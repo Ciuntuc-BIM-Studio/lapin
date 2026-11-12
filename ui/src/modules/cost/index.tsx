@@ -14,6 +14,8 @@ import { openCostTime } from './costTime';
 import { exportPdf, exportXlsx, formOnSheet, openEstimate, useEstimate } from './estimate';
 import { exportTakeoff, takeoff } from './schedules';
 import { lazyPart } from '../../platform/lazyPart';
+// Lapin Extensions: the content packs this module's libraries take (docs/plan-extensions.md).
+import './extensionKind';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const SchedulesDialog = lazyPart(() => import('./SchedulesDialog').then((m) => m.SchedulesDialog), { title: 'Schedules' });

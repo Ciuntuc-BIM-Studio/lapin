@@ -50,6 +50,8 @@ export function baseFileActions(): FileAction[] {
     { id: 'file.exportMesh', label: 'Export 3D (glTF, USD, DAE)…', run: dialog('exportMesh') },
     // The project as one .html that any browser opens, and that Lapin opens again (decision 482, docs/html-export.md).
     { id: 'file.exportHtml', label: 'Lapin for the browser (.html)…', menu: 'export-html', run: dialog('exportHtml') },
+    // Lapin Extensions (docs/plan-extensions.md): content packs from the catalogue, into Lapin's own libraries.
+    { id: 'file.extensions', label: 'Extensions…', menu: 'extensions', run: dialog('extensions') },
     { id: 'file.share', label: 'Share session…', shown: () => !engineInBrowser, run: dialog('share') },
     { id: 'file.join', label: 'Join session…', run: dialog('join') },
     { id: 'file.preferences', label: 'Preferences…', keys: 'app.preferences', run: dialog('preferences') },
@@ -63,6 +65,7 @@ export const HOST_SECTIONS: FileSection[] = [
   { ids: ['file.new', 'file.newFromTemplate', 'file.open', 'file.save', 'file.saveAs', 'file.saveVersion', 'file.saveTemplate'] },
   { head: 'IFC and Fragments', ids: ['file.importIfc', 'file.importFragments', 'file.importBos', 'file.importSdnf', 'file.linkIfc', 'file.linkLapin', 'file.exportExchange', 'file.exportJg', 'file.optimizeIfc'] },
   { head: 'Other formats', ids: ['file.linkPointCloud', 'file.importDxf', 'file.importTrace', 'file.importMesh', 'file.exportMesh', 'file.exportHtml'] },
+  { ids: ['file.extensions'] },
   { ids: ['file.share', 'file.join', 'file.startScreen'] },
 ];
 

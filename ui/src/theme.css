@@ -2163,3 +2163,31 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .my-card.drop-before { box-shadow: 0 -3px 0 var(--accent); }
 .my-card.drop-after { box-shadow: 0 3px 0 var(--accent); }
 .small-btn { display: inline-flex; align-items: center; gap: 5px; }
+
+/* Lapin Extensions (docs/plan-extensions.md): File → Extensions… */
+.extensions-dialog .dialog-body { min-height: 420px; }
+.ext-search { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.ext-search input { flex: 1; }
+.ext-kinds { flex-wrap: wrap; }
+.ext-split { display: grid; grid-template-columns: minmax(200px, 280px) 1fr; gap: 12px; min-height: 320px; }
+.ext-list { display: flex; flex-direction: column; gap: 2px; overflow-y: auto; max-height: 440px; border-right: 1px solid var(--rule); padding-right: 8px; }
+.ext-row { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 6px 24px 6px 8px; border: 1px solid transparent; border-radius: 3px; background: none; color: var(--ink); cursor: pointer; text-align: left; }
+.ext-row:hover { background: var(--panel); }
+.ext-row.on { border-color: var(--accent); background: var(--panel); }
+.ext-row-name { font-weight: 600; }
+.ext-row-mark { position: absolute; right: 6px; top: 8px; color: var(--accent); }
+.ext-details { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ext-title { display: flex; align-items: baseline; gap: 8px; }
+.ext-name { font-size: 15px; font-weight: 600; }
+.ext-facts { display: grid; grid-template-columns: max-content 1fr; gap: 3px 12px; margin: 4px 0; font-size: 12px; }
+.ext-facts dt { color: var(--ink-muted); }
+.ext-facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.ext-sha { font-family: ui-monospace, monospace; }
+.ext-items ul, .ext-code ul { margin: 4px 0 0; padding-left: 18px; }
+.ext-code { border: 1px solid var(--rule-strong); border-radius: 3px; padding: 6px 8px; }
+.ext-code p { margin: 0 0 4px; display: flex; gap: 6px; align-items: flex-start; }
+.ext-links { margin-top: auto; align-items: center; gap: 6px; }
+.ext-installed { display: flex; flex-direction: column; gap: 6px; }
+.ext-installed-row { cursor: default; }
+.ext-address { min-width: 0; }
+@media (max-width: 760px) { .ext-split { grid-template-columns: 1fr; } .ext-list { border-right: 0; max-height: 200px; } }

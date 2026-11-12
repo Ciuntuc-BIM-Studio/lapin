@@ -22,6 +22,8 @@ import { FurnitureLibraryDialog, SaveToLibraryDialog } from './FurnitureLibraryD
 import { refreshLibrary, useFurnitureLibrary } from './library';
 import { addTemplateAddition } from '../../engine/templates';
 import { useEffect } from 'react';
+// Lapin Extensions: the content packs this module's libraries take (docs/plan-extensions.md).
+import './extensionKind';
 
 /** The bar of a kind's tool: its type, its turn when it stands free, and whether it backs onto walls. */
 function kindOptions(kind: string, placing = true) {

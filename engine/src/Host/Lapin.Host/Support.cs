@@ -88,7 +88,7 @@ public static class Support
     /// <summary>
     /// The address of one of the help menu's links (only these: nothing else is
     /// opened on the host's say); <c>forumTopic</c> takes the new topic's
-    /// <c>title</c> and <c>body</c> from <paramref name="p"/>.
+    /// <c>title</c> and <c>body</c> from <paramref name="p"/>, <c>extensionPage</c> an https <c>url</c>.
     /// </summary>
     public static string LinkUrl(string? which, JsonObject? p = null) =>
         which is not null && Guides.TryGetValue(which, out var guide) ? guide
@@ -97,6 +97,9 @@ public static class Support
                 "forum" => ForumUrl,
                 "forumTopic" => ForumTopic((string?)p?["title"], (string?)p?["body"]),
                 "community" => CommunityUrl, "site" => SiteUrl, "source" => SourceUrl,
+                // An extension's homepage or forum topic, as the catalogue names it (Lapin Extensions): an https address only.
+                "extensionPage" => (string?)p?["url"] is { } u && Uri.TryCreate(u, UriKind.Absolute, out var page) && page.Scheme == "https" ? page.AbsoluteUri
+                    : throw new CommandException("An extension's page is opened only at an https address."),
                 _ => throw new CommandException("Nothing to open."),
             };
 

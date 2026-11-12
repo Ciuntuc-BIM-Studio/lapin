@@ -5,7 +5,8 @@
 // A scene drives the interface in English; what a user types (a question)
 // is in the run's language (t.lang, one of languages.mjs), from the tables
 // below: a language missing from a table types the English.
-import { mkdirSync, mkdtempSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { say } from './languages.mjs';
@@ -6360,6 +6361,101 @@ export const scenes = [
         t.expect(kinds.includes('IfcWallType') && !kinds.includes('IfcWall') && !kinds.includes('IfcWallStandardCase'), 'the new project has the house\'s wall types and no wall');
       } finally {
         await t.call('templates.delete', { id: 'Office houses' }).catch(() => undefined);
+      }
+    },
+  },
+  {
+    // Lapin Extensions, stage 0 (docs/plan-extensions.md): a catalogue on this computer (an index and its three packages,
+    // made here as the catalogue's tools make them) read from File → Extensions… → Catalogue…; Browse shows the furniture
+    // pack's details and the script's (installable, not runnable yet); the furniture pack installed (its SHA-256 checked)
+    // lands in My furniture; Installed lists it; Uninstall takes its items away again. Everything is cleaned at the end.
+    id: 'extensions',
+    touches: ['core', 'furniture'],
+    async run(t) {
+      await t.fresh();
+      const dir = mkdtempSync(join(tmpdir(), 'lapin-guide-extensions-'));
+      const sha = (b) => createHash('sha256').update(b).digest('hex');
+      const author = { name: 'Ciuntuc BIM Studio', github: 'Ciuntuc-BIM-Studio', url: 'https://ciuntucbimstudio.ro' };
+      const pkg = (file, bytes) => ({ url: file, sha256: sha(bytes), size: bytes.length });
+      // The furniture pack: four types made with the configurator, packed as My furniture → Export packs them.
+      const made = [
+        ['casework', 'sideboard', 'Comodă stejar', 'living', ['stejar']],
+        ['casework', 'tvUnit', 'Comodă TV nuc', 'living', ['nuc', 'tv']],
+        ['casework', 'bookcase', 'Bibliotecă înaltă', 'storage', ['stejar']],
+        ['sofa', null, 'Canapea 3 locuri', 'living', ['canapea']],
+      ];
+      const entries = [];
+      for (const [kind, preset, name, category, tags] of made) {
+        const { id } = await t.cmd('furniture.createType', { kind, name, ...(preset ? { preset } : {}) });
+        const type = await t.call('doc.query', { name: 'furniture.libraryItem', args: { typeId: id } });
+        const thumbnail = await t.page.evaluate(async (spec) => (await import('/src/modules/furniture/library.ts')).thumbnailOf(spec), type.spec);
+        entries.push({ id: `guide${entries.length + 1}`, name, category, tags, thumbnail, at: '2026-11-12T00:00:00Z', type });
+      }
+      const lib = Buffer.from((await t.call('furnitureLibrary.pack', { entries })).data, 'base64');
+      writeFileSync(join(dir, 'mobilier-living.lapinlib'), lib);
+      const tpl = Buffer.from((await t.call('template.make', {})).data, 'base64');
+      writeFileSync(join(dir, 'sablon-romania.lapin'), tpl);
+      const py = Buffer.from('# lapin: name="Perimeter walls", version="1.0.0", requires="scripting"\nimport lapinbim as lapin\n\nwith lapin.batch("Perimeter walls"):\n    for (x1, y1, x2, y2) in [(0, 0, 8, 0), (8, 0, 8, 6), (8, 6, 0, 6), (0, 6, 0, 0)]:\n        lapin.architecture.add_wall(x1=x1, y1=y1, x2=x2, y2=y2, height=2.8)\n');
+      writeFileSync(join(dir, 'perimeter_walls.py'), py);
+      const base = { schema: 1, version: '1.0.0', author, lapin: '*', homepage: 'https://github.com/Ciuntuc-BIM-Studio/lapin-extensions', forum: 'https://forum.lapinbim.com/c/lapin' };
+      const index = { format: 'lapin-extensions-index', version: 1, extensions: [
+        { ...base, id: 'ro.ciuntucbimstudio.mobilier-living', name: 'Mobilier living', kind: 'furniture', license: 'CC-BY-4.0', languages: ['ro'], tags: ['living', 'example'],
+          summary: 'Living-room furniture types for My furniture: sideboard, TV unit, bookcase and sofa.', contents: { file: 'mobilier-living.lapinlib', items: made.map((m) => m[2]) }, package: pkg('mobilier-living.lapinlib', lib) },
+        { ...base, id: 'ro.ciuntucbimstudio.sablon-romania', name: 'Șablon de proiect România', kind: 'template', license: 'CC0-1.0', languages: ['ro'], tags: ['romania'],
+          summary: 'A project template with the storeys named the Romanian way.', contents: { file: 'sablon-romania.lapin' }, package: pkg('sablon-romania.lapin', tpl) },
+        { ...base, id: 'ro.ciuntucbimstudio.pereti-perimetrali', name: 'Perimeter walls', kind: 'script', license: 'MIT', permissions: ['model.read', 'model.write'], requires: ['scripting'], tags: ['walls', 'python'],
+          summary: 'A Python script: four walls round a rectangle, as one undo step.', contents: { file: 'perimeter_walls.py' }, package: pkg('perimeter_walls.py', py) },
+      ] };
+      writeFileSync(join(dir, 'index.json'), JSON.stringify(index, null, 2));
+      const before = (await t.call('furnitureLibrary.list', {})).map((e) => e.id);
+      try {
+        await t.button('File', { exact: true });
+        await t.page.locator('[data-menu=extensions]').click();
+        const dialog = t.page.locator('[data-dialog=extensions]');
+        await dialog.waitFor({ timeout: 10_000 });
+        // The catalogue on this computer: its index's path typed in Catalogue….
+        await dialog.locator('[data-action=extensions-catalogue]').click();
+        await dialog.locator('[data-field=extensions-index]').fill(join(dir, 'index.json'));
+        await dialog.locator('[data-action=extensions-index-set]').click();
+        await dialog.locator('[data-extension]').nth(2).waitFor({ timeout: 15_000 });
+        t.expect(await dialog.locator('[data-extension]').count() === 3, 'Browse lists the three extensions of the catalogue');
+        await dialog.locator('[data-extension="ro.ciuntucbimstudio.mobilier-living"]').click();
+        await dialog.locator('[data-extension-details="ro.ciuntucbimstudio.mobilier-living"]').waitFor({ timeout: 5000 });
+        await t.wait(300);
+        await t.shot('extensions-browse', { of: '[data-dialog=extensions]', pad: 0 });
+        // A script: what it asks for, and that it runs only once the Python console is in Lapin.
+        await dialog.locator('[data-extension="ro.ciuntucbimstudio.pereti-perimetrali"]').click();
+        await dialog.locator('[data-extension-details="ro.ciuntucbimstudio.pereti-perimetrali"] .ext-code').waitFor({ timeout: 5000 });
+        await t.shot('extensions-script', { of: '[data-extension-details="ro.ciuntucbimstudio.pereti-perimetrali"]', pad: 8 });
+        // Install: downloaded, its SHA-256 checked, into My furniture.
+        await dialog.locator('[data-extension="ro.ciuntucbimstudio.mobilier-living"]').click();
+        await dialog.locator('[data-action=extension-install]').click();
+        await dialog.locator('[data-extension="ro.ciuntucbimstudio.mobilier-living"] .ext-row-mark').waitFor({ timeout: 20_000 });
+        const added = (await t.call('furnitureLibrary.list', {})).filter((e) => !before.includes(e.id));
+        t.expect(added.length === 4 && added.some((e) => e.name === 'Canapea 3 locuri'), `the pack's four types are in My furniture (${added.length})`);
+        await dialog.locator('[data-tab-extensions=installed]').click();
+        await dialog.locator('[data-installed-extension="ro.ciuntucbimstudio.mobilier-living"]').waitFor({ timeout: 5000 });
+        await t.shot('extensions-installed', { of: '[data-dialog=extensions]', pad: 0 });
+        // Where it went: My furniture….
+        await dialog.locator('[data-installed-extension="ro.ciuntucbimstudio.mobilier-living"]').getByRole('button', { name: 'My furniture…' }).click();
+        const library = t.page.locator('[data-dialog=furniture-library]');
+        await library.waitFor({ timeout: 10_000 });
+        await library.locator('[data-library-entry="Comodă TV nuc"]').waitFor({ timeout: 10_000 });
+        await t.wait(500);
+        await t.shot('extensions-my-furniture', { of: '[data-dialog=furniture-library]', pad: 0 });
+        await t.page.keyboard.press('Escape');
+        await t.ui({ dialog: 'extensions' });
+        await dialog.waitFor({ timeout: 10_000 });
+        await dialog.locator('[data-tab-extensions=installed]').click();
+        // Uninstall (its question answered yes): the pack's items leave My furniture, nothing else does.
+        await dialog.locator('[data-installed-extension="ro.ciuntucbimstudio.mobilier-living"] [data-action=extension-uninstall]').click();
+        await dialog.locator('[data-installed-extension]').waitFor({ state: 'detached', timeout: 10_000 });
+        const left = (await t.call('furnitureLibrary.list', {})).map((e) => e.id);
+        t.expect(left.length === before.length && left.every((id) => before.includes(id)), 'uninstalling takes the pack\'s items out of My furniture');
+      } finally {
+        for (const e of await t.call('furnitureLibrary.list', {}).catch(() => [])) if (!before.includes(e.id)) await t.call('furnitureLibrary.delete', { id: e.id }).catch(() => undefined);
+        await t.page.evaluate(() => { localStorage.removeItem('lapin.extensions'); localStorage.removeItem('lapin.extensions.index'); }).catch(() => undefined);
+        await t.ui({ dialog: null });
       }
     },
   },

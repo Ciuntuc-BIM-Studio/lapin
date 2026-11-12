@@ -1,0 +1,58 @@
+---
+title: Estensioni
+order: 126
+summary: Aggiungi arredi, modelli di progetto, profili, motivi di campitura, cartigli e listini prezzi creati da altri dal catalogo Lapin Extensions, e rimuovili di nuovo.
+---
+
+## Il catalogo
+
+**Lapin Extensions** è un catalogo gratuito di contenuti creati per Lapin dai suoi utenti e da noi: pacchetti di arredi, modelli di progetto, librerie di profili, motivi di campitura, cartigli e listini prezzi. Ognuno va nella libreria che Lapin ha già per quel tipo, così lo usi come se l'avessi fatto tu.
+
+Apri **File → Estensioni…**. **Sfoglia** mostra il catalogo: cerca per nome, etichetta o per ciò che un'estensione contiene, oppure scegli una categoria.
+
+![Estensioni: Sfoglia, i dettagli di un pacchetto di arredi](shots/extensions-browse.webp)
+
+Fai clic su un'estensione per vederne i dettagli prima di installarla:
+
+- **Autore** e **Licenza**. Ogni estensione ha una licenza, scelta dal suo autore. Una *permissiva* (MIT, CC-BY, CC0…) ti permette di usare ciò che contiene in qualsiasi progetto; per le altre, *leggi le condizioni* prima.
+- **Funziona con**: le versioni di Lapin per cui è stata fatta. Se non va bene per il tuo Lapin, lo dice invece di offrire **Installa**.
+- **Dimensione**, il file e il suo **SHA-256**: l'impronta del file esaminato dal catalogo.
+- **Contenuto**: i suoi elementi, quando l'autore li elenca.
+- **Sito** e **Discussione sul forum**: dove fare domande all'autore.
+
+## Installare, aggiornare, disinstallare
+
+Fai clic su **Installa**. Lapin scarica il file, controlla che dimensione e SHA-256 siano esattamente quelli indicati dal catalogo (un file modificato lungo il percorso viene rifiutato e non si installa nulla), poi lo inserisce nella sua libreria:
+
+| Tipo | Dove va |
+|---|---|
+| Arredi | **Interni → I miei arredi…** |
+| Modelli di progetto | **File → Nuovo da modello…** |
+| Profili | le librerie di profili di questo computer |
+| Motivi di campitura | I miei motivi, offerti da **Gestisci → Materiali** |
+| Cartigli | i cartigli di questo computer |
+| Listini prezzi | **Esecuzione → Listini prezzi…**, indicati come orientativi: i prezzi sono dell'autore, confrontali con i tuoi |
+
+Se la tua libreria ha già qualcosa con lo stesso nome, Lapin chiede prima di sostituirlo. Nulla di ciò che porta un'estensione viene mai eseguito: le estensioni sono contenuto.
+
+**Installate** elenca ciò che ha questo computer. Ogni riga apre il posto dove è andato (**I miei arredi…**, **Modelli di progetto…**), offre **Aggiorna** quando il catalogo ha una versione più recente, e **Disinstalla**.
+
+![Installate: il pacchetto di arredi, con il pulsante che apre I miei arredi](shots/extensions-installed.webp)
+
+![I tipi di arredo del pacchetto in I miei arredi](shots/extensions-my-furniture.webp)
+
+**Disinstalla** toglie dalle tue librerie ciò che l'estensione ha aggiunto, e solo quello. Ciò che hai già messo nei tuoi progetti resta lì: un tipo di arredo inserito in un progetto, un progetto avviato da un modello.
+
+## Script
+
+Il catalogo elenca anche **script Python**. Nell'app desktop puoi installarne uno già ora; viene eseguito quando Lapin avrà la sua console Python, e solo quando lo esegui tu. Prima di installarlo, i suoi dettagli dicono cosa chiede (leggere o modificare il progetto aperto, accedere ai file o a internet). Uno script può fare sul tuo computer ciò che puoi fare tu, quindi installa script solo di autori di cui ti fidi. Il browser accetta solo pacchetti di contenuto.
+
+![I dettagli di uno script: cosa chiede, e che non è ancora eseguibile](shots/extensions-script.webp)
+
+## Un altro catalogo
+
+**Catalogo…**, in fondo alla finestra, imposta l'indirizzo del catalogo: un indirizzo https, oppure il percorso di un `index.json` su questo computer o in una cartella condivisa (il catalogo di uno studio). Lascialo vuoto per usare quello di Lapin. La freccia accanto rilegge il catalogo.
+
+## Pubblicare le tue
+
+Chiunque può pubblicare un'estensione: esportala da Lapin (I miei arredi → Esporta…, Salva come modello…, una libreria di profili, un cartiglio), allega il file a una release di un tuo repository GitHub e aggiungi il suo manifest al catalogo con una pull request su [Ciuntuc-BIM-Studio/lapin-extensions](https://github.com/Ciuntuc-BIM-Studio/lapin-extensions). Il suo README spiega come, e cosa guardano i controlli automatici.

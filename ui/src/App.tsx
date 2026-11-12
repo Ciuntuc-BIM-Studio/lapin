@@ -417,8 +417,10 @@ const OptimizeIfcDialog = lazyPart(() => import('./shell/OptimizeIfcDialog').the
 const ProjectTemplatesDialog = lazyPart(() => import('./shell/ProjectTemplatesDialog').then((m) => m.ProjectTemplatesDialog), { title: 'Project templates' });
 const SaveTemplateDialog = lazyPart(() => import('./shell/ProjectTemplatesDialog').then((m) => m.SaveTemplateDialog), { title: 'Save as template' });
 
+// Lapin Extensions (docs/plan-extensions.md): File → Extensions….
+const ExtensionsDialog = lazyPart(() => import('./shell/ExtensionsDialog').then((m) => m.ExtensionsDialog), { title: 'Extensions' });
 const MyToolsDialog = lazyPart(() => import('./shell/MyToolsDialog').then((m) => m.MyToolsDialog), { title: 'Customize My tools' });
-const shareDialogs: Record<string, React.ComponentType> = { myTools: MyToolsDialog, share: ShareDialog, join: JoinDialog, interface: InterfaceDialog, preferences: PreferencesDialog, quickTools: QuickToolsDialog, shortcuts: ShortcutsDialog, palette: CommandPalette, optimizeIfc: OptimizeIfcDialog, projectTemplates: ProjectTemplatesDialog, saveTemplate: SaveTemplateDialog };
+const shareDialogs: Record<string, React.ComponentType> = { myTools: MyToolsDialog, share: ShareDialog, join: JoinDialog, interface: InterfaceDialog, preferences: PreferencesDialog, quickTools: QuickToolsDialog, shortcuts: ShortcutsDialog, palette: CommandPalette, optimizeIfc: OptimizeIfcDialog, projectTemplates: ProjectTemplatesDialog, saveTemplate: SaveTemplateDialog, extensions: ExtensionsDialog };
 
 function Workspace() {
   const open = useUi((s) => s.dialog);

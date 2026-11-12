@@ -41,6 +41,8 @@ import { cutAtPlan, toggleSectionBox } from '../../viewport/sectionBoxTools';
 import { frontDiscipline } from './disciplines';
 import { sectionGrips, sectionRefs, sectionTools } from './sections';
 import { lazyPart } from '../../platform/lazyPart';
+// Lapin Extensions: the content packs this module's libraries take (docs/plan-extensions.md).
+import './extensionKinds';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const ProfileLibrariesDialog = lazyPart(() => import('./profileLibraries/ProfileLibrariesDialog').then((m) => m.ProfileLibrariesDialog), { title: 'Profile libraries' });
