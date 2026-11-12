@@ -67,7 +67,7 @@ From the environment (the compose file and `store.env` on the server):
 
 ## Deploying (first time)
 
-Nothing here has been done yet. The forum, Cloudflare and GitHub steps are the owner's (they need his accounts); the secrets are typed into the server and the forum's admin page directly, never into a chat, a commit or a log.
+**Done on 12.11.2026.** What differs from the steps below: no Cloudflare path route — the tunnel sends `store.lapinbim.com` and `lapinbim.com` to lapin-web (127.0.0.1:3461), whose nginx proxies `store.lapinbim.com` (its own `server` block) and `location /extensions/` to `lapin-store:8080` on the compose network; `store.env` was written on the server with the SSO secret and the salt made there (`openssl rand`) and the GitHub token piped from the Mac's keychain item `lapin-store-github`; the forum's two DiscourseConnect settings were set through the admin API with the secret read from `store.env`, never shown; the store key is `~/.lapin/store-key.pem` (id `2daeb4d5dc6eae92`), listed in `STORE_KEYS`, so **every publication is signed** (`node tools/publish.mjs --upload`, never `--unsigned` again). The steps stay as the record of a first install (and for a self-hosted copy). The forum, Cloudflare and GitHub steps are the owner's; secrets never go into a chat, a commit or a log.
 
 ### 1. GitHub: the store's token
 

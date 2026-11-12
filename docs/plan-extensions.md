@@ -1,6 +1,6 @@
 # Lapin Extensions: plan
 
-Hotărârea utilizatorului (12.11.2026): un magazin de extensii, **Lapin Extensions**, cu adresa viitoare store.lapinbim.com. Etapa 0 e făcută (decizia 499); etapa 1 e construită (decizia 504, §10: codul și testele; publicarea pe server o face utilizatorul, pașii în `deploy/store/README.md`); etapa 2 e hotărâtă în §11. Extensiile vin în patru feluri, în ordinea asta:
+Hotărârea utilizatorului (12.11.2026): un magazin de extensii, **Lapin Extensions**, cu adresa viitoare store.lapinbim.com. Etapa 0 e făcută (decizia 499); etapa 1 e construită și **publicată pe 12.11.2026** (decizia 504, §10): store.lapinbim.com live, containerul `lapin-store`, DiscourseConnect pornit pe forum, catalogul **semnat** cu cheia magazinului (`2daeb4d5dc6eae92`, în `STORE_KEYS` din același zi); pașii și întreținerea în `deploy/store/README.md`; etapa 2 e hotărâtă în §11. Extensiile vin în patru feluri, în ordinea asta:
 
 1. **Pachete de conținut** (fără cod): mobilier (`.lapinlib`), șabloane de proiect (`.lapin`), profile (`.lapinprofiles`), hașuri (`.pat`), cartușe (`.json` al cartușelor), liste de prețuri (`.lapinprices`), tipuri de pereți, plăci, uși, ferestre, stâlpi, grinzi, scări (`.lapintypes`, felul `types`, §9.1). **Primele.**
 2. **Scripturi și unelte Python**, după etapa 4 a planului Python (`docs/plan-python-scripting.md`, decizia 489).
