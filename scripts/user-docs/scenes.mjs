@@ -3939,6 +3939,42 @@ export const scenes = [
     },
   },
   {
+    // A click takes only what the view shows (decision 498), as the snaps do (decision 491); Properties says so of an element picked by its name.
+    id: 'select-shown',
+    async run(t) {
+      await t.fresh();
+      const { storey, walls } = await house(t, { roof: false });
+      const plan = (await t.cmd('view.create', { kind: 'plan', storeyId: storey, name: 'Ground floor selection' })).id;
+      await t.ui({ view: 'plan', planViewId: plan, keyPlan: false, dialog: null });
+      await t.wait(1500);
+      // The inner wall clicked, then walls hidden here and the same click passes it over; picked by its name instead,
+      // Properties says it is not shown in this view.
+      await t.wait(600);
+      const at = await t.page.evaluate(async ([id, x, y]) => {
+        const svg = document.querySelector('[data-testid=plan]');
+        const view = (await import('/src/viewport/zoom.ts')).recall(id);
+        if (!svg || !view) return null;
+        const r = svg.getBoundingClientRect();
+        return [r.left + (x - view.cx) * view.scale + r.width / 2, r.top + r.height / 2 - (y - view.cy) * view.scale];
+      }, [plan, 7, 4]);
+      t.expect(!!at, 'the plan on the screen');
+      const clickWall = async () => {
+        await t.ui({ selection: null, selected: [] });
+        await t.page.mouse.move(at[0], at[1], { steps: 3 });
+        await t.page.mouse.click(at[0], at[1]);
+        await t.wait(600);
+        return t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().selected);
+      };
+      t.expect((await clickWall()).includes(walls.inner), 'a click on the inner wall selects it');
+      await t.cmd('view.graphics', { id: plan, category: 'walls', value: { hidden: true } });
+      await t.wait(1500);
+      t.expect(!(await clickWall()).includes(walls.inner), 'with walls hidden in the view, the same click passes the wall over');
+      await t.ui({ selection: walls.inner, selected: [walls.inner] });
+      await t.page.locator('[data-testid=not-shown-here]').waitFor({ timeout: 5000 });
+      t.expect(await t.page.locator('[data-testid=not-shown-here]').count() === 1, 'selected by its name, Properties says it is not shown in this view');
+    },
+  },
+  {
     // Visibility / Graphics, stages B and C (decisions 393, 394): annotation categories, a DXF import by its layers, a rule-based filter drawn in its colour.
     id: 'views-vg-filters',
     async run(t) {

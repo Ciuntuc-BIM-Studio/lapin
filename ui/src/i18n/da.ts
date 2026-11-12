@@ -2000,6 +2000,7 @@ export const DA: Record<string, string> = {
   "Material hatches": "Materialets skraveringer",
   "Hatches of": "Skraveringer for",
   "The material's own, as in Manage → Materials: every type and element made of it changes too.": "Materialets egne, som i Administrer → Materialer: hver type og hvert element af det ændres også.",
+  "Not shown in this view: hidden by its graphics, a filter, a phase, Hide / Isolate, its range or a level put away. A click or a box here does not take it.": "Vises ikke i denne visning: skjult af sin grafik, et filter, en fase, Skjul / Isolér, sit område eller en etage, der er lagt væk. Et klik eller en boks her tager det ikke.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

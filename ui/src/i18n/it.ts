@@ -2008,6 +2008,7 @@ export const IT: Record<string, string> = {
   "Material hatches": "Tratteggi del materiale",
   "Hatches of": "Tratteggi di",
   "The material's own, as in Manage → Materials: every type and element made of it changes too.": "Sono del materiale, come in Gestisci → Materiali: cambiano anche tutti i tipi e gli elementi fatti di esso.",
+  "Not shown in this view: hidden by its graphics, a filter, a phase, Hide / Isolate, its range or a level put away. A click or a box here does not take it.": "Non mostrato in questa vista: nascosto dalla sua grafica, da un filtro, da una fase, da Nascondi / Isola, dal suo intervallo o da un livello messo da parte. Un clic o un riquadro qui non lo prende.",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

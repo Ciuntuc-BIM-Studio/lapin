@@ -6,7 +6,7 @@
  */
 
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
-import { AlignHorizontalJustifyCenter, ChevronRight, Search, Trash2 } from 'lucide-react';
+import { AlignHorizontalJustifyCenter, ChevronRight, EyeOff, Search, Trash2 } from 'lucide-react';
 import { Cell, LengthCell } from './cells';
 import { panelFocus, panelKeys, parseNumber } from './cellKeys';
 import { useUi } from '../app/store';
@@ -30,6 +30,7 @@ import { AxisFields } from './AxisFields';
 import { paramKey, sameKind, type Param } from './params';
 import { filterSets, importedSets } from './ifcProperties';
 import { MaterialPicker } from '../modules/core/MaterialPicker';
+import { hiddenHere, useShownHere } from '../viewport/cad/shown';
 
 /** An input that commits on Enter or when it loses focus, not on every key. */
 function Commit({ value, onCommit, suffix, className }: { value: string; onCommit: (v: string) => void; suffix?: string; className?: string }) {
@@ -293,6 +294,9 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
   const level = node.editable ? elevationOf(node, storey, type, cls?.fields.map((f) => f.key) ?? []) : null;
   const elevation = level ? raisedBy(level, rise) : null;
   const TypeFields = type ? typeFieldsOf(type.type) : null;
+  // Selected from a list (the project browser, a schedule, a link) though the view in front hides it (decision 498): said, not silent.
+  useShownHere((s) => s.version);
+  const notShown = !inFront && hiddenHere(node.id);
   return (
     <aside className="panel props" aria-label="Properties" ref={body} onKeyDown={panelKeys} onFocus={panelFocus}>
       <div className="props-resize" onPointerDown={startResize} title="Drag to widen the panel" />
@@ -303,6 +307,7 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
           : <span className="panel-title">{node.name}</span>}
       </div>
       <label className="props-filter"><Search size={12} /><input placeholder="Filter properties" value={filter} onChange={(e) => setFilter(e.target.value)} onKeyDown={(e) => { if (e.key === 'Escape') setFilter(''); }} /></label>
+      {notShown && <p className="muted small pad props-not-shown" data-testid="not-shown-here"><EyeOff size={12} /> Not shown in this view: hidden by its graphics, a filter, a phase, Hide / Isolate, its range or a level put away. A click or a box here does not take it.</p>}
       {!node.editable && <p className="muted small pad">This element belongs to a module this edition does not have: it is shown and kept, not edited.</p>}
       {sections.map((s) => (
         <Group key={s.id} id={s.id} label={s.label}><s.component node={node} /></Group>

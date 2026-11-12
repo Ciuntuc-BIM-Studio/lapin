@@ -2006,6 +2006,7 @@ export const PL: Record<string, string> = {
   "Material hatches": "Kreskowania materiału",
   "Hatches of": "Kreskowania:",
   "The material's own, as in Manage → Materials: every type and element made of it changes too.": "Należą do materiału, jak w Zarządzaj → Materiały: zmienia się też każdy typ i element z niego zrobiony.",
+  "Not shown in this view: hidden by its graphics, a filter, a phase, Hide / Isolate, its range or a level put away. A click or a box here does not take it.": "Niewidoczny w tym widoku: ukryty przez swoją grafikę, filtr, fazę, Ukryj / Izoluj, swój zakres lub odłożoną kondygnację. Kliknięcie ani ramka tutaj go nie zaznaczą.",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

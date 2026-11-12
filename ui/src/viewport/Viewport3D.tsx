@@ -70,10 +70,13 @@ import { openGroupOf, shownSelection, useExpansion } from '../platform/groups';
 import { useTagHover } from './tagTarget';
 import { pickClick, pickRegion } from '../platform/assemblies';
 import { boxEdges, boxOf, projectSegments, takes, toggleRegion3d, useRegion3d, type Project } from './select3d';
+import { clippedAway, seenHit } from './seen3d';
+import { clearShown, publishShown } from './cad/shown';
+import { usePaneActive } from '../app/pane';
 import { dragTo, isWindow, regionTestOf, SelectRegion, toggleLasso, type SelectDrag } from './selectDrag';
 import type { Seg } from './selectBox';
 import { resetTemporary, temporaryOn, useTemporary } from './temporary';
-import { place } from '../engine/instances';
+import { place, placedBox } from '../engine/instances';
 import { fineShown, useFineBodies } from './fineBodies';
 import { disposeUnderlays, sameSources, underlayGroup, underlaySources, type UnderlayBatch } from './underlays3d';
 import { PointCloudLayer, type Hierarchy, type Tile } from './pointClouds3d';
@@ -254,6 +257,8 @@ function meshOf(item: RenderItem): THREE.Group {
     const levels = [p, ...p.lods.map(copyArrays)].map((m, k) => {
       const g = new THREE.Group();
       g.visible = k === 0;
+      // A level of detail: hidden for a coarser copy, still the one a click meets (seen3d.ts).
+      g.userData.lodLevel = true;
       add(g, m.positions, m.normals, m.indices, m.edges, p.color, p.material);
       if (k > 0) g.traverse((c) => { c.raycast = NO_RAYCAST; });
       into.add(g);
@@ -332,6 +337,27 @@ function capsOf(item: CapItem): THREE.Group {
     group.add(lines);
   }
   return group;
+}
+
+/** Each element's box (its parts' too), worked out once per item, for what a clipping plane takes away wholly. */
+const boxes = new WeakMap<RenderItem, number[] | null>();
+function itemBox(item: RenderItem): number[] | null {
+  if (boxes.has(item)) return boxes.get(item)!;
+  const all = [item.positions, ...(item.parts ?? []).map((p) => p.positions)];
+  let b: number[] | null = null;
+  for (const a of all) {
+    const own = a?.length ? boxOf(a) : null;
+    if (own) b = b ? [Math.min(b[0], own[0]), Math.min(b[1], own[1]), Math.min(b[2], own[2]), Math.max(b[3], own[3]), Math.max(b[4], own[4]), Math.max(b[5], own[5])] : own;
+  }
+  boxes.set(item, b);
+  return b;
+}
+
+/** Whether a section box, a section or the storeys' cut takes an element away wholly (decision 498: nothing of it to select). */
+function clipped(item: RenderItem, planes: readonly THREE.Plane[]): boolean {
+  if (!planes.length) return false;
+  const b = itemBox(item);
+  return !!b && clippedAway(b, planes);
 }
 
 function highlight(group: THREE.Object3D, on: boolean) {
@@ -604,8 +630,6 @@ export function Viewport3D() {
   /** The clipping planes: a section's shown in 3D, and the cut above the storeys shown; the renderer takes both. */
   const sectionClip = useRef<THREE.Plane[]>([]);
   const storeyClip = useRef<THREE.Plane[]>([]);
-  /** Where the storeys shown are cut (a height), so a click above it picks nothing cut away. */
-  const cutRef = useRef<number | null>(null);
   const applyClip = () => {
     const all = [...sectionClip.current, ...storeyClip.current];
     if (rendererRef.current) rendererRef.current.clippingPlanes = all;
@@ -963,7 +987,8 @@ export function Viewport3D() {
 
     // A click (not a drag): the element under it, and the point on the active storey's plane.
     const ray = new THREE.Raycaster();
-    // What the ray meets first among the elements shown (not those hidden, nor what the storeys' cut takes away).
+    // What the ray meets first among the elements shown (decision 498: not those hidden, nor their hidden layers, nor what a
+    // section box, a section or the storeys' cut takes away).
     const pickAt = () => {
       const meshes: THREE.Object3D[] = [];
       for (const { object } of live.values()) if (object.visible) meshes.push(object);
@@ -974,10 +999,10 @@ export function Viewport3D() {
       // The openings' voids pick as their openings (View → Opening voids, decision 289), while no tool is on.
       const voids = s.getObjectByName(VOIDS_GROUP);
       if (voids && !useUi.getState().tool) for (const c of voids.children) if (c.userData.openingVoid) meshes.push(c);
-      const cut = cutRef.current;
+      const planes = renderer.clippingPlanes ?? [];
       // Lines are met within a few pixels of the cursor, as far off as the camera looks.
       ray.params.Line = { threshold: lineThreshold(cam, ray) };
-      return ray.intersectObjects(meshes, true).find((h) => nodeOfHit(h) && (cut === null || h.point.z <= cut + 1e-3));
+      return ray.intersectObjects(meshes, true).find((h) => nodeOfHit(h) && seenHit(h, planes));
     };
     /** The element a hit is on: its own mesh's, or the instance's. */
     const nodeOfHit = (h: THREE.Intersection | undefined) => (h ? (h.object.userData.nodeId as string | undefined) ?? layer.nodeOf(h) : undefined);
@@ -1360,9 +1385,11 @@ export function Viewport3D() {
       const win = isWindow(d);
       const nodes = useSession.getState().nodes;
       const looks = useLooks.getState().looks;
+      const planes = renderer.clippingPlanes ?? [];
       const ids: string[] = [];
       for (const [id, { item, object }] of items.current) {
-        if (!object.visible || !pickable(nodes.get(id))) continue;
+        // Only what the view shows (decision 498): not hidden, not wholly cut away by a section box or a cut.
+        if (!object.visible || !pickable(nodes.get(id)) || clipped(item, planes)) continue;
         const segs: Seg[] = [];
         let behind = false;
         const add = (flat: ArrayLike<number>) => { if (projectSegments(flat, project, segs).behind) behind = true; };
@@ -1380,6 +1407,7 @@ export function Viewport3D() {
         const mesh = useSession.getState().meshes.get(item.instance!.mesh);
         if (!mesh || looks[id]?.hidden || !pickable(nodes.get(id))) continue;
         const m = item.instance!.matrix;
+        if (planes.length && clippedAway(placedBox(mesh.box, m), planes)) continue;
         const seen = projectSegments(boxEdges(mesh.box, (x, y, z) => place(m, x, y, z)), project);
         if (takes(test, win, seen)) ids.push(id);
       }
@@ -1794,13 +1822,28 @@ export function Viewport3D() {
 
   // The storeys the 3D view shows (report #29): the others hidden by their looks (Storeys3DLooks); here the cut above them, and the chip.
   useEffect(() => {
-    cutRef.current = cut;
     // Keeps what lies under the height: −z + cut ≥ 0.
     storeyClip.current = cut === null ? [] : [new THREE.Plane(new THREE.Vector3(0, 0, -1), cut)];
     applyClip();
     walkApi.current.changed();
     invalidate.current();
   }, [cut]);
+
+  // What this 3D view hides (decision 498): hidden by a look (Visibility / Graphics, Hide / Isolate, a phase, a storey or a link
+  // put away) or wholly cut away; Properties says so of an element selected from a list. Set again whenever what it shows changes.
+  const paneActive = usePaneActive();
+  const paneKey = useRef(`3d:${Math.random().toString(36).slice(2)}`).current;
+  useEffect(() => {
+    if (!paneActive) { clearShown(paneKey); return; }
+    publishShown(paneKey, (id) => {
+      const planes = rendererRef.current?.clippingPlanes ?? [];
+      const e = items.current.get(id);
+      if (e) return !e.object.visible || clipped(e.item, planes);
+      const whole = render.get(id);
+      return !!whole?.instance && !!useLooks.getState().looks[id]?.hidden;
+    });
+  }, [paneActive, paneKey, render, looks, visualStyle, walking, drafts3d, layers, cut, clipKey]);
+  useEffect(() => () => clearShown(paneKey), [paneKey]);
 
   return (
     <>

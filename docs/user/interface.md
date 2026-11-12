@@ -142,6 +142,10 @@ Each view opened has a tab above the view. Drag a tab to put the view somewhere 
 
 A right click on a tab offers the same: **Open in a new window**, **Split: open beside**, **Split: open below** (or **Open in the other pane** when the view is split), **Close** and **Close the others**. The window button at the right of the tabs, and **View → New window**, open the view in front in a window of its own. The windows share the model, the selection, the storey and the tool; each keeps its own zoom.
 
+## What a click selects
+
+A click, a selection box or a lasso takes only what the view shows, in plans, sections, elevations, sheets' views and 3D. An element the view's Visibility / Graphics hides (its category, a subcategory, a filter), one put away with Hide / Isolate or by the view's phase, one outside the view range or crop, on a level, link or group not shown, or cut away by a section box, is passed over: the click takes what is drawn under it, and the element under the cursor that lights up is one you can see. With **Drill into assemblies** on, a click inside a whole still steps into its parts. With the modelling lines shown instead of the drawing (the pen button at the top of the plan), everything on the screen can be picked. The project browser, a schedule, a link in the properties panel and the dependencies still select an element by its name, hidden or not; the properties panel then says *Not shown in this view*.
+
 ## Several elements at once
 
 Select several elements (Shift-click, or drag a box) and the properties panel shows the last one picked, with **N selected** beside its class. A value they share is shown; one that differs reads *varies*. Change a field and every selected element that has it takes the new value, in one step that **Undo** takes back: the height and base offset of walls, the type of every selected wall, door or beam, the sill of windows, the phases of every selected element whatever its class, the layer and colour of drafted lines, the style of texts. What is each element's own stays its own: a room's number, a wall's length, a door's place along its wall.

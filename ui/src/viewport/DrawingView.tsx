@@ -26,7 +26,8 @@ import { pickDrawing } from './drawingPick';
 import { openContextMenu } from '../shell/ContextMenu';
 import { groupItems } from '../shell/selectionMenu';
 import { membersOf, pickTarget, shownSelection } from '../platform/groups';
-import { pickClick, pickRegion } from '../platform/assemblies';
+import { pickClick, pickRegion, wholeOf } from '../platform/assemblies';
+import { clearShown, hiddenInDrawing, publishShown } from './cad/shown';
 import { drawOrderItems, isDrafted } from './drawOrder';
 import { CadOverlay } from './cad/canvas';
 import { useCadCanvas, type Aimed } from './cad/aim';
@@ -60,6 +61,14 @@ export function DrawingView() {
   // The dark theme: the drawing on the theme's background, its black pens in the theme's ink, as a plan (report #90).
   const onDark = drawsOnDark(useUi((s) => s.theme));
   const drawing = useDrawing(id);
+  // What this section or elevation hides (its clicks take only its drawing's marks), for Properties' note on an element selected from a list (decision 498).
+  const render = useSession((s) => s.render);
+  const paneKey = useRef(`drawing:${Math.random().toString(36).slice(2)}`).current;
+  useEffect(() => {
+    if (!active) { clearShown(paneKey); return; }
+    publishShown(paneKey, (x) => hiddenInDrawing(x, drawing, (e) => render.has(e), (e) => wholeOf(e, nodes, relations)));
+  }, [active, drawing, render, nodes, relations, paneKey]);
+  useEffect(() => () => clearShown(paneKey), [paneKey]);
   // What the selected or hovered tags tag, and what the TAG command hovers (report #130).
   const tagHover = useTagHover();
   const targets = useMemo(() => tagTargets(selected, nodes, tagHover), [selected, nodes, tagHover]);

@@ -63,7 +63,7 @@ const drawsInPlan = (r: RenderItem): boolean => r.plan.some((it) => it.kind !== 
 
 /** What lies under `p` within `tol` (metres); with `types`, only elements of those classes (annotations then are not picked). */
 /** The nearest element of `types` within `tol` of the point, by its plan lines (inside a closed outline: nearest of all). */
-export function nearestOf(p: Vec2, tol: number, items: RenderItem[], nodes: Map<string, NodeDto>, types: string[]): NodeDto | null {
+export function nearestOf(p: Vec2, tol: number, items: readonly RenderItem[], nodes: Map<string, NodeDto>, types: string[]): NodeDto | null {
   let best: NodeDto | null = null, least = tol;
   for (const r of items) {
     const e = nodes.get(r.nodeId);
@@ -80,7 +80,7 @@ export function nearestOf(p: Vec2, tol: number, items: RenderItem[], nodes: Map<
   return best;
 }
 
-export function pickAt(p: Vec2, tol: number, items: RenderItem[], nodes: Map<string, NodeDto>, marks: Mark[] | undefined, types?: string[]): NodeDto | null {
+export function pickAt(p: Vec2, tol: number, items: readonly RenderItem[], nodes: Map<string, NodeDto>, marks: Mark[] | undefined, types?: string[]): NodeDto | null {
   const takes = (e: NodeDto) => !types || types.includes('*') || types.includes(e.type);
   let best: { e: NodeDto; prio: number } | null = null;
   for (const r of items) {
@@ -139,12 +139,12 @@ export function pickAt(p: Vec2, tol: number, items: RenderItem[], nodes: Map<str
 }
 
 /** What a selection box from world corner `p` to `q` takes (see boxTest): elements by their lines, then annotations. */
-export function boxIds(p: Vec2, q: Vec2, windowMode: boolean, items: RenderItem[], nodes: Map<string, NodeDto>, marks: Mark[] | undefined): string[] {
+export function boxIds(p: Vec2, q: Vec2, windowMode: boolean, items: readonly RenderItem[], nodes: Map<string, NodeDto>, marks: Mark[] | undefined): string[] {
   return regionIds(boxTest(p, q, windowMode), items, nodes, marks);
 }
 
 /** What a selection region (a box or a lasso) takes: elements by their lines, then annotations. */
-export function regionIds(takes: RegionTest, items: RenderItem[], nodes: Map<string, NodeDto>, marks: Mark[] | undefined): string[] {
+export function regionIds(takes: RegionTest, items: readonly RenderItem[], nodes: Map<string, NodeDto>, marks: Mark[] | undefined): string[] {
   const ids: string[] = [];
   for (const r of items) {
     const segs: Seg[] = [];

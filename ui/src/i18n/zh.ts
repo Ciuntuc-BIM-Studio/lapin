@@ -1997,6 +1997,7 @@ export const ZH: Record<string, string> = {
   "Material hatches": "材质填充图案",
   "Hatches of": "填充图案：",
   "The material's own, as in Manage → Materials: every type and element made of it changes too.": "属于材质自身，与 管理 → 材料 中相同：由其制成的每个类型和构件也会随之改变.",
+  "Not shown in this view: hidden by its graphics, a filter, a phase, Hide / Isolate, its range or a level put away. A click or a box here does not take it.": "在此视图中不显示：被其图形、过滤器、阶段、隐藏 / 隔离、视图范围或已收起的楼层隐藏。在此处单击或框选不会选中它。",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

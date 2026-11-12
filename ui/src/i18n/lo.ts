@@ -2059,6 +2059,7 @@ export const LO: Record<string, string> = {
   "Material hatches": "ລາຍແຮັດຂອງວັດສະດຸ",
   "Hatches of": "ລາຍແຮັດຂອງ",
   "The material's own, as in Manage → Materials: every type and element made of it changes too.": "ເປັນຂອງວັດສະດຸເອງ, ຄືໃນ ຈັດການ → ວັດສະດຸ: ທຸກປະເພດ ແລະ ອົງປະກອບທີ່ເຮັດຈາກມັນກໍ່ປ່ຽນຕາມ.",
+  "Not shown in this view: hidden by its graphics, a filter, a phase, Hide / Isolate, its range or a level put away. A click or a box here does not take it.": "ບໍ່ສະແດງໃນມຸມມອງນີ້: ຖືກເຊື່ອງໂດຍກຣາຟິກຂອງມັນ, ຕົວກອງ, ໄລຍະ, ເຊື່ອງ / ແຍກ, ຂອບເຂດຂອງມັນ ຫຼື ຊັ້ນທີ່ຖືກເກັບໄວ້. ການຄລິກ ຫຼື ກອບຢູ່ນີ້ບໍ່ເລືອກມັນ.",
 };
 
 /** Phrases with a number or a name in them. */

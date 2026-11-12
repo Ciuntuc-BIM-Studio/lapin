@@ -776,7 +776,7 @@ public static class Views
             catch (CommandException) { }
         // Every element the drawing shows can be picked by what it drew: its cut outlines and its seen lines, as a
         // mark on the PICK layer (never drawn, only hit and highlighted). Hidden and overhead lines pick nothing.
-        marks.AddRange(PickMarks(drawing));
+        marks.AddRange(PickMarks(drawing, spec.Hidden));
         // What the view's Visibility / Graphics hides goes with its marks (decision 391): a hidden category's tags and bars, a link hidden here.
         marks.RemoveAll(vg.HidesMark);
         // The point clouds the view's cut takes, as dots under the drawing (decision 396; the view's Point clouds tab hides them, not its categories): a plan's or a section's slice, an elevation's front.
@@ -1212,7 +1212,7 @@ public static class Views
     /// A mark per element from its cut loops and seen lines, so a section or an elevation picks what it draws; its cut and
     /// filled loops go in the mark's data too (<c>loops</c>: x y x y … each), so a click inside a cut takes the element.
     /// </summary>
-    static IEnumerable<ViewMark> PickMarks(Lapin.Drawing.Views.ViewDrawing drawing)
+    static IEnumerable<ViewMark> PickMarks(Lapin.Drawing.Views.ViewDrawing drawing, bool hiddenLines)
     {
         var byElement = new Dictionary<string, ViewMark>();
         var loops = new Dictionary<string, JsonArray>();
@@ -1226,8 +1226,12 @@ public static class Views
         foreach (var c in drawing.Cuts)
             foreach (var loop in c.Loops)
                 if (loop.Length >= 2) { Of(c.Element).Polyline(loop, true, "PICK", 0); Loop(c.Element, loop); }
+        // Hidden and overhead lines pick nothing, but the element they draw is shown (a beam above a plan's cut): its mark, with no
+        // lines, says so, so the plan's selection and snaps take it by its own modelling lines (decision 498). Hidden lines count
+        // only where the view draws them.
         foreach (var l in drawing.Lines)
             if (l.Role is not (LineRole.Hidden or LineRole.Overhead)) Of(l.Element).Line(l.A, l.B, "PICK", 0);
+            else if (l.Role == LineRole.Overhead || hiddenLines) Of(l.Element);
         foreach (var f in drawing.Fills ?? [])
             foreach (var loop in f.Loops)
                 if (loop.Length >= 2) { Of(f.Element).Polyline(loop, true, "PICK", 0); Loop(f.Element, loop); }

@@ -55,6 +55,23 @@ public class VisibilityGraphicsTests
         Assert.DoesNotContain(pens, p => (string?)p!["layer"] == "CUT");
     }
 
+    /// <summary>An element the plan draws only overhead (a beam above the cut) is shown, so it can be selected there (decision 498).</summary>
+    [Fact]
+    public void An_element_drawn_only_overhead_is_marked_as_shown_without_pick_lines()
+    {
+        var f = new Fixture(new ArchitectureModule(), new Lapin.Structure.StructureModule());
+        var beam = (string)f.Run("structure.addBeam", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 5, ["y2"] = 0 })!["id"]!;
+        var plan = Plan(f);
+        var marks = ((JsonObject)f.Session.Query("view.drawing", new JsonObject { ["id"] = plan })!)["marks"]!.AsArray();
+        var own = marks.Where(x => (string)x!["id"]! == beam).ToList();
+        Assert.NotEmpty(own);
+        // Its dashed lines pick nothing in a section's way: the mark only says the drawing shows it.
+        Assert.All(own, x => Assert.Empty(x!["segments"]!.AsArray()));
+        // Beams hidden in the view: not shown, so neither picked nor snapped to.
+        G(f, new JsonObject { ["id"] = plan, ["category"] = "beams", ["value"] = Hidden });
+        Assert.DoesNotContain(beam, Marked(f, plan));
+    }
+
     [Fact]
     public void The_new_categories_reach_what_had_none()
     {

@@ -2004,6 +2004,7 @@ export const RO: Record<string, string> = {
   "Material hatches": "Hașurile materialului",
   "Hatches of": "Hașurile pentru",
   "The material's own, as in Manage → Materials: every type and element made of it changes too.": "Sunt ale materialului, ca în Gestionare → Materiale: se schimbă și fiecare tip și element făcut din el.",
+  "Not shown in this view: hidden by its graphics, a filter, a phase, Hide / Isolate, its range or a level put away. A click or a box here does not take it.": "Nu se vede în această vedere: ascuns de grafica lui, de un filtru, de o fază, de Ascunde / Izolează, de domeniul vederii sau de un nivel pus deoparte. Un clic sau o fereastră de selecție aici nu îl ia.",
 };
 
 /** Phrases with a number or a name in them. */

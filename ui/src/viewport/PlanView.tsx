@@ -6,7 +6,7 @@
  */
 
 import { membersOf, openGroupOf, pickTarget, shownSelection, useExpansion } from '../platform/groups';
-import { drillInside, pickClick, pickRegion, useDrill } from '../platform/assemblies';
+import { drillInside, pickClick, pickRegion, useDrill, wholeOf } from '../platform/assemblies';
 import { orthophotos } from './textures';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Compass, FileDown, Footprints, Layers, Maximize, MousePointer2, PenLine } from 'lucide-react';
@@ -46,7 +46,7 @@ import { editDimension } from './dimensionEdit';
 import { openPickedView } from './openView';
 import { CadOverlay } from './cad/canvas';
 import { snapShapes, useCadCanvas, type Aimed } from './cad/aim';
-import { shownItems } from './cad/shown';
+import { clearShown, hiddenInDrawing, publishShown, shownItems } from './cad/shown';
 import { CommandLine } from './cad/CommandLine';
 import './cad/ucs';
 import { feedPoint, finishStep, useCad } from './cad/session';
@@ -183,8 +183,9 @@ export function PlanView() {
   const detail = planDetail(drawing?.scale ?? 100);
   const items = useMemo(() => [...render.values()].filter((r) => r.storeyId === storey?.id)
     .map((r) => (r.plan.every((it) => shownAt(it, detail)) ? r : { ...r, plan: r.plan.filter((it) => shownAt(it, detail)) })), [render, storey?.id, detail]);
-  // What the snaps take: only the elements the view's drawing shows (forum #31, decision 491), all of them over modelling lines.
-  const snapItems = useMemo(() => shownItems(items, drawing), [items, drawing]);
+  // What the snaps and the selection take: only the elements the view's drawing shows (forum #31, decisions 491 and 498), all
+  // of them over modelling lines; a part of a whole drawn as one keeps its own lines (drilling into assemblies).
+  const snapItems = useMemo(() => shownItems(items, drawing, (id) => wholeOf(id, nodes, relations)), [items, drawing, nodes, relations]);
   const snapPoints = useMemo(() => snapItems.flatMap((r) => pairs(r.snaps ?? [])), [snapItems]);
   const markSnaps = useMemo(() => (drawing?.marks ?? []).flatMap((m) => pairs(m.snaps ?? [])), [drawing]);
 
@@ -293,7 +294,14 @@ export function PlanView() {
   const drillPath = useDrill((st) => st.path);
   const drillOn = useDisplay((st) => st.drillSelect);
   const inside = useMemo(() => (drillOn && !scope ? drillInside(drillPath, selected, nodes, relations) : null), [drillOn, scope, drillPath, selected, nodes, relations]);
-  const pickItems = useMemo(() => (scope ? items.filter((r) => pickable(nodes.get(r.nodeId))) : items), [scope, items, nodes]);
+  const pickItems = useMemo(() => (scope ? snapItems.filter((r) => pickable(nodes.get(r.nodeId))) : snapItems), [scope, snapItems, nodes]);
+  // What this plan hides, for Properties' note on an element selected from a list (decision 498).
+  const paneKey = useRef(`plan:${Math.random().toString(36).slice(2)}`).current;
+  useEffect(() => {
+    if (!active) { clearShown(paneKey); return; }
+    publishShown(paneKey, (id) => hiddenInDrawing(id, drawing, (x) => render.has(x), (x) => wholeOf(x, nodes, relations)));
+  }, [active, drawing, render, nodes, relations, paneKey]);
+  useEffect(() => () => clearShown(paneKey), [paneKey]);
   const pick = useCallback((p: Vec2, types?: string[]): NodeDto | null =>
     pickAt(p, 6 / view.scale, pickItems, nodes, scope ? undefined : drawing?.marks, types), [pickItems, nodes, view.scale, drawing, scope]);
 
