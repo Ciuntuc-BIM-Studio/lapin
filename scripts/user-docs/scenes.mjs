@@ -3782,7 +3782,7 @@ export const scenes = [
       const facadeType = await typeOf(walls[0]);
       await select(t, walls[0]);
       await t.fit();
-      await t.keys('m', 'a', 'Enter');
+      await t.keys('m', 'a');
       t.expect(await t.page.evaluate(async () => (await import('/src/viewport/cad/session.ts')).useCad.getState().command) === 'MATCHPROP', 'MA starts Match properties with the selected wall as its source');
       t.expect(await t.page.locator('[data-testid=match-bar]').count() === 1, 'the command line shows what it copies from');
       // The inner wall under the cursor lights up before the click.

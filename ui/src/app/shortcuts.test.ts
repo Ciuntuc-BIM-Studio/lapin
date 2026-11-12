@@ -90,6 +90,12 @@ describe('the keymap', () => {
     expect(s.preset).toBe('revit');
   });
 
+  it('MA starts Match properties at once: its own MATCHPROP names never make it wait, so a following Enter ends the tool (the guide scene)', () => {
+    const match: CommandDef = { id: 'modify.match', label: 'Match properties', category: 'Modify', defaults: ['MA'], same: 'MATCHPROP', run: () => {} };
+    const map = resolveKeymap([match], { 'modify.match': ['MA'] }, [{ name: 'MATCHPROP', command: 'MATCHPROP' }, { name: 'MA', command: 'MATCHPROP' }, { name: 'MATCHTYPE', command: 'MATCHPROP' }]);
+    expect(matchSequence('MA', map)).toEqual({ kind: 'fire', id: 'modify.match' });
+  });
+
   it('runs a sequence at once unless something longer starts with it; its own command never makes it wait', () => {
     const bindings = { ...effectiveBindings(COMMANDS, withPreset('revit')), 'modify.move': ['MV'] };
     const map = resolveKeymap(COMMANDS, bindings, cli);
