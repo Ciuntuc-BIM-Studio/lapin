@@ -59,6 +59,7 @@ public sealed class CoreModule : ILapinModule
         RulePacks.Register(r);
         // Classifications, keynotes and shared parameter definitions (docs/plan-user-extensibility.md §7.3).
         Classifications.Register(r);
+        ParamFormulas.Register(r);
         Images.Register(r);
         Views.Register(r);
         r.Service<IProjectUpgrade>(new StoreyPlans.DefaultPlanUpgrade());
@@ -190,10 +191,14 @@ public sealed class CoreModule : ILapinModule
                 var (pset, standardKind) = StandardPsets.Check(e.Class, (string?)a["pset"] ?? shared?.Pset, name);
                 var list = e.Attrs["params"] is JsonArray old ? (JsonArray)old.DeepClone() : new JsonArray();
                 var existing = list.OfType<JsonObject>().FirstOrDefault(p => Params.Same(p, pset, name));
-                var kind = standardKind ?? (string?)a["kind"] ?? (string?)existing?["kind"] ?? shared?.Kind ?? throw new CommandException($"A new parameter needs its kind ({string.Join(", ", Params.Kinds)}).");
+                var kind = standardKind ?? (string?)a["kind"] ?? (string?)existing?["kind"] ?? shared?.Kind ?? ((string?)a[ParamFormulas.Key] is { Length: > 0 } ? "number" : null) ?? throw new CommandException($"A new parameter needs its kind ({string.Join(", ", Params.Kinds)}).");
                 var options = a["options"] as JsonArray ?? existing?["options"] as JsonArray;
-                var value = Params.Check(kind, a["value"], options);
+                // A formula instead of a value (docs/plan-user-extensibility.md §5.3): worked out on every ask, never stored.
+                var formula = (string?)a[ParamFormulas.Key] is { Length: > 0 } fx ? ParamFormulas.Check(fx) : null;
+                if (formula != null && kind is not ("number" or "length" or "area" or "angle" or "bool")) throw new CommandException("A formula gives a number: its parameter is a number, a length, an area, an angle or a yes/no.");
+                var value = formula != null ? null : Params.Check(kind, a["value"], options);
                 var entry = new JsonObject { ["name"] = name, ["kind"] = kind, ["value"] = value };
+                if (formula != null) entry[ParamFormulas.Key] = formula;
                 if (pset != null) entry["pset"] = pset;
                 if (kind == "choice" && options != null) entry["options"] = options.DeepClone();
                 // A type's instance default (TypeDefaults): `instance` given sets or clears it, else the parameter keeps what it was.

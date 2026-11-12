@@ -89,7 +89,7 @@ public static class Schedules
                     foreach (var (_, level) in occ) counts[level] = counts.GetValueOrDefault(level) + 1;
                     var numbered = occ.OrderBy(x => levels.IndexOf(x.Level) is var i && i < 0 ? 99 : i).ThenBy(x => m.Order(x.e.Id))
                         .Select((x, i) => new Occurrence(x.e.Id, x.Level, i + 1, s?.IsExternal)).ToList();
-                    return new ScheduleEntry(key, k, s, mk, name, s?.Width ?? 0, s?.Height ?? 0, counts, placed.Count, numbered, Params: ParamValues(type, placed));
+                    return new ScheduleEntry(key, k, s, mk, name, s?.Width ?? 0, s?.Height ?? 0, counts, placed.Count, numbered, Params: ParamValues(m, type, placed));
                 }
                 // Curtain wall doors filling their cells (report #133): an entry for each size they stand at, besides the type's own.
                 List<(Entity e, JoinerySpec? Size)> sized = spec == null ? [] : all.Select(e => (e, Size: CurtainCells.SeatOf(m, e)?.Spec)).Where(x => x.Size is { } s && (Math.Abs(s.Width - spec.Width) > 5e-4 || Math.Abs(s.Height - spec.Height) > 5e-4)).ToList();
@@ -201,8 +201,10 @@ public static class Schedules
     /// A type's parameters as its schedule entry shows them (decision 251): the type's own, each placed one's own over it; where the
     /// placed ones differ, their values one after another. Keyed by the parameter's name (case aside, the first spelling kept).
     /// </summary>
-    static Dictionary<string, string> ParamValues(Entity type, List<Entity> placed)
+    static Dictionary<string, string> ParamValues(IModelView m, Entity type, List<Entity> placed)
     {
+        // Formulas worked out (docs/plan-user-extensibility.md §5.3): each placed one's from its own numbers and its type's.
+        IEnumerable<System.Text.Json.Nodes.JsonObject> StoredParams(Entity e) => ParamFormulas.Resolved(m, e, e.Id == type.Id ? null : type).Where(p => ((string?)p["name"])?.Trim() is { Length: > 0 });
         var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var typeValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var p in StoredParams(type)) { var n = ((string)p["name"]!).Trim(); names.TryAdd(n, n); typeValues[n] = ParamText(p); }

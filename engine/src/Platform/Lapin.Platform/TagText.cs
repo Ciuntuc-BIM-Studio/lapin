@@ -39,9 +39,12 @@ public static partial class TagText
     static IEnumerable<JsonObject> Stored(Entity? e) => e?.Attrs["params"] is JsonArray a ? a.OfType<JsonObject>() : [];
 
     /// <summary>A stored parameter of <paramref name="e"/> the field names: "Set.Name" in that set, else a name in any set, the user's own first.</summary>
-    static JsonObject? Param(Entity? e, string key)
+    static JsonObject? Param(Entity? e, string key) => Param(Stored(e), key);
+
+    /// <summary>The same among parameters given (formulas worked out: <see cref="ParamFormulas.Resolved"/>).</summary>
+    static JsonObject? Param(IEnumerable<JsonObject> stored, string key)
     {
-        var list = Stored(e).Where(p => p["value"] != null).ToList();
+        var list = stored.Where(p => p["value"] != null).ToList();
         var dot = key.IndexOf('.');
         if (dot > 0)
         {
@@ -108,7 +111,8 @@ public static partial class TagText
         // Its classification's code or title, or one system's code (docs/plan-user-extensibility.md §7.3: a keynote is a tag of it).
         if (Classifications.TagValue(m, e, type, key) is { } classified) return classified;
         // The user's parameters, the element's own over its type's (as the properties panel shows them).
-        if ((Param(e, key) ?? Param(type, key)) is { } p) return ParamText(p, units);
+        // A formula's value worked out from the element's other parameters and numbers (docs/plan-user-extensibility.md §5.3).
+        if ((Param(ParamFormulas.Resolved(m, e, type), key) ?? Param(ParamFormulas.Resolved(m, type, null), key)) is { } p) return ParamText(p, units);
         if ((Imported(e, key) ?? Imported(type, key)) is { } imported) return imported;
         string? Of(Entity? x) => x?.Attrs.FirstOrDefault(kv => string.Equals(kv.Key, key, StringComparison.OrdinalIgnoreCase)).Value switch
         {

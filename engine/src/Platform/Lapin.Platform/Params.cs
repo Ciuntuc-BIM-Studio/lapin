@@ -43,7 +43,10 @@ public static class Params
             if (!seen.Add($"{pset}\u001f{name}")) throw new CommandException($"„{name}” is there twice.");
             var kind = standardKind ?? (string?)p["kind"] ?? throw new CommandException($"„{name}” needs its kind ({string.Join(", ", Kinds)}).");
             var options = p["options"] as JsonArray;
-            var entry = new JsonObject { ["name"] = name, ["kind"] = kind, ["value"] = Check(kind, p["value"], options) };
+            // A formula instead of a value (ParamFormulas): kept as written, its value worked out on every ask.
+            var formula = (string?)p[ParamFormulas.Key] is { Length: > 0 } fx ? ParamFormulas.Check(fx) : null;
+            var entry = new JsonObject { ["name"] = name, ["kind"] = kind, ["value"] = formula != null ? null : Check(kind, p["value"], options) };
+            if (formula != null) entry[ParamFormulas.Key] = formula;
             if (pset != null) entry["pset"] = pset;
             if (kind == "choice" && options != null) entry["options"] = options.DeepClone();
             if (IsInstanceDefault(p)) entry[InstanceKey] = true;
