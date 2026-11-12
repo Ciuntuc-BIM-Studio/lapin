@@ -110,6 +110,10 @@ Hver af dem sidder efter væggens virkelige flader, hvor vinduet er, ud fra væg
 
 ![En rammeløs glasdør på pivoter med hjørnebeslag, i konfiguratoren](shots/joinery-frameless-door.webp)
 
+**Gulvdørlukker (gulvhængsel)** hænger et dørblad på en dørlukker nedfældet i gulvet under dets pivot, med et toppivot og et hjørnebeslag over det; **Ny rammeløs glasdør på gulvdørlukker** starter en (1000 × 2100, dobbeltvirkende, holdt åben ved 90°). **Gulvdørlukker** vælger modellen efter det tungeste og bredeste dørblad den bærer og dens lukkekraft (EN 1154); **Automatisk (den letteste der bærer dørbladet)** vælger for dig (12 mm glas vejer 30 kg/m²), og en model for svag til dørbladet afvises. **Åbningsmåde** er **Enkeltvirkende** eller **Dobbeltvirkende (svinger begge veje)**, begge slag tegnet i plan; **Pivot fra kanten** er 55 mm som standard (30 til 150 mm); **Nederste beslag** er et **Nederste hjørnebeslag** eller et **Hælbeslag**; **Holde-åben** er ingen, 80°, 90°, 105° eller 120°. Kassen ligger under gulvbelægningen: planer tegner dens dækplade og drejer dørbladet om pivotet, opstalter kassen stiplet og pivotets akse. Dørlisten nævner ophænget, og IFC skriver det i sættet `Lapin_FloorSpring` (modellen, dørbladets vægt, pivotets afstand, beslagene, holde-åben-vinklen). Modellerne er vejledende: tjek producentens data.
+
+![En rammeløs glasdør på gulvdørlukker, dobbeltvirkende, med hælbeslag, i konfiguratoren](shots/joinery-floor-spring.webp)
+
 **Sprosser** deler ruderne: **Gitter (kolonial)** med ruder i bredden og højden, **Prairie** med sprosser nær kanterne, eller et **Rudemønster**.
 
 På facaden kan et vindue ud over indfatningen have en **Slutsten**, en **Krone over åbningen** (et **Gesims**, en **Fronton**, en **Buet fronton** eller en **Vandnæse**, der følger en buet top) og et **Brystningsfelt under sålbænken** med konsoller.

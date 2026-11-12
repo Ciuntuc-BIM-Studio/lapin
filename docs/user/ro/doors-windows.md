@@ -134,6 +134,10 @@ Fiecare se așază după fețele reale ale peretelui unde e fereastra, din strat
 
 ![O ușă de sticlă fără toc, pe pivoți cu feronerie de colț, în configurator](shots/joinery-frameless-door.webp)
 
+**Arc de pardoseală (balama de pardoseală)** prinde foaia batantă pe un arc îngropat în pardoseală sub pivotul ei, cu un pivot sus și o feronerie de colț deasupra; **Ușă nouă din sticlă fără toc pe arc de pardoseală** pornește una (1000 × 2100, pendulară, blocată deschisă la 90°). **Arc de pardoseală** alege modelul după cea mai grea și mai lată foaie pe care o duce și forța de închidere (EN 1154); **Automat (cel mai ușor care duce foaia)** alege pentru dumneavoastră (sticla de 12 mm cântărește 30 kg/m²), iar un model prea slab pentru foaie este refuzat. **Sensul de batere** este **Batere într-un sens** sau **Batere în ambele sensuri (pendulară)**, cu ambele deschideri desenate în plan; **Pivotul de la margine** este 55 mm implicit (30 până la 150 mm); **Feroneria de jos** este o **Feronerie de colț jos** sau o **Clemă de călcâi**; **Blocare deschisă** este niciuna, 80°, 90°, 105° sau 120°. Cutia arcului stă sub pardoseala finită: planurile îi desenează capacul și rotesc foaia în jurul pivotului, fațadele desenează cutia întreruptă și axa pivotului. Tabelul ușilor spune cum e prinsă foaia, iar IFC o scrie în setul `Lapin_FloorSpring` (modelul, greutatea foii, distanța pivotului, feroneria, unghiul de blocare). Modelele sunt orientative: verificați datele producătorului.
+
+![O ușă de sticlă fără toc pe arc de pardoseală, pendulară, cu clemă de călcâi, în configurator](shots/joinery-floor-spring.webp)
+
 **Baghete** împart ochiurile: **Grilă (colonial)** cu ochiurile pe lățime și pe înălțime, **Prairie** cu bare lângă margini, sau **Romburi**.
 
 Pe fațadă, pe lângă ancadrament, o fereastră poate avea **Cheie de boltă**, **Coronament peste gol** (**Cornișă**, **Fronton**, **Fronton în arc** sau **Ancadrament de ploaie**, care urmează un cap în arc) și **Panou sub glaf** cu consolele lui.

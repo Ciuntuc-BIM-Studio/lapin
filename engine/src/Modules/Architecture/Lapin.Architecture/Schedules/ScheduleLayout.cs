@@ -43,7 +43,7 @@ public static class ScheduleLayout
     static readonly Dictionary<string, double> DrawingPen = new() { ["cut"] = 0.35, ["outline"] = 0.25, ["thin"] = 0.13 };
     public const double TitleH = 10, BandGap = 8, TableGap = 10;
 
-    public static readonly string[] JoineryRows = ["name", "size", "bay", "operation", "sill", "levels", "total", "uValue", "fire", "lintel"];
+    public static readonly string[] JoineryRows = ["name", "size", "bay", "operation", "hanging", "sill", "levels", "total", "uValue", "fire", "lintel"];
     public static readonly string[] LintelRows = ["lintelKind", "product", "section", "length", "levels", "total", "openings", "concrete", "steel"];
 
     internal static string Mm(double m) => Math.Round(m * 1000).ToString(CultureInfo.InvariantCulture);
@@ -95,6 +95,28 @@ public static class ScheduleLayout
         return string.Join(" + ", ops.Distinct().Select(o => OperationLabel.GetValueOrDefault(o, o)));
     }
 
+    /// <summary>
+    /// The Hanging row (topic #28): what holds a frameless glass door's leaves, in the schedule's words ("floor spring 100 kg
+    /// (EN 1–4), double action, pivot 55 mm, heel strap, hold-open 90°"); null for a framed type or a frameless window.
+    /// </summary>
+    public static string? HangingText(JoinerySpec spec)
+    {
+        if (spec.Frameless is not { } f || !spec.IsDoor) return null;
+        if (f.Fixing == "hinges") return "glass hinges";
+        if (f.Fixing != "floor-spring") return "pivots and patch fittings";
+        var leaves = Joinery.Normalised(spec).Where(p => Frameless.OnSpring(spec, p)).ToList();
+        var parts = new List<string> { Frameless.SpringOf(spec) is { } m ? $"floor spring {m.MaxMass.ToString(CultureInfo.InvariantCulture)} kg ({m.Strength})" : "floor spring" };
+        if (leaves.Count > 0)
+        {
+            var dbl = leaves.Count(p => p.Operation.StartsWith("double-acting", StringComparison.Ordinal));
+            parts.Add(dbl == leaves.Count ? "double action" : dbl == 0 ? "single action" : "single and double action");
+        }
+        parts.Add($"pivot {Mm(f.Pivot)} mm");
+        parts.Add(f.Bottom == "strap" ? "heel strap" : "bottom patch");
+        if (f.HoldOpen > 0) parts.Add($"hold-open {Math.Round(f.HoldOpen).ToString(CultureInfo.InvariantCulture)}°");
+        return string.Join(", ", parts);
+    }
+
     /// <summary>The rows the data takes (lintel rows when every entry is a lintel), in the table's order, typed text over the model's.</summary>
     public static List<ScheduleRow> Rows(ScheduleData data, ScheduleTable table)
     {
@@ -131,6 +153,8 @@ public static class ScheduleLayout
                 "bay" => data.Entries.Any(e => e.Spec != null && BayWindows.Projecting(e.Spec))
                     ? new(id, "Projecting", e => e.Spec != null && BayWindows.Projecting(e.Spec) ? BayWindows.Describe(e.Spec) : "—", true) : null,
                 "operation" => new(id, "Opening", e => e.Spec == null ? "—" : OperationText(e.Spec), true),
+                "hanging" => data.Entries.Any(e => e.Spec != null && HangingText(e.Spec) != null)
+                    ? new(id, "Hanging", e => e.Spec != null && HangingText(e.Spec) is { } h ? h : "—", true) : null,
                 "sill" => data.Entries.Any(e => e.Kind == "window") ? new(id, "Sill height (mm)", e => e.Kind == "window" && e.Spec != null ? Mm(e.Spec.SillHeight) : "—", true) : null,
                 "total" => new(id, "Total", e => e.Total.ToString(CultureInfo.InvariantCulture), true, true),
                 "uValue" => new(id, "U (W/m²K)", e => UValue(e) is { Length: > 0 } u ? u : "—", true),

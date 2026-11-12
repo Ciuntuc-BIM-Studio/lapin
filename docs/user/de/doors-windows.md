@@ -110,6 +110,10 @@ Jedes Teil richtet sich nach den tatsächlichen Flächen der Wand dort, wo das F
 
 ![Eine rahmenlose Glastür auf Drehlagern mit Eckbeschlägen, im Konfigurator](shots/joinery-frameless-door.webp)
 
+**Bodentürschließer (Bodenscharnier)** hängt einen Drehflügel an einen im Boden eingelassenen Türschließer unter seinem Drehpunkt, mit einem oberen Drehlager und einem Eckbeschlag darüber; **Neue rahmenlose Glastür auf Bodentürschließer** legt eine an (1000 × 2100, pendelnd, bei 90° festgestellt). **Bodentürschließer** wählt das Modell nach dem schwersten und breitesten Flügel, den es trägt, und seiner Schließkraft (EN 1154); **Automatisch (der leichteste, der den Flügel trägt)** wählt für Sie (12 mm Glas wiegt 30 kg/m²), ein zu schwaches Modell wird abgelehnt. **Öffnungsart** ist **Einseitig öffnend** oder **Pendelnd (öffnet in beide Richtungen)**, beide Schwünge im Grundriss gezeichnet; **Drehpunkt vom Rand** ist standardmäßig 55 mm (30 bis 150 mm); **Unterer Beschlag** ist ein **Unterer Eckbeschlag** oder ein **Fersenband**; **Feststellung** ist keine, 80°, 90°, 105° oder 120°. Der Kasten liegt unter dem Fußbodenbelag: Grundrisse zeichnen seine Abdeckplatte und schwenken den Flügel um seinen Drehpunkt, Ansichten den Kasten gestrichelt und die Drehachse. Die Türliste nennt die Aufhängung, und IFC schreibt sie in den Satz `Lapin_FloorSpring` (Modell, Flügelgewicht, Abstand des Drehpunkts, Beschläge, Feststellwinkel). Die Modelle sind Richtwerte: prüfen Sie die Herstellerangaben.
+
+![Eine rahmenlose Glastür auf Bodentürschließer, pendelnd, mit Fersenband, im Konfigurator](shots/joinery-floor-spring.webp)
+
 **Sprossen** teilen die Scheiben: **Raster (Kolonial)** mit Feldern in der Breite und Höhe, **Prairie** mit Sprossen nahe den Rändern, oder ein **Rautenmuster**.
 
 An der Fassade kann ein Fenster neben der Fasche einen **Schlussstein**, eine **Bekrönung über der Öffnung** (ein **Gesims**, eine **Giebelverdachung**, einen **Segmentgiebel** oder ein **Überschlagsgesims**, das einem Bogen folgt) und ein **Brüstungsfeld unter der Sohlbank** mit Konsolen haben.

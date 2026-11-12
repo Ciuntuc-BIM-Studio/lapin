@@ -825,6 +825,38 @@ export const scenes = [
     },
   },
   {
+    // A frameless glass door on a floor spring (a forum user's request, topic #28): the preset, the spring's model, single or
+    // double action, the pivot's offset, the bottom fitting and the hold-open angle.
+    id: 'door-floor-spring',
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      await t.tool('architecture.joineryTypes');
+      const dialog = t.page.locator('.dialog');
+      await dialog.locator('[data-action=new-floor-spring-door]').click();
+      await dialog.locator('[data-testid=floor-spring-fields]').waitFor({ timeout: 15000 });
+      await t.wait(600);
+      t.expect(await dialog.locator('input[data-field=frameless]').isChecked(), 'the preset is frameless glass');
+      t.expect(await dialog.locator('select[data-field=frameless-fixing]').inputValue() === 'floor-spring', 'hung on a floor spring');
+      t.expect(await dialog.locator('select[data-field=floor-spring-model]').inputValue() === 'auto', 'the spring the lightest that carries the leaf');
+      t.expect(await dialog.locator('select[data-field=floor-spring-action]').inputValue() === 'double', 'double action by default');
+      t.expect(await dialog.locator('select[data-field=floor-spring-hold]').inputValue() === '90', 'held open at 90°');
+      t.expect(await dialog.locator('select[data-field=floor-spring-model] option').count() >= 3, 'the models offered');
+      await dialog.locator('select[data-field=floor-spring-bottom]').selectOption('strap');
+      await t.wait(600);
+      await dialog.locator('[data-testid=floor-spring-fields]').evaluate((el) => el.scrollIntoView({ block: 'center' }));
+      await t.wait(500);
+      await t.shot('joinery-floor-spring', { of: '.dialog', pad: 0 });
+      await dialog.locator('.btn.primary').first().click();
+      await t.wait(800);
+      await t.keys('Escape');
+      const type = (await t.nodes()).find((n) => n.type === 'IfcDoorType' && n.props?.spec?.frameless?.fixing === 'floor-spring');
+      t.expect(type, 'the door type keeps its floor spring');
+      t.expect(type?.props.spec.frameless.bottom === 'strap', 'with a heel strap at the bottom');
+      t.expect(type?.props.spec.panels?.[0]?.operation === 'double-acting-left', 'its leaf double acting');
+    },
+  },
+  {
     // Bay, bow and box windows (report #60): a bay window type from the configurator (New bay window, a bow style), placed
     // with the Bay window tool and by command, in plan (the projection, the roof dashed over it) and in 3D.
     id: 'bay-windows',

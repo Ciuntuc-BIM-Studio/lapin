@@ -1,4 +1,6 @@
 using Lapin.Geometry;
+using Lapin.Model;
+using Lapin.Platform;
 
 namespace Lapin.Architecture;
 
@@ -8,14 +10,51 @@ namespace Lapin.Architecture;
 /// <see cref="Floor"/> over the floor. <see cref="Fixing"/> says what holds a hinged leaf: "pivot" (a floor spring and a top
 /// pivot, patch fittings at its corners) or "hinges" (glass hinges clamped to the leaf, fixed to the jamb or the pane beside
 /// it). Fixed panes stand in a channel on the floor or sill and under the head; a sliding leaf hangs from a track across the
-/// head, in front of the panes (towards the room), past them by <see cref="Frameless.Overlap"/>.
+/// head, in front of the panes (towards the room), past them by <see cref="Frameless.Overlap"/>. "floor-spring" (a forum
+/// user's request, topic #28) hangs a swinging leaf on a floor spring let into the floor under its pivot, <see cref="Pivot"/>
+/// in from the leaf's hinge edge, with a top pivot over it: <see cref="Spring"/> the model ("auto": the lightest that carries
+/// the leaf, <see cref="Frameless.Springs"/>), <see cref="Bottom"/> what clamps the leaf's bottom corner ("patch", a patch
+/// fitting, or "strap", a heel strap), <see cref="HoldOpen"/> the angle it holds open at (degrees; 0: none). Single or double
+/// action is the leaf's operation (swing-… or double-acting-…).
 /// </summary>
-public sealed record JoineryFrameless(string Fixing = "pivot", double Glass = 0.012, double Gap = 0.004, double Floor = 0.008);
+public sealed record JoineryFrameless(string Fixing = "pivot", double Glass = 0.012, double Gap = 0.004, double Floor = 0.008,
+    string Spring = "auto", double Pivot = 0.055, string Bottom = "patch", double HoldOpen = 0);
+
+/// <summary>
+/// A floor spring's model (indicative sizes, as the makers' catalogues give them; the user's own model is a matter of the
+/// fittings data): the heaviest and widest leaf it carries, its closing force as EN 1154 grades it, its box (along the leaf,
+/// across it, deep).
+/// </summary>
+public sealed record FloorSpringModel(string Id, double MaxMass, double MaxWidth, string Strength, double Length, double Width, double Depth);
 
 /// <summary>The rules and the body of a frameless glass type (<see cref="JoinerySpec.Frameless"/>).</summary>
 public static class Frameless
 {
-    public static readonly string[] Fixings = ["pivot", "hinges"];
+    public static readonly string[] Fixings = ["pivot", "hinges", "floor-spring"];
+
+    /// <summary>The floor springs offered, lightest first (indicative).</summary>
+    public static readonly FloorSpringModel[] Springs =
+    [
+        new("60", 60, 0.95, "EN 1–3", 0.27, 0.07, 0.038),
+        new("100", 100, 1.1, "EN 1–4", 0.28, 0.09, 0.045),
+        new("150", 150, 1.4, "EN 3–6", 0.32, 0.1, 0.055),
+        new("300", 300, 1.6, "EN 4–7", 0.35, 0.12, 0.07),
+    ];
+
+    /// <summary>What clamps a floor-spring leaf's bottom corner: a patch fitting or a heel strap.</summary>
+    public static readonly string[] Bottoms = ["patch", "strap"];
+
+    /// <summary>Toughened glass's density, kg/m³.</summary>
+    public const double GlassDensity = 2500;
+
+    /// <summary>A floor spring's cover plate: its thickness (flush with the floor finish) and how far it runs past the box each side.</summary>
+    public const double CoverPlate = 0.003, CoverMargin = 0.01;
+
+    /// <summary>A heel strap along the glass and up it.</summary>
+    public const double StrapLength = 0.1, StrapHeight = 0.04;
+
+    /// <summary>How far the spring's spindle (the pivot) stands from the box's end on the hinge side.</summary>
+    const double Spindle = 0.04;
 
     /// <summary>What a frameless panel may do: a fixed pane, a leaf that swings, acts both ways or slides.</summary>
     public static readonly string[] Operations =
@@ -52,6 +91,7 @@ public static class Frameless
         if (!double.IsFinite(f.Glass) || f.Glass is < 0.006 or > 0.025) return "Frameless glass is toughened glass 6 to 25 mm thick.";
         if (!double.IsFinite(f.Gap) || f.Gap is < 0 or > 0.02) return "The gap round frameless glass is 0 to 20 mm.";
         if (!double.IsFinite(f.Floor) || f.Floor is < 0 or > 0.03) return "The gap under a frameless leaf is 0 to 30 mm.";
+        if (f.Fixing == "floor-spring" && SpringProblem(s) is { } sp) return sp;
         foreach (var p in Joinery.Normalised(s))
         {
             if (!s.IsDoor && p.Operation != "fixed") return "A frameless window is fixed glazing: its panes do not open.";
@@ -61,6 +101,62 @@ public static class Frameless
             if (Joinery.IsDoorLeaf(p.Operation) && r.Z0 > Joinery.InnerRect(s).Z0 + 1e-6) return "A frameless leaf stands on the floor: put it in the bottom row.";
         }
         return null;
+    }
+
+    /// <summary>Whether a leaf swings on a floor spring (a swinging leaf of a type hung so).</summary>
+    public static bool OnSpring(JoinerySpec s, JoineryPanel p) =>
+        s.Frameless is { Fixing: "floor-spring" } && Joinery.IsDoorLeaf(p.Operation) && !Slides(p.Operation);
+
+    /// <summary>A leaf's glass mass, kg.</summary>
+    public static double LeafMass(JoinerySpec s, JoineryPanel p)
+    {
+        var r = PaneRect(s, p);
+        return (r.X1 - r.X0) * (r.Z1 - r.Z0) * s.Frameless!.Glass * GlassDensity;
+    }
+
+    /// <summary>
+    /// The floor spring a type's leaves hang on: the one chosen, or ("auto") the lightest that carries the heaviest and widest
+    /// of them; null when the type has none, or (auto) none carries it.
+    /// </summary>
+    public static FloorSpringModel? SpringOf(JoinerySpec s)
+    {
+        if (s.Frameless is not { Fixing: "floor-spring" } f) return null;
+        if (f.Spring != "auto") return Springs.FirstOrDefault(m => m.Id == f.Spring);
+        var leaves = Joinery.Normalised(s).Where(p => OnSpring(s, p)).ToList();
+        var mass = leaves.Count == 0 ? 0 : leaves.Max(p => LeafMass(s, p));
+        var width = leaves.Count == 0 ? 0 : leaves.Max(p => PaneRect(s, p).X1 - PaneRect(s, p).X0);
+        return Springs.FirstOrDefault(m => mass <= m.MaxMass + 1e-9 && width <= m.MaxWidth + 1e-9);
+    }
+
+    static string Kg(double v) => Math.Round(v).ToString(System.Globalization.CultureInfo.InvariantCulture);
+    static string Mm(double v) => Math.Round(v * 1000).ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+    static string? SpringProblem(JoinerySpec s)
+    {
+        var f = s.Frameless!;
+        if (f.Spring != "auto" && Springs.All(m => m.Id != f.Spring)) return $"„{f.Spring}” is not a floor spring (auto, {string.Join(", ", Springs.Select(m => m.Id))}).";
+        if (!Bottoms.Contains(f.Bottom)) return "A floor spring's leaf is held at the bottom by a patch fitting or a heel strap.";
+        if (!double.IsFinite(f.Pivot) || f.Pivot is < 0.03 or > 0.15) return "A floor spring's pivot stands 30 to 150 mm in from the leaf's edge.";
+        if (!double.IsFinite(f.HoldOpen) || (f.HoldOpen != 0 && f.HoldOpen is < 60 or > 180)) return "A floor spring holds open at 60° to 180°, or not at all (0).";
+        foreach (var p in Joinery.Normalised(s).Where(p => OnSpring(s, p)))
+        {
+            var r = PaneRect(s, p);
+            var (w, h) = (r.X1 - r.X0, r.Z1 - r.Z0);
+            if (f.Pivot > w / 3) return "The pivot stands within a third of the leaf's width from its edge: bring it in or widen the leaf.";
+            var mass = LeafMass(s, p);
+            var leaf = $"A leaf of {Mm(w)} × {Mm(h)} in {Mm(f.Glass)} mm glass weighs {Kg(mass)} kg";
+            if (SpringOf(s) is not { } m) return $"{leaf}: it is heavier or wider than any floor spring carries ({Kg(Springs[^1].MaxMass)} kg, {Mm(Springs[^1].MaxWidth)} mm).";
+            if (mass > m.MaxMass + 1e-9) return $"{leaf}: the floor spring „{m.Id}” carries {Kg(m.MaxMass)} kg; choose a stronger one.";
+            if (w > m.MaxWidth + 1e-9) return $"{leaf}: the floor spring „{m.Id}” carries leaves up to {Mm(m.MaxWidth)} mm wide; choose a stronger one.";
+        }
+        return null;
+    }
+
+    /// <summary>A floor-spring leaf's pivot along the type's x: <see cref="JoineryFrameless.Pivot"/> in from its hinge edge.</summary>
+    public static double PivotX(JoinerySpec s, JoineryPanel p)
+    {
+        var r = PaneRect(s, p);
+        return p.Operation.EndsWith("-left") ? r.X0 + s.Frameless!.Pivot : r.X1 - s.Frameless!.Pivot;
     }
 
     /// <summary>The clear rectangle the panes share: the opening less the gap, a door's from the floor gap.</summary>
@@ -125,7 +221,21 @@ public static class Frameless
             {
                 var hingeLeft = p.Operation.EndsWith("-left");
                 var (xh, xl, sg) = hingeLeft ? (r.X0, r.X1, 1) : (r.X1, r.X0, -1);
-                if (f.Fixing == "hinges")
+                if (OnSpring(s, p) && SpringOf(s) is { } m)
+                {
+                    // The floor spring: its box let into the floor under the pivot, the spindle near its hinge end, the box running
+                    // under the closed leaf; the cover plate over it flush with the floor finish; a top pivot in the gap over the leaf.
+                    var px = PivotX(s, p);
+                    var (b0, b1) = (px - sg * Spindle, px - sg * Spindle + sg * m.Length);
+                    o.Add(new JoineryBox("hardware", new Vec3(Math.Min(b0, b1), y - m.Width / 2, -CoverPlate - m.Depth), new Vec3(Math.Max(b0, b1), y + m.Width / 2, -CoverPlate)) { Underfloor = true });
+                    o.Add(new JoineryBox("hardware", new Vec3(Math.Min(b0, b1) - CoverMargin, y - m.Width / 2 - CoverMargin, -CoverPlate), new Vec3(Math.Max(b0, b1) + CoverMargin, y + m.Width / 2 + CoverMargin, 0)) { Underfloor = true });
+                    o.Add(new JoineryBox("hardware", new Vec3(px - 0.02, y - 0.02, r.Z1), new Vec3(px + 0.02, y + 0.02, s.Height)));
+                    // The top patch fitting the top pivot turns, the bottom one (or a heel strap) the spindle, a lock patch opposite.
+                    o.Add(Clamp(xh, xh + sg * PatchLength, r.Z1 - PatchHeight, r.Z1, y, true));
+                    o.Add(f.Bottom == "strap" ? Clamp(xh, xh + sg * StrapLength, r.Z0, r.Z0 + StrapHeight, y, true) : Clamp(xh, xh + sg * PatchLength, r.Z0, r.Z0 + PatchHeight, y, true));
+                    o.Add(Clamp(xl, xl - sg * PatchLength, r.Z0, r.Z0 + PatchHeight, y, true));
+                }
+                else if (f.Fixing == "hinges")
                 {
                     // Glass hinges on the hinge side, reaching across the gap to the jamb or the pane beside it; three on a tall leaf.
                     var h = r.Z1 - r.Z0;
@@ -151,5 +261,40 @@ public static class Frameless
             o.Add(new JoineryBox("hardware", new Vec3(inner.X0, ys - g / 2 - 0.02, s.Height - Rail), new Vec3(inner.X1, ys + g / 2 + 0.02, s.Height)));
         }
         return o.Where(b => b.Max.X - b.Min.X > 1e-6 && b.Max.Y - b.Min.Y > 1e-6 && b.Max.Z - b.Min.Z > 1e-6).ToList();
+    }
+}
+
+/// <summary>
+/// A frameless glass door's floor spring in IFC (topic #28): a set of Lapin's, <c>Lapin_FloorSpring</c>, on the door (its type's
+/// spec): the model, what it carries, its closing force, the leaf's weight, single or double action, the pivot's offset, the
+/// fittings, the hold-open angle and the box. The spring and the fittings stay parts of the door's body, as the patch fittings do.
+/// </summary>
+sealed class FloorSpringSets : IIfcElementSets
+{
+    public const string Set = "Lapin_FloorSpring";
+
+    public IEnumerable<IfcStandardSet> Sets(IModelView model, Entity element)
+    {
+        if (element.Class != IfcClass.Door || Openings.SpecOf(model, element.Id) is not { Frameless: { Fixing: "floor-spring" } f } spec) yield break;
+        var leaves = Joinery.Normalised(spec).Where(p => Frameless.OnSpring(spec, p)).ToList();
+        if (leaves.Count == 0 || Frameless.SpringOf(spec) is not { } m) yield break;
+        var dbl = leaves.Count(p => p.Operation.StartsWith("double-acting", StringComparison.Ordinal));
+        var props = new List<IfcStandardProperty>
+        {
+            new("Model", "IFCLABEL", m.Id),
+            new("MaxLeafMass", "IFCMASSMEASURE", m.MaxMass),
+            new("MaxLeafWidth", "IFCPOSITIVELENGTHMEASURE", m.MaxWidth),
+            new("ClosingForce", "IFCLABEL", m.Strength),
+            new("LeafMass", "IFCMASSMEASURE", Math.Round(leaves.Max(p => Frameless.LeafMass(spec, p)), 1)),
+            new("Action", "IFCLABEL", dbl == leaves.Count ? "double action" : dbl == 0 ? "single action" : "single and double action"),
+            new("PivotOffset", "IFCPOSITIVELENGTHMEASURE", f.Pivot),
+            new("TopFitting", "IFCLABEL", "top pivot and patch fitting"),
+            new("BottomFitting", "IFCLABEL", f.Bottom == "strap" ? "heel strap" : "patch fitting"),
+            new("BoxLength", "IFCPOSITIVELENGTHMEASURE", m.Length),
+            new("BoxWidth", "IFCPOSITIVELENGTHMEASURE", m.Width),
+            new("BoxDepth", "IFCPOSITIVELENGTHMEASURE", m.Depth),
+        };
+        if (f.HoldOpen > 0) props.Add(new("HoldOpenAngle", "IFCPLANEANGLEMEASURE", f.HoldOpen * Math.PI / 180));
+        yield return new IfcStandardSet(Set, props);
     }
 }

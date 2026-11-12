@@ -1947,6 +1947,20 @@ export const DA: Record<string, string> = {
   "The partitions the schedule lists": "De partitioner skemaet viser",
   "Partition: bars in one are numbered, scheduled and filtered apart": "Partition: stængerne i en partition nummereres, opgøres og filtreres for sig",
   "The partition new bars go in: numbered from 1 in it, scheduled and filtered apart (empty: none)": "Partitionen nye stænger kommer i: nummereret fra 1 i den, opgjort og filtreret for sig (tom: ingen)",
+  // A frameless door on a floor spring (topic #28).
+  'Floor spring (floor hinge)': 'Gulvdørlukker (gulvhængsel)',
+  'Floor spring': 'Gulvdørlukker',
+  'Automatic (the lightest that carries the leaf)': 'Automatisk (den letteste der bærer dørbladet)',
+  'Opening action': 'Åbningsmåde',
+  'Single action': 'Enkeltvirkende',
+  'Double action (swings both ways)': 'Dobbeltvirkende (svinger begge veje)',
+  'Pivot from the edge': 'Pivot fra kanten',
+  'Bottom fitting': 'Nederste beslag',
+  'Bottom patch fitting': 'Nederste hjørnebeslag',
+  'Heel strap': 'Hælbeslag',
+  'Hold-open': 'Holde-åben',
+  'Indicative models; check the maker\'s data for the leaf\'s weight and the closing force.': 'Vejledende modeller; tjek producentens data for dørbladets vægt og lukkekraften.',
+  'New frameless door on floor spring': 'Ny rammeløs glasdør på gulvdørlukker',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

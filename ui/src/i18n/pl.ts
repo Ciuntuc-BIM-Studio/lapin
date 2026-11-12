@@ -1953,6 +1953,20 @@ export const PL: Record<string, string> = {
   "The partitions the schedule lists": "Partycje, które zestawienie wymienia",
   "Partition: bars in one are numbered, scheduled and filtered apart": "Partycja: pręty w jednej są numerowane, zestawiane i filtrowane osobno",
   "The partition new bars go in: numbered from 1 in it, scheduled and filtered apart (empty: none)": "Partycja nowych prętów: numerowane od 1, zestawiane i filtrowane osobno (puste: brak)",
+  // A frameless door on a floor spring (topic #28).
+  'Floor spring (floor hinge)': 'Samozamykacz podłogowy (zawias podłogowy)',
+  'Floor spring': 'Samozamykacz podłogowy',
+  'Automatic (the lightest that carries the leaf)': 'Automatyczny (najlżejszy, który uniesie skrzydło)',
+  'Opening action': 'Sposób otwierania',
+  'Single action': 'Otwierane w jedną stronę',
+  'Double action (swings both ways)': 'Wahadłowe (otwierane w obie strony)',
+  'Pivot from the edge': 'Oś obrotu od krawędzi',
+  'Bottom fitting': 'Okucie dolne',
+  'Bottom patch fitting': 'Dolne okucie narożne',
+  'Heel strap': 'Okucie piętowe',
+  'Hold-open': 'Blokada otwarcia',
+  'Indicative models; check the maker\'s data for the leaf\'s weight and the closing force.': 'Modele orientacyjne; sprawdź dane producenta dotyczące ciężaru skrzydła i siły zamykania.',
+  'New frameless door on floor spring': 'Nowe drzwi szklane bez ramy na samozamykaczu podłogowym',
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

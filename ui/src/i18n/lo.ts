@@ -2006,6 +2006,20 @@ export const LO: Record<string, string> = {
   "The partitions the schedule lists": "ພາກສ່ວນທີ່ຕາຕະລາງສະແດງ",
   "Partition: bars in one are numbered, scheduled and filtered apart": "ພາກສ່ວນ: ເຫຼັກໃນພາກສ່ວນໜຶ່ງຖືກນັບເລກ, ລົງຕາຕະລາງ ແລະ ກັ່ນຕອງແຍກກັນ",
   "The partition new bars go in: numbered from 1 in it, scheduled and filtered apart (empty: none)": "ພາກສ່ວນຂອງເຫຼັກໃໝ່: ນັບເລກຈາກ 1 ໃນມັນ, ລົງຕາຕະລາງ ແລະ ກັ່ນຕອງແຍກກັນ (ຫວ່າງ: ບໍ່ມີ)",
+  // A frameless door on a floor spring (topic #28).
+  'Floor spring (floor hinge)': 'ສະປິງພື້ນ (ບານພັບພື້ນ)',
+  'Floor spring': 'ສະປິງພື້ນ',
+  'Automatic (the lightest that carries the leaf)': 'ອັດຕະໂນມັດ (ອັນເບົາທີ່ສຸດທີ່ຮັບບານໄດ້)',
+  'Opening action': 'ທິດທາງການເປີດ',
+  'Single action': 'ເປີດທາງດຽວ',
+  'Double action (swings both ways)': 'ເປີດສອງທາງ (ແກວ່ງໄປມາ)',
+  'Pivot from the edge': 'ແກນໝູນຈາກຂອບ',
+  'Bottom fitting': 'ອຸປະກອນລຸ່ມ',
+  'Bottom patch fitting': 'ອຸປະກອນມຸມລຸ່ມ',
+  'Heel strap': 'ຕົວຈັບສົ້ນ',
+  'Hold-open': 'ຄ້າງເປີດ',
+  'Indicative models; check the maker\'s data for the leaf\'s weight and the closing force.': 'ແບບຈຳລອງໂດຍປະມານ; ກວດເບິ່ງຂໍ້ມູນຂອງຜູ້ຜະລິດສຳລັບນ້ຳໜັກບານ ແລະ ແຮງປິດ.',
+  'New frameless door on floor spring': 'ປະຕູແກ້ວບໍ່ມີກອບໃໝ່ເທິງສະປິງພື້ນ',
 };
 
 /** Phrases with a number or a name in them. */

@@ -289,6 +289,9 @@ public sealed record JoineryBox(string Role, Vec3 Min, Vec3 Max, IReadOnlyList<V
 
     /// <summary>A part that moves with a door leaf (frameless glass, its fittings and handles): a plan draws the leaf open by its swing, not this closed.</summary>
     public bool Leaf { get; init; }
+
+    /// <summary>A part let into the floor under the door (a floor spring's box and its cover plate, topic #28): elevations draw it dashed, plans its cover plate seen.</summary>
+    public bool Underfloor { get; init; }
 }
 
 /// <summary>

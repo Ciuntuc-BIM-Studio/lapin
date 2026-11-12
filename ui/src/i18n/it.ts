@@ -1955,6 +1955,20 @@ export const IT: Record<string, string> = {
   "The partitions the schedule lists": "Le partizioni che la distinta elenca",
   "Partition: bars in one are numbered, scheduled and filtered apart": "Partizione: le barre di una sono numerate, elencate e filtrate a parte",
   "The partition new bars go in: numbered from 1 in it, scheduled and filtered apart (empty: none)": "La partizione delle nuove barre: numerate da 1 al suo interno, elencate e filtrate a parte (vuoto: nessuna)",
+  // A frameless door on a floor spring (topic #28).
+  'Floor spring (floor hinge)': 'Chiudiporta a pavimento (cerniera a pavimento)',
+  'Floor spring': 'Chiudiporta a pavimento',
+  'Automatic (the lightest that carries the leaf)': 'Automatico (il più leggero che regge l\'anta)',
+  'Opening action': 'Senso di apertura',
+  'Single action': 'Apertura in un senso',
+  'Double action (swings both ways)': 'Apertura nei due sensi (va e vieni)',
+  'Pivot from the edge': 'Perno dal bordo',
+  'Bottom fitting': 'Accessorio inferiore',
+  'Bottom patch fitting': 'Accessorio d\'angolo inferiore',
+  'Heel strap': 'Staffa a tallone',
+  'Hold-open': 'Fermo in apertura',
+  'Indicative models; check the maker\'s data for the leaf\'s weight and the closing force.': 'Modelli indicativi; verificate i dati del produttore per il peso dell\'anta e la forza di chiusura.',
+  'New frameless door on floor spring': 'Nuova porta in vetro senza telaio su chiudiporta a pavimento',
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

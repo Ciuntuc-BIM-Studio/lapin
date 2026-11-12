@@ -134,6 +134,10 @@ Each one sits by the wall's real faces where the window is, from the wall's laye
 
 ![A frameless glass door on pivots with patch fittings, in the configurator](shots/joinery-frameless-door.webp)
 
+**Floor spring (floor hinge)** hangs a swinging leaf on a floor spring let into the floor under its pivot, with a top pivot and a patch fitting over it; **New frameless door on floor spring** starts one (1000 × 2100, double acting, held open at 90°). **Floor spring** picks the model by the heaviest and widest leaf it carries and its closing force (EN 1154); **Automatic (the lightest that carries the leaf)** chooses for you (12 mm glass weighs 30 kg/m²), and a model too light for the leaf is refused. **Opening action** is **Single action** or **Double action (swings both ways)**, both swings drawn in plan; **Pivot from the edge** is 55 mm by default (30 to 150 mm); **Bottom fitting** is a **Bottom patch fitting** or a **Heel strap**; **Hold-open** is none, 80°, 90°, 105° or 120°. The spring's box lies under the floor finish: plans draw its cover plate and swing the leaf about its pivot, elevations draw the box dashed and the pivot's axis. The door schedule names the hanging, and IFC writes it in the set `Lapin_FloorSpring` (the model, the leaf's weight, the pivot's offset, the fittings, the hold-open angle). The models are indicative: check the maker's data.
+
+![A frameless glass door on a floor spring, double acting, with a heel strap, in the configurator](shots/joinery-floor-spring.webp)
+
 **Glazing bars** divide the panes: **Grid (colonial)** with its lites across and up, **Prairie** with bars near the edges, or a **Diamond lattice**.
 
 On the facade, besides the surround, a window can have a **Keystone**, a **Crown over the opening** (a **Cornice**, a **Pediment**, a **Segmental pediment**, or a **Hood mould** that follows an arched head) and an **Apron under the sill** with its consoles.

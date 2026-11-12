@@ -110,6 +110,10 @@ Cada una se sitúa según las caras reales del muro donde está la ventana, a pa
 
 ![Una puerta de vidrio sin marco sobre pivotes con herrajes de esquina, en el configurador](shots/joinery-frameless-door.webp)
 
+**Muelle de suelo (bisagra de suelo)** cuelga una hoja batiente de un muelle empotrado en el suelo bajo su pivote, con un pivote superior y un herraje de esquina encima; **Puerta de vidrio sin marco nueva sobre muelle de suelo** empieza una (1000 × 2100, de vaivén, retenida abierta a 90°). **Muelle de suelo** elige el modelo por la hoja más pesada y ancha que soporta y su fuerza de cierre (EN 1154); **Automático (el más ligero que soporta la hoja)** elige por usted (el vidrio de 12 mm pesa 30 kg/m²), y un modelo demasiado ligero para la hoja se rechaza. **Sentido de apertura** es **Apertura en un sentido** o **Apertura en ambos sentidos (vaivén)**, con los dos giros dibujados en planta; **Pivote desde el borde** es 55 mm por defecto (30 a 150 mm); **Herraje inferior** es un **Herraje de esquina inferior** o una **Pinza de talón**; **Retención abierta** es ninguna, 80°, 90°, 105° o 120°. La caja del muelle queda bajo el pavimento: las plantas dibujan su tapa y giran la hoja alrededor del pivote, los alzados la caja a trazos y el eje del pivote. La tabla de puertas nombra el colgado, y el IFC lo escribe en el conjunto `Lapin_FloorSpring` (el modelo, el peso de la hoja, la distancia del pivote, los herrajes, el ángulo de retención). Los modelos son orientativos: compruebe los datos del fabricante.
+
+![Una puerta de vidrio sin marco sobre muelle de suelo, de vaivén, con pinza de talón, en el configurador](shots/joinery-floor-spring.webp)
+
 **Junquillos** dividen los vidrios: **Cuadrícula (colonial)** con sus vidrios a lo ancho y a lo alto, **Prairie** con barras cerca de los bordes, o **Rombos**.
 
 En la fachada, además del recercado, una ventana puede tener **Clave**, **Remate sobre el hueco** (**Cornisa**, **Frontón**, **Frontón curvo** o un **Guardapolvo** que sigue un remate en arco) y un **Antepecho bajo el vierteaguas** con sus ménsulas.

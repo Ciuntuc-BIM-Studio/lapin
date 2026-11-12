@@ -1944,6 +1944,20 @@ export const ZH: Record<string, string> = {
   'Writing the page': '正在写入页面',
   'This web page was not written by Lapin: only a page Lapin exported (File → Lapin for the browser) opens as a project.': '此网页不是由 Lapin 生成的：只有 Lapin 导出的页面（文件 → Lapin 浏览器版）才能作为项目打开。',
   'This Lapin page was exported without its project: it shows the model in a browser but cannot be opened. Export it again with the project included.': '此 Lapin 页面导出时未包含其项目：它可在浏览器中显示模型，但无法打开。请连同项目重新导出。',
+  // A frameless door on a floor spring (topic #28).
+  'Floor spring (floor hinge)': '地弹簧（地铰链）',
+  'Floor spring': '地弹簧',
+  'Automatic (the lightest that carries the leaf)': '自动（能承载门扇的最轻型号）',
+  'Opening action': '开启方式',
+  'Single action': '单向开启',
+  'Double action (swings both ways)': '双向开启（双向摆动）',
+  'Pivot from the edge': '转轴距边缘',
+  'Bottom fitting': '下部五金',
+  'Bottom patch fitting': '下夹',
+  'Heel strap': '下门夹（跟夹）',
+  'Hold-open': '定位开启',
+  'Indicative models; check the maker\'s data for the leaf\'s weight and the closing force.': '参考型号；门扇重量和关闭力请以厂家资料为准。',
+  'New frameless door on floor spring': '新建地弹簧无框玻璃门',
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

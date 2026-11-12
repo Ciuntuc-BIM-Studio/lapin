@@ -1951,6 +1951,20 @@ export const RO: Record<string, string> = {
   "The partitions the schedule lists": "Partițiile pe care le cuprinde extrasul",
   "Partition: bars in one are numbered, scheduled and filtered apart": "Partiție: barele dintr-una sunt numerotate, extrase și filtrate separat",
   "The partition new bars go in: numbered from 1 in it, scheduled and filtered apart (empty: none)": "Partiția în care intră barele noi: numerotate de la 1 în ea, extrase și filtrate separat (gol: niciuna)",
+  // A frameless door on a floor spring (topic #28).
+  'Floor spring (floor hinge)': 'Arc de pardoseală (balama de pardoseală)',
+  'Floor spring': 'Arc de pardoseală',
+  'Automatic (the lightest that carries the leaf)': 'Automat (cel mai ușor care duce foaia)',
+  'Opening action': 'Sensul de batere',
+  'Single action': 'Batere într-un sens',
+  'Double action (swings both ways)': 'Batere în ambele sensuri (pendulară)',
+  'Pivot from the edge': 'Pivotul de la margine',
+  'Bottom fitting': 'Feroneria de jos',
+  'Bottom patch fitting': 'Feronerie de colț jos',
+  'Heel strap': 'Clemă de călcâi',
+  'Hold-open': 'Blocare deschisă',
+  'Indicative models; check the maker\'s data for the leaf\'s weight and the closing force.': 'Modele orientative; verificați datele producătorului pentru greutatea foii și forța de închidere.',
+  'New frameless door on floor spring': 'Ușă nouă din sticlă fără toc pe arc de pardoseală',
 };
 
 /** Phrases with a number or a name in them. */

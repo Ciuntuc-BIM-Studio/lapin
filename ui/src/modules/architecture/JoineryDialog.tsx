@@ -80,7 +80,11 @@ interface Spec {
   frameless?: Frameless | null;
 }
 /** How a frameless leaf is held (pivots with patch fittings, or glass hinges), the glass's thickness, the gaps round it and under a leaf. */
-interface Frameless { fixing: 'pivot' | 'hinges'; glass: number; gap: number; floor: number }
+interface Frameless { fixing: 'pivot' | 'hinges' | 'floor-spring'; glass: number; gap: number; floor: number;
+  /** On a floor spring (topic #28): the model ("auto" or an id of the catalog's floorSprings), the pivot's offset from the leaf's edge, the bottom fitting, the hold-open angle (degrees, 0 none). */
+  spring?: string; pivot?: number; bottom?: 'patch' | 'strap'; holdOpen?: number }
+/** A floor spring the engine offers (indicative): the heaviest and widest leaf it carries, its closing force (EN 1154). */
+interface FloorSpringModel { id: string; maxMass: number; maxWidth: number; strength: string }
 const FRAMELESS: Frameless = { fixing: 'pivot', glass: 0.012, gap: 0.004, floor: 0.008 };
 /** What a frameless pane may do: a door's leaves swing, swing both ways or slide; a window's panes are fixed. */
 const FRAMELESS_DOOR_OPS = ['swing-left', 'swing-right', 'double-acting-left', 'double-acting-right', 'door-sliding-left', 'door-sliding-right', 'fixed'];
@@ -422,7 +426,7 @@ function ShapeFields({ spec, onChange }: { spec: Spec; onChange: (patch: Partial
 }
 
 /** Frameless glass (tester's question 7): on or off, what holds a door's leaves, the glass, the gaps. */
-function FramelessFields({ spec, onChange }: { spec: Spec; onChange: (patch: Partial<Spec>) => void }) {
+function FramelessFields({ spec, springs, onChange }: { spec: Spec; springs?: FloorSpringModel[]; onChange: (patch: Partial<Spec>) => void }) {
   const fl = spec.frameless;
   const door = spec.kind === 'door';
   const setFl = (p: Partial<Frameless>) => onChange({ frameless: { ...(fl ?? FRAMELESS), ...p } });
@@ -436,13 +440,53 @@ function FramelessFields({ spec, onChange }: { spec: Spec; onChange: (patch: Par
       {fl && <>
         {door && <label className="field-line"><span className="eyebrow">Fixing</span>
           <select data-field="frameless-fixing" value={fl.fixing} onChange={(e) => setFl({ fixing: e.target.value as Frameless['fixing'] })}>
-            <option value="pivot">Pivots and patch fittings</option><option value="hinges">Glass hinges</option>
+            <option value="pivot">Pivots and patch fittings</option><option value="hinges">Glass hinges</option><option value="floor-spring">Floor spring (floor hinge)</option>
           </select></label>}
+        {door && fl.fixing === 'floor-spring' && <FloorSpringFields spec={spec} fl={fl} springs={springs} onChange={onChange} setFl={setFl} />}
         <Mm label="Glass thickness" value={fl.glass} onChange={(v) => setFl({ glass: v })} />
         <Mm label="Gap round the glass" value={fl.gap} onChange={(v) => setFl({ gap: v })} />
         {door && <Mm label="Gap under the leaf" value={fl.floor} onChange={(v) => setFl({ floor: v })} />}
       </>}
     </>
+  );
+}
+
+/**
+ * A frameless leaf on a floor spring (topic #28): the spring's model (auto: the lightest that carries the leaf; the engine
+ * refuses one too light), single or double action (the leaves' operations), the pivot's offset from the edge, the bottom
+ * fitting, the hold-open angle.
+ */
+function FloorSpringFields({ spec, fl, springs, onChange, setFl }: { spec: Spec; fl: Frameless; springs?: FloorSpringModel[];
+  onChange: (patch: Partial<Spec>) => void; setFl: (p: Partial<Frameless>) => void }) {
+  const leaves = spec.panels.filter((p) => p.operation.startsWith('swing') || p.operation.startsWith('double-acting'));
+  const action = leaves.length > 0 && leaves.every((p) => p.operation.startsWith('double-acting')) ? 'double' : 'single';
+  const setAction = (a: string) => onChange({ panels: spec.panels.map((p) => {
+    const hand = p.operation.endsWith('-right') ? 'right' : 'left';
+    return p.operation.startsWith('swing') || p.operation.startsWith('double-acting') ? { ...p, operation: `${a === 'double' ? 'double-acting' : 'swing'}-${hand}` } : p;
+  }) });
+  return (
+    <div data-testid="floor-spring-fields">
+      <label className="field-line"><span className="eyebrow">Floor spring</span>
+        <select data-field="floor-spring-model" value={fl.spring ?? 'auto'} onChange={(e) => setFl({ spring: e.target.value })}>
+          <option value="auto">Automatic (the lightest that carries the leaf)</option>
+          {(springs ?? []).map((m) => <option key={m.id} value={m.id}>{`${m.maxMass} kg, ${Math.round(m.maxWidth * 1000)} mm, ${m.strength}`}</option>)}
+        </select></label>
+      <label className="field-line"><span className="eyebrow">Opening action</span>
+        <select data-field="floor-spring-action" value={action} onChange={(e) => setAction(e.target.value)}>
+          <option value="single">Single action</option><option value="double">Double action (swings both ways)</option>
+        </select></label>
+      <Mm label="Pivot from the edge" value={fl.pivot ?? 0.055} onChange={(v) => setFl({ pivot: v })} />
+      <label className="field-line"><span className="eyebrow">Bottom fitting</span>
+        <select data-field="floor-spring-bottom" value={fl.bottom ?? 'patch'} onChange={(e) => setFl({ bottom: e.target.value as Frameless['bottom'] })}>
+          <option value="patch">Bottom patch fitting</option><option value="strap">Heel strap</option>
+        </select></label>
+      <label className="field-line"><span className="eyebrow">Hold-open</span>
+        <select data-field="floor-spring-hold" value={String(fl.holdOpen ?? 0)} onChange={(e) => setFl({ holdOpen: Number(e.target.value) })}>
+          <option value="0">None</option>
+          {[80, 90, 105, 120].map((a) => <option key={a} value={a}>{`${a}°`}</option>)}
+        </select></label>
+      <p className="muted small">Indicative models; check the maker's data for the leaf's weight and the closing force.</p>
+    </div>
   );
 }
 
@@ -707,7 +751,7 @@ export function JoineryDialog() {
   const model = useMemo(() => ({ nodes, relations }), [nodes, relations]);
   const types = [...ofClass(model, 'IfcDoorType'), ...ofClass(model, 'IfcWindowType')];
   const catalog = info?.catalogs['architecture.joinery'] as unknown as { windowOperations: string[]; doorOperations: string[]; defaultDoor: Spec; defaultWindow: Spec;
-    doorPresets?: Record<string, Spec>; defaultMeeting?: Meeting & { astragalWidth?: number };
+    doorPresets?: Record<string, Spec>; defaultMeeting?: Meeting & { astragalWidth?: number }; floorSprings?: FloorSpringModel[];
     profileSystems?: Record<string, { frame: Spec['frame']; sash: Spec['sash']; profile: Profile }> } | undefined;
   const bayStyles = info?.catalogs['architecture.bayStyles'] as unknown as { spec: Spec }[] | undefined;
   const [editing, setEditing] = useState<string | null>(types[0]?.id ?? null);
@@ -851,6 +895,7 @@ export function JoineryDialog() {
             ))}
             <li><button type="button" className="tree-item" onClick={() => startNew('door')}><Plus size={12} /> New door</button></li>
             {catalog.doorPresets?.double && <li><button type="button" className="tree-item" data-action="new-double-door" onClick={() => startNew('door', false, 'double')}><Plus size={12} /> New double door</button></li>}
+            {catalog.doorPresets?.['floor-spring'] && <li><button type="button" className="tree-item" data-action="new-floor-spring-door" onClick={() => startNew('door', false, 'floor-spring')}><Plus size={12} /> New frameless door on floor spring</button></li>}
             <li><button type="button" className="tree-item" onClick={() => startNew('window')}><Plus size={12} /> New window</button></li>
             <li><button type="button" className="tree-item" data-action="new-bay-window" onClick={() => startNew('window', true)}><Plus size={12} /> New bay window</button></li>
           </ul>
@@ -873,7 +918,7 @@ export function JoineryDialog() {
                     if (patch.columns) setCols(patch.columns.join(' '));
                     if (patch.rows) setRows(patch.rows.join(' '));
                   }} /></label>
-              {!spec.bay && <FramelessFields spec={spec} onChange={set} />}
+              {!spec.bay && <FramelessFields spec={spec} springs={catalog.floorSprings} onChange={set} />}
               {!spec.bay && !spec.frameless && <ShapeFields spec={spec} onChange={set} />}
               {spec.kind === 'window' && !spec.frameless && <BayFields spec={spec} onChange={(patch) => set(patch as Partial<Spec>)} onGrid={(c) => setCols(c.join(' '))} />}
               {!spec.frameless && <>

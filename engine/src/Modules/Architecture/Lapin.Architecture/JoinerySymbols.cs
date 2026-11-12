@@ -80,6 +80,20 @@ public static class JoinerySymbols
             var fold = new Vec2(hx + sg * half * Math.Cos(Math.PI / 3), yIn - half * Math.Sin(Math.PI / 3));
             return [Line(new(hx, yIn), fold, "outline"), Line(fold, new(hx + sg * 2 * half * Math.Cos(Math.PI / 3), yIn), "outline")];
         }
+        if (fl != null && Frameless.OnSpring(s.Spec, p))
+        {
+            // On a floor spring (topic #28): the leaf open at 90° across its pivot, its short end past it, the long side's swing
+            // about the pivot; a double-acting leaf's other swing dashed.
+            var pv = new Vec2(Frameless.PivotX(s.Spec, p), f.Offset);
+            var reach = w - fl.Pivot;
+            var sw = new List<JStroke>
+            {
+                level <= PlanDetail.Coarse ? Line(new(pv.X, pv.Y + fl.Pivot), new(pv.X, pv.Y - reach), "cut") : Rect(pv.X - t / 2, pv.Y - reach, pv.X + t / 2, pv.Y + fl.Pivot, "cut"),
+                left ? Arc(pv, reach, -Math.PI / 2, 0, "thin") : Arc(pv, reach, Math.PI, 1.5 * Math.PI, "thin"),
+            };
+            if (op.StartsWith("double-acting")) sw.Add(left ? Arc(pv, reach, 0, Math.PI / 2, "thin", true) : Arc(pv, reach, Math.PI / 2, Math.PI, "thin", true));
+            return sw;
+        }
         var hinge = new Vec2(left ? r.X0 : r.X1, yIn);
         var sgn = left ? 1 : -1;
         var o = new List<JStroke>
@@ -143,6 +157,9 @@ public static class JoinerySymbols
             }
         if (level >= PlanDetail.Fine)
             foreach (var b in boxes.Where(b => b.Role == "board" && b.Max.Z < z)) o.Add(Rect(b.Min.X, b.Min.Y, b.Max.X, b.Max.Y, "outline"));
+        // A floor spring's cover plate, seen on the floor (topic #28).
+        if (level >= PlanDetail.Medium)
+            foreach (var b in boxes.Where(b => b.Underfloor && Math.Abs(b.Max.Z) < 1e-9)) o.Add(Rect(b.Min.X, b.Min.Y, b.Max.X, b.Max.Y, "thin"));
         var view = new JinerySpecView(s);
         foreach (var p in Joinery.Normalised(s))
         {
@@ -296,8 +313,16 @@ public static class JoinerySymbols
             }
         // Frameless glass (tester's question 7): no frame, so the opening's outline is the wall's; the fittings, track and handles are what shows.
         if (s.Frameless != null)
+        {
+            // A floor spring under the floor dashed, its pivot's axis dashed up the leaf (topic #28).
             foreach (var b in Joinery.Boxes(s).Where(b => b.Role is "hardware" || (hardware && b.Role is "handle")))
-                o.Add(Rect(b.Min.X, b.Min.Z, b.Max.X, b.Max.Z, "outline"));
+                o.Add(b.Underfloor ? Rect(b.Min.X, b.Min.Z, b.Max.X, b.Max.Z, "thin", true) : Rect(b.Min.X, b.Min.Z, b.Max.X, b.Max.Z, "outline"));
+            foreach (var p in Joinery.Normalised(s).Where(p => Frameless.OnSpring(s, p)))
+            {
+                var x = Frameless.PivotX(s, p);
+                o.Add(Line(new(x, 0), new(x, s.Height), "thin", true));
+            }
+        }
         if (s.Kind == "window" && s.Board.Exterior > 0 && exterior) o.Add(Rect(-s.Width / 2 - 0.03, -0.04, s.Width / 2 + 0.03, 0, "outline"));
         return exterior ? o.Select(x => x with { Pts = x.Pts.Select(q => new Vec2(-q.X, q.Y)).ToList() }).ToList() : o;
     }

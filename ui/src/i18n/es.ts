@@ -1952,6 +1952,20 @@ export const ES: Record<string, string> = {
   "The partitions the schedule lists": "Las particiones que lista la planilla",
   "Partition: bars in one are numbered, scheduled and filtered apart": "Partición: las barras de una se numeran, listan y filtran aparte",
   "The partition new bars go in: numbered from 1 in it, scheduled and filtered apart (empty: none)": "La partición de las barras nuevas: numeradas desde 1 en ella, listadas y filtradas aparte (vacío: ninguna)",
+  // A frameless door on a floor spring (topic #28).
+  'Floor spring (floor hinge)': 'Muelle de suelo (bisagra de suelo)',
+  'Floor spring': 'Muelle de suelo',
+  'Automatic (the lightest that carries the leaf)': 'Automático (el más ligero que soporta la hoja)',
+  'Opening action': 'Sentido de apertura',
+  'Single action': 'Apertura en un sentido',
+  'Double action (swings both ways)': 'Apertura en ambos sentidos (vaivén)',
+  'Pivot from the edge': 'Pivote desde el borde',
+  'Bottom fitting': 'Herraje inferior',
+  'Bottom patch fitting': 'Herraje de esquina inferior',
+  'Heel strap': 'Pinza de talón',
+  'Hold-open': 'Retención abierta',
+  'Indicative models; check the maker\'s data for the leaf\'s weight and the closing force.': 'Modelos orientativos; compruebe los datos del fabricante para el peso de la hoja y la fuerza de cierre.',
+  'New frameless door on floor spring': 'Puerta de vidrio sin marco nueva sobre muelle de suelo',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

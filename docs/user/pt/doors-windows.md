@@ -110,6 +110,10 @@ Cada uma se posiciona pelas faces reais da parede onde a janela está, a partir 
 
 ![Uma porta de vidro sem caixilho sobre pivôs com ferragens de canto, no configurador](shots/joinery-frameless-door.webp)
 
+**Mola de piso (dobradiça de piso)** pendura uma folha de abrir numa mola embutida no piso sob o seu pivô, com um pivô superior e uma ferragem de canto acima; **Nova porta de vidro sem caixilho sobre mola de piso** começa uma (1000 × 2100, vaivém, retida aberta a 90°). **Mola de piso** escolhe o modelo pela folha mais pesada e mais larga que suporta e pela força de fechamento (EN 1154); **Automático (o mais leve que suporta a folha)** escolhe por você (o vidro de 12 mm pesa 30 kg/m²), e um modelo fraco demais para a folha é recusado. **Sentido de abertura** é **Abertura num sentido** ou **Vaivém (abre nos dois sentidos)**, com os dois giros desenhados em planta; **Pivô a partir da borda** é 55 mm por padrão (30 a 150 mm); **Ferragem inferior** é uma **Ferragem de canto inferior** ou uma **Ferragem de calcanhar**; **Retenção aberta** é nenhuma, 80°, 90°, 105° ou 120°. A caixa da mola fica sob o piso acabado: as plantas desenham a sua tampa e giram a folha em torno do pivô, as elevações a caixa tracejada e o eixo do pivô. A tabela de portas indica a fixação, e o IFC escreve-a no conjunto `Lapin_FloorSpring` (o modelo, o peso da folha, a distância do pivô, as ferragens, o ângulo de retenção). Os modelos são indicativos: confira os dados do fabricante.
+
+![Uma porta de vidro sem caixilho sobre mola de piso, vaivém, com ferragem de calcanhar, no configurador](shots/joinery-floor-spring.webp)
+
 **Travessas de vidro** dividem os vidros: **Quadriculado (colonial)** com os seus quadros na largura e na altura, **Prairie** com barras perto das bordas, ou uma **Losangos**.
 
 Na fachada, além da moldura, uma janela pode ter uma **Fecho de arco**, um **Coroamento sobre a abertura** (uma **Cornija**, um **Frontão**, um **Frontão curvo** ou uma **Pingadeira** que segue um topo em arco) e um **Painel sob o peitoril** com os seus consoles.

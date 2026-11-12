@@ -1952,6 +1952,20 @@ export const DE: Record<string, string> = {
   "The partitions the schedule lists": "Die Partitionen, die die Liste enthält",
   "Partition: bars in one are numbered, scheduled and filtered apart": "Partition: Stäbe einer Partition werden getrennt nummeriert, gelistet und gefiltert",
   "The partition new bars go in: numbered from 1 in it, scheduled and filtered apart (empty: none)": "Die Partition neuer Stäbe: darin ab 1 nummeriert, getrennt gelistet und gefiltert (leer: keine)",
+  // A frameless door on a floor spring (topic #28).
+  'Floor spring (floor hinge)': 'Bodentürschließer (Bodenscharnier)',
+  'Floor spring': 'Bodentürschließer',
+  'Automatic (the lightest that carries the leaf)': 'Automatisch (der leichteste, der den Flügel trägt)',
+  'Opening action': 'Öffnungsart',
+  'Single action': 'Einseitig öffnend',
+  'Double action (swings both ways)': 'Pendelnd (öffnet in beide Richtungen)',
+  'Pivot from the edge': 'Drehpunkt vom Rand',
+  'Bottom fitting': 'Unterer Beschlag',
+  'Bottom patch fitting': 'Unterer Eckbeschlag',
+  'Heel strap': 'Fersenband',
+  'Hold-open': 'Feststellung',
+  'Indicative models; check the maker\'s data for the leaf\'s weight and the closing force.': 'Richtwerte; prüfen Sie die Herstellerangaben für das Flügelgewicht und die Schließkraft.',
+  'New frameless door on floor spring': 'Neue rahmenlose Glastür auf Bodentürschließer',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

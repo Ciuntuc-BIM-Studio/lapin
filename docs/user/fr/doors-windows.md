@@ -110,6 +110,10 @@ Chacun se place d’après les faces réelles du mur à l’endroit de la fenêt
 
 ![Une porte en verre sans cadre sur pivots avec ferrures d'angle, dans le configurateur](shots/joinery-frameless-door.webp)
 
+**Pivot de sol (frein de sol)** suspend un vantail battant à un frein encastré dans le sol sous son pivot, avec un pivot haut et une ferrure d'angle au-dessus ; **Nouvelle porte en verre sans cadre sur pivot de sol** en commence une (1000 × 2100, va-et-vient, arrêtée ouverte à 90°). **Pivot de sol** choisit le modèle selon le vantail le plus lourd et le plus large qu'il porte et sa force de fermeture (EN 1154) ; **Automatique (le plus léger qui porte le vantail)** choisit pour vous (le verre de 12 mm pèse 30 kg/m²), et un modèle trop faible pour le vantail est refusé. **Sens d'ouverture** est **Ouverture dans un sens** ou **Va-et-vient (s'ouvre dans les deux sens)**, les deux débattements dessinés en plan ; **Pivot depuis le bord** vaut 55 mm par défaut (30 à 150 mm) ; **Ferrure basse** est une **Ferrure d'angle basse** ou un **Sabot de talon** ; **Arrêt en position ouverte** est aucun, 80°, 90°, 105° ou 120°. Le boîtier se trouve sous le revêtement de sol : les plans dessinent sa plaque de recouvrement et font pivoter le vantail autour de son axe, les élévations le boîtier en tirets et l'axe du pivot. Le tableau des portes nomme la suspension, et l'IFC l'écrit dans le jeu `Lapin_FloorSpring` (le modèle, le poids du vantail, la distance du pivot, les ferrures, l'angle d'arrêt). Les modèles sont indicatifs : vérifiez les données du fabricant.
+
+![Une porte en verre sans cadre sur pivot de sol, va-et-vient, avec sabot de talon, dans le configurateur](shots/joinery-floor-spring.webp)
+
 **Petits-bois** divisent les vitrages : **Grille (colonial)** avec ses carreaux en largeur et en hauteur, **Prairie** avec des barres près des bords, ou des **Losanges**.
 
 Sur la façade, en plus de l’encadrement, une fenêtre peut avoir une **Clé de voûte**, un **Couronnement au-dessus de la baie** (une **Corniche**, un **Fronton**, un **Fronton cintré** ou un **Larmier** qui suit une tête cintrée) et une **Allège sous l’appui** avec ses consoles.

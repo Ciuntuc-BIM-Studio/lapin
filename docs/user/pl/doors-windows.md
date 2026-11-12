@@ -110,6 +110,10 @@ Każdy z nich przylega do rzeczywistych lic ściany w miejscu okna, wyznaczonych
 
 ![Szklane drzwi bez ramy na zawiasach czopowych z okuciami narożnymi, w konfiguratorze](shots/joinery-frameless-door.webp)
 
+**Samozamykacz podłogowy (zawias podłogowy)** zawiesza skrzydło rozwierane na samozamykaczu wpuszczonym w podłogę pod jego osią obrotu, z górnym czopem i okuciem narożnym nad nim; **Nowe drzwi szklane bez ramy na samozamykaczu podłogowym** zaczynają takie drzwi (1000 × 2100, wahadłowe, blokowane w otwarciu przy 90°). **Samozamykacz podłogowy** wybiera model według najcięższego i najszerszego skrzydła, które uniesie, i siły zamykania (EN 1154); **Automatyczny (najlżejszy, który uniesie skrzydło)** wybiera za Ciebie (szkło 12 mm waży 30 kg/m²), a model za słaby dla skrzydła zostaje odrzucony. **Sposób otwierania** to **Otwierane w jedną stronę** lub **Wahadłowe (otwierane w obie strony)**, z oboma łukami na rzucie; **Oś obrotu od krawędzi** to domyślnie 55 mm (od 30 do 150 mm); **Okucie dolne** to **Dolne okucie narożne** lub **Okucie piętowe**; **Blokada otwarcia** to brak, 80°, 90°, 105° lub 120°. Skrzynka leży pod posadzką: rzuty rysują jej pokrywę i obracają skrzydło wokół osi, widoki skrzynkę linią przerywaną i oś obrotu. Zestawienie drzwi podaje sposób zawieszenia, a IFC zapisuje go w zestawie `Lapin_FloorSpring` (model, ciężar skrzydła, odległość osi, okucia, kąt blokady). Modele są orientacyjne: sprawdź dane producenta.
+
+![Szklane drzwi bez ramy na samozamykaczu podłogowym, wahadłowe, z okuciem piętowym, w konfiguratorze](shots/joinery-floor-spring.webp)
+
 **Szprosy** dzielą kwatery: **Siatka (kolonialna)** z polami w poziomie i pionie, **Prairie** ze szprosami przy krawędziach lub **Romby**.
 
 Na elewacji, oprócz opaski, okno może mieć **Zwornik**, **Zwieńczenie nad otworem** (**Gzyms**, **Naczółek**, **Naczółek łukowy** lub **Kapinos**, który podąża za łukiem) oraz **Płycina pod parapetem** z konsolami.

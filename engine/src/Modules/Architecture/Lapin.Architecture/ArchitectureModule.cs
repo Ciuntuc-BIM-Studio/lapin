@@ -137,6 +137,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Class(new(IfcClass.WindowType, "Window type", [], "#9cc8e8", Kind: "type"));
         r.Service<IVoidShapes>(new VoidShapes());
         r.Service<IIfcElementSets>(new JoineryDataSets());
+        r.Service<IIfcElementSets>(new FloorSpringSets());
         r.Service<Lapin.Platform.Coordination.IOpeningVoids>(new ArchitectureVoids());
         // The openings' boxes a dimension across one reads its height from (report #92, decision 338).
         r.Service<IWallOpenings>(new ArchitectureWallOpenings());
@@ -175,7 +176,12 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             ["defaultDoor"] = JoinerySpecs.Door.ToJson(),
             ["defaultWindow"] = JoinerySpecs.Window.ToJson(),
             // Door presets (decision 466): a double door, no mullion between its leaves, a rebated meeting, the right leaf active.
-            ["doorPresets"] = new JsonObject { ["double"] = JoinerySpecs.DoubleDoor.ToJson() },
+            ["doorPresets"] = new JsonObject { ["double"] = JoinerySpecs.DoubleDoor.ToJson(), ["floor-spring"] = JoinerySpecs.FloorSpringDoor.ToJson() },
+            // The floor springs a frameless leaf may hang on (topic #28; indicative): the heaviest and widest leaf, the closing force.
+            ["floorSprings"] = new JsonArray(Frameless.Springs.Select(m => (JsonNode)new JsonObject
+            {
+                ["id"] = m.Id, ["maxMass"] = m.MaxMass, ["maxWidth"] = m.MaxWidth, ["strength"] = m.Strength, ["length"] = m.Length, ["width"] = m.Width, ["depth"] = m.Depth,
+            }).ToArray()),
             ["meetingKinds"] = new JsonArray(JoineryMeeting.Kinds.Select(x => (JsonNode)x).ToArray()),
             ["defaultMeeting"] = new JsonObject { ["kind"] = "rebated", ["active"] = "right", ["width"] = JoineryMeeting.DefaultRebate, ["thickness"] = JoineryMeeting.DefaultAstragalThickness, ["bolts"] = true, ["astragalWidth"] = JoineryMeeting.DefaultAstragalWidth },
             ["shapes"] = new JsonArray(JoineryShapes.Kinds.Select(x => (JsonNode)x).ToArray()),

@@ -884,4 +884,14 @@ public static class JoinerySpecs
     {
         Mark = "DD", Width = 1.5, Columns = [1, 1], Panels = [new(0, 0, "swing-left"), new(1, 0, "swing-right")], Mullions = [0], Meeting = new JoineryMeeting(),
     };
+
+    /// <summary>
+    /// A frameless glass door on a floor spring (topic #28): one 1000 × 2100 leaf of 12 mm toughened glass, double acting, the
+    /// spring the lightest that carries it, the pivot 55 mm in, a top patch fitting and a bottom one, held open at 90°.
+    /// </summary>
+    public static JoinerySpec FloorSpringDoor => JoinerySpec.DefaultDoor("Frameless door on floor spring 1000×2100") with
+    {
+        Mark = "GD", Width = 1.0, Columns = [1], Rows = [1], Panels = [new(0, 0, "double-acting-left")], Threshold = 0, Style = "frameless-glass",
+        Frameless = new JoineryFrameless("floor-spring", HoldOpen: 90),
+    };
 }
