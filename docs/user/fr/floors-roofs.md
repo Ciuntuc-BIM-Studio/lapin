@@ -8,6 +8,8 @@ summary: Dessinez dalles et toits par leur contour, choisissez la forme et les r
 
 Choisissez **Architecture → Dalle** (<kbd>SB</kbd>), puis cliquez les angles de son contour. Fermez le contour sur le premier point, ou appuyez sur <kbd>Enter</kbd>. Une dalle est elle aussi faite de couches, définies dans **Architecture → Types de dalles**. Une couche d’un type de dalle peut avoir une épaisseur de 0 (une étanchéité, une peinture) : elle ne construit rien, est dessinée en trait dans les coupes et est métrée à la surface de la dalle.
 
+Dans **Types de dalles**, chaque couche a une **Priorité** (de 0 à 100) et une **Catégorie**, comme les couches d’un type de mur. Une couche de mur qui descend dans la dalle (**Dans les dalles** dans **Types de murs**) traverse les couches de la dalle de priorité plus faible et s’arrête sur la première de priorité égale ou supérieure. Vide, la priorité est celle du matériau dans **Gérer → Ordre de coupe**, sinon 50 pour le noyau et 0 pour les autres couches. Une couche marquée **Finition** disparaît quand une vue omet les finitions des dalles.
+
 Pour changer le contour, sélectionnez la dalle et faites glisser ses angles. **Trémie de dalle** (<kbd>SH</kbd>) perce un trou dans une dalle, pour un escalier ou une gaine.
 
 Une dalle dessinée hors des murs, devant une porte, est un perron. Pour les marches qui y mènent, voir [Escaliers](stairs.md).

@@ -234,6 +234,14 @@ Tabul **Vedere** setează ce arată vederea din față și cum arată.
 
 ![Calitate afișare](shots/display-quality.webp)
 
+### Finisajele în planuri și secțiuni
+
+Un stil de vedere spune, separat pentru pereți și pentru plăci, dacă planurile desenează straturile de finisaj și dacă secțiunile și fațadele le desenează: **Finisaje pereți în planuri**, **Finisaje pardoseli în planuri**, **Finisaje pereți în secțiuni** și **Finisaje pardoseli în secțiuni** în **Gestionare → Stiluri de vedere**. Toate patru sunt bifate implicit. O vedere își poate seta propriile alegeri în **Setările vederii** (**Finisaje pereți**, **Finisaje pardoseli**), iar butonul de lângă ele o întoarce la stil. Un finisaj e un strat a cărui **Categorie** proprie în tipul lui e **Finisaj**, altfel al cărui material are această categorie. Un plan fără finisajele pereților desenează conturul secționat al fiecărui perete la miez, cu îmbinările și colțurile ca înainte, și face snap pe fețele miezului. Planșele poloneze, de exemplu, se tipăresc cu planuri fără niciun finisaj și cu secțiuni cu finisajele pardoselilor, dar fără ale pereților: debifează primele trei la stilul Architectural, iar toate planurile și secțiunile proiectului urmează. Modelul nu se schimbă: cantitățile, vederea 3D și IFC păstrează toate straturile.
+
+![Gestionare → Stiluri de vedere, cu alegerile finisajelor pentru planuri și secțiuni](shots/view-styles-finishes.webp)
+
+![O secțiune cu pardoseala și șapa plăcii și fără tencuiala pereților](shots/finishes-section.webp)
+
 ### Vizibilitate / Grafică
 
 **Vizibilitate** (<kbd>VV</kbd>) sau **Grafică** (<kbd>VG</kbd>) deschide Vizibilitate / Grafică pentru vederea din față: un plan, o secțiune, o fațadă sau o vedere 3D. Ce ascunde se ascunde și pe planșele vederii, în PDF și DXF, și la exportul 3D.

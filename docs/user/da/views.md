@@ -235,6 +235,14 @@ Fanen **Vis** indstiller, hvad visningen forrest viser, og hvordan den ser ud.
 
 ![Visningskvalitet](shots/display-quality.webp)
 
+### Overflader i planer og snit
+
+En visningsstil siger, hver for sig for vægge og dæk, om planer tegner overfladelagene, og om snit og facader gør: **Vægoverflader i planer**, **Dækoverflader i planer**, **Vægoverflader i snit** og **Dækoverflader i snit** i **Administrer → Visningsstile**. Alle fire er slået til som standard. En visning kan sætte sine egne i **Visningsindstillinger** (**Vægoverflader**, **Dækoverflader**), og knappen ved siden af tager stilens igen. En overflade er et lag, hvis egen **Kategori** i dets type er **Overflade**, ellers et lag, hvis materiale har den kategori. En plan uden vægoverfladerne tegner hver vægs snitomrids ved kernen, med samlinger og hjørner som før, og fanger kernens flader. Polske tegninger trykkes for eksempel med planer helt uden overflader og snit med dækkenes overflader, men ikke væggenes: fjern fluebenet ved de tre første i stilen Architectural, og alle projektets planer og snit følger med. Modellen ændres ikke: mængder, 3D-visningen og IFC beholder alle lag.
+
+![Administrer → Visningsstile, med valg af overflader for planer og snit](shots/view-styles-finishes.webp)
+
+![Et snit med dækkets gulvbelægning og afretningslag og uden væggenes puds](shots/finishes-section.webp)
+
 ### Synlighed / grafik
 
 **Synlighed** (<kbd>VV</kbd>) eller **Grafik** (<kbd>VG</kbd>) åbner synlighed / grafik for visningen forrest: en plan, et snit, en facade eller en 3D-visning. Det, den skjuler, er også skjult på visningens tegningsark, i dens PDF og DXF og i en 3D-eksport.

@@ -18,7 +18,17 @@ export type LayerMode = 'all' | 'noFinishes' | 'core';
  * entourageFill: the colour their silhouettes are filled with in elevations and sections, null for none.
  */
 export type EntourageMode = 'outline' | 'abstract' | 'detailed' | 'none';
-export interface ViewStyle { id: string; name: string; discipline: string | null; layers: LayerMode; joins: boolean; overhead: boolean; ifc2d: boolean; voids?: boolean; voidSizes?: boolean; finishHatch?: boolean; surfaceHatch?: boolean; entourage?: EntourageMode; entourageFill?: string | null; /** The graphics set its views take when they have none of their own (decision 391). */ graphicsSet?: string | null; /** Its views' level of development (decision 404). */ detail?: number }
+export interface ViewStyle { id: string; name: string; discipline: string | null; layers: LayerMode; joins: boolean; overhead: boolean; ifc2d: boolean; voids?: boolean; voidSizes?: boolean; finishHatch?: boolean; surfaceHatch?: boolean; entourage?: EntourageMode; entourageFill?: string | null; /** The graphics set its views take when they have none of their own (decision 391). */ graphicsSet?: string | null; /** Its views' level of development (decision 404). */ detail?: number;
+  /** The finish layers by the kind of view (the forum's topic #30): plans, and sections with elevations, drawing the walls' and the floors' finishes; on unless false. */
+  wallFinishesPlan?: boolean; wallFinishesSection?: boolean; floorFinishesPlan?: boolean; floorFinishesSection?: boolean }
+
+/** The four finish choices, by kind of view and category, with their labels and what they do, as View settings and View styles offer them. */
+export const FINISH_FIELDS: { key: 'wallFinishesPlan' | 'wallFinishesSection' | 'floorFinishesPlan' | 'floorFinishesSection'; plan: boolean; label: string; column: string; title: string }[] = [
+  { key: 'wallFinishesPlan', plan: true, label: 'Wall finishes', column: 'Wall finishes in plans', title: 'Plans draw the finish layers of walls (a layer\'s own category in its type, else its material\'s)' },
+  { key: 'floorFinishesPlan', plan: true, label: 'Floor finishes', column: 'Floor finishes in plans', title: 'Plans draw the finish layers of floors (a layer\'s own category in its type, else its material\'s)' },
+  { key: 'wallFinishesSection', plan: false, label: 'Wall finishes', column: 'Wall finishes in sections', title: 'Sections and elevations draw the finish layers of walls (a layer\'s own category in its type, else its material\'s)' },
+  { key: 'floorFinishesSection', plan: false, label: 'Floor finishes', column: 'Floor finishes in sections', title: 'Sections and elevations draw the finish layers of floors (a layer\'s own category in its type, else its material\'s)' },
+];
 
 /** The entourage modes as the editors offer them. */
 export const ENTOURAGE_MODES: [EntourageMode, string][] = [['outline', 'outlines'], ['abstract', 'abstract'], ['detailed', 'detailed'], ['none', 'not drawn']];

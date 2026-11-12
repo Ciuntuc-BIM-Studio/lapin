@@ -1,6 +1,24 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // The forum's topic #30: finish layers by kind of view, wall layers into the floors' layers
+  "Floor finishes": "Finisaje pardoseli",
+  "Wall finishes in plans": "Finisaje pereți în planuri",
+  "Floor finishes in plans": "Finisaje pardoseli în planuri",
+  "Wall finishes in sections": "Finisaje pereți în secțiuni",
+  "Floor finishes in sections": "Finisaje pardoseli în secțiuni",
+  "Plans draw the finish layers of walls (a layer's own category in its type, else its material's)": "Planurile desenează straturile de finisaj ale pereților (categoria proprie a stratului în tipul lui, altfel a materialului)",
+  "Plans draw the finish layers of floors (a layer's own category in its type, else its material's)": "Planurile desenează straturile de finisaj ale pardoselilor (categoria proprie a stratului în tipul lui, altfel a materialului)",
+  "Sections and elevations draw the finish layers of walls (a layer's own category in its type, else its material's)": "Secțiunile și fațadele desenează straturile de finisaj ale pereților (categoria proprie a stratului în tipul lui, altfel a materialului)",
+  "Sections and elevations draw the finish layers of floors (a layer's own category in its type, else its material's)": "Secțiunile și fațadele desenează straturile de finisaj ale pardoselilor (categoria proprie a stratului în tipul lui, altfel a materialului)",
+  "A layer's own category in its type (Wall types, Floor types) wins over its material's. Plans, and sections with elevations, each say whether they draw the walls' finishes and the floors'.": "Categoria proprie a unui strat în tipul lui (Tipuri de pereți, Tipuri de plăci) are întâietate față de a materialului. Planurile, și secțiunile cu fațadele, spun fiecare dacă desenează finisajele pereților și pe ale pardoselilor.",
+  "What the layer is in this build-up; empty: its material's category (Manage → Materials). View styles leave out the finishes by it": "Ce este stratul în această alcătuire; gol: categoria materialului (Gestionare → Materiale). Stilurile de vedere lasă deoparte finisajele după ea",
+  "material's": "a materialului",
+  "Into floors": "În plăci",
+  "Whether the layer goes on into the floors' layers ranked under it, as where walls join: down from the wall's base to the first floor layer ranked as high or higher (the brick onto the concrete, through the finish and the screed), up to the underside of the first such layer of the floor over it": "Dacă stratul continuă în straturile plăcilor cu prioritate mai mică, ca la îmbinarea pereților: în jos, de la baza peretelui până la primul strat al plăcii cu prioritate cel puțin egală (cărămida pe beton, prin pardoseală și șapă), în sus până la fața de jos a primului astfel de strat al plăcii de deasupra",
+  "Down: through the layers of the floor the wall stands on ranked under this one, to the top of the first ranked as high or higher": "În jos: prin straturile plăcii pe care stă peretele cu prioritate mai mică decât acesta, până la fața de sus a primului cu prioritate cel puțin egală",
+  "Up: through the lower layers of the floor over the wall ranked under this one, to the underside of the first ranked as high or higher": "În sus: prin straturile de jos ale plăcii de deasupra peretelui cu prioritate mai mică decât acesta, până la fața de jos a primului cu prioritate cel puțin egală",
+  "Where a wall's layer goes on into this floor, it passes the floor's layers ranked under it and stops at the first as high or higher; empty: its material's priority in the cut order, else 50 for the core and 0 for the rest": "Unde un strat al unui perete continuă în această placă, trece prin straturile ei cu prioritate mai mică și se oprește la primul cu prioritate cel puțin egală; gol: prioritatea materialului în ordinea de tăiere, altfel 50 pentru miez și 0 pentru restul",
   // The 3D view's style in the HUD
   "3D · EDGES": "3D · MUCHII",
   "3D · X-RAY": "3D · RAZE X",

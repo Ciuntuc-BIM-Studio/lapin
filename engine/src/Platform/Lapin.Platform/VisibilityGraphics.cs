@@ -41,12 +41,31 @@ public sealed class VisibilityGraphics
     /// <summary>The view's graphics as they rule it (null: none).</summary>
     public JsonObject? Graphics { get; }
 
-    VisibilityGraphics(IModelView model, JsonObject? graphics, bool in3d)
+    /// <summary>
+    /// The categories whose finish layers this view leaves out by its style and its kind (the forum's topic #30): a plan, or a
+    /// section or an elevation, without the walls' finishes ("walls") or the floors' ("slabs"); empty for a 3D view and by default.
+    /// </summary>
+    public IReadOnlySet<string> FinishesHidden { get; }
+
+    VisibilityGraphics(IModelView model, JsonObject? graphics, bool in3d, IReadOnlySet<string>? finishesHidden = null)
     {
         m = model;
         Graphics = graphics;
         this.in3d = in3d;
+        FinishesHidden = finishesHidden ?? new HashSet<string>();
         filters = graphics == null ? new Dictionary<string, ViewFilters.Filter>() : ViewFilters.All(model).ToDictionary(f => f.Id);
+    }
+
+    /// <summary>The categories a view's style leaves the finishes out of in a view of its kind (<see cref="ViewStyles.Style.DrawsFinishes"/>).</summary>
+    static HashSet<string>? FinishRule(IModelView m, Entity view)
+    {
+        var kind = view.Str("kind");
+        if (kind is not ("plan" or "section" or "elevation" or null) || view.Class != Views.Class) return null;
+        var style = ViewStyles.Of(m, view);
+        HashSet<string>? o = null;
+        foreach (var c in new[] { "walls", "slabs" })
+            if (!style.DrawsFinishes(kind, c)) (o ??= []).Add(c);
+        return o;
     }
 
     /// <summary>The filters a set of rules uses, in order, with their rows ({id, hidden, …}), those the project no longer has left out.</summary>
@@ -64,7 +83,7 @@ public sealed class VisibilityGraphics
     public IEnumerable<JsonObject> FilterRows(Entity e) => FiltersOf(RulesFor(e)).Where(x => Takes(x.Filter, e)).Select(x => x.Row);
 
     /// <summary>A view's (a 2D view, a 3D view, or {3D} as <see cref="GraphicsSets.As3dView"/> gives it).</summary>
-    public static VisibilityGraphics Of(IModelView m, Entity view) => new(m, GraphicsSets.Of(m, view), view.Str("kind") == "3d");
+    public static VisibilityGraphics Of(IModelView m, Entity view) => new(m, GraphicsSets.Of(m, view), view.Str("kind") == "3d", FinishRule(m, view));
 
     /// <summary>A view's graphics read as given (a test, an export with graphics of its own).</summary>
     public static VisibilityGraphics From(IModelView m, JsonObject? graphics, bool in3d) => new(m, graphics, in3d);
@@ -89,6 +108,8 @@ public sealed class VisibilityGraphics
         if (in3d ? GraphicsSets.Hides3d(g, e) : GraphicsSets.Hides(g, e)) return true;
         // A reference all of one finish, insulation or membrane (a plaster part of a wall, a covering): hidden with its subcategory (decision 400).
         if (HiddenSubs(e) is { } sub && ReferenceLayers.WholeSub(m, e) is { } whole && True(sub[whole]?["hidden"])) return true;
+        // The finishes the view's style leaves out in a view of its kind (topic #30): a reference that is all finish, a room's wall or floor finish.
+        if (FinishesHidden.Count > 0 && FinishOf(e) is { } fc && FinishesHidden.Contains(fc)) return true;
         // A filter that takes it and hides what it takes (the first that says, in the view's order).
         return FilterRows(e).Select(r => r["hidden"]).FirstOrDefault(h => h is JsonValue) is { } hv && True(hv);
     }
@@ -193,8 +214,20 @@ public sealed class VisibilityGraphics
     /// <summary>Whether the view hides one part of an element by its subcategory (a wall's finishes, a door's reveals).</summary>
     public bool HidesPart(Entity e, string? partKey)
     {
+        // The finish layers of walls or floors, which the view's style leaves out in a view of its kind (topic #30).
+        if (FinishesHidden.Count > 0 && partKey != null && ReferenceLayers.CategoryOf(e) is { } c && FinishesHidden.Contains(c) && SubOf(e, partKey) == "finishes") return true;
         if (HiddenSubs(e) is not { } sub || SubOf(e, partKey) is not { } s) return false;
         return True(sub[s]?["hidden"]);
+    }
+
+    /// <summary>
+    /// Whether a whole element is a finish of walls or floors, and of which ("walls", "slabs"): a reference all of finish (a
+    /// plaster part of a wall), a room's finish of its walls or its floor; null otherwise.
+    /// </summary>
+    string? FinishOf(Entity e)
+    {
+        if (e.Class == "LapinRoomFinish") return e.Str("part") switch { "walls" => "walls", "floor" => "slabs", _ => null };
+        return ReferenceLayers.CategoryOf(e) is { } c && c is "walls" or "slabs" && ReferenceLayers.WholeSub(m, e) == "finishes" ? c : null;
     }
 
     /// <summary>
@@ -212,16 +245,8 @@ public sealed class VisibilityGraphics
         // A reference's layers, from its file's material (decision 400).
         if (list == null) return ReferenceLayers.SubOfPart(m, e, partKey);
         if (index < 0 || index >= list.Count) return null;
-        var band = list[index];
-        if (band.Core) return "core";
-        var mat = m.Get(band.Material);
-        if (mat != null && Materials.IsFinish(mat)) return "finishes";
-        return mat?.Str("category")?.Trim().ToLowerInvariant() switch
-        {
-            "insulation" => "insulation",
-            "membrane" => "membranes",
-            _ => "otherLayers",
-        };
+        // By the layer's own category when its type gives one (the forum's topic #30), else its material's.
+        return LayerSets.SubOf(m, list[index]);
     }
 
     /// <summary>The entity a mark belongs to: its owner, or the element before the owner's colon (a beam's stirrups, a grid's axis).</summary>

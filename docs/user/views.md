@@ -235,6 +235,14 @@ The **View** tab sets what the view in front shows and how it looks.
 
 ![Display quality](shots/display-quality.webp)
 
+### Finishes in plans and sections
+
+A view style says, for walls and for floors apart, whether plans draw the finish layers, and whether sections and elevations do: **Wall finishes in plans**, **Floor finishes in plans**, **Wall finishes in sections** and **Floor finishes in sections** in **Manage → View styles**. All four are on by default. A view can set its own in **View settings** (**Wall finishes**, **Floor finishes**), and the button beside them takes the style's again. A finish is a layer whose own **Category** in its type is **Finish**, else whose material's category is. A plan without the wall finishes draws each wall's cut outline at its core, with the joins and corners as before, and snaps to the core's faces. Polish drawings, for example, are printed with plans without any finishes and sections with the floors' finishes but not the walls': untick the first three on the Architectural style, and every plan and section of the project follows. The model is unchanged: quantities, the 3D view and IFC keep every layer.
+
+![Manage → View styles, with the finish choices of plans and sections](shots/view-styles-finishes.webp)
+
+![A section with the floor's finish and screed and without the walls' plaster](shots/finishes-section.webp)
+
 ### Visibility / Graphics
 
 **Visibility** (<kbd>VV</kbd>) or **Graphics** (<kbd>VG</kbd>) opens the view in front's Visibility / Graphics, for a plan, a section, an elevation or a 3D view. What it hides is hidden on the view's sheets, in its PDF and DXF, and in a 3D export too.

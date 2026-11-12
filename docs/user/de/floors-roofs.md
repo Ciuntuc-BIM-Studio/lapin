@@ -8,6 +8,8 @@ summary: Zeichnen Sie Decken und Dächer über ihren Umriss, wählen Sie die For
 
 Wählen Sie **Innenausbau → Decke** (<kbd>SB</kbd>) und klicken Sie dann auf die Ecken ihres Umrisses. Schließen Sie den Umriss am ersten Punkt oder drücken Sie <kbd>Enter</kbd>. Auch eine Decke besteht aus Schichten, die unter **Innenausbau → Deckentypen** festgelegt werden. Eine Schicht eines Deckentyps kann die Dicke 0 haben (eine Abdichtung, ein Anstrich): Sie bildet nichts, wird in Schnitten als Linie gezeichnet und nach der Fläche der Decke gemessen.
 
+In **Deckentypen** hat jede Schicht eine **Priorität** (0 bis 100) und eine **Kategorie**, wie die Schichten eines Wandtyps. Eine Wandschicht, die in die Decke läuft (**In Decken** in **Wandtypen**), durchdringt die Deckenschichten mit niedrigerer Priorität und endet auf der ersten mit gleicher oder höherer. Leer ist die Priorität die des Materials in **Verwalten → Schnittreihenfolge**, sonst 50 für den Kern und 0 für die übrigen Schichten. Eine als **Bekleidung** markierte Schicht entfällt, wenn eine Ansicht die Bodenbeläge weglässt.
+
 Um den Umriss zu ändern, wählen Sie die Decke aus und ziehen Sie ihre Ecken. **Deckenöffnung** (<kbd>SH</kbd>) schneidet ein Loch in eine Decke, für eine Treppe oder einen Schacht.
 
 Eine außerhalb der Wände, vor einer Tür gezeichnete Decke ist ein Podest. Für die Stufen dort hinauf siehe [Treppen](stairs.md).

@@ -67,6 +67,8 @@ public static class IfcExport
     public const string ProjectInfoSetName = "Lapin_ProjectInformation";
     /// <summary>An opening void's own set (decision 289): its mark, kind, host, opening, fill and offset.</summary>
     public const string VoidSetName = "Lapin_OpeningVoid";
+    /// <summary>A wall layer's extension into the floors' layers (the forum's topic #30): ExtendToFloorBelow, ExtendToFloorAbove, on its IfcMaterialLayer.</summary>
+    public const string LayerJoinsSetName = "Lapin_LayerJoins";
     /// <summary>The intent set's name until 25.10.2026: files written before still carry it.</summary>
     public const string OldIntentSetName = "Pset_Lapin_Intent";
     public static bool IsIntentSet(string? name) => name is IntentSetName or OldIntentSetName;
@@ -1129,8 +1131,16 @@ public static class IfcExport
         string LayerSet(Entity set)
         {
             if (layerSets.TryGetValue(set.Id, out var r)) return r;
+            // Its Category: Core for the core, else the layer's own (Finish, Insulation…; the forum's topic #30) when its type gives one.
             var layers = Layers.Read(set).Select(l =>
-                f.Add("IFCMATERIALLAYER", Material(l.Material), R(l.Thickness), Null, S(l.Name ?? m.Get(l.Material)?.Name), S(l.Note), S(l.Core ? "Core" : null), l.Priority is { } p ? I(Math.Clamp(p, 0, 100)) : Null)).ToList();
+            {
+                var r = f.Add("IFCMATERIALLAYER", Material(l.Material), R(l.Thickness), Null, S(l.Name ?? m.Get(l.Material)?.Name), S(l.Note), S(l.Core ? "Core" : l.Category), l.Priority is { } p ? I(Math.Clamp(p, 0, 100)) : Null);
+                // A wall's layer going on into the floors' layers ranked under it (topic #30): Lapin's own properties of the layer, the bodies built as they are.
+                if (l.ExtendDown == true || l.ExtendUp == true)
+                    f.Add("IFCMATERIALPROPERTIES", S(LayerJoinsSetName), Null,
+                        L(new[] { Single("ExtendToFloorBelow", Typed("IFCBOOLEAN", l.ExtendDown == true ? True : False)), Single("ExtendToFloorAbove", Typed("IFCBOOLEAN", l.ExtendUp == true ? True : False)) }), r);
+                return r;
+            }).ToList();
             return layerSets[set.Id] = f.Add("IFCMATERIALLAYERSET", L(layers), S(set.Name), Null);
         }
 

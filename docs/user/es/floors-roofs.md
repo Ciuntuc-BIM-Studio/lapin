@@ -8,6 +8,8 @@ summary: Dibuje losas y cubiertas por su contorno, elija la forma y los bordes d
 
 Elija **Arquitectura → Losa** (<kbd>SB</kbd>) y haga clic en las esquinas de su contorno. Cierre el contorno en el primer punto o pulse <kbd>Enter</kbd>. Una losa también está hecha de capas, que se definen en **Arquitectura → Tipos de losa**. Una capa de un tipo de losa puede tener espesor 0 (una impermeabilización, la pintura): no construye nada, se dibuja como una línea en las secciones y se mide por la superficie de la losa.
 
+En **Tipos de losa**, cada capa tiene una **Prioridad** (de 0 a 100) y una **Categoría**, como las capas de un tipo de muro. Una capa de muro que baja a la losa (**En losas** en **Tipos de muro**) atraviesa las capas de la losa de menor prioridad y se detiene sobre la primera de prioridad igual o mayor. Vacía, la prioridad es la del material en **Gestionar → Orden de corte**, si no 50 para el núcleo y 0 para las demás capas. Una capa marcada **Acabado** se va cuando una vista omite los acabados de las losas.
+
 Para cambiar el contorno, seleccione la losa y arrastre sus esquinas. **Hueco en losa** (<kbd>SH</kbd>) abre un hueco en una losa, para una escalera o un patinillo.
 
 Una losa dibujada fuera de los muros, delante de una puerta, es un porche. Para los peldaños que suben a él, consulte [Escaleras](stairs.md).

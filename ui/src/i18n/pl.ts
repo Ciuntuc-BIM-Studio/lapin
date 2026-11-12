@@ -3,6 +3,24 @@
 import type { Language } from './index';
 
 export const PL: Record<string, string> = {
+  // The forum's topic #30: finish layers by kind of view, wall layers into the floors' layers
+  "Floor finishes": "Wykończenia podłóg",
+  "Wall finishes in plans": "Wykończenia ścian na rzutach",
+  "Floor finishes in plans": "Wykończenia podłóg na rzutach",
+  "Wall finishes in sections": "Wykończenia ścian na przekrojach",
+  "Floor finishes in sections": "Wykończenia podłóg na przekrojach",
+  "Plans draw the finish layers of walls (a layer's own category in its type, else its material's)": "Rzuty rysują warstwy wykończeniowe ścian (własna kategoria warstwy w jej typie, w przeciwnym razie kategoria materiału)",
+  "Plans draw the finish layers of floors (a layer's own category in its type, else its material's)": "Rzuty rysują warstwy wykończeniowe podłóg (własna kategoria warstwy w jej typie, w przeciwnym razie kategoria materiału)",
+  "Sections and elevations draw the finish layers of walls (a layer's own category in its type, else its material's)": "Przekroje i elewacje rysują warstwy wykończeniowe ścian (własna kategoria warstwy w jej typie, w przeciwnym razie kategoria materiału)",
+  "Sections and elevations draw the finish layers of floors (a layer's own category in its type, else its material's)": "Przekroje i elewacje rysują warstwy wykończeniowe podłóg (własna kategoria warstwy w jej typie, w przeciwnym razie kategoria materiału)",
+  "A layer's own category in its type (Wall types, Floor types) wins over its material's. Plans, and sections with elevations, each say whether they draw the walls' finishes and the floors'.": "Własna kategoria warstwy w jej typie (Typy ścian, Typy stropów) ma pierwszeństwo przed kategorią materiału. Rzuty oraz przekroje z elewacjami określają każde z osobna, czy rysują wykończenia ścian i podłóg.",
+  "What the layer is in this build-up; empty: its material's category (Manage → Materials). View styles leave out the finishes by it": "Czym jest warstwa w tym układzie; puste: kategoria jej materiału (Zarządzaj → Materiały). Style widoków pomijają według niej wykończenia",
+  "material's": "materiału",
+  "Into floors": "W stropy",
+  "Whether the layer goes on into the floors' layers ranked under it, as where walls join: down from the wall's base to the first floor layer ranked as high or higher (the brick onto the concrete, through the finish and the screed), up to the underside of the first such layer of the floor over it": "Czy warstwa przechodzi w warstwy stropów o niższym priorytecie, jak przy połączeniach ścian: w dół od podstawy ściany do pierwszej warstwy stropu o priorytecie co najmniej równym (cegła na beton, przez posadzkę i jastrych), w górę do spodu pierwszej takiej warstwy stropu nad nią",
+  "Down: through the layers of the floor the wall stands on ranked under this one, to the top of the first ranked as high or higher": "W dół: przez warstwy stropu, na którym stoi ściana, o niższym priorytecie niż ta, do wierzchu pierwszej o priorytecie co najmniej równym",
+  "Up: through the lower layers of the floor over the wall ranked under this one, to the underside of the first ranked as high or higher": "W górę: przez dolne warstwy stropu nad ścianą o niższym priorytecie niż ta, do spodu pierwszej o priorytecie co najmniej równym",
+  "Where a wall's layer goes on into this floor, it passes the floor's layers ranked under it and stops at the first as high or higher; empty: its material's priority in the cut order, else 50 for the core and 0 for the rest": "Gdzie warstwa ściany przechodzi w ten strop, mija jego warstwy o niższym priorytecie i zatrzymuje się na pierwszej o priorytecie co najmniej równym; puste: priorytet materiału w kolejności cięcia, w przeciwnym razie 50 dla rdzenia i 0 dla pozostałych",
   // The 3D view's style in the HUD
   "3D · EDGES": "3D · KRAWĘDZIE",
   "3D · X-RAY": "3D · RENTGEN",

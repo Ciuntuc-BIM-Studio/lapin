@@ -235,6 +235,14 @@ A guia **Vista** define o que a vista em primeiro plano mostra e qual é a sua a
 
 ![Qualidade de exibição](shots/display-quality.webp)
 
+### Acabamentos nas plantas e nos cortes
+
+Um estilo de vista diz, separadamente para paredes e para pisos, se as plantas desenham as camadas de acabamento e se os cortes e as elevações as desenham: **Acabamentos de paredes nas plantas**, **Acabamentos de pisos nas plantas**, **Acabamentos de paredes nos cortes** e **Acabamentos de pisos nos cortes** em **Gerenciar → Estilos de vista**. As quatro vêm marcadas por padrão. Uma vista pode definir as suas em **Configurações da vista** (**Acabamentos de paredes**, **Acabamentos de pisos**), e o botão ao lado volta às do estilo. Um acabamento é uma camada cuja **Categoria** própria no seu tipo é **Acabamento**, senão uma cujo material tem essa categoria. Uma planta sem os acabamentos das paredes desenha o contorno cortado de cada parede no núcleo, com as junções e os cantos como antes, e faz snap nas faces do núcleo. As pranchas polonesas, por exemplo, são impressas com plantas sem nenhum acabamento e cortes com os acabamentos dos pisos, mas não os das paredes: desmarque as três primeiras no estilo Architectural, e todas as plantas e cortes do projeto acompanham. O modelo não muda: as quantidades, a vista 3D e o IFC mantêm todas as camadas.
+
+![Gerenciar → Estilos de vista, com os acabamentos das plantas e dos cortes](shots/view-styles-finishes.webp)
+
+![Um corte com o revestimento e o contrapiso do piso e sem o reboco das paredes](shots/finishes-section.webp)
+
 ### Visibilidade / Gráficos
 
 **Visibilidade** (<kbd>VV</kbd>) ou **Gráficos** (<kbd>VG</kbd>) abre a visibilidade / gráficos da vista à frente: uma planta, um corte, uma elevação ou uma vista 3D. O que ela oculta fica oculto também nas pranchas da vista, no seu PDF e DXF, e numa exportação 3D.

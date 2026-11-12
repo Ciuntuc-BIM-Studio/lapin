@@ -235,6 +235,14 @@ Karta **Widok** ustala, co pokazuje widok na pierwszym planie i jak wygląda.
 
 ![Jakość wyświetlania](shots/display-quality.webp)
 
+### Wykończenia na rzutach i przekrojach
+
+Styl widoku określa, osobno dla ścian i dla stropów, czy rzuty rysują warstwy wykończeniowe oraz czy rysują je przekroje i elewacje: **Wykończenia ścian na rzutach**, **Wykończenia podłóg na rzutach**, **Wykończenia ścian na przekrojach** i **Wykończenia podłóg na przekrojach** w **Zarządzaj → Style widoku**. Domyślnie wszystkie cztery są włączone. Widok może ustawić własne w **Ustawieniach widoku** (**Wykończenia ścian**, **Wykończenia podłóg**), a przycisk obok przywraca ustawienie stylu. Wykończenie to warstwa, której własna **Kategoria** w typie to **Wykończenie**, a w przeciwnym razie warstwa, której materiał ma tę kategorię. Rzut bez wykończeń ścian rysuje przecięty obrys każdej ściany na rdzeniu, z połączeniami i narożnikami jak dotąd, i przyciąga do lic rdzenia. W Polsce rzuty drukuje się zwykle bez wykończeń, a przekroje z wykończeniami podłóg, lecz bez wykończeń ścian: odznacz pierwsze trzy w stylu Architectural, a wszystkie rzuty i przekroje projektu pójdą za tym. Model się nie zmienia: ilości, widok 3D i IFC zachowują wszystkie warstwy.
+
+![Zarządzaj → Style widoku, z wyborem wykończeń dla rzutów i przekrojów](shots/view-styles-finishes.webp)
+
+![Przekrój z posadzką i jastrychem stropu, bez tynku ścian](shots/finishes-section.webp)
+
 ### Widoczność / Grafika
 
 **Widoczność** (<kbd>VV</kbd>) lub **Grafika** (<kbd>VG</kbd>) otwiera widoczność / grafikę widoku na wierzchu: rzutu, przekroju, elewacji lub widoku 3D. To, co ukrywa, jest ukryte także na arkuszach widoku, w jego PDF i DXF oraz w eksporcie 3D.

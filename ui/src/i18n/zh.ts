@@ -3,6 +3,24 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // The forum's topic #30: finish layers by kind of view, wall layers into the floors' layers
+  "Floor finishes": "楼板饰面",
+  "Wall finishes in plans": "平面图中的墙面饰面",
+  "Floor finishes in plans": "平面图中的楼板饰面",
+  "Wall finishes in sections": "剖面中的墙面饰面",
+  "Floor finishes in sections": "剖面中的楼板饰面",
+  "Plans draw the finish layers of walls (a layer's own category in its type, else its material's)": "平面图绘制墙的饰面层（按该层在其类型中的类别，否则按其材料的类别）",
+  "Plans draw the finish layers of floors (a layer's own category in its type, else its material's)": "平面图绘制楼板的饰面层（按该层在其类型中的类别，否则按其材料的类别）",
+  "Sections and elevations draw the finish layers of walls (a layer's own category in its type, else its material's)": "剖面和立面绘制墙的饰面层（按该层在其类型中的类别，否则按其材料的类别）",
+  "Sections and elevations draw the finish layers of floors (a layer's own category in its type, else its material's)": "剖面和立面绘制楼板的饰面层（按该层在其类型中的类别，否则按其材料的类别）",
+  "A layer's own category in its type (Wall types, Floor types) wins over its material's. Plans, and sections with elevations, each say whether they draw the walls' finishes and the floors'.": "层在其类型中的类别（墙类型、楼板类型）优先于其材料的类别。平面图以及剖面和立面各自决定是否绘制墙的饰面和楼板的饰面。",
+  "What the layer is in this build-up; empty: its material's category (Manage → Materials). View styles leave out the finishes by it": "该层在此构造中的作用；留空：其材料的类别（管理 → 材料）。视图样式据此省略饰面",
+  "material's": "材料的",
+  "Into floors": "伸入楼板",
+  "Whether the layer goes on into the floors' layers ranked under it, as where walls join: down from the wall's base to the first floor layer ranked as high or higher (the brick onto the concrete, through the finish and the screed), up to the underside of the first such layer of the floor over it": "该层是否伸入优先级较低的楼板层，如同墙体连接处：向下从墙底到第一个优先级相同或更高的楼板层（砖落在混凝土上，穿过面层和找平层），向上到上方楼板第一个此类层的底面",
+  "Down: through the layers of the floor the wall stands on ranked under this one, to the top of the first ranked as high or higher": "向下：穿过墙所在楼板中优先级低于此层的各层，到第一个优先级相同或更高的层的顶面",
+  "Up: through the lower layers of the floor over the wall ranked under this one, to the underside of the first ranked as high or higher": "向上：穿过墙上方楼板中优先级低于此层的下部各层，到第一个优先级相同或更高的层的底面",
+  "Where a wall's layer goes on into this floor, it passes the floor's layers ranked under it and stops at the first as high or higher; empty: its material's priority in the cut order, else 50 for the core and 0 for the rest": "墙的某层伸入此楼板时，穿过其中优先级较低的层，停在第一个优先级相同或更高的层；留空：其材料在剪切顺序中的优先级，否则核心层为 50，其余为 0",
   // The 3D view's style in the HUD
   "3D · EDGES": "3D · 边线",
   "3D · X-RAY": "3D · X 光",

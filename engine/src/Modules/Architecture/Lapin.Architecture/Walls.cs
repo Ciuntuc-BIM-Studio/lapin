@@ -94,12 +94,13 @@ public static class Walls
     }
 
     /// <summary>A layer band of the wall's section: across the axis (left of it positive), its material, whether it is the core, its priority at joins (<see cref="Layers.Rank"/>).</summary>
-    public readonly record struct Band(double From, double To, string? Material, string Name, bool Core = false, int Index = 0, double? Z0 = null, double? Z1 = null, IReadOnlyList<LayerPart>? Parts = null, int Rank = Layers.CoreRank);
+    public readonly record struct Band(double From, double To, string? Material, string Name, bool Core = false, int Index = 0, double? Z0 = null, double? Z1 = null, IReadOnlyList<LayerPart>? Parts = null, int Rank = Layers.CoreRank,
+        bool ExtendDown = false, bool ExtendUp = false);
 
     /// <summary>The wall's section, first layer to last; one centred band for a wall without layers.</summary>
     public static IReadOnlyList<Band> Section(IModelView m, Entity wall)
     {
-        if (LayerSets.BandsOf(m, wall.Id) is { } bands) return bands.Select(b => new Band(b.From, b.To, b.Material, b.Name, b.Core, b.Index, b.Z0, b.Z1, b.Parts, b.Rank)).ToList();
+        if (LayerSets.BandsOf(m, wall.Id) is { } bands) return bands.Select(b => new Band(b.From, b.To, b.Material, b.Name, b.Core, b.Index, b.Z0, b.Z1, b.Parts, b.Rank, b.ExtendDown, b.ExtendUp)).ToList();
         var t = wall.NumOrNull("thickness") ?? DefaultThickness;
         return [new Band(-t / 2, t / 2, null, wall.Name, true)];
     }
@@ -114,6 +115,132 @@ public static class Walls
     {
         var bands = Section(m, wall);
         return (End(wall) - Start(wall)).Length < MinLength ? null : new JoinWall(Start(wall), End(wall), bands.Min(b => b.From), bands.Max(b => b.To));
+    }
+
+    /// <summary>
+    /// A straight wall laid out as its joins leave it: its ends, its frame (start, direction, length), its base and height,
+    /// its section, and each band's footprint in the pieces the walls meeting it leave of it.
+    /// </summary>
+    public sealed record Layout(Vec2 Start, Vec2 End, Vec2 Dir, double Length, double Z, double Height, IReadOnlyList<Band> Bands, Func<Band, List<IReadOnlyList<Vec2>>> Footprints);
+
+    /// <summary>The wall's <see cref="Layout"/>; null for a curved wall or one of no length.</summary>
+    public static Layout? LayoutOf(Entity wall, IModelView m, IServices? services, List<string> problems)
+    {
+        var start = Start(wall);
+        var end = End(wall);
+        if ((end - start).Length < MinLength || PathCurve.Of(wall) is { IsArc: true }) return null;
+        var paths = services?.Get<IPathElements>();
+        var ends = Joins.WithOwnEnds(paths != null ? Joins.EndsOf(m, wall, paths, problems) : new (Vec2 Point, EndCut Cut)?[2], wall, Frame(wall, m));
+        if (ends[0] is { } s) start = s.Point;
+        if (ends[1] is { } e) end = e.Point;
+        var startCut = ends[0]?.Cut ?? EndCut.Square;
+        var endCut = ends[1]?.Cut ?? EndCut.Square;
+        var along = end - start;
+        var length = along.Length;
+        var dir = along.Normalized();
+        var left = dir.Perp;
+        var z = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
+        var bands = Section(m, wall);
+        var yMin = bands.Min(b => b.From);
+        var yMax = bands.Max(b => b.To);
+        double At(EndCut c, double y) => yMax - yMin < 1e-12 ? c.Right : c.Right + (c.Left - c.Right) * (y - yMin) / (yMax - yMin);
+        Vec2 P(double x, double y) => start + dir * x + left * y;
+        var cutOrder = services?.Get<ICutters>();
+        Func<Entity, int?> ranked = x => cutOrder?.PriorityOf(x, m);
+        var corners = paths != null ? LayerCorners(m, wall, paths, start, dir, length, bands, ranked) : new Func<Band, (double From, double To)>?[2];
+        var crossings = paths != null ? LayerCrossings(m, wall, paths, start, dir, bands, ranked) : _ => [];
+        double Reach(int end, Band b, bool atFrom) =>
+            corners[end] is { } f ? (atFrom ? f(b).From : f(b).To) : At(end == 0 ? startCut : endCut, atFrom ? b.From : b.To) + (ends[end] == null ? LayerEnd(wall, b.Index, end, atFrom) : 0);
+        List<IReadOnlyList<Vec2>> Footprints(Band band)
+        {
+            Vec2[] whole =
+            [
+                P(-Reach(0, band, true), band.From), P(length + Reach(1, band, true), band.From),
+                P(length + Reach(1, band, false), band.To), P(-Reach(0, band, false), band.To),
+            ];
+            return Pieces(whole, crossings(band), start, dir, length);
+        }
+        return new Layout(start, end, dir, length, z, wall.Num("height", DefaultHeight), bands, Footprints);
+    }
+
+    /// <summary>
+    /// A wall layer's piece in a floor's layers (the forum's topic #30): what the layer adds where it goes on down into the
+    /// floor it stands on (<paramref name="Down"/>) or up into the floor over it, within that floor's outline; its band, and the
+    /// floor it takes the piece out of.
+    /// </summary>
+    public sealed record Extension(string Slab, Band Band, Solid Solid, bool Down);
+
+    /// <summary>How near (metres) a wall's base or top must come to a floor to stand on it or meet it.</summary>
+    const double FloorTouch = 0.005;
+
+    /// <summary>
+    /// The pieces the wall's layers marked to extend (<see cref="MaterialLayer.ExtendDown"/>, <see cref="MaterialLayer.ExtendUp"/>)
+    /// add in the floors they meet: down, from the wall's base through the layers of a floor it stands on (its base at the
+    /// floor's top, or in it) ranked under the layer, to the top of the first ranked as high or higher (the floor's bottom when
+    /// none is); up, from the wall's top (the floor's underside, when the floor outranks the wall and so cuts its head) through
+    /// the layers of a floor its top meets, to the underside of the first ranked as high (its top when none is). Ranks are the
+    /// layers' (<see cref="Layers.Rank"/>), as where walls join. Each piece is the band's footprint between the two heights, kept
+    /// to the floor's outline. None for a curved wall, a wall without such a layer, or without the boolean library.
+    /// </summary>
+    public static List<Extension> Extensions(Entity wall, IModelView m, IServices? services, Layout? layout = null)
+    {
+        var o = new List<Extension>();
+        var bands = layout?.Bands ?? Section(m, wall);
+        if (!bands.Any(b => b.ExtendDown || b.ExtendUp) || services?.Get<ISolidBooleans>() is not { } booleans) return o;
+        layout ??= LayoutOf(wall, m, services, []);
+        if (layout == null) return o;
+        var z = layout.Z;
+        var top = z + layout.Height;
+        var cutters = services.Get<ICutters>();
+        var mine = cutters?.PriorityOf(wall, m);
+        var footprints = layout.Bands.Where(b => (b.ExtendDown || b.ExtendUp) && b.To - b.From > 1e-9).Select(b => (Band: b, Pieces: layout.Footprints(b))).Where(x => x.Pieces.Count > 0).ToList();
+        if (footprints.Count == 0) return o;
+        var pts = footprints.SelectMany(x => x.Pieces.SelectMany(p => p)).ToList();
+        var (x0, y0, x1, y1) = (pts.Min(p => p.X), pts.Min(p => p.Y), pts.Max(p => p.X), pts.Max(p => p.Y));
+        foreach (var slab in m.OfClass(IfcClass.Slab))
+        {
+            var contour = Slabs.Contour(slab);
+            if (contour.Count < 3 || contour.Max(p => p.X) <= x0 || contour.Min(p => p.X) >= x1 || contour.Max(p => p.Y) <= y0 || contour.Min(p => p.Y) >= y1) continue;
+            if (LayerSets.BandsOf(m, slab.Id) is not { Count: > 0 } layers) continue;
+            var slabTop = Slabs.Top(m, slab);
+            var bottom = slabTop + layers.Min(l => l.From);
+            // Whether the floor cuts the wall where they overlap (its priority over the wall's): then the wall's body stops at its face.
+            var outranks = cutters?.PriorityOf(slab, m) is { } theirs && mine is { } wallRank && theirs > wallRank;
+            var below = z >= bottom - FloorTouch && z <= slabTop + FloorTouch;
+            var above = !below && bottom > z + FloorTouch && bottom <= top + FloorTouch;
+            if (!below && !above) continue;
+            Solid? region = null;
+            foreach (var (band, pieces) in footprints)
+            {
+                double lo, hi;
+                if (below && band.ExtendDown)
+                {
+                    // Down from the top: through the layers ranked under the wall's, onto the first as high.
+                    var stop = layers.OrderByDescending(l => l.To).FirstOrDefault(l => l.Rank >= band.Rank) is { To: var t } first && first.Material != null ? slabTop + t : bottom;
+                    (lo, hi) = (stop, outranks && slabTop > z ? slabTop : z);
+                }
+                else if (above && band.ExtendUp)
+                {
+                    // Up from the underside: through the layers ranked under the wall's, to the underside of the first as high.
+                    var stop = layers.OrderBy(l => l.From).FirstOrDefault(l => l.Rank >= band.Rank) is { From: var f } first && first.Material != null ? slabTop + f : slabTop;
+                    (lo, hi) = (outranks && top > bottom ? bottom : top, stop);
+                }
+                else continue;
+                if (hi - lo <= 1e-6) continue;
+                region ??= Prism.ExtrudeFootprint(contour, bottom - 1, slabTop - bottom + 2, "floor");
+                foreach (var piece in pieces)
+                {
+                    if (Prism.ExtrudeFootprint(piece, lo, hi - lo, band.Name) is not { } prism) continue;
+                    // Kept to the floor's outline: a wall only half on this floor goes down only where the floor is.
+                    var inside = piece.All(p => Polygon2.Contains(contour, p));
+                    Solid? kept;
+                    try { kept = inside ? prism : region != null ? booleans.Intersection(prism, region, prism.Tag) : null; }
+                    catch (InvalidOperationException) { kept = null; }
+                    if (kept != null && Measure.Volume(kept) > 1e-9) o.Add(new Extension(slab.Id, band, kept, below));
+                }
+            }
+        }
+        return o;
     }
 
     public static ElementGeometry? Geometry(Entity wall, IModelView m, IServices? services = null)
@@ -194,6 +321,7 @@ public static class Walls
             try { return booleans.Difference(part.Solid, reach, part.Solid.Tag) is { } cut ? part with { Solid = cut } : part; }
             catch (InvalidOperationException ex) { problems.Add($"{part.Name}: an opening could not be cut ({ex.Message})."); return part; }
         }
+        var layered = LayerSets.BandsOf(m, wall.Id);
         var gaps = openings.Where(o => o.Sill < PlanCutAbove(m, wall) && o.Sill + o.Height > PlanCutAbove(m, wall))
             .Select(o => (From: o.Along - o.Width / 2 - Vec2.Dot(start - Start(wall), dir), To: o.Along + o.Width / 2 - Vec2.Dot(start - Start(wall), dir))).OrderBy(g => g.From).ToList();
         foreach (var band in bands)
@@ -235,7 +363,8 @@ public static class Walls
                 foreach (var g in gaps.Append((From: x1, To: x1)))
                 {
                     var piece = ClipX(footprint, start, dir, at, g.From);
-                    if (piece.Count >= 3) plan.Add(new PlanItem("cut", true, piece));
+                    // With its layer's subcategory, so a plan without the finishes snaps to what it draws (topic #30).
+                    if (piece.Count >= 3) plan.Add(new PlanItem("cut", true, piece, Sub: layered != null && band.Index < layered.Count ? LayerSets.SubOf(m, layered[band.Index]) : null));
                     at = Math.Max(at, g.To);
                 }
             }
@@ -253,6 +382,37 @@ public static class Walls
                 }).OfType<GeometryPart>().ToList();
         }
         parts = CutPriorities.Apply(wall, m, services, parts, problems);
+        // The layers going on into the floors' layers ranked under them (the forum's topic #30): added after the cut priorities, which
+        // would take them out again (the floor outranks the wall); the floor takes the same pieces out of its own layers.
+        foreach (var x in Extensions(wall, m, services))
+        {
+            var b = x.Band;
+            GeometryPart piece;
+            if (b.Core && zones.Count > 0)
+            {
+                var zone = (x.Down ? zones[0] : zones[^1]).Zone;
+                piece = new GeometryPart(zone.Name, Materials.ColorOf(m, zone.Material), x.Solid, zone.Material, "zone:" + zone.Key);
+            }
+            else
+            {
+                // A layer of several materials in its height: its bottom piece's below, its own above.
+                var material = x.Down && b.Parts is { Count: > 0 } ps ? ps[0].Material : b.Material;
+                piece = new GeometryPart(b.Name, Materials.ColorOf(m, material), x.Solid, material, $"layer:{b.Index}");
+            }
+            // One body with the part of the layer it goes on from (no seam drawn across it at the floor's face).
+            var xb = Measure.Bounds(x.Solid)!.Value;
+            var at = parts.FindIndex(p => p.Key == piece.Key && p.Material == piece.Material && Measure.Bounds(p.Solid) is { } pb
+                && pb.Min.X < xb.Max.X - 1e-6 && pb.Max.X > xb.Min.X + 1e-6 && pb.Min.Y < xb.Max.Y - 1e-6 && pb.Max.Y > xb.Min.Y + 1e-6
+                && (x.Down ? Math.Abs(pb.Min.Z - xb.Max.Z) < 1e-6 : Math.Abs(pb.Max.Z - xb.Min.Z) < 1e-6));
+            Solid? joined = null;
+            if (at >= 0 && booleans != null)
+            {
+                try { joined = booleans.Union([parts[at].Solid, x.Solid], parts[at].Solid.Tag); }
+                catch (InvalidOperationException) { joined = null; }
+            }
+            if (joined != null) parts[at] = parts[at] with { Solid = joined };
+            else parts.Add(piece);
+        }
         if (booleans != null)
         {
             var ring = zones.FirstOrDefault(zb => zb.Zone.Role == "ringBeam");

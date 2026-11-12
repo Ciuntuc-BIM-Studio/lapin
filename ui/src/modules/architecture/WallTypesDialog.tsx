@@ -19,6 +19,8 @@ import { Cell, LengthField, NumberField } from '../../shell/cells';
 import { LayerThickness } from '../core/LayerThickness';
 import { MaterialHatchButton } from '../core/MaterialHatchButton';
 import { layerRankHint } from './layerRank';
+import { flagsJson, flagsOf, newWallFlags, type LayerFlags } from './layerFlags';
+import { CATEGORY_TIP, LayerCategory } from './LayerCategory';
 import { LintelRuleEditor } from './LintelRule';
 import { DEFAULT_RULE, type Rule } from './lintels';
 import { MaterialPicker } from '../core/MaterialPicker';
@@ -28,7 +30,7 @@ import { WallLayersLegend } from './WallLayersLegend';
 import { WallTypeSweeps, sweepJson, sweepRows, type TypeSweepRow } from './WallTypeSweeps';
 
 /** A layer as the editor holds it: lengths in metres; from and to null for the whole height. */
-interface Row { material: string; thickness: number; core: boolean; from: number | null; to: number | null; parts: Part[]; priority: number | null; note: string }
+interface Row extends LayerFlags { material: string; thickness: number; core: boolean; from: number | null; to: number | null; parts: Part[]; priority: number | null; note: string }
 
 /** A piece of a layer in its height, from the layer's bottom up (decision 264); above the last, the layer's own material. */
 interface Part { material: string; height: number }
@@ -58,7 +60,10 @@ const fromRow = (r: ZoneRow) => ({
   ...(r.role !== 'masonry' && r.rebar ? { rebar: r.rebar } : {}),
 });
 
-const layer = (material: string, thickness: number, core = false): Row => ({ material, thickness, core, from: null, to: null, parts: [], priority: null, note: '' });
+// A new type's core goes down onto the floor's structure (topic #30); a type saved before keeps what it says.
+const layer = (material: string, thickness: number, core = false): Row => ({ material, thickness, core, from: null, to: null, parts: [], priority: null, note: '', ...newWallFlags(core) });
+/** What the Into floors column says (topic #30). */
+const EXTEND_TIP = 'Whether the layer goes on into the floors\' layers ranked under it, as where walls join: down from the wall\'s base to the first floor layer ranked as high or higher (the brick onto the concrete, through the finish and the screed), up to the underside of the first such layer of the floor over it';
 const blank = (): Row[] => [layer('Render', 0.02), layer('Brick', 0.25, true), layer('Plaster', 0.015)];
 
 export function WallTypesDialog() {
@@ -91,7 +96,7 @@ export function WallTypesDialog() {
     setLintels((t.props.lintels as unknown as Rule | undefined) ?? DEFAULT_RULE);
     setName(t.name);
     setRows(typeLayers(model, t.id).map((l) => ({ material: materialName(model, l.material), thickness: l.thickness, core: l.core === true, from: l.from || null, to: l.to || null,
-      parts: (l.parts ?? []).map((p) => ({ material: materialName(model, p.material), height: p.height })), priority: typeof l.priority === 'number' ? l.priority : null, note: l.note ?? '' })));
+      parts: (l.parts ?? []).map((p) => ({ material: materialName(model, p.material), height: p.height })), priority: typeof l.priority === 'number' ? l.priority : null, note: l.note ?? '', ...flagsOf(l) })));
     const stored = Array.isArray(t.props.zones) ? (t.props.zones as unknown as ZoneJson[]) : [];
     setZones(stored.map((z) => toRow(z, (id) => materialName(model, id))));
   }, [editing]);
@@ -116,6 +121,7 @@ export function WallTypesDialog() {
     ...(!r.core && r.parts.length > 0 ? { parts: r.parts.map((p) => ({ material: p.material.trim(), height: p.height })) } : {}),
     ...(r.priority != null ? { priority: r.priority } : {}),
     ...(r.note.trim() ? { note: r.note.trim() } : {}),
+    ...flagsJson(r, true),
   }));
   const setPart = (i: number, k: number, patch: Partial<Part>) => set(i, { parts: rows[i].parts.map((p, j) => (j === k ? { ...p, ...patch } : p)) });
 
@@ -164,7 +170,7 @@ export function WallTypesDialog() {
             <p className="muted small">Layers from the face right of the drawn direction to the left face. The core carries the wall's axis.</p>
             <WallLayersLegend layers={rows} />
             <table className="layer-edit">
-              <thead><tr><th>Material</th><th>Thickness</th><th>Core</th><th title="How high the layer goes over the wall's base; empty: the whole height">From</th><th title="How high the layer goes over the wall's base; empty: the whole height">Up to</th><th title="Where walls join, a layer goes on through the other wall's layers of a lower priority and stops at the first as high or higher; empty: its material's priority in the cut order, else 50 for the core and 0 for the rest">Priority</th><th title="How the layer is laid in this build-up (a build-up tag writes it)">Note</th><th /></tr></thead>
+              <thead><tr><th>Material</th><th>Thickness</th><th>Core</th><th title="How high the layer goes over the wall's base; empty: the whole height">From</th><th title="How high the layer goes over the wall's base; empty: the whole height">Up to</th><th title="Where walls join, a layer goes on through the other wall's layers of a lower priority and stops at the first as high or higher; empty: its material's priority in the cut order, else 50 for the core and 0 for the rest">Priority</th><th title={CATEGORY_TIP}>Category</th><th title={EXTEND_TIP}>Into floors</th><th title="How the layer is laid in this build-up (a build-up tag writes it)">Note</th><th /></tr></thead>
               <tbody>
                 {rows.map((r, i) => [
                   <tr key={i}>
@@ -175,6 +181,11 @@ export function WallTypesDialog() {
                     <td><LengthField className="layer-height" testId="layer-to" metres={r.to} placeholder="top" readOnly={r.core} noUnit blank min={0} onCommit={(m) => set(i, { to: m })} /></td>
                     <td><NumberField className="layer-priority" testId="layer-priority" value={r.priority} placeholder={String(layerRankHint(model, r.material, r.core))} blank min={0} max={100} integer
                       title="Where walls join, a layer goes on through the other wall's layers of a lower priority and stops at the first as high or higher; empty: its material's priority in the cut order, else 50 for the core and 0 for the rest" onCommit={(n) => set(i, { priority: n })} /></td>
+                    <td><LayerCategory value={r.category} onChange={(category) => set(i, { category })} /></td>
+                    <td className="layer-extend">
+                      <label title="Down: through the layers of the floor the wall stands on ranked under this one, to the top of the first ranked as high or higher"><input type="checkbox" data-testid="layer-extend-down" checked={r.down} onChange={(e) => set(i, { down: e.target.checked })} />↓</label>
+                      <label title="Up: through the lower layers of the floor over the wall ranked under this one, to the underside of the first ranked as high or higher"><input type="checkbox" data-testid="layer-extend-up" checked={r.up} onChange={(e) => set(i, { up: e.target.checked })} />↑</label>
+                    </td>
                     <td><Cell className="layer-note" testId="layer-note" value={r.note} placeholder="—" title="How the layer is laid in this build-up (a build-up tag writes it)" onCommit={(t) => set(i, { note: t })} /></td>
                     <td className="row-tools">
                       <button type="button" className="icon mini" title="Up" onClick={() => move(i, -1)}><ArrowUp size={12} /></button>
@@ -186,7 +197,7 @@ export function WallTypesDialog() {
                   </tr>,
                   !r.core && r.parts.length > 0 && (
                     <tr key={`${i}-parts`} className="layer-parts">
-                      <td colSpan={8} data-i18n-ctx="finish">
+                      <td colSpan={10} data-i18n-ctx="finish">
                         <span className="muted small">Up its height, from {r.from ? formatLength(r.from) : 'the bottom'}:</span>
                         {r.parts.map((p, k) => (
                           <span key={k} className="layer-part" data-testid="layer-part">
@@ -201,7 +212,7 @@ export function WallTypesDialog() {
                     </tr>
                   ),
                 ])}
-                <tr className="total"><td>Total</td><td className="num">{formatLength(total)}</td><td colSpan={5} /></tr>
+                <tr className="total"><td>Total</td><td className="num">{formatLength(total)}</td><td colSpan={7} /></tr>
               </tbody>
             </table>
             <WallTypeSweeps rows={sweeps} onChange={setSweeps} />

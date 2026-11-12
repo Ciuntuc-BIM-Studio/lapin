@@ -8,6 +8,8 @@ summary: Rysuj stropy i dachy po ich obrysie, wybieraj kształt i krawędzie dac
 
 Wybierz **Architektura → Strop** (<kbd>SB</kbd>), a następnie kliknij narożniki jego obrysu. Zamknij obrys na pierwszym punkcie albo naciśnij <kbd>Enter</kbd>. Strop również składa się z warstw, ustawianych w **Architektura → Typy stropów**. Warstwa typu stropu może mieć grubość 0 (hydroizolacja, farba): niczego nie buduje, na przekrojach jest rysowana linią i liczona powierzchnią stropu.
 
+W **Typy stropów** każda warstwa ma **Priorytet** (od 0 do 100) i **Kategorię**, jak warstwy typu ściany. Warstwa ściany schodząca w strop (**W stropy** w **Typy ścian**) przechodzi przez warstwy stropu o niższym priorytecie i zatrzymuje się na pierwszej o priorytecie co najmniej równym. Pusty priorytet to priorytet materiału w **Zarządzaj → Kolejność cięcia**, w przeciwnym razie 50 dla rdzenia i 0 dla pozostałych warstw. Warstwa oznaczona **Wykończenie** znika, gdy widok pomija wykończenia podłóg.
+
 Aby zmienić obrys, zaznacz strop i przeciągnij jego narożniki. **Otwór w stropie** (<kbd>SH</kbd>) wycina w stropie otwór na schody lub szyb.
 
 Strop narysowany poza ścianami, przed drzwiami, to ganek. Schody prowadzące na niego opisuje strona [Schody](stairs.md).

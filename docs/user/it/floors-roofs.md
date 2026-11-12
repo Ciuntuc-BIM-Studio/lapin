@@ -8,6 +8,8 @@ summary: Disegna solai e tetti dal loro contorno, scegli la forma e i bordi di u
 
 Scegli **Architettura → Solaio** (<kbd>SB</kbd>), poi fai clic sugli angoli del suo contorno. Chiudi il contorno sul primo punto, oppure premi <kbd>Enter</kbd>. Anche un solaio è fatto di strati, impostati in **Architettura → Tipi di solaio**. Uno strato di un tipo di solaio può avere spessore 0 (un’impermeabilizzazione, la pittura): non costruisce nulla, è disegnato come una linea nelle sezioni ed è misurato sulla superficie del solaio.
 
+In **Tipi di solaio** ogni strato ha una **Priorità** (da 0 a 100) e una **Categoria**, come gli strati di un tipo di muro. Uno strato di muro che scende nel solaio (**Nei solai** in **Tipi di muro**) attraversa gli strati del solaio di priorità inferiore e si ferma sul primo di priorità uguale o maggiore. Vuota, la priorità è quella del materiale in **Gestisci → Ordine di taglio**, altrimenti 50 per il nucleo e 0 per gli altri strati. Uno strato marcato **Finitura** se ne va quando una vista tralascia le finiture dei solai.
+
 Per cambiare il contorno, seleziona il solaio e trascinane gli angoli. **Foro nel solaio** (<kbd>SH</kbd>) taglia un foro in un solaio, per una scala o un cavedio.
 
 Un solaio disegnato fuori dai muri, davanti a una porta, è un portico. Per i gradini che vi salgono, vedi [Scale](stairs.md).

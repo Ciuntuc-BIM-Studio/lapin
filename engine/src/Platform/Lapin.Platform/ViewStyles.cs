@@ -41,7 +41,15 @@ public static class ViewStyles
 {
     public const string Key = "viewStyles";
     public static readonly string[] LayerModes = ["all", "noFinishes", "core"];
-    public static readonly string[] Fields = ["layers", "joins", "overhead", "ifc2d", "voids", "voidSizes", "finishHatch", "surfaceHatch", "entourage", "entourageFill", "detail"];
+    public static readonly string[] Fields = ["layers", "joins", "overhead", "ifc2d", "voids", "voidSizes", "finishHatch", "surfaceHatch", "entourage", "entourageFill", "detail",
+        "wallFinishesPlan", "wallFinishesSection", "floorFinishesPlan", "floorFinishesSection"];
+
+    /// <summary>
+    /// The finish layers by the kind of view (the forum's topic #30): whether plans, and whether sections and elevations, draw
+    /// the walls' finishes and the floors' (<see cref="LayerSets.SubOf"/>: a layer's own category, else its material's). All on by
+    /// default and for a style saved before them; Visibility / Graphics hides what they leave out (<see cref="VisibilityGraphics.HidesPart"/>).
+    /// </summary>
+    public static readonly string[] FinishFields = ["wallFinishesPlan", "wallFinishesSection", "floorFinishesPlan", "floorFinishesSection"];
     /// <summary>How people, cars and plants draw in 2D (decision 341).</summary>
     public static readonly string[] EntourageModes = ["outline", "abstract", "detailed", "none"];
 
@@ -56,14 +64,29 @@ public static class ViewStyles
         n == null || (string?)n is "" or "none" ? null : FillOf(n) ?? throw new CommandException("A fill is a colour (#rrggbb) or none.");
 
     /// <summary>A style, or a view's settings as its style and its own choices make them.</summary>
-    public sealed record Style(string Id, string Name, string? Discipline, string Layers, bool Joins, bool Overhead, bool Ifc2d = true, bool Voids = false, bool VoidSizes = true, bool FinishHatch = true, bool SurfaceHatch = true, string Entourage = "outline", string? EntourageFill = null, string? GraphicsSet = null, int Detail = PlanDetail.Lod350)
+    public sealed record Style(string Id, string Name, string? Discipline, string Layers, bool Joins, bool Overhead, bool Ifc2d = true, bool Voids = false, bool VoidSizes = true, bool FinishHatch = true, bool SurfaceHatch = true, string Entourage = "outline", string? EntourageFill = null, string? GraphicsSet = null, int Detail = PlanDetail.Lod350,
+        bool WallFinishesPlan = true, bool WallFinishesSection = true, bool FloorFinishesPlan = true, bool FloorFinishesSection = true)
     {
         public JsonObject ToJson() => WithSet(new()
         {
             ["id"] = Id, ["name"] = Name, ["discipline"] = Discipline, ["layers"] = Layers, ["joins"] = Joins, ["overhead"] = Overhead, ["ifc2d"] = Ifc2d,
             ["voids"] = Voids, ["voidSizes"] = VoidSizes, ["finishHatch"] = FinishHatch, ["surfaceHatch"] = SurfaceHatch,
             ["entourage"] = Entourage, ["entourageFill"] = EntourageFill, ["detail"] = Detail,
+            ["wallFinishesPlan"] = WallFinishesPlan, ["wallFinishesSection"] = WallFinishesSection, ["floorFinishesPlan"] = FloorFinishesPlan, ["floorFinishesSection"] = FloorFinishesSection,
         });
+
+        /// <summary>Whether a view of this kind draws the finishes of a category's layers (walls; slabs and coverings for floors); true for any other kind of view or category.</summary>
+        public bool DrawsFinishes(string? viewKind, string? category)
+        {
+            var plan = viewKind is "plan" or null;
+            if (!plan && viewKind is not ("section" or "elevation")) return true;
+            return category switch
+            {
+                "walls" => plan ? WallFinishesPlan : WallFinishesSection,
+                "slabs" => plan ? FloorFinishesPlan : FloorFinishesSection,
+                _ => true,
+            };
+        }
 
         /// <summary>The graphics set its views take when they have none of their own (decision 391), written only when it names one.</summary>
         JsonObject WithSet(JsonObject o)
@@ -89,7 +112,11 @@ public static class ViewStyles
             FillOf(o["entourageFill"]),
             (string?)o["graphicsSet"] is { Length: > 0 } gs ? gs : null,
             // A style saved before the views' LOD (decision 404): LOD 400 for a structural one (a link's rebar too), else 350.
-            PlanDetail.LodOf(o["detail"]) ?? ((string?)o["discipline"] == "Structure" || (string?)o["id"] == "structural" ? PlanDetail.Lod400 : PlanDetail.Lod350));
+            PlanDetail.LodOf(o["detail"]) ?? ((string?)o["discipline"] == "Structure" || (string?)o["id"] == "structural" ? PlanDetail.Lod400 : PlanDetail.Lod350),
+            // A style saved before the finishes by kind of view (topic #30): every finish drawn, as before.
+            On(o["wallFinishesPlan"]), On(o["wallFinishesSection"]), On(o["floorFinishesPlan"]), On(o["floorFinishesSection"]));
+
+        static bool On(JsonNode? n) => n is not JsonValue v || !v.TryGetValue<bool>(out var b) || b;
 
         /// <summary>Whether a style saved without a newer field takes it on: unless it is a structural, MEP or coordination one.</summary>
         static bool ArchitecturalByDefault(JsonObject o) =>
@@ -139,8 +166,14 @@ public static class ViewStyles
             Entourage = (string?)o["entourage"] is { } en && EntourageModes.Contains(en) ? en : s.Entourage,
             EntourageFill = o.ContainsKey("entourageFill") ? FillOf(o["entourageFill"]) : s.EntourageFill,
             Detail = PlanDetail.LodOf(o["detail"]) ?? s.Detail,
+            WallFinishesPlan = Own(o["wallFinishesPlan"]) ?? s.WallFinishesPlan,
+            WallFinishesSection = Own(o["wallFinishesSection"]) ?? s.WallFinishesSection,
+            FloorFinishesPlan = Own(o["floorFinishesPlan"]) ?? s.FloorFinishesPlan,
+            FloorFinishesSection = Own(o["floorFinishesSection"]) ?? s.FloorFinishesSection,
         };
     }
+
+    static bool? Own(JsonNode? n) => n is JsonValue v && v.TryGetValue<bool>(out var b) ? b : null;
 
     /// <summary>Whether a view draws a part of a layered element (a part keyed layer:&lt;n&gt;; any other part always draws).</summary>
     public static bool Draws(IModelView m, Style s, string element, string? partKey, Dictionary<string, IReadOnlyList<LayerBand>?> cache) =>
@@ -163,7 +196,8 @@ public static class ViewStyles
         var band = bands[index];
         // An element without a marked core keeps all its layers: there is nothing to tell its structure by.
         if (layers == "core") return band.Core || !bands.Any(b => b.Core);
-        return band.Core || !(m.Get(band.Material) is { } mat && Materials.IsFinish(mat));
+        // A finish by the layer's own category, else its material's (the forum's topic #30).
+        return band.Core || !LayerSets.IsFinish(m, band);
     }
 
     /// <summary>
@@ -220,6 +254,18 @@ public static class ViewStyles
         if (a.ContainsKey("entourageFill")) s = s with { EntourageFill = CheckedFill(a["entourageFill"]) };
         if (a.ContainsKey("detail")) s = s with { Detail = PlanDetail.LodOf(a["detail"]) ?? throw new CommandException(PlanDetail.LodProblem) };
         if (a.ContainsKey("graphicsSet")) s = s with { GraphicsSet = (string?)a["graphicsSet"] is { Length: > 0 } gs ? gs : null };
+        foreach (var f in FinishFields)
+        {
+            if (!a.ContainsKey(f)) continue;
+            var on = Own(a[f]) ?? throw new CommandException($"{f} is true or false.");
+            s = f switch
+            {
+                "wallFinishesPlan" => s with { WallFinishesPlan = on },
+                "wallFinishesSection" => s with { WallFinishesSection = on },
+                "floorFinishesPlan" => s with { FloorFinishesPlan = on },
+                _ => s with { FloorFinishesSection = on },
+            };
+        }
         return s;
     }
 

@@ -3,6 +3,24 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // The forum's topic #30: finish layers by kind of view, wall layers into the floors' layers
+  "Floor finishes": "ຜິວຕົບແຕ່ງພື້ນ",
+  "Wall finishes in plans": "ຜິວຕົບແຕ່ງຝາໃນແຜນຜັງ",
+  "Floor finishes in plans": "ຜິວຕົບແຕ່ງພື້ນໃນແຜນຜັງ",
+  "Wall finishes in sections": "ຜິວຕົບແຕ່ງຝາໃນຮູບໜ້າຕັດ",
+  "Floor finishes in sections": "ຜິວຕົບແຕ່ງພື້ນໃນຮູບໜ້າຕັດ",
+  "Plans draw the finish layers of walls (a layer's own category in its type, else its material's)": "ແຜນຜັງແຕ້ມຊັ້ນຜິວຕົບແຕ່ງຂອງຝາ (ໝວດຂອງຊັ້ນເອງໃນປະເພດຂອງມັນ, ຖ້າບໍ່ມີແມ່ນຂອງວັດສະດຸ)",
+  "Plans draw the finish layers of floors (a layer's own category in its type, else its material's)": "ແຜນຜັງແຕ້ມຊັ້ນຜິວຕົບແຕ່ງຂອງພື້ນ (ໝວດຂອງຊັ້ນເອງໃນປະເພດຂອງມັນ, ຖ້າບໍ່ມີແມ່ນຂອງວັດສະດຸ)",
+  "Sections and elevations draw the finish layers of walls (a layer's own category in its type, else its material's)": "ຮູບໜ້າຕັດ ແລະ ຮູບດ້ານແຕ້ມຊັ້ນຜິວຕົບແຕ່ງຂອງຝາ (ໝວດຂອງຊັ້ນເອງໃນປະເພດຂອງມັນ, ຖ້າບໍ່ມີແມ່ນຂອງວັດສະດຸ)",
+  "Sections and elevations draw the finish layers of floors (a layer's own category in its type, else its material's)": "ຮູບໜ້າຕັດ ແລະ ຮູບດ້ານແຕ້ມຊັ້ນຜິວຕົບແຕ່ງຂອງພື້ນ (ໝວດຂອງຊັ້ນເອງໃນປະເພດຂອງມັນ, ຖ້າບໍ່ມີແມ່ນຂອງວັດສະດຸ)",
+  "A layer's own category in its type (Wall types, Floor types) wins over its material's. Plans, and sections with elevations, each say whether they draw the walls' finishes and the floors'.": "ໝວດຂອງຊັ້ນເອງໃນປະເພດຂອງມັນ (ປະເພດຝາ, ປະເພດພື້ນ) ມາກ່ອນໝວດຂອງວັດສະດຸ. ແຜນຜັງ, ແລະ ຮູບໜ້າຕັດກັບຮູບດ້ານ, ແຕ່ລະອັນບອກວ່າແຕ້ມຜິວຕົບແຕ່ງຂອງຝາ ແລະ ຂອງພື້ນຫຼືບໍ່.",
+  "What the layer is in this build-up; empty: its material's category (Manage → Materials). View styles leave out the finishes by it": "ຊັ້ນນີ້ແມ່ນຫຍັງໃນໂຄງສ້າງນີ້; ວ່າງ: ໝວດຂອງວັດສະດຸ (ຈັດການ → ວັດສະດຸ). ຮູບແບບມຸມມອງຕັດຜິວຕົບແຕ່ງອອກຕາມມັນ",
+  "material's": "ຂອງວັດສະດຸ",
+  "Into floors": "ເຂົ້າໃນພື້ນ",
+  "Whether the layer goes on into the floors' layers ranked under it, as where walls join: down from the wall's base to the first floor layer ranked as high or higher (the brick onto the concrete, through the finish and the screed), up to the underside of the first such layer of the floor over it": "ຊັ້ນນີ້ສືບຕໍ່ເຂົ້າໃນຊັ້ນຂອງພື້ນທີ່ມີລຳດັບຄວາມສຳຄັນຕ່ຳກວ່າຫຼືບໍ່, ຄືກັບບ່ອນທີ່ຝາຕໍ່ກັນ: ລົງຈາກຕີນຝາຮອດຊັ້ນພື້ນທຳອິດທີ່ມີລຳດັບເທົ່າກັນຫຼືສູງກວ່າ (ດິນຈີ່ລົງເທິງຄອນກຣີດ, ຜ່ານຜິວພື້ນ ແລະ ຊັ້ນປັບລະດັບ), ຂຶ້ນຮອດໜ້າລຸ່ມຂອງຊັ້ນດັ່ງກ່າວທຳອິດຂອງພື້ນຂ້າງເທິງ",
+  "Down: through the layers of the floor the wall stands on ranked under this one, to the top of the first ranked as high or higher": "ລົງ: ຜ່ານຊັ້ນຂອງພື້ນທີ່ຝາຕັ້ງຢູ່ທີ່ມີລຳດັບຕ່ຳກວ່າຊັ້ນນີ້, ຮອດໜ້າເທິງຂອງຊັ້ນທຳອິດທີ່ມີລຳດັບເທົ່າກັນຫຼືສູງກວ່າ",
+  "Up: through the lower layers of the floor over the wall ranked under this one, to the underside of the first ranked as high or higher": "ຂຶ້ນ: ຜ່ານຊັ້ນລຸ່ມຂອງພື້ນເທິງຝາທີ່ມີລຳດັບຕ່ຳກວ່າຊັ້ນນີ້, ຮອດໜ້າລຸ່ມຂອງຊັ້ນທຳອິດທີ່ມີລຳດັບເທົ່າກັນຫຼືສູງກວ່າ",
+  "Where a wall's layer goes on into this floor, it passes the floor's layers ranked under it and stops at the first as high or higher; empty: its material's priority in the cut order, else 50 for the core and 0 for the rest": "ບ່ອນທີ່ຊັ້ນຂອງຝາສືບຕໍ່ເຂົ້າໃນພື້ນນີ້, ມັນຜ່ານຊັ້ນຂອງພື້ນທີ່ມີລຳດັບຕ່ຳກວ່າ ແລະ ຢຸດຢູ່ຊັ້ນທຳອິດທີ່ເທົ່າກັນຫຼືສູງກວ່າ; ວ່າງ: ລຳດັບຂອງວັດສະດຸໃນລຳດັບການຕັດ, ຖ້າບໍ່ມີແມ່ນ 50 ສຳລັບແກນ ແລະ 0 ສຳລັບສ່ວນອື່ນ",
   // The 3D view's style in the HUD
   "3D · EDGES": "3D · ຂອບ",
   "3D · X-RAY": "3D · ລັງສີ X",

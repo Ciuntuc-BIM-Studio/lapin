@@ -1249,7 +1249,7 @@ public sealed partial class Session
         }
         // The interface's plan lines (picking, snapping, the selection): an entourage's outline symbols, whatever a view draws.
         var plan = (g?.Plan ?? []).Where(i => i.In(ViewStyles.EntourageModes[0])).Select(i => new PlanItemDto(i.Kind, i.Closed, i.Points.SelectMany(v => new[] { v.X, v.Y }).ToArray(), null,
-            i.MinDetail == PlanDetail.Coarse ? null : i.MinDetail, i.MaxDetail == PlanDetail.Fine ? null : i.MaxDetail, i.Style?.Pattern)).ToList();
+            i.MinDetail == PlanDetail.Coarse ? null : i.MinDetail, i.MaxDetail == PlanDetail.Fine ? null : i.MaxDetail, i.Style?.Pattern, i.Sub)).ToList();
         var snaps = (g?.Snaps ?? []).SelectMany(v => new[] { v.X, v.Y }).ToArray();
         // Lines in space (CAD linework with heights): each polyline as segments.
         float[]? lines = null;

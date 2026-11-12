@@ -3,6 +3,24 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  // The forum's topic #30: finish layers by kind of view, wall layers into the floors' layers
+  "Floor finishes": "Dækoverflader",
+  "Wall finishes in plans": "Vægoverflader i planer",
+  "Floor finishes in plans": "Dækoverflader i planer",
+  "Wall finishes in sections": "Vægoverflader i snit",
+  "Floor finishes in sections": "Dækoverflader i snit",
+  "Plans draw the finish layers of walls (a layer's own category in its type, else its material's)": "Planer tegner væggenes overfladelag (lagets egen kategori i dets type, ellers materialets)",
+  "Plans draw the finish layers of floors (a layer's own category in its type, else its material's)": "Planer tegner dækkenes overfladelag (lagets egen kategori i dets type, ellers materialets)",
+  "Sections and elevations draw the finish layers of walls (a layer's own category in its type, else its material's)": "Snit og facader tegner væggenes overfladelag (lagets egen kategori i dets type, ellers materialets)",
+  "Sections and elevations draw the finish layers of floors (a layer's own category in its type, else its material's)": "Snit og facader tegner dækkenes overfladelag (lagets egen kategori i dets type, ellers materialets)",
+  "A layer's own category in its type (Wall types, Floor types) wins over its material's. Plans, and sections with elevations, each say whether they draw the walls' finishes and the floors'.": "Et lags egen kategori i dets type (Vægtyper, Dæktyper) går forud for materialets. Planer, og snit med facader, siger hver for sig, om de tegner væggenes og dækkenes overflader.",
+  "What the layer is in this build-up; empty: its material's category (Manage → Materials). View styles leave out the finishes by it": "Hvad laget er i denne opbygning; tom: materialets kategori (Administrer → Materialer). Visningsstile udelader overfladerne efter den",
+  "material's": "materialets",
+  "Into floors": "Ind i dæk",
+  "Whether the layer goes on into the floors' layers ranked under it, as where walls join: down from the wall's base to the first floor layer ranked as high or higher (the brick onto the concrete, through the finish and the screed), up to the underside of the first such layer of the floor over it": "Om laget fortsætter ind i dækkenes lag med lavere prioritet, som hvor vægge mødes: nedad fra væggens fod til det første dæklag med samme eller højere prioritet (teglen ned på betonen, gennem belægningen og afretningslaget), opad til undersiden af det første sådanne lag i dækket over",
+  "Down: through the layers of the floor the wall stands on ranked under this one, to the top of the first ranked as high or higher": "Ned: gennem lagene i dækket, væggen står på, med lavere prioritet end dette, til oversiden af det første med samme eller højere",
+  "Up: through the lower layers of the floor over the wall ranked under this one, to the underside of the first ranked as high or higher": "Op: gennem de nederste lag i dækket over væggen med lavere prioritet end dette, til undersiden af det første med samme eller højere",
+  "Where a wall's layer goes on into this floor, it passes the floor's layers ranked under it and stops at the first as high or higher; empty: its material's priority in the cut order, else 50 for the core and 0 for the rest": "Hvor et væglag fortsætter ind i dette dæk, går det gennem dækkets lag med lavere prioritet og stopper ved det første med samme eller højere; tom: materialets prioritet i snitrækkefølgen, ellers 50 for kernen og 0 for resten",
   // The 3D view's style in the HUD
   "3D · EDGES": "3D · KANTER",
   "3D · X-RAY": "3D · RØNTGEN",

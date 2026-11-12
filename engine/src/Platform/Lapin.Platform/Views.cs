@@ -889,8 +889,12 @@ public static class Views
         var r = Render(q, view);
         if (r.Problem != null) return new JsonObject { ["problem"] = r.Problem, ["pens"] = new JsonArray() };
         var book = DraftingResources.Book(q.Model);
+        // The categories whose finish layers the view leaves out (its style by its kind, topic #30; or every finish): what the interface does not snap to.
+        var style = ViewStyles.Of(q.Model, view);
+        var hiddenFinishes = style.Layers != "all" ? ["walls", "slabs"] : VisibilityGraphics.Of(q.Model, view).FinishesHidden.Order().ToList();
         var o = new JsonObject
         {
+            ["hiddenFinishes"] = new JsonArray(hiddenFinishes.Select(c => (JsonNode)c).ToArray()),
             ["kind"] = r.Kind,
             ["scale"] = r.Scale,
             ["lineCap"] = book.LineCap,

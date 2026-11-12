@@ -3,6 +3,24 @@
 import type { Language } from './index';
 
 export const ES: Record<string, string> = {
+  // The forum's topic #30: finish layers by kind of view, wall layers into the floors' layers
+  "Floor finishes": "Acabados de losas",
+  "Wall finishes in plans": "Acabados de muros en plantas",
+  "Floor finishes in plans": "Acabados de losas en plantas",
+  "Wall finishes in sections": "Acabados de muros en secciones",
+  "Floor finishes in sections": "Acabados de losas en secciones",
+  "Plans draw the finish layers of walls (a layer's own category in its type, else its material's)": "Las plantas dibujan las capas de acabado de los muros (la categoría propia de la capa en su tipo, si no la de su material)",
+  "Plans draw the finish layers of floors (a layer's own category in its type, else its material's)": "Las plantas dibujan las capas de acabado de las losas (la categoría propia de la capa en su tipo, si no la de su material)",
+  "Sections and elevations draw the finish layers of walls (a layer's own category in its type, else its material's)": "Las secciones y los alzados dibujan las capas de acabado de los muros (la categoría propia de la capa en su tipo, si no la de su material)",
+  "Sections and elevations draw the finish layers of floors (a layer's own category in its type, else its material's)": "Las secciones y los alzados dibujan las capas de acabado de las losas (la categoría propia de la capa en su tipo, si no la de su material)",
+  "A layer's own category in its type (Wall types, Floor types) wins over its material's. Plans, and sections with elevations, each say whether they draw the walls' finishes and the floors'.": "La categoría propia de una capa en su tipo (Tipos de muro, Tipos de losa) prevalece sobre la de su material. Las plantas, y las secciones con los alzados, dicen cada una si dibujan los acabados de los muros y los de las losas.",
+  "What the layer is in this build-up; empty: its material's category (Manage → Materials). View styles leave out the finishes by it": "Qué es la capa en esta composición; vacío: la categoría de su material (Gestionar → Materiales). Los estilos de vista omiten los acabados según ella",
+  "material's": "del material",
+  "Into floors": "En losas",
+  "Whether the layer goes on into the floors' layers ranked under it, as where walls join: down from the wall's base to the first floor layer ranked as high or higher (the brick onto the concrete, through the finish and the screed), up to the underside of the first such layer of the floor over it": "Si la capa continúa en las capas de las losas de menor prioridad, como en las uniones de muros: hacia abajo, desde la base del muro hasta la primera capa de la losa de prioridad igual o mayor (el ladrillo sobre el hormigón, a través del acabado y el recrecido), hacia arriba hasta la cara inferior de la primera capa así de la losa superior",
+  "Down: through the layers of the floor the wall stands on ranked under this one, to the top of the first ranked as high or higher": "Abajo: a través de las capas de la losa sobre la que se apoya el muro de menor prioridad que esta, hasta la cara superior de la primera de prioridad igual o mayor",
+  "Up: through the lower layers of the floor over the wall ranked under this one, to the underside of the first ranked as high or higher": "Arriba: a través de las capas inferiores de la losa sobre el muro de menor prioridad que esta, hasta la cara inferior de la primera de prioridad igual o mayor",
+  "Where a wall's layer goes on into this floor, it passes the floor's layers ranked under it and stops at the first as high or higher; empty: its material's priority in the cut order, else 50 for the core and 0 for the rest": "Donde una capa de un muro continúa en esta losa, atraviesa sus capas de menor prioridad y se detiene en la primera de prioridad igual o mayor; vacío: la prioridad de su material en el orden de corte, si no 50 para el núcleo y 0 para el resto",
   // The 3D view's style in the HUD
   "3D · EDGES": "3D · ARISTAS",
   "3D · X-RAY": "3D · RAYOS X",

@@ -122,9 +122,40 @@ public static class Slabs
             else problems.Add("Openings in floors need the boolean library (manifold), missing here.");
         }
         parts = CutPriorities.Apply(slab, m, services, parts, problems);
+        // The walls' layers going on into this floor's layers ranked under them (the forum's topic #30): what they take of it.
+        if (WallExtensions(slab, m, services) is { Count: > 0 } taken && services?.Get<ISolidBooleans>() is { } cut)
+            parts = parts.Select(p =>
+            {
+                var b = Measure.Bounds(p.Solid);
+                var reach = taken.Where(x => b is { } pb && Measure.Bounds(x) is { } xb && xb.Min.Z < pb.Max.Z - 1e-6 && xb.Max.Z > pb.Min.Z + 1e-6).ToList();
+                if (reach.Count == 0) return p;
+                try { return cut.Difference(p.Solid, reach, p.Solid.Tag) is { } s && Measure.Volume(s) > 1e-9 ? p with { Solid = s } : null; }
+                catch (InvalidOperationException ex) { problems.Add($"{p.Name}: a wall's layer could not be taken out of it ({ex.Message})."); return p; }
+            }).OfType<GeometryPart>().ToList();
         var plan = new List<PlanItem> { new("outline", true, contour) };
         plan.AddRange(holes.Select(h => new PlanItem("outline", true, h)));
         return new ElementGeometry(parts, plan, contour, problems.Count > 0 ? problems : null);
+    }
+
+    /// <summary>
+    /// The pieces of the walls' layers that go on into this floor (<see cref="Walls.Extensions"/>): read only when a wall type
+    /// has such a layer, then of the walls of those types near the floor's outline.
+    /// </summary>
+    static List<Solid> WallExtensions(Entity slab, IModelView m, IServices? services)
+    {
+        var o = new List<Solid>();
+        var types = m.OfClass(IfcClass.WallType).Where(t => LayerSets.LayersOf(m, t.Id).Any(l => l.ExtendDown == true || l.ExtendUp == true)).ToList();
+        if (types.Count == 0) return o;
+        var contour = Contour(slab);
+        var (x0, y0, x1, y1) = (contour.Min(p => p.X) - 1, contour.Min(p => p.Y) - 1, contour.Max(p => p.X) + 1, contour.Max(p => p.Y) + 1);
+        foreach (var type in types)
+            foreach (var wall in m.RelatedOf(type.Id, IfcClass.RelDefinesByType).Where(w => w.Class == IfcClass.Wall))
+            {
+                var (a, b) = (Walls.Start(wall), Walls.End(wall));
+                if (Math.Max(a.X, b.X) < x0 || Math.Min(a.X, b.X) > x1 || Math.Max(a.Y, b.Y) < y0 || Math.Min(a.Y, b.Y) > y1) continue;
+                o.AddRange(Walls.Extensions(wall, m, services).Where(x => x.Slab == slab.Id).Select(x => x.Solid));
+            }
+        return o;
     }
 
     /// <summary>The prism an opening takes out of its floor, through the whole build-up and a little proud of it: what IFC writes as the opening's body.</summary>

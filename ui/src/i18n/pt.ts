@@ -3,6 +3,24 @@
 import type { Language } from './index';
 
 export const PT: Record<string, string> = {
+  // The forum's topic #30: finish layers by kind of view, wall layers into the floors' layers
+  "Floor finishes": "Acabamentos de pisos",
+  "Wall finishes in plans": "Acabamentos de paredes nas plantas",
+  "Floor finishes in plans": "Acabamentos de pisos nas plantas",
+  "Wall finishes in sections": "Acabamentos de paredes nos cortes",
+  "Floor finishes in sections": "Acabamentos de pisos nos cortes",
+  "Plans draw the finish layers of walls (a layer's own category in its type, else its material's)": "As plantas desenham as camadas de acabamento das paredes (a categoria própria da camada no seu tipo, senão a do seu material)",
+  "Plans draw the finish layers of floors (a layer's own category in its type, else its material's)": "As plantas desenham as camadas de acabamento dos pisos (a categoria própria da camada no seu tipo, senão a do seu material)",
+  "Sections and elevations draw the finish layers of walls (a layer's own category in its type, else its material's)": "Os cortes e as elevações desenham as camadas de acabamento das paredes (a categoria própria da camada no seu tipo, senão a do seu material)",
+  "Sections and elevations draw the finish layers of floors (a layer's own category in its type, else its material's)": "Os cortes e as elevações desenham as camadas de acabamento dos pisos (a categoria própria da camada no seu tipo, senão a do seu material)",
+  "A layer's own category in its type (Wall types, Floor types) wins over its material's. Plans, and sections with elevations, each say whether they draw the walls' finishes and the floors'.": "A categoria própria de uma camada no seu tipo (Tipos de parede, Tipos de piso) prevalece sobre a do seu material. As plantas, e os cortes com as elevações, dizem cada um se desenham os acabamentos das paredes e os dos pisos.",
+  "What the layer is in this build-up; empty: its material's category (Manage → Materials). View styles leave out the finishes by it": "O que a camada é nesta composição; vazio: a categoria do seu material (Gerenciar → Materiais). Os estilos de vista omitem os acabamentos por ela",
+  "material's": "do material",
+  "Into floors": "Nos pisos",
+  "Whether the layer goes on into the floors' layers ranked under it, as where walls join: down from the wall's base to the first floor layer ranked as high or higher (the brick onto the concrete, through the finish and the screed), up to the underside of the first such layer of the floor over it": "Se a camada continua nas camadas dos pisos de prioridade menor, como nas junções de paredes: para baixo, da base da parede até a primeira camada do piso de prioridade igual ou maior (o tijolo sobre o concreto, através do revestimento e do contrapiso), para cima até a face inferior da primeira camada desse tipo do piso acima",
+  "Down: through the layers of the floor the wall stands on ranked under this one, to the top of the first ranked as high or higher": "Para baixo: através das camadas do piso em que a parede se apoia de prioridade menor que esta, até o topo da primeira de prioridade igual ou maior",
+  "Up: through the lower layers of the floor over the wall ranked under this one, to the underside of the first ranked as high or higher": "Para cima: através das camadas inferiores do piso acima da parede de prioridade menor que esta, até a face inferior da primeira de prioridade igual ou maior",
+  "Where a wall's layer goes on into this floor, it passes the floor's layers ranked under it and stops at the first as high or higher; empty: its material's priority in the cut order, else 50 for the core and 0 for the rest": "Onde uma camada de uma parede continua neste piso, ela atravessa as camadas dele de prioridade menor e para na primeira de prioridade igual ou maior; vazio: a prioridade do seu material na ordem de corte, senão 50 para o núcleo e 0 para o resto",
   // The 3D view's style in the HUD
   "3D · EDGES": "3D · ARESTAS",
   "3D · X-RAY": "3D · RAIOS X",

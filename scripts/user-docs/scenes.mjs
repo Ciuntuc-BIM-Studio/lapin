@@ -512,6 +512,76 @@ export const scenes = [
     },
   },
   {
+    // A wall's layer through the floor's layers by priority (the forum's topic #30): the brick core ticked ↓ in Wall types goes
+    // through the floor finish and the screed onto the concrete; the section shows it, the floor loses what the wall takes.
+    id: 'wall-into-floor',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      await t.cmd('architecture.addSlab', { storeyId: s, points: [[-2, -2], [4, -2], [4, 3], [-2, 3]] });
+      const type = (await t.cmd('architecture.createWallType', { name: 'Brick 250 plastered', layers: [
+        { material: 'Plaster', thickness: 0.015 }, { material: 'Brick', thickness: 0.25, core: true }, { material: 'Plaster', thickness: 0.015 }] })).id;
+      const wall = (await t.cmd('architecture.addWall', { storeyId: s, typeId: type, x1: -1, y1: 0, x2: 3, y2: 0, height: 1.2 })).id;
+      const core = async () => (await t.call('quantities.of', { id: wall })).find((q) => q.part === 'layer:1')?.quantities.find((x) => x.name === 'NetVolume')?.value ?? 0;
+      const before = await core();
+      t.expect(Math.abs(before - 4 * 0.25 * 1.2) < 1e-6, `the brick stands on the floor's top at first (${before.toFixed(4)} m³)`);
+      // Ticked in Wall types, on the core's row, as a user does.
+      await t.ui({ wallTypeId: type });
+      await t.tool('architecture.wallTypes');
+      await t.wait(600);
+      const down = t.page.locator('.dialog [data-testid=layer-extend-down]');
+      t.expect(await down.count() === 3, `every layer offers to go down into the floor (${await down.count()})`);
+      await down.nth(1).check();
+      await t.page.locator('.dialog').getByRole('button', { name: 'Save type' }).click();
+      await t.wait(1200);
+      const after = await core();
+      t.expect(Math.abs(after - 4 * 0.25 * 1.27) < 1e-6, `the brick goes down through the finish and the screed onto the concrete (${after.toFixed(4)} m³)`);
+      await t.ui({ dialog: null });
+      await t.cmd('view.create', { kind: 'section', name: 'W-W', start: [1, -0.6], end: [1, 0.8], depth: 1, scale: 10 });
+      await openFromBrowser(t, 'W-W', 1500);
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      t.expect(await t.page.locator('[data-testid=drawing] .pen-hatch').count() > 0, 'the section hatches the brick and the floor');
+      await t.wait(800);
+      await t.shot('wall-into-floor-section', { of: '[data-testid=drawing]', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
+    // Finish layers by the kind of view (the forum's topic #30): the Architectural style's plans without the walls' and the
+    // floors' finishes, its sections with the floors' finishes only, set in Manage → View styles.
+    id: 'finishes-by-view',
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      await t.ui({ dialog: 'viewStyles' });
+      await t.wait(800);
+      const row = t.page.locator('.dialog table.view-styles tbody tr').first();
+      for (const key of ['wallFinishesPlan', 'floorFinishesPlan', 'wallFinishesSection']) {
+        // A controlled box: it shows the engine's answer, a moment after the click.
+        await row.locator(`[data-testid=style-${key}]`).click();
+        await t.wait(700);
+      }
+      const styles = await t.call('doc.query', { name: 'viewStyle.list', args: {} });
+      const arch = styles.find((x) => x.id === 'architectural');
+      t.expect(arch && !arch.wallFinishesPlan && !arch.floorFinishesPlan && !arch.wallFinishesSection && arch.floorFinishesSection,
+        'the Architectural style draws no finishes in plans and only the floors\' in sections');
+      await t.shot('view-styles-finishes', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+      const plan = await t.call('doc.query', { name: 'view.drawing', args: { storeyId: await t.storey() } });
+      t.expect(JSON.stringify(plan.hiddenFinishes) === '["slabs","walls"]', `the plan leaves out the walls' and the floors' finishes (${JSON.stringify(plan.hiddenFinishes)})`);
+      const section = (await t.cmd('view.create', { kind: 'section', name: 'F-F', start: [5, -0.6], end: [5, 0.8], depth: 1, scale: 10 })).id;
+      const drawn = await t.call('doc.query', { name: 'view.drawing', args: { id: section } });
+      t.expect(JSON.stringify(drawn.hiddenFinishes) === '["walls"]', `the section leaves out the walls' finishes only (${JSON.stringify(drawn.hiddenFinishes)})`);
+      await openFromBrowser(t, 'F-F', 1500);
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      await t.wait(800);
+      await t.shot('finishes-section', { of: '[data-testid=drawing]', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     // Placing a door or window as Revit does (a tester's wish): the cursor's side of the wall is the side it opens to, Space its other hand, shown before the click.
     id: 'fill-placing',
     async run(t) {

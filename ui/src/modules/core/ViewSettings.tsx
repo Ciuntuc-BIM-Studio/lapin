@@ -13,12 +13,12 @@
  */
 
 import { setDisplay, useDisplay } from '../../app/display';
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { Copy, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { DisciplinePicker } from './DisciplinePicker';
-import { ENTOURAGE_FILLS, ENTOURAGE_MODES, LOD_HELP, LODS, useViewStyles, type EntourageMode, type LayerMode, type ViewStyle } from './viewStyles';
+import { ENTOURAGE_FILLS, ENTOURAGE_MODES, FINISH_FIELDS, LOD_HELP, LODS, useViewStyles, type EntourageMode, type LayerMode, type ViewStyle } from './viewStyles';
 import { frontView } from '../../viewport/frontView';
 import { storeys } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
@@ -89,6 +89,12 @@ function ViewSettingsEditor({ view }: { view: NodeDto }) {
             {LAYER_MODES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
           </select><Reset field="layers" />
         </dd>
+        {(plan || section || view.props.kind === 'elevation') && FINISH_FIELDS.filter((f) => f.plan === plan).map((f) => (
+          <Fragment key={f.key}>
+            <dt title={f.title}>{f.label}</dt>
+            <dd><input type="checkbox" data-testid={`view-${f.key}`} checked={state.resolved[f.key] !== false} onChange={(e) => set({ [f.key]: e.target.checked })} /><Reset field={f.key} /></dd>
+          </Fragment>
+        ))}
         {!threeD && (
           <>
             <dt title="One material goes on from one element into the next without a line (walls, beams, footings): on by default">Join materials</dt>
@@ -235,7 +241,7 @@ export function ViewStylesDialog() {
         <header className="dialog-head"><span className="panel-title">View styles</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">
           <table className="layer-table view-styles">
-            <thead><tr><th>Name</th><th title="The views of this discipline take this style unless they name another">Discipline</th><th title={LOD_HELP}>Level of development</th><th data-i18n-ctx="element">Layers</th><th title="One material goes on from element to element without a line">Join materials</th><th title="Plans draw what lies above their cut">Overhead</th><th title="Plans draw the 2D an IFC file gave its elements instead of their cut">IFC 2D symbols</th><th title="Plans, sections and elevations draw the openings' voids, crossed, with their marks">Opening voids</th><th title="Under each void's mark its width × height (a round one's diameter) and a wall opening's bottom level">Void sizes</th><th title="Plans hatch the rooms' floor finishes as their types say (a plan seen from below, their ceilings)">Floor finish hatches</th><th title="Elevations and sections hatch the faces they see with their materials' elevation hatch (Manage → Materials), where nothing nearer hides them">Surface hatches</th><th title="How people, cars and plants draw in plans, elevations and sections: outlines (simple symbols and silhouettes), abstract (circles and boxes), detailed (every line of their symbols and bodies) or not at all; their bodies stay in 3D">Entourage in 2D</th><th title="The fill of the silhouettes elevations and sections draw for people, cars and plants">Silhouette fill</th><th title="The Visibility / Graphics set its views take when they have none of their own, as a view template">Graphics set</th><th /></tr></thead>
+            <thead><tr><th>Name</th><th title="The views of this discipline take this style unless they name another">Discipline</th><th title={LOD_HELP}>Level of development</th><th data-i18n-ctx="element">Layers</th><th title="One material goes on from element to element without a line">Join materials</th><th title="Plans draw what lies above their cut">Overhead</th><th title="Plans draw the 2D an IFC file gave its elements instead of their cut">IFC 2D symbols</th><th title="Plans, sections and elevations draw the openings' voids, crossed, with their marks">Opening voids</th><th title="Under each void's mark its width × height (a round one's diameter) and a wall opening's bottom level">Void sizes</th><th title="Plans hatch the rooms' floor finishes as their types say (a plan seen from below, their ceilings)">Floor finish hatches</th><th title="Elevations and sections hatch the faces they see with their materials' elevation hatch (Manage → Materials), where nothing nearer hides them">Surface hatches</th>{FINISH_FIELDS.map((f) => <th key={f.key} title={f.title}>{f.column}</th>)}<th title="How people, cars and plants draw in plans, elevations and sections: outlines (simple symbols and silhouettes), abstract (circles and boxes), detailed (every line of their symbols and bodies) or not at all; their bodies stay in 3D">Entourage in 2D</th><th title="The fill of the silhouettes elevations and sections draw for people, cars and plants">Silhouette fill</th><th title="The Visibility / Graphics set its views take when they have none of their own, as a view template">Graphics set</th><th /></tr></thead>
             <tbody>
               {styles.map((s) => (
                 <tr key={s.id}>
@@ -250,6 +256,7 @@ export function ViewStylesDialog() {
                   <td><input type="checkbox" checked={s.voidSizes !== false} disabled={!s.voids} onChange={(e) => update(s.id, { voidSizes: e.target.checked })} /></td>
                   <td><input type="checkbox" checked={s.finishHatch !== false} onChange={(e) => update(s.id, { finishHatch: e.target.checked })} /></td>
                   <td><input type="checkbox" checked={s.surfaceHatch !== false} onChange={(e) => update(s.id, { surfaceHatch: e.target.checked })} /></td>
+                  {FINISH_FIELDS.map((f) => <td key={f.key}><input type="checkbox" data-testid={`style-${f.key}`} checked={s[f.key] !== false} onChange={(e) => update(s.id, { [f.key]: e.target.checked })} /></td>)}
                   <td><select value={s.entourage ?? 'outline'} onChange={(e) => update(s.id, { entourage: e.target.value as EntourageMode })}>{ENTOURAGE_MODES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></td>
                   <td><select value={s.entourageFill ?? ''} onChange={(e) => update(s.id, { entourageFill: e.target.value || null })}>{ENTOURAGE_FILLS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></td>
                   <td><select data-testid="style-graphics-set" value={s.graphicsSet ?? ''} onChange={(e) => update(s.id, { graphicsSet: e.target.value || null })}><option value="">none</option>{sets.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}</select></td>
@@ -267,6 +274,7 @@ export function ViewStylesDialog() {
             {styles.length ? `Layers: ${styles.map((s) => `${s.name} draws ${layerLabel(s.layers)}`).join('; ')}. ` : ''}
             Finishes are the layers whose material's category is Finish (Manage → Materials); without a category, plaster, render, paint, tiles, boards and floor coverings count as finishes.
           </p>
+          <p className="muted small">A layer's own category in its type (Wall types, Floor types) wins over its material's. Plans, and sections with elevations, each say whether they draw the walls' finishes and the floors'.</p>
         </div>
         <footer className="dialog-foot">{error && <p className="error-text" role="alert">{error}</p>}<span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
       </div>

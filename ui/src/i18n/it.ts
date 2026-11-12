@@ -3,6 +3,24 @@
 import type { Language } from './index';
 
 export const IT: Record<string, string> = {
+  // The forum's topic #30: finish layers by kind of view, wall layers into the floors' layers
+  "Floor finishes": "Finiture dei solai",
+  "Wall finishes in plans": "Finiture dei muri in pianta",
+  "Floor finishes in plans": "Finiture dei solai in pianta",
+  "Wall finishes in sections": "Finiture dei muri in sezione",
+  "Floor finishes in sections": "Finiture dei solai in sezione",
+  "Plans draw the finish layers of walls (a layer's own category in its type, else its material's)": "Le piante disegnano gli strati di finitura dei muri (la categoria propria dello strato nel suo tipo, altrimenti quella del suo materiale)",
+  "Plans draw the finish layers of floors (a layer's own category in its type, else its material's)": "Le piante disegnano gli strati di finitura dei solai (la categoria propria dello strato nel suo tipo, altrimenti quella del suo materiale)",
+  "Sections and elevations draw the finish layers of walls (a layer's own category in its type, else its material's)": "Le sezioni e i prospetti disegnano gli strati di finitura dei muri (la categoria propria dello strato nel suo tipo, altrimenti quella del suo materiale)",
+  "Sections and elevations draw the finish layers of floors (a layer's own category in its type, else its material's)": "Le sezioni e i prospetti disegnano gli strati di finitura dei solai (la categoria propria dello strato nel suo tipo, altrimenti quella del suo materiale)",
+  "A layer's own category in its type (Wall types, Floor types) wins over its material's. Plans, and sections with elevations, each say whether they draw the walls' finishes and the floors'.": "La categoria propria di uno strato nel suo tipo (Tipi di muro, Tipi di solaio) prevale su quella del suo materiale. Le piante, e le sezioni con i prospetti, dicono ciascuna se disegnano le finiture dei muri e quelle dei solai.",
+  "What the layer is in this build-up; empty: its material's category (Manage → Materials). View styles leave out the finishes by it": "Che cosa è lo strato in questa stratigrafia; vuoto: la categoria del suo materiale (Gestisci → Materiali). Gli stili di vista tralasciano le finiture in base a essa",
+  "material's": "del materiale",
+  "Into floors": "Nei solai",
+  "Whether the layer goes on into the floors' layers ranked under it, as where walls join: down from the wall's base to the first floor layer ranked as high or higher (the brick onto the concrete, through the finish and the screed), up to the underside of the first such layer of the floor over it": "Se lo strato prosegue negli strati dei solai di priorità inferiore, come ai giunti dei muri: verso il basso, dalla base del muro fino al primo strato del solaio di priorità uguale o maggiore (il laterizio sul calcestruzzo, attraverso la finitura e il massetto), verso l’alto fino all’intradosso del primo strato di questo tipo del solaio sopra",
+  "Down: through the layers of the floor the wall stands on ranked under this one, to the top of the first ranked as high or higher": "Giù: attraverso gli strati del solaio su cui poggia il muro di priorità inferiore a questo, fino all’estradosso del primo di priorità uguale o maggiore",
+  "Up: through the lower layers of the floor over the wall ranked under this one, to the underside of the first ranked as high or higher": "Su: attraverso gli strati inferiori del solaio sopra il muro di priorità inferiore a questo, fino all’intradosso del primo di priorità uguale o maggiore",
+  "Where a wall's layer goes on into this floor, it passes the floor's layers ranked under it and stops at the first as high or higher; empty: its material's priority in the cut order, else 50 for the core and 0 for the rest": "Dove uno strato di un muro prosegue in questo solaio, ne attraversa gli strati di priorità inferiore e si ferma al primo di priorità uguale o maggiore; vuoto: la priorità del suo materiale nell’ordine di taglio, altrimenti 50 per il nucleo e 0 per il resto",
   // The 3D view's style in the HUD
   "3D · EDGES": "3D · SPIGOLI",
   "3D · X-RAY": "3D · RAGGI X",

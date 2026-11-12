@@ -76,6 +76,8 @@ export interface DrawingDto {
   /** Annotations a click selects: their entity, segments and snap points. */
   marks?: { id: string; segments: number[]; snaps?: number[]; data?: Record<string, unknown>; hit?: { solid: boolean; loops: number[][] } }[];
   problems?: string[];
+  /** The categories (walls, slabs) whose finish layers the view leaves out (topic #30): their cut pieces offer no snap. */
+  hiddenFinishes?: string[];
   /** Line edits (Linework) whose edge is gone. */
   lineworkOrphans?: string[];
   /** Where the drawing lies in the model: (x, y) is origin + right·x + up·y; dir looks into the scene. */

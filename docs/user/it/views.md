@@ -235,6 +235,14 @@ La scheda **Vista** imposta che cosa mostra la vista in primo piano e come appar
 
 ![Qualità di visualizzazione](shots/display-quality.webp)
 
+### Le finiture in pianta e in sezione
+
+Uno stile di vista dice, separatamente per i muri e per i solai, se le piante disegnano gli strati di finitura e se li disegnano le sezioni e i prospetti: **Finiture dei muri in pianta**, **Finiture dei solai in pianta**, **Finiture dei muri in sezione** e **Finiture dei solai in sezione** in **Gestisci → Stili di vista**. Tutte e quattro sono attive per impostazione predefinita. Una vista può impostare le sue in **Impostazioni di vista** (**Finiture dei muri**, **Finiture dei solai**), e il pulsante accanto riprende quelle dello stile. Una finitura è uno strato la cui **Categoria** propria nel suo tipo è **Finitura**, altrimenti uno il cui materiale ha questa categoria. Una pianta senza le finiture dei muri disegna il contorno sezionato di ogni muro sul nucleo, con i giunti e gli angoli come prima, e si aggancia alle facce del nucleo. Le tavole polacche, per esempio, si stampano con piante senza alcuna finitura e sezioni con le finiture dei solai ma non quelle dei muri: togli la spunta alle prime tre nello stile Architectural, e tutte le piante e le sezioni del progetto seguono. Il modello non cambia: quantità, vista 3D e IFC mantengono tutti gli strati.
+
+![Gestisci → Stili di vista, con le finiture di piante e sezioni](shots/view-styles-finishes.webp)
+
+![Una sezione con la pavimentazione e il massetto del solaio e senza l’intonaco dei muri](shots/finishes-section.webp)
+
 ### Visibilità / Grafica
 
 **Visibilità** (<kbd>VV</kbd>) o **Grafica** (<kbd>VG</kbd>) apre visibilità / grafica della vista in primo piano: una pianta, una sezione, un prospetto o una vista 3D. Ciò che nasconde è nascosto anche sulle tavole della vista, nel suo PDF e DXF, e in un'esportazione 3D.

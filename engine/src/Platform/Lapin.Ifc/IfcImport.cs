@@ -676,6 +676,18 @@ public static partial class IfcImport
             return materialIds[fileMaterial] = Lapin.Platform.Materials.Ensure(edit, name, null).Id;
         }
 
+        /// <summary>Whether a layer's Lapin_LayerJoins says it goes on into the floors' layers (the forum's topic #30): true, else null.</summary>
+        bool? LayerJoin(int layer, string property)
+        {
+            foreach (var props in Rels.PropertiesOf[layer])
+            {
+                if (Str(props[0]) != IfcExport.LayerJoinsSetName) continue;
+                foreach (var p in Items(props[2]))
+                    if (p.Type == "IFCPROPERTYSINGLEVALUE" && Str(p[0]) == property && p[2] is StepTyped { Value: StepEnum { Value: "T" } }) return true;
+            }
+            return null;
+        }
+
         /// <summary>A layer set as the model's entity, its id derived from its owner's (a type) so a second import finds it.</summary>
         string LayerSet(IEdit edit, int fileSet, string ownerId)
         {
@@ -685,7 +697,10 @@ public static partial class IfcImport
             var layers = Items(set[0]).Select(l => new MaterialLayer(MaterialId(edit, Ref(l[0])), Length(l[1]), Str(l[5]) == "Core", Str(l[3]),
                 Priority: l.Args.Count > 6 && l[6] is long or double or StepTyped ? (int)Math.Clamp(Math.Round(Num(l[6])), 0, 100) : null,
                 // Its Description: how the layer is laid in this build-up (the layer's note, docs/plan-buildup-tags.md).
-                Note: l.Args.Count > 4 && Str(l[4]) is { Length: > 0 } note ? note : null)).ToList();
+                Note: l.Args.Count > 4 && Str(l[4]) is { Length: > 0 } note ? note : null,
+                // Its Category when it is one of the materials' (Finish, Insulation…; the forum's topic #30); Core (LoadBearing) marks the core.
+                Category: Str(l[5]) is { } cat ? Lapin.Platform.Materials.Categories.FirstOrDefault(c => string.Equals(c, cat, StringComparison.OrdinalIgnoreCase)) : null,
+                ExtendDown: LayerJoin(l.Id, "ExtendToFloorBelow"), ExtendUp: LayerJoin(l.Id, "ExtendToFloorAbove"))).ToList();
             id = Step.Guid(ownerId, "layerset");
             Put(edit, id, IfcClass.MaterialLayerSet, Str(set[1]) ?? "Layers", Layers.Write(layers), null, counts: false);
             return layerSets[fileSet] = id;

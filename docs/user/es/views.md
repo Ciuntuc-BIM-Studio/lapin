@@ -231,6 +231,14 @@ La ficha **Vista** configura qué muestra la vista que está delante y cómo se 
 
 ![Calidad de visualización](shots/display-quality.webp)
 
+### Acabados en plantas y secciones
+
+Un estilo de vista dice, por separado para muros y para losas, si las plantas dibujan las capas de acabado y si las dibujan las secciones y los alzados: **Acabados de muros en plantas**, **Acabados de losas en plantas**, **Acabados de muros en secciones** y **Acabados de losas en secciones** en **Gestionar → Estilos de vista**. Las cuatro están activadas por defecto. Una vista puede fijar las suyas en **Configuración de vista** (**Acabados de muros**, **Acabados de losas**), y el botón de al lado vuelve a las del estilo. Un acabado es una capa cuya **Categoría** propia en su tipo es **Acabado**, si no una cuyo material tiene esa categoría. Una planta sin los acabados de muros dibuja el contorno cortado de cada muro en su núcleo, con las uniones y esquinas como antes, y se ajusta a las caras del núcleo. Los planos polacos, por ejemplo, se imprimen con plantas sin ningún acabado y secciones con los acabados de las losas pero no los de los muros: desmarque las tres primeras en el estilo Architectural, y todas las plantas y secciones del proyecto lo siguen. El modelo no cambia: las cantidades, la vista 3D e IFC conservan todas las capas.
+
+![Gestionar → Estilos de vista, con los acabados de plantas y secciones](shots/view-styles-finishes.webp)
+
+![Una sección con el acabado y el recrecido de la losa y sin el enlucido de los muros](shots/finishes-section.webp)
+
 ### Visibilidad / Gráficos
 
 **Visibilidad** (<kbd>VV</kbd>) o **Gráficos** (<kbd>VG</kbd>) abre la visibilidad / gráficos de la vista al frente: una planta, una sección, un alzado o una vista 3D. Lo que oculta queda oculto también en los planos de la vista, en su PDF y DXF, y en una exportación 3D.

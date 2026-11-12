@@ -342,8 +342,10 @@ public sealed record PartInstance(Vec3 Origin, Vec3 X, Vec3 Y, Vec3 Z);
 /// (<see cref="PlanDetail"/>: a plan's scale says which — a track is a thick axis at 1:2000, its two rails at 1:500,
 /// every rail edge and sleeper at 1:100) and in a style of its own (a centre line's dash-dot). <see cref="Mode"/>: the
 /// entourage mode it draws in (<see cref="ViewStyles.EntourageModes"/>: a person's, car's or plant's symbol); null, every one.
+/// <see cref="Sub"/>: a layered element's cut piece, the subcategory of its layer (<see cref="LayerSets.SubOf"/>: core, finishes…),
+/// so the interface snaps only to what a plan draws (a plan without the walls' finishes: their cores' faces).
 /// </summary>
-public sealed record PlanItem(string Kind, bool Closed, IReadOnlyList<Vec2> Points, int MinDetail = PlanDetail.Coarse, int MaxDetail = PlanDetail.Fine, Lapin.Drawing.LineStyleSpec? Style = null, string? Mode = null)
+public sealed record PlanItem(string Kind, bool Closed, IReadOnlyList<Vec2> Points, int MinDetail = PlanDetail.Coarse, int MaxDetail = PlanDetail.Fine, Lapin.Drawing.LineStyleSpec? Style = null, string? Mode = null, string? Sub = null)
 {
     public bool At(int detail) => detail >= MinDetail && detail <= MaxDetail;
     /// <summary>Whether it draws in a view whose entourage mode is <paramref name="mode"/>.</summary>

@@ -3,8 +3,10 @@ using Lapin.Model;
 
 namespace Lapin.Platform;
 
-/// <summary>A layer as a command gives it: a material by name, a thickness in metres, the core mark, its priority at joins (null: its material's), its note (how it is laid in this build-up).</summary>
-public sealed record LayerSpec(string Material, double Thickness, bool Core = false, string? Color = null, string? Name = null, double? From = null, double? To = null, IReadOnlyList<LayerPartSpec>? Parts = null, int? Priority = null, string? Note = null);
+/// <summary>A layer as a command gives it: a material by name, a thickness in metres, the core mark, its priority at joins (null: its material's), its note (how it is laid in this build-up),
+/// its category (null: its material's), whether a wall's layer extends down and up into the floors' layers ranked under it (<see cref="MaterialLayer"/>).</summary>
+public sealed record LayerSpec(string Material, double Thickness, bool Core = false, string? Color = null, string? Name = null, double? From = null, double? To = null, IReadOnlyList<LayerPartSpec>? Parts = null, int? Priority = null, string? Note = null,
+    string? Category = null, bool ExtendDown = false, bool ExtendUp = false);
 
 /// <summary>A piece of a layer in its height as a command gives it (decision 264): a material by name, its height in metres.</summary>
 public sealed record LayerPartSpec(string Material, double Height, string? Name = null, string? Color = null);
@@ -16,7 +18,8 @@ public sealed record LayerPartSpec(string Material, double Height, string? Name 
 /// platform's, since several modules build on it.
 /// </summary>
 /// <summary>One layer of an element's layer set as a band across its axis: from, to, its material, its name, its place in the set, whether it is the core.</summary>
-public readonly record struct LayerBand(double From, double To, string Material, string Name, int Index, bool Core, double? Z0 = null, double? Z1 = null, IReadOnlyList<LayerPart>? Parts = null, int Rank = 0);
+public readonly record struct LayerBand(double From, double To, string Material, string Name, int Index, bool Core, double? Z0 = null, double? Z1 = null, IReadOnlyList<LayerPart>? Parts = null, int Rank = 0,
+    string? Category = null, bool ExtendDown = false, bool ExtendUp = false);
 
 public static class LayerSets
 {
@@ -56,11 +59,19 @@ public static class LayerSets
             // How it is laid in this build-up (docs/plan-buildup-tags.md): free text, kept as given (its lines too), none when blank.
             var note = l["note"] is JsonValue nv && nv.TryGetValue<string>(out var ns) && ns.Trim().Length > 0 ? ns.Trim() : null;
             if (note is { Length: > 2000 }) throw new CommandException("A layer's note is at most 2000 characters.");
-            o.Add(new LayerSpec(material, thickness.Value, l["core"] is JsonValue c && c.TryGetValue<bool>(out var core) && core, (string?)l["color"], (string?)l["name"], from, to, ParseParts(l["parts"]), priority, note));
+            // What the layer is in this build-up (the forum's topic #30): one of the materials' categories; none: its material's.
+            string? category = null;
+            if (l["category"] is JsonValue cv && cv.TryGetValue<string>(out var cs) && cs.Trim().Length > 0)
+                category = Materials.Categories.FirstOrDefault(x => string.Equals(x, cs.Trim(), StringComparison.OrdinalIgnoreCase))
+                    ?? throw new CommandException($"„{cs.Trim()}” is not a layer's category ({string.Join(", ", Materials.Categories)}).");
+            o.Add(new LayerSpec(material, thickness.Value, l["core"] is JsonValue c && c.TryGetValue<bool>(out var core) && core, (string?)l["color"], (string?)l["name"], from, to, ParseParts(l["parts"]), priority, note,
+                category, True(l["extendDown"]), True(l["extendUp"])));
         }
         Validate(o, what);
         return o;
     }
+
+    static bool True(JsonNode? n) => n is JsonValue v && v.TryGetValue<bool>(out var b) && b;
 
     /// <summary>A layer's pieces in its height (decision 264), bottom up: a material and a height each; none for a layer of one material.</summary>
     static IReadOnlyList<LayerPartSpec>? ParseParts(JsonNode? node)
@@ -91,12 +102,14 @@ public static class LayerSets
     /// <summary>The layers with their materials, made when the project has none of that name.</summary>
     public static List<MaterialLayer> Resolve(IEdit edit, IReadOnlyList<LayerSpec> layers) =>
         layers.Select(l => new MaterialLayer(Materials.Ensure(edit, l.Material, l.Color).Id, l.Thickness, l.Core, l.Name, l.From, l.To,
-            l.Parts is { Count: > 0 } ps ? ps.Select(p => new LayerPart(Materials.Ensure(edit, p.Material, p.Color).Id, p.Height, p.Name)).ToList() : null, l.Priority, l.Note)).ToList();
+            l.Parts is { Count: > 0 } ps ? ps.Select(p => new LayerPart(Materials.Ensure(edit, p.Material, p.Color).Id, p.Height, p.Name)).ToList() : null, l.Priority, l.Note,
+            l.Category, l.ExtendDown ? true : null, l.ExtendUp ? true : null)).ToList();
 
     /// <summary>A stored layer as a command would give it again (materials by name), its pieces in height with it.</summary>
     public static LayerSpec SpecOf(IModelView m, MaterialLayer l) =>
         new(m.Get(l.Material)?.Name ?? "Material", l.Thickness, l.Core, Name: l.Name, From: l.From, To: l.To,
-            Parts: l.Parts?.Select(p => new LayerPartSpec(m.Get(p.Material)?.Name ?? "Material", p.Height, p.Name)).ToList(), Priority: l.Priority, Note: l.Note);
+            Parts: l.Parts?.Select(p => new LayerPartSpec(m.Get(p.Material)?.Name ?? "Material", p.Height, p.Name)).ToList(), Priority: l.Priority, Note: l.Note,
+            Category: l.Category, ExtendDown: l.ExtendDown == true, ExtendUp: l.ExtendUp == true);
 
     /// <summary>A new layer set, associated with the type.</summary>
     public static Entity Attach(IEdit edit, Entity type, IReadOnlyList<LayerSpec> layers)
@@ -153,8 +166,30 @@ public static class LayerSets
         var core = Layers.CoreIndex(layers);
         var table = CutOrder.MaterialsOf(m);
         return layers.Select((l, i) => new LayerBand(bands[i].From, bands[i].To, l.Material, l.Name ?? m.Get(l.Material)?.Name ?? $"Layer {i + 1}", i, i == core, l.From, l.To, l.Parts,
-            Layers.Rank(l.Priority, table != null && Json.Number(table[l.Material]) is { } n ? (int)n : null, i == core))).ToList();
+            Layers.Rank(l.Priority, table != null && Json.Number(table[l.Material]) is { } n ? (int)n : null, i == core), l.Category, l.ExtendDown == true, l.ExtendUp == true)).ToList();
     }
+
+    /// <summary>
+    /// A layer's role, as Visibility / Graphics names its subcategories: the core; else by the layer's own category when it gives
+    /// one (the forum's topic #30), else by its material's (a finish by <see cref="Materials.IsFinish"/>, by its name when it has
+    /// no category): finishes, insulation, membranes or other layers.
+    /// </summary>
+    public static string SubOf(IModelView m, LayerBand band)
+    {
+        if (band.Core) return "core";
+        var mat = m.Get(band.Material);
+        if (band.Category == null && mat != null && Materials.IsFinish(mat)) return "finishes";
+        return (band.Category ?? mat?.Str("category")?.Trim())?.ToLowerInvariant() switch
+        {
+            "finish" => "finishes",
+            "insulation" => "insulation",
+            "membrane" => "membranes",
+            _ => "otherLayers",
+        };
+    }
+
+    /// <summary>Whether a layer is a finish: by its own category, else its material's (<see cref="SubOf"/>).</summary>
+    public static bool IsFinish(IModelView m, LayerBand band) => SubOf(m, band) == "finishes";
 
     /// <summary>Flips a layered element across its axis: its usage's sense turns and its offset changes sign (false: it has no layers).</summary>
     public static bool Flip(IEdit edit, string occurrenceId)

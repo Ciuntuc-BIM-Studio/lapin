@@ -235,6 +235,14 @@ L’onglet **Vue** règle ce que montre la vue au premier plan et son aspect.
 
 ![Qualité d’affichage](shots/display-quality.webp)
 
+### Les finitions en plan et en coupe
+
+Un style de vue dit, à part pour les murs et pour les dalles, si les plans dessinent les couches de finition et si les coupes et les élévations les dessinent : **Finitions des murs en plan**, **Finitions des dalles en plan**, **Finitions des murs en coupe** et **Finitions des dalles en coupe** dans **Gérer → Styles de vue**. Les quatre sont cochées par défaut. Une vue peut fixer les siennes dans **Paramètres de vue** (**Finitions des murs**, **Finitions des dalles**), et le bouton à côté reprend celles du style. Une finition est une couche dont la **Catégorie** propre dans son type est **Finition**, sinon une couche dont le matériau a cette catégorie. Un plan sans les finitions des murs dessine le contour coupé de chaque mur sur son noyau, avec les jonctions et les angles comme avant, et s’accroche aux faces du noyau. Les plans polonais, par exemple, s’impriment avec des plans sans aucune finition et des coupes avec les finitions des dalles mais pas celles des murs : décochez les trois premières dans le style Architectural, et tous les plans et coupes du projet suivent. Le modèle ne change pas : les quantités, la vue 3D et l’IFC gardent toutes les couches.
+
+![Gérer → Styles de vue, avec les finitions des plans et des coupes](shots/view-styles-finishes.webp)
+
+![Une coupe avec le revêtement et la chape de la dalle et sans l’enduit des murs](shots/finishes-section.webp)
+
 ### Visibilité / Graphismes
 
 **Visibilité** (<kbd>VV</kbd>) ou **Graphismes** (<kbd>VG</kbd>) ouvre la visibilité / les graphismes de la vue au premier plan : un plan, une coupe, une élévation ou une vue 3D. Ce qu’elle masque l’est aussi sur les feuilles de la vue, dans son PDF et son DXF, et dans un export 3D.

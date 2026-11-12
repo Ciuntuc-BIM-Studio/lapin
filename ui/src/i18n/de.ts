@@ -3,6 +3,24 @@
 import type { Language } from './index';
 
 export const DE: Record<string, string> = {
+  // The forum's topic #30: finish layers by kind of view, wall layers into the floors' layers
+  "Floor finishes": "Bodenbeläge",
+  "Wall finishes in plans": "Wandbeläge in Grundrissen",
+  "Floor finishes in plans": "Bodenbeläge in Grundrissen",
+  "Wall finishes in sections": "Wandbeläge in Schnitten",
+  "Floor finishes in sections": "Bodenbeläge in Schnitten",
+  "Plans draw the finish layers of walls (a layer's own category in its type, else its material's)": "Grundrisse zeichnen die Belagsschichten der Wände (die eigene Kategorie der Schicht in ihrem Typ, sonst die ihres Materials)",
+  "Plans draw the finish layers of floors (a layer's own category in its type, else its material's)": "Grundrisse zeichnen die Belagsschichten der Decken (die eigene Kategorie der Schicht in ihrem Typ, sonst die ihres Materials)",
+  "Sections and elevations draw the finish layers of walls (a layer's own category in its type, else its material's)": "Schnitte und Ansichten zeichnen die Belagsschichten der Wände (die eigene Kategorie der Schicht in ihrem Typ, sonst die ihres Materials)",
+  "Sections and elevations draw the finish layers of floors (a layer's own category in its type, else its material's)": "Schnitte und Ansichten zeichnen die Belagsschichten der Decken (die eigene Kategorie der Schicht in ihrem Typ, sonst die ihres Materials)",
+  "A layer's own category in its type (Wall types, Floor types) wins over its material's. Plans, and sections with elevations, each say whether they draw the walls' finishes and the floors'.": "Die eigene Kategorie einer Schicht in ihrem Typ (Wandtypen, Deckentypen) geht der ihres Materials vor. Grundrisse sowie Schnitte mit Ansichten legen jeweils fest, ob sie die Beläge der Wände und die der Decken zeichnen.",
+  "What the layer is in this build-up; empty: its material's category (Manage → Materials). View styles leave out the finishes by it": "Was die Schicht in diesem Aufbau ist; leer: die Kategorie ihres Materials (Verwalten → Materialien). Ansichtsstile lassen die Beläge danach weg",
+  "material's": "des Materials",
+  "Into floors": "In Decken",
+  "Whether the layer goes on into the floors' layers ranked under it, as where walls join: down from the wall's base to the first floor layer ranked as high or higher (the brick onto the concrete, through the finish and the screed), up to the underside of the first such layer of the floor over it": "Ob die Schicht in die Schichten der Decken mit niedrigerer Priorität weiterläuft, wie an Wandanschlüssen: nach unten vom Wandfuß bis zur ersten Deckenschicht mit gleicher oder höherer Priorität (der Ziegel auf den Beton, durch Belag und Estrich), nach oben bis zur Unterseite der ersten solchen Schicht der Decke darüber",
+  "Down: through the layers of the floor the wall stands on ranked under this one, to the top of the first ranked as high or higher": "Nach unten: durch die Schichten der Decke, auf der die Wand steht, mit niedrigerer Priorität als diese, bis zur Oberseite der ersten mit gleicher oder höherer",
+  "Up: through the lower layers of the floor over the wall ranked under this one, to the underside of the first ranked as high or higher": "Nach oben: durch die unteren Schichten der Decke über der Wand mit niedrigerer Priorität als diese, bis zur Unterseite der ersten mit gleicher oder höherer",
+  "Where a wall's layer goes on into this floor, it passes the floor's layers ranked under it and stops at the first as high or higher; empty: its material's priority in the cut order, else 50 for the core and 0 for the rest": "Wo eine Wandschicht in diese Decke weiterläuft, durchdringt sie deren Schichten mit niedrigerer Priorität und endet an der ersten mit gleicher oder höherer; leer: die Priorität ihres Materials in der Schnittreihenfolge, sonst 50 für den Kern und 0 für die übrigen",
   // The 3D view's style in the HUD
   "3D · EDGES": "3D · KANTEN",
   "3D · X-RAY": "3D · RÖNTGEN",

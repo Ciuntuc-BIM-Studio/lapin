@@ -3,6 +3,24 @@
 import type { Language } from './index';
 
 export const FR: Record<string, string> = {
+  // The forum's topic #30: finish layers by kind of view, wall layers into the floors' layers
+  "Floor finishes": "Finitions des dalles",
+  "Wall finishes in plans": "Finitions des murs en plan",
+  "Floor finishes in plans": "Finitions des dalles en plan",
+  "Wall finishes in sections": "Finitions des murs en coupe",
+  "Floor finishes in sections": "Finitions des dalles en coupe",
+  "Plans draw the finish layers of walls (a layer's own category in its type, else its material's)": "Les plans dessinent les couches de finition des murs (la catégorie propre de la couche dans son type, sinon celle de son matériau)",
+  "Plans draw the finish layers of floors (a layer's own category in its type, else its material's)": "Les plans dessinent les couches de finition des dalles (la catégorie propre de la couche dans son type, sinon celle de son matériau)",
+  "Sections and elevations draw the finish layers of walls (a layer's own category in its type, else its material's)": "Les coupes et les élévations dessinent les couches de finition des murs (la catégorie propre de la couche dans son type, sinon celle de son matériau)",
+  "Sections and elevations draw the finish layers of floors (a layer's own category in its type, else its material's)": "Les coupes et les élévations dessinent les couches de finition des dalles (la catégorie propre de la couche dans son type, sinon celle de son matériau)",
+  "A layer's own category in its type (Wall types, Floor types) wins over its material's. Plans, and sections with elevations, each say whether they draw the walls' finishes and the floors'.": "La catégorie propre d’une couche dans son type (Types de murs, Types de dalles) l’emporte sur celle de son matériau. Les plans, et les coupes avec les élévations, disent chacun s’ils dessinent les finitions des murs et celles des dalles.",
+  "What the layer is in this build-up; empty: its material's category (Manage → Materials). View styles leave out the finishes by it": "Ce qu’est la couche dans cette composition ; vide : la catégorie de son matériau (Gérer → Matériaux). Les styles de vue omettent les finitions d’après elle",
+  "material's": "du matériau",
+  "Into floors": "Dans les dalles",
+  "Whether the layer goes on into the floors' layers ranked under it, as where walls join: down from the wall's base to the first floor layer ranked as high or higher (the brick onto the concrete, through the finish and the screed), up to the underside of the first such layer of the floor over it": "Si la couche se prolonge dans les couches des dalles de priorité plus faible, comme aux jonctions des murs : vers le bas, depuis la base du mur jusqu’à la première couche de la dalle de priorité égale ou supérieure (la brique sur le béton, à travers le revêtement et la chape), vers le haut jusqu’à la sous-face de la première couche de ce genre de la dalle au-dessus",
+  "Down: through the layers of the floor the wall stands on ranked under this one, to the top of the first ranked as high or higher": "Vers le bas : à travers les couches de la dalle sur laquelle repose le mur de priorité plus faible que celle-ci, jusqu’au dessus de la première de priorité égale ou supérieure",
+  "Up: through the lower layers of the floor over the wall ranked under this one, to the underside of the first ranked as high or higher": "Vers le haut : à travers les couches inférieures de la dalle au-dessus du mur de priorité plus faible que celle-ci, jusqu’à la sous-face de la première de priorité égale ou supérieure",
+  "Where a wall's layer goes on into this floor, it passes the floor's layers ranked under it and stops at the first as high or higher; empty: its material's priority in the cut order, else 50 for the core and 0 for the rest": "Là où une couche d’un mur se prolonge dans cette dalle, elle traverse ses couches de priorité plus faible et s’arrête à la première de priorité égale ou supérieure ; vide : la priorité de son matériau dans l’ordre de coupe, sinon 50 pour le noyau et 0 pour le reste",
   // The 3D view's style in the HUD
   "3D · EDGES": "3D · ARÊTES",
   "3D · X-RAY": "3D · RAYONS X",

@@ -15,8 +15,9 @@ public sealed record EdgeDto(string Id, string From, string To, string Type, int
 /// <summary>An IFC relationship: one relating entity, the entities it relates.</summary>
 public sealed record RelationDto(string Id, string Class, string Relating, IReadOnlyList<string> Related);
 
-/// <summary>A plan item for the interface: its kind, points (x, y, …), text; the levels of detail it is drawn at when not all (<see cref="PlanDetail"/>) and its dash pattern when it has one of its own.</summary>
-public sealed record PlanItemDto(string Kind, bool Closed, double[] Points, string? Text = null, int? MinDetail = null, int? MaxDetail = null, string? Pattern = null);
+/// <summary>A plan item for the interface: its kind, points (x, y, …), text; the levels of detail it is drawn at when not all (<see cref="PlanDetail"/>) and its dash pattern when it has one of its own;
+/// a layered element's cut piece, its layer's subcategory (<see cref="PlanItem.Sub"/>).</summary>
+public sealed record PlanItemDto(string Kind, bool Closed, double[] Points, string? Text = null, int? MinDetail = null, int? MaxDetail = null, string? Pattern = null, string? Sub = null);
 
 /// <summary>
 /// One part of an element's render. <see cref="HiddenBy"/>: the layers modes of a 3D view

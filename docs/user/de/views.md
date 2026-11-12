@@ -235,6 +235,14 @@ Die Registerkarte **Ansicht** legt fest, was die vorne liegende Ansicht zeigt un
 
 ![Anzeigequalität](shots/display-quality.webp)
 
+### Beläge in Grundrissen und Schnitten
+
+Ein Ansichtsstil legt getrennt für Wände und Decken fest, ob Grundrisse die Belagsschichten zeichnen und ob Schnitte und Ansichten sie zeichnen: **Wandbeläge in Grundrissen**, **Bodenbeläge in Grundrissen**, **Wandbeläge in Schnitten** und **Bodenbeläge in Schnitten** in **Verwalten → Ansichtsstile**. Alle vier sind standardmäßig an. Eine Ansicht kann in den **Ansichtseinstellungen** eigene setzen (**Wandbeläge**, **Bodenbeläge**), und die Schaltfläche daneben nimmt wieder die des Stils. Ein Belag ist eine Schicht, deren eigene **Kategorie** in ihrem Typ **Bekleidung** ist, sonst eine, deren Material diese Kategorie hat. Ein Grundriss ohne Wandbeläge zeichnet den Schnittumriss jeder Wand am Kern, mit Anschlüssen und Ecken wie bisher, und fängt an den Flächen des Kerns. Polnische Pläne zum Beispiel werden mit Grundrissen ganz ohne Beläge und mit Schnitten mit den Bodenbelägen, aber ohne die Wandbeläge gedruckt: Deaktivieren Sie die ersten drei im Stil Architectural, und alle Grundrisse und Schnitte des Projekts folgen. Das Modell bleibt gleich: Mengen, die 3D-Ansicht und IFC behalten alle Schichten.
+
+![Verwalten → Ansichtsstile, mit der Wahl der Beläge für Grundrisse und Schnitte](shots/view-styles-finishes.webp)
+
+![Ein Schnitt mit Bodenbelag und Estrich der Decke und ohne den Putz der Wände](shots/finishes-section.webp)
+
 ### Sichtbarkeit / Grafiken
 
 **Sichtbarkeit** (<kbd>VV</kbd>) oder **Grafiken** (<kbd>VG</kbd>) öffnet Sichtbarkeit / Grafiken der vorderen Ansicht: ein Grundriss, ein Schnitt, eine Ansicht oder eine 3D-Ansicht. Was sie ausblendet, ist auch auf den Plänen der Ansicht, in ihrem PDF und DXF und in einem 3D-Export ausgeblendet.

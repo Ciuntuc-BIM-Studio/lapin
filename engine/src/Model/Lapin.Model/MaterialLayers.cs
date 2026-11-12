@@ -15,8 +15,15 @@ namespace Lapin.Model;
 /// ranked as high or higher. Null: its material's priority in the cut order, else the defaults (<see cref="Layers.Rank"/>).
 /// Its <see cref="Note"/> (docs/plan-buildup-tags.md) says how it is laid in this build-up ("in a continuous layer, Baumit
 /// SupraFix"): the type's, not the material's; written in IFC as the IfcMaterialLayer's Description.
+/// Its <see cref="Category"/> (IFC4's IfcMaterialLayer.Category; the forum's topic #30): what the layer is in this build-up
+/// (Structure, Finish, Insulation, Membrane, Other), over its material's category; null: its material's. A view style hides
+/// the finishes by it (docs/view-styles.md).
+/// <see cref="ExtendDown"/> and <see cref="ExtendUp"/> (a wall's layer; topic #30, as Revit's layer functions): whether the layer
+/// goes on down, through the layers of the floor the wall stands on ranked under it, to the top of the first ranked as high
+/// or higher, and up, through the floor above's lower layers, to the underside of the first as high. Null: no (as before).
 /// </summary>
-public sealed record MaterialLayer(string Material, double Thickness, bool Core = false, string? Name = null, double? From = null, double? To = null, List<LayerPart>? Parts = null, int? Priority = null, string? Note = null);
+public sealed record MaterialLayer(string Material, double Thickness, bool Core = false, string? Name = null, double? From = null, double? To = null, List<LayerPart>? Parts = null, int? Priority = null, string? Note = null,
+    string? Category = null, bool? ExtendDown = null, bool? ExtendUp = null);
 
 /// <summary>A piece of a layer in its height (decision 264): its material (an IfcMaterial id), how high it is, its own name.</summary>
 public sealed record LayerPart(string Material, double Height, string? Name = null);
