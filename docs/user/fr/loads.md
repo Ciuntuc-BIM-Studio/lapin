@@ -64,6 +64,10 @@ L'onglet **Combinaisons** liste les combinaisons des cas, d'après l'EN 1990 ave
 
 ![L'onglet Combinaisons](shots/loads-combinations.webp)
 
+## Analyser
+
+**Lancer l'analyse** (dans le même groupe et dans la boîte Charges) analyse le portique sous ces charges : voir [Analyse structurelle](analysis.md).
+
 ## Dans le fichier IFC
 
 **Exporter IFC, Fragments ou BOS…** a **Structural Analysis View (modèle analytique et charges)** : le fichier porte alors le modèle analytique des murs porteurs, planchers, poteaux et poutres, avec les cas de charge, les charges et les combinaisons, comme un IFC Structural Analysis View. Voir [Import et export](import-export.md).

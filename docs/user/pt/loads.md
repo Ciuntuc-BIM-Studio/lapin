@@ -64,6 +64,10 @@ O separador **Combinações** lista as combinações dos casos, segundo a EN 199
 
 ![O separador Combinações](shots/loads-combinations.webp)
 
+## Analisar
+
+**Executar análise** (no mesmo grupo e na caixa Cargas) analisa o pórtico sob estas cargas: veja [Análise estrutural](analysis.md).
+
 ## No ficheiro IFC
 
 **Exportar IFC, Fragments ou BOS…** tem **Structural Analysis View (modelo analítico e cargas)**: o ficheiro leva então o modelo analítico das paredes resistentes, lajes, pilares e vigas, com os casos de carga, as cargas e as combinações, como um IFC Structural Analysis View. Ver [Importação e exportação](import-export.md).

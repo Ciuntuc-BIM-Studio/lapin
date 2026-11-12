@@ -5,6 +5,7 @@ using Lapin.Geometry;
 using Lapin.Model;
 using Lapin.Platform;
 using Lapin.Platform.Analysis;
+using Lapin.Analysis.Solver;
 
 namespace Lapin.Analysis;
 
@@ -12,8 +13,10 @@ namespace Lapin.Analysis;
 /// Structural analysis, stage S0 (docs/plan-fem.md §8): the project's load cases, the user's loads (area, line, point), the
 /// loads derived from the model on every ask (the self weight, the floors' finishes, the partitions, the rooms' imposed loads
 /// by their category of use), the EN 1990 combinations, and all of it for IFC's structural analysis view
-/// (<see cref="IStructuralLoads"/>). It reads rooms, slabs and walls by their class and geometry, never through architecture
-/// or structure: without them it has less to read. Engine units: metres, kN, kN/m, kN/m².
+/// (<see cref="IStructuralLoads"/>). Stage S1 (§9): the linear static analysis of the bars (<see cref="AnalysisRun"/>:
+/// analysis.run, analysis.results, analysis.diagram) and their end releases (analysis.setReleases). It reads rooms, slabs and
+/// walls by their class and geometry, never through architecture or structure: without them it has less to read. Engine
+/// units: metres, kN, kN/m, kN/m².
 /// </summary>
 public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IViewAnnotations, IStructuralLoads
 {
@@ -164,6 +167,39 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
                 }
             }
             return new JsonObject { ["areas"] = areas, ["lines"] = lines, ["points"] = points };
+        });
+
+        // ── Linear static analysis of the bars (S1, §9) ──
+
+        r.Query("run", (q, _) => AnalysisRun.Of(q).RunJson());
+        // {case | combination | envelope: "uls" | "sls", elementId?}: the nodes' displacements, the reactions, the bars' forces at their stations and the maxima.
+        r.Query("results", (q, a) => AnalysisRun.Results(q, a));
+        // {case | combination | envelope, quantity: N | Vy | Vz | T | My | Mz | deformed, scale?, elementId?}: polylines in world coordinates.
+        r.Query("diagram", (q, a) => AnalysisRun.Diagram(q, a));
+
+        // {ids, i?, j?}: the bars' end releases, each end six booleans [ux, uy, uz, rx, ry, rz] in local axes (true: released),
+        // or "fixed" / "pinned"; null takes the element's own off (back to the default), absent leaves that end as it is.
+        r.Command("setReleases", "End releases", (ctx, a) =>
+        {
+            var ids = Args.Ids(a);
+            if (ids.Count == 0) throw new CommandException("Select the bars.");
+            if (!a.ContainsKey("i") && !a.ContainsKey("j")) throw new CommandException("Say the releases of end i, end j or both.");
+            static bool[]? End(JsonNode? n, string key) =>
+                n is null ? null : FrameReleases.Parse(n) ?? throw new CommandException($"End {key}'s releases are six booleans [ux, uy, uz, rx, ry, rz], or „fixed” or „pinned”.");
+            var (ri, rj) = (End(a["i"], "i"), End(a["j"], "j"));
+            foreach (var id in ids)
+            {
+                var e = ctx.Model.Get(id) ?? throw new CommandException($"There is no {id}.");
+                if (UserLoads.Classes.Contains(e.Class) || e.Class == LoadCases.Class) throw new CommandException("Releases are a bar's.");
+                var attrs = e.CloneAttrs();
+                var own = attrs[FrameReleases.Key] as JsonObject is { } had ? (JsonObject)had.DeepClone() : new JsonObject();
+                if (a.ContainsKey("i")) { if (ri == null) own.Remove("i"); else own["i"] = FrameReleases.ToJson(ri); }
+                if (a.ContainsKey("j")) { if (rj == null) own.Remove("j"); else own["j"] = FrameReleases.ToJson(rj); }
+                attrs.Remove(FrameReleases.Key);
+                if (own.Count > 0) attrs[FrameReleases.Key] = own;
+                ctx.Replace(e.With(attrs: attrs));
+            }
+            return null;
         });
     }
 

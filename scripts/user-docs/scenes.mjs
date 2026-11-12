@@ -3289,6 +3289,85 @@ export const scenes = [
     },
   },
   {
+    // Structural analysis, stage S1b (docs/plan-fem.md §9.6): Run analysis on a floor of four beams and columns, the results, the diagrams in 3D, a bar's releases, the stale card, a mechanism.
+    id: 'analysis',
+    touches: ['core', 'architecture', 'structure', 'analysis'],
+    async run(t) {
+      await t.fresh();
+      const ground = await t.storey();
+      const first = (await t.cmd('storey.create', { name: 'First floor', elevation: 3, height: 3 })).id;
+      const concrete = 'Concrete C25/30';
+      const col = (await t.cmd('structure.createColumnType', { name: 'C30x30', section: { kind: 'rectangle', width: 0.3, depth: 0.3 }, material: concrete })).id;
+      const beam = (await t.cmd('structure.createBeamType', { name: 'B30x50', section: { kind: 'rectangle', width: 0.3, depth: 0.5 }, material: concrete })).id;
+      const slab = (await t.cmd('architecture.createSlabType', { name: 'Floor 20', layers: [{ material: concrete, thickness: 0.2, core: true }] })).id;
+      const mat = (await t.nodes()).find((n) => n.name === concrete && n.type === 'IfcMaterial');
+      if (mat) await t.cmd('material.setData', { id: mat.id, params: [{ pset: 'Pset_MaterialCommon', name: 'MassDensity', value: 2500 }] });
+      const corners = [[0, 0], [6, 0], [6, 4], [0, 4]];
+      const columns = [];
+      for (const [x, y] of corners) columns.push((await t.cmd('structure.addColumn', { storeyId: ground, x, y, typeId: col })).id);
+      const beams = [];
+      for (let i = 0; i < 4; i++) { const [a, b] = [corners[i], corners[(i + 1) % 4]]; beams.push((await t.cmd('structure.addBeam', { storeyId: ground, x1: a[0], y1: a[1], x2: b[0], y2: b[1], typeId: beam })).id); }
+      await t.cmd('architecture.addSlab', { storeyId: first, points: [[-0.15, -0.15], [6.15, -0.15], [6.15, 4.15], [-0.15, 4.15]], typeId: slab });
+      for (const [x, y] of corners) await t.cmd('structure.addPadFooting', { storeyId: ground, x, y });
+      await t.cmd('analysis.defaultCases', {});
+      await t.cmd('analysis.addAreaLoad', { storeyId: first, points: [[0, 0], [6, 0], [6, 4], [0, 4]], value: 5 });
+      await t.wait(600);
+      await t.button('Structure', { exact: true });
+      await t.shot('ribbon-analysis', { of: '.topbar', pad: 0 });
+      // Run analysis: the results open.
+      await t.tool('analysis.run');
+      const dialog = t.page.locator('[aria-label="Analysis results"]');
+      await t.until(async () => (await dialog.locator('[data-testid=analysis-maxima]').count()) > 0, 'the Analysis results dialog lists the largest values');
+      const run = await t.call('doc.query', { name: 'analysis.run', args: {} });
+      t.expect(run.ok === true, `the analysis ran (${JSON.stringify(run.mechanism ?? run.refused ?? '')})`);
+      t.expect(run.cases.every((c) => c.balanced !== false), 'every case balances');
+      t.expect(await dialog.locator('[data-testid=analysis-cases] tbody tr').count() >= 2, 'a row for each case');
+      await t.wait(500);
+      await t.shot('analysis-results', { of: '.dialog', pad: 0 });
+      // Show the diagrams in 3D: the bending moment of the ultimate envelope.
+      await dialog.locator('[data-testid=results-show]').click();
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 0.9, pitch: -0.45, distance: 15, target: { x: 3, y: 2, z: 2 } }, false));
+      await t.wait(1500);
+      await t.until(async () => (await t.page.locator('[data-testid=analysis-overlay]').count()) > 0, 'the diagram is drawn over the 3D view');
+      t.expect(await t.page.locator('[data-testid=analysis-card]').count() === 1, 'the card with the picker shows');
+      await t.shot('analysis-moments', { of: '[data-testid=view3d]', pad: 0 });
+      await t.page.locator('[data-testid=analysis-q-N]').click();
+      await t.wait(700);
+      await t.page.locator('[data-testid=analysis-q-deformed]').click();
+      await t.wait(700);
+      await t.shot('analysis-deformed', { of: '[data-testid=view3d]', pad: 0 });
+      await t.page.locator('[data-testid=analysis-q-Mz]').click();
+      // A bar's releases and extremes in its properties.
+      await select(t, beams[0]);
+      await t.wait(600);
+      t.expect(await t.page.locator('[data-field=release-i]').count() === 1, 'a beam has its releases in its properties');
+      await t.shot('analysis-bar', { of: 'aside.props', pad: 0, maxHeight: 700 });
+      await t.page.locator('[data-field=release-i]').selectOption('pinned');
+      await t.wait(700);
+      const own = (await t.nodes()).find((n) => n.id === beams[0]);
+      t.expect(JSON.stringify(own?.props?.analysisReleases?.i) === JSON.stringify([false, false, false, false, true, true]), `the beam's end i is pinned (${JSON.stringify(own?.props?.analysisReleases)})`);
+      // The model changed: the card says so, and Run again.
+      t.expect(await t.page.locator('[data-testid=analysis-rerun]').count() === 1, 'the card offers Run again');
+      await t.page.locator('[data-testid=analysis-rerun]').click();
+      await t.until(async () => (await t.page.locator('[data-testid=analysis-pick]').count()) > 0, 'the picker is back after Run again');
+      await t.wait(700);
+      await t.page.locator('[data-testid=analysis-pick]').selectOption({ index: 0 });
+      await t.wait(700);
+      await t.shot('analysis-pick', { of: '[data-testid=analysis-card]', pad: 6 });
+      // A mechanism: every column's top end released in all six freedoms.
+      await t.cmd('analysis.setReleases', { ids: columns, j: [true, true, true, true, true, true] });
+      await t.wait(600);
+      await t.ui({ dialog: null });
+      await t.tool('analysis.run');
+      await t.until(async () => (await t.page.locator('[data-testid=analysis-mechanism]').count()) > 0 || (await t.page.locator('[data-testid=analysis-maxima]').count()) > 0, 'the run answers');
+      t.expect(await t.page.locator('[data-testid=analysis-mechanism]').count() === 1, 'the mechanism is said');
+      await t.wait(500);
+      await t.shot('analysis-mechanism', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+    },
+  },
+  {
     // Decision 445: File → Preferences (grid and snaps), the snap menu, a UCS in a plan, the project's points in 3D.
     id: 'preferences',
     touches: ['core', 'drafting'],

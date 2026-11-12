@@ -64,6 +64,10 @@ The **Combinations** tab lists the combinations of the cases, after EN 1990 as r
 
 ![The Combinations tab](shots/loads-combinations.webp)
 
+## Analysing
+
+**Run analysis** (in the same group, and in the Loads dialog) analyses the frame under these loads: see [Structural analysis](analysis.md).
+
 ## In the IFC file
 
 **Export IFC, Fragments or BOS…** has **Structural analysis view (analytical model and loads)**: the file then carries the analytical model of the bearing walls, floors, columns and beams, with the load cases, the loads and the combinations, as an IFC Structural Analysis View. See [Import and export](import-export.md).

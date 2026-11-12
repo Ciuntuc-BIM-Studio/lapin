@@ -1572,6 +1572,17 @@ dl.fields label.check input { width: auto; margin: 0; }
 .sim-settings { position: absolute; right: 10px; top: 44px; max-height: calc(100% - 52px); overflow-y: auto; z-index: 20; display: grid; gap: 6px; width: 270px; padding: 8px 10px; background: var(--panel); border: 1px solid var(--rule-strong); border-radius: 3px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14); }
 .sim-colour { display: flex; align-items: center; gap: 8px; }
 .sim-colour input[type='color'] { width: 28px; height: 20px; padding: 0; border: 1px solid var(--rule-strong); background: none; }
+.sel-card.analysis-card { left: 12px; right: auto; bottom: 12px; width: 280px; gap: 6px; }
+.sel-card.analysis-card .quantities { flex-wrap: wrap; gap: 4px; }
+.sel-card.analysis-card input[type=range] { flex: 1; min-width: 0; }
+.row.between { justify-content: space-between; align-items: center; }
+.row.releases { flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.analysis-overlay .analysis-base { stroke: var(--ink-muted); stroke-width: 1; fill: none; stroke-dasharray: 4 3; }
+.analysis-overlay .analysis-curve { stroke-width: 2.2; fill: none; stroke-linejoin: round; }
+.analysis-overlay .analysis-hatch { stroke-width: 1; opacity: 0.55; }
+.analysis-overlay .analysis-reaction { stroke: #d9480f; stroke-width: 2.2; fill: none; }
+.analysis-overlay text { font: 600 11px/1 system-ui, sans-serif; paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round; }
+.analysis-overlay text.analysis-unit { fill: var(--ink-muted); font-weight: 500; }
 .sel-card.sim-card { left: 12px; right: auto; bottom: 12px; width: auto; max-width: 340px; gap: 4px; }
 .sel-card.sim-card .sim-legend { flex-direction: column; align-items: flex-start; }
 .gantt-head-time.scrub { cursor: ew-resize; }

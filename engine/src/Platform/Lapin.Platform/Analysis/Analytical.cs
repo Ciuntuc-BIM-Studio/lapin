@@ -89,6 +89,12 @@ public sealed record AnalyticalSupport(
     string SourceId, string Name, SupportSpec Spec, IReadOnlyList<Vec2>? Region = null, Vec2? LineA = null, Vec2? LineB = null,
     double Width = 0, double Bottom = 0, double Top = 0, string? ForFrame = null, bool AtEnd = false);
 
+/// <summary>
+/// A roof framed in bars (a timber roof's members, which the frames give): its planes as its roof module solves them, each
+/// its outline in 3D (eaves and overhangs included). An analysis lays the roof's area loads on its members plane by plane.
+/// </summary>
+public sealed record AnalyticalRoof(string SourceId, IReadOnlyList<IReadOnlyList<Vec3>> Planes);
+
 /// <summary>An element the analytical model leaves out, and why.</summary>
 public sealed record LeftOut(string SourceId, string Name, string IfcClass, string Reason);
 
@@ -100,6 +106,7 @@ public sealed class AnalyticalContribution
     public List<AnalyticalSupport> Supports { get; } = [];
     public List<LeftOut> LeftOut { get; } = [];
     public List<AnalyticalLink> Links { get; } = [];
+    public List<AnalyticalRoof> Roofs { get; } = [];
     /// <summary>The project's services (a wall's top under a roof needs the bodies' geometry).</summary>
     public IServices? Services { get; init; }
 }

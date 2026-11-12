@@ -272,4 +272,64 @@ public class StructuralIfcTests
         }
         Assert.Equal(Imported(Bytes(f, false)), Imported(Bytes(f, true)));
     }
+    [Fact]
+    public void Released_ends_are_written_as_their_connections_condition_and_eccentric_ends_with_their_offsets()
+    {
+        // The steel hall: its secondary members pinned on cleats and gussets, their ends on their hosts' axes by arms (§9.1).
+        var f = AnalysisRunTests.Hall();
+        var am = AnalyticalModel.Build(f.Model, f.Session.Reader.Services, new AnalyticalOptions());
+        var releases = FrameReleases.Of(am, f.Model);
+        var step = Export(f);
+        var plain = step.OfType("IFCRELCONNECTSSTRUCTURALMEMBER").ToList();
+        var eccentric = step.OfType("IFCRELCONNECTSWITHECCENTRICITY").ToList();
+        // Every bar end connected once, an eccentric one with its offset.
+        Assert.Equal(2 * am.Frames.Count, plain.Count + eccentric.Count);
+        // As the analysis takes them: the joint's own offset plus an unsymmetric section's centroid off the line (the hall's C purlins').
+        Assert.Equal(am.Frames.Count(x => (x.OffI + AnalyticalModel.CentroidOffset(x)).Length > 1e-9) + am.Frames.Count(x => (x.OffJ + AnalyticalModel.CentroidOffset(x)).Length > 1e-9), eccentric.Count);
+        Assert.Contains(am.Frames, x => AnalyticalModel.CentroidOffset(x).Length > 1e-9);
+        var ecc = step.Get(eccentric[0][10])!;
+        Assert.Equal("IFCCONNECTIONPOINTECCENTRICITY", ecc.Type);
+        Assert.Equal("IFCCARTESIANPOINT", step.Get(ecc[0])!.Type);
+        Assert.Equal("IFCVERTEXPOINT", step.Get(ecc[1])!.Type);
+        var offset = Math.Sqrt(Enumerable.Range(2, 3).Sum(i => (double)ecc[i]! * (double)ecc[i]!));
+        Assert.InRange(offset, 0.01, 1.0);
+        // A pinned end: held in translation and torsion, free to turn about local 2 and 3.
+        var conditions = plain.Concat(eccentric).Where(r => r[6] is StepRef).Select(r => step.Get(r[6])!).ToList();
+        Assert.Equal(releases.Values.Count(r => r.I.Any(x => x)) + releases.Values.Count(r => r.J.Any(x => x)), conditions.Count);
+        var pinned = conditions.First(c => (string?)c[0] == "pinned");
+        Assert.Equal("IFCBOUNDARYNODECONDITION", pinned.Type);
+        StepTyped B(bool b) => new("IFCBOOLEAN", new StepEnum(b ? "T" : "F"));
+        Assert.Equal([B(true), B(true), B(true), B(true), B(false), B(false)], Enumerable.Range(1, 6).Select(i => pinned[i]));
+        // The far end of a bar pinned at both: its twist free too (held at its first end only).
+        Assert.Contains(conditions, c => (string?)c[0] == "released" && Equals(c[4], B(false)) && Equals(c[5], B(false)) && Equals(c[6], B(false)) && Equals(c[3], B(true)));
+        // A frame's concrete beams: rigidly joined, no condition.
+        var concrete = Export(Build().F);
+        Assert.All(concrete.OfType("IFCRELCONNECTSSTRUCTURALMEMBER"), r => Assert.False(r[6] is StepRef));
+    }
+    [Fact]
+    public void An_unsymmetric_bar_is_written_on_its_line_with_its_centroid_as_both_ends_eccentricity()
+    {
+        // A UPN 200 column on a pad footing: the curve member on the box centre's line between its two nodes, as before; each
+        // end connected with the centroid's offset across the web, in the member's local axes, as the analysis takes it.
+        var f = LoadCaseTests.F();
+        var type = (string)f.Run("structure.createColumnType", new JsonObject { ["section"] = "UPN 200", ["material"] = "S355" })!["id"]!;
+        f.Run("structure.addColumn", new JsonObject { ["storeyId"] = f.Storey, ["x"] = 0, ["y"] = 0, ["typeId"] = type });
+        f.Run("structure.addPadFooting", new JsonObject { ["storeyId"] = f.Storey, ["x"] = 0, ["y"] = 0 });
+        var am = AnalyticalModel.Build(f.Model, f.Session.Reader.Services, new AnalyticalOptions());
+        var bar = Assert.Single(am.Frames);
+        var c = AnalyticalModel.CentroidOffset(bar);
+        Assert.Equal(SectionProperties.Of(bar.Source.Section.Shape)!.Centroid.Length, c.Length, 9);
+        var step = Export(f);
+        Assert.Empty(step.OfType("IFCRELCONNECTSSTRUCTURALMEMBER"));
+        var ends = step.OfType("IFCRELCONNECTSWITHECCENTRICITY").ToList();
+        Assert.Equal(2, ends.Count);
+        foreach (var r in ends)
+        {
+            var ecc = step.Get(r[10])!;
+            var local = Enumerable.Range(2, 3).Select(i => (double)ecc[i]!).ToArray();
+            // Square to the column: nothing along local 1, the centroid's offset across.
+            Assert.Equal(0, local[0], 9);
+            Assert.Equal(c.Length, Math.Sqrt(local[1] * local[1] + local[2] * local[2]), 6);
+        }
+    }
 }

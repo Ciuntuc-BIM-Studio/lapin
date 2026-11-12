@@ -173,7 +173,7 @@ public sealed class LoadsReport
     }
 
     /// <summary>A material's density (kg/m³) by its id or name: its own, else what its name says (a timber grade, steel, reinforced concrete); null without one.</summary>
-    sealed class Densities(IModelView m)
+    internal sealed class Densities(IModelView m)
     {
         readonly Dictionary<string, double?> cache = [];
 

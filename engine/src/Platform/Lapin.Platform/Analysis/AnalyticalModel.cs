@@ -73,6 +73,10 @@ public sealed class AnalyticalModel
     public List<List<string>> Floating { get; } = [];
     /// <summary>How many ends and crossings were joined eccentrically (their offsets kept).</summary>
     public int EccentricJoins { get; private set; }
+    /// <summary>The connections the physical model knows (cleats, gussets, fly braces): an analysis pins the members they join (<see cref="FrameReleases"/>).</summary>
+    public List<AnalyticalLink> Links { get; } = [];
+    /// <summary>The roofs framed in bars, with their planes (an analysis lays their area loads on their members plane by plane).</summary>
+    public List<AnalyticalRoof> Roofs { get; } = [];
 
     sealed class Bar(AnalyticalFrame src)
     {
@@ -129,6 +133,8 @@ public sealed class AnalyticalModel
         var model = new AnalyticalModel();
         model.Storeys.AddRange(Spatial.Storeys(m));
         model.LeftOut.AddRange(all.LeftOut);
+        model.Links.AddRange(all.Links);
+        model.Roofs.AddRange(all.Roofs);
 
         var bars = new List<Bar>();
         foreach (var f in all.Frames)
@@ -858,6 +864,26 @@ public sealed class AnalyticalModel
         if (d.Length < 0.5) return 0;
         var angle = Math.Atan2(Vec3.Dot(Vec3.Cross(reference, d), u), Vec3.Dot(reference, d)) * 180 / Math.PI;
         return Normalize(angle);
+    }
+
+    /// <summary>
+    /// Where a bar's centroidal axis is from its line (metres, global): an unsymmetric section's (a T, a channel, an angle)
+    /// centroid off its box centre, through which the analytical line runs. In the section's drawing x lies along −local 3
+    /// (+local 3 for a mirrored member) and y along local 2, of the bar's geometric axes (docs/jg-structures.md); zero for a
+    /// section symmetric about both axes or without properties.
+    /// </summary>
+    public static Vec3 CentroidOffset(AFrame f) => CentroidOffset(f, SectionProperties.Of(f.Source.Section.Shape));
+
+    public static Vec3 CentroidOffset(AFrame f, SectionProps? props)
+    {
+        if (props is not { } p || p.Centroid.Length <= 1e-9) return Vec3.Zero;
+        var (pi, pj) = (f.I.At + f.OffI, f.J.At + f.OffJ);
+        var u = (pj - pi).Normalized();
+        var v0 = Reference(u);
+        var t = f.RotationDeg * Math.PI / 180;
+        var l2 = (v0 * Math.Cos(t) + Vec3.Cross(u, v0) * Math.Sin(t)).Normalized();
+        var l3 = Vec3.Cross(u, l2);
+        return l2 * p.Centroid.Y + l3 * (f.Source.Mirrored ? p.Centroid.X : -p.Centroid.X);
     }
 
     /// <summary>An angle in degrees in (−180, 180], rounded to a millionth.</summary>

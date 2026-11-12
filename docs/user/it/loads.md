@@ -64,6 +64,10 @@ La scheda **Combinazioni** elenca le combinazioni dei casi, secondo l'EN 1990 co
 
 ![La scheda Combinazioni](shots/loads-combinations.webp)
 
+## Analisi
+
+**Esegui l'analisi** (nello stesso gruppo e nella finestra Carichi) analizza il telaio sotto questi carichi: vedi [Analisi strutturale](analysis.md).
+
 ## Nel file IFC
 
 **Esporta IFC, Fragments o BOS…** ha **Structural Analysis View (modello analitico e carichi)**: il file porta allora il modello analitico dei muri portanti, solai, pilastri e travi, con i casi di carico, i carichi e le combinazioni, come un IFC Structural Analysis View. Vedi [Importazione ed esportazione](import-export.md).

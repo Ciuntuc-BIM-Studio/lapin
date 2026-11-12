@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import loaded, { product } from 'virtual:lapin-modules';
 import type { ComponentType } from 'react';
+import type * as THREE from 'three';
 import type { PlacementRequest, Vec2, Grip, GripView, LapinModule, ModuleViewDef, PlanOverlayProps, RefLine, RibbonTabDef, ToolDef } from './module';
 import type { NodeDto } from '../engine/protocol';
 import { addModuleViews, toggleTool, useUi } from '../app/store';
@@ -34,6 +35,9 @@ function replacedOnce<T>(kind: 'dialogs' | 'views', id: string, original: () => 
 }
 /** What the modules show over the active model view (the planning module's card to drag the selection onto a task). */
 export const overlays = (): ComponentType[] => modules.flatMap((m) => m.overlays ?? []);
+
+/** What the modules draw over the 3D view's canvas, projected by its camera. */
+export const overlays3d = (): ComponentType<{ camera: React.RefObject<THREE.Camera | null>; canvas: React.RefObject<HTMLElement | null> }>[] => modules.flatMap((m) => m.overlays3d ?? []);
 
 /** What the modules draw inside the plan's SVG, in the plan's own coordinates. */
 export const planOverlays = (): ComponentType<PlanOverlayProps>[] => modules.flatMap((m) => m.planOverlays ?? []);

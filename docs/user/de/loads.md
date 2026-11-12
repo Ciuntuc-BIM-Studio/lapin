@@ -64,6 +64,10 @@ Der Reiter **Kombinationen** listet die Kombinationen der Fälle nach EN 1990 mi
 
 ![Der Reiter Kombinationen](shots/loads-combinations.webp)
 
+## Berechnen
+
+**Berechnung starten** (in derselben Gruppe und im Dialog Lasten) berechnet den Rahmen unter diesen Lasten: siehe [Tragwerksberechnung](analysis.md).
+
 ## In der IFC-Datei
 
 **IFC, Fragments oder BOS exportieren…** hat **Structural Analysis View (Analysemodell und Lasten)**: die Datei enthält dann das Analysemodell der tragenden Wände, Decken, Stützen und Träger mit den Lastfällen, den Lasten und den Kombinationen, als IFC Structural Analysis View. Siehe [Import und Export](import-export.md).

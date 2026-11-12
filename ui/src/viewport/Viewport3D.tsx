@@ -26,7 +26,7 @@ import { everyLayerPatch, layers3dOf, layersChip, shownIn } from './layers3d';
 import { setTool, useUi } from '../app/store';
 import { useDisplay } from '../app/display';
 import { usePaneField } from '../app/pane';
-import { findTool } from '../platform/modules';
+import { findTool, overlays3d } from '../platform/modules';
 import type { FaceHit, Vec2 } from '../platform/module';
 import { completeTool } from './tools';
 import { boxUv, boxUvSized, imageOf, imageTexture, orthophotos, orthoTexture, orthoUv, pictureOf, pictureUv, splitByFace, textureFor, textureOf, tileOf, whenImagesLoad, type Face, type TextureKind } from './textures';
@@ -1931,6 +1931,7 @@ export function Viewport3D() {
       {!walkStart && <SketchGrips3D camera={camRef} canvas={host} scene={scene} />}
       {!walkStart && <RefPlanes3D camera={camRef} canvas={host} />}
       {!walkStart && <Location3D camera={camRef} canvas={host} />}
+      {!walkStart && overlays3d().map((Overlay, k) => <Overlay key={k} camera={camRef} canvas={host} />)}
       <KeyPlan mode="3d" />
     </>
   );

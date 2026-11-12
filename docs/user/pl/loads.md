@@ -64,6 +64,10 @@ Karta **Kombinacje** wymienia kombinacje przypadków wg EN 1990 z wartościami z
 
 ![Karta Kombinacje](shots/loads-combinations.webp)
 
+## Analiza
+
+**Uruchom analizę** (w tej samej grupie i w oknie Obciążenia) analizuje ramę pod tymi obciążeniami: zobacz [Analiza konstrukcji](analysis.md).
+
 ## W pliku IFC
 
 **Eksportuj IFC, Fragments lub BOS…** ma opcję **Structural Analysis View (model analityczny i obciążenia)**: plik niesie wtedy model analityczny ścian nośnych, stropów, słupów i belek, z przypadkami obciążenia, obciążeniami i kombinacjami, jako IFC Structural Analysis View. Zobacz [Import i eksport](import-export.md).

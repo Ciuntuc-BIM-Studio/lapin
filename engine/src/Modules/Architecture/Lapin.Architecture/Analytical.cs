@@ -112,6 +112,7 @@ public sealed class ArchitectureAnalytical : IAnalyticalElements
             }
             return;
         }
+        into.Roofs.Add(new AnalyticalRoof(roof.Id, shape.Planes.Select(p => (IReadOnlyList<Vec3>)p.Points).ToList()));
         var k = 0;
         foreach (var mb in RoofParts.Framing(r, shape, openings))
         {

@@ -64,6 +64,10 @@ La pestaña **Combinaciones** lista las combinaciones de las hipótesis, según 
 
 ![La pestaña Combinaciones](shots/loads-combinations.webp)
 
+## Analizar
+
+**Ejecutar análisis** (en el mismo grupo y en el cuadro Cargas) analiza el pórtico con estas cargas: véase [Análisis estructural](analysis.md).
+
 ## En el archivo IFC
 
 **Exportar IFC, Fragments o BOS…** tiene **Structural Analysis View (modelo analítico y cargas)**: el archivo lleva entonces el modelo analítico de los muros portantes, forjados, pilares y vigas, con las hipótesis de carga, las cargas y las combinaciones, como un IFC Structural Analysis View. Véase [Importar y exportar](import-export.md).

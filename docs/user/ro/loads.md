@@ -64,6 +64,10 @@ Fila **Combinații** enumeră combinațiile cazurilor, după EN 1990, cele recom
 
 ![Fila Combinații](shots/loads-combinations.webp)
 
+## Calculul
+
+**Rulează calculul** (în același grup și în dialogul Încărcări) calculează cadrul sub aceste încărcări: vezi [Calcul structural](analysis.md).
+
 ## În fișierul IFC
 
 **Exportă IFC, Fragments sau BOS…** are **Structural Analysis View (model analitic și încărcări)**: fișierul poartă atunci modelul analitic al pereților portanți, planșeelor, stâlpilor și grinzilor, cu cazurile de încărcare, încărcările și combinațiile, ca IFC Structural Analysis View. Vezi [Import și export](import-export.md).

@@ -7,6 +7,7 @@
  */
 
 import type { ComponentType } from 'react';
+import type * as THREE from 'three';
 import type { NodeDto } from '../engine/protocol';
 import type { Icon } from '../icons';
 
@@ -288,6 +289,8 @@ export interface LapinModule {
   expandSelection?: (id: string, node: NodeDto | undefined) => readonly string[] | null;
   /** Shown over the active pane's model view (not over a module's own view): a card the selection is dragged from. */
   overlays?: ComponentType[];
+  /** Drawn over every 3D view's canvas, projected by the camera it is given (the structural analysis' diagrams). Nothing in it takes the pointer. */
+  overlays3d?: ComponentType<{ camera: React.RefObject<THREE.Camera | null>; canvas: React.RefObject<HTMLElement | null> }>[];
   /**
    * Drawn inside every plan view's SVG, over its elements and grips, in the plan's own coordinates (`PlanOverlayProps`).
    * Nothing in it takes the pointer unless it asks: an element that should be clicked carries `data-overlay-hit` (and

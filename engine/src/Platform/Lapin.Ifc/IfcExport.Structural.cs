@@ -76,6 +76,32 @@ public static partial class IfcExport
             }
             void Connect(string member, string memberGid, ANode n) =>
                 f.Add("IFCRELCONNECTSSTRUCTURALMEMBER", Gid(memberGid, $"connects:{n.Id}"), Null, Null, Null, member, connectionOf[n], Null, Null, Null, Null);
+            // A bar's end: its releases as the condition it is joined by (true: held; in the member's local axes, as IFC implies
+            // with no coordinate system given), an eccentric end its offset from the node (the member's local axes) as well. The
+            // member stays on its analytical line (the box centre's); an unsymmetric section's centroid off it is part of its ends'
+            // eccentricity, as the analysis takes it.
+            var releases = FrameReleases.Of(am, m);
+            var eccentric = 0;
+            void ConnectEnd(string member, string memberGid, AFrame fr, bool atJ, Vec3 local1, Vec3 local2)
+            {
+                var n = atJ ? fr.J : fr.I;
+                var off = (atJ ? fr.OffJ : fr.OffI) + AnalyticalModel.CentroidOffset(fr);
+                var rel = releases.TryGetValue(fr, out var r) ? (atJ ? r.J : r.I) : null;
+                var cond = rel != null && rel.Any(x => x)
+                    ? f.Add("IFCBOUNDARYNODECONDITION", S(rel.SequenceEqual(FrameReleases.Pinned) ? "pinned" : rel.SequenceEqual(FrameReleases.PinnedStrong) ? "pinned about local 3" : "released"),
+                        Bool(!rel[0]), Bool(!rel[1]), Bool(!rel[2]), Bool(!rel[3]), Bool(!rel[4]), Bool(!rel[5]))
+                    : Null;
+                var gid = Gid(memberGid, $"connects:{n.Id}");
+                if (off.Length <= 1e-9)
+                {
+                    f.Add("IFCRELCONNECTSSTRUCTURALMEMBER", gid, Null, Null, Null, member, connectionOf[n], cond, Null, Null, Null);
+                    return;
+                }
+                var local3 = Vec3.Cross(local1, local2);
+                var ecc = f.Add("IFCCONNECTIONPOINTECCENTRICITY", P3(n.At + off), vertexOf[n], R(Vec3.Dot(off, local1)), R(Vec3.Dot(off, local2)), R(Vec3.Dot(off, local3)));
+                f.Add("IFCRELCONNECTSWITHECCENTRICITY", gid, Null, Null, S("eccentric end: the offset from the node to the member's end, in the member's local axes"), member, connectionOf[n], cond, Null, Null, Null, ecc);
+                eccentric++;
+            }
             var membersOf = new Dictionary<string, List<string>>();
             void Own(string sourceId, string member) => (membersOf.TryGetValue(sourceId, out var l) ? l : membersOf[sourceId] = []).Add(member);
 
@@ -95,8 +121,8 @@ public static partial class IfcExport
                     Shape("Edge", edge), E("RIGID_JOINED_MEMBER"), Dir3(local2));
                 frameRef[fr] = member;
                 items.Add(member);
-                Connect(member, gid, fr.I);
-                Connect(member, gid, fr.J);
+                ConnectEnd(member, gid, fr, false, u, local2);
+                ConnectEnd(member, gid, fr, true, u, local2);
                 Own(fr.Source.SourceId, member);
                 var key = (fr.Source.Section.Key, fr.Source.MaterialId);
                 if (!profileSets.TryGetValue(key, out var ps))
@@ -212,7 +238,8 @@ public static partial class IfcExport
 
             Notes.Add($"Structural analysis view: {am.Nodes.Count} nodes, {am.Frames.Count} bars, {am.Shells.Count} shells" +
                 (loads != null ? $", {loads.Cases.Count} load cases, {actions} actions, {loads.Combinations.Count} combinations." : "; without the structural analysis module, no loads."));
-            if (am.Frames.Any(x => x.Eccentric)) Notes.Add("Structural analysis view: eccentric bar ends are written on their nodes, their offsets left out.");
+            if (eccentric > 0) Notes.Add($"Structural analysis view: {eccentric} eccentric bar ends written with their offsets (IfcRelConnectsWithEccentricity), an unsymmetric section's centroid off its line among them.");
+            if (releases.Count > 0) Notes.Add($"Structural analysis view: {releases.Count} bars with released ends (their connections' AppliedCondition).");
             if (am.LeftOut.Count > 0) Notes.Add($"Structural analysis view: {am.LeftOut.Count} elements left out of the analytical model (as the JG Structures export says why).");
         }
 

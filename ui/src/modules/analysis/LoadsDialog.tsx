@@ -1,11 +1,12 @@
 /** Loads (docs/plan-fem.md §8): the load cases, the imposed loads by category, what the model carries, the EN 1990 combinations. All values are indicative. */
 
 import { useState } from 'react';
-import { Plus, Trash2, X } from 'lucide-react';
+import { Play, Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { PendingDialog } from '../core/PendingDialog';
 import { useAnalysis } from './hooks';
+import { runAnalysis } from './useResults';
 import {
   ACTION_SOURCES, ACTION_SOURCE_LABEL, ACTION_TYPES, ACTION_TYPE_LABEL, combinationName, formatFactor, formatKn, imposedArgs, psiFrom,
   type CategoryDto, type CombinationsDto, type LoadCaseDto, type LoadsDto,
@@ -37,6 +38,7 @@ export function LoadsDialog() {
           {tab === 'imposed' && <ImposedTab cats={cats} />}
           {tab === 'summary' && <SummaryTab loads={loads} />}
           {tab === 'combinations' && (combos ? <CombinationsTab data={combos} /> : <p className="muted">Reading the combinations…</p>)}
+          <div className="row"><button type="button" className="btn primary" data-testid="loads-run" title="Analyse the frame under these loads and show the results" onClick={() => void runAnalysis()}><Play size={14} />Run analysis</button></div>
           <p className="muted small">The values are indicative (EN 1990 and EN 1991-1-1 as recommended): set the national annex values and check them before using the results.</p>
           {error && <p className="error-text" role="alert">{error}</p>}
         </div>

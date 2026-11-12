@@ -64,6 +64,10 @@ Fanen **Kombinationer** viser kombinationerne af tilfældene efter EN 1990 med d
 
 ![Fanen Kombinationer](shots/loads-combinations.webp)
 
+## Analyse
+
+**Kør analyse** (i samme gruppe og i dialogen Belastninger) analyserer rammen under disse laster: se [Konstruktionsberegning](analysis.md).
+
 ## I IFC-filen
 
 **Eksportér IFC, Fragments eller BOS…** har **Structural Analysis View (analytisk model og laster)**: filen bærer så den analytiske model af de bærende vægge, dæk, søjler og bjælker med lasttilfælde, laster og kombinationer, som en IFC Structural Analysis View. Se [Import og eksport](import-export.md).

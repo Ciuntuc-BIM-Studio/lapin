@@ -26,6 +26,13 @@ public sealed record SectionProps(double Area, double I22, double I33, double S2
     public string? IwMethod { get; init; }
     /// <summary>The outside's length (m: the paintable surface a metre), its fillets rounded.</summary>
     public double Perimeter { get; init; }
+    /// <summary>
+    /// The shear areas (m²) for a shear force along local 2 (the depth: an I's web, EN 1993-1-1's Av,z) and along local 3 (the
+    /// width: an I's flanges, Av,y), and how they were found; null where Lapin has no rule (an arbitrary outline).
+    /// </summary>
+    public double? Av2 { get; init; }
+    public double? Av3 { get; init; }
+    public string? AvMethod { get; init; }
 }
 
 /// <summary>
@@ -62,6 +69,49 @@ public static class SectionProperties
 
     /// <summary>The section's properties; null when its geometry cannot give them (no size, an unknown kind).</summary>
     public static SectionProps? Of(SectionShape s)
+    {
+        var p = Core(s);
+        if (p == null) return null;
+        var r = s.Root is { } own && own >= 0 ? own : CatalogueOf(s.Designation)?.Radius ?? 0;
+        return ShearAreas(s, p, r) is { } v ? p with { Av2 = Math.Min(v.Av2, p.Area), Av3 = Math.Min(v.Av3, p.Area), AvMethod = v.Method } : p;
+    }
+
+    /// <summary>
+    /// The shear areas: a rectangle's 5/6·A, a circle's (and an ellipse's) 0.9·A; EN 1993-1-1:2005 §6.2.6(3) for the hot-rolled
+    /// and hollow sections — an I or H Av,z = A − 2b·tf + (tw + 2r)·tf, not less than hw·tw, and Av,y = 2b·tf; a channel
+    /// A − 2b·tf + (tw + r)·tf; a T A − b·tf + (tw + 2r)·tf/2; an RHS A·h/(b + h) along its depth, A·b/(b + h) across; a CHS
+    /// 2A/π — and for the other open sections their webs' and flanges' areas (an angle's legs, a cold-formed sheet's web and
+    /// flanges, an asymmetric I's web and both flanges). None for an arbitrary outline.
+    /// </summary>
+    static (double Av2, double Av3, string Method)? ShearAreas(SectionShape s, SectionProps p, double r)
+    {
+        double a = p.Area, b = s.Width, h = s.Depth, tw = s.Web, tf = s.Flange;
+        const string En = "EN 1993-1-1:2005 §6.2.6(3)";
+        switch (s.Kind)
+        {
+            case "rectangle": return (5.0 / 6 * a, 5.0 / 6 * a, "5/6·A (a rectangle)");
+            case "circle" or "ellipse": return (0.9 * a, 0.9 * a, "0.9·A (a solid circle)");
+            case "CHS": return (2 * a / Math.PI, 2 * a / Math.PI, $"2A/π, {En}(g)");
+            case "RHS": return (a * h / (b + h), a * b / (b + h), $"A·h/(b + h) and A·b/(b + h), {En}(f)");
+            case "I":
+            {
+                var hw = h - 2 * tf;
+                return (Math.Max(a - 2 * b * tf + (tw + 2 * r) * tf, hw * tw), 2 * b * tf, $"A − 2b·tf + (tw + 2r)·tf, not less than hw·tw; 2b·tf across: {En}(a)");
+            }
+            case "U": return (a - 2 * b * tf + (tw + r) * tf, 2 * b * tf, $"A − 2b·tf + (tw + r)·tf; 2b·tf across: {En}(b)");
+            case "T": return (a - b * tf + (tw + 2 * r) * tf / 2, b * tf, $"A − b·tf + (tw + 2r)·tf/2; b·tf across: {En}(c)");
+            case "asymI":
+            {
+                var (b2, tf2) = (s.Width2 > 0 ? s.Width2 : b, s.Flange2 > 0 ? s.Flange2 : tf);
+                return ((h - tf - tf2) * tw, b * tf + b2 * tf2, "the web's area along the depth, the flanges' across");
+            }
+            case "L": return (h * tw, b * tf, "each leg's area along it");
+            case "C" or "Z" or "SIGMA": return ((h - 2 * tw) * tw, 2 * (b - tw) * tw, "the web's area along the depth, the flanges' across");
+            default: return null;
+        }
+    }
+
+    static SectionProps? Core(SectionShape s)
     {
         if (!(s.Width > 0 && s.Depth > 0) || !double.IsFinite(s.Width) || !double.IsFinite(s.Depth)) return null;
         var cat = CatalogueOf(s.Designation);

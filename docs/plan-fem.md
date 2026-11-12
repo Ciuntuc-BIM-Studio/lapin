@@ -233,3 +233,57 @@ Opțiunea `structural: true` din `IfcExportOptions` (dialogul de export: „Stru
 ### 8.8 Testele
 
 `LoadCaseTests` (implicitele, unicitatea codului, un singur caz cu greutate proprie, ștergerea refuzată), `DerivedLoadTests` (placa cu șapă 5 cm × 2200 kg/m³ → 1,079 kN/m²; peretele neportant de 2,5 m din BCA → linia lui; camera de 4 × 5 m categoria A → 40 kN; categoria derivată din funcție; `none`), `CombinationTests` (G1, G2, Q-A, S, W → numărul și factorii combinațiilor SLU și SLS după EN 1990, cheile stabile), `StructuralIfcTests` (exportul cu SAV citit de cititorul STEP al lui Lapin: entitățile, referințele, unitățile, GlobalId-urile stabile la două exporturi, fără SAV când nu se cere).
+
+## 9. S1: static liniar pe bare (specificația)
+
+**Hotărât de utilizator (12.11.2026):** S1 duce încărcările plăcilor pe reazeme după regula de 45° până la S2; calculul (S0–S3) rămâne în modulul deschis, MIT. **Hotărât de utilizator (12.11.2026, „nu mai facem ediție cu altă licență — facem ce putem noi și rezolvăm problemele până la capăt”):** nicio ediție sau modul cu licență copyleft (nici LGPL pentru CSparse.NET sau BriefFiniteElement.NET); rezolvitorul și elementele rămân ale lui Lapin, MIT, și la S2 pe modelele mari. Inspirație: [ifc_structural_mechanics](https://github.com/brunopostle/ifc_structural_mechanics) (Bruno Postle, **GPL-3.0**: nu se ia cod, doar comportamentul și convențiile citite din documentația lui; rulat local ca program separat, doar la dezvoltare, pe exportul nostru SAV).
+
+### 9.1 Modelul de calcul
+
+- Din `AnalyticalModel.Build` (aceleași noduri și bare ca exportul). **Barele** intră cu rigiditatea lor; **plăcile nu** în S1: pereții portanți sunt **reazeme liniare** (nodurile de pe capul lor: translațiile ținute, rotirile libere), plăcile doar duc încărcări. Spus în raport.
+- **Elementul:** bara 3D cu 12 grade de libertate, Euler-Bernoulli; Timoshenko când secțiunea dă ariile de forfecare. Torsiunea cu GJ, G = E / 2(1 + ν). Axele locale ca la JG (§ „Frames' local axes” din `docs/jg-structures.md`). **Capetele excentrice** (`end_offsets`) ca brațe rigide prin transformarea matricei.
+- **Eliberările:** atributul `analysisReleases` pe element (`{i: [ux, uy, uz, rx, ry, rz], j: […]}`, `true` = eliberat), scris de `analysis.setReleases {ids, i?, j?}` (un pas de undo, ca fazele pe elementele altora). Implicit: ce spune îmbinarea (`AnalyticalLink`: eclisele, guseele, contrafișele → articulat; baza de oțel articulată → articulat), barele de lemn ale șarpantei articulate la capete (panele pe căpriori, cleștii), betonul monolit încastrat. O bară articulată la ambele capete păstrează torsiunea ținută la un capăt (fără mecanism). În SAV: `IfcRelConnectsStructuralMember.AppliedCondition` (`IfcBoundaryNodeCondition` cu rotirile libere), ca în ifc_structural_mechanics.
+- **Materialul:** E și ν din `StructuralMaterials`; fără E, bara e refuzată în raport și calculul nu pornește.
+
+### 9.2 Încărcările pe bare
+
+Din `IStructuralLoads` (S0), pe fiecare caz:
+- **Greutatea proprie** a barelor: γ·A pe lungimea lor, în −Z. Greutatea plăcilor (miezul) e încărcare de suprafață pe placă.
+- **Liniare și concentrate:** pe bara de sub ele (proiecția orizontală până la 0,3 m de axă, până la 1 m sub), pe porțiunea acoperită; altfel pe placa de sub ele (ca mai jos); altfel nelegate, spus.
+- **Pe suprafață** (ale utilizatorului, finisajele, camerele, greutatea plăcii): pe fiecare bucată de placă (`ShellPieces`), după **regula de 45°**: bisectoarele colțurilor împart bucata în zone aferente laturilor, fiecare zonă devine o încărcare trapezoidală sau triunghiulară pe latura ei, pe bara sau peretele de sub latură; o latură fără reazem își dă zona celorlalte; o bucată fără nicio latură rezemată se duce pe nodurile ei (stâlpii), după aria aferentă. Suma pe reazeme = încărcarea plăcii, verificat.
+- **Liniare pe placă** (pereții despărțitori): echivalentul pe suprafață al bucății (încărcarea / aria bucății), apoi regula de 45°. Spus.
+
+### 9.3 Rezolvarea
+
+- Asamblarea în coordonate globale, numerotarea nodurilor reordonată **Reverse Cuthill-McKee**, matricea în formă de profil (skyline), **LDLᵀ** cu toate cazurile ca membri drepți (o singură factorizare). Fără dependențe; merge și în browser.
+- **Un mecanism** (pivot nul sau negativ): calculul se oprește și spune nodul și gradul de libertate, cu elementele legate de el.
+- **Reacțiile:** R = K·U − F la nodurile rezemate; **echilibrul** ΣR + ΣF = 0 pe fiecare caz, la 1e-6 relativ, în raport.
+- **Eforturile:** la capetele barelor din K_e·u_e − f_e, apoi N, Vy, Vz, T, My, Mz în 11 puncte pe bară cu încărcările din deschidere, și extremele exacte (momentul maxim sub o încărcare uniformă).
+- **Combinațiile** (S0, §8.5) prin suprapunere; **înfășurătorile** SLU și SLS (maxim și minim în fiecare punct).
+- Rezultatele sunt derivate, ținute în memorie după versiunea modelului (nicio scriere în `.lapin`).
+
+### 9.4 Interogările
+
+- `analysis.run {}` → `{ok, dofs, elements, solveMs, cases: [{id, code, sumLoads: [Fx, Fy, Fz], sumReactions: […], balance}], mechanism?, notes}`.
+- `analysis.results {case | combination | envelope: "uls"|"sls", elementId?}` → deplasările nodurilor, reacțiile, eforturile pe bare (stațiile), maximele.
+- `analysis.diagram {case | combination | envelope, quantity: N|Vy|Vz|T|My|Mz|deformed, scale?}` → polilinii în coordonatele lumii, pentru vedere.
+- `analysis.setReleases {ids, i?, j?}` (comandă).
+
+### 9.5 Testele (cu soluții închise; cifrele din teorie, nu din alte programe)
+
+Consola cu forță la capăt (δ = PL³/3EI, M = PL) pe axa tare și pe cea slabă (bara rotită 90°); grinda simplu rezemată cu încărcare uniformă (5wL⁴/384EI, wL²/8) și cu forță la mijloc (PL³/48EI); grinda continuă pe două deschideri egale (wL²/8 pe reazem, reacțiile 3/8, 10/8, 3/8 wL); cadrul portal încastrat cu forță orizontală (soluția închisă); torsiunea unei console (TL/GJ); o bară articulată la capete într-un cadru; un capăt excentric (momentul din braț); regula de 45° pe o placă dreptunghiulară 6 × 4 m pe patru grinzi (două trapeze, două triunghiuri, suma = q·24 m²); mecanismul semnalat; echilibrul pe casa din scenele ghidului; IPE 300 în consolă cu secțiunea reală. **Verificări de dezvoltare, nu în depozit:** un cadru spațial față de Pynite (MIT, venv local) și exportul SAV citit de ifc_structural_mechanics (GPL, program separat).
+
+### 9.6 Interfața (S1b, după motor)
+
+Butonul **Run analysis** în grupul Loads; o vedere analitică 3D: deformata, diagramele N/V/M pe cazul, combinația sau înfășurătoarea aleasă, reacțiile; eforturile și deplasarea maximă ale barei în Proprietăți; mecanismul și echilibrul în dialogul Loads.
+
+### 9.7 Ce s-a hotărât la implementare (12.11.2026)
+
+- **Lemnul șarpantei** e articulat doar pe axa tare (rz), și numai la capătul unde reazemă pe ceva (un reazem, un perete, o bară continuă: pana, cosoroaba); unde se întâlnesc doar capete de bare, rămân legate rigid. Astereala le ține lateral; S1 n-are încă placa acoperișului. Barele prinse cu eclise, gusee sau contrafișe sunt articulate pe ambele axe. O consolă (un capăt liber) rămâne încastrată la celălalt capăt. Regulile sunt în `FrameReleases` (platformă), folosite și de solver, și de exportul SAV.
+- **Acoperișurile pe șarpantă** iau încărcările de suprafață pe fiecare apă reală (`AnalyticalRoof`, dat de modulul de arhitectură din forma acoperișului): fiecare căprior, colțar, dolie sau talpă superioară de fermă primește fâșia până la jumătatea distanței până la vecini, tăiată după apa lui; fără căpriori, panele. Zăpada pe proiecția orizontală (q·w·cos α pe metrul de bară), restul pe aria reală. Ce cade în afara apelor e spus.
+- **Timoshenko** implicit, cu ariile de forfecare din geometrie (EN 1993-1-1 6.2.6(3) la profile; 5/6·A la dreptunghi; 0,9·A la cerc); un contur oarecare rămâne Euler-Bernoulli, spus.
+- **Profilele nesimetrice** (T, U, L, I nesimetric): solverul le pune axa în centrul de greutate prin brațe rigide; exportul SAV scrie același braț ca excentricitate (`IfcRelConnectsWithEccentricity`).
+- **Forțele concentrate și liniare pe o placă fără bară dedesubt** se împart pe colțurile bucății cu ponderi consistente static (baricentrice, biliniare, Wachspress), integrate pe linie; colțurile fără reazem dau mai departe pe laturi după regula pârghiei.
+- **Un model fără bare** rulează: plăcile se duc direct în pereți, ca reacții.
+- **Rezolvitorul** (RCM + skyline LDLᵀ): 26.460 de grade de libertate în 14 s, 86.490 în 106 s (1,25 GB); peste 400 M de intrări în profil e refuzat. La S2 (plăcile, modelele mari) un Cholesky rar propriu (supernodal, cu reordonare AMD sau disecție imbricată) îl înlocuiește, tot cod al lui Lapin.
+- **Verificat la dezvoltare:** un cadru spațial față de PyNite 3.2.1 (deplasările la 1e-15, reacțiile la 3e-16).
