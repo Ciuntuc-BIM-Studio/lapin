@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { areaLoadArgs, combinationName, formatFactor, formatKn, imposedArgs, lineLoadArgs, parsePositive, pointLoadArgs, psiFrom } from './loads';
+import { areaLoadArgs, combinationName, formatFactor, formatKn, imposedArgs, lineLoadArgs, parsePositive, pointLoadArgs, psiFrom, snowArgs, windArgs } from './loads';
 
 describe('structural load helpers', () => {
   it('reads typed values', () => {
@@ -34,5 +34,13 @@ describe('structural load helpers', () => {
     expect(imposedArgs('A', '')).toEqual({ category: 'A', qk: null });
     expect(imposedArgs('A', '1,5')).toEqual({ category: 'A', qk: 1.5 });
     expect(imposedArgs('A', 'x')).toBeUndefined();
+  });
+  it('reads the site\'s snow and wind as typed, s0,k and qb needed, the factors 1 when left empty', () => {
+    expect(snowArgs('2,0', '1.2', '', '1.1')).toEqual({ s0k: 2, ce: 1.2, ct: 1, importance: 1.1 });
+    expect(snowArgs('', '1', '1', '1')).toBeUndefined();
+    expect(snowArgs('2', '3', '1', '1')).toBeUndefined();
+    expect(windArgs('0,5', 'III', '')).toEqual({ qb: 0.5, terrain: 'III', importance: 1 });
+    expect(windArgs('0.5', 'V', '1')).toBeUndefined();
+    expect(windArgs('x', 'II', '1')).toBeUndefined();
   });
 });

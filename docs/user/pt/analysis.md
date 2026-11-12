@@ -16,6 +16,9 @@ summary: Execute uma análise estática linear do pórtico sob as suas cargas, l
 - As **paredes resistentes** são apoios: seguram as barras que assentam nelas, mas não são analisadas como paredes.
 - As **lajes** não suportam como placas; passam as suas cargas às barras e paredes por baixo pela **regra dos 45°**: as bissetrizes dos cantos dividem a laje nas áreas que cada lado suporta, e cada uma torna-se uma carga trapezoidal ou triangular na barra de baixo.
 - As **coberturas com estrutura** passam a carga a cada asna pela sua **largura de influência**, até meio caminho dos vizinhos; a neve é tomada por projeção horizontal.
+- Os **varões e tirantes** (uma barra redonda maciça que contraventa, um tirante ou um cabo) trabalham axialmente: são articulados nas extremidades e o seu peso vai para as extremidades, pelo que não fletem como vigas. O campo **Barra com esforço axial** nas propriedades de **Análise** de uma barra altera-o: **Pela secção e pelo uso**, **Sim (um varão ou tirante)** ou **Não (uma viga)**.
+- As **vigas de alturas diferentes** que chegam a um pilar mantêm cada uma o seu nível; o pilar tem um só nó, e as vigas ficam ligadas a ele por um braço rígido.
+- O **vento nas fachadas** vai para as vigas, travessas e bordos de laje ao longo delas; a faixa ao seu pé vai diretamente ao solo e é listada à parte das somas das barras.
 - O **peso próprio** das barras é tomado ao longo delas, e as cargas que desenhou e as derivadas vão para onde encontram algo por baixo. Uma carga que não encontra nada é deixada de fora e indicada.
 
 ## Execução

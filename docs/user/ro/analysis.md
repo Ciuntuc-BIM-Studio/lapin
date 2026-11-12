@@ -16,6 +16,9 @@ summary: Rulează un calcul static liniar al cadrului sub încărcările tale, c
 - **Pereții portanți** sunt reazeme: țin barele de pe ei, dar nu sunt calculați ca pereți.
 - **Planșeele și plăcile** nu duc încărcarea ca plăci; își trec încărcările barelor și pereților de sub ele după **regula de 45°**: bisectoarele colțurilor împart placa în zonele pe care le duce fiecare latură, iar fiecare devine o încărcare trapezoidală sau triunghiulară pe bara de dedesubt.
 - **Acoperișurile cu șarpantă** trec încărcarea fiecărui căprior după **lățimea lui aferentă**, până la jumătatea distanței față de vecini; zăpada se ia pe proiecția orizontală.
+- **Tijele și tiranții** (o bară plină rotundă care contravântuiește, un tirant sau un cablu) lucrează axial: sunt articulați la capete, iar greutatea lor merge la capete, deci nu se încovoaie ca grinzile. Câmpul **Bară cu efort axial** din proprietățile **Analiză** ale unei bare le schimbă: **Din secțiune și utilizare**, **Da (tijă sau tirant)** sau **Nu (grindă)**.
+- **Grinzile de înălțimi diferite** care se întâlnesc la un stâlp își păstrează fiecare cota; stâlpul are un singur nod, iar grinzile sunt legate de el printr-un braț rigid.
+- **Vântul pe fațade** merge la grinzi, rigle și marginile planșeelor de-a lungul lor; fâșia de la baza lor merge direct în teren și e listată separat de sumele barelor.
 - **Greutatea proprie** a barelor se ia de-a lungul lor, iar încărcările desenate de tine și cele derivate merg acolo unde găsesc ceva dedesubt. O încărcare care nu găsește nimic este lăsată deoparte și raportată.
 
 ## Rularea

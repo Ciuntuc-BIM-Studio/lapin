@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import { useSession } from '../../engine/session';
+import { t } from '../../i18n';
 
 const KEY = 'lapin.analysis.load';
 type Kind = 'area' | 'line' | 'point';
@@ -39,7 +40,7 @@ export function LoadOption({ kind }: { kind: Kind }) {
       <span className="muted small">{UNIT[kind]}</span>
       <select aria-label="Load case" data-testid="load-case" title="The load case the load goes in" value={caseId} onChange={(e) => set({ ...prefs, caseId: e.target.value || null })}>
         <option value="">Imposed load (Q-A)</option>
-        {cases.map((c) => <option key={c.id} value={c.id}>{c.code ? `${c.code} · ${c.name}` : c.name}</option>)}
+        {cases.map((c) => <option key={c.id} value={c.id}>{c.code ? `${c.code} · ${t(c.name)}` : t(c.name)}</option>)}
       </select>
     </span>
   );

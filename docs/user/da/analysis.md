@@ -16,6 +16,9 @@ summary: Kør en lineær statisk analyse af rammen under dine laster, læs diagr
 - **Bærende vægge** er understøtninger: de holder stængerne på dem, men analyseres ikke som vægge.
 - **Dæk og plader** bærer ikke som plader; de leder deres laster til stængerne og væggene under dem efter **45°-reglen**: hjørnernes halveringslinjer deler pladen i de områder, hver side bærer, og hvert område bliver en trapez- eller trekantlast på stangen nedenunder.
 - **Tage med konstruktion** leder lasten til hvert spær efter dens **tilhørende bredde**, halvvejs til naboerne; sne tages pr. vandret projektion.
+- **Rundstål og stag** (en massiv rund stang, der afstiver, et stag eller et kabel) virker aksialt: de er charnierled i enderne, og deres vægt føres til enderne, så de ikke bøjer ned som bjælker. Feltet **Aksialt belastet stang** i en stangs egenskaber under **Analyse** ændrer det: **Efter tværsnit og anvendelse**, **Ja (et rundstål eller stag)** eller **Nej (en bjælke)**.
+- **Bjælker i forskellig højde**, der mødes ved en søjle, beholder hver sin kote; søjlen har ét knudepunkt, og bjælkerne er bundet til det med en stiv arm.
+- **Vind på facaderne** går til bjælkerne, sprosserne og dækkanterne langs dem; båndet ved deres fod går direkte til jorden og opføres for sig, adskilt fra stængernes summer.
 - Stængernes **egenvægt** tages langs dem, og de laster, du har tegnet, og de afledte går derhen, hvor de finder noget under sig. En last, der intet finder, udelades og meldes.
 
 ## Kørsel

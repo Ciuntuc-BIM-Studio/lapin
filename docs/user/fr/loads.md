@@ -37,6 +37,7 @@ Celles-ci, vous ne les dessinez pas ; Lapin les dérive du modèle à chaque dem
 - Le **poids propre** des planchers, murs, poteaux et poutres, d'après les masses volumiques de leurs matériaux, dans le cas dont la source est le poids propre (G1).
 - Les **finitions des planchers**, d'après leurs couches, et les **murs non porteurs**, en charges linéiques, dans le cas qui liste finitions et cloisons (G2).
 - Les **pièces** : la charge d'exploitation de la catégorie d'une pièce sur sa surface, dans le cas de cette catégorie (Q-A, Q-B…).
+- La **neige** et le **vent**, dès que vous donnez les valeurs du site (voir [Neige et vent](#neige-et-vent)).
 
 Un matériau sans masse volumique est laissé de côté, et le Récapitulatif dit lequel.
 
@@ -51,6 +52,29 @@ Sélectionnez une pièce : ses propriétés ont une section **Charge d'exploitat
 L'onglet **Charges d'exploitation** liste chaque catégorie avec son usage et son **qk** en kN/m², comme le recommande l'EN 1991-1-1. Saisissez dans le champ la valeur de votre annexe nationale ; **Modifié** revient à la valeur par défaut.
 
 ![L'onglet Charges d'exploitation](shots/loads-imposed.webp)
+
+## Neige et vent
+
+L'onglet **Neige et vent** contient le climat du site. Lapin ne livre pas les cartes nationales : relevez les valeurs de votre site dans la **CR 1-1-3/2012** (neige, sa figure 3.1 ou son annexe A) et la **CR 1-1-4/2012** (vent, sa figure 2.1 ou son annexe A), ou dans l'annexe nationale selon laquelle vous travaillez, et saisissez-les.
+
+![L'onglet Neige et vent](shots/loads-climate.webp)
+
+- **Neige** : **Charge de neige au sol s0,k (kN/m²)**, **Coefficient d'exposition Ce** (complète 0,8, partielle 1,0, abritée 1,2), **Coefficient thermique Ct** (1,0 sauf si la toiture est vitrée et perd de la chaleur) et **Coefficient d'importance γIs** (1,0 pour les bâtiments ordinaires). **Appliquer la neige**.
+- **Vent** : **Pression de référence du vent qb (kN/m²)**, **Catégorie de terrain** (de 0 à IV, de la mer au centre-ville) et **Coefficient d'importance γIw**. **Appliquer le vent**.
+
+Les appliquer crée les cas dans lesquels vont leurs charges :
+
+- **S**, la neige sans accumulation, et **S+X**, **S-X**, **S+Y**, **S-Y**, la neige accumulée par un vent soufflant vers chaque côté : sur une toiture à deux versants, le versant face au vent en prend la moitié. Une accumulation qui ne change rien ici (aucun versant ne fait face à ce vent) est laissée de côté, et le Récapitulatif le dit.
+- **W+X/s**, **W+X/p**, et ainsi de suite pour les quatre directions : le vent soufflant vers +X, −X, +Y, −Y, une fois avec la **succion** (/s) des toitures et une fois avec leur **pression** (/p).
+
+Les dispositions de la neige et les directions du vent sont des alternatives : une combinaison n'en prend qu'une de chaque.
+
+Ce que Lapin en déduit, à chaque demande :
+
+- **Neige** sur chaque versant de toiture, par m² en plan : s = γIs · μ1 · Ce · Ct · s0,k, avec μ1 = 0,8 jusqu'à 30°, puis moins, 0 à 60° et plus raide ; sur un plancher que rien ne couvre (une terrasse, une toiture plate) μ1 = 0,8.
+- **Vent** sur les murs et les toitures : le contour du bâtiment est l'enveloppe convexe de ses murs et poteaux ; les façades prennent les zones A à E, les toitures plates F à I, une toiture à deux versants F à J, selon les coefficients de l'EN 1991-1-4, à la pression de la hauteur du bâtiment pour la catégorie de terrain. Une façade passe son vent aux poutres, lisses et rives de plancher le long d'elle, sa bande la plus basse au sol ; une toiture à ses chevrons ou pannes. Les toitures à croupes, la pression intérieure et les accumulations de neige aux acrotères ne sont pas encore dérivées.
+
+> Ces valeurs sont **indicatives** : les coefficients sont ceux que recommandent les normes. Vérifiez-les avec votre annexe nationale.
 
 ## Récapitulatif
 

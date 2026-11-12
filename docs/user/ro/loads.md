@@ -37,6 +37,7 @@ Pe acestea nu le desenezi; Lapin le deduce din model de fiecare dată când le c
 - **Greutatea proprie** a planșeelor, pereților, stâlpilor și grinzilor, din densitățile materialelor lor, în cazul a cărui sursă e greutatea proprie (G1).
 - **Finisajele planșeelor**, din straturile lor, și **pereții neportanți**, ca încărcări liniare, în cazul care enumeră finisajele și pereții despărțitori (G2).
 - **Încăperile**: încărcarea utilă a categoriei unei încăperi pe aria ei, în cazul acelei categorii (Q-A, Q-B…).
+- **Zăpada** și **vântul**, de îndată ce dai valorile amplasamentului (vezi [Zăpadă și vânt](#zăpadă-și-vânt)).
 
 Un material fără densitate e lăsat pe dinafară, iar Rezumatul spune care.
 
@@ -51,6 +52,29 @@ Selectează o încăpere: proprietățile ei au o secțiune **Încărcare utilă
 Fila **Încărcări utile** enumeră fiecare categorie cu folosința ei și **qk** în kN/m², cum recomandă EN 1991-1-1. Scrie în câmp valoarea anexei tale naționale; **Modificat** revine la valoarea implicită.
 
 ![Fila Încărcări utile](shots/loads-imposed.webp)
+
+## Zăpadă și vânt
+
+Fila **Zăpadă și vânt** are clima amplasamentului. Lapin nu livrează hărțile naționale: citește valorile amplasamentului tău din **CR 1-1-3/2012** (zăpada, figura 3.1 sau anexa A) și **CR 1-1-4/2012** (vântul, figura 2.1 sau anexa A), ori din anexa națională după care lucrezi, și scrie-le.
+
+![Fila Zăpadă și vânt](shots/loads-climate.webp)
+
+- **Zăpada**: **Încărcarea din zăpadă pe sol s0,k (kN/m²)**, **Expunerea Ce** (completă 0,8, parțială 1,0, redusă 1,2), **Coeficientul termic Ct** (1,0, în afară de cazul unui acoperiș vitrat care pierde căldură) și **Factorul de importanță γIs** (1,0 pentru clădirile obișnuite). **Aplică zăpada**.
+- **Vântul**: **Presiunea de referință a vântului qb (kN/m²)**, **Categoria de teren** (de la 0 la IV, de la mare până în centrul unui oraș) și **Factorul de importanță γIw**. **Aplică vântul**.
+
+Aplicarea lor face cazurile în care intră încărcările:
+
+- **S**, zăpada netroienită, și **S+X**, **S-X**, **S+Y**, **S-Y**, zăpada troienită de un vânt care suflă spre fiecare latură: pe un acoperiș în două ape, panta dinspre vânt ia jumătate. Un troian care nu schimbă nimic aici (nicio pantă nu e expusă acelui vânt) e lăsat pe dinafară, iar Rezumatul spune asta.
+- **W+X/s**, **W+X/p** și tot așa pentru cele patru direcții: vântul care suflă spre +X, −X, +Y, −Y, o dată cu **aspirația** acoperișurilor (/s) și o dată cu **presiunea** lor (/p).
+
+Aranjamentele zăpezii și direcțiile vântului sunt alternative: o combinație ia doar una din fiecare.
+
+Ce deduce Lapin din ele, de fiecare dată când le ceri:
+
+- **Zăpada** pe fiecare pantă de acoperiș, pe m² în plan: s = γIs · μ1 · Ce · Ct · s0,k, cu μ1 = 0,8 până la 30°, apoi mai puțin, 0 la 60° și mai abrupt; pe un planșeu pe care nu-l acoperă nimic (o terasă, un acoperiș plat) μ1 = 0,8.
+- **Vântul** pe pereți și acoperișuri: conturul clădirii e anvelopa convexă a pereților și stâlpilor; fațadele iau zonele A–E, acoperișurile plate F–I, un acoperiș în două ape F–J, după coeficienții din EN 1991-1-4, la presiunea înălțimii clădirii pentru categoria de teren. O fațadă își trece vântul grinzilor, riglelor și marginilor de planșeu de-a lungul ei, fâșia ei cea mai de jos terenului; un acoperiș, căpriorilor sau panelor lui. Acoperișurile în patru ape, presiunea interioară și troienele la parapeți nu sunt încă derivate.
+
+> Aceste valori sunt **orientative**: coeficienții sunt cei recomandați de norme. Verifică-i după anexa ta națională.
 
 ## Rezumat
 

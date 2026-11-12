@@ -65,6 +65,7 @@ public sealed class AnalysisRun
 
         notes.Add("Stage S1: the bars carry everything; the slabs only carry loads to them (the 45° rule), the load-bearing walls are line supports (every node of theirs held in translation, free to turn). Shells are analysed from S2.");
         notes.Add("Bars as Timoshenko beams, their shear areas from the section (EN 1993-1-1 §6.2.6(3) for steel, 5/6·A for a rectangle).");
+        if (sp.Model.LevelJoins > 0) notes.Add($"{sp.Model.LevelJoins} beam end{(sp.Model.LevelJoins == 1 ? "" : "s")} of another depth meet{(sp.Model.LevelJoins == 1 ? "s" : "")} a column at its joint: {(sp.Model.LevelJoins == 1 ? "its" : "their")} own level kept, a rigid arm to the joint.");
         if (sp.Model.Frames.Any(f => f.Eccentric)) notes.Add($"{sp.Model.Frames.Count(f => f.Eccentric)} bars with eccentric ends, joined to their nodes by rigid arms.");
         var pinned = sp.Releases.Values.Count(r => r.Source.StartsWith("pinned: "));
         var strong = sp.Releases.Values.Count(r => r.Source.StartsWith("pinned about"));
@@ -77,6 +78,7 @@ public sealed class AnalysisRun
             var code = rep.Cases.First(x => x.Id == c.Loads.Id).Code;
             if (c.Unmapped > 1e-6)
                 notes.Add($"„{code}”: {R(c.Unmapped, 3)} kN of {c.UnmappedLoads} load{(c.UnmappedLoads == 1 ? "" : "s")} find nothing under them (no bar, slab or wall within reach) and are left out: {string.Join(", ", c.UnmappedSources.Take(6).Select(id => q.Model.Get(id)?.Name ?? id))}{(c.UnmappedSources.Count > 6 ? "…" : "")}.");
+            if (c.ToGround.Length > 1e-6) notes.Add($"„{code}”: {R(c.ToGround.Length, 2)} kN of the wind on the façades goes straight to the ground (the strip at their foot), outside the bars' sums.");
             if (c.WallsOwn > 1e-6) notes.Add($"„{code}”: the load-bearing walls' own weight ({R(c.WallsOwn, 2)} kN) goes straight to what holds them in S1, outside the bars' sums.");
         }
         if (sp.Cases.Sum(c => c.Spread) is var spread and > 0)
@@ -124,6 +126,7 @@ public sealed class AnalysisRun
                 ["balance"] = r != null ? r.Balance : null,
                 ["balanced"] = r != null ? r.Balance <= Balanced : null,
                 ["unmapped"] = R(mc?.Unmapped ?? 0),
+                ["toGround"] = mc is { ToGround.Length: > 1e-9 } ? V3(mc.ToGround) : null,
             });
         }
         o["cases"] = cases;

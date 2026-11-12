@@ -37,6 +37,7 @@ Tych nie rysujesz; Lapin wyprowadza je z modelu przy każdym zapytaniu i podąż
 - **Ciężar własny** stropów, ścian, słupów i belek, z gęstości ich materiałów, w przypadku, którego źródłem jest ciężar własny (G1).
 - **Wykończenie stropów**, z ich warstw, oraz **ściany niekonstrukcyjne**, jako obciążenia liniowe, w przypadku wymieniającym wykończenie i ścianki działowe (G2).
 - **Pomieszczenia**: obciążenie użytkowe kategorii pomieszczenia na jego powierzchni, w przypadku tej kategorii (Q-A, Q-B…).
+- **Śnieg** i **wiatr**, gdy podasz wartości dla lokalizacji (zob. [Śnieg i wiatr](#śnieg-i-wiatr)).
 
 Materiał bez gęstości jest pomijany, a Podsumowanie mówi który.
 
@@ -51,6 +52,29 @@ Zaznacz pomieszczenie: jego właściwości mają sekcję **Obciążenie użytkow
 Karta **Obciążenia użytkowe** wymienia każdą kategorię z jej zastosowaniem i **qk** w kN/m², jak zaleca EN 1991-1-1. Wpisz w polu wartość z załącznika krajowego; **Zmienione** wraca do wartości domyślnej.
 
 ![Karta Obciążenia użytkowe](shots/loads-imposed.webp)
+
+## Śnieg i wiatr
+
+Karta **Śnieg i wiatr** zawiera klimat lokalizacji. Lapin nie dostarcza map krajowych: odczytaj wartości dla swojej lokalizacji z **CR 1-1-3/2012** (śnieg, jego rysunek 3.1 lub załącznik A) i **CR 1-1-4/2012** (wiatr, jego rysunek 2.1 lub załącznik A) albo z załącznika krajowego, według którego pracujesz, i wpisz je.
+
+![Karta Śnieg i wiatr](shots/loads-climate.webp)
+
+- **Śnieg**: **Obciążenie śniegiem gruntu s0,k (kN/m²)**, **Współczynnik ekspozycji Ce** (pełna 0,8, częściowa 1,0, osłonięta 1,2), **Współczynnik termiczny Ct** (1,0, chyba że dach jest przeszklony i traci ciepło) i **Współczynnik ważności γIs** (1,0 dla zwykłych budynków). **Zastosuj śnieg**.
+- **Wiatr**: **Bazowe ciśnienie prędkości wiatru qb (kN/m²)**, **Kategoria terenu** (od 0 do IV, od morza do centrum miasta) i **Współczynnik ważności γIw**. **Zastosuj wiatr**.
+
+Zastosowanie ich tworzy przypadki, do których trafiają ich obciążenia:
+
+- **S**, śnieg bez zasp, i **S+X**, **S-X**, **S+Y**, **S-Y**, śnieg nawiany przez wiatr wiejący w stronę każdego boku: na dachu dwuspadowym połać zwrócona ku wiatrowi bierze połowę. Zaspa, która tu niczego nie zmienia (żadna połać nie jest zwrócona ku temu wiatrowi), jest pomijana, a Podsumowanie to mówi.
+- **W+X/s**, **W+X/p** i tak dalej dla czterech kierunków: wiatr wiejący w stronę +X, −X, +Y, −Y, raz z **ssaniem** (/s) dachów i raz z ich **parciem** (/p).
+
+Układy śniegu i kierunki wiatru są alternatywami: kombinacja bierze tylko jeden z każdego rodzaju.
+
+Co Lapin z nich wylicza, przy każdym zapytaniu:
+
+- **Śnieg** na każdej połaci dachu, na m² rzutu: s = γIs · μ1 · Ce · Ct · s0,k, z μ1 = 0,8 do 30°, potem mniej, 0 przy 60° i w stromszych; na stropie, którego nic nie przykrywa (taras, dach płaski), μ1 = 0,8.
+- **Wiatr** na ściany i dachy: obrys budynku to otoczka wypukła jego ścian i słupów; elewacje biorą strefy A do E, dachy płaskie F do I, dach dwuspadowy F do J, według współczynników EN 1991-1-4, przy ciśnieniu na wysokości budynku dla kategorii terenu. Elewacja przekazuje swój wiatr belkom, ryglom i krawędziom stropów wzdłuż niej, swój najniższy pas gruntowi; dach jego krokwiom lub płatwiom. Dachy kopertowe, ciśnienie wewnętrzne i zaspy śnieżne przy attykach nie są jeszcze wyprowadzane.
+
+> Te wartości są **orientacyjne**: współczynniki są zalecanymi przez normy. Sprawdź je z załącznikiem krajowym.
 
 ## Podsumowanie
 

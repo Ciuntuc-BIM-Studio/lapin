@@ -93,7 +93,17 @@ public sealed record AnalyticalSupport(
 /// A roof framed in bars (a timber roof's members, which the frames give): its planes as its roof module solves them, each
 /// its outline in 3D (eaves and overhangs included). An analysis lays the roof's area loads on its members plane by plane.
 /// </summary>
-public sealed record AnalyticalRoof(string SourceId, IReadOnlyList<IReadOnlyList<Vec3>> Planes);
+public sealed record AnalyticalRoof(string SourceId, IReadOnlyList<IReadOnlyList<Vec3>> Planes)
+{
+    /// <summary>
+    /// The members that carry the roof's cladding when they are not the roof element's own (a steel hall's purlins), each
+    /// with its role there ("purlin", "rafter"); null: the roof's own members (a timber roof's), by their roles.
+    /// </summary>
+    public IReadOnlyDictionary<string, string>? Members { get; init; }
+    /// <summary>The roof's name and storey, for what the loads on it say.</summary>
+    public string? Name { get; init; }
+    public string? StoreyId { get; init; }
+}
 
 /// <summary>An element the analytical model leaves out, and why.</summary>
 public sealed record LeftOut(string SourceId, string Name, string IfcClass, string Reason);
@@ -129,13 +139,17 @@ public static class AnalyticalKinds
 }
 
 /// <summary>
-/// What the analytical model takes: the storeys (null: all), the kinds (null: all), every wall or only load-bearing ones, and
+/// What the analytical model takes: the storeys (null: all), the kinds (null: all), every wall or only load-bearing ones,
 /// how the feet on footings are held (<see cref="Footings"/>: "fixed", the default, or "pinned"; a steel column base keeps
-/// its connection's own).
+/// its connection's own), and the elements an export leaves out (<see cref="Exclude"/>: what it was asked to leave out, and
+/// what is not built yet in the phase it writes), whose members, supports and loads stay out with them.
 /// </summary>
-public sealed record AnalyticalOptions(IReadOnlySet<string>? Storeys = null, IReadOnlySet<string>? Kinds = null, bool AllWalls = false, string Footings = "fixed")
+public sealed record AnalyticalOptions(IReadOnlySet<string>? Storeys = null, IReadOnlySet<string>? Kinds = null, bool AllWalls = false, string Footings = "fixed",
+    IReadOnlySet<string>? Exclude = null)
 {
     public static readonly string[] FootingFixities = ["fixed", "pinned"];
     public bool Takes(string kind) => Kinds == null || Kinds.Contains(kind);
     public bool On(string? storeyId) => Storeys == null || storeyId == null || Storeys.Contains(storeyId);
+    /// <summary>Whether an element stays in (not one the export leaves out).</summary>
+    public bool Keeps(string? id) => id == null || Exclude?.Contains(id) != true;
 }

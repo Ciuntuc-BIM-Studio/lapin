@@ -47,6 +47,16 @@ export function ReleasesSection({ node }: { node: NodeDto }) {
       <dl className="fields" data-testid="releases">
         <End end="i" own={own.i} ids={ids} />
         <End end="j" own={own.j} ids={ids} />
+        <dt>Axial member</dt>
+        <dd>
+          <select data-field="axial" aria-label="Axial member" title="A rod or tie works in tension and compression only: pinned at its ends, its weight carried to them"
+            value={typeof node.props.analysisAxial === 'boolean' ? String(node.props.analysisAxial) : ''}
+            onChange={(e) => void execute('analysis.setAxial', { ids, axial: e.target.value === '' ? null : e.target.value === 'true' })}>
+            <option value="">By its section and use</option>
+            <option value="true">Yes (a rod or tie)</option>
+            <option value="false">No (a beam)</option>
+          </select>
+        </dd>
       </dl>
       <p className="muted small">A ticked freedom is released at that end. Default: what the connection says (a cleat or gusset pins), a timber roof member pinned about its strong axis, any other bar fixed.</p>
       {mine.length > 0 && results && <Extremes frames={mine} name={results.name} />}

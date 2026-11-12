@@ -8,6 +8,8 @@
     {"name":"analysis.addPointLoad","module":"analysis","label":"Point load","args":[{"name":"at","type":"list"},{"name":"storeyId","type":"str"},{"name":"value","type":"float"},{"name":"z","type":"float"},{"name":"direction","type":"str"},{"name":"caseId","type":"str"}]},
     {"name":"analysis.defaultCases","module":"analysis","label":"Default load cases","args":[]},
     {"name":"analysis.removeCase","module":"analysis","label":"Remove load case","args":[{"name":"id","type":"str"}]},
+    {"name":"analysis.setAxial","module":"analysis","label":"Axial member","args":[{"name":"axial","type":"bool"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},
+    {"name":"analysis.setClimate","module":"analysis","label":"Snow and wind","args":[{"name":"snow","type":"dict"},{"name":"wind","type":"dict"}]},
     {"name":"analysis.setImposedLoad","module":"analysis","label":"Imposed load","args":[{"name":"category","type":"str"},{"name":"qk","type":"float"}]},
     {"name":"analysis.setOccupancy","module":"analysis","label":"Category of use","args":[{"name":"category","type":"str"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},
     {"name":"analysis.setReleases","module":"analysis","label":"End releases","args":[{"name":"i"},{"name":"j"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},
@@ -573,6 +575,7 @@
   ],
   "queries": [
     {"name":"analysis.categories","module":"analysis","args":[]},
+    {"name":"analysis.climate","module":"analysis","args":[]},
     {"name":"analysis.combinations","module":"analysis","args":[]},
     {"name":"analysis.diagram","module":"analysis","args":[{"name":"case","type":"str"},{"name":"combination","type":"str"},{"name":"envelope","type":"str"},{"name":"elementId","type":"str"},{"name":"quantity","type":"str"},{"name":"scale"}]},
     {"name":"analysis.loads","module":"analysis","args":[]},

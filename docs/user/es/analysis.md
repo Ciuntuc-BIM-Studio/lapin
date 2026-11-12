@@ -16,6 +16,9 @@ summary: Ejecute un análisis estático lineal del pórtico con sus cargas, lea 
 - Los **muros de carga** son apoyos: sostienen las barras que descansan en ellos, pero no se analizan como muros.
 - Los **forjados y losas** no se analizan como placas; pasan sus cargas a las barras y muros que tienen debajo por la **regla de 45°**: las bisectrices de las esquinas dividen la losa en las zonas que lleva cada lado, y cada una se convierte en una carga trapezoidal o triangular sobre la barra de debajo.
 - Las **cubiertas con estructura** pasan la carga a cada cabio por su **ancho tributario**, hasta la mitad de la distancia a los vecinos; la nieve se toma por proyección horizontal.
+- Las **varillas y tirantes** (una barra redonda maciza que arriostra, un tirante o un cable) trabajan axialmente: están articulados en sus extremos y su peso va a los extremos, de modo que no flectan como vigas. El campo **Barra con esfuerzo axil** en las propiedades de **Análisis** de una barra lo cambia: **Según su sección y uso**, **Sí (una varilla o tirante)** o **No (una viga)**.
+- Las **vigas de distinto canto** que llegan a un pilar conservan cada una su nivel; el pilar tiene un solo nudo, y las vigas se atan a él con un brazo rígido.
+- El **viento sobre las fachadas** va a las vigas, travesaños y bordes de forjado a lo largo de ellas; la franja a su pie va directamente al terreno y se lista aparte de las sumas de las barras.
 - El **peso propio** de las barras se toma a lo largo de ellas, y las cargas que usted dibujó y las derivadas van donde encuentran algo debajo. Una carga que no encuentra nada se deja fuera y se indica.
 
 ## Ejecución

@@ -3392,6 +3392,19 @@ export const scenes = [
       await dialog.getByRole('tab', { name: 'Imposed loads' }).click();
       await t.wait(400);
       await t.shot('loads-imposed', { of: '.dialog', pad: 0 });
+      // The site's snow and wind (docs/plan-fem.md §9.9): s0,k and qb typed, each applied; their cases made.
+      await dialog.getByRole('tab', { name: 'Snow and wind' }).click();
+      await t.until(async () => (await dialog.locator('[data-testid=climate-s0k]').count()) === 1, 'the Snow and wind tab offers the ground snow load');
+      await dialog.locator('[data-testid=climate-s0k]').fill('2.0');
+      await dialog.locator('[data-testid=climate-snow-apply]').click();
+      await dialog.locator('[data-testid=climate-qb]').fill('0.5');
+      await dialog.locator('[data-testid=climate-terrain]').selectOption('III');
+      await dialog.locator('[data-testid=climate-wind-apply]').click();
+      await t.until(async () => (await t.call('doc.query', { name: 'analysis.climate', args: {} }))?.wind?.qb === 0.5, 'the site\'s wind is set');
+      const climateCases = (await t.call('doc.query', { name: 'analysis.loads', args: {} })).cases.map((c) => c.code);
+      t.expect(climateCases.includes('S+Y') && climateCases.includes('W-X/p'), `the snow's and the wind's cases are made (${climateCases.join(', ')})`);
+      await t.wait(400);
+      await t.shot('loads-climate', { of: '.dialog', pad: 0 });
       await dialog.getByRole('tab', { name: 'Summary' }).click();
       await t.wait(500);
       t.expect(/derived loads/i.test(await dialog.innerText()), 'the Summary lists the derived loads');

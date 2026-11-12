@@ -16,6 +16,9 @@ summary: Esegui un'analisi statica lineare del telaio sotto i tuoi carichi, legg
 - I **muri portanti** sono vincoli: sorreggono le aste che vi poggiano, ma non sono analizzati come muri.
 - I **solai e le lastre** non portano come piastre; passano i carichi alle aste e ai muri sottostanti con la **regola dei 45°**: le bisettrici degli angoli dividono la lastra nelle aree portate da ogni lato, e ciascuna diventa un carico trapezoidale o triangolare sull'asta sotto.
 - Le **coperture con struttura** passano il carico a ogni puntone secondo la sua **larghezza di influenza**, fino a metà strada dai vicini; la neve è presa per proiezione orizzontale.
+- I **tondini e i tiranti** (una barra tonda piena che controventa, un tirante o un cavo) lavorano assialmente: sono incernierati alle estremità e il loro peso va alle estremità, quindi non si inflettono come travi. Il campo **Asta con sforzo normale** nelle proprietà **Analisi** di un'asta lo cambia: **Dalla sezione e dall'uso**, **Sì (un tondino o un tirante)** o **No (una trave)**.
+- Le **travi di altezze diverse** che arrivano a un pilastro mantengono ciascuna il proprio livello; il pilastro ha un solo nodo, e le travi vi sono vincolate con un braccio rigido.
+- Il **vento sulle facciate** va alle travi, ai correnti e ai bordi di solaio lungo di esse; la fascia al loro piede va direttamente al suolo ed è elencata a parte dalle somme delle aste.
 - Il **peso proprio** delle aste è preso lungo di esse, e i carichi che hai disegnato e quelli derivati vanno dove trovano qualcosa sotto. Un carico che non trova nulla è escluso e segnalato.
 
 ## Esecuzione

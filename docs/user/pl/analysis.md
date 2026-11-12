@@ -16,6 +16,9 @@ summary: Uruchom liniową analizę statyczną ramy pod swoimi obciążeniami, od
 - **Ściany nośne** są podporami: podtrzymują spoczywające na nich pręty, ale nie są analizowane jako ściany.
 - **Stropy i płyty** nie przenoszą obciążeń jako tarcze; przekazują obciążenia prętom i ścianom pod nimi według **reguły 45°**: dwusieczne narożników dzielą płytę na pola, które niesie każdy bok, a każde staje się obciążeniem trapezowym lub trójkątnym na pręcie poniżej.
 - **Dachy z konstrukcją** przekazują obciążenie na każdą krokiew według jej **szerokości pasma**, do połowy odległości do sąsiadów; śnieg liczony jest na rzut poziomy.
+- **Cięgna i ściągi** (pełny pręt okrągły, który usztywnia, ściąg lub lina) pracują osiowo: są przegubowe na końcach, a ich ciężar idzie na końce, więc nie uginają się jak belki. Ustawienie **Pręt osiowo obciążony** we właściwościach pręta w sekcji **Analiza** to zmienia: **Według przekroju i użycia**, **Tak (cięgno lub ściąg)** albo **Nie (belka)**.
+- **Belki o różnej wysokości** schodzące się przy słupie zachowują każda swój poziom; słup ma jeden węzeł, a belki są z nim związane sztywnym ramieniem.
+- **Wiatr na elewacjach** idzie do belek, rygli i krawędzi stropów wzdłuż nich; pas u ich stóp idzie wprost do gruntu i jest wymieniony osobno od sum prętów.
 - **Ciężar własny** prętów liczony jest wzdłuż nich, a obciążenia narysowane przez Ciebie i pochodne trafiają tam, gdzie coś pod sobą znajdą. Obciążenie, które nic nie znajduje, jest pomijane i zgłaszane.
 
 ## Uruchamianie

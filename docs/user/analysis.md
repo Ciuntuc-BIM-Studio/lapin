@@ -16,6 +16,9 @@ summary: Run a linear static analysis of the frame under your loads, read the di
 - **Load-bearing walls** are supports: they hold the bars on them, but are not analysed as walls.
 - **Floors and slabs** do not carry load as plates; they pass their loads to the bars and walls under them by the **45° rule**: the corners' bisectors divide the slab into the areas each side carries, and each becomes a trapezoidal or triangular load on the bar below.
 - **Framed roofs** pass the load to each rafter by its **tributary width**, half way to its neighbours; snow is taken per horizontal projection.
+- **Rods and ties** (a solid round bar that braces, a tie or cable) work axially: they are pinned at their ends and their weight goes to their ends, so they do not sag as beams. A bar's **Axial member** in its **Analysis** properties changes it: **By its section and use**, **Yes (a rod or tie)** or **No (a beam)**.
+- **Beams of different depths** meeting a column each keep their own level; the column has one joint, and the beams are tied to it by a rigid arm.
+- **Wind on the façades** goes to the beams, rails and floor edges along them; the strip at their foot goes straight to the ground and is listed apart from the bars' sums.
 - The **self weight** of the bars is taken along them, and the loads you drew and the derived ones go where they find something under them. A load that finds nothing is left out and reported.
 
 ## Running it

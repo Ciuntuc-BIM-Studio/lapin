@@ -33,6 +33,8 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
             new("actionSource", "Source", "choice", Choices: LoadCases.ActionSources),
             new("category", "Category", "choice", Choices: [.. Categories.All.Select(c => c.Key), Categories.Snow, Categories.Wind]),
             new("selfWeight", "Self weight", "bool"),
+            new("windDirection", "Wind towards", "choice", Choices: Climate.Directions),
+            new("roofCpe", "Roof coefficients", "choice", Choices: Climate.RoofSets),
         ], "#c2410c", Kind: "resource"));
         UserLoads.Register(r);
         r.Service<IElementUpdate>(this);
@@ -116,7 +118,26 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
             return null;
         });
 
+        // {snow?: {s0k, ce?, ct?, importance?} | null, wind?: {qb, terrain?, importance?} | null}: the site's climate (CR 1-1-3,
+        // CR 1-1-4), the values the user reads for the site; null takes one off, absent leaves it. The cases its loads go in
+        // made when missing (the snow's arrangements, the wind's directions), in the same undo step.
+        r.Command("setClimate", "Snow and wind", (ctx, a) =>
+        {
+            if (!a.ContainsKey("snow") && !a.ContainsKey("wind")) throw new CommandException("Say the snow, the wind or both.");
+            var project = Spatial.Project(ctx.Model) ?? throw new CommandException("The model has no project.");
+            var attrs = project.CloneAttrs();
+            var own = attrs[Climate.Key] is JsonObject had ? (JsonObject)had.DeepClone() : new JsonObject();
+            if (a.ContainsKey("snow")) { if (a["snow"] is JsonObject s) own["snow"] = Climate.WriteSnow(s); else if (a["snow"] is null) own.Remove("snow"); else throw new CommandException("The snow is {s0k, ce, ct, importance}."); }
+            if (a.ContainsKey("wind")) { if (a["wind"] is JsonObject w) own["wind"] = Climate.WriteWind(w); else if (a["wind"] is null) own.Remove("wind"); else throw new CommandException("The wind is {qb, terrain, importance}."); }
+            attrs.Remove(Climate.Key);
+            if (own.Count > 0) attrs[Climate.Key] = own;
+            ctx.Replace(project.With(attrs: attrs));
+            return Ids(Climate.EnsureCases(ctx, a["snow"] is JsonObject, a["wind"] is JsonObject));
+        });
+
         // ── Queries ──
+
+        r.Query("climate", (q, _) => Climate.ToJson(q.Model));
 
         r.Query("loads", (q, _) => LoadsJson(q.Model, LoadsReport.Compute(q)));
 
@@ -154,6 +175,9 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
                     case "planar":
                         o["points"] = new JsonArray(x.Points.Select(p => (JsonNode)P(p.Xy)).ToArray());
                         o["z"] = x.Points[0].Z;
+                        // On a roof's plane or a façade: its corners in 3D besides.
+                        if (x.Points.Any(p => Math.Abs(p.Z - x.Points[0].Z) > 1e-6))
+                            o["points3"] = new JsonArray(x.Points.Select(p => (JsonNode)new JsonArray(R(p.X), R(p.Y), R(p.Z))).ToArray());
                         areas.Add((JsonNode)o);
                         break;
                     case "curve":
@@ -176,6 +200,25 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
         r.Query("results", (q, a) => AnalysisRun.Results(q, a));
         // {case | combination | envelope, quantity: N | Vy | Vz | T | My | Mz | deformed, scale?, elementId?}: polylines in world coordinates.
         r.Query("diagram", (q, a) => AnalysisRun.Diagram(q, a));
+
+        // {ids, axial: true | false | null}: whether the bars work axially only (a rod, a tie: pinned at their ends, their weight
+        // at them) or as beams; null back to what their section and use say (FrameReleases.Axial). One undo step.
+        r.Command("setAxial", "Axial member", (ctx, a) =>
+        {
+            var ids = Args.Ids(a);
+            if (ids.Count == 0) throw new CommandException("Select the bars.");
+            if (!a.ContainsKey("axial")) throw new CommandException("Say axial: true (a rod or tie), false (a beam) or null (by its section and use).");
+            bool? axial = a["axial"] is null ? null : a["axial"] is JsonValue v && v.TryGetValue<bool>(out var b) ? b : throw new CommandException("Axial is true, false or null.");
+            foreach (var id in ids)
+            {
+                var e = ctx.Model.Get(id) ?? throw new CommandException($"There is no {id}.");
+                if (UserLoads.Classes.Contains(e.Class) || e.Class == LoadCases.Class) throw new CommandException("Only a bar works axially.");
+                var attrs = e.CloneAttrs();
+                if (axial is { } x) attrs[FrameReleases.AxialKey] = x; else attrs.Remove(FrameReleases.AxialKey);
+                ctx.Replace(e.With(attrs: attrs));
+            }
+            return null;
+        });
 
         // {ids, i?, j?}: the bars' end releases, each end six booleans [ux, uy, uz, rx, ry, rz] in local axes (true: released),
         // or "fixed" / "pinned"; null takes the element's own off (back to the default), absent leaves that end as it is.
@@ -224,7 +267,7 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
             {
                 ["id"] = c.Id, ["code"] = c.Code, ["name"] = c.Name, ["actionType"] = c.ActionType, ["actionSource"] = c.ActionSource, ["category"] = c.Category,
                 ["selfWeight"] = c.SelfWeight, ["derives"] = new JsonArray(c.Derives.Select(d => (JsonNode)d).ToArray()),
-                ["psi"] = c.Variable ? c.Psi.ToJson() : null,
+                ["psi"] = c.Variable ? c.Psi.ToJson() : null, ["windDirection"] = c.WindDirection, ["roofCpe"] = c.RoofCpe,
                 ["userLoads"] = rep.UserLoads.Count(l => l.CaseId == c.Id), ["total"] = R(rep.Total(c)), ["empty"] = rep.Empty(c),
             });
         var storeys = new JsonArray();
@@ -239,10 +282,16 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
             }
             storeys.Add((JsonNode)new JsonObject { ["id"] = s.Id, ["name"] = s.Name, ["byCase"] = by });
         }
-        var derived = new JsonArray(rep.Derived.Select(d => (JsonNode)new JsonObject
+        // The snow's and the wind's many pieces (planes, zones, bands) a row a case and element: the largest value, the total summed.
+        var rows = rep.Derived.Where(d => d.Kind is not (LoadCases.Snow or LoadCases.Wind))
+            .Select(d => (d.Kind, d.CaseId, d.SourceId, d.SourceName, d.StoreyId, d.Value, d.Unit, d.Total))
+            .Concat(rep.Derived.Where(d => d.Kind is LoadCases.Snow or LoadCases.Wind)
+                .GroupBy(d => (d.Kind, d.CaseId, d.SourceId, Name: d.SourceId == Spatial.Project(m)?.Id ? "Façades" : d.SourceName.Split(", zone ")[0]))
+                .Select(g => (g.Key.Kind, g.Key.CaseId, g.Key.SourceId, g.Key.Name, g.First().StoreyId, g.Max(d => d.Value), g.First().Unit, g.Sum(d => d.Total))));
+        var derived = new JsonArray(rows.Select(d => (JsonNode)new JsonObject
         {
-            ["kind"] = d.Kind, ["caseId"] = d.CaseId, ["sourceId"] = d.SourceId, ["sourceName"] = d.SourceName, ["storeyId"] = d.StoreyId,
-            ["value"] = R(d.Value), ["unit"] = d.Unit, ["total"] = R(d.Total),
+            ["kind"] = d.Kind, ["caseId"] = d.CaseId, ["sourceId"] = d.SourceId, ["sourceName"] = d.Item4, ["storeyId"] = d.StoreyId,
+            ["value"] = R(d.Item6), ["unit"] = d.Unit, ["total"] = R(d.Item8),
         }).ToArray());
         var missing = new JsonArray(rep.Missing.OrderBy(x => x.Key, StringComparer.Ordinal).Select(x => (JsonNode)new JsonObject
         {
@@ -271,10 +320,10 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
         }
         foreach (var d in rep.Derived.Where(d => d.CaseId != null && d.Shape != "none"))
         {
-            var down = new Vec3(0, 0, -1);
+            var down = d.Direction ?? new Vec3(0, 0, -1);
             if (d.Shape == "area")
-                o.Add(new StructuralActionData(d.SourceId, $"{d.SourceName}: {d.Kind}", d.CaseId!, "planar", d.Points.Select(p => p.At(d.Z)).ToList(), down, d.Value, d.SourceId, true, d.Kind)
-                { Holes = d.Holes.Select(h => (IReadOnlyList<Vec3>)h.Select(p => p.At(d.Z)).ToList()).ToList() });
+                o.Add(new StructuralActionData(d.SourceId, $"{d.SourceName}: {d.Kind}", d.CaseId!, "planar", d.Points3 ?? d.Points.Select(p => p.At(d.Z)).ToList(), down, d.Value, d.SourceId, true, d.Key ?? d.Kind)
+                { Holes = d.Holes.Select(h => (IReadOnlyList<Vec3>)h.Select(p => p.At(d.Z)).ToList()).ToList(), Projected = d.Projected });
             else
                 for (var i = 0; i + 1 < d.Points.Count; i++)
                     o.Add(new StructuralActionData(d.SourceId, $"{d.SourceName}: {d.Kind}", d.CaseId!, "curve", [d.Points[i].At(d.Z), d.Points[i + 1].At(d.Z)], down, d.Value,
@@ -285,9 +334,9 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
 
     // ── IStructuralLoads ──
 
-    public StructuralLoadsData For(IQueryContext query)
+    public StructuralLoadsData For(IQueryContext query, AnalyticalOptions? options = null)
     {
-        var rep = LoadsReport.Compute(query);
+        var rep = LoadsReport.Compute(query, options);
         var (combinations, _) = Combinations.Of(rep);
         return new StructuralLoadsData(
             rep.Cases.Select(c => new StructuralLoadCaseData(c.Id, c.Code, c.Name, c.ActionType, c.ActionSource, c.SelfWeight)).ToList(),

@@ -16,6 +16,9 @@ summary: Lancez une analyse statique linéaire du portique sous vos charges, lis
 - Les **murs porteurs** sont des appuis : ils tiennent les barres qui reposent dessus, mais ne sont pas analysés comme des murs.
 - Les **planchers et dalles** ne portent pas comme des plaques ; ils reportent leurs charges sur les barres et murs en dessous par la **règle des 45°** : les bissectrices des angles divisent la dalle en zones que porte chaque côté, et chacune devient une charge trapézoïdale ou triangulaire sur la barre dessous.
 - Les **toitures à charpente** reportent la charge sur chaque chevron selon sa **largeur tributaire**, jusqu'à mi-distance de ses voisins ; la neige est prise par projection horizontale.
+- Les **tiges et tirants** (une barre ronde pleine qui contrevente, un tirant ou un câble) travaillent axialement : ils sont articulés à leurs extrémités et leur poids va à leurs extrémités, de sorte qu'ils ne fléchissent pas comme des poutres. Le champ **Barre à effort axial** dans les propriétés **Analyse** d'une barre le change : **D'après sa section et son usage**, **Oui (une tige ou un tirant)** ou **Non (une poutre)**.
+- Les **poutres de hauteurs différentes** qui rencontrent un poteau gardent chacune leur niveau ; le poteau n'a qu'un nœud, et les poutres y sont liées par un bras rigide.
+- Le **vent sur les façades** va aux poutres, lisses et rives de plancher le long d'elles ; la bande à leur pied va directement au sol et est listée à part des sommes des barres.
 - Le **poids propre** des barres est pris le long d'elles, et les charges que vous avez dessinées et les charges dérivées vont là où elles trouvent quelque chose dessous. Une charge qui ne trouve rien est laissée de côté et signalée.
 
 ## Lancer le calcul

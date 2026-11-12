@@ -24,6 +24,10 @@ public sealed class MappedCase(CaseLoads loads)
     public int OnRoofs { get; set; }
     /// <summary>A snow case: its area loads are per horizontal projection.</summary>
     public bool Snow { get; init; }
+    /// <summary>Wind on the façades that their lowest strip takes straight to the ground (kN).</summary>
+    public Vec3 ToGround { get; set; }
+    /// <summary>Loads on upright faces (wind on the façades) taken by what runs along them.</summary>
+    public int OnFacades { get; set; }
 }
 
 /// <summary>
@@ -49,6 +53,8 @@ public sealed class StructuralProblem
     public required List<MappedCase> Cases { get; init; }
     public required List<string> Notes { get; init; }
     public required Dictionary<AFrame, EndReleases> Releases { get; init; }
+    /// <summary>The members working axially only (rods, ties: <see cref="FrameReleases.Axial"/>), by element id: their weight goes to their ends.</summary>
+    public HashSet<string> Axial { get; init; } = [];
 
     sealed class Piece
     {
@@ -151,7 +157,10 @@ public sealed class StructuralProblem
         var sp = new StructuralProblem
         {
             Problem = p, Model = am, Frames = frames, NodeIndex = nodeIndex, Refused = refused, Cases = [], Notes = notes, Releases = releases,
+            Axial = FrameReleases.AxialMembers(am, m),
         };
+        if (sp.Axial.Count > 0)
+            notes.Add($"{sp.Axial.Count} rod{(sp.Axial.Count == 1 ? " or tie works" : "s or ties work")} axially: pinned at {(sp.Axial.Count == 1 ? "its" : "their")} own ends, {(sp.Axial.Count == 1 ? "its" : "their")} weight carried to them (no bending under it); analysisAxial on an element changes it.");
         if (refused.Count > 0) return sp;
         sp.MapLoads(m, rep, densities, selfWeight);
         return sp;
@@ -186,11 +195,20 @@ public sealed class StructuralProblem
             if (c.Id == selfCase?.Id)
             {
                 var down = new Vec3(0, 0, -1);
+                var rods = new Dictionary<string, double>();
                 foreach (var (k, q) in selfWeight)
                 {
                     var e = Frames[k];
                     var length = (e.J.At + e.OffJ - (e.I.At + e.OffI)).Length;
+                    // A rod or tie: its weight at its own ends, half each, so it does not bend under it.
+                    if (Axial.Contains(e.Source.SourceId)) { rods[e.Source.SourceId] = rods.GetValueOrDefault(e.Source.SourceId) + q * length; continue; }
                     mc.Loads.Span.Add((k, SpanLoad.Uniform(0, length, down * q)));
+                }
+                foreach (var (id, w) in rods)
+                {
+                    var pieces = Frames.Where(f => f.Source.SourceId == id).OrderBy(f => f.Piece).ToList();
+                    mc.Loads.AddNodal(NodeIndex[pieces[0].I], down * (w / 2));
+                    mc.Loads.AddNodal(NodeIndex[pieces[^1].J], down * (w / 2));
                 }
                 // The slabs' cores as area loads on their own pieces; the walls' own weight goes straight to what holds them.
                 foreach (var piece in _pieces)
@@ -386,9 +404,16 @@ public sealed class StructuralProblem
 
     void Planar(MappedCase mc, StructuralActionData a, string source)
     {
+        // An action on a sloping face (a roof's plane) has its height where it is; one on an upright face (a façade) goes to
+        // what holds the façade.
+        var normal = VecMath.NewellNormal(a.Points.ToList());
+        if (normal.Length > 1e-12 && Math.Abs(normal.Normalized().Z) < 1e-6) { Facade(mc, a, source); return; }
+        normal = normal.Length > 1e-12 ? normal.Normalized() : Vec3.UnitZ;
+        var p0 = a.Points[0];
+        double ZOf(Vec2 p) => Math.Abs(normal.Z) < 1e-9 ? p0.Z : p0.Z - (normal.X * (p.X - p0.X) + normal.Y * (p.Y - p0.Y)) / normal.Z;
         var outline = a.Points.Select(x => x.Xy).ToList();
         var rings = Tributary.Oriented(outline, a.Holes.Select(h => (IReadOnlyList<Vec2>)h.Select(x => x.Xy).ToList()));
-        var z = a.Points[0].Z;
+        var z = a.Points.Average(p => p.Z);
         var q = a.Direction * a.Value;
         var total = Tributary.Area(rings) * a.Value;
         var placed = 0.0;
@@ -398,17 +423,132 @@ public sealed class StructuralProblem
             .Select(pc => (Pc: pc, Clipped: rings.Select(r => (IReadOnlyList<Vec2>)Tributary.ClipTo(r, pc.Plan)).Where(r => r.Count >= 3).ToList()))
             .Where(x => Tributary.Area(x.Clipped) > 1e-9)
             .Select(x => (x.Pc, x.Clipped, At: Polygon2.InteriorPoint(x.Clipped[0])))
-            .Where(x => x.Pc.ZAt(x.At) <= z + AboveReach && x.Pc.ZAt(x.At) >= z - DepthReach)
+            .Where(x => x.Pc.ZAt(x.At) <= ZOf(x.At) + AboveReach && x.Pc.ZAt(x.At) >= ZOf(x.At) - DepthReach)
             .OrderByDescending(x => x.Pc.ZAt(x.At)).ToList())
         {
             // A piece of another slab under one already taken here (two floors within a metre) is not loaded twice.
             if (taken.Any(t => t.Shell.Source.SourceId != pc.Shell.Source.SourceId && Tributary.Area([Tributary.ClipTo(pc.Plan, t.Plan)]) > 1e-6)) continue;
             taken.Add(pc);
-            placed += AreaOnPiece(mc, pc, clipped, q, source);
+            // A load per area of a sloping face (wind on a deck) over its plan: over the piece's cosine.
+            var k = a.Projected == false && Math.Abs(pc.Normal.Z) > 1e-9 ? 1 / Math.Abs(pc.Normal.Z) : 1;
+            placed += AreaOnPiece(mc, pc, clipped, q * k, source) / k;
             // What the piece took is no longer on the roofs: its part of the rings, turned round.
             foreach (var r in clipped) rest.Add(r.Reverse().ToList());
         }
-        if (_roofs.Count > 0 && rest.Count > 0) placed += OnFramedRoofs(mc, rest, z, a.Direction, a.Value);
+        if (_roofs.Count > 0 && rest.Count > 0) placed += OnFramedRoofs(mc, rest, z, a.Direction, a.Value, a.Projected ?? mc.Snow);
+        Unmapped(mc, total - placed, source);
+    }
+
+    // ------------------------------------------------------------ wind on a façade
+
+    /// <summary>How far in plan from a façade's plane (metres) a beam, a rail or a floor's edge carries it.</summary>
+    public const double FacadeReach = 0.75;
+
+    sealed record FacadeCarrier(int Bar, Side? Side, double S0, double Z0, double S1, double Z1)
+    {
+        public double Z(double s) => Math.Abs(Z1 - Z0) < 1e-12 || !(S1 - S0 > 1e-12) || !double.IsFinite(S1 - S0) ? Z0 : Z0 + (Z1 - Z0) * (s - S0) / (S1 - S0);
+    }
+
+    /// <summary>
+    /// An action on an upright face (wind on a façade, docs/plan-fem.md §9.9): the face spans up and down between what runs
+    /// along it in its plane — the beams, rails and eaves beams (within <see cref="FacadeReach"/> of it in plan, parallel within
+    /// 10°; a gable's rafter sloping), the floors' edges, and the ground under its foot — each taking the strip from half way to
+    /// the one under it to half way to the one over it (the lowest from the face's foot, the highest to its top), as a line
+    /// load along it; the ground's strip goes to the ground. What has nothing along it is left, and said.
+    /// </summary>
+    void Facade(MappedCase mc, StructuralActionData a, string source)
+    {
+        var p0 = a.Points[0];
+        var n = VecMath.NewellNormal(a.Points.ToList());
+        var u = new Vec2(-n.Y, n.X).Normalized();
+        Vec2 SZ(Vec3 p) => new(Vec2.Dot(p.Xy - p0.Xy, u), p.Z);
+        var poly = Polygon2.EnsureCcw(a.Points.Select(SZ).ToList()).ToList();
+        var total = Math.Abs(Polygon2.SignedArea(poly)) * a.Value;
+        if (total <= 1e-12) return;
+        var q = a.Direction * a.Value;
+        double Off(Vec2 p) => Math.Abs(Vec2.Cross(u, p - p0.Xy));
+        var carriers = new List<FacadeCarrier>();
+        for (var k = 0; k < Problem.Elements.Count; k++)
+        {
+            var f = Frames[k];
+            if (f.Source.Kind == "column") continue;
+            var (pi, pj) = (f.I.At + f.OffI, f.J.At + f.OffJ);
+            var d = pj.Xy - pi.Xy;
+            if (d.Length < 0.05 || Math.Abs(Vec2.Cross(d.Normalized(), u)) > Math.Sin(10 * Math.PI / 180) || Off(pi.Xy) > FacadeReach || Off(pj.Xy) > FacadeReach) continue;
+            var (si, sj) = (SZ(pi), SZ(pj));
+            carriers.Add(si.X <= sj.X ? new FacadeCarrier(k, null, si.X, si.Y, sj.X, sj.Y) : new FacadeCarrier(k, null, sj.X, sj.Y, si.X, si.Y));
+        }
+        foreach (var pc in _pieces)
+            foreach (var side in pc.Sides)
+            {
+                var (sa, sb) = (side.A, side.A + side.Dir * side.Length);
+                if (side.Length < 0.05 || Math.Abs(Vec2.Cross(side.Dir, u)) > Math.Sin(10 * Math.PI / 180) || Off(sa) > FacadeReach || Off(sb) > FacadeReach) continue;
+                var (za, zb) = (pc.ZAt(sa), pc.ZAt(sb));
+                var (s0, s1) = (Vec2.Dot(sa - p0.Xy, u), Vec2.Dot(sb - p0.Xy, u));
+                carriers.Add(s0 <= s1 ? new FacadeCarrier(-1, side, s0, za, s1, zb) : new FacadeCarrier(-1, side, s1, zb, s0, za));
+            }
+        // The ground under the face's foot when it stands on it.
+        var foot = poly.Min(p => p.Y);
+        if (Problem.Nodes.Count > 0 && foot <= Problem.Nodes.Min(x => x.Z) + 0.3)
+            carriers.Add(new FacadeCarrier(-2, null, double.NegativeInfinity, foot, double.PositiveInfinity, foot));
+        var cuts = poly.Select(p => p.X).Concat(carriers.SelectMany(c => new[] { c.S0, c.S1 })).Where(double.IsFinite).ToList();
+        for (var i = 0; i < carriers.Count; i++)
+            for (var j = i + 1; j < carriers.Count; j++)
+            {
+                var (x, y) = (carriers[i], carriers[j]);
+                var (lo, hi) = (Math.Max(x.S0, y.S0), Math.Min(x.S1, y.S1));
+                if (!double.IsFinite(x.S0) || !double.IsFinite(y.S0) || !double.IsFinite(x.S1) || !double.IsFinite(y.S1) || !(hi - lo > 1e-9)) continue;
+                var (a0, a1) = (double.IsFinite(lo) ? lo : hi - 1, double.IsFinite(hi) ? hi : lo + 1);
+                var (d0, d1) = (x.Z(a0) - y.Z(a0), x.Z(a1) - y.Z(a1));
+                if (d0 * d1 < 0) cuts.Add(a0 + (a1 - a0) * d0 / (d0 - d1));
+            }
+        var (sMin, sMax) = (poly.Min(p => p.X), poly.Max(p => p.X));
+        cuts = cuts.Where(s => s >= sMin - 1e-9 && s <= sMax + 1e-9).Distinct().Order().ToList();
+        const double Far = 1e4;
+        var placed = 0.0;
+        for (var i = 0; i + 1 < cuts.Count; i++)
+        {
+            var (ca, cb) = (cuts[i], cuts[i + 1]);
+            if (cb - ca < 1e-9) continue;
+            var mid = (ca + cb) / 2;
+            var active = carriers.Where(c => c.S0 <= mid && c.S1 >= mid).OrderBy(c => c.Z(mid)).ToList();
+            for (var j = 0; j < active.Count; j++)
+            {
+                var c = active[j];
+                double Lo(double s) => j == 0 ? -Far : (active[j - 1].Z(s) + c.Z(s)) / 2;
+                double Hi(double s) => j == active.Count - 1 ? Far : (c.Z(s) + active[j + 1].Z(s)) / 2;
+                var strip = new List<Vec2> { new(ca, Lo(ca)), new(cb, Lo(cb)), new(cb, Hi(cb)), new(ca, Hi(ca)) };
+                var region = Tributary.ClipTo(poly, strip);
+                if (region.Count < 3 || Math.Abs(Polygon2.SignedArea(region)) < 1e-9) continue;
+                foreach (var t in Tributary.Profile([region], new Vec2(0, 0), new Vec2(1, 0)))
+                {
+                    placed += t.Integral * a.Value;
+                    if (c.Bar == -2) { mc.ToGround += q * t.Integral; continue; }
+                    if (c.Side is { } side)
+                    {
+                        // Along the floor's edge: its stations from the side's start.
+                        double S(double s) => Vec2.Dot(p0.Xy + u * s - side.A, side.Dir);
+                        var (x0, x1) = (S(t.S0), S(t.S1));
+                        var tr = x0 <= x1 ? new Trapezoid(x0, x1, t.W0, t.W1) : new Trapezoid(x1, x0, t.W1, t.W0);
+                        PlaceOnSide(mc, side, [tr], q, source);
+                        continue;
+                    }
+                    var f = Frames[c.Bar];
+                    var e = Problem.Elements[c.Bar];
+                    var (pi, pj) = (f.I.At + f.OffI, f.J.At + f.OffJ);
+                    var len = (pj - pi).Length;
+                    var plan = Math.Abs(Vec2.Dot(pj.Xy - pi.Xy, u));
+                    var si = Vec2.Dot(pi.Xy - p0.Xy, u);
+                    double X(double s) => Math.Clamp(Math.Abs(s - si) / plan, 0, 1) * len;
+                    var (bx0, bx1) = (X(t.S0), X(t.S1));
+                    var (w0, w1) = (t.W0 * plan / len, t.W1 * plan / len);
+                    if (bx0 > bx1) { (bx0, bx1) = (bx1, bx0); (w0, w1) = (w1, w0); }
+                    if (bx1 - bx0 < 1e-9) mc.Loads.Span.Add((c.Bar, SpanLoad.Force(bx0, q * t.Integral)));
+                    else mc.Loads.Span.Add((c.Bar, new SpanLoad(bx0, bx1, q * w0, q * w1)));
+                }
+            }
+        }
+        mc.OnFacades++;
         Unmapped(mc, total - placed, source);
     }
 
@@ -662,9 +802,11 @@ public sealed class StructuralProblem
         var o = new List<Roof>();
         foreach (var ar in Model.Roofs)
         {
-            var members = Enumerable.Range(0, Frames.Count).Where(k => Frames[k].Source.SourceId == ar.SourceId && Frames[k].Source.Category == AnalyticalKinds.Roofs).ToList();
+            // The roof's own members (a timber roof's), or those it names (a steel hall's purlins), each with its role there.
+            string RoleIn(int k) => ar.Members != null && ar.Members.TryGetValue(Frames[k].Source.SourceId, out var own) ? own : RoleOf(Frames[k].Source);
+            var members = Enumerable.Range(0, Frames.Count).Where(k => (Frames[k].Source.SourceId == ar.SourceId && Frames[k].Source.Category == AnalyticalKinds.Roofs) || ar.Members?.ContainsKey(Frames[k].Source.SourceId) == true).ToList();
             if (members.Count == 0) continue;
-            List<(int K, Vec3 Pi, Vec3 Pj)> Of(string[] roles) => members.Where(k => roles.Contains(RoleOf(Frames[k].Source)))
+            List<(int K, Vec3 Pi, Vec3 Pj)> Of(string[] roles) => members.Where(k => roles.Contains(RoleIn(k)))
                 .Select(k => (k, Frames[k].I.At + Frames[k].OffI, Frames[k].J.At + Frames[k].OffJ)).Where(x => (x.Item3.Xy - x.Item2.Xy).Length > 1e-6).ToList();
             var carriers = Of(Sloping);
             if (carriers.Count == 0) carriers = Of(Longitudinal);
@@ -702,7 +844,7 @@ public sealed class StructuralProblem
     /// covers — as a line load. Snow is per horizontal projection (q·w per metre of plan along the bar), any other load per true
     /// area (over the plane's cosine). What lies outside every plane is left. Returns the load placed, as q × its plan area.
     /// </summary>
-    double OnFramedRoofs(MappedCase mc, List<IReadOnlyList<Vec2>> rings, double z, Vec3 dir, double q)
+    double OnFramedRoofs(MappedCase mc, List<IReadOnlyList<Vec2>> rings, double z, Vec3 dir, double q, bool projected)
     {
         var placed = 0.0;
         foreach (var roof in _roofs.Where(r => z >= r.ZMin - DepthReach && z <= r.ZMax + DepthReach))
@@ -776,7 +918,7 @@ public sealed class StructuralProblem
                         if (Math.Abs(area) < 1e-12) continue;
                         var c = x.C;
                         // Per metre of the bar: the plan's load over the bar's length, over the plane's cosine for a true-area load.
-                        var k = c.PlanLength / c.Length * (mc.Snow ? 1 : 1 / plane.Normal.Z);
+                        var k = c.PlanLength / c.Length * (projected ? 1 : 1 / plane.Normal.Z);
                         foreach (var t in Tributary.Profile(part, c.A, c.Dir))
                         {
                             // A strip of a carrier oblique to the frame (a hip) may reach past its ends in its own axis: at its ends.

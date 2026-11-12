@@ -16,6 +16,9 @@ summary: Eine linear-statische Berechnung des Rahmens unter Ihren Lasten ausfüh
 - **Tragende Wände** sind Auflager: Sie halten die Stäbe auf ihnen, werden aber nicht als Wände berechnet.
 - **Decken und Platten** tragen nicht als Platten; sie leiten ihre Lasten nach der **45°-Regel** an die Stäbe und Wände darunter ab: Die Winkelhalbierenden der Ecken teilen die Platte in die Flächen, die jede Seite trägt, und jede wird zu einer trapez- oder dreieckförmigen Last auf dem Stab darunter.
 - **Dächer mit Tragwerk** leiten die Last auf jeden Sparren über seine **Einzugsbreite**, bis zur halben Strecke zu den Nachbarn; Schnee wird je horizontaler Projektion angesetzt.
+- **Pendelstäbe und Zugglieder** (ein aussteifender Rundstab, ein Zugband oder ein Seil) arbeiten axial: Sie sind an den Enden gelenkig, und ihr Gewicht geht an die Enden, sodass sie nicht wie Balken durchhängen. Die Einstellung **Axial beanspruchter Stab** in den Eigenschaften eines Stabs unter **Analyse** ändert das: **Nach Querschnitt und Nutzung**, **Ja (Pendelstab oder Zugband)** oder **Nein (ein Balken)**.
+- **Balken unterschiedlicher Höhe**, die auf eine Stütze treffen, behalten jeweils ihre eigene Höhenlage; die Stütze hat einen Knoten, und die Balken sind durch einen starren Arm an ihn gebunden.
+- **Wind auf den Fassaden** geht an die Balken, Riegel und Deckenränder entlang ihnen; der Streifen an ihrem Fuß geht direkt in den Boden und wird getrennt von den Summen der Stäbe aufgeführt.
 - Das **Eigengewicht** der Stäbe wird entlang der Stäbe angesetzt; die von Ihnen gezeichneten und die abgeleiteten Lasten gehen dorthin, wo sie darunter etwas finden. Eine Last, die nichts findet, bleibt unberücksichtigt und wird gemeldet.
 
 ## Ausführen

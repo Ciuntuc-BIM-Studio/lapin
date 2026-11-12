@@ -37,6 +37,7 @@ Estas não as desenha; o Lapin deriva-as do modelo de cada vez que as pede, e ac
 - O **peso próprio** de lajes, paredes, pilares e vigas, a partir das densidades dos seus materiais, no caso cuja origem é o peso próprio (G1).
 - Os **acabamentos das lajes**, a partir das suas camadas, e as **paredes não resistentes**, como cargas lineares, no caso que lista acabamentos e divisórias (G2).
 - Os **compartimentos**: a sobrecarga da categoria de um compartimento sobre a sua área, no caso dessa categoria (Q-A, Q-B…).
+- A **neve** e o **vento**, assim que indica os valores do local (veja [Neve e vento](#neve-e-vento)).
 
 Um material sem densidade fica de fora, e o Resumo diz qual.
 
@@ -51,6 +52,29 @@ Selecione um compartimento: as suas propriedades têm uma secção **Sobrecarga*
 O separador **Sobrecargas de utilização** lista cada categoria com o seu uso e o seu **qk** em kN/m², como recomenda a EN 1991-1-1. Escreva no campo o valor do seu anexo nacional; **Alterado** volta ao valor por defeito.
 
 ![O separador Sobrecargas de utilização](shots/loads-imposed.webp)
+
+## Neve e vento
+
+O separador **Neve e vento** guarda o clima do local. O Lapin não traz os mapas nacionais: leia os valores do seu local na **CR 1-1-3/2012** (neve, a sua figura 3.1 ou anexo A) e na **CR 1-1-4/2012** (vento, a sua figura 2.1 ou anexo A), ou no anexo nacional por que trabalha, e escreva-os.
+
+![O separador Neve e vento](shots/loads-climate.webp)
+
+- **Neve**: **Carga de neve no solo s0,k (kN/m²)**, **Exposição Ce** (total 0,8, parcial 1,0, abrigada 1,2), **Coeficiente térmico Ct** (1,0, salvo se a cobertura for envidraçada e perder calor) e **Coeficiente de importância γIs** (1,0 para edifícios correntes). **Aplicar a neve**.
+- **Vento**: **Pressão de referência do vento qb (kN/m²)**, **Categoria de terreno** (de 0 a IV, do mar ao centro de uma cidade) e **Coeficiente de importância γIw**. **Aplicar o vento**.
+
+Ao aplicá-los criam-se os casos em que as suas cargas entram:
+
+- **S**, a neve sem acumulação, e **S+X**, **S-X**, **S+Y**, **S-Y**, a neve acumulada por um vento que sopra para cada lado: numa cobertura de duas águas, a vertente virada ao vento leva metade. Uma acumulação que aqui não muda nada (nenhuma vertente está virada a esse vento) fica de fora, e o Resumo di-lo.
+- **W+X/s**, **W+X/p**, e assim para as quatro direções: o vento que sopra para +X, −X, +Y, −Y, uma vez com a **sucção** (/s) das coberturas e outra com a sua **pressão** (/p).
+
+As disposições da neve e as direções do vento são alternativas: uma combinação toma só uma de cada.
+
+O que o Lapin calcula a partir deles, de cada vez que o pede:
+
+- **Neve** em cada vertente de cobertura, por m² em planta: s = γIs · μ1 · Ce · Ct · s0,k, com μ1 = 0,8 até 30°, depois menos, 0 aos 60° e mais inclinado; numa laje que nada cobre (um terraço, uma cobertura plana) μ1 = 0,8.
+- **Vento** nas paredes e coberturas: o contorno do edifício é o invólucro convexo das suas paredes e pilares; as fachadas tomam as zonas A a E, as coberturas planas F a I, uma cobertura de duas águas F a J, pelos coeficientes da EN 1991-1-4, à pressão da altura do edifício para a categoria de terreno. Uma fachada passa o seu vento às vigas, travessas e bordos de laje ao longo dela, a sua faixa mais baixa ao solo; uma cobertura às suas asnas ou madres. As coberturas de quatro águas, a pressão interior e as acumulações de neve nas platibandas ainda não são derivadas.
+
+> Estes valores são **indicativos**: os coeficientes são os recomendados pelas normas. Confirme-os com o seu anexo nacional.
 
 ## Resumo
 

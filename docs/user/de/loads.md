@@ -37,6 +37,7 @@ Diese zeichnest du nicht; Lapin leitet sie bei jeder Abfrage aus dem Modell ab, 
 - Das **Eigengewicht** von Decken, Wänden, Stützen und Trägern aus den Dichten ihrer Materialien, im Fall, dessen Quelle das Eigengewicht ist (G1).
 - Die **Deckenbeläge** aus den Schichten der Decken und die **nichttragenden Wände** als Linienlasten, im Fall, der Ausbau und Trennwände aufführt (G2).
 - Die **Räume**: die Nutzlast der Kategorie eines Raums über seine Fläche, im Fall dieser Kategorie (Q-A, Q-B…).
+- Der **Schnee** und der **Wind**, sobald du die Werte des Standorts angibst (siehe [Schnee und Wind](#schnee-und-wind)).
 
 Ein Material ohne Dichte bleibt außen vor, und die Übersicht sagt, welches.
 
@@ -51,6 +52,29 @@ Wähle einen Raum: seine Eigenschaften haben einen Abschnitt **Nutzlast**. Seine
 Der Reiter **Nutzlasten** führt jede Kategorie mit ihrer Nutzung und ihrem **qk** in kN/m² auf, wie EN 1991-1-1 es empfiehlt. Trage im Feld den Wert deines Nationalen Anhangs ein; **Geändert** setzt auf den Standardwert zurück.
 
 ![Der Reiter Nutzlasten](shots/loads-imposed.webp)
+
+## Schnee und Wind
+
+Der Reiter **Schnee und Wind** enthält das Klima des Standorts. Lapin liefert die nationalen Karten nicht mit: Lies die Werte für deinen Standort aus **CR 1-1-3/2012** (Schnee, Bild 3.1 oder Anhang A) und **CR 1-1-4/2012** (Wind, Bild 2.1 oder Anhang A) oder aus dem Nationalen Anhang, nach dem du arbeitest, ab und trage sie ein.
+
+![Der Reiter Schnee und Wind](shots/loads-climate.webp)
+
+- **Schnee**: **Schneelast auf dem Boden s0,k (kN/m²)**, **Expositionsbeiwert Ce** (voll 0,8, teilweise 1,0, geschützt 1,2), **Temperaturbeiwert Ct** (1,0, außer das Dach ist verglast und verliert Wärme) und **Bedeutungsbeiwert γIs** (1,0 für gewöhnliche Gebäude). **Schnee anwenden**.
+- **Wind**: **Basisgeschwindigkeitsdruck qb (kN/m²)**, **Geländekategorie** (0 bis IV, vom Meer bis zum Stadtzentrum) und **Bedeutungsbeiwert γIw**. **Wind anwenden**.
+
+Beim Anwenden entstehen die Fälle, in die ihre Lasten gehen:
+
+- **S**, der Schnee ohne Verwehung, und **S+X**, **S-X**, **S+Y**, **S-Y**, der Schnee, den ein Wind in Richtung jeder Seite verweht: Auf einem Satteldach nimmt die dem Wind zugewandte Seite die Hälfte. Eine Verwehung, die hier nichts ändert (keine Dachfläche ist diesem Wind zugewandt), bleibt außen vor, und die Übersicht sagt es.
+- **W+X/s**, **W+X/p** und so weiter für die vier Richtungen: der Wind in Richtung +X, −X, +Y, −Y, einmal mit dem **Sog** (/s) der Dächer und einmal mit ihrem **Druck** (/p).
+
+Die Schneeanordnungen und die Windrichtungen sind Alternativen: Eine Kombination nimmt jeweils nur eine.
+
+Was Lapin daraus ableitet, bei jeder Abfrage:
+
+- **Schnee** auf jeder Dachfläche, je m² Grundriss: s = γIs · μ1 · Ce · Ct · s0,k, mit μ1 = 0,8 bis 30°, danach weniger, 0 bei 60° und steiler; auf einer Decke, die nichts überdeckt (eine Terrasse, ein Flachdach), μ1 = 0,8.
+- **Wind** auf Wände und Dächer: Der Umriss des Gebäudes ist die konvexe Hülle seiner Wände und Stützen; die Fassaden nehmen die Zonen A bis E, die Flachdächer F bis I, ein Satteldach F bis J, nach den Beiwerten der EN 1991-1-4, beim Druck der Gebäudehöhe für die Geländekategorie. Eine Fassade gibt ihren Wind an die Balken, Riegel und Deckenränder entlang ihr ab, ihren untersten Streifen an den Boden; ein Dach an seine Sparren oder Pfetten. Walmdächer, der Innendruck und Schneeverwehungen an Attiken werden noch nicht abgeleitet.
+
+> Diese Werte sind **Richtwerte**: Die Beiwerte sind die von den Normen empfohlenen. Prüfe sie gegen deinen Nationalen Anhang.
 
 ## Übersicht
 
