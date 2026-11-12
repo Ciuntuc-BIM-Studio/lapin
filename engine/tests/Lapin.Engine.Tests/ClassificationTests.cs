@@ -91,4 +91,26 @@ public sealed class ClassificationTests
         Assert.Equal(0, (int)b.Run("params.importDefs", new JsonObject { ["text"] = text })!["added"]!);
         Assert.Throws<CommandException>(() => b.Run("params.setDef", new JsonObject { ["def"] = new JsonObject { ["name"] = "X", ["kind"] = "text", ["pset"] = "Pset_Mine" } }));
     }
+
+    [Fact]
+    public void Codes_come_back_from_the_IFC_file_onto_the_elements()
+    {
+        var a = F();
+        Uniclass(a);
+        var wall = a.Wall(0, 0, 5, 0);
+        a.Run("classification.assign", new JsonObject { ["ids"] = new JsonArray(wall), ["system"] = "Uniclass", ["code"] = "Ss_25_10" });
+        var path = Path.Combine(Path.GetTempPath(), $"lapin-class-{Guid.NewGuid():N}.ifc");
+        try
+        {
+            IfcExport.Write(a.Session, path);
+            var b = new Fixture(new ArchitectureModule());
+            IfcImport.Run(b.Session, path, null, out _);
+            var system = Classifications.System(b.Model, "Uniclass");
+            Assert.NotNull(system);
+            Assert.Equal("Framed wall systems", Classifications.Items(system!).Single(i => i.Code == "Ss_25_10").Title);
+            var classified = b.Model.Entities.Where(e => Classifications.RefsOf(e).Any(r => r.Code == "Ss_25_10")).ToList();
+            Assert.Single(classified);
+        }
+        finally { File.Delete(path); }
+    }
 }

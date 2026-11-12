@@ -247,8 +247,64 @@ public static partial class IfcImport
             UnitInstances(edit);
             if (ReadProcesses && !o.ReferenceOnly) Processes(edit);
             if (ReadProcesses && !o.ReferenceOnly) Controls(edit);
+            Classified(edit);
             var left = edit.Model.Entities.Count(e => s.Catalog.Geometry(e.Class) != null && !seen.Contains(e.Id) && e.Class is not (IfcClass.OpeningElement or IfcClass.Annotation or IfcClass.Grid));
             if (left > 0 && elements + updated > 0) notes.Add($"{left} element(s) of the project are not in the file; they stay as they are.");
+        }
+
+        /// <summary>
+        /// The file's classifications (docs/plan-user-extensibility.md §7.3): each IfcClassification a system of the project (one of its
+        /// name kept, its items added), each reference's code (Identification, else Location) and title (Name) an item of it, put on
+        /// the elements and types the file relates it to that came in; a reference without a system goes under „IFC classification”.
+        /// </summary>
+        void Classified(IEdit edit)
+        {
+            var rels = f.OfType("IFCRELASSOCIATESCLASSIFICATION").ToList();
+            if (rels.Count == 0) return;
+            var count = 0;
+            foreach (var r in rels)
+            {
+                if (f.Get(r[5]) is not { Type: "IFCCLASSIFICATIONREFERENCE" } reference) continue;
+                var code = Str(reference[1]) ?? Str(reference[0]);
+                if (string.IsNullOrWhiteSpace(code)) continue;
+                // Its system: the classification it names, through references of references (a tree written as one).
+                var source = f.Get(reference[3]);
+                var parentCode = source is { Type: "IFCCLASSIFICATIONREFERENCE" } pr ? Str(pr[1]) ?? Str(pr[0]) : null;
+                for (var i = 0; i < 16 && source is { Type: "IFCCLASSIFICATIONREFERENCE" }; i++) source = f.Get(source[3]);
+                var name = source is { Type: "IFCCLASSIFICATION" } c ? Str(c[3]) ?? "IFC classification" : "IFC classification";
+                var system = Classifications.System(edit.Model, name);
+                if (system == null)
+                {
+                    var attrs = new JsonObject { ["items"] = new JsonArray() };
+                    if (source is { Type: "IFCCLASSIFICATION" } cs)
+                    {
+                        if (Str(cs[0]) is { Length: > 0 } src) attrs["source"] = src;
+                        if (Str(cs[1]) is { Length: > 0 } ed) attrs["edition"] = ed;
+                    }
+                    system = new Entity(GlobalId.New(), Classifications.Class, name, attrs);
+                    edit.Add(system);
+                }
+                if (!Classifications.Items(system).Any(x => x.Code == code))
+                {
+                    var attrs = system.CloneAttrs();
+                    var items = (attrs["items"] as JsonArray)?.DeepClone() as JsonArray ?? [];
+                    var item = new JsonObject { ["code"] = code, ["title"] = Str(reference[2]) ?? "" };
+                    if (parentCode is { Length: > 0 }) item["parent"] = parentCode;
+                    items.Add((JsonNode)item);
+                    attrs["items"] = items;
+                    edit.Replace(system = system.With(attrs: attrs));
+                }
+                foreach (var obj in Refs(r[4]))
+                {
+                    if (f.Get(obj) is not { } fe || Str(fe[0]) is not { } gid || edit.Model.Get(gid) is not { } target) continue;
+                    var refs = Classifications.RefsOf(target).Where(x => x.System != system.Id).Append((system.Id, code)).ToList();
+                    var attrs = target.CloneAttrs();
+                    attrs[Classifications.Key] = new JsonArray(refs.Select(x => (JsonNode)new JsonObject { ["system"] = x.Item1, ["code"] = x.Item2 }).ToArray());
+                    edit.Replace(target.With(attrs: attrs));
+                    count++;
+                }
+            }
+            if (count > 0) notes.Add($"{count} classification code(s) read onto the elements and types.");
         }
 
         // ─── Reading ────────────────────────────────────────────────────────
