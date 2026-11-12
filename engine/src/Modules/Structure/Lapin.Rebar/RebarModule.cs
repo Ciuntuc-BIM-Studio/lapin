@@ -275,6 +275,23 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         r.Service<IViewAnnotations>(this);
         // The reinforcement's rules in the project's rule pack (docs/plan-user-extensibility.md §5.4).
         RebarRuleSection.Register(r);
+        // Bars along an element's edges as the view cuts it ({viewId, at | hostId, edges?: [side…] (none: all round), cover?, diameter?, steel?, hooks?, count?}), docs/plan-user-extensibility.md §6.2.
+        r.Command("alongOutline", "Bar along edges", (ctx, a) =>
+        {
+            var view = Views.Find(ctx.Model, (string?)a["viewId"] ?? "") ?? throw new CommandException("A bar is drawn on a view.");
+            var at = Args.TryPoint(a["at"]);
+            var found = RebarLinework.Outline(ctx, view, (string?)a["hostId"], at) ?? throw new CommandException("The view does not cut an element there: draw the bar in a section through it.");
+            var d = Json.Number(a["diameter"]) ?? 0.012;
+            var cover = Json.Number(a["cover"]) ?? 0.03;
+            if (cover < 0 || cover > 0.5) throw new CommandException("The cover is 0 to 500 mm.");
+            var edges = a["edges"] is JsonArray ea ? ea.Select(x => (int)(Json.Number(x) ?? -1)).ToList() : null;
+            var args = RebarLinework.AlongOutline(found.Loop, edges, cover + d / 2);
+            args["viewId"] = view.Id;
+            args["diameter"] = d;
+            foreach (var k in new[] { "steel", "hooks", "count", "mark" }) if (a[k] != null) args[k] = a[k]!.DeepClone();
+            var entry = (ctx.Services as ModuleCatalog)?.Command("rebar.add") ?? throw new CommandException("No bars here.");
+            return entry.Handler(ctx, args);
+        });
         // Bar shapes of the user's, and the bending schedule by the standard and BVBS (docs/plan-user-extensibility.md §6.3–6.4).
         RebarShapeData.Register(r);
         RebarBvbs.Register(r);

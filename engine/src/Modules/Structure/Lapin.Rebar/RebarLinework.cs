@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using Lapin.Geometry;
 using Lapin.Model;
 using Lapin.Platform;
+using Lapin.Drawing.Views;
 
 namespace Lapin.Rebar;
 
@@ -70,6 +71,47 @@ public static class RebarLinework
         o["shape"] = "polyline"; o["at"] = J(run[0]); o["rotation"] = 0;
         o["vertices"] = new JsonArray(run.Select(p => (JsonNode)J(p - run[0])).ToArray());
         return o;
+    }
+
+    /// <summary>
+    /// An element's cut outline in a view (its outer loop, counter-clockwise), for bars laid along its edges: the cut that holds
+    /// <paramref name="at"/>, else the host's own (<paramref name="hostId"/>); null when the view cuts neither.
+    /// </summary>
+    public static (string Host, List<Vec2> Loop)? Outline(ICommandContext ctx, Entity view, string? hostId, Vec2? at)
+    {
+        var (drawing, _, _) = Views.Generate(ctx.Query, view);
+        if (drawing == null) return null;
+        foreach (var cut in drawing.Cuts)
+        {
+            if (cut.Loops.Count == 0) continue;
+            if (hostId != null ? cut.Element != hostId : at is not { } p || !Polygon2.Inside(cut.Loops.Select(l => l.ToArray()).ToArray(), p)) continue;
+            var outer = cut.Loops.OrderByDescending(l => Math.Abs(Polygon2.SignedArea(l))).First().ToList();
+            if (Polygon2.SignedArea(outer) < 0) outer.Reverse();
+            return (cut.Element, outer);
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Bars along an element's edges as a view cuts it (docs/plan-user-extensibility.md §6.2): the outline brought in by the cover and
+    /// half the bar; all its edges a closed bar (a rectangle a stirrup), some of them (each the side from its corner to the next) an
+    /// open bar along them, stopping at the cover from the faces it meets.
+    /// </summary>
+    public static JsonObject AlongOutline(List<Vec2> outer, IReadOnlyList<int>? edges, double inset)
+    {
+        // Outward positive (Polygon2.Offset): inward by the inset.
+        var inner = Polygon2.Offset(outer, [-inset]);
+        if (Math.Abs(Polygon2.SignedArea(inner)) < 1e-6 || Polygon2.SignedArea(inner) < 0) throw new CommandException("The element is too small for the cover and the bar.");
+        if (edges == null || edges.Count >= outer.Count) return Recognise([.. inner], true, true);
+        var n = outer.Count;
+        var set = edges.Select(i => ((i % n) + n) % n).Distinct().ToHashSet();
+        // A run of sides that follow one another: from the first side whose previous one is not taken (the run round the corner of the loop).
+        var start = Enumerable.Range(0, n).FirstOrDefault(i => set.Contains(i) && !set.Contains((i - 1 + n) % n), -1);
+        if (start < 0) return Recognise([.. inner], true, true);
+        var pts = new List<Vec2> { inner[start] };
+        for (var k = 0; k < n && set.Contains((start + k) % n); k++) pts.Add(inner[(start + k + 1) % n]);
+        if (pts.Count - 1 != set.Count) throw new CommandException("The edges chosen do not follow one another round the outline.");
+        return Recognise(pts, false, true);
     }
 
     public static readonly LineworkConverter Bars = new("rebar", "Reinforcement bars", "rebar", "any", ["plan", "section", "elevation", "drafting", "detail"],

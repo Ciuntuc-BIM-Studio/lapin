@@ -99,4 +99,35 @@ public sealed class RebarShapeDataTests
         Assert.Equal(RebarBvbs.Checksum(record[..at]).ToString(System.Globalization.CultureInfo.InvariantCulture) + "@", record[at..]);
         Assert.Equal(1, (int)r["records"]!);
     }
+
+    [Fact]
+    public void Bars_follow_an_element_s_edges_as_a_section_cuts_it_at_the_cover()
+    {
+        var f = F();
+        // A 0.3 × 0.5 beam from x 0 to 6 at y 0, cut across by a section at x 3 looking along it.
+        var beam = (string)f.Run("structure.addBeam", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 6, ["y2"] = 0 })!["id"]!;
+        var section = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = new JsonArray(3, -2), ["end"] = new JsonArray(3, 2), ["scale"] = 20 })!["id"]!;
+        var (drawing, _, _) = Views.Generate(f.Session.Reader, f.Model.Get(section)!);
+        var cut = drawing!.Cuts.First(c => c.Element == beam).Loops[0];
+        var mid = new Lapin.Geometry.Vec2(cut.Average(p => p.X), cut.Average(p => p.Y));
+        // All round: a stirrup, the cut's size less twice the cover and the bar.
+        var id = (string)f.Run("rebar.alongOutline", new JsonObject { ["viewId"] = section, ["at"] = new JsonArray(mid.X, mid.Y), ["cover"] = 0.025, ["diameter"] = 0.008 })!["id"]!;
+        var s = Rebars.SpecOf(f.Model.Get(id)!);
+        Assert.Equal("stirrup", s.Shape);
+        var (w, h) = (cut.Max(p => p.X) - cut.Min(p => p.X), cut.Max(p => p.Y) - cut.Min(p => p.Y));
+        Assert.Equal(new[] { w - 2 * 0.029, h - 2 * 0.029 }.Order().ToArray(), new[] { s["a"], s["b"] }.Order().ToArray(), new ToleranceComparer(1e-6));
+        Assert.Equal(beam, f.Model.Get(id)!.Str("host"));
+        // One edge: a straight bar along it, stopping at the cover from the faces it meets.
+        var low = Enumerable.Range(0, cut.Length).OrderBy(i => cut[i].Y + cut[(i + 1) % cut.Length].Y).First();
+        var bar = (string)f.Run("rebar.alongOutline", new JsonObject { ["viewId"] = section, ["at"] = new JsonArray(mid.X, mid.Y), ["edges"] = new JsonArray(low), ["cover"] = 0.025, ["diameter"] = 0.016 })!["id"]!;
+        var b = Rebars.SpecOf(f.Model.Get(bar)!);
+        Assert.Equal("straight", b.Shape);
+        Assert.Equal(w - 2 * 0.033, b["length"], 6);
+    }
+
+    sealed class ToleranceComparer(double tol) : IEqualityComparer<double>
+    {
+        public bool Equals(double x, double y) => Math.Abs(x - y) <= tol;
+        public int GetHashCode(double obj) => 0;
+    }
 }
