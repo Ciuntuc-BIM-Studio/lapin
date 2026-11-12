@@ -39,6 +39,8 @@ public sealed class EngineHub
             Furniture = userDir == null ? null : new FurnitureLibrary(Path.Combine(userDir, "furniture")),
         };
         Sharing = new Sharing(this);
+        // Python in Lapin (docs/plan-python-scripting.md): where the edition has the scripting module.
+        Scripts = new ScriptHost(session.Product.Modules.Contains("scripting"), userDir, o => TellLocal("script.output", o));
         session.History.AuthorName = id => Participant(id)?.Name;
         // A module's background result (docs/overrides.md) waits for the calls' queue like a call, then goes out as a diff.
         session.DeliveryWaiting += () => _ = Deliveries();
@@ -66,6 +68,7 @@ public sealed class EngineHub
 
     public Session Session => _session;
     public Sharing Sharing { get; }
+    public ScriptHost Scripts { get; }
 
     /// <summary>
     /// One connected interface: who it is, and how a frame reaches it. What the hub sends it waits in its own queue,
@@ -197,6 +200,14 @@ public sealed class EngineHub
         lock (_clients) had = _clients.Remove(c);
         c.Complete();
         if (had && c.Participant != null) await BroadcastPresence();
+        // A script's connection lost (its Python killed, stopped, crashed) with its step open: the step taken back, every window told.
+        if (_session.OwnsStep(c))
+        {
+            await _gate.WaitAsync();
+            try { if (_session.RollbackFor(c) is { } back) Broadcast(back); }
+            finally { _gate.Release(); }
+            if (_session.DeliveriesWaiting) _ = Deliveries();
+        }
     }
 
     Client[] Clients() { lock (_clients) return [.. _clients]; }
@@ -235,6 +246,8 @@ public sealed class EngineHub
     public async Task<byte[]?> Handle(string text, Client? client)
     {
         var caller = client?.Caller ?? Caller.Local;
+        // The connection is who a script's open step belongs to (Session.Step.cs).
+        if (client != null) caller = caller with { Connection = client };
         if (Own(text) is { } own) return await HandleOwn(own, client, caller);
         await _gate.WaitAsync();
         try
@@ -251,20 +264,22 @@ public sealed class EngineHub
         finally
         {
             _gate.Release();
+            // What waited for a script's step to end (a module's background result) goes now.
+            if (!_session.StepOpen && _session.DeliveriesWaiting) _ = Deliveries();
         }
     }
 
-    /// <summary>A share.*, presence.*, cancel.* or extensions.* call, parsed; null for any other. They are answered at once, past the queue of calls (a cancel stops the one running).</summary>
+    /// <summary>A share.*, presence.*, cancel.*, extensions.* or script.* call, parsed; null for any other. They are answered at once, past the queue of calls (a cancel stops the one running).</summary>
     static JsonObject? Own(string text)
     {
         // Cheap test first: every other call goes on untouched.
         if (!text.Contains("\"share.", StringComparison.Ordinal) && !text.Contains("\"presence.", StringComparison.Ordinal) && !text.Contains("\"cancel.", StringComparison.Ordinal)
-            && !text.Contains("\"extensions.", StringComparison.Ordinal)) return null;
+            && !text.Contains("\"extensions.", StringComparison.Ordinal) && !text.Contains("\"script.", StringComparison.Ordinal)) return null;
         try
         {
             return JsonNode.Parse(text) is JsonObject o && (string?)o["method"] is { } m
                 && (m.StartsWith("share.", StringComparison.Ordinal) || m.StartsWith("presence.", StringComparison.Ordinal) || m.StartsWith("cancel.", StringComparison.Ordinal)
-                    || m.StartsWith("extensions.", StringComparison.Ordinal)) ? o : null;
+                    || m.StartsWith("extensions.", StringComparison.Ordinal) || m.StartsWith("script.", StringComparison.Ordinal)) ? o : null;
         }
         catch (System.Text.Json.JsonException) { return null; }
     }
@@ -306,6 +321,12 @@ public sealed class EngineHub
                 case "extensions.source":
                     if (caller.Remote) throw new CommandException("Only the host can do that.");
                     result = new JsonObject { ["index"] = ExtensionFetch.IndexFromEnvironment };
+                    break;
+                // Python (docs/plan-python-scripting.md, stage 2): the host's own, past the queue of calls (a Stop must reach a script
+                // whose commands hold the queue); what the script does comes back through its own connection as ordinary calls.
+                case var _ when method.StartsWith("script.", StringComparison.Ordinal):
+                    if (caller.Remote) throw new CommandException("Only the host can do that.");
+                    result = await Scripts.Handle(method, p);
                     break;
                 default:
                     if (caller.Remote) throw new CommandException("Only the host can do that.");

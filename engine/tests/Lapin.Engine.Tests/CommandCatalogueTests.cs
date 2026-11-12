@@ -100,4 +100,31 @@ public class CommandCatalogueTests
         Assert.Throws<CommandException>(() => f.Run("edit.batch", new JsonObject { ["steps"] = new JsonArray(Step(10)), ["label"] = 3 }));
         Assert.Equal(walls, f.Model.OfClass(IfcClass.Wall).Count());
     }
+
+    /// <summary>A module built in another repository: its commands' arguments from the catalogue its assembly carries.</summary>
+    sealed class PremiumModule : ILapinModule
+    {
+        public string Id => "premium";
+        public string Name => "Premium";
+        public void Register(IModuleRegistry r)
+        {
+            r.Command("place", "Place", (ctx, a) => null);
+            r.Query("report", (ctx, a) => null);
+        }
+    }
+
+    [Fact]
+    public void A_module_built_elsewhere_brings_its_own_catalogue_and_Lapins_own_entries_win()
+    {
+        var f = new Fixture(new ArchitectureModule(), new PremiumModule());
+        var d = new EngineDispatcher(f.Session, PackageFiles.Create());
+        var c = Reply(d, "session.catalogue", [], Caller.Local)["result"]!;
+        var place = c["commands"]!.AsArray().Single(x => (string?)x!["name"] == "premium.place")!;
+        Assert.Equal(["storeyId", "count"], place["args"]!.AsArray().Select(x => (string?)x!["name"]));
+        var report = c["queries"]!.AsArray().Single(x => (string?)x!["name"] == "premium.report")!;
+        Assert.Equal("premium", (string?)report["module"]);
+        Assert.Equal(["id"], report["args"]!.AsArray().Select(x => (string?)x!["name"]));
+        var wall = c["commands"]!.AsArray().Single(x => (string?)x!["name"] == "architecture.addWall")!;
+        Assert.DoesNotContain("ignored", wall["args"]!.AsArray().Select(x => (string?)x!["name"]));
+    }
 }

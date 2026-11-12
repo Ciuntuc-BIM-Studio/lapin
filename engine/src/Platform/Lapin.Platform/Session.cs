@@ -173,6 +173,7 @@ public sealed partial class Session
     /// <param name="seed">The spatial structure of an IFC file the project is made from: its GlobalIds and names (the storeys as <paramref name="storeys"/>, in the same order).</param>
     void StartEmpty(IReadOnlyList<(string Name, double Elevation, double Height)> storeys, bool fresh = false, SpatialSeed? seed = null)
     {
+        RefuseDuringStep(ownerToo: true);
         _foreignClasses.Clear();
         ForgetMeshes();
         _history.Load([], []);
@@ -244,6 +245,7 @@ public sealed partial class Session
     /// <summary>Replaces the model with one read from a file (no undo step). <paramref name="classModules"/>: which module wrote each class.</summary>
     public Diff Load(IEnumerable<Entity> entities, IEnumerable<Relation> relations, string? path, IReadOnlyDictionary<string, string>? classModules = null)
     {
+        RefuseDuringStep(ownerToo: true);
         _foreignClasses.Clear();
         foreach (var (cls, module) in classModules ?? new Dictionary<string, string>())
             if (_catalog.OwnerOf(cls) == null) _foreignClasses[cls] = module;
@@ -363,7 +365,8 @@ public sealed partial class Session
         }, author);
         result = r;
         if (t == null) return Empty();
-        Emit("tx", t);
+        // In an open step the journal gets the step once, when it is committed (Session.Step.cs).
+        if (t.Seq != 0) Emit("tx", t);
         return DiffAfter(t);
     }
 
@@ -384,7 +387,7 @@ public sealed partial class Session
     {
         var t = Commit(label, edit, Author);
         if (t == null) return Empty();
-        Emit("tx", t);
+        if (t.Seq != 0) Emit("tx", t);
         // Being recovered (an import done again): the snapshot at the end draws everything once.
         return _quiet ? Empty() : DiffAfter(t);
     }
@@ -395,6 +398,8 @@ public sealed partial class Session
     /// </summary>
     Transaction? Commit(string label, Action<IEdit> edit, string author)
     {
+        // A script's step open: only its own connection edits (Session.Step.cs).
+        RefuseDuringStep();
         Transaction? t = null;
         _inEdit = true;
         try { t = _history.Execute(label, edit, author); }
@@ -452,6 +457,8 @@ public sealed partial class Session
     public IReadOnlyList<DeliveryOutcome> TakeDeliveries()
     {
         var o = new List<DeliveryOutcome>();
+        // A script's step open: they wait for it to end, never joining it.
+        if (StepOpen) return o;
         while (_deliveries.TryDequeue(out var d))
         {
             if (Stale(d.Since, d.Reads)) { o.Add(new(d.Label, "stale", d.Since.Author)); continue; }
@@ -494,6 +501,7 @@ public sealed partial class Session
     public Diff Undo(string? author = null)
     {
         author ??= Author;
+        RefuseDuringStep(ownerToo: true);
         if (_history.Undo(author) is not { } t) return Empty();
         Interlocked.Increment(ref _changes);
         Changed(t);
@@ -504,6 +512,7 @@ public sealed partial class Session
     public Diff Redo(string? author = null)
     {
         author ??= Author;
+        RefuseDuringStep(ownerToo: true);
         if (_history.Redo(author) is not { } t) return Empty();
         Interlocked.Increment(ref _changes);
         Changed(t);

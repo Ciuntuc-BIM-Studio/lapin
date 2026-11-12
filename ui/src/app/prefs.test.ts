@@ -15,6 +15,13 @@ describe('preferences (decision 445)', () => {
     expect(readPrefs({ theme: 'neon', gridStep: -1, polarStep: 7, gridMajor: 0.5 })).toMatchObject({ theme: 'paper', gridStep: 1, polarStep: 45, gridMajor: 5 });
   });
 
+  it('keeps Developer extras off unless switched on, with the Python and the editor it names (decision 489)', () => {
+    expect(readPrefs(null)).toMatchObject({ developerExtras: false, pythonPath: null, externalEditor: null });
+    expect(readPrefs({ developerExtras: 'yes', pythonPath: '  ', externalEditor: 7 })).toMatchObject({ developerExtras: false, pythonPath: null, externalEditor: null });
+    expect(readPrefs({ developerExtras: true, pythonPath: ' /opt/homebrew/bin/python3.13 ', externalEditor: 'code' }))
+      .toMatchObject({ developerExtras: true, pythonPath: '/opt/homebrew/bin/python3.13', externalEditor: 'code' });
+  });
+
   it('keeps the adaptive grid the plan always had, and a fixed one at every zoom', () => {
     expect(gridStepAt(20, { gridMode: 'adaptive', gridStep: 0.1 })).toBe(1);
     expect(gridStepAt(1, { gridMode: 'adaptive', gridStep: 0.1 })).toBe(25);

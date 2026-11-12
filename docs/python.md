@@ -4,7 +4,7 @@ Every Lapin tool is an engine command with JSON arguments and one undo step. `la
 - shows at once in the window;
 - undoes with Ctrl+Z, one step per command (or per batch).
 
-It is stage 1 of `docs/plan-python-scripting.md` (decision 489): the client. The console in the app, the recorder and script tools come in stages 2–4.
+It is stages 1 and 2 of `docs/plan-python-scripting.md` (decision 489): the client, and the Script panel in the app (below). The recorder, the project's scripts and script tools come in stages 3–4.
 
 - **Python 3.11 or newer**, the standard library only: its own WebSocket client over `socket`, the engine's LPF1 frames read with `struct` and `memoryview`, JSON-RPC.
 - **127.0.0.1 only**: it drives the engine of this computer, never another's (decision 489, §7). A guest of a shared session has no way in.
@@ -162,11 +162,35 @@ with lapin.batch("Walls +20 cm"):
         w.update(height=w.height + 0.2)
 ```
 
+## The Script panel (stage 2)
+
+The open module `scripting` (in the free edition, `products/lapin.json`) puts Python in the desktop app, behind **Preferences → Developer extras** (off by default; user guide: `docs/user/python.md`). Its engine half is the host's (`engine/src/Host/Lapin.Host/ScriptHost.cs`), its interface half `ui/src/modules/scripting` (the panel, CodeMirror 6 fetched with it on first open).
+
+- **Python is the user's own**, 3.11 or newer: the one named in Preferences (a path or a command), else the first that answers of `LAPIN_PYTHON`, `py -3` (Windows), `python3`, `python`, and the usual places (python.org's, Homebrew's, pyenv's; a GUI app on macOS has a short PATH). Each is asked its version; an older one is named in the message. Lapin ships no Python and downloads none.
+- **The kernel**: `python -I -B -u -c "<bootstrap>" <package dir>`, started at the first Run, one per engine, kept between runs (the console's names stay) until Restart. Isolated (no current folder, no `PYTHON*` variables; the user's own site-packages are put back, so `pip install --user` packages import), no bytecode written (the app's resources are signed). The package is `python/lapinbim`, copied by `build:product` to `resources/python/lapinbim` where the product has `scripting` (so no `pip install` is needed), and found by the host beside its modules, else up from the engine (a checkout's `python/`: `pnpm dev`, the guide's scenes, the tests); `--python-dir` names another. The kernel binds `lapin` to it, sets `LAPIN_PORT` to the engine's and connects back over the protocol like any script: what a script does is ordinary commands.
+- **Kernel protocol** (`python/lapinbim/kernel.py`), one JSON object a line: in, `{"op": "run", "id", "code", "name", "console"}`, `{"op": "interrupt"}`, `{"op": "exit"}`; out, `ready` (versions), `out`/`err` (what the code prints, with its run's id), `done` (`ok`, `interrupted`, `kept`, `error`, `line`, `traceback` with the kernel's frames left out, `seconds`). A console run shows its last expression's value. `input()` is refused rather than hanging.
+- **Host methods**, the host's own (refused to a guest: `Only the host can do that.`), answered past the call queue so Stop reaches a script whose commands hold it: `script.run {code, name?, console?, python?}` (one run at a time), `script.stop` (an interrupt, a real SIGINT on macOS and Linux, `interrupt_main` on Windows; the process killed after 2 s), `script.restart`, `script.status {python?, refresh?}`, and Mine: `script.files`, `script.load {name}`, `script.save {name, code}`, `script.delete {name}`, `script.reveal {name, editor?}` (plain `.py` files in `<user-dir>/scripts`, a name never a path; the external editor named, else `open -t`, Notepad or xdg-open, never the system's action for `.py`, which may run it). The kernel's lines go to the computer's own windows as the event `script.output`. An edition without `scripting` refuses them (`script.status` says so).
+
+### One Run, one undo step: `doc.begin`, `doc.commit`, `doc.rollback`
+
+The kernel opens a step on the engine round each run: `doc.begin {label: <the script's name>}`, then `doc.commit` when the code ends well, `doc.rollback` when it raises or is stopped. Any client may use them (`lapin.call("doc.begin", {"label": "…"})`); the step is its connection's (`Session.Step.cs`):
+
+- its commands (a batch too) join one transaction (`History.Begin/Commit/Rollback`): one undo step named by the label, journalled once at the commit; nothing changed, no step;
+- each command's diff still goes to every window as it is made, so the window shows the script at work;
+- while it is open, another connection's edit, undo or redo, a new or opened project, a save, is refused with *A script is editing the model: wait for it to finish, or stop it.*; reads go on; the step's own connection cannot undo, redo, save or open another project inside it either; a module's background results wait for it to end;
+- a command refused inside it takes back only itself; the step stays open;
+- the connection lost (the kernel killed, crashed, a terminal script closed) rolls it back, and every window gets the diff;
+- a guest cannot open one (`doc.begin`, `doc.commit` and `doc.rollback` are not in `AllowedRemote`).
+
+In the panel the module's own connection (`lapin`) holds the step; another connection a script opens itself (`lapinbim.Lapin()`) is refused while it runs.
+
 ## Tests
 
 `pnpm test:python` (`scripts/test-python.mjs`, part of `pnpm test`) runs `python/tests` with the standard library's `unittest` on the oldest Python found from 3.11 and the newest, each against an engine of its own: the built Debug host on a free port with a temporary user folder (`python/tests/engine.py`), as `scripts/lapin-mcp-check.mjs` starts it, never the engine of `pnpm dev`. They cover the WebSocket client against a small server of the test's own (fragments, ping, a 64-bit length, masking, close, a wrong handshake), the LPF1 reader, names and arguments, and against the engine: connecting by `LAPIN_PORT` and by `host.json`, typed commands, a batch as one named undo step (and all or nothing), undo and redo, a refused command, binary frames, quantities, element edits, diff events, saving, the module's own connection, the catalogue and the stubs. No Python 3.11 or newer: the run says so and passes; no built engine, no dotnet or no node: the engine's tests are skipped, saying why. `--all` runs every Python found.
 
 ## Publishing on PyPI
+
+`lapinbim` is published on PyPI **only with an app release** (the user's decision, 12.11.2026): when a build of Lapin is published for users (`scripts/publish-update.mjs`), the same commit's package is built and uploaded, so a version on PyPI always matches an app users have; never between releases. The release steps: publish the app; then `pnpm build:engine` and `node scripts/publish-python.mjs --upload` from the same commit.
 
 The package's version is Lapin's build version, `0.1.<commit count>`, the desktop app's: a published `lapinbim` carries the catalogue and the stubs of the Lapin built from the same commit. A newer Lapin still works with it (it reads the open engine's catalogue); an engine from before `session.catalogue` uses the copy the package carries.
 
@@ -179,3 +203,19 @@ node scripts/publish-python.mjs --upload --test  # to TestPyPI first
 ```
 
 The script stages a copy of `python/` with the version written in, starts an engine of its own to write `lapinbim/catalogue.json` and `lapinbim/__init__.pyi`, builds the sdist and the wheel with the package's own backend, checks that the wheel imports with its version, stubs and catalogue, and with `--upload` runs `python3 -m twine upload`. The token is the user's own (in `~/.pypirc` as `__token__`, the keyring, or typed when twine asks); it never goes through the script or the repo. `--python <cmd>` picks the Python, `--product <id>` the edition whose catalogue it carries (`lapin` by default).
+
+## A premium module's commands
+
+A module built in another repository (`../lapin-mep`, `../lapin-urban`, …; docs/overrides.md) is not in Lapin's catalogue, which is made from this repository's source. Its repository makes its own and embeds it in its module:
+
+```sh
+node ../lapin-pro/scripts/command-catalogue.mjs --root engine/src --out engine/src/Modules/<Group>/Lapin.<X>/catalogue.json
+```
+
+```xml
+<ItemGroup>
+  <EmbeddedResource Include="catalogue.json" LogicalName="Lapin.catalogue.json" />
+</ItemGroup>
+```
+
+`session.catalogue` reads `Lapin.catalogue.json` from every loaded module's assembly (`CommandCatalogue.ModuleResource`) and fills in the commands and queries Lapin's own catalogue does not have; Lapin's own entries win. The Python package, the panel's completion and the MCP bridge then have that module's arguments, in an installed app too. Run it again when the module's commands change (a step in its build, as Lapin.Protocol's is here).

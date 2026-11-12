@@ -18,6 +18,10 @@
  *   node scripts/command-catalogue.mjs            write the file (only when it changed)
  *   node scripts/command-catalogue.mjs --check    fail when the file is not what the source makes
  *   node scripts/command-catalogue.mjs --print    write it to stdout
+ *   node scripts/command-catalogue.mjs --root <engine/src> --out <file>
+ *                                                 another repository's (a premium module's, docs/overrides.md): its own
+ *                                                 commands, written to <file>, which its module embeds as
+ *                                                 Lapin.catalogue.json (CommandCatalogue.ModuleResource)
  */
 
 import { existsSync, readFileSync, readdirSync, utimesSync, writeFileSync } from 'node:fs';
@@ -196,7 +200,16 @@ export function readCatalogue() {
   return c.commands.length ? c : null;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url) && process.argv.includes('--root')) {
+  // A premium repository's catalogue: its own source, its own file.
+  const arg = (k) => process.argv[process.argv.indexOf(k) + 1];
+  if (!process.argv.includes('--out')) { console.error('--root takes --out <file>'); process.exit(1); }
+  const text = catalogueText(catalogueFromSource(resolve(arg('--root'))));
+  const out = resolve(arg('--out'));
+  if (!existsSync(out) || readFileSync(out, 'utf8') !== text) writeFileSync(out, text);
+  const c = JSON.parse(text);
+  console.log(`command catalogue: ${c.commands.length} commands, ${c.queries.length} queries → ${out}`);
+} else if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const text = catalogueText(catalogueFromSource());
   const now = existsSync(catalogueFile) ? readFileSync(catalogueFile, 'utf8') : null;
   if (process.argv.includes('--print')) process.stdout.write(text);

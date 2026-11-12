@@ -6,7 +6,7 @@
  * from the shortcuts' registry.
  */
 
-import { setPrefs } from '../app/prefs';
+import { setPrefs, usePrefs } from '../app/prefs';
 import { useEffect, useRef, useState } from 'react';
 import { Moon, Redo2, Search, Sun, Undo2 } from 'lucide-react';
 import { HelpMenu } from './HelpMenu';
@@ -95,9 +95,12 @@ function FileMenu() {
 const dragTool = (tl: ToolDef) => ({ ...toolDragProps(tl.id), onContextMenu: (e: React.MouseEvent) => toolMenu(e, tl) });
 
 /** The band of the tab: large tools with their names and keys, or icons only. */
-function Band({ tab, icons, onPicked, drop }: { tab: RibbonTabDef; icons: boolean; onPicked?: () => void; drop?: boolean }) {
+function Band({ tab: all, icons, onPicked, drop }: { tab: RibbonTabDef; icons: boolean; onPicked?: () => void; drop?: boolean }) {
   const tool = useUi((s) => s.tool);
   useBindings();
+  // A group shown only while something holds (`shown`): drawn again when the preferences change (Developer extras).
+  usePrefs();
+  const tab = { ...all, groups: all.groups.filter((g) => g.shown?.() ?? true) };
   const press = (tl: ToolDef) => { activate(tl); onPicked?.(); };
   if (icons) return (
     <div className={`band icons${drop ? ' drop' : ''}`} role="toolbar" aria-label={tab.label} data-i18n-ctx={tab.i18nCtx} onWheel={wheelAcross}>

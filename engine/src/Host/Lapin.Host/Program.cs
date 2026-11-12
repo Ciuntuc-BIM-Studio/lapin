@@ -4,7 +4,7 @@ using Lapin.Platform;
 using Lapin.Protocol;
 
 // The local engine. Started by the desktop shell (or by `pnpm dev`):
-//   Lapin.Host --product <product.json> --modules-dir <dir> [--user-dir <dir>] [--port 0] [--parent-pid <pid>]
+//   Lapin.Host --product <product.json> --modules-dir <dir> [--user-dir <dir>] [--port 0] [--parent-pid <pid>] [--python-dir <dir>]
 // It listens on 127.0.0.1 only and prints one line the shell waits for:
 //   LAPIN_HOST_READY {"port":12345}
 
@@ -33,6 +33,8 @@ var app = builder.Build();
 app.UseWebSockets();
 
 var hub = new EngineHub(session, PackageFiles.Create(), recovery, userDir);
+// The lapinbim package the Script panel's Python runs (docs/plan-python-scripting.md): named, else beside the modules (the app's resources/python), else the checkout's python/.
+hub.Scripts.PackageDir = Arg("--python-dir", "") is { Length: > 0 } pythonDir ? pythonDir : ScriptHost.FindPackage(Arg("--modules-dir"));
 app.MapGet("/health", () => Results.Json(new { ok = true, product = product.Id, modules = product.Modules }));
 app.Map("/ws", async ctx =>
 {
@@ -46,6 +48,8 @@ app.Map("/ws", async ctx =>
 
 await app.StartAsync();
 var bound = new Uri(app.Urls.First()).Port;
+hub.Scripts.Port = bound;
+app.Lifetime.ApplicationStopping.Register(hub.Scripts.Dispose);
 Console.WriteLine($"LAPIN_HOST_READY {{\"port\":{bound}}}");
 Console.Out.Flush();
 

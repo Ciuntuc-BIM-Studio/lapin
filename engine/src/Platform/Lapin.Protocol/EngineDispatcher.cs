@@ -393,6 +393,8 @@ public sealed record Caller(string Author, string Role)
 {
     public static readonly Caller Local = new(History.Me, "owner");
     public bool Remote => Author != History.Me;
+    /// <summary>The connection the call came on (the host's client), whose a script's open step is (<see cref="Session.Connection"/>); null in-process.</summary>
+    public object? Connection { get; init; }
 }
 
 /// <summary>A reply to one call: its id, and its result or why it failed.</summary>
@@ -545,6 +547,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             var p = msg["params"] as JsonObject ?? [];
             if (caller.Remote && AllowedRemote(method, p, caller.Role) is { } refused) throw new CommandException(refused);
             session.Author = caller.Author;
+            session.Connection = caller.Connection;
             session.Progress = ReportProgress;
             HostFiles.GuestCall = caller.Remote;
             try
@@ -562,7 +565,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 }
                 return (BinaryFrame.Encode(new Reply(id, result), ContractsOnly), diff);
             }
-            finally { session.Author = History.Me; session.Progress = null; HostFiles.GuestCall = false; }
+            finally { session.Author = History.Me; session.Connection = null; session.Progress = null; HostFiles.GuestCall = false; }
         }
         // A refusal the user reads. InvalidOperationException is not one: it is what an empty First(), a JsonNode given two parents or a
         // null Value throws, an engine bug, logged below.
@@ -652,6 +655,8 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
 
     (object? Result, Diff? Diff) Dispatch(string method, JsonObject p)
     {
+        // A script's step open: the project is not saved half way through it (a rollback would leave the file ahead of the model).
+        if (method is "project.save" or "project.saveBytes" or "project.saveVersion" or "project.updateVersion") session.RefuseDuringStep(ownerToo: true);
         // Another project: a file surveyed for this one (its bytes, its index) is not kept for it.
         if (method is "project.new" or "project.newFromTemplate" or "project.open" or "project.openBytes" or "recovery.restore") { _surveyed = null; _fragSurveyed = null; _bosSurveyed = null; }
         // A file written where asked (the desktop's save dialog), else handed back to download (a browser).
@@ -688,6 +693,11 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 var diff = session.Execute(command, p["args"] as JsonObject ?? [], out var result);
                 return (result?.DeepClone(), diff);
             }
+            // A step held open by a script's run (docs/plan-python-scripting.md §8): its commands one undo step, the connection's own;
+            // the host's alone (a guest is refused by AllowedRemote), rolled back by the host when the connection is lost.
+            case "doc.begin": session.Begin((string?)p["label"] ?? "Script"); return (null, null);
+            case "doc.commit": return (null, session.Commit());
+            case "doc.rollback": return (null, session.Rollback());
             case "doc.undo": return (null, session.Undo(session.Author));
             case "doc.redo": return (null, session.Redo(session.Author));
             case "doc.query":

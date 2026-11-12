@@ -153,3 +153,11 @@ placementCheck: (req) => ({ ok, message?, snapAlong? }) | null   // may be async
 - Asked, throttled (about 8 a second, only the latest question answered), while the Door or Window tool is on and the cursor is over a wall; `req` is `{ kind: 'door' | 'window', host, along (m from the start of the host's axis), width, typeId }`. The first module to answer wins.
 - `ok: false` draws the ghost as an error with `message` beside the cursor; `snapAlong` (m along the axis) is where ghost and click go when the cursor is within a metre of it, on the cursor's side of the wall. The engine is still asked at the click and its sentence error shows as usual.
 - A tool opts in with `gesture.placing(entity, at)` on its `pick` gesture (Door and Window do). Resolved by `askPlacement` in `ui/src/platform/modules.ts`; the store and pure helpers are in `ui/src/platform/placement.ts`.
+
+## Engine: a premium module's command catalogue (decision 489)
+
+A module built in another repository carries the arguments of its own commands, so scripts (`lapinbim`), the Script panel's completion and the MCP bridge know them in an installed app: its repository runs `node ../lapin-pro/scripts/command-catalogue.mjs --root engine/src --out <module folder>/catalogue.json` and embeds the file with `LogicalName="Lapin.catalogue.json"`. `session.catalogue` (`CommandCatalogue.For`) reads that resource from every loaded module's assembly and fills in what Lapin's own catalogue lacks; Lapin's entries win. Details in `docs/python.md`, A premium module's commands.
+
+## Interface: a ribbon group shown while something holds
+
+`RibbonGroupDef.shown?: () => boolean` keeps a group off the ribbon until it holds (the `scripting` module's Developer group on View: Preferences → Developer extras on). The ribbon draws again when a preference changes.

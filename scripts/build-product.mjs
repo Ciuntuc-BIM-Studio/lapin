@@ -100,6 +100,14 @@ for (const m of product.engine.filter((id) => id !== 'core')) {
   for (const f of readdirSync(src).filter((f) => !f.endsWith('.pdb'))) cpSync(join(src, f), join(res, 'modules', m, f));
 }
 
+// The lapinbim package for the Script panel's Python (docs/plan-python-scripting.md, stage 2), where the product has the scripting
+// module: its .py files and py.typed beside the modules (resources/python/lapinbim), so the user's Python needs no pip install.
+if (product.modules.includes('scripting')) {
+  const pkg = join(root, 'python', 'lapinbim');
+  mkdirSync(join(res, 'python', 'lapinbim'), { recursive: true });
+  for (const f of readdirSync(pkg).filter((f) => f.endsWith('.py') || f.endsWith('.pyi') || f === 'py.typed' || f === 'catalogue.json')) cpSync(join(pkg, f), join(res, 'python', 'lapinbim', f));
+}
+
 // 3. UI: only this product's UI modules are bundled.
 sh('pnpm', ['--filter', 'ui', 'build'], { env: { LAPIN_PRODUCT_FILE: manifest, LAPIN_UI_OUT: join(out, 'ui') } });
 

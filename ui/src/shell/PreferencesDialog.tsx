@@ -5,7 +5,7 @@
  * off, polar tracking's angle. Coordinates: what the status line reads at the cursor, the project's points shown in
  * plans and 3D, the UCS. Display: the switches of View → Graphics and the 3D view's navigation, in one place.
  * Profiles: the profile standards a new project offers and those the pickers show (decision 457). General also chooses the
- * project template File → New starts from (decision 470).
+ * project template File → New starts from (decision 470), and Developer extras (decision 489: the Script panel, its Python and editor).
  */
 
 import { setKeymap, useKeymap } from '../app/shortcuts';
@@ -24,6 +24,7 @@ import { useProfileLibraries } from '../modules/core/profileLibraries/store';
 import { standardsOf } from '../modules/core/profileLibraries/model';
 import { StandardChecks } from '../modules/core/profileLibraries/StandardChecks';
 import { refreshTemplates, useTemplates } from '../engine/templates';
+import { engineInBrowser } from '../engine/session';
 
 type Page = 'general' | 'grid' | 'coords' | 'display' | 'profiles';
 const PAGES: { id: Page; label: string }[] = [
@@ -118,6 +119,18 @@ export function PreferencesDialog() {
               <h4>Keyboard</h4>
               <label className="row small"><input type="checkbox" data-field="prefs-letters" checked={keys.letters} onChange={(e) => setKeymap({ ...keys, letters: e.target.checked })} /> Letter shortcuts (Revit-style)</label>
               <p className="muted small">Typed letters such as WA start a tool. Off: letters always go to the command line, and Enter or Space runs a command, an alias, or the command whose letters they are. The ` key gives the command line all typing, whichever is on. Your own aliases are in Keyboard shortcuts…</p>
+              <h4>Developer extras</h4>
+              <label className="row small"><input type="checkbox" data-field="prefs-developer-extras" checked={p.developerExtras} onChange={(e) => setPrefs({ developerExtras: e.target.checked })} /> Developer extras: the Script panel, to drive Lapin with Python</label>
+              <p className="muted small">Off by default. On: View → Script opens a Python console and an editor; each Run is one undo step. A script can do anything you can do on this computer.</p>
+              {p.developerExtras && (engineInBrowser ? <p className="muted small">Python runs in the desktop app.</p> : (
+                <dl className="fields">
+                  <dt>Python</dt><dd><input type="text" data-field="prefs-python" defaultValue={p.pythonPath ?? ''} placeholder="Found on this computer" spellCheck={false}
+                    onBlur={(e) => setPrefs({ pythonPath: e.target.value.trim() || null })} /></dd>
+                  <dt>External editor</dt><dd><input type="text" data-field="prefs-external-editor" defaultValue={p.externalEditor ?? ''} placeholder="The system's text editor" spellCheck={false}
+                    onBlur={(e) => setPrefs({ externalEditor: e.target.value.trim() || null })} /></dd>
+                </dl>
+              ))}
+              {p.developerExtras && !engineInBrowser && <p className="muted small">Python 3.11 or newer, from python.org or your system: a path or a command (python3, py -3 is tried on Windows); empty, Lapin looks for it. The editor is a command such as code; empty, the system's text editor.</p>}
             </>}
             {page === 'grid' && <>
               <h4 data-i18n-ctx="prefs">Grid</h4>

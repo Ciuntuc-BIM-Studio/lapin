@@ -4,7 +4,8 @@
  * the zoom; or fixed: one step, drawn and snapped to, whatever the zoom), the object snaps a cursor takes (as
  * AutoCAD's OSNAP settings), polar tracking's angle, and which coordinates the status line reads at the cursor
  * (the plan's own, the project base point's, the survey point's map coordinates, or the UCS's), and the project template a
- * new project starts from (decision 470). On the desktop they are also kept in the user's folder (app/userSettings.ts). The display's own
+ * new project starts from (decision 470), and Developer extras (decision 489: the Script panel, the Python it runs, the editor
+ * a script opens in; off by default, as in Blender). On the desktop they are also kept in the user's folder (app/userSettings.ts). The display's own
  * switches (thin lines, the 3D view's navigation) stay in app/display.ts; the dialog shows them too.
  */
 
@@ -34,6 +35,12 @@ export interface Prefs {
   newProjectProfileStandards: string[] | null;
   /** The project template File → New starts from (decision 470): a template's id on this computer; null, Lapin's default. */
   defaultTemplate: string | null;
+  /** Developer extras (decision 489): the Script panel (Python) on View → Developer. Off: nothing of it shows. */
+  developerExtras: boolean;
+  /** The Python the Script panel runs (a path or a command); null: the one found on this computer. */
+  pythonPath: string | null;
+  /** The editor "Open in external editor" uses (a command: code, subl…); null: the system's text editor. */
+  externalEditor: string | null;
 }
 
 export const SNAP_MODES: readonly SnapMode[] = ['endpoint', 'midpoint', 'intersection', 'center', 'quadrant', 'perpendicular', 'nearest'];
@@ -42,6 +49,7 @@ export const DEFAULT_PREFS: Prefs = {
   theme: 'paper', gridMode: 'adaptive', gridStep: 1, gridMajor: 5, gridSnap: true,
   snapModes: [...SNAP_MODES], polarStep: 45, coords: 'internal',
   profileStandardsHidden: [], newProjectProfileStandards: null, defaultTemplate: null,
+  developerExtras: false, pythonPath: null, externalEditor: null,
 };
 
 const names = (v: unknown): string[] | null => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && !!x.trim()).map((x) => x.trim()))] : null);
@@ -67,6 +75,9 @@ export function readPrefs(stored: unknown): Prefs {
     profileStandardsHidden: names(o.profileStandardsHidden) ?? [],
     newProjectProfileStandards: names(o.newProjectProfileStandards),
     defaultTemplate: typeof o.defaultTemplate === 'string' && o.defaultTemplate.trim() ? o.defaultTemplate : null,
+    developerExtras: o.developerExtras === true,
+    pythonPath: typeof o.pythonPath === 'string' && o.pythonPath.trim() ? o.pythonPath.trim() : null,
+    externalEditor: typeof o.externalEditor === 'string' && o.externalEditor.trim() ? o.externalEditor.trim() : null,
   };
 }
 

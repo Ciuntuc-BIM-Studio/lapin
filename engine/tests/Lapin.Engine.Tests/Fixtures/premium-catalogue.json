@@ -1,0 +1,10 @@
+{
+  "format": 1,
+  "commands": [
+    {"name":"premium.place","module":"premium","label":"Place","args":[{"name":"storeyId","type":"str"},{"name":"count","type":"int"}]},
+    {"name":"architecture.addWall","module":"premium","label":"Wall","args":[{"name":"ignored","type":"str"}]}
+  ],
+  "queries": [
+    {"name":"premium.report","module":"premium","args":[{"name":"id","type":"str"}]}
+  ]
+}

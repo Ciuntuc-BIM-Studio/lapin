@@ -110,6 +110,8 @@ export interface RibbonGroupDef {
   label: string; tools: ToolDef[]; small?: ToolDef[];
   /** Another module's group on the same tab this one goes after (the gates after the Site tab's Landscape); else in module order. */
   after?: string;
+  /** Shown only while this holds (the scripting module's Developer group: Preferences → Developer extras on). The ribbon draws again when a preference changes. */
+  shown?: () => boolean;
 }
 
 export interface RibbonTabDef {

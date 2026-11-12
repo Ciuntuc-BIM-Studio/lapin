@@ -2192,3 +2192,41 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .ext-installed-row { cursor: default; }
 .ext-address { min-width: 0; }
 @media (max-width: 760px) { .ext-split { grid-template-columns: 1fr; } .ext-list { border-right: 0; max-height: 200px; } }
+
+/* The Script panel (docs/plan-python-scripting.md, stage 2): Python in Lapin, a developer extra. */
+.script-panel { position: fixed; left: 8px; right: 8px; bottom: 30px; z-index: 40; display: flex; flex-direction: column; background: var(--raised); border: 1px solid var(--rule-strong); border-radius: 4px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18); color: var(--ink); }
+.script-resize { position: absolute; left: 0; right: 0; top: -4px; height: 8px; cursor: ns-resize; }
+.script-head { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 1px solid var(--rule); }
+.script-status { font-size: 11.5px; }
+.script-status.running { color: var(--accent); }
+.script-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 170px minmax(0, 1.2fr) minmax(0, 1fr); }
+.script-library { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--rule); }
+.script-library-head, .script-console-head { display: flex; align-items: center; justify-content: space-between; padding: 4px 8px; border-bottom: 1px solid var(--rule); }
+.script-files { overflow-y: auto; padding: 4px; display: flex; flex-direction: column; gap: 1px; }
+.script-files p { margin: 4px; }
+.script-file { text-align: left; padding: 4px 6px; border: 1px solid transparent; border-radius: 3px; background: none; color: var(--ink); cursor: pointer; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.script-file:hover { background: var(--panel); }
+.script-file.on { border-color: var(--accent); background: var(--panel); }
+.script-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; border-right: 1px solid var(--rule); }
+.script-toolbar { display: flex; align-items: center; gap: 6px; padding: 4px 8px; border-bottom: 1px solid var(--rule); }
+.script-toolbar .btn { width: auto; display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px; font-size: 11.5px; }
+.script-name { width: 160px; font-size: 12px; }
+.script-editor { flex: 1; min-height: 0; overflow: hidden; }
+.script-editor .cm-editor { height: 100%; font-size: 12.5px; background: var(--panel); color: var(--ink); }
+.script-editor .cm-scroller { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.script-editor .cm-gutters { background: var(--wash); color: var(--ink-muted); border-right: 1px solid var(--rule); }
+.script-editor .cm-activeLine, .script-editor .cm-activeLineGutter { background: var(--accent-wash); }
+.script-editor .cm-error-line { background: color-mix(in srgb, var(--err) 18%, transparent); }
+.script-editor .cm-cursor { border-left-color: var(--ink); }
+.script-console { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.script-output { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 8px; background: var(--panel); }
+.script-line { margin: 0; white-space: pre-wrap; word-break: break-word; font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.script-line.in { color: var(--ink-muted); }
+.script-line.err { color: var(--err); }
+.script-line.ok { color: var(--ok); }
+.script-line.info { color: var(--ink-muted); font-style: italic; }
+.script-input { display: flex; align-items: flex-start; gap: 6px; padding: 4px 8px; border-top: 1px solid var(--rule); }
+.script-prompt { font: 12px/1.6 ui-monospace, monospace; color: var(--ink-muted); }
+.script-input textarea { flex: 1; resize: none; border: 0; outline: none; background: transparent; color: var(--ink); font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.script-web { padding: 16px; }
+@media (max-width: 900px) { .script-body { grid-template-columns: 1fr; grid-template-rows: auto 1fr 1fr; } .script-library { border-right: 0; max-height: 90px; } }

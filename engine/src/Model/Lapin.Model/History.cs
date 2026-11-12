@@ -330,19 +330,112 @@ public sealed class History(ModelStore store)
     /// <summary>Changed since the last save (or open).</summary>
     public bool Dirty => (_undo.Count > 0 ? _undo[^1].Seq : 0) != _savedAt;
 
-    /// <summary>Runs <paramref name="edit"/> as one transaction; nothing changed means no transaction (null). A throw leaves the model as it was.</summary>
+    /// <summary>
+    /// Runs <paramref name="edit"/> as one transaction; nothing changed means no transaction (null). A throw leaves the model as it was.
+    /// While a step is open (<see cref="Begin"/>) the transaction joins it instead of the history: the one returned has no
+    /// sequence number (0) and is not in the undo list; the step becomes one transaction when it is committed.
+    /// </summary>
     public Transaction? Execute(string label, Action<IEdit> edit, string author = Me)
     {
         var b = new TransactionBuilder(store, NewId);
         try { edit(b); }
         catch { b.Rollback(); throw; }
         if (b.EntityChanges.Count == 0 && b.RelationChanges.Count == 0) return null;
+        if (_open != null)
+        {
+            var part = new Transaction(0, label, b.EntityChanges, b.RelationChanges, DateTimeOffset.UtcNow, author);
+            _open.Join(part);
+            return part;
+        }
         var t = new Transaction(++_seq, label, b.EntityChanges, b.RelationChanges, DateTimeOffset.UtcNow, author);
-        _undo.Add(t);
-        _authors.Add(author);
-        // A new edit ends what its author could redo (and no one else's).
-        _redo.RemoveAll(x => x.Author == author);
+        Push(t);
         return t;
+    }
+
+    void Push(Transaction t)
+    {
+        _undo.Add(t);
+        _authors.Add(t.Author);
+        // A new edit ends what its author could redo (and no one else's).
+        _redo.RemoveAll(x => x.Author == t.Author);
+    }
+
+    // ------------------------------------------------------------ a step held open
+
+    /// <summary>
+    /// A step held open across several edits (a script's run, docs/plan-python-scripting.md §8): the changes of each
+    /// edit made while it is open, folded together as one transaction would hold them (each id's state before the
+    /// first edit that touched it, and after the last).
+    /// </summary>
+    sealed class OpenStep(string label, string author)
+    {
+        public string Label { get; } = label;
+        public string Author { get; } = author;
+        readonly Dictionary<string, Change<Entity>> _entities = [];
+        readonly List<string> _entityOrder = [];
+        readonly Dictionary<string, Change<Relation>> _relations = [];
+        readonly List<string> _relationOrder = [];
+
+        public void Join(Transaction t)
+        {
+            foreach (var c in t.Entities) Fold(_entities, _entityOrder, c);
+            foreach (var c in t.Relations) Fold(_relations, _relationOrder, c);
+        }
+
+        static void Fold<T>(Dictionary<string, Change<T>> map, List<string> order, Change<T> c) where T : class
+        {
+            if (map.TryGetValue(c.Id, out var was)) map[c.Id] = was with { After = c.After };
+            else { map[c.Id] = c; order.Add(c.Id); }
+        }
+
+        public IReadOnlyList<Change<Entity>> Entities => _entityOrder.Select(id => _entities[id]).Where(c => !(c.Before == null && c.After == null)).ToList();
+        public IReadOnlyList<Change<Relation>> Relations => _relationOrder.Select(id => _relations[id]).Where(c => !(c.Before == null && c.After == null)).ToList();
+    }
+
+    OpenStep? _open;
+
+    /// <summary>Whether a step is open (<see cref="Begin"/>).</summary>
+    public bool StepOpen => _open != null;
+
+    /// <summary>The open step's name, null when none is open.</summary>
+    public string? StepLabel => _open?.Label;
+
+    /// <summary>
+    /// A step opened: every edit until <see cref="Commit"/> or <see cref="Rollback"/> joins it, and it is undone and
+    /// redone whole, named <paramref name="label"/>. Undo and redo wait for it to end (the caller refuses them).
+    /// </summary>
+    public void Begin(string label, string author = Me)
+    {
+        if (_open != null) throw new ModelException($"A step is open already („{_open.Label}”).");
+        _open = new OpenStep(label, author);
+    }
+
+    /// <summary>The open step ended and kept: one transaction in the history (null when it changed nothing).</summary>
+    public Transaction? Commit()
+    {
+        var o = _open ?? throw new ModelException("No step is open.");
+        _open = null;
+        var entities = o.Entities;
+        var relations = o.Relations;
+        if (entities.Count == 0 && relations.Count == 0) return null;
+        var t = new Transaction(++_seq, o.Label, entities, relations, DateTimeOffset.UtcNow, o.Author);
+        Push(t);
+        return t;
+    }
+
+    /// <summary>
+    /// The open step ended and its edits taken back: the model as it was when the step began, nothing in the history.
+    /// Returns what was taken back (as an undone transaction is: the changes it had made), null when nothing.
+    /// </summary>
+    public Transaction? Rollback()
+    {
+        var o = _open ?? throw new ModelException("No step is open.");
+        _open = null;
+        var entities = o.Entities;
+        var relations = o.Relations;
+        if (entities.Count == 0 && relations.Count == 0) return null;
+        Replaying.Revert(store, entities, relations);
+        return new Transaction(0, o.Label, entities, relations, DateTimeOffset.UtcNow, o.Author);
     }
 
     /// <summary>
@@ -466,6 +559,7 @@ public sealed class History(ModelStore store)
         _undone.Clear();
         _replayed.Clear();
         _authors.Clear();
+        _open = null;
         _savedAt = 0;
         _seq = 0;
     }

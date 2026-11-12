@@ -6539,6 +6539,65 @@ export const scenes = [
     },
   },
   {
+    // Decision 489, stage 2: Python in Lapin. Preferences → Developer extras switched on; View → Script opens the panel; the
+    // editor's script (four walls round a room), named and saved in Mine, runs as one undo step named after it; the console
+    // reads the model; one Undo takes the four walls away. Python is this computer's own (3.11 or newer): with none, the
+    // panel's message is photographed and the run is left out, saying so.
+    id: 'python-console',
+    touches: ['scripting', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const walls = async () => (await t.nodes()).filter((n) => n.type === 'IfcWall').length;
+      try {
+        await t.ui({ dialog: 'preferences' });
+        await t.page.waitForSelector('[data-testid=preferences]', { timeout: 10_000 });
+        await t.page.locator('[data-field=prefs-developer-extras]').check();
+        await t.page.locator('[data-field=prefs-python]').waitFor({ timeout: 5000 });
+        // The section's end in view: the switch, the Python and the editor it names.
+        await t.page.locator('.prefs-page').evaluate((e) => { e.scrollTop = e.scrollHeight; });
+        await t.wait(300);
+        await t.shot('python-preferences', { of: '.prefs-dialog', pad: 0 });
+        await t.ui({ dialog: null });
+        await t.button('View', { exact: true });
+        await t.page.locator('.band button.tool', { hasText: /^Script$/ }).first().click();
+        const panel = t.page.locator('[data-panel=script]');
+        await panel.waitFor({ timeout: 20_000 });
+        await t.until(async () => (await panel.locator('[data-field=script-status]').count()) > 0, 'the panel says which Python it found');
+        const status = await t.call('script.status', {});
+        if (!status.ok) {
+          console.log(`  ! python-console: ${status.message} The panel is photographed without a run.`);
+          await t.shot('python-panel', { of: '[data-panel=script]', pad: 0 });
+          return;
+        }
+        // The editor's script named, saved in Mine, then run: one undo step named after it.
+        const name = say({ en: 'Room walls', ro: 'Pereții camerei' }, t.lang);
+        await panel.locator('[data-field=script-name]').fill(name);
+        await panel.locator('[data-action=script-save]').click();
+        await panel.locator(`[data-script="${name}.py"]`).waitFor({ timeout: 10_000 });
+        await panel.locator('[data-action=script-run]').click();
+        await t.until(async () => (await panel.locator('.script-line.ok').count()) > 0, 'the run ends well', 60_000);
+        t.expect(await walls() === 4, `the script made four walls (${await walls()})`);
+        const doc = await t.page.evaluate(async () => (await import('/src/engine/session.ts')).useSession.getState().doc);
+        t.expect(doc?.undoLabel === name, `the run is one undo step named after the script (${doc?.undoLabel})`);
+        // The console reads the model.
+        const input = panel.locator('[data-field=script-console-input]');
+        await input.fill('len(lapin.model.walls)');
+        await input.press('Enter');
+        await t.until(async () => (await panel.locator('.script-line.out').last().innerText()).trim() === '4', 'the console says how many walls there are');
+        await t.fit();
+        await t.wait(600);
+        await t.shot('python-panel');
+        // One Undo takes the whole run away.
+        await t.page.locator('.undo-btn').first().click();
+        await t.until(async () => (await walls()) === 0, 'one Undo takes the four walls away');
+        await t.shot('python-undo', { of: '[data-panel=script]', pad: 0 });
+        await t.page.evaluate(async () => (await import('/src/app/prefs.ts')).setPrefs({ developerExtras: false }));
+      } finally {
+        await t.call('script.delete', { name: `${say({ en: 'Room walls', ro: 'Pereții camerei' }, t.lang)}.py` }).catch(() => undefined);
+      }
+    },
+  },
+  {
     id: 'help',
     async run(t) {
       await t.fresh();
