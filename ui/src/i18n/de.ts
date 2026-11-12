@@ -1311,6 +1311,10 @@ export const DE: Record<string, string> = {
   'Voids in 3D': 'Körper in 3D',
   'Each opening in a wall, floor or roof also as a solid of its own (IfcBuildingElementProxy PROVISIONFORVOID with Pset_ProvisionForVoid), for clash tools; the kinds and offset of Manage → Openings vs MEP': 'Jede Öffnung in Wand, Decke oder Dach auch als eigener Körper (IfcBuildingElementProxy PROVISIONFORVOID mit Pset_ProvisionForVoid), für Kollisionsprogramme; die Arten und der Versatz aus Verwalten → Öffnungen vs TGA',
   'as solids, for clash tools': 'als Körper, für Kollisionsprogramme',
+  // Bonsai's drawing styles with an IFC export (decision 495)
+  'Bonsai drawing styles': 'Bonsai-Zeichenstile',
+  'a stylesheet and its hatches beside the file': 'ein Stylesheet und seine Schraffuren neben der Datei',
+  'Bonsai (BlenderBIM) draws its drawings with a CSS stylesheet: the project\'s materials (cut hatches, fills), pens and text written beside the IFC as name.css and name-patterns.svg, and named in the file so Bonsai\'s new drawings take them': 'Bonsai (BlenderBIM) zeichnet seine Pläne mit einem CSS-Stylesheet: die Materialien des Projekts (Schnittschraffuren, Füllungen), Stifte und Text neben die IFC als name.css und name-patterns.svg geschrieben und in der Datei benannt, damit neue Pläne in Bonsai sie übernehmen',
   'Each opening in a wall, floor or roof also as a solid of its own, in a group named Opening voids, for clash tools; the kinds and offset of Manage → Openings vs MEP': 'Jede Öffnung in Wand, Decke oder Dach auch als eigener Körper, in einer Gruppe namens Opening voids, für Kollisionsprogramme; die Arten und der Versatz aus Verwalten → Öffnungen vs TGA',
   // Opening voids on plans, sections and elevations (decision 290)
   'Each opening\'s void drawn where the view cuts or sees it, crossed, with its mark (V1, V2…), as a coordination drawing shows provisions for voids; sheets print it': 'Der Körper jeder Öffnung, gezeichnet wo die Ansicht ihn schneidet oder sieht, durchkreuzt, mit seiner Marke (V1, V2…), wie ein Koordinationsplan Aussparungen zeigt; Pläne drucken ihn',

@@ -54,6 +54,10 @@ Filens rum (fra Revit, ArchiCAD og andre) kommer ind som Lapin-rum, hvert på si
 
 **Eksportér IFC eller Fragments…** skriver modellen som IFC eller som Fragments, valgt som en import: elementerne efter fagområde og type, etagerne, fasen og kun det, 3D-visningen viser. IFC går ud i IFC4 eller IFC4X3, et lagdelt elements dele under det eller ét legeme hver; Fragments fra projektets basispunkt, det interne origo eller opmålingspunktet. En Fragments-fil bærer det, en IFC-viewer viser: hvert elements type, dets mængder, dine parametre, dets materialer og kortkoordinaterne, sådan som That Opens konverter skriver dem.
 
+En reference beholder de åbninger, dens fil skar i den, med de døre og vinduer, der udfylder dem: **Eksportér IFC eller Fragments…** skriver dem tilbage med filens GlobalId'er, og en reference, der flyttes, drejes, spejles eller kopieres, tager sine døre og vinduer med (en kopi får sine egne åbninger, udfyldt af kopier af dem). Sletter du en reference, slettes dørene og vinduerne i den, som ved en Lapin-væg; en dør slettet alene, eller flyttet væk, efterlader åbningen tom.
+
+På skrivebordet skriver **Bonsai-tegnestile** ved siden af IFC-filen et stylesheet (`navn.css`) og dets skraveringer (`navn-patterns.svg`) til Bonsai (BlenderBIM), hvis tegninger formateres med CSS: hvert materiales snitskravering, udfyldning og facadeskravering, snit- og projektionslinjerne fra dine objektstile og teksten fra dine tegnestandarder. IFC-filen navngiver begge filer, så en tegning, du laver i Bonsai ud fra den, bruger dem.
+
 ![Eksportér IFC eller Fragments](shots/export-exchange.webp)
 
 ### SDNF (ståldetaljering)

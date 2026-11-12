@@ -908,7 +908,9 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 var voidOptions = Lapin.Platform.Coordination.VoidOptions.From(session.Model, new JsonObject { ["kinds"] = p["voidKinds"]?.DeepClone(), ["offset"] = p["voidOffset"]?.DeepClone() });
                 var options = new IfcExportOptions((string?)p["schema"] ?? "IFC4", (string?)p["detail"] ?? "group", (string?)p["phase"],
                     (string?)p["geometry"] ?? "brep", Math.Clamp(Json.Number(p["tolerance"]) ?? 0, 0, 0.1), exclude.Count > 0 ? exclude : null,
-                    p["voids"] is JsonValue vv && vv.TryGetValue<bool>(out var withVoids) && withVoids, voidOptions.Kinds, voidOptions.Offset);
+                    p["voids"] is JsonValue vv && vv.TryGetValue<bool>(out var withVoids) && withVoids, voidOptions.Kinds, voidOptions.Offset,
+                    // `bonsaiStyles`: Bonsai's drawing styles (a stylesheet and its patterns) written beside the file, on the desktop (a path given).
+                    p["bonsaiStyles"] is JsonValue bv && bv.TryGetValue<bool>(out var bonsai) && bonsai);
                 if ((string?)p["path"] is { Length: > 0 } ifcPath) return (IfcExport.Write(session, ifcPath, options).ToJson(), null);
                 using var ms = new MemoryStream();
                 IfcExport.Write(session, ms, "project.ifc", options);

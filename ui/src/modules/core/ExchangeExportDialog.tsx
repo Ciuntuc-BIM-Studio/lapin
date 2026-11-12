@@ -4,7 +4,7 @@
  * a phase, everything or only what the 3D view shows. IFC in IFC4 or IFC4X3, its parts grouped under their element
  * or one body each, its bodies as faceted B-reps (exact) or face sets (a much smaller file), simplified on request
  * within a tolerance where a body is meshed (Simplifier in the engine); Fragments from the project base point, the
- * internal origin or the survey point. SDNF 3.0 (docs/sdnf.md, decision 463) where the product has the steel module: the columns, beams
+ * internal origin or the survey point. On the desktop, an IFC can take Bonsai's drawing styles beside it (a stylesheet and its hatch patterns, decision 495). SDNF 3.0 (docs/sdnf.md, decision 463) where the product has the steel module: the columns, beams
  * and steel members of the storeys and kinds chosen, their connections' plates, the grids, for steel detailing programs.
  */
 
@@ -13,7 +13,7 @@ import { X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
 import { engine, useSession } from '../../engine/session';
 import { LONG_TIMEOUT_MS } from '../../engine/client';
-import { exportFile, projectTitle, saveFile } from '../../engine/files';
+import { exportFile, isDesktop, projectTitle, saveFile } from '../../engine/files';
 import { hasModule } from '../../platform/brand';
 import { choiceOf, type ExchangeFormat, type Survey } from '../../engine/ifcImport';
 import { useLooks } from '../../platform/looks';
@@ -41,6 +41,8 @@ export function ExchangeExportDialog() {
   const [origin, setOrigin] = useState('base');
   // The openings also as solid voids for clash tools (decision 289): off, the export is as it always was.
   const [voids, setVoids] = useState(false);
+  // Bonsai's drawing styles beside the IFC (docs/spec-ifc.md, decision 495): a stylesheet and its hatches, on the desktop.
+  const [bonsai, setBonsai] = useState(false);
   const [busy, setBusy] = useState(false);
   const close = () => useUi.setState({ dialog: null });
   useEffect(() => {
@@ -69,7 +71,7 @@ export function ExchangeExportDialog() {
       } catch (e) {
         notify(e instanceof Error ? e.message : String(e));
       }
-    } else if (format === 'ifc') await exportFile('project.exportIfc', { ...common, entourage: true, schema, detail, geometry, ...(simplify ? { tolerance: mm / 1000 } : {}) }, `${projectTitle(path)}.ifc`, 'ifc');
+    } else if (format === 'ifc') await exportFile('project.exportIfc', { ...common, entourage: true, schema, detail, geometry, ...(simplify ? { tolerance: mm / 1000 } : {}), ...(bonsai && isDesktop() ? { bonsaiStyles: true } : {}) }, `${projectTitle(path)}.ifc`, 'ifc');
     else await exportFile('project.exportMesh', { ...common, format, origin, ...(onlyShown ? { viewId: view3dId ?? '3d' } : {}) }, `${projectTitle(path)}.${format}`, format);
     setBusy(false);
     close();
@@ -127,6 +129,12 @@ export function ExchangeExportDialog() {
                   <option value="brep">faceted B-rep: exact, a face entity per face</option>
                   <option value="faceset">face sets: the same faces, a much smaller file</option>
                 </select></dd>
+                {isDesktop() && (
+                  <>
+                    <dt title="Bonsai (BlenderBIM) draws its drawings with a CSS stylesheet: the project's materials (cut hatches, fills), pens and text written beside the IFC as name.css and name-patterns.svg, and named in the file so Bonsai's new drawings take them">Bonsai drawing styles</dt>
+                    <dd><label><input type="checkbox" data-testid="export-bonsai" style={{ width: 'auto', marginRight: 6 }} checked={bonsai} onChange={(e) => setBonsai(e.target.checked)} /> a stylesheet and its hatches beside the file</label></dd>
+                  </>
+                )}
                 <dt>Simplify</dt>
                 <dd><label><input type="checkbox" className="export-simplify" style={{ width: 'auto', marginRight: 6 }} checked={simplify} onChange={(e) => setSimplify(e.target.checked)} /> fewer triangles where a body is meshed, never further from it than the tolerance</label></dd>
                 {simplify && (

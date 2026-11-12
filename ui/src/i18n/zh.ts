@@ -1311,6 +1311,10 @@ export const ZH: Record<string, string> = {
   'Voids in 3D': '三维空洞',
   'Each opening in a wall, floor or roof also as a solid of its own (IfcBuildingElementProxy PROVISIONFORVOID with Pset_ProvisionForVoid), for clash tools; the kinds and offset of Manage → Openings vs MEP': '墙、楼板或屋顶上的每个洞口也作为独立实体（IfcBuildingElementProxy PROVISIONFORVOID，带 Pset_ProvisionForVoid），供碰撞检测工具使用；类别和偏移取自管理 → 洞口与机电',
   'as solids, for clash tools': '作为实体，供碰撞检测工具使用',
+  // Bonsai's drawing styles with an IFC export (decision 495)
+  'Bonsai drawing styles': 'Bonsai 图纸样式',
+  'a stylesheet and its hatches beside the file': '文件旁的样式表及其填充图案',
+  'Bonsai (BlenderBIM) draws its drawings with a CSS stylesheet: the project\'s materials (cut hatches, fills), pens and text written beside the IFC as name.css and name-patterns.svg, and named in the file so Bonsai\'s new drawings take them': 'Bonsai（BlenderBIM）用 CSS 样式表绘制图纸：项目的材料（剖切填充图案、填充色）、笔宽和文字写在 IFC 旁边，名为 name.css 和 name-patterns.svg，并在文件中指明，使 Bonsai 新建的图纸采用它们',
   'Each opening in a wall, floor or roof also as a solid of its own, in a group named Opening voids, for clash tools; the kinds and offset of Manage → Openings vs MEP': '墙、楼板或屋顶上的每个洞口也作为独立实体，放在名为 Opening voids 的组中，供碰撞检测工具使用；类别和偏移取自管理 → 洞口与机电',
   // Opening voids on plans, sections and elevations (decision 290)
   'Each opening\'s void drawn where the view cuts or sees it, crossed, with its mark (V1, V2…), as a coordination drawing shows provisions for voids; sheets print it': '每个洞口的空洞绘制在视图剖切或可见之处，以交叉线表示并带其标记（V1、V2…），如同协调图显示预留空洞；图纸会打印它',

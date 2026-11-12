@@ -1306,6 +1306,10 @@ export const DA: Record<string, string> = {
   'Voids in 3D': 'Volumener i 3D',
   'Each opening in a wall, floor or roof also as a solid of its own (IfcBuildingElementProxy PROVISIONFORVOID with Pset_ProvisionForVoid), for clash tools; the kinds and offset of Manage → Openings vs MEP': 'Hver åbning i en væg, et dæk eller et tag også som et selvstændigt legeme (IfcBuildingElementProxy PROVISIONFORVOID med Pset_ProvisionForVoid), til kollisionsprogrammer; slagsene og forskydningen fra Administrer → Åbninger mod installationer',
   'as solids, for clash tools': 'som legemer, til kollisionsprogrammer',
+  // Bonsai's drawing styles with an IFC export (decision 495)
+  'Bonsai drawing styles': 'Bonsai-tegnestile',
+  'a stylesheet and its hatches beside the file': 'et stylesheet og dets skraveringer ved siden af filen',
+  'Bonsai (BlenderBIM) draws its drawings with a CSS stylesheet: the project\'s materials (cut hatches, fills), pens and text written beside the IFC as name.css and name-patterns.svg, and named in the file so Bonsai\'s new drawings take them': 'Bonsai (BlenderBIM) tegner sine tegninger med et CSS-stylesheet: projektets materialer (snitskraveringer, udfyldninger), penne og tekst skrevet ved siden af IFC-filen som navn.css og navn-patterns.svg og navngivet i filen, så Bonsais nye tegninger bruger dem',
   'Each opening in a wall, floor or roof also as a solid of its own, in a group named Opening voids, for clash tools; the kinds and offset of Manage → Openings vs MEP': 'Hver åbning i en væg, et dæk eller et tag også som et selvstændigt legeme, i en gruppe ved navn Opening voids, til kollisionsprogrammer; slagsene og forskydningen fra Administrer → Åbninger mod installationer',
   // Opening voids on plans, sections and elevations (decision 290)
   'Each opening\'s void drawn where the view cuts or sees it, crossed, with its mark (V1, V2…), as a coordination drawing shows provisions for voids; sheets print it': 'Hver åbnings udsparingslegeme tegnet hvor visningen skærer eller ser det, krydset, med sit mærke (V1, V2…), som en koordineringstegning viser udsparinger; tegningsark udskriver det',

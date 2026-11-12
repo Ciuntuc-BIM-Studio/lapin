@@ -1312,6 +1312,10 @@ export const ES: Record<string, string> = {
   'Voids in 3D': 'Volúmenes en 3D',
   'Each opening in a wall, floor or roof also as a solid of its own (IfcBuildingElementProxy PROVISIONFORVOID with Pset_ProvisionForVoid), for clash tools; the kinds and offset of Manage → Openings vs MEP': 'Cada hueco en un muro, losa o cubierta también como un sólido propio (IfcBuildingElementProxy PROVISIONFORVOID con Pset_ProvisionForVoid), para los programas de colisiones; los tipos y el desfase de Gestionar → Huecos vs instalaciones',
   'as solids, for clash tools': 'como sólidos, para los programas de colisiones',
+  // Bonsai's drawing styles with an IFC export (decision 495)
+  'Bonsai drawing styles': 'Estilos de dibujo de Bonsai',
+  'a stylesheet and its hatches beside the file': 'una hoja de estilos y sus tramas junto al archivo',
+  'Bonsai (BlenderBIM) draws its drawings with a CSS stylesheet: the project\'s materials (cut hatches, fills), pens and text written beside the IFC as name.css and name-patterns.svg, and named in the file so Bonsai\'s new drawings take them': 'Bonsai (BlenderBIM) dibuja sus planos con una hoja de estilos CSS: los materiales del proyecto (tramas de corte, rellenos), las plumas y el texto escritos junto al IFC como nombre.css y nombre-patterns.svg, y nombrados en el archivo para que los nuevos dibujos de Bonsai los tomen',
   'Each opening in a wall, floor or roof also as a solid of its own, in a group named Opening voids, for clash tools; the kinds and offset of Manage → Openings vs MEP': 'Cada hueco en un muro, losa o cubierta también como un sólido propio, en un grupo llamado Opening voids, para los programas de colisiones; los tipos y el desfase de Gestionar → Huecos vs instalaciones',
   // Opening voids on plans, sections and elevations (decision 290)
   'Each opening\'s void drawn where the view cuts or sees it, crossed, with its mark (V1, V2…), as a coordination drawing shows provisions for voids; sheets print it': 'El volumen de cada hueco dibujado donde la vista lo corta o lo ve, en cruz, con su marca (V1, V2…), como un plano de coordinación muestra los huecos previstos; los planos lo imprimen',

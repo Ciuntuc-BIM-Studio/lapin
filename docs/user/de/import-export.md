@@ -54,6 +54,10 @@ Die Räume der Datei (aus Revit, ArchiCAD und anderen) kommen als Lapin-Räume h
 
 **IFC oder Fragments exportieren…** schreibt das Modell als IFC oder als Fragments, ausgewählt wie ein Import: die Elemente nach Disziplin und Art, die Geschosse, die Phase und nur, was die 3D-Ansicht zeigt. IFC geht in IFC4 oder IFC4X3 hinaus, die Teile eines geschichteten Elements darunter oder je ein Körper; Fragments ab dem Projektbasispunkt, dem internen Ursprung oder dem Vermessungspunkt. Eine Fragments-Datei trägt, was ein IFC-Viewer zeigt: den Typ jedes Elements, seine Mengen, Ihre Parameter, seine Materialien und die Kartenkoordinaten, so wie der Konverter von That Open sie schreibt.
 
+Eine Referenz behält die Öffnungen, die ihre Datei in sie geschnitten hat, mit den Türen und Fenstern darin: **IFC oder Fragments exportieren…** schreibt sie mit den GlobalIds der Datei zurück, und eine verschobene, gedrehte, gespiegelte oder kopierte Referenz nimmt ihre Türen und Fenster mit (eine Kopie erhält eigene Öffnungen, gefüllt mit Kopien davon). Wird eine Referenz gelöscht, gehen die Türen und Fenster darin mit, wie bei einer Lapin-Wand; eine allein gelöschte oder weggeschobene Tür lässt die Öffnung leer.
+
+Auf dem Desktop schreibt **Bonsai-Zeichenstile** neben die IFC ein Stylesheet (`name.css`) und seine Schraffuren (`name-patterns.svg`) für Bonsai (BlenderBIM), dessen Pläne mit CSS gestaltet werden: Schnittschraffur, Füllung und Ansichtsschraffur jedes Materials, die Schnitt- und Ansichtslinien Ihrer Objektstile und der Text Ihrer Zeichenstandards. Die IFC nennt beide Dateien, sodass ein Plan, den Sie daraus in Bonsai anlegen, sie übernimmt.
+
 ![IFC oder Fragments exportieren](shots/export-exchange.webp)
 
 ### SDNF (Stahlbau-Detaillierung)

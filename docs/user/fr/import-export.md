@@ -54,6 +54,10 @@ Les espaces du fichier (de Revit, ArchiCAD et autres) entrent comme pièces Lapi
 
 **Exporter IFC ou Fragments…** écrit le modèle en IFC ou en Fragments, choisi comme un import : les éléments par discipline et par type, les niveaux, la phase, et seulement ce que montre la vue 3D. L’IFC sort en IFC4 ou IFC4X3, les parties d’un élément en couches sous lui ou un corps chacune ; Fragments depuis le point de base du projet, l’origine interne ou le point topographique. Un fichier Fragments porte ce que montre une visionneuse IFC : le type de chaque élément, ses quantités, vos paramètres, ses matériaux et les coordonnées cartographiques, comme les écrit le convertisseur de That Open.
 
+Une référence garde les ouvertures que son fichier y a découpées, avec les portes et fenêtres qui les remplissent : **Exporter IFC ou Fragments…** les réécrit avec les GlobalId du fichier, et une référence déplacée, tournée, symétrisée ou copiée emporte ses portes et fenêtres (une copie reçoit ses propres ouvertures, remplies par des copies). Supprimer une référence supprime les portes et fenêtres qu'elle contient, comme pour un mur Lapin ; une porte supprimée seule, ou déplacée ailleurs, laisse l'ouverture vide.
+
+Sur le bureau, **Styles de dessin Bonsai** écrit à côté de l'IFC une feuille de style (`nom.css`) et ses hachures (`nom-patterns.svg`) pour Bonsai (BlenderBIM), dont les dessins sont mis en forme par CSS : la hachure de coupe, le remplissage et la hachure d'élévation de chaque matériau, les traits coupés et vus de vos styles d'objet et le texte de vos standards de dessin. L'IFC nomme les deux fichiers, ainsi un dessin créé dans Bonsai à partir de lui les reprend.
+
 ![Exporter IFC ou Fragments](shots/export-exchange.webp)
 
 ### SDNF (détail de charpente métallique)

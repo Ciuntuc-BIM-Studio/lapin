@@ -22,8 +22,9 @@ namespace Lapin.Ifc;
 /// <summary><paramref name="Exclude"/>: elements left out (the kinds and storeys not chosen, what the 3D view hides: <see cref="ModelSurvey.Excluded"/>).</summary>
 /// <summary><paramref name="Voids"/>: the openings also as solid voids (IfcBuildingElementProxy PROVISIONFORVOID, decision 289), of the kinds asked, their sides moved by the offset; off by default.</summary>
 public sealed record IfcExportOptions(string Schema = "IFC4", string Detail = "group", string? Phase = null, string Geometry = "brep", double Tolerance = 0, IReadOnlySet<string>? Exclude = null,
-    bool Voids = false, IReadOnlySet<string>? VoidKinds = null, double VoidOffset = 0)
+    bool Voids = false, IReadOnlySet<string>? VoidKinds = null, double VoidOffset = 0, bool BonsaiStyles = false)
 {
+    // BonsaiStyles: the project's drawing styles for Bonsai beside the file (<see cref="Ifc.BonsaiStyles"/>), named in BBIM_Documentation on IfcProject.
     public bool Ifc43 => Schema.StartsWith("IFC4X3", StringComparison.OrdinalIgnoreCase);
     public bool Grouped => !string.Equals(Detail, "simple", StringComparison.OrdinalIgnoreCase);
     public bool FaceSet => string.Equals(Geometry, "faceset", StringComparison.OrdinalIgnoreCase);
@@ -83,13 +84,23 @@ public static class IfcExport
         using var ms = new MemoryStream();
         var result = Write(session, ms, System.IO.Path.GetFileName(path), options);
         File.WriteAllBytes(path, ms.ToArray());
+        // Bonsai's drawing styles beside it, under the names the file gives them (BBIM_Documentation).
+        if (options?.BonsaiStyles == true)
+        {
+            var sheet = BonsaiStyles.Of(session.Model);
+            var (css, patterns) = BonsaiStyles.FileNames(path);
+            var dir = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(path)) ?? ".";
+            File.WriteAllText(System.IO.Path.Combine(dir, css), sheet.Css);
+            File.WriteAllText(System.IO.Path.Combine(dir, patterns), sheet.Patterns);
+            result = result with { Notes = [.. result.Notes, $"Bonsai drawing styles: {css} and {patterns} beside it."] };
+        }
         return result with { Path = path };
     }
 
     /// <summary>The project as IFC into a stream, <paramref name="name"/> in its header (a browser hands the bytes to the user).</summary>
     public static IfcExportResult Write(Session session, Stream output, string name, IfcExportOptions? options = null)
     {
-        var w = new Writer(session, options ?? new IfcExportOptions());
+        var w = new Writer(session, options ?? new IfcExportOptions()) { IfcName = name };
         w.Run();
         w.File.Write(output, name, w.O.Ifc43 ? "ViewDefinition [ReferenceView]" : "ViewDefinition [ReferenceView_V1.2]", w.O.SchemaName);
         return new IfcExportResult(name, w.O.SchemaName, w.Elements, w.PartCount, w.StoreyCount, w.Notes);
@@ -198,6 +209,8 @@ public static class IfcExport
         // The application that wrote it: the product (Lapin, or an edition under its own name).
         public readonly Step File = new() { Application = s.Product.Name };
         public IfcExportOptions O => o;
+        /// <summary>The file's name, which names the drawing styles written beside it.</summary>
+        public string IfcName { get; init; } = "project.ifc";
         public int Elements, PartCount, StoreyCount;
         public readonly List<string> Notes = [];
 
@@ -512,6 +525,13 @@ public static class IfcExport
             // The project's information and the user's own parameters of it (decision 340): Lapin's own set, never a Pset_.
             if (ProjectInformation() is { Count: > 0 } info)
                 Define(projectRef, f.Add("IFCPROPERTYSET", Gid(project.Id, ProjectInfoSetName), Null, S(ProjectInfoSetName), Null, L(info)), Gid(project.Id, ProjectInfoSetName + "-rel"));
+            // Bonsai's drawing styles beside the file: the stylesheet and patterns its new drawings take (BBIM_Documentation, paths relative to the file).
+            if (o.BonsaiStyles)
+            {
+                var (css, patterns) = BonsaiStyles.FileNames(IfcName);
+                var doc = new[] { Single(BonsaiStyles.StylesheetKey, Typed("IFCTEXT", S(css))), Single(BonsaiStyles.PatternsKey, Typed("IFCTEXT", S(patterns))) };
+                Define(projectRef, f.Add("IFCPROPERTYSET", Gid(project.Id, BonsaiStyles.SetName), Null, S(BonsaiStyles.SetName), Null, L(doc)), Gid(project.Id, BonsaiStyles.SetName + "-rel"));
+            }
 
             var site = m.OfClass(IfcClass.Site).FirstOrDefault();
             var building = Spatial.Building(m);

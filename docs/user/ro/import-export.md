@@ -54,6 +54,10 @@ Spațiile fișierului (din Revit, ArchiCAD și altele) intră ca încăperi Lapi
 
 **Exportă IFC, Fragments sau BOS…** scrie modelul ca IFC, ca Fragments sau ca BIM Open Schema, ales la fel ca un import: elementele pe discipline și tipuri, etajele, faza și doar ce arată vederea 3D. IFC iese în IFC4 sau IFC4X3, cu părțile unui element stratificat sub el sau câte un corp fiecare; Fragments de la punctul de bază al proiectului, de la originea internă sau de la punctul de topografie. Un fișier Fragments poartă ce arată un vizualizator IFC: tipul fiecărui element, cantitățile, parametrii tăi, materialele și coordonatele pe hartă, cum le scrie convertorul That Open.
 
+O referință își păstrează golurile pe care i le-a tăiat fișierul ei, cu ușile și ferestrele care le umplu: **Exportă IFC, Fragments sau BOS…** le scrie înapoi cu GlobalId-urile fișierului, iar o referință mutată, rotită, oglindită sau copiată își ia ușile și ferestrele cu ea (o copie primește goluri proprii, umplute de copii ale lor). Ștergerea unei referințe șterge ușile și ferestrele din ea, ca la un perete Lapin; o ușă ștearsă singură, sau mutată în altă parte, lasă golul gol.
+
+Pe desktop, **Stiluri de desen Bonsai** scrie lângă IFC o foaie de stil (`nume.css`) și hașurile ei (`nume-patterns.svg`) pentru Bonsai (BlenderBIM), ale cărui desene se stilizează cu CSS: hașura secțiunii, umplerea și hașura de fațadă ale fiecărui material, liniile de secțiune și de proiecție din stilurile de obiect și textul din standardele de desen. IFC-ul numește ambele fișiere, deci un desen pe care îl faceți în Bonsai din el le ia.
+
 ![Exportă IFC, Fragments sau BOS](shots/export-exchange.webp)
 
 ### BIM Open Schema

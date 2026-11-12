@@ -54,6 +54,10 @@ The file's spaces (from Revit, ArchiCAD and others) come in as Lapin rooms, each
 
 **Export IFC, Fragments or BOS…** writes the model as IFC, as Fragments or as BIM Open Schema, chosen as an import is: the elements by discipline and kind, the storeys, the phase, and only what the 3D view shows. IFC goes out in IFC4 or IFC4X3, a layered element's parts under it or one body each; Fragments from the project base point, the internal origin or the survey point. A Fragments file carries what an IFC viewer shows: each element's type, its quantities, your parameters, its materials and the map coordinates, as That Open's converter writes them.
 
+A reference keeps the openings its file cut into it, with the doors and windows filling them: **Export IFC, Fragments or BOS…** writes them back with the file's GlobalIds, and a reference moved, turned, mirrored or copied takes its doors and windows with it (a copy gets openings of its own, filled by copies of them). Deleting a reference deletes the doors and windows in it, as with a Lapin wall; a door deleted on its own, or moved away, leaves the opening empty.
+
+On the desktop, **Bonsai drawing styles** (in **Export IFC, Fragments or BOS…**) writes beside the IFC a stylesheet (`name.css`) and its hatches (`name-patterns.svg`) for Bonsai (BlenderBIM), whose drawings are styled by CSS: each material's cut hatch, fill and elevation hatch, the cut and seen lines of your object styles and the text of your drafting standards. The IFC names both files, so a drawing you create in Bonsai from it takes them.
+
 ![Export IFC, Fragments or BOS](shots/export-exchange.webp)
 
 ### BIM Open Schema

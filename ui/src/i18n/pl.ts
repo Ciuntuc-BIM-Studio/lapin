@@ -1311,6 +1311,10 @@ export const PL: Record<string, string> = {
   'Voids in 3D': 'Bryły w 3D',
   'Each opening in a wall, floor or roof also as a solid of its own (IfcBuildingElementProxy PROVISIONFORVOID with Pset_ProvisionForVoid), for clash tools; the kinds and offset of Manage → Openings vs MEP': 'Każdy otwór w ścianie, stropie lub dachu także jako osobna bryła (IfcBuildingElementProxy PROVISIONFORVOID z Pset_ProvisionForVoid), dla programów wykrywania kolizji; rodzaje i odsunięcie z Zarządzaj → Otwory a instalacje',
   'as solids, for clash tools': 'jako bryły, dla programów wykrywania kolizji',
+  // Bonsai's drawing styles with an IFC export (decision 495)
+  'Bonsai drawing styles': 'Style rysunków Bonsai',
+  'a stylesheet and its hatches beside the file': 'arkusz stylów i jego kreskowania obok pliku',
+  'Bonsai (BlenderBIM) draws its drawings with a CSS stylesheet: the project\'s materials (cut hatches, fills), pens and text written beside the IFC as name.css and name-patterns.svg, and named in the file so Bonsai\'s new drawings take them': 'Bonsai (BlenderBIM) rysuje swoje rysunki z arkuszem stylów CSS: materiały projektu (kreskowania przekroju, wypełnienia), pióra i tekst zapisane obok pliku IFC jako nazwa.css i nazwa-patterns.svg oraz wskazane w pliku, aby nowe rysunki w Bonsai je przejęły',
   'Each opening in a wall, floor or roof also as a solid of its own, in a group named Opening voids, for clash tools; the kinds and offset of Manage → Openings vs MEP': 'Każdy otwór w ścianie, stropie lub dachu także jako osobna bryła, w grupie o nazwie Opening voids, dla programów wykrywania kolizji; rodzaje i odsunięcie z Zarządzaj → Otwory a instalacje',
   // Opening voids on plans, sections and elevations (decision 290)
   'Each opening\'s void drawn where the view cuts or sees it, crossed, with its mark (V1, V2…), as a coordination drawing shows provisions for voids; sheets print it': 'Bryła każdego otworu rysowana tam, gdzie widok ją tnie lub widzi, przekreślona, z jej oznaczeniem (V1, V2…), jak rysunek koordynacyjny pokazuje przewidziane otwory; arkusze ją drukują',

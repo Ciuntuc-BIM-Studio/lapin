@@ -54,6 +54,10 @@ Przestrzenie z pliku (z Revita, ArchiCAD-a i innych) wchodzą jako pomieszczenia
 
 **Eksportuj IFC lub Fragments…** zapisuje model jako IFC lub jako Fragments, wybierany tak jak przy imporcie: elementy według branż i rodzajów, kondygnacje, faza i tylko to, co pokazuje widok 3D. IFC wychodzi w IFC4 lub IFC4X3, z częściami elementu warstwowego pod nim lub z jedną bryłą na każdy; Fragments od punktu bazowego projektu, początku wewnętrznego lub punktu pomiarowego. Plik Fragments niesie to, co pokazuje przeglądarka IFC: typ każdego elementu, jego ilości, Twoje parametry, materiały i współrzędne mapy, tak jak zapisuje je konwerter That Open.
 
+Odniesienie zachowuje otwory, które wyciął w nim jego plik, z drzwiami i oknami, które je wypełniają: **Eksportuj IFC lub Fragments…** zapisuje je z powrotem z identyfikatorami GlobalId pliku, a odniesienie przesunięte, obrócone, odbite lub skopiowane zabiera ze sobą swoje drzwi i okna (kopia dostaje własne otwory, wypełnione ich kopiami). Usunięcie odniesienia usuwa drzwi i okna w nim, jak przy ścianie Lapin; drzwi usunięte osobno lub przesunięte gdzie indziej zostawiają otwór pusty.
+
+Na komputerze **Style rysunków Bonsai** zapisuje obok pliku IFC arkusz stylów (`nazwa.css`) i jego kreskowania (`nazwa-patterns.svg`) dla Bonsai (BlenderBIM), którego rysunki są formatowane przez CSS: kreskowanie przekroju, wypełnienie i kreskowanie elewacji każdego materiału, linie przekroju i widoku z Twoich stylów obiektów oraz tekst z Twoich standardów rysunkowych. IFC wskazuje oba pliki, więc rysunek utworzony z niego w Bonsai je przejmuje.
+
 ![Eksportuj IFC lub Fragments](shots/export-exchange.webp)
 
 ### SDNF (detalowanie konstrukcji stalowych)

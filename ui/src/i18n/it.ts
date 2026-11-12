@@ -1312,6 +1312,10 @@ export const IT: Record<string, string> = {
   'Voids in 3D': 'Volumi in 3D',
   'Each opening in a wall, floor or roof also as a solid of its own (IfcBuildingElementProxy PROVISIONFORVOID with Pset_ProvisionForVoid), for clash tools; the kinds and offset of Manage → Openings vs MEP': 'Ogni apertura in un muro, un solaio o un tetto anche come solido a sé (IfcBuildingElementProxy PROVISIONFORVOID con Pset_ProvisionForVoid), per i programmi di interferenze; i tipi e lo scostamento di Gestisci → Aperture vs impianti',
   'as solids, for clash tools': 'come solidi, per i programmi di interferenze',
+  // Bonsai's drawing styles with an IFC export (decision 495)
+  'Bonsai drawing styles': 'Stili di disegno Bonsai',
+  'a stylesheet and its hatches beside the file': 'un foglio di stile e i suoi retini accanto al file',
+  'Bonsai (BlenderBIM) draws its drawings with a CSS stylesheet: the project\'s materials (cut hatches, fills), pens and text written beside the IFC as name.css and name-patterns.svg, and named in the file so Bonsai\'s new drawings take them': 'Bonsai (BlenderBIM) disegna i suoi elaborati con un foglio di stile CSS: i materiali del progetto (retini di sezione, riempimenti), le penne e il testo scritti accanto all\'IFC come nome.css e nome-patterns.svg, e nominati nel file perché i nuovi disegni di Bonsai li prendano',
   'Each opening in a wall, floor or roof also as a solid of its own, in a group named Opening voids, for clash tools; the kinds and offset of Manage → Openings vs MEP': 'Ogni apertura in un muro, un solaio o un tetto anche come solido a sé, in un gruppo chiamato Opening voids, per i programmi di interferenze; i tipi e lo scostamento di Gestisci → Aperture vs impianti',
   // Opening voids on plans, sections and elevations (decision 290)
   'Each opening\'s void drawn where the view cuts or sees it, crossed, with its mark (V1, V2…), as a coordination drawing shows provisions for voids; sheets print it': 'Il volume di ogni apertura disegnato dove la vista lo taglia o lo vede, con la croce, con la sua sigla (V1, V2…), come una tavola di coordinamento mostra i fori previsti; le tavole lo stampano',

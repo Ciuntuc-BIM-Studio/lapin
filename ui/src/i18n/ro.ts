@@ -1308,6 +1308,10 @@ export const RO: Record<string, string> = {
   'Voids in 3D': 'Volume în 3D',
   'Each opening in a wall, floor or roof also as a solid of its own (IfcBuildingElementProxy PROVISIONFORVOID with Pset_ProvisionForVoid), for clash tools; the kinds and offset of Manage → Openings vs MEP': 'Fiecare gol dintr-un perete, o placă sau un acoperiș și ca solid propriu (IfcBuildingElementProxy PROVISIONFORVOID cu Pset_ProvisionForVoid), pentru programele de coliziuni; felurile și decalajul din Gestionare → Goluri vs instalații',
   'as solids, for clash tools': 'ca solide, pentru programele de coliziuni',
+  // Bonsai's drawing styles with an IFC export (decision 495)
+  'Bonsai drawing styles': 'Stiluri de desen Bonsai',
+  'a stylesheet and its hatches beside the file': 'o foaie de stil și hașurile ei lângă fișier',
+  'Bonsai (BlenderBIM) draws its drawings with a CSS stylesheet: the project\'s materials (cut hatches, fills), pens and text written beside the IFC as name.css and name-patterns.svg, and named in the file so Bonsai\'s new drawings take them': 'Bonsai (BlenderBIM) își desenează desenele cu o foaie de stil CSS: materialele proiectului (hașurile secțiunii, umplerile), creioanele și textul scrise lângă IFC ca nume.css și nume-patterns.svg și numite în fișier, ca desenele noi din Bonsai să le ia',
   'Each opening in a wall, floor or roof also as a solid of its own, in a group named Opening voids, for clash tools; the kinds and offset of Manage → Openings vs MEP': 'Fiecare gol dintr-un perete, o placă sau un acoperiș și ca solid propriu, într-un grup numit Opening voids, pentru programele de coliziuni; felurile și decalajul din Gestionare → Goluri vs instalații',
   // Opening voids on plans, sections and elevations (decision 290)
   'Each opening\'s void drawn where the view cuts or sees it, crossed, with its mark (V1, V2…), as a coordination drawing shows provisions for voids; sheets print it': 'Volumul fiecărui gol desenat unde vederea îl taie sau îl vede, cu diagonale și cu marca lui (V1, V2…), cum arată un plan de coordonare golurile prevăzute; planșele îl tipăresc',

@@ -54,6 +54,10 @@ Los espacios del archivo (de Revit, ArchiCAD y otros) entran como habitaciones d
 
 **Exportar IFC o Fragments…** escribe el modelo como IFC o como Fragments, elegido como una importación: los elementos por disciplina y tipo, las plantas, la fase y solo lo que muestra la vista 3D. El IFC sale en IFC4 o IFC4X3, con las partes de un elemento por capas bajo él o un cuerpo cada una; Fragments desde el punto base del proyecto, el origen interno o el punto topográfico. Un archivo Fragments lleva lo que muestra un visor IFC: el tipo de cada elemento, sus cantidades, tus parámetros, sus materiales y las coordenadas del mapa, como los escribe el conversor de That Open.
 
+Una referencia conserva los huecos que su archivo le recortó, con las puertas y ventanas que los llenan: **Exportar IFC o Fragments…** los vuelve a escribir con los GlobalId del archivo, y una referencia movida, girada, reflejada o copiada se lleva sus puertas y ventanas (una copia recibe huecos propios, llenados por copias de ellas). Borrar una referencia borra las puertas y ventanas que contiene, como en un muro de Lapin; una puerta borrada sola, o movida a otro sitio, deja el hueco vacío.
+
+En el escritorio, **Estilos de dibujo de Bonsai** escribe junto al IFC una hoja de estilos (`nombre.css`) y sus tramas (`nombre-patterns.svg`) para Bonsai (BlenderBIM), cuyos dibujos se estilizan con CSS: la trama de corte, el relleno y la trama de alzado de cada material, las líneas de corte y vistas de sus estilos de objeto y el texto de sus estándares de dibujo. El IFC nombra ambos archivos, así que un dibujo que cree en Bonsai a partir de él los toma.
+
 ![Exportar IFC o Fragments](shots/export-exchange.webp)
 
 ### SDNF (detallado de acero)
