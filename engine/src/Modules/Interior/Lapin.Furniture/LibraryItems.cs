@@ -49,6 +49,8 @@ public static class LibraryItems
             ["materials"] = materials,
         };
         if (type.PredefinedType != null) item["predefinedType"] = type.PredefinedType;
+        // A model of the user's travels with it, its file inside (docs/plan-user-extensibility.md §5.5).
+        if (UserModels.Carry(m, (string?)spec[FurnitureModels.Key]) is { } model) item["model"] = model;
         return item;
     }
 
@@ -86,6 +88,7 @@ public static class LibraryItems
         var key = (string?)(spec["kind"] as JsonValue);
         if (FurnitureKinds.Find(key) is null)
             throw new CommandException($"This piece of furniture is of a kind („{key}”) this edition of Lapin does not build.");
+        UserModels.Bring(edit, item["model"] as JsonObject);
         var predefined = (string?)item["predefinedType"] ?? FurnitureKinds.IfcOf(new Spec(spec)).Predefined;
 
         // Its materials: the project's own when it has one of the name, else made as the item keeps it.

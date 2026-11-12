@@ -25,6 +25,8 @@ public sealed class FurnitureModule : ILapinModule
 
     public void Register(IModuleRegistry r)
     {
+        // Furniture models of the user's own (docs/plan-user-extensibility.md §5.5).
+        UserModels.Register(r);
         r.Class(new(Class, "Furniture",
         [
             new("rotation", "Rotation (°)", "number"), new("offset", "Above the floor", "length"),
@@ -46,6 +48,7 @@ public sealed class FurnitureModule : ILapinModule
         // A type of a kind: {kind, name?, spec?} → {id}; the spec's values over the kind's defaults, its materials made when missing.
         r.Command("createType", "New furniture type", (ctx, a) =>
         {
+            UserModels.EnsureAll(ctx.Model);
             var kind = FurnitureKinds.Find((string?)a["kind"]) ?? throw new CommandException($"A piece of furniture is one of {string.Join(", ", FurnitureKinds.All.Select(k => k.Key))}.");
             // A kitchen of a layout starts from its preset, under what the spec gives.
             var given = a["spec"] as JsonObject;
@@ -69,6 +72,7 @@ public sealed class FurnitureModule : ILapinModule
         // A type changed: {id, name?, spec?} (values merged; null: the kind's default again). Its pieces follow.
         r.Command("updateType", "Change furniture type", (ctx, a) =>
         {
+            UserModels.EnsureAll(ctx.Model);
             var type = RequireType(ctx.Model, (string?)a["id"]);
             var spec = (type.Attrs["spec"] as JsonObject)?.DeepClone() as JsonObject ?? FurnitureKinds.NewSpec(FurnitureKinds.All[0], null);
             var kind = new Spec(spec).Kind;
@@ -221,10 +225,12 @@ public sealed class FurnitureModule : ILapinModule
             var spec = FurnitureKinds.NewSpec(kind, null);
             if (a["spec"] is JsonObject given) { var g = (JsonObject)given.DeepClone(); g.Remove("kind"); FurnitureKinds.Merge(spec, g, kind); }
             var s = new Spec(spec);
+            UserModels.Ensure(q.Model, s.Str(FurnitureModels.Key));
             var b = new Builder(new Vec2(0, 0), 0, 0, FurnitureBodies.Handed(s));
             // A kitchen with its own units is previewed as long as they need (a piece's own length is set where it stands).
             var length = Json.Number(a["length"]) ?? (s.Kind.Key == "kitchen" && s.List(KitchenUnits.BaseKey) is { Count: > 0 } ? Math.Max(s.W, KitchenUnits.RequiredLength(s)) : null);
             FurnitureBodies.Build(b, s, length);
+            PlanSymbol(q.Model, b, s);
             var colors = FurnitureKinds.RoleOrder.ToDictionary(role => role, role => Materials.Find(q.Model, s.MaterialName(role))?.Str("color") ?? FurnitureKinds.RoleDefaults[role].Color);
             var handed = FurnitureBodies.Handed(s);
             return new JsonObject
@@ -352,14 +358,35 @@ public sealed class FurnitureModule : ILapinModule
 
     // ---- The body ----
 
+    /// <summary>
+    /// A type's plan drawn by a symbol of the user's (<c>planSymbol</c>, docs/plan-user-extensibility.md §3.5): the symbol's lines in the
+    /// building's mm about the piece's middle, in place of the body seen from above; none named, or one gone, the plan stays.
+    /// </summary>
+    static void PlanSymbol(IModelView m, Builder b, Spec spec)
+    {
+        if (spec.Str("planSymbol") is not { Length: > 0 } id || Symbols.DefOf(m, id) is not { } def) return;
+        var sd = SymbolRender.Render(m, def, Symbols.Resolver(m, def, null, null), 0.001);
+        var overhead = b.Plan.Any(p => p.Kind == "overhead") && b.Plan.All(p => p.Kind != "symbol");
+        b.Plan.RemoveAll(p => p.Kind is "symbol" or "overhead");
+        var kind = overhead ? "overhead" : "symbol";
+        foreach (var s in sd.Strokes)
+        {
+            var pts = s.Pts.Select(p => (p.X * 0.001, p.Y * 0.001)).ToArray();
+            if (s.Closed) b.Loop(kind, pts); else b.Line(kind, pts);
+        }
+        foreach (var f in sd.Fills) foreach (var loop in f.Loops) b.Loop(kind, loop.Select(p => (p.X * 0.001, p.Y * 0.001)));
+    }
+
     public static ElementGeometry? Geometry(Entity e, IModelView m)
     {
         if (Args.TryPoint(e.Attrs["at"]) is not { } at) return null;
         var spec = new Spec(TypeOf(m, e)?.Attrs["spec"] as JsonObject);
         var z = (Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0) + e.Num("offset");
+        UserModels.Ensure(m, spec.Str(FurnitureModels.Key));
         var b = new Builder(at, z, e.Num("rotation"), e.Bool("mirror") ^ FurnitureBodies.Handed(spec));
         var length = e.NumOrNull("length");
         FurnitureBodies.Build(b, spec, length);
+        PlanSymbol(m, b, spec);
         var parts = new List<GeometryPart>();
         foreach (var role in FurnitureKinds.RoleOrder)
         {

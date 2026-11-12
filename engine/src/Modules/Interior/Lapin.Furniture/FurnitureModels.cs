@@ -51,7 +51,7 @@ public static class FurnitureModels
         }
     }
 
-    public static FurnitureModel? Find(string? id) => id == null ? null : All.FirstOrDefault(m => m.Id == id);
+    public static FurnitureModel? Find(string? id) => id == null ? null : All.FirstOrDefault(m => m.Id == id) ?? UserModels.Find(id);
 
     /// <summary>A spec's model: the one it names, else the first.</summary>
     public static FurnitureModel Of(Spec s) => Find(s.Str("model")) ?? All[0];
@@ -326,7 +326,8 @@ static class ModelMeshes
     static ModelMesh? Load(string id)
     {
         var model = FurnitureModels.Find(id);
-        var bytes = Lapin.Furniture.Models.FurnitureModelFiles.Read(id);
+        // Lapin's own, else one of the user's (UserModels: known from its project before its types are built).
+        var bytes = UserModels.Is(id) ? UserModels.Bytes(id) : Lapin.Furniture.Models.FurnitureModelFiles.Read(id);
         if (model == null || bytes == null) return null;
         // glTF is Y up with its front along +Z: Lapin's frame is Z up with the front along −y.
         var pieces = Lapin.Mesh.MeshImport.Gltf(bytes, true, null, []);

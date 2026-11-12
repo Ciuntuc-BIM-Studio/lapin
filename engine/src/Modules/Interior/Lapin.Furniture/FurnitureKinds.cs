@@ -263,6 +263,12 @@ public static class FurnitureKinds
                 spec["materials"] = mats;
                 continue;
             }
+            // Its plan drawn by a symbol of the user's (docs/plan-user-extensibility.md §3.5), any kind; null or "": the body seen from above.
+            if (key == "planSymbol")
+            {
+                if ((string?)v is { Length: > 0 } sym) spec[key] = sym.Trim(); else spec.Remove(key);
+                continue;
+            }
             // A kitchen's own units, along its main run and above it (decision 472): each checked; null or [] goes back to the even split.
             if (key is KitchenUnits.BaseKey or KitchenUnits.UpperKey)
             {
