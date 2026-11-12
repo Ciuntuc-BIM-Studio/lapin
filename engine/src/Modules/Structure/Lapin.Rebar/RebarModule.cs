@@ -68,6 +68,9 @@ public static class Rebars
 
     public static RebarSpec SpecOf(Entity e)
     {
+        // A shape of the user's (docs/plan-user-extensibility.md §6.3): known from the definition the bar keeps.
+        if (e.Attrs["shapeDef"] is JsonObject kept && e.Str("shape")?.StartsWith(RebarShapeData.Prefix, StringComparison.Ordinal) == true)
+            try { RebarShapeData.Register(kept); } catch (CommandException) { }
         var shape = RebarShapes.IsShape(e.Str("shape")) ? e.Str("shape")! : "straight";
         var def = RebarShapes.Def(shape);
         var p = new Dictionary<string, double>();
@@ -272,6 +275,9 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         r.Service<IViewAnnotations>(this);
         // The reinforcement's rules in the project's rule pack (docs/plan-user-extensibility.md §5.4).
         RebarRuleSection.Register(r);
+        // Bar shapes of the user's, and the bending schedule by the standard and BVBS (docs/plan-user-extensibility.md §6.3–6.4).
+        RebarShapeData.Register(r);
+        RebarBvbs.Register(r);
         // Drafted lines and polylines made bars (docs/plan-user-extensibility.md §6.1).
         r.Service<LineworkConverter>(RebarLinework.Bars);
         r.Service<IElementPlacement>(this);
@@ -281,6 +287,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         // A bar on a view: {viewId, shape, at: [x, y], params?: {key: m}, vertices?, diameter?, mark?, count?, rotation?, mirrorX?, mirrorY?, hooks?: {start?: {angle, length, flip}, end?}, view?, steel?, layer?, array?, excludeSchedule?}.
         r.Command("add", "Bar", (ctx, a) =>
         {
+            a = UserShape(ctx.Model, a);
             var view = Views.Find(ctx.Model, (string?)a["viewId"] ?? "") ?? throw new CommandException("A bar is drawn on a view.");
             var shape = (string?)a["shape"] ?? "straight";
             var def = RebarShapes.Def(shape);
@@ -296,12 +303,14 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
                 attrs["host"] = host;
                 if (attrs["across"] == null) attrs["across"] = new Rebar3D.Across(1, "cover", 0.05).ToJson();
             }
+            KeepShape(attrs, a);
             var e = new Entity(ctx.NewId(), Rebars.Class, $"{def.Label} {Rebars.Mark(new Entity("", Rebars.Class, "", attrs))}", attrs);
             ctx.Add(e);
             return new JsonObject { ["id"] = e.Id };
         });
         r.Command("update", "Bar", (ctx, a) =>
         {
+            a = UserShape(ctx.Model, a);
             var e = Require(ctx.Model, (string?)a["id"], Rebars.Class);
             var attrs = e.CloneAttrs();
             Write(attrs, a, run: false);
@@ -357,6 +366,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         // Bars distributed along a path: {viewId, start, end, rise?, shape?, params?, diameter?, step?, zones?: [{length, step}], count?, mark?, size?, side?, show?, offset?, hooks?}.
         r.Command("addRun", "Bar distribution", (ctx, a) =>
         {
+            a = UserShape(ctx.Model, a);
             var view = Views.Find(ctx.Model, (string?)a["viewId"] ?? "") ?? throw new CommandException("A distribution is drawn on a view.");
             var shape = (string?)a["shape"] ?? "stirrup";
             var def = RebarShapes.Def(shape);
@@ -367,12 +377,14 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             a = (JsonObject)a.DeepClone();
             RebarRuleSection.Complete(ctx.Model, a, Json.Number(a["diameter"]) ?? def.DefaultDiameter, shape);
             Write(attrs, a, run: true);
+            KeepShape(attrs, a);
             var e = new Entity(ctx.NewId(), Rebars.RunClass, $"{def.Label}s {Rebars.Mark(new Entity("", Rebars.RunClass, "", attrs))}", attrs);
             ctx.Add(e);
             return new JsonObject { ["id"] = e.Id };
         });
         r.Command("updateRun", "Bar distribution", (ctx, a) =>
         {
+            a = UserShape(ctx.Model, a);
             var e = Require(ctx.Model, (string?)a["id"], Rebars.RunClass);
             var attrs = e.CloneAttrs();
             Write(attrs, a, run: true);
@@ -522,10 +534,34 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
     /// <summary>The partition a command gives (trimmed; "" none).</summary>
     static string PartitionArg(JsonObject a) => ((string?)a[Rebars.PartitionKey])?.Trim() ?? "";
 
+    /// <summary>A bar asked of a shape of the project's ({shapeId}): its definition known, the bar's shape its code.</summary>
+    static JsonObject UserShape(IModelView m, JsonObject a)
+    {
+        if ((string?)a["shapeId"] is not { Length: > 0 } id) return a;
+        var def = RebarShapeData.DefOf(m, id) ?? throw new CommandException("There is no such bar shape.");
+        var o = (JsonObject)a.DeepClone();
+        o["shape"] = RebarShapeData.Register(def);
+        o["shapeDef"] = RebarShapeData.Check(def);
+        return o;
+    }
+
+    /// <summary>A bar of a shape of the project's keeps its definition and the shape it came from.</summary>
+    static void KeepShape(JsonObject attrs, JsonObject a)
+    {
+        if (a["shapeDef"] is JsonObject def) { attrs["shapeDef"] = def.DeepClone(); attrs["shapeId"] = (string?)a["shapeId"]; }
+    }
+
     static void Write(JsonObject attrs, JsonObject a, bool run)
     {
         if (a.ContainsKey(Rebars.PartitionKey)) { if (PartitionArg(a) is { Length: > 0 } pa) attrs[Rebars.PartitionKey] = pa; else attrs.Remove(Rebars.PartitionKey); }
-        if ((string?)a["shape"] is { } shape) { RebarShapes.Def(shape); attrs["shape"] = shape; }
+        if ((string?)a["shape"] is { } shape)
+        {
+            RebarShapes.Def(shape);
+            attrs["shape"] = shape;
+            // Back to one of Lapin's shapes: the user's definition goes with the one it was.
+            if (!shape.StartsWith(RebarShapeData.Prefix, StringComparison.Ordinal)) { attrs.Remove("shapeDef"); attrs.Remove("shapeId"); }
+            else KeepShape(attrs, a);
+        }
         var def = RebarShapes.Def((string?)attrs["shape"] ?? "straight");
         if (a["params"] is JsonObject po)
         {

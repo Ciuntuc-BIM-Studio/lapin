@@ -122,8 +122,8 @@ public static class RebarShapes
         new("dot", "Bar in section", [new("length", "Bar length", 1.0)], LongitudinalLayer, 0.012, _ => [], _ => []),
     ];
 
-    public static ShapeDef Def(string code) => Catalogue.FirstOrDefault(s => s.Code == code) ?? throw new CommandException($"„{code}” is not a bar shape ({string.Join(", ", Catalogue.Select(s => s.Code))}).");
-    public static bool IsShape(string? code) => code != null && Catalogue.Any(s => s.Code == code);
+    public static ShapeDef Def(string code) => Catalogue.FirstOrDefault(s => s.Code == code) ?? RebarShapeData.Find(code) ?? throw new CommandException($"„{code}” is not a bar shape ({string.Join(", ", Catalogue.Select(s => s.Code))}).");
+    public static bool IsShape(string? code) => code != null && (Catalogue.Any(s => s.Code == code) || RebarShapeData.Find(code) != null);
 
     /// <summary>The bend radius the bar is bent at: its own (a polyline's parameter) or the Eurocode's for its diameter.</summary>
     public static double RadiusOf(RebarSpec s) => s.BendRadius ?? (s.Shape == "polyline" && s.Params.TryGetValue("bendRadius", out var r) ? r : BendRadius(s.Diameter));
