@@ -182,6 +182,10 @@ registerCommand({ names: ['SAVESYMBOL', 'SYMBOLSAVE', 'SYMSAVE'], label: 'Save a
 export function symbolMenuItems(ids: string[], nodes: Map<string, NodeDto>): MenuItem[] {
   const out: MenuItem[] = [];
   if (ids.some((id) => isSymbolSource(nodes.get(id)))) out.push({ label: 'Save as symbol…', onSelect: () => void startCommand('SAVESYMBOL') });
+  // Drafted lines and shapes made walls, floors, columns, bars… (Convert to…, the drafting module's dialog).
+  if (ids.some((id) => { const n = nodes.get(id); return n?.type === 'IfcAnnotation' && typeof n.props.viewId === 'string' && !!n.props.shape && n.props.predefinedType !== 'SYMBOL'; })) {
+    out.push({ label: 'Convert to…', onSelect: () => void import('../../drafting/convert/convert').then((m) => m.convertSelection()) });
+  }
   const placed = ids.filter((id) => nodes.get(id)?.props.predefinedType === 'SYMBOL');
   if (placed.length) {
     out.push(

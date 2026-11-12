@@ -16,6 +16,7 @@ import { pensToSvg } from '../documents/docModel';
 import { TYPE_CHOICES } from '../LibraryChoices';
 import { freeName } from '../titleBlocks/titleBlockModel';
 import { SymbolEditor } from './SymbolEditor';
+import { Thumb } from './Thumb';
 import { createSymbol, deleteSymbol, exportSymbols, getSymbol, importSymbols, listSymbols, previewSymbol, readPack, updateSymbol, type PackSymbol, type SymList } from './symbols';
 import {
   byCategory, forgetSymbol, symbolsDialog, keepSymbol, librarySymbols, normaliseDef, packText, parsePack, previewImage, renameSymbol, updateLibrarySymbol,
@@ -38,9 +39,7 @@ const STARTER: SymDef = {
   items: [{ type: 'circle', c: [0, 0], r: 4, stroke: 0.25 }, { type: 'line', a: [0, 0], b: [4, 0], w: 0.25 }],
 };
 
-export const Thumb = ({ p }: { p?: SymPreview | null }) => (
-  <span className="sy-thumb" data-no-i18n aria-hidden dangerouslySetInnerHTML={{ __html: p && p.pens.length ? pensToSvg(previewImage(p)) : '' }} />
-);
+export { Thumb };
 
 type Editing = { kind: 'project'; id: string; name: string; def: SymDef } | { kind: 'library'; id: string; name: string; def: SymDef } | { kind: 'new'; name: string; def: SymDef };
 

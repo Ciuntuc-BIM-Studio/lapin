@@ -1,10 +1,11 @@
 /** Loads (docs/plan-fem.md §8): the load cases, the imposed loads by category, what the model carries, the EN 1990 combinations. All values are indicative. */
 
 import { useState } from 'react';
-import { Play, Plus, Trash2, X } from 'lucide-react';
+import { FileUp, Play, Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { PendingDialog } from '../core/PendingDialog';
+import { openImportTable } from '../core/tables/tables';
 import { useAnalysis } from './hooks';
 import { runAnalysis } from './useResults';
 import {
@@ -38,7 +39,8 @@ export function LoadsDialog() {
           {tab === 'imposed' && <ImposedTab cats={cats} />}
           {tab === 'summary' && <SummaryTab loads={loads} />}
           {tab === 'combinations' && (combos ? <CombinationsTab data={combos} /> : <p className="muted">Reading the combinations…</p>)}
-          <div className="row"><button type="button" className="btn primary" data-testid="loads-run" title="Analyse the frame under these loads and show the results" onClick={() => void runAnalysis()}><Play size={14} />Run analysis</button></div>
+          <div className="row"><button type="button" className="btn primary" data-testid="loads-run" title="Analyse the frame under these loads and show the results" onClick={() => void runAnalysis()}><Play size={14} />Run analysis</button>
+            <button type="button" className="btn" data-testid="loads-import" title="Point, line and area loads from a CSV or Excel file or pasted cells" onClick={() => openImportTable('analysis.loads', 'Import loads')}><FileUp size={14} />Import loads…</button></div>
           <p className="muted small">The values are indicative (EN 1990 and EN 1991-1-1 as recommended): set the national annex values and check them before using the results.</p>
           {error && <p className="error-text" role="alert">{error}</p>}
         </div>
@@ -79,6 +81,7 @@ function CasesTab({ loads, cats }: { loads: LoadsDto; cats: CategoryDto[] }) {
       <div className="row">
         <button type="button" className="btn" onClick={() => void execute('analysis.defaultCases', {})}>Add standard cases</button>
         <button type="button" className="btn" title="One imposed-load case for each category the rooms use that has none" onClick={() => void execute('analysis.addMissingCases', {})}>Add missing cases</button>
+        <button type="button" className="btn" data-testid="cases-import" title="Load cases from a CSV or Excel file or pasted cells" onClick={() => openImportTable('analysis.cases', 'Import load cases')}><FileUp size={14} />Import load cases…</button>
       </div>
       <p className="muted small">The cases a load goes in. The derived loads (finishes, partitions, rooms) go in the cases that list them.</p>
     </>

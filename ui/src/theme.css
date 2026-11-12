@@ -2298,3 +2298,17 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .script-ask-element .btn { width: auto; padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .script-tool-trust { max-width: 520px; }
 @media (max-width: 900px) { .script-body { grid-template-columns: 1fr; grid-template-rows: auto 1fr 1fr; } .script-library { border-right: 0; max-height: 90px; } }
+
+/* Marker symbols (symbol pickers with previews) and the table import / convert dialogs. */
+.slot-picker { position: relative; display: inline-block; max-width: 100%; }
+.slot-current { display: inline-flex; align-items: center; gap: 6px; min-width: 190px; text-align: left; }
+.slot-list { position: absolute; z-index: 30; top: 100%; left: 0; min-width: 260px; max-height: 320px; overflow: auto; background: var(--panel, #fff); border: 1px solid var(--rule); box-shadow: 0 6px 18px rgba(0, 0, 0, .18); padding: 4px; }
+.slot-list .eyebrow { margin: 6px 4px 2px; }
+.slot-row { display: flex; align-items: center; gap: 8px; width: 100%; padding: 3px 4px; background: none; border: 0; text-align: left; cursor: pointer; color: inherit; font: inherit; }
+.slot-row:hover, .slot-row.on { background: var(--hover, rgba(0, 0, 0, .06)); }
+.import-table .map-table th, .import-table .map-table td { white-space: nowrap; max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+.import-table .scroll-x { overflow-x: auto; max-height: 260px; overflow-y: auto; }
+.import-table textarea.paste { width: 100%; min-height: 70px; font-family: var(--mono, monospace); font-size: 11px; }
+.import-table .row-bad td { color: var(--danger, #b3261e); }
+.import-table .row-head td { font-weight: 600; background: var(--hover, rgba(0, 0, 0, .06)); }
+.convert-dialog .opt-grid { display: grid; grid-template-columns: max-content 1fr; gap: 6px 12px; align-items: center; }

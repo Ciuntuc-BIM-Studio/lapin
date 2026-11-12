@@ -148,4 +148,21 @@ public sealed class SymbolSlotTests
         Assert.Equal(Symbols.Level(storey.Num("elevation") + 3.2), Spot(section, 1, y + 3.2));
         Assert.Equal(Symbols.Level(storey.Num("elevation")), Spot(Plan(f), 1, 1));
     }
+
+    [Fact]
+    public void A_section_head_symbol_points_the_way_the_section_looks_at_its_marker_s_size()
+    {
+        var f = F();
+        var plan = Plan(f);
+        var section = Section(f);
+        var before = Marks(f, plan).Single(m => m.Owner == section);
+        f.Run("symbols.setSlot", new JsonObject { ["slot"] = "sectionHead", ["symbolId"] = BuiltinSymbols.Prefix + "section-head" });
+        var head = Marks(f, plan).Single(m => m.Owner == section);
+        // Lapin's own arrow and the symbol's both stand on the side the section looks to (the line at y 2, the look +y or −y).
+        double Side(ViewMark mk) => mk.Lines.Where(l => l.Layer != "PICK" && Math.Abs(l.A.Y - 2) + Math.Abs(l.B.Y - 2) > 1e-6).Average(l => (l.A.Y + l.B.Y) / 2) - 2;
+        Assert.Equal(Math.Sign(Side(before)), Math.Sign(Side(head)));
+        // At 1:100 the 12 mm bubble is 1.2 m across (with the line's end stroke beside it, at most 1.6).
+        var xs = head.Lines.Where(l => l.Layer != "PICK").SelectMany(l => new[] { l.A.X, l.B.X }).Where(x => x < 0.5).ToList();
+        Assert.InRange(xs.Max() - xs.Min(), 1.0, 1.6);
+    }
 }

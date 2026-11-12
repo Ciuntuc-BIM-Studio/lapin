@@ -3,7 +3,7 @@
 import { StoreySection } from './StoreySection';
 import { toggleDrafts3d, toggleDragMove3d, toggleDxf3d, toggleDrillSelect, toggleGrid, toggleOrbitSelection, toggleThinLines, toggleZoomToCursor, useDisplay } from '../../app/display';
 import { measure } from './measure';
-import { Pin, PinOff, PackageOpen, AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, ScanEye, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, Shapes, SlidersHorizontal, Square, SquareDashed, Star, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn, Building2 } from 'lucide-react';
+import { Pin, PinOff, PackageOpen, AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, ScanEye, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, Shapes, SlidersHorizontal, Square, Table2, SquareDashed, Star, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn, Building2 } from 'lucide-react';
 import { CopyToStoreysIcon, ElevationIcon, MoveToStoreyIcon, ProfileIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { notify } from '../../app/store';
@@ -43,6 +43,8 @@ import { sectionGrips, sectionRefs, sectionTools } from './sections';
 import { lazyPart } from '../../platform/lazyPart';
 // Lapin Extensions: the content packs this module's libraries take (docs/plan-extensions.md).
 import './extensionKinds';
+import { MarkerSymbolSection, slotsFor } from './symbols/SlotPicker';
+import { openImportTable } from './tables/tables';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const ProfileLibrariesDialog = lazyPart(() => import('./profileLibraries/ProfileLibrariesDialog').then((m) => m.ProfileLibrariesDialog), { title: 'Profile libraries' });
@@ -72,6 +74,7 @@ const CoordinationDialog = lazyPart(() => import('./coordination/CoordinationDia
 const DocumentsDialog = lazyPart(() => import('./documents/DocumentsDialog').then((m) => m.DocumentsDialog), { title: 'Documents' });
 const ProjectInfoDialog = lazyPart(() => import('./documents/ProjectInfoForm').then((m) => m.ProjectInfoDialog), { title: 'Project information' });
 const TemplatesDialog = lazyPart(() => import('./documents/TemplatesDialog').then((m) => m.TemplatesDialog), { title: 'Document templates' });
+const ImportTableDialog = lazyPart(() => import('./tables/ImportTableDialog').then((m) => m.ImportTableDialog), { title: 'Import table' });
 const SymbolsDialog = lazyPart(() => import('./symbols/SymbolsDialog').then((m) => m.SymbolsDialog), { title: 'Symbols' });
 const SaveSymbolDialog = lazyPart(() => import('./symbols/SaveSymbolDialog').then((m) => m.SaveSymbolDialog), { title: 'Save as symbol' });
 const TitleBlocksDialog = lazyPart(() => import('./titleBlocks/TitleBlocksDialog').then((m) => m.TitleBlocksDialog), { title: 'Title blocks' });
@@ -173,6 +176,9 @@ const core: LapinModule = {
         { id: 'manage.titleBlocks', label: 'Title blocks…', icon: PanelBottomClose, run: () => useUi.setState({ dialog: 'titleBlocks' }) },
         // The symbols: Lapin's, the project's and this computer's, drawn in the symbol editor, placed on views (docs/plan-user-extensibility.md §3).
         { id: 'manage.symbols', label: 'Symbols…', icon: Shapes, run: () => useUi.setState({ dialog: 'symbols' }) },
+        // Any table (loads, load cases, property values) read from a CSV or Excel file or pasted cells, its columns mapped, previewed and imported in one step (§7.1).
+        { id: 'manage.importTable', label: 'Import table…', icon: Table2, run: () => openImportTable() },
+        { id: 'manage.importProperties', label: 'Import property values…', icon: Table2, run: () => openImportTable('core.properties', 'Import property values') },
       ] },
       // The project folder as a CDE (docs/plan-cde.md): the folder and its naming, the pre-issue checks, the issue.
       { label: 'Issue', tools: [
@@ -293,7 +299,7 @@ const core: LapinModule = {
   // An opening void's label is held by its opening (a roof window's by its roof) where a view draws the voids (decision 292).
   grips: { LapinView: sectionGrips, IfcOpeningElement: voidLabelGrips, IfcRoof: voidLabelGrips },
   references: { LapinView: sectionRefs },
-  dialogs: { components: ComponentsDialog, importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, copyToStoreys: CopyToStoreysDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, typePacks: TypePacksDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, exportHtml: ExportHtmlDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, documents: DocumentsDialog, documentTemplates: TemplatesDialog, titleBlocks: TitleBlocksDialog, symbols: SymbolsDialog, saveSymbol: SaveSymbolDialog, projectInfo: ProjectInfoDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, sun: SunDialog, exportExchange: ExchangeExportDialog, exportJg: JgExportDialog, sections: SectionsDialog, coordination: CoordinationDialog, profiles: ProfilesDialog, profileLibraries: ProfileLibrariesDialog },
+  dialogs: { components: ComponentsDialog, importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, copyToStoreys: CopyToStoreysDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, typePacks: TypePacksDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, exportHtml: ExportHtmlDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, documents: DocumentsDialog, documentTemplates: TemplatesDialog, titleBlocks: TitleBlocksDialog, symbols: SymbolsDialog, importTable: ImportTableDialog, saveSymbol: SaveSymbolDialog, projectInfo: ProjectInfoDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, sun: SunDialog, exportExchange: ExchangeExportDialog, exportJg: JgExportDialog, sections: SectionsDialog, coordination: CoordinationDialog, profiles: ProfilesDialog, profileLibraries: ProfileLibrariesDialog },
   background: CoreBackground,
   propertySections: [
     { id: 'group', label: 'Group', classes: ['IfcGroup'], component: GroupSection },
@@ -301,6 +307,8 @@ const core: LapinModule = {
     { id: 'titleBlock', label: 'Title block', classes: ['LapinSheet'], component: SheetSection, fieldKeys: butDiscipline('LapinSheet') },
     { id: 'storeyLevels', label: 'Levels', classes: ['IfcBuildingStorey'], component: StoreySection, replacesFields: () => true },
     { id: 'viewSettings', label: 'View settings', classes: ['LapinView'], component: ViewSettingsSection, fieldKeys: viewFields },
+    // The symbol a section, an elevation, a grid axis, a level, a callout or a view is marked with (docs/plan-user-extensibility.md §3.3).
+    { id: 'markerSymbol', label: 'Marker symbol', classes: ['LapinView', 'IfcGrid', 'IfcBuildingStorey', 'LapinInset'], shows: (n) => slotsFor(n).length > 0, component: MarkerSymbolSection },
   ],
   hotbar: [
     { id: 'select', label: 'Select', icon: MousePointer2, shortcut: 'Esc', run: () => setTool(null) },

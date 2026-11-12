@@ -1,10 +1,11 @@
 /** Structural analysis: stage S0 (docs/plan-fem.md §8: load cases, loads on a plan, the combinations, the IFC Structural Analysis View) and S1b (§9.6: Run analysis, the results, the diagrams in 3D, the bars' releases). */
 
-import { ArrowDown, ArrowDownToLine, ListChecks, Play, Weight } from 'lucide-react';
+import { ArrowDown, ArrowDownToLine, FileUp, ListChecks, Play, Weight } from 'lucide-react';
 import type { LapinModule, ToolDef } from '../../platform/module';
 import { notify, useUi } from '../../app/store';
 import { lazyPart } from '../../platform/lazyPart';
 import { areaLoadArgs, lineLoadArgs, pointLoadArgs } from './loads';
+import { openImportTable } from '../core/tables/tables';
 import { currentLoad, LoadOption } from './prefs';
 import { OccupancySection } from './OccupancySection';
 import { BAR_CLASSES } from './results';
@@ -31,6 +32,8 @@ function chosen(kind: 'area' | 'line' | 'point') {
 }
 
 const cases: ToolDef = { id: 'analysis.cases', label: 'Load cases…', icon: ListChecks, run: () => useUi.setState({ dialog: 'analysisLoads' }) };
+const importLoads: ToolDef = { id: 'analysis.importLoads', label: 'Import loads…', icon: FileUp, run: () => openImportTable('analysis.loads', 'Import loads') };
+const importCases: ToolDef = { id: 'analysis.importCases', label: 'Import load cases…', icon: FileUp, run: () => openImportTable('analysis.cases', 'Import load cases') };
 const runTool: ToolDef = { id: 'analysis.run', label: 'Run analysis', icon: Play, run: () => void runAnalysis() };
 const area: ToolDef = {
   id: 'analysis.areaLoad', label: 'Area load', icon: ArrowDownToLine, options: AreaOption,
@@ -55,7 +58,7 @@ const analysis: LapinModule = {
   tabs: [{
     // The Structure tab's group.
     id: 'structure', label: 'Structure', order: 30, include: ['modify'],
-    groups: [{ label: 'Loads', tools: [cases, area, line, point, runTool] }],
+    groups: [{ label: 'Loads', tools: [cases, area, line, point, runTool], small: [importLoads, importCases] }],
   }],
   dialogs: { analysisLoads: LoadsDialog, analysisResults: ResultsDialog },
   background: AnalysisWatch,

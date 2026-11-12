@@ -1,6 +1,6 @@
 /** Drafting: CAD drawing on views (lines, polylines, circles, arcs, hatches on layers, and their edits), dimensions that follow the elements, texts, grid axes. */
 
-import { ArrowRightToLine, Crosshair, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Unlink2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags, Grid3x3, Settings2, Image as ImageIcon, Ruler, Shapes, Shapes as SymbolsIcon, FolderPlus } from 'lucide-react';
+import { ArrowRightToLine, Crosshair, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Unlink2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags, Grid3x3, Settings2, Image as ImageIcon, Ruler, Replace, Shapes, Shapes as SymbolsIcon, FolderPlus } from 'lucide-react';
 import { AngleIcon, ArcLengthIcon, DiameterIcon, DimensionIcon, GridAxisIcon, LevelIcon, OrdinateIcon, RadiusIcon, SlopeIcon } from '../../icons';
 import type { Grip, GripStep, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { axisGrips, axisRef, outlineGrips, pt } from '../../viewport/gripKit';
@@ -23,10 +23,13 @@ import { TagOptions, tagCommand, tagGrips, useTagPrefs } from './tag';
 import { DRAW_ORDER, drawOrder } from '../../viewport/drawOrder';
 import { lazyPart } from '../../platform/lazyPart';
 import '../core/symbols/symbolTools';
+import { convertLayersInFront, convertSelection } from './convert/convert';
 import { SymbolSection } from '../core/symbols/SymbolSection';
 import { surveyPoint, useLocation } from '../../app/location';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
+const ConvertDialog = lazyPart(() => import('./convert/ConvertDialog').then((m) => m.ConvertDialog), { title: 'Convert drafting' });
+const ConvertLayersDialog = lazyPart(() => import('./convert/ConvertLayersDialog').then((m) => m.ConvertLayersDialog), { title: 'Convert layers' });
 const ImportDxfDialog = lazyPart(() => import('./ImportDxfDialog').then((m) => m.ImportDxfDialog), { title: 'Import DXF' });
 const ImportTraceDialog = lazyPart(() => import('./ImportTraceDialog').then((m) => m.ImportTraceDialog), { title: 'Import PDF or image' });
 const LayersDialog = lazyPart(() => import('./LayersDialog').then((m) => m.LayersDialog), { title: 'Drafting layers' });
@@ -632,6 +635,8 @@ const drafting: LapinModule = {
         { label: 'Symbol', tools: [cad('saveSymbol', 'Save as symbol', FolderPlus, 'SAVESYMBOL')], small: [cad('symbol', 'Symbol', Shapes, 'SYMBOL')] },
         orderGroup,
         { label: 'Linework', tools: [cad('linework', 'Linework', PenLine, 'LINEWORK')], small: [cad('lwJoin', 'Join', CornerUpRight, 'LWJOIN'), cad('lwTrim', 'Trim', Scissors, 'LWTRIM'), cad('lwExtend', 'Extend', ArrowRightToLine, 'LWEXTEND'), cad('lwReset', 'Reset', Eraser, 'LWRESET')] },
+        // Drafted lines and shapes made into elements by the modules' converters (docs/plan-user-extensibility.md §7.4–7.5).
+        { label: 'Convert', tools: [{ id: 'drafting.convert', label: 'Convert to…', icon: Replace, run: () => void convertSelection() }], small: [{ id: 'drafting.convertLayers', label: 'Convert layers…', icon: Layers, run: () => void convertLayersInFront() }] },
         { label: 'Layers', tools: [{ id: 'drafting.layers', label: 'Layers', icon: Layers, run: () => useUi.setState({ dialog: 'draftLayers' }) }] },
         { label: 'Import', tools: [{ id: 'drafting.importDxf', label: 'Import DXF', icon: FileInput, run: () => void importDxf() }],
           small: [{ id: 'drafting.importTrace', label: 'PDF or image', icon: ImageIcon, run: () => void importTrace() }, scaleImage] },
@@ -666,7 +671,7 @@ const drafting: LapinModule = {
     },
   ],
   hotbar: [dimension],
-  dialogs: { draftLayers: LayersDialog, importDxf: ImportDxfDialog, importTrace: ImportTraceDialog, grid: GridDialog },
+  dialogs: { convertDrafting: ConvertDialog, convertLayers: ConvertLayersDialog, draftLayers: LayersDialog, importDxf: ImportDxfDialog, importTrace: ImportTraceDialog, grid: GridDialog },
   propertySections: [
     // The drafted kinds show their own fields (a line its ends, a circle its radius), so the class's generic ones stay out.
     { id: 'draft', label: 'Drafting', classes: ['IfcAnnotation'], component: DraftSection, replacesFields: draftsFields },

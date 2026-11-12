@@ -13,6 +13,7 @@ import { Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { PendingDialog } from './PendingDialog';
+import { MarkerSymbolsStandards } from './symbols/SlotPicker';
 import { BuildupEditor } from './BuildupEditor';
 import { LeaderEditor, type LeaderEntry } from './LeaderEditor';
 import { BUILDUP_DEFAULTS, type BuildupEntry } from './buildupTag';
@@ -185,6 +186,7 @@ export function StandardsDialog() {
             onBlur={(e) => markOption(row.key, e.target.value, was, row.size ? 1 : 0.5, row.size ? 50 : 20)} /> mm</dd>,
         ];
       })}
+      <MarkerSymbolsStandards />
     </dl>
   );
   return (

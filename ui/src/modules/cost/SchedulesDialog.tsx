@@ -4,7 +4,8 @@
  */
 
 import { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { FileUp, X } from 'lucide-react';
+import { openImportTable } from '../core/tables/tables';
 import { useUi } from '../../app/store';
 import { query, useSession } from '../../engine/session';
 import { newSchedule, openSchedule, type ScheduleKind } from './schedules';
@@ -35,7 +36,7 @@ export function SchedulesDialog() {
             </ul>
           </>}
         </div>
-        <footer className="dialog-foot"><span className="grow" /><button type="button" className="btn" onClick={close}>Close</button></footer>
+        <footer className="dialog-foot"><button type="button" className="btn" data-field="import-properties" title="Property values from a CSV or Excel file or pasted cells, onto elements by GlobalId, mark or name" onClick={() => openImportTable('core.properties', 'Import property values')}><FileUp size={14} />Import property values…</button><span className="grow" /><button type="button" className="btn" onClick={close}>Close</button></footer>
       </div>
     </div>
   );

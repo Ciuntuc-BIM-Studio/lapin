@@ -15,6 +15,7 @@ import { dxfFile } from '../../engine/files';
 import { execute, query, useSession } from '../../engine/session';
 import { frontView } from '../../viewport/frontView';
 import { zoomHost } from '../../viewport/zoom';
+import { openConvertLayers } from './convert/convert';
 import { shortNumber } from '../../platform/vec';
 
 interface Info {
@@ -30,7 +31,7 @@ interface Info {
   map?: { likely: boolean; units?: string; georeferenced: boolean; crs: string | null };
 }
 
-interface Result { file: string; entities: number; shapes: number; hatches: number; texts: number; dimensions: number; layers: string[]; patterns: string[]; skipped: Record<string, number>; units: string; unitsGuessed: boolean; flipped: boolean }
+interface Result { file: string; entities: number; shapes: number; hatches: number; texts: number; dimensions: number; symbols?: number; instances?: number; layers: string[]; patterns: string[]; skipped: Record<string, number>; units: string; unitsGuessed: boolean; flipped: boolean }
 
 const UNITS = [['auto', 'as the file says'], ['mm', 'millimetres'], ['cm', 'centimetres'], ['m', 'metres'], ['in', 'inches'], ['ft', 'feet']];
 
@@ -50,6 +51,8 @@ export function ImportDxfDialog() {
   const [dimensions, setDimensions] = useState('native');
   const [joinDimensions, setJoinDimensions] = useState(true);
   const [link, setLink] = useState(false);
+  const [blocks, setBlocks] = useState(false);
+  const [convertAfter, setConvertAfter] = useState(false);
   const [place, setPlace] = useState<'origin' | 'map'>('origin');
   const [off, setOff] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
@@ -91,14 +94,16 @@ export function ImportDxfDialog() {
         ...(flip === 'auto' ? {} : { flip: flip === 'yes' }),
         scale: Number(scale.replace(',', '.')) || 1,
         ...(layers && off.size ? { layers } : {}),
-        texts, hatches, dimensions, joinDimensions, link, ...(byMap ? { map: true } : {}),
+        texts, hatches, dimensions, joinDimensions, link, ...(blocks ? { blocks: 'symbols' } : {}), ...(byMap ? { map: true } : {}),
       }) as Result | null;
       if (r) {
-        const parts = [r.shapes ? `${r.shapes} shapes` : '', r.hatches ? `${r.hatches} hatches` : '', r.texts ? `${r.texts} texts` : '', r.dimensions ? `${r.dimensions} dimensions` : ''].filter(Boolean);
+        const parts = [r.shapes ? `${r.shapes} shapes` : '', r.hatches ? `${r.hatches} hatches` : '', r.texts ? `${r.texts} texts` : '', r.dimensions ? `${r.dimensions} dimensions` : '', r.symbols ? `${r.symbols} symbols` : '', r.instances ? `${r.instances} block instances` : ''].filter(Boolean);
         const skipped = Object.entries(r.skipped ?? {});
         notify(`Imported ${r.file} (${r.units}${r.flipped ? ', mirrored' : ''}): ${parts.join(', ') || 'nothing'}${r.layers.length ? `; ${r.layers.length} new layers` : ''}${r.patterns.length ? `; patterns ${r.patterns.join(', ')}` : ''}.${skipped.length ? ` Left out: ${skipped.map(([k, n]) => `${n} ${k}`).join(', ')}.` : ''}`);
       }
       close();
+      // The layers offered for conversion to walls, columns, bars… (Convert layers…), when asked.
+      if (convertAfter && viewId) openConvertLayers(viewId);
       // The drawing framed: a map's lies far from where the plan was looking.
       setTimeout(() => zoomHost()?.fitAll(), 250);
     } catch (e) {
@@ -158,6 +163,12 @@ export function ImportDxfDialog() {
                   <label><input type="checkbox" checked={texts} onChange={(e) => setTexts(e.target.checked)} /> texts</label>
                   <label><input type="checkbox" checked={hatches} onChange={(e) => setHatches(e.target.checked)} /> hatches</label>
                 </dd>
+                {info.blocks > 0 && <>
+                  <dt title="Each block of the file becomes a symbol of the project, each insert an instance placed, turned and turned over as it was; without: the blocks are exploded into lines">Blocks</dt>
+                  <dd><label><input type="checkbox" data-field="dxf-blocks" checked={blocks} onChange={(e) => setBlocks(e.target.checked)} /> keep as symbols</label></dd>
+                </>}
+                <dt title="Opens Convert layers… after the import: A-WALL to walls, A-COLS to columns, steel layers to bars">Then</dt>
+                <dd><label><input type="checkbox" data-field="dxf-convert" checked={convertAfter} onChange={(e) => setConvertAfter(e.target.checked)} /> convert its layers to elements…</label></dd>
                 <dt title="Read-only, managed under Manage → Links: shown or hidden, halftone, unlinked, converted to native, read again from its file">As a link</dt>
                 <dd><label><input type="checkbox" checked={link} onChange={(e) => setLink(e.target.checked)} /> read-only, kept with the file</label></dd>
                 <dt>Dimensions</dt>
