@@ -554,7 +554,7 @@ export const scenes = [
     id: 'finishes-by-view',
     async run(t) {
       await t.fresh();
-      await house(t, { roof: false });
+      const { walls } = await house(t, { roof: false });
       const s = await t.storey();
       const plan = await t.call('doc.query', { name: 'view.drawing', args: { storeyId: s } });
       t.expect(plan.structure === 'noFinishes', `a new project's plan leaves out the finishes (${plan.structure})`);
@@ -590,6 +590,26 @@ export const scenes = [
       await t.fit();
       await t.wait(800);
       await t.shot('finishes-section', { of: '[data-testid=drawing]', pad: 0 });
+      // Decision 502: a room's finishes and its skirting go with the finish layers; a partition's door goes with the partition.
+      const room = (await t.cmd('architecture.addRoom', { storeyId: s, x: 3, y: 4 })).id;
+      const finish = (await t.cmd('architecture.roomFinishTypeFromLibrary', { name: 'Living room' })).id;
+      await t.cmd('architecture.applyRoomFinish', { roomIds: [room], typeId: finish });
+      const skirting = (await t.cmd('architecture.addSkirting', { storeyId: s, roomId: room })).id;
+      const across = (await t.cmd('view.create', { kind: 'section', name: 'G-G', start: [3, -1], end: [3, 9], depth: 1 })).id;
+      const owners = async () => new Set((await t.call('doc.query', { name: 'view.drawing', args: { id: across } })).marks.map((m) => m.id.split(/[#:]/)[0]));
+      const finishes = (await t.nodes()).filter((n) => n.type === 'LapinRoomFinish' && n.props.roomId === room).map((n) => n.id);
+      t.expect(finishes.length > 0, 'the room has its finishes');
+      const whole = await owners();
+      t.expect(whole.has(skirting) && finishes.some((id) => whole.has(id)), 'the entire model draws the room\'s finishes and its skirting');
+      await t.cmd('view.setStyle', { id: across, layers: 'noFinishes' });
+      const bare = await owners();
+      t.expect(!bare.has(skirting) && !finishes.some((id) => bare.has(id)), 'without finishes, the room\'s finishes and its skirting are left out');
+      const door = (await t.cmd('architecture.addDoor', { wallId: walls.inner, x: 7, y: 6 })).id;
+      await t.cmd('element.setParam', { ids: [walls.inner], pset: 'Pset_WallCommon', name: 'LoadBearing', value: false });
+      const plan2 = await t.cmd('view.create', { kind: 'plan', storeyId: s, name: 'Load-bearing cores', layers: 'coreLoadBearing' });
+      const cores2 = new Set((await t.call('doc.query', { name: 'view.drawing', args: { id: plan2.id } })).marks.map((m) => m.id.split(/[#:]/)[0]));
+      t.expect(!cores2.has(walls.inner) && (!door || !cores2.has(door)), 'the partition and its door are left out of the load-bearing cores');
+      t.expect(cores2.has(walls[0]), 'a wall that says nothing of its load is drawn');
       await t.ui({ keyPlan: true });
     },
   },

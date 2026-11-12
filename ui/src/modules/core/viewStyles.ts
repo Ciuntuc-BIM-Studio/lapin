@@ -14,9 +14,9 @@ export type LayerMode = 'all' | 'noFinishes' | 'core' | 'coreLoadBearing';
 /** The partial structure display's presets, as the view settings, the view styles and the view's corner offer them. */
 export const STRUCTURE_MODES: [LayerMode, string, string][] = [
   ['all', 'Entire model', 'Every layer of walls, floors and roofs'],
-  ['noFinishes', 'Without finishes', 'The finish layers (plasters, renders, floor finishes: category Finish) left out; the insulation, membranes and structure drawn'],
+  ['noFinishes', 'Without finishes', "The finish layers (plasters, renders, floor finishes: category Finish) left out, with the rooms' finishes and the skirtings; the insulation, membranes and structure drawn"],
   ['core', 'Core only', 'The cores alone, between their boundaries; the finishes, insulation and membranes left out'],
-  ['coreLoadBearing', 'Core of load-bearing elements only', 'The cores of the load-bearing elements alone (LoadBearing in their properties, as Pset_WallCommon); partitions, coverings and room finishes not drawn'],
+  ['coreLoadBearing', 'Core of load-bearing elements only', 'The cores of the load-bearing elements alone (LoadBearing in their properties, as Pset_WallCommon; a wall that says nothing bears load); partitions with their doors and windows, coverings and room finishes not drawn'],
 ];
 export const structureLabel = (m: LayerMode | null | undefined) => STRUCTURE_MODES.find(([k]) => k === m)?.[1] ?? STRUCTURE_MODES[0][1];
 
@@ -39,7 +39,9 @@ export interface ViewStyle { id: string; name: string; discipline: string | null
   /** The finish layers by the kind of view (the forum's topic #30): plans, and sections with elevations, drawing the walls' and the floors' finishes; on unless false. */
   wallFinishesPlan?: boolean; wallFinishesSection?: boolean; floorFinishesPlan?: boolean; floorFinishesSection?: boolean;
   /** Its plans' and its sections' and elevations' partial structure display (decision 500); unset, its layers. */
-  layersPlan?: LayerMode | null; layersSection?: LayerMode | null }
+  layersPlan?: LayerMode | null; layersSection?: LayerMode | null;
+  /** Whether the partial structure display leaves out the separate finish elements (rooms' finishes, skirtings, finish coverings) with the finish layers (decision 502); on unless false (a project made before). */
+  finishElements?: boolean }
 
 /** The four finish choices, by kind of view and category, with their labels and what they do, as View settings and View styles offer them. */
 export const FINISH_FIELDS: { key: 'wallFinishesPlan' | 'wallFinishesSection' | 'floorFinishesPlan' | 'floorFinishesSection'; plan: boolean; label: string; column: string; title: string }[] = [

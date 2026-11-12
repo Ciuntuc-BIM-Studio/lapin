@@ -75,7 +75,8 @@ public static class ViewStyles
     /// for its plans and for its sections and elevations, null to take <see cref="Layers"/> (<see cref="LayersFor"/>).
     /// </summary>
     public sealed record Style(string Id, string Name, string? Discipline, string Layers, bool Joins, bool Overhead, bool Ifc2d = true, bool Voids = false, bool VoidSizes = true, bool FinishHatch = true, bool SurfaceHatch = true, string Entourage = "outline", string? EntourageFill = null, string? GraphicsSet = null, int Detail = PlanDetail.Lod350,
-        bool WallFinishesPlan = true, bool WallFinishesSection = true, bool FloorFinishesPlan = true, bool FloorFinishesSection = true, string? LayersPlan = null, string? LayersSection = null)
+        bool WallFinishesPlan = true, bool WallFinishesSection = true, bool FloorFinishesPlan = true, bool FloorFinishesSection = true, string? LayersPlan = null, string? LayersSection = null,
+        bool FinishElements = true)
     {
         /// <summary>The partial structure display of a view of this kind (a plan, a section or an elevation, another).</summary>
         public string LayersFor(string? viewKind) => viewKind switch
@@ -112,6 +113,7 @@ public static class ViewStyles
             if (GraphicsSet != null) o["graphicsSet"] = GraphicsSet;
             if (LayersPlan != null) o["layersPlan"] = LayersPlan;
             if (LayersSection != null) o["layersSection"] = LayersSection;
+            if (!FinishElements) o["finishElements"] = false;
             return o;
         }
 
@@ -136,7 +138,9 @@ public static class ViewStyles
             // A style saved before the finishes by kind of view (topic #30): every finish drawn, as before.
             On(o["wallFinishesPlan"]), On(o["wallFinishesSection"]), On(o["floorFinishesPlan"]), On(o["floorFinishesSection"]),
             // A style saved before the structure display by kind of view (decision 500): its plans and sections take its layers.
-            Mode(o["layersPlan"]), Mode(o["layersSection"]));
+            Mode(o["layersPlan"]), Mode(o["layersSection"]),
+            // Whether the separate finish elements go with the finish layers (decision 502): a project made before is marked false (StructureUpgrade).
+            On(o["finishElements"]));
 
         static string? Mode(JsonNode? n) => (string?)n is { } l && LayerModes.Contains(l) ? l : null;
 
@@ -162,7 +166,7 @@ public static class ViewStyles
     ];
 
     /// <summary>The styles a project made before decision 500 read as when it had none of its own: every view the entire model but the structural ones.</summary>
-    public static IReadOnlyList<Style> LegacyDefaults => Defaults.Select(s => s with { LayersPlan = null, LayersSection = null }).ToList();
+    public static IReadOnlyList<Style> LegacyDefaults => Defaults.Select(s => s with { LayersPlan = null, LayersSection = null, FinishElements = false }).ToList();
 
     public static IReadOnlyList<Style> All(IModelView m) =>
         Spatial.Project(m)?.Attrs[Key] is JsonArray arr && arr.Count > 0
@@ -212,18 +216,26 @@ public static class ViewStyles
 
     /// <summary>Whether a view draws a part of a layered element (a part keyed layer:&lt;n&gt;; any other part always draws).</summary>
     public static bool Draws(IModelView m, Style s, string element, string? partKey, Dictionary<string, IReadOnlyList<LayerBand>?> cache) =>
-        Draws(m, s.Layers, element, partKey, cache);
+        Draws(m, s.Layers, element, partKey, cache, s.FinishElements);
 
     /// <summary>
     /// Whether a layers mode (all, noFinishes, core, coreLoadBearing) draws a part of a layered element (a part keyed
     /// layer:&lt;n&gt;; any other part always draws); the cores of the load-bearing elements only draw no part of an element
     /// that bears no load (<see cref="BearsLoad"/>), and the core of one that does.
     /// </summary>
-    public static bool Draws(IModelView m, string layers, string element, string? partKey, Dictionary<string, IReadOnlyList<LayerBand>?> cache)
+    /// <remarks>
+    /// <paramref name="finishElements"/>: whether a separate finish element (<see cref="FinishElementSub"/>: a room's finish, a
+    /// skirting, a reference all of one finish) goes with the layers of its role (decision 502); false for a style of a project
+    /// made before, which drew them.
+    /// </remarks>
+    public static bool Draws(IModelView m, string layers, string element, string? partKey, Dictionary<string, IReadOnlyList<LayerBand>?> cache, bool finishElements = true)
     {
+        if (layers == "all") return true;
+        var el = m.Get(element);
+        if (finishElements && el != null && LeavesOut(layers, FinishElementSub(m, el))) return false;
         if (layers == "coreLoadBearing")
         {
-            if (m.Get(element) is { } el && !BearsLoad(m, el)) return false;
+            if (el != null && !BearsLoad(m, el)) return false;
             layers = "core";
         }
         if (layers == "all" || partKey is not { } k || !k.StartsWith("layer:", StringComparison.Ordinal)
@@ -274,6 +286,33 @@ public static class ViewStyles
 
     static string Checked(string l) => LayerModes.Contains(l) ? l : throw new CommandException($"„{l}” is not {LayerModesText}.");
 
+    /// <summary>Whether a layers mode leaves out what is of a layer role (finishes; insulation, membranes): without the finishes the finishes, the core modes all three.</summary>
+    public static bool LeavesOut(string layers, string? sub) =>
+        sub != null && (layers == "noFinishes" ? sub == "finishes" : layers is "core" or "coreLoadBearing");
+
+    /// <summary>The kinds of IfcCovering that are a finish (IFC's CoveringTypeEnum), and those of the other roles.</summary>
+    static string? CoveringSub(string? predefined) => predefined switch
+    {
+        "FLOORING" or "CLADDING" or "CEILING" or "MOLDING" or "SKIRTINGBOARD" => "finishes",
+        "INSULATION" => "insulation",
+        "MEMBRANE" => "membranes",
+        _ => null,
+    };
+
+    /// <summary>
+    /// The layer role a whole element is of, so the partial structure display leaves it out with the layers of that role
+    /// (decision 502): a room's finish (its floor, walls and ceiling) and a skirting are finishes; a reference all of one
+    /// material by that material (<see cref="ReferenceLayers.WholeSub"/>: a plaster lining, a wool layer brought as a wall); a
+    /// covering by its IFC kind (a flooring, a cladding, a ceiling, a moulding, a skirting board a finish, an insulation, a
+    /// membrane; a roofing goes with its roof). Null for any other element.
+    /// </summary>
+    public static string? FinishElementSub(IModelView m, Entity e)
+    {
+        if (e.Class is "LapinRoomFinish" or "LapinSkirting") return "finishes";
+        if (ReferenceLayers.WholeSub(m, e) is { } whole) return whole;
+        return e.Class == "IfcCovering" ? CoveringSub(e.PredefinedType ?? m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.PredefinedType) : null;
+    }
+
     /// <summary>The classes whose elements bear load or not (IFC's Pset_…Common LoadBearing), which the cores of the load-bearing elements only leave out when they do not.</summary>
     static readonly HashSet<string> Bearing = [IfcClass.Wall, "IfcWallStandardCase", "IfcCurtainWall", IfcClass.Slab, IfcClass.Roof, IfcClass.Column, IfcClass.Beam, IfcClass.Footing, "IfcPile", "IfcMember", "IfcPlate", "IfcCovering", "LapinRoomFinish"];
 
@@ -283,15 +322,21 @@ public static class ViewStyles
     /// <summary>
     /// Whether the cores of the load-bearing elements only (decision 500) keep an element: one of a class that bears load or
     /// not by IFC's LoadBearing (walls, floors, roofs, columns, beams, members, plates, footings, piles, coverings, a room's
-    /// finishes) when it or its type says it bears load (<see cref="Coordination.Provisions.LoadBearing"/>: Pset_WallCommon.LoadBearing for
-    /// a wall, as the analytical model reads it), or when neither says and it is a column, beam, footing, pile, floor or roof;
-    /// a covering or a room's finish never. Any other element (a door, a stair, furniture) is kept.
+    /// finishes) when it or its type says it bears load (<see cref="Coordination.Provisions.LoadBearing"/>: Pset_WallCommon.LoadBearing
+    /// for a wall); when neither says, a wall bears load unless IFC calls it or its type a partition (PARTITIONING; decision
+    /// 502: so the preset is of use before every wall is marked), and so do a column, beam, footing, pile, floor or roof; a
+    /// covering or a room's finish never. Any other element (a door, a stair, furniture) is kept.
+    /// The analytical model keeps its own rule (<see cref="Coordination.Provisions.LoadBearing"/>: a wall bears load only when
+    /// it says so; the others are partitions, whose weight it lays on the floors).
     /// </summary>
     public static bool BearsLoad(IModelView m, Entity e)
     {
         if (!Bearing.Contains(e.Class)) return true;
         if (e.Class is "IfcCovering" or "LapinRoomFinish") return false;
-        return Coordination.Provisions.LoadBearingOrNull(m, e) ?? BearingUnlessSaid.Contains(e.Class);
+        if (Coordination.Provisions.LoadBearingOrNull(m, e) is { } said) return said;
+        if (e.Class is IfcClass.Wall or "IfcWallStandardCase")
+            return !(e.PredefinedType == "PARTITIONING" || m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.PredefinedType == "PARTITIONING");
+        return BearingUnlessSaid.Contains(e.Class);
     }
 
     static JsonArray Write(IEnumerable<Style> styles) => new(styles.Select(s => (JsonNode)s.ToJson()).ToArray());
@@ -323,6 +368,7 @@ public static class ViewStyles
         if (a.ContainsKey("entourageFill")) s = s with { EntourageFill = CheckedFill(a["entourageFill"]) };
         if (a.ContainsKey("detail")) s = s with { Detail = PlanDetail.LodOf(a["detail"]) ?? throw new CommandException(PlanDetail.LodProblem) };
         if (a.ContainsKey("graphicsSet")) s = s with { GraphicsSet = (string?)a["graphicsSet"] is { Length: > 0 } gs ? gs : null };
+        if (a.ContainsKey("finishElements")) s = s with { FinishElements = Own(a["finishElements"]) ?? throw new CommandException("finishElements is true or false.") };
         foreach (var f in FinishFields)
         {
             if (!a.ContainsKey(f)) continue;
@@ -338,24 +384,33 @@ public static class ViewStyles
         return s;
     }
 
-    /// <summary>The project's mark that its views' structure display is read as decision 500 has it (a project made before is upgraded).</summary>
+    /// <summary>The project's mark that its views' structure display is read as decisions 500 and 502 have it (a project made before is upgraded).</summary>
     public const string StructureRevKey = "structureRev";
+
+    /// <summary>The mark's value now: 1 decision 500's display by kind of view, 2 the finish elements going with the finish layers (decision 502).</summary>
+    public const int StructureRev = 2;
 
     /// <summary>
     /// A project made before the structure display by kind of view (decision 500) keeps what its views drew: one without
     /// styles of its own reads the styles it read then (<see cref="LegacyDefaults"/>: its plans the entire model), written
     /// on it; one with its own keeps them as they are (a style without <c>layersPlan</c> or <c>layersSection</c> takes its
     /// <c>layers</c> for every view, as before), and decision 496's finish choices by kind of view stay as they were, the
-    /// advanced detail of the structure display. Then the project is marked.
+    /// advanced detail of the structure display. A project made before the finish elements went with the finish layers
+    /// (decision 502, a mark under 2) keeps drawing them: its styles say <c>finishElements</c> false (one without styles of
+    /// its own gets the defaults it read, so marked). Then the project is marked.
     /// </summary>
     public sealed class StructureUpgrade : IProjectUpgrade
     {
         public (IReadOnlyList<Entity> Entities, IReadOnlyList<Relation> Relations) Upgrade(IReadOnlyList<Entity> entities, IReadOnlyList<Relation> relations)
         {
-            if (entities.FirstOrDefault(e => e.Class == IfcClass.Project) is not { } project || project.Attrs[StructureRevKey] != null) return (entities, relations);
+            if (entities.FirstOrDefault(e => e.Class == IfcClass.Project) is not { } project) return (entities, relations);
+            int? rev = Json.Number(project.Attrs[StructureRevKey]) is { } r ? (int)Math.Round(r) : null;
+            if (rev >= StructureRev) return (entities, relations);
             var attrs = project.CloneAttrs();
-            if (attrs[Key] is not JsonArray { Count: > 0 }) attrs[Key] = Write(LegacyDefaults);
-            attrs[StructureRevKey] = 1;
+            if (rev == null && attrs[Key] is not JsonArray { Count: > 0 }) attrs[Key] = Write(LegacyDefaults);
+            if (attrs[Key] is not JsonArray { Count: > 0 } own) attrs[Key] = Write(Defaults.Select(s => s with { FinishElements = false }));
+            else foreach (var o in own.OfType<JsonObject>()) o["finishElements"] = false;
+            attrs[StructureRevKey] = StructureRev;
             var up = project.With(attrs: attrs);
             return (entities.Select(e => e.Id == project.Id ? up : e).ToList(), relations);
         }

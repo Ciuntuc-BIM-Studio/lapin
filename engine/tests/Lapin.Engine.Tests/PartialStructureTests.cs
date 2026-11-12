@@ -89,8 +89,10 @@ public sealed class PartialStructureTests
         // The core only: the insulation goes too.
         Set("core");
         Assert.Equal(["layer:2"], Keys(f, plan, wall));
-        // The cores of the load-bearing elements only: a wall said to bear load keeps its core, one that does not is not drawn.
+        // The cores of the load-bearing elements only: a wall said to bear load (or saying nothing) keeps its core, one that does not is not drawn.
         Set("coreLoadBearing");
+        Assert.Equal(["layer:2"], Keys(f, plan, wall));
+        Bears(f, wall, false);
         Assert.Empty(Keys(f, plan, wall));
         Bears(f, wall, true);
         Assert.Equal(["layer:2"], Keys(f, plan, wall));
@@ -111,8 +113,8 @@ public sealed class PartialStructureTests
         f.Run("view.setStyle", new JsonObject { ["id"] = plan, ["layers"] = "coreLoadBearing" });
         Assert.Equal(["layer:1"], Keys(f, plan, bearing));
         Assert.Empty(Keys(f, plan, partition));
-        // A wall that says nothing bears none (Pset_WallCommon.LoadBearing unset), as the analytical model takes it.
-        Assert.Empty(Keys(f, plan, unsaid));
+        // A wall that says nothing bears load here (decision 502), so the preset is of use before every wall is marked.
+        Assert.Equal(["layer:1"], Keys(f, plan, unsaid));
         var vg = VisibilityGraphics.Of(f.Model, Views.Find(f.Model, plan)!);
         Assert.True(vg.Hides(f.Model.Get(partition)!));
         Assert.False(vg.Hides(f.Model.Get(bearing)!));
@@ -127,6 +129,197 @@ public sealed class PartialStructureTests
         var g = f.Session.Geometry(partition)!;
         Assert.All(g.Parts, p => Assert.Contains("coreLoadBearing", ViewStyles.HiddenBy(f.Model, partition, p, bands) ?? []));
         Assert.DoesNotContain("coreLoadBearing", ViewStyles.HiddenBy(f.Model, bearing, f.Session.Geometry(bearing)!.Parts.Single(p => p.Key == "layer:1"), bands) ?? []);
+    }
+
+    /// <summary>The elements a view's drawing marks (what its snaps and picking take), by owner (<c>id#axis</c>, <c>id:part</c> name <c>id</c>).</summary>
+    static HashSet<string> Marked(Fixture f, string view) =>
+        ((JsonArray)Views.Drawing(new Q(f), Views.Find(f.Model, view)!)["marks"]!).Select(x => (string)x!["id"]!)
+            .Select(id => id.Split('#', ':')[0]).ToHashSet();
+
+    /// <summary>Whether a view draws anything of an element: a cut, a line, a fill.</summary>
+    static bool Drawn(Fixture f, string view, string element)
+    {
+        var (d, _, problem) = Views.Generate(new Q(f), Views.Find(f.Model, view)!);
+        Assert.True(d != null, problem);
+        return d!.Cuts.Any(c => c.Element == element) || d.Lines.Any(l => l.Element == element) || (d.Fills ?? []).Any(x => x.Element == element);
+    }
+
+    [Fact]
+    public void A_wall_that_says_nothing_bears_load_and_a_partition_says_it_does_not()
+    {
+        var f = new Fixture();
+        var unsaid = f.Wall(0, 0, 5, 0);
+        // A partition type, marked as Lapin's partitions are: Pset_WallCommon.LoadBearing false on the type.
+        var partitionType = f.Type("Plasterboard partition", ("Plasterboard", 0.0125, false), ("Steel studs", 0.075, true), ("Plasterboard", 0.0125, false));
+        f.Run("element.setParam", new JsonObject { ["id"] = partitionType, ["pset"] = "Pset_WallCommon", ["name"] = "LoadBearing", ["value"] = false });
+        var partition = f.Wall(0, 3, 5, 3, partitionType);
+        Assert.True(ViewStyles.BearsLoad(f.Model, f.Model.Get(unsaid)!));
+        Assert.False(ViewStyles.BearsLoad(f.Model, f.Model.Get(partition)!));
+        // IFC's own word for a partition (IfcWall PARTITIONING, on the wall or its type), unless LoadBearing says otherwise.
+        Assert.False(ViewStyles.BearsLoad(f.Model, new Entity("p", IfcClass.Wall, "P", [], "PARTITIONING")));
+        Assert.True(ViewStyles.BearsLoad(f.Model, new Entity("p2", IfcClass.Wall, "P", new JsonObject { ["loadBearing"] = true }, "PARTITIONING")));
+        // A curtain wall says nothing and bears none, as before.
+        Assert.False(ViewStyles.BearsLoad(f.Model, new Entity("cw", "IfcCurtainWall", "CW", [])));
+        var plan = Plan(f);
+        f.Run("view.setStyle", new JsonObject { ["id"] = plan, ["layers"] = "coreLoadBearing" });
+        Assert.NotEmpty(Keys(f, plan, unsaid));
+        Assert.Empty(Keys(f, plan, partition));
+        // The analytical model keeps its own rule: a wall bears load only when it says so (its partitions' loads come from the rest).
+        Assert.False(Lapin.Platform.Coordination.Provisions.LoadBearing(f.Model, f.Model.Get(unsaid)!));
+        Assert.False(Lapin.Platform.Coordination.Provisions.LoadBearing(f.Model, f.Model.Get(partition)!));
+    }
+
+    [Fact]
+    public void The_doors_and_windows_of_a_wall_left_out_go_with_it()
+    {
+        var f = new Fixture();
+        var bearing = f.Wall(0, 0, 5, 0);
+        var partition = f.Wall(0, 3, 5, 3);
+        Bears(f, partition, false);
+        f.Run("architecture.addDoor", new JsonObject { ["wallId"] = bearing, ["along"] = 1.5 });
+        f.Run("architecture.addDoor", new JsonObject { ["wallId"] = partition, ["along"] = 1.5 });
+        f.Run("architecture.addWindow", new JsonObject { ["wallId"] = partition, ["along"] = 3.5 });
+        var inBearing = Openings.PlacedOn(f.Model, bearing).Single().Fill!;
+        var inPartition = Openings.PlacedOn(f.Model, partition).Select(p => p.Fill!).ToList();
+        Assert.Equal(2, inPartition.Count);
+        var plan = Plan(f);
+        var section = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = new JsonArray(1.5, -1), ["end"] = new JsonArray(1.5, 4) })!["id"]!;
+        // Drawn in the entire model.
+        Assert.All(inPartition, d => Assert.True(Drawn(f, plan, d.Id)));
+        foreach (var v in new[] { plan, section }) f.Run("view.setStyle", new JsonObject { ["id"] = v, ["layers"] = "coreLoadBearing" });
+        // The plan: the partition's door and window gone with it (their symbols too, so nothing to snap to or pick), the other door kept.
+        Assert.All(inPartition, d => Assert.False(Drawn(f, plan, d.Id)));
+        Assert.True(Drawn(f, plan, inBearing.Id));
+        var marked = Marked(f, plan);
+        Assert.DoesNotContain(partition, marked);
+        Assert.All(inPartition, d => Assert.DoesNotContain(d.Id, marked));
+        Assert.Contains(inBearing.Id, marked);
+        // The section too; and Visibility / Graphics says it of the doors and of their openings.
+        Assert.False(Drawn(f, section, inPartition[0].Id));
+        Assert.True(Drawn(f, section, inBearing.Id));
+        var vg = VisibilityGraphics.Of(f.Model, Views.Find(f.Model, plan)!);
+        Assert.All(inPartition, d => Assert.True(vg.Hides(d)));
+        Assert.True(vg.Hides(Openings.PlacedOn(f.Model, partition).First().Opening));
+        Assert.False(vg.Hides(inBearing));
+        // Without the finishes, every door draws.
+        f.Run("view.setStyle", new JsonObject { ["id"] = plan, ["layers"] = "noFinishes" });
+        Assert.All(inPartition, d => Assert.True(Drawn(f, plan, d.Id)));
+    }
+
+    /// <summary>A 5 × 4 m room walled by the default type, its finish laid from the library, a skirting round it.</summary>
+    static (Fixture F, string Room, string[] Walls, List<Entity> Finishes, string Skirting) FinishedRoom()
+    {
+        var f = new Fixture();
+        var walls = new[] { ((0.0, 0.0), (5.0, 0.0)), ((5.0, 0.0), (5.0, 4.0)), ((5.0, 4.0), (0.0, 4.0)), ((0.0, 4.0), (0.0, 0.0)) }
+            .Select(x => f.Wall(x.Item1.Item1, x.Item1.Item2, x.Item2.Item1, x.Item2.Item2)).ToArray();
+        var room = (string)f.Run("architecture.addRoom", new JsonObject { ["storeyId"] = f.Storey, ["x"] = 2.5, ["y"] = 2 })!["id"]!;
+        var type = (string)f.Run("architecture.roomFinishTypeFromLibrary", new JsonObject { ["name"] = "Living room" })!["id"]!;
+        f.Run("architecture.applyRoomFinish", new JsonObject { ["roomIds"] = new JsonArray(room), ["typeId"] = type });
+        var skirting = (string)f.Run("architecture.addSkirting", new JsonObject { ["storeyId"] = f.Storey, ["roomId"] = room })!["id"]!;
+        var finishes = f.Model.OfClass(RoomFinishes.Class).Where(e => e.Str("roomId") == room).ToList();
+        return (f, room, walls, finishes, skirting);
+    }
+
+    [Fact]
+    public void A_rooms_finishes_and_skirtings_go_with_the_finish_layers()
+    {
+        var (f, _, walls, finishes, skirting) = FinishedRoom();
+        string Part(string p) => finishes.Single(e => e.Str("part") == p).Id;
+        var section = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = new JsonArray(2.5, -1), ["end"] = new JsonArray(2.5, 5) })!["id"]!;
+        var plan = Plan(f);
+        // The entire model: the floor, the walls' finish, the ceiling and the skirting all cut by the section.
+        f.Run("view.setStyle", new JsonObject { ["id"] = section, ["layers"] = "all" });
+        Assert.All(new[] { Part("floor"), Part("walls"), Part("ceiling"), skirting }, id => Assert.True(Drawn(f, section, id), id));
+        foreach (var mode in new[] { "noFinishes", "core", "coreLoadBearing" })
+        {
+            f.Run("view.setStyle", new JsonObject { ["id"] = section, ["layers"] = mode });
+            Assert.All(new[] { Part("floor"), Part("walls"), Part("ceiling"), skirting }, id => Assert.False(Drawn(f, section, id), $"{mode}: {id}"));
+            Assert.DoesNotContain(skirting, Marked(f, section));
+            // The walls themselves stay (the default wall says nothing of its load, so it bears it).
+            Assert.NotEmpty(Keys(f, section, walls[0]));
+        }
+        // A plan without the finishes leaves out the walls' finish its cut plane cuts, and sees the floor and the skirting under
+        // it as they are (decision 500's rule for what a plan cuts).
+        Assert.Equal("noFinishes", ViewStyles.Of(f.Model, Views.Find(f.Model, plan)!).Layers);
+        Assert.False(Drawn(f, plan, Part("walls")));
+        Assert.True(Drawn(f, plan, Part("floor")));
+        Assert.True(Drawn(f, plan, skirting));
+        f.Run("view.setStyle", new JsonObject { ["id"] = plan, ["layers"] = "all" });
+        Assert.True(Drawn(f, plan, Part("walls")));
+        // The 3D (and what it exports) leaves them out by the same modes.
+        var bands = new Dictionary<string, IReadOnlyList<LayerBand>?>();
+        foreach (var id in new[] { Part("walls"), Part("floor"), skirting })
+            Assert.All(f.Session.Geometry(id)!.Parts, p => Assert.Equal(["noFinishes", "core", "coreLoadBearing"], ViewStyles.HiddenBy(f.Model, id, p, bands) ?? []));
+        // The quantities stay the model's.
+        Assert.NotEmpty(f.Session.Quantities(skirting));
+    }
+
+    [Fact]
+    public void A_reference_all_of_one_finish_goes_with_the_finishes_and_one_of_insulation_with_the_cores()
+    {
+        var f = new Fixture();
+        Entity Reference(string id, string cls, string material, string? predefined = null)
+        {
+            var record = new Entity("rec-" + id, IfcSource.RecordClass, "IFC record", new JsonObject { ["snap"] = new JsonObject { ["t"] = "IFCMATERIAL", ["a"] = new JsonArray($"'{material}'", "$", "$") } });
+            var e = new Entity(id, cls, material, new JsonObject { ["reference"] = true, [IfcSource.Key] = new JsonObject { ["material"] = new JsonObject { ["record"] = record.Id } } }, predefined);
+            f.Session.Edit("put", x => { x.Add(record); x.Add(e); });
+            return f.Model.Get(id)!;
+        }
+        var plaster = Reference("plaster", "IfcCovering", "Gypsum plaster", "CLADDING");
+        var wool = Reference("wool", IfcClass.Wall, "Mineral wool");
+        var concrete = Reference("concrete", IfcClass.Wall, "Concrete C25/30");
+        var section = Section(f);
+        VisibilityGraphics Vg(string mode)
+        {
+            f.Run("view.setStyle", new JsonObject { ["id"] = section, ["layers"] = mode });
+            return VisibilityGraphics.Of(f.Model, Views.Find(f.Model, section)!);
+        }
+        Assert.Equal("finishes", ViewStyles.FinishElementSub(f.Model, plaster));
+        Assert.Equal("insulation", ViewStyles.FinishElementSub(f.Model, wool));
+        Assert.Null(ViewStyles.FinishElementSub(f.Model, concrete));
+        var all = Vg("all");
+        Assert.False(all.HidesPart(plaster, "body") || all.HidesPart(wool, "body"));
+        var noFinishes = Vg("noFinishes");
+        Assert.True(noFinishes.HidesPart(plaster, "body"));
+        Assert.False(noFinishes.HidesPart(wool, "body"));
+        var core = Vg("core");
+        Assert.True(core.HidesPart(plaster, "body"));
+        Assert.True(core.HidesPart(wool, "body"));
+        Assert.False(core.HidesPart(concrete, "body"));
+        // A native covering by its IFC kind: a flooring is a finish, an insulation goes with the cores, a roofing is its roof's.
+        Assert.Equal("finishes", ViewStyles.FinishElementSub(f.Model, new Entity("fl", "IfcCovering", "F", [], "FLOORING")));
+        Assert.Equal("insulation", ViewStyles.FinishElementSub(f.Model, new Entity("in", "IfcCovering", "I", [], "INSULATION")));
+        Assert.Null(ViewStyles.FinishElementSub(f.Model, new Entity("ro", "IfcCovering", "R", [], "ROOFING")));
+    }
+
+    [Fact]
+    public void A_project_made_before_draws_its_finish_elements_as_it_drew()
+    {
+        var (f, _, _, finishes, skirting) = FinishedRoom();
+        var section = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = new JsonArray(2.5, -1), ["end"] = new JsonArray(2.5, 5) })!["id"]!;
+        f.Run("view.setStyle", new JsonObject { ["id"] = section, ["layers"] = "noFinishes" });
+        var plan = Plan(f);
+        var walls = finishes.Single(e => e.Str("part") == "walls").Id;
+        Assert.False(Drawn(f, section, skirting));
+        // Saved before the finish elements went with the finish layers (its mark 1): its styles keep drawing them.
+        var saved = f.Model.Entities.Select(e =>
+        {
+            if (e.Class != IfcClass.Project) return e;
+            var a = e.CloneAttrs();
+            a[ViewStyles.StructureRevKey] = 1;
+            return e.With(attrs: a);
+        }).ToList();
+        var (up, rels) = f.Session.Upgraded(saved, f.Model.Relations.ToList());
+        var project = up.Single(e => e.Class == IfcClass.Project);
+        Assert.Equal(ViewStyles.StructureRev, (int)project.Attrs[ViewStyles.StructureRevKey]!);
+        f.Session.Load(up, rels, null);
+        Assert.All(ViewStyles.All(f.Model), s => Assert.False(s.FinishElements));
+        Assert.True(Drawn(f, section, skirting));
+        Assert.True(Drawn(f, plan, walls));
+        // Its style set to leave them out, as a new project's does.
+        f.Run("viewStyle.update", new JsonObject { ["id"] = "architectural", ["finishElements"] = true });
+        Assert.False(Drawn(f, section, skirting));
+        Assert.False(Drawn(f, plan, walls));
     }
 
     [Fact]
@@ -225,10 +418,11 @@ public sealed class PartialStructureTests
         var section = Section(f);
         var (up, rels) = f.Session.Upgraded(Saved(f), f.Model.Relations.ToList());
         var project = up.Single(e => e.Class == IfcClass.Project);
-        Assert.Equal(1, (int)project.Attrs[ViewStyles.StructureRevKey]!);
-        // Its styles written as it read them: the plans the entire model, the structural ones the cores.
+        Assert.Equal(ViewStyles.StructureRev, (int)project.Attrs[ViewStyles.StructureRevKey]!);
+        // Its styles written as it read them: the plans the entire model, the structural ones the cores, the finish elements drawn.
         var styles = ((JsonArray)project.Attrs[ViewStyles.Key]!).OfType<JsonObject>().Select(ViewStyles.Style.From).ToList();
         Assert.All(styles, s => Assert.Null(s.LayersPlan));
+        Assert.All(styles, s => Assert.False(s.FinishElements));
         Assert.Equal("core", styles.Single(s => s.Id == "structural").Layers);
         f.Session.Load(up, rels, null);
         Assert.Equal(["layer:0", "layer:1", "layer:2", "layer:3"], Keys(f, plan, wall));

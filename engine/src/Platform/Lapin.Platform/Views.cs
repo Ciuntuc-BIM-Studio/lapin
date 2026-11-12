@@ -457,7 +457,8 @@ public static class Views
         // In a plan the partial structure display and the finishes by kind of view rule what the cut plane cuts (decision 500):
         // a floor seen under it, a soffit over it, shows as it is, so a plan without the finishes still sees its floors.
         double? structureCut = plan && !site && planStorey != null && (style.Layers != "all" || vg.FinishesHidden.Count > 0) ? Range(m, view).Cut : null;
-        bool Cut(GeometryPart p) => structureCut is not { } sc || p.Key is not { } pk || !pk.StartsWith("layer:", StringComparison.Ordinal)
+        // A separate finish element (decision 502: a room's floor, a skirting) is ruled the same way, all its parts.
+        bool Cut(GeometryPart p, bool wholeFinish) => structureCut is not { } sc || !(wholeFinish || p.Key is { } pk && pk.StartsWith("layer:", StringComparison.Ordinal))
             || Measure.Bounds(p.Solid) is not { } pb || (pb.Min.Z <= sc + 1e-9 && pb.Max.Z >= sc - 1e-9);
         foreach (var e in m.Entities)
         {
@@ -507,8 +508,9 @@ public static class Views
                 symbols.Add(stick);
                 continue;
             }
+            var wholeFinish = structureCut != null && style.FinishElements && ViewStyles.FinishElementSub(m, e) != null;
             foreach (var p in g.Parts)
-                if ((Cut(p) ? ViewStyles.Draws(m, style, e.Id, p.Key, bandCache) && PartShown(e, p.Key) : PartShown(e, p.Key, cut: false)) && Detailed(e, p)) parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, MaterialOf(e, p), CutInPlan: stored || p.CutInPlan) { BySilhouette = bySilhouette, Smooth = smooth });
+                if ((Cut(p, wholeFinish) ? ViewStyles.Draws(m, style, e.Id, p.Key, bandCache) && PartShown(e, p.Key) : PartShown(e, p.Key, cut: false)) && Detailed(e, p)) parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, MaterialOf(e, p), CutInPlan: stored || p.CutInPlan) { BySilhouette = bySilhouette, Smooth = smooth });
             if (bySilhouette && silhouettes != null)
                 foreach (var sh in g.Silhouettes!)
                     if (sh.Mode == null || sh.Mode == entourage) silhouettes.Add(new DrawSilhouette(sh, e.Id, e.Class, style.EntourageFill, thin));

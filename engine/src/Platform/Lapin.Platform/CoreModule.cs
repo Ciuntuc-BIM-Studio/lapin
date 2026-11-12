@@ -526,7 +526,7 @@ public static class Spatial
         var project = Project(edit.Model);
         if (project == null)
         {
-            project = new Entity(IdOf(edit, seed?.Project.Id), IfcClass.Project, seed?.Project.Name ?? "Project", new JsonObject { ["lengthUnit"] = "METRE", [ViewDetail.RevKey] = 1, [MaterialHatchUpgrade.RevKey] = MaterialHatchUpgrade.Rev, [ViewStyles.StructureRevKey] = 1 });
+            project = new Entity(IdOf(edit, seed?.Project.Id), IfcClass.Project, seed?.Project.Name ?? "Project", new JsonObject { ["lengthUnit"] = "METRE", [ViewDetail.RevKey] = 1, [MaterialHatchUpgrade.RevKey] = MaterialHatchUpgrade.Rev, [ViewStyles.StructureRevKey] = ViewStyles.StructureRev });
             edit.Add(project);
         }
         var site = edit.Model.OfClass(IfcClass.Site).FirstOrDefault();

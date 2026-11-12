@@ -55,13 +55,17 @@ public sealed class VisibilityGraphics
     /// </summary>
     public string Structure { get; }
 
-    VisibilityGraphics(IModelView model, JsonObject? graphics, bool in3d, IReadOnlySet<string>? finishesHidden = null, string structure = "all")
+    /// <summary>Whether the separate finish elements go with the finish layers in <see cref="Structure"/> (decision 502; false for a project made before, <see cref="ViewStyles.Style.FinishElements"/>).</summary>
+    public bool FinishElements { get; }
+
+    VisibilityGraphics(IModelView model, JsonObject? graphics, bool in3d, IReadOnlySet<string>? finishesHidden = null, string structure = "all", bool finishElements = true)
     {
         m = model;
         Graphics = graphics;
         this.in3d = in3d;
         FinishesHidden = finishesHidden ?? new HashSet<string>();
         Structure = in3d ? "all" : structure;
+        FinishElements = finishElements;
         filters = graphics == null ? new Dictionary<string, ViewFilters.Filter>() : ViewFilters.All(model).ToDictionary(f => f.Id);
     }
 
@@ -98,7 +102,7 @@ public sealed class VisibilityGraphics
     public static VisibilityGraphics Of(IModelView m, Entity view)
     {
         var style = StyleOf2d(m, view);
-        return new(m, GraphicsSets.Of(m, view), view.Str("kind") == "3d", FinishRule(view, style), style?.Layers ?? "all");
+        return new(m, GraphicsSets.Of(m, view), view.Str("kind") == "3d", FinishRule(view, style), style?.Layers ?? "all", style?.FinishElements ?? true);
     }
 
     /// <summary>A view's graphics read as given (a test, an export with graphics of its own).</summary>
@@ -122,14 +126,36 @@ public sealed class VisibilityGraphics
         if (LinkRow(e.Str(Links.Key)) is { } row && True(row["hidden"])) return true;
         var g = RulesFor(e);
         if (in3d ? GraphicsSets.Hides3d(g, e) : GraphicsSets.Hides(g, e)) return true;
-        // The cores of the load-bearing elements only (decision 500): a partition, a covering, a room's finish not drawn at all.
-        if (Structure == "coreLoadBearing" && !ViewStyles.BearsLoad(m, e)) return true;
+        // The cores of the load-bearing elements only (decision 500): a partition, a covering, a room's finish not drawn at all,
+        // and with a wall left out its doors, windows and openings (decision 502).
+        if (Structure == "coreLoadBearing" && (!ViewStyles.BearsLoad(m, e) || HostOf(e) is { } host && !ViewStyles.BearsLoad(m, host))) return true;
         // A reference all of one finish, insulation or membrane (a plaster part of a wall, a covering): hidden with its subcategory (decision 400).
         if (HiddenSubs(e) is { } sub && ReferenceLayers.WholeSub(m, e) is { } whole && True(sub[whole]?["hidden"])) return true;
         // The finishes the view's style leaves out in a view of its kind (topic #30): a reference that is all finish, a room's wall or floor finish.
         if (FinishesHidden.Count > 0 && FinishOf(e) is { } fc && FinishesHidden.Contains(fc)) return true;
         // A filter that takes it and hides what it takes (the first that says, in the view's order).
         return FilterRows(e).Select(r => r["hidden"]).FirstOrDefault(h => h is JsonValue) is { } hv && True(hv);
+    }
+
+    Dictionary<string, Entity>? referenceHosts;
+
+    /// <summary>
+    /// The element a door, a window or an opening is in: the wall (or floor) its opening voids, or the reference whose kept
+    /// opening it fills (<see cref="ReferenceFills"/>); null for any other element.
+    /// </summary>
+    Entity? HostOf(Entity e)
+    {
+        if (m.RelatingOf(e.Id, IfcClass.RelFillsElement) is { } opening) return m.RelatingOf(opening.Id, IfcClass.RelVoidsElement);
+        if (e.Class == IfcClass.OpeningElement) return m.RelatingOf(e.Id, IfcClass.RelVoidsElement);
+        if (e.Class is not (IfcClass.Door or IfcClass.Window) || !StoredBodies.Has(e)) return null;
+        if (referenceHosts == null)
+        {
+            referenceHosts = [];
+            foreach (var x in m.Entities)
+                if (x.Attrs[StoredBodies.OpeningsKey] is JsonArray)
+                    foreach (var filler in ReferenceFills.Fillers(x)) referenceHosts.TryAdd(filler, x);
+        }
+        return referenceHosts.GetValueOrDefault(e.Id);
     }
 
     /// <summary>Whether a linked element draws halftone in this view (its link's row; Manage → Links halftones it everywhere).</summary>
@@ -237,7 +263,7 @@ public sealed class VisibilityGraphics
     public bool HidesPart(Entity e, string? partKey, bool cut = true)
     {
         // The layers the view's partial structure display leaves out (decision 500): the finishes, all but the core.
-        if (cut && Structure != "all" && partKey != null && !ViewStyles.Draws(m, Structure, e.Id, partKey, bands)) return true;
+        if (cut && Structure != "all" && partKey != null && !ViewStyles.Draws(m, Structure, e.Id, partKey, bands, FinishElements)) return true;
         // The finish layers of walls or floors, which the view's style leaves out in a view of its kind (topic #30).
         if (cut && FinishesHidden.Count > 0 && partKey != null && ReferenceLayers.CategoryOf(e) is { } c && FinishesHidden.Contains(c) && SubOf(e, partKey) == "finishes") return true;
         if (HiddenSubs(e) is not { } sub || SubOf(e, partKey) is not { } s) return false;
