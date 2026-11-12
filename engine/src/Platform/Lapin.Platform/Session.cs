@@ -360,6 +360,8 @@ public sealed partial class Session
             r = entry.Handler(ctx, args);
             // What the command changed of elements a module drives, written back in the module's terms (docs/overrides.md, Driven elements).
             Driven.After(ctx, edit, command);
+            // An element that took a type in the command: the type's instance defaults it lacks (TypeDefaults).
+            TypeDefaults.Settle(edit);
             // An instance of a component changed: the others follow, in the same undo step (docs/components.md).
             Components.Settle(ctx, edit);
         }, author);

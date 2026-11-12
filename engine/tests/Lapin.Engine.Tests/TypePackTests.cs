@@ -204,6 +204,117 @@ public sealed class TypePackTests
         Assert.Equal(own.Id, (string?)other.Model.Get((string)r["types"]![0]!["id"]!)!.Attrs["section"]!["profileId"]);
     }
 
+    static JsonObject Read(Fixture f, string text) => (JsonObject)f.Session.Query("types.readPack", new JsonObject { ["text"] = text })!;
+
+    static JsonObject Choose(Fixture f, string text, JsonObject? materials = null, JsonObject? types = null)
+    {
+        var a = new JsonObject { ["text"] = text };
+        if (materials != null) a["materials"] = materials;
+        if (types != null) a["types"] = types;
+        return (JsonObject)f.Run("types.importFrom", a)!;
+    }
+
+    /// <summary>A pack of WT1 whose brick is hatched at twice the scale, and a project with WT1 on concrete and a brick of its own hatch.</summary>
+    static (string Text, Fixture To, string OwnType, string Wall) Library()
+    {
+        var from = F();
+        var type = WallType(from);
+        from.Run("material.update", new JsonObject { ["id"] = Material(from, "Brick").Id, ["section"] = new JsonObject { ["hatchScale"] = 2.0 } });
+        var text = Export(from, type);
+        var to = F();
+        to.Session.Edit("Brick", e => Materials.Ensure(e, "Brick"));
+        var own = WallType(to, brick: "Concrete");
+        var wall = to.Wall(0, 0, 5, 0, own);
+        return (text, to, own, wall);
+    }
+
+    [Fact]
+    public void Before_importing_the_pack_says_which_materials_and_types_of_the_same_name_differ_and_how()
+    {
+        var (text, to, _, _) = Library();
+        var r = Read(to, text);
+        var brick = Assert.Single(r["materials"]!.AsArray(), m => (string?)m!["name"] == "Brick")!;
+        Assert.Contains("section hatch", brick["differs"]!.AsArray().Select(x => (string?)x));
+        var wt = r["types"]!.AsArray().Single()!;
+        Assert.True((bool)wt["exists"]!);
+        Assert.Equal(["layers"], wt["differs"]!.AsArray().Select(x => (string?)x));
+        // Its own project: nothing differs.
+        var from = F();
+        var same = Export(from, WallType(from));
+        var again = Read(from, same);
+        Assert.Empty(again["materials"]!.AsArray());
+        Assert.Null(again["types"]![0]!["differs"]);
+    }
+
+    [Fact]
+    public void Without_choices_the_project_s_material_is_kept_and_the_import_says_so()
+    {
+        var (text, to, _, _) = Library();
+        var before = Material(to, "Brick").Attrs.ToJsonString();
+        var r = Import(to, text);
+        Assert.Equal(1, (int)r["materialsKept"]!);
+        Assert.Equal(before, Material(to, "Brick").Attrs.ToJsonString());
+        Assert.Equal("renamed", (string?)r["types"]![0]!["status"]);
+    }
+
+    [Fact]
+    public void A_material_updated_from_the_pack_keeps_its_id_and_one_kept_beside_is_the_new_type_s()
+    {
+        var (text, to, _, _) = Library();
+        var id = Material(to, "Brick").Id;
+        var r = Choose(to, text, new JsonObject { ["Brick"] = "update" });
+        Assert.Equal(1, (int)r["materialsUpdated"]!);
+        Assert.Equal(id, Material(to, "Brick").Id);
+        Assert.Equal(2.0, (double)Material(to, "Brick").Attrs["section"]!["hatchScale"]!);
+        to.Session.Undo();
+        Assert.Null(Material(to, "Brick").Attrs["section"]?["hatchScale"]);
+
+        r = Choose(to, text, new JsonObject { ["brick"] = "both" });
+        Assert.Equal(["Brick (2)"], r["materialsRenamed"]!.AsArray().Select(x => (string?)x));
+        var made = to.Model.OfClass(IfcClass.WallType).Single(t => t.Name == "WT1 Exterior (2)");
+        Assert.Equal("Brick (2)", Layers(to, made)[2].Material);
+        Assert.Null(Material(to, "Brick").Attrs["section"]?["hatchScale"]);
+    }
+
+    [Fact]
+    public void A_type_updated_from_the_pack_keeps_its_id_and_its_walls_follow_and_one_skipped_stays()
+    {
+        var (text, to, own, wall) = Library();
+        var setBefore = to.Model.RelatingOf(own, IfcClass.RelAssociatesMaterial)!.Id;
+        var r = Choose(to, text, types: new JsonObject { ["WT1 Exterior"] = "update" });
+        Assert.Equal(1, (int)r["updated"]!);
+        Assert.Equal(own, (string?)r["types"]![0]!["id"]);
+        Assert.Equal("Brick", Layers(to, to.Model.Get(own)!)[2].Material);
+        Assert.Equal(setBefore, to.Model.RelatingOf(own, IfcClass.RelAssociatesMaterial)!.Id);
+        Assert.Single(to.Model.OfClass(IfcClass.WallType), t => t.Name.StartsWith("WT1 Exterior", StringComparison.Ordinal));
+        // The wall on the new layers: its usage still points at the type's set.
+        Assert.Equal(setBefore, to.Usage(wall).ForLayerSet);
+        to.Session.Undo();
+        Assert.Equal("Concrete", Layers(to, to.Model.Get(own)!)[2].Material);
+
+        r = Choose(to, text, types: new JsonObject { ["WT1 Exterior"] = "skip" });
+        Assert.Equal(1, (int)r["skipped"]!);
+        Assert.Equal("Concrete", Layers(to, to.Model.Get(own)!)[2].Material);
+        Assert.Single(to.Model.OfClass(IfcClass.WallType), t => t.Name.StartsWith("WT1 Exterior", StringComparison.Ordinal));
+        Assert.Throws<CommandException>(() => Choose(to, text, types: new JsonObject { ["WT1 Exterior"] = "merge" }));
+    }
+
+    [Fact]
+    public void A_type_s_parameters_and_instance_defaults_travel_in_the_pack()
+    {
+        var from = F();
+        var type = WallType(from);
+        from.Run("element.setParam", new JsonObject { ["id"] = type, ["pset"] = "Pset_WallCommon", ["name"] = "FireRating", ["value"] = "EI 60" });
+        from.Run("element.setParam", new JsonObject { ["id"] = type, ["pset"] = "RAVA_Wall", ["name"] = "Renovation", ["kind"] = "text", ["value"] = "new", ["instance"] = true });
+        var to = F();
+        var made = (string)Import(to, Export(from, type))["types"]![0]!["id"]!;
+        var ps = to.Model.Get(made)!.Attrs["params"]!.AsArray().OfType<JsonObject>().ToList();
+        Assert.Contains(ps, p => (string?)p["pset"] == "Pset_WallCommon" && (string?)p["value"] == "EI 60");
+        Assert.Contains(ps, p => (string?)p["name"] == "Renovation" && p["instance"] is not null && (bool)p["instance"]!);
+        var wall = to.Wall(0, 0, 4, 0, made);
+        Assert.Equal("new", (string?)to.Model.Get(wall)!.Attrs["params"]![0]!["value"]);
+    }
+
     [Fact]
     public void Only_types_are_exported()
     {

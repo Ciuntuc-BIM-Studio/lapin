@@ -12,6 +12,12 @@ public interface ITypeAssigner
     /// <summary>The type classes it assigns (IfcWallType, IfcDoorType…).</summary>
     IReadOnlyCollection<string> TypeClasses { get; }
     void Assign(IEdit edit, IServices services, Entity element, Entity type);
+    /// <summary>
+    /// A type of its classes changed in place, its layer set included (a type library's version taken over the project's:
+    /// <see cref="TypePacks"/>): its elements laid out again as the module's own edit of the type does (a wall's usage on
+    /// the new layers, its type's sweeps).
+    /// </summary>
+    void Updated(IEdit edit, IServices services, Entity type) { }
 }
 
 /// <summary>

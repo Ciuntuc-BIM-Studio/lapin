@@ -84,6 +84,130 @@ public sealed class TypeExchangeTests
         Assert.Equal(0.225, bounds.Max(b => b.Max.Y) - bounds.Min(b => b.Min.Y), 6);
     }
 
+    [Theory]
+    [InlineData("json")]
+    [InlineData("csv")]
+    public void Types_come_into_a_project_that_has_no_wall_or_floor_type(string format)
+    {
+        var from = F();
+        Project(from);
+        var text = Export(from, format);
+        var to = F();
+        // A tester's report: the list of wall types empty, the import did nothing.
+        to.Session.Edit("No types", e =>
+        {
+            foreach (var t in to.Model.OfClass(IfcClass.WallType).Concat(to.Model.OfClass(IfcClass.SlabType)).ToList()) e.Remove(t.Id);
+        });
+        Assert.Empty(to.Model.OfClass(IfcClass.WallType));
+        Assert.Empty(to.Model.OfClass(IfcClass.SlabType));
+        var r = Import(to, text);
+        Assert.Equal(2, (int)r["created"]!);
+        Assert.Equal(["WT1 Exterior"], to.Model.OfClass(IfcClass.WallType).Select(t => t.Name));
+        Assert.Equal(["F1 Ground floor"], to.Model.OfClass(IfcClass.SlabType).Select(t => t.Name));
+        Assert.Equal(4, Layers(to, to.Model.OfClass(IfcClass.WallType).Single()).Count);
+    }
+
+    static JsonObject Choose(Fixture f, string text, JsonObject? materials = null, JsonObject? types = null)
+    {
+        var a = new JsonObject { ["text"] = text };
+        if (materials != null) a["materials"] = materials;
+        if (types != null) a["types"] = types;
+        return (JsonObject)f.Run("architecture.importTypes", a)!;
+    }
+
+    static Entity Material(Fixture f, string name) => f.Model.OfClass(IfcClass.Material).Single(m => m.Name == name);
+
+    /// <summary>A project whose WT1 has a clinker brick hatched at twice the scale, a fire rating and an instance default.</summary>
+    static string Library(Fixture from)
+    {
+        var type = (string)from.Run("architecture.createWallType", new JsonObject
+        {
+            ["name"] = "WT1 Exterior", ["mark"] = "WT1",
+            ["layers"] = new JsonArray(
+                new JsonObject { ["material"] = "Clinker brick", ["thickness"] = 0.25, ["core"] = true, ["category"] = "Structure", ["extendDown"] = true },
+                new JsonObject { ["material"] = "Plaster", ["thickness"] = 0.015 }),
+        })!["id"]!;
+        from.Run("material.update", new JsonObject { ["id"] = Material(from, "Clinker brick").Id, ["section"] = new JsonObject { ["hatchScale"] = 2.0, ["hatchAngle"] = 30.0, ["hatchPen"] = 3 } });
+        from.Run("material.update", new JsonObject { ["id"] = Material(from, "Plaster").Id, ["color"] = "#fafafa" });
+        from.Run("element.setParam", new JsonObject { ["id"] = type, ["pset"] = "Pset_WallCommon", ["name"] = "IsExternal", ["value"] = true });
+        from.Run("element.setParam", new JsonObject { ["id"] = type, ["pset"] = "Pset_WallCommon", ["name"] = "FireRating", ["value"] = "EI 60" });
+        from.Run("element.setParam", new JsonObject { ["id"] = type, ["pset"] = "RAVA_Wall", ["name"] = "Renovation", ["kind"] = "text", ["value"] = "new", ["instance"] = true });
+        return Export(from, "json");
+    }
+
+    [Fact]
+    public void The_json_carries_the_materials_graphics_and_the_type_s_parameters_and_a_project_makes_them_as_they_were()
+    {
+        var text = Library(F());
+        var doc = JsonNode.Parse(text)!.AsObject();
+        Assert.Equal(2, (int)doc["version"]!);
+        var to = F();
+        to.Session.Edit("Plaster", e => Materials.Ensure(e, "Plaster"));
+        var r = Import(to, text);
+        Assert.Equal(1, (int)r["created"]!);
+        var clinker = Material(to, "Clinker brick");
+        Assert.Equal(2.0, (double)clinker.Attrs["section"]!["hatchScale"]!);
+        Assert.Equal(30.0, (double)clinker.Attrs["section"]!["hatchAngle"]!);
+        Assert.Equal(3, (int)clinker.Attrs["section"]!["hatchPen"]!);
+        var type = to.Model.OfClass(IfcClass.WallType).Single(t => t.Name == "WT1 Exterior");
+        var ps = type.Attrs["params"]!.AsArray().OfType<JsonObject>().ToList();
+        Assert.Contains(ps, p => (string?)p["name"] == "FireRating" && (string?)p["value"] == "EI 60" && (string?)p["pset"] == "Pset_WallCommon");
+        Assert.Contains(ps, p => (string?)p["name"] == "IsExternal" && (bool)p["value"]!);
+        Assert.Contains(ps, p => (string?)p["name"] == "Renovation" && (bool)p["instance"]!);
+        var core = LayerSets.LayersOf(to.Model, type.Id)[0];
+        Assert.Equal("Structure", core.Category);
+        Assert.True(core.ExtendDown);
+        // The project's Plaster differs (its colour): kept as it was, said so.
+        Assert.NotEqual("#fafafa", Material(to, "Plaster").Str("color"));
+        Assert.Equal(1, (int)r["materials"]!["kept"]!);
+    }
+
+    [Fact]
+    public void Before_importing_the_json_says_what_differs_and_the_choices_update_keep_both_or_skip()
+    {
+        var text = Library(F());
+        var to = F();
+        Project(to);   // WT1 Exterior of other layers
+        var plaster = Material(to, "Plaster").Id;
+        var preview = (JsonObject)to.Session.Query("architecture.readTypes", new JsonObject { ["text"] = text })!;
+        var wt = preview["types"]!.AsArray().Single()!;
+        Assert.True((bool)wt["exists"]!);
+        Assert.Contains("layers", wt["differs"]!.AsArray().Select(x => (string?)x));
+        Assert.Contains("parameters", wt["differs"]!.AsArray().Select(x => (string?)x));
+        var m = Assert.Single(preview["materials"]!.AsArray())!;
+        Assert.Equal("Plaster", (string?)m["name"]);
+        Assert.Equal(["colour"], m["differs"]!.AsArray().Select(x => (string?)x));
+
+        // Plaster updated in place, the type kept beside.
+        var r = Choose(to, text, new JsonObject { ["Plaster"] = "update" }, new JsonObject { ["WT1 Exterior"] = "both" });
+        Assert.Equal("#fafafa", to.Model.Get(plaster)!.Str("color"));
+        Assert.Equal(["WT1 Exterior (2)"], r["renamed"]!.AsArray().Select(x => (string?)x));
+        Assert.Equal(4, LayerSets.LayersOf(to.Model, to.Model.OfClass(IfcClass.WallType).Single(t => t.Name == "WT1 Exterior").Id).Count);
+        to.Session.Undo();
+
+        // Plaster kept beside as „Plaster (2)”, which the file's type takes; the project's type skipped.
+        r = Choose(to, text, new JsonObject { ["Plaster"] = "both" }, new JsonObject { ["WT1 Exterior"] = "skip" });
+        Assert.Equal(1, (int)r["skipped"]!);
+        Assert.Equal(["Plaster (2)"], r["materials"]!["renamed"]!.AsArray().Select(x => (string?)x));
+        Assert.Equal(4, LayerSets.LayersOf(to.Model, to.Model.OfClass(IfcClass.WallType).Single(t => t.Name == "WT1 Exterior").Id).Count);
+        to.Session.Undo();
+
+        // Plaster (2) taken by the type updated in place.
+        r = Choose(to, text, new JsonObject { ["Plaster"] = "both" });
+        Assert.Equal(1, (int)r["updated"]!);
+        var layers = LayerSets.LayersOf(to.Model, to.Model.OfClass(IfcClass.WallType).Single(t => t.Name == "WT1 Exterior").Id);
+        Assert.Equal(["Clinker brick", "Plaster (2)"], layers.Select(l => to.Model.Get(l.Material)!.Name));
+    }
+
+    [Fact]
+    public void A_json_of_the_first_version_without_materials_or_parameters_still_imports()
+    {
+        var f = F();
+        var r = Import(f, "{\"format\": \"lapin-types\", \"version\": 1, \"types\": [{\"kind\": \"wall\", \"name\": \"Old\", \"layers\": [{\"material\": \"Brick\", \"thickness\": 0.25, \"core\": true}]}]}");
+        Assert.Equal(1, (int)r["created"]!);
+        Assert.Null(f.Model.OfClass(IfcClass.WallType).Single(t => t.Name == "Old").Attrs["params"]);
+    }
+
     [Fact]
     public void A_file_without_what_a_type_needs_is_refused_whole()
     {

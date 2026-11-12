@@ -66,7 +66,7 @@ export function SlabTypesDialog() {
               <li key={t.id}><button type="button" className={`tree-item${editing === t.id ? ' on' : ''}`} onClick={() => setEditing(t.id)}>{t.name}<span className="muted small"> · {relatedOf(model, t.id, 'IfcRelDefinesByType').length}</span></button></li>
             ))}
             <li><button type="button" className={`tree-item${editing === null ? ' on' : ''}`} onClick={() => setEditing(null)}><Plus size={12} /> New type</button></li>
-            <li><TypeFiles kind="floor" /></li>
+            <li><TypeFiles kind="floor" onImported={(names) => { const t = ofClass(useSession.getState(), 'IfcSlabType').find((n) => n.name === names[0]); if (t) setEditing(t.id); }} /></li>
           </ul>
           <div className="type-edit">
             <label className="field-line"><span className="eyebrow">Name</span><input value={name} placeholder="(from its core and thickness)" onChange={(e) => setName(e.target.value)} /></label>

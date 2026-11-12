@@ -73,7 +73,8 @@ export function WallTypesDialog() {
   const model = useMemo(() => ({ nodes, relations }), [nodes, relations]);
   const types = ofClass(model, 'IfcWallType');
   const current = useUi((s) => s.wallTypeId);
-  const [editing, setEditing] = useState<string | null>(current ?? types[0]?.id ?? null);
+  // The type walls are drawn with, when it is still there (a deleted one left the editor on nothing), else the first.
+  const [editing, setEditing] = useState<string | null>((current && nodes.has(current) ? current : null) ?? types[0]?.id ?? null);
   const [name, setName] = useState('');
   const [rows, setRows] = useState<Row[]>(blank());
   const [zones, setZones] = useState<ZoneRow[]>([]);
@@ -163,7 +164,8 @@ export function WallTypesDialog() {
               </li>
             ))}
             <li><button type="button" className={`tree-item${editing === null ? ' on' : ''}`} onClick={() => setEditing(null)}><Plus size={12} /> New type</button></li>
-            <li><TypeFiles kind="wall" /></li>
+            {/* Imported (a tester's report: into an empty list "nothing happened"): the first type brought in opened in the editor. */}
+            <li><TypeFiles kind="wall" onImported={(names) => { const t = ofClass(useSession.getState(), 'IfcWallType').find((n) => n.name === names[0]); if (t) setEditing(t.id); }} /></li>
           </ul>
           <div className="type-edit">
             <label className="field-line"><span className="eyebrow">Name</span><input value={name} placeholder="(from its core and thickness)" onChange={(e) => setName(e.target.value)} /></label>

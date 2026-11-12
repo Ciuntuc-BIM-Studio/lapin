@@ -45,6 +45,7 @@ export function sharedValue(ids: readonly string[], key: string, propsOf: (id: s
 }
 
 /** `pset`: the property set it goes to in IFC (Pset_DoorCommon, a set of the user's); none: Lapin_Parameters. */
-export interface Param { name: string; kind: string; value: unknown; options?: string[]; pset?: string }
+/** `instance`: on a type, an instance default (each element given the type gets a copy it may change), not the type's property. */
+export interface Param { name: string; kind: string; value: unknown; options?: string[]; pset?: string; instance?: boolean }
 /** A parameter's identity: its set and its name, case aside. */
 export const paramKey = (p: Param) => `${(p.pset ?? '').toLowerCase()}/${p.name.toLowerCase()}`;

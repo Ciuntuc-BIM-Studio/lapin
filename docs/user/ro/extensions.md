@@ -53,7 +53,7 @@ O extensie de **tipuri** aduce tipuri de pereți, plăci, uși, ferestre, stâlp
 
 ![Detaliile unei extensii de tipuri: licența ei marcată necomercială](shots/extensions-types.webp)
 
-Tipurile tale intră într-un pachet din **Gestionare → Pachete de tipuri…**: bifezi tipurile, dai pachetului un nume, iar **Exportă tipuri…** salvează un fișier `.lapintypes`. **Importă tipuri…** din același dialog citește unul, te lasă să-i alegi tipurile și le adaugă la fel.
+Tipurile tale intră într-un pachet din **Gestionare → Pachete de tipuri…**: bifezi tipurile, dai pachetului un nume, iar **Exportă tipuri…** salvează un fișier `.lapintypes`. **Importă tipuri…** din același dialog citește unul, te lasă să-i alegi tipurile și le adaugă la fel. Un pachet duce orice fel de tip cu tot ce îl alcătuiește: straturi, materiale cu culorile și hașurile lor, profile și parametri (seturi de proprietăți IFC cu numele, felul, valorile și unitățile lor, cu valorile implicite pentru instanțe marcate). Înainte să le adauge, dialogul arată materialele și tipurile din pachet pe care proiectul le are deja cu același nume, definite altfel, cu ce diferă, și alegi pentru fiecare, ca la importul tipurilor de pereți: un material păstrat, actualizat pe loc din pachet sau păstrat alături ca *Nume (2)*; un tip păstrat alături (implicit), actualizat pe loc (elementele lui urmează) sau sărit. După import se arată ce s-a creat, refolosit, actualizat și sărit. O eroare la citirea unui pachet se arată întotdeauna.
 
 ![Gestionare → Pachete de tipuri…: un tip de perete ales pentru export](shots/type-packs-export.webp)
 

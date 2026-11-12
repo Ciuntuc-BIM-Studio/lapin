@@ -11,12 +11,21 @@ public static class Params
     /// <summary>A stored parameter's set: null for the user's own (Lapin_Parameters).</summary>
     public static string? SetOf(JsonObject p) => (string?)p["pset"] is { Length: > 0 } s && s != StandardPsets.Own ? s : null;
 
+    /// <summary>
+    /// On a type's parameter: an instance default (<c>instance: true</c>), not a property of the type. An element given the
+    /// type (placed with it, or its type changed) that has no parameter of that set and name gets a copy, which it may then
+    /// change (<see cref="TypeDefaults"/>); the IFC export leaves it out of the type's property sets.
+    /// </summary>
+    public const string InstanceKey = "instance";
+
+    public static bool IsInstanceDefault(JsonObject p) => p[InstanceKey] is JsonValue v && v.TryGetValue<bool>(out var b) && b;
+
     /// <summary>Whether a stored parameter is the one named: the same name (case aside) in the same set.</summary>
     public static bool Same(JsonObject p, string? pset, string name) =>
         string.Equals((string?)p["name"], name, StringComparison.OrdinalIgnoreCase) && string.Equals(SetOf(p), pset, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// A whole list of parameters as a command gives it ([{name, kind, value, pset?, options?}], a material's), each checked as
+    /// A whole list of parameters as a command gives it ([{name, kind, value, pset?, options?, instance?}], a material's or a type's), each checked as
     /// element.setParam checks one: a standard set's property only by its own name and held as its kind, a set of the user's
     /// never „Pset_”; the same name twice in one set refused. Stored as given, in order.
     /// </summary>
@@ -37,6 +46,7 @@ public static class Params
             var entry = new JsonObject { ["name"] = name, ["kind"] = kind, ["value"] = Check(kind, p["value"], options) };
             if (pset != null) entry["pset"] = pset;
             if (kind == "choice" && options != null) entry["options"] = options.DeepClone();
+            if (IsInstanceDefault(p)) entry[InstanceKey] = true;
             o.Add((JsonNode)entry);
         }
         return o;

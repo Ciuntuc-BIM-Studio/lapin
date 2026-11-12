@@ -51,17 +51,25 @@ export async function pickFile(description: string, ext: string | string[]): Pro
       const [handle] = await open({ types: [{ description, accept: { 'application/octet-stream': exts.map((e) => `.${e}`) } }] });
       const file = await handle.getFile();
       return { name: file.name, bytes: new Uint8Array(await file.arrayBuffer()), handle };
-    } catch { return null; }   // cancelled
+    } catch (e) {
+      // Cancelled: nothing. Refused (a webview that has the picker but may not show it, a page not active): the file input below,
+      // rather than nothing at all (a tester's report: Import… did nothing).
+      if ((e as { name?: string } | null)?.name === 'AbortError') return null;
+    }
   }
   return new Promise((resolve) => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = exts.map((e) => `.${e}`).join(',');
+    // In the page while it is open: a webview (WebKit's) may not tell a detached input its file was chosen.
+    input.style.display = 'none';
+    document.body.appendChild(input);
+    const done = (r: { name: string; bytes: Uint8Array; handle: null } | null) => { input.remove(); resolve(r); };
     input.onchange = async () => {
       const file = input.files?.[0];
-      resolve(file ? { name: file.name, bytes: new Uint8Array(await file.arrayBuffer()), handle: null } : null);
+      try { done(file ? { name: file.name, bytes: new Uint8Array(await file.arrayBuffer()), handle: null } : null); } catch (e) { notify(e instanceof Error ? e.message : String(e)); done(null); }
     };
-    input.oncancel = () => resolve(null);
+    input.oncancel = () => done(null);
     input.click();
   });
 }

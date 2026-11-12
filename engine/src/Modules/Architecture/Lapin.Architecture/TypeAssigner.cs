@@ -39,4 +39,18 @@ public sealed class TypeAssigner : ITypeAssigner
                 break;
         }
     }
+
+    /// <summary>As WallTypes.Update and Slabs.UpdateType do after the layers changed: every wall and floor of the type on its new layers, a wall with its type's sweeps.</summary>
+    public void Updated(IEdit edit, IServices services, Entity type)
+    {
+        foreach (var e in edit.Model.RelatedOf(type.Id, IfcClass.RelDefinesByType).ToList())
+        {
+            if (type.Class == IfcClass.WallType && e.Class == IfcClass.Wall)
+            {
+                Walls.LayOut(edit, e, edit.Model.Get(type.Id)!);
+                WallSweepTypes.Rebuild(edit, edit.Model.Get(e.Id)!);
+            }
+            else if (type.Class == IfcClass.SlabType && e.Class == IfcClass.Slab) Slabs.SetType(edit, e, edit.Model.Get(type.Id)!);
+        }
+    }
 }

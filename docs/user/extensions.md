@@ -53,7 +53,7 @@ A **types** extension brings wall, floor, door, window, column, beam or stair ty
 
 ![A types extension's details: its licence marked non-commercial](shots/extensions-types.webp)
 
-Your own types go into a pack from **Manage → Type packs…**: tick the types, give the pack a name, and **Export types…** saves a `.lapintypes` file. **Import types…** in the same dialog reads one, lets you choose its types and adds them the same way.
+Your own types go into a pack from **Manage → Type packs…**: tick the types, give the pack a name, and **Export types…** saves a `.lapintypes` file. **Import types…** in the same dialog reads one, lets you choose its types and adds them the same way. A pack carries any kind of type with everything it is made of: layers, materials with their colours and hatches, profiles and parameters (IFC property sets with their names, kinds, values and units, instance defaults marked). Before adding them, the dialog lists the pack's materials and types that the project already has under the same name and defined otherwise, with what differs, and you choose for each, as when importing wall types: a material kept, updated from the pack in place, or kept beside as *Name (2)*; a type kept beside (the default), updated in place (its elements follow) or skipped. What was made, reused, updated and skipped is listed afterwards. A failure to read a pack is always shown.
 
 ![Manage → Type packs…: a wall type chosen for export](shots/type-packs-export.webp)
 

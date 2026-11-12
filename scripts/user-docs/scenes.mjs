@@ -6634,6 +6634,61 @@ export const scenes = [
     },
   },
   {
+    // A tester's report (type libraries, nothing lost in silence): Wall types → Import… of a JSON whose wall type and brick
+    // differ from the project's of the same name lists both with what differs and a choice each; the brick updated from the
+    // file in place, the type updated (its wall follows), what the import did counted. Then the type's parameter made an
+    // instance default (Type parameters → Instance default): a wall drawn with the type gets its copy.
+    id: 'type-import-choices',
+    touches: ['architecture', 'core'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const layers = [{ material: 'Render', thickness: 0.02 }, { material: 'Brick', thickness: 0.25, core: true }, { material: 'Plaster', thickness: 0.015 }];
+      const { id: typeId } = await t.cmd('architecture.createWallType', { name: 'WT1 Exterior', mark: 'WT1', layers });
+      await t.cmd('element.setParam', { id: typeId, pset: 'Pset_WallCommon', name: 'FireRating', value: 'EI 60' });
+      // The library's version: the brick hatched otherwise, the core 300 mm thick, a renovation status of its own.
+      const { text } = await t.call('doc.query', { name: 'architecture.exportTypes', args: { kinds: ['wall'], format: 'json' } });
+      const doc = JSON.parse(text);
+      const lib = doc.types.find((x) => x.name === 'WT1 Exterior');
+      lib.layers[1].thickness = 0.3;
+      lib.params = [...(lib.params ?? []), { name: 'Renovation', kind: 'choice', options: ['new', 'existing', 'demolish'], value: 'new', pset: 'RAVA_Wall', instance: true }];
+      doc.types = [lib];
+      for (const m of doc.materials) if (m.name === 'Brick') m.attrs = { ...m.attrs, section: { ...(m.attrs.section ?? {}), hatchScale: 2, hatchAngle: 30 } };
+      const dir = mkdtempSync(join(tmpdir(), 'lapin-guide-type-import-'));
+      const file = join(dir, 'Wall library.json');
+      writeFileSync(file, JSON.stringify(doc, null, 2));
+      const wall = (await t.cmd('architecture.addWall', { storeyId: s, typeId, x1: 0, y1: 0, x2: 6, y2: 0 })).id;
+
+      await t.tool('architecture.wallTypes');
+      await t.page.evaluate(() => { delete window.showOpenFilePicker; });
+      const chooser = t.page.waitForEvent('filechooser', { timeout: 10_000 });
+      await t.page.locator('[data-action=types-import]').click();
+      await (await chooser).setFiles(file);
+      const choices = t.page.locator('[data-dialog=type-conflicts]');
+      await choices.waitFor({ timeout: 10_000 });
+      t.expect(await choices.locator('[data-choice-material=Brick]').count() === 1, 'the brick, defined otherwise, is listed');
+      t.expect((await choices.innerText()).includes('section hatch'), 'what differs of the brick is said');
+      t.expect(await choices.locator('[data-choice-type="WT1 Exterior"]').count() === 1, 'the wall type of the same name is listed');
+      await choices.locator('[data-choice-material=Brick]').selectOption('update');
+      await t.wait(300);
+      await t.shot('type-import-choices', { of: '[data-dialog=type-conflicts]', pad: 0 });
+      await choices.locator('[data-action=types-import-go]').click();
+      await t.page.locator('[data-testid=import-summary]').waitFor({ timeout: 10_000 });
+      const brick = (await t.nodes()).find((n) => n.type === 'IfcMaterial' && n.name === 'Brick');
+      t.expect(brick?.props.section?.hatchScale === 2, 'the brick was updated from the file in place');
+      const q = await t.call('quantities.of', { id: wall });
+      t.expect(q.length > 0, 'the wall of the updated type is still measured');
+      await t.ui({ dialog: null });
+
+      // The renovation status is an instance default: a wall drawn with the type now gets its own copy.
+      const typed = (await t.nodes()).find((n) => n.id === typeId);
+      t.expect((typed?.props.params ?? []).some((p) => p.name === 'Renovation' && p.instance === true), 'the instance default came with the type');
+      const second = (await t.cmd('architecture.addWall', { storeyId: s, typeId, x1: 0, y1: 4, x2: 6, y2: 4 })).id;
+      const own = (await t.nodes()).find((n) => n.id === second);
+      t.expect((own?.props.params ?? []).some((p) => p.name === 'Renovation' && p.value === 'new'), 'a wall drawn with the type got the instance default');
+    },
+  },
+  {
     // Types as an extension (docs/plan-extensions.md, §9.3): a wall type made in one project and chosen in Manage → Type
     // packs… (exported as its .lapintypes, the file the dialog's Export types… saves); in a new project, a catalogue on this
     // computer lists it as a types extension under a non-commercial licence (marked so); installed, its type comes into the

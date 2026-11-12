@@ -86,6 +86,7 @@ public sealed class CoreModule : ILapinModule
         Assemblies.Register(r);
         TypeMappings.Register(r);
         TypePacks.Register(r);
+        TypeDefaults.Register(r);
         Sheets.Register(r);
         TitleBlocks.Register(r);
         CutOrder.Register(r);
@@ -163,7 +164,7 @@ public sealed class CoreModule : ILapinModule
 
         // The user's own parameters on any element, drafted shape or Studio solid: a name, a kind, a value (exported as Lapin_Parameters).
         // With `pset`, in that property set: a standard one (Pset_DoorCommon) only with its own property names, held as their kind;
-        // one of the user's never „Pset_…” (StandardPsets).
+        // one of the user's never „Pset_…” (StandardPsets). On a type, `instance: true` makes it an instance default (TypeDefaults).
         r.Command("element.setParam", "Set parameter", (ctx, a) =>
         {
             var ids = Driven.Rest(Args.Ids(a), Driven.Before(ctx, new DrivenEdit("element.setParam", Args.Ids(a), a)));
@@ -181,6 +182,9 @@ public sealed class CoreModule : ILapinModule
                 var entry = new JsonObject { ["name"] = name, ["kind"] = kind, ["value"] = value };
                 if (pset != null) entry["pset"] = pset;
                 if (kind == "choice" && options != null) entry["options"] = options.DeepClone();
+                // A type's instance default (TypeDefaults): `instance` given sets or clears it, else the parameter keeps what it was.
+                var instance = a[Params.InstanceKey] is JsonValue iv && iv.TryGetValue<bool>(out var inst) ? inst : existing != null && Params.IsInstanceDefault(existing);
+                if (instance) entry[Params.InstanceKey] = true;
                 if (existing != null) list[list.IndexOf(existing)] = entry; else list.Add((JsonNode)entry);
                 var attrs = e.CloneAttrs();
                 attrs["params"] = list;

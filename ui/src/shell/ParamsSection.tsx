@@ -1,13 +1,16 @@
 /**
  * The user's own parameters of an element or a type (a name, a kind, a value; exported to IFC as Lapin_Parameters or the
- * standard set named): in the properties panel, and in a type's configurator (the doors and windows', decision 251).
+ * standard set named): in the properties panel, and in a type's configurator (the doors and windows', decision 251). A type's
+ * parameter may be an instance default (a tester's report: new / existing / demolish is each element's): each element given
+ * the type gets a copy it may change, and the type's IFC sets leave it out; elements made before get it when asked.
  */
 
 import { useEffect, useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { CopyCheck, Plus, X } from 'lucide-react';
 import { Cell, LengthCell } from './cells';
 import { parseNumber } from './cellKeys';
-import { execute, query } from '../engine/session';
+import { execute, query, useSession } from '../engine/session';
+import { notify } from '../app/store';
 import { paramKey, sameKind, type Param } from './params';
 import type { NodeDto } from '../engine/protocol';
 
@@ -40,8 +43,15 @@ export function useStandardProps(cls: string): [string, string, string][] {
  * parameters of: `ids` then names who is written). Parameters the element
  * has of its own shadow its type's of the same name.
  */
-export function ParamsSection({ node, ids: who, shadowed }: { node: NodeDto; ids?: () => string[]; shadowed?: Set<string> }) {
+export function ParamsSection({ node, ids: who, shadowed, isType = node.type.endsWith('Type') }: { node: NodeDto; ids?: () => string[]; shadowed?: Set<string>; isType?: boolean }) {
   const params = (Array.isArray(node.props.params) ? node.props.params : []) as unknown as Param[];
+  // A type's parameter marked an instance default, or back to the type's own (its value kept).
+  const setInstance = (p: Param, instance: boolean) => void execute('element.setParam', { ids: ids(), name: p.name, value: p.value, instance, ...(p.pset ? { pset: p.pset } : {}) });
+  const applyDefaults = async () => {
+    const r = await execute('types.applyInstanceDefaults', { id: node.id }) as { filled: number } | null;
+    if (!r) { notify(useSession.getState().error ?? 'The instance defaults could not be applied.'); return; }
+    notify(r.filled === 0 ? 'Every element of the type already has its instance defaults.' : "The type's instance defaults were given to its elements that lacked them, in one step to undo.");
+  };
   const [name, setName] = useState('');
   const [kind, setKind] = useState<string>('text');
   const ids = who ?? (() => sameKind(node));
@@ -75,9 +85,21 @@ export function ParamsSection({ node, ids: who, shadowed }: { node: NodeDto; ids
                   : <Cell className="num" value={p.value == null ? '' : String(p.value)} suffix={p.kind === 'area' ? 'm²' : p.kind === 'angle' ? '°' : undefined}
                       onCommit={(t) => { const n = parseNumber(t); if (n != null) set(p, n); }} />}
               </dd>
+              {isType && (
+                <label className="small muted param-instance" title="An instance default: each element given this type gets a copy it may change (Renovation status, a room's use), and the type's IFC property sets leave it out. Unticked: a property of the type itself (FireRating), shared by every element.">
+                  <input type="checkbox" checked={p.instance === true} data-param-instance={p.name} onChange={(e) => setInstance(p, e.target.checked)} /> Instance default
+                </label>
+              )}
             </span>
           ))}
         </dl>
+      )}
+      {isType && params.some((p) => p.instance) && (
+        <div className="param-add">
+          <button type="button" className="btn small" data-action="apply-instance-defaults" title="Elements of the type placed before a parameter became an instance default lack it: each gets a copy, those with their own value keep it; one step to undo" onClick={() => void applyDefaults()}>
+            <CopyCheck size={13} /> Apply instance defaults to elements of this type
+          </button>
+        </div>
       )}
       <div className="param-add">
         <input placeholder="New parameter" value={name} list="param-suggestions" onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') add(); }} />

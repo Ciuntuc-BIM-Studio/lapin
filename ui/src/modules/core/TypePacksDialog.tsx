@@ -3,20 +3,26 @@
  * columns, beams, stairs…), chosen and exported as a .lapintypes with what they are made of (layers, materials,
  * profiles, parameters), the file a types extension is; and a .lapintypes read, its types chosen and brought into the
  * project in one step to undo (types.importFrom: materials matched by name or made, an identical type reused, one of
- * the same name that differs added as „Name (2)”).
+ * the same name that differs added as „Name (2)”). What the project already has under the same name and is defined
+ * otherwise (a material's hatches, a type's layers) is listed before, with a choice each (LibraryChoices): nothing is
+ * lost in silence; what the import did is counted.
  */
 
 import { useEffect, useMemo, useState } from 'react';
 import { FileDown, FileUp, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
 import { pickFile, saveFile } from '../../engine/files';
-import { execute, query, useSession } from '../../engine/session';
+import { query, useSession } from '../../engine/session';
 import { readTypePack } from '../../platform/extensions/packs';
 import { PendingDialog } from './PendingDialog';
+import { ask, defaultChoices, ImportSummary, LibraryChoices, run, type ImportSummaryData, type LibraryChoiceState, type MaterialConflict } from './LibraryChoices';
 
 interface ProjectType { id: string; class: string; label: string; name: string; count: number }
-interface PackType { ref: string; class: string; label: string; name: string; exists: boolean }
-interface ImportResult { created: number; reused: number; materials: number }
+interface PackType { ref: string; class: string; label: string; name: string; exists: boolean; differs?: string[] }
+interface ImportResult { created: number; reused: number; updated: number; skipped: number; materials: number; materialsUpdated: number; materialsKept: number; materialsRenamed: string[]; types: { name: string; status: string }[] }
+
+/** The pack's types the project has by name, made otherwise. */
+const conflictsOf = (types: PackType[]) => types.filter((t) => (t.differs?.length ?? 0) > 0).map((t) => ({ key: t.ref, name: t.name, label: t.label, differs: t.differs! }));
 
 const byKind = <T extends { label: string; name: string }>(list: T[]) => [...list].sort((a, b) => a.label.localeCompare(b.label) || a.name.localeCompare(b.name));
 
@@ -25,8 +31,10 @@ export function TypePacksDialog() {
   const [types, setTypes] = useState<ProjectType[] | null>(null);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [name, setName] = useState('');
-  const [pack, setPack] = useState<{ file: string; name: string | null; text: string; types: PackType[] } | null>(null);
+  const [pack, setPack] = useState<{ file: string; name: string | null; text: string; types: PackType[]; materials: MaterialConflict[] } | null>(null);
   const [chosen, setChosen] = useState<Set<string>>(new Set());
+  const [choices, setChoices] = useState<LibraryChoiceState>({ materials: {}, types: {} });
+  const [summary, setSummary] = useState<ImportSummaryData | null>(null);
   const close = () => useUi.setState({ dialog: null });
   useEffect(() => {
     let live = true;
@@ -38,26 +46,34 @@ export function TypePacksDialog() {
 
   const toggle = (set: Set<string>, id: string) => { const n = new Set(set); if (n.has(id)) n.delete(id); else n.add(id); return n; };
   const exportPack = async () => {
-    const r = await query<{ text: string; file: string }>('types.export', { ids: [...picked], name: name.trim() || undefined });
+    const r = await ask<{ text: string; file: string }>('types.export', { ids: [...picked], name: name.trim() || undefined });
     if (!r) return;
     if (await saveFile(new TextEncoder().encode(r.text), r.file, 'application/json')) notify('The types were exported as a .lapintypes, with their layers, materials and profiles: the file a types extension is.');
   };
   const openPack = async () => {
+    setSummary(null);
     const f = await pickFile('Type pack (.lapintypes)', ['lapintypes', 'json']);
     if (!f) return;
     try {
       const { text } = readTypePack(f.bytes);
-      const r = await query<{ name: string | null; types: PackType[] }>('types.readPack', { text });
+      // A refusal (not a pack, a newer one, a kind of type this edition lacks) is said, not swallowed.
+      const r = await ask<{ name: string | null; types: PackType[]; materials?: MaterialConflict[] }>('types.readPack', { text });
       if (!r) return;
-      setPack({ file: f.name, name: r.name, text, types: r.types });
+      const materials = r.materials ?? [];
+      setPack({ file: f.name, name: r.name, text, types: r.types, materials });
       setChosen(new Set(r.types.map((t) => t.ref)));
+      setChoices(defaultChoices(materials, conflictsOf(r.types), 'both'));
     } catch (e) { notify(e instanceof Error ? e.message : String(e)); }
   };
   const bring = async () => {
     if (!pack) return;
-    const r = await execute('types.importFrom', { text: pack.text, refs: [...chosen] }) as ImportResult | null;
+    const types = Object.fromEntries(Object.entries(choices.types).filter(([ref]) => chosen.has(ref)));
+    const r = await run<ImportResult>('types.importFrom', { text: pack.text, refs: [...chosen], materials: choices.materials, types });
     if (!r) return;
-    notify(`Types added to the project: ${r.created} new, ${r.reused} already in it.`);
+    setSummary({ typesMade: r.created, typesReused: r.reused, typesChanged: r.updated, typesSkipped: r.skipped, materialsMade: r.materials, materialsUpdated: r.materialsUpdated, materialsKept: r.materialsKept,
+      renamed: [...r.types.filter((t) => t.status === 'renamed').map((t) => t.name), ...r.materialsRenamed] });
+    if (r.created + r.updated === 0 && r.reused === 0) notify("No type was imported: the file's types were all skipped.");
+    else notify(`Types added to the project: ${r.created} new, ${r.reused} already in it.`);
     setPack(null);
   };
 
@@ -83,6 +99,7 @@ export function TypePacksDialog() {
                   ))}
                 </tbody>
               </table>
+              <LibraryChoices materials={pack.materials} types={conflictsOf(packTypes).filter((t) => chosen.has(t.key))} value={choices} onChange={setChoices} />
             </>
           ) : (
             <>
@@ -102,6 +119,7 @@ export function TypePacksDialog() {
                   </tbody>
                 </table>
               )}
+              {summary && <ImportSummary r={summary} />}
               <label className="row small">Pack name <input className="grow" value={name} onChange={(e) => setName(e.target.value)} placeholder="Types" data-field="type-pack-name" /></label>
             </>
           )}
