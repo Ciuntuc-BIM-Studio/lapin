@@ -595,6 +595,9 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
     /// the host (reports, links opened, the recovery journal); exports come
     /// back as bytes, imports bring theirs. A viewer looks; an editor edits.
     /// </summary>
+    /// <summary>The library files a firm's folder may hold (docs/plan-user-extensibility.md §4.2), by extension.</summary>
+    public static readonly string[] LibraryKinds = ["lapinsymbols", "lapintypes", "lapinstandards", "lapinrules", "lapinbarshapes", "lapinparams", "lapinmapping", "lapinprofiles", "lapinprices", "pat", "lin"];
+
     public static string? AllowedRemote(string method, JsonObject p, string role)
     {
         // Anywhere in the call (a query's args, a batch's steps, an attribute set): a file or folder named by its path.
@@ -877,6 +880,52 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 lib["checks"] = new JsonArray(read.Checks.Take(500).Select(x => (JsonNode)Lapin.Platform.ProfileLibraries.ProfileProps.CheckJson(x)).ToArray());
                 lib["checkCount"] = read.Checks.Count;
                 return (lib, null);
+            }
+            case "library.readFolder":
+            {
+                // A firm's folder of libraries (docs/plan-user-extensibility.md §4.2): every file of a library kind in it (or of the kinds
+                // asked), with its kind, name, date and text (at most 16 MB each); the interface reads each through its kind's own importer.
+                var folder = HostFiles.Check((string?)p["path"] ?? throw new CommandException("The folder's path is missing."));
+                var kinds = p["kinds"] is JsonArray ka ? ka.Select(x => ((string?)x)?.TrimStart('.').ToLowerInvariant()).OfType<string>().Where(LibraryKinds.Contains).ToHashSet() : [.. LibraryKinds];
+                var files = new JsonArray();
+                var problems = new JsonArray();
+                var exists = Directory.Exists(folder);
+                if (!exists) problems.Add((JsonNode)$"The folder {folder} cannot be reached.");
+                else
+                    foreach (var file in Directory.EnumerateFiles(folder).Where(f => kinds.Contains(Path.GetExtension(f).TrimStart('.').ToLowerInvariant())).Order(StringComparer.OrdinalIgnoreCase))
+                    {
+                        try
+                        {
+                            var info = new FileInfo(file);
+                            if (info.Length > 16 * 1024 * 1024) { problems.Add((JsonNode)$"{info.Name}: larger than 16 MB."); continue; }
+                            files.Add((JsonNode)new JsonObject
+                            {
+                                ["file"] = file, ["name"] = Path.GetFileNameWithoutExtension(file), ["kind"] = Path.GetExtension(file).TrimStart('.').ToLowerInvariant(),
+                                ["modified"] = info.LastWriteTime.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture), ["text"] = File.ReadAllText(file),
+                            });
+                        }
+                        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { problems.Add((JsonNode)$"{Path.GetFileName(file)}: {e.Message}"); }
+                    }
+                return (new JsonObject { ["folder"] = folder, ["exists"] = exists, ["files"] = files, ["problems"] = problems }, null);
+            }
+            case "library.writeFolder":
+            {
+                // A library file written into a firm's folder ({path, name, kind, text}) through a temporary file, one of that name replaced.
+                var folder = HostFiles.Check((string?)p["path"] ?? throw new CommandException("The folder's path is missing."));
+                var kind = ((string?)p["kind"])?.TrimStart('.').ToLowerInvariant() is { } k && LibraryKinds.Contains(k) ? k : throw new CommandException($"A library file is one of {string.Join(", ", LibraryKinds.Select(x => "." + x))}.");
+                var text = (string?)p["text"] ?? throw new CommandException("Nothing to write.");
+                if (!Directory.Exists(folder)) throw new CommandException($"The folder {folder} cannot be reached.");
+                var name = (string?)p["name"] ?? "library";
+                var safe = string.Concat(name.Select(c => Path.GetInvalidFileNameChars().Contains(c) || c is '/' or '\\' or ':' ? '_' : c)).Trim();
+                var target = Path.Combine(folder, $"{(safe.Length > 0 ? safe : "library")}.{kind}");
+                try
+                {
+                    var temp = target + ".tmp";
+                    File.WriteAllText(temp, text);
+                    File.Move(temp, target, true);
+                }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException) { throw new CommandException($"The file could not be written there: {e.Message}"); }
+                return (new JsonObject { ["file"] = target }, null);
             }
             case "profiles.readFolder":
             {
