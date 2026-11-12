@@ -134,6 +134,22 @@ public static class DraftCommands
                         attrs["hatch"] = nh;
                     }
                 }
+                else if (e.PredefinedType == SymbolInstances.Predefined)
+                {
+                    // A symbol: its point, angle and flips carried (a mirror turns it over, its texts stay readable); a scale its size.
+                    var place = op switch
+                    {
+                        "mirror" => Placement2D.Mirror(P(a["a"]), P(a["b"])),
+                        _ => new Placement2D(point, turn, false),
+                    };
+                    SymbolInstances.Carry(attrs, place);
+                    if (op == "scale" && Json.Number(a["factor"]) is { } k)
+                    {
+                        attrs["scale"] = Math.Round((Json.Number(attrs["scale"]) is > 0 and var s0 ? s0 : 1) * Math.Abs(k), 9);
+                        // A negative factor is a half turn about the centre.
+                        if (k < 0) attrs["angle"] = Math.Round(((Json.Number(attrs["angle"]) ?? 0) + 180) % 360, 9);
+                    }
+                }
                 else if (e.PredefinedType == "TEXT" && attrs["at"] is JsonArray at)
                 {
                     var q = point(new Vec2(Json.Number(at[0]) ?? 0, Json.Number(at[1]) ?? 0));

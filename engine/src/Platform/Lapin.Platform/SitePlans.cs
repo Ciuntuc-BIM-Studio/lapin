@@ -119,6 +119,14 @@ public static class SitePlans
             var r = 7 * mm;
             var at = new Vec2(hi.X + 4 * mm + r, hi.Y - r - 6 * mm);
             var mk = new ViewMark(null);
+            // A symbol of the user's (the view's own, else the project's): where Lapin's arrow is, its +y to true north.
+            if (SymbolSlots.SymbolFor(c.Model, "northArrow", c.View) is { } northSymbol)
+            {
+                SymbolSlots.Draw(c, mk, northSymbol, at, n, false, 1, Layer, Ink, _ => (false, null));
+                yield return mk;
+            }
+            else
+            {
             mk.Polyline(ViewMark.Circle(at, r, 48), true, Layer, Pens.Default.Seen, Ink);
             var tip = at + n * (r * 1.25);
             var tail = at - n * (r * 0.8);
@@ -128,6 +136,7 @@ public static class SitePlans
             mk.Fills.Add(([[tip, right, tail]], Ink));
             mk.Text(new PenText(tip + n * (2.5 * mm), "N", text.Height * 1.2, 0, "middle", "bottom", true, text.Font), Ink);
             yield return mk;
+            }
         }
 
         if (ScaleBar(c.View))

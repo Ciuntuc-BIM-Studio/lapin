@@ -30,7 +30,7 @@ public sealed class VisibilityGraphics
     public static readonly string[] LinkDisplays = ["host", "custom"];
 
     /// <summary>The annotation categories, by what owns a mark (stage B).</summary>
-    public static readonly string[] AnnotationCategories = ["dimensions", "texts", "tags", "roomTags", "grids", "levels", "sections", "elevations", "callouts", "refPlanes", "viewBoundaries", "legends"];
+    public static readonly string[] AnnotationCategories = ["dimensions", "texts", "tags", "roomTags", "grids", "levels", "sections", "elevations", "callouts", "refPlanes", "viewBoundaries", "legends", "symbols"];
 
     readonly IModelView m;
     readonly bool in3d;
@@ -171,7 +171,7 @@ public sealed class VisibilityGraphics
     /// <summary>The annotation category of a mark's owner (a dimension, a grid, a level, a room's stamp…), or null when it is not an annotation.</summary>
     public static string? AnnotationOf(Entity e, ViewMark? mk = null) => e.Class switch
     {
-        IfcClass.Annotation => e.PredefinedType switch { "DIMENSION" => "dimensions", "TEXT" => "texts", "TAG" => "tags", "LEGEND" => "legends", _ => null },
+        IfcClass.Annotation => e.PredefinedType switch { "DIMENSION" => "dimensions", "TEXT" => "texts", "TAG" => "tags", "LEGEND" => "legends", "SYMBOL" => "symbols", _ => null },
         IfcClass.Grid => "grids",
         IfcClass.BuildingStorey => "levels",
         IfcClass.Space => mk is { Under: false, Pick: false } ? "roomTags" : null,

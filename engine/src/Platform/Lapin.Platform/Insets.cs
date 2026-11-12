@@ -113,7 +113,12 @@ public static class Insets
             {
                 mk.Polyline([lo, new Vec2(hi.X, lo.Y), hi, new Vec2(lo.X, hi.Y)], true, Layer, 0.18, "#555555");
                 var scale = c.Scale / factor;
-                mk.Text(new PenText(new Vec2((lo.X + hi.X) / 2, lo.Y - 1.5 * c.Mm), $"{source.Name}  1:{Math.Round(scale).ToString(CultureInfo.InvariantCulture)}", 2.5, 0, "middle", "top"), "#555555");
+                var scaleText = $"1:{Math.Round(scale).ToString(CultureInfo.InvariantCulture)}";
+                // A symbol of the user's for its head (the inset's own, else the project's), on the frame's lower-left corner.
+                if (SymbolSlots.SymbolFor(c.Model, "calloutHead", e) is { } headSymbol)
+                    SymbolSlots.Draw(c, mk, headSymbol, lo, new Vec2(0, 1), false, 1, Layer, "#555555", SymbolSlots.MarkTokens(c.Model, source, key => key == "mark.scale" ? (true, scaleText) : (false, null)));
+                else
+                mk.Text(new PenText(new Vec2((lo.X + hi.X) / 2, lo.Y - 1.5 * c.Mm), $"{source.Name}  {scaleText}", 2.5, 0, "middle", "top"), "#555555");
             }
             else
             {

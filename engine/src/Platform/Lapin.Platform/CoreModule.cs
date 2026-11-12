@@ -89,6 +89,12 @@ public sealed class CoreModule : ILapinModule
         TypeDefaults.Register(r);
         Sheets.Register(r);
         TitleBlocks.Register(r);
+        // 2D symbols of the user's own (docs/plan-user-extensibility.md §3).
+        Symbols.Register(r);
+        SymbolSlots.Register(r);
+        // The table import (docs/plan-user-extensibility.md §7.1) and its first target, property values.
+        TableImport.Register(r);
+        r.Service<TableTarget>(PropertyTable.Target);
         CutOrder.Register(r);
         StoreyMove.Register(r);
         StoreyCopy.Register(r);

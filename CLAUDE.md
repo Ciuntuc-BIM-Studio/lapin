@@ -83,6 +83,7 @@ Subagents default to Sonnet. Every code change in `engine/`, geometry, licence a
 - Norms and prices are the user's own; anything Lapin ships is marked indicative.
 - The open repo holds hooks only; premium code stays in its private repo and open modules never depend on it.
 - New interface strings go in all the languages of `ui/src/i18n`.
+- Whatever users can easily configure themselves — by drawing it (a saved symbol, shape or profile) or by formulas and live text (`{…}` tokens, `{= …}`) — gets that way too, beside the built-in coded one; extend, never break: the coded version stays the built-in default with the same output (docs/plan-user-extensibility.md).
 
 ## What exists, and where to read about it
 

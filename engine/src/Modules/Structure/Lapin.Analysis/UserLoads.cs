@@ -116,9 +116,13 @@ public static class UserLoads
         var direction = (string?)a["direction"] ?? "down";
         if (!Directions.Contains(direction)) throw new CommandException($"A load's direction is {string.Join(", ", Directions)}.");
         attrs["direction"] = direction;
+        // Its case by id, else by its code or name (a table's rows name it; docs/plan-user-extensibility.md §7.2), else the default.
         var caseId = (string?)a["caseId"] is { Length: > 0 } given
             ? LoadCases.Find(ctx.Model, given)?.Id ?? throw new CommandException("There is no such load case.")
-            : LoadCases.DefaultForLoads(ctx);
+            : (string?)a["caseName"] is { Length: > 0 } named
+                ? (LoadCases.All(ctx.Model).FirstOrDefault(c => string.Equals(c.Code, named, StringComparison.OrdinalIgnoreCase)) ?? LoadCases.All(ctx.Model).FirstOrDefault(c => string.Equals(c.Name, named, StringComparison.OrdinalIgnoreCase)))?.Id
+                  ?? throw new CommandException($"There is no load case „{named}”.")
+                : LoadCases.DefaultForLoads(ctx);
         attrs["caseId"] = caseId;
         var e = new Entity(ctx.NewId(), cls, name, attrs);
         ctx.Add(e);

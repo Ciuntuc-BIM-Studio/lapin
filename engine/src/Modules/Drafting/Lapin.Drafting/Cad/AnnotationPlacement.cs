@@ -47,6 +47,9 @@ public sealed class AnnotationPlacement : IElementPlacement
                 if (attrs["end"] is JsonArray && ((string?)attrs["element"] is not { } tagged || TagHold.Moves(m, tagged, moving) || m.Get(tagged) == null))
                     attrs["end"] = J(t.Point(P(attrs["end"])));
                 break;
+            case SymbolInstances.Predefined:
+                SymbolInstances.Carry(attrs, t);
+                break;
             case "TEXT":
                 attrs["at"] = J(t.Point(P(attrs["at"])));
                 var deg = Json.Number(attrs["angle"]) ?? 0;

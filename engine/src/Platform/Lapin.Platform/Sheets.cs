@@ -271,6 +271,20 @@ public static class Sheets
         // View titles: the view's name over a rule, its scale beside, under the box's lower-left corner; the view's own pens, so they move with it.
         foreach (var pl in placements.Where(p => !p.Content))
         {
+            // A symbol of the user's for the title (the view's own, else the project's): its insertion point at the box's lower-left corner.
+            if (SymbolSlots.SymbolFor(q.Model, "viewTitle", pl.View) is { } titleSymbol)
+            {
+                var titled = pl;
+                var own = SymbolSlots.SheetPens(q, titleSymbol, new Vec2(pl.X0, pl.Y1), titled.View, SymbolSlots.MarkTokens(q.Model, pl.View, key => key switch
+                {
+                    "view.name" or "mark.name" => (true, titled.Boundary != null ? $"{titled.View.Name} · {titled.Boundary.Name}" : titled.View.Name),
+                    "view.scale" or "mark.scale" => (true, $"1:{titled.Drawing.Scale:0}"),
+                    _ => (false, null),
+                }));
+                foreach (var p in own) p.Viewport = pl.Viewport.Id;
+                pens.AddRange(own);
+                continue;
+            }
             var y = pl.Y1 + 7;
             var title = new Pen("TEXT", "#000000", 0, null, null) { Viewport = pl.Viewport.Id };
             var rule = new Pen("TITLE", "#000000", RulePen, null, null) { Viewport = pl.Viewport.Id };
@@ -281,6 +295,9 @@ public static class Sheets
             title.Texts.Add(new PenText(new Vec2(pl.X0 + nameWidth + 4, y), $"1:{pl.Drawing.Scale:0}", 2.5, Anchor: "start"));
             pens.AddRange([rule, title]);
         }
+
+        // The sheet's own symbols (a north arrow, a stamp, a key): over the views, under the title block.
+        pens.AddRange(Symbols.SheetPens(q, sheet, placements));
 
         if (template != null)
         {

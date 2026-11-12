@@ -120,6 +120,11 @@ public static class ElevationMarkers
             // The symbol behind the line's middle: a circle of the symbol's size, its arrow filled, pointing at the building.
             var r = u / 2;
             var centre = At((lo + hi) / 2 + along) - d * r;
+            // A symbol of the user's for the mark (the elevation's own, else the project's): its centre where Lapin's circle is, +y at the building.
+            if (SymbolSlots.SymbolFor(c.Model, "elevationHead", v) is { } markSymbol)
+                SymbolSlots.Draw(c, mk, markSymbol, centre, d, false, size / Standards.DefaultMarkSize, "ELEVATION", "#000000", SymbolSlots.MarkTokens(c.Model, v));
+            else
+            {
             mk.Polyline(ViewMark.Circle(centre, r, 32), true, "ELEVATION", Pens.Default.Seen);
             Vec2[] arrow = [centre + d * (1.6 * r), centre + right * (0.8 * r), centre - right * (0.8 * r)];
             mk.Fills.Add(([arrow], "#000000"));
@@ -129,6 +134,7 @@ public static class ElevationMarkers
             var gap = r + 0.3 * r + (Math.Abs(away.Y) > 0.5 ? 0.6 * textHeight * c.Mm : 0);
             var anchor = away.X > 0.5 ? "start" : away.X < -0.5 ? "end" : "middle";
             mk.Text(new PenText(centre + away * gap, v.Name, textHeight, Anchor: anchor, Baseline: "middle", Font: text.Font));
+            }
             mk.Snaps.AddRange([a, bEnd]);
             mk.Data = new JsonObject
             {

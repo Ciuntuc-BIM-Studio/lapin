@@ -156,9 +156,18 @@ public static class Grids
                 mk.Line(a, b, "GRID", Pens.Default.Hidden, color, dash);
                 var u = (b - a).Normalized();
                 var ends = c.Kind == "plan" ? axis.Ends ?? axisStyle.Ends : "end";
+                // A symbol of the user's for the bubbles (the grid's own, else the project's), its insertion point on the axis' end, +y outward.
+                var bubbleSymbol = SymbolSlots.SymbolFor(c.Model, "gridBubble", grid);
                 foreach (var (end, outward, on) in new[] { (a, -u, ends is "both" or "start"), (b, u, ends is "both" or "end") })
                 {
                     if (!on) continue;
+                    if (bubbleSymbol != null)
+                    {
+                        var tag = axis.Tag;
+                        SymbolSlots.Draw(c, mk, bubbleSymbol, end, outward, false, axisStyle.Size / Standards.DefaultAxis.Size, "GRID", color,
+                            key => key is "grid.label" or "attr.label" ? (true, tag) : (false, null));
+                        continue;
+                    }
                     var centre = end + outward * r;
                     var outline = axisStyle.Bubble == "square"
                         ? new[] { centre + new Vec2(-r, -r), centre + new Vec2(r, -r), centre + new Vec2(r, r), centre + new Vec2(-r, r) }

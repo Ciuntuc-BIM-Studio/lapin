@@ -40,6 +40,9 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
         r.Service<IViewAnnotations>(this);
         r.Service<IStructuralLoads>(this);
         r.Service<IElementPlacement>(new UserLoads.Placement());
+        // Loads and load cases from tables (docs/plan-user-extensibility.md §7.2).
+        r.Service<TableTarget>(AnalysisTables.Loads);
+        r.Service<TableTarget>(AnalysisTables.Cases);
 
         // ── Cases ──
 

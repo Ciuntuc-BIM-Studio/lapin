@@ -1034,12 +1034,17 @@ public static class Views
                 mk.Line(first.A, first.A + u0 * Math.Min(0.8 * u, first.Length / 3), "SECTION", Pens.Default.Cut).Line(last.B, last.B - u1 * Math.Min(0.8 * u, last.Length / 3), "SECTION", Pens.Default.Cut);
                 // Each head (its arrow and name) where its end is, or moved off it (decision 460: headA, headB), a fine leader back.
                 var heads = new JsonArray();
+                // A symbol of the user's for the head (docs/plan-user-extensibility.md §3.3): the section's own, else the project's; none, Lapin's arrow.
+                var headSymbol = SymbolSlots.SymbolFor(m, "sectionHead", v);
                 foreach (var (key, end, look) in new[] { ("a", first.A, u0.Perp), ("b", last.B, u1.Perp) })
                 {
                     var off = SectionHeads.Offset(v, key);
                     var foot = end + off;
                     if (off.Length > 1e-9) mk.Line(end, foot, "SECTION", Pens.Default.Hatch);
                     var tip = foot + look * arrow;
+                    // Its +y the way the section looks, its +x out along the line at either end (turned over at the start).
+                    if (headSymbol != null) SymbolSlots.Draw(c, mk, headSymbol, foot, look, key == "a", size / Standards.DefaultMarkSize, "SECTION", "#000000", SymbolSlots.MarkTokens(m, v));
+                    else
                     mk.Line(foot, tip, "SECTION", Pens.Default.Seen)
                       .Line(tip, tip - look * head + look.Perp * (head * 0.5), "SECTION", Pens.Default.Seen)
                       .Line(tip, tip - look * head - look.Perp * (head * 0.5), "SECTION", Pens.Default.Seen)
@@ -1075,6 +1080,21 @@ public static class Views
                 var w = t / Math.Sqrt(3);
                 var (apex, left, right, mid) = (new Vec2(x1, y), new Vec2(x1 - w, y + t), new Vec2(x1 + w, y + t), new Vec2(x1, y + t));
                 const string ink = "#222222";
+                // A symbol of the user's for the marker (the storey's own, else the project's): standing on the line's end, with the level's name and elevation.
+                if (SymbolSlots.SymbolFor(m, "levelHead", storey) is { } levelSymbol)
+                {
+                    var levelName = storey.Name;
+                    var levelText = Standards.IsImperial(c.Book.Units) ? Standards.FormatLevel(z, c.Book.Units) : Symbols.Level(z);
+                    SymbolSlots.Draw(c, mk, levelSymbol, apex, new Vec2(0, 1), false, size / DefaultLevelMarkSize, "LEVEL", ink, key => key switch
+                    {
+                        "level.name" or "attr.name" => (true, levelName),
+                        "level.elevation" or "attr.level" => (true, levelText),
+                        "level.z" => (true, z.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)),
+                        _ => (false, null),
+                    });
+                    yield return mk;
+                    continue;
+                }
                 switch (style)
                 {
                     case "tick": mk.Line(apex, mid, "LEVEL", Pens.Default.Cut, ink); break;
