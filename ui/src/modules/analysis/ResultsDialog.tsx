@@ -3,6 +3,7 @@
 import { Play, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { PendingDialog } from '../core/PendingDialog';
+import { ShellMaxima, ShellOptions } from './ShellOptions';
 import { hideDiagrams, runAnalysis, setPick, showDiagrams, useResults } from './useResults';
 import {
   balanceText, formatMm, formatValue, formatVec, FORCE_QUANTITIES, pickChoices, pickValue, spanRatio,
@@ -50,8 +51,11 @@ export function ResultsDialog() {
                 </select>
               </div>
               {results ? <Maxima results={results} /> : <p className="muted">Reading the results…</p>}
+              {results && <ShellMaxima results={results} />}
             </>
           )}
+          <ShellOptions />
+
           {run.notes.map((n, i) => <p key={i} className="muted small">{n}</p>)}
           <p className="muted small">The results are indicative: loads, combinations and the analysis are yours to check before you rely on them.</p>
           <div className="row">
@@ -72,6 +76,7 @@ function Summary({ run }: { run: RunDto }) {
       <p className="row" data-testid="analysis-summary">
         <span>Bars</span><b data-no-i18n>{run.elements}</b><span className="muted">·</span>
         <span>Nodes</span><b data-no-i18n>{run.nodes}</b><span className="muted">·</span>
+        {run.shells && <><span>Shell elements</span><b data-no-i18n>{run.shells.elements}</b><span className="muted">·</span></>}
         <span>Unknowns</span><b data-no-i18n>{run.dofs}</b><span className="muted">·</span>
         <span>Solve time</span><b data-no-i18n>{formatValue(run.solveMs)} ms ({formatValue(run.totalMs)} ms)</b>
       </p>

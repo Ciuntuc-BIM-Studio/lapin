@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { engine, useSession } from '../../engine/session';
 import { useUi } from '../../app/store';
 import { pickArgs, pickFrom, validPick, type DiagramDto, type Pick, type Quantity, type ResultsDto, type RunDto } from './results';
+import type { ContoursDto, ShellQuantity } from './shells';
 
 export interface ResultsState {
   run: RunDto | null;
@@ -22,10 +23,14 @@ export interface ResultsState {
   reactions: boolean;
   results: ResultsDto | null;
   diagram: DiagramDto | null;
+  /** The quantity contoured on the slabs and walls analysed as shells (null: none). */
+  shellQuantity: ShellQuantity | null;
+  contours: ContoursDto | null;
 }
 
 export const useResults = create<ResultsState>(() => ({
   run: null, error: null, running: false, at: null, stale: false, show: false, pick: null, quantity: 'Mz', mult: 1, reactions: true, results: null, diagram: null,
+  shellQuantity: 'my', contours: null,
 }));
 
 const set = useResults.setState;
@@ -37,20 +42,22 @@ const ask = <T,>(name: string, args: Record<string, unknown>) => engine.call<T>(
 /** The results and the diagram of what is picked, asked again (the newest answer only counts). */
 export async function refresh(): Promise<void> {
   const s = useResults.getState();
-  if (!s.run || !s.run.ok || !s.pick) { set({ results: null, diagram: null }); return; }
+  if (!s.run || !s.run.ok || !s.pick) { set({ results: null, diagram: null, contours: null }); return; }
   const mine = ++ticket;
   const key = `${s.pick.kind}:${s.pick.key}:${s.quantity}`;
   const scale = baseScale?.key === key && s.mult !== 1 ? baseScale.scale * s.mult : undefined;
+  const shells = !!s.run.shells && s.shellQuantity !== null;
   try {
-    const [results, diagram] = await Promise.all([
+    const [results, diagram, contours] = await Promise.all([
       ask<ResultsDto>('analysis.results', pickArgs(s.pick)),
       ask<DiagramDto>('analysis.diagram', { ...pickArgs(s.pick), quantity: s.quantity, ...(scale ? { scale } : {}) }),
+      shells ? ask<ContoursDto>('analysis.contours', { ...pickArgs(s.pick), quantity: s.shellQuantity }) : Promise.resolve(null),
     ]);
     if (mine !== ticket || useResults.getState().stale) return;
     if (scale === undefined) baseScale = { key, scale: diagram.scale };
-    set({ results, diagram, error: null });
+    set({ results, diagram, contours, error: null });
   } catch (e) {
-    if (mine === ticket) set({ results: null, diagram: null, error: e instanceof Error ? e.message : String(e) });
+    if (mine === ticket) set({ results: null, diagram: null, contours: null, error: e instanceof Error ? e.message : String(e) });
   }
 }
 
@@ -67,7 +74,7 @@ export async function runAnalysis(open = true): Promise<void> {
     if (open) useUi.setState({ dialog: 'analysisResults' });
     await refresh();
   } catch (e) {
-    set({ run: null, running: false, error: e instanceof Error ? e.message : String(e), results: null, diagram: null, show: false });
+    set({ run: null, running: false, error: e instanceof Error ? e.message : String(e), results: null, diagram: null, contours: null, show: false });
     if (open) useUi.setState({ dialog: 'analysisResults' });
   }
 }
@@ -80,6 +87,8 @@ export const setPick = (p: Pick | string | null): void => {
   void refresh();
 };
 export const setQuantity = (quantity: Quantity): void => { baseScale = null; set({ quantity, mult: 1 }); void refresh(); };
+/** The quantity contoured on the shells; null takes the contours off. */
+export const setShellQuantity = (shellQuantity: ShellQuantity | null): void => { set({ shellQuantity, contours: shellQuantity ? useResults.getState().contours : null }); void refresh(); };
 let slide: ReturnType<typeof setTimeout> | undefined;
 export const setMult = (mult: number): void => {
   set({ mult });
@@ -90,12 +99,12 @@ export const setReactions = (reactions: boolean): void => set({ reactions });
 /** Takes the diagrams off the view (the run is kept). */
 export const hideDiagrams = (): void => set({ show: false });
 export const showDiagrams = (): void => set({ show: true });
-export const clearResults = (): void => { ticket++; baseScale = null; set({ run: null, results: null, diagram: null, show: false, stale: false, error: null, at: null }); };
+export const clearResults = (): void => { ticket++; baseScale = null; set({ run: null, results: null, diagram: null, contours: null, show: false, stale: false, error: null, at: null }); };
 
 /** A change to the model makes what was worked out stale: the drawing goes, the card offers Run again. */
 export function markStale(nodes: unknown): void {
   const s = useResults.getState();
   if (!s.run || s.stale || s.at === nodes) return;
   ticket++;
-  set({ stale: true, results: null, diagram: null });
+  set({ stale: true, results: null, diagram: null, contours: null });
 }

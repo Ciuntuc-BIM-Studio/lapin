@@ -200,6 +200,12 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
         r.Query("results", (q, a) => AnalysisRun.Results(q, a));
         // {case | combination | envelope, quantity: N | Vy | Vz | T | My | Mz | deformed, scale?, elementId?}: polylines in world coordinates.
         r.Query("diagram", (q, a) => AnalysisRun.Diagram(q, a));
+        // {case | combination | envelope, quantity: w | mx | my | mxy | nx | ny | nxy | vx | vy, shellId?}: each shell surface's
+        // mesh with the quantity smoothed at its nodes (S2, §10.6), world coordinates.
+        r.Query("contours", (q, a) => AnalysisRun.Contours(q, a));
+        r.Query("options", (q, _) => AnalysisSettings.Of(q.Model).ToJson());
+        // {shells?: both | slabs | walls | none, meshSize?: metres}: how the analysis takes slabs and walls; null back to the default. One undo step.
+        r.Command("setOptions", "Analysis options", (ctx, a) => { AnalysisSettings.Write(ctx, a); return null; });
 
         // {ids, axial: true | false | null}: whether the bars work axially only (a rod, a tie: pinned at their ends, their weight
         // at them) or as beams; null back to what their section and use say (FrameReleases.Axial). One undo step.

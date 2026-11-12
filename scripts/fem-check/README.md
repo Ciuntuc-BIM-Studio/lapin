@@ -47,10 +47,12 @@ The kind sets the tolerances against ifc_structural_mechanics:
   3 % on displacements and forces.
 - **open**: other sections, which it analyses as rectangles of the same area, second moments and shear areas, far too
   stiff in torsion for open sections (its README). Torsion is shown and not judged.
-- **shell**: a floor it analyses as a shell, which Lapin's S1 does not (the 45° rule onto the beams): the sums
-  agree, the distribution only roughly.
+- **shell**: a floor both analyse as a shell (Lapin from S2b, docs/plan-fem.md §10.13), each beam on its own axis
+  under it (the export moves its profile by the beam's offset). It ties a beam to the slab in translation along the
+  line (a hinge, its W-JNT-001), Lapin's slab is monolithic with the beam: the sums, supports (10 %), nodes and
+  deflected axes (5 %) are judged; the beams' shear, moments and torsion are shown, not judged.
 
-Against PyNite every model is held to 1e-4 of the largest value: the same bars, Lapin's arms rigid and PyNite's very
+PyNite takes bars only: a model with shells is compared with ifc_structural_mechanics alone. Against PyNite every model is held to 1e-4 of the largest value: the same bars, Lapin's arms rigid and PyNite's very
 stiff bars.
 
 ## Installing the other programs (once, outside the repository)

@@ -413,30 +413,32 @@ public static class ProfileIfc
     }
 
     /// <summary>
-    /// A profile in its parametric subtype, centred on its box as IFC defines them (Position left out: it is the identity),
+    /// A profile in its parametric subtype, centred on its box as IFC defines them (Position left out, the identity, unless
+    /// <paramref name="position"/> gives one: an IfcAxis2Placement2D moving it off the member's axis),
     /// the sizes in the file's length (<paramref name="perMetre"/> of them to a metre); null when IFC has no form for its kind
     /// (an outline, a Σ, a C without lips, a Z with lips or unequal thicknesses).
     /// </summary>
-    public static string? Parametric(Step f, SectionProfile p, double perMetre)
+    public static string? Parametric(Step f, SectionProfile p, double perMetre, string? position = null)
     {
         string V(double m) => R(m * perMetre);
         string Opt(double m) => m > 0 ? V(m) : Null;
         string Slope() => p.Slope > 0 ? R(Math.Atan(p.Slope)) : Null;
+        var pos = position ?? Null;
         return p.Kind switch
         {
-            "I" => f.Add("IFCISHAPEPROFILEDEF", E("AREA"), S(p.Name), Null, V(p.B), V(p.H), V(p.Tw), V(p.Tf), Opt(p.R1), Opt(p.R2), Slope()),
-            "asymI" => f.Add("IFCASYMMETRICISHAPEPROFILEDEF", E("AREA"), S(p.Name), Null, V(p.B2), V(p.H), V(p.Tw), V(p.Tf2), Opt(p.R1), V(p.B), V(p.Tf), Opt(p.R1), Null, Null, Null, Null),
-            "U" => f.Add("IFCUSHAPEPROFILEDEF", E("AREA"), S(p.Name), Null, V(p.H), V(p.B), V(p.Tw), V(p.Tf), Opt(p.R1), Opt(p.R2), Slope()),
-            "T" => f.Add("IFCTSHAPEPROFILEDEF", E("AREA"), S(p.Name), Null, V(p.H), V(p.B), V(p.Tw), V(p.Tf), Opt(p.R1), Opt(p.R2), Null, Null, Null),
-            "L" => f.Add("IFCLSHAPEPROFILEDEF", E("AREA"), S(p.Name), Null, V(p.H), V(p.B), V(p.Tw), Opt(p.R1), Opt(p.R2), Null),
-            "RHS" => f.Add("IFCRECTANGLEHOLLOWPROFILEDEF", E("AREA"), S(p.Name), Null, V(p.B), V(p.H), V(p.Tw), Opt(p.R2), Opt(p.R1)),
-            "CHS" => f.Add("IFCCIRCLEHOLLOWPROFILEDEF", E("AREA"), S(p.Name), Null, V(p.B / 2), V(p.Tw)),
-            "C" when p.Lip > 0 => f.Add("IFCCSHAPEPROFILEDEF", E("AREA"), S(p.Name), Null, V(p.H), V(p.B), V(p.Tw), V(p.Lip), Null),
+            "I" => f.Add("IFCISHAPEPROFILEDEF", E("AREA"), S(p.Name), pos, V(p.B), V(p.H), V(p.Tw), V(p.Tf), Opt(p.R1), Opt(p.R2), Slope()),
+            "asymI" => f.Add("IFCASYMMETRICISHAPEPROFILEDEF", E("AREA"), S(p.Name), pos, V(p.B2), V(p.H), V(p.Tw), V(p.Tf2), Opt(p.R1), V(p.B), V(p.Tf), Opt(p.R1), Null, Null, Null, Null),
+            "U" => f.Add("IFCUSHAPEPROFILEDEF", E("AREA"), S(p.Name), pos, V(p.H), V(p.B), V(p.Tw), V(p.Tf), Opt(p.R1), Opt(p.R2), Slope()),
+            "T" => f.Add("IFCTSHAPEPROFILEDEF", E("AREA"), S(p.Name), pos, V(p.H), V(p.B), V(p.Tw), V(p.Tf), Opt(p.R1), Opt(p.R2), Null, Null, Null),
+            "L" => f.Add("IFCLSHAPEPROFILEDEF", E("AREA"), S(p.Name), pos, V(p.H), V(p.B), V(p.Tw), Opt(p.R1), Opt(p.R2), Null),
+            "RHS" => f.Add("IFCRECTANGLEHOLLOWPROFILEDEF", E("AREA"), S(p.Name), pos, V(p.B), V(p.H), V(p.Tw), Opt(p.R2), Opt(p.R1)),
+            "CHS" => f.Add("IFCCIRCLEHOLLOWPROFILEDEF", E("AREA"), S(p.Name), pos, V(p.B / 2), V(p.Tw)),
+            "C" when p.Lip > 0 => f.Add("IFCCSHAPEPROFILEDEF", E("AREA"), S(p.Name), pos, V(p.H), V(p.B), V(p.Tw), V(p.Lip), Null),
             // IFC's flange runs from the web's far face; Lapin's width is the whole section's.
-            "Z" when p.Lip <= 0 => f.Add("IFCZSHAPEPROFILEDEF", E("AREA"), S(p.Name), Null, V(p.H), V((p.B + p.Tw) / 2), V(p.Tw), V(p.Tw), Null, Null),
-            "rectangle" => f.Add("IFCRECTANGLEPROFILEDEF", E("AREA"), S(p.Name), Null, V(p.B), V(p.H)),
-            "circle" => f.Add("IFCCIRCLEPROFILEDEF", E("AREA"), S(p.Name), Null, V(p.B / 2)),
-            "ellipse" => f.Add("IFCELLIPSEPROFILEDEF", E("AREA"), S(p.Name), Null, V(p.B / 2), V(p.H / 2)),
+            "Z" when p.Lip <= 0 => f.Add("IFCZSHAPEPROFILEDEF", E("AREA"), S(p.Name), pos, V(p.H), V((p.B + p.Tw) / 2), V(p.Tw), V(p.Tw), Null, Null),
+            "rectangle" => f.Add("IFCRECTANGLEPROFILEDEF", E("AREA"), S(p.Name), pos, V(p.B), V(p.H)),
+            "circle" => f.Add("IFCCIRCLEPROFILEDEF", E("AREA"), S(p.Name), pos, V(p.B / 2)),
+            "ellipse" => f.Add("IFCELLIPSEPROFILEDEF", E("AREA"), S(p.Name), pos, V(p.B / 2), V(p.H / 2)),
             _ => null,
         };
     }

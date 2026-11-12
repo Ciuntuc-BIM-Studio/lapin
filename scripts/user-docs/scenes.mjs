@@ -3459,7 +3459,18 @@ export const scenes = [
       await t.wait(1500);
       await t.until(async () => (await t.page.locator('[data-testid=analysis-overlay]').count()) > 0, 'the diagram is drawn over the 3D view');
       t.expect(await t.page.locator('[data-testid=analysis-card]').count() === 1, 'the card with the picker shows');
+      // The floor is a shell (S2b, docs/plan-fem.md §10.10): its moment my in bands over it, the legend on the card.
+      t.expect(run.shells?.elements === 96, `the floor is meshed into 96 shell elements (${JSON.stringify(run.shells)})`);
+      await t.until(async () => (await t.page.locator('[data-testid=analysis-legend]').count()) > 0, 'the contours\' legend shows on the card');
+      t.expect(await t.page.locator('[data-testid=analysis-legend]').getAttribute('data-quantity') === 'my', 'the floor\'s my is contoured');
+      await t.until(async () => (await t.page.locator('[data-contours]').count()) > 0, 'the floor\'s contours are in the 3D view\'s scene');
       await t.shot('analysis-moments', { of: '[data-testid=view3d]', pad: 0 });
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 0.6, pitch: -1.05, distance: 12, target: { x: 3, y: 2, z: 3 } }, false));
+      await t.wait(1200);
+      await t.shot('analysis-slab', { of: '[data-testid=view3d]', pad: 0 });
+      await t.shot('analysis-legend', { of: '[data-testid=analysis-card]', pad: 6 });
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 0.9, pitch: -0.45, distance: 15, target: { x: 3, y: 2, z: 2 } }, false));
+      await t.wait(800);
       await t.page.locator('[data-testid=analysis-q-N]').click();
       await t.wait(700);
       await t.page.locator('[data-testid=analysis-q-deformed]').click();

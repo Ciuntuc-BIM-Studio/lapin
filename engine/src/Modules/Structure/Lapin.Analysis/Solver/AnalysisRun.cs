@@ -15,7 +15,7 @@ namespace Lapin.Analysis.Solver;
 /// solved once for every case (<see cref="FrameSolver"/>), the combinations of S0 by superposition and the envelopes of the
 /// ultimate and serviceability ones. Derived, never stored: kept in memory for the model's revision only.
 /// </summary>
-public sealed class AnalysisRun
+public sealed partial class AnalysisRun
 {
     public const double Balanced = 1e-6;
 
@@ -58,13 +58,14 @@ public sealed class AnalysisRun
             try { sol = FrameSolver.Solve(sp.Problem); }
             catch (InvalidOperationException ex) { notes.Add(ex.Message); }
         }
-        if (sp.Refused.Count == 0 && sp.Problem.Elements.Count == 0)
+        if (sp.Refused.Count == 0 && sp.Problem.Elements.Count == 0 && sp.Problem.Shells.Count == 0)
             notes.Add(sp.Model.Shells.Any(x => x.Source.Kind == "wall")
-                ? "No bars: the slabs' loads go straight into the load-bearing walls under them, their reactions; the walls and slabs themselves are analysed from S2."
-                : "No bars and no load-bearing walls: nothing carries the loads (S1 analyses bars; walls and slabs come with S2).");
+                ? "No bars and no shells: the slabs' loads go straight into the load-bearing walls under them, their reactions."
+                : "No bars, no shells and no load-bearing walls: nothing carries the loads.");
 
-        notes.Add("Stage S1: the bars carry everything; the slabs only carry loads to them (the 45° rule), the load-bearing walls are line supports (every node of theirs held in translation, free to turn). Shells are analysed from S2.");
-        notes.Add("Bars as Timoshenko beams, their shear areas from the section (EN 1993-1-1 §6.2.6(3) for steel, 5/6·A for a rectangle).");
+        if (sp.Problem.Shells.Count == 0)
+            notes.Add("No shells: the bars carry everything; the slabs only carry loads to them (the 45° rule), the load-bearing walls are line supports (every node of theirs held in translation, free to turn).");
+        if (sp.Problem.Elements.Count > 0) notes.Add("Bars as Timoshenko beams, their shear areas from the section (EN 1993-1-1 §6.2.6(3) for steel, 5/6·A for a rectangle).");
         if (sp.Model.LevelJoins > 0) notes.Add($"{sp.Model.LevelJoins} beam end{(sp.Model.LevelJoins == 1 ? "" : "s")} of another depth meet{(sp.Model.LevelJoins == 1 ? "s" : "")} a column at its joint: {(sp.Model.LevelJoins == 1 ? "its" : "their")} own level kept, a rigid arm to the joint.");
         if (sp.Model.Frames.Any(f => f.Eccentric)) notes.Add($"{sp.Model.Frames.Count(f => f.Eccentric)} bars with eccentric ends, joined to their nodes by rigid arms.");
         var pinned = sp.Releases.Values.Count(r => r.Source.StartsWith("pinned: "));
@@ -107,8 +108,9 @@ public sealed class AnalysisRun
         {
             ["ok"] = Ok,
             ["dofs"] = Solution?.Dofs ?? 0,
-            ["elements"] = p.Elements.Count,
-            ["nodes"] = p.Elements.SelectMany(e => new[] { e.I, e.J }).Distinct().Count(),
+            ["elements"] = Problem.Members.Count,
+            ["nodes"] = Problem.Members.SelectMany(e => new[] { e.I, e.J }).Distinct().Count(),
+            ["settings"] = Problem.Settings.ToJson(),
             ["solveMs"] = R(Solution?.SolveMs ?? 0, 2),
             ["totalMs"] = R(TotalMs, 2),
             ["profile"] = Solution?.Profile ?? 0,
@@ -130,6 +132,17 @@ public sealed class AnalysisRun
             });
         }
         o["cases"] = cases;
+        var perGroup = p.Shells.GroupBy(s => s.Group ?? "").ToDictionary(g => g.Key, g => g.Count());
+        if (Problem.ShellInfo is { } si)
+            o["shells"] = new JsonObject
+            {
+                ["surfaces"] = si.Surfaces, ["elements"] = si.Elements, ["quads"] = si.Quads, ["triangles"] = si.Triangles, ["nodes"] = si.Nodes, ["meshSize"] = si.MeshSize,
+                ["list"] = new JsonArray(Problem.Surfaces.OrderBy(x => x.Value.Name, StringComparer.Ordinal).Select(x => (JsonNode)new JsonObject
+                {
+                    ["id"] = x.Key, ["sourceId"] = x.Value.SourceId, ["name"] = x.Value.Name, ["kind"] = x.Value.Kind,
+                    ["elements"] = perGroup.GetValueOrDefault(x.Key),
+                }).ToArray()),
+            };
         o["combinations"] = new JsonArray(Combinations.Select(c => (JsonNode)new JsonObject { ["key"] = c.Key, ["kind"] = c.Kind, ["name"] = c.Name }).ToArray());
         if (Solution?.Mechanism is { } mech)
         {
@@ -159,7 +172,7 @@ public sealed class AnalysisRun
     sealed record Selection(string Kind, string Key, string Name, List<(string Key, string Name, List<(int Case, double Factor)> Terms)> Sets);
 
     /// <summary>What a result is asked of: a case (its id or code), a combination (its key) or an envelope (uls, sls); one bar's element or piece, or all.</summary>
-    public sealed record Ask(string? Case, string? Combination, string? Envelope, string? ElementId = null);
+    public sealed record Ask(string? Case, string? Combination, string? Envelope, string? ElementId = null, string? ShellId = null);
 
     Selection Select(Ask ask)
     {
@@ -220,26 +233,87 @@ public sealed class AnalysisRun
         return new State { U = u, Reactions = reactions, Elements = els };
     }
 
+    /// <summary>The members (the analytical model's bars) asked for: one bar's (its element's GlobalId or its piece's id), or all.</summary>
     List<int> ElementsFor(string? id)
     {
-        var p = Problem.Problem;
-        if (id == null) return Enumerable.Range(0, p.Elements.Count).ToList();
-        var list = Enumerable.Range(0, p.Elements.Count).Where(k => p.Elements[k].Id == id || p.Elements[k].SourceId == id).ToList();
+        var ms = Problem.Members;
+        if (id == null) return Enumerable.Range(0, ms.Count).ToList();
+        var list = Enumerable.Range(0, ms.Count).Where(k => ms[k].Id == id || ms[k].SourceId == id).ToList();
         return list.Count > 0 ? list : throw new CommandException("That element is not a bar of the analysis.");
+    }
+
+    // ------------------------------------------------------------ a member through its pieces
+
+    /// <summary>The piece of a member at x (from its i end; at a node between two pieces, the one before it).</summary>
+    (FrameElement E, int K, double X0) PieceAt(int member, double x)
+    {
+        var ps = Problem.PieceMap[member];
+        var pc = ps.Count == 1 ? ps[0] : ps.FirstOrDefault(q => x <= q.X1 + 1e-12) ?? ps[^1];
+        return (Problem.Problem.Elements[pc.Element], pc.Element, pc.X0);
+    }
+
+    Section MemberAt(int member, ElementResult[] els, double x)
+    {
+        var (e, k, x0) = PieceAt(member, x);
+        return Stations.At(e, els[k], x - x0) with { X = x };
+    }
+
+    List<Section> MemberAlong(int member, ElementResult[] els)
+    {
+        var l = Problem.Members[member].L;
+        return Enumerable.Range(0, Stations.Count).Select(i => MemberAt(member, els, l * i / (Stations.Count - 1))).ToList();
+    }
+
+    Extreme[] MemberExtremes(int member, ElementResult[] els)
+    {
+        Extreme[]? best = null;
+        foreach (var pc in Problem.PieceMap[member])
+        {
+            var ex = Stations.Extremes(Problem.Problem.Elements[pc.Element], els[pc.Element]);
+            if (best == null) { best = ex.Select(x => x with { XMax = x.XMax + pc.X0, XMin = x.XMin + pc.X0 }).ToArray(); continue; }
+            for (var q = 0; q < 6; q++)
+            {
+                if (ex[q].Max > best[q].Max) best[q] = best[q] with { Max = ex[q].Max, XMax = ex[q].XMax + pc.X0 };
+                if (ex[q].Min < best[q].Min) best[q] = best[q] with { Min = ex[q].Min, XMin = ex[q].XMin + pc.X0 };
+            }
+        }
+        return best!;
+    }
+
+    List<double> MemberBreaks(int member, ElementResult[] els) =>
+        Problem.PieceMap[member].SelectMany(pc => Stations.Breaks(Problem.Problem.Elements[pc.Element], els[pc.Element]).Select(b => b + pc.X0)).Distinct().Order().ToList();
+
+    /// <summary>A member's displacement at x in its local axes (metres) in one of the solution's cases.</summary>
+    public (double U, double V, double W) MemberDeflection(int member, int caseIndex, double x) => MemberDeflection(member, Solution!.Cases[caseIndex].Elements, x);
+
+    (double U, double V, double W) MemberDeflection(int member, ElementResult[] els, double x)
+    {
+        var (e, k, x0) = PieceAt(member, x);
+        return Stations.Deflection(e, els[k], x - x0);
+    }
+
+    /// <summary>A member's own ends' local displacements: its first piece's i end, its last piece's j end.</summary>
+    double[] MemberEnds(int member, ElementResult[] els)
+    {
+        var ps = Problem.PieceMap[member];
+        var (a, b) = (els[ps[0].Element].ULocal, els[ps[^1].Element].ULocal);
+        return [.. a.Take(6), .. b.Skip(6).Take(6)];
     }
 
     // ------------------------------------------------------------ analysis.results
 
     /// <summary>{case | combination | envelope, elementId?}: the analysis at the model's revision, its results.</summary>
     public static JsonObject Results(IQueryContext q, JsonObject a) =>
-        Of(q).Results(new Ask((string?)a["case"], (string?)a["combination"], (string?)a["envelope"], (string?)a["elementId"]));
+        Of(q).Results(new Ask((string?)a["case"], (string?)a["combination"], (string?)a["envelope"], (string?)a["elementId"], (string?)a["shellId"]));
 
     public JsonObject Results(Ask ask)
     {
         var sel = Select(ask);
         var p = Problem.Problem;
-        var els = ElementsFor(ask.ElementId);
-        var nodes = (ask.ElementId != null ? els.SelectMany(k => new[] { p.Elements[k].I, p.Elements[k].J }) : p.Elements.SelectMany(e => new[] { e.I, e.J })).Distinct().OrderBy(n => n).ToList();
+        var ms = Problem.Members;
+        var onlyShell = ask.ShellId != null && ask.ElementId == null;
+        var els = onlyShell ? [] : ElementsFor(ask.ElementId);
+        var nodes = (onlyShell ? [] : ask.ElementId != null ? els.SelectMany(k => new[] { ms[k].I, ms[k].J }) : ms.SelectMany(e => new[] { e.I, e.J })).Distinct().OrderBy(n => n).ToList();
         var states = sel.Sets.Select(s => Combine(s.Terms)).ToList();
         var envelope = sel.Kind == "envelope";
         var o = new JsonObject
@@ -272,7 +346,7 @@ public sealed class AnalysisRun
         var reactArr = new JsonArray();
         foreach (var n in states.SelectMany(s => s.Reactions.Keys).Distinct().OrderBy(n => n))
         {
-            if (ask.ElementId != null && !nodeSet.Contains(n)) continue;
+            if ((ask.ElementId != null || onlyShell) && !nodeSet.Contains(n)) continue;
             var rs = states.Select(s => s.Reactions.TryGetValue(n, out var r) ? r : new double[6]).ToList();
             var ro = new JsonObject { ["node"] = p.NodeIds[n], ["at"] = V3(p.Nodes[n]) };
             if (envelope) { ro["min"] = Arr(Enumerable.Range(0, 6).Select(d => rs.Min(x => x[d]))); ro["max"] = Arr(Enumerable.Range(0, 6).Select(d => rs.Max(x => x[d]))); }
@@ -288,9 +362,9 @@ public sealed class AnalysisRun
         (string Frame, double X, double Value)? maxDefl = null;
         foreach (var k in els)
         {
-            var e = p.Elements[k];
+            var e = ms[k];
             var fo = new JsonObject { ["id"] = e.Id, ["sourceId"] = e.SourceId, ["name"] = e.Name, ["length"] = R(e.L) };
-            var stations = states.Select(s => Stations.Along(e, s.Elements[k])).ToList();
+            var stations = states.Select(s => MemberAlong(k, s.Elements)).ToList();
             var arr = new JsonArray();
             for (var i = 0; i < Stations.Count; i++)
             {
@@ -301,7 +375,7 @@ public sealed class AnalysisRun
             }
             fo["stations"] = arr;
             var ext = new JsonObject();
-            var extremes = states.Select(s => Stations.Extremes(e, s.Elements[k])).ToList();
+            var extremes = states.Select(s => MemberExtremes(k, s.Elements)).ToList();
             for (var q = 0; q < 6; q++)
             {
                 var hi = extremes.MaxBy(x => x[q].Max)![q];
@@ -317,8 +391,8 @@ public sealed class AnalysisRun
                 for (var i = 0; i <= 20; i++)
                 {
                     var x = e.L * i / 20;
-                    var (_, v, w) = Stations.Deflection(e, s.Elements[k], x);
-                    var ul = s.Elements[k].ULocal;
+                    var (_, v, w) = MemberDeflection(k, s.Elements, x);
+                    var ul = MemberEnds(k, s.Elements);
                     var (v0, w0, v1, w1) = (ul[1], ul[2], ul[7], ul[8]);
                     var t = x / e.L;
                     var (rv, rw) = (v - (v0 + (v1 - v0) * t), w - (w0 + (w1 - w0) * t));
@@ -340,6 +414,12 @@ public sealed class AnalysisRun
                     ["max"] = new JsonObject { ["frame"] = h.Frame, ["x"] = R(h.X), ["value"] = R(h.Value) },
                     ["min"] = new JsonObject { ["frame"] = l.Frame, ["x"] = R(l.X), ["value"] = R(l.Value) },
                 };
+        if (p.Shells.Count > 0 && (ask.ElementId == null || ask.ShellId != null))
+        {
+            var (shells, shellMax) = ShellResults(sel, ask.ShellId);
+            o["shells"] = shells;
+            foreach (var (key, value) in shellMax) mx[key] = value;
+        }
         o["maxima"] = mx;
         return o;
     }
@@ -362,7 +442,7 @@ public sealed class AnalysisRun
         var els = ElementsFor(ask.ElementId);
         var states = sel.Sets.Select(s => Combine(s.Terms)).ToList();
         var envelope = sel.Kind == "envelope";
-        var pts = p.Elements.SelectMany(e => new[] { e.Pi, e.Pj }).ToList();
+        var pts = Problem.Members.SelectMany(e => new[] { e.Pi, e.Pj }).Concat(p.Shells.SelectMany(s => s.Nodes.Select(n => p.Nodes[n]))).ToList();
         var extent = pts.Count == 0 ? 1 : Math.Max((new Vec3(pts.Max(x => x.X), pts.Max(x => x.Y), pts.Max(x => x.Z)) - new Vec3(pts.Min(x => x.X), pts.Min(x => x.Y), pts.Min(x => x.Z))).Length, 1);
         var polylines = new JsonArray();
         var scale = scaleArg;
@@ -375,12 +455,12 @@ public sealed class AnalysisRun
             for (var si = 0; si < states.Count; si++)
                 foreach (var k in els)
                 {
-                    var e = p.Elements[k];
+                    var e = Problem.Members[k];
                     var list = new List<(double, double, double, double)>();
                     for (var i = 0; i <= 20; i++)
                     {
                         var x = e.L * i / 20;
-                        var (u, v, w) = Stations.Deflection(e, states[si].Elements[k], x);
+                        var (u, v, w) = MemberDeflection(k, states[si].Elements, x);
                         list.Add((x, u, v, w));
                         maxD = Math.Max(maxD, Math.Sqrt(u * u + v * v + w * w));
                     }
@@ -389,7 +469,7 @@ public sealed class AnalysisRun
             var s = scale ?? (maxD > 1e-15 ? 0.05 * extent / maxD : 1);
             foreach (var ((si, k), list) in samples)
             {
-                var e = p.Elements[k];
+                var e = Problem.Members[k];
                 var line = new JsonObject
                 {
                     ["frame"] = e.Id, ["sourceId"] = e.SourceId, ["base"] = new JsonArray(V3(e.Pi), V3(e.Pj)),
@@ -408,19 +488,19 @@ public sealed class AnalysisRun
         var max = 0.0;
         foreach (var k in els)
         {
-            var e = p.Elements[k];
+            var e = Problem.Members[k];
             var xs = new List<double>();
             for (var i = 0; i <= 20; i++) xs.Add(e.L * i / 20);
             foreach (var s in states)
             {
-                foreach (var b in Stations.Breaks(e, s.Elements[k])) { xs.Add(Math.Max(0, b - 1e-6)); xs.Add(Math.Min(e.L, b + 1e-6)); }
-                foreach (var ex in Stations.Extremes(e, s.Elements[k])) { xs.Add(ex.XMax); xs.Add(ex.XMin); }
+                foreach (var b in MemberBreaks(k, s.Elements)) { xs.Add(Math.Max(0, b - 1e-6)); xs.Add(Math.Min(e.L, b + 1e-6)); }
+                foreach (var ex in MemberExtremes(k, s.Elements)) { xs.Add(ex.XMax); xs.Add(ex.XMin); }
             }
             xs = xs.Distinct().OrderBy(x => x).ToList();
             var (lo, hi) = (new List<double>(), new List<double>());
             foreach (var x in xs)
             {
-                var vs = states.Select(s => Stations.At(e, s.Elements[k], x)[q]).ToList();
+                var vs = states.Select(s => MemberAt(k, s.Elements, x)[q]).ToList();
                 lo.Add(vs.Min());
                 hi.Add(vs.Max());
                 max = Math.Max(max, Math.Max(Math.Abs(vs.Min()), Math.Abs(vs.Max())));
@@ -430,7 +510,7 @@ public sealed class AnalysisRun
         var sc = scale ?? (max > 1e-12 ? 0.1 * extent / max : 1);
         foreach (var k in els)
         {
-            var e = p.Elements[k];
+            var e = Problem.Members[k];
             // Moments on the tension side: Mz (σ = −Mz·y/I33) along −local 2, My (σ = My·z/I22) along local 3; forces along local 2 (Vz along local 3).
             var dir = q switch { 5 => -e.Ey, 4 or 2 => e.Ez, _ => e.Ey };
             var (xs, lo, hi) = values[k];

@@ -125,7 +125,7 @@ public static partial class IfcExport
 
             // The bars: local 2 as the member's axis, its section and material as a profile set shared by the bars that have them.
             var frameRef = new Dictionary<AFrame, string>();
-            var profileSets = new Dictionary<(string, string?), (string Set, List<string> Members)>();
+            var profileSets = new Dictionary<(string, string?, double), (string Set, List<string> Members)>();
             foreach (var fr in am.Frames)
             {
                 var (pi, pj) = (fr.I.At + fr.OffI, fr.J.At + fr.OffJ);
@@ -144,10 +144,13 @@ public static partial class IfcExport
                 ConnectEnd(member, gid, fr, false, u, local2);
                 ConnectEnd(member, gid, fr, true, u, local2);
                 Own(fr.Source.SourceId, member);
-                var key = (fr.Source.Section.Key, fr.Source.MaterialId);
+                // A beam laid in the slab it carries (decision 357) has its own axis under the slab's plane by its OffsetZ: the
+                // profile placed that far off the member's curve, along the member's Axis (the profile's y), as a T beam is.
+                var below = Math.Round(fr.OffsetZ * local2.Z, 6);
+                var key = (fr.Source.Section.Key, fr.Source.MaterialId, below);
                 if (!profileSets.TryGetValue(key, out var ps))
                 {
-                    var profile = StructuralProfile(fr.Source.Section);
+                    var profile = StructuralProfile(fr.Source.Section, below);
                     // The section's values as the analysis takes them (SectionProperties, from its outline), so that a reader
                     // need not draw it again (a sloped flange is drawn more than one way): Pset_ProfileMechanical, about the
                     // profile's own axes (IFC's member y is the profile's x: MomentOfInertiaY bends in the depth, Lapin's I33).
@@ -164,8 +167,8 @@ public static partial class IfcExport
                 }
                 ps.Members.Add(member);
             }
-            foreach (var ((section, mat), (set, members)) in profileSets)
-                f.Add("IFCRELASSOCIATESMATERIAL", Gid(project.Id, $"structural-profile:{section}:{mat}"), Null, Null, Null, L(members), set);
+            foreach (var ((section, mat, below), (set, members)) in profileSets)
+                f.Add("IFCRELASSOCIATESMATERIAL", Gid(project.Id, below == 0 ? $"structural-profile:{section}:{mat}" : $"structural-profile:{section}:{mat}:{below}"), Null, Null, Null, L(members), set);
 
             // The shells: a face on its plane bounded by its nodes' edges, its core's thickness and material.
             var shellRef = new Dictionary<AShell, string>();
@@ -411,7 +414,7 @@ public static partial class IfcExport
         }
 
         /// <summary>A bar's section as IFC writes a profile, metres: its parametric form when IFC has one, else its outline's rings.</summary>
-        string StructuralProfile(FrameSection section)
+        string StructuralProfile(FrameSection section, double below = 0)
         {
             var sh = section.Shape;
             var p = new SectionProfile
@@ -419,7 +422,8 @@ public static partial class IfcExport
                 Name = section.Name, Kind = sh.Kind, H = sh.Kind == "circle" ? sh.Width : sh.Depth, B = sh.Width, Tw = sh.Web, Tf = sh.Flange, Lip = sh.Lip,
                 R1 = sh.Root ?? 0, R2 = sh.Toe ?? 0, Slope = sh.Slope, B2 = sh.Width2, Tf2 = sh.Flange2, Rings = sh.Rings,
             };
-            if (ProfileIfc.Parametric(f, p, 1) is { } parametric) return parametric;
+            var position = Math.Abs(below) > 1e-9 ? f.Add("IFCAXIS2PLACEMENT2D", f.Add("IFCCARTESIANPOINT", L(new[] { R(0), R(below) })), Null) : null;
+            if (ProfileIfc.Parametric(f, p, 1, position) is { } parametric) return parametric;
             var rings = SectionProperties.RingsOf(sh) ?? [];
             var outsides = rings.Where(r => r.Count >= 3 && Polygon2.SignedArea(r) > 0).ToList();
             if (outsides.Count == 0)

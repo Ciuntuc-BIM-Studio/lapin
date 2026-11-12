@@ -1931,7 +1931,7 @@ export function Viewport3D() {
       {!walkStart && <SketchGrips3D camera={camRef} canvas={host} scene={scene} />}
       {!walkStart && <RefPlanes3D camera={camRef} canvas={host} />}
       {!walkStart && <Location3D camera={camRef} canvas={host} />}
-      {!walkStart && overlays3d().map((Overlay, k) => <Overlay key={k} camera={camRef} canvas={host} />)}
+      {!walkStart && overlays3d().map((Overlay, k) => <Overlay key={k} camera={camRef} canvas={host} scene={scene} invalidate={invalidate} />)}
       <KeyPlan mode="3d" />
     </>
   );

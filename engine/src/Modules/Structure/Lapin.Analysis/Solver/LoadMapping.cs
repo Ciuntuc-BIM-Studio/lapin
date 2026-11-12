@@ -40,13 +40,13 @@ public sealed class MappedCase(CaseLoads loads)
 /// else on the slab under it as its piece's equivalent area load; an area load on each slab piece under it (at most 1 m
 /// below), by the 45° rule (<see cref="Tributary"/>), onto the bars along its sides or straight into the walls under them.
 /// </summary>
-public sealed class StructuralProblem
+public sealed partial class StructuralProblem
 {
     public const double PlanReach = 0.3, DepthReach = 1.0, AboveReach = 0.3;
 
     public required FrameProblem Problem { get; init; }
     public required AnalyticalModel Model { get; init; }
-    /// <summary>The bar of each solver element.</summary>
+    /// <summary>The bar of each solver element (a bar cut at the shells' nodes along it: each of its pieces).</summary>
     public required List<AFrame> Frames { get; init; }
     public required Dictionary<ANode, int> NodeIndex { get; init; }
     public required List<RefusedBar> Refused { get; init; }
@@ -66,11 +66,15 @@ public sealed class StructuralProblem
         public Vec3 Normal, Origin;
         public double Area;
         public required List<Side> Sides;
+        /// <summary>A piece analysed as a shell: its elements, each with its outline in plan.</summary>
+        public List<MeshedFace>? Faces;
+        public bool Meshed => Faces != null;
         public double ZAt(Vec2 p) => Math.Abs(Normal.Z) < 1e-9 ? Origin.Z : Origin.Z - (Normal.X * (p.X - Origin.X) + Normal.Y * (p.Y - Origin.Y)) / Normal.Z;
     }
 
     sealed class Side
     {
+        public required Piece Owner;
         public Vec2 A, Dir;
         public double Length;
         /// <summary>The ring's nodes along it, with their station from A.</summary>
@@ -84,9 +88,21 @@ public sealed class StructuralProblem
     {
         var am = rep.Model;
         var notes = new List<string>();
+        var settings = AnalysisSettings.Of(m);
         var p = new FrameProblem();
         var nodeIndex = new Dictionary<ANode, int>();
-        var wallNodes = am.Shells.Where(s => s.Source.Kind == "wall").SelectMany(s => s.Nodes).ToHashSet();
+        var materials = new Dictionary<string, StructuralMaterial?>();
+        StructuralMaterial? MaterialOf(string? id)
+        {
+            if (id == null) return null;
+            if (materials.TryGetValue(id, out var had)) return had;
+            var e = (m.Get(id) is { Class: IfcClass.Material } own ? own : Materials.Find(m, id))
+                ?? new Entity($"lapin-material-{id}", IfcClass.Material, id, []);
+            return materials[id] = StructuralMaterials.Of(m, e);
+        }
+        // Which slabs and walls are shells (§10.10): concrete ones with an E, as the options say; the others as in S1.
+        var shellOf = ShellsTaken(am, settings, MaterialOf, notes);
+        var wallNodes = am.Shells.Where(s => s.Source.Kind == "wall" && !shellOf.ContainsKey(s)).SelectMany(s => s.Nodes).ToHashSet();
         foreach (var n in am.Nodes)
         {
             bool[]? held = n.Restraints is { Length: 6 } r ? [.. r] : null;
@@ -97,18 +113,11 @@ public sealed class StructuralProblem
         var densities = new LoadsReport.Densities(m);
         var refused = new List<RefusedBar>();
         var frames = new List<AFrame>();
-        var materials = new Dictionary<string, StructuralMaterial?>();
         var assumedNu = new HashSet<string>();
         var timberG = new HashSet<string>();
-        StructuralMaterial? MaterialOf(string? id)
-        {
-            if (id == null) return null;
-            if (materials.TryGetValue(id, out var had)) return had;
-            var e = (m.Get(id) is { Class: IfcClass.Material } own ? own : Materials.Find(m, id))
-                ?? new Entity($"lapin-material-{id}", IfcClass.Material, id, []);
-            return materials[id] = StructuralMaterials.Of(m, e);
-        }
         var selfWeight = new List<(int Element, double Q)>();
+        var slabNodes = shellOf.Keys.Where(s => s.Source.Kind == "slab").SelectMany(s => s.Nodes).ToHashSet();
+        var armed = 0;
         var offCentre = 0;
         var noShear = new HashSet<string>();
         foreach (var f in am.Frames)
@@ -135,10 +144,14 @@ public sealed class StructuralProblem
             if (centroid.Length > 1e-9) offCentre++;
             if (props.Av2 is not { } av2 || props.Av3 is not { } av3) { (av2, av3) = (0, 0); noShear.Add(f.Source.Section.Name); }
             var rel = releases.GetValueOrDefault(f);
+            // A beam laid in the slab it carries (decision 357) keeps its own axis under a meshed slab by rigid arms (§10.4):
+            // the slab and the beam work together as a T.
+            var arm = Math.Abs(f.OffsetZ) > 1e-9 && slabNodes.Contains(f.I) && slabNodes.Contains(f.J) ? new Vec3(0, 0, f.OffsetZ) : Vec3.Zero;
+            if (arm.Length > 0) armed++;
             var el = new FrameElement
             {
                 Id = f.Id, Name = f.Source.Name, SourceId = f.Source.SourceId,
-                I = nodeIndex[f.I], J = nodeIndex[f.J], OffI = f.OffI + centroid, OffJ = f.OffJ + centroid, Local2 = local2,
+                I = nodeIndex[f.I], J = nodeIndex[f.J], OffI = f.OffI + centroid + arm, OffJ = f.OffJ + centroid + arm, Local2 = local2,
                 E = e.Value / 1000, G = g / 1000, A = props.Area, I22 = props.I22, I33 = props.I33, Jt = props.J, As2 = av2, As3 = av3,
                 ReleaseI = rel?.I ?? new bool[6], ReleaseJ = rel?.J ?? new bool[6],
             };
@@ -150,6 +163,7 @@ public sealed class StructuralProblem
             notes.Add($"{refused.Count} bar{(refused.Count == 1 ? " is" : "s are")} refused, the analysis does not start: " +
                 string.Join("; ", refused.Take(8).Select(r => $"{r.Frame.Source.Name}: {r.Reason}")) + (refused.Count > 8 ? "…" : "") + ".");
         if (timberG.Count > 0) notes.Add($"Timber ({string.Join(", ", timberG)}): G = E0,mean / 16, as EN 338's tables give it (no Poisson ratio for an orthotropic material).");
+        if (armed > 0) notes.Add($"{armed} beam piece{(armed == 1 ? "" : "s")} under a slab analysed as a shell: on the slab's nodes, {(armed == 1 ? "its" : "their")} own axis below by rigid arms (the slab and the beam work as a T).");
         if (offCentre > 0) notes.Add($"{offCentre} bar{(offCentre == 1 ? "" : "s")} of an unsymmetric section (a T, a channel, an angle): {(offCentre == 1 ? "its" : "their")} axis through the centroid, joined to the box centre's nodes by rigid arms.");
         if (noShear.Count > 0) notes.Add($"No shear area for {string.Join(", ", noShear.Take(6))}{(noShear.Count > 6 ? "…" : "")}: Euler–Bernoulli there (shear deformation left out).");
         if (assumedNu.Count > 0) notes.Add($"No Poisson ratio for {string.Join(", ", assumedNu)}: ν = 0.3 assumed for G.");
@@ -157,12 +171,16 @@ public sealed class StructuralProblem
         var sp = new StructuralProblem
         {
             Problem = p, Model = am, Frames = frames, NodeIndex = nodeIndex, Refused = refused, Cases = [], Notes = notes, Releases = releases,
-            Axial = FrameReleases.AxialMembers(am, m),
+            Axial = FrameReleases.AxialMembers(am, m), Settings = settings,
         };
         if (sp.Axial.Count > 0)
             notes.Add($"{sp.Axial.Count} rod{(sp.Axial.Count == 1 ? " or tie works" : "s or ties work")} axially: pinned at {(sp.Axial.Count == 1 ? "its" : "their")} own ends, {(sp.Axial.Count == 1 ? "its" : "their")} weight carried to them (no bending under it); analysisAxial on an element changes it.");
+        sp.Members.AddRange(p.Elements);
+        for (var k = 0; k < p.Elements.Count; k++) sp.PieceMap.Add([new MemberPiece(k, 0, double.NaN)]);
         if (refused.Count > 0) return sp;
+        sp.MeshShells(shellOf, MaterialOf);
         sp.MapLoads(m, rep, densities, selfWeight);
+        sp.SplitBars();
         return sp;
     }
 
@@ -210,18 +228,24 @@ public sealed class StructuralProblem
                     mc.Loads.AddNodal(NodeIndex[pieces[0].I], down * (w / 2));
                     mc.Loads.AddNodal(NodeIndex[pieces[^1].J], down * (w / 2));
                 }
-                // The slabs' cores as area loads on their own pieces; the walls' own weight goes straight to what holds them.
+                // The slabs' cores as area loads on their own pieces (a shell's on its elements, per their true area); the walls'
+                // own weight goes straight to what holds them, a shell wall's on its elements.
                 foreach (var piece in _pieces)
                     if (densities.Of(piece.Shell.Source.MaterialId) is { } rho)
                     {
                         var q = piece.Shell.Source.Thickness * rho * Units.G / 1000;
+                        if (piece.Faces is { } faces) { foreach (var face in faces) mc.Loads.Surface.Add((face.Shell, down * q)); continue; }
                         // The piece's area measured on its plane, its load per plan area.
                         var slope = Math.Abs(piece.Normal.Z) > 1e-9 ? 1 / Math.Abs(piece.Normal.Z) : 1;
                         AreaOnPiece(mc, piece, [piece.Plan], down * (q * slope), piece.Shell.Source.SourceId);
                     }
                 foreach (var w in Model.Shells.Where(s => s.Source.Kind == "wall"))
                     if (densities.Of(w.Source.MaterialId) is { } rho)
-                        mc.WallsOwn += VecMath.NewellNormal(w.Nodes.Select(n => n.At).ToList()).Length * w.Source.Thickness * rho * Units.G / 1000;
+                    {
+                        var q = w.Source.Thickness * rho * Units.G / 1000;
+                        if (_faces.TryGetValue(w, out var faces)) { foreach (var face in faces) mc.Loads.Surface.Add((face.Shell, down * q)); continue; }
+                        mc.WallsOwn += VecMath.NewellNormal(w.Nodes.Select(n => n.At).ToList()).Length * q;
+                    }
             }
             foreach (var a in actions.Where(a => a.CaseId == c.Id))
             {
@@ -278,20 +302,24 @@ public sealed class StructuralProblem
             {
                 var bar = _barOn.TryGetValue(Key(nodes[j].Item1, nodes[j + 1].Item1), out var e) ? e : -1;
                 bars.Add(bar);
-                if (bar >= 0 || (Problem.Held[nodes[j].Item1] != null && Problem.Held[nodes[j + 1].Item1] != null)) supported = true;
+                if (bar >= 0 || (Problem.Held[nodes[j].Item1] != null && Problem.Held[nodes[j + 1].Item1] != null)
+                    || (_shellNodes.Contains(nodes[j].Item1) && _shellNodes.Contains(nodes[j + 1].Item1))) supported = true;
             }
-            sides.Add(new Side { A = a, Dir = dir, Length = len, Nodes = nodes, Bars = bars, Supported = supported });
+            sides.Add(new Side { Owner = null!, A = a, Dir = dir, Length = len, Nodes = nodes, Bars = bars, Supported = supported });
         }
-        return new Piece
+        var piece = new Piece
         {
             Shell = s, Ring = ring, Plan = corners.Select(i => plan[i]).ToList(), Corners = corners.Select(i => ring[i]).ToList(), Normal = normal, Origin = pts3[0], Area = Polygon2.SignedArea(corners.Select(i => plan[i]).ToList()), Sides = sides,
+            Faces = _faces.TryGetValue(s, out var faces) ? faces : null,
         };
+        foreach (var side in sides) side.Owner = piece;
+        return piece;
     }
 
     /// <summary>A force on a node: on the solver's model when a bar or a support carries the node.</summary>
     bool OnNode(MappedCase mc, int node, Vec3 f)
     {
-        if (!_carrying[node]) return false;
+        if (!_carrying[node] && !_shellNodes.Contains(node)) return false;
         mc.Loads.AddNodal(node, f);
         return true;
     }
@@ -310,6 +338,7 @@ public sealed class StructuralProblem
     /// </summary>
     double AreaOnPiece(MappedCase mc, Piece piece, IReadOnlyList<IReadOnlyList<Vec2>> rings, Vec3 q, string source)
     {
+        if (piece.Faces is { } faces) return AreaOnMesh(mc, piece, faces, rings, q);
         var placed = 0.0;
         var qn = q.Length;
         if (qn < 1e-15) return 0;
@@ -347,6 +376,7 @@ public sealed class StructuralProblem
     /// <summary>A side's line load (per unit intensity, trapezoids along it) times the intensity: on the bars along it, else on its carried nodes by the lever rule; what falls past its ends at them.</summary>
     double PlaceOnSide(MappedCase mc, Side side, List<Trapezoid> profile, Vec3 q, string source)
     {
+        if (side.Owner.Faces is { } faces) return LineOnMesh(mc, side, faces, profile, q);
         var placed = 0.0;
         foreach (var t0 in profile)
         {
@@ -398,9 +428,9 @@ public sealed class StructuralProblem
         return f.Length;
     }
 
-    /// <summary>The pieces under a plan point or region at a height: within 1 m below it (0.3 m above), the highest first.</summary>
+    /// <summary>The pieces under a plan point at a height (on their edges too, within the model's tolerance): within 1 m below it (0.3 m above), the highest first.</summary>
     IEnumerable<Piece> PiecesUnder(Vec2 at, double z) =>
-        _pieces.Where(pc => Polygon2.Contains(pc.Plan, at) && pc.ZAt(at) is var pz && pz <= z + AboveReach && pz >= z - DepthReach).OrderByDescending(pc => pc.ZAt(at));
+        _pieces.Where(pc => (Polygon2.Contains(pc.Plan, at) || Enumerable.Range(0, pc.Plan.Count).Any(i => ShellPieces.DistToSegment(at, pc.Plan[i], pc.Plan[(i + 1) % pc.Plan.Count]) <= AnalyticalModel.Tolerance)) && pc.ZAt(at) is var pz && pz <= z + AboveReach && pz >= z - DepthReach).OrderByDescending(pc => pc.ZAt(at));
 
     void Planar(MappedCase mc, StructuralActionData a, string source)
     {
@@ -467,6 +497,16 @@ public sealed class StructuralProblem
         if (total <= 1e-12) return;
         var q = a.Direction * a.Value;
         double Off(Vec2 p) => Math.Abs(Vec2.Cross(u, p - p0.Xy));
+        // The shell walls in the face's plane take what they cover, on their elements (§10.5); the rest as below.
+        var walls = WallFacesAlong(p0, u, SZ);
+        var placed = walls.Count > 0 ? OnWallFaces(mc, walls, [poly], q) * a.Value : 0;
+        if (walls.Count > 0 && placed >= total * (1 - 1e-9)) { mc.OnFacades++; Unmapped(mc, total - placed, source); return; }
+        double Uncovered(List<Vec2> region)
+        {
+            if (walls.Count == 0) return 1;
+            var area = Math.Abs(Polygon2.SignedArea(region));
+            return area <= 1e-12 ? 0 : Math.Max(0, 1 - walls.Sum(w => Tributary.Area([Tributary.ClipTo(region, w.Poly)])) / area);
+        }
         var carriers = new List<FacadeCarrier>();
         for (var k = 0; k < Problem.Elements.Count; k++)
         {
@@ -505,7 +545,6 @@ public sealed class StructuralProblem
         var (sMin, sMax) = (poly.Min(p => p.X), poly.Max(p => p.X));
         cuts = cuts.Where(s => s >= sMin - 1e-9 && s <= sMax + 1e-9).Distinct().Order().ToList();
         const double Far = 1e4;
-        var placed = 0.0;
         for (var i = 0; i + 1 < cuts.Count; i++)
         {
             var (ca, cb) = (cuts[i], cuts[i + 1]);
@@ -520,8 +559,12 @@ public sealed class StructuralProblem
                 var strip = new List<Vec2> { new(ca, Lo(ca)), new(cb, Lo(cb)), new(cb, Hi(cb)), new(ca, Hi(ca)) };
                 var region = Tributary.ClipTo(poly, strip);
                 if (region.Count < 3 || Math.Abs(Polygon2.SignedArea(region)) < 1e-9) continue;
-                foreach (var t in Tributary.Profile([region], new Vec2(0, 0), new Vec2(1, 0)))
+                // What the shell walls took of the strip is not carried again: the rest in proportion.
+                var keep = Uncovered(region);
+                if (keep <= 1e-9) continue;
+                foreach (var t0 in Tributary.Profile([region], new Vec2(0, 0), new Vec2(1, 0)))
                 {
+                    var t = keep >= 1 - 1e-12 ? t0 : new Trapezoid(t0.S0, t0.S1, t0.W0 * keep, t0.W1 * keep);
                     placed += t.Integral * a.Value;
                     if (c.Bar == -2) { mc.ToGround += q * t.Integral; continue; }
                     if (c.Side is { } side)
@@ -570,9 +613,10 @@ public sealed class StructuralProblem
                 // (exact for a triangle's and a quadrilateral's weights, quadratic at most along a line).
                 var (pa, pb) = (a + (b - a) * t0, a + (b - a) * t1);
                 var force = wPerLength * (pb - pa).Length;
+                if (pc.Faces is { } faces) { placed += SegmentOnMesh(mc, faces, pa, pb, wPerLength, wPerLength); continue; }
                 foreach (var (g, w) in FrameElement.Gauss3)
                     placed += PointOnPiece(mc, pc, pa + (pb - pa) * ((1 + g) / 2), force * (w / 2), source);
-                mc.Spread++;
+                if (!pc.Meshed) mc.Spread++;
             }
         }
         return placed;
@@ -676,7 +720,7 @@ public sealed class StructuralProblem
         if (PiecesUnder(at.Xy, at.Z).FirstOrDefault() is { } pc)
         {
             Unmapped(mc, act.Value - PointOnPiece(mc, pc, at.Xy, f, source), source);
-            mc.OnCorners++;
+            if (!pc.Meshed) mc.OnCorners++;
             return;
         }
         Unmapped(mc, act.Value, source);
@@ -740,6 +784,7 @@ public sealed class StructuralProblem
     /// <summary>A force at a plan point of a piece: on its corners by <see cref="CornerWeights"/>; a corner nothing carries passes its share along a supported side to the nodes there, else over the piece by the 45° rule.</summary>
     double PointOnPiece(MappedCase mc, Piece pc, Vec2 at, Vec3 f, string source)
     {
+        if (pc.Faces is { } faces) return PointOnMesh(mc, faces, at, f);
         var w = CornerWeights(pc.Plan, at);
         var placed = 0.0;
         var n = pc.Corners.Count;

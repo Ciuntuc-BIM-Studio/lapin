@@ -1587,6 +1587,9 @@ dl.fields label.check input { width: auto; margin: 0; }
 .sel-card.analysis-card { left: 12px; right: auto; bottom: 12px; width: 280px; gap: 6px; }
 .sel-card.analysis-card .quantities { flex-wrap: wrap; gap: 4px; }
 .sel-card.analysis-card input[type=range] { flex: 1; min-width: 0; }
+.sel-card.analysis-card .contour-bands { display: flex; flex-direction: column; gap: 1px; }
+.sel-card.analysis-card .contour-band { gap: 6px; line-height: 1.1; }
+.sel-card.analysis-card .contour-swatch { width: 18px; height: 10px; border-radius: 2px; flex: none; }
 .row.between { justify-content: space-between; align-items: center; }
 .row.releases { flex-wrap: wrap; gap: 6px; margin-top: 4px; }
 .analysis-overlay .analysis-base { stroke: var(--ink-muted); stroke-width: 1; fill: none; stroke-dasharray: 4 3; }

@@ -2,8 +2,12 @@ using Lapin.Geometry;
 
 namespace Lapin.Analysis.Solver;
 
-/// <summary>A piece of a shell to mesh: its corners (nodes of the model, in order round it, convex and plane) and its surface (its element's), and the normal its faces take (null: the corners' own turn).</summary>
-public sealed record MeshPiece(IReadOnlyList<int> Corners, string Group, Vec3? Normal = null);
+/// <summary>
+/// A piece of a shell to mesh: its corners (nodes of the model, in order round it, convex and plane) and its surface (its
+/// element's), the normal its faces take (null: the corners' own turn), and its own target size (null: the mesh's); an edge
+/// two pieces share is cut at the smaller of theirs.
+/// </summary>
+public sealed record MeshPiece(IReadOnlyList<int> Corners, string Group, Vec3? Normal = null, double? Size = null);
 
 /// <summary>The faces of a meshed piece: its index, and its 3 or 4 nodes, counter-clockwise about the piece's normal.</summary>
 public sealed record MeshFace(int Piece, int[] Nodes);
@@ -32,18 +36,56 @@ public sealed class ShellMesh
         if (len < tolerance) return [a];
         var dir = d * (1 / len);
         var seen = new HashSet<int> { a, b };
-        foreach (var (key, inner) in Edges)
-            foreach (var n in inner.Append(key.Item1).Append(key.Item2))
-            {
-                if (seen.Contains(n)) continue;
-                var v = Nodes[n] - pa;
-                var t = Vec3.Dot(v, dir);
-                if (t <= tolerance || t >= len - tolerance || (v - dir * t).Length > tolerance) continue;
-                seen.Add(n);
-                o.Add((t, n));
-            }
+        foreach (var n in Near(pa, pb, tolerance))
+        {
+            if (seen.Contains(n)) continue;
+            var v = Nodes[n] - pa;
+            var t = Vec3.Dot(v, dir);
+            if (t <= tolerance || t >= len - tolerance || (v - dir * t).Length > tolerance) continue;
+            seen.Add(n);
+            o.Add((t, n));
+        }
         return o.OrderBy(x => x.T).Select(x => x.N).ToList();
     }
+
+    Dictionary<(long, long, long), List<int>>? _grid;
+    double _cell;
+
+    /// <summary>The nodes on the pieces' edges in the grid cells round the segment from pa to pb.</summary>
+    IEnumerable<int> Near(Vec3 pa, Vec3 pb, double tolerance)
+    {
+        if (_grid == null)
+        {
+            var on = Edges.SelectMany(x => x.Value.Append(x.Key.Item1).Append(x.Key.Item2)).Distinct().ToList();
+            var span = on.Count == 0 ? 1 : Math.Max(1e-3, on.Max(n => Math.Max(Math.Abs(Nodes[n].X), Math.Max(Math.Abs(Nodes[n].Y), Math.Abs(Nodes[n].Z)))));
+            _cell = Math.Max(0.25, span / 2000);
+            _grid = [];
+            foreach (var n in on)
+            {
+                var c = Cell(Nodes[n]);
+                if (!_grid.TryGetValue(c, out var l)) _grid[c] = l = [];
+                l.Add(n);
+            }
+        }
+        var len = (pb - pa).Length;
+        var steps = (int)Math.Ceiling(len / (_cell / 2)) + 1;
+        var cells = new HashSet<(long, long, long)>();
+        var r = new Vec3(tolerance, tolerance, tolerance);
+        for (var s = 0; s <= steps; s++)
+        {
+            var q = pa + (pb - pa) * ((double)s / steps);
+            var (c0, c1) = (Cell(q - r), Cell(q + r));
+            for (var x = c0.Item1 - 1; x <= c1.Item1 + 1; x++)
+                for (var y = c0.Item2 - 1; y <= c1.Item2 + 1; y++)
+                    for (var z = c0.Item3 - 1; z <= c1.Item3 + 1; z++)
+                        cells.Add((x, y, z));
+        }
+        foreach (var c in cells)
+            if (_grid.TryGetValue(c, out var l))
+                foreach (var n in l) yield return n;
+    }
+
+    (long, long, long) Cell(Vec3 p) => ((long)Math.Floor(p.X / _cell), (long)Math.Floor(p.Y / _cell), (long)Math.Floor(p.Z / _cell));
 }
 
 /// <summary>
@@ -118,6 +160,33 @@ public static class ShellMesher
                     for (var z = c0.Item3; z <= c1.Item3; z++)
                         yield return (x, y, z);
         }
+        // Each piece's sides through their hard points; each part between two hard points takes the smallest size of the
+        // pieces it bounds.
+        double SizeOf(MeshPiece piece) => piece.Size is { } own && own > 0 ? Math.Min(own, size) : size;
+        var chains = new List<List<int>>?[pieces.Count];
+        var partSize = new Dictionary<(int, int), double>();
+        for (var pi = 0; pi < pieces.Count; pi++)
+        {
+            var piece = pieces[pi];
+            if (piece.Corners.Count < 3) continue;
+            var corners = Oriented(piece, all);
+            var list = new List<List<int>>();
+            for (var i = 0; i < corners.Count; i++)
+            {
+                var (a, b) = (corners[i], corners[(i + 1) % corners.Count]);
+                var chain = new List<int> { a };
+                chain.AddRange(HardOn(a, b));
+                chain.Add(b);
+                list.Add(chain);
+                for (var x = 0; x + 1 < chain.Count; x++)
+                {
+                    var key = chain[x] < chain[x + 1] ? (chain[x], chain[x + 1]) : (chain[x + 1], chain[x]);
+                    partSize[key] = Math.Min(partSize.GetValueOrDefault(key, double.PositiveInfinity), SizeOf(piece));
+                }
+            }
+            chains[pi] = list;
+        }
+
         // A part between two hard points, cut in equal segments: its inner nodes from the lower index to the higher.
         int[] Part(int a, int b)
         {
@@ -125,7 +194,7 @@ public static class ShellMesher
             if (!edges.TryGetValue(key, out var inner))
             {
                 var (p0, p1) = (all[key.Item1], all[key.Item2]);
-                var m = Math.Max(1, (int)Math.Ceiling((p1 - p0).Length / size - 1e-6));
+                var m = Math.Max(1, (int)Math.Ceiling((p1 - p0).Length / partSize.GetValueOrDefault(key, size) - 1e-6));
                 inner = new int[m - 1];
                 for (var s = 1; s < m; s++)
                 {
@@ -145,7 +214,7 @@ public static class ShellMesher
             // along the longest side.
             var turn = VecMath.NewellNormal(piece.Corners.Select(c => all[c]).ToList());
             var normal = (piece.Normal ?? turn).Normalized();
-            var corners = Vec3.Dot(turn, normal) < 0 ? piece.Corners.Reverse().ToList() : piece.Corners.ToList();
+            var corners = Oriented(piece, all);
             var pts = corners.Select(c => all[c]).ToList();
             var longest = Enumerable.Range(0, corners.Count).MaxBy(i => (pts[(i + 1) % pts.Count] - pts[i]).Length);
             var ex = pts[(longest + 1) % pts.Count] - pts[longest];
@@ -159,11 +228,8 @@ public static class ShellMesher
             var sides = new List<List<int>>();
             for (var i = 0; i < corners.Count; i++)
             {
-                var (a, b) = (corners[i], corners[(i + 1) % corners.Count]);
-                var chain = new List<int> { a };
-                chain.AddRange(HardOn(a, b));
-                chain.Add(b);
-                var side = new List<int> { a };
+                var chain = chains[pi]![i];
+                var side = new List<int> { chain[0] };
                 for (var x = 0; x + 1 < chain.Count; x++)
                 {
                     side.AddRange(Part(chain[x], chain[x + 1]));
@@ -176,10 +242,18 @@ public static class ShellMesher
             List<int[]>? made = null;
             if (corners.Count == 4 && sides[0].Count == sides[2].Count && sides[1].Count == sides[3].Count)
                 made = Transfinite(sides, all, To2, To3);
-            made ??= Unstructured(sides, all, To2, To3, size);
+            made ??= Unstructured(sides, all, To2, To3, SizeOf(piece));
             foreach (var f in made) faces.Add(new MeshFace(pi, f));
         }
         return new ShellMesh { Nodes = all, Faces = faces, Given = nodes.Count, Edges = edges };
+    }
+
+    /// <summary>A piece's corners counter-clockwise about its normal (its own, or the corners' turn).</summary>
+    static List<int> Oriented(MeshPiece piece, List<Vec3> all)
+    {
+        var turn = VecMath.NewellNormal(piece.Corners.Select(c => all[c]).ToList());
+        var normal = (piece.Normal ?? turn).Normalized();
+        return Vec3.Dot(turn, normal) < 0 ? piece.Corners.Reverse().ToList() : piece.Corners.ToList();
     }
 
     /// <summary>A four-sided piece with opposite sides cut alike: Coons' patch through its boundary nodes; null if a quadrilateral would fold.</summary>

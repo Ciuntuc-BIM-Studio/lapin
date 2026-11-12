@@ -4,6 +4,7 @@ import { Play, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { hideDiagrams, runAnalysis, setMult, setPick, setQuantity, setReactions, useResults } from './useResults';
 import { formatValue, pickChoices, pickValue, QUANTITIES, type Quantity } from './results';
+import { ShellPicker } from './ShellContours';
 
 const SHORT: Record<Quantity, string> = { N: 'N', Vy: 'Vy', Vz: 'Vz', T: 'T', My: 'My', Mz: 'Mz', deformed: 'Deformed' };
 const TITLE: Record<Quantity, string> = {
@@ -42,6 +43,7 @@ export function AnalysisCard() {
               <button key={q} type="button" className={`btn mini${quantity === q ? ' primary' : ''}`} aria-pressed={quantity === q} title={TITLE[q]} data-testid={`analysis-q-${q}`} onClick={() => setQuantity(q)}>{SHORT[q]}</button>
             ))}
           </div>
+          <ShellPicker />
           <label className="row small" title="The diagram's size on the view; the model is not changed">
             <span>Scale</span>
             <input type="range" min={-2} max={2} step={0.1} value={Math.log2(mult)} aria-label="Diagram scale" data-testid="analysis-scale" onChange={(e) => setMult(2 ** Number(e.target.value))} />
