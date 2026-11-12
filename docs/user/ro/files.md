@@ -12,7 +12,9 @@ summary: Salvezi și deschizi proiecte, pornești proiecte noi din șabloanele t
 
 - **Aplicația desktop.** Fișierul se salvează unde alegi.
 - **În browser, Chrome și Edge.** Lapin salvează de fiecare dată în același fișier.
-- **În browser, Safari și Firefox.** Fiecare salvare descarcă fișierul.
+- **În browser, Safari și Firefox.** Fiecare salvare cere numele fișierului într-o căsuță mică, cu numele proiectului completat, și descarcă fișierul.
+
+Orice export și orice fișier salvat de Lapin cere întâi numele, cu numele proiectului ca sugestie: dialogul de salvare al desktopului, în Chrome și Edge dialogul de salvare al browserului, în celelalte browsere căsuța Lapin.
 
 Un fișier `.lapin` ține tot proiectul: modelul, vederile, planșele, materialele cu imaginile lor proprii și versiunile.
 

@@ -83,8 +83,8 @@ public static class SectionMarkers
             var (arrow, head) = (0.7 * u, 0.25 * u);
             var (path, _, _) = SectionPaths.Resolve(m, c.Services, v);
             if (path == null) continue;
-            var pieces = SectionPaths.Pieces(path);
-            var spanned = pieces.Count > 1;
+            // Its cuts: a projected jogged section's parallel pieces only (its jogs cut nothing), a developed one's every piece.
+            var (pieces, spanned) = SectionPaths.Cuts(v, path);
             var mk = new ViewMark(v.Id);
             foreach (var piece in pieces)
             {

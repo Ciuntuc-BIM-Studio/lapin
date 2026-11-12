@@ -16,9 +16,11 @@ public interface ISectionPaths
 
 /// <summary>
 /// A section's line in plan (docs/sections.md, decision 176): two points as
-/// before, or more (a jogged section: each straight piece a planar cut seen
-/// only between its ends, the pieces laid side by side at their lengths, a
-/// developed section), an arc through three points (a curved section, sampled
+/// before, or more (a jogged section: projected by default, report #146, its
+/// pieces parallel to the first cutting in one frame and its jogs cutting
+/// nothing; or developed, <c>jogged: "developed"</c>, each straight piece a
+/// planar cut seen only between its ends, the pieces laid side by side at
+/// their lengths), an arc through three points (a curved section, sampled
 /// to pieces), or the path of an element it follows (a road's axis, a wall, a
 /// drafted polyline: an alignment), read live, with the stations along it.
 /// The view keeps <c>pts</c>, <c>curve</c> ("arc") and <c>along</c> (the
@@ -106,6 +108,75 @@ public static class SectionPaths
         return o;
     }
 
+    /// <summary>The view's field that says how a jogged section is drawn (report #146): <see cref="ProjectedMode"/> (absent: the default) or <see cref="DevelopedMode"/>.</summary>
+    public const string JoggedKey = "jogged";
+    public const string ProjectedMode = "projected";
+    public const string DevelopedMode = "developed";
+
+    /// <summary>A piece within this angle of the first piece's direction is parallel to it and cuts; any other is a jog.</summary>
+    public const double ParallelDegrees = 1.0;
+
+    /// <summary>Whether the section's line is jogged (three or more points, not an arc, following nothing, not across an element): the only line <c>jogged</c> applies to.</summary>
+    public static bool IsJogged(Entity view) => !IsArc(view) && Along(view) == null && !AcrossSections.Is(view) && Points(view).Count > 2;
+
+    /// <summary>
+    /// Whether a jogged section is drawn projected (Revit's: the pieces parallel to the first cut, the jogs cut nothing, one
+    /// frame along the first piece): the default for a jogged line unless <c>jogged: "developed"</c>. A curved section or one
+    /// along an element is always developed.
+    /// </summary>
+    public static bool Projects(Entity view) => IsJogged(view) && view.Str(JoggedKey) != DevelopedMode;
+
+    /// <summary>
+    /// The planar cuts a section is drawn by, and whether each sees only its stretch (a line of more than one piece). Developed:
+    /// every straight piece at its developed station (<see cref="Pieces(IReadOnlyList{Vec2})"/>). Projected (<see cref="Projects"/>):
+    /// <see cref="ProjectedPieces"/>, falling back to developed when the line turns back over itself.
+    /// </summary>
+    public static (List<Piece> Pieces, bool Spanned) Cuts(Entity view, IReadOnlyList<Vec2> path)
+    {
+        var raw = Pieces(path);
+        var spanned = raw.Count > 1;
+        if (spanned && Projects(view) && ProjectedPieces(raw) is { } projected) return (projected, true);
+        return (raw, spanned);
+    }
+
+    /// <summary>
+    /// A jogged line's cuts drawn projected (report #146, as Revit's): x is the distance along the first piece's direction from
+    /// its start, the pieces parallel to it (within <see cref="ParallelDegrees"/>) each cut on a plane of the first piece's
+    /// direction (through the piece's middle) and see only their stretch of x; the others (the jogs) cut nothing and add no
+    /// width: where the cut jumps from one parallel piece to the next is the middle of the jogs between them (a perpendicular
+    /// jog's own x), so the stretches meet with no gap. Each cut is a piece from the start of its stretch to its end, laid at
+    /// its station (its x0), so a drawing point's x is the plan point's projection on the first direction for every piece.
+    /// Null when the line turns back on itself (a stretch running backwards), which only a developed section can draw.
+    /// </summary>
+    public static List<Piece>? ProjectedPieces(IReadOnlyList<Piece> raw)
+    {
+        if (raw.Count == 0) return null;
+        var origin = raw[0].A;
+        var u = (raw[0].B - raw[0].A) * (1 / raw[0].Length);
+        var n = u.Perp;
+        var sinTol = Math.Sin(ParallelDegrees * Math.PI / 180);
+        double T(Vec2 p) => Vec2.Dot(p - origin, u);
+        bool Parallel(Piece p) { var d = (p.B - p.A) * (1 / p.Length); return Vec2.Dot(d, u) > 0 && Math.Abs(d.X * u.Y - d.Y * u.X) <= sinTol; }
+        var cutting = raw.Where(Parallel).ToList();
+        var o = new List<Piece>(cutting.Count);
+        var lo = 0.0;
+        for (var i = 0; i < cutting.Count; i++)
+        {
+            var p = cutting[i];
+            // To the middle of the jogs before the next parallel piece; the last to its own end.
+            var hi = i + 1 < cutting.Count ? (T(p.B) + T(cutting[i + 1].A)) / 2 : T(p.B);
+            if (i + 1 < cutting.Count && T(cutting[i + 1].A) < T(p.B) - 1e-6) return null;
+            if (hi < lo - 1e-6) return null;
+            if (hi - lo > 1e-9)
+            {
+                var off = Vec2.Dot((p.A + p.B) * 0.5 - origin, n);
+                o.Add(new Piece(origin + u * lo + n * off, origin + u * hi + n * off, hi - lo, lo));
+            }
+            lo = Math.Max(lo, hi);
+        }
+        return o.Count == 0 ? null : o;
+    }
+
     public static double Length(IReadOnlyList<Vec2> path) => Polyline2.Length(path);
 
     /// <summary>
@@ -149,6 +220,13 @@ public static class SectionPaths
                 pts = Clean(followed.Points);
             }
             else attrs.Remove("along");
+        }
+        if (a.ContainsKey(JoggedKey))
+        {
+            // How a jogged line is drawn: "developed" kept; "projected" (the default) or null clears the field.
+            var mode = (string?)a[JoggedKey];
+            if (mode is not (null or ProjectedMode or DevelopedMode)) throw new CommandException("A jogged section is drawn \"projected\" or \"developed\".");
+            if (mode == DevelopedMode) attrs[JoggedKey] = DevelopedMode; else attrs.Remove(JoggedKey);
         }
         if (a.ContainsKey("stations"))
         {

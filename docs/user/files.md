@@ -12,7 +12,9 @@ summary: Save and open projects, start new ones from your own templates, get bac
 
 - **Desktop app.** The file is saved where you choose.
 - **Browser, Chrome and Edge.** Lapin saves to the same file each time.
-- **Browser, Safari and Firefox.** Each save downloads the file.
+- **Browser, Safari and Firefox.** Each save asks for the file's name in a small box, with the project's name filled in, and downloads the file.
+
+Every export and every file Lapin saves asks for its name first, with the project's name as the suggestion: the desktop's save dialog, in Chrome and Edge the browser's own save dialog, in other browsers Lapin's box.
 
 A `.lapin` file holds the whole project: the model, the views, the sheets, the materials with their own images, and the versions.
 

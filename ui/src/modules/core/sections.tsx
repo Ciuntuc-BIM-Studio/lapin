@@ -1,6 +1,8 @@
 /**
- * Sections along more than one line (docs/sections.md): jogged (a polyline,
- * each straight piece a planar cut laid beside the previous at its length),
+ * Sections along more than one line (docs/sections.md): jogged (a polyline;
+ * projected by default, the pieces parallel to the first cutting in one
+ * frame and the jogs cutting nothing, or developed, each straight piece a
+ * planar cut laid beside the previous at its length),
  * curved (an arc through three points) and along an element (a road's axis,
  * a wall, a drafted polyline: its line read live, with the stations along
  * it). Their tools, their grips in plan and their fields in the view's
@@ -182,7 +184,7 @@ export function sectionGrips(node: NodeDto, view?: GripView): Grip[] {
 
 export const sectionRefs = (node: NodeDto): RefLine[] => (isSection(node) && sectionPoints(node).length >= 2 ? [{ points: sectionPoints(node), closed: false, kind: 'axis' }] : []);
 
-/** In a section's settings: its line (how many pieces, how long), what it follows, and the stations written along it. */
+/** In a section's settings: its line (how many pieces, how long), how a jogged one is drawn, what it follows, and the stations written along it. */
 export function SectionFields({ view }: { view: NodeDto }) {
   const nodes = useSession((s) => s.nodes);
   const pts = sectionPoints(view);
@@ -191,12 +193,24 @@ export function SectionFields({ view }: { view: NodeDto }) {
   let length = 0;
   for (let i = 0; i + 1 < pts.length; i++) length += Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y);
   const kind = along ? 'Along an element' : isCurvedSection(view) ? 'Arc' : pts.length > 2 ? 'Jogged line' : 'Straight line';
+  // How a jogged line is drawn (report #146): projected (Revit's, the default) or developed; a curve and a followed line are always developed.
+  const jogged = !along && !isCurvedSection(view) && !isAcross(view) && pts.length > 2;
+  const mode = view.props.jogged === 'developed' ? 'developed' : 'projected';
   const stations = typeof view.props.stations === 'number' ? view.props.stations : null;
   const scale = Number(view.props.scale ?? 100);
   return (
     <>
-      <dt title="The line the section cuts along: straight, jogged (each piece drawn beside the previous at its length), an arc, or an element's">Line</dt>
+      <dt title="The line the section cuts along: straight, jogged, an arc, or an element's">Line</dt>
       <dd className="muted small">{kind}{followed ? <>: <span data-no-i18n>{followed.name}</span></> : null}{pts.length >= 2 ? <span data-no-i18n> · {lengthText(length)}</span> : null}</dd>
+      {jogged && (
+        <>
+          <dt title="Projected: the pieces parallel to the first cut the model and the jogs cut nothing, all drawn in one frame, so grids stand where they cross in plan. Developed: every piece cuts and is drawn beside the previous at its length">Jogged</dt>
+          <dd><select data-field="section-jogged" value={mode} onChange={(e) => void execute('view.setLine', { id: view.id, jogged: e.target.value })}>
+            <option value="projected">Projected</option>
+            <option value="developed">Developed</option>
+          </select></dd>
+        </>
+      )}
       {along && (
         <>
           <dt title="The section follows the element's line as it is now; stop following to keep the line as it is and edit it">Follows</dt>

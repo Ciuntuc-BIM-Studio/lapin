@@ -10,7 +10,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Copy, Download, FileUp, LayoutTemplate, MousePointerClick, Pencil, Plus, Tags, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
 import { engineInBrowser, useSession } from '../../engine/session';
-import { download, pickFile, pickPath, toBase64 } from '../../engine/files';
+import { pickFile, pickPath, saveFile, toBase64 } from '../../engine/files';
 import { addFurnitureToTemplate, refreshTemplates, useTemplates } from '../../engine/templates';
 import { specOf, TYPE_CLASS } from './furniture';
 import {
@@ -28,7 +28,7 @@ async function exportTo(ids: string[] | null, name: string) {
   try {
     if (engineInBrowser) {
       const r = await exportEntries(ids);
-      if (r.data) download(Uint8Array.from(atob(r.data), (c) => c.charCodeAt(0)), `${fileName(name)}.lapinlib`, 'application/json');
+      if (r.data) await saveFile(Uint8Array.from(atob(r.data), (c) => c.charCodeAt(0)), `${fileName(name)}.lapinlib`, 'application/json');
       return;
     }
     const path = await pickPath('save', `${fileName(name)}.lapinlib`, FILTERS);

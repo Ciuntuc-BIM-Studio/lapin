@@ -138,12 +138,9 @@ public static class Grids
                     double x;
                     if (c.Kind == "section")
                     {
-                        // Where the axis crosses the section's plane.
-                        var (da, db) = (c.Frame.Depth(new Vec3(axis.A.X, axis.A.Y, 0)), c.Frame.Depth(new Vec3(axis.B.X, axis.B.Y, 0)));
-                        if (Math.Abs(da - db) < 1e-9 || da * db > 0) continue;
-                        var t = da / (da - db);
-                        var p = axis.A + (axis.B - axis.A) * t;
-                        x = c.Map(p).X;
+                        // Where the axis crosses the section's cut: its plane, or the piece of a jogged section whose stretch holds it (report #146).
+                        if (Views.CrossingX(c, axis.A, axis.B) is not { } cx) continue;
+                        x = cx;
                     }
                     else
                     {

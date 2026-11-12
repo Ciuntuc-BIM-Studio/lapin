@@ -10,7 +10,7 @@ import { Download, FilePlus2, FileUp, Pencil, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../app/store';
 import { setPrefs, usePrefs } from '../app/prefs';
 import { engine, engineInBrowser, useSession } from '../engine/session';
-import { download, enter, newProject, pickFile, pickPath, projectTitle, toBase64 } from '../engine/files';
+import { enter, newProject, pickFile, pickPath, projectTitle, saveFile, toBase64 } from '../engine/files';
 import { deleteTemplate, importTemplate, templateAdditions, refreshTemplates, renameTemplate, saveAsTemplate, startFromTemplate, startFromTemplateFile, templateData, useTemplates, type TemplateInfo } from '../engine/templates';
 
 const FILTERS = [{ name: 'Lapin project or template', extensions: ['lapin'] }];
@@ -89,7 +89,7 @@ function Row({ t, isDefault }: { t: TemplateInfo; isDefault: boolean }) {
   const exportIt = async () => {
     try {
       if (engineInBrowser) {
-        download(Uint8Array.from(atob(await templateData(t.id)), (c) => c.charCodeAt(0)), `${t.id}.lapin`);
+        await saveFile(Uint8Array.from(atob(await templateData(t.id)), (c) => c.charCodeAt(0)), `${t.id}.lapin`, 'application/zip');
         return;
       }
       const path = await pickPath('save', `${t.id}.lapin`, FILTERS);

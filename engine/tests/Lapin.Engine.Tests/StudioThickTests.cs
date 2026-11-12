@@ -189,7 +189,7 @@ public class StudioThickTests
     {
         var f = F();
         // A jogged section: 0,0 → 4,0, then 4,0 → 4,6; its second piece starts at station 4 and runs north, looking −x.
-        var section = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["pts"] = new JsonArray(J(0, 0), J(4, 0), J(4, 6)) })!["id"]!;
+        var section = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["pts"] = new JsonArray(J(0, 0), J(4, 0), J(4, 6)), ["jogged"] = "developed" })!["id"]!;
         // A wall strip drawn on the second piece, from station 5 to 7 at the height 1: along y from 1 to 3 on x = 4.
         var strip = Make(f, "wall", Draw(f, section, Poly(false, (5, 1), (7, 1))), new() { ["thickness"] = 0.2, ["height"] = 0.3, ["justify"] = "left" });
         var b = f.Bounds(strip);

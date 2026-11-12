@@ -92,9 +92,53 @@ export function download(bytes: Uint8Array, name: string, type = 'application/oc
 }
 
 /**
+ * Where a file goes in the browser: a file the user chose with the save picker (Chrome, Edge), or just the name they gave in
+ * Lapin's own box (the browser then downloads it where it is set to).
+ */
+export interface SaveTarget { name: string; handle: FileSystemFileHandle | null }
+
+const typesOf = (ext: string, type: string) => [{ description: ext ? ext.toUpperCase() : 'File', accept: { [type]: ext ? [`.${ext}`] : [] } }];
+
+/**
+ * The user is asked for the file's name before anything is made (report #145): the browser's save picker where it has one, else a box
+ * of Lapin's with the suggested name filled in. `existing` is a file already chosen (a project saved before), used as it is. Null:
+ * the user stepped back. The extension is kept: a name typed without it gets it.
+ */
+export async function chooseTarget(name: string, type = 'application/octet-stream', existing: FileSystemFileHandle | null = null): Promise<SaveTarget | null> {
+  if (existing) return { name: existing.name, handle: existing };
+  const ext = name.includes('.') ? name.split('.').pop()!.toLowerCase() : '';
+  const save = picker().showSaveFilePicker;
+  if (save) {
+    try {
+      const handle = await save({ suggestedName: name, types: typesOf(ext, type) });
+      return { name: handle.name, handle };
+    } catch (e) {
+      if ((e as { name?: string } | null)?.name === 'AbortError') return null;
+      // Refused (the click that began the export is too old for the browser, a frame that may not show it): the box below.
+    }
+  }
+  const { ask, textField } = await import('../shell/AskBox');
+  const r = await ask('Save as…', [textField('name', 'File name', name)]);
+  if (!r) return null;
+  let typed = safeFileName(String(r.name ?? ''), '').trim();
+  if (!typed) return null;
+  if (ext && !typed.toLowerCase().endsWith(`.${ext}`)) typed += `.${ext}`;
+  return { name: typed, handle: null };
+}
+
+/** The bytes into the chosen file, or handed to the browser as a download under the chosen name. */
+export async function writeTarget(target: SaveTarget, bytes: Uint8Array, type = 'application/octet-stream'): Promise<void> {
+  if (target.handle) {
+    const w = await target.handle.createWritable();
+    await w.write(bytes as BlobPart);
+    await w.close();
+  } else download(bytes, target.name, type);
+}
+
+/**
  * Bytes the interface made (a schedule's CSV or XLSX, exported types) saved where the user says (report #66): on the
- * desktop the save dialog, the default name given, and the engine writes them; in a browser a download. The file's
- * name when saved, null when the user stepped back or it failed (said in a notice).
+ * desktop the save dialog, the default name given, and the engine writes them; in a browser the save picker or a box asking
+ * the name, then a download. The file's name when saved, null when the user stepped back or it failed (said in a notice).
  */
 export async function saveFile(bytes: Uint8Array, name: string, type = 'application/octet-stream'): Promise<string | null> {
   try {
@@ -106,8 +150,10 @@ export async function saveFile(bytes: Uint8Array, name: string, type = 'applicat
       await engine.call('file.write', { path, data: toBase64(bytes) }, { timeoutMs: LONG_TIMEOUT_MS });
       return path.split(/[\\/]/).pop() ?? name;
     }
-    download(bytes, name, type);
-    return name;
+    const target = await chooseTarget(name, type);
+    if (!target) return null;
+    await writeTarget(target, bytes, type);
+    return target.name;
   } catch (e) {
     notify(e instanceof Error ? e.message : String(e));
     return null;
@@ -117,21 +163,12 @@ export async function saveFile(bytes: Uint8Array, name: string, type = 'applicat
 /** A file name the systems accept, from a schedule's or a type's name (no slashes, colons, quotes…). */
 export const safeFileName = (name: string, fallback = 'export') => name.replace(/[\\/:*?"<>|]+/g, '_').trim() || fallback;
 
-/** Bytes written into a file the user chose (where the browser can), else downloaded; false: the user cancelled. */
+/** Bytes written into a file the user chose (where the browser can) or named, else downloaded; false: the user cancelled. */
 async function keep(bytes: Uint8Array, name: string, handle: FileSystemFileHandle | null, ask: boolean): Promise<{ handle: FileSystemFileHandle | null } | false> {
-  let target = ask ? null : handle;
-  const save = picker().showSaveFilePicker;
-  if (!target && save) {
-    try { target = await save({ suggestedName: name, types: [{ description: 'Lapin project', accept: { 'application/zip': ['.lapin'] } }] }); } catch { return false; }
-  }
-  if (target) {
-    const w = await target.createWritable();
-    await w.write(bytes as BlobPart);
-    await w.close();
-    return { handle: target };
-  }
-  download(bytes, name);
-  return { handle: null };
+  const target = await chooseTarget(name, 'application/zip', ask ? null : handle);
+  if (!target) return false;
+  await writeTarget(target, bytes);
+  return { handle: target.handle };
 }
 
 export interface RecoverableWork { file: string; path: string | null; at: string; edits: number; lastEdit: string | null }
@@ -269,10 +306,12 @@ export async function saveProject(as = false): Promise<boolean> {
   const current = useSession.getState().doc?.path ?? null;
   if (engineInBrowser) {
     try {
-      const r = await engine.call<{ name: string; data: string }>('project.saveBytes', { name: current ?? pageName ?? 'project.lapin' }, { timeoutMs: LONG_TIMEOUT_MS });
-      const kept = await keep(fromBase64(r.data), r.name, projectHandle, as);
-      if (!kept) return false;
-      projectHandle = kept.handle;
+      // The name is asked first (the engine then holds the project under it, so exports are named after it).
+      const chosen = await chooseTarget(current ?? pageName ?? 'project.lapin', 'application/zip', as ? null : projectHandle);
+      if (!chosen) return false;
+      const r = await engine.call<{ name: string; data: string }>('project.saveBytes', { name: chosen.name }, { timeoutMs: LONG_TIMEOUT_MS });
+      await writeTarget(chosen, fromBase64(r.data), 'application/zip');
+      projectHandle = chosen.handle;
       notify(`Saved ${projectTitle(r.name)}.`);
       return true;
     } catch (e) {
@@ -404,13 +443,12 @@ export async function exportFile(method: string, args: Record<string, unknown>, 
       notify(`Exported ${path.split(/[\\/]/).pop()}.`);
       return;
     }
+    // Asked before the engine works: the picker needs the click that began the export, which a long export outlives.
+    const target = await chooseTarget(name, MIME[ext] ?? 'application/octet-stream');
+    if (!target) return;
     const r = await engine.call<{ data: string }>(method, args, { timeoutMs: LONG_TIMEOUT_MS });
-    const bytes = Uint8Array.from(atob(r.data), (c) => c.charCodeAt(0));
-    const url = URL.createObjectURL(new Blob([bytes], { type: MIME[ext] ?? 'application/octet-stream' }));
-    const a = document.createElement('a');
-    a.href = url; a.download = name; a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 10_000);
-    notify(`Exported ${name}.`);
+    await writeTarget(target, fromBase64(r.data), MIME[ext] ?? 'application/octet-stream');
+    notify(`Exported ${target.name}.`);
   } catch (e) {
     notify(e instanceof Error ? e.message : String(e));
   }

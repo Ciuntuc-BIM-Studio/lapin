@@ -273,7 +273,7 @@ public class SurfaceHatchTests
         f.Wall(3, 6, 3, 9, brick);
         f.Wall(1, 3, 2, 3, plain);
         f.Wall(4, 7, 4, 8, plain);
-        var view = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["pts"] = new JsonArray(new JsonArray(0, 1), new JsonArray(6, 1), new JsonArray(6, 9)) })!["id"]!;
+        var view = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["pts"] = new JsonArray(new JsonArray(0, 1), new JsonArray(6, 1), new JsonArray(6, 9)), ["jogged"] = "developed" })!["id"]!;
         return (f, view);
     }
 

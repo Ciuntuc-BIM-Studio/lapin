@@ -1,4 +1,4 @@
-# Developed sections: jogged, curved, along an element
+# Jogged, curved and developed sections
 
 Asked on 30.10.2026 (decision 176): "systems of sections made of straight polylines with segments in different directions, or even curved sections, or through an alignment".
 
@@ -6,14 +6,28 @@ Asked on 30.10.2026 (decision 176): "systems of sections made of straight polyli
 
 A section's line is a polyline in plan (`SectionPaths`). Each straight piece is a planar section looking left of the piece (as before), that **sees only between its two ends**: `ViewSpec.Span = (0, length)`, applied in `HiddenLines.Draw(span)` — the edges are clipped where they cross the piece's end planes, the cut areas are clipped there too (Sutherland–Hodgman on x), nothing is drawn at the clip, and a solid wholly outside the piece is skipped. The pieces are then laid side by side at their stations (the developed x: the sum of the lengths before them), `ViewDrawing.Shifted` and `Join`, so a jogged section reads as one drawing at true lengths (`Views.Generate`, `Views.Pieces`). A plain two-point section is one piece without a span, exactly as it was.
 
-- **Jogged**: `pts` with three or more points.
+- **Jogged**: `pts` with three or more points. Drawn **projected** by default (below); `jogged: "developed"` on the view draws it developed as described here.
 - **Curved**: `curve: "arc"` with three points (start, a point on the arc, end): the arc is sampled to pieces of at most 7.5° (4 to 48), `SectionPaths.SampleArc`.
 - **Along an element** (an alignment): `along: <id>`. The element's line is read live each time the section is drawn, through `ISectionPaths` (Civil: paths, retaining walls, ditches with the station their chain starts at, site feature lines; Drafting: a drafted line, polyline, arc or circle) or, for a path element (a wall, a beam, a strip footing), its axis with its arc sampled. When the element is gone, the last line it had (`pts`) stays.
 - `start` and `end` are kept as the first and last point, so everything that read a section as one line still works: `Views.Look` (the first piece), the DXF import's mirroring, the Studio sketches' plane, the legacy import, the key plan's "look from".
 
+## Projected jogged sections (report #146, 12.11.2026)
+
+A tester: "the section cuts the model along the break as well… grid line 4 goes through the wall in plan, but appears offset in section; expected: the section to work like Revit's, where the break does not cut, only the parallel segments". A jogged line (three or more points, no arc, following nothing, not across an element) is now drawn **projected** unless the view says `jogged: "developed"` (`SectionPaths.Projects`, `SectionPaths.Cuts`, `SectionPaths.ProjectedPieces`):
+
+- x in the drawing is the plan point's projection on the first piece's direction, from its start: one frame for the whole drawing, so `ViewContext.Map` (the first piece's frame) puts every annotation where it is in plan.
+- The pieces parallel to the first (same sense, within `ParallelDegrees` = 1°) cut, each on a plane of the first piece's direction through the piece's middle (a near-parallel piece is straightened, at most 1° off), seeing only its stretch of x.
+- The other pieces are jogs: they cut nothing and add no width. Where the cut jumps from one parallel piece to the next is the middle of the jogs between them in x: a perpendicular jog's own x, an oblique one's middle, so the stretches meet with no gap.
+- A line that turns back over itself (a parallel piece going the other way, a stretch running backwards) cannot be projected: it is drawn developed.
+- Each cut is a `SectionPaths.Piece` from the start of its stretch to its end, laid at its station (x0), so everything that worked piece by piece (`Views.Pieces`, `Generate`'s laying, `frames`, `PlaneOf(atX)`, `ViewPlanes`, the traces in other views, the surface hatches and shadows, the voids and clash marks, the CAD underlays in 3D) takes it unchanged. A projected line with a single cut (an L) is that one piece, still seeing only its stretch.
+- Grids in a section (`Grids.Marks`) stand where the axis crosses the cut whose stretch holds the crossing (`Views.CrossingX`), in both modes; an axis that crosses only a projected section's jog is not drawn. (Before, they took the first piece's infinite plane, which put them wrong on a developed section's later pieces.)
+- No dashed jog line in a projected drawing; the stations, when asked, run along the projected x.
+- The interface: the view's settings show **Jogged: Projected | Developed** for a jogged line (`view.setLine {id, jogged: "projected" | "developed"}`; projected, the default, stores nothing). Curved sections and sections along an element stay developed.
+- Existing projects: no upgrade. A jogged section saved before has no `jogged`, so it opens projected, which is what the report asks for (the developed one was reported as wrong); its drawing gets narrower by the jogs' lengths, so a sheet's viewport of it shows the same model narrower. Set it back to Developed to keep the old drawing.
+
 ## Over the drawing
 
-`Views.SectionMarks`: a fine grey dashed line down each jog, over the drawing's height; with **stations** (`stations` m on the view; by default a tenth of the scale when the section follows an element, else none), a base line along the bottom with a tick and the chainage ("0+020", `SectionPaths.Station`) at every round station from the line's start station, and at both ends.
+`Views.SectionMarks`: a fine grey dashed line down each jog of a developed section, over the drawing's height; with **stations** (`stations` m on the view; by default a tenth of the scale when the section follows an element, else none), a base line along the bottom with a tick and the chainage ("0+020", `SectionPaths.Station`) at every round station from the line's start station, and at both ends.
 
 In a plan, a section's mark (`Views.Marks`) is its whole line, the strokes and arrows at its two ends each looking left of its end piece, its name at both ends; every point is a snap.
 
@@ -21,8 +35,8 @@ In a plan, a section's mark (`Views.Marks`) is its whole line, the strokes and a
 
 - View → **Jogged section** (SJ: a polyline gesture, Enter finishes), **Curved section** (SC: three points, as a curved wall), **Section along** (SA: pick a road, a ditch, a retaining wall, a site line, a wall, a beam, a footing or a drafted shape). `ui/src/modules/core/sections.tsx`.
 - Grips in plan (`sectionGrips`, on `LapinView`): the points (dragged; Ctrl/⌘-click takes one out when more than two remain), the middle of each piece (dragged or Ctrl/⌘-clicked adds a jog); a curved section its three points; a following section none. All through `view.setLine {id, pts}`.
-- The view's settings: **Line** (straight, jogged, arc, along an element, with the length), **Follows** (Stop following keeps the line as it is), **Stations (m)**.
-- The drawing's JSON carries `frames: [{origin, right, up, dir, x0, x1}]` for a developed section: a drawing point (x, y) lies on the piece whose stretch holds x, at x − x0. In 3D (`sectionPieces`, `Viewport3D.sectionOverlay`) the drawing is laid piece by piece on its planes; the model's cut stays on the first piece's plane, since three.js clips with intersections of half-spaces only, and a jogged cut is a union.
+- The view's settings: **Line** (straight, jogged, arc, along an element, with the length), **Jogged** (projected or developed, for a jogged line), **Follows** (Stop following keeps the line as it is), **Stations (m)**.
+- The drawing's JSON carries `frames: [{origin, right, up, dir, x0, x1}]` for a developed or projected jogged section (a projected one's frames all share the first piece's right and dir): a drawing point (x, y) lies on the piece whose stretch holds x, at x − x0. In 3D (`sectionPieces`, `Viewport3D.sectionOverlay`) the drawing is laid piece by piece on its planes; the model's cut stays on the first piece's plane, since three.js clips with intersections of half-spaces only, and a jogged cut is a union.
 
 ## Decided by default (to confirm)
 

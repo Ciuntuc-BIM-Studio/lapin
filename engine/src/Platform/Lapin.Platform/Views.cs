@@ -93,9 +93,10 @@ public static class Views
                 // The first piece of its line; a developed section (more pieces) is drawn piece by piece (Generate).
                 var (path, _, problem) = SectionPaths.Resolve(m, services, view);
                 if (path == null) return (null, problem);
-                var pieces = SectionPaths.Pieces(path);
+                // Projected (a jogged line's default, report #146): its first cut, whose frame is the whole drawing's.
+                var (pieces, spanned) = SectionPaths.Cuts(view, path);
                 if (pieces.Count == 0) return (null, "A section needs two different points.");
-                return (ViewSpec.Section(pieces[0].A, pieces[0].B, view.NumOrNull("depth") ?? ViewRanges.Unlimited, hidden, spanned: pieces.Count > 1), null);
+                return (ViewSpec.Section(pieces[0].A, pieces[0].B, view.NumOrNull("depth") ?? ViewRanges.Unlimited, hidden, spanned), null);
             }
             case "elevation":
             {
@@ -245,7 +246,7 @@ public static class Views
             {
                 var (path, _, _) = SectionPaths.Resolve(m, services, view);
                 if (path == null) return null;
-                var pieces = SectionPaths.Pieces(path);
+                var (pieces, _) = SectionPaths.Cuts(view, path);
                 if (pieces.Count == 0) return null;
                 var piece = atX is { } x ? pieces.LastOrDefault(p => p.Station <= x + 1e-9) ?? pieces[0] : pieces[0];
                 var f = ViewSpec.Section(piece.A, piece.B, 1).Frame;
@@ -621,17 +622,17 @@ public static class Views
         return (drawing, spec, null, drawn, laid);
     }
 
-    /// <summary>A developed section's pieces: each straight piece's spec (seeing only between its ends) and the station it is laid at; one piece (or none) for a plain section.</summary>
+    /// <summary>A developed section's pieces: each straight piece's spec (seeing only between its ends) and the station it is laid at; a projected jogged section's cuts (<see cref="SectionPaths.Cuts"/>); one piece (or none) for a plain section.</summary>
     public static List<(ViewSpec Spec, double Station)> Pieces(IQueryContext q, Entity view)
     {
         var o = new List<(ViewSpec, double)>();
         if (view.Str("kind") != "section") return o;
         var (path, _, _) = SectionPaths.Resolve(q.Model, q.Services, view);
         if (path == null) return o;
-        var pieces = SectionPaths.Pieces(path);
+        var (pieces, spanned) = SectionPaths.Cuts(view, path);
         var hidden = ShowsHidden(Spatial.Project(q.Model), "section", view.Str("hiddenLines"));
         var depth = view.NumOrNull("depth") ?? ViewRanges.Unlimited;
-        foreach (var p in pieces) o.Add((ViewSpec.Section(p.A, p.B, depth, hidden, spanned: pieces.Count > 1), p.Station));
+        foreach (var p in pieces) o.Add((ViewSpec.Section(p.A, p.B, depth, hidden, spanned), p.Station));
         return o;
     }
 
@@ -1145,8 +1146,9 @@ public static class Views
     {
         var m = c.Model;
         var frames = new List<(WorkPlane Plane, double X0, double X1)>();
-        var developed = c.Kind == "section" && SectionPaths.Resolve(m, c.Services, c.View).Path is { } path ? SectionPaths.Pieces(path) : null;
-        if (developed is { Count: > 1 })
+        // A jogged line's cuts each over its stretch (a projected L's one cut too), a developed line's pieces.
+        var developed = c.Kind == "section" && SectionPaths.Resolve(m, c.Services, c.View).Path is { } path && SectionPaths.Cuts(c.View, path) is { Spanned: true } cuts ? cuts.Pieces : null;
+        if (developed is { Count: > 0 })
         {
             foreach (var piece in developed)
                 if (PlaneOf(m, c.Services, c.View, piece.Station + piece.Length / 2) is { } wp)
@@ -1155,6 +1157,24 @@ public static class Views
         else if (c.Kind == "plan") { if (PlaneOf(m, c.Services, c.View) is { } wp) frames.Add((wp, x0, x1)); }
         else frames.Add((new WorkPlane(c.Frame.Origin, c.Frame.Right, c.Frame.Up, -c.Frame.Dir), x0, x1));
         return frames;
+    }
+
+    /// <summary>
+    /// The drawing's x where a line in plan (<paramref name="a"/> to <paramref name="b"/>, a grid's axis) crosses the section's
+    /// cut: its plane, or the piece whose stretch holds the crossing (a jogged section, projected or developed; a projected
+    /// one's jogs cut nothing, so an axis crossing only a jog is not drawn). Null when it crosses none.
+    /// </summary>
+    public static double? CrossingX(ViewContext c, Vec2 a, Vec2 b)
+    {
+        foreach (var (wp, x0, x1) in ViewPlanes(c, double.NegativeInfinity, double.PositiveInfinity))
+        {
+            var (pa, pb) = (new Vec3(a.X, a.Y, wp.Origin.Z), new Vec3(b.X, b.Y, wp.Origin.Z));
+            var (da, db) = (Vec3.Dot(pa - wp.Origin, wp.Normal), Vec3.Dot(pb - wp.Origin, wp.Normal));
+            if (Math.Abs(da - db) < 1e-9 || da * db > 0) continue;
+            var x = wp.Local(pa + (pb - pa) * (da / (da - db))).At.X;
+            if (x >= x0 - 1e-6 && x <= x1 + 1e-6) return x;
+        }
+        return null;
     }
 
     /// <summary>
@@ -1187,19 +1207,21 @@ public static class Views
 
     /// <summary>
     /// What a developed section writes over itself: a fine dashed line down each jog (where one piece ends and the next
-    /// begins), and the stations along the bottom when it has them (a tick and "0+020" every step, from the station its
+    /// begins; none on a projected jogged section, whose pieces share one frame), and the stations along the bottom when it has them (a tick and "0+020" every step, from the station its
     /// line starts at). Null when it is a plain section with no stations.
     /// </summary>
     static ViewMark? SectionMarks(ViewContext c, (Vec2 Min, Vec2 Max) bounds, double k, TextStyle text)
     {
         var (path, station0, _) = SectionPaths.Resolve(c.Model, c.Services, c.View);
         if (path == null) return null;
-        var pieces = SectionPaths.Pieces(path);
+        var (pieces, _) = SectionPaths.Cuts(c.View, path);
+        // Projected (a jogged line's default, report #146): one frame, no jog to mark.
+        var jogs = SectionPaths.Projects(c.View) ? 0 : pieces.Count - 1;
         var step = SectionPaths.Stations(c.View, c.Scale);
-        if (pieces.Count < 2 && step == null) return null;
+        if (jogs < 1 && step == null) return null;
         var mk = new ViewMark(null);
         var (y0, y1) = (bounds.Min.Y - 0.5 * k, bounds.Max.Y + 0.5 * k);
-        foreach (var p in pieces.Skip(1))
+        foreach (var p in pieces.Skip(jogs < 1 ? pieces.Count : 1))
             mk.Line(new Vec2(p.Station, y0), new Vec2(p.Station, y1), "SECTION", Pens.Default.Hidden, "#777777", LineStyles.DashOf("dashed"));
         if (step is { } st)
         {
@@ -1455,7 +1477,8 @@ public static class Views
             return new JsonObject { ["id"] = copy.Id, ["annotations"] = annotations };
         });
 
-        // A section's line moved or redrawn: {id, start?, end?} or {id, pts}, {curve: "arc" | null}, {along: element | null}, {stations: m | null}.
+        // A section's line moved or redrawn: {id, start?, end?} or {id, pts}, {curve: "arc" | null}, {along: element | null}, {stations: m | null},
+        // {jogged: "projected" | "developed" | null}: how a jogged line is drawn (report #146; projected, the default, stores nothing).
         r.Command("view.setLine", "Move section", (ctx, a) =>
         {
             var v = ctx.Model.Get((string?)a["id"] ?? "") is { Class: Class } x && x.Str("kind") == "section" ? x : throw new CommandException("Not a section.");

@@ -3840,7 +3840,7 @@ export const scenes = [
       await house(t);
       await t.cmd('view.create', { kind: 'section', name: 'A-A', start: [6, -2], end: [6, 10], depth: 0.5, scale: 50 });
       await t.cmd('view.create', { kind: 'elevation', direction: 'south' });
-      // A jogged section (decision 176): up through the south wall, across through the inner wall, up through the north wall and its window.
+      // A jogged section (decision 176): up through the south wall, across (a jog, cutting nothing: projected, report #146), up through the north wall and its window.
       await t.cmd('view.create', { kind: 'section', name: 'B-B', pts: [[2, -1], [2, 4], [9.5, 4], [9.5, 9]], scale: 50 });
       await t.wait(800);
       await t.shot('browser', { of: 'nav.browser', pad: 0, maxHeight: 640 });
@@ -3927,6 +3927,18 @@ export const scenes = [
       await t.page.mouse.move(grab[0], grab[1]);
       await t.page.mouse.down();
       await t.page.mouse.move(grab[0] + 60, grab[1] + 40, { steps: 5 });
+      // Its settings: Jogged, projected by default; developed lays every piece, the jog too, side by side.
+      const sectionB = (await t.nodes()).find((n) => n.type === 'LapinView' && n.name === 'B-B');
+      await t.page.evaluate(async (id) => (await import('/src/app/store.ts')).useUi.setState({ selected: [], selection: id }), sectionB.id);
+      await t.page.locator('nav.browser').getByText('B-B', { exact: true }).first().click();
+      const jogged = t.page.locator('[data-field=section-jogged]');
+      await jogged.waitFor();
+      t.expect(await jogged.inputValue() === 'projected', 'a jogged section is projected by default');
+      await t.shot('section-jogged-setting', { of: '.view-settings', pad: 0 });
+      await jogged.selectOption('developed');
+      await t.wait(1200);
+      t.expect((await t.nodes()).find((n) => n.id === sectionB.id)?.props.jogged === 'developed', 'Developed is kept on the view');
+      await t.shot('section-jogged-developed', { of: '[data-testid=drawing]', pad: 0 });
       await t.page.mouse.up();
       const moved = await box();
       t.expect(Math.abs(moved.x - before.x - 60) < 2 && Math.abs(moved.y - before.y - 40) < 2, `the dialog follows the drag (${before.x},${before.y} → ${moved.x},${moved.y})`);
@@ -4544,7 +4556,7 @@ export const scenes = [
       t.expect(await t.page.locator('[data-testid=drawing] .pen-surface-hatch').count() > 0, 'the elevation hatches the faces it sees, from their materials\' names');
       await t.shot('elevation-surface-hatch', { of: '[data-testid=drawing]', pad: 0 });
       // A jogged section: through the house along y = 4, north along x = 5, then along y = 9.5 looking at the garden wall.
-      await t.cmd('view.create', { kind: 'section', name: 'J-J', pts: [[-1, 4], [5, 4], [5, 9.5], [14, 9.5]] });
+      await t.cmd('view.create', { kind: 'section', name: 'J-J', pts: [[-1, 4], [5, 4], [5, 9.5], [14, 9.5]], jogged: 'developed' });
       await openFromBrowser(t, 'J-J', 1500);
       await t.fit();
       t.expect(await t.page.locator('[data-testid=drawing] .pen-surface-hatch').count() > 0, 'the developed section hatches what its pieces see');

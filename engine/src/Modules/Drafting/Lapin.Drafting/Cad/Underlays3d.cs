@@ -84,7 +84,7 @@ public static class Underlays3d
             {
                 var (path, _, _) = SectionPaths.Resolve(m, services, view);
                 if (path == null) return null;
-                var list = SectionPaths.Pieces(path).Select(p => (p.Station, Plane: Views.PlaneOf(m, services, view, p.Station))).Where(p => p.Plane != null).Select(p => (p.Station, p.Plane!)).ToList();
+                var list = SectionPaths.Cuts(view, path).Pieces.Select(p => (p.Station, Plane: Views.PlaneOf(m, services, view, p.Station))).Where(p => p.Plane != null).Select(p => (p.Station, p.Plane!)).ToList();
                 return list.Count == 0 ? null : new ViewPlanes(list);
             }
             return Views.PlaneOf(m, services, view) is { } plane ? new ViewPlanes([(double.NegativeInfinity, plane)]) : null;
