@@ -190,3 +190,53 @@ Toate lungimile de aici urmează unitățile proiectului. În picioare și țoli
 ![Aceeași axă în picioare și țoli](shots/axis-properties-imperial.webp)
 
 ![Tabul Adnotări](shots/ribbon-annotate.webp)
+
+## Simboluri
+
+Un simbol este un desen mic pe care îl refolosești: un marcaj de pilot, o săgeată de nord, eticheta unui nor de revizie, legenda unei uși antifoc. E făcut din linii, polilinii, dreptunghiuri, cercuri, arce, umpleri, hașuri și texte, iar fiecare copie așezată într-o vedere e un singur element pe care îl muți, rotești, oglindești, copiezi și ștergi. Dacă schimbi simbolul, toate copiile îl urmează.
+
+Un simbol are o **scară**. Un simbol de **adnotare** își păstrează mărimea pe hârtie (o săgeată de nord are 12 mm și la 1:50, și la 1:200); un simbol de **model** are mărimea reală, în metri (un vas de toaletă, o mașină), deci crește și scade cu scara vederii. Desenul primului e în milimetri pe hârtie, al celui de-al doilea în metri.
+
+### Un simbol din desenele tale
+
+Desenează simbolul într-un plan, o secțiune sau o vedere de desen, cu uneltele obișnuite (linii, cercuri, texte). Unde un text trebuie să difere de la o copie la alta, scrie în el un jeton viu, de exemplu `{attr.no}`. Selectează desenul, apoi alege **Desen → Simbol → Salvează ca simbol…** (sau scrie **SAVESYMBOL**, sau clic dreapta → **Salvează ca simbol…**). Dă clic pe **punctul de inserție** (punctul care ajunge unde dai clic când îl așezi), apoi pe un punct de-a lungul direcției simbolului (axa lui +x, după care se orientează un cap de secțiune când se rotește) sau apasă **Enter** pentru 0°. O fereastră mică cere **Numele**, **Categoria** și **Scara** (adnotare sau model). Cu **Înlocuiește desenul cu simbolul** bifat, desenul tău devine un simbol așezat unde era; un pas de anulare readuce liniile.
+
+![Salvează ca simbol în tabul Desen](shots/symbol-save-ribbon.webp)
+
+![Fereastra Salvează ca simbol](shots/symbol-save.webp)
+
+### Editorul de simboluri
+
+**Gestionare → Simboluri…** arată simbolurile (mai jos). **Nou** deschide unul gol în editor, iar **Editează…** deschide unul făcut de tine. Editorul e cel al designerului de cartușe: unelte pentru linii, dreptunghiuri, polilinii, cercuri, arce și texte pe o grilă, cu o cruce roșie la punctul de inserție și o săgeată pentru direcție, scara, categoria și descrierea simbolului în dreapta și o previzualizare desenată de motor așa cum se va tipări. **Oglindire X**, **Oglindire Y** și butonul de rotire întorc previzualizarea, ca să vezi cum se citește în orice poziție. **Salvează** păstrează schimbările: toate copiile așezate se actualizează într-un singur pas de anulare.
+
+![Editorul de simboluri](shots/symbol-editor.webp)
+
+**Atributele** sunt valorile cerute când se așază un simbol. Dă fiecăruia o cheie (`no`), o etichetă și o valoare implicită; un text care spune `{attr.no}` arată apoi valoarea fiecărei copii. Se completează în bara liniei de comandă la așezare și se schimbă după aceea în Proprietăți.
+
+**Text viu.** Un text poate arăta ce știe modelul, scris între acolade. Lista de sub previzualizare le oferă (cu o casetă de căutare): de exemplu `{view.scale}` (scara vederii), `{level.name}` și `{level.elevation}` (nivelul), `{point.elevation}` (înălțimea punctului unde stă simbolul: în plan, cea a nivelului; în secțiuni și fațade, înălțimea acelui punct), `{mark.name}` și `{mark.number}` (ale unui marcaj de vedere). O **formulă** începe cu `=` și poate avea un format după `|`: `{= attr.w * 2 | 0.00}` dublează atributul `w` și scrie două zecimale. Formulele folosesc numere, operatorii `+ - * / %`, comparații, funcții ca `min`, `max`, `round`, `if`, `clamp`, `sin` și nume; nu rulează niciodată cod. Scrie un text în caseta de încercare de sub listă ca să vezi ce dă.
+
+### Așezarea unui simbol
+
+Alege **Adnotări → Simboluri → Simbol** (sau scrie **SYMBOL**, **SYM**) într-un plan, o secțiune, o fațadă sau o vedere de desen. O fantomă a simbolului urmează cursorul; dă clic ca să-l așezi și continuă pentru alte copii. **Esc** încheie unealta. Bara liniei de comandă are simbolul de așezat, butonul de rotire, cele două butoane de oglindire și câte o casetă pentru fiecare atribut. **Spațiu** rotește simbolul un sfert; scrie **R** și **Enter** ca să-l rotești, **X** sau **Y** și **Enter** ca să-l oglindești stânga-dreapta sau sus-jos. Oricum ai roti sau oglindi, textele rămân lizibile: de la stânga la dreapta, sau de jos în sus când s-au rotit un sfert, niciodată cu susul în jos sau în oglindă.
+
+![Așezarea simbolului: opțiunile lui în linia de comandă](shots/symbol-place.webp)
+
+![Trei copii: așezată ca desenată, oglindită, rotită](shots/symbol-placed.webp)
+
+Un simbol așezat se selectează ca orice element. În **Proprietăți → Simbol** îl poți schimba cu alt simbol, îi poți da **Unghiul** și **Factor de mărime**, **Oglindire X** și **Oglindire Y**, schimba valoarea fiecărui atribut, alege stratul și culoarea, **Editează simbolul** (simbolul însuși: toate copiile îl urmează) și **Explodează**, care înlocuiește copia cu linii, forme și texte simple, pe care le editezi pe rând. Mută, Rotește, Oglindește, Copiază și celelalte unelte de desen merg pe un simbol ca pe orice element desenat. Un simbol aparține vederii lui, ca o cotă, iar planșele, PDF-ul și DXF-ul îl tipăresc așa cum îl vezi (în DXF e un bloc).
+
+![Proprietățile unui simbol așezat](shots/symbol-properties.webp)
+
+### Simbolurile Lapin și ale tale
+
+**Gestionare → Simboluri…** arată trei locuri, pe categorii. **Încorporate** sunt ale Lapin: săgețile de nord, capul de secțiune și marcajul de fațadă cu numerele lor, callout-ul, marcajul de revizie, linia de rupere, cota de nivel, marcajele de nivel (pe jumătate negru și deschis) și bulinele axelor. Nu pot fi schimbate, dar **Duplică** face o copie a unuia în proiectul tău, de schimbat. **Acest proiect** ține ce ai făcut sau importat; călătorește în fișierul proiectului. **Acest calculator** e biblioteca ta: **Salvează pe acest calculator** pune acolo o copie, iar orice proiect deschis pe acest calculator o poate folosi (**Adaugă în proiect** aduce unul). Alege un simbol ca să-l vezi mare și **Așază pe o vedere**, **Editează…**, **Redenumește**, **Duplică** sau **Șterge** (un simbol așezat întreabă ce se face cu copiile lui).
+
+![Gestionare → Simboluri](shots/symbols-dialog.webp)
+
+### Schimbul de simboluri
+
+**Exportă…** scrie simbolul ca fișier **.lapinsymbols**; **Importă…** citește unul, în proiect sau în biblioteca acestui calculator (caseta de lângă buton). Unde proiectul are deja un simbol cu același nume, o listă arată care sunt la fel și care diferă, cu o alegere pentru fiecare: **păstrează**, **actualizează** (copiile așezate îl urmează), **păstrează-le pe amândouă** sau **sari**.
+
+### Simboluri pe planșe
+
+Pe o planșă, **Așază simbol…** din bara de unelte listează simbolurile; alege unul și dă clic unde stă pe hârtie (Esc anulează). E desenat la mărimea lui pe hârtie, oricare ar fi scara vederilor de pe planșă, și se tipărește așa cum îl vezi.

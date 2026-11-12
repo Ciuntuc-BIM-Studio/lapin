@@ -190,3 +190,53 @@ Every length here follows the project's units. In feet and inches, the ends and 
 ![The same axis in feet and inches](shots/axis-properties-imperial.webp)
 
 ![The Annotate tab](shots/ribbon-annotate.webp)
+
+## Symbols
+
+A symbol is a small drawing you reuse: a pile mark, a north arrow, a revision cloud's tag, a fire door's key. It is made of lines, polylines, rectangles, circles, arcs, fills, hatches and texts, and each copy placed in a view is one element that you can move, turn, flip, copy and delete. Change the symbol and every copy follows.
+
+A symbol has a **scale**. An **annotation** symbol keeps its size on paper (a north arrow is 12 mm high at 1:50 and at 1:200); a **model** symbol has real size in metres (a toilet, a car), so it grows and shrinks with the view's scale. The symbol's drawing is in millimetres on paper for the first and in metres for the second.
+
+### Making a symbol from drafting
+
+Draw the symbol in a plan, section or drafting view with the ordinary tools (lines, circles, texts). Where a text should change from copy to copy, write a live token in it, such as `{attr.no}`. Select the drawing, then choose **Draft → Symbol → Save as symbol…** (or type **SAVESYMBOL**, or right-click → **Save as symbol…**). Click the **insertion point** (the point that lands where you click when you place it), then click a point along the symbol's direction (its +x axis, which a section head follows when it turns), or press **Enter** for 0°. A small dialog asks for the **Name**, the **Category** and the **Scale** (annotation or model). With **Replace the drafting with the symbol** ticked, your drawing becomes one placed symbol where it was; one step of undo brings the lines back.
+
+![Save as symbol in the Draft tab](shots/symbol-save-ribbon.webp)
+
+![The Save as symbol dialog](shots/symbol-save.webp)
+
+### The symbol editor
+
+**Manage → Symbols…** lists the symbols (below). **New** opens an empty one in the editor, and **Edit…** opens one you made. The editor is the title block designer's: tools for lines, rectangles, polylines, circles, arcs and texts on a grid, with a red cross at the insertion point and an arrow for the direction, the symbol's scale, category and description on the right, and a preview drawn by the engine as it will print. **Flip X**, **Flip Y** and the turn button flip and turn the preview, so you can see how it reads in any position. **Save** keeps the changes: every placed copy updates in one step of undo.
+
+![The symbol editor](shots/symbol-editor.webp)
+
+**Attributes** are the values asked for when a symbol is placed. Give each a key (`no`), a label and a default; a text that says `{attr.no}` then shows the value of each copy. They are filled in the command line's bar while placing and changed later in Properties.
+
+**Live text.** A text can show what the model knows, written in braces. The list under the preview offers them (with a search box): for example `{view.scale}` (the view's scale), `{level.name}` and `{level.elevation}` (the level), `{point.elevation}` (the height of the point where the symbol stands: in a plan the level's, in a section or an elevation the height of that point), `{mark.name}` and `{mark.number}` (a view mark's). A **formula** starts with `=` and ends with an optional format after `|`: `{= attr.w * 2 | 0.00}` doubles the attribute `w` and writes two decimals. Formulas use numbers, the operators `+ - * / %`, comparisons, the functions `min`, `max`, `round`, `if`, `clamp`, `sin` and the like, and names; they never run code. Type a text in the try box under the list to see what it gives.
+
+### Placing a symbol
+
+Choose **Annotate → Symbols → Symbol** (or type **SYMBOL**, **SYM**) in a plan, a section, an elevation or a drafting view. A ghost of the symbol follows the cursor; click to place it, and keep clicking for more copies. **Esc** ends the tool. The command line's bar has the symbol to place, the turn button, the two flip buttons and one box per attribute. **Space** turns the symbol a quarter; type **R** and **Enter** to turn it, **X** or **Y** and **Enter** to flip it left to right or top to bottom. Whatever the turn or the flip, texts stay readable: left to right, or bottom to top when they have turned a quarter, never upside down or mirrored.
+
+![Placing the symbol: its options in the command line](shots/symbol-place.webp)
+
+![Three copies: placed as drawn, flipped, turned](shots/symbol-placed.webp)
+
+A placed symbol is selected like any element. In **Properties → Symbol** you can swap it for another symbol, set its **Angle** and **Size factor**, **Flip X** and **Flip Y**, change each attribute's value, choose its layer and colour, **Edit symbol** (the symbol itself: every copy follows) and **Explode**, which replaces the copy with plain lines, shapes and texts that you can edit one by one. Move, Rotate, Mirror, Copy and the other drafting tools work on a symbol like on any drafted element. A symbol belongs to its view, like a dimension, and sheets, the PDF and the DXF print it as you see it (in DXF it is a block).
+
+![A placed symbol's properties](shots/symbol-properties.webp)
+
+### Lapin's own symbols and yours
+
+**Manage → Symbols…** shows three places, by category. **Built-in** are Lapin's own: north arrows, the section head and the elevation mark with their numbers, the callout, the revision marker, the break line, the spot level, the level markers (half black and open) and grid bubbles. They cannot be changed, but **Duplicate** makes a copy of one in your project to change. **This project** holds what you made or imported; it travels in the project file. **This computer** is your library: **Save to this computer** puts a copy there, and every project you open on this computer can use it (**Add to the project** brings one in). Choose a symbol to see it large, and **Place on a view**, **Edit…**, **Rename**, **Duplicate** or **Delete** it (a symbol that is placed asks what to do with its copies).
+
+![Manage → Symbols](shots/symbols-dialog.webp)
+
+### Sharing symbols
+
+**Export…** writes the symbol as a **.lapinsymbols** file; **Import…** reads one, into the project or into this computer's library (the box beside the button). Where the project already has a symbol of the same name, a list shows which are the same and which differ, with a choice for each: **keep**, **update** (the copies placed follow), **keep both** or **skip**.
+
+### Symbols on sheets
+
+On a sheet, **Place symbol…** in the toolbar lists the symbols; choose one and click where it goes on the paper (Esc cancels). It is drawn at its paper size whatever the scale of the views on the sheet, and it prints as you see it.

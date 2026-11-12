@@ -8247,6 +8247,120 @@ export const scenes = [
     },
   },
   {
+    // Symbols of the user's own (docs/plan-user-extensibility.md §3): two lines and a text with {attr.no} drafted in a plan, saved as
+    // a symbol, placed twice (the second flipped), the attribute changed in Properties, the symbol listed in Manage → Symbols… and
+    // opened in its editor (a live text and a formula, the preview flipped), then a sheet and exploding.
+    id: 'symbols',
+    touches: ['core', 'drafting'],
+    async run(t) {
+      await t.fresh();
+      const { page } = t;
+      const s = await t.storey();
+      const view = `plan:${s}`;
+      await t.cmd('architecture.addWall', { storeyId: s, x1: 0, y1: 0, x2: 8, y2: 0 });
+      await t.cmd('architecture.addWall', { storeyId: s, x1: 0, y1: 5, x2: 8, y2: 5 });
+      const drawn = (await t.cmd('drafting.draw', { viewId: view, shapes: [{ type: 'line', a: [2, 2], b: [3, 2] }, { type: 'line', a: [2.2, 2], b: [2.2, 2.6] }] })).ids;
+      const text = (await t.cmd('drafting.addText', { viewId: view, at: [2.3, 2.65], text: '{attr.no}' })).id;
+      await t.fit();
+      await t.button('Draft', { exact: true });
+      await select(t, drawn[0]);
+      await t.ui({ selected: [...drawn, text] });
+      await t.wait(500);
+      await t.shot('symbol-save-ribbon', { of: '.topbar', pad: 0 });
+      // Save as symbol…: the insertion point, then Enter for the direction, then the dialog.
+      await t.tool('cad.saveSymbol');
+      const [bx, by] = await t.planPoint(2.5, 2);
+      await page.mouse.move(bx, by, { steps: 3 }); await page.mouse.click(bx, by);
+      await t.wait(400);
+      await t.keys('Enter');
+      await page.waitForSelector('[data-dialog=save-symbol]', { timeout: 10_000 });
+      await page.locator('[data-field=sy-save-name]').fill('Pile mark');
+      await page.locator('[data-field=sy-save-category]').fill('structure');
+      await t.shot('symbol-save', { of: '[data-dialog=save-symbol]', pad: 12 });
+      await page.locator('[data-field=sy-save-go]').click();
+      await t.wait(1000);
+      const symbols = async () => (await t.call('doc.query', { name: 'symbols.list', args: {} })).items;
+      const mine = (await symbols()).find((i) => i.name === 'Pile mark');
+      t.expect(mine, 'Save as symbol… made "Pile mark"');
+      t.expect((await t.nodes()).filter((n) => n.props.predefinedType === 'SYMBOL').length === 1, 'one placed symbol stands where the drafting was');
+      await t.ui({ selection: null, selected: [] });
+      // Placed twice with the Symbol tool: R turns it, X flips it.
+      await t.button('Annotate', { exact: true });
+      await t.tool('cad.symbol');
+      await t.wait(500);
+      await page.locator('[data-symbol-pick]').selectOption(mine.id);
+      await t.wait(500);
+      await page.locator('[data-symbol-attr=no]').fill('P2');
+      await t.wait(300);
+      await page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
+      const [ax, ay] = await t.planPoint(4.5, 2);
+      await page.mouse.move(ax - 20, ay, { steps: 3 }); await page.mouse.move(ax, ay, { steps: 3 });
+      await page.locator('[data-symbol-flipx]').click();
+      await t.wait(600);
+      await page.mouse.move(ax, ay, { steps: 3 });
+      await t.shot('symbol-place', { of: '[data-testid=command-line]', pad: 0 });
+      await page.mouse.click(ax, ay);
+      await t.wait(700);
+      await page.locator('[data-symbol-attr=no]').fill('P3');
+      await page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
+      await page.keyboard.type('x'); await page.keyboard.press('Enter');
+      await page.keyboard.type('r'); await page.keyboard.press('Enter');
+      const [cx, cy] = await t.planPoint(6.5, 2);
+      await page.mouse.move(cx, cy, { steps: 4 });
+      await page.mouse.click(cx, cy);
+      await t.wait(800);
+      await t.keys('Escape', 'Escape');
+      const placed = (await t.nodes()).filter((n) => n.props.predefinedType === 'SYMBOL');
+      t.expect(placed.length === 3, `three placed symbols (${placed.length})`);
+      const flipped = placed.filter((n) => n.props.flipX === true || n.props.flipY === true);
+      t.expect(flipped.length >= 1, 'a flipped one among them');
+      const second = placed.find((n) => n.props.values?.no === 'P2') ?? placed[1];
+      await select(t, second.id);
+      await t.wait(800);
+      t.expect(await page.locator('[data-testid=symbol-section]').count() === 1, 'Properties has the symbol\'s section');
+      await page.locator('[data-field=sym-attr-no]').fill('A7');
+      await page.locator('[data-field=sym-attr-no]').press('Enter');
+      await t.wait(800);
+      t.expect((await t.nodes()).find((n) => n.id === second.id).props.values?.no === 'A7', 'the attribute changed in Properties');
+      const [qx, qy] = await t.planPoint(4.5, 2.3);
+      await t.shot('symbol-placed', { clip: { x: qx - 330, y: qy - 150, width: 660, height: 300 } });
+      await t.shot('symbol-properties', { of: 'aside.props', pad: 0, maxHeight: 560 });
+      await t.ui({ selection: null, selected: [] });
+      // Manage → Symbols…
+      await t.button('Manage', { exact: true });
+      await t.tool('manage.symbols');
+      await page.waitForSelector('[data-dialog=symbols]', { timeout: 10_000 });
+      await t.wait(800);
+      t.expect(await page.locator(`[data-field="sy-item-${mine.id}"]`).count() === 1, 'Manage → Symbols… lists "Pile mark"');
+      t.expect(await page.locator('[data-field^=sy-item-][data-origin=builtin]').count() > 5, 'with Lapin\'s own symbols');
+      await page.locator('[data-field=sy-search]').fill('Pile');
+      await t.wait(400);
+      await page.locator(`[data-field="sy-item-${mine.id}"]`).click();
+      await t.wait(500);
+      await t.shot('symbols-dialog', { of: '[data-dialog=symbols]', pad: 8 });
+      await page.locator('[data-field=sy-edit]').click();
+      await page.waitForSelector('[data-dialog=symbol-editor]', { timeout: 10_000 });
+      await t.wait(900);
+      // A live text with a formula, and the preview flipped.
+      const textTool = page.locator('[data-field=sy-tool-text]');
+      if (await textTool.count()) await textTool.click();
+      await page.locator('[data-field=sy-flip-x]').click();
+      await t.wait(700);
+      await t.shot('symbol-editor', { of: '[data-dialog=symbol-editor]', pad: 8 });
+      await page.locator('[data-field=sy-save]').click();
+      await t.wait(800);
+      await t.until(async () => (await page.locator('[data-dialog=symbol-editor]').count()) === 0 || (await page.locator('[data-dialog=symbol-editor] .btn', { hasText: 'Close' }).click().then(() => false, () => false)), 'the editor closed', 8000);
+      t.expect(await page.locator('[data-dialog=symbol-editor]').count() === 0, 'the editor closed');
+      await t.keys('Escape');
+      // Exploding: back to drafting.
+      await select(t, second.id);
+      await t.wait(500);
+      await page.locator('[data-field=sym-explode]').click();
+      await t.wait(900);
+      t.expect((await t.nodes()).filter((n) => n.props.predefinedType === 'SYMBOL').length === 2, 'Explode turned one symbol back into drafting');
+    },
+  },
+  {
     // Tags (report #64): what a tag shows chosen in the command line's bar (here the walls' fire rating, a parameter of the
     // user's own), its elbow leader (decision 331: an oblique line to the knee at 60°, the shoulder under the text) with
     // its grips, and the tag's properties.
