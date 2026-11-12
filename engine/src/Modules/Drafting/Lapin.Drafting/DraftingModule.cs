@@ -31,6 +31,8 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         Cad.ViewImages.Register(r);
         // Symbols placed on views and sheets, and drafting saved as a symbol (docs/plan-user-extensibility.md §3).
         Cad.SymbolInstances.Register(r);
+        // Drafting converted into elements by the modules' converters, by shapes or by layers (docs/plan-user-extensibility.md §7.4).
+        Cad.LineworkConvert.Register(r);
         r.Service<IElementPlacement>(new Cad.AnnotationPlacement());
         r.Service<IDeletion>(new AxisDeletion());
         r.Service<IPartPlacement>(new AxisPlacement());

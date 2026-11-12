@@ -107,6 +107,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
     {
         // The opening symbols on elevations.
         r.Service<IViewAnnotations>(this);
+        // Drafted linework made walls, floors, rooms and railings (docs/plan-user-extensibility.md §7.4).
+        LineworkConverters.Register(r);
         r.Service<IInstanceMembers>(new RoomInstanceMembers());
 
         // Door and window markers on a plan: one for each door and window of its storey not yet tagged there ({viewId, doorType?, windowType?}: tag types of the drafting standards).

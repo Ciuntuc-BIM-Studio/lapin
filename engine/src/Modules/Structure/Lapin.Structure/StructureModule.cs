@@ -14,6 +14,8 @@ public sealed class StructureModule : ILapinModule
     public void Register(IModuleRegistry r)
     {
         r.Service<IIfcRecognizer>(new ForeignMembers());
+        // Drafted linework made beams, columns and footings (docs/plan-user-extensibility.md §7.4).
+        LineworkConverters.Register(r);
         r.Service<ITypeAssigner>(new TypeAssigner());
         r.Service<Lapin.Platform.Analysis.IAnalyticalElements>(new StructureAnalytical());
         FieldDescriptor priority = new("cutPriority", "Cut priority", "number", Min: 0, Max: 100);

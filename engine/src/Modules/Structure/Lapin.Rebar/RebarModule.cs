@@ -270,6 +270,8 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         });
 
         r.Service<IViewAnnotations>(this);
+        // Drafted lines and polylines made bars (docs/plan-user-extensibility.md §6.1).
+        r.Service<LineworkConverter>(RebarLinework.Bars);
         r.Service<IElementPlacement>(this);
         r.Service<IDeletion>(this);
         r.Service<IScheduleSource>(new RebarSchedule());
