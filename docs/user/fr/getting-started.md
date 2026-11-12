@@ -33,7 +33,7 @@ Besoin de plus de place pour le dessin ? **Vue → Interface…** choisit une 
 
 - **Zoom.** Tournez la molette de la souris ou pincez sur un pavé tactile. Lapin zoome là où se trouve le curseur.
 - **Panoramique.** Faites glisser avec le bouton du milieu ou le bouton droit de la souris, ou avec deux doigts sur un pavé tactile.
-- **Orbite en 3D.** Faites glisser avec le bouton gauche de la souris. Si des éléments sont sélectionnés, la vue tourne autour d’eux ; sinon autour du point du modèle sous le curseur.
+- **Orbite en 3D.** Faites glisser avec le bouton gauche de la souris. Si des éléments sont sélectionnés, la vue tourne autour d’eux ; sinon autour du point du modèle sous le curseur. Pour déplacer un élément sélectionné en le faisant glisser, appuyez dessus et maintenez brièvement, puis faites glisser ; un simple glissement fait toujours tourner la vue.
 - **Tout afficher.** Appuyez sur le bouton **Ajuster**, tapez <kbd>ZE</kbd>, ou double-cliquez avec le bouton du milieu.
 
 ## Unités

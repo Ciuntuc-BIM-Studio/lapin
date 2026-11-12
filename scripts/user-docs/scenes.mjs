@@ -7217,10 +7217,11 @@ export const scenes = [
       // Decision 399: snapped from its top corner to the floor's, the stair keeps its level (it went there in plan only).
       t.expect(Math.abs(b1.min.z - b0.min.z) < 0.005, `the stair keeps its level (its foot ${b0.min.z.toFixed(3)} → ${b1.min.z.toFixed(3)})`);
 
-      // Dragged by its body: pressed on the selected stair and moved, it follows; letting go puts it there.
+      // Dragged by its body: pressed on the selected stair and held briefly (a plain drag orbits), then moved, it follows; letting go puts it there.
       const mid = await screen({ x: (b1.min.x + b1.max.x) / 2, y: (b1.min.y + b1.max.y) / 2, z: b1.max.z * 0.5 });
       await page.mouse.move(mid.x, mid.y, { steps: 2 });
       await page.mouse.down();
+      await t.wait(600); // past the viewport's hold (HOLD_MS 350 in Move3D.tsx)
       const away = await screen({ x: (b1.min.x + b1.max.x) / 2 + 0.6, y: (b1.min.y + b1.max.y) / 2 + 1, z: b1.max.z * 0.5 });
       await page.mouse.move(away.x, away.y, { steps: 12 });
       await t.wait(400);
