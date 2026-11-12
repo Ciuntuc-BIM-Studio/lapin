@@ -2202,6 +2202,9 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .ext-installed { display: flex; flex-direction: column; gap: 6px; }
 .ext-installed-row { cursor: default; }
 .ext-address { min-width: 0; }
+/* How the catalogue is signed (stage 1): a quiet line when it is Lapin's, a warning for an unsigned one of one's own. */
+.ext-trust { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; }
+.ext-trust.warn { color: var(--accent); }
 @media (max-width: 760px) { .ext-split { grid-template-columns: 1fr; } .ext-list { border-right: 0; max-height: 200px; } }
 
 /* The Script panel (docs/plan-python-scripting.md, stage 2): Python in Lapin, a developer extra. */

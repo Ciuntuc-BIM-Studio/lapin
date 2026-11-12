@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your extensions · Lapin Extensions</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="/assets/store.css">
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<script src="/assets/theme.js"></script>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="/"><span class="brand-mark">L</span><span>Lapin <span class="brand-sub">Extensions</span></span></a>
+  <nav><a href="/">Extensions</a><a href="/authors/">Authors</a><a href="/publish/">Publish</a></nav>
+  <span class="grow"></span>
+  <span class="muted" data-who></span>
+  <button type="button" class="btn small" data-logout hidden>Sign out</button>
+  <button type="button" class="icon" data-theme-toggle title="Light or dark" aria-label="Light or dark">◐</button>
+</header>
+<main>
+  <h1>Your extensions</h1>
+
+  <section data-signed-out hidden>
+    <p class="lede">Sign in with your forum.lapinbim.com account to publish extensions and follow their review and downloads.</p>
+    <p><a class="btn primary" href="/auth/login?return=/dashboard/">Sign in with the forum</a></p>
+    <p class="muted small">The store receives your forum user name and display name, and keeps them with what you submit (<a href="/legal/privacy.html">privacy notice</a>). No account on forum.lapinbim.com yet? <a href="https://forum.lapinbim.com/signup">Make one</a>.</p>
+  </section>
+
+  <section data-signed-in hidden>
+    <h2>Submissions</h2>
+    <p class="muted" data-none hidden>Nothing submitted yet: the form below publishes your first extension.</p>
+    <table class="list" data-submissions hidden>
+      <thead><tr><th>Extension</th><th>Version</th><th>Review</th><th>Downloads</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <h2 data-form-title>Submit an extension</h2>
+    <form class="form" data-form novalidate>
+      <p class="muted small">A new extension, or a new version of one of yours (the same id, a higher version). The store checks the file as Lapin will, keeps it, and opens a pull request in the catalogue on GitHub; a maintainer merges it, a script after its code is read.</p>
+      <div class="row">
+        <label>Id <span class="muted">lowercase, dots and dashes; your name or domain first: ana.brick-hatches</span><input name="id" required maxlength="64" pattern="[a-z0-9]+([.-][a-z0-9]+)*" autocomplete="off"></label>
+        <label>Kind
+          <select name="kind" required>
+            <option value="furniture">Furniture (.lapinlib)</option>
+            <option value="template">Project template (.lapin)</option>
+            <option value="types">Types (.lapintypes)</option>
+            <option value="profiles">Profiles (.lapinprofiles)</option>
+            <option value="hatches">Hatch patterns (.pat)</option>
+            <option value="titleBlock">Title block (.json)</option>
+            <option value="priceList">Price list (.lapinprices)</option>
+            <option value="script">Python script (.py)</option>
+          </select>
+        </label>
+      </div>
+      <div class="row">
+        <label>Name <span class="muted">at most 80 characters</span><input name="name" required maxlength="80"></label>
+        <label>Version <span class="muted">semver: 1.0.0</span><input name="version" required value="1.0.0" maxlength="40"></label>
+      </div>
+      <label>Summary <span class="muted">one line for the list, at most 200 characters</span><input name="summary" required maxlength="200"></label>
+      <label>Description <span class="muted">optional</span><textarea name="description" rows="5" maxlength="8000"></textarea></label>
+      <div class="row">
+        <label>Licence <span class="muted">an SPDX expression: CC-BY-4.0, MIT, CC0-1.0, CC-BY-NC-4.0…</span><input name="license" required value="CC-BY-4.0"></label>
+        <label>Works with <span class="muted">Lapin versions: >=0.1.900, *</span><input name="lapin" required value=">=0.1.900"></label>
+      </div>
+      <div class="row">
+        <label>Author name <span class="muted">as shown; your forum name if empty</span><input name="authorName" maxlength="80"></label>
+        <label>GitHub user <span class="muted">optional</span><input name="github" maxlength="39"></label>
+      </div>
+      <div class="row">
+        <label>Website <span class="muted">optional, https</span><input name="authorUrl" type="url"></label>
+        <label>Homepage of the extension <span class="muted">optional, https</span><input name="homepage" type="url"></label>
+      </div>
+      <div class="row">
+        <label>Forum topic <span class="muted">optional, https://forum.lapinbim.com/t/…</span><input name="forum" type="url"></label>
+        <label>Tags <span class="muted">comma-separated, at most 12</span><input name="tags"></label>
+      </div>
+      <div class="row">
+        <label>Languages of its content <span class="muted">ro, en…</span><input name="languages"></label>
+        <label>What it holds <span class="muted">comma-separated; read from the file if empty</span><input name="items"></label>
+      </div>
+      <fieldset data-permissions hidden>
+        <legend>A script asks to <span class="muted">(shown to users before they install it)</span></legend>
+        <label><input type="checkbox" name="permissions" value="model.read"> Read the open project</label>
+        <label><input type="checkbox" name="permissions" value="model.write"> Change the open project</label>
+        <label><input type="checkbox" name="permissions" value="files.read"> Read files on this computer</label>
+        <label><input type="checkbox" name="permissions" value="files.write"> Write files on this computer</label>
+        <label><input type="checkbox" name="permissions" value="network"> Reach the internet</label>
+        <label><input type="checkbox" name="permissions" value="process"> Start other programs</label>
+      </fieldset>
+      <label>The file <span class="muted">at most 64 MB</span><input name="file" type="file" required></label>
+      <label>Screenshots <span class="muted">optional: up to 6 PNG, WebP or JPEG pictures, 2 MB each</span><input name="screenshots" type="file" accept="image/png,image/webp,image/jpeg" multiple></label>
+      <label class="check"><span><input type="checkbox" name="acceptTerms" required> I accept the <a href="/legal/author-terms.html">author terms</a>: the work is mine or I may share it under this licence.</span></label>
+      <p><button type="submit" class="btn primary">Submit for review</button> <button type="button" class="btn" data-reset>Clear</button></p>
+      <p data-progress class="muted" aria-live="polite"></p>
+      <p data-error class="error" role="alert"></p>
+    </form>
+  </section>
+</main>
+<footer class="foot">
+  <p>Lapin Extensions is run by Ciuntuc BIM Studio SRL, Huși, Romania. <a href="/legal/terms-of-use.html">Terms of use</a> · <a href="/legal/author-terms.html">Author terms</a> · <a href="/legal/privacy.html">Privacy</a> · <a href="/legal/notice-and-action.html">Report content</a></p>
+</footer>
+<script src="/dashboard/dashboard.js"></script>
+</body>
+</html>

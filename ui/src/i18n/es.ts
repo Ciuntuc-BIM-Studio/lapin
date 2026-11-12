@@ -2166,6 +2166,13 @@ export const ES: Record<string, string> = {
   "Extensions are read from https addresses (or files on this computer).": "Las extensiones se leen de direcciones https (o de archivos de este ordenador).",
   // Lapin Extensions: type packs, non-commercial licences, .lapinprices (decision 499, §9 answers)
   "Non-commercial": "No comercial",
+  "Signed by Lapin Extensions: Lapin checks the catalogue's signature and each file's SHA-256.": "Firmado por Lapin Extensions: Lapin comprueba la firma del catálogo y el SHA-256 de cada archivo.",
+  "This catalogue is not signed by Lapin Extensions: install from it only if you trust who keeps it.": "Este catálogo no está firmado por Lapin Extensions: instala desde él solo si confías en quien lo mantiene.",
+  "The catalogue’s signature does not hold: it may have been changed. It was not read.": "La firma del catálogo no es válida: puede haber sido modificado. No se ha leído.",
+  "Lapin’s catalogue is not signed as it should be. It was not read; try again later.": "El catálogo de Lapin no está firmado como debería. No se ha leído; inténtalo más tarde.",
+  "The package is not signed by the catalogue: it was not installed.": "El paquete no está firmado por el catálogo: no se ha instalado.",
+  "The package’s signature does not hold: it was not installed.": "La firma del paquete no es válida: no se ha instalado.",
+  "The package has no address to read it from.": "El paquete no tiene ninguna dirección desde la que leerlo.",
   "Its licence forbids commercial use: not for paid work": "Su licencia prohíbe el uso comercial: no para trabajos remunerados",
   "Its types go into the project open now (one step to undo): materials matched by name or made, a type already there the same reused. Installed → Add its types to this project brings them into another.": "Sus tipos entran en el proyecto abierto ahora (un paso para deshacer): materiales emparejados por nombre o creados, un tipo igual ya presente reutilizado. Instaladas → Añadir sus tipos a este proyecto los lleva a otro.",
   "Add its types to this project": "Añadir sus tipos a este proyecto",

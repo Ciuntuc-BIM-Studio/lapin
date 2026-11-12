@@ -37,6 +37,8 @@ Fai clic su **Installa**. Lapin scarica il file, controlla che dimensione e SHA-
 
 Se la tua libreria ha già qualcosa con lo stesso nome, Lapin chiede prima di sostituirlo. Nulla di ciò che porta un'estensione viene mai eseguito: le estensioni sono contenuto.
 
+Anche il catalogo di Lapin è **firmato** da Lapin Extensions: il catalogo e ciascuno dei suoi file portano una firma che Lapin verifica prima di leggere l'elenco o installare un file, così una copia modificata lungo la strada viene rifiutata. Una riga sopra l'elenco dice **Firmato da Lapin Extensions** quando lo è.
+
 **Installate** elenca ciò che ha questo computer. Ogni riga apre il posto dove è andato (**I miei arredi…**, **Modelli di progetto…**), offre **Aggiorna** quando il catalogo ha una versione più recente, e **Disinstalla**.
 
 ![Installate: il pacchetto di arredi, con il pulsante che apre I miei arredi](shots/extensions-installed.webp)
@@ -63,10 +65,15 @@ Il catalogo elenca anche **script Python**. Nell'app desktop puoi installarne un
 
 ## Un altro catalogo
 
-**Catalogo…**, in fondo alla finestra, imposta l'indirizzo del catalogo: un indirizzo https, oppure il percorso di un `index.json` su questo computer o in una cartella condivisa (il catalogo di uno studio). Lascialo vuoto per usare quello di Lapin. La freccia accanto rilegge il catalogo.
+**Catalogo…**, in fondo alla finestra, imposta l'indirizzo del catalogo: un indirizzo https, oppure il percorso di un `index.json` su questo computer o in una cartella condivisa (il catalogo di uno studio). Lascialo vuoto per usare quello di Lapin. La freccia accanto rilegge il catalogo. Un catalogo tuo non deve essere firmato: Lapin dice allora sopra l'elenco che **non è firmato da Lapin Extensions**, quindi installa da esso solo se ti fidi di chi lo gestisce. Un catalogo la cui firma non è valida non viene mai letto.
 
 ## Pubblicare le tue
 
-Chiunque può pubblicare un'estensione: esportala da Lapin (I miei arredi → Esporta…, Salva come modello…, una libreria di profili, un cartiglio), allega il file a una release di un tuo repository GitHub e aggiungi il suo manifest al catalogo con una pull request su [Ciuntuc-BIM-Studio/lapin-extensions](https://github.com/Ciuntuc-BIM-Studio/lapin-extensions). Il suo README spiega come, e cosa guardano i controlli automatici.
+Il catalogo ha un proprio sito, **[store.lapinbim.com](https://store.lapinbim.com)**: una pagina per ogni estensione, con le sue immagini, versioni, licenza e download, e una pagina per ogni autore.
+
+Chiunque può pubblicare un'estensione. Esportala da Lapin (I miei arredi → Esporta…, Salva come modello…, una libreria di profili, un cartiglio), poi:
+
+- **Sullo store**: accedi a store.lapinbim.com con il tuo account del [forum](https://forum.lapinbim.com), apri **Your extensions** (le tue estensioni), compila il modulo e carica il file e qualche schermata. Lo store verifica il file come farà Lapin e lo invia in revisione; la tua pagina mostra la revisione e, una volta pubblicata, quante volte è stata scaricata. Una nuova versione segue lo stesso percorso.
+- **Su GitHub**: allega il file a una release di un tuo repository e aggiungi il suo manifest con una pull request su [Ciuntuc-BIM-Studio/lapin-extensions](https://github.com/Ciuntuc-BIM-Studio/lapin-extensions). Il suo README spiega come, e cosa guardano i controlli automatici.
 
 Un pacchetto di tipi viene da **Gestisci → Pacchetti di tipi… → Esporta tipi…**; un listino prezzi da **Listini prezzi…**, con il pulsante di esportazione di un listino di questo computer (un file `.lapinprices`, con i prezzi indicati come orientativi).

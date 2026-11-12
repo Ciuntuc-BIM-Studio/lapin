@@ -6540,6 +6540,7 @@ export const scenes = [
     // made here as the catalogue's tools make them) read from File → Extensions… → Catalogue…; Browse shows the furniture
     // pack's details and the script's (installable, not runnable yet); the furniture pack installed (its SHA-256 checked)
     // lands in My furniture; Installed lists it; Uninstall takes its items away again. Everything is cleaned at the end.
+    // Stage 1: the catalogue is unsigned and not Lapin's own, so the dialog warns above the list.
     id: 'extensions',
     touches: ['core', 'furniture'],
     async run(t) {
@@ -6590,6 +6591,8 @@ export const scenes = [
         await dialog.locator('[data-action=extensions-index-set]').click();
         await dialog.locator('[data-extension]').nth(2).waitFor({ timeout: 15_000 });
         t.expect(await dialog.locator('[data-extension]').count() === 3, 'Browse lists the three extensions of the catalogue');
+        // Stage 1: a catalogue of one's own, unsigned, is read with a warning above the list.
+        t.expect(await dialog.locator('[data-testid=extensions-unsigned]').isVisible(), 'an unsigned catalogue of one\'s own is said so above the list');
         await dialog.locator('[data-extension="ro.ciuntucbimstudio.mobilier-living"]').click();
         await dialog.locator('[data-extension-details="ro.ciuntucbimstudio.mobilier-living"]').waitFor({ timeout: 5000 });
         await t.wait(300);

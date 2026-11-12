@@ -33,6 +33,8 @@ windows builds/
 # The feedback reports: the server (deploy/feedback/.env) and the screenshots pulled from it are local.
 deploy/feedback/.env
 deploy/feedback/feedback-screenshots/
+# The store (deploy/store): which server, local only.
+deploy/store/.env
 
 # Proposals sent to us (not ours to publish)
 lapin-litestep-proposal.pdf

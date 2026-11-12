@@ -2169,6 +2169,13 @@ export const IT: Record<string, string> = {
   "Extensions are read from https addresses (or files on this computer).": "Le estensioni si leggono da indirizzi https (o da file su questo computer).",
   // Lapin Extensions: type packs, non-commercial licences, .lapinprices (decision 499, §9 answers)
   "Non-commercial": "Non commerciale",
+  "Signed by Lapin Extensions: Lapin checks the catalogue's signature and each file's SHA-256.": "Firmato da Lapin Extensions: Lapin verifica la firma del catalogo e lo SHA-256 di ogni file.",
+  "This catalogue is not signed by Lapin Extensions: install from it only if you trust who keeps it.": "Questo catalogo non è firmato da Lapin Extensions: installa da esso solo se ti fidi di chi lo gestisce.",
+  "The catalogue’s signature does not hold: it may have been changed. It was not read.": "La firma del catalogo non è valida: potrebbe essere stato modificato. Non è stato letto.",
+  "Lapin’s catalogue is not signed as it should be. It was not read; try again later.": "Il catalogo di Lapin non è firmato come dovrebbe. Non è stato letto; riprova più tardi.",
+  "The package is not signed by the catalogue: it was not installed.": "Il pacchetto non è firmato dal catalogo: non è stato installato.",
+  "The package’s signature does not hold: it was not installed.": "La firma del pacchetto non è valida: non è stato installato.",
+  "The package has no address to read it from.": "Il pacchetto non ha alcun indirizzo da cui leggerlo.",
   "Its licence forbids commercial use: not for paid work": "La sua licenza vieta l'uso commerciale: non per lavori retribuiti",
   "Its types go into the project open now (one step to undo): materials matched by name or made, a type already there the same reused. Installed → Add its types to this project brings them into another.": "I suoi tipi entrano nel progetto aperto ora (un passo da annullare): materiali abbinati per nome o creati, un tipo già presente uguale riutilizzato. Installate → Aggiungi i suoi tipi a questo progetto li porta in un altro.",
   "Add its types to this project": "Aggiungi i suoi tipi a questo progetto",

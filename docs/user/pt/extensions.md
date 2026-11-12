@@ -37,6 +37,8 @@ Clique em **Instalar**. O Lapin baixa o arquivo, confere se o tamanho e o SHA-25
 
 Se a sua biblioteca já tiver algo com o mesmo nome, o Lapin pergunta antes de substituir. Nada do que uma extensão traz é executado: extensões são conteúdo.
 
+O catálogo do Lapin também é **assinado** pela Lapin Extensions: o catálogo e cada um dos seus arquivos levam uma assinatura que o Lapin verifica antes de ler a lista ou instalar um arquivo, de modo que uma cópia alterada pelo caminho é recusada. Uma linha acima da lista diz **Assinado pela Lapin Extensions** quando é o caso.
+
 **Instaladas** lista o que este computador tem. Cada linha abre o lugar para onde foi (**O meu mobiliário…**, **Modelos de projeto…**), oferece **Atualizar** quando o catálogo tem uma versão mais nova, e **Desinstalar**.
 
 ![Instaladas: o pacote de mobiliário, com o botão que abre O meu mobiliário](shots/extensions-installed.webp)
@@ -63,10 +65,15 @@ O catálogo também lista **scripts Python**. No aplicativo de desktop você já
 
 ## Outro catálogo
 
-**Catálogo…**, na parte de baixo da janela, define o endereço do catálogo: um endereço https, ou o caminho de um `index.json` neste computador ou em uma pasta compartilhada (o catálogo próprio de um escritório). Deixe vazio para usar o do Lapin. A seta ao lado lê o catálogo de novo.
+**Catálogo…**, na parte de baixo da janela, define o endereço do catálogo: um endereço https, ou o caminho de um `index.json` neste computador ou em uma pasta compartilhada (o catálogo próprio de um escritório). Deixe vazio para usar o do Lapin. A seta ao lado lê o catálogo de novo. Um catálogo seu não precisa ser assinado: o Lapin diz então acima da lista que ele **não é assinado pela Lapin Extensions**, então instale a partir dele só se confiar em quem o mantém. Um catálogo cuja assinatura não confere nunca é lido.
 
 ## Publicar as suas
 
-Qualquer pessoa pode publicar uma extensão: exporte-a do Lapin (O meu mobiliário → Exportar, Guardar como modelo…, uma biblioteca de perfis, um carimbo), anexe o arquivo a uma release de um repositório seu no GitHub e adicione o manifesto dela ao catálogo por um pull request em [Ciuntuc-BIM-Studio/lapin-extensions](https://github.com/Ciuntuc-BIM-Studio/lapin-extensions). O README dele explica como, e o que as verificações automáticas examinam.
+O catálogo tem o seu próprio site, **[store.lapinbim.com](https://store.lapinbim.com)**: uma página para cada extensão, com as suas imagens, versões, licença e downloads, e uma página para cada autor.
+
+Qualquer pessoa pode publicar uma extensão. Exporte-a do Lapin (O meu mobiliário → Exportar, Guardar como modelo…, uma biblioteca de perfis, um carimbo), e depois:
+
+- **Na loja**: entre em store.lapinbim.com com a sua conta do [fórum](https://forum.lapinbim.com), abra **Your extensions** (as suas extensões), preencha o formulário e envie o arquivo e algumas capturas de tela. A loja verifica o arquivo como o Lapin fará e o envia para revisão; a sua página mostra a revisão e, depois de publicada, quantas vezes foi baixada. Uma versão nova segue o mesmo caminho.
+- **No GitHub**: anexe o arquivo a uma release de um repositório seu e adicione o manifesto dele por um pull request em [Ciuntuc-BIM-Studio/lapin-extensions](https://github.com/Ciuntuc-BIM-Studio/lapin-extensions). O README dele explica como, e o que as verificações automáticas examinam.
 
 Um pacote de tipos sai de **Gerenciar → Pacotes de tipos… → Exportar tipos…**; uma tabela de preços de **Tabelas de preços…**, com o botão de exportar de uma tabela deste computador (um arquivo `.lapinprices`, com os preços marcados como indicativos).

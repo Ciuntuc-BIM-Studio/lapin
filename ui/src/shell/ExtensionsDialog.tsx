@@ -3,11 +3,12 @@
  * extension's details: author, licence, the Lapin versions it works with, what it holds, what a script asks for) and
  * install it; Installed lists what this computer has, to open where it went, update or uninstall. Content packs go into
  * Lapin's own libraries through their importers; nothing is run. The catalogue's address can be changed (a local index
- * while developing, a firm's own catalogue).
+ * while developing, a firm's own catalogue). Stage 1: how the catalogue is signed is said above the list (signed by Lapin
+ * Extensions, or a catalogue of one's own left unsigned); the store's page of an extension is store.lapinbim.com.
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { Check, Download, ExternalLink, RefreshCw, Search, ShieldAlert, Trash2, X } from 'lucide-react';
+import { Check, Download, ExternalLink, RefreshCw, Search, ShieldAlert, ShieldCheck, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../app/store';
 import { engine, engineInBrowser, useSession } from '../engine/session';
 import { CATEGORY_ORDER, countByKind, filterCatalogue, sizeText, updatesOf, type InstalledExtension } from '../platform/extensions/install';
@@ -87,6 +88,15 @@ function Details({ m, installed }: { m: Manifest; installed?: InstalledExtension
   );
 }
 
+/** How the catalogue is signed (stage 1): by Lapin Extensions' key, or a catalogue of one's own left unsigned. */
+function Trust() {
+  const { trust, from, loading, error } = useExtensions();
+  if (loading || error || !trust) return null;
+  if (trust === 'signed') return <p className="small muted ext-trust" data-testid="extensions-signed"><ShieldCheck size={13} /> Signed by Lapin Extensions: Lapin checks the catalogue&apos;s signature and each file&apos;s SHA-256.</p>;
+  if (from === DEFAULT_INDEX) return null;
+  return <p className="small ext-trust warn" role="note" data-testid="extensions-unsigned"><ShieldAlert size={13} /> This catalogue is not signed by Lapin Extensions: install from it only if you trust who keeps it.</p>;
+}
+
 function Browse() {
   const { list, loading, error, installed } = useExtensions();
   const [search, setSearch] = useState('');
@@ -104,6 +114,7 @@ function Browse() {
           <button key={k} type="button" className={`tab-chip${kind === k ? ' on' : ''}`} data-extension-kind={k} onClick={() => setKind(k)}>{KIND_INFO[k].label} <span className="muted" data-no-i18n>{counts[k]}</span></button>
         ))}
       </div>
+      <Trust />
       {loading && <p className="muted small">Reading the catalogue…</p>}
       {error && <p className="error-text small" role="alert">The catalogue could not be read: {error}</p>}
       {!loading && !error && list.length === 0 && <p className="muted small">The catalogue lists no extension yet.</p>}

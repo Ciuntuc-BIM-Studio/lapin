@@ -2170,6 +2170,13 @@ export const FR: Record<string, string> = {
   "Extensions are read from https addresses (or files on this computer).": "Les extensions sont lues depuis des adresses https (ou des fichiers de cet ordinateur).",
   // Lapin Extensions: type packs, non-commercial licences, .lapinprices (decision 499, §9 answers)
   "Non-commercial": "Non commerciale",
+  "Signed by Lapin Extensions: Lapin checks the catalogue's signature and each file's SHA-256.": "Signé par Lapin Extensions : Lapin vérifie la signature du catalogue et le SHA-256 de chaque fichier.",
+  "This catalogue is not signed by Lapin Extensions: install from it only if you trust who keeps it.": "Ce catalogue n’est pas signé par Lapin Extensions : n’installez depuis lui que si vous faites confiance à qui le tient.",
+  "The catalogue’s signature does not hold: it may have been changed. It was not read.": "La signature du catalogue n’est pas valide : il a peut-être été modifié. Il n’a pas été lu.",
+  "Lapin’s catalogue is not signed as it should be. It was not read; try again later.": "Le catalogue de Lapin n’est pas signé comme il le devrait. Il n’a pas été lu ; réessayez plus tard.",
+  "The package is not signed by the catalogue: it was not installed.": "Le paquet n’est pas signé par le catalogue : il n’a pas été installé.",
+  "The package’s signature does not hold: it was not installed.": "La signature du paquet n’est pas valide : il n’a pas été installé.",
+  "The package has no address to read it from.": "Le paquet n’a aucune adresse d’où le lire.",
   "Its licence forbids commercial use: not for paid work": "Sa licence interdit l'usage commercial : pas pour un travail rémunéré",
   "Its types go into the project open now (one step to undo): materials matched by name or made, a type already there the same reused. Installed → Add its types to this project brings them into another.": "Ses types entrent dans le projet ouvert maintenant (une étape à annuler) : matériaux associés par nom ou créés, un type identique déjà présent réutilisé. Installées → Ajouter ses types à ce projet les apporte dans un autre.",
   "Add its types to this project": "Ajouter ses types à ce projet",

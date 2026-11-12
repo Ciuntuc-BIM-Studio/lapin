@@ -7,6 +7,7 @@
  */
 
 import { compatibility, compareVersions, KIND_INFO, MAX_PACKAGE, type AppFacts, type ExtensionKind, type Manifest } from './manifest';
+import { packageProblem, type StoreKey } from './signature';
 
 /** What an installer added, kept to take it away again (ids, names); JSON. */
 export type Receipt = Record<string, unknown>;
@@ -45,6 +46,8 @@ export interface InstallDeps {
   confirm: InstallerContext['confirm'];
   /** The index's own address, against which a relative package path is read. */
   base?: string;
+  /** The store keys and whether a package must be signed (Lapin's own catalogue once Lapin carries a key): signature.ts. */
+  signature?: { keys: readonly StoreKey[]; required: boolean };
   now?: () => string;
 }
 
@@ -63,15 +66,34 @@ export async function sha256Hex(bytes: Uint8Array): Promise<string> {
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-/** The package's bytes, from the address the app can read (the browser: lapinbim.com's copy when there is one), checked. */
-export async function download(m: Manifest, deps: Pick<InstallDeps, 'fetchBytes' | 'base' | 'app'>): Promise<Uint8Array> {
-  const from = resolveUrl(deps.base, deps.app.browser && m.package.mirror ? m.package.mirror : m.package.url);
-  const bytes = await deps.fetchBytes(from);
-  if (bytes.length > MAX_PACKAGE) throw new Error('The package is bigger than an extension may be.');
-  if (bytes.length !== m.package.size) throw new Error(`The package is ${bytes.length} bytes, its manifest says ${m.package.size}: it was not installed.`);
-  const sum = await sha256Hex(bytes);
-  if (sum !== m.package.sha256) throw new Error('The package is not the one its manifest names (its SHA-256 differs): it was not installed.');
-  return bytes;
+/**
+ * Where a package is read from, in order (stage 1): the store's counting address (it counts the download and redirects to
+ * lapinbim.com's copy), then on the desktop the author's file and lapinbim.com's copy, in the browser the copy only when
+ * there is one (an author's GitHub release answers no browser). Each is tried until one gives the right bytes.
+ */
+export function packageSources(m: Manifest, app: Pick<AppFacts, 'browser'>): string[] {
+  const p = m.package;
+  const list = app.browser ? [p.download, p.mirror ?? p.url] : [p.download, p.url, p.mirror];
+  return [...new Set(list.filter((u): u is string => !!u))];
+}
+
+/** The package's bytes, from the first address that gives the file its manifest names (size, SHA-256), its signature checked first. */
+export async function download(m: Manifest, deps: Pick<InstallDeps, 'fetchBytes' | 'base' | 'app' | 'signature'>): Promise<Uint8Array> {
+  if (deps.signature) {
+    const problem = await packageProblem(m, deps.signature);
+    if (problem) throw new Error(problem);
+  }
+  let failure: Error | null = null;
+  for (const url of packageSources(m, deps.app)) {
+    let bytes: Uint8Array;
+    try { bytes = await deps.fetchBytes(resolveUrl(deps.base, url)); } catch (e) { failure ??= e instanceof Error ? e : new Error(String(e)); continue; }
+    // A wrong file is the strongest reason: it is the one said when no address gives the right one.
+    if (bytes.length > MAX_PACKAGE) { failure = new Error('The package is bigger than an extension may be.'); continue; }
+    if (bytes.length !== m.package.size) { failure = new Error(`The package is ${bytes.length} bytes, its manifest says ${m.package.size}: it was not installed.`); continue; }
+    if ((await sha256Hex(bytes)) !== m.package.sha256) { failure = new Error('The package is not the one its manifest names (its SHA-256 differs): it was not installed.'); continue; }
+    return bytes;
+  }
+  throw failure ?? new Error('The package has no address to read it from.');
 }
 
 /** Downloads, checks and installs an extension; its record. An extension already installed is updated (the old one taken away first). */

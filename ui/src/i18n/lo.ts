@@ -2220,6 +2220,13 @@ export const LO: Record<string, string> = {
   "Extensions are read from https addresses (or files on this computer).": "ສ່ວນຂະຫຍາຍອ່ານຈາກທີ່ຢູ່ https (ຫຼື ໄຟລ໌ໃນຄອມພິວເຕີນີ້).",
   // Lapin Extensions: type packs, non-commercial licences, .lapinprices (decision 499, §9 answers)
   "Non-commercial": "ບໍ່ແມ່ນການຄ້າ",
+  "Signed by Lapin Extensions: Lapin checks the catalogue's signature and each file's SHA-256.": "ເຊັນໂດຍ Lapin Extensions: Lapin ກວດລາຍເຊັນຂອງລາຍການ ແລະ SHA-256 ຂອງແຕ່ລະໄຟລ໌.",
+  "This catalogue is not signed by Lapin Extensions: install from it only if you trust who keeps it.": "ລາຍການນີ້ບໍ່ໄດ້ເຊັນໂດຍ Lapin Extensions: ຕິດຕັ້ງຈາກມັນສະເພາະເມື່ອທ່ານໄວ້ໃຈຜູ້ທີ່ດູແລມັນ.",
+  "The catalogue’s signature does not hold: it may have been changed. It was not read.": "ລາຍເຊັນຂອງລາຍການບໍ່ຖືກຕ້ອງ: ມັນອາດຖືກປ່ຽນແປງ. ມັນບໍ່ໄດ້ຖືກອ່ານ.",
+  "Lapin’s catalogue is not signed as it should be. It was not read; try again later.": "ລາຍການຂອງ Lapin ບໍ່ໄດ້ເຊັນຕາມທີ່ຄວນ. ມັນບໍ່ໄດ້ຖືກອ່ານ; ລອງໃໝ່ພາຍຫຼັງ.",
+  "The package is not signed by the catalogue: it was not installed.": "ແພັກເກດບໍ່ໄດ້ເຊັນໂດຍລາຍການ: ມັນບໍ່ໄດ້ຖືກຕິດຕັ້ງ.",
+  "The package’s signature does not hold: it was not installed.": "ລາຍເຊັນຂອງແພັກເກດບໍ່ຖືກຕ້ອງ: ມັນບໍ່ໄດ້ຖືກຕິດຕັ້ງ.",
+  "The package has no address to read it from.": "ແພັກເກດບໍ່ມີທີ່ຢູ່ໃຫ້ອ່ານ.",
   "Its licence forbids commercial use: not for paid work": "ໃບອະນຸຍາດຂອງມັນຫ້າມໃຊ້ທາງການຄ້າ: ບໍ່ແມ່ນສຳລັບວຽກທີ່ໄດ້ຮັບຄ່າຈ້າງ",
   "Its types go into the project open now (one step to undo): materials matched by name or made, a type already there the same reused. Installed → Add its types to this project brings them into another.": "ປະເພດຂອງມັນເຂົ້າໄປໃນໂຄງການທີ່ເປີດຢູ່ດຽວນີ້ (ຍົກເລີກໄດ້ໃນຂັ້ນຕອນດຽວ): ວັດສະດຸຈັບຄູ່ຕາມຊື່ ຫຼື ສ້າງໃໝ່, ປະເພດດຽວກັນທີ່ມີຢູ່ແລ້ວຖືກໃຊ້ຄືນ. ຕິດຕັ້ງແລ້ວ → ເພີ່ມປະເພດຂອງມັນໃສ່ໂຄງການນີ້ ນຳພວກມັນເຂົ້າໄປໃນໂຄງການອື່ນ.",
   "Add its types to this project": "ເພີ່ມປະເພດຂອງມັນໃສ່ໂຄງການນີ້",

@@ -2165,6 +2165,13 @@ export const RO: Record<string, string> = {
   "Extensions are read from https addresses (or files on this computer).": "Extensiile se citesc de la adrese https (sau din fișiere de pe acest calculator).",
   // Lapin Extensions: type packs, non-commercial licences, .lapinprices (decision 499, §9 answers)
   "Non-commercial": "Necomercială",
+  "Signed by Lapin Extensions: Lapin checks the catalogue's signature and each file's SHA-256.": "Semnat de Lapin Extensions: Lapin verifică semnătura catalogului și SHA-256-ul fiecărui fișier.",
+  "This catalogue is not signed by Lapin Extensions: install from it only if you trust who keeps it.": "Acest catalog nu e semnat de Lapin Extensions: instalează din el doar dacă ai încredere în cine îl ține.",
+  "The catalogue’s signature does not hold: it may have been changed. It was not read.": "Semnătura catalogului nu se potrivește: poate a fost schimbat. Nu a fost citit.",
+  "Lapin’s catalogue is not signed as it should be. It was not read; try again later.": "Catalogul Lapin nu e semnat cum ar trebui. Nu a fost citit; încearcă mai târziu.",
+  "The package is not signed by the catalogue: it was not installed.": "Pachetul nu e semnat de catalog: nu a fost instalat.",
+  "The package’s signature does not hold: it was not installed.": "Semnătura pachetului nu se potrivește: nu a fost instalat.",
+  "The package has no address to read it from.": "Pachetul nu are nicio adresă de unde să fie citit.",
   "Its licence forbids commercial use: not for paid work": "Licența ei interzice folosirea comercială: nu pentru lucrări plătite",
   "Its types go into the project open now (one step to undo): materials matched by name or made, a type already there the same reused. Installed → Add its types to this project brings them into another.": "Tipurile ei intră în proiectul deschis acum (un pas de anulat): materialele potrivite după nume sau create, un tip deja acolo la fel refolosit. Instalate → Adaugă-i tipurile în acest proiect le aduce în altul.",
   "Add its types to this project": "Adaugă-i tipurile în acest proiect",

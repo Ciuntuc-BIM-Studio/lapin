@@ -2161,6 +2161,13 @@ export const DA: Record<string, string> = {
   "Extensions are read from https addresses (or files on this computer).": "Udvidelser læses fra https-adresser (eller filer på denne computer).",
   // Lapin Extensions: type packs, non-commercial licences, .lapinprices (decision 499, §9 answers)
   "Non-commercial": "Ikke-kommerciel",
+  "Signed by Lapin Extensions: Lapin checks the catalogue's signature and each file's SHA-256.": "Signeret af Lapin Extensions: Lapin kontrollerer katalogets signatur og hver fils SHA-256.",
+  "This catalogue is not signed by Lapin Extensions: install from it only if you trust who keeps it.": "Dette katalog er ikke signeret af Lapin Extensions: installer kun fra det, hvis du stoler på, hvem der vedligeholder det.",
+  "The catalogue’s signature does not hold: it may have been changed. It was not read.": "Katalogets signatur holder ikke: det kan være ændret. Det blev ikke læst.",
+  "Lapin’s catalogue is not signed as it should be. It was not read; try again later.": "Lapins katalog er ikke signeret, som det skal være. Det blev ikke læst; prøv igen senere.",
+  "The package is not signed by the catalogue: it was not installed.": "Pakken er ikke signeret af kataloget: den blev ikke installeret.",
+  "The package’s signature does not hold: it was not installed.": "Pakkens signatur holder ikke: den blev ikke installeret.",
+  "The package has no address to read it from.": "Pakken har ingen adresse at læse den fra.",
   "Its licence forbids commercial use: not for paid work": "Dens licens forbyder kommerciel brug: ikke til betalt arbejde",
   "Its types go into the project open now (one step to undo): materials matched by name or made, a type already there the same reused. Installed → Add its types to this project brings them into another.": "Dens typer kommer ind i det projekt, der er åbent nu (ét trin at fortryde): materialer matchet efter navn eller oprettet, en ens type, der allerede findes, genbrugt. Installerede → Tilføj dens typer til dette projekt bringer dem ind i et andet.",
   "Add its types to this project": "Tilføj dens typer til dette projekt",

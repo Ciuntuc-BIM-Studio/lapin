@@ -44,7 +44,7 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   process: 'Start other programs',
 };
 
-export interface Author { name: string; github?: string; url?: string; email?: string }
+export interface Author { name: string; github?: string; url?: string; email?: string; /** Their user name on forum.lapinbim.com (set by the store for what is submitted there). */ forum?: string }
 
 export interface ExtensionPackage {
   /** Where the file is: an https address (the author's GitHub release), or, in a local catalogue, a path beside the index. */
@@ -53,6 +53,10 @@ export interface ExtensionPackage {
   size: number;
   /** A copy kept by lapinbim.com (the browser cannot read GitHub's releases); the same bytes, the same SHA-256. */
   mirror?: string;
+  /** The store's counting address (store.lapinbim.com/api/download/<id>/<version>): counts the download, then redirects to the copy. Tried first. */
+  download?: string;
+  /** The store key's signature of `packageMessage` (signature.ts): its id, version, SHA-256 and size. */
+  signature?: { keyId: string; value: string };
 }
 
 export interface Manifest {
@@ -64,6 +68,8 @@ export interface Manifest {
   /** One line for the list. */
   summary: string;
   description?: string;
+  /** Pictures for the store's page: files of its folder in the catalogue, or https addresses (Lapin does not show them). */
+  screenshots?: string[];
   /** Semver: 1.2.0. */
   version: string;
   author: Author;
@@ -183,6 +189,7 @@ export function validateManifest(m: unknown, opts: { local?: boolean } = {}): st
   else {
     if (a.github !== undefined && (!str(a.github) || !/^[A-Za-z0-9-]{1,39}$/.test(a.github))) e.push('author.github must be a GitHub user name.');
     if (a.url !== undefined && (!str(a.url) || !isHttps(a.url))) e.push('author.url must be an https address.');
+    if (a.forum !== undefined && (!str(a.forum) || !/^[A-Za-z0-9_.-]{1,60}$/.test(a.forum))) e.push('author.forum must be a user name on forum.lapinbim.com.');
   }
   if (!str(o.license)) e.push('license is required: an SPDX expression (MIT, CC-BY-4.0…).');
   else if (!isSpdx(o.license)) e.push(`license „${o.license}” is not an SPDX expression.`);
@@ -208,7 +215,12 @@ export function validateManifest(m: unknown, opts: { local?: boolean } = {}): st
     if (!str(p.sha256) || !SHA256.test(p.sha256)) e.push('package.sha256 must be the file\'s SHA-256, 64 lowercase hex digits.');
     if (typeof p.size !== 'number' || !Number.isInteger(p.size) || p.size <= 0 || p.size > MAX_PACKAGE) e.push(`package.size must be the file's size in bytes, at most ${MAX_PACKAGE}.`);
     if (p.mirror !== undefined && (!str(p.mirror) || !isHttps(p.mirror))) e.push('package.mirror must be an https address.');
+    if (p.download !== undefined && (!str(p.download) || !isHttps(p.download))) e.push('package.download must be an https address.');
+    const sig = p.signature as { keyId?: unknown; value?: unknown } | undefined;
+    if (sig !== undefined && (!sig || typeof sig !== 'object' || !/^[0-9a-f]{16}$/.test(String(sig.keyId ?? '')) || !/^[A-Za-z0-9+/]{86}==$/.test(String(sig.value ?? '')))) e.push('package.signature must be { keyId, value }: a store key id and an Ed25519 signature in base64.');
   }
+  const shots = o.screenshots;
+  if (shots !== undefined && (!Array.isArray(shots) || shots.length > 6 || shots.some((x) => typeof x !== 'string' || !(/^screenshot(?:-[1-9])?\.(?:png|webp|jpg)$/.test(x) || /^https:\/\/[^\s"'<>]+$/i.test(x))))) e.push('screenshots must be at most 6 https addresses or files of its folder (screenshot.webp, screenshot-2.png).');
   for (const k of ['homepage', 'forum'] as const) if (o[k] !== undefined && (!str(o[k]) || !isHttps(o[k] as string))) e.push(`${k} must be an https address.`);
   if (kind === 'priceList' && o.indicative !== true) e.push('A price list says its prices are indicative: indicative must be true.');
   if (o.indicative !== undefined && typeof o.indicative !== 'boolean') e.push('indicative must be true or false.');

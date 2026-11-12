@@ -37,6 +37,8 @@ Klik på **Installér**. Lapin henter filen, tjekker at dens størrelse og SHA-2
 
 Har dit bibliotek allerede noget med samme navn, spørger Lapin, før det erstatter det. Intet, en udvidelse medbringer, bliver nogensinde kørt: udvidelser er indhold.
 
+Lapins katalog er også **signeret** af Lapin Extensions: kataloget og hver af dets filer bærer en signatur, som Lapin kontrollerer, før det læser listen eller installerer en fil, så en kopi, der er ændret undervejs, afvises. En linje over listen siger **Signeret af Lapin Extensions**, når det er tilfældet.
+
 **Installeret** viser, hvad denne computer har. Hver række åbner det sted, hvor det havnede (**Mine møbler…**, **Projektskabeloner…**), tilbyder **Opdatér**, når kataloget har en nyere version, og **Afinstallér**.
 
 ![Installeret: møbelpakken, med knappen der åbner Mine møbler](shots/extensions-installed.webp)
@@ -63,10 +65,15 @@ Kataloget oplister også **Python-scripts**. I skrivebordsprogrammet kan du inst
 
 ## Et andet katalog
 
-**Katalog…** nederst i dialogen sætter kataloget adresse: en https-adresse eller stien til en `index.json` på denne computer eller i en delt mappe (en virksomheds eget katalog). Lad det stå tomt for Lapins eget. Pilen ved siden af læser kataloget igen.
+**Katalog…** nederst i dialogen sætter kataloget adresse: en https-adresse eller stien til en `index.json` på denne computer eller i en delt mappe (en virksomheds eget katalog). Lad det stå tomt for Lapins eget. Pilen ved siden af læser kataloget igen. Et katalog af dit eget behøver ikke være signeret: Lapin siger så over listen, at det **ikke er signeret af Lapin Extensions**, så installer kun fra det, hvis du stoler på, hvem der vedligeholder det. Et katalog, hvis signatur ikke holder, bliver aldrig læst.
 
 ## Udgiv dine egne
 
-Alle kan udgive en udvidelse: eksportér den fra Lapin (Mine møbler → Eksportér, Gem som skabelon…, et profilbibliotek, et tegningshoved), vedhæft filen til en release i et af dine GitHub-repositories, og tilføj dens manifest til kataloget med en pull request på [Ciuntuc-BIM-Studio/lapin-extensions](https://github.com/Ciuntuc-BIM-Studio/lapin-extensions). Dens README fortæller hvordan, og hvad de automatiske tjek ser på.
+Kataloget har sit eget websted, **[store.lapinbim.com](https://store.lapinbim.com)**: en side for hver udvidelse med dens billeder, versioner, licens og downloads, og en side for hver forfatter.
+
+Alle kan udgive en udvidelse. Eksportér den fra Lapin (Mine møbler → Eksportér, Gem som skabelon…, et profilbibliotek, et tegningshoved), og derefter:
+
+- **I butikken**: log ind på store.lapinbim.com med din konto fra [forummet](https://forum.lapinbim.com), åbn **Your extensions** (dine udvidelser), udfyld formularen, og upload filen og nogle skærmbilleder. Butikken kontrollerer filen, som Lapin vil gøre, og sender den til gennemgang; din side viser gennemgangen og, når den er udgivet, hvor mange gange den er downloadet. En ny version går på samme måde.
+- **På GitHub**: vedhæft filen til en release i et af dine repositories, og tilføj dens manifest med en pull request på [Ciuntuc-BIM-Studio/lapin-extensions](https://github.com/Ciuntuc-BIM-Studio/lapin-extensions). Dens README fortæller hvordan, og hvad de automatiske tjek ser på.
 
 En typepakke kommer fra **Administrer → Typepakker… → Eksportér typer…**; en prisliste fra **Prislister…**, med eksportknappen for en liste på denne computer (en `.lapinprices`-fil, dens priser markeret vejledende).

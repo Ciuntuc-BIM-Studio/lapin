@@ -2164,6 +2164,13 @@ export const PT: Record<string, string> = {
   "Extensions are read from https addresses (or files on this computer).": "Extensões são lidas de endereços https (ou de arquivos neste computador).",
   // Lapin Extensions: type packs, non-commercial licences, .lapinprices (decision 499, §9 answers)
   "Non-commercial": "Não comercial",
+  "Signed by Lapin Extensions: Lapin checks the catalogue's signature and each file's SHA-256.": "Assinado pela Lapin Extensions: o Lapin verifica a assinatura do catálogo e o SHA-256 de cada arquivo.",
+  "This catalogue is not signed by Lapin Extensions: install from it only if you trust who keeps it.": "Este catálogo não é assinado pela Lapin Extensions: instale a partir dele só se confiar em quem o mantém.",
+  "The catalogue’s signature does not hold: it may have been changed. It was not read.": "A assinatura do catálogo não confere: ele pode ter sido alterado. Não foi lido.",
+  "Lapin’s catalogue is not signed as it should be. It was not read; try again later.": "O catálogo do Lapin não está assinado como deveria. Não foi lido; tente mais tarde.",
+  "The package is not signed by the catalogue: it was not installed.": "O pacote não está assinado pelo catálogo: não foi instalado.",
+  "The package’s signature does not hold: it was not installed.": "A assinatura do pacote não confere: não foi instalado.",
+  "The package has no address to read it from.": "O pacote não tem nenhum endereço de onde ser lido.",
   "Its licence forbids commercial use: not for paid work": "Sua licença proíbe o uso comercial: não para trabalho pago",
   "Its types go into the project open now (one step to undo): materials matched by name or made, a type already there the same reused. Installed → Add its types to this project brings them into another.": "Seus tipos entram no projeto aberto agora (um passo para desfazer): materiais correspondidos pelo nome ou criados, um tipo igual já presente reutilizado. Instaladas → Adicionar seus tipos a este projeto os leva para outro.",
   "Add its types to this project": "Adicionar seus tipos a este projeto",

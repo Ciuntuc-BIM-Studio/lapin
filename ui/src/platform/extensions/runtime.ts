@@ -8,6 +8,10 @@
  * engine (a local index while developing), else Lapin's own, https://lapinbim.com/extensions/index.json. The desktop reads
  * through its engine (`extensions.fetch`: its webview reaches no other site, and GitHub's release files answer no browser);
  * the browser reads with fetch, the packages from lapinbim.com's copies.
+ *
+ * Stage 1: the catalogue's signature (`<index>.sig`) is read with it and checked against the store keys Lapin carries
+ * (keys.ts). Lapin's own catalogue must be signed once Lapin carries a key; another may be unsigned (the dialog says so),
+ * never wrongly signed. A package of Lapin's own catalogue must then be signed too (install.ts, signature.ts).
  */
 
 import { create } from 'zustand';
@@ -17,6 +21,8 @@ import { toBase64 } from '../../engine/files';
 import { hasModule } from '../brand';
 import { installExtension, uninstallExtension, type ContentInstaller, type InstalledExtension, type InstalledStore } from './install';
 import { readIndex, type AppFacts, type ExtensionKind, type Manifest } from './manifest';
+import { STORE_KEYS } from './keys';
+import { catalogueTrust, trustProblem, type CatalogueTrust } from './signature';
 
 export const DEFAULT_INDEX = 'https://lapinbim.com/extensions/index.json';
 const INDEX_KEY = 'lapin.extensions.index';
@@ -68,11 +74,13 @@ export interface CatalogueState {
   installed: InstalledExtension[];
   /** The extension being installed or removed. */
   busy: string | null;
+  /** How the catalogue read is signed: by a store key Lapin trusts, or not at all (null: not read yet). */
+  trust: CatalogueTrust | null;
 }
 
 const storedIndex = (): string | null => { try { return localStorage.getItem(INDEX_KEY) || null; } catch { return null; } };
 
-export const useExtensions = create<CatalogueState>(() => ({ chosen: storedIndex(), from: null, list: [], problems: [], loading: false, error: null, installed: readInstalled(), busy: null }));
+export const useExtensions = create<CatalogueState>(() => ({ chosen: storedIndex(), from: null, list: [], problems: [], loading: false, error: null, installed: readInstalled(), busy: null, trust: null }));
 
 /** The catalogue's address set (empty: back to the engine's or Lapin's own). */
 export function setCatalogueAddress(address: string): void {
@@ -118,13 +126,18 @@ export async function loadCatalogue(): Promise<void> {
   try {
     const from = await catalogueAddress();
     const bytes = await fetchBytes(from);
+    // Its signature beside it: none (a 404, an unsigned catalogue of one's own) reads as unsigned.
+    const sig = await fetchBytes(`${from}.sig`).catch(() => null);
+    const trust = await catalogueTrust(STORE_KEYS, bytes, sig);
+    const problem = trustProblem(trust, { isDefault: from === DEFAULT_INDEX, keys: STORE_KEYS });
+    if (problem) throw new Error(problem);
     const { extensions, problems } = readIndex(JSON.parse(new TextDecoder().decode(bytes)), { local: isLocalAddress(from) });
     if (mine !== reading) return;
-    useExtensions.setState({ from, list: extensions, problems, loading: false });
+    useExtensions.setState({ from, list: extensions, problems, loading: false, trust });
     if (problems.length) console.info('Extensions left out of the catalogue:', problems.join(' '));
   } catch (e) {
     if (mine !== reading) return;
-    useExtensions.setState({ loading: false, error: e instanceof Error ? e.message : String(e), list: [] });
+    useExtensions.setState({ loading: false, error: e instanceof Error ? e.message : String(e), list: [], trust: null });
   }
 }
 
@@ -138,7 +151,8 @@ export async function install(m: Manifest): Promise<InstalledExtension> {
   useExtensions.setState({ busy: m.id });
   try {
     const base = useExtensions.getState().from ?? undefined;
-    return await installExtension(m, { app: appFacts(), fetchBytes, installers, store: installedStore, confirm: (q) => window.confirm(q), base });
+    const signature = { keys: STORE_KEYS, required: base === DEFAULT_INDEX && STORE_KEYS.length > 0 };
+    return await installExtension(m, { app: appFacts(), fetchBytes, installers, store: installedStore, confirm: (q) => window.confirm(q), base, signature });
   } finally { useExtensions.setState({ busy: null }); }
 }
 

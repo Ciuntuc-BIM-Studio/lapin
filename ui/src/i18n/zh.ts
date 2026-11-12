@@ -2158,6 +2158,13 @@ export const ZH: Record<string, string> = {
   "Extensions are read from https addresses (or files on this computer).": "扩展从 https 地址（或这台电脑上的文件）读取。",
   // Lapin Extensions: type packs, non-commercial licences, .lapinprices (decision 499, §9 answers)
   "Non-commercial": "非商业",
+  "Signed by Lapin Extensions: Lapin checks the catalogue's signature and each file's SHA-256.": "由 Lapin Extensions 签名：Lapin 会检查目录的签名和每个文件的 SHA-256。",
+  "This catalogue is not signed by Lapin Extensions: install from it only if you trust who keeps it.": "此目录未由 Lapin Extensions 签名：仅在信任其维护者时才从中安装。",
+  "The catalogue’s signature does not hold: it may have been changed. It was not read.": "目录的签名不成立：它可能已被更改。未读取。",
+  "Lapin’s catalogue is not signed as it should be. It was not read; try again later.": "Lapin 的目录未按要求签名。未读取；请稍后再试。",
+  "The package is not signed by the catalogue: it was not installed.": "该包未由目录签名：未安装。",
+  "The package’s signature does not hold: it was not installed.": "该包的签名不成立：未安装。",
+  "The package has no address to read it from.": "该包没有可读取的地址。",
   "Its licence forbids commercial use: not for paid work": "其许可证禁止商业用途：不可用于有偿工作",
   "Its types go into the project open now (one step to undo): materials matched by name or made, a type already there the same reused. Installed → Add its types to this project brings them into another.": "其类型进入当前打开的项目（一步撤销）：材料按名称匹配或新建，项目中已有的相同类型被重用。已安装 → 将其类型添加到此项目 可把它们带入另一个项目。",
   "Add its types to this project": "将其类型添加到此项目",

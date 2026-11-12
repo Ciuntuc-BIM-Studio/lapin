@@ -2167,6 +2167,13 @@ export const PL: Record<string, string> = {
   "Extensions are read from https addresses (or files on this computer).": "Rozszerzenia są czytane z adresów https (lub z plików na tym komputerze).",
   // Lapin Extensions: type packs, non-commercial licences, .lapinprices (decision 499, §9 answers)
   "Non-commercial": "Niekomercyjna",
+  "Signed by Lapin Extensions: Lapin checks the catalogue's signature and each file's SHA-256.": "Podpisany przez Lapin Extensions: Lapin sprawdza podpis katalogu i SHA-256 każdego pliku.",
+  "This catalogue is not signed by Lapin Extensions: install from it only if you trust who keeps it.": "Ten katalog nie jest podpisany przez Lapin Extensions: instaluj z niego tylko, jeśli ufasz temu, kto go prowadzi.",
+  "The catalogue’s signature does not hold: it may have been changed. It was not read.": "Podpis katalogu się nie zgadza: mógł zostać zmieniony. Nie został odczytany.",
+  "Lapin’s catalogue is not signed as it should be. It was not read; try again later.": "Katalog Lapina nie jest podpisany tak, jak powinien. Nie został odczytany; spróbuj później.",
+  "The package is not signed by the catalogue: it was not installed.": "Pakiet nie jest podpisany przez katalog: nie został zainstalowany.",
+  "The package’s signature does not hold: it was not installed.": "Podpis pakietu się nie zgadza: nie został zainstalowany.",
+  "The package has no address to read it from.": "Pakiet nie ma adresu, z którego można go odczytać.",
   "Its licence forbids commercial use: not for paid work": "Jej licencja zabrania użytku komercyjnego: nie do płatnej pracy",
   "Its types go into the project open now (one step to undo): materials matched by name or made, a type already there the same reused. Installed → Add its types to this project brings them into another.": "Jej typy trafiają do projektu otwartego teraz (jeden krok do cofnięcia): materiały dopasowane po nazwie lub utworzone, taki sam typ już obecny użyty ponownie. Zainstalowane → Dodaj jej typy do tego projektu przenosi je do innego.",
   "Add its types to this project": "Dodaj jej typy do tego projektu",

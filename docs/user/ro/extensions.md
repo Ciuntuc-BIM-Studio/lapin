@@ -37,6 +37,8 @@ Clic pe **Instalează**. Lapin descarcă fișierul, verifică dacă mărimea și
 
 Dacă biblioteca ta are deja ceva cu același nume, Lapin întreabă înainte să-l înlocuiască. Nimic din ce aduce o extensie nu se rulează: extensiile sunt conținut.
 
+Catalogul Lapin este și **semnat** de Lapin Extensions: catalogul și fiecare fișier al lui poartă o semnătură pe care Lapin o verifică înainte să citească lista sau să instaleze un fișier, așa că o copie schimbată pe drum este refuzată. O linie deasupra listei spune **Semnat de Lapin Extensions** când este.
+
 **Instalate** arată ce are acest calculator. Fiecare rând deschide locul unde a ajuns (**Mobilierul meu…**, **Șabloane de proiect…**), oferă **Actualizează** când catalogul are o versiune mai nouă, și **Dezinstalează**.
 
 ![Instalate: pachetul de mobilier, cu butonul care deschide Mobilierul meu](shots/extensions-installed.webp)
@@ -63,10 +65,15 @@ Catalogul are și **scripturi Python**. În aplicația desktop poți instala unu
 
 ## Alt catalog
 
-**Catalog…**, jos în dialog, setează adresa catalogului: o adresă https sau calea unui `index.json` de pe acest calculator ori dintr-un folder partajat (catalogul propriu al unui birou). Lasă-l gol pentru catalogul Lapin. Săgeata de lângă el citește catalogul din nou.
+**Catalog…**, jos în dialog, setează adresa catalogului: o adresă https sau calea unui `index.json` de pe acest calculator ori dintr-un folder partajat (catalogul propriu al unui birou). Lasă-l gol pentru catalogul Lapin. Săgeata de lângă el citește catalogul din nou. Un catalog propriu nu trebuie să fie semnat: Lapin spune atunci deasupra listei că **nu e semnat de Lapin Extensions**, așa că instalează din el doar dacă ai încredere în cine îl ține. Un catalog a cărui semnătură nu se potrivește nu este citit niciodată.
 
 ## Publică-ți propriile extensii
 
-Oricine poate publica o extensie: o exporți din Lapin (Mobilierul meu → Exportă, Salvează ca șablon…, o bibliotecă de profile, un cartuș), atașezi fișierul la un release al unui depozit GitHub al tău și adaugi manifestul ei în catalog printr-un pull request pe [Ciuntuc-BIM-Studio/lapin-extensions](https://github.com/Ciuntuc-BIM-Studio/lapin-extensions). README-ul lui spune cum, și ce verifică testele automate.
+Catalogul are propriul site, **[store.lapinbim.com](https://store.lapinbim.com)**: o pagină pentru fiecare extensie, cu imaginile, versiunile, licența și descărcările ei, și o pagină pentru fiecare autor.
+
+Oricine poate publica o extensie. O exporți din Lapin (Mobilierul meu → Exportă, Salvează ca șablon…, o bibliotecă de profile, un cartuș), apoi:
+
+- **Pe magazin**: intră pe store.lapinbim.com cu contul tău de pe [forum](https://forum.lapinbim.com), deschide **Your extensions** (extensiile tale), completează formularul și încarcă fișierul și câteva capturi de ecran. Magazinul verifică fișierul așa cum o va face Lapin și îl trimite la verificare; pagina ta arată verificarea și, după publicare, de câte ori a fost descărcat. O versiune nouă merge la fel.
+- **Pe GitHub**: atașează fișierul la un release al unui depozit al tău și adaugă manifestul lui printr-un pull request pe [Ciuntuc-BIM-Studio/lapin-extensions](https://github.com/Ciuntuc-BIM-Studio/lapin-extensions). README-ul lui spune cum, și ce verifică testele automate.
 
 Un pachet de tipuri vine din **Gestionare → Pachete de tipuri… → Exportă tipuri…**; o listă de prețuri din **Liste de prețuri…**, cu butonul de export al unei liste de pe acest calculator (un fișier `.lapinprices`, cu prețurile marcate orientative).

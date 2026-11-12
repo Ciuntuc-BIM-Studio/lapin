@@ -2166,6 +2166,13 @@ export const DE: Record<string, string> = {
   "Extensions are read from https addresses (or files on this computer).": "Erweiterungen werden von https-Adressen gelesen (oder aus Dateien auf diesem Computer).",
   // Lapin Extensions: type packs, non-commercial licences, .lapinprices (decision 499, §9 answers)
   "Non-commercial": "Nicht kommerziell",
+  "Signed by Lapin Extensions: Lapin checks the catalogue's signature and each file's SHA-256.": "Signiert von Lapin Extensions: Lapin prüft die Signatur des Katalogs und den SHA-256 jeder Datei.",
+  "This catalogue is not signed by Lapin Extensions: install from it only if you trust who keeps it.": "Dieser Katalog ist nicht von Lapin Extensions signiert: Installieren Sie daraus nur, wenn Sie dem Betreiber vertrauen.",
+  "The catalogue’s signature does not hold: it may have been changed. It was not read.": "Die Signatur des Katalogs stimmt nicht: Er wurde möglicherweise verändert. Er wurde nicht gelesen.",
+  "Lapin’s catalogue is not signed as it should be. It was not read; try again later.": "Lapins Katalog ist nicht wie vorgesehen signiert. Er wurde nicht gelesen; versuchen Sie es später erneut.",
+  "The package is not signed by the catalogue: it was not installed.": "Das Paket ist nicht vom Katalog signiert: Es wurde nicht installiert.",
+  "The package’s signature does not hold: it was not installed.": "Die Signatur des Pakets stimmt nicht: Es wurde nicht installiert.",
+  "The package has no address to read it from.": "Das Paket hat keine Adresse, von der es gelesen werden kann.",
   "Its licence forbids commercial use: not for paid work": "Ihre Lizenz verbietet die kommerzielle Nutzung: nicht für bezahlte Arbeit",
   "Its types go into the project open now (one step to undo): materials matched by name or made, a type already there the same reused. Installed → Add its types to this project brings them into another.": "Ihre Typen kommen in das jetzt geöffnete Projekt (ein Schritt zum Rückgängigmachen): Materialien nach Namen zugeordnet oder angelegt, ein gleicher vorhandener Typ wiederverwendet. Installiert → Typen zu diesem Projekt hinzufügen bringt sie in ein anderes.",
   "Add its types to this project": "Typen zu diesem Projekt hinzufügen",

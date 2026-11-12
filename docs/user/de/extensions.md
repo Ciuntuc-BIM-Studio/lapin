@@ -37,6 +37,8 @@ Klicke auf **Installieren**. Lapin lädt die Datei herunter, prüft, dass Größ
 
 Hat deine Bibliothek schon etwas mit demselben Namen, fragt Lapin nach, bevor es ersetzt. Nichts, was eine Erweiterung mitbringt, wird je ausgeführt: Erweiterungen sind Inhalt.
 
+Lapins Katalog ist außerdem von Lapin Extensions **signiert**: Der Katalog und jede seiner Dateien tragen eine Signatur, die Lapin prüft, bevor es die Liste liest oder eine Datei installiert; eine unterwegs veränderte Kopie wird daher abgelehnt. Eine Zeile über der Liste sagt **Signiert von Lapin Extensions**, wenn es so ist.
+
 **Installiert** listet, was dieser Computer hat. Jede Zeile öffnet den Ort, an dem es gelandet ist (**Meine Möbel…**, **Projektvorlagen…**), bietet **Aktualisieren** an, wenn der Katalog eine neuere Version hat, und **Deinstallieren**.
 
 ![Installiert: das Möbelpaket, mit der Schaltfläche, die Meine Möbel öffnet](shots/extensions-installed.webp)
@@ -63,10 +65,15 @@ Der Katalog listet auch **Python-Skripte**. In der Desktop-App kannst du schon e
 
 ## Ein anderer Katalog
 
-**Katalog…** unten im Dialog legt die Adresse des Katalogs fest: eine https-Adresse oder der Pfad einer `index.json` auf diesem Computer oder in einem geteilten Ordner (der eigene Katalog einer Firma). Leer lassen für Lapins eigenen Katalog. Der Pfeil daneben liest den Katalog erneut.
+**Katalog…** unten im Dialog legt die Adresse des Katalogs fest: eine https-Adresse oder der Pfad einer `index.json` auf diesem Computer oder in einem geteilten Ordner (der eigene Katalog einer Firma). Leer lassen für Lapins eigenen Katalog. Der Pfeil daneben liest den Katalog erneut. Ein eigener Katalog muss nicht signiert sein: Lapin sagt dann über der Liste, dass er **nicht von Lapin Extensions signiert** ist; installiere daraus also nur, wenn du dem Betreiber vertraust. Ein Katalog, dessen Signatur nicht stimmt, wird nie gelesen.
 
 ## Eigene veröffentlichen
 
-Jeder kann eine Erweiterung veröffentlichen: Exportiere sie aus Lapin (Meine Möbel → Exportieren, Als Vorlage speichern…, eine Profilbibliothek, ein Plankopf), hänge die Datei an ein Release eines eigenen GitHub-Repositorys und füge ihr Manifest dem Katalog per Pull Request auf [Ciuntuc-BIM-Studio/lapin-extensions](https://github.com/Ciuntuc-BIM-Studio/lapin-extensions) hinzu. Die README dort erklärt, wie, und was die automatischen Prüfungen ansehen.
+Der Katalog hat eine eigene Website, **[store.lapinbim.com](https://store.lapinbim.com)**: eine Seite für jede Erweiterung mit ihren Bildern, Versionen, Lizenz und Downloads und eine Seite für jeden Autor.
+
+Jeder kann eine Erweiterung veröffentlichen. Exportiere sie aus Lapin (Meine Möbel → Exportieren, Als Vorlage speichern…, eine Profilbibliothek, ein Plankopf), dann:
+
+- **Im Store**: Melde dich auf store.lapinbim.com mit deinem Konto im [Forum](https://forum.lapinbim.com) an, öffne **Your extensions** (deine Erweiterungen), fülle das Formular aus und lade die Datei und ein paar Screenshots hoch. Der Store prüft die Datei so, wie Lapin es tun wird, und schickt sie zur Prüfung; deine Seite zeigt die Prüfung und, sobald sie veröffentlicht ist, wie oft sie heruntergeladen wurde. Eine neue Version läuft genauso.
+- **Auf GitHub**: Hänge die Datei an ein Release eines eigenen Repositorys und füge ihr Manifest per Pull Request auf [Ciuntuc-BIM-Studio/lapin-extensions](https://github.com/Ciuntuc-BIM-Studio/lapin-extensions) hinzu. Die README dort erklärt, wie, und was die automatischen Prüfungen ansehen.
 
 Ein Typpaket kommt aus **Verwalten → Typpakete… → Typen exportieren…**; eine Preisliste aus **Preislisten…**, mit dem Export-Knopf einer Liste auf diesem Computer (eine `.lapinprices`-Datei, ihre Preise als Richtwerte markiert).

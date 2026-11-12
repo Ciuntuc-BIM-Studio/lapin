@@ -37,6 +37,8 @@ Click **Install**. Lapin downloads the file, checks that its size and SHA-256 ar
 
 If your library already has something of the same name, Lapin asks before replacing it. Nothing an extension brings is ever run: extensions are content.
 
+Lapin's catalogue is also **signed** by Lapin Extensions: the catalogue and each of its files carry a signature that Lapin checks before it reads the list or installs a file, so a copy changed anywhere on the way is refused. A line above the list says **Signed by Lapin Extensions** when it is.
+
 **Installed** lists what this computer has. Each row opens where it went (**My furniture…**, **Project templates…**), offers **Update** when the catalogue has a newer version, and **Uninstall**.
 
 ![Installed: the furniture pack, with the button that opens My furniture](shots/extensions-installed.webp)
@@ -63,10 +65,15 @@ The catalogue also lists **Python scripts**. On the desktop you can install one 
 
 ## Another catalogue
 
-**Catalogue…** at the bottom of the dialog sets the catalogue's address: an https address, or the path of an `index.json` on this computer or a shared folder (a firm's own catalogue). Leave it empty for Lapin's own. The arrow beside it reads the catalogue again.
+**Catalogue…** at the bottom of the dialog sets the catalogue's address: an https address, or the path of an `index.json` on this computer or a shared folder (a firm's own catalogue). Leave it empty for Lapin's own. The arrow beside it reads the catalogue again. A catalogue of your own need not be signed: Lapin then says above the list that it is **not signed by Lapin Extensions**, so install from it only if you trust who keeps it. A catalogue whose signature does not hold is never read.
 
 ## Publishing your own
 
-Anyone can publish an extension: export it from Lapin (My furniture → Export, Save as template…, a profile library, a title block), attach the file to a release of a GitHub repository of yours, and add its manifest to the catalogue by a pull request on [Ciuntuc-BIM-Studio/lapin-extensions](https://github.com/Ciuntuc-BIM-Studio/lapin-extensions). Its README says how, and what the automatic checks look at.
+The catalogue has its own site, **[store.lapinbim.com](https://store.lapinbim.com)**: a page for each extension, with its pictures, versions, licence and downloads, and a page for each author.
+
+Anyone can publish an extension. Export it from Lapin (My furniture → Export, Save as template…, a profile library, a title block), then:
+
+- **On the store**: sign in at store.lapinbim.com with your [forum](https://forum.lapinbim.com) account, open **Your extensions**, fill in the form and upload the file and a few screenshots. The store checks the file as Lapin will and sends it for review; your page shows the review and, once it is published, how many times it was downloaded. A new version goes the same way.
+- **On GitHub**: attach the file to a release of a repository of yours and add its manifest by a pull request on [Ciuntuc-BIM-Studio/lapin-extensions](https://github.com/Ciuntuc-BIM-Studio/lapin-extensions). Its README says how, and what the automatic checks look at.
 
 A types pack comes from **Manage → Type packs… → Export types…**; a price list from **Price lists…**, with the export button of a list on this computer (a `.lapinprices` file, its prices marked indicative).

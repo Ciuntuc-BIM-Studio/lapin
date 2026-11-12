@@ -37,6 +37,8 @@ Kliknij **Zainstaluj**. Lapin pobiera plik, sprawdza, czy jego rozmiar i SHA-256
 
 Jeśli Twoja biblioteka ma już coś o tej samej nazwie, Lapin pyta przed zastąpieniem. Nic z tego, co przynosi rozszerzenie, nigdy nie jest uruchamiane: rozszerzenia to treść.
 
+Katalog Lapina jest też **podpisany** przez Lapin Extensions: katalog i każdy jego plik niosą podpis, który Lapin sprawdza, zanim odczyta listę lub zainstaluje plik, więc kopia zmieniona po drodze jest odrzucana. Wiersz nad listą mówi **Podpisany przez Lapin Extensions**, gdy tak jest.
+
 **Zainstalowane** pokazuje, co ma ten komputer. Każdy wiersz otwiera miejsce, gdzie to trafiło (**Moje meble…**, **Szablony projektu…**), oferuje **Aktualizuj**, gdy katalog ma nowszą wersję, oraz **Odinstaluj**.
 
 ![Zainstalowane: pakiet mebli z przyciskiem otwierającym Moje meble](shots/extensions-installed.webp)
@@ -63,10 +65,15 @@ Katalog zawiera też **skrypty Pythona**. W aplikacji na komputer możesz już j
 
 ## Inny katalog
 
-**Katalog…** na dole okna ustawia adres katalogu: adres https albo ścieżkę do `index.json` na tym komputerze lub we wspólnym folderze (własny katalog firmy). Zostaw puste, aby użyć katalogu Lapina. Strzałka obok czyta katalog ponownie.
+**Katalog…** na dole okna ustawia adres katalogu: adres https albo ścieżkę do `index.json` na tym komputerze lub we wspólnym folderze (własny katalog firmy). Zostaw puste, aby użyć katalogu Lapina. Strzałka obok czyta katalog ponownie. Własny katalog nie musi być podpisany: Lapin mówi wtedy nad listą, że **nie jest podpisany przez Lapin Extensions**, więc instaluj z niego tylko, jeśli ufasz temu, kto go prowadzi. Katalog, którego podpis się nie zgadza, nigdy nie jest odczytywany.
 
 ## Publikowanie własnych
 
-Każdy może opublikować rozszerzenie: wyeksportuj je z Lapina (Moje meble → Eksportuj, Zapisz jako szablon…, biblioteka profili, tabliczka), dołącz plik do wydania (release) własnego repozytorium GitHub i dodaj jego manifest do katalogu przez pull request w [Ciuntuc-BIM-Studio/lapin-extensions](https://github.com/Ciuntuc-BIM-Studio/lapin-extensions). Jego README mówi, jak to zrobić i co sprawdzają automatyczne testy.
+Katalog ma własną stronę, **[store.lapinbim.com](https://store.lapinbim.com)**: stronę każdego rozszerzenia z jego obrazami, wersjami, licencją i pobraniami oraz stronę każdego autora.
+
+Każdy może opublikować rozszerzenie. Wyeksportuj je z Lapina (Moje meble → Eksportuj, Zapisz jako szablon…, biblioteka profili, tabliczka), a potem:
+
+- **W sklepie**: zaloguj się na store.lapinbim.com kontem z [forum](https://forum.lapinbim.com), otwórz **Your extensions** (Twoje rozszerzenia), wypełnij formularz i prześlij plik oraz kilka zrzutów ekranu. Sklep sprawdza plik tak, jak zrobi to Lapin, i wysyła go do recenzji; Twoja strona pokazuje recenzję i, po opublikowaniu, ile razy rozszerzenie pobrano. Nowa wersja przechodzi tę samą drogą.
+- **Na GitHubie**: dołącz plik do wydania (release) własnego repozytorium i dodaj jego manifest przez pull request w [Ciuntuc-BIM-Studio/lapin-extensions](https://github.com/Ciuntuc-BIM-Studio/lapin-extensions). Jego README mówi, jak to zrobić i co sprawdzają automatyczne testy.
 
 Pakiet typów powstaje w **Zarządzaj → Pakiety typów… → Eksportuj typy…**; cennik w **Cenniki…**, przyciskiem eksportu cennika z tego komputera (plik `.lapinprices`, z cenami oznaczonymi jako orientacyjne).
