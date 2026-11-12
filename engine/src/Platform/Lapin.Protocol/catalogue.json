@@ -797,6 +797,7 @@
     {"name":"standards.lineTypes","module":"core","args":[]},
     {"name":"standards.readLin","module":"core","args":[{"name":"text","type":"str"},{"name":"units","type":"str"}]},
     {"name":"standards.readPack","module":"core","args":[{"name":"text","type":"str"}]},
+    {"name":"steel.boltGrades","module":"steel","args":[]},
     {"name":"steel.hallPreview","module":"steel","args":[{"name":"id","type":"str"}]},
     {"name":"steel.node","module":"steel","args":[{"name":"id","type":"str"}]},
     {"name":"steel.readSketch","module":"steel","args":[{"name":"id","type":"str"}]},

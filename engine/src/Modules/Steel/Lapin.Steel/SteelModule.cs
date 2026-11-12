@@ -41,6 +41,8 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
 
     public void Register(IModuleRegistry r)
     {
+        // The bolts' grades in the project's rule pack (docs/plan-user-extensibility.md §5.4).
+        BoltRuleSection.Register(r);
         r.Class(new(Member, "Member",
         [
             new("rotation", "Rotation", "angle"),

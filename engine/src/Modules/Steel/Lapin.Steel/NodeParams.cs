@@ -48,7 +48,9 @@ public sealed record NodeParams(
         static bool? B(JsonNode? x) => x is JsonValue v && v.TryGetValue<bool>(out var b) ? b : null;
         static int? I(JsonNode? x) => Json.Number(x) is { } d ? (int)Math.Round(d) : null;
         string? S(string k, string[] allowed) => (string?)o[k] is { } s && allowed.Contains(s) ? s : null;
-        return new NodeParams(Json.Number(o["plate"]), Json.Number(o["bolt"]), S("grade", Grades), I(o["rows"]), I(o["cols"]),
+        // A grade is the project's to name (its rule pack offers Lapin's four and any it adds, docs/plan-user-extensibility.md §5.4): a short text.
+        var grade = ((string?)o["grade"])?.Trim() is { Length: > 0 and <= 20 } gr ? gr : null;
+        return new NodeParams(Json.Number(o["plate"]), Json.Number(o["bolt"]), grade, I(o["rows"]), I(o["cols"]),
             Json.Number(o["edge"]), Json.Number(o["pitch"]), Json.Number(o["gauge"]), Json.Number(o["extension"]), B(o["stiffeners"]),
             S("base", Bases), S("anchor", AnchorKinds), I(o["anchors"]), Json.Number(o["anchorLength"]), Json.Number(o["grout"]), Json.Number(o["gap"]));
     }
@@ -62,7 +64,7 @@ public sealed record NodeParams(
     /// <summary>A patch as a command gives it: its fields checked; a field given as null goes back to its default.</summary>
     public static NodeParams Patch(NodeParams current, JsonObject patch)
     {
-        if (patch["grade"] is JsonValue gv && (string?)gv is { } g && !Grades.Contains(g)) throw new CommandException($"A bolt's grade is 4.6, 5.6, 8.8 or 10.9, not „{g}”.");
+        if (patch["grade"] is JsonValue gv && (string?)gv is { } g && g.Trim() is not { Length: > 0 and <= 20 }) throw new CommandException("A bolt's grade is a short name: 8.8, 10.9, A325…");
         if (patch["base"] is JsonValue bv && (string?)bv is { } b && !Bases.Contains(b)) throw new CommandException("A column base is pinned or fixed.");
         if (patch["anchor"] is JsonValue av && (string?)av is { } a && !AnchorKinds.Contains(a)) throw new CommandException("An anchor is straight, hooked or with an anchor plate.");
         var o = current.ToJson();

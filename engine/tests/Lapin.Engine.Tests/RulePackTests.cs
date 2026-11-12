@@ -108,4 +108,14 @@ public sealed class RulePackTests
         a.Run("rules.delete", new JsonObject { ["id"] = id });
         Assert.Equal(RulePacks.Builtin, RulePacks.ActiveId(a.Model));
     }
+
+    [Fact]
+    public void A_pack_names_the_bolt_grades_to_offer()
+    {
+        var f = new Fixture(new StructureModule(), new Lapin.Steel.SteelModule());
+        Assert.Equal(["4.6", "5.6", "8.8", "10.9"], f.Session.Query("steel.boltGrades", [])!["grades"]!.AsArray().Select(x => (string)x!).ToArray());
+        var id = (string)f.Run("rules.create", new JsonObject { ["from"] = RulePacks.Builtin, ["name"] = "US", ["activate"] = true })!["id"]!;
+        f.Run("rules.update", new JsonObject { ["id"] = id, ["section"] = "bolts", ["values"] = new JsonObject { ["grades"] = new JsonArray("A325", "A490") } });
+        Assert.Equal(["A325", "A490"], f.Session.Query("steel.boltGrades", [])!["grades"]!.AsArray().Select(x => (string)x!).ToArray());
+    }
 }
