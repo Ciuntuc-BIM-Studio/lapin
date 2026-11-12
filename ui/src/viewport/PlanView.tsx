@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Compass, FileDown, Footprints, Layers, Maximize, MousePointer2, PenLine } from 'lucide-react';
 import { openContextMenu } from '../shell/ContextMenu';
 import { selectionItems } from '../shell/selectionMenu';
+import { symbolMenuItems } from '../modules/core/symbols/symbolTools';
 import { drawOrderItems, isDrafted } from './drawOrder';
 import { num } from '../engine/model';
 import { useWalk, walkInto } from './walk';
@@ -598,7 +599,7 @@ export function PlanView() {
       { label: 'Walk in 3D', icon: <Footprints size={13} />, onSelect: () => walkIntoRoom(room, item, num(storey ?? undefined, 'elevation')) },
       { label: 'Select', icon: <MousePointer2 size={13} />, onSelect: () => select(room.id) },
     ] : [];
-    openContextMenu(x, y, [...order, ...rooms, ...selectionItems()]);
+    openContextMenu(x, y, [...order, ...symbolMenuItems(selected, nodes), ...rooms, ...selectionItems()]);
   };
   /** What a selection box or lasso takes: inside it wholly (a window, dragged to the right) or touching it (crossing, to the left). */
   const selectBox = (b: SelectDrag, add: boolean) => {

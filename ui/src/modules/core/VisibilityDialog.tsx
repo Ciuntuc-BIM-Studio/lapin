@@ -68,7 +68,7 @@ export const CATEGORY_NAMES: Record<string, string> = {
   steelConnections: 'Steel connections', transport: 'Transport', shading: 'Shading',
   core: 'Core', finishes: 'Finishes', insulation: 'Insulation', membranes: 'Membranes', otherLayers: 'Other layers', reveals: 'Reveals',
   dimensions: 'Dimensions', texts: 'Texts', tags: 'Tags', roomTags: 'Room tags', grids: 'Grids', levels: 'Levels', sections: 'Section marks',
-  elevations: 'Elevation marks', callouts: 'Callouts', refPlanes: 'Reference planes', viewBoundaries: 'View boundaries', legends: 'Legends',
+  elevations: 'Elevation marks', callouts: 'Callouts', refPlanes: 'Reference planes', viewBoundaries: 'View boundaries', legends: 'Legends', symbols: 'Symbols',
 };
 
 /** What a filter's rule can read, and how it compares, as the editor names them. */

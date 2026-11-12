@@ -1,6 +1,6 @@
 /** Drafting: CAD drawing on views (lines, polylines, circles, arcs, hatches on layers, and their edits), dimensions that follow the elements, texts, grid axes. */
 
-import { ArrowRightToLine, Crosshair, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Unlink2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags, Grid3x3, Settings2, Image as ImageIcon, Ruler } from 'lucide-react';
+import { ArrowRightToLine, Crosshair, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Unlink2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags, Grid3x3, Settings2, Image as ImageIcon, Ruler, Shapes, Shapes as SymbolsIcon, FolderPlus } from 'lucide-react';
 import { AngleIcon, ArcLengthIcon, DiameterIcon, DimensionIcon, GridAxisIcon, LevelIcon, OrdinateIcon, RadiusIcon, SlopeIcon } from '../../icons';
 import type { Grip, GripStep, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { axisGrips, axisRef, outlineGrips, pt } from '../../viewport/gripKit';
@@ -22,6 +22,8 @@ import { formatLength, formatLevel } from '../../engine/unitsStore';
 import { TagOptions, tagCommand, tagGrips, useTagPrefs } from './tag';
 import { DRAW_ORDER, drawOrder } from '../../viewport/drawOrder';
 import { lazyPart } from '../../platform/lazyPart';
+import '../core/symbols/symbolTools';
+import { SymbolSection } from '../core/symbols/SymbolSection';
 import { surveyPoint, useLocation } from '../../app/location';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
@@ -30,7 +32,7 @@ const ImportTraceDialog = lazyPart(() => import('./ImportTraceDialog').then((m) 
 const LayersDialog = lazyPart(() => import('./LayersDialog').then((m) => m.LayersDialog), { title: 'Drafting layers' });
 
 /** An aligned dimension: its two points, then where its line goes; then on as a string, one object. Points on an element's cut edge, a grid axis or a wall's centre line follow it. */
-const DRAFTED = new Set(['DRAFT', 'TEXT', 'DIMENSION', 'TAG']);
+const DRAFTED = new Set(['DRAFT', 'TEXT', 'DIMENSION', 'TAG', 'SYMBOL']);
 const draftsFields = (node: NodeDto) => DRAFTED.has(String(node.props.predefinedType));
 
 const dimension: ToolDef = { id: 'drafting.dimension', label: 'Aligned', icon: DimensionIcon, shortcut: 'DI', run: () => void startCommand('DIMALIGNED') };
@@ -627,6 +629,7 @@ const drafting: LapinModule = {
         { label: 'Modify', tools: [cad('move', 'Move', Move, 'MOVE'), cad('copy', 'Copy', Copy, 'COPY'), cad('rotate', 'Rotate', RotateCw, 'ROTATE'), cad('mirror', 'Mirror', FlipHorizontal2, 'MIRROR')], small: [cad('scale', 'Scale', Scaling, 'SCALE'), cad('erase', 'Erase', Eraser, 'ERASE')] },
         { label: 'Edit', tools: [cad('offset', 'Offset', CopyPlus, 'OFFSET'), cad('trim', 'Trim', Scissors, 'TRIM'), cad('extend', 'Extend', ArrowRightToLine, 'EXTEND'), cad('fillet', 'Fillet', CornerUpRight, 'FILLET')], small: [cad('chamfer', 'Chamfer', CornerUpRight, 'CHAMFER'), cad('join', 'Join', Link2, 'JOIN'), cad('explode', 'Explode', Unlink2, 'EXPLODE')] },
         { label: 'Fill', tools: [cad('hatch', 'Hatch', Hash, 'HATCH')] },
+        { label: 'Symbol', tools: [cad('saveSymbol', 'Save as symbol', FolderPlus, 'SAVESYMBOL')], small: [cad('symbol', 'Symbol', Shapes, 'SYMBOL')] },
         orderGroup,
         { label: 'Linework', tools: [cad('linework', 'Linework', PenLine, 'LINEWORK')], small: [cad('lwJoin', 'Join', CornerUpRight, 'LWJOIN'), cad('lwTrim', 'Trim', Scissors, 'LWTRIM'), cad('lwExtend', 'Extend', ArrowRightToLine, 'LWEXTEND'), cad('lwReset', 'Reset', Eraser, 'LWRESET')] },
         { label: 'Layers', tools: [{ id: 'drafting.layers', label: 'Layers', icon: Layers, run: () => useUi.setState({ dialog: 'draftLayers' }) }] },
@@ -655,6 +658,8 @@ const drafting: LapinModule = {
           axis,
           { id: 'level', label: 'Level', icon: LevelIcon, shortcut: 'LL', run: () => void startCommand('DIMLEVEL') },
         ] },
+        // Symbols of the user's own (docs/plan-user-extensibility.md §3): placed with a ghost (R/Space turns, X and Y flip), made from drafting, managed and edited in Manage → Symbols….
+        { label: 'Symbols', tools: [cad('symbol', 'Symbol', Shapes, 'SYMBOL'), cad('saveSymbol', 'Save as symbol', FolderPlus, 'SAVESYMBOL')], small: [{ id: 'drafting.symbols', label: 'Symbols…', icon: SymbolsIcon, run: () => useUi.setState({ dialog: 'symbols' }) }] },
         orderGroup,
         { label: 'Sheets', tools: [{ id: 'sheet', label: 'Sheet', icon: FileText, run: () => void execute('sheet.create', { name: 'Sheet', paper: 'A3' }).then((r) => { const id = (r as { id?: string } | null)?.id; if (id) useUi.setState({ view: 'sheet', sheetId: id, selection: id, selected: [id] }); }) }, viewBoundary] },
       ],
@@ -666,6 +671,7 @@ const drafting: LapinModule = {
     // The drafted kinds show their own fields (a line its ends, a circle its radius), so the class's generic ones stay out.
     { id: 'draft', label: 'Drafting', classes: ['IfcAnnotation'], component: DraftSection, replacesFields: draftsFields },
     { id: 'dimension', label: 'Dimension', classes: ['IfcAnnotation'], component: DimensionSection },
+    { id: 'symbol', label: 'Symbol', classes: ['IfcAnnotation'], component: SymbolSection },
     { id: 'viewBoundary', label: 'View boundary', classes: ['LapinViewBoundary'], component: BoundarySection },
     { id: 'grid', label: 'Axes', classes: ['IfcGrid'], component: GridSection },
   ],

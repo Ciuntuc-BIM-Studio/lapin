@@ -27,6 +27,8 @@ import type { PenDto } from './drawing';
 import { printSheet } from './printSheet';
 import { VIEW_DRAG } from '../shell/browserSets';
 import { ScalePicker, StructurePicker } from './ScaleChip';
+import { listSymbols, placeSymbol, rememberSymbol, type SymList } from '../modules/core/symbols/symbols';
+import { byCategory } from '../modules/core/symbols/symbolModel';
 import { PX_PER_MM, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelZoom, type ZoomHost } from './zoom';
 
 interface Vp {
@@ -68,6 +70,11 @@ export function SheetView() {
   const [slid, setSlid] = useState<{ id: string; dx: number; dy: number } | null>(null);
   const [active, setActive] = useState<string | null>(null);
   const [dropping, setDropping] = useState(false);
+  // A symbol of the user's own, placed by the next click on the paper (docs/plan-user-extensibility.md §3).
+  const [symbols, setSymbols] = useState<SymList>({ items: [], categories: [] });
+  const [placingSymbol, setPlacingSymbol] = useState<{ id: string; name: string } | null>(null);
+  const symbolVersion = useSession((x) => x.version);
+  useEffect(() => { void listSymbols(false).then(setSymbols); }, [symbolVersion]);
   // The remarks read from reviewed PDFs: shown over the paper (the screen alone; the sheet prints without them).
   const showRemarks = useRemarkUi((s) => s.show);
   const remarkCount = id ? countOpen(nodes, id) : 0;
@@ -203,6 +210,12 @@ export function SheetView() {
           <option value="">Place view…</option>
           {placeable.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
         </select>
+        <select value="" data-testid="sheet-place-symbol" title="Place a symbol on the sheet: then click where it goes (Esc cancels)"
+          onChange={(e) => { const sym = symbols.items.find((i) => i.id === e.target.value); if (sym) { rememberSymbol(sym.id); setPlacingSymbol({ id: sym.id, name: sym.name }); ref.current?.focus(); } }}>
+          <option value="">Place symbol…</option>
+          {byCategory(symbols.items, symbols.categories).map(([cat, items]) => <optgroup key={cat} label={cat}>{items.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}</optgroup>)}
+        </select>
+        {placingSymbol && <span className="chip" data-no-i18n>{placingSymbol.name} <button type="button" className="link" onClick={() => setPlacingSymbol(null)}>×</button></span>}
         <button type="button" className="icon" title="Export PDF" onClick={() => void exportAs('pdf')}><FileDown size={14} /><span className="small">PDF</span></button>
         <button type="button" className="icon" title="Export DXF" onClick={() => void exportAs('dxf')}><FileDown size={14} /><span className="small">DXF</span></button>
         <button type="button" className="icon" title="Print the sheet (a plotter at its paper size, 1:1)" data-testid="sheet-print" disabled={!d}
@@ -239,6 +252,7 @@ export function SheetView() {
           const p = paperAt(e);
           void execute('sheet.addViewport', { id: sheet.id, viewId, x: p.x, y: p.y });
         }}
+        onKeyDown={(e) => { if (e.key === 'Escape' && placingSymbol) { setPlacingSymbol(null); e.stopPropagation(); } }}
         onWheel={(e) => {
           const r = ref.current!.getBoundingClientRect();
           const now = performance.now();
@@ -249,6 +263,7 @@ export function SheetView() {
         onPointerDown={(e) => {
           if (middleTwice.current(e)) { fit(); return; }
           const p = paperAt(e);
+          if (placingSymbol && e.button === 0) { void placeSymbol({ sheetId: sheet.id, symbolId: placingSymbol.id, at: [Math.round(p.x * 100) / 100, Math.round(p.y * 100) / 100] }).then((r) => { if (r?.id) select(r.id); }); return; }
           const vp = pick(p);
           // A pinned view is picked, not moved: the drag pans the paper.
           if (vp && e.button === 0 && e.shiftKey && !vp.pinned && !vp.content) { drag.current = { kind: 'slide', x: e.clientX, y: e.clientY, vp }; setActive(vp.id); }

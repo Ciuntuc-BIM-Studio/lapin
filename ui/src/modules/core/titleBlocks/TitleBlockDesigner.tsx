@@ -36,7 +36,7 @@ const GRIDS = [0, 0.5, 1, 2.5, 5];
 const PAD = 8;
 
 /** A number field committed on Enter or when left, only when it changed. */
-function Num({ label, value, onCommit, step = 0.5, min }: { label: string; value: number | undefined; onCommit: (v: number) => void; step?: number; min?: number }) {
+export function Num({ label, value, onCommit, step = 0.5, min }: { label: string; value: number | undefined; onCommit: (v: number) => void; step?: number; min?: number }) {
   return (
     <label className="tb-num">
       <span className="muted small">{label}</span>
@@ -47,7 +47,7 @@ function Num({ label, value, onCommit, step = 0.5, min }: { label: string; value
   );
 }
 
-function Colour({ label, value, onChange, none }: { label: string; value: string | null | undefined; onChange: (v: string | null) => void; none?: boolean }) {
+export function Colour({ label, value, onChange, none }: { label: string; value: string | null | undefined; onChange: (v: string | null) => void; none?: boolean }) {
   return (
     <label className="tb-num">
       <span className="muted small">{label}</span>
