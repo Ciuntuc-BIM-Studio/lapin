@@ -26,10 +26,10 @@ export function tagTargets(selected: readonly string[], nodes: ReadonlyMap<strin
   return out;
 }
 
-/** Whether the command line waits for an element to tag. */
+/** Whether the command line waits for an element to tag, or for one a step lights up as the cursor moves (Match properties' targets). */
 export function tagToolPicking(): boolean {
   const s = useCad.getState();
-  return s.command === 'TAG' && s.step?.want === 'select';
+  return s.step?.want === 'select' && (s.command === 'TAG' || !!s.step.hover);
 }
 
 /**

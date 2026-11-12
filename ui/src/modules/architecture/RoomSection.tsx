@@ -19,6 +19,7 @@ import { HatchSwatch } from '../core/HatchSwatch';
 import { useSchemes } from './rooms';
 import { RoomFinishField } from './RoomFinishes';
 import { RoomOpeningsField } from './RoomOpenings';
+import { sameKind } from '../../shell/params';
 
 /** A text field with suggestions (an HTML datalist): commits on blur or Enter. */
 function Suggest({ value, options, onCommit, id }: { value: string; options: string[]; onCommit: (v: string) => void; id: string }) {
@@ -38,7 +39,8 @@ export function RoomSection({ node }: { node: NodeDto }) {
   const [hatches, setHatches] = useState<string[]>([]);
   useEffect(() => { void query<{ name: string }[]>('hatch.list').then((r) => r && setHatches(r.map((h) => h.name))); }, []);
   const str = (k: string) => (typeof node.props[k] === 'string' ? (node.props[k] as string) : '');
-  const update = (k: string, v: unknown) => void execute('element.update', { id: node.id, attrs: { [k]: v === '' ? null : v } });
+  // With several rooms selected, each takes it (topic #29), but its number, which is its own.
+  const update = (k: string, v: unknown) => void execute('element.update', { ids: k === 'number' ? [node.id] : sameKind(node), attrs: { [k]: v === '' ? null : v } });
   const known = (k: string, extra: string[] = []) => [...new Set([...extra, ...(s?.values[k] ?? []).map((v) => v.value)])];
   const hatch = str('fillHatch');
   // A room found from its walls that nothing closes round any more keeps its last outline, and says so.

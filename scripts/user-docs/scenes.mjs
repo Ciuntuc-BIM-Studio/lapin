@@ -3655,6 +3655,66 @@ export const scenes = [
     },
   },
   {
+    // Several elements at once and Match properties (a forum user's report and wish, topic #29; decision 490): two walls
+    // selected given a phase in the properties panel, both take it; then MA from the facade wall: the inner wall lit under the
+    // cursor, the settings of what is carried, a click giving it the facade's type, height, parameter and phase in one undo step.
+    id: 'match-properties',
+    touches: ['core', 'phases', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const { walls } = await house(t, { roof: false });
+      const thin = (await t.cmd('architecture.createWallType', { name: 'Partition 12', layers: [{ material: 'Plasterboard', thickness: 0.12, core: true }] })).id;
+      await t.cmd('architecture.setWallType', { ids: [walls.inner], typeId: thin });
+      const node = async (id) => (await t.nodes()).find((n) => n.id === id);
+      const typeOf = (id) => t.page.evaluate(async (id) => { const s = (await import('/src/engine/session.ts')).useSession.getState(); return (await import('/src/engine/model.ts')).typeOf(s, id)?.id ?? null; }, id);
+      // Several selected: a phase chosen in the panel goes to each of them (only the first took it before).
+      await t.ui({ selection: walls[1], selected: [walls[3], walls[1]] });
+      await t.wait(400);
+      const created = t.page.locator('aside.props [data-field=phase-created]');
+      t.expect(await created.count() === 1, 'the properties panel shows the phases of the walls selected');
+      await created.selectOption('existing');
+      await t.wait(500);
+      t.expect((await node(walls[1])).props.phaseCreated === 'existing' && (await node(walls[3])).props.phaseCreated === 'existing', 'both walls selected take the phase');
+      // The source: the facade wall, made 3.2 m high with a parameter of its own, in the new construction.
+      await t.cmd('element.update', { ids: [walls[0]], attrs: { height: 3.2 } });
+      await t.cmd('element.setParam', { ids: [walls[0]], name: 'Fire rating', kind: 'text', value: 'EI 60' });
+      await t.cmd('phases.assign', { ids: [walls[0]], created: 'new-construction' });
+      const facadeType = await typeOf(walls[0]);
+      await select(t, walls[0]);
+      await t.fit();
+      await t.keys('m', 'a', 'Enter');
+      t.expect(await t.page.evaluate(async () => (await import('/src/viewport/cad/session.ts')).useCad.getState().command) === 'MATCHPROP', 'MA starts Match properties with the selected wall as its source');
+      t.expect(await t.page.locator('[data-testid=match-bar]').count() === 1, 'the command line shows what it copies from');
+      // The inner wall under the cursor lights up before the click.
+      const [px, py] = await t.planPoint(7, 5);
+      await t.page.mouse.move(px - 40, py - 40);
+      await t.page.mouse.move(px, py, { steps: 6 });
+      await t.wait(300);
+      t.expect(await t.page.evaluate(async () => (await import('/src/viewport/tagTarget.ts')).useTagHover.getState().element) === walls.inner, 'the wall under the cursor is lit');
+      await t.page.locator('[data-action=match-settings]').click();
+      t.expect(await t.page.locator('[data-testid=match-settings] input[type=checkbox]').count() === 6, 'the settings list what is carried');
+      t.expect(!(await t.page.locator('[data-testid=match-settings] input[data-group=name]').isChecked()), 'the name is not carried at first');
+      await t.page.mouse.move(px, py);
+      await t.wait(300);
+      await t.shot('match-properties', { clip: { x: 250, y: 120, width: 1190, height: 780 } });
+      await t.page.locator('[data-action=match-settings]').click();
+      await t.page.mouse.click(px, py);
+      await t.wait(700);
+      const inner = await node(walls.inner);
+      t.expect(await typeOf(walls.inner) === facadeType, 'the inner wall takes the facade wall\'s type');
+      t.expect(Math.abs(inner.props.height - 3.2) < 1e-9, 'and its height');
+      t.expect(inner.props.phaseCreated === 'new-construction', 'and its phase');
+      t.expect((inner.props.params ?? []).some((p) => p.name === 'Fire rating' && p.value === 'EI 60'), 'and its parameter');
+      t.expect(JSON.stringify(inner.props.start) === JSON.stringify([7, 0]) || JSON.stringify(inner.props.start) === JSON.stringify([7, 8]), 'but stays where it stands');
+      // One click, one undo step.
+      await t.keys('Escape');
+      t.expect(await t.page.evaluate(async () => (await import('/src/viewport/cad/session.ts')).useCad.getState().command) === null, 'Esc ends it');
+      await t.page.evaluate(async () => (await import('/src/engine/session.ts')).undo());
+      await t.wait(500);
+      t.expect(await typeOf(walls.inner) === thin && !(await node(walls.inner)).props.phaseCreated, 'Undo takes the whole match back at once');
+    },
+  },
+  {
     // Section and elevation markers (decisions 455, 456, 460): the section markers' size in Drafting standards → Project
     // (a section's and an elevation's apart), the south elevation marked in the plan clear of A-A's head, its line's end
     // grip dragged so it reaches only the middle of the house, its marker dragged further out, A-A's head moved off its end.

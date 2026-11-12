@@ -1967,6 +1967,8 @@ export const PL: Record<string, string> = {
   'Hold-open': 'Blokada otwarcia',
   'Indicative models; check the maker\'s data for the leaf\'s weight and the closing force.': 'Modele orientacyjne; sprawdź dane producenta dotyczące ciężaru skrzydła i siły zamykania.',
   'New frameless door on floor spring': 'Nowe drzwi szklane bez ramy na samozamykaczu podłogowym',
+  // Decision 490: Match properties
+  'Match properties': 'Dopasuj właściwości', 'Another source': 'Inne źródło', 'What to carry': 'Co przenieść', 'Dimensions and settings': 'Wymiary i ustawienia', 'Layer, colour and hatch': 'Warstwa, kolor i kreskowanie', 'Never where an element stands, its shape or its GlobalId.': 'Nigdy położenie elementu, jego kształt ani GlobalId.', 'The element whose properties are carried': 'Element, którego właściwości są przenoszone',
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {
@@ -2147,4 +2149,5 @@ export const PL_PATTERNS: Language['patterns'] = [
   [/^This piece of furniture is of a kind \(„(.+)”\) this edition of Lapin does not build\.$/, (m) => `Ten mebel jest rodzaju („${m[1]}”), którego ta edycja Lapina nie buduje.`],
   // Decision 481: arrays
   [/^item (\d+) of (\d+)$/, (m) => `element ${m[1]} z ${m[2]}`],
+  [/^Apply to the selection \((\d+)\)$/, (m) => `Zastosuj do zaznaczenia (${m[1]})`],
 ];

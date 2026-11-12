@@ -11,6 +11,7 @@ import { activate } from '../../../platform/modules';
 import { CLASS, TYPE_CLASS, fanSummary, kindOf, specOf } from './fans';
 import { editFanType, useFanCatalogs } from './FanTypesDialog';
 import { fanDuct } from './tools';
+import { sameKind } from '../../../shell/params';
 
 const upright = (m: unknown) => m === 'wall' || m === 'window';
 
@@ -30,7 +31,7 @@ export function FanSection({ node }: { node: NodeDto }) {
       <dl className="fields">
         <dt>Type</dt>
         <dd>
-          <select value={type?.id ?? ''} data-field="fan-type" onChange={(e) => void execute('mep.setFanType', { ids: [node.id], typeId: e.target.value })}>
+          <select value={type?.id ?? ''} data-field="fan-type" onChange={(e) => void execute('mep.setFanType', { ids: sameKind(node), typeId: e.target.value })}>
             {others.map((t) => <option key={t.id} value={t.id} data-no-i18n>{t.name}</option>)}
           </select>
         </dd>

@@ -164,6 +164,7 @@ describe('the languages', () => {
     '3 guide(s) erased.',
     'Guide line at 750 mm.',
     'Distance: 1250 mm.',
+    'Apply to the selection (3)',
   ];
   const first = (patterns: [RegExp, unknown][], s: string) => patterns.findIndex(([re]) => re.test(s));
 

@@ -2020,6 +2020,8 @@ export const LO: Record<string, string> = {
   'Hold-open': 'ຄ້າງເປີດ',
   'Indicative models; check the maker\'s data for the leaf\'s weight and the closing force.': 'ແບບຈຳລອງໂດຍປະມານ; ກວດເບິ່ງຂໍ້ມູນຂອງຜູ້ຜະລິດສຳລັບນ້ຳໜັກບານ ແລະ ແຮງປິດ.',
   'New frameless door on floor spring': 'ປະຕູແກ້ວບໍ່ມີກອບໃໝ່ເທິງສະປິງພື້ນ',
+  // Decision 490: Match properties
+  'Match properties': 'ຖ່າຍທອດຄຸນສົມບັດ', 'Another source': 'ແຫຼ່ງອື່ນ', 'What to carry': 'ສິ່ງທີ່ຈະຖ່າຍທອດ', 'Dimensions and settings': 'ຂະໜາດ ແລະ ການຕັ້ງຄ່າ', 'Layer, colour and hatch': 'ຊັ້ນ, ສີ ແລະ ລາຍແຮເງົາ', 'Never where an element stands, its shape or its GlobalId.': 'ບໍ່ເຄີຍຖ່າຍທອດຕຳແໜ່ງ, ຮູບຮ່າງ ຫຼື GlobalId ຂອງອົງປະກອບ.', 'The element whose properties are carried': 'ອົງປະກອບທີ່ຖ່າຍທອດຄຸນສົມບັດ',
 };
 
 /** Phrases with a number or a name in them. */
@@ -2193,4 +2195,5 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^This piece of furniture is of a kind \(„(.+)”\) this edition of Lapin does not build\.$/, (m) => `ເຟີນິເຈີຊິ້ນນີ້ເປັນຊະນິດ („${m[1]}”) ທີ່ Lapin ສະບັບນີ້ບໍ່ສ້າງ.`],
   // Decision 481: arrays
   [/^item (\d+) of (\d+)$/, (m) => `ລາຍການ ${m[1]} ໃນ ${m[2]}`],
+  [/^Apply to the selection \((\d+)\)$/, (m) => `ນຳໃຊ້ກັບສິ່ງທີ່ເລືອກ (${m[1]})`],
 ];

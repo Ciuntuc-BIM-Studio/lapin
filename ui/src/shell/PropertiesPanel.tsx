@@ -261,6 +261,20 @@ function FrontViewPanel() {
   );
 }
 
+/**
+ * An absolute elevation typed (the top, the base or the bottom above ±0.00): every selected element of the kind moved there,
+ * each by its own offset from its own level (topic #29: with several selected, only one moved), one undo step.
+ */
+function toElevation(node: NodeDto, absolute: number, declared: readonly string[]) {
+  const model = useSession.getState();
+  const steps = sameKind(node).flatMap((id) => {
+    const n = model.nodes.get(id);
+    const level = n ? elevationOf(n, relatingOf(model, id, 'IfcRelContainedInSpatialStructure'), typeOf(model, id), declared) : null;
+    return level ? [{ command: 'element.update', args: { ids: [id], attrs: { [level.key]: offsetFor(level, absolute) } } }] : [];
+  });
+  return steps.length ? execute('edit.batch', { steps }) : Promise.resolve(null);
+}
+
 function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
   const nodes = useSession((s) => s.nodes);
   const relations = useSession((s) => s.relations);
@@ -308,7 +322,7 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
               <dt title="The level's elevation and this offset from it: the figure below follows it">Offset from level</dt>
               <dd><LengthCell metres={elevation.offset} onCommit={(v) => void execute('element.update', { ids: sameKind(node), attrs: { [elevation.key]: v } })} /></dd>
               <dt title={elevation.of === 'top' ? 'The top of the element, above ±0.00: type it to move the element there' : elevation.of === 'bottom' ? 'The bottom of the element, above ±0.00: type it to move the element there' : 'The base of the element, above ±0.00: type it to move the element there'}>{elevation.of === 'top' ? 'Top elevation' : elevation.of === 'bottom' ? 'Bottom elevation' : 'Base elevation'}</dt>
-              <dd><LengthCell metres={elevation.absolute} onCommit={(v) => { if (v != null) void execute('element.update', { ids: [node.id], attrs: { [elevation.key]: offsetFor(elevation, v) } }); }} /></dd>
+              <dd><LengthCell metres={elevation.absolute} onCommit={(v) => { if (v != null) void toElevation(node, v, cls?.fields.map((f) => f.key) ?? []); }} /></dd>
             </>}
           </dl>
         </Group>

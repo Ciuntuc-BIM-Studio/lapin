@@ -7,6 +7,7 @@ import { ofClass, relatedOf, typeOf } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
 import { arcLength, arcOf } from '../../viewport/arc';
 import { lengthText } from '../../engine/unitsStore';
+import { sameKind } from '../../shell/params';
 
 export function CurtainWallSection({ node }: { node: NodeDto }) {
   const nodes = useSession((s) => s.nodes);
@@ -19,7 +20,7 @@ export function CurtainWallSection({ node }: { node: NodeDto }) {
       <label className="type-pick">
         <span className="eyebrow">Type</span>
         <span className="row">
-          <select value={type?.id ?? ''} disabled={!node.editable} onChange={(e) => void execute('architecture.setCurtainWallType', { ids: [node.id], typeId: e.target.value })}>
+          <select value={type?.id ?? ''} disabled={!node.editable} onChange={(e) => void execute('architecture.setCurtainWallType', { ids: sameKind(node), typeId: e.target.value })}>
             {ofClass(model, 'IfcCurtainWallType').map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
           <button type="button" className="icon" title="Curtain walls…" onClick={() => useUi.setState({ dialog: 'curtainWalls', curtainTypeId: type?.id ?? null })}><Settings2 size={14} /></button>

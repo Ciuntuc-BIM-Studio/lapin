@@ -16,6 +16,7 @@ import { LengthField, NumberField } from '../../shell/cells';
 import { sectionLabel, type SectionDto } from './sections';
 import { hallOf, type HaunchDto } from './hall';
 import { useHall } from './HallDialog';
+import { sameKind } from '../../shell/params';
 
 export interface SteelEnd {
   cut?: 'square' | 'plane' | 'mitre' | 'fit'; extension?: number; planAngle?: number; elevAngle?: number; ref?: string;
@@ -134,7 +135,7 @@ export function SteelSection({ node }: { node: NodeDto }) {
         <label className="type-pick">
           <span className="eyebrow">Type</span>
           <span className="row">
-            <select value={type?.id ?? ''} disabled={!node.editable} data-field="steel-type" onChange={(ev) => void execute('steel.setType', { ids: [node.id], typeId: ev.target.value })}>
+            <select value={type?.id ?? ''} disabled={!node.editable} data-field="steel-type" onChange={(ev) => void execute('steel.setType', { ids: sameKind(node), typeId: ev.target.value })}>
               {types.map((t) => <option key={t.id} value={t.id} data-no-i18n>{t.name}</option>)}
             </select>
             <button type="button" className="icon" title="Steel types…" onClick={() => useUi.setState({ dialog: 'steelTypes' })}><Settings2 size={14} /></button>

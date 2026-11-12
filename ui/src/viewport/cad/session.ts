@@ -69,6 +69,10 @@ export interface Step {
   enter?: () => Next;
   /** Escape (or another command starting): what the step keeps of the work so far, as a dimension string keeps its points. */
   escape?: () => void | Promise<void>;
+  /** An element clicked in the 3D view (where a click has no point on a drawing): the step takes it, rather than the selection. */
+  element?: (id: string) => Next;
+  /** The element under the cursor is lit while the step waits for one (Match properties' targets, decision 490). */
+  hover?: boolean;
 }
 
 interface CadState {
@@ -528,6 +532,13 @@ export const feedPoint = serial(async (p: Vec2): Promise<void> => {
   }
   if (s.step.point) await advance(s.step.point(p));
 });
+
+/** An element clicked in the 3D view while a step takes elements (`element`): true when it took it. */
+export function feedElement(id: string): boolean {
+  if (!useCad.getState().step?.element) return false;
+  void serial(async () => { const step = useCad.getState().step; if (step?.element) await advance(step.element(id)); })();
+  return true;
+}
 
 /** A right-click in a view while a step runs: what Enter does (finish, accept); false when no step takes it. */
 export const finishStep = serial(async (): Promise<boolean> => {

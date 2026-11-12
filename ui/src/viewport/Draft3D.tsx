@@ -21,7 +21,8 @@ import { useDrawing } from './drawing';
 import { useCadCanvas, snapShapes, type Aimed } from './cad/aim';
 import { CadOverlay } from './cad/canvas';
 import { CommandLine } from './cad/CommandLine';
-import { cancel, feedPoint, useCad } from './cad/session';
+import { cancel, feedElement, feedPoint, useCad } from './cad/session';
+import { useTagHover } from './tagTarget';
 import { nearestOnShape, type Shape } from './cad/shapes';
 import { frameOfView, rayOnPlane, toPlane, toWorld, workPlaneView } from './workPlane';
 import { axesInPlane, infer, type Inferred } from './sketch/inference';
@@ -119,11 +120,22 @@ export function Draft3D({ camera, canvas, scene }: { camera: React.RefObject<THR
       if (sa && sb) { const px = Math.hypot(sb.x - sa.x, sb.y - sa.y); if (px > 1e-6 && Math.abs(px - scaleRef.current) / scaleRef.current > 0.05) setScale(px); }
       return p;
     };
+    let hoverFrame = 0;
     const onMove = (e: PointerEvent) => {
       if (e.buttons !== 0 || !inside(e) || facePickRef.current) return;
+      const step = useCad.getState().step;
+      // The element a step waiting for one would take, lit under the cursor (tagTarget.ts; the 3D view draws it).
+      if (step?.hover && step.want === 'select' && !hoverFrame) {
+        const [cx, cy] = [e.clientX, e.clientY];
+        hoverFrame = requestAnimationFrame(() => {
+          hoverFrame = 0;
+          const ray = rayAt3({ camera, canvas, scene }, cx, cy);
+          const id = (ray ? hitAt(scene.current, ray)?.nodeId : null) ?? null;
+          if (useTagHover.getState().element !== id) useTagHover.setState({ element: id });
+        });
+      }
       const raw = rawAt(e);
       if (!raw) return;
-      const step = useCad.getState().step;
       const a = inferOver(aimRef.current(raw, step?.base ?? null, { orthoHeld: e.shiftKey }), raw, step?.base ?? null);
       setAimed(a);
       useCad.setState({ cursor: a.point });
@@ -151,6 +163,8 @@ export function Draft3D({ camera, canvas, scene }: { camera: React.RefObject<THR
       if (step?.want === 'select' && !sketchRef.current) {
         const ray = rayAt3({ camera, canvas, scene }, e.clientX, e.clientY);
         const hit = ray ? hitAt(scene.current, ray) : null;
+        // A step that takes elements (Match properties' source and targets, decision 490): the element itself, not the selection.
+        if (step.element && hit?.nodeId) { feedElement(hit.nodeId); return; }
         const id = pickTarget(hit?.nodeId);
         if (id) { if (!useUi.getState().selected.includes(id)) select(id, true); return; }
       }
@@ -182,6 +196,7 @@ export function Draft3D({ camera, canvas, scene }: { camera: React.RefObject<THR
     window.addEventListener('pointerdown', onDown, true);
     window.addEventListener('pointerup', onUp, true);
     return () => {
+      if (hoverFrame) cancelAnimationFrame(hoverFrame);
       window.removeEventListener('pointermove', onMove, true);
       window.removeEventListener('pointerdown', onDown, true);
       window.removeEventListener('pointerup', onUp, true);

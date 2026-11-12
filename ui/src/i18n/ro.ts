@@ -1965,6 +1965,8 @@ export const RO: Record<string, string> = {
   'Hold-open': 'Blocare deschisă',
   'Indicative models; check the maker\'s data for the leaf\'s weight and the closing force.': 'Modele orientative; verificați datele producătorului pentru greutatea foii și forța de închidere.',
   'New frameless door on floor spring': 'Ușă nouă din sticlă fără toc pe arc de pardoseală',
+  // Decision 490: Match properties
+  'Match properties': 'Preia proprietățile', 'Another source': 'Altă sursă', 'What to carry': 'Ce se preia', 'Dimensions and settings': 'Dimensiuni și setări', 'Layer, colour and hatch': 'Strat, culoare și hașură', 'Never where an element stands, its shape or its GlobalId.': 'Niciodată locul elementului, forma sau GlobalId-ul lui.', 'The element whose properties are carried': 'Elementul ale cărui proprietăți se preiau',
 };
 
 /** Phrases with a number or a name in them. */
@@ -2138,4 +2140,5 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^This piece of furniture is of a kind \(„(.+)”\) this edition of Lapin does not build\.$/, (m) => `Această piesă de mobilier e de un fel („${m[1]}”) pe care această ediție Lapin nu îl construiește.`],
   // Decision 481: arrays
   [/^item (\d+) of (\d+)$/, (m) => `elementul ${m[1]} din ${m[2]}`],
+  [/^Apply to the selection \((\d+)\)$/, (m) => `Aplică selecției (${m[1]})`],
 ];

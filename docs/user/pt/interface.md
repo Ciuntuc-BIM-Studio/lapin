@@ -120,6 +120,18 @@ Clique em um ícone na barra de um painel recolhido para abrir o painel sobre a 
 
 A lua na ponta direita da faixa de opções torna a interface escura (grafite); o sol torna-a clara de novo (papel). No tema escuro, plantas, cortes e alçados ficam sobre o fundo escuro, com as penas pretas em tinta clara; as folhas continuam papel. Os pequenos desenhos dos configuradores (a planta, o corte e o alçado de uma porta ou janela, de uma cobertura, uma varanda, um elevador, um pavilhão, uma escada…) e as pré-visualizações de etiquetas, carimbos e materiais são desenhados num cartão de papel claro nos dois temas, para que as suas linhas, textos e cotas se leiam como num desenho impresso.
 
+## Vários elementos de uma vez
+
+Selecione vários elementos (Shift-clique ou uma caixa) e o painel de propriedades mostra o último escolhido, com **N selecionados** ao lado da sua classe. Um valor que partilham é mostrado; um que difere aparece como *varia*. Mude um campo e cada elemento selecionado que o tem fica com o novo valor, num só passo que **Desfazer** reverte: a altura e o deslocamento da base das paredes, o tipo de cada parede, porta ou viga selecionada, o peitoril das janelas, as fases de cada elemento selecionado seja qual for a sua classe, a camada e a cor das linhas desenhadas, o estilo dos textos. O que é próprio de cada elemento continua seu: o número de um compartimento, o comprimento de uma parede, o lugar de uma porta ao longo da sua parede.
+
+## Corresponder propriedades
+
+**Modificar → Corresponder propriedades** (<kbd>MA</kbd>, ou `MATCHPROP` na linha de comandos como no AutoCAD; o Revit chama-lhe Match Type) dá a outros elementos o que um elemento tem. Selecione o elemento de onde copiar, ou inicie o comando e clique primeiro nele; depois clique em cada elemento que deve ficar com as suas propriedades. O elemento sob o cursor acende antes do clique, em plantas, cortes e 3D. Cada clique é um passo que **Desfazer** reverte. **Aplicar à seleção** dá-as de uma vez a todos os outros elementos selecionados. Prima <kbd>Enter</kbd> ou <kbd>Esc</kbd> quando terminar.
+
+A roda dentada na barra da linha de comandos lista o que é copiado, e o Lapin lembra a sua escolha: **Tipo** (para um elemento da mesma classe), **Dimensões e definições** (altura, deslocamentos, materiais, prioridade de corte, o estilo de um texto, a posição do aro e o peitoril de uma porta ou janela; para outra classe só os campos que ela também tem), **Parâmetros** (os seus; os de um conjunto padrão só para a mesma classe), **Fases**, **Camada, cor e tracejado** (formas desenhadas) e **Nome** (desligado de início). Onde um elemento está, a sua forma e o seu GlobalId nunca são copiados. Um elemento fixado também os recebe: fixar mantém um elemento no lugar, não as suas definições.
+
+![Corresponder propriedades em planta: a parede de onde se copia, a parede sob o cursor acesa e o que é copiado](shots/match-properties.webp)
+
 ## Atalhos de teclado
 
 **Vista → Atalhos de teclado…** (<kbd>KS</kbd>) lista, por guia, todos os comandos que o teclado alcança. Cada linha mostra os atalhos do comando.

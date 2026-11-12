@@ -36,6 +36,17 @@ describe('what a tag tags, highlighted (report #130)', () => {
     expect(useTagHover.getState()).toEqual({ element: null, tag: null });
   });
 
+  it('lights the element under the cursor while Match properties waits for its targets (decision 490), not while another command selects', () => {
+    const o = { pickElement: () => 'beam3', pickTag: () => null, anyTags: false, busy: true };
+    useCad.setState({ command: 'MATCHPROP', step: { want: 'select', hover: true } as never });
+    trackTagHover({ x: 0, y: 0 }, o);
+    expect(useTagHover.getState().element).toBe('beam3');
+    useCad.setState({ command: 'MOVE', step: { want: 'select' } as never });
+    expect(tagToolPicking()).toBe(false);
+    trackTagHover({ x: 0, y: 0 }, o);
+    expect(useTagHover.getState().element).toBeNull();
+  });
+
   it('searches a view for tags only when it has some', () => {
     expect(viewHasTags(nodes, 'plan:g')).toBe(true);
     expect(viewHasTags(nodes, 'plan:other')).toBe(false);

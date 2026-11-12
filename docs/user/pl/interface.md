@@ -120,6 +120,18 @@ Kliknij ikonę na pasku zwiniętego panelu, aby otworzyć panel nad widokiem bez
 
 Księżyc na prawym końcu wstążki przełącza interfejs na ciemny (grafit); słońce z powrotem na jasny (papier). W ciemnym motywie rzuty, przekroje i elewacje leżą na ciemnym tle, a ich czarne pióra rysują jasnym tuszem; arkusze pozostają papierem. Małe rysunki konfiguratorów (rzut, przekrój i elewacja drzwi lub okna, dachu, balkonu, windy, hali, schodów…) oraz podglądy etykiet, tabliczek rysunkowych i materiałów są rysowane na jasnej karcie papieru w obu motywach, aby ich linie, teksty i wymiary czytały się jak na wydrukowanym rysunku.
 
+## Kilka elementów naraz
+
+Zaznacz kilka elementów (Shift-klik lub ramka), a panel właściwości pokaże ostatnio wybrany, z **N zaznaczonych** obok jego klasy. Wspólna wartość jest pokazana; różniąca się ma postać *różne*. Zmień pole, a każdy zaznaczony element, który je ma, przyjmie nową wartość, w jednym kroku cofanym przez **Cofnij**: wysokość i odsunięcie podstawy ścian, typ każdej zaznaczonej ściany, drzwi lub belki, parapet okien, fazy każdego zaznaczonego elementu bez względu na klasę, warstwę i kolor rysowanych linii, styl tekstów. To, co należy do danego elementu, pozostaje jego: numer pomieszczenia, długość ściany, miejsce drzwi wzdłuż ich ściany.
+
+## Dopasuj właściwości
+
+**Modyfikuj → Dopasuj właściwości** (<kbd>MA</kbd> lub `MATCHPROP` w wierszu poleceń, jak w AutoCAD; w Revit to Match Type) daje innym elementom to, co ma jeden element. Zaznacz element, z którego kopiujesz, albo uruchom polecenie i najpierw go kliknij; potem klikaj każdy element, który ma przejąć jego właściwości. Element pod kursorem podświetla się przed kliknięciem, na rzutach, w przekrojach i w 3D. Każde kliknięcie to krok cofany przez **Cofnij**. **Zastosuj do zaznaczenia** daje je naraz wszystkim pozostałym zaznaczonym elementom. Naciśnij <kbd>Enter</kbd> lub <kbd>Esc</kbd>, gdy skończysz.
+
+Koło zębate na pasku wiersza poleceń pokazuje, co jest przenoszone, a Lapin zapamiętuje wybór: **Typ** (do elementu tej samej klasy), **Wymiary i ustawienia** (wysokość, odsunięcia, materiały, priorytet cięcia, styl tekstu, położenie ościeżnicy i parapet drzwi lub okna; do innej klasy tylko pola, które też ma), **Parametry** (twoje; z zestawu standardowego tylko do tej samej klasy), **Fazy**, **Warstwa, kolor i kreskowanie** (rysowane kształty) oraz **Nazwa** (na początku wyłączona). Położenie elementu, jego kształt i GlobalId nigdy nie są przenoszone. Przypięty element też je przyjmuje: przypięcie trzyma element w miejscu, nie jego ustawienia.
+
+![Dopasuj właściwości na rzucie: ściana, z której się kopiuje, podświetlona ściana pod kursorem i to, co jest przenoszone](shots/match-properties.webp)
+
 ## Skróty klawiszowe
 
 **Widok → Skróty klawiszowe…** (<kbd>KS</kbd>) wyświetla, według kart, każde polecenie dostępne z klawiatury. Każdy wiersz pokazuje skróty polecenia.

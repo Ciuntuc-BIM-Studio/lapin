@@ -1961,6 +1961,8 @@ export const DA: Record<string, string> = {
   'Hold-open': 'Holde-åben',
   'Indicative models; check the maker\'s data for the leaf\'s weight and the closing force.': 'Vejledende modeller; tjek producentens data for dørbladets vægt og lukkekraften.',
   'New frameless door on floor spring': 'Ny rammeløs glasdør på gulvdørlukker',
+  // Decision 490: Match properties
+  'Match properties': 'Overfør egenskaber', 'Another source': 'Anden kilde', 'What to carry': 'Hvad der overføres', 'Dimensions and settings': 'Mål og indstillinger', 'Layer, colour and hatch': 'Lag, farve og skravering', 'Never where an element stands, its shape or its GlobalId.': 'Aldrig hvor et element står, dets form eller dets GlobalId.', 'The element whose properties are carried': 'Elementet, hvis egenskaber overføres',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -2136,4 +2138,5 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^This piece of furniture is of a kind \(„(.+)”\) this edition of Lapin does not build\.$/, (m) => `Dette møbel er af en art („${m[1]}”), som denne udgave af Lapin ikke bygger.`],
   // Decision 481: arrays
   [/^item (\d+) of (\d+)$/, (m) => `element ${m[1]} af ${m[2]}`],
+  [/^Apply to the selection \((\d+)\)$/, (m) => `Anvend på markeringen (${m[1]})`],
 ];

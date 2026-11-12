@@ -142,6 +142,18 @@ Fiecare vedere deschisă are un tab deasupra ei. Trage un tab ca să muți veder
 
 Un clic dreapta pe tab oferă același lucru: **Deschide într-o fereastră nouă**, **Împarte: deschide alături**, **Împarte: deschide dedesubt** (sau **Deschide în celălalt panou** când vederea e împărțită), **Închide** și **Închide-le pe celelalte**. Butonul de fereastră din dreapta taburilor și **Vedere → Fereastră nouă** deschid vederea din față într-o fereastră separată. Ferestrele împart modelul, selecția, nivelul și unealta; fiecare își păstrează zoomul.
 
+## Mai multe elemente deodată
+
+Selectează mai multe elemente (Shift-clic sau trage un dreptunghi), iar panoul de proprietăți îl arată pe ultimul ales, cu **N selectate** lângă clasa lui. O valoare pe care o au toate e afișată; una care diferă apare ca *diferă*. Schimbă un câmp și fiecare element selectat care îl are primește noua valoare, într-un singur pas pe care **Anulează** îl desface: înălțimea și decalajul bazei pereților, tipul fiecărui perete, ușă sau grindă selectată, parapetul ferestrelor, fazele fiecărui element selectat oricare i-ar fi clasa, stratul și culoarea liniilor desenate, stilul textelor. Ce e al fiecărui element rămâne al lui: numărul unei încăperi, lungimea unui perete, locul unei uși de-a lungul peretelui.
+
+## Preia proprietățile
+
+**Modifică → Preia proprietățile** (<kbd>MA</kbd>, sau `MATCHPROP` în linia de comandă, ca în AutoCAD; în Revit se numește Match Type) dă altor elemente ce are un element. Selectează elementul de la care copiezi, sau pornește comanda și dă clic întâi pe el; apoi dă clic pe fiecare element care trebuie să-i primească proprietățile. Elementul de sub cursor se luminează înainte de clic, în planuri, secțiuni și 3D. Fiecare clic e un pas pe care **Anulează** îl desface. **Aplică selecției** le dă deodată tuturor celorlalte elemente selectate. Apasă <kbd>Enter</kbd> sau <kbd>Esc</kbd> când ai terminat.
+
+Rotița din bara liniei de comandă arată ce se preia, iar Lapin ține minte alegerea: **Tip** (unui element din aceeași clasă), **Dimensiuni și setări** (înălțime, decalaje, materiale, prioritatea la tăiere, stilul unui text, poziția tocului și parapetul unei uși sau ferestre; altei clase doar câmpurile pe care le are și ea), **Parametri** (ai tăi; ai unui set standard doar aceleiași clase), **Faze**, **Strat, culoare și hașură** (forme desenate) și **Nume** (oprit la început). Locul unui element, forma și GlobalId-ul lui nu se preiau niciodată. Un element fixat le primește totuși: fixarea ține elementul pe loc, nu setările lui.
+
+![Preia proprietățile în plan: peretele de la care se copiază, peretele de sub cursor luminat și ce se preia](shots/match-properties.webp)
+
 ## Scurtăturile de tastatură
 
 **Vedere → Scurtături de tastatură…** (<kbd>KS</kbd>) arată fiecare comandă la care ajunge tastatura, pe file. Fiecare rând arată scurtăturile comenzii.

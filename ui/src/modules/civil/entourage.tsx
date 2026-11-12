@@ -12,6 +12,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { execute, useSession } from '../../engine/session';
 import { NumberField } from '../../shell/cells';
 import { Mm } from './SiteSections';
+import { sameKind } from '../../shell/params';
 
 export const ENTOURAGE_KINDS = [
   { key: 'man', label: 'Man standing', category: 'person', height: 1.78, color: '#3e5c7a' },
@@ -91,7 +92,7 @@ export function EntourageSection({ node }: { node: NodeDto }) {
   const pictures = useProjectKinds();
   const picture = pictures.find((p) => p.id === node.props.kind);
   const kind = picture ?? kindOf(node.props.kind);
-  const update = (attrs: Record<string, unknown>) => void execute('element.update', { ids: [node.id], attrs });
+  const update = (attrs: Record<string, unknown>) => void execute('element.update', { ids: sameKind(node), attrs });
   const height = typeof node.props.height === 'number' ? node.props.height : kind.height;
   return (
     <dl className="fields">

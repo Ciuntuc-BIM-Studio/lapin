@@ -120,6 +120,18 @@ Cliquez une icône sur la barre d’un panneau replié pour ouvrir le panneau su
 
 La lune au bout droit du ruban rend l’interface sombre (graphite) ; le soleil la rend de nouveau claire (papier). Dans le thème sombre, les plans, coupes et élévations reposent sur le fond sombre, leurs plumes noires en encre claire ; les feuilles restent du papier. Les petits dessins des configurateurs (le plan, la coupe et l’élévation d’une porte ou d’une fenêtre, d’un toit, d’un balcon, d’un ascenseur, d’une halle, d’un escalier…) et les aperçus des étiquettes, des cartouches et des matériaux sont dessinés sur une carte de papier claire dans les deux thèmes, pour que leurs lignes, textes et cotes se lisent comme sur un dessin imprimé.
 
+## Plusieurs éléments à la fois
+
+Sélectionnez plusieurs éléments (Maj-clic ou un cadre) et le panneau des propriétés montre le dernier choisi, avec **N sélectionnés** à côté de sa classe. Une valeur qu’ils partagent est affichée ; une valeur qui diffère se lit *variable*. Changez un champ et chaque élément sélectionné qui l’a prend la nouvelle valeur, en une seule étape qu’**Annuler** reprend : la hauteur et le décalage de base des murs, le type de chaque mur, porte ou poutre sélectionné, l’allège des fenêtres, les phases de chaque élément sélectionné quelle que soit sa classe, le calque et la couleur des lignes dessinées, le style des textes. Ce qui est propre à chaque élément le reste : le numéro d’une pièce, la longueur d’un mur, la place d’une porte le long de son mur.
+
+## Appliquer les propriétés
+
+**Modifier → Appliquer les propriétés** (<kbd>MA</kbd>, ou `MATCHPROP` sur la ligne de commande comme dans AutoCAD ; Revit l’appelle Match Type) donne à d’autres éléments ce qu’a un élément. Sélectionnez l’élément à copier, ou lancez la commande et cliquez-le d’abord ; cliquez ensuite chaque élément qui doit prendre ses propriétés. L’élément sous le curseur s’allume avant le clic, en plan, en coupe et en 3D. Chaque clic est une étape qu’**Annuler** reprend. **Appliquer à la sélection** les donne d’un coup à tous les autres éléments sélectionnés. Appuyez sur <kbd>Entrée</kbd> ou <kbd>Échap</kbd> quand vous avez fini.
+
+La roue dentée de la barre de la ligne de commande liste ce qui est appliqué, et Lapin retient votre choix : **Type** (à un élément de la même classe), **Dimensions et réglages** (hauteur, décalages, matériaux, priorité de coupe, le style d’un texte, la position du dormant et l’allège d’une porte ou d’une fenêtre ; à une autre classe seulement les champs qu’elle a aussi), **Paramètres** (les vôtres ; ceux d’un jeu standard seulement à la même classe), **Phases**, **Calque, couleur et hachure** (formes dessinées) et **Nom** (désactivé au départ). L’emplacement d’un élément, sa forme et son GlobalId ne sont jamais appliqués. Un élément épinglé les prend quand même : l’épingle garde un élément en place, pas ses réglages.
+
+![Appliquer les propriétés en plan : le mur copié, le mur sous le curseur allumé et ce qui est appliqué](shots/match-properties.webp)
+
 ## Raccourcis clavier
 
 **Vue → Raccourcis clavier…** (<kbd>KS</kbd>) liste, par onglet, toutes les commandes accessibles au clavier. Chaque ligne affiche les raccourcis de la commande.

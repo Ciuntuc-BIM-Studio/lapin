@@ -1970,6 +1970,8 @@ export const FR: Record<string, string> = {
   'Hold-open': 'Arrêt en position ouverte',
   'Indicative models; check the maker\'s data for the leaf\'s weight and the closing force.': 'Modèles indicatifs ; vérifiez les données du fabricant pour le poids du vantail et la force de fermeture.',
   'New frameless door on floor spring': 'Nouvelle porte en verre sans cadre sur pivot de sol',
+  // Decision 490: Match properties
+  'Match properties': 'Appliquer les propriétés', 'Another source': 'Autre source', 'What to carry': 'Ce qui est appliqué', 'Dimensions and settings': 'Dimensions et réglages', 'Layer, colour and hatch': 'Calque, couleur et hachure', 'Never where an element stands, its shape or its GlobalId.': 'Jamais l’emplacement d’un élément, sa forme ni son GlobalId.', 'The element whose properties are carried': 'L’élément dont les propriétés sont appliquées',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;
@@ -2145,4 +2147,5 @@ export const FR_PATTERNS: Language['patterns'] = [
   [/^This piece of furniture is of a kind \(„(.+)”\) this edition of Lapin does not build\.$/, (m) => `Cette pièce de mobilier est d’un genre („${m[1]}”) que cette édition de Lapin ne construit pas.`],
   // Decision 481: arrays
   [/^item (\d+) of (\d+)$/, (m) => `élément ${m[1]} sur ${m[2]}`],
+  [/^Apply to the selection \((\d+)\)$/, (m) => `Appliquer à la sélection (${m[1]})`],
 ];

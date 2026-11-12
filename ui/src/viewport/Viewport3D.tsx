@@ -67,6 +67,7 @@ import { clampPitch, easeEye, exitWalk, lookVector, toggleFly, useWalk, walkStep
 import { TICK, Walker, worldOf } from './walkPhysics';
 import { InstanceLayer } from './instancing';
 import { openGroupOf, shownSelection, useExpansion } from '../platform/groups';
+import { useTagHover } from './tagTarget';
 import { pickClick, pickRegion } from '../platform/assemblies';
 import { boxEdges, boxOf, projectSegments, takes, toggleRegion3d, useRegion3d, type Project } from './select3d';
 import { dragTo, isWindow, regionTestOf, SelectRegion, toggleLasso, type SelectDrag } from './selectDrag';
@@ -1651,6 +1652,17 @@ export function Viewport3D() {
     boxDirty.current();
     invalidate.current();
   }, [render, meshes, layers, selected, expansion, looks, visualStyle, walking, capsShown, drafts3d, fineBodies.on, fineBodies.version]);
+
+  // The element a command waiting for one would take (Match properties' targets, decision 490), lit as the selection is
+  // while the cursor is on it; its own look back when the cursor leaves (an instanced one is not lit).
+  const hovered = useTagHover((st) => st.element);
+  useEffect(() => {
+    const entry = hovered ? items.current.get(hovered) : undefined;
+    if (!hovered || !entry) return;
+    highlight(entry.object, true);
+    invalidate.current();
+    return () => { highlight(entry.object, shownSelection(useUi.getState().selected).has(hovered)); invalidate.current(); };
+  }, [hovered, render, selected]);
 
   // A walk asked for (a plan's right-click on a room), or ended; the model changed or shown otherwise under a walker.
   useEffect(() => { if (walkStart) walkApi.current.start(walkStart); else walkApi.current.stop(); }, [walkStart]);

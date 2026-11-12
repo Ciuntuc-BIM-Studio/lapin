@@ -120,6 +120,18 @@ Fai clic su un’icona sulla barra di un pannello ridotto per aprire il pannello
 
 La luna all’estremità destra della barra multifunzione rende scura l’interfaccia (grafite); il sole la rende di nuovo chiara (carta). Nel tema scuro piante, sezioni e prospetti stanno sullo sfondo scuro, con le penne nere in inchiostro chiaro; le tavole restano carta. I piccoli disegni dei configuratori (pianta, sezione e prospetto di una porta o finestra, di un tetto, un balcone, un ascensore, un capannone, una scala…) e le anteprime di etichette, cartigli e materiali sono disegnati su una scheda di carta chiara in entrambi i temi, così linee, testi e quote si leggono come su un disegno stampato.
 
+## Più elementi insieme
+
+Seleziona più elementi (Maiusc-clic o un riquadro) e il pannello delle proprietà mostra l’ultimo scelto, con **N selezionati** accanto alla sua classe. Un valore che hanno in comune viene mostrato; uno che differisce si legge *varia*. Cambia un campo e ogni elemento selezionato che lo ha prende il nuovo valore, in un solo passo che **Annulla** riporta indietro: l’altezza e l’offset di base dei muri, il tipo di ogni muro, porta o trave selezionato, il davanzale delle finestre, le fasi di ogni elemento selezionato qualunque sia la sua classe, il layer e il colore delle linee disegnate, lo stile dei testi. Ciò che è proprio di ogni elemento resta suo: il numero di un locale, la lunghezza di un muro, la posizione di una porta lungo il suo muro.
+
+## Corrispondenza proprietà
+
+**Modifica → Corrispondenza proprietà** (<kbd>MA</kbd>, o `MATCHPROP` nella riga di comando come in AutoCAD; Revit lo chiama Match Type) dà ad altri elementi ciò che ha un elemento. Seleziona l’elemento da cui copiare, oppure avvia il comando e fai prima clic su di esso; poi fai clic su ogni elemento che deve prenderne le proprietà. L’elemento sotto il cursore si illumina prima del clic, in pianta, in sezione e in 3D. Ogni clic è un passo che **Annulla** riporta indietro. **Applica alla selezione** le dà in una volta a tutti gli altri elementi selezionati. Premi <kbd>Invio</kbd> o <kbd>Esc</kbd> quando hai finito.
+
+L’ingranaggio nella barra della riga di comando elenca cosa viene trasferito, e Lapin ricorda la tua scelta: **Tipo** (a un elemento della stessa classe), **Dimensioni e impostazioni** (altezza, offset, materiali, priorità di taglio, lo stile di un testo, la posizione del telaio e il davanzale di una porta o finestra; a un’altra classe solo i campi che ha anch’essa), **Parametri** (i tuoi; quelli di un set standard solo alla stessa classe), **Fasi**, **Layer, colore e retino** (forme disegnate) e **Nome** (spento all’inizio). La posizione di un elemento, la sua forma e il suo GlobalId non vengono mai trasferiti. Un elemento bloccato li prende comunque: il blocco tiene fermo un elemento, non le sue impostazioni.
+
+![Corrispondenza proprietà in pianta: il muro da cui si copia, il muro sotto il cursore illuminato e cosa viene trasferito](shots/match-properties.webp)
+
 ## Scorciatoie da tastiera
 
 **Vista → Scorciatoie da tastiera…** (<kbd>KS</kbd>) elenca ogni comando raggiungibile dalla tastiera, per scheda. Ogni riga mostra le scorciatoie del comando.

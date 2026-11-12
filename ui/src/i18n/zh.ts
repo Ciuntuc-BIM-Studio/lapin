@@ -1958,6 +1958,8 @@ export const ZH: Record<string, string> = {
   'Hold-open': '定位开启',
   'Indicative models; check the maker\'s data for the leaf\'s weight and the closing force.': '参考型号；门扇重量和关闭力请以厂家资料为准。',
   'New frameless door on floor spring': '新建地弹簧无框玻璃门',
+  // Decision 490: Match properties
+  'Match properties': '特性匹配', 'Another source': '其他源对象', 'What to carry': '要匹配的内容', 'Dimensions and settings': '尺寸和设置', 'Layer, colour and hatch': '图层、颜色和填充图案', 'Never where an element stands, its shape or its GlobalId.': '从不复制元素的位置、形状或 GlobalId.', 'The element whose properties are carried': '要复制其特性的元素',
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [
@@ -2130,4 +2132,5 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^This piece of furniture is of a kind \(„(.+)”\) this edition of Lapin does not build\.$/, (m) => `这件家具属于此版本 Lapin 不支持构建的种类（„${m[1]}”）。`],
   // Decision 481: arrays
   [/^item (\d+) of (\d+)$/, (m) => `第 ${m[1]} 项，共 ${m[2]} 项`],
+  [/^Apply to the selection \((\d+)\)$/, (m) => `应用到选择集 (${m[1]})`],
 ];

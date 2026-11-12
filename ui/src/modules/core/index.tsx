@@ -6,11 +6,10 @@ import { measure } from './measure';
 import { Pin, PinOff, AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, ScanEye, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareDashed, Star, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn, Building2 } from 'lucide-react';
 import { CopyToStoreysIcon, ElevationIcon, MoveToStoreyIcon, ProfileIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
-import { typeOf } from '../../engine/model';
 import { notify } from '../../app/store';
 import { nextVisualStyle, XRAY_NOTICE } from '../../app/visualStyle';
-import { setTypeOf, similarOf } from '../../platform/modules';
-import { registerCommand, startCommand, useCad, cadLog, type Step } from '../../viewport/cad/session';
+import { similarOf } from '../../platform/modules';
+import { registerCommand, startCommand } from '../../viewport/cad/session';
 import type { LapinModule } from '../../platform/module';
 import { voidLabelGrips } from '../../platform/labelParts';
 import type { NodeDto } from '../../engine/protocol';
@@ -28,6 +27,7 @@ import { toggleClashMarks, toggleVoids2d } from './coordination/coordination';
 import { openDocuments } from './documents/documents';
 import { convertToNative } from './convertTools';
 import { pinSelection } from './pinTools';
+import { MatchOptions, matchProperties } from './matchTool';
 import { arraySelection } from './arrayTool';
 import { GroupSection } from './GroupSection';
 import { ArraySection, arrayOf } from './ArraySection';
@@ -87,33 +87,8 @@ function createSimilar() {
   f(node);
 }
 
-/** MATCHTYPE: a source element's type given to the elements clicked after it (the same class). */
-function matchType(): Step {
-  const withSource = (sourceId: string): Step => {
-    const s = useSession.getState();
-    const src = s.nodes.get(sourceId), type = typeOf(s, sourceId);
-    if (!src || !type || !setTypeOf(src.type)) { cadLog('That element has no type to give.'); return pick(); }
-    const step = (): Step => ({
-      prompt: `Click the elements to give „${type.name}” (Enter to finish)`, want: 'select',
-      point: async (p) => {
-        const id = useCad.getState().host?.pickAny(p);
-        const n = id ? useSession.getState().nodes.get(id) : undefined;
-        if (!n || n.type !== src.type) cadLog('Pick an element of the same kind.');
-        else await setTypeOf(src.type)!([n.id], type.id);
-        return step();
-      },
-      enter: () => null,
-    });
-    return step();
-  };
-  const pick = (): Step => ({
-    prompt: 'Click the element whose type to give', want: 'select',
-    point: (p) => { const id = useCad.getState().host?.pickAny(p); return id ? withSource(id) : pick(); },
-  });
-  const sel = useUi.getState().selection;
-  return sel ? withSource(sel) : pick();
-}
-registerCommand({ names: ['MATCHTYPE', 'MA'], label: 'Match type', start: matchType });
+// Match properties (decision 490; AutoCAD's MATCHPROP, Revit's Match Type): MATCHTYPE, the older name, too.
+registerCommand({ names: ['MATCHPROP', 'MA', 'MATCHTYPE', 'PAINTER'], label: 'Match properties', start: matchProperties, options: MatchOptions });
 // Copy to storeys and Move to storey from the command line: their dialogs, on the selection.
 registerCommand({ names: ['COPYSTOREY', 'COPYTOSTOREYS', 'COPYSTOREYS'], label: 'Copy to storeys', start: () => { useUi.setState({ dialog: 'copyToStoreys' }); } });
 registerCommand({ names: ['MOVESTOREY', 'MOVETOSTOREY'], label: 'Move to storey', start: () => { useUi.setState({ dialog: 'moveToStorey' }); } });
@@ -143,7 +118,7 @@ const core: LapinModule = {
       { id: 'modify.pin', label: 'Pin', icon: Pin, run: () => void pinSelection(true) },
       { id: 'modify.unpin', label: 'Unpin', icon: PinOff, shortcut: 'UP', run: () => void pinSelection(false) },
       { id: 'modify.similar', label: 'Create similar', icon: CopyCheck, shortcut: 'CS', run: createSimilar },
-      { id: 'modify.match', label: 'Match type', icon: Pipette, shortcut: 'MA', run: () => void startCommand('MATCHTYPE') },
+      { id: 'modify.match', label: 'Match properties', icon: Pipette, shortcut: 'MA', run: () => void startCommand('MATCHPROP') },
       { id: 'modify.moveToStorey', label: 'Move to storey', icon: MoveToStoreyIcon, run: () => useUi.setState({ dialog: 'moveToStorey' }) },
       // ArchiCAD's copy to stories (a tester's wish): the selection onto several storeys at once; COPYSTOREY on the command line.
       { id: 'modify.copyToStoreys', label: 'Copy to storeys', icon: CopyToStoreysIcon, run: () => useUi.setState({ dialog: 'copyToStoreys' }) },

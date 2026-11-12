@@ -77,7 +77,7 @@ const hotbarCommands = (): CommandDef[] => Array.from({ length: 9 }, (_, i) => (
 
 /** The command-line command a tool starts, when it is one (the Modify and Draft tools). */
 const SAME: Record<string, string> = {
-  'modify.move': 'MOVE', 'modify.copy': 'COPY', 'modify.rotate': 'ROTATE', 'modify.mirror': 'MIRROR', 'modify.delete': 'ERASE', 'modify.match': 'MATCHTYPE',
+  'modify.move': 'MOVE', 'modify.copy': 'COPY', 'modify.rotate': 'ROTATE', 'modify.mirror': 'MIRROR', 'modify.delete': 'ERASE', 'modify.match': 'MATCHPROP',
   'cad.line': 'LINE', 'cad.pline': 'PLINE', 'cad.rect': 'RECTANGLE', 'cad.circle': 'CIRCLE', 'cad.arc': 'ARC', 'cad.move': 'MOVE', 'cad.copy': 'COPY',
   'cad.rotate': 'ROTATE', 'cad.mirror': 'MIRROR', 'cad.scale': 'SCALE', 'cad.erase': 'ERASE', 'cad.offset': 'OFFSET', 'cad.trim': 'TRIM', 'cad.extend': 'EXTEND',
   'cad.fillet': 'FILLET', 'cad.chamfer': 'CHAMFER', 'cad.explode': 'EXPLODE', 'cad.hatch': 'HATCH', 'cad.tag': 'TAG', 'drafting.dimension': 'DIMALIGNED', 'architecture.stair': 'STAIR', 'architecture.ramp': 'RAMP',

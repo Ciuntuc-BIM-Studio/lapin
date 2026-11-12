@@ -20,6 +20,16 @@ import { Cell, LengthField, NumberField } from '../../shell/cells';
 import { useLayers, type DraftLayer } from '../../viewport/cad/layers';
 import { ptStrict } from '../../platform/vec';
 import { TagFields } from './tag';
+import { selectionWith } from '../../shell/params';
+
+/**
+ * Who a style change goes to (a forum user's report, topic #29: a change with several selected reached only one): every
+ * selected drafted shape (a layer, a colour, a role), hatch (its pattern), text (its style) or dimension (its style) with this one.
+ */
+const isDrafted = (n: NodeDto) => n.type === 'IfcAnnotation' && (!!n.props.shape || !!n.props.hatch);
+const drafted = (node: NodeDto) => selectionWith(node, isDrafted);
+const hatches = (node: NodeDto) => selectionWith(node, (n) => n.type === 'IfcAnnotation' && !!n.props.hatch);
+const alike = (node: NodeDto) => selectionWith(node, (n) => n.type === 'IfcAnnotation' && n.props.predefinedType === node.props.predefinedType && !n.props.shape && !n.props.hatch);
 
 type Layer = DraftLayer;
 
@@ -118,7 +128,7 @@ function HatchFields({ node, hatch }: { node: NodeDto; hatch: Record<string, unk
   useEffect(() => { void query<{ name: string }[]>('hatch.list').then((r) => r && setPatterns(r.map((h) => h.name))); }, []);
   const loops = Array.isArray(hatch.loops) ? (hatch.loops as unknown[][]).map((l) => l.map(ptStrict).filter((p): p is Vec2 => !!p)) : [];
   const area = loops.length ? loops.reduce((a, l, i) => a + (i === 0 ? 1 : -1) * polygonArea(l), 0) : null;
-  const set = (patch: Record<string, unknown>) => void execute('drafting.updateDraft', { id: node.id, hatch: patch });
+  const set = (patch: Record<string, unknown>) => void execute('drafting.updateDraft', { ids: patch.origin !== undefined ? [node.id] : hatches(node), hatch: patch });
   const pattern = String(hatch.pattern ?? 'SOLID');
   const origin = ptStrict(hatch.origin);
   return (
@@ -150,18 +160,18 @@ function Drafted({ node }: { node: NodeDto }) {
     <dl className="fields">
       <Row label="Kind" value={kind} />
       <dt data-i18n-ctx="cad">Layer</dt>
-      <dd><select value={layerName} onChange={(e) => void execute('drafting.updateDraft', { id: node.id, layer: e.target.value })}>
+      <dd><select value={layerName} onChange={(e) => void execute('drafting.updateDraft', { ids: drafted(node), layer: e.target.value })}>
         {(layers.length ? layers : [{ name: layerName } as Layer]).map((l) => <option key={l.name} value={l.name}>{l.name}</option>)}
       </select></dd>
       <dt>Colour</dt>
       <dd className="pair">
-        <input type="color" value={own ?? layer?.color ?? '#18181b'} onChange={(e) => void execute('drafting.updateDraft', { id: node.id, color: e.target.value })} />
+        <input type="color" value={own ?? layer?.color ?? '#18181b'} onChange={(e) => void execute('drafting.updateDraft', { ids: drafted(node), color: e.target.value })} />
         {own
-          ? <button type="button" className="link" onClick={() => void execute('drafting.updateDraft', { id: node.id, color: null })}>by layer</button>
+          ? <button type="button" className="link" onClick={() => void execute('drafting.updateDraft', { ids: drafted(node), color: null })}>by layer</button>
           : <span className="muted small">by layer</span>}
       </dd>
       <dt title="What it is for: Studio's operations find their profile, path, rail or axis by it; construction lines are never printed">Role</dt>
-      <dd><select value={typeof node.props.role === 'string' ? node.props.role : ''} onChange={(e) => void execute('drafting.updateDraft', { id: node.id, role: e.target.value || null })}>
+      <dd><select value={typeof node.props.role === 'string' ? node.props.role : ''} onChange={(e) => void execute('drafting.updateDraft', { ids: drafted(node), role: e.target.value || null })}>
         <option value="">none</option>
         {ROLES.map((r) => <option key={r} value={r}>{roleLabel(r)}</option>)}
       </select></dd>
@@ -173,7 +183,7 @@ function Drafted({ node }: { node: NodeDto }) {
 }
 
 function TextFields({ node }: { node: NodeDto }) {
-  const set = (attrs: Record<string, unknown>) => void execute('element.update', { id: node.id, attrs });
+  const set = (attrs: Record<string, unknown>) => void execute('element.update', { ids: 'text' in attrs ? [node.id] : alike(node), attrs });
   const at = ptStrict(node.props.at);
   const text = typeof node.props.text === 'string' ? node.props.text : '';
   const [body, setBody] = useState(text);
@@ -196,11 +206,11 @@ function DimensionFields({ node }: { node: NodeDto }) {
   return (
     <dl className="fields">
       <Row label="Kind" value={ptStrict(node.props.dir) ? 'Linear' : 'Aligned'} />
-      <dt>Dimension style</dt><dd><input value={typeof node.props.dimStyle === 'string' ? node.props.dimStyle : ''} placeholder="default" onChange={(e) => void execute('element.update', { id: node.id, attrs: { dimStyle: e.target.value || null } })} /></dd>
+      <dt>Dimension style</dt><dd><input value={typeof node.props.dimStyle === 'string' ? node.props.dimStyle : ''} placeholder="default" onChange={(e) => void execute('element.update', { ids: alike(node), attrs: { dimStyle: e.target.value || null } })} /></dd>
       {/* Its own text height on the paper (decision 271); empty: the dimension style's. */}
       <dt title="On the paper; empty: the dimension style's">Text height</dt>
       <dd><NumberField value={typeof node.props.textHeight === 'number' ? node.props.textHeight : null} placeholder="by style" suffix="mm" min={0.5} max={50}
-        onCommit={(h) => void execute('element.update', { id: node.id, attrs: { textHeight: h } })} /></dd>
+        onCommit={(h) => void execute('element.update', { ids: alike(node), attrs: { textHeight: h } })} /></dd>
       {pts.length > 2 && <Row label="Points" value={String(pts.length)} />}
       {a && <Point label="Start" p={a} />}
       {b && <Point label="End" p={b} />}

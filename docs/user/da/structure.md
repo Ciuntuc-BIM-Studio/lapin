@@ -36,7 +36,7 @@ Tegn fundamenter på niveauet **Foundations**, eller giv dem deres egen plan.
 
 **Konstruktionstyper** angiver tværsnittene for søjler, bjælker og fundamenter: betontværsnit og stålprofiler. En søjles tværsnit er et **Rektangel**, en **Cirkel** eller en **Polygon**, en regelmæssig givet ved sine **Sider** og sin **Diameter** over hjørnerne (en ottekantet stolpe, som en importeret IFC kan have den). Klik på en type i listen for at ændre dens størrelse eller navn, og derefter **Gem type**: alle elementer af den type følger med; **Ny type** går tilbage til at oprette en.
 
-Bjælker og fundamenter sammenføjes af sig selv, hvor de mødes, et hjørne som geringssamling. En bjælke tegnet fra søjleakse til søjleakse stopper ved søjlernes flader; dens længde, volumen og bøjler tæller den frie spændvidde imellem dem. **Geringssamling**, **Stødsamling** og **Byt om** ændrer, hvordan to bjælker eller to fundamenter mødes. **Matchtype** (<kbd>MA</kbd>) kopierer ét elements type til andre, og **Opret lignende** (<kbd>CS</kbd>) begynder at tegne et nyt element af samme type.
+Bjælker og fundamenter sammenføjes af sig selv, hvor de mødes, et hjørne som geringssamling. En bjælke tegnet fra søjleakse til søjleakse stopper ved søjlernes flader; dens længde, volumen og bøjler tæller den frie spændvidde imellem dem. **Geringssamling**, **Stødsamling** og **Byt om** ændrer, hvordan to bjælker eller to fundamenter mødes. **Overfør egenskaber** (<kbd>MA</kbd>) kopierer ét elements type og indstillinger til andre, og **Opret lignende** (<kbd>CS</kbd>) begynder at tegne et nyt element af samme type.
 
 Enhver anden profil kommer fra bibliotekerne: **Fra et profilbibliotek…** søger i dem alle (se [Profilbiblioteker](profiles.md)).
 

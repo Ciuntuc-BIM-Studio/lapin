@@ -93,6 +93,7 @@ export const REMEMBERED_IDS = ['wallTypeId', 'slabTypeId', 'doorTypeId', 'window
 
 /** Run an engine command; its diff arrives as an event. Errors land in the session. */
 export async function execute(command: string, args: Record<string, unknown> = {}): Promise<unknown> {
+  if (recording) { recording.push({ command, args }); return null; }
   try {
     const result = await engine.call('doc.execute', { command, args });
     useSession.setState({ error: null });
@@ -101,6 +102,20 @@ export async function execute(command: string, args: Record<string, unknown> = {
     useSession.setState({ error: e instanceof Error ? e.message : String(e) });
     return null;
   }
+}
+
+let recording: { command: string; args: Record<string, unknown> }[] | null = null;
+
+/**
+ * The commands `run` would send, kept instead of sent (each answers null), so they go together as one edit.batch: one undo
+ * step (Match properties gives a type the way its module does, decision 490). Only the commands `run` sends before it awaits.
+ */
+export function stepsOf(run: () => unknown): { command: string; args: Record<string, unknown> }[] {
+  const was = recording;
+  const steps: { command: string; args: Record<string, unknown> }[] = [];
+  recording = steps;
+  try { void Promise.resolve(run()).catch(() => undefined); } finally { recording = was; }
+  return steps;
 }
 
 /** Ask the engine a question (no edit): null when it cannot answer. */

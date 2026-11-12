@@ -120,6 +120,18 @@ Haga clic en un icono del carril de un panel plegado para abrir el panel sobre l
 
 La luna en el extremo derecho de la cinta vuelve oscura la interfaz (grafito); el sol la vuelve clara otra vez (papel). En el tema oscuro las plantas, secciones y alzados quedan sobre el fondo oscuro, con sus plumas negras en tinta clara; las láminas siguen siendo papel. Los dibujos pequeños de los configuradores (la planta, la sección y el alzado de una puerta o ventana, de una cubierta, un balcón, un ascensor, una nave, una escalera…) y las vistas previas de etiquetas, cajetines y materiales se dibujan sobre una tarjeta de papel clara en ambos temas, para que sus líneas, textos y cotas se lean como en un plano impreso.
 
+## Varios elementos a la vez
+
+Seleccione varios elementos (Mayús-clic o un recuadro) y el panel de propiedades muestra el último elegido, con **N seleccionados** junto a su clase. Un valor que comparten se muestra; uno que difiere aparece como *varía*. Cambie un campo y cada elemento seleccionado que lo tiene toma el nuevo valor, en un solo paso que **Deshacer** revierte: la altura y el desfase de base de los muros, el tipo de cada muro, puerta o viga seleccionado, el antepecho de las ventanas, las fases de cada elemento seleccionado sea cual sea su clase, la capa y el color de las líneas dibujadas, el estilo de los textos. Lo que es propio de cada elemento sigue siendo suyo: el número de un local, la longitud de un muro, el lugar de una puerta a lo largo de su muro.
+
+## Igualar propiedades
+
+**Modificar → Igualar propiedades** (<kbd>MA</kbd>, o `MATCHPROP` en la línea de comandos como en AutoCAD; Revit lo llama Match Type) da a otros elementos lo que tiene un elemento. Seleccione el elemento del que se copia, o inicie el comando y haga clic primero en él; luego haga clic en cada elemento que deba tomar sus propiedades. El elemento bajo el cursor se ilumina antes del clic, en plantas, secciones y 3D. Cada clic es un paso que **Deshacer** revierte. **Aplicar a la selección** las da a la vez a todos los demás elementos seleccionados. Pulse <kbd>Intro</kbd> o <kbd>Esc</kbd> al terminar.
+
+El engranaje de la barra de la línea de comandos indica qué se copia, y Lapin recuerda su elección: **Tipo** (a un elemento de la misma clase), **Dimensiones y ajustes** (altura, desfases, materiales, prioridad de corte, el estilo de un texto, la posición del marco y el antepecho de una puerta o ventana; a otra clase solo los campos que también tiene), **Parámetros** (los suyos; los de un conjunto estándar solo a la misma clase), **Fases**, **Capa, color y sombreado** (formas dibujadas) y **Nombre** (desactivado al principio). Dónde está un elemento, su forma y su GlobalId nunca se copian. Un elemento fijado también los toma: fijar mantiene un elemento en su sitio, no sus ajustes.
+
+![Igualar propiedades en planta: el muro del que se copia, el muro bajo el cursor iluminado y lo que se copia](shots/match-properties.webp)
+
 ## Métodos abreviados de teclado
 
 **Vista → Métodos abreviados de teclado…** (<kbd>KS</kbd>) enumera todos los comandos a los que llega el teclado, por ficha. Cada fila muestra los métodos abreviados del comando.

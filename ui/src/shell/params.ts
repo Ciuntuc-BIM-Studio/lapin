@@ -20,6 +20,30 @@ export const sameKind = (node: NodeDto, types: readonly string[] = [node.type]):
   return selectionLike(node.id, types, useUi.getState().selected, (id) => nodes.get(id)?.type);
 };
 
+/**
+ * Who a change any element takes goes to (its phases, its discipline; a forum user's report, topic #29: 23 beams given a phase,
+ * only the first took it): when it is among the selected, every selected element that `takes` it, whatever its class; else the
+ * element alone.
+ */
+export function selectionWhere(id: string, selected: readonly string[], takes: (id: string) => boolean): string[] {
+  if (!selected.includes(id)) return [id];
+  const like = selected.filter(takes);
+  return like.includes(id) ? like : [id];
+}
+
+/** The selected elements a change any element takes goes to (see {@link selectionWhere}). */
+export const selectionWith = (node: NodeDto, takes: (n: NodeDto) => boolean = () => true): string[] => {
+  const nodes = useSession.getState().nodes;
+  return selectionWhere(node.id, useUi.getState().selected, (id) => { const n = nodes.get(id); return !!n && takes(n); });
+};
+
+/** The value of `key` the elements share (the first's, and whether the others differ: shown as "varies"). */
+export function sharedValue(ids: readonly string[], key: string, propsOf: (id: string) => Record<string, unknown> | undefined): { value: unknown; varies: boolean } {
+  const values = ids.map((id) => propsOf(id)?.[key]);
+  const first = values[0];
+  return { value: first, varies: values.some((v) => JSON.stringify(v ?? null) !== JSON.stringify(first ?? null)) };
+}
+
 /** `pset`: the property set it goes to in IFC (Pset_DoorCommon, a set of the user's); none: Lapin_Parameters. */
 export interface Param { name: string; kind: string; value: unknown; options?: string[]; pset?: string }
 /** A parameter's identity: its set and its name, case aside. */

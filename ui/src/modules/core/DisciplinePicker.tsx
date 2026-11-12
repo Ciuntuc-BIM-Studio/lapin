@@ -8,6 +8,7 @@ import { execute, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
 import { knownDisciplines } from './disciplines';
 import { useViewStyles } from './viewStyles';
+import { sameKind } from '../../shell/params';
 
 const OTHER = '\u0000other';
 
@@ -17,7 +18,7 @@ export function DisciplinePicker({ node, onPick }: { node: NodeDto; onPick?: (di
   const styles = useViewStyles();
   const known = knownDisciplines(nodes, styles);
   const current = typeof node.props.discipline === 'string' && node.props.discipline.trim() ? node.props.discipline.trim() : 'Architecture';
-  const set = (discipline: string) => onPick ? onPick(discipline) : void execute('element.update', { id: node.id, attrs: { discipline } });
+  const set = (discipline: string) => onPick ? onPick(discipline) : void execute('element.update', { ids: sameKind(node), attrs: { discipline } });
   const pick = (v: string) => {
     if (v !== OTHER) { set(v); return; }
     const typed = window.prompt('The discipline (the browser groups views and sheets by it)', current)?.trim();

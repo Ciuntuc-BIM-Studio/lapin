@@ -120,6 +120,18 @@ Klicken Sie auf ein Symbol auf der Leiste eines eingeklappten Bereichs, um den B
 
 Der Mond am rechten Ende des Menübands schaltet die Oberfläche dunkel (Graphit), die Sonne wieder hell (Papier). Im dunklen Thema liegen Grundrisse, Schnitte und Ansichten auf dem dunklen Hintergrund, ihre schwarzen Stifte in heller Tinte; Pläne bleiben Papier. Die kleinen Zeichnungen der Konfiguratoren (Grundriss, Schnitt und Ansicht einer Tür oder eines Fensters, eines Dachs, eines Balkons, eines Aufzugs, einer Halle, einer Treppe…) und die Vorschauen von Beschriftungen, Schriftfeldern und Materialien werden in beiden Themen auf einer hellen Papierkarte gezeichnet, sodass ihre Linien, Texte und Maße wie auf einer gedruckten Zeichnung lesbar sind.
 
+## Mehrere Elemente auf einmal
+
+Wählen Sie mehrere Elemente (Umschalt-Klick oder ein Rahmen), und das Eigenschaftenfenster zeigt das zuletzt gewählte, mit **N ausgewählt** neben seiner Klasse. Ein gemeinsamer Wert wird angezeigt; ein abweichender erscheint als *variiert*. Ändern Sie ein Feld, und jedes ausgewählte Element, das es hat, übernimmt den neuen Wert, in einem Schritt, den **Rückgängig** zurücknimmt: Höhe und Basisversatz von Wänden, der Typ jeder ausgewählten Wand, Tür oder jedes Trägers, die Brüstung von Fenstern, die Phasen jedes ausgewählten Elements gleich welcher Klasse, Layer und Farbe gezeichneter Linien, der Stil von Texten. Was einem Element allein gehört, bleibt seins: die Nummer eines Raums, die Länge einer Wand, der Platz einer Tür entlang ihrer Wand.
+
+## Eigenschaften übertragen
+
+**Ändern → Eigenschaften übertragen** (<kbd>MA</kbd>, oder `MATCHPROP` in der Befehlszeile wie in AutoCAD; in Revit heißt es Match Type) gibt anderen Elementen, was ein Element hat. Wählen Sie das Element, von dem kopiert wird, oder starten Sie den Befehl und klicken Sie es zuerst an; klicken Sie dann jedes Element an, das seine Eigenschaften übernehmen soll. Das Element unter dem Cursor leuchtet vor dem Klick auf, in Grundrissen, Schnitten und 3D. Jeder Klick ist ein Schritt, den **Rückgängig** zurücknimmt. **Auf die Auswahl anwenden** gibt sie allen anderen ausgewählten Elementen auf einmal. Drücken Sie <kbd>Enter</kbd> oder <kbd>Esc</kbd>, wenn Sie fertig sind.
+
+Das Zahnrad in der Leiste der Befehlszeile listet auf, was übertragen wird, und Lapin merkt sich Ihre Wahl: **Typ** (an ein Element derselben Klasse), **Maße und Einstellungen** (Höhe, Versätze, Materialien, Schnittpriorität, der Stil eines Textes, Rahmenlage und Brüstung einer Tür oder eines Fensters; an eine andere Klasse nur die Felder, die sie auch hat), **Parameter** (Ihre eigenen; die eines Standardsatzes nur an dieselbe Klasse), **Phasen**, **Layer, Farbe und Schraffur** (gezeichnete Formen) und **Name** (anfangs aus). Wo ein Element steht, seine Form und seine GlobalId werden nie übertragen. Ein fixiertes Element übernimmt sie trotzdem: Fixieren hält ein Element an seinem Platz, nicht seine Einstellungen.
+
+![Eigenschaften übertragen im Grundriss: die Wand, von der kopiert wird, die Wand unter dem Cursor hervorgehoben, und was übertragen wird](shots/match-properties.webp)
+
 ## Tastenkürzel
 
 **Ansicht → Tastenkürzel…** (<kbd>KS</kbd>) listet jeden Befehl, den die Tastatur erreichen kann, nach Registerkarte. Jede Zeile zeigt die Tastenkürzel des Befehls.

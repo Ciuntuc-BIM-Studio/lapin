@@ -20,6 +20,7 @@ import { MaterialPicker } from '../core/MaterialPicker';
 import { deleteType } from '../core/deleteType';
 import { t } from '../../i18n';
 import { Strokes, type Drawing } from './JoineryDialog';
+import { sameKind } from '../../shell/params';
 
 export const SHADE = 'IfcShadingDevice';
 export const SHADE_TYPE = 'IfcShadingDeviceType';
@@ -265,7 +266,7 @@ export function SunshadeSection({ node }: { node: NodeDto }) {
   const spec = specOf(type);
   const kind = kinds.find((k) => k.key === spec.kind);
   const types = [...nodes.values()].filter((n) => n.type === SHADE_TYPE).sort((a, b) => a.name.localeCompare(b.name));
-  const update = (attrs: Record<string, unknown>) => void execute('element.update', { ids: [node.id], attrs });
+  const update = (attrs: Record<string, unknown>) => void execute('element.update', { ids: sameKind(node), attrs });
   const host = typeof node.props.host === 'string' ? nodes.get(node.props.host) : undefined;
   const wall = typeof node.props.wall === 'string' ? nodes.get(node.props.wall) : undefined;
   const own = typeof node.props.projection === 'number' ? node.props.projection : null;
@@ -284,7 +285,7 @@ export function SunshadeSection({ node }: { node: NodeDto }) {
       <dl className="fields">
         <dt>Type</dt>
         <dd>
-          <select value={type?.id ?? ''} data-field="sunshade-type" onChange={(e) => void execute('architecture.setSunshadeType', { ids: [node.id], typeId: e.target.value })}>
+          <select value={type?.id ?? ''} data-field="sunshade-type" onChange={(e) => void execute('architecture.setSunshadeType', { ids: sameKind(node), typeId: e.target.value })}>
             {types.map((x) => <option key={x.id} value={x.id} data-no-i18n>{x.name}</option>)}
           </select>
         </dd>

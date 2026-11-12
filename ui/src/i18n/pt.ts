@@ -1964,6 +1964,8 @@ export const PT: Record<string, string> = {
   'Hold-open': 'Retenção aberta',
   'Indicative models; check the maker\'s data for the leaf\'s weight and the closing force.': 'Modelos indicativos; confira os dados do fabricante para o peso da folha e a força de fechamento.',
   'New frameless door on floor spring': 'Nova porta de vidro sem caixilho sobre mola de piso',
+  // Decision 490: Match properties
+  'Match properties': 'Corresponder propriedades', 'Another source': 'Outra origem', 'What to carry': 'O que copiar', 'Dimensions and settings': 'Dimensões e definições', 'Layer, colour and hatch': 'Camada, cor e tracejado', 'Never where an element stands, its shape or its GlobalId.': 'Nunca onde um elemento está, a sua forma nem o seu GlobalId.', 'The element whose properties are carried': 'O elemento cujas propriedades são copiadas',
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 
@@ -2138,4 +2140,5 @@ export const PT_PATTERNS: Language['patterns'] = [
   [/^This piece of furniture is of a kind \(„(.+)”\) this edition of Lapin does not build\.$/, (m) => `Esta peça de mobiliário é de um tipo („${m[1]}”) que esta edição do Lapin não constrói.`],
   // Decision 481: arrays
   [/^item (\d+) of (\d+)$/, (m) => `item ${m[1]} de ${m[2]}`],
+  [/^Apply to the selection \((\d+)\)$/, (m) => `Aplicar à seleção (${m[1]})`],
 ];

@@ -142,6 +142,18 @@ Each view opened has a tab above the view. Drag a tab to put the view somewhere 
 
 A right click on a tab offers the same: **Open in a new window**, **Split: open beside**, **Split: open below** (or **Open in the other pane** when the view is split), **Close** and **Close the others**. The window button at the right of the tabs, and **View → New window**, open the view in front in a window of its own. The windows share the model, the selection, the storey and the tool; each keeps its own zoom.
 
+## Several elements at once
+
+Select several elements (Shift-click, or drag a box) and the properties panel shows the last one picked, with **N selected** beside its class. A value they share is shown; one that differs reads *varies*. Change a field and every selected element that has it takes the new value, in one step that **Undo** takes back: the height and base offset of walls, the type of every selected wall, door or beam, the sill of windows, the phases of every selected element whatever its class, the layer and colour of drafted lines, the style of texts. What is each element's own stays its own: a room's number, a wall's length, a door's place along its wall.
+
+## Match properties
+
+**Modify → Match properties** (<kbd>MA</kbd>, or `MATCHPROP` on the command line as in AutoCAD; Revit calls it Match Type) gives other elements what one element has. Select the element to copy from, or start the command and click it first; then click each element that should take its properties. The element under the cursor lights up before you click, in plans, sections and 3D. Each click is one step that **Undo** takes back. **Apply to the selection** gives them to every other selected element at once. Press <kbd>Enter</kbd> or <kbd>Esc</kbd> when you are done.
+
+The gear in the command line's bar lists what is carried, and Lapin remembers your choice: **Type** (to an element of the same class), **Dimensions and settings** (height, offsets, materials, cut priority, a text's style, a door's or window's frame position and sill; to another class only the fields it has too), **Parameters** (your own; a standard set's only to the same class), **Phases**, **Layer, colour and hatch** (drafted shapes) and **Name** (off at first). Where an element stands, its shape and its GlobalId are never carried. A pinned element still takes them: a pin keeps an element in place, not its settings.
+
+![Match properties in plan: the wall copied from, the wall under the cursor lit, and what is carried](shots/match-properties.webp)
+
 ## Keyboard shortcuts
 
 **View → Keyboard shortcuts…** (<kbd>KS</kbd>) lists every command the keyboard can reach, by tab. Each row shows the command's shortcuts.

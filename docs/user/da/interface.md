@@ -120,6 +120,18 @@ Klik på et ikon på et indfoldet panels skinne for at åbne panelet over visnin
 
 Månen yderst til højre på båndet gør brugerfladen mørk (grafit); solen gør den lys igen (papir). I det mørke tema ligger planer, snit og facader på den mørke baggrund med de sorte penne i lyst blæk; ark forbliver papir. Konfiguratorernes små tegninger (en dørs eller et vindues plan, snit og facade, et tags, en altans, en elevators, en hals, en trappes…) og forhåndsvisningerne af mærker, tegningshoveder og materialer tegnes på et lyst papirkort i begge temaer, så deres linjer, tekster og mål læses som på en udskrevet tegning.
 
+## Flere elementer på én gang
+
+Vælg flere elementer (Skift-klik eller en ramme), og egenskabspanelet viser det sidst valgte, med **N valgt** ved siden af dets klasse. En værdi, de deler, vises; en, der er forskellig, står som *varierer*. Ændr et felt, og hvert valgt element, der har det, får den nye værdi, i ét trin, som **Fortryd** tager tilbage: højde og basisforskydning for vægge, typen for hver valgt væg, dør eller bjælke, brystningen for vinduer, faserne for hvert valgt element uanset klasse, lag og farve for tegnede linjer, stilen for tekster. Det, der er hvert elements eget, forbliver dets eget: et rums nummer, en vægs længde, en dørs plads langs dens væg.
+
+## Overfør egenskaber
+
+**Redigér → Overfør egenskaber** (<kbd>MA</kbd>, eller `MATCHPROP` på kommandolinjen som i AutoCAD; Revit kalder det Match Type) giver andre elementer det, ét element har. Vælg det element, der kopieres fra, eller start kommandoen og klik først på det; klik derefter på hvert element, der skal have dets egenskaber. Elementet under markøren lyser op før klikket, i planer, snit og 3D. Hvert klik er ét trin, som **Fortryd** tager tilbage. **Anvend på markeringen** giver dem til alle de andre valgte elementer på én gang. Tryk <kbd>Enter</kbd> eller <kbd>Esc</kbd>, når du er færdig.
+
+Tandhjulet i kommandolinjens bjælke viser, hvad der overføres, og Lapin husker dit valg: **Type** (til et element af samme klasse), **Mål og indstillinger** (højde, forskydninger, materialer, snitprioritet, en teksts stil, en dørs eller et vindues karmplacering og brystning; til en anden klasse kun de felter, den også har), **Parametre** (dine egne; et standardsæts kun til samme klasse), **Faser**, **Lag, farve og skravering** (tegnede former) og **Navn** (slået fra til at begynde med). Hvor et element står, dets form og dets GlobalId overføres aldrig. Et fastgjort element får dem alligevel: en fastgørelse holder et element på plads, ikke dets indstillinger.
+
+![Overfør egenskaber i plan: væggen, der kopieres fra, væggen under markøren fremhævet, og hvad der overføres](shots/match-properties.webp)
+
 ## Tastaturgenveje
 
 **Vis → Tastaturgenveje…** (<kbd>KS</kbd>) viser alle de kommandoer, tastaturet kan nå, fane for fane. Hver række viser kommandoens genveje.

@@ -10,6 +10,7 @@ import { LengthField, NumberField } from '../../shell/cells';
 import { relatingOf } from '../../engine/model';
 import { CLASS, TYPE_CLASS, kindOf, sizeOf } from './furniture';
 import { editType, useKinds } from './FurnitureTypesDialog';
+import { sameKind } from '../../shell/params';
 
 export function FurnitureSection({ node }: { node: NodeDto }) {
   const nodes = useSession((s) => s.nodes);
@@ -19,14 +20,14 @@ export function FurnitureSection({ node }: { node: NodeDto }) {
   const typeId = type?.id;
   const kind = kindOf(type);
   const others = [...nodes.values()].filter((n) => n.type === TYPE_CLASS).sort((a, b) => (kindOf(a) === kind ? 0 : 1) - (kindOf(b) === kind ? 0 : 1) || a.name.localeCompare(b.name));
-  const update = (attrs: Record<string, unknown>) => void execute('element.update', { ids: [node.id], attrs });
+  const update = (attrs: Record<string, unknown>) => void execute('element.update', { ids: sameKind(node), attrs });
   if (node.type !== CLASS) return null;
   return (
     <div data-testid="furniture-section" data-i18n-ctx="furniture">
       <dl className="fields">
         <dt>Type</dt>
         <dd>
-          <select value={typeId ?? ''} data-field="furniture-type" onChange={(e) => void execute('furniture.setType', { ids: [node.id], typeId: e.target.value })}>
+          <select value={typeId ?? ''} data-field="furniture-type" onChange={(e) => void execute('furniture.setType', { ids: sameKind(node), typeId: e.target.value })}>
             {others.map((t) => <option key={t.id} value={t.id} data-no-i18n>{t.name}</option>)}
           </select>
         </dd>
