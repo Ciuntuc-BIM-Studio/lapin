@@ -34,6 +34,27 @@ public class VisibilityGraphicsTests
     static void G(Fixture f, JsonObject a) => f.Run("view.graphics", a);
     static JsonObject Hidden => new() { ["hidden"] = true };
 
+    /// <summary>The elements a view's drawing marks: what the plan's snaps may take (forum #31, decision 491).</summary>
+    static HashSet<string> Marked(Fixture f, string view) =>
+        ((JsonObject)f.Session.Query("view.drawing", new JsonObject { ["id"] = view })!)["marks"]!.AsArray().Select(x => (string)x!["id"]!).ToHashSet();
+
+    [Fact]
+    public void A_hidden_element_leaves_nothing_in_the_drawing_to_snap_to()
+    {
+        var f = F();
+        var wall = f.Wall(0, 0, 5, 0);
+        var plan = Plan(f);
+        var line = (string)f.Run("drafting.draw", new JsonObject { ["viewId"] = plan, ["shapes"] = new JsonArray(new JsonObject { ["type"] = "line", ["a"] = new JsonArray(0, 3), ["b"] = new JsonArray(5, 3) }) })!["ids"]![0]!;
+        Assert.Contains(wall, Marked(f, plan));
+        Assert.Contains(line, Marked(f, plan));
+        // Walls hidden in the view: the wall has no mark (nothing to pick or snap to) and no cut line; the drafted line keeps its own.
+        G(f, new JsonObject { ["id"] = plan, ["category"] = "walls", ["value"] = Hidden });
+        Assert.DoesNotContain(wall, Marked(f, plan));
+        Assert.Contains(line, Marked(f, plan));
+        var pens = ((JsonObject)f.Session.Query("view.drawing", new JsonObject { ["id"] = plan })!)["pens"]!.AsArray();
+        Assert.DoesNotContain(pens, p => (string?)p!["layer"] == "CUT");
+    }
+
     [Fact]
     public void The_new_categories_reach_what_had_none()
     {

@@ -28,7 +28,7 @@ Cada ferramenta mostra as suas letras na dica; você pode mudá-las em **Vista �
 
 ## Snaps e auxiliares
 
-O Lapin faz snap nas pontas, nos pontos médios e nas interseções do que está desenhado, e na grade. <kbd>F3</kbd> liga ou desliga o snap, <kbd>F8</kbd> o modo orto e <kbd>F10</kbd> o rastreamento polar. O estado deles aparece no canto inferior direito da vista.
+O Lapin faz snap nas pontas, nos pontos médios e nas interseções do que está desenhado, e na grade. <kbd>F3</kbd> liga ou desliga o snap, <kbd>F8</kbd> o modo orto e <kbd>F10</kbd> o rastreamento polar. O estado deles aparece no canto inferior direito da vista. O snap pega só o que a vista mostra: um elemento que a Visibilidade / Gráficos dela oculta (sua categoria, um filtro, um vínculo, uma fase) ou que fica fora do intervalo da vista não desenha nada, então não oferece ponto de snap, em plantas, cortes, elevações e 3D. Com as linhas de modelagem mostradas no lugar do desenho (o botão da caneta no topo da planta), toda linha da tela faz snap.
 
 ## Selecionando
 

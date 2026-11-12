@@ -28,7 +28,7 @@ Ogni strumento mostra le sue lettere nel suo suggerimento; puoi cambiarle in **V
 
 ## Snap e aiuti
 
-Lapin aggancia con lo snap le estremità, i punti medi e le intersezioni di ciò che è disegnato, e la griglia. <kbd>F3</kbd> attiva o disattiva lo snap, <kbd>F8</kbd> l’orto e <kbd>F10</kbd> il puntamento polare. Il loro stato compare in basso a destra nella vista.
+Lapin aggancia con lo snap le estremità, i punti medi e le intersezioni di ciò che è disegnato, e la griglia. <kbd>F3</kbd> attiva o disattiva lo snap, <kbd>F8</kbd> l’orto e <kbd>F10</kbd> il puntamento polare. Il loro stato compare in basso a destra nella vista. Lo snap prende solo ciò che la vista mostra: un elemento che la sua Visibilità / Grafica nasconde (la sua categoria, un filtro, un collegamento, una fase) o che sta fuori dall’intervallo della vista non disegna nulla, quindi non offre alcun punto di snap, in piante, sezioni, prospetti e 3D. Con le linee di modellazione mostrate al posto del disegno (il pulsante con la penna in cima alla pianta), si aggancia ogni linea sullo schermo.
 
 ## Selezione
 

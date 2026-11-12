@@ -28,7 +28,7 @@ Hvert værktøj viser sine bogstaver i sit værktøjstip; du kan ændre dem unde
 
 ## Fang og hjælpere
 
-Lapin fanger til enderne, midtpunkterne og skæringerne af det, der er tegnet, og til gitteret. <kbd>F3</kbd> slår fang til eller fra, <kbd>F8</kbd> ortho og <kbd>F10</kbd> polær sporing. Deres tilstand vises nederst til højre i visningen.
+Lapin fanger til enderne, midtpunkterne og skæringerne af det, der er tegnet, og til gitteret. <kbd>F3</kbd> slår fang til eller fra, <kbd>F8</kbd> ortho og <kbd>F10</kbd> polær sporing. Deres tilstand vises nederst til højre i visningen. Fang tager kun det, visningen viser: et element, som dens Synlighed / Grafik skjuler (dets kategori, et filter, et link, en fase), eller som ligger uden for visningens område, tegner intet og giver derfor intet punkt at fange, i planer, snit, facader og 3D. Med modellinjerne vist i stedet for tegningen (pen-knappen øverst i planen) fanger hver linje på skærmen.
 
 ## At vælge
 

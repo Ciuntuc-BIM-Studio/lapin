@@ -28,7 +28,7 @@ Chaque outil affiche ses lettres dans son info-bulle ; vous pouvez les modifie
 
 ## Accrochages et aides
 
-Lapin s’accroche aux extrémités, aux milieux et aux intersections de ce qui est dessiné, ainsi qu’à la grille. <kbd>F3</kbd> active ou désactive l’accrochage, <kbd>F8</kbd> le mode ortho et <kbd>F10</kbd> le repérage polaire. Leur état s’affiche en bas à droite de la vue.
+Lapin s’accroche aux extrémités, aux milieux et aux intersections de ce qui est dessiné, ainsi qu’à la grille. <kbd>F3</kbd> active ou désactive l’accrochage, <kbd>F8</kbd> le mode ortho et <kbd>F10</kbd> le repérage polaire. Leur état s’affiche en bas à droite de la vue. L’accrochage ne prend que ce que la vue montre : un élément que sa Visibilité / Graphismes masque (sa catégorie, un filtre, un lien, une phase) ou qui se trouve hors de sa plage de vue ne dessine rien, et n’offre donc aucun point d’accrochage, en plan, en coupe, en élévation et en 3D. Avec les lignes de modélisation affichées à la place du dessin (le bouton à plume en haut du plan), toute ligne à l’écran accroche.
 
 ## Sélectionner
 

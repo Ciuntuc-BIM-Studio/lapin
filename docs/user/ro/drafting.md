@@ -32,7 +32,7 @@ Fiecare unealtă își arată literele când ții mouse-ul peste ea; le poți sc
 
 ## Snap și ajutoare
 
-Lapin se prinde de capetele, mijloacele și intersecțiile a ce e desenat, și de grilă. <kbd>F3</kbd> pornește sau oprește snap-ul, <kbd>F8</kbd> ortho și <kbd>F10</kbd> urmărirea polară. Starea lor se vede în dreapta jos a vederii.
+Lapin se prinde de capetele, mijloacele și intersecțiile a ce e desenat, și de grilă. <kbd>F3</kbd> pornește sau oprește snap-ul, <kbd>F8</kbd> ortho și <kbd>F10</kbd> urmărirea polară. Starea lor se vede în dreapta jos a vederii. Snap-ul ia doar ce arată vederea: un element pe care Vizibilitate / Grafică îl ascunde (categoria lui, un filtru, o legătură, o fază) sau care e în afara intervalului vederii nu desenează nimic, deci nu oferă niciun punct de prins, în planuri, secțiuni, fațade și 3D. Cu liniile de modelare arătate în locul desenului (butonul cu peniță din capul planului), se prinde orice linie de pe ecran.
 
 **Ce snap-uri.** Un clic dreapta pe **SNAP** (sau pe ▾ de lângă el) arată snap-urile la obiecte: **Capăt**, **Mijloc**, **Intersecție**, **Centru**, **Cadran**, **Perpendicular** și **Cel mai apropiat**, fiecare pornit sau oprit, apoi **Snap la grilă** și unghiul urmăririi polare (la fiecare 5°, 10°, 15°, 22,5°, 30°, 45° sau 90°). Aceleași alegeri sunt în **Fișier → Preferințe… → Grilă și snap** și se păstrează la următoarea pornire.
 

@@ -28,7 +28,7 @@ Jedes Werkzeug zeigt seine Buchstaben in seinem Tooltip; Sie können sie unter *
 
 ## Fang und Hilfsmittel
 
-Lapin fängt Endpunkte, Mittelpunkte und Schnittpunkte des Gezeichneten sowie das Raster. <kbd>F3</kbd> schaltet den Fang ein oder aus, <kbd>F8</kbd> Ortho und <kbd>F10</kbd> den polaren Spurfang. Ihr Zustand wird unten rechts in der Ansicht angezeigt.
+Lapin fängt Endpunkte, Mittelpunkte und Schnittpunkte des Gezeichneten sowie das Raster. <kbd>F3</kbd> schaltet den Fang ein oder aus, <kbd>F8</kbd> Ortho und <kbd>F10</kbd> den polaren Spurfang. Ihr Zustand wird unten rechts in der Ansicht angezeigt. Der Fang nimmt nur, was die Ansicht zeigt: Ein Element, das ihre Sichtbarkeit / Grafik ausblendet (seine Kategorie, ein Filter, eine Verknüpfung, eine Phase) oder das außerhalb ihres Ansichtsbereichs liegt, zeichnet nichts und bietet daher keinen Fangpunkt, in Grundrissen, Schnitten, Ansichten und 3D. Werden statt der Zeichnung die Modelllinien gezeigt (die Stift-Schaltfläche oben im Grundriss), fängt jede Linie auf dem Bildschirm.
 
 ## Auswählen
 

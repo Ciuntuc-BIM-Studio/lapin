@@ -32,7 +32,7 @@ Every tool shows its letters in its tooltip; you can change them in **View → K
 
 ## Snaps and helpers
 
-Lapin snaps to the ends, middles and intersections of what is drawn, and to the grid. <kbd>F3</kbd> turns snapping on or off, <kbd>F8</kbd> ortho and <kbd>F10</kbd> polar tracking. Their state shows at the bottom right of the view.
+Lapin snaps to the ends, middles and intersections of what is drawn, and to the grid. <kbd>F3</kbd> turns snapping on or off, <kbd>F8</kbd> ortho and <kbd>F10</kbd> polar tracking. Their state shows at the bottom right of the view. Snaps take only what the view shows: an element its Visibility / Graphics hides (its category, a filter, a link, a phase) or that lies outside its view range draws nothing, so it offers no point to snap to, in plans, sections, elevations and 3D. With the modelling lines shown instead of the drawing (the pen button at the top of the plan), every line on the screen snaps.
 
 **Which snaps.** A right click on **SNAP** (or the ▾ beside it) lists the object snaps: **Endpoint**, **Midpoint**, **Intersection**, **Centre**, **Quadrant**, **Perpendicular** and **Nearest**, each on or off, then **Snap to the grid** and the polar tracking angle (every 5°, 10°, 15°, 22.5°, 30°, 45° or 90°). The same choices are in **File → Preferences… → Grid and snaps**, and they are kept for the next start.
 

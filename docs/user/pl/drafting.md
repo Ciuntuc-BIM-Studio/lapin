@@ -28,7 +28,7 @@ Każde narzędzie pokazuje swoje litery w podpowiedzi; zmienisz je w **Widok →
 
 ## Przyciąganie i pomoce
 
-Lapin przyciąga do końców, środków i przecięć tego, co narysowane, oraz do siatki. <kbd>F3</kbd> włącza lub wyłącza przyciąganie, <kbd>F8</kbd> orto, a <kbd>F10</kbd> śledzenie biegunowe. Ich stan widać w prawym dolnym rogu widoku.
+Lapin przyciąga do końców, środków i przecięć tego, co narysowane, oraz do siatki. <kbd>F3</kbd> włącza lub wyłącza przyciąganie, <kbd>F8</kbd> orto, a <kbd>F10</kbd> śledzenie biegunowe. Ich stan widać w prawym dolnym rogu widoku. Przyciąganie bierze tylko to, co pokazuje widok: element ukryty przez jego Widoczność / Grafikę (kategorię, filtr, łącze, fazę) albo leżący poza zakresem widoku niczego nie rysuje, więc nie daje żadnego punktu do przyciągnięcia, w rzutach, przekrojach, elewacjach i 3D. Gdy zamiast rysunku widać linie modelowe (przycisk z piórem u góry rzutu), przyciąga każda linia na ekranie.
 
 ## Zaznaczanie
 

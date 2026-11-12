@@ -46,6 +46,7 @@ import { editDimension } from './dimensionEdit';
 import { openPickedView } from './openView';
 import { CadOverlay } from './cad/canvas';
 import { snapShapes, useCadCanvas, type Aimed } from './cad/aim';
+import { shownItems } from './cad/shown';
 import { CommandLine } from './cad/CommandLine';
 import './cad/ucs';
 import { feedPoint, finishStep, useCad } from './cad/session';
@@ -182,7 +183,9 @@ export function PlanView() {
   const detail = planDetail(drawing?.scale ?? 100);
   const items = useMemo(() => [...render.values()].filter((r) => r.storeyId === storey?.id)
     .map((r) => (r.plan.every((it) => shownAt(it, detail)) ? r : { ...r, plan: r.plan.filter((it) => shownAt(it, detail)) })), [render, storey?.id, detail]);
-  const snapPoints = useMemo(() => items.flatMap((r) => pairs(r.snaps ?? [])), [items]);
+  // What the snaps take: only the elements the view's drawing shows (forum #31, decision 491), all of them over modelling lines.
+  const snapItems = useMemo(() => shownItems(items, drawing), [items, drawing]);
+  const snapPoints = useMemo(() => snapItems.flatMap((r) => pairs(r.snaps ?? [])), [snapItems]);
   const markSnaps = useMemo(() => (drawing?.marks ?? []).flatMap((m) => pairs(m.snaps ?? [])), [drawing]);
 
   /** What the elements and the drawing's annotations span; null when the plan is empty. */
@@ -299,7 +302,7 @@ export function PlanView() {
   // The modelling lines as shapes to snap to (the drawing's own lines come from the canvas).
   const extra = useMemo(() => {
     const o: Shape[] = [];
-    for (const r of items) for (const it of r.plan) {
+    for (const r of snapItems) for (const it of r.plan) {
       if (it.kind === 'label' || it.kind === 'hit' || it.kind === 'grid' || it.kind === 'reach') continue;
       const ps = pairs(it.points);
       for (let i = 0; i + 1 < ps.length + (it.closed ? 1 : 0); i++) o.push({ type: 'line', a: ps[i], b: ps[(i + 1) % ps.length] });
@@ -307,7 +310,7 @@ export function PlanView() {
     for (const q of [...snapPoints, ...markSnaps]) o.push({ type: 'line', a: q, b: q });
     if (underDrawing) o.push(...snapShapes(underDrawing).shapes);
     return o;
-  }, [items, snapPoints, markSnaps, underDrawing]);
+  }, [snapItems, snapPoints, markSnaps, underDrawing]);
   const planViewOf = storey ? ownPlan ?? `plan:${storey.id}` : null;
   /** An element's modelling lines on this plan, as shapes (what MOVE and a dragged grip leave as the ghost and carry). */
   const outlines = useCallback((id: string): Shape[] => {

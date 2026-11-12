@@ -28,7 +28,7 @@ Cada herramienta muestra sus letras en su información sobre herramientas; puede
 
 ## Referencias y ayudas
 
-Lapin fuerza el cursor a los extremos, los puntos medios y las intersecciones de lo dibujado, y a la rejilla. <kbd>F3</kbd> activa o desactiva las referencias, <kbd>F8</kbd> el modo orto y <kbd>F10</kbd> el rastreo polar. Su estado se muestra en la parte inferior derecha de la vista.
+Lapin fuerza el cursor a los extremos, los puntos medios y las intersecciones de lo dibujado, y a la rejilla. <kbd>F3</kbd> activa o desactiva las referencias, <kbd>F8</kbd> el modo orto y <kbd>F10</kbd> el rastreo polar. Su estado se muestra en la parte inferior derecha de la vista. Las referencias solo toman lo que la vista muestra: un elemento que su Visibilidad / Gráficos oculta (su categoría, un filtro, un vínculo, una fase) o que queda fuera de su rango de vista no dibuja nada, así que no ofrece ningún punto al que forzar el cursor, en plantas, secciones, alzados y 3D. Con las líneas de modelado mostradas en lugar del dibujo (el botón de la pluma arriba de la planta), cualquier línea de la pantalla sirve de referencia.
 
 ## Seleccionar
 
