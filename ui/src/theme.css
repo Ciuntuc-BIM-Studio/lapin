@@ -2176,6 +2176,7 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .ext-row.on { border-color: var(--accent); background: var(--panel); }
 .ext-row-name { font-weight: 600; }
 .ext-row-mark { position: absolute; right: 6px; top: 8px; color: var(--accent); }
+.ext-nc { color: #c2410c; font-weight: 600; }
 .ext-details { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .ext-title { display: flex; align-items: baseline; gap: 8px; }
 .ext-name { font-size: 15px; font-weight: 600; }

@@ -11,7 +11,7 @@ import { Check, Download, ExternalLink, RefreshCw, Search, ShieldAlert, Trash2, 
 import { notify, useUi } from '../app/store';
 import { engine, engineInBrowser, useSession } from '../engine/session';
 import { CATEGORY_ORDER, countByKind, filterCatalogue, sizeText, updatesOf, type InstalledExtension } from '../platform/extensions/install';
-import { compatibility, isPermissive, KIND_INFO, PERMISSION_LABELS, runnable, type ExtensionKind, type Manifest } from '../platform/extensions/manifest';
+import { compatibility, isNonCommercial, isPermissive, KIND_INFO, PERMISSION_LABELS, runnable, type ExtensionKind, type Manifest } from '../platform/extensions/manifest';
 import { appFacts, contentInstallers, DEFAULT_INDEX, install, loadCatalogue, setCatalogueAddress, uninstall, useExtensions } from '../platform/extensions/runtime';
 
 const close = () => useUi.setState({ dialog: null });
@@ -39,6 +39,7 @@ function Details({ m, installed }: { m: Manifest; installed?: InstalledExtension
   const info = KIND_INFO[m.kind];
   const newer = installed && updatesOf([installed], [m], app).length > 0;
   const permissive = isPermissive(m.license);
+  const nonCommercial = isNonCommercial(m.license);
   return (
     <div className="ext-details" data-extension-details={m.id}>
       <div className="ext-title">
@@ -50,7 +51,7 @@ function Details({ m, installed }: { m: Manifest; installed?: InstalledExtension
       <dl className="ext-facts">
         <dt>Kind</dt><dd>{info.label}</dd>
         <dt>Author</dt><dd data-no-i18n>{m.author.name}{m.author.github ? ` (@${m.author.github})` : ''}</dd>
-        <dt>Licence</dt><dd><span data-no-i18n>{m.license}</span> {permissive ? <span className="chip">permissive</span> : <span className="chip warn" title="Read its licence before you use what it holds">read its terms</span>}</dd>
+        <dt>Licence</dt><dd><span data-no-i18n>{m.license}</span> {permissive ? <span className="chip">permissive</span> : <span className="chip warn" title="Read its licence before you use what it holds">read its terms</span>}{nonCommercial && <> <span className="chip warn" data-testid="extension-non-commercial" title="Its licence forbids commercial use: not for paid work">Non-commercial</span></>}</dd>
         <dt>Works with</dt><dd><span data-no-i18n>Lapin {m.lapin}</span></dd>
         <dt>Size</dt><dd data-no-i18n>{sizeText(m.package.size)} · {m.contents.file}</dd>
         {!!m.languages?.length && <><dt>Languages</dt><dd data-no-i18n>{m.languages.join(', ')}</dd></>}
@@ -69,6 +70,7 @@ function Details({ m, installed }: { m: Manifest; installed?: InstalledExtension
         </div>
       )}
       {m.kind === 'priceList' && <p className="small muted">Its prices are the author's and indicative: check them against your own before you use them.</p>}
+      {m.kind === 'types' && <p className="small muted">Its types go into the project open now (one step to undo): materials matched by name or made, a type already there the same reused. Installed → Add its types to this project brings them into another.</p>}
       <div className="row ext-links">
         {m.homepage && <button type="button" className="btn small" onClick={() => openPage(m.homepage!)}><ExternalLink size={12} />Homepage</button>}
         {m.forum && <button type="button" className="btn small" onClick={() => openPage(m.forum!)}><ExternalLink size={12} />Forum topic</button>}
@@ -110,7 +112,7 @@ function Browse() {
           {shown.map((m) => (
             <button key={m.id} type="button" role="option" aria-selected={current?.id === m.id} className={`ext-row${current?.id === m.id ? ' on' : ''}`} data-extension={m.id} onClick={() => setPicked(m.id)}>
               <span className="ext-row-name" data-no-i18n>{m.name}</span>
-              <span className="muted small"><span>{KIND_INFO[m.kind].label}</span><span data-no-i18n> · {m.author.name}</span></span>
+              <span className="muted small"><span>{KIND_INFO[m.kind].label}</span><span data-no-i18n> · {m.author.name}</span>{isNonCommercial(m.license) && <> · <span className="ext-nc" title="Its licence forbids commercial use: not for paid work">Non-commercial</span></>}</span>
               {installed.some((x) => x.id === m.id) && <Check size={13} className="ext-row-mark" />}
             </button>
           ))}

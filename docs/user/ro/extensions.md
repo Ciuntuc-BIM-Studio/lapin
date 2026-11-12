@@ -1,7 +1,7 @@
 ---
 title: Extensii
 order: 126
-summary: Adaugi mobilier, șabloane de proiect, profile, hașuri, cartușe și liste de prețuri făcute de alții din catalogul Lapin Extensions, și le scoți din nou.
+summary: Adaugi mobilier, șabloane de proiect, tipuri de pereți, uși și ferestre, profile, hașuri, cartușe și liste de prețuri făcute de alții din catalogul Lapin Extensions, și le scoți din nou.
 ---
 
 ## Catalogul
@@ -15,6 +15,7 @@ Deschide **Fișier → Extensii…**. **Răsfoiește** arată catalogul: cauți 
 Clic pe o extensie ca să-i vezi detaliile înainte s-o instalezi:
 
 - **Autor** și **Licență**. Fiecare extensie are o licență, aleasă de autorul ei. Una *permisivă* (MIT, CC-BY, CC0…) te lasă să folosești ce conține în orice proiect; la alta, *citește-i condițiile* întâi.
+- **Necomercială**: o extensie a cărei licență interzice folosirea comercială (CC-BY-NC, PolyForm Noncommercial…) e marcată așa în listă și în detalii. O poți instala și învăța din ea, dar nu o folosi în lucrări plătite.
 - **Merge cu**: versiunile Lapin pentru care a fost făcută. Una care nu se potrivește cu Lapin-ul tău spune asta în loc să ofere **Instalează**.
 - **Mărime**, fișierul și **SHA-256**-ul lui: amprenta fișierului verificat de catalog.
 - **Ce conține**: elementele ei, când autorul le enumeră.
@@ -32,6 +33,7 @@ Clic pe **Instalează**. Lapin descarcă fișierul, verifică dacă mărimea și
 | Hașuri | Hașurile mele, oferite de **Gestionare → Materiale** |
 | Cartușe | cartușele de pe acest calculator |
 | Liste de prețuri | **Execuție → Liste de prețuri…**, marcate orientative: prețurile sunt ale autorului, verifică-le cu ale tale |
+| Tipuri | proiectul deschis când o instalezi, într-un pas de anulat (**Gestionare → Pachete de tipuri…** le exportă pe ale tale) |
 
 Dacă biblioteca ta are deja ceva cu același nume, Lapin întreabă înainte să-l înlocuiască. Nimic din ce aduce o extensie nu se rulează: extensiile sunt conținut.
 
@@ -42,6 +44,16 @@ Dacă biblioteca ta are deja ceva cu același nume, Lapin întreabă înainte s�
 ![Tipurile de mobilier ale pachetului în Mobilierul meu](shots/extensions-my-furniture.webp)
 
 **Dezinstalează** scoate din bibliotecile tale ce a adăugat extensia, și doar atât. Ce ai pus deja în proiecte rămâne în ele: un tip de mobilier inserat într-un proiect, un proiect pornit dintr-un șablon.
+
+## Tipuri
+
+O extensie de **tipuri** aduce tipuri de pereți, plăci, uși, ferestre, stâlpi, grinzi sau scări cu tot ce sunt făcute: straturile, materialele, profilele și parametrii lor. Instalată, tipurile ei intră în proiectul deschis acum, într-un pas de anulat: un material cu același nume deja în proiect e folosit, oricare altul e creat; un tip deja acolo exact la fel e refolosit, iar unul cu același nume dar diferit e adăugat lângă el cu (2) după nume. **Instalate → Adaugă-i tipurile în acest proiect** le aduce în alt proiect.
+
+![Detaliile unei extensii de tipuri: licența ei marcată necomercială](shots/extensions-types.webp)
+
+Tipurile tale intră într-un pachet din **Gestionare → Pachete de tipuri…**: bifezi tipurile, dai pachetului un nume, iar **Exportă tipuri…** salvează un fișier `.lapintypes`. **Importă tipuri…** din același dialog citește unul, te lasă să-i alegi tipurile și le adaugă la fel.
+
+![Gestionare → Pachete de tipuri…: un tip de perete ales pentru export](shots/type-packs-export.webp)
 
 ## Scripturi
 
@@ -56,3 +68,5 @@ Catalogul are și **scripturi Python**. În aplicația desktop poți instala unu
 ## Publică-ți propriile extensii
 
 Oricine poate publica o extensie: o exporți din Lapin (Mobilierul meu → Exportă, Salvează ca șablon…, o bibliotecă de profile, un cartuș), atașezi fișierul la un release al unui depozit GitHub al tău și adaugi manifestul ei în catalog printr-un pull request pe [Ciuntuc-BIM-Studio/lapin-extensions](https://github.com/Ciuntuc-BIM-Studio/lapin-extensions). README-ul lui spune cum, și ce verifică testele automate.
+
+Un pachet de tipuri vine din **Gestionare → Pachete de tipuri… → Exportă tipuri…**; o listă de prețuri din **Liste de prețuri…**, cu butonul de export al unei liste de pe acest calculator (un fișier `.lapinprices`, cu prețurile marcate orientative).

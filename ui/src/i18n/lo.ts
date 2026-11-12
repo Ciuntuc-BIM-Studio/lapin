@@ -2132,6 +2132,30 @@ export const LO: Record<string, string> = {
   "Not installed: yours was kept.": "ບໍ່ໄດ້ຕິດຕັ້ງ: ຂອງທ່ານຍັງຢູ່.",
   "This is not a catalogue of Lapin extensions.": "ນີ້ບໍ່ແມ່ນລາຍການສ່ວນຂະຫຍາຍ Lapin.",
   "Extensions are read from https addresses (or files on this computer).": "ສ່ວນຂະຫຍາຍອ່ານຈາກທີ່ຢູ່ https (ຫຼື ໄຟລ໌ໃນຄອມພິວເຕີນີ້).",
+  // Lapin Extensions: type packs, non-commercial licences, .lapinprices (decision 499, §9 answers)
+  "Non-commercial": "ບໍ່ແມ່ນການຄ້າ",
+  "Its licence forbids commercial use: not for paid work": "ໃບອະນຸຍາດຂອງມັນຫ້າມໃຊ້ທາງການຄ້າ: ບໍ່ແມ່ນສຳລັບວຽກທີ່ໄດ້ຮັບຄ່າຈ້າງ",
+  "Its types go into the project open now (one step to undo): materials matched by name or made, a type already there the same reused. Installed → Add its types to this project brings them into another.": "ປະເພດຂອງມັນເຂົ້າໄປໃນໂຄງການທີ່ເປີດຢູ່ດຽວນີ້ (ຍົກເລີກໄດ້ໃນຂັ້ນຕອນດຽວ): ວັດສະດຸຈັບຄູ່ຕາມຊື່ ຫຼື ສ້າງໃໝ່, ປະເພດດຽວກັນທີ່ມີຢູ່ແລ້ວຖືກໃຊ້ຄືນ. ຕິດຕັ້ງແລ້ວ → ເພີ່ມປະເພດຂອງມັນໃສ່ໂຄງການນີ້ ນຳພວກມັນເຂົ້າໄປໃນໂຄງການອື່ນ.",
+  "Add its types to this project": "ເພີ່ມປະເພດຂອງມັນໃສ່ໂຄງການນີ້",
+  "Type packs": "ຊຸດປະເພດ",
+  "Choose the types to add. Their materials are the project's when it has one of the same name, else made; a type already in the project the same is reused, one of the same name that differs is added beside it with (2) after its name. One step to undo.": "ເລືອກປະເພດທີ່ຈະເພີ່ມ. ວັດສະດຸຂອງພວກມັນແມ່ນຂອງໂຄງການເມື່ອມີຊື່ດຽວກັນ, ບໍ່ດັ່ງນັ້ນຈະສ້າງໃໝ່; ປະເພດດຽວກັນທີ່ມີຢູ່ໃນໂຄງການແລ້ວຖືກໃຊ້ຄືນ, ປະເພດຊື່ດຽວກັນທີ່ແຕກຕ່າງຖືກເພີ່ມຢູ່ຂ້າງມັນໂດຍມີ (2) ຫຼັງຊື່. ຍົກເລີກໄດ້ໃນຂັ້ນຕອນດຽວ.",
+  "a type of this name is in the project": "ມີປະເພດຊື່ນີ້ຢູ່ໃນໂຄງການ",
+  "Choose types of the project and export them as a .lapintypes, with their layers, materials, profiles and parameters: another project imports them here, and a types extension of Lapin Extensions is such a file.": "ເລືອກປະເພດຂອງໂຄງການ ແລະ ສົ່ງອອກເປັນ .lapintypes ພ້ອມຊັ້ນ, ວັດສະດຸ, ໂປຣໄຟລ໌ ແລະ ພາລາມິເຕີ: ໂຄງການອື່ນນຳເຂົ້າພວກມັນຢູ່ນີ້, ແລະ ສ່ວນຂະຫຍາຍປະເພດຂອງ Lapin Extensions ແມ່ນໄຟລ໌ແບບນີ້.",
+  "The project has no types yet.": "ໂຄງການຍັງບໍ່ມີປະເພດ.",
+  "Pack name": "ຊື່ຊຸດ",
+  "Import types…": "ນຳເຂົ້າປະເພດ…",
+  "Export types…": "ສົ່ງອອກປະເພດ…",
+  "The types were exported as a .lapintypes, with their layers, materials and profiles: the file a types extension is.": "ປະເພດຖືກສົ່ງອອກເປັນ .lapintypes ພ້ອມຊັ້ນ, ວັດສະດຸ ແລະ ໂປຣໄຟລ໌: ໄຟລ໌ຂອງສ່ວນຂະຫຍາຍປະເພດ.",
+  "Type pack (.lapintypes)": "ຊຸດປະເພດ (.lapintypes)",
+  "Export .lapinprices… (the file a price list extension is; its prices marked indicative)": "ສົ່ງອອກ .lapinprices… (ໄຟລ໌ຂອງສ່ວນຂະຫຍາຍລາຍການລາຄາ; ລາຄາຖືກໝາຍວ່າເປັນການປະມານ)",
+  "Price list exported as .lapinprices, marked indicative: the file a price list extension is.": "ລາຍການລາຄາຖືກສົ່ງອອກເປັນ .lapinprices, ໝາຍວ່າເປັນການປະມານ: ໄຟລ໌ຂອງສ່ວນຂະຫຍາຍລາຍການລາຄາ.",
+  "The file is not a Lapin type pack (.lapintypes).": "ໄຟລ໌ນີ້ບໍ່ແມ່ນຊຸດປະເພດ Lapin (.lapintypes).",
+  "This type pack was written by a newer Lapin: update Lapin to read it.": "ຊຸດປະເພດນີ້ຖືກຂຽນໂດຍ Lapin ທີ່ໃໝ່ກວ່າ: ອັບເດດ Lapin ເພື່ອອ່ານມັນ.",
+  "The type pack has no type.": "ຊຸດປະເພດບໍ່ມີປະເພດໃດເລີຍ.",
+  "Every item of a type pack has a ref, a class, a name and its attrs.": "ແຕ່ລະລາຍການຂອງຊຸດປະເພດມີ ref, ຄລາສ, ຊື່ ແລະ ຄຸນລັກສະນະຂອງມັນ.",
+  "A type pack holds types only.": "ຊຸດປະເພດມີແຕ່ປະເພດເທົ່ານັ້ນ.",
+  "Choose the types to export.": "ເລືອກປະເພດທີ່ຈະສົ່ງອອກ.",
+  "None of the chosen types is in the pack.": "ບໍ່ມີປະເພດທີ່ເລືອກໃດຢູ່ໃນຊຸດ.",
 };
 
 /** Phrases with a number or a name in them. */
@@ -2315,4 +2339,6 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^It works with Lapin (.+); this is Lapin (.+)\.$/, (m) => `ໃຊ້ໄດ້ກັບ Lapin ${m[1]}; ນີ້ແມ່ນ Lapin ${m[2]}.`],
   [/^This edition of Lapin has no (.+) module\.$/, (m) => `Lapin ລຸ້ນນີ້ບໍ່ມີໂມດູນ ${m[1]}.`],
   [/^The package is (\d+) bytes, its manifest says (\d+): it was not installed\.$/, (m) => `ແພັກເກັດມີ ${m[1]} ໄບຕ໌, manifest ບອກ ${m[2]}: ບໍ່ໄດ້ຕິດຕັ້ງ.`],
+  // Lapin Extensions: type packs (decision 499)
+  [/^Types added to the project: (\d+) new, (\d+) already in it\.$/, (m) => `ເພີ່ມປະເພດໃສ່ໂຄງການແລ້ວ: ໃໝ່ ${m[1]}, ມີຢູ່ແລ້ວ ${m[2]}.`],
 ];

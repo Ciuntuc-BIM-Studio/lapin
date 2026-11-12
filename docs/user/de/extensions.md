@@ -15,6 +15,7 @@ summary: Möbel, Projektvorlagen, Profile, Schraffurmuster, Planköpfe und Preis
 Klicke auf eine Erweiterung, um ihre Details zu sehen, bevor du sie installierst:
 
 - **Autor** und **Lizenz**. Jede Erweiterung hat eine Lizenz, die ihr Autor gewählt hat. Eine *freizügige* (MIT, CC-BY, CC0…) erlaubt dir, ihren Inhalt in jedem Projekt zu nutzen; bei anderen *Bedingungen lesen*, bevor du sie nutzt.
+- **Nicht kommerziell**: Eine Erweiterung, deren Lizenz die kommerzielle Nutzung verbietet (CC-BY-NC, PolyForm Noncommercial…), ist in der Liste und in ihren Details so markiert. Du kannst sie installieren und daraus lernen, aber nicht für bezahlte Arbeit verwenden.
 - **Läuft mit**: die Lapin-Versionen, für die sie gemacht wurde. Passt sie nicht zu deinem Lapin, steht das da, statt **Installieren** anzubieten.
 - **Größe**, die Datei und ihr **SHA-256**: der Fingerabdruck der Datei, die der Katalog geprüft hat.
 - **Inhalt**: ihre Elemente, wenn der Autor sie auflistet.
@@ -32,6 +33,7 @@ Klicke auf **Installieren**. Lapin lädt die Datei herunter, prüft, dass Größ
 | Schraffurmuster | Meine Muster, angeboten unter **Verwalten → Materialien** |
 | Planköpfe | die Planköpfe auf diesem Computer |
 | Preislisten | **Ausführung → Preislisten…**, als Richtwerte markiert: die Preise sind die des Autors, prüfe sie mit deinen eigenen |
+| Typen | das Projekt, das beim Installieren offen ist, in einem Schritt rückgängig zu machen (**Verwalten → Typpakete…** exportiert deine eigenen) |
 
 Hat deine Bibliothek schon etwas mit demselben Namen, fragt Lapin nach, bevor es ersetzt. Nichts, was eine Erweiterung mitbringt, wird je ausgeführt: Erweiterungen sind Inhalt.
 
@@ -42,6 +44,16 @@ Hat deine Bibliothek schon etwas mit demselben Namen, fragt Lapin nach, bevor es
 ![Die Möbeltypen des Pakets in Meine Möbel](shots/extensions-my-furniture.webp)
 
 **Deinstallieren** entfernt aus deinen Bibliotheken, was die Erweiterung hinzugefügt hat, und nur das. Was du schon in deine Projekte übernommen hast, bleibt dort: ein in ein Projekt eingefügter Möbeltyp, ein aus einer Vorlage gestartetes Projekt.
+
+## Typen
+
+Eine **Typen**-Erweiterung bringt Wand-, Decken-, Tür-, Fenster-, Stützen-, Träger- oder Treppentypen mit allem, woraus sie bestehen: ihren Schichten, Materialien, Profilen und Parametern. Installiert kommen ihre Typen in das jetzt offene Projekt, in einem Schritt rückgängig zu machen: Ein Material gleichen Namens im Projekt wird verwendet, jedes andere angelegt; ein genau gleicher Typ im Projekt wird wiederverwendet, einer gleichen Namens, der sich unterscheidet, kommt daneben mit (2) nach dem Namen. **Installiert → Typen zu diesem Projekt hinzufügen** bringt sie in ein anderes Projekt.
+
+![Die Details einer Typen-Erweiterung: ihre Lizenz als nicht kommerziell markiert](shots/extensions-types.webp)
+
+Deine eigenen Typen kommen über **Verwalten → Typpakete…** in ein Paket: Hake die Typen an, gib dem Paket einen Namen, und **Typen exportieren…** speichert eine `.lapintypes`-Datei. **Typen importieren…** im selben Dialog liest eine, lässt dich ihre Typen wählen und fügt sie genauso hinzu.
+
+![Verwalten → Typpakete…: ein Wandtyp für den Export gewählt](shots/type-packs-export.webp)
 
 ## Skripte
 
@@ -56,3 +68,5 @@ Der Katalog listet auch **Python-Skripte**. In der Desktop-App kannst du schon e
 ## Eigene veröffentlichen
 
 Jeder kann eine Erweiterung veröffentlichen: Exportiere sie aus Lapin (Meine Möbel → Exportieren, Als Vorlage speichern…, eine Profilbibliothek, ein Plankopf), hänge die Datei an ein Release eines eigenen GitHub-Repositorys und füge ihr Manifest dem Katalog per Pull Request auf [Ciuntuc-BIM-Studio/lapin-extensions](https://github.com/Ciuntuc-BIM-Studio/lapin-extensions) hinzu. Die README dort erklärt, wie, und was die automatischen Prüfungen ansehen.
+
+Ein Typpaket kommt aus **Verwalten → Typpakete… → Typen exportieren…**; eine Preisliste aus **Preislisten…**, mit dem Export-Knopf einer Liste auf diesem Computer (eine `.lapinprices`-Datei, ihre Preise als Richtwerte markiert).

@@ -15,6 +15,7 @@ Apri **File → Estensioni…**. **Sfoglia** mostra il catalogo: cerca per nome,
 Fai clic su un'estensione per vederne i dettagli prima di installarla:
 
 - **Autore** e **Licenza**. Ogni estensione ha una licenza, scelta dal suo autore. Una *permissiva* (MIT, CC-BY, CC0…) ti permette di usare ciò che contiene in qualsiasi progetto; per le altre, *leggi le condizioni* prima.
+- **Non commerciale**: un'estensione la cui licenza vieta l'uso commerciale (CC-BY-NC, PolyForm Noncommercial…) è segnata così nell'elenco e nei suoi dettagli. Puoi installarla e impararne, ma non usarla in lavori retribuiti.
 - **Funziona con**: le versioni di Lapin per cui è stata fatta. Se non va bene per il tuo Lapin, lo dice invece di offrire **Installa**.
 - **Dimensione**, il file e il suo **SHA-256**: l'impronta del file esaminato dal catalogo.
 - **Contenuto**: i suoi elementi, quando l'autore li elenca.
@@ -32,6 +33,7 @@ Fai clic su **Installa**. Lapin scarica il file, controlla che dimensione e SHA-
 | Motivi di campitura | I miei motivi, offerti da **Gestisci → Materiali** |
 | Cartigli | i cartigli di questo computer |
 | Listini prezzi | **Esecuzione → Listini prezzi…**, indicati come orientativi: i prezzi sono dell'autore, confrontali con i tuoi |
+| Tipi | il progetto aperto quando la installi, in un passo da annullare (**Gestisci → Pacchetti di tipi…** esporta i tuoi) |
 
 Se la tua libreria ha già qualcosa con lo stesso nome, Lapin chiede prima di sostituirlo. Nulla di ciò che porta un'estensione viene mai eseguito: le estensioni sono contenuto.
 
@@ -42,6 +44,16 @@ Se la tua libreria ha già qualcosa con lo stesso nome, Lapin chiede prima di so
 ![I tipi di arredo del pacchetto in I miei arredi](shots/extensions-my-furniture.webp)
 
 **Disinstalla** toglie dalle tue librerie ciò che l'estensione ha aggiunto, e solo quello. Ciò che hai già messo nei tuoi progetti resta lì: un tipo di arredo inserito in un progetto, un progetto avviato da un modello.
+
+## Tipi
+
+Un'estensione di **tipi** porta tipi di muri, solai, porte, finestre, pilastri, travi o scale con ciò di cui sono fatti: i loro strati, materiali, profili e parametri. Installata, i suoi tipi entrano nel progetto aperto ora, in un passo da annullare: un materiale con lo stesso nome già nel progetto viene usato, ogni altro viene creato; un tipo già presente esattamente uguale viene riutilizzato, e uno con lo stesso nome ma diverso viene aggiunto accanto con (2) dopo il nome. **Installate → Aggiungi i suoi tipi a questo progetto** li porta in un altro progetto.
+
+![I dettagli di un'estensione di tipi: la sua licenza segnata come non commerciale](shots/extensions-types.webp)
+
+I tuoi tipi vanno in un pacchetto da **Gestisci → Pacchetti di tipi…**: spunta i tipi, dai un nome al pacchetto, e **Esporta tipi…** salva un file `.lapintypes`. **Importa tipi…** nello stesso dialogo ne legge uno, ti lascia scegliere i suoi tipi e li aggiunge allo stesso modo.
+
+![Gestisci → Pacchetti di tipi…: un tipo di muro scelto per l'esportazione](shots/type-packs-export.webp)
 
 ## Script
 
@@ -56,3 +68,5 @@ Il catalogo elenca anche **script Python**. Nell'app desktop puoi installarne un
 ## Pubblicare le tue
 
 Chiunque può pubblicare un'estensione: esportala da Lapin (I miei arredi → Esporta…, Salva come modello…, una libreria di profili, un cartiglio), allega il file a una release di un tuo repository GitHub e aggiungi il suo manifest al catalogo con una pull request su [Ciuntuc-BIM-Studio/lapin-extensions](https://github.com/Ciuntuc-BIM-Studio/lapin-extensions). Il suo README spiega come, e cosa guardano i controlli automatici.
+
+Un pacchetto di tipi viene da **Gestisci → Pacchetti di tipi… → Esporta tipi…**; un listino prezzi da **Listini prezzi…**, con il pulsante di esportazione di un listino di questo computer (un file `.lapinprices`, con i prezzi indicati come orientativi).

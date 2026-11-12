@@ -85,6 +85,7 @@ public sealed class CoreModule : ILapinModule
         // The wholes an element is a part of, for drill-down picking.
         Assemblies.Register(r);
         TypeMappings.Register(r);
+        TypePacks.Register(r);
         Sheets.Register(r);
         TitleBlocks.Register(r);
         CutOrder.Register(r);

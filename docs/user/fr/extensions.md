@@ -15,6 +15,7 @@ Ouvrez **Fichier → Extensions…**. **Parcourir** liste le catalogue : cherche
 Cliquez sur une extension pour voir ses détails avant de l'installer :
 
 - **Auteur** et **Licence**. Chaque extension a une licence, choisie par son auteur. Une licence *permissive* (MIT, CC-BY, CC0…) vous permet d'utiliser son contenu dans n'importe quel projet ; pour une autre, *lisez ses conditions* d'abord.
+- **Non commerciale** : une extension dont la licence interdit l'usage commercial (CC-BY-NC, PolyForm Noncommercial…) est marquée ainsi dans la liste et dans ses détails. Vous pouvez l'installer et en apprendre, mais pas l'utiliser dans un travail rémunéré.
 - **Fonctionne avec** : les versions de Lapin pour lesquelles elle a été faite. Une extension qui ne convient pas à votre Lapin le dit au lieu de proposer **Installer**.
 - **Taille**, le fichier et son **SHA-256** : l'empreinte du fichier examiné par le catalogue.
 - **Contenu** : ses éléments, quand son auteur les énumère.
@@ -32,6 +33,7 @@ Cliquez sur **Installer**. Lapin télécharge le fichier, vérifie que sa taille
 | Motifs de hachures | Mes motifs, proposés par **Gérer → Matériaux** |
 | Cartouches | les cartouches de cet ordinateur |
 | Listes de prix | **Exécution → Listes de prix…**, marquées indicatives : les prix sont ceux de l'auteur, comparez-les aux vôtres |
+| Types | le projet ouvert quand vous l'installez, en une étape à annuler (**Gérer → Paquets de types…** exporte les vôtres) |
 
 Si votre bibliothèque contient déjà quelque chose du même nom, Lapin demande avant de le remplacer. Rien de ce qu'apporte une extension n'est jamais exécuté : les extensions sont du contenu.
 
@@ -42,6 +44,16 @@ Si votre bibliothèque contient déjà quelque chose du même nom, Lapin demande
 ![Les types de mobilier du pack dans Mon mobilier](shots/extensions-my-furniture.webp)
 
 **Désinstaller** retire de vos bibliothèques ce que l'extension a ajouté, et seulement cela. Ce que vous avez déjà mis dans vos projets y reste : un type de mobilier inséré dans un projet, un projet commencé depuis un modèle.
+
+## Types
+
+Une extension de **types** apporte des types de murs, dalles, portes, fenêtres, poteaux, poutres ou escaliers avec ce dont ils sont faits : leurs couches, matériaux, profilés et paramètres. Installée, ses types entrent dans le projet ouvert, en une étape à annuler : un matériau du même nom déjà dans le projet est utilisé, tout autre est créé ; un type déjà présent exactement identique est réutilisé, et un du même nom qui diffère est ajouté à côté avec (2) après son nom. **Installées → Ajouter ses types à ce projet** les apporte dans un autre projet.
+
+![Les détails d'une extension de types : sa licence marquée non commerciale](shots/extensions-types.webp)
+
+Vos propres types vont dans un paquet depuis **Gérer → Paquets de types…** : cochez les types, donnez un nom au paquet, et **Exporter des types…** enregistre un fichier `.lapintypes`. **Importer des types…** dans le même dialogue en lit un, vous laisse choisir ses types et les ajoute de la même façon.
+
+![Gérer → Paquets de types… : un type de mur choisi pour l'export](shots/type-packs-export.webp)
 
 ## Scripts
 
@@ -56,3 +68,5 @@ Le catalogue liste aussi des **scripts Python**. Dans l'application de bureau, v
 ## Publier les vôtres
 
 Tout le monde peut publier une extension : exportez-la depuis Lapin (Mon mobilier → Exporter, Enregistrer comme modèle…, une bibliothèque de profilés, un cartouche), joignez le fichier à une release d'un de vos dépôts GitHub et ajoutez son manifeste au catalogue par une pull request sur [Ciuntuc-BIM-Studio/lapin-extensions](https://github.com/Ciuntuc-BIM-Studio/lapin-extensions). Son README explique comment, et ce que regardent les contrôles automatiques.
+
+Un paquet de types vient de **Gérer → Paquets de types… → Exporter des types…** ; une liste de prix de **Listes de prix…**, avec le bouton d'export d'une liste de cet ordinateur (un fichier `.lapinprices`, ses prix marqués indicatifs).

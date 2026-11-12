@@ -6471,6 +6471,74 @@ export const scenes = [
     },
   },
   {
+    // Types as an extension (docs/plan-extensions.md, §9.3): a wall type made in one project and chosen in Manage → Type
+    // packs… (exported as its .lapintypes, the file the dialog's Export types… saves); in a new project, a catalogue on this
+    // computer lists it as a types extension under a non-commercial licence (marked so); installed, its type comes into the
+    // project (types.importFrom, its materials made) and a wall of it is drawn. Everything is cleaned at the end.
+    id: 'extensions-types',
+    touches: ['core', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const dir = mkdtempSync(join(tmpdir(), 'lapin-guide-extension-types-'));
+      const sha = (b) => createHash('sha256').update(b).digest('hex');
+      const layers = [{ material: 'Tencuială exterioară', thickness: 0.02 }, { material: 'Polistiren 10 cm', thickness: 0.1 }, { material: 'BCA', thickness: 0.3, core: true }, { material: 'Tencuială interioară', thickness: 0.015 }];
+      const { id: typeId } = await t.cmd('architecture.createWallType', { name: 'WT1 BCA 30 termoizolat', mark: 'WT1', layers });
+      try {
+        // Manage → Type packs…: the project's types, the wall type chosen.
+        await t.ui({ dialog: 'typePacks' });
+        const packs = t.page.locator('[data-dialog=type-packs]');
+        await packs.waitFor({ timeout: 10_000 });
+        await packs.locator('[data-project-type="WT1 BCA 30 termoizolat"]').check();
+        await packs.locator('[data-field=type-pack-name]').fill('Pereți RO');
+        await t.wait(300);
+        await t.shot('type-packs-export', { of: '[data-dialog=type-packs]', pad: 0 });
+        // What Export types… saves.
+        const { text } = await t.call('doc.query', { name: 'types.export', args: { ids: [typeId], name: 'Pereți RO' } });
+        const bytes = Buffer.from(text);
+        writeFileSync(join(dir, 'pereti-ro.lapintypes'), bytes);
+        await t.ui({ dialog: null });
+        const index = { format: 'lapin-extensions-index', version: 1, extensions: [{
+          schema: 1, id: 'ro.ciuntucbimstudio.pereti-ro', name: 'Pereți RO', version: '1.0.0', kind: 'types', license: 'CC-BY-NC-4.0', lapin: '*', languages: ['ro'], tags: ['walls', 'romania'],
+          author: { name: 'Ciuntuc BIM Studio', github: 'Ciuntuc-BIM-Studio', url: 'https://ciuntucbimstudio.ro' },
+          summary: 'A thermally insulated autoclaved aerated concrete wall type, with its layers and materials.',
+          contents: { file: 'pereti-ro.lapintypes', items: ['WT1 BCA 30 termoizolat'] }, package: { url: 'pereti-ro.lapintypes', sha256: sha(bytes), size: bytes.length },
+        }] };
+        writeFileSync(join(dir, 'index.json'), JSON.stringify(index, null, 2));
+
+        // A new project, without the type: File → Extensions…, the catalogue on this computer.
+        await t.fresh();
+        const s = await t.storey();
+        const has = async () => (await t.call('doc.query', { name: 'types.list', args: {} })).types.find((x) => x.name === 'WT1 BCA 30 termoizolat');
+        t.expect(!(await has()), 'the new project has no wall type of that name');
+        await t.button('File', { exact: true });
+        await t.page.locator('[data-menu=extensions]').click();
+        const dialog = t.page.locator('[data-dialog=extensions]');
+        await dialog.waitFor({ timeout: 10_000 });
+        await dialog.locator('[data-action=extensions-catalogue]').click();
+        await dialog.locator('[data-field=extensions-index]').fill(join(dir, 'index.json'));
+        await dialog.locator('[data-action=extensions-index-set]').click();
+        await dialog.locator('[data-extension="ro.ciuntucbimstudio.pereti-ro"]').click({ timeout: 15_000 });
+        const details = dialog.locator('[data-extension-details="ro.ciuntucbimstudio.pereti-ro"]');
+        await details.locator('[data-testid=extension-non-commercial]').waitFor({ timeout: 5000 });
+        await t.wait(300);
+        await t.shot('extensions-types', { of: '[data-dialog=extensions]', pad: 0 });
+        // Install: the pack checked and kept, its type brought into the open project in one step to undo.
+        await details.locator('[data-action=extension-install]').click();
+        await dialog.locator('[data-extension="ro.ciuntucbimstudio.pereti-ro"] .ext-row-mark').waitFor({ timeout: 20_000 });
+        let type = null;
+        for (let i = 0; i < 20 && !type; i++) { type = await has(); if (!type) await t.wait(250); }
+        t.expect(!!type, 'installing the types extension brought its wall type into the project');
+        await t.ui({ dialog: null });
+        const wall = (await t.cmd('architecture.addWall', { storeyId: s, typeId: type.id, x1: 0, y1: 0, x2: 6, y2: 0 })).id;
+        const q = await t.call('quantities.of', { id: wall });
+        t.expect(q.some((x) => x.part === 'layer:2'), 'a wall of the installed type is drawn with its layers');
+      } finally {
+        await t.page.evaluate(() => { localStorage.removeItem('lapin.extensions'); localStorage.removeItem('lapin.extensions.index'); try { indexedDB.deleteDatabase('lapin-type-packs'); } catch { /* none */ } }).catch(() => undefined);
+        await t.ui({ dialog: null });
+      }
+    },
+  },
+  {
     id: 'help',
     async run(t) {
       await t.fresh();

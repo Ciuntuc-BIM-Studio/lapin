@@ -108,7 +108,7 @@ export function updatesOf(installed: InstalledExtension[], catalogue: Manifest[]
 // ------------------------------------------------------------ the catalogue as Browse shows it
 
 /** Browse's categories: the kinds, in the order the list shows them. */
-export const CATEGORY_ORDER: ExtensionKind[] = ['furniture', 'template', 'profiles', 'hatches', 'titleBlock', 'priceList', 'script'];
+export const CATEGORY_ORDER: ExtensionKind[] = ['furniture', 'template', 'types', 'profiles', 'hatches', 'titleBlock', 'priceList', 'script'];
 
 /** The extensions matching the search (name, summary, author, tags, items) and the kind chosen, by name. */
 export function filterCatalogue(list: Manifest[], f: { search?: string; kind?: ExtensionKind | null }): Manifest[] {

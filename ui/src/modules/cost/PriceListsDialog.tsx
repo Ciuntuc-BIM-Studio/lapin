@@ -6,11 +6,19 @@
  */
 
 import { useEffect, useState } from 'react';
-import { BookMarked, Download, FileUp, Trash2, X } from 'lucide-react';
+import { BookMarked, Download, FileDown, FileUp, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { pickFile, saveFile, toBase64 } from '../../engine/files';
+import { writePriceList } from '../../platform/extensions/packs';
 import { forgetFromLibrary, keepInLibrary, library, type LibraryList, type PriceRowDto } from './estimate';
+
+/** A list of this computer's library as a .lapinprices: the file a price list extension is (docs/plan-extensions.md), marked indicative. */
+async function exportList(l: LibraryList) {
+  const name = l.name.replace(/[\\/:*?"<>|]/g, ' ').trim() || 'Price list';
+  const saved = await saveFile(new TextEncoder().encode(writePriceList(l)), `${name}.lapinprices`, 'application/json');
+  if (saved) notify('Price list exported as .lapinprices, marked indicative: the file a price list extension is.');
+}
 
 interface ListDto { id: string; name: string; currency: string; count: number; resources: number; indicative: boolean; source?: string | null }
 interface ReadDto { header: number; rows: number; headings: string[]; sample: string[][]; map: Record<string, number | null>; fields: string[] }
@@ -138,6 +146,7 @@ export function PriceListsDialog() {
                       <span className="muted small" data-no-i18n>{`${l.rows.filter((r) => !r.a).length} · ${l.currency} · ${l.added}`}</span>
                       <span className="grow" />
                       <button type="button" className="btn" disabled={inProject.has(l.name)} onClick={() => void execute('cost.addPriceList', { name: l.name, currency: l.currency, rows: l.rows, source: 'library' })}>Add to the project</button>
+                      <button type="button" className="icon mini" data-action="price-export-lapinprices" title="Export .lapinprices… (the file a price list extension is; its prices marked indicative)" onClick={() => void exportList(l)}><FileDown size={12} /></button>
                       <button type="button" className="icon mini" title="Forget it on this computer" onClick={() => { forgetFromLibrary(l.name); setLib(library()); }}><Trash2 size={12} /></button>
                     </li>
                   ))}

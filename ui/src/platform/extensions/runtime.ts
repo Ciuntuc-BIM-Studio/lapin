@@ -109,15 +109,21 @@ export async function catalogueAddress(): Promise<string> {
 export const isLocalAddress = (a: string) => !/^https:\/\//i.test(a) || /^https?:\/\/(localhost|127\.0\.0\.1)[:/]/i.test(a);
 
 /** The catalogue read (again). */
+let reading = 0;
+
 export async function loadCatalogue(): Promise<void> {
+  // Only the latest read counts: an earlier one answering late (Lapin's own catalogue, unreachable, after another was chosen) is dropped.
+  const mine = ++reading;
   useExtensions.setState({ loading: true, error: null });
   try {
     const from = await catalogueAddress();
     const bytes = await fetchBytes(from);
     const { extensions, problems } = readIndex(JSON.parse(new TextDecoder().decode(bytes)), { local: isLocalAddress(from) });
+    if (mine !== reading) return;
     useExtensions.setState({ from, list: extensions, problems, loading: false });
     if (problems.length) console.info('Extensions left out of the catalogue:', problems.join(' '));
   } catch (e) {
+    if (mine !== reading) return;
     useExtensions.setState({ loading: false, error: e instanceof Error ? e.message : String(e), list: [] });
   }
 }

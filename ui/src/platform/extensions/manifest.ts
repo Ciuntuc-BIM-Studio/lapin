@@ -7,7 +7,7 @@
  */
 
 /** The kinds of extension: content packs (no code) first; Python scripts, which run once the Python console exists. */
-export const KINDS = ['furniture', 'template', 'profiles', 'hatches', 'titleBlock', 'priceList', 'script'] as const;
+export const KINDS = ['furniture', 'template', 'types', 'profiles', 'hatches', 'titleBlock', 'priceList', 'script'] as const;
 export type ExtensionKind = (typeof KINDS)[number];
 
 export interface KindInfo {
@@ -23,6 +23,8 @@ export interface KindInfo {
 export const KIND_INFO: Record<ExtensionKind, KindInfo> = {
   furniture: { label: 'Furniture', extensions: ['lapinlib'], code: false, module: 'furniture' },
   template: { label: 'Project templates', extensions: ['lapin'], code: false },
+  // Wall, floor, door, window, column, beam, stair… types with their materials and layers (a .lapintypes, types.importFrom).
+  types: { label: 'Types', extensions: ['lapintypes'], code: false, module: 'core' },
   profiles: { label: 'Profiles', extensions: ['lapinprofiles'], code: false, module: 'core' },
   hatches: { label: 'Hatch patterns', extensions: ['pat'], code: false, module: 'core' },
   titleBlock: { label: 'Title blocks', extensions: ['json'], code: false, module: 'core' },
@@ -123,8 +125,11 @@ export function isSpdx(expr: string): boolean {
   return depth === 0 && !wantId;
 }
 
-/** Whether the expression can be taken under licences Lapin calls permissive only (OR: either side is enough; AND: both are needed). */
-export function isPermissive(expr: string): boolean {
+/**
+ * An SPDX expression evaluated: whether it can be taken under licences for which `ok` holds (OR: either side is enough;
+ * AND: both are needed; a WITH exception goes with its licence). False for what is not an SPDX expression.
+ */
+function holds(expr: string, ok: (id: string) => boolean): boolean {
   if (!isSpdx(expr)) return false;
   const tokens = expr.replace(/[()]/g, ' $& ').trim().split(/\s+/);
   let i = 0;
@@ -133,12 +138,31 @@ export function isPermissive(expr: string): boolean {
     if (tokens[i] === '(') { i++; const v = or(); i++; return v; }
     const id = tokens[i++].replace(/\+$/, '');
     if (tokens[i] === 'WITH') i += 2;
-    return PERMISSIVE.has(id);
+    return ok(id);
   };
   const and = (): boolean => { let v = atom(); while (tokens[i] === 'AND') { i++; v = atom() && v; } return v; };
   const or = (): boolean => { let v = and(); while (tokens[i] === 'OR') { i++; v = and() || v; } return v; };
   return or();
 }
+
+/** Whether the expression can be taken under licences Lapin calls permissive only. */
+export const isPermissive = (expr: string): boolean => holds(expr, (id) => PERMISSIVE.has(id));
+
+/** Licences that forbid commercial use, besides the Creative Commons NC family (any SPDX id with -NC: CC-BY-NC-4.0, CC-BY-NC-SA-4.0, CC-BY-NC-ND-4.0…). */
+export const NON_COMMERCIAL = new Set(['PolyForm-Noncommercial-1.0.0', 'NCGL-UK-2.0']);
+
+/** Whether a licence id forbids commercial use: -NC in it (Creative Commons), one of the known others, a LicenseRef saying non-commercial. */
+export function isNonCommercialId(id: string): boolean {
+  const bare = id.replace(/\+$/, '');
+  return /-NC(?:-|$)/i.test(bare) || NON_COMMERCIAL.has(bare) || /^LicenseRef-.*non-?commercial/i.test(bare);
+}
+
+/**
+ * Whether what the extension holds may not be used commercially: no way to take it but under a non-commercial licence
+ * (`MIT OR CC-BY-NC-4.0` can be taken under MIT; `CC-BY-NC-4.0 AND MIT` cannot). Shown as „Non-commercial” in Browse
+ * and the details (decision 499, §9.2); accepted in the catalogue.
+ */
+export const isNonCommercial = (expr: string): boolean => isSpdx(expr) && !holds(expr, (id) => !isNonCommercialId(id));
 
 const str = (v: unknown): v is string => typeof v === 'string' && v.trim().length > 0;
 const isHttps = (u: string) => /^https:\/\/[^\s/$.?#].[^\s]*$/i.test(u);

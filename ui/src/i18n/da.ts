@@ -2073,6 +2073,30 @@ export const DA: Record<string, string> = {
   "Not installed: yours was kept.": "Ikke installeret: din blev beholdt.",
   "This is not a catalogue of Lapin extensions.": "Dette er ikke et katalog over Lapin-udvidelser.",
   "Extensions are read from https addresses (or files on this computer).": "Udvidelser læses fra https-adresser (eller filer på denne computer).",
+  // Lapin Extensions: type packs, non-commercial licences, .lapinprices (decision 499, §9 answers)
+  "Non-commercial": "Ikke-kommerciel",
+  "Its licence forbids commercial use: not for paid work": "Dens licens forbyder kommerciel brug: ikke til betalt arbejde",
+  "Its types go into the project open now (one step to undo): materials matched by name or made, a type already there the same reused. Installed → Add its types to this project brings them into another.": "Dens typer kommer ind i det projekt, der er åbent nu (ét trin at fortryde): materialer matchet efter navn eller oprettet, en ens type, der allerede findes, genbrugt. Installerede → Tilføj dens typer til dette projekt bringer dem ind i et andet.",
+  "Add its types to this project": "Tilføj dens typer til dette projekt",
+  "Type packs": "Typepakker",
+  "Choose the types to add. Their materials are the project's when it has one of the same name, else made; a type already in the project the same is reused, one of the same name that differs is added beside it with (2) after its name. One step to undo.": "Vælg de typer, der skal tilføjes. Deres materialer er projektets, når det har et med samme navn, ellers oprettes de; en ens type i projektet genbruges, en med samme navn, der er forskellig, tilføjes ved siden af med (2) efter navnet. Ét trin at fortryde.",
+  "a type of this name is in the project": "en type med dette navn findes i projektet",
+  "Choose types of the project and export them as a .lapintypes, with their layers, materials, profiles and parameters: another project imports them here, and a types extension of Lapin Extensions is such a file.": "Vælg typer i projektet og eksportér dem som .lapintypes med deres lag, materialer, profiler og parametre: et andet projekt importerer dem her, og en typeudvidelse fra Lapin Extensions er sådan en fil.",
+  "The project has no types yet.": "Projektet har endnu ingen typer.",
+  "Pack name": "Pakkens navn",
+  "Import types…": "Importér typer…",
+  "Export types…": "Eksportér typer…",
+  "The types were exported as a .lapintypes, with their layers, materials and profiles: the file a types extension is.": "Typerne blev eksporteret som .lapintypes med deres lag, materialer og profiler: filen for en typeudvidelse.",
+  "Type pack (.lapintypes)": "Typepakke (.lapintypes)",
+  "Export .lapinprices… (the file a price list extension is; its prices marked indicative)": "Eksportér .lapinprices… (filen for en prislisteudvidelse; dens priser markeret vejledende)",
+  "Price list exported as .lapinprices, marked indicative: the file a price list extension is.": "Prislisten blev eksporteret som .lapinprices, markeret vejledende: filen for en prislisteudvidelse.",
+  "The file is not a Lapin type pack (.lapintypes).": "Filen er ikke en Lapin-typepakke (.lapintypes).",
+  "This type pack was written by a newer Lapin: update Lapin to read it.": "Denne typepakke er skrevet af en nyere Lapin: opdatér Lapin for at læse den.",
+  "The type pack has no type.": "Typepakken har ingen type.",
+  "Every item of a type pack has a ref, a class, a name and its attrs.": "Hvert element i en typepakke har en ref, en klasse, et navn og sine attributter.",
+  "A type pack holds types only.": "En typepakke indeholder kun typer.",
+  "Choose the types to export.": "Vælg de typer, der skal eksporteres.",
+  "None of the chosen types is in the pack.": "Ingen af de valgte typer er i pakken.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -2258,4 +2282,6 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^It works with Lapin (.+); this is Lapin (.+)\.$/, (m) => `Virker med Lapin ${m[1]}; dette er Lapin ${m[2]}.`],
   [/^This edition of Lapin has no (.+) module\.$/, (m) => `Denne udgave af Lapin har intet ${m[1]}-modul.`],
   [/^The package is (\d+) bytes, its manifest says (\d+): it was not installed\.$/, (m) => `Pakken er ${m[1]} bytes, dens manifest siger ${m[2]}: den blev ikke installeret.`],
+  // Lapin Extensions: type packs (decision 499)
+  [/^Types added to the project: (\d+) new, (\d+) already in it\.$/, (m) => `Typer tilføjet til projektet: ${m[1]} nye, ${m[2]} fandtes allerede.`],
 ];

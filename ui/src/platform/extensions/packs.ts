@@ -95,3 +95,29 @@ export function readPriceList(bytes: Uint8Array): { name: string; currency: stri
   }
   return { name: o.name, currency: o.currency, rows: o.rows as PriceRow[] };
 }
+
+/** A price list written as a .lapinprices (Price lists → Export .lapinprices…): the file the extensions installer reads, always marked indicative. */
+export function writePriceList(list: { name: string; currency: string; rows: PriceRow[] }): string {
+  return JSON.stringify({ format: 'lapin-price-list', version: 1, name: list.name, currency: list.currency, indicative: true, rows: list.rows }, null, 1);
+}
+
+export interface TypePackItem { ref: string; class: string; name: string }
+
+/**
+ * A .lapintypes (a type pack: Manage → Type packs… → Export, the engine's types.export): `{format: "lapin-type-pack",
+ * version: 1, name?, types: [{ref, class, name, attrs, material?}], resources: [...]}`; its types' names and classes.
+ * The engine checks the rest as it brings them in (types.importFrom): each class a kind of type the edition has.
+ */
+export function readTypePack(bytes: Uint8Array): { name: string | null; types: TypePackItem[]; text: string } {
+  const o = json(bytes, 'a Lapin type pack');
+  if (o.format !== 'lapin-type-pack') throw new Error('The file is not a Lapin type pack (.lapintypes).');
+  if (typeof o.version !== 'number' || o.version > 1) throw new Error('This type pack was written by a newer Lapin: update Lapin to read it.');
+  if (!Array.isArray(o.types) || o.types.length === 0) throw new Error('The type pack has no type.');
+  const item = (t: Record<string, unknown> | null) => !!t && typeof t.ref === 'string' && !!t.ref && typeof t.class === 'string' && !!t.class
+    && typeof t.name === 'string' && !!t.name.trim() && !!t.attrs && typeof t.attrs === 'object' && !Array.isArray(t.attrs);
+  const types = o.types as Record<string, unknown>[];
+  if (!types.every(item)) throw new Error('Every item of a type pack has a ref, a class, a name and its attrs.');
+  if (o.resources !== undefined && (!Array.isArray(o.resources) || !(o.resources as Record<string, unknown>[]).every(item))) throw new Error('Every item of a type pack has a ref, a class, a name and its attrs.');
+  if (types.some((t) => !(t.class as string).endsWith('Type'))) throw new Error('A type pack holds types only.');
+  return { name: typeof o.name === 'string' && o.name.trim() ? o.name.trim() : null, types: types.map((t) => ({ ref: t.ref as string, class: t.class as string, name: t.name as string })), text: utf8(bytes) };
+}

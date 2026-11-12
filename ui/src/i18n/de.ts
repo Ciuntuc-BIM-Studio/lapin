@@ -2078,6 +2078,30 @@ export const DE: Record<string, string> = {
   "Not installed: yours was kept.": "Nicht installiert: Deines bleibt.",
   "This is not a catalogue of Lapin extensions.": "Das ist kein Katalog von Lapin-Erweiterungen.",
   "Extensions are read from https addresses (or files on this computer).": "Erweiterungen werden von https-Adressen gelesen (oder aus Dateien auf diesem Computer).",
+  // Lapin Extensions: type packs, non-commercial licences, .lapinprices (decision 499, §9 answers)
+  "Non-commercial": "Nicht kommerziell",
+  "Its licence forbids commercial use: not for paid work": "Ihre Lizenz verbietet die kommerzielle Nutzung: nicht für bezahlte Arbeit",
+  "Its types go into the project open now (one step to undo): materials matched by name or made, a type already there the same reused. Installed → Add its types to this project brings them into another.": "Ihre Typen kommen in das jetzt geöffnete Projekt (ein Schritt zum Rückgängigmachen): Materialien nach Namen zugeordnet oder angelegt, ein gleicher vorhandener Typ wiederverwendet. Installiert → Typen zu diesem Projekt hinzufügen bringt sie in ein anderes.",
+  "Add its types to this project": "Typen zu diesem Projekt hinzufügen",
+  "Type packs": "Typpakete",
+  "Choose the types to add. Their materials are the project's when it has one of the same name, else made; a type already in the project the same is reused, one of the same name that differs is added beside it with (2) after its name. One step to undo.": "Wählen Sie die hinzuzufügenden Typen. Ihre Materialien sind die des Projekts, wenn es eines mit demselben Namen hat, sonst werden sie angelegt; ein gleicher Typ im Projekt wird wiederverwendet, einer mit demselben Namen, der sich unterscheidet, kommt daneben mit (2) nach dem Namen. Ein Schritt zum Rückgängigmachen.",
+  "a type of this name is in the project": "ein Typ dieses Namens ist im Projekt",
+  "Choose types of the project and export them as a .lapintypes, with their layers, materials, profiles and parameters: another project imports them here, and a types extension of Lapin Extensions is such a file.": "Wählen Sie Typen des Projekts und exportieren Sie sie als .lapintypes, mit ihren Schichten, Materialien, Profilen und Parametern: ein anderes Projekt importiert sie hier, und eine Typen-Erweiterung von Lapin Extensions ist eine solche Datei.",
+  "The project has no types yet.": "Das Projekt hat noch keine Typen.",
+  "Pack name": "Paketname",
+  "Import types…": "Typen importieren…",
+  "Export types…": "Typen exportieren…",
+  "The types were exported as a .lapintypes, with their layers, materials and profiles: the file a types extension is.": "Die Typen wurden als .lapintypes exportiert, mit ihren Schichten, Materialien und Profilen: die Datei einer Typen-Erweiterung.",
+  "Type pack (.lapintypes)": "Typpaket (.lapintypes)",
+  "Export .lapinprices… (the file a price list extension is; its prices marked indicative)": "Als .lapinprices exportieren… (die Datei einer Preislisten-Erweiterung; ihre Preise als Richtwerte markiert)",
+  "Price list exported as .lapinprices, marked indicative: the file a price list extension is.": "Preisliste als .lapinprices exportiert, als Richtwerte markiert: die Datei einer Preislisten-Erweiterung.",
+  "The file is not a Lapin type pack (.lapintypes).": "Die Datei ist kein Lapin-Typpaket (.lapintypes).",
+  "This type pack was written by a newer Lapin: update Lapin to read it.": "Dieses Typpaket wurde von einem neueren Lapin geschrieben: Aktualisieren Sie Lapin, um es zu lesen.",
+  "The type pack has no type.": "Das Typpaket enthält keinen Typ.",
+  "Every item of a type pack has a ref, a class, a name and its attrs.": "Jedes Element eines Typpakets hat eine Ref, eine Klasse, einen Namen und seine Attribute.",
+  "A type pack holds types only.": "Ein Typpaket enthält nur Typen.",
+  "Choose the types to export.": "Wählen Sie die zu exportierenden Typen.",
+  "None of the chosen types is in the pack.": "Keiner der gewählten Typen ist im Paket.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -2263,4 +2287,6 @@ export const DE_PATTERNS: Language['patterns'] = [
   [/^It works with Lapin (.+); this is Lapin (.+)\.$/, (m) => `Läuft mit Lapin ${m[1]}; dies ist Lapin ${m[2]}.`],
   [/^This edition of Lapin has no (.+) module\.$/, (m) => `Diese Lapin-Edition hat kein Modul ${m[1]}.`],
   [/^The package is (\d+) bytes, its manifest says (\d+): it was not installed\.$/, (m) => `Das Paket hat ${m[1]} Bytes, sein Manifest sagt ${m[2]}: Es wurde nicht installiert.`],
+  // Lapin Extensions: type packs (decision 499)
+  [/^Types added to the project: (\d+) new, (\d+) already in it\.$/, (m) => `Typen zum Projekt hinzugefügt: ${m[1]} neu, ${m[2]} schon darin.`],
 ];

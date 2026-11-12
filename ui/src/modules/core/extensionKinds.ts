@@ -4,15 +4,31 @@
  * and checked first; one of the same name already there is replaced only when the user says so.
  */
 
-import { useUi } from '../../app/store';
+import { notify, useUi } from '../../app/store';
+import { execute, useSession } from '../../engine/session';
+import { indexedRows } from '../../engine/templates';
 import { readPatterns, readProfileLibrary, readTitleBlock } from '../../platform/extensions/packs';
 import { addContentInstaller } from '../../platform/extensions/runtime';
+import { typesInstaller, type TypePackRow } from '../../platform/extensions/typesKind';
 import { forgetPatterns, keepPatterns, myPatterns } from './myPatterns';
 import { computerLibraries, forgetOnComputer, keepOnComputer } from './profileLibraries/store';
 import type { LibraryJson } from './profileLibraries/model';
 import { forgetBlock, keepBlock, type TbFile } from './titleBlocks/titleBlockModel';
 
 const kept = 'Not installed: yours was kept.';
+
+/** Type packs (.lapintypes) installed: kept on this computer (the page's IndexedDB, the desktop's too), their types brought into the open project. */
+const typePacks = indexedRows<TypePackRow>('lapin-type-packs', 'packs', 'type pack');
+
+addContentInstaller(typesInstaller({
+  rows: typePacks,
+  bring: async (text) => {
+    if (!useSession.getState().connected) return null;
+    const r = await execute('types.importFrom', { text }) as { created: number; reused: number } | null;
+    if (r) notify(`Types added to the project: ${r.created} new, ${r.reused} already in it.`);
+    return r;
+  },
+}));
 
 addContentInstaller({
   kind: 'profiles',

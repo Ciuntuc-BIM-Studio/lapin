@@ -2077,6 +2077,30 @@ export const RO: Record<string, string> = {
   "Not installed: yours was kept.": "Neinstalat: al tău a fost păstrat.",
   "This is not a catalogue of Lapin extensions.": "Acesta nu e un catalog de extensii Lapin.",
   "Extensions are read from https addresses (or files on this computer).": "Extensiile se citesc de la adrese https (sau din fișiere de pe acest calculator).",
+  // Lapin Extensions: type packs, non-commercial licences, .lapinprices (decision 499, §9 answers)
+  "Non-commercial": "Necomercială",
+  "Its licence forbids commercial use: not for paid work": "Licența ei interzice folosirea comercială: nu pentru lucrări plătite",
+  "Its types go into the project open now (one step to undo): materials matched by name or made, a type already there the same reused. Installed → Add its types to this project brings them into another.": "Tipurile ei intră în proiectul deschis acum (un pas de anulat): materialele potrivite după nume sau create, un tip deja acolo la fel refolosit. Instalate → Adaugă-i tipurile în acest proiect le aduce în altul.",
+  "Add its types to this project": "Adaugă-i tipurile în acest proiect",
+  "Type packs": "Pachete de tipuri",
+  "Choose the types to add. Their materials are the project's when it has one of the same name, else made; a type already in the project the same is reused, one of the same name that differs is added beside it with (2) after its name. One step to undo.": "Alege tipurile de adăugat. Materialele lor sunt ale proiectului când are unul cu același nume, altfel se creează; un tip deja în proiect la fel e refolosit, unul cu același nume dar diferit e adăugat lângă el cu (2) după nume. Un pas de anulat.",
+  "a type of this name is in the project": "un tip cu acest nume e în proiect",
+  "Choose types of the project and export them as a .lapintypes, with their layers, materials, profiles and parameters: another project imports them here, and a types extension of Lapin Extensions is such a file.": "Alege tipuri din proiect și exportă-le ca .lapintypes, cu straturile, materialele, profilele și parametrii lor: alt proiect le importă aici, iar o extensie de tipuri din Lapin Extensions e un astfel de fișier.",
+  "The project has no types yet.": "Proiectul nu are încă tipuri.",
+  "Pack name": "Numele pachetului",
+  "Import types…": "Importă tipuri…",
+  "Export types…": "Exportă tipuri…",
+  "The types were exported as a .lapintypes, with their layers, materials and profiles: the file a types extension is.": "Tipurile au fost exportate ca .lapintypes, cu straturile, materialele și profilele lor: fișierul unei extensii de tipuri.",
+  "Type pack (.lapintypes)": "Pachet de tipuri (.lapintypes)",
+  "Export .lapinprices… (the file a price list extension is; its prices marked indicative)": "Exportă .lapinprices… (fișierul unei extensii de liste de prețuri; prețurile marcate orientative)",
+  "Price list exported as .lapinprices, marked indicative: the file a price list extension is.": "Lista de prețuri a fost exportată ca .lapinprices, marcată orientativă: fișierul unei extensii de liste de prețuri.",
+  "The file is not a Lapin type pack (.lapintypes).": "Fișierul nu e un pachet de tipuri Lapin (.lapintypes).",
+  "This type pack was written by a newer Lapin: update Lapin to read it.": "Acest pachet de tipuri a fost scris de un Lapin mai nou: actualizează Lapin ca să-l citești.",
+  "The type pack has no type.": "Pachetul de tipuri nu are niciun tip.",
+  "Every item of a type pack has a ref, a class, a name and its attrs.": "Fiecare element al unui pachet de tipuri are un ref, o clasă, un nume și atributele lui.",
+  "A type pack holds types only.": "Un pachet de tipuri conține doar tipuri.",
+  "Choose the types to export.": "Alege tipurile de exportat.",
+  "None of the chosen types is in the pack.": "Niciunul dintre tipurile alese nu e în pachet.",
 };
 
 /** Phrases with a number or a name in them. */
@@ -2260,4 +2284,6 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^It works with Lapin (.+); this is Lapin (.+)\.$/, (m) => `Merge cu Lapin ${m[1]}; acesta e Lapin ${m[2]}.`],
   [/^This edition of Lapin has no (.+) module\.$/, (m) => `Această ediție Lapin nu are modulul ${m[1]}.`],
   [/^The package is (\d+) bytes, its manifest says (\d+): it was not installed\.$/, (m) => `Pachetul are ${m[1]} octeți, manifestul lui spune ${m[2]}: nu a fost instalat.`],
+  // Lapin Extensions: type packs (decision 499)
+  [/^Types added to the project: (\d+) new, (\d+) already in it\.$/, (m) => `Tipuri adăugate în proiect: ${m[1]} noi, ${m[2]} erau deja în el.`],
 ];

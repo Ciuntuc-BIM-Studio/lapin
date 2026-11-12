@@ -15,6 +15,7 @@ Abra **Arquivo → Extensões…**. **Explorar** lista o catálogo: pesquise por
 Clique em uma extensão para ver seus detalhes antes de instalá-la:
 
 - **Autor** e **Licença**. Toda extensão tem uma licença, escolhida pelo autor. Uma *permissiva* (MIT, CC-BY, CC0…) deixa você usar o que ela contém em qualquer projeto; em outra, *leia os termos* antes.
+- **Não comercial**: uma extensão cuja licença proíbe o uso comercial (CC-BY-NC, PolyForm Noncommercial…) é marcada assim na lista e nos seus detalhes. Você pode instalá-la e aprender com ela, mas não usá-la em trabalho pago.
 - **Funciona com**: as versões do Lapin para as quais foi feita. Se não servir para o seu Lapin, ela diz isso em vez de oferecer **Instalar**.
 - **Tamanho**, o arquivo e o seu **SHA-256**: a impressão digital do arquivo que o catálogo revisou.
 - **Conteúdo**: seus itens, quando o autor os lista.
@@ -32,6 +33,7 @@ Clique em **Instalar**. O Lapin baixa o arquivo, confere se o tamanho e o SHA-25
 | Padrões de hachura | Meus padrões, oferecidos por **Gerenciar → Materiais** |
 | Carimbos | os carimbos deste computador |
 | Tabelas de preços | **Execução → Tabelas de preços…**, marcadas como indicativas: os preços são do autor, compare-os com os seus |
+| Tipos | o projeto aberto quando você a instala, em um passo para desfazer (**Gerenciar → Pacotes de tipos…** exporta os seus) |
 
 Se a sua biblioteca já tiver algo com o mesmo nome, o Lapin pergunta antes de substituir. Nada do que uma extensão traz é executado: extensões são conteúdo.
 
@@ -42,6 +44,16 @@ Se a sua biblioteca já tiver algo com o mesmo nome, o Lapin pergunta antes de s
 ![Os tipos de mobiliário do pacote em O meu mobiliário](shots/extensions-my-furniture.webp)
 
 **Desinstalar** tira das suas bibliotecas o que a extensão adicionou, e só isso. O que você já colocou nos seus projetos continua neles: um tipo de mobiliário inserido em um projeto, um projeto iniciado a partir de um modelo.
+
+## Tipos
+
+Uma extensão de **tipos** traz tipos de paredes, lajes, portas, janelas, pilares, vigas ou escadas com aquilo de que são feitos: suas camadas, materiais, perfis e parâmetros. Instalada, seus tipos entram no projeto aberto agora, em um passo para desfazer: um material com o mesmo nome já no projeto é usado, qualquer outro é criado; um tipo já presente exatamente igual é reutilizado, e um com o mesmo nome que difere é adicionado ao lado com (2) após o nome. **Instaladas → Adicionar seus tipos a este projeto** os leva para outro projeto.
+
+![Os detalhes de uma extensão de tipos: sua licença marcada como não comercial](shots/extensions-types.webp)
+
+Seus próprios tipos vão para um pacote em **Gerenciar → Pacotes de tipos…**: marque os tipos, dê um nome ao pacote, e **Exportar tipos…** salva um arquivo `.lapintypes`. **Importar tipos…** no mesmo diálogo lê um, deixa você escolher seus tipos e os adiciona do mesmo jeito.
+
+![Gerenciar → Pacotes de tipos…: um tipo de parede escolhido para exportar](shots/type-packs-export.webp)
 
 ## Scripts
 
@@ -56,3 +68,5 @@ O catálogo também lista **scripts Python**. No aplicativo de desktop você já
 ## Publicar as suas
 
 Qualquer pessoa pode publicar uma extensão: exporte-a do Lapin (O meu mobiliário → Exportar, Guardar como modelo…, uma biblioteca de perfis, um carimbo), anexe o arquivo a uma release de um repositório seu no GitHub e adicione o manifesto dela ao catálogo por um pull request em [Ciuntuc-BIM-Studio/lapin-extensions](https://github.com/Ciuntuc-BIM-Studio/lapin-extensions). O README dele explica como, e o que as verificações automáticas examinam.
+
+Um pacote de tipos sai de **Gerenciar → Pacotes de tipos… → Exportar tipos…**; uma tabela de preços de **Tabelas de preços…**, com o botão de exportar de uma tabela deste computador (um arquivo `.lapinprices`, com os preços marcados como indicativos).

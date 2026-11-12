@@ -2070,6 +2070,30 @@ export const ZH: Record<string, string> = {
   "Not installed: yours was kept.": "未安装：保留了你的。",
   "This is not a catalogue of Lapin extensions.": "这不是 Lapin 扩展目录。",
   "Extensions are read from https addresses (or files on this computer).": "扩展从 https 地址（或这台电脑上的文件）读取。",
+  // Lapin Extensions: type packs, non-commercial licences, .lapinprices (decision 499, §9 answers)
+  "Non-commercial": "非商业",
+  "Its licence forbids commercial use: not for paid work": "其许可证禁止商业用途：不可用于有偿工作",
+  "Its types go into the project open now (one step to undo): materials matched by name or made, a type already there the same reused. Installed → Add its types to this project brings them into another.": "其类型进入当前打开的项目（一步撤销）：材料按名称匹配或新建，项目中已有的相同类型被重用。已安装 → 将其类型添加到此项目 可把它们带入另一个项目。",
+  "Add its types to this project": "将其类型添加到此项目",
+  "Type packs": "类型包",
+  "Choose the types to add. Their materials are the project's when it has one of the same name, else made; a type already in the project the same is reused, one of the same name that differs is added beside it with (2) after its name. One step to undo.": "选择要添加的类型。项目中有同名材料时使用项目的材料，否则新建；项目中已有的相同类型被重用，同名但不同的类型在其旁添加，名称后加 (2)。一步撤销。",
+  "a type of this name is in the project": "项目中已有同名类型",
+  "Choose types of the project and export them as a .lapintypes, with their layers, materials, profiles and parameters: another project imports them here, and a types extension of Lapin Extensions is such a file.": "选择项目的类型并导出为 .lapintypes，带有其图层、材料、型材和参数：另一个项目在此导入它们，Lapin Extensions 的类型扩展就是这样的文件。",
+  "The project has no types yet.": "项目还没有类型。",
+  "Pack name": "包名称",
+  "Import types…": "导入类型…",
+  "Export types…": "导出类型…",
+  "The types were exported as a .lapintypes, with their layers, materials and profiles: the file a types extension is.": "类型已导出为 .lapintypes，带有其图层、材料和型材：即类型扩展的文件。",
+  "Type pack (.lapintypes)": "类型包 (.lapintypes)",
+  "Export .lapinprices… (the file a price list extension is; its prices marked indicative)": "导出 .lapinprices…（价格表扩展的文件；其价格标为参考）",
+  "Price list exported as .lapinprices, marked indicative: the file a price list extension is.": "价格表已导出为 .lapinprices，标为参考：即价格表扩展的文件。",
+  "The file is not a Lapin type pack (.lapintypes).": "该文件不是 Lapin 类型包 (.lapintypes)。",
+  "This type pack was written by a newer Lapin: update Lapin to read it.": "此类型包由较新版本的 Lapin 写入：请更新 Lapin 以读取它。",
+  "The type pack has no type.": "类型包中没有类型。",
+  "Every item of a type pack has a ref, a class, a name and its attrs.": "类型包的每一项都有 ref、类、名称及其属性。",
+  "A type pack holds types only.": "类型包只包含类型。",
+  "Choose the types to export.": "选择要导出的类型。",
+  "None of the chosen types is in the pack.": "所选类型都不在包中。",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [
@@ -2252,4 +2276,6 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^It works with Lapin (.+); this is Lapin (.+)\.$/, (m) => `适用于 Lapin ${m[1]}；当前是 Lapin ${m[2]}。`],
   [/^This edition of Lapin has no (.+) module\.$/, (m) => `此版本的 Lapin 没有 ${m[1]} 模块。`],
   [/^The package is (\d+) bytes, its manifest says (\d+): it was not installed\.$/, (m) => `包为 ${m[1]} 字节，清单写的是 ${m[2]}：未安装。`],
+  // Lapin Extensions: type packs (decision 499)
+  [/^Types added to the project: (\d+) new, (\d+) already in it\.$/, (m) => `类型已添加到项目：新增 ${m[1]} 个，已有 ${m[2]} 个。`],
 ];

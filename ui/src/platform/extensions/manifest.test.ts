@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compareVersions, compatibility, isPermissive, isSpdx, readIndex, runnable, satisfies, validateManifest } from './manifest';
+import { compareVersions, compatibility, isNonCommercial, isNonCommercialId, isPermissive, isSpdx, readIndex, runnable, satisfies, validateManifest } from './manifest';
 import { furniturePack } from './fixtures';
 
 const app = (over: Partial<{ version: string; browser: boolean; modules: string[] }> = {}) => {
@@ -50,6 +50,24 @@ describe('licences', () => {
     expect(isPermissive('GPL-3.0-only AND MIT')).toBe(false);
     expect(isPermissive('(MIT OR GPL-3.0-only) AND CC-BY-4.0')).toBe(true);
     expect(isPermissive('CC-BY-NC-4.0')).toBe(false);
+  });
+
+  it('marks non-commercial what can be taken under a non-commercial licence only', () => {
+    for (const nc of ['CC-BY-NC-4.0', 'CC-BY-NC-SA-4.0', 'CC-BY-NC-ND-3.0', 'CC-BY-NC-SA-2.0-UK', 'PolyForm-Noncommercial-1.0.0', 'NCGL-UK-2.0', 'LicenseRef-Firm-NonCommercial', 'CC-BY-NC-4.0 AND MIT', '(MIT OR Apache-2.0) AND CC-BY-NC-4.0']) expect(isNonCommercial(nc), nc).toBe(true);
+    for (const ok of ['MIT', 'CC-BY-4.0', 'CC-BY-SA-4.0', 'CC0-1.0', 'NCSA', 'GPL-3.0-only', 'MIT OR CC-BY-NC-4.0', 'LicenseRef-Ciuntuc-1', 'not a licence']) expect(isNonCommercial(ok), ok).toBe(false);
+    expect(isNonCommercialId('CC-BY-NC-SA-4.0')).toBe(true);
+    expect(isNonCommercialId('NCSA')).toBe(false);
+    // Accepted in the catalogue all the same, shown as it is.
+    expect(validateManifest(furniturePack({ license: 'CC-BY-NC-4.0' }))).toEqual([]);
+  });
+});
+
+describe('the types kind', () => {
+  it('is a .lapintypes, core\'s, content with no code', () => {
+    const types = furniturePack({ kind: 'types', contents: { file: 'pereti.lapintypes', items: ['WT1 BCA 30'] } });
+    expect(validateManifest(types)).toEqual([]);
+    expect(validateManifest({ ...types, contents: { file: 'pereti.lapin' } })).toContain('A types package is a .lapintypes file.');
+    expect(compatibility(types, app({ browser: true, modules: ['core'] }))).toEqual({ ok: true });
   });
 });
 
