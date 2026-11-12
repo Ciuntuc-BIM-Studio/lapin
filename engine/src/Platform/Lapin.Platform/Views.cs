@@ -745,8 +745,9 @@ public static class Views
                 else if (halftoneOthers && ShowsByStorey(m, view, el) == true) colors[id] = Links.Halftone;
                 if (vg.LinesOf(el) is { } lines && !(elementLines?.ContainsKey(id) ?? false)) (elementLines ??= [])[id] = lines;
             }
-        var styles = LineStyles.For(project?.Attrs["objectStyles"] as JsonObject, graphics?["categories"] as JsonObject, elementLines, table, scale);
-        var penOptions = new Pens.Options(scale, spec.Hidden, styles, categories, DraftingResources.Patterns(m), ElementColors: colors, Table: table);
+        var lineTypes = DraftingResources.Book(m).LineTypes;
+        var styles = LineStyles.For(project?.Attrs["objectStyles"] as JsonObject, graphics?["categories"] as JsonObject, elementLines, table, scale, lineTypes);
+        var penOptions = new Pens.Options(scale, spec.Hidden, styles, categories, DraftingResources.Patterns(m), ElementColors: colors, Table: table, LineTypes: lineTypes);
         var pens = Pens.Of(drawing, materials, penOptions);
         // The faces the drawing sees, worked out once for its shadows and its surface hatches: a developed section's on each
         // piece (its own cut areas hiding what is behind them), the parts' faces gathered once for all of them.
@@ -1631,7 +1632,7 @@ public static class Views
                 ["levelMark"] = new JsonObject { ["style"] = LevelMark(project).Style, ["size"] = LevelMark(project).Size },
                 ["categories"] = new JsonArray(LineStyles.Categories.Select(c => (JsonNode)c).ToArray()),
                 ["roles"] = new JsonArray(LineStyles.Roles.Select(c => (JsonNode)c).ToArray()),
-                ["patterns"] = new JsonArray(LineStyles.Patterns.Select(c => (JsonNode)c).ToArray()),
+                ["patterns"] = new JsonArray(LineStyles.Patterns.Concat((DraftingResources.Book(q.Model).LineTypes ?? []).Select(l => l.Name)).Select(c => (JsonNode)c).ToArray()),
             };
         });
 
@@ -1647,7 +1648,7 @@ public static class Views
                 var c = styles[cat] as JsonObject ?? new JsonObject();
                 if (a["spec"] is JsonObject spec)
                 {
-                    if ((string?)spec["pattern"] is { } pat && !LineStyles.Patterns.Contains(pat)) throw new CommandException($"„{pat}” is not a line pattern.");
+                    if ((string?)spec["pattern"] is { } pat && !LineStyles.Patterns.Contains(pat) && !Standards.LineTypeNames(DraftingResources.Book(ctx.Model)).Contains(pat, StringComparer.OrdinalIgnoreCase)) throw new CommandException($"„{pat}” is not a line pattern.");
                     if (Json.Number(spec["pen"]) is { } pen && (pen < 1 || pen > LineStyles.PenCount)) throw new CommandException("A pen is 1 to 16.");
                     c[role] = spec.DeepClone();
                 }

@@ -13,8 +13,11 @@ public sealed record CadLayer(string Name, string Color = "#18181b", double Weig
 {
     public static readonly string[] LineTypes = ["continuous", "dashed", "dotted", "dashdot"];
 
-    /// <summary>The line type's dashes on paper (mm).</summary>
+    /// <summary>The line type's dashes on paper (mm), Lapin's own only.</summary>
     public double[]? Dash => Dashes.Of(LineType) is { Length: > 0 } d ? d : null;
+
+    /// <summary>The line type's dashes on paper (mm): the project's own of that name (docs/plan-user-extensibility.md §3.6), else Lapin's.</summary>
+    public double[]? DashIn(StyleBook book) => Standards.DashOf(book, LineType) is { Length: > 0 } d ? d : null;
 
     public JsonObject ToJson() => new() { ["name"] = Name, ["color"] = Color, ["weight"] = Weight, ["lineType"] = LineType, ["visible"] = Visible, ["locked"] = Locked };
 
@@ -22,7 +25,8 @@ public sealed record CadLayer(string Name, string Color = "#18181b", double Weig
     {
         if (n is not JsonObject o || ((string?)o["name"])?.Trim() is not { Length: > 0 } name) return null;
         static bool B(JsonNode? x, bool d) => x is JsonValue v && v.TryGetValue<bool>(out var b) ? b : d;
-        var lt = (string?)o["lineType"] is { } l && LineTypes.Contains(l) ? l : "continuous";
+        // Lapin's line types, or one of the project's own by its name (an unknown one draws continuous).
+        var lt = (string?)o["lineType"] is { Length: > 0 and <= 64 } l ? l : "continuous";
         return new CadLayer(name, (string?)o["color"] ?? "#18181b", Math.Clamp(Json.Number(o["weight"]) ?? 0.25, 0.05, 2), lt, B(o["visible"], true), B(o["locked"], false));
     }
 }
@@ -241,7 +245,7 @@ public static class Drafts
             var construction = e.Str("role") == "draft";
             foreach (var line in Geo.Polylines(shape))
                 if (construction) mk.Polyline(line, false, ConstructionLayer, Pens.Default.Hatch, "#8f98a3", [2, 1.5]);
-                else mk.Polyline(line, false, layer.Name, layer.Weight, color, layer.Dash);
+                else mk.Polyline(line, false, layer.Name, layer.Weight, color, layer.DashIn(c.Book));
             var k = Geo.Keys(shape);
             mk.Snaps.AddRange([.. k.Endpoints, .. k.Midpoints, .. k.Centers, .. k.Quadrants]);
             mk.Shapes.Add(shape.ToJson());

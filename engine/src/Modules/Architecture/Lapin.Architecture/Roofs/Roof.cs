@@ -257,8 +257,10 @@ public static class Roof
         }
         var (shape, problem) = Solve(r);
         if (shape == null) return new ElementGeometry([], plan, r.Outline, [problem ?? "The roof cannot be solved."]);
-        if (!r.Barrel && r.Rules.Any(x => x.Kind == EdgeKind.Eave && x.Pitch < r.Covering.MinPitch))
-            diags.Add($"{r.Covering.Id} needs a pitch of at least {r.Covering.MinPitch:0}°.");
+        // The covering's least pitch: the project's rule pack's, else the catalogue's (docs/plan-user-extensibility.md §5.4).
+        var minPitch = RoofRuleSection.MinPitch(m, r.Covering);
+        if (!r.Barrel && r.Rules.Any(x => x.Kind == EdgeKind.Eave && x.Pitch < minPitch))
+            diags.Add($"{r.Covering.Id} needs a pitch of at least {minPitch:0}°.");
 
         // Each plane as the covering's body, over the rafters and battens (or the deck), vertically, so planes of one pitch share their hips and ridges.
         // A vault's strips go out along the circle's radius instead, so they meet on their shared edges.

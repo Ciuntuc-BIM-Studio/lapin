@@ -125,7 +125,7 @@ public static class Pens
 
     public sealed record Options(double Scale = 100, bool HiddenLines = true, LineStyles.Resolver? LineStyle = null,
         IReadOnlyDictionary<string, CategoryGraphics>? Categories = null, IReadOnlyList<HatchPattern>? Patterns = null, int MaxHatchSegments = 60_000,
-        IReadOnlyDictionary<string, string>? ElementColors = null, LineStyles.PenTable? Table = null);
+        IReadOnlyDictionary<string, string>? ElementColors = null, LineStyles.PenTable? Table = null, IReadOnlyList<LineTypeDef>? LineTypes = null);
 
     /// <summary>A colour washed out towards white (a cut filled with a phase's colour stays readable under its hatch).</summary>
     static string Pale(string css)
@@ -209,11 +209,11 @@ public static class Pens
             var styled = separation ? o.LineStyle?.Invoke(LineRole.Separation, l.Class, l.Element) ?? o.LineStyle?.Invoke(l.Role, l.Class, l.Element) : o.LineStyle?.Invoke(l.Role, l.Class, l.Element);
             // A line edit's style (Linework) wins over everything else.
             if (l.Style is { Empty: false } ls)
-                styled = new ResolvedLine(ls.Pen is { } lsPen ? LineStyles.PenWidth(o.Table ?? LineStyles.DefaultPenTable(), lsPen, o.Scale) : styled?.WidthMm, ls.Color ?? styled?.Color, ls.Pattern != null ? LineStyles.DashOf(ls.Pattern) : styled?.Dash);
+                styled = new ResolvedLine(ls.Pen is { } lsPen ? LineStyles.PenWidth(o.Table ?? LineStyles.DefaultPenTable(), lsPen, o.Scale) : styled?.WidthMm, ls.Color ?? styled?.Color, ls.Pattern != null ? Dashes.Of(ls.Pattern, o.LineTypes) : styled?.Dash);
             // The element's own style (an IFC file's colour and pattern) under everything else.
             if (l.Own is { Empty: false } own)
                 styled = new ResolvedLine(styled?.WidthMm ?? (g?.LineWeight == null && own.Pen is { } ownPen ? LineStyles.PenWidth(o.Table ?? LineStyles.DefaultPenTable(), ownPen, o.Scale) : null),
-                    styled?.Color ?? (g?.LineColor == null ? own.Color : null), styled?.Dash ?? (own.Pattern != null ? LineStyles.DashOf(own.Pattern) : null));
+                    styled?.Color ?? (g?.LineColor == null ? own.Color : null), styled?.Dash ?? (own.Pattern != null ? Dashes.Of(own.Pattern, o.LineTypes) : null));
             var color = o.ElementColors?.GetValueOrDefault(l.Element) ?? styled?.Color ?? g?.LineColor;
             Pen pen;
             switch (l.Role)

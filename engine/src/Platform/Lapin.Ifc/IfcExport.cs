@@ -249,6 +249,35 @@ public static partial class IfcExport
         /// <summary>What foreign elements carry from their file (<see cref="IfcSource"/>), written back as it came.</summary>
         IfcCarry.Writer Carry => carry ??= new IfcCarry.Writer(File);
 
+        /// <summary>
+        /// The classifications (docs/plan-user-extensibility.md §7.3): each system the elements and types written use an
+        /// IfcClassification, each code an IfcClassificationReference (its title as the name, its system as the source), related to
+        /// what carries it by one IfcRelAssociatesClassification.
+        /// </summary>
+        void Classified()
+        {
+            var groups = new Dictionary<(string System, string Code), List<string>>();
+            foreach (var e in m.Entities)
+            {
+                var refs = Classifications.RefsOf(e);
+                if (refs.Count == 0) continue;
+                var target = written.TryGetValue(e.Id, out var w) ? w : types.TryGetValue(e.Id, out var t) ? t.Ref : null;
+                if (target == null) continue;
+                foreach (var r in refs) (groups.TryGetValue(r, out var l) ? l : groups[r] = []).Add(target);
+            }
+            if (groups.Count == 0) return;
+            var systems = new Dictionary<string, string>();
+            foreach (var ((systemId, code), objects) in groups.OrderBy(g => g.Key.System).ThenBy(g => g.Key.Code, StringComparer.Ordinal))
+            {
+                if (m.Get(systemId) is not { Class: Classifications.Class } system) continue;
+                if (!systems.TryGetValue(systemId, out var sysRef))
+                    systems[systemId] = sysRef = f.Add("IFCCLASSIFICATION", S(system.Str("source")), S(system.Str("edition")), Null, S(system.Name), S(system.Str("description")), Null, Null);
+                var title = Classifications.Items(system).FirstOrDefault(i => i.Code == code)?.Title;
+                var reference = f.Add("IFCCLASSIFICATIONREFERENCE", Null, S(code), S(title), sysRef, Null, Null);
+                f.Add("IFCRELASSOCIATESCLASSIFICATION", Gid(systemId, "class:" + code), Null, Null, Null, L(objects.Distinct()), reference);
+            }
+        }
+
         public void Run()
         {
             project = Spatial.Project(m) ?? throw new CommandException("The model has no project.");
@@ -2127,6 +2156,7 @@ public static partial class IfcExport
             }
             foreach (var (typeId, t) in types) f.Add("IFCRELDEFINESBYTYPE", Gid(typeId, "defines"), Null, Null, Null, L(t.Occurrences), t.Ref);
             foreach (var (materialId, list) in materialUses) f.Add("IFCRELASSOCIATESMATERIAL", Gid(materialId, "associates"), Null, Null, Null, L(list), Material(materialId));
+            Classified();
             foreach (var fill in pendingFills)
                 if (written.TryGetValue(fill.Relating, out var opening) && fill.Related.Count > 0 && written.TryGetValue(fill.Related[0], out var filler))
                     f.Add("IFCRELFILLSELEMENT", Gid(fill.Id), Null, Null, Null, opening, filler);

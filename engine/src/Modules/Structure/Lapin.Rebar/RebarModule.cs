@@ -270,6 +270,8 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         });
 
         r.Service<IViewAnnotations>(this);
+        // The reinforcement's rules in the project's rule pack (docs/plan-user-extensibility.md §5.4).
+        RebarRuleSection.Register(r);
         // Drafted lines and polylines made bars (docs/plan-user-extensibility.md §6.1).
         r.Service<LineworkConverter>(RebarLinework.Bars);
         r.Service<IElementPlacement>(this);
@@ -284,6 +286,9 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             var def = RebarShapes.Def(shape);
             var attrs = new JsonObject { ["viewId"] = view.Id, ["shape"] = shape, ["at"] = Rebars.J(Args.Point(a["at"], "the bar's point")), ["diameter"] = def.DefaultDiameter, ["mark"] = Rebars.NextMark(ctx.Model, PartitionArg(a)), ["count"] = 1 };
             if (def.FreeVertices && a["vertices"] == null) attrs["vertices"] = new JsonArray(def.Vertices(new Dictionary<string, double>()).Select(p => (JsonNode)Rebars.J(p)).ToArray());
+            // The project's rules complete it: its steel, its hooks' tails, its bend radius (docs/plan-user-extensibility.md §6.5).
+            a = (JsonObject)a.DeepClone();
+            RebarRuleSection.Complete(ctx.Model, a, Json.Number(a["diameter"]) ?? def.DefaultDiameter, shape);
             Write(attrs, a, run: false);
             // Drawn inside an element's cut (a beam in its longitudinal section): the bar lies in that element, one across its width unless told more.
             if (a["host"] == null && Rebar3D.HostAt(ctx, view, Rebars.At(new Entity("", Rebars.Class, "", attrs))) is { } host)
@@ -359,6 +364,8 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             var end = Args.Point(a["end"], "the path's end");
             if ((end - start).Length < 1e-6) throw new CommandException("A distribution needs two different points.");
             var attrs = new JsonObject { ["viewId"] = view.Id, ["shape"] = shape, ["start"] = Rebars.J(start), ["end"] = Rebars.J(end), ["diameter"] = def.DefaultDiameter, ["mark"] = Rebars.NextMark(ctx.Model, PartitionArg(a)), ["count"] = 1, ["step"] = 0.15 };
+            a = (JsonObject)a.DeepClone();
+            RebarRuleSection.Complete(ctx.Model, a, Json.Number(a["diameter"]) ?? def.DefaultDiameter, shape);
             Write(attrs, a, run: true);
             var e = new Entity(ctx.NewId(), Rebars.RunClass, $"{def.Label}s {Rebars.Mark(new Entity("", Rebars.RunClass, "", attrs))}", attrs);
             ctx.Add(e);

@@ -77,6 +77,13 @@ public sealed record TagType(string Id, string Name, string Template, IReadOnlyL
 public sealed record LayerGroup(string Id, string Name, bool Visible, bool Locked);
 
 /// <summary>A drafting layer: its colour, pen (paper mm) and line type, shown or locked by itself or its group.</summary>
+/// <summary>
+/// A line type of the project's own (docs/plan-user-extensibility.md §3.6): its name (what a layer, an axis style or an object
+/// style names), its dashes on paper (mm: dash, gap, dash, gap…; a dot is a dash of 0.1 mm) and what it is. Read from an
+/// AutoCAD <c>.lin</c> file or made in Lapin; Lapin's own (continuous, dashed, hidden, center, dotted, dashdot) stay.
+/// </summary>
+public sealed record LineTypeDef(string Id, string Name, double[] Dashes, string? Description = null);
+
 public sealed record DraftLayer(string Id, string Name, string Color, bool Visible, bool Locked, string? Group = null, double? LineWeight = null, string? LineType = null);
 
 /// <summary>
@@ -101,7 +108,8 @@ public sealed record StyleBook(
     IReadOnlyList<TextStyle> TextStyles, IReadOnlyList<DimStyle> DimStyles, IReadOnlyList<AxisStyle> AxisStyles,
     string DefaultAxisStyle, IReadOnlyList<TagType> TagTypes, IReadOnlyList<DraftLayer> Layers, IReadOnlyList<LayerGroup> LayerGroups,
     string LineCap = "round", string Units = "mm", double? SectionMarkSize = null, double? SectionMarkText = null, double? ElevationMarkSize = null, double? ElevationMarkText = null,
-    double? AreaRounding = null, IReadOnlyList<double>? Scales = null, double? PlanScale = null, double? SectionScale = null, double? ElevationScale = null)
+    double? AreaRounding = null, IReadOnlyList<double>? Scales = null, double? PlanScale = null, double? SectionScale = null, double? ElevationScale = null,
+    IReadOnlyList<LineTypeDef>? LineTypes = null)
 {
     public static StyleBook Default => Standards.Read(null);
 }
@@ -188,12 +196,14 @@ public static class Standards
             v["precision"] is JsonValue pv && Lapin.Model.Json.Number(pv) is { } pn && double.IsFinite(pn) ? Math.Max(-1, (int)Math.Round(pn)) : d.Precision, OneOf(v["unit"], Units, d.Unit), Color(v["color"]), OneOf(v["openingHeight"], OpeningHeights, d.OpeningHeight));
     }
 
-    static AxisStyle ReadAxis(JsonObject v)
+    static AxisStyle ReadAxis(JsonObject v) => ReadAxis(v, LineTypes);
+
+    static AxisStyle ReadAxis(JsonObject v, string[] lineTypes)
     {
         var d = DefaultAxis;
         var first = v["firstLabel"] is JsonValue j && j.TryGetValue<string>(out var fl) && fl.Trim().Length > 0 ? fl.Trim() : d.FirstLabel;
         return new(Str(v["id"], d.Id), Str(v["name"], d.Name), Str(v["textStyle"], d.TextStyle), OneOf(v["bubble"], Bubbles, d.Bubble), OneOf(v["ends"], AxisEnds, d.Ends),
-            Positive(v["size"], d.Size), OneOf(v["lineType"], LineTypes, d.LineType), first, Color(v["color"]));
+            Positive(v["size"], d.Size), OneOf(v["lineType"], lineTypes, d.LineType), first, Color(v["color"]));
     }
 
     static TagType? ReadTag(JsonObject v)
@@ -276,10 +286,29 @@ public static class Standards
         (id != null ? b.TagTypes.FirstOrDefault(t => t.Id == id) : null)
         ?? (ifcClass != null && id == null ? b.TagTypes.FirstOrDefault(t => t.Classes.Contains(ifcClass) && t.Shape != "buildup") : null);
 
-    static DraftLayer ReadLayer(JsonObject v) => new(
+    static DraftLayer ReadLayer(JsonObject v) => ReadLayer(v, LineTypes);
+
+    static DraftLayer ReadLayer(JsonObject v, string[] lineTypes) => new(
         Str(v["id"], "0"), Str(v["name"], Str(v["id"], "0")), Color(v["color"]) ?? Layer0.Color, v["visible"] is not JsonValue vv || !vv.TryGetValue<bool>(out var vis) || vis,
         True(v["locked"]), v["group"] is JsonValue g && g.TryGetValue<string>(out var gs) && gs.Length > 0 ? gs : null,
-        Num(v["lineWeight"], -1) is var w && w > 0 ? w : null, OneOf(v["lineType"], LineTypes, "") is { Length: > 0 } lt ? lt : null);
+        Num(v["lineWeight"], -1) is var w && w > 0 ? w : null, OneOf(v["lineType"], lineTypes, "") is { Length: > 0 } lt ? lt : null);
+
+    /// <summary>A line type of the project's: a name, dashes on paper (mm, two at least, each above 0 and under 100); null when it is not one.</summary>
+    public static LineTypeDef? ReadLineType(JsonObject v)
+    {
+        var name = v["name"] is JsonValue nv && nv.TryGetValue<string>(out var n) ? n.Trim() : "";
+        if (name.Length is 0 or > 64 || LineTypes.Contains(name, StringComparer.OrdinalIgnoreCase) || LineStyles.Patterns.Contains(name, StringComparer.OrdinalIgnoreCase)) return null;
+        if (v["dashes"] is not JsonArray da) return null;
+        var dashes = da.Select(x => Lapin.Model.Json.Number(x) ?? double.NaN).ToArray();
+        if (dashes.Length < 2 || dashes.Length > 24 || dashes.Any(x => !(x > 0 && x < 100))) return null;
+        return new(name, name, [.. dashes.Select(x => Math.Round(x, 4))], v["description"] is JsonValue dv && dv.TryGetValue<string>(out var ds) && ds.Trim().Length > 0 ? ds.Trim() : null);
+    }
+
+    /// <summary>Every line type name a layer, an axis or an object style may name: Lapin's and the project's.</summary>
+    public static string[] LineTypeNames(StyleBook? b) => [.. LineTypes, .. LineStyles.Patterns.Where(p => !LineTypes.Contains(p)), .. (b?.LineTypes ?? []).Select(l => l.Name)];
+
+    /// <summary>A line type's dashes on paper (mm): the project's of that name, else Lapin's; continuous or unknown: none.</summary>
+    public static double[] DashOf(StyleBook? b, string? lineType) => Dashes.Of(lineType, b?.LineTypes);
 
     static List<T> WithStandard<T>(List<T> list, T standard, Func<T, string> id, string key = Standard) =>
         list.Any(s => id(s) == key) ? list : [standard, .. list];
@@ -289,20 +318,24 @@ public static class Standards
     {
         var o = raw as JsonObject ?? [];
         IEnumerable<JsonObject> List(string key) => o[key] is JsonArray a ? a.OfType<JsonObject>() : [];
-        var axes = WithStandard(List("axisStyles").Select(ReadAxis).ToList(), DefaultAxis, a => a.Id);
+        // The project's own line types first: its layers and axes may name them.
+        var own = List("lineTypes").Select(ReadLineType).OfType<LineTypeDef>().GroupBy(l => l.Name, StringComparer.OrdinalIgnoreCase).Select(g => g.Last()).ToList();
+        string[] names = [.. LineTypes, .. LineStyles.Patterns.Where(p => !LineTypes.Contains(p)), .. own.Select(l => l.Name)];
+        var axes = WithStandard(List("axisStyles").Select(v => ReadAxis(v, names)).ToList(), DefaultAxis, a => a.Id);
         var def = o["defaultAxisStyle"] is JsonValue dv && dv.TryGetValue<string>(out var ds) && axes.Any(a => a.Id == ds) ? ds : Standard;
         return new StyleBook(
             WithStandard(List("textStyles").Select(ReadText).ToList(), DefaultText, t => t.Id),
             WithStandard(List("dimStyles").Select(ReadDim).ToList(), DefaultDim, d => d.Id),
             axes, def,
             o["tagTypes"] is JsonArray ? List("tagTypes").Select(ReadTag).OfType<TagType>().ToList() : [.. DefaultTagTypes],
-            WithStandard(List("layers").Select(ReadLayer).ToList(), Layer0, l => l.Id, "0"),
+            WithStandard(List("layers").Select(v => ReadLayer(v, names)).ToList(), Layer0, l => l.Id, "0"),
             List("layerGroups").Where(g => g["id"] is JsonValue).Select(g => new LayerGroup(Str(g["id"], ""), Str(g["name"], "Group"), g["visible"] is not JsonValue gv || !gv.TryGetValue<bool>(out var b) || b, True(g["locked"]))).Where(g => g.Id.Length > 0).ToList(),
             OneOf(o["lineCap"], LineCaps, "round"), OneOf(o["units"], ProjectUnits, "mm"),
             MarkValue(o["sectionMarkSize"] ?? o["markSize"], MinMarkSize, MaxMarkSize), MarkValue(o["sectionMarkText"] ?? o["markText"], MinMarkText, MaxMarkText),
             MarkValue(o["elevationMarkSize"] ?? o["markSize"], MinMarkSize, MaxMarkSize), MarkValue(o["elevationMarkText"] ?? o["markText"], MinMarkText, MaxMarkText),
             Lapin.Drawing.AreaRounding.Read(Lapin.Model.Json.Number(o["areaRounding"])),
-            ViewScales(o["scales"]), ViewScale(o["planScale"]), ViewScale(o["sectionScale"]), ViewScale(o["elevationScale"]));
+            ViewScales(o["scales"]), ViewScale(o["planScale"]), ViewScale(o["sectionScale"]), ViewScale(o["elevationScale"]),
+            own.Count > 0 ? own : null);
     }
 
     public static JsonObject ToJson(StyleBook b) => (JsonObject)JsonSerializer.SerializeToNode(b, DrawingJson.Default.StyleBook)!;

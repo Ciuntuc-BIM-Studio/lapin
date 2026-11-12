@@ -121,7 +121,7 @@ public static class Grids
         var axisStyle = Standards.ResolveAxis(c.Book, new JsonObject { ["axisStyle"] = c.Book.DefaultAxisStyle });
         var text = Standards.ResolveText(c.Book, new JsonObject { ["axisStyle"] = c.Book.DefaultAxisStyle });
         var color = axisStyle.Color ?? "#000000";
-        var dash = Standards.DashOf(axisStyle.LineType);
+        var dash = Standards.DashOf(c.Book, axisStyle.LineType);
         var r = axisStyle.Size * c.Mm / 2;
         // Sections and elevations run the axes over what they draw, else over the storeys.
         var storeys = Spatial.Storeys(c.Model).ToList();

@@ -110,7 +110,7 @@ public static class SymbolInstances
                 {
                     o[widthKey] = layer.Weight;
                     if (color != null) o["color"] = color;
-                    if (layer.Dash is { } dash) o["dash"] = new JsonArray(dash.Select(d => (JsonNode)d).ToArray());
+                    if (layer.DashIn(book) is { } dash) o["dash"] = new JsonArray(dash.Select(d => (JsonNode)d).ToArray());
                     return o;
                 }
                 if (e.Attrs["hatch"] is JsonObject h)

@@ -53,6 +53,12 @@ public sealed class CoreModule : ILapinModule
             [new("elevation", "Elevation", "length"), new("height", "Height", "length", Min: 0.1)], "#6c5ce7", Kind: "spatial"));
         r.Class(new(IfcClass.Material, "Material", [new("color", "Colour", "color"), new("category", "Category", "text")], Kind: "resource"));
         DraftingResources.Register(r);
+        // Line types of the project's own and the standards as a library (docs/plan-user-extensibility.md §3.6–3.7).
+        StandardsLibrary.Register(r);
+        // Rule packs: the norms the configurators use, as data (docs/plan-user-extensibility.md §5.4).
+        RulePacks.Register(r);
+        // Classifications, keynotes and shared parameter definitions (docs/plan-user-extensibility.md §7.3).
+        Classifications.Register(r);
         Images.Register(r);
         Views.Register(r);
         r.Service<IProjectUpgrade>(new StoreyPlans.DefaultPlanUpgrade());
@@ -179,10 +185,12 @@ public sealed class CoreModule : ILapinModule
             foreach (var id in ids)
             {
                 var e = ctx.Model.Get(id) ?? throw new CommandException("Which element?");
-                var (pset, standardKind) = StandardPsets.Check(e.Class, (string?)a["pset"], name);
+                // A shared definition of that name gives its set and kind when the command gives none (docs/plan-user-extensibility.md §7.3).
+                var shared = a["pset"] == null && a["kind"] == null ? ParamDefs.Find(ctx.Model, name) : null;
+                var (pset, standardKind) = StandardPsets.Check(e.Class, (string?)a["pset"] ?? shared?.Pset, name);
                 var list = e.Attrs["params"] is JsonArray old ? (JsonArray)old.DeepClone() : new JsonArray();
                 var existing = list.OfType<JsonObject>().FirstOrDefault(p => Params.Same(p, pset, name));
-                var kind = standardKind ?? (string?)a["kind"] ?? (string?)existing?["kind"] ?? throw new CommandException($"A new parameter needs its kind ({string.Join(", ", Params.Kinds)}).");
+                var kind = standardKind ?? (string?)a["kind"] ?? (string?)existing?["kind"] ?? shared?.Kind ?? throw new CommandException($"A new parameter needs its kind ({string.Join(", ", Params.Kinds)}).");
                 var options = a["options"] as JsonArray ?? existing?["options"] as JsonArray;
                 var value = Params.Check(kind, a["value"], options);
                 var entry = new JsonObject { ["name"] = name, ["kind"] = kind, ["value"] = value };

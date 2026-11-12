@@ -105,6 +105,8 @@ public static partial class TagText
             case "type": return type?.Name ?? e.Name;
             case "class": return e.Class.StartsWith("Ifc", StringComparison.Ordinal) ? e.Class[3..] : e.Class;
         }
+        // Its classification's code or title, or one system's code (docs/plan-user-extensibility.md §7.3: a keynote is a tag of it).
+        if (Classifications.TagValue(m, e, type, key) is { } classified) return classified;
         // The user's parameters, the element's own over its type's (as the properties panel shows them).
         if ((Param(e, key) ?? Param(type, key)) is { } p) return ParamText(p, units);
         if ((Imported(e, key) ?? Imported(type, key)) is { } imported) return imported;

@@ -17,6 +17,9 @@ public static class StairsModule
     public static void Register(IModuleRegistry r)
     {
         r.Class(new(IfcClass.StairType, "Stair type", [], "#b9a68a", Kind: "type"));
+        // The stairs' rules in the project's rule pack (docs/plan-user-extensibility.md §5.4).
+        StairRuleSection.Register(r);
+        r.Service<IRuleSection>(new Roofs.RoofRuleSection());
         r.Class(new(IfcClass.Stair, "Stair",
         [
             new("width", "Width", "length", Min: 0.5, Max: 5),

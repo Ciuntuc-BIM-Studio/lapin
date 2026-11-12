@@ -117,7 +117,7 @@ public static class LineStyles
     /// view's category overrides ({category: {lines: {role: spec}}}) and element
     /// overrides ({elementId: {role: spec}}). Null when nothing is styled.
     /// </summary>
-    public static Resolver? For(JsonObject? objectStyles, JsonObject? viewCategories, JsonObject? viewElements, PenTable? table, double scale)
+    public static Resolver? For(JsonObject? objectStyles, JsonObject? viewCategories, JsonObject? viewElements, PenTable? table, double scale, IReadOnlyList<LineTypeDef>? lineTypes = null)
     {
         objectStyles ??= []; viewCategories ??= []; viewElements ??= [];
         var anything = objectStyles.Count > 0 || viewElements.Count > 0 || viewCategories.Any(c => c.Value?["lines"] is JsonObject { Count: > 0 });
@@ -134,7 +134,7 @@ public static class LineStyles
             spec = Merge(spec, LineStyleSpec.From(element?[role]));
             if (category != null) spec = Merge(spec, LineStyleSpec.From(viewCategories[category]?["lines"]?[role]));
             if (category != null) spec = Merge(spec, LineStyleSpec.From(objectStyles[category]?[role]));
-            ResolvedLine? r = spec.Empty ? null : new ResolvedLine(spec.Pen is { } p ? PenWidth(table, p, scale) : null, spec.Color, spec.Pattern != null ? DashOf(spec.Pattern) : null);
+            ResolvedLine? r = spec.Empty ? null : new ResolvedLine(spec.Pen is { } p ? PenWidth(table, p, scale) : null, spec.Color, spec.Pattern != null ? Dashes.Of(spec.Pattern, lineTypes) : null);
             cache[key] = r;
             return r;
         };
@@ -159,6 +159,10 @@ public static class PenLayer
 /// <summary>The dash patterns by name, on paper (mm): the one table for pens, drafting standards and CAD layers.</summary>
 public static class Dashes
 {
+    /// <summary>A line type's dashes: the project's own of that name (<paramref name="own"/>), else Lapin's.</summary>
+    public static double[] Of(string? name, IReadOnlyList<LineTypeDef>? own) =>
+        name != null && own?.FirstOrDefault(l => string.Equals(l.Name, name, StringComparison.OrdinalIgnoreCase)) is { } mine ? mine.Dashes : Of(name);
+
     public static double[] Of(string? name) => name switch
     {
         "dashed" => [3, 1.5],

@@ -55,7 +55,7 @@ public static class ViewLinework
             if (action is not ("hide" or "show" or "style")) throw new CommandException("Linework hides, shows or restyles an edge.");
             var style = LineStyleSpec.From(a["style"]);
             if (action == "style" && (style == null || style.Empty)) throw new CommandException("A style needs a pen, a colour or a pattern.");
-            if (style?.Pattern is { } pat && !LineStyles.Patterns.Contains(pat)) throw new CommandException($"„{pat}” is not a line pattern.");
+            if (style?.Pattern is { } pat && !LineStyles.Patterns.Contains(pat) && !Standards.LineTypeNames(DraftingResources.Book(ctx.Model)).Contains(pat, StringComparer.OrdinalIgnoreCase)) throw new CommandException($"„{pat}” is not a line pattern.");
             var edge = Pick(ctx, view, Args.Point(a["at"], "point"), a);
             Write(ctx, view, Linework.Add(Edits(view), new LineEdit(ctx.NewId(), edge.Element, edge.A, edge.B, action, style)));
             return new JsonObject { ["element"] = edge.Element };
