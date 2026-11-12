@@ -2594,6 +2594,9 @@ export const scenes = [
       t.expect(nook?.props?.host === stair && nook?.props?.style === 'reading', 'a reading nook is made under the stair');
       await t.ui({ dialog: null });
       await t.wait(600);
+      // Report #143: the type says how a plan draws the stair over its cut plane, and its break line.
+      t.expect(await dialog.locator('select[data-field=symbols-above-cut]').count() > 0, 'the type chooses how the plan draws the stair over its cut');
+      t.expect(await dialog.locator('select[data-field=symbols-break]').count() > 0, 'the type chooses its break line');
       await t.shot('under-stair-properties', { of: 'aside.props', pad: 0, maxHeight: 640 });
       // The other five styles, each under a stair of its own beside the first.
       const styles = ['storage', 'office', 'mudroom', 'playhouse', 'dogbed'];

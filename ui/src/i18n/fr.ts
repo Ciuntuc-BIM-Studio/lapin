@@ -937,6 +937,7 @@ export const FR: Record<string, string> = {
   // Labels the guide's translators found in English, and meanings told apart by context (`ctx|phrase`)
   "session|Join": "Rejoindre", "element|Layers": "Couches", "cad|Layer": "Calque", "edge|gable": "pignon",
   "eave": "égout", "Import DXF": "Importer DXF", "Import DXF…": "Importer DXF…", "Import DXF ·": "Importer DXF ·",
+  'Over the cut plane': 'Au-dessus du plan de coupe', 'Dashed': 'En tirets', 'Not drawn': 'Non dessiné', 'Whole stair, no cut': 'Escalier entier, sans coupe', 'Break line': 'Ligne de coupure', 'Zigzag': 'Zigzag', 'Two parallel lines': 'Deux lignes parallèles',
   "Link IFC": "Lier IFC", "Link IFC…": "Lier IFC…", "Nothing is linked. File → Link IFC…, or Import DXF… with „As a link”, brings a file in read-only; it is listed here.": "Rien n’est lié. Fichier → Lier IFC…, ou Importer DXF… avec « Comme lien », apporte un fichier en lecture seule ; il est listé ici.", "IFC properties": "Propriétés IFC",
   "Units": "Unités", "Units:": "Unités :", "The project's units: change them in Drafting standards → Project": "Les unités du projet : à changer dans Normes de dessin → Projet", "Lengths are shown and typed in this unit everywhere; the engine keeps metres": "Les longueurs sont affichées et saisies partout dans cette unité ; le moteur garde des mètres",
   "Roof window": "Fenêtre de toit", "Dormer": "Lucarne", "dormer": "lucarne", "Shaped by hand": "Formé à la main",

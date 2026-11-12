@@ -37,9 +37,11 @@ interface Spec {
   maxRun?: number;
   /** A spiral's or curved stair's inner radius, the degrees it turns through (null: as the risers and tread make it), a split stair's side flights' width. */
   innerRadius?: number; sweep?: number | null; sideWidth?: number | null;
-  /** What a plan writes on it (report #46). */
-  symbols?: { numbers: boolean; label: boolean; up: boolean } | null;
+  /** What a plan writes on it (report #46), and how it draws the part over the plan's cut and the break line (report #143). */
+  symbols?: Symbols | null;
 }
+interface Symbols { numbers: boolean; label: boolean; up: boolean; aboveCut?: 'dashed' | 'hidden' | 'whole'; break?: 'zigzag' | 'double' }
+const SYMBOLS: Symbols = { numbers: false, label: false, up: true, aboveCut: 'dashed', break: 'zigzag' };
 interface Defaults { spec: Spec; ramp?: Spec; rampShapes?: string[]; rules: Record<string, Rules>; shapes: string[]; turns: string[]; sides: string[]; constructions?: string[]; railingStyles?: string[]; library?: { key: string; spec: Spec }[] }
 
 const SHAPES: Record<string, string> = { straight: 'Straight', 'straight-landing': 'Straight with landing', l: 'L shape', u: 'U shape (dog-leg with no gap)', spiral: 'Spiral', curved: 'Curved', split: 'Split (bifurcated)' };
@@ -214,11 +216,22 @@ export function StairTypesDialog() {
                 <p className="eyebrow">In plan</p>
                 {(['numbers', 'label', 'up'] as const).map((k) => (
                   <label key={k} className="row small">
-                    <input type="checkbox" data-field={`symbols-${k}`} checked={(spec.symbols ?? { numbers: false, label: false, up: true })[k]}
-                      onChange={(e) => set({ symbols: { ...(spec.symbols ?? { numbers: false, label: false, up: true }), [k]: e.target.checked } })} />
+                    <input type="checkbox" data-field={`symbols-${k}`} checked={(spec.symbols ?? SYMBOLS)[k]}
+                      onChange={(e) => set({ symbols: { ...SYMBOLS, ...spec.symbols, [k]: e.target.checked } })} />
                     {k === 'numbers' ? 'Number the steps' : k === 'label' ? 'Label: risers, riser and tread, width' : '"UP" at the foot of the arrow'}
                   </label>
                 ))}
+                {/* Report #143: a plan cuts the stair at its cut plane, with a break line; what lies over the cut is dashed, left out, or the stair drawn whole. */}
+                <label className="field-line"><span className="eyebrow">Over the cut plane</span>
+                  <select data-field="symbols-above-cut" value={spec.symbols?.aboveCut ?? 'dashed'} onChange={(e) => set({ symbols: { ...SYMBOLS, ...spec.symbols, aboveCut: e.target.value as Symbols['aboveCut'] } })}>
+                    <option value="dashed">Dashed</option><option value="hidden">Not drawn</option><option value="whole">Whole stair, no cut</option>
+                  </select>
+                </label>
+                {(spec.symbols?.aboveCut ?? 'dashed') !== 'whole' && <label className="field-line"><span className="eyebrow">Break line</span>
+                  <select data-field="symbols-break" value={spec.symbols?.break ?? 'zigzag'} onChange={(e) => set({ symbols: { ...SYMBOLS, ...spec.symbols, break: e.target.value as Symbols['break'] } })}>
+                    <option value="zigzag">Zigzag</option><option value="double">Two parallel lines</option>
+                  </select>
+                </label>}
               </>}
               {tab === 'shape' && <>
                 {/* How high it climbs: up to the storey above, or any height, from below the storey's level or up from it. */}

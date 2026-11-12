@@ -983,6 +983,7 @@ export const LO: Record<string, string> = {
   'Prairie': 'ແພຣຣີ', 'Traditional': 'ດັ້ງເດີມ', 'Round window': 'ປ່ອງຢ້ຽມມົນ', 'Keystone': 'ຫີນກະແຈໂຄ້ງ', 'Crown over the opening': 'ບົວປະດັບເໜືອຊ່ອງເປີດ', 'Cornice': 'ບົວຊາຍຄາ',
   'Pediment': 'ໜ້າຈົ່ວ', 'Segmental pediment': 'ໜ້າຈົ່ວໂຄ້ງ', 'Hood mould': 'ບົວກັນນ້ຳຢອດ', 'Apron under the sill': 'ແຜ່ນປະດັບກ້ອງຕັ່ງ', 'Consoles': 'ຄ້ຳຍັນ', 'Round arch': 'ໂຄ້ງເຄິ່ງວົງມົນ',
   'Segmental arch': 'ໂຄ້ງສ່ວນວົງ', 'Pointed arch': 'ໂຄ້ງແຫຼມ', 'Triangular head': 'ຫົວສາມຫຼ່ຽມ', 'Round or oval': 'ມົນ ຫຼື ຮີ', 'Rise of the head': 'ຄວາມສູງສ່ວນໂຄ້ງຫົວ',
+  'Over the cut plane': 'ເໜືອລະດັບຕັດ', 'Dashed': 'ເສັ້ນປະ', 'Not drawn': 'ບໍ່ແຕ້ມ', 'Whole stair, no cut': 'ຂັ້ນໄດທັງໝົດ, ບໍ່ຕັດ', 'Break line': 'ເສັ້ນຕັດ', 'Zigzag': 'ຊິກແຊັກ', 'Two parallel lines': 'ສອງເສັ້ນຂະໜານ',
   'Bars in the head': 'ຊີ່ໃນສ່ວນຫົວ', 'Sunburst': 'ແສງຕາເວັນ', 'Upright': 'ຕັ້ງ', 'The mullions carried up': 'ເສົາກອບຕໍ່ຂຶ້ນໄປ', 'Cross': 'ກາກບາດ', 'Spokes': 'ຊີ່ລັດສະໝີ',
   'Glazing bars': 'ຊີ່ແກ້ວ', 'Grid (colonial)': 'ຕາໜ່າງ (ໂຄໂລນຽນ)', 'Diamond lattice': 'ຕາໜ່າງຂ້າວຫຼາມຕັດ', 'Lites across': 'ຊ່ອງແກ້ວຕາມລວງກວ້າງ', 'Lites up': 'ຊ່ອງແກ້ວຕາມລວງສູງ',
   'Bar width': 'ຄວາມກວ້າງຊີ່', 'Handle': 'ມືຈັບ', 'Lever (default)': 'ມືຈັບກ້ານ (ຄ່າເລີ່ມຕົ້ນ)', 'Window handle (default)': 'ມືຈັບປ່ອງຢ້ຽມ (ຄ່າເລີ່ມຕົ້ນ)', 'Lever': 'ມືຈັບກ້ານ',

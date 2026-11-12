@@ -937,6 +937,7 @@ export const DA: Record<string, string> = {
   // Labels the guide's translators found in English, and meanings told apart by context (`ctx|phrase`)
   "session|Join": "Deltag", "element|Layers": "Lag", "cad|Layer": "Lag", "edge|gable": "gavl",
   "eave": "tagfod", "Import DXF": "Importér DXF", "Import DXF…": "Importér DXF…", "Import DXF ·": "Importér DXF ·",
+  'Over the cut plane': 'Over snitplanet', 'Dashed': 'Stiplet', 'Not drawn': 'Tegnes ikke', 'Whole stair, no cut': 'Hele trappen, uden snit', 'Break line': 'Brudlinje', 'Zigzag': 'Zigzag', 'Two parallel lines': 'To parallelle linjer',
   "Link IFC": "Tilknyt IFC", "Link IFC…": "Tilknyt IFC…", "Nothing is linked. File → Link IFC…, or Import DXF… with „As a link”, brings a file in read-only; it is listed here.": "Intet er tilknyttet. Fil → Tilknyt IFC… eller Importér DXF… med „Som link“ henter en fil skrivebeskyttet ind; den vises her.", "IFC properties": "IFC-egenskaber",
   "Units": "Enheder", "Units:": "Enheder:", "The project's units: change them in Drafting standards → Project": "Projektets enheder: skift dem i Tegningsstandarder → Projekt", "Lengths are shown and typed in this unit everywhere; the engine keeps metres": "Længder vises og indtastes overalt i denne enhed; motoren gemmer meter",
   "Roof window": "Ovenlysvindue", "Dormer": "Kvist", "dormer": "kvist", "Shaped by hand": "Formet i hånden",

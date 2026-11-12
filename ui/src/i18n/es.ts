@@ -937,6 +937,7 @@ export const ES: Record<string, string> = {
   // Labels the guide's translators found in English, and meanings told apart by context (`ctx|phrase`)
   "session|Join": "Unirse", "element|Layers": "Capas", "cad|Layer": "Capa", "edge|gable": "hastial",
   "eave": "alero", "Import DXF": "Importar DXF", "Import DXF…": "Importar DXF…", "Import DXF ·": "Importar DXF ·",
+  'Over the cut plane': 'Por encima del plano de corte', 'Dashed': 'Discontinuo', 'Not drawn': 'No se dibuja', 'Whole stair, no cut': 'Escalera entera, sin corte', 'Break line': 'Línea de rotura', 'Zigzag': 'Zigzag', 'Two parallel lines': 'Dos líneas paralelas',
   "Link IFC": "Vincular IFC", "Link IFC…": "Vincular IFC…", "Nothing is linked. File → Link IFC…, or Import DXF… with „As a link”, brings a file in read-only; it is listed here.": "No hay nada vinculado. Archivo → Vincular IFC…, o Importar DXF… con «Como vínculo», trae un archivo en solo lectura; aparece aquí.", "IFC properties": "Propiedades IFC",
   "Units": "Unidades", "Units:": "Unidades:", "The project's units: change them in Drafting standards → Project": "Las unidades del proyecto: se cambian en Normas de dibujo → Proyecto", "Lengths are shown and typed in this unit everywhere; the engine keeps metres": "Las longitudes se muestran y se escriben en esta unidad en todas partes; el motor guarda metros",
   "Roof window": "Ventana de cubierta", "Dormer": "Buhardilla", "dormer": "buhardilla", "Shaped by hand": "Con forma a mano",

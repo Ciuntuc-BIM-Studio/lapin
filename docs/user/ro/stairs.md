@@ -40,11 +40,17 @@ Biblioteca adaugă în proiect tipuri gata făcute: scară în U fără gol, sca
 
 ### Treptele numerotate
 
-La **În plan**, în fila **Formă**: **Numerotează treptele** scrie numărul fiecărei trepte într-un cerc, de la prima contratreaptă în sus; **Etichetă** scrie contratreptele, înălțimea și lățimea treptei și lățimea scării lângă picior; **„UP” la piciorul săgeții** arată de unde pornește. Planurile și planșele le arată.
+La **În plan**, în fila **Formă**: **Numerotează treptele** scrie numărul fiecărei trepte într-un cerc, de la prima contratreaptă în sus; **Etichetă** scrie contratreptele, înălțimea și lățimea treptei și lățimea scării lângă picior; **„UP” la piciorul săgeții** arată de unde pornește. Planurile și planșele le arată. Numerele stau lângă linia de pas, niciodată pe ea: în dreapta ei la urcare pe o scară dreaptă, pe partea exterioară a unei întoarceri, spre exterior pe o scară în spirală.
 
 ![Trepte numerotate în plan, o scară bifurcată și una cu trepte în consolă](shots/stair-numbers-plan.webp)
 
 ![O scară în spirală, una bifurcată și una cu trepte în consolă, în 3D](shots/stair-shapes-3d.webp)
+
+### Scara în plan: tăiată la planul de secționare
+
+Un plan taie scara acolo unde o traversează planul lui de secționare (1,20 m peste etaj, dacă vederea nu are altă înălțime de tăiere), ca în standardele de desen. Treptele de sub tăietură se desenează văzute; o linie de întrerupere traversează rampa, oblic, acolo unde nasurile treptelor ajung la înălțimea tăieturii; treptele de deasupra se desenează cu linie întreruptă, ca tot ce e deasupra tăieturii. Linia de pas continuă până sus, întreruptă după linia de întrerupere, cu săgeata sus. Când tăietura cade pe trepte balansate sau pe o scară în spirală, linia de întrerupere traversează drept linia de pas în acel loc. O scară aflată toată sub tăietură (treptele de la intrare) se desenează întreagă.
+
+La **În plan**, **Deasupra planului de secționare** alege **Cu linie întreruptă**, **Nedesenat** (scara se oprește la linia de întrerupere, cu săgeata pe ea, iar numerele de deasupra tăieturii lipsesc) sau **Scara întreagă, fără tăietură**; **Linia de întrerupere** e **În zigzag** sau **Două linii paralele**. Planul de pe ecran, planșele și PDF-ul lor sunt desenate de același motor, deci arată aceeași scară.
 
 ## Trepte de intrare (o terasă)
 

@@ -935,6 +935,7 @@ export const PL: Record<string, string> = {
   // Labels the guide's translators found in English, and meanings told apart by context (`ctx|phrase`)
   "session|Join": "Dołącz", "element|Layers": "Warstwy", "cad|Layer": "Warstwa", "edge|gable": "szczyt",
   "eave": "okap", "Import DXF": "Importuj DXF", "Import DXF…": "Importuj DXF…", "Import DXF ·": "Importuj DXF ·",
+  'Over the cut plane': 'Nad płaszczyzną cięcia', 'Dashed': 'Linią przerywaną', 'Not drawn': 'Nierysowane', 'Whole stair, no cut': 'Całe schody, bez cięcia', 'Break line': 'Linia przerwania', 'Zigzag': 'Zygzak', 'Two parallel lines': 'Dwie równoległe linie',
   "Link IFC": "Połącz IFC", "Link IFC…": "Połącz IFC…", "Nothing is linked. File → Link IFC…, or Import DXF… with „As a link”, brings a file in read-only; it is listed here.": "Nic nie jest połączone. Plik → Połącz IFC… lub Importuj DXF… z „Jako łącze” wczytuje plik tylko do odczytu; pojawia się on tutaj.", "IFC properties": "Właściwości IFC",
   "Units": "Jednostki", "Units:": "Jednostki:", "The project's units: change them in Drafting standards → Project": "Jednostki projektu: zmień je w Standardy rysunkowe → Projekt", "Lengths are shown and typed in this unit everywhere; the engine keeps metres": "Długości są wszędzie pokazywane i wpisywane w tej jednostce; silnik przechowuje metry",
   "Roof window": "Okno dachowe", "Dormer": "Lukarna", "dormer": "lukarna", "Shaped by hand": "Kształtowane ręcznie",

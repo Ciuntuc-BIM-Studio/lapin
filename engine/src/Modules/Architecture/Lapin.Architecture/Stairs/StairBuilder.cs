@@ -409,71 +409,15 @@ public static class StairBuilder
     // ─── Plan ───────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// The stair as a plan draws it, whole, from the foot to the top whatever
-    /// the plan's cut (the user reads the stair entire): every riser as a line
-    /// across, the sides of each flight, the landings and winders, and the
-    /// arrow of ascent along the centre line.
+    /// The stair's plan lines, whole from the foot to the top (<see cref="StairPlan"/> with no cut): what a plan picks and
+    /// snaps to, and what the interface draws while no drawing is asked for. A plan's drawing draws the stair from its
+    /// marks instead (<see cref="StairMarks"/>), cut at the view's own cut plane (report #143), so these are of a kind
+    /// the drawing leaves alone (<c>outline</c>).
     /// </summary>
     static List<PlanItem> Plan(Resolved r, StairPlacement place)
     {
-        var items = new List<PlanItem>();
-        var w = r.Width;
-        var arrow = new List<Vec2>();
-        foreach (var fl in r.Flights)
-        {
-            var l = fl.Left * (r.WidthOf(fl) / 2);
-            var run = (fl.Risers - 1) * r.Tread;
-            for (var i = 1; i <= fl.Risers; i++)
-            {
-                var u = (i - 1) * r.Tread;
-                items.Add(new PlanItem("symbol", false, [place.World(fl.Start + fl.Dir * u - l), place.World(fl.Start + fl.Dir * u + l)]));
-            }
-            // A flight with no tread (a riser between two winding corners): the walking line passes over its riser.
-            if (run < 1e-9) { if (arrow.Count > 0) arrow.Add(place.World(fl.Start)); continue; }
-            items.Add(new PlanItem("symbol", false, [place.World(fl.Start - l), place.World(fl.Start + fl.Dir * run - l)]));
-            items.Add(new PlanItem("symbol", false, [place.World(fl.Start + l), place.World(fl.Start + fl.Dir * run + l)]));
-            arrow.Add(place.World(arrow.Count == 0 ? fl.Start + fl.Dir * Math.Min(r.Tread / 2, run / 2) : fl.Start));
-            arrow.Add(place.World(fl.Start + fl.Dir * run));
-        }
-        foreach (var ld in r.Landings) items.Add(new PlanItem("symbol", true, ld.Outline.Select(p => place.World(p)).ToArray()));
-        foreach (var wd in r.Winders) items.Add(new PlanItem("symbol", true, wd.Outline.Select(p => place.World(p)).ToArray()));
-        if (r.Arc is { } arc)
-        {
-            // Along the walking line, from half a tread in to the top.
-            var a0 = arc.A0 + arc.Step / 2;
-            var a1 = arc.Angle(arc.Steps);
-            var m = Math.Max(4, (int)Math.Ceiling(Math.Abs(a1 - a0) / (Math.PI / 36)));
-            arrow.AddRange(Enumerable.Range(0, m + 1).Select(i => place.World(arc.At(a0 + (a1 - a0) * i / m, arc.Walk))));
-            if (r.Spec.Shape == "spiral")
-                items.Add(new PlanItem("symbol", true, ViewMark.Circle(place.World(arc.Centre), Math.Max(0.03, Math.Min(0.08, arc.Inner * 0.8)), 16)));
-        }
-        if (r.Spec.Shape == "split" && r.Flights.Count == 3)
-        {
-            // Up the main flight, then up each return: three arrows, no line across the landing.
-            arrow.Clear();
-            foreach (var fl in r.Flights)
-            {
-                var run = (fl.Risers - 1) * r.Tread;
-                if (run < 1e-9) continue;
-                var (a, b) = (place.World(fl.Start + fl.Dir * Math.Min(r.Tread / 2, run / 2)), place.World(fl.Start + fl.Dir * run));
-                items.Add(new PlanItem("symbol", false, [a, b]));
-                var d = (b - a).Normalized();
-                var size = Math.Min(0.25, r.WidthOf(fl) * 0.25);
-                items.Add(new PlanItem("symbol", false, [b - d * size + d.Perp * (size * 0.5), b, b - d * size - d.Perp * (size * 0.5)]));
-            }
-        }
-        if (arrow.Count >= 2)
-        {
-            // Through a turn the arrow goes from the end of one flight to the start of the next, over the landing or the winders.
-            items.Add(new PlanItem("symbol", false, [.. arrow]));
-            var tip = arrow[^1];
-            var d = (arrow[^1] - arrow[^2]).Normalized();
-            var size = Math.Min(0.25, w * 0.25);
-            items.Add(new PlanItem("symbol", false, [tip - d * size + d.Perp * (size * 0.5), tip, tip - d * size - d.Perp * (size * 0.5)]));
-            var foot = arrow[0];
-            items.Add(new PlanItem("symbol", true, [foot + new Vec2(0.04, 0), foot + new Vec2(0, 0.04), foot - new Vec2(0.04, 0), foot - new Vec2(0, 0.04)]));
-        }
-        return items;
+        var symbol = StairPlan.Of(r, null);
+        return symbol.Lines.Concat(symbol.Walk).Select(l => new PlanItem("outline", l.Closed, l.Points.Select(p => place.World(p)).ToArray())).ToList();
     }
 
     // ─── Quantities ─────────────────────────────────────────────────────────
@@ -581,10 +525,11 @@ public static class StairBuilder
 }
 
 /// <summary>
-/// What a plan writes on its storey's stairs (report #46, decision 190), as the type asks
-/// (<see cref="StairPlanSymbols"/>): each step's number in a circle, from the first riser up (the last one
-/// on what it climbs to), "UP" at the foot of the arrow, and a label by the foot with the risers, the
-/// riser and tread, and the width.
+/// How a plan draws its storey's stairs: the symbol cut at the view's own cut plane (report #143, <see cref="StairPlan"/>),
+/// in the stairs' line styles (seen under the cut, overhead over it), and what it writes on them, as the type asks
+/// (<see cref="StairPlanSymbols"/>; report #46, decision 190): each step's number in a circle beside the walking line, from
+/// the first riser up (the last one on what it climbs to), "UP" at the foot of the arrow, and a label by the foot with the
+/// risers, the riser and tread, and the width. Drawn by the engine as marks, so the plan on screen, a sheet and its PDF are one.
 /// </summary>
 public static class StairMarks
 {
@@ -596,23 +541,45 @@ public static class StairMarks
         var hidden = (c.View.Attrs["hiddenElements"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
         var graphics = VisibilityGraphics.Of(m, c.View);
         var style = Standards.TextOf(c.Book, Standards.DefaultRoomTag.TextStyle);
-        foreach (var stair in m.OfClass(IfcClass.Stair))
+        // A site plan draws the stairs by their bodies, seen from above: no symbol, no cut.
+        var site = SitePlans.Of(c.View) != null;
+        double? cut = site ? null : Views.Range(m, c.View).Cut;
+        var filters = c.Services?.All<IViewElementFilter>() ?? [];
+        var stairs = m.OfClass(IfcClass.Stair).Where(s => !hidden.Contains(s.Id) && !graphics.Hides(s) && Spatial.StoreyOf(m, s.Id)?.Id == storeyId).ToList();
+        if (stairs.Count == 0) yield break;
+        var pens = new StairPens(c, graphics, stairs);
+        foreach (var stair in stairs)
         {
-            if (hidden.Contains(stair.Id) || graphics.Hides(stair) || Spatial.StoreyOf(m, stair.Id)?.Id != storeyId) continue;
+            // A view's filter (a phase) may hide it, or draw it in its colour.
+            var filtered = filters.Select(f => f.For(m, c.View, stair)).FirstOrDefault(x => x != null);
+            if (filtered is { Hide: true }) continue;
             if (StairBuilder.Resolve(m, stair) is not var (r, place, spec)) continue;
             var symbols = spec.Symbols ?? new StairPlanSymbols();
-            if (!symbols.Numbers && !symbols.Label && !symbols.Up) continue;
             var mark = new ViewMark(stair.Id);
+            Vec2 V(Vec2 local) => c.Map(place.World(local), place.Z0);
+            var hc = cut - place.Z0;
+            var plan = StairPlan.Of(r, hc, symbols.AboveCut, symbols.Break, 3 * c.Mm);
+            if (!site)
+            {
+                var seen = pens.Of(stair, LineRole.Projection, filtered?.Color);
+                var over = pens.Of(stair, LineRole.Overhead, filtered?.Color);
+                foreach (var line in plan.Lines.Concat(plan.Walk))
+                {
+                    var (w, ink, dash) = line.Above ? over : seen;
+                    mark.Polyline(line.Points.Select(V).ToList(), line.Closed, line.Above ? "STAIR-OVERHEAD" : "STAIR", w, ink, dash);
+                }
+                foreach (var br in plan.Breaks) mark.Polyline(br.Select(V).ToList(), false, "STAIR", seen.Width, seen.Color, null);
+            }
             var color = style.Color ?? "#000000";
             var h = Math.Max(1.8, style.Height * 0.8);
-            Vec2 V(Vec2 local) => c.Map(place.World(local), place.Z0);
             if (symbols.Numbers)
             {
-                // A circle and figure that fit the step: never wider than four tenths of the tread (a small spiral's are tight).
-                var radius = Math.Min(h * c.Mm * 0.9, 0.4 * Math.Min(r.Tread, r.Width / 2));
+                var (radius, gap) = NumberSize(r, h * c.Mm * 0.9, c.Mm);
                 var nh = radius / (c.Mm * 0.9);
-                foreach (var (at, n) in StepCentres(r))
+                foreach (var (at, n) in NumberSpots(r, radius, gap, plan.Paths))
                 {
+                    // Over the cut and not drawn: no number either.
+                    if (!site && symbols.AboveCut == "hidden" && hc is { } top && n * r.RiserHeight > top + 1e-9) continue;
                     var p = V(at);
                     mark.Polyline(ViewMark.Circle(p, radius, 20), true, "STAIR-NUMBERS", Pens.Default.Hatch, color);
                     mark.Text(new PenText(p, n.ToString(System.Globalization.CultureInfo.InvariantCulture), nh, 0, "middle", "middle", false, style.Font), color);
@@ -630,8 +597,77 @@ public static class StairMarks
                 for (var i = 0; i < lines.Length; i++)
                     mark.Text(new PenText(at + new Vec2(0, -h * c.Mm * 1.5 * i), $"{keys[i]} {lines[i]}", h, 0, "end", "middle", i == 0, style.Font), color);
             }
-            if (mark.Texts.Count > 0) yield return mark;
+            if (mark.Texts.Count > 0 || mark.Lines.Count > 0) yield return mark;
         }
+    }
+
+    /// <summary>
+    /// A step number's circle (m), at most <paramref name="wanted"/>, and its gap from the walking line: small enough to
+    /// fit in a tread (four tenths of it) and, beside the walking line, in half the narrowest flight.
+    /// </summary>
+    public static (double Radius, double Gap) NumberSize(Resolved r, double wanted, double gap)
+    {
+        var narrowest = r.Flights.Count > 0 ? Math.Min(r.Width, r.Flights.Min(r.WidthOf)) : r.Width;
+        gap = Math.Min(gap, narrowest / 10);
+        var radius = Math.Min(wanted, Math.Min(0.4 * r.Tread, (narrowest / 2 - gap) / 2.1));
+        return (Math.Max(radius, 0.01), gap);
+    }
+
+    /// <summary>
+    /// Where each step's number goes in the stair's frame (report #143): beside the walking line, not on it, its circle a
+    /// <paramref name="gap"/> clear of it: a flight's on the outer side of the turn (a straight stair's on the right going
+    /// up, <see cref="StairPlan.NumbersOnLeft"/>), a spiral's or curved stair's outwards, a winder's pushed off the line on its own side.
+    /// </summary>
+    public static List<(Vec2 At, int Number)> NumberSpots(Resolved r, double radius, double gap, IReadOnlyList<Vec2[]> paths)
+    {
+        var off = radius + gap;
+        var onLeft = StairPlan.NumbersOnLeft(r);
+        var o = new List<(Vec2, int)>();
+        foreach (var (at, n) in StepCentres(r))
+        {
+            Vec2 p;
+            if (r.Arc is { } arc)
+            {
+                var radial = (at - arc.Centre).Normalized();
+                p = arc.Centre + radial * (arc.Walk + off);
+            }
+            else if (FlightOf(r, at) is { } fl)
+            {
+                // A split stair's return flights: each away from the middle.
+                var side = r.Spec.Shape == "split" ? (Vec2.Dot(fl.Start - r.Flights[0].Start, fl.Left) is var d && Math.Abs(d) > 1e-6 ? (d > 0 ? fl.Left : fl.Left * -1) : fl.Left * -1)
+                    : onLeft ? fl.Left : fl.Left * -1;
+                p = at + side * off;
+            }
+            else p = at;
+            // Whatever it stands on, never on the walking line: pushed off it, square to it.
+            foreach (var path in paths)
+                for (var i = 0; i + 1 < path.Length; i++)
+                {
+                    var (a, b) = (path[i], path[i + 1]);
+                    var ab = b - a;
+                    if (ab.Length < 1e-9) continue;
+                    var t = Math.Clamp(Vec2.Dot(p - a, ab) / Vec2.Dot(ab, ab), 0, 1);
+                    var q = a + ab * t;
+                    var away = p - q;
+                    if (away.Length >= off - 1e-9) continue;
+                    var dir = away.Length > 1e-9 ? away.Normalized() : ab.Normalized().Perp * -1;
+                    p = q + dir * off;
+                }
+            o.Add((p, n));
+        }
+        return o;
+    }
+
+    /// <summary>The flight a point on its centre line belongs to (a tread's middle, or the last number half a tread past the top); null on winders.</summary>
+    static Flight? FlightOf(Resolved r, Vec2 at)
+    {
+        foreach (var fl in r.Flights)
+        {
+            var d = at - fl.Start;
+            var (u, v) = (Vec2.Dot(d, fl.Dir), Vec2.Dot(d, fl.Left));
+            if (Math.Abs(v) < 1e-6 && u > -1e-9 && u <= (fl.Risers - 0.5) * r.Tread + 1e-6) return fl;
+        }
+        return null;
     }
 
     /// <summary>Where each step's number goes, in the stair's frame: the middle of its tread (a winder's or a spiral's wedge too), numbered by its height; the last riser's on what it climbs to, half a tread on (a split stair's two return flights have the same numbers).</summary>
@@ -659,3 +695,36 @@ public static class StairMarks
     static Vec2 Centroid(IReadOnlyList<Vec2> pts) => new(pts.Average(p => p.X), pts.Average(p => p.Y));
 }
 
+/// <summary>
+/// The pens a plan draws its stairs' symbols with, as the drawing styles any element's lines (Pens): the view's element
+/// and category overrides, then the project's object styles for stairs, the view's category colour and weight, a filter's
+/// colour or halftone; else a seen line (0.25 mm, black) under the cut and an overhead one (dashed, grey) over it.
+/// </summary>
+sealed class StairPens
+{
+    readonly LineStyles.Resolver? styles;
+    readonly CategoryGraphics? category;
+    readonly VisibilityGraphics vg;
+
+    public StairPens(ViewContext c, VisibilityGraphics vg, IEnumerable<Entity> stairs)
+    {
+        this.vg = vg;
+        var project = Spatial.Project(c.Model);
+        var graphics = GraphicsSets.Of(c.Model, c.View);
+        var elements = graphics?["elements"]?.DeepClone() as JsonObject;
+        foreach (var s in stairs)
+            if (vg.LinesOf(s) is { } lines && !(elements?.ContainsKey(s.Id) ?? false)) (elements ??= [])[s.Id] = lines;
+        styles = LineStyles.For(project?.Attrs["objectStyles"] as JsonObject, graphics?["categories"] as JsonObject, elements, LineStyles.ReadTable(project?.Attrs["penTable"]), c.Scale);
+        category = CategoryGraphics.From(graphics?["categories"]?["stairs"]);
+    }
+
+    public (double Width, string Color, double[]? Dash) Of(Entity stair, string role, string? filterColor)
+    {
+        var styled = styles?.Invoke(role, stair.Class, stair.Id);
+        var color = filterColor ?? vg.ColorOf(stair) ?? styled?.Color ?? category?.LineColor;
+        if (role == LineRole.Overhead)
+            return (styled?.WidthMm ?? Pens.Default.Seen * 0.7, color ?? "#888888", styled?.Dash is { Length: > 0 } od ? od : [2, 1]);
+        var w = styled?.WidthMm ?? (Pens.WeightMm(category?.LineWeight) is { } mm ? Pens.SeenWeight(mm) : Pens.Default.Seen);
+        return (w, color ?? "#000000", styled?.Dash is { Length: > 0 } sd ? sd : null);
+    }
+}

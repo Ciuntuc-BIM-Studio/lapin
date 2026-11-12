@@ -92,8 +92,8 @@ public class StairTests
         Assert.Equal(-0.5, min.Y, 6);
         Assert.Equal(0.5, max.Y, 6);
         Assert.Equal(1.5 - 0.03, max.Z, 6);                             // the concrete stops a finish under the landing level
-        // The plan: risers below the cut as lines, a break, an arrow.
-        Assert.True(g.Plan!.Count(i => i.Kind == "symbol") >= 8);
+        // The plan's pick lines: the risers, the sides, the landing, the walking line and its arrow (drawn cut by the plan's marks).
+        Assert.True(g.Plan!.Count(i => i.Kind == "outline") >= 8);
         var q = f.Session.Quantities(id);
         Assert.Equal(2, q.Count(s => s.Name == "Qto_StairFlightBaseQuantities"));
         var own = q.Single(s => s.Name == "Lapin_StairQuantities");
@@ -253,7 +253,7 @@ public class StairTests
         g = f.Session.Geometry(id)!;
         Assert.DoesNotContain(g.Parts, p => p.Key!.StartsWith("flight:", StringComparison.Ordinal));
         Assert.NotNull(g.Diagnostics);
-        Assert.Single(g.Plan!, i => i.Kind == "symbol");
+        Assert.Single(g.Plan!, i => i.Kind == "outline");
     }
 
     [Fact]

@@ -935,6 +935,7 @@ export const ZH: Record<string, string> = {
   // Labels the guide's translators found in English, and meanings told apart by context (`ctx|phrase`)
   "session|Join": "加入", "element|Layers": "构造层", "cad|Layer": "图层", "edge|gable": "山墙",
   "eave": "檐口", "Import DXF": "导入 DXF", "Import DXF…": "导入 DXF…", "Import DXF ·": "导入 DXF ·",
+  'Over the cut plane': '剖切面以上', 'Dashed': '虚线', 'Not drawn': '不绘制', 'Whole stair, no cut': '整部楼梯，不剖切', 'Break line': '折断线', 'Zigzag': '锯齿形', 'Two parallel lines': '两条平行线',
   "Link IFC": "链接 IFC", "Link IFC…": "链接 IFC…", "Nothing is linked. File → Link IFC…, or Import DXF… with „As a link”, brings a file in read-only; it is listed here.": "没有链接。文件 → 链接 IFC…，或勾选“作为链接”的 导入 DXF…，会以只读方式引入文件；它将列在此处。", "IFC properties": "IFC 属性",
   "Units": "单位", "Units:": "单位：", "The project's units: change them in Drafting standards → Project": "项目单位：在绘图标准 → 项目中更改", "Lengths are shown and typed in this unit everywhere; the engine keeps metres": "所有位置的长度都以此单位显示和输入；引擎内部以米保存",
   "Roof window": "天窗", "Dormer": "老虎窗", "dormer": "老虎窗", "Shaped by hand": "手动造型",

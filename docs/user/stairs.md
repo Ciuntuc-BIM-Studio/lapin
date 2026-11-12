@@ -40,11 +40,17 @@ The **Railing** has its **Design**: **Posts and a handrail**, **Balusters** (at 
 
 ### Numbered steps
 
-Under **In plan** on the **Shape** tab: **Number the steps** writes each step's number in a circle, from the first riser up; **Label** writes the risers, the riser and the tread, and the width by the foot; **"UP" at the foot of the arrow** marks where it starts. Plans and sheets show them.
+Under **In plan** on the **Shape** tab: **Number the steps** writes each step's number in a circle, from the first riser up; **Label** writes the risers, the riser and the tread, and the width by the foot; **"UP" at the foot of the arrow** marks where it starts. Plans and sheets show them. The numbers stand beside the walking line, never on it: on the right going up a straight stair, on the outer side of a turn, outwards on a spiral.
 
 ![Numbered steps in plan, a split stair and a cantilever stair](shots/stair-numbers-plan.webp)
 
 ![A spiral, a split and a cantilever stair in 3D](shots/stair-shapes-3d.webp)
+
+### The stair in plan: cut at the cut plane
+
+A plan cuts a stair where its cut plane crosses it (1.20 m above the storey, unless the view sets another cut height), as drawing standards do. The steps under the cut are drawn as seen; a break line crosses the flight, slanted, where the nosings reach the cut height; the steps above it are dashed, in the style of what lies over the cut. The walking line goes on to the top, dashed past the break, with its arrow at the top. Where the cut falls on winders or on a spiral, the break goes straight across the walking line there. A stair wholly under the cut (entrance steps) is drawn whole.
+
+Under **In plan**, **Over the cut plane** chooses **Dashed**, **Not drawn** (the stair stops at the break line, the arrow on it, and the numbers above the cut are left out) or **Whole stair, no cut**; **Break line** is a **Zigzag** or **Two parallel lines**. The plan on screen, the sheets and their PDF are drawn by the same engine, so they show the same stair.
 
 ## Entrance steps (a porch)
 

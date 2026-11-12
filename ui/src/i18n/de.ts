@@ -937,6 +937,7 @@ export const DE: Record<string, string> = {
   // Labels the guide's translators found in English, and meanings told apart by context (`ctx|phrase`)
   "session|Join": "Beitreten", "element|Layers": "Schichten", "cad|Layer": "Layer", "edge|gable": "Giebel",
   "eave": "Traufe", "Import DXF": "DXF importieren", "Import DXF…": "DXF importieren…", "Import DXF ·": "DXF importieren ·",
+  'Over the cut plane': 'Über der Schnittebene', 'Dashed': 'Gestrichelt', 'Not drawn': 'Nicht gezeichnet', 'Whole stair, no cut': 'Ganze Treppe, ohne Schnitt', 'Break line': 'Bruchlinie', 'Zigzag': 'Zickzack', 'Two parallel lines': 'Zwei parallele Linien',
   "Link IFC": "IFC verknüpfen", "Link IFC…": "IFC verknüpfen…", "Nothing is linked. File → Link IFC…, or Import DXF… with „As a link”, brings a file in read-only; it is listed here.": "Nichts ist verknüpft. Datei → IFC verknüpfen… oder DXF importieren… mit „Als Verknüpfung“ holt eine Datei schreibgeschützt herein; sie steht dann hier.", "IFC properties": "IFC-Eigenschaften",
   "Units": "Einheiten", "Units:": "Einheiten:", "The project's units: change them in Drafting standards → Project": "Die Einheiten des Projekts: zu ändern unter Zeichnungsstandards → Projekt", "Lengths are shown and typed in this unit everywhere; the engine keeps metres": "Längen werden überall in dieser Einheit angezeigt und eingegeben; die Engine rechnet in Metern",
   "Roof window": "Dachfenster", "Dormer": "Gaube", "dormer": "Gaube", "Shaped by hand": "Von Hand geformt",

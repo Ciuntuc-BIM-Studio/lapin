@@ -10,10 +10,22 @@ Modelul e cel al tâmplăriei, care merge deja: un **tip** (`IfcStairType`, `Ifc
 - Comenzi: `architecture.createStairType`, `updateStairType`, `addStair {storeyId, typeId?, x, y, x2, y2 | rotation, turn?, width?…}`, `updateStair`; interogări `stairPreview`, `stairPlan`, `stairCheck`.
 - Instanța ține `at`, `rotation` (grade, ca stâlpii, deci mutarea și rotirea din plan o poartă), `turn`, decalajele, `topStoreyId`, `height` (fără etaj deasupra) și ce fixează.
 - Golul din placa de sus e un `IfcOpeningElement` cu `stairId`; conturul lui **se citește din scară la fiecare construire** (`Slabs.HoleContour`), deci urmează scara și la mutare; ștergerea scării îl ia cu ea (`IDeletion` pentru elemente existente, în `element.delete`).
-- Planul desenează **scara întreagă**, de la picior la vârf, oricare ar fi cota de tăiere a vederii (decis 25.10.2026: utilizatorul citește simbolul întreg); linia de întrerupere a dispărut. Configuratorul arată planul și o secțiune de-a lungul primei rampe **desenate de generatorul 2D** (`architecture.stairDrawing`: scara într-o sesiune proprie, cu o placă deasupra, randată ca vedere), cu hașurile materialelor și grosimile de linie.
+- Planul desena **scara întreagă**, de la picior la vârf, oricare ar fi cota de tăiere a vederii (decis 25.10.2026); raportul testerului #143 (12.11.2026) a cerut tăietura standard, vezi „Planul tăiat” mai jos. Configuratorul arată planul și o secțiune de-a lungul primei rampe **desenate de generatorul 2D** (`architecture.stairDrawing`: scara într-o sesiune proprie, cu o placă deasupra, randată ca vedere), cu hașurile materialelor și grosimile de linie.
 - Treptele balansate au intradosul în trepte (prisme pe fiecare treaptă), nu o suprafață lină; rampele drepte au vangul înclinat corect.
 - Studio nu mai deține `IfcStair`: scara lui liberă e un proxy exportat ca `IfcStair`.
 - Rămase pentru etapele următoare: partea de deasupra tăieturii pe planul etajului de sus („COBOARĂ”), cota automată „n × h / b”, înălțimea liberă verificată sub placă, rampele, oțelul și lemnul, extrasul.
+
+## Planul tăiat (raportul #143, 12.11.2026)
+
+Testerul (0.1.814, Windows) a cerut ca planul să taie scara la planul de secționare, cu simbolul standard, iar numerele treptelor să nu stea pe linia de pas. Făcut:
+
+- **Unde:** `Stairs/StairPlan.cs` dă simbolul în sistemul scării pentru o cotă de tăiere dată (deasupra piciorului scării); `StairMarks.Marks` (în `StairBuilder.cs`) îl desenează în fiecare plan, ca marcaje ale motorului, cu cota de tăiere a vederii (`Views.Range(...).Cut`), deci ecranul, planșele și PDF-ul arată la fel. Liniile de plan ale elementului (`ElementGeometry.Plan`) rămân scara întreagă, de fel `outline`: după ele se alege și se agață scara, iar desenul vederii nu le mai desenează.
+- **Tăietura:** pe o rampă pe care o traversează tăietura, linia de întrerupere trece prin punctul liniei de pas unde linia nasurilor ajunge la cota tăieturii, oblică la 30° față de perpendiculara pe rampă (deci la 60° față de rampă), de la o latură la alta, ținută în rampă; liniile rampei (contratreptele, laturile) sunt tăiate de ea: dinspre picior văzute, dincolo cu stilul liniilor de deasupra tăieturii (`overhead`: întrerupt, gri, sau cum spun stilurile obiectelor și Visibility / Graphics pentru scări). Podestele și treptele balansate (și treptele scărilor curbe și în spirală) se clasează după cota lor, latură cu latură, o latură comună desenată o dată (văzută dacă una din ele e sub tăietură). Când tăietura nu cade într-o rampă (pe trepte balansate, pe o spirală, la prima contratreaptă a unei rampe), linia de întrerupere traversează drept linia de pas acolo (radial pe spirală). O scară toată sub tăietură se desenează întreagă, ca înainte; una toată deasupra, toată întreruptă.
+- **Linia de pas** continuă până sus, văzută până la tăietură, întreruptă după ea, cu săgeata sus; o scară bifurcată are câte una pe rampă.
+- **Tipul alege** (`StairPlanSymbols`, fila Shape → In plan): `AboveCut` `dashed` (implicit), `hidden` (nimic deasupra, săgeata la linia de întrerupere, numerele de deasupra lipsesc) sau `whole` (scara întreagă, fără tăietură, ca înainte); `Break` `zigzag` (implicit, zigzagul pe latura liberă de numere) sau `double` (două linii paralele).
+- **Numerele treptelor** stau lângă linia de pas, cu cercul la o distanță de ea (1 mm pe hârtie): pe dreapta la urcare pe o scară dreaptă, pe partea exterioară a întoarcerii la L și U, spre exterior pe spirale și scări curbe, departe de mijloc pe rampele laterale ale scării bifurcate; cercul încape în jumătatea rampei (`StairMarks.NumberSize`, `NumberSpots`).
+- Teste: `StairPlanCutTests` (linia de întrerupere la stația bună și contratreptele de deasupra întrerupte; scara sub tăietură neschimbată; formele L, U, balansate, spirală, curbă, bifurcată la cinci cote; numerele niciodată pe linia de pas; desenul vederii).
+- Rămase: partea care coboară pe planul etajului de sus („COBOARĂ”, nedesenată încă); rampele (`RampMarks`) desenează încă tronsoanele întregi.
 
 ## Principii
 
@@ -83,7 +95,7 @@ Arhitectul vede în plus **finisajele**: grosimea și materialul treptei finite,
 
 ## Desen
 
-- **Plan:** treptele ca linii pe lățime, linia de întrerupere la cota de tăiere a planului (1,20 m): sub ea linii pline, deasupra nimic (sau punctat, după standardul de desen); săgeata de urcare cu „URCĂ” sau numerotarea contratreptelor (1 … n) la picior și la vârf; podestele cu conturul lor; balustrada ca linie. Pe planul etajului de sus, partea care coboară apare ca „COBOARĂ”, tot până la linia de întrerupere.
+- **Plan:** treptele ca linii pe lățime, linia de întrerupere la cota de tăiere a planului (1,20 m): sub ea linii pline, deasupra întrerupt sau nimic, după tip (făcut, raportul #143, vezi „Planul tăiat”); săgeata de urcare cu „URCĂ” sau numerotarea contratreptelor (1 … n) la picior și la vârf; podestele cu conturul lor; balustrada ca linie. Pe planul etajului de sus, partea care coboară apare ca „COBOARĂ”, tot până la linia de întrerupere.
 - **Secțiune și fațadă:** profilul în trepte, placa, podestele, balustrada, din corpurile 3D, ca restul.
 - **Cote:** o cotă de scară: „15 × 17,5 / 28” lângă săgeată; cota lungimii rampei în plan.
 - **Extras:** fișa scării, pe tipul de extras existent: forma, n, h, b, lățimea, construcția, cantitățile.

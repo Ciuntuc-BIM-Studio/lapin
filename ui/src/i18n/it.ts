@@ -937,6 +937,7 @@ export const IT: Record<string, string> = {
   // Labels the guide's translators found in English, and meanings told apart by context (`ctx|phrase`)
   "session|Join": "Partecipa", "element|Layers": "Strati", "cad|Layer": "Layer", "edge|gable": "timpano",
   "eave": "gronda", "Import DXF": "Importa DXF", "Import DXF…": "Importa DXF…", "Import DXF ·": "Importa DXF ·",
+  'Over the cut plane': 'Sopra il piano di taglio', 'Dashed': 'Tratteggiato', 'Not drawn': 'Non disegnato', 'Whole stair, no cut': 'Scala intera, senza taglio', 'Break line': 'Linea di interruzione', 'Zigzag': 'Zigzag', 'Two parallel lines': 'Due linee parallele',
   "Link IFC": "Collega IFC", "Link IFC…": "Collega IFC…", "Nothing is linked. File → Link IFC…, or Import DXF… with „As a link”, brings a file in read-only; it is listed here.": "Nessun collegamento. File → Collega IFC…, o Importa DXF… con «Come collegamento», porta un file in sola lettura; compare qui.", "IFC properties": "Proprietà IFC",
   "Units": "Unità", "Units:": "Unità:", "The project's units: change them in Drafting standards → Project": "Le unità del progetto: si cambiano in Standard di disegno → Progetto", "Lengths are shown and typed in this unit everywhere; the engine keeps metres": "Le lunghezze sono mostrate e digitate ovunque in questa unità; il motore conserva i metri",
   "Roof window": "Finestra da tetto", "Dormer": "Abbaino", "dormer": "abbaino", "Shaped by hand": "Sagomato a mano",

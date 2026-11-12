@@ -935,6 +935,7 @@ export const RO: Record<string, string> = {
   // Labels the guide's translators found in English, and meanings told apart by context (`ctx|phrase`)
   "session|Join": "Intră", "element|Layers": "Straturi", "cad|Layer": "Layer", "edge|gable": "fronton",
   "eave": "streașină", "Import DXF": "Importă DXF", "Import DXF…": "Importă DXF…", "Import DXF ·": "Importă DXF ·",
+  'Over the cut plane': 'Deasupra planului de secționare', 'Dashed': 'Cu linie întreruptă', 'Not drawn': 'Nedesenat', 'Whole stair, no cut': 'Scara întreagă, fără tăietură', 'Break line': 'Linia de întrerupere', 'Zigzag': 'În zigzag', 'Two parallel lines': 'Două linii paralele',
   "Link IFC": "Leagă IFC", "Link IFC…": "Leagă IFC…", "Nothing is linked. File → Link IFC…, or Import DXF… with „As a link”, brings a file in read-only; it is listed here.": "Nimic nu e legat. Fișier → Leagă IFC… sau Importă DXF… cu „Ca legătură” aduce un fișier doar în citire; el apare aici.", "IFC properties": "Proprietăți IFC",
   "Units": "Unități", "Units:": "Unități:", "The project's units: change them in Drafting standards → Project": "Unitățile proiectului: se schimbă în Standarde de desen → Proiect", "Lengths are shown and typed in this unit everywhere; the engine keeps metres": "Lungimile se arată și se introduc peste tot în această unitate; motorul ține metri",
   "Roof window": "Fereastră de acoperiș", "Dormer": "Lucarnă", "dormer": "lucarnă", "Shaped by hand": "Formă liberă",

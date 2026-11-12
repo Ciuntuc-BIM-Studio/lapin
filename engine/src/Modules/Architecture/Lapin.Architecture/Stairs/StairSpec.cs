@@ -45,8 +45,13 @@ public sealed record StairFinish(double TreadThickness, string TreadMaterial, do
 public sealed record StairRailing(string Sides, double Height, double BarSize, double PostSize, double PostSpacing,
     string Style = "bar", string Profile = "square", double BalusterSpacing = 0.11, double Inset = 0.05, double Extension = 0, string? Color = null);
 
-/// <summary>What a plan writes on the stair (report #46): each step's number in a circle, the label of its riser, tread and width by its foot, "UP" at the foot of the arrow.</summary>
-public sealed record StairPlanSymbols(bool Numbers = false, bool Label = false, bool Up = true);
+/// <summary>
+/// What a plan writes on the stair (report #46): each step's number in a circle, the label of its riser, tread and width by
+/// its foot, "UP" at the foot of the arrow; and how it draws the stair where the plan's cut crosses it (report #143):
+/// <see cref="AboveCut"/> "dashed" (over the cut in the overhead style), "hidden" (not drawn) or "whole" (no cut, the
+/// stair entire), <see cref="Break"/> "zigzag" or "double" (<see cref="StairPlan"/>).
+/// </summary>
+public sealed record StairPlanSymbols(bool Numbers = false, bool Label = false, bool Up = true, string AboveCut = "dashed", string Break = "zigzag");
 
 /// <summary>
 /// A stair type as the configurator edits it: the shape (a straight run, a
@@ -214,6 +219,8 @@ public sealed record StairSpec(
             if (s.Railing.Profile is not ("square" or "round")) s = s with { Railing = s.Railing with { Profile = "square" } };
             if (!Constructions.Contains(s.Construction.Kind)) s = s with { Construction = s.Construction with { Kind = "rc" } };
             if (s.Rules.MinRisers < 1) s = s with { Rules = s.Rules with { MinRisers = 1 } };
+            if (s.Symbols is { } sym && (!StairPlan.AboveModes.Contains(sym.AboveCut) || !StairPlan.BreakStyles.Contains(sym.Break)))
+                s = s with { Symbols = sym with { AboveCut = StairPlan.AboveModes.Contains(sym.AboveCut) ? sym.AboveCut : "dashed", Break = StairPlan.BreakStyles.Contains(sym.Break) ? sym.Break : "zigzag" } };
             if (s.Kind == "ramp" && !RampShapes.Contains(s.Shape)) s = s with { Shape = "straight-landing" };
             if (s.Kind == "ramp" && s.Construction.Kind is not ("rc" or "solid")) s = s with { Construction = s.Construction with { Kind = "rc" } };
             return s with
