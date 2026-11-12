@@ -94,6 +94,7 @@ public class LinkLayersTests
     public void Engineers_hide_a_link_s_finishes_in_a_plan_and_in_3D()
     {
         var (f, wall, slab, link) = Linked();
+        f.EveryLayerInPlans();
         var storey = Spatial.StoreyOf(f.Model, wall.Id)!.Id;
         var plan = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = storey, ["scale"] = 50 })!["id"]!;
         List<string> Cut(string id)

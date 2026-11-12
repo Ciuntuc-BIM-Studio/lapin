@@ -113,7 +113,10 @@ public static class Provisions
     }
 
     /// <summary>Whether an element bears load: Pset_…Common LoadBearing true on it or its type, or its own <c>loadBearing</c>.</summary>
-    public static bool LoadBearing(IModelView m, Entity e)
+    public static bool LoadBearing(IModelView m, Entity e) => LoadBearingOrNull(m, e) ?? false;
+
+    /// <summary>What an element or its type says of its bearing load (<see cref="LoadBearing"/>), null when neither says.</summary>
+    public static bool? LoadBearingOrNull(IModelView m, Entity e)
     {
         static bool? In(Entity x)
         {
@@ -124,7 +127,7 @@ public static class Provisions
                     return p["value"] is JsonValue v && (v.TryGetValue<bool>(out var b) ? b : v.TryGetValue<string>(out var s) && s.Trim().ToLowerInvariant() is "true" or "yes" or "1");
             return null;
         }
-        return In(e) ?? (m.RelatingOf(e.Id, IfcClass.RelDefinesByType) is { } t ? In(t) : null) ?? false;
+        return In(e) ?? (m.RelatingOf(e.Id, IfcClass.RelDefinesByType) is { } t ? In(t) : null);
     }
 
     /// <summary>Takes the provisions out of a host's parts (a geometry filter): only where they cut and the build cuts openings.</summary>

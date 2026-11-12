@@ -3,6 +3,29 @@
 import type { Language } from './index';
 
 export const FR: Record<string, string> = {
+  // Decision 500: the partial structure display
+  "Entire model": "Modèle entier",
+  "Every layer of walls, floors and roofs": "Toutes les couches des murs, des dalles et des toitures",
+  "Without finishes": "Sans finitions",
+  "The finish layers (plasters, renders, floor finishes: category Finish) left out; the insulation, membranes and structure drawn": "Les couches de finition (enduits, crépis, revêtements de sol : catégorie Finish) omises ; l'isolant, les membranes et la structure dessinés",
+  "Core only": "Noyau seul",
+  "The cores alone, between their boundaries; the finishes, insulation and membranes left out": "Les noyaux seuls, entre leurs limites ; les finitions, l'isolant et les membranes omis",
+  "Core of load-bearing elements only": "Noyau des éléments porteurs seul",
+  "The cores of the load-bearing elements alone (LoadBearing in their properties, as Pset_WallCommon); partitions, coverings and room finishes not drawn": "Les noyaux des éléments porteurs seuls (LoadBearing dans leurs propriétés, comme Pset_WallCommon) ; cloisons, revêtements et finitions de pièces non dessinés",
+  "Partial structure display": "Affichage partiel de la structure",
+  "Partial structure display: which layers of walls, floors and roofs the view draws (one undo step); the style's for this kind of view is marked ·": "Affichage partiel de la structure : quelles couches des murs, des dalles et des toitures la vue dessine (une étape d'annulation) ; celui du style pour ce type de vue est marqué ·",
+  "Which layers of walls, floors and roofs the view draws, as its style says for its kind of view (plans; sections and elevations; 3D) unless it sets its own; also in the view's corner, beside its scale. A plan rules what its cut plane cuts: the floors seen under it show as they are. A layer is a finish, insulation or membrane by its own category in its type, else its material's.": "Quelles couches des murs, des dalles et des toitures la vue dessine, comme son style le dit pour son type de vue (plans ; coupes et façades ; 3D), sauf si elle fixe le sien ; aussi dans le coin de la vue, près de son échelle. Un plan décide de ce que coupe son plan de coupe : les dalles vues dessous se montrent telles quelles. Une couche est une finition, un isolant ou une membrane selon sa propre catégorie dans son type, sinon celle de son matériau.",
+  "By element kind": "Par type d'élément",
+  "Over the partial structure display, element kind by element kind: whether this view draws the walls' and the floors' finish layers (and the rooms' wall and floor finishes)": "Au-dessus de l'affichage partiel de la structure, type d'élément par type d'élément : si cette vue dessine les couches de finition des murs et des dalles (et les finitions murales et de sol des pièces)",
+  "advanced": "avancé",
+  "Structure in plans": "Structure en plan",
+  "Partial structure display of the style's plans: which layers of walls, floors and roofs they draw": "Affichage partiel de la structure des plans du style : quelles couches des murs, des dalles et des toitures ils dessinent",
+  "Structure in sections": "Structure en coupe",
+  "Partial structure display of the style's sections and elevations": "Affichage partiel de la structure des coupes et façades du style",
+  "Structure in 3D": "Structure en 3D",
+  "Partial structure display of the style's 3D views and other views": "Affichage partiel de la structure des vues 3D du style et des autres vues",
+  "The partial structure display is said for plans, for sections and elevations, and for 3D views; a view sets its own in its settings or from its corner, beside its scale. The finish columns are its advanced detail, element kind by element kind.": "L'affichage partiel de la structure se dit pour les plans, pour les coupes et façades, et pour les vues 3D ; une vue fixe le sien dans ses réglages ou depuis son coin, près de son échelle. Les colonnes de finitions en sont le détail avancé, type d'élément par type d'élément.",
+  "load-bearing cores only": "noyaux porteurs seuls",
   // The forum's topic #30: finish layers by kind of view, wall layers into the floors' layers
   "Floor finishes": "Finitions des dalles",
   "Wall finishes in plans": "Finitions des murs en plan",

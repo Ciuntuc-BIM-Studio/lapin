@@ -3,6 +3,29 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // Decision 500: the partial structure display
+  "Entire model": "整个模型",
+  "Every layer of walls, floors and roofs": "墙、楼板和屋顶的每一层",
+  "Without finishes": "不含饰面",
+  "The finish layers (plasters, renders, floor finishes: category Finish) left out; the insulation, membranes and structure drawn": "省略饰面层（抹灰、涂层、地面饰面：类别 Finish）；绘制保温层、防水膜和结构",
+  "Core only": "仅核心层",
+  "The cores alone, between their boundaries; the finishes, insulation and membranes left out": "仅绘制核心层，限于其边界之间；省略饰面、保温层和防水膜",
+  "Core of load-bearing elements only": "仅承重构件的核心层",
+  "The cores of the load-bearing elements alone (LoadBearing in their properties, as Pset_WallCommon); partitions, coverings and room finishes not drawn": "仅绘制承重构件的核心层（其属性中的 LoadBearing，如 Pset_WallCommon）；隔墙、覆层和房间饰面不绘制",
+  "Partial structure display": "部分结构显示",
+  "Partial structure display: which layers of walls, floors and roofs the view draws (one undo step); the style's for this kind of view is marked ·": "部分结构显示：视图绘制墙、楼板和屋顶的哪些层（一步撤销）；样式中针对此类视图的设置标有 ·",
+  "Which layers of walls, floors and roofs the view draws, as its style says for its kind of view (plans; sections and elevations; 3D) unless it sets its own; also in the view's corner, beside its scale. A plan rules what its cut plane cuts: the floors seen under it show as they are. A layer is a finish, insulation or membrane by its own category in its type, else its material's.": "视图绘制墙、楼板和屋顶的哪些层，按其样式针对该类视图（平面图；剖面图和立面图；3D）的设定，除非视图自行设定；也可在视图角落、比例尺旁设置。平面图决定其剖切面所切到的内容：其下方可见的楼板按原样显示。一层是饰面、保温层还是防水膜，取决于其在类型中自身的类别，否则取决于其材料的类别。",
+  "By element kind": "按构件类型",
+  "Over the partial structure display, element kind by element kind: whether this view draws the walls' and the floors' finish layers (and the rooms' wall and floor finishes)": "在部分结构显示之上，逐个构件类型设置：此视图是否绘制墙和楼板的饰面层（以及房间的墙面和地面饰面）",
+  "advanced": "高级",
+  "Structure in plans": "平面图中的结构",
+  "Partial structure display of the style's plans: which layers of walls, floors and roofs they draw": "样式中平面图的部分结构显示：它们绘制墙、楼板和屋顶的哪些层",
+  "Structure in sections": "剖面图中的结构",
+  "Partial structure display of the style's sections and elevations": "样式中剖面图和立面图的部分结构显示",
+  "Structure in 3D": "3D 中的结构",
+  "Partial structure display of the style's 3D views and other views": "样式中 3D 视图及其他视图的部分结构显示",
+  "The partial structure display is said for plans, for sections and elevations, and for 3D views; a view sets its own in its settings or from its corner, beside its scale. The finish columns are its advanced detail, element kind by element kind.": "部分结构显示分别针对平面图、剖面图和立面图以及 3D 视图设定；视图可在其设置中或从其角落、比例尺旁设定自己的显示。饰面列是其高级细节，逐个构件类型设置。",
+  "load-bearing cores only": "仅承重核心层",
   // The forum's topic #30: finish layers by kind of view, wall layers into the floors' layers
   "Floor finishes": "楼板饰面",
   "Wall finishes in plans": "平面图中的墙面饰面",

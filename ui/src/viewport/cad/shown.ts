@@ -51,8 +51,11 @@ export function shownItems<T extends { nodeId: string; type?: string; plan?: Pla
   const shown = drawnElements(drawing);
   const kept = shown ? items.filter((r) => isShown(r.nodeId, shown, wholeOf)) : items;
   const hidden = drawing?.hiddenFinishes;
-  if (!hidden?.length) return kept;
-  return kept.map((r) => (r.plan && r.type && r.plan.some((it) => !drawnInPlan(r.type!, it, hidden)) ? { ...r, plan: r.plan.filter((it) => drawnInPlan(r.type!, it, hidden)) } : r));
+  // The roles the view's partial structure display leaves out of every layered element (decision 500).
+  const subs = drawing?.hiddenSubs;
+  if (!hidden?.length && !subs?.length) return kept;
+  const drawn = (type: string, it: PlanItemDto) => drawnInPlan(type, it, hidden, subs);
+  return kept.map((r) => (r.plan && r.type && r.plan.some((it) => !drawn(r.type!, it)) ? { ...r, plan: r.plan.filter((it) => drawn(r.type!, it)) } : r));
 }
 
 /**

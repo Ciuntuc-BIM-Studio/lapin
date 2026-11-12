@@ -10,8 +10,13 @@ namespace Lapin.Platform;
 /// default (Architectural, Structural, MEP), editable, and more can be made.
 /// It says:
 /// <list type="bullet">
-/// <item><c>layers</c>: which layers of layered elements draw: all of them,
-/// all but the finishes (<see cref="Materials.IsFinish"/>), or the core only;</item>
+/// <item><c>layers</c>: the partial structure display (as ArchiCAD's), which layers of layered elements draw: the entire
+/// model (<c>all</c>), all but the finishes (<c>noFinishes</c>, <see cref="LayerSets.IsFinish"/>), the core only
+/// (<c>core</c>), or the cores of the load-bearing elements only (<c>coreLoadBearing</c>, <see cref="BearsLoad"/>: the
+/// others not drawn at all). A style says it for its plans (<c>layersPlan</c>), its sections and elevations
+/// (<c>layersSection</c>) and its other views, 3D among them (<c>layers</c>, also what the first two take when unset); a
+/// view sets its own (<c>layers</c> again). A new project's Architectural style draws its plans without the finishes
+/// (decision 500); a project made before keeps what it drew (<see cref="StructureUpgrade"/>);</item>
 /// <item><c>joins</c>: whether one material goes on from one element into the
 /// next without a line (the visual joins), on by default;</item>
 /// <item><c>overhead</c>: whether a plan draws what lies above its cut, up to
@@ -40,7 +45,8 @@ namespace Lapin.Platform;
 public static class ViewStyles
 {
     public const string Key = "viewStyles";
-    public static readonly string[] LayerModes = ["all", "noFinishes", "core"];
+    public static readonly string[] LayerModes = ["all", "noFinishes", "core", "coreLoadBearing"];
+    const string LayerModesText = "all, noFinishes, core or coreLoadBearing";
     public static readonly string[] Fields = ["layers", "joins", "overhead", "ifc2d", "voids", "voidSizes", "finishHatch", "surfaceHatch", "entourage", "entourageFill", "detail",
         "wallFinishesPlan", "wallFinishesSection", "floorFinishesPlan", "floorFinishesSection"];
 
@@ -63,10 +69,22 @@ public static class ViewStyles
     static string? CheckedFill(JsonNode? n) =>
         n == null || (string?)n is "" or "none" ? null : FillOf(n) ?? throw new CommandException("A fill is a colour (#rrggbb) or none.");
 
-    /// <summary>A style, or a view's settings as its style and its own choices make them.</summary>
+    /// <summary>
+    /// A style, or a view's settings as its style and its own choices make them. <see cref="Layers"/>: the partial structure
+    /// display of its views (a view's: what it draws by); <see cref="LayersPlan"/>, <see cref="LayersSection"/>: a style's
+    /// for its plans and for its sections and elevations, null to take <see cref="Layers"/> (<see cref="LayersFor"/>).
+    /// </summary>
     public sealed record Style(string Id, string Name, string? Discipline, string Layers, bool Joins, bool Overhead, bool Ifc2d = true, bool Voids = false, bool VoidSizes = true, bool FinishHatch = true, bool SurfaceHatch = true, string Entourage = "outline", string? EntourageFill = null, string? GraphicsSet = null, int Detail = PlanDetail.Lod350,
-        bool WallFinishesPlan = true, bool WallFinishesSection = true, bool FloorFinishesPlan = true, bool FloorFinishesSection = true)
+        bool WallFinishesPlan = true, bool WallFinishesSection = true, bool FloorFinishesPlan = true, bool FloorFinishesSection = true, string? LayersPlan = null, string? LayersSection = null)
     {
+        /// <summary>The partial structure display of a view of this kind (a plan, a section or an elevation, another).</summary>
+        public string LayersFor(string? viewKind) => viewKind switch
+        {
+            "plan" or null => LayersPlan ?? Layers,
+            "section" or "elevation" => LayersSection ?? Layers,
+            _ => Layers,
+        };
+
         public JsonObject ToJson() => WithSet(new()
         {
             ["id"] = Id, ["name"] = Name, ["discipline"] = Discipline, ["layers"] = Layers, ["joins"] = Joins, ["overhead"] = Overhead, ["ifc2d"] = Ifc2d,
@@ -88,10 +106,12 @@ public static class ViewStyles
             };
         }
 
-        /// <summary>The graphics set its views take when they have none of their own (decision 391), written only when it names one.</summary>
+        /// <summary>The graphics set its views take when they have none of their own (decision 391), and its plans' and sections' structure display, written only when set.</summary>
         JsonObject WithSet(JsonObject o)
         {
             if (GraphicsSet != null) o["graphicsSet"] = GraphicsSet;
+            if (LayersPlan != null) o["layersPlan"] = LayersPlan;
+            if (LayersSection != null) o["layersSection"] = LayersSection;
             return o;
         }
 
@@ -114,7 +134,11 @@ public static class ViewStyles
             // A style saved before the views' LOD (decision 404): LOD 400 for a structural one (a link's rebar too), else 350.
             PlanDetail.LodOf(o["detail"]) ?? ((string?)o["discipline"] == "Structure" || (string?)o["id"] == "structural" ? PlanDetail.Lod400 : PlanDetail.Lod350),
             // A style saved before the finishes by kind of view (topic #30): every finish drawn, as before.
-            On(o["wallFinishesPlan"]), On(o["wallFinishesSection"]), On(o["floorFinishesPlan"]), On(o["floorFinishesSection"]));
+            On(o["wallFinishesPlan"]), On(o["wallFinishesSection"]), On(o["floorFinishesPlan"]), On(o["floorFinishesSection"]),
+            // A style saved before the structure display by kind of view (decision 500): its plans and sections take its layers.
+            Mode(o["layersPlan"]), Mode(o["layersSection"]));
+
+        static string? Mode(JsonNode? n) => (string?)n is { } l && LayerModes.Contains(l) ? l : null;
 
         static bool On(JsonNode? n) => n is not JsonValue v || !v.TryGetValue<bool>(out var b) || b;
 
@@ -123,15 +147,22 @@ public static class ViewStyles
             !((string?)o["discipline"] is "Structure" or "MEP" || (string?)o["id"] is "structural" or "mep" or "coordination");
     }
 
-    /// <summary>The styles a project without its own reads as: one per discipline; the structural one draws the cores alone.</summary>
+    /// <summary>
+    /// The styles a project without its own reads as: one per discipline; the architectural one's plans without the finishes
+    /// (decision 500: the plasters and floor finishes left out, the insulation drawn), its sections, elevations and 3D views
+    /// the entire model; the structural one draws the cores alone.
+    /// </summary>
     public static readonly IReadOnlyList<Style> Defaults =
     [
-        new("architectural", "Architectural", "Architecture", "all", true, true),
+        new("architectural", "Architectural", "Architecture", "all", true, true, LayersPlan: "noFinishes"),
         new("structural", "Structural", "Structure", "core", true, true, FinishHatch: false, SurfaceHatch: false, Detail: PlanDetail.Lod400),
         new("mep", "MEP", "MEP", "all", true, true, FinishHatch: false, SurfaceHatch: false),
         // For coordination drawings (decision 290): the openings' voids drawn, marked and sized; taken by name, no discipline's.
         new("coordination", "Coordination", null, "all", true, true, Voids: true, FinishHatch: false, SurfaceHatch: false),
     ];
+
+    /// <summary>The styles a project made before decision 500 read as when it had none of its own: every view the entire model but the structural ones.</summary>
+    public static IReadOnlyList<Style> LegacyDefaults => Defaults.Select(s => s with { LayersPlan = null, LayersSection = null }).ToList();
 
     public static IReadOnlyList<Style> All(IModelView m) =>
         Spatial.Project(m)?.Attrs[Key] is JsonArray arr && arr.Count > 0
@@ -147,10 +178,14 @@ public static class ViewStyles
         return all.FirstOrDefault(s => string.Equals(s.Discipline, discipline, StringComparison.OrdinalIgnoreCase)) ?? all[0];
     }
 
-    /// <summary>How a view draws: its style's settings, with what the view sets itself over them.</summary>
+    /// <summary>
+    /// How a view draws: its style's settings, with what the view sets itself over them; its partial structure display its
+    /// own, else its style's for a view of its kind (<see cref="Style.LayersFor"/>).
+    /// </summary>
     public static Style Of(IModelView m, Entity view)
     {
-        var s = StyleOf(m, view);
+        var st = StyleOf(m, view);
+        var s = st with { Layers = st.LayersFor(view.Str("kind")), LayersPlan = null, LayersSection = null };
         var o = view.Attrs["styleOverrides"] as JsonObject;
         if (o == null) return s;
         return s with
@@ -179,9 +214,18 @@ public static class ViewStyles
     public static bool Draws(IModelView m, Style s, string element, string? partKey, Dictionary<string, IReadOnlyList<LayerBand>?> cache) =>
         Draws(m, s.Layers, element, partKey, cache);
 
-    /// <summary>Whether a layers mode (all, noFinishes, core) draws a part of a layered element (a part keyed layer:&lt;n&gt;; any other part always draws).</summary>
+    /// <summary>
+    /// Whether a layers mode (all, noFinishes, core, coreLoadBearing) draws a part of a layered element (a part keyed
+    /// layer:&lt;n&gt;; any other part always draws); the cores of the load-bearing elements only draw no part of an element
+    /// that bears no load (<see cref="BearsLoad"/>), and the core of one that does.
+    /// </summary>
     public static bool Draws(IModelView m, string layers, string element, string? partKey, Dictionary<string, IReadOnlyList<LayerBand>?> cache)
     {
+        if (layers == "coreLoadBearing")
+        {
+            if (m.Get(element) is { } el && !BearsLoad(m, el)) return false;
+            layers = "core";
+        }
         if (layers == "all" || partKey is not { } k || !k.StartsWith("layer:", StringComparison.Ordinal)
             || !int.TryParse(k.AsSpan(6), System.Globalization.CultureInfo.InvariantCulture, out var index)) return true;
         if (!cache.TryGetValue(element, out var bands)) cache[element] = bands = LayerSets.BandsOf(m, element);
@@ -210,6 +254,7 @@ public static class ViewStyles
     public static bool Shows3d(IModelView m, string layers, string element, GeometryPart part, Dictionary<string, IReadOnlyList<LayerBand>?> cache)
     {
         if (layers == "all") return true;
+        if (layers == "coreLoadBearing" && m.Get(element) is { } el && !BearsLoad(m, el)) return false;
         if (part.Key is { } k && k.StartsWith("reveal", StringComparison.Ordinal))
             return !(part.Material is { } mid && m.Get(mid) is { } mat && Materials.IsFinish(mat));
         return Draws(m, layers, element, part.Key, cache);
@@ -224,9 +269,30 @@ public static class ViewStyles
         return by?.ToArray();
     }
 
-    /// <summary>A layers mode as a request names it: all (also when absent), noFinishes or core.</summary>
-    public static string LayersOf(JsonNode? n) =>
-        (string?)n is { } l ? LayerModes.Contains(l) ? l : throw new CommandException($"„{l}” is not all, noFinishes or core.") : "all";
+    /// <summary>A layers mode as a request names it: all (also when absent), noFinishes, core or coreLoadBearing.</summary>
+    public static string LayersOf(JsonNode? n) => (string?)n is { } l ? Checked(l) : "all";
+
+    static string Checked(string l) => LayerModes.Contains(l) ? l : throw new CommandException($"„{l}” is not {LayerModesText}.");
+
+    /// <summary>The classes whose elements bear load or not (IFC's Pset_…Common LoadBearing), which the cores of the load-bearing elements only leave out when they do not.</summary>
+    static readonly HashSet<string> Bearing = [IfcClass.Wall, "IfcWallStandardCase", "IfcCurtainWall", IfcClass.Slab, IfcClass.Roof, IfcClass.Column, IfcClass.Beam, IfcClass.Footing, "IfcPile", "IfcMember", "IfcPlate", "IfcCovering", "LapinRoomFinish"];
+
+    /// <summary>Those taken as bearing load when nothing says: columns, beams, footings and piles (as the IFC export writes them), floors and roofs.</summary>
+    static readonly HashSet<string> BearingUnlessSaid = [IfcClass.Slab, IfcClass.Roof, IfcClass.Column, IfcClass.Beam, IfcClass.Footing, "IfcPile"];
+
+    /// <summary>
+    /// Whether the cores of the load-bearing elements only (decision 500) keep an element: one of a class that bears load or
+    /// not by IFC's LoadBearing (walls, floors, roofs, columns, beams, members, plates, footings, piles, coverings, a room's
+    /// finishes) when it or its type says it bears load (<see cref="Coordination.Provisions.LoadBearing"/>: Pset_WallCommon.LoadBearing for
+    /// a wall, as the analytical model reads it), or when neither says and it is a column, beam, footing, pile, floor or roof;
+    /// a covering or a room's finish never. Any other element (a door, a stair, furniture) is kept.
+    /// </summary>
+    public static bool BearsLoad(IModelView m, Entity e)
+    {
+        if (!Bearing.Contains(e.Class)) return true;
+        if (e.Class is "IfcCovering" or "LapinRoomFinish") return false;
+        return Coordination.Provisions.LoadBearingOrNull(m, e) ?? BearingUnlessSaid.Contains(e.Class);
+    }
 
     static JsonArray Write(IEnumerable<Style> styles) => new(styles.Select(s => (JsonNode)s.ToJson()).ToArray());
 
@@ -242,7 +308,10 @@ public static class ViewStyles
     {
         if (((string?)a["name"])?.Trim() is { Length: > 0 } name) s = s with { Name = name };
         if (a.ContainsKey("discipline")) s = s with { Discipline = ((string?)a["discipline"])?.Trim() is { Length: > 0 } d ? d : null };
-        if ((string?)a["layers"] is { } l) s = s with { Layers = LayerModes.Contains(l) ? l : throw new CommandException($"„{l}” is not all, noFinishes or core.") };
+        if ((string?)a["layers"] is { } l) s = s with { Layers = Checked(l) };
+        // Its plans' and its sections' own (null: its layers).
+        if (a.ContainsKey("layersPlan")) s = s with { LayersPlan = (string?)a["layersPlan"] is { } lp ? Checked(lp) : null };
+        if (a.ContainsKey("layersSection")) s = s with { LayersSection = (string?)a["layersSection"] is { } ls ? Checked(ls) : null };
         if (a["joins"] is JsonValue jv && jv.TryGetValue<bool>(out var j)) s = s with { Joins = j };
         if (a["overhead"] is JsonValue ov && ov.TryGetValue<bool>(out var h)) s = s with { Overhead = h };
         if (a["ifc2d"] is JsonValue iv && iv.TryGetValue<bool>(out var i)) s = s with { Ifc2d = i };
@@ -267,6 +336,29 @@ public static class ViewStyles
             };
         }
         return s;
+    }
+
+    /// <summary>The project's mark that its views' structure display is read as decision 500 has it (a project made before is upgraded).</summary>
+    public const string StructureRevKey = "structureRev";
+
+    /// <summary>
+    /// A project made before the structure display by kind of view (decision 500) keeps what its views drew: one without
+    /// styles of its own reads the styles it read then (<see cref="LegacyDefaults"/>: its plans the entire model), written
+    /// on it; one with its own keeps them as they are (a style without <c>layersPlan</c> or <c>layersSection</c> takes its
+    /// <c>layers</c> for every view, as before), and decision 496's finish choices by kind of view stay as they were, the
+    /// advanced detail of the structure display. Then the project is marked.
+    /// </summary>
+    public sealed class StructureUpgrade : IProjectUpgrade
+    {
+        public (IReadOnlyList<Entity> Entities, IReadOnlyList<Relation> Relations) Upgrade(IReadOnlyList<Entity> entities, IReadOnlyList<Relation> relations)
+        {
+            if (entities.FirstOrDefault(e => e.Class == IfcClass.Project) is not { } project || project.Attrs[StructureRevKey] != null) return (entities, relations);
+            var attrs = project.CloneAttrs();
+            if (attrs[Key] is not JsonArray { Count: > 0 }) attrs[Key] = Write(LegacyDefaults);
+            attrs[StructureRevKey] = 1;
+            var up = project.With(attrs: attrs);
+            return (entities.Select(e => e.Id == project.Id ? up : e).ToList(), relations);
+        }
     }
 
     /// <summary>A graphics set removed: the styles that named it name none.</summary>
@@ -358,7 +450,7 @@ public static class ViewStyles
                 if (!a.ContainsKey(f)) continue;
                 var value = a[f];
                 if (value == null) { own.Remove(f); continue; }
-                if (f == "layers") own[f] = (string?)value is { } l && LayerModes.Contains(l) ? l : throw new CommandException($"„{value}” is not all, noFinishes or core.");
+                if (f == "layers") own[f] = (string?)value is { } l ? Checked(l) : throw new CommandException($"„{value}” is not {LayerModesText}.");
                 else if (f == "entourage") own[f] = EntourageMode(value);
                 // A fill set to none on the view, over a style's colour: kept as "none".
                 else if (f == "entourageFill") own[f] = CheckedFill(value) ?? "none";

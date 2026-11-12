@@ -135,15 +135,16 @@ De skjulte etager tegnes ikke, og du kan ikke markere dem, tilpasse til dem elle
 
 ### Uden overflader, eller kun kernerne
 
-En 3D-visning kan vise bygningens konstruktion alene, som en konstruktionsplan gør. I 3D-visningens egenskaber (når intet er markeret), eller under **Vis → Visningsindstillinger** med 3D-visningen forrest, viser **Lag**:
+En 3D-visning kan vise bygningens konstruktion alene, som en konstruktionsplan gør. I 3D-visningens egenskaber (når intet er markeret), eller under **Vis → Visningsindstillinger** med 3D-visningen forrest, viser **Delvis visning af konstruktionen**:
 
-- **alle lag**: vægge, dæk og fundamenter, som de er bygget;
-- **uden overflader**: uden de lag, hvis materiale er en overflade (puds, filt, maling, fliser, plader, gulvbelægninger, eller et materiale, hvis kategori er Overflade under Administrer → Materialer); isoleringen bliver;
-- **kun kernen**: kun det lag, der er markeret som kerne (murstenen, betondækket).
+- **Hele modellen**: vægge, dæk og fundamenter, som de er bygget;
+- **Uden overfladelag**: uden de lag, hvis materiale er en overflade (puds, filt, maling, fliser, plader, gulvbelægninger, eller et materiale, hvis kategori er Overflade under Administrer → Materialer); isoleringen bliver;
+- **Kun kernen**: kun det lag, der er markeret som kerne (murstenen, betondækket);
+- **Kun kernen i bærende elementer**: kun kernerne i de bærende elementer (se [Delvis visning af konstruktionen](#delvis-visning-af-konstruktionen)).
 
 ![Et hus i 3D med kun kernen: væggene er deres mursten, dækkene deres plade](shots/layers-3d-core.webp)
 
-Hvert lag, der beholdes, forbliver et lukket legeme i sit eget materiale, så et snit eller snitboksen lukker det som før. Døre og vinduer bliver i deres åbninger; en lysning beklædt med en overflade følger væggens overflader. En 3D-visning tager sine lag fra sin stil, som en plan: sæt dens **Fagområde** til Konstruktion, og den viser kun kernerne; sæt **Lag** for at vælge andet, og knappen ved siden af går tilbage til stilens valg. Chippen **Viste lag** nederst i 3D-visningen siger, hvad der er udeladt; dens **×** viser alle lag igen. De skjulte lag kan ikke markeres eller gås imod, og **Filer → Eksportér 3D…**, som visningen viser det, eksporterer de samme lag.
+Hvert lag, der beholdes, forbliver et lukket legeme i sit eget materiale, så et snit eller snitboksen lukker det som før. Døre og vinduer bliver i deres åbninger; en lysning beklædt med en overflade følger væggens overflader. En 3D-visning tager sine lag fra sin stil, som en plan: sæt dens **Fagområde** til Konstruktion, og den viser kun kernerne; sæt **Delvis visning af konstruktionen** for at vælge andet, og knappen ved siden af går tilbage til stilens valg. Chippen **Viste lag** nederst i 3D-visningen siger, hvad der er udeladt; dens **×** viser alle lag igen. De skjulte lag kan ikke markeres eller gås imod, og **Filer → Eksportér 3D…**, som visningen viser det, eksporterer de samme lag.
 
 ### At gå ind i et rum
 
@@ -226,7 +227,7 @@ Fanen **Vis** indstiller, hvad visningen forrest viser, og hvordan den ser ud.
 ![Fanen Vis](shots/ribbon-view.webp)
 
 - **Visningsindstillinger.** Visningens fagområde og stil, dens område (snithøjde og -dybde) og dens grafik.
-- **Visningsstile.** Arkitektonisk, Konstruktiv (kun kernerne), Installationer eller dine egne. Hver stil vælger de lag, der tegnes (alle, uden overflader eller kernen), og hvordan materialer samles.
+- **Visningsstile.** Arkitektonisk, Konstruktiv (kun kernerne), Installationer eller dine egne. Hver stil vælger de lag, der tegnes (deres delvise visning af konstruktionen, hver for sig for planer, snit og 3D-visninger), og hvordan materialer samles.
 - **IFC 2D-symboler.** Elementer importeret eller linket fra en IFC-fil, som har deres egen plantegning med (et fodaftryk, en dørs slag, et inventars symbol, med filens farver, udfyldninger og tekster), tegner den i planer i stedet for deres snit. Fjern fluebenet under Visningsindstillinger (eller i en visningsstil) for i stedet at tegne deres 3D-snit.
 - **Synlighed** (<kbd>VV</kbd>) og **Grafik** (<kbd>VG</kbd>). De viser eller skjuler kategorier og indstiller deres penne, linjetyper og udfyldninger.
 - **Opdel** og **Vindue.** De viser to visninger side om side eller åbner en visning i et separat vindue.
@@ -235,13 +236,30 @@ Fanen **Vis** indstiller, hvad visningen forrest viser, og hvordan den ser ud.
 
 ![Visningskvalitet](shots/display-quality.webp)
 
-### Overflader i planer og snit
+### Delvis visning af konstruktionen
 
-En visningsstil siger, hver for sig for vægge og dæk, om planer tegner overfladelagene, og om snit og facader gør: **Vægoverflader i planer**, **Dækoverflader i planer**, **Vægoverflader i snit** og **Dækoverflader i snit** i **Administrer → Visningsstile**. Alle fire er slået til som standard. En visning kan sætte sine egne i **Visningsindstillinger** (**Vægoverflader**, **Dækoverflader**), og knappen ved siden af tager stilens igen. En overflade er et lag, hvis egen **Kategori** i dets type er **Overflade**, ellers et lag, hvis materiale har den kategori. En plan uden vægoverfladerne tegner hver vægs snitomrids ved kernen, med samlinger og hjørner som før, og fanger kernens flader. Polske tegninger trykkes for eksempel med planer helt uden overflader og snit med dækkenes overflader, men ikke væggenes: fjern fluebenet ved de tre første i stilen Architectural, og alle projektets planer og snit følger med. Modellen ændres ikke: mængder, 3D-visningen og IFC beholder alle lag.
+Hver visning siger, hvilke lag i vægge, dæk og tage den tegner, som ArchiCADs delvise visning af konstruktionen. **Delvis visning af konstruktionen** har fire forindstillinger:
 
-![Administrer → Visningsstile, med valg af overflader for planer og snit](shots/view-styles-finishes.webp)
+- **Hele modellen**: alle lag, som de er bygget;
+- **Uden overfladelag**: overfladelagene udeladt (puds, pudslag, gulvbelægninger og afretningslag, hvis **Kategori** er **Overflade**); isoleringen, membranerne og konstruktionen tegnes;
+- **Kun kernen**: kun kernerne, mellem deres grænser; isoleringen udgår også;
+- **Kun kernen i bærende elementer**: kun kernerne i de bærende elementer. Et element, der ikke bærer last (en skillevæg, en beklædning, et rums overflader), tegnes slet ikke. En væg bærer last, når **LoadBearing** er sat i dens egenskaber (Pset_WallCommon), på den eller på dens type, som den analytiske model læser det; søjler, bjælker, fundamenter, dæk og tage bærer last, medmindre de siger, at de ikke gør.
 
-![Et snit med dækkets gulvbelægning og afretningslag og uden væggenes puds](shots/finishes-section.webp)
+Et overfladelag er et lag, hvis egen **Kategori** i dets type er **Overflade**, ellers et lag, hvis materiale har den kategori (**Administrer → Materialer**). I et nyt projekt tegnes planer uden overfladelag, mens snit, facader og 3D-visninger viser hele modellen, det klassiske sæt til arkitekttegninger: pudsen udeladt i planerne, mens varmeisoleringen vises, og snit og detaljer med det hele. Et projekt lavet før tegner, som det gjorde.
+
+**Administrer → Visningsstile** sætter det for hver stil for sig: **Konstruktion i planer**, **Konstruktion i snit** (snit og facader) og **Konstruktion i 3D** (3D-visninger og resten), så alle stilens visninger følger det. En visning sætter sin egen i **Visningsindstillinger**, og knappen ved siden af tager stilens igen. Den findes også øverst i en plan, et snit eller en facade, ved siden af målestokken: vælg en anden forindstilling dér, i ét fortrydelsestrin. På et ark kan du vælge en placeret tegning, og dens forindstilling vises dér også, så hver tegning på et ark siger sin egen. En etages plan uden egen visning bliver med den etagens planvisning.
+
+En plan anvender det på det, dens snitplan skærer: et dæk, der ses under snittet, vises, som det er, med sin overflade ovenpå. Ark, PDF, DXF og fangene følger det, der er tegnet: en plan uden væggenes overflader fanger kernernes flader. Modellen ændres ikke: mængder og IFC beholder alle lag.
+
+![Administrer → Visningsstile: den delvise visning af konstruktionen for planer, snit og 3D-visninger](shots/view-styles-structure.webp)
+
+![Den delvise visning af konstruktionen øverst i en plan, ved siden af målestokken](shots/structure-picker.webp)
+
+![En plan med kun kernen: væggene er deres mursten](shots/structure-plan-core.webp)
+
+![Et snit med hele modellen: væggenes puds og dækkets gulvbelægning og afretningslag](shots/finishes-section.webp)
+
+**Efter elementtype.** Under forindstillingen har **Visningsindstillinger** for en plan, et snit eller en facade **Vægoverflader** og **Dækoverflader**, og **Administrer → Visningsstile** har **Vægoverflader i planer**, **Dækoverflader i planer**, **Vægoverflader i snit** og **Dækoverflader i snit**: fjernet udelader visningen også væggenes eller dækkenes overfladelag (og rummenes væg- eller gulvoverflader), uanset forindstilling. Alle er sat som standard. Polske tegninger trykkes for eksempel med planer helt uden overflader og snit med dækkenes overflader, men ikke væggenes: planer **Uden overfladelag**, snit **Hele modellen** med **Vægoverflader i snit** fjernet.
 
 ### Synlighed / grafik
 

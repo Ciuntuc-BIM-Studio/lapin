@@ -58,6 +58,7 @@ public sealed class CoreModule : ILapinModule
         r.Service<IProjectUpgrade>(new StoreyPlans.DefaultPlanUpgrade());
         r.Service<IProjectUpgrade>(new ViewDetail.LevelUpgrade());
         r.Service<IProjectUpgrade>(new MaterialHatchUpgrade());
+        r.Service<IProjectUpgrade>(new ViewStyles.StructureUpgrade());
         // References move, turn, mirror, copy and rise like any element (decision 448).
         var references = new ReferencePlacement();
         r.Service<IElementPlacement>(references);
@@ -524,7 +525,7 @@ public static class Spatial
         var project = Project(edit.Model);
         if (project == null)
         {
-            project = new Entity(IdOf(edit, seed?.Project.Id), IfcClass.Project, seed?.Project.Name ?? "Project", new JsonObject { ["lengthUnit"] = "METRE", [ViewDetail.RevKey] = 1, [MaterialHatchUpgrade.RevKey] = MaterialHatchUpgrade.Rev });
+            project = new Entity(IdOf(edit, seed?.Project.Id), IfcClass.Project, seed?.Project.Name ?? "Project", new JsonObject { ["lengthUnit"] = "METRE", [ViewDetail.RevKey] = 1, [MaterialHatchUpgrade.RevKey] = MaterialHatchUpgrade.Rev, [ViewStyles.StructureRevKey] = 1 });
             edit.Add(project);
         }
         var site = edit.Model.OfClass(IfcClass.Site).FirstOrDefault();

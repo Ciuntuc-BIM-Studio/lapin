@@ -54,7 +54,7 @@ import { tagTargets, trackTagHover, useTagHover, viewHasTags } from './tagTarget
 import { carryBegin, carryBy, carryEnd, carrying, useTrace } from './moveTrace';
 import type { Shape } from './cad/shapes';
 import { actualScale, boundsOf, coreBounds, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelGesture, wheelZoom, type Bounds, type View2, type ZoomHost } from './zoom';
-import { ScaleChip, ScalePicker } from './ScaleChip';
+import { ScaleChip, ScalePicker, StructurePicker } from './ScaleChip';
 import { DASHES, planDetail, shownAt } from './planDetail';
 import { axisLine, riseThrough } from './arc';
 import { useLang } from '../i18n';
@@ -779,6 +779,7 @@ export function PlanView() {
         <button type="button" className={`icon${planDrawing ? ' on' : ''}`} title={planDrawing ? 'Drawing: hatches and pens (click for modelling lines)' : 'Modelling lines (click for the drawing)'}
           onClick={() => useUi.setState({ planDrawing: !planDrawing })}><PenLine size={14} /></button>
         <ScalePicker viewId={planViewOf} scale={shownScale} />
+        <StructurePicker viewId={planViewOf} kind="plan" />
         <ScaleChip pxPerMetre={view.scale} scale={shownScale} onActual={host.actual} />
         {Math.abs(northAngle) > 1e-9 && (
           <button type="button" className={`icon${trueNorth ? ' on' : ''}`} data-testid="plan-true-north"

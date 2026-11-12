@@ -37,7 +37,7 @@ export interface RenderPart {
   indices: Int32Array;
   edges: Float32Array;
   /** The layers modes of a 3D view that leave this part out (a finish layer: both; insulation: core); none: every mode shows it (layers3d.ts). */
-  hiddenBy?: ('noFinishes' | 'core')[] | null;
+  hiddenBy?: ('noFinishes' | 'core' | 'coreLoadBearing')[] | null;
   /** Coarser copies for the screen, finest first (docs/plan-display-precision.md): only a part of many triangles has them. */
   lods?: RenderLod[] | null;
   /** The part's key (a layered element's layer:<n>): a look may show it apart (the 4D simulation). */

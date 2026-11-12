@@ -135,15 +135,16 @@ I piani nascosti non sono disegnati, e non puoi selezionarli, adattare la vista 
 
 ### Senza finiture, o solo i nuclei
 
-Una vista 3D può mostrare la sola struttura dell’edificio, come fa una pianta strutturale. Nelle proprietà della vista 3D (con niente selezionato), oppure in **Vista → Impostazioni di vista** con la vista 3D in primo piano, **Layer** mostra:
+Una vista 3D può mostrare la sola struttura dell’edificio, come fa una pianta strutturale. Nelle proprietà della vista 3D (con niente selezionato), oppure in **Vista → Impostazioni di vista** con la vista 3D in primo piano, **Visualizzazione parziale della struttura** mostra:
 
-- **tutti gli strati**: i muri, i solai e le fondazioni come sono costruiti;
-- **senza finiture**: senza gli strati il cui materiale è una finitura (intonaco, intonaco esterno, pittura, piastrelle, lastre, pavimentazioni, o un materiale la cui categoria è Finitura in Gestisci → Materiali); l’isolamento resta;
-- **solo il nucleo**: solo lo strato indicato come nucleo (il laterizio, la soletta in calcestruzzo).
+- **Modello intero**: i muri, i solai e le fondazioni come sono costruiti;
+- **Senza finiture**: senza gli strati il cui materiale è una finitura (intonaco, intonaco esterno, pittura, piastrelle, lastre, pavimentazioni, o un materiale la cui categoria è Finitura in Gestisci → Materiali); l’isolamento resta;
+- **Solo nucleo**: solo lo strato indicato come nucleo (il laterizio, la soletta in calcestruzzo);
+- **Solo nucleo degli elementi portanti**: solo i nuclei degli elementi portanti (vedi [Visualizzazione parziale della struttura](#visualizzazione-parziale-della-struttura)).
 
 ![Una casa in 3D con il solo nucleo: i muri sono il loro laterizio, i solai la loro soletta](shots/layers-3d-core.webp)
 
-Ogni strato conservato resta un solido chiuso nel proprio materiale, così un taglio o il box di sezione lo chiudono come prima. Porte e finestre restano nelle loro aperture; una mazzetta rivestita con una finitura va con le finiture del muro. Una vista 3D prende i suoi strati dal suo stile, come una pianta: imposta la sua **Disciplina** su Struttura e mostra solo i nuclei; imposta **Layer** per scegliere diversamente, e il pulsante accanto torna a quelli dello stile. L’etichetta **Strati mostrati** in basso nella vista 3D dice che cosa è escluso; la sua **×** mostra di nuovo tutti gli strati. Gli strati nascosti non si selezionano né ostacolano una camminata, e **File → Esporta 3D…** come lo mostra la vista esporta gli stessi strati.
+Ogni strato conservato resta un solido chiuso nel proprio materiale, così un taglio o il box di sezione lo chiudono come prima. Porte e finestre restano nelle loro aperture; una mazzetta rivestita con una finitura va con le finiture del muro. Una vista 3D prende i suoi strati dal suo stile, come una pianta: imposta la sua **Disciplina** su Struttura e mostra solo i nuclei; imposta **Visualizzazione parziale della struttura** per scegliere diversamente, e il pulsante accanto torna a quelli dello stile. L’etichetta **Strati mostrati** in basso nella vista 3D dice che cosa è escluso; la sua **×** mostra di nuovo tutti gli strati. Gli strati nascosti non si selezionano né ostacolano una camminata, e **File → Esporta 3D…** come lo mostra la vista esporta gli stessi strati.
 
 ### Camminare in un locale
 
@@ -226,7 +227,7 @@ La scheda **Vista** imposta che cosa mostra la vista in primo piano e come appar
 ![La scheda Vista](shots/ribbon-view.webp)
 
 - **Impostazioni di vista.** La disciplina e lo stile della vista, il suo intervallo (l’altezza e la profondità di taglio) e la sua grafica.
-- **Stili di vista.** Architettonico, Strutturale (solo i nuclei), Impianti o i tuoi. Ogni stile sceglie gli strati disegnati (tutti, senza finiture, o il nucleo) e come si uniscono i materiali.
+- **Stili di vista.** Architettonico, Strutturale (solo i nuclei), Impianti o i tuoi. Ogni stile sceglie gli strati disegnati (la loro visualizzazione parziale della struttura, separatamente per piante, sezioni e viste 3D) e come si uniscono i materiali.
 - **Simboli 2D IFC.** Gli elementi importati o collegati da un file IFC che portano un proprio disegno in pianta (un’impronta, l’apertura di una porta, il simbolo di un apparecchio, con i colori, i riempimenti e i testi del file) lo disegnano nelle piante al posto del loro taglio. Togli la spunta in Impostazioni di vista (o in uno stile di vista) per disegnare invece il loro taglio 3D.
 - **Visibilità** (<kbd>VV</kbd>) e **Grafica** (<kbd>VG</kbd>). Mostrano o nascondono le categorie e ne impostano penne, tipi di linea e riempimenti.
 - **Dividi** e **Finestra.** Mostrano due viste affiancate, o aprono una vista in una finestra separata.
@@ -235,13 +236,30 @@ La scheda **Vista** imposta che cosa mostra la vista in primo piano e come appar
 
 ![Qualità di visualizzazione](shots/display-quality.webp)
 
-### Le finiture in pianta e in sezione
+### Visualizzazione parziale della struttura
 
-Uno stile di vista dice, separatamente per i muri e per i solai, se le piante disegnano gli strati di finitura e se li disegnano le sezioni e i prospetti: **Finiture dei muri in pianta**, **Finiture dei solai in pianta**, **Finiture dei muri in sezione** e **Finiture dei solai in sezione** in **Gestisci → Stili di vista**. Tutte e quattro sono attive per impostazione predefinita. Una vista può impostare le sue in **Impostazioni di vista** (**Finiture dei muri**, **Finiture dei solai**), e il pulsante accanto riprende quelle dello stile. Una finitura è uno strato la cui **Categoria** propria nel suo tipo è **Finitura**, altrimenti uno il cui materiale ha questa categoria. Una pianta senza le finiture dei muri disegna il contorno sezionato di ogni muro sul nucleo, con i giunti e gli angoli come prima, e si aggancia alle facce del nucleo. Le tavole polacche, per esempio, si stampano con piante senza alcuna finitura e sezioni con le finiture dei solai ma non quelle dei muri: togli la spunta alle prime tre nello stile Architectural, e tutte le piante e le sezioni del progetto seguono. Il modello non cambia: quantità, vista 3D e IFC mantengono tutti gli strati.
+Ogni vista dice quali strati di muri, solai e coperture disegna, come la visualizzazione parziale della struttura di ArchiCAD. **Visualizzazione parziale della struttura** offre quattro preimpostazioni:
 
-![Gestisci → Stili di vista, con le finiture di piante e sezioni](shots/view-styles-finishes.webp)
+- **Modello intero**: tutti gli strati, come sono costruiti;
+- **Senza finiture**: gli strati di finitura omessi (intonaci, rasature, finiture di pavimento e massetti la cui **Categoria** è **Finitura**); l’isolante, le membrane e la struttura sono disegnati;
+- **Solo nucleo**: i soli nuclei, tra i loro limiti; anche l’isolante se ne va;
+- **Solo nucleo degli elementi portanti**: i soli nuclei degli elementi portanti. Un elemento che non porta carichi (un tramezzo, un rivestimento, le finiture di un locale) non è disegnato affatto. Un muro è portante quando **LoadBearing** è spuntato nelle sue proprietà (Pset_WallCommon), su di esso o sul suo tipo, come lo legge il modello analitico; pilastri, travi, fondazioni, solai e coperture sono portanti a meno che non dicano di non esserlo.
 
-![Una sezione con la pavimentazione e il massetto del solaio e senza l’intonaco dei muri](shots/finishes-section.webp)
+Una finitura è uno strato la cui **Categoria** propria nel suo tipo è **Finitura**, altrimenti uno il cui materiale ha questa categoria (**Gestisci → Materiali**). In un nuovo progetto le piante sono disegnate senza finiture, e le sezioni, i prospetti e le viste 3D mostrano il modello intero, l’insieme classico per le tavole di architettura: gli intonaci omessi dalle piante mentre l’isolante termico si vede, e le sezioni e i dettagli con tutto. Un progetto fatto prima si disegna come prima.
+
+**Gestisci → Stili di vista** la imposta per ogni stile a parte: **Struttura in pianta**, **Struttura nelle sezioni** (sezioni e prospetti) e **Struttura in 3D** (viste 3D e il resto), così ogni vista dello stile la segue. Una vista imposta la sua in **Impostazioni di vista**, e il pulsante accanto riprende quella dello stile. Si trova anche in alto in una pianta, una sezione o un prospetto, accanto alla scala: scegli lì un’altra preimpostazione, in un passo di annullamento. Su una tavola, scegli un disegno posizionato e la sua preimpostazione compare anche lì, così ogni disegno di una tavola dice la sua. La pianta di un livello senza vista propria diventa, con essa, la vista in pianta del livello.
+
+Una pianta la applica a ciò che taglia il suo piano di taglio: un solaio visto sotto il taglio si mostra com’è, con la sua finitura sopra. Tavole, PDF, DXF e agganci seguono ciò che è disegnato: una pianta senza le finiture dei muri si aggancia alle facce dei nuclei. Il modello non cambia: quantità e IFC mantengono tutti gli strati.
+
+![Gestisci → Stili di vista: la visualizzazione parziale della struttura di piante, sezioni e viste 3D](shots/view-styles-structure.webp)
+
+![La visualizzazione parziale della struttura in alto in una pianta, accanto alla scala](shots/structure-picker.webp)
+
+![Una pianta con il solo nucleo: i muri sono il loro laterizio](shots/structure-plan-core.webp)
+
+![Una sezione con il modello intero: l’intonaco dei muri e la pavimentazione e il massetto del solaio](shots/finishes-section.webp)
+
+**Per tipo di elemento.** Sotto la preimpostazione, **Impostazioni di vista** di una pianta, di una sezione o di un prospetto ha **Finiture dei muri** e **Finiture dei solai**, e **Gestisci → Stili di vista** ha **Finiture dei muri in pianta**, **Finiture dei solai in pianta**, **Finiture dei muri in sezione** e **Finiture dei solai in sezione**: senza spunta, la vista omette anche gli strati di finitura dei muri o dei solai (e le finiture di parete o di pavimento dei locali), qualunque sia la sua preimpostazione. Tutte sono attive per impostazione predefinita. Le tavole polacche, per esempio, si stampano con piante senza alcuna finitura e sezioni con le finiture dei solai ma non quelle dei muri: piante **Senza finiture**, sezioni **Modello intero** con **Finiture dei muri in sezione** senza spunta.
 
 ### Visibilità / Grafica
 

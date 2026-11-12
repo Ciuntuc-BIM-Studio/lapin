@@ -1,6 +1,29 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // Decision 500: the partial structure display
+  "Entire model": "Întregul model",
+  "Every layer of walls, floors and roofs": "Toate straturile pereților, planșeelor și acoperișurilor",
+  "Without finishes": "Fără finisaje",
+  "The finish layers (plasters, renders, floor finishes: category Finish) left out; the insulation, membranes and structure drawn": "Straturile de finisaj (tencuieli, glet, finisaje de pardoseală: categoria Finish) lăsate la o parte; termoizolația, membranele și structura desenate",
+  "Core only": "Doar miezul",
+  "The cores alone, between their boundaries; the finishes, insulation and membranes left out": "Doar miezurile, între limitele lor; finisajele, izolația și membranele lăsate la o parte",
+  "Core of load-bearing elements only": "Doar miezul elementelor portante",
+  "The cores of the load-bearing elements alone (LoadBearing in their properties, as Pset_WallCommon); partitions, coverings and room finishes not drawn": "Doar miezurile elementelor portante (LoadBearing în proprietățile lor, ca în Pset_WallCommon); pereții despărțitori, placajele și finisajele încăperilor nu se desenează",
+  "Partial structure display": "Afișare parțială a structurii",
+  "Partial structure display: which layers of walls, floors and roofs the view draws (one undo step); the style's for this kind of view is marked ·": "Afișare parțială a structurii: ce straturi de pereți, planșee și acoperișuri desenează vederea (un pas de anulare); cea a stilului pentru acest fel de vedere e marcată cu ·",
+  "Which layers of walls, floors and roofs the view draws, as its style says for its kind of view (plans; sections and elevations; 3D) unless it sets its own; also in the view's corner, beside its scale. A plan rules what its cut plane cuts: the floors seen under it show as they are. A layer is a finish, insulation or membrane by its own category in its type, else its material's.": "Ce straturi de pereți, planșee și acoperișuri desenează vederea, după cum spune stilul ei pentru felul ei de vedere (planuri; secțiuni și fațade; 3D), dacă nu are una proprie; și în colțul vederii, lângă scară. Un plan hotărăște ce taie planul lui de tăiere: planșeele văzute sub el se arată așa cum sunt. Un strat e finisaj, izolație sau membrană după categoria lui proprie în tip, altfel după cea a materialului.",
+  "By element kind": "După felul elementului",
+  "Over the partial structure display, element kind by element kind: whether this view draws the walls' and the floors' finish layers (and the rooms' wall and floor finishes)": "Peste afișarea parțială a structurii, pe feluri de elemente: dacă această vedere desenează straturile de finisaj ale pereților și ale planșeelor (și finisajele de perete și de pardoseală ale încăperilor)",
+  "advanced": "avansat",
+  "Structure in plans": "Structura în planuri",
+  "Partial structure display of the style's plans: which layers of walls, floors and roofs they draw": "Afișarea parțială a structurii în planurile stilului: ce straturi de pereți, planșee și acoperișuri desenează",
+  "Structure in sections": "Structura în secțiuni",
+  "Partial structure display of the style's sections and elevations": "Afișarea parțială a structurii în secțiunile și fațadele stilului",
+  "Structure in 3D": "Structura în 3D",
+  "Partial structure display of the style's 3D views and other views": "Afișarea parțială a structurii în vederile 3D ale stilului și în celelalte vederi",
+  "The partial structure display is said for plans, for sections and elevations, and for 3D views; a view sets its own in its settings or from its corner, beside its scale. The finish columns are its advanced detail, element kind by element kind.": "Afișarea parțială a structurii se spune pentru planuri, pentru secțiuni și fațade și pentru vederile 3D; o vedere o stabilește pe a ei în setările ei sau din colțul ei, lângă scară. Coloanele de finisaje sunt detaliul ei avansat, pe feluri de elemente.",
+  "load-bearing cores only": "doar miezurile portante",
   // The forum's topic #30: finish layers by kind of view, wall layers into the floors' layers
   "Floor finishes": "Finisaje pardoseli",
   "Wall finishes in plans": "Finisaje pereți în planuri",

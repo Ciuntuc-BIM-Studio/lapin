@@ -47,6 +47,8 @@ public sealed class View3dLayersTests
     public void A_wall_in_3D_keeps_brick_and_wool_without_finishes_and_the_brick_alone_as_its_core()
     {
         var (f, wall) = PlasteredWall();
+        // Load-bearing (Pset_WallCommon.LoadBearing), so the load-bearing elements' cores keep its brick (decision 500).
+        f.Run("element.setParam", new JsonObject { ["id"] = wall, ["pset"] = "Pset_WallCommon", ["name"] = "LoadBearing", ["value"] = true });
         var item = Item(f, wall);
         var h = f.Bounds(wall).Max.Z - f.Bounds(wall).Min.Z;
         Assert.Equal(["Lime plaster", "Brick", "Mineral wool", "Silicate render"], Shown(item, "all").Names);
@@ -57,9 +59,9 @@ public sealed class View3dLayersTests
         Assert.Equal(5 * h * 0.35, Shown(item, "noFinishes").Volume, 4);
         Assert.Equal(5 * h * 0.25, Shown(item, "core").Volume, 4);
         // The plaster goes in both modes, the wool with the cores only, the brick never.
-        Assert.Equal(["noFinishes", "core"], item.Parts![0].HiddenBy!);
+        Assert.Equal(["noFinishes", "core", "coreLoadBearing"], item.Parts![0].HiddenBy!);
         Assert.Null(item.Parts[1].HiddenBy);
-        Assert.Equal(["core"], item.Parts[2].HiddenBy!);
+        Assert.Equal(["core", "coreLoadBearing"], item.Parts[2].HiddenBy!);
     }
 
     [Fact]
@@ -163,6 +165,7 @@ public sealed class View3dLayersTests
     public void A_plans_drawing_is_not_touched_by_the_3D_views_layers()
     {
         var (f, wall) = PlasteredWall();
+        f.EveryLayerInPlans();
         var plan = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey })!["id"]!;
         f.Run("view.setStyle", new JsonObject { ["id"] = "3d", ["layers"] = "core" });
         var (d, _, problem) = Views.Generate(new Q(f), Views.Find(f.Model, plan)!);

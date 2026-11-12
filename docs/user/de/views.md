@@ -135,15 +135,16 @@ Die ausgeblendeten Geschosse werden nicht gezeichnet, und Sie können sie weder 
 
 ### Ohne Bekleidungen oder nur die Kerne
 
-Eine 3D-Ansicht kann das Tragwerk des Gebäudes allein zeigen, wie ein Tragwerksplan. In den Eigenschaften der 3D-Ansicht (wenn nichts ausgewählt ist) oder in **Ansicht → Ansichtseinstellungen**, während die 3D-Ansicht vorne liegt, zeigt **Schichten**:
+Eine 3D-Ansicht kann das Tragwerk des Gebäudes allein zeigen, wie ein Tragwerksplan. In den Eigenschaften der 3D-Ansicht (wenn nichts ausgewählt ist) oder in **Ansicht → Ansichtseinstellungen**, während die 3D-Ansicht vorne liegt, zeigt **Teilstrukturdarstellung**:
 
-- **alle Schichten**: die Wände, Decken und Fundamente, wie sie gebaut sind;
-- **ohne Bekleidungen**: ohne die Schichten, deren Material eine Bekleidung ist (Putz, Außenputz, Anstrich, Fliesen, Platten, Bodenbeläge oder ein Material, dessen Kategorie in Verwalten → Materialien Bekleidung ist); die Dämmung bleibt;
-- **nur der Kern**: nur die als Kern markierte Schicht (der Ziegel, die Betondecke).
+- **Gesamtes Modell**: die Wände, Decken und Fundamente, wie sie gebaut sind;
+- **Ohne Beläge**: ohne die Schichten, deren Material eine Bekleidung ist (Putz, Außenputz, Anstrich, Fliesen, Platten, Bodenbeläge oder ein Material, dessen Kategorie in Verwalten → Materialien Bekleidung ist); die Dämmung bleibt;
+- **Nur Kern**: nur die als Kern markierte Schicht (der Ziegel, die Betondecke);
+- **Nur Kern tragender Elemente**: nur die Kerne der tragenden Elemente (siehe [Teilstrukturdarstellung](#teilstrukturdarstellung)).
 
 ![Ein Haus in 3D nur mit dem Kern: Die Wände sind ihr Ziegel, die Decken ihre Platte](shots/layers-3d-core.webp)
 
-Jede beibehaltene Schicht bleibt ein geschlossener Körper in ihrem eigenen Material, sodass ein Schnitt oder der Schnittbereich sie wie zuvor schließt. Türen und Fenster bleiben in ihren Öffnungen; eine mit einer Bekleidung ausgekleidete Laibung gehört zu den Bekleidungen der Wand. Eine 3D-Ansicht übernimmt ihre Schichten aus ihrem Stil, wie ein Grundriss: Setzen Sie ihre **Disziplin** auf Tragwerk, und sie zeigt nur die Kerne; stellen Sie **Schichten** ein, um anders zu wählen, und die Schaltfläche daneben kehrt zu den Schichten des Stils zurück. Der Chip **Angezeigte Schichten** unten in der 3D-Ansicht sagt, was weggelassen wird; sein **×** zeigt wieder alle Schichten. Die ausgeblendeten Schichten werden nicht ausgewählt und halten Sie bei einer Begehung nicht auf, und **Datei → 3D exportieren…** exportiert, so wie die Ansicht es zeigt, dieselben Schichten.
+Jede beibehaltene Schicht bleibt ein geschlossener Körper in ihrem eigenen Material, sodass ein Schnitt oder der Schnittbereich sie wie zuvor schließt. Türen und Fenster bleiben in ihren Öffnungen; eine mit einer Bekleidung ausgekleidete Laibung gehört zu den Bekleidungen der Wand. Eine 3D-Ansicht übernimmt ihre Schichten aus ihrem Stil, wie ein Grundriss: Setzen Sie ihre **Disziplin** auf Tragwerk, und sie zeigt nur die Kerne; stellen Sie **Teilstrukturdarstellung** ein, um anders zu wählen, und die Schaltfläche daneben kehrt zu den Schichten des Stils zurück. Der Chip **Angezeigte Schichten** unten in der 3D-Ansicht sagt, was weggelassen wird; sein **×** zeigt wieder alle Schichten. Die ausgeblendeten Schichten werden nicht ausgewählt und halten Sie bei einer Begehung nicht auf, und **Datei → 3D exportieren…** exportiert, so wie die Ansicht es zeigt, dieselben Schichten.
 
 ### In einen Raum gehen
 
@@ -226,7 +227,7 @@ Die Registerkarte **Ansicht** legt fest, was die vorne liegende Ansicht zeigt un
 ![Die Registerkarte Ansicht](shots/ribbon-view.webp)
 
 - **Ansichtseinstellungen.** Die Disziplin und der Stil der Ansicht, ihr Bereich (die Schnitthöhe und -tiefe) und ihre Grafiken.
-- **Ansichtsstile.** Architektur, Tragwerk (nur die Kerne), TGA oder Ihr eigener. Jeder Stil wählt die gezeichneten Schichten (alle, ohne Bekleidungen oder den Kern) und wie Materialien sich verbinden.
+- **Ansichtsstile.** Architektur, Tragwerk (nur die Kerne), TGA oder Ihr eigener. Jeder Stil wählt die gezeichneten Schichten (ihre Teilstrukturdarstellung, getrennt für Grundrisse, Schnitte und 3D-Ansichten) und wie Materialien sich verbinden.
 - **IFC-2D-Symbole.** Aus einer IFC-Datei importierte oder verknüpfte Elemente, die ihre eigene Grundrisszeichnung mitbringen (eine Grundfläche, den Aufschlag einer Tür, das Symbol eines Objekts, mit den Farben, Füllungen und Texten der Datei), zeichnen diese in Grundrissen statt ihres Schnitts. Entfernen Sie das Häkchen in den Ansichtseinstellungen (oder in einem Ansichtsstil), um stattdessen ihren 3D-Schnitt zu zeichnen.
 - **Sichtbarkeit** (<kbd>VV</kbd>) und **Grafiken** (<kbd>VG</kbd>). Sie blenden Kategorien ein oder aus und legen ihre Stifte, Linientypen und Füllungen fest.
 - **Teilen** und **Fenster.** Sie zeigen zwei Ansichten nebeneinander oder öffnen eine Ansicht in einem eigenen Fenster.
@@ -235,13 +236,30 @@ Die Registerkarte **Ansicht** legt fest, was die vorne liegende Ansicht zeigt un
 
 ![Anzeigequalität](shots/display-quality.webp)
 
-### Beläge in Grundrissen und Schnitten
+### Teilstrukturdarstellung
 
-Ein Ansichtsstil legt getrennt für Wände und Decken fest, ob Grundrisse die Belagsschichten zeichnen und ob Schnitte und Ansichten sie zeichnen: **Wandbeläge in Grundrissen**, **Bodenbeläge in Grundrissen**, **Wandbeläge in Schnitten** und **Bodenbeläge in Schnitten** in **Verwalten → Ansichtsstile**. Alle vier sind standardmäßig an. Eine Ansicht kann in den **Ansichtseinstellungen** eigene setzen (**Wandbeläge**, **Bodenbeläge**), und die Schaltfläche daneben nimmt wieder die des Stils. Ein Belag ist eine Schicht, deren eigene **Kategorie** in ihrem Typ **Bekleidung** ist, sonst eine, deren Material diese Kategorie hat. Ein Grundriss ohne Wandbeläge zeichnet den Schnittumriss jeder Wand am Kern, mit Anschlüssen und Ecken wie bisher, und fängt an den Flächen des Kerns. Polnische Pläne zum Beispiel werden mit Grundrissen ganz ohne Beläge und mit Schnitten mit den Bodenbelägen, aber ohne die Wandbeläge gedruckt: Deaktivieren Sie die ersten drei im Stil Architectural, und alle Grundrisse und Schnitte des Projekts folgen. Das Modell bleibt gleich: Mengen, die 3D-Ansicht und IFC behalten alle Schichten.
+Jede Ansicht legt fest, welche Schichten von Wänden, Decken und Dächern sie zeichnet, wie die Teilstrukturdarstellung in ArchiCAD. **Teilstrukturdarstellung** bietet vier Voreinstellungen:
 
-![Verwalten → Ansichtsstile, mit der Wahl der Beläge für Grundrisse und Schnitte](shots/view-styles-finishes.webp)
+- **Gesamtes Modell**: jede Schicht, wie gebaut;
+- **Ohne Beläge**: die Belagschichten weggelassen (Putze, Beschichtungen, Bodenbeläge und Estriche, deren **Kategorie** **Bekleidung** ist); Dämmung, Abdichtungen und Tragwerk werden gezeichnet;
+- **Nur Kern**: nur die Kerne, zwischen ihren Grenzen; auch die Dämmung entfällt;
+- **Nur Kern tragender Elemente**: nur die Kerne der tragenden Elemente. Ein Element, das keine Lasten trägt (eine Trennwand, eine Verkleidung, die Beläge eines Raums), wird gar nicht gezeichnet. Eine Wand ist tragend, wenn **LoadBearing** in ihren Eigenschaften angekreuzt ist (Pset_WallCommon), an ihr oder an ihrem Typ, wie das Analysemodell es liest; Stützen, Träger, Fundamente, Decken und Dächer sind tragend, sofern sie nicht sagen, dass sie es nicht sind.
 
-![Ein Schnitt mit Bodenbelag und Estrich der Decke und ohne den Putz der Wände](shots/finishes-section.webp)
+Ein Belag ist eine Schicht, deren eigene **Kategorie** in ihrem Typ **Bekleidung** ist, sonst eine, deren Material diese Kategorie hat (**Verwalten → Materialien**). In einem neuen Projekt werden Grundrisse ohne Beläge gezeichnet, Schnitte, Ansichten und 3D-Ansichten zeigen das gesamte Modell, der klassische Satz für Architekturpläne: die Putze fehlen in den Grundrissen, während die Wärmedämmung zu sehen ist, Schnitte und Details mit allem. Ein früher angelegtes Projekt wird gezeichnet wie bisher.
+
+**Verwalten → Ansichtsstile** legt sie für jeden Stil einzeln fest: **Struktur in Grundrissen**, **Struktur in Schnitten** (Schnitte und Ansichten) und **Struktur in 3D** (3D-Ansichten und der Rest), sodass jede Ansicht des Stils ihr folgt. Eine Ansicht legt ihre eigene in den **Ansichtseinstellungen** fest, und die Schaltfläche daneben nimmt wieder die des Stils. Sie steht auch oben in einem Grundriss, einem Schnitt oder einer Ansicht, neben dem Maßstab: Wählen Sie dort eine andere Voreinstellung, in einem Schritt rückgängig zu machen. Auf einem Plan wählen Sie eine platzierte Zeichnung, und ihre Voreinstellung erscheint dort ebenfalls, sodass jede Zeichnung auf einem Plan ihre eigene festlegt. Ein Geschossgrundriss ohne eigene Ansicht wird damit zur Grundrissansicht des Geschosses.
+
+Ein Grundriss wendet sie auf das an, was seine Schnittebene schneidet: Eine unter dem Schnitt gesehene Decke erscheint, wie sie ist, mit ihrem Belag obenauf. Pläne, PDF, DXF und die Fänge folgen dem Gezeichneten: Ein Grundriss ohne die Wandbeläge fängt an den Flächen der Kerne. Das Modell bleibt gleich: Mengen und IFC behalten alle Schichten.
+
+![Verwalten → Ansichtsstile: die Teilstrukturdarstellung für Grundrisse, Schnitte und 3D-Ansichten](shots/view-styles-structure.webp)
+
+![Die Teilstrukturdarstellung oben in einem Grundriss, neben dem Maßstab](shots/structure-picker.webp)
+
+![Ein Grundriss nur mit dem Kern: Die Wände sind ihr Ziegel](shots/structure-plan-core.webp)
+
+![Ein Schnitt mit dem gesamten Modell: der Putz der Wände und Bodenbelag und Estrich der Decke](shots/finishes-section.webp)
+
+**Nach Elementart.** Unter der Voreinstellung haben die **Ansichtseinstellungen** eines Grundrisses, eines Schnitts oder einer Ansicht **Wandbeläge** und **Bodenbeläge**, und **Verwalten → Ansichtsstile** hat **Wandbeläge in Grundrissen**, **Bodenbeläge in Grundrissen**, **Wandbeläge in Schnitten** und **Bodenbeläge in Schnitten**: deaktiviert, lässt die Ansicht auch die Belagschichten der Wände oder der Decken weg (und die Wand- oder Bodenbeläge der Räume), gleich welche Voreinstellung. Alle sind standardmäßig an. Polnische Pläne zum Beispiel werden mit Grundrissen ganz ohne Beläge und mit Schnitten mit den Bodenbelägen, aber ohne die Wandbeläge gedruckt: Grundrisse **Ohne Beläge**, Schnitte **Gesamtes Modell** mit deaktivierten **Wandbeläge in Schnitten**.
 
 ### Sichtbarkeit / Grafiken
 

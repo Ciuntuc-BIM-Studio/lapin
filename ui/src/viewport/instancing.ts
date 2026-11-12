@@ -213,7 +213,7 @@ class Batch {
   /** Faces, edges or both; the parts a layers mode leaves out, hidden. */
   show(style: VisualStyle, layers: string) {
     for (const p of this.parts.flatMap(variants)) {
-      const kept = !p.part.hiddenBy?.includes(layers as 'noFinishes' | 'core');
+      const kept = !p.part.hiddenBy?.includes(layers as 'noFinishes' | 'core' | 'coreLoadBearing');
       p.solid.visible = p.faded.visible = kept && style !== 'wireframe';
       if (p.edges) p.edges.visible = kept && style !== 'shaded';
     }

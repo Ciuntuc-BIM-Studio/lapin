@@ -131,15 +131,16 @@ Las plantas ocultas no se dibujan, y no puede seleccionarlas, ajustar la vista a
 
 ### Sin acabados, o solo los núcleos
 
-Una vista 3D puede mostrar solo la estructura del edificio, como lo hace una planta estructural. En las propiedades de la vista 3D (sin nada seleccionado), o en **Vista → Configuración de vista** con la vista 3D delante, **Capas** muestra:
+Una vista 3D puede mostrar solo la estructura del edificio, como lo hace una planta estructural. En las propiedades de la vista 3D (sin nada seleccionado), o en **Vista → Configuración de vista** con la vista 3D delante, **Visualización parcial de la estructura** muestra:
 
-- **todas las capas**: los muros, forjados y zapatas tal como se construyen;
-- **sin acabados**: sin las capas cuyo material es un acabado (enlucido, revoco, pintura, baldosas, tableros, revestimientos de suelo, o un material cuya categoría es Acabado en Gestionar → Materiales); el aislamiento se mantiene;
-- **solo el núcleo**: solo la capa marcada como núcleo (el ladrillo, la losa de hormigón).
+- **Modelo completo**: los muros, forjados y zapatas tal como se construyen;
+- **Sin acabados**: sin las capas cuyo material es un acabado (enlucido, revoco, pintura, baldosas, tableros, revestimientos de suelo, o un material cuya categoría es Acabado en Gestionar → Materiales); el aislamiento se mantiene;
+- **Solo el núcleo**: solo la capa marcada como núcleo (el ladrillo, la losa de hormigón);
+- **Solo el núcleo de los elementos portantes**: solo los núcleos de los elementos portantes (véase [Visualización parcial de la estructura](#visualización-parcial-de-la-estructura)).
 
 ![Una casa en 3D con solo el núcleo: los muros son su ladrillo, los forjados su losa](shots/layers-3d-core.webp)
 
-Cada capa conservada sigue siendo un sólido cerrado en su propio material, de modo que un corte o la caja de sección la cierran como antes. Las puertas y ventanas permanecen en sus huecos; un derrame revestido con un acabado va con los acabados del muro. Una vista 3D toma sus capas de su estilo, como una planta: configure su **Disciplina** como Estructura y mostrará solo los núcleos; configure **Capas** para elegir otra cosa, y el botón de al lado vuelve a las del estilo. El indicador **Capas mostradas** de la parte inferior de la vista 3D indica lo que se omite; su **×** vuelve a mostrar todas las capas. Las capas ocultas no se seleccionan ni detienen un recorrido, y **Archivo → Exportar 3D…** tal como la vista lo muestra exporta las mismas capas.
+Cada capa conservada sigue siendo un sólido cerrado en su propio material, de modo que un corte o la caja de sección la cierran como antes. Las puertas y ventanas permanecen en sus huecos; un derrame revestido con un acabado va con los acabados del muro. Una vista 3D toma sus capas de su estilo, como una planta: configure su **Disciplina** como Estructura y mostrará solo los núcleos; configure **Visualización parcial de la estructura** para elegir otra cosa, y el botón de al lado vuelve a las del estilo. El indicador **Capas mostradas** de la parte inferior de la vista 3D indica lo que se omite; su **×** vuelve a mostrar todas las capas. Las capas ocultas no se seleccionan ni detienen un recorrido, y **Archivo → Exportar 3D…** tal como la vista lo muestra exporta las mismas capas.
 
 ### Entrar caminando en una habitación
 
@@ -222,7 +223,7 @@ La ficha **Vista** configura qué muestra la vista que está delante y cómo se 
 ![La ficha Vista](shots/ribbon-view.webp)
 
 - **Configuración de vista.** La disciplina y el estilo de la vista, su rango (la altura y la profundidad del corte) y sus gráficos.
-- **Estilos de vista.** Arquitectónico, Estructural (solo los núcleos), Instalaciones o los suyos propios. Cada estilo elige las capas dibujadas (todas, sin acabados o el núcleo) y cómo se unen los materiales.
+- **Estilos de vista.** Arquitectónico, Estructural (solo los núcleos), Instalaciones o los suyos propios. Cada estilo elige las capas dibujadas (su visualización parcial de la estructura, por separado para plantas, secciones y vistas 3D) y cómo se unen los materiales.
 - **Símbolos 2D de IFC.** Los elementos importados o vinculados desde un archivo IFC que traen su propio dibujo en planta (una huella, el barrido de una puerta, el símbolo de un aparato, con los colores, rellenos y textos del archivo) lo dibujan en las plantas en lugar de su corte. Desmárquelo en Configuración de vista (o en un estilo de vista) para dibujar en su lugar su corte 3D.
 - **Visibilidad** (<kbd>VV</kbd>) y **Gráficos** (<kbd>VG</kbd>). Muestran u ocultan categorías y configuran sus plumas, tipos de línea y rellenos.
 - **Dividir** y **Ventana.** Muestran dos vistas una al lado de la otra, o abren una vista en una ventana separada.
@@ -231,13 +232,30 @@ La ficha **Vista** configura qué muestra la vista que está delante y cómo se 
 
 ![Calidad de visualización](shots/display-quality.webp)
 
-### Acabados en plantas y secciones
+### Visualización parcial de la estructura
 
-Un estilo de vista dice, por separado para muros y para losas, si las plantas dibujan las capas de acabado y si las dibujan las secciones y los alzados: **Acabados de muros en plantas**, **Acabados de losas en plantas**, **Acabados de muros en secciones** y **Acabados de losas en secciones** en **Gestionar → Estilos de vista**. Las cuatro están activadas por defecto. Una vista puede fijar las suyas en **Configuración de vista** (**Acabados de muros**, **Acabados de losas**), y el botón de al lado vuelve a las del estilo. Un acabado es una capa cuya **Categoría** propia en su tipo es **Acabado**, si no una cuyo material tiene esa categoría. Una planta sin los acabados de muros dibuja el contorno cortado de cada muro en su núcleo, con las uniones y esquinas como antes, y se ajusta a las caras del núcleo. Los planos polacos, por ejemplo, se imprimen con plantas sin ningún acabado y secciones con los acabados de las losas pero no los de los muros: desmarque las tres primeras en el estilo Architectural, y todas las plantas y secciones del proyecto lo siguen. El modelo no cambia: las cantidades, la vista 3D e IFC conservan todas las capas.
+Cada vista dice qué capas de muros, losas y cubiertas dibuja, como la visualización parcial de la estructura de ArchiCAD. **Visualización parcial de la estructura** ofrece cuatro preajustes:
 
-![Gestionar → Estilos de vista, con los acabados de plantas y secciones](shots/view-styles-finishes.webp)
+- **Modelo completo**: todas las capas, tal como se construyen;
+- **Sin acabados**: las capas de acabado omitidas (revocos, enlucidos, acabados de suelo y recrecidos cuya **Categoría** es **Acabado**); el aislamiento, las membranas y la estructura se dibujan;
+- **Solo el núcleo**: solo los núcleos, entre sus límites; el aislamiento también se va;
+- **Solo el núcleo de los elementos portantes**: solo los núcleos de los elementos portantes. Un elemento que no soporta carga (un tabique, un revestimiento, los acabados de una estancia) no se dibuja en absoluto. Un muro es portante cuando **LoadBearing** está marcado en sus propiedades (Pset_WallCommon), en él o en su tipo, como lo lee el modelo analítico; los pilares, las vigas, las zapatas, las losas y las cubiertas son portantes salvo que digan que no lo son.
 
-![Una sección con el acabado y el recrecido de la losa y sin el enlucido de los muros](shots/finishes-section.webp)
+Un acabado es una capa cuya **Categoría** propia en su tipo es **Acabado**, si no una cuyo material tiene esa categoría (**Gestionar → Materiales**). En un proyecto nuevo, las plantas se dibujan sin acabados, y las secciones, los alzados y las vistas 3D muestran el modelo completo, el conjunto clásico para planos de arquitectura: los revocos omitidos en las plantas mientras se ve el aislamiento térmico, y las secciones y los detalles con todo. Un proyecto hecho antes se dibuja como lo hacía.
+
+**Gestionar → Estilos de vista** lo fija para cada estilo por separado: **Estructura en plantas**, **Estructura en secciones** (secciones y alzados) y **Estructura en 3D** (vistas 3D y el resto), de modo que todas las vistas del estilo lo siguen. Una vista fija el suyo en **Configuración de vista**, y el botón de al lado vuelve al del estilo. También está en la parte superior de una planta, una sección o un alzado, junto a la escala: elija allí otro preajuste, en un paso que se puede deshacer. En una lámina, elija un dibujo colocado y su preajuste aparece también allí, de modo que cada dibujo de una lámina indica el suyo. La planta de un nivel sin vista propia pasa a ser, con él, la vista en planta del nivel.
+
+Una planta lo aplica a lo que corta su plano de corte: una losa vista bajo el corte se muestra tal como es, con su acabado encima. Las láminas, el PDF, el DXF y los ajustes siguen lo dibujado: una planta sin los acabados de muros se ajusta a las caras de los núcleos. El modelo no cambia: las cantidades y el IFC conservan todas las capas.
+
+![Gestionar → Estilos de vista: la visualización parcial de la estructura de plantas, secciones y vistas 3D](shots/view-styles-structure.webp)
+
+![La visualización parcial de la estructura en la parte superior de una planta, junto a la escala](shots/structure-picker.webp)
+
+![Una planta con solo el núcleo: los muros son su ladrillo](shots/structure-plan-core.webp)
+
+![Una sección con el modelo completo: el enlucido de los muros y el acabado y el recrecido de la losa](shots/finishes-section.webp)
+
+**Por tipo de elemento.** Bajo el preajuste, **Configuración de vista** de una planta, una sección o un alzado tiene **Acabados de muros** y **Acabados de losas**, y **Gestionar → Estilos de vista** tiene **Acabados de muros en plantas**, **Acabados de losas en plantas**, **Acabados de muros en secciones** y **Acabados de losas en secciones**: desmarcados, la vista omite también las capas de acabado de los muros o de las losas (y los acabados de pared o de suelo de las estancias), sea cual sea su preajuste. Todos están marcados por defecto. Los planos polacos, por ejemplo, se imprimen con plantas sin ningún acabado y secciones con los acabados de las losas pero no los de los muros: plantas **Sin acabados**, secciones **Modelo completo** con **Acabados de muros en secciones** desmarcado.
 
 ### Visibilidad / Gráficos
 

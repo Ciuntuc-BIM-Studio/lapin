@@ -78,6 +78,9 @@ export interface DrawingDto {
   problems?: string[];
   /** The categories (walls, slabs) whose finish layers the view leaves out (topic #30): their cut pieces offer no snap. */
   hiddenFinishes?: string[];
+  /** The view's partial structure display (decision 500), and the layers' roles it leaves out of every layered element: their cut pieces offer no snap. */
+  structure?: 'all' | 'noFinishes' | 'core' | 'coreLoadBearing';
+  hiddenSubs?: string[];
   /** Line edits (Linework) whose edge is gone. */
   lineworkOrphans?: string[];
   /** Where the drawing lies in the model: (x, y) is origin + right·x + up·y; dir looks into the scene. */

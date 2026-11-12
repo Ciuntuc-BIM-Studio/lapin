@@ -280,6 +280,7 @@ public class DrawingTests
     public void A_plan_cuts_walls_into_their_layers_with_the_materials_hatches_and_the_corner_reads_as_one()
     {
         var f = new Fixture();
+        f.EveryLayerInPlans();
         f.Wall(0, 0, 5, 0);
         f.Wall(5, 0, 5, 4);
         var d = Draw(f, new JsonObject { ["storeyId"] = f.Storey });

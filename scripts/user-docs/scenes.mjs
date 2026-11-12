@@ -549,33 +549,44 @@ export const scenes = [
     },
   },
   {
-    // Finish layers by the kind of view (the forum's topic #30): the Architectural style's plans without the walls' and the
-    // floors' finishes, its sections with the floors' finishes only, set in Manage → View styles.
+    // The partial structure display (decision 500, as ArchiCAD's; the forum's topic #30): a new project's plans without the
+    // finishes, its sections the entire model, set by kind of view in Manage → View styles and per view from its corner.
     id: 'finishes-by-view',
     async run(t) {
       await t.fresh();
       await house(t, { roof: false });
+      const s = await t.storey();
+      const plan = await t.call('doc.query', { name: 'view.drawing', args: { storeyId: s } });
+      t.expect(plan.structure === 'noFinishes', `a new project's plan leaves out the finishes (${plan.structure})`);
+      t.expect(JSON.stringify(plan.hiddenSubs) === '["finishes"]', `the plan's snaps leave out the finish layers (${JSON.stringify(plan.hiddenSubs)})`);
       await t.ui({ dialog: 'viewStyles' });
       await t.wait(800);
       const row = t.page.locator('.dialog table.view-styles tbody tr').first();
-      for (const key of ['wallFinishesPlan', 'floorFinishesPlan', 'wallFinishesSection']) {
-        // A controlled box: it shows the engine's answer, a moment after the click.
-        await row.locator(`[data-testid=style-${key}]`).click();
-        await t.wait(700);
-      }
-      const styles = await t.call('doc.query', { name: 'viewStyle.list', args: {} });
-      const arch = styles.find((x) => x.id === 'architectural');
-      t.expect(arch && !arch.wallFinishesPlan && !arch.floorFinishesPlan && !arch.wallFinishesSection && arch.floorFinishesSection,
-        'the Architectural style draws no finishes in plans and only the floors\' in sections');
-      await t.shot('view-styles-finishes', { of: '.dialog', pad: 0 });
+      t.expect(await row.locator('[data-testid=style-structure-plan]').inputValue() === 'noFinishes', 'the Architectural style\'s plans: without finishes');
+      t.expect(await row.locator('[data-testid=style-structure-section]').inputValue() === 'all', 'its sections: the entire model');
+      await t.shot('view-styles-structure', { of: '.dialog', pad: 0 });
       await t.ui({ dialog: null });
-      const plan = await t.call('doc.query', { name: 'view.drawing', args: { storeyId: await t.storey() } });
-      t.expect(JSON.stringify(plan.hiddenFinishes) === '["slabs","walls"]', `the plan leaves out the walls' and the floors' finishes (${JSON.stringify(plan.hiddenFinishes)})`);
+      // From the plan's corner, beside its scale: the cores only, one undo step; the level's plan becomes its plan view.
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      const picker = t.page.locator('[data-testid=view-structure]').first();
+      await t.wait(600);
+      t.expect(await picker.inputValue() === 'noFinishes', 'the plan\'s corner shows its partial structure display');
+      await picker.selectOption('core');
+      await t.wait(1200);
+      const planView = (await t.nodes()).find((n) => n.type === 'LapinView' && n.props.kind === 'plan' && n.props.storeyId === s && !n.props.site && !n.props.foundation);
+      t.expect(planView, 'the level has its plan view');
+      const cores = await t.call('doc.query', { name: 'view.drawing', args: { id: planView.id } });
+      t.expect(cores.structure === 'core' && JSON.stringify(cores.hiddenSubs) === '["finishes","insulation","membranes"]', `the level's plan draws the cores only (${cores.structure})`);
+      await t.shot('structure-picker', { of: '.view-toolbar', pad: 0 });
+      await t.shot('structure-plan-core', { of: '[data-testid=plan]', pad: 0 });
+      await t.page.evaluate(async () => (await import('/src/engine/session.ts')).undo());
+      await t.wait(900);
+      // A section: the entire model, the walls' plaster and the floor's finish drawn.
       const section = (await t.cmd('view.create', { kind: 'section', name: 'F-F', start: [5, -0.6], end: [5, 0.8], depth: 1, scale: 10 })).id;
       const drawn = await t.call('doc.query', { name: 'view.drawing', args: { id: section } });
-      t.expect(JSON.stringify(drawn.hiddenFinishes) === '["walls"]', `the section leaves out the walls' finishes only (${JSON.stringify(drawn.hiddenFinishes)})`);
+      t.expect(drawn.structure === 'all' && drawn.hiddenSubs.length === 0, `the section draws the entire model (${drawn.structure})`);
       await openFromBrowser(t, 'F-F', 1500);
-      await t.ui({ keyPlan: false });
       await t.fit();
       await t.wait(800);
       await t.shot('finishes-section', { of: '[data-testid=drawing]', pad: 0 });
@@ -4573,7 +4584,7 @@ export const scenes = [
       p = await parts();
       t.expect(p.mode === 'core' && p.shown < p.all, `a Structural 3D view shows the cores alone (${p.shown} of ${p.all} parts)`);
       t.expect(await page.locator('.mode-chip.layers').getByText('the core only').count() === 1, 'the chip says the cores alone are shown');
-      const layersSelect = props.locator('dt', { hasText: /^Layers$/ }).locator('xpath=following-sibling::dd[1]').locator('select');
+      const layersSelect = props.locator('[data-testid=view-structure-setting]');
       t.expect(await layersSelect.inputValue() === 'core', 'the 3D view\'s properties say the core only');
       // The section box's caps close the cores alone.
       const capped = await t.call('view.caps', { planes: [{ normal: [-1, 0, 0], constant: 6 }], layers: 'core' });

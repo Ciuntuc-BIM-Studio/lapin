@@ -133,6 +133,7 @@ public class PlanningSimulationTests
     public void A_view_at_a_date_draws_what_the_simulation_shows_and_the_phases_step_aside()
     {
         var (f, ids) = Sample();
+        f.EveryLayerInPlans();
         var plan = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey })!["id"]!;
         var all = Cut(Drawing(f, plan));
         // 3 March: the walls not started are not drawn.

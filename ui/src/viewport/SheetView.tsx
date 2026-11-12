@@ -26,7 +26,7 @@ import { DrawingLayer } from './DrawingLayer';
 import type { PenDto } from './drawing';
 import { printSheet } from './printSheet';
 import { VIEW_DRAG } from '../shell/browserSets';
-import { ScalePicker } from './ScaleChip';
+import { ScalePicker, StructurePicker } from './ScaleChip';
 import { PX_PER_MM, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelZoom, type ZoomHost } from './zoom';
 
 interface Vp {
@@ -213,6 +213,10 @@ export function SheetView() {
         )}
         {/* The selected view's scale on the sheet (decision 492): its view's own, so every sheet that shows it follows. */}
         {activeVp && !activeVp.content && <ScalePicker viewId={activeVp.viewId} scale={activeVp.scale} />}
+        {/* Its partial structure display (decision 500): the view's own, so each placed drawing says it apart. */}
+        {activeVp && !activeVp.content && nodes.get(activeVp.viewId)?.props.kind !== '3d' && (
+          <StructurePicker viewId={activeVp.viewId} kind={typeof nodes.get(activeVp.viewId)?.props.kind === 'string' ? nodes.get(activeVp.viewId)!.props.kind as string : 'plan'} />
+        )}
         <button type="button" className="chip scale" title="The sheet's size on screen against paper · click for paper size (ZA)" onClick={host.actual}>{Math.round((v.k / PX_PER_MM) * 100)} %</button>
         <button type="button" className="icon" title="Fit (ZE)" onClick={fit}><Maximize size={14} /></button>
       </div>

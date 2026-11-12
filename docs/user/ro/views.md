@@ -135,15 +135,16 @@ Etajele ascunse nu se desenează și nu le poți selecta, încadra sau călca pe
 
 ### Fără finisaje sau doar miezurile
 
-O vedere 3D poate arăta doar structura clădirii, cum o arată un plan de structură. În proprietățile vederii 3D (fără nimic selectat) sau în **Vedere → Setările vederii** cu vederea 3D în față, câmpul **Straturi** arată:
+O vedere 3D poate arăta doar structura clădirii, cum o arată un plan de structură. În proprietățile vederii 3D (fără nimic selectat) sau în **Vedere → Setările vederii** cu vederea 3D în față, câmpul **Afișare parțială a structurii** arată:
 
-- **toate straturile**: pereții, planșeele și fundațiile cum sunt construite;
-- **fără finisaje**: fără straturile din materiale de finisaj (tencuială, vopsea, faianță, gresie, rigips, pardoseli sau un material cu categoria Finish în Manage → Materials); izolația rămâne;
-- **doar miezul**: doar stratul marcat ca miez (zidăria, placa de beton).
+- **Întregul model**: pereții, planșeele și fundațiile cum sunt construite;
+- **Fără finisaje**: fără straturile din materiale de finisaj (tencuială, vopsea, faianță, gresie, rigips, pardoseli sau un material cu categoria Finish în Manage → Materials); izolația rămâne;
+- **Doar miezul**: doar stratul marcat ca miez (zidăria, placa de beton);
+- **Doar miezul elementelor portante**: miezurile elementelor portante, și numai ele (vezi [Afișare parțială a structurii](#afișare-parțială-a-structurii)).
 
 ![O casă în 3D doar cu miezul: pereții sunt zidăria lor, planșeele placa lor](shots/layers-3d-core.webp)
 
-Fiecare strat păstrat rămâne un solid închis, în materialul lui, așa că o tăietură sau cutia de secțiune îl închide ca înainte. Ușile și ferestrele rămân în golurile lor; un șpalet finisat dispare odată cu finisajele peretelui. O vedere 3D își ia straturile din stilul ei, ca un plan: cu **Disciplina** Structure arată doar miezurile; din **Straturi** alegi altfel, iar butonul de lângă câmp o întoarce la stil. Eticheta **Straturi afișate** din josul vederii 3D spune ce lipsește; **×** de pe ea arată din nou toate straturile. Straturile ascunse nu se selectează și nu te opresc la plimbare, iar **Fișier → Exportă 3D…** cum o arată vederea exportă aceleași straturi.
+Fiecare strat păstrat rămâne un solid închis, în materialul lui, așa că o tăietură sau cutia de secțiune îl închide ca înainte. Ușile și ferestrele rămân în golurile lor; un șpalet finisat dispare odată cu finisajele peretelui. O vedere 3D își ia straturile din stilul ei, ca un plan: cu **Disciplina** Structure arată doar miezurile; din **Afișare parțială a structurii** alegi altfel, iar butonul de lângă câmp o întoarce la stil. Eticheta **Straturi afișate** din josul vederii 3D spune ce lipsește; **×** de pe ea arată din nou toate straturile. Straturile ascunse nu se selectează și nu te opresc la plimbare, iar **Fișier → Exportă 3D…** cum o arată vederea exportă aceleași straturi.
 
 ### Plimbare printr-o încăpere
 
@@ -226,7 +227,7 @@ Tabul **Vedere** setează ce arată vederea din față și cum arată.
 ![Tabul Vedere](shots/ribbon-view.webp)
 
 - **Setările vederii.** Disciplina și stilul vederii, intervalul ei (cota de secționare și adâncimea) și grafica.
-- **Stiluri de vedere.** Arhitectural, Structural (doar miezurile), Instalații sau al tău. Fiecare stil alege straturile desenate (toate, fără finisaje sau doar miezul) și cum se unesc materialele.
+- **Stiluri de vedere.** Arhitectural, Structural (doar miezurile), Instalații sau al tău. Fiecare stil alege straturile desenate (afișarea lor parțială a structurii, separat pentru planuri, secțiuni și vederi 3D) și cum se unesc materialele.
 - **Vizibilitate** (<kbd>VV</kbd>) și **Grafică** (<kbd>VG</kbd>). Arată sau ascund categorii și le setează penițele, tipurile de linie și umpluturile.
 - **Împarte** și **Fereastră.** Arată două vederi alăturate sau deschid o vedere într-o fereastră separată.
 - **Calitate afișare.** Cum se desenează vederea 3D (**Desen**, **Mediu** sau **Realist**, păstrat pe acest calculator: vezi *Realist, cu soarele*) și cum desenează vederea 3D piesele cu multe triunghiuri (o instalație importată, mobilier, țevi) când sunt departe. **Echilibrat** desenează mai grosier o piesă îndepărtată doar unde diferența e sub un pixel. **Rapid** o lasă să se abată până la 3 pixeli, pentru modele mari și calculatoare mai lente. **Precis** desenează fiecare piesă așa cum e. Precizia ține de proiect. Modelul, desenele, exporturile și cantitățile nu devin niciodată mai grosiere: o curbă e făcută din bucăți drepte care se abat de la ea cel mult un milimetru.
@@ -234,13 +235,30 @@ Tabul **Vedere** setează ce arată vederea din față și cum arată.
 
 ![Calitate afișare](shots/display-quality.webp)
 
-### Finisajele în planuri și secțiuni
+### Afișare parțială a structurii
 
-Un stil de vedere spune, separat pentru pereți și pentru plăci, dacă planurile desenează straturile de finisaj și dacă secțiunile și fațadele le desenează: **Finisaje pereți în planuri**, **Finisaje pardoseli în planuri**, **Finisaje pereți în secțiuni** și **Finisaje pardoseli în secțiuni** în **Gestionare → Stiluri de vedere**. Toate patru sunt bifate implicit. O vedere își poate seta propriile alegeri în **Setările vederii** (**Finisaje pereți**, **Finisaje pardoseli**), iar butonul de lângă ele o întoarce la stil. Un finisaj e un strat a cărui **Categorie** proprie în tipul lui e **Finisaj**, altfel al cărui material are această categorie. Un plan fără finisajele pereților desenează conturul secționat al fiecărui perete la miez, cu îmbinările și colțurile ca înainte, și face snap pe fețele miezului. Planșele poloneze, de exemplu, se tipăresc cu planuri fără niciun finisaj și cu secțiuni cu finisajele pardoselilor, dar fără ale pereților: debifează primele trei la stilul Architectural, iar toate planurile și secțiunile proiectului urmează. Modelul nu se schimbă: cantitățile, vederea 3D și IFC păstrează toate straturile.
+Fiecare vedere spune ce straturi de pereți, planșee și acoperișuri desenează, ca afișarea parțială a structurii din ArchiCAD. **Afișare parțială a structurii** are patru preseturi:
 
-![Gestionare → Stiluri de vedere, cu alegerile finisajelor pentru planuri și secțiuni](shots/view-styles-finishes.webp)
+- **Întregul model**: toate straturile, cum sunt construite;
+- **Fără finisaje**: straturile de finisaj lăsate la o parte (tencuieli, glet, finisaje de pardoseală și șape a căror **Categorie** e **Finisaj**); izolația, membranele și structura se desenează;
+- **Doar miezul**: doar miezurile, între limitele lor; izolația dispare și ea;
+- **Doar miezul elementelor portante**: doar miezurile elementelor portante. Un element care nu poartă sarcini (un perete despărțitor, un placaj, finisajele unei încăperi) nu se desenează deloc. Un perete e portant când **LoadBearing** e bifat în proprietățile lui (Pset_WallCommon), pe el sau pe tipul lui, așa cum citește modelul analitic; stâlpii, grinzile, fundațiile, planșeele și acoperișurile sunt portante dacă nu spun că nu sunt.
 
-![O secțiune cu pardoseala și șapa plăcii și fără tencuiala pereților](shots/finishes-section.webp)
+Un finisaj e un strat a cărui **Categorie** proprie în tipul lui e **Finisaj**, altfel al cărui material are această categorie (**Gestionare → Materiale**). Într-un proiect nou, planurile se desenează fără finisaje, iar secțiunile, fațadele și vederile 3D arată întregul model, setul clasic pentru planșele de arhitectură: tencuielile lipsesc din planuri, dar termoizolația se vede, iar secțiunile și detaliile arată totul. Un proiect făcut înainte se desenează ca până acum.
+
+**Gestionare → Stiluri de vedere** o setează pentru fiecare stil în parte: **Structura în planuri**, **Structura în secțiuni** (secțiuni și fațade) și **Structura în 3D** (vederile 3D și restul), așa că toate vederile stilului o urmează. O vedere își setează propria alegere în **Setările vederii**, iar butonul de lângă ea o întoarce la stil. Se găsește și sus, într-un plan, o secțiune sau o fațadă, lângă scară: alegi acolo alt preset, cu un singur pas de anulare. Pe o planșă, alegi un desen pus și presetul lui apare tot acolo, așa că fiecare desen de pe planșă își spune propria alegere. Planul unui nivel fără vedere proprie devine, odată cu ea, vederea de plan a nivelului.
+
+Un plan o aplică la ce taie planul lui de tăiere: un planșeu văzut sub tăietură se arată așa cum e, cu finisajul lui deasupra. Planșele, PDF-ul, DXF-ul și snap-urile urmează ce e desenat: un plan fără finisajele pereților face snap pe fețele miezurilor. Modelul nu se schimbă: cantitățile și IFC păstrează toate straturile.
+
+![Gestionare → Stiluri de vedere: afișarea parțială a structurii pentru planuri, secțiuni și vederi 3D](shots/view-styles-structure.webp)
+
+![Afișarea parțială a structurii sus într-un plan, lângă scară](shots/structure-picker.webp)
+
+![Un plan doar cu miezul: pereții sunt zidăria lor](shots/structure-plan-core.webp)
+
+![O secțiune cu întregul model: tencuiala pereților și pardoseala și șapa planșeului](shots/finishes-section.webp)
+
+**După felul elementului.** Sub preset, **Setările vederii** unui plan, ale unei secțiuni sau ale unei fațade au **Finisaje pereți** și **Finisaje pardoseli**, iar **Gestionare → Stiluri de vedere** are **Finisaje pereți în planuri**, **Finisaje pardoseli în planuri**, **Finisaje pereți în secțiuni** și **Finisaje pardoseli în secțiuni**: debifate, vederea lasă la o parte și straturile de finisaj ale pereților sau ale planșeelor (și finisajele de perete sau de pardoseală ale încăperilor), oricare ar fi presetul. Toate sunt bifate implicit. Planșele poloneze, de exemplu, se tipăresc cu planuri fără niciun finisaj și cu secțiuni cu finisajele pardoselilor, dar fără ale pereților: planuri cu **Fără finisaje**, secțiuni cu **Întregul model** și **Finisaje pereți în secțiuni** debifat.
 
 ### Vizibilitate / Grafică
 

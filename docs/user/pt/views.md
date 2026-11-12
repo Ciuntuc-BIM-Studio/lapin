@@ -135,15 +135,16 @@ Os pavimentos ocultos não são desenhados, e você não pode selecioná-los, aj
 
 ### Sem acabamentos, ou só os núcleos
 
-Uma vista 3D pode mostrar só a estrutura do edifício, como faz uma planta estrutural. Nas propriedades da vista 3D (sem nada selecionado), ou em **Vista → Configurações da vista** com a vista 3D em primeiro plano, **Layers** mostra:
+Uma vista 3D pode mostrar só a estrutura do edifício, como faz uma planta estrutural. Nas propriedades da vista 3D (sem nada selecionado), ou em **Vista → Configurações da vista** com a vista 3D em primeiro plano, **Exibição parcial da estrutura** mostra:
 
-- **todas as camadas**: as paredes, as lajes e as fundações como são construídas;
-- **sem acabamentos**: sem as camadas cujo material é um acabamento (gesso, reboco, pintura, cerâmica, placas, revestimentos de piso, ou um material cuja categoria é Acabamento em Gerenciar → Materiais); o isolamento fica;
-- **só o núcleo**: só a camada marcada como núcleo (o tijolo, a laje de concreto).
+- **Modelo inteiro**: as paredes, as lajes e as fundações como são construídas;
+- **Sem acabamentos**: sem as camadas cujo material é um acabamento (gesso, reboco, pintura, cerâmica, placas, revestimentos de piso, ou um material cuja categoria é Acabamento em Gerenciar → Materiais); o isolamento fica;
+- **Só o núcleo**: só a camada marcada como núcleo (o tijolo, a laje de concreto);
+- **Só o núcleo dos elementos portantes**: só os núcleos dos elementos portantes (veja [Exibição parcial da estrutura](#exibição-parcial-da-estrutura)).
 
 ![Uma casa em 3D só com o núcleo: as paredes são o seu tijolo, as lajes o seu concreto](shots/layers-3d-core.webp)
 
-Cada camada mantida continua um sólido fechado no seu próprio material, então um corte ou a caixa de corte a fecha como antes. Portas e janelas ficam nas suas aberturas; um requadro revestido com um acabamento vai junto com os acabamentos da parede. Uma vista 3D pega as suas camadas do seu estilo, como uma planta: defina a sua **Disciplina** como Estrutura e ela mostra só os núcleos; defina **Layers** para escolher outra coisa, e o botão ao lado volta ao valor do estilo. O chip **Camadas exibidas** na parte de baixo da vista 3D diz o que fica de fora; o seu **×** mostra todas as camadas de novo. As camadas ocultas não são selecionadas nem bloqueiam a caminhada, e **Arquivo → Exportar 3D…** como a vista mostra exporta as mesmas camadas.
+Cada camada mantida continua um sólido fechado no seu próprio material, então um corte ou a caixa de corte a fecha como antes. Portas e janelas ficam nas suas aberturas; um requadro revestido com um acabamento vai junto com os acabamentos da parede. Uma vista 3D pega as suas camadas do seu estilo, como uma planta: defina a sua **Disciplina** como Estrutura e ela mostra só os núcleos; defina **Exibição parcial da estrutura** para escolher outra coisa, e o botão ao lado volta ao valor do estilo. O chip **Camadas exibidas** na parte de baixo da vista 3D diz o que fica de fora; o seu **×** mostra todas as camadas de novo. As camadas ocultas não são selecionadas nem bloqueiam a caminhada, e **Arquivo → Exportar 3D…** como a vista mostra exporta as mesmas camadas.
 
 ### Entrar caminhando em um ambiente
 
@@ -226,7 +227,7 @@ A guia **Vista** define o que a vista em primeiro plano mostra e qual é a sua a
 ![A guia Vista](shots/ribbon-view.webp)
 
 - **Configurações da vista.** A disciplina e o estilo da vista, a sua faixa (a altura e a profundidade do corte) e os seus gráficos.
-- **Estilos de vista.** Arquitetônico, Estrutural (só os núcleos), MEP ou o seu próprio. Cada estilo escolhe as camadas desenhadas (todas, sem acabamentos ou o núcleo) e como os materiais se unem.
+- **Estilos de vista.** Arquitetônico, Estrutural (só os núcleos), MEP ou o seu próprio. Cada estilo escolhe as camadas desenhadas (a sua exibição parcial da estrutura, em separado para plantas, cortes e vistas 3D) e como os materiais se unem.
 - **Símbolos 2D do IFC.** Elementos importados ou vinculados de um arquivo IFC que trazem o seu próprio desenho de planta (uma projeção, o giro de uma porta, o símbolo de uma peça, com as cores, os preenchimentos e os textos do arquivo) o desenham nas plantas em vez do seu corte. Desmarque a opção em Configurações da vista (ou em um estilo de vista) para desenhar o corte 3D deles em vez disso.
 - **Visibilidade** (<kbd>VV</kbd>) e **Gráficos** (<kbd>VG</kbd>). Eles mostram ou ocultam categorias e definem as suas penas, tipos de linha e preenchimentos.
 - **Dividir** e **Janela.** Eles mostram duas vistas lado a lado ou abrem uma vista em uma janela separada.
@@ -235,13 +236,30 @@ A guia **Vista** define o que a vista em primeiro plano mostra e qual é a sua a
 
 ![Qualidade de exibição](shots/display-quality.webp)
 
-### Acabamentos nas plantas e nos cortes
+### Exibição parcial da estrutura
 
-Um estilo de vista diz, separadamente para paredes e para pisos, se as plantas desenham as camadas de acabamento e se os cortes e as elevações as desenham: **Acabamentos de paredes nas plantas**, **Acabamentos de pisos nas plantas**, **Acabamentos de paredes nos cortes** e **Acabamentos de pisos nos cortes** em **Gerenciar → Estilos de vista**. As quatro vêm marcadas por padrão. Uma vista pode definir as suas em **Configurações da vista** (**Acabamentos de paredes**, **Acabamentos de pisos**), e o botão ao lado volta às do estilo. Um acabamento é uma camada cuja **Categoria** própria no seu tipo é **Acabamento**, senão uma cujo material tem essa categoria. Uma planta sem os acabamentos das paredes desenha o contorno cortado de cada parede no núcleo, com as junções e os cantos como antes, e faz snap nas faces do núcleo. As pranchas polonesas, por exemplo, são impressas com plantas sem nenhum acabamento e cortes com os acabamentos dos pisos, mas não os das paredes: desmarque as três primeiras no estilo Architectural, e todas as plantas e cortes do projeto acompanham. O modelo não muda: as quantidades, a vista 3D e o IFC mantêm todas as camadas.
+Cada vista diz que camadas de paredes, pisos e coberturas desenha, como a exibição parcial da estrutura do ArchiCAD. **Exibição parcial da estrutura** oferece quatro predefinições:
 
-![Gerenciar → Estilos de vista, com os acabamentos das plantas e dos cortes](shots/view-styles-finishes.webp)
+- **Modelo inteiro**: todas as camadas, como são construídas;
+- **Sem acabamentos**: as camadas de acabamento omitidas (rebocos, emboços, acabamentos de piso e contrapisos cuja **Categoria** é **Acabamento**); o isolamento, as membranas e a estrutura são desenhados;
+- **Só o núcleo**: só os núcleos, entre os seus limites; o isolamento também sai;
+- **Só o núcleo dos elementos portantes**: só os núcleos dos elementos portantes. Um elemento que não suporta carga (uma divisória, um revestimento, os acabamentos de um compartimento) não é desenhado de todo. Uma parede é portante quando **LoadBearing** está marcado nas suas propriedades (Pset_WallCommon), nela ou no seu tipo, como o modelo analítico lê; pilares, vigas, fundações, pisos e coberturas são portantes, a menos que digam que não são.
 
-![Um corte com o revestimento e o contrapiso do piso e sem o reboco das paredes](shots/finishes-section.webp)
+Um acabamento é uma camada cuja **Categoria** própria no seu tipo é **Acabamento**, senão uma cujo material tem essa categoria (**Gerenciar → Materiais**). Num projeto novo, as plantas são desenhadas sem acabamentos, e os cortes, os alçados e as vistas 3D mostram o modelo inteiro, o conjunto clássico para as pranchas de arquitetura: os rebocos omitidos das plantas enquanto o isolamento térmico aparece, e os cortes e os detalhes com tudo. Um projeto feito antes desenha como desenhava.
+
+**Gerenciar → Estilos de vista** define-a para cada estilo em separado: **Estrutura em plantas**, **Estrutura em cortes** (cortes e alçados) e **Estrutura em 3D** (vistas 3D e o resto), de modo que todas as vistas do estilo a seguem. Uma vista define a sua em **Configurações da vista**, e o botão ao lado volta à do estilo. Está também no topo de uma planta, de um corte ou de um alçado, junto à escala: escolha ali outra predefinição, em um passo de desfazer. Numa prancha, escolha um desenho colocado e a sua predefinição aparece também ali, de modo que cada desenho de uma prancha diz a sua. A planta de um nível sem vista própria passa a ser, com ela, a vista em planta do nível.
+
+Uma planta aplica-a ao que o seu plano de corte corta: um piso visto sob o corte aparece como é, com o seu acabamento por cima. As pranchas, o PDF, o DXF e os snaps seguem o que está desenhado: uma planta sem os acabamentos das paredes faz snap nas faces dos núcleos. O modelo não muda: as quantidades e o IFC mantêm todas as camadas.
+
+![Gerenciar → Estilos de vista: a exibição parcial da estrutura de plantas, cortes e vistas 3D](shots/view-styles-structure.webp)
+
+![A exibição parcial da estrutura no topo de uma planta, junto à escala](shots/structure-picker.webp)
+
+![Uma planta só com o núcleo: as paredes são o seu tijolo](shots/structure-plan-core.webp)
+
+![Um corte com o modelo inteiro: o reboco das paredes e o revestimento e o contrapiso do piso](shots/finishes-section.webp)
+
+**Por tipo de elemento.** Sob a predefinição, **Configurações da vista** de uma planta, de um corte ou de um alçado tem **Acabamentos das paredes** e **Acabamentos de pisos**, e **Gerenciar → Estilos de vista** tem **Acabamentos de paredes nas plantas**, **Acabamentos de pisos nas plantas**, **Acabamentos de paredes nos cortes** e **Acabamentos de pisos nos cortes**: desmarcados, a vista omite também as camadas de acabamento das paredes ou dos pisos (e os acabamentos de parede ou de piso dos compartimentos), seja qual for a sua predefinição. Todos vêm marcados por padrão. As pranchas polonesas, por exemplo, são impressas com plantas sem nenhum acabamento e cortes com os acabamentos dos pisos, mas não os das paredes: plantas **Sem acabamentos**, cortes **Modelo inteiro** com **Acabamentos de paredes nos cortes** desmarcado.
 
 ### Visibilidade / Gráficos
 

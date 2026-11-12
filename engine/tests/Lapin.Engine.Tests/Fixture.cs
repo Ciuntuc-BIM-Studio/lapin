@@ -55,5 +55,8 @@ sealed class Fixture
                 Run("material.update", new JsonObject { ["id"] = m.Id, ["section"] = new JsonObject { ["hatch"] = Lapin.Drawing.MaterialGraphics.LegacyFromName(m.Name, 0) } });
     }
 
+    /// <summary>The plans drawing the entire model, as a project made before decision 500 drew them (a new project's plans leave out the finishes).</summary>
+    public void EveryLayerInPlans() => Run("viewStyle.update", new JsonObject { ["id"] = "architectural", ["layersPlan"] = "all" });
+
     public LayerUsage Usage(string wallId) => Layers.ReadUsage(Walls.UsageOf(Model, wallId)!)!;
 }

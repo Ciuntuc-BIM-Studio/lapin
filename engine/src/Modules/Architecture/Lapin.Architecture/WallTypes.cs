@@ -11,11 +11,15 @@ namespace Lapin.Architecture;
 /// </summary>
 public static class WallTypes
 {
-    /// <summary>The type new walls get when none is chosen: render, brick (the core), plaster.</summary>
+    /// <summary>
+    /// The type new walls get when none is chosen: render, brick (the core), plaster; the brick goes down into the floor's
+    /// layers ranked under it (decision 497's ↓, decision 500), so it stands on the structural slab through its finish and
+    /// screed. Made on first use, so the walls and types of a project made before stay as they are.
+    /// </summary>
     public static readonly IReadOnlyList<LayerSpec> DefaultLayers =
     [
         new("Render", 0.02),
-        new("Brick", 0.25, Core: true),
+        new("Brick", 0.25, Core: true, ExtendDown: true),
         new("Plaster", 0.015),
     ];
 

@@ -8,7 +8,24 @@ import { useEffect } from 'react';
 import { create } from 'zustand';
 import { query, useSession } from '../../engine/session';
 
-export type LayerMode = 'all' | 'noFinishes' | 'core';
+/** The partial structure display (decision 500, as ArchiCAD's): the entire model, without the finishes, the cores only, the load-bearing elements' cores only. */
+export type LayerMode = 'all' | 'noFinishes' | 'core' | 'coreLoadBearing';
+
+/** The partial structure display's presets, as the view settings, the view styles and the view's corner offer them. */
+export const STRUCTURE_MODES: [LayerMode, string, string][] = [
+  ['all', 'Entire model', 'Every layer of walls, floors and roofs'],
+  ['noFinishes', 'Without finishes', 'The finish layers (plasters, renders, floor finishes: category Finish) left out; the insulation, membranes and structure drawn'],
+  ['core', 'Core only', 'The cores alone, between their boundaries; the finishes, insulation and membranes left out'],
+  ['coreLoadBearing', 'Core of load-bearing elements only', 'The cores of the load-bearing elements alone (LoadBearing in their properties, as Pset_WallCommon); partitions, coverings and room finishes not drawn'],
+];
+export const structureLabel = (m: LayerMode | null | undefined) => STRUCTURE_MODES.find(([k]) => k === m)?.[1] ?? STRUCTURE_MODES[0][1];
+
+/** What a style says for a view of a kind: its plans' or its sections' and elevations' own, else its layers (ViewStyles.Style.LayersFor). */
+export function styleStructure(style: Pick<ViewStyle, 'layers' | 'layersPlan' | 'layersSection'>, kind: string | null | undefined): LayerMode {
+  if (kind === 'plan' || kind == null) return style.layersPlan ?? style.layers;
+  if (kind === 'section' || kind === 'elevation') return style.layersSection ?? style.layers;
+  return style.layers;
+}
 /**
  * ifc2d: plans draw the 2D an IFC file gave its elements (footprints, symbols) instead of their cut.
  * voids: the openings' voids drawn, crossed and marked (decision 290); voidSizes: with their sizes and bottom levels.
@@ -20,7 +37,9 @@ export type LayerMode = 'all' | 'noFinishes' | 'core';
 export type EntourageMode = 'outline' | 'abstract' | 'detailed' | 'none';
 export interface ViewStyle { id: string; name: string; discipline: string | null; layers: LayerMode; joins: boolean; overhead: boolean; ifc2d: boolean; voids?: boolean; voidSizes?: boolean; finishHatch?: boolean; surfaceHatch?: boolean; entourage?: EntourageMode; entourageFill?: string | null; /** The graphics set its views take when they have none of their own (decision 391). */ graphicsSet?: string | null; /** Its views' level of development (decision 404). */ detail?: number;
   /** The finish layers by the kind of view (the forum's topic #30): plans, and sections with elevations, drawing the walls' and the floors' finishes; on unless false. */
-  wallFinishesPlan?: boolean; wallFinishesSection?: boolean; floorFinishesPlan?: boolean; floorFinishesSection?: boolean }
+  wallFinishesPlan?: boolean; wallFinishesSection?: boolean; floorFinishesPlan?: boolean; floorFinishesSection?: boolean;
+  /** Its plans' and its sections' and elevations' partial structure display (decision 500); unset, its layers. */
+  layersPlan?: LayerMode | null; layersSection?: LayerMode | null }
 
 /** The four finish choices, by kind of view and category, with their labels and what they do, as View settings and View styles offer them. */
 export const FINISH_FIELDS: { key: 'wallFinishesPlan' | 'wallFinishesSection' | 'floorFinishesPlan' | 'floorFinishesSection'; plan: boolean; label: string; column: string; title: string }[] = [

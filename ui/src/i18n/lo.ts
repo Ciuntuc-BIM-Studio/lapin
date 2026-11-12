@@ -3,6 +3,29 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // Decision 500: the partial structure display
+  "Entire model": "ແບບຈຳລອງທັງໝົດ",
+  "Every layer of walls, floors and roofs": "ທຸກຊັ້ນຂອງຝາ, ພື້ນ ແລະ ຫຼັງຄາ",
+  "Without finishes": "ບໍ່ມີຜິວຕົບແຕ່ງ",
+  "The finish layers (plasters, renders, floor finishes: category Finish) left out; the insulation, membranes and structure drawn": "ຊັ້ນຜິວຕົບແຕ່ງ (ປູນສາຍ, ປູນສະຫຼົບ, ຜິວພື້ນ: ໝວດ Finish) ຖືກຍົກເວັ້ນ; ສານກັນຄວາມຮ້ອນ, ແຜ່ນເມມເບຣນ ແລະ ໂຄງສ້າງຖືກແຕ້ມ",
+  "Core only": "ສະເພາະແກນ",
+  "The cores alone, between their boundaries; the finishes, insulation and membranes left out": "ສະເພາະແກນ, ລະຫວ່າງຂອບເຂດຂອງມັນ; ຜິວຕົບແຕ່ງ, ສານກັນຄວາມຮ້ອນ ແລະ ແຜ່ນເມມເບຣນຖືກຍົກເວັ້ນ",
+  "Core of load-bearing elements only": "ສະເພາະແກນຂອງອົງປະກອບຮັບນ້ຳໜັກ",
+  "The cores of the load-bearing elements alone (LoadBearing in their properties, as Pset_WallCommon); partitions, coverings and room finishes not drawn": "ສະເພາະແກນຂອງອົງປະກອບຮັບນ້ຳໜັກ (LoadBearing ໃນຄຸນສົມບັດຂອງມັນ, ຄື Pset_WallCommon); ຝາກັ້ນ, ການບຸຜິວ ແລະ ຜິວຕົບແຕ່ງຫ້ອງບໍ່ຖືກແຕ້ມ",
+  "Partial structure display": "ການສະແດງໂຄງສ້າງບາງສ່ວນ",
+  "Partial structure display: which layers of walls, floors and roofs the view draws (one undo step); the style's for this kind of view is marked ·": "ການສະແດງໂຄງສ້າງບາງສ່ວນ: ມຸມມອງແຕ້ມຊັ້ນໃດຂອງຝາ, ພື້ນ ແລະ ຫຼັງຄາ (ຍ້ອນກັບໄດ້ໜຶ່ງຂັ້ນ); ຂອງແບບຮູບສຳລັບມຸມມອງຊະນິດນີ້ຖືກໝາຍດ້ວຍ ·",
+  "Which layers of walls, floors and roofs the view draws, as its style says for its kind of view (plans; sections and elevations; 3D) unless it sets its own; also in the view's corner, beside its scale. A plan rules what its cut plane cuts: the floors seen under it show as they are. A layer is a finish, insulation or membrane by its own category in its type, else its material's.": "ມຸມມອງແຕ້ມຊັ້ນໃດຂອງຝາ, ພື້ນ ແລະ ຫຼັງຄາ, ຕາມທີ່ແບບຮູບຂອງມັນກຳນົດສຳລັບຊະນິດມຸມມອງຂອງມັນ (ແຜນຜັງ; ຮູບຕັດ ແລະ ຮູບດ້ານ; 3D) ເວັ້ນເສຍແຕ່ມັນກຳນົດເອງ; ຢູ່ແຈຂອງມຸມມອງ, ຂ້າງມາດຕາສ່ວນນຳ. ແຜນຜັງກຳນົດສິ່ງທີ່ລະນາບຕັດຂອງມັນຕັດ: ພື້ນທີ່ເຫັນຢູ່ລຸ່ມຈະສະແດງຕາມທີ່ເປັນ. ຊັ້ນເປັນຜິວຕົບແຕ່ງ, ສານກັນຄວາມຮ້ອນ ຫຼື ແຜ່ນເມມເບຣນ ຕາມໝວດຂອງມັນເອງໃນປະເພດ, ຖ້າບໍ່ດັ່ງນັ້ນຕາມໝວດຂອງວັດສະດຸ.",
+  "By element kind": "ຕາມຊະນິດອົງປະກອບ",
+  "Over the partial structure display, element kind by element kind: whether this view draws the walls' and the floors' finish layers (and the rooms' wall and floor finishes)": "ເໜືອການສະແດງໂຄງສ້າງບາງສ່ວນ, ຕາມຊະນິດອົງປະກອບ: ມຸມມອງນີ້ແຕ້ມຊັ້ນຜິວຕົບແຕ່ງຂອງຝາ ແລະ ພື້ນຫຼືບໍ່ (ແລະ ຜິວຕົບແຕ່ງຝາ ແລະ ພື້ນຂອງຫ້ອງ)",
+  "advanced": "ຂັ້ນສູງ",
+  "Structure in plans": "ໂຄງສ້າງໃນແຜນຜັງ",
+  "Partial structure display of the style's plans: which layers of walls, floors and roofs they draw": "ການສະແດງໂຄງສ້າງບາງສ່ວນຂອງແຜນຜັງໃນແບບຮູບ: ພວກມັນແຕ້ມຊັ້ນໃດຂອງຝາ, ພື້ນ ແລະ ຫຼັງຄາ",
+  "Structure in sections": "ໂຄງສ້າງໃນຮູບຕັດ",
+  "Partial structure display of the style's sections and elevations": "ການສະແດງໂຄງສ້າງບາງສ່ວນຂອງຮູບຕັດ ແລະ ຮູບດ້ານໃນແບບຮູບ",
+  "Structure in 3D": "ໂຄງສ້າງໃນ 3D",
+  "Partial structure display of the style's 3D views and other views": "ການສະແດງໂຄງສ້າງບາງສ່ວນຂອງມຸມມອງ 3D ແລະ ມຸມມອງອື່ນໆໃນແບບຮູບ",
+  "The partial structure display is said for plans, for sections and elevations, and for 3D views; a view sets its own in its settings or from its corner, beside its scale. The finish columns are its advanced detail, element kind by element kind.": "ການສະແດງໂຄງສ້າງບາງສ່ວນກຳນົດສຳລັບແຜນຜັງ, ຮູບຕັດ ແລະ ຮູບດ້ານ, ແລະ ມຸມມອງ 3D; ມຸມມອງກຳນົດເອງໃນການຕັ້ງຄ່າຂອງມັນ ຫຼື ຈາກແຈຂອງມັນ, ຂ້າງມາດຕາສ່ວນ. ຖັນຜິວຕົບແຕ່ງແມ່ນລາຍລະອຽດຂັ້ນສູງຂອງມັນ, ຕາມຊະນິດອົງປະກອບ.",
+  "load-bearing cores only": "ສະເພາະແກນຮັບນ້ຳໜັກ",
   // The forum's topic #30: finish layers by kind of view, wall layers into the floors' layers
   "Floor finishes": "ຜິວຕົບແຕ່ງພື້ນ",
   "Wall finishes in plans": "ຜິວຕົບແຕ່ງຝາໃນແຜນຜັງ",

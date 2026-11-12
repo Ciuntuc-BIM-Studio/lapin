@@ -3,6 +3,29 @@
 import type { Language } from './index';
 
 export const PL: Record<string, string> = {
+  // Decision 500: the partial structure display
+  "Entire model": "Cały model",
+  "Every layer of walls, floors and roofs": "Każda warstwa ścian, stropów i dachów",
+  "Without finishes": "Bez wykończeń",
+  "The finish layers (plasters, renders, floor finishes: category Finish) left out; the insulation, membranes and structure drawn": "Warstwy wykończeniowe (tynki, wyprawy, wykończenia podłóg: kategoria Finish) pominięte; izolacja, membrany i konstrukcja narysowane",
+  "Core only": "Tylko rdzeń",
+  "The cores alone, between their boundaries; the finishes, insulation and membranes left out": "Same rdzenie, między ich granicami; wykończenia, izolacja i membrany pominięte",
+  "Core of load-bearing elements only": "Tylko rdzeń elementów nośnych",
+  "The cores of the load-bearing elements alone (LoadBearing in their properties, as Pset_WallCommon); partitions, coverings and room finishes not drawn": "Same rdzenie elementów nośnych (LoadBearing w ich właściwościach, jak w Pset_WallCommon); ścianki działowe, okładziny i wykończenia pomieszczeń nie są rysowane",
+  "Partial structure display": "Częściowe wyświetlanie konstrukcji",
+  "Partial structure display: which layers of walls, floors and roofs the view draws (one undo step); the style's for this kind of view is marked ·": "Częściowe wyświetlanie konstrukcji: które warstwy ścian, stropów i dachów rysuje widok (jeden krok cofania); to ze stylu dla tego rodzaju widoku jest oznaczone ·",
+  "Which layers of walls, floors and roofs the view draws, as its style says for its kind of view (plans; sections and elevations; 3D) unless it sets its own; also in the view's corner, beside its scale. A plan rules what its cut plane cuts: the floors seen under it show as they are. A layer is a finish, insulation or membrane by its own category in its type, else its material's.": "Które warstwy ścian, stropów i dachów rysuje widok, tak jak mówi jego styl dla jego rodzaju widoku (rzuty; przekroje i elewacje; 3D), chyba że ustawia własne; także w rogu widoku, obok skali. Rzut rozstrzyga, co przecina jego płaszczyzna cięcia: stropy widoczne pod nią pokazują się takie, jakie są. Warstwa jest wykończeniem, izolacją lub membraną według własnej kategorii w typie, a jeśli jej brak, według kategorii materiału.",
+  "By element kind": "Według rodzaju elementu",
+  "Over the partial structure display, element kind by element kind: whether this view draws the walls' and the floors' finish layers (and the rooms' wall and floor finishes)": "Ponad częściowym wyświetlaniem konstrukcji, rodzaj elementu po rodzaju: czy ten widok rysuje warstwy wykończeniowe ścian i stropów (oraz wykończenia ścian i podłóg pomieszczeń)",
+  "advanced": "zaawansowane",
+  "Structure in plans": "Konstrukcja na rzutach",
+  "Partial structure display of the style's plans: which layers of walls, floors and roofs they draw": "Częściowe wyświetlanie konstrukcji na rzutach stylu: które warstwy ścian, stropów i dachów rysują",
+  "Structure in sections": "Konstrukcja w przekrojach",
+  "Partial structure display of the style's sections and elevations": "Częściowe wyświetlanie konstrukcji w przekrojach i elewacjach stylu",
+  "Structure in 3D": "Konstrukcja w 3D",
+  "Partial structure display of the style's 3D views and other views": "Częściowe wyświetlanie konstrukcji w widokach 3D stylu i w pozostałych widokach",
+  "The partial structure display is said for plans, for sections and elevations, and for 3D views; a view sets its own in its settings or from its corner, beside its scale. The finish columns are its advanced detail, element kind by element kind.": "Częściowe wyświetlanie konstrukcji określa się dla rzutów, dla przekrojów i elewacji oraz dla widoków 3D; widok ustawia własne w swoich ustawieniach lub z rogu, obok skali. Kolumny wykończeń to jego zaawansowany szczegół, rodzaj elementu po rodzaju.",
+  "load-bearing cores only": "tylko rdzenie nośne",
   // The forum's topic #30: finish layers by kind of view, wall layers into the floors' layers
   "Floor finishes": "Wykończenia podłóg",
   "Wall finishes in plans": "Wykończenia ścian na rzutach",

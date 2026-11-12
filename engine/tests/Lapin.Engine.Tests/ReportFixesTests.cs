@@ -20,6 +20,7 @@ public class ReportFixesTests
     public void The_lines_between_a_walls_layers_take_the_separation_pen_its_contour_the_cut_pen()
     {
         var f = F();
+        f.EveryLayerInPlans();
         var type = f.Type("Layered", ("Plaster", 0.015, false), ("Brick", 0.25, true), ("Plaster", 0.015, false));
         f.Wall(0, 0, 5, 0, type);
         var plan = Plan(f);

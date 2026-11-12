@@ -50,6 +50,7 @@ public sealed class ViewMarkerMoveTests
     public void An_elevation_s_marker_moves_and_the_elevation_sees_the_same()
     {
         var f = F();
+        f.EveryLayerInPlans();
         var (_, south, plan) = House(f);
         var before = Ends(Drawing(f, plan), south);
         var seen = Bounds(Drawing(f, south));

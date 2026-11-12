@@ -135,15 +135,16 @@ The storeys hidden are not drawn, and you cannot select them, fit to them or wal
 
 ### Without finishes, or the cores only
 
-A 3D view can show the structure of the building alone, as a structural plan does. In the 3D view's properties (with nothing selected), or in **View → View settings** with the 3D view in front, **Layers** shows:
+A 3D view can show the structure of the building alone, as a structural plan does. In the 3D view's properties (with nothing selected), or in **View → View settings** with the 3D view in front, **Partial structure display** shows:
 
-- **every layer**: the walls, floors and footings as they are built;
-- **without finishes**: without the layers whose material is a finish (plaster, render, paint, tiles, boards, floor coverings, or a material whose category is Finish in Manage → Materials); the insulation stays;
-- **the core only**: only the layer marked as the core (the brick, the concrete slab).
+- **Entire model**: the walls, floors and footings as they are built;
+- **Without finishes**: without the layers whose material is a finish (plaster, render, paint, tiles, boards, floor coverings, or a material whose category is Finish in Manage → Materials); the insulation stays;
+- **Core only**: only the layer marked as the core (the brick, the concrete slab);
+- **Core of load-bearing elements only**: the cores of the load-bearing elements alone (see [Partial structure display](#partial-structure-display)).
 
 ![A house in 3D with the core only: the walls are their brick, the floors their slab](shots/layers-3d-core.webp)
 
-Each layer kept stays a closed solid in its own material, so a cut or the section box closes it as before. Doors and windows stay in their openings; a reveal lined in a finish goes with the wall's finishes. A 3D view takes its layers from its style, like a plan: set its **Discipline** to Structure and it shows the cores only; set **Layers** to choose otherwise, and the button beside it goes back to the style's. The **Layers shown** chip at the bottom of the 3D view says what is left out; its **×** shows every layer again. The layers hidden are not selected or walked against, and **File → Export 3D…** as the view shows it exports the same layers.
+Each layer kept stays a closed solid in its own material, so a cut or the section box closes it as before. Doors and windows stay in their openings; a reveal lined in a finish goes with the wall's finishes. A 3D view takes its layers from its style, like a plan: set its **Discipline** to Structure and it shows the cores only; set **Partial structure display** to choose otherwise, and the button beside it goes back to the style's. The **Layers shown** chip at the bottom of the 3D view says what is left out; its **×** shows every layer again. The layers hidden are not selected or walked against, and **File → Export 3D…** as the view shows it exports the same layers.
 
 ### Walking into a room
 
@@ -226,7 +227,7 @@ The **View** tab sets what the view in front shows and how it looks.
 ![The View tab](shots/ribbon-view.webp)
 
 - **View settings.** The view's discipline and style, its range (the cut height and depth), and its graphics.
-- **View styles.** Architectural, Structural (the cores only), MEP or your own. Each style chooses the layers drawn (all, without finishes, or the core) and how materials join.
+- **View styles.** Architectural, Structural (the cores only), MEP or your own. Each style chooses the layers drawn (its partial structure display, for plans, sections and 3D views apart) and how materials join.
 - **IFC 2D symbols.** Elements imported or linked from an IFC file that bring their own plan drawing (a footprint, a door's swing, a fixture's symbol, with the file's colours, fills and texts) draw it in plans instead of their cut. Untick it in View settings (or in a view style) to draw their 3D cut instead.
 - **Visibility** (<kbd>VV</kbd>) and **Graphics** (<kbd>VG</kbd>). They show or hide categories and set their pens, line types and fills.
 - **Split** and **Window.** They show two views side by side, or open a view in a separate window.
@@ -235,13 +236,30 @@ The **View** tab sets what the view in front shows and how it looks.
 
 ![Display quality](shots/display-quality.webp)
 
-### Finishes in plans and sections
+### Partial structure display
 
-A view style says, for walls and for floors apart, whether plans draw the finish layers, and whether sections and elevations do: **Wall finishes in plans**, **Floor finishes in plans**, **Wall finishes in sections** and **Floor finishes in sections** in **Manage → View styles**. All four are on by default. A view can set its own in **View settings** (**Wall finishes**, **Floor finishes**), and the button beside them takes the style's again. A finish is a layer whose own **Category** in its type is **Finish**, else whose material's category is. A plan without the wall finishes draws each wall's cut outline at its core, with the joins and corners as before, and snaps to the core's faces. Polish drawings, for example, are printed with plans without any finishes and sections with the floors' finishes but not the walls': untick the first three on the Architectural style, and every plan and section of the project follows. The model is unchanged: quantities, the 3D view and IFC keep every layer.
+Each view says which layers of walls, floors and roofs it draws, as ArchiCAD's partial structure display does. **Partial structure display** offers four presets:
 
-![Manage → View styles, with the finish choices of plans and sections](shots/view-styles-finishes.webp)
+- **Entire model**: every layer, as built;
+- **Without finishes**: the finish layers left out (plasters, renders, floor finishes and screeds whose **Category** is **Finish**); the insulation, the membranes and the structure are drawn;
+- **Core only**: the cores alone, between their boundaries; the insulation goes too;
+- **Core of load-bearing elements only**: the cores of the load-bearing elements alone. An element that bears no load (a partition, a covering, a room's finishes) is not drawn at all. A wall bears load when **LoadBearing** is ticked in its properties (Pset_WallCommon), on it or on its type, as the analytical model reads it; columns, beams, footings, floors and roofs bear load unless they say they do not.
 
-![A section with the floor's finish and screed and without the walls' plaster](shots/finishes-section.webp)
+A finish is a layer whose own **Category** in its type is **Finish**, else whose material's category is (**Manage → Materials**). In a new project, plans are drawn without finishes, and sections, elevations and 3D views show the entire model, the classic set for architectural sheets: the plasters left out of plans while the thermal insulation shows, sections and details with everything. A project made before draws as it did.
+
+**Manage → View styles** sets it for each style apart: **Structure in plans**, **Structure in sections** (sections and elevations) and **Structure in 3D** (3D views and the rest), so every view of the style follows. A view sets its own in **View settings**, and the button beside it takes the style's again. It is also at the top of a plan, a section or an elevation, beside the scale: pick another preset there, in one step to undo. On a sheet, pick a placed drawing and its preset shows there too, so each drawing on a sheet says its own. A level's plan with no view of its own becomes the level's plan view with it.
+
+A plan applies it to what its cut plane cuts: a floor seen under the cut shows as it is, with its finish on top. Sheets, PDF, DXF and the snaps follow what is drawn: a plan without the wall finishes snaps to the cores' faces. The model is unchanged: quantities and IFC keep every layer.
+
+![Manage → View styles: the partial structure display of plans, sections and 3D views](shots/view-styles-structure.webp)
+
+![The partial structure display at the top of a plan, beside the scale](shots/structure-picker.webp)
+
+![A plan with the core only: the walls are their brick](shots/structure-plan-core.webp)
+
+![A section with the entire model: the walls' plaster and the floor's finish and screed](shots/finishes-section.webp)
+
+**By element kind.** Under the preset, **View settings** of a plan, a section or an elevation has **Wall finishes** and **Floor finishes**, and **Manage → View styles** has **Wall finishes in plans**, **Floor finishes in plans**, **Wall finishes in sections** and **Floor finishes in sections**: unticked, the view also leaves out the walls' or the floors' finish layers (and the rooms' wall or floor finishes) whatever its preset. All are ticked by default. Polish drawings, for example, are printed with plans without any finishes and sections with the floors' finishes but not the walls': plans **Without finishes**, sections **Entire model** with **Wall finishes in sections** unticked.
 
 ### Visibility / Graphics
 

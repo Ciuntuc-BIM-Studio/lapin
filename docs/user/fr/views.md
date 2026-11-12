@@ -135,15 +135,16 @@ Les niveaux masqués ne sont pas dessinés, et vous ne pouvez ni les sélectionn
 
 ### Sans les finitions, ou les noyaux seulement
 
-Une vue 3D peut montrer la structure du bâtiment seule, comme le fait un plan de structure. Dans les propriétés de la vue 3D (sans rien de sélectionné), ou dans **Vue → Paramètres de vue** avec la vue 3D au premier plan, **Couches** affiche :
+Une vue 3D peut montrer la structure du bâtiment seule, comme le fait un plan de structure. Dans les propriétés de la vue 3D (sans rien de sélectionné), ou dans **Vue → Paramètres de vue** avec la vue 3D au premier plan, **Affichage partiel de la structure** affiche :
 
-- **toutes les couches** : les murs, les dalles et les semelles tels qu’ils sont construits ;
-- **sans les finitions** : sans les couches dont le matériau est une finition (enduit, crépi, peinture, carrelage, plaques, revêtements de sol, ou un matériau de catégorie Finition dans Gérer → Matériaux) ; l’isolation reste ;
-- **le noyau seulement** : seulement la couche marquée comme noyau (la brique, la dalle en béton).
+- **Modèle entier** : les murs, les dalles et les semelles tels qu’ils sont construits ;
+- **Sans finitions** : sans les couches dont le matériau est une finition (enduit, crépi, peinture, carrelage, plaques, revêtements de sol, ou un matériau de catégorie Finition dans Gérer → Matériaux) ; l’isolation reste ;
+- **Noyau seul** : seulement la couche marquée comme noyau (la brique, la dalle en béton);
+- **Noyau des éléments porteurs seul** : les noyaux des éléments porteurs seuls (voir [Affichage partiel de la structure](#affichage-partiel-de-la-structure)).
 
 ![Une maison en 3D avec le noyau seulement : les murs sont leur brique, les dalles leur dalle en béton](shots/layers-3d-core.webp)
 
-Chaque couche conservée reste un solide fermé dans son propre matériau, si bien qu’une coupe ou la zone de coupe la ferme comme avant. Les portes et les fenêtres restent dans leurs baies ; un tableau habillé d’une finition part avec les finitions du mur. Une vue 3D prend ses couches de son style, comme un plan : réglez sa **Discipline** sur Structure et elle ne montre que les noyaux ; réglez **Couches** pour choisir autrement, et le bouton à côté revient à celles du style. La puce **Couches affichées** en bas de la vue 3D indique ce qui est laissé de côté ; son **×** affiche de nouveau toutes les couches. Les couches masquées ne sont ni sélectionnées ni heurtées pendant une visite, et **Fichier → Exporter 3D…** telle que la vue l’affiche exporte les mêmes couches.
+Chaque couche conservée reste un solide fermé dans son propre matériau, si bien qu’une coupe ou la zone de coupe la ferme comme avant. Les portes et les fenêtres restent dans leurs baies ; un tableau habillé d’une finition part avec les finitions du mur. Une vue 3D prend ses couches de son style, comme un plan : réglez sa **Discipline** sur Structure et elle ne montre que les noyaux ; réglez **Affichage partiel de la structure** pour choisir autrement, et le bouton à côté revient à celles du style. La puce **Couches affichées** en bas de la vue 3D indique ce qui est laissé de côté ; son **×** affiche de nouveau toutes les couches. Les couches masquées ne sont ni sélectionnées ni heurtées pendant une visite, et **Fichier → Exporter 3D…** telle que la vue l’affiche exporte les mêmes couches.
 
 ### Entrer dans une pièce
 
@@ -226,7 +227,7 @@ L’onglet **Vue** règle ce que montre la vue au premier plan et son aspect.
 ![L’onglet Vue](shots/ribbon-view.webp)
 
 - **Paramètres de vue.** La discipline et le style de la vue, sa plage (la hauteur et la profondeur de coupe) et ses graphismes.
-- **Styles de vue.** Architectural, Structurel (les noyaux seulement), Fluides ou les vôtres. Chaque style choisit les couches dessinées (toutes, sans les finitions, ou le noyau) et la façon dont les matériaux se joignent.
+- **Styles de vue.** Architectural, Structurel (les noyaux seulement), Fluides ou les vôtres. Chaque style choisit les couches dessinées (leur affichage partiel de la structure, à part pour les plans, les coupes et les vues 3D) et la façon dont les matériaux se joignent.
 - **Symboles 2D IFC.** Les éléments importés ou liés depuis un fichier IFC qui apportent leur propre dessin en plan (une emprise, le débattement d’une porte, le symbole d’un appareil, avec les couleurs, remplissages et textes du fichier) le dessinent dans les plans au lieu de leur coupe. Décochez-le dans Paramètres de vue (ou dans un style de vue) pour dessiner plutôt leur coupe 3D.
 - **Visibilité** (<kbd>VV</kbd>) et **Graphismes** (<kbd>VG</kbd>). Ils affichent ou masquent des catégories et règlent leurs plumes, types de ligne et remplissages.
 - **Scinder** et **Fenêtre.** Ils affichent deux vues côte à côte, ou ouvrent une vue dans une fenêtre séparée.
@@ -235,13 +236,30 @@ L’onglet **Vue** règle ce que montre la vue au premier plan et son aspect.
 
 ![Qualité d’affichage](shots/display-quality.webp)
 
-### Les finitions en plan et en coupe
+### Affichage partiel de la structure
 
-Un style de vue dit, à part pour les murs et pour les dalles, si les plans dessinent les couches de finition et si les coupes et les élévations les dessinent : **Finitions des murs en plan**, **Finitions des dalles en plan**, **Finitions des murs en coupe** et **Finitions des dalles en coupe** dans **Gérer → Styles de vue**. Les quatre sont cochées par défaut. Une vue peut fixer les siennes dans **Paramètres de vue** (**Finitions des murs**, **Finitions des dalles**), et le bouton à côté reprend celles du style. Une finition est une couche dont la **Catégorie** propre dans son type est **Finition**, sinon une couche dont le matériau a cette catégorie. Un plan sans les finitions des murs dessine le contour coupé de chaque mur sur son noyau, avec les jonctions et les angles comme avant, et s’accroche aux faces du noyau. Les plans polonais, par exemple, s’impriment avec des plans sans aucune finition et des coupes avec les finitions des dalles mais pas celles des murs : décochez les trois premières dans le style Architectural, et tous les plans et coupes du projet suivent. Le modèle ne change pas : les quantités, la vue 3D et l’IFC gardent toutes les couches.
+Chaque vue dit quelles couches des murs, des dalles et des toitures elle dessine, comme l’affichage partiel de la structure d’ArchiCAD. **Affichage partiel de la structure** propose quatre préréglages :
 
-![Gérer → Styles de vue, avec les finitions des plans et des coupes](shots/view-styles-finishes.webp)
+- **Modèle entier** : toutes les couches, telles qu’elles sont construites ;
+- **Sans finitions** : les couches de finition omises (enduits, crépis, revêtements de sol et chapes dont la **Catégorie** est **Finition**) ; l’isolant, les membranes et la structure sont dessinés ;
+- **Noyau seul** : les noyaux seuls, entre leurs limites ; l’isolant disparaît aussi ;
+- **Noyau des éléments porteurs seul** : les noyaux des éléments porteurs seuls. Un élément qui ne porte pas de charge (une cloison, un revêtement, les finitions d’une pièce) n’est pas dessiné du tout. Un mur est porteur quand **LoadBearing** est coché dans ses propriétés (Pset_WallCommon), sur lui ou sur son type, comme le modèle analytique le lit ; les poteaux, les poutres, les semelles, les dalles et les toitures sont porteurs sauf s’ils disent qu’ils ne le sont pas.
 
-![Une coupe avec le revêtement et la chape de la dalle et sans l’enduit des murs](shots/finishes-section.webp)
+Une finition est une couche dont la **Catégorie** propre dans son type est **Finition**, sinon une couche dont le matériau a cette catégorie (**Gérer → Matériaux**). Dans un nouveau projet, les plans sont dessinés sans finitions, et les coupes, les élévations et les vues 3D montrent le modèle entier, le jeu classique des planches d’architecture : les enduits omis des plans alors que l’isolant thermique se voit, et les coupes et les détails avec tout. Un projet fait avant se dessine comme avant.
+
+**Gérer → Styles de vue** le règle pour chaque style à part : **Structure en plan**, **Structure en coupe** (coupes et élévations) et **Structure en 3D** (vues 3D et le reste), si bien que toutes les vues du style le suivent. Une vue fixe le sien dans **Paramètres de vue**, et le bouton à côté reprend celui du style. Il se trouve aussi en haut d’un plan, d’une coupe ou d’une élévation, près de l’échelle : choisissez-y un autre préréglage, en une étape d’annulation. Sur une planche, choisissez un dessin placé et son préréglage s’y affiche aussi, si bien que chaque dessin d’une planche dit le sien. Le plan d’un niveau sans vue propre devient, avec lui, la vue en plan du niveau.
+
+Un plan l’applique à ce que coupe son plan de coupe : une dalle vue sous la coupe se montre telle quelle, avec sa finition dessus. Les planches, le PDF, le DXF et les accroches suivent ce qui est dessiné : un plan sans les finitions des murs s’accroche aux faces des noyaux. Le modèle ne change pas : les quantités et l’IFC gardent toutes les couches.
+
+![Gérer → Styles de vue : l’affichage partiel de la structure des plans, des coupes et des vues 3D](shots/view-styles-structure.webp)
+
+![L’affichage partiel de la structure en haut d’un plan, près de l’échelle](shots/structure-picker.webp)
+
+![Un plan avec le noyau seul : les murs sont leur brique](shots/structure-plan-core.webp)
+
+![Une coupe avec le modèle entier : l’enduit des murs, et le revêtement et la chape de la dalle](shots/finishes-section.webp)
+
+**Par type d’élément.** Sous le préréglage, **Paramètres de vue** d’un plan, d’une coupe ou d’une élévation a **Finitions des murs** et **Finitions des dalles**, et **Gérer → Styles de vue** a **Finitions des murs en plan**, **Finitions des dalles en plan**, **Finitions des murs en coupe** et **Finitions des dalles en coupe** : décochées, la vue omet aussi les couches de finition des murs ou des dalles (et les finitions murales ou de sol des pièces), quel que soit son préréglage. Toutes sont cochées par défaut. Les plans polonais, par exemple, s’impriment avec des plans sans aucune finition et des coupes avec les finitions des dalles mais pas celles des murs : plans **Sans finitions**, coupes **Modèle entier** avec **Finitions des murs en coupe** décochée.
 
 ### Visibilité / Graphismes
 

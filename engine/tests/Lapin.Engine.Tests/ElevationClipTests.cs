@@ -77,6 +77,7 @@ public sealed class ElevationClipTests
     public void The_Move_tool_takes_the_marker_in_from_where_it_stands_and_a_pinned_one_stays()
     {
         var f = F();
+        f.EveryLayerInPlans();
         var (south, _, _, plan, elevation) = House(f);
         var at = (double)Mark(Drawing(f, plan), elevation)!["data"]!["depth"]!;
         // Moved 6 m north from where the plan draws it: inside the house.

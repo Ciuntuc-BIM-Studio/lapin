@@ -1,8 +1,10 @@
 /**
  * A view's drawing settings in one place (docs/view-styles.md): its style
  * (Architectural, Structural, MEP or one of the project's own), and over it
- * what the view sets itself: which layers of layered elements draw (all,
- * all but the finishes, the cores), whether one material goes on from
+ * what the view sets itself: its partial structure display (decision 500: the
+ * entire model, without the finishes, the cores only, the load-bearing
+ * elements' cores only; a style says it for its plans, its sections and
+ * elevations, and its 3D views), whether one material goes on from
  * element to element without a line, whether a plan draws what is above its
  * cut, whether a plan draws the 2D an IFC file gave its elements instead of
  * their cut, whether the openings' voids are drawn (decision 290), how people, cars and plants draw (decision 341); with a plan's cut plane and range (View range) and the storeys it
@@ -18,7 +20,8 @@ import { Copy, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { DisciplinePicker } from './DisciplinePicker';
-import { ENTOURAGE_FILLS, ENTOURAGE_MODES, FINISH_FIELDS, LOD_HELP, LODS, useViewStyles, type EntourageMode, type LayerMode, type ViewStyle } from './viewStyles';
+import { t } from '../../i18n';
+import { ENTOURAGE_FILLS, ENTOURAGE_MODES, FINISH_FIELDS, LOD_HELP, LODS, STRUCTURE_MODES, structureLabel, styleStructure, useViewStyles, type EntourageMode, type LayerMode, type ViewStyle } from './viewStyles';
 import { frontView } from '../../viewport/frontView';
 import { storeys } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
@@ -31,8 +34,16 @@ import { shadowsAllowed, ViewShadowFields } from './ViewShadowFields';
 
 interface ViewStyleState { style: ViewStyle; named: boolean; resolved: ViewStyle; overrides: string[] }
 
-const LAYER_MODES: [LayerMode, string][] = [['all', 'every layer'], ['noFinishes', 'without finishes'], ['core', 'the core only']];
-const layerLabel = (m: LayerMode) => LAYER_MODES.find(([k]) => k === m)?.[1] ?? m;
+/** A partial structure display choice: the presets, each with what it draws (decision 500). */
+function StructureSelect({ value, onPick, testId }: { value: LayerMode; onPick: (m: LayerMode) => void; testId?: string }) {
+  return (
+    <select data-testid={testId} value={value} onChange={(e) => onPick(e.target.value as LayerMode)}>
+      {STRUCTURE_MODES.map(([k, l, d]) => <option key={k} value={k} title={d}>{l}</option>)}
+    </select>
+  );
+}
+
+const STRUCTURE_HELP = 'Which layers of walls, floors and roofs the view draws, as its style says for its kind of view (plans; sections and elevations; 3D) unless it sets its own; also in the view\'s corner, beside its scale. A plan rules what its cut plane cuts: the floors seen under it show as they are. A layer is a finish, insulation or membrane by its own category in its type, else its material\'s.';
 
 /** The editor of one view's settings. */
 function ViewSettingsEditor({ view }: { view: NodeDto }) {
@@ -83,12 +94,16 @@ function ViewSettingsEditor({ view }: { view: NodeDto }) {
             {LODS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
           </select><Reset field="detail" />
         </dd>
-        <dt title={threeD ? 'Which layers of walls, floors and footings the 3D view shows (each kept layer a solid of its own); the finishes are the layers of materials whose category is Finish' : 'Which layers of walls, floors and footings draw: the finishes are the layers of materials whose category is Finish'} data-i18n-ctx="element">Layers</dt>
+        <dt title={STRUCTURE_HELP}>Partial structure display</dt>
         <dd>
-          <select value={state.resolved.layers} onChange={(e) => set({ layers: e.target.value })}>
-            {LAYER_MODES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-          </select><Reset field="layers" />
+          <StructureSelect testId="view-structure-setting" value={state.resolved.layers} onPick={(m) => set({ layers: m === styleStructure(state.style, view.props.kind as string | undefined) ? null : m })} /><Reset field="layers" />
         </dd>
+        {(plan || section || view.props.kind === 'elevation') && (
+          <>
+            <dt className="muted small" title="Over the partial structure display, element kind by element kind: whether this view draws the walls' and the floors' finish layers (and the rooms' wall and floor finishes)">By element kind</dt>
+            <dd className="muted small">advanced</dd>
+          </>
+        )}
         {(plan || section || view.props.kind === 'elevation') && FINISH_FIELDS.filter((f) => f.plan === plan).map((f) => (
           <Fragment key={f.key}>
             <dt title={f.title}>{f.label}</dt>
@@ -241,14 +256,16 @@ export function ViewStylesDialog() {
         <header className="dialog-head"><span className="panel-title">View styles</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">
           <table className="layer-table view-styles">
-            <thead><tr><th>Name</th><th title="The views of this discipline take this style unless they name another">Discipline</th><th title={LOD_HELP}>Level of development</th><th data-i18n-ctx="element">Layers</th><th title="One material goes on from element to element without a line">Join materials</th><th title="Plans draw what lies above their cut">Overhead</th><th title="Plans draw the 2D an IFC file gave its elements instead of their cut">IFC 2D symbols</th><th title="Plans, sections and elevations draw the openings' voids, crossed, with their marks">Opening voids</th><th title="Under each void's mark its width × height (a round one's diameter) and a wall opening's bottom level">Void sizes</th><th title="Plans hatch the rooms' floor finishes as their types say (a plan seen from below, their ceilings)">Floor finish hatches</th><th title="Elevations and sections hatch the faces they see with their materials' elevation hatch (Manage → Materials), where nothing nearer hides them">Surface hatches</th>{FINISH_FIELDS.map((f) => <th key={f.key} title={f.title}>{f.column}</th>)}<th title="How people, cars and plants draw in plans, elevations and sections: outlines (simple symbols and silhouettes), abstract (circles and boxes), detailed (every line of their symbols and bodies) or not at all; their bodies stay in 3D">Entourage in 2D</th><th title="The fill of the silhouettes elevations and sections draw for people, cars and plants">Silhouette fill</th><th title="The Visibility / Graphics set its views take when they have none of their own, as a view template">Graphics set</th><th /></tr></thead>
+            <thead><tr><th>Name</th><th title="The views of this discipline take this style unless they name another">Discipline</th><th title={LOD_HELP}>Level of development</th><th title="Partial structure display of the style's plans: which layers of walls, floors and roofs they draw">Structure in plans</th><th title="Partial structure display of the style's sections and elevations">Structure in sections</th><th title="Partial structure display of the style's 3D views and other views">Structure in 3D</th><th title="One material goes on from element to element without a line">Join materials</th><th title="Plans draw what lies above their cut">Overhead</th><th title="Plans draw the 2D an IFC file gave its elements instead of their cut">IFC 2D symbols</th><th title="Plans, sections and elevations draw the openings' voids, crossed, with their marks">Opening voids</th><th title="Under each void's mark its width × height (a round one's diameter) and a wall opening's bottom level">Void sizes</th><th title="Plans hatch the rooms' floor finishes as their types say (a plan seen from below, their ceilings)">Floor finish hatches</th><th title="Elevations and sections hatch the faces they see with their materials' elevation hatch (Manage → Materials), where nothing nearer hides them">Surface hatches</th>{FINISH_FIELDS.map((f) => <th key={f.key} title={f.title}>{f.column}</th>)}<th title="How people, cars and plants draw in plans, elevations and sections: outlines (simple symbols and silhouettes), abstract (circles and boxes), detailed (every line of their symbols and bodies) or not at all; their bodies stay in 3D">Entourage in 2D</th><th title="The fill of the silhouettes elevations and sections draw for people, cars and plants">Silhouette fill</th><th title="The Visibility / Graphics set its views take when they have none of their own, as a view template">Graphics set</th><th /></tr></thead>
             <tbody>
               {styles.map((s) => (
                 <tr key={s.id}>
                   <td><input key={s.name} defaultValue={s.name} onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== s.name) update(s.id, { name: v }); }} /></td>
                   <td><input key={s.discipline ?? ''} defaultValue={s.discipline ?? ''} placeholder="none" onBlur={(e) => { const v = e.target.value.trim(); if (v !== (s.discipline ?? '')) update(s.id, { discipline: v || null }); }} /></td>
                   <td><select data-testid="style-detail" value={s.detail ?? 350} onChange={(e) => update(s.id, { detail: Number(e.target.value) })}>{LODS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></td>
-                  <td><select value={s.layers} onChange={(e) => update(s.id, { layers: e.target.value as LayerMode })}>{LAYER_MODES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></td>
+                  <td><StructureSelect testId="style-structure-plan" value={styleStructure(s, 'plan')} onPick={(m) => update(s.id, { layersPlan: m })} /></td>
+                  <td><StructureSelect testId="style-structure-section" value={styleStructure(s, 'section')} onPick={(m) => update(s.id, { layersSection: m })} /></td>
+                  <td><StructureSelect testId="style-structure-3d" value={s.layers} onPick={(m) => update(s.id, { layers: m })} /></td>
                   <td><input type="checkbox" checked={s.joins} onChange={(e) => update(s.id, { joins: e.target.checked })} /></td>
                   <td><input type="checkbox" checked={s.overhead} onChange={(e) => update(s.id, { overhead: e.target.checked })} /></td>
                   <td><input type="checkbox" checked={s.ifc2d !== false} onChange={(e) => update(s.id, { ifc2d: e.target.checked })} /></td>
@@ -271,10 +288,11 @@ export function ViewStylesDialog() {
           </table>
           <button type="button" className="btn" onClick={() => void execute('viewStyle.create', { name: 'New style' })}><Plus size={14} /> New style</button>
           <p className="muted small">
-            {styles.length ? `Layers: ${styles.map((s) => `${s.name} draws ${layerLabel(s.layers)}`).join('; ')}. ` : ''}
+            {styles.length ? `${t('Partial structure display')}: ${styles.map((s) => `${s.name}: ${t(structureLabel(styleStructure(s, 'plan')))} · ${t(structureLabel(styleStructure(s, 'section')))} · ${t(structureLabel(s.layers))}`).join('; ')}. ` : ''}
             Finishes are the layers whose material's category is Finish (Manage → Materials); without a category, plaster, render, paint, tiles, boards and floor coverings count as finishes.
           </p>
           <p className="muted small">A layer's own category in its type (Wall types, Floor types) wins over its material's. Plans, and sections with elevations, each say whether they draw the walls' finishes and the floors'.</p>
+          <p className="muted small">The partial structure display is said for plans, for sections and elevations, and for 3D views; a view sets its own in its settings or from its corner, beside its scale. The finish columns are its advanced detail, element kind by element kind.</p>
         </div>
         <footer className="dialog-foot">{error && <p className="error-text" role="alert">{error}</p>}<span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
       </div>

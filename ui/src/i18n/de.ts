@@ -3,6 +3,29 @@
 import type { Language } from './index';
 
 export const DE: Record<string, string> = {
+  // Decision 500: the partial structure display
+  "Entire model": "Gesamtes Modell",
+  "Every layer of walls, floors and roofs": "Jede Schicht von Wänden, Decken und Dächern",
+  "Without finishes": "Ohne Beläge",
+  "The finish layers (plasters, renders, floor finishes: category Finish) left out; the insulation, membranes and structure drawn": "Die Belagschichten (Putze, Beschichtungen, Bodenbeläge: Kategorie Finish) weggelassen; Dämmung, Abdichtungen und Tragwerk gezeichnet",
+  "Core only": "Nur Kern",
+  "The cores alone, between their boundaries; the finishes, insulation and membranes left out": "Nur die Kerne, zwischen ihren Grenzen; Beläge, Dämmung und Abdichtungen weggelassen",
+  "Core of load-bearing elements only": "Nur Kern tragender Elemente",
+  "The cores of the load-bearing elements alone (LoadBearing in their properties, as Pset_WallCommon); partitions, coverings and room finishes not drawn": "Nur die Kerne der tragenden Elemente (LoadBearing in ihren Eigenschaften, wie in Pset_WallCommon); Trennwände, Verkleidungen und Raumbeläge werden nicht gezeichnet",
+  "Partial structure display": "Teilstrukturdarstellung",
+  "Partial structure display: which layers of walls, floors and roofs the view draws (one undo step); the style's for this kind of view is marked ·": "Teilstrukturdarstellung: welche Schichten von Wänden, Decken und Dächern die Ansicht zeichnet (ein Rückgängig-Schritt); die des Stils für diese Art von Ansicht ist mit · markiert",
+  "Which layers of walls, floors and roofs the view draws, as its style says for its kind of view (plans; sections and elevations; 3D) unless it sets its own; also in the view's corner, beside its scale. A plan rules what its cut plane cuts: the floors seen under it show as they are. A layer is a finish, insulation or membrane by its own category in its type, else its material's.": "Welche Schichten von Wänden, Decken und Dächern die Ansicht zeichnet, wie es ihr Stil für ihre Art von Ansicht sagt (Grundrisse; Schnitte und Ansichten; 3D), sofern sie keine eigene hat; auch in der Ecke der Ansicht, neben ihrem Maßstab. Ein Grundriss bestimmt, was seine Schnittebene schneidet: die darunter gesehenen Decken erscheinen, wie sie sind. Eine Schicht ist Belag, Dämmung oder Abdichtung nach ihrer eigenen Kategorie im Typ, sonst nach der ihres Materials.",
+  "By element kind": "Nach Elementart",
+  "Over the partial structure display, element kind by element kind: whether this view draws the walls' and the floors' finish layers (and the rooms' wall and floor finishes)": "Über der Teilstrukturdarstellung, Elementart für Elementart: ob diese Ansicht die Belagschichten der Wände und der Decken zeichnet (und die Wand- und Bodenbeläge der Räume)",
+  "advanced": "erweitert",
+  "Structure in plans": "Struktur in Grundrissen",
+  "Partial structure display of the style's plans: which layers of walls, floors and roofs they draw": "Teilstrukturdarstellung der Grundrisse des Stils: welche Schichten von Wänden, Decken und Dächern sie zeichnen",
+  "Structure in sections": "Struktur in Schnitten",
+  "Partial structure display of the style's sections and elevations": "Teilstrukturdarstellung der Schnitte und Ansichten des Stils",
+  "Structure in 3D": "Struktur in 3D",
+  "Partial structure display of the style's 3D views and other views": "Teilstrukturdarstellung der 3D-Ansichten des Stils und der übrigen Ansichten",
+  "The partial structure display is said for plans, for sections and elevations, and for 3D views; a view sets its own in its settings or from its corner, beside its scale. The finish columns are its advanced detail, element kind by element kind.": "Die Teilstrukturdarstellung wird für Grundrisse, für Schnitte und Ansichten und für 3D-Ansichten festgelegt; eine Ansicht legt ihre eigene in ihren Einstellungen oder aus ihrer Ecke fest, neben ihrem Maßstab. Die Belagspalten sind ihr erweitertes Detail, Elementart für Elementart.",
+  "load-bearing cores only": "nur tragende Kerne",
   // The forum's topic #30: finish layers by kind of view, wall layers into the floors' layers
   "Floor finishes": "Bodenbeläge",
   "Wall finishes in plans": "Wandbeläge in Grundrissen",

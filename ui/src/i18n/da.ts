@@ -3,6 +3,29 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  // Decision 500: the partial structure display
+  "Entire model": "Hele modellen",
+  "Every layer of walls, floors and roofs": "Alle lag i vægge, dæk og tage",
+  "Without finishes": "Uden overfladelag",
+  "The finish layers (plasters, renders, floor finishes: category Finish) left out; the insulation, membranes and structure drawn": "Overfladelagene (puds, pudslag, gulvbelægninger: kategori Finish) udeladt; isolering, membraner og konstruktion tegnet",
+  "Core only": "Kun kernen",
+  "The cores alone, between their boundaries; the finishes, insulation and membranes left out": "Kun kernerne, mellem deres grænser; overfladelag, isolering og membraner udeladt",
+  "Core of load-bearing elements only": "Kun kernen i bærende elementer",
+  "The cores of the load-bearing elements alone (LoadBearing in their properties, as Pset_WallCommon); partitions, coverings and room finishes not drawn": "Kun kernerne i de bærende elementer (LoadBearing i deres egenskaber, som i Pset_WallCommon); skillevægge, beklædninger og rummenes overflader tegnes ikke",
+  "Partial structure display": "Delvis visning af konstruktionen",
+  "Partial structure display: which layers of walls, floors and roofs the view draws (one undo step); the style's for this kind of view is marked ·": "Delvis visning af konstruktionen: hvilke lag i vægge, dæk og tage visningen tegner (ét fortrydelsestrin); stilens for denne slags visning er markeret med ·",
+  "Which layers of walls, floors and roofs the view draws, as its style says for its kind of view (plans; sections and elevations; 3D) unless it sets its own; also in the view's corner, beside its scale. A plan rules what its cut plane cuts: the floors seen under it show as they are. A layer is a finish, insulation or membrane by its own category in its type, else its material's.": "Hvilke lag i vægge, dæk og tage visningen tegner, som dens stil siger for dens slags visning (planer; snit og facader; 3D), medmindre den har sin egen; også i visningens hjørne, ved siden af målestokken. En plan afgør, hvad dens snitplan skærer: de dæk, der ses under den, vises som de er. Et lag er overfladelag, isolering eller membran efter sin egen kategori i typen, ellers materialets.",
+  "By element kind": "Efter elementtype",
+  "Over the partial structure display, element kind by element kind: whether this view draws the walls' and the floors' finish layers (and the rooms' wall and floor finishes)": "Oven på den delvise visning af konstruktionen, elementtype for elementtype: om denne visning tegner væggenes og dækkenes overfladelag (og rummenes væg- og gulvoverflader)",
+  "advanced": "avanceret",
+  "Structure in plans": "Konstruktion i planer",
+  "Partial structure display of the style's plans: which layers of walls, floors and roofs they draw": "Delvis visning af konstruktionen i stilens planer: hvilke lag i vægge, dæk og tage de tegner",
+  "Structure in sections": "Konstruktion i snit",
+  "Partial structure display of the style's sections and elevations": "Delvis visning af konstruktionen i stilens snit og facader",
+  "Structure in 3D": "Konstruktion i 3D",
+  "Partial structure display of the style's 3D views and other views": "Delvis visning af konstruktionen i stilens 3D-visninger og øvrige visninger",
+  "The partial structure display is said for plans, for sections and elevations, and for 3D views; a view sets its own in its settings or from its corner, beside its scale. The finish columns are its advanced detail, element kind by element kind.": "Den delvise visning af konstruktionen angives for planer, for snit og facader og for 3D-visninger; en visning sætter sin egen i sine indstillinger eller fra sit hjørne, ved siden af målestokken. Overfladekolonnerne er dens avancerede detalje, elementtype for elementtype.",
+  "load-bearing cores only": "kun bærende kerner",
   // The forum's topic #30: finish layers by kind of view, wall layers into the floors' layers
   "Floor finishes": "Dækoverflader",
   "Wall finishes in plans": "Vægoverflader i planer",

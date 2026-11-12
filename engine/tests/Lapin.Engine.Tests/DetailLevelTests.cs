@@ -77,6 +77,7 @@ public class DetailLevelTests
     public void LOD_100_one_outline_hatched_as_the_core_200_the_layers_300_the_sills()
     {
         var (f, wall, window, brick) = House();
+        f.EveryLayerInPlans();
         var plan = Plan(f, 50);
         string[] Keys(string view, string id) => [.. Drawing(f, view).Cuts.Where(c => c.Element == id).Select(c => c.Key ?? "").Distinct().Order()];
         string[] Materials(string view, string id) => [.. Drawing(f, view).Cuts.Where(c => c.Element == id).Select(c => c.Material ?? "").Distinct()];

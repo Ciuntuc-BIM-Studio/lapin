@@ -135,15 +135,16 @@ Ukryte kondygnacje nie są rysowane i nie możesz ich zaznaczać, dopasowywać d
 
 ### Bez wykończeń lub same rdzenie
 
-Widok 3D może pokazać samą konstrukcję budynku, tak jak rzut konstrukcyjny. We właściwościach widoku 3D (gdy nic nie jest zaznaczone) lub w **Widok → Ustawienia widoku** z widokiem 3D na pierwszym planie, **Warstwy** pokazuje:
+Widok 3D może pokazać samą konstrukcję budynku, tak jak rzut konstrukcyjny. We właściwościach widoku 3D (gdy nic nie jest zaznaczone) lub w **Widok → Ustawienia widoku** z widokiem 3D na pierwszym planie, **Częściowe wyświetlanie konstrukcji** pokazuje:
 
-- **wszystkie warstwy**: ściany, stropy i fundamenty takie, jak są zbudowane;
-- **bez wykończeń**: bez warstw, których materiał jest wykończeniem (tynk, wyprawa, farba, płytki, płyty, okładziny podłóg lub materiał, którego kategoria to Wykończenie w Zarządzaj → Materiały); izolacja zostaje;
-- **tylko rdzeń**: tylko warstwa oznaczona jako rdzeń (cegła, płyta betonowa).
+- **Cały model**: ściany, stropy i fundamenty takie, jak są zbudowane;
+- **Bez wykończeń**: bez warstw, których materiał jest wykończeniem (tynk, wyprawa, farba, płytki, płyty, okładziny podłóg lub materiał, którego kategoria to Wykończenie w Zarządzaj → Materiały); izolacja zostaje;
+- **Tylko rdzeń**: tylko warstwa oznaczona jako rdzeń (cegła, płyta betonowa);
+- **Tylko rdzeń elementów nośnych**: same rdzenie elementów nośnych (zob. [Częściowe wyświetlanie konstrukcji](#częściowe-wyświetlanie-konstrukcji)).
 
 ![Dom w 3D z samym rdzeniem: ściany to ich cegła, stropy ich płyta](shots/layers-3d-core.webp)
 
-Każda zachowana warstwa pozostaje zamkniętą bryłą we własnym materiale, więc cięcie lub skrzynka przekroju zamyka ją jak wcześniej. Drzwi i okna zostają w swoich otworach; ościeże wyłożone wykończeniem idzie razem z wykończeniami ściany. Widok 3D bierze swoje warstwy ze swojego stylu, tak jak rzut: ustaw jego **Branża** na Konstrukcja, a pokaże same rdzenie; ustaw **Warstwy**, aby wybrać inaczej, a przycisk obok przywraca ustawienie stylu. Plakietka **Pokazane warstwy** u dołu widoku 3D mówi, co jest pominięte; jej **×** znowu pokazuje wszystkie warstwy. Ukrytych warstw nie można zaznaczyć ani się o nie oprzeć podczas spaceru, a **Plik → Eksportuj 3D…** w trybie „tak, jak pokazuje widok” eksportuje te same warstwy.
+Każda zachowana warstwa pozostaje zamkniętą bryłą we własnym materiale, więc cięcie lub skrzynka przekroju zamyka ją jak wcześniej. Drzwi i okna zostają w swoich otworach; ościeże wyłożone wykończeniem idzie razem z wykończeniami ściany. Widok 3D bierze swoje warstwy ze swojego stylu, tak jak rzut: ustaw jego **Branża** na Konstrukcja, a pokaże same rdzenie; ustaw **Częściowe wyświetlanie konstrukcji**, aby wybrać inaczej, a przycisk obok przywraca ustawienie stylu. Plakietka **Pokazane warstwy** u dołu widoku 3D mówi, co jest pominięte; jej **×** znowu pokazuje wszystkie warstwy. Ukrytych warstw nie można zaznaczyć ani się o nie oprzeć podczas spaceru, a **Plik → Eksportuj 3D…** w trybie „tak, jak pokazuje widok” eksportuje te same warstwy.
 
 ### Spacer po pomieszczeniu
 
@@ -226,7 +227,7 @@ Karta **Widok** ustala, co pokazuje widok na pierwszym planie i jak wygląda.
 ![Karta Widok](shots/ribbon-view.webp)
 
 - **Ustawienia widoku.** Branża i styl widoku, jego zakres (wysokość i głębokość cięcia) oraz jego grafika.
-- **Style widoku.** Architektoniczny, Konstrukcyjny (same rdzenie), MEP lub twój własny. Każdy styl wybiera rysowane warstwy (wszystkie, bez wykończeń lub rdzeń) i sposób łączenia materiałów.
+- **Style widoku.** Architektoniczny, Konstrukcyjny (same rdzenie), MEP lub twój własny. Każdy styl wybiera rysowane warstwy (ich częściowe wyświetlanie konstrukcji, osobno dla rzutów, przekrojów i widoków 3D) i sposób łączenia materiałów.
 - **Symbole 2D IFC.** Elementy zaimportowane lub połączone z pliku IFC, które przynoszą własny rysunek rzutu (obrys, łuk otwierania drzwi, symbol urządzenia, z kolorami, wypełnieniami i tekstami pliku), rysują go na rzutach zamiast swojego cięcia. Odznacz to w Ustawieniach widoku (lub w stylu widoku), aby zamiast tego rysować ich cięcie 3D.
 - **Widoczność** (<kbd>VV</kbd>) i **Grafika** (<kbd>VG</kbd>). Pokazują lub ukrywają kategorie i ustawiają ich pióra, rodzaje linii i wypełnienia.
 - **Podziel** i **Okno.** Pokazują dwa widoki obok siebie lub otwierają widok w osobnym oknie.
@@ -235,13 +236,30 @@ Karta **Widok** ustala, co pokazuje widok na pierwszym planie i jak wygląda.
 
 ![Jakość wyświetlania](shots/display-quality.webp)
 
-### Wykończenia na rzutach i przekrojach
+### Częściowe wyświetlanie konstrukcji
 
-Styl widoku określa, osobno dla ścian i dla stropów, czy rzuty rysują warstwy wykończeniowe oraz czy rysują je przekroje i elewacje: **Wykończenia ścian na rzutach**, **Wykończenia podłóg na rzutach**, **Wykończenia ścian na przekrojach** i **Wykończenia podłóg na przekrojach** w **Zarządzaj → Style widoku**. Domyślnie wszystkie cztery są włączone. Widok może ustawić własne w **Ustawieniach widoku** (**Wykończenia ścian**, **Wykończenia podłóg**), a przycisk obok przywraca ustawienie stylu. Wykończenie to warstwa, której własna **Kategoria** w typie to **Wykończenie**, a w przeciwnym razie warstwa, której materiał ma tę kategorię. Rzut bez wykończeń ścian rysuje przecięty obrys każdej ściany na rdzeniu, z połączeniami i narożnikami jak dotąd, i przyciąga do lic rdzenia. W Polsce rzuty drukuje się zwykle bez wykończeń, a przekroje z wykończeniami podłóg, lecz bez wykończeń ścian: odznacz pierwsze trzy w stylu Architectural, a wszystkie rzuty i przekroje projektu pójdą za tym. Model się nie zmienia: ilości, widok 3D i IFC zachowują wszystkie warstwy.
+Każdy widok określa, które warstwy ścian, stropów i dachów rysuje, tak jak częściowe wyświetlanie konstrukcji w ArchiCAD. **Częściowe wyświetlanie konstrukcji** ma cztery ustawienia wstępne:
 
-![Zarządzaj → Style widoku, z wyborem wykończeń dla rzutów i przekrojów](shots/view-styles-finishes.webp)
+- **Cały model**: każda warstwa, tak jak jest zbudowana;
+- **Bez wykończeń**: warstwy wykończeniowe pominięte (tynki, wyprawy, wykończenia podłóg i jastrychy, których **Kategoria** to **Wykończenie**); izolacja, membrany i konstrukcja są rysowane;
+- **Tylko rdzeń**: same rdzenie, między ich granicami; izolacja też znika;
+- **Tylko rdzeń elementów nośnych**: same rdzenie elementów nośnych. Element, który nie przenosi obciążeń (ścianka działowa, okładzina, wykończenia pomieszczenia), nie jest rysowany wcale. Ściana jest nośna, gdy **LoadBearing** jest zaznaczone w jej właściwościach (Pset_WallCommon), na niej lub na jej typie, tak jak czyta to model analityczny; słupy, belki, fundamenty, stropy i dachy są nośne, chyba że mówią, że nie są.
 
-![Przekrój z posadzką i jastrychem stropu, bez tynku ścian](shots/finishes-section.webp)
+Wykończenie to warstwa, której własna **Kategoria** w typie to **Wykończenie**, a w przeciwnym razie warstwa, której materiał ma tę kategorię (**Zarządzaj → Materiały**). W nowym projekcie rzuty rysuje się bez wykończeń, a przekroje, elewacje i widoki 3D pokazują cały model, klasyczny zestaw dla rysunków architektonicznych: tynki pominięte w rzutach, podczas gdy izolacja termiczna jest widoczna, a przekroje i detale ze wszystkim. Projekt utworzony wcześniej rysuje się jak dotąd.
+
+**Zarządzaj → Style widoku** ustawia to dla każdego stylu osobno: **Konstrukcja na rzutach**, **Konstrukcja w przekrojach** (przekroje i elewacje) i **Konstrukcja w 3D** (widoki 3D i reszta), więc każdy widok stylu za tym idzie. Widok ustawia własne w **Ustawieniach widoku**, a przycisk obok przywraca ustawienie stylu. Jest też u góry rzutu, przekroju lub elewacji, obok skali: wybierz tam inne ustawienie wstępne, w jednym kroku cofania. Na arkuszu zaznacz umieszczony rysunek, a jego ustawienie wstępne pojawi się tam również, więc każdy rysunek na arkuszu określa własne. Rzut kondygnacji bez własnego widoku staje się wraz z nim widokiem rzutu kondygnacji.
+
+Rzut stosuje je do tego, co przecina jego płaszczyzna cięcia: strop widoczny pod cięciem pokazuje się taki, jaki jest, z wykończeniem na wierzchu. Arkusze, PDF, DXF i przyciąganie idą za tym, co narysowane: rzut bez wykończeń ścian przyciąga do lic rdzeni. Model się nie zmienia: ilości i IFC zachowują wszystkie warstwy.
+
+![Zarządzaj → Style widoku: częściowe wyświetlanie konstrukcji dla rzutów, przekrojów i widoków 3D](shots/view-styles-structure.webp)
+
+![Częściowe wyświetlanie konstrukcji u góry rzutu, obok skali](shots/structure-picker.webp)
+
+![Rzut z samym rdzeniem: ściany to ich cegła](shots/structure-plan-core.webp)
+
+![Przekrój z całym modelem: tynk ścian oraz posadzka i jastrych stropu](shots/finishes-section.webp)
+
+**Według rodzaju elementu.** Pod ustawieniem wstępnym **Ustawienia widoku** rzutu, przekroju lub elewacji mają **Wykończenia ścian** i **Wykończenia podłóg**, a **Zarządzaj → Style widoku** ma **Wykończenia ścian na rzutach**, **Wykończenia podłóg na rzutach**, **Wykończenia ścian na przekrojach** i **Wykończenia podłóg na przekrojach**: odznaczone, widok pomija także warstwy wykończeniowe ścian lub stropów (oraz wykończenia ścian lub podłóg pomieszczeń), bez względu na ustawienie wstępne. Domyślnie wszystkie są włączone. W Polsce rzuty drukuje się zwykle bez wykończeń, a przekroje z wykończeniami podłóg, lecz bez wykończeń ścian: rzuty **Bez wykończeń**, przekroje **Cały model** z odznaczonymi **Wykończenia ścian na przekrojach**.
 
 ### Widoczność / Grafika
 

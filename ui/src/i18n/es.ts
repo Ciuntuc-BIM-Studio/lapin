@@ -3,6 +3,29 @@
 import type { Language } from './index';
 
 export const ES: Record<string, string> = {
+  // Decision 500: the partial structure display
+  "Entire model": "Modelo completo",
+  "Every layer of walls, floors and roofs": "Todas las capas de muros, losas y cubiertas",
+  "Without finishes": "Sin acabados",
+  "The finish layers (plasters, renders, floor finishes: category Finish) left out; the insulation, membranes and structure drawn": "Las capas de acabado (revocos, enlucidos, acabados de suelo: categoría Finish) omitidas; el aislamiento, las membranas y la estructura dibujados",
+  "Core only": "Solo el núcleo",
+  "The cores alone, between their boundaries; the finishes, insulation and membranes left out": "Solo los núcleos, entre sus límites; los acabados, el aislamiento y las membranas omitidos",
+  "Core of load-bearing elements only": "Solo el núcleo de los elementos portantes",
+  "The cores of the load-bearing elements alone (LoadBearing in their properties, as Pset_WallCommon); partitions, coverings and room finishes not drawn": "Solo los núcleos de los elementos portantes (LoadBearing en sus propiedades, como en Pset_WallCommon); tabiques, revestimientos y acabados de estancias no se dibujan",
+  "Partial structure display": "Visualización parcial de la estructura",
+  "Partial structure display: which layers of walls, floors and roofs the view draws (one undo step); the style's for this kind of view is marked ·": "Visualización parcial de la estructura: qué capas de muros, losas y cubiertas dibuja la vista (un paso de deshacer); la del estilo para este tipo de vista está marcada con ·",
+  "Which layers of walls, floors and roofs the view draws, as its style says for its kind of view (plans; sections and elevations; 3D) unless it sets its own; also in the view's corner, beside its scale. A plan rules what its cut plane cuts: the floors seen under it show as they are. A layer is a finish, insulation or membrane by its own category in its type, else its material's.": "Qué capas de muros, losas y cubiertas dibuja la vista, según dice su estilo para su tipo de vista (plantas; secciones y alzados; 3D), salvo que fije la suya; también en la esquina de la vista, junto a su escala. Una planta decide lo que corta su plano de corte: las losas vistas bajo él se muestran tal como son. Una capa es acabado, aislamiento o membrana por su propia categoría en su tipo, y si no por la de su material.",
+  "By element kind": "Por tipo de elemento",
+  "Over the partial structure display, element kind by element kind: whether this view draws the walls' and the floors' finish layers (and the rooms' wall and floor finishes)": "Sobre la visualización parcial de la estructura, tipo de elemento por tipo de elemento: si esta vista dibuja las capas de acabado de los muros y de las losas (y los acabados de pared y de suelo de las estancias)",
+  "advanced": "avanzado",
+  "Structure in plans": "Estructura en plantas",
+  "Partial structure display of the style's plans: which layers of walls, floors and roofs they draw": "Visualización parcial de la estructura de las plantas del estilo: qué capas de muros, losas y cubiertas dibujan",
+  "Structure in sections": "Estructura en secciones",
+  "Partial structure display of the style's sections and elevations": "Visualización parcial de la estructura de las secciones y alzados del estilo",
+  "Structure in 3D": "Estructura en 3D",
+  "Partial structure display of the style's 3D views and other views": "Visualización parcial de la estructura de las vistas 3D del estilo y de las demás vistas",
+  "The partial structure display is said for plans, for sections and elevations, and for 3D views; a view sets its own in its settings or from its corner, beside its scale. The finish columns are its advanced detail, element kind by element kind.": "La visualización parcial de la estructura se indica para plantas, para secciones y alzados, y para vistas 3D; una vista fija la suya en su configuración o desde su esquina, junto a su escala. Las columnas de acabados son su detalle avanzado, tipo de elemento por tipo de elemento.",
+  "load-bearing cores only": "solo núcleos portantes",
   // The forum's topic #30: finish layers by kind of view, wall layers into the floors' layers
   "Floor finishes": "Acabados de losas",
   "Wall finishes in plans": "Acabados de muros en plantas",

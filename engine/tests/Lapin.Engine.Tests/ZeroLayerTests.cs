@@ -201,6 +201,7 @@ public sealed class ZeroLayerTests : IDisposable
     public void A_zero_layer_inside_the_wall_is_drawn_as_a_membrane_line_in_plan_and_in_the_build_up()
     {
         var f = new Fixture();
+        f.EveryLayerInPlans();
         var (with, _) = WallTypes(f);
         f.Wall(0, 0, 6, 0, with);
         var plan = Views.Render(new Q(f), Views.Find(f.Model, "plan:" + f.Storey)!, print: true);

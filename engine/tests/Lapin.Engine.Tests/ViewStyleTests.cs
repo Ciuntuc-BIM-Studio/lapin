@@ -173,6 +173,7 @@ public sealed class ViewStyleTests
     public void Walls_meeting_in_a_T_or_crossing_in_an_X_read_as_one_build_up()
     {
         var f = new Fixture(new ArchitectureModule(), new StructureModule());
+        f.EveryLayerInPlans();
         f.Wall(0, 3, 8, 3);
         // Ending on the crossed wall's plaster side (its left, y > 3): its own plaster lies at x 5.125–5.14, its core at 4.875–5.125.
         f.Wall(5, 7, 5, 3);

@@ -3,6 +3,29 @@
 import type { Language } from './index';
 
 export const IT: Record<string, string> = {
+  // Decision 500: the partial structure display
+  "Entire model": "Modello intero",
+  "Every layer of walls, floors and roofs": "Ogni strato di pareti, solai e coperture",
+  "Without finishes": "Senza finiture",
+  "The finish layers (plasters, renders, floor finishes: category Finish) left out; the insulation, membranes and structure drawn": "Gli strati di finitura (intonaci, rasature, finiture di pavimento: categoria Finish) omessi; l'isolante, le membrane e la struttura disegnati",
+  "Core only": "Solo nucleo",
+  "The cores alone, between their boundaries; the finishes, insulation and membranes left out": "Solo i nuclei, tra i loro limiti; le finiture, l'isolante e le membrane omessi",
+  "Core of load-bearing elements only": "Solo nucleo degli elementi portanti",
+  "The cores of the load-bearing elements alone (LoadBearing in their properties, as Pset_WallCommon); partitions, coverings and room finishes not drawn": "Solo i nuclei degli elementi portanti (LoadBearing nelle loro proprietà, come Pset_WallCommon); tramezzi, rivestimenti e finiture dei locali non disegnati",
+  "Partial structure display": "Visualizzazione parziale della struttura",
+  "Partial structure display: which layers of walls, floors and roofs the view draws (one undo step); the style's for this kind of view is marked ·": "Visualizzazione parziale della struttura: quali strati di pareti, solai e coperture disegna la vista (un passo di annullamento); quella dello stile per questo tipo di vista è segnata con ·",
+  "Which layers of walls, floors and roofs the view draws, as its style says for its kind of view (plans; sections and elevations; 3D) unless it sets its own; also in the view's corner, beside its scale. A plan rules what its cut plane cuts: the floors seen under it show as they are. A layer is a finish, insulation or membrane by its own category in its type, else its material's.": "Quali strati di pareti, solai e coperture disegna la vista, come dice il suo stile per il suo tipo di vista (piante; sezioni e prospetti; 3D), a meno che non ne imposti una propria; anche nell'angolo della vista, accanto alla sua scala. Una pianta decide ciò che taglia il suo piano di taglio: i solai visti sotto appaiono come sono. Uno strato è finitura, isolante o membrana in base alla sua categoria nel tipo, altrimenti a quella del suo materiale.",
+  "By element kind": "Per tipo di elemento",
+  "Over the partial structure display, element kind by element kind: whether this view draws the walls' and the floors' finish layers (and the rooms' wall and floor finishes)": "Sopra la visualizzazione parziale della struttura, tipo di elemento per tipo di elemento: se questa vista disegna gli strati di finitura delle pareti e dei solai (e le finiture di parete e di pavimento dei locali)",
+  "advanced": "avanzato",
+  "Structure in plans": "Struttura in pianta",
+  "Partial structure display of the style's plans: which layers of walls, floors and roofs they draw": "Visualizzazione parziale della struttura delle piante dello stile: quali strati di pareti, solai e coperture disegnano",
+  "Structure in sections": "Struttura nelle sezioni",
+  "Partial structure display of the style's sections and elevations": "Visualizzazione parziale della struttura delle sezioni e dei prospetti dello stile",
+  "Structure in 3D": "Struttura in 3D",
+  "Partial structure display of the style's 3D views and other views": "Visualizzazione parziale della struttura delle viste 3D dello stile e delle altre viste",
+  "The partial structure display is said for plans, for sections and elevations, and for 3D views; a view sets its own in its settings or from its corner, beside its scale. The finish columns are its advanced detail, element kind by element kind.": "La visualizzazione parziale della struttura si indica per le piante, per le sezioni e i prospetti e per le viste 3D; una vista imposta la sua nelle sue impostazioni o dal suo angolo, accanto alla sua scala. Le colonne delle finiture ne sono il dettaglio avanzato, tipo di elemento per tipo di elemento.",
+  "load-bearing cores only": "solo nuclei portanti",
   // The forum's topic #30: finish layers by kind of view, wall layers into the floors' layers
   "Floor finishes": "Finiture dei solai",
   "Wall finishes in plans": "Finiture dei muri in pianta",

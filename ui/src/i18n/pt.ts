@@ -3,6 +3,29 @@
 import type { Language } from './index';
 
 export const PT: Record<string, string> = {
+  // Decision 500: the partial structure display
+  "Entire model": "Modelo inteiro",
+  "Every layer of walls, floors and roofs": "Todas as camadas de paredes, pisos e coberturas",
+  "Without finishes": "Sem acabamentos",
+  "The finish layers (plasters, renders, floor finishes: category Finish) left out; the insulation, membranes and structure drawn": "As camadas de acabamento (rebocos, emboços, acabamentos de piso: categoria Finish) omitidas; o isolamento, as membranas e a estrutura desenhados",
+  "Core only": "Só o núcleo",
+  "The cores alone, between their boundaries; the finishes, insulation and membranes left out": "Só os núcleos, entre os seus limites; os acabamentos, o isolamento e as membranas omitidos",
+  "Core of load-bearing elements only": "Só o núcleo dos elementos portantes",
+  "The cores of the load-bearing elements alone (LoadBearing in their properties, as Pset_WallCommon); partitions, coverings and room finishes not drawn": "Só os núcleos dos elementos portantes (LoadBearing nas suas propriedades, como em Pset_WallCommon); divisórias, revestimentos e acabamentos de compartimentos não são desenhados",
+  "Partial structure display": "Exibição parcial da estrutura",
+  "Partial structure display: which layers of walls, floors and roofs the view draws (one undo step); the style's for this kind of view is marked ·": "Exibição parcial da estrutura: que camadas de paredes, pisos e coberturas a vista desenha (um passo de desfazer); a do estilo para este tipo de vista está marcada com ·",
+  "Which layers of walls, floors and roofs the view draws, as its style says for its kind of view (plans; sections and elevations; 3D) unless it sets its own; also in the view's corner, beside its scale. A plan rules what its cut plane cuts: the floors seen under it show as they are. A layer is a finish, insulation or membrane by its own category in its type, else its material's.": "Que camadas de paredes, pisos e coberturas a vista desenha, como o seu estilo diz para o seu tipo de vista (plantas; cortes e alçados; 3D), a menos que defina a sua; também no canto da vista, junto à sua escala. Uma planta decide o que o seu plano de corte corta: os pisos vistos por baixo aparecem como são. Uma camada é acabamento, isolamento ou membrana pela sua própria categoria no tipo, senão pela do seu material.",
+  "By element kind": "Por tipo de elemento",
+  "Over the partial structure display, element kind by element kind: whether this view draws the walls' and the floors' finish layers (and the rooms' wall and floor finishes)": "Sobre a exibição parcial da estrutura, tipo de elemento a tipo de elemento: se esta vista desenha as camadas de acabamento das paredes e dos pisos (e os acabamentos de parede e de piso dos compartimentos)",
+  "advanced": "avançado",
+  "Structure in plans": "Estrutura em plantas",
+  "Partial structure display of the style's plans: which layers of walls, floors and roofs they draw": "Exibição parcial da estrutura das plantas do estilo: que camadas de paredes, pisos e coberturas desenham",
+  "Structure in sections": "Estrutura em cortes",
+  "Partial structure display of the style's sections and elevations": "Exibição parcial da estrutura dos cortes e alçados do estilo",
+  "Structure in 3D": "Estrutura em 3D",
+  "Partial structure display of the style's 3D views and other views": "Exibição parcial da estrutura das vistas 3D do estilo e das outras vistas",
+  "The partial structure display is said for plans, for sections and elevations, and for 3D views; a view sets its own in its settings or from its corner, beside its scale. The finish columns are its advanced detail, element kind by element kind.": "A exibição parcial da estrutura é indicada para plantas, para cortes e alçados e para vistas 3D; uma vista define a sua nas suas definições ou a partir do seu canto, junto à sua escala. As colunas de acabamentos são o seu detalhe avançado, tipo de elemento a tipo de elemento.",
+  "load-bearing cores only": "só núcleos portantes",
   // The forum's topic #30: finish layers by kind of view, wall layers into the floors' layers
   "Floor finishes": "Acabamentos de pisos",
   "Wall finishes in plans": "Acabamentos de paredes nas plantas",

@@ -89,6 +89,7 @@ public class VisibilityGraphicsTests
     public void A_subcategory_leaves_out_the_walls_finishes_in_a_plan_a_sheet_and_the_3D()
     {
         var f = F();
+        f.EveryLayerInPlans();
         var type = f.Type("Plastered brick", ("Lime plaster", 0.02, false), ("Brick", 0.25, true), ("Mineral wool", 0.1, false), ("Silicate render", 0.01, false));
         var wall = f.Wall(0, 0, 5, 0, type);
         var plan = Plan(f);

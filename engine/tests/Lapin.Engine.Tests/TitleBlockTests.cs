@@ -124,6 +124,7 @@ public sealed class TitleBlockTests : IDisposable
     {
         // The hashes of the pens and the DXF as main drew them before title blocks of the user's own.
         var f = F();
+        f.EveryLayerInPlans();
         f.Wall(0, 0, 10, 0);
         f.Wall(10, 0, 10, 6);
         // The walls hatched as they were then (decision 456 changed the brick's cut hatch, not the title blocks).

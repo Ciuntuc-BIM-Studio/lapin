@@ -52,6 +52,8 @@ public sealed class FinishLayerViewTests : IDisposable
         var type = f.Type("Plastered brick", ("Plaster", 0.015, false), ("Brick", 0.25, true), ("Plaster", 0.015, false));
         var wall = f.Wall(0, 0, 5, 0, type);
         var slab = (string)f.Run("architecture.addSlab", new JsonObject { ["storeyId"] = f.Storey, ["points"] = new JsonArray(new JsonArray(-1, -2), new JsonArray(6, -2), new JsonArray(6, 2), new JsonArray(-1, 2)) })!["id"]!;
+        // The choices by element kind are the advanced detail of the partial structure display (decision 500): over the entire model here, as a project made before draws.
+        f.Run("viewStyle.update", new JsonObject { ["id"] = "architectural", ["layersPlan"] = "all" });
         return (f, wall, slab);
     }
 

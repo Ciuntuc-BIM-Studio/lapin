@@ -13,9 +13,9 @@
 import type { NodeDto, RenderItem } from '../engine/protocol';
 import { view3dProps } from './storeys3d';
 
-export type LayerMode = 'all' | 'noFinishes' | 'core';
+export type LayerMode = 'all' | 'noFinishes' | 'core' | 'coreLoadBearing';
 
-const MODES: readonly LayerMode[] = ['all', 'noFinishes', 'core'];
+const MODES: readonly LayerMode[] = ['all', 'noFinishes', 'core', 'coreLoadBearing'];
 const isMode = (v: unknown): v is LayerMode => MODES.includes(v as LayerMode);
 
 interface StyleLayers { id: string; discipline: string | null; layers: LayerMode }
@@ -58,7 +58,7 @@ export function layers3dOf(nodes: Map<string, NodeDto>, viewId: string | null): 
 
 /** What the 3D's chip says when not every layer shows; null: every layer does. */
 export function layersChip(l: Layers3d): string | null {
-  return l.mode === 'noFinishes' ? 'without finishes' : l.mode === 'core' ? 'the core only' : null;
+  return l.mode === 'noFinishes' ? 'without finishes' : l.mode === 'core' ? 'the core only' : l.mode === 'coreLoadBearing' ? 'load-bearing cores only' : null;
 }
 
 /** The patch that brings a 3D view back to every layer: its style's when that is every layer, else its own. */

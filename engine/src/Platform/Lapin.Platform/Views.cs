@@ -420,7 +420,7 @@ public static class Views
         var hiddenElements = (view.Attrs["hiddenElements"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
         var filters = q.Services.All<IViewElementFilter>();
         var partFilters = q.Services.All<IViewPartFilter>();
-        bool PartShown(Entity e, string? key) => (partFilters.Count == 0 || !partFilters.Any(f => f.Hides(q, view, e, key))) && !vg.HidesPart(e, key);
+        bool PartShown(Entity e, string? key, bool cut = true) => (partFilters.Count == 0 || !partFilters.Any(f => f.Hides(q, view, e, key))) && !vg.HidesPart(e, key, cut);
         var plan = view.Str("kind") is "plan" or null;
         // A site plan: the model from above, what lies under the ground left out, the site's own symbols from every storey.
         var site = plan && SitePlans.Of(view) != null;
@@ -454,6 +454,11 @@ public static class Views
         // Elements standing on several storeys (a lift's shaft): drawn by the plans of each storey they reach.
         IReadOnlyList<IStoreySpans> spans = plan ? q.Services.All<IStoreySpans>() : [];
         var planStorey = plan && storey != null && m.Get(storey) is { Class: IfcClass.BuildingStorey } ps ? ps : null;
+        // In a plan the partial structure display and the finishes by kind of view rule what the cut plane cuts (decision 500):
+        // a floor seen under it, a soffit over it, shows as it is, so a plan without the finishes still sees its floors.
+        double? structureCut = plan && !site && planStorey != null && (style.Layers != "all" || vg.FinishesHidden.Count > 0) ? Range(m, view).Cut : null;
+        bool Cut(GeometryPart p) => structureCut is not { } sc || p.Key is not { } pk || !pk.StartsWith("layer:", StringComparison.Ordinal)
+            || Measure.Bounds(p.Solid) is not { } pb || (pb.Min.Z <= sc + 1e-9 && pb.Max.Z >= sc - 1e-9);
         foreach (var e in m.Entities)
         {
             // Rooms draw as their fills and stamps (their module's marks), never as a body cut or seen.
@@ -503,7 +508,7 @@ public static class Views
                 continue;
             }
             foreach (var p in g.Parts)
-                if (ViewStyles.Draws(m, style, e.Id, p.Key, bandCache) && PartShown(e, p.Key) && Detailed(e, p)) parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, MaterialOf(e, p), CutInPlan: stored || p.CutInPlan) { BySilhouette = bySilhouette, Smooth = smooth });
+                if ((Cut(p) ? ViewStyles.Draws(m, style, e.Id, p.Key, bandCache) && PartShown(e, p.Key) : PartShown(e, p.Key, cut: false)) && Detailed(e, p)) parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, MaterialOf(e, p), CutInPlan: stored || p.CutInPlan) { BySilhouette = bySilhouette, Smooth = smooth });
             if (bySilhouette && silhouettes != null)
                 foreach (var sh in g.Silhouettes!)
                     if (sh.Mode == null || sh.Mode == entourage) silhouettes.Add(new DrawSilhouette(sh, e.Id, e.Class, style.EntourageFill, thin));
@@ -892,9 +897,13 @@ public static class Views
         // The categories whose finish layers the view leaves out (its style by its kind, topic #30; or every finish): what the interface does not snap to.
         var style = ViewStyles.Of(q.Model, view);
         var hiddenFinishes = style.Layers != "all" ? ["walls", "slabs"] : VisibilityGraphics.Of(q.Model, view).FinishesHidden.Order().ToList();
+        // The layers' roles its partial structure display leaves out of every layered element (decision 500): the core modes the insulation and membranes too.
+        string[] hiddenSubs = style.Layers switch { "noFinishes" => ["finishes"], "core" or "coreLoadBearing" => ["finishes", "insulation", "membranes"], _ => [] };
         var o = new JsonObject
         {
             ["hiddenFinishes"] = new JsonArray(hiddenFinishes.Select(c => (JsonNode)c).ToArray()),
+            ["structure"] = style.Layers,
+            ["hiddenSubs"] = new JsonArray(hiddenSubs.Select(c => (JsonNode)c).ToArray()),
             ["kind"] = r.Kind,
             ["scale"] = r.Scale,
             ["lineCap"] = book.LineCap,
@@ -1340,6 +1349,8 @@ public static class Views
                     break;
                 default: throw new CommandException("A view is a plan, a section, an elevation, a reference plane or a 3D view.");
             }
+            // Its own partial structure display (decision 500: a level's default plan given one from its corner becomes its plan view with it, one step).
+            if (a["layers"] != null) attrs["styleOverrides"] = new JsonObject { ["layers"] = ViewStyles.LayersOf(a["layers"]) };
             // The level's first floor plan view becomes its plan: what was drawn on its default plan goes onto it (decision 386).
             var first = kind == "plan" && attrs["site"] == null && !attrs.ContainsKey("foundation") && (string?)attrs["storeyId"] is { } onStorey && StoreyPlans.Of(ctx.Model, onStorey) == null ? onStorey : null;
             var v = new Entity(ctx.NewId(), Class, name, attrs);
