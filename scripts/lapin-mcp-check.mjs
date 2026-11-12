@@ -72,6 +72,12 @@ console.log(`initialize: ${init.result.serverInfo.name} ${init.result.serverInfo
 const names = (await rpc('tools/list', {})).result.tools.map((t) => t.name);
 console.log(`tools: ${names.join(', ')}`);
 for (const t of ['lapin_documents', 'lapin_document_export']) if (!names.includes(t)) fail(`no ${t}`);
+// The arguments come from the engine's own catalogue (session.catalogue), as in an installed app.
+const info = await tool('lapin_info');
+const addWall = info.commands.find((c) => c.startsWith('architecture.addWall('));
+if (!addWall || !addWall.includes('x1') || !addWall.includes('storeyId')) fail(`lapin_info has no arguments for architecture.addWall: ${addWall}`);
+if (!info.queries.some((q) => q.startsWith('document.preview'))) fail('lapin_info lists no queries');
+console.log(`info: ${info.commands.length} commands, ${info.queries.length} queries; ${addWall}`);
 
 // A small model: a 10 × 8 m ring of walls on the first storey, its plan, a boundary over one corner.
 const storey = (await tool('lapin_model', { classes: ['IfcBuildingStorey'] }))[0].id;

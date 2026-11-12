@@ -1,0 +1,37 @@
+# lapinbim: drive Lapin from Python (docs/python.md, decision 489). Standard library only, no dependencies.
+# Built by its own backend (build_backend/lapin_build.py, standard library too); published by scripts/publish-python.mjs.
+
+[build-system]
+requires = []
+build-backend = "lapin_build"
+backend-path = ["build_backend"]
+
+[project]
+name = "lapinbim"
+dynamic = ["version"]
+description = "Drive Lapin, the open BIM modeller on IFC, from Python: its commands, queries, undo, batches and model."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Ciuntuc BIM Studio SRL", email = "ionut@ciuntucbimstudio.ro" }]
+keywords = ["bim", "ifc", "lapin", "architecture", "cad", "scripting"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://lapin.ciuntucbimstudio.ro/"
+Documentation = "https://github.com/Ciuntuc-BIM-Studio/lapin-pro/blob/main/docs/python.md"
+Source = "https://github.com/Ciuntuc-BIM-Studio/lapin-pro/tree/main/python"

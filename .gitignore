@@ -38,3 +38,8 @@ deploy/feedback/feedback-screenshots/
 lapin-litestep-proposal.pdf
 cubes_1m_fixed.ifc
 02767_0_IDP_EJE_ARQ+EST+MEP.ifc
+
+# The Python package's files made for a release (scripts/publish-python.mjs) or by `python -m lapinbim stubs` in a checkout.
+python/lapinbim/__init__.pyi
+python/lapinbim/catalogue.json
+__pycache__/

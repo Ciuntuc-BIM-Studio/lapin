@@ -12,10 +12,9 @@
  *   claude mcp add lapin -- node /path/to/lapin-pro/scripts/lapin-mcp.mjs
  */
 
-import { readFileSync, existsSync, readdirSync, mkdirSync, writeFileSync } from 'node:fs';
+import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { createInterface } from 'node:readline';
 
 const VERSION = '0.1.0';
@@ -55,51 +54,26 @@ function decode(buf) {
 }
 
 /**
- * The arguments each command and query reads, found in the engine's source
- * (every `a["key"]` and `P(a, "x", "y")` of its handler), so they never drift
- * from the code. Keys read by helpers the handler calls are not seen; the
- * command's error then names what is missing. Empty when the source is not
- * beside this script (a packaged app).
+ * The arguments each command and query reads (decision 489): the command catalogue made from the engine's source when
+ * Lapin is built (scripts/command-catalogue.mjs), served by the engine itself as `session.catalogue`, so an installed
+ * app, with no source beside it, has them too. An engine from before the catalogue: the repo's catalogue.json, when
+ * this script is in a checkout. Keys read by helpers further than the catalogue looks are not listed; the command's
+ * error then names what is missing. The same catalogue as the Python package's (docs/python.md).
  */
-function argsFromSource() {
-  const root = join(dirname(fileURLToPath(import.meta.url)), '..', 'engine', 'src');
-  const out = new Map();
-  if (!existsSync(root)) return out;
-  const moduleOf = (dir) => {
-    for (let d = dir; d.startsWith(root); d = dirname(d)) {
-      const f = join(d, 'module.json');
-      if (existsSync(f)) try { return JSON.parse(readFileSync(f, 'utf8')).id; } catch { break; }
-    }
-    return 'core';
-  };
-  const walk = (dir) => {
-    for (const e of readdirSync(dir, { withFileTypes: true })) {
-      const f = join(dir, e.name);
-      if (e.isDirectory()) { if (e.name !== 'bin' && e.name !== 'obj') walk(f); continue; }
-      if (!e.name.endsWith('.cs')) continue;
-      const src = readFileSync(f, 'utf8');
-      const marks = [...src.matchAll(/\.(Command|Query)\("([\w.]+)"/g)];
-      if (!marks.length) continue;
-      const mod = moduleOf(dir);
-      marks.forEach((m, i) => {
-        let body = src.slice(m.index, marks[i + 1]?.index ?? src.length);
-        const end = body.search(/\n {4}\}\n/); // the registering method's end
-        if (end > 0) body = body.slice(0, end);
-        const keys = new Set();
-        for (const k of body.matchAll(/\ba\["(\w+)"\]/g)) keys.add(k[1]);
-        for (const k of body.matchAll(/\(a, "(\w+)", "(\w+)"/g)) { keys.add(k[1]); keys.add(k[2]); }
-        for (const k of body.matchAll(/\(a, "(\w+)"\)/g)) keys.add(k[1]);
-        const name = m[2].includes('.') ? m[2] : `${mod}.${m[2]}`;
-        out.set(name, { kind: m[1], keys: [...keys] });
-      });
-    }
-  };
-  walk(root);
-  return out;
+let catalogue = null;
+async function argsOf() {
+  if (catalogue) return catalogue;
+  let c = null;
+  try { c = await call('session.catalogue'); }
+  catch {
+    try { c = (await import('./command-catalogue.mjs')).readCatalogue(); } catch { /* no checkout beside the script */ }
+  }
+  const map = new Map();
+  for (const [kind, list] of [['Command', c?.commands], ['Query', c?.queries]])
+    for (const e of list ?? []) map.set(e.name, { kind, keys: (e.args ?? []).map((x) => x.name) });
+  return (catalogue = map);
 }
-
-const ARGS = argsFromSource();
-const withArgs = (name) => (ARGS.get(name)?.keys.length ? `(${ARGS.get(name).keys.join(', ')})` : '');
+const withArgs = (args, name) => (args.get(name)?.keys.length ? `(${args.get(name).keys.join(', ')})` : '');
 
 let ws = null;
 let next = 1;
@@ -120,7 +94,7 @@ async function connect() {
     pending.delete(msg.id);
     if (msg.error) p.reject(new Error(msg.error)); else p.resolve(msg.result);
   };
-  ws.onclose = () => { ws = null; for (const p of pending.values()) p.reject(new Error('The engine closed.')); pending.clear(); };
+  ws.onclose = () => { ws = null; catalogue = null; for (const p of pending.values()) p.reject(new Error('The engine closed.')); pending.clear(); };
   return ws;
 }
 
@@ -228,10 +202,11 @@ const TOOLS = [
     inputSchema: { type: 'object', properties: {} },
     run: async () => {
       const i = await call('session.info');
+      const args = await argsOf();
       return {
         product: i.product, modules: i.modules?.map((m) => m.id),
-        commands: i.commands?.map((c) => `${c.name}${withArgs(c.name)} — ${c.label}`),
-        queries: [...ARGS].filter(([, d]) => d.kind === 'Query').map(([n]) => `${n}${withArgs(n)}`),
+        commands: i.commands?.map((c) => `${c.name}${withArgs(args, c.name)} — ${c.label}`),
+        queries: [...args].filter(([, d]) => d.kind === 'Query').map(([n]) => `${n}${withArgs(args, n)}`),
         classes: i.nodeTypes?.map((t) => ({ class: t.type, label: t.label, module: t.module, fields: t.fields?.map((f) => `${f.key} (${f.kind})`) })),
       };
     },

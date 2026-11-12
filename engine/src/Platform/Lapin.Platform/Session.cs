@@ -352,7 +352,7 @@ public sealed partial class Session
         JsonNode? r = null;
         // What a link brought in is read-only, except to the link commands and to the imports that make links.
         var allowLinked = command.StartsWith("link.", StringComparison.Ordinal) || command.EndsWith(".importDxf", StringComparison.Ordinal);
-        var t = Commit(entry.Label, edit =>
+        var t = Commit(LabelOf(entry, args), edit =>
         {
             var ctx = new CommandContext(edit, _catalog, new QueryContext(this), allowLinked);
             r = entry.Handler(ctx, args);
@@ -366,6 +366,18 @@ public sealed partial class Session
         Emit("tx", t);
         return DiffAfter(t);
     }
+
+    /// <summary>The longest name a batch may give its undo step.</summary>
+    public const int MaxBatchLabel = 120;
+
+    /// <summary>
+    /// The undo step's name: the command's label, or a batch's own (<c>edit.batch {steps, label}</c>, a script's
+    /// <c>with lapin.batch("Facades")</c>, docs/python.md), trimmed and cut to <see cref="MaxBatchLabel"/> characters.
+    /// </summary>
+    static string LabelOf(CommandEntry entry, JsonObject args) =>
+        entry.Name == "edit.batch" && args["label"] is JsonValue v && v.TryGetValue<string>(out var label) && label.Trim() is { Length: > 0 } named
+            ? named.Length > MaxBatchLabel ? named[..MaxBatchLabel] : named
+            : entry.Label;
 
     /// <summary>One edit made outside a module's commands (an IFC import): one undo step, journalled and diffed like a command.</summary>
     public Diff Edit(string label, Action<IEdit> edit)

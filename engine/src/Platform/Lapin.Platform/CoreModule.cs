@@ -236,10 +236,12 @@ public sealed class CoreModule : ILapinModule
 
         // Move, copy, rotate or mirror elements and annotations in plan (one undo step); a copy returns the new ids.
         // Several commands as one edit (one undo step): a grip shared by two walls moves both ends; each step keeps its own rules.
+        // `label` names the step ("Facades" for a script's batch; Session.LabelOf), else it is "Edit".
         r.Command("edit.batch", "Edit", (ctx, a) =>
         {
             var catalog = ctx.Services as ModuleCatalog ?? throw new CommandException("No commands to batch here.");
             if (a["steps"] is not JsonArray steps || steps.Count == 0) throw new CommandException("A batch needs its steps.");
+            if (a["label"] is { } label && (label is not JsonValue lv || !lv.TryGetValue<string>(out _))) throw new CommandException("A batch's label is a text.");
             var results = new JsonArray();
             foreach (var step in steps)
             {

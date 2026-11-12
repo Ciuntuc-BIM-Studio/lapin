@@ -1,6 +1,8 @@
 # Scripturi Python în Lapin: plan
 
-Hotărârea utilizatorului (12.11.2026): „Scripturi Python în Lapin, legate de scripturi Python care conduc modelul prin protocol — Lapin rămâne C# și MIT, fără dependențe — livrat ca plug-in, chiar și în ediția gratuită implicită, în prima fază.” Cerut pe forum: un API pentru add-on-uri, o consolă Python care arată pașii interfeței ca cod (ca la Bonsai/IfcOpenShell), un comutator pentru dezvoltatori (ca la Blender). Doar planul; nimic implementat. Răspunsurile la întrebările din §11 hotărăsc etapele.
+Hotărârea utilizatorului (12.11.2026): „Scripturi Python în Lapin, legate de scripturi Python care conduc modelul prin protocol — Lapin rămâne C# și MIT, fără dependențe — livrat ca plug-in, chiar și în ediția gratuită implicită, în prima fază.” Cerut pe forum: un API pentru add-on-uri, o consolă Python care arată pașii interfeței ca cod (ca la Bonsai/IfcOpenShell), un comutator pentru dezvoltatori (ca la Blender).
+
+**Stare (12.11.2026):** utilizatorul a răspuns la toate întrebările din §11 cu recomandările („da la toate”). **Etapa 1 e făcută**: pachetul `lapinbim` în `python/`, catalogul comenzilor la build (`scripts/command-catalogue.mjs` → `session.catalogue`, comun cu podul MCP), `edit.batch {label}`, testele (`pnpm test:python`) și publicarea pe PyPI pregătită (`scripts/publish-python.mjs`; o publică utilizatorul cu tokenul lui). Ghidul pentru dezvoltatori: `docs/python.md`. Etapele 2–4 rămân.
 
 ## 1. Ce are Lapin azi
 
@@ -95,6 +97,8 @@ Hotărârea utilizatorului (12.11.2026): „Scripturi Python în Lapin, legate d
 Propunerea Lite-STEP (Ginnung Technologies, https://www.lite-step.org) e un DSL Python declarativ. **Licența ei nu e scrisă pe site**, deci nu se copiază nimic din ea (nici cod, nici nume de funcții, nici exemple). O ediție (decizia 344, `docs/overrides.md`) ar putea pune peste `lapinbim` un strat declarativ în stilul ei (un model descris în `source/model.py`, păstrat ca parte străină, decizia 345), cu înlocuiri de comenzi și unelte; compatibilitatea doar ca idee, după ce licența lor e cunoscută și permisivă. Pachetul `lapinbim` rămâne imperativ și al lui Lapin.
 
 ## 11. Întrebări pentru utilizator
+
+Răspunsurile (12.11.2026, „da la toate”): 1. `lapinbim`, legat ca `lapin` în consolă; 2. pe PyPI de la etapa 1 (versiunea = a lui Lapin, `0.1.<număr de commit-uri>`; o publică utilizatorul); 3. doar Python-ul utilizatorului; 4. Python doar pe desktop (fără Pyodide); 5. minimum 3.11; 6. panoul Script în spatele „Developer extras”, oprit implicit (etapa 2); 7. CodeMirror 6 (etapa 2); 8. o rulare = un pas de undo prin `doc.begin/commit` (etapa 2); 9. `LapinScript` în model plus `scripts/*.py` (etapa 3); 10. oaspeții nu rulează scripturi; 11. uneltele și dialogurile din scripturi în ediția gratuită (etapa 4); 12. catalogul generat la build din surse, acum.
 
 1. Numele pachetului: `lapinbim` (PyPI și import, `lapin` în consolă) e bun? (`lapin` e luat pe PyPI.)
 2. Publicăm pe PyPI de la stadiul 1, sau doar fișierul livrat cu aplicația la început?

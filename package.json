@@ -11,9 +11,10 @@
     "dev:desktop": "node scripts/dev.mjs --desktop",
     "typecheck": "pnpm --filter ui typecheck",
     "lint": "pnpm --filter ui lint",
-    "test": "pnpm --filter ui test && pnpm test:engine && pnpm test:feedback",
+    "test": "pnpm --filter ui test && pnpm test:engine && pnpm test:feedback && pnpm test:python",
     "test:feedback": "node --test deploy/feedback/server/server.test.mjs",
     "test:engine": "dotnet test engine/tests/Lapin.Engine.Tests -v q -nologo",
+    "test:python": "node scripts/test-python.mjs",
     "products": "node scripts/product.mjs",
     "check:licenses": "node scripts/check-licenses.mjs",
     "build": "node scripts/check-licenses.mjs && pnpm --filter ui build",
@@ -22,7 +23,9 @@
     "check:web": "node scripts/check-web.mjs",
     "docs:user": "node scripts/user-docs/run.mjs",
     "tauri": "tauri",
-    "mcp": "node scripts/lapin-mcp.mjs"
+    "mcp": "node scripts/lapin-mcp.mjs",
+    "catalogue": "node scripts/command-catalogue.mjs",
+    "publish:python": "node scripts/publish-python.mjs"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

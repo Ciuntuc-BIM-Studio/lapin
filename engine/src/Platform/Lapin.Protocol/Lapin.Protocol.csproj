@@ -4,6 +4,19 @@
     the binary frames it answers with. The desktop host serves it over a
     WebSocket; the browser host, from a Web Worker (docs/plan-browser-engine.md).
   -->
+  <!--
+    The command catalogue (decision 489, docs/python.md): every command and query with the arguments its handler reads,
+    made from the engine's source by scripts/command-catalogue.mjs before each build where the source changed, embedded,
+    and served as session.catalogue. Without node the file in the repo is embedded as it is.
+  -->
+  <ItemGroup>
+    <EmbeddedResource Include="catalogue.json" LogicalName="Lapin.Protocol.catalogue.json" />
+    <LapinCatalogueSource Include="$(MSBuildThisFileDirectory)../../**/*.cs" Exclude="$(MSBuildThisFileDirectory)../../**/bin/**;$(MSBuildThisFileDirectory)../../**/obj/**" />
+    <LapinCatalogueSource Include="$(MSBuildThisFileDirectory)../../../../scripts/command-catalogue.mjs" />
+  </ItemGroup>
+  <Target Name="LapinCommandCatalogue" BeforeTargets="BeforeBuild" Inputs="@(LapinCatalogueSource)" Outputs="$(MSBuildThisFileDirectory)catalogue.json" Condition="'$(LapinCatalogue)' != 'off'">
+    <Exec Command="node &quot;$(MSBuildThisFileDirectory)../../../../scripts/command-catalogue.mjs&quot;" ContinueOnError="true" StandardOutputImportance="low" />
+  </Target>
   <ItemGroup>
     <ProjectReference Include="../Lapin.Platform/Lapin.Platform.csproj" />
     <ProjectReference Include="../Lapin.Package/Lapin.Package.csproj" />

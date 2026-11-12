@@ -599,7 +599,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
         var editor = role is "editor" or "owner";
         switch (method)
         {
-            case "session.info" or "doc.snapshot" or "doc.query" or "quantities.of" or "quantities.many" or "view.caps" or "view.fine" or "pointcloud.tiles"
+            case "session.info" or "session.catalogue" or "doc.snapshot" or "doc.query" or "quantities.of" or "quantities.many" or "view.caps" or "view.fine" or "pointcloud.tiles"
                 or "project.versions" or "project.compareVersions"
                 or "export.pdf" or "export.dxf" or "project.exportIfc" or "project.exportMesh" or "project.exportSurvey" or "project.exportHtml" or "project.htmlPlan":
                 return null;
@@ -679,6 +679,8 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
         switch (method)
         {
             case "session.info": return (session.Info(), null);
+            // Every command and query with the arguments it reads (decision 489): the MCP bridge's and the Python package's (docs/python.md).
+            case "session.catalogue": return (CommandCatalogue.For(session), null);
             case "doc.snapshot": return (session.Snapshot(), null);
             case "doc.execute":
             {

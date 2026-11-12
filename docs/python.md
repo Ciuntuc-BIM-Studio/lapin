@@ -1,0 +1,181 @@
+# Lapin from Python: the `lapinbim` package
+
+Every Lapin tool is an engine command with JSON arguments and one undo step. `lapinbim` (in `python/`, MIT) sends those commands to the Lapin that is open on this computer, so what a script makes:
+- shows at once in the window;
+- undoes with Ctrl+Z, one step per command (or per batch).
+
+It is stage 1 of `docs/plan-python-scripting.md` (decision 489): the client. The console in the app, the recorder and script tools come in stages 2–4.
+
+- **Python 3.11 or newer**, the standard library only: its own WebSocket client over `socket`, the engine's LPF1 frames read with `struct` and `memoryview`, JSON-RPC.
+- **127.0.0.1 only**: it drives the engine of this computer, never another's (decision 489, §7). A guest of a shared session has no way in.
+- **No dependency**, and none to build it: the package has its own build backend (`python/build_backend/lapin_build.py`).
+
+## Install
+
+```sh
+pip install lapinbim                 # from PyPI
+pip install ./python                 # from a checkout of lapin-pro
+pip install -e ./python              # the checkout's own code, as you edit it
+```
+
+## Connect
+
+```python
+import lapinbim as lapin
+
+print(lapin.info().product.name)     # the module's own connection, made at the first call
+```
+
+The engine is found as the MCP bridge finds it (docs/mcp.md):
+1. `LAPIN_PORT`, when set;
+2. else the first live `host.json` the engine writes while it runs, in `LAPIN_USER_DIR`, then the desktop app's user folder (`~/Library/Application Support/ro.ciuntucbimstudio.lapin` on macOS, `~/.local/share/Lapin` on Linux, `%LOCALAPPDATA%\Lapin` on Windows); a file whose process is gone is skipped;
+3. else port 47810, the one `pnpm dev` uses (its user folder is the repo's `.artifacts/user`).
+
+`lapin.connect(port)` makes the module's connection to a given port; `lapin.Lapin(port)` makes another one (`with lapin.Lapin() as l: …` closes it).
+
+## Calls
+
+| Call | What it does |
+|---|---|
+| `lapin.architecture.add_wall(x1=0, y1=0, x2=5, y2=0, height=2.8)` | A command by its namespace and name, typed from the catalogue (below): one undo step. Returns what the command returns (often `{"id": …}`, read as `r.id`). |
+| `lapin.execute("architecture.addWall", {"x1": 0, …})` | The same, by the engine's names. |
+| `lapin.query("schedule.csv", {"id": …})` | A question that changes nothing; typed too: `lapin.schedule.csv(id=…)`. |
+| `lapin.undo()`, `lapin.redo()` | One step back or forward. |
+| `lapin.save()`, `lapin.save("/abs/path/house.lapin")` | The project saved, to its own file or to the path. |
+| `lapin.info()` | `session.info`: the product, its modules, the commands (name, label), the classes and their fields. |
+| `lapin.catalogue()` | The commands and queries with their arguments, and the classes (below). |
+| `lapin.quantities(id)` | An element's quantity sets. |
+| `lapin.snapshot()`, `lapin.state()` | The whole model as a window gets it (nodes, relations, render); the document's state (`undo_label`, `can_undo`, `dirty`, `path`). |
+| `lapin.batch(label)` | `with lapin.batch("Facades"):` the commands inside as one `edit.batch`: one undo step named `label`. |
+| `lapin.on("diff", f)` | `f(diff)` for every change the engine sends (an edit, an undo, the window's own); returns what removes it. |
+| `lapin.model` | The model's entities (below). |
+| `lapin.call(method, params)` | Any protocol call (`doc.execute`, `project.new`, …). |
+
+A refused command raises `lapinbim.LapinError` with the engine's own message (the one the user reads in the window); `e.name` is the command.
+
+### Names, arguments and units
+
+- A command's **namespace** is what comes before its first dot, in snake_case: `architecture.addWall` is `lapin.architecture.add_wall`, `cutOrder.reset` is `lapin.cut_order.reset`. `lapin.ns("cutOrder")` takes the engine's spelling, `lapin.command("architecture.addWall")` a full name.
+- **Arguments** are named only, in snake_case (`storey_id`) or as the engine spells them (`storeyId`); a Python keyword takes a trailing `_` (`from_`). A top-level `None` is not sent (so a default stays the engine's); a dict passed first goes as it is, for what keywords cannot say: `lapin.element.update({"id": w, "attrs": {"name": None}})`.
+- An `Element` passed as an argument goes as its id: `lapin.element.delete(ids=[wall])`.
+- **Units** are the engine's: metres and degrees (decision 112); no conversion.
+- A query named like a command of the same namespace takes `_query`: `lapin.project.location_query()`.
+
+### The command catalogue
+
+What arguments each command reads is not declared in C#: it is found in the engine's source when Lapin is built. `scripts/command-catalogue.mjs` reads every handler (`r.Command("addWall", "Wall", (ctx, a) => …)`): its `a["key"]`, `P(a, "x", "y")`, and the keys of the helpers it hands `a` to (`Args.Ids(a)`, `WallsAlong.Add(ctx, a, …)`, two levels deep), with a type guessed from how each is read (`(string?)` → str, `Json.Number` → float, `TryGetValue<bool>` → bool, `as JsonArray` → list, `as JsonObject` → dict). It writes `engine/src/Platform/Lapin.Protocol/catalogue.json`, which the Lapin.Protocol build regenerates before compiling (when node is there) and embeds.
+
+The engine serves it as **`session.catalogue`** (`CommandCatalogue.cs`): the product's own commands with their label and module, and its queries, each with the arguments from the file. So an installed app, with no source, still has them. The classes and their fields come from `session.info`. The MCP bridge reads the same catalogue (docs/mcp.md).
+
+Keys read further away than the catalogue looks are not listed; the command still takes them (`**kwargs` go as they are), and its error names what is missing. A premium module built elsewhere has its commands listed with no arguments. A command added to the engine shows here after the next build; `CommandCatalogueTests` fails when a registered command is missing from the file.
+
+### Editor completion
+
+The published package carries `__init__.pyi` and `catalogue.json` for the Lapin it was made with: an editor completes `lapin.architecture.add_wall(` with its arguments and their types, and `lapin.model.walls`. For the Lapin open now (newer, or an edition with more modules):
+
+```sh
+python -m lapinbim stubs                     # beside the installed package (--out DIR elsewhere)
+python -m lapinbim catalogue --out c.json    # the catalogue itself
+python -m lapinbim info                      # what the open Lapin has
+```
+
+## The model
+
+```python
+lapin.model.walls                    # IfcWall: a class by the plural of its label (lapin.model.classes lists them)
+lapin.model.floors                   # IfcSlab ("Floor")
+lapin.model.of("IfcWall", "IfcCurtainWall")
+lapin.model[id]                      # one entity; KeyError when the model has none
+len(lapin.model), list(lapin.model)
+```
+
+The entities are read from `doc.snapshot` (JSON) once and kept until the engine sends a diff; then the next read asks again. An `Element` has `id` (its GlobalId), `type` (its IFC class), `name`, `storey` (the storey's id), `module`, `parent` and `attrs`; its attributes read by name too (`wall.height`, `wall.type_id`). It is what the model was when read.
+
+| On an element | What it does |
+|---|---|
+| `quantities()` | Its quantity sets, as the properties panel shows them. |
+| `quantity("NetVolume")` | One quantity's value by its IFC name. |
+| `update(height=3)` | `element.update`: its fields changed, one undo step. |
+| `rename(name)`, `set_param(name, value, kind=None, pset=None)`, `delete()` | `element.rename`, `element.setParam`, `element.delete`. |
+
+## Batches: one undo step for many commands
+
+```python
+with lapin.batch("Facades") as b:
+    for x in range(0, 30, 6):
+        lapin.architecture.add_wall(x1=x, y1=0, x2=x + 6, y2=0)
+print(b.results)                     # each command's result, in order
+```
+
+- The commands go together as one `edit.batch {steps, label}` when the block ends: one undo step named by the label (the engine's own "Edit" without one), all or nothing (a step refused, none is kept).
+- Inside the block a command returns a `Deferred`, filled when the block ends (`d.id` before then raises). A step cannot use an id made by an earlier step of the same batch; queries go at once and see the model before the batch.
+- An exception in the block sends nothing. A batch inside a batch joins the outer one. `undo` and `redo` are refused inside.
+- Thousands of single commands are thousands of undo steps and a few seconds; a batch is one call.
+
+## Events
+
+```python
+off = lapin.on("diff", lambda d: print(len(d.nodes), "changed,", len(d.removed_nodes), "removed"))
+lapin.on("*", lambda name, data: print(name))      # every event: diff, progress, presence, delivery
+off()
+```
+
+Handlers run one at a time, on a thread of their own (so they may call the engine). A diff carries the window's meshes too: its arrays are `memoryview`s on the frame (`numpy.frombuffer(part.positions, numpy.float32)` takes one as it is).
+
+## Examples
+
+Four walls round a room, one undo step:
+
+```python
+import lapinbim as lapin
+
+storey = next(s.id for s in lapin.model.storeys if s.elevation == 0)
+corners = [(0, 0), (10, 0), (10, 8), (0, 8)]
+with lapin.batch("Room walls"):
+    for (x1, y1), (x2, y2) in zip(corners, corners[1:] + corners[:1]):
+        lapin.architecture.add_wall(storey_id=storey, x1=x1, y1=y1, x2=x2, y2=y2, height=2.8)
+```
+
+The volume of every wall, and the total:
+
+```python
+total = 0.0
+for wall in lapin.model.walls:
+    v = wall.quantity("NetVolume") or 0
+    total += v
+    print(f"{wall.name:20} {v:8.3f} m³")
+print(f"{'total':20} {total:8.3f} m³")
+```
+
+A door schedule, and its CSV written to a file:
+
+```python
+sched = lapin.architecture.create_schedule(kind="door")        # door, window, all, lintel, or a module's table
+open("/tmp/doors.csv", "w", encoding="utf-8").write(lapin.schedule.csv(id=sched.id))
+```
+
+Every wall 20 cm higher, one undo step:
+
+```python
+with lapin.batch("Walls +20 cm"):
+    for w in lapin.model.walls:
+        w.update(height=w.height + 0.2)
+```
+
+## Tests
+
+`pnpm test:python` (`scripts/test-python.mjs`, part of `pnpm test`) runs `python/tests` with the standard library's `unittest` on the oldest Python found from 3.11 and the newest, each against an engine of its own: the built Debug host on a free port with a temporary user folder (`python/tests/engine.py`), as `scripts/lapin-mcp-check.mjs` starts it, never the engine of `pnpm dev`. They cover the WebSocket client against a small server of the test's own (fragments, ping, a 64-bit length, masking, close, a wrong handshake), the LPF1 reader, names and arguments, and against the engine: connecting by `LAPIN_PORT` and by `host.json`, typed commands, a batch as one named undo step (and all or nothing), undo and redo, a refused command, binary frames, quantities, element edits, diff events, saving, the module's own connection, the catalogue and the stubs. No Python 3.11 or newer: the run says so and passes; no built engine, no dotnet or no node: the engine's tests are skipped, saying why. `--all` runs every Python found.
+
+## Publishing on PyPI
+
+The package's version is Lapin's build version, `0.1.<commit count>`, the desktop app's: a published `lapinbim` carries the catalogue and the stubs of the Lapin built from the same commit. A newer Lapin still works with it (it reads the open engine's catalogue); an engine from before `session.catalogue` uses the copy the package carries.
+
+```sh
+pnpm build:engine
+node scripts/publish-python.mjs                  # build/python/dist: the sdist and the wheel, with their SHA-256; nothing uploaded
+python3 -m pip install --user twine              # once
+node scripts/publish-python.mjs --upload         # the same, then twine uploads them (it asks for the PyPI token)
+node scripts/publish-python.mjs --upload --test  # to TestPyPI first
+```
+
+The script stages a copy of `python/` with the version written in, starts an engine of its own to write `lapinbim/catalogue.json` and `lapinbim/__init__.pyi`, builds the sdist and the wheel with the package's own backend, checks that the wheel imports with its version, stubs and catalogue, and with `--upload` runs `python3 -m twine upload`. The token is the user's own (in `~/.pypirc` as `__token__`, the keyring, or typed when twine asks); it never goes through the script or the repo. `--python <cmd>` picks the Python, `--product <id>` the edition whose catalogue it carries (`lapin` by default).

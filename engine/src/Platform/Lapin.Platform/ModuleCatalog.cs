@@ -32,6 +32,8 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
     public IReadOnlyList<OverrideInfo> Overrides => _overrides;
     public IEnumerable<(ClassDescriptor Descriptor, string Module)> Classes => _classes.Values;
     public IEnumerable<CommandEntry> Commands => _commands.Values;
+    /// <summary>Every query's full name ("schedule.csv").</summary>
+    public IEnumerable<string> QueryNames => _queries.Keys;
     public IReadOnlyDictionary<string, JsonNode> Catalogs => _catalogs;
 
     public static ModuleCatalog Create(IEnumerable<ILapinModule> modules)
