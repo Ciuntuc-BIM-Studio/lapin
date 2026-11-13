@@ -3453,6 +3453,13 @@ export const DA: Record<string, string> = {
   "The part's value, the same for every object": "Delens værdi, den samme for hvert objekt",
   "type": "type",
   "formula": "formel",
+  'Join automatically': 'Saml automatisk',
+  'Join automatically at start': 'Saml automatisk ved start',
+  'Join automatically at end': 'Saml automatisk ved slut',
+  'Don\'t join at this end': 'Saml ikke ved denne ende',
+  'Join automatically at this end': 'Saml automatisk ved denne ende',
+  'Say which end: start, end or both.': 'Angiv hvilken ende: start, slut eller begge.',
+  'Select walls, beams or strip footings.': 'Vælg vægge, bjælker eller stribefundamenter.',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

@@ -109,6 +109,55 @@ public static class Openings
         }
     }
 
+    /// <summary>
+    /// Where the openings of straight walls recognised from a file (their <c>imported</c> record) stand in plan, to keep across an
+    /// edit that moves a wall's start (decision 546). An opening is placed by its distance from its wall's start (<c>along</c>),
+    /// so a start that moves (a length typed, a joined neighbour's end dragged) would carry the openings with it; the file put
+    /// them where they are, and they stay there (<see cref="KeepPlaces"/>). Openings in walls drawn in Lapin go with the start.
+    /// </summary>
+    public static List<(string Opening, string Wall, Vec2 At)> PlacesOnRecognised(IModelView m, IEnumerable<string> wallIds)
+    {
+        var o = new List<(string, string, Vec2)>();
+        foreach (var id in wallIds.Distinct())
+        {
+            if (m.Get(id) is not { Class: IfcClass.Wall } w || w.Attrs["imported"] == null || PathCurve.Of(w).IsArc) continue;
+            var a = Walls.Start(w);
+            var d = Walls.End(w) - a;
+            if (d.Length < 1e-9) continue;
+            d = d * (1 / d.Length);
+            foreach (var p in PlacedOn(m, id)) o.Add((p.Opening.Id, id, a + d * p.Along));
+        }
+        return o;
+    }
+
+    /// <summary>
+    /// Where an opening of <paramref name="places"/> falls along its wall as it is now: the same point in plan when the wall is
+    /// still straight and still runs through it (only its ends moved along it), else null (turned, bent: it goes with the start).
+    /// </summary>
+    public static double? AlongKept(Entity wall, Vec2 at)
+    {
+        if (PathCurve.Of(wall).IsArc) return null;
+        var a = Walls.Start(wall);
+        var d = Walls.End(wall) - a;
+        if (d.Length < 1e-9 || Math.Abs(Vec2.Cross(d, at - a)) / d.Length > 1e-6) return null;
+        return AlongOf(wall, at);
+    }
+
+    /// <summary>The openings of <see cref="PlacesOnRecognised"/> brought back to where they stood in plan; refused where one would no longer fit its wall.</summary>
+    public static void KeepPlaces(IEdit edit, IEnumerable<(string Opening, string Wall, Vec2 At)> places)
+    {
+        foreach (var (openingId, wallId, at) in places)
+        {
+            if (edit.Model.Get(wallId) is not { } w || edit.Model.Get(openingId) is not { } opening) continue;
+            if (AlongKept(w, at) is not { } along || Math.Abs(along - opening.Num("along")) < 1e-9) continue;
+            var placed = Place(edit.Model, opening);
+            CheckFits(edit.Model, w, along, placed.Sill, placed.Width, placed.Height, openingId);
+            var attrs = opening.CloneAttrs();
+            attrs["along"] = along;
+            edit.Replace(opening.With(attrs: attrs));
+        }
+    }
+
     /// <summary>Where a point falls along the wall's axis, metres from its start.</summary>
     public static double AlongOf(Entity wall, Vec2 p)
     {

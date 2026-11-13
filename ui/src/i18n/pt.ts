@@ -3456,6 +3456,13 @@ export const PT: Record<string, string> = {
   "The part's value, the same for every object": "O valor da peça, o mesmo para cada objeto",
   "type": "tipo",
   "formula": "fórmula",
+  'Join automatically': 'Unir automaticamente',
+  'Join automatically at start': 'Unir automaticamente no início',
+  'Join automatically at end': 'Unir automaticamente no fim',
+  'Don\'t join at this end': 'Não unir nesta extremidade',
+  'Join automatically at this end': 'Unir automaticamente nesta extremidade',
+  'Say which end: start, end or both.': 'Diga qual extremidade: início, fim ou ambas.',
+  'Select walls, beams or strip footings.': 'Selecione paredes, vigas ou sapatas corridas.',
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

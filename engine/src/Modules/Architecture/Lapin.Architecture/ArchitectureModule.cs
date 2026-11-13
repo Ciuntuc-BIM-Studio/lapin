@@ -875,7 +875,15 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var next = Walls.Attrs(start, end, height, baseOffset, thickness);
             if (rise != 0) next[PathCurve.Key] = rise;
             var after = wall.With(attrs: next);
-            foreach (var o in Openings.PlacedOn(ctx.Model, wall.Id)) Openings.CheckFits(ctx.Model, after, o.Along, o.Sill, o.Width, o.Height, o.Opening.Id);
+            // A recognised wall's openings stay where the file put them in plan (decision 546): the wall's and its joined
+            // neighbours' (their joined ends move with it); a drawn wall's go with its start.
+            var places = Openings.PlacesOnRecognised(ctx.Model, Joins.Of(ctx.Model, wall.Id).Select(j => Joins.Other(j, wall.Id)).Prepend(wall.Id));
+            var kept = places.Where(p => p.Wall == wall.Id).ToDictionary(p => p.Opening, p => p.At);
+            foreach (var o in Openings.PlacedOn(ctx.Model, wall.Id))
+            {
+                var along = kept.TryGetValue(o.Opening.Id, out var at) ? Openings.AlongKept(after, at) ?? o.Along : o.Along;
+                Openings.CheckFits(ctx.Model, after, along, o.Sill, o.Width, o.Height, o.Opening.Id);
+            }
             // Only the wall's own fields change; what other modules wrote on it (its phase, its cut priority) stays.
             var attrs = wall.CloneAttrs();
             foreach (var (k, v) in Walls.Attrs(Walls.Start(wall), Walls.End(wall), height, baseOffset, thickness)) attrs[k] = v?.DeepClone();
@@ -884,6 +892,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var moveJoined = a["moveJoinedEnds"] is not JsonValue mj || !mj.TryGetValue<bool>(out var keep) || keep;
             if ((start - Walls.Start(wall)).Length > 1e-12 || (end - Walls.End(wall)).Length > 1e-12)
                 Joins.MoveEnds(ctx, Paths(ctx), ctx.Model.Get(wall.Id)!, start, end, moveJoined, a["detachJoinedEnds"] is JsonValue dj && dj.TryGetValue<bool>(out var detach) && detach);
+            Openings.KeepPlaces(ctx, places);
             return null;
         });
 

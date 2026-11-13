@@ -491,6 +491,14 @@ export const scenes = [
       // Each wall's own length and thickness (report #107).
       t.expect(await t.page.locator('[data-field=wall-length]').count() === 1 && await t.page.locator('[data-field=wall-thickness]').count() === 1, 'the wall\'s length and thickness are fields');
       await t.shot('wall-properties', { of: 'aside.props', pad: 0, maxHeight: 620 });
+      // Each end joining by itself or not (the forum's topic #50, decision 546): two toggles, on for a drawn wall.
+      const autoEnd = t.page.locator('aside.props [data-action=auto-join-end]');
+      t.expect(await autoEnd.count() === 1 && await autoEnd.isChecked(), 'a drawn wall\'s end joins automatically');
+      await autoEnd.click();
+      await t.wait(300);
+      t.expect((await t.nodes()).find((n) => n.id === walls[0].id)?.props.autoJoin?.end === false, 'the toggle turns the end\'s joining off');
+      await t.page.evaluate(async () => (await import('/src/engine/session.ts')).undo());
+      await t.wait(300);
       // Its top (the forum's topic #45): the storey above by default, its height worked out from the storeys, following them.
       t.expect(await t.page.locator('[data-testid=wall-top]').inputValue() === 'above', 'a new wall goes up to the storey above');
       const levels = (await t.nodes()).filter((n) => n.type === 'IfcBuildingStorey').sort((p, q) => (p.props.elevation ?? 0) - (q.props.elevation ?? 0));

@@ -45,6 +45,27 @@ public static class Joins
 
     public static bool Stops(Relation r) => r.Attrs?[StopsOn] is JsonValue v && v.TryGetValue<bool>(out var on) && on;
 
+    /// <summary>
+    /// On a path element: whether each of its ends joins automatically (<c>{start, end}</c>, the forum's topic #50, decision 546).
+    /// Not stored, an end of an element drawn in Lapin joins, and one recognised from a file (its <c>imported</c> record) does
+    /// not: the import reproduces the file. An end that does not join automatically keeps the joins it has, which the join
+    /// tools still make and take off; <see cref="Auto"/> neither joins it nor brings another element's end to it.
+    /// </summary>
+    public const string AutoKey = "autoJoin";
+
+    /// <summary>Whether the element's end (0 start, 1 end) joins automatically (<see cref="AutoKey"/>).</summary>
+    public static bool AutoAt(Entity e, int end) =>
+        e.Attrs[AutoKey] is JsonObject o && o[end == 0 ? "start" : "end"] is JsonValue v && v.TryGetValue<bool>(out var b) ? b : e.Attrs["imported"] == null;
+
+    /// <summary>Whether any end of the element joins automatically; one with neither joins nothing new (not even along its run).</summary>
+    public static bool AutoAny(Entity e) => AutoAt(e, 0) || AutoAt(e, 1);
+
+    /// <summary>The attributes with the ends' automatic joining set (null: as it is); both ends stored, so a copy keeps what was asked.</summary>
+    public static void SetAuto(JsonObject attrs, Entity e, bool? start, bool? end)
+    {
+        attrs[AutoKey] = new JsonObject { ["start"] = start ?? AutoAt(e, 0), ["end"] = end ?? AutoAt(e, 1) };
+    }
+
     static JoinWall Frame(IPathElements paths, IModelView m, Entity e) =>
         paths.FrameOf(e, m) ?? throw new CommandException($"„{e.Name}” cannot be joined as it is.");
 
@@ -346,11 +367,16 @@ public static class Joins
 
     /// <param name="skip">Elements left out (what moved or was copied with it keeps its joins among them as they were, decision 531).</param>
     /// <param name="thickness">Each element's thickness as joins see it, kept across the calls of one command (null: worked out each call).</param>
+    /// <remarks>
+    /// Each end's <see cref="AutoKey"/> is kept (decision 546): an end that does not join automatically is not joined, nor is
+    /// another's end brought to it; an element neither of whose ends does joins nothing, and nothing joins it along its run but
+    /// an end stopping on it (it is left whole, as a T's through element is).
+    /// </remarks>
     public static void Auto(IEdit edit, IPathElements paths, string id, JoinStyle style = JoinStyle.Mitre, IReadOnlySet<string>? skip = null,
         Dictionary<string, double>? thickness = null)
     {
         var m = edit.Model;
-        if (m.Get(id) is not { } e || !paths.IsPath(e.Class)) return;
+        if (m.Get(id) is not { } e || !paths.IsPath(e.Class) || !AutoAny(e)) return;
         var storey = Spatial.StoreyOf(m, id);
         // Only those near enough to meet are tried (a move of hundreds of walls tried each against the whole storey, decision 531):
         // two meet only within twice the thicker's thickness of each other's ends (WallJoins.Compute); the margin covers an end a join moves first.
@@ -365,7 +391,7 @@ public static class Joins
         foreach (var end in new[] { 0, 1 })
         {
             e = m.Get(id)!;
-            if (JoinedEnds(m, e)[end]) continue;
+            if (JoinedEnds(m, e)[end] || !AutoAt(e, end)) continue;
             var at = end == 0 ? Start(e) : End(e);
             var joinedHere = false;
             foreach (var other in others.OrderBy(o => DistanceTo(o, at)))
@@ -381,6 +407,8 @@ public static class Joins
                 // fan, NodeAt), else left alone.
                 var theirs = trial.B.Connection == Connection.AtStart ? 0 : 1;
                 var node = trial.B.Connection != Connection.AtPath && ((theirs == 0 ? Start(current) : End(current)) - at).Length <= NodeTolerance;
+                // Their end there does not join automatically (decision 546): it stays where it is.
+                if (trial.B.Connection != Connection.AtPath && !AutoAt(current, theirs)) continue;
                 if (trial.B.Connection != Connection.AtPath && JoinedEnds(m, current)[theirs] && !node) continue;
                 if (joinedHere && !node) continue;
                 Join(edit, paths, e, current, trial.Kind == JoinKind.L ? style : JoinStyle.Butt);
@@ -400,7 +428,8 @@ public static class Joins
             try { trial = WallJoins.Compute(fe, fo); }
             catch (CommandException) { continue; }
             if (trial.Kind != JoinKind.T || trial.A.Connection != Connection.AtPath) continue;
-            if (JoinedEnds(m, current)[trial.B.Connection == Connection.AtStart ? 0 : 1]) continue;
+            var theirEnd = trial.B.Connection == Connection.AtStart ? 0 : 1;
+            if (JoinedEnds(m, current)[theirEnd] || !AutoAt(current, theirEnd)) continue;
             Join(edit, paths, e, current);
         }
         // Others whose run this element's run crosses: an X, the one already there through (the thicker, when they differ).
@@ -409,7 +438,7 @@ public static class Joins
             if (Between(m, id, other.Id) != null) continue;
             var current = m.Get(other.Id)!;
             e = m.Get(id)!;
-            if (PathCurve.Of(e).IsArc || PathCurve.Of(current).IsArc) continue;
+            if (PathCurve.Of(e).IsArc || PathCurve.Of(current).IsArc || !AutoAny(current)) continue;
             if (Pair(paths, m, current, e) is not (var fo, var fe)) continue;
             WallJoin trial;
             try { trial = WallJoins.Compute(fo, fe); }

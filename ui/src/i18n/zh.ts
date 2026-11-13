@@ -3450,6 +3450,13 @@ export const ZH: Record<string, string> = {
   "The part's value, the same for every object": "零件的值，对每个对象都相同",
   "type": "类型",
   "formula": "公式",
+  'Join automatically': '自动连接',
+  'Join automatically at start': '在起点自动连接',
+  'Join automatically at end': '在终点自动连接',
+  'Don\'t join at this end': '此端不连接',
+  'Join automatically at this end': '此端自动连接',
+  'Say which end: start, end or both.': '请说明哪一端：起点、终点或两端。',
+  'Select walls, beams or strip footings.': '请选择墙、梁或条形基础。',
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

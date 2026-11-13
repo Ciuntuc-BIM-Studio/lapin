@@ -308,6 +308,7 @@
     {"name":"element.pin","module":"core","label":"Pin","args":[{"name":"pinned","type":"bool"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},
     {"name":"element.removeParam","module":"core","label":"Remove parameter","args":[{"name":"name","type":"str"},{"name":"pset","type":"str"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},
     {"name":"element.rename","module":"core","label":"Rename","args":[{"name":"id","type":"str"},{"name":"name","type":"str"}]},
+    {"name":"element.setAutoJoin","module":"core","label":"Join automatically","args":[{"name":"start"},{"name":"end"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},
     {"name":"element.setBody","module":"core","label":"Set body","args":[{"name":"id","type":"str"},{"name":"units"},{"name":"body"},{"name":"placement"}]},
     {"name":"element.setParam","module":"core","label":"Set parameter","args":[{"name":"name","type":"str"},{"name":"pset","type":"str"},{"name":"kind","type":"str"},{"name":"options","type":"list"},{"name":"value"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},
     {"name":"element.transform","module":"core","label":"Transform","args":[{"name":"op","type":"str"},{"name":"world","type":"list"},{"name":"up","type":"float"},{"name":"rise","type":"float"},{"name":"frame","type":"dict"},{"name":"by"},{"name":"center"},{"name":"angle","type":"float"},{"name":"a"},{"name":"b"},{"name":"copy","type":"bool"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},

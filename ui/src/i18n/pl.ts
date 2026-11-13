@@ -3459,6 +3459,13 @@ export const PL: Record<string, string> = {
   "The part's value, the same for every object": "Wartość części, taka sama dla każdego obiektu",
   "type": "typ",
   "formula": "wzór",
+  'Join automatically': 'Łącz automatycznie',
+  'Join automatically at start': 'Łącz automatycznie na początku',
+  'Join automatically at end': 'Łącz automatycznie na końcu',
+  'Don\'t join at this end': 'Nie łącz na tym końcu',
+  'Join automatically at this end': 'Łącz automatycznie na tym końcu',
+  'Say which end: start, end or both.': 'Podaj, który koniec: początek, koniec lub oba.',
+  'Select walls, beams or strip footings.': 'Zaznacz ściany, belki lub ławy fundamentowe.',
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

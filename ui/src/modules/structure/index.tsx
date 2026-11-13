@@ -14,6 +14,7 @@ import { StructureSection } from './StructureSection';
 import { sameKind } from '../../shell/params';
 import { lazyPart } from '../../platform/lazyPart';
 import { StripOption, stripArgs } from './stripOptions';
+import { withAutoJoinMenus } from '../core/autoJoin';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const StructureTypesDialog = lazyPart(() => import('./StructureTypesDialog').then((m) => m.StructureTypesDialog), { title: 'Structure types' });
@@ -91,7 +92,7 @@ function memberGrips(node: NodeDto): Grip[] {
   if (!c) return [];
   const beam = node.type === 'IfcBeam';
   return [
-    ...pathGrips(c, (s, e, rise) => ({ command: 'structure.updatePath', args: { id: node.id, x1: s.x, y1: s.y, x2: e.x, y2: e.y, arc: rise, detachJoinedEnds: true } })),
+    ...withAutoJoinMenus(node.id, node.props, pathGrips(c, (s, e, rise) => ({ command: 'structure.updatePath', args: { id: node.id, x1: s.x, y1: s.y, x2: e.x, y2: e.y, arc: rise, detachJoinedEnds: true } }))),
     flipAcross(c, (beam ? node.props.flipped : usageOf(useSession.getState(), node.id)?.negative) ? 1 : -1, beam ? 'Flip: mirror the section across the axis' : 'Flip: swap the foundation\'s faces', () => ({ command: 'structure.flip', args: { ids: sameKind(node) } })),
   ];
 }

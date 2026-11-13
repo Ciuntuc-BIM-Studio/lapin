@@ -3512,6 +3512,13 @@ export const LO: Record<string, string> = {
   "The part's value, the same for every object": "ຄ່າຂອງຊິ້ນສ່ວນ, ຄືກັນສຳລັບທຸກວັດຖຸ",
   "type": "ປະເພດ",
   "formula": "ສູດ",
+  'Join automatically': 'ເຊື່ອມຕໍ່ອັດຕະໂນມັດ',
+  'Join automatically at start': 'ເຊື່ອມຕໍ່ອັດຕະໂນມັດທີ່ຈຸດເລີ່ມ',
+  'Join automatically at end': 'ເຊື່ອມຕໍ່ອັດຕະໂນມັດທີ່ຈຸດທ້າຍ',
+  'Don\'t join at this end': 'ບໍ່ເຊື່ອມຕໍ່ທີ່ປາຍນີ້',
+  'Join automatically at this end': 'ເຊື່ອມຕໍ່ອັດຕະໂນມັດທີ່ປາຍນີ້',
+  'Say which end: start, end or both.': 'ບອກວ່າປາຍໃດ: ຈຸດເລີ່ມ, ຈຸດທ້າຍ ຫຼື ທັງສອງ.',
+  'Select walls, beams or strip footings.': 'ເລືອກຝາ, ຄານ ຫຼື ຖານຮາກແບບແຖບ.',
 };
 
 /** Phrases with a number or a name in them. */

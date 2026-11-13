@@ -3454,6 +3454,13 @@ export const RO: Record<string, string> = {
   "The part's value, the same for every object": "Valoarea piesei, aceeași pentru fiecare obiect",
   "type": "tip",
   "formula": "formulă",
+  'Join automatically': 'Îmbinare automată',
+  'Join automatically at start': 'Îmbinare automată la început',
+  'Join automatically at end': 'Îmbinare automată la sfârșit',
+  'Don\'t join at this end': 'Nu îmbina la acest capăt',
+  'Join automatically at this end': 'Îmbină automat la acest capăt',
+  'Say which end: start, end or both.': 'Spune care capăt: începutul, sfârșitul sau amândouă.',
+  'Select walls, beams or strip footings.': 'Selectează pereți, grinzi sau fundații continue.',
 };
 
 /** Phrases with a number or a name in them. */
