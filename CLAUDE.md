@@ -94,7 +94,7 @@ The history of what was built, decision by decision, is in `docs/history.md`; th
 - Sections, site plans, rooms: `docs/sections.md`, `docs/site-plans.md`, `docs/rooms.md`, `docs/spec-site.md`
 - Visibility / Graphics, point clouds: `docs/plan-visibility-graphics.md`
 - Stairs, terrain, CAD drafting: `docs/spec-stairs.md`, `docs/spec-terrain.md`, `docs/spec-drafting-cad.md`
-- Studio (solids, sketches, thick solids): `docs/spec-studio.md`, `docs/plan-studio-editor.md`, `docs/plan-studio-sketch.md`, `docs/plan-studio-thick.md`, `docs/plan-3d-modelling.md`
+- Studio (solids, sketches, thick solids): `docs/spec-studio.md`, `docs/plan-studio-editor.md`, `docs/plan-studio-sketch.md`, `docs/plan-studio-thick.md`, `docs/plan-3d-modelling.md`; parametric parts, sketch constraints, STEP and FreeCAD interop (proposed): `docs/plan-studio-parametric.md`
 - Groups, components, links, versions: `docs/groups.md`, `docs/components.md`, `docs/links.md`, `docs/versions.md`
 - IFC (import, recognition, the fidelity gate, export): `docs/spec-ifc.md`, `docs/ifc-optimize.md`
 - Other formats: `docs/dxf-import.md`, `docs/fragments.md`, `docs/bos.md`, `docs/sdnf.md`, `docs/plan-mesh-export.md`, `docs/html-export.md`
