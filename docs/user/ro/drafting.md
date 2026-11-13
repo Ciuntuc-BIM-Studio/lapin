@@ -237,6 +237,62 @@ Un simbol așezat se selectează ca orice element. În **Proprietăți → Simbo
 
 **Exportă…** scrie simbolul ca fișier **.lapinsymbols**; **Importă…** citește unul, în proiect sau în biblioteca acestui calculator (caseta de lângă buton). Unde proiectul are deja un simbol cu același nume, o listă arată care sunt la fel și care diferă, cu o alegere pentru fiecare: **păstrează**, **actualizează** (copiile așezate îl urmează), **păstrează-le pe amândouă** sau **sari**.
 
+### Marcajele vederilor
+
+Lapin desenează singur marcajele vederilor: capătul unei secțiuni, marcajul unei fațade, marcajul unui nivel, bula unei axe, săgeata nordului dintr-un plan de situație, capătul unui detaliu, titlul unei vederi pe planșă. Poți să le desenezi cu un simbol al tău (sau cu unul al lui Lapin: o bulă pătrată de ax, un marcaj de nivel pe jumătate negru) și să le schimbi pe toate odată.
+
+În **Gestionare → Standarde de desen → Proiect**, lista **Simboluri de marcaj** are câte un selector pentru fiecare: **Capăt de secțiune**, **Marcaj de fațadă**, **Semnul cotei de nivel**, **Bulă de ax**, **Săgeata nordului (planuri de situație)**, **Capăt de detaliu** și **Titlul vederii (pe planșe)**. Deschide un selector ca să vezi simbolurile cu imaginile lor: întâi cele de felul marcajului (bulele de ax pentru bula de ax), apoi celelalte. **Cel propriu al lui Lapin (implicit)** păstrează desenul făcut de Lapin până acum; nimic nu se schimbă până nu alegi.
+
+![Standarde de desen, Proiect: un simbol pentru fiecare marcaj](shots/standards-marker-symbols.webp)
+
+Un marcaj poate avea simbolul lui. Selectează o secțiune, o fațadă, un nivel, o axă, un detaliu sau o vedere și, în **Proprietăți**, **Simbol de marcaj** (o secțiune are și **Titlul vederii**) arată alegerea proiectului; alege alt simbol doar pentru acest marcaj sau **Alegerea proiectului** ca să revii. Mai multe marcaje de același fel selectate se schimbă împreună.
+
+![Planul cu marcajele desenate de simboluri](shots/marker-symbols-plan.webp)
+
+![Proprietățile unei secțiuni: simbolul ei de marcaj](shots/marker-symbol-properties.webp)
+
+Un simbol făcut pentru un marcaj se face ca oricare altul (vezi mai sus). Desenează-l cu **+y** în direcția în care arată marcajul: săgeata capătului de secțiune, a marcajului de fațadă, triunghiul marcajului de nivel. Se așază pe direcția secțiunii sau a fațadei, la capătul axei, pe linia nivelului. Textele vii ale marcajului îl completează: `{mark.name}` și `{mark.number}` (numărul vederii pe planșa ei), `{mark.sheet}` (numărul planșei), `{mark.scale}`, `{level.name}` și `{level.elevation}` pentru un nivel, `{grid.label}` pentru o axă; un simbol cu atributele `number`, `sheet` sau `name` le citește din marcaj. Capătul de secțiune, marcajul de fațadă, detaliul, marcajele de nivel și bulele de ax încorporate în Lapin o fac.
+
 ### Simboluri pe planșe
 
 Pe o planșă, **Așază simbol…** din bara de unelte listează simbolurile; alege unul și dă clic unde stă pe hârtie (Esc anulează). E desenat la mărimea lui pe hârtie, oricare ar fi scara vederilor de pe planșă, și se tipărește așa cum îl vezi.
+
+## Conversia desenului în elemente
+
+Liniile desenate într-un plan, un desen adus din DXF sau calchiat dintr-un PDF pot deveni elemente adevărate. Lapin recunoaște ce e fiecare formă și o face cu modulul care o stăpânește.
+
+**Desen → Convertește → Convertește în…** lucrează pe selecția din vederea din față: selectează întâi linii, polilinii, arce sau cercuri desenate. Dialogul listează în ce se pot transforma formele în ediția ta: **Walls** (pe linii și contururi, îmbinați), **Floor** (un contur închis), **Room** (un contur închis), **Railing** (o linie deschisă), **Beams**, **Strip foundations**, **Pad footings** și **Columns** (un cerc sau un contur, rotit după latura cea mai lungă) și **Reinforcement bars** (o formă dreaptă, în L, în U sau un etrier recunoscută, altfel o bară polilinie). Numele conversiilor apar așa în listă, în engleză. Opțiunile conversiei alese (tipul și înălțimea unui perete, diametrul unei bare) sunt dedesubt, iar dialogul spune câte forme **pot fi convertite** și câte **nu**, cu motivul (o placă are nevoie de un contur închis), și listează ce ar deveni fiecare. Planurile iau etajul planului; secțiunile și fațadele iau bare. **Păstrează desenul** lasă formele sub elementele noi, ca fundal; fără el sunt înlocuite. Un pas de anulare readuce desenul.
+
+![Grupul Convertește din tabul Desen](shots/convert-ribbon.webp)
+
+![Convertește în…: ce devin formele](shots/convert-dialog.webp)
+
+Un desen pe layere se convertește layer cu layer: **Desen → Convertește → Convertește layerele…** listează layerele vederii cu numărul lor de forme și câte o alegere **Devine**: **A-WALL** în pereți, **A-COLS** în stâlpi, **A-BARS** în bare; **(lasă ca desen)** păstrează un layer cum e. Butonul de lângă un layer deschide opțiunile conversiei lui. Previzualizarea numără ce se va face. Aici desenul se păstrează implicit, ca fundal din care s-au făcut elementele. Corespondența se ține pe acest calculator după numele layerului, deci următorul desen al aceluiași birou e deja potrivit; **Exportă corespondența…** și **Importă corespondența…** o scriu într-un fișier `.lapinmapping` și îl citesc înapoi, ca s-o împarți cu biroul. După **Importă DXF…** poți bifa **convertește layerele în elemente…** ca să ajungi direct în acest dialog.
+
+![Convertește layerele…: fiecare layer și ce devine](shots/convert-layers.webp)
+
+### Blocurile DXF ca simboluri
+
+Un DXF cu blocuri (scaune, uși, simbolurile unui birou) le poate păstra: în dialogul de import, **Blocuri → păstrează ca simboluri**. Fiecare bloc devine un simbol al proiectului, la scara modelului, iar fiecare inserție devine o copie așezată, rotită și întoarsă ca în fișier; fără bifă, blocurile sunt descompuse în linii. Blocurile sunt apoi în **Gestionare → Simboluri…** ca orice alt simbol, unde poți edita unul și toate copiile îl urmează, iar o copie se selectează, se mută și se numără ca un singur element. Mesajul de după import numără simbolurile și copiile.
+
+![Trei inserții ale unui bloc, ca simboluri așezate](shots/dxf-blocks.webp)
+
+![Blocul în Gestionare → Simboluri…](shots/dxf-blocks-symbols.webp)
+
+## Tipuri de linie
+
+Liniile întrerupte și punctate vin din **tipurile de linie**. **Gestionare → Standarde de desen → Tipuri de linie** le listează pe cele ale lui Lapin (continuă, întreruptă, axă, ascunsă…) și pe cele ale proiectului, fiecare desenată cum se tipărește. **Nou** face unul; alege-l ca să-i schimbi **Numele**, **Descrierea** și modelul, o **Liniuță mm** și un **Spațiu mm** repetate pe linie, în milimetri pe hârtie, cu o previzualizare deasupra. **Liniuță și spațiu** adaugă o pereche, crucea de lângă o pereche o scoate, și le poți scrie și direct: `6 2 1 2` și **Enter** (o liniuță de 6, un spațiu de 2, un punct, un spațiu de 2). **Duplică** copiază în proiect un tip de linie al lui Lapin, ca să-l schimbi. Redenumirea unuia îl redenumește peste tot unde e folosit: layere, stiluri de axe, stiluri de obiecte, liniile editate. **Elimină** îl șterge, iar ce îl folosea se desenează continuu.
+
+Tipurile de linie ale proiectului sunt oferite oriunde se alege un tip de linie: layerele de desen, linia axelor și a stilurilor de obiecte, liniile editate.
+
+![Standarde de desen, Tipuri de linie](shots/line-types.webp)
+
+**Importă .lin…** citește un fișier de tipuri de linie AutoCAD. Dialogul îi listează tipurile cu modelele lor, **Liniuțele din fișier sunt în** milimetri sau țoli, și o casetă pentru fiecare, ca să-l lași deoparte. Un tip al cărui nume îl are deja proiectul, cu alte liniuțe, întreabă: **Actualizează-l pe al proiectului**, **Păstrează-le pe amândouă** sau **Sari peste**, ori **Aplică la toate…**. Textul și formele dintr-un tip de linie complex sunt lăsate deoparte; liniuțele lui se păstrează. **Exportă .lin…** scrie tipurile proiectului pentru AutoCAD.
+
+![Importă .lin…: tipurile din fișier, alese înainte să intre](shots/line-types-import.webp)
+
+### Standardele ca bibliotecă
+
+**Exportă standardele…**, sus în dreapta în Standarde de desen, scrie stilurile, tipurile de etichete, layerele, tipurile de linie, hașurile și simbolurile proiectului într-un fișier **.lapinstandards**: standardele biroului, gata pentru alt proiect sau alt calculator. **Importă standarde…** citește unul. Ce lipsește proiectului se adaugă; ce are sub același nume dar făcut altfel e listat, intrare cu intrare, cu aceleași alegeri (**Actualizează-l pe al proiectului**, **Păstrează-le pe amândouă**, **Sari peste** și **Aplică la toate…**). **Opțiunile** fișierului (unități, scări, mărimi ale marcajelor, stiluri de obiecte, tabelul de penițe, simboluri de marcaj) vin numai dacă bifezi **Și opțiunile proiectului…**. Un mesaj numără ce s-a adăugat, actualizat, ce era la fel și ce s-a sărit, iar un pas de anulare le ia pe toate înapoi.
+
+![Importă standarde…: ce diferă, intrare cu intrare](shots/standards-import.webp)

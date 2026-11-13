@@ -2588,6 +2588,7 @@ export const ZH: Record<string, string> = {
   "Apply to stair types": "应用到楼梯类型",
   "Back to the furniture types": "返回家具类型",
   "Bar of a shape": "某形状的钢筋",
+  "Bars along edges": "沿边缘布筋", "All round": "整圈", "Pick edges": "选择边", "Click inside the cut of an element in a section first.": "请先在剖面中单击构件剖切面的内部。", "Click near the sides to lay bars along, after the first click inside the cut.": "在剖切面内第一次单击后，请单击要布筋的边附近。",
   "Bar shape saved.": "钢筋形状已保存。",
   "Bar shapes": "钢筋形状",
   "Bar shapes…": "钢筋形状…",

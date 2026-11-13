@@ -64,6 +64,10 @@ Fila **Combinații** enumeră combinațiile cazurilor, după EN 1990, cele recom
 
 ![Fila Combinații](shots/loads-combinations.webp)
 
+## Încărcări dintr-un tabel
+
+**Importă încărcări…** și **Importă cazuri de încărcare…** (în grup și în dialogul Încărcări) citesc încărcări și cazuri dintr-un fișier CSV sau Excel, ori din celule lipite dintr-un tabel: câte o coloană pentru fel, caz, nivel, coordonate, valoare și unitatea ei. Lapin ghicește coloanele, citește unități ca *4,5 kN/m* sau *2,5 kPa*, arată fiecare rând înainte de import, iar importul întreg este un singur pas de anulat. Vezi [Importul tabelelor](tables.md).
+
 ## Calculul
 
 **Rulează calculul** (în același grup și în dialogul Încărcări) calculează cadrul sub aceste încărcări: vezi [Calcul structural](analysis.md).

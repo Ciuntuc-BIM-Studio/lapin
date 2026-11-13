@@ -2591,6 +2591,7 @@ export const DA: Record<string, string> = {
   "Apply to stair types": "Anvend på trappetyper",
   "Back to the furniture types": "Tilbage til møbeltyperne",
   "Bar of a shape": "Stang i en form",
+  "Bars along edges": "Stænger langs kanter", "All round": "hele vejen rundt", "Pick edges": "Vælg kanter", "Click inside the cut of an element in a section first.": "Klik først inde i et elements snit i et snit.", "Click near the sides to lay bars along, after the first click inside the cut.": "Klik efter det første klik i snittet tæt på de sider, stængerne skal ligge langs.",
   "Bar shape saved.": "Stangform gemt.",
   "Bar shapes": "Stangformer",
   "Bar shapes…": "Stangformer…",

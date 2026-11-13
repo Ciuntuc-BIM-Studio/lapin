@@ -158,6 +158,24 @@ Rotița din bara liniei de comandă arată ce se preia, iar Lapin ține minte al
 
 ![Preia proprietățile în plan: peretele de la care se copiază, peretele de sub cursor luminat și ce se preia](shots/match-properties.webp)
 
+## Parametri calculați prin formule
+
+Un parametru al tău care e număr, lungime, arie, unghi sau da/nu (nu text sau alegere) poate fi calculat în loc să fie scris. În **Proprietăți → Parametri**, apasă butonul **Σ** dinaintea valorii lui: valoarea devine un câmp de **formulă**. Scrie formula și apasă <kbd>Enter</kbd> (sau părăsește câmpul) ca s-o păstrezi. Sub câmp, Lapin arată ce dă formula, *= 21*, sau de ce nu se citește; o formulă care nu se citește nu se păstrează. Apasă **Σ** din nou ca să te întorci la o valoare: ultimul rezultat rămâne valoare.
+
+![Un parametru Studs calculat din lungimea peretelui și dintr-un parametru Spacing](shots/param-formula.webp)
+
+O formulă se păstrează cum e scrisă și se calculează la fiecare cerere, deci urmează elementul: schimbă lungimea peretelui sau *Spacing* și *Studs* se schimbă odată cu ele. Etichetele, extrasele și exportul IFC citesc rezultatul. Ce poate folosi o formulă:
+
+- **Nume**: ceilalți parametri ai elementului și ai tipului lui, și numerele proprii ale elementului (*Height*, *Width*). Un nume cu spații poate fi scris fără ele: *Fire rating* sau *FireRating*. Un parametru poate folosi altul care e formulă.
+- **Cantități**, când elementul le are: *Length*, *Width*, *Height*, *GrossArea*, *NetArea*, *GrossVolume*, *NetVolume*.
+- **Funcții**: *min*, *max*, *round*, *floor*, *ceil*, *sqrt*, *sin*, *cos*, *tan*, *atan2*, *if* și *clamp*, cu + − × ÷ și paranteze. Zecimalele se scriu cu punct; argumentele se despart prin virgulă sau punct și virgulă.
+
+**Nume și funcții**, sub câmp, enumeră numele pe care le oferă elementul. O formulă da/nu e da când rezultatul nu e zero (*if(Height > 3, 1, 0)*).
+
+![O formulă care nu se citește spune de ce](shots/param-formula-error.webp)
+
+Același limbaj merge în textul viu al [simbolurilor și etichetelor](drafting.md), scris `{= attr.w * 2 | 0.00}`.
+
 ## Scurtăturile de tastatură
 
 **Vedere → Scurtături de tastatură…** (<kbd>KS</kbd>) arată fiecare comandă la care ajunge tastatura, pe file. Fiecare rând arată scurtăturile comenzii.

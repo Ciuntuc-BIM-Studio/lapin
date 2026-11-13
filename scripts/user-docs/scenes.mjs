@@ -8849,6 +8849,530 @@ export const scenes = [
       }
     },
   },
+  {
+    // Marker symbols (docs/plan-user-extensibility.md §3.3): the section head, the elevation mark and the grid bubble chosen in
+    // Drafting standards → Project (one picked in the list with its previews), a section's own choice in Properties, the plan
+    // showing the marks as the symbols draw them.
+    id: 'marker-symbols',
+    touches: ['core'],
+    async run(t) {
+      await t.fresh();
+      const { page } = t;
+      await house(t, { roof: false });
+      const section = await t.cmd('view.create', { kind: 'section', name: 'A-A', start: [6, -2], end: [6, 10] });
+      const elevation = await t.cmd('view.create', { kind: 'elevation', direction: 'south' });
+      const items = (await t.call('doc.query', { name: 'symbols.list', args: {} })).items;
+      const named = (name) => items.find((i) => i.name === name)?.id;
+      const head = named('Section head (bubble and arrow)'), mark = named('Elevation mark'), bubble = named('Grid bubble (square)'), levelHalf = named('Level marker (half black)');
+      t.expect(head && mark && bubble && levelHalf, "Lapin's own marker symbols are listed");
+      // Drafting standards → Project: the Marker symbols list; the section head picked from the picture list.
+      await t.tool('manage.standards');
+      await page.locator('.dialog').getByText('Project', { exact: true }).first().click();
+      await t.wait(500);
+      await page.locator('[data-slot=sectionHead]').scrollIntoViewIfNeeded();
+      await page.locator('[data-field=slot-sectionHead]').click();
+      await t.wait(500);
+      t.expect(await page.locator('.slot-list [role=option]').count() > 5, 'the list shows the symbols with their pictures');
+      await t.shot('standards-marker-symbols', { of: '.dialog', pad: 0, maxHeight: 760 });
+      await page.locator(`.slot-list [data-symbol="${head}"]`).click();
+      await t.wait(600);
+      await t.cmd('symbols.setSlot', { slot: 'elevationHead', symbolId: mark });
+      await t.cmd('symbols.setSlot', { slot: 'gridBubble', symbolId: bubble });
+      await t.cmd('symbols.setSlot', { slot: 'levelHead', symbolId: levelHalf });
+      const slots = (await t.call('doc.query', { name: 'symbols.slots', args: {} })).slots;
+      t.expect(slots.find((x) => x.id === 'sectionHead')?.project === head, 'the section head is the project\'s choice');
+      await t.keys('Escape');
+      // The plan: the marks are the symbols now.
+      await t.ui({ selection: null, selected: [] });
+      await t.fit();
+      await t.wait(1000);
+      await t.shot('marker-symbols-plan', { of: '[data-testid=plan]', pad: 0 });
+      // Properties of the section: its own choice beside the project's.
+      await select(t, section.id);
+      await t.wait(900);
+      t.expect(await page.locator('[data-testid=marker-symbol-section]').count() === 1, 'Properties has the marker symbol of the section');
+      await page.locator('[data-field=mark-sectionHead]').scrollIntoViewIfNeeded();
+      await page.locator('[data-field=mark-sectionHead]').click();
+      await t.wait(500);
+      await t.shot('marker-symbol-properties', { of: 'aside.props', pad: 0, maxHeight: 620 });
+      await page.keyboard.press('Escape');
+    },
+  },
+  {
+    // Convert drafting to… and Convert layers… (docs/plan-user-extensibility.md §7.4–7.5), and the DXF's blocks kept as symbols (§7.6):
+    // an outline and lines drafted on a layer made walls, the layers A-COLS and A-BARS mapped to columns and bars, a DXF with a block
+    // and three inserts imported with the blocks as symbols.
+    id: 'convert-drafting',
+    touches: ['drafting', 'architecture', 'structure', 'rebar', 'core'],
+    async run(t) {
+      await t.fresh();
+      const { page } = t;
+      const s = await t.storey();
+      const view = `plan:${s}`;
+      for (const [name, color] of [['A-WALL', '#444444'], ['A-COLS', '#b04030'], ['A-BARS', '#2050c0'], ['A-NOTES', '#808080'], ['FURNITURE', '#208040']]) await t.cmd('drafting.setLayer', { name, color });
+      const poly = (pts, closed = true) => ({ type: 'polyline', pts, closed });
+      const walls = (await t.cmd('drafting.draw', { viewId: view, layer: 'A-WALL', shapes: [poly([[0, 0], [8, 0], [8, 5], [0, 5]]), { type: 'line', a: [4, 0], b: [4, 5] }] })).ids;
+      await t.fit();
+      await t.button('Draft', { exact: true });
+      await t.ui({ selected: walls, selection: walls[0] });
+      await t.wait(600);
+      await t.shot('convert-ribbon', { of: '.topbar', pad: 0 });
+      await t.tool('drafting.convert');
+      await page.waitForSelector('[data-dialog=convert]', { timeout: 10_000 });
+      await page.locator('[data-testid=convert-preview]').waitFor({ timeout: 10_000 });
+      await page.locator('[data-field=convert-converter]').selectOption('walls');
+      await t.wait(900);
+      await t.shot('convert-dialog', { of: '[data-dialog=convert]', pad: 8 });
+      const before = (await t.nodes()).filter((n) => n.type === 'IfcWall').length;
+      await page.locator('[data-field=convert-run]').click();
+      await t.until(async () => (await t.nodes()).filter((n) => n.type === 'IfcWall').length > before, 'walls made from the drafted lines');
+      await t.wait(800);
+      // Convert layers…: columns on A-COLS, bars on A-BARS; A-NOTES left as drafting.
+      await t.ui({ selection: null, selected: [] });
+      const front = await page.evaluate(async () => (await (await import('/src/viewport/frontView.ts')).frontView()));
+      t.expect(front, 'the view in front');
+      const circles = [[1, 1], [7, 1], [1, 4], [7, 4]].map(([x, y]) => ({ type: 'circle', c: [x, y], r: 0.2 }));
+      await t.cmd('drafting.draw', { viewId: front, layer: 'A-COLS', shapes: circles });
+      await t.cmd('drafting.draw', { viewId: front, layer: 'A-BARS', shapes: [{ type: 'line', a: [1, 2.2], b: [7, 2.2] }, { type: 'line', a: [1, 2.8], b: [7, 2.8] }] });
+      await t.cmd('drafting.draw', { viewId: front, layer: 'A-NOTES', shapes: [{ type: 'line', a: [0, 6], b: [8, 6] }] });
+      await t.wait(600);
+      await t.tool('drafting.convertLayers');
+      await page.waitForSelector('[data-dialog=convert-layers]', { timeout: 10_000 });
+      await page.locator('[data-field="layer-converter-A-COLS"]').selectOption('columns');
+      await page.locator('[data-field="layer-converter-A-BARS"]').selectOption('rebar');
+      await t.until(async () => !(await page.locator('[data-field=layers-run]').isDisabled()), 'the map previewed');
+      await t.wait(600);
+      await t.shot('convert-layers', { of: '[data-dialog=convert-layers]', pad: 8 });
+      await page.locator('[data-field=layers-run]').click();
+      await t.until(async () => (await t.nodes()).some((n) => n.type === 'IfcColumn'), 'columns made from the layer');
+      t.expect((await t.nodes()).filter((n) => n.type === 'IfcColumn').length === 4, 'four columns, one for each circle');
+      await t.wait(800);
+      // A DXF's blocks as symbols: a chair block inserted three times, one turned.
+      const L = (a, b) => `0\nLINE\n8\n0\n10\n${a[0]}\n20\n${a[1]}\n11\n${b[0]}\n21\n${b[1]}\n`;
+      const chair = L([-250, -250], [250, -250]) + L([250, -250], [250, 250]) + L([250, 250], [-250, 250]) + L([-250, 250], [-250, -250]) + L([-250, 250], [250, 250]);
+      const insert = (x, y, rot) => `0\nINSERT\n8\nFURNITURE\n2\nCHAIR\n10\n${x}\n20\n${y}\n50\n${rot}\n`;
+      const dxf = `0\nSECTION\n2\nHEADER\n9\n$INSUNITS\n70\n4\n0\nENDSEC\n0\nSECTION\n2\nBLOCKS\n0\nBLOCK\n8\n0\n2\nCHAIR\n70\n0\n10\n0\n20\n0\n3\nCHAIR\n${chair}0\nENDBLK\n8\n0\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n${insert(2000, 7500, 0)}${insert(3000, 7500, 90)}${insert(4000, 7500, 180)}0\nENDSEC\n0\nEOF\n`;
+      const r = await t.cmd('drafting.importDxf', { viewId: front, name: 'chairs.dxf', data: Buffer.from(dxf).toString('base64'), blocks: 'symbols' });
+      t.expect(r?.symbols === 1 && r?.instances === 3, `the block became a symbol and its inserts instances (${r?.symbols}, ${r?.instances})`);
+      await t.fit();
+      await t.wait(900);
+      const [px, py] = await t.planPoint(3, 7.5);
+      await t.shot('dxf-blocks', { clip: { x: Math.max(0, px - 260), y: Math.max(0, py - 120), width: 520, height: 240 } });
+      await t.button('Manage', { exact: true });
+      await t.tool('manage.symbols');
+      await page.waitForSelector('[data-dialog=symbols]', { timeout: 10_000 });
+      await t.wait(800);
+      await page.locator('[data-field=sy-search]').fill('CHAIR');
+      await t.wait(500);
+      await t.shot('dxf-blocks-symbols', { of: '[data-dialog=symbols]', pad: 8 });
+    },
+  },
+  {
+    // Line types (docs/plan-user-extensibility.md §3.6) and the standards library (§3.7): Drafting standards → Line types with one
+    // made and its dashes typed, an AutoCAD .lin read with its types chosen, and a .lapinstandards file read back where the project
+    // differs, each entry given its choice.
+    id: 'line-types',
+    touches: ['core'],
+    async run(t) {
+      await t.fresh();
+      const { page } = t;
+      await t.tool('manage.standards');
+      await page.locator('[data-field=standards-tab-lines]').click();
+      await page.locator('[data-testid=line-types]').waitFor({ timeout: 10_000 });
+      await page.locator('[data-field=lt-new]').click();
+      await t.wait(700);
+      await page.locator('[data-field=lt-name]').fill('Centre fine');
+      await page.locator('[data-field=lt-name]').blur();
+      await t.wait(600);
+      await page.locator('[data-field=lt-dashes-text]').fill('12 3 2 3');
+      await page.locator('[data-field=lt-dashes-text]').press('Enter');
+      await t.wait(800);
+      const own = async () => (await t.call('doc.query', { name: 'standards.lineTypes', args: {} })).own;
+      t.expect((await own()).some((o) => o.name === 'Centre fine' && o.dashes.join(',') === '12,3,2,3'), 'the line type "Centre fine" has the dashes typed');
+      await t.shot('line-types', { of: '.dialog', pad: 0 });
+      // Import .lin…: a file with two types, chosen in the list before they come in.
+      const lin = join(tmpdir(), 'office.lin');
+      writeFileSync(lin, '*HIDDENX,Hidden, short dashes\nA,6,-3\n*BORDERY,Border, long dashes\nA,12,-3,12,-3,0,-3\n*CENTRE FINE,Centre, the office\'s\nA,8,-2\n');
+      await page.evaluate(() => { delete window.showOpenFilePicker; });
+      const chooser = page.waitForEvent('filechooser', { timeout: 10_000 });
+      await page.locator('[data-field=lt-import]').click();
+      await (await chooser).setFiles(lin);
+      await page.locator('[data-testid=lin-import]').waitFor({ timeout: 10_000 });
+      await t.wait(700);
+      await t.shot('line-types-import', { of: '.dialog', pad: 0 });
+      await page.locator('[data-field=lin-import-apply]').click();
+      await t.wait(900);
+      t.expect((await own()).some((o) => o.name === 'HIDDENX'), 'the .lin file\'s line types are in the project');
+      // The standards library: exported, the project changed, the file read back: what differs asks.
+      const pack = await t.call('doc.query', { name: 'standards.export', args: {} });
+      t.expect(typeof pack?.text === 'string' && pack.text.length > 20, 'Export standards… gives a file');
+      await t.cmd('standards.setLineType', { name: 'HIDDENX', dashes: [3, 1] });
+      await t.cmd('standards.removeLineType', { name: 'BORDERY' });
+      const file = join(tmpdir(), 'Office.lapinstandards');
+      writeFileSync(file, pack.text);
+      const chooser2 = page.waitForEvent('filechooser', { timeout: 10_000 });
+      await page.locator('[data-field=standards-import]').click();
+      await (await chooser2).setFiles(file);
+      await page.locator('[data-testid=standards-import]').waitFor({ timeout: 10_000 });
+      await t.wait(700);
+      await t.shot('standards-import', { of: '.dialog', pad: 0 });
+      await page.locator('[data-field=standards-import-apply]').click();
+      await t.wait(1000);
+      const after = await own();
+      t.expect(after.some((o) => o.name === 'BORDERY') && after.find((o) => o.name === 'HIDDENX')?.dashes.join(',') === '6,3', 'the import brought back the removed type and updated the changed one');
+    },
+  },
+  // [scenes:A]
+  {
+    // Import table… (docs/plan-user-extensibility.md §7.1): property values pasted from a spreadsheet (a mark, a property of a standard
+    // set, a parameter of one's own; one mark that no element has, left out), then loads with their units on the rows, a row
+    // that cannot be read, Skip rows with errors, and the result in the model.
+    id: 'tables',
+    touches: ['core', 'architecture', 'analysis'],
+    async run(t) {
+      await t.fresh();
+      const { storey, walls } = await house(t, { roof: false });
+      for (const [i, name] of [[0, 'W-01'], [1, 'W-02'], [2, 'W-03']]) await t.cmd('element.rename', { id: walls[i], name });
+      await t.button('Manage', { exact: true });
+      await t.shot('tables-ribbon', { of: '.topbar', pad: 0 });
+      const dialog = t.page.locator('[data-dialog=import-table]');
+      const paste = async (text) => {
+        await dialog.locator('[data-field=table-paste]').fill(text);
+        await dialog.locator('[data-field=table-use-pasted]').click();
+        await t.until(async () => (await dialog.locator('[data-testid=table-columns]').count()) > 0, 'the table is read');
+      };
+      // Property values: the table is chosen, the cells pasted, the columns guessed from their headings.
+      await t.tool('manage.importTable');
+      await t.page.waitForSelector('[data-dialog=import-table]', { timeout: 10_000 });
+      await dialog.locator('[data-field=table-target]').selectOption('core.properties');
+      await paste('Mark\tPset_WallCommon.FireRating\tSound rating\nW-01\tREI 120\t52\nW-02\tREI 60\t48\nW-09\tREI 60\t45\n');
+      await t.until(async () => (await dialog.locator('[data-testid=table-preview]').count()) > 0, 'the preview is shown');
+      t.expect(await dialog.locator('[data-field=table-ok]').innerText() === '2', 'two rows are ready');
+      t.expect(await dialog.locator('[data-field=table-errors]').innerText() === '1', 'the row of a mark no element has is an error');
+      t.expect(await dialog.locator('[data-field=table-import]').isDisabled(), 'Import waits while a row has an error');
+      await t.shot('tables-properties', { of: '[data-dialog=import-table]', pad: 0 });
+      await dialog.locator('[data-field=table-skip]').check();
+      await dialog.locator('[data-field=table-import]').click();
+      await t.wait(900);
+      const nodes = await t.nodes();
+      const w1 = nodes.find((n) => n.id === walls[0]);
+      t.expect(JSON.stringify(w1?.props ?? {}).includes('REI 120'), 'W-01 has its fire rating');
+      t.expect(!JSON.stringify(nodes.find((n) => n.id === walls[2])?.props ?? {}).includes('REI'), 'W-03 was not in the table');
+      // Loads: values with their units on the rows, a point load without its coordinates.
+      await t.tool('analysis.importLoads');
+      await t.page.waitForSelector('[data-dialog=import-table]', { timeout: 10_000 });
+      await paste('Case\tKind\tx\ty\tx1\ty1\tx2\ty2\tValue\tUnit\nQ-A\tline\t\t\t0\t0\t6\t0\t4.5\tkN/m\nQ-A\tpoint\t3\t3\t\t\t\t\t12\tkN\nQ-A\tpoint\t\t\t\t\t\t\t5\tkN\n');
+      await t.until(async () => (await dialog.locator('[data-testid=table-preview]').count()) > 0, 'the loads preview is shown');
+      t.expect(await dialog.locator('[data-field=table-ok]').innerText() === '2', 'two loads are ready');
+      t.expect(await dialog.locator('[data-field=table-errors]').innerText() === '1', 'the point without coordinates is an error');
+      await dialog.locator('[data-field=table-skip]').check();
+      await t.shot('tables-loads', { of: '[data-dialog=import-table]', pad: 0 });
+      await dialog.locator('[data-field=table-import]').click();
+      await t.wait(900);
+      const loads = await t.call('doc.query', { name: 'analysis.loads', args: {} });
+      const qa = loads.cases.find((c) => c.code === 'Q-A');
+      t.expect(qa && qa.userLoads === 2, `two loads in Q-A (${qa?.userLoads})`);
+      t.expect(storey != null, 'the storey stands');
+    },
+  },
+  {
+    // Parameters worked out by a formula (docs/plan-user-extensibility.md §5.3): a wall's parameter turned into a formula in
+    // Properties, the live result under it, the help of names and functions open, and a formula that does not read.
+    id: 'param-formula',
+    touches: ['core', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const { walls } = await house(t, { roof: false });
+      await t.cmd('element.setParam', { ids: [walls[0]], name: 'Spacing', kind: 'length', value: 0.6 });
+      await t.cmd('element.setParam', { ids: [walls[0]], name: 'Studs', kind: 'number', value: 0 });
+      await select(t, walls[0]);
+      await t.wait(700);
+      const sw = t.page.locator('[data-param-formula-switch=Studs]');
+      if (await sw.count() === 0) { await t.page.locator('[data-group=params] .sect-head').click(); await t.wait(300); }
+      await sw.click();
+      const input = t.page.locator('[data-param-formula=Studs]');
+      await input.fill('ceil(Length / Spacing) + 1');
+      await input.press('Enter');
+      await t.until(async () => /^=/.test((await t.page.locator('[data-param-result=Studs]').innerText()).trim()), 'the formula gives its value');
+      await t.page.locator('.param-formula-help summary').first().click();
+      await t.wait(300);
+      await t.shot('param-formula', { of: t.page.locator('dl:has([data-param-formula-switch=Studs])').first(), pad: 6 });
+      // A formula that does not read says why, under it, and is not kept.
+      await input.fill('ceil(Length /');
+      await t.until(async () => (await t.page.locator('[data-param-result=Studs]').innerText()).trim().length > 0 && !/^=/.test((await t.page.locator('[data-param-result=Studs]').innerText()).trim()), 'a formula that does not read says so');
+      await t.shot('param-formula-error', { of: t.page.locator('dl:has([data-param-formula-switch=Studs])').first(), pad: 6 });
+      await input.fill('ceil(Length / Spacing) + 1');
+    },
+  },
+  // [scenes:B1]
+  {
+    // Rule packs (docs/plan-user-extensibility.md §5.4): Lapin's own read only, a copy of the project's with a stricter riser, in use; the check
+    // lists the stair type that differs; Apply to stair types copies the rules in and the check comes back clean.
+    id: 'rules',
+    touches: ['core', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const { page } = t;
+      const s = await t.storey();
+      await t.cmd('architecture.addStair', { storeyId: s, x: 1, y: 1, x2: 3, y2: 1 });
+      const listed = await t.call('doc.query', { name: 'rules.list', args: {} });
+      const builtin = listed.items.find((i) => i.builtin);
+      t.expect(builtin, 'Lapin has a rule pack of its own');
+      const mine = (await t.cmd('rules.create', { from: builtin.id, name: 'Office rules', description: 'Our riser and treads', activate: true })).id;
+      const pack = await t.call('doc.query', { name: 'rules.get', args: { id: mine } });
+      const stairs = structuredClone(pack.sections.stairs);
+      stairs.residential.riserMax = 0.175;
+      stairs.residential.riserTarget = 0.165;
+      await t.cmd('rules.update', { id: mine, section: 'stairs', values: stairs });
+      await t.button('Manage', { exact: true });
+      await t.tool('manage.rules');
+      await page.waitForSelector('[data-dialog=rules]', { timeout: 10_000 });
+      await page.locator(`[data-rules-pack="${mine}"]`).click();
+      await t.until(async () => (await page.locator('[data-testid=rules-stairs]').count()) === 1, 'the stairs table is shown');
+      await t.wait(500);
+      await t.shot('rules-dialog', { of: '[data-dialog=rules]', pad: 8 });
+      // Check the project: the stair type made with Lapin's riser differs from the rules in use.
+      await page.locator('[data-field=rules-check]').click();
+      await t.until(async () => (await page.locator('[data-testid=rules-findings] li.finding').count()) >= 1, 'the check lists the stair type');
+      await t.wait(400);
+      await t.shot('rules-check', { of: '[data-dialog=rules]', pad: 8 });
+      // Apply to stair types, then the check is clean.
+      await page.locator('[data-field=rules-apply-stairs]').click();
+      await t.wait(900);
+      await page.locator('[data-field=rules-check]').click();
+      await t.until(async () => (await page.locator('[data-testid=rules-findings] li.finding').count()) === 0, 'the stair types follow the rules after Apply');
+      await t.ui({ dialog: null });
+    },
+  },
+  {
+    // Classifications (docs/plan-user-extensibility.md §7.3): a system with items, a code on a wall in Properties, the office's keynotes, a shared parameter.
+    id: 'classifications',
+    touches: ['core'],
+    async run(t) {
+      await t.fresh();
+      const { page } = t;
+      const s = await t.storey();
+      const wall = (await t.cmd('architecture.addWall', { storeyId: s, x1: 0, y1: 0, x2: 6, y2: 0 })).id;
+      const other = (await t.cmd('architecture.addWall', { storeyId: s, x1: 0, y1: 4, x2: 6, y2: 4 })).id;
+      const uni = (await t.cmd('classification.create', { name: 'Uniclass', source: 'The office, from its licensed copy', edition: '2015' })).id;
+      await t.cmd('classification.assign', { ids: [wall], system: uni, code: 'Ss_25_10', add: true, title: 'Wall structure systems' });
+      await t.cmd('classification.assign', { ids: [other], system: uni, code: 'Ss_25_30', add: true, title: 'Framed wall systems' });
+      const keys = (await t.cmd('classification.create', { name: 'Office keynotes' })).id;
+      await t.cmd('classification.assign', { ids: [other], system: keys, code: 'K12', add: true, title: 'Fire-stopped joint' });
+      await t.cmd('params.setDef', { def: { name: 'Fire compartment', kind: 'choice', pset: 'Lapin_Fire', options: ['A', 'B', 'C'], description: 'The compartment an element belongs to' } });
+      await t.ui({ selection: wall, selected: [wall] });
+      await t.wait(600);
+      await page.waitForSelector('[data-group=classification]', { timeout: 10_000 });
+      t.expect(await page.locator('[data-class-ref=Uniclass]').count() === 1, 'the wall shows its Uniclass code');
+      await page.locator('[data-group=classification]').scrollIntoViewIfNeeded();
+      await t.wait(300);
+      await t.shot('classification-properties', { of: '[data-group=classification]', pad: 8 });
+      await t.ui({ selection: null, selected: [] });
+      await t.button('Manage', { exact: true });
+      await t.tool('manage.classifications');
+      await page.waitForSelector('[data-dialog=classifications]', { timeout: 10_000 });
+      await page.locator('[data-class-system=Uniclass]').click();
+      await t.until(async () => (await page.locator('.class-tree-box').innerText()).includes('Ss_25_10'), 'the tree lists the items');
+      await t.wait(400);
+      await t.shot('classifications-dialog', { of: '[data-dialog=classifications]', pad: 8 });
+      await page.locator('[data-field=class-tab-params]').click();
+      await page.waitForSelector('[data-param-def="Fire compartment"]', { timeout: 10_000 });
+      await t.wait(400);
+      await t.shot('classifications-params', { of: '[data-dialog=classifications]', pad: 8 });
+      await t.ui({ dialog: null });
+    },
+  },
+  // [scenes:B2]
+  {
+    // Bars along an element's edges (docs/plan-user-extensibility.md §6.2): a beam cut across in a section; the tool's bar (cover, diameter,
+    // steel, All round / Pick edges); a stirrup all round and an open bar along one side, placed as the tool places them.
+    id: 'rebar-along-edges',
+    touches: ['rebar', 'structure'],
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const s = await t.storey();
+      const beam = (await t.cmd('structure.addBeam', { storeyId: s, x1: 0, y1: 0, x2: 6, y2: 0 })).id;
+      const across = (await t.cmd('rebar.sectionHere', { viewId: `plan:${s}`, id: beam, point: [3, 0], inset: false })).viewId;
+      t.expect(across, 'a section across the beam');
+      await t.ui({ view: 'drawing', drawingViewId: across, selection: null, selected: [], keyPlan: false, tool: null });
+      await t.button('Simple rebar', { exact: true });
+      await t.fit();
+      await t.wait(800);
+      await t.tool('rebar.alongEdges');
+      await page.evaluate(async () => (await import('/src/modules/rebar/AlongEdgesTool.tsx')).useAlongEdges.setState({ cover: 0.025, diameter: 0.016 }));
+      await page.locator('[data-field=rebar-along-mode]').selectOption('pick');
+      await t.wait(400);
+      await t.shot('rebar-along-edges-bar', { of: '.cad-prompt', pad: 4 });
+      // What the tool does on the clicks: the first inside the cut, the others near the sides.
+      const box = await page.evaluate(async ([viewId, beamId]) => {
+        const { query, execute } = await import('/src/engine/session.ts');
+        const tool = await import('/src/modules/rebar/AlongEdgesTool.tsx');
+        const d = await query('view.drawing', { id: viewId });
+        const loops = (d?.marks ?? []).filter((m) => m.id === beamId).flatMap((m) => m.data?.loops ?? []);
+        if (!loops.length) return null;
+        const xs = [], ys = [];
+        for (const l of loops) for (let i = 0; i + 1 < l.length; i += 2) { xs.push(l[i]); ys.push(l[i + 1]); }
+        const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+        const mid = { x: (x0 + x1) / 2, y: (y0 + y1) / 2 };
+        const log = []; const ctx = { viewId, storeyId: '', execute: async (c, a) => { const r = await execute(c, a); log.push([c, JSON.stringify(a), JSON.stringify(r)]); return r; } };
+        tool.useAlongEdges.setState({ mode: 'all', diameter: 0.008, cover: 0.03 });
+        await tool.placeAlongEdges({ points: [mid] }, ctx);
+        tool.useAlongEdges.setState({ mode: 'pick', diameter: 0.016, cover: 0.03 });
+        await tool.placeAlongEdges({ points: [mid, { x: mid.x, y: y0 + 0.005 }] }, ctx);
+        return { x0, x1, y0, y1, log };
+      }, [across, beam]);
+      t.expect(box, 'the section\'s drawing has the beam\'s cut (the loops the tool reads its sides from)');
+      await t.wait(1200);
+      const bars = (await t.nodes()).filter((n) => n.type === 'LapinRebar');
+      t.expect(bars.length === 2, `a stirrup all round and a bar along the bottom side (${bars.length} bars)`);
+      await t.ui({ selection: null, selected: [], tool: null });
+      await t.fit();
+      await t.wait(800);
+      await t.shot('rebar-along-edges', { of: '[data-testid=drawing]', pad: 0 });
+    },
+  },
+  {
+    // Bar shapes of the user's (§6.3) and the bending schedule by the standard (§6.4): BS 8666's shape 21 (a U bar) made in the dialog's
+    // data and shown with its live drawing; three bars of it; the Bar of a shape tool's bar; the schedule as the standard writes it.
+    id: 'rebar-shapes',
+    touches: ['rebar'],
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const view = (await t.cmd('view.create', { kind: 'section', start: [0, -1], end: [6, -1], scale: 50, name: 'Beam B1' })).id;
+      const shape = (await t.cmd('rebar.createShape', { def: {
+        code: '21', label: 'U bar', standard: 'BS 8666',
+        params: [{ key: 'A', label: 'A', default: 0.3, min: 0.05 }, { key: 'B', label: 'B', default: 0.5, min: 0.05 }, { key: 'C', label: 'C', default: 0.3, min: 0.05 }],
+        legs: [{ length: 'A', turn: '-90' }, { length: 'B', turn: '-90' }, { length: 'C' }],
+      } })).id;
+      t.expect(shape, 'the shape is made');
+      await t.cmd('rebar.add', { viewId: view, shapeId: shape, at: [0.5, 0.4], diameter: 0.012, params: { B: 0.6 } });
+      await t.cmd('rebar.add', { viewId: view, shapeId: shape, at: [2.0, 0.4], diameter: 0.012, params: { B: 0.6 } });
+      await t.cmd('rebar.add', { viewId: view, shapeId: shape, at: [3.5, 0.4], diameter: 0.016, params: { A: 0.4, B: 0.8, C: 0.4 } });
+      await t.cmd('rebar.add', { viewId: view, shape: 'straight', at: [0.5, 0.1], params: { length: 5 }, diameter: 0.016 });
+      await t.ui({ view: 'drawing', drawingViewId: view, selection: null, selected: [], keyPlan: false });
+      await t.wait(1000);
+      await t.button('Simple rebar', { exact: true });
+      await t.tool('rebar.shapes');
+      await page.waitForSelector('[data-testid=shape-editor]', { timeout: 10_000 });
+      await t.until(async () => await page.locator('[data-testid=shape-editor] svg').count() > 0, 'the shape\'s live drawing');
+      t.expect(await page.locator('[data-testid=shape-legs] tbody tr').count() === 3, 'the shape has three legs');
+      await t.shot('rebar-shapes', { of: '[data-dialog=barShapes]', pad: 0 });
+      await page.locator('[data-dialog=barShapes] button[title=Close]').click();
+      await t.wait(400);
+      // The Bar of a shape tool: the shape is chosen in the tool bar.
+      await t.tool('rebar.userShape');
+      await t.wait(500);
+      t.expect(await page.locator('[data-field=rebar-tool-shape]').count() === 1, 'the tool bar chooses the shape');
+      await t.shot('rebar-shape-tool', { of: '.cad-prompt', pad: 4 });
+      await t.keys('Escape');
+      // The schedule as the standard writes it.
+      await t.tool('rebar.bendingSchedule');
+      await page.waitForSelector('[data-testid=bending-schedule]', { timeout: 10_000 });
+      t.expect(await page.locator('[data-testid=bending-schedule] tbody tr').count() >= 2, 'a row for each mark');
+      await t.shot('rebar-bending-schedule', { of: '[data-dialog=bendingSchedule]', pad: 0 });
+      await page.locator('[data-dialog=bendingSchedule] button[title=Close]').click();
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
+    // Furniture models of the user's own (§3.5, decision 512): a GLB made here (a sofa's seat and its plinth, two materials) brought in
+    // through the dialog with its licence and source, its materials given roles, a stretch zone on the width; a type made of it; a
+    // symbol of the user's as the type's plan symbol.
+    id: 'furniture-user-model',
+    touches: ['furniture', 'core'],
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const s = await t.storey();
+      // A binary glTF of two boxes (y up, metres): a seat 2 x 0.9 x 0.45 and a plinth under it, two materials.
+      const box = (x0, y0, z0, x1, y1, z1) => [[x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0], [x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]];
+      const faces = [0, 2, 1, 0, 3, 2, 4, 5, 6, 4, 6, 7, 0, 1, 5, 0, 5, 4, 3, 7, 6, 3, 6, 2, 0, 4, 7, 0, 7, 3, 1, 2, 6, 1, 6, 5];
+      const verts = [...box(-1, 0.1, -0.45, 1, 0.5, 0.45), ...box(-0.95, 0, -0.4, 0.95, 0.1, 0.4)];
+      const pos = Buffer.alloc(verts.length * 12);
+      verts.forEach((v, i) => v.forEach((c, k) => pos.writeFloatLE(c, i * 12 + k * 4)));
+      const idx = Buffer.alloc(144);
+      faces.forEach((f, i) => { idx.writeUInt16LE(f, i * 2); idx.writeUInt16LE(f, 72 + i * 2); });
+      const bin = Buffer.concat([pos, idx]);
+      const json = JSON.stringify({
+        asset: { version: '2.0' }, scene: 0, scenes: [{ nodes: [0] }], nodes: [{ mesh: 0 }],
+        meshes: [{ primitives: [{ attributes: { POSITION: 0 }, indices: 2, material: 0 }, { attributes: { POSITION: 1 }, indices: 3, material: 1 }] }],
+        materials: [{ name: 'Seat fabric' }, { name: 'Plinth wood' }],
+        accessors: [
+          { bufferView: 0, componentType: 5126, count: 8, type: 'VEC3', min: [-1, 0.1, -0.45], max: [1, 0.5, 0.45] },
+          { bufferView: 0, byteOffset: 96, componentType: 5126, count: 8, type: 'VEC3', min: [-0.95, 0, -0.4], max: [0.95, 0.1, 0.4] },
+          { bufferView: 1, componentType: 5123, count: 36, type: 'SCALAR' }, { bufferView: 2, componentType: 5123, count: 36, type: 'SCALAR' }],
+        bufferViews: [{ buffer: 0, byteOffset: 0, byteLength: 192, target: 34962 }, { buffer: 0, byteOffset: 192, byteLength: 72, target: 34963 }, { buffer: 0, byteOffset: 264, byteLength: 72, target: 34963 }],
+        buffers: [{ byteLength: bin.length }],
+      });
+      const jsonBytes = Buffer.from(json + ' '.repeat((4 - (json.length % 4)) % 4));
+      const head = Buffer.alloc(12); head.write('glTF', 0); head.writeUInt32LE(2, 4); head.writeUInt32LE(12 + 8 + jsonBytes.length + 8 + bin.length, 8);
+      const chunk = (len, type) => { const c = Buffer.alloc(8); c.writeUInt32LE(len, 0); c.write(type, 4, 'latin1'); return c; };
+      const glb = Buffer.concat([head, chunk(jsonBytes.length, 'JSON'), jsonBytes, chunk(bin.length, 'BIN\0'), bin]);
+      const { tmpdir } = await import('node:os');
+      const { join } = await import('node:path');
+      const { writeFileSync } = await import('node:fs');
+      const file = join(tmpdir(), 'lapin-guide-sofa.glb');
+      writeFileSync(file, glb);
+      await t.button('Interior', { exact: true });
+      await t.tool('furniture.types');
+      await t.wait(500);
+      await page.evaluate(() => { delete window.showOpenFilePicker; });
+      await page.locator('[data-action=furniture-import-model]').click();
+      await page.waitForSelector('[data-dialog=furnitureModels]', { timeout: 10_000 });
+      const chooser = page.waitForEvent('filechooser', { timeout: 10_000 });
+      await page.locator('[data-field=model-import]').click();
+      await (await chooser).setFiles(file);
+      await page.waitForSelector('[data-testid=model-import-form]', { timeout: 10_000 });
+      await page.locator('[data-field=model-name]').fill('Studio sofa');
+      t.expect(await page.locator('[data-field=model-import-go]').isDisabled(), 'a model does not come in without its licence');
+      await page.locator('[data-field=model-licence]').fill('CC0-1.0');
+      await page.locator('[data-field=model-source]').fill('Drawn in Blender, own work');
+      await page.locator('[data-field=model-group]').fill('Studio');
+      await t.shot('furniture-model-import', { of: '[data-dialog=furnitureModels]', pad: 0 });
+      await page.locator('[data-field=model-import-go]').click();
+      await page.waitForSelector('[data-testid=user-model-editor]', { timeout: 20_000 });
+      // Roles for the file's materials, a zone on the width (the middle stretches, the ends keep their size).
+      await page.locator('[data-slot="Seat fabric"]').selectOption('upholstery');
+      await page.locator('[data-slot="Plinth wood"]').selectOption('legs');
+      await page.locator('[data-zone-toggle=x]').check();
+      await page.locator('[data-zone-from=x]').fill('30');
+      await page.locator('[data-zone-to=x]').fill('70');
+      await t.wait(300);
+      await page.locator('[data-field=model-save]').click();
+      await t.wait(1000);
+      await t.shot('furniture-model-editor', { of: '[data-dialog=furnitureModels]', pad: 0 });
+      const mine = (await t.call('doc.query', { name: 'furniture.models', args: {} })).models.find((m) => m.name === 'Studio sofa');
+      t.expect(mine && mine.licence === 'CC0-1.0' && mine.slots['Seat fabric'] === 'upholstery', 'the model is kept with its licence and roles');
+      // Back to the types: a type of the model, in the gallery beside Lapin's, and a plan symbol of the user's for it.
+      await page.locator('[data-dialog=furnitureModels] button[title="Back to the furniture types"]').click();
+      await t.wait(500);
+      const type = (await t.cmd('furniture.createType', { kind: 'model', name: 'Studio sofa 2600', spec: { model: mine.code, width: 2.6 } })).id;
+      const view = `plan:${s}`;
+      const drawn = (await t.cmd('drafting.draw', { viewId: view, shapes: [
+        { type: 'line', a: [20, 20], b: [22, 20] }, { type: 'line', a: [22, 20], b: [22, 20.9] }, { type: 'line', a: [22, 20.9], b: [20, 20.9] }, { type: 'line', a: [20, 20.9], b: [20, 20] },
+        { type: 'line', a: [20, 20.7], b: [22, 20.7] }] })).ids;
+      await t.cmd('drafting.toSymbol', { viewId: view, ids: drawn, base: [21, 20.45], name: 'Sofa plan', category: 'Furniture', scale: 'model' });
+      const sym = (await t.call('doc.query', { name: 'symbols.list', args: {} })).items.find((i) => i.name === 'Sofa plan');
+      t.expect(sym, 'a symbol of the user\'s');
+      await t.cmd('furniture.updateType', { id: type, spec: { planSymbol: sym.id } });
+      await t.wait(800);
+      await page.locator('.dialog [data-furniture-type]').filter({ hasText: 'Studio sofa 2600' }).first().click();
+      await t.wait(1500);
+      t.expect(await page.locator('.dialog [data-model].on').count() === 1, 'the type of the model is marked in the gallery');
+      t.expect(await page.locator('.dialog [data-field=furniture-plan-symbol]').count() === 1, 'the type has a plan symbol field');
+      await t.shot('furniture-plan-symbol-field', { of: '.dialog', pad: 0 });
+      await page.locator('.dialog button[title="Close"]').first().click();
+      await t.wait(300);
+      await t.cmd('furniture.place', { storeyId: s, typeId: type, x: 21, y: 20.45, against: false });
+      await t.ui({ selection: null, selected: [] });
+      await t.fit();
+      await t.wait(1200);
+      await t.shot('furniture-plan-symbol', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  // [scenes:C]
 ];
 
 /** A zip of stored entries (name, text), enough for a BCF file: the local headers, the central directory and its end, with CRC-32. */

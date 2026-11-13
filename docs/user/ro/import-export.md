@@ -110,11 +110,17 @@ Copia se scrie lângă original, sau într-un folder ales de tine, cu numele ori
 
 **Importă DXF…** aduce un desen CAD în vederea din față, cu layerele, hașurile, textele și cotele lui. Intră ca desen de care te poți prinde și pe care îl poți edita. Ca să folosești un DWG, salvează-l întâi ca DXF din programul tău CAD (AutoCAD, BricsCAD sau DraftSight: **Save As → DXF**). Un PDF sau o imagine intră pentru calchiat cu **Fișier → Importă PDF sau imagine…** sau **Desen → PDF sau imagine**: liniile unui PDF vectorial ca desen, la scara la care a fost desenat, iar pozele lui și orice PNG sau JPEG ca imagini translucide (vezi [Desen](drafting.md)). Într-un plan, **Așezat: după coordonatele hărții** pune un desen în coordonate reale (un plan cadastral în Stereo 70) unde îl pune harta (vezi [Amplasamentul și datele lui](site.md)).
 
+Blocurile unui DXF pot intra ca simboluri (**Blocuri → păstrează ca simboluri**) în loc de linii descompuse, iar **convertește layerele în elemente…** transformă layerele lui în pereți, stâlpi sau bare imediat după import: vezi [Desen](drafting.md#blocurile-dxf-ca-simboluri) și [Conversia desenului în elemente](drafting.md#conversia-desenului-in-elemente).
+
 Desenul stă și în **vederea 3D**, pe planul vederii în care a intrat: pe un plan la cota nivelului, pe o secțiune sau fațadă pe planul acelei vederi, în culorile layerelor lui, cu hașurile estompate, ca linii subțiri care nu ascund niciodată modelul. Un layer stins în **Desen → Layere** rămâne stins și în 3D. **Vedere → DXF în 3D** (și în **Vedere → Setările vederii** ale unei vederi 3D) arată sau ascunde toate importurile; un import anume se comută din **În 3D** în proprietățile oricărei forme a lui, un DXF legat din coloana **3D** din **Gestionare → Legături**. Desenul în 3D pe acel nivel, cu uneltele din Desen sau cu Schița din Studio, face snap pe liniile lui, așa că îl poți calchia în 3D ca pe plan. Liniile cărora fișierul le-a dat cote stau în spațiu la acele cote, ca înainte.
 
 ![Un DXF de amplasament în vederea 3D, la cota parterului](shots/dxf-3d.webp)
 
 Un DXF importat face parte din proiect: **File → Save** îl păstrează în fișierul `.lapin` cu straturile, hașurile, textele și orice grup făcut din el, iar la redeschiderea proiectului e acolo, pe planul nivelului. Vederea de plan în care a intrat e de atunci planul nivelului, cea listată în browserul proiectului, iar ce era desenat înainte pe nivel trece pe ea. Lapin întreabă dacă salvezi înainte să se închidă cu modificări nesalvate. Ca desenul să rămână un fișier separat, bifează **As a link** în dialogul de import: rămâne legat, needitabil, iar **Manage → Links** îl reîncarcă atunci când fișierul se schimbă.
+
+## Tabele
+
+Încărcările, cazurile de încărcare, parametrii elementelor și codurile de clasificare intră dintr-un fișier CSV sau Excel, ori din celule lipite dintr-un tabel, cu **Gestionare → Importă tabel…**: coloanele sunt ghicite, unitățile citite, fiecare rând arătat înainte de import, iar importul este un singur pas de anulat. Vezi [Importul tabelelor](tables.md).
 
 ## Legături
 

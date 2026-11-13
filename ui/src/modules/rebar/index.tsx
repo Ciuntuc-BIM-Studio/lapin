@@ -4,7 +4,7 @@
  * or a column at a click, inset beside it in the same view, with the context round it.
  */
 
-import { Crosshair, FileDown, Minus, PictureInPicture2, Scissors, Settings2, Shapes, Slice, Table2, Ruler } from 'lucide-react';
+import { Crosshair, FileDown, Minus, PictureInPicture2, Scissors, Settings2, Shapes, Slice, Square, Table2, Ruler } from 'lucide-react';
 import { SectionIcon } from '../../icons';
 import type { Grip, GripView, LapinModule, ToolDef, Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
@@ -21,6 +21,7 @@ import { anchorGrips, type AnchorData } from './anchors';
 import { lazyPart } from '../../platform/lazyPart';
 import { PartitionOptions, partitionArg, useShapePick } from './partitions';
 import { ShapeToolOptions } from './ShapeTool';
+import { AlongEdgesOptions, placeAlongEdges } from './AlongEdgesTool';
 import { exportBvbsFile } from './barShapes';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
@@ -110,6 +111,16 @@ const userShapeBar: ToolDef = {
     if (!shapeId) { notify('Make a bar shape first: Bar shapes…'); return; }
     await ctx.execute('rebar.add', { viewId: ctx.viewId, shapeId, at: [p.x, p.y], ...partitionArg() });
   },
+};
+/**
+ * Bars along the edges of an element's cut in a section: a click inside the cut (all round: a stirrup); with Pick edges, further
+ * clicks near the sides toggle them, Enter places an open bar along them.
+ */
+const alongEdges: ToolDef = {
+  id: 'rebar.alongEdges', label: 'Bars along edges', icon: Square,
+  gesture: { kind: 'polyline' },
+  options: AlongEdgesOptions,
+  complete: placeAlongEdges,
 };
 /** The project's bar shapes: the codes of the user's standard (BS 8666, ISO 4066, the office's), edited with a live drawing. */
 const barShapes: ToolDef = { id: 'rebar.shapes', label: 'Bar shapes…', icon: Shapes, run: () => useUi.setState({ dialog: 'barShapes' }) };
@@ -223,7 +234,7 @@ export const rebarModule: LapinModule = {
     id: 'rebar', label: 'Simple rebar', order: 35, include: ['modify'],
     groups: [
       { label: 'Sections', tools: [sectionHere, sectionAcross, insetView] },
-      { label: 'Bars', tools: [straight, lBar, uBar, stirrup, polylineBar], small: [tie, dot, userShapeBar, asSection, splitBar] },
+      { label: 'Bars', tools: [straight, lBar, uBar, stirrup, polylineBar], small: [tie, dot, userShapeBar, alongEdges, asSection, splitBar] },
       { label: 'Distribution', tools: [run] },
       { label: 'Schedule', tools: [schedule, bendingSchedule, barShapes, settings, bars3d], small: [exportBvbs] },
     ],

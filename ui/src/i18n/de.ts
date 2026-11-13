@@ -2596,6 +2596,7 @@ export const DE: Record<string, string> = {
   "Apply to stair types": "Auf Treppentypen anwenden",
   "Back to the furniture types": "Zurück zu den Möbeltypen",
   "Bar of a shape": "Stab einer Form",
+  "Bars along edges": "Stäbe entlang der Kanten", "All round": "Rundum", "Pick edges": "Kanten wählen", "Click inside the cut of an element in a section first.": "Klicken Sie zuerst in den Schnitt eines Bauteils in einem Schnitt.", "Click near the sides to lay bars along, after the first click inside the cut.": "Klicken Sie nach dem ersten Klick im Schnitt nahe an die Seiten, an denen Stäbe liegen sollen.",
   "Bar shape saved.": "Biegeform gespeichert.",
   "Bar shapes": "Biegeformen",
   "Bar shapes…": "Biegeformen…",

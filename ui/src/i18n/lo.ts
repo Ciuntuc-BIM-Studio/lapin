@@ -2650,6 +2650,7 @@ export const LO: Record<string, string> = {
   "Apply to stair types": "ນຳໃຊ້ກັບປະເພດຂັ້ນໄດ",
   "Back to the furniture types": "ກັບຄືນໄປປະເພດເຄື່ອງເຮືອນ",
   "Bar of a shape": "ເຫຼັກເສັ້ນຂອງຮູບຮ່າງ",
+  "Bars along edges": "ເຫຼັກຕາມຂອບ", "All round": "ຮອບທັງໝົດ", "Pick edges": "ເລືອກຂອບ", "Click inside the cut of an element in a section first.": "ກະລຸນາຄລິກພາຍໃນຮອຍຕັດຂອງອົງປະກອບໃນຮູບຕັດກ່ອນ.", "Click near the sides to lay bars along, after the first click inside the cut.": "ຫຼັງຈາກຄລິກທຳອິດໃນຮອຍຕັດ, ຄລິກໃກ້ດ້ານທີ່ຕ້ອງການວາງເຫຼັກ.",
   "Bar shape saved.": "ບັນທຶກຮູບຮ່າງເຫຼັກເສັ້ນແລ້ວ.",
   "Bar shapes": "ຮູບຮ່າງເຫຼັກເສັ້ນ",
   "Bar shapes…": "ຮູບຮ່າງເຫຼັກເສັ້ນ…",

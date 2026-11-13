@@ -1,7 +1,7 @@
 ---
 title: Armare simplă
 order: 52
-summary: Armătura desenată pe secțiuni și planuri, secțiuni transversale tăiate unde apeși, și extrasul de armare.
+summary: Armătura desenată pe secțiuni și planuri, bare pe muchiile unui element, formele tale de bare, secțiuni transversale tăiate unde apeși, lista de îndoire după standardul tău și BVBS.
 ---
 
 Tabul **Armare simplă** desenează armătura așa cum se face un extras: bare ca forme cu dimensiunile lor, etrieri distribuiți pe o grindă, mărci în baloane și un tabel care le adună. Merge pe orice vedere: o secțiune, un plan, o fațadă.
@@ -36,6 +36,40 @@ Lungimile sunt cele nominale, măsurate pe axa barei între colțuri, cu ciocuri
 
 **Taie bara** taie o bară longitudinală mai lungă decât lungimea la care se livrează (12 m sau 6 m, în **Setări armare**). Unde se suprapun cele două bucăți e decizia ta, nu a lui Lapin: o bară de jos se înnădește lângă reazeme, una de sus departe de ele. Așa că zona de suprapunere o dai tu: apeși pe bară la un capăt al suprapunerii, apoi la celălalt; sau apeși unde se termină prima bară și scrii lungimea suprapunerii (800 pentru 800 mm), măsurată pe bară; Enter sau Escape după primul clic termină **lungimea de suprapunere** din setări (50Ø dacă nu e dată) la acel clic. În proprietățile barei aceeași zonă se scrie ca **Suprapunerea de la … până la …** în milimetri de la începutul barei, cu lungimea suprapunerii alături (dacă o schimbi, „până la” rămâne și se mută „de la”); prima bară se termină la *până la*, a doua începe la *de la*, iar cele două lungimi se arată în timp ce scrii, înainte de **Taie bara**. Prima păstrează marca și ciocul de la început, a doua primește marca următoare și ciocul de la capăt, iar extrasul le numără ca două mărci cu lungimile lor. A doua bucată se desenează puțin lângă prima, ca suprapunerea să se citească. O bară peste lungimea de livrare e semnalată în proprietăți, iar **Taie la lungimea de livrare** termină suprapunerea la lungimea de livrare, ca prima bucată să fie exact atât de lungă.
 
+## Forme de bare ale tale
+
+Formele din grupul **Bare** sunt cele din Eurocod. O firmă care urmează alt standard (BS 8666, ISO 4066, unul german sau american) sau are propria listă de coduri de formă le face în **Armare simplă → Forme de bare…**. Dialogul arată formele **Ale acestui proiect** (cu câte bare folosesc fiecare) și pe cele **Ale Lapin**, și are **Nou**, **Importă…** și **Exportă…**.
+
+O formă are:
+
+- un **Cod**, așa cum îl numește standardul tău (21, 11, 41…), un **Nume** și **Standardul** din care face parte;
+- **Parametri**: o cheie (A, B, C…), o etichetă, o valoare **Implicit** și una **Minim**, în unitatea de lungime a proiectului;
+- **Brațe**: **Lungimea** fiecărui braț, care e cheia unui parametru (`A`) sau o formulă (`A - 2 * R1`), și **Întoarcerea** în grade, în sens trigonometric, de la acel braț la următorul (ultimul n-are);
+- un **cârlig** opțional la fiecare capăt: 90°, 135° sau 180°.
+
+**Previzualizarea** de alături e desenul formei făcut de motor, refăcut pe măsură ce scrii. Dacă definiția nu poate fi citită (o cheie care nu e parametru, o întoarcere pe care motorul n-o poate îndoi), spune de ce, cu roșu, iar **Salvează** așteaptă. **Adaugă în proiect** (sau **Salvează**) o păstrează; **Șterge** o scoate, iar barele ei își păstrează propria copie.
+
+![Forme de bare: forma 21 din BS 8666 cu parametrii, brațele și desenul ei](shots/rebar-shapes.webp)
+
+O formă se folosește cu unealta **Bara unei forme** (printre uneltele mici ale grupului **Bare**): alegi forma în bara liniei de comandă și apeși unde vine bara. Parametrii ei sunt apoi în proprietățile barei, în milimetri, ca la celelalte bare, iar gripurile îi trag. O bară își păstrează definiția formei și urmează o schimbare pe care o faci formei. Formele călătoresc într-un fișier **.lapinbarshapes**: **Exportă…** scrie unul, iar **Importă…** adaugă formele pe care proiectul nu le are și le actualizează pe cele cu același cod.
+
+![Bara liniei de comandă a uneltei Bara unei forme, cu forma aleasă](shots/rebar-shape-tool.webp)
+
+## Bare pe muchiile unui element
+
+**Bare pe muchii** (**Armare simplă → Bare**, printre uneltele mici) așază o bară de-a lungul laturilor tăieturii unui element, acolo unde o secțiune îl taie: etrierul unei grinzi, barele de la fața ei de jos. Lucrezi într-o secțiune transversală prin element (**Secțiune aici** și **Secțiune transversală** fac una). Bara liniei de comandă are:
+
+- **Acoperire**, în milimetri: cât stă bara înăuntru față de fața betonului, până la marginea barei (motorul aduce conturul înăuntru cu acoperirea și jumătate din diametrul barei);
+- **Diametru**, din diametrele pachetului de reguli al proiectului (vezi **Reguli** mai jos), și **Oțel**;
+- **Pe tot conturul** sau **Alege muchiile**;
+- **Partiția** în care intră barele noi, ca la celelalte unelte.
+
+Apasă în interiorul tăieturii elementului, în beton, nu pe margine, și apasă <kbd>Enter</kbd>. Cu **Pe tot conturul** bara e un etrier închis pe tot conturul: un dreptunghi la o grindă dreptunghiulară, orice contur la oricare alta. Cu **Alege muchiile** primul clic spune doar care tăietură; fiecare clic următor, lângă o latură, o alege sau, apăsat din nou, o lasă; <kbd>Enter</kbd> așază apoi o bară deschisă de-a lungul laturilor alese. Ele trebuie să se urmeze pe contur (doar latura de jos, sau cea de jos și cele două de lângă ea). Bara se oprește la acoperire de fețele pe care le întâlnește. Se așază în gazda ei ca orice bară desenată în tăietura ei, intră în extras și apare ca un punct în celelalte secțiuni. Un pas de anulare o ia înapoi.
+
+![Grindă tăiată transversal, cu un etrier pe tot conturul și o bară pe latura de jos, și bara uneltei](shots/rebar-along-edges.webp)
+
+![Bara liniei de comandă a uneltei Bare pe muchii](shots/rebar-along-edges-bar.webp)
+
 ## Etrierii pe tipul de grindă sau de stâlp
 
 Etrierii nu se desenează unul câte unul: țin de **tip**. În Structură → Tipuri de structură, un tip dreptunghiular de grindă sau de stâlp primește **Etrieri pe acest tip**: diametrul, acoperirea de beton și modul de așezare — un pas pe toată lungimea sau **trei zone**, fiecare cu partea ei din lungime (implicit o treime) și pasul ei, mai des la capete. Fiecare element al tipului îi arată apoi în orice secțiune după cum stă vederea față de axă: dreptunghiul din interiorul acoperirii în secțiunea transversală, câte o linie pentru fiecare etrier în cea longitudinală, linii peste grindă în planul de structură; cu eticheta `41Ø8/150` și balonul mărcii. Intră în extras sub marca tipului. Etrierii unui **stâlp** pot fi doar perimetrali, **cu un romb înscris** (colțurile la mijlocul laturilor) sau **cu doi interiori, câte unul pe direcție**, fiecare fel cu marca lui. Stâlpul se armează pe tronson de etaj, așa că **barele lui longitudinale** stau tot pe tip: câte atâtea pe fiecare față cu colțurile comune, diametrul lor și **mustățile** care ies peste nivelul de sus (implicit 1 m) pentru stâlpul de deasupra; puncte în tăietura orizontală și în planul de structură, linii în secțiunea verticală. **Sus** spune cum se termină: **După stâlpul de deasupra** (implicit) le continuă ca mustăți acolo unde pe stâlp stă alt stâlp, iar unde nu stă niciunul (ultimul etaj) le oprește sub fața de sus, în acoperire, cu un cioc de 90° (12Ø) îndoit spre interior; **Mustăți peste nivelul de sus** și **Ciocuri de 90° sub fața de sus** aleg una dintre ele orice ar fi deasupra. O bară cu cioc e o bară în L în extras, cu ciocul socotit în lungime.
@@ -51,6 +85,20 @@ Etrierii nu se desenează unul câte unul: țin de **tip**. În Structură → T
 ## Extrasul
 
 **Extras de armare** face un tabel cu fiecare bară pe mărci: diametru, formă, număr, lungimea uneia, lungimea totală și masa, cu totalurile pe diametre. O marcă ale cărei bare diferă la diametru sau lungime e notată. E un tabel ca celelalte: pe planșe, în CSV și XLSX.
+
+## Lista de îndoire după standard
+
+**Extras de armare** (mai sus) e extrasul de bare al proiectului. **Listă de îndoire (standard)** scrie mărcile cum le scrie lista de bare a standardului tău, un rând pe marcă: **marca**, **diametrul**, **codul formei**, dimensiunile **A, B, C…** ale parametrilor formei, **numărul**, **lungimea**, **totalul** și **masa**. Ea cuprinde barele desenate dintr-o formă (cele din grupul **Bare** și din formele tale). Barele așezate de un tip (etrieri, bare de stâlp) n-au formă desenată și nu sunt în ea.
+
+**Exportă CSV…** scrie tabelul pentru un program de calcul tabelar (UTF-8, cu marca de ordine a octeților, ca să-l deschidă corect). **Exportă BVBS (.abs)…**, aici și în grupul de extrase al tabului, scrie mărcile pentru mașina de îndoit în BVBS, formatul asociației germane (înregistrări BF2D, după ghidul public 3.1, cu suma lui de control). Notificarea spune câte înregistrări a făcut și câte bare așezate de tipuri a lăsat deoparte.
+
+![Lista de îndoire după standard: mărci, coduri de formă și dimensiuni](shots/rebar-bending-schedule.webp)
+
+## Reguli și bare din linii desenate
+
+Oțelurile și diametrele pe care le oferă uneltele, oțelul implicit, dornul și cozile ciocurilor pe care le iau barele noi vin din **pachetul de reguli** al proiectului (**Gestionare → Reguli…**; vezi [Reguli](rules.md)): schimbi un diametru acolo și fiecare selector îl urmează. Nimic nu e refuzat din cauza unei reguli: Lapin propune și avertizează.
+
+Liniile, poliliniile și cercurile desenate într-o vedere sau aduse dintr-un DXF pot deveni bare cu **Convertește desenul în…** (vezi [Desen](drafting.md)): o linie dreaptă devine o bară dreaptă, o polilinie o bară de forma pe care o are (un L, un U sau un etrier sunt recunoscute, altfel o bară polilinie), așezată în vedere ca orice bară. **Convertește layerele…** o face pentru un desen întreg, alegând în ce se face fiecare layer.
 
 ## Partiții
 

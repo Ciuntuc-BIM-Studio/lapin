@@ -173,6 +173,41 @@ Un model se **întinde pe zone**: pe fiecare axă are o bandă care se întinde,
 
 În IFC o piesă dintr-un model e un IfcFurniture al tipului ei, cu tipul predefinit al modelului (SOFA, CHAIR, TABLE sau USERDEFINED cu Floor lamp, Plant, Rug…), iar corpul ei e rețeaua întinsă, ca B-rep fațetat sau ca set de fețe, după cum cere exportul. Modelul și mărimea călătoresc cu tipul, așa că Lapin le citește înapoi. Extrasul de mobilier le listează pe grupe și modele.
 
+## Modele proprii
+
+Un model făcut de tine, cumpărat sau descărcat (o canapea dintr-un catalog, o lampă pe care ai modelat-o) poate fi folosit ca modelele lui Lapin, dacă e un **GLB** (glTF binar). În **Tipuri de mobilier**, **Importă model (GLB)…** deschide **Modelele tale de mobilier**: lista lor în stânga și, sus în dreapta, butonul **Înapoi la tipurile de mobilier** (cel de închidere).
+
+**Importul.** Alegi fișierul. Lapin îi citește dimensiunea și materialele și cere:
+
+- un **Nume**;
+- **Licența**: al cui e modelul și în ce condiții (CC0-1.0, CC-BY-4.0, propriu…). E obligatorie, așa că **Importă** rămâne gri fără ea: un model intră cu condițiile lui, iar ele călătoresc cu el oriunde ajunge;
+- **Sursa**: autorul, site-ul, adresa de unde a fost descărcat;
+- **Grupul** sub care apare în galerie (**Modelele mele** dacă îl lași gol).
+
+![Importul unui GLB: numele, licența, sursa și grupul](shots/furniture-model-import.webp)
+
+**Setările modelului.** Îl alegi din listă ca să schimbi:
+
+- **Dimensiune (lățime, adâncime, înălțime)**: cu ce pornește un tip nou al lui, și **Dimensiune minimă** și **Dimensiune maximă** pe care le poate lua;
+- **Agățat la**: înălțimea părții de jos, pentru o aplică sau un pendul (0: pe podea);
+- **Se sprijină de un perete** și **Locuri**, ca la canapelele și fotoliile lui Lapin;
+- **Materialele fișierului → roluri**: fiecare material din fișier primește un rol (upholstery, accent, body, top, legs, metal, glass, shade, foliage, pot, adică tapițerie, accent, corp, blat, picioare, metal, sticlă, abajur, frunziș, ghiveci). Un tip al modelului dă un material fiecărui rol, deci toate materialele cu același rol iau aceeași culoare, iar aspectele și culorile din dialogul de tipuri ajung la model;
+- **Zone de întindere**: pentru fiecare axă o bifezi și tragi cele două cursoare ca să spui ce bandă se întinde. În afara benzii modelul își păstrează dimensiunea (brațele unei canapele, picioarele unei mese); înăuntru crește odată cu piesa. O axă fără zonă **se scalează întreagă**.
+
+**Salvează** păstrează schimbările, iar tipurile făcute din model le urmează. **Șterge** scoate modelul, când nu mai e niciun tip făcut din el.
+
+![Setările unui model: dimensiunile, rolurile materialelor și zonele de întindere](shots/furniture-model-editor.webp)
+
+Înapoi în **Tipuri de mobilier**, modelele tale sunt în galerie după cele ale lui Lapin, în grupul lor; faci un tip dintr-unul cu **Dintr-un model**, ca la celelalte, și îi dai dimensiunea și culorile. Modelele tale merg cu proiectul și cu tipurile pe care le salvezi în **Mobilierul meu**.
+
+### Un simbol pentru plan
+
+Implicit, un plan desenează o piesă ca pe corpul ei văzut de sus. Un tip poate folosi în schimb un simbol al tău (vezi [Desen](drafting.md), Simboluri): în **Tipuri de mobilier**, **Simbol în plan** arată întâi simbolurile din categoria **Mobilier**, apoi pe celelalte; **Desenat de sus** se întoarce la corp. Simbolul e scalat la dimensiunea piesei, deci fiecare piesă a tipului urmează când tipul sau simbolul se schimbă. E pentru plan: secțiunile, fațadele și 3D arată în continuare modelul.
+
+![Un tip dintr-un model propriu, cu simbolul lui în plan](shots/furniture-plan-symbol-field.webp)
+
+![O canapea dintr-un model propriu, în plan, desenată de simbolul ei](shots/furniture-plan-symbol.webp)
+
 ## Proprietățile unei piese
 
 Când selectezi o piesă, vezi:

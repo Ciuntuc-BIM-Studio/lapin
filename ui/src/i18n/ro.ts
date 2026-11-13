@@ -2596,6 +2596,7 @@ export const RO: Record<string, string> = {
   "Apply to stair types": "Aplică la tipurile de scări",
   "Back to the furniture types": "Înapoi la tipurile de mobilier",
   "Bar of a shape": "Bara unei forme",
+  "Bars along edges": "Bare pe muchii", "All round": "Pe tot conturul", "Pick edges": "Alege muchiile", "Click inside the cut of an element in a section first.": "Fă mai întâi clic în interiorul tăieturii unui element, într-o secțiune.", "Click near the sides to lay bars along, after the first click inside the cut.": "Fă clic lângă laturile pe care așezi bare, după primul clic din interiorul tăieturii.",
   "Bar shape saved.": "Forma barei a fost salvată.",
   "Bar shapes": "Forme de bare",
   "Bar shapes…": "Forme de bare…",

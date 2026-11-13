@@ -64,6 +64,10 @@ The **Combinations** tab lists the combinations of the cases, after EN 1990 as r
 
 ![The Combinations tab](shots/loads-combinations.webp)
 
+## Loads from a spreadsheet
+
+**Import loads…** and **Import load cases…** (in the group, and in the Loads dialog) read loads and cases from a CSV or Excel file, or from cells pasted from a spreadsheet: a column for the kind, the case, the storey, the coordinates, the value and its unit. Lapin guesses the columns, reads units such as *4.5 kN/m* or *2.5 kPa*, shows each row before anything is imported, and the whole import is one step to undo. See [Import tables](tables.md).
+
 ## Analysing
 
 **Run analysis** (in the same group, and in the Loads dialog) analyses the frame under these loads: see [Structural analysis](analysis.md).

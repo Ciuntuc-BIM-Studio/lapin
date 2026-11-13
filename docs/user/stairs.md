@@ -189,3 +189,5 @@ In the properties panel a balcony shows only the fields its kind uses (a loggia'
 ![From the north: the loggia cut into the wall, the curved balcony with its parapet and the rounded one](shots/balconies-3d-north.webp)
 
 **Architecture → Balcony schedule** lists each balcony with its storey, style, kind, width, depth, area, railing length and design, what carries it and its thermal break, with the totals. In IFC a balcony is an IfcElementAssembly (USERDEFINED, "Balcony") of an IfcElementAssemblyType, made of its parts: the slab an IfcSlab (FLOOR), the finish and soffit IfcCoverings (FLOORING, CEILING), the railing an IfcRailing (GUARDRAIL) or a parapet an IfcWall (PARAPET), posts IfcColumns, brackets IfcDiscreteAccessories (BRACKET), tie rods IfcMembers, the thermal break an IfcBuildingElementPart; a loggia's recess is an IfcOpeningElement in its wall. Lapin reads its own back as balconies.
+
+The limits a stair is checked against (riser, tread, width, headroom, slope) are the project's **Stairs** rules: see [Rules](rules.md), where **Apply to stair types** copies a changed pack into the types already made.

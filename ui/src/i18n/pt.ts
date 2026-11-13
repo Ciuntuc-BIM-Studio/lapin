@@ -2594,6 +2594,7 @@ export const PT: Record<string, string> = {
   "Apply to stair types": "Aplicar aos tipos de escada",
   "Back to the furniture types": "Voltar aos tipos de mobiliário",
   "Bar of a shape": "Barra de uma forma",
+  "Bars along edges": "Barras ao longo das arestas", "All round": "À volta toda", "Pick edges": "Escolher arestas", "Click inside the cut of an element in a section first.": "Clique primeiro dentro do corte de um elemento, numa secção.", "Click near the sides to lay bars along, after the first click inside the cut.": "Depois do primeiro clique dentro do corte, clique junto aos lados onde pôr barras.",
   "Bar shape saved.": "Forma de barra salva.",
   "Bar shapes": "Formas de barra",
   "Bar shapes…": "Formas de barra…",

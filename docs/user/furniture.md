@@ -173,6 +173,41 @@ In plan a piece of a model is its body seen from above, drawn by the engine with
 
 In IFC a piece of a model is an IfcFurniture of its type with the model's predefined type (SOFA, CHAIR, TABLE, or USERDEFINED with Floor lamp, Plant, Rug…), and its body is the stretched mesh, as a faceted B-rep or a face set as the export asks. The model and the size travel with the type, so Lapin reads them back. The furniture schedule lists them by group and model.
 
+## Models of your own
+
+A model you made, bought or downloaded (a sofa from a maker's catalogue, a lamp you modelled) can be used like Lapin's own, if it is a **GLB** (binary glTF). In **Furniture types**, **Import model (GLB)…** opens **Your furniture models**: its list on the left, and **Back to the furniture types** (the close button) on the top right.
+
+**Import.** Choose the file. Lapin reads its size and its materials from it, and asks for:
+
+- a **Name**;
+- the **Licence**: whose the model is and on what terms (CC0-1.0, CC-BY-4.0, your own…). It is required, so **Import** stays grey without it: a model comes in with its terms, and they travel with it wherever it goes;
+- the **Source**: the maker, the site, the address it was downloaded from;
+- the **Group** it is listed under in the gallery (**My models** if you leave it empty).
+
+![Importing a GLB: its name, licence, source and group](shots/furniture-model-import.webp)
+
+**The model's settings.** Choose it in the list to change:
+
+- **Size (width, depth, height)**: what a new type of it starts with, and the **Least size** and **Most size** it may take;
+- **Hung at**: the height of its underside, for a wall lamp or a pendant (0: on the floor);
+- **Stands against a wall** and **Seats**, as for Lapin's sofas and armchairs;
+- **Materials of the file → roles**: each material in the file is given a role (upholstery, accent, body, top, legs, metal, glass, shade, foliage, pot). A type of the model gives a material to each role, so every material with the same role takes the same colour, and the looks and colours in the types dialog reach the model;
+- **Stretch zones**: for each axis, tick it and drag the two sliders to say which band stretches. Outside the band the model keeps its size (a sofa's arms, a table's legs); inside it, it grows with the piece. An axis without a zone **scales whole**.
+
+**Save** keeps the changes, and the types made of the model follow. **Delete** removes the model, once no type is made of it.
+
+![A model's settings: its sizes, the roles of its materials and its stretch zones](shots/furniture-model-editor.webp)
+
+Back in **Furniture types**, the models are in the gallery after Lapin's, in their group; make a type of one with **From a model**, as for the others, and size and colour it. Your models go with the project, and with the types you save to **My furniture**.
+
+### A symbol for the plan
+
+By default a plan draws a piece as its body seen from above. A type can use a symbol of yours instead (see [Drafting](drafting.md), Symbols): in **Furniture types**, **Plan symbol** lists the symbols of the **Furniture** category first, then the others; **Drawn from above** goes back to the body. The symbol is scaled to the piece's size, so every piece of the type follows when the type or the symbol changes. It is for the plan: sections, elevations and 3D still show the model.
+
+![A type of a model of your own with its plan symbol](shots/furniture-plan-symbol-field.webp)
+
+![A sofa of a model of your own in plan, drawn by its symbol](shots/furniture-plan-symbol.webp)
+
 ## A piece's properties
 
 Select a piece to see:

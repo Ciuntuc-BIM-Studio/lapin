@@ -237,6 +237,62 @@ A placed symbol is selected like any element. In **Properties → Symbol** you c
 
 **Export…** writes the symbol as a **.lapinsymbols** file; **Import…** reads one, into the project or into this computer's library (the box beside the button). Where the project already has a symbol of the same name, a list shows which are the same and which differ, with a choice for each: **keep**, **update** (the copies placed follow), **keep both** or **skip**.
 
+### Marks of the views
+
+Lapin draws the marks of the views itself: a section's head, an elevation's mark, a level's marker, a grid axis' bubble, a site plan's north arrow, a callout's head, a view's title on a sheet. You can have any of them drawn with a symbol of yours (or one of Lapin's own: a square grid bubble, a half-black level marker) and change them all at once.
+
+In **Manage → Drafting standards → Project**, the **Marker symbols** list has one picker for each: **Section head**, **Elevation mark**, **Level marker**, **Grid bubble**, **North arrow (site plans)**, **Callout head** and **View title (on sheets)**. Open a picker to see the symbols with their pictures, those of the mark's own kind first (the grid bubbles for the grid bubble), then the others. **Lapin's own (default)** keeps the drawing Lapin made until now; nothing changes until you choose.
+
+![Drafting standards, Project: a symbol for each mark](shots/standards-marker-symbols.webp)
+
+A mark can have its own symbol. Select a section, an elevation, a level, a grid, a callout or a view and, in **Properties**, **Marker symbol** (a section also has **View title**) shows the project's choice; pick another symbol for this mark alone, or **Project's choice** to go back. Several marks of the same kind selected change together.
+
+![The plan with the marks drawn by symbols](shots/marker-symbols-plan.webp)
+
+![Properties of a section: its own marker symbol](shots/marker-symbol-properties.webp)
+
+A symbol meant for a mark is made like any other (see above). Draw it with its **+y** pointing the way the mark points: a section head's arrow, an elevation's arrow, a level marker's triangle. It is laid along the section's or elevation's direction, on the grid's end, on the level line. The live texts of the mark fill it in: `{mark.name}` and `{mark.number}` (the view's number on its sheet), `{mark.sheet}` (that sheet's number), `{mark.scale}`, `{level.name}` and `{level.elevation}` for a level, `{grid.label}` for a grid axis; a symbol with the attributes `number`, `sheet` or `name` reads them from the mark. Lapin's built-in section head, elevation mark, callout, level markers and grid bubbles do.
+
 ### Symbols on sheets
 
 On a sheet, **Place symbol…** in the toolbar lists the symbols; choose one and click where it goes on the paper (Esc cancels). It is drawn at its paper size whatever the scale of the views on the sheet, and it prints as you see it.
+
+## Converting drafting to elements
+
+Lines drawn in a plan, a drawing imported from DXF or traced from a PDF can become real elements. Lapin recognises what each shape is and makes it with the module that owns it.
+
+**Draft → Convert → Convert to…** works on the selection in the view in front: select drafted lines, polylines, arcs or circles first. The dialog lists what the shapes can become in your edition: **Walls** (along lines and outlines, joined), **Floor** (a closed outline), **Room** (a closed outline), **Railing** (an open line), **Beams**, **Strip foundations**, **Pad footings** and **Columns** (a circle or an outline, turned along its longest side), and **Reinforcement bars** (a straight, L, U or stirrup shape recognised, else a polyline bar). The options of the chosen conversion (a wall's type and height, a bar's diameter) are below it, and the dialog says how many shapes **can be converted** and how many **cannot**, with the reason (a floor needs a closed outline), and lists what each would become. Plans take the plan's storey; sections and elevations take bars. **Keep the drafting** leaves the shapes under the new elements as an underlay; without it they are replaced. One step of undo brings the drafting back.
+
+![The Convert group of the Draft tab](shots/convert-ribbon.webp)
+
+![Convert to…: what the shapes become](shots/convert-dialog.webp)
+
+A drawing in layers is converted layer by layer: **Draft → Convert → Convert layers…** lists the layers of the view with their number of shapes and a **Becomes** choice for each: **A-WALL** to walls, **A-COLS** to columns, **A-BARS** to bars; **(leave as drafting)** keeps a layer as it is. The button beside a layer opens its conversion's options. The preview counts what will be made. Here the drafting is kept by default, as the underlay the elements were made from. The map is kept on this computer by layer name, so the next drawing from the same office is mapped already; **Export map…** and **Import map…** write it to a `.lapinmapping` file and read it back, to share with the office. After **Import DXF…** you can tick **convert its layers to elements…** to land in this dialog straight away.
+
+![Convert layers…: each layer and what it becomes](shots/convert-layers.webp)
+
+### DXF blocks as symbols
+
+A DXF that has blocks (chairs, doors, a firm's symbols) can keep them: in the import dialog, **Blocks → keep as symbols**. Each block becomes a symbol of the project, at model scale, and each insert becomes one placed copy, turned and flipped as in the file; without it the blocks are exploded into lines. The blocks are then in **Manage → Symbols…** like any other symbol, where you can edit one and every copy follows, and a copy is selected, moved and counted as one element. The notice after the import counts the symbols and copies.
+
+![Three inserts of one block, as placed symbols](shots/dxf-blocks.webp)
+
+![The block in Manage → Symbols…](shots/dxf-blocks-symbols.webp)
+
+## Line types
+
+Dashed and dotted lines come from **line types**. **Manage → Drafting standards → Line types** lists Lapin's (continuous, dashed, centre, hidden…) and the project's own, each drawn as it prints. **New** makes one; choose it to change its **Name** and **Description** and its pattern, a **Dash mm** and a **Gap mm** repeated along the line, in paper millimetres, with a preview above. **Dash and gap** adds a pair, the cross beside a pair removes it, and you can also type them: `6 2 1 2` and **Enter** (a dash of 6, a gap of 2, a dot, a gap of 2). **Duplicate** copies a line type of Lapin's into the project to change. Renaming one renames it everywhere it is used: layers, grid axis styles, object styles, linework. **Remove** deletes it, and what used it draws continuous.
+
+The project's line types are offered wherever a line type is chosen: drafting layers, the axes' and the object styles' line, linework.
+
+![Drafting standards, Line types](shots/line-types.webp)
+
+**Import .lin…** reads an AutoCAD line type file. The dialog lists its types with their patterns, **Dashes in the file are in** millimetres or inches, and a box for each to leave out. A type whose name the project already has with other dashes asks: **Update the project's**, **Keep both** or **Skip**, or **Apply to all…**. Text and shapes inside a complex line type are left out; its dashes are kept. **Export .lin…** writes the project's own types for AutoCAD.
+
+![Import .lin…: the types in the file, chosen before they come in](shots/line-types-import.webp)
+
+### The standards as a library
+
+**Export standards…**, at the top right of Drafting standards, writes the project's styles, tag types, layers, line types, hatches and symbols as a **.lapinstandards** file: the office's standards, ready for another project or another computer. **Import standards…** reads one. What the project lacks is added; what it has under the same name but made otherwise is listed, entry by entry, with the same choices (**Update the project's**, **Keep both**, **Skip**, and **Apply to all…**). The file's **options** (units, scales, marker sizes, object styles, the pen table, marker symbols) come only if you tick **Also the project's options…**. A notice counts what was added, updated, the same and skipped, and one step of undo takes it all back.
+
+![Import standards…: what differs, entry by entry](shots/standards-import.webp)

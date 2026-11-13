@@ -2597,6 +2597,7 @@ export const PL: Record<string, string> = {
   "Apply to stair types": "Zastosuj do typów schodów",
   "Back to the furniture types": "Wróć do typów mebli",
   "Bar of a shape": "Pręt o kształcie",
+  "Bars along edges": "Pręty wzdłuż krawędzi", "All round": "Dookoła", "Pick edges": "Wybierz krawędzie", "Click inside the cut of an element in a section first.": "Najpierw kliknij wewnątrz przekroju elementu na przekroju.", "Click near the sides to lay bars along, after the first click inside the cut.": "Po pierwszym kliknięciu w przekroju kliknij przy bokach, wzdłuż których ułożyć pręty.",
   "Bar shape saved.": "Zapisano kształt pręta.",
   "Bar shapes": "Kształty prętów",
   "Bar shapes…": "Kształty prętów…",

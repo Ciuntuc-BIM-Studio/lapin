@@ -158,6 +158,24 @@ The gear in the command line's bar lists what is carried, and Lapin remembers yo
 
 ![Match properties in plan: the wall copied from, the wall under the cursor lit, and what is carried](shots/match-properties.webp)
 
+## Parameters worked out by formulas
+
+A parameter of your own that is a number, a length, an area, an angle or a yes/no (not a text or a choice) can be worked out instead of typed. In **Properties → Parameters**, press the **Σ** button before its value: the value becomes a **formula** field. Type the formula and press <kbd>Enter</kbd> (or leave the field) to keep it. Under the field Lapin shows what the formula gives, *= 21*, or why it does not read; a formula that does not read is not kept. Press **Σ** again to go back to a value: the last result stays as the value.
+
+![A Studs parameter worked out from the wall's length and a Spacing parameter](shots/param-formula.webp)
+
+A formula is kept as written and worked out every time it is asked for, so it follows the element: change the wall's length or the *Spacing* and *Studs* changes with them. Tags, schedules and the IFC export read the result. What a formula may use:
+
+- **Names**: the element's other parameters and its type's, and the element's own numbers (*Height*, *Width*). A name with spaces may be written without them: *Fire rating* or *FireRating*. A parameter may use another that is a formula.
+- **Quantities**, when the element has them: *Length*, *Width*, *Height*, *GrossArea*, *NetArea*, *GrossVolume*, *NetVolume*.
+- **Functions**: *min*, *max*, *round*, *floor*, *ceil*, *sqrt*, *sin*, *cos*, *tan*, *atan2*, *if* and *clamp*, with + − × ÷ and brackets. Decimals are written with a dot; arguments are separated by a comma or a semicolon.
+
+**Names and functions** under the field lists the names this element offers. A yes/no formula is yes when its result is not zero (*if(Height > 3, 1, 0)*).
+
+![A formula that does not read says why](shots/param-formula-error.webp)
+
+The same language works in the live text of [symbols and tags](drafting.md), written `{= attr.w * 2 | 0.00}`.
+
 ## Keyboard shortcuts
 
 **View → Keyboard shortcuts…** (<kbd>KS</kbd>) lists every command the keyboard can reach, by tab. Each row shows the command's shortcuts.
