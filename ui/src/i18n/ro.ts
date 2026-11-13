@@ -22,6 +22,18 @@ export const RO: Record<string, string> = {
   "That sketch is not one of the part's own: use Constrain part first.": "Schița aceea nu este a piesei: folosește întâi Constrânge piesa.",
   "Place the part first: its sketch is edited in the part's edit mode, on an object.": "Plasează întâi piesa: schița ei se editează în modul de editare al piesei, pe un obiect.",
   "Type the body's depth: a length, or =formula.": "Scrie adâncimea corpului: o lungime sau =formulă.",
+  // Decision 537: a graph palette's values, shared or each user's own
+  "Palette values": "Valorile paletei",
+  "Shared": "Comune",
+  "Each user's own": "Ale fiecărui utilizator",
+  "The graph's values are the defaults: what each user changes in the palette stays on their computer, and Bake does not change the graph.": "Valorile grafului sunt cele implicite: ce schimbă fiecare utilizator în paletă rămâne pe calculatorul lui, iar Creează nu schimbă graful.",
+  "What the palette changes is written into the graph: everyone sees the same values.": "Ce schimbă paleta se scrie în graf: toți văd aceleași valori.",
+  "Your own value: the graph's differs": "Valoarea ta: a grafului e alta",
+  "Your own values, kept on this computer": "Valorile tale, păstrate pe acest calculator",
+  "Forget your values: the graph's again": "Uită valorile tale: din nou ale grafului",
+  "Reset to the graph's values": "Înapoi la valorile grafului",
+  "Write your values into the graph, for everyone (one undo step)": "Scrie valorile tale în graf, pentru toți (un pas de anulare)",
+  "Save as the graph's values": "Salvează ca valori ale grafului",
   // Decision 536: a graph's palette, its tool in My tools, groups
   "Open the graph in the Graphs panel": "Deschide graful în panoul Grafuri",
   "This graph has no inputs yet: add Number, Choice, Storey or other input nodes in the Graphs panel, and they become its fields here.": "Graful nu are încă intrări: adaugă noduri Număr, Alegere, Nivel sau alte noduri de intrare în panoul Grafuri și devin câmpurile lui aici.",

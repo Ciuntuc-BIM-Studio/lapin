@@ -24,6 +24,18 @@ export const LO: Record<string, string> = {
   "That sketch is not one of the part's own: use Constrain part first.": "ແຜນຮ່າງນັ້ນບໍ່ແມ່ນຂອງຊິ້ນສ່ວນເອງ: ໃຊ້ ຈຳກັດຊິ້ນສ່ວນ ກ່ອນ.",
   "Place the part first: its sketch is edited in the part's edit mode, on an object.": "ວາງຊິ້ນສ່ວນກ່ອນ: ແຜນຮ່າງຂອງມັນແກ້ໄຂໃນໂໝດແກ້ໄຂຂອງຊິ້ນສ່ວນ, ເທິງວັດຖຸ.",
   "Type the body's depth: a length, or =formula.": "ພິມຄວາມເລິກຂອງຕົວຖັນ: ຄວາມຍາວ ຫຼື =ສູດ.",
+  // Decision 537: a graph palette's values, shared or each user's own
+  "Palette values": "ຄ່າຂອງແຜງເຄື່ອງມື",
+  "Shared": "ໃຊ້ຮ່ວມກັນ",
+  "Each user's own": "ຂອງຜູ້ໃຊ້ແຕ່ລະຄົນ",
+  "The graph's values are the defaults: what each user changes in the palette stays on their computer, and Bake does not change the graph.": "ຄ່າຂອງກຣາບແມ່ນຄ່າເລີ່ມຕົ້ນ: ສິ່ງທີ່ຜູ້ໃຊ້ແຕ່ລະຄົນປ່ຽນໃນແຜງເຄື່ອງມືຈະຢູ່ໃນຄອມພິວເຕີຂອງເຂົາ, ແລະ ສ້າງ ບໍ່ປ່ຽນກຣາບ.",
+  "What the palette changes is written into the graph: everyone sees the same values.": "ສິ່ງທີ່ແຜງເຄື່ອງມືປ່ຽນຈະຖືກຂຽນລົງໃນກຣາບ: ທຸກຄົນເຫັນຄ່າດຽວກັນ.",
+  "Your own value: the graph's differs": "ຄ່າຂອງທ່ານເອງ: ຄ່າຂອງກຣາບແຕກຕ່າງ",
+  "Your own values, kept on this computer": "ຄ່າຂອງທ່ານເອງ, ເກັບໄວ້ໃນຄອມພິວເຕີນີ້",
+  "Forget your values: the graph's again": "ລືມຄ່າຂອງທ່ານ: ກັບໄປໃຊ້ຄ່າຂອງກຣາບ",
+  "Reset to the graph's values": "ກັບຄືນຄ່າຂອງກຣາບ",
+  "Write your values into the graph, for everyone (one undo step)": "ຂຽນຄ່າຂອງທ່ານລົງໃນກຣາບ, ສຳລັບທຸກຄົນ (ຍົກເລີກໄດ້ໃນຂັ້ນດຽວ)",
+  "Save as the graph's values": "ບັນທຶກເປັນຄ່າຂອງກຣາບ",
   // Decision 536: a graph's palette, its tool in My tools, groups
   "Open the graph in the Graphs panel": "ເປີດກຣາບໃນແຜງກຣາບ",
   "This graph has no inputs yet: add Number, Choice, Storey or other input nodes in the Graphs panel, and they become its fields here.": "ກຣາບນີ້ຍັງບໍ່ມີຂໍ້ມູນປ້ອນ: ເພີ່ມໂນດຕົວເລກ, ການເລືອກ, ຊັ້ນ ຫຼື ໂນດປ້ອນອື່ນໆໃນແຜງກຣາບ, ແລ້ວພວກມັນຈະເປັນຊ່ອງຂອງມັນຢູ່ນີ້.",

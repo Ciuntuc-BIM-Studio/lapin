@@ -2549,6 +2549,11 @@ polygon.part-plane { fill: var(--accent); fill-opacity: 0.14; stroke: var(--acce
 .graph-palette-values { display: flex; flex-direction: column; gap: 2px; overflow-wrap: anywhere; min-width: 0; }
 .graph-palette-table { border-collapse: collapse; font-size: 11px; margin-top: 2px; }
 .graph-palette-table td { border: 1px solid var(--rule); padding: 1px 4px; }
+.graph-palette-field { position: relative; }
+.graph-palette-dot { position: absolute; left: -7px; top: 9px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+.graph-palette-own { display: flex; flex-direction: column; gap: 4px; padding-top: 4px; }
+.graph-palette-own-buttons { display: flex; flex-wrap: wrap; gap: 4px; }
+.graph-palette-own .btn { width: auto; display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; font-size: 11px; }
 .graph-palette-foot { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 6px 10px; border-top: 1px solid var(--rule); }
 .graph-palette-foot .btn { width: auto; display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; }
 .graphs-inspector .graphs-section { border-top: 1px solid var(--rule); padding-top: 6px; margin-top: 4px; display: flex; flex-direction: column; gap: 6px; }

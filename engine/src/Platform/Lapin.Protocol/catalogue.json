@@ -323,7 +323,7 @@
     {"name":"furniture.setType","module":"furniture","label":"Change type","args":[{"name":"typeId","type":"str"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},
     {"name":"furniture.updateModel","module":"furniture","label":"Change furniture model","args":[{"name":"id","type":"str"},{"name":"name","type":"str"},{"name":"zones","type":"dict"},{"name":"slots","type":"dict"},{"name":"mount","type":"float"}]},
     {"name":"furniture.updateType","module":"furniture","label":"Change furniture type","args":[{"name":"id","type":"str"},{"name":"spec","type":"dict"},{"name":"name","type":"str"}]},
-    {"name":"graphs.bake","module":"graphs","label":"Bake graph","args":[{"name":"values","type":"dict"},{"name":"graph","type":"dict"},{"name":"id","type":"str"},{"name":"storey","type":"str"}]},
+    {"name":"graphs.bake","module":"graphs","label":"Bake graph","args":[{"name":"values","type":"dict"},{"name":"write","type":"bool"},{"name":"graph","type":"dict"},{"name":"id","type":"str"},{"name":"storey","type":"str"}]},
     {"name":"graphs.delete","module":"graphs","label":"Delete graph","args":[{"name":"id","type":"str"}]},
     {"name":"graphs.rename","module":"graphs","label":"Rename graph","args":[{"name":"id","type":"str"},{"name":"name","type":"str"}]},
     {"name":"graphs.save","module":"graphs","label":"Save graph","args":[{"name":"id","type":"str"},{"name":"graph"},{"name":"description","type":"str"},{"name":"name","type":"str"}]},

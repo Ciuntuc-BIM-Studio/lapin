@@ -24,6 +24,18 @@ export const DA: Record<string, string> = {
   "That sketch is not one of the part's own: use Constrain part first.": "Den skitse hører ikke til delen: brug først Begræns delen.",
   "Place the part first: its sketch is edited in the part's edit mode, on an object.": "Placér først delen: dens skitse redigeres i delens redigeringstilstand, på et objekt.",
   "Type the body's depth: a length, or =formula.": "Skriv legemets dybde: en længde eller =formel.",
+  // Decision 537: a graph palette's values, shared or each user's own
+  "Palette values": "Paletværdier",
+  "Shared": "Fælles",
+  "Each user's own": "Hver brugers egne",
+  "The graph's values are the defaults: what each user changes in the palette stays on their computer, and Bake does not change the graph.": "Grafens værdier er standardværdierne: det, hver bruger ændrer i paletten, bliver på deres computer, og Generér ændrer ikke grafen.",
+  "What the palette changes is written into the graph: everyone sees the same values.": "Det, paletten ændrer, skrives i grafen: alle ser de samme værdier.",
+  "Your own value: the graph's differs": "Din egen værdi: grafens er en anden",
+  "Your own values, kept on this computer": "Dine egne værdier, gemt på denne computer",
+  "Forget your values: the graph's again": "Glem dine værdier: grafens igen",
+  "Reset to the graph's values": "Nulstil til grafens værdier",
+  "Write your values into the graph, for everyone (one undo step)": "Skriv dine værdier i grafen, for alle (ét fortrydelsestrin)",
+  "Save as the graph's values": "Gem som grafens værdier",
   // Decision 536: a graph's palette, its tool in My tools, groups
   "Open the graph in the Graphs panel": "Åbn grafen i panelet Grafer",
   "This graph has no inputs yet: add Number, Choice, Storey or other input nodes in the Graphs panel, and they become its fields here.": "Grafen har endnu ingen input: tilføj noder som Tal, Valg, Etage eller andre inputnoder i panelet Grafer, så bliver de dens felter her.",

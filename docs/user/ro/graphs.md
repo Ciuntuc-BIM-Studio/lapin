@@ -62,7 +62,11 @@ Un graf poate fi o unealtă a lui: intrările lui devin câmpurile unei mici **p
 - **Ce dă**: fiecare nod **Vezi valoarea** își arată valoarea în paletă, sub câmpuri; bifează **Arată-i valorile în paletă** pe orice alt nod (un **Număr** al pereților făcuți, o **Sumă** de lungimi) ca să-l arăți și pe el. O listă își arată primele elemente și câte sunt în total, o listă de liste ca un mic tabel.
 - **Folosirea**: schimbă un câmp și fantoma îl urmează imediat, fără să atingă modelul. Când îl lași (eliberezi cursorul, apeși **Enter**, bifezi, alegi), valoarea e scrisă în graf: un pas de anulare, și pânza o arată și ea. **Creează** face ce arată fantoma, într-un pas de anulare.
 
-Valorile sunt ale grafului, păstrate cu proiectul: un coleg care îl deschide primește aceeași unealtă, aceleași câmpuri și valorile folosite ultima dată. Într-o sesiune partajată oaspeții nu primesc paleta, cum nu primesc nici graful.
+- **Valorile paletei**, sub **Graful ca unealtă**, spune ale cui sunt valorile:
+  - **Comune** (implicit): ce lași în paletă e scris în graf, ca mai sus. Valorile sunt ale grafului, păstrate cu proiectul: un coleg care îl deschide primește aceeași unealtă, aceleași câmpuri și valorile folosite ultima dată.
+  - **Ale fiecărui utilizator**: valorile grafului sunt doar cele implicite. Ce schimbi în paletă se păstrează pe calculatorul tău, pentru acest proiect și acest graf, și nu e scris niciodată în graf; un coleg vede valorile grafului, sau pe ale lui. Un punct mic lângă un câmp arată o valoare a ta diferită de a grafului. Fantoma și **Creează** folosesc valorile tale, iar Creează face doar elementele: graful rămâne cum era, iar pasul de anulare e tot „Creare din graf”. **Înapoi la valorile grafului** le uită pe ale tale; **Salvează ca valori ale grafului** le scrie în graf pentru toți, într-un pas de anulare. O valoare a ta care nu se mai potrivește (nodul ei de intrare șters sau schimbat, o alegere care nu mai e oferită, un număr în afara minimului și maximului, un nivel sau un tip care nu mai există) lasă locul valorii grafului.
+
+Într-o sesiune partajată oaspeții nu primesc paleta, cum nu primesc nici graful.
 
 ## Grupuri
 

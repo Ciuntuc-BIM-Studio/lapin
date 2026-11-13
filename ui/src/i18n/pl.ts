@@ -24,6 +24,18 @@ export const PL: Record<string, string> = {
   "That sketch is not one of the part's own: use Constrain part first.": "Ten szkic nie należy do części: najpierw użyj Zwiąż część więzami.",
   "Place the part first: its sketch is edited in the part's edit mode, on an object.": "Najpierw umieść część: jej szkic edytuje się w trybie edycji części, na obiekcie.",
   "Type the body's depth: a length, or =formula.": "Wpisz głębokość bryły: długość lub =wzór.",
+  // Decision 537: a graph palette's values, shared or each user's own
+  "Palette values": "Wartości palety",
+  "Shared": "Wspólne",
+  "Each user's own": "Własne każdego użytkownika",
+  "The graph's values are the defaults: what each user changes in the palette stays on their computer, and Bake does not change the graph.": "Wartości grafu są domyślne: to, co każdy użytkownik zmieni w palecie, zostaje na jego komputerze, a Utwórz nie zmienia grafu.",
+  "What the palette changes is written into the graph: everyone sees the same values.": "To, co zmienia paleta, jest zapisywane w grafie: wszyscy widzą te same wartości.",
+  "Your own value: the graph's differs": "Twoja własna wartość: wartość grafu jest inna",
+  "Your own values, kept on this computer": "Twoje własne wartości, zachowane na tym komputerze",
+  "Forget your values: the graph's again": "Zapomnij swoje wartości: znowu te z grafu",
+  "Reset to the graph's values": "Przywróć wartości grafu",
+  "Write your values into the graph, for everyone (one undo step)": "Zapisz swoje wartości w grafie, dla wszystkich (jeden krok cofania)",
+  "Save as the graph's values": "Zapisz jako wartości grafu",
   // Decision 536: a graph's palette, its tool in My tools, groups
   "Open the graph in the Graphs panel": "Otwórz graf w panelu Grafy",
   "This graph has no inputs yet: add Number, Choice, Storey or other input nodes in the Graphs panel, and they become its fields here.": "Ten graf nie ma jeszcze danych wejściowych: dodaj w panelu Grafy węzły Liczba, Wybór, Kondygnacja lub inne węzły wejściowe, a staną się tu jego polami.",

@@ -86,16 +86,19 @@ public sealed class GraphsModule : ILapinModule, IPackageTexts, IDrivenElements
         });
 
         // {id} or {graph}, storey? (the storey a command node without one works on: the view's), values? (a palette's fields,
-        // written into the saved graph in the same step): the graph made, one undo step; refused whole, with the first
-        // failure, when one of its commands fails.
+        // written into the saved graph in the same step, unless write is false or the graph's palette values are each
+        // user's own: decision 537), write?: the graph made, one undo step; refused whole, with the first failure, when one
+        // of its commands fails.
         r.Command("bake", "Bake graph", (ctx, a) =>
         {
-            var doc = DocOf(ctx.Model, a).WithValues(a["values"] as JsonObject);
-            if (a["values"] is JsonObject { Count: > 0 } && a["graph"] is not JsonObject && Graph(ctx.Model, (string?)a["id"]) is { } saved)
+            var saved = DocOf(ctx.Model, a);
+            var doc = saved.WithValues(a["values"] as JsonObject);
+            var write = a["write"] is JsonValue w && w.TryGetValue<bool>(out var wb) ? wb : !saved.EachUsersOwnValues;
+            if (write && a["values"] is JsonObject { Count: > 0 } && a["graph"] is not JsonObject && Graph(ctx.Model, (string?)a["id"]) is { } entity)
             {
-                var attrs = saved.CloneAttrs();
+                var attrs = entity.CloneAttrs();
                 attrs["graph"] = doc.ToJson();
-                if (attrs.ToJsonString() != saved.Attrs.ToJsonString()) ctx.Replace(saved.With(attrs: attrs));
+                if (attrs.ToJsonString() != entity.Attrs.ToJsonString()) ctx.Replace(entity.With(attrs: attrs));
             }
             var catalog = ctx.Services as ModuleCatalog ?? throw new CommandException("No commands to bake here.");
             var tracking = new TrackingContext(ctx, catalog, new ModelQuery(ctx.Model, catalog));
