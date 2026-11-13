@@ -3487,6 +3487,19 @@ export const ES: Record<string, string> = {
   "The project's own parameters (Manage → Project information): by their key alone.": "Los parámetros propios del proyecto (Gestionar → Información del proyecto): solo por su clave.",
   "Texts in quotes, joined by &, and their functions: ": "Textos entre comillas, unidos con &, y sus funciones: ",
   "A text's formula may also be a text with fields in braces: ": "La fórmula de un texto también puede ser un texto con campos entre llaves: ",
+  "Text only": "Solo texto",
+  "A symbol of your own drawn instead of the text: its texts' {fields} read the element, as the template's do (Manage → Symbols… to draw one)": "Un símbolo propio dibujado en lugar del texto: los {campos} de sus textos leen el elemento, como los de la plantilla (Gestionar → Símbolos… para dibujar uno)",
+  "Drawn as": "Dibujado como",
+  "A symbol of your own drawn as every room's stamp: its texts' {fields} read the room ({number}, {name}, {area}, its parameters, {storey.code}…), as the lines below do": "Un símbolo propio dibujado como sello de cada local: los {campos} de sus textos leen el local ({number}, {name}, {area}, sus parámetros, {storey.code}…), como las líneas de abajo",
+  "The lines below": "Las líneas de abajo",
+  "Draw a symbol, or change one: its texts may hold fields such as {storey.code}.{number}": "Dibuja un símbolo o cambia uno: sus textos pueden llevar campos como {storey.code}.{number}",
+  "The symbol is drawn instead of the lines; the lines stay for a project without it.": "Se dibuja el símbolo en lugar de las líneas; las líneas quedan para un proyecto sin él.",
+  "Tagged element's name": "Nombre del elemento etiquetado",
+  "Tagged element's mark": "Marca del elemento etiquetado",
+  "Tagged element's type": "Tipo del elemento etiquetado",
+  "Room's number": "Número del local",
+  "Room's area": "Superficie del local",
+  "Tagged element's storey": "Planta del elemento etiquetado",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

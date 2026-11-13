@@ -3487,6 +3487,19 @@ export const DE: Record<string, string> = {
   "The project's own parameters (Manage → Project information): by their key alone.": "Die eigenen Parameter des Projekts (Verwalten → Projektinformationen): allein über ihren Schlüssel.",
   "Texts in quotes, joined by &, and their functions: ": "Texte in Anführungszeichen, verbunden mit &, und ihre Funktionen: ",
   "A text's formula may also be a text with fields in braces: ": "Die Formel eines Textes kann auch ein Text mit Feldern in geschweiften Klammern sein: ",
+  "Text only": "Nur Text",
+  "A symbol of your own drawn instead of the text: its texts' {fields} read the element, as the template's do (Manage → Symbols… to draw one)": "Ein eigenes Symbol statt des Textes: die {Felder} seiner Texte lesen das Element wie die der Vorlage (Verwalten → Symbole…, um eines zu zeichnen)",
+  "Drawn as": "Gezeichnet als",
+  "A symbol of your own drawn as every room's stamp: its texts' {fields} read the room ({number}, {name}, {area}, its parameters, {storey.code}…), as the lines below do": "Ein eigenes Symbol als Stempel jedes Raums: die {Felder} seiner Texte lesen den Raum ({number}, {name}, {area}, seine Parameter, {storey.code}…) wie die Zeilen unten",
+  "The lines below": "Die Zeilen unten",
+  "Draw a symbol, or change one: its texts may hold fields such as {storey.code}.{number}": "Ein Symbol zeichnen oder ändern: seine Texte können Felder wie {storey.code}.{number} enthalten",
+  "The symbol is drawn instead of the lines; the lines stay for a project without it.": "Das Symbol wird statt der Zeilen gezeichnet; die Zeilen bleiben für ein Projekt ohne es.",
+  "Tagged element's name": "Name des markierten Elements",
+  "Tagged element's mark": "Kennzeichen des markierten Elements",
+  "Tagged element's type": "Typ des markierten Elements",
+  "Room's number": "Raumnummer",
+  "Room's area": "Raumfläche",
+  "Tagged element's storey": "Geschoss des markierten Elements",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

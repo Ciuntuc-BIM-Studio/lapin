@@ -147,6 +147,34 @@ public static class Tags
         if (align) { data["align"] = true; data["base"] = Math.Round(DirectionOf(c, e) ?? 0, 4); }
     }
 
+    /// <summary>
+    /// A tag drawn by its type's symbol (decision 551): the symbol at its point, turned with it, a straight leader from the
+    /// symbol's box to the element (bent at its elbow), left out while the box stands on its end unless pointed or bent by hand.
+    /// </summary>
+    static ViewMark SymbolTag(ViewContext c, Entity t, Entity e, (SymbolDrawing Drawing, SymbolXf Xf) laid, Vec2 at, double rad, string color, bool leaderOn, Vec2? end, Vec2? elbow)
+    {
+        var mk = new ViewMark(t.Id);
+        var (centre, halfW, halfH) = TagSymbols.Into(c, mk, laid, at, rad, "TAG", color);
+        var turn = new Turn(at, rad);
+        var data = new JsonObject { ["at"] = J(at), ["leader"] = leaderOn, ["shape"] = TagLeaders.Straight, ["of"] = e.Id, ["symbol"] = true };
+        var shaped = t.Attrs["end"] is JsonArray || elbow != null;
+        if (leaderOn && end is { } target && (shaped || (turn.Inv(target) - centre).Length > Math.Max(halfW, halfH) * 1.2))
+        {
+            var from = turn.P(Leaves(centre, halfW, halfH, turn.Inv(elbow ?? target)));
+            Vec2[] path = elbow is { } k ? [from, k, target] : [from, target];
+            mk.Polyline(path, false, "TAG", Pens.Default.Hatch, color);
+            mk.Polyline(ViewMark.Circle(target, c.Mm * 0.5, 8), true, "TAG", Pens.Default.Seen, color);
+            data["from"] = J(from);
+            data["end"] = J(target);
+            if (elbow is { } kk) data["elbow"] = J(kk);
+            mk.Snaps.Add(target);
+        }
+        mk.Data = data;
+        AngleData(data, t, e, c, turn.P(centre), halfH + 1.5 * 2.5 * c.Mm);
+        mk.Snaps.Add(at);
+        return mk;
+    }
+
     static string? LeaderShape(JsonNode? n) => n is JsonValue v && v.TryGetValue<string>(out var s) && s is TagLeaders.Straight or TagLeaders.Elbow ? s : null;
 
     public static IEnumerable<ViewMark> Marks(ViewContext c)
@@ -170,6 +198,12 @@ public static class Tags
             var lines = LinesOf(c.Model, t, e, type, c.Book.Units);
             var color = e == null ? "#c0392b" : style.Color ?? "#000000";
             var leaderOn = t.Attrs["leader"] is not JsonValue lv || !lv.TryGetValue<bool>(out var on) || on;
+            // A tag type drawn by a symbol of the user's (decision 551): the symbol at the tag's point, its texts the element's fields.
+            if (type?.Symbol is { } symbolId && e != null && TagSymbols.Lay(c, symbolId, at, rad, e) is { } laid)
+            {
+                yield return SymbolTag(c, t, e, laid, at, rad, color, leaderOn, Followed(Pt(t.Attrs["end"])) ?? Anchor(c.Drawing, e.Id), Followed(Pt(t.Attrs["elbow"])));
+                continue;
+            }
             // An elbow (decision 331): the tag's point is its knee, the text beside it on its shoulder, no box.
             if (TagLeaders.ShapeOf(t, type) == TagLeaders.Elbow)
             {

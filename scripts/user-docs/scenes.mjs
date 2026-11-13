@@ -9648,12 +9648,44 @@ export const scenes = [
       await input.press('Enter');
       const result = () => t.page.locator('[data-param-result="Room index"]').innerText();
       await t.until(async () => (await result()).includes('K1.A.3.1'), 'the room\'s index reads its storey\'s code');
-      await t.page.locator('.param-formula-help summary').first().click();
-      await t.wait(300);
       await t.shot('param-scopes', { of: t.page.locator('dl:has([data-param-formula-switch="Room index"])').first(), pad: 6 });
       // The storey's code changed: the room's index follows, nothing stored on the room.
       await t.cmd('element.setParam', { ids: [storey], name: 'code', value: 'K2' });
       await t.until(async () => (await result()).includes('K2.A.3.1'), 'the index follows the storey\'s code');
+    },
+  },
+  {
+    // A room stamp drawn by a symbol of one's own (decision 551, a tester's topic #37): index | name over area | finish, the
+    // texts' fields read from the room, its storey's code among them; the Room tag dialog's Drawn as.
+    id: 'room-tag-symbol',
+    touches: ['core', 'architecture', 'drafting'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      await t.cmd('element.setParam', { ids: [storey], name: 'code', kind: 'text', value: 'K1' });
+      // 5 × 4.9 m: 24.5 m².
+      const room = (await t.cmd('architecture.addRoom', { storeyId: storey, x1: 0.8, y1: 1.5, x2: 5.8, y2: 6.4, name: 'Living', function: 'Living', number: '1' })).id;
+      await t.cmd('element.setParam', { ids: [room], name: 'Floor finish', kind: 'text', value: 'Oak' });
+      const text = (x, y, s, h = 2.5, bold = false) => ({ type: 'text', at: [x, y], text: s, h, bold });
+      const symbol = await t.cmd('symbols.create', { name: 'Room tag K', def: { scale: 'annotation', category: 'annotation', items: [
+        { type: 'rect', x: -22, y: -7, w: 44, h: 14, stroke: 0.35 },
+        { type: 'line', a: [-22, 0], b: [22, 0] }, { type: 'line', a: [-2, -7], b: [-2, 7] },
+        text(-20, 2, '{storey.code}.{number}', 3, true), text(0, 2, '{name}', 3),
+        text(-20, -5, '{area}'), text(0, -5, '{Floor finish}'),
+      ] } });
+      await t.cmd('standards.set', { kind: 'tag', entry: { id: 'room', symbol: symbol.id } });
+      const plan = await t.cmd('view.create', { kind: 'plan', storeyId: storey, name: 'Ground floor plan' });
+      await t.ui({ planViewId: plan.id, keyPlan: false });
+      await t.wait(1200);
+      const drawn = JSON.stringify(await t.call('doc.query', { name: 'view.drawing', args: { id: plan.id } }));
+      t.expect(drawn.includes('K1.1') && drawn.includes('Oak') && drawn.includes('24.50'), 'the stamp is the symbol, its texts the room\'s fields');
+      await t.fit();
+      await t.shot('room-tag-symbol', { of: '[data-testid=plan]', pad: 0 });
+      // The Room tag dialog: Drawn as names the symbol.
+      await t.tool('architecture.roomTag');
+      await t.wait(600);
+      t.expect(await t.page.locator('[data-testid=room-tag-symbol] [data-field=room-tag-symbol]').count() === 1, 'the Room tag dialog offers Drawn as');
+      await t.ui({ dialog: null });
     },
   },
   // [scenes:B1]

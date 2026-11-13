@@ -161,6 +161,14 @@ Marcajul unei uși sau ferestre se modifică parte cu parte, fiecare text mutat 
 
 ![O etichetă aliniată la peretele ei, cu mânerul de rotire, și peretele etichetat evidențiat](shots/tag-rotate.webp)
 
+**Câmpurile altor elemente.** Textul unei etichete poate citi dincolo de elementul ei, cu un domeniu înainte de punct: `{storey.code}` (parametrul nivelului), `{project.number}`, `{host.FireRating}` (peretele unei uși), `{room.name}`, la o ușă `{fromRoom.number}` și `{toRoom.number}`, iar parametrii proprii ai proiectului doar prin cheia lor. Un câmp poate fi și o formulă: `{= upper(storey.code) & "." & number}`, `{= area * 1.1 | 0.00}`. Lista **Arată** din proprietățile unei etichete le grupează după locul de unde vin (nivelul, proiectul, gazda, încăperea). Vezi [Parametri calculați prin formule](interface.md#parametri-calculați-prin-formule).
+
+#### O etichetă desenată ca simbol
+
+Un tip de etichetă, sau eticheta încăperilor, poate fi un desen al tău în loc de text. Desenează eticheta ca [simbol](#simboluri) (**Gestionare → Simboluri…**): liniile, casetele și cercurile ei cum trebuie să arate și un text oriunde vine o valoare, fiecare cu câmpuri ca un șablon — pentru o încăpere, `{storey.code}.{Hall}.{Flat}.{number}` într-o casetă, `{name}` lângă ea, `{area}` și `{Floor finish}` dedesubt. Lista **Câmpuri** a editorului de simboluri oferă câmpurile elementului etichetat și parametrii nivelurilor tale. Apoi, în **Gestionare → Standarde de desen → Etichete**, alege simbolul lângă tipul de etichetă (**Doar text** e textul simplu), sau în **Eticheta încăperii…**, **Desenat ca**. Fiecare etichetă de acel tip, eticheta fiecărei încăperi, se desenează ca simbolul în punctul ei, cu textele completate din elementul ei; urmează elementul și ce citește el (codul unui nivel schimbat schimbă toate etichetele). O etichetă își păstrează linia de indicație, pornită din caseta simbolului; câmpurile proprii ale simbolului (`{view.scale}`, `{attr.…}`) merg în continuare. Un simbol șters lasă textul tipului.
+
+![Eticheta unei încăperi desenată ca simbol propriu: K1.1 | Living / 24.5 m² | Oak](shots/room-tag-symbol.webp)
+
 #### Eticheta de stratificație
 
 O etichetă de stratificație scrie straturile unui element ca o notă de arhitectură: un antet (*EXTERIOR*), un rând pentru fiecare strat, un final (*INTERIOR*). Un proiect nou are **Build-up (exterior → interior)**: fiecare rând e descrierea materialului (numele lui, dacă nu are descriere), λ-ul lui dacă îl are și grosimea stratului în mm. Alege-o în bara uneltei **Etichetă** și dă clic pe un perete, o placă, un acoperiș sau finisajul unei încăperi; celelalte elemente primesc câmpul ales. Textul se citește din model de fiecare dată când se desenează: schimbi un strat, descrierea unui material sau λ-ul lui, iar eticheta urmează.

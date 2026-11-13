@@ -3485,6 +3485,19 @@ export const PT: Record<string, string> = {
   "The project's own parameters (Manage → Project information): by their key alone.": "Os parâmetros próprios do projeto (Gerir → Informação do projeto): só pela sua chave.",
   "Texts in quotes, joined by &, and their functions: ": "Textos entre aspas, unidos por &, e as suas funções: ",
   "A text's formula may also be a text with fields in braces: ": "A fórmula de um texto também pode ser um texto com campos entre chavetas: ",
+  "Text only": "Só texto",
+  "A symbol of your own drawn instead of the text: its texts' {fields} read the element, as the template's do (Manage → Symbols… to draw one)": "Um símbolo seu desenhado em vez do texto: os {campos} dos seus textos leem o elemento, como os do modelo (Gerir → Símbolos… para desenhar um)",
+  "Drawn as": "Desenhado como",
+  "A symbol of your own drawn as every room's stamp: its texts' {fields} read the room ({number}, {name}, {area}, its parameters, {storey.code}…), as the lines below do": "Um símbolo seu desenhado como carimbo de cada compartimento: os {campos} dos seus textos leem o compartimento ({number}, {name}, {area}, os seus parâmetros, {storey.code}…), como as linhas abaixo",
+  "The lines below": "As linhas abaixo",
+  "Draw a symbol, or change one: its texts may hold fields such as {storey.code}.{number}": "Desenhe um símbolo ou altere um: os seus textos podem ter campos como {storey.code}.{number}",
+  "The symbol is drawn instead of the lines; the lines stay for a project without it.": "O símbolo é desenhado em vez das linhas; as linhas ficam para um projeto sem ele.",
+  "Tagged element's name": "Nome do elemento etiquetado",
+  "Tagged element's mark": "Marca do elemento etiquetado",
+  "Tagged element's type": "Tipo do elemento etiquetado",
+  "Room's number": "Número do compartimento",
+  "Room's area": "Área do compartimento",
+  "Tagged element's storey": "Piso do elemento etiquetado",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

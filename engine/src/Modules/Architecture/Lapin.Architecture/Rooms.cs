@@ -428,7 +428,16 @@ public static class Rooms
     static ViewMark Stamp(ViewContext c, Entity room, Outline o, TagType type, TextStyle style)
     {
         var at = StampPoint(room, o);
-        var lines = TagText.Lines(type.Template, c.Model, room, Values(room, o, c.Model, c.Book.Units, c.Book.AreaRounding), c.Book.Units);
+        var values = Values(room, o, c.Model, c.Book.Units, c.Book.AreaRounding);
+        // A stamp drawn by a symbol of the user's (decision 551): the symbol at the stamp's point, its texts the room's fields.
+        if (type.Symbol is { } symbolId && TagSymbols.Lay(c, symbolId, at, 0, room, values) is { } laid)
+        {
+            var drawn = new ViewMark(room.Id);
+            TagSymbols.Into(c, drawn, laid, at, 0, "ROOM-TAG", o.Lost ? "#c0392b" : style.Color ?? "#000000");
+            drawn.Snaps.Add(at);
+            return drawn;
+        }
+        var lines = TagText.Lines(type.Template, c.Model, room, values, c.Book.Units);
         var h = style.Height * c.Mm;
         var step = h * 1.5;
         var color = o.Lost ? "#c0392b" : style.Color ?? "#000000";

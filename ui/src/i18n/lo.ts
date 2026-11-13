@@ -3541,6 +3541,19 @@ export const LO: Record<string, string> = {
   "The project's own parameters (Manage → Project information): by their key alone.": "ພາຣາມິເຕີຂອງໂຄງການເອງ (ຈັດການ → ຂໍ້ມູນໂຄງການ): ດ້ວຍກະແຈຂອງມັນຢ່າງດຽວ.",
   "Texts in quotes, joined by &, and their functions: ": "ຂໍ້ຄວາມໃນວົງຢືມ, ເຊື່ອມດ້ວຍ &, ແລະ ຟັງຊັນຂອງມັນ: ",
   "A text's formula may also be a text with fields in braces: ": "ສູດຂອງຂໍ້ຄວາມຍັງສາມາດເປັນຂໍ້ຄວາມທີ່ມີຊ່ອງໃນວົງເລັບປີກກາ: ",
+  "Text only": "ຂໍ້ຄວາມຢ່າງດຽວ",
+  "A symbol of your own drawn instead of the text: its texts' {fields} read the element, as the template's do (Manage → Symbols… to draw one)": "ສັນຍາລັກຂອງທ່ານເອງແທນຂໍ້ຄວາມ: {ຊ່ອງ} ໃນຂໍ້ຄວາມຂອງມັນອ່ານອົງປະກອບ ຄືກັບແມ່ແບບ (ຈັດການ → ສັນຍາລັກ… ເພື່ອແຕ້ມ)",
+  "Drawn as": "ແຕ້ມເປັນ",
+  "A symbol of your own drawn as every room's stamp: its texts' {fields} read the room ({number}, {name}, {area}, its parameters, {storey.code}…), as the lines below do": "ສັນຍາລັກຂອງທ່ານເອງແຕ້ມເປັນປ້າຍຂອງທຸກຫ້ອງ: {ຊ່ອງ} ໃນຂໍ້ຄວາມຂອງມັນອ່ານຫ້ອງ ({number}, {name}, {area}, ພາຣາມິເຕີຂອງມັນ, {storey.code}…) ຄືກັບແຖວຂ້າງລຸ່ມ",
+  "The lines below": "ແຖວຂ້າງລຸ່ມ",
+  "Draw a symbol, or change one: its texts may hold fields such as {storey.code}.{number}": "ແຕ້ມສັນຍາລັກ ຫຼື ປ່ຽນອັນໜຶ່ງ: ຂໍ້ຄວາມຂອງມັນມີຊ່ອງເຊັ່ນ {storey.code}.{number} ໄດ້",
+  "The symbol is drawn instead of the lines; the lines stay for a project without it.": "ສັນຍາລັກຖືກແຕ້ມແທນແຖວ; ແຖວຍັງຢູ່ສຳລັບໂຄງການທີ່ບໍ່ມີມັນ.",
+  "Tagged element's name": "ຊື່ຂອງອົງປະກອບທີ່ຕິດປ້າຍ",
+  "Tagged element's mark": "ເຄື່ອງໝາຍຂອງອົງປະກອບທີ່ຕິດປ້າຍ",
+  "Tagged element's type": "ປະເພດຂອງອົງປະກອບທີ່ຕິດປ້າຍ",
+  "Room's number": "ເລກຫ້ອງ",
+  "Room's area": "ເນື້ອທີ່ຫ້ອງ",
+  "Tagged element's storey": "ຊັ້ນຂອງອົງປະກອບທີ່ຕິດປ້າຍ",
 };
 
 /** Phrases with a number or a name in them. */

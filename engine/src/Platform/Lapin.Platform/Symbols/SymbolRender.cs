@@ -62,9 +62,10 @@ public static class SymbolRender
 {
     /// <summary>
     /// The symbol's items as strokes, fills, hatches and texts in its own mm, its live text filled by <paramref name="resolve"/>;
-    /// circles and arcs in chords for a symbol mm of <paramref name="metresPerMm"/> where it lands (the one rule for every curve).
+    /// circles and arcs in chords for a symbol mm of <paramref name="metresPerMm"/> where it lands (the one rule for every curve);
+    /// <paramref name="fields"/>, when given, fills a text's own fields first (a tag symbol's {number}, decision 551).
     /// </summary>
-    public static SymbolDrawing Render(IModelView m, SymbolDef d, Func<string, (bool Known, string? Value)> resolve, double metresPerMm, List<string>? unknown = null)
+    public static SymbolDrawing Render(IModelView m, SymbolDef d, Func<string, (bool Known, string? Value)> resolve, double metresPerMm, List<string>? unknown = null, Func<string, string>? fields = null)
     {
         var o = new SymbolDrawing([], [], [], []);
         var book = DraftingResources.Book(m);
@@ -129,6 +130,7 @@ public static class SymbolRender
                 case "text":
                 {
                     var raw = item["text"]?.ToString() ?? "";
+                    if (fields != null) raw = fields(raw);
                     var value = LiveText.Fill(raw, resolve, unknown);
                     var style = (string?)item["style"] is { Length: > 0 } sid ? Standards.TextOf(book, sid) : null;
                     var height = Json.Number(item["h"]) ?? style?.Height ?? 2.5;

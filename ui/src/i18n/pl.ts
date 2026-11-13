@@ -3488,6 +3488,19 @@ export const PL: Record<string, string> = {
   "The project's own parameters (Manage → Project information): by their key alone.": "Własne parametry projektu (Zarządzaj → Informacje o projekcie): samym kluczem.",
   "Texts in quotes, joined by &, and their functions: ": "Teksty w cudzysłowie, łączone przez &, i ich funkcje: ",
   "A text's formula may also be a text with fields in braces: ": "Formuła tekstu może też być tekstem z polami w nawiasach klamrowych: ",
+  "Text only": "Tylko tekst",
+  "A symbol of your own drawn instead of the text: its texts' {fields} read the element, as the template's do (Manage → Symbols… to draw one)": "Własny symbol rysowany zamiast tekstu: {pola} jego tekstów czytają element jak pola szablonu (Zarządzaj → Symbole…, by narysować)",
+  "Drawn as": "Rysowany jako",
+  "A symbol of your own drawn as every room's stamp: its texts' {fields} read the room ({number}, {name}, {area}, its parameters, {storey.code}…), as the lines below do": "Własny symbol rysowany jako pieczątka każdego pomieszczenia: {pola} jego tekstów czytają pomieszczenie ({number}, {name}, {area}, jego parametry, {storey.code}…), jak wiersze poniżej",
+  "The lines below": "Wiersze poniżej",
+  "Draw a symbol, or change one: its texts may hold fields such as {storey.code}.{number}": "Narysuj symbol lub zmień istniejący: jego teksty mogą zawierać pola jak {storey.code}.{number}",
+  "The symbol is drawn instead of the lines; the lines stay for a project without it.": "Symbol jest rysowany zamiast wierszy; wiersze zostają dla projektu bez niego.",
+  "Tagged element's name": "Nazwa oznaczonego elementu",
+  "Tagged element's mark": "Oznaczenie oznaczonego elementu",
+  "Tagged element's type": "Typ oznaczonego elementu",
+  "Room's number": "Numer pomieszczenia",
+  "Room's area": "Powierzchnia pomieszczenia",
+  "Tagged element's storey": "Kondygnacja oznaczonego elementu",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

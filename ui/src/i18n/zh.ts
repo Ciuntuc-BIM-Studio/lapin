@@ -3479,6 +3479,19 @@ export const ZH: Record<string, string> = {
   "The project's own parameters (Manage → Project information): by their key alone.": "项目自己的参数（管理 → 项目信息）：只写其键即可。",
   "Texts in quotes, joined by &, and their functions: ": "引号中的文本，用 & 连接，以及文本函数： ",
   "A text's formula may also be a text with fields in braces: ": "文本的公式也可以是带有花括号字段的文本： ",
+  "Text only": "仅文字",
+  "A symbol of your own drawn instead of the text: its texts' {fields} read the element, as the template's do (Manage → Symbols… to draw one)": "用你自己的符号代替文字：其文字中的 {字段} 读取元素，与模板相同（管理 → 符号… 绘制一个）",
+  "Drawn as": "绘制为",
+  "A symbol of your own drawn as every room's stamp: its texts' {fields} read the room ({number}, {name}, {area}, its parameters, {storey.code}…), as the lines below do": "用你自己的符号作为每个房间的标记：其文字中的 {字段} 读取房间（{number}、{name}、{area}、其参数、{storey.code}…），与下面各行相同",
+  "The lines below": "下面各行",
+  "Draw a symbol, or change one: its texts may hold fields such as {storey.code}.{number}": "绘制或修改一个符号：其文字可包含 {storey.code}.{number} 这样的字段",
+  "The symbol is drawn instead of the lines; the lines stay for a project without it.": "绘制符号以代替各行；各行保留给没有该符号的项目。",
+  "Tagged element's name": "被标注元素的名称",
+  "Tagged element's mark": "被标注元素的标记",
+  "Tagged element's type": "被标注元素的类型",
+  "Room's number": "房间编号",
+  "Room's area": "房间面积",
+  "Tagged element's storey": "被标注元素的楼层",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

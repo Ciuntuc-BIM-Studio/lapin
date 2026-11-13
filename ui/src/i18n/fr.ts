@@ -3491,6 +3491,19 @@ export const FR: Record<string, string> = {
   "The project's own parameters (Manage → Project information): by their key alone.": "Les paramètres propres du projet (Gérer → Informations du projet) : par leur seule clé.",
   "Texts in quotes, joined by &, and their functions: ": "Textes entre guillemets, joints par &, et leurs fonctions : ",
   "A text's formula may also be a text with fields in braces: ": "La formule d'un texte peut aussi être un texte avec des champs entre accolades : ",
+  "Text only": "Texte seul",
+  "A symbol of your own drawn instead of the text: its texts' {fields} read the element, as the template's do (Manage → Symbols… to draw one)": "Un symbole à vous dessiné à la place du texte : les {champs} de ses textes lisent l'élément, comme ceux du modèle (Gérer → Symboles… pour en dessiner un)",
+  "Drawn as": "Dessiné comme",
+  "A symbol of your own drawn as every room's stamp: its texts' {fields} read the room ({number}, {name}, {area}, its parameters, {storey.code}…), as the lines below do": "Un symbole à vous dessiné comme étiquette de chaque pièce : les {champs} de ses textes lisent la pièce ({number}, {name}, {area}, ses paramètres, {storey.code}…), comme les lignes ci-dessous",
+  "The lines below": "Les lignes ci-dessous",
+  "Draw a symbol, or change one: its texts may hold fields such as {storey.code}.{number}": "Dessiner un symbole ou en changer un : ses textes peuvent contenir des champs comme {storey.code}.{number}",
+  "The symbol is drawn instead of the lines; the lines stay for a project without it.": "Le symbole est dessiné à la place des lignes ; les lignes restent pour un projet qui ne l'a pas.",
+  "Tagged element's name": "Nom de l'élément étiqueté",
+  "Tagged element's mark": "Repère de l'élément étiqueté",
+  "Tagged element's type": "Type de l'élément étiqueté",
+  "Room's number": "Numéro de la pièce",
+  "Room's area": "Surface de la pièce",
+  "Tagged element's storey": "Niveau de l'élément étiqueté",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

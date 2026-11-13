@@ -3482,6 +3482,19 @@ export const DA: Record<string, string> = {
   "The project's own parameters (Manage → Project information): by their key alone.": "Projektets egne parametre (Administrer → Projektoplysninger): alene ved deres nøgle.",
   "Texts in quotes, joined by &, and their functions: ": "Tekster i anførselstegn, sat sammen med &, og deres funktioner: ",
   "A text's formula may also be a text with fields in braces: ": "En teksts formel kan også være en tekst med felter i krøllede parenteser: ",
+  "Text only": "Kun tekst",
+  "A symbol of your own drawn instead of the text: its texts' {fields} read the element, as the template's do (Manage → Symbols… to draw one)": "Et eget symbol tegnet i stedet for teksten: dets teksters {felter} læser elementet som skabelonens (Administrer → Symboler… for at tegne et)",
+  "Drawn as": "Tegnet som",
+  "A symbol of your own drawn as every room's stamp: its texts' {fields} read the room ({number}, {name}, {area}, its parameters, {storey.code}…), as the lines below do": "Et eget symbol tegnet som hvert rums stempel: dets teksters {felter} læser rummet ({number}, {name}, {area}, dets parametre, {storey.code}…) som linjerne nedenfor",
+  "The lines below": "Linjerne nedenfor",
+  "Draw a symbol, or change one: its texts may hold fields such as {storey.code}.{number}": "Tegn et symbol eller ret et: dets tekster kan rumme felter som {storey.code}.{number}",
+  "The symbol is drawn instead of the lines; the lines stay for a project without it.": "Symbolet tegnes i stedet for linjerne; linjerne bliver til et projekt uden det.",
+  "Tagged element's name": "Det mærkede elements navn",
+  "Tagged element's mark": "Det mærkede elements mærke",
+  "Tagged element's type": "Det mærkede elements type",
+  "Room's number": "Rummets nummer",
+  "Room's area": "Rummets areal",
+  "Tagged element's storey": "Det mærkede elements etage",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

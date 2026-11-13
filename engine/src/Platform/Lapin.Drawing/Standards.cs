@@ -43,16 +43,18 @@ public sealed record AxisStyle(string Id, string Name, string TextStyle, string 
 /// at a free elbow) or "elbow" (the default: an oblique segment to a knee, then a shoulder along the text, no box); the
 /// shoulder underlines the text's first row, each, the last or none (<see cref="Underline"/>), reaching
 /// <see cref="Extension"/> paper mm further out from the text towards the knee.
+/// A box or a room's stamp may be drawn by a symbol of the user's instead (decision 551, <see cref="Symbol"/>: a symbol's id):
+/// its lines as drawn, its texts' {fields} read from the tagged element as the template's are, at the tag's point.
 /// </summary>
 public sealed record TagType(string Id, string Name, string Template, IReadOnlyList<string> Classes,
     string Shape = "box", string Inner = "", string Unit = "cm", double Reach = 6, string TextStyle = Standards.Standard, string TextOrientation = "across",
     string? Header = null, string? Footer = null, string? Order = null, bool? ZeroLayers = null, string? Leaders = null, string? Bullet = null, double? Width = null,
-    string? LeaderShape = null, string? Underline = null, double? Extension = null)
+    string? LeaderShape = null, string? Underline = null, double? Extension = null, string? Symbol = null)
 {
     public bool Equals(TagType? o) => o is not null && Id == o.Id && Name == o.Name && Template == o.Template && Classes.SequenceEqual(o.Classes)
         && Shape == o.Shape && Inner == o.Inner && Unit == o.Unit && Reach == o.Reach && TextStyle == o.TextStyle && TextOrientation == o.TextOrientation
         && Header == o.Header && Footer == o.Footer && Order == o.Order && ZeroLayers == o.ZeroLayers && Leaders == o.Leaders && Bullet == o.Bullet && Width == o.Width
-        && LeaderShape == o.LeaderShape && Underline == o.Underline && Extension == o.Extension;
+        && LeaderShape == o.LeaderShape && Underline == o.Underline && Extension == o.Extension && Symbol == o.Symbol;
     public override int GetHashCode() => HashCode.Combine(Id, Name, Template, Shape, Inner, Header, Footer, Order);
 
     /// <summary>A build-up tag's layers the other way: interior to exterior, bottom to top.</summary>
@@ -226,7 +228,8 @@ public static class Standards
             Choice("leaders", BuildupLeaders), Choice("bullet", BuildupBullets),
             Lapin.Model.Json.Number(v["width"]) is { } w && double.IsFinite(w) && w > 0 ? Math.Clamp(w, 10, 1000) : null,
             Choice("leaderShape", LeaderShapes), Choice("underline", Underlines),
-            Lapin.Model.Json.Number(v["extension"]) is { } ext && double.IsFinite(ext) && ext >= 0 ? Math.Min(ext, 100) : null);
+            Lapin.Model.Json.Number(v["extension"]) is { } ext && double.IsFinite(ext) && ext >= 0 ? Math.Min(ext, 100) : null,
+            Text("symbol"));
     }
 
     /// <summary>A tag's leader (decision 331): straight from its box, or an elbow whose shoulder runs along the text.</summary>

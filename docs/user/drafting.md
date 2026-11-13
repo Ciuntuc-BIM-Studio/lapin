@@ -161,6 +161,14 @@ A door's or window's marker is edited part by part, each text moved or turned an
 
 ![A tag aligned to its wall, with its turning grip, and the wall it tags highlighted](shots/tag-rotate.webp)
 
+**Other elements' fields.** A tag's text may read beyond its element, with a scope before a dot: `{storey.code}` (its storey's parameter), `{project.number}`, `{host.FireRating}` (a door's wall), `{room.name}`, a door's `{fromRoom.number}` and `{toRoom.number}`, and the project's own parameters by their key alone. A field may be a formula too: `{= upper(storey.code) & "." & number}`, `{= area * 1.1 | 0.00}`. The **Shows** list in a tag's properties groups them by where they come from (its storey, the project, its host, its room). See [Parameters worked out by formulas](interface.md#parameters-worked-out-by-formulas).
+
+#### A tag drawn by a symbol
+
+A tag type, or the room stamp, can be a drawing of your own instead of a text. Draw the tag as a [symbol](#symbols) (**Manage → Symbols…**): its lines, boxes and circles as it should look, and a text wherever a value goes, each holding fields as a template does — for a room, `{storey.code}.{Hall}.{Flat}.{number}` in one box, `{name}` beside it, `{area}` and `{Floor finish}` under them. The **Fields** list of the symbol editor offers the tagged element's fields and your storeys' parameters. Then, in **Manage → Drafting standards → Tags**, choose the symbol beside the tag type (**Text only** is the plain text), or in **Room tag…**, **Drawn as**. Every tag of that type, every room's stamp, is drawn as the symbol at its point, its texts filled from its element; they follow the element and what it reads (a storey's code changed changes every stamp). A tag still has its leader, drawn from the symbol's box; the symbol's own fields (`{view.scale}`, `{attr.…}`) keep working. A symbol deleted leaves the type's text.
+
+![A room stamp drawn by a symbol of one's own: K1.1 | Living / 24.5 m² | Oak](shots/room-tag-symbol.webp)
+
 #### Build-up tag
 
 A build-up tag writes an element's layers as an architectural note: a header (*EXTERIOR*), a line for each layer, a footer (*INTERIOR*). A new project has **Build-up (exterior → interior)**: each line is the material's description (its name when it has none), its λ when it has one, and the layer's thickness in mm. Choose it in the **Tag** tool's bar and click a wall, a floor, a roof or a room's finish; other elements get the field instead. The text is read from the model each time it is drawn: change a layer, a material's description or its λ, and the tag follows.

@@ -13,7 +13,7 @@ import { Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { PendingDialog } from './PendingDialog';
-import { MarkerSymbolsStandards } from './symbols/SlotPicker';
+import { MarkerSymbolsStandards, SymbolPicker, useSymbolList } from './symbols/SlotPicker';
 import { LineTypesTab } from './lineTypes/LineTypesTab';
 import { useLineTypes } from './lineTypes/lineTypes';
 import { lineTypeNames, withCurrent } from './lineTypes/lineTypeModel';
@@ -97,6 +97,7 @@ export function StandardsDialog() {
   const [pack, setPack] = useState<PackRead | null>(null);
   const lineTypes = useLineTypes();
   const systems = useSystems();
+  const symbols = useSymbolList();
   const [editing, setEditing] = useState<string | null>(null);
   useEffect(() => { clearStandardsTab(); }, []);
   useEffect(() => {
@@ -233,6 +234,12 @@ export function StandardsDialog() {
                   {tab.id === 'tag' && <td>{e.shape === 'buildup'
                     ? <button type="button" className={`btn mini${editing === e.id ? ' on' : ''}`} data-field="tag-shape-buildup" title="Its header, line per layer, footer, order, leaders and width, with a preview" onClick={() => setEditing(editing === e.id ? null : e.id)}>Build-up…</button>
                     : <><button type="button" className="btn mini" data-field="tag-leader" title="Its leader: straight from a box, or an elbow under the text, with a preview" onClick={() => setEditing(e.id)}>Leader…</button>
+                      {e.shape !== 'opening' && (
+                        <span title="A symbol of your own drawn instead of the text: its texts' {fields} read the element, as the template's do (Manage → Symbols… to draw one)">
+                          <SymbolPicker field={`tag-symbol-${e.id}`} value={typeof e.symbol === 'string' ? e.symbol : null} list={symbols} category="annotation" noneLabel="Text only"
+                            onChange={(id) => set({ id: e.id, symbol: id })} />
+                        </span>
+                      )}
                       {systems.length > 0 && (
                         <select className="mini" value="" data-field="tag-class-field" title="Add a classification field to the text: {classification.code}, {classification.title}, or a system's own code"
                           onChange={(ev) => { if (ev.target.value) set({ id: e.id, template: `${String(e.template ?? '')}${e.template ? ' ' : ''}{${ev.target.value}}` }); }}>

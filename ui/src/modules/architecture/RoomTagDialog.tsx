@@ -3,7 +3,9 @@
  * each a field of the room (its name, number, function, area, perimeter…) or
  * a text of one's own. It writes the room tag type of the project's drafting
  * standards (its template, "{name}|{number}|{area}" by default), which
- * Drafting standards → Tags shows as text.
+ * Drafting standards → Tags shows as text. A line may read the room's own
+ * parameters, its storey's and the project's (decision 550); the stamp may
+ * instead be a symbol of one's own whose texts read the same fields (decision 551).
  */
 
 import { useEffect, useState } from 'react';
@@ -11,8 +13,9 @@ import { ArrowDown, ArrowUp, Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { PendingDialog } from '../core/PendingDialog';
+import { SymbolPicker, useSymbolList } from '../core/symbols/SlotPicker';
 
-type TagType = { id: string; name?: string; shape?: string; template?: string; classes?: string | string[] };
+type TagType = { id: string; name?: string; shape?: string; template?: string; classes?: string | string[]; symbol?: string | null };
 
 /** The room's fields a stamp line can show (the engine's Rooms.Values and the room's attributes). */
 const ROOM_FIELDS: { key: string; label: string }[] = [
@@ -56,6 +59,7 @@ export function RoomTagDialog() {
   const [lines, setLines] = useState<string[]>([]);
   const [missing, setMissing] = useState(false);
   const more = useRoomFields();
+  const symbols = useSymbolList();
   const close = () => useUi.setState({ dialog: null });
   useEffect(() => {
     let live = true;
@@ -74,6 +78,8 @@ export function RoomTagDialog() {
     const template = joinTemplate(next);
     if (template) void execute('standards.set', { kind: 'tag', entry: missing ? { ...tag, template } : { id: tag.id, template } });
   };
+  // A symbol of one's own drawn instead of the lines (decision 551); none: the lines.
+  const setSymbol = (symbol: string | null) => void execute('standards.set', { kind: 'tag', entry: missing ? { ...tag, template: joinTemplate(lines) || tag.template, symbol } : { id: tag.id, symbol } });
   const move = (i: number, d: number) => { const n = [...lines]; [n[i], n[i + d]] = [n[i + d]!, n[i]!]; save(n); };
   const unused = ROOM_FIELDS.find((f) => !lines.some((l) => fieldOf(l) === f.key));
   return (
@@ -81,6 +87,12 @@ export function RoomTagDialog() {
       <div className="dialog" role="dialog" aria-label="Room tag" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Room tag</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">
+          <div className="row" data-testid="room-tag-symbol">
+            <span title="A symbol of your own drawn as every room's stamp: its texts' {fields} read the room ({number}, {name}, {area}, its parameters, {storey.code}…), as the lines below do">Drawn as</span>
+            <SymbolPicker field="room-tag-symbol" value={tag.symbol ?? null} list={symbols} category="annotation" noneLabel="The lines below" onChange={setSymbol} />
+            <button type="button" className="btn small" title="Draw a symbol, or change one: its texts may hold fields such as {storey.code}.{number}" onClick={() => useUi.setState({ dialog: 'symbols' })}>Symbols…</button>
+          </div>
+          {tag.symbol && <p className="muted small">The symbol is drawn instead of the lines; the lines stay for a project without it.</p>}
           <p className="muted small">What each room's stamp shows in plan, line by line. The first line is written in bold.</p>
           <table className="standards-table">
             <tbody>
