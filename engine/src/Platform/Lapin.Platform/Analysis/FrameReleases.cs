@@ -10,6 +10,8 @@ namespace Lapin.Platform.Analysis;
 public sealed record EndReleases(bool[] I, bool[] J, string Source)
 {
     public bool Any => I.Any(x => x) || J.Any(x => x);
+    /// <summary>A member that works in tension and compression only (a rod, a tie): pinned at its own ends, its weight at them.</summary>
+    public bool Axial { get; init; }
 }
 
 /// <summary>
@@ -36,6 +38,35 @@ public static class FrameReleases
     public static bool[] Pinned => [false, false, false, false, true, true];
     /// <summary>Pinned about local 3 only: the hinge of a member's bending in the plane of its depth (a rafter's, a purlin's under its load), held across it.</summary>
     public static bool[] PinnedStrong => [false, false, false, false, false, true];
+
+    /// <summary>The element's own word on whether it works axially only (true) or as a beam (false); absent: what its section and use say.</summary>
+    public const string AxialKey = "analysisAxial";
+    /// <summary>The kinds of member (IfcMemberTypeEnum, IFC 4.3's cables and ties too) that are axial whatever their section.</summary>
+    static readonly string[] Ties = ["TIEBAR", "TIE_BAR", "SUSPENSION_CABLE", "STAY_CABLE", "SUSPENDER", "CABLE"];
+
+    /// <summary>
+    /// Whether a member works in tension and compression only (docs/plan-fem.md §9.9): its own <see cref="AxialKey"/>, else a
+    /// tie or cable by its kind (on it or its type), else a solid round bar (a rod) that braces (an IfcMember BRACE, a hall's
+    /// roof or wall bracing). Such a member is pinned at both its own ends and carries its weight to them: a Ø20 rod of
+    /// bracing 7 m long has no stiffness to speak of in bending, and analysed as a beam it sags under its own weight as no rod
+    /// in tension does. Whether it takes compression at all is S5's (members in tension only).
+    /// </summary>
+    public static bool Axial(IModelView m, AnalyticalFrame src)
+    {
+        var e = m.Get(src.SourceId);
+        if (e?.Attrs[AxialKey] is JsonValue v && v.TryGetValue<bool>(out var own)) return own;
+        var type = e != null ? m.RelatingOf(e.Id, IfcClass.RelDefinesByType) : null;
+        var kind = e?.PredefinedType is { Length: > 0 } p && p != "NOTDEFINED" && p != "USERDEFINED" ? p : type?.PredefinedType;
+        if (kind != null && Ties.Contains(kind.ToUpperInvariant())) return true;
+        if (src.Section.Shape.Kind != "circle") return false;
+        var role = src.Role ?? "";
+        return string.Equals(kind, "BRACE", StringComparison.OrdinalIgnoreCase) || role.StartsWith("rbr:", StringComparison.Ordinal) || role.StartsWith("wbr:", StringComparison.Ordinal)
+            || role.Contains("brac", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>The members (their elements' ids) that work axially only, of a model.</summary>
+    public static HashSet<string> AxialMembers(AnalyticalModel am, IModelView m) =>
+        am.Frames.Select(f => f.Source).Distinct().Where(s => Axial(m, s)).Select(s => s.SourceId).ToHashSet();
 
     /// <summary>An end's releases from what a command or the attribute gives: six booleans, or "fixed" / "pinned"; null for anything else.</summary>
     public static bool[]? Parse(JsonNode? n)
@@ -80,7 +111,9 @@ public static class FrameReleases
             var (ownI, ownJ) = Own(m.Get(src.SourceId));
             string source;
             bool[] def;
-            if (linked.Contains(src.SourceId)) { def = Pinned; source = "pinned: a connection joins it"; }
+            var axial = Axial(m, src);
+            if (axial) { def = Pinned; source = "pinned: a rod or tie, working axially"; }
+            else if (linked.Contains(src.SourceId)) { def = Pinned; source = "pinned: a connection joins it"; }
             else if (src.Category == AnalyticalKinds.Roofs && src.IfcClass == "IfcMember") { def = PinnedStrong; source = "pinned about its strong axis: a roof's timber member"; }
             else { def = Fixed; source = "fixed"; }
             if (ownI != null || ownJ != null) source = "the element's own";
@@ -97,9 +130,9 @@ public static class FrameReleases
             if (!i.Any(x => x) && !j.Any(x => x)) continue;
             var first = pieces[0];
             var last = pieces[^1];
-            if (first == last) { o[first] = new EndReleases(i, j, source); continue; }
-            o[first] = new EndReleases(i, Fixed, source);
-            o[last] = new EndReleases(Fixed, j, source);
+            if (first == last) { o[first] = new EndReleases(i, j, source) { Axial = axial }; continue; }
+            o[first] = new EndReleases(i, Fixed, source) { Axial = axial };
+            o[last] = new EndReleases(Fixed, j, source) { Axial = axial };
         }
         return o;
     }

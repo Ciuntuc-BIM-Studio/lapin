@@ -1,5 +1,7 @@
 /** Structural analysis, stage S1b (docs/plan-fem.md §9.6): the pure parts of the results interface: the engine's reports, the picker, the diagrams' geometry, the end releases. */
 
+import type { AnalysisOptionsDto, ShellResultDto, ShellsRunDto } from './shells';
+
 export interface RunCaseDto { id: string; code: string; sumLoads: number[]; sumReactions: number[] | null; balance: number | null; balanced: boolean | null; unmapped: number }
 export interface RunComboDto { key: string; kind: string; name: string }
 export interface MechanismDto {
@@ -10,6 +12,8 @@ export interface RefusedDto { id: string; sourceId: string; name: string; reason
 export interface RunDto {
   ok: boolean; dofs: number; elements: number; nodes: number; solveMs: number; totalMs: number; profile: number;
   cases: RunCaseDto[]; combinations: RunComboDto[]; mechanism?: MechanismDto; refused?: RefusedDto[]; notes: string[];
+  /** The slabs and walls analysed as shells (S2b), and the options the run took. */
+  shells?: ShellsRunDto; settings?: AnalysisOptionsDto;
 }
 
 export interface Extreme { frame: string; x: number; value: number }
@@ -26,6 +30,7 @@ export interface FrameResultDto {
 export interface ResultsDto {
   kind: string; key: string; name: string; units?: Record<string, string>;
   reactions: ReactionDto[]; frames: FrameResultDto[]; maxima: MaximaDto;
+  shells?: ShellResultDto[];
 }
 export interface PolylineDto { frame: string; sourceId: string; base: number[][]; points: number[][]; values: number[]; bound?: 'min' | 'max'; combination?: string }
 export interface DiagramDto { kind: string; key: string; quantity: string; unit: string; scale: number; max: number; polylines: PolylineDto[] }

@@ -4,7 +4,7 @@ order: 52
 summary: Ejecute un análisis estático lineal del pórtico con sus cargas, lea los diagramas de esfuerzos, momentos y deformada en 3D y fije las liberaciones de los extremos de las barras.
 ---
 
-**Ejecutar análisis** del grupo **Cargas** de la pestaña **Estructura** (y del cuadro Cargas) analiza las barras del modelo con las cargas y combinaciones de [Cargas](loads.md) y muestra los esfuerzos en ellas.
+**Ejecutar análisis** del grupo **Cargas** de la pestaña **Estructura** (y del cuadro Cargas) analiza las barras, losas y muros del modelo con las cargas y combinaciones de [Cargas](loads.md) y muestra los esfuerzos en ellas.
 
 ![El grupo Cargas, con Ejecutar análisis](shots/ribbon-analysis.webp)
 
@@ -13,9 +13,14 @@ summary: Ejecute un análisis estático lineal del pórtico con sus cargas, lea 
 ## Qué se analiza
 
 - Las **barras** (pilares, vigas, elementos de acero y de madera) entran con su propia rigidez, según su material y su sección. Una barra cuyo material no tiene módulo de elasticidad se deja fuera y se enumera.
-- Los **muros de carga** son apoyos: sostienen las barras que descansan en ellos, pero no se analizan como muros.
-- Los **forjados y losas** no se analizan como placas; pasan sus cargas a las barras y muros que tienen debajo por la **regla de 45°**: las bisectrices de las esquinas dividen la losa en las zonas que lleva cada lado, y cada una se convierte en una carga trapezoidal o triangular sobre la barra de debajo.
+- Los **forjados y losas de hormigón** se analizan como **láminas**: cada uno se divide en elementos pequeños (una malla, de 0,5 m por defecto) que flectan y se estiran, y comparten sus nudos con las vigas, pilares y muros que encuentran. La losa lleva sus cargas por sí misma a lo que la sostiene, por su rigidez y la de ellos. Una viga bajo una losa conserva su propio eje por debajo y trabaja con la losa como una viga en T.
+- Los **muros de carga de hormigón** también son láminas: se apoyan en sus cimentaciones (un muro sin nada modelado debajo se sujeta a lo largo de su pie) y llevan los forjados que descansan en ellos, y el viento u otras cargas laterales en su plano.
+- Los **muros de fábrica** y los de otros materiales son apoyos: sostienen las losas y barras que descansan en ellos, pero no se analizan como muros.
+- Los **forjados de otros materiales** (un forjado de madera) pasan sus cargas a las barras y muros que tienen debajo por la **regla de 45°**: las bisectrices de las esquinas dividen la losa en las zonas que lleva cada lado, y cada una se convierte en una carga trapezoidal o triangular sobre la barra de debajo.
 - Las **cubiertas con estructura** pasan la carga a cada cabio por su **ancho tributario**, hasta la mitad de la distancia a los vecinos; la nieve se toma por proyección horizontal.
+- Las **varillas y tirantes** (una barra redonda maciza que arriostra, un tirante o un cable) trabajan axialmente: están articulados en sus extremos y su peso va a los extremos, de modo que no flectan como vigas. El campo **Barra con esfuerzo axil** en las propiedades de **Análisis** de una barra lo cambia: **Según su sección y uso**, **Sí (una varilla o tirante)** o **No (una viga)**.
+- Las **vigas de distinto canto** que llegan a un pilar conservan cada una su nivel; el pilar tiene un solo nudo, y las vigas se atan a él con un brazo rígido.
+- El **viento sobre las fachadas** va a las vigas, travesaños y bordes de forjado a lo largo de ellas; la franja a su pie va directamente al terreno y se lista aparte de las sumas de las barras.
 - El **peso propio** de las barras se toma a lo largo de ellas, y las cargas que usted dibujó y las derivadas van donde encuentran algo debajo. Una carga que no encuentra nada se deja fuera y se indica.
 
 ## Ejecución
@@ -24,10 +29,11 @@ Elija **Ejecutar análisis**. Se abre el cuadro **Resultados del análisis**:
 
 ![El cuadro Resultados del análisis](shots/analysis-results.webp)
 
-- El resumen: las barras, nudos e incógnitas del cálculo y lo que tardó.
+- El resumen: las barras, los elementos de lámina, nudos e incógnitas del cálculo y lo que tardó.
 - Para cada hipótesis, la **suma de sus cargas** frente a la **suma de las reacciones**, y si **equilibran** (una marca) o no (una cruz: no se fíe de esos resultados). Las cargas sin asignar se dan en kN.
 - Lo que se **dejó fuera** del análisis, y por qué.
-- Los valores **máximos y mínimos** de esfuerzos y momentos, el desplazamiento y la flecha máximos (con su relación con la luz, L/300) de la hipótesis, combinación o envolvente que elija.
+- Los valores **máximos y mínimos** de esfuerzos y momentos, el desplazamiento y la flecha máximos (con su relación con la luz, L/300) de la hipótesis, combinación o envolvente que elija; debajo, los valores máximos y mínimos en las **losas y muros**, y dónde están.
+- **Láminas**: qué losas y muros se analizan como láminas (**Forjados y muros**, **Solo forjados**, **Solo muros** o **Ninguno**: las losas por la regla de 45° y los muros como apoyos) y el tamaño de la **Malla** en metros. Una malla más fina es más exacta y más lenta; una pieza estrecha siempre recibe al menos cuatro elementos a lo ancho. Un cambio es un solo paso de deshacer; **Ejecutar de nuevo** lo recoge.
 
 **Mostrar los diagramas** cierra el cuadro y muestra los resultados en la vista 3D.
 
@@ -45,6 +51,22 @@ Una tarjeta sobre la vista 3D elige lo que se dibuja:
 Cada barra muestra su línea de base, la curva, rayas entre ellas y los valores en los extremos; el rojo es positivo y el azul negativo. Los momentos se dibujan del lado en que la barra está traccionada.
 
 ![La forma deformada](shots/analysis-deformed.webp)
+
+## Losas y muros
+
+Cuando las losas o los muros se analizan como láminas, la tarjeta tiene una segunda fila de botones, **Forjados y muros**, y las láminas se colorean en bandas según la magnitud que elija (un segundo clic en ella quita los colores):
+
+![El momento my del forjado, en bandas](shots/analysis-slab.webp)
+
+- **w**: el desplazamiento perpendicular a la losa o al muro (positivo hacia arriba en una losa).
+- **mx**, **my**: los momentos flectores en las direcciones x e y de la losa (X e Y globales en una losa; a lo largo y hacia arriba en un muro), en kN·m por metro. En una losa, **positivo significa que su cara inferior está traccionada** (el vano), negativo su cara superior (sobre un apoyo); en un muro, la cara a la derecha de su sentido.
+- **mxy**: el momento torsor; **nx**, **ny**, **nxy**: los esfuerzos en el plano de la losa (tracción positiva), en kN por metro; **vx**, **vy**: los esfuerzos cortantes transversales.
+
+La leyenda de la tarjeta da los valores de cada banda y la unidad:
+
+![La leyenda de los contornos](shots/analysis-legend.webp)
+
+Las mismas bandas se dibujan en la planta de la planta de la losa, para la pantalla; las láminas aún no las imprimen. En una envolvente, cada punto muestra el mayor en valor absoluto entre su valor mínimo y su máximo.
 
 ## Liberaciones de los extremos
 

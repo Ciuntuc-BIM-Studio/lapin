@@ -7,6 +7,12 @@ namespace Lapin.Analysis;
 /// <summary>A load case as read from its entity (docs/plan-fem.md §8.2).</summary>
 public sealed record LoadCase(string Id, string Code, string Name, string ActionType, string ActionSource, bool SelfWeight, IReadOnlyList<string> Derives, string? Category, Psi? OwnPsi)
 {
+    /// <summary>Where the wind blows towards (+x, −x, +y, −y): a wind case's direction, a snow case's drift (null: undrifted).</summary>
+    public string? WindDirection { get; init; }
+    /// <summary>A wind case's set of the roofs' pressure coefficients: min (suction) or max (pressure).</summary>
+    public string? RoofCpe { get; init; }
+    /// <summary>The cases whose loads are alternatives of one action (the arrangements of the snow, the directions of the wind): a combination takes one of them.</summary>
+    public string? Exclusive => Takes(LoadCases.Snow) ? LoadCases.Snow : Takes(LoadCases.Wind) ? LoadCases.Wind : null;
     public bool Permanent => ActionType == LoadCases.Permanent;
     public bool Variable => ActionType == LoadCases.Variable;
     public bool Wind => ActionSource == "WIND_W" || Category == Categories.Wind;
@@ -29,13 +35,17 @@ public static class LoadCases
     public const string Permanent = "PERMANENT_G", Variable = "VARIABLE_Q", Extraordinary = "EXTRAORDINARY_A";
     public static readonly string[] ActionTypes = [Permanent, Variable, Extraordinary];
     public static readonly string[] ActionSources = ["DEAD_LOAD_G", "COMPLETION_G1", "LIVE_LOAD_Q", "SNOW_S", "WIND_W", "EARTHQUAKE_E", "USERDEFINED"];
-    public const string Finishes = "finishes", Partitions = "partitions", Occupancy = "occupancy";
-    public static readonly string[] DerivedKinds = [Finishes, Partitions, Occupancy];
+    public const string Finishes = "finishes", Partitions = "partitions", Occupancy = "occupancy", Snow = "snow", Wind = "wind";
+    public static readonly string[] DerivedKinds = [Finishes, Partitions, Occupancy, Snow, Wind];
 
     public static LoadCase Read(Entity e) => new(
         e.Id, e.Str("code") ?? e.Name, e.Name, e.Str("actionType") ?? Variable, e.Str("actionSource") ?? "USERDEFINED", e.Bool("selfWeight"),
         (e.Attrs["derives"] as JsonArray)?.Select(x => (string?)x).OfType<string>().Where(DerivedKinds.Contains).Distinct().ToList() ?? [],
-        e.Str("category"), ReadPsi(e.Attrs["psi"]));
+        e.Str("category"), ReadPsi(e.Attrs["psi"]))
+    {
+        WindDirection = e.Str("windDirection") is { } d && Climate.Directions.Contains(d) ? d : null,
+        RoofCpe = e.Str("roofCpe") is { } r && Climate.RoofSets.Contains(r) ? r : null,
+    };
 
     static Psi? ReadPsi(JsonNode? n) =>
         n is JsonObject o && Json.Number(o["0"]) is { } a && Json.Number(o["1"]) is { } b && Json.Number(o["2"]) is { } c ? new Psi(a, b, c) : null;
@@ -45,9 +55,18 @@ public static class LoadCases
 
     public static LoadCase? Find(IModelView m, string? id) => id != null && m.Get(id) is { Class: Class } e ? Read(e) : null;
 
-    /// <summary>The case taking a derived kind (the rooms' imposed loads: the one of that category).</summary>
-    public static LoadCase? Taking(IEnumerable<LoadCase> cases, string kind, string? category = null) =>
-        cases.FirstOrDefault(c => c.Takes(kind) && (kind != Occupancy || c.Category == category));
+    /// <summary>
+    /// The case taking a derived kind: the rooms' imposed loads the one of that category; the snow the one of that drift
+    /// (<paramref name="direction"/> null: undrifted); the wind the one of that direction and roof set (min when none is said).
+    /// </summary>
+    public static LoadCase? Taking(IEnumerable<LoadCase> cases, string kind, string? category = null, string? direction = null, string? set = null) =>
+        cases.FirstOrDefault(c => c.Takes(kind) && kind switch
+        {
+            Occupancy => c.Category == category,
+            Snow => c.WindDirection == direction,
+            Wind => c.WindDirection == direction && (c.RoofCpe ?? "min") == (set ?? "min"),
+            _ => true,
+        });
 
     sealed record Spec(string Code, string Name, string ActionType, string ActionSource, bool SelfWeight, string[] Derives, string? Category);
 
@@ -56,9 +75,20 @@ public static class LoadCases
         new("G1", "Self weight", Permanent, "DEAD_LOAD_G", true, [], null),
         new("G2", "Finishes and partitions", Permanent, "COMPLETION_G1", false, [Finishes, Partitions], null),
         new("Q-A", "Imposed, category A", Variable, "LIVE_LOAD_Q", false, [Occupancy], "A"),
-        new("S", "Snow", Variable, "SNOW_S", false, [], Categories.Snow),
+        new("S", "Snow", Variable, "SNOW_S", false, [Snow], Categories.Snow),
         new("W", "Wind", Variable, "WIND_W", false, [], Categories.Wind),
     ];
+
+    /// <summary>A snow or wind case the climate's loads go in (<see cref="Climate.EnsureCases"/>); its id.</summary>
+    public static string Make(ICommandContext ctx, string code, string name, string category, string derives, string? direction, string? set)
+    {
+        var e = Make(ctx, new Spec(code, name, Variable, category == Categories.Snow ? "SNOW_S" : "WIND_W", false, [derives], category));
+        var attrs = e.CloneAttrs();
+        if (direction != null) attrs["windDirection"] = direction;
+        if (set != null) attrs["roofCpe"] = set;
+        if (direction != null || set != null) ctx.Replace(e.With(attrs: attrs));
+        return e.Id;
+    }
 
     static Entity Make(ICommandContext ctx, Spec s)
     {
@@ -93,7 +123,7 @@ public static class LoadCases
         return Make(ctx, new Spec(code, $"Imposed, category {category}", Variable, "LIVE_LOAD_Q", false, [Occupancy], category)).Id;
     }
 
-    static string Unique(IReadOnlyList<LoadCase> cases, string code)
+    public static string Unique(IReadOnlyList<LoadCase> cases, string code)
     {
         if (!cases.Any(c => string.Equals(c.Code, code, StringComparison.OrdinalIgnoreCase))) return code;
         for (var i = 2; ; i++) if (!cases.Any(c => string.Equals(c.Code, $"{code}{i}", StringComparison.OrdinalIgnoreCase))) return $"{code}{i}";
@@ -172,8 +202,20 @@ public static class LoadCases
                 attrs["derives"] = new JsonArray(kinds.Select(k => (JsonNode)k).ToArray());
             }
             else if (a["derives"] is null or JsonArray) attrs.Remove("derives");
-            else throw new CommandException("A case's derived loads are a list: finishes, partitions, occupancy.");
+            else throw new CommandException("A case's derived loads are a list: finishes, partitions, occupancy, snow, wind.");
         }
+        foreach (var (key, allowed) in new[] { ("windDirection", Climate.Directions), ("roofCpe", Climate.RoofSets) })
+            if (a.ContainsKey(key))
+            {
+                if ((string?)a[key] is { Length: > 0 } v)
+                {
+                    if (!allowed.Contains(v)) throw new CommandException($"A case's {key} is {string.Join(", ", allowed)}.");
+                    attrs[key] = v;
+                }
+                else attrs.Remove(key);
+            }
+        var direction = (string?)attrs["windDirection"];
+        var roofSet = (string?)attrs["roofCpe"];
         var derives = (attrs["derives"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToList() ?? [];
         foreach (var k in derives)
         {
@@ -182,6 +224,17 @@ public static class LoadCases
                 if (actionType != Variable || category == null || Categories.Of(category) == null)
                     throw new CommandException("The rooms' imposed loads go in a variable case of their category of use.");
                 if (Taking(others, Occupancy, category) is { } o) throw new CommandException($"The rooms of category {category} are in „{o.Code}” already.");
+            }
+            else if (k == Snow)
+            {
+                if (actionType != Variable || category != Categories.Snow) throw new CommandException("The snow goes in a variable case of category snow.");
+                if (Taking(others, Snow, null, direction) is { } o) throw new CommandException($"This arrangement of the snow is in „{o.Code}” already.");
+            }
+            else if (k == Wind)
+            {
+                if (actionType != Variable || category != Categories.Wind) throw new CommandException("The wind goes in a variable case of category wind.");
+                if (direction == null) throw new CommandException("A wind case says where the wind blows towards: windDirection +x, -x, +y or -y.");
+                if (Taking(others, Wind, null, direction, roofSet) is { } o) throw new CommandException($"This wind is in „{o.Code}” already.");
             }
             else if (Taking(others, k) is { } o) throw new CommandException($"The {k} are in „{o.Code}” already: a derived load goes in one case.");
         }

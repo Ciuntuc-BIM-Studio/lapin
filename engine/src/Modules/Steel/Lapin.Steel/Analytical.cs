@@ -29,6 +29,22 @@ public sealed class SteelAnalytical : IAnalyticalElements
                 [ax.At(default, 0), ax.At(default, ax.Length)], w, section, type?.Str("material"), Spatial.StoreyOf(m, e.Id)?.Id,
                 ax.Section.Depth, ax.Section.Width, role, ax.Flipped));
         }
+        // A hall's roof as the planes over its rafters' top (from the columns' outer faces, past the gables as far as the
+        // purlins), carried by its purlins: the snow and the wind on it go to them (docs/plan-fem.md §9.9).
+        foreach (var hall in m.OfClass(Halls.Class))
+        {
+            var s = Halls.SpecOf(hall);
+            var purlins = Halls.Members(m, hall.Id).Where(x => Halls.KindOfRole(s, x.Key) == "purlin").ToDictionary(x => x.Value.Id, _ => "purlin");
+            if (purlins.Count == 0) continue;
+            var level = Spatial.StoreyOf(m, hall.Id)?.Num("elevation") ?? MemberAxes.Level(m, m.Get(purlins.Keys.First())!);
+            var (x0, x1) = (-s.Column.Depth / 2, s.Span + s.Column.Depth / 2);
+            var (y0, y1) = (-s.PurlinOverhang, s.Length + s.PurlinOverhang);
+            Vec3 P(double x, double y) => Halls.Plan(s, x, y).At(level + s.Top(x));
+            List<IReadOnlyList<Vec3>> planes = s.Mono
+                ? [new[] { P(x0, y0), P(x1, y0), P(x1, y1), P(x0, y1) }]
+                : [new[] { P(x0, y0), P(s.ApexX, y0), P(s.ApexX, y1), P(x0, y1) }, new[] { P(s.ApexX, y0), P(x1, y0), P(x1, y1), P(s.ApexX, y1) }];
+            into.Roofs.Add(new AnalyticalRoof(hall.Id, planes) { Members = purlins, Name = hall.Name, StoreyId = Spatial.StoreyOf(m, hall.Id)?.Id });
+        }
         foreach (var node in m.OfClass(SteelNodes.Class))
         {
             var kind0 = SteelNodes.KindOf(node);

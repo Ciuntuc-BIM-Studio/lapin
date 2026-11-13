@@ -54,6 +54,9 @@ public class AnalysisRunTests
         return new Frame(f, ground, first, slab, columns, beams, beamType);
     }
 
+    /// <summary>The analysis as in S1: no shells, the slabs by the 45° rule, the walls line supports.</summary>
+    internal static void NoShells(Fixture f) => f.Run("analysis.setOptions", new JsonObject { ["shells"] = "none" });
+
     internal static JsonArray Rect(double x0, double y0, double x1, double y1) =>
         new(new JsonArray(x0, y0), new JsonArray(x1, y0), new JsonArray(x1, y1), new JsonArray(x0, y1));
 
@@ -70,9 +73,13 @@ public class AnalysisRunTests
         f.Run("analysis.addAreaLoad", new JsonObject { ["storeyId"] = t.First, ["points"] = Rect(0, 0, 6, 4), ["value"] = 5 });
         var run = Run(f);
         Assert.True((bool)run["ok"]!);
-        // Four columns and four beams on eight nodes, the four feet fixed: 4 × 6 degrees of freedom.
+        // Four columns and four beams on eight nodes; the floor a shell of 12 × 8 elements at 0.5 m sharing the beams' nodes,
+        // the four feet fixed: (13 × 9 + 4 − 4) × 6 degrees of freedom.
         Assert.Equal(8, (int)run["elements"]!);
-        Assert.Equal(24, (int)run["dofs"]!);
+        Assert.Equal(96, (int)run["shells"]!["elements"]!);
+        Assert.Equal(96, (int)run["shells"]!["quads"]!);
+        Assert.Equal(0.5, (double)run["shells"]!["meshSize"]!);
+        Assert.Equal(13 * 9 * 6, (int)run["dofs"]!);
         Assert.True((double)run["solveMs"]! >= 0);
         var cases = run["cases"]!.AsArray().Select(c => c!.AsObject()).ToDictionary(c => (string)c["code"]!);
         // G1: the columns' and beams' own weight along them, the slab's core over its outline (6 × 4 × 0.2 m), 25 kN/m³ less a hair (2500 kg/m³ × g).
@@ -153,9 +160,11 @@ public class AnalysisRunTests
         var pts = beam["points"]!.AsArray();
         var vals = beam["values"]!.AsArray();
         Assert.Equal(pts.Count, vals.Count);
-        // The beam's axis at the slab's mid-plane (2.9 m), its sagging moment drawn below it (the tension side), 1 cm a kN·m.
+        // The beam on its own axis (2.75 m: under the shell slab by its arms), its sagging moment drawn below it (the tension
+        // side), 1 cm a kN·m.
+        Assert.Equal(2.75, (double)beam["base"]![0]![2]!, 9);
         var i = Enumerable.Range(0, vals.Count).MaxBy(k => (double)vals[k]!);
-        Assert.Equal(2.9 - 0.01 * (double)vals[i]!, (double)pts[i]![2]!, 6);
+        Assert.Equal(2.75 - 0.01 * (double)vals[i]!, (double)pts[i]![2]!, 6);
         var deformed = f.Session.Query("analysis.diagram", new JsonObject { ["envelope"] = "sls", ["quantity"] = "deformed" })!.AsObject();
         Assert.Equal("m", (string?)deformed["unit"]);
         Assert.True((double)deformed["scale"]! > 0);
@@ -168,6 +177,7 @@ public class AnalysisRunTests
     {
         var t = Frame6x4();
         var f = t.F;
+        NoShells(f);
         f.Run("analysis.addAreaLoad", new JsonObject { ["storeyId"] = t.First, ["points"] = Rect(0, 0, 6, 4), ["value"] = 5 });
         var before = Bar(Results(f, new JsonObject { ["case"] = "Q-A" }), t.Beams[0]);
         Assert.True(Math.Abs((double)Station(before, 0)["Mz"]!) > 1);
@@ -207,6 +217,7 @@ public class AnalysisRunTests
     public void A_frame_standing_on_nothing_is_a_mechanism_said_with_its_node()
     {
         var t = Frame6x4(footings: false);
+        NoShells(t.F);
         var run = Run(t.F);
         Assert.False((bool)run["ok"]!);
         var m = run["mechanism"]!.AsObject();
@@ -421,12 +432,13 @@ public class AnalysisRunTests
         foreach (var w in walls) f.Run("element.setParam", new JsonObject { ["id"] = w, ["pset"] = "Pset_WallCommon", ["name"] = "LoadBearing", ["value"] = true });
         f.Run("architecture.addSlab", new JsonObject { ["storeyId"] = first, ["points"] = Rect(0, 0, 6, 4) });
         f.Run("analysis.defaultCases", []);
+        NoShells(f);
         f.Run("analysis.addAreaLoad", new JsonObject { ["storeyId"] = first, ["points"] = Rect(0, 0, 6, 4), ["value"] = 2 });
         var run = Run(f);
         Assert.True((bool)run["ok"]!, run.ToJsonString());
         Assert.Equal(0, (int)run["dofs"]!);
         Assert.Equal(0, (int)run["elements"]!);
-        Assert.Contains(run["notes"]!.AsArray(), n => ((string)n!).StartsWith("No bars: the slabs' loads go straight into the load-bearing walls"));
+        Assert.Contains(run["notes"]!.AsArray(), n => ((string)n!).StartsWith("No bars and no shells: the slabs' loads go straight into the load-bearing walls"));
         var q = run["cases"]!.AsArray().Single(c => (string?)c!["code"] == "Q-A")!;
         Assert.Equal(-48, (double)q["sumLoads"]![2]!, 9);
         Assert.Equal(48, (double)q["sumReactions"]![2]!, 9);

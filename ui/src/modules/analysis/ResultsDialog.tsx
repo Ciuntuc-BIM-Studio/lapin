@@ -3,6 +3,7 @@
 import { Play, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { PendingDialog } from '../core/PendingDialog';
+import { ShellMaxima, ShellOptions } from './ShellOptions';
 import { hideDiagrams, runAnalysis, setPick, showDiagrams, useResults } from './useResults';
 import {
   balanceText, formatMm, formatValue, formatVec, FORCE_QUANTITIES, pickChoices, pickValue, spanRatio,
@@ -35,7 +36,7 @@ export function ResultsDialog() {
               <span className="eyebrow">Left out of the analysis</span>
               <table className="standards-table" data-testid="analysis-refused">
                 <thead><tr><th>Element</th><th>Reason</th></tr></thead>
-                <tbody>{run.refused.map((x) => <tr key={x.id}><td data-no-i18n>{x.name || x.sourceId}</td><td data-no-i18n>{x.reason}</td></tr>)}</tbody>
+                <tbody>{run.refused.map((x) => <tr key={x.id}><td data-no-i18n>{x.name || x.sourceId}</td><td>{x.reason}</td></tr>)}</tbody>
               </table>
             </>
           )}
@@ -50,9 +51,12 @@ export function ResultsDialog() {
                 </select>
               </div>
               {results ? <Maxima results={results} /> : <p className="muted">Reading the results…</p>}
+              {results && <ShellMaxima results={results} />}
             </>
           )}
-          {run.notes.map((n, i) => <p key={i} className="muted small" data-no-i18n>{n}</p>)}
+          <ShellOptions />
+
+          {run.notes.map((n, i) => <p key={i} className="muted small">{n}</p>)}
           <p className="muted small">The results are indicative: loads, combinations and the analysis are yours to check before you rely on them.</p>
           <div className="row">
             <button type="button" className="btn" disabled={running} data-testid="results-rerun" onClick={() => void runAnalysis()}><Play size={14} />Run again</button>
@@ -72,6 +76,7 @@ function Summary({ run }: { run: RunDto }) {
       <p className="row" data-testid="analysis-summary">
         <span>Bars</span><b data-no-i18n>{run.elements}</b><span className="muted">·</span>
         <span>Nodes</span><b data-no-i18n>{run.nodes}</b><span className="muted">·</span>
+        {run.shells && <><span>Shell elements</span><b data-no-i18n>{run.shells.elements}</b><span className="muted">·</span></>}
         <span>Unknowns</span><b data-no-i18n>{run.dofs}</b><span className="muted">·</span>
         <span>Solve time</span><b data-no-i18n>{formatValue(run.solveMs)} ms ({formatValue(run.totalMs)} ms)</b>
       </p>
@@ -102,7 +107,7 @@ function Mechanism({ run }: { run: RunDto }) {
   return (
     <div className="warn-text" role="alert" data-testid="analysis-mechanism">
       <strong>The structure is a mechanism: it can move without resistance.</strong>
-      <p data-no-i18n>{m.message}</p>
+      <p>{m.message}</p>
       {m.names?.length > 0 && <p className="small" data-no-i18n>{[...new Set([...(m.names ?? []), ...(m.movingNames ?? [])])].join(', ')}</p>}
       {ids.length > 0 && <button type="button" className="btn" data-testid="analysis-select-mechanism" onClick={() => selectMechanism(ids)}>Select the elements involved</button>}
     </div>

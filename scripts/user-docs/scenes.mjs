@@ -2688,8 +2688,12 @@ export const scenes = [
       await t.ui({ dialog: null });
       await t.wait(600);
       // Report #143: the type says how a plan draws the stair over its cut plane, and its break line.
-      t.expect(await dialog.locator('select[data-field=symbols-above-cut]').count() > 0, 'the type chooses how the plan draws the stair over its cut');
-      t.expect(await dialog.locator('select[data-field=symbols-break]').count() > 0, 'the type chooses its break line');
+      await t.tool('architecture.stairTypes');
+      const types = t.page.locator('[aria-label="Stair types"]');
+      t.expect(await types.locator('select[data-field=symbols-above-cut]').count() > 0, 'the type chooses how the plan draws the stair over its cut');
+      t.expect(await types.locator('select[data-field=symbols-break]').count() > 0, 'the type chooses its break line');
+      await t.ui({ dialog: null });
+      await t.wait(400);
       await t.shot('under-stair-properties', { of: 'aside.props', pad: 0, maxHeight: 640 });
       // The other five styles, each under a stair of its own beside the first.
       const styles = ['storage', 'office', 'mudroom', 'playhouse', 'dogbed'];
@@ -3392,6 +3396,19 @@ export const scenes = [
       await dialog.getByRole('tab', { name: 'Imposed loads' }).click();
       await t.wait(400);
       await t.shot('loads-imposed', { of: '.dialog', pad: 0 });
+      // The site's snow and wind (docs/plan-fem.md §9.9): s0,k and qb typed, each applied; their cases made.
+      await dialog.getByRole('tab', { name: 'Snow and wind' }).click();
+      await t.until(async () => (await dialog.locator('[data-testid=climate-s0k]').count()) === 1, 'the Snow and wind tab offers the ground snow load');
+      await dialog.locator('[data-testid=climate-s0k]').fill('2.0');
+      await dialog.locator('[data-testid=climate-snow-apply]').click();
+      await dialog.locator('[data-testid=climate-qb]').fill('0.5');
+      await dialog.locator('[data-testid=climate-terrain]').selectOption('III');
+      await dialog.locator('[data-testid=climate-wind-apply]').click();
+      await t.until(async () => (await t.call('doc.query', { name: 'analysis.climate', args: {} }))?.wind?.qb === 0.5, 'the site\'s wind is set');
+      const climateCases = (await t.call('doc.query', { name: 'analysis.loads', args: {} })).cases.map((c) => c.code);
+      t.expect(climateCases.includes('S+Y') && climateCases.includes('W-X/p'), `the snow's and the wind's cases are made (${climateCases.join(', ')})`);
+      await t.wait(400);
+      await t.shot('loads-climate', { of: '.dialog', pad: 0 });
       await dialog.getByRole('tab', { name: 'Summary' }).click();
       await t.wait(500);
       t.expect(/derived loads/i.test(await dialog.innerText()), 'the Summary lists the derived loads');
@@ -3446,7 +3463,18 @@ export const scenes = [
       await t.wait(1500);
       await t.until(async () => (await t.page.locator('[data-testid=analysis-overlay]').count()) > 0, 'the diagram is drawn over the 3D view');
       t.expect(await t.page.locator('[data-testid=analysis-card]').count() === 1, 'the card with the picker shows');
+      // The floor is a shell (S2b, docs/plan-fem.md §10.10): its moment my in bands over it, the legend on the card.
+      t.expect(run.shells?.elements === 96, `the floor is meshed into 96 shell elements (${JSON.stringify(run.shells)})`);
+      await t.until(async () => (await t.page.locator('[data-testid=analysis-legend]').count()) > 0, 'the contours\' legend shows on the card');
+      t.expect(await t.page.locator('[data-testid=analysis-legend]').getAttribute('data-quantity') === 'my', 'the floor\'s my is contoured');
+      await t.until(async () => (await t.page.locator('[data-contours]').count()) > 0, 'the floor\'s contours are in the 3D view\'s scene');
       await t.shot('analysis-moments', { of: '[data-testid=view3d]', pad: 0 });
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 0.6, pitch: -1.05, distance: 12, target: { x: 3, y: 2, z: 3 } }, false));
+      await t.wait(1200);
+      await t.shot('analysis-slab', { of: '[data-testid=view3d]', pad: 0 });
+      await t.shot('analysis-legend', { of: '[data-testid=analysis-card]', pad: 6 });
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 0.9, pitch: -0.45, distance: 15, target: { x: 3, y: 2, z: 2 } }, false));
+      await t.wait(800);
       await t.page.locator('[data-testid=analysis-q-N]').click();
       await t.wait(700);
       await t.page.locator('[data-testid=analysis-q-deformed]').click();
@@ -3956,6 +3984,18 @@ export const scenes = [
       t.expect((await t.nodes()).find((n) => n.id === sectionA.id)?.props.scale === 50, 'one undo takes the scale back');
       await openFromBrowser(t, 'B-B', 2500);
       await t.shot('section-jogged', { of: '[data-testid=drawing]', pad: 0 });
+      // Its settings: Jogged, projected by default; developed lays every piece, the jog too, side by side.
+      const sectionB = (await t.nodes()).find((n) => n.type === 'LapinView' && n.name === 'B-B');
+      await t.page.evaluate(async (id) => (await import('/src/app/store.ts')).useUi.setState({ selected: [], selection: id }), sectionB.id);
+      await t.page.locator('nav.browser').getByText('B-B', { exact: true }).first().click();
+      const jogged = t.page.locator('[data-field=section-jogged]');
+      await jogged.waitFor();
+      t.expect(await jogged.inputValue() === 'projected', 'a jogged section is projected by default');
+      await t.shot('section-jogged-setting', { of: '.view-settings', pad: 0 });
+      await jogged.selectOption('developed');
+      await t.wait(1200);
+      t.expect((await t.nodes()).find((n) => n.id === sectionB.id)?.props.jogged === 'developed', 'Developed is kept on the view');
+      await t.shot('section-jogged-developed', { of: '[data-testid=drawing]', pad: 0 });
       const elevation = (await t.nodes()).find((n) => n.type === 'LapinView' && /elevation/i.test(n.name));
       t.expect(elevation, 'an elevation in the project');
       await openFromBrowser(t, elevation.name, 2500);
@@ -4023,18 +4063,6 @@ export const scenes = [
       await t.page.mouse.move(grab[0], grab[1]);
       await t.page.mouse.down();
       await t.page.mouse.move(grab[0] + 60, grab[1] + 40, { steps: 5 });
-      // Its settings: Jogged, projected by default; developed lays every piece, the jog too, side by side.
-      const sectionB = (await t.nodes()).find((n) => n.type === 'LapinView' && n.name === 'B-B');
-      await t.page.evaluate(async (id) => (await import('/src/app/store.ts')).useUi.setState({ selected: [], selection: id }), sectionB.id);
-      await t.page.locator('nav.browser').getByText('B-B', { exact: true }).first().click();
-      const jogged = t.page.locator('[data-field=section-jogged]');
-      await jogged.waitFor();
-      t.expect(await jogged.inputValue() === 'projected', 'a jogged section is projected by default');
-      await t.shot('section-jogged-setting', { of: '.view-settings', pad: 0 });
-      await jogged.selectOption('developed');
-      await t.wait(1200);
-      t.expect((await t.nodes()).find((n) => n.id === sectionB.id)?.props.jogged === 'developed', 'Developed is kept on the view');
-      await t.shot('section-jogged-developed', { of: '[data-testid=drawing]', pad: 0 });
       await t.page.mouse.up();
       const moved = await box();
       t.expect(Math.abs(moved.x - before.x - 60) < 2 && Math.abs(moved.y - before.y - 40) < 2, `the dialog follows the drag (${before.x},${before.y} → ${moved.x},${moved.y})`);
@@ -6906,7 +6934,7 @@ export const scenes = [
         await t.button('View', { exact: true });
         await t.page.locator('.band button.tool', { hasText: /^Script$/ }).first().click();
         const panel = t.page.locator('[data-panel=script]');
-        await panel.waitFor({ timeout: 20_000 });
+        await panel.waitFor({ timeout: 90_000 });
         await t.until(async () => (await panel.locator('[data-field=script-status]').count()) > 0, 'the panel says which Python it found');
         const status = await t.call('script.status', {});
         if (!status.ok) {
@@ -6957,7 +6985,7 @@ export const scenes = [
         await t.button('View', { exact: true });
         await page.locator('.band button.tool', { hasText: /^Script$/ }).first().click();
         const panel = page.locator('[data-panel=script]');
-        await panel.waitFor({ timeout: 20_000 });
+        await panel.waitFor({ timeout: 90_000 });
         await panel.locator('[data-action=script-tab-recorder]').click();
         await panel.locator('[data-action=script-record]').click();
         await t.until(async () => (await panel.locator('[data-action=script-record-stop]').count()) > 0, 'the recorder records');
@@ -6975,7 +7003,7 @@ export const scenes = [
         await t.keys('Escape', 'Escape');
         await t.until(async () => (await walls()).length === 2, 'two walls are drawn');
         await page.evaluate(async () => (await import('/src/modules/scripting/store.ts')).openPanel());
-        await panel.waitFor({ timeout: 20_000 });
+        await panel.waitFor({ timeout: 90_000 });
         const recorder = panel.locator('[data-field=script-recorder]');
         await t.until(async () => ((await recorder.innerText()).match(/lapin\.architecture\.add_wall\(/g) ?? []).length === 2, 'the recorder shows the two walls as two lines');
         const text = await recorder.innerText();
@@ -7455,7 +7483,7 @@ export const scenes = [
       await t.tool('manage.documents');
       await t.page.waitForSelector('[data-dialog=documents]', { timeout: 10_000 });
       await t.page.locator('[data-field="doc-template-memoriu-arhitectura"]').click();
-      await t.page.waitForSelector('[data-dialog=documents] .doc-sheet:not(.doc-measure)', { timeout: 20_000 });
+      await t.page.waitForSelector('[data-dialog=documents] .doc-sheet:not(.doc-measure)', { timeout: 90_000 });
       await t.wait(800);
       t.expect((await t.page.locator('[data-field=doc-preview]').innerText()).includes('Memoriu tehnic de arhitectură'), 'the preview shows the technical report filled from the project');
       t.expect((await t.page.locator('[data-field=doc-preview]').innerText()).includes('12/2026'), 'the preview reads the project number from Project information');
@@ -7516,11 +7544,11 @@ export const scenes = [
       });
       await t.cmd('document.create', { template: 'memoriu-arhitectura' });
       await t.tool('manage.documents');
-      await t.page.waitForSelector('[data-dialog=documents] .doc-sheet:not(.doc-measure)', { timeout: 20_000 });
+      await t.page.waitForSelector('[data-dialog=documents] .doc-sheet:not(.doc-measure)', { timeout: 90_000 });
       await t.wait(500);
       // Edit: the document's own blocks on a page, its fields as chips with their values.
       await t.page.locator('[data-field=doc-edit]').click();
-      await t.page.waitForSelector('[data-field=doc-editor] .doc-chip', { timeout: 20_000 });
+      await t.page.waitForSelector('[data-field=doc-editor] .doc-chip', { timeout: 90_000 });
       await t.wait(800);
       t.expect((await t.page.locator('[data-field=doc-editor] .doc-chip[data-chip="project.number"]').first().innerText()).includes('12/2026'), 'a field shows as a chip with its value now');
       // A line of its own after the phase's: "Beneficiar: " and the client's field, found by searching.

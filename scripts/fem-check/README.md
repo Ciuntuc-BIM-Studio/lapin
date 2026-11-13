@@ -47,11 +47,14 @@ The kind sets the tolerances against ifc_structural_mechanics:
   3 % on displacements and forces.
 - **open**: other sections, which it analyses as rectangles of the same area, second moments and shear areas, far too
   stiff in torsion for open sections (its README). Torsion is shown and not judged.
-- **shell**: a floor it analyses as a shell, which Lapin's S1 does not (the 45° rule onto the beams): the sums
-  agree, the distribution only roughly.
+- **shell**: a floor both analyse as a shell (Lapin from S2b, docs/plan-fem.md §10.13), each beam on its own axis
+  under it (the export moves its profile by the beam's offset). It ties a beam to the slab in translation along the
+  line (a hinge, its W-JNT-001), Lapin's slab is monolithic with the beam: the sums, supports (10 %), nodes and
+  deflected axes (5 %) are judged; the beams' shear, moments and torsion are shown, not judged.
 
-Against PyNite every model is held to 1e-4 of the largest value: the same bars, Lapin's arms rigid and PyNite's very
-stiff bars.
+PyNite takes bars only: a model with shells is compared with ifc_structural_mechanics alone. Against PyNite every model is held to 1e-4 of the largest value: the same bars, Lapin's arms rigid and PyNite's very
+stiff bars. `pynite_run.py` keeps each bar whole: PyNite would cut a bar at any node lying on its axis (an arm's end on a
+column), which Lapin's solver does not.
 
 ## Installing the other programs (once, outside the repository)
 
@@ -117,3 +120,14 @@ and PyNite's: the nodes' translations, the reactions and the bars' end forces ag
 
 The files are kept in the output folder: `sav/` (the dumps), `ism/<model>/` (their results.json, analyze.log,
 check.json), `pynite/<model>.json`.
+
+## Plates (stage S2)
+
+`pynite_plate.py` solves the plates of `ShellElementTests` (a 4 × 4 m square, t = 0.04 m, 10 kPa, simply supported or
+clamped, 8 × 8 and 16 × 16) with PyNite's quadrilaterals, which are DKMQ (Katili 1993) where Lapin's are MITC4, and
+prints both as shares of plate theory (docs/plan-fem.md §10.9):
+```sh
+~/fem-tools/pynite-venv/bin/python -I scripts/fem-check/pynite_plate.py
+```
+Lapin's numbers in it are those its tests printed on 12.11.2026; rerun the tests with `--logger "console;verbosity=detailed"`
+to see them again.

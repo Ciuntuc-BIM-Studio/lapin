@@ -13,6 +13,8 @@ import { runAnalysis } from './useResults';
 import { AnalysisWatch } from './watch';
 import { AnalysisCard } from './AnalysisCard';
 import { Analysis3D } from './Analysis3D';
+import { ShellContours3D } from './ShellContours3D';
+import { ShellContoursPlan } from './ShellContours';
 import { ReleasesSection } from './ReleasesSection';
 
 // Fetched the first time it is opened (platform/lazyPart.tsx).
@@ -63,7 +65,8 @@ const analysis: LapinModule = {
   dialogs: { analysisLoads: LoadsDialog, analysisResults: ResultsDialog },
   background: AnalysisWatch,
   overlays: [AnalysisCard],
-  overlays3d: [Analysis3D],
+  overlays3d: [Analysis3D, ShellContours3D],
+  planOverlays: [ShellContoursPlan],
   propertySections: [
     { id: 'occupancy', label: 'Imposed load', classes: ['IfcSpace'], component: OccupancySection },
     { id: 'analysis', label: 'Analysis', classes: [...BAR_CLASSES], component: ReleasesSection },

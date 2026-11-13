@@ -199,6 +199,8 @@ try {
   if (started && !failed) {
     const downloads = mkdtempSync(join(tmpdir(), 'lapin-check-web-dl-'));
     await send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: downloads });
+    // Exports ask for a file name first (decision 509): no native picker here, the Save as… box answered with OK.
+    await ev(`(() => { window.showSaveFilePicker = undefined; setInterval(() => { document.querySelector('.ask-box[aria-label="Save as…"] .btn.primary')?.click(); }, 150); })()`);
     const MAGIC = { glb: (b) => b.readUInt32LE(0) === 0x46546c67, usdz: (b) => b.readUInt32LE(0) === 0x04034b50 && b.toString('utf8', 30, 40) === 'model.usda', dae: (b) => b.toString('utf8', 0, 200).includes('<COLLADA') };
     for (const format of ['glb', 'usdz', 'dae']) {
       await ev(`[...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'File')?.click()`);

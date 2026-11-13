@@ -248,6 +248,14 @@ export interface PlacementVerdict { ok: boolean; message?: string; snapAlong?: n
  * What a module's plan overlay is given: the plan's own transform (the view's pan, zoom and true-north turn), so it can
  * draw in model coordinates inside the plan's SVG and read where the pointer is in the model.
  */
+/** What a 3D overlay is given: the view's camera and canvas, its scene and how to ask it to draw again. */
+export interface Overlay3DProps {
+  camera: React.RefObject<THREE.Camera | null>;
+  canvas: React.RefObject<HTMLElement | null>;
+  scene?: React.RefObject<THREE.Scene | null>;
+  invalidate?: React.RefObject<() => void>;
+}
+
 export interface PlanOverlayProps {
   /** A model point (metres) as the plan shows it, in SVG pixels. */
   toScreen: (p: Vec2) => { x: number; y: number };
@@ -307,8 +315,11 @@ export interface LapinModule {
   expandSelection?: (id: string, node: NodeDto | undefined) => readonly string[] | null;
   /** Shown over the active pane's model view (not over a module's own view): a card the selection is dragged from. */
   overlays?: ComponentType[];
-  /** Drawn over every 3D view's canvas, projected by the camera it is given (the structural analysis' diagrams). Nothing in it takes the pointer. */
-  overlays3d?: ComponentType<{ camera: React.RefObject<THREE.Camera | null>; canvas: React.RefObject<HTMLElement | null> }>[];
+  /**
+   * Drawn over every 3D view's canvas, projected by the camera it is given (the structural analysis' diagrams), or put in its
+   * scene (the shells' contours: objects that take no ray, the view asked to draw again after). Nothing in it takes the pointer.
+   */
+  overlays3d?: ComponentType<Overlay3DProps>[];
   /**
    * Drawn inside every plan view's SVG, over its elements and grips, in the plan's own coordinates (`PlanOverlayProps`).
    * Nothing in it takes the pointer unless it asks: an element that should be clicked carries `data-overlay-hit` (and

@@ -81,6 +81,7 @@ public class LoadMappingTests
     public void A_floors_area_load_goes_onto_its_four_beams_by_the_45_degree_rule()
     {
         var t = AnalysisRunTests.Frame6x4();
+        AnalysisRunTests.NoShells(t.F);
         var f = t.F;
         f.Run("analysis.addAreaLoad", new JsonObject { ["storeyId"] = t.First, ["points"] = AnalysisRunTests.Rect(0, 0, 6, 4), ["value"] = 5 });
         var q = Case(f, "Q-A");
@@ -107,6 +108,7 @@ public class LoadMappingTests
     public void A_partly_loaded_floor_gives_each_beam_what_falls_in_its_zone()
     {
         var t = AnalysisRunTests.Frame6x4();
+        AnalysisRunTests.NoShells(t.F);
         var f = t.F;
         f.Run("analysis.addAreaLoad", new JsonObject { ["storeyId"] = t.First, ["points"] = AnalysisRunTests.Rect(0, 0, 2, 1), ["value"] = 4 });
         var by = ByBar(f, Case(f, "Q-A"));
@@ -119,6 +121,7 @@ public class LoadMappingTests
     public void A_line_load_goes_on_the_beam_under_it_and_one_off_any_beam_on_its_slab_pieces_corners()
     {
         var t = AnalysisRunTests.Frame6x4();
+        AnalysisRunTests.NoShells(t.F);
         var f = t.F;
         // Along the south beam's axis, 2 m of it: on that beam, over that stretch.
         f.Run("analysis.addLineLoad", new JsonObject { ["storeyId"] = t.First, ["a"] = new JsonArray(1, 0.1), ["b"] = new JsonArray(3, 0.1), ["value"] = 6 });
@@ -151,6 +154,7 @@ public class LoadMappingTests
     public void A_point_load_goes_on_a_columns_head_and_one_with_nothing_under_it_is_said()
     {
         var t = AnalysisRunTests.Frame6x4();
+        AnalysisRunTests.NoShells(t.F);
         var f = t.F;
         f.Run("analysis.addPointLoad", new JsonObject { ["storeyId"] = t.First, ["at"] = new JsonArray(6, 4), ["value"] = 15 });
         var q = Case(f, "Q-A");
@@ -177,6 +181,7 @@ public class LoadMappingTests
     {
         // The floor's corners are the columns' heads: a force at (2, 1) of 6 × 4 m gives them 1/2, 1/4, 1/12 and 1/6 of it.
         var t = AnalysisRunTests.Frame6x4();
+        AnalysisRunTests.NoShells(t.F);
         var f = t.F;
         f.Run("analysis.addPointLoad", new JsonObject { ["storeyId"] = t.First, ["at"] = new JsonArray(2, 1), ["value"] = 24 });
         var q = Case(f, "Q-A");

@@ -37,6 +37,7 @@ Dem tegner du ikke; Lapin afleder dem af modellen, hver gang du spørger, og de 
 - **Egenvægten** af dæk, vægge, søjler og bjælker ud fra materialernes densiteter, i det tilfælde, hvis kilde er egenvægt (G1).
 - **Dækkenes overflader** ud fra deres lag og de **ikke-bærende vægge** som linjelaster, i det tilfælde, der opregner overflader og skillevægge (G2).
 - **Rummene**: nyttelasten for et rums kategori over dets areal, i den kategoris tilfælde (Q-A, Q-B…).
+- **Sneen** og **vinden**, så snart du angiver stedets værdier (se [Sne og vind](#sne-og-vind)).
 
 Et materiale uden densitet udelades, og Oversigten siger hvilket.
 
@@ -51,6 +52,29 @@ Vælg et rum: dets egenskaber har en sektion **Nyttelast**. Dets **Kategori** er
 Fanen **Nyttelaster** viser hver kategori med dens anvendelse og dens **qk** i kN/m², som EN 1991-1-1 anbefaler. Skriv dit nationale anneks' værdi i feltet; **Ændret** går tilbage til standardværdien.
 
 ![Fanen Nyttelaster](shots/loads-imposed.webp)
+
+## Sne og vind
+
+Fanen **Sne og vind** indeholder stedets klima. Lapin leverer ikke de nationale kort: aflæs værdierne for dit sted i **CR 1-1-3/2012** (sne, figur 3.1 eller bilag A) og **CR 1-1-4/2012** (vind, figur 2.1 eller bilag A), eller i det nationale anneks, du arbejder efter, og skriv dem ind.
+
+![Fanen Sne og vind](shots/loads-climate.webp)
+
+- **Sne**: **Snelast på terræn s0,k (kN/m²)**, **Eksponeringsfaktor Ce** (fuld 0,8, delvis 1,0, beskyttet 1,2), **Termisk koefficient Ct** (1,0, medmindre taget er glasset og taber varme) og **Betydningsfaktor γIs** (1,0 for almindelige bygninger). **Påfør sneen**.
+- **Vind**: **Basishastighedstryk qb (kN/m²)**, **Terrænkategori** (0 til IV, fra havet til en bymidte) og **Betydningsfaktor γIw**. **Påfør vinden**.
+
+Når de påføres, oprettes de tilfælde, deres laster kommer i:
+
+- **S**, sneen uden snedrev, og **S+X**, **S-X**, **S+Y**, **S-Y**, sneen med snedrev fra en vind, der blæser mod hver side: på et sadeltag tager den flade, der vender mod vinden, det halve. Et snedrev, der ikke ændrer noget her (ingen flade vender mod den vind), udelades, og Oversigten siger det.
+- **W+X/s**, **W+X/p** og så videre for de fire retninger: vinden, der blæser mod +X, −X, +Y, −Y, én gang med tagenes **sug** (/s) og én gang med deres **tryk** (/p).
+
+Snedrevsarrangementerne og vindretningerne er alternativer: en kombination tager kun én af hver.
+
+Det, Lapin regner ud af dem, hver gang du spørger:
+
+- **Sne** på hver tagflade, pr. m² i plan: s = γIs · μ1 · Ce · Ct · s0,k, med μ1 = 0,8 op til 30°, derefter mindre, 0 ved 60° og stejlere; på et dæk, intet dækker (en terrasse, et fladt tag), er μ1 = 0,8.
+- **Vind** på vægge og tage: bygningens omrids er det konvekse hylster af dens vægge og søjler; facaderne tager zonerne A til E, de flade tage F til I, et sadeltag F til J, efter koefficienterne i EN 1991-1-4, ved trykket i bygningens højde for terrænkategorien. En facade leder sin vind til bjælkerne, sprosserne og dækkanterne langs den, dens laveste bånd til jorden; et tag til dets spær eller åse. Valmtage, indvendigt tryk og snedrev ved brystværn er ikke afledt endnu.
+
+> Disse værdier er **vejledende**: koefficienterne er normernes anbefalede. Kontrollér dem mod dit nationale anneks.
 
 ## Oversigt
 

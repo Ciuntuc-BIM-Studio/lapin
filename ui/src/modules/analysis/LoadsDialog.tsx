@@ -1,20 +1,22 @@
 /** Loads (docs/plan-fem.md §8): the load cases, the imposed loads by category, what the model carries, the EN 1990 combinations. All values are indicative. */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FileUp, Play, Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
+import { t, useLang } from '../../i18n';
 import { PendingDialog } from '../core/PendingDialog';
 import { openImportTable } from '../core/tables/tables';
 import { useAnalysis } from './hooks';
 import { runAnalysis } from './useResults';
 import {
-  ACTION_SOURCES, ACTION_SOURCE_LABEL, ACTION_TYPES, ACTION_TYPE_LABEL, combinationName, formatFactor, formatKn, imposedArgs, psiFrom,
-  type CategoryDto, type CombinationsDto, type LoadCaseDto, type LoadsDto,
+  ACTION_SOURCES, ACTION_SOURCE_LABEL, ACTION_TYPES, ACTION_TYPE_LABEL, combinationName, EXPOSURES, formatFactor, formatKn, imposedArgs, psiFrom,
+  snowArgs, TERRAINS, windArgs,
+  type CategoryDto, type ClimateDto, type CombinationsDto, type LoadCaseDto, type LoadsDto,
 } from './loads';
 
-type Tab = 'cases' | 'imposed' | 'summary' | 'combinations';
-const TABS: [Tab, string][] = [['cases', 'Cases'], ['imposed', 'Imposed loads'], ['summary', 'Summary'], ['combinations', 'Combinations']];
+type Tab = 'cases' | 'imposed' | 'site' | 'summary' | 'combinations';
+const TABS: [Tab, string][] = [['cases', 'Cases'], ['imposed', 'Imposed loads'], ['site', 'Snow and wind'], ['summary', 'Summary'], ['combinations', 'Combinations']];
 const CATEGORY_EXTRA = ['snow', 'wind'];
 
 export function LoadsDialog() {
@@ -23,6 +25,7 @@ export function LoadsDialog() {
   const loads = useAnalysis<LoadsDto>('analysis.loads');
   const cats = useAnalysis<CategoryDto[]>('analysis.categories');
   const combos = useAnalysis<CombinationsDto>('analysis.combinations', tab === 'combinations');
+  const climate = useAnalysis<ClimateDto>('analysis.climate', tab === 'site');
   if (!loads || !cats) return <PendingDialog title="Loads" />;
   return (
     <div className="dialog-backdrop" role="dialog" aria-label="Loads">
@@ -37,11 +40,12 @@ export function LoadsDialog() {
           </div>
           {tab === 'cases' && <CasesTab loads={loads} cats={cats} />}
           {tab === 'imposed' && <ImposedTab cats={cats} />}
+          {tab === 'site' && (climate ? <SiteTab climate={climate} /> : <p className="muted">Reading the site's snow and wind…</p>)}
           {tab === 'summary' && <SummaryTab loads={loads} />}
           {tab === 'combinations' && (combos ? <CombinationsTab data={combos} /> : <p className="muted">Reading the combinations…</p>)}
           <div className="row"><button type="button" className="btn primary" data-testid="loads-run" title="Analyse the frame under these loads and show the results" onClick={() => void runAnalysis()}><Play size={14} />Run analysis</button>
             <button type="button" className="btn" data-testid="loads-import" title="Point, line and area loads from a CSV or Excel file or pasted cells" onClick={() => openImportTable('analysis.loads', 'Import loads')}><FileUp size={14} />Import loads…</button></div>
-          <p className="muted small">The values are indicative (EN 1990 and EN 1991-1-1 as recommended): set the national annex values and check them before using the results.</p>
+          <p className="muted small">The values are indicative (EN 1990, EN 1991-1-1, EN 1991-1-3 and EN 1991-1-4 as recommended): set the national annex values and check them before using the results.</p>
           {error && <p className="error-text" role="alert">{error}</p>}
         </div>
       </div>
@@ -52,6 +56,7 @@ export function LoadsDialog() {
 function CasesTab({ loads, cats }: { loads: LoadsDto; cats: CategoryDto[] }) {
   const [name, setName] = useState('');
   const [type, setType] = useState<string>('VARIABLE_Q');
+  useLang((s) => s.lang);
   const update = (id: string, args: Record<string, unknown>) => void execute('analysis.updateCase', { id, ...args });
   const categoryKeys = ['', ...cats.map((c) => c.key), ...CATEGORY_EXTRA];
   return (
@@ -62,7 +67,7 @@ function CasesTab({ loads, cats }: { loads: LoadsDto; cats: CategoryDto[] }) {
           {loads.cases.map((c) => (
             <tr key={c.id}>
               <td><input key={c.id + c.code} style={{ width: 64 }} defaultValue={c.code} aria-label="Code" onBlur={(e) => e.target.value.trim() && e.target.value !== c.code && update(c.id, { code: e.target.value.trim() })} /></td>
-              <td><input key={c.id + c.name} defaultValue={c.name} aria-label="Name" onBlur={(e) => e.target.value.trim() && e.target.value !== c.name && update(c.id, { name: e.target.value.trim() })} /></td>
+              <td><input key={c.id + c.name + t(c.name)} defaultValue={t(c.name)} aria-label="Name" onBlur={(e) => e.target.value.trim() && e.target.value !== t(c.name) && update(c.id, { name: e.target.value.trim() })} /></td>
               <td><select value={c.actionType} onChange={(e) => update(c.id, { actionType: e.target.value })}>{ACTION_TYPES.map((t) => <option key={t} value={t}>{ACTION_TYPE_LABEL[t]}</option>)}</select></td>
               <td><select value={c.actionSource} onChange={(e) => update(c.id, { actionSource: e.target.value })}>{ACTION_SOURCES.map((t) => <option key={t} value={t}>{ACTION_SOURCE_LABEL[t]}</option>)}</select></td>
               <td><select value={c.category ?? ''} onChange={(e) => update(c.id, { category: e.target.value || null })}>{categoryKeys.map((k) => <option key={k} value={k}>{k === 'snow' ? 'Snow' : k === 'wind' ? 'Wind' : k || '(none)'}</option>)}</select></td>
@@ -83,7 +88,7 @@ function CasesTab({ loads, cats }: { loads: LoadsDto; cats: CategoryDto[] }) {
         <button type="button" className="btn" title="One imposed-load case for each category the rooms use that has none" onClick={() => void execute('analysis.addMissingCases', {})}>Add missing cases</button>
         <button type="button" className="btn" data-testid="cases-import" title="Load cases from a CSV or Excel file or pasted cells" onClick={() => openImportTable('analysis.cases', 'Import load cases')}><FileUp size={14} />Import load cases…</button>
       </div>
-      <p className="muted small">The cases a load goes in. The derived loads (finishes, partitions, rooms) go in the cases that list them.</p>
+      <p className="muted small">The cases a load goes in. The derived loads (finishes, partitions, rooms, snow, wind) go in the cases that list them.</p>
     </>
   );
 }
@@ -127,6 +132,7 @@ function QkField({ c }: { c: CategoryDto }) {
 }
 
 function SummaryTab({ loads }: { loads: LoadsDto }) {
+  useLang((s) => s.lang);
   const caseOf = (id: string) => loads.cases.find((c) => c.id === id);
   return (
     <>
@@ -135,7 +141,7 @@ function SummaryTab({ loads }: { loads: LoadsDto }) {
         <tbody>
           {loads.cases.map((c) => (
             <tr key={c.id} className={c.empty ? 'muted' : undefined}>
-              <td>{c.code} · {c.name}</td><td>{c.userLoads}</td><td>{c.selfWeight && c.total === 0 ? 'by the analysis (self weight)' : formatKn(c.total)}</td>
+              <td>{c.code} · {t(c.name)}</td><td>{c.userLoads}</td><td>{c.selfWeight && c.total === 0 ? 'by the analysis (self weight)' : formatKn(c.total)}</td>
               {loads.storeys.map((s) => <td key={s.id}>{formatKn(s.byCase[c.id] ?? 0)}</td>)}
             </tr>
           ))}
@@ -158,6 +164,63 @@ function SummaryTab({ loads }: { loads: LoadsDto }) {
         <p className="warn-text"><strong>Missing load cases (category: rooms)</strong> {loads.missing.map((m) => `${m.category}: ${m.rooms}`).join(' · ')}. <span>Use Add missing cases.</span></p>
       )}
       {loads.notes.map((n, i) => <p key={i} className="muted small">{n}</p>)}
+    </>
+  );
+}
+
+/**
+ * The site's snow and wind (docs/plan-fem.md §9.9): the values the user reads for the site from CR 1-1-3 and CR 1-1-4 (Lapin
+ * does not ship their maps), each committed with Apply; the cases their loads go in are made by the engine.
+ */
+function SiteTab({ climate }: { climate: ClimateDto }) {
+  const s = climate.snow;
+  const w = climate.wind;
+  const [snow, setSnow] = useState({ s0k: s ? String(s.s0k) : '', ce: String(s?.ce ?? 1), ct: String(s?.ct ?? 1), importance: String(s?.importance ?? 1) });
+  const [wind, setWind] = useState({ qb: w ? String(w.qb) : '', terrain: w?.terrain ?? 'II', importance: String(w?.importance ?? 1) });
+  useEffect(() => { setSnow({ s0k: s ? String(s.s0k) : '', ce: String(s?.ce ?? 1), ct: String(s?.ct ?? 1), importance: String(s?.importance ?? 1) }); }, [s?.s0k, s?.ce, s?.ct, s?.importance]);
+  useEffect(() => { setWind({ qb: w ? String(w.qb) : '', terrain: w?.terrain ?? 'II', importance: String(w?.importance ?? 1) }); }, [w?.qb, w?.terrain, w?.importance]);
+  const sa = snowArgs(snow.s0k, snow.ce, snow.ct, snow.importance);
+  const wa = windArgs(wind.qb, wind.terrain, wind.importance);
+  const field = (label: string, title: string, value: string, set: (v: string) => void, invalid: boolean, testid: string) => (
+    <label className="row" title={title}>
+      <span style={{ minWidth: 220 }}>{label}</span>
+      <input style={{ width: 72 }} aria-label={label} data-testid={testid} value={value} aria-invalid={invalid} className={invalid ? 'invalid' : undefined} onChange={(e) => set(e.target.value)} />
+    </label>
+  );
+  return (
+    <>
+      <span className="eyebrow">Snow (CR 1-1-3/2012, EN 1991-1-3)</span>
+      {field('Ground snow load s0,k (kN/m²)', 'The characteristic snow load on the ground at the site: CR 1-1-3 Figure 3.1 or its Annex A', snow.s0k, (v) => setSnow({ ...snow, s0k: v }), !!snow.s0k.trim() && !sa, 'climate-s0k')}
+      <label className="row" title="CR 1-1-3 Table 4.1: how the site exposes the roof to the wind">
+        <span style={{ minWidth: 220 }}>Exposure Ce</span>
+        <select aria-label="Exposure Ce" value={snow.ce} onChange={(e) => setSnow({ ...snow, ce: e.target.value })}>
+          {EXPOSURES.map(([v, label]) => <option key={v} value={String(v)}>{label}</option>)}
+          {!EXPOSURES.some(([v]) => String(v) === snow.ce) && <option value={snow.ce}>{snow.ce}</option>}
+        </select>
+      </label>
+      {field('Thermal coefficient Ct', '1.0, less only over a glazed roof that loses heat (CR 1-1-3 4.2)', snow.ct, (v) => setSnow({ ...snow, ct: v }), !sa && !!snow.s0k.trim(), 'climate-ct')}
+      {field('Importance factor γIs', 'CR 1-1-3 Table 4.2: 1.0 for ordinary buildings (class III, IV), 1.10 class II, 1.15 class I', snow.importance, (v) => setSnow({ ...snow, importance: v }), !sa && !!snow.s0k.trim(), 'climate-gis')}
+      <div className="row">
+        <button type="button" className="btn primary" data-testid="climate-snow-apply" disabled={!sa} onClick={() => sa && void execute('analysis.setClimate', { snow: sa })}>Apply the snow</button>
+        {s && <button type="button" className="btn" onClick={() => void execute('analysis.setClimate', { snow: null })}>No snow</button>}
+      </div>
+      <p className="muted small">On each roof plane s = γIs · μ1 · Ce · Ct · s0,k per m² of plan (μ1 0.8 to 30°, then less to 0 at 60°), 0.8 on a floor nothing covers. The case S holds the undrifted snow, S+X to S-Y a duo-pitch roof's drifted snow (half on the plane facing the wind).</p>
+
+      <span className="eyebrow">Wind (CR 1-1-4/2012, EN 1991-1-4)</span>
+      {field('Reference wind pressure qb (kN/m²)', 'The reference pressure at 10 m at the site: CR 1-1-4 Figure 2.1 or its Annex A', wind.qb, (v) => setWind({ ...wind, qb: v }), !!wind.qb.trim() && !wa, 'climate-qb')}
+      <label className="row" title="EN 1991-1-4 Table 4.1: the roughness of the terrain round the site">
+        <span style={{ minWidth: 220 }}>Terrain category</span>
+        <select aria-label="Terrain category" data-testid="climate-terrain" value={wind.terrain} onChange={(e) => setWind({ ...wind, terrain: e.target.value })}>
+          {TERRAINS.map((k) => { const x = climate.terrains.find((tt) => tt.key === k); return <option key={k} value={k}>{x ? `${k} · ${t(x.label)}` : k}</option>; })}
+        </select>
+      </label>
+      {field('Importance factor γIw', 'CR 1-1-4 Table 3.3: 1.0 for ordinary buildings (class III, IV), 1.10 class II, 1.15 class I', wind.importance, (v) => setWind({ ...wind, importance: v }), !wa && !!wind.qb.trim(), 'climate-giw')}
+      <div className="row">
+        <button type="button" className="btn primary" data-testid="climate-wind-apply" disabled={!wa} onClick={() => wa && void execute('analysis.setClimate', { wind: wa })}>Apply the wind</button>
+        {w && <button type="button" className="btn" onClick={() => void execute('analysis.setClimate', { wind: null })}>No wind</button>}
+      </div>
+      <p className="muted small">The wind blows towards +X, -X, +Y and -Y, each in two cases: the roofs' suction (/s) and their pressure (/p). Walls and columns make the building's outline; the façades go to the beams, rails and floor edges along them, the roofs to their rafters or purlins.</p>
+      <p className="muted small">Lapin does not ship the national maps: read the site's values from CR 1-1-3 and CR 1-1-4 (or the national annex you work to). The rules and coefficients are the recommended ones, indicative.</p>
     </>
   );
 }

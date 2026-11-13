@@ -6,13 +6,15 @@ export const ACTION_TYPE_LABEL: Record<string, string> = { PERMANENT_G: 'Permane
 export const ACTION_SOURCE_LABEL: Record<string, string> = {
   DEAD_LOAD_G: 'Self weight / dead load', COMPLETION_G1: 'Completion (finishes)', LIVE_LOAD_Q: 'Imposed', SNOW_S: 'Snow', WIND_W: 'Wind', EARTHQUAKE_E: 'Earthquake', USERDEFINED: 'User defined',
 };
-export const DERIVES = ['finishes', 'partitions', 'occupancy'] as const;
+export const DERIVES = ['finishes', 'partitions', 'occupancy', 'snow', 'wind'] as const;
 
 export type Psi = Record<'0' | '1' | '2', number>;
 
 export interface LoadCaseDto {
   id: string; code: string; name: string; actionType: string; actionSource: string; category?: string | null;
   selfWeight: boolean; derives: string[]; psi?: Psi | null; userLoads: number; total: number; empty: boolean;
+  /** A wind case's direction (+x, -x, +y, -y), a snow case's drift; a wind case's roof coefficients (min: suction, max: pressure). */
+  windDirection?: string | null; roofCpe?: string | null;
 }
 export interface DerivedLoadDto { kind: string; caseId: string; sourceId: string; sourceName: string; storeyId: string; value: number; unit: string; total: number }
 export interface LoadsDto {
@@ -68,4 +70,35 @@ export function imposedArgs(category: string, text: string): { category: string;
   if (!text.trim()) return { category, qk: null };
   const q = parseNumber(text);
   return q != null && q >= 0 ? { category, qk: q } : undefined;
+}
+
+/** The site's climate as the engine has it (analysis.climate): the user's snow and wind values, and the terrain categories. */
+export interface ClimateDto {
+  snow: { s0k: number; ce: number; ct: number; importance: number } | null;
+  wind: { qb: number; terrain: string; importance: number } | null;
+  terrains: { key: string; z0: number; zmin: number; label: string }[];
+}
+
+/** CR 1-1-3/2012 Table 4.1: the exposure coefficient Ce of a site. */
+export const EXPOSURES: [number, string][] = [[0.8, 'Full exposure (0.8)'], [1.0, 'Partial exposure (1.0)'], [1.2, 'Sheltered (1.2)']];
+export const TERRAINS = ['0', 'I', 'II', 'III', 'IV'] as const;
+
+export interface SnowArgs { s0k: number; ce: number; ct: number; importance: number }
+export interface WindArgs { qb: number; terrain: string; importance: number }
+
+/** The snow's fields typed: analysis.setClimate's snow, undefined when one does not read (s0,k is needed; the others default to 1). */
+export function snowArgs(s0k: string, ce: string, ct: string, importance: string): SnowArgs | undefined {
+  const sk = parseNumber(s0k);
+  if (sk == null || sk < 0 || sk > 20) return undefined;
+  const [c, t, i] = [ce, ct, importance].map((x) => (x.trim() ? parseNumber(x) : 1));
+  if (c == null || t == null || i == null || c < 0.5 || c > 2 || t < 0.1 || t > 1.5 || i < 0.5 || i > 2) return undefined;
+  return { s0k: sk, ce: c, ct: t, importance: i };
+}
+
+/** The wind's fields typed: analysis.setClimate's wind, undefined when one does not read (qb is needed; γIw defaults to 1). */
+export function windArgs(qb: string, terrain: string, importance: string): WindArgs | undefined {
+  const q = parseNumber(qb);
+  const i = importance.trim() ? parseNumber(importance) : 1;
+  if (q == null || q < 0 || q > 10 || i == null || i < 0.5 || i > 2 || !(TERRAINS as readonly string[]).includes(terrain)) return undefined;
+  return { qb: q, terrain, importance: i };
 }

@@ -28,8 +28,11 @@ HERE = Path(__file__).resolve().parent
 # only, the same model on both sides (the differences are the mesh, the 9.81 m/s² of ifc_structural_mechanics against
 # 9.80665, its torsion-corrected shear across the width, its displacements read on the faces); `open`: sections other
 # than solid rectangles, which ifc_structural_mechanics analyses as equivalent rectangles (its README); `shell`: a floor
-# that ifc_structural_mechanics analyses as a shell, which Lapin's S1 does not (the 45° rule onto the beams), so only
-# the sums and the overall shape are comparable.
+# both analyse as a shell (Lapin from S2b, docs/plan-fem.md §10.10: MITC4 on its own mesh against their shell elements on
+# Gmsh's), each beam on its own axis under the slab (the export's profile Position, as Lapin's rigid arms). The two differ in
+# how a beam holds the slab: theirs tied to it in translation along the line, a hinge (their W-JNT-001), Lapin's monolithic,
+# the slab's edge turning with the beam; so the beams' shear, moments and torsion are shown, not judged (13–90 % on
+# 12.11.2026), the sums, supports (5–9 %), nodes and deflected axes (under 5 %) are.
 MODELS = {
     "cantilever": "rect",
     "simple-beam": "rect",
@@ -45,7 +48,7 @@ TOL = {
     "rect": (0.002, 0.02, 0.03, 0.03, 0.03, 0.03),
     # An open section's equivalent rectangle is tens of times too stiff in torsion (its README): torsion is shown, not judged.
     "open": (0.002, 0.03, 0.03, 0.03, 0.05, math.inf),
-    "shell": (0.002, 0.30, 0.50, 0.50, 0.60, 0.60),
+    "shell": (0.002, 0.10, 0.05, 0.05, math.inf, math.inf),
 }
 # PyNite against Lapin's Euler-Bernoulli solve, of the largest of each: the same bars, so the only difference is the
 # arms', rigid in Lapin and very stiff bars in PyNite (pynite_run.py). Rotations are not judged: at a node only pinned
@@ -291,7 +294,9 @@ def main():
                         print(f"    {r['unmatched']} support(s) of Lapin's not found in results.json")
                     if not r["ok"]:
                         failed.append(f"{model} {r['case']}: ifc_structural_mechanics beyond the tolerance")
-        if a.pynite:
+        if a.pynite and lapin["problem"].get("shells"):
+            print(f"  PyNite: skipped ({lapin['problem']['shells']} shell elements; pynite_run.py takes bars only)")
+        elif a.pynite:
             dst = out / "pynite" / f"{model}.json"
             dst.parent.mkdir(parents=True, exist_ok=True)
             p = run([a.pynite, "-I", HERE / "pynite_run.py", sav / f"{model}.lapin.json", dst])

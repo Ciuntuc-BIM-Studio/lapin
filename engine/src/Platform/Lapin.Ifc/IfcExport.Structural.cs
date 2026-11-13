@@ -50,8 +50,14 @@ public static partial class IfcExport
         void Structural()
         {
             var reader = s.Reader;
-            var am = AnalyticalModel.Build(m, reader.Services, new AnalyticalOptions());
-            var loads = s.Catalog.Get<IStructuralLoads>()?.For(reader);
+            // What the export leaves out (its Exclude, and what its phase has not built yet) stays out of the analysis view too:
+            // its members, its supports, its connections and the loads derived from it.
+            var left = new HashSet<string>(o.Exclude ?? new HashSet<string>());
+            if (o.Phase != null) foreach (var e in m.Entities.Where(e => IsElement(e) && !InPhase(e))) left.Add(e.Id);
+            var options = new AnalyticalOptions(Exclude: left.Count > 0 ? left : null);
+            var am = AnalyticalModel.Build(m, reader.Services, options);
+            var loads = s.Catalog.Get<IStructuralLoads>()?.For(reader, options);
+            var axial = FrameReleases.AxialMembers(am, m);
             var reference = f.Add("IFCGEOMETRICREPRESENTATIONSUBCONTEXT", S("Reference"), S("Model"), Derived, Derived, Derived, Derived, model, Null, E("GRAPH_VIEW"), Null);
             var shared = Place(null, 0);
             string Shape(string type, string item) => f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null,
@@ -119,7 +125,7 @@ public static partial class IfcExport
 
             // The bars: local 2 as the member's axis, its section and material as a profile set shared by the bars that have them.
             var frameRef = new Dictionary<AFrame, string>();
-            var profileSets = new Dictionary<(string, string?), (string Set, List<string> Members)>();
+            var profileSets = new Dictionary<(string, string?, double), (string Set, List<string> Members)>();
             foreach (var fr in am.Frames)
             {
                 var (pi, pj) = (fr.I.At + fr.OffI, fr.J.At + fr.OffJ);
@@ -132,16 +138,19 @@ public static partial class IfcExport
                     : f.Add("IFCEDGE", fr.OffI.Length <= 1e-9 ? vertexOf[fr.I] : f.Add("IFCVERTEXPOINT", P3(pi)), fr.OffJ.Length <= 1e-9 ? vertexOf[fr.J] : f.Add("IFCVERTEXPOINT", P3(pj)));
                 var gid = Gid(fr.Id, "structural-member");
                 var member = f.Add("IFCSTRUCTURALCURVEMEMBER", gid, Null, S(fr.Pieces > 1 ? $"{fr.Source.Name} ({fr.Piece}/{fr.Pieces})" : fr.Source.Name), Null, Null, shared,
-                    Shape("Edge", edge), E("RIGID_JOINED_MEMBER"), Dir3(local2));
+                    Shape("Edge", edge), E(axial.Contains(fr.Source.SourceId) ? "PIN_JOINED_MEMBER" : "RIGID_JOINED_MEMBER"), Dir3(local2));
                 frameRef[fr] = member;
                 items.Add(member);
                 ConnectEnd(member, gid, fr, false, u, local2);
                 ConnectEnd(member, gid, fr, true, u, local2);
                 Own(fr.Source.SourceId, member);
-                var key = (fr.Source.Section.Key, fr.Source.MaterialId);
+                // A beam laid in the slab it carries (decision 357) has its own axis under the slab's plane by its OffsetZ: the
+                // profile placed that far off the member's curve, along the member's Axis (the profile's y), as a T beam is.
+                var below = Math.Round(fr.OffsetZ * local2.Z, 6);
+                var key = (fr.Source.Section.Key, fr.Source.MaterialId, below);
                 if (!profileSets.TryGetValue(key, out var ps))
                 {
-                    var profile = StructuralProfile(fr.Source.Section);
+                    var profile = StructuralProfile(fr.Source.Section, below);
                     // The section's values as the analysis takes them (SectionProperties, from its outline), so that a reader
                     // need not draw it again (a sloped flange is drawn more than one way): Pset_ProfileMechanical, about the
                     // profile's own axes (IFC's member y is the profile's x: MomentOfInertiaY bends in the depth, Lapin's I33).
@@ -158,8 +167,8 @@ public static partial class IfcExport
                 }
                 ps.Members.Add(member);
             }
-            foreach (var ((section, mat), (set, members)) in profileSets)
-                f.Add("IFCRELASSOCIATESMATERIAL", Gid(project.Id, $"structural-profile:{section}:{mat}"), Null, Null, Null, L(members), set);
+            foreach (var ((section, mat, below), (set, members)) in profileSets)
+                f.Add("IFCRELASSOCIATESMATERIAL", Gid(project.Id, below == 0 ? $"structural-profile:{section}:{mat}" : $"structural-profile:{section}:{mat}:{below}"), Null, Null, Null, L(members), set);
 
             // The shells: a face on its plane bounded by its nodes' edges, its core's thickness and material.
             var shellRef = new Dictionary<AShell, string>();
@@ -217,8 +226,9 @@ public static partial class IfcExport
                         case "planar" when a.Points.Count >= 3:
                         {
                             var load = f.Add("IFCSTRUCTURALLOADPLANARFORCE", Null, R(force.X), R(force.Y), R(force.Z));
+                            // Snow on a sloping face is per area of its plan (PROJECTED_LENGTH), wind's pressure per area of the face.
                             action = f.Add("IFCSTRUCTURALPLANARACTION", gid, Null, S(a.Name), Null, Null, shared, Shape("Face", ActionFace(a.Points, a.Holes)), load,
-                                E("GLOBAL_COORDS"), Null, Null, E("CONST"));
+                                E("GLOBAL_COORDS"), Null, a.Projected is { } projected ? E(projected ? "PROJECTED_LENGTH" : "TRUE_LENGTH") : Null, E("CONST"));
                             break;
                         }
                         case "curve" when a.Points.Count >= 2:
@@ -279,6 +289,7 @@ public static partial class IfcExport
             if (eccentric > 0) Notes.Add($"Structural analysis view: {eccentric} eccentric bar ends written with their offsets (IfcRelConnectsWithEccentricity), each bar's edge ending at its own end.");
             if (releases.Count > 0) Notes.Add($"Structural analysis view: {releases.Count} bars with released ends (their connections' AppliedCondition).");
             if (am.LeftOut.Count > 0) Notes.Add($"Structural analysis view: {am.LeftOut.Count} elements left out of the analytical model (as the JG Structures export says why).");
+            if (axial.Count > 0) Notes.Add($"Structural analysis view: {axial.Count} rods and ties as pin-joined members (PIN_JOINED_MEMBER), pinned at their ends.");
         }
 
         /// <summary>An action's face: its own vertices and edges, on its plane, its holes as inner bounds.</summary>
@@ -302,9 +313,14 @@ public static partial class IfcExport
         /// </summary>
         static string? Under(AnalyticalModel am, StructuralActionData a, Dictionary<AFrame, string> frames, Dictionary<AShell, string> shells)
         {
+            // A planar action on a wall (wind on a façade) bears on no slab.
+            var normal = a.Kind == "planar" ? VecMath.NewellNormal(a.Points.ToList()) : default;
+            if (a.Kind == "planar" && normal.Length > 1e-12 && Math.Abs(normal.Normalized().Z) < 1e-6) return null;
             var at = a.Kind switch
             {
-                "planar" => Middle(a.Points.Select(p => p.Xy).ToList()).At(a.Points[0].Z),
+                // On a sloping face (snow, wind on a roof), its middle on its own plane.
+                "planar" => Middle(a.Points.Select(p => p.Xy).ToList()) is var mid && normal.Length > 1e-12
+                    ? mid.At(a.Points[0].Z - (normal.X * (mid.X - a.Points[0].X) + normal.Y * (mid.Y - a.Points[0].Y)) / normal.Z) : default,
                 "curve" => (a.Points[0] + a.Points[1]) * 0.5,
                 _ => a.Points[0],
             };
@@ -398,7 +414,7 @@ public static partial class IfcExport
         }
 
         /// <summary>A bar's section as IFC writes a profile, metres: its parametric form when IFC has one, else its outline's rings.</summary>
-        string StructuralProfile(FrameSection section)
+        string StructuralProfile(FrameSection section, double below = 0)
         {
             var sh = section.Shape;
             var p = new SectionProfile
@@ -406,7 +422,8 @@ public static partial class IfcExport
                 Name = section.Name, Kind = sh.Kind, H = sh.Kind == "circle" ? sh.Width : sh.Depth, B = sh.Width, Tw = sh.Web, Tf = sh.Flange, Lip = sh.Lip,
                 R1 = sh.Root ?? 0, R2 = sh.Toe ?? 0, Slope = sh.Slope, B2 = sh.Width2, Tf2 = sh.Flange2, Rings = sh.Rings,
             };
-            if (ProfileIfc.Parametric(f, p, 1) is { } parametric) return parametric;
+            var position = Math.Abs(below) > 1e-9 ? f.Add("IFCAXIS2PLACEMENT2D", f.Add("IFCCARTESIANPOINT", L(new[] { R(0), R(below) })), Null) : null;
+            if (ProfileIfc.Parametric(f, p, 1, position) is { } parametric) return parametric;
             var rings = SectionProperties.RingsOf(sh) ?? [];
             var outsides = rings.Where(r => r.Count >= 3 && Polygon2.SignedArea(r) > 0).ToList();
             if (outsides.Count == 0)

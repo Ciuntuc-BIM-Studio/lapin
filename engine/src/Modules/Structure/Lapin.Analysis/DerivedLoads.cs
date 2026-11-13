@@ -16,6 +16,14 @@ public sealed record DerivedLoad(string Kind, string? CaseId, string SourceId, s
     IReadOnlyList<Vec2> Points, double Z, double Value, string Unit, double Total, string? Category = null)
 {
     public IReadOnlyList<IReadOnlyList<Vec2>> Holes { get; init; } = [];
+    /// <summary>An area on a sloping or upright face (a roof's plane, a façade): its outline in 3D; null for one level at <see cref="Z"/>.</summary>
+    public IReadOnlyList<Vec3>? Points3 { get; init; }
+    /// <summary>The force's direction (a unit vector); null: down.</summary>
+    public Vec3? Direction { get; init; }
+    /// <summary>What names it among its source's loads (an IFC action's GlobalId comes from it); null: its kind.</summary>
+    public string? Key { get; init; }
+    /// <summary>On a sloping face: its value per area of plan (snow) or per area of the face (wind); null on a level one.</summary>
+    public bool? Projected { get; init; }
 }
 
 /// <summary>
@@ -53,13 +61,14 @@ public sealed class LoadsReport
 
     static string N(double v) => Math.Round(v, 3).ToString("0.###", CultureInfo.InvariantCulture);
 
-    public static LoadsReport Compute(IQueryContext q)
+    public static LoadsReport Compute(IQueryContext q, AnalyticalOptions? options = null)
     {
         var m = q.Model;
         var cases = LoadCases.All(m);
         var notes = new List<string>();
         var derived = new List<DerivedLoad>();
-        var model = AnalyticalModel.Build(m, q.Services, Options);
+        var opts = options ?? Options;
+        var model = AnalyticalModel.Build(m, q.Services, opts);
         var densities = new Densities(m);
         string? StoreyOf(string id) => Spatial.StoreyOf(m, id)?.Id;
         string NameOf(string id, string fallback) => m.Get(id)?.Name is { Length: > 0 } n ? n : fallback;
@@ -121,7 +130,7 @@ public sealed class LoadsReport
         var inModel = model.Shells.Select(s => s.Source.SourceId).ToHashSet();
         var contributed = new AnalyticalContribution { Services = q.Services };
         foreach (var src in q.Services.All<IAnalyticalElements>()) src.Contribute(m, contributed);
-        foreach (var wall in contributed.Shells.Where(s => s.Kind == "wall" && s.Line is { Count: >= 2 } && !inModel.Contains(s.SourceId)).GroupBy(s => s.SourceId).Select(g => g.First()))
+        foreach (var wall in contributed.Shells.Where(s => s.Kind == "wall" && s.Line is { Count: >= 2 } && !inModel.Contains(s.SourceId) && opts.Keeps(s.SourceId)).GroupBy(s => s.SourceId).Select(g => g.First()))
         {
             var line = wall.Line!;
             var length = 0.0;
@@ -145,7 +154,7 @@ public sealed class LoadsReport
 
         // 4. The rooms: their category's imposed load over their outline (without its islands), at their storey's level.
         var missing = new Dictionary<string, List<string>>();
-        foreach (var room in m.OfClass(IfcClass.Space))
+        foreach (var room in m.OfClass(IfcClass.Space).Where(r => opts.Keeps(r.Id)))
         {
             var category = Categories.OfRoom(room);
             if (category == Categories.None || Categories.Qk(m, category) is not { } qk) continue;
@@ -158,6 +167,11 @@ public sealed class LoadsReport
             derived.Add(new DerivedLoad(LoadCases.Occupancy, c?.Id, room.Id, room.Name, storey?.Id, "area", outline.Points, storey?.Num("elevation") ?? 0, qk, "kN/m²", qk * area, category));
         }
 
+        // 5. Snow and wind from the site's climate (CR 1-1-3, CR 1-1-4), on the roofs' real shape and the façades.
+        var surfaces = RoofSurfaces.Of(model, m);
+        ClimateLoads.Snow(m, cases, surfaces, derived, notes);
+        ClimateLoads.Wind(m, cases, model, contributed, surfaces, derived, notes, opts);
+
         if (selfCase == null && weights.Count > 0) notes.Add("No case carries the self weight: give one permanent case selfWeight.");
         if (finishesCase == null && derived.Any(d => d.Kind == LoadCases.Finishes)) notes.Add("The floors' finishes are in no case: give one case derives finishes.");
         if (partitionsCase == null && derived.Any(d => d.Kind == LoadCases.Partitions)) notes.Add("The partitions are in no case: give one case derives partitions.");
@@ -167,7 +181,7 @@ public sealed class LoadsReport
 
         return new LoadsReport
         {
-            Cases = cases, UserLoads = global::Lapin.Analysis.UserLoads.All(m).Where(l => l.Points.Count > 0).ToList(), Derived = derived, Model = model,
+            Cases = cases, UserLoads = global::Lapin.Analysis.UserLoads.All(m).Where(l => l.Points.Count > 0 && opts.Keeps(l.Entity.Id)).ToList(), Derived = derived, Model = model,
             Missing = missing, Notes = notes, Weighed = weights.Count,
         };
     }

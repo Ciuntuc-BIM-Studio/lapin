@@ -172,11 +172,18 @@ public class SavDumpTests
     static JsonArray B(bool[] b) => new(b.Select(x => (JsonNode)x).ToArray());
     static JsonArray D(IEnumerable<double> xs) => new(xs.Select(x => (JsonNode)x).ToArray());
 
-    static JsonObject ProblemJson(FrameProblem p, IReadOnlyList<string> codes) => new()
+    /// <summary>
+    /// The solver's problem: its nodes, its members (the analytical model's bars, whole: a bar the shells' nodes cut is one
+    /// member here, as the export writes it), each case's loads; with shells, how many (PyNite then does not take it).
+    /// </summary>
+    static JsonObject ProblemJson(StructuralProblem sp, IReadOnlyList<string> codes) => ProblemJson(sp.Problem, sp.Members, codes);
+
+    static JsonObject ProblemJson(FrameProblem p, IReadOnlyList<FrameElement> members, IReadOnlyList<string> codes) => new()
     {
         ["units"] = new JsonObject { ["length"] = "m", ["force"] = "kN", ["modulus"] = "kN/m2" },
+        ["shells"] = p.Shells.Count,
         ["nodes"] = new JsonArray(p.Nodes.Select((n, i) => (JsonNode)new JsonObject { ["id"] = p.NodeIds[i], ["at"] = V(n), ["held"] = p.Held[i] is { } h ? B(h) : null }).ToArray()),
-        ["elements"] = new JsonArray(p.Elements.Select(e => (JsonNode)new JsonObject
+        ["elements"] = new JsonArray(members.Select(e => (JsonNode)new JsonObject
         {
             ["id"] = e.Id, ["ifcGuid"] = Step.Guid(e.Id, "structural-member"), ["sourceId"] = e.SourceId, ["name"] = e.Name, ["i"] = e.I, ["j"] = e.J, ["offI"] = V(e.OffI), ["offJ"] = V(e.OffJ), ["local2"] = V(e.Local2),
             ["E"] = e.E, ["G"] = e.G, ["A"] = e.A, ["I22"] = e.I22, ["I33"] = e.I33, ["J"] = e.Jt, ["As2"] = e.As2, ["As3"] = e.As3,
@@ -243,12 +250,11 @@ public class SavDumpTests
             foreach (var code in codes) results[code] = f.Session.Query("analysis.results", new JsonObject { ["case"] = code });
             // Each bar's axis displaced, in global axes, at 21 points along it, in each case.
             var along = new JsonObject();
-            var sol = run.Solution!;
             for (var k = 0; k < codes.Count; k++)
-                along[codes[k]] = new JsonArray(run.Problem.Problem.Elements.Select((e, i) => (JsonNode)new JsonArray(Enumerable.Range(0, 21).Select(t =>
+                along[codes[k]] = new JsonArray(run.Problem.Members.Select((e, i) => (JsonNode)new JsonArray(Enumerable.Range(0, 21).Select(t =>
                 {
                     var x = e.L * t / 20;
-                    var (u, v, w) = Stations.Deflection(e, sol.Cases[k].Elements[i], x);
+                    var (u, v, w) = run.MemberDeflection(i, k, x);
                     var g = e.Ex * u + e.Ey * v + e.Ez * w;
                     return (JsonNode)new JsonArray(x, g.X, g.Y, g.Z);
                 }).ToArray())).ToArray());
@@ -257,9 +263,10 @@ public class SavDumpTests
                 ["model"] = name,
                 ["along"] = along,
                 ["run"] = run.RunJson(),
-                ["problem"] = ProblemJson(run.Problem.Problem, codes),
+                ["problem"] = ProblemJson(run.Problem, codes),
                 ["results"] = results,
-                ["eulerBernoulli"] = EulerBernoulli(run.Problem.Problem, codes),
+                // PyNite takes bars only: a model with shells is compared with ifc_structural_mechanics alone.
+                ["eulerBernoulli"] = run.Problem.Problem.Shells.Count == 0 ? EulerBernoulli(run.Problem.Problem, codes) : null,
             };
             File.WriteAllText(Path.Combine(dir, name + ".lapin.json"), o.ToJsonString(new JsonSerializerOptions { WriteIndented = false }));
         }

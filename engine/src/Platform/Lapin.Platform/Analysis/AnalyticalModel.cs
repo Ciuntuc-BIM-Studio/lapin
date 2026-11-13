@@ -73,6 +73,8 @@ public sealed class AnalyticalModel
     public List<List<string>> Floating { get; } = [];
     /// <summary>How many ends and crossings were joined eccentrically (their offsets kept).</summary>
     public int EccentricJoins { get; private set; }
+    /// <summary>How many level beam ends meet a column at another beam's level (their own level kept, a rigid arm to the joint).</summary>
+    public int LevelJoins { get; private set; }
     /// <summary>The connections the physical model knows (cleats, gussets, fly braces): an analysis pins the members they join (<see cref="FrameReleases"/>).</summary>
     public List<AnalyticalLink> Links { get; } = [];
     /// <summary>The roofs framed in bars, with their planes (an analysis lays their area loads on their members plane by plane).</summary>
@@ -133,13 +135,14 @@ public sealed class AnalyticalModel
         var model = new AnalyticalModel();
         model.Storeys.AddRange(Spatial.Storeys(m));
         model.LeftOut.AddRange(all.LeftOut);
-        model.Links.AddRange(all.Links);
-        model.Roofs.AddRange(all.Roofs);
+        model.Links.AddRange(all.Links.Where(l => options.Keeps(l.HostId) && options.Keeps(l.MemberId)));
+        model.Roofs.AddRange(all.Roofs.Where(r => options.Keeps(r.SourceId)));
 
         var bars = new List<Bar>();
         foreach (var f in all.Frames)
         {
             if (!options.On(f.StoreyId)) continue;
+            if (!options.Keeps(f.SourceId)) { model.LeftOut.Add(new(f.SourceId, f.Name, f.IfcClass, "left out of the export")); continue; }
             if (!options.Takes(f.Category)) { model.LeftOut.Add(new(f.SourceId, f.Name, f.IfcClass, $"{f.Category} not chosen")); continue; }
             if (f.Points.Count < 2) { model.LeftOut.Add(new(f.SourceId, f.Name, f.IfcClass, "no axis")); continue; }
             bars.Add(new Bar(f));
@@ -148,16 +151,18 @@ public sealed class AnalyticalModel
         foreach (var s in all.Shells)
         {
             if (!options.On(s.StoreyId)) continue;
+            if (!options.Keeps(s.SourceId)) { model.LeftOut.Add(new(s.SourceId, s.Name, s.IfcClass, "left out of the export")); continue; }
             var kind = s.Kind == "wall" ? AnalyticalKinds.Walls : s.IfcClass == "IfcRoof" ? AnalyticalKinds.Roofs : AnalyticalKinds.Slabs;
             if (!options.Takes(kind)) { model.LeftOut.Add(new(s.SourceId, s.Name, s.IfcClass, $"{kind} not chosen")); continue; }
             if (s.Kind == "wall" && !s.LoadBearing && !options.AllWalls) { model.LeftOut.Add(new(s.SourceId, s.Name, s.IfcClass, "not load-bearing (Pset_WallCommon.LoadBearing)")); continue; }
             plates.Add(new Plate(s));
         }
-        var supports = options.Takes(AnalyticalKinds.Supports) ? all.Supports : [];
+        var supports = options.Takes(AnalyticalKinds.Supports) ? all.Supports.Where(s => options.Keeps(s.SourceId) && options.Keeps(s.ForFrame)).ToList() : [];
 
         JoinEnds(bars);
         SnapLevels(bars, plates);
         SnapPlan(bars, plates);
+        model.LevelJoins = JoinAtColumns(bars);
         OntoWalls(bars, plates);
         model.EccentricJoins = Connect(bars, plates, all.Links);
         model.Assemble(bars, plates, supports, m, options);
@@ -335,6 +340,9 @@ public sealed class AnalyticalModel
                 var (pa, pb) = (a.Bar.Pts[a.K], b.Bar.Pts[b.K]);
                 var gap = (pa - pb).Length;
                 if (gap <= Tolerance || gap > Math.Max(a.Bar.Src.Depth, b.Bar.Src.Depth) / 2 + 0.05) continue;
+                // Two level beams at different heights (of different depths, their tops flush) keep their levels: they meet a
+                // column, or each other, by a rigid arm (JoinAtColumns, Connect), never by tilting both to a height between.
+                if (a.Bar.Horizontal && b.Bar.Horizontal && Math.Abs(pa.Z - pb.Z) > Tolerance) continue;
                 var da = (pa - a.Bar.Pts[a.K == 0 ? 1 : a.K - 1]).Normalized();
                 var db = (pb - b.Bar.Pts[b.K == 0 ? 1 : b.K - 1]).Normalized();
                 var meet = (pa + pb) * 0.5;
@@ -347,9 +355,76 @@ public sealed class AnalyticalModel
                     var (qa, qb) = (pa + da * s, pb + db * t);
                     if ((qa - qb).Length <= 5 * Tolerance && Math.Abs(s) <= gap * 4 + 0.05 && Math.Abs(t) <= gap * 4 + 0.05) meet = (qa + qb) * 0.5;
                 }
+                // A level bar stays level: its end moves in plan only (a rafter meeting it takes the rest, or an arm does).
                 a.Bar.Pts[a.K] = meet;
                 b.Bar.Pts[b.K] = meet;
             }
+    }
+
+    /// <summary>
+    /// Level beams of different depths meeting a column at one joint (their sections overlapping in height: flush tops, a
+    /// shallow beam framing into a deep one's side) keep each its own axis' level; the column has one node there, at the
+    /// deepest beam's level, and every other beam is joined to it by a rigid vertical arm (its end's offset), so the column is
+    /// not cut into slivers between the beams' axes and no beam tilts. A joint at the column's head or foot moves that end to
+    /// the node (and the end of a column above or below meeting it there): the shallower beams' own ends then lie beyond the
+    /// column, not on its axis, where a reader of the SAV export would join them to the column (and lose their releases).
+    /// Returns how many ends were joined so.
+    /// </summary>
+    static int JoinAtColumns(List<Bar> bars)
+    {
+        var joined = 0;
+        var level = bars.Where(b => !b.Vertical && b.Horizontal && b.Pts.Count >= 2).ToList();
+        var columns = bars.Where(b => b.Vertical).ToList();
+        foreach (var c in columns)
+        {
+            var at = c.Pts[0].Xy;
+            var (zLo, zHi) = (Math.Min(c.Pts[0].Z, c.Pts[1].Z), Math.Max(c.Pts[0].Z, c.Pts[1].Z));
+            var ends = new List<(Bar Bar, int K, double Z, double Half)>();
+            foreach (var b in level)
+                foreach (var k in new[] { 0, 1 })
+                {
+                    var p = b.Pts[k == 0 ? 0 : b.Pts.Count - 1];
+                    if ((p.Xy - at).Length > Tolerance || p.Z < zLo - Tolerance || p.Z > zHi + Tolerance || b.EndNode[k] != null) continue;
+                    ends.Add((b, k, p.Z, Math.Max(b.Src.Depth, Tolerance) / 2));
+                }
+            if (ends.Count < 2) continue;
+            // Joints: ends whose sections overlap in height, gathered from the top down.
+            var sorted = ends.OrderByDescending(e => e.Z).ToList();
+            var joints = new List<List<(Bar Bar, int K, double Z, double Half)>>();
+            foreach (var e in sorted)
+            {
+                var j = joints.LastOrDefault();
+                if (j != null && j.Any(o => Math.Abs(o.Z - e.Z) < o.Half + e.Half - 1e-9)) j.Add(e);
+                else joints.Add([e]);
+            }
+            foreach (var j in joints)
+            {
+                if (j.Max(e => e.Z) - j.Min(e => e.Z) <= Tolerance) continue;
+                var (top, bottom) = (j.Max(e => e.Z + e.Half), j.Min(e => e.Z - e.Half));
+                // The deepest beam's level (of equally deep ones, the column's end's when one is there, else the highest).
+                var deepest = j.Max(e => e.Half);
+                var z = j.Where(e => e.Half >= deepest - 1e-9).OrderByDescending(e => Math.Abs(e.Z - zHi) <= Tolerance || Math.Abs(e.Z - zLo) <= Tolerance)
+                    .ThenByDescending(e => e.Z).First().Z;
+                // The column's end in the joint moves to the node, with the end of a column meeting it there.
+                for (var k = 0; k < 2; k++)
+                {
+                    var p = c.Pts[k];
+                    if (p.Z < bottom - Tolerance || p.Z > top + Tolerance || Math.Abs(p.Z - z) <= Tolerance) continue;
+                    foreach (var o in columns)
+                        for (var m = 0; m < 2; m++)
+                            if (o != c && (o.Pts[m] - p).Length <= Tolerance) o.Pts[m] = o.Pts[m] with { Z = z };
+                    c.Pts[k] = p with { Z = z };
+                }
+                (zLo, zHi) = (Math.Min(c.Pts[0].Z, c.Pts[1].Z), Math.Max(c.Pts[0].Z, c.Pts[1].Z));
+                foreach (var e in j.Where(e => Math.Abs(e.Z - z) > Tolerance))
+                {
+                    e.Bar.EndNode[e.K] = at.At(z);
+                    e.Bar.EndOn[e.K] = c.Src.Name;
+                    joined++;
+                }
+            }
+        }
+        return joined;
     }
 
     static Vec2 Mid(IReadOnlyList<Vec3> pts)

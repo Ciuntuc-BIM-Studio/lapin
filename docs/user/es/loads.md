@@ -37,6 +37,7 @@ Estas no las dibujas; Lapin las deriva del modelo cada vez que las pides y sigue
 - El **peso propio** de forjados, muros, pilares y vigas, a partir de las densidades de sus materiales, en la hipótesis cuyo origen es el peso propio (G1).
 - Los **acabados de los forjados**, a partir de sus capas, y los **muros no portantes**, como cargas lineales, en la hipótesis que enumera acabados y tabiques (G2).
 - Las **estancias**: la sobrecarga de uso de la categoría de una estancia sobre su superficie, en la hipótesis de esa categoría (Q-A, Q-B…).
+- La **nieve** y el **viento**, una vez que das los valores del emplazamiento (véase [Nieve y viento](#nieve-y-viento)).
 
 Un material sin densidad se deja fuera, y el Resumen dice cuál.
 
@@ -51,6 +52,29 @@ Selecciona una estancia: sus propiedades tienen una sección **Sobrecarga de uso
 La pestaña **Sobrecargas de uso** lista cada categoría con su uso y su **qk** en kN/m², como recomienda EN 1991-1-1. Escribe en el campo el valor de tu anexo nacional; **Modificado** vuelve al valor por defecto.
 
 ![La pestaña Sobrecargas de uso](shots/loads-imposed.webp)
+
+## Nieve y viento
+
+La pestaña **Nieve y viento** guarda el clima del emplazamiento. Lapin no incluye los mapas nacionales: lee los valores de tu emplazamiento en **CR 1-1-3/2012** (nieve, su figura 3.1 o anexo A) y **CR 1-1-4/2012** (viento, su figura 2.1 o anexo A), o en el anexo nacional con el que trabajas, y escríbelos.
+
+![La pestaña Nieve y viento](shots/loads-climate.webp)
+
+- **Nieve**: **Carga de nieve sobre el terreno s0,k (kN/m²)**, **Exposición Ce** (completa 0,8, parcial 1,0, protegida 1,2), **Coeficiente térmico Ct** (1,0 salvo que la cubierta sea acristalada y pierda calor) y **Coeficiente de importancia γIs** (1,0 para edificios ordinarios). **Aplicar la nieve**.
+- **Viento**: **Presión básica del viento qb (kN/m²)**, **Categoría de terreno** (de 0 a IV, del mar al centro de una ciudad) y **Coeficiente de importancia γIw**. **Aplicar el viento**.
+
+Al aplicarlos se crean las hipótesis en las que entran sus cargas:
+
+- **S**, la nieve sin acumulación, y **S+X**, **S-X**, **S+Y**, **S-Y**, la nieve acumulada por un viento que sopla hacia cada lado: en una cubierta a dos aguas, el faldón que mira al viento toma la mitad. Una acumulación que aquí no cambia nada (ningún faldón mira a ese viento) se deja fuera, y el Resumen lo dice.
+- **W+X/s**, **W+X/p**, y así para las cuatro direcciones: el viento que sopla hacia +X, −X, +Y, −Y, una vez con la **succión** (/s) de las cubiertas y otra con su **presión** (/p).
+
+Las disposiciones de la nieve y las direcciones del viento son alternativas: una combinación toma solo una de cada.
+
+Lo que Lapin calcula a partir de ellos, cada vez que lo pides:
+
+- **Nieve** en cada faldón de cubierta, por m² en planta: s = γIs · μ1 · Ce · Ct · s0,k, con μ1 = 0,8 hasta 30°, luego menos, 0 a 60° y más inclinado; en un forjado que nada cubre (una terraza, una cubierta plana) μ1 = 0,8.
+- **Viento** sobre muros y cubiertas: el contorno del edificio es la envolvente convexa de sus muros y pilares; las fachadas toman las zonas A a E, las cubiertas planas F a I, una cubierta a dos aguas F a J, según los coeficientes de EN 1991-1-4, a la presión de la altura del edificio para la categoría de terreno. Una fachada pasa su viento a las vigas, travesaños y bordes de forjado a lo largo de ella, su franja más baja al terreno; una cubierta, a sus cabios o correas. Las cubiertas a cuatro aguas, la presión interior y las acumulaciones de nieve en los petos aún no se derivan.
+
+> Estos valores son **orientativos**: los coeficientes son los recomendados por las normas. Compruébalos con tu anexo nacional.
 
 ## Resumen
 

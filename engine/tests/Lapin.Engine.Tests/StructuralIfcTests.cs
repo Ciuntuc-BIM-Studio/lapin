@@ -418,6 +418,40 @@ public class StructuralIfcTests
     }
 
     [Fact]
+    public void The_view_leaves_out_what_the_export_leaves_out_and_what_its_phase_has_not_built()
+    {
+        var fr = Build();
+        var f = fr.F;
+        static StepFile Write(Fixture f, IfcExportOptions o)
+        {
+            using var ms = new MemoryStream();
+            IfcExport.Write(f.Session, ms, "frame.ifc", o);
+            return StepFile.Read(ms.ToArray());
+        }
+        var guids = AnalyticalModel.Build(f.Model, f.Session.Reader.Services, new AnalyticalOptions()).Frames.Where(x => x.Source.SourceId == fr.Beams[0]).Select(x => Step.Guid(x.Id, "structural-member")).ToHashSet();
+        Assert.NotEmpty(guids);
+        bool Named(StepEntity e, string id) => guids.Contains((string)e[0]!);
+        var all = Write(f, new IfcExportOptions(Structural: true));
+        Assert.Contains(all.OfType("IFCSTRUCTURALCURVEMEMBER"), b => Named(b, fr.Beams[0]));
+        Assert.Contains(all.OfType("IFCSTRUCTURALPLANARACTION"), a => ((string?)a[2] ?? "").Contains("occupancy"));
+        // A beam and the room left out: the beam's member, connections and assignment gone, the room's imposed load too.
+        var left = Write(f, new IfcExportOptions(Structural: true, Exclude: new HashSet<string> { fr.Beams[0], fr.Room }));
+        Assert.DoesNotContain(left.OfType("IFCSTRUCTURALCURVEMEMBER"), b => Named(b, fr.Beams[0]));
+        Assert.Equal(all.OfType("IFCSTRUCTURALCURVEMEMBER").Count() - all.OfType("IFCSTRUCTURALCURVEMEMBER").Count(b => Named(b, fr.Beams[0])), left.OfType("IFCSTRUCTURALCURVEMEMBER").Count());
+        Assert.DoesNotContain(left.OfType("IFCSTRUCTURALPLANARACTION"), a => ((string?)a[2] ?? "").Contains("occupancy"));
+        // A column demolished in the existing phase is not in the new construction's view.
+        var g = new Fixture(new Lapin.Architecture.ArchitectureModule(), new Lapin.Structure.StructureModule(), new Lapin.Analysis.AnalysisModule(), new Lapin.Phases.PhasesModule());
+        var col = (string)g.Run("structure.createColumnType", new JsonObject { ["name"] = "C30x30", ["section"] = new JsonObject { ["kind"] = "rectangle", ["width"] = 0.3, ["depth"] = 0.3 }, ["material"] = "Concrete C25/30" })!["id"]!;
+        var keep = (string)g.Run("structure.addColumn", new JsonObject { ["storeyId"] = g.Storey, ["x"] = 0, ["y"] = 0, ["typeId"] = col })!["id"]!;
+        var gone = (string)g.Run("structure.addColumn", new JsonObject { ["storeyId"] = g.Storey, ["x"] = 4, ["y"] = 0, ["typeId"] = col })!["id"]!;
+        g.Run("phases.assign", new JsonObject { ["ids"] = new JsonArray(gone), ["created"] = "existing", ["demolished"] = "existing" });
+        var phased = Write(g, new IfcExportOptions(Structural: true, Phase: "new-construction"));
+        Assert.Contains(phased.OfType("IFCSTRUCTURALCURVEMEMBER"), b => (string?)b[0] == Step.Guid(keep, "structural-member"));
+        Assert.DoesNotContain(phased.OfType("IFCSTRUCTURALCURVEMEMBER"), b => (string?)b[0] == Step.Guid(gone, "structural-member"));
+        Assert.Single(Write(g, new IfcExportOptions(Structural: true)).OfType("IFCSTRUCTURALCURVEMEMBER"), b => (string?)b[0] == Step.Guid(gone, "structural-member"));
+    }
+
+    [Fact]
     public void A_release_is_written_in_the_members_IFC_axes_its_Axis_as_z()
     {
         // A level beam pinned about its strong axis (Lapin's local 3, horizontal, square to it) at one end, and free to slide

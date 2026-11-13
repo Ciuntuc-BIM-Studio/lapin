@@ -210,6 +210,15 @@ async function takePictures() {
         const errors = [];
         page.on('pageerror', (e) => errors.push(e.message));
         page.on('dialog', (d) => void d.accept());
+        // Exports and saves ask for a file name first (decision 509): no native picker here, and the Save as box (in any language: its input holds a name with an extension) answered with OK, so the download follows.
+        await page.addInitScript(() => {
+          try { Object.defineProperty(window, 'showSaveFilePicker', { value: undefined, configurable: true, writable: true }); } catch { /* kept */ }
+          setInterval(() => {
+            const box = document.querySelector('.ask-box');
+            const input = box?.querySelector('input[type=text], input:not([type])');
+            if (input && /\.[A-Za-z0-9]{2,6}$/.test(input.value)) box.querySelector('.btn.primary')?.click();
+          }, 150);
+        });
         // Reports a scene might open never leave the machine.
         await page.route('**/api/feedback**', (r) => r.abort());
         try {

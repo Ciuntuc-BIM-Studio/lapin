@@ -37,6 +37,7 @@ Questi non li disegni; Lapin li ricava dal modello a ogni richiesta, e seguono o
 - Il **peso proprio** di solai, muri, pilastri e travi, dalle densità dei loro materiali, nel caso la cui origine è il peso proprio (G1).
 - Le **finiture dei solai**, dai loro strati, e i **muri non portanti**, come carichi lineari, nel caso che elenca finiture e tramezzi (G2).
 - I **locali**: il carico variabile della categoria di un locale sulla sua superficie, nel caso di quella categoria (Q-A, Q-B…).
+- La **neve** e il **vento**, una volta che dai i valori del sito (vedi [Neve e vento](#neve-e-vento)).
 
 Un materiale senza densità viene lasciato fuori, e il Riepilogo dice quale.
 
@@ -51,6 +52,29 @@ Seleziona un locale: le sue proprietà hanno una sezione **Carico variabile**. L
 La scheda **Carichi variabili** elenca ogni categoria con il suo uso e il suo **qk** in kN/m², come raccomanda l'EN 1991-1-1. Scrivi nel campo il valore del tuo annesso nazionale; **Modificato** torna al valore predefinito.
 
 ![La scheda Carichi variabili](shots/loads-imposed.webp)
+
+## Neve e vento
+
+La scheda **Neve e vento** contiene il clima del sito. Lapin non include le mappe nazionali: leggi i valori del tuo sito da **CR 1-1-3/2012** (neve, la sua figura 3.1 o allegato A) e **CR 1-1-4/2012** (vento, la sua figura 2.1 o allegato A), o dall'annesso nazionale con cui lavori, e scrivili.
+
+![La scheda Neve e vento](shots/loads-climate.webp)
+
+- **Neve**: **Carico neve al suolo s0,k (kN/m²)**, **Esposizione Ce** (piena 0,8, parziale 1,0, riparata 1,2), **Coefficiente termico Ct** (1,0 salvo che la copertura sia vetrata e perda calore) e **Fattore di importanza γIs** (1,0 per gli edifici ordinari). **Applica la neve**.
+- **Vento**: **Pressione di riferimento del vento qb (kN/m²)**, **Categoria di terreno** (da 0 a IV, dal mare al centro di una città) e **Fattore di importanza γIw**. **Applica il vento**.
+
+Applicandoli si creano i casi in cui vanno i loro carichi:
+
+- **S**, la neve senza accumulo, e **S+X**, **S-X**, **S+Y**, **S-Y**, la neve accumulata da un vento che soffia verso ogni lato: su una copertura a due falde, la falda esposta al vento ne prende la metà. Un accumulo che qui non cambia nulla (nessuna falda è esposta a quel vento) viene lasciato fuori, e il Riepilogo lo dice.
+- **W+X/s**, **W+X/p**, e così via per le quattro direzioni: il vento che soffia verso +X, −X, +Y, −Y, una volta con la **depressione** (/s) delle coperture e una volta con la loro **pressione** (/p).
+
+Le disposizioni della neve e le direzioni del vento sono alternative: una combinazione ne prende solo una per tipo.
+
+Ciò che Lapin ricava da essi, a ogni richiesta:
+
+- **Neve** su ogni falda di copertura, per m² in pianta: s = γIs · μ1 · Ce · Ct · s0,k, con μ1 = 0,8 fino a 30°, poi meno, 0 a 60° e più ripida; su un solaio che nulla copre (una terrazza, una copertura piana) μ1 = 0,8.
+- **Vento** su muri e coperture: il contorno dell'edificio è l'inviluppo convesso dei suoi muri e pilastri; le facciate prendono le zone da A a E, le coperture piane da F a I, una copertura a due falde da F a J, secondo i coefficienti dell'EN 1991-1-4, alla pressione dell'altezza dell'edificio per la categoria di terreno. Una facciata passa il suo vento alle travi, ai correnti e ai bordi di solaio lungo di essa, la sua fascia più bassa al suolo; una copertura ai suoi puntoni o arcarecci. Le coperture a padiglione, la pressione interna e gli accumuli di neve ai parapetti non sono ancora ricavati.
+
+> Questi valori sono **indicativi**: i coefficienti sono quelli raccomandati dalle norme. Verificali rispetto al tuo annesso nazionale.
 
 ## Riepilogo
 

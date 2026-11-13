@@ -20,6 +20,11 @@ public sealed record StructuralActionData(string Id, string Name, string CaseId,
     string? SourceId, bool Derived, string? Key = null)
 {
     public IReadOnlyList<IReadOnlyList<Vec3>> Holes { get; init; } = [];
+    /// <summary>
+    /// A planar action on a sloping face: true when its value is per area of its horizontal projection (snow, EN 1991-1-3),
+    /// false when per area of the face itself (wind's pressure); null for one drawn on a plan (a horizontal face).
+    /// </summary>
+    public bool? Projected { get; init; }
 }
 
 /// <summary>A combination of load cases (EN 1990): its stable key (uls/&lt;caseId&gt;, slsq…), its kind (uls, sls-characteristic, sls-frequent, sls-quasi), its name written from its factors, and the factors.</summary>
@@ -34,5 +39,6 @@ public sealed record StructuralLoadsData(IReadOnlyList<StructuralLoadCaseData> C
 /// </summary>
 public interface IStructuralLoads
 {
-    StructuralLoadsData For(IQueryContext query);
+    /// <summary>The loads on the analytical model the options make (an export's: without what it leaves out); null: all of it.</summary>
+    StructuralLoadsData For(IQueryContext query, AnalyticalOptions? options = null);
 }
