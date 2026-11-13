@@ -85,10 +85,11 @@ public sealed partial class StudioModule
                 var d = e.Num("depth");
                 if (Math.Abs(d) < 1e-9) return (null, null, "The push or pull has no distance.");
                 var u = n.Normalized();
+                // Pulled, into the element a hair, so the two share volume. Pushed, on the face exactly: the cut is its true size
+                // (its volume, its quantities), and the boolean moves whichever of its faces lie on the element's out a hair (Flush.Proud).
                 const double eps = 1e-4;
-                // Into the element a hair (a pull, so the two share volume), or out of it a hair (a push, so no face is shared).
-                var nudge = d > 0 ? -u * eps : u * eps;
-                var solid = Prism.Extrude(ring.Select(p => p + nudge).ToList(), holes.Select(h => (IReadOnlyList<Vec3>)h.Select(p => p + nudge).ToList()).ToList(), u * (d > 0 ? d + eps : d - eps), "studio");
+                var nudge = d > 0 ? -u * eps : Vec3.Zero;
+                var solid = Prism.Extrude(ring.Select(p => p + nudge).ToList(), holes.Select(h => (IReadOnlyList<Vec3>)h.Select(p => p + nudge).ToList()).ToList(), u * (d > 0 ? d + eps : d), "studio");
                 return (solid, null, solid == null ? "The face could not be pushed or pulled." : null);
             }
             case "body":

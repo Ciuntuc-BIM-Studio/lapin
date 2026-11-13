@@ -122,6 +122,18 @@ public sealed partial class StudioModule
         return view;
     }
 
+    /// <summary>
+    /// A shape drawn on a face's plane that a Studio solid is made from (a face, or a region of it, pushed or pulled): not
+    /// drawn in 3D, where its outline would hang over the part a push took away (decision 518); the solid's edges show it.
+    /// It stays on its plane's view and in the project browser, to be edited. Worked out on every ask, never stored.
+    /// </summary>
+    public static bool ConsumedOnFace(Entity draft, IModelView m)
+    {
+        if (draft.PredefinedType != Drafts.Predefined) return false;
+        if (m.Get(draft.Str("viewId") ?? "") is not { } view || view.Str("kind") != RefPlanes.Kind || view.Str(OnFaceKey) == null) return false;
+        return Classes.SelectMany(m.OfClass).Any(s => s.Str("operation") != null && s.Str("profile") == draft.Id);
+    }
+
     /// <summary>The reference plane lying on a face's plane and facing its way, if one was made (by a shape drawn on it, or Sketch on face).</summary>
     static Entity? FacePlane(IModelView m, Vec3 at, Vec3 normal)
     {
