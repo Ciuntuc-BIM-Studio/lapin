@@ -13,8 +13,9 @@ import type { NodeDto } from '../../engine/protocol';
 import { LengthField, NumberField } from '../../shell/cells';
 import { t } from '../../i18n';
 import { hallOf } from './hall';
+import { useBoltGrades } from './boltGrades';
 import { useHall } from './HallDialog';
-import { anchorCounts, BOLT_SIZES, boltLabel, GRADES, nodeFields, partsRows, weldsText, type NodeField, type NodeInfo, type NodeParamsDto } from './nodes';
+import { anchorCounts, BOLT_SIZES, boltLabel, nodeFields, partsRows, weldsText, type NodeField, type NodeInfo, type NodeParamsDto } from './nodes';
 
 const LENGTHS: Partial<Record<NodeField, [string, number]>> = {
   plate: ['Plate thickness', 0.004], edge: ['Edge distance', 0.012], pitch: ['Bolt pitch', 0.025], gauge: ['Bolt gauge', 0.03],
@@ -26,6 +27,7 @@ export function NodeSection({ node }: { node: NodeDto }) {
   const relations = useSession((s) => s.relations);
   const [info, setInfo] = useState<NodeInfo | null>(null);
   useEffect(() => { let live = true; void query<NodeInfo>('steel.node', { id: node.id }).then((r) => { if (live) setInfo(r); }); return () => { live = false; }; }, [node.id, nodes]);
+  const grades = useBoltGrades(info?.params.grade);
   if (!info) return null;
   const hall = hallOf({ nodes, relations }, node.id);
   const ro = !node.editable;
@@ -72,7 +74,7 @@ export function NodeSection({ node }: { node: NodeDto }) {
         <div key={k} className="contents"><dt>{base ? 'Anchor grade' : 'Bolt grade'}</dt>
           <dd><select className="cell" data-field="node-grade" title={t('by the profile')} value={p.grade ?? ''} disabled={ro} onChange={(e) => send('grade', e.target.value || null)}>
             <option value="">{byProfile(s.grade)}</option>
-            {GRADES.map((g) => <option key={g} value={g} data-no-i18n>{g}</option>)}
+            {grades.map((g) => <option key={g} value={g} data-no-i18n>{g}</option>)}
           </select></dd></div>
       );
       case 'rows': return (

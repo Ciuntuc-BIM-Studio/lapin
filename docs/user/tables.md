@@ -20,7 +20,7 @@ The same dialog opens, already on its table, from where the data belongs:
 2. **Choose a CSV or Excel file…**, or paste cells copied from a spreadsheet, headings first, into **Or paste** and press **Use the pasted cells**. Excel's semicolons and decimal commas are read too; a number may have its thousands grouped.
 3. The first rows of the file are shown. **Heading row** says which row holds the headings, when the file starts with a title or blank lines.
 4. Lapin **guesses what each column is** from its heading, in English, Romanian, German, French and other languages (*Value*, *Valoare*, *Wert*, *Q*, *Load case*, *Caz*…). Under each heading is a list: change what is wrong, or choose **(leave out)** for a column you do not need. A column can be given to one meaning only, so choosing it for another column takes it from the first. A required column is marked with an asterisk, and **Still to map** lists those no column has yet.
-5. Where a column carries a number, a second list gives its **unit**. Leave it on **(unit from the heading or the row)** and Lapin reads the unit where the file writes it: in the heading (*Width (cm)*) or in a **Unit** column on each row (*kN/m*, *kPa*). Lengths may be in m, cm, mm, ft or in; forces in kN, N, daN, kgf, tf or kip, per metre or per square metre (kN/m², kPa, psf…).
+5. Where a column carries a number, a second list gives its **unit**. Leave it on **(unit from the heading or the row)** and Lapin reads the unit where the file writes it: in the cell itself (*4.5 kN/m*, *250 mm*), in a **Unit** column on each row (*kN/m*, *kPa*) or in the heading (*Width (cm)*). A unit written in the cell wins over the row's **Unit** and the heading's. Lengths may be in m, cm, mm, ft or in; forces in kN, N, daN, kgf, tf or kip, per metre or per square metre (kN/m², kPa, psf…).
 6. What the file lacks and the table needs, the dialog asks for: a **Storey for every row** when the loads have no storey column.
 7. The **preview** counts the rows that are ready and those **with errors**, and lists each row in words, *Line load 4.5 kN/m … on Ground floor*, or why it cannot be read. It follows every change you make to the columns.
 8. **Import** makes it so. A row with an error stops the import, so that nothing is half done; tick **Skip rows with errors** to leave those rows out and import the others. The message tells how many rows came in and how many were left out.
@@ -46,7 +46,7 @@ One row a load. **Value** is the only column that must be there.
 | **Storey** | By name. Without the column, **Storey for every row** gives it. |
 | **x**, **y**, **x1**, **y1**, **x2**, **y2** | A point load's place, or a line load's two ends, in metres by default. |
 | **Outline points** | An area load's corners, written *x y; x y; …* in one cell. |
-| **Value**, **Unit** | The magnitude, with its unit in the heading or in the **Unit** column. A negative value acts the other way. |
+| **Value**, **Unit** | The magnitude, with its unit in the cell (*4.5 kN/m*), in the heading or in the **Unit** column. A negative value acts the other way. |
 | **Direction** | The direction the load acts in: down (when empty), up, +x, −x, +y or −y. |
 | **Height above the storey** | The load's height above the floor. |
 

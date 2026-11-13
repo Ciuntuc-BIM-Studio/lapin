@@ -1,5 +1,6 @@
 /** A converter's options as fields: a type of its class, a length (in the project's unit), a choice, a yes or no, a number. */
 
+import { t as tr } from '../../../i18n';
 import { useSession } from '../../../engine/session';
 import { LengthField, NumberField } from '../../../shell/cells';
 import type { ConvOption } from '../../core/tables/tableModel';
@@ -33,7 +34,7 @@ export function OptionFields({ options, values, onChange }: { options: ConvOptio
             default: return <NumberField value={typeof v === 'number' ? v : null} testId={`opt-${o.key}`} onCommit={(n) => onChange(o.key, n ?? undefined)} />;
           }
         })();
-        return [<label key={`l${o.key}`} data-no-i18n>{o.label}</label>, <div key={`f${o.key}`}>{field}</div>];
+        return [<label key={`l${o.key}`} data-no-i18n>{tr(o.label)}</label>, <div key={`f${o.key}`}>{field}</div>];
       })}
     </div>
   );

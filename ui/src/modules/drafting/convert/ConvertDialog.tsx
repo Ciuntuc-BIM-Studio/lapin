@@ -6,6 +6,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
+import { t as tr } from '../../../i18n';
 import { notify, useUi } from '../../../app/store';
 import { mergeOptions } from '../../core/tables/tableModel';
 import { convertDrafting, convertedMessage, listConverters, previewConversion, useConvert, type Converter, type ConvertPreview } from './convert';
@@ -68,11 +69,11 @@ export function ConvertDialog() {
                 <dt>Convert to</dt>
                 <dd>
                   <select value={converterId} data-field="convert-converter" onChange={(e) => choose(e.target.value)}>
-                    {converters.map((c) => <option key={c.id} value={c.id} data-no-i18n>{c.label}</option>)}
+                    {converters.map((c) => <option key={c.id} value={c.id} data-no-i18n>{tr(c.label)}</option>)}
                   </select>
                 </dd>
               </dl>
-              {converter?.description && <p className="muted small" data-no-i18n>{converter.description}</p>}
+              {converter?.description && <p className="muted small" data-no-i18n>{tr(converter.description)}</p>}
               {converter && <OptionFields options={converter.options} values={values} onChange={(k, v) => setValues({ ...values, [k]: v })} />}
               {preview && (
                 <div data-testid="convert-preview">

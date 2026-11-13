@@ -5,6 +5,7 @@
  * to a .lapinmapping file and comes back from one.
  */
 
+import { t as tr } from '../../../i18n';
 import { useEffect, useMemo, useState } from 'react';
 import { FileDown, FileUp, SlidersHorizontal, X } from 'lucide-react';
 import { notify, useUi } from '../../../app/store';
@@ -104,7 +105,7 @@ export function ConvertLayersDialog() {
                         <td>
                           <select value={r.converter ?? ''} data-field={`layer-converter-${r.layer}`} onChange={(e) => choose(r.layer, e.target.value)}>
                             <option value="">(leave as drafting)</option>
-                            {converters.map((c) => <option key={c.id} value={c.id} data-no-i18n>{c.label}</option>)}
+                            {converters.map((c) => <option key={c.id} value={c.id} data-no-i18n>{tr(c.label)}</option>)}
                           </select>
                         </td>
                         <td>{conv && conv.options.length > 0 && <button type="button" className={`btn mini${open === r.layer ? ' primary' : ''}`} data-field={`layer-options-${r.layer}`} title="This conversion's options" onClick={() => setOpen(open === r.layer ? null : r.layer)}><SlidersHorizontal size={12} />Options</button>}</td>

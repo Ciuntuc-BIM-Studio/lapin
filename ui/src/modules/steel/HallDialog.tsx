@@ -20,7 +20,8 @@ import { LengthField, NumberField } from '../../shell/cells';
 import { t, useLang } from '../../i18n';
 import { baysForLength, baysText, fit, parseBays, parseBracing, secondaryName, secondaryProfiles, secondaryValue, summaryRows, type HallAttrs, type HallPreview, type HaunchDto, type PreviewItem, type PreviewRole } from './hall';
 import type { SectionDto } from './sections';
-import { anchorCounts, BOLT_SIZES, boltLabel, GRADES, type NodeParamsDto } from './nodes';
+import { useBoltGrades } from './boltGrades';
+import { anchorCounts, BOLT_SIZES, boltLabel, type NodeParamsDto } from './nodes';
 import { ProfilePickerField } from '../core/profileLibraries/ProfilePickerField';
 
 /** The hall the configurator is open on; null: a new one. */
@@ -136,6 +137,7 @@ export function HallDialog() {
   // A kind of connection's parameter: given, or (null) back to the profiles'.
   type NodeKind = keyof NonNullable<HallAttrs['nodeParams']>;
   const nodeParams = value('nodeParams') ?? {};
+  const grades = useBoltGrades(nodeParams.eaves?.grade);
   const nodeParam = <F extends keyof NodeParamsDto>(kind: NodeKind, f: F): NodeParamsDto[F] => nodeParams[kind]?.[f];
   const setNode = (kind: NodeKind, f: keyof NodeParamsDto, v: unknown) => {
     const cur: NodeParamsDto = { ...(nodeParams[kind] ?? {}) };
@@ -332,7 +334,7 @@ export function HallDialog() {
                     <label className="field-line roof-field"><span className="eyebrow">Bolt grade</span>
                       <select value={nodeParam('eaves', 'grade') ?? ''} data-field="hall-eaves-grade" onChange={(e) => setNode('eaves', 'grade', e.target.value || null)}>
                         <option value="">by the profile</option>
-                        {GRADES.map((g) => <option key={g} value={g} data-no-i18n>{g}</option>)}
+                        {grades.map((g) => <option key={g} value={g} data-no-i18n>{g}</option>)}
                       </select>
                     </label>
                     <label className="field-line roof-field"><span className="eyebrow">Above the rafter</span>

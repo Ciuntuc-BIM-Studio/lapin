@@ -121,6 +121,26 @@ export function setPitch(roofs: Section, covering: string, deg: number): Section
   return { ...roofs, minPitch: { ...minPitch, [covering]: Math.min(89, Math.max(0, deg)) } };
 }
 
+// ─── Bolts ───────────────────────────────────────────────────────────────────
+
+/** A grade added (a name of 1 to 20 characters, not already there). */
+export function addGrade(grades: string[], name: string): string[] {
+  const n = name.trim();
+  return n && n.length <= 20 && !grades.includes(n) ? [...grades, n] : grades;
+}
+
+/** A grade renamed in place (unchanged when the name is empty, too long or already there). */
+export function renameGrade(grades: string[], at: number, name: string): string[] {
+  const n = name.trim();
+  if (!n || n.length > 20 || grades.some((g, i) => i !== at && g === n)) return grades;
+  return grades.map((g, i) => (i === at ? n : g));
+}
+
+/** A grade taken off (one at least stays). */
+export function removeGrade(grades: string[], at: number): string[] {
+  return grades.length <= 1 ? grades : grades.filter((_, i) => i !== at);
+}
+
 // ─── Findings ────────────────────────────────────────────────────────────────
 
 /** Findings by module, the worst first inside each. */

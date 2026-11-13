@@ -41,3 +41,15 @@ describe('rule tables', () => {
     expect(f[0][1].map((x) => x.severity)).toEqual(['warning', 'info']);
   });
 });
+
+describe('bolt grades', () => {
+  it('adds, renames and removes grades, keeping one at least and no duplicates', async () => {
+    const { addGrade, removeGrade, renameGrade } = await import('./rulesModel');
+    expect(addGrade(['8.8'], ' A325 ')).toEqual(['8.8', 'A325']);
+    expect(addGrade(['8.8'], '8.8')).toEqual(['8.8']);
+    expect(renameGrade(['8.8', '10.9'], 1, 'A490')).toEqual(['8.8', 'A490']);
+    expect(renameGrade(['8.8', '10.9'], 1, '8.8')).toEqual(['8.8', '10.9']);
+    expect(removeGrade(['8.8'], 0)).toEqual(['8.8']);
+    expect(removeGrade(['8.8', '10.9'], 0)).toEqual(['10.9']);
+  });
+});

@@ -239,7 +239,7 @@ export function SymbolsDialog() {
                             <button type="button" data-field={`sy-item-${r.id}`} data-origin={r.origin} onClick={() => setSelected(keyOf(r))} onDoubleClick={() => r.origin !== 'builtin' && void edit(r)}>
                               <Thumb p={r.preview} />
                               <span className="sy-item-text">
-                                <strong data-no-i18n>{r.name}</strong>
+                                <strong data-no-i18n>{r.origin === 'builtin' ? tr(r.name) : r.name}</strong>
                                 {r.uses > 0 && <span className="muted small">{`${r.uses} ${tr('placed')}`}</span>}
                               </span>
                             </button>
@@ -285,9 +285,9 @@ export function SymbolsDialog() {
                 {renaming != null ? (
                   <input className="tpl-title-input" autoFocus value={renaming} onChange={(e) => setRenaming(e.target.value)} data-field="sy-rename-input"
                     onBlur={() => void rename(current, renaming)} onKeyDown={(e) => { if (e.key === 'Enter') void rename(current, renaming); if (e.key === 'Escape') setRenaming(null); }} />
-                ) : <h3 className="tpl-title" data-no-i18n>{current.name}</h3>}
+                ) : <h3 className="tpl-title" data-no-i18n>{current.origin === 'builtin' ? tr(current.name) : current.name}</h3>}
                 <p className="muted small">{`${current.origin === 'builtin' ? tr('Built-in') : current.origin === 'project' ? tr('This project') : tr('This computer')} · `}<span data-no-i18n>{current.category}</span>{` · ${current.scale === 'model' ? tr('Model size') : tr('Paper size')}`}</p>
-                {current.description && <p className="small" data-no-i18n>{current.description}</p>}
+                {current.description && <p className="small" data-no-i18n>{current.origin === 'builtin' ? tr(current.description) : current.description}</p>}
                 <div className="row wrap">
                   <button type="button" className="btn primary" onClick={() => void place(current)} data-field="sy-place" title="Place it on a plan, section, elevation or drafting view"><MapPin size={13} />Place on a view</button>
                   {current.origin !== 'builtin' && <button type="button" className="btn" onClick={() => void edit(current)} data-field="sy-edit"><Pencil size={13} />Edit…</button>}

@@ -522,7 +522,7 @@ export function SymbolEditor({ title, name: initialName, def: initialDef, catego
                   <h5 className="muted small" data-no-i18n>{g}</h5>
                   <ul className="tb-field-list">
                     {shownFields.filter((f) => f.group === g).map((f) => (
-                      <li key={f.key}><button type="button" onClick={() => pickField(f.key)} data-field={`sy-field-${f.key}`} title={`{${f.key}}`}><span data-no-i18n>{f.label}</span><span className="muted small" data-no-i18n>{`{${f.key}}`}</span></button></li>
+                      <li key={f.key}><button type="button" onClick={() => pickField(f.key)} data-field={`sy-field-${f.key}`} title={`{${f.key}}`}><span data-no-i18n>{tr(f.label)}</span><span className="muted small" data-no-i18n>{`{${f.key}}`}</span></button></li>
                     ))}
                   </ul>
                 </section>

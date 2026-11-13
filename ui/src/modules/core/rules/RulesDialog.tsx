@@ -15,11 +15,11 @@ import { LengthField, NumberField } from '../../../shell/cells';
 import { ask, runOk as run } from '../LibraryChoices';
 import { PendingDialog } from '../PendingDialog';
 import {
-  BUILTIN_SETS, STAIR_FIELDS, addStairSet, addStep, diametersText, findingsByModule, parseDiameters, removeStairSet, removeStep, removeSteel, addSteel,
+  BUILTIN_SETS, STAIR_FIELDS, addGrade, removeGrade, renameGrade, addStairSet, addStep, diametersText, findingsByModule, parseDiameters, removeStairSet, removeStep, removeSteel, addSteel,
   setPitch, setStairValue, setStep, stairProblem, stepsProblem, type Finding, type RulePack, type RulesList, type Section, type Step,
 } from './rulesModel';
 
-const SECTION_LABELS: Record<string, string> = { stairs: 'Stairs', rebar: 'Reinforcement', roofs: 'Roofs' };
+const SECTION_LABELS: Record<string, string> = { stairs: 'Stairs', rebar: 'Reinforcement', roofs: 'Roofs', bolts: 'Bolts' };
 
 export function RulesDialog() {
   const version = useSession((s) => s.version);
@@ -127,7 +127,8 @@ export function RulesDialog() {
             {section === 'stairs' && pack.sections.stairs && <StairsEditor values={pack.sections.stairs} readOnly={readOnly} onChange={(v) => void update('stairs', v)} setProblem={setProblem} />}
             {section === 'rebar' && pack.sections.rebar && <RebarEditor values={pack.sections.rebar} readOnly={readOnly} onChange={(v) => void update('rebar', v)} setProblem={setProblem} />}
             {section === 'roofs' && pack.sections.roofs && <RoofsEditor values={pack.sections.roofs} readOnly={readOnly} onChange={(v) => void update('roofs', v)} />}
-            {!['stairs', 'rebar', 'roofs'].includes(section) && <p className="muted small">This section has no table here: it comes and goes with the pack's file.</p>}
+            {section === 'bolts' && pack.sections.bolts && <BoltsEditor values={pack.sections.bolts} readOnly={readOnly} onChange={(v) => void update('bolts', v)} setProblem={setProblem} />}
+            {!['stairs', 'rebar', 'roofs', 'bolts'].includes(section) && <p className="muted small">This section has no table here: it comes and goes with the pack's file.</p>}
           </main>
         </div>
       </div>
@@ -282,6 +283,42 @@ function RoofsEditor({ values, readOnly, onChange }: { values: Section; readOnly
         </tbody>
       </table>
       <p className="muted small">A roof pitched under its covering's least pitch is warned of, as it may not shed water.</p>
+    </div>
+  );
+}
+
+function BoltsEditor({ values, readOnly, onChange, setProblem }: { values: Section; readOnly: boolean; onChange: (s: Section) => void; setProblem: (p: string | null) => void }) {
+  const grades = (values.grades as string[]) ?? [];
+  const [grade, setGrade] = useState('');
+  const add = () => {
+    const next = addGrade(grades, grade);
+    if (next === grades) { setProblem('A grade is 1 to 20 characters and not already in the list.'); return; }
+    onChange({ ...values, grades: next });
+    setGrade('');
+  };
+  return (
+    <div data-testid="rules-bolts">
+      <h4 className="eyebrow">Bolt grades offered</h4>
+      <ul className="plain-list">
+        {grades.map((g, i) => (
+          <li key={g + i} className="row">
+            <input defaultValue={g} readOnly={readOnly} data-field={`rules-grade-${i}`} data-no-i18n
+              onBlur={(e) => {
+                const v = e.target.value.trim();
+                if (v === g) return;
+                const next = renameGrade(grades, i, v);
+                if (next === grades) { e.target.value = g; setProblem('A grade is 1 to 20 characters and not already in the list.'); return; }
+                onChange({ ...values, grades: next });
+              }} />
+            {!readOnly && grades.length > 1 && <button type="button" className="icon mini" title="Take this grade off the list" onClick={() => onChange({ ...values, grades: removeGrade(grades, i) })}><X size={10} /></button>}
+          </li>
+        ))}
+      </ul>
+      {!readOnly && <div className="row">
+        <input placeholder="New grade" value={grade} data-field="rules-new-grade" onChange={(e) => setGrade(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && grade.trim()) add(); }} />
+        <button type="button" className="icon" title="Add the grade" disabled={!grade.trim()} onClick={add}><Plus size={13} /></button>
+      </div>}
+      <p className="muted small">These are the grades a steel connection can be given, in its properties and in the hall's connections.</p>
     </div>
   );
 }

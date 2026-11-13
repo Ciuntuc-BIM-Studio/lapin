@@ -20,7 +20,7 @@ Același dialog se deschide, deja pe tabelul lui, de unde aparțin datele:
 2. **Alege un fișier CSV sau Excel…**, sau lipește celule copiate dintr-un tabel, cu antetele primele, în **Sau lipește**, și apasă **Folosește celulele lipite**. Se citesc și punctul și virgula ca separator de coloane, ca în Excel, și virgula zecimală; un număr poate avea miile grupate.
 3. Se arată primele rânduri ale fișierului. **Rândul de antet** spune ce rând are antetele, când fișierul începe cu un titlu sau cu rânduri goale.
 4. Lapin **ghicește ce este fiecare coloană** din antetul ei, în română, engleză, germană, franceză și alte limbi (*Valoare*, *Value*, *Wert*, *Q*, *Caz*, *Load case*…). Sub fiecare antet e o listă: schimbă ce e greșit sau alege **(omite)** pentru o coloană de care nu ai nevoie. O coloană poate avea un singur sens, așa că dacă îl alegi pentru altă coloană i-l iei pe cea dintâi. O coloană obligatorie e marcată cu asterisc, iar **De corelat încă** le enumeră pe cele pe care nu le are nicio coloană.
-5. Unde o coloană are un număr, o a doua listă dă **unitatea**. Lasă-o pe **(unitatea din antet sau din rând)** și Lapin citește unitatea unde o scrie fișierul: în antet (*Lățime (cm)*) sau într-o coloană **Unitate** pe fiecare rând (*kN/m*, *kPa*). Lungimile pot fi în m, cm, mm, ft sau in; forțele în kN, N, daN, kgf, tf sau kip, pe metru sau pe metru pătrat (kN/m², kPa, psf…).
+5. Unde o coloană are un număr, o a doua listă dă **unitatea**. Lasă-o pe **(unitatea din antet sau din rând)** și Lapin citește unitatea unde o scrie fișierul: în celula însăși (*4,5 kN/m*, *250 mm*), într-o coloană **Unitate** pe fiecare rând (*kN/m*, *kPa*) sau în antet (*Lățime (cm)*). O unitate scrisă în celulă are întâietate față de **Unitatea** rândului și de cea din antet. Lungimile pot fi în m, cm, mm, ft sau in; forțele în kN, N, daN, kgf, tf sau kip, pe metru sau pe metru pătrat (kN/m², kPa, psf…).
 6. Ce lipsește fișierului și are nevoie tabelul, dialogul cere: un **Nivel pentru fiecare rând**, când încărcările nu au coloană de nivel.
 7. **Previzualizarea** numără rândurile **gata** și pe cele **cu erori** și le descrie pe fiecare în cuvinte, *Încărcare liniară 4,5 kN/m … pe Parter*, sau spune de ce nu se poate citi. Urmează fiecare schimbare a coloanelor.
 8. **Import** o face. Un rând cu eroare oprește importul, ca să nu rămână nimic pe jumătate; bifează **Sari peste rândurile cu erori** ca să le lași deoparte și să imporți restul. Mesajul spune câte rânduri au intrat și câte au fost lăsate deoparte.
@@ -46,7 +46,7 @@ Un rând pe încărcare. **Valoare** este singura coloană obligatorie.
 | **Nivel** | După nume. Fără coloană, îl dă **Nivel pentru fiecare rând**. |
 | **x**, **y**, **x1**, **y1**, **x2**, **y2** | Locul unei încărcări punctuale sau cele două capete ale uneia liniare, implicit în metri. |
 | **Outline points** | Colțurile unei încărcări pe suprafață, scrise *x y; x y; …* într-o singură celulă. |
-| **Valoare**, **Unitate** | Mărimea, cu unitatea în antet sau în coloana **Unitate**. O valoare negativă acționează în sens opus. |
+| **Valoare**, **Unitate** | Mărimea, cu unitatea în celulă (*4,5 kN/m*), în antet sau în coloana **Unitate**. O valoare negativă acționează în sens opus. |
 | **Direction** | Direcția în care acționează încărcarea: în jos (când e goală), în sus, +x, −x, +y sau −y (*down*, *up*). |
 | **Height above the storey** | Înălțimea încărcării deasupra planșeului. |
 

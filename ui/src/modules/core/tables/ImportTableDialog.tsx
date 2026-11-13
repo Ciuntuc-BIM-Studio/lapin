@@ -8,6 +8,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Download, FileDown, FileUp, X } from 'lucide-react';
+import { t as tr } from '../../../i18n';
 import { notify, useUi } from '../../../app/store';
 import { pickFile, saveFile, toBase64 } from '../../../engine/files';
 import { storeys } from '../../../engine/model';
@@ -193,7 +194,7 @@ export function ImportTableDialog() {
                         <th key={i}>
                           <select value={m?.key ?? LEAVE} data-field={`table-column-${i}`} disabled={!target} onChange={(e) => setMapping(setColumnKey(mapping, i, e.target.value || null))}>
                             <option value={LEAVE}>(leave out)</option>
-                            {target?.columns.map((c) => <option key={c.key} value={c.key}>{c.label}{c.required ? ' *' : ''}</option>)}
+                            {target?.columns.map((c) => <option key={c.key} value={c.key} title={c.help}>{c.label}{c.required ? ' *' : ''}</option>)}
                             {target?.open && <option value={OPEN}>As a property</option>}
                           </select>
                           {units.length > 0 && (
@@ -242,7 +243,7 @@ export function ImportTableDialog() {
                   </dd>
                 </dl>
               )}
-              {lacking.length > 0 && <p className="muted" data-testid="table-lacking">Still to map: <span data-no-i18n>{lacking.map((c) => c.label).join(', ')}</span></p>}
+              {lacking.length > 0 && <p className="muted" data-testid="table-lacking">Still to map: <span data-no-i18n>{lacking.map((c) => tr(c.label)).join(', ')}</span></p>}
               {preview && (
                 <div data-testid="table-preview">
                   <p><strong data-field="table-ok">{preview.ok}</strong> <span>rows ready</span>{preview.errors ? <>, <strong className="row-bad" data-field="table-errors">{preview.errors}</strong> <span>with errors</span></> : ''} · <span data-no-i18n>{preview.steps}</span> <span>steps</span></p>

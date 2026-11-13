@@ -9,6 +9,7 @@ import { ChevronDown } from 'lucide-react';
 import type { NodeDto } from '../../../engine/protocol';
 import { execute, query, useSession } from '../../../engine/session';
 import { selectionWith } from '../../../shell/params';
+import { t as tr } from '../../../i18n';
 import { byCategory, type SymSummary } from './symbolModel';
 import { listSymbols, type SymList } from './symbols';
 import { Thumb } from './Thumb';
@@ -58,7 +59,7 @@ export function SymbolPicker({ value, onChange, list, category, noneLabel, field
     <span className="slot-picker" ref={box}>
       <button type="button" className="btn slot-current" data-field={field} aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen(!open)}>
         {current ? <Thumb p={current.preview} /> : null}
-        <span className="grow" data-no-i18n={current ? true : undefined}>{current ? current.name : value ? value : noneLabel}</span>
+        <span className="grow" data-no-i18n={current ? true : undefined}>{current ? (current.builtin ? tr(current.name) : current.name) : value ? value : noneLabel}</span>
         <ChevronDown size={12} />
       </button>
       {open && (
@@ -69,7 +70,7 @@ export function SymbolPicker({ value, onChange, list, category, noneLabel, field
               <p className="eyebrow">{cat}{cat === category ? ' ·' : ''}</p>
               {items.map((i) => (
                 <button key={i.id} type="button" role="option" aria-selected={i.id === value} className={`slot-row${i.id === value ? ' on' : ''}`} data-symbol={i.id} onClick={() => pick(i.id)}>
-                  <Thumb p={i.preview} /><span data-no-i18n>{i.name}</span>
+                  <Thumb p={i.preview} /><span data-no-i18n>{i.builtin ? tr(i.name) : i.name}</span>
                 </button>
               ))}
             </div>
