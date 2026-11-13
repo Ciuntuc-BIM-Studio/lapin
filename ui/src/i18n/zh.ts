@@ -3062,6 +3062,22 @@ export const ZH: Record<string, string> = {
   "Family from sketch…": "草图生成族…",
   "Choose a title block to save.": "请选择要保存的标题栏。",
   "Place on a plan": "放置到平面图",
+  "Part tree": "零件树",
+  "Finish part": "完成零件",
+  "Edit part": "编辑零件",
+  "Sketches": "草图",
+  "Top plane (xy)": "顶面 (xy)",
+  "Front plane (xz)": "前面 (xz)",
+  "Right plane (yz)": "右面 (yz)",
+  "Reading the part…": "正在读取零件…",
+  "Leave the part (Tab or Esc)": "退出零件（Tab 或 Esc）",
+  "instance": "实例",
+  "published": "已发布",
+  "off when not": "不满足时关闭",
+  "Select one Studio solid or part first.": "请先选择一个 Studio 实体或零件。",
+  "Finish the edit mode that is on first.": "请先结束当前的编辑模式。",
+  "That sketch is not in the model any more: redraw it to rebuild the solid.": "该草图已不在模型中：重新绘制它以重建实体。",
+  "Tab, or a double click on it in 3D": "Tab，或在 3D 中双击它",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

@@ -9660,6 +9660,63 @@ export const scenes = [
       await t.keys('Escape');
     },
   },
+  {
+    // A Studio part edited in place (docs/plan-studio-parametric.md §3.2): Tab on a placed part, the model dimmed, the part's tree
+    // (origin, sketches, steps, parameters), a value changed in the tree, Tab again to finish.
+    id: 'studio-part',
+    touches: ['studio', 'core'],
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const leg = (name, x) => ({ name, plane: 'xy', points: [[0, 0], ['L', 0], ['L', 'L'], [0, 'L']], depth: 'H - T', offset: [x, name.endsWith('2') || name.endsWith('4') ? 'D - L' : 0, 0] });
+      const def = {
+        ifcClass: 'IfcFurnishingElement', description: 'A table with legs, and a shelf when it is wanted',
+        params: [
+          { key: 'W', label: 'Width', kind: 'length', default: 1.2 }, { key: 'D', label: 'Depth', kind: 'length', default: 0.7 },
+          { key: 'H', label: 'Height', kind: 'length', default: 0.75 }, { key: 'L', label: 'Leg', kind: 'length', default: 0.06 },
+          { key: 'T', label: 'Top thickness', kind: 'length', default: 0.03 }, { key: 'HasShelf', label: 'Shelf', kind: 'bool', default: 1 },
+        ],
+        bodies: [
+          { name: 'Top', plane: 'xy', points: [[0, 0], ['W', 0], ['W', 'D'], [0, 'D']], depth: 'T', offset: [0, 0, 'H - T'] },
+          leg('Leg 1', 0), leg('Leg 2', 0), leg('Leg 3', 'W - L'), leg('Leg 4', 'W - L'),
+          { name: 'Shelf', plane: 'xy', points: [['L', 'L'], ['W - L', 'L'], ['W - L', 'D - L'], ['L', 'D - L']], depth: 0.02, offset: [0, 0, 0.2], when: 'HasShelf' },
+        ],
+      };
+      const part = await t.cmd('studio.createPart', { name: 'Table', def });
+      t.expect(part?.id, 'the part is made');
+      const placed = await t.cmd('studio.placePart', { typeId: part.id, storeyId: storey, at: [4, 3] });
+      t.expect(placed?.id, 'the part is placed');
+      await t.cmd('studio.setPartValues', { ids: [placed.id], values: { HasShelf: 0 } });
+      await t.ui({ view: '3d', selection: placed.id, selected: [placed.id], keyPlan: false });
+      await t.wait(1500);
+      await t.fit();
+      await t.shot('studio-part-model', { of: '[data-testid=view3d]', pad: 0 });
+      // Tab: the model fades, only the part can be picked, its tree opens.
+      await t.keys('Tab');
+      const tree = page.locator('[data-testid=part-tree]');
+      await tree.waitFor({ timeout: 10_000 });
+      await t.until(async () => (await tree.locator('[data-part-param]').count()) === 6, 'the tree lists the six parameters');
+      await tree.locator('[data-part-plane=xz]').hover();
+      await t.wait(600);
+      await t.shot('studio-part-edit', { of: '[data-testid=view3d]', pad: 0 });
+      t.expect((await tree.locator('[data-part-step]').count()) === 6, 'the tree lists the six bodies as steps');
+      t.expect(await tree.locator('[data-part-step="5"].off').count() === 1, 'the shelf, switched off, is greyed');
+      // A value changed in the tree: this object follows.
+      const width = tree.locator('[data-part-param=W] input');
+      await width.fill('1600');
+      await width.press('Enter');
+      await t.until(async () => Math.abs((await t.nodes()).find((n) => n.id === placed.id)?.props.values?.W - 1.6) < 1e-6, 'the width typed in the tree reaches the object');
+      await t.shot('studio-part-tree', { of: '[data-testid=part-tree]', pad: 6 });
+      // Finish part: the model is shown again.
+      await tree.locator('[data-testid=part-finish]').click();
+      await t.until(async () => (await tree.count()) === 0, 'Finish part leaves the edit mode');
+      await t.keys('Tab');
+      await tree.waitFor({ timeout: 10_000 });
+      await t.keys('Tab');
+      await t.until(async () => (await tree.count()) === 0, 'Tab leaves it too');
+    },
+  },
 ];
 
 /** A zip of stored entries (name, text), enough for a BCF file: the local headers, the central directory and its end, with CRC-32. */

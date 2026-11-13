@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { partLook, useLooks, type Look } from '../platform/looks';
 import { useSunlight } from '../platform/sunlight';
-import { pickable } from '../platform/scope';
+import { doubleClickHandlers, pickable } from '../platform/scope';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
@@ -1093,7 +1093,7 @@ export function Viewport3D() {
       const hit = pickAt();
       const id = hit?.object.userData.refPlane ? nodeOfHit(hit) : undefined;
       if (id) useUi.setState({ view: 'drawing', drawingViewId: id, selection: id, selected: [id] });
-      else openGroupOf(nodeOfHit(hit));
+      else if (!openGroupOf(nodeOfHit(hit))) for (const h of doubleClickHandlers) if (h(nodeOfHit(hit) ?? null)) break;
     };
     renderer.domElement.addEventListener('dblclick', onDouble);
 

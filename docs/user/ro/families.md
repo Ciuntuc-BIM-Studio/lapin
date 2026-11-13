@@ -6,6 +6,8 @@ summary: Obiecte proprii cu parametri — o masă, un dulap, o bancă — făcut
 
 ## Ce este o familie
 
+Familiile sunt acum **piese**: un proiect cu familii le deschide ca piese, cu aceiași identificatori, iar **Tab** pe una plasată o editează pe loc (vezi pagina Piese).
+
 O **familie** este un obiect pe care îl definești o dată și îl așezi de câte ori ai nevoie. Are **parametri** (o lățime, o înălțime, un da/nu pentru un raft) și **corpuri**, fiecare un contur închis împins la o adâncime. Fiecare colț, adâncime și deplasare este un număr sau o **formulă** din parametri, așa că o familie dă o masă de orice mărime. Fiecare obiect așezat își păstrează valorile lui și urmează familia când o schimbi.
 
 O familie e mai ușoară decât un configurator de tip: nu are straturi sau dimensiuni de catalog, ci doar solidele pe care le descrii. Aparține proiectului. Ca s-o folosești în alte proiecte, păstrează-o într-o bibliotecă (mai jos).

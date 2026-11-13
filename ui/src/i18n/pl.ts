@@ -3071,6 +3071,22 @@ export const PL: Record<string, string> = {
   "Family from sketch…": "Rodzina ze szkicu…",
   "Choose a title block to save.": "Wybierz tabliczkę rysunkową do zapisania.",
   "Place on a plan": "Umieść na rzucie",
+  "Part tree": "Drzewo części",
+  "Finish part": "Zakończ część",
+  "Edit part": "Edytuj część",
+  "Sketches": "Szkice",
+  "Top plane (xy)": "Płaszczyzna górna (xy)",
+  "Front plane (xz)": "Płaszczyzna przednia (xz)",
+  "Right plane (yz)": "Płaszczyzna prawa (yz)",
+  "Reading the part…": "Odczyt części…",
+  "Leave the part (Tab or Esc)": "Opuść część (Tab lub Esc)",
+  "instance": "wystąpienie",
+  "published": "opublikowany",
+  "off when not": "wyłączony, gdy nie",
+  "Select one Studio solid or part first.": "Najpierw zaznacz bryłę Studio lub część.",
+  "Finish the edit mode that is on first.": "Najpierw zakończ włączony tryb edycji.",
+  "That sketch is not in the model any more: redraw it to rebuild the solid.": "Tego szkicu nie ma już w modelu: narysuj go ponownie, aby odbudować bryłę.",
+  "Tab, or a double click on it in 3D": "Tab lub dwukrotne kliknięcie w 3D",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

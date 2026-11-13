@@ -3073,6 +3073,22 @@ export const IT: Record<string, string> = {
   "Family from sketch…": "Famiglia da schizzo…",
   "Choose a title block to save.": "Scegli un cartiglio da salvare.",
   "Place on a plan": "Posiziona sulla pianta",
+  "Part tree": "Albero del componente",
+  "Finish part": "Termina componente",
+  "Edit part": "Modifica componente",
+  "Sketches": "Schizzi",
+  "Top plane (xy)": "Piano superiore (xy)",
+  "Front plane (xz)": "Piano frontale (xz)",
+  "Right plane (yz)": "Piano destro (yz)",
+  "Reading the part…": "Lettura del componente…",
+  "Leave the part (Tab or Esc)": "Esci dal componente (Tab o Esc)",
+  "instance": "istanza",
+  "published": "pubblicato",
+  "off when not": "disattivato quando non",
+  "Select one Studio solid or part first.": "Seleziona prima un solido Studio o un componente.",
+  "Finish the edit mode that is on first.": "Termina prima la modalità di modifica attiva.",
+  "That sketch is not in the model any more: redraw it to rebuild the solid.": "Questo schizzo non è più nel modello: ridisegnalo per ricostruire il solido.",
+  "Tab, or a double click on it in 3D": "Tab, o doppio clic su di esso in 3D",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

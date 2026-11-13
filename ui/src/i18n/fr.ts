@@ -3074,6 +3074,22 @@ export const FR: Record<string, string> = {
   "Family from sketch…": "Famille depuis esquisse…",
   "Choose a title block to save.": "Choisissez un cartouche à enregistrer.",
   "Place on a plan": "Placer sur le plan",
+  "Part tree": "Arbre de la pièce",
+  "Finish part": "Terminer la pièce",
+  "Edit part": "Modifier la pièce",
+  "Sketches": "Esquisses",
+  "Top plane (xy)": "Plan de dessus (xy)",
+  "Front plane (xz)": "Plan de face (xz)",
+  "Right plane (yz)": "Plan de droite (yz)",
+  "Reading the part…": "Lecture de la pièce…",
+  "Leave the part (Tab or Esc)": "Quitter la pièce (Tab ou Échap)",
+  "instance": "instance",
+  "published": "publié",
+  "off when not": "désactivé quand non",
+  "Select one Studio solid or part first.": "Sélectionnez d'abord un solide Studio ou une pièce.",
+  "Finish the edit mode that is on first.": "Terminez d'abord le mode d'édition en cours.",
+  "That sketch is not in the model any more: redraw it to rebuild the solid.": "Cette esquisse n'est plus dans le modèle : redessinez-la pour reconstruire le solide.",
+  "Tab, or a double click on it in 3D": "Tab, ou double-clic dessus en 3D",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

@@ -3065,6 +3065,22 @@ export const DA: Record<string, string> = {
   "Family from sketch…": "Familie fra skitse…",
   "Choose a title block to save.": "Vælg et tegningshoved at gemme.",
   "Place on a plan": "Placér på planen",
+  "Part tree": "Delens træ",
+  "Finish part": "Afslut del",
+  "Edit part": "Rediger del",
+  "Sketches": "Skitser",
+  "Top plane (xy)": "Topplan (xy)",
+  "Front plane (xz)": "Frontplan (xz)",
+  "Right plane (yz)": "Højre plan (yz)",
+  "Reading the part…": "Læser delen…",
+  "Leave the part (Tab or Esc)": "Forlad delen (Tab eller Esc)",
+  "instance": "instans",
+  "published": "publiceret",
+  "off when not": "slået fra når ikke",
+  "Select one Studio solid or part first.": "Vælg først et Studio-legeme eller en del.",
+  "Finish the edit mode that is on first.": "Afslut først den redigeringstilstand, der er slået til.",
+  "That sketch is not in the model any more: redraw it to rebuild the solid.": "Skitsen er ikke længere i modellen: tegn den igen for at genopbygge legemet.",
+  "Tab, or a double click on it in 3D": "Tab, eller dobbeltklik på den i 3D",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

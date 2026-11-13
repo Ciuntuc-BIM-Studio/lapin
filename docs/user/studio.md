@@ -163,4 +163,8 @@ A polyline's properties list its sides. Type a side's length, and its end moves 
 
 ## Families
 
-A **family** is a solid of your own with parameters, placed as many times as you need. See the Families page.
+A **family** is a solid of your own with parameters, placed as many times as you need. See the Families page. Families are parts now: select one and press Tab to edit it in place (the Parts page).
+
+## Parts
+
+Select a solid or a placed part in 3D and press **Tab**, double-click it, or use **Studio → Part → Edit part**: the rest of the model fades and the part's tree lists its origin, sketches, steps and parameters. See the Parts page.

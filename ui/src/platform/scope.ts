@@ -44,3 +44,10 @@ export function pickable(node: NodeDto | null | undefined): boolean {
   const s = useScope.getState().scope;
   return !!node && (!s || s.includes(node));
 }
+
+/**
+ * Keys and clicks a module takes before the shell does: Tab (a handler returns true when it took the press; otherwise Tab
+ * folds the panels as before) and a double click on an element in 3D (after the reference planes and groups).
+ */
+export const tabHandlers = new Set<() => boolean>();
+export const doubleClickHandlers = new Set<(id: string | null) => boolean>();

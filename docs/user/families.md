@@ -6,6 +6,8 @@ summary: Objects of your own with parameters — a table, a cabinet, a bench —
 
 ## What a family is
 
+Families are now **parts**: a project with families opens them as parts with the same ids, and **Tab** on a placed one edits it in place (see the Parts page).
+
 A **family** is an object you define once and place as many times as you need. It has **parameters** (a width, a height, a yes/no for a shelf) and **bodies**, each a closed outline pushed to a depth. Every corner, depth and offset is a number or a **formula** of the parameters, so one family gives a table of any size. Each object placed keeps its own values and follows the family when you change it.
 
 A family is lighter than a type configurator: it has no layers or catalogue sizes, only the solids you describe. It belongs to the project. To use it in other projects, keep it in a library (below).

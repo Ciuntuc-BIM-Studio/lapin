@@ -15,6 +15,7 @@ import { chooseWorkspace, onInterfaceChange, useInterface, WORKSPACE_IDS, WORKSP
 import { effectiveBindings, formatBinding, resolveAlias, resolveKeymap, useKeymap, type Binding, type CommandDef, type Keymap } from './shortcuts';
 import { activate, activateSlot, allTools, defaultHotbar, hotbarSlots, ribbonTabs } from '../platform/modules';
 import { extraTools, extraToolsRev } from '../platform/extraTools';
+import { tabHandlers } from '../platform/scope';
 import { redo, undo } from '../engine/session';
 import { deleteElements } from '../engine/dependents';
 import { runFileAction } from '../shell/fileActions';
@@ -63,7 +64,7 @@ function appCommands(): CommandDef[] {
     { id: 'app.zoomPrevious', label: 'Zoom before', category: views, defaults: [], same: 'ZP', run: zoom((h) => h.previous()) },
     { id: 'app.toggleBrowser', label: 'Project browser: fold or unfold', category: panels, defaults: ['Ctrl+B'], run: () => togglePanel('browser') },
     { id: 'app.toggleProps', label: 'Properties: fold or unfold', category: panels, defaults: ['Ctrl+Shift+B'], run: () => togglePanel('props') },
-    { id: 'app.togglePanels', label: 'Both panels: fold or unfold', category: panels, defaults: ['Tab'], run: toggleBothPanels },
+    { id: 'app.togglePanels', label: 'Both panels: fold or unfold', category: panels, defaults: ['Tab'], run: () => { for (const h of tabHandlers) if (h()) return; toggleBothPanels(); } },
     { id: 'app.propsOverlay', label: 'All properties (over the view)', category: panels, defaults: [], run: () => { if (usePanels.getState().propsOpen) return; showOverlay('props'); } },
     // The model assistant: the desktop's only (docs/plan-assistant.md); not in the web build at all.
     ...(import.meta.env.VITE_ENGINE !== 'worker' && assistantAvailable()

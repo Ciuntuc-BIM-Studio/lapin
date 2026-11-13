@@ -3070,6 +3070,22 @@ export const RO: Record<string, string> = {
   "Family from sketch…": "Familie din schiță…",
   "Choose a title block to save.": "Alege un cartuș de salvat.",
   "Place on a plan": "Așază pe plan",
+  "Part tree": "Arborele piesei",
+  "Finish part": "Termină piesa",
+  "Edit part": "Editează piesa",
+  "Sketches": "Schițe",
+  "Top plane (xy)": "Planul de sus (xy)",
+  "Front plane (xz)": "Planul din față (xz)",
+  "Right plane (yz)": "Planul din dreapta (yz)",
+  "Reading the part…": "Se citește piesa…",
+  "Leave the part (Tab or Esc)": "Părăsește piesa (Tab sau Esc)",
+  "instance": "instanță",
+  "published": "publicat",
+  "off when not": "oprit când nu",
+  "Select one Studio solid or part first.": "Selectați mai întâi un solid Studio sau o piesă.",
+  "Finish the edit mode that is on first.": "Terminați mai întâi modul de editare care este pornit.",
+  "That sketch is not in the model any more: redraw it to rebuild the solid.": "Schița nu mai este în model: desenați-o din nou ca să se refacă solidul.",
+  "Tab, or a double click on it in 3D": "Tab sau dublu clic pe ea în 3D",
 };
 
 /** Phrases with a number or a name in them. */

@@ -9,7 +9,7 @@
  */
 
 import {
-  Boxes, PackagePlus, ArrowUpDown, ArrowUpToLine, ArrowRightToLine, Eraser, Keyboard, Rainbow, Ruler, Spline, CopyPlus, CornerUpRight, Slash, Redo2, ScanEye, SquarePen, CircleCheckBig, Circle, Hexagon, RectangleHorizontal, Blocks, Box, BrickWall, CircleDot, Cone, Container, Cylinder, Eye, FlipHorizontal2, Frame, Grid3x3, Layers2, Move3d, Octagon, PackageOpen, PenTool, Pyramid,
+  Boxes, PackagePlus, PencilRuler, ArrowUpDown, ArrowUpToLine, ArrowRightToLine, Eraser, Keyboard, Rainbow, Ruler, Spline, CopyPlus, CornerUpRight, Slash, Redo2, ScanEye, SquarePen, CircleCheckBig, Circle, Hexagon, RectangleHorizontal, Blocks, Box, BrickWall, CircleDot, Cone, Container, Cylinder, Eye, FlipHorizontal2, Frame, Grid3x3, Layers2, Move3d, Octagon, PackageOpen, PenTool, Pyramid,
   RefreshCcw, Rotate3d, RotateCw, Scissors, Slice, SquareMinus, SquarePlus, SquareRoundCorner, SquareSplitHorizontal, SquareSquare, SquareStack, Torus, TriangleRight, Unlink, Waypoints,
 } from 'lucide-react';
 import type { Grip, LapinModule, RefLine, ToolDef, ToolInput } from '../../platform/module';
@@ -24,6 +24,8 @@ import { editSketch } from './sketch';
 import { FeatureCard, featureFieldKeys, takeUpTo } from './FeatureCard';
 import { OperationsCard, hasTools } from './OperationsCard';
 import { RefPlaneSection } from './RefPlaneSection';
+import { editPart, finishPart, isEditable, registerEditMode } from './editMode';
+import { EditPartSection, PartPlane3D, PartTreePanel } from './PartTree';
 import { COMMAND, DEFAULT_JUSTIFY, JUSTIFY, frontViewId, makesNative, nativeArgs, shapeFits, solidArgs, threePoints, viewOf, type ThickChoice, type ThickOp } from './thick';
 import { cadLog, registerCommand, startCommand, type Step } from '../../viewport/cad/session';
 import { useCamera, type Vec3 } from '../../viewport/camera';
@@ -747,6 +749,10 @@ const primitive = (shape: string, label: string, icon: ToolDef['icon']): ToolDef
 const familiesDialogTool: ToolDef = { id: 'studio.families', label: 'Families…', icon: Boxes, run: () => useUi.setState({ dialog: 'families' }) };
 const familyFromSketch: ToolDef = { id: 'studio.familyFromSketch', label: 'Family from sketch…', icon: PackagePlus, run: startFamilyFromSketch };
 
+registerEditMode();
+const editPartTool: ToolDef = { id: 'studio.editPart', label: 'Edit part', icon: PencilRuler, run: () => { useUi.setState({ view: '3d' }); editPart(); } };
+const finishPartTool: ToolDef = { id: 'studio.finishPart', label: 'Finish part', icon: CircleCheckBig, run: () => void finishPart() };
+
 const studio: LapinModule = {
   id: 'studio',
   name: 'Studio',
@@ -776,6 +782,7 @@ const studio: LapinModule = {
         tools: [primitive('box', 'Cuboid', Box), primitive('cylinder', 'Cylinder', Cylinder)],
         small: [primitive('sphere', 'Sphere', CircleDot), primitive('cone', 'Cone', Cone), primitive('torus', 'Torus', Torus), primitive('wedge', 'Wedge', TriangleRight), primitive('pyramid', 'Pyramid', Pyramid)],
       },
+      { label: 'Part', tools: [editPartTool, finishPartTool] },
       { label: 'Families', tools: [placeFamilyTool, familiesDialogTool], small: [familyFromSketch] },
       {
         label: 'Modify',
@@ -799,11 +806,14 @@ const studio: LapinModule = {
   dialogs: { families: FamiliesDialog, familyFromSketch: FamilyFromSketchDialog },
   propertySections: [
     { id: 'studioFamily', label: 'Family', classes: SOLID_CLASSES, shows: isPlacedPart, component: FamilySection },
+    { id: 'studioEditPart', label: 'Part', classes: SOLID_CLASSES, shows: isEditable, component: EditPartSection },
     { id: 'studioFeature', label: 'Studio', classes: SOLID_CLASSES, component: FeatureCard, fieldKeys: featureFieldKeys },
     { id: 'studioRefPlane', label: 'Reference plane', classes: ['LapinView'], component: RefPlaneSection },
     // Any element some solid cuts, unites or intersects: those solids listed, selectable even when never drawn.
     { id: 'studioOperations', label: 'Boolean', classes: ['*'], shows: hasTools, component: OperationsCard },
   ],
+  overlays: [PartTreePanel],
+  overlays3d: [PartPlane3D],
   grips: Object.fromEntries(SOLID_CLASSES.map((c) => [c, solidGrips])),
   references: Object.fromEntries(SOLID_CLASSES.map((c) => [c, solidRefs])),
 };

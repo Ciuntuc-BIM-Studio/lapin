@@ -2377,3 +2377,16 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .nav-style-row { align-items: flex-start; }
 .nav-style-text { display: flex; flex-direction: column; gap: 1px; }
 .status-nav { display: inline-flex; align-items: center; gap: 3px; }
+/* The part's tree while a part is edited (Studio, decision 517). */
+.sel-card.part-tree { left: 12px; right: auto; top: 132px; bottom: 12px; width: 300px; overflow-y: auto; gap: 8px; }
+.part-tree .part-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); margin-bottom: 2px; }
+.part-tree .part-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.part-tree .part-list li { display: flex; align-items: center; gap: 6px; }
+.part-tree .part-list li.off > :not(.icon) { opacity: 0.45; }
+.part-tree .part-list li.on button.link { font-weight: 600; }
+.part-tree .part-list button.link { display: inline-flex; align-items: center; gap: 5px; }
+.part-tree .part-params { width: 100%; border-collapse: collapse; font-size: 12px; }
+.part-tree .part-params th { text-align: left; font-weight: 500; opacity: 0.7; }
+.part-tree .part-params td { padding: 2px 4px 2px 0; vertical-align: middle; }
+.part-tree .part-params tr.changed td:first-child { font-weight: 600; }
+polygon.part-plane { fill: var(--accent); fill-opacity: 0.14; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 6 4; }

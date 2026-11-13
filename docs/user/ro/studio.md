@@ -163,4 +163,8 @@ Proprietățile unei polilinii îi arată laturile. Scrie lungimea unei laturi, 
 
 ## Familii
 
-O **familie** este un solid propriu cu parametri, așezat de câte ori ai nevoie. Vezi pagina Familii.
+O **familie** este un solid propriu cu parametri, așezat de câte ori ai nevoie. Vezi pagina Familii. Familiile sunt acum piese: selectează una și apasă Tab ca s-o editezi pe loc (pagina Piese).
+
+## Piese
+
+Selectează în 3D un solid sau o piesă plasată și apasă **Tab**, dă dublu clic pe ea sau folosește **Studio → Piesă → Editează piesa**: restul modelului se estompează, iar arborele piesei arată originea, schițele, pașii și parametrii. Vezi pagina Piese.

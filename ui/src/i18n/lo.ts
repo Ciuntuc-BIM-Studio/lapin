@@ -3124,6 +3124,22 @@ export const LO: Record<string, string> = {
   "Family from sketch…": "ຕະກູນຈາກແບບຮ່າງ…",
   "Choose a title block to save.": "ເລືອກກອບຊື່ທີ່ຈະບັນທຶກ.",
   "Place on a plan": "ວາງໃສ່ແປນ",
+  "Part tree": "ຕົ້ນໄມ້ຂອງຊິ້ນສ່ວນ",
+  "Finish part": "ສຳເລັດຊິ້ນສ່ວນ",
+  "Edit part": "ແກ້ໄຂຊິ້ນສ່ວນ",
+  "Sketches": "ຮ່າງ",
+  "Top plane (xy)": "ຮະນາບດ້ານເທິງ (xy)",
+  "Front plane (xz)": "ຮະນາບດ້ານໜ້າ (xz)",
+  "Right plane (yz)": "ຮະນາບດ້ານຂວາ (yz)",
+  "Reading the part…": "ກຳລັງອ່ານຊິ້ນສ່ວນ…",
+  "Leave the part (Tab or Esc)": "ອອກຈາກຊິ້ນສ່ວນ (Tab ຫຼື Esc)",
+  "instance": "ອິນສະແຕນ",
+  "published": "ເຜີຍແຜ່ແລ້ວ",
+  "off when not": "ປິດເມື່ອບໍ່",
+  "Select one Studio solid or part first.": "ກະລຸນາເລືອກແຂງ Studio ຫຼື ຊິ້ນສ່ວນກ່ອນ.",
+  "Finish the edit mode that is on first.": "ກະລຸນາຈົບໂໝດແກ້ໄຂທີ່ເປີດຢູ່ກ່ອນ.",
+  "That sketch is not in the model any more: redraw it to rebuild the solid.": "ຮ່າງນັ້ນບໍ່ຢູ່ໃນແບບຈຳລອງອີກຕໍ່ໄປ: ແຕ້ມໃໝ່ເພື່ອສ້າງແຂງຄືນ.",
+  "Tab, or a double click on it in 3D": "Tab ຫຼື ກົດສອງຄັ້ງໃສ່ມັນໃນ 3D",
 };
 
 /** Phrases with a number or a name in them. */
