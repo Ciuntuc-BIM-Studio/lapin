@@ -512,6 +512,29 @@ public static partial class IfcExport
             return f.Add("IFCSHAPEREPRESENTATION", body, S("Body"), S("MappedRepresentation"), L(new[] { f.Add("IFCMAPPEDITEM", map, op) }));
         }
 
+        /// <summary>The representation map of each type written that has a body of its own (a part's: <see cref="IIfcTypeShapes"/>), by the type's id.</summary>
+        readonly Dictionary<string, string?> typeMaps = [];
+
+        /// <summary>
+        /// A type's body as its one representation map (written once): the body a part's defaults build, its block definition. IFC4
+        /// lists a type's RepresentationMaps as "a multi-view block definition" (one map per representation: Body, Axis…), never
+        /// variants of one, so elements built with other values carry their own body (decision 520 P3, docs/spec-ifc.md).
+        /// </summary>
+        string? TypeMap(Entity type)
+        {
+            if (typeMaps.TryGetValue(type.Id, out var known)) return known;
+            string? map = null;
+            foreach (var src in s.Catalog.All<IIfcTypeShapes>())
+            {
+                if (src.TypeBody(m, type) is not { Parts.Count: > 0 } b) continue;
+                map = f.Add("IFCREPRESENTATIONMAP", f.Add("IFCAXIS2PLACEMENT3D", f.Add("IFCCARTESIANPOINT", "(0.,0.,0.)"), Null, Null),
+                    BodyOf(b.Parts.Select(p => Brep(p.Solid, StyleKey(p), 0))));
+                maps[b.Key] = map;
+                break;
+            }
+            return typeMaps[type.Id] = map;
+        }
+
         string BodyOf(IEnumerable<string> breps) => f.Add("IFCSHAPEREPRESENTATION", body, S("Body"), S(o.FaceSet ? "Tessellation" : "Brep"), L(breps));
 
         /// <summary>
@@ -801,12 +824,16 @@ public static partial class IfcExport
             // A railway element already has its linear placement and frame; the rest stand on their storey (or in the joinery's frame).
             place ??= at is { } jp ? JoineryPlace(relTo, jp, z0) : Place(relTo, 0);
             var reps = new List<string>();
+            // A type with a body of its own (a part): its map written before the type is, whatever this element's body.
+            var typeMap = type != null ? TypeMap(type) : null;
             // A body its module gives as constructive solids (a steel member: its profile swept, cut by its ends' planes, decision 268).
             var swept = !grouped && at == null && railPart == null ? SweptOf(e) : null;
             if (swept != null && !SweepIsBody(swept, parts)) swept = null;
             if (swept != null) reps.Add(SweptRep(swept, parts[0].Color, fr));
             // An instance of a shared body: the body once, as a representation map, each instance mapping it where it stands.
-            else if (!grouped && at == null && railPart == null && geo!.Instance is { } inst && Mapped(inst, z0) is { } mapped) reps.Add(mapped);
+            // A part's (decision 520 P3): the type's map when it is built with its type's values, else its own body.
+            else if (!grouped && at == null && railPart == null && geo!.Instance is { } inst && (inst.Local == null || (typeMap != null && maps.GetValueOrDefault(inst.Body) == typeMap))
+                && Mapped(inst, z0) is { } mapped) reps.Add(mapped);
             else if (!grouped) reps.Add(BodyOf(parts.Select(p => at is { } jp2 ? Brep(p.Solid, StyleKey(p), v => Local(jp2, v)) : Brep(p.Solid, StyleKey(p), fr))));
             if (AxisOf(e) is { } ax) reps.Add(ax);
             reps.AddRange(Plan2dOf(e));
@@ -1147,6 +1174,7 @@ public static partial class IfcExport
                 var own = new List<(string, string)>();
                 if (mirrored) own.Add(("LapinMirrorOf", GlobalIdOf(type.Id)));
                 if (typeClass != type.Class) own.Add(("LapinClass", type.Class));
+                foreach (var src in s.Catalog.All<IIfcTypeShapes>()) own.AddRange(src.TypeIntent(m, type));
                 var intent = IntentOf(type, Gid(key, IntentKey), null, own.Count > 0 ? own : null);
                 // The type's parameters, which every element of the type has.
                 var sets = new List<string> { intent };
@@ -1154,6 +1182,10 @@ public static partial class IfcExport
                 foreach (var (setName, props) in NamedParams(type))
                     sets.Add(f.Add("IFCPROPERTYSET", Gid(key, "params:" + setName), Null, S(setName), Null, L(props.Select(p => Single(p.Name, p.Value)).ToArray())));
                 if (terms != null) sets.AddRange(JoinerySets(key, terms));
+                // Lapin's own sets a module gives the type (a part's type parameters, Lapin_PartParameters).
+                foreach (var src in s.Catalog.All<IIfcTypeShapes>())
+                    if (src.TypeSet(m, type) is { Properties.Count: > 0 } ts)
+                        sets.Add(f.Add("IFCPROPERTYSET", Gid(key, "type-set:" + ts.Name), Null, S(ts.Name), Null, L(ts.Properties.Select(p => Single(p.Name, StandardValue(p), p.Description)).ToArray())));
                 // An exhaust fan's type (report #55): Pset_FanTypeCommon with the names IFC gives them, its airflow in m³/s.
                 if (kind.Class == "IfcFan" && type.Attrs["spec"] is JsonObject fan && Json.Number(fan["airflow"]) is { } flow)
                 {
@@ -1163,7 +1195,9 @@ public static partial class IfcExport
                 }
                 var pre = E(kind.Predefined.Length == 0 ? "NOTDEFINED" : kind.Predefined);
                 var name = mirrored ? $"{type.Name} (mirrored)" : type.Name;
-                string[] common = [gid, Null, S(name), Null, Null, L(sets), Null, S(type.Id), S(kind.Predefined == "USERDEFINED" ? kind.ObjectType : null)];
+                // Its body as its representation map (a part's), the map its elements built with its values are mapped items of.
+                var typeMap = !mirrored && typeMaps.GetValueOrDefault(type.Id) is { } tm ? L(new[] { tm }) : Null;
+                string[] common = [gid, Null, S(name), Null, Null, L(sets), typeMap, S(type.Id), S(kind.Predefined == "USERDEFINED" ? kind.ObjectType : null)];
                 var up = typeClass.ToUpperInvariant();
                 // A door's operation in the schema written (a garage door's differs, decision 530).
                 var said = terms?.In(o.Ifc43);
@@ -1175,6 +1209,8 @@ public static partial class IfcExport
                     IfcClass.Window => f.Add(up, [.. common, pre, operation, False, userDefined]),
                     // IfcFurnitureType: its AssemblyPlace before its PredefinedType.
                     "IfcFurniture" => f.Add(up, [.. common, E("NOTDEFINED"), pre]),
+                    // A class without predefined types (IfcFurnishingElementType ends at its ElementType).
+                    _ when Classes.TryGetValue(kind.Class, out var allowed) && allowed == null => f.Add(up, common),
                     _ => f.Add(up, [.. common, pre]),
                 };
                 types[key] = t = (r, []);
@@ -1575,7 +1611,7 @@ public static partial class IfcExport
                     if (!common.Any(c => c.Name == p.Name)) common.Add((p.Name, StandardValue(p)));
             foreach (var set in moduleSets.Where(x => x.Name != commonName))
             {
-                var props = set.Properties.Select(p => Single(p.Name, StandardValue(p))).ToList();
+                var props = set.Properties.Select(p => Single(p.Name, StandardValue(p), p.Description)).ToList();
                 if (props.Count > 0) Define(entity, f.Add("IFCPROPERTYSET", Gid(e.Id, "pset/" + set.Name), Null, S(set.Name), Null, L(props)), Gid(e.Id, "pset-rel/" + set.Name));
             }
             var commonProps = commonName != null ? CommonWith(e, commonName, common) : [];

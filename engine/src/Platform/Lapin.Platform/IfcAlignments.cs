@@ -75,8 +75,30 @@ public interface IIfcElementSets
     IEnumerable<IfcStandardSet> Sets(IModelView model, Entity element);
 }
 
-/// <summary>One standard property: its name, its IFC measure type (IFCLABEL, IFCBOOLEAN, IFCLENGTHMEASURE…) and its value (a string, a bool or a number in SI units).</summary>
-public sealed record IfcStandardProperty(string Name, string Measure, object Value);
+/// <summary>One standard property: its name, its IFC measure type (IFCLABEL, IFCBOOLEAN, IFCLENGTHMEASURE…) and its value (a string, a bool or a number in SI units); its description, when it has one.</summary>
+public sealed record IfcStandardProperty(string Name, string Measure, object Value, string? Description = null);
+
+/// <summary>
+/// A module's types that IFC writes with a body of their own (Studio's parts, decision 520 stage P3): the type's body, its block
+/// definition, written once as the IfcTypeProduct's representation map, and the set of Lapin's own the type carries.
+/// </summary>
+public interface IIfcTypeShapes
+{
+    /// <summary>
+    /// The type's body in its own frame, with the key the elements built with the same values carry as their shared instance
+    /// (<see cref="SharedInstance.Body"/>): those are written as mapped items of the type's map. Null for a type without one.
+    /// </summary>
+    IfcTypeBody? TypeBody(IModelView model, Entity type);
+
+    /// <summary>A set the type carries (never named Pset_…), with its properties; null for none.</summary>
+    IfcStandardSet? TypeSet(IModelView model, Entity type) => null;
+
+    /// <summary>What the type's intent set adds (its Lapin id under a name of its own); none by default.</summary>
+    IReadOnlyList<(string Name, string Value)> TypeIntent(IModelView model, Entity type) => [];
+}
+
+/// <summary>A type's body: the key its instances share it by, and its parts in the type's frame.</summary>
+public sealed record IfcTypeBody(string Key, IReadOnlyList<GeometryPart> Parts);
 
 /// <summary>A standard property set (Pset_…) and its properties.</summary>
 public sealed record IfcStandardSet(string Name, IReadOnlyList<IfcStandardProperty> Properties);

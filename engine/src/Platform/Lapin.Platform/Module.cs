@@ -467,8 +467,14 @@ public sealed record ElementGeometry(IReadOnlyList<GeometryPart> Parts, IReadOnl
 /// <summary>
 /// An element's parts are a shared body's (<see cref="StoredBodies"/>), placed by
 /// <see cref="Xf"/>: the interface draws one mesh for all of them (docs/plan-instancing.md).
+/// <para>A body no entity holds (a Studio part's per set of values, decision 520 P3) comes with its parts in its own frame,
+/// <see cref="Local"/>, and <see cref="Body"/> is its key: the session tessellates them once for as long as they are the same
+/// list, and the IFC export writes them as a representation map. A filter that changes the parts drops the instance.</para>
 /// </summary>
-public sealed record SharedInstance(string Body, double[] Xf);
+public sealed record SharedInstance(string Body, double[] Xf)
+{
+    public IReadOnlyList<GeometryPart>? Local { get; init; }
+}
 
 /// <summary>A command refused for a reason the user should read.</summary>
 public sealed class CommandException(string message) : ModelException(message);

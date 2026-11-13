@@ -447,6 +447,8 @@ public static partial class IfcImport
                     case "LapinHost": host = value as string; break;
                     case "LapinId": lapinId = value as string; break;
                     case "LapinVersion": break;
+                    // A part's id beside its definition (decision 520 P3): the type's GlobalId and tag carry it already.
+                    case "LapinPartId": break;
                     default: attrs[name] = value switch { JsonNode n => n, bool b => b, double d => d, string t => t, _ => null }; break;
                 }
             }
@@ -831,7 +833,19 @@ public static partial class IfcImport
                     rest.Add(e);
                     continue;
                 }
-                if (intent != null) { Native(edit, e, intent); native.Add(e.Id); continue; }
+                if (intent != null)
+                {
+                    Native(edit, e, intent);
+                    native.Add(e.Id);
+                    // A placed part (decision 520 P3) is rebuilt from its part and values: measured against the file's body by the
+                    // gate as a recognised element is, and the file's body where they differ.
+                    if (intent.Attrs["operation"] is JsonValue op && op.TryGetValue<string>(out var operation) && operation == "part" && o.Gate.On && Str(e[0]) is { } partGid)
+                    {
+                        if (recognition == null) PrepareRecognition();
+                        gated.Add(new Gated(e, partGid, ClassName(e.Type), false, [], []) { Native = true });
+                    }
+                    continue;
+                }
                 if (fills.Contains(e.Id)) { rest.Add(e); continue; } // decided by its wall, below
                 if (!o.ReferenceOnly && !parentOf.ContainsKey(e.Id) && Recognize(edit, e)) { native.Add(e.Id); continue; }
                 rest.Add(e);

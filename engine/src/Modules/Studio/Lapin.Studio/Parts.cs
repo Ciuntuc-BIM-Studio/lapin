@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -234,26 +235,96 @@ public static class Parts
     /// <summary>A placed part's bodies in the world, one geometry part each; Studio's steps are done on each after.</summary>
     public static (List<GeometryPart> Parts, List<string> Problems) Build(Entity e, IModelView m)
     {
-        if (DefOf(TypeOf(m, e)) is not { } def) return ([], ["Its part is gone, or no longer has a definition."]);
-        List<(string Name, string? Material, Solid Solid)> bodies;
-        try { bodies = Bodies(def, Values(def, e.Attrs["values"] as JsonObject)); }
-        catch (CommandException ex) { return ([], [ex.Message]); }
-        var (place, dir, mirror) = Placing(e, m);
-        var parts = new List<GeometryPart>();
-        foreach (var (name, material, solid) in bodies)
-        {
-            // Its faces' normals turned with it; turned over (mirrored), each face's loops run the other way.
-            var faces = solid.Faces.Select(f =>
-            {
-                var turned = dir(f.Normal);
-                return mirror ? f with { Outer = [.. f.Outer.Reverse()], Holes = [.. f.Holes.Select(h => h.Reverse().ToArray())], Normal = turned } : f with { Normal = turned };
-            }).ToArray();
-            var moved = new Solid([.. solid.Vertices.Select(place)], faces, "part");
-            var mat = material != null ? Materials.Find(m, material) : null;
-            parts.Add(new GeometryPart(name, mat?.Str("color") ?? "#b9b2a6", moved, mat?.Id, "part:" + name));
-        }
-        return (parts, []);
+        var (parts, problems, _) = BuildShared(e, m);
+        return (parts, problems);
     }
+
+    /// <summary>
+    /// A placed part's bodies in the world, and the shared body they are placed copies of (docs/plan-instancing.md, decision 520
+    /// P3): placed parts of one part with the same values (each instance's own, the defaults, the type's and the derived ones
+    /// worked out) share one body, built once (<see cref="SetOf"/>), its key <see cref="SharedKey"/>; each is that body moved and
+    /// turned (a mirrored one shares the mirrored body). Null shared when it builds no body.
+    /// </summary>
+    public static (List<GeometryPart> Parts, List<string> Problems, SharedInstance? Shared) BuildShared(Entity e, IModelView m)
+    {
+        var type = TypeOf(m, e);
+        if (DefOf(type) is not { } def) return ([], ["Its part is gone, or no longer has a definition."], null);
+        Dictionary<string, double> values;
+        try { values = Values(def, e.Attrs["values"] as JsonObject); }
+        catch (CommandException ex) { return ([], [ex.Message], null); }
+        var set = SetOf(type!.Id, def, values);
+        if (set.Error is { } error) return ([], [error], null);
+        var (at, rotation, mirror) = Pose(e);
+        var local = set.Local(m, mirror);
+        if (local.Count == 0) return ([], [], null);
+        var z = (Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0) + e.Num("z");
+        var xf = Xf(at, z, rotation);
+        var parts = local.Select(p => p with { Solid = StoredBodies.Place(p.Solid, xf) }).ToList();
+        return (parts, [], new SharedInstance(set.KeyOf(mirror), xf) { Local = local });
+    }
+
+    /// <summary>A placed part's placement: 12 numbers, the images of x, y, z and the origin (<see cref="StoredBodies.Place"/>), a turn about z and a move.</summary>
+    static double[] Xf(Vec2 at, double z, double rotation)
+    {
+        var (c, s) = (Math.Cos(rotation * Math.PI / 180), Math.Sin(rotation * Math.PI / 180));
+        return [c, s, 0, -s, c, 0, 0, 0, 1, at.X, at.Y, z];
+    }
+
+    // ------------------------------------------------------------ shared bodies (P3)
+
+    const int BodyCacheSize = 256;
+
+    /// <summary>A part's bodies per set of values, by the part's definition (its JSON node: a changed part is a new node).</summary>
+    static readonly ConditionalWeakTable<JsonObject, BodyCache> BodyCaches = new();
+
+    /// <summary>A body turned over x (x → −x): its faces' loops run the other way, their normals mirrored.</summary>
+    static Solid Mirrored(Solid s) => new(
+        [.. s.Vertices.Select(v => new Vec3(-v.X, v.Y, v.Z))],
+        [.. s.Faces.Select(f => f with { Outer = [.. f.Outer.Reverse()], Holes = [.. f.Holes.Select(h => h.Reverse().ToArray())], Normal = new Vec3(-f.Normal.X, f.Normal.Y, f.Normal.Z) })],
+        s.Tag);
+
+    /// <summary>Values written one way: keys in order, numbers round-trip.</summary>
+    internal static string Canonical(IReadOnlyDictionary<string, double> values) =>
+        string.Join(";", values.OrderBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase).Select(kv => kv.Key + "=" + kv.Value.ToString("R", CultureInfo.InvariantCulture)));
+
+    static string Hex(string text) => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(text)))[..16].ToLowerInvariant();
+
+    /// <summary>
+    /// The key placed parts share a body by: the part's id, then a hash of its definition and of the values the body is built with
+    /// (those its bodies and sketches name, derived ones worked out; a count or a text they never read splits nothing), the same
+    /// in every session for the same part and values.
+    /// </summary>
+    public static string SharedKey(string partId, JsonObject def, IReadOnlyDictionary<string, double> values) => SetOf(partId, def, values).Key;
+
+    /// <summary>A part's bodies for some values, built once per definition and set of values (256 sets kept per definition).</summary>
+    internal static BodySet SetOf(string partId, JsonObject def, IReadOnlyDictionary<string, double> values)
+    {
+        var cache = BodyCaches.GetValue(def, _ => new BodyCache());
+        string canonical;
+        lock (cache)
+        {
+            cache.Names ??= PartParams.Sites(def).Where(x => !x.Where.StartsWith("the formula of ", StringComparison.Ordinal))
+                .SelectMany(x => PartParams.NamesIn(x.Text)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var names = cache.Names;
+            canonical = Canonical(values.Where(kv => names.Contains(kv.Key)).ToDictionary(kv => kv.Key, kv => kv.Value));
+            if (cache.By.TryGetValue(canonical, out var hit)) return hit;
+            cache.Hash ??= Hex(def.ToJsonString());
+            var frozen = new Dictionary<string, double>(values, StringComparer.OrdinalIgnoreCase);
+            var set = new BodySet($"part:{partId}:{Hex(cache.Hash + "|" + canonical)}", () =>
+            {
+                Interlocked.Increment(ref cache.Builds);
+                try { return (Bodies(def, frozen), null); }
+                catch (CommandException ex) { return (null, ex.Message); }
+            });
+            cache.By[canonical] = set;
+            cache.Order.Enqueue(canonical);
+            while (cache.Order.Count > BodyCacheSize) cache.By.Remove(cache.Order.Dequeue());
+            return set;
+        }
+    }
+
+    /// <summary>How many sets of values a part's definition has had its bodies built for (the tests' counter).</summary>
+    public static int BodyBuilds(JsonObject def) => BodyCaches.TryGetValue(def, out var c) ? Volatile.Read(ref c.Builds) : 0;
 
     /// <summary>An instance's own values over <paramref name="had"/>: each the part's parameter of that key, checked a number; null takes the default back.</summary>
     static JsonObject Own(Entity type, JsonObject values, JsonObject? had)
@@ -681,6 +752,48 @@ public static class Parts
         PartSketches.Register(r);
         // The parameter table (P1).
         PartParams.Register(r);
+    }
+
+    // The shared bodies' cache (declared here, after the commands, so the catalogue's reading of this file finds the commands' class).
+
+    sealed class BodyCache
+    {
+        public string? Hash;
+        /// <summary>The names the bodies and sketches read (their corners, depths, conditions, offsets, constraints): values outside them build the same body.</summary>
+        public HashSet<string>? Names;
+        public readonly Dictionary<string, BodySet> By = [];
+        public readonly Queue<string> Order = new();
+        public int Builds;
+    }
+
+    /// <summary>
+    /// One set of values' bodies in the part's own frame, built once on first ask (a failure kept as its reason), with the
+    /// geometry parts made of them (by the materials' colours as they stand) and their mirror image, made when first asked.
+    /// </summary>
+    internal sealed class BodySet(string key, Func<(List<(string Name, string? Material, Solid Solid)>? Bodies, string? Error)> build)
+    {
+        readonly Lazy<(List<(string Name, string? Material, Solid Solid)>? Bodies, string? Error)> _built = new(build, LazyThreadSafetyMode.ExecutionAndPublication);
+        (string Signature, IReadOnlyList<GeometryPart> Parts)? _local, _mirrored;
+
+        public string Key { get; } = key;
+        public string? Error => _built.Value.Error;
+        public string KeyOf(bool mirror) => mirror ? Key + ":m" : Key;
+
+        /// <summary>The bodies as geometry parts in the part's frame (turned over when mirrored): the same list for as long as the materials are.</summary>
+        public IReadOnlyList<GeometryPart> Local(IModelView m, bool mirror)
+        {
+            var bodies = _built.Value.Bodies ?? [];
+            var mats = bodies.Select(b => b.Material != null ? Materials.Find(m, b.Material) : null).ToList();
+            var signature = string.Join("|", mats.Select(x => x == null ? "" : x.Id + "=" + x.Str("color")));
+            lock (this)
+            {
+                var known = mirror ? _mirrored : _local;
+                if (known is { } k && k.Signature == signature) return k.Parts;
+                var parts = bodies.Select((b, i) => new GeometryPart(b.Name, mats[i]?.Str("color") ?? "#b9b2a6", mirror ? Mirrored(b.Solid) : b.Solid, mats[i]?.Id, "part:" + b.Name)).ToList();
+                if (mirror) _mirrored = (signature, parts); else _local = (signature, parts);
+                return parts;
+            }
+        }
     }
 
     /// <summary>A parameter of a definition as read (declared last, so the catalogue's reading of this file finds the commands' class).</summary>

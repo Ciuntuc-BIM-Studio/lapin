@@ -47,7 +47,7 @@ public sealed partial class Session
     readonly System.Collections.Concurrent.ConcurrentDictionary<Solid, byte> _planesUsed = new(ReferenceEqualityComparer.Instance);
 
     /// <summary>The shared bodies' meshes (docs/plan-instancing.md), each with the body it was tessellated from; and those the interface has.</summary>
-    readonly Dictionary<string, (JsonObject Body, SharedMesh Mesh)> _meshes = [];
+    readonly Dictionary<string, (object Body, SharedMesh Mesh)> _meshes = [];
     readonly HashSet<string> _meshesSent = [];
 
     /// <summary>
@@ -1043,7 +1043,10 @@ public sealed partial class Session
         try
         {
             g = producer(e, view, _catalog);
+            var made = g?.Parts;
             if (g != null) foreach (var f in _catalog.All<IGeometryFilter>()) g = f.Apply(e, g, view, _catalog) ?? g;
+            // A filter that changed the parts (a boolean, a sweep added) leaves them no longer the shared body's.
+            if (g?.Instance != null && !ReferenceEquals(g.Parts, made)) g = g with { Instance = null };
             if (g != null) item = Render(e, g, problems, view);
         }
         catch (Exception ex)
@@ -1206,19 +1209,20 @@ public sealed partial class Session
             if (_readers.TryGetValue(r, out var set)) { set.Remove(id); if (set.Count == 0) _readers.Remove(r); }
     }
 
-    /// <summary>A shared body's mesh: tessellated once for as long as the body is the same.</summary>
-    SharedMesh? MeshOf(string bodyId, Entity e, IModelView read, Dictionary<string, IReadOnlyList<LayerBand>?> bands)
+    /// <summary>A shared body's mesh: tessellated once for as long as the body is the same (an entity's body, or the parts an instance brings: <see cref="SharedInstance.Local"/>).</summary>
+    SharedMesh? MeshOf(SharedInstance inst, Entity e, IModelView read, Dictionary<string, IReadOnlyList<LayerBand>?> bands)
     {
-        if (read.Get(bodyId) is not { Class: StoredBodies.SharedClass } shared || shared.Attrs[StoredBodies.Key] is not JsonObject body) return null;
-        lock (_meshes) return MeshOfLocked(bodyId, shared, body, e, read, bands);
+        if (inst.Local is { } local) lock (_meshes) return MeshOfLocked(inst.Body, local, local, e, read, bands);
+        if (read.Get(inst.Body) is not { Class: StoredBodies.SharedClass } shared || shared.Attrs[StoredBodies.Key] is not JsonObject body) return null;
+        lock (_meshes) return MeshOfLocked(inst.Body, body, StoredBodies.SharedParts(shared), e, read, bands);
     }
 
-    SharedMesh MeshOfLocked(string bodyId, Entity shared, JsonObject body, Entity e, IModelView read, Dictionary<string, IReadOnlyList<LayerBand>?> bands)
+    SharedMesh MeshOfLocked(string bodyId, object body, IReadOnlyList<GeometryPart> shared, Entity e, IModelView read, Dictionary<string, IReadOnlyList<LayerBand>?> bands)
     {
         if (_meshes.TryGetValue(bodyId, out var known) && ReferenceEquals(known.Body, body)) return known.Mesh;
         var parts = new List<RenderPart>();
         (Vec3 Min, Vec3 Max)? box = null;
-        foreach (var p in StoredBodies.SharedParts(shared))
+        foreach (var p in shared)
         {
             var m = p.Tessellate();
             parts.Add(new RenderPart(p.Name, p.Color, m.Positions, m.Normals, m.Indices, m.Edges, p.Material, ViewStyles.HiddenBy(read, e.Id, p, bands), RenderLod.Of(m), p.Key));
@@ -1266,7 +1270,7 @@ public sealed partial class Session
     {
         var parts = new List<RenderPart>();
         var bands = new Dictionary<string, IReadOnlyList<LayerBand>?>();
-        if (g?.Instance is { } inst && MeshOf(inst.Body, e, read, bands) is { } mesh)
+        if (g?.Instance is { } inst && MeshOf(inst, e, read, bands) is { } mesh)
         {
             var plan2d = (g.Plan ?? []).Where(i => i.In(ViewStyles.EntourageModes[0])).Select(i => new PlanItemDto(i.Kind, i.Closed, i.Points.SelectMany(v => new[] { v.X, v.Y }).ToArray())).ToList();
             return new RenderItem(e.Id, e.Class, Spatial.ShownOn(_store, e)?.Id, (_catalog.OwnerOf(e.Class) != null || StoredBodies.Has(e)),

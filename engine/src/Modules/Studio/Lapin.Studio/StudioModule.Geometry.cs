@@ -60,14 +60,19 @@ public sealed partial class StudioModule
         return new ElementGeometry(parts, plan, plan.SelectMany(p => p.Points).ToList(), problems.Count > 0 ? problems : null);
     }
 
-    /// <summary>A placed part (<see cref="Parts"/>): its bodies as its part's definition makes them, then its own steps on each, cut as any Studio solid.</summary>
+    /// <summary>
+    /// A placed part (<see cref="Parts"/>): its bodies as its part's definition makes them, then its own steps on each, cut as any
+    /// Studio solid. Untouched by steps or cuts, it is an instance of the body its part and values share (decision 520 P3): the
+    /// interface draws one mesh for all of them, the IFC export maps the type's.
+    /// </summary>
     static ElementGeometry PartGeometry(Entity e, IModelView m, IServices? services)
     {
         if (services?.Get<ISolidBooleans>() is { } b) _booleans = b;
         var booleans = services?.Get<ISolidBooleans>() ?? _booleans;
-        var (parts, problems) = Parts.Build(e, m);
+        var (parts, problems, shared) = Parts.BuildShared(e, m);
         if (parts.Count > 0 && e.Attrs["features"] is JsonArray { Count: > 0 } features)
         {
+            shared = null;
             var done = new List<GeometryPart>();
             foreach (var p in parts)
             {
@@ -78,8 +83,14 @@ public sealed partial class StudioModule
             if (done.Count == 0) return new ElementGeometry([], Diagnostics: problems.Count > 0 ? [.. problems.Distinct()] : ["Nothing is left of the part."]);
             parts = done;
         }
-        if (parts.Count > 0 && !IsVoid(e)) parts = CutPriorities.Apply(e, m, services, parts, problems);
-        return new ElementGeometry(parts, Diagnostics: problems.Count > 0 ? [.. problems.Distinct()] : null);
+        if (parts.Count > 0 && !IsVoid(e))
+        {
+            var cut = CutPriorities.Apply(e, m, services, parts, problems);
+            if (cut.Count != parts.Count || cut.Where((p, i) => !ReferenceEquals(p, parts[i])).Any()) shared = null;
+            parts = cut;
+        }
+        if (IsVoid(e)) shared = null;
+        return new ElementGeometry(parts, Diagnostics: problems.Count > 0 ? [.. problems.Distinct()] : null, Instance: shared);
     }
 
     /// <summary>Where a solid drawn on a section, an elevation or a reference plane was moved or turned to in plan (12 numbers, as an instance's).</summary>

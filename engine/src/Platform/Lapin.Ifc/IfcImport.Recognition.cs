@@ -136,7 +136,11 @@ public static partial class IfcImport
         // ─── The fidelity gate (docs/spec-ifc.md, Poarta de fidelitate) ─────────
 
         /// <summary>A recognised element waiting to be measured: the file's entity, the native id, what was made with it (its openings, doors and windows), the file's fills it took.</summary>
-        sealed record Gated(StepEntity E, string Id, string IfcClass, bool Clipped, List<(string Id, string Class)> Extra, List<int> Fills);
+        sealed record Gated(StepEntity E, string Id, string IfcClass, bool Clipped, List<(string Id, string Class)> Extra, List<int> Fills)
+        {
+            /// <summary>Rebuilt from Lapin's intent (a placed part), not by a recogniser: counted with the elements.</summary>
+            public bool Native { get; init; }
+        }
 
         readonly List<Gated> gated = [];
         FidelityReport? fidelity;
@@ -297,8 +301,12 @@ public static partial class IfcImport
                     recognizedByClass[cls] = recognizedByClass.GetValueOrDefault(cls) - 1;
                 }
                 seen.Remove(x.Id);
-                recognized--;
-                recognizedByClass[x.IfcClass] = recognizedByClass.GetValueOrDefault(x.IfcClass) - 1;
+                if (x.Native) elements--;
+                else
+                {
+                    recognized--;
+                    recognizedByClass[x.IfcClass] = recognizedByClass.GetValueOrDefault(x.IfcClass) - 1;
+                }
                 Reference(edit, x.E, booleans);
                 // The parts it was made of (a drywall's boards, ArchiCAD's layers): left out while it was native, its body as a
                 // reference, as a reference import brings them; not offered again to recognition from their triangles.
