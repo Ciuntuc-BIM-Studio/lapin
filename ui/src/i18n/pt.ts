@@ -147,6 +147,11 @@ export const PT: Record<string, string> = {
   "Its tool in My tools (the script's header)": "Sua ferramenta em Minhas ferramentas (o cabeçalho do script)",
   "Tool:": "Ferramenta:",
   "Forget trust: this script asks again before it runs, and its tools leave My tools": "Esquecer a confiança: este script pergunta de novo antes de ser executado, e suas ferramentas saem de Minhas ferramentas",
+  // Decision 516: scripts' panels, menus and palettes
+  "A palette's button names its palette.": "O botão de uma paleta nomeia a sua paleta.",
+  "A palette gives its button at most 64 values.": "Uma paleta dá ao seu botão no máximo 64 valores.",
+  "A palette's values are at most 64 KB.": "Os valores de uma paleta têm no máximo 64 KB.",
+  "A palette's values are an object of names and values.": "Os valores de uma paleta são um objeto de nomes e valores.",
   // The forum's topic #30: finish layers by kind of view, wall layers into the floors' layers
   "Floor finishes": "Acabamentos de pisos",
   "Wall finishes in plans": "Acabamentos de paredes nas plantas",

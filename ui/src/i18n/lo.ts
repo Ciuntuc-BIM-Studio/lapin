@@ -147,6 +147,11 @@ export const LO: Record<string, string> = {
   "Its tool in My tools (the script's header)": "ເຄື່ອງມືຂອງມັນໃນເຄື່ອງມືຂອງຂ້ອຍ (ສ່ວນຫົວຂອງສະຄຣິບ)",
   "Tool:": "ເຄື່ອງມື:",
   "Forget trust: this script asks again before it runs, and its tools leave My tools": "ລືມຄວາມໄວ້ວາງໃຈ: ສະຄຣິບນີ້ຈະຖາມອີກກ່ອນແລ່ນ, ແລະເຄື່ອງມືຂອງມັນຈະອອກຈາກເຄື່ອງມືຂອງຂ້ອຍ",
+  // Decision 516: scripts' panels, menus and palettes
+  "A palette's button names its palette.": "ປຸ່ມຂອງແຜງເຄື່ອງມືບອກຊື່ແຜງຂອງມັນ.",
+  "A palette gives its button at most 64 values.": "ແຜງເຄື່ອງມືໃຫ້ຄ່າແກ່ປຸ່ມຂອງມັນໄດ້ຫຼາຍສຸດ 64 ຄ່າ.",
+  "A palette's values are at most 64 KB.": "ຄ່າຂອງແຜງເຄື່ອງມືມີຂະໜາດຫຼາຍສຸດ 64 KB.",
+  "A palette's values are an object of names and values.": "ຄ່າຂອງແຜງເຄື່ອງມືແມ່ນວັດຖຸຂອງຊື່ ແລະ ຄ່າ.",
   // The forum's topic #30: finish layers by kind of view, wall layers into the floors' layers
   "Floor finishes": "ຜິວຕົບແຕ່ງພື້ນ",
   "Wall finishes in plans": "ຜິວຕົບແຕ່ງຝາໃນແຜນຜັງ",

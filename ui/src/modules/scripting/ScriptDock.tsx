@@ -14,6 +14,7 @@ import { engine, engineInBrowser } from '../../engine/session';
 import { forgetSentSelection, tellSelection, useScripting } from './store';
 import { startScriptTools } from './scriptTools';
 import { ScriptDialogs } from './AskDialog';
+import { ScriptPalettes } from './PaletteWindow';
 
 const ScriptPanel = lazyPart(() => import('./ScriptPanel').then((m) => m.ScriptPanel), { title: 'Script', inline: true });
 
@@ -31,5 +32,5 @@ export function ScriptDock() {
     return () => { off(); back(); if (timer) clearTimeout(timer); };
   }, [on]);
   if (engineInBrowser) return on && open ? <ScriptPanel /> : null;
-  return <>{on && open && <ScriptPanel />}<ScriptDialogs /></>;
+  return <>{on && open && <ScriptPanel />}<ScriptDialogs /><ScriptPalettes /></>;
 }

@@ -261,16 +261,53 @@ When the Script panel runs a saved script (Run), the kernel says back the tools 
 
 A tool's click is one Run, one undo step named after the tool: `script.run {code, name, tool: {name, call, main}, source}`. The kernel runs the script in a namespace of its own, as `__main__` when the tool is the whole script, else as a module (`__name__ == "__lapin_tool__"`, so code under `if __name__ == "__main__":` does not run), then calls the tool's function: `call`, a function of the script by its name, else the one `lapin.ui.tool` registered under the tool's name as the script loaded. The console's names are left alone.
 
+### Panels, sizes, menus and palettes (decision 516)
+
+```python
+with lapin.ui.panel("Walls"):                                # a group of My tools of the script's own
+    @lapin.ui.tool("Perimeter", icon="square", size="small")  # small: a line, three stacked
+    def perimeter(): ...
+
+    with lapin.ui.menu("Openings", icon="door"):             # one button, a pulldown of its tools
+        lapin.ui.tool("Door", run=add_door)
+        lapin.ui.tool("Window", run=add_window)
+
+    p = lapin.ui.palette("Wall tools", icon="wall")          # a floating panel, opened by its button
+    p.heading("New wall")
+    p.text("Drawn on the active storey.")
+    p.field("height", lapin.ui.number(2.8, unit="m", min=0.1))
+    p.field("kind", lapin.ui.choice({"b": "Brick", "c": "Concrete"}))
+    p.separator()
+
+    @p.button("Make", icon="hammer")
+    def make(v):                                             # v: {"height": 2.8, "kind": "b"}, as ask gives them
+        ...
+
+    with p.row():                                            # buttons side by side
+        p.button("Short", run=short)                         # a function with no parameter is called without the values
+        p.button("Long", run=long)
+```
+
+- **Panels**: `lapin.ui.panel(name)` registers nothing alone; the tools, menus and palettes made inside its `with` block (or with `p.tool(…)`, `p.menu(…)`, `p.palette(…)`, or `panel="Walls"`) go, the first time they are seen, into a My tools group of that name (an existing one of that name, else one made among the script's other panels in their order) instead of **Scripts**. The same rule as before: put in once; a tool the user moves or takes out stays where they put it. `panel(name, icon=…)` takes an icon for later; groups show none now.
+- **Sizes**: `size="small"` (tools, menus, palettes) puts it small the first time; the band stacks small ones by three.
+- **Menus**: `lapin.ui.menu(name, icon, tooltip, size, panel)` is one button whose pulldown lists its tools (`with m:`, `m.tool(…)`, `@m.tool(…)`). Each of them is still a tool of its own (`script:<source>#<name>`: Commands… finds it, Customize My tools… can place it alone), but it is not put in My tools by itself. A menu with no tool is not shown. Generic: `ToolDef.items` (`ui/src/platform/module.ts`) is a pulldown for any module; the ribbon's and My tools' bands open it under the button (`ui/src/shell/pulldown.ts`, the right-click menu's look), anywhere else its `run` opens it at the pointer.
+- **Palettes**: `lapin.ui.palette(name, icon, tooltip, size, panel)` is a button in My tools opening or closing a small floating panel of the window's own (`ui/src/modules/scripting/PaletteWindow.tsx`, its logic `palette.ts`): non-modal, no backdrop, moved by its title bar; where it floats and what its fields hold are kept per palette in the browser's storage (`lapin.scriptPalette.<id>`). Rows, in order: `heading(text)`, `text(text)`, `separator()`, `field(key, value or lapin.ui field)` (the kinds `ask` has, drawn by the same code) and `button(name, run=f, icon, tooltip)` / `@p.button(name)`; `with p.row():` puts the buttons made inside side by side. Limits: 200 rows, 64 fields, 50 buttons (8 in a row), texts of 2000 characters; the window reads the rows again and keeps only what it draws.
+- A palette's button is **one Run, one undo step named after the button**, exactly like a tool, and the buttons wait while a script runs: `script.run {code, name: <button>, tool: {name: <button>, call, palette: <palette>, values}, source}`. The window checks the fields first (as the dialog does); the host's `ToolOf` lets `values` through as an object of at most 64 keys and 64 KB of JSON (else a `CommandException`). The kernel loads the script as a module, finds the palette and the button registered under their names (`_ui.press`), and calls its function with the values converted as `ask` converts its answer (numbers, elements read from the model…) when it takes a parameter, else with none.
+- What the kernel says back: each entry of `{type: "tools"}` may carry `panel`, `size` and a tool's `menu`; menus are `{kind: "menu", name, icon, tooltip, panel?, size?}`, palettes `{kind: "palette", name, icon, tooltip, panel?, size?, rows}`. Entries kept by older builds (no `kind`) read as tools.
+- An extension's script (Lapin Extensions) runs from its header only: it takes `panel=` and `size=` there, and has no menus or palettes. Trust is unchanged: Mine always, a project's script only when trusted here. Desktop only, as tools.
+
 ### The plug-in header
 
 ```python
 # lapin: name="Perimeter walls", version="1.1.0", requires="scripting, lapin>=0.1.900"
 # lapin: tool="Perimeter walls", icon="square", tooltip="Four walls round a rectangle", run="perimeter"
+# lapin: panel="Walls", size="small"
 ```
 
 `# lapin:` lines among the comments at the top of the script (before its code), each `key=value` pairs (quoted, or bare up to the next comma), read without running anything (`ui/src/modules/scripting/header.ts`; `script.files` gives each script of Mine's first 4 KB and hash for it):
 - `tool`: the tool's name (`tool=yes`: the script's `name`); `run`: the function it calls (a Python name; none: the whole script as `__main__`); `icon`: one of Lapin's icons (`ui/src/icons/icons.json`: `wall`, `door`, `stair`…) or of a set of lucide's (`square`, `ruler`, `layers`, `grid`, `star`, `wrench`…: `ui/src/modules/scripting/icons.tsx`), else a letter (`icon="P"`, else the name's first); `tooltip`;
-- `name`, `version`, `description`; `requires`: modules the edition must have and `lapin>=0.1.N` — a tool whose script needs what this Lapin lacks is not offered.
+- `name`, `version`, `description`; `requires`: modules the edition must have and `lapin>=0.1.N` — a tool whose script needs what this Lapin lacks is not offered;
+- `panel`: the group of My tools the tool goes in (else Scripts); `size="small"`: put small (decision 516).
 
 ### Where tools come from, and trust
 

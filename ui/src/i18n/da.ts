@@ -147,6 +147,11 @@ export const DA: Record<string, string> = {
   "Its tool in My tools (the script's header)": "Dets værktøj i Mine værktøjer (scriptets header)",
   "Tool:": "Værktøj:",
   "Forget trust: this script asks again before it runs, and its tools leave My tools": "Glem tillid: scriptet spørger igen, før det kører, og dets værktøjer forsvinder fra Mine værktøjer",
+  // Decision 516: scripts' panels, menus and palettes
+  "A palette's button names its palette.": "En palettes knap navngiver sin palet.",
+  "A palette gives its button at most 64 values.": "En palet giver sin knap højst 64 værdier.",
+  "A palette's values are at most 64 KB.": "En palettes værdier fylder højst 64 KB.",
+  "A palette's values are an object of names and values.": "En palettes værdier er et objekt af navne og værdier.",
   // The forum's topic #30: finish layers by kind of view, wall layers into the floors' layers
   "Floor finishes": "Dækoverflader",
   "Wall finishes in plans": "Vægoverflader i planer",

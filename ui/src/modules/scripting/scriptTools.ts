@@ -5,6 +5,10 @@
  * trusted here, then `script.run {tool}`: one Run, one undo step named after the tool), and keeps the questions scripts ask
  * (`lapin.ui.ask`, the host's `script.ask`) for the dialog (AskDialog.tsx) until one window answers. Works with Developer
  * extras off too: a tool is for anyone; the Script panel is the developer's. The desktop's only.
+ *
+ * Decision 516: a script's menu is a pulldown tool (its tools as `items`, shell/pulldown.ts), a palette a tool that opens
+ * or closes its floating panel (PaletteWindow.tsx); a palette's button runs like a tool (one Run, one undo step named after the
+ * button), carrying the palette's values (`script.run {tool: {name, call, palette, values}}`).
  */
 
 import { create } from 'zustand';
@@ -19,17 +23,29 @@ import type { ToolDef } from '../../platform/module';
 import { readQuestion, type AskQuestion } from './ask';
 import { scriptIcon } from './icons';
 import { forgetSentSelection, listen, onScriptDeleted, projectScripts, refreshFiles, tellSelection, useScripting } from './store';
-import { addNewTools, readRegistered, scriptTools, TOOL_PREFIX, type RegisteredTool, type ScriptTool } from './tools';
+import { addNewTools, placed, readRegistered, scriptTools, TOOL_PREFIX, type RegisteredTool, type ScriptTool } from './tools';
+import { openPulldown } from '../../shell/pulldown';
 import { remember, sha256 } from './trust';
 
 export interface ScriptToolsState {
   /** The questions scripts ask, oldest first: the dialog shows the first. */
   questions: AskQuestion[];
-  /** A tool whose script is not trusted here, waiting for the user's answer (Run once / Trust / Cancel). */
-  trustAsk: { tool: ScriptTool; code: string; sha: string } | null;
+  /** A tool whose script is not trusted here, waiting for the user's answer (Run once / Trust / Cancel); a palette's button pressed. */
+  trustAsk: { tool: ScriptTool; code: string; sha: string; button?: PaletteButtonRun } | null;
+  /** The scripts' palettes now (decision 516), and the ones open, by id, in the order they were opened. */
+  palettes: ScriptTool[];
+  open: string[];
 }
 
-export const useScriptTools = create<ScriptToolsState>(() => ({ questions: [], trustAsk: null }));
+/** A palette's button pressed: its name, the function it calls, the palette's values as the window holds them. */
+export interface PaletteButtonRun { name: string; call: string | null; values: Record<string, unknown> }
+
+export const useScriptTools = create<ScriptToolsState>(() => ({ questions: [], trustAsk: null, palettes: [], open: [] }));
+
+/** A palette opened, or closed when it is open. */
+export function togglePalette(id: string): void {
+  useScriptTools.setState((s) => ({ open: s.open.includes(id) ? s.open.filter((x) => x !== id) : [...s.open, id] }));
+}
 
 const REGISTERED_KEY = 'lapin.scriptTools.registered';
 const ADDED_KEY = 'lapin.scriptTools.added';
@@ -60,7 +76,20 @@ function trustedNow(): Set<string> {
   return s;
 }
 
-const toToolDef = (t: ScriptTool): ToolDef => ({ id: t.id, label: t.name, icon: scriptIcon(t.icon, t.name), tooltip: t.tooltip, run: () => void runTool(t.id) });
+/** A script's tools as the ribbon's: a menu's tools its `items` (each a tool of its own too), a palette opening its panel. */
+function toToolDefs(list: readonly ScriptTool[]): ToolDef[] {
+  const defs = list.map((t): ToolDef => ({
+    id: t.id, label: t.name, icon: scriptIcon(t.icon, t.name), tooltip: t.tooltip,
+    run: t.kind === 'palette' ? () => togglePalette(t.id) : () => void runTool(t.id),
+  }));
+  return defs.map((d, i) => {
+    const t = list[i];
+    if (t.kind !== 'menu') return d;
+    const menu: ToolDef = { ...d, items: defs.filter((_, j) => list[j].menu === t.name) };
+    menu.run = () => openPulldown(menu);
+    return menu;
+  });
+}
 
 let refreshing: Promise<void> | null = null;
 let again = false;
@@ -90,8 +119,11 @@ async function refreshOnce(): Promise<void> {
     facts: { version: useSession.getState().info?.engineVersion ?? '0.0.0', hasModule },
   });
   tools = new Map(Object.values(byScript).flat().map((t) => [t.id, t]));
-  replaceExtraTools(TOOL_PREFIX, Object.fromEntries(Object.entries(byScript).map(([k, list]) => [`${TOOL_PREFIX}${k}`, list.map(toToolDef)])));
-  const r = addNewTools(myTab(), [...tools.keys()], added);
+  replaceExtraTools(TOOL_PREFIX, Object.fromEntries(Object.entries(byScript).map(([k, list]) => [`${TOOL_PREFIX}${k}`, toToolDefs(list)])));
+  // A palette whose script is gone (or no longer has it) closes.
+  const palettes = [...tools.values()].filter((t) => t.kind === 'palette');
+  useScriptTools.setState((s) => ({ palettes, open: s.open.filter((id) => tools.get(id)?.kind === 'palette') }));
+  const r = addNewTools(myTab(), [...tools.values()].map(placed), added);
   if (r.added.size !== added.size) {
     added = r.added;
     store(ADDED_KEY, [...added]);
@@ -122,8 +154,11 @@ async function codeOf(t: ScriptTool): Promise<string | null> {
   }
 }
 
-/** A script tool pressed: its script run as one Run (one undo step named after the tool), after trust for a project's or an installed script. */
-export async function runTool(id: string): Promise<void> {
+/**
+ * A script tool pressed: its script run as one Run (one undo step named after the tool), after trust for a project's or
+ * an installed script. A palette's button (`button`) runs the same way, named after the button, with the palette's values.
+ */
+export async function runTool(id: string, button?: PaletteButtonRun): Promise<void> {
   const t = tools.get(id);
   if (!t) return;
   if (engineInBrowser) { notify('Python runs in the desktop app.'); return; }
@@ -134,20 +169,22 @@ export async function runTool(id: string): Promise<void> {
     const sha = await sha256(code);
     if (!trustedNow().has(sha)) {
       const known = await engine.call<{ trusted: boolean }>('script.trusted', { sha256: sha }).then((r) => r.trusted, () => false);
-      if (!known) { useScriptTools.setState({ trustAsk: { tool: t, code, sha } }); return; }
+      if (!known) { useScriptTools.setState({ trustAsk: { tool: t, code, sha, button } }); return; }
       trustKnown.set(sha, true);
     }
   }
-  await startTool(t, code);
+  await startTool(t, code, button);
 }
 
-async function startTool(t: ScriptTool, code: string): Promise<void> {
+async function startTool(t: ScriptTool, code: string, button?: PaletteButtonRun): Promise<void> {
   // The window's selection as it is now, for lapin.selection() (told as it changes only with Developer extras on).
   forgetSentSelection();
   tellSelection();
-  useScripting.setState((s) => ({ lines: [...s.lines, { kind: 'info', text: `▶ ${t.name}` }] }));
+  const name = button?.name ?? t.name;
+  useScripting.setState((s) => ({ lines: [...s.lines, { kind: 'info', text: `▶ ${name}` }] }));
+  const tool = button ? { name: button.name, call: button.call, main: false, palette: t.name, values: button.values } : { name: t.name, call: t.call, main: t.main };
   try {
-    await engine.call('script.run', { code, name: t.name, tool: { name: t.name, call: t.call, main: t.main }, source: t.source.key, python: usePrefs.getState().pythonPath });
+    await engine.call('script.run', { code, name, tool, source: t.source.key, python: usePrefs.getState().pythonPath });
   } catch (e) { notify(message(e)); }
 }
 
@@ -161,7 +198,7 @@ export async function answerToolTrust(answer: 'trust' | 'once' | 'cancel'): Prom
     trustKnown.set(a.sha, true);
     useScripting.setState((s) => ({ trust: remember(s.trust, a.sha, 'trust') }));
   }
-  await startTool(a.tool, a.code);
+  await startTool(a.tool, a.code, a.button);
 }
 
 /** Trust in a code taken back on this computer: a project's script's tools leave, an installed one asks again. */
@@ -181,7 +218,7 @@ export async function runExtension(id: string): Promise<void> {
   if (own) { await runTool(own.id); return; }
   const row = (await scriptRows.all()).find((r) => r.id === id);
   if (!row) return;
-  const t: ScriptTool = { id: `${TOOL_PREFIX}extension:${id}#`, source: { kind: 'extension', key: `extension:${id}`, label: row.name, id }, name: row.name, call: null, main: true, from: 'header' };
+  const t: ScriptTool = { id: `${TOOL_PREFIX}extension:${id}#`, source: { kind: 'extension', key: `extension:${id}`, label: row.name, id }, name: row.name, call: null, main: true, from: 'header', kind: 'tool', small: false };
   tools.set(t.id, t);
   await runTool(t.id);
 }

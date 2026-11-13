@@ -251,4 +251,19 @@ public sealed class ScriptToolTests : IDisposable
         foreach (var bad in new[] { """{"name":""}""", """{"name":"x","call":"os.system"}""", """{"name":"x","call":"1a"}""", """{"call":"f"}""" })
             Assert.Throws<CommandException>(() => ScriptHost.ToolOf(JsonNode.Parse(bad) as JsonObject));
     }
+
+    [Fact]
+    public void A_palettes_button_carries_its_values_within_limits()
+    {
+        Assert.Equal("""{"name":"Make","call":"make","main":false,"palette":"Wall tools","values":{"height":3,"kind":"brick"}}""",
+            ScriptHost.ToolOf(JsonNode.Parse("""{"name":"Make","call":"make","palette":" Wall tools ","values":{"height":3,"kind":"brick"}}""") as JsonObject)!.ToJsonString());
+        Assert.Throws<CommandException>(() => ScriptHost.ToolOf(new JsonObject { ["name"] = "Make", ["palette"] = "" }));
+        // No values: none sent on.
+        Assert.False(ScriptHost.ToolOf(JsonNode.Parse("""{"name":"Make"}""") as JsonObject)!.ContainsKey("values"));
+        var many = new JsonObject();
+        for (var i = 0; i <= ScriptHost.MaxToolValues; i++) many[$"k{i}"] = i;
+        var big = new JsonObject { ["text"] = new string('x', ScriptHost.MaxToolValuesBytes) };
+        foreach (var bad in new JsonNode[] { many, big, new JsonArray(1, 2), JsonValue.Create("x") })
+            Assert.Throws<CommandException>(() => ScriptHost.ToolOf(new JsonObject { ["name"] = "Make", ["values"] = bad }));
+    }
 }

@@ -9,7 +9,8 @@
  *
  * `tool` makes the script a tool in My tools (`tool=yes`: named after the script); `run` names the function the tool calls
  * (without it the tool runs the whole script); `icon` is one of Lapin's or lucide's icons by name, else a letter;
- * `requires` lists modules the edition must have and `lapin>=0.1.N`, the oldest Lapin it works with.
+ * `requires` lists modules the edition must have and `lapin>=0.1.N`, the oldest Lapin it works with. `panel` names the
+ * group of My tools the tool goes in (decision 516; else "Scripts"), `size="small"` puts it small.
  */
 
 import { compareVersions } from '../../platform/extensions/manifest';
@@ -24,6 +25,9 @@ export interface ScriptHeader {
   tooltip?: string;
   /** The function the tool calls (a Python name); none: the tool runs the whole script. */
   run?: string;
+  /** The group of My tools the tool goes in (decision 516). */
+  panel?: string;
+  size?: 'large' | 'small';
   requires: string[];
   /** Every key as written (lowercase), the ones above too. */
   all: Record<string, string>;
@@ -93,6 +97,9 @@ export function parseHeader(code: string, fileName?: string): ScriptHeader | nul
     h.tool = (YES.has(tool.toLowerCase()) ? h.name ?? fileName?.replace(/\.py$/i, '') ?? 'Script' : tool).slice(0, 120);
   }
   if (all.run && PY_NAME.test(all.run.trim())) h.run = all.run.trim();
+  h.panel = text('panel', 60);
+  const size = all.size?.trim().toLowerCase();
+  if (size === 'small' || size === 'large') h.size = size;
   return h;
 }
 

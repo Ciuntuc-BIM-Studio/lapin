@@ -12,10 +12,16 @@
  *   with it.
  * - **My tools**: a tool seen for the first time is put in the group "Scripts" (made when missing), once; taken out by
  *   the user, it stays out.
+ * - **Panels, sizes, menus, palettes** (decision 516): a tool of a panel (`lapin.ui.panel`, the header's `panel=`) goes
+ *   into a group of that name instead (made when missing, among the script's other panels in their order); a small one
+ *   (`size="small"`) is put small. A menu (`lapin.ui.menu`) is one button whose pulldown lists its tools, each still a
+ *   tool of its own (Commands… finds it, Customize My tools… can place it) but not put in My tools by itself. A palette
+ *   (`lapin.ui.palette`) is a button opening a floating panel of the window's own (palette.ts reads its rows).
  */
 
 import { addGroup, addTool, has, type MyTab } from '../../app/myTools';
 import { missingRequirements, parseHeader, type RequireFacts } from './header';
+import { readRows, type PaletteRow } from './palette';
 
 /** Where a script is: its kind and its key for the window (a file name of Mine, a project script's name, an extension's id). */
 export interface ToolSource {
@@ -28,8 +34,16 @@ export interface ToolSource {
   id?: string;
 }
 
-/** A tool a script registered with lapin.ui.tool, as the kernel says it (python/lapinbim/_ui.py). */
-export interface RegisteredTool { name: string; icon?: string | null; tooltip?: string | null; call?: string | null; main?: boolean }
+/**
+ * A tool a script registered with lapin.ui.tool, as the kernel says it (python/lapinbim/_ui.py); with decision 516 also
+ * a menu or a palette (`kind`), and where it goes (`panel`, `size`, a tool's `menu`). What older builds kept has none.
+ */
+export interface RegisteredTool {
+  name: string; icon?: string | null; tooltip?: string | null; call?: string | null; main?: boolean;
+  kind?: string; panel?: string | null; size?: string | null; menu?: string | null; rows?: unknown;
+}
+
+export type ScriptToolKind = 'tool' | 'menu' | 'palette';
 
 /** One tool of a script: its id, where its script is, its name, icon and tooltip, and what its run calls. */
 export interface ScriptTool {
@@ -42,6 +56,16 @@ export interface ScriptTool {
   call: string | null;
   main: boolean;
   from: 'header' | 'registered';
+  /** A tool, a pulldown of tools (decision 516), or a palette's button. */
+  kind: ScriptToolKind;
+  /** The group of My tools it goes in the first time (none: "Scripts"). */
+  panel?: string;
+  /** Put small (a line, three stacked) the first time. */
+  small: boolean;
+  /** The menu of the script it is listed in (a tool's; only a menu the script has). */
+  menu?: string;
+  /** A palette's rows. */
+  rows?: PaletteRow[];
 }
 
 export const TOOL_PREFIX = 'script:';
@@ -50,21 +74,32 @@ export const SCRIPTS_GROUP = 'Scripts';
 export const sourceKey = (kind: ToolSource['kind'], key: string): string => `${kind}:${key}`;
 export const toolId = (source: string, name: string): string => `${TOOL_PREFIX}${source}#${name}`;
 
+const text = (v: unknown, max: number): string | undefined => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : undefined);
+
 /** A script's tools: its header's (when this Lapin has what it requires), then those it registered, each name once. */
 export function toolsOf(source: ToolSource, code: string, registered: readonly RegisteredTool[] | undefined, facts: RequireFacts): ScriptTool[] {
   const out: ScriptTool[] = [];
   const h = parseHeader(code, source.label);
   if (h?.tool && missingRequirements(h.requires, facts).length === 0)
-    out.push({ id: toolId(source.key, h.tool), source, name: h.tool, icon: h.icon, tooltip: h.tooltip, call: h.run ?? null, main: !h.run, from: 'header' });
+    out.push({ id: toolId(source.key, h.tool), source, name: h.tool, icon: h.icon, tooltip: h.tooltip, call: h.run ?? null, main: !h.run, from: 'header', kind: 'tool', panel: h.panel, small: h.size === 'small' });
   for (const r of registered ?? []) {
-    const name = typeof r.name === 'string' ? r.name.trim().slice(0, 120) : '';
+    const name = text(r.name, 120) ?? '';
     if (!name || out.some((t) => t.name === name)) continue;
-    out.push({
-      id: toolId(source.key, name), source, name, icon: r.icon ?? undefined, tooltip: r.tooltip ?? undefined,
-      call: typeof r.call === 'string' && /^[A-Za-z_]\w{0,99}$/.test(r.call) ? r.call : null, main: r.main === true && !r.call, from: 'registered',
-    });
+    const kind: ScriptToolKind = r.kind === 'menu' || r.kind === 'palette' ? r.kind : 'tool';
+    const t: ScriptTool = {
+      id: toolId(source.key, name), source, name, icon: text(r.icon, 40), tooltip: text(r.tooltip, 300),
+      call: kind === 'tool' && typeof r.call === 'string' && /^[A-Za-z_]\w{0,99}$/.test(r.call) ? r.call : null,
+      main: kind === 'tool' && r.main === true && !r.call, from: 'registered', kind, panel: text(r.panel, 60), small: r.size === 'small',
+    };
+    if (kind === 'tool') { const m = text(r.menu, 120); if (m) t.menu = m; }
+    if (kind === 'palette') t.rows = readRows(r.rows);
+    out.push(t);
   }
-  return out;
+  // A tool names only a menu its script has; a menu with no tool is no button.
+  const menus = new Set(out.filter((t) => t.kind === 'menu').map((t) => t.name));
+  for (const t of out) if (t.menu && !menus.has(t.menu)) delete t.menu;
+  const used = new Set(out.flatMap((t) => (t.menu ? [t.menu] : [])));
+  return out.filter((t) => t.kind !== 'menu' || used.has(t.name));
 }
 
 /** What the store read: the user's scripts (their first lines), the project's (their code and hash), the installed ones. */
@@ -94,20 +129,40 @@ export function scriptTools(i: ToolInputs): Record<string, ScriptTool[]> {
   return out;
 }
 
+/** A tool as My tools first takes it: its id, its panel (none: "Scripts"), whether small, whether it is in a menu (then not put alone). */
+export interface NewTool { id: string; panel?: string; small?: boolean; menu?: string }
+
+/** A script tool as My tools first takes it. */
+export const placed = (t: ScriptTool): NewTool => ({ id: t.id, panel: t.panel, small: t.small, menu: t.menu });
+
 /**
- * The tools seen for the first time put in My tools, in the group "Scripts" (made at the end when missing); `added`
- * remembers each one put in, so a tool the user took out stays out.
+ * The tools seen for the first time put in My tools: in their panel's group, else in "Scripts" (a group made when
+ * missing: after the group of the nearest panel before it in the tools' order, else before the nearest after it, else
+ * at the end); small ones small. `added` remembers each one put in, so a tool the user took out stays out. A tool in a
+ * menu is reached through its menu: it is not put in alone.
  */
-export function addNewTools(tab: MyTab, ids: readonly string[], added: ReadonlySet<string>): { tab: MyTab; added: Set<string> } {
+export function addNewTools(tab: MyTab, tools: readonly (string | NewTool)[], added: ReadonlySet<string>): { tab: MyTab; added: Set<string> } {
+  const list = tools.map((x) => (typeof x === 'string' ? { id: x } : x));
+  const order = [...new Set(list.map((x) => x.panel || SCRIPTS_GROUP))];
   const next = new Set(added);
   let t = tab;
-  for (const id of ids) {
-    if (next.has(id)) continue;
-    next.add(id);
-    if (has(t, id)) continue;
-    let group = t.groups.find((g) => g.label === SCRIPTS_GROUP)?.id;
-    if (!group) { const made = addGroup(t, SCRIPTS_GROUP); t = made.tab; group = made.id; }
-    t = addTool(t, id, { group });
+  const groupFor = (label: string): string => {
+    const found = t.groups.find((g) => g.label === label);
+    if (found) return found.id;
+    const at = order.indexOf(label);
+    let index: number | undefined;
+    for (let i = at - 1; i >= 0 && index === undefined; i--) { const g = t.groups.findIndex((x) => x.label === order[i]); if (g >= 0) index = g + 1; }
+    for (let i = at + 1; i < order.length && index === undefined; i++) { const g = t.groups.findIndex((x) => x.label === order[i]); if (g >= 0) index = g; }
+    const made = addGroup(t, label, index);
+    t = made.tab;
+    return made.id;
+  };
+  for (const x of list) {
+    if (x.menu || next.has(x.id)) continue;
+    next.add(x.id);
+    if (has(t, x.id)) continue;
+    const group = groupFor(x.panel || SCRIPTS_GROUP);
+    t = addTool(t, x.id, { group }, !x.small);
   }
   return { tab: t, added: next };
 }
@@ -118,7 +173,7 @@ export function readRegistered(stored: unknown): Record<string, RegisteredTool[]
   if (!stored || typeof stored !== 'object') return out;
   for (const [k, v] of Object.entries(stored as Record<string, unknown>)) {
     if (!/^(mine|project):/.test(k) || !Array.isArray(v)) continue;
-    const list = v.filter((x): x is RegisteredTool => !!x && typeof x === 'object' && typeof (x as RegisteredTool).name === 'string').slice(0, 50);
+    const list = v.filter((x): x is RegisteredTool => !!x && typeof x === 'object' && typeof (x as RegisteredTool).name === 'string').slice(0, 100);
     if (list.length) out[k] = list;
   }
   return out;

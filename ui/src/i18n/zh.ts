@@ -147,6 +147,11 @@ export const ZH: Record<string, string> = {
   "Its tool in My tools (the script's header)": "它在“我的工具”中的工具（脚本的头部）",
   "Tool:": "工具:",
   "Forget trust: this script asks again before it runs, and its tools leave My tools": "忘记信任：此脚本在运行前会再次询问，其工具也会从“我的工具”中移除",
+  // Decision 516: scripts' panels, menus and palettes
+  "A palette's button names its palette.": "面板的按钮须注明其所属面板.",
+  "A palette gives its button at most 64 values.": "面板最多向其按钮传递 64 个值.",
+  "A palette's values are at most 64 KB.": "面板的值最多 64 KB.",
+  "A palette's values are an object of names and values.": "面板的值是由名称和值组成的对象.",
   // The forum's topic #30: finish layers by kind of view, wall layers into the floors' layers
   "Floor finishes": "楼板饰面",
   "Wall finishes in plans": "平面图中的墙面饰面",

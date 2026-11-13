@@ -145,6 +145,11 @@ export const RO: Record<string, string> = {
   "Its tool in My tools (the script's header)": "Unealta lui în Uneltele mele (antetul scriptului)",
   "Tool:": "Unealtă:",
   "Forget trust: this script asks again before it runs, and its tools leave My tools": "Retrage încrederea: scriptul întreabă din nou înainte să ruleze, iar uneltele lui ies din Uneltele mele",
+  // Decision 516: scripts' panels, menus and palettes
+  "A palette's button names its palette.": "Butonul unei palete își numește paleta.",
+  "A palette gives its button at most 64 values.": "O paletă dă butonului ei cel mult 64 de valori.",
+  "A palette's values are at most 64 KB.": "Valorile unei palete au cel mult 64 KB.",
+  "A palette's values are an object of names and values.": "Valorile unei palete sunt un obiect de nume și valori.",
   // The forum's topic #30: finish layers by kind of view, wall layers into the floors' layers
   "Floor finishes": "Finisaje pardoseli",
   "Wall finishes in plans": "Finisaje pereți în planuri",

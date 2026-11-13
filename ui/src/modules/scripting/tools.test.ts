@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { emptyTab, visibleTab, toolsOf as toolsInTab } from '../../app/myTools';
-import { addNewTools, readRegistered, scriptTools, toolId, toolsOf, type ToolInputs } from './tools';
+import { addGroup, emptyTab, visibleTab, toolsOf as toolsInTab } from '../../app/myTools';
+import { addNewTools, placed, readRegistered, scriptTools, toolId, toolsOf, type ToolInputs } from './tools';
+import { fieldsOf, readMemory, readRows } from './palette';
 
 const facts = { version: '0.1.950', hasModule: (m: string) => m === 'scripting' };
 const HEADER = '# lapin: name="Walls", tool="Perimeter walls", icon="square", tooltip="Four walls", run="perimeter"\nimport lapinbim as lapin\n';
@@ -56,5 +57,96 @@ describe('a script\'s tools (decision 489, stage 4)', () => {
   it('keep what scripts registered, as read back, Mine\'s and the project\'s only', () => {
     expect(readRegistered({ 'mine:a.py': [{ name: 'A' }, 3, { nope: 1 }], 'extension:x': [{ name: 'B' }], junk: 1 })).toEqual({ 'mine:a.py': [{ name: 'A' }] });
     expect(readRegistered(null)).toEqual({});
+  });
+
+  it('keep older stored entries, and the panels, menus and palettes of decision 516', () => {
+    const kept = readRegistered({ 'mine:a.py': [{ name: 'Old', call: 'f', main: false }, { kind: 'palette', name: 'P', rows: [{ row: 'separator' }] }] });
+    expect(kept['mine:a.py'].map((x) => x.name)).toEqual(['Old', 'P']);
+    const [old] = toolsOf({ kind: 'mine', key: 'mine:a.py', label: 'a.py' }, '', kept['mine:a.py'], facts);
+    expect(old).toMatchObject({ kind: 'tool', small: false, call: 'f' });
+    expect(old.panel).toBeUndefined();
+  });
+});
+
+const SRC = { kind: 'mine' as const, key: 'mine:walls.py', label: 'walls.py' };
+
+describe('panels, sizes, menus and palettes of a script (decision 516)', () => {
+  const registered = [
+    { name: 'Perimeter', call: 'perimeter', panel: 'Walls', size: 'small' },
+    { kind: 'menu', name: 'Openings', icon: 'door', panel: 'Walls' },
+    { name: 'Door', call: 'door', panel: 'Walls', menu: 'Openings' },
+    { name: 'Window', call: 'window', panel: 'Walls', menu: 'Openings' },
+    { kind: 'menu', name: 'Empty', panel: 'Walls' },
+    { name: 'Stray', call: 'stray', menu: 'Nowhere' },
+    { kind: 'palette', name: 'Wall tools', panel: 'Roofs', rows: [{ row: 'heading', text: 'New wall' }, { row: 'button', name: 'Make', call: 'make' }], call: 'evil' },
+    { name: 'Loose', call: 'loose' },
+  ];
+
+  it('read their kind, panel, size and menu; a menu with no tool, and a menu no script has, are dropped', () => {
+    const list = toolsOf(SRC, '# lapin: tool="Header tool", panel="Roofs", size="small"\n', registered, facts);
+    const by = Object.fromEntries(list.map((t) => [t.name, t]));
+    expect(list.map((t) => t.name)).toEqual(['Header tool', 'Perimeter', 'Openings', 'Door', 'Window', 'Stray', 'Wall tools', 'Loose']);
+    expect(by['Header tool']).toMatchObject({ panel: 'Roofs', small: true, kind: 'tool' });
+    expect(by.Perimeter).toMatchObject({ panel: 'Walls', small: true });
+    expect(by.Openings).toMatchObject({ kind: 'menu', call: null, main: false, icon: 'door' });
+    expect(by.Door.menu).toBe('Openings');
+    expect(by.Stray.menu).toBeUndefined();
+    expect(by['Wall tools']).toMatchObject({ kind: 'palette', panel: 'Roofs', call: null });
+    expect(by['Wall tools'].rows).toEqual([{ row: 'heading', text: 'New wall' }, { row: 'buttons', buttons: [{ name: 'Make', call: 'make' }] }]);
+  });
+
+  it('go into My tools in their panels\' groups, in the panels\' order, small ones small, a menu\'s tools through their menu only', () => {
+    const list = toolsOf(SRC, '', registered, facts);
+    const r = addNewTools(emptyTab(), list.map(placed), new Set());
+    expect(r.tab.groups.map((g) => g.label)).toEqual(['Walls', 'Scripts', 'Roofs']);
+    const walls = r.tab.groups[0].items;
+    expect(walls.map((i) => i.tool)).toEqual([toolId(SRC.key, 'Perimeter'), toolId(SRC.key, 'Openings')]);
+    expect(walls.map((i) => i.large)).toEqual([false, true]);
+    expect(toolsInTab(r.tab)).not.toContain(toolId(SRC.key, 'Door'));
+    expect(r.added.has(toolId(SRC.key, 'Door'))).toBe(false);
+    // A panel made later goes among the others in the script's order; an existing group of that name is used.
+    const user = addGroup(emptyTab(), 'Roofs').tab;
+    const again = addNewTools(user, list.map(placed), new Set());
+    expect(again.tab.groups.map((g) => g.label)).toEqual(['Walls', 'Scripts', 'Roofs']);
+    expect(again.tab.groups[2].items.map((i) => i.tool)).toEqual([toolId(SRC.key, 'Wall tools')]);
+  });
+});
+
+describe('a palette\'s rows (decision 516)', () => {
+  it('keep what the window draws only: texts, one separator at a time, fields once by key, buttons once by name', () => {
+    const rows = readRows([
+      { row: 'separator' },
+      { row: 'heading', text: '  New wall ' },
+      { row: 'text', text: '' },
+      { row: 'separator' }, { row: 'separator' },
+      { row: 'field', field: { key: 'height', kind: 'number', label: 'Height', value: 2.8, unit: 'm' } },
+      { row: 'field', field: { key: 'height', kind: 'text' } },
+      { row: 'field', field: { key: 'bad', kind: 'html' } },
+      { row: 'button', name: 'Make', call: 'make', icon: 'hammer' },
+      { row: 'buttons', buttons: [{ name: 'Make' }, { name: 'Two', call: 'os.system' }, 7] },
+      { row: 'script', code: 'alert(1)' },
+      'junk',
+    ]);
+    expect(rows).toEqual([
+      { row: 'heading', text: 'New wall' },
+      { row: 'separator' },
+      { row: 'field', field: { key: 'height', kind: 'number', label: 'Height', value: 2.8, unit: 'm' } },
+      { row: 'buttons', buttons: [{ name: 'Make', call: 'make', icon: 'hammer' }] },
+      { row: 'buttons', buttons: [{ name: 'Two', call: null }] },
+    ]);
+    expect(fieldsOf(rows).map((f) => f.key)).toEqual(['height']);
+    expect(readRows(null)).toEqual([]);
+    expect(readRows(Array.from({ length: 500 }, (_, i) => ({ row: 'text', text: `t${i}` })))).toHaveLength(200);
+  });
+
+  it('remember where it floats and what its fields hold, only what still fits them', () => {
+    const fields = fieldsOf(readRows([
+      { row: 'field', field: { key: 'h', kind: 'number', value: 1 } },
+      { row: 'field', field: { key: 'ok', kind: 'bool' } },
+      { row: 'field', field: { key: 'k', kind: 'choice', choices: [{ value: 'a' }, { value: 'b' }] } },
+    ]));
+    expect(readMemory({ x: 10, y: 'no', state: { h: '2,5', ok: 'yes', k: 1, gone: 'x' } }, fields)).toEqual({ x: 10, state: { h: '2,5', k: 1 } });
+    expect(readMemory({ state: { k: 5 } }, fields)).toEqual({ state: {} });
+    expect(readMemory('junk', fields)).toEqual({});
   });
 });
