@@ -15,7 +15,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { Copy, FileUp, Library, MousePointerClick, Plus, Replace, RotateCcw, Search, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Copy, FileUp, Library, MousePointerClick, Plus, Replace, RotateCcw, Search, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
@@ -29,6 +29,7 @@ import { freeName, matches, PRESET_GROUPS, PRESETS, presetArgs, type Preset } fr
 import { lookOf, LOOK_RANGES, type Look } from '../../viewport/look';
 import { LengthField } from '../../shell/cells';
 import { MaterialDataTab } from './MaterialDataTab';
+import { dropStash, returnToDialog } from './dialogReturn';
 
 /** IfcMaterial.Category as the interface offers it (Materials.Categories in the engine). */
 const MATERIAL_CATEGORIES = ['Structure', 'Finish', 'Insulation', 'Membrane', 'Other'];
@@ -67,6 +68,16 @@ export function MaterialsDialog() {
     void query<Hatch[]>('hatch.list').then((r) => r && setHatches(r));
   }, [nodes]);
   useEffect(() => { setDraft({}); setReplaceWith(''); }, [selected]);
+  // Opened from a type dialog's swatch (forum #45): on that material and its 2D graphics, once the list is in; its "Back" returns with the edits kept.
+  const focus = useUi((s) => s.materialFocus);
+  const returnTo = useUi((s) => s.returnTo);
+  useEffect(() => {
+    const target = focus && list.find((x) => x.name === focus.name);
+    if (!focus || !target) return;
+    setSelected(target.id); setTab(focus.tab); setSearch(''); setCategory('');
+    useUi.setState({ materialFocus: null });
+  }, [focus, list]);
+  useEffect(() => dropStash, []);
   const m = list.find((x) => x.id === selected) ?? null;
   const node = m ? nodes.get(m.id) : undefined;
   const shown = list.filter((x) => matches(x.name, search) && (!category || (category === '-' ? !x.category : x.category === category)));
@@ -137,6 +148,8 @@ export function MaterialsDialog() {
       <div className="dialog wide materials-dialog">
         <header className="dialog-head">
           <span className="panel-title">Materials</span>
+          {returnTo && <button type="button" className="btn" data-testid="materials-back" onClick={returnToDialog}><ArrowLeft size={13} />{returnTo === 'slabTypes' ? 'Back to Floor types' : 'Back to Wall types'}</button>}
+          <span className="grow" />
           <button type="button" className="icon" onClick={() => useUi.setState({ dialog: null })} title="Close"><X size={15} /></button>
         </header>
         <div className="dialog-body split">

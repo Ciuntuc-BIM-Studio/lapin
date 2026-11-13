@@ -179,24 +179,94 @@ public static class Flush
         return !Apart(a, b) && !Apart(b, a);
     }
 
-    /// <summary>The tool's face lies within the host's: every corner of it in or on the host's face, and its inside too.</summary>
+    /// <summary>
+    /// The tool's face lies within the host's, holes and notches respected, exactly in the plane: every corner of it in or
+    /// on the host's face (within <paramref name="tol"/>), no edge of it crossing an edge of the host's outline or holes,
+    /// no corner of the host's (a notch's, a hole's) strictly inside it, and the area it shares with the host's triangles
+    /// all of its own but a band <paramref name="tol"/> wide round its outline (which catches a notch or a hole whose edges
+    /// lie along its own). An L- or U-shaped host with a tool spanning its notch, or a tool over a hole, is not within.
+    /// </summary>
     static bool Within(Solid a, Face fa, Solid b, Face fb, Vec3 normal, double tol)
     {
         var (u, v) = VecMath.PlaneBasis(normal);
-        var outer = fb.Outer.Select(i => VecMath.Project(b.Vertices[i], u, v)).ToList();
-        bool OnOrIn(Vec2 p) => Polygon2.Contains(outer, p) || Near(outer, p, tol);
-        return fa.Outer.All(i => OnOrIn(VecMath.Project(a.Vertices[i], u, v)))
-            && Inner(a, fa, normal).All(p => Inside(b, fb, VecMath.Project(p, u, v), u, v));
+        var ta = Tris(a, fa, normal, u, v);
+        var tb = Tris(b, fb, normal, u, v);
+        if (ta.Count == 0 || tb.Count == 0) return false;
+        var (boxA, boxB) = (Box(ta), Box(tb));
+        if (boxA.Min.X < boxB.Min.X - tol || boxA.Min.Y < boxB.Min.Y - tol || boxA.Max.X > boxB.Max.X + tol || boxA.Max.Y > boxB.Max.Y + tol) return false;
+        List<Vec2> P(Solid s, int[] loop) => loop.Select(i => VecMath.Project(s.Vertices[i], u, v)).ToList();
+        var la = Loops(fa).Select(l => P(a, l)).ToList();
+        var lb = Loops(fb).Select(l => P(b, l)).ToList();
+        bool On(List<List<Vec2>> loops, Vec2 p) => loops.Any(l => Near(l, p, tol));
+        bool In(List<List<Vec2>> loops, Vec2 p) => Polygon2.Contains(loops[0], p) && !loops.Skip(1).Any(h => Polygon2.Contains(h, p));
+        // The tool's corners in or on the host's face.
+        if (!la.SelectMany(l => l).All(p => On(lb, p) || In(lb, p))) return false;
+        // No corner of the host's strictly inside the tool's (a notch's corner, a hole under it).
+        if (lb.SelectMany(l => l).Any(p => p.X > boxA.Min.X && p.X < boxA.Max.X && p.Y > boxA.Min.Y && p.Y < boxA.Max.Y && In(la, p) && !On(la, p))) return false;
+        // No edge of the tool's crossing one of the host's.
+        foreach (var x in la)
+            for (var i = 0; i < x.Count; i++)
+            {
+                var (p0, p1) = (x[i], x[(i + 1) % x.Count]);
+                foreach (var y in lb)
+                    for (var k = 0; k < y.Count; k++)
+                        if (Cross(p0, p1, y[k], y[(k + 1) % y.Count], tol)) return false;
+            }
+        // The area shared: the host's triangles are disjoint, so a tool triangle's clips by them sum to its part within.
+        double area = 0, shared = 0, rim = 0;
+        foreach (var l in la)
+            for (var i = 0; i < l.Count; i++) rim += (l[(i + 1) % l.Count] - l[i]).Length;
+        foreach (var x in ta)
+        {
+            area += Math.Abs(Vec2.Cross(x[1] - x[0], x[2] - x[0])) / 2;
+            var bx = Box([x]);
+            foreach (var y in tb)
+            {
+                var by = Box([y]);
+                if (bx.Min.X >= by.Max.X || by.Min.X >= bx.Max.X || bx.Min.Y >= by.Max.Y || by.Min.Y >= bx.Max.Y) continue;
+                shared += Clip(x, y);
+            }
+        }
+        return area - shared <= tol * rim + 1e-15;
     }
 
-    /// <summary>Points strictly inside a face: its triangles' centroids.</summary>
-    static IEnumerable<Vec3> Inner(Solid s, Face f, Vec3 normal) =>
-        Triangulator.Face(s.Vertices, f.Outer, f.Holes, normal).Select(t => (s.Vertices[t.A] + s.Vertices[t.B] + s.Vertices[t.C]) * (1.0 / 3));
-
-    static bool Inside(Solid s, Face f, Vec2 p, Vec3 u, Vec3 v)
+    /// <summary>Two segments cross properly: each one's ends more than <paramref name="tol"/> to either side of the other's line.</summary>
+    static bool Cross(Vec2 p0, Vec2 p1, Vec2 q0, Vec2 q1, double tol)
     {
-        List<Vec2> L(int[] loop) => loop.Select(i => VecMath.Project(s.Vertices[i], u, v)).ToList();
-        return Polygon2.Contains(L(f.Outer), p) && !f.Holes.Any(h => Polygon2.Contains(L(h), p));
+        if (Math.Max(p0.X, p1.X) < Math.Min(q0.X, q1.X) || Math.Max(q0.X, q1.X) < Math.Min(p0.X, p1.X)
+            || Math.Max(p0.Y, p1.Y) < Math.Min(q0.Y, q1.Y) || Math.Max(q0.Y, q1.Y) < Math.Min(p0.Y, p1.Y)) return false;
+        static bool Sides(Vec2 a, Vec2 b, Vec2 c, Vec2 d, double tol)
+        {
+            var e = b - a;
+            var len = e.Length;
+            if (len < 1e-15) return false;
+            var dc = Vec2.Cross(e, c - a) / len;
+            var dd = Vec2.Cross(e, d - a) / len;
+            return (dc > tol && dd < -tol) || (dc < -tol && dd > tol);
+        }
+        return Sides(p0, p1, q0, q1, tol) && Sides(q0, q1, p0, p1, tol);
+    }
+
+    /// <summary>The area two triangles share: one clipped by the other's three edges (Sutherland–Hodgman, both convex).</summary>
+    static double Clip(Vec2[] s, Vec2[] t)
+    {
+        var c = Vec2.Cross(t[1] - t[0], t[2] - t[0]) > 0 ? t : [t[0], t[2], t[1]];
+        var poly = new List<Vec2>(s);
+        for (var i = 0; i < 3 && poly.Count > 0; i++)
+        {
+            var (e0, e1) = (c[i], c[(i + 1) % 3]);
+            var e = e1 - e0;
+            var next = new List<Vec2>(poly.Count + 2);
+            for (var k = 0; k < poly.Count; k++)
+            {
+                var (p, q) = (poly[k], poly[(k + 1) % poly.Count]);
+                var (dp, dq) = (Vec2.Cross(e, p - e0), Vec2.Cross(e, q - e0));
+                if (dp >= 0) next.Add(p);
+                if ((dp >= 0) != (dq >= 0)) next.Add(p + (q - p) * (dp / (dp - dq)));
+            }
+            poly = next;
+        }
+        return poly.Count < 3 ? 0 : Math.Abs(Polygon2.SignedArea(poly));
     }
 
     static bool Near(List<Vec2> ring, Vec2 p, double tol)

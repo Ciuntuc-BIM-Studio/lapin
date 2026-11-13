@@ -12,8 +12,12 @@ import { query, useSession } from '../../engine/session';
 import { HatchSwatch } from './HatchSwatch';
 import { MaterialGraphicsTable, type HatchPattern, type MaterialRow } from './MaterialGraphicsTable';
 import { materialNamed, materialsOf, placeBeside } from './materialHatch';
+import { openMaterialsFrom } from './dialogReturn';
 
-export function MaterialHatchButton({ material }: { material: string }) {
+/** `from`: the dialog this swatch is in and a snapshot of its editor, so that "Open in Materials…" can come back to it (forum #45). */
+export interface HatchReturn { kind: string; snapshot: () => unknown }
+
+export function MaterialHatchButton({ material, from }: { material: string; from?: HatchReturn }) {
   const nodes = useSession((s) => s.nodes);
   const [row, setRow] = useState<MaterialRow | null>(null);
   const [open, setOpen] = useState(false);
@@ -31,12 +35,12 @@ export function MaterialHatchButton({ material }: { material: string }) {
         onClick={() => setOpen((v) => !v)}>
         <HatchSwatch hatch={cut?.hatch ?? null} scale={cut?.hatchScale ?? 1} fill={cut?.fill ?? null} membrane={cut?.membrane ?? false} size={22} />
       </button>
-      {open && row && <MaterialHatchEditor m={row} anchor={button.current} onClose={() => setOpen(false)} />}
+      {open && row && <MaterialHatchEditor m={row} anchor={button.current} from={from} onClose={() => setOpen(false)} />}
     </>
   );
 }
 
-function MaterialHatchEditor({ m, anchor, onClose }: { m: MaterialRow; anchor: HTMLElement | null; onClose: () => void }) {
+function MaterialHatchEditor({ m, anchor, from, onClose }: { m: MaterialRow; anchor: HTMLElement | null; from?: HatchReturn; onClose: () => void }) {
   const [hatches, setHatches] = useState<HatchPattern[]>([]);
   const [at, setAt] = useState<{ left: number; top: number } | null>(null);
   const panel = useRef<HTMLDivElement>(null);
@@ -74,6 +78,7 @@ function MaterialHatchEditor({ m, anchor, onClose }: { m: MaterialRow; anchor: H
         <button type="button" className="icon mini" title="Close" onClick={onClose}><X size={13} /></button>
       </header>
       <MaterialGraphicsTable m={m} hatches={hatches} />
+      {from && <button type="button" className="btn" data-testid="open-in-materials" onClick={() => openMaterialsFrom(from.kind, m.name, from.snapshot())}>Open in Materials…</button>}
       <p className="muted small">The material&apos;s own, as in Manage → Materials: every type and element made of it changes too.</p>
     </div>,
     root,

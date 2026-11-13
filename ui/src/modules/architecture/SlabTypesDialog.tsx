@@ -11,6 +11,7 @@ import { flagsJson, flagsOf } from './layerFlags';
 import { CATEGORY_TIP, LayerCategory } from './LayerCategory';
 import { LayerThickness } from '../core/LayerThickness';
 import { MaterialHatchButton } from '../core/MaterialHatchButton';
+import { takeStash } from '../core/dialogReturn';
 import { deleteType } from '../core/deleteType';
 import { SaveTypeToLibrary } from '../core/SaveTypeToLibrary';
 import { MaterialPicker } from '../core/MaterialPicker';
@@ -28,14 +29,21 @@ export function SlabTypesDialog() {
   const error = useSession((s) => s.error);
   const model = useMemo(() => ({ nodes, relations }), [nodes, relations]);
   const types = ofClass(model, 'IfcSlabType');
-  const [editing, setEditing] = useState<string | null>(types[0]?.id ?? null);
-  const [name, setName] = useState('');
-  const [rows, setRows] = useState<Row[]>(blank());
+  // Back from Materials (forum #45): the type and the unsaved edits as they were left.
+  const kept = useRef<{ editing: string | null; name: string; rows: Row[] } | null | undefined>(undefined);
+  if (kept.current === undefined) kept.current = takeStash<{ editing: string | null; name: string; rows: Row[] }>('slabTypes');
+  const k0 = kept.current;
+  const [editing, setEditing] = useState<string | null>(k0 ? k0.editing : types[0]?.id ?? null);
+  const [name, setName] = useState(k0?.name ?? '');
+  const [rows, setRows] = useState<Row[]>(k0?.rows ?? blank());
+  const restoredFor = useRef<string | null | undefined>(k0 ? k0.editing : undefined);
   // The editor loads when the picked type changes, not on every diff (which
   // would throw away what is being typed): it reads the model through a ref.
   const modelRef = useRef(model);
   modelRef.current = model;
   useEffect(() => {
+    if (restoredFor.current !== undefined && restoredFor.current === editing) return; // the edits kept, not the saved type
+    restoredFor.current = undefined;
     const model = modelRef.current;
     const t = editing ? model.nodes.get(editing) : undefined;
     if (!t) { setName(''); setRows(blank()); return; }
@@ -77,7 +85,7 @@ export function SlabTypesDialog() {
               <tbody>
                 {rows.map((r, i) => (
                   <tr key={i}>
-                    <td><span className="layer-material"><MaterialPicker value={r.material} onChange={(material) => set(i, { material })} /><MaterialHatchButton material={r.material} /></span></td>
+                    <td><span className="layer-material"><MaterialPicker value={r.material} onChange={(material) => set(i, { material })} /><MaterialHatchButton material={r.material} from={{ kind: 'slabTypes', snapshot: () => ({ editing, name, rows }) }} /></span></td>
                     <td className="num"><LayerThickness model={model} material={r.material} metres={r.thickness} onCommit={(m) => set(i, { thickness: m })} /></td>
                     <td><input type="radio" name="slab-core" checked={r.core} onChange={() => set(i, { core: true })} /></td>
                     <td><NumberField className="layer-priority" testId="layer-priority" value={r.priority ?? null} placeholder={String(layerRankHint(model, r.material, r.core))} blank min={0} max={100} integer

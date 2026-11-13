@@ -3086,6 +3086,7 @@ export const RO: Record<string, string> = {
   "Finish the edit mode that is on first.": "Terminați mai întâi modul de editare care este pornit.",
   "That sketch is not in the model any more: redraw it to rebuild the solid.": "Schița nu mai este în model: desenați-o din nou ca să se refacă solidul.",
   "Tab, or a double click on it in 3D": "Tab sau dublu clic pe ea în 3D",
+  "Layer from": "Strat de la", "Layer up to": "Strat până la", "wall top": "sus perete", "Layers 1 to n from the R face (right of the drawn direction) to the L face, as in the picture. Wall drawn anticlockwise: R is the exterior, L the interior. The core carries the wall's axis.": "Straturile 1…n de la fața D (dreapta direcției de desenare) la fața S, ca în desen. Perete desenat în sens antiorar: D este exteriorul, S interiorul. Miezul poartă axa peretelui.", "Reverse layers": "Inversează straturile", "Run the layers the other way: the R face's layer goes to the L face. Walls of the type swap faces once it is saved": "Pune straturile în ordine inversă: stratul de pe fața D trece pe fața S. Pereții tipului își schimbă fețele după salvare", "Reverse the order of the layers? Once the type is saved, its walls swap faces: what is exterior becomes interior.": "Inversezi ordinea straturilor? După salvarea tipului, pereții lui își schimbă fețele: ce era exterior devine interior.", "Open in Materials…": "Deschide în Materiale…", "Back to Wall types": "Înapoi la Tipuri de pereți", "Back to Floor types": "Înapoi la Tipuri de plăci",
 };
 
 /** Phrases with a number or a name in them. */

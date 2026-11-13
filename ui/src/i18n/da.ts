@@ -3081,6 +3081,7 @@ export const DA: Record<string, string> = {
   "Finish the edit mode that is on first.": "Afslut først den redigeringstilstand, der er slået til.",
   "That sketch is not in the model any more: redraw it to rebuild the solid.": "Skitsen er ikke længere i modellen: tegn den igen for at genopbygge legemet.",
   "Tab, or a double click on it in 3D": "Tab, eller dobbeltklik på den i 3D",
+  "Layer from": "Lag fra", "Layer up to": "Lag op til", "wall top": "vægtop", "Layers 1 to n from the R face (right of the drawn direction) to the L face, as in the picture. Wall drawn anticlockwise: R is the exterior, L the interior. The core carries the wall's axis.": "Lag 1 til n fra siden H (til højre for tegneretningen) til siden V, som på tegningen. Væg tegnet mod uret: H er ydersiden, V indersiden. Kernen bærer væggens akse.", "Reverse layers": "Vend lagene", "Run the layers the other way: the R face's layer goes to the L face. Walls of the type swap faces once it is saved": "Lægger lagene i omvendt rækkefølge: laget på siden H flyttes til siden V. Vægge af typen bytter side, når den er gemt", "Reverse the order of the layers? Once the type is saved, its walls swap faces: what is exterior becomes interior.": "Vende lagenes rækkefølge? Når typen er gemt, bytter dens vægge side: det der var ydre bliver indre.", "Open in Materials…": "Åbn i Materialer…", "Back to Wall types": "Tilbage til Vægtyper", "Back to Floor types": "Tilbage til Dæktyper",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
