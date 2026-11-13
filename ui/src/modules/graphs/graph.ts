@@ -1,5 +1,5 @@
 /**
- * Visual graphs (docs/plan-visual-graphs.md, decision 522): the graph as the engine keeps it (format 1: nodes and wires),
+ * Visual graphs (docs/plan-visual-graphs.md, decision 525): the graph as the engine keeps it (format 1: nodes and wires),
  * the nodes' specs (the engine's own nodes from graphs.nodes, the product's commands and queries from session.catalogue),
  * and the editing a canvas does to it — pure functions, so the canvas only draws and the engine evaluates.
  */

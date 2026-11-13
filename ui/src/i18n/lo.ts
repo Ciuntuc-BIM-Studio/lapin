@@ -3,7 +3,7 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
-  // Decision 522: visual graphs
+  // Decision 525: visual graphs
   "Storey levels": "ລະດັບຊັ້ນ",
   "Round off": "ປັດເສດ",
   "Elements made": "ອົງປະກອບທີ່ສ້າງ",

@@ -2349,7 +2349,7 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .shape-preview { color: var(--ink); }
 .tabs-inline { flex-wrap: wrap; align-items: center; }
 
-/* Visual graphs (docs/plan-visual-graphs.md, decision 522): the Graphs panel, a view beside the model's. */
+/* Visual graphs (docs/plan-visual-graphs.md, decision 525): the Graphs panel, a view beside the model's. */
 .graphs-view { position: absolute; inset: 0; container-type: size; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); }
 .graphs-toolbar { display: flex; align-items: center; gap: 6px; padding: 4px 8px; border-bottom: 1px solid var(--rule); background: var(--panel); flex-wrap: wrap; }
 .graphs-toolbar select { max-width: 180px; }

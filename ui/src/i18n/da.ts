@@ -3,7 +3,7 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
-  // Decision 522: visual graphs
+  // Decision 525: visual graphs
   "Storey levels": "Etagekoter",
   "Round off": "Afrund",
   "Elements made": "Lavede elementer",

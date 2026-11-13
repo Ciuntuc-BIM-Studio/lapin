@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!--
-    Visual graphs (docs/plan-visual-graphs.md, decision 522): LapinGraph entities, nodes wired into a graph the engine
+    Visual graphs (docs/plan-visual-graphs.md, decision 525): LapinGraph entities, nodes wired into a graph the engine
     evaluates (its own nodes and the product's commands and queries), a ghost of what it would make built on a copy of the
     model, and Bake, one undo step. An open module, in the free edition and in the browser.
   -->

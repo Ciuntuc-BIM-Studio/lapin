@@ -1,7 +1,7 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
-  // Decision 522: visual graphs
+  // Decision 525: visual graphs
   "Storey levels": "Cotele nivelurilor",
   "Round off": "Rotunjește",
   "Elements made": "Elemente făcute",

@@ -80,7 +80,7 @@ public static class LapinPackage
 
     /// <summary>
     /// The top-level folders a module writes text into (<see cref="ModuleText"/>): copies of what its entities hold, for
-    /// whoever opens the zip without Lapin (a project's scripts as <c>scripts/&lt;name&gt;.py</c>, decision 489; its graphs as <c>graphs/&lt;name&gt;.json</c>, decision 522). The model's
+    /// whoever opens the zip without Lapin (a project's scripts as <c>scripts/&lt;name&gt;.py</c>, decision 489; its graphs as <c>graphs/&lt;name&gt;.json</c>, decision 525). The model's
     /// Arrow tables stay what Lapin reads; another tool's entries in the same folder are kept beside them (<see cref="PackageForeign"/>).
     /// </summary>
     public static readonly IReadOnlyList<string> TextFolders = ["scripts", "graphs"];

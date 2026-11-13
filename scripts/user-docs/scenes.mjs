@@ -9462,7 +9462,7 @@ export const scenes = [
     },
   },
   {
-    // Visual graphs (decision 522, docs/plan-visual-graphs.md, stage 1): a graph of a series, two points and the Wall command
+    // Visual graphs (decision 525, docs/plan-visual-graphs.md, stage 1): a graph of a series, two points and the Wall command
     // (a row of three walls), kept in the project; View → Graphs opens it beside the plan; the engine's ghost shows the three
     // walls in the plan before anything is made (the model untouched); Bake makes them in one undo step.
     id: 'graphs',

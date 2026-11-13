@@ -12,7 +12,7 @@ using Lapin.Protocol;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// Visual graphs (docs/plan-visual-graphs.md, decision 522): the graph read and checked, evaluated by the engine with lists
+/// Visual graphs (docs/plan-visual-graphs.md, decision 525): the graph read and checked, evaluated by the engine with lists
 /// mapped by the longest, a failing node saying why while the rest goes on, the limits; the preview leaving the model as
 /// it was and drawing a ghost of what the commands would make; Bake one undo step, refused whole when a command fails;
 /// graphs kept in the project and in the .lapin as graphs/&lt;name&gt;.json.

@@ -1,5 +1,5 @@
 /**
- * The Graphs panel (docs/plan-visual-graphs.md §5, decision 522): a view of the module's own, opened beside the model's
+ * The Graphs panel (docs/plan-visual-graphs.md §5, decision 525): a view of the module's own, opened beside the model's
  * (split; on the desktop its tab goes into a window of its own). Above, the project's graphs (New, its name, Delete), the
  * preview switch and Bake. Left, the canvas (SVG, written here: no dependency): nodes with typed, coloured ports, wires
  * drawn thicker when they carry a list, double-click to add a node by searching, drag a node's head to move it (the

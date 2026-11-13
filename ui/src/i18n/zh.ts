@@ -3,7 +3,7 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
-  // Decision 522: visual graphs
+  // Decision 525: visual graphs
   "Storey levels": "楼层标高",
   "Round off": "取整",
   "Elements made": "生成的构件",
