@@ -3,6 +3,16 @@
 import type { Language } from './index';
 
 export const PL: Record<string, string> = {
+  // Decision 516: mouse navigation styles
+  "Mouse navigation": "Nawigacja myszą",
+  "Left drag orbits, right drag pans, wheel zooms; Alt + left drag selects a region": "Przeciąganie lewym obraca, przeciąganie prawym przesuwa, kółko powiększa; Alt + przeciąganie lewym zaznacza obszar",
+  "Middle drag pans, Shift + middle drag orbits; left drag selects a window or crossing; Ctrl adds, Shift removes": "Przeciąganie środkowym przesuwa, Shift + przeciąganie środkowym obraca; przeciąganie lewym zaznacza oknem lub przecięciem; Ctrl dodaje, Shift usuwa",
+  "Middle drag pans, Shift + middle drag orbits; left drag selects a window or crossing; Shift removes, Ctrl adds": "Przeciąganie środkowym przesuwa, Shift + przeciąganie środkowym obraca; przeciąganie lewym zaznacza oknem lub przecięciem; Shift usuwa, Ctrl dodaje",
+  "Middle drag pans, Shift + middle drag orbits; left drag draws a marquee; Shift adds or removes": "Przeciąganie środkowym przesuwa, Shift + przeciąganie środkowym obraca; przeciąganie lewym rysuje ramkę zaznaczenia; Shift dodaje lub usuwa",
+  "Middle drag orbits, Shift + middle drag pans; left drag selects a window or crossing; Ctrl adds, Shift toggles, Ctrl + Shift removes": "Przeciąganie środkowym obraca, Shift + przeciąganie środkowym przesuwa; przeciąganie lewym zaznacza oknem lub przecięciem; Ctrl dodaje, Shift przełącza, Ctrl + Shift usuwa",
+  "Middle drag orbits, Shift + middle drag pans, Ctrl + middle drag zooms; left drag selects a box; Shift toggles": "Przeciąganie środkowym obraca, Shift + przeciąganie środkowym przesuwa, Ctrl + przeciąganie środkowym powiększa; przeciąganie lewym zaznacza ramką; Shift przełącza",
+  "Right drag orbits, Shift + right drag pans; left drag selects a window or crossing; Shift adds, Ctrl removes": "Przeciąganie prawym obraca, Shift + przeciąganie prawym przesuwa; przeciąganie lewym zaznacza oknem lub przecięciem; Shift dodaje, Ctrl usuwa",
+  "How the mouse orbits, pans, zooms and selects in the 3D view and in plans, sections, elevations and sheets; the menu in the status bar chooses it too. Lapin's own is the default; the others assume a three-button mouse.": "Jak mysz obraca, przesuwa, powiększa i zaznacza w widoku 3D oraz w rzutach, przekrojach, elewacjach i arkuszach; wybiera to także menu na pasku stanu. Domyślna jest nawigacja Lapin; pozostałe zakładają mysz z trzema przyciskami.",
   // Decision 507: pad footings under columns, their level
   "Pad footings under columns": "Stopy fundamentowe pod słupami",
   "At the base of the column": "U podstawy słupa",

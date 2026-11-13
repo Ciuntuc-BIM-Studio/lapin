@@ -19,6 +19,7 @@ import { openContextMenu, type MenuItem } from './shell/ContextMenu';
 import { t as tr } from './i18n';
 import { resolveTheme, setPrefs, usePrefs } from './app/prefs';
 import { CursorCoords } from './shell/CursorCoords';
+import { NavStyleMenu } from './shell/NavStyleMenu';
 import { watchLocation } from './app/location';
 import { useShortcuts } from './app/keys';
 import { useSession } from './engine/session';
@@ -93,6 +94,7 @@ function StatusBar() {
       {merged && <CadPrompt inline />}
       {parts.hud === 'status' && <span className="status-hud">{facts.level} <span className="accent">{facts.elevation}</span> · {facts.view}</span>}
       <CursorCoords />
+      <NavStyleMenu />
       <span>{projectTitle(doc?.path)}{doc?.dirty ? ' · unsaved' : ''}</span>
       <span>{elements} elements</span>
       <button type="button" className="status-link" title="The project's units: change them in Drafting standards → Project" onClick={() => openStandards('project')}>Units: {unitLabel(units) || units}</button>

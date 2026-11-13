@@ -1,6 +1,16 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // Decision 516: mouse navigation styles
+  "Mouse navigation": "Navigare cu mouse-ul",
+  "Left drag orbits, right drag pans, wheel zooms; Alt + left drag selects a region": "Tragere cu stânga rotește, tragere cu dreapta deplasează, rotița face zoom; Alt + tragere cu stânga selectează o regiune",
+  "Middle drag pans, Shift + middle drag orbits; left drag selects a window or crossing; Ctrl adds, Shift removes": "Tragere cu mijlocul deplasează, Shift + tragere cu mijlocul rotește; tragere cu stânga selectează cu fereastră sau crossing; Ctrl adaugă, Shift scoate",
+  "Middle drag pans, Shift + middle drag orbits; left drag selects a window or crossing; Shift removes, Ctrl adds": "Tragere cu mijlocul deplasează, Shift + tragere cu mijlocul rotește; tragere cu stânga selectează cu fereastră sau crossing; Shift scoate, Ctrl adaugă",
+  "Middle drag pans, Shift + middle drag orbits; left drag draws a marquee; Shift adds or removes": "Tragere cu mijlocul deplasează, Shift + tragere cu mijlocul rotește; tragere cu stânga desenează un chenar de selecție; Shift adaugă sau scoate",
+  "Middle drag orbits, Shift + middle drag pans; left drag selects a window or crossing; Ctrl adds, Shift toggles, Ctrl + Shift removes": "Tragere cu mijlocul rotește, Shift + tragere cu mijlocul deplasează; tragere cu stânga selectează cu fereastră sau crossing; Ctrl adaugă, Shift comută, Ctrl + Shift scoate",
+  "Middle drag orbits, Shift + middle drag pans, Ctrl + middle drag zooms; left drag selects a box; Shift toggles": "Tragere cu mijlocul rotește, Shift + tragere cu mijlocul deplasează, Ctrl + tragere cu mijlocul face zoom; tragere cu stânga selectează cu un chenar; Shift comută",
+  "Right drag orbits, Shift + right drag pans; left drag selects a window or crossing; Shift adds, Ctrl removes": "Tragere cu dreapta rotește, Shift + tragere cu dreapta deplasează; tragere cu stânga selectează cu fereastră sau crossing; Shift adaugă, Ctrl scoate",
+  "How the mouse orbits, pans, zooms and selects in the 3D view and in plans, sections, elevations and sheets; the menu in the status bar chooses it too. Lapin's own is the default; the others assume a three-button mouse.": "Cum rotește, deplasează, mărește și selectează mouse-ul în vederea 3D și în planuri, secțiuni, fațade și planșe; îl alege și meniul din bara de stare. Cel al Lapin este cel implicit; celelalte presupun un mouse cu trei butoane.",
   // Decision 507: pad footings under columns, their level
   "Pad footings under columns": "Fundații izolate sub stâlpi",
   "At the base of the column": "La baza stâlpului",

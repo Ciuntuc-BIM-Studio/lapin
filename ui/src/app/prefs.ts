@@ -11,6 +11,7 @@
 
 import { create } from 'zustand';
 import type { SnapMode } from '../viewport/cad/snaps';
+import { DEFAULT_NAV_STYLE, NAV_STYLE_IDS, type NavStyleId } from './navStyle';
 
 export type ThemeChoice = 'paper' | 'graphite' | 'system';
 export type GridMode = 'adaptive' | 'fixed';
@@ -41,6 +42,8 @@ export interface Prefs {
   pythonPath: string | null;
   /** The editor "Open in external editor" uses (a command: code, subl…); null: the system's text editor. */
   externalEditor: string | null;
+  /** The mouse navigation style (decision 516): Lapin's own, or as Revit, AutoCAD, ArchiCAD, SketchUp, Blender or Rhino do it (app/navStyle.ts). */
+  navStyle: NavStyleId;
 }
 
 export const SNAP_MODES: readonly SnapMode[] = ['endpoint', 'midpoint', 'intersection', 'center', 'quadrant', 'perpendicular', 'nearest'];
@@ -49,7 +52,7 @@ export const DEFAULT_PREFS: Prefs = {
   theme: 'paper', gridMode: 'adaptive', gridStep: 1, gridMajor: 5, gridSnap: true,
   snapModes: [...SNAP_MODES], polarStep: 45, coords: 'internal',
   profileStandardsHidden: [], newProjectProfileStandards: null, defaultTemplate: null,
-  developerExtras: false, pythonPath: null, externalEditor: null,
+  developerExtras: false, pythonPath: null, externalEditor: null, navStyle: DEFAULT_NAV_STYLE,
 };
 
 const names = (v: unknown): string[] | null => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && !!x.trim()).map((x) => x.trim()))] : null);
@@ -78,6 +81,7 @@ export function readPrefs(stored: unknown): Prefs {
     developerExtras: o.developerExtras === true,
     pythonPath: typeof o.pythonPath === 'string' && o.pythonPath.trim() ? o.pythonPath.trim() : null,
     externalEditor: typeof o.externalEditor === 'string' && o.externalEditor.trim() ? o.externalEditor.trim() : null,
+    navStyle: pick(o.navStyle, NAV_STYLE_IDS, d.navStyle),
   };
 }
 

@@ -27,7 +27,9 @@ import { openContextMenu } from '../shell/ContextMenu';
 import { groupItems } from '../shell/selectionMenu';
 import { symbolMenuItems } from '../modules/core/symbols/symbolTools';
 import { membersOf, pickTarget, shownSelection } from '../platform/groups';
-import { pickClick, pickRegion, wholeOf } from '../platform/assemblies';
+import { pickByMods, pickRegion, wholeOf } from '../platform/assemblies';
+import { clickMode, modsOf, pansIn2d, regionSelection, wheelFactor } from '../app/navStyle';
+import { currentNavStyle } from '../app/navStyleStore';
 import { clearShown, hiddenInDrawing, publishShown } from './cad/shown';
 import { drawOrderItems, isDrafted } from './drawOrder';
 import { CadOverlay } from './cad/canvas';
@@ -85,7 +87,7 @@ export function DrawingView() {
   const go = useCallback((v: View) => { setView((old) => { if (old) pushHistory(key, old); return v; }); }, [key]);
   const [hover, setHover] = useState<Aimed | null>(null);
   /** A press; `carry`: the selection it was pressed on (a drag moves it, or copies it with Ctrl/⌘/Alt), from `base` (the press, snapped). */
-  const drag = useRef<{ x: number; y: number; view: View; moved: boolean; carry?: string[]; copy?: boolean; base?: Vec2 } | null>(null);
+  const drag = useRef<{ x: number; y: number; view: View; moved: boolean; carry?: string[]; copy?: boolean; base?: Vec2; pan?: boolean } | null>(null);
   /** A selection box or lasso being dragged (screen px); Space turns the box into a lasso. */
   const [box, setBox] = useState<SelectDrag | null>(null);
   useLassoKey(!!box, setBox);
@@ -139,10 +141,9 @@ export function DrawingView() {
   const pickAny = useCallback((p: Vec2): string | null => pickDrawing(p, 6 / v.scale, drawing?.marks, nodes), [drawing, nodes, v.scale]);
 
   /** The annotations and drafted shapes a box takes, added to the selection with shift (or while a command asks for a selection). */
-  const selectBox = (b: SelectDrag, add: boolean) => {
+  const selectBox = (b: SelectDrag, e: React.PointerEvent) => {
     const ids = pickRegion(markIds(regionTestOf(b, toWorld), nodes, drawing?.marks));
-    const before = add || useCad.getState().step ? useUi.getState().selected : [];
-    const next = [...new Set([...before, ...ids])];
+    const next = regionSelection(useUi.getState().selected, ids, useCad.getState().step ? 'add' : clickMode(currentNavStyle(), modsOf(e)));
     useUi.setState({ selected: next, selection: next[next.length - 1] ?? null });
   };
 
@@ -325,7 +326,7 @@ export function DrawingView() {
           if (mode === 'pan') { setView({ ...v, cx: v.cx + e.deltaX / v.scale, cy: v.cy - e.deltaY / v.scale }); return; }
           const r = ref.current!.getBoundingClientRect();
           const p = toWorld(e.clientX - r.left, e.clientY - r.top);
-          const scale = clampScale(v.scale * wheelZoom(e, size.h));
+          const scale = clampScale(v.scale * wheelFactor(currentNavStyle(), wheelZoom(e, size.h)));
           const now = performance.now();
           if (now - wheelBurst.current > 400) pushHistory(key, v);
           wheelBurst.current = now;
@@ -343,7 +344,7 @@ export function DrawingView() {
             const sel = useUi.getState().selected;
             if (hit && (sel.includes(hit) || sel.includes(pickTarget(hit) ?? hit) || markSelected(hit, sel))) { carry = sel; base = aimed.point; }
           }
-          drag.current = { x: e.clientX, y: e.clientY, view: v, moved: false, carry, copy: e.altKey || e.ctrlKey || e.metaKey, base };
+          drag.current = { x: e.clientX, y: e.clientY, view: v, moved: false, carry, copy: e.altKey || e.ctrlKey || e.metaKey, base, pan: e.button === 0 || pansIn2d(currentNavStyle(), e.button, modsOf(e)) };
           (e.target as Element).setPointerCapture?.(e.pointerId);
         }}
         onPointerMove={(e) => {
@@ -377,7 +378,7 @@ export function DrawingView() {
               setBox((cur) => dragTo(cur ?? { a: { x: d.x - r.left, y: d.y - r.top }, b: to }, to));
               return;
             }
-            if (d.moved) { setView({ ...d.view, cx: d.view.cx - (e.clientX - d.x) / d.view.scale, cy: d.view.cy + (e.clientY - d.y) / d.view.scale }); return; }
+            if (d.moved && d.pan) { setView({ ...d.view, cx: d.view.cx - (e.clientX - d.x) / d.view.scale, cy: d.view.cy + (e.clientY - d.y) / d.view.scale }); return; }
           }
           const here = at(e);
           setHover(here.aimed);
@@ -387,7 +388,7 @@ export function DrawingView() {
           if (editor.onPointerUp()) return;
           const d = drag.current;
           drag.current = null;
-          if (box) { selectBox(box, e.shiftKey); setBox(null); return; }
+          if (box) { selectBox(box, e); setBox(null); return; }
           if (d?.moved && e.button === 0 && d.carry && d.base) {
             const r = ref.current!.getBoundingClientRect();
             const to = aim(toWorld(e.clientX - r.left, e.clientY - r.top), d.base, { orthoHeld: e.shiftKey }).point;
@@ -410,7 +411,7 @@ export function DrawingView() {
           const step = useCad.getState().step;
           if (step) { void feedPoint(step.want === 'pick' || step.want === 'select' ? raw : aimed.point); acquire(aimed.point); return; }
           if (gestureClick(aimed.point, raw)) return;
-          pickClick(pickAny(raw), { add: e.shiftKey });
+          pickByMods(pickAny(raw), modsOf(e), currentNavStyle());
         }}
         onPointerLeave={() => { setHover(null); trackTagHover(null, { pickElement: () => null, pickTag: () => null, anyTags, busy: true }); editor.onPointerLeave(); }}
         onContextMenu={(e) => e.preventDefault()}

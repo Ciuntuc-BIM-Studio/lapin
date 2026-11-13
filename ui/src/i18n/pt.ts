@@ -3,6 +3,16 @@
 import type { Language } from './index';
 
 export const PT: Record<string, string> = {
+  // Decision 516: mouse navigation styles
+  "Mouse navigation": "Navegação com o rato",
+  "Left drag orbits, right drag pans, wheel zooms; Alt + left drag selects a region": "Arrastar com o esquerdo orbita, arrastar com o direito desloca, a roda faz zoom; Alt + arrastar com o esquerdo seleciona uma região",
+  "Middle drag pans, Shift + middle drag orbits; left drag selects a window or crossing; Ctrl adds, Shift removes": "Arrastar com o do meio desloca, Shift + arrastar com o do meio orbita; arrastar com o esquerdo seleciona por janela ou por interseção; Ctrl adiciona, Shift remove",
+  "Middle drag pans, Shift + middle drag orbits; left drag selects a window or crossing; Shift removes, Ctrl adds": "Arrastar com o do meio desloca, Shift + arrastar com o do meio orbita; arrastar com o esquerdo seleciona por janela ou por interseção; Shift remove, Ctrl adiciona",
+  "Middle drag pans, Shift + middle drag orbits; left drag draws a marquee; Shift adds or removes": "Arrastar com o do meio desloca, Shift + arrastar com o do meio orbita; arrastar com o esquerdo desenha uma caixa de seleção; Shift adiciona ou remove",
+  "Middle drag orbits, Shift + middle drag pans; left drag selects a window or crossing; Ctrl adds, Shift toggles, Ctrl + Shift removes": "Arrastar com o do meio orbita, Shift + arrastar com o do meio desloca; arrastar com o esquerdo seleciona por janela ou por interseção; Ctrl adiciona, Shift alterna, Ctrl + Shift remove",
+  "Middle drag orbits, Shift + middle drag pans, Ctrl + middle drag zooms; left drag selects a box; Shift toggles": "Arrastar com o do meio orbita, Shift + arrastar com o do meio desloca, Ctrl + arrastar com o do meio faz zoom; arrastar com o esquerdo seleciona com uma caixa; Shift alterna",
+  "Right drag orbits, Shift + right drag pans; left drag selects a window or crossing; Shift adds, Ctrl removes": "Arrastar com o direito orbita, Shift + arrastar com o direito desloca; arrastar com o esquerdo seleciona por janela ou por interseção; Shift adiciona, Ctrl remove",
+  "How the mouse orbits, pans, zooms and selects in the 3D view and in plans, sections, elevations and sheets; the menu in the status bar chooses it too. Lapin's own is the default; the others assume a three-button mouse.": "Como o rato orbita, desloca, faz zoom e seleciona na vista 3D e em plantas, cortes, alçados e pranchas; o menu da barra de estado também o escolhe. O do Lapin é o predefinido; os outros pressupõem um rato de três botões.",
   // Decision 507: pad footings under columns, their level
   "Pad footings under columns": "Sapatas isoladas sob pilares",
   "At the base of the column": "Na base do pilar",

@@ -3,6 +3,16 @@
 import type { Language } from './index';
 
 export const IT: Record<string, string> = {
+  // Decision 516: mouse navigation styles
+  "Mouse navigation": "Navigazione con il mouse",
+  "Left drag orbits, right drag pans, wheel zooms; Alt + left drag selects a region": "Trascinare col sinistro orbita, trascinare col destro sposta, la rotella esegue lo zoom; Alt + trascinare col sinistro seleziona una regione",
+  "Middle drag pans, Shift + middle drag orbits; left drag selects a window or crossing; Ctrl adds, Shift removes": "Trascinare col centrale sposta, Maiusc + trascinare col centrale orbita; trascinare col sinistro seleziona con finestra o intersezione; Ctrl aggiunge, Maiusc rimuove",
+  "Middle drag pans, Shift + middle drag orbits; left drag selects a window or crossing; Shift removes, Ctrl adds": "Trascinare col centrale sposta, Maiusc + trascinare col centrale orbita; trascinare col sinistro seleziona con finestra o intersezione; Maiusc rimuove, Ctrl aggiunge",
+  "Middle drag pans, Shift + middle drag orbits; left drag draws a marquee; Shift adds or removes": "Trascinare col centrale sposta, Maiusc + trascinare col centrale orbita; trascinare col sinistro disegna un riquadro di selezione; Maiusc aggiunge o rimuove",
+  "Middle drag orbits, Shift + middle drag pans; left drag selects a window or crossing; Ctrl adds, Shift toggles, Ctrl + Shift removes": "Trascinare col centrale orbita, Maiusc + trascinare col centrale sposta; trascinare col sinistro seleziona con finestra o intersezione; Ctrl aggiunge, Maiusc inverte, Ctrl + Maiusc rimuove",
+  "Middle drag orbits, Shift + middle drag pans, Ctrl + middle drag zooms; left drag selects a box; Shift toggles": "Trascinare col centrale orbita, Maiusc + trascinare col centrale sposta, Ctrl + trascinare col centrale esegue lo zoom; trascinare col sinistro seleziona con un riquadro; Maiusc inverte",
+  "Right drag orbits, Shift + right drag pans; left drag selects a window or crossing; Shift adds, Ctrl removes": "Trascinare col destro orbita, Maiusc + trascinare col destro sposta; trascinare col sinistro seleziona con finestra o intersezione; Maiusc aggiunge, Ctrl rimuove",
+  "How the mouse orbits, pans, zooms and selects in the 3D view and in plans, sections, elevations and sheets; the menu in the status bar chooses it too. Lapin's own is the default; the others assume a three-button mouse.": "Come il mouse orbita, sposta, esegue lo zoom e seleziona nella vista 3D e in piante, sezioni, prospetti e tavole; lo sceglie anche il menu nella barra di stato. Quello di Lapin è predefinito; gli altri presuppongono un mouse a tre tasti.",
   // Decision 507: pad footings under columns, their level
   "Pad footings under columns": "Plinti sotto i pilastri",
   "At the base of the column": "Alla base del pilastro",

@@ -68,7 +68,9 @@ import { TICK, Walker, worldOf } from './walkPhysics';
 import { InstanceLayer } from './instancing';
 import { openGroupOf, shownSelection, useExpansion } from '../platform/groups';
 import { useTagHover } from './tagTarget';
-import { pickClick, pickRegion } from '../platform/assemblies';
+import { pickByMods, pickRegion } from '../platform/assemblies';
+import { clickMode, dragAction, modsOf, regionSelection, wheelFactor, zoomsToCursor, type Mods } from '../app/navStyle';
+import { currentNavStyle } from '../app/navStyleStore';
 import { boxEdges, boxOf, projectSegments, takes, toggleRegion3d, useRegion3d, type Project } from './select3d';
 import { clippedAway, seenHit } from './seen3d';
 import { clearShown, publishShown } from './cad/shown';
@@ -83,7 +85,7 @@ import { PointCloudLayer, type Hierarchy, type Tile } from './pointClouds3d';
 import { cloudSpecs, isCloudLink, setCloudStatus, type ViewCloud } from './pointClouds';
 import { copyArrays, displayQualityOf, levelFor, pixelsPerMetre, type DisplayQuality, type LodCamera } from './lod';
 import { inWorld } from '../engine/instances';
-import { clampWheel, wheelZoom } from './zoom';
+import { clampWheel, middleDouble, wheelZoom } from './zoom';
 import { orbitAbout, orbitAngles, orbitPivot, orthoZoomShift, zoomAbout, type Rig } from './navigate3d';
 
 const CLEAR = { paper: 0xf3efe7, graphite: 0x1c1b19 } as const;
@@ -612,7 +614,7 @@ export function Viewport3D() {
   const toolId = useUi((s) => s.tool);
   const tool = findTool(toolId);
   // What a click does, kept current for the listeners set up once.
-  const clickRef = useRef<(hit: { nodeId: string | null; ground: Vec2 | null; add: boolean; leaf?: boolean; face?: FaceHit }) => void>(() => undefined);
+  const clickRef = useRef<(hit: { nodeId: string | null; ground: Vec2 | null; mods: Mods; face?: FaceHit }) => void>(() => undefined);
   /** The classes a face tool works on (null: no face tool on), for the hover that lights up the face under the cursor. */
   const faceTypes = useRef<string[] | null>(null);
   /** The query that names the face under the cursor for the face tool on. */
@@ -651,10 +653,10 @@ export function Viewport3D() {
   faceTypes.current = tool?.gesture?.kind === 'face' ? tool.gesture.types : null;
   faceQuery.current = tool?.gesture?.kind === 'face' ? tool.gesture.query ?? 'core.faceAt' : 'core.faceAt';
 
-  clickRef.current = ({ nodeId, ground, add, leaf, face }) => {
+  clickRef.current = ({ nodeId, ground, mods, face }) => {
     const g = tool?.gesture;
     // A member of a group picks the group (docs/groups.md); drilling, a part its wholes first (platform/assemblies.ts).
-    if (!g) { pickClick(nodeId && pickable(useSession.getState().nodes.get(nodeId)) ? nodeId : null, { add, leaf }); return; }
+    if (!g) { pickByMods(nodeId && pickable(useSession.getState().nodes.get(nodeId)) ? nodeId : null, mods, currentNavStyle()); return; }
     // In 3D a pick-then-point tool completes with its pick alone (the tool's default for the second point).
     if (g.kind === 'face' || g.kind === 'pick' || g.kind === 'pickThenPoint') {
       const node = nodeId ? useSession.getState().nodes.get(nodeId) : undefined;
@@ -1020,8 +1022,7 @@ export function Viewport3D() {
       clickRef.current({
         nodeId: nodeOfHit(hit) ?? null,
         ground: g ? { x: Math.round(g.x * 20) / 20, y: Math.round(g.y * 20) / 20 } : null,
-        add: e.shiftKey,
-        leaf: e.ctrlKey || e.metaKey,
+        mods: modsOf(e),
         face: hit ? faceHit(hit) : undefined,
       });
     };
@@ -1128,10 +1129,10 @@ export function Viewport3D() {
       return p;
     };
     const onNavWheel = (e: WheelEvent) => {
-      if (e.target !== renderer.domElement || !controls.enabled || !controls.enableZoom || !useDisplay.getState().zoomToCursor) return;
+      if (e.target !== renderer.domElement || !controls.enabled || !controls.enableZoom || !zoomsToCursor(currentNavStyle(), useDisplay.getState().zoomToCursor)) return;
       e.preventDefault();
       e.stopPropagation();
-      const k = wheelZoom(e, renderer.domElement.clientHeight || 800);
+      const k = wheelFactor(currentNavStyle(), wheelZoom(e, renderer.domElement.clientHeight || 800));
       const p = zoomPoint(e);
       if (!p || k === 1) return;
       cancelAnimationFrame(flight);
@@ -1144,6 +1145,29 @@ export function Viewport3D() {
       } else setRig(zoomAbout(rigNow(), p, k));
     };
     el.addEventListener('wheel', onNavWheel, { capture: true, passive: false });
+    // The navigation style (app/navStyle.ts): in another program's way, each press tells the orbit controls what it does (or nothing),
+    // the modifiers it was pressed with taken off the event so the controls do not read them as their own; a region is drawn by the
+    // region code below. Lapin's own keeps the controls' mapping, and only its extra (Alt + left drag, a region) is taken here.
+    const middleTwice = middleDouble();
+    const noButton = -1 as THREE.MOUSE;
+    const shadow = (e: Event, keys: readonly string[]) => { for (const k of keys) Object.defineProperty(e, k, { value: false, configurable: true }); };
+    let restoreButtons = false;
+    const onStyleDown = (e: PointerEvent) => {
+      if (e.target !== renderer.domElement || e.pointerType === 'touch' || !controls.enabled) return;
+      const st = currentNavStyle();
+      const mods = modsOf(e);
+      const act = dragAction(st, e.button, mods);
+      if (st.fitDouble3d && middleTwice(e)) { useCamera.getState().api?.fit(true); e.preventDefault(); return; }
+      if (st.native && act !== 'region') return;
+      const to = act === 'orbit' ? THREE.MOUSE.ROTATE : act === 'pan' ? THREE.MOUSE.PAN : act === 'zoom' ? THREE.MOUSE.DOLLY : noButton;
+      controls.mouseButtons = { LEFT: noButton, MIDDLE: noButton, RIGHT: noButton, [e.button === 0 ? 'LEFT' : e.button === 1 ? 'MIDDLE' : 'RIGHT']: to };
+      shadow(e, ['shiftKey', 'ctrlKey', 'metaKey']);
+      restoreButtons = st.native;
+    };
+    const onStyleUp = () => { if (restoreButtons) { restoreButtons = false; buttons(); } };
+    el.addEventListener('pointerdown', onStyleDown, true);
+    window.addEventListener('pointerup', onStyleUp, true);
+    window.addEventListener('pointercancel', onStyleUp, true);
     // An orbit about a point: from the button the orbit controls turn with, the selection's middle or the model under the cursor.
     let orbit: { id: number; x: number; y: number; pivot: THREE.Vector3 } | null = null;
     const rotateButton = (button: number) => (button === 0 ? controls.mouseButtons.LEFT : button === 1 ? controls.mouseButtons.MIDDLE : button === 2 ? controls.mouseButtons.RIGHT : -1) === THREE.MOUSE.ROTATE;
@@ -1351,7 +1375,7 @@ export function Viewport3D() {
         const id = nodeOfHit(pickAt());
         const { selected } = useUi.getState();
         const { nodes, relations } = useSession.getState();
-        if (id && pickable(nodes.get(id)) && !shownSelection(selected, nodes, relations).has(id)) pickClick(id);
+        if (id && pickable(nodes.get(id)) && !shownSelection(selected, nodes, relations).has(id)) pickByMods(id, modsOf(e), currentNavStyle());
       }
       openContextMenu(e.clientX, e.clientY, [...selectionItems(), ...temporaryItems()]);
     };
@@ -1368,6 +1392,10 @@ export function Viewport3D() {
     };
     buttons();
     const unregion = useRegion3d.subscribe(buttons);
+    // The style changed: the controls' own buttons again, and the wheel's direction where the controls zoom.
+    const styled = () => { buttons(); controls.zoomSpeed = currentNavStyle().wheel.invert ? -1 : 1; };
+    styled();
+    const unstyle = usePrefs.subscribe((p, before) => { if (p.navStyle !== before.navStyle) styled(); });
     const local = (e: MouseEvent) => { const r = renderer.domElement.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
     let regionFrom: { x: number; y: number } | null = null;
     /** What a region takes: elements by their edges on the screen (their box when they have none), instances by their placed box. */
@@ -1414,7 +1442,9 @@ export function Viewport3D() {
       return pickRegion(ids);
     };
     const onRegionDown = (e: PointerEvent) => {
-      if (e.button !== 0 || !useRegion3d.getState().on || useUi.getState().tool || faceTypes.current) return;
+      if (e.button !== 0 || useUi.getState().tool || faceTypes.current) return;
+      // Select region (SR) on, or this press is the navigation style's region (a left drag in most, Alt + left drag in Lapin's).
+      if (!useRegion3d.getState().on && dragAction(currentNavStyle(), e.button, modsOf(e)) !== 'region') return;
       regionFrom = local(e);
       renderer.domElement.setPointerCapture(e.pointerId);
     };
@@ -1423,7 +1453,8 @@ export function Viewport3D() {
       const p = local(e);
       const d = useRegion3d.getState().drag;
       if (!d && Math.hypot(p.x - regionFrom.x, p.y - regionFrom.y) < 4) return;
-      useRegion3d.setState({ drag: d ? dragTo(d, p) : { a: regionFrom, b: p } });
+      const forced = currentNavStyle().region;
+      useRegion3d.setState({ drag: d ? dragTo(d, p) : { a: regionFrom, b: p, mode: forced === 'direction' ? undefined : forced } });
     };
     const onRegionUp = (e: PointerEvent) => {
       const d = useRegion3d.getState().drag;
@@ -1431,8 +1462,8 @@ export function Viewport3D() {
       if (!d) return;
       useRegion3d.setState({ drag: null });
       const ids = regionSelect(d);
-      const before = e.shiftKey ? useUi.getState().selected : [];
-      const next = [...new Set([...before, ...ids])];
+      // How it joins the selection is the style's (Lapin: Shift adds; Revit: Ctrl adds, Shift removes).
+      const next = regionSelection(useUi.getState().selected, ids, clickMode(currentNavStyle(), modsOf(e)));
       useUi.setState({ selected: next, selection: next[next.length - 1] ?? null });
     };
     const onRegionKey = (e: KeyboardEvent) => {
@@ -1466,6 +1497,9 @@ export function Viewport3D() {
       renderer.domElement.removeEventListener('dblclick', onDouble);
       el.removeEventListener('wheel', onNavWheel, { capture: true });
       el.removeEventListener('pointerdown', onNavDown, true);
+      el.removeEventListener('pointerdown', onStyleDown, true);
+      window.removeEventListener('pointerup', onStyleUp, true);
+      window.removeEventListener('pointercancel', onStyleUp, true);
       window.removeEventListener('pointermove', onNavMove, true);
       window.removeEventListener('pointerup', onNavUp, true);
       window.removeEventListener('pointercancel', onNavUp, true);
@@ -1474,6 +1508,7 @@ export function Viewport3D() {
       renderer.domElement.removeEventListener('pointerup', onRegionUp);
       window.removeEventListener('keydown', onRegionKey, true);
       unregion();
+      unstyle();
       renderer.domElement.removeEventListener('pointermove', onMove);
       cancelAnimationFrame(hoverFrame);
       faceAsk = -1;

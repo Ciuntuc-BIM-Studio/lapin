@@ -169,6 +169,28 @@ Un clic, o fereastră de selecție sau un lasou iau doar ce arată vederea, în 
 
 Selectează mai multe elemente (Shift-clic sau trage un dreptunghi), iar panoul de proprietăți îl arată pe ultimul ales, cu **N selectate** lângă clasa lui. O valoare pe care o au toate e afișată; una care diferă apare ca *diferă*. Schimbă un câmp și fiecare element selectat care îl are primește noua valoare, într-un singur pas pe care **Anulează** îl desface: înălțimea și decalajul bazei pereților, tipul fiecărui perete, ușă sau grindă selectată, parapetul ferestrelor, fazele fiecărui element selectat oricare i-ar fi clasa, stratul și culoarea liniilor desenate, stilul textelor. Ce e al fiecărui element rămâne al lui: numărul unei încăperi, lungimea unui perete, locul unei uși de-a lungul peretelui.
 
+## Stiluri de navigare cu mouse-ul
+
+Bara de stare, jos, arată stilul de navigare cu mouse-ul în uz (la început *Lapin*). Dă clic pe el ca să alegi altul: **Revit-like**, **AutoCAD-like**, **ArchiCAD-like**, **SketchUp-like**, **Blender-like** sau **Rhino-like**, fiecare cu gesturile lui principale. Îl setează și **Fișier → Preferințe → Afișare → Navigare cu mouse-ul**. Se păstrează pentru tine, pe acest calculator, pentru toate proiectele, și se aplică deopotrivă vederii 3D și planurilor, secțiunilor, fațadelor și planșelor.
+
+![Meniul stilurilor de navigare din bara de stare](shots/nav-styles-menu.webp)
+
+| Stil | Rotire (3D) | Deplasare | Zoom | Selecție | Regiune |
+|---|---|---|---|---|---|
+| Lapin | tragere cu stânga | tragere cu dreapta (și Shift sau Ctrl + stânga) | rotița; tragere cu mijlocul | clic; <kbd>Shift</kbd> comută; <kbd>Ctrl</kbd> ia partea | <kbd>Alt</kbd> + tragere cu stânga |
+| Revit-like | <kbd>Shift</kbd> + tragere cu mijlocul | tragere cu mijlocul | rotița | <kbd>Ctrl</kbd> adaugă, <kbd>Shift</kbd> scoate | tragere cu stânga |
+| AutoCAD-like | <kbd>Shift</kbd> + tragere cu mijlocul | tragere cu mijlocul | rotița | <kbd>Shift</kbd> scoate, <kbd>Ctrl</kbd> adaugă | tragere cu stânga |
+| ArchiCAD-like | <kbd>Shift</kbd> + tragere cu mijlocul | tragere cu mijlocul | rotița | <kbd>Shift</kbd> adaugă sau scoate | tragere cu stânga |
+| SketchUp-like | tragere cu mijlocul | <kbd>Shift</kbd> + tragere cu mijlocul | rotița | <kbd>Ctrl</kbd> adaugă, <kbd>Shift</kbd> comută, <kbd>Ctrl</kbd> + <kbd>Shift</kbd> scoate | tragere cu stânga |
+| Blender-like | tragere cu mijlocul | <kbd>Shift</kbd> + tragere cu mijlocul | rotița (spre mijlocul vederii); <kbd>Ctrl</kbd> + tragere cu mijlocul | <kbd>Shift</kbd> comută | tragere cu stânga (un chenar) |
+| Rhino-like | tragere cu dreapta | <kbd>Shift</kbd> + tragere cu dreapta | rotița | <kbd>Shift</kbd> adaugă, <kbd>Ctrl</kbd> scoate | tragere cu stânga |
+
+**Lapin** e felul în care a lucrat mereu Lapin și rămâne cel implicit: nimic nu se schimbă până nu alegi altul. În celelalte, o tragere cu stânga care începe pe loc gol (sau pe un element neselectat) desenează în vederea 3D o regiune de selecție, ca în planuri: trasă spre dreapta, o fereastră (contur plin) ia elementele a căror geometrie vizibilă e toată înăuntru; trasă spre stânga, un crossing (punctat) ia orice element atinge. Blender-like ia mereu ce atinge chenarul, oricum e tras. <kbd>Space</kbd> în timp ce tragi face din chenar un lasou. Tastele din coloana *Selecție* spun cum se alătură regiunea selecției: cu <kbd>Ctrl</kbd> în Revit-like adaugă, cu <kbd>Shift</kbd> scoate; fără nicio tastă înlocuiește. Apăsarea pe un element selectat, o clipă de așteptare și tragerea îl mută în continuare, în orice stil. Contează doar ce arată vederea: un element ascuns, izolat în afară, tăiat de o cutie de secțiune sau dintr-o altă fază nu e luat niciodată, iar un grup sau un ansamblu e luat așa cum l-ar lua un clic.
+
+![Un crossing tras peste casă în 3D cu stilul Revit-like](shots/nav-3d-crossing.webp)
+
+În planuri, secțiuni, fațade și planșe, stilul alege ce buton deplasează și ce taste adaugă la selecție sau scot din ea; tragerea cu stânga desenează în continuare o fereastră sau un crossing, iar butonul din mijloc apăsat de două ori potrivește în continuare vederea (și în 3D, în Revit-like și AutoCAD-like). Celelalte stiluri presupun un mouse cu trei butoane: pe un trackpad, fără buton din mijloc, rămâi la Lapin. Se împrumută doar comenzile: numele sunt simple etichete și nimic altceva din acele programe nu e imitat.
+
 ## Preia proprietățile
 
 **Modifică → Preia proprietățile** (<kbd>MA</kbd>, sau `MATCHPROP` în linia de comandă, ca în AutoCAD; în Revit se numește Match Type) dă altor elemente ce are un element. Selectează elementul de la care copiezi, sau pornește comanda și dă clic întâi pe el; apoi dă clic pe fiecare element care trebuie să-i primească proprietățile. Elementul de sub cursor se luminează înainte de clic, în planuri, secțiuni și 3D. Fiecare clic e un pas pe care **Anulează** îl desface. **Aplică selecției** le dă deodată tuturor celorlalte elemente selectate. Apasă <kbd>Enter</kbd> sau <kbd>Esc</kbd> când ai terminat.

@@ -6,7 +6,9 @@
  */
 
 import { membersOf, openGroupOf, pickTarget, shownSelection, useExpansion } from '../platform/groups';
-import { drillInside, pickClick, pickRegion, useDrill, wholeOf } from '../platform/assemblies';
+import { drillInside, pickByMods, pickClick, pickRegion, useDrill, wholeOf } from '../platform/assemblies';
+import { clickMode, modsOf, pansIn2d, regionSelection, wheelFactor, type Mods } from '../app/navStyle';
+import { currentNavStyle } from '../app/navStyleStore';
 import { orthophotos } from './textures';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Compass, FileDown, Footprints, Layers, Maximize, MousePointer2, PenLine } from 'lucide-react';
@@ -103,7 +105,7 @@ export function PlanView() {
   const lang = useLang((s) => s.lang); // its reason, written by the cursor, in the language the interface speaks
   const [ortho, setOrtho] = useState(false);
   /** A press: where, the view then, whether it moved; `carry`: the selection it was pressed on (a drag moves it, or copies it with Ctrl), from `base` (the press, snapped). */
-  const drag = useRef<{ x: number; y: number; view: View; moved: boolean; carry?: string[]; copy?: boolean; base?: Vec2 } | null>(null);
+  const drag = useRef<{ x: number; y: number; view: View; moved: boolean; carry?: string[]; copy?: boolean; base?: Vec2; pan?: boolean } | null>(null);
   /** A selection box or lasso being dragged (screen px): left to right a window, right to left crossing; Space turns the box into a lasso. */
   const [box, setBox] = useState<SelectDrag | null>(null);
   useLassoKey(!!box, setBox);
@@ -378,14 +380,14 @@ export function PlanView() {
     else setPts([]);
   }, [tool]);
 
-  const click = useCallback((p: Vec2, raw: Vec2, add: boolean, typed?: number, leaf = false) => {
+  const click = useCallback((p: Vec2, raw: Vec2, add: boolean, typed?: number, leaf = false, mods?: Mods) => {
     // A drafting command takes the click: a snapped point, or what lies under the cursor.
     const step = useCad.getState().step;
     if (step) { void feedPoint(step.want === 'pick' || step.want === 'select' ? raw : p); acquire(p); return; }
     if (tool?.gesture) acquire(p);
     if (!tool?.gesture) {
       // A member of a group picks the group (docs/groups.md); drilling, a part its wholes first (platform/assemblies.ts).
-      pickClick(pick(raw)?.id, { add, leaf });
+      if (mods) pickByMods(pick(raw)?.id, mods, currentNavStyle()); else pickClick(pick(raw)?.id, { add, leaf });
       return;
     }
     const g = tool.gesture;
@@ -500,7 +502,7 @@ export function PlanView() {
       if (hit && sel.includes(hit.id)) carry = sel;
     }
     const base = carry ? snapAt(e.clientX, e.clientY).point : undefined;
-    drag.current = { x: e.clientX, y: e.clientY, view, moved: false, carry, copy: e.altKey || e.ctrlKey || e.metaKey, base };
+    drag.current = { x: e.clientX, y: e.clientY, view, moved: false, carry, copy: e.altKey || e.ctrlKey || e.metaKey, base, pan: pansIn2d(currentNavStyle(), e.button, modsOf(e)) };
   };
   const onPointerMove = (e: React.PointerEvent) => {
     if (peers.length) { const rect = svgRef.current!.getBoundingClientRect(); const w = toWorld(e.clientX - rect.left, e.clientY - rect.top); reportPresence({ cursor: [w.x, w.y] }); }
@@ -533,7 +535,7 @@ export function PlanView() {
         setHover(snapAt(e.clientX, e.clientY, d.base));
         return;
       }
-      if (d.moved && e.buttons !== 1) { const m = screenDelta(dx, dy, d.view.scale); setView({ ...d.view, cx: d.view.cx - m.x, cy: d.view.cy - m.y }); }
+      if (d.moved && e.buttons !== 1 && d.pan) { const m = screenDelta(dx, dy, d.view.scale); setView({ ...d.view, cx: d.view.cx - m.x, cy: d.view.cy - m.y }); }
     }
     setHover(constrained(snapAt(e.clientX, e.clientY, pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined)));
     { const r = svgRef.current!.getBoundingClientRect(); rawHover.current = toWorld(e.clientX - r.left, e.clientY - r.top); }
@@ -550,7 +552,7 @@ export function PlanView() {
     if (editor.onPointerUp()) return;
     const d = drag.current;
     drag.current = null;
-    if (box) { selectBox(box, e.shiftKey); setBox(null); return; }
+    if (box) { selectBox(box, e); setBox(null); return; }
     if (d?.moved && e.button === 0) {
       // A drag is two points: where it was pressed and where it was let go, both snapped.
       const step = useCad.getState().step;
@@ -580,7 +582,7 @@ export function PlanView() {
     if (d && !d.moved && e.button === 2 && !tool?.gesture && !useCad.getState().step) { if (!editor.onContextMenu(e)) roomMenu(e.clientX, e.clientY); return; }
     if (!d || d.moved || e.button !== 0) return;
     const rect = svgRef.current!.getBoundingClientRect();
-    click(constrained(snapAt(e.clientX, e.clientY, pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined)).point, toWorld(e.clientX - rect.left, e.clientY - rect.top), e.shiftKey, undefined, e.ctrlKey || e.metaKey);
+    click(constrained(snapAt(e.clientX, e.clientY, pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined)).point, toWorld(e.clientX - rect.left, e.clientY - rect.top), e.shiftKey, undefined, e.ctrlKey || e.metaKey, modsOf(e));
   };
   /**
    * A right-click (not a drag): on drafting, its draw order (decision 339; what is under the cursor selected first when it
@@ -605,10 +607,10 @@ export function PlanView() {
     openContextMenu(x, y, [...order, ...symbolMenuItems(selected, nodes), ...rooms, ...selectionItems()]);
   };
   /** What a selection box or lasso takes: inside it wholly (a window, dragged to the right) or touching it (crossing, to the left). */
-  const selectBox = (b: SelectDrag, add: boolean) => {
+  const selectBox = (b: SelectDrag, e: React.PointerEvent) => {
     const ids = pickRegion(regionIds(regionTestOf(b, toWorld), pickItems, nodes, scope ? undefined : drawing?.marks));
-    const before = add || useCad.getState().step ? useUi.getState().selected : [];
-    const next = [...new Set([...before, ...ids])];
+    // How it joins the selection is the navigation style's (Shift adds in Lapin's; Ctrl adds and Shift removes in Revit's); a command asking for a selection collects.
+    const next = regionSelection(useUi.getState().selected, ids, useCad.getState().step ? 'add' : clickMode(currentNavStyle(), modsOf(e)));
     useUi.setState({ selected: next, selection: next[next.length - 1] ?? null });
   };
 
@@ -622,7 +624,7 @@ export function PlanView() {
     }
     const rect = svgRef.current!.getBoundingClientRect();
     const at = toWorld(e.clientX - rect.left, e.clientY - rect.top);
-    const scale = clampScale(view.scale * wheelZoom(e, size.h));
+    const scale = clampScale(view.scale * wheelFactor(currentNavStyle(), wheelZoom(e, size.h)));
     // Zoom about the cursor; a burst of wheel steps is one zoom for ZP.
     const now = performance.now();
     if (now - wheelBurst.current > 400) pushHistory(key, view);

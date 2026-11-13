@@ -17,6 +17,7 @@ import type { NodeDto, RelationDto } from '../engine/protocol';
 import { useSession } from '../engine/session';
 import { select, useUi } from '../app/store';
 import { useDisplay } from '../app/display';
+import { clickMode, picksLeaf, type Mods, type NavStyle } from '../app/navStyle';
 import { addSelectionExpander, expansionChanged, GROUP, groupOf, membersOf, pickTarget } from './groups';
 import { useScope } from './scope';
 
@@ -139,6 +140,24 @@ export function pickClick(id: string | null | undefined, mods: { add?: boolean; 
   const target = drillTarget(chain, useDrill.getState().path, useUi.getState().selected, mods.leaf);
   useDrill.setState({ path: chain });
   select(target);
+}
+
+/**
+ * A pick as a navigation style reads its keys (app/navStyle.ts): replace, toggle (what Shift always did), or, in the other
+ * programs' ways, add only or remove only. Lapin's own keeps pickClick's behaviour to the letter. Empty space with a key
+ * that adds, removes or toggles leaves the selection as it is (outside Lapin's style).
+ */
+export function pickByMods(id: string | null | undefined, mods: Mods, style: NavStyle): void {
+  const mode = clickMode(style, mods), leaf = picksLeaf(style, mods);
+  if (style.native || mode === 'replace') { pickClick(id, { add: mode === 'toggle', leaf }); return; }
+  if (!id) return;
+  const before = useUi.getState().selected;
+  pickClick(id, { add: true, leaf });
+  if (mode === 'toggle') return;
+  const after = useUi.getState().selected;
+  const added = after.some((x) => !before.includes(x)), removed = before.some((x) => !after.includes(x));
+  // The pick flipped what it met; add keeps it when it was already in, remove keeps it out when it was not.
+  if ((mode === 'add' && removed && !added) || (mode === 'remove' && added && !removed)) useUi.setState({ selected: [...before], selection: before[before.length - 1] ?? null });
 }
 
 /** Several picks (a box, a lasso): off, each as its group; on, each as the top of its chain. Once each. */

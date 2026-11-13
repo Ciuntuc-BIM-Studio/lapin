@@ -3,6 +3,16 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  // Decision 516: mouse navigation styles
+  "Mouse navigation": "Musenavigation",
+  "Left drag orbits, right drag pans, wheel zooms; Alt + left drag selects a region": "Træk med venstre roterer, træk med højre panorerer, hjulet zoomer; Alt + træk med venstre markerer et område",
+  "Middle drag pans, Shift + middle drag orbits; left drag selects a window or crossing; Ctrl adds, Shift removes": "Træk med midten panorerer, Shift + træk med midten roterer; træk med venstre markerer med vindue eller kryds; Ctrl tilføjer, Shift fjerner",
+  "Middle drag pans, Shift + middle drag orbits; left drag selects a window or crossing; Shift removes, Ctrl adds": "Træk med midten panorerer, Shift + træk med midten roterer; træk med venstre markerer med vindue eller kryds; Shift fjerner, Ctrl tilføjer",
+  "Middle drag pans, Shift + middle drag orbits; left drag draws a marquee; Shift adds or removes": "Træk med midten panorerer, Shift + træk med midten roterer; træk med venstre tegner en markeringsramme; Shift tilføjer eller fjerner",
+  "Middle drag orbits, Shift + middle drag pans; left drag selects a window or crossing; Ctrl adds, Shift toggles, Ctrl + Shift removes": "Træk med midten roterer, Shift + træk med midten panorerer; træk med venstre markerer med vindue eller kryds; Ctrl tilføjer, Shift skifter, Ctrl + Shift fjerner",
+  "Middle drag orbits, Shift + middle drag pans, Ctrl + middle drag zooms; left drag selects a box; Shift toggles": "Træk med midten roterer, Shift + træk med midten panorerer, Ctrl + træk med midten zoomer; træk med venstre markerer med en boks; Shift skifter",
+  "Right drag orbits, Shift + right drag pans; left drag selects a window or crossing; Shift adds, Ctrl removes": "Træk med højre roterer, Shift + træk med højre panorerer; træk med venstre markerer med vindue eller kryds; Shift tilføjer, Ctrl fjerner",
+  "How the mouse orbits, pans, zooms and selects in the 3D view and in plans, sections, elevations and sheets; the menu in the status bar chooses it too. Lapin's own is the default; the others assume a three-button mouse.": "Hvordan musen roterer, panorerer, zoomer og markerer i 3D-visningen og i plantegninger, snit, facader og tegningsark; menuen i statuslinjen vælger den også. Lapins egen er standard; de andre forudsætter en mus med tre knapper.",
   // Decision 507: pad footings under columns, their level
   "Pad footings under columns": "Punktfundamenter under søjler",
   "At the base of the column": "Ved søjlens fod",
