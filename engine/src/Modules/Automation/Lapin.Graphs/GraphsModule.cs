@@ -6,7 +6,7 @@ using Lapin.Platform;
 namespace Lapin.Graphs;
 
 /// <summary>
-/// Visual graphs (docs/plan-visual-graphs.md, decision 525): a project's graphs, each a <see cref="Class"/> entity holding
+/// Visual graphs (docs/plan-visual-graphs.md, decision 527): a project's graphs, each a <see cref="Class"/> entity holding
 /// its nodes and wires (<see cref="GraphDoc"/>), saved, renamed and deleted by commands (one undo step each, so they go into
 /// undo, versions, shared sessions and the rule of an absent module like any content), written also as
 /// <c>graphs/&lt;name&gt;.json</c> in the .lapin. <c>graphs.evaluate</c> is a query: the graph's values and the ghost of what

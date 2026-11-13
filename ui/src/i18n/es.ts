@@ -15,7 +15,7 @@ export const ES: Record<string, string> = {
   "Middle drag orbits, Shift + middle drag pans, Ctrl + middle drag zooms; left drag selects a box; Shift toggles": "Arrastrar con el centro orbita, Mayús + arrastrar con el centro desplaza, Ctrl + arrastrar con el centro hace zoom; arrastrar con la izquierda selecciona con un cuadro; Mayús alterna",
   "Right drag orbits, Shift + right drag pans; left drag selects a window or crossing; Shift adds, Ctrl removes": "Arrastrar con la derecha orbita, Mayús + arrastrar con la derecha desplaza; arrastrar con la izquierda selecciona por ventana o por captura; Mayús añade, Ctrl quita",
   "How the mouse orbits, pans, zooms and selects in the 3D view and in plans, sections, elevations and sheets; the menu in the status bar chooses it too. Lapin's own is the default; the others assume a three-button mouse.": "Cómo el ratón orbita, desplaza, hace zoom y selecciona en la vista 3D y en plantas, secciones, alzados y láminas; el menú de la barra de estado también lo elige. El de Lapin es el predeterminado; los demás suponen un ratón de tres botones.",
-  // Decision 525: visual graphs
+  // Decision 527: visual graphs
   "Graphs are the host's: in a shared session only the host opens, previews and bakes them.": "Los grafos son del anfitrión: en una sesión compartida solo el anfitrión los abre, previsualiza y genera.",
   "Storey levels": "Cotas de las plantas",
   "Round off": "Redondear",
@@ -254,7 +254,7 @@ export const ES: Record<string, string> = {
   "Its tool in My tools (the script's header)": "Su herramienta en Mis herramientas (la cabecera del script)",
   "Tool:": "Herramienta:",
   "Forget trust: this script asks again before it runs, and its tools leave My tools": "Olvidar la confianza: este script vuelve a preguntar antes de ejecutarse, y sus herramientas salen de Mis herramientas",
-  // Decision 526: scripts' panels, menus and palettes
+  // Decision 528: scripts' panels, menus and palettes
   "A palette's button names its palette.": "El botón de una paleta nombra su paleta.",
   "A palette gives its button at most 64 values.": "Una paleta da a su botón como máximo 64 valores.",
   "A palette's values are at most 64 KB.": "Los valores de una paleta ocupan como máximo 64 KB.",
@@ -426,6 +426,32 @@ export const ES: Record<string, string> = {
   "UCS at the survey point, its axes east and north.": "UCS en el punto de reconocimiento, con sus ejes hacia el este y el norte.",
   "UCS origin moved.": "Origen del UCS movido.",
   "UCS set.": "UCS establecido.",
+  "Rotated view: change its orientation or set north up again": "Vista girada: cambia su orientación o vuelve a poner el norte arriba",
+  "Rotate view: turn the plan on screen and on its sheets": "Girar vista: gira la planta en pantalla y en sus planos",
+  "North up (not rotated)": "Norte arriba (sin girar)",
+  "Rotate view…": "Girar vista…",
+  "Rotate view to align with an edge": "Girar la vista para alinearla con una arista",
+  "Follow the UCS": "Seguir el SCP",
+  "True north up": "Norte verdadero arriba",
+  "Rotate view": "Girar vista",
+  "Direction shown horizontal (° from X)": "Dirección mostrada en horizontal (° desde X)",
+  "In the plan’s coordinates, turned as it shows (mm)": "En las coordenadas de la planta, giradas como se ve (mm)",
+  "Only a plan is rotated: a section or an elevation looks where its line or side says.": "Solo se gira una planta: una sección o un alzado mira donde dicen su línea o su lado.",
+  "First point of the edge to align with": "Primer punto de la arista con la que alinear",
+  "Second point of the edge": "Segundo punto de la arista",
+  "The two points are the same: pick two different points.": "Los dos puntos son el mismo: elige dos puntos distintos.",
+  "View rotated to the edge.": "Vista girada según la arista.",
+  "There is no UCS: the view stays as it is (World turns it back north up).": "No hay SCP: la vista queda como está (World la devuelve con el norte arriba).",
+  "View follows the UCS.": "La vista sigue el SCP.",
+  "PLAN: [Current UCS/World/Angle/Edge/True north] <Current UCS>": "PLAN: [Current UCS/World/Angle/Edge/True north] <Current UCS>",
+  "View north up (World).": "Vista con el norte arriba (World).",
+  "Direction to show horizontal (degrees from the X axis)": "Dirección que se mostrará en horizontal (grados desde el eje X)",
+  "View rotated.": "Vista girada.",
+  "The project is not turned from true north: the view stays north up.": "El proyecto no está girado respecto al norte verdadero: la vista queda con el norte arriba.",
+  "View rotated to true north.": "Vista girada hacia el norte verdadero.",
+  "Rotate view (PLAN)": "Girar vista (PLAN)",
+  "Rotate view to an edge": "Girar la vista según una arista",
+  "The plan is turned: crop its boundary in the view (View boundaries), not on the sheet.": "La planta está girada: recorta su contorno en la vista (Contornos de vista), no en el plano.",
   "Dark": "Oscuro",
   "As the system": "Como el sistema",
   "Grid and snaps": "Cuadrícula y forzado",
@@ -3191,6 +3217,7 @@ export const ES: Record<string, string> = {
   "Layer from": "Capa desde", "Layer up to": "Capa hasta", "wall top": "parte superior del muro", "Layers 1 to n from the R face (right of the drawn direction) to the L face, as in the picture. Wall drawn anticlockwise: R is the exterior, L the interior. The core carries the wall's axis.": "Capas 1 a n desde la cara D (a la derecha del sentido de dibujo) hasta la cara I, como en el dibujo. Muro dibujado en sentido antihorario: D es el exterior, I el interior. El núcleo lleva el eje del muro.", "Reverse layers": "Invertir capas", "Run the layers the other way: the R face's layer goes to the L face. Walls of the type swap faces once it is saved": "Pone las capas en orden inverso: la capa de la cara D pasa a la cara I. Los muros del tipo intercambian sus caras al guardarlo", "Reverse the order of the layers? Once the type is saved, its walls swap faces: what is exterior becomes interior.": "¿Invertir el orden de las capas? Al guardar el tipo, sus muros intercambian las caras: lo que era exterior pasa a ser interior.", "Open in Materials…": "Abrir en Materiales…", "Back to Wall types": "Volver a Tipos de muro", "Back to Floor types": "Volver a Tipos de losa",
   // A wall's top (the forum's topic #45)
   'Storey above': 'Planta superior', 'Unconnected height': 'Altura sin conexión', 'Where the wall goes up to: the storey above its own (on the topmost storey, that storey\'s top), a storey of the project, or a height of its own. Its height follows the storeys when they move': 'Hasta dónde sube el muro: la planta sobre la suya (en la planta más alta, la parte superior de esta), una planta del proyecto o una altura propia. Su altura sigue a las plantas cuando se mueven', 'Added to the level the top goes to (negative: below it, under a floor\'s structure)': 'Se suma al nivel al que llega la parte superior (negativo: por debajo, bajo la estructura de un forjado)', 'From its base to its top, worked out from the storeys': 'De su base a su parte superior, calculada a partir de las plantas', 'goes up to': 'sube hasta', 'to its storey\'s top': 'hasta la parte superior de su planta', 'Top: as the type': 'Superior: según el tipo', 'Top: storey above': 'Superior: planta superior', 'Top: unconnected height': 'Superior: altura sin conexión', 'Wall top': 'Parte superior del muro', 'Where new walls of this type go up to': 'Hasta dónde suben los muros nuevos de este tipo', 'for new walls; each wall\'s own in its properties': 'para muros nuevos; cada muro tiene la suya en sus propiedades', 'Wall type\'s top': 'Parte superior del tipo de muro',
+  'Measured from': 'Medido desde', 'Measured to': 'Medido hasta', 'Wall start': 'Inicio del muro', 'Meeting wall’s face': 'Cara del muro que concurre', 'Meeting wall’s core face': 'Cara del núcleo del muro que concurre', 'Opening start': 'Inicio del hueco', 'Opening centre': 'Centro del hueco', 'Opening end': 'Final del hueco',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

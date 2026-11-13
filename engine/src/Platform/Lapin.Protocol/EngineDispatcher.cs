@@ -637,7 +637,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
     /// </summary>
     /// <summary>
     /// The namespaces of commands no guest runs: a project's scripts (<c>scripting.save</c>, <c>scripting.rename</c>,
-    /// <c>scripting.delete</c>) and its graphs (<c>graphs.*</c>, decision 525: the host's, like scripts).
+    /// <c>scripting.delete</c>) and its graphs (<c>graphs.*</c>, decision 527: the host's, like scripts).
     /// </summary>
     public static readonly string[] HostOnlyCommands = ["scripting.", "graphs."];
 

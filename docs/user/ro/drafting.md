@@ -187,7 +187,7 @@ Ca orice etichetă, eticheta de stratificație își urmează elementul, iar pla
 
 ![Dialogul Rețea de axe](shots/grid-dialog.webp)
 
-Dă clic pe o axă ca s-o selectezi. Proprietățile ei arată **Începutul** și **Sfârșitul**, **Lungimea**, **Unghiul** și distanța față de axa paralelă dinaintea ei (↔). Scrie o distanță nouă și axa se mută; se mută și axele de după ea, dacă nu debifezi **se mută și axele de după ea**. **Buline** alege capetele care au bulină. **Stiluri de axe…** deschide **Standarde de desen → Axe**, unde se stabilesc bulina, mărimea ei, tipul de linie și prima etichetă. Selectează toată rețeaua ca să vezi axele și distanțele dintre ele.
+Dă clic pe o axă ca s-o selectezi. Proprietățile ei arată **Începutul** și **Sfârșitul**, **Lungimea**, **Unghiul** și distanța față de axa paralelă dinaintea ei (↔). Scrie o distanță nouă și axa se mută; se mută și axele de după ea, dacă nu debifezi **se mută și axele de după ea**. **Buline** alege capetele care au bulină. **Stiluri de axe…** deschide **Standarde de desen → Axe**, unde se stabilesc bulina, mărimea ei, tipul de linie și prima etichetă. Selectează toată rețeaua ca să vezi axele și distanțele dintre ele. **Aliniază axele** face ca axele paralele să înceapă și să se sfârșească pe aceleași linii, luând axa selectată ca referință: cu mai multe axe selectate se aliniază doar acelea la ea; cu una singură, toate axele grilei paralele cu ea.
 
 ![Proprietățile unei axe](shots/axis-properties.webp)
 

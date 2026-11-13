@@ -15,7 +15,7 @@ export const PL: Record<string, string> = {
   "Middle drag orbits, Shift + middle drag pans, Ctrl + middle drag zooms; left drag selects a box; Shift toggles": "Przeciąganie środkowym obraca, Shift + przeciąganie środkowym przesuwa, Ctrl + przeciąganie środkowym powiększa; przeciąganie lewym zaznacza ramką; Shift przełącza",
   "Right drag orbits, Shift + right drag pans; left drag selects a window or crossing; Shift adds, Ctrl removes": "Przeciąganie prawym obraca, Shift + przeciąganie prawym przesuwa; przeciąganie lewym zaznacza oknem lub przecięciem; Shift dodaje, Ctrl usuwa",
   "How the mouse orbits, pans, zooms and selects in the 3D view and in plans, sections, elevations and sheets; the menu in the status bar chooses it too. Lapin's own is the default; the others assume a three-button mouse.": "Jak mysz obraca, przesuwa, powiększa i zaznacza w widoku 3D oraz w rzutach, przekrojach, elewacjach i arkuszach; wybiera to także menu na pasku stanu. Domyślna jest nawigacja Lapin; pozostałe zakładają mysz z trzema przyciskami.",
-  // Decision 525: visual graphs
+  // Decision 527: visual graphs
   "Graphs are the host's: in a shared session only the host opens, previews and bakes them.": "Grafy należą do gospodarza: w udostępnionej sesji tylko gospodarz je otwiera, podgląda i tworzy z nich elementy.",
   "Storey levels": "Poziomy kondygnacji",
   "Round off": "Zaokrąglij",
@@ -254,7 +254,7 @@ export const PL: Record<string, string> = {
   "Its tool in My tools (the script's header)": "Jego narzędzie w Moich narzędziach (nagłówek skryptu)",
   "Tool:": "Narzędzie:",
   "Forget trust: this script asks again before it runs, and its tools leave My tools": "Cofnij zaufanie: ten skrypt znów zapyta przed uruchomieniem, a jego narzędzia znikną z Moich narzędzi",
-  // Decision 526: scripts' panels, menus and palettes
+  // Decision 528: scripts' panels, menus and palettes
   "A palette's button names its palette.": "Przycisk palety podaje nazwę swojej palety.",
   "A palette gives its button at most 64 values.": "Paleta przekazuje swojemu przyciskowi najwyżej 64 wartości.",
   "A palette's values are at most 64 KB.": "Wartości palety mają najwyżej 64 KB.",
@@ -426,6 +426,32 @@ export const PL: Record<string, string> = {
   "UCS at the survey point, its axes east and north.": "UCS w punkcie pomiarowym, jego osie na wschód i północ.",
   "UCS origin moved.": "Początek UCS przesunięty.",
   "UCS set.": "UCS ustawiony.",
+  "Rotated view: change its orientation or set north up again": "Obrócony widok: zmień jego orientację lub ustaw znów północ u góry",
+  "Rotate view: turn the plan on screen and on its sheets": "Obróć widok: obróć rzut na ekranie i na jego arkuszach",
+  "North up (not rotated)": "Północ u góry (bez obrotu)",
+  "Rotate view…": "Obróć widok…",
+  "Rotate view to align with an edge": "Obróć widok, by wyrównać do krawędzi",
+  "Follow the UCS": "Podążaj za LUW",
+  "True north up": "Północ geograficzna u góry",
+  "Rotate view": "Obróć widok",
+  "Direction shown horizontal (° from X)": "Kierunek pokazany poziomo (° od X)",
+  "In the plan’s coordinates, turned as it shows (mm)": "We współrzędnych rzutu, obróconych tak, jak jest widoczny (mm)",
+  "Only a plan is rotated: a section or an elevation looks where its line or side says.": "Obraca się tylko rzut: przekrój lub elewacja patrzy tam, gdzie wskazuje jego linia lub strona.",
+  "First point of the edge to align with": "Pierwszy punkt krawędzi do wyrównania",
+  "Second point of the edge": "Drugi punkt krawędzi",
+  "The two points are the same: pick two different points.": "Oba punkty są takie same: wybierz dwa różne punkty.",
+  "View rotated to the edge.": "Widok obrócony do krawędzi.",
+  "There is no UCS: the view stays as it is (World turns it back north up).": "Brak LUW: widok pozostaje bez zmian (World przywraca północ u góry).",
+  "View follows the UCS.": "Widok podąża za LUW.",
+  "PLAN: [Current UCS/World/Angle/Edge/True north] <Current UCS>": "PLAN: [Current UCS/World/Angle/Edge/True north] <Current UCS>",
+  "View north up (World).": "Widok z północą u góry (World).",
+  "Direction to show horizontal (degrees from the X axis)": "Kierunek do pokazania poziomo (stopnie od osi X)",
+  "View rotated.": "Widok obrócony.",
+  "The project is not turned from true north: the view stays north up.": "Projekt nie jest obrócony względem północy geograficznej: widok pozostaje z północą u góry.",
+  "View rotated to true north.": "Widok obrócony do północy geograficznej.",
+  "Rotate view (PLAN)": "Obróć widok (PLAN)",
+  "Rotate view to an edge": "Obróć widok do krawędzi",
+  "The plan is turned: crop its boundary in the view (View boundaries), not on the sheet.": "Rzut jest obrócony: przytnij jego granicę w widoku (Granice widoku), nie na arkuszu.",
   "Dark": "Ciemny",
   "As the system": "Jak system",
   "Grid and snaps": "Siatka i przyciąganie",
@@ -3192,6 +3218,7 @@ export const PL: Record<string, string> = {
   "Layer from": "Warstwa od", "Layer up to": "Warstwa do", "wall top": "góra ściany", "Layers 1 to n from the R face (right of the drawn direction) to the L face, as in the picture. Wall drawn anticlockwise: R is the exterior, L the interior. The core carries the wall's axis.": "Warstwy od 1 do n od lica P (po prawej stronie kierunku rysowania) do lica L, jak na rysunku. Ściana rysowana przeciwnie do ruchu wskazówek zegara: P to zewnątrz, L to wnętrze. Rdzeń niesie oś ściany.", "Reverse layers": "Odwróć warstwy", "Run the layers the other way: the R face's layer goes to the L face. Walls of the type swap faces once it is saved": "Układa warstwy w odwrotnej kolejności: warstwa lica P trafia na lico L. Ściany tego typu zamieniają się licami po zapisaniu", "Reverse the order of the layers? Once the type is saved, its walls swap faces: what is exterior becomes interior.": "Odwrócić kolejność warstw? Po zapisaniu typu jego ściany zamieniają się licami: to, co było zewnątrz, będzie wewnątrz.", "Open in Materials…": "Otwórz w Materiałach…", "Back to Wall types": "Wróć do Typów ścian", "Back to Floor types": "Wróć do Typów stropów",
   // A wall's top (the forum's topic #45)
   'Storey above': 'Kondygnacja powyżej', 'Unconnected height': 'Wysokość niepowiązana', 'Where the wall goes up to: the storey above its own (on the topmost storey, that storey\'s top), a storey of the project, or a height of its own. Its height follows the storeys when they move': 'Do jakiej wysokości sięga ściana: kondygnacja nad jej własną (na najwyższej kondygnacji jej góra), kondygnacja projektu lub własna wysokość. Jej wysokość podąża za kondygnacjami, gdy się przesuwają', 'Added to the level the top goes to (negative: below it, under a floor\'s structure)': 'Dodawane do poziomu, do którego sięga góra (ujemne: poniżej, pod konstrukcją stropu)', 'From its base to its top, worked out from the storeys': 'Od podstawy do góry, obliczona z kondygnacji', 'goes up to': 'sięga do', 'to its storey\'s top': 'do góry swojej kondygnacji', 'Top: as the type': 'Góra: jak typ', 'Top: storey above': 'Góra: kondygnacja powyżej', 'Top: unconnected height': 'Góra: wysokość niepowiązana', 'Wall top': 'Góra ściany', 'Where new walls of this type go up to': 'Do jakiej wysokości sięgają nowe ściany tego typu', 'for new walls; each wall\'s own in its properties': 'dla nowych ścian; każda ściana ma własną we właściwościach', 'Wall type\'s top': 'Góra typu ściany',
+  'Measured from': 'Mierzone od', 'Measured to': 'Mierzone do', 'Wall start': 'Początek ściany', 'Meeting wall’s face': 'Lico ściany stykającej się', 'Meeting wall’s core face': 'Lico rdzenia ściany stykającej się', 'Opening start': 'Początek otworu', 'Opening centre': 'Środek otworu', 'Opening end': 'Koniec otworu',
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

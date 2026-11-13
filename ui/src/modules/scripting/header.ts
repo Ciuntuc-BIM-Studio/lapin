@@ -10,7 +10,7 @@
  * `tool` makes the script a tool in My tools (`tool=yes`: named after the script); `run` names the function the tool calls
  * (without it the tool runs the whole script); `icon` is one of Lapin's or lucide's icons by name, else a letter;
  * `requires` lists modules the edition must have and `lapin>=0.1.N`, the oldest Lapin it works with. `panel` names the
- * group of My tools the tool goes in (decision 526; else "Scripts"), `size="small"` puts it small.
+ * group of My tools the tool goes in (decision 528; else "Scripts"), `size="small"` puts it small.
  */
 
 import { compareVersions } from '../../platform/extensions/manifest';
@@ -25,7 +25,7 @@ export interface ScriptHeader {
   tooltip?: string;
   /** The function the tool calls (a Python name); none: the tool runs the whole script. */
   run?: string;
-  /** The group of My tools the tool goes in (decision 526). */
+  /** The group of My tools the tool goes in (decision 528). */
   panel?: string;
   size?: 'large' | 'small';
   requires: string[];

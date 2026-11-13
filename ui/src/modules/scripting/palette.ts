@@ -1,5 +1,5 @@
 /**
- * A script's palette (`lapin.ui.palette`, decision 526), its logic: the rows a script registered (python/lapinbim/_ui.py,
+ * A script's palette (`lapin.ui.palette`, decision 528), its logic: the rows a script registered (python/lapinbim/_ui.py,
  * said back by the kernel after a Run from the Script panel) read into what the window draws itself — headings, texts,
  * separators, fields of the kinds `lapin.ui.ask` has (ask.ts reads them), buttons alone or side by side — never anything
  * of the script's to run; and what a palette remembers on this computer (where it floats, what its fields hold). Kept

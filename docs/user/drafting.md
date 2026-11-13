@@ -187,7 +187,7 @@ Like any tag, a build-up tag follows its element, and sheets and PDFs print it a
 
 ![The Axis grid dialog](shots/grid-dialog.webp)
 
-Click an axis to select it. Its properties show its **Start** and **End**, **Length**, **Angle**, and its spacing from the parallel axis before it (↔). Type a new spacing and the axis moves; the axes beyond it move too, unless you untick **the axes beyond move too**. **Bubbles** chooses which ends carry a bubble. **Axis styles…** opens **Drafting standards → Grid axes**, where the bubble, its size, the line type and the first label are set. Select the whole grid to list its axes and their spacings.
+Click an axis to select it. Its properties show its **Start** and **End**, **Length**, **Angle**, and its spacing from the parallel axis before it (↔). Type a new spacing and the axis moves; the axes beyond it move too, unless you untick **the axes beyond move too**. **Bubbles** chooses which ends carry a bubble. **Axis styles…** opens **Drafting standards → Grid axes**, where the bubble, its size, the line type and the first label are set. Select the whole grid to list its axes and their spacings. **Line up the axes** makes the parallel axes start and end on the same lines, taking the axis selected as the reference: with several axes selected, only those line up with it; with one, all the grid's axes that run parallel to it.
 
 ![A grid axis's properties](shots/axis-properties.webp)
 

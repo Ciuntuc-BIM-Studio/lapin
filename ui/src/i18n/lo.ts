@@ -15,7 +15,7 @@ export const LO: Record<string, string> = {
   "Middle drag orbits, Shift + middle drag pans, Ctrl + middle drag zooms; left drag selects a box; Shift toggles": "ລາກດ້ວຍປຸ່ມກາງໝູນ, Shift + ລາກດ້ວຍປຸ່ມກາງເລື່ອນ, Ctrl + ລາກດ້ວຍປຸ່ມກາງຊູມ; ລາກດ້ວຍປຸ່ມຊ້າຍເລືອກດ້ວຍກອບ; Shift ສະລັບ",
   "Right drag orbits, Shift + right drag pans; left drag selects a window or crossing; Shift adds, Ctrl removes": "ລາກດ້ວຍປຸ່ມຂວາໝູນ, Shift + ລາກດ້ວຍປຸ່ມຂວາເລື່ອນ; ລາກດ້ວຍປຸ່ມຊ້າຍເລືອກດ້ວຍໜ້າຕ່າງ ຫຼື ການຂ້າມ; Shift ເພີ່ມ, Ctrl ເອົາອອກ",
   "How the mouse orbits, pans, zooms and selects in the 3D view and in plans, sections, elevations and sheets; the menu in the status bar chooses it too. Lapin's own is the default; the others assume a three-button mouse.": "ເມົາໝູນ, ເລື່ອນ, ຊູມ ແລະ ເລືອກແນວໃດໃນມຸມມອງ 3D ແລະ ໃນແຜນຜັງ, ສ່ວນຕັດ, ດ້ານຕັ້ງ ແລະ ແຜ່ນແຕ້ມ; ເມນູໃນແຖບສະຖານະກໍເລືອກໄດ້ຄືກັນ. ຂອງ Lapin ເປັນຄ່າເລີ່ມຕົ້ນ; ແບບອື່ນສົມມຸດວ່າໃຊ້ເມົາສາມປຸ່ມ.",
-  // Decision 525: visual graphs
+  // Decision 527: visual graphs
   "Graphs are the host's: in a shared session only the host opens, previews and bakes them.": "ກຣາບເປັນຂອງເຈົ້າພາບ: ໃນເຊດຊັນທີ່ແບ່ງປັນ ມີແຕ່ເຈົ້າພາບທີ່ເປີດ, ເບິ່ງຕົວຢ່າງ ແລະ ສ້າງຈາກມັນ.",
   "Storey levels": "ລະດັບຊັ້ນ",
   "Round off": "ປັດເສດ",
@@ -254,7 +254,7 @@ export const LO: Record<string, string> = {
   "Its tool in My tools (the script's header)": "ເຄື່ອງມືຂອງມັນໃນເຄື່ອງມືຂອງຂ້ອຍ (ສ່ວນຫົວຂອງສະຄຣິບ)",
   "Tool:": "ເຄື່ອງມື:",
   "Forget trust: this script asks again before it runs, and its tools leave My tools": "ລືມຄວາມໄວ້ວາງໃຈ: ສະຄຣິບນີ້ຈະຖາມອີກກ່ອນແລ່ນ, ແລະເຄື່ອງມືຂອງມັນຈະອອກຈາກເຄື່ອງມືຂອງຂ້ອຍ",
-  // Decision 526: scripts' panels, menus and palettes
+  // Decision 528: scripts' panels, menus and palettes
   "A palette's button names its palette.": "ປຸ່ມຂອງແຜງເຄື່ອງມືບອກຊື່ແຜງຂອງມັນ.",
   "A palette gives its button at most 64 values.": "ແຜງເຄື່ອງມືໃຫ້ຄ່າແກ່ປຸ່ມຂອງມັນໄດ້ຫຼາຍສຸດ 64 ຄ່າ.",
   "A palette's values are at most 64 KB.": "ຄ່າຂອງແຜງເຄື່ອງມືມີຂະໜາດຫຼາຍສຸດ 64 KB.",
@@ -426,6 +426,32 @@ export const LO: Record<string, string> = {
   "UCS at the survey point, its axes east and north.": "UCS ທີ່ຈຸດສຳຫຼວດພິກັດ, ແກນໄປທາງທິດຕາເວັນອອກ ແລະ ທິດເໜືອ.",
   "UCS origin moved.": "ຍ້າຍຈຸດເລີ່ມຕົ້ນຂອງ UCS ແລ້ວ.",
   "UCS set.": "ຕັ້ງ UCS ແລ້ວ.",
+  "Rotated view: change its orientation or set north up again": "ມຸມມອງໝຸນແລ້ວ: ປ່ຽນທິດທາງຂອງມັນ ຫຼື ໃຫ້ທິດເໜືອຢູ່ເທິງອີກ",
+  "Rotate view: turn the plan on screen and on its sheets": "ໝຸນມຸມມອງ: ໝຸນແຜນຜັງເທິງໜ້າຈໍ ແລະ ເທິງແຜ່ນແບບຂອງມັນ",
+  "North up (not rotated)": "ທິດເໜືອຢູ່ເທິງ (ບໍ່ໝຸນ)",
+  "Rotate view…": "ໝຸນມຸມມອງ…",
+  "Rotate view to align with an edge": "ໝຸນມຸມມອງໃຫ້ຊື່ກັບຂອບ",
+  "Follow the UCS": "ຕາມ UCS",
+  "True north up": "ທິດເໜືອແທ້ຢູ່ເທິງ",
+  "Rotate view": "ໝຸນມຸມມອງ",
+  "Direction shown horizontal (° from X)": "ທິດທາງທີ່ສະແດງເປັນແນວນອນ (° ຈາກ X)",
+  "In the plan’s coordinates, turned as it shows (mm)": "ໃນພິກັດຂອງແຜນຜັງ, ໝຸນຕາມທີ່ສະແດງ (mm)",
+  "Only a plan is rotated: a section or an elevation looks where its line or side says.": "ໝຸນໄດ້ສະເພາະແຜນຜັງ: ຮູບຕັດ ຫຼື ຮູບດ້ານ ເບິ່ງໄປທາງທີ່ເສັ້ນ ຫຼື ດ້ານຂອງມັນບອກ.",
+  "First point of the edge to align with": "ຈຸດທຳອິດຂອງຂອບທີ່ຈະໃຫ້ຊື່ກັບ",
+  "Second point of the edge": "ຈຸດທີສອງຂອງຂອບ",
+  "The two points are the same: pick two different points.": "ສອງຈຸດເປັນຈຸດດຽວກັນ: ເລືອກສອງຈຸດທີ່ຕ່າງກັນ.",
+  "View rotated to the edge.": "ມຸມມອງໝຸນຕາມຂອບແລ້ວ.",
+  "There is no UCS: the view stays as it is (World turns it back north up).": "ບໍ່ມີ UCS: ມຸມມອງຢູ່ຄືເກົ່າ (World ໃຫ້ທິດເໜືອກັບຄືນຢູ່ເທິງ).",
+  "View follows the UCS.": "ມຸມມອງຕາມ UCS.",
+  "PLAN: [Current UCS/World/Angle/Edge/True north] <Current UCS>": "PLAN: [Current UCS/World/Angle/Edge/True north] <Current UCS>",
+  "View north up (World).": "ມຸມມອງທິດເໜືອຢູ່ເທິງ (World).",
+  "Direction to show horizontal (degrees from the X axis)": "ທິດທາງທີ່ຈະສະແດງເປັນແນວນອນ (ອົງສາຈາກແກນ X)",
+  "View rotated.": "ມຸມມອງໝຸນແລ້ວ.",
+  "The project is not turned from true north: the view stays north up.": "ໂຄງການບໍ່ໄດ້ໝຸນຈາກທິດເໜືອແທ້: ມຸມມອງຢູ່ທິດເໜືອຢູ່ເທິງ.",
+  "View rotated to true north.": "ມຸມມອງໝຸນໄປທິດເໜືອແທ້ແລ້ວ.",
+  "Rotate view (PLAN)": "ໝຸນມຸມມອງ (PLAN)",
+  "Rotate view to an edge": "ໝຸນມຸມມອງຕາມຂອບ",
+  "The plan is turned: crop its boundary in the view (View boundaries), not on the sheet.": "ແຜນຜັງໝຸນຢູ່: ຕັດຂອບເຂດຂອງມັນໃນມຸມມອງ (ຂອບເຂດມຸມມອງ), ບໍ່ແມ່ນເທິງແຜ່ນ.",
   "Dark": "ມືດ",
   "As the system": "ຕາມລະບົບ",
   "Grid and snaps": "ຕາໜ່າງ ແລະ ການຈັບຈຸດ",
@@ -3245,6 +3271,7 @@ export const LO: Record<string, string> = {
   "Layer from": "ຊັ້ນຈາກ", "Layer up to": "ຊັ້ນເຖິງ", "wall top": "ເທິງສຸດຂອງຝາ", "Layers 1 to n from the R face (right of the drawn direction) to the L face, as in the picture. Wall drawn anticlockwise: R is the exterior, L the interior. The core carries the wall's axis.": "ຊັ້ນ 1 ຫາ n ຈາກໜ້າ R (ເບື້ອງຂວາຂອງທິດທາງການແຕ້ມ) ຫາໜ້າ L ຕາມຮູບ. ຝາທີ່ແຕ້ມທວນເຂັມໂມງ: R ແມ່ນດ້ານນອກ, L ແມ່ນດ້ານໃນ. ແກນກາງຮັບແກນຂອງຝາ.", "Reverse layers": "ກັບຊັ້ນ", "Run the layers the other way: the R face's layer goes to the L face. Walls of the type swap faces once it is saved": "ວາງຊັ້ນຕາມລຳດັບກົງກັນຂ້າມ: ຊັ້ນຂອງໜ້າ R ຍ້າຍໄປໜ້າ L. ຝາຂອງປະເພດຈະສະຫຼັບໜ້າເມື່ອບັນທຶກ", "Reverse the order of the layers? Once the type is saved, its walls swap faces: what is exterior becomes interior.": "ກັບລຳດັບຂອງຊັ້ນບໍ? ເມື່ອບັນທຶກປະເພດແລ້ວ ຝາຂອງມັນຈະສະຫຼັບໜ້າ: ສິ່ງທີ່ເປັນດ້ານນອກຈະກາຍເປັນດ້ານໃນ.", "Open in Materials…": "ເປີດໃນວັດສະດຸ…", "Back to Wall types": "ກັບໄປປະເພດຝາ", "Back to Floor types": "ກັບໄປປະເພດພື້ນ",
   // A wall's top (the forum's topic #45)
   'Storey above': 'ຊັ້ນເທິງ', 'Unconnected height': 'ຄວາມສູງບໍ່ເຊື່ອມ', 'Where the wall goes up to: the storey above its own (on the topmost storey, that storey\'s top), a storey of the project, or a height of its own. Its height follows the storeys when they move': 'ຝາຂຶ້ນໄປຮອດໃສ: ຊັ້ນເທິງຊັ້ນຂອງມັນ (ຢູ່ຊັ້ນສູງສຸດ ແມ່ນຈຸດເທິງຂອງຊັ້ນນັ້ນ), ຊັ້ນໜຶ່ງຂອງໂຄງການ ຫຼື ຄວາມສູງຂອງມັນເອງ. ຄວາມສູງຂອງມັນປ່ຽນຕາມຊັ້ນເມື່ອຊັ້ນຍ້າຍ', 'Added to the level the top goes to (negative: below it, under a floor\'s structure)': 'ບວກໃສ່ລະດັບທີ່ຈຸດເທິງຂຶ້ນໄປຮອດ (ລົບ: ຕ່ຳກວ່າ, ກ້ອງໂຄງສ້າງພື້ນ)', 'From its base to its top, worked out from the storeys': 'ຈາກຖານຮອດຈຸດເທິງ, ຄິດໄລ່ຈາກຊັ້ນ', 'goes up to': 'ຂຶ້ນໄປຮອດ', 'to its storey\'s top': 'ຮອດຈຸດເທິງຂອງຊັ້ນມັນ', 'Top: as the type': 'ຈຸດເທິງ: ຕາມປະເພດ', 'Top: storey above': 'ຈຸດເທິງ: ຊັ້ນເທິງ', 'Top: unconnected height': 'ຈຸດເທິງ: ຄວາມສູງບໍ່ເຊື່ອມ', 'Wall top': 'ຈຸດເທິງຂອງຝາ', 'Where new walls of this type go up to': 'ຝາໃໝ່ປະເພດນີ້ຂຶ້ນໄປຮອດໃສ', 'for new walls; each wall\'s own in its properties': 'ສຳລັບຝາໃໝ່; ແຕ່ລະຝາມີຂອງຕົນເອງໃນຄຸນສົມບັດ', 'Wall type\'s top': 'ຈຸດເທິງຂອງປະເພດຝາ',
+  'Measured from': 'ວັດແທກຈາກ', 'Measured to': 'ວັດແທກເຖິງ', 'Wall start': 'ຈຸດເລີ່ມຂອງຝາ', 'Meeting wall’s face': 'ໜ້າຂອງຝາທີ່ຕັດກັນ', 'Meeting wall’s core face': 'ໜ້າແກນຂອງຝາທີ່ຕັດກັນ', 'Opening start': 'ຈຸດເລີ່ມຂອງຊ່ອງເປີດ', 'Opening centre': 'ກາງຊ່ອງເປີດ', 'Opening end': 'ຈຸດສຸດຂອງຊ່ອງເປີດ',
 };
 
 /** Phrases with a number or a name in them. */

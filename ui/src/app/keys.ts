@@ -15,7 +15,7 @@
  */
 
 import { useEffect } from 'react';
-import { useUi } from './store';
+import { select, useUi } from './store';
 import { findTool, hotbarIds, useToolTick } from '../platform/modules';
 import { reach } from './hotbar';
 import { cancel, submit, useCad } from '../viewport/cad/session';
@@ -76,7 +76,7 @@ export type KeyIntent =
   | { kind: 'toolSpace' }
   /** The ` key: the command line takes all typing, or gives it back. */
   | { kind: 'cmdMode' }
-  | { kind: 'closeDialog' } | { kind: 'cancel' } | { kind: 'submit' } | { kind: 'backspace' }
+  | { kind: 'closeDialog' } | { kind: 'deselect' } | { kind: 'cancel' } | { kind: 'submit' } | { kind: 'backspace' }
   | { kind: 'type'; buffer: string }
   | { kind: 'valueType'; key: string } | { kind: 'valueBack' } | { kind: 'valueEnter' }
   | { kind: 'liveType'; key: string } | { kind: 'liveBack' } | { kind: 'liveFocus'; field?: 'len' | 'ang' } | { kind: 'liveClear' } | { kind: 'liveCommit' } | { kind: 'liveMode' };
@@ -149,7 +149,8 @@ export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
     if (unitKey(s.live.text, e.key)) return { kind: 'liveType', key: e.key.toLowerCase() };
   }
   const typing = s.buffer.length > 0 || !!s.step;
-  if (e.key === 'Escape') return s.step || s.buffer || all ? { kind: 'cancel' } : null;
+  // Esc: first the running command (or what is typed), then, with nothing on, the selection lets go (a drilled one steps up first: DrillCrumbs).
+  if (e.key === 'Escape') return s.step || s.buffer || all ? { kind: 'cancel' } : !s.tool && s.selected.length ? { kind: 'deselect' } : null;
   if (e.key === ' ' && !typing && s.toolSpace) return { kind: 'toolSpace' };
   if (e.key === 'Enter' || (e.key === ' ' && (typing || s.hasLast) && s.step?.want !== 'text')) {
     // Plan gestures (a floor's outline) take their own Enter.
@@ -181,11 +182,14 @@ export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
   return { kind: 'type', buffer };
 }
 
+/** The tool at the start of a key press, before a view's own Esc handler ends it: that Esc ends the tool and does no more. */
+let toolAtKeydown: string | null = null;
+
 function snapshot(): KeySnapshot {
   const ui = useUi.getState();
   const cad = useCad.getState();
   return {
-    screen: ui.screen, dialog: openDialog(ui.dialog, !!document.querySelector('[role="dialog"]')), tool: ui.tool, selected: ui.selected, toolSpace: !!(ui.tool && findTool(ui.tool)?.space),
+    screen: ui.screen, dialog: openDialog(ui.dialog, !!document.querySelector('[role="dialog"]')), tool: ui.tool ?? toolAtKeydown, selected: ui.selected, toolSpace: !!(ui.tool && findTool(ui.tool)?.space),
     buffer: cad.buffer, step: cad.step ? { want: cad.step.want } : null, hasLast: !!cad.last,
     hotbar: reach(hotbarIds()), keymap: keymap(), letters: useKeymap.getState().letters, takeAll: cad.takeAll,
     live: (() => { const l = useLive.getState(); return { active: !!l.owner, text: l[l.focus], typed: !!(l.len || l.ang), rect: !!l.rect, mode: l.mode }; })(),
@@ -214,6 +218,7 @@ export function carryOut(intent: KeyIntent): void {
     }
     case 'toolSpace': { const t = useUi.getState().tool; if (t) findTool(t)?.space?.(); useToolTick.setState((s) => ({ n: s.n + 1 })); break; }
     case 'closeDialog': useUi.setState({ dialog: null }); break;
+    case 'deselect': select(null); break;
     case 'cancel': cancel(); useCad.setState({ takeAll: false }); break;
     case 'cmdMode': useCad.setState((c) => ({ takeAll: !c.takeAll })); break;
     case 'submit': {
@@ -257,8 +262,10 @@ export function handleKeydown(e: KeyEventLike, snap: () => KeySnapshot = snapsho
 
 export function useShortcuts(): void {
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => handleKeydown(e);
+    const onKey = (e: KeyboardEvent) => { handleKeydown(e); toolAtKeydown = null; };
+    const first = () => { toolAtKeydown = useUi.getState().tool; };
+    window.addEventListener('keydown', first, true);
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => { window.removeEventListener('keydown', first, true); window.removeEventListener('keydown', onKey); };
   }, []);
 }

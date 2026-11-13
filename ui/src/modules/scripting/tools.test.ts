@@ -59,7 +59,7 @@ describe('a script\'s tools (decision 489, stage 4)', () => {
     expect(readRegistered(null)).toEqual({});
   });
 
-  it('keep older stored entries, and the panels, menus and palettes of decision 526', () => {
+  it('keep older stored entries, and the panels, menus and palettes of decision 528', () => {
     const kept = readRegistered({ 'mine:a.py': [{ name: 'Old', call: 'f', main: false }, { kind: 'palette', name: 'P', rows: [{ row: 'separator' }] }] });
     expect(kept['mine:a.py'].map((x) => x.name)).toEqual(['Old', 'P']);
     const [old] = toolsOf({ kind: 'mine', key: 'mine:a.py', label: 'a.py' }, '', kept['mine:a.py'], facts);
@@ -70,7 +70,7 @@ describe('a script\'s tools (decision 489, stage 4)', () => {
 
 const SRC = { kind: 'mine' as const, key: 'mine:walls.py', label: 'walls.py' };
 
-describe('panels, sizes, menus and palettes of a script (decision 526)', () => {
+describe('panels, sizes, menus and palettes of a script (decision 528)', () => {
   const registered = [
     { name: 'Perimeter', call: 'perimeter', panel: 'Walls', size: 'small' },
     { kind: 'menu', name: 'Openings', icon: 'door', panel: 'Walls' },
@@ -112,7 +112,7 @@ describe('panels, sizes, menus and palettes of a script (decision 526)', () => {
   });
 });
 
-describe('a palette\'s rows (decision 526)', () => {
+describe('a palette\'s rows (decision 528)', () => {
   it('keep what the window draws only: texts, one separator at a time, fields once by key, buttons once by name', () => {
     const rows = readRows([
       { row: 'separator' },

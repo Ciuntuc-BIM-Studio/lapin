@@ -2,10 +2,11 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { NodeDto, RelationDto } from '../engine/protocol';
 import { useSession } from '../engine/session';
 import { useUi } from '../app/store';
+import { NAV_STYLES } from '../app/navStyle';
 import { setDisplay } from '../app/display';
 import { useScope } from './scope';
 import { openGroup, shownSelection } from './groups';
-import { assemblyPath, drillEscape, drillInside, drillLevel, drillTarget, pickClick, pickRegion, useDrill } from './assemblies';
+import { assemblyPath, drillEscape, drillInside, drillLevel, drillTarget, pickByMods, pickClick, pickRegion, useDrill } from './assemblies';
 
 const node = (id: string, type: string, storeyId: string | null = 's'): NodeDto => ({ id, type, name: id, parentId: storeyId, px: 0, py: 0, props: {}, editable: true, module: null, storeyId });
 const rel = (id: string, cls: string, relating: string, related: string[]): [string, RelationDto] => [id, { id, class: cls, relating, related }];
@@ -147,5 +148,27 @@ describe('picking with drilling on', () => {
     setDisplay({ drillSelect: false });
     expect(useDrill.getState().path).toBeNull();
     expect(click('c1')).toEqual(['c1']);
+  });
+});
+
+describe('Shift on empty space', () => {
+  const shift = { shift: true, ctrl: false, alt: false };
+  const plain = { shift: false, ctrl: false, alt: false };
+  it('leaves the selection as it is in Lapin\'s style, drilling or not; a plain click on nothing still lets go', () => {
+    for (const drill of [false, true]) {
+      setDisplay({ drillSelect: drill });
+      useUi.setState({ selected: ['w', 'x'], selection: 'x' });
+      pickByMods(null, shift, NAV_STYLES.lapin);
+      expect(sel()).toEqual(['w', 'x']);
+      pickClick(null, { add: true });
+      expect(sel()).toEqual(['w', 'x']);
+      pickByMods(null, plain, NAV_STYLES.lapin);
+      expect(sel()).toEqual([]);
+    }
+  });
+  it('still toggles what it meets', () => {
+    useUi.setState({ selected: ['w'], selection: 'w' });
+    pickByMods('c1', shift, NAV_STYLES.lapin);
+    expect(sel()).toEqual(['w', 'c1']);
   });
 });

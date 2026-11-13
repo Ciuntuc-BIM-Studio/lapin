@@ -107,7 +107,7 @@ class ToolTests(unittest.TestCase):
 
 
 class PanelTests(unittest.TestCase):
-    """Decision 526: panels, sizes, menus and palettes, as registered for the window."""
+    """Decision 528: panels, sizes, menus and palettes, as registered for the window."""
 
     def setUp(self):
         _ui._registered = []

@@ -6,7 +6,7 @@
  * (`lapin.ui.ask`, the host's `script.ask`) for the dialog (AskDialog.tsx) until one window answers. Works with Developer
  * extras off too: a tool is for anyone; the Script panel is the developer's. The desktop's only.
  *
- * Decision 526: a script's menu is a pulldown tool (its tools as `items`, shell/pulldown.ts), a palette a tool that opens
+ * Decision 528: a script's menu is a pulldown tool (its tools as `items`, shell/pulldown.ts), a palette a tool that opens
  * or closes its floating panel (PaletteWindow.tsx); a palette's button runs like a tool (one Run, one undo step named after the
  * button), carrying the palette's values (`script.run {tool: {name, call, palette, values}}`).
  */
@@ -32,7 +32,7 @@ export interface ScriptToolsState {
   questions: AskQuestion[];
   /** A tool whose script is not trusted here, waiting for the user's answer (Run once / Trust / Cancel); a palette's button pressed. */
   trustAsk: { tool: ScriptTool; code: string; sha: string; button?: PaletteButtonRun } | null;
-  /** The scripts' palettes now (decision 526), and the ones open, by id, in the order they were opened. */
+  /** The scripts' palettes now (decision 528), and the ones open, by id, in the order they were opened. */
   palettes: ScriptTool[];
   open: string[];
 }

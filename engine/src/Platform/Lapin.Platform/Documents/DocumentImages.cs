@@ -39,8 +39,16 @@ public static class DocumentImages
         var own = view.NumOrNull("scale") is { } vs && vs > 0 ? vs : 100;
         var sc = scale is > 0 ? scale.Value : own;
         if (boundaryId is { Length: > 0 }) return Cropped(q, view, Boundary(m, view.Id, boundaryId), scale, width, sc, own, target, maxWidth, key, caption);
-        var r = Render(q, view, sc, own);
-        if (r.Bounds is not { } b) return null;
+        // A turned plan (decision 526) pictured as it shows: its pens turned, its texts readable.
+        var turn = Views.Turn(m, view);
+        (List<Pen> Pens, (Vec2 Min, Vec2 Max)? Bounds) Shown(Views.Rendered rr)
+        {
+            if (turn == 0) return (rr.Pens, rr.Bounds);
+            var turned = rr.Pens.Select(p => Turning.Turned(p, turn, rr.Scale / 1000)).ToList();
+            return (turned, Turning.Bounds(turned));
+        }
+        var (pensShown, boundsShown) = Shown(Render(q, view, sc, own));
+        if (boundsShown is not { } b) return null;
         var extent = Math.Max(b.Max.X - b.Min.X, 1e-6);
         double Wide(double at) => extent * 1000 / at + 2 * Margin;
         double? refit = null;
@@ -49,13 +57,13 @@ public static class DocumentImages
         if (refit is { } rs && Math.Abs(rs - sc) > 1e-9)
         {
             sc = rs;
-            r = Render(q, view, sc, own);
-            if (r.Bounds is not { } rb) return null;
+            (pensShown, boundsShown) = Shown(Render(q, view, sc, own));
+            if (boundsShown is not { } rb) return null;
             b = rb;
         }
         var k = 1000 / sc;
         var (minX, maxY) = (b.Min.X, b.Max.Y);
-        var pens = Transform(r.Pens, p => new Vec2((p.X - minX) * k + Margin, (maxY - p.Y) * k + Margin), 1);
+        var pens = Transform(pensShown,p => new Vec2((p.X - minX) * k + Margin, (maxY - p.Y) * k + Margin), 1);
         return new DocImage(key, (b.Max.X - b.Min.X) * k + 2 * Margin, (b.Max.Y - b.Min.Y) * k + 2 * Margin, pens, caption);
     }
 

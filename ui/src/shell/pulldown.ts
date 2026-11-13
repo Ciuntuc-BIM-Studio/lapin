@@ -1,5 +1,5 @@
 /**
- * A pulldown tool (decision 526; `ToolDef.items`: a script's `lapin.ui.menu`): its button opens the right-click menu's
+ * A pulldown tool (decision 528; `ToolDef.items`: a script's `lapin.ui.menu`): its button opens the right-click menu's
  * list of its tools under it, each pressed as itself. Pressed from elsewhere (Commands…, a quick slot) the list opens
  * where the pointer last went down. Any other tool is just pressed.
  */

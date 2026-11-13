@@ -11,6 +11,7 @@ import { mm, num, ofClass, relatedOf, relatingOf, typeOf } from '../../engine/mo
 import type { NodeDto } from '../../engine/protocol';
 import { LengthField } from '../../shell/cells';
 import { sameKind } from '../../shell/params';
+import { AlongField } from './AlongField';
 import { JoineryDataButton } from './JoineryData';
 import type { Position } from './JoineryDialog';
 
@@ -70,7 +71,7 @@ export function JoinerySection({ node }: { node: NodeDto }) {
           </>}
         </>}
         {opening && node.editable && <>
-          <dt>Along the wall</dt><dd><LengthField metres={num(opening, 'along')} onCommit={(v) => { if (v != null) void execute('architecture.moveOpening', { id: node.id, along: v }); }} /></dd>
+          <dt>Along the wall</dt><dd><AlongField id={node.id} along={num(opening, 'along')} width={num(opening, 'width') || spec?.width || 0} /></dd>
           <dt>Sill</dt><dd><LengthField metres={num(opening, 'sill')} onCommit={(v) => { if (v != null) void execute('architecture.moveOpening', { ids: sameKind(node, JOINERY), sill: v }); }} /></dd>
         </>}
         {node.editable && !inCurtain && <>

@@ -88,7 +88,7 @@ export interface ToolDef {
   /** A button: what it does when pressed (a tool with a gesture is switched on instead). */
   run?: () => void;
   /**
-   * A pulldown (decision 526: a script's `lapin.ui.menu`): its button in the ribbon and in My tools opens a list of these
+   * A pulldown (decision 528: a script's `lapin.ui.menu`): its button in the ribbon and in My tools opens a list of these
    * tools (shell/pulldown.ts), each pressed as itself. Elsewhere (Commands…, a quick slot) its `run` is pressed, which
    * should open the same list.
    */

@@ -222,6 +222,28 @@ Mânerele unui element selectat (capetele unui perete, colțurile unei plăci) s
 
 Trage o carte din **Catalog** sau o unealtă din ribbon pe vederea 3D: unealta pornește cu acel tip. O unealtă pusă printr-un clic (un stâlp, o fundație izolată, mobilier, un lift, o plantă) e pusă imediat unde o lași, prinsă de model. Lăsată, sau pusă cu un clic, pe placa altui nivel, elementul merge pe acel nivel: o masă pusă pe placa etajului ține de etaj, oricare ar fi nivelul activ.
 
+## Rotirea unui plan
+
+Un plan poate fi rotit astfel încât un perete pus oblic să stea de-a lungul ecranului, cum fac **PLAN** din AutoCAD, decuparea rotită din Revit și **Set Orientation** din ArchiCAD. Butonul **Rotește vederea** din bara planului (săgeata care se întoarce) oferă:
+
+- **Nordul în sus (nerotită)**: planul cum e desenat, cu axa X spre dreapta.
+- **Rotește vederea…**: direcția de arătat orizontal, în grade față de axa X (30 aduce orizontal un perete desenat la 30°).
+- **Rotește vederea după o muchie**: dai clic pe două puncte, de exemplu cele două colțuri ale unui perete; direcția lor devine orizontală, iar planul se rotește cu cel mult 90°.
+- **Urmează UCS-ul**: orizontala planului e axa X a UCS-ului și o urmează când UCS-ul se schimbă (vezi [Snap și ajutoare](drafting.md#snap-și-ajutoare)).
+- **Nordul geografic în sus**, când proiectul e rotit față de nordul geografic.
+
+În linia de comandă, **PLAN** cere **Current UCS** (Enter), **World** (din nou nordul în sus), **Angle**, **Edge** sau **True north**. Fiecare schimbare e un singur pas de anulare. Planul implicit al unui nivel devine vederea lui de plan când e rotit, cu ce era desenat pe el.
+
+![Rotește vederea în bara planului](shots/plan-orientation-menu.webp)
+
+Orientarea ține de vedere: se păstrează cu proiectul, iar planșele vederii, PDF-ul și DXF-ul ei (în coordonatele planului) o tipăresc cum o arată ecranul. DXF-ul față de punctul de bază sau în coordonatele hărții rămâne în acele sisteme. Tot restul merge și rotit: panoramarea și zoomul, mânerele, snap-urile, fereastra și selecția prin traversare, cotele temporare, planul de reper (care arată ecranul rotit pe o hartă cu nordul în sus) și săgeata nordului. Ortho, urmărirea polară și grila urmează axele ecranului, sau ale UCS-ului când e setat unul; coordonatele tastate rămân în UCS. Textele, etichetele, cotele și numele încăperilor se rotesc cu planul și rămân lizibile: un text care s-ar citi cu susul în jos e întors pe loc, cum cere desenul tehnic (drept în limitele a ±90°). Hașurile se rotesc așa cum le desenează desenul.
+
+![O casă la 30°, rotită ca peretele din față să stea de-a lungul ecranului](shots/plan-orientation.webp)
+
+![Același plan pe planșa lui, tipărit cum se vede](shots/plan-orientation-sheet.webp)
+
+Doar planurile se rotesc (planuri de nivel, de tavan, de fundații, de situație și de încadrare); o secțiune sau o fațadă privește unde spun linia sau latura ei. O limită a vederii rămâne paralelă cu axele planului: pe o planșă, un plan rotit cu alt unghi decât un sfert de tură arată chenarul din jurul ei, iar limita se decupează în vedere.
+
 ## Ce arată o vedere
 
 Tabul **Vedere** setează ce arată vederea din față și cum arată.

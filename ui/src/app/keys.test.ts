@@ -151,6 +151,12 @@ describe('keyIntent', () => {
   it('cancels a running command with Escape, toggles with the F keys, picks the hotbar with digits', () => {
     expect(keyIntent(press('Escape'), state({ step: { want: 'point' } }))).toEqual({ kind: 'cancel' });
     expect(keyIntent(press('Escape'), state())).toBeNull();
+    // Nothing running: Esc lets the selection go (after a tool ends, not with it).
+    expect(keyIntent(press('Escape'), state({ selected: ['w1'] }))).toEqual({ kind: 'deselect' });
+    expect(keyIntent(press('Escape'), state({ selected: ['w1'], tool: 'architecture.wall' }))).toBeNull();
+    expect(keyIntent(press('Escape'), state({ selected: ['w1'], buffer: 'ab' }))).toEqual({ kind: 'cancel' });
+    expect(keyIntent(press('Escape'), state({ selected: ['w1'], step: { want: 'point' } }))).toEqual({ kind: 'cancel' });
+    expect(keyIntent(press('Escape'), state({ selected: ['w1'], dialog: 'x' }))).toEqual({ kind: 'closeDialog' });
     expect(keyIntent(press('F8'), state())).toEqual({ kind: 'command', id: 'app.ortho' });
     expect(keyIntent(press('3'), state())).toEqual({ kind: 'command', id: 'hotbar.3' });
     expect(keyIntent(press('9'), state())).toBeNull();

@@ -123,7 +123,7 @@ export function MyToolsBand({ icons, drop, onPicked }: { icons: boolean; drop?: 
     refocus.setState({ tool: null });
   }, [focus, stored]);
 
-  // A pulldown (a script's menu, decision 526) opens its list under its button; the band stays open while one is chosen.
+  // A pulldown (a script's menu, decision 528) opens its list under its button; the band stays open while one is chosen.
   const press = (tl: ToolDef, el: HTMLElement) => { pressTool(tl, el); if (!tl.items?.length) onPicked?.(); };
   const clear = () => { setOver(null); setDragged(null); };
 

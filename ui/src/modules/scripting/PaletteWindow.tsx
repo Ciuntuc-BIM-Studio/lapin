@@ -1,5 +1,5 @@
 /**
- * A script's palettes (`lapin.ui.palette`, decision 526): small floating panels of the window's own, drawn from the rows
+ * A script's palettes (`lapin.ui.palette`, decision 528): small floating panels of the window's own, drawn from the rows
  * the script registered (palette.ts reads them) — headings, texts, separators, the fields `lapin.ui.ask` has (the same
  * Field as AskDialog.tsx) and buttons — never anything of the script's to run. Non-modal, without a backdrop, moved by
  * their title bar; each opened and closed by its button in My tools. Where it floats and what its fields hold are kept on

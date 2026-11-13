@@ -15,7 +15,7 @@ export const DA: Record<string, string> = {
   "Middle drag orbits, Shift + middle drag pans, Ctrl + middle drag zooms; left drag selects a box; Shift toggles": "Træk med midten roterer, Shift + træk med midten panorerer, Ctrl + træk med midten zoomer; træk med venstre markerer med en boks; Shift skifter",
   "Right drag orbits, Shift + right drag pans; left drag selects a window or crossing; Shift adds, Ctrl removes": "Træk med højre roterer, Shift + træk med højre panorerer; træk med venstre markerer med vindue eller kryds; Shift tilføjer, Ctrl fjerner",
   "How the mouse orbits, pans, zooms and selects in the 3D view and in plans, sections, elevations and sheets; the menu in the status bar chooses it too. Lapin's own is the default; the others assume a three-button mouse.": "Hvordan musen roterer, panorerer, zoomer og markerer i 3D-visningen og i plantegninger, snit, facader og tegningsark; menuen i statuslinjen vælger den også. Lapins egen er standard; de andre forudsætter en mus med tre knapper.",
-  // Decision 525: visual graphs
+  // Decision 527: visual graphs
   "Graphs are the host's: in a shared session only the host opens, previews and bakes them.": "Grafer tilhører værten: i en delt session er det kun værten, der åbner, forhåndsviser og genererer dem.",
   "Storey levels": "Etagekoter",
   "Round off": "Afrund",
@@ -254,7 +254,7 @@ export const DA: Record<string, string> = {
   "Its tool in My tools (the script's header)": "Dets værktøj i Mine værktøjer (scriptets header)",
   "Tool:": "Værktøj:",
   "Forget trust: this script asks again before it runs, and its tools leave My tools": "Glem tillid: scriptet spørger igen, før det kører, og dets værktøjer forsvinder fra Mine værktøjer",
-  // Decision 526: scripts' panels, menus and palettes
+  // Decision 528: scripts' panels, menus and palettes
   "A palette's button names its palette.": "En palettes knap navngiver sin palet.",
   "A palette gives its button at most 64 values.": "En palet giver sin knap højst 64 værdier.",
   "A palette's values are at most 64 KB.": "En palettes værdier fylder højst 64 KB.",
@@ -426,6 +426,32 @@ export const DA: Record<string, string> = {
   "UCS at the survey point, its axes east and north.": "UCS i opmålingspunktet, med akserne mod øst og nord.",
   "UCS origin moved.": "UCS-oprindelsen er flyttet.",
   "UCS set.": "UCS er sat.",
+  "Rotated view: change its orientation or set north up again": "Roteret visning: skift dens orientering eller sæt nord op igen",
+  "Rotate view: turn the plan on screen and on its sheets": "Roter visning: drej planen på skærmen og på dens tegningsark",
+  "North up (not rotated)": "Nord op (ikke roteret)",
+  "Rotate view…": "Roter visning…",
+  "Rotate view to align with an edge": "Roter visning efter en kant",
+  "Follow the UCS": "Følg UCS",
+  "True north up": "Sand nord op",
+  "Rotate view": "Roter visning",
+  "Direction shown horizontal (° from X)": "Retning vist vandret (° fra X)",
+  "In the plan’s coordinates, turned as it shows (mm)": "I planens koordinater, drejet som den vises (mm)",
+  "Only a plan is rotated: a section or an elevation looks where its line or side says.": "Kun en plan kan roteres: et snit eller en facade ser derhen, hvor dens linje eller side siger.",
+  "First point of the edge to align with": "Første punkt på kanten, der skal rettes ind efter",
+  "Second point of the edge": "Andet punkt på kanten",
+  "The two points are the same: pick two different points.": "De to punkter er ens: vælg to forskellige punkter.",
+  "View rotated to the edge.": "Visningen er roteret efter kanten.",
+  "There is no UCS: the view stays as it is (World turns it back north up).": "Der er ingen UCS: visningen forbliver som den er (World drejer den tilbage med nord op).",
+  "View follows the UCS.": "Visningen følger UCS.",
+  "PLAN: [Current UCS/World/Angle/Edge/True north] <Current UCS>": "PLAN: [Current UCS/World/Angle/Edge/True north] <Current UCS>",
+  "View north up (World).": "Visning med nord op (World).",
+  "Direction to show horizontal (degrees from the X axis)": "Retning der skal vises vandret (grader fra X-aksen)",
+  "View rotated.": "Visningen er roteret.",
+  "The project is not turned from true north: the view stays north up.": "Projektet er ikke drejet fra sand nord: visningen forbliver med nord op.",
+  "View rotated to true north.": "Visningen er roteret til sand nord.",
+  "Rotate view (PLAN)": "Roter visning (PLAN)",
+  "Rotate view to an edge": "Roter visning efter en kant",
+  "The plan is turned: crop its boundary in the view (View boundaries), not on the sheet.": "Planen er drejet: beskær dens afgrænsning i visningen (Visningsafgrænsninger), ikke på arket.",
   "Dark": "Mørk",
   "As the system": "Som systemet",
   "Grid and snaps": "Gitter og fang",
@@ -3186,6 +3212,7 @@ export const DA: Record<string, string> = {
   "Layer from": "Lag fra", "Layer up to": "Lag op til", "wall top": "vægtop", "Layers 1 to n from the R face (right of the drawn direction) to the L face, as in the picture. Wall drawn anticlockwise: R is the exterior, L the interior. The core carries the wall's axis.": "Lag 1 til n fra siden H (til højre for tegneretningen) til siden V, som på tegningen. Væg tegnet mod uret: H er ydersiden, V indersiden. Kernen bærer væggens akse.", "Reverse layers": "Vend lagene", "Run the layers the other way: the R face's layer goes to the L face. Walls of the type swap faces once it is saved": "Lægger lagene i omvendt rækkefølge: laget på siden H flyttes til siden V. Vægge af typen bytter side, når den er gemt", "Reverse the order of the layers? Once the type is saved, its walls swap faces: what is exterior becomes interior.": "Vende lagenes rækkefølge? Når typen er gemt, bytter dens vægge side: det der var ydre bliver indre.", "Open in Materials…": "Åbn i Materialer…", "Back to Wall types": "Tilbage til Vægtyper", "Back to Floor types": "Tilbage til Dæktyper",
   // A wall's top (the forum's topic #45)
   'Storey above': 'Etagen ovenover', 'Unconnected height': 'Fri højde', 'Where the wall goes up to: the storey above its own (on the topmost storey, that storey\'s top), a storey of the project, or a height of its own. Its height follows the storeys when they move': 'Hvor langt væggen går op: etagen over dens egen (på den øverste etage dennes top), en etage i projektet eller en egen højde. Dens højde følger etagerne, når de flyttes', 'Added to the level the top goes to (negative: below it, under a floor\'s structure)': 'Lægges til det niveau, toppen går op til (negativ: under det, under et dæks konstruktion)', 'From its base to its top, worked out from the storeys': 'Fra dens fod til dens top, beregnet ud fra etagerne', 'goes up to': 'går op til', 'to its storey\'s top': 'til toppen af dens etage', 'Top: as the type': 'Top: som typen', 'Top: storey above': 'Top: etagen ovenover', 'Top: unconnected height': 'Top: fri højde', 'Wall top': 'Vægtop', 'Where new walls of this type go up to': 'Hvor langt nye vægge af denne type går op', 'for new walls; each wall\'s own in its properties': 'for nye vægge; hver væg har sin egen i egenskaberne', 'Wall type\'s top': 'Vægtypens top',
+  'Measured from': 'Målt fra', 'Measured to': 'Målt til', 'Wall start': 'Vægstart', 'Meeting wall’s face': 'Mødende vægs flade', 'Meeting wall’s core face': 'Mødende vægs kerneflade', 'Opening start': 'Åbningens start', 'Opening centre': 'Åbningens midte', 'Opening end': 'Åbningens slutning',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

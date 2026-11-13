@@ -147,6 +147,42 @@ public static class Views
         }
     }
 
+    /// <summary>Whether a view takes an orientation (decision 526): a plan (a floor, ceiling, foundation, site or location plan); a section or an elevation looks where its line or side says.</summary>
+    public static bool Orientable(Entity view) => (view.Str("kind") ?? "plan") == "plan";
+
+    /// <summary>The value of <c>orientation</c> that follows the UCS's X axis (as AutoCAD's PLAN to the current UCS), as it changes.</summary>
+    public const string FollowUcs = "ucs";
+
+    /// <summary>
+    /// A plan's orientation (decision 526): the model direction (degrees anticlockwise from +X) it shows horizontal, to the
+    /// right, on screen and on paper; 0 when it is not turned (project north up). Its <c>orientation</c> is an angle, or
+    /// <see cref="FollowUcs"/>: the UCS's X axis (none: not turned).
+    /// </summary>
+    public static double Orientation(IModelView m, Entity view)
+    {
+        if (!Orientable(view)) return 0;
+        var o = view.Attrs["orientation"];
+        if (o is JsonValue v && v.TryGetValue<string>(out var s) && s == FollowUcs) return Location.Ucs(m)?.Angle ?? 0;
+        return Json.Number(o) ?? 0;
+    }
+
+    /// <summary>An orientation as a command gives it ({angle: °} or {ucs: true}; an angle of 0 or null: none), as kept on the view.</summary>
+    static JsonNode? OrientationArg(JsonNode? angleArg, JsonNode? ucsArg)
+    {
+        if (ucsArg is JsonValue uv && uv.TryGetValue<bool>(out var ucs) && ucs) return FollowUcs;
+        if (angleArg is null) return null;
+        var angle = Json.Number(angleArg) is { } n && double.IsFinite(n) ? n : throw new CommandException("A view's orientation is an angle in degrees.");
+        var norm = Math.Round(Turning.Normalize(angle), 9);
+        return Math.Abs(norm) < 1e-9 ? null : JsonValue.Create(norm);
+    }
+
+    /// <summary>The turn (radians, anticlockwise) a view's drawing takes on screen and on paper: minus its orientation; 0 when it is not turned.</summary>
+    public static double Turn(IModelView m, Entity view)
+    {
+        var a = Turning.Normalize(Orientation(m, view));
+        return Math.Abs(a) < 1e-9 ? 0 : -a * Math.PI / 180;
+    }
+
     /// <summary>The nearest the bounds come along a plan direction (the front an elevation sees).</summary>
     static double Front((Vec3 Min, Vec3 Max) b, Vec2 look) =>
         new[] { b.Min.X, b.Max.X }.SelectMany(x => new[] { b.Min.Y, b.Max.Y }.Select(y => x * look.X + y * look.Y)).Min();
@@ -976,7 +1012,11 @@ public static class Views
         };
         var unit = coords == "map" ? 1.0 : 1000.0;
         var turn = coords == "map" ? -north : 0;
-        var pens = r.Pens.Select(p =>
+        // A turned plan (decision 526) is written in its own coordinates as it shows, turned about the internal origin, its texts readable;
+        // the base point's and the map's are systems of their own, to lay over other drawings, so they stay as they are.
+        var viewTurn = coords == "internal" ? Turn(q.Model, view) : 0;
+        var source = viewTurn == 0 ? r.Pens : r.Pens.Select(p => Turning.Turned(p, viewTurn, r.Scale / 1000)).ToList();
+        var pens = source.Select(p =>
         {
             var o = new Pen(p.Layer, p.Stroke, p.Width, p.Fill, p.Dash?.Select(v => v * r.Scale * unit / 1000).ToArray());
             o.Segments.AddRange(p.Segments.Select(s => (place(s.A), place(s.B))));
@@ -1366,6 +1406,8 @@ public static class Views
                             attrs["storeys"] = new StoreyDisplay("some", new HashSet<string> { below.Id }, false).ToJson();
                     }
                     name = (string?)a["name"] ?? storey.Name;
+                    // Turned on screen and paper from the start (decision 526): {orientation: {angle} | {ucs: true}}.
+                    if (a["orientation"] is JsonObject orient && OrientationArg(orient["angle"], orient["ucs"]) is { } turned) attrs["orientation"] = turned;
                     break;
                 }
                 case "section" when a[AcrossSections.Key] != null:
@@ -1566,6 +1608,34 @@ public static class Views
             else attrs.Remove("underlay");
             ctx.Replace(v.With(attrs: attrs));
             return null;
+        });
+
+        // A plan's orientation (decision 526: AutoCAD's PLAN, Revit's rotated crop, ArchiCAD's Set Orientation): {id, angle: ° (the model
+        // direction shown horizontal, to the right) | null or 0 (north up)} or {id, ucs: true} (the UCS's X axis, followed as it changes).
+        // The plan turns on screen and on its sheets, PDF and DXF alike. A level's default plan (plan:<storey>) becomes its plan view with it, one step.
+        r.Command("view.setOrientation", "Rotate view", (ctx, a) =>
+        {
+            var id = (string?)a["id"] ?? "";
+            var value = OrientationArg(a["angle"], a["ucs"]);
+            if (ctx.Model.Get(id) is { Class: Class } v)
+            {
+                if (!Orientable(v)) throw new CommandException("Only a plan is rotated: a section or an elevation looks where its line or side says.");
+                var attrs = v.CloneAttrs();
+                if (value is null) attrs.Remove("orientation"); else attrs["orientation"] = value;
+                ctx.Replace(v.With(attrs: attrs));
+                return new JsonObject { ["id"] = v.Id };
+            }
+            if (!id.StartsWith("plan:", StringComparison.Ordinal) || Find(ctx.Model, id) is not { } implicitPlan) throw new CommandException("There is no such view.");
+            // The level's default plan saved as its plan view with the orientation (decision 386: what was drawn on it goes onto it).
+            if (value is null) return new JsonObject { ["id"] = id };
+            var storeyId = implicitPlan.Str("storeyId")!;
+            var first = StoreyPlans.Of(ctx.Model, storeyId) == null;
+            var pa = implicitPlan.CloneAttrs();
+            pa["orientation"] = value;
+            var saved = new Entity(ctx.NewId(), Class, implicitPlan.Name, pa);
+            ctx.Add(saved);
+            if (first) StoreyPlans.Rehome(ctx, storeyId, saved.Id);
+            return new JsonObject { ["id"] = saved.Id };
         });
 
         r.Command("view.setRange", "View range", (ctx, a) =>

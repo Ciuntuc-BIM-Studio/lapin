@@ -24,7 +24,7 @@
   the tool's function, all of it one undo step. A script's header can name a tool too (``# lapin: tool="…"``), read
   without running it. Outside the panel (a terminal) ``tool`` only gives the function back, so a script runs there as
   it is.
-- ``panel(name)``, ``menu(name)``, ``palette(name)`` (decision 526): a script's own group of My tools (its tools go there
+- ``panel(name)``, ``menu(name)``, ``palette(name)`` (decision 528): a script's own group of My tools (its tools go there
   instead of "Scripts"), a pulldown of tools, and a small floating panel of fields and buttons, all drawn by the window
   from what is registered (JSON), never from the script's own HTML or code::
 

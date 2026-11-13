@@ -15,7 +15,7 @@ export const ZH: Record<string, string> = {
   "Middle drag orbits, Shift + middle drag pans, Ctrl + middle drag zooms; left drag selects a box; Shift toggles": "中键拖动旋转，Shift + 中键拖动平移，Ctrl + 中键拖动缩放；左键拖动框选；Shift 切换",
   "Right drag orbits, Shift + right drag pans; left drag selects a window or crossing; Shift adds, Ctrl removes": "右键拖动旋转，Shift + 右键拖动平移；左键拖动以窗口或交叉方式选择；Shift 添加，Ctrl 移除",
   "How the mouse orbits, pans, zooms and selects in the 3D view and in plans, sections, elevations and sheets; the menu in the status bar chooses it too. Lapin's own is the default; the others assume a three-button mouse.": "鼠标在三维视图以及平面图、剖面图、立面图和图纸中如何旋转、平移、缩放和选择；状态栏中的菜单也可选择。默认为 Lapin 自己的方式；其他方式假定使用三键鼠标。",
-  // Decision 525: visual graphs
+  // Decision 527: visual graphs
   "Graphs are the host's: in a shared session only the host opens, previews and bakes them.": "图归主持人所有：在共享会话中只有主持人能打开、预览和烘焙它们。",
   "Storey levels": "楼层标高",
   "Round off": "取整",
@@ -254,7 +254,7 @@ export const ZH: Record<string, string> = {
   "Its tool in My tools (the script's header)": "它在“我的工具”中的工具（脚本的头部）",
   "Tool:": "工具:",
   "Forget trust: this script asks again before it runs, and its tools leave My tools": "忘记信任：此脚本在运行前会再次询问，其工具也会从“我的工具”中移除",
-  // Decision 526: scripts' panels, menus and palettes
+  // Decision 528: scripts' panels, menus and palettes
   "A palette's button names its palette.": "面板的按钮须注明其所属面板.",
   "A palette gives its button at most 64 values.": "面板最多向其按钮传递 64 个值.",
   "A palette's values are at most 64 KB.": "面板的值最多 64 KB.",
@@ -426,6 +426,32 @@ export const ZH: Record<string, string> = {
   "UCS at the survey point, its axes east and north.": "UCS 位于测量点，其轴指向东和北。",
   "UCS origin moved.": "UCS 原点已移动。",
   "UCS set.": "UCS 已设置。",
+  "Rotated view: change its orientation or set north up again": "已旋转视图：更改其方向或恢复北向朝上",
+  "Rotate view: turn the plan on screen and on its sheets": "旋转视图：在屏幕上及其图纸上旋转平面图",
+  "North up (not rotated)": "北向朝上（不旋转）",
+  "Rotate view…": "旋转视图…",
+  "Rotate view to align with an edge": "旋转视图以对齐一条边",
+  "Follow the UCS": "跟随 UCS",
+  "True north up": "正北朝上",
+  "Rotate view": "旋转视图",
+  "Direction shown horizontal (° from X)": "水平显示的方向（自 X 轴的度数）",
+  "In the plan’s coordinates, turned as it shows (mm)": "在平面图的坐标中，按显示的方式旋转（mm）",
+  "Only a plan is rotated: a section or an elevation looks where its line or side says.": "只有平面图可以旋转：剖面或立面朝向其线或其侧所指的方向。",
+  "First point of the edge to align with": "要对齐的边的第一点",
+  "Second point of the edge": "边的第二点",
+  "The two points are the same: pick two different points.": "两个点相同：请选择两个不同的点。",
+  "View rotated to the edge.": "视图已按边旋转。",
+  "There is no UCS: the view stays as it is (World turns it back north up).": "没有 UCS：视图保持不变（World 将其恢复为北向朝上）。",
+  "View follows the UCS.": "视图跟随 UCS。",
+  "PLAN: [Current UCS/World/Angle/Edge/True north] <Current UCS>": "PLAN：[Current UCS/World/Angle/Edge/True north] <Current UCS>",
+  "View north up (World).": "视图北向朝上（World）。",
+  "Direction to show horizontal (degrees from the X axis)": "要水平显示的方向（自 X 轴的度数）",
+  "View rotated.": "视图已旋转。",
+  "The project is not turned from true north: the view stays north up.": "项目未相对正北旋转：视图保持北向朝上。",
+  "View rotated to true north.": "视图已旋转至正北。",
+  "Rotate view (PLAN)": "旋转视图（PLAN）",
+  "Rotate view to an edge": "按边旋转视图",
+  "The plan is turned: crop its boundary in the view (View boundaries), not on the sheet.": "平面图已旋转：请在视图中裁剪其边界（视图边界），而非在图纸上。",
   "Dark": "深色",
   "As the system": "跟随系统",
   "Grid and snaps": "栅格和捕捉",
@@ -3183,6 +3209,7 @@ export const ZH: Record<string, string> = {
   "Layer from": "层起点", "Layer up to": "层终点", "wall top": "墙顶", "Layers 1 to n from the R face (right of the drawn direction) to the L face, as in the picture. Wall drawn anticlockwise: R is the exterior, L the interior. The core carries the wall's axis.": "第 1 至 n 层，从 R 面（绘制方向的右侧）到 L 面，与图中一致。逆时针绘制的墙：R 为外侧，L 为内侧。核心层承载墙的轴线。", "Reverse layers": "反转层", "Run the layers the other way: the R face's layer goes to the L face. Walls of the type swap faces once it is saved": "将各层按相反顺序排列：R 面的层移到 L 面。保存后，该类型的墙会交换两面", "Reverse the order of the layers? Once the type is saved, its walls swap faces: what is exterior becomes interior.": "反转各层的顺序？保存该类型后，其墙的两面会互换：原来的外侧变为内侧。", "Open in Materials…": "在材料中打开…", "Back to Wall types": "返回墙类型", "Back to Floor types": "返回楼板类型",
   // A wall's top (the forum's topic #45)
   'Storey above': '上一楼层', 'Unconnected height': '非约束高度', 'Where the wall goes up to: the storey above its own (on the topmost storey, that storey\'s top), a storey of the project, or a height of its own. Its height follows the storeys when they move': '墙体向上延伸到的位置：其所在楼层的上一楼层（在最高楼层时为该楼层的顶部）、项目中的某一楼层，或其自身高度。楼层移动时，其高度随之变化', 'Added to the level the top goes to (negative: below it, under a floor\'s structure)': '加到顶部所到达的标高上（负值：在其下方，位于楼板结构之下）', 'From its base to its top, worked out from the storeys': '从底部到顶部，根据楼层计算', 'goes up to': '上至', 'to its storey\'s top': '至其楼层顶部', 'Top: as the type': '顶部：按类型', 'Top: storey above': '顶部：上一楼层', 'Top: unconnected height': '顶部：非约束高度', 'Wall top': '墙顶', 'Where new walls of this type go up to': '此类型的新墙向上延伸到的位置', 'for new walls; each wall\'s own in its properties': '用于新墙；每面墙在其属性中有自己的设置', 'Wall type\'s top': '墙类型的顶部',
+  'Measured from': '测量起点', 'Measured to': '测量终点', 'Wall start': '墙起点', 'Meeting wall’s face': '相交墙的表面', 'Meeting wall’s core face': '相交墙的芯层表面', 'Opening start': '洞口起点', 'Opening centre': '洞口中心', 'Opening end': '洞口终点',
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

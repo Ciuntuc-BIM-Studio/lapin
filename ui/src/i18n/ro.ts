@@ -13,7 +13,7 @@ export const RO: Record<string, string> = {
   "Middle drag orbits, Shift + middle drag pans, Ctrl + middle drag zooms; left drag selects a box; Shift toggles": "Tragere cu mijlocul rotește, Shift + tragere cu mijlocul deplasează, Ctrl + tragere cu mijlocul face zoom; tragere cu stânga selectează cu un chenar; Shift comută",
   "Right drag orbits, Shift + right drag pans; left drag selects a window or crossing; Shift adds, Ctrl removes": "Tragere cu dreapta rotește, Shift + tragere cu dreapta deplasează; tragere cu stânga selectează cu fereastră sau crossing; Shift adaugă, Ctrl scoate",
   "How the mouse orbits, pans, zooms and selects in the 3D view and in plans, sections, elevations and sheets; the menu in the status bar chooses it too. Lapin's own is the default; the others assume a three-button mouse.": "Cum rotește, deplasează, mărește și selectează mouse-ul în vederea 3D și în planuri, secțiuni, fațade și planșe; îl alege și meniul din bara de stare. Cel al Lapin este cel implicit; celelalte presupun un mouse cu trei butoane.",
-  // Decision 525: visual graphs
+  // Decision 527: visual graphs
   "Graphs are the host's: in a shared session only the host opens, previews and bakes them.": "Grafurile sunt ale gazdei: într-o sesiune partajată doar gazda le deschide, le previzualizează și creează din ele.",
   "Storey levels": "Cotele nivelurilor",
   "Round off": "Rotunjește",
@@ -252,7 +252,7 @@ export const RO: Record<string, string> = {
   "Its tool in My tools (the script's header)": "Unealta lui în Uneltele mele (antetul scriptului)",
   "Tool:": "Unealtă:",
   "Forget trust: this script asks again before it runs, and its tools leave My tools": "Retrage încrederea: scriptul întreabă din nou înainte să ruleze, iar uneltele lui ies din Uneltele mele",
-  // Decision 526: scripts' panels, menus and palettes
+  // Decision 528: scripts' panels, menus and palettes
   "A palette's button names its palette.": "Butonul unei palete își numește paleta.",
   "A palette gives its button at most 64 values.": "O paletă dă butonului ei cel mult 64 de valori.",
   "A palette's values are at most 64 KB.": "Valorile unei palete au cel mult 64 KB.",
@@ -424,6 +424,32 @@ export const RO: Record<string, string> = {
   "UCS at the survey point, its axes east and north.": "UCS în punctul topografic, cu axele spre est și nord.",
   "UCS origin moved.": "Originea UCS a fost mutată.",
   "UCS set.": "UCS setat.",
+  "Rotated view: change its orientation or set north up again": "Vedere rotită: schimbă-i orientarea sau pune din nou nordul în sus",
+  "Rotate view: turn the plan on screen and on its sheets": "Rotește vederea: întoarce planul pe ecran și pe planșele lui",
+  "North up (not rotated)": "Nordul în sus (nerotită)",
+  "Rotate view…": "Rotește vederea…",
+  "Rotate view to align with an edge": "Rotește vederea după o muchie",
+  "Follow the UCS": "Urmează UCS-ul",
+  "True north up": "Nordul geografic în sus",
+  "Rotate view": "Rotește vederea",
+  "Direction shown horizontal (° from X)": "Direcția arătată orizontal (° față de X)",
+  "In the plan’s coordinates, turned as it shows (mm)": "În coordonatele planului, rotite cum se vede (mm)",
+  "Only a plan is rotated: a section or an elevation looks where its line or side says.": "Doar un plan se rotește: o secțiune sau o fațadă privește unde spun linia sau latura ei.",
+  "First point of the edge to align with": "Primul punct al muchiei după care se aliniază",
+  "Second point of the edge": "Al doilea punct al muchiei",
+  "The two points are the same: pick two different points.": "Cele două puncte coincid: alege două puncte diferite.",
+  "View rotated to the edge.": "Vedere rotită după muchie.",
+  "There is no UCS: the view stays as it is (World turns it back north up).": "Nu există UCS: vederea rămâne cum este (World o readuce cu nordul în sus).",
+  "View follows the UCS.": "Vederea urmează UCS-ul.",
+  "PLAN: [Current UCS/World/Angle/Edge/True north] <Current UCS>": "PLAN: [Current UCS/World/Angle/Edge/True north] <Current UCS>",
+  "View north up (World).": "Vedere cu nordul în sus (World).",
+  "Direction to show horizontal (degrees from the X axis)": "Direcția de arătat orizontal (grade față de axa X)",
+  "View rotated.": "Vedere rotită.",
+  "The project is not turned from true north: the view stays north up.": "Proiectul nu e rotit față de nordul geografic: vederea rămâne cu nordul în sus.",
+  "View rotated to true north.": "Vedere rotită spre nordul geografic.",
+  "Rotate view (PLAN)": "Rotește vederea (PLAN)",
+  "Rotate view to an edge": "Rotește vederea după o muchie",
+  "The plan is turned: crop its boundary in the view (View boundaries), not on the sheet.": "Planul e rotit: decupează-i limita în vedere (Limitele vederii), nu pe planșă.",
   "Dark": "Întunecată",
   "As the system": "Ca sistemul",
   "Grid and snaps": "Grilă și snap",
@@ -3191,6 +3217,7 @@ export const RO: Record<string, string> = {
   "Layer from": "Strat de la", "Layer up to": "Strat până la", "wall top": "sus perete", "Layers 1 to n from the R face (right of the drawn direction) to the L face, as in the picture. Wall drawn anticlockwise: R is the exterior, L the interior. The core carries the wall's axis.": "Straturile 1…n de la fața D (dreapta direcției de desenare) la fața S, ca în desen. Perete desenat în sens antiorar: D este exteriorul, S interiorul. Miezul poartă axa peretelui.", "Reverse layers": "Inversează straturile", "Run the layers the other way: the R face's layer goes to the L face. Walls of the type swap faces once it is saved": "Pune straturile în ordine inversă: stratul de pe fața D trece pe fața S. Pereții tipului își schimbă fețele după salvare", "Reverse the order of the layers? Once the type is saved, its walls swap faces: what is exterior becomes interior.": "Inversezi ordinea straturilor? După salvarea tipului, pereții lui își schimbă fețele: ce era exterior devine interior.", "Open in Materials…": "Deschide în Materiale…", "Back to Wall types": "Înapoi la Tipuri de pereți", "Back to Floor types": "Înapoi la Tipuri de plăci",
   // A wall's top (the forum's topic #45)
   'Storey above': 'Etajul de deasupra', 'Unconnected height': 'Înălțime neconectată', 'Where the wall goes up to: the storey above its own (on the topmost storey, that storey\'s top), a storey of the project, or a height of its own. Its height follows the storeys when they move': 'Până unde urcă peretele: etajul de deasupra celui propriu (pe ultimul etaj, partea de sus a acestuia), un etaj al proiectului sau o înălțime proprie. Înălțimea lui urmează etajele când acestea se mută', 'Added to the level the top goes to (negative: below it, under a floor\'s structure)': 'Adăugat la nivelul până la care urcă partea de sus (negativ: sub el, sub structura unei plăci)', 'From its base to its top, worked out from the storeys': 'De la bază până sus, calculată din etaje', 'goes up to': 'urcă până la', 'to its storey\'s top': 'până sus la etajul său', 'Top: as the type': 'Sus: ca tipul', 'Top: storey above': 'Sus: etajul de deasupra', 'Top: unconnected height': 'Sus: înălțime neconectată', 'Wall top': 'Partea de sus a peretelui', 'Where new walls of this type go up to': 'Până unde urcă pereții noi de acest tip', 'for new walls; each wall\'s own in its properties': 'pentru pereții noi; fiecare perete are propria valoare în proprietăți', 'Wall type\'s top': 'Partea de sus a tipului de perete',
+  'Measured from': 'Măsurat de la', 'Measured to': 'Măsurat până la', 'Wall start': 'Începutul peretelui', 'Meeting wall’s face': 'Fața peretelui care se întâlnește', 'Meeting wall’s core face': 'Fața miezului peretelui care se întâlnește', 'Opening start': 'Începutul golului', 'Opening centre': 'Centrul golului', 'Opening end': 'Sfârșitul golului',
 };
 
 /** Phrases with a number or a name in them. */

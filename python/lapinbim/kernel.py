@@ -22,7 +22,7 @@ own, as ``__main__`` when the tool is the whole script (a header's ``tool=`` wit
 name, else the one ``lapin.ui.tool`` registered under the tool's name as the script loaded). A Run from the panel
 (``"source"``: the window's key for the script) says back the tools the script registered with ``lapin.ui.tool``:
 ``{"type": "tools", "id", "source", "tools": [{"name", "icon", "tooltip", "call", "main"}]}``, before its ``done``.
-Decision 526: an entry may name its ``panel``, ``size`` and ``menu``; ``{"kind": "menu"}`` and ``{"kind": "palette",
+Decision 528: an entry may name its ``panel``, ``size`` and ``menu``; ``{"kind": "menu"}`` and ``{"kind": "palette",
 "rows"}`` entries are a script's pulldowns and palettes. A palette's button run is ``"tool": {"name", "call", "palette",
 "values"}``: the script loaded as a module, then the button's function, given the values when it takes a parameter.
 

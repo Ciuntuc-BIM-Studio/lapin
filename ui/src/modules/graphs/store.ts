@@ -130,7 +130,7 @@ export async function bake(): Promise<void> {
 }
 
 /** Graphs opened beside the view (the panel: split on the web, a window of its own on the desktop from its tab). */
-/** What a guest of a shared session is told: the project's graphs are the host's, like its scripts (decision 525). */
+/** What a guest of a shared session is told: the project's graphs are the host's, like its scripts (decision 527). */
 export const GUEST_REFUSAL = "Graphs are the host's: in a shared session only the host opens, previews and bakes them.";
 
 export function openPanel(): void {

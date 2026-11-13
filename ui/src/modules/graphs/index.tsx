@@ -1,5 +1,5 @@
 /**
- * Visual graphs (docs/plan-visual-graphs.md, decision 525): the open module `graphs`, in the free edition and on the web.
+ * Visual graphs (docs/plan-visual-graphs.md, decision 527): the open module `graphs`, in the free edition and on the web.
  * Its engine half (Lapin.Graphs) keeps the project's graphs, evaluates them and bakes them; this half is the Graphs panel,
  * a view of its own opened beside the model's (View → Graphs: split on the web; on the desktop its tab goes into a
  * window of its own, to float or to put on another screen), and the ghost of what the open graph would make in every 3D

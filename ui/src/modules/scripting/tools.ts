@@ -12,7 +12,7 @@
  *   with it.
  * - **My tools**: a tool seen for the first time is put in the group "Scripts" (made when missing), once; taken out by
  *   the user, it stays out.
- * - **Panels, sizes, menus, palettes** (decision 526): a tool of a panel (`lapin.ui.panel`, the header's `panel=`) goes
+ * - **Panels, sizes, menus, palettes** (decision 528): a tool of a panel (`lapin.ui.panel`, the header's `panel=`) goes
  *   into a group of that name instead (made when missing, among the script's other panels in their order); a small one
  *   (`size="small"`) is put small. A menu (`lapin.ui.menu`) is one button whose pulldown lists its tools, each still a
  *   tool of its own (Commands… finds it, Customize My tools… can place it) but not put in My tools by itself. A palette
@@ -35,7 +35,7 @@ export interface ToolSource {
 }
 
 /**
- * A tool a script registered with lapin.ui.tool, as the kernel says it (python/lapinbim/_ui.py); with decision 526 also
+ * A tool a script registered with lapin.ui.tool, as the kernel says it (python/lapinbim/_ui.py); with decision 528 also
  * a menu or a palette (`kind`), and where it goes (`panel`, `size`, a tool's `menu`). What older builds kept has none.
  */
 export interface RegisteredTool {
@@ -56,7 +56,7 @@ export interface ScriptTool {
   call: string | null;
   main: boolean;
   from: 'header' | 'registered';
-  /** A tool, a pulldown of tools (decision 526), or a palette's button. */
+  /** A tool, a pulldown of tools (decision 528), or a palette's button. */
   kind: ScriptToolKind;
   /** The group of My tools it goes in the first time (none: "Scripts"). */
   panel?: string;

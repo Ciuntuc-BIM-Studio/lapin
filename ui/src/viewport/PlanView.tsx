@@ -7,11 +7,11 @@
 
 import { membersOf, openGroupOf, pickTarget, shownSelection, useExpansion } from '../platform/groups';
 import { drillInside, pickByMods, pickClick, pickRegion, useDrill, wholeOf } from '../platform/assemblies';
-import { clickMode, modsOf, pansIn2d, regionSelection, wheelFactor, type Mods } from '../app/navStyle';
+import { modsOf, pansIn2d, regionMode, regionSelection, wheelFactor, type Mods } from '../app/navStyle';
 import { currentNavStyle } from '../app/navStyleStore';
 import { orthophotos } from './textures';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Compass, FileDown, Footprints, Layers, Maximize, MousePointer2, PenLine } from 'lucide-react';
+import { Compass, FileDown, Footprints, Layers, Maximize, MousePointer2, PenLine, RotateCw } from 'lucide-react';
 import { openContextMenu } from '../shell/ContextMenu';
 import { selectionItems } from '../shell/selectionMenu';
 import { symbolMenuItems } from '../modules/core/symbols/symbolTools';
@@ -30,7 +30,7 @@ import { useGripEditor } from './GripLayer';
 import { LiveBar, LiveBox } from './LiveBox';
 import { liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
 import { markSelected, nearestOf, pickAt, regionIds } from './planPick';
-import { dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
+import { boxOutcome, dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
 import { pickable, useScope } from '../platform/scope';
 import { pairs } from './snap';
 import { formatLength, lengthText } from '../engine/unitsStore';
@@ -52,7 +52,10 @@ import { snapShapes, useCadCanvas, type Aimed } from './cad/aim';
 import { clearShown, hiddenInDrawing, publishShown, shownItems, shownWholeOf } from './cad/shown';
 import { CommandLine } from './cad/CommandLine';
 import './cad/ucs';
-import { feedPoint, finishStep, useCad } from './cad/session';
+import './cad/plan';
+import { FOLLOW_UCS, normalizeDeg, orientationOf, screenAxes, screenCorners, setOrientation, turnOf } from './orientation';
+import { ask, numberField } from '../shell/AskBox';
+import { feedPoint, finishStep, startCommand, useCad } from './cad/session';
 import { tagTargets, trackTagHover, useTagHover, viewHasTags } from './tagTarget';
 import { carryBegin, carryBy, carryEnd, carrying, useTrace } from './moveTrace';
 import type { Shape } from './cad/shapes';
@@ -97,6 +100,8 @@ export function PlanView() {
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [pts, setPts] = useState<Vec2[]>([]);
   const [hover, setHover] = useState<Aimed | null>(null);
+  /** What a click would select under the cursor now (the outline lit; null while a tool or a step takes the point). */
+  const [hoverId, setHoverId] = useState<string | null>(null);
   /** Where the cursor is, unsnapped: what a pick reads, and the side of a wall a door opens to. */
   const rawHover = useRef<Vec2 | null>(null);
   // Space while a tool is on changes what its ghost shows.
@@ -163,8 +168,16 @@ export function PlanView() {
   // True north up (decision 447): the plan turned on screen by the angle to true north, chosen per plan; drawn,
   // snapped and picked through these two, so all of it turns together. Sheets and the PDF keep project north up.
   const northAngle = useLocation((st) => basePoint(st.loc).northAngle);
-  const trueNorth = useTrueNorth((st) => !!st.on[key]) && Math.abs(northAngle) > 1e-9;
-  const rot = trueNorth ? trueNorthTurn(northAngle) : 0;
+  // A plan view's own orientation (decision 526): kept with the view, printed as shown; it takes over from true north up.
+  const ucsAngle = useLocation((st) => ucsOf(st.loc)?.angle ?? null);
+  const orientationValue = ownPlan ? nodes.get(ownPlan)?.props.orientation : undefined;
+  const orientation = orientationOf(orientationValue, ucsAngle == null ? null : { origin: { x: 0, y: 0 }, angle: ucsAngle });
+  const oriented = Math.abs(orientation) > 1e-9;
+  const northOn = useTrueNorth((st) => !!st.on[key]);
+  const trueNorth = !oriented && northOn && Math.abs(northAngle) > 1e-9;
+  const rot = oriented ? turnOf(orientation) : trueNorth ? trueNorthTurn(northAngle) : 0;
+  /** The axes ortho, polar tracking and the grid follow in a turned plan with no UCS: the screen's. */
+  const axes = useMemo(() => (oriented ? screenAxes(orientation) : null), [oriented, orientation]);
   const toScreen = useCallback((p: Vec2) => {
     const d = turn({ x: p.x - view.cx, y: p.y - view.cy }, rot);
     return { x: d.x * view.scale + size.w / 2, y: size.h / 2 - d.y * view.scale };
@@ -345,7 +358,7 @@ export function PlanView() {
   }, [items]);
   const { aim, acquire } = useCadCanvas({
     viewId: planViewOf, drawing, extra, scale: view.scale, pickAny: (p) => pick(p)?.id ?? null, outlines,
-    inRegion: (takes) => regionIds(takes, pickItems, nodes, scope ? undefined : drawing?.marks),
+    inRegion: (takes) => regionIds(takes, pickItems, nodes, scope ? undefined : drawing?.marks), axes,
   });
   const cadStep = useCad((s) => s.step);
   /** The selection dragged by its body (its trace shows over the plan). */
@@ -546,13 +559,29 @@ export function PlanView() {
       const q = host && what ? requestFor(host, at, what) : null;
       if (q) { askPlacement(q.req); setPlacing(q.req); } else resetPlacement();
     }
+    {
+      // Idle, or a step asking for a pick or a selection: what a click would take is lit (the same pick the click uses: decision 498).
+      const step = useCad.getState().step;
+      const idle = !tool?.gesture && !d && !editor.dragging && (!step || step.want === 'pick' || step.want === 'select');
+      const hit = idle ? pick(rawHover.current) : null;
+      const id = hit ? pickTarget(hit.id) ?? hit.id : null;
+      setHoverId((cur) => (cur === id ? cur : id));
+    }
     trackTagHover(rawHover.current, { pickElement: (q) => pick(q)?.id ?? null, pickTag: (q) => pick(q, ['IfcAnnotation'])?.id ?? null, anyTags, busy: !!tool?.gesture || !!d });
   };
   const onPointerUp = (e: React.PointerEvent) => {
     if (editor.onPointerUp()) return;
     const d = drag.current;
     drag.current = null;
-    if (box) { selectBox(box, e); setBox(null); return; }
+    if (box) {
+      const b = box;
+      setBox(null);
+      // A tiny box is the press taken as a click (where it began), not a window.
+      if (selectBox(b, e) === 'done' || !d) return;
+      const rect = svgRef.current!.getBoundingClientRect();
+      click(constrained(snapAt(d.x, d.y, pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined)).point, toWorld(d.x - rect.left, d.y - rect.top), e.shiftKey, undefined, e.ctrlKey || e.metaKey, modsOf(e));
+      return;
+    }
     if (d?.moved && e.button === 0) {
       // A drag is two points: where it was pressed and where it was let go, both snapped.
       const step = useCad.getState().step;
@@ -607,11 +636,15 @@ export function PlanView() {
     openContextMenu(x, y, [...order, ...symbolMenuItems(selected, nodes), ...rooms, ...selectionItems()]);
   };
   /** What a selection box or lasso takes: inside it wholly (a window, dragged to the right) or touching it (crossing, to the left). */
-  const selectBox = (b: SelectDrag, e: React.PointerEvent) => {
+  const selectBox = (b: SelectDrag, e: React.PointerEvent): 'click' | 'done' => {
     const ids = pickRegion(regionIds(regionTestOf(b, toWorld), pickItems, nodes, scope ? undefined : drawing?.marks));
+    const outcome = boxOutcome(b, ids.length);
+    if (outcome === 'click') return 'click';
+    if (outcome === 'keep') return 'done';
     // How it joins the selection is the navigation style's (Shift adds in Lapin's; Ctrl adds and Shift removes in Revit's); a command asking for a selection collects.
-    const next = regionSelection(useUi.getState().selected, ids, useCad.getState().step ? 'add' : clickMode(currentNavStyle(), modsOf(e)));
+    const next = regionSelection(useUi.getState().selected, ids, useCad.getState().step ? 'add' : regionMode(currentNavStyle(), modsOf(e)));
     useUi.setState({ selected: next, selection: next[next.length - 1] ?? null });
+    return 'done';
   };
 
   const onWheel = (e: React.WheelEvent) => {
@@ -650,7 +683,7 @@ export function PlanView() {
   const grid = useMemo(() => {
     const lines: { d: string; major: boolean }[] = [];
     if (!measured) return lines;
-    const frame = ucs && !isIdentity(ucs) ? ucs : null;
+    const frame = ucs && !isIdentity(ucs) ? ucs : axes;
     let step = gridStepAt(view.scale, gridPrefs);
     const major = gridPrefs.gridMode === 'fixed' ? gridPrefs.gridMajor : 5;
     let every = 1;
@@ -668,7 +701,7 @@ export function PlanView() {
     for (let y = Math.floor(min.y / step) * step; y <= max.y; y += step) lines.push({ d: seg({ x: min.x, y }, { x: max.x, y }), major: isMajor(y) });
     return lines;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, size, measured, toScreen, toWorld, gridPrefs, ucsKey]);
+  }, [view, size, measured, toScreen, toWorld, gridPrefs, ucsKey, axes]);
 
   const drawn = useMemo(() => {
     const out: { key: string; r: RenderItem; kind: string; d: string; closed: boolean; text: string | null; at: Vec2; pattern: string | null }[] = [];
@@ -768,7 +801,7 @@ export function PlanView() {
     return null;
   })();
 
-  const marker = hover && (tool?.gesture || editor.dragging || cadStep || dragTrace) ? toScreen(hover.point) : null;
+  const marker = hover && (tool?.gesture || editor.dragging || cadStep?.want === 'point' || dragTrace) ? toScreen(hover.point) : null;
 
   return (
     <div className="view-pane">
@@ -795,7 +828,26 @@ export function PlanView() {
         <ScalePicker viewId={planViewOf} scale={shownScale} />
         <StructurePicker viewId={planViewOf} kind="plan" />
         <ScaleChip pxPerMetre={view.scale} scale={shownScale} onActual={host.actual} />
-        {Math.abs(northAngle) > 1e-9 && (
+        {planViewOf && (
+          <button type="button" className={`icon${oriented ? ' on' : ''}`} data-testid="plan-orientation"
+            title={oriented ? 'Rotated view: change its orientation or set north up again' : 'Rotate view: turn the plan on screen and on its sheets'}
+            onClick={(e) => {
+              const r = e.currentTarget.getBoundingClientRect();
+              const id = planViewOf;
+              const following = orientationValue === FOLLOW_UCS;
+              openContextMenu(r.left, r.bottom + 4, [
+                { label: 'North up (not rotated)', checked: !oriented && !following, onSelect: () => void setOrientation(id, null) },
+                { label: 'Rotate view…', checked: oriented && !following, onSelect: async () => {
+                  const v = await ask('Rotate view', [numberField('angle', 'Direction shown horizontal (° from X)', Math.round(orientation * 1e6) / 1e6)]);
+                  if (v && Number.isFinite(Number(v.angle))) void setOrientation(id, Number(v.angle));
+                } },
+                { label: 'Rotate view to align with an edge', onSelect: () => void startCommand('ALIGNVIEW') },
+                { label: 'Follow the UCS', checked: following, disabled: ucsAngle == null, onSelect: () => void setOrientation(id, FOLLOW_UCS) },
+                ...(Math.abs(northAngle) > 1e-9 ? [{ label: 'True north up', checked: oriented && !following && Math.abs(normalizeDeg(orientation - northAngle)) < 1e-6, onSelect: () => void setOrientation(id, northAngle) }] : []),
+              ]);
+            }}><RotateCw size={14} /></button>
+        )}
+        {Math.abs(northAngle) > 1e-9 && !oriented && (
           <button type="button" className={`icon${trueNorth ? ' on' : ''}`} data-testid="plan-true-north"
             title={trueNorth ? 'True north up: click for project north' : 'Project north up: click to turn the plan to true north'}
             onClick={() => setTrueNorth(key, !trueNorth)}><Compass size={14} /></button>
@@ -809,16 +861,16 @@ export function PlanView() {
             const run = (coords: 'internal' | 'project' | 'map') => void exportFile('export.dxf', { id, coords }, name, 'dxf');
             const loc = useLocation.getState().loc;
             openContextMenu(r.left, r.bottom + 4, [
-              { label: 'In the plan’s coordinates (mm)', onSelect: () => run('internal') },
+              { label: oriented ? 'In the plan’s coordinates, turned as it shows (mm)' : 'In the plan’s coordinates (mm)', onSelect: () => run('internal') },
               { label: 'From the project base point (mm)', onSelect: () => run('project') },
               { label: 'In map coordinates (E, N in metres)', disabled: !surveyPoint(loc), onSelect: () => run('map') },
             ]);
           }}><FileDown size={14} /><span className="small">DXF</span></button>}
       </div>
-      <KeyPlan mode="plan" frame={measured ? [toWorld(0, size.h), toWorld(size.w, 0)] : null} onLookAt={(p) => go({ ...view, cx: p.x, cy: p.y })} />
-      <svg ref={svgRef} className={`plan-svg${tool?.gesture || cadStep ? ' tool' : ''}`} data-testid="plan"
+      <KeyPlan mode="plan" frame={measured ? screenCorners(toWorld, size.w, size.h) : null} onLookAt={(p) => go({ ...view, cx: p.x, cy: p.y })} />
+      <svg ref={svgRef} className={`plan-svg${tool?.gesture || cadStep?.want === 'point' ? ' tool' : tool || cadStep ? ' pick' : hoverId ? ' pick' : ''}`} data-testid="plan"
         onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
-        onPointerLeave={() => { setHover(null); trackTagHover(null, { pickElement: () => null, pickTag: () => null, anyTags, busy: true }); editor.onPointerLeave(); }} onWheel={onWheel} onContextMenu={(e) => e.preventDefault()}
+        onPointerLeave={() => { setHover(null); setHoverId(null); trackTagHover(null, { pickElement: () => null, pickTag: () => null, anyTags, busy: true }); editor.onPointerLeave(); }} onWheel={onWheel} onContextMenu={(e) => e.preventDefault()}
         onDoubleClick={(e) => {
           if (tool?.gesture || useCad.getState().step) return;
           const rect = svgRef.current!.getBoundingClientRect();
@@ -846,6 +898,11 @@ export function PlanView() {
               className={`plan-item ${kind}${closed ? ' closed' : ''}${r.editable ? '' : ' foreign'}${shown.has(r.nodeId) ? ' selected' : targets.has(r.nodeId) ? ' tag-target' : ''}${scope && pickable(nodes.get(r.nodeId)) ? ' in-scope' : ''}${inside?.has(r.nodeId) ? ' in-drill' : ''}`} />
           ))}
         </g>
+        {hoverId && !shown.has(hoverId) && (
+          <g className="plan-hover" aria-hidden="true">
+            {drawn.filter((x) => x.kind !== 'label' && x.kind !== 'hit' && (x.r.nodeId === hoverId || membersOf(hoverId).includes(x.r.nodeId))).map((x) => <path key={x.key} d={x.d} />)}
+          </g>
+        )}
         {peers.map((p) => {
           const theirs = new Set(p.presence.selection ?? []);
           return theirs.size === 0 ? null : (
