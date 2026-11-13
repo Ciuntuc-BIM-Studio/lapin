@@ -26,6 +26,7 @@ public sealed partial class StudioModule
     public static ElementGeometry? Geometry(Entity e, IModelView m, IServices? services)
     {
         if (Thick.Is(e.Str("operation")) || e.Str("operation") == Thick.BoxSlab) return ThickGeometry(e, m, services);
+        if (Parts.IsInstance(e)) return PartGeometry(e, m, services);
         if (services?.Get<ISolidBooleans>() is { } b) _booleans = b;
         var booleans = services?.Get<ISolidBooleans>() ?? _booleans;
         var (solid, sketchPlan, problem) = Base(e, m, services, null);
@@ -57,6 +58,28 @@ public sealed partial class StudioModule
         // only cuts what it is a tool of: nothing ranks over it.
         if (!IsVoid(e)) parts = CutPriorities.Apply(e, m, services, parts, problems);
         return new ElementGeometry(parts, plan, plan.SelectMany(p => p.Points).ToList(), problems.Count > 0 ? problems : null);
+    }
+
+    /// <summary>A placed part (<see cref="Parts"/>): its bodies as its part's definition makes them, then its own steps on each, cut as any Studio solid.</summary>
+    static ElementGeometry PartGeometry(Entity e, IModelView m, IServices? services)
+    {
+        if (services?.Get<ISolidBooleans>() is { } b) _booleans = b;
+        var booleans = services?.Get<ISolidBooleans>() ?? _booleans;
+        var (parts, problems) = Parts.Build(e, m);
+        if (parts.Count > 0 && e.Attrs["features"] is JsonArray { Count: > 0 } features)
+        {
+            var done = new List<GeometryPart>();
+            foreach (var p in parts)
+            {
+                var (solid, issues) = Features.Apply(p.Solid, features, new Features.Context(booleans));
+                problems.AddRange(issues);
+                if (solid != null) done.Add(p with { Solid = solid });
+            }
+            if (done.Count == 0) return new ElementGeometry([], Diagnostics: problems.Count > 0 ? [.. problems.Distinct()] : ["Nothing is left of the part."]);
+            parts = done;
+        }
+        if (parts.Count > 0 && !IsVoid(e)) parts = CutPriorities.Apply(e, m, services, parts, problems);
+        return new ElementGeometry(parts, Diagnostics: problems.Count > 0 ? [.. problems.Distinct()] : null);
     }
 
     /// <summary>Where a solid drawn on a section, an elevation or a reference plane was moved or turned to in plan (12 numbers, as an instance's).</summary>

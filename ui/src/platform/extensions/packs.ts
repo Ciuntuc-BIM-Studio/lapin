@@ -218,9 +218,10 @@ export function readMapping(bytes: Uint8Array): { kind: 'table' | 'layers'; name
   return { kind: 'layers', names: (o.layers as { layer: string }[]).map((l) => l.layer), text: utf8(bytes) };
 }
 
-/** A .lapinfamily (a parametric family of Studio): `{format: "lapin-family", version: 1, name, def}`. */
+/** A .lapinfamily or a .lapinpart (a parametric part of Studio, decision 517): `{format: "lapin-family" | "lapinpart", version: 1, name, def}`. */
 export function readFamily(bytes: Uint8Array): { name: string; text: string } {
-  const o = pack(bytes, 'family', 'lapin-family');
+  const part = json(bytes, 'a Lapin family').format === 'lapinpart';
+  const o = part ? pack(bytes, 'part', 'lapinpart') : pack(bytes, 'family', 'lapin-family');
   if (!text(o.name)) throw new Error('The family has no name.');
   if (!o.def || typeof o.def !== 'object' || Array.isArray(o.def)) throw new Error('The family has no definition.');
   return { name: o.name.trim(), text: utf8(bytes) };

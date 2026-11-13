@@ -1,0 +1,569 @@
+using System.Globalization;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Lapin.Geometry;
+using Lapin.Drafting.Cad;
+using Lapin.Model;
+using Lapin.Platform;
+
+namespace Lapin.Studio;
+
+/// <summary>
+/// Studio's parametric parts (docs/plan-studio-parametric.md §3.1, §9; decision 517, stage P0).
+///
+/// <para><b>The part</b> is a <see cref="StudioModule.TypeClass"/> (<c>LapinSolidType</c>) grown: besides its name and description
+/// it may carry a part definition, <c>def</c>: <c>{ifcClass, params, bodies, description?, planSymbol?}</c>, the schema of the light
+/// families of decision 515. Each parameter is <c>{key, label, kind (length, number, angle, bool), default}</c> with the optional
+/// <c>unit</c>, <c>instance</c>, <c>published</c>, <c>group</c> and <c>description</c> kept for the parameter table (P1); each body a
+/// closed outline on an origin plane of the part (xy lying, xz or yz standing) whose corners are numbers or formulas of the
+/// parameters (<c>W - T</c>), pushed by a depth (a formula too), set off by an offset, made only when its <c>when</c> holds.</para>
+///
+/// <para><b>A placed part</b> is an ordinary Studio solid: class <see cref="InstanceClass"/> (a proxy, with <c>exportAs</c> the class the
+/// definition names, so it is written to IFC as that class with the part's IfcTypeProduct; <c>studio.setClass</c> changes it as any
+/// solid's), <c>operation: "part"</c>, typed by its part through <c>IfcRelDefinesByType</c> as <c>studio.setType</c> types any solid,
+/// standing at <c>at: [x, y]</c> and <c>z</c> above its storey, turned by <c>rotation</c> (°), maybe <c>mirror</c>ed, with
+/// <c>values</c> of its own over the part's defaults, and Studio's steps (<c>features</c>) done after its bodies. Its body is worked
+/// out on every ask, never stored.</para>
+///
+/// <para><b>Every other Studio solid is a one-step part</b>: its recipe (operation, profile, guide, rail, features) stays on the
+/// solid, and a type without <c>def</c> is the named type it always was; nothing of theirs changes. The part tree
+/// (<c>studio.partTree</c>) shows both kinds the same way.</para>
+/// </summary>
+public static class Parts
+{
+    public const string TypeClass = StudioModule.TypeClass;
+    public const string InstanceClass = IfcClass.BuildingElementProxy;
+    public const string Operation = "part";
+    public const string FileFormat = "lapinpart";
+    public const string FileExtension = ".lapinpart";
+    public const int FileVersion = 1;
+    public static readonly string[] Planes = ["xy", "xz", "yz"];
+    public static readonly string[] ParamKinds = ["length", "number", "angle", "bool"];
+
+    static double? Num(JsonNode? n) => n is JsonValue v && v.TryGetValue<bool>(out var b) ? (b ? 1 : 0) : Json.Number(n);
+    static bool? Flag(JsonNode? n) => n is JsonValue v && v.TryGetValue<bool>(out var b) ? b : null;
+
+    static List<Param> Params(JsonObject def) =>
+        [.. (def["params"] as JsonArray ?? []).OfType<JsonObject>().Select(p => new Param((string)p["key"]!, (string?)p["label"] ?? (string)p["key"]!, (string?)p["kind"] ?? "length", Num(p["default"]) ?? 0, p))];
+
+    /// <summary>The values a body is built with: the part's defaults, an instance's own over them.</summary>
+    public static Dictionary<string, double> Values(JsonObject def, JsonObject? own)
+    {
+        var o = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+        foreach (var p in Params(def)) o[p.Key] = p.Default;
+        foreach (var (k, v) in own ?? []) if (o.ContainsKey(k) && Num(v) is { } x) o[k] = x;
+        return o;
+    }
+
+    static double Eval(JsonNode? n, IReadOnlyDictionary<string, double> values, string what)
+    {
+        if (n is null) return 0;
+        var text = n is JsonValue jv && jv.TryGetValue<double>(out var d) ? d.ToString("R", CultureInfo.InvariantCulture) : n.ToString();
+        var (v, error) = Expr.TryEval(text, k => values.TryGetValue(k, out var x) ? x : null);
+        return v ?? throw new CommandException($"{what}: {error}");
+    }
+
+    /// <summary>A body's local frame: its outline's x and y on the plane, its depth along the plane's normal.</summary>
+    static (Vec3 U, Vec3 V, Vec3 N) Frame(string plane) => plane switch
+    {
+        "xz" => (new Vec3(1, 0, 0), Vec3.UnitZ, new Vec3(0, 1, 0)),
+        "yz" => (new Vec3(0, 1, 0), Vec3.UnitZ, new Vec3(1, 0, 0)),
+        _ => (new Vec3(1, 0, 0), new Vec3(0, 1, 0), Vec3.UnitZ),
+    };
+
+    static string BodyName(JsonObject b, int i) => (string?)b["name"] is { Length: > 0 } nm ? nm : $"Body {i}";
+
+    /// <summary>The bodies of a part for some values, in the part's own frame (metres): each with its name and material role.</summary>
+    public static List<(string Name, string? Material, Solid Solid)> Bodies(JsonObject def, IReadOnlyDictionary<string, double> values)
+    {
+        var o = new List<(string, string?, Solid)>();
+        var i = 0;
+        foreach (var b in (def["bodies"] as JsonArray ?? []).OfType<JsonObject>())
+        {
+            var name = BodyName(b, ++i);
+            if (b["when"] is { } when && Eval(when, values, $"{name}'s condition") == 0) continue;
+            var (u, v, n) = Frame((string?)b["plane"] ?? "xy");
+            var off = b["offset"] is JsonArray oa && oa.Count == 3 ? new Vec3(Eval(oa[0], values, name), Eval(oa[1], values, name), Eval(oa[2], values, name)) : default;
+            List<Vec3> Ring(JsonNode? pts) => [.. (pts as JsonArray ?? []).OfType<JsonArray>().Select(p => off + u * Eval(p[0], values, $"{name}'s corners") + v * Eval(p[1], values, $"{name}'s corners"))];
+            var outer = Ring(b["points"]);
+            if (outer.Count < 3) continue;
+            var holes = (b["holes"] as JsonArray ?? []).Select(h => (IReadOnlyList<Vec3>)Ring(h)).Where(h => h.Count >= 3).ToList();
+            var depth = Eval(b["depth"], values, $"{name}'s depth");
+            if (Math.Abs(depth) < 1e-6) continue;
+            if (Prism.Extrude(outer, holes, n * depth, "part") is { } solid) o.Add((name, (string?)b["material"], solid));
+        }
+        return o;
+    }
+
+    /// <summary>A part definition as a command or a file gives it, checked: its parameters, bodies whose corners and depths read and make a body with the defaults.</summary>
+    public static JsonObject Check(JsonNode? n)
+    {
+        if (n is not JsonObject o) throw new CommandException("A part is {params, bodies}.");
+        var ps = new JsonArray();
+        var keys = new List<string>();
+        foreach (var p in o["params"] as JsonArray ?? [])
+        {
+            if (p is not JsonObject po || ((string?)po["key"])?.Trim() is not { Length: > 0 and <= 24 } key || !char.IsLetter(key[0]) || !key.All(c => char.IsLetterOrDigit(c) || c == '_'))
+                throw new CommandException("Each parameter has a key of letters and digits (W, Height, HasShelf).");
+            if (keys.Contains(key, StringComparer.OrdinalIgnoreCase)) throw new CommandException($"The parameter „{key}” is there twice.");
+            keys.Add(key);
+            var kind = (string?)po["kind"] ?? "length";
+            if (!ParamKinds.Contains(kind)) throw new CommandException($"A parameter is a {string.Join(", ", ParamKinds)}.");
+            var d = Num(po["default"]) ?? throw new CommandException($"{key} needs its default.");
+            if (!double.IsFinite(d) || Math.Abs(d) > 1000) throw new CommandException($"{key}'s default is a number within ±1000.");
+            var pc = new JsonObject { ["key"] = key, ["label"] = ((string?)po["label"])?.Trim() is { Length: > 0 } l ? l : key, ["kind"] = kind, ["default"] = d };
+            // What the parameter table keeps (P1 uses them): kept when given, never required.
+            foreach (var text in new[] { "unit", "group", "description" })
+                if (po[text] is JsonValue tv && tv.TryGetValue<string>(out var s) && s.Trim() is { Length: > 0 } st) pc[text] = st;
+            foreach (var flag in new[] { "instance", "published" })
+                if (Flag(po[flag]) is { } fb) pc[flag] = fb;
+            ps.Add((JsonNode)pc);
+        }
+        var bodies = new JsonArray();
+        foreach (var b in o["bodies"] as JsonArray ?? [])
+        {
+            if (b is not JsonObject bo) throw new CommandException("Each body is {plane, points, depth}.");
+            var plane = (string?)bo["plane"] ?? "xy";
+            if (!Planes.Contains(plane)) throw new CommandException($"A body's plane is {string.Join(", ", Planes)}.");
+            if (bo["points"] is not JsonArray { Count: >= 3 } pts || pts.Any(p => p is not JsonArray { Count: 2 })) throw new CommandException("A body's outline has three corners at least, each [x, y].");
+            bodies.Add((JsonNode)bo.DeepClone());
+        }
+        if (bodies.Count == 0) throw new CommandException("A part has one body at least.");
+        var cls = ((string?)o["ifcClass"])?.Trim() is { Length: > 3 } c && c.StartsWith("Ifc", StringComparison.Ordinal) ? c : IfcClass.BuildingElementProxy;
+        var def = new JsonObject { ["ifcClass"] = cls, ["params"] = ps, ["bodies"] = bodies };
+        if (((string?)o["description"])?.Trim() is { Length: > 0 } desc) def["description"] = desc;
+        if (((string?)o["planSymbol"])?.Trim() is { Length: > 0 } sym) def["planSymbol"] = sym;
+        // Built with its defaults: every corner, depth and condition reads, and something is made.
+        if (Bodies(def, Values(def, null)).Count == 0) throw new CommandException("With its defaults the part makes no body.");
+        return def;
+    }
+
+    /// <summary>
+    /// Drafted closed outlines made a part (a plan's lying, a section's or an elevation's standing): their corners from the lowest
+    /// left one, in metres; the right-most corners following W and the top-most H when <paramref name="parameterize"/> (the width and
+    /// height stretch the outline), each outline a body pushed by <paramref name="depth"/> (a parameter D).
+    /// </summary>
+    public static JsonObject FromOutlines(IReadOnlyList<IReadOnlyList<Vec2>> outlines, bool standing, double depth, bool parameterize)
+    {
+        var all = outlines.SelectMany(o => o).ToList();
+        var (x0, y0, x1, y1) = (all.Min(p => p.X), all.Min(p => p.Y), all.Max(p => p.X), all.Max(p => p.Y));
+        var (w, h) = (x1 - x0, y1 - y0);
+        static JsonNode N(double v) => JsonValue.Create(Math.Round(v, 6))!;
+        JsonNode X(double x) => parameterize && Math.Abs(x - x1) < 1e-6 ? "W" : parameterize && Math.Abs(x - x0) < 1e-6 ? N(0) : N(x - x0);
+        JsonNode Y(double y) => parameterize && Math.Abs(y - y1) < 1e-6 ? "H" : parameterize && Math.Abs(y - y0) < 1e-6 ? N(0) : N(y - y0);
+        var bodies = new JsonArray();
+        var i = 0;
+        foreach (var o in outlines)
+            bodies.Add((JsonNode)new JsonObject
+            {
+                ["name"] = $"Body {++i}", ["plane"] = standing ? "xz" : "xy",
+                ["points"] = new JsonArray(o.Select(p => (JsonNode)new JsonArray(X(p.X), Y(p.Y))).ToArray()),
+                ["depth"] = parameterize ? "D" : N(depth),
+            });
+        var ps = new JsonArray();
+        if (parameterize)
+        {
+            ps.Add((JsonNode)new JsonObject { ["key"] = "W", ["label"] = "Width", ["kind"] = "length", ["default"] = N(w) });
+            ps.Add((JsonNode)new JsonObject { ["key"] = "H", ["label"] = standing ? "Height" : "Depth", ["kind"] = "length", ["default"] = N(h) });
+            ps.Add((JsonNode)new JsonObject { ["key"] = "D", ["label"] = standing ? "Thickness" : "Height", ["kind"] = "length", ["default"] = N(depth) });
+        }
+        return new JsonObject { ["params"] = ps, ["bodies"] = bodies };
+    }
+
+    // ------------------------------------------------------------ instances
+
+    /// <summary>A Studio solid placed from a part definition.</summary>
+    public static bool IsInstance(Entity e) => e.Str("operation") == Operation;
+
+    /// <summary>An element's part type: the <c>LapinSolidType</c> it is typed by, if any.</summary>
+    public static Entity? TypeOf(IModelView m, Entity e) => m.RelatingOf(e.Id, IfcClass.RelDefinesByType) is { Class: TypeClass } t ? t : null;
+
+    /// <summary>A part type's definition, when it has one (a type without is a plain solid type).</summary>
+    public static JsonObject? DefOf(Entity? type) => type?.Attrs["def"] as JsonObject;
+
+    static (Vec2 At, double Rotation, bool Mirror) Pose(Entity e) =>
+        (Args.TryPoint(e.Attrs["at"]) ?? default, e.Num("rotation"), e.Bool("mirror"));
+
+    /// <summary>How an instance takes its part's frame into the world: points and directions, and whether it is turned over.</summary>
+    static (Func<Vec3, Vec3> Place, Func<Vec3, Vec3> Dir, bool Mirror) Placing(Entity e, IModelView m)
+    {
+        var (at, rotation, mirror) = Pose(e);
+        var z = (Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0) + e.Num("z");
+        var (c, s) = (Math.Cos(rotation * Math.PI / 180), Math.Sin(rotation * Math.PI / 180));
+        Vec3 Dir(Vec3 d)
+        {
+            var x = mirror ? -d.X : d.X;
+            return new Vec3(x * c - d.Y * s, x * s + d.Y * c, d.Z);
+        }
+        Vec3 Place(Vec3 p)
+        {
+            var x = mirror ? -p.X : p.X;
+            return new Vec3(at.X + x * c - p.Y * s, at.Y + x * s + p.Y * c, z + p.Z);
+        }
+        return (Place, Dir, mirror);
+    }
+
+    /// <summary>A placed part's bodies in the world, one geometry part each; Studio's steps are done on each after.</summary>
+    public static (List<GeometryPart> Parts, List<string> Problems) Build(Entity e, IModelView m)
+    {
+        if (DefOf(TypeOf(m, e)) is not { } def) return ([], ["Its part is gone, or no longer has a definition."]);
+        List<(string Name, string? Material, Solid Solid)> bodies;
+        try { bodies = Bodies(def, Values(def, e.Attrs["values"] as JsonObject)); }
+        catch (CommandException ex) { return ([], [ex.Message]); }
+        var (place, dir, mirror) = Placing(e, m);
+        var parts = new List<GeometryPart>();
+        foreach (var (name, material, solid) in bodies)
+        {
+            // Its faces' normals turned with it; turned over (mirrored), each face's loops run the other way.
+            var faces = solid.Faces.Select(f =>
+            {
+                var turned = dir(f.Normal);
+                return mirror ? f with { Outer = [.. f.Outer.Reverse()], Holes = [.. f.Holes.Select(h => h.Reverse().ToArray())], Normal = turned } : f with { Normal = turned };
+            }).ToArray();
+            var moved = new Solid([.. solid.Vertices.Select(place)], faces, "part");
+            var mat = material != null ? Materials.Find(m, material) : null;
+            parts.Add(new GeometryPart(name, mat?.Str("color") ?? "#b9b2a6", moved, mat?.Id, "part:" + name));
+        }
+        return (parts, []);
+    }
+
+    /// <summary>An instance's own values over <paramref name="had"/>: each the part's parameter of that key, checked a number; null takes the default back.</summary>
+    static JsonObject Own(Entity type, JsonObject values, JsonObject? had)
+    {
+        var keys = Params(DefOf(type)!).ToDictionary(p => p.Key, StringComparer.OrdinalIgnoreCase);
+        var o = had?.DeepClone() as JsonObject ?? new JsonObject();
+        foreach (var (k, v) in values)
+        {
+            if (!keys.TryGetValue(k, out var p)) throw new CommandException($"„{type.Name}” has no parameter „{k}”.");
+            if (v == null) { o.Remove(p.Key); continue; }
+            o[p.Key] = Num(v) ?? throw new CommandException($"{p.Label} is a number.");
+        }
+        return o;
+    }
+
+    /// <summary>The values an instance keeps when it takes another part: those the new part has a parameter for.</summary>
+    public static JsonObject? Kept(Entity type, JsonObject? values)
+    {
+        if (values == null || DefOf(type) is not { } def) return null;
+        var keys = Params(def).Select(p => p.Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var o = new JsonObject();
+        foreach (var (k, v) in values) if (keys.Contains(k)) o[k] = v?.DeepClone();
+        return o.Count == 0 ? null : o;
+    }
+
+    /// <summary>A part type, one with a definition when <paramref name="withDef"/>.</summary>
+    public static Entity Require(IModelView m, string? id, bool withDef = true)
+    {
+        var e = m.Get(id ?? "") is { Class: TypeClass } t ? t : throw new CommandException("There is no such part.");
+        if (withDef && DefOf(e) == null) throw new CommandException($"„{e.Name}” is a solid type with no part definition.");
+        return e;
+    }
+
+    /// <summary>How many elements a part types.</summary>
+    public static int Uses(IModelView m, Entity type) => m.RelatedOf(type.Id, IfcClass.RelDefinesByType).Count();
+
+    // ------------------------------------------------------------ the commands (the families' shortcuts call these)
+
+    public static JsonNode? Create(ICommandContext ctx, JsonObject a, string fallbackName)
+    {
+        var def = Check(a["def"]);
+        var e = new Entity(ctx.NewId(), TypeClass, ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : fallbackName, new JsonObject { ["def"] = def });
+        ctx.Add(e);
+        return new JsonObject { ["id"] = e.Id };
+    }
+
+    /// <summary>A part changed ({name?, def?}): its instances follow (their own values kept where it still has the parameter).</summary>
+    public static JsonNode? Update(ICommandContext ctx, JsonObject a, Entity e)
+    {
+        var attrs = e.CloneAttrs();
+        if (a["def"] != null) attrs["def"] = Check(a["def"]);
+        var name = ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : null;
+        ctx.Replace(e.With(name: name, attrs: attrs));
+        return null;
+    }
+
+    public static JsonNode? Delete(ICommandContext ctx, Entity e)
+    {
+        var used = Uses(ctx.Model, e);
+        if (used > 0) throw new CommandException($"{used} object{(used == 1 ? " is" : "s are")} of „{e.Name}”: delete them first.");
+        ctx.Remove(e.Id);
+        return null;
+    }
+
+    /// <summary>A part placed: {storeyId, at: [x, y], z?, rotation?, mirror?, values?}.</summary>
+    public static JsonNode? Place(ICommandContext ctx, JsonObject a, Entity type)
+    {
+        var def = DefOf(type)!;
+        var storey = Spatial.Require(ctx.Model, (string?)a["storeyId"] ?? Spatial.Storeys(ctx.Model).FirstOrDefault()?.Id, IfcClass.BuildingStorey);
+        var at = Args.Point(a["at"], "where it stands");
+        var attrs = new JsonObject { ["operation"] = Operation, ["at"] = new JsonArray(at.X, at.Y), ["rotation"] = Json.Number(a["rotation"]) ?? 0 };
+        if ((string?)def["ifcClass"] is { } cls && cls != InstanceClass) attrs["exportAs"] = cls;
+        if (Json.Number(a["z"]) is { } z) attrs["z"] = z;
+        if (a["mirror"] is JsonValue mv && mv.TryGetValue<bool>(out var mirror) && mirror) attrs["mirror"] = true;
+        if (a["values"] is JsonObject values && Own(type, values, null) is { Count: > 0 } own) attrs["values"] = own;
+        var e = new Entity(ctx.NewId(), InstanceClass, type.Name, attrs);
+        ctx.Add(e);
+        Spatial.Contain(ctx, storey.Id, e.Id);
+        ctx.Relate(IfcClass.RelDefinesByType, type.Id, e.Id);
+        return new JsonObject { ["id"] = e.Id };
+    }
+
+    /// <summary>Instances' own values ({ids, values}: a value null goes back to the part's default).</summary>
+    public static JsonNode? SetValues(ICommandContext ctx, JsonObject a)
+    {
+        foreach (var id in Args.Ids(a))
+        {
+            var e = ctx.Model.Get(id) is { } x && IsInstance(x) ? x : throw new CommandException("Not a placed part.");
+            var type = TypeOf(ctx.Model, e) is { } t && DefOf(t) != null ? t : throw new CommandException("Its part is gone.");
+            var attrs = e.CloneAttrs();
+            var own = Own(type, a["values"] as JsonObject ?? [], e.Attrs["values"] as JsonObject);
+            if (own.Count == 0) attrs.Remove("values"); else attrs["values"] = own;
+            ctx.Replace(e.With(attrs: attrs));
+            // Built with them, or refused with why.
+            if (Build(ctx.Model.Get(id)!, ctx.Model).Problems is [{ } problem, ..]) throw new CommandException(problem);
+        }
+        return null;
+    }
+
+    /// <summary>Drafted closed outlines of a view made a part ({viewId, ids, name, depth, parameterize? (default true), ifcClass?}); the drafting stays.</summary>
+    public static JsonNode? FromSketch(ICommandContext ctx, JsonObject a, string fallbackName)
+    {
+        var view = Views.Find(ctx.Model, (string?)a["viewId"] ?? "") ?? throw new CommandException("There is no such view.");
+        var outlines = new List<IReadOnlyList<Vec2>>();
+        foreach (var id in Args.Ids(a))
+        {
+            var e = ctx.Model.Get(id) ?? throw new CommandException("Something chosen is gone.");
+            if (e.Attrs["shape"] is not JsonObject shape) continue;
+            if ((string?)shape["type"] == "polyline" && shape["closed"] is JsonValue cv && cv.TryGetValue<bool>(out var closed) && closed)
+                outlines.Add([.. Args.StoredPoints(shape["pts"])]);
+            else if ((string?)shape["type"] == "circle" && Args.TryPoint(shape["c"]) is { } c && Json.Number(shape["r"]) is { } rad)
+                outlines.Add([.. Enumerable.Range(0, Chords.Circle(rad)).Select(k => c + new Vec2(Math.Cos(2 * Math.PI * k / Chords.Circle(rad)), Math.Sin(2 * Math.PI * k / Chords.Circle(rad))) * rad)]);
+        }
+        if (outlines.Count == 0) throw new CommandException("A part is made of closed outlines: closed polylines, rectangles or circles.");
+        var standing = view.Str("kind") is "section" or "elevation";
+        var def = FromOutlines(outlines, standing, Json.Number(a["depth"]) ?? 0.5, a["parameterize"] is not JsonValue pv || !pv.TryGetValue<bool>(out var p) || p);
+        if ((string?)a["ifcClass"] is { Length: > 3 } cls) def["ifcClass"] = cls;
+        def = Check(def);
+        var part = new Entity(ctx.NewId(), TypeClass, ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : fallbackName, new JsonObject { ["def"] = def });
+        ctx.Add(part);
+        return new JsonObject { ["id"] = part.Id, ["def"] = def.DeepClone() };
+    }
+
+    /// <summary>A part as a file's text: <c>{format, version, name, def}</c>, as a .lapinpart, or as a .lapinfamily for the families' export.</summary>
+    public static JsonObject FileText(Entity e, string format, int version, string extension)
+    {
+        var def = DefOf(e) ?? throw new CommandException($"„{e.Name}” is a solid drawn from a sketch: only a part of formula bodies goes to a file yet.");
+        var o = new JsonObject { ["format"] = format, ["version"] = version, ["name"] = e.Name, ["def"] = def.DeepClone() };
+        return new JsonObject { ["text"] = o.ToJsonString(new JsonSerializerOptions { WriteIndented = true }), ["file"] = e.Name + extension };
+    }
+
+    /// <summary>A .lapinpart's text (or a .lapinfamily's, which is read as a part) brought in as a part ({text}).</summary>
+    public static JsonNode? Import(ICommandContext ctx, JsonObject a)
+    {
+        const string Refused = "That is not a part file (.lapinpart or .lapinfamily).";
+        JsonNode? n;
+        try { n = JsonNode.Parse((string?)a["text"] ?? ""); } catch (JsonException) { throw new CommandException(Refused); }
+        if (n is not JsonObject o || (string?)o["format"] is not (FileFormat or Families.FileFormat)) throw new CommandException(Refused);
+        if ((string?)o["format"] == FileFormat && Json.Number(o["version"]) is { } v && v > FileVersion) throw new CommandException("That part file was written by a newer Lapin.");
+        var e = new Entity(ctx.NewId(), TypeClass, ((string?)o["name"])?.Trim() is { Length: > 0 } nm ? nm : "Part", new JsonObject { ["def"] = Check(o["def"]) });
+        ctx.Add(e);
+        return new JsonObject { ["id"] = e.Id };
+    }
+
+    /// <summary>A part's bodies for some values (its defaults under them), as edges in its own frame: the editor's preview, or why it does not build.</summary>
+    public static JsonNode Preview(JsonObject a, IModelView m)
+    {
+        var def = Check(a["def"] ?? Require(m, (string?)a["id"]).Attrs["def"]);
+        var bodies = Bodies(def, Values(def, a["values"] as JsonObject));
+        return new JsonObject
+        {
+            ["bodies"] = new JsonArray(bodies.Select(b => (JsonNode)new JsonObject
+            {
+                ["name"] = b.Name,
+                ["edges"] = new JsonArray(b.Solid.Faces.SelectMany(f => f.Outer.Select((v, k) => (v, w: f.Outer[(k + 1) % f.Outer.Length])))
+                    .Select(e => (JsonNode)new JsonArray(Math.Round(b.Solid.Vertices[e.v].X, 6), Math.Round(b.Solid.Vertices[e.v].Y, 6), Math.Round(b.Solid.Vertices[e.v].Z, 6),
+                        Math.Round(b.Solid.Vertices[e.w].X, 6), Math.Round(b.Solid.Vertices[e.w].Y, 6), Math.Round(b.Solid.Vertices[e.w].Z, 6))).ToArray()),
+                ["volume"] = Math.Round(Measure.Volume(b.Solid), 9),
+            }).ToArray()),
+        };
+    }
+
+    // ------------------------------------------------------------ the part's tree
+
+    static JsonArray V(Vec3 v) => new(Math.Round(v.X, 9), Math.Round(v.Y, 9), Math.Round(v.Z, 9));
+    static JsonObject FrameJson(Vec3 origin, Vec3 right, Vec3 up, Vec3 normal) =>
+        new() { ["origin"] = V(origin), ["right"] = V(right), ["up"] = V(up), ["normal"] = V(normal) };
+
+    /// <summary>
+    /// What the edit mode shows of a Studio solid (docs/plan-studio-parametric.md §3.2): its part, the origin planes, the sketches,
+    /// the steps and the parameters. A solid drawn from a sketch: its drafted profile, path, rail… as sketches, its operation and
+    /// Studio steps as steps, no parameters yet. A placed part: each body's outline a sketch on its origin plane and a step, the
+    /// definition's parameters with the instance's values.
+    /// </summary>
+    public static JsonObject Tree(IModelView m, IServices? services, Entity e)
+    {
+        var type = TypeOf(m, e);
+        var sketches = new JsonArray();
+        var steps = new JsonArray();
+        var ps = new JsonArray();
+        var k = 0;
+        if (IsInstance(e))
+        {
+            var def = DefOf(type);
+            var values = def != null ? Values(def, e.Attrs["values"] as JsonObject) : [];
+            var (place, dir, _) = Placing(e, m);
+            var i = 0;
+            foreach (var b in (def?["bodies"] as JsonArray ?? []).OfType<JsonObject>())
+            {
+                var name = BodyName(b, ++i);
+                var plane = (string?)b["plane"] ?? "xy";
+                var (u, v, n) = Frame(plane);
+                Vec3 off = default;
+                try { if (b["offset"] is JsonArray oa && oa.Count == 3) off = new Vec3(Eval(oa[0], values, name), Eval(oa[1], values, name), Eval(oa[2], values, name)); }
+                catch (CommandException) { }
+                sketches.Add((JsonNode)new JsonObject
+                {
+                    ["id"] = $"body:{i}", ["name"] = name, ["plane"] = plane, ["shapeIds"] = new JsonArray(),
+                    ["points"] = b["points"]?.DeepClone(), ["frame"] = FrameJson(place(off), dir(u), dir(v), dir(n)),
+                });
+                var step = new JsonObject { ["index"] = k++, ["kind"] = "extrude", ["label"] = name, ["sketch"] = $"body:{i}" };
+                if (b["when"] is { } when)
+                {
+                    step["when"] = when.DeepClone();
+                    try { if (Eval(when, values, name) == 0) step["suppressed"] = true; } catch (CommandException) { }
+                }
+                steps.Add((JsonNode)step);
+            }
+            foreach (var p in def != null ? Params(def) : [])
+            {
+                var o = new JsonObject
+                {
+                    ["key"] = p.Key, ["label"] = p.Label, ["kind"] = p.Kind, ["default"] = p.Default, ["value"] = values.TryGetValue(p.Key, out var x) ? x : p.Default,
+                    // Every parameter of a light family was an instance's own and shown: so they stay until the table says otherwise (P1).
+                    ["instance"] = Flag(p.Source["instance"]) ?? true, ["published"] = Flag(p.Source["published"]) ?? true,
+                };
+                foreach (var text in new[] { "unit", "group", "description" }) if ((string?)p.Source[text] is { } s) o[text] = s;
+                ps.Add((JsonNode)o);
+            }
+        }
+        else if (e.Str("operation") is { } op)
+        {
+            // A box's bottom or top: its box's sketch.
+            var source = op == Thick.BoxSlab ? m.Get(e.Str("box") ?? "") ?? e : e;
+            var roles = new List<(string Role, string Id)>();
+            foreach (var key in new[] { "profile", "guide", "endProfile", "rail" }) if (source.Str(key) is { } id) roles.Add((key, id));
+            foreach (var id in (source.Attrs["profiles"] as JsonArray)?.Select(x => (string?)x).OfType<string>() ?? []) roles.Add(("profiles", id));
+            foreach (var (role, id) in roles.DistinctBy(r => r.Id))
+            {
+                var draft = m.Get(id);
+                var o = new JsonObject { ["id"] = id, ["role"] = role };
+                var shapeIds = new List<string> { id };
+                if (draft != null)
+                {
+                    if (role is "profile" or "endProfile" or "profiles" && Sketches.OutlineOf(m, draft) is { } outline) shapeIds = [.. outline.Ids];
+                    if (role == "profile") shapeIds.AddRange(Sketches.HoleOutlines(m, draft, [draft.Id]).SelectMany(h => h.Ids));
+                    var view = Views.Find(m, draft.Str("viewId") ?? "");
+                    o["viewId"] = view?.Id;
+                    o["plane"] = view?.Str("kind") ?? "plan";
+                    if (view != null && Sketches.PlaneOf(m, view, services, Sketches.MidX(Drafts.ShapeOf(draft))) is { } sp) o["frame"] = FrameJson(sp.Origin, sp.Right, sp.Up, sp.Normal);
+                }
+                else o["missing"] = true;
+                o["shapeIds"] = new JsonArray(shapeIds.Distinct().Select(x => (JsonNode)x).ToArray());
+                sketches.Add((JsonNode)o);
+            }
+            steps.Add((JsonNode)new JsonObject { ["index"] = k++, ["kind"] = op, ["label"] = OperationLabel(op) });
+        }
+        // Studio's steps, after the operation or the bodies.
+        var f = 0;
+        foreach (var feature in (e.Attrs["features"] as JsonArray)?.OfType<JsonObject>() ?? [])
+        {
+            var step = new JsonObject { ["index"] = k++, ["kind"] = (string?)feature["op"] ?? "step", ["label"] = Features.Label(feature), ["feature"] = f++ };
+            if (Features.Off(feature)) step["suppressed"] = true;
+            steps.Add((JsonNode)step);
+        }
+        var tree = new JsonObject
+        {
+            ["id"] = e.Id, ["name"] = type?.Name ?? e.Name, ["kind"] = IsInstance(e) ? "formula" : "recipe",
+            ["planes"] = new JsonArray(Planes.Select(p => (JsonNode)p).ToArray()),
+            ["sketches"] = sketches, ["steps"] = steps, ["params"] = ps,
+        };
+        if (type != null) tree["partTypeId"] = type.Id;
+        return tree;
+    }
+
+    static string OperationLabel(string op) => op switch
+    {
+        "followMe" => "Follow Me",
+        Thick.Wall => "Wall strip",
+        Thick.BoxSlab => "Box bottom or top",
+        "body" => "Body",
+        "prism" => "Push/pull on a face",
+        _ => char.ToUpperInvariant(op[0]) + op[1..],
+    };
+
+    public static void Register(IModuleRegistry r)
+    {
+        // Every part type of the project: the formula ones with their definition, the plain solid types without.
+        r.Query("parts", (q, _) => new JsonObject
+        {
+            ["parts"] = new JsonArray(q.Model.OfClass(TypeClass).OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase).Select(e => (JsonNode)new JsonObject
+            {
+                ["id"] = e.Id, ["name"] = e.Name, ["description"] = e.Str("description"), ["def"] = DefOf(e)?.DeepClone(), ["uses"] = Uses(q.Model, e),
+            }).ToArray()),
+        });
+        r.Query("partPreview", (q, a) => Preview(a, q.Model));
+        r.Query("partTree", (q, a) =>
+        {
+            var e = q.Model.Get((string?)a["id"] ?? "") is { } x && x.Str("operation") != null ? x : throw new CommandException("Not a Studio solid or a placed part.");
+            return Tree(q.Model, q.Services, e);
+        });
+        r.Command("createPart", "New part", (ctx, a) => Create(ctx, a, "Part"));
+        r.Command("updatePart", "Change part", (ctx, a) => Update(ctx, a, Require(ctx.Model, (string?)a["id"], withDef: false)));
+        r.Command("deletePart", "Delete part", (ctx, a) => Delete(ctx, Require(ctx.Model, (string?)a["id"], withDef: false)));
+        // A part placed: {typeId, storeyId, at: [x, y], z?, rotation?, mirror?, values?}.
+        r.Command("placePart", "Place part", (ctx, a) => Place(ctx, a, Require(ctx.Model, (string?)a["typeId"])));
+        r.Command("setPartValues", "Part values", SetValues);
+        r.Command("partFromSketch", "Part from sketch", (ctx, a) => FromSketch(ctx, a, "Part"));
+        r.Query("exportPart", (q, a) => FileText(Require(q.Model, (string?)a["id"], withDef: false), FileFormat, FileVersion, FileExtension));
+        r.Command("importPart", "Import part", Import);
+    }
+
+    /// <summary>A parameter of a definition as read (declared last, so the catalogue's reading of this file finds the commands' class).</summary>
+    sealed record Param(string Key, string Label, string Kind, double Default, JsonObject Source);
+}
+
+/// <summary>
+/// The light families of decision 515 made parts (docs/plan-studio-parametric.md §9): a saved <c>LapinFamily</c> becomes a
+/// <c>LapinSolidType</c> with the same id, name and definition; each <c>LapinFamilyInstance</c> a placed part (a proxy Studio
+/// solid of <c>operation: "part"</c>) with the same id, point, height, rotation, mirror, values and class, typed by its part through
+/// one <c>IfcRelDefinesByType</c> per part (its GlobalId derived from the part's, so opening twice gives the same one).
+/// </summary>
+public sealed class FamilyPartUpgrade : IProjectUpgrade
+{
+    public const string OldClass = "LapinFamily";
+    public const string OldInstanceClass = "LapinFamilyInstance";
+
+    public (IReadOnlyList<Entity> Entities, IReadOnlyList<Relation> Relations) Upgrade(IReadOnlyList<Entity> entities, IReadOnlyList<Relation> relations)
+    {
+        if (!entities.Any(e => e.Class is OldClass or OldInstanceClass)) return (entities, relations);
+        var families = entities.Where(e => e.Class == OldClass).Select(e => e.Id).ToHashSet();
+        var typed = new Dictionary<string, List<string>>();
+        var es = entities.Select(e =>
+        {
+            if (e.Class == OldClass) return new Entity(e.Id, Parts.TypeClass, e.Name, e.CloneAttrs(), e.PredefinedType);
+            if (e.Class != OldInstanceClass) return e;
+            var attrs = e.CloneAttrs();
+            var family = e.Str("familyId");
+            attrs.Remove("familyId");
+            attrs["operation"] = Parts.Operation;
+            if (attrs["exportAs"] is JsonValue x && x.TryGetValue<string>(out var cls) && cls == Parts.InstanceClass) attrs.Remove("exportAs");
+            if (family != null && families.Contains(family)) (typed.TryGetValue(family, out var l) ? l : typed[family] = []).Add(e.Id);
+            return new Entity(e.Id, Parts.InstanceClass, e.Name, attrs, e.PredefinedType);
+        }).ToList();
+        var rs = relations.ToList();
+        foreach (var (family, ids) in typed)
+            rs.Add(new Relation(GlobalId.FromGuid(new Guid(Md5.HashData(Encoding.UTF8.GetBytes("lapin-family-part:" + family)))), IfcClass.RelDefinesByType, family, ids));
+        return (es, rs);
+    }
+}

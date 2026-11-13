@@ -37,7 +37,7 @@ export const KIND_INFO: Record<ExtensionKind, KindInfo> = {
   barShapes: { label: 'Bar shapes', extensions: ['lapinbarshapes'], code: false, module: 'rebar' },
   parameters: { label: 'Shared parameters', extensions: ['lapinparams'], code: false, module: 'core' },
   mapping: { label: 'Table and layer mappings', extensions: ['lapinmapping'], code: false, module: 'core' },
-  families: { label: 'Families', extensions: ['lapinfamily'], code: false, module: 'studio' },
+  families: { label: 'Families', extensions: ['lapinfamily', 'lapinpart'], code: false, module: 'studio' },
   script: { label: 'Python scripts', extensions: ['py'], code: true },
 };
 

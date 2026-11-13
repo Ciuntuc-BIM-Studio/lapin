@@ -9624,7 +9624,7 @@ export const scenes = [
       await page.mouse.move(x2, y2, { steps: 3 }); await page.mouse.click(x2, y2);
       await t.wait(900);
       await t.keys('Escape');
-      const placed = (await t.nodes()).filter((n) => n.type === 'LapinFamilyInstance');
+      const placed = (await t.nodes()).filter((n) => n.props.operation === 'part');
       t.expect(placed.length === 2, `two table objects, found ${placed.length}`);
       const first = placed.find((n) => n.props.values?.Width === 1.6) ?? placed[0];
       t.expect(first.props.values?.Width === 1.6 && first.props.rotation === 90, 'the first one has its own width and is turned a quarter');

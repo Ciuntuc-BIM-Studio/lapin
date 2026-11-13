@@ -36,7 +36,7 @@ import { cancel as cancelCommand } from '../../viewport/cad/session';
 import { toggleSketchupKeys, useDisplay } from '../../app/display';
 import './familyLibrary';
 import { FamiliesDialog } from './families/FamiliesDialog';
-import { FAMILY_CLASS, FamilyFromSketchDialog, FamilySection, placeFamilyTool, startFamilyFromSketch } from './families/FamilyTools';
+import { isPlacedPart, FamilyFromSketchDialog, FamilySection, placeFamilyTool, startFamilyFromSketch } from './families/FamilyTools';
 
 /** The thickness and height last used, the next command's defaults. */
 const last = { thickness: 0.2, height: 3 };
@@ -798,7 +798,7 @@ const studio: LapinModule = {
   }],
   dialogs: { families: FamiliesDialog, familyFromSketch: FamilyFromSketchDialog },
   propertySections: [
-    { id: 'studioFamily', label: 'Family', classes: [FAMILY_CLASS], component: FamilySection },
+    { id: 'studioFamily', label: 'Family', classes: SOLID_CLASSES, shows: isPlacedPart, component: FamilySection },
     { id: 'studioFeature', label: 'Studio', classes: SOLID_CLASSES, component: FeatureCard, fieldKeys: featureFieldKeys },
     { id: 'studioRefPlane', label: 'Reference plane', classes: ['LapinView'], component: RefPlaneSection },
     // Any element some solid cuts, unites or intersects: those solids listed, selectable even when never drawn.

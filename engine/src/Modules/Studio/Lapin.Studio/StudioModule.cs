@@ -27,7 +27,11 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
     public static readonly string[] Classes =
         [IfcClass.BuildingElementProxy, "IfcMember", "IfcPlate", "IfcCovering", "IfcRailing", "IfcChimney", "IfcFurnishingElement"];
 
-    /// <summary>A Studio solid's type (shared by the solids that take it); exported as the type of the solid's IFC class (IfcMemberType, IfcSlabType…).</summary>
+    /// <summary>
+    /// A Studio solid's type (shared by the solids that take it); exported as the type of the solid's IFC class (IfcMemberType, IfcSlabType…).
+    /// It is the part of decision 517: one that carries a definition (<c>def</c>) is placed as parts (<see cref="Parts"/>); one without is
+    /// the named type it always was, its solids keeping their own recipe.
+    /// </summary>
     public const string TypeClass = "LapinSolidType";
 
     /// <summary>What a Studio solid can be, as the inspector offers it: its IFC class (written as itself, or as a proxy that exports as it) and that class's predefined types (IFC4).</summary>
@@ -62,9 +66,9 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
     /// <summary>
     /// The operations a solid is made by: from a sketch (extrude, sweep, revolve, loft), without one (a primitive;
     /// a prism, a face pushed or pulled on an element Studio does not build; a body, an element's or a mesh file's
-    /// triangles made into a Studio solid).
+    /// triangles made into a Studio solid), or a part placed from its type's definition (<see cref="Parts"/>).
     /// </summary>
-    public static readonly string[] Operations = ["extrude", "sweep", "revolve", "loft", "primitive", "prism", "body", "followMe"];
+    public static readonly string[] Operations = ["extrude", "sweep", "revolve", "loft", "primitive", "prism", "body", "followMe", Parts.Operation];
 
     public void Register(IModuleRegistry r)
     {
@@ -107,8 +111,11 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
             r.Cutter(cls, cls == "IfcFurnishingElement" ? 10 : 40, (e, m) => !IsVoid(e) && Geometry(e, m, null)?.Parts is [{ } only] ? only.Solid : null);
         }
         r.Class(new(TypeClass, "Solid type", [new("description", "Description", "text")], "#b9b2a6", Kind: "type"));
-        // Families of the user's own: parametric objects from formulas or a sketch (docs/plan-user-extensibility.md §5.6).
+        // Parts (decision 517): a solid type carrying a definition, placed as Studio solids; the families of the user's own
+        // (docs/plan-user-extensibility.md §5.6) are parts now, their commands shortcuts onto the parts' and saved ones upgraded.
+        Parts.Register(r);
         Families.Register(r);
+        r.Service<IProjectUpgrade>(new FamilyPartUpgrade());
         // A box's walls with its bottom and top: an assembly (IfcElementAssembly) of separate elements, without a body of its own.
         r.Class(new(Boxes.AssemblyClass, "Assembly", [], "#b9b2a6"));
         r.Service<IGeometryFilter>(this);
@@ -177,7 +184,15 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
             }
             foreach (var id in ids)
             {
-                Solid(ctx.Model, id);
+                var solid = Solid(ctx.Model, id);
+                // A placed part is made by its part: it takes another part (keeping the values that part has), never a plain type or none.
+                if (Parts.IsInstance(solid))
+                {
+                    if (Parts.DefOf(type) == null) throw new CommandException($"„{solid.Name}” is a placed part: give it another part, one with a definition.");
+                    var attrs = solid.CloneAttrs();
+                    if (Parts.Kept(type!, attrs["values"] as JsonObject) is { } kept) attrs["values"] = kept; else attrs.Remove("values");
+                    ctx.Replace(solid.With(attrs: attrs));
+                }
                 ctx.Unrelate(IfcClass.RelDefinesByType, id);
                 if (type != null) ctx.Relate(IfcClass.RelDefinesByType, type.Id, id);
             }

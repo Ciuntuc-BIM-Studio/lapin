@@ -20,7 +20,7 @@ export interface FirmSave {
 }
 
 /** The kinds whose „this computer” is a plain file store (the others have libraries of their own). */
-const KEPT_HERE = new Set(['lin', 'lapinstandards', 'lapinrules', 'lapinbarshapes', 'lapinparams', 'lapinfamily']);
+const KEPT_HERE = new Set(['lin', 'lapinstandards', 'lapinrules', 'lapinbarshapes', 'lapinparams', 'lapinfamily', 'lapinpart']);
 
 const base = (p: string) => p.split(/[\\/]/).filter(Boolean).pop() ?? p;
 

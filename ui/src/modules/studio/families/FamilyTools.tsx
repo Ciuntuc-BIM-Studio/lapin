@@ -17,7 +17,14 @@ import { registerDraftMenu } from '../../../viewport/draftMenu';
 import { familiesDialog, listFamilies, previewFamily, setFamilyValues, useFamilies, useFromSketch, usePlaceFamily } from './familyApi';
 import { IFC_CLASSES, className, parseValue, placedEdges, planEdges, sketchSources, valuesOf, type FamilyDto } from './familyModel';
 
-export const FAMILY_CLASS = 'LapinFamilyInstance';
+/** An object of a family is a placed part (decision 517): a Studio solid of operation `part`, typed by its part (IfcRelDefinesByType). */
+export const isPlacedPart = (n?: NodeDto | null): boolean => !!n && n.props.operation === 'part';
+
+/** The part (family) a placed part is typed by. */
+const partOf = (id: string): string | undefined => {
+  for (const r of useSession.getState().relations.values()) if (r.class === 'IfcRelDefinesByType' && r.related.includes(id)) return r.relating;
+  return undefined;
+};
 
 // ------------------------------------------------------------ the place tool
 
@@ -114,13 +121,15 @@ const shownValue = (v: unknown, kind: string): string => (typeof v === 'number' 
 
 export function FamilySection({ node }: { node: NodeDto }) {
   const { families } = useFamilies();
-  const family: FamilyDto | undefined = families.find((f) => f.id === node.props.familyId);
+  const relations = useSession((x) => x.relations);
+  const familyId = relations && partOf(node.id);
+  const family: FamilyDto | undefined = families.find((f) => f.id === familyId);
   const own = (node.props.values ?? {}) as Record<string, unknown>;
   // The objects of the family selected with this one are changed together.
   const ids = (): string[] => {
     const sel = useUi.getState().selected;
     const nodes = useSession.getState().nodes;
-    return sel.includes(node.id) ? sel.filter((id) => nodes.get(id)?.type === FAMILY_CLASS) : [node.id];
+    return sel.includes(node.id) ? sel.filter((id) => isPlacedPart(nodes.get(id))) : [node.id];
   };
   const commit = async (key: string, kind: 'length' | 'number' | 'angle' | 'bool', text: string) => {
     const v = parseValue(text, kind, (t) => parseLength(t));

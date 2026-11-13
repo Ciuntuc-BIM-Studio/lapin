@@ -69,6 +69,16 @@ public sealed class StudioPlacement : IElementPlacement
                     attrs["holes"] = new JsonArray(holes.OfType<JsonArray>().Select(h => (JsonNode)new JsonArray(h.Select(Features.P).OfType<Vec3>().Select(p => (JsonNode)Features.J(Pt(p))).ToArray())).ToArray());
                 if (Features.P(attrs["normal"]) is { } n) attrs["normal"] = Features.J(Dir(n));
                 break;
+            case Parts.Operation:
+            {
+                // A placed part: its point, its angle, a mirror turning it over.
+                var q = t.Point(Args.TryPoint(e.Attrs["at"]) ?? default);
+                attrs["at"] = new JsonArray(q.X, q.Y);
+                var turned = t.Angle(e.Num("rotation") * Math.PI / 180) * 180 / Math.PI;
+                attrs["rotation"] = Math.Round(((turned % 360) + 360) % 360, 9);
+                if (t.Mirrored) { attrs["mirror"] = !e.Bool("mirror"); attrs["rotation"] = Math.Round((((turned + 180) % 360) + 360) % 360, 9); }
+                break;
+            }
         }
         if (FromSketch(e) && !OnPlan(m, e))
         {
@@ -109,6 +119,8 @@ public sealed class StudioPlacement : IElementPlacement
         var copy = new Entity(ctx.NewId(), e.Class, e.Name, attrs, e.PredefinedType);
         ctx.Add(copy);
         if (Spatial.StoreyOf(ctx.Model, e.Id) is { } st) Spatial.Contain(ctx, st.Id, copy.Id);
+        // Its type (a placed part's part) with it.
+        if (ctx.Model.RelatingOf(e.Id, IfcClass.RelDefinesByType) is { } type) ctx.Relate(IfcClass.RelDefinesByType, type.Id, copy.Id);
         if (e.Str("operation") == Thick.Box) Boxes.Reconcile(ctx, copy);
         return copy.Id;
     }
