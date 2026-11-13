@@ -501,6 +501,7 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
 
     public ElementGeometry? Apply(Entity e, ElementGeometry g, IModelView m, IServices services)
     {
+        if (e.Class == IfcClass.Annotation) return g.Lines is { Count: > 0 } && ConsumedOnFace(e, m) ? g with { Lines = [] } : null;
         var rels = m.RelationsOf(e.Id).Where(x => x.Class == IfcClass.RelInterferesElements).ToList();
         if (IsVoid(e)) return g with { Parts = [], Plan = null };
         if (rels.Count == 0) return null;
@@ -526,7 +527,9 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
                 {
                     case "Union":
                     {
-                        var u = booleans.Union([.. parts.Select(p => p.Solid), .. tools], "studio");
+                        // A tool only touching its target (a face on a face) is sunk into it a hair, so the two share volume.
+                        var sunk = tools.Select(t => parts.Aggregate(t, (acc, p) => Flush.Sunk(acc, p.Solid))).ToList();
+                        var u = booleans.Union([.. parts.Select(p => p.Solid), .. sunk], "studio");
                         if (u != null) parts = [parts[0] with { Solid = u, Key = "body" }];
                         break;
                     }
@@ -534,12 +537,14 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
                     {
                         var self = parts.Count == 1 ? parts[0].Solid : booleans.Union(parts.Select(p => p.Solid).ToList(), "studio");
                         var other = tools.Count == 1 ? tools[0] : booleans.Union(tools, "studio");
+                        if (self != null && other != null) other = Flush.Proud(other, self);
                         var i = self != null && other != null ? booleans.Intersection(self, other, "studio") : null;
                         parts = i != null ? [parts[0] with { Solid = i, Key = "body" }] : [];
                         break;
                     }
                     default:
-                        parts = parts.Select(p => booleans.Difference(p.Solid, tools, p.Solid.Tag) is { } d ? p with { Solid = d } : null).OfType<GeometryPart>().ToList();
+                        // The tools' faces lying on the target's moved out a hair, so no sliver of a face is left (decision 518).
+                        parts = parts.Select(p => booleans.Difference(p.Solid, tools.Select(t => Flush.Proud(t, p.Solid)).ToList(), p.Solid.Tag) is { } d ? p with { Solid = d } : null).OfType<GeometryPart>().ToList();
                         break;
                 }
             }

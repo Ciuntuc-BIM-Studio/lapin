@@ -44,11 +44,21 @@ public static class RefPlanes
     {
         var o = new Vec3(view.Num("x"), view.Num("y"), view.Num("z"));
         var (b, t, s) = (view.Num("bearing") * Deg, view.Num("tilt") * Deg, view.Num("spin") * Deg);
-        var n = new Vec3(Math.Cos(t) * Math.Cos(b), Math.Cos(t) * Math.Sin(b), Math.Sin(t)).Normalized();
+        var n = Clean(new Vec3(Math.Cos(t) * Math.Cos(b), Math.Cos(t) * Math.Sin(b), Math.Sin(t)));
         // Level along the plane (the bearing turned a quarter clockwise), whatever the tilt: no singular case.
-        var x0 = new Vec3(-Math.Sin(b), Math.Cos(b), 0);
-        var x = (x0 * Math.Cos(s) + Vec3.Cross(n, x0) * Math.Sin(s)).Normalized();
-        return new WorkPlane(o, x, Vec3.Cross(n, x).Normalized(), n);
+        var x0 = Clean(new Vec3(-Math.Sin(b), Math.Cos(b), 0));
+        var x = Clean(x0 * Math.Cos(s) + Vec3.Cross(n, x0) * Math.Sin(s));
+        return new WorkPlane(o, x, Clean(Vec3.Cross(n, x)), n);
+    }
+
+    /// <summary>
+    /// An axis without the sines' and cosines' rounding (cos 90° is 6e-17, not 0): a level or upright plane's axes exact,
+    /// so what is drawn on a face lies on it and a solid made from it shares its planes exactly (decision 518).
+    /// </summary>
+    static Vec3 Clean(Vec3 v)
+    {
+        static double Z(double c) => Math.Abs(c) < 1e-14 ? 0 : c;
+        return new Vec3(Z(v.X), Z(v.Y), Z(v.Z)).Normalized();
     }
 
     /// <summary>The fields of a plane through <paramref name="origin"/> facing <paramref name="normal"/>, its x along <paramref name="right"/> when given (else level).</summary>
