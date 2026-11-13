@@ -12,7 +12,7 @@
 
 import { create } from 'zustand';
 import type { DrawingDto } from '../drawing';
-import type { PlanItemDto } from '../../engine/protocol';
+import type { PlanItemDto, RelationDto } from '../../engine/protocol';
 import { drawnInPlan } from '../finishSnaps';
 
 /** The elements a view's drawing shows: each mark's owner (`id`, `id#axis`, `id:part` all name `id`); null with no drawing. */
@@ -31,6 +31,17 @@ export function drawnElements(drawing: DrawingDto | null | undefined): Set<strin
 
 /** The whole an element is a part of (platform/assemblies.ts' wholeOf), to climb from a part to what the drawing names. */
 export type WholeOf = (id: string) => string | undefined;
+
+/**
+ * The whole an element shown stands for: its assembly (`assembly`, assemblies.ts' wholeOf) or, for an opening a wall has (an
+ * IfcOpeningElement voiding it), the wall: a plan draws the gap in the wall's own lines, with no mark of the opening's own, so a click
+ * in the gap takes the opening when the wall is shown. The voids are read once, so a model of many elements stays linear.
+ */
+export function shownWholeOf(relations: ReadonlyMap<string, RelationDto>, assembly: WholeOf): WholeOf {
+  const host = new Map<string, string>();
+  for (const r of relations.values()) if (r.class === 'IfcRelVoidsElement') for (const o of r.related) host.set(o, r.relating);
+  return (id) => assembly(id) ?? host.get(id);
+}
 
 /** Whether `id` or one of its wholes is among what a drawing shows (a whole drawn as one keeps its parts' own lines pickable for drilling). */
 export function isShown(id: string, shown: ReadonlySet<string>, wholeOf?: WholeOf): boolean {

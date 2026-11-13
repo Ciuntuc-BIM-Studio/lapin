@@ -46,7 +46,7 @@ import { editDimension } from './dimensionEdit';
 import { openPickedView } from './openView';
 import { CadOverlay } from './cad/canvas';
 import { snapShapes, useCadCanvas, type Aimed } from './cad/aim';
-import { clearShown, hiddenInDrawing, publishShown, shownItems } from './cad/shown';
+import { clearShown, hiddenInDrawing, publishShown, shownItems, shownWholeOf } from './cad/shown';
 import { CommandLine } from './cad/CommandLine';
 import './cad/ucs';
 import { feedPoint, finishStep, useCad } from './cad/session';
@@ -185,7 +185,7 @@ export function PlanView() {
     .map((r) => (r.plan.every((it) => shownAt(it, detail)) ? r : { ...r, plan: r.plan.filter((it) => shownAt(it, detail)) })), [render, storey?.id, detail]);
   // What the snaps and the selection take: only the elements the view's drawing shows (forum #31, decisions 491 and 498), all
   // of them over modelling lines; a part of a whole drawn as one keeps its own lines (drilling into assemblies).
-  const snapItems = useMemo(() => shownItems(items, drawing, (id) => wholeOf(id, nodes, relations)), [items, drawing, nodes, relations]);
+  const snapItems = useMemo(() => shownItems(items, drawing, shownWholeOf(relations, (id) => wholeOf(id, nodes, relations))), [items, drawing, nodes, relations]);
   const snapPoints = useMemo(() => snapItems.flatMap((r) => pairs(r.snaps ?? [])), [snapItems]);
   const markSnaps = useMemo(() => (drawing?.marks ?? []).flatMap((m) => pairs(m.snaps ?? [])), [drawing]);
   // What the tool on snaps to besides (the Pad footing tool: the columns of the storey above, decision 507).
@@ -302,7 +302,7 @@ export function PlanView() {
   const paneKey = useRef(`plan:${Math.random().toString(36).slice(2)}`).current;
   useEffect(() => {
     if (!active) { clearShown(paneKey); return; }
-    publishShown(paneKey, (id) => hiddenInDrawing(id, drawing, (x) => render.has(x), (x) => wholeOf(x, nodes, relations)));
+    publishShown(paneKey, (id) => hiddenInDrawing(id, drawing, (x) => render.has(x), shownWholeOf(relations, (x) => wholeOf(x, nodes, relations))));
   }, [active, drawing, render, nodes, relations, paneKey]);
   useEffect(() => () => clearShown(paneKey), [paneKey]);
   const pick = useCallback((p: Vec2, types?: string[]): NodeDto | null =>
