@@ -51,6 +51,23 @@ The **Model** group reads the elements you pick (**Elements picked** and **Use t
 - **Bounding box**: the box round any element's body as Lapin builds it: its lowest and highest corners, its centre, its size along X and Y and its height.
 - **Drafting geometry**: a line, polyline, rectangle, arc or circle drawn with the drafting tools, or the linework of an imported DXF, in the model: on its view's level (a plan's at its storey's level), arcs and circles as points. It gives the **Line**, its **Points**, **Start**, **End** and the **Centre** of an arc or a circle. Select the shapes in the plan, press **Use the selection** on an Elements picked node, and wire it in: a drafted polyline into **Corners**, then its segment starts and ends into a **Wall**, makes a wall along each side; a drafted line into **Divide line**, then into a **Column**, makes columns at its division points.
 
+## A graph as a tool
+
+A graph can be a tool of its own: its inputs become the fields of a small **palette** that works it out and bakes it without the canvas, in the desktop app and in Lapin for the browser alike.
+
+![The row of walls as a tool: its palette, with the walls' count and height, the walls made, and the ghost in the plan](shots/graphs-palette.webp)
+
+- **Make it a tool**: click an empty place of the canvas, and under **The graph as a tool** in the inspector tick **Show in My tools**. Its button goes into **My tools**, in the group **Graphs** unless you name another, with the name you give it (the graph's, else), an icon (`wall`, `grid`, `star`… or a letter) and a tooltip. The palette button above the canvas opens the palette too.
+- **The fields** are the graph's input nodes: **Number** (with its unit, metres or degrees; with a **Least** and a **Most** it gets a slider), **Whole number**, **Text**, **Yes or no**, **Choice**, **Elements picked** (with **Use selection**), **Storey** (the view's, unless one is chosen) and **A type** (a wall type, a floor type… for a tool's Type). Select an input node and set, under **In the palette**, whether it shows there, its label, its **Order** (those without one follow, top to bottom as on the canvas), and a number's least, most and step.
+- **What it gives**: every **Watch** node shows its value in the palette, under the fields; tick **Show its values in the palette** on any other node (a **Count** of the walls made, a **Sum** of lengths) to show it too. A list shows its first items and how many in all, a list of lists as a small table.
+- **Using it**: change a field and the ghost follows at once, the model untouched. Let go of it (release the slider, press **Enter**, tick a box, choose) and the value is written into the graph: one undo step, and the canvas shows it too. **Bake** makes what the ghost shows, in one undo step.
+
+The values belong to the graph, kept with the project: a colleague opening it gets the same tool, the same fields and the values last used. In a shared session the guests get no palette, as they get no graph.
+
+## Groups
+
+Select some nodes and press **G** (or the group button in the canvas's corner) to collapse them into one node: a **group**. Its inputs are the wires that came into the nodes from outside, its outputs those that left them; the graph works out the same. Select the group and press **Expand the group** in the inspector to have its nodes back, where the group stands. The input nodes inside a group are still fields of the palette.
+
 ## Errors
 
 A node that fails turns red and says why in the inspector (and when hovered): a wall of no length, a division by zero. The nodes after it say which input has nothing; the rest of the graph is still worked out. When only some items of a list fail, the node turns amber and says how many.

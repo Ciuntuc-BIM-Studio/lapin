@@ -2326,7 +2326,8 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .script-ask-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .script-ask-number { display: flex; align-items: center; gap: 6px; }
 .script-ask-number input { flex: 1; min-width: 0; text-align: right; }
-.script-ask-number .script-ask-slider { flex: 2 1 70px; min-width: 50px; padding: 0; }
+.script-ask-number { min-width: 0; }
+.script-ask-number .script-ask-slider { flex: 1 1 0; width: 0; min-width: 40px; padding: 0; }
 .script-ask-number:has(.script-ask-slider) input[type=text] { flex: 0 0 58px; }
 .script-ask-element { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .script-ask-element select, .script-ask-picked { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -2341,7 +2342,7 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .script-palette-body p, .script-palette-body hr { margin: 0; }
 .script-palette-body hr { border: 0; border-top: 1px solid var(--rule); }
 .script-palette-heading { margin: 2px 0 0; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted); }
-.script-palette-body .script-ask-row { grid-template-columns: minmax(80px, 40%) 1fr; gap: 6px; }
+.script-palette-body .script-ask-row { grid-template-columns: minmax(70px, 36%) minmax(0, 1fr); gap: 6px; }
 .script-palette-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
 .script-palette-buttons .btn { flex: 1 1 auto; width: auto; padding: 6px 10px; justify-content: center; gap: 6px; font-size: 11.5px; letter-spacing: 0.03em; }
 .tool .pulldown-mark { vertical-align: middle; margin-left: 2px; }

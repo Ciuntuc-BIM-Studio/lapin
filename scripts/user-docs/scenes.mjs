@@ -9808,7 +9808,8 @@ export const scenes = [
   {
     // Visual graphs (decision 527, docs/plan-visual-graphs.md, stage 1): a graph of a series, two points and the Wall command
     // (a row of three walls), kept in the project; View → Graphs opens it beside the plan; the engine's ghost shows the three
-    // walls in the plan before anything is made (the model untouched); Bake makes them in one undo step.
+    // walls in the plan before anything is made (the model untouched); Bake makes them in one undo step. Stage 2 (decision
+    // 536): the graph as a tool, its palette previewing and baking it without the canvas.
     id: 'graphs',
     touches: ['graphs', 'architecture', 'core'],
     async run(t) {
@@ -9847,6 +9848,49 @@ export const scenes = [
       t.expect(doc?.undoLabel === 'Bake graph', `Bake is one undo step (${doc?.undoLabel})`);
       await t.wait(800);
       await t.shot('graphs-baked');
+
+      // Stage 2 (decision 536): the same graph as a tool of My tools. Its walls' count and height are input nodes (the count
+      // with a least and a most: a slider), a Watch counts the walls made; the palette changes the ghost live, and Bake makes it.
+      await page.evaluate(async () => (await import('/src/engine/session.ts')).undo());
+      await t.until(async () => (await walls()) === 0, 'Undo takes the three walls back');
+      const L = (en, ro) => say({ en, ro }, t.lang);
+      const two = {
+        format: 2,
+        tool: { show: true, name, icon: 'wall', tooltip: L('A row of walls, as many and as high as you say', 'Un rând de pereți, câți și cât de înalți spui') },
+        nodes: [
+          ...graph.nodes.map((n) => ({ ...n, y: n.y + 120 })),
+          { ...N('n5', 'integer', 20, 0, { value: 3 }), label: L('Walls', 'Pereți'), palette: { min: 1, max: 8, order: 1 } },
+          { ...N('n6', 'number', 260, 360, { value: 2.8, unit: 'length' }), label: L('Height', 'Înălțime'), palette: { min: 2.4, max: 4, step: 0.1, order: 2 } },
+          N('n7', 'count', 740, 160),
+          { ...N('n8', 'watch', 960, 160), label: L('Walls made', 'Pereți făcuți') },
+        ],
+        wires: [
+          ...graph.wires,
+          { from: 'n5', out: 'value', to: 'n1', in: 'count' }, { from: 'n6', out: 'value', to: 'n4', in: 'height' },
+          { from: 'n4', out: 'ids', to: 'n7', in: 'list' }, { from: 'n7', out: 'count', to: 'n8', in: 'value' },
+        ],
+      };
+      await t.cmd('graphs.save', { id: saved.id, graph: two });
+      await t.until(async () => page.evaluate(async (id) => Boolean((await import('/src/platform/modules.ts')).findTool(`graph:${id}`)), saved.id), 'the graph is a tool of My tools');
+      // The panel closed: the palette works without the canvas, the ghost in the plan.
+      await page.evaluate(async () => { const m = await import('/src/app/store.ts'); if (m.useUi.getState().panes.length > 1) m.closePane(1); m.useUi.setState({ notice: null }); });
+      await t.tool(`graph:${saved.id}`);
+      await page.waitForSelector('[data-graph-palette]', { timeout: 10_000 });
+      const watched = async () => page.locator('[data-palette-output=n8] .graph-palette-values').innerText().catch(() => '');
+      await t.until(async () => (await watched()).trim() === '3', 'the palette shows the walls made');
+      // Five walls: typed into the count's field, the ghost and the watch follow at once; let go, the graph keeps it.
+      const count = page.locator('[data-graph-palette] [data-ask-field=n5] input[type=text]');
+      await count.fill('5');
+      await t.until(async () => (await watched()).trim() === '5', 'the palette previews five walls');
+      t.expect(await walls() === 0, 'the palette\'s preview makes nothing');
+      await count.press('Enter');
+      await t.until(async () => page.evaluate(async (id) => (await import('/src/engine/session.ts')).useSession.getState().nodes.get(id)?.props?.graph?.nodes?.find((n) => n.id === 'n5')?.values?.value === 5, saved.id), 'the count is written into the graph');
+      await page.evaluate(async () => (await import('/src/app/store.ts')).useUi.setState({ notice: null }));
+      await t.fit();
+      await t.wait(800);
+      await t.shot('graphs-palette');
+      await page.locator('[data-action=graph-palette-bake]').click();
+      await t.until(async () => (await walls()) === 5, 'Bake from the palette makes the five walls');
     },
   },
   // [scenes:C]

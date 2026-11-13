@@ -51,6 +51,23 @@ Grupul **Model** citește elementele pe care le alegi (**Elemente alese** și **
 - **Cutia încadratoare**: cutia din jurul corpului oricărui element, așa cum îl construiește Lapin: colțurile cel mai de jos și cel mai de sus, centrul, mărimea pe X și pe Y și înălțimea.
 - **Geometria desenului**: o linie, polilinie, dreptunghi, arc sau cerc desenat cu uneltele de desen, ori liniile unui DXF importat, în model: la cota vederii lui (a unui plan la cota nivelului), arcele și cercurile ca puncte. Dă **Linie**, **Puncte**, **Început**, **Sfârșit** și **Centru** pentru un arc sau un cerc. Selectează formele în plan, apasă **Folosește selecția** pe un nod Elemente alese și leagă-l: o polilinie desenată în **Colțuri**, apoi începuturile și capetele segmentelor într-un **Perete**, face un perete pe fiecare latură; o linie desenată în **Împarte linia**, apoi într-un **Stâlp**, pune stâlpi în punctele de împărțire.
 
+## Un graf ca unealtă
+
+Un graf poate fi o unealtă a lui: intrările lui devin câmpurile unei mici **palete** care îl calculează și îl creează fără pânză, la fel în aplicația desktop și în Lapin din browser.
+
+![Rândul de pereți ca unealtă: paleta lui, cu numărul și înălțimea pereților, pereții făcuți și fantoma în plan](shots/graphs-palette.webp)
+
+- **Fă-l unealtă**: dă clic pe un loc gol al pânzei și, sub **Graful ca unealtă** în inspector, bifează **Arată în Uneltele mele**. Butonul lui intră în **Uneltele mele**, în grupul **Grafuri** dacă nu numești altul, cu numele pe care i-l dai (altfel al grafului), o pictogramă (`wall`, `grid`, `star`… sau o literă) și un indiciu. Butonul de paletă de deasupra pânzei deschide și el paleta.
+- **Câmpurile** sunt nodurile de intrare ale grafului: **Număr** (cu unitatea lui, metri sau grade; cu un **Minim** și un **Maxim** primește un cursor), **Număr întreg**, **Text**, **Da sau nu**, **Alegere**, **Elemente alese** (cu **Folosește selecția**), **Nivel** (al vederii, dacă nu e ales unul) și **Un tip** (un tip de perete, de placă… pentru Tipul unei unelte). Selectează un nod de intrare și stabilește, sub **În paletă**, dacă se vede acolo, eticheta lui, **Ordinea** (cele fără ordine urmează, de sus în jos ca pe pânză) și minimul, maximul și pasul unui număr.
+- **Ce dă**: fiecare nod **Vezi valoarea** își arată valoarea în paletă, sub câmpuri; bifează **Arată-i valorile în paletă** pe orice alt nod (un **Număr** al pereților făcuți, o **Sumă** de lungimi) ca să-l arăți și pe el. O listă își arată primele elemente și câte sunt în total, o listă de liste ca un mic tabel.
+- **Folosirea**: schimbă un câmp și fantoma îl urmează imediat, fără să atingă modelul. Când îl lași (eliberezi cursorul, apeși **Enter**, bifezi, alegi), valoarea e scrisă în graf: un pas de anulare, și pânza o arată și ea. **Creează** face ce arată fantoma, într-un pas de anulare.
+
+Valorile sunt ale grafului, păstrate cu proiectul: un coleg care îl deschide primește aceeași unealtă, aceleași câmpuri și valorile folosite ultima dată. Într-o sesiune partajată oaspeții nu primesc paleta, cum nu primesc nici graful.
+
+## Grupuri
+
+Selectează câteva noduri și apasă **G** (sau butonul de grup din colțul pânzei) ca să le strângi într-un singur nod: un **grup**. Intrările lui sunt firele care veneau în noduri din afară, ieșirile cele care plecau din ele; graful se calculează la fel. Selectează grupul și apasă **Desface grupul** în inspector ca să ai nodurile înapoi, unde stă grupul. Nodurile de intrare dintr-un grup rămân câmpuri ale paletei.
+
 ## Erori
 
 Un nod care cade se face roșu și spune de ce în inspector (și când treci cu mouse-ul peste el): un perete fără lungime, o împărțire la zero. Nodurile de după el spun care intrare nu are nimic; restul grafului se calculează mai departe. Când cad doar câteva elemente ale unei liste, nodul se face chihlimbariu și spune câte.
