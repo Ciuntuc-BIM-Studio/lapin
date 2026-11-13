@@ -30,6 +30,17 @@ There are no data trees. A **list** wired into an input that takes one value run
 
 A tool's node takes the same inputs as its command: a **Wall** has **Start** and **End** points, a height, a storey, a type. Its outputs are **Elements made** and **Result** (what the command answered).
 
+## List nodes
+
+Besides **Range**, **Series**, **Count**, **Item**, **Reverse**, **Flatten**, **Sum**, **Smallest and largest** and **Filter**, the **Lists** group has:
+
+- **List**: a list you type, its items between semicolons or each on a line of its own: `3; 4,5; 6`. A decimal comma or point is fine. **Kind** **Auto** gives numbers when every item is a number, else texts; **Numbers** says which item is not one; **Texts** keeps everything as text.
+- **Join lists**: the lists wired into A, B, C and D one after the other. A single value counts as a list of one, so it also gathers a few values into a list; an input left empty is left out.
+- **Sort**: numbers by size, texts alphabetically, with the numbers in them by size (W2 before W10, capitals or not). Wire another list into **By** to sort by its values, place for place: the walls of a class by their height (**Property** `height` into By). **Descending** turns it round. Equal values keep their order; an empty item goes last. **Order** says where each item was, from 0.
+- **Part of a list**: **Count** items from **Start** (from 0). A negative start counts from the end; no count takes everything to the end. The first three: start 0, count 3; the last three: start -3.
+- **Unique**: each value once, in the order first seen, and **How many** times each was there. Numbers a billionth apart or less are the same, points too; texts are compared as written (capitals count), and the number 1 is not the text „1”.
+- **Every with every**: every pair of an item of A and an item of B. Its outputs A and B are as long as the pairs (A's items each repeated, B's over and over), so the next node, fed both, runs once for every pair: a **List** of X values and one of Y values into Every with every, then into a **Point**, give a point at every crossing. At most 10,000 pairs.
+
 ## Errors
 
 A node that fails turns red and says why in the inspector (and when hovered): a wall of no length, a division by zero. The nodes after it say which input has nothing; the rest of the graph is still worked out. When only some items of a list fail, the node turns amber and says how many.

@@ -30,6 +30,17 @@ Nu există arbori de date. O **listă** legată la o intrare care ia o singură 
 
 Nodul unei unelte are aceleași intrări ca și comanda ei: un **Perete** are punctele **Început** și **Sfârșit**, o înălțime, un nivel, un tip. Ieșirile lui sunt **Elemente făcute** și **Rezultat** (ce a răspuns comanda).
 
+## Nodurile de liste
+
+Pe lângă **Interval**, **Serie**, **Număr**, **Element din listă**, **Inversează**, **Aplatizează**, **Sumă**, **Cel mai mic și cel mai mare** și **Filtru**, grupul **Liste** are:
+
+- **Listă**: o listă pe care o scrii, cu elementele despărțite prin punct și virgulă sau fiecare pe rândul lui: `3; 4,5; 6`. Virgula sau punctul zecimal merg amândouă. **Fel** **Automat** dă numere când fiecare element e un număr, altfel texte; **Numere** spune care element nu e număr; **Texte** le păstrează pe toate ca text.
+- **Unește listele**: listele legate la A, B, C și D, una după alta. O singură valoare contează ca o listă de un element, așa că nodul strânge și câteva valori într-o listă; o intrare lăsată goală e omisă.
+- **Sortează**: numerele după mărime, textele alfabetic, cu numerele din ele după mărime (W2 înainte de W10, cu majuscule sau nu). Leagă altă listă la **După** ca să sortezi după valorile ei, loc cu loc: pereții unei clase după înălțime (**Property** `height` în După). **Descrescător** o întoarce. Valorile egale își păstrează ordinea; un element gol merge la sfârșit. **Ordine** spune unde era fiecare element, de la 0.
+- **Parte dintr-o listă**: **Număr** elemente de la **Început** (de la 0). Un început negativ numără de la sfârșit; fără număr ia tot până la capăt. Primele trei: început 0, număr 3; ultimele trei: început -3.
+- **Unice**: fiecare valoare o dată, în ordinea în care apare prima dată, și **De câte ori** era. Numerele care diferă cu cel mult o miliardime sunt aceleași, punctele la fel; textele se compară cum sunt scrise (majusculele contează), iar numărul 1 nu e textul „1”.
+- **Fiecare cu fiecare**: fiecare pereche dintre un element din A și unul din B. Ieșirile A și B sunt cât perechile (fiecare element din A repetat, cele din B reluate), deci nodul următor, legat la amândouă, rulează o dată pentru fiecare pereche: o **Listă** de valori X și una de valori Y prin Fiecare cu fiecare, apoi într-un **Punct**, dau un punct la fiecare încrucișare. Cel mult 10.000 de perechi.
+
 ## Erori
 
 Un nod care cade se face roșu și spune de ce în inspector (și când treci cu mouse-ul peste el): un perete fără lungime, o împărțire la zero. Nodurile de după el spun care intrare nu are nimic; restul grafului se calculează mai departe. Când cad doar câteva elemente ale unei liste, nodul se face chihlimbariu și spune câte.

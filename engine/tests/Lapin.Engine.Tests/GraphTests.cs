@@ -329,4 +329,159 @@ public sealed class GraphTests : IDisposable
         f.Run("element.delete", new JsonObject { ["ids"] = new JsonArray(graph) });
         Assert.Empty(f.Model.OfClass(GraphsModule.Class));
     }
+
+    // ── the list nodes (decision 527, stage 1 extended) ──
+
+    static string Json(JsonNode? n) => n?.ToJsonString() ?? "null";
+
+    static JsonObject Typed(string id, string items, string kind = "Auto") => N(id, "list", new() { ["items"] = items, ["kind"] = kind });
+
+    [Fact]
+    public void A_list_typed_by_hand_gives_numbers_when_every_item_is_one_else_texts()
+    {
+        var f = Project();
+        var many = string.Join(";", Enumerable.Repeat("1", GraphLimits.MaxItems + 1));
+        var r = Evaluate(f, G([Typed("n", "3; 4,5\n 6;"), Typed("t", "W1; 2"), Typed("forced", "3; 4", "Texts"), Typed("bad", "3; x", "Numbers"),
+            Typed("empty", " ; "), Typed("big", many), Typed("inf", "1; Infinity")]));
+        Assert.Equal("[3,4.5,6]", Json(Out(r, "n", "list")));
+        Assert.Equal("[\"W1\",\"2\"]", Json(Out(r, "t", "list")));
+        Assert.Equal("[\"3\",\"4\"]", Json(Out(r, "forced", "list")));
+        Assert.Equal("„x” is not a number.", (string)NodeOf(r, "bad")["error"]!);
+        Assert.Equal("[]", Json(Out(r, "empty", "list")));
+        Assert.Contains("at most", (string)NodeOf(r, "big")["error"]!);
+        // Only finite numbers: „Infinity” is a text, so the list is of texts.
+        Assert.Equal("[\"1\",\"Infinity\"]", Json(Out(r, "inf", "list")));
+    }
+
+    [Fact]
+    public void Join_lists_puts_them_one_after_the_other_a_single_value_as_one_item_an_empty_input_left_out()
+    {
+        var f = Project();
+        var r = Evaluate(f, G(
+            [Typed("a", "1; 2"), N("five", "number", new() { ["value"] = 5 }), Typed("d", "x"), N("join", "joinLists"), N("none", "joinLists"),
+             N("s1", "series", new() { ["count"] = 6000 }), N("s2", "series", new() { ["count"] = 6000 }), N("big", "joinLists")],
+            W("a", "list", "join", "a"), W("five", "value", "join", "b"), W("d", "list", "join", "d"), W("s1", "list", "big", "a"), W("s2", "list", "big", "b")));
+        Assert.Equal("[1,2,5,\"x\"]", Json(Out(r, "join", "list")));
+        Assert.Equal("[]", Json(Out(r, "none", "list")));
+        Assert.Contains("at most", (string)NodeOf(r, "big")["error"]!);
+    }
+
+    [Fact]
+    public void Sort_orders_numbers_by_size_texts_naturally_and_items_by_another_lists_values()
+    {
+        var f = Project();
+        var r = Evaluate(f, G(
+            [Typed("n", "3; 1; 2"), N("up", "sort"), N("down", "sort", new() { ["descending"] = true }),
+             Typed("t", "W10; w2; W1; Beam"), N("texts", "sort"), Typed("mixed", "2; a; 10"), N("mix", "sort"),
+             Typed("names", "a; b; c"), Typed("heights", "2.8; 3,1; 2.5"), N("by", "sort"), N("byDown", "sort", new() { ["descending"] = true }),
+             Typed("ties", "b; a; c"), Typed("tieKeys", "1; 2; 1"), N("stable", "sort"),
+             Typed("two", "1; 2"), N("short", "sort"),
+             N("nothing", "sort", new() { ["list"] = new JsonArray(3, null, 1) }), N("nothingDown", "sort", new() { ["list"] = new JsonArray(3, null, 1), ["descending"] = true }),
+             N("pts", "grid", new() { ["nx"] = 2, ["ny"] = 1 }), N("points", "sort"), N("empty", "sort")],
+            W("n", "list", "up", "list"), W("n", "list", "down", "list"), W("t", "list", "texts", "list"), W("mixed", "list", "mix", "list"),
+            W("names", "list", "by", "list"), W("heights", "list", "by", "by"), W("names", "list", "byDown", "list"), W("heights", "list", "byDown", "by"),
+            W("ties", "list", "stable", "list"), W("tieKeys", "list", "stable", "by"), W("names", "list", "short", "list"), W("two", "list", "short", "by"),
+            W("pts", "points", "points", "list")));
+        Assert.Equal("[1,2,3]", Json(Out(r, "up", "list")));
+        Assert.Equal("[1,2,0]", Json(Out(r, "up", "order")));
+        Assert.Equal("[3,2,1]", Json(Out(r, "down", "list")));
+        Assert.Equal("[\"Beam\",\"W1\",\"w2\",\"W10\"]", Json(Out(r, "texts", "list")));
+        Assert.Equal("[\"2\",\"10\",\"a\"]", Json(Out(r, "mix", "list")));
+        Assert.Equal("[\"c\",\"a\",\"b\"]", Json(Out(r, "by", "list")));
+        Assert.Equal("[2,0,1]", Json(Out(r, "by", "order")));
+        Assert.Equal("[\"b\",\"a\",\"c\"]", Json(Out(r, "byDown", "list")));
+        // Equal keys keep their order, whichever way.
+        Assert.Equal("[\"b\",\"c\",\"a\"]", Json(Out(r, "stable", "list")));
+        Assert.Equal("By has 2 values for 3 items: one each.", (string)NodeOf(r, "short")["error"]!);
+        // Nothing goes last either way.
+        Assert.Equal("[1,3,null]", Json(Out(r, "nothing", "list")));
+        Assert.Equal("[3,1,null]", Json(Out(r, "nothingDown", "list")));
+        Assert.Contains("cannot be sorted", (string)NodeOf(r, "points")["error"]!);
+        Assert.Equal("[]", Json(Out(r, "empty", "list")));
+        Assert.Equal("[]", Json(Out(r, "empty", "order")));
+    }
+
+    [Fact]
+    public void Sort_puts_elements_in_the_order_of_their_heights()
+    {
+        var f = Project();
+        var tall = f.Wall(0, 0, 5, 0, height: 3.2);
+        var low = f.Wall(0, 2, 5, 2, height: 2.4);
+        var mid = f.Wall(0, 4, 5, 4, height: 2.8);
+        var r = Evaluate(f, G(
+            [N("walls", "ofClass", new() { ["class"] = IfcClass.Wall }), N("h", "property", new() { ["key"] = "height" }), N("sort", "sort")],
+            W("walls", "ids", "h", "id"), W("walls", "ids", "sort", "list"), W("h", "value", "sort", "by")));
+        Assert.Equal([low, mid, tall], Out(r, "sort", "list")!.AsArray().Select(x => (string)x!));
+    }
+
+    [Fact]
+    public void Part_of_a_list_takes_count_items_from_start_a_negative_start_counting_from_the_end()
+    {
+        var f = Project();
+        JsonObject Part(string id, int start, int? count = null)
+        {
+            var v = new JsonObject { ["start"] = start };
+            if (count != null) v["count"] = count;
+            return N(id, "slice", v);
+        }
+        string[] ids = ["mid", "last", "lastTwo", "past", "before", "bad", "all", "empty"];
+        var r = Evaluate(f, G(
+            [N("r", "range", new() { ["start"] = 0, ["end"] = 9 }), Part("mid", 2, 3), Part("last", -3), Part("lastTwo", -3, 2), Part("past", 20),
+             Part("before", -20, 2), Part("bad", 0, -1), Part("all", 0), Part("empty", 1, 2)],
+            [.. ids.Where(i => i != "empty").Select(i => W("r", "list", i, "list"))]));
+        Assert.Equal("[2,3,4]", Json(Out(r, "mid", "list")));
+        Assert.Equal("[7,8,9]", Json(Out(r, "last", "list")));
+        Assert.Equal("[7,8]", Json(Out(r, "lastTwo", "list")));
+        Assert.Equal("[]", Json(Out(r, "past", "list")));
+        Assert.Equal("[0,1]", Json(Out(r, "before", "list")));
+        Assert.Contains("fewer than no items", (string)NodeOf(r, "bad")["error"]!);
+        Assert.Equal(10, Out(r, "all", "list")!.AsArray().Count);
+        Assert.Equal("[]", Json(Out(r, "empty", "list")));
+    }
+
+    [Fact]
+    public void Unique_keeps_each_value_once_in_the_order_first_seen_and_counts_them()
+    {
+        var f = Project();
+        var r = Evaluate(f, G(
+            [N("u", "unique", new() { ["list"] = new JsonArray(1, 1.0000000001, 2, "1", "a", "A", "a", 2, 1.0000001, true, true) }),
+             N("p1", "point", new() { ["x"] = 1, ["y"] = 2 }), N("p2", "point", new() { ["x"] = 1, ["y"] = 2.0000000004 }), N("p3", "point", new() { ["x"] = 3 }),
+             N("pts", "joinLists"), N("up", "unique"), N("empty", "unique")],
+            W("p1", "point", "pts", "a"), W("p2", "point", "pts", "b"), W("p3", "point", "pts", "c"), W("pts", "list", "up", "list")));
+        // Numbers a billionth apart are one; a text „1” is not the number 1; texts keep their case.
+        Assert.Equal("[1,2,\"1\",\"a\",\"A\",1.0000001,true]", Json(Out(r, "u", "list")));
+        Assert.Equal("[2,2,1,2,1,1,2]", Json(Out(r, "u", "times")));
+        Assert.Equal(2, Out(r, "up", "list")!.AsArray().Count);
+        Assert.Equal("[2,1]", Json(Out(r, "up", "times")));
+        Assert.Equal("[]", Json(Out(r, "empty", "list")));
+    }
+
+    [Fact]
+    public void Every_with_every_feeds_the_next_node_every_pair_so_a_command_makes_every_combination()
+    {
+        var f = Project();
+        var g = G(
+            [Typed("xs", "0; 5"), Typed("ys", "0; 3; 6"), N("cross", "cross"), N("a", "point"), N("end", "add", new() { ["b"] = 2 }), N("b", "point"),
+             N("wall", "command:architecture.addWall", new() { ["height"] = 2.8 })],
+            W("xs", "list", "cross", "a"), W("ys", "list", "cross", "b"), W("cross", "a", "a", "x"), W("cross", "b", "a", "y"),
+            W("cross", "a", "end", "a"), W("end", "value", "b", "x"), W("cross", "b", "b", "y"), W("a", "point", "wall", "pt:1"), W("b", "point", "wall", "pt:2"));
+        var r = Evaluate(f, g);
+        Assert.Equal("[0,0,0,5,5,5]", Json(Out(r, "cross", "a")));
+        Assert.Equal("[0,3,6,0,3,6]", Json(Out(r, "cross", "b")));
+        Assert.Equal(6, (double)Out(r, "cross", "count")!);
+        Assert.Equal(6, Out(r, "wall", "ids")!.AsArray().Count);
+
+        f.Run("graphs.bake", new JsonObject { ["graph"] = g.DeepClone() });
+        var starts = f.Model.OfClass(IfcClass.Wall).Select(w => w.Attrs["start"]!.AsArray()).Select(p => ((double)p[0]!, (double)p[1]!)).Order().ToList();
+        Assert.Equal([(0.0, 0.0), (0, 3), (0, 6), (5, 0), (5, 3), (5, 6)], starts);
+
+        r = Evaluate(f, G([N("s1", "series", new() { ["count"] = 101 }), N("s2", "series", new() { ["count"] = 100 }), N("big", "cross"), Typed("e", ""), N("none", "cross")],
+            W("s1", "list", "big", "a"), W("s2", "list", "big", "b"), W("e", "list", "none", "a"), W("s2", "list", "none", "b")));
+        Assert.Equal($"Every with every makes 10100 pairs: at most {GraphLimits.MaxItems}.", (string)NodeOf(r, "big")["error"]!);
+        Assert.Equal("[]", Json(Out(r, "none", "a")));
+        Assert.Equal(0, (double)Out(r, "none", "count")!);
+
+        var kinds = f.Session.Query("graphs.nodes", [])!["nodes"]!.AsArray().Where(n => (string)n!["group"]! == "Lists").Select(n => (string)n!["kind"]!).ToList();
+        foreach (var k in new[] { "list", "joinLists", "sort", "slice", "unique", "cross" }) Assert.Contains(k, kinds);
+    }
 }
