@@ -6,11 +6,18 @@
 
 import type { Param } from './params';
 
-/** A formula gives a number or a yes/no: text and choices stay values. */
-export const FORMULA_KINDS = ['number', 'length', 'area', 'angle', 'bool'];
+/** A formula gives a number, a yes/no or a text (decision 550: `{storey.code}.{number}`, `upper(name)`); choices stay values. */
+export const FORMULA_KINDS = ['number', 'length', 'area', 'angle', 'bool', 'text'];
 export const canFormula = (kind: string): boolean => FORMULA_KINDS.includes(kind);
 
 export const FORMULA_FUNCTIONS = ['min', 'max', 'round', 'floor', 'ceil', 'sqrt', 'sin', 'cos', 'tan', 'atan2', 'if', 'clamp'];
+/** The functions for texts (decision 550), and `&` that joins two. */
+export const TEXT_FUNCTIONS = ['concat', 'text', 'upper', 'lower', 'trim', 'left', 'right', 'len', 'pad'];
+/** Where a name may read beyond the element (decision 551), written before a dot: `storey.code`, `project.number`. */
+export const FORMULA_SCOPES = ['type', 'storey', 'building', 'site', 'project', 'group', 'assembly', 'host', 'room', 'fromRoom', 'toRoom'];
+
+/** Whether a formula is a template (a text with {fields}), not an expression. */
+export const isTemplate = (formula: string): boolean => formula.includes('{');
 /** Quantities a formula may name where the engine has them for the element. */
 export const FORMULA_QUANTITIES = ['Length', 'Width', 'Height', 'GrossArea', 'NetArea', 'GrossVolume', 'NetVolume'];
 
@@ -27,7 +34,9 @@ export const initialState = (p: Pick<Param, 'kind' | 'value'> & { formula?: stri
 export function toggled(state: FormulaState, p: Pick<Param, 'kind' | 'value'>): FormulaState {
   if (state.mode === 'formula') return { mode: 'value', text: state.text };
   const v = p.value;
-  const text = state.text || (typeof v === 'number' ? String(v) : typeof v === 'boolean' ? (v ? '1' : '0') : '');
+  // A text's value becomes a text in quotes (its quotes doubled), a number's its number.
+  const text = state.text || (typeof v === 'number' ? String(v) : typeof v === 'boolean' ? (v ? '1' : '0')
+    : p.kind === 'text' && typeof v === 'string' && v ? `"${v.replace(/"/g, '""')}"` : '');
   return { mode: 'formula', text };
 }
 
@@ -37,14 +46,16 @@ export function formulaArgs(ids: string[], p: Pick<Param, 'name' | 'kind' | 'pse
 }
 
 /** What it is given to make it a plain value again: the value the formula gave (or the kind's empty one when it gave none). */
-export function valueArgs(ids: string[], p: Pick<Param, 'name' | 'kind' | 'pset'>, computed: number | null | undefined): Record<string, unknown> {
-  const value = computed != null ? (p.kind === 'bool' ? computed !== 0 : computed) : p.kind === 'bool' ? false : 0;
+export function valueArgs(ids: string[], p: Pick<Param, 'name' | 'kind' | 'pset'>, computed: number | string | null | undefined): Record<string, unknown> {
+  const value = p.kind === 'text' ? (computed == null ? '' : String(computed))
+    : typeof computed === 'number' ? (p.kind === 'bool' ? computed !== 0 : computed) : p.kind === 'bool' ? false : 0;
   return { ids, name: p.name, kind: p.kind, value, ...(p.pset ? { pset: p.pset } : {}) };
 }
 
-/** A result written for its kind: a yes/no, an angle in degrees, an area, a number; `length` formats the metres in the project's unit. */
-export function resultText(value: number | null | undefined, kind: string, length: (m: number) => string): string {
+/** A result written for its kind: a yes/no, an angle in degrees, an area, a number, a text as it is; `length` formats the metres in the project's unit. */
+export function resultText(value: number | string | null | undefined, kind: string, length: (m: number) => string): string {
   if (value == null) return '';
+  if (typeof value === 'string') return value;
   switch (kind) {
     case 'bool': return value !== 0 ? 'yes' : 'no';
     case 'length': return length(value);

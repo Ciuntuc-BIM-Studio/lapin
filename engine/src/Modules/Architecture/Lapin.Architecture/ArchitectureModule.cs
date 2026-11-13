@@ -412,6 +412,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Service<Lapin.Platform.Documents.IDocumentFields>(new DocumentFields());
 
         // ------------------------------------------------------------ rooms
+        // The scopes formulas and tags read a room by (decision 551): {room.name}, a door's {fromRoom.number}, {toRoom.number}.
+        RoomScopes.Register();
         r.Class(new(Rooms.Class, "Room",
         [
             new("number", "Number", "text"),

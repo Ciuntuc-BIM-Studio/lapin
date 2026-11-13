@@ -88,7 +88,7 @@ export function ParamsSection({ node, ids: who, shadowed, isType = node.type.end
         <dl className="fields">
           {params.map((p) => (
             <span key={paramKey(p)} className="qrow">
-              <dt title={`${p.pset ? `${p.pset} · ` : ''}${shadowed?.has(paramKey(p)) ? `${p.kind} · this element has its own value` : p.kind}`} className={shadowed?.has(paramKey(p)) ? 'shadowed' : undefined}>{p.pset && <span className="muted small" data-no-i18n>{p.pset} · </span>}{p.name}<button type="button" className="icon mini row-x" title="Remove the parameter" onClick={() => void execute('element.removeParam', { ids: ids(), name: p.name, ...(p.pset ? { pset: p.pset } : {}) })}><X size={10} /></button></dt>
+              <dt title={`${p.pset ? `${p.pset} · ` : ''}${shadowed?.has(paramKey(p)) ? `${p.kind} · this element has its own value` : p.kind}`} className={shadowed?.has(paramKey(p)) ? 'shadowed' : undefined}>{p.pset && <span className="muted small" data-no-i18n>{p.pset} · </span>}<span data-no-i18n>{p.name}</span><button type="button" className="icon mini row-x" title="Remove the parameter" onClick={() => void execute('element.removeParam', { ids: ids(), name: p.name, ...(p.pset ? { pset: p.pset } : {}) })}><X size={10} /></button></dt>
               <dd>
                 <ParamValue p={p} id={node.id} ids={ids} evaluated={evaluated} params={params} attrs={node.props}>
                 {p.kind === 'length' ? <LengthCell metres={p.value as number} onCommit={(m) => set(p, m)} />

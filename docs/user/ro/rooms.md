@@ -45,6 +45,12 @@ Fiecare rând face o ușă sau o fereastră obișnuită în peretele de pe acea 
 
 ![Dialogul Eticheta încăperii](shots/room-tag.webp)
 
+Un rând poate arăta și parametrii proprii ai încăperii, ai nivelului ei și ai proiectului: lista îi oferă la **Parametri**, **Nivelul lui** și **Proiectul** de îndată ce o încăpere îi are. Parametrul unui nivel e citit de toate încăperile de pe el: dă nivelului un parametru *code* = K1, iar rândul `{storey.code}.{number}` al unei încăperi scrie *K1.1*; schimbă-l în K2 și toate etichetele urmează. Un parametru al încăperii poate fi calculat dintr-o formulă din ele (*Room index* = `{storey.code}.{Hall}.{Flat}.{number}`), iar extrasul încăperilor are câte o coloană pentru fiecare parametru al încăperilor: vezi [Parametri calculați prin formule](interface.md#texte-calculate).
+
+**Desenat ca** un simbol al tău, eticheta arată cum ai desenat-o: casete, linii și texte care țin câmpurile (`{storey.code}.{number}`, `{name}`, `{area}`, `{Floor finish}`). Desenează-l în **Simboluri…**, apoi alege-l la **Desenat ca**; **Rândurile de mai jos** te întoarce la rânduri. Vezi [O etichetă desenată ca simbol](drafting.md#o-etichetă-desenată-ca-simbol).
+
+![Eticheta unei încăperi desenată ca simbol propriu](shots/room-tag-symbol.webp)
+
 ## Rotunjirea ariilor
 
 Încăperile își arată aria la sutimea de metru pătrat. **Gestionare → Standarde de desen → Proiect → Rotunjirea ariilor** o rotunjește în schimb la **0,1 m²**, **0,5 m²** sau **1 m²**, jumătatea în sus, cum scriu țările nordice ariile încăperilor (12,27 m² devine 12,5 m² la 0,5 și 12 m² la 1). Se aplică oricărei arii de încăpere pe care o arată Lapin: etichetele din planuri și planșe, legenda culorilor și dialogul Culorile încăperilor, extrasul de încăperi, ariile de pardoseală din cantitățile unei încăperi și ariile pe care le completează un document. Fiecare încăpere se rotunjește separat, iar un total adună încăperile rotunjite, așa că coloana extrasului dă totalul ei. Modelul păstrează aria exactă: fișierul IFC, volumele și celelalte cantități nu se rotunjesc niciodată. Într-un proiect în picioare, pasul e în picioare pătrate.
