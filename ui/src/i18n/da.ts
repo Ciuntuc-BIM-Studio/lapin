@@ -3102,6 +3102,7 @@ export const DA: Record<string, string> = {
   "Hide the constraints": "Skjul båndene",
   "1 degree of freedom": "1 frihedsgrad",
   "1 constraint": "1 bånd",
+  "Constrain while drawing: in a sketch, snaps and typed values become constraints (hold Ctrl on a click for a free point)": "Bind under tegning: I en skitse bliver fang og indtastede værdier til bånd (hold Ctrl nede ved klik for et frit punkt)",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

@@ -355,7 +355,7 @@ export function PlanView() {
     const rect = svgRef.current!.getBoundingClientRect();
     const raw = toWorld(clientX - rect.left, clientY - rect.top);
     const a = aim(raw, from ?? null, { grid: gridSnapStep(view.scale), orthoHeld: ortho });
-    useCad.setState({ cursor: a.point });
+    useCad.setState({ cursor: a.point, aim: a });
     liveCursor(a.point);
     return a;
   }, [toWorld, view.scale, aim, ortho]);

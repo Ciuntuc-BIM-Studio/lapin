@@ -3107,6 +3107,7 @@ export const RO: Record<string, string> = {
   "Hide the constraints": "Ascunde constrângerile",
   "1 degree of freedom": "1 grad de libertate",
   "1 constraint": "1 constrângere",
+  "Constrain while drawing: in a sketch, snaps and typed values become constraints (hold Ctrl on a click for a free point)": "Constrânge în timp ce desenezi: într-o schiță, prinderile și valorile tastate devin constrângeri (ține Ctrl apăsat la clic pentru un punct liber)",
 };
 
 /** Phrases with a number or a name in them. */

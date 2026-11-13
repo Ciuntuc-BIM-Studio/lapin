@@ -9844,6 +9844,40 @@ export const scenes = [
       await t.until(async () => (await page.locator('[data-constraint]').count()) === 0, 'hiding the constraints takes their glyphs off the view');
       await page.locator('[data-testid=sketch-constraints-toggle]').click();
       await t.until(async () => (await page.locator('[data-constraint]').count()) > 0, 'showing them puts them back');
+
+      // Constraints recorded while drawing: a line begun on the rectangle's corner (an endpoint snap) and drawn along the ortho line is
+      // coincident with the corner and vertical; a second one begun with ⌘/Ctrl held is free.
+      await fitSmall();
+      const constraintsNow = async () => (await t.call('doc.query', { name: 'studio.constraints', args: { viewId: plan } })).constraints;
+      const before = (await constraintsNow()).length;
+      await page.evaluate(async () => { (await import('/src/viewport/cad/session.ts')).useCad.setState({ ortho: true }); (await (await import('/src/viewport/cad/session.ts')).startCommand('LINE')); });
+      const corner = (await draft())[1];
+      const [cx, cy] = await t.planPoint(corner[0], corner[1]);
+      await page.mouse.move(cx - 25, cy - 25); await page.mouse.move(cx, cy, { steps: 6 }); await t.wait(300);
+      await page.mouse.click(cx, cy);
+      await t.wait(600);
+      await page.mouse.move(cx + 6, cy + 80, { steps: 8 });
+      await t.wait(300);
+      await t.shot('sketch-constraints-drawing', { of: '[data-testid=plan]', pad: 0 });
+      await page.mouse.click(cx + 6, cy + 80);
+      await t.wait(900);
+      await t.keys('Escape');
+      await t.until(async () => (await constraintsNow()).length > before, 'the line drawn in the sketch keeps what the inference found');
+      const made = (await constraintsNow()).slice(before).map((c) => c.kind);
+      t.expect(made.includes('coincident') && made.includes('vertical'), `the new line is coincident with the corner and vertical (it has ${made.join(', ')})`);
+      const count = (await constraintsNow()).length;
+      await page.evaluate(async () => { await (await import('/src/viewport/cad/session.ts')).startCommand('LINE'); });
+      await page.mouse.move(cx - 25, cy - 25); await page.mouse.move(cx, cy, { steps: 6 }); await t.wait(300);
+      await page.keyboard.down('Meta');
+      await page.mouse.click(cx, cy);
+      await t.wait(600);
+      await page.mouse.move(cx + 70, cy - 5, { steps: 8 });
+      await page.mouse.click(cx + 70, cy - 5);
+      await page.keyboard.up('Meta');
+      await t.wait(900);
+      await t.keys('Escape');
+      { const now = await constraintsNow(); t.expect(now.length === count, `a line drawn with ⌘/Ctrl held on its points has no constraints (it has ${now.slice(count).map((c) => `${c.kind} ${c.refs.map((r) => r.part).join('/')}`).join(', ')})`); }
+      await page.evaluate(async () => (await import('/src/viewport/cad/session.ts')).useCad.setState({ ortho: false }));
     },
   },
 ];

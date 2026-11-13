@@ -3161,6 +3161,7 @@ export const LO: Record<string, string> = {
   "Hide the constraints": "ເຊື່ອງຂໍ້ຈຳກັດ",
   "1 degree of freedom": "1 ລະດັບເສລີ",
   "1 constraint": "1 ຂໍ້ຈຳກັດ",
+  "Constrain while drawing: in a sketch, snaps and typed values become constraints (hold Ctrl on a click for a free point)": "ຈຳກັດໃນຂະນະແຕ້ມ: ໃນແບບຮ່າງ ຈຸດຈັບ ແລະຄ່າທີ່ພິມຈະກາຍເປັນຂໍ້ຈຳກັດ (ກົດ Ctrl ຄ້າງໄວ້ເວລາຄລິກເພື່ອໄດ້ຈຸດອິດສະຫຼະ)",
 };
 
 /** Phrases with a number or a name in them. */

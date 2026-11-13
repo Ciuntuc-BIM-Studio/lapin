@@ -11,7 +11,7 @@ import type { DrawingDto } from '../drawing';
 import { SnapIndex, findSnap, type SnapMode } from './snaps';
 import { usePrefs } from '../../app/prefs';
 import { fromFrame, isIdentity, toFrame, ucsOf, useLocation, type Frame } from '../../app/location';
-import { fromJson, nearestOnShape, type Shape } from './shapes';
+import { fromJson, keyPoints, nearestOnShape, type Shape } from './shapes';
 import { applyOrtho } from './input';
 import { track, trackOnOrtho, type Guide } from './tracking';
 import { useCad, type CadHost } from './session';
@@ -21,7 +21,7 @@ import { viewFrameAt } from '../viewFrame';
 /** What holds an aimed point that no object snap took: the ortho line from the base (on, or Shift held), a polar angle from the base, or a tracking guide through an acquired point. */
 export type AimLock = 'ortho' | 'polar' | 'tracking';
 
-export interface Aimed { point: Vec2; kind: 'point' | 'grid' | 'free'; mode?: SnapMode; guides: Guide[]; lock?: AimLock }
+export interface Aimed { point: Vec2; kind: 'point' | 'grid' | 'free'; mode?: SnapMode; guides: Guide[]; lock?: AimLock; /** The drafted shape the object snap took the point from (its id), when it is one. */ shapeId?: string }
 
 /**
  * The aim's rule, with the snap already found: an object snap (other than
@@ -67,13 +67,15 @@ export function resolveAim(raw: Vec2, c: AimInput): Aimed {
 /** The drawing's lines a cursor can snap to (no hatches, fills or texts). */
 const SNAP_LAYERS = new Set(['CUT', 'SEEN', 'HIDDEN', 'OVERHEAD', 'BEYOND', 'MEMBRANE']);
 
-export function snapShapes(drawing: DrawingDto | null, extra: Shape[] = []): { shapes: Shape[]; drafts: Map<string, Shape[]> } {
+export function snapShapes(drawing: DrawingDto | null, extra: Shape[] = []): { shapes: Shape[]; drafts: Map<string, Shape[]>; owners: (string | null)[] } {
   const shapes: Shape[] = [...extra];
+  /** The drafted shape each of `shapes` is (its id), null for the others: what an object snap says it took a point from. */
+  const owners: (string | null)[] = extra.map(() => null);
   const drafts = new Map<string, Shape[]>();
   for (const p of drawing?.pens ?? []) {
     if (!SNAP_LAYERS.has(p.layer) || !p.segments) continue;
     const s = p.segments;
-    for (let k = 0; k + 3 < s.length; k += 4) shapes.push({ type: 'line', a: { x: s[k], y: s[k + 1] }, b: { x: s[k + 2], y: s[k + 3] } });
+    for (let k = 0; k + 3 < s.length; k += 4) { shapes.push({ type: 'line', a: { x: s[k], y: s[k + 1] }, b: { x: s[k + 2], y: s[k + 3] } }); owners.push(null); }
   }
   for (const m of drawing?.marks ?? []) {
     const exact = (m as { shapes?: Record<string, unknown>[] }).shapes;
@@ -81,12 +83,24 @@ export function snapShapes(drawing: DrawingDto | null, extra: Shape[] = []): { s
       const list = exact.filter((j) => !j.hatch).map(fromJson).filter((x): x is Shape => !!x);
       if (list.length) drafts.set(m.id, list);
       shapes.push(...list);
+      owners.push(...list.map(() => m.id));
       continue;
     }
     const s = m.segments;
-    for (let k = 0; k + 3 < s.length; k += 4) shapes.push({ type: 'line', a: { x: s[k], y: s[k + 1] }, b: { x: s[k + 2], y: s[k + 3] } });
+    for (let k = 0; k + 3 < s.length; k += 4) { shapes.push({ type: 'line', a: { x: s[k], y: s[k + 1] }, b: { x: s[k + 2], y: s[k + 3] } }); owners.push(null); }
   }
-  return { shapes, drafts };
+  return { shapes, drafts, owners };
+}
+
+/** The first drafted shape a snap of this kind at `p` could have come from: its end, middle, centre or quadrant there, or its line through the point. */
+export function draftThrough(drafts: ReadonlyMap<string, Shape[]>, p: Vec2, mode: SnapMode): string | null {
+  const at = (list: Vec2[]) => list.some((q) => Math.hypot(q.x - p.x, q.y - p.y) < 1e-6);
+  for (const [id, list] of drafts) for (const sh of list) {
+    const k = keyPoints(sh);
+    const hit = mode === 'endpoint' ? at(k.endpoints) : mode === 'midpoint' ? at(k.midpoints) : mode === 'center' ? at(k.centers) : mode === 'quadrant' ? at(k.quadrants) : nearestOnShape(sh, p).dist < 1e-6;
+    if (hit) return id;
+  }
+  return null;
 }
 
 export function useCadCanvas(o: {
@@ -108,7 +122,7 @@ export function useCadCanvas(o: {
   // A plan drafts in the UCS; a section or an elevation in its own frame.
   const planRef = useRef(o.drawing?.kind === 'plan');
   planRef.current = o.drawing?.kind === 'plan';
-  const { shapes, drafts } = useMemo(() => snapShapes(o.drawing, o.extra), [o.drawing, o.extra]);
+  const { shapes, drafts, owners } = useMemo(() => snapShapes(o.drawing, o.extra), [o.drawing, o.extra]);
   const index = useMemo(() => new SnapIndex(shapes), [shapes]);
   const acquired = useRef<Vec2[]>([]);
   const hold = useRef<{ p: Vec2; timer: ReturnType<typeof setTimeout> } | null>(null);
@@ -186,8 +200,11 @@ export function useCadCanvas(o: {
       }
     } else if (hold.current) { clearTimeout(hold.current.timer); hold.current = null; }
     const frame = planRef.current ? ucsOf(useLocation.getState().loc) : null;
-    return resolveAim(raw, { base, ortho: cad.ortho || !!o2.orthoHeld, polar: cad.polar, polarStep: prefs.polarStep, snap: s, acquired: acquired.current, tol, grid: o2.grid, frame });
-  }, [shapes, index]);
+    const aimed = resolveAim(raw, { base, ortho: cad.ortho || !!o2.orthoHeld, polar: cad.polar, polarStep: prefs.polarStep, snap: s, acquired: acquired.current, tol, grid: o2.grid, frame });
+    // The drafted shape the point lies on: the snap's own, else the first drafted shape through the point (the model's lines may be found first where they coincide).
+    const owner = aimed.mode ? (s && aimed.mode === s.mode ? owners[s.shape] : null) ?? draftThrough(drafts, aimed.point, aimed.mode) : null;
+    return owner ? { ...aimed, shapeId: owner } : aimed;
+  }, [shapes, index, owners, drafts]);
 
   /** A point the gesture placed: acquired for the guides. */
   const acquire = useCallback((p: Vec2) => {

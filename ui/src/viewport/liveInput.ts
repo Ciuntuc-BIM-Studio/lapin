@@ -43,7 +43,7 @@ interface LiveState {
   ang: string;
   focus: LiveField;
   /** What a typed point does; `typed` is the length typed (m) when one was, for a tool that measures along its own path. */
-  commit: ((p: Vec2, typed?: number) => void) | null;
+  commit: ((p: Vec2, typed?: number, typedAngle?: number) => void) | null;
   /** A move from the base (MOVE, COPY, a dragged grip): the cells at the cursor also show Δx and Δy. */
   delta: boolean;
 }
@@ -51,7 +51,7 @@ interface LiveState {
 export const useLive = create<LiveState>(() => ({ owner: null, base: null, cursor: null, len: '', ang: '', focus: 'len', commit: null, delta: false }));
 
 /** A segment starts at `base`: its length and angle can now be typed. */
-export function liveBegin(owner: string, base: Vec2, commit: (p: Vec2, typed?: number) => void, o: { delta?: boolean } = {}): void {
+export function liveBegin(owner: string, base: Vec2, commit: (p: Vec2, typed?: number, typedAngle?: number) => void, o: { delta?: boolean } = {}): void {
   const s = useLive.getState();
   const delta = !!o.delta;
   if (s.owner === owner && s.base && Math.hypot(s.base.x - base.x, s.base.y - base.y) < 1e-12) { useLive.setState({ commit, delta }); return; }
@@ -96,7 +96,8 @@ export function liveCommit(): boolean {
   if (!p) return false;
   const commit = s.commit;
   const typed = parseLength(s.len) ?? undefined;
+  const typedAngle = parseAngle(s.ang) ?? undefined;
   useLive.setState({ len: '', ang: '' });
-  commit(p, typed);
+  commit(p, typed, typedAngle);
   return true;
 }

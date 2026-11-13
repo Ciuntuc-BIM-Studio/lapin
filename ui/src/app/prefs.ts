@@ -44,6 +44,8 @@ export interface Prefs {
   externalEditor: string | null;
   /** The mouse navigation style (decision 516): Lapin's own, or as Revit, AutoCAD, ArchiCAD, SketchUp, Blender or Rhino do it (app/navStyle.ts). */
   navStyle: NavStyleId;
+  /** Drawing in a sketch records what the inference found as constraints (decision 520, C2); Ctrl on a click places that point free. */
+  constrainWhileDrawing: boolean;
 }
 
 export const SNAP_MODES: readonly SnapMode[] = ['endpoint', 'midpoint', 'intersection', 'center', 'quadrant', 'perpendicular', 'nearest'];
@@ -52,7 +54,7 @@ export const DEFAULT_PREFS: Prefs = {
   theme: 'paper', gridMode: 'adaptive', gridStep: 1, gridMajor: 5, gridSnap: true,
   snapModes: [...SNAP_MODES], polarStep: 45, coords: 'internal',
   profileStandardsHidden: [], newProjectProfileStandards: null, defaultTemplate: null,
-  developerExtras: false, pythonPath: null, externalEditor: null, navStyle: DEFAULT_NAV_STYLE,
+  developerExtras: false, pythonPath: null, externalEditor: null, navStyle: DEFAULT_NAV_STYLE, constrainWhileDrawing: true,
 };
 
 const names = (v: unknown): string[] | null => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && !!x.trim()).map((x) => x.trim()))] : null);
@@ -82,6 +84,7 @@ export function readPrefs(stored: unknown): Prefs {
     pythonPath: typeof o.pythonPath === 'string' && o.pythonPath.trim() ? o.pythonPath.trim() : null,
     externalEditor: typeof o.externalEditor === 'string' && o.externalEditor.trim() ? o.externalEditor.trim() : null,
     navStyle: pick(o.navStyle, NAV_STYLE_IDS, d.navStyle),
+    constrainWhileDrawing: o.constrainWhileDrawing !== false,
   };
 }
 

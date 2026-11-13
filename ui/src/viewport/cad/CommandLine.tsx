@@ -16,7 +16,7 @@ import { findTool } from '../../platform/modules';
 import { ROLES, findCommand, roleLabel, useCad } from './session';
 import { useLayers } from './layers';
 import { openSnapMenu, UcsChip, useSnapSummary } from '../../shell/CursorCoords';
-import { usePrefs } from '../../app/prefs';
+import { setPrefs, usePrefs } from '../../app/prefs';
 import { t } from '../../i18n';
 
 /** The prompt, what is typed, the switches and the layer: the part both kinds of line have. */
@@ -26,6 +26,7 @@ export function CadPrompt({ inline }: { inline?: boolean }) {
   const tool = useUi((s) => s.tool);
   const snaps = useSnapSummary();
   const polarStep = usePrefs((s) => s.polarStep);
+  const constrain = usePrefs((s) => s.constrainWhileDrawing);
   const view = useUi((s) => s.view);
   const promptHere = useInterface((s) => s.parts.prompt === 'commandLine');
   useBindings();
@@ -47,6 +48,8 @@ export function CadPrompt({ inline }: { inline?: boolean }) {
       <button type="button" className={`cad-toggle${ortho ? ' on' : ''}`} title={bindingText('app.ortho') ? `Ortho (${bindingText('app.ortho').split(', ')[0]}; hold Shift)` : 'Ortho (hold Shift)'} onClick={() => useCad.setState({ ortho: !ortho })}>ORTHO</button>
       <UcsChip />
       <button type="button" className={`cad-toggle${polar ? ' on' : ''}`} title={`${t('Polar tracking every')} ${polarStep}°${key('app.polar')}`} onClick={() => useCad.setState({ polar: !polar })}>POLAR</button>
+      {twoD && <button type="button" className={`cad-toggle${constrain ? ' on' : ''}`} data-testid="constrain-toggle" aria-pressed={constrain}
+        title="Constrain while drawing: in a sketch, snaps and typed values become constraints (hold Ctrl on a click for a free point)" onClick={() => setPrefs({ constrainWhileDrawing: !constrain })}>CNSTR</button>}
       {(!inline || twoD) && <>
         <select className="cad-layer" value={layer} title="The layer new shapes go on" onChange={(e) => useCad.setState({ layer: e.target.value })}>
           {(layers.length ? layers : [{ name: '0' }]).map((l) => <option key={l.name} value={l.name}>{l.name}</option>)}

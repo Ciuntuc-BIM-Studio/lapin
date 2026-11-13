@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Vec2 } from '../../platform/module';
 
-const engine = vi.hoisted(() => ({ execute: vi.fn(), undo: vi.fn() }));
+const engine = vi.hoisted(() => ({ execute: vi.fn(), undo: vi.fn(), useSession: { getState: vi.fn(() => ({ nodes: new Map(), error: null })), setState: vi.fn() } }));
 vi.mock('../../engine/session', () => engine);
 
 import { cancel, feedPoint, startCommand, submit, useCad } from './session';
@@ -154,5 +154,75 @@ describe('typed values and the project\'s unit', () => {
     const calls = engine.execute.mock.calls.map(([c, a]) => [c, a] as [string, Record<string, unknown>]);
     expect(calls.find(([c]) => c === 'element.transform')?.[1].angle).toBe(90);
     expect(calls.find(([c]) => c === 'drafting.transform')?.[1].factor).toBe(2.5);
+  });
+});
+
+describe('constraints recorded while drawing (decision 520, C2)', () => {
+  const sketch = () => engine.useSession.getState.mockReturnValue({
+    error: null,
+    nodes: new Map([
+      ['d1', { id: 'd1', props: { predefinedType: 'DRAFT', viewId: 'v', shape: { type: 'line', a: [0, 0], b: [4, 0] } } }],
+      ['s1', { id: 's1', props: { operation: 'extrude', profile: 'd1' } }],
+    ]),
+  });
+  const added = () => engine.execute.mock.calls.filter(([c]) => c === 'studio.addConstraint').map(([, a]) => a as { constraints?: { kind: string; refs: { shape: string; part: string }[]; value?: number }[] });
+  const aim = (p: Vec2, mode?: string, shapeId?: string, lock?: string) => useCad.setState({ aim: { point: p, kind: 'point', guides: [], ...(mode ? { mode } : {}), ...(shapeId ? { shapeId } : {}), ...(lock ? { lock } : {}) } as never });
+  beforeEach(async () => {
+    sketch();
+    const { setPrefs } = await import('../../app/prefs');
+    setPrefs({ constrainWhileDrawing: true });
+  });
+
+  it('an endpoint snap and a held ortho line become a coincidence and a horizontal side, in one batch', async () => {
+    await startCommand('LINE');
+    aim(P(4, 0), 'endpoint', 'd1');
+    await feedPoint(P(4, 0));
+    aim(P(9, 0), undefined, undefined, 'ortho');
+    await feedPoint(P(9, 0));
+    const [call] = added();
+    expect(call.constraints?.map((c) => c.kind)).toEqual(['coincident', 'horizontal']);
+    expect(call.constraints?.[0].refs).toEqual([{ shape: 'x', part: 'start' }, { shape: 'd1', part: 'end' }]);
+  });
+
+  it('a typed length is a driving dimension of the side', async () => {
+    await startCommand('LINE');
+    aim(P(0, 5));
+    await feedPoint(P(0, 5));
+    aim(P(0.5, 5.1));
+    await feedPoint(P(3, 5), { length: 3 });
+    expect(added()[0].constraints).toEqual([{ kind: 'distance', refs: [{ shape: 'x', part: 'whole' }], value: 3 }]);
+  });
+
+  it('a rectangle is two horizontal and two vertical sides; a typed radius a radius', async () => {
+    await startCommand('RECTANGLE');
+    await feedPoint(P(0, 0));
+    await feedPoint(P(5, 2));
+    expect(added()[0].constraints?.map((c) => c.kind)).toEqual(['horizontal', 'vertical', 'horizontal', 'vertical']);
+    engine.execute.mockClear();
+    await startCommand('CIRCLE');
+    await feedPoint(P(10, 10));
+    await submit('2');
+    expect(added()[0].constraints).toEqual([{ kind: 'radius', refs: [{ shape: 'x', part: 'whole' }], value: 0.002 }]);
+  });
+
+  it('records nothing with the setting off, in a view that is no sketch, or with the point placed free', async () => {
+    const { setPrefs } = await import('../../app/prefs');
+    setPrefs({ constrainWhileDrawing: false });
+    await startCommand('RECTANGLE');
+    await feedPoint(P(0, 0)); await feedPoint(P(5, 2));
+    expect(added()).toEqual([]);
+    setPrefs({ constrainWhileDrawing: true });
+    engine.useSession.getState.mockReturnValue({ nodes: new Map(), error: null });
+    await startCommand('RECTANGLE');
+    await feedPoint(P(0, 0)); await feedPoint(P(5, 2));
+    expect(added()).toEqual([]);
+  });
+
+  it('tries the constraints one by one when the solver refuses the batch', async () => {
+    await startCommand('RECTANGLE');
+    engine.execute.mockImplementation((cmd: string, args: { constraints?: unknown[] }) => new Promise((r) => setTimeout(() => r(cmd === 'studio.addConstraint' && args.constraints ? null : { ids: ['x'] }), 2)));
+    await feedPoint(P(0, 0)); await feedPoint(P(5, 2));
+    const calls = engine.execute.mock.calls.filter(([c]) => c === 'studio.addConstraint');
+    expect(calls.length).toBe(5);
   });
 });

@@ -3110,6 +3110,7 @@ export const IT: Record<string, string> = {
   "Hide the constraints": "Nascondi i vincoli",
   "1 degree of freedom": "1 grado di libertà",
   "1 constraint": "1 vincolo",
+  "Constrain while drawing: in a sketch, snaps and typed values become constraints (hold Ctrl on a click for a free point)": "Vincola mentre disegni: in uno schizzo, gli snap e i valori digitati diventano vincoli (tieni premuto Ctrl al clic per un punto libero)",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

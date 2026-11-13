@@ -86,6 +86,19 @@ Schimbi o cotă și schița o urmează, la fel tot ce e construit din ea: aici l
 
 Trage un punct al unei forme constrânse de mânerul lui: restul schiței urmează regulile cât muți, arătat pe măsură ce tragi, iar rezultatul este un singur pas de anulare la eliberare. Dacă regulile nu lasă punctul acolo (un punct fix, o cotă care s-ar strica), tragerea se arată în roșu cu motivul și e refuzată. Celelalte editări (mutare, tăiere, prelungire, decalare, racordare) se rezolvă la fel. O regulă care nu poate urma o editare (forma ei a fost tăiată) se scoate cu o notificare care spune care și de ce; nu rămâne niciodată greșită.
 
+## Constrângeri în timp ce desenezi
+
+Într-o schiță (o vedere ale cărei forme construiesc un solid Studio, o vedere care are deja constrângeri sau când desenezi cu un rol, de pildă *profile*), ce găsește inferența pe măsură ce faci clic se păstrează ca restricții, implicit pornit:
+
+- o prindere de **capăt** sau de **centru** face punctul coincident cu el; o prindere de **mijloc** îl face mijlocul acelei muchii; **pe muchie**, **cadran** și **intersecție** pun punctul pe obiect; **perpendicular** îl pune pe muchie și face latura perpendiculară pe ea;
+- o latură trasă pe linia **ortho** sau pe una **polară** este orizontală sau verticală;
+- o lungime sau un unghi tastat devine o cotă conducătoare; o rază tastată, o rază;
+- un dreptunghi are două laturi orizontale și două verticale, iar o linie începută unde s-a sfârșit precedenta se leagă de ea.
+
+Ține apăsat **Ctrl** (⌘ pe Mac) la clic ca să pui punctul acela fără constrângeri. Comutatorul **CNSTR** din linia de comandă pornește și oprește totul. Constrângerile se adaugă imediat după formă, ca un pas aparte: un **Undo** le scoate și păstrează forma.
+
+![O linie trasă din colț pe linia ortho](shots/sketch-constraints-drawing.webp)
+
 ## Mai departe
 
 Pagina Piese spune cum devine o schiță o piesă cu parametri, pe care îi folosesc formulele din cote.

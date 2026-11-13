@@ -286,7 +286,7 @@ export function DrawingView() {
     const r = ref.current!.getBoundingClientRect();
     const raw = toWorld(e.clientX - r.left, e.clientY - r.top);
     const aimed = aim(raw, useCad.getState().step?.base ?? null, { orthoHeld: e.shiftKey });
-    useCad.setState({ cursor: aimed.point });
+    useCad.setState({ cursor: aimed.point, aim: aimed });
     liveCursor(aimed.point);
     return { raw, aimed };
   };

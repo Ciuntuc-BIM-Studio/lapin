@@ -86,6 +86,19 @@ Change a dimension and the sketch follows, and so does everything built from it:
 
 Drag a point of a constrained shape with its grip: the rest of the sketch follows the rules while you move, shown as you drag, and the result is one undo step on release. If the rules do not let that point go there (a fixed point, a dimension that would be broken), the drag shows in red with the reason and is refused. Other edits (move, trim, extend, offset, fillet) are solved the same way. A rule that cannot follow an edit (its shape was cut away) is removed with a notice saying which and why; it is never kept wrong.
 
+## Constraints while drawing
+
+In a sketch (a view whose shapes build a Studio solid, a view that already has constraints, or when you draw with a role such as *profile*), what the inference finds as you click is kept as constraints, on by default:
+
+- an **endpoint** or **centre** snap makes the point coincident with it; a **midpoint** snap makes it the midpoint of that edge; **on edge**, **quadrant** and **intersection** put the point on the object; **perpendicular** puts it on the edge and makes the side perpendicular to it;
+- a side drawn along the **ortho** or a **polar** line is horizontal or vertical;
+- a length or angle you type becomes a driving dimension; a typed radius a radius;
+- a rectangle is made of two horizontal and two vertical sides, and a line begun where the last one ended is joined to it.
+
+Hold **Ctrl** (⌘ on a Mac) on a click to place that point without constraints. The **CNSTR** switch in the command line turns the whole thing off and on. The constraints are added right after the shape, as a step of their own: one **Undo** takes them off and keeps the shape.
+
+![A line drawn from the corner along the ortho line](shots/sketch-constraints-drawing.webp)
+
 ## Where to go next
 
 The Parts page tells how a sketch becomes a part with parameters, which the formulas in dimensions use.

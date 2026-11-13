@@ -3107,6 +3107,7 @@ export const DE: Record<string, string> = {
   "Hide the constraints": "Zwangsbedingungen ausblenden",
   "1 degree of freedom": "1 Freiheitsgrad",
   "1 constraint": "1 Zwangsbedingung",
+  "Constrain while drawing: in a sketch, snaps and typed values become constraints (hold Ctrl on a click for a free point)": "Beim Zeichnen einschränken: In einer Skizze werden Fangpunkte und eingegebene Werte zu Zwangsbedingungen (Strg beim Klick setzt einen freien Punkt)",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

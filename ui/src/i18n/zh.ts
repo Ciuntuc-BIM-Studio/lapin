@@ -3099,6 +3099,7 @@ export const ZH: Record<string, string> = {
   "Hide the constraints": "隐藏约束",
   "1 degree of freedom": "1 个自由度",
   "1 constraint": "1 个约束",
+  "Constrain while drawing: in a sketch, snaps and typed values become constraints (hold Ctrl on a click for a free point)": "绘图时约束：在草图中，捕捉和输入的数值会变成约束（点击时按住 Ctrl 可放置自由点）",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

@@ -17,11 +17,15 @@ import { deleteElements } from '../../engine/dependents';
 import { ucsOf, useLocation } from '../../app/location';
 import { applyOrtho, parseCoordinateInput, parseScalar, pointAlong } from './input';
 import { lengthText, parseLength } from '../../engine/unitsStore';
-import { arcThrough, dist, toJson, type Shape } from './shapes';
+import { arcThrough, dist, fromJson, toJson, type Shape } from './shapes';
 import { liveBegin, liveEnd } from '../liveInput';
 import { traceBegin, traceEnd } from '../moveTrace';
 import { lassoTest, type RegionTest } from '../selectBox';
 import { xy } from '../../platform/vec';
+import { usePrefs } from '../../app/prefs';
+import type { Aimed } from './aim';
+import { inferConstraints, sketchViews, type DrawHints, type Drawn, type PlacedPoint } from './recorded';
+import { viewHasConstraints } from './sketchStore';
 import type { ViewFrame } from '../viewFrame';
 
 /** What a 2D view lends the command line: its view, and what lies under a point. */
@@ -86,6 +90,8 @@ interface CadState {
   step: Step | null;
   last: string | null;
   cursor: Vec2 | null;
+  /** What the view's aim made of the cursor (the snap, the guides, the lock): how a clicked point was found. */
+  aim: Aimed | null;
   lastPoint: Vec2 | null;
   osnap: boolean;
   ortho: boolean;
@@ -105,7 +111,7 @@ interface CadState {
 }
 
 export const useCad = create<CadState>(() => ({
-  buffer: '', takeAll: false, history: [], command: null, step: null, last: null, cursor: null, lastPoint: null,
+  buffer: '', takeAll: false, history: [], command: null, step: null, last: null, cursor: null, aim: null, lastPoint: null,
   osnap: true, ortho: false, polar: true, layer: '0', role: '', host: null,
   offset: 0.5, offsetThrough: false, radius: 0, chamfer: 0.1, pattern: 'LINES45', hatchScale: 1,
 }));
@@ -125,7 +131,7 @@ async function advance(next: Next): Promise<void> {
   if (step) useCad.setState({ step });
   else useCad.setState({ step: null, command: null });
   // A point asked for from a base: its length and angle can be typed at the cursor.
-  if (step && step.want === 'point' && step.base) liveBegin('cad', step.base, (p) => void feedPoint(p), { delta: !!step.trace });
+  if (step && step.want === 'point' && step.base) liveBegin('cad', step.base, (p, typed, angle) => void feedPoint(p, { length: typed, angle }), { delta: !!step.trace });
   else liveEnd('cad');
   if (step?.trace && step.base) traceBegin('cad', step.base, step.trace);
   else traceEnd('cad');
@@ -137,12 +143,71 @@ function host(): CadHost | null {
   return h;
 }
 
-async function draw(shapes: Shape[]): Promise<string[]> {
+async function draw(shapes: Shape[], hints?: DrawHints): Promise<string[]> {
   const h = host();
   if (!h || !shapes.length) return [];
   const { layer, role } = useCad.getState();
   const r = await execute('drafting.draw', { viewId: h.viewId, layer, shapes: shapes.map(toJson), ...(role ? { role } : {}) }) as { ids?: string[] } | null;
-  return r?.ids ?? [];
+  const ids = r?.ids ?? [];
+  if (ids.length) await recordWhileDrawing(h.viewId, role, ids, shapes, hints);
+  return ids;
+}
+
+// ─── Constraints recorded while drawing (decision 520, C2) ─────────────────
+
+/** The points put down in the running command, how each was found: what `draw` turns into constraints. */
+let trail: PlacedPoint[] = [];
+/** The shape drawn just before in the same command: a chain of lines is joined as it is drawn. */
+let prevDrawn: Drawn | null = null;
+const resetRecording = () => { trail = []; prevDrawn = null; };
+
+/** Ctrl (or ⌘) held at the press: the click places its point without constraints. Read when the click is fed, not when it is run. */
+let ctrlHeld = false;
+if (typeof window !== 'undefined') window.addEventListener('pointerdown', (e) => { ctrlHeld = e.ctrlKey || e.metaKey; }, true);
+
+/** What was typed for a point put down (a length in metres, an angle in degrees), as `draw` will want it. */
+export const typedAt = (p: Vec2): { length?: number; angle?: number } | undefined => trail.find((x) => dist(x.p, p) < 1e-7)?.typed;
+
+function noteFed(p: Vec2, o: { typed?: { length?: number; angle?: number }; free?: boolean; aim?: Aimed | null } = {}): void {
+  const a = o.aim;
+  const typed = o.typed && (o.typed.length != null || o.typed.angle != null) ? o.typed : undefined;
+  // A typed point lies where the typing put it, off the aim's own; the line that held the direction still holds it.
+  const inference = !a ? null : typed ? (a.lock ? { lock: a.lock } : null) : dist(a.point, p) < 1e-9 && (a.mode || a.lock) ? { mode: a.mode, shapeId: a.shapeId, lock: a.lock } : null;
+  trail = [...trail, { p, inference, free: !!o.free, ...(typed ? { typed } : {}) }].slice(-64);
+}
+
+/** The drafted shapes of a view as the model has them now. */
+function draftsOf(viewId: string): Map<string, Shape> {
+  const out = new Map<string, Shape>();
+  for (const n of useSession.getState().nodes.values()) {
+    if (n.props.predefinedType !== 'DRAFT' || n.props.viewId !== viewId || !n.props.shape) continue;
+    const sh = fromJson(n.props.shape as Record<string, unknown>);
+    if (sh) out.set(n.id, sh);
+  }
+  return out;
+}
+
+/**
+ * Right after shapes are drawn in a sketch (a view whose shapes build a Studio solid, one that has constraints, or drawing with a
+ * role), what the inference found for their points becomes constraints, solved with the shapes. A batch the solver refuses (one
+ * of them conflicts) is tried one by one, so what holds stays.
+ */
+async function recordWhileDrawing(viewId: string, role: string, ids: string[], shapes: Shape[], hints?: DrawHints): Promise<void> {
+  if (!usePrefs.getState().constrainWhileDrawing) { prevDrawn = null; return; }
+  if (!(viewHasConstraints(viewId) || role || sketchViews(useSession.getState().nodes.values()).has(viewId))) { prevDrawn = null; return; }
+  const world = draftsOf(viewId);
+  if (prevDrawn) world.set(prevDrawn.id, prevDrawn.shape);
+  const specs = ids.flatMap((id, i) => {
+    const drawn = { id, shape: shapes[i] };
+    const list = inferConstraints(drawn, trail, world, { prev: prevDrawn, hints });
+    prevDrawn = drawn;
+    return list;
+  });
+  if (!specs.length) return;
+  const body = specs.map((c) => ({ kind: c.kind, refs: c.refs, ...(c.value != null ? { value: c.value } : {}) }));
+  if (await execute('studio.addConstraint', { viewId, constraints: body })) return;
+  for (const one of body) await execute('studio.addConstraint', { viewId, ...one });
+  useSession.setState({ error: null });
 }
 
 // ─── Commands ──────────────────────────────────────────────────────────────
@@ -180,7 +245,7 @@ const rectOf = (a: Vec2, b: Vec2): Shape => ({ type: 'polyline', pts: [a, { x: b
 function rectangle(): Step {
   return {
     prompt: 'First corner', want: 'point',
-    point: (a) => ({ prompt: 'Other corner (or @width,height)', want: 'point', base: a, preview: (c) => [rectOf(a, c)], point: async (b) => { await draw([rectOf(a, b)]); return null; } }),
+    point: (a) => ({ prompt: 'Other corner (or @width,height)', want: 'point', base: a, preview: (c) => [rectOf(a, c)], point: async (b) => { await draw([rectOf(a, b)], { rect: true }); return null; } }),
   };
 }
 
@@ -190,8 +255,8 @@ function circle(): Step {
     point: (c) => ({
       prompt: 'Radius (a point or a value)', want: 'point', base: c,
       preview: (p) => [{ type: 'circle', c, r: Math.max(dist(c, p), 1e-6) }],
-      point: async (p) => { if (dist(c, p) > 1e-9) await draw([{ type: 'circle', c, r: dist(c, p) }]); return null; },
-      value: async (r) => { if (r > 0) await draw([{ type: 'circle', c, r }]); return null; },
+      point: async (p) => { if (dist(c, p) > 1e-9) await draw([{ type: 'circle', c, r: dist(c, p) }], { radius: typedAt(p)?.length }); return null; },
+      value: async (r) => { if (r > 0) await draw([{ type: 'circle', c, r }], { radius: r }); return null; },
     }),
   };
 }
@@ -504,6 +569,7 @@ async function runCommand(name: string): Promise<boolean> {
   const c = findCommand(name);
   if (!c) return false;
   cancel(true);
+  resetRecording();
   useUi.setState({ tool: null });
   log(`> ${c.names[0]}`);
   useCad.setState({ command: c.names[0], last: c.names[0], buffer: '' });
@@ -516,13 +582,14 @@ export function cancel(quiet = false): void {
   if (s.command && !quiet) log('*Cancel*');
   if (s.step?.escape) void Promise.resolve(s.step.escape()).catch(() => undefined);
   generation++;
+  resetRecording();
   useCad.setState({ command: null, step: null, buffer: '' });
   liveEnd('cad');
   traceEnd('cad');
 }
 
 /** A point clicked in a view (already snapped). */
-export const feedPoint = serial(async (p: Vec2): Promise<void> => {
+const feed = serial(async (p: Vec2, typed: { length?: number; angle?: number } | undefined, free: boolean, aim: Aimed | null): Promise<void> => {
   const s = useCad.getState();
   if (!s.step) return;
   useCad.setState({ lastPoint: p });
@@ -532,8 +599,10 @@ export const feedPoint = serial(async (p: Vec2): Promise<void> => {
     await advance(s.step.pick?.(hit, p));
     return;
   }
-  if (s.step.point) await advance(s.step.point(p));
+  if (s.step.point) { noteFed(p, { typed, free, aim }); await advance(s.step.point(p)); }
 });
+/** A point clicked in a view (already snapped), or typed at its cursor (`typed`: the length and angle). How it was found, and whether Ctrl placed it free, is read now. */
+export const feedPoint = (p: Vec2, typed?: { length?: number; angle?: number }): Promise<void> => feed(p, typed, ctrlHeld, useCad.getState().aim);
 
 /** An element clicked in the 3D view while a step takes elements (`element`): true when it took it. */
 export function feedElement(id: string): boolean {
@@ -574,7 +643,7 @@ export const submit = serial(async (raw: string): Promise<void> => {
   if (step.want === 'point' || step.want === 'select' || step.want === 'pick' || step.want === 'none') {
     const frame = s.host?.isPlan?.() ? ucsOf(useLocation.getState().loc) : null;
     const parsed = parseCoordinateInput(text, { last: step.base ?? s.lastPoint, frame });
-    if (parsed?.kind === 'point' && step.point) { useCad.setState({ lastPoint: parsed.pt }); await advance(step.point(parsed.pt)); return; }
+    if (parsed?.kind === 'point' && step.point) { useCad.setState({ lastPoint: parsed.pt }); noteFed(parsed.pt); await advance(step.point(parsed.pt)); return; }
     if (parsed?.kind === 'distance') {
       if (step.value) { await advance(step.value(parsed.d)); return; }
       // A distance from the base toward the cursor (squared by ortho).
@@ -582,6 +651,7 @@ export const submit = serial(async (raw: string): Promise<void> => {
         const toward = s.cursor ? (s.ortho ? applyOrtho(step.base, s.cursor, frame) : s.cursor) : { x: step.base.x + 1, y: step.base.y };
         const p = pointAlong(step.base, toward, parsed.d);
         useCad.setState({ lastPoint: p });
+        noteFed(p, { typed: { length: parsed.d }, aim: s.aim });
         await advance(step.point(p));
         return;
       }

@@ -138,7 +138,7 @@ export function Draft3D({ camera, canvas, scene }: { camera: React.RefObject<THR
       if (!raw) return;
       const a = inferOver(aimRef.current(raw, step?.base ?? null, { orthoHeld: e.shiftKey }), raw, step?.base ?? null);
       setAimed(a);
-      useCad.setState({ cursor: a.point });
+      useCad.setState({ cursor: a.point, aim: a });
     };
     /**
      * Where the CAD aim found nothing (no object snap, no guide, no ortho), the 3D sketch's inference: the model's axes

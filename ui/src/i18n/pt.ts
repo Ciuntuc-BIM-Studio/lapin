@@ -3105,6 +3105,7 @@ export const PT: Record<string, string> = {
   "Hide the constraints": "Ocultar as restrições",
   "1 degree of freedom": "1 grau de liberdade",
   "1 constraint": "1 restrição",
+  "Constrain while drawing: in a sketch, snaps and typed values become constraints (hold Ctrl on a click for a free point)": "Restringir ao desenhar: num esboço, os snaps e os valores digitados viram restrições (segure Ctrl ao clicar para um ponto livre)",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

@@ -3108,6 +3108,7 @@ export const PL: Record<string, string> = {
   "Hide the constraints": "Ukryj więzy",
   "1 degree of freedom": "1 stopień swobody",
   "1 constraint": "1 więz",
+  "Constrain while drawing: in a sketch, snaps and typed values become constraints (hold Ctrl on a click for a free point)": "Więzy podczas rysowania: w szkicu przyciągnięcia i wpisane wartości stają się więzami (Ctrl przy kliknięciu daje punkt wolny)",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {
