@@ -592,6 +592,20 @@ label.check { display: inline-flex; gap: 6px; align-items: center; margin-right:
 .plan-item.reach { stroke-width: 0.6; stroke-dasharray: 6 4; fill: none; opacity: 0.7; pointer-events: none; }
 .joinery-small { display: flex; gap: 12px; align-items: flex-end; margin-top: 6px; }
 .joinery-small figure { margin: 0; text-align: center; }
+/* The type configurators' preview (decision 529): Plan · Section · 3D, the engine's drawings on the drawings' paper. */
+.type-preview { margin: 4px 0 8px; }
+.type-preview-bar { gap: 6px; align-items: center; flex-wrap: wrap; }
+.type-preview-bar select { font-size: 12px; }
+.type-preview-bar .cell-wrap { width: auto; flex: none; }
+.type-preview-bar .cell.type-preview-size { width: 64px; }
+.type-preview-panes { display: flex; gap: 8px; margin-top: 4px; }
+.type-preview-pane { margin: 0; text-align: center; }
+.type-preview-svg { display: block; border: 1px solid var(--rule); }
+.type-preview-svg .ref-face.side { text-anchor: middle; }
+.type-preview-lit { fill: rgba(232, 89, 12, 0.32); stroke: #e8590c; stroke-width: 1.5; pointer-events: none; }
+.type-preview-3d { display: block; background: var(--raised); border: 1px solid var(--rule); cursor: grab; touch-action: none; }
+.type-preview-problem { min-height: 40px; }
+table.layer-edit > tbody > tr.lit > td { background: var(--accent-wash); }
 .joinery-3d { margin: 6px 0 0; text-align: center; }
 .joinery-3d canvas { display: block; background: var(--raised); border: 1px solid var(--rule); cursor: grab; touch-action: none; }
 .joinery-symbols { gap: 10px; align-items: center; margin-top: 6px; flex-wrap: wrap; }

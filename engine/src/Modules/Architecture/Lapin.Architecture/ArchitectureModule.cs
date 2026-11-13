@@ -107,6 +107,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
     {
         // The opening symbols on elevations.
         r.Service<IViewAnnotations>(this);
+        // The Wall types dialog's preview: the type in a sample wall with a T joined to it (decision 529).
+        r.Service<ITypePreview>(new WallTypePreview());
         // Drafted linework made walls, floors, rooms and railings (docs/plan-user-extensibility.md §7.4).
         LineworkConverters.Register(r);
         r.Service<IInstanceMembers>(new RoomInstanceMembers());

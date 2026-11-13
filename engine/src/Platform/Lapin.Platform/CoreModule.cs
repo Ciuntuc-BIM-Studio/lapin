@@ -62,6 +62,8 @@ public sealed class CoreModule : ILapinModule
         ParamFormulas.Register(r);
         Images.Register(r);
         Views.Register(r);
+        // The type configurators' preview, drawn as the drawings are (decision 529).
+        TypePreviews.Register(r);
         r.Service<IProjectUpgrade>(new StoreyPlans.DefaultPlanUpgrade());
         r.Service<IProjectUpgrade>(new ViewDetail.LevelUpgrade());
         r.Service<IProjectUpgrade>(new MaterialHatchUpgrade());

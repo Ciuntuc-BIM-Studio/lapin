@@ -693,6 +693,8 @@ public static class Views
     {
         /// <summary>A section across an element: the window it sees (its span and rise), whose middle is the element's section; null for any other view.</summary>
         public (Vec2 Min, Vec2 Max)? Window { get; init; }
+        /// <summary>The drawing as generated, its line edits made: each cut area with its element and part key (a type's preview lights a layer up by it).</summary>
+        public ViewDrawing? Generated { get; init; }
     }
 
     /// <summary>The mark layer of construction lines (drafted shapes whose role is draft): on screen, never printed.</summary>
@@ -925,13 +927,16 @@ public static class Views
         return new Rendered(pens, marks, bounds, scale, spec.Kind, null, spec.Kind == "plan" ? ViewRanges.Problems(Range(m, view)) : [], lineworkOrphans, spec.Frame, depth, frames)
         {
             Window = spec.Span is { } sp && spec.Rise is { } rs ? (new Vec2(sp.Min, rs.Min), new Vec2(sp.Max, rs.Max)) : null,
+            Generated = drawing,
         };
     }
 
     /// <summary>The view drawn, for the interface: its pens, annotations, bounds and problems.</summary>
-    public static JsonObject Drawing(IQueryContext q, Entity view)
+    public static JsonObject Drawing(IQueryContext q, Entity view) => DrawingOf(q, view, Render(q, view));
+
+    /// <summary>A view already rendered (<see cref="Render"/>), for the interface: as <see cref="Drawing"/>.</summary>
+    public static JsonObject DrawingOf(IQueryContext q, Entity view, Rendered r)
     {
-        var r = Render(q, view);
         if (r.Problem != null) return new JsonObject { ["problem"] = r.Problem, ["pens"] = new JsonArray() };
         var book = DraftingResources.Book(q.Model);
         // The categories whose finish layers the view leaves out (its style by its kind, topic #30; or every finish): what the interface does not snap to.

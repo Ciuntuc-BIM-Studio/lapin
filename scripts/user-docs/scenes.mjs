@@ -509,6 +509,24 @@ export const scenes = [
       await t.tool('architecture.wallTypes');
       t.expect(await t.page.locator('.dialog [data-testid=wall-legend]').count() === 1, 'the wall types show their legend');
       await t.shot('wall-types', { of: '.dialog', pad: 0 });
+      // The preview (decision 529): the type in a sample wall with a T, drawn by the engine in plan, section and 3D; a hovered
+      // row's layer lit in all three; made apart from the project, which gets nothing from it.
+      const preview = t.page.locator('.dialog [data-testid=type-preview]');
+      t.expect(await preview.count() === 1, 'Wall types shows the type\'s preview');
+      const nodesBefore = (await t.nodes()).length;
+      await t.page.locator('.dialog [data-testid=type-preview-plan] .drawing-layer path').first().waitFor({ timeout: 10000 });
+      t.expect(await preview.locator('[data-testid=type-preview-section] .drawing-layer path').count() > 0, 'the preview draws the section');
+      t.expect(await preview.locator('[data-testid=type-preview-plan] [data-face=right]').count() === 1, 'the plan names the R face, on top');
+      const coreRow = t.page.locator('.dialog table.layer-edit:not(.zones) > tbody > tr:not(.layer-parts):not(.total)').nth(1);
+      // The preview whole on the screen, then the core's row hovered (the mouse stays on it, the preview in view).
+      await preview.evaluate((e) => e.scrollIntoView({ block: 'start' }));
+      await t.wait(200);
+      await coreRow.hover();
+      await t.wait(300);
+      t.expect(await preview.locator('[data-testid=type-preview-lit]').count() === 2, 'a hovered row lights its layer in the plan and the section');
+      await t.shot('wall-type-preview', { of: '.dialog [data-testid=type-preview]', pad: 6 });
+      t.expect((await t.nodes()).length === nodesBefore, 'the preview adds nothing to the project');
+      await t.page.mouse.move(5, 5);
       // A layer's material hatches at hand (forum #30, decision 493): its swatch opens the material's 2D graphics, the same command as Materials.
       const swatch = t.page.locator('.dialog [data-testid=layer-hatch]').first();
       t.expect(await swatch.count() === 1 && await swatch.isEnabled(), 'each layer shows its material\'s hatch swatch');

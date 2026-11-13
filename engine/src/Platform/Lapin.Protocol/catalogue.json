@@ -868,6 +868,7 @@
     {"name":"types.export","module":"core","args":[{"name":"ids","type":"list"},{"name":"name","type":"str"}]},
     {"name":"types.imported","module":"core","args":[]},
     {"name":"types.list","module":"core","args":[]},
+    {"name":"types.preview","module":"core","args":[{"name":"class","type":"str"},{"name":"type","type":"dict"},{"name":"sample","type":"dict"},{"name":"views","type":"list"},{"name":"scale","type":"float"},{"name":"detail","type":"str"},{"name":"layers","type":"str"},{"name":"styleId","type":"str"}]},
     {"name":"types.readPack","module":"core","args":[{"name":"text","type":"str"}]},
     {"name":"view.drawing","module":"core","args":[{"name":"id","type":"str"},{"name":"storeyId","type":"str"}]},
     {"name":"view.hidden3d","module":"core","args":[{"name":"id","type":"str"}]},
