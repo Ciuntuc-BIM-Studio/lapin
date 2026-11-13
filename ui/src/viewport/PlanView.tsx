@@ -11,7 +11,7 @@ import { modsOf, pansIn2d, regionMode, regionSelection, wheelFactor, type Mods }
 import { currentNavStyle } from '../app/navStyleStore';
 import { orthophotos } from './textures';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Compass, FileDown, Footprints, Layers, Maximize, MousePointer2, PenLine } from 'lucide-react';
+import { Compass, FileDown, Footprints, Layers, Maximize, MousePointer2, PenLine, RotateCw } from 'lucide-react';
 import { openContextMenu } from '../shell/ContextMenu';
 import { selectionItems } from '../shell/selectionMenu';
 import { symbolMenuItems } from '../modules/core/symbols/symbolTools';
@@ -52,7 +52,10 @@ import { snapShapes, useCadCanvas, type Aimed } from './cad/aim';
 import { clearShown, hiddenInDrawing, publishShown, shownItems, shownWholeOf } from './cad/shown';
 import { CommandLine } from './cad/CommandLine';
 import './cad/ucs';
-import { feedPoint, finishStep, useCad } from './cad/session';
+import './cad/plan';
+import { FOLLOW_UCS, normalizeDeg, orientationOf, screenAxes, screenCorners, setOrientation, turnOf } from './orientation';
+import { ask, numberField } from '../shell/AskBox';
+import { feedPoint, finishStep, startCommand, useCad } from './cad/session';
 import { tagTargets, trackTagHover, useTagHover, viewHasTags } from './tagTarget';
 import { carryBegin, carryBy, carryEnd, carrying, useTrace } from './moveTrace';
 import type { Shape } from './cad/shapes';
@@ -165,8 +168,16 @@ export function PlanView() {
   // True north up (decision 447): the plan turned on screen by the angle to true north, chosen per plan; drawn,
   // snapped and picked through these two, so all of it turns together. Sheets and the PDF keep project north up.
   const northAngle = useLocation((st) => basePoint(st.loc).northAngle);
-  const trueNorth = useTrueNorth((st) => !!st.on[key]) && Math.abs(northAngle) > 1e-9;
-  const rot = trueNorth ? trueNorthTurn(northAngle) : 0;
+  // A plan view's own orientation (decision 526): kept with the view, printed as shown; it takes over from true north up.
+  const ucsAngle = useLocation((st) => ucsOf(st.loc)?.angle ?? null);
+  const orientationValue = ownPlan ? nodes.get(ownPlan)?.props.orientation : undefined;
+  const orientation = orientationOf(orientationValue, ucsAngle == null ? null : { origin: { x: 0, y: 0 }, angle: ucsAngle });
+  const oriented = Math.abs(orientation) > 1e-9;
+  const northOn = useTrueNorth((st) => !!st.on[key]);
+  const trueNorth = !oriented && northOn && Math.abs(northAngle) > 1e-9;
+  const rot = oriented ? turnOf(orientation) : trueNorth ? trueNorthTurn(northAngle) : 0;
+  /** The axes ortho, polar tracking and the grid follow in a turned plan with no UCS: the screen's. */
+  const axes = useMemo(() => (oriented ? screenAxes(orientation) : null), [oriented, orientation]);
   const toScreen = useCallback((p: Vec2) => {
     const d = turn({ x: p.x - view.cx, y: p.y - view.cy }, rot);
     return { x: d.x * view.scale + size.w / 2, y: size.h / 2 - d.y * view.scale };
@@ -347,7 +358,7 @@ export function PlanView() {
   }, [items]);
   const { aim, acquire } = useCadCanvas({
     viewId: planViewOf, drawing, extra, scale: view.scale, pickAny: (p) => pick(p)?.id ?? null, outlines,
-    inRegion: (takes) => regionIds(takes, pickItems, nodes, scope ? undefined : drawing?.marks),
+    inRegion: (takes) => regionIds(takes, pickItems, nodes, scope ? undefined : drawing?.marks), axes,
   });
   const cadStep = useCad((s) => s.step);
   /** The selection dragged by its body (its trace shows over the plan). */
@@ -672,7 +683,7 @@ export function PlanView() {
   const grid = useMemo(() => {
     const lines: { d: string; major: boolean }[] = [];
     if (!measured) return lines;
-    const frame = ucs && !isIdentity(ucs) ? ucs : null;
+    const frame = ucs && !isIdentity(ucs) ? ucs : axes;
     let step = gridStepAt(view.scale, gridPrefs);
     const major = gridPrefs.gridMode === 'fixed' ? gridPrefs.gridMajor : 5;
     let every = 1;
@@ -690,7 +701,7 @@ export function PlanView() {
     for (let y = Math.floor(min.y / step) * step; y <= max.y; y += step) lines.push({ d: seg({ x: min.x, y }, { x: max.x, y }), major: isMajor(y) });
     return lines;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, size, measured, toScreen, toWorld, gridPrefs, ucsKey]);
+  }, [view, size, measured, toScreen, toWorld, gridPrefs, ucsKey, axes]);
 
   const drawn = useMemo(() => {
     const out: { key: string; r: RenderItem; kind: string; d: string; closed: boolean; text: string | null; at: Vec2; pattern: string | null }[] = [];
@@ -817,7 +828,26 @@ export function PlanView() {
         <ScalePicker viewId={planViewOf} scale={shownScale} />
         <StructurePicker viewId={planViewOf} kind="plan" />
         <ScaleChip pxPerMetre={view.scale} scale={shownScale} onActual={host.actual} />
-        {Math.abs(northAngle) > 1e-9 && (
+        {planViewOf && (
+          <button type="button" className={`icon${oriented ? ' on' : ''}`} data-testid="plan-orientation"
+            title={oriented ? 'Rotated view: change its orientation or set north up again' : 'Rotate view: turn the plan on screen and on its sheets'}
+            onClick={(e) => {
+              const r = e.currentTarget.getBoundingClientRect();
+              const id = planViewOf;
+              const following = orientationValue === FOLLOW_UCS;
+              openContextMenu(r.left, r.bottom + 4, [
+                { label: 'North up (not rotated)', checked: !oriented && !following, onSelect: () => void setOrientation(id, null) },
+                { label: 'Rotate view…', checked: oriented && !following, onSelect: async () => {
+                  const v = await ask('Rotate view', [numberField('angle', 'Direction shown horizontal (° from X)', Math.round(orientation * 1e6) / 1e6)]);
+                  if (v && Number.isFinite(Number(v.angle))) void setOrientation(id, Number(v.angle));
+                } },
+                { label: 'Rotate view to align with an edge', onSelect: () => void startCommand('ALIGNVIEW') },
+                { label: 'Follow the UCS', checked: following, disabled: ucsAngle == null, onSelect: () => void setOrientation(id, FOLLOW_UCS) },
+                ...(Math.abs(northAngle) > 1e-9 ? [{ label: 'True north up', checked: oriented && !following && Math.abs(normalizeDeg(orientation - northAngle)) < 1e-6, onSelect: () => void setOrientation(id, northAngle) }] : []),
+              ]);
+            }}><RotateCw size={14} /></button>
+        )}
+        {Math.abs(northAngle) > 1e-9 && !oriented && (
           <button type="button" className={`icon${trueNorth ? ' on' : ''}`} data-testid="plan-true-north"
             title={trueNorth ? 'True north up: click for project north' : 'Project north up: click to turn the plan to true north'}
             onClick={() => setTrueNorth(key, !trueNorth)}><Compass size={14} /></button>
@@ -831,13 +861,13 @@ export function PlanView() {
             const run = (coords: 'internal' | 'project' | 'map') => void exportFile('export.dxf', { id, coords }, name, 'dxf');
             const loc = useLocation.getState().loc;
             openContextMenu(r.left, r.bottom + 4, [
-              { label: 'In the plan’s coordinates (mm)', onSelect: () => run('internal') },
+              { label: oriented ? 'In the plan’s coordinates, turned as it shows (mm)' : 'In the plan’s coordinates (mm)', onSelect: () => run('internal') },
               { label: 'From the project base point (mm)', onSelect: () => run('project') },
               { label: 'In map coordinates (E, N in metres)', disabled: !surveyPoint(loc), onSelect: () => run('map') },
             ]);
           }}><FileDown size={14} /><span className="small">DXF</span></button>}
       </div>
-      <KeyPlan mode="plan" frame={measured ? [toWorld(0, size.h), toWorld(size.w, 0)] : null} onLookAt={(p) => go({ ...view, cx: p.x, cy: p.y })} />
+      <KeyPlan mode="plan" frame={measured ? screenCorners(toWorld, size.w, size.h) : null} onLookAt={(p) => go({ ...view, cx: p.x, cy: p.y })} />
       <svg ref={svgRef} className={`plan-svg${tool?.gesture || cadStep?.want === 'point' ? ' tool' : tool || cadStep ? ' pick' : hoverId ? ' pick' : ''}`} data-testid="plan"
         onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
         onPointerLeave={() => { setHover(null); setHoverId(null); trackTagHover(null, { pickElement: () => null, pickTag: () => null, anyTags, busy: true }); editor.onPointerLeave(); }} onWheel={onWheel} onContextMenu={(e) => e.preventDefault()}

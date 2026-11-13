@@ -222,6 +222,28 @@ A selected element's grips (a wall's ends, a floor's corners) are dragged in 3D 
 
 Drag a card from the **Catalog** or a tool from the ribbon onto the 3D view: its tool starts with that type. A tool placed by one click (a column, a pad footing, furniture, an elevator, a plant) is placed at once where you drop it, snapped to the model. Dropped, or clicked, on a floor of another storey, the element goes on that storey: a table set on the first floor's slab belongs to the first floor, whatever level is active.
 
+## Rotating a plan
+
+A plan can be turned so that a wall at an angle lies along the screen, as AutoCAD's **PLAN**, Revit's rotated crop and ArchiCAD's **Set Orientation** do. The plan's **Rotate view** button (the turning arrow in its bar) offers:
+
+- **North up (not rotated)**: the plan as drawn, its X axis to the right.
+- **Rotate view…**: the direction to show horizontal, in degrees from the X axis (30 turns a wall drawn at 30° level).
+- **Rotate view to align with an edge**: click two points, a wall's two corners for example; their direction becomes horizontal, turning the plan by at most 90°.
+- **Follow the UCS**: the plan's horizontal is the UCS's X axis, and follows it when the UCS changes (see [Snaps and helpers](drafting.md#snaps-and-helpers)).
+- **True north up**, when the project is turned from true north.
+
+On the command line, **PLAN** asks for **Current UCS** (Enter), **World** (north up again), **Angle**, **Edge** or **True north**. Each change is one undo step. A level's default plan becomes its plan view when it is turned, with what was drawn on it.
+
+![Rotate view in the plan's bar](shots/plan-orientation-menu.webp)
+
+The orientation belongs to the view: it is kept with the project and the view's sheets, its PDF and its DXF (in the plan's own coordinates) print it as the screen shows it. The DXF from the base point or in map coordinates stays in those systems. Everything else keeps working turned: pan and zoom, grips, snaps, the selection window and crossing, temporary dimensions, the key plan (which shows the turned screen on a north-up map) and the north arrow. Ortho, polar tracking and the grid follow the screen's axes, or the UCS's when one is set; typed coordinates stay in the UCS. Texts, tags, dimensions and room names turn with the plan and stay readable: a text that would read upside down is turned over where it stands, as drafting has it (upright within ±90°). Hatches turn as the drawing draws them.
+
+![A house at 30° turned so its front wall lies along the screen](shots/plan-orientation.webp)
+
+![The same plan on its sheet, printed as it shows](shots/plan-orientation-sheet.webp)
+
+Only plans turn (floor, ceiling, foundation, site and location plans); a section or an elevation looks where its line or side says. A view boundary stays square to the plan's axes: on a sheet, a plan turned by other than a quarter turn shows the box round it, and the boundary is cropped in the view.
+
 ## What a view shows
 
 The **View** tab sets what the view in front shows and how it looks.

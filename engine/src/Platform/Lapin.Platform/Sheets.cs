@@ -108,6 +108,10 @@ public static class Sheets
         public Entity? Boundary { get; init; }
         /// <summary>Paper mm per drawing metre.</summary>
         public double K => 1000 / Drawing.Scale;
+        /// <summary>The turn (radians, anticlockwise) the view's drawing takes on the paper: a plan's orientation (decision 526); 0: as drawn.</summary>
+        public double Turn { get; init; }
+        /// <summary>A move on the paper (mm, y down) as the move in the view's drawing (m) that shows as it.</summary>
+        public Vec2 FromPaper(double dx, double dy) => Turning.Turn(new Vec2(dx / K, -dy / K), -Turn);
     }
 
     /// <summary>A viewport's boundary when it names one of its view's.</summary>
@@ -150,17 +154,24 @@ public static class Sheets
             if (Views.Find(q.Model, vp.ViewId) is not { } view) continue;
             var r = Views.Render(q, view, print: true);
             var k = 1000 / r.Scale;
-            var (w, h) = vp.Width > 0 && vp.Height > 0 ? (vp.Width, vp.Height) : r.Bounds is { } b ? Fit(b, r.Scale) : (120, 80);
-            var c = vp.Center ?? (r.Bounds is { } bb ? (bb.Min + bb.Max) * 0.5 : new Vec2(0, 0));
-            // Bound to a named boundary of its view: its box and middle are the boundary's.
+            // A turned plan (decision 526) lies on the paper as it shows on screen: its drawing turned about the middle the
+            // viewport shows (kept in the view's own coordinates, so turning the view keeps that middle in the box), its box fitting it turned.
+            var turn = Views.Turn(q.Model, view);
+            Vec2 T(Vec2 p) => Turning.Turn(p, turn);
+            var shown = turn == 0 ? r.Bounds : Turning.Bounds(r.Pens, turn);
+            var (w, h) = vp.Width > 0 && vp.Height > 0 ? (vp.Width, vp.Height) : shown is { } b ? Fit(b, r.Scale) : (120, 80);
+            var c = vp.Center ?? (shown is { } bb ? Turning.Turn((bb.Min + bb.Max) * 0.5, -turn) : new Vec2(0, 0));
+            // Bound to a named boundary of its view: its box and middle are the boundary's (turned: the box round the boundary as it shows).
             var boundary = BoundaryOf(q.Model, vp);
             if (boundary != null)
             {
                 var (bmin, bmax) = ViewBoundaries.Box(boundary);
-                (w, h, c) = ((bmax.X - bmin.X) * k, (bmax.Y - bmin.Y) * k, (bmin + bmax) * 0.5);
+                var corners = new[] { bmin, new Vec2(bmax.X, bmin.Y), bmax, new Vec2(bmin.X, bmax.Y) }.Select(T).ToList();
+                (w, h, c) = ((corners.Max(p => p.X) - corners.Min(p => p.X)) * k, (corners.Max(p => p.Y) - corners.Min(p => p.Y)) * k, (bmin + bmax) * 0.5);
             }
-            Vec2 ToPaper(Vec2 p) => new(vp.X + (p.X - c.X) * k, vp.Y - (p.Y - c.Y) * k);
-            o.Add(new Placement(vp, view, r, vp.X - w / 2, vp.Y - h / 2, vp.X + w / 2, vp.Y + h / 2, ToPaper) { Middle = c, Boundary = boundary });
+            var tc = T(c);
+            Vec2 ToPaper(Vec2 p) { var d = T(p) - tc; return new(vp.X + d.X * k, vp.Y - d.Y * k); }
+            o.Add(new Placement(vp, view, r, vp.X - w / 2, vp.Y - h / 2, vp.X + w / 2, vp.Y + h / 2, ToPaper) { Middle = c, Boundary = boundary, Turn = turn });
         }
         return o;
     }
@@ -211,7 +222,9 @@ public static class Sheets
     /// A view's pen on paper, cut to a box as a viewport shows it (segments and fills clipped, texts kept when their point is
     /// inside, pictures clipped where printed); null when nothing of it is inside. A document's picture cropped to a boundary uses it too.
     /// </summary>
-    public static Pen? ClipToBox(Pen pen, Func<Vec2, Vec2> toPaper, double x0, double y0, double x1, double y1, string? viewport = null)
+    /// <param name="turnDeg">The turn <paramref name="toPaper"/> gives the drawing (a turned plan, decision 526): its texts turn with it, kept readable (<see cref="Turning.Upright"/>).</param>
+    /// <param name="unitsPerMm">Drawing units per paper mm (the view's scale / 1000), for a text turned over on its footprint.</param>
+    public static Pen? ClipToBox(Pen pen, Func<Vec2, Vec2> toPaper, double x0, double y0, double x1, double y1, string? viewport = null, double turnDeg = 0, double unitsPerMm = 0)
     {
         var o = new Pen(pen.Layer, pen.Stroke, pen.Width, pen.Fill, pen.Dash) { Viewport = viewport };
         foreach (var (a, b) in pen.Segments)
@@ -221,8 +234,9 @@ public static class Sheets
         }
         foreach (var loop in pen.Loops)
             if (ClipLoop(loop.Select(toPaper).ToList(), x0, y0, x1, y1) is { Count: >= 3 } c) o.Loops.Add(c);
-        foreach (var t in pen.Texts)
+        foreach (var t0 in pen.Texts)
         {
+            var t = Turning.Upright(t0, turnDeg, unitsPerMm);
             var at = toPaper(t.At);
             if (at.X >= x0 && at.X <= x1 && at.Y >= y0 && at.Y <= y1) o.Texts.Add(t with { At = at });
         }
@@ -257,7 +271,7 @@ public static class Sheets
         var placements = placed ?? Place(q, sheet);
         foreach (var pl in placements)
             foreach (var pen in pl.Drawing.Pens)
-                if (ClipToBox(pen, pl.ToPaper, pl.X0, pl.Y0, pl.X1, pl.Y1, pl.Viewport.Id) is { } o) pens.Add(o);
+                if (ClipToBox(pen, pl.ToPaper, pl.X0, pl.Y0, pl.X1, pl.Y1, pl.Viewport.Id, pl.Turn * 180 / Math.PI, pl.Drawing.Scale / 1000) is { } o) pens.Add(o);
 
         var frame = new Pen("FRAME", "#000000", FramePen, null, null);
         var rules = new Pen("TITLE", "#000000", RulePen, null, null);
@@ -639,10 +653,14 @@ public static class Sheets
             if (x1 - x0 < 10 || y1 - y0 < 10) throw new CommandException("A view on a sheet is 10 mm across at least.");
             var (cx, cy) = ((x0 + x1) / 2, (y0 + y1) / 2);
             var k = pl.K;
-            var middle = pl.Middle + new Vec2((cx - pl.Viewport.X) / k, -(cy - pl.Viewport.Y) / k);
+            var middle = pl.Middle + pl.FromPaper(cx - pl.Viewport.X, cy - pl.Viewport.Y);
             if (pl.Boundary is { } b)
             {
+                // A boundary is square to the view's axes: a plan turned by a quarter turn crops it with its sides swapped; by another angle, in its view (decision 526).
+                var quarters = Math.Round(pl.Turn / (Math.PI / 2));
+                if (Math.Abs(pl.Turn - quarters * Math.PI / 2) > 1e-9) throw new CommandException("The plan is turned: crop its boundary in the view (View boundaries), not on the sheet.");
                 var half = new Vec2((x1 - x0) / 2 / k, (y1 - y0) / 2 / k);
+                if (Math.Abs(quarters) % 2 == 1) half = new Vec2(half.Y, half.X);
                 SetBoundary(ctx, b, middle - half, middle + half);
                 vps[i] = vps[i] with { X = cx, Y = cy };
             }
@@ -656,7 +674,7 @@ public static class Sheets
         {
             var sheet = Require(ctx.Model, (string?)a["id"]);
             var (vps, i, pl) = Placed(ctx, sheet, (string?)a["viewportId"]);
-            var shift = new Vec2(-(Json.Number(a["dx"]) ?? 0) / pl.K, (Json.Number(a["dy"]) ?? 0) / pl.K);
+            var shift = -pl.FromPaper(Json.Number(a["dx"]) ?? 0, Json.Number(a["dy"]) ?? 0);
             if (pl.Boundary is { } b)
             {
                 var (min, max) = ViewBoundaries.Box(b);

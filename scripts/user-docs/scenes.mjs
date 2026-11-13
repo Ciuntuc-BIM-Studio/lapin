@@ -4519,6 +4519,73 @@ export const scenes = [
     },
   },
   {
+    // Decision 525 (a tester's question: how to rotate the view along the screen): a plan turned to align with a wall, on
+    // screen and on its sheet, its texts readable.
+    id: 'views-plan-orientation',
+    touches: ['core', 'architecture', 'drafting'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      // A house standing at 30° to the plan's axes: 12 × 8 m, a door, its rooms named.
+      const c = Math.cos(Math.PI / 6), n = Math.sin(Math.PI / 6);
+      const at = (x, y) => [x * c - y * n, x * n + y * c];
+      const outline = [[0, 0], [12, 0], [12, 8], [0, 8]].map(([x, y]) => at(x, y));
+      const walls = [];
+      for (let i = 0; i < 4; i++) {
+        const [a, b] = [outline[i], outline[(i + 1) % 4]];
+        walls.push((await t.cmd('architecture.addWall', { storeyId: s, x1: a[0], y1: a[1], x2: b[0], y2: b[1] })).id);
+      }
+      const [i0, i1] = [at(7, 0), at(7, 8)];
+      await t.cmd('architecture.addWall', { storeyId: s, x1: i0[0], y1: i0[1], x2: i1[0], y2: i1[1] });
+      await t.cmd('architecture.addDoor', { wallId: walls[0], x: at(3, 0)[0], y: at(3, 0)[1] });
+      const plan = `plan:${s}`;
+      await t.cmd('drafting.addText', { viewId: plan, at: at(3.5, 4), text: 'Living room' });
+      await t.cmd('drafting.addText', { viewId: plan, at: at(9.5, 4), text: 'Bedroom' });
+      await t.cmd('drafting.addDimension', { viewId: plan, a: outline[0], b: outline[1], at: at(0, -1.5) });
+      await t.ui({ view: 'plan', keyPlan: false, planDrawing: true });
+      await t.wait(1200);
+      await t.fit();
+      // The plan's Rotate view button: its menu.
+      await t.until(async () => (await t.page.locator('[data-testid=plan-orientation]').count()) > 0, 'the Rotate view button on the plan');
+      await t.page.locator('[data-testid=plan-orientation]').first().click();
+      await t.wait(400);
+      t.expect(await t.page.getByRole('menuitem').count() >= 4, 'Rotate view offers north up, an angle, an edge and the UCS');
+      await t.shot('plan-orientation-menu', { clip: await t.page.evaluate(() => { const m = document.querySelector('[role=menu]') ?? document.querySelector('.context-menu'); const r = (m ?? document.body).getBoundingClientRect(); return { x: Math.max(0, r.left - 360), y: Math.max(0, r.top - 60), width: Math.min(window.innerWidth, r.width + 480), height: Math.min(window.innerHeight - Math.max(0, r.top - 60), r.height + 140) }; }) });
+      // Rotate view to align with an edge: the house's front wall, picked by its two corners.
+      await t.page.getByRole('menuitem').nth(2).click();
+      await t.wait(400);
+      for (const [x, y] of [outline[0], outline[1]]) {
+        const [px, py] = await t.planPoint(x, y);
+        await t.page.mouse.move(px, py, { steps: 4 });
+        await t.wait(200);
+        await t.page.mouse.click(px, py);
+        await t.wait(500);
+      }
+      const turnedView = async () => (await t.nodes()).find((v) => v.props?.kind === 'plan' && v.props.orientation != null);
+      await t.until(async () => Math.abs(Number((await turnedView())?.props.orientation) - 30) < 0.5, 'the plan view turned to 30°, its front wall along the screen');
+      const turned = await turnedView();
+      await t.wait(800);
+      await t.fit();
+      await t.wait(800);
+      t.expect(((await t.page.locator('[data-testid=plan-orientation]').first().getAttribute('class')) ?? '').includes('on'), 'the Rotate view button says the plan is turned');
+      await t.shot('plan-orientation', { of: '[data-testid=plan]', pad: 0 });
+      // On its sheet the plan prints as it shows: the walls level and upright, the texts readable.
+      const sheet = await t.cmd('sheet.create', { name: 'Turned plan', number: 'A-110', paper: 'A3' });
+      await t.cmd('sheet.addViewport', { id: sheet.id, viewId: turned.id, x: 200, y: 140 });
+      const page = await t.call('doc.query', { name: 'sheet.drawing', args: { id: sheet.id } });
+      const cuts = page.pens.filter((p) => p.layer === 'CUT').flatMap((p) => { const q = p.segments ?? []; const o = []; for (let k = 0; k + 3 < q.length; k += 4) o.push([q[k], q[k + 1], q[k + 2], q[k + 3]]); return o; });
+      const long = cuts.filter(([x1, y1, x2, y2]) => Math.hypot(x2 - x1, y2 - y1) > 30);
+      t.expect(long.length > 0 && long.every(([x1, y1, x2, y2]) => { const l = Math.hypot(x2 - x1, y2 - y1); return Math.abs(y2 - y1) < l * 0.01 || Math.abs(x2 - x1) < l * 0.01; }), 'the sheet prints the walls level and upright');
+      const texts = page.pens.filter((p) => p.viewport).flatMap((p) => p.texts ?? []);
+      t.expect(texts.some((x) => x.text === 'Living room') && texts.every((x) => x.angle > -90 + 1e-6 && x.angle <= 90 + 1e-6), 'the texts on the sheet read upright (within ±90°)');
+      await t.wait(800);
+      const sheetLabel = await t.page.locator('nav.browser').getByText(/Turned plan/).first().textContent();
+      await openFromBrowser(t, sheetLabel?.trim() || 'Turned plan', 3000);
+      await t.fit();
+      await t.shot('plan-orientation-sheet', { clip: { x: 250, y: 120, width: 1190, height: 730 } });
+    },
+  },
+  {
     // A section seen in 3D (the browser's right-click), and a walk into a room (the plan's right-click).
     id: 'views-3d',
     async run(t) {

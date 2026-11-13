@@ -26,8 +26,8 @@ const W = 136, H = 104, STRIP = 150;
 
 interface Props {
   mode: '3d' | 'plan' | 'drawing';
-  /** A plan: the corners of what is on screen (world). */
-  frame?: [Vec2, Vec2] | null;
+  /** A plan: the corners of what is on screen (world), in order round it. */
+  frame?: Vec2[] | null;
   onLookAt?: (p: Vec2) => void;
   /** A section or elevation: the view shown. */
   viewId?: string | null;
@@ -184,10 +184,8 @@ function KeyPlanMap({ mode, frame, onLookAt, viewId, onFold }: Props) {
         {/* North, up. */}
         <g className="north" transform="translate(10 14)"><path d="M0 6V-6M-3 -2L0 -6L3 -2" /><text x={5} y={-3}>N</text></g>
 
-        {mode === 'plan' && frame && (() => {
-          const a = toMap(frame[0]), c = toMap(frame[1]);
-          return <rect className="frame" x={Math.min(a.x, c.x)} y={Math.min(a.y, c.y)} width={Math.abs(c.x - a.x)} height={Math.abs(c.y - a.y)} />;
-        })()}
+        {/* What the screen shows: its four corners, so a turned plan (decision 526) shows its turned box on the north-up map. */}
+        {mode === 'plan' && frame && frame.length >= 3 && <polygon className="frame" points={frame.map((p) => { const q = toMap(p); return `${q.x},${q.y}`; }).join(' ')} />}
 
         {cut && (
           <g className="section-mark">

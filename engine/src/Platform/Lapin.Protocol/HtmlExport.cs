@@ -90,14 +90,15 @@ public static class HtmlExport
     const double Margin = 10;
 
     /// <summary>A view as a page of its own at its scale (paper mm, y down) with a margin round what it shows, and what a click on it takes.</summary>
-    public static (PaperPage Page, List<SvgPick> Picks) ViewOnPaper(Views.Rendered r, string title = "", string lineCap = "round")
+    /// <param name="turn">A turned plan's turn (radians, decision 526): the page shows it as the view does, its texts readable.</param>
+    public static (PaperPage Page, List<SvgPick> Picks) ViewOnPaper(Views.Rendered r, string title = "", string lineCap = "round", double turn = 0)
     {
         var k = 1000 / r.Scale;
-        var (min, max) = r.Bounds ?? (new Vec2(0, 0), new Vec2(1, 1));
+        var (min, max) = (turn == 0 ? r.Bounds : Turning.Bounds(r.Pens, turn)) ?? (new Vec2(0, 0), new Vec2(1, 1));
         var w = Math.Max(20, (max.X - min.X) * k + 2 * Margin);
         var h = Math.Max(20, (max.Y - min.Y) * k + 2 * Margin);
-        Vec2 ToPaper(Vec2 p) => new(Margin + (p.X - min.X) * k, Margin + (max.Y - p.Y) * k);
-        var pens = r.Pens.Select(p => Sheets.ClipToBox(p, ToPaper, 0, 0, w, h)).OfType<Pen>().ToList();
+        Vec2 ToPaper(Vec2 p) { p = Turning.Turn(p, turn); return new(Margin + (p.X - min.X) * k, Margin + (max.Y - p.Y) * k); }
+        var pens = r.Pens.Select(p => Sheets.ClipToBox(p, ToPaper, 0, 0, w, h, null, turn * 180 / Math.PI, r.Scale / 1000)).OfType<Pen>().ToList();
         return (new PaperPage(w, h, pens, title, lineCap), Picks(r.Marks, ToPaper, 0, 0, w, h));
     }
 
@@ -144,7 +145,7 @@ public static class HtmlExport
         if (Views.Find(m, id) is not { } view || view.Str("kind") is "3d") return null;
         var r = Views.Render(q, view, print: true);
         if (r.Problem != null || r.Bounds == null || r.Pens.Count == 0) return null;
-        var (p2, pk) = ViewOnPaper(r, view.Name, cap);
+        var (p2, pk) = ViewOnPaper(r, view.Name, cap, Views.Turn(m, view));
         return (SvgWriter.Write(p2, pk, Image), p2.W, p2.H, pk.Count > 0);
     }
 
