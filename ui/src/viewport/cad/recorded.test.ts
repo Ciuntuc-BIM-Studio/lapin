@@ -88,6 +88,23 @@ describe('which views are sketches', () => {
   });
 });
 
+describe('a tangent arc continued from a line', () => {
+  it('is joined to the line\'s end, end to end, and tangent there (the arc\'s start counter-clockwise, its end clockwise)', () => {
+    const tf = { ref: { shape: 'ln', part: 'end' }, p: P(0, 0) };
+    const ccw: Shape = { type: 'arc', c: P(0, 1), r: 1, start: 1.5 * Math.PI, end: 0 };
+    expect(inferConstraints({ id: newShapeId(0), shape: ccw }, [placed(P(1, 1))], world, { hints: { tangentFrom: tf } })).toEqual([
+      { kind: 'coincident', refs: [{ shape: newShapeId(0), part: 'start' }, { shape: 'ln', part: 'end' }] },
+      { kind: 'tangent', refs: [{ shape: 'ln', part: 'end' }, { shape: newShapeId(0), part: 'start' }] },
+    ]);
+    // Clockwise: the point leaving the line is the arc's own end.
+    const cw: Shape = { type: 'arc', c: P(0, -2), r: 2, start: 0, end: Math.PI / 2 };
+    const r = inferConstraints({ id: newShapeId(0), shape: cw }, [placed(P(2, -2))], world, { hints: { tangentFrom: tf, cw: true } });
+    expect(r.map((c) => c.refs[c.refs.length - 1].part)).toEqual(['end', 'end']);
+    const args = drawConstrainedArgs({}, r);
+    expect(args.constraints[1]).toEqual({ kind: 'tangent', refs: [{ shape: 'ln', part: 'end' }, { new: 0, part: 'end' }] });
+  });
+});
+
 describe('the drawConstrained request', () => {
   it('sends the drawing as drafting.draw takes it, with refs to the new shapes written {new: i, part}', () => {
     const draw = { viewId: 'v', layer: '0', shapes: [{ type: 'line', a: [0, 0], b: [4, 0] }, { type: 'line', a: [4, 0], b: [4, 3] }] };

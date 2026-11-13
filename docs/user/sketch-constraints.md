@@ -54,6 +54,7 @@ Each other constraint has a small glyph near what it holds: **H**, **V**, **∥*
 - Click a glyph or a dimension to select it (Shift adds); **Delete** removes the selection, as one undo step.
 - **Double-click** a dimension to edit its value in place, in the field that opens: a number or `=formula`. A driven dimension becomes driving when you give it a value, unless that would over-constrain the sketch.
 - **Drag** a dimension by its value or its line to place it: it follows the cursor and stays where you let go, as one undo step. A dimension you have not placed stands outside its shapes, on the side away from them. A placed one keeps its place relative to what it measures, and moves, turns and mirrors with its shapes.
+- A dimension you have placed can go back: select it and press **A**, or click the small **A** button beside its value (*Automatic position*); it stands outside its shapes again, as one undo step.
 - The eye on the chip below hides the constraints in this view, and shows them again. It is remembered for the view.
 
 ![A dimension edited in place](shots/sketch-constraints-edit.webp)
@@ -95,6 +96,8 @@ In a sketch (a view whose shapes build a Studio solid, a view that already has c
 - a side drawn along the **ortho** or a **polar** line is horizontal or vertical;
 - a line drawn near another drafted line, in a direction within a few degrees of it, locks to it and shows a **Parallel** hint: the two sides are made parallel. A line begun on an arc or a circle and drawn along its tangent, or ending where it would just touch one, shows a **Tangent** hint and is made tangent to it (end to end when it begins at an end of the arc). Neither is offered with ortho on;
 - a length or angle you type becomes a driving dimension; a typed radius a radius; a rectangle typed as `@width,height` keeps both sizes as driving distances;
+- **Arc → Tangent** (or Enter at the first prompt) goes on from the end of the last line or arc you drew: only the end point is picked, the tangent it leaves along is shown, and the joint is made coincident and tangent end to end;
+- a rule the solver refuses while you draw is left out of the drawing, not the drawing itself, and a notice says which and why (*2 constraints left out: horizontal — …*);
 - a rectangle is made of two horizontal and two vertical sides, and a line begun where the last one ended is joined to it.
 
 Hold **Ctrl** (⌘ on a Mac) on a click to place that point without constraints. The **CNSTR** switch in the command line turns the whole thing off and on. The shape and its constraints are one step: one **Undo** takes both away. A constraint that would conflict with the sketch is left out; the shape is drawn all the same.

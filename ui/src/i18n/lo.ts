@@ -3409,6 +3409,12 @@ export const LO: Record<string, string> = {
   "edge": "ຂອບ",
   "curve": "ເສັ້ນໂຄ້ງ",
   "whole": "ທັງໝົດ",
+  'Automatic position': 'ຕຳແໜ່ງອັດຕະໂນມັດ',
+  'Automatic position: press A, or the button': 'ຕຳແໜ່ງອັດຕະໂນມັດ: ກົດ A ຫຼື ປຸ່ມ',
+  'Start point [Tangent]': 'ຈຸດເລີ່ມຕົ້ນ [Tangent]',
+  'End point (tangent to the last line or arc)': 'ຈຸດສິ້ນສຸດ (ແຕະກັບເສັ້ນ ຫຼື ສ່ວນໂຄ້ງສຸດທ້າຍ)',
+  'There is no line or arc to continue from.': 'ບໍ່ມີເສັ້ນ ຫຼື ສ່ວນໂຄ້ງໃຫ້ສືບຕໍ່.',
+  'The end point lies on the tangent line.': 'ຈຸດສິ້ນສຸດຢູ່ເທິງເສັ້ນແຕະ.',
 };
 
 /** Phrases with a number or a name in them. */
@@ -3697,4 +3703,6 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^(\d+) constraints$/, (m) => `${m[1]} ຂໍ້ຈຳກັດ`],
   [/^Constraint dropped: (.+)$/, (m) => `ລຶບຂໍ້ຈຳກັດແລ້ວ: ${m[1]}`],
   [/^(\d+) constraints dropped: (.+)$/, (m) => `ລຶບ ${m[1]} ຂໍ້ຈຳກັດແລ້ວ: ${m[2]}`],
+  [/^Constraint left out: (.+)$/, (m) => `ຂ້າມຂໍ້ຈຳກັດ: ${m[1]}`],
+  [/^(\d+) constraints left out: (.+)$/, (m) => `ຂ້າມ ${m[1]} ຂໍ້ຈຳກັດ: ${m[2]}`],
 ];

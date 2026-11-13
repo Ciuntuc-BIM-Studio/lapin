@@ -5,7 +5,7 @@ import { useStandards } from '../../engine/unitsStore';
 import type { Vec2 } from '../../platform/module';
 import { ALL_MODES, SnapIndex, findSnap, type SnapMode } from './snaps';
 import { applyOrtho, applyPolar, parseCoordinateInput, pointAlong } from './input';
-import { arcThrough, type Shape } from './shapes';
+import { arcThrough, arcTangent, type Shape } from './shapes';
 import { track, trackOnOrtho } from './tracking';
 
 const P = (x: number, y: number): Vec2 => ({ x, y });
@@ -157,5 +157,26 @@ describe('guide lines', () => {
     expect(a?.type).toBe('arc');
     if (a?.type === 'arc') { nearPt(a.c, P(0, 0)); expect(a.start).toBeCloseTo(0, 9); expect(a.end).toBeCloseTo(Math.PI, 9); }
     expect(arcThrough(P(0, 0), P(1, 1), P(2, 2))).toBeNull();
+  });
+  it('a tangent arc leaves the start along the direction and ends at the point: centre on the normal, counter-clockwise to the left', () => {
+    // Heading +x from the origin, ending at (1, 1): the quarter circle about (0, 1).
+    const a = arcTangent(P(0, 0), P(3, 0), P(1, 1))!;
+    nearPt(a.c, P(0, 1));
+    expect(a.r).toBeCloseTo(1, 9);
+    expect(a.cw).toBe(false);
+    expect(a.start).toBeCloseTo(1.5 * Math.PI, 9);
+    expect(a.end).toBeCloseTo(0, 9);
+  });
+  it('a tangent arc turning right is clockwise: its counter-clockwise start is the point picked', () => {
+    const a = arcTangent(P(0, 0), P(1, 0), P(2, -2))!;
+    nearPt(a.c, P(0, -2));
+    expect(a.r).toBeCloseTo(2, 9);
+    expect(a.cw).toBe(true);
+    expect(a.start).toBeCloseTo(0, 9);
+    expect(a.end).toBeCloseTo(Math.PI / 2, 9);
+  });
+  it('no tangent arc ends on the tangent line or on its own start', () => {
+    expect(arcTangent(P(0, 0), P(1, 0), P(5, 0))).toBeNull();
+    expect(arcTangent(P(0, 0), P(1, 0), P(0, 0))).toBeNull();
   });
 });

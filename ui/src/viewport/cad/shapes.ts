@@ -201,6 +201,24 @@ export function polylines(s: Shape): Vec2[][] {
   }
 }
 
+/**
+ * The arc that leaves `start` along `dir` (tangent there) and ends at `end`: its centre, radius and angles (always counter-clockwise
+ * start to end; `cw` says the travel from `start` to `end` is clockwise, so `start` is the arc's `end`). Null when `end` lies on the
+ * tangent line, or on `start`.
+ */
+export function arcTangent(start: Vec2, dir: Vec2, end: Vec2): { c: Vec2; r: number; start: number; end: number; cw: boolean } | null {
+  const len = Math.hypot(dir.x, dir.y);
+  if (len < 1e-12) return null;
+  const n = P(-dir.y / len, dir.x / len);
+  const dx = end.x - start.x, dy = end.y - start.y;
+  const along = n.x * dx + n.y * dy;
+  if (Math.abs(along) < 1e-9 * Math.max(1, Math.hypot(dx, dy))) return null;
+  const t = (dx * dx + dy * dy) / (2 * along);
+  const c = P(start.x + n.x * t, start.y + n.y * t);
+  const a1 = Math.atan2(start.y - c.y, start.x - c.x), a2 = Math.atan2(end.y - c.y, end.x - c.x);
+  return t > 0 ? { c, r: t, start: normAngle(a1), end: normAngle(a2), cw: false } : { c, r: -t, start: normAngle(a2), end: normAngle(a1), cw: true };
+}
+
 /** The arc through three points, from the first to the third by the second; null when they lie on a line. */
 export function arcThrough(p1: Vec2, p2: Vec2, p3: Vec2): Shape | null {
   const d = 2 * (p1.x * (p2.y - p3.y) + p2.x * (p3.y - p1.y) + p3.x * (p1.y - p2.y));
