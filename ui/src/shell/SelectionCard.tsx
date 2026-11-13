@@ -27,7 +27,7 @@ export function SelectionCard() {
   const keys = bindingText('app.propsOverlay').split(', ')[0];
   return (
     <div className="sel-card props" role="region" aria-label="Selection">
-      <span className="eyebrow">{cls?.label ?? node.type}{count > 1 ? ` · ${count} selected` : ''}</span>
+      <span className="eyebrow"><span data-i18n-ctx="class">{cls?.label ?? node.type}</span>{count > 1 ? ` · ${count} selected` : ''}</span>
       <span className="panel-title">{node.name}</span>
       {node.editable && fields.length > 0 && <dl className="fields">{fields.map((f) => <FieldRow key={f.key} node={node} field={f} />)}</dl>}
       <button type="button" className="link" onClick={() => showOverlay('props')}>All properties…{keys && <kbd data-no-i18n>{keys}</kbd>}</button>

@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // Names of the engine's classes (data-i18n-ctx="class"): the plain word keeps its other meaning.
+  'class|Solid': '实体', 'class|Bar': '钢筋', 'class|Issue': '问题', 'class|Grid': '轴网', 'class|Covering': '覆层',
   "Some constraints could not stay with the shapes and were dropped.": "部分约束无法保留在形状上，已被移除。",
   "Editing the part: values shown are its defaults": "正在编辑零件：显示的值为其默认值",
   "Some constraints the drawing made could not hold and were left out.": "绘图产生的部分约束无法成立，已被略去。",

@@ -177,7 +177,7 @@ export function FeatureCard({ node }: { node: NodeDto }) {
       <dt title="The IFC class it is written as: quantities, property sets and its cut priority follow it">IFC class</dt>
       <dd><select className="cell" value={cls} onChange={(e) => void execute('studio.setClass', { ids: solidsSelected(node), class: e.target.value })}>
         {!classes.some((c) => c.class === cls) && <option value={cls}>{cls}</option>}
-        {classes.map((c) => <option key={c.class} value={c.class}>{c.label}</option>)}
+        {classes.map((c) => <option key={c.class} value={c.class} data-i18n-ctx="class">{c.label}</option>)}
       </select></dd>
       <dt>Predefined type</dt>
       <dd><select className="cell" value={pre} onChange={(e) => {

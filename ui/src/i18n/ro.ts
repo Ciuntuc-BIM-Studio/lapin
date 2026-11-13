@@ -1,6 +1,8 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // Names of the engine's classes (data-i18n-ctx="class"): the plain word keeps its other meaning.
+  'class|Solid': 'Solid', 'class|Bar': 'Bară de armătură', 'class|Issue': 'Problemă', 'class|Grid': 'Grilă', 'class|Covering': 'Finisaj',
   "Some constraints could not stay with the shapes and were dropped.": "Unele constrângeri n-au putut rămâne cu formele și au fost scoase.",
   "Editing the part: values shown are its defaults": "Editezi piesa: valorile arătate sunt cele implicite",
   "Some constraints the drawing made could not hold and were left out.": "Unele constrângeri făcute de desen n-au putut fi ținute și au fost lăsate deoparte.",
