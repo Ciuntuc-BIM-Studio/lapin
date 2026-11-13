@@ -242,6 +242,10 @@ public static class Components
     /// <summary>Whether an element is a member of an instance of a component.</summary>
     static bool InInstance(IModelView m, string id) => Groups.Of(m, id) is { } g && Of(g) != null;
 
+    /// <summary>The members of every apartment type's instances: their inner walls stop in the building as <see cref="StopInnerWalls"/> says, not by <see cref="Joins.Auto"/>.</summary>
+    public static IEnumerable<string> UnitMembers(IModelView m) =>
+        Groups.All(m).Where(g => IsUnit(m, Of(g))).SelectMany(g => Groups.MembersOf(m, g.Id));
+
     /// <summary>The instances near a wall of the building this command made, moved or took away (their members may meet it).</summary>
     static IEnumerable<string> NearChangedWalls(ICommandContext ctx, IReadOnlyList<Change<Entity>> changed)
     {

@@ -423,6 +423,7 @@ public static class Arrays
         if (path != null && rule.Along != null) attrs["pathKey"] = path.Key; else attrs.Remove("pathKey");
         var items = Items(array).Select(i => i with { Ids = i.Ids.Where(id => ctx.Model.Get(id) != null).ToList() }).ToList();
         var (moved, added, removed) = (0, 0, 0);
+        var carried = new List<ElementTransform.Result>();
         // Past the count: deleted (one removed by hand stays a gap).
         if (items.Count > poses.Count)
         {
@@ -436,7 +437,7 @@ public static class Arrays
             if (item.Ids.Count == 0 || item.At.Same(poses[i])) { items[i] = item with { At = poses[i] }; continue; }
             // What is pinned stands where it is (decision 449): it keeps its place, and where the rule last put it.
             if (item.Ids.Any(id => Pins.Is(ctx.Model.Get(id)) || Groups.Expand(ctx.Model, [id]).Elements.Any(x => Pins.Is(ctx.Model.Get(x))))) continue;
-            Carry(ctx, item.Ids, item.At, poses[i], copy: false);
+            Carry(ctx, item.Ids, item.At, poses[i], copy: false, carried);
             items[i] = item with { At = poses[i] };
             moved++;
         }
@@ -445,10 +446,18 @@ public static class Arrays
             var source = items.FirstOrDefault(i => i.Ids.Count > 0) ?? throw new CommandException("Nothing of the array is left to copy.");
             for (var i = items.Count; i < poses.Count; i++)
             {
-                var made = Carry(ctx, source.Ids, source.At, poses[i], copy: true);
+                var made = Carry(ctx, source.Ids, source.At, poses[i], copy: true, carried);
                 items.Add(new Item(made, poses[i]));
                 added++;
             }
+        }
+        // Walls, beams and strip footings carried join what they now meet outside the array; its items keep their joins
+        // among them as they were, so each stays where the rule puts it, and none joins the path it follows (forum 47, decision 531).
+        if (carried.Count > 0)
+        {
+            var inArray = Groups.Expand(ctx.Model, items.SelectMany(i => i.Ids)).Elements.ToHashSet();
+            if (rule.Along != null) inArray.Add(rule.Along);
+            foreach (var r in carried) ElementTransform.JoinWhatMeets(ctx, r, inArray);
         }
         attrs["items"] = ItemsJson(items);
         // A count follows from a spacing along a path when none was given: worked out each time, not kept.
@@ -466,10 +475,11 @@ public static class Arrays
     }
 
     /// <summary>What stands at <paramref name="from"/> carried, or copied, to <paramref name="to"/>, as element.transform does it (what a module drives, its own way): the copy's ids.</summary>
-    static List<string> Carry(ICommandContext ctx, List<string> ids, Pose from, Pose to, bool copy)
+    static List<string> Carry(ICommandContext ctx, List<string> ids, Pose from, Pose to, bool copy, List<ElementTransform.Result>? carried = null)
     {
         var args = new JsonObject { ["ids"] = new JsonArray(ids.Select(x => (JsonNode)x).ToArray()), ["op"] = copy ? "copy" : "move", ["up"] = to.Z - from.Z };
         var r = ElementTransform.Run(ctx, args, Pose.Between(from, to));
+        carried?.Add(r);
         return copy ? Roots(ctx.Model, r.Made.Select(x => (string?)x).OfType<string>()) : ids;
     }
 

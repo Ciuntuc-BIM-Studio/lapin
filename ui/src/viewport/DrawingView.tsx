@@ -44,7 +44,7 @@ import { boxOutcome, dragTo, regionTestOf, SelectRegion, useLassoKey, type Selec
 import { useGripEditor } from './GripLayer';
 import { DrawingOverlays } from './DrawingOverlays';
 import { LiveBar, LiveBox } from './LiveBox';
-import { liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
+import { liveBegin, liveCursor, liveEnd, livePoint, liveTaken, useLive } from './liveInput';
 import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelGesture, wheelZoom, type View2, type ZoomHost } from './zoom';
 import { ScaleChip, ScalePicker, StructurePicker } from './ScaleChip';
 import { KeyPlan } from './KeyPlan';
@@ -432,8 +432,10 @@ export function DrawingView() {
           if (!d || d.moved || e.button !== 0) return;
           const { raw, aimed } = at(e);
           const step = useCad.getState().step;
-          if (step) { void feedPoint(step.want === 'pick' || step.want === 'select' ? raw : aimed.point); acquire(aimed.point); return; }
-          if (gestureClick(aimed.point, raw)) return;
+          const taken = liveTaken(aimed.point);
+          const where = taken?.point ?? aimed.point;
+          if (step) { void feedPoint(step.want === 'pick' || step.want === 'select' ? raw : where); acquire(where); return; }
+          if (gestureClick(where, raw, taken?.typed)) return;
           pickByMods(pickAny(raw), modsOf(e), currentNavStyle());
         }}
         onPointerLeave={() => { setHover(null); setHoverId(null); trackTagHover(null, { pickElement: () => null, pickTag: () => null, anyTags, busy: true }); editor.onPointerLeave(); }}

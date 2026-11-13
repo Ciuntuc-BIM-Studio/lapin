@@ -24,6 +24,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         r.Service<IViewAnnotations>(this);
         r.Service<ISectionPaths>(new ShapeSectionPaths());
         r.Service<IArrayPaths>(new ShapeArrayPaths());
+        r.Service<IDraftedGeometry>(new ShapeDraftedGeometry());
         Cad.DraftCommands.Register(r);
         Cad.DxfImport.Register(r);
         Cad.Underlays3d.Register(r);
@@ -116,7 +117,9 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         {
             var grid = Spatial.Require(ctx.Model, (string?)a["gridId"], IfcClass.Grid);
             var only = a["tags"] is JsonArray tags ? tags.Select(t => (string?)t).OfType<string>().ToHashSet() : null;
-            var axes = Grids.Align(Grids.Axes(grid), only, out var n);
+            // The axis the others line up to (decision 531): its tag, or its id (the grid's id, #, the tag).
+            var to = (string?)a["to"] is { Length: > 0 } ref0 ? ref0.IndexOf('#') is var h and >= 0 ? ref0[(h + 1)..] : ref0 : null;
+            var axes = Grids.Align(Grids.Axes(grid), only, out var n, to);
             if (n > 0) Write(ctx, grid, axes);
             return new JsonObject { ["aligned"] = n };
         });
@@ -683,4 +686,10 @@ sealed class ShapeSectionPaths : ISectionPaths
 {
     public FollowedPath? PathOf(IModelView m, Entity e) =>
         e.Class == IfcClass.Annotation && Cad.Drafts.ShapeOf(e) is { } shape && Cad.Geo.Polylines(shape) is { Count: > 0 } lines && lines[0].Count >= 2 ? new FollowedPath(lines[0]) : null;
+}
+
+/// <summary>Drafted shapes as graphs read them (decision 534): <see cref="Cad.Drafts.Runs"/>.</summary>
+sealed class ShapeDraftedGeometry : IDraftedGeometry
+{
+    public IReadOnlyList<DraftedRun>? RunsOf(IModelView model, IServices services, Entity element) => Cad.Drafts.Runs(element, model, services);
 }

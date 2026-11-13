@@ -9,15 +9,16 @@
  */
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Flame, Eye, EyeOff, Plus, Trash2, Workflow } from 'lucide-react';
+import { Flame, Eye, EyeOff, Maximize2, Plus, Trash2, Workflow } from 'lucide-react';
 import { useSession } from '../../engine/session';
 import { useUi } from '../../app/store';
 import { t as tr, useLang } from '../../i18n';
 import {
-  addNode, connect, fitView, moveNodes, nodeHeight, nodesIn, portAt, PORT_COLOURS, removeNodes, removeWire, searchNodes, setLabel, setValue, showValue,
+  addNode, connect, fitView, moveNodes, nodeHeight, nodesIn, numberText, portAt, PORT_COLOURS, removeNodes, removeWire, rowValue, searchNodes, valueEnd, setLabel, setValue, showValue,
   sockets, unknownSpec, wireKey, wirePath, zoomAt, HEAD_H, NODE_W, ROW_H, type GraphJson, type GraphView as ViewT, type NodeSpec, type PortSpec,
 } from './graph';
 import { isGuest } from '../../engine/share';
+import { commitNumber, NO_COMMIT } from '../../shell/fieldCommit';
 import { bake, currentGraph, GUEST_REFUSAL, deleteGraph, evaluate, loadSpecs, newGraph, openGraph, projectGraphs, renameGraph, saveGraph, setPreview, useGraphs } from './store';
 
 type Drag =
@@ -106,13 +107,30 @@ function Editor() {
   const [space, setSpace] = useState(false);
   const host = useRef<HTMLDivElement>(null);
   const fitted = useRef(false);
-  // The whole graph in sight when it opens (once its nodes' sizes are known).
+  // Panned or zoomed by hand: the panel's resizing no longer fits the graph again (Fit does, and starts over).
+  const touched = useRef(false);
+  const fitNow = useRef(() => {});
+  fitNow.current = () => {
+    if (!specs || !host.current) return;
+    const r = host.current.getBoundingClientRect();
+    if (r.width < 1 || r.height < 1) return;
+    setView(fitView(graph, specOf, r.width, r.height));
+  };
+  const fit = () => { touched.current = false; fitNow.current(); host.current?.focus(); };
+  // The whole graph in sight when it opens (once its nodes' sizes are known), and again as the panel is resized until the
+  // user pans or zooms.
   useLayoutEffect(() => {
     if (fitted.current || !specs || !host.current) return;
     fitted.current = true;
-    const r = host.current.getBoundingClientRect();
-    setView(fitView(saved, specOf, r.width, r.height));
-  }, [specs]); // eslint-disable-line react-hooks/exhaustive-deps
+    fitNow.current();
+  }, [specs]);
+  useEffect(() => {
+    const el = host.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => { if (fitted.current && !touched.current) fitNow.current(); });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   // Evaluated after each change of the graph, and of the model (a graph reads it), a moment after the last.
   const graphText = JSON.stringify(saved);
@@ -142,7 +160,7 @@ function Editor() {
 
   const onMove = (e: React.PointerEvent) => {
     if (!drag) return;
-    if (drag.kind === 'pan') { setView({ ...drag.view, x: drag.view.x - (e.clientX - drag.sx) / view.zoom, y: drag.view.y - (e.clientY - drag.sy) / view.zoom }); return; }
+    if (drag.kind === 'pan') { touched.current = true; setView({ ...drag.view, x: drag.view.x - (e.clientX - drag.sx) / view.zoom, y: drag.view.y - (e.clientY - drag.sy) / view.zoom }); return; }
     const p = toGraph(e);
     if (drag.kind === 'box') setDrag({ ...drag, b: p });
     else if (drag.kind === 'wire') setDrag({ ...drag, at: p });
@@ -175,6 +193,7 @@ function Editor() {
 
   const onWheel = (e: React.WheelEvent) => {
     const r = host.current!.getBoundingClientRect();
+    touched.current = true;
     setView((v) => zoomAt(v, e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * 0.0015)));
   };
 
@@ -187,6 +206,7 @@ function Editor() {
       else if (wireSel) { commit(removeWire(saved, wireSel)); setWireSel(null); }
     } else if (e.key === 'Escape') { e.stopPropagation(); setSearch(null); setSelected(new Set()); setWireSel(null); }
     else if (e.key === ' ') { e.preventDefault(); e.stopPropagation(); setSpace(true); }
+    else if ((e.key === 'f' || e.key === 'F' || e.key === 'Home') && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); e.stopPropagation(); fit(); }
   };
 
   const onDouble = (e: React.MouseEvent) => {
@@ -263,6 +283,10 @@ function Editor() {
             )}
           </g>
         </svg>
+        {graph.nodes.length > 0 && (
+          <button type="button" className="icon graphs-fit" title="Fit the graph in the canvas (F)" data-action="graph-fit"
+            onPointerDown={(e) => e.stopPropagation()} onClick={fit}><Maximize2 size={14} /></button>
+        )}
         {graph.nodes.length === 0 && !search && <div className="graphs-hint muted">Double-click to add a node.</div>}
         {refusal && <div className="graphs-refusal error-text" onClick={() => setRefusal(null)}>{refusal}</div>}
         {search && specs && <Search x={search.sx} y={search.sy} specs={specs} onPick={add} onClose={() => setSearch(null)} />}
@@ -277,6 +301,8 @@ function NodeBox({ node, spec, on, result, wired, onHead, onOut }: {
   wired: GraphJson['wires']; onHead: (e: React.PointerEvent) => void; onOut: (e: React.PointerEvent, port: string) => void;
 }) {
   useLang((l) => l.lang); // drawn again in another language: the SVG is not walked by the translator
+  const sessionNodes = useSession((s) => s.nodes);
+  const storeyName = (id: string) => sessionNodes.get(id)?.name;
   const s = sockets(spec);
   const h = nodeHeight(spec);
   const settings = spec.inputs.filter((p) => p.setting);
@@ -296,7 +322,11 @@ function NodeBox({ node, spec, on, result, wired, onHead, onOut }: {
           <g key={`i${p.name}`}>
             <circle cx={0} cy={y} r={5} fill={isWired ? PORT_COLOURS[p.type] : 'var(--panel, #fff)'} stroke={PORT_COLOURS[p.type]} strokeWidth={2} className="graph-port" data-node={node.id} data-port-in={p.name} />
             <text x={10} y={y + 4} className="graph-port-label">{tr(p.label)}</text>
-            {!isWired && constant !== undefined && <text x={NODE_W / 2 - 4} y={y + 4} className="graph-port-value" textAnchor="end" data-no-i18n>{showValue(constant)}</text>}
+            {!isWired && constant !== undefined && (() => {
+              const out = s.outputs[i];
+              const right = valueEnd(out ? tr(out.label) : undefined);
+              return <text x={right} y={y + 4} className="graph-port-value" textAnchor="end" data-no-i18n>{rowValue(constant, p.type, tr(p.label), storeyName, right)}</text>;
+            })()}
           </g>
         );
       })}
@@ -311,7 +341,7 @@ function NodeBox({ node, spec, on, result, wired, onHead, onOut }: {
       })}
       {settings.length > 0 && s.inputs.length === 0 && (
         <text x={10} y={HEAD_H + ROW_H / 2 + 4} className="graph-port-value" data-no-i18n>
-          {settings.map((p) => showValue(node.values?.[p.name] ?? p.default)).join(' · ')}
+          {settings.map((p) => { const v = node.values?.[p.name] ?? p.default; return p.type === 'storey' ? (typeof v === 'string' && v ? storeyName(v) ?? '?' : tr("The view's storey")) : showValue(v); }).join(' · ')}
         </text>
       )}
     </g>
@@ -405,8 +435,13 @@ function Field({ port, value, onSet }: { port: PortSpec; value: unknown; onSet: 
   if (port.type === 'number' || port.type === 'integer') {
     return (
       <label className="field"><span>{port.label}</span>
-        <input type="number" step={port.type === 'integer' ? 1 : 'any'} defaultValue={typeof shown === 'number' ? shown : ''} data-port={port.name}
-          onBlur={(e) => { const t = e.target.value.trim(); const n = Number(t); onSet(t === '' ? null : Number.isFinite(n) ? n : null); }}
+        <input className="num" inputMode="decimal" defaultValue={numberText(shown)} data-port={port.name}
+          onBlur={(e) => {
+            const t = e.target.value;
+            if (!t.trim()) { onSet(null); return; }
+            const v = commitNumber(t, null, { integer: port.type === 'integer' });
+            if (v === NO_COMMIT || v === null) e.target.value = numberText(shown); else { e.target.value = numberText(v); onSet(v); }
+          }}
           onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
       </label>
     );
@@ -417,8 +452,13 @@ function Field({ port, value, onSet }: { port: PortSpec; value: unknown; onSet: 
       <label className="field"><span>{port.label}</span>
         <span className="graphs-xyz">
           {[0, 1, 2].map((i) => (
-            <input key={i} type="number" step="any" defaultValue={p[i] ?? 0} aria-label={['X', 'Y', 'Z'][i]}
-              onBlur={(e) => { const q = [...p]; q[i] = Number(e.target.value) || 0; onSet({ $pt: q }); }} />
+            <input key={i} className="num" inputMode="decimal" defaultValue={numberText(p[i] ?? 0)} aria-label={['X', 'Y', 'Z'][i]}
+              onBlur={(e) => {
+                const v = e.target.value.trim() ? commitNumber(e.target.value, null) : 0;
+                const n = v === NO_COMMIT || v === null ? p[i] ?? 0 : v;
+                e.target.value = numberText(n);
+                const q = [...p]; q[i] = n; onSet({ $pt: q });
+              }} />
           ))}
         </span>
       </label>

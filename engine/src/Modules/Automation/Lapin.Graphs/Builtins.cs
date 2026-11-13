@@ -13,8 +13,10 @@ namespace Lapin.Graphs;
 public sealed record Port(string Name, string Label, string Type = "any", bool Whole = false, bool Setting = false, JsonNode? Default = null, string[]? Choices = null);
 
 /// <summary>What a node's run is given: its inputs (wired, else its constants, else the ports' defaults), its node, the model.</summary>
-public sealed class NodeCall(GraphNode node, IReadOnlyDictionary<string, object?> inputs, IModelView model, string? storey = null)
+public sealed class NodeCall(GraphNode node, IReadOnlyDictionary<string, object?> inputs, IModelView model, string? storey = null, IQueryContext? query = null)
 {
+    /// <summary>The model's geometry and the product's services, over the same model (the preview's copy, the bake's edit).</summary>
+    public IQueryContext? Query => query;
     /// <summary>The view's storey, what a storey left unchosen means (<see cref="Evaluator.Storey"/>).</summary>
     public string? Storey => storey;
     public GraphNode Node => node;
@@ -133,6 +135,46 @@ public static class Builtins
             for (var i = 0; i < l.Count; i++) (Values.Bool(keep[Math.Min(i, keep.Count - 1)]) ? kept : rest).Add(l[i]);
             return [kept, rest];
         }, "The items whose Keep is yes; Keep shorter than the list repeats its last."),
+        new("list", "List", "Lists", [Set("items", "Items", "text", "1; 2; 3"), Set("kind", "Kind", "text", "Auto", ["Auto", "Numbers", "Texts"])], [Out("list", "List", "list")], c =>
+            One(Lists.Typed(c.Text("items"), c.Text("kind"))),
+            "A list typed by hand, its items between semicolons or on lines of their own (a decimal comma is fine); Auto: numbers when every item is one, else texts."),
+        new("joinLists", "Join lists", "Lists", [Whole("a", "A"), Whole("b", "B"), Whole("c", "C"), Whole("d", "D")], [Out("list", "List", "list")], c =>
+        {
+            var all = new List<object?>();
+            foreach (var p in (string[])["a", "b", "c", "d"]) all.AddRange(Values.List(c[p]));
+            Limit(all.Count);
+            return One(all);
+        }, "The lists one after the other; a single value counts as a list of one (to gather values into a list), an input left empty is left out."),
+        new("sort", "Sort", "Lists", [Whole("list", "List"), Whole("by", "By"), Set("descending", "Descending", "bool", false)], [Out("list", "Sorted", "list"), Out("order", "Order", "integer")], c =>
+        {
+            var (sorted, order) = Lists.Sort(Values.List(c["list"]), c["by"] is { } by ? Values.List(by) : null, Values.Bool(c["descending"]));
+            return [sorted, order];
+        }, "Numbers by size, texts alphabetically (the numbers in them by size: W2 before W10); By: by another list's values, place for place (elements by their height). Equal keys keep their order; nothing goes last. Order: where each item was, from 0."),
+        new("slice", "Part of a list", "Lists", [Whole("list", "List"), In("start", "Start", "integer", 0), In("count", "Count", "integer")], [Out("list", "Items", "list")], c =>
+        {
+            var l = Values.List(c["list"]);
+            var start = c.Int("start", 0);
+            if (start < 0) start = Math.Max(0, start + l.Count);
+            start = Math.Min(start, l.Count);
+            var n = c["count"] == null ? l.Count - start : c.Int("count", 0);
+            if (n < 0) throw new CommandException("A part of a list cannot have fewer than no items.");
+            return One(l.GetRange(start, Math.Min(n, l.Count - start)));
+        }, "Count items from Start (from 0; a negative start counts from the end); no count: to the end. The first 3: start 0, count 3; the last 3: start -3."),
+        new("unique", "Unique", "Lists", [Whole("list", "List")], [Out("list", "Values", "list"), Out("times", "How many", "integer")], c =>
+        {
+            var (values, times) = Lists.Unique(Values.List(c["list"]));
+            return [values, times];
+        }, "Each value once, in the order first seen, and how many times it was there; numbers a billionth apart or less are the same."),
+        new("cross", "Every with every", "Lists", [Whole("a", "A"), Whole("b", "B")], [Out("a", "A", "any"), Out("b", "B", "any"), Out("count", "Pairs", "integer")], c =>
+        {
+            List<object?> a = Values.List(c["a"]), b = Values.List(c["b"]);
+            var n = (long)a.Count * b.Count;
+            if (n > GraphLimits.MaxItems) throw new CommandException($"Every with every makes {n} pairs: at most {GraphLimits.MaxItems}.");
+            var outA = new List<object?>((int)n);
+            var outB = new List<object?>((int)n);
+            foreach (var x in a) foreach (var y in b) { outA.Add(x); outB.Add(y); }
+            return [outA, outB, (double)n];
+        }, "Every pair of an item of A and an item of B: each of A's repeated, B's over again, so that the next node, fed both, runs on every pair."),
 
         // ── maths ──
         Binary("add", "Add", (a, b) => a + b),
@@ -255,6 +297,20 @@ public static class Builtins
                 _ => e.Attrs[key] is { } v ? Values.FromJson(v) : throw new CommandException($"„{e.Name}” has no property „{key}”."),
             });
         }, "An element's attribute by its key (height, thickness…), or its name, class or id."),
+
+        // ── the model's geometry, read as references (decision 534) ──
+        new("axis", "Axis", "Model", [In("id", "Element", "element")], [Out("line", "Axis", "geometry"), Out("start", "Start", "point"), Out("end", "End", "point")], References.Axis,
+            "The axis of a wall (curved too), a beam, a footing, a railing or each axis of a grid, as a polyline; its start and end."),
+        new("outline", "Outline", "Model", [In("id", "Element", "element")], [Out("line", "Outline", "geometry"), Out("points", "Corners", "point")], References.Outline,
+            "The closed outline of a floor, a room, a roof or a site zone, at its level, and its corners."),
+        new("location", "Location", "Model", [In("id", "Element", "element")], [Out("point", "Point", "point"), Out("rotation", "Rotation", "number")], References.Location,
+            "Where a column, a pad footing, furniture, a door or a window stands, and its turn in degrees."),
+        new("box", "Bounding box", "Model", [In("id", "Element", "element")],
+            [Out("min", "Lowest corner", "point"), Out("max", "Highest corner", "point"), Out("center", "Centre", "point"), Out("x", "Size along X", "number"), Out("y", "Size along Y", "number"), Out("z", "Height", "number")],
+            References.Box, "The box round any element's body, as the model builds it."),
+        new("drafted", "Drafting geometry", "Model", [In("id", "Element", "element")],
+            [Out("line", "Line", "geometry"), Out("points", "Points", "point"), Out("start", "Start", "point"), Out("end", "End", "point"), Out("center", "Centre", "point")], References.Drafted,
+            "A drafted line, polyline, rectangle, arc or circle (or a DXF's linework) in the model, on its view's level; arcs as points. Pick them in a plan with Elements picked."),
 
         // ── outputs ──
         new("watch", "Watch", "Outputs", [Whole("value", "Value", "any")], [Out("value", "Value")], c => One(c["value"]), "Shows what it is given."),

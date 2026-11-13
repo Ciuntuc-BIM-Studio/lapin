@@ -113,6 +113,21 @@ export function liveMeasure(s: Pick<LiveState, 'base' | 'cursor' | 'len' | 'ang'
   return { len: Math.hypot(dx, dy), ang: ((Math.atan2(dy, dx) * 180) / Math.PI + 360) % 360, dx, dy, end };
 }
 
+/**
+ * A click while a length, angle, width or height is typed: the click takes what the preview shows, the cursor giving only
+ * the direction (or the sign), and the typed fields are spent. Null when nothing is typed (the click is the cursor's point),
+ * or when the box belongs to a gesture other than `owners`. `typed` is the length typed, for a tool measuring along its own path.
+ */
+export function liveTaken(cursor: Vec2, owners: readonly string[] = ['tool', 'cad']): { point: Vec2; typed?: number } | null {
+  const s = useLive.getState();
+  if (!s.owner || !owners.includes(s.owner) || !s.base || (!s.len && !s.ang)) return null;
+  const point = livePoint({ ...s, cursor });
+  if (!point) return null;
+  const typed = s.mode === 'rect' ? undefined : parseLength(s.len) ?? undefined;
+  useLive.setState({ len: '', ang: '' });
+  return { point, typed };
+}
+
 /** Enter: the typed point is taken (true when there was something to take). */
 export function liveCommit(): boolean {
   const s = useLive.getState();

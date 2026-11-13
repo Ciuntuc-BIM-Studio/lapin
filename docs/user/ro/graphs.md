@@ -17,7 +17,7 @@ Deschide **Vedere → Grafuri**. Panoul se deschide lângă vedere: trage linia 
 ![Un graf care face un rând de pereți: panoul lângă plan, pereții ca fantomă](shots/graphs-panel.webp)
 
 - **Sus**: grafurile proiectului, **Graf nou**, numele grafului (scrie ca să-l redenumești), **Șterge graful**, ochiul care arată sau ascunde fantoma și **Creează**.
-- **Pânza**: dublu-clic pe un loc gol ca să adaugi un nod: scrie câteva litere (`wall`, `range`, `point`) și apasă **Enter**. Trage de la o ieșire (partea dreaptă a unui nod) la o intrare (partea stângă) ca să le legi. Mută un nod trăgându-l de titlu; Shift-clic ca să alegi mai multe, sau trage un dreptunghi în jurul lor; **Delete** le scoate. Rotița mărește, butonul din mijloc (sau **Space** și tragere) mută pânza.
+- **Pânza**: dublu-clic pe un loc gol ca să adaugi un nod: scrie câteva litere (`wall`, `range`, `point`) și apasă **Enter**. Trage de la o ieșire (partea dreaptă a unui nod) la o intrare (partea stângă) ca să le legi. Mută un nod trăgându-l de titlu; Shift-clic ca să alegi mai multe, sau trage un dreptunghi în jurul lor; **Delete** le scoate. Rotița mărește, butonul din mijloc (sau **Space** și tragere) mută pânza. Graful se încadrează în pânză când se deschide și când panoul își schimbă mărimea, până când mărești sau muți pânza tu; butonul **Încadrează** din colțul pânzei (sau **F**, ori **Home**) îl încadrează din nou. Numerele se scriu cu punct zecimal, cum le arată nodurile; o virgulă zecimală scrisă e citită și ea.
 - **Inspectorul**, în dreapta: intrările nodului ales care nu au fir (scrie o valoare), ce dă nodul și de ce a căzut, dacă a căzut.
 
 Fiecare schimbare e un pas de anulare: **Ctrl+Z** desface un nod adăugat, mutat sau legat cum desface un perete.
@@ -26,9 +26,30 @@ Fiecare schimbare e un pas de anulare: **Ctrl+Z** desface un nod adăugat, mutat
 
 Porturile sunt colorate după ce duc: numerele albastru, textele chihlimbariu, punctele verde, elementele mov, listele gri. Un fir între feluri care nu se potrivesc e refuzat, cu motivul.
 
-Nu există arbori de date. O **listă** legată la o intrare care ia o singură valoare rulează nodul o dată pentru fiecare element: o **Serie** de trei numere în X-ul unui **Punct** dă trei puncte, iar trei puncte în Începutul unui **Perete** dau trei pereți. Mai multe liste merg alături; o listă mai scurtă își repetă ultimul element. Un fir care duce o listă e desenat mai gros, cu numărul elementelor pe el. Unele intrări iau lista întreagă (**Număr**, **Sumă**, **Element din listă**, **Polilinie**).
+Nu există arbori de date. O **listă** legată la o intrare care ia o singură valoare rulează nodul o dată pentru fiecare element: o **Serie** de trei numere în X-ul unui **Punct** dă trei puncte, iar trei puncte în Începutul unui **Perete** dau trei pereți. Mai multe liste merg alături; o listă mai scurtă își repetă ultimul element. Un fir care duce o listă e desenat mai gros, cu numărul elementelor pe el. Unele intrări iau lista întreagă (**Număr**, **Sumă**, **Element din listă**, **Polilinie**). Intrarea de tip listă a unei unelte (elementele pe care lucrează **Fundații izolate sub stâlpi**, punctele unui planșeu) ia lista întreagă într-o singură rulare; o listă de liste o rulează o dată pentru fiecare listă.
 
 Nodul unei unelte are aceleași intrări ca și comanda ei: un **Perete** are punctele **Început** și **Sfârșit**, o înălțime, un nivel, un tip. Ieșirile lui sunt **Elemente făcute** și **Rezultat** (ce a răspuns comanda).
+
+## Nodurile de liste
+
+Pe lângă **Interval**, **Serie**, **Număr**, **Element din listă**, **Inversează**, **Aplatizează**, **Sumă**, **Cel mai mic și cel mai mare** și **Filtru**, grupul **Liste** are:
+
+- **Listă**: o listă pe care o scrii, cu elementele despărțite prin punct și virgulă sau fiecare pe rândul lui: `3; 4,5; 6`. Virgula sau punctul zecimal merg amândouă. **Fel** **Automat** dă numere când fiecare element e un număr, altfel texte; **Numere** spune care element nu e număr; **Texte** le păstrează pe toate ca text.
+- **Unește listele**: listele legate la A, B, C și D, una după alta. O singură valoare contează ca o listă de un element, așa că nodul strânge și câteva valori într-o listă; o intrare lăsată goală e omisă.
+- **Sortează**: numerele după mărime, textele alfabetic, cu numerele din ele după mărime (W2 înainte de W10, cu majuscule sau nu). Leagă altă listă la **După** ca să sortezi după valorile ei, loc cu loc: pereții unei clase după înălțime (**Property** `height` în După). **Descrescător** o întoarce. Valorile egale își păstrează ordinea; un element gol merge la sfârșit. **Ordine** spune unde era fiecare element, de la 0.
+- **Parte dintr-o listă**: **Număr** elemente de la **Început** (de la 0). Un început negativ numără de la sfârșit; fără număr ia tot până la capăt. Primele trei: început 0, număr 3; ultimele trei: început -3.
+- **Unice**: fiecare valoare o dată, în ordinea în care apare prima dată, și **De câte ori** era. Numerele care diferă cu cel mult o miliardime sunt aceleași, punctele la fel; textele se compară cum sunt scrise (majusculele contează), iar numărul 1 nu e textul „1”.
+- **Fiecare cu fiecare**: fiecare pereche dintre un element din A și unul din B. Ieșirile A și B sunt cât perechile (fiecare element din A repetat, cele din B reluate), deci nodul următor, legat la amândouă, rulează o dată pentru fiecare pereche: o **Listă** de valori X și una de valori Y prin Fiecare cu fiecare, apoi într-un **Punct**, dau un punct la fiecare încrucișare. Cel mult 10.000 de perechi.
+
+## Citirea modelului
+
+Grupul **Model** citește elementele pe care le alegi (**Elemente alese** și **Folosește selecția**, sau **Elementele unei clase**) ca referințe. Fiecare nod ia un element sau o listă de elemente; un element de alt fel cade doar pe elementul lui și spune de ce, celelalte se citesc. Modelul e citit așa cum e acum: mută un perete și previzualizarea a ce face graful din el se mută și ea. Curbele vin ca puncte după aceeași regulă ca orice curbă din Lapin (nicio coardă la mai mult de un milimetru de arc).
+
+- **Axă**: axul unui perete (și curb), al unei grinzi, al unei fundații continue sau al unei balustrade, ori fiecare ax al unei rețele, ca polilinie, cu **Început** și **Sfârșit**. Al unui perete la baza lui, al unei grinzi la partea ei de sus.
+- **Contur**: conturul închis al unui planșeu, al unei încăperi, al unui acoperiș sau al unei zone de teren (o plantație), la cota lui, și **Colțurile** lui.
+- **Amplasament**: unde stă un stâlp, o fundație izolată, o piesă de mobilier, o ușă sau o fereastră, și **Rotirea** ei în grade. O ușă sau o fereastră e pe axul peretelui ei, la parapet.
+- **Cutia încadratoare**: cutia din jurul corpului oricărui element, așa cum îl construiește Lapin: colțurile cel mai de jos și cel mai de sus, centrul, mărimea pe X și pe Y și înălțimea.
+- **Geometria desenului**: o linie, polilinie, dreptunghi, arc sau cerc desenat cu uneltele de desen, ori liniile unui DXF importat, în model: la cota vederii lui (a unui plan la cota nivelului), arcele și cercurile ca puncte. Dă **Linie**, **Puncte**, **Început**, **Sfârșit** și **Centru** pentru un arc sau un cerc. Selectează formele în plan, apasă **Folosește selecția** pe un nod Elemente alese și leagă-l: o polilinie desenată în **Colțuri**, apoi începuturile și capetele segmentelor într-un **Perete**, face un perete pe fiecare latură; o linie desenată în **Împarte linia**, apoi într-un **Stâlp**, pune stâlpi în punctele de împărțire.
 
 ## Erori
 

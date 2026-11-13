@@ -2,6 +2,7 @@ using System.IO.Compression;
 using System.Text;
 using System.Text.Json.Nodes;
 using Lapin.Architecture;
+using Lapin.Geometry;
 using Lapin.Graphs;
 using Lapin.Host;
 using Lapin.Model;
@@ -44,7 +45,7 @@ public sealed class GraphTests : IDisposable
         ["format"] = 1, ["nodes"] = new JsonArray(nodes.Cast<JsonNode>().ToArray()), ["wires"] = new JsonArray(wires.Cast<JsonNode>().ToArray()),
     };
 
-    static JsonObject Evaluate(Fixture f, JsonObject graph) => f.Session.Query("graphs.evaluate", new JsonObject { ["graph"] = graph })!.AsObject();
+    static JsonObject Evaluate(Fixture f, JsonObject graph) => f.Session.Query("graphs.evaluate", new JsonObject { ["graph"] = graph.DeepClone() })!.AsObject();
 
     static JsonObject NodeOf(JsonObject r, string id) => r["nodes"]![id]!.AsObject();
 
@@ -328,5 +329,383 @@ public sealed class GraphTests : IDisposable
         Assert.Equal(3, f.Model.OfClass(IfcClass.Wall).Count());
         f.Run("element.delete", new JsonObject { ["ids"] = new JsonArray(graph) });
         Assert.Empty(f.Model.OfClass(GraphsModule.Class));
+    }
+
+    // ── the list nodes (decision 527, stage 1 extended) ──
+
+    static string Json(JsonNode? n) => n?.ToJsonString() ?? "null";
+
+    static JsonObject Typed(string id, string items, string kind = "Auto") => N(id, "list", new() { ["items"] = items, ["kind"] = kind });
+
+    [Fact]
+    public void A_list_typed_by_hand_gives_numbers_when_every_item_is_one_else_texts()
+    {
+        var f = Project();
+        var many = string.Join(";", Enumerable.Repeat("1", GraphLimits.MaxItems + 1));
+        var r = Evaluate(f, G([Typed("n", "3; 4,5\n 6;"), Typed("t", "W1; 2"), Typed("forced", "3; 4", "Texts"), Typed("bad", "3; x", "Numbers"),
+            Typed("empty", " ; "), Typed("big", many), Typed("inf", "1; Infinity")]));
+        Assert.Equal("[3,4.5,6]", Json(Out(r, "n", "list")));
+        Assert.Equal("[\"W1\",\"2\"]", Json(Out(r, "t", "list")));
+        Assert.Equal("[\"3\",\"4\"]", Json(Out(r, "forced", "list")));
+        Assert.Equal("„x” is not a number.", (string)NodeOf(r, "bad")["error"]!);
+        Assert.Equal("[]", Json(Out(r, "empty", "list")));
+        Assert.Contains("at most", (string)NodeOf(r, "big")["error"]!);
+        // Only finite numbers: „Infinity” is a text, so the list is of texts.
+        Assert.Equal("[\"1\",\"Infinity\"]", Json(Out(r, "inf", "list")));
+    }
+
+    [Fact]
+    public void Join_lists_puts_them_one_after_the_other_a_single_value_as_one_item_an_empty_input_left_out()
+    {
+        var f = Project();
+        var r = Evaluate(f, G(
+            [Typed("a", "1; 2"), N("five", "number", new() { ["value"] = 5 }), Typed("d", "x"), N("join", "joinLists"), N("none", "joinLists"),
+             N("s1", "series", new() { ["count"] = 6000 }), N("s2", "series", new() { ["count"] = 6000 }), N("big", "joinLists")],
+            W("a", "list", "join", "a"), W("five", "value", "join", "b"), W("d", "list", "join", "d"), W("s1", "list", "big", "a"), W("s2", "list", "big", "b")));
+        Assert.Equal("[1,2,5,\"x\"]", Json(Out(r, "join", "list")));
+        Assert.Equal("[]", Json(Out(r, "none", "list")));
+        Assert.Contains("at most", (string)NodeOf(r, "big")["error"]!);
+    }
+
+    [Fact]
+    public void Sort_orders_numbers_by_size_texts_naturally_and_items_by_another_lists_values()
+    {
+        var f = Project();
+        var r = Evaluate(f, G(
+            [Typed("n", "3; 1; 2"), N("up", "sort"), N("down", "sort", new() { ["descending"] = true }),
+             Typed("t", "W10; w2; W1; Beam"), N("texts", "sort"), Typed("mixed", "2; a; 10"), N("mix", "sort"),
+             Typed("names", "a; b; c"), Typed("heights", "2.8; 3,1; 2.5"), N("by", "sort"), N("byDown", "sort", new() { ["descending"] = true }),
+             Typed("ties", "b; a; c"), Typed("tieKeys", "1; 2; 1"), N("stable", "sort"),
+             Typed("two", "1; 2"), N("short", "sort"),
+             N("nothing", "sort", new() { ["list"] = new JsonArray(3, null, 1) }), N("nothingDown", "sort", new() { ["list"] = new JsonArray(3, null, 1), ["descending"] = true }),
+             N("pts", "grid", new() { ["nx"] = 2, ["ny"] = 1 }), N("points", "sort"), N("empty", "sort")],
+            W("n", "list", "up", "list"), W("n", "list", "down", "list"), W("t", "list", "texts", "list"), W("mixed", "list", "mix", "list"),
+            W("names", "list", "by", "list"), W("heights", "list", "by", "by"), W("names", "list", "byDown", "list"), W("heights", "list", "byDown", "by"),
+            W("ties", "list", "stable", "list"), W("tieKeys", "list", "stable", "by"), W("names", "list", "short", "list"), W("two", "list", "short", "by"),
+            W("pts", "points", "points", "list")));
+        Assert.Equal("[1,2,3]", Json(Out(r, "up", "list")));
+        Assert.Equal("[1,2,0]", Json(Out(r, "up", "order")));
+        Assert.Equal("[3,2,1]", Json(Out(r, "down", "list")));
+        Assert.Equal("[\"Beam\",\"W1\",\"w2\",\"W10\"]", Json(Out(r, "texts", "list")));
+        Assert.Equal("[\"2\",\"10\",\"a\"]", Json(Out(r, "mix", "list")));
+        Assert.Equal("[\"c\",\"a\",\"b\"]", Json(Out(r, "by", "list")));
+        Assert.Equal("[2,0,1]", Json(Out(r, "by", "order")));
+        Assert.Equal("[\"b\",\"a\",\"c\"]", Json(Out(r, "byDown", "list")));
+        // Equal keys keep their order, whichever way.
+        Assert.Equal("[\"b\",\"c\",\"a\"]", Json(Out(r, "stable", "list")));
+        Assert.Equal("By has 2 values for 3 items: one each.", (string)NodeOf(r, "short")["error"]!);
+        // Nothing goes last either way.
+        Assert.Equal("[1,3,null]", Json(Out(r, "nothing", "list")));
+        Assert.Equal("[3,1,null]", Json(Out(r, "nothingDown", "list")));
+        Assert.Contains("cannot be sorted", (string)NodeOf(r, "points")["error"]!);
+        Assert.Equal("[]", Json(Out(r, "empty", "list")));
+        Assert.Equal("[]", Json(Out(r, "empty", "order")));
+    }
+
+    [Fact]
+    public void Sort_puts_elements_in_the_order_of_their_heights()
+    {
+        var f = Project();
+        var tall = f.Wall(0, 0, 5, 0, height: 3.2);
+        var low = f.Wall(0, 2, 5, 2, height: 2.4);
+        var mid = f.Wall(0, 4, 5, 4, height: 2.8);
+        var r = Evaluate(f, G(
+            [N("walls", "ofClass", new() { ["class"] = IfcClass.Wall }), N("h", "property", new() { ["key"] = "height" }), N("sort", "sort")],
+            W("walls", "ids", "h", "id"), W("walls", "ids", "sort", "list"), W("h", "value", "sort", "by")));
+        Assert.Equal([low, mid, tall], Out(r, "sort", "list")!.AsArray().Select(x => (string)x!));
+    }
+
+    [Fact]
+    public void Part_of_a_list_takes_count_items_from_start_a_negative_start_counting_from_the_end()
+    {
+        var f = Project();
+        JsonObject Part(string id, int start, int? count = null)
+        {
+            var v = new JsonObject { ["start"] = start };
+            if (count != null) v["count"] = count;
+            return N(id, "slice", v);
+        }
+        string[] ids = ["mid", "last", "lastTwo", "past", "before", "bad", "all", "empty"];
+        var r = Evaluate(f, G(
+            [N("r", "range", new() { ["start"] = 0, ["end"] = 9 }), Part("mid", 2, 3), Part("last", -3), Part("lastTwo", -3, 2), Part("past", 20),
+             Part("before", -20, 2), Part("bad", 0, -1), Part("all", 0), Part("empty", 1, 2)],
+            [.. ids.Where(i => i != "empty").Select(i => W("r", "list", i, "list"))]));
+        Assert.Equal("[2,3,4]", Json(Out(r, "mid", "list")));
+        Assert.Equal("[7,8,9]", Json(Out(r, "last", "list")));
+        Assert.Equal("[7,8]", Json(Out(r, "lastTwo", "list")));
+        Assert.Equal("[]", Json(Out(r, "past", "list")));
+        Assert.Equal("[0,1]", Json(Out(r, "before", "list")));
+        Assert.Contains("fewer than no items", (string)NodeOf(r, "bad")["error"]!);
+        Assert.Equal(10, Out(r, "all", "list")!.AsArray().Count);
+        Assert.Equal("[]", Json(Out(r, "empty", "list")));
+    }
+
+    [Fact]
+    public void Unique_keeps_each_value_once_in_the_order_first_seen_and_counts_them()
+    {
+        var f = Project();
+        var r = Evaluate(f, G(
+            [N("u", "unique", new() { ["list"] = new JsonArray(1, 1.0000000001, 2, "1", "a", "A", "a", 2, 1.0000001, true, true) }),
+             N("p1", "point", new() { ["x"] = 1, ["y"] = 2 }), N("p2", "point", new() { ["x"] = 1, ["y"] = 2.0000000004 }), N("p3", "point", new() { ["x"] = 3 }),
+             N("pts", "joinLists"), N("up", "unique"), N("empty", "unique")],
+            W("p1", "point", "pts", "a"), W("p2", "point", "pts", "b"), W("p3", "point", "pts", "c"), W("pts", "list", "up", "list")));
+        // Numbers a billionth apart are one; a text „1” is not the number 1; texts keep their case.
+        Assert.Equal("[1,2,\"1\",\"a\",\"A\",1.0000001,true]", Json(Out(r, "u", "list")));
+        Assert.Equal("[2,2,1,2,1,1,2]", Json(Out(r, "u", "times")));
+        Assert.Equal(2, Out(r, "up", "list")!.AsArray().Count);
+        Assert.Equal("[2,1]", Json(Out(r, "up", "times")));
+        Assert.Equal("[]", Json(Out(r, "empty", "list")));
+    }
+
+    [Fact]
+    public void Every_with_every_feeds_the_next_node_every_pair_so_a_command_makes_every_combination()
+    {
+        var f = Project();
+        var g = G(
+            [Typed("xs", "0; 5"), Typed("ys", "0; 3; 6"), N("cross", "cross"), N("a", "point"), N("end", "add", new() { ["b"] = 2 }), N("b", "point"),
+             N("wall", "command:architecture.addWall", new() { ["height"] = 2.8 })],
+            W("xs", "list", "cross", "a"), W("ys", "list", "cross", "b"), W("cross", "a", "a", "x"), W("cross", "b", "a", "y"),
+            W("cross", "a", "end", "a"), W("end", "value", "b", "x"), W("cross", "b", "b", "y"), W("a", "point", "wall", "pt:1"), W("b", "point", "wall", "pt:2"));
+        var r = Evaluate(f, g);
+        Assert.Equal("[0,0,0,5,5,5]", Json(Out(r, "cross", "a")));
+        Assert.Equal("[0,3,6,0,3,6]", Json(Out(r, "cross", "b")));
+        Assert.Equal(6, (double)Out(r, "cross", "count")!);
+        Assert.Equal(6, Out(r, "wall", "ids")!.AsArray().Count);
+
+        f.Run("graphs.bake", new JsonObject { ["graph"] = g.DeepClone() });
+        var starts = f.Model.OfClass(IfcClass.Wall).Select(w => w.Attrs["start"]!.AsArray()).Select(p => ((double)p[0]!, (double)p[1]!)).Order().ToList();
+        Assert.Equal([(0.0, 0.0), (0, 3), (0, 6), (5, 0), (5, 3), (5, 6)], starts);
+
+        r = Evaluate(f, G([N("s1", "series", new() { ["count"] = 101 }), N("s2", "series", new() { ["count"] = 100 }), N("big", "cross"), Typed("e", ""), N("none", "cross")],
+            W("s1", "list", "big", "a"), W("s2", "list", "big", "b"), W("e", "list", "none", "a"), W("s2", "list", "none", "b")));
+        Assert.Equal($"Every with every makes 10100 pairs: at most {GraphLimits.MaxItems}.", (string)NodeOf(r, "big")["error"]!);
+        Assert.Equal("[]", Json(Out(r, "none", "a")));
+        Assert.Equal(0, (double)Out(r, "none", "count")!);
+
+        var kinds = f.Session.Query("graphs.nodes", [])!["nodes"]!.AsArray().Where(n => (string)n!["group"]! == "Lists").Select(n => (string)n!["kind"]!).ToList();
+        foreach (var k in new[] { "list", "joinLists", "sort", "slice", "unique", "cross" }) Assert.Contains(k, kinds);
+    }
+
+    // ── the model's geometry read as references (decision 534) ──
+
+    static Fixture Site()
+    {
+        var f = new Fixture(new ArchitectureModule(), new Lapin.Structure.StructureModule(), new Lapin.Drafting.DraftingModule(), new Lapin.Furniture.FurnitureModule(), new Lapin.Civil.CivilModule(), new GraphsModule());
+        f.Run("storey.create", []);
+        return f;
+    }
+
+    static double[] Pt(JsonNode? n) => n!["$pt"]!.AsArray().Select(x => (double)x!).ToArray();
+    static List<double[]> LineOf(JsonNode? n) => n!["$line"]!.AsArray().Select(p => p!.AsArray().Select(x => (double)x!).ToArray()).ToList();
+    static JsonArray P(params double[][] p) => new(p.Select(x => (JsonNode)new JsonArray(x[0], x[1])).ToArray());
+    static JsonObject Picked(string id, params string[] ids) => N(id, "pick", new() { ["ids"] = new JsonArray(ids.Select(i => (JsonNode)i).ToArray()) });
+    static string Id(JsonNode? r) => (string)r!["id"]!;
+
+    static void Near(double[] want, double[] got) { Assert.Equal(want.Length, got.Length); for (var i = 0; i < want.Length; i++) Assert.Equal(want[i], got[i], 6); }
+
+    [Fact]
+    public void Axis_reads_straight_and_curved_walls_beams_railings_and_grids_and_an_element_without_one_fails_on_its_item()
+    {
+        var f = Site();
+        var wall = f.Wall(0, 0, 6, 0);
+        var curved = Id(f.Run("architecture.addWall", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 10, ["x2"] = 10, ["y2"] = 10, ["x3"] = 5, ["y3"] = 12, ["join"] = false }));
+        var beam = Id(f.Run("structure.addBeam", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 2, ["x2"] = 4, ["y2"] = 2 }));
+        var railing = Id(f.Run("architecture.addRailing", new JsonObject { ["storeyId"] = f.Storey, ["points"] = P([0, 1], [3, 1], [3, 4]) }));
+        f.Run("drafting.addAxis", new JsonObject { ["x1"] = 0, ["y1"] = -2, ["x2"] = 6, ["y2"] = -2, ["tag"] = "A" });
+        f.Run("drafting.addAxis", new JsonObject { ["x1"] = 0, ["y1"] = -2, ["x2"] = 0, ["y2"] = 8, ["tag"] = "1" });
+        var grid = f.Model.OfClass(IfcClass.Grid).Single().Id;
+        var column = Id(f.Run("structure.addColumn", new JsonObject { ["storeyId"] = f.Storey, ["x"] = 1, ["y"] = 1 }));
+        var upper = Id(f.Run("storey.create", new JsonObject { ["name"] = "First floor", ["elevation"] = 3.0 }));
+        var high = Id(f.Run("architecture.addWall", new JsonObject { ["storeyId"] = upper, ["x1"] = 0, ["y1"] = 0, ["x2"] = 4, ["y2"] = 0, ["baseOffset"] = 0.5, ["join"] = false }));
+
+        var r = Evaluate(f, G(
+            [Picked("w", wall), Picked("c", curved), Picked("b", beam), Picked("r", railing), Picked("g", grid), Picked("mixed", wall, column), Picked("h", high),
+             N("aw", "axis"), N("ac", "axis"), N("ab", "axis"), N("ar", "axis"), N("ag", "axis"), N("am", "axis"), N("ah", "axis")],
+            W("w", "ids", "aw", "id"), W("c", "ids", "ac", "id"), W("b", "ids", "ab", "id"), W("r", "ids", "ar", "id"), W("g", "ids", "ag", "id"), W("mixed", "ids", "am", "id"), W("h", "ids", "ah", "id")));
+        var straight = LineOf(Out(r, "aw", "line")![0]);
+        Assert.Equal(2, straight.Count);
+        Near([0, 0, 0], straight[0]);
+        Near([6, 0, 0], straight[1]);
+        Near([6, 0, 0], Pt(Out(r, "aw", "end")![0]));
+
+        // A curved wall: its arc through the chord rule, from end to end, every point on the circle.
+        var arc = LineOf(Out(r, "ac", "line")![0]);
+        Assert.True(arc.Count > 8);
+        Near([0, 10, 0], arc[0]);
+        Near([10, 10, 0], arc[^1]);
+        var (cx, cy, radius) = (5.0, 10 + 2 - (25 + 4) / 4.0, (25 + 4) / 4.0); // rise 2 over a 10 m chord
+        Assert.All(arc, p => Assert.Equal(radius, Math.Sqrt((p[0] - cx) * (p[0] - cx) + (p[1] - cy) * (p[1] - cy)), 5));
+        Assert.Contains(arc, p => Math.Abs(p[1] - 12) < 0.01);
+
+        // A beam at its top, under the level above; a railing's points; a grid's every axis.
+        Near([0, 2, 3], Pt(Out(r, "ab", "start")![0]));
+        Assert.Equal(3, LineOf(Out(r, "ar", "line")![0]).Count);
+        var axes = Out(r, "ag", "line")![0]!.AsArray();
+        Assert.Equal(2, axes.Count);
+        Near([0, 8, 0], Pt(Out(r, "ag", "end")![0]![1]));
+        // A wall on the upper storey, at its base.
+        Near([0, 0, 3.5], Pt(Out(r, "ah", "start")![0]));
+
+        // A column has no axis: that item fails, the wall's is read.
+        Assert.StartsWith("1 of 2 failed:", (string)NodeOf(r, "am")["warning"]!);
+        Assert.Contains("has no axis", (string)NodeOf(r, "am")["warning"]!);
+        Assert.NotNull(Out(r, "am", "line")![0]);
+    }
+
+    [Fact]
+    public void Outline_reads_floors_rooms_roofs_and_site_zones_at_their_level()
+    {
+        var f = Site();
+        var sq = P([0, 0], [6, 0], [6, 4], [0, 4]);
+        var slab = Id(f.Run("architecture.addSlab", new JsonObject { ["storeyId"] = f.Storey, ["points"] = sq.DeepClone(), ["offset"] = -0.1 }));
+        var room = Id(f.Run("architecture.addRoom", new JsonObject { ["storeyId"] = f.Storey, ["points"] = sq.DeepClone() }));
+        var roof = Id(f.Run("architecture.addRoof", new JsonObject { ["storeyId"] = f.Storey, ["points"] = sq.DeepClone() }));
+        var planting = Id(f.Run("civil.addPlanting", new JsonObject { ["storeyId"] = f.Storey, ["points"] = sq.DeepClone() }));
+        var wall = f.Wall(0, 0, 6, 0);
+        var r = Evaluate(f, G([Picked("all", slab, room, roof, planting), N("o", "outline"), Picked("w", wall), N("ow", "outline")],
+            W("all", "ids", "o", "id"), W("w", "ids", "ow", "id")));
+        var lines = Out(r, "o", "line")!.AsArray();
+        Assert.Equal(4, lines.Count);
+        Assert.All(lines, l => { Assert.True((bool)l!["closed"]!); Assert.Equal(4, LineOf(l).Count); });
+        Assert.All(LineOf(lines[0]), p => Assert.Equal(-0.1, p[2], 6));
+        Assert.All(LineOf(lines[1]), p => Assert.Equal(0, p[2], 6));
+        Near([6, 4, 0], Pt(Out(r, "o", "points")![1]![2]));
+        Assert.Contains("has no outline", (string)NodeOf(r, "ow")["error"]!);
+    }
+
+    [Fact]
+    public void Location_reads_columns_footings_furniture_doors_and_windows()
+    {
+        var f = Site();
+        var wall = f.Wall(0, 0, 6, 0);
+        var column = Id(f.Run("structure.addColumn", new JsonObject { ["storeyId"] = f.Storey, ["x"] = 1, ["y"] = 1, ["rotation"] = 30 }));
+        var pad = Id(f.Run("structure.addPadFooting", new JsonObject { ["storeyId"] = f.Storey, ["x"] = 2, ["y"] = 2 }));
+        var chair = Id(f.Run("furniture.place", new JsonObject { ["storeyId"] = f.Storey, ["kind"] = "armchair", ["x"] = 3, ["y"] = 3, ["against"] = false, ["rotation"] = 90 }));
+        var door = Id(f.Run("architecture.addDoor", new JsonObject { ["wallId"] = wall, ["along"] = 2 }));
+        var window = Id(f.Run("architecture.addWindow", new JsonObject { ["wallId"] = wall, ["along"] = 4, ["sill"] = 0.9 }));
+        var r = Evaluate(f, G([Picked("all", column, pad, chair, door, window, wall), N("l", "location")], W("all", "ids", "l", "id")));
+        var pts = Out(r, "l", "point")!.AsArray();
+        var turns = Out(r, "l", "rotation")!.AsArray();
+        Near([1, 1, 0], Pt(pts[0]));
+        Assert.Equal(30, (double)turns[0]!, 6);
+        Near([2, 2, 0], Pt(pts[1]));
+        Near([3, 3, 0], Pt(pts[2]));
+        Assert.Equal(90, (double)turns[2]!, 6);
+        Near([2, 0, 0], Pt(pts[3]));
+        Assert.Equal(0, (double)turns[3]!, 6);
+        Near([4, 0, 0.9], Pt(pts[4]));
+        Assert.Null(pts[5]);
+        Assert.Contains("is not placed at a point", (string)NodeOf(r, "l")["warning"]!);
+    }
+
+    [Fact]
+    public void Bounding_box_measures_any_elements_body_and_a_drafted_shape()
+    {
+        var f = Site();
+        var wall = f.Wall(0, 0, 6, 0, height: 2.5);
+        var plan = Id(f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey }));
+        var circle = (string)f.Run("drafting.draw", new JsonObject { ["viewId"] = plan, ["shape"] = new JsonObject { ["type"] = "circle", ["c"] = new JsonArray(5, 5), ["r"] = 1 } })!["ids"]![0]!;
+        var r = Evaluate(f, G([Picked("p", wall, circle), N("b", "box")], W("p", "ids", "b", "id")));
+        var (lo, hi) = f.Bounds(wall);
+        Near([lo.X, lo.Y, lo.Z], Pt(Out(r, "b", "min")![0]));
+        Near([hi.X, hi.Y, hi.Z], Pt(Out(r, "b", "max")![0]));
+        Assert.Equal(2.5, (double)Out(r, "b", "z")![0]!, 6);
+        Assert.Equal(6, (double)Out(r, "b", "x")![0]!, 3);
+        // A drafted circle by its chords (within a millimetre of the curve).
+        Assert.All(Pt(Out(r, "b", "center")![1]).Zip(new[] { 5.0, 5, 0 }), p => Assert.Equal(p.Second, p.First, 2));
+        Assert.Equal(2, (double)Out(r, "b", "x")![1]!, 2);
+    }
+
+    [Fact]
+    public void Drafting_geometry_reads_lines_polylines_arcs_and_circles_at_their_views_level_and_feeds_the_tools()
+    {
+        var f = Site();
+        var upper = Id(f.Run("storey.create", new JsonObject { ["name"] = "First floor", ["elevation"] = 3.0 }));
+        var plan = Id(f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = upper }));
+        string Draw(JsonObject shape) => (string)f.Run("drafting.draw", new JsonObject { ["viewId"] = plan, ["shape"] = shape })!["ids"]![0]!;
+        var line = Draw(new JsonObject { ["type"] = "line", ["a"] = new JsonArray(0, 0), ["b"] = new JsonArray(8, 0) });
+        var rect = Draw(new JsonObject { ["type"] = "polyline", ["pts"] = P([0, 2], [5, 2], [5, 6], [0, 6]), ["closed"] = true });
+        var arc = Draw(new JsonObject { ["type"] = "arc", ["c"] = new JsonArray(10, 10), ["r"] = 4, ["start"] = 0, ["end"] = Math.PI / 2 });
+        var circle = Draw(new JsonObject { ["type"] = "circle", ["c"] = new JsonArray(-5, 0), ["r"] = 2 });
+        var text = Id(f.Run("drafting.addText", new JsonObject { ["viewId"] = plan, ["text"] = "Note", ["at"] = new JsonArray(1, 1) }));
+        var wall = f.Wall(0, 0, 6, 0);
+
+        var r = Evaluate(f, G([Picked("p", line, rect, arc, circle), N("d", "drafted"), Picked("t", text), N("dt", "drafted"), Picked("w", wall), N("dw", "drafted")],
+            W("p", "ids", "d", "id"), W("t", "ids", "dt", "id"), W("w", "ids", "dw", "id")));
+        var lines = Out(r, "d", "line")!.AsArray();
+        Near([0, 0, 3], LineOf(lines[0])[0]);
+        Near([8, 0, 3], Pt(Out(r, "d", "end")![0]));
+        Assert.Null(Out(r, "d", "center")![0]);
+        // The rectangle closed, its four corners once each; its end is its start.
+        Assert.True((bool)lines[1]!["closed"]!);
+        Assert.Equal(4, LineOf(lines[1]).Count);
+        Near([0, 2, 3], Pt(Out(r, "d", "end")![1]));
+        // The arc through the chord rule, from its start to its end, every point on its circle at the plan's level.
+        var a = LineOf(lines[2]);
+        Assert.Equal(Chords.Count(4, Math.PI / 2, 3) + 1, a.Count);
+        Near([14, 10, 3], a[0]);
+        Near([10, 14, 3], a[^1]);
+        Assert.All(a, p => { Assert.Equal(4, Math.Sqrt((p[0] - 10) * (p[0] - 10) + (p[1] - 10) * (p[1] - 10)), 5); Assert.Equal(3, p[2], 6); });
+        Near([10, 10, 3], Pt(Out(r, "d", "center")![2]));
+        // The circle closed, as many sides as the rule gives.
+        Assert.True((bool)lines[3]!["closed"]!);
+        Assert.Equal(Chords.Circle(2), LineOf(lines[3]).Count);
+        Near([-5, 0, 3], Pt(Out(r, "d", "center")![3]));
+        Assert.Contains("texts, dimensions and tags", (string)NodeOf(r, "dt")["error"]!);
+        Assert.Contains("is not drafted", (string)NodeOf(r, "dw")["error"]!);
+
+        // Walls along the drafted rectangle (its segments), columns at the drafted line's division points.
+        var g = G(
+            [Picked("rect", rect), N("dr", "drafted"), N("corners", "corners"), N("wall", "command:architecture.addWall", new() { ["height"] = 2.8, ["join"] = false }),
+             Picked("ln", line), N("dl", "drafted"), N("div", "divideLine", new() { ["count"] = 4 }), N("xyz", "xyz"), N("col", "command:structure.addColumn")],
+            W("rect", "ids", "dr", "id"), W("dr", "line", "corners", "line"), W("corners", "starts", "wall", "pt:1"), W("corners", "ends", "wall", "pt:2"),
+            W("ln", "ids", "dl", "id"), W("dl", "start", "div", "a"), W("dl", "end", "div", "b"), W("div", "points", "xyz", "point"), W("xyz", "x", "col", "x"), W("xyz", "y", "col", "y"));
+        f.Run("graphs.bake", new JsonObject { ["graph"] = g, ["storey"] = upper });
+        Assert.Equal(5, f.Model.OfClass(IfcClass.Wall).Count());
+        var cols = f.Model.OfClass(IfcClass.Column).Select(c => Lapin.Model.Json.Number(c.Attrs["at"]!.AsArray()[0]) ?? -1).Order().ToList();
+        Assert.Equal([0.0, 2, 4, 6, 8], cols);
+    }
+
+    [Fact]
+    public void What_a_graph_makes_from_an_element_follows_it_when_it_moves()
+    {
+        var f = Site();
+        var wall = f.Wall(0, 0, 6, 0);
+        var g = G([Picked("w", wall), N("axis", "axis"), N("xyz", "xyz"), N("col", "command:structure.addColumn")],
+            W("w", "ids", "axis", "id"), W("axis", "end", "xyz", "point"), W("xyz", "x", "col", "x"), W("xyz", "y", "col", "y"));
+        Near([6, 0, 0], Pt(Out(Evaluate(f, g), "axis", "end")![0]));
+        f.Run("element.transform", new JsonObject { ["ids"] = new JsonArray(wall), ["op"] = "move", ["by"] = new JsonArray(1.0, 2.0) });
+        // The preview reads the wall where it is now.
+        Near([7, 2, 0], Pt(Out(Evaluate(f, g), "axis", "end")![0]));
+        f.Run("graphs.bake", new JsonObject { ["graph"] = g.DeepClone() });
+        var at = f.Model.OfClass(IfcClass.Column).Single().Attrs["at"]!.AsArray();
+        Assert.Equal([7.0, 2.0], at.Select(x => (double)x!));
+    }
+
+    [Fact]
+    public void A_commands_list_argument_takes_the_whole_list_once_and_maps_only_over_a_list_of_lists()
+    {
+        var f = Site();
+        var cols = Enumerable.Range(0, 4).Select(i => Id(f.Run("structure.addColumn", new JsonObject { ["storeyId"] = f.Storey, ["x"] = i * 5.0, ["y"] = 0 }))).ToList();
+        // Filmed: 12 picked columns into Pad footings under columns answered „11 of 12 failed”, mapped column by column. The
+        // node here does not say ids is whole (a graph made by a script): the engine knows the argument is a list.
+        var g = G([Picked("c", [.. cols]), N("pads", "command:structure.padsUnderColumns")], W("c", "ids", "pads", "ids"));
+        var r = Evaluate(f, g);
+        Assert.Null(NodeOf(r, "pads")["error"]);
+        Assert.Null(NodeOf(r, "pads")["warning"]);
+        Assert.Equal(1, (int)r["calls"]!);
+        Assert.Equal(4, Out(r, "pads", "ids")!.AsArray().Count);
+        Assert.True(Evaluator.ListArgument("ids") && Evaluator.ListArgument("storeyIds") && Evaluator.ListArgument("points") && !Evaluator.ListArgument("id"));
+
+        // A list of lists: one run for each list.
+        r = Evaluate(f, G([N("pads", "command:structure.padsUnderColumns", new() { ["ids"] = new JsonArray(new JsonArray(cols[0], cols[1]), new JsonArray(cols[2], cols[3])) })]));
+        Assert.Equal(2, (int)r["calls"]!);
+        Assert.Equal(2, (int)NodeOf(r, "pads")["items"]!);
+        Assert.All(Out(r, "pads", "ids")!.AsArray(), made => Assert.Equal(2, made!.AsArray().Count));
+
+        // Points written as [x, y] are one list of points, not a list of lists to map over: one floor.
+        r = Evaluate(f, G([N("slab", "command:architecture.addSlab", new() { ["points"] = P([20, 0], [26, 0], [26, 4], [20, 4]) })]));
+        Assert.Equal(1, (int)r["calls"]!);
+        Assert.Null(NodeOf(r, "slab")["error"]);
     }
 }

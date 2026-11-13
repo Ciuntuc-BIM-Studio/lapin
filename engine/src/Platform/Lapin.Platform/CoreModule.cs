@@ -292,6 +292,8 @@ public sealed class CoreModule : ILapinModule
         r.Command("element.transform", "Transform", (ctx, a) =>
         {
             var t = ElementTransform.Run(ctx, a);
+            // Walls, beams and strip footings moved or copied join what they now meet, as drawing does (forum 47, decision 531).
+            ElementTransform.JoinWhatMeets(ctx, t);
             var o = new JsonObject { ["ids"] = t.Made };
             // A 3D move's vertical part left out on what has no height of its own (docs/plan-3d-modelling.md).
             if (t.Kept.Count > 0) o["kept"] = new JsonArray(t.Kept.Select(x => (JsonNode)x).ToArray());
@@ -362,6 +364,36 @@ public static class ElementTransform
     {
         /// <summary>What a move's <c>up</c> could not raise (it has no height of its own): the ids moved or copied.</summary>
         public IReadOnlyList<string> Kept { get; init; } = [];
+
+        /// <summary>The elements moved, turned or mirrored (not copied) as a whole, each carried on its own.</summary>
+        public IReadOnlyList<string> Moved { get; init; } = [];
+    }
+
+    /// <summary>
+    /// After a move, a turn, a mirror, a copy or an array (forum 47, decision 531): each path element carried (a wall, a beam,
+    /// a strip footing) joins what it now meets, as one drawn there would (<see cref="Joins.Auto"/>), and a moved one's joins
+    /// with what stayed are worked out again (one that no longer meets goes), as a wall's ends edited are (updateWall). What
+    /// was carried together keeps its joins among them as they were: none is made between two of them. A copy is the user's
+    /// own new element, so a copy of one recognised from a file joins too; one recognised from a file (its <c>imported</c>
+    /// record) moved keeps its joins as the file had them, and joins nothing new (docs/spec-ifc.md, the import reproduces the file).
+    /// </summary>
+    /// <param name="together">More that counts as carried with it (an array's items: none joins another).</param>
+    public static void JoinWhatMeets(ICommandContext ctx, Result r, IReadOnlySet<string>? together = null)
+    {
+        if (ctx.Services.Get<IPathElements>() is not { } paths) return;
+        bool IsPath(string id) => ctx.Model.Get(id) is { } e && paths.IsPath(e.Class) && e.Attrs["start"] is JsonArray && e.Attrs["end"] is JsonArray;
+        // An apartment type's inner walls stop in the building's as its instances say (docs/plan-units.md), not joined here.
+        var units = Components.UnitMembers(ctx.Model).ToHashSet();
+        var moved = r.Moved.Where(id => IsPath(id) && ctx.Model.Get(id)!.Attrs["imported"] == null && !units.Contains(id)).ToList();
+        var copied = r.Copies.Values.Where(id => IsPath(id) && !units.Contains(id)).ToList();
+        if (moved.Count == 0 && copied.Count == 0) return;
+        var with = r.Moved.Concat(r.Copies.Values).Concat(together ?? Enumerable.Empty<string>()).Concat(units).ToHashSet();
+        try { Joins.Refresh(ctx, paths, moved, j => !(with.Contains(j.Relating) && j.Related.All(with.Contains))); }
+        catch (CommandException) { }
+        var thickness = new Dictionary<string, double>();
+        foreach (var id in moved.Concat(copied))
+            try { Joins.Auto(ctx, paths, id, skip: with, thickness: thickness); }
+            catch (CommandException) { }
     }
 
     public static Result Run(ICommandContext ctx, JsonObject a, Placement2D? given = null)
@@ -505,7 +537,7 @@ public static class ElementTransform
         if (!copy) foreach (var g in groups) Components.MovedInstance(ctx, g, inModel ?? t, up + lift);
         if (copy) Pins.Unpinned(ctx, made.Select(x => (string?)x).OfType<string>());
         foreach (var id in driven.Made) made.Add((JsonNode)id);
-        return new Result(made, copies, twins) { Kept = kept };
+        return new Result(made, copies, twins) { Kept = kept, Moved = copy ? [] : entities.Select(e => e.Id).ToList() };
     }
 
     /// <summary>What lies on a view and takes the view's points (a drafted shape, a dimension, a bar drawn on it), not the model's.</summary>

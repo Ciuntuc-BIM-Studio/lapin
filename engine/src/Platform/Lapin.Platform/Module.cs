@@ -514,3 +514,16 @@ public interface IStickAxes
 {
     (Vec3 A, Vec3 B)? StickOf(IModelView model, Entity element);
 }
+
+/// <summary>A drafted shape in the model (world metres): its points, curves in chords (<see cref="Chords"/>), whether it closes, its centre if it has one.</summary>
+public sealed record DraftedRun(IReadOnlyList<Vec3> Points, bool Closed, Vec3? Centre = null);
+
+/// <summary>
+/// The drafted shapes a module draws on views (lines, polylines, rectangles, arcs, circles, a DXF's linework), placed in
+/// the model the way the 3D view places them: on their view's plane (a plan's at its storey's level), a DXF's 3D lines at
+/// their heights. What visual graphs read as drafting geometry (decision 534); null when the element is none of its.
+/// </summary>
+public interface IDraftedGeometry
+{
+    IReadOnlyList<DraftedRun>? RunsOf(IModelView model, IServices services, Entity element);
+}

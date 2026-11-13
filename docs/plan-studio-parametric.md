@@ -138,6 +138,8 @@ Each stage is a commit (or a few) with its tests first, the user guide page in e
 
 Order: P0, C0–C3, P1, P3, X1, P2, X3, X2, X4, P4, C5. About 6–8 weeks to constrained sketches in an edit mode; 20–28 weeks for everything.
 
+**13.11.2026, the user:** STEP and FreeCAD (X1–X4) stay in this plan for later; they are not scheduled. The order now runs P0, C0–C3 (done), P1, P3, P2, P4, C5; X1–X4 wait for the user to ask for them.
+
 ## 7. Risks
 
 1. **Refs under topological edits** (TRIM, JOIN, regions, a step's face lost). The hardest problem. Map by geometry where a shape is split or joined; otherwise drop with a message, never a silent wrong solve.

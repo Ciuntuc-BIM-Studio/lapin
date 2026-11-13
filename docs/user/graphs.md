@@ -17,7 +17,7 @@ Open **View → Graphs**. The panel opens beside the view: drag the line between
 ![A graph making a row of walls: the panel beside the plan, the walls as a ghost](shots/graphs-panel.webp)
 
 - **Above**: the project's graphs, **New graph**, the graph's name (type to rename it), **Delete graph**, the eye that shows or hides the ghost, and **Bake**.
-- **The canvas**: double-click an empty place to add a node: type a few letters (`wall`, `range`, `point`) and press **Enter**. Drag from an output (right side of a node) to an input (left side) to wire them. Drag a node by its title; Shift-click to select more, or drag a box round them; **Delete** takes them out. The wheel zooms, the middle button (or **Space** and drag) moves the canvas.
+- **The canvas**: double-click an empty place to add a node: type a few letters (`wall`, `range`, `point`) and press **Enter**. Drag from an output (right side of a node) to an input (left side) to wire them. Drag a node by its title; Shift-click to select more, or drag a box round them; **Delete** takes them out. The wheel zooms, the middle button (or **Space** and drag) moves the canvas. The graph fits the canvas when it opens and as the panel is resized, until you zoom or move the canvas yourself; the **Fit** button in the canvas's corner (or **F**, or **Home**) fits it again. Numbers are written with a decimal point, as the nodes show them; a decimal comma typed is read too.
 - **The inspector**, on the right: the selected node's inputs that have no wire (type a value), what it gives, and why it failed if it did.
 
 Every change is one undo step: **Ctrl+Z** undoes a node added, moved or wired as it undoes a wall.
@@ -26,9 +26,30 @@ Every change is one undo step: **Ctrl+Z** undoes a node added, moved or wired as
 
 Ports are coloured by what they carry: numbers blue, texts amber, points green, elements purple, lists grey. A wire between kinds that do not meet is refused, with why.
 
-There are no data trees. A **list** wired into an input that takes one value runs the node once for each item: a **Series** of three numbers into a **Point**'s X gives three points, and three points into a **Wall**'s Start give three walls. Several lists run side by side; a shorter list repeats its last item. A wire carrying a list is drawn thicker, with the number of items on it. Some inputs take the whole list instead (**Count**, **Sum**, **Item**, **Polyline**).
+There are no data trees. A **list** wired into an input that takes one value runs the node once for each item: a **Series** of three numbers into a **Point**'s X gives three points, and three points into a **Wall**'s Start give three walls. Several lists run side by side; a shorter list repeats its last item. A wire carrying a list is drawn thicker, with the number of items on it. Some inputs take the whole list instead (**Count**, **Sum**, **Item**, **Polyline**). A tool's list input (the elements a **Pad footings under columns** works on, a floor's points) takes the whole list in one run; a list of lists runs it once for each list.
 
 A tool's node takes the same inputs as its command: a **Wall** has **Start** and **End** points, a height, a storey, a type. Its outputs are **Elements made** and **Result** (what the command answered).
+
+## List nodes
+
+Besides **Range**, **Series**, **Count**, **Item**, **Reverse**, **Flatten**, **Sum**, **Smallest and largest** and **Filter**, the **Lists** group has:
+
+- **List**: a list you type, its items between semicolons or each on a line of its own: `3; 4,5; 6`. A decimal comma or point is fine. **Kind** **Auto** gives numbers when every item is a number, else texts; **Numbers** says which item is not one; **Texts** keeps everything as text.
+- **Join lists**: the lists wired into A, B, C and D one after the other. A single value counts as a list of one, so it also gathers a few values into a list; an input left empty is left out.
+- **Sort**: numbers by size, texts alphabetically, with the numbers in them by size (W2 before W10, capitals or not). Wire another list into **By** to sort by its values, place for place: the walls of a class by their height (**Property** `height` into By). **Descending** turns it round. Equal values keep their order; an empty item goes last. **Order** says where each item was, from 0.
+- **Part of a list**: **Count** items from **Start** (from 0). A negative start counts from the end; no count takes everything to the end. The first three: start 0, count 3; the last three: start -3.
+- **Unique**: each value once, in the order first seen, and **How many** times each was there. Numbers a billionth apart or less are the same, points too; texts are compared as written (capitals count), and the number 1 is not the text „1”.
+- **Every with every**: every pair of an item of A and an item of B. Its outputs A and B are as long as the pairs (A's items each repeated, B's over and over), so the next node, fed both, runs once for every pair: a **List** of X values and one of Y values into Every with every, then into a **Point**, give a point at every crossing. At most 10,000 pairs.
+
+## Reading the model
+
+The **Model** group reads the elements you pick (**Elements picked** and **Use the selection**, or **Elements of a class**) as references. Each node takes one element or a list of them; an element of the wrong kind fails on its own item and says why, the others are read. The model is read as it is now: move a wall and the preview of what the graph makes from it moves too. Curves come as points by the same rule as every curve in Lapin (no chord more than a millimetre off).
+
+- **Axis**: the axis of a wall (a curved one too), a beam, a strip footing or a railing, or every axis of a grid, as a polyline, with its **Start** and **End**. A wall's at its base, a beam's at its top.
+- **Outline**: the closed outline of a floor, a room, a roof or a site zone (a planting), at its level, and its **Corners**.
+- **Location**: where a column, a pad footing, a piece of furniture, a door or a window stands, and its **Rotation** in degrees. A door or a window is on its wall's axis, at its sill.
+- **Bounding box**: the box round any element's body as Lapin builds it: its lowest and highest corners, its centre, its size along X and Y and its height.
+- **Drafting geometry**: a line, polyline, rectangle, arc or circle drawn with the drafting tools, or the linework of an imported DXF, in the model: on its view's level (a plan's at its storey's level), arcs and circles as points. It gives the **Line**, its **Points**, **Start**, **End** and the **Centre** of an arc or a circle. Select the shapes in the plan, press **Use the selection** on an Elements picked node, and wire it in: a drafted polyline into **Corners**, then its segment starts and ends into a **Wall**, makes a wall along each side; a drafted line into **Divide line**, then into a **Column**, makes columns at its division points.
 
 ## Errors
 

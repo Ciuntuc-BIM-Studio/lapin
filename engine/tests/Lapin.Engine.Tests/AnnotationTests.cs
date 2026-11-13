@@ -444,6 +444,33 @@ public class AnnotationTests
     }
 
     [Fact]
+    public void Axes_line_up_to_the_one_named_and_it_stays_as_it_is()
+    {
+        // Forum 47, decision 531: alignAxes {to} takes that axis's start and end lines, not the family's envelope.
+        var f = F();
+        var g = (string)f.Run("drafting.addAxis", new JsonObject { ["x1"] = 0, ["y1"] = -1, ["x2"] = 0, ["y2"] = 10, ["tag"] = "1" })!["gridId"]!;
+        f.Run("drafting.addAxis", new JsonObject { ["x1"] = 5, ["y1"] = 2, ["x2"] = 5, ["y2"] = 6, ["tag"] = "2" });
+        f.Run("drafting.addAxis", new JsonObject { ["x1"] = 9, ["y1"] = 12, ["x2"] = 9, ["y2"] = 3, ["tag"] = "3" });
+        f.Run("drafting.addAxis", new JsonObject { ["x1"] = -2, ["y1"] = 3, ["x2"] = 11, ["y2"] = 3, ["tag"] = "A" });
+        var r = f.Run("drafting.alignAxes", new JsonObject { ["gridId"] = g, ["to"] = "2" });
+        Assert.Equal(2, (int)r!["aligned"]!);
+        var axes = Grids.Axes(f.Model.Get(g)!).ToDictionary(a => a.Tag);
+        Assert.Equal((2.0, 6.0), (axes["1"].A.Y, axes["1"].B.Y));
+        Assert.Equal((5.0, 2.0, 5.0, 6.0), (axes["2"].A.X, axes["2"].A.Y, axes["2"].B.X, axes["2"].B.Y));
+        // Drawn downwards: it keeps its direction.
+        Assert.Equal((6.0, 2.0), (axes["3"].A.Y, axes["3"].B.Y));
+        Assert.Equal((-2.0, 11.0), (axes["A"].A.X, axes["A"].B.X));
+        // By its id too (the grid's id, #, the tag), and only those named with it.
+        f.Run("drafting.updateAxis", new JsonObject { ["gridId"] = g, ["tag"] = "1", ["y1"] = 0, ["y2"] = 20 });
+        f.Run("drafting.updateAxis", new JsonObject { ["gridId"] = g, ["tag"] = "3", ["y1"] = 30 });
+        f.Run("drafting.alignAxes", new JsonObject { ["gridId"] = g, ["to"] = $"{g}#1", ["tags"] = new JsonArray("1", "2") });
+        axes = Grids.Axes(f.Model.Get(g)!).ToDictionary(a => a.Tag);
+        Assert.Equal((0.0, 20.0), (axes["2"].A.Y, axes["2"].B.Y));
+        Assert.Equal(30.0, axes["3"].A.Y);
+        Assert.Throws<CommandException>(() => f.Run("drafting.alignAxes", new JsonObject { ["gridId"] = g, ["to"] = "Z" }));
+    }
+
+    [Fact]
     public void A_tag_reads_its_element_follows_it_and_goes_red_when_it_is_gone()
     {
         var f = F();
