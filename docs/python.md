@@ -51,6 +51,7 @@ The engine is found as the MCP bridge finds it (docs/mcp.md):
 | `lapin.selection()` | What the window has selected now, as elements (the desktop app with the scripting module). |
 | `lapin.selected()` | The same, each with its GlobalId, IFC class, name, storey, assembly path and box. |
 | `lapin.measure(name, query=… \| expr=…, id=…)`, `lapin.measure_value(name)` | A named measure the engine keeps and tells again (`measure` event) when what it reads changes. |
+| `lapin.watch(ids, measures)`, `lapin.watch(ids, script="truss.py")`, `lapin.unwatch(…)` | The `watch` event when another's change touches them; or a project script Lapin runs again (trusted only). |
 | `lapin.create_body(ifc_class, body, storey=…, global_id=…, owner=…)`, `lapin.set_body(id, body)` | An element whose body the script computes (`element.createBody`, `element.setBody`; below, *External geometry and live scripts*). |
 | `lapin.on("diff", f)` | `f(diff)` for every change the engine sends (an edit, an undo, the window's own); returns what removes it. |
 | `lapin.model` | The model's entities (below). |

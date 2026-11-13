@@ -479,6 +479,29 @@ class Lapin:
     def remove_measure(self, name: str) -> bool:
         return bool((self.call("measure.remove", {"name": name}) or {}).get("removed"))
 
+    def watch(self, ids: Any = None, measures: Any = None, *, script: str | None = None) -> Any:
+        """Be told when elements or measures change (``script.watch``; docs/plan-external-geometry.md, L3).
+
+        Without ``script``: this connection's watch; after another connection's change (the user's, an undo) that touches
+        one of ``ids`` (an attribute, or its body rebuilt) or changes one of ``measures`` (names this connection defined,
+        or built-ins), the ``watch`` event comes ``{watch, ids, measures}`` (``on("watch", f)``); this connection's own
+        edits never fire it. Returns ``{watch, ids, measures}``; ``unwatch(r.watch)`` ends it.
+
+        With ``script`` (a project script's name or id): kept in the project (one undo step); Lapin runs that script
+        again, trusted only, as its own undo step "<script> regenerated"."""
+        p: dict[str, Any] = {}
+        if ids is not None:
+            p["ids"] = [ids] if isinstance(ids, (str, Element)) else list(ids)
+        if measures is not None:
+            p["measures"] = [measures] if isinstance(measures, str) else list(measures)
+        if script is not None:
+            p["script"] = script
+        return self.call("script.watch", p)
+
+    def unwatch(self, watch: str | None = None, *, script: str | None = None) -> Any:
+        """A watch ended: this connection's by its id, or a project script's (``script``)."""
+        return self.call("script.unwatch", {"script": script} if script is not None else {"watch": watch})
+
     def on(self, event: str, handler: Callable[[Any], Any]) -> Callable[[], None]:
         """``handler(data)`` for each ``event`` the engine sends ("diff", "progress", "presence", "delivery", "selection", "measure", "watch"); "*" gets
         ``handler(name, data)`` for all. Handlers run one at a time on a thread of their own. Returns what removes it."""

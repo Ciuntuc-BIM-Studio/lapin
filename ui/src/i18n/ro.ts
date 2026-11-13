@@ -24,6 +24,8 @@ export const RO: Record<string, string> = {
   "Change graph inputs": "Schimbă intrările grafului",
   "A type": "Un tip",
   "A type of the project (a wall type, a slab type…) for a tool's Type; none chosen: the first of its class by name.": "Un tip al proiectului (un tip de perete, un tip de placă…) pentru Tipul unei unelte; niciunul ales: primul din clasa lui, după nume.",
+  // Decision 539: a project script run again when what it watches changes (docs/plan-external-geometry.md, L3)
+  "Watch for script": "Urmărire pentru script",
   // Decision 537: bodies made by a script (docs/plan-external-geometry.md, L1)
   "Made by a script:": "Făcut de un script:",
   "Its shape is changed in the script; here it moves, turns, copies and is cut like any element.": "Forma lui se schimbă în script; aici se mută, se rotește, se copiază și se secționează ca orice element.",
@@ -3365,6 +3367,9 @@ export const RO: Record<string, string> = {
 
 /** Phrases with a number or a name in them. */
 export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
+  [/^„(.+)” was not run again: it is not trusted on this computer\. Run it once from the Script panel and choose Trust\.$/, (m) => `„${m[1]}” nu a fost rulat din nou: nu are încredere pe acest calculator. Rulează-l o dată din panoul Script și alege Trust.`],
+  [/^„(.+)” was not run again: another script kept running\.$/, (m) => `„${m[1]}” nu a fost rulat din nou: alt script a rulat în continuare.`],
+  [/^„(.+)” took more than (\d+) s to run again: it was stopped, and nothing it did is kept\.$/, (m) => `„${m[1]}” a avut nevoie de mai mult de ${m[2]} s ca să ruleze din nou: a fost oprit, și nimic din ce a făcut nu se păstrează.`],
   [/^(\d+) added, (\d+) updated, (\d+) the same, (\d+) skipped\.$/, (m) => `${m[1]} adăugate, ${m[2]} actualizate, ${m[3]} la fel, ${m[4]} omise.`],
   [/^(\d+) line types added, (\d+) updated, (\d+) skipped\.$/, (m) => `${m[1]} tipuri de linie adăugate, ${m[2]} actualizate, ${m[3]} omise.`],
   [/^(\d+) parameters added, (\d+) updated\.$/, (m) => `${m[1]} parametri adăugați, ${m[2]} actualizați.`],

@@ -26,6 +26,8 @@ export const ES: Record<string, string> = {
   "Change graph inputs": "Cambiar las entradas del grafo",
   "A type": "Un tipo",
   "A type of the project (a wall type, a slab type…) for a tool's Type; none chosen: the first of its class by name.": "Un tipo del proyecto (un tipo de muro, un tipo de losa…) para el Tipo de una herramienta; sin elegir: el primero de su clase por nombre.",
+  // Decision 539: a project script run again when what it watches changes (docs/plan-external-geometry.md, L3)
+  "Watch for script": "Vigilancia para el script",
   // Decision 537: bodies made by a script (docs/plan-external-geometry.md, L1)
   "Made by a script:": "Creado por un script:",
   "Its shape is changed in the script; here it moves, turns, copies and is cut like any element.": "Su forma se cambia en el script; aquí se mueve, gira, copia y corta como cualquier elemento.",
@@ -3367,6 +3369,9 @@ const n = (count: string, one: string, many: string) => `${count} ${count === '1
 
 /** Phrases with a number or a name in them. */
 export const ES_PATTERNS: Language['patterns'] = [
+  [/^„(.+)” was not run again: it is not trusted on this computer\. Run it once from the Script panel and choose Trust\.$/, (m) => `«${m[1]}» no se volvió a ejecutar: no es de confianza en este ordenador. Ejecútelo una vez desde el panel Script y elija Confiar.`],
+  [/^„(.+)” was not run again: another script kept running\.$/, (m) => `«${m[1]}» no se volvió a ejecutar: otro script seguía en ejecución.`],
+  [/^„(.+)” took more than (\d+) s to run again: it was stopped, and nothing it did is kept\.$/, (m) => `«${m[1]}» tardó más de ${m[2]} s en volver a ejecutarse: se detuvo y no se conserva nada de lo que hizo.`],
   [/^(\d+) added, (\d+) updated, (\d+) the same, (\d+) skipped\.$/, (m) => `${m[1]} añadidos, ${m[2]} actualizados, ${m[3]} iguales, ${m[4]} omitidos.`],
   [/^(\d+) line types added, (\d+) updated, (\d+) skipped\.$/, (m) => `${m[1]} tipos de línea añadidos, ${m[2]} actualizados, ${m[3]} omitidos.`],
   [/^(\d+) parameters added, (\d+) updated\.$/, (m) => `${m[1]} parámetros añadidos, ${m[2]} actualizados.`],

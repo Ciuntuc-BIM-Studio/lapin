@@ -26,6 +26,8 @@ export const LO: Record<string, string> = {
   "Change graph inputs": "ປ່ຽນຂໍ້ມູນປ້ອນຂອງກຣາບ",
   "A type": "ປະເພດໜຶ່ງ",
   "A type of the project (a wall type, a slab type…) for a tool's Type; none chosen: the first of its class by name.": "ປະເພດໜຶ່ງຂອງໂຄງການ (ປະເພດຝາ, ປະເພດພື້ນ…) ສຳລັບປະເພດຂອງເຄື່ອງມື; ບໍ່ໄດ້ເລືອກ: ອັນທຳອິດຂອງຊັ້ນຂອງມັນຕາມຊື່.",
+  // Decision 539: a project script run again when what it watches changes (docs/plan-external-geometry.md, L3)
+  "Watch for script": "ການຕິດຕາມສຳລັບສະຄຣິບ",
   // Decision 537: bodies made by a script (docs/plan-external-geometry.md, L1)
   "Made by a script:": "ສ້າງໂດຍສະຄຣິບ:",
   "Its shape is changed in the script; here it moves, turns, copies and is cut like any element.": "ຮູບຮ່າງຂອງມັນປ່ຽນໃນສະຄຣິບ; ຢູ່ນີ້ມັນຍ້າຍ, ໝູນ, ສຳເນົາ ແລະ ຖືກຕັດຄືກັບອົງປະກອບອື່ນ.",
@@ -3419,6 +3421,9 @@ export const LO: Record<string, string> = {
 
 /** Phrases with a number or a name in them. */
 export const LO_PATTERNS: Language['patterns'] = [
+  [/^„(.+)” was not run again: it is not trusted on this computer\. Run it once from the Script panel and choose Trust\.$/, (m) => `„${m[1]}” ບໍ່ໄດ້ຖືກແລ່ນອີກ: ມັນບໍ່ໄດ້ຮັບຄວາມໄວ້ວາງໃຈໃນຄອມພິວເຕີນີ້. ແລ່ນມັນເທື່ອໜຶ່ງຈາກແຜງ Script ແລະ ເລືອກ ໄວ້ວາງໃຈ.`],
+  [/^„(.+)” was not run again: another script kept running\.$/, (m) => `„${m[1]}” ບໍ່ໄດ້ຖືກແລ່ນອີກ: ສະຄຣິບອື່ນຍັງແລ່ນຢູ່.`],
+  [/^„(.+)” took more than (\d+) s to run again: it was stopped, and nothing it did is kept\.$/, (m) => `„${m[1]}” ໃຊ້ເວລາຫຼາຍກວ່າ ${m[2]} ວິນາທີ ເພື່ອແລ່ນອີກ: ມັນຖືກຢຸດ, ແລະ ບໍ່ມີສິ່ງໃດທີ່ມັນເຮັດຖືກເກັບໄວ້.`],
   [/^(\d+) added, (\d+) updated, (\d+) the same, (\d+) skipped\.$/, (m) => `ເພີ່ມ ${m[1]}, ອັບເດດ ${m[2]}, ຄືກັນ ${m[3]}, ຂ້າມ ${m[4]}.`],
   [/^(\d+) line types added, (\d+) updated, (\d+) skipped\.$/, (m) => `ເພີ່ມ ${m[1]} ປະເພດເສັ້ນ, ອັບເດດ ${m[2]}, ຂ້າມ ${m[3]}.`],
   [/^(\d+) parameters added, (\d+) updated\.$/, (m) => `ເພີ່ມ ${m[1]} ພາຣາມິເຕີ, ອັບເດດ ${m[2]}.`],

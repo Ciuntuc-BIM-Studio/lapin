@@ -26,6 +26,8 @@ export const PL: Record<string, string> = {
   "Change graph inputs": "Zmień dane wejściowe grafu",
   "A type": "Typ",
   "A type of the project (a wall type, a slab type…) for a tool's Type; none chosen: the first of its class by name.": "Typ projektu (typ ściany, typ stropu…) dla Typu narzędzia; żaden nie wybrany: pierwszy z jego klasy według nazwy.",
+  // Decision 539: a project script run again when what it watches changes (docs/plan-external-geometry.md, L3)
+  "Watch for script": "Obserwacja dla skryptu",
   // Decision 537: bodies made by a script (docs/plan-external-geometry.md, L1)
   "Made by a script:": "Utworzone przez skrypt:",
   "Its shape is changed in the script; here it moves, turns, copies and is cut like any element.": "Jego kształt zmienia się w skrypcie; tutaj przesuwa się, obraca, kopiuje i przecina jak każdy element.",
@@ -3373,6 +3375,9 @@ const n = (count: string, one: string, few: string, many: string) => `${count} $
 
 /** Phrases with a number or a name in them. */
 export const PL_PATTERNS: Language['patterns'] = [
+  [/^„(.+)” was not run again: it is not trusted on this computer\. Run it once from the Script panel and choose Trust\.$/, (m) => `„${m[1]}” nie został uruchomiony ponownie: nie jest zaufany na tym komputerze. Uruchom go raz z panelu Skrypt i wybierz Ufaj.`],
+  [/^„(.+)” was not run again: another script kept running\.$/, (m) => `„${m[1]}” nie został uruchomiony ponownie: inny skrypt wciąż działał.`],
+  [/^„(.+)” took more than (\d+) s to run again: it was stopped, and nothing it did is kept\.$/, (m) => `„${m[1]}” potrzebował ponad ${m[2]} s na ponowne uruchomienie: został zatrzymany i nic z tego, co zrobił, nie zostaje.`],
   [/^(\d+) added, (\d+) updated, (\d+) the same, (\d+) skipped\.$/, (m) => `Dodano ${m[1]}, zaktualizowano ${m[2]}, takich samych ${m[3]}, pominięto ${m[4]}.`],
   [/^(\d+) line types added, (\d+) updated, (\d+) skipped\.$/, (m) => `Dodano ${m[1]} typów linii, zaktualizowano ${m[2]}, pominięto ${m[3]}.`],
   [/^(\d+) parameters added, (\d+) updated\.$/, (m) => `Dodano ${m[1]} parametrów, zaktualizowano ${m[2]}.`],

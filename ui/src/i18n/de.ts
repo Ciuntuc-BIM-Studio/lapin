@@ -26,6 +26,8 @@ export const DE: Record<string, string> = {
   "Change graph inputs": "Eingaben des Graphen ändern",
   "A type": "Ein Typ",
   "A type of the project (a wall type, a slab type…) for a tool's Type; none chosen: the first of its class by name.": "Ein Typ des Projekts (ein Wandtyp, ein Deckentyp…) für den Typ eines Werkzeugs; keiner gewählt: der erste seiner Klasse nach Namen.",
+  // Decision 539: a project script run again when what it watches changes (docs/plan-external-geometry.md, L3)
+  "Watch for script": "Beobachtung für Skript",
   // Decision 537: bodies made by a script (docs/plan-external-geometry.md, L1)
   "Made by a script:": "Von einem Skript erstellt:",
   "Its shape is changed in the script; here it moves, turns, copies and is cut like any element.": "Seine Form wird im Skript geändert; hier wird es wie jedes Element verschoben, gedreht, kopiert und geschnitten.",
@@ -3367,6 +3369,9 @@ const n = (count: string, one: string, many: string) => `${count} ${count === '1
 
 /** Phrases with a number or a name in them. */
 export const DE_PATTERNS: Language['patterns'] = [
+  [/^„(.+)” was not run again: it is not trusted on this computer\. Run it once from the Script panel and choose Trust\.$/, (m) => `„${m[1]}“ wurde nicht erneut ausgeführt: Es ist auf diesem Computer nicht vertrauenswürdig. Führen Sie es einmal im Skript-Bereich aus und wählen Sie Vertrauen.`],
+  [/^„(.+)” was not run again: another script kept running\.$/, (m) => `„${m[1]}“ wurde nicht erneut ausgeführt: Ein anderes Skript lief weiter.`],
+  [/^„(.+)” took more than (\d+) s to run again: it was stopped, and nothing it did is kept\.$/, (m) => `„${m[1]}“ brauchte für die erneute Ausführung mehr als ${m[2]} s: Es wurde gestoppt, und nichts davon wird behalten.`],
   [/^(\d+) added, (\d+) updated, (\d+) the same, (\d+) skipped\.$/, (m) => `${m[1]} hinzugefügt, ${m[2]} aktualisiert, ${m[3]} gleich, ${m[4]} übersprungen.`],
   [/^(\d+) line types added, (\d+) updated, (\d+) skipped\.$/, (m) => `${m[1]} Linientypen hinzugefügt, ${m[2]} aktualisiert, ${m[3]} übersprungen.`],
   [/^(\d+) parameters added, (\d+) updated\.$/, (m) => `${m[1]} Parameter hinzugefügt, ${m[2]} aktualisiert.`],

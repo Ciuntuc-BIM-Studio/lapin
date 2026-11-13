@@ -87,6 +87,54 @@ class LiveTests(unittest.TestCase):
         self.assertTrue(self.lapin.remove_measure("half"))
 
 
+    def test_a_watch_is_told_of_another_connections_change(self):
+        wall = self.lapin.architecture.add_wall(storey_id=self.storey, x1=0, y1=0, x2=5, y2=0, height=3).id
+        w = self.lapin.watch(wall, f"wall.{wall}.top")
+        got: list = []
+        told = threading.Event()
+        off = self.lapin.on("watch", lambda d: (got.append(d), told.set()))
+        self.lapin.element.update(id=wall, attrs={"height": 3.2})   # its own change: nothing
+        with Lapin(self.engine.port) as other:
+            other.element.update(id=wall, attrs={"height": 3.4})
+            self.assertTrue(told.wait(5))
+        off()
+        self.assertEqual(len(got), 1)
+        self.assertEqual(got[0]["watch"], w.watch)
+        self.assertEqual(got[0]["ids"], [wall])
+        self.lapin.unwatch(w.watch)
+
+    def test_a_trusted_project_script_runs_again_as_its_own_undo_step(self):
+        import hashlib
+        import time
+
+        wall = self.lapin.architecture.add_wall(storey_id=self.storey, x1=0, y1=0, x2=5, y2=0, height=3).id
+        code = (
+            "import lapinbim as lapin\n"
+            f"w = lapin.model[{wall!r}]\n"
+            "lapin.element.rename(id=w.id, name=f'h={w.height:.1f}')\n"
+        )
+        self.lapin.scripting.save(name="regen.py", code=code)
+        status = self.lapin.call("script.status", {"refresh": True})
+        if not status.get("ok"):
+            self.skipTest(f"No Python for the Script panel: {status.get('message')}")
+        self.lapin.call("script.trust", {"sha256": hashlib.sha256(code.encode()).hexdigest()})
+        self.lapin.watch(wall, script="regen.py")
+        with Lapin(self.engine.port) as other:
+            other.element.update(id=wall, attrs={"height": 4})
+        deadline = time.time() + 30
+        while time.time() < deadline and self.lapin.model[wall].name != "h=4.0":
+            time.sleep(0.2)
+        self.assertEqual(self.lapin.model[wall].name, "h=4.0")
+        self.assertEqual(self.lapin.state().undo_label, "regen regenerated")
+        # Its own change set nothing off again: still one regeneration, the step before it the user's.
+        time.sleep(1)
+        self.assertEqual(self.lapin.state().undo_label, "regen regenerated")
+        self.lapin.undo()
+        self.assertAlmostEqual(self.lapin.model[wall].height, 4.0)
+        self.assertNotEqual(self.lapin.model[wall].name, "h=4.0")
+        self.lapin.unwatch(script="regen.py")
+
+
 class GlobalIdTests(unittest.TestCase):
     def test_ids_are_ifcs_and_stable(self):
         self.assertEqual(compress(uuid.UUID(int=0)), "0" * 22)

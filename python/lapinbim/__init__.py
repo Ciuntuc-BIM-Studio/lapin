@@ -30,7 +30,7 @@ __all__ = [
     "__version__", "Lapin", "LapinError", "Batch", "Deferred", "Step", "Element", "Model", "Obj",
     "connect", "client", "close", "call", "execute", "query", "undo", "redo", "save", "info", "quantities",
     "snapshot", "state", "batch", "step", "selection", "on", "catalogue", "ns", "command", "ui", "UI",
-    "create_body", "set_body", "global_id", "selected", "measure", "measure_value", "remove_measure",
+    "create_body", "set_body", "global_id", "selected", "measure", "measure_value", "remove_measure", "watch", "unwatch",
 ]
 
 _default: Lapin | None = None
@@ -142,6 +142,15 @@ def measure_value(name: str) -> Any:
 
 def remove_measure(name: str) -> bool:
     return client().remove_measure(name)
+
+
+def watch(ids: Any = None, measures: Any = None, *, script: str | None = None) -> Any:
+    """Be told (the ``watch`` event) when elements or measures change; a project script's watch with ``script``."""
+    return client().watch(ids, measures, script=script)
+
+
+def unwatch(watch: str | None = None, *, script: str | None = None) -> Any:
+    return client().unwatch(watch, script=script)
 
 
 def on(event: str, handler: Callable[..., Any]) -> Callable[[], None]:

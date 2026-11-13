@@ -365,11 +365,21 @@ public sealed class EngineHub
                     if (id != null) _ = ReplyWhenAnswered(client, id, answer);
                     return null;
                 }
-                // External programs (docs/plan-external-geometry.md, L2): measures of the connection's own. Never a guest's.
-                case "measure.define" or "measure.get" or "measure.remove" or "measure.list":
+                // External programs (docs/plan-external-geometry.md, L2–L3): measures and watches of the connection's own, a project
+                // script's watch kept in the project (scripting.watch, one undo step). Never a guest's.
+                case "measure.define" or "measure.get" or "measure.remove" or "measure.list" or "script.watch" or "script.unwatch":
                 {
                     if (caller.Remote) throw new CommandException("Only the host can do that.");
                     if (client == null) throw new CommandException("Measures and watches are a connection's.");
+                    if (method is "script.watch" or "script.unwatch" && p["script"] is JsonValue sv && sv.TryGetValue<string>(out var script))
+                    {
+                        // A project script's watch is the project's: the command, one undo step, answered as this call.
+                        var args = new JsonObject { ["name"] = script };
+                        if (_session.Model.Get(script) is { Class: LiveLinks.ScriptClass }) args = new JsonObject { ["id"] = script };
+                        if (method == "script.watch") { args["ids"] = p["ids"]?.DeepClone(); args["measures"] = p["measures"]?.DeepClone(); }
+                        var call = new JsonObject { ["id"] = id?.DeepClone(), ["method"] = "doc.execute", ["params"] = new JsonObject { ["command"] = "scripting.watch", ["args"] = args } };
+                        return await Handle(call.ToJsonString(), client);
+                    }
                     await _gate.WaitAsync();
                     try
                     {
@@ -378,7 +388,9 @@ public sealed class EngineHub
                             "measure.define" => Live.Define(client, p),
                             "measure.get" => Live.Get(client, (string?)p["name"]),
                             "measure.remove" => Live.Remove(client, (string?)p["name"]),
-                            _ => Live.List(client),
+                            "measure.list" => Live.List(client),
+                            "script.watch" => Live.AddWatch(client, p),
+                            _ => Live.Unwatch(client, (string?)p["watch"]),
                         };
                     }
                     finally { _gate.Release(); }
@@ -422,16 +434,87 @@ public sealed class EngineHub
 
     // ------------------------------------------------------------ external programs (docs/plan-external-geometry.md, L2–L3)
 
-    /// <summary>After a change (under the gate): measures told to their connections.</summary>
+    /// <summary>How long after the last change a project script watching it is run again (several quick edits run it once).</summary>
+    public static TimeSpan RegenerateAfter { get; set; } = TimeSpan.FromMilliseconds(300);
+    /// <summary>How long a script run again may take before it is stopped (and what it did taken back).</summary>
+    public static TimeSpan RegenerateTimeout { get; set; } = TimeSpan.FromSeconds(60);
+
+    readonly Dictionary<string, CancellationTokenSource> _regenerating = [];
+
+    /// <summary>After a change (under the gate): measures and watches told to their connections, project scripts it hit run again.</summary>
     void AfterChange(Diff diff, Client? author, bool byScript)
     {
         List<LiveLinks.Note> notes;
-        try { (notes, _) = Live.Changed(diff, author, byScript); }
+        List<string> scripts;
+        try { (notes, scripts) = Live.Changed(diff, author, byScript); }
         catch (Exception ex) { Console.Error.WriteLine($"[engine] Measures after a change: {ex}"); return; }
         var clients = Clients();
         foreach (var n in notes)
             if (n.Owner is Client c && clients.Contains(c)) c.Post(new JsonObject { ["event"] = n.Event, ["data"] = n.Data }.ToJsonString());
+        if (Scripts.Enabled) foreach (var s in scripts) Regenerate(s);
     }
+
+    /// <summary>A project script run again soon (<see cref="RegenerateAfter"/>), a run already waiting for it put off.</summary>
+    void Regenerate(string scriptId)
+    {
+        var cts = new CancellationTokenSource();
+        lock (_regenerating)
+        {
+            if (_regenerating.Remove(scriptId, out var before)) before.Cancel();
+            _regenerating[scriptId] = cts;
+        }
+        _ = RegenerateSoon(scriptId, cts);
+    }
+
+    async Task RegenerateSoon(string scriptId, CancellationTokenSource cts)
+    {
+        try { await Task.Delay(RegenerateAfter, cts.Token); }
+        catch (TaskCanceledException) { return; }
+        lock (_regenerating) if (_regenerating.TryGetValue(scriptId, out var mine) && mine == cts) _regenerating.Remove(scriptId);
+        for (var tries = 0; ; tries++)
+        {
+            string? code, name;
+            await _gate.WaitAsync();
+            try
+            {
+                if (_session.Model.Get(scriptId) is not { Class: LiveLinks.ScriptClass } s) return;
+                (code, name) = (s.Str("code") ?? "", s.Name);
+            }
+            finally { _gate.Release(); }
+            var stem = name.EndsWith(".py", StringComparison.OrdinalIgnoreCase) ? name[..^3] : name;
+            // Never an untrusted project's code (decision 489, §7): the user runs it once from the Script panel and trusts it.
+            if (!Scripts.IsTrusted(Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(code)))))
+            {
+                await ScriptNote("err", $"„{name}” was not run again: it is not trusted on this computer. Run it once from the Script panel and choose Trust.");
+                return;
+            }
+            // A run going on (the user's, or another script's) first: tried again each second, a minute at most.
+            if (Scripts.RunningId != null)
+            {
+                if (tries >= 60) { await ScriptNote("err", $"„{name}” was not run again: another script kept running."); return; }
+                await Task.Delay(1000);
+                continue;
+            }
+            try
+            {
+                var r = await Scripts.Handle("script.run", new JsonObject { ["code"] = code, ["name"] = $"{stem} regenerated" });
+                if (r?["run"] is JsonValue rv && rv.TryGetValue<int>(out var run)) _ = StopAfter(run, name);
+            }
+            catch (CommandException ex) { await ScriptNote("err", $"„{name}” was not run again: {ex.Message}"); }
+            return;
+        }
+    }
+
+    async Task StopAfter(int run, string name)
+    {
+        await Task.Delay(RegenerateTimeout);
+        if (Scripts.RunningId != run) return;
+        await ScriptNote("err", $"„{name}” took more than {RegenerateTimeout.TotalSeconds:0} s to run again: it was stopped, and nothing it did is kept.");
+        try { await Scripts.Handle("script.stop", []); } catch (CommandException) { }
+    }
+
+    /// <summary>A line of Lapin's own in the Script panel's output.</summary>
+    Task ScriptNote(string level, string text) => TellLocal("script.output", new JsonObject { ["type"] = "note", ["level"] = level, ["text"] = text });
 
     /// <summary>The window's selection with what it is, to every connection of this computer (the event <c>selection</c>).</summary>
     async Task TellSelection()
