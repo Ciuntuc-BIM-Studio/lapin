@@ -354,7 +354,7 @@ public static partial class PartSketches
         return (type, def, sketch);
     }
 
-    static (Entity Type, JsonObject Def) PartOf(IModelView m, string? id)
+    internal static (Entity Type, JsonObject Def) PartOf(IModelView m, string? id)
     {
         var e = m.Get(id ?? "") ?? throw new CommandException("There is no such part.");
         var type = Parts.IsInstance(e) ? Parts.TypeOf(m, e) ?? throw new CommandException("Its part is gone.") : Parts.Require(m, e.Id);
@@ -366,7 +366,7 @@ public static partial class PartSketches
     /// A changed definition kept: checked (every sketch solved with the defaults, a conflict refused), every placed part's values
     /// building with it (or refused, naming the first that does not), then written; its instances rebuild from it.
     /// </summary>
-    static JsonObject Commit(ICommandContext ctx, Entity type, JsonObject def)
+    internal static JsonObject Commit(ICommandContext ctx, Entity type, JsonObject def)
     {
         var done = Parts.Check(def);
         foreach (var e in ctx.Model.RelatedOf(type.Id, IfcClass.RelDefinesByType).Where(Parts.IsInstance))

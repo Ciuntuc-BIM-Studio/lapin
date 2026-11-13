@@ -39,7 +39,7 @@ public static class Parts
     public const string FileExtension = ".lapinpart";
     public const int FileVersion = 1;
     public static readonly string[] Planes = ["xy", "xz", "yz"];
-    public static readonly string[] ParamKinds = ["length", "number", "angle", "bool"];
+    public static readonly string[] ParamKinds = ["length", "number", "angle", "bool", "text", "integer"];
 
     static double? Num(JsonNode? n) => n is JsonValue v && v.TryGetValue<bool>(out var b) ? (b ? 1 : 0) : Json.Number(n);
     static bool? Flag(JsonNode? n) => n is JsonValue v && v.TryGetValue<bool>(out var b) ? b : null;
@@ -47,13 +47,16 @@ public static class Parts
     static List<Param> Params(JsonObject def) =>
         [.. (def["params"] as JsonArray ?? []).OfType<JsonObject>().Select(p => new Param((string)p["key"]!, (string?)p["label"] ?? (string)p["key"]!, (string?)p["kind"] ?? "length", Num(p["default"]) ?? 0, p))];
 
-    /// <summary>The values a body is built with: the part's defaults, an instance's own over them.</summary>
-    public static Dictionary<string, double> Values(JsonObject def, JsonObject? own)
+    /// <summary>
+    /// The values a body is built with: the part's defaults, an instance's own over them for its instance parameters, the derived
+    /// ones worked out (<see cref="PartParams.Resolve"/>); texts are left out (formulas read numbers). Throws with the first value
+    /// that does not hold (out of its bounds, a formula that does not read).
+    /// </summary>
+    public static Dictionary<string, double> Values(JsonObject def, JsonObject? own, JsonObject? over = null)
     {
-        var o = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
-        foreach (var p in Params(def)) o[p.Key] = p.Default;
-        foreach (var (k, v) in own ?? []) if (o.ContainsKey(k) && Num(v) is { } x) o[k] = x;
-        return o;
+        var r = PartParams.Resolve(def, own, over);
+        if (r.Problems.Count > 0) throw new CommandException(r.Problems.Values.First());
+        return r.Numbers;
     }
 
     internal static double Eval(JsonNode? n, IReadOnlyDictionary<string, double> values, string what)
@@ -122,25 +125,20 @@ public static class Parts
         var keys = new List<string>();
         foreach (var p in o["params"] as JsonArray ?? [])
         {
-            if (p is not JsonObject po || ((string?)po["key"])?.Trim() is not { Length: > 0 and <= 24 } key || !char.IsLetter(key[0]) || !key.All(c => char.IsLetterOrDigit(c) || c == '_'))
-                throw new CommandException("Each parameter has a key of letters and digits (W, Height, HasShelf).");
+            if (p is not JsonObject po) throw new CommandException("Each parameter has a key of letters and digits (W, Height, HasShelf).");
+            var key = PartParams.ValidKey((string?)po["key"]);
             if (keys.Contains(key, StringComparer.OrdinalIgnoreCase)) throw new CommandException($"The parameter „{key}” is there twice.");
             keys.Add(key);
-            var kind = (string?)po["kind"] ?? "length";
-            if (!ParamKinds.Contains(kind)) throw new CommandException($"A parameter is a {string.Join(", ", ParamKinds)}.");
-            var d = Num(po["default"]) ?? throw new CommandException($"{key} needs its default.");
-            if (!double.IsFinite(d) || Math.Abs(d) > 1000) throw new CommandException($"{key}'s default is a number within ±1000.");
-            var pc = new JsonObject { ["key"] = key, ["label"] = ((string?)po["label"])?.Trim() is { Length: > 0 } l ? l : key, ["kind"] = kind, ["default"] = d };
-            // What the parameter table keeps (P1 uses them): kept when given, never required.
-            foreach (var text in new[] { "unit", "group", "description" })
-                if (po[text] is JsonValue tv && tv.TryGetValue<string>(out var s) && s.Trim() is { Length: > 0 } st) pc[text] = st;
-            foreach (var flag in new[] { "instance", "published" })
-                if (Flag(po[flag]) is { } fb) pc[flag] = fb;
-            ps.Add((JsonNode)pc);
+            // The parameter table (P1): kind, default or formula, unit, group, description, instance, published, min, max.
+            ps.Add((JsonNode)PartParams.CheckOne(po, key));
         }
+        // Derived parameters: their names known, no cycle (its path named); then every value worked out with the defaults.
+        var checkedParams = ps.OfType<JsonObject>().ToList();
+        PartParams.Order(checkedParams, strict: true);
+        var resolved = PartParams.Resolve(new JsonObject { ["params"] = ps.DeepClone() }, null);
+        if (resolved.Problems.Count > 0) throw new CommandException($"With its defaults: {resolved.Problems.Values.First()}");
         // A part's own sketches (§9 point 2), checked and solved with the defaults.
-        var defaults = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
-        foreach (var p in ps.OfType<JsonObject>()) defaults[(string)p["key"]!] = Num(p["default"]) ?? 0;
+        var defaults = resolved.Numbers;
         var sketches = o["sketches"] is JsonArray { Count: > 0 } given ? PartSketches.Check(given, defaults) : null;
         var bodies = new JsonArray();
         foreach (var b in o["bodies"] as JsonArray ?? [])
@@ -266,7 +264,13 @@ public static class Parts
         {
             if (!keys.TryGetValue(k, out var p)) throw new CommandException($"„{type.Name}” has no parameter „{k}”.");
             if (v == null) { o.Remove(p.Key); continue; }
-            o[p.Key] = Num(v) ?? throw new CommandException($"{p.Label} is a number.");
+            // A derived parameter is its formula's; a type parameter is the part's, the same for every placed part.
+            if (PartParams.FormulaOf(p.Source) is { } f) throw new CommandException($"{p.Label} is worked out by its formula ({f}): a placed part takes no value of its own for it.");
+            if (!PartParams.IsInstance(p.Source)) throw new CommandException($"{p.Label} is a type parameter, one value for every placed part: change it on the part.");
+            if (p.Kind == "text") { o[p.Key] = v is JsonValue tv && tv.TryGetValue<string>(out var s) ? s : v.ToJsonString(); continue; }
+            var x = Num(v) ?? throw new CommandException($"{p.Label} is a number.");
+            if (PartParams.OutOfBounds(p.Source, x) is { } why) throw new CommandException(why);
+            o[p.Key] = x;
         }
         return o;
     }
@@ -400,19 +404,50 @@ public static class Parts
         return new JsonObject { ["id"] = e.Id };
     }
 
-    /// <summary>A part's bodies for some values (its defaults under them), as edges in its own frame: the editor's preview, or why it does not build.</summary>
-    public static JsonNode Preview(JsonObject a, IModelView m)
+    /// <summary>
+    /// A part's bodies for some values: the editor's preview and the flex ghost. <c>{id, values?}</c> or <c>{def, values?}</c>: with
+    /// <c>id</c> a part, its definition with its defaults under the values; with <c>id</c> a placed part, its own values under them
+    /// (the given values may also flex a type parameter; derived ones are worked out, never given), the part's own sketches solved
+    /// with them. → <c>{ok: true, frame: "part" | "world", bodies: [{name, edges, volume}]}</c>, or <c>{ok: false, reason, bodies: []}</c>
+    /// when the values do not build (out of a parameter's bounds, a formula or a sketch that does not solve).
+    /// <para><b>Edges</b>: each body's face outlines as segments, every edge <c>[x1, y1, z1, x2, y2, z2]</c> in metres (rounded to
+    /// 1e-6), an edge shared by two faces listed once per face. Their frame is the part's own (its origin, x along its width) for a
+    /// part or a <c>def</c>; for a placed part they are in the <b>world</b>: its point, height above its storey, rotation and mirror
+    /// applied, as its body is built. <c>volume</c> is m³ (in either frame).</para>
+    /// <para>The families' <c>studio.familyPreview</c> calls this with <paramref name="strict"/>: values that do not build throw,
+    /// as they always did.</para>
+    /// </summary>
+    public static JsonNode Preview(JsonObject a, IModelView m, bool strict = true)
     {
-        var def = Check(a["def"] ?? Require(m, (string?)a["id"]).Attrs["def"]);
-        var bodies = Bodies(def, Values(def, a["values"] as JsonObject));
+        JsonObject def;
+        JsonObject? own = null;
+        Func<Vec3, Vec3>? place = null;
+        if (a["def"] != null) def = Check(a["def"]);
+        else if (m.Get((string?)a["id"] ?? "") is { } x && IsInstance(x))
+        {
+            // The stored definition (not checked again, so the sketches' solves stay cached across a flex).
+            def = DefOf(TypeOf(m, x)) ?? throw new CommandException("Its part is gone, or no longer has a definition.");
+            own = x.Attrs["values"] as JsonObject;
+            place = Placing(x, m).Place;
+        }
+        else def = DefOf(Require(m, (string?)a["id"]))!;
+        List<(string Name, string? Material, Solid Solid)> bodies;
+        try { bodies = Bodies(def, Values(def, own, a["values"] as JsonObject)); }
+        catch (CommandException ex) when (!strict)
+        {
+            return new JsonObject { ["ok"] = false, ["reason"] = ex.Message, ["bodies"] = new JsonArray() };
+        }
+        var to = place ?? (v => v);
+        static JsonNode Edge(Vec3 p, Vec3 q) => new JsonArray(Math.Round(p.X, 6), Math.Round(p.Y, 6), Math.Round(p.Z, 6), Math.Round(q.X, 6), Math.Round(q.Y, 6), Math.Round(q.Z, 6));
         return new JsonObject
         {
+            ["ok"] = true,
+            ["frame"] = place != null ? "world" : "part",
             ["bodies"] = new JsonArray(bodies.Select(b => (JsonNode)new JsonObject
             {
                 ["name"] = b.Name,
                 ["edges"] = new JsonArray(b.Solid.Faces.SelectMany(f => f.Outer.Select((v, k) => (v, w: f.Outer[(k + 1) % f.Outer.Length])))
-                    .Select(e => (JsonNode)new JsonArray(Math.Round(b.Solid.Vertices[e.v].X, 6), Math.Round(b.Solid.Vertices[e.v].Y, 6), Math.Round(b.Solid.Vertices[e.v].Z, 6),
-                        Math.Round(b.Solid.Vertices[e.w].X, 6), Math.Round(b.Solid.Vertices[e.w].Y, 6), Math.Round(b.Solid.Vertices[e.w].Z, 6))).ToArray()),
+                    .Select(e => Edge(to(b.Solid.Vertices[e.v]), to(b.Solid.Vertices[e.w]))).ToArray()),
                 ["volume"] = Math.Round(Measure.Volume(b.Solid), 9),
             }).ToArray()),
         };
@@ -466,7 +501,9 @@ public static class Parts
         if (IsInstance(e))
         {
             var def = DefOf(type);
-            var values = def != null ? Values(def, e.Attrs["values"] as JsonObject) : [];
+            // Never throws: a value that does not hold shows its problem on its parameter.
+            var resolved = def != null ? PartParams.Resolve(def, e.Attrs["values"] as JsonObject) : null;
+            var values = resolved?.Numbers ?? [];
             var (place, dir, _) = Placing(e, m);
             // The part's own sketches (§9 point 2): solved with this instance's values, their constraints and how they stand. Their
             // shapes are (u, v) on the sketch's plane; the frame takes them to the world, origin + u·right + v·up (place is affine,
@@ -527,15 +564,26 @@ public static class Parts
                 }
                 steps.Add((JsonNode)step);
             }
+            var defaults = def != null ? PartParams.Resolve(def, null) : null;
             foreach (var p in def != null ? Params(def) : [])
             {
+                var derived = PartParams.IsDerived(p.Source);
+                var text = p.Kind == "text";
+                var shown = PartParams.ValueJson(p.Source, resolved!);
                 var o = new JsonObject
                 {
-                    ["key"] = p.Key, ["label"] = p.Label, ["kind"] = p.Kind, ["default"] = p.Default, ["value"] = values.TryGetValue(p.Key, out var x) ? x : p.Default,
-                    // Every parameter of a light family was an instance's own and shown: so they stay until the table says otherwise (P1).
+                    ["key"] = p.Key, ["label"] = p.Label, ["kind"] = p.Kind,
+                    // A derived parameter's default: its formula worked out with the defaults.
+                    ["default"] = text ? p.Source["default"]?.DeepClone() ?? "" : derived ? (defaults!.Numbers.TryGetValue(p.Key, out var dv) ? Math.Round(dv, 9) : null) : p.Default,
+                    ["value"] = shown["value"]?.DeepClone() ?? (text ? null : p.Default),
+                    // Every parameter of a light family was an instance's own and shown: so they stay unless the table says otherwise.
                     ["instance"] = Flag(p.Source["instance"]) ?? true, ["published"] = Flag(p.Source["published"]) ?? true,
+                    ["derived"] = derived, ["source"] = shown["source"]?.DeepClone(),
                 };
-                foreach (var text in new[] { "unit", "group", "description" }) if ((string?)p.Source[text] is { } s) o[text] = s;
+                if (PartParams.FormulaOf(p.Source) is { } formula) o["formula"] = formula;
+                foreach (var bound in new[] { "min", "max" }) if (Num(p.Source[bound]) is { } bv) o[bound] = bv;
+                foreach (var t in new[] { "unit", "group", "description" }) if ((string?)p.Source[t] is { } s) o[t] = s;
+                if (shown["problem"] is { } problem) o["problem"] = problem.DeepClone();
                 ps.Add((JsonNode)o);
             }
         }
@@ -614,7 +662,7 @@ public static class Parts
                 ["id"] = e.Id, ["name"] = e.Name, ["description"] = e.Str("description"), ["def"] = DefOf(e)?.DeepClone(), ["uses"] = Uses(q.Model, e),
             }).ToArray()),
         });
-        r.Query("partPreview", (q, a) => Preview(a, q.Model));
+        r.Query("partPreview", (q, a) => Preview(a, q.Model, strict: false));
         r.Query("partTree", (q, a) =>
         {
             var e = q.Model.Get((string?)a["id"] ?? "") is { } x && x.Str("operation") != null ? x : throw new CommandException("Not a Studio solid or a placed part.");
@@ -631,6 +679,8 @@ public static class Parts
         r.Command("importPart", "Import part", Import);
         // A part's own sketches: the conversion of formula corners and their editing (§9 point 2).
         PartSketches.Register(r);
+        // The parameter table (P1).
+        PartParams.Register(r);
     }
 
     /// <summary>A parameter of a definition as read (declared last, so the catalogue's reading of this file finds the commands' class).</summary>
