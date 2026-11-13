@@ -124,7 +124,8 @@ public static class Features
                 if (P(f["point"]) is not { } at || P(f["normal"]) is not { } n0 || n0.Length < 1e-9) return (null, "its plane is not given.");
                 var half = HalfSpace(cur, at, n0.Normalized(), (string?)f["keep"] != "front");
                 if (half == null) return (null, "the plane could not be made.");
-                var o = c.Booleans!.Intersection(cur, half, cur.Tag);
+                // A plane on one of the body's faces: the half kept reaches a hair past it, so no sliver of that face is left.
+                var o = c.Booleans!.Intersection(cur, Flush.Proud(half, cur), cur.Tag);
                 return o == null ? (null, "nothing is left on the side kept.") : (o, null);
             }
             case "array":
@@ -154,6 +155,9 @@ public static class Features
                     copies.Add(SolidBuilder.Transform(cur, map));
                 }
                 if (c.Booleans == null) return (null, "it needs the boolean library (manifold), missing here.");
+                // Copies set face to face (a step of the body's own width, a polar array's sectors) sunk into the one before a hair, so they join in volume.
+                for (var i = 1; i < copies.Count; i++) copies[i] = Flush.Sunk(copies[i], copies[i - 1]);
+                if (copies.Count > 2) copies[^1] = Flush.Sunk(copies[^1], copies[0]);
                 return (c.Booleans.Union(copies, cur.Tag), null);
             }
             case "move":
@@ -185,25 +189,20 @@ public static class Features
         return c + v * co + Vec3.Cross(d, v) * s + d * (Vec3.Dot(d, v) * (1 - co));
     }
 
-    /// <summary>A face pushed out by d (added: a prism on it, united) or in (a prism into the body, taken away).</summary>
+    /// <summary>
+    /// A face pushed out by d (added: a prism on it, united) or in (a prism into the body, taken away). The prism is the
+    /// face's true size; the boolean moves whichever of its faces lie on the body's a hair, into the body (a pull, so the
+    /// two share volume) or out of it (a push, so no sliver of a face is left), and the faces that stay keep their planes (decision 519).
+    /// </summary>
     public static (Solid? Solid, string? Problem) PushPull(Solid cur, BrepFace face, double d, ISolidBooleans booleans)
     {
-        const double eps = 1e-4;
         var n = face.Normal;
-        if (d > 0)
-        {
-            // Started a hair inside the body, so the two share volume, not only a face.
-            var prism = Prism.Extrude(Shift(face.Outer, -n * eps), face.Holes.Select(h => (IReadOnlyList<Vec3>)Shift(h, -n * eps)).ToList(), n * (d + eps), cur.Tag);
-            if (prism == null) return (null, "the face could not be pulled.");
-            return (booleans.Union([cur, prism], cur.Tag), null);
-        }
-        var cut = Prism.Extrude(Shift(face.Outer, n * eps), face.Holes.Select(h => (IReadOnlyList<Vec3>)Shift(h, n * eps)).ToList(), n * (d - eps), cur.Tag);
-        if (cut == null) return (null, "the face could not be pushed.");
-        var o = booleans.Difference(cur, [cut], cur.Tag);
+        var prism = Prism.Extrude(face.Outer.ToList(), face.Holes.Select(h => (IReadOnlyList<Vec3>)h.ToList()).ToList(), n * d, cur.Tag);
+        if (prism == null) return (null, d > 0 ? "the face could not be pulled." : "the face could not be pushed.");
+        if (d > 0) return (booleans.Union([cur, Flush.Sunk(prism, cur)], cur.Tag), null);
+        var o = booleans.Difference(cur, [Flush.Proud(prism, cur)], cur.Tag);
         return o == null ? (null, "nothing would be left.") : (o, null);
     }
-
-    static List<Vec3> Shift(IReadOnlyList<Vec3> ring, Vec3 by) => ring.Select(p => p + by).ToList();
 
     /// <summary>
     /// An edge bevelled (a plane across it, <paramref name="size"/> back along each face) or rounded (a quarter round

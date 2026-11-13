@@ -157,8 +157,12 @@ public class IfcImportTests : IDisposable
         // The zoned wall's masonry is cut by nothing; the floor by nothing: their bodies are what the file holds.
         var slab = b.Model.OfClass(IfcClass.Slab).Single();
         Assert.Equal(Volume(a, slab.Id), Volume(b, slab.Id), 3);
+        // The strip footing cuts the floor with its ends on the floor's: each layer is one clean box since decision 519
+        // (no sliver making it several bodies), so the floor is recognised from its triangles, within the fidelity gate.
+        Assert.False(StoredBodies.Has(slab));
+        Assert.All(a.Session.Geometry(slab.Id)!.Parts, p => Assert.Equal(6, p.Solid.Faces.Length));
         // References are not edited.
-        var ex = Assert.Throws<CommandException>(() => b.Run("element.update", new JsonObject { ["id"] = slab.Id, ["attrs"] = new JsonObject { ["offset"] = 0.1 } }));
+        var ex = Assert.Throws<CommandException>(() => b.Run("element.update", new JsonObject { ["id"] = door.Id, ["attrs"] = new JsonObject { ["name"] = "Changed" } }));
         Assert.Contains("reference", ex.Message);
         // They export again, with their class and body.
         var again = StepFile.Read(Export(b, "again.ifc"));
