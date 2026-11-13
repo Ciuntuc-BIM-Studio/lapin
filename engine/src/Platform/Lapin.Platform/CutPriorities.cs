@@ -27,7 +27,8 @@ public static class CutPriorities
             var part = parts[i];
             var mine = by.Where((_, k) => boxes[k] is { } b && Meets(b, bounds[i])).ToList();
             if (mine.Count == 0) { o.Add(part); continue; }
-            try { if (booleans.Difference(part.Solid, mine, part.Solid.Tag) is { } cut) o.Add(part with { Solid = cut }); }
+            // A cutter's faces lying on the part's (a column flush with a wall's face, both turned) moved out a hair, so no sliver is left (decision 519).
+            try { if (booleans.Difference(part.Solid, mine.Select(t => Flush.Proud(t, part.Solid)).ToList(), part.Solid.Tag) is { } cut) o.Add(part with { Solid = cut }); }
             catch (InvalidOperationException ex) { problems.Add($"{part.Name}: could not be cut ({ex.Message})."); o.Add(part); }
         }
         return o;

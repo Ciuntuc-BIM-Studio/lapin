@@ -45,7 +45,7 @@ public class StudioFlushCutTests
     static Solid Body(Fixture f, string id) => f.Session.Geometry(id)!.Parts.Single().Solid;
 
     /// <summary>Faces back to back on one plane (opposite normals, a shared plane): the membranes a sliver leaves.</summary>
-    static int Membranes(Solid s)
+    internal static int Membranes(Solid s)
     {
         var n = 0;
         for (var i = 0; i < s.Faces.Length; i++)
@@ -58,9 +58,9 @@ public class StudioFlushCutTests
         return n;
     }
 
-    static int Edges(Solid s) => Tessellator.Tessellate(s).Edges.Length / 6;
+    internal static int Edges(Solid s) => Tessellator.Tessellate(s).Edges.Length / 6;
 
-    static void Clean(Solid s, int faces, double volume)
+    internal static void Clean(Solid s, int faces, double volume)
     {
         Assert.Equal(0, Membranes(s));
         Assert.Equal(faces, s.Faces.Length);
@@ -71,7 +71,7 @@ public class StudioFlushCutTests
         Assert.Equal(volume, Measure.Volume(s), 6);
     }
 
-    static double Area(params (double U, double V)[] pts) => Math.Abs(Polygon2.SignedArea(pts.Select(p => new Vec2(p.U, p.V)).ToList()));
+    internal static double Area(params (double U, double V)[] pts) => Math.Abs(Polygon2.SignedArea(pts.Select(p => new Vec2(p.U, p.V)).ToList()));
 
     static readonly (double, double) A = (0.2, 1), B = (1, -0.2);
     static readonly double Tri = Area(A, B, (1, 1));
