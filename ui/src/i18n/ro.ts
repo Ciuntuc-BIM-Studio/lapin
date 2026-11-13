@@ -1,6 +1,8 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // Decision 524: the box by the cursor offers width and height for a rectangle
+  'Space switches length and angle with width and height': 'Space comută între lungime și unghi și lățime și înălțime', 'Width × Height': 'Lățime × Înălțime', 'Length ∠ Angle': 'Lungime ∠ Unghi',
   // Decision 516: mouse navigation styles
   "Mouse navigation": "Navigare cu mouse-ul",
   "Left drag orbits, right drag pans, wheel zooms; Alt + left drag selects a region": "Tragere cu stânga rotește, tragere cu dreapta deplasează, rotița face zoom; Alt + tragere cu stânga selectează o regiune",

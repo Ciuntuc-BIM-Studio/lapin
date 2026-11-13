@@ -119,6 +119,14 @@ describe('keyIntent', () => {
     expect(keyIntent(press('m'), live())).toEqual({ kind: 'type', buffer: 'm' });
     expect(keyIntent(press('-'), live())).toEqual({ kind: 'command', id: 'app.zoomOut' });
     expect(keyIntent(press('Tab'), live())).toEqual({ kind: 'liveFocus' });
+    // A rectangle: Space switches length/angle with width/height; a comma in width/height goes on to the height; elsewhere Space is not the box's.
+    const rect = (mode: 'polar' | 'rect') => state({ live: { active: true, text: '2000', typed: true, rect: true, mode }, hotbar: 9 });
+    expect(keyIntent(press(' '), rect('polar'))).toEqual({ kind: 'liveMode' });
+    expect(keyIntent(press(','), rect('rect'))).toEqual({ kind: 'liveFocus', field: 'ang' });
+    expect(keyIntent(press(','), rect('polar'))).toEqual({ kind: 'liveType', key: ',' });
+    expect(keyIntent(press(' '), live())).not.toEqual({ kind: 'liveMode' });
+    // A negative width or height can be typed from an empty field in width/height (elsewhere a minus is zoom out).
+    expect(keyIntent(press('-'), state({ live: { active: true, text: '', typed: false, rect: true, mode: 'rect' }, hotbar: 9 }))).toEqual({ kind: 'liveType', key: '-' });
     expect(keyIntent(press('<'), live('2400'))).toEqual({ kind: 'liveFocus', field: 'ang' });
     expect(keyIntent(press('Enter'), live('2400', true))).toEqual({ kind: 'liveCommit' });
     expect(keyIntent(press('Escape'), live('2400', true))).toEqual({ kind: 'liveClear' });

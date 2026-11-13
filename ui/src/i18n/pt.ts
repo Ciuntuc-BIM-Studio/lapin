@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const PT: Record<string, string> = {
+  // Decision 524: the box by the cursor offers width and height for a rectangle
+  'Space switches length and angle with width and height': 'Espaço alterna entre comprimento e ângulo e largura e altura', 'Width × Height': 'Largura × Altura', 'Length ∠ Angle': 'Comprimento ∠ Ângulo',
   // Decision 516: mouse navigation styles
   "Mouse navigation": "Navegação com o rato",
   "Left drag orbits, right drag pans, wheel zooms; Alt + left drag selects a region": "Arrastar com o esquerdo orbita, arrastar com o direito desloca, a roda faz zoom; Alt + arrastar com o esquerdo seleciona uma região",

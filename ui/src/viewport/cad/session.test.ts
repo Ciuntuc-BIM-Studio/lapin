@@ -155,4 +155,87 @@ describe('typed values and the project\'s unit', () => {
     expect(calls.find(([c]) => c === 'element.transform')?.[1].angle).toBe(90);
     expect(calls.find(([c]) => c === 'drafting.transform')?.[1].factor).toBe(2.5);
   });
+
+  describe('ROTATE Reference and Copy', () => {
+    const transforms = () => engine.execute.mock.calls.filter(([c]) => c === 'element.transform').map(([, a]) => a as Record<string, unknown>);
+    beforeEach(() => { useUi.setState({ selected: ['a'] }); });
+
+    it('Reference: hinge, reference point, new point; the turn is the difference', async () => {
+      await startCommand('ROTATE');
+      await feedPoint(P(0, 0));
+      await submit('R');
+      await feedPoint(P(1, 0));
+      await feedPoint(P(0, 2));
+      expect(transforms()).toHaveLength(1);
+      expect(transforms()[0].angle).toBeCloseTo(90, 9);
+      expect(transforms()[0].copy).toBeUndefined();
+    });
+
+    it('Reference with typed angles: 30 then 75 turns by 45', async () => {
+      await startCommand('ROTATE');
+      await feedPoint(P(0, 0));
+      await submit('R');
+      await submit('30');
+      await submit('75');
+      expect(transforms()[0].angle).toBeCloseTo(45, 9);
+    });
+
+    it('Reference: a reference point, then a typed new direction (mixed)', async () => {
+      await startCommand('ROTATE');
+      await feedPoint(P(1, 1));
+      await submit('R');
+      await feedPoint(P(2, 2));
+      await submit('90');
+      expect(transforms()[0].angle).toBeCloseTo(45, 9);
+    });
+
+    it('the ribbon\'s Rotate (ROTATEREF) goes hinge → reference point → target point', async () => {
+      await startCommand('ROTATEREF');
+      await feedPoint(P(0, 0));
+      expect(useCad.getState().step?.prompt).toContain('Reference point');
+      await feedPoint(P(2, 0));
+      await feedPoint(P(0, 3));
+      expect(transforms()).toHaveLength(1);
+      expect(transforms()[0].angle).toBeCloseTo(90, 9);
+    });
+
+    it('ROTATEREF: an angle typed at the reference step is the turn itself, at the target step the new direction', async () => {
+      await startCommand('ROTATEREF');
+      await feedPoint(P(0, 0));
+      await submit('30');
+      expect(transforms()[0].angle).toBe(30);
+      engine.execute.mockClear();
+      await startCommand('ROTATEREF');
+      await feedPoint(P(0, 0));
+      await feedPoint(P(1, 1));          // reference 45°
+      await submit('90');                // new direction 90°
+      expect(transforms()[0].angle).toBeCloseTo(45, 9);
+    });
+
+    it('ROTATEREF keeps Copy', async () => {
+      await startCommand('ROTATEREF');
+      await feedPoint(P(0, 0));
+      await submit('C');
+      await submit('20');
+      expect(transforms()[0]).toMatchObject({ angle: 20, copy: true });
+    });
+
+    it('Copy turns a copy', async () => {
+      await startCommand('ROTATE');
+      await feedPoint(P(0, 0));
+      await submit('C');
+      expect(useCad.getState().step?.prompt).toContain('Copy: yes');
+      await submit('45');
+      expect(transforms()[0]).toMatchObject({ op: 'rotate', angle: 45, copy: true });
+    });
+
+    it('the preview turns the selection with the cursor', async () => {
+      useCad.setState({ host: { viewId: 'v', pickDraft: () => null, pickAny: () => null, shapeOf: () => ({ type: 'line', a: P(1, 0), b: P(2, 0) }) } });
+      await startCommand('ROTATE');
+      await feedPoint(P(0, 0));
+      const pv = useCad.getState().step!.preview!(P(0, 5));
+      const l = pv.find((sh) => sh.type === 'line' && Math.abs((sh as { a: Vec2 }).a.x) < 1e-9 && (sh as { a: Vec2 }).a.y > 0.5);
+      expect(l).toBeTruthy();
+    });
+  });
 });

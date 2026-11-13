@@ -5050,6 +5050,20 @@ export const scenes = [
       t.expect(/point/i.test(asks), `the command line asks for the next point (it says: ${asks.replace(/\s+/g, ' ').slice(0, 120)})`);
       await t.shot('command-line', { clip: { x: 250, y: 120, width: 860, height: 730 } });
       await t.keys('Escape', 'Escape');
+      // Rectangle: the box by the cursor switches to width and height with Space (the mode is remembered), Tab goes to the height.
+      await t.page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
+      await t.page.keyboard.type('REC'); await t.page.keyboard.press('Enter');
+      const [rx, ry] = await t.planPoint(2, 2);
+      await t.page.mouse.move(rx, ry, { steps: 3 }); await t.page.mouse.click(rx, ry);
+      const [sx, sy] = await t.planPoint(4, 3.2);
+      await t.page.mouse.move(sx, sy, { steps: 6 });
+      await t.wait(300);
+      await t.page.keyboard.press(' ');
+      await t.page.keyboard.type('2000'); await t.page.keyboard.press('Tab'); await t.page.keyboard.type('-1500');
+      await t.wait(300);
+      t.expect(await t.page.locator('.live-box .live-label', { hasText: 'W' }).count() === 1, 'Space turns the box by the cursor into width and height');
+      await t.shot('rectangle-box', { clip: { x: 250, y: 120, width: 860, height: 730 } });
+      await t.keys('Escape', 'Escape');
       // Move the inner wall (decision 165): from its middle (snapped), partway across the room with ortho on.
       await select(t, walls.inner);
       await t.page.locator('.band').getByRole('button', { name: 'Move', exact: true }).click();

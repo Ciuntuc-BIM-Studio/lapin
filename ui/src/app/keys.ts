@@ -19,7 +19,7 @@ import { useUi } from './store';
 import { findTool, hotbarIds, useToolTick } from '../platform/modules';
 import { reach } from './hotbar';
 import { cancel, submit, useCad } from '../viewport/cad/session';
-import { liveCommit, useLive } from '../viewport/liveInput';
+import { liveCommit, liveToggleMode, useLive } from '../viewport/liveInput';
 import { chordOf, isBareKey, matchSequence, PendingSequence, type Keymap } from './shortcuts';
 import { keymap, runCommand } from './commands';
 import { useKeymap } from './shortcuts';
@@ -64,7 +64,7 @@ export interface KeySnapshot {
   /** The command line takes all typing (the ` key). */
   takeAll?: boolean;
   /** A segment being drawn from a base: its length and angle can be typed (the focused field's text). */
-  live?: { active: boolean; text: string; typed: boolean };
+  live?: { active: boolean; text: string; typed: boolean; /** A rectangle tool: Space switches length/angle with width/height. */ rect?: boolean; mode?: 'polar' | 'rect' };
   /** A 3D tool waits for a typed value (valueOwner.ts): what is typed so far. */
   value?: { text: string } | null;
 }
@@ -79,7 +79,7 @@ export type KeyIntent =
   | { kind: 'closeDialog' } | { kind: 'cancel' } | { kind: 'submit' } | { kind: 'backspace' }
   | { kind: 'type'; buffer: string }
   | { kind: 'valueType'; key: string } | { kind: 'valueBack' } | { kind: 'valueEnter' }
-  | { kind: 'liveType'; key: string } | { kind: 'liveBack' } | { kind: 'liveFocus'; field?: 'len' | 'ang' } | { kind: 'liveClear' } | { kind: 'liveCommit' };
+  | { kind: 'liveType'; key: string } | { kind: 'liveBack' } | { kind: 'liveFocus'; field?: 'len' | 'ang' } | { kind: 'liveClear' } | { kind: 'liveCommit' } | { kind: 'liveMode' };
 
 /** The units a typed length may end in (parseLength reads them). */
 const UNIT_SUFFIXES = ['mm', 'cm', 'dm', 'm', 'in', 'ft', "'", '"'];
@@ -139,10 +139,13 @@ export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
   if (s.live?.active && !s.buffer && !all) {
     if (e.key === 'Tab') return { kind: 'liveFocus' };
     if (e.key === '<') return { kind: 'liveFocus', field: 'ang' };
+    // A rectangle: Space switches length/angle with width/height; in width/height a comma goes on to the height.
+    if (e.key === ' ' && s.live.rect) return { kind: 'liveMode' };
+    if (e.key === ',' && s.live.rect && s.live.mode === 'rect') return { kind: 'liveFocus', field: 'ang' };
     if (e.key === 'Enter' && s.live.typed) return { kind: 'liveCommit' };
     if (e.key === 'Escape' && s.live.typed) return { kind: 'liveClear' };
     if (e.key === 'Backspace' && s.live.text) return { kind: 'liveBack' };
-    if (/^[0-9.,+]$/.test(e.key) || (e.key === '-' && s.live.text)) return { kind: 'liveType', key: e.key };
+    if (/^[0-9.,+]$/.test(e.key) || (e.key === '-' && (s.live.text || (s.live.rect && s.live.mode === 'rect')))) return { kind: 'liveType', key: e.key };
     if (unitKey(s.live.text, e.key)) return { kind: 'liveType', key: e.key.toLowerCase() };
   }
   const typing = s.buffer.length > 0 || !!s.step;
@@ -185,7 +188,7 @@ function snapshot(): KeySnapshot {
     screen: ui.screen, dialog: openDialog(ui.dialog, !!document.querySelector('[role="dialog"]')), tool: ui.tool, selected: ui.selected, toolSpace: !!(ui.tool && findTool(ui.tool)?.space),
     buffer: cad.buffer, step: cad.step ? { want: cad.step.want } : null, hasLast: !!cad.last,
     hotbar: reach(hotbarIds()), keymap: keymap(), letters: useKeymap.getState().letters, takeAll: cad.takeAll,
-    live: (() => { const l = useLive.getState(); return { active: !!l.owner, text: l[l.focus], typed: !!(l.len || l.ang) }; })(),
+    live: (() => { const l = useLive.getState(); return { active: !!l.owner, text: l[l.focus], typed: !!(l.len || l.ang), rect: !!l.rect, mode: l.mode }; })(),
     value: (() => { const o = valueOwner(); return o ? { text: o.text() } : null; })(),
   };
 }
@@ -229,6 +232,7 @@ export function carryOut(intent: KeyIntent): void {
     case 'liveFocus': useLive.setState((l) => ({ focus: intent.field ?? (l.focus === 'len' ? 'ang' : 'len') })); break;
     case 'liveClear': useLive.setState({ len: '', ang: '' }); break;
     case 'liveCommit': liveCommit(); break;
+    case 'liveMode': liveToggleMode(); break;
   }
 }
 

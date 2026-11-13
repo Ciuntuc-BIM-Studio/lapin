@@ -771,6 +771,8 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .live-cell.typed { font-weight: 700; color: var(--accent); }
 .live-label { color: var(--ink-muted); font-size: 10px; }
 .live-unit { color: var(--ink-muted); font-size: 10px; }
+.live-hint { color: var(--ink-muted); font-size: 10px; align-self: center; }
+.live-mode { font-size: 11px; padding: 1px 6px; white-space: nowrap; }
 .live-bar { position: absolute; z-index: 3; left: 50%; top: 52px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 5px 10px; background: var(--hud); border: 1px solid var(--rule); border-radius: 3px; backdrop-filter: blur(4px); font-size: 11.5px; }
 .live-field { display: flex; align-items: center; gap: 5px; color: var(--ink-muted); }
 .live-field input { width: 74px; padding: 2px 5px; font: 11.5px var(--mono); text-align: right; font-variant-numeric: tabular-nums; }

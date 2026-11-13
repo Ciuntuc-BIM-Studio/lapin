@@ -12,6 +12,12 @@ Typed coordinates are in the project's unit, as the lengths beside the cursor ar
 
 ![Copying a wall: after the base point, the command line and the live input show the length and angle to the mouse](shots/command-line.webp)
 
+**The box by the cursor.** While a segment is drawn, the small box beside the cursor shows its **L**ength and **∠** angle, and you can type into it without clicking anywhere: the digits (with a unit, if you like: `240cm`, `2.4m`) go to the focused field, <kbd>Tab</kbd> moves to the other, <kbd>Enter</kbd> takes the point and <kbd>Esc</kbd> clears what you typed. For a rectangle (the drafting **Rectangle**, a floor or any other tool that is drawn as one) the box can also ask for the **W**idth and **H**eight instead, like `@2000,1500` on the command line: press <kbd>Space</kbd> (or click the mode button in the bar over the view) to switch between *Length ∠ Angle* and *Width × Height*. In *Width × Height*, <kbd>Tab</kbd> or a comma goes from the width to the height, and the values are signed as on the command line: a negative width puts the rectangle to the left of the first corner, a negative height below it. A field left empty follows the mouse. Each rectangle tool remembers its own mode.
+
+![The rectangle's box in Width × Height: 2000 wide and 1500 below the first corner](shots/rectangle-box.webp)
+
+**Rotate.** The ribbon's **Rotate** (and **Modify → Rotate**) works with three clicks: the **hinge**, a **reference point** (where the thing points now: click on the edge you want to straighten) and a **target point** (where it must point). The selection turns in the preview as you move, the angle shows at the cursor, and snapping and polar tracking help you aim. The turn is the difference between the two directions, whatever the UCS. At any step you can type instead: an angle at the reference step is the turn itself (`30`), and an angle at the target step is the new direction, measured from the UCS's X axis. <kbd>C</kbd> turns a copy and leaves the original. Typing **ROTATE** (or <kbd>RO</kbd>) on the command line gives AutoCAD's: the base point, then the angle (typed, or a point measured from X), with **[Reference/Copy]**; <kbd>R</kbd> there is the same reference flow.
+
 Every tool shows its letters in its tooltip; you can change them in **View → Keyboard shortcuts…** (see [The interface and shortcuts](interface.md)). These are the ones used most:
 
 | Model | | Draft | |

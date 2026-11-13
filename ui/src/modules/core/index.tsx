@@ -120,7 +120,7 @@ const core: LapinModule = {
     modify: { label: 'Modify', tools: [], small: [
       { id: 'modify.move', label: 'Move', icon: Move, run: () => void startCommand('MOVE') },
       { id: 'modify.copy', label: 'Copy', icon: Copy, run: () => void startCommand('COPY') },
-      { id: 'modify.rotate', label: 'Rotate', icon: RotateCw, run: () => void startCommand('ROTATE') },
+      { id: 'modify.rotate', label: 'Rotate', icon: RotateCw, run: () => void startCommand('ROTATEREF') },
       { id: 'modify.mirror', label: 'Mirror', icon: FlipHorizontal2, run: () => void startCommand('MIRROR') },
       // Copies in a row or round a centre, any element alike (decision 448).
       { id: 'modify.array', label: 'Array', icon: Grid3x3, run: () => void arraySelection() },

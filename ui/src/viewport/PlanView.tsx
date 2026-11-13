@@ -475,7 +475,7 @@ export function PlanView() {
   const last = pts[pts.length - 1];
   useEffect(() => {
     const k = tool?.gesture?.kind;
-    if (last && (k === 'twoPoints' || k === 'polyline' || k === 'polygon' || k === 'rectangle' || k === 'threePoints' || k === 'pickThenPoint')) liveBegin('tool', last, (p, typed) => clickRef.current(p, p, false, typed));
+    if (last && (k === 'twoPoints' || k === 'polyline' || k === 'polygon' || k === 'rectangle' || k === 'threePoints' || k === 'pickThenPoint')) liveBegin('tool', last, (p, typed) => clickRef.current(p, p, false, typed), k === 'rectangle' ? { rect: tool?.id ?? 'rectangle' } : {});
     else liveEnd('tool');
   }, [last, tool]);
   useEffect(() => () => liveEnd('tool'), []);
