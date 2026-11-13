@@ -23,6 +23,7 @@ import { MaterialGraphicsTable, type HatchPattern as Hatch, type MaterialRow as 
 import { OwnImage } from './OwnImage';
 import { MaterialPreview } from './MaterialPreview';
 import { forgetPatterns, keepPatterns, myPatterns } from './myPatterns';
+import { FirmFolderFiles } from './FirmFolderFiles';
 import { forgetHatchPreviews } from './hatchCache';
 import { freeName, matches, PRESET_GROUPS, PRESETS, presetArgs, type Preset } from './materialLibrary';
 import { lookOf, LOOK_RANGES, type Look } from '../../viewport/look';
@@ -89,6 +90,16 @@ export function MaterialsDialog() {
     create(presetArgs(p, freeName(p.name, list.map((x) => x.name))));
   };
 
+  const importPatFile = async (name: string, text: string) => {
+    const r = await execute('hatch.import', { text }) as { count: number; errors: string[] } | null;
+    if (r) {
+      forgetHatchPreviews();
+      keepPatterns(name, text);
+      setMine(myPatterns());
+      notify(`${r.count} hatch pattern${r.count === 1 ? '' : 's'} loaded${r.errors.length ? `, ${r.errors.length} line(s) skipped` : ''}, and kept in My patterns on this computer.`);
+    }
+  };
+
   const importPat = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -96,14 +107,7 @@ export function MaterialsDialog() {
     input.onchange = async () => {
       const file = input.files?.[0];
       if (!file) return;
-      const text = await file.text();
-      const r = await execute('hatch.import', { text }) as { count: number; errors: string[] } | null;
-      if (r) {
-        forgetHatchPreviews();
-        keepPatterns(file.name, text);
-        setMine(myPatterns());
-        notify(`${r.count} hatch pattern${r.count === 1 ? '' : 's'} loaded${r.errors.length ? `, ${r.errors.length} line(s) skipped` : ''}, and kept in My patterns on this computer.`);
-      }
+      await importPatFile(file.name, await file.text());
     };
     input.click();
   };
@@ -160,6 +164,8 @@ export function MaterialsDialog() {
             </div>
             <button type="button" className={`btn${library ? ' on' : ''}`} data-action="material-library" onClick={() => setLibrary((v) => !v)}><Library size={14} />From the library…</button>
             <button type="button" className="btn" onClick={importPat}><FileUp size={14} />Import .pat</button>
+            <FirmFolderFiles ext="pat" onPick={(f) => importPatFile(f.name, new TextDecoder().decode(f.bytes))}
+              save={{ disabled: mine.length === 0, get: async () => ({ text: mine.map((f) => f.text).join('\n'), name: 'My patterns' }) }} />
             {mine.length > 0 && (
               <div className="my-patterns">
                 <span className="eyebrow" title="The .pat files you imported, kept on this computer for any project">My patterns</span>

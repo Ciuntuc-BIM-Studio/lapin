@@ -12,6 +12,7 @@ import { pickFile, safeFileName, saveFile } from '../../../engine/files';
 import { t as tr } from '../../../i18n';
 import { TYPE_CHOICES } from '../LibraryChoices';
 import { LineSample } from './LineSample';
+import { FirmFolderFiles } from '../FirmFolderFiles';
 import { exportLin, importLin, readLin, removeLineType, setLineType, useLineTypes } from './lineTypes';
 import {
   addPair, dashesText, defaultLineChoices, fromPairs, lineConflicts, parseDashes, removePair, setPairValue, toPairs, validDashes,
@@ -46,10 +47,10 @@ export function LineTypesTab() {
     if (r) setSelected(r.name);
   };
 
-  const importFile = async (units: 'mm' | 'in', again?: { text: string }) => {
+  const importFile = async (units: 'mm' | 'in', again?: { text: string }, given?: { bytes: Uint8Array }) => {
     let text = again?.text;
     if (text == null) {
-      const f = await pickFile('AutoCAD line types (.lin)', 'lin');
+      const f = given ?? await pickFile('AutoCAD line types (.lin)', 'lin');
       if (!f) return;
       text = new TextDecoder().decode(f.bytes);
     }
@@ -151,6 +152,8 @@ export function LineTypesTab() {
               </li>
             ))}
           </ul>
+          <FirmFolderFiles ext="lin" onPick={(f) => importFile('mm', undefined, f)}
+            save={{ disabled: own.length === 0, get: async () => { const r = await exportLin(); return r ? { text: r.text, name: r.file.replace(/\.[^.]+$/, '') } : null; } }} />
         </div>
         <div className="grow">
           {!current ? <p className="muted">Choose a line type, or make one. Layers, grid axes, object styles and linework take it by its name.</p>

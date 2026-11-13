@@ -2333,3 +2333,14 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .param-formula-switch.on { color: var(--accent); }
 .shape-preview { color: var(--ink); }
 .tabs-inline { flex-wrap: wrap; align-items: center; }
+
+/* The Catalog's libraries (decision 263 stage 4b) and the firm folders block of the library dialogs. */
+.catalog-library { display: flex; flex-direction: column; gap: 6px; padding: 4px 0; }
+.catalog-lib-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.catalog-lib-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 4px 6px; border: 1px solid var(--rule); border-radius: 4px; background: var(--panel); }
+.catalog-lib-row .sy-thumb { width: 44px; height: 32px; }
+.firm-files { margin-top: 8px; }
+.firm-list li { display: flex; align-items: center; gap: 2px; }
+.firm-list li > button:first-child { flex: 1; }
+.firm-folders li { align-items: center; gap: 8px; padding: 2px 0; }
+.catalog-lib-row .catalog-text { min-width: 0; overflow-wrap: anywhere; }

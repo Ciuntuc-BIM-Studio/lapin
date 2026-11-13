@@ -12,7 +12,7 @@ Lapin cannot ship every steel profile used in the world, so it ships a small Eur
 
 - **Built in**: *EN steel (Lapin)*: IPE, HEA, HEB, HEM, UPN, UPE, equal and unequal angles, hot-finished SHS, RHS and CHS in common sizes, and generic cold-formed C, Z and Σ. Standard dimensions only; every property is worked out by Lapin.
 - **On this computer**: the libraries you import, for any project. The browser version keeps them too, in that browser.
-- **Company folders**: in the desktop app, any number of local, network or synced folders of `.lapinprofiles` files (**Add a folder…**). A folder is read-only unless you tick **writable**; then the save button beside it writes the library chosen there, for your colleagues.
+- **Company folders**: in the desktop app, any number of local, network or synced folders of `.lapinprofiles` files (**Add a folder…**; the same list is **Preferences → Libraries**, where every other library reads its files of the firm's folders too). A folder is read-only unless you tick **writable**; then the save button beside it writes the library chosen there, for your colleagues.
 - **In the project**: only the profiles the project uses are copied into it, with their library's name, so the file opens anywhere.
 
 Type in the search box to look through every library at once by name, family, standard or kind; choose a profile to see it drawn with its dimensions and its properties.

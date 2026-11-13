@@ -1,7 +1,7 @@
 ---
 title: Extensions
 order: 126
-summary: Add furniture, project templates, wall, door and window types, profiles, hatch patterns, title blocks and price lists made by others from the Lapin Extensions catalogue, and remove them again.
+summary: Add furniture, project templates, wall, door and window types, symbols, line types, drafting standards, rule packs, bar shapes, shared parameters, families, profiles, hatch patterns, title blocks and price lists made by others from the Lapin Extensions catalogue, and remove them again.
 ---
 
 ## The catalogue
@@ -34,6 +34,10 @@ Click **Install**. Lapin downloads the file, checks that its size and SHA-256 ar
 | Title blocks | the title blocks on this computer |
 | Price lists | **Construction → Price lists…**, marked indicative: the prices are the author's, check them against your own |
 | Types | the project open when you install it, in one step to undo (**Manage → Type packs…** exports your own) |
+| Symbols | **Manage → Symbols…**, in this computer's library; **Add to this project** in Installed brings them into the project open |
+| Line types, Drafting standards, Bar shapes, Shared parameters, Families | kept on this computer; **Add to this project** in Installed (and the project browser's **Catalog → From the libraries**) brings them into the project open through the library's own import: line types into the project's line types, standards into **Drafting standards**, bar shapes into **Bar shapes…** (the edition needs the rebar module), parameters into **Shared parameters**, families into Studio's families (the studio module) |
+| Rule packs | kept on this computer; **Add to this project** adds a rule pack of the project. Marked indicative: the values are the author's, check them against the norm in force |
+| Table and layer mappings | remembered by Lapin, so **Import table…** finds the column mapping by the table's headings and **Convert drafting to…** the converter of each layer; uninstalling puts your earlier choices back |
 
 If your library already has something of the same name, Lapin asks before replacing it. Nothing an extension brings is ever run: extensions are content.
 
@@ -76,4 +80,4 @@ Anyone can publish an extension. Export it from Lapin (My furniture → Export, 
 - **On the store**: sign in at store.lapinbim.com with your [forum](https://forum.lapinbim.com) account, open **Your extensions**, fill in the form and upload the file and a few screenshots. The store checks the file as Lapin will and sends it for review; your page shows the review and, once it is published, how many times it was downloaded. A new version goes the same way.
 - **On GitHub**: attach the file to a release of a repository of yours and add its manifest by a pull request on [Ciuntuc-BIM-Studio/lapin-extensions](https://github.com/Ciuntuc-BIM-Studio/lapin-extensions). Its README says how, and what the automatic checks look at.
 
-A types pack comes from **Manage → Type packs… → Export types…**; a price list from **Price lists…**, with the export button of a list on this computer (a `.lapinprices` file, its prices marked indicative).
+A types pack comes from **Manage → Type packs… → Export types…** (or **Save to library** at a type configurator); a symbol, line type, standards, rule pack, bar shapes or parameters file from the **Export** of its own dialog (**Manage → Symbols…**, **Drafting standards**, **Rules…**, **Bar shapes…**, **Shared parameters**; line types as a `.lin`); a price list from **Price lists…**, with the export button of a list on this computer (a `.lapinprices` file, its prices marked indicative).

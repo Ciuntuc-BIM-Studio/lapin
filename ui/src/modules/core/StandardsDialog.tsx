@@ -19,7 +19,7 @@ import { useLineTypes } from './lineTypes/lineTypes';
 import { lineTypeNames, withCurrent } from './lineTypes/lineTypeModel';
 import { useSystems } from './classifications/classifications';
 import { classificationFields } from './classifications/classModel';
-import { StandardsImportPanel, StandardsLibraryButtons, type PackRead } from './StandardsLibrary';
+import { StandardsFirmFolders, StandardsImportPanel, StandardsLibraryButtons, type PackRead } from './StandardsLibrary';
 import { BuildupEditor } from './BuildupEditor';
 import { LeaderEditor, type LeaderEntry } from './LeaderEditor';
 import { BUILDUP_DEFAULTS, type BuildupEntry } from './buildupTag';
@@ -265,6 +265,7 @@ export function StandardsDialog() {
             )}
           </div>
           </>}
+          {!pack && !lines && <StandardsFirmFolders onRead={setPack} />}
           {error && <p className="error-text" role="alert">{error}</p>}
         </div>
       </div>

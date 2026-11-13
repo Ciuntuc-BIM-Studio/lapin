@@ -6,10 +6,10 @@
 
 import { notify, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
-import { indexedRows } from '../../engine/templates';
 import { readPatterns, readProfileLibrary, readTitleBlock } from '../../platform/extensions/packs';
 import { addContentInstaller } from '../../platform/extensions/runtime';
-import { typesInstaller, type TypePackRow } from '../../platform/extensions/typesKind';
+import { typesInstaller } from '../../platform/extensions/typesKind';
+import { typePackRows } from './typeLibrary';
 import { forgetPatterns, keepPatterns, myPatterns } from './myPatterns';
 import { computerLibraries, forgetOnComputer, keepOnComputer } from './profileLibraries/store';
 import type { LibraryJson } from './profileLibraries/model';
@@ -18,10 +18,9 @@ import { forgetBlock, keepBlock, type TbFile } from './titleBlocks/titleBlockMod
 const kept = 'Not installed: yours was kept.';
 
 /** Type packs (.lapintypes) installed: kept on this computer (the page's IndexedDB, the desktop's too), their types brought into the open project. */
-const typePacks = indexedRows<TypePackRow>('lapin-type-packs', 'packs', 'type pack');
 
 addContentInstaller(typesInstaller({
-  rows: typePacks,
+  rows: typePackRows,
   bring: async (text) => {
     if (!useSession.getState().connected) return null;
     const r = await execute('types.importFrom', { text }) as { created: number; reused: number } | null;

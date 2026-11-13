@@ -98,6 +98,22 @@ The project browser's **Catalog** tab shows the project's types for each tool th
 
 ![The window types, drawn by their elevation](shots/catalog-windows.webp)
 
+**From the libraries** at the top of the tab lists what can be added to the project from every source: Lapin's own, **This computer**, the **firm folders** and the installed **extensions**. There are entries for types, symbols, line types, drafting standards, rule packs, bar shapes, shared parameters, hatch patterns and families, with a search, a kind and a source filter, the symbols drawn small, and each entry's source and licence. **Add to project** brings it in through the library's own import, in one step to undo; a type brings what it is made of (materials, profiles).
+
+![The Catalog's libraries: the firm folder's line types and symbol](shots/catalog-libraries.webp)
+
+### Firm folders in the library dialogs
+
+Each library's dialog (**Symbols…**, **Type packs…**, **Line types** in Drafting standards, **Drafting standards**, **Rules…**, **Bar shapes…**, **Shared parameters**, **Materials** for `.pat` files, **Price lists…**) has a **Firm folders** block that lists the files of its kind in your firm folders. A click reads the file through the dialog's own import, with the same choices as **Import…**. **Save to firm folder…** writes the library's own export into a writable folder, replacing a file of the same name. The small disk button keeps a copy of a file on this computer.
+
+![Symbols: the firm folder's file beside This project and This computer](shots/symbols-firm-folder.webp)
+
+### Save to library at a type configurator
+
+The dialogs that make types (wall, floor, door and window, stair, curtain wall, column and beam, steel and furniture types) have **Save to library**: the chosen type is written as a `.lapintypes` with its layers, materials, profiles and parameters, to **This computer** or a writable firm folder. It then appears in the Catalog, ready to add to another project in one click.
+
+![Save to library in the wall types](shots/save-type-library.webp)
+
 ## Folding the side panels
 
 In every mode, the project browser and the properties panel fold to a thin rail on their side:
@@ -131,6 +147,9 @@ The theme is kept: Lapin starts again in the one you left it in. **File → Pref
 - **Coordinates**: what the status line reads at the cursor, whether the project's points are shown, and the UCS (see [Real coordinates](site.md#real-coordinates)).
 - **Display**: the switches of View → Graphics (grid, thin lines, drafts and DXF in 3D) and how the 3D view is navigated, in one place.
 - **Profiles**: the profile standards a new project offers and those the pickers show (see [Profile libraries](profiles.md#standards)).
+- **Libraries** (desktop app): the **firm folders**, any number of local, network or synced folders that hold library files (symbols, types, line types, standards, rule packs, bar shapes, parameters, hatches, price lists, profiles, families). Tick **writable** to let Lapin save into a folder. The library dialogs and the Catalog read them (below).
+
+![File → Preferences → Libraries: a firm folder](shots/preferences-libraries.webp)
 
 ![File → Preferences: grid and snaps](shots/preferences.webp)
 

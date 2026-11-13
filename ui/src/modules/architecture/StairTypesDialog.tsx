@@ -20,6 +20,7 @@ import { ChecksList, percent, type StairNumbers } from './StairSection';
 import { DrawingLayer } from '../../viewport/DrawingLayer';
 import type { DrawingDto } from '../../viewport/drawing';
 import { deleteType } from '../core/deleteType';
+import { SaveTypeToLibrary } from '../core/SaveTypeToLibrary';
 
 interface Rules { set: string; riserMin: number; riserMax: number; riserTarget: number; treadMin: number; treadMax: number; treadTarget: number; stepMin: number; stepMax: number; minWidth: number; maxRisers: number; headroom: number; maxSlope: number; minRisers?: number }
 interface Spec {
@@ -362,6 +363,7 @@ export function StairTypesDialog() {
             </div>
             <div className="row joinery-actions">
               <span className="grow" />
+              {editing && <SaveTypeToLibrary ids={[editing]} />}
               {editing && <button type="button" className="btn" title="Delete the type (refused while stairs or ramps use it)" onClick={() => void deleteType(editing).then((ok) => { if (ok) setEditing(null); })}>Delete</button>}
               {editing && <button type="button" className="btn" onClick={() => placeWith(editing)}>Place with it</button>}
               <button type="button" className="btn primary" onClick={() => void save()}>{editing ? 'Save type' : 'Create type'}</button>

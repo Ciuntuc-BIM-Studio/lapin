@@ -16,6 +16,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { describeType } from './describe';
 import { structureHooks } from './hooks';
 import { deleteType } from '../core/deleteType';
+import { SaveTypeToLibrary } from '../core/SaveTypeToLibrary';
 import { useStandards } from '../../engine/unitsStore';
 import { formatSteps, parseSteps, type Step } from './steps';
 import { Cell, LengthField } from '../../shell/cells';
@@ -155,6 +156,7 @@ export function StructureTypesDialog() {
           <div className="type-edit">
             <div className="row">
               <p className="eyebrow grow">{edited ? <span data-no-i18n>{edited.name}</span> : `New ${kind} type`}</p>
+              {edited && <SaveTypeToLibrary ids={[edited.id]} />}
               {edited && <button type="button" className="btn small" onClick={fresh}>New type</button>}
             </div>
             <label className="field-line"><span className="eyebrow">Name</span><input value={name} placeholder="(from its size)" onChange={(e) => setName(e.target.value)} /></label>

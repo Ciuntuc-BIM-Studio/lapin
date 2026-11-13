@@ -98,6 +98,22 @@ Fila **Catalog** din browserul proiectului arată tipurile proiectului pentru fi
 
 ![Tipurile de ferestre, desenate după vederea lor](shots/catalog-windows.webp)
 
+**Din biblioteci**, în capul filei, arată ce se poate adăuga în proiect din orice sursă: bibliotecile Lapin, **Acest calculator**, **folderele firmei** și **extensiile** instalate. Sunt intrări pentru tipuri, simboluri, tipuri de linie, standarde de desen, pachete de reguli, forme de bare, parametri comuni, hașuri și familii, cu căutare, filtru de fel și de sursă, simbolurile desenate mic și sursa și licența fiecărei intrări. **Adaugă în proiect** o aduce prin importul propriei biblioteci, într-un pas de anulat; un tip aduce și din ce e făcut (materiale, profile).
+
+![Bibliotecile din Catalog: tipurile de linie și simbolul din folderul firmei](shots/catalog-libraries.webp)
+
+### Folderele firmei în dialogurile bibliotecilor
+
+Dialogul fiecărei biblioteci (**Simboluri…**, **Pachete de tipuri…**, **Tipuri de linie** din Standarde de desen, **Standarde de desen**, **Reguli…**, **Forme de bare…**, **Parametri comuni**, **Materiale** pentru fișierele `.pat`, **Liste de prețuri…**) are un bloc **Folderele firmei** cu fișierele de felul lui din folderele firmei. Un clic citește fișierul prin importul dialogului, cu aceleași alegeri ca la **Importă…**. **Salvează în folderul firmei…** scrie exportul propriu al bibliotecii într-un folder de scris, înlocuind un fișier cu același nume. Butonul mic cu disc păstrează o copie a fișierului pe acest calculator.
+
+![Simboluri: fișierul din folderul firmei lângă Acest proiect și Acest calculator](shots/symbols-firm-folder.webp)
+
+### Salvează în bibliotecă la configuratorul unui tip
+
+Dialogurile care fac tipuri (pereți, plăci, uși și ferestre, scări, pereți cortină, stâlpi și grinzi, oțel și mobilier) au **Salvează în bibliotecă**: tipul ales se scrie ca `.lapintypes`, cu straturile, materialele, profilele și parametrii lui, pe **Acest calculator** sau într-un folder al firmei care poate fi scris. Apoi apare în Catalog, gata de adăugat într-un alt proiect cu un clic.
+
+![Salvează în bibliotecă la tipurile de pereți](shots/save-type-library.webp)
+
 ## Plierea panourilor laterale
 
 În orice mod, browserul proiectului și panoul de proprietăți se pliază pe o bară subțire, pe partea lor:
@@ -131,6 +147,9 @@ Tema se păstrează: Lapin pornește din nou în cea în care l-ai lăsat. **Fi�
 - **Coordonate**: ce citește bara de stare la cursor, dacă punctele proiectului se văd și UCS-ul (vezi [Coordonate reale](site.md#coordonate-reale)).
 - **Afișare**: comutatoarele din Vedere → Grafică (grila, liniile subțiri, desenele și DXF-ul în 3D) și felul în care navighezi în vederea 3D, într-un singur loc.
 - **Profile**: standardele de profile oferite de un proiect nou și cele arătate de alegătoare (vezi [Biblioteci de profile](profiles.md#standardele)).
+- **Biblioteci** (aplicația desktop): **folderele firmei**, oricâte foldere locale, din rețea sau sincronizate cu fișiere de bibliotecă (simboluri, tipuri, tipuri de linie, standarde, pachete de reguli, forme de bare, parametri, hașuri, liste de prețuri, profile, familii). Bifează **de scris** ca Lapin să poată salva într-un folder. Dialogurile bibliotecilor și Catalogul le citesc (mai jos).
+
+![Fișier → Preferințe → Biblioteci: un folder al firmei](shots/preferences-libraries.webp)
 
 ![Fișier → Preferințe: grila și snap-ul](shots/preferences.webp)
 

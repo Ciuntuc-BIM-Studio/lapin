@@ -7,7 +7,7 @@
  */
 
 /** The kinds of extension: content packs (no code) first; Python scripts, which run once the Python console exists. */
-export const KINDS = ['furniture', 'template', 'types', 'profiles', 'hatches', 'titleBlock', 'priceList', 'script'] as const;
+export const KINDS = ['furniture', 'template', 'types', 'profiles', 'hatches', 'titleBlock', 'priceList', 'symbols', 'lineTypes', 'standards', 'rules', 'barShapes', 'parameters', 'mapping', 'families', 'script'] as const;
 export type ExtensionKind = (typeof KINDS)[number];
 
 export interface KindInfo {
@@ -29,6 +29,15 @@ export const KIND_INFO: Record<ExtensionKind, KindInfo> = {
   hatches: { label: 'Hatch patterns', extensions: ['pat'], code: false, module: 'core' },
   titleBlock: { label: 'Title blocks', extensions: ['json'], code: false, module: 'core' },
   priceList: { label: 'Price lists', extensions: ['lapinprices'], code: false, module: 'cost' },
+  // The libraries of docs/plan-user-extensibility.md §3–§6: each file as the library's Export writes it, kept on this computer and brought into the project on request.
+  symbols: { label: 'Symbols', extensions: ['lapinsymbols'], code: false, module: 'core' },
+  lineTypes: { label: 'Line types', extensions: ['lin'], code: false, module: 'core' },
+  standards: { label: 'Drafting standards', extensions: ['lapinstandards'], code: false, module: 'core' },
+  rules: { label: 'Rule packs', extensions: ['lapinrules'], code: false, module: 'core' },
+  barShapes: { label: 'Bar shapes', extensions: ['lapinbarshapes'], code: false, module: 'rebar' },
+  parameters: { label: 'Shared parameters', extensions: ['lapinparams'], code: false, module: 'core' },
+  mapping: { label: 'Table and layer mappings', extensions: ['lapinmapping'], code: false, module: 'core' },
+  families: { label: 'Families', extensions: ['lapinfamily'], code: false, module: 'studio' },
   script: { label: 'Python scripts', extensions: ['py'], code: true },
 };
 
@@ -223,6 +232,7 @@ export function validateManifest(m: unknown, opts: { local?: boolean } = {}): st
   if (shots !== undefined && (!Array.isArray(shots) || shots.length > 6 || shots.some((x) => typeof x !== 'string' || !(/^screenshot(?:-[1-9])?\.(?:png|webp|jpg)$/.test(x) || /^https:\/\/[^\s"'<>]+$/i.test(x))))) e.push('screenshots must be at most 6 https addresses or files of its folder (screenshot.webp, screenshot-2.png).');
   for (const k of ['homepage', 'forum'] as const) if (o[k] !== undefined && (!str(o[k]) || !isHttps(o[k] as string))) e.push(`${k} must be an https address.`);
   if (kind === 'priceList' && o.indicative !== true) e.push('A price list says its prices are indicative: indicative must be true.');
+  if (kind === 'rules' && o.indicative !== true) e.push('A rule pack says its values are indicative: indicative must be true.');
   if (o.indicative !== undefined && typeof o.indicative !== 'boolean') e.push('indicative must be true or false.');
   return e;
 }

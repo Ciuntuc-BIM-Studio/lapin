@@ -18,6 +18,7 @@ import { formatLengths, parseLengths } from '../core/format';
 import { PendingDialog } from '../core/PendingDialog';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { deleteType } from '../core/deleteType';
+import { SaveTypeToLibrary } from '../core/SaveTypeToLibrary';
 import { ProfilePickerField } from '../core/profileLibraries/ProfilePickerField';
 import { placeJson, type Place } from './memberPlace';
 import { PlaceFields } from './PlaceFields';
@@ -208,6 +209,7 @@ export function CurtainWallDialog() {
             </div>
             <div className="row joinery-actions">
               <span className="grow" />
+              {editing && <SaveTypeToLibrary ids={[editing]} />}
               {editing && <button type="button" className="btn" title="Delete the type (refused while curtain walls use it)" onClick={() => void deleteType(editing).then((ok) => { if (ok) setEditing(null); })}><Trash2 size={14} />Delete type</button>}
               {editing && <button type="button" className="btn" onClick={() => useUi.setState({ curtainTypeId: editing })}>Draw with it</button>}
               <button type="button" className="btn primary" disabled={Boolean(preview?.problem)} onClick={() => void save()}>{editing ? 'Save type' : 'Create type'}</button>

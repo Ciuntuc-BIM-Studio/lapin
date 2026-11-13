@@ -12,7 +12,7 @@ Lapin nu poate livra toate profilele metalice folosite în lume, așa că vine c
 
 - **Încorporată**: *EN steel (Lapin)*: IPE, HEA, HEB, HEM, UPN, UPE, corniere egale și inegale, SHS, RHS și CHS formate la cald în mărimi uzuale, C, Z și Σ generice formate la rece. Doar dimensiuni standard; toate proprietățile le calculează Lapin.
 - **Pe acest calculator**: bibliotecile importate, pentru orice proiect. Și varianta din browser le păstrează, în acel browser.
-- **Folderele firmei**: în aplicația desktop, oricâte foldere locale, din rețea sau sincronizate cu fișiere `.lapinprofiles` (**Adaugă un folder…**). Un folder e doar de citit până bifezi **de scris**; atunci butonul de salvare de lângă el scrie acolo biblioteca aleasă, pentru colegi.
+- **Folderele firmei**: în aplicația desktop, oricâte foldere locale, din rețea sau sincronizate cu fișiere `.lapinprofiles` (**Adaugă un folder…**; aceeași listă e **Preferințe → Biblioteci**, unde și celelalte biblioteci își citesc fișierele din folderele firmei). Un folder e doar de citit până bifezi **de scris**; atunci butonul de salvare de lângă el scrie acolo biblioteca aleasă, pentru colegi.
 - **În proiect**: doar profilele folosite se copiază în proiect, cu numele bibliotecii lor, ca fișierul să se deschidă oriunde.
 
 Scrie în căutare ca să cauți în toate bibliotecile după nume, familie, standard sau fel; alege un profil ca să-l vezi desenat, cu dimensiunile și proprietățile lui.

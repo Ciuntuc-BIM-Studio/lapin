@@ -15,6 +15,8 @@ import { pickFile, saveFile } from '../../engine/files';
 import { query, useSession } from '../../engine/session';
 import { readTypePack } from '../../platform/extensions/packs';
 import { PendingDialog } from './PendingDialog';
+import { FirmFolderFiles } from './FirmFolderFiles';
+import { exportTypes, saveTypesToLibrary, type LibraryTarget } from './typeLibrary';
 import { ask, defaultChoices, ImportSummary, LibraryChoices, run, type ImportSummaryData, type LibraryChoiceState, type MaterialConflict } from './LibraryChoices';
 
 interface ProjectType { id: string; class: string; label: string; name: string; count: number }
@@ -50,9 +52,9 @@ export function TypePacksDialog() {
     if (!r) return;
     if (await saveFile(new TextEncoder().encode(r.text), r.file, 'application/json')) notify('The types were exported as a .lapintypes, with their layers, materials and profiles: the file a types extension is.');
   };
-  const openPack = async () => {
+  const openPack = async (given?: { name: string; bytes: Uint8Array }) => {
     setSummary(null);
-    const f = await pickFile('Type pack (.lapintypes)', ['lapintypes', 'json']);
+    const f = given ?? await pickFile('Type pack (.lapintypes)', ['lapintypes', 'json']);
     if (!f) return;
     try {
       const { text } = readTypePack(f.bytes);
@@ -65,6 +67,7 @@ export function TypePacksDialog() {
       setChoices(defaultChoices(materials, conflictsOf(r.types), 'both'));
     } catch (e) { notify(e instanceof Error ? e.message : String(e)); }
   };
+  const keepHere = async (target: LibraryTarget) => { await saveTypesToLibrary([...picked], name.trim() || 'Types', target); };
   const bring = async () => {
     if (!pack) return;
     const types = Object.fromEntries(Object.entries(choices.types).filter(([ref]) => chosen.has(ref)));
@@ -120,6 +123,8 @@ export function TypePacksDialog() {
                 </table>
               )}
               {summary && <ImportSummary r={summary} />}
+              <FirmFolderFiles ext="lapintypes" onPick={(f) => openPack(f)}
+                save={{ disabled: picked.size === 0, get: async () => { const r = await exportTypes([...picked], name.trim() || undefined); return r ? { text: r.text, name: name.trim() || r.file.replace(/\.[^.]+$/, '') } : null; } }} />
               <label className="row small">Pack name <input className="grow" value={name} onChange={(e) => setName(e.target.value)} placeholder="Types" data-field="type-pack-name" /></label>
             </>
           )}
@@ -135,6 +140,7 @@ export function TypePacksDialog() {
             <>
               <button type="button" className="btn" onClick={() => void openPack()} data-action="type-pack-open"><FileUp size={13} /> Import types…</button>
               <span className="grow" />
+              <button type="button" className="btn" disabled={picked.size === 0} onClick={() => void keepHere({ kind: 'computer' })} data-action="type-pack-keep" title="Kept in this computer's type packs: any project here can add them (Catalog)">Save to this computer</button>
               <button type="button" className="btn primary" disabled={picked.size === 0} onClick={() => void exportPack()} data-action="type-pack-export"><FileDown size={13} /> Export types…</button>
             </>
           )}

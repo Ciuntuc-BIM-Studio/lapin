@@ -13,6 +13,7 @@ import { useSession } from '../engine/session';
 import { slotOf, TOOL_DRAG } from '../app/hotbar';
 import { activate, allTools, typesOf } from '../platform/modules';
 import type { ToolDef } from '../platform/module';
+import { CatalogLibrary } from './CatalogLibrary';
 
 const KIND_KEY = 'lapin.catalog.kind';
 
@@ -27,7 +28,24 @@ export function catalogKinds(tools: ToolDef[] = allTools()): ToolDef[] {
   return [...by.values()];
 }
 
+const MODE_KEY = 'lapin.catalog.mode';
+
+/** The catalog: the project's types for the tools, or what the libraries can add (Lapin's, this computer's, the firm's, the extensions'). */
 export function Catalog() {
+  const [mode, setMode] = useState<'project' | 'libraries'>(() => { try { return localStorage.getItem(MODE_KEY) === 'libraries' ? 'libraries' : 'project'; } catch { return 'project'; } });
+  const pick = (m: 'project' | 'libraries') => { setMode(m); try { localStorage.setItem(MODE_KEY, m); } catch { /* a convenience only */ } };
+  return (
+    <>
+      <div className="catalog-kinds" role="tablist" aria-label="Catalog source">
+        <button type="button" role="tab" aria-selected={mode === 'project'} className={`kind-chip${mode === 'project' ? ' on' : ''}`} data-mode="project" onClick={() => pick('project')}>In the project</button>
+        <button type="button" role="tab" aria-selected={mode === 'libraries'} className={`kind-chip${mode === 'libraries' ? ' on' : ''}`} data-mode="libraries" onClick={() => pick('libraries')}>From the libraries</button>
+      </div>
+      {mode === 'project' ? <ProjectCatalog /> : <CatalogLibrary />}
+    </>
+  );
+}
+
+function ProjectCatalog() {
   useSession((s) => s.nodes);
   useUi((s) => [s.wallTypeId, s.doorTypeId, s.windowTypeId, s.slabTypeId, s.stairTypeId, s.rampTypeId, s.ceilingTypeId, s.skirtingTypeId, s.curtainTypeId, s.memberTypeId].join());
   const kinds = catalogKinds();

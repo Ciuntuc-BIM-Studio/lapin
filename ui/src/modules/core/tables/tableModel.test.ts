@@ -87,3 +87,20 @@ describe('converter options', () => {
     expect(recallLayer('X')).toBeNull();
   });
 });
+
+describe('a mapping file installed as an extension', () => {
+  it('remembers a table mapping by its headings and a layer map by layer, and puts them back', async () => {
+    const store = new Map<string, string>();
+    (globalThis as unknown as { localStorage: Storage }).localStorage = { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => { store.set(k, v); }, removeItem: (k: string) => { store.delete(k); } } as Storage;
+    const { rememberMappingFile, forgetMappingReceipt, recallMapping, recallLayer, rememberLayers } = await import('./tableModel');
+    rememberLayers([{ layer: 'A-WALL', converter: 'old', options: {} }]);
+    const t = rememberMappingFile({ app: 'lapin', kind: 'table', version: 1, target: 'core.classification', mapping: [{ header: 'Code', key: 'code' }, { header: 'Title', key: 'title' }] });
+    expect(recallMapping('core.classification', ['Title', 'Code'])).toEqual([{ column: 0, key: 'title' }, { column: 1, key: 'code' }]);
+    const l = rememberMappingFile({ app: 'lapin', kind: 'layers', version: 1, layers: [{ layer: 'A-WALL', converter: 'architecture.wall', options: {} }, { layer: 'A-DOOR', converter: null, options: {} }] });
+    expect(recallLayer('A-WALL')?.converter).toBe('architecture.wall');
+    forgetMappingReceipt(t); forgetMappingReceipt(l);
+    expect(recallMapping('core.classification', ['Title', 'Code'])).toBeNull();
+    expect(recallLayer('A-WALL')?.converter).toBe('old');
+    expect(recallLayer('A-DOOR')).toBeNull();
+  });
+});

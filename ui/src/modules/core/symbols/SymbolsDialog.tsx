@@ -16,6 +16,7 @@ import { pensToSvg } from '../documents/docModel';
 import { TYPE_CHOICES } from '../LibraryChoices';
 import { freeName } from '../titleBlocks/titleBlockModel';
 import { SymbolEditor } from './SymbolEditor';
+import { FirmFolderFiles } from '../FirmFolderFiles';
 import { Thumb } from './Thumb';
 import { createSymbol, deleteSymbol, exportSymbols, getSymbol, importSymbols, listSymbols, previewSymbol, readPack, updateSymbol, type PackSymbol, type SymList } from './symbols';
 import {
@@ -142,20 +143,23 @@ export function SymbolsDialog() {
     else if (r.origin === 'library') { renameSymbol(r.id, n); reload(); }
   };
 
+  /** A symbol as a .lapinsymbols file's text, wherever it is kept. */
+  const packOf = async (r: Row): Promise<{ text: string; file: string } | null> => {
+    if (r.origin === 'library') { const def = await defOf(r); return def ? { text: packText([{ name: r.name, def }], r.name), file: `${safeFileName(r.name, 'symbol')}.lapinsymbols` } : null; }
+    const e = await exportSymbols([r.id], r.name);
+    return e ? { text: e.text, file: `${safeFileName(r.name, 'symbol')}.lapinsymbols` } : null;
+  };
+
   const exportOne = async (r: Row) => {
-    let text: string, file: string;
-    if (r.origin === 'library') { const def = await defOf(r); if (!def) return; text = packText([{ name: r.name, def }], r.name); file = `${safeFileName(r.name, 'symbol')}.lapinsymbols`; }
-    else {
-      const e = await exportSymbols([r.id], r.name);
-      if (!e) return;
-      text = e.text; file = `${safeFileName(r.name, 'symbol')}.lapinsymbols`;
-    }
+    const p = await packOf(r);
+    if (!p) return;
+    const { text, file } = p;
     const saved = await saveFile(new TextEncoder().encode(text), file, 'application/json');
     if (saved) notify(`Exported ${saved}.`);
   };
 
-  const importOne = async () => {
-    const f = await pickFile('Symbol library (.lapinsymbols)', 'lapinsymbols');
+  const importOne = async (given?: { bytes: Uint8Array }) => {
+    const f = given ?? await pickFile('Symbol library (.lapinsymbols)', 'lapinsymbols');
     if (!f) return;
     const text = new TextDecoder().decode(f.bytes);
     if (into === 'library') {
@@ -251,6 +255,8 @@ export function SymbolsDialog() {
                 </section>
               );
             })}
+            <FirmFolderFiles ext="lapinsymbols" onPick={(f) => importOne(f)}
+              save={{ disabled: !current, get: async () => { if (!current) { notify('Choose a symbol to save.'); return null; } const p = await packOf(current); return p ? { text: p.text, name: current.name } : null; } }} />
           </aside>
           <main className="tpl-detail">
             {pack ? (

@@ -11,6 +11,7 @@ import { notify, useUi } from '../../app/store';
 import { engine, useSession } from '../../engine/session';
 import { pickFile, safeFileName, saveFile } from '../../engine/files';
 import { LengthField } from '../../shell/cells';
+import { FirmFolderFiles } from '../core/FirmFolderFiles';
 import { PendingDialog } from '../core/PendingDialog';
 import { createShape, deleteShape, exportShapes, importShapes, updateShape, useShapeLibrary } from './barShapes';
 import { ShapePreview } from './ShapePreview';
@@ -36,8 +37,8 @@ export function BarShapesDialog() {
     const saved = await saveFile(new TextEncoder().encode(r.text), safeFileName(r.file, 'shapes.lapinbarshapes'), 'application/json');
     if (saved) notify(`Exported ${saved}.`);
   };
-  const importFile = async () => {
-    const f = await pickFile('Bar shapes (.lapinbarshapes)', 'lapinbarshapes');
+  const importFile = async (given?: { bytes: Uint8Array }) => {
+    const f = given ?? await pickFile('Bar shapes (.lapinbarshapes)', 'lapinbarshapes');
     if (!f) return;
     const r = await importShapes(new TextDecoder().decode(f.bytes), true);
     if (r) notify(`${r.added} shapes added, ${r.updated} updated.`);
@@ -65,6 +66,8 @@ export function BarShapesDialog() {
             </ul>
             <h4 className="eyebrow">Lapin's</h4>
             <ul className="doc-templates">{lib.builtin.map((b) => <li key={b.code}><span className="small" data-no-i18n>{b.label}</span></li>)}</ul>
+            <FirmFolderFiles ext="lapinbarshapes" onPick={(f) => importFile(f)}
+              save={{ disabled: lib.shapes.length === 0, get: async () => { const r = await exportShapes(); return r ? { text: r.text, name: r.file.replace(/\.[^.]+$/, '') } : null; } }} />
           </aside>
           <main className="tpl-detail">
             {selected === 'new' || current

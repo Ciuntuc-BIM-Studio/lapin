@@ -10,7 +10,7 @@
 
 import { setKeymap, useKeymap } from '../app/shortcuts';
 import { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { FolderPlus, Trash2, X } from 'lucide-react';
 import { useUi } from '../app/store';
 import { POLAR_STEPS, SNAP_MODES, resolveTheme, setPrefs, usePrefs, type CoordSystem, type ThemeChoice } from '../app/prefs';
 import { setDisplay, useDisplay, type Display } from '../app/display';
@@ -25,11 +25,14 @@ import { standardsOf } from '../modules/core/profileLibraries/model';
 import { StandardChecks } from '../modules/core/profileLibraries/StandardChecks';
 import { refreshTemplates, useTemplates } from '../engine/templates';
 import { engineInBrowser } from '../engine/session';
+import { isDesktop } from '../engine/files';
+import { pickFolder } from '../modules/core/cde/cde';
+import { firmFoldersAvailable, prefsStart, setFirmFolders, useFirmFiles } from '../modules/core/firmFolders';
 
-type Page = 'general' | 'grid' | 'coords' | 'display' | 'profiles';
+type Page = 'general' | 'grid' | 'coords' | 'display' | 'profiles' | 'libraries';
 const PAGES: { id: Page; label: string }[] = [
   { id: 'general', label: 'General' }, { id: 'grid', label: 'Grid and snaps' }, { id: 'coords', label: 'Coordinates' }, { id: 'display', label: 'Display' },
-  { id: 'profiles', label: 'Profiles' },
+  { id: 'profiles', label: 'Profiles' }, { id: 'libraries', label: 'Libraries' },
 ];
 
 /** The profile standards (decision 457): those a new project offers, those the pickers show. */
@@ -46,6 +49,32 @@ function ProfilesPage() {
     <StandardChecks all={all} value={all.filter((g) => !p.profileStandardsHidden.includes(g))} testId="prefs-shown-standards"
       onChange={(v) => setPrefs({ profileStandardsHidden: v ? all.filter((g) => !v.includes(g)) : [] })} />
     <p className="muted small">The chips at the top of a picker's list do the same.</p>
+  </>;
+}
+/** The firm's folders for every library (docs/plan-user-extensibility.md §4.2). */
+function LibrariesPage() {
+  const { files, problems, folders, loading } = useFirmFiles([]);
+  const add = async () => {
+    const path = isDesktop() ? await pickFolder(null) : null;
+    if (path && !folders.some((f) => f.path === path)) setFirmFolders([...folders, { path, writable: false }]);
+  };
+  if (!firmFoldersAvailable()) return <p className="muted small" data-testid="prefs-firm-browser">Firm folders are in the desktop app: the browser keeps libraries on this computer only.</p>;
+  return <>
+    <h4>Firm folders</h4>
+    <p className="muted small">Folders of library files shared by the firm (local, on the network or synced): symbols, types, line types, standards, rule packs, bar shapes, parameters, hatches, price lists, profiles and families. Every library dialog and the Catalog list what they hold; „Save to firm folder…” writes into the ones marked writable.</p>
+    {folders.length === 0 && <p className="muted small">None yet.</p>}
+    <ul className="plain-list firm-folders" data-testid="prefs-firm-folders">
+      {folders.map((f) => (
+        <li key={f.path} className="row small">
+          <span className="grow" data-no-i18n title={f.path}>{f.path}</span>
+          <span className="muted small" data-no-i18n>{loading ? '…' : files.filter((x) => x.folder === f.path).length}</span>
+          <label className="check" title="Lapin may save library files there"><input type="checkbox" checked={f.writable} onChange={(e) => setFirmFolders(folders.map((x) => (x.path === f.path ? { ...x, writable: e.target.checked } : x)))} data-field="prefs-firm-writable" />writable</label>
+          <button type="button" className="icon mini" title="Stop reading this folder (its files stay)" onClick={() => setFirmFolders(folders.filter((x) => x.path !== f.path))}><Trash2 size={11} /></button>
+        </li>
+      ))}
+    </ul>
+    <p className="row small"><button type="button" className="btn" onClick={() => void add()} data-field="prefs-firm-add"><FolderPlus size={14} />Add a folder…</button></p>
+    {problems.length > 0 && <p className="muted small" data-no-i18n>{problems.join(' ')}</p>}
   </>;
 }
 const THEMES: { id: ThemeChoice; label: string }[] = [{ id: 'paper', label: 'Light theme' }, { id: 'graphite', label: 'Dark theme' }, { id: 'system', label: 'As the system' }];
@@ -74,7 +103,7 @@ function Radio<T extends string | number>({ name, value, options, onChange }: { 
 }
 
 export function PreferencesDialog() {
-  const [page, setPage] = useState<Page>('general');
+  const [page, setPage] = useState<Page>(() => { const p = prefsStart.page as Page | null; prefsStart.page = null; return p && PAGES.some((x) => x.id === p) ? p : 'general'; });
   const p = usePrefs();
   const display = useDisplay();
   const lang = useLang((s) => s.lang);
@@ -189,6 +218,7 @@ export function PreferencesDialog() {
               <p className="row small"><button type="button" className="btn" onClick={() => useUi.setState({ dialog: 'displayQuality' })}>Display quality…</button></p>
             </>}
             {page === 'profiles' && <ProfilesPage />}
+            {page === 'libraries' && <LibrariesPage />}
           </section>
         </div>
         <footer className="dialog-foot"><span className="muted small">Kept on this computer, for every project.</span><span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>

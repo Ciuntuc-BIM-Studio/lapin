@@ -146,3 +146,35 @@ export const rememberLayers = (layers: LayerEntry[]): void => {
   } catch { /* not kept */ }
 };
 export const recallLayer = (layer: string): { converter: string | null; options: Record<string, unknown> } | null => layerMemory()[layer] ?? null;
+
+// ------------------------------------------------------------ a .lapinmapping brought in as an extension
+
+/** What installing a mapping file changed, to put back: the table signatures it added and each layer's earlier memory (null: none). */
+export interface MappingReceipt { tables: string[]; layers: Record<string, { converter: string | null; options: Record<string, unknown> } | null> }
+
+/** A .lapinmapping's mappings remembered on this computer, as if the user had matched them (table: by its headings; layers: by name). */
+export function rememberMappingFile(file: MappingFile): MappingReceipt {
+  const receipt: MappingReceipt = { tables: [], layers: {} };
+  if (file.kind === 'table') {
+    const headers = file.mapping.map((e) => e.header);
+    const items: MapItem[] = file.mapping.flatMap((e, column) => (e.key ? [{ column, key: e.key, ...(e.unit ? { unit: e.unit } : {}) }] : []));
+    rememberMapping(file.target, headers, items);
+    receipt.tables.push(headerSignature(file.target, headers));
+  } else {
+    for (const l of file.layers) receipt.layers[l.layer] = recallLayer(l.layer);
+    rememberLayers(file.layers);
+  }
+  return receipt;
+}
+
+/** What `rememberMappingFile` remembered, taken away again (a layer's earlier choice put back). */
+export function forgetMappingReceipt(r: MappingReceipt): void {
+  try {
+    const mem = readMemory();
+    for (const sig of r.tables ?? []) delete mem[sig];
+    localStorage.setItem(MEMORY, JSON.stringify(mem));
+    const layers = layerMemory();
+    for (const [name, was] of Object.entries(r.layers ?? {})) { if (was) layers[name] = was; else delete layers[name]; }
+    localStorage.setItem(LAYER_MEMORY, JSON.stringify(layers));
+  } catch { /* nothing kept */ }
+}

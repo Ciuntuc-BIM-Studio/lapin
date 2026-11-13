@@ -10,6 +10,7 @@ import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { ofClass, relatedOf } from '../../engine/model';
 import { deleteType } from '../core/deleteType';
+import { SaveTypeToLibrary } from '../core/SaveTypeToLibrary';
 import { LengthField } from '../../shell/cells';
 import { kgPerMetre, sectionLabel, sectionPath, type SectionDto } from './sections';
 import { ProfilePickerField } from '../core/profileLibraries/ProfilePickerField';
@@ -78,6 +79,7 @@ export function SteelTypesDialog() {
                 );
               })}
             </ul>
+            {types.length > 0 && <SaveTypeToLibrary ids={types.map((x) => x.id)} name="Steel types" />}
           </div>
           <div className="type-edit">
             <p className="eyebrow">New steel type</p>

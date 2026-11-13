@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { FileDown, FileUp, Plus, Trash2 } from 'lucide-react';
 import { notify } from '../../../app/store';
 import { pickFile, safeFileName, saveFile } from '../../../engine/files';
+import { FirmFolderFiles } from '../FirmFolderFiles';
 import { PARAM_KINDS, parseOptions, type ParamDef } from './classModel';
 import { exportDefs, importDefs, removeDef, setDef, useParamDefs } from './classifications';
 
@@ -29,8 +30,8 @@ export function SharedParams() {
     const saved = await saveFile(new TextEncoder().encode(r.text), safeFileName(r.file, 'parameters.lapinparams'), 'application/json');
     if (saved) notify(`Exported ${saved}.`);
   };
-  const importFile = async () => {
-    const f = await pickFile('Shared parameters (.lapinparams)', 'lapinparams');
+  const importFile = async (given?: { bytes: Uint8Array }) => {
+    const f = given ?? await pickFile('Shared parameters (.lapinparams)', 'lapinparams');
     if (!f) return;
     const r = await importDefs(new TextDecoder().decode(f.bytes));
     if (r) notify(`${r.added} parameters added, ${r.updated} updated.`);
@@ -71,6 +72,8 @@ export function SharedParams() {
           <dt /><dd className="row"><button type="button" className="btn primary" disabled={!draft.name.trim()} data-field="param-save" onClick={() => void save()}>{draft.id ? 'Save' : 'Add'}</button><button type="button" className="btn" onClick={() => setDraft(null)}>Cancel</button></dd>
         </dl>
       )}
+      <FirmFolderFiles ext="lapinparams" onPick={(f) => importFile(f)}
+        save={{ disabled: defs.length === 0, get: async () => { const r = await exportDefs(); return r ? { text: r.text, name: r.file.replace(/\.[^.]+$/, '') } : null; } }} />
     </div>
   );
 }

@@ -7411,6 +7411,56 @@ export const scenes = [
     },
   },
   {
+    // The libraries of the firm (docs/plan-user-extensibility.md §4): a folder of library files read by every library's dialog and by the
+    // Catalog's „From the libraries”, a configured type saved to a library. The folder is the temporary one of this run, writable.
+    id: 'libraries-firm',
+    touches: ['core', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      const dir = mkdtempSync(join(tmpdir(), 'lapin-guide-firm-'));
+      const symbol = { name: 'Firm north arrow', def: { scale: 'annotation', category: 'north', attributes: [], items: [{ type: 'circle', c: [0, 0], r: 6, stroke: 0.35 }, { type: 'line', a: [0, -6], b: [0, 8], w: 0.5 }, { type: 'line', a: [0, 8], b: [-2.5, 3], w: 0.5 }, { type: 'line', a: [0, 8], b: [2.5, 3], w: 0.5 }] } };
+      writeFileSync(join(dir, 'Office symbols.lapinsymbols'), JSON.stringify({ format: 'lapin-symbols', version: 1, name: 'Office symbols', symbols: [symbol] }, null, 2));
+      writeFileSync(join(dir, 'Office lines.lin'), '*FIRM-DASHDOT, dash dot\nA,12,-4,1,-4\n*FIRM-LONG, long dash\nA,20,-5\n');
+      await t.page.evaluate(async (path) => {
+        (await import('/src/modules/core/profileLibraries/store.ts')).setSharedFolders([{ path, writable: true }]);
+      }, dir);
+      await t.ui({ dialog: 'preferences' });
+      await t.page.locator('[data-field=prefs-libraries]').click();
+      await t.page.waitForSelector('[data-testid=prefs-firm-folders] li', { timeout: 10_000 });
+      await t.until(async () => (await t.page.locator('[data-testid=prefs-firm-folders] li').first().innerText()).includes('2'), 'the folder counts its two library files');
+      await t.shot('preferences-libraries', { of: '.prefs-dialog', pad: 0 });
+      await t.ui({ dialog: null });
+      // The Symbols dialog lists the folder's file and reads it through its own import.
+      await t.ui({ dialog: 'symbols' });
+      await t.page.waitForSelector('[data-dialog=symbols] [data-firm-file="Office symbols"]', { timeout: 10_000 });
+      await t.shot('symbols-firm-folder', { of: '[data-dialog=symbols]', pad: 0 });
+      await t.page.locator('[data-dialog=symbols] [data-field=sy-import-where]').selectOption('project');
+      await t.page.locator('[data-dialog=symbols] [data-firm-file="Office symbols"]').click();
+      await t.until(async () => (await t.page.locator('[data-dialog=symbols] [data-field^="sy-item-"]').allInnerTexts()).some((x) => x.includes('Firm north arrow')), 'the symbol of the firm\'s file is in the project');
+      await t.ui({ dialog: null });
+      // The Catalog's libraries: the line types of the folder, with their source.
+      await t.page.locator('nav.browser [data-tab=catalog]').click();
+      await t.page.locator('[data-testid=catalog] [data-mode=libraries], nav.browser [data-mode=libraries]').first().click();
+      await t.page.waitForSelector('[data-testid=catalog-library] [data-entry="Office lines"]', { timeout: 10_000 });
+      await t.shot('catalog-libraries', { of: 'nav.browser', pad: 0 });
+      await t.page.locator('[data-testid=catalog-library] [data-entry="Office lines"] [data-action=catalog-add]').click();
+      await t.until(async () => (await t.call('doc.query', { name: 'standards.lineTypes', args: {} })).own.some((l) => l.name === 'FIRM-DASHDOT'), 'Add to project brought the folder\'s line types in');
+      // Save to library at a type configurator.
+      await t.ui({ dialog: 'wallTypes' });
+      await t.page.waitForSelector('[data-action=save-type-library]', { timeout: 10_000 });
+      await t.shot('save-type-library', { of: '.dialog', pad: 0 });
+      await t.page.locator('[data-action=save-type-library]').click();
+      await t.wait(800);
+      await t.ui({ dialog: null });
+      await t.page.locator('nav.browser [data-mode=libraries]').click();
+      await t.page.locator('nav.browser [data-testid=catalog-library] button[data-source=computer]').click();
+      t.expect(await t.page.locator('[data-testid=catalog-library] [data-entry]').count() >= 1, 'the type saved to this computer is in the Catalog');
+      await t.page.locator('nav.browser [data-mode=project]').click();
+      await t.page.locator('nav.browser .browser-tab').first().click();
+    },
+  },
+  {
     // The CDE (docs/plan-cde.md, decision 185): the project file holds the issues; the folder is the desktop app's, so the guide's
     // browser run sets it with the development switch (the folder typed in) in a temporary folder. The project is saved as House.lapin
     // (an issue is a version in its file), issued for real, and the dialog shows the issue as issued, the project saved after it.

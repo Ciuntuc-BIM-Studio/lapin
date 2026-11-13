@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readFurnitureLibrary, readPatterns, readPriceList, readProfileLibrary, readTitleBlock } from './packs';
+import { readBarShapes, readFamily, readFurnitureLibrary, readLineTypes, readMapping, readParameters, readPatterns, readPriceList, readProfileLibrary, readRulePack, readStandards, readSymbolPack, readTitleBlock } from './packs';
 
 const b = (v: unknown) => new TextEncoder().encode(typeof v === 'string' ? v : JSON.stringify(v));
 
@@ -37,5 +37,43 @@ describe('a content pack\'s file', () => {
     expect(readPriceList(b(list)).rows).toHaveLength(1);
     expect(() => readPriceList(b({ ...list, indicative: false }))).toThrow('A price list from an extension says its prices are indicative.');
     expect(() => readPriceList(b({ ...list, rows: [{ c: 'X', n: 'x', u: 'm', m: -1 }] }))).toThrow('The row X has a price that is not a number.');
+  });
+});
+
+describe('the libraries\' own files (symbols, line types, standards, rules, bar shapes, parameters, mappings, families)', () => {
+  it('a symbol library', () => {
+    const lib = { format: 'lapin-symbols', version: 1, name: 'Office', symbols: [{ name: 'North', def: { items: [{ type: 'circle', c: [0, 0], r: 3 }] } }] };
+    expect(readSymbolPack(b(lib))).toMatchObject({ name: 'Office', names: ['North'] });
+    expect(() => readSymbolPack(b({ ...lib, symbols: [{ name: 'Empty', def: { items: [] } }] }))).toThrow('A symbol of the library has no name or draws nothing.');
+    expect(() => readSymbolPack(b({ ...lib, version: 2 }))).toThrow(/newer Lapin/);
+    expect(() => readSymbolPack(b({ format: 'x' }))).toThrow('The file is not a Lapin symbol library.');
+  });
+
+  it('a .lin file: names with a pattern line each', () => {
+    expect(readLineTypes(b('*DASHDOT, dash dot\nA,12,-6,0,-6\n*HIDDEN2\nA,3,-1.5\n')).names).toEqual(['DASHDOT', 'HIDDEN2']);
+    expect(() => readLineTypes(b('*A\n*B\nA,1,-1\n'))).toThrow('The line type A has no pattern.');
+    expect(() => readLineTypes(b('hello\n'))).toThrow(/does not start with a \*NAME line/);
+    expect(() => readLineTypes(b('*A\n1,2\n'))).toThrow(/does not start with A,/);
+  });
+
+  it('standards, rules, bar shapes, parameters, families', () => {
+    expect(readStandards(b({ format: 'lapin-standards', version: 1, name: 'DIN', drafting: {} })).name).toBe('DIN');
+    expect(() => readStandards(b({ format: 'lapin-standards', version: 1 }))).toThrow('The standards file has no drafting standards.');
+    expect(readRulePack(b({ format: 'lapin-rules', version: 1, name: 'RO', indicative: true, stairs: {} })).name).toBe('RO');
+    expect(() => readRulePack(b({ format: 'lapin-rules', version: 1, name: 'RO', indicative: false, stairs: {} }))).toThrow(/indicative/);
+    expect(() => readRulePack(b({ format: 'lapin-rules', version: 1, name: 'RO' }))).toThrow('The rule pack has no rules.');
+    expect(readBarShapes(b({ format: 'lapin-bar-shapes', version: 1, shapes: [{ code: '21', label: 'L' }] })).codes).toEqual(['21 L']);
+    expect(() => readBarShapes(b({ format: 'lapin-bar-shapes', version: 1, shapes: [{ label: 'L' }] }))).toThrow('A shape of the file has no code or label.');
+    expect(readParameters(b({ format: 'lapin-parameters', version: 1, parameters: [{ name: 'Fire', kind: 'text' }] })).names).toEqual(['Fire']);
+    expect(() => readParameters(b({ format: 'lapin-parameters', version: 1, parameters: [] }))).toThrow('The parameters file has no parameter.');
+    expect(readFamily(b({ format: 'lapin-family', version: 1, name: 'Bracket', def: { params: [] } })).name).toBe('Bracket');
+    expect(() => readFamily(b({ format: 'lapin-family', version: 1, name: 'x' }))).toThrow('The family has no definition.');
+  });
+
+  it('a mapping: a table\'s or a layer map', () => {
+    expect(readMapping(b({ app: 'lapin', kind: 'table', version: 1, target: 'core.classification', mapping: [{ header: 'Code', key: 'code' }] })).kind).toBe('table');
+    expect(readMapping(b({ app: 'lapin', kind: 'layers', version: 1, layers: [{ layer: 'A-WALL', converter: null, options: {} }] })).names).toEqual(['A-WALL']);
+    expect(() => readMapping(b({ app: 'lapin', kind: 'table', target: 't', mapping: [] }))).toThrow('The table mapping has no target or no column.');
+    expect(() => readMapping(b({ kind: 'x' }))).toThrow('The file is not a Lapin mapping file.');
   });
 });

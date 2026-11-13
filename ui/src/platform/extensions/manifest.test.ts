@@ -117,3 +117,26 @@ describe('the catalogue\'s index', () => {
     expect(() => readIndex({ format: 'lapin-extensions-index', version: 2, extensions: [] })).toThrow(/newer Lapin/);
   });
 });
+
+describe('the library kinds of extension', () => {
+  const lib = (kind: string, file: string, over: Record<string, unknown> = {}) => furniturePack({ kind: kind as never, contents: { file }, ...over });
+
+  it('takes each kind with its file and refuses another', () => {
+    for (const [kind, file] of [['symbols', 'a.lapinsymbols'], ['lineTypes', 'a.lin'], ['standards', 'a.lapinstandards'], ['barShapes', 'a.lapinbarshapes'], ['parameters', 'a.lapinparams'], ['mapping', 'a.lapinmapping'], ['families', 'a.lapinfamily']] as const) {
+      expect(validateManifest(lib(kind, file))).toEqual([]);
+      expect(validateManifest(lib(kind, 'a.zip'))[0]).toContain('package is a');
+    }
+  });
+
+  it('a rule pack says its values are indicative', () => {
+    expect(validateManifest(lib('rules', 'ro.lapinrules'))).toContain('A rule pack says its values are indicative: indicative must be true.');
+    expect(validateManifest(lib('rules', 'ro.lapinrules', { indicative: true }))).toEqual([]);
+  });
+
+  it('needs the module of its library in the edition', () => {
+    const m = lib('barShapes', 'a.lapinbarshapes');
+    expect(compatibility(m as never, app({ modules: ['core'] }))).toEqual({ ok: false, reason: 'This edition of Lapin has no rebar module.' });
+    expect(compatibility(m as never, app({ modules: ['core', 'rebar'] })).ok).toBe(true);
+    expect(compatibility(lib('families', 'a.lapinfamily') as never, app()).ok).toBe(false);
+  });
+});

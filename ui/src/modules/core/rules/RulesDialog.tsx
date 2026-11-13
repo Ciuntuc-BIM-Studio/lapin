@@ -13,6 +13,7 @@ import { pickFile, safeFileName, saveFile } from '../../../engine/files';
 import { execute, useSession } from '../../../engine/session';
 import { LengthField, NumberField } from '../../../shell/cells';
 import { ask, runOk as run } from '../LibraryChoices';
+import { FirmFolderFiles } from '../FirmFolderFiles';
 import { PendingDialog } from '../PendingDialog';
 import {
   BUILTIN_SETS, STAIR_FIELDS, addGrade, removeGrade, renameGrade, addStairSet, addStep, diametersText, findingsByModule, parseDiameters, removeStairSet, removeStep, removeSteel, addSteel,
@@ -67,8 +68,8 @@ export function RulesDialog() {
     const saved = await saveFile(new TextEncoder().encode(r.text), safeFileName(r.file, 'rules.lapinrules'), 'application/json');
     if (saved) notify(`Exported ${saved}.`);
   };
-  const importPack = async () => {
-    const f = await pickFile('Rule pack (.lapinrules)', 'lapinrules');
+  const importPack = async (given?: { bytes: Uint8Array }) => {
+    const f = given ?? await pickFile('Rule pack (.lapinrules)', 'lapinrules');
     if (!f) return;
     const r = await run<{ id: string }>('rules.import', { text: new TextDecoder().decode(f.bytes) });
     if (r) setSelected(r.id);
@@ -99,6 +100,8 @@ export function RulesDialog() {
                 </li>
               ))}
             </ul>
+            <FirmFolderFiles ext="lapinrules" onPick={(f) => importPack(f)}
+              save={{ get: async () => { const r = await ask<{ text: string; file: string }>('rules.export', { id: item.id }); return r ? { text: r.text, name: r.file.replace(/\.[^.]+$/, '') } : null; } }} />
           </aside>
           <main className="tpl-detail">
             <p className="muted small rules-note" data-testid="rules-note">Every value here is indicative and yours to check against the norm in force: Lapin's tools propose and warn from these rules, they never refuse.</p>

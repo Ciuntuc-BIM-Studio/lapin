@@ -11,6 +11,7 @@ import { execute, query, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
 import { relatedOf } from '../../engine/model';
 import { deleteType } from '../core/deleteType';
+import { SaveTypeToLibrary } from '../core/SaveTypeToLibrary';
 import { LengthField } from '../../shell/cells';
 import { KitchenUnitsEditor } from './KitchenUnitsEditor';
 import { CaseworkEditor } from './CaseworkEditor';
@@ -188,6 +189,7 @@ export function FurnitureTypesDialog() {
                 <span className="eyebrow">{kind.label}</span>
                 <span className="grow" />
                 <button type="button" className="btn small" data-action="furniture-save-library" onClick={() => saveTypeToLibrary(type.id)} title="Keep this type in your own library, to use it in other projects"><BookmarkPlus size={13} /> Save to my library…</button>
+                <SaveTypeToLibrary ids={[type.id]} />
                 <button type="button" className="btn small" onClick={() => void duplicate()} title="A copy of this type, to change"><Copy size={13} /> Duplicate</button>
               </div>
               <div className="furniture-edit-grid">

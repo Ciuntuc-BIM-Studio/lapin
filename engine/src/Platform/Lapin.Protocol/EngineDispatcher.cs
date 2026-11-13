@@ -596,7 +596,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
     /// back as bytes, imports bring theirs. A viewer looks; an editor edits.
     /// </summary>
     /// <summary>The library files a firm's folder may hold (docs/plan-user-extensibility.md §4.2), by extension.</summary>
-    public static readonly string[] LibraryKinds = ["lapinsymbols", "lapintypes", "lapinstandards", "lapinrules", "lapinbarshapes", "lapinparams", "lapinmapping", "lapinfamily", "lapinprofiles", "lapinprices", "pat", "lin"];
+    public static readonly string[] LibraryKinds = ["lapinsymbols", "lapintypes", "lapinstandards", "lapinrules", "lapinbarshapes", "lapinparams", "lapinmapping", "lapinfamily", "lapinlib", "lapintitleblock", "lapinprofiles", "lapinprices", "pat", "lin"];
 
     public static string? AllowedRemote(string method, JsonObject p, string role)
     {

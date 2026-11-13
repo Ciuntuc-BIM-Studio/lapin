@@ -10,7 +10,8 @@ import { BookMarked, Download, FileDown, FileUp, Trash2, X } from 'lucide-react'
 import { notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { pickFile, saveFile, toBase64 } from '../../engine/files';
-import { writePriceList } from '../../platform/extensions/packs';
+import { readPriceList, writePriceList } from '../../platform/extensions/packs';
+import { FirmFolderFiles } from '../core/FirmFolderFiles';
 import { forgetFromLibrary, keepInLibrary, library, type LibraryList, type PriceRowDto } from './estimate';
 
 /** A list of this computer's library as a .lapinprices: the file a price list extension is (docs/plan-extensions.md), marked indicative. */
@@ -152,6 +153,8 @@ export function PriceListsDialog() {
                   ))}
                 </ul>
               )}
+              <FirmFolderFiles ext="lapinprices" onPick={(f) => { try { const l = readPriceList(f.bytes); void execute('cost.addPriceList', { name: l.name, currency: l.currency, rows: l.rows, source: 'library' }).then((r) => { if (r) notify(`Price list added to the project from the firm folder: ${l.name}.`); }); } catch (e) { notify(e instanceof Error ? e.message : String(e)); } }}
+                save={{ disabled: lib.length === 0, choices: lib.map((l) => l.name), get: async (name) => { const l = lib.find((x) => x.name === name); return l ? { text: writePriceList(l), name: l.name } : null; } }} />
             </>
           )}
         </div>

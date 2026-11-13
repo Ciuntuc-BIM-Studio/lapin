@@ -23,6 +23,7 @@ import { PartitionOptions, partitionArg, useShapePick } from './partitions';
 import { ShapeToolOptions } from './ShapeTool';
 import { AlongEdgesOptions, placeAlongEdges } from './AlongEdgesTool';
 import { exportBvbsFile } from './barShapes';
+import './extensionKind';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const InsetPickDialog = lazyPart(() => import('./RebarDialogs').then((m) => m.InsetPickDialog), { title: 'Inset view' });

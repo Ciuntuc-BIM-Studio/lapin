@@ -10,11 +10,26 @@ import { FileDown, FileUp } from 'lucide-react';
 import { notify } from '../../app/store';
 import { pickFile, safeFileName, saveFile } from '../../engine/files';
 import { ask, runOk as run, TYPE_CHOICES } from './LibraryChoices';
+import { FirmFolderFiles } from './FirmFolderFiles';
 import {
   allChoices, conflictsOf, defaultStandardsChoices, entryKey, kindLabel, summarise, type StandardsPack,
 } from './standardsLibraryModel';
 
 export interface PackRead { text: string; pack: StandardsPack }
+
+/** The standards in the firm's folders, read like an imported file; Save to firm folder… writes the project's own export. */
+export function StandardsFirmFolders({ onRead }: { onRead: (r: PackRead) => void }) {
+  const read = async (f: { bytes: Uint8Array }) => {
+    const text = new TextDecoder().decode(f.bytes);
+    const pack = await ask<StandardsPack>('standards.readPack', { text });
+    if (pack) onRead({ text, pack });
+  };
+  const get = async () => {
+    const r = await ask<{ text: string; file: string }>('standards.export', {});
+    return r ? { text: r.text, name: r.file.replace(/\.[^.]+$/, '') } : null;
+  };
+  return <FirmFolderFiles ext="lapinstandards" onPick={read} save={{ get }} />;
+}
 
 export function StandardsLibraryButtons({ onRead }: { onRead: (r: PackRead) => void }) {
   const exportAll = async () => {

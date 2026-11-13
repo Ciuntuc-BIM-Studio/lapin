@@ -20,6 +20,7 @@ import { PendingDialog } from '../core/PendingDialog';
 import { ParamsSection } from '../../shell/ParamsSection';
 import { StyleSelect, sameAs } from '../../shell/StyleSelect';
 import { deleteType } from '../core/deleteType';
+import { SaveTypeToLibrary } from '../core/SaveTypeToLibrary';
 import { LintelRuleEditor } from './LintelRule';
 import type { Rule } from './lintels';
 import { BayFields, type Bay } from './BayFields';
@@ -1042,6 +1043,7 @@ export function JoineryDialog() {
             </div>
             <div className="row joinery-actions">
               <span className="grow" />
+              {editing && <SaveTypeToLibrary ids={[editing]} />}
               {editing && <button type="button" className="btn" title="Delete the type (refused while elements use it)" onClick={() => void deleteType(editing).then((ok) => { if (ok) setEditing(null); })}><Trash2 size={14} />Delete type</button>}
               {editing && <button type="button" className="btn" onClick={() => useUi.setState(spec.kind === 'door' ? { doorTypeId: editing } : { windowTypeId: editing })}>Place with it</button>}
               <button type="button" className="btn primary" disabled={Boolean(preview?.problem)} onClick={() => void save()}>{editing ? 'Save type' : 'Create type'}</button>

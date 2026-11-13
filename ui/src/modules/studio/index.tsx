@@ -34,6 +34,7 @@ import { finishSketch, lookAtPlane, setWorkPlane, useWorkPlane } from '../../vie
 import { frameOfView } from '../../viewport/workPlane';
 import { cancel as cancelCommand } from '../../viewport/cad/session';
 import { toggleSketchupKeys, useDisplay } from '../../app/display';
+import './familyLibrary';
 
 /** The thickness and height last used, the next command's defaults. */
 const last = { thickness: 0.2, height: 3 };
