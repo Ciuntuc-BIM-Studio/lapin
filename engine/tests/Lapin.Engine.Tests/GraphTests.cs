@@ -277,7 +277,7 @@ public sealed class GraphTests : IDisposable
         Assert.Contains("architecture.addWall", commands);
         Assert.DoesNotContain(commands, c => c.StartsWith("graphs.", StringComparison.Ordinal) || c == "edit.batch");
         // Every command of the module is in the source catalogue (node:check keeps it fresh).
-        foreach (var c in new[] { "graphs.save", "graphs.rename", "graphs.delete", "graphs.bake" }) Assert.Contains(c, CommandCatalogue.SourceCommands);
+        foreach (var c in new[] { "graphs.save", "graphs.rename", "graphs.delete", "graphs.bake", "graphs.set" }) Assert.Contains(c, CommandCatalogue.SourceCommands);
     }
 
     static JsonObject Exec(string command, JsonObject args) => new() { ["command"] = command, ["args"] = args };
@@ -300,6 +300,7 @@ public sealed class GraphTests : IDisposable
         {
             ("doc.execute", Exec("graphs.save", new JsonObject { ["name"] = "Mine", ["graph"] = Walls() })),
             ("doc.execute", Exec("graphs.bake", new JsonObject { ["id"] = graph })),
+            ("doc.execute", Exec("graphs.set", new JsonObject { ["id"] = graph, ["values"] = new JsonObject() })),
             ("doc.execute", Exec("graphs.rename", new JsonObject { ["id"] = graph, ["name"] = "x" })),
             ("doc.execute", Exec("graphs.delete", new JsonObject { ["id"] = graph })),
             ("doc.execute", Exec("edit.batch", new JsonObject { ["steps"] = new JsonArray(Exec("graphs.bake", new JsonObject { ["id"] = graph })) })),
@@ -707,5 +708,181 @@ public sealed class GraphTests : IDisposable
         r = Evaluate(f, G([N("slab", "command:architecture.addSlab", new() { ["points"] = P([20, 0], [26, 0], [26, 4], [20, 4]) })]));
         Assert.Equal(1, (int)r["calls"]!);
         Assert.Null(NodeOf(r, "slab")["error"]);
+    }
+
+    // ── stage 2: the palette, format 2, groups (decision 536) ──
+
+    /// <summary>Walls() with its count an input: Number „Walls” → the series' count, the wall's height a Number too.</summary>
+    static JsonObject PaletteWalls()
+    {
+        var g = Walls();
+        var nodes = g["nodes"]!.AsArray();
+        nodes.Add(new JsonObject { ["id"] = "count", ["kind"] = "integer", ["x"] = 0, ["y"] = 0, ["values"] = new JsonObject { ["value"] = 3 }, ["label"] = "Walls",
+            ["palette"] = new JsonObject { ["min"] = 1, ["max"] = 10, ["order"] = 1, ["junk"] = "x" } });
+        nodes.Add(N("h", "number", new() { ["value"] = 2.8, ["unit"] = "length" }));
+        nodes.Add(N("total", "count"));
+        nodes.Add(N("watch", "watch"));
+        g["wires"]!.AsArray().Add(W("count", "value", "xs", "count"));
+        g["wires"]!.AsArray().Add(W("h", "value", "wall", "height"));
+        g["wires"]!.AsArray().Add(W("wall", "ids", "total", "list"));
+        g["wires"]!.AsArray().Add(W("total", "count", "watch", "value"));
+        g["format"] = 2;
+        g["tool"] = new JsonObject { ["show"] = true, ["name"] = "Row of walls", ["icon"] = "wall", ["group"] = "Graphs", ["other"] = 1 };
+        return g;
+    }
+
+    [Fact]
+    public void A_graph_of_format_1_is_read_and_written_as_format_2_and_a_newer_one_refused()
+    {
+        var one = Walls();
+        Assert.Equal(1, (int)one["format"]!);
+        var doc = GraphDoc.Read(one);
+        var two = doc.ToJson();
+        Assert.Equal(2, (int)two["format"]!);
+        Assert.Equal(4, two["nodes"]!.AsArray().Count);
+        Assert.Null(two["tool"]);
+        // What format 1 did not have is not read from it: a group refused, palette settings left out.
+        var withGroup = G([N("g", "group")]);
+        Assert.Contains("format 1", Assert.Throws<CommandException>(() => GraphDoc.Read(withGroup)).Message);
+        var settings = Walls();
+        settings["nodes"]![0]!["palette"] = new JsonObject { ["hide"] = true };
+        Assert.Null(GraphDoc.Read(settings).Nodes[0].Palette);
+        var newer = Walls();
+        newer["format"] = 3;
+        Assert.Contains("newer Lapin", Assert.Throws<CommandException>(() => GraphDoc.Read(newer)).Message);
+        // A format-1 graph evaluates as before.
+        var f = Project();
+        Assert.Equal(3, Out(Evaluate(f, Walls()), "wall", "ids")!.AsArray().Count);
+    }
+
+    [Fact]
+    public void Palette_settings_and_the_tool_are_kept_with_the_graph_only_what_is_known()
+    {
+        var f = Project();
+        var id = (string)f.Run("graphs.save", new JsonObject { ["name"] = "Row", ["graph"] = PaletteWalls() })!["id"]!;
+        var g = f.Session.Query("graphs.get", new JsonObject { ["id"] = id })!["graph"]!;
+        Assert.Equal(2, (int)g["format"]!);
+        Assert.Equal("""{"show":true,"name":"Row of walls","icon":"wall","group":"Graphs"}""", g["tool"]!.ToJsonString());
+        var count = g["nodes"]!.AsArray().First(n => (string)n!["id"]! == "count")!;
+        Assert.Equal("""{"order":1,"min":1,"max":10}""", count["palette"]!.ToJsonString());
+    }
+
+    [Fact]
+    public void A_palettes_values_preview_without_a_step_and_are_written_into_the_graph_as_one()
+    {
+        var f = Project();
+        var id = (string)f.Run("graphs.save", new JsonObject { ["name"] = "Row", ["graph"] = PaletteWalls() })!["id"]!;
+        var undo = f.Session.History.UndoLabel;
+        var revision = f.Model.Revision;
+        // Changed in the palette: the preview takes the values, the graph and the model stay as they were.
+        var r = f.Session.Query("graphs.evaluate", new JsonObject { ["id"] = id, ["values"] = new JsonObject { ["count"] = 5, ["h"] = 3.1 } })!.AsObject();
+        Assert.Equal(5, (double)Out(r, "watch", "value")!);
+        Assert.Equal(5, Out(r, "wall", "ids")!.AsArray().Count);
+        Assert.Equal(revision, f.Model.Revision);
+        Assert.Equal(undo, f.Session.History.UndoLabel);
+        Assert.Equal(3, (double)Out(f.Session.Query("graphs.evaluate", new JsonObject { ["id"] = id })!.AsObject(), "watch", "value")!);
+
+        // Let go: written into the graph's input nodes, one step.
+        f.Run("graphs.set", new JsonObject { ["id"] = id, ["values"] = new JsonObject { ["count"] = 4 } });
+        Assert.Equal("Change graph inputs", f.Session.History.UndoLabel);
+        Assert.Equal(4, (double)Out(f.Session.Query("graphs.evaluate", new JsonObject { ["id"] = id })!.AsObject(), "watch", "value")!);
+        f.Session.Undo();
+        Assert.Equal(3, (double)Out(f.Session.Query("graphs.evaluate", new JsonObject { ["id"] = id })!.AsObject(), "watch", "value")!);
+
+        // Only an input node takes a value, and only one of its kind.
+        Assert.Contains("not an input", Assert.Throws<CommandException>(() => f.Run("graphs.set", new JsonObject { ["id"] = id, ["values"] = new JsonObject { ["wall"] = 1 } })).Message);
+        Assert.Contains("does not take", Assert.Throws<CommandException>(() => f.Run("graphs.set", new JsonObject { ["id"] = id, ["values"] = new JsonObject { ["count"] = 2.5 } })).Message);
+        Assert.Contains("no node", Assert.Throws<CommandException>(() => f.Run("graphs.set", new JsonObject { ["id"] = id, ["values"] = new JsonObject { ["nope"] = 1 } })).Message);
+
+        // Bake from the palette: its values written and the walls made in one step; Undo takes both back.
+        f.Run("graphs.bake", new JsonObject { ["id"] = id, ["values"] = new JsonObject { ["count"] = 2 } });
+        Assert.Equal("Bake graph", f.Session.History.UndoLabel);
+        Assert.Equal(2, f.Model.OfClass(IfcClass.Wall).Count());
+        Assert.Equal(2, Lapin.Model.Json.Number(GraphDoc.Read(f.Model.Get(id)!.Attrs["graph"]).Find("count")!.Values["value"]));
+        f.Session.Undo();
+        Assert.Empty(f.Model.OfClass(IfcClass.Wall));
+        Assert.Equal(3, Lapin.Model.Json.Number(GraphDoc.Read(f.Model.Get(id)!.Attrs["graph"]).Find("count")!.Values["value"]));
+    }
+
+    [Fact]
+    public void A_type_node_gives_the_type_chosen_else_the_first_of_its_class_by_name()
+    {
+        var f = Project();
+        var thin = f.Type("B thin", ("Brick", 0.1, true));
+        var thick = f.Type("A thick", ("Brick", 0.3, true));
+        Assert.Equal(thick, (string)Out(Evaluate(f, G([N("t", "type")])), "t", "value")!);
+        Assert.Equal(thin, (string)Out(Evaluate(f, G([N("t", "type", new() { ["value"] = thin })])), "t", "value")!);
+        Assert.Contains("no type", (string)NodeOf(Evaluate(f, G([N("t", "type", new() { ["class"] = IfcClass.StairType })])), "t")["error"]!);
+        // Into a wall's Type: the wall is of it.
+        var g = Walls();
+        g["nodes"]!.AsArray().Add(N("t", "type", new() { ["value"] = thin }));
+        g["wires"]!.AsArray().Add(W("t", "value", "wall", "typeId"));
+        f.Run("graphs.bake", new JsonObject { ["graph"] = g });
+        Assert.All(f.Model.OfClass(IfcClass.Wall), w => Assert.Equal(thin, f.Model.RelatingOf(w.Id, IfcClass.RelDefinesByType)?.Id));
+    }
+
+    /// <summary>Walls() with its series and two points collapsed into the group „row”: the series' count fed from outside, the points read out.</summary>
+    static JsonObject Grouped()
+    {
+        var inner = G([N("xs", "series", new() { ["start"] = 0, ["step"] = 2 }), N("a", "point"), N("b", "point", new() { ["y"] = 4 })],
+            W("xs", "list", "a", "x"), W("xs", "list", "b", "x"));
+        inner.Remove("format");
+        var group = new JsonObject
+        {
+            ["id"] = "row", ["kind"] = "group", ["x"] = 0, ["y"] = 0, ["label"] = "Row", ["graph"] = inner,
+            ["inputs"] = new JsonArray(new JsonObject { ["node"] = "xs", ["port"] = "count", ["label"] = "How many" }),
+            ["outputs"] = new JsonArray(new JsonObject { ["node"] = "a", ["port"] = "point" }, new JsonObject { ["node"] = "b", ["port"] = "point" }),
+        };
+        var g = G([N("n", "integer", new() { ["value"] = 3 }), group, N("wall", "command:architecture.addWall", new() { ["height"] = 2.8 })],
+            W("n", "value", "row", "xs.count"), W("row", "a.point", "wall", "pt:1"), W("row", "b.point", "wall", "pt:2"));
+        g["format"] = 2;
+        return g;
+    }
+
+    [Fact]
+    public void A_group_evaluates_as_its_nodes_would_outside_and_keeps_their_results_by_path()
+    {
+        var f = Project();
+        var r = Evaluate(f, Grouped());
+        Assert.Equal(3, Out(r, "wall", "ids")!.AsArray().Count);
+        Assert.Equal(3, Out(r, "row", "a.point")!.AsArray().Count);
+        Assert.Equal([0.0, 2, 4], Numbers(Out(r, "row/xs", "list")));
+        // The points inside are drawn in the ghost, as outside.
+        Assert.Equal(6 * 3, r["ghost"]!["points"]!.AsArray().Count);
+        // Written and read again as it was; baked in one step, the same walls as the graph unfolded.
+        Assert.Equal(GraphDoc.Read(Grouped()).ToJson().ToJsonString(), GraphDoc.Read(GraphDoc.Read(Grouped()).ToJson()).ToJson().ToJsonString());
+        f.Run("graphs.bake", new JsonObject { ["graph"] = Grouped() });
+        Assert.Equal([0.0, 2, 4], f.Model.OfClass(IfcClass.Wall).Select(w => Lapin.Model.Json.Number(w.Attrs["start"]!.AsArray()[0]) ?? -1).Order());
+
+        // A palette's value reaches a node inside a group by its path.
+        Assert.Contains("not an input", Assert.Throws<CommandException>(() => GraphDoc.Read(Grouped()).WithValues(new JsonObject { ["row/xs"] = 4 })).Message);
+        var withInput = Grouped();
+        withInput["nodes"]![1]!["graph"]!["nodes"]!.AsArray().Add(N("y", "number", new() { ["value"] = 4 }));
+        withInput["nodes"]![1]!["graph"]!["wires"]!.AsArray().Add(W("y", "value", "b", "y"));
+        var moved = GraphDoc.Read(withInput).WithValues(new JsonObject { ["row/y"] = 7 });
+        Assert.Equal(7, Lapin.Model.Json.Number(moved.Find("row/y")!.Values["value"]));
+
+        // A failure inside shows on its node, and on the group as a warning or, when nothing comes out, an error.
+        var bad = Grouped();
+        bad["wires"]!.AsArray()[0] = W("n", "value", "row", "xs.count");
+        bad["nodes"]![0]!["values"] = new JsonObject { ["value"] = -1 };
+        var rb = Evaluate(f, bad);
+        Assert.NotNull(NodeOf(rb, "row/xs")["error"]);
+        Assert.Contains("inside failed", (string)NodeOf(rb, "row")["error"]!);
+        Assert.Contains("not baked", Assert.Throws<CommandException>(() => f.Run("graphs.bake", new JsonObject { ["graph"] = bad })).Message);
+    }
+
+    [Fact]
+    public void A_group_is_checked_its_ports_name_nodes_it_holds_and_a_wire_names_a_port_it_has()
+    {
+        var unknownPort = Grouped();
+        unknownPort["wires"]!.AsArray()[0] = W("n", "value", "row", "xs.start2");
+        Assert.Contains("no input", Assert.Throws<CommandException>(() => GraphDoc.Read(unknownPort)).Message);
+        var missing = Grouped();
+        missing["nodes"]![1]!["inputs"]!.AsArray().Add(new JsonObject { ["node"] = "zz", ["port"] = "x" });
+        Assert.Contains("does not hold", Assert.Throws<CommandException>(() => GraphDoc.Read(missing)).Message);
+        var wiredInside = Grouped();
+        wiredInside["nodes"]![1]!["inputs"]!.AsArray().Add(new JsonObject { ["node"] = "a", ["port"] = "x" });
+        Assert.Contains("wired inside", Assert.Throws<CommandException>(() => GraphDoc.Read(wiredInside)).Message);
     }
 }

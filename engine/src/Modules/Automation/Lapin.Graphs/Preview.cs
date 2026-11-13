@@ -31,7 +31,7 @@ public static class Preview
         var catalog = q.Services as ModuleCatalog ?? throw new CommandException("No commands to preview here.");
         var clock = Stopwatch.StartNew();
         JsonObject? result = null;
-        if (!doc.Nodes.Any(n => n.Kind.StartsWith(Evaluator.CommandPrefix, StringComparison.Ordinal)))
+        if (!doc.All().Any(x => x.Node.Kind.StartsWith(Evaluator.CommandPrefix, StringComparison.Ordinal)))
         {
             var e = new Evaluator(doc, q.Model, catalog, null, q, GraphLimits.PreviewTime) { Storey = storey }.RunAll();
             result = Result(e, null, catalog);

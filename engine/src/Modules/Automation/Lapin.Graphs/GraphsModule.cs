@@ -74,15 +74,34 @@ public sealed class GraphsModule : ILapinModule, IPackageTexts, IDrivenElements
             return null;
         });
 
-        // {id} or {graph}, storey? (the storey a command node without one works on: the view's): the graph made, one undo step; refused whole, with the first failure, when one of its commands fails.
+        // {id, values: {path: value}}: a palette's fields written into the graph's input nodes (decision 536), one undo step.
+        r.Command("set", "Change graph inputs", (ctx, a) =>
+        {
+            var e = Graph(ctx.Model, (string?)a["id"]);
+            var doc = GraphDoc.Read(e.Attrs["graph"] ?? new JsonObject()).WithValues(a["values"] as JsonObject);
+            var attrs = e.CloneAttrs();
+            attrs["graph"] = doc.ToJson();
+            if (attrs.ToJsonString() != e.Attrs.ToJsonString()) ctx.Replace(e.With(attrs: attrs));
+            return Json(e, created: false);
+        });
+
+        // {id} or {graph}, storey? (the storey a command node without one works on: the view's), values? (a palette's fields,
+        // written into the saved graph in the same step): the graph made, one undo step; refused whole, with the first
+        // failure, when one of its commands fails.
         r.Command("bake", "Bake graph", (ctx, a) =>
         {
-            var doc = DocOf(ctx.Model, a);
+            var doc = DocOf(ctx.Model, a).WithValues(a["values"] as JsonObject);
+            if (a["values"] is JsonObject { Count: > 0 } && a["graph"] is not JsonObject && Graph(ctx.Model, (string?)a["id"]) is { } saved)
+            {
+                var attrs = saved.CloneAttrs();
+                attrs["graph"] = doc.ToJson();
+                if (attrs.ToJsonString() != saved.Attrs.ToJsonString()) ctx.Replace(saved.With(attrs: attrs));
+            }
             var catalog = ctx.Services as ModuleCatalog ?? throw new CommandException("No commands to bake here.");
             var tracking = new TrackingContext(ctx, catalog, new ModelQuery(ctx.Model, catalog));
             var e = new Evaluator(doc, ctx.Model, catalog, tracking, tracking.Query, GraphLimits.BakeTime) { Storey = (string?)a["storey"] }.RunAll();
             if (e.Results.FirstOrDefault(x => x.Value.IsCommand && (x.Value.Error != null || x.Value.Failed > 0)) is { Value: { } bad, Key: { } at })
-                throw new CommandException($"The graph was not baked: „{Label(doc.Node(at)!)}” failed: {bad.Error ?? bad.Warning}");
+                throw new CommandException($"The graph was not baked: „{Label(doc.Find(at)!)}” failed: {bad.Error ?? bad.Warning}");
             return new JsonObject { ["made"] = new JsonArray(e.Made.Select(x => (JsonNode)x).ToArray()), ["calls"] = e.Calls };
         });
 
@@ -96,8 +115,9 @@ public sealed class GraphsModule : ILapinModule, IPackageTexts, IDrivenElements
             return o;
         });
 
-        // {id} or {graph} (an unsaved one, or {id, graph}: the saved one as the editor has it now), storey?: its values and its ghost.
-        r.Query("evaluate", (q, a) => Preview.Of(q, DocOf(q.Model, a), (string?)a["storey"]));
+        // {id} or {graph} (an unsaved one, or {id, graph}: the saved one as the editor has it now), storey?, values? (a
+        // palette's fields as they are being changed, not written: decision 536): its values and its ghost.
+        r.Query("evaluate", (q, a) => Preview.Of(q, DocOf(q.Model, a).WithValues(a["values"] as JsonObject), (string?)a["storey"]));
 
         // The module's own nodes with their ports, and the product's commands and queries a graph may run.
         r.Query("nodes", (q, _) =>

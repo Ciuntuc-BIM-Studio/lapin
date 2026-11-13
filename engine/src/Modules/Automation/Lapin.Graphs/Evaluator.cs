@@ -44,19 +44,58 @@ public sealed class GraphStopped(string message) : ModelException(message);
 /// <paramref name="commands"/> (a copy of the model for a preview, the command's own context for Bake); without one they
 /// are not run.
 /// </summary>
-public sealed class Evaluator(GraphDoc doc, IModelView model, ModuleCatalog catalog, TrackingContext? commands, IQueryContext query, TimeSpan budget)
+public sealed class Evaluator
 {
+    /// <summary>What an evaluation and the groups' evaluations inside it share: results by path, what was made, calls, the clock.</summary>
+    sealed class Run
+    {
+        public readonly Dictionary<string, NodeResult> Results = new(StringComparer.Ordinal);
+        public readonly Dictionary<string, string> Kinds = new(StringComparer.Ordinal);
+        public readonly List<string> Made = [];
+        public readonly Stopwatch Clock = Stopwatch.StartNew();
+        public int Calls;
+    }
+
+    readonly GraphDoc doc;
+    readonly IModelView model;
+    readonly ModuleCatalog catalog;
+    readonly TrackingContext? commands;
+    readonly IQueryContext query;
+    readonly TimeSpan budget;
+    readonly Run _run;
+    /// <summary>The path of the group evaluated (<c>g1/</c>), empty for the graph itself.</summary>
+    readonly string _prefix;
+    /// <summary>A group's inputs as its nodes take them: (node, port) → the value wired into the group.</summary>
+    readonly Dictionary<(string Node, string Port), object?> _injected;
+
+    public Evaluator(GraphDoc doc, IModelView model, ModuleCatalog catalog, TrackingContext? commands, IQueryContext query, TimeSpan budget)
+        : this(doc, model, catalog, commands, query, budget, new Run(), "", []) { }
+
+    Evaluator(GraphDoc doc, IModelView model, ModuleCatalog catalog, TrackingContext? commands, IQueryContext query, TimeSpan budget, Run run, string prefix, Dictionary<(string, string), object?> injected)
+    {
+        this.doc = doc;
+        this.model = model;
+        this.catalog = catalog;
+        this.commands = commands;
+        this.query = query;
+        this.budget = budget;
+        _run = run;
+        _prefix = prefix;
+        _injected = injected;
+    }
+
     /// <summary>
     /// The storey a command node without one of its own works on (the view's, as a tool draws on the storey shown): set as its
     /// <c>storeyId</c> when its inputs have none. Null: each command's own default (the first storey).
     /// </summary>
     public string? Storey { get; init; }
 
-    public Dictionary<string, NodeResult> Results { get; } = new(StringComparer.Ordinal);
+    /// <summary>What each node gave, by its path (a group's nodes as <c>group/node</c>).</summary>
+    public Dictionary<string, NodeResult> Results => _run.Results;
     /// <summary>What the commands made, in order (elements first: what has a geometry).</summary>
-    public List<string> Made { get; } = [];
-    public int Calls { get; private set; }
-    readonly Stopwatch _clock = Stopwatch.StartNew();
+    public List<string> Made => _run.Made;
+    public int Calls => _run.Calls;
+    Stopwatch _clock => _run.Clock;
 
     public const string CommandPrefix = "command:";
     public const string QueryPrefix = "query:";
@@ -67,6 +106,7 @@ public sealed class Evaluator(GraphDoc doc, IModelView model, ModuleCatalog cata
         var result = new NodeResult { IsCommand = isCommand };
         try
         {
+            if (node.IsGroup) { RunGroup(node, result); return result; }
             var (inputs, whole, outputs, run) = Prepare(node);
             // A command's or a query's list argument takes a list whole, and maps only over a list of lists (one list each run).
             var nested = node.Kind.StartsWith(CommandPrefix, StringComparison.Ordinal) || node.Kind.StartsWith(QueryPrefix, StringComparison.Ordinal) ? whole : null;
@@ -97,15 +137,48 @@ public sealed class Evaluator(GraphDoc doc, IModelView model, ModuleCatalog cata
         var order = doc.Order();
         for (var i = 0; i < order.Count; i++)
         {
-            try { Results[order[i].Id] = RunNode(order[i]); }
+            _run.Kinds[_prefix + order[i].Id] = order[i].Kind;
+            try { Results[_prefix + order[i].Id] = RunNode(order[i]); }
             catch (Stop s)
             {
-                Results[order[i].Id] = s.At;
-                foreach (var rest in order.Skip(i + 1)) Results[rest.Id] = new NodeResult { Error = "Not reached: the graph was stopped before it.", IsCommand = rest.Kind.StartsWith(CommandPrefix, StringComparison.Ordinal) };
+                Results[_prefix + order[i].Id] = s.At;
+                foreach (var rest in order.Skip(i + 1)) Results[_prefix + rest.Id] = new NodeResult { Error = "Not reached: the graph was stopped before it.", IsCommand = rest.Kind.StartsWith(CommandPrefix, StringComparison.Ordinal) };
+                if (_prefix.Length > 0) throw;
                 break;
             }
         }
         return this;
+    }
+
+    /// <summary>
+    /// A group (decision 536): its nodes evaluated as a graph of their own, each open input fed by the wire into the group
+    /// (taken as it is: the nodes inside map over it as they would outside), each open output read from the node inside.
+    /// Its nodes' results are kept by their paths (<c>group/node</c>), so an error inside shows on the node that failed.
+    /// </summary>
+    void RunGroup(GraphNode node, NodeResult result)
+    {
+        var injected = new Dictionary<(string, string), object?>();
+        foreach (var w in doc.Wires.Where(w => w.To == node.Id))
+        {
+            var from = Results.GetValueOrDefault(_prefix + w.From);
+            if (from == null || from.Error != null)
+                throw new CommandException($"The input „{w.In}” has nothing: „{Name(doc.Node(w.From)!)}” failed.");
+            var port = node.Ins.First(p => p.Name == w.In);
+            injected[(port.Node, port.Port)] = from.Outputs.GetValueOrDefault(w.Out);
+        }
+        var path = $"{_prefix}{node.Id}/";
+        new Evaluator(node.Inner!, model, catalog, commands, query, budget, _run, path, injected) { Storey = Storey }.RunAll();
+        string? failed = null;
+        foreach (var p in node.Outs)
+        {
+            var r = Results.GetValueOrDefault(path + p.Node);
+            if (r == null || r.Error != null) { failed ??= $"„{Name(node.Inner!.Node(p.Node)!)}” inside failed: {r?.Error}"; continue; }
+            result.Outputs[p.Name] = r.Outputs.GetValueOrDefault(p.Port);
+        }
+        if (failed != null && result.Outputs.Count == 0 && node.Outs.Count > 0) throw new CommandException(failed);
+        var inside = Results.Where(x => x.Key.StartsWith(path, StringComparison.Ordinal)).Select(x => x.Value).ToList();
+        var bad = inside.Count(x => x.Error != null);
+        if (failed != null || bad > 0) result.Warning = failed ?? $"{bad} of the {inside.Count} nodes inside failed.";
     }
 
     static string Message(Exception e) => e switch
@@ -121,11 +194,13 @@ public sealed class Evaluator(GraphDoc doc, IModelView model, ModuleCatalog cata
         // What its wires bring: an upstream node that failed leaves this one with nothing to work on.
         foreach (var w in doc.Wires.Where(w => w.To == node.Id))
         {
-            var from = Results.GetValueOrDefault(w.From);
+            var from = Results.GetValueOrDefault(_prefix + w.From);
             if (from == null || from.Error != null)
                 throw new CommandException($"The input „{w.In}” has nothing: „{Name(doc.Node(w.From)!)}” failed.");
             inputs[w.In] = from.Outputs.GetValueOrDefault(w.Out);
         }
+        // A group's node fed from outside the group, as by a wire.
+        foreach (var ((n, port), v) in _injected) if (n == node.Id) inputs[port] = v;
         if (Builtins.Of(node.Kind) is { } def)
         {
             foreach (var p in def.Inputs)
@@ -195,7 +270,7 @@ public sealed class Evaluator(GraphDoc doc, IModelView model, ModuleCatalog cata
 
     object?[] RunCommand(CommandEntry entry, Dictionary<string, object?> inputs)
     {
-        if (++Calls > GraphLimits.MaxCalls) throw new GraphStopped($"A graph runs at most {GraphLimits.MaxCalls} commands at once: stopped here.");
+        if (++_run.Calls > GraphLimits.MaxCalls) throw new GraphStopped($"A graph runs at most {GraphLimits.MaxCalls} commands at once: stopped here.");
         var ctx = commands!;
         var args = Args(inputs);
         if (Storey != null && !args.ContainsKey("storeyId") && ctx.Model.Get(Storey) is { Class: IfcClass.BuildingStorey }) args["storeyId"] = Storey;
@@ -269,8 +344,8 @@ public sealed class Evaluator(GraphDoc doc, IModelView model, ModuleCatalog cata
                 case List<object?> list: foreach (var x in list) Walk(x); break;
             }
         }
-        foreach (var node in doc.Nodes)
-            if (Builtins.Of(node.Kind) is { Group: "Geometry" } && Results.GetValueOrDefault(node.Id) is { Error: null } r)
+        foreach (var (path, r) in Results)
+            if (r.Error == null && Builtins.Of(_run.Kinds.GetValueOrDefault(path) ?? "") is { Group: "Geometry" })
                 foreach (var v in r.Outputs.Values) Walk(v);
         return (points, lines);
     }

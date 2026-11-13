@@ -64,6 +64,10 @@ public static class Builtins
 
     static object?[] One(object? v) => [v];
 
+    /// <summary>The classes of types a type node offers.</summary>
+    static readonly string[] TypeClasses =
+        [IfcClass.WallType, IfcClass.SlabType, IfcClass.ColumnType, IfcClass.BeamType, IfcClass.FootingType, IfcClass.DoorType, IfcClass.WindowType, IfcClass.StairType, IfcClass.RampType];
+
     public static readonly IReadOnlyList<NodeDef> All =
     [
         // ── inputs (stage 2: each a field of the graph's palette) ──
@@ -88,6 +92,14 @@ public static class Builtins
             if (c.Storey != null && c.Model.Get(c.Storey) is { Class: IfcClass.BuildingStorey }) return One(c.Storey);
             return One(Spatial.Storeys(c.Model).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey."));
         }, "A storey of the project; none chosen: the view's."),
+        new("type", "A type", "Inputs", [Set("class", "Class", "text", IfcClass.WallType, TypeClasses), Set("value", "Type", "type", "")], [Out("value", "Type", "element")], c =>
+        {
+            var cls = c.Text("class");
+            var id = c.Text("value");
+            if (c.Model.Get(id) is { } e && e.Class == cls) return One(id);
+            var first = c.Model.OfClass(cls).OrderBy(x => x.Name, StringComparer.CurrentCultureIgnoreCase).FirstOrDefault();
+            return One(first?.Id ?? throw new CommandException($"The project has no type of the class {cls}."));
+        }, "A type of the project (a wall type, a slab type…) for a tool's Type; none chosen: the first of its class by name."),
 
         // ── lists ──
         new("range", "Range", "Lists", [In("start", "Start", "number", 0), In("end", "End", "number", 10), In("step", "Step", "number", 1)], [Out("list", "Numbers", "number")], c =>
@@ -317,6 +329,29 @@ public static class Builtins
     ];
 
     static readonly Dictionary<string, NodeDef> ByKind = All.ToDictionary(d => d.Kind);
+
+    /// <summary>The input nodes (each a field of the graph's palette, decision 536) and the setting that holds the value a field sets.</summary>
+    public static string? InputPort(string kind) => kind switch
+    {
+        "number" or "integer" or "text" or "bool" or "choice" or "storey" or "type" => "value",
+        "pick" => "ids",
+        _ => null,
+    };
+
+    /// <summary>A palette's value for an input node, refused when it is not of the node's kind (a number for a number, ids for elements picked…).</summary>
+    public static void CheckInput(string kind, JsonNode? value, string name)
+    {
+        var ok = kind switch
+        {
+            "number" => value is JsonValue && Json.Number(value) is { } d && double.IsFinite(d),
+            "integer" => value is JsonValue && Json.Number(value) is { } d && Math.Abs(d - Math.Round(d)) < 1e-9,
+            "bool" => value is JsonValue v && v.TryGetValue<bool>(out _),
+            "text" or "choice" or "storey" or "type" => value is JsonValue v && v.TryGetValue<string>(out _),
+            "pick" => value is JsonArray a && a.All(x => x is JsonValue v && v.TryGetValue<string>(out _)),
+            _ => false,
+        };
+        if (!ok) throw new CommandException($"„{name}” does not take that value.");
+    }
 
     public static NodeDef? Of(string kind) => ByKind.GetValueOrDefault(kind);
 
