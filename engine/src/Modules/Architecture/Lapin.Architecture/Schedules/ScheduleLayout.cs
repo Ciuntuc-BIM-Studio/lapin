@@ -60,6 +60,8 @@ public static class ScheduleLayout
         // the left of someone pushing it open) opens to the right of the line from its handle to its hinges, a right swing.
         ["swing-left"] = "swing right", ["swing-right"] = "swing left", ["double-acting-left"] = "double acting right", ["double-acting-right"] = "double acting left",
         ["door-sliding-left"] = "sliding left", ["door-sliding-right"] = "sliding right", ["folding-left"] = "folding right", ["folding-right"] = "folding left",
+        // Lift-and-slide and tilt-and-slide leaves (forum topic 34), named by the way they run.
+        ["lift-slide-left"] = "lift & slide left", ["lift-slide-right"] = "lift & slide right", ["tilt-slide-left"] = "tilt & slide left", ["tilt-slide-right"] = "tilt & slide right",
     };
 
     /// <summary>
