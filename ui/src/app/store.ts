@@ -127,6 +127,10 @@ export interface UiState extends Pane {
   /** The style a new balcony takes: a built-in one's id or a project style's (a type's id); null: cantilevered. */
   balconyStyle: string | null;
   dialog: Dialog;
+  /** Where Manage → Materials opens: on that material and tab (Wall types' "Open in Materials…", forum #45); consumed when it opens. */
+  materialFocus: { name: string; tab: 'graphics' } | null;
+  /** The dialog Materials came from, that "Back to" returns to with its unsaved edits (modules/core/dialogReturn.ts). */
+  returnTo: string | null;
   /** A message for the user (saved, recovered…), cleared by the next one. */
   notice: string | null;
   theme: Theme;
@@ -145,7 +149,7 @@ export interface UiState extends Pane {
 
 const first = emptyPane('plan');
 export const useUi = create<UiState>(() => ({
-  screen: 'start', tab: null, tool: null, ...first, panes: [first], pane: 0, viewTabs: [], split: 'row', windowRole: 'main', planDrawing: true, refPlanes: true, openingVoids: false, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, stairTypeId: null, rampTypeId: null, memberTypeId: null, ceilingTypeId: null, skirtingTypeId: null, roomFinishTypeId: null, insetAt: null, curtainTypeId: null, openingSize: { width: 0.9, height: 2.1, sill: 0, shape: 'rect', rise: null }, roofId: null, slabTypeId: null, roofStyle: null, balconyId: null, balconyStyle: null, dialog: null, notice: null, theme: startTheme(), visualStyle: 'edges', fog: false, keyPlan: true,
+  screen: 'start', tab: null, tool: null, ...first, panes: [first], pane: 0, viewTabs: [], split: 'row', windowRole: 'main', planDrawing: true, refPlanes: true, openingVoids: false, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, stairTypeId: null, rampTypeId: null, memberTypeId: null, ceilingTypeId: null, skirtingTypeId: null, roomFinishTypeId: null, insetAt: null, curtainTypeId: null, openingSize: { width: 0.9, height: 2.1, sill: 0, shape: 'rect', rise: null }, roofId: null, slabTypeId: null, roofStyle: null, balconyId: null, balconyStyle: null, dialog: null, materialFocus: null, returnTo: null, notice: null, theme: startTheme(), visualStyle: 'edges', fog: false, keyPlan: true,
 }));
 
 /**

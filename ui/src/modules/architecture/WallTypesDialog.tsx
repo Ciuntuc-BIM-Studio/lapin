@@ -10,14 +10,17 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, Layers, Plus, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Layers, Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
+import { t } from '../../i18n';
 import { execute, useSession } from '../../engine/session';
 import { materialName, ofClass, relatedOf, typeLayers } from '../../engine/model';
 import { formatLength, useStandards } from '../../engine/unitsStore';
 import { Cell, LengthField, NumberField } from '../../shell/cells';
 import { LayerThickness } from '../core/LayerThickness';
 import { MaterialHatchButton } from '../core/MaterialHatchButton';
+import { takeStash } from '../core/dialogReturn';
+import { reverseLayers } from './reverseLayers';
 import { layerRankHint } from './layerRank';
 import { flagsJson, flagsOf, newWallFlags, type LayerFlags } from './layerFlags';
 import { CATEGORY_TIP, LayerCategory } from './LayerCategory';
@@ -67,6 +70,9 @@ const layer = (material: string, thickness: number, core = false): Row => ({ mat
 const EXTEND_TIP = 'Whether the layer goes on into the floors\' layers ranked under it, as where walls join: down from the wall\'s base to the first floor layer ranked as high or higher (the brick onto the concrete, through the finish and the screed), up to the underside of the first such layer of the floor over it';
 const blank = (): Row[] => [layer('Render', 0.02), layer('Brick', 0.25, true), layer('Plaster', 0.015)];
 
+/** The editor as it is, kept while Materials is open (forum #45) and taken back when the dialog opens again. */
+interface Kept { editing: string | null; name: string; rows: Row[]; zones: ZoneRow[]; lintels: Rule; sweeps: TypeSweepRow[] }
+
 export function WallTypesDialog() {
   const nodes = useSession((s) => s.nodes);
   const relations = useSession((s) => s.relations);
@@ -75,12 +81,17 @@ export function WallTypesDialog() {
   const types = ofClass(model, 'IfcWallType');
   const current = useUi((s) => s.wallTypeId);
   // The type walls are drawn with, when it is still there (a deleted one left the editor on nothing), else the first.
-  const [editing, setEditing] = useState<string | null>((current && nodes.has(current) ? current : null) ?? types[0]?.id ?? null);
-  const [name, setName] = useState('');
-  const [rows, setRows] = useState<Row[]>(blank());
-  const [zones, setZones] = useState<ZoneRow[]>([]);
-  const [lintels, setLintels] = useState<Rule>(DEFAULT_RULE);
-  const [sweeps, setSweeps] = useState<TypeSweepRow[]>([]);
+  // Back from Materials (its "Back to Wall types"): the type and the unsaved edits as they were left.
+  const kept = useRef<Kept | null | undefined>(undefined);
+  if (kept.current === undefined) kept.current = takeStash<Kept>('wallTypes');
+  const k0 = kept.current;
+  const [editing, setEditing] = useState<string | null>(k0 ? k0.editing : (current && nodes.has(current) ? current : null) ?? types[0]?.id ?? null);
+  const [name, setName] = useState(k0?.name ?? '');
+  const [rows, setRows] = useState<Row[]>(k0?.rows ?? blank());
+  const [zones, setZones] = useState<ZoneRow[]>(k0?.zones ?? []);
+  const [lintels, setLintels] = useState<Rule>(k0?.lintels ?? DEFAULT_RULE);
+  const [sweeps, setSweeps] = useState<TypeSweepRow[]>(k0?.sweeps ?? []);
+  const restoredFor = useRef<string | null | undefined>(k0 ? k0.editing : undefined);
   const info = useSession((s) => s.info);
   // The total and the heights below are written in the project's units: shown again when they change.
   useStandards((s) => s.units);
@@ -91,6 +102,8 @@ export function WallTypesDialog() {
   modelRef.current = model;
   // Load the picked type into the editor.
   useEffect(() => {
+    if (restoredFor.current !== undefined && restoredFor.current === editing) return; // the edits kept, not the saved type
+    restoredFor.current = undefined;
     const model = modelRef.current;
     const t = editing ? model.nodes.get(editing) : undefined;
     if (!t) { setName(''); setRows(blank()); setZones([]); setLintels(DEFAULT_RULE); setSweeps([]); return; }
@@ -115,6 +128,11 @@ export function WallTypesDialog() {
     [next[i], next[j]] = [next[j], next[i]];
     setRows(next);
   };
+  const reverse = () => {
+    if (window.confirm(t('Reverse the order of the layers? Once the type is saved, its walls swap faces: what is exterior becomes interior.'))) setRows(reverseLayers(rows));
+  };
+  // Opening a material in Manage → Materials keeps all of this for the way back.
+  const hatchFrom = { kind: 'wallTypes', snapshot: (): Kept => ({ editing, name, rows, zones, lintels, sweeps }) };
   const total = rows.reduce((s, r) => s + r.thickness, 0);
   // A layer's own height (report #44): from and up to, over the wall's base; empty, the whole height.
   const height = (v: number | null) => (v != null && v > 0 ? v : null);
@@ -170,18 +188,18 @@ export function WallTypesDialog() {
           </ul>
           <div className="type-edit">
             <label className="field-line"><span className="eyebrow">Name</span><input value={name} placeholder="(from its core and thickness)" onChange={(e) => setName(e.target.value)} /></label>
-            <p className="muted small">Layers from the face right of the drawn direction to the left face. The core carries the wall's axis.</p>
+            <p className="muted small" data-testid="wall-face-note">Layers 1 to n from the R face (right of the drawn direction) to the L face, as in the picture. Wall drawn anticlockwise: R is the exterior, L the interior. The core carries the wall's axis.</p>
             <WallLayersLegend layers={rows} />
             <table className="layer-edit">
-              <thead><tr><th>Material</th><th>Thickness</th><th>Core</th><th title="How high the layer goes over the wall's base; empty: the whole height">From</th><th title="How high the layer goes over the wall's base; empty: the whole height">Up to</th><th title="Where walls join, a layer goes on through the other wall's layers of a lower priority and stops at the first as high or higher; empty: its material's priority in the cut order, else 50 for the core and 0 for the rest">Priority</th><th title={CATEGORY_TIP}>Category</th><th title={EXTEND_TIP}>Into floors</th><th title="How the layer is laid in this build-up (a build-up tag writes it)">Note</th><th /></tr></thead>
+              <thead><tr><th>Material</th><th>Thickness</th><th>Core</th><th title="How high the layer goes over the wall's base; empty: the whole height">Layer from</th><th title="How high the layer goes over the wall's base; empty: the whole height">Layer up to</th><th title="Where walls join, a layer goes on through the other wall's layers of a lower priority and stops at the first as high or higher; empty: its material's priority in the cut order, else 50 for the core and 0 for the rest">Priority</th><th title={CATEGORY_TIP}>Category</th><th title={EXTEND_TIP}>Into floors</th><th title="How the layer is laid in this build-up (a build-up tag writes it)">Note</th><th /></tr></thead>
               <tbody>
                 {rows.map((r, i) => [
                   <tr key={i}>
-                    <td><span className="layer-material"><MaterialPicker value={r.material} onChange={(material) => set(i, { material })} /><MaterialHatchButton material={r.material} /></span></td>
+                    <td><span className="layer-material"><MaterialPicker value={r.material} onChange={(material) => set(i, { material })} /><MaterialHatchButton material={r.material} from={hatchFrom} /></span></td>
                     <td className="num"><LayerThickness model={model} material={r.material} metres={r.thickness} onCommit={(m) => set(i, { thickness: m })} /></td>
                     <td><input type="radio" name="core" checked={r.core} onChange={() => set(i, { core: true })} /></td>
                     <td><LengthField className="layer-height" testId="layer-from" metres={r.from} placeholder="0" readOnly={r.core} noUnit blank min={0} onCommit={(m) => set(i, { from: m })} /></td>
-                    <td><LengthField className="layer-height" testId="layer-to" metres={r.to} placeholder="top" readOnly={r.core} noUnit blank min={0} onCommit={(m) => set(i, { to: m })} /></td>
+                    <td><LengthField className="layer-height" testId="layer-to" metres={r.to} placeholder="wall top" readOnly={r.core} noUnit blank min={0} onCommit={(m) => set(i, { to: m })} /></td>
                     <td><NumberField className="layer-priority" testId="layer-priority" value={r.priority} placeholder={String(layerRankHint(model, r.material, r.core))} blank min={0} max={100} integer
                       title="Where walls join, a layer goes on through the other wall's layers of a lower priority and stops at the first as high or higher; empty: its material's priority in the cut order, else 50 for the core and 0 for the rest" onCommit={(n) => set(i, { priority: n })} /></td>
                     <td><LayerCategory value={r.category} onChange={(category) => set(i, { category })} /></td>
@@ -205,7 +223,7 @@ export function WallTypesDialog() {
                         {r.parts.map((p, k) => (
                           <span key={k} className="layer-part" data-testid="layer-part">
                             <MaterialPicker value={p.material} onChange={(material) => setPart(i, k, { material })} />
-                            <MaterialHatchButton material={p.material} />
+                            <MaterialHatchButton material={p.material} from={hatchFrom} />
                             <LengthField className="layer-height" metres={p.height} min={0} title="How high this piece goes" onCommit={(m) => { if (m != null && m > 0) setPart(i, k, { height: m }); }} />
                             <button type="button" className="icon mini" title="Remove the piece" onClick={() => set(i, { parts: r.parts.filter((_, j) => j !== k) })}><X size={11} /></button>
                           </span>
@@ -256,6 +274,7 @@ export function WallTypesDialog() {
             {zones.length > 0 && <button type="button" className="btn" onClick={() => setZones([...zones, { key: '', name: 'Zone', role: 'masonry', height: 0.25, rest: false, material: 'Brick', block: null, rebar: null }])}><Plus size={14} />Zone</button>}
             <div className="row">
               <button type="button" className="btn" onClick={() => setRows([...rows, layer('Plaster', 0.015)])}><Plus size={14} />Layer</button>
+              <button type="button" className="btn" data-testid="reverse-layers" title="Run the layers the other way: the R face's layer goes to the L face. Walls of the type swap faces once it is saved" disabled={rows.length < 2} onClick={reverse}><ArrowUpDown size={14} />Reverse layers</button>
               <span className="grow" />
               {editing && <SaveTypeToLibrary ids={[editing]} />}
               {editing && <button type="button" className="btn" title="Delete the type (refused while elements use it)" onClick={() => void deleteType(editing).then((ok) => { if (ok) setEditing(null); })}><Trash2 size={14} />Delete type</button>}

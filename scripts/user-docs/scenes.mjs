@@ -510,6 +510,32 @@ export const scenes = [
       await t.keys('Escape');
       await t.wait(300);
       t.expect(await editor.count() === 0 && await t.page.locator('.dialog [data-testid=wall-legend]').count() === 1, 'Esc closes the hatches, not Wall types');
+      // The legend runs as the table (forum #45): layer 1 on top, on the R face; Reverse layers runs the rows the other way, asking first.
+      const order = async () => t.page.locator('.dialog [data-testid=wall-legend] [data-layer]').evaluateAll((g) => g.map((e) => e.getAttribute('data-layer')));
+      t.expect((await order()).join() === '1,2,3', `the legend lists layer 1 first, found ${await order()}`);
+      const firstMaterial = async () => t.page.locator('.dialog .layer-material select').first().inputValue();
+      const before = await firstMaterial();
+      const answers = t.page.listeners('dialog');
+      t.page.removeAllListeners('dialog');
+      t.page.on('dialog', (d) => void d.accept());
+      await t.page.locator('.dialog [data-testid=reverse-layers]').click();
+      await t.wait(300);
+      t.expect(await firstMaterial() !== before, 'Reverse layers runs the rows the other way');
+      await t.page.locator('.dialog [data-testid=reverse-layers]').click();
+      await t.wait(300);
+      t.expect(await firstMaterial() === before, 'and the other way again');
+      t.page.removeAllListeners('dialog');
+      for (const l of answers) t.page.on('dialog', l);
+      // Open in Materials keeps the unsaved edits for the way back (one dialog slot).
+      await t.page.locator('.dialog [data-testid=layer-hatch]').first().click();
+      await t.wait(400);
+      await t.page.locator('[data-testid=open-in-materials]').click();
+      await t.wait(600);
+      t.expect(await t.page.locator('.dialog[aria-label=Materials], [role=dialog][aria-label=Materials]').count() === 1, 'Open in Materials opens Materials');
+      t.expect(await t.page.locator('.dialog [data-tab=graphics].on').count() === 1, 'on the material\'s 2D graphics tab');
+      await t.page.locator('[data-testid=materials-back]').click();
+      await t.wait(500);
+      t.expect(await t.page.locator('.dialog [data-testid=wall-legend]').count() === 1 && await firstMaterial() === before, 'Back returns to Wall types with its edits');
     },
   },
   {

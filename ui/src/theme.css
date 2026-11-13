@@ -449,7 +449,7 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 .wall-legend { display: block; margin: 2px 0 6px; overflow: visible; }
 .wall-legend .layer-band { fill: var(--wash); stroke: var(--ink-muted); stroke-width: 0.8; }
 .wall-legend .layer-band.core { fill: var(--accent-wash); stroke: var(--accent); }
-.wall-legend .band-no { fill: var(--ink); font: 600 10px var(--font); text-anchor: end; dominant-baseline: central; }
+.wall-legend .band-no { fill: var(--ink); font: 600 10px var(--font); text-anchor: start; dominant-baseline: central; }
 .wall-legend .axis { stroke: var(--accent); stroke-width: 1.2; stroke-dasharray: 10 3 2 3; }
 table.layer-edit:not(.zones):not(.material-params) > tbody { counter-reset: layer; }
 table.layer-edit:not(.zones) > tbody > tr:not(.layer-parts):not(.total) > td:first-child { position: relative; padding-left: 16px; }
