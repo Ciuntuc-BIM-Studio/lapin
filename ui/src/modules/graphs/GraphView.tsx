@@ -9,14 +9,16 @@
  */
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Flame, Eye, EyeOff, Maximize2, Plus, Trash2, Workflow } from 'lucide-react';
+import { Flame, Eye, EyeOff, Group, Maximize2, PanelsTopLeft, Plus, Trash2, Ungroup, Workflow } from 'lucide-react';
 import { useSession } from '../../engine/session';
 import { useUi } from '../../app/store';
 import { t as tr, useLang } from '../../i18n';
 import {
-  addNode, connect, fitView, moveNodes, nodeHeight, nodesIn, numberText, portAt, PORT_COLOURS, removeNodes, removeWire, rowValue, searchNodes, valueEnd, setLabel, setValue, showValue,
-  sockets, unknownSpec, wireKey, wirePath, zoomAt, HEAD_H, NODE_W, ROW_H, type GraphJson, type GraphView as ViewT, type NodeSpec, type PortSpec,
+  addNode, collapse, connect, expand, fitView, groupSpec, moveNodes, nodeHeight, nodesIn, numberText, portAt, PORT_COLOURS, removeNodes, removeWire, rowValue, searchNodes, valueEnd, setLabel, setPalette, setTool, setValue, showValue,
+  sockets, unknownSpec, wireKey, wirePath, zoomAt, GROUP, HEAD_H, NODE_W, ROW_H, type GraphJson, type GraphNode, type GraphView as ViewT, type NodeSpec, type PortSpec,
 } from './graph';
+import { isInput, GRAPHS_GROUP, type GraphTool, type NodePalette } from './palette';
+import { togglePalette } from './tools';
 import { isGuest } from '../../engine/share';
 import { commitNumber, NO_COMMIT } from '../../shell/fieldCommit';
 import { bake, currentGraph, GUEST_REFUSAL, deleteGraph, evaluate, loadSpecs, newGraph, openGraph, projectGraphs, renameGraph, saveGraph, setPreview, useGraphs } from './store';
@@ -79,6 +81,8 @@ function Toolbar({ graphs }: { graphs: { id: string; name: string }[] }) {
           <span className={`graphs-status small ${errors ? 'error-text' : 'muted'}`} data-field="graph-status">
             {busy ? 'Evaluating…' : errors ? <><span data-no-i18n>{errors}</span> <span>failed</span></> : result ? <span data-no-i18n>{result.ms} ms</span> : ''}
           </span>
+          <button type="button" className="icon" title="Open the graph's palette: its inputs as fields, Bake without the canvas" data-action="graph-palette" onClick={() => togglePalette(current.id)}>
+            <PanelsTopLeft size={14} /></button>
           <button type="button" className={`icon${preview ? ' on' : ''}`} title={preview ? 'Hide the preview' : 'Show the preview in the views'} data-action="graph-preview" onClick={() => setPreview(!preview)}>
             {preview ? <Eye size={14} /> : <EyeOff size={14} />}
           </button>
@@ -139,7 +143,10 @@ function Editor() {
     return () => clearTimeout(t);
   }, [graphText, version]);
 
-  const specOf = (kind: string): NodeSpec => specs?.get(kind) ?? unknownSpec(graph.nodes.find((n) => n.kind === kind) ?? { id: '', kind, x: 0, y: 0 }, graph);
+  const specOf = (kind: string, node?: GraphNode): NodeSpec => {
+    if (kind === GROUP && node) return groupSpec(node, (k, n) => specOf(k, n));
+    return specs?.get(kind) ?? unknownSpec(node ?? graph.nodes.find((n) => n.kind === kind) ?? { id: '', kind, x: 0, y: 0 }, graph);
+  };
   const commit = (g: GraphJson) => { setDraft(g); void saveGraph(g).finally(() => setDraft(null)); };
 
   const toGraph = (e: { clientX: number; clientY: number }) => {
@@ -207,6 +214,7 @@ function Editor() {
     } else if (e.key === 'Escape') { e.stopPropagation(); setSearch(null); setSelected(new Set()); setWireSel(null); }
     else if (e.key === ' ') { e.preventDefault(); e.stopPropagation(); setSpace(true); }
     else if ((e.key === 'f' || e.key === 'F' || e.key === 'Home') && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); e.stopPropagation(); fit(); }
+    else if ((e.key === 'g' || e.key === 'G') && !e.ctrlKey && !e.metaKey && !e.altKey && selected.size > 0) { e.preventDefault(); e.stopPropagation(); collapseSelected(); }
   };
 
   const onDouble = (e: React.MouseEvent) => {
@@ -245,6 +253,15 @@ function Editor() {
 
   const one = selected.size === 1 ? graph.nodes.find((n) => selected.has(n.id)) : undefined;
 
+  /** The selection collapsed into one group (one undo step), the group selected. */
+  function collapseSelected() {
+    const r = collapse(saved, selected, tr('Group'));
+    if (!r) return;
+    setSelected(new Set([r.id]));
+    commit(r.graph);
+    host.current?.focus();
+  }
+
   return (
     <div className="graphs-body">
       <div ref={host} className={`graphs-canvas${space || drag?.kind === 'pan' ? ' panning' : ''}`} tabIndex={0} data-testid="graphs-canvas"
@@ -255,12 +272,12 @@ function Editor() {
             {graph.wires.map((w) => {
               const from = graph.nodes.find((n) => n.id === w.from);
               const to = graph.nodes.find((n) => n.id === w.to);
-              const a = from && portAt(from, specOf(from.kind), 'out', w.out);
-              const b = to && portAt(to, specOf(to.kind), 'in', w.in);
+              const a = from && portAt(from, specOf(from.kind, from), 'out', w.out);
+              const b = to && portAt(to, specOf(to.kind, to), 'in', w.in);
               if (!a || !b) return null;
               const key = wireKey(w);
               const count = result?.nodes[w.from]?.counts?.[w.out];
-              const type = specOf(from.kind).outputs.find((p) => p.name === w.out)?.type ?? 'any';
+              const type = specOf(from.kind, from).outputs.find((p) => p.name === w.out)?.type ?? 'any';
               return (
                 <g key={key} className={`graph-wire${wireSel === key ? ' on' : ''}`} onPointerDown={(e) => { e.stopPropagation(); setWireSel(key); setSelected(new Set()); host.current?.focus(); }}>
                   <path d={wirePath(a, b)} className="hit" />
@@ -271,11 +288,11 @@ function Editor() {
             })}
             {drag?.kind === 'wire' && (() => {
               const from = graph.nodes.find((n) => n.id === drag.from);
-              const a = from && portAt(from, specOf(from.kind), 'out', drag.out);
+              const a = from && portAt(from, specOf(from.kind, from), 'out', drag.out);
               return a ? <path d={wirePath(a, drag.at)} className="graph-wire-draft" /> : null;
             })()}
             {graph.nodes.map((n) => (
-              <NodeBox key={n.id} node={n} spec={specOf(n.kind)} on={selected.has(n.id)} result={result?.nodes[n.id]} wired={graph.wires}
+              <NodeBox key={n.id} node={n} spec={specOf(n.kind, n)} on={selected.has(n.id)} result={result?.nodes[n.id]} wired={graph.wires}
                 onHead={(e) => startMove(e, n.id)} onOut={(e, port) => startWire(e, n.id, port)} />
             ))}
             {drag?.kind === 'box' && (
@@ -283,6 +300,10 @@ function Editor() {
             )}
           </g>
         </svg>
+        {selected.size > 0 && (
+          <button type="button" className="icon graphs-collapse" title="Collapse the selected nodes into one group (G)" data-action="graph-collapse"
+            onPointerDown={(e) => e.stopPropagation()} onClick={collapseSelected}><Group size={14} /></button>
+        )}
         {graph.nodes.length > 0 && (
           <button type="button" className="icon graphs-fit" title="Fit the graph in the canvas (F)" data-action="graph-fit"
             onPointerDown={(e) => e.stopPropagation()} onClick={fit}><Maximize2 size={14} /></button>
@@ -291,7 +312,8 @@ function Editor() {
         {refusal && <div className="graphs-refusal error-text" onClick={() => setRefusal(null)}>{refusal}</div>}
         {search && specs && <Search x={search.sx} y={search.sy} specs={specs} onPick={add} onClose={() => setSearch(null)} />}
       </div>
-      <Inspector key={one?.id ?? ''} graph={graph} id={one?.id ?? null} spec={one ? specOf(one.kind) : null} onChange={commit} />
+      <Inspector key={one?.id ?? ''} graph={graph} id={one?.id ?? null} spec={one ? specOf(one.kind, one) : null} onChange={commit}
+        onExpand={(gid) => { const r = expand(saved, gid); if (r) { setSelected(new Set(r.ids)); commit(r.graph); } }} />
     </div>
   );
 }
@@ -309,7 +331,7 @@ function NodeBox({ node, spec, on, result, wired, onHead, onOut }: {
   const state = result?.error ? ' failed' : result?.warning ? ' warned' : '';
   const label = node.label ?? tr(spec.label);
   return (
-    <g className={`graph-node${on ? ' on' : ''}${state}`} transform={`translate(${node.x} ${node.y})`} data-graph-node={node.id} data-kind={node.kind}>
+    <g className={`graph-node${on ? ' on' : ''}${state}${node.kind === GROUP ? ' group' : ''}`} transform={`translate(${node.x} ${node.y})`} data-graph-node={node.id} data-kind={node.kind}>
       <title>{result?.error ?? result?.warning ?? spec.about ?? spec.name ?? label}</title>
       <rect className="body" width={NODE_W} height={h} rx={6} />
       <rect className="head" width={NODE_W} height={HEAD_H} rx={6} onPointerDown={onHead} />
@@ -374,11 +396,19 @@ function Search({ x, y, specs, onPick, onClose }: { x: number; y: number; specs:
   );
 }
 
-function Inspector({ graph, id, spec, onChange }: { graph: GraphJson; id: string | null; spec: NodeSpec | null; onChange: (g: GraphJson) => void }) {
+function Inspector({ graph, id, spec, onChange, onExpand }: { graph: GraphJson; id: string | null; spec: NodeSpec | null; onChange: (g: GraphJson) => void; onExpand: (id: string) => void }) {
   const result = useGraphs((s) => (id ? s.result?.nodes[id] : undefined));
   const node = id ? graph.nodes.find((n) => n.id === id) : undefined;
-  if (!node || !spec) return <aside className="graphs-inspector muted small"><p>Select a node to set its inputs and see what it gives.</p></aside>;
+  if (!node || !spec) {
+    return (
+      <aside className="graphs-inspector" data-field="graph-inspector">
+        <p className="muted small">Select a node to set its inputs and see what it gives.</p>
+        <ToolSettings graph={graph} onChange={onChange} />
+      </aside>
+    );
+  }
   const wired = new Set(graph.wires.filter((w) => w.to === node.id).map((w) => w.in));
+  const group = node.kind === GROUP;
   return (
     <aside className="graphs-inspector" data-field="graph-inspector">
       <div className="panel-title">{spec.label}</div>
@@ -387,7 +417,13 @@ function Inspector({ graph, id, spec, onChange }: { graph: GraphJson; id: string
       <label className="field"><span>Name in the graph</span>
         <input defaultValue={node.label ?? ''} placeholder={spec.label} onBlur={(e) => { if ((e.target.value.trim() || undefined) !== node.label) onChange(setLabel(graph, node.id, e.target.value)); }} />
       </label>
-      {spec.inputs.filter((p) => !wired.has(p.name)).map((p) => (
+      {group && (
+        <>
+          <p className="muted small"><span data-no-i18n>{node.graph?.nodes.length ?? 0}</span> <span>nodes inside</span></p>
+          <button type="button" className="btn" data-action="graph-expand" onClick={() => onExpand(node.id)}><Ungroup size={14} /> Expand the group</button>
+        </>
+      )}
+      {!group && spec.inputs.filter((p) => !wired.has(p.name)).map((p) => (
         <Field key={p.name} port={p} value={node.values?.[p.name]} onSet={(v) => onChange(setValue(graph, node.id, p.name, v))} />
       ))}
       {result?.error && <p className="error-text small" data-field="graph-error">{result.error}</p>}
@@ -395,7 +431,106 @@ function Inspector({ graph, id, spec, onChange }: { graph: GraphJson; id: string
       {result && !result.error && spec.outputs.map((p) => (
         <div key={p.name} className="graphs-output small"><b>{p.label}</b> <span data-no-i18n>{showValue(result.outputs[p.name])}</span></div>
       ))}
+      {!group && <PaletteSettings graph={graph} node={node} spec={spec} onChange={onChange} />}
     </aside>
+  );
+}
+
+/** A number typed in the inspector's small fields (empty: none), committed when left. */
+function SmallNumber({ label, value, onSet, field }: { label: string; value: unknown; onSet: (v: number | undefined) => void; field: string }) {
+  return (
+    <label className="field"><span>{label}</span>
+      <input className="num" inputMode="decimal" defaultValue={numberText(value)} data-palette-setting={field}
+        onBlur={(e) => {
+          const t = e.target.value.trim();
+          if (!t) { onSet(undefined); return; }
+          const v = commitNumber(t, null);
+          if (v === NO_COMMIT || v === null) e.target.value = numberText(value); else { e.target.value = numberText(v); onSet(v); }
+        }}
+        onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
+    </label>
+  );
+}
+
+/**
+ * How the node shows in the graph's palette (decision 536): an input node's field (shown, its label, its order, and a
+ * number's least, most and step: a least and a most give it a slider); another node's values shown or not (a Watch is
+ * shown unless it is hidden).
+ */
+function PaletteSettings({ graph, node, spec, onChange }: { graph: GraphJson; node: GraphNode; spec: NodeSpec; onChange: (g: GraphJson) => void }) {
+  const p = (node.palette ?? {}) as NodePalette;
+  const change = (c: Record<string, unknown>) => onChange(setPalette(graph, node.id, c));
+  if (isInput(node.kind)) {
+    const numeric = node.kind === 'number' || node.kind === 'integer';
+    return (
+      <div className="graphs-section" data-field="graph-palette-settings">
+        <span className="graphs-section-title">In the palette</span>
+        <label className="field check"><input type="checkbox" checked={!p.hide} data-palette-setting="show" onChange={(e) => change({ hide: e.target.checked ? undefined : true })} /> <span>Show in the palette</span></label>
+        {!p.hide && (
+          <>
+            <label className="field"><span>Label in the palette</span>
+              <input defaultValue={p.label ?? ''} placeholder={node.label ?? tr(spec.label)} data-palette-setting="label" onBlur={(e) => { if ((e.target.value.trim() || undefined) !== p.label) change({ label: e.target.value.trim() || undefined }); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
+            </label>
+            <SmallNumber label="Order" field="order" value={p.order} onSet={(v) => change({ order: v })} />
+            {numeric && (
+              <div className="graphs-limits">
+                <SmallNumber label="Least" field="min" value={p.min} onSet={(v) => change({ min: v })} />
+                <SmallNumber label="Most" field="max" value={p.max} onSet={(v) => change({ max: v })} />
+                <SmallNumber label="Step" field="step" value={p.step} onSet={(v) => change({ step: v })} />
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    );
+  }
+  const watch = node.kind === 'watch';
+  const on = watch ? !p.hide : p.show === true;
+  return (
+    <div className="graphs-section" data-field="graph-palette-settings">
+      <span className="graphs-section-title">In the palette</span>
+      <label className="field check">
+        <input type="checkbox" checked={on} data-palette-setting="show" onChange={(e) => change(watch ? { hide: e.target.checked ? undefined : true } : { show: e.target.checked ? true : undefined })} />
+        <span>Show its values in the palette</span>
+      </label>
+      {on && (
+        <label className="field"><span>Label in the palette</span>
+          <input defaultValue={p.label ?? ''} placeholder={node.label ?? tr(spec.label)} onBlur={(e) => { if ((e.target.value.trim() || undefined) !== p.label) change({ label: e.target.value.trim() || undefined }); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
+        </label>
+      )}
+    </div>
+  );
+}
+
+/** The graph as a tool of My tools (decision 536): shown or not, its button's name, icon and tooltip, its group. */
+function ToolSettings({ graph, onChange }: { graph: GraphJson; onChange: (g: GraphJson) => void }) {
+  const t = (graph.tool ?? {}) as GraphTool;
+  const graphId = useGraphs((s) => s.graphId);
+  const name = useSession((s) => (graphId ? s.nodes.get(graphId)?.name : undefined));
+  const change = (c: Record<string, unknown>) => onChange(setTool(graph, c));
+  const text = (key: keyof GraphTool, label: string, placeholder: string) => (
+    <label className="field"><span>{label}</span>
+      <input defaultValue={String(t[key] ?? '')} placeholder={placeholder} data-tool-setting={key}
+        onBlur={(e) => { if ((e.target.value.trim() || undefined) !== t[key]) change({ [key]: e.target.value.trim() || undefined }); }}
+        onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
+    </label>
+  );
+  return (
+    <div className="graphs-section" data-field="graph-tool-settings">
+      <span className="graphs-section-title">The graph as a tool</span>
+      <label className="field check"><input type="checkbox" checked={t.show === true} data-tool-setting="show" onChange={(e) => change({ show: e.target.checked ? true : undefined })} /> <span>Show in My tools</span></label>
+      <p className="muted small">Its button opens the graph's palette: the input nodes as fields, the watched values, and Bake.</p>
+      {t.show === true && (
+        <>
+          {text('name', "Button's name", name ?? '')}
+          {text('icon', 'Icon', 'wall, grid, star, P…')}
+          {text('tooltip', 'Tooltip', '')}
+          {text('group', 'Group in My tools', tr(GRAPHS_GROUP))}
+        </>
+      )}
+    </div>
   );
 }
 

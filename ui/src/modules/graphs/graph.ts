@@ -37,13 +37,25 @@ export interface GraphNode {
   values?: Record<string, unknown>;
   whole?: string[];
   label?: string;
+  /** Format 2: how the node shows in the graph's palette (palette.ts's NodePalette). */
+  palette?: Record<string, unknown>;
+  /** Format 2, a group: its nodes and wires, and its open ports (an inner node's port each, named node.port on the group). */
+  graph?: { nodes: GraphNode[]; wires: GraphWire[] };
+  inputs?: GroupPort[];
+  outputs?: GroupPort[];
 }
+
+export interface GroupPort { node: string; port: string; label?: string }
 
 export interface GraphWire { from: string; out: string; to: string; in: string }
 
-export interface GraphJson { format: 1; nodes: GraphNode[]; wires: GraphWire[] }
+/** A graph as the engine keeps it: format 2 (stage 2: palette settings, the tool, groups); a format-1 graph reads the same. */
+export interface GraphJson { format: 1 | 2; nodes: GraphNode[]; wires: GraphWire[]; tool?: Record<string, unknown> }
 
-export const emptyGraph = (): GraphJson => ({ format: 1, nodes: [], wires: [] });
+export const GRAPH_FORMAT = 2;
+export const GROUP = 'group';
+
+export const emptyGraph = (): GraphJson => ({ format: 2, nodes: [], wires: [] });
 
 /** What graphs.nodes answers. */
 export interface EngineNodes {
@@ -183,11 +195,18 @@ export function wouldCycle(graph: GraphJson, from: string, to: string): boolean 
   return false;
 }
 
-/** A fresh id for a node of this graph: n1, n2… */
-export function newNodeId(graph: GraphJson): string {
+/** A fresh id for a node of this graph, unique in its groups too (so a group expanded never meets one): n1, n2… */
+export function newNodeId(graph: { nodes: GraphNode[] }, prefix = 'n'): string {
   let max = 0;
-  for (const n of graph.nodes) { const m = /^n(\d+)$/.exec(n.id); if (m) max = Math.max(max, Number(m[1])); }
-  return `n${max + 1}`;
+  const walk = (nodes: GraphNode[]) => {
+    for (const n of nodes) {
+      const m = new RegExp(`^${prefix}(\\d+)$`).exec(n.id);
+      if (m) max = Math.max(max, Number(m[1]));
+      if (n.graph) walk(n.graph.nodes);
+    }
+  };
+  walk(graph.nodes);
+  return `${prefix}${max + 1}`;
 }
 
 /** A node of <spec> added at (x, y); a catalogue node notes which of its inputs take a list whole (the engine does not read the catalogue). */
@@ -222,13 +241,13 @@ export function removeWire(graph: GraphJson, key: string): GraphJson {
  * A wire drawn: refused (with why) when it closes a circle or the types do not meet; an input holds one wire, so one
  * already on it is replaced.
  */
-export function connect(graph: GraphJson, specs: (kind: string) => NodeSpec | undefined, wire: GraphWire): { graph: GraphJson } | { refused: string } {
+export function connect(graph: GraphJson, specs: (kind: string, node?: GraphNode) => NodeSpec | undefined, wire: GraphWire): { graph: GraphJson } | { refused: string } {
   const from = graph.nodes.find((n) => n.id === wire.from);
   const to = graph.nodes.find((n) => n.id === wire.to);
   if (!from || !to) return { refused: 'No such node.' };
   if (wouldCycle(graph, wire.from, wire.to)) return { refused: 'A node cannot feed itself, even through others.' };
-  const out = specs(from.kind)?.outputs.find((p) => p.name === wire.out);
-  const inp = specs(to.kind)?.inputs.find((p) => p.name === wire.in);
+  const out = specs(from.kind, from)?.outputs.find((p) => p.name === wire.out);
+  const inp = specs(to.kind, to)?.inputs.find((p) => p.name === wire.in);
   if (out && inp && !fits(out.type, inp.type)) return { refused: `A ${out.type} does not go into a ${inp.type}.` };
   const wires = graph.wires.filter((w) => !(w.to === wire.to && w.in === wire.in));
   return { graph: { ...graph, wires: [...wires, wire] } };
@@ -254,12 +273,130 @@ export function setLabel(graph: GraphJson, id: string, label: string): GraphJson
   return { ...graph, nodes: graph.nodes.map((n) => { if (n.id !== id) return n; const next = { ...n }; if (label.trim()) next.label = label.trim().slice(0, 80); else delete next.label; return next; }) };
 }
 
-/** The graph as the engine keeps it, read from an entity's props (an unreadable one is empty). */
+/** The graph as the engine keeps it, read from an entity's props (an unreadable one is empty); written as format 2. */
 export function graphOf(props: Record<string, unknown> | undefined): GraphJson {
   const g = props?.graph as Partial<GraphJson> | undefined;
   if (!g || !Array.isArray(g.nodes)) return emptyGraph();
-  return { format: 1, nodes: g.nodes as GraphNode[], wires: Array.isArray(g.wires) ? (g.wires as GraphWire[]) : [] };
+  const out: GraphJson = { format: 2, nodes: g.nodes as GraphNode[], wires: Array.isArray(g.wires) ? (g.wires as GraphWire[]) : [] };
+  if (g.tool && typeof g.tool === 'object') out.tool = g.tool;
+  return out;
 }
+
+/** A node's palette settings changed (an undefined or empty one taken out; none left: no palette). */
+export function setPalette(graph: GraphJson, id: string, change: Record<string, unknown>): GraphJson {
+  return {
+    ...graph,
+    nodes: graph.nodes.map((n) => {
+      if (n.id !== id) return n;
+      const palette: Record<string, unknown> = { ...(n.palette ?? {}) };
+      for (const [k, v] of Object.entries(change)) if (v === undefined || v === null || v === '') delete palette[k]; else palette[k] = v;
+      const next: GraphNode = { ...n, palette };
+      if (Object.keys(palette).length === 0) delete next.palette;
+      return next;
+    }),
+  };
+}
+
+/** The graph's tool settings changed (show, name, icon, tooltip, group); none left: no tool. */
+export function setTool(graph: GraphJson, change: Record<string, unknown>): GraphJson {
+  const tool: Record<string, unknown> = { ...(graph.tool ?? {}) };
+  for (const [k, v] of Object.entries(change)) if (v === undefined || v === null || v === '') delete tool[k]; else tool[k] = v;
+  const next: GraphJson = { ...graph, tool };
+  if (Object.keys(tool).length === 0) delete next.tool;
+  return next;
+}
+
+// ── groups: a selection collapsed into one node, and expanded back (decision 536) ──
+
+/** A group's port's name on the group: its inner node's id and port. */
+export const groupPortName = (p: GroupPort) => `${p.node}.${p.port}`;
+
+/** A group's spec: its open ports, each named and typed as the inner node's port (its own label when it has one). */
+export function groupSpec(node: GraphNode, specOf: (kind: string, node?: GraphNode) => NodeSpec): NodeSpec {
+  const inner = node.graph?.nodes ?? [];
+  const port = (p: GroupPort, side: 'inputs' | 'outputs'): PortSpec => {
+    const n = inner.find((x) => x.id === p.node);
+    const ps = n ? specOf(n.kind, n)[side].find((x) => x.name === p.port) : undefined;
+    const owner = n ? (n.label ?? specOf(n.kind, n).label) : p.node;
+    return { name: groupPortName(p), label: p.label ?? (ps ? `${ps.label} (${owner})` : p.port), type: ps?.type ?? 'any', ...(ps?.whole ? { whole: true } : {}) };
+  };
+  return {
+    kind: GROUP, label: 'Group', group: 'Groups', about: 'Nodes collapsed into one: its inputs and outputs are their ports wired from and to the rest of the graph.',
+    inputs: (node.inputs ?? []).map((p) => port(p, 'inputs')), outputs: (node.outputs ?? []).map((p) => port(p, 'outputs')),
+  };
+}
+
+/**
+ * The nodes <ids> collapsed into one group: placed where the first of them stood, holding them and the wires between
+ * them; a wire from outside into one of them becomes the group's input (one per inner port, so a value wired into two of
+ * them is still two inputs only when it goes to two ports), a wire from one of them to outside the group's output. Null
+ * when fewer than one node is chosen.
+ */
+export function collapse(graph: GraphJson, ids: ReadonlySet<string>, label = 'Group'): { graph: GraphJson; id: string } | null {
+  const inside = graph.nodes.filter((n) => ids.has(n.id));
+  if (inside.length === 0) return null;
+  const id = newNodeId(graph, 'g');
+  const innerWires = graph.wires.filter((w) => ids.has(w.from) && ids.has(w.to));
+  const incoming = graph.wires.filter((w) => !ids.has(w.from) && ids.has(w.to));
+  const outgoing = graph.wires.filter((w) => ids.has(w.from) && !ids.has(w.to));
+  const inputs: GroupPort[] = [];
+  for (const w of incoming) if (!inputs.some((p) => p.node === w.to && p.port === w.in)) inputs.push({ node: w.to, port: w.in });
+  const outputs: GroupPort[] = [];
+  for (const w of outgoing) if (!outputs.some((p) => p.node === w.from && p.port === w.out)) outputs.push({ node: w.from, port: w.out });
+  const x = Math.min(...inside.map((n) => n.x));
+  const y = Math.min(...inside.map((n) => n.y));
+  const group: GraphNode = { id, kind: GROUP, x, y, label, graph: { nodes: inside, wires: innerWires }, inputs, outputs };
+  const at = graph.nodes.findIndex((n) => ids.has(n.id));
+  const nodes = graph.nodes.filter((n) => !ids.has(n.id));
+  nodes.splice(Math.min(at, nodes.length), 0, group);
+  const wires = [
+    ...graph.wires.filter((w) => !ids.has(w.from) && !ids.has(w.to)),
+    ...incoming.map((w) => ({ ...w, to: id, in: `${w.to}.${w.in}` })),
+    ...outgoing.map((w) => ({ ...w, from: id, out: `${w.from}.${w.out}` })),
+  ];
+  return { graph: { ...graph, nodes, wires }, id };
+}
+
+/**
+ * A group expanded back: its nodes put where it stands (moved with it since it was made), their wires, and the group's
+ * wires taken to the inner ports they name. An inner node whose id the graph has since given to another is renamed.
+ */
+export function expand(graph: GraphJson, id: string): { graph: GraphJson; ids: string[] } | null {
+  const group = graph.nodes.find((n) => n.id === id && n.kind === GROUP && n.graph);
+  if (!group?.graph) return null;
+  const others = graph.nodes.filter((n) => n.id !== id);
+  const taken = new Set(allIds({ nodes: others }));
+  const rename = new Map<string, string>();
+  let scratch: { nodes: GraphNode[] } = { nodes: [...others, ...group.graph.nodes] };
+  for (const n of group.graph.nodes) {
+    if (!taken.has(n.id)) { taken.add(n.id); continue; }
+    const fresh = newNodeId(scratch);
+    rename.set(n.id, fresh);
+    taken.add(fresh);
+    scratch = { nodes: [...scratch.nodes, { ...n, id: fresh }] };
+  }
+  const to = (n: string) => rename.get(n) ?? n;
+  const x0 = Math.min(...group.graph.nodes.map((n) => n.x));
+  const y0 = Math.min(...group.graph.nodes.map((n) => n.y));
+  const inner = group.graph.nodes.map((n) => ({ ...n, id: to(n.id), x: n.x - x0 + group.x, y: n.y - y0 + group.y }));
+  const port = (list: GroupPort[] | undefined, name: string) => list?.find((p) => groupPortName(p) === name);
+  const wires: GraphWire[] = [];
+  for (const w of graph.wires) {
+    if (w.to === id) { const p = port(group.inputs, w.in); if (p) wires.push({ ...w, to: to(p.node), in: p.port }); continue; }
+    if (w.from === id) { const p = port(group.outputs, w.out); if (p) wires.push({ ...w, from: to(p.node), out: p.port }); continue; }
+    wires.push(w);
+  }
+  wires.push(...group.graph.wires.map((w) => ({ ...w, from: to(w.from), to: to(w.to) })));
+  const at = graph.nodes.indexOf(group);
+  const nodes = [...graph.nodes.slice(0, at), ...inner, ...graph.nodes.slice(at + 1)];
+  return { graph: { ...graph, nodes, wires }, ids: inner.map((n) => n.id) };
+}
+
+/** Every node's id, in groups too. */
+function allIds(graph: { nodes: GraphNode[] }): string[] {
+  return graph.nodes.flatMap((n) => [n.id, ...(n.graph ? allIds(n.graph) : [])]);
+}
+
 
 // ── drawing ──
 
@@ -310,21 +447,21 @@ export function zoomAt(v: GraphView, sx: number, sy: number, factor: number): Gr
 }
 
 /** The view that shows every node of the graph in a canvas of <width> × <height> pixels, never zoomed in past 1×. */
-export function fitView(graph: GraphJson, specs: (kind: string) => NodeSpec, width: number, height: number, margin = 24): GraphView {
+export function fitView(graph: GraphJson, specs: (kind: string, node?: GraphNode) => NodeSpec, width: number, height: number, margin = 24): GraphView {
   if (graph.nodes.length === 0 || width <= 0 || height <= 0) return { x: -40, y: -40, zoom: 1 };
   const x0 = Math.min(...graph.nodes.map((n) => n.x)) - margin;
   const y0 = Math.min(...graph.nodes.map((n) => n.y)) - margin;
   const x1 = Math.max(...graph.nodes.map((n) => n.x + NODE_W)) + margin;
-  const y1 = Math.max(...graph.nodes.map((n) => n.y + nodeHeight(specs(n.kind)))) + margin;
+  const y1 = Math.max(...graph.nodes.map((n) => n.y + nodeHeight(specs(n.kind, n)))) + margin;
   const zoom = Math.max(0.25, Math.min(1, width / (x1 - x0), height / (y1 - y0)));
   return { zoom, x: x0 - (width / zoom - (x1 - x0)) / 2, y: y0 - (height / zoom - (y1 - y0)) / 2 };
 }
 
 /** The nodes inside a rectangle of the graph (a marquee). */
-export function nodesIn(graph: GraphJson, specs: (kind: string) => NodeSpec, a: { x: number; y: number }, b: { x: number; y: number }): string[] {
+export function nodesIn(graph: GraphJson, specs: (kind: string, node?: GraphNode) => NodeSpec, a: { x: number; y: number }, b: { x: number; y: number }): string[] {
   const [x0, x1] = [Math.min(a.x, b.x), Math.max(a.x, b.x)];
   const [y0, y1] = [Math.min(a.y, b.y), Math.max(a.y, b.y)];
-  return graph.nodes.filter((n) => n.x < x1 && n.x + NODE_W > x0 && n.y < y1 && n.y + nodeHeight(specs(n.kind)) > y0).map((n) => n.id);
+  return graph.nodes.filter((n) => n.x < x1 && n.x + NODE_W > x0 && n.y < y1 && n.y + nodeHeight(specs(n.kind, n)) > y0).map((n) => n.id);
 }
 
 /** A value as a few words, for a node's footer and the inspector. */

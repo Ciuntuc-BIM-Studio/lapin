@@ -3,6 +3,7 @@ import {
   numberText, rowValue, valueEnd,
   addNode, argLabel, argPorts, connect, emptyGraph, fits, fitView, graphOf, moveNodes, nodeHeight, nodeSpecs, nodesIn, portAt, removeNodes, removeWire,
   searchNodes, setLabel, setValue, showValue, wireKey, wouldCycle, zoomAt, HEAD_H, NODE_W, ROW_H, type EngineNodes, type GraphJson, type NodeSpec,
+  collapse, expand, groupSpec, newNodeId, setPalette, setTool,
 } from './graph';
 
 const engineNodes: EngineNodes = {
@@ -179,5 +180,69 @@ describe('what the nodes and the inspector show', () => {
     expect(numberText(0.1 + 0.2)).toBe('0.3');
     expect(numberText(undefined)).toBe('');
     expect(showValue(2.8)).toBe(numberText(2.8));
+  });
+});
+
+describe('groups (decision 536)', () => {
+  // range → point.x, point → wall Start; collapsing range and point leaves the wall outside.
+  function wired(): GraphJson {
+    const g = sample();
+    g.nodes.push({ id: 'n4', kind: 'number', x: -200, y: 0, values: { value: 5 } });
+    g.wires = [
+      { from: 'n4', out: 'value', to: 'n1', in: 'end' },
+      { from: 'n1', out: 'list', to: 'n2', in: 'x' },
+      { from: 'n2', out: 'point', to: 'n3', in: 'pt:1' },
+    ];
+    return g;
+  }
+
+  it('collapses a selection into one node whose open ports are the wires crossing it', () => {
+    const r = collapse(wired(), new Set(['n1', 'n2']), 'Row')!;
+    const group = r.graph.nodes.find((n) => n.id === r.id)!;
+    expect(r.id).toBe('g1');
+    expect(group.kind).toBe('group');
+    expect(group.graph!.nodes.map((n) => n.id)).toEqual(['n1', 'n2']);
+    expect(group.graph!.wires).toEqual([{ from: 'n1', out: 'list', to: 'n2', in: 'x' }]);
+    expect(group.inputs).toEqual([{ node: 'n1', port: 'end' }]);
+    expect(group.outputs).toEqual([{ node: 'n2', port: 'point' }]);
+    expect({ x: group.x, y: group.y }).toEqual({ x: 0, y: 0 });
+    expect(r.graph.wires).toEqual([
+      { from: 'n4', out: 'value', to: 'g1', in: 'n1.end' },
+      { from: 'g1', out: 'n2.point', to: 'n3', in: 'pt:1' },
+    ]);
+    // Its spec: the inner ports, named after their nodes.
+    const s = groupSpec(group, (k) => spec(k));
+    expect(s.inputs.map((p) => [p.name, p.label, p.type])).toEqual([['n1.end', 'End (Range)', 'number']]);
+    expect(s.outputs.map((p) => p.type)).toEqual(['point']);
+    // A new node never takes an id a group holds.
+    expect(newNodeId(r.graph)).toBe('n5');
+    expect(collapse(wired(), new Set())).toBeNull();
+  });
+
+  it('expands a group back where it was moved, its wires to the inner ports, as before', () => {
+    const before = wired();
+    const c = collapse(before, new Set(['n1', 'n2']))!;
+    const moved = moveNodes(c.graph, new Set([c.id]), 100, 50);
+    const e = expand(moved, c.id)!;
+    expect(e.ids).toEqual(['n1', 'n2']);
+    expect(e.graph.nodes.find((n) => n.id === 'n2')).toMatchObject({ x: 320, y: 50 });
+    const key = (g: GraphJson) => g.wires.map(wireKey).sort();
+    expect(key(e.graph)).toEqual(key(before));
+    // An inner id taken since is renamed, its wires with it.
+    const clash = { ...c.graph, nodes: [...c.graph.nodes, { id: 'n2', kind: 'point', x: 0, y: 0 }] };
+    const r = expand(clash, c.id)!;
+    expect(new Set(r.graph.nodes.map((n) => n.id)).size).toBe(r.graph.nodes.length);
+    expect(r.graph.wires.some((w) => w.to === 'n3' && w.from === r.ids[1])).toBe(true);
+  });
+
+  it('reads a format-1 graph as format 2 with its tool, and sets palette and tool settings', () => {
+    expect(graphOf({ graph: { format: 1, nodes: [], wires: [] } }).format).toBe(2);
+    expect(graphOf({ graph: { format: 2, nodes: [], wires: [], tool: { show: true } } }).tool).toEqual({ show: true });
+    let g = setPalette(sample(), 'n1', { label: 'Count', min: 1 });
+    expect(g.nodes[0]!.palette).toEqual({ label: 'Count', min: 1 });
+    g = setPalette(g, 'n1', { label: '', min: undefined });
+    expect(g.nodes[0]!.palette).toBeUndefined();
+    expect(setTool(sample(), { show: true, name: '' }).tool).toEqual({ show: true });
+    expect(setTool(setTool(sample(), { show: true }), { show: undefined }).tool).toBeUndefined();
   });
 });

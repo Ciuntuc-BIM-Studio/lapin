@@ -3,6 +3,29 @@
 import type { Language } from './index';
 
 export const FR: Record<string, string> = {
+  // Decision 536: a graph's palette, its tool in My tools, groups
+  "Open the graph in the Graphs panel": "Ouvrir le graphe dans le panneau Graphes",
+  "This graph has no inputs yet: add Number, Choice, Storey or other input nodes in the Graphs panel, and they become its fields here.": "Ce graphe n'a pas encore de saisies : ajoutez des nœuds Nombre, Choix, Niveau ou d'autres nœuds de saisie dans le panneau Graphes, et ils deviennent ses champs ici.",
+  "Open the palette of this graph": "Ouvrir la palette de ce graphe",
+  "Open the graph's palette: its inputs as fields, Bake without the canvas": "Ouvrir la palette du graphe : ses saisies en champs, Générer sans le canevas",
+  "Collapse the selected nodes into one group (G)": "Regrouper les nœuds sélectionnés en un groupe (G)",
+  "Nodes collapsed into one: its inputs and outputs are their ports wired from and to the rest of the graph.": "Nœuds regroupés en un seul : ses entrées et sorties sont leurs ports reliés au reste du graphe.",
+  "nodes inside": "nœuds à l'intérieur",
+  "Expand the group": "Dégrouper",
+  "In the palette": "Dans la palette",
+  "Show in the palette": "Afficher dans la palette",
+  "Label in the palette": "Libellé dans la palette",
+  "Show its values in the palette": "Afficher ses valeurs dans la palette",
+  "The graph as a tool": "Le graphe comme outil",
+  "Show in My tools": "Afficher dans Mes outils",
+  "Its button opens the graph's palette: the input nodes as fields, the watched values, and Bake.": "Son bouton ouvre la palette du graphe : les nœuds de saisie en champs, les valeurs observées et Générer.",
+  "Button's name": "Nom du bouton",
+  "Icon": "Icône",
+  "Tooltip": "Info-bulle",
+  "Group in My tools": "Groupe dans Mes outils",
+  "Change graph inputs": "Modifier les saisies du graphe",
+  "A type": "Un type",
+  "A type of the project (a wall type, a slab type…) for a tool's Type; none chosen: the first of its class by name.": "Un type du projet (un type de mur, un type de dalle…) pour le Type d'un outil ; aucun choisi : le premier de sa classe par nom.",
   // Decision 524: the box by the cursor offers width and height for a rectangle
   'Space switches length and angle with width and height': 'Espace bascule entre longueur et angle et largeur et hauteur', 'Width × Height': 'Largeur × Hauteur', 'Length ∠ Angle': 'Longueur ∠ Angle',
   // Decision 516: mouse navigation styles

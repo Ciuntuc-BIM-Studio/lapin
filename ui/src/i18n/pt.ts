@@ -3,6 +3,29 @@
 import type { Language } from './index';
 
 export const PT: Record<string, string> = {
+  // Decision 536: a graph's palette, its tool in My tools, groups
+  "Open the graph in the Graphs panel": "Abrir o grafo no painel Grafos",
+  "This graph has no inputs yet: add Number, Choice, Storey or other input nodes in the Graphs panel, and they become its fields here.": "Este grafo ainda não tem entradas: adicione nós Número, Escolha, Piso ou outros nós de entrada no painel Grafos, e passam a ser os seus campos aqui.",
+  "Open the palette of this graph": "Abrir a paleta deste grafo",
+  "Open the graph's palette: its inputs as fields, Bake without the canvas": "Abrir a paleta do grafo: as suas entradas como campos, Gerar sem a tela",
+  "Collapse the selected nodes into one group (G)": "Agrupar os nós selecionados num grupo (G)",
+  "Nodes collapsed into one: its inputs and outputs are their ports wired from and to the rest of the graph.": "Nós agrupados num só: as suas entradas e saídas são as portas deles ligadas ao resto do grafo.",
+  "nodes inside": "nós lá dentro",
+  "Expand the group": "Desagrupar",
+  "In the palette": "Na paleta",
+  "Show in the palette": "Mostrar na paleta",
+  "Label in the palette": "Rótulo na paleta",
+  "Show its values in the palette": "Mostrar os seus valores na paleta",
+  "The graph as a tool": "O grafo como ferramenta",
+  "Show in My tools": "Mostrar em Minhas ferramentas",
+  "Its button opens the graph's palette: the input nodes as fields, the watched values, and Bake.": "O seu botão abre a paleta do grafo: os nós de entrada como campos, os valores observados e Gerar.",
+  "Button's name": "Nome do botão",
+  "Icon": "Ícone",
+  "Tooltip": "Dica",
+  "Group in My tools": "Grupo em Minhas ferramentas",
+  "Change graph inputs": "Alterar as entradas do grafo",
+  "A type": "Um tipo",
+  "A type of the project (a wall type, a slab type…) for a tool's Type; none chosen: the first of its class by name.": "Um tipo do projeto (um tipo de parede, um tipo de laje…) para o Tipo de uma ferramenta; nenhum escolhido: o primeiro da sua classe por nome.",
   // Decision 524: the box by the cursor offers width and height for a rectangle
   'Space switches length and angle with width and height': 'Espaço alterna entre comprimento e ângulo e largura e altura', 'Width × Height': 'Largura × Altura', 'Length ∠ Angle': 'Comprimento ∠ Ângulo',
   // Decision 516: mouse navigation styles

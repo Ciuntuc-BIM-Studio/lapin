@@ -3,6 +3,29 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // Decision 536: a graph's palette, its tool in My tools, groups
+  "Open the graph in the Graphs panel": "在图面板中打开该图",
+  "This graph has no inputs yet: add Number, Choice, Storey or other input nodes in the Graphs panel, and they become its fields here.": "此图还没有输入项：在图面板中添加数字、选择、楼层或其他输入节点，它们就会成为这里的字段.",
+  "Open the palette of this graph": "打开此图的面板",
+  "Open the graph's palette: its inputs as fields, Bake without the canvas": "打开图的面板：输入项作为字段，无需画布即可烘焙",
+  "Collapse the selected nodes into one group (G)": "将所选节点折叠为一个组 (G)",
+  "Nodes collapsed into one: its inputs and outputs are their ports wired from and to the rest of the graph.": "折叠为一个的节点：其输入和输出是它们与图其余部分相连的端口.",
+  "nodes inside": "个内部节点",
+  "Expand the group": "展开组",
+  "In the palette": "在面板中",
+  "Show in the palette": "在面板中显示",
+  "Label in the palette": "面板中的标签",
+  "Show its values in the palette": "在面板中显示其值",
+  "The graph as a tool": "图作为工具",
+  "Show in My tools": "在我的工具中显示",
+  "Its button opens the graph's palette: the input nodes as fields, the watched values, and Bake.": "其按钮打开图的面板：输入节点作为字段、监视的值和烘焙.",
+  "Button's name": "按钮名称",
+  "Icon": "图标",
+  "Tooltip": "工具提示",
+  "Group in My tools": "我的工具中的组",
+  "Change graph inputs": "更改图的输入",
+  "A type": "一种类型",
+  "A type of the project (a wall type, a slab type…) for a tool's Type; none chosen: the first of its class by name.": "项目中的一种类型（墙类型、楼板类型…），用于工具的类型；未选择：按名称取其类别的第一个.",
   // Decision 524: the box by the cursor offers width and height for a rectangle
   'Space switches length and angle with width and height': '空格键在长度与角度、宽度与高度之间切换', 'Width × Height': '宽度 × 高度', 'Length ∠ Angle': '长度 ∠ 角度',
   // Decision 516: mouse navigation styles

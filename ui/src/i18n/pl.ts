@@ -3,6 +3,29 @@
 import type { Language } from './index';
 
 export const PL: Record<string, string> = {
+  // Decision 536: a graph's palette, its tool in My tools, groups
+  "Open the graph in the Graphs panel": "Otwórz graf w panelu Grafy",
+  "This graph has no inputs yet: add Number, Choice, Storey or other input nodes in the Graphs panel, and they become its fields here.": "Ten graf nie ma jeszcze danych wejściowych: dodaj w panelu Grafy węzły Liczba, Wybór, Kondygnacja lub inne węzły wejściowe, a staną się tu jego polami.",
+  "Open the palette of this graph": "Otwórz paletę tego grafu",
+  "Open the graph's palette: its inputs as fields, Bake without the canvas": "Otwórz paletę grafu: jego dane wejściowe jako pola, Utwórz bez obszaru roboczego",
+  "Collapse the selected nodes into one group (G)": "Zwiń zaznaczone węzły w jedną grupę (G)",
+  "Nodes collapsed into one: its inputs and outputs are their ports wired from and to the rest of the graph.": "Węzły zwinięte w jeden: jego wejścia i wyjścia to ich porty połączone z resztą grafu.",
+  "nodes inside": "węzłów wewnątrz",
+  "Expand the group": "Rozwiń grupę",
+  "In the palette": "W palecie",
+  "Show in the palette": "Pokaż w palecie",
+  "Label in the palette": "Etykieta w palecie",
+  "Show its values in the palette": "Pokaż jego wartości w palecie",
+  "The graph as a tool": "Graf jako narzędzie",
+  "Show in My tools": "Pokaż w Moich narzędziach",
+  "Its button opens the graph's palette: the input nodes as fields, the watched values, and Bake.": "Jego przycisk otwiera paletę grafu: węzły wejściowe jako pola, obserwowane wartości i Utwórz.",
+  "Button's name": "Nazwa przycisku",
+  "Icon": "Ikona",
+  "Tooltip": "Podpowiedź",
+  "Group in My tools": "Grupa w Moich narzędziach",
+  "Change graph inputs": "Zmień dane wejściowe grafu",
+  "A type": "Typ",
+  "A type of the project (a wall type, a slab type…) for a tool's Type; none chosen: the first of its class by name.": "Typ projektu (typ ściany, typ stropu…) dla Typu narzędzia; żaden nie wybrany: pierwszy z jego klasy według nazwy.",
   // Decision 524: the box by the cursor offers width and height for a rectangle
   'Space switches length and angle with width and height': 'Spacja przełącza między długością i kątem a szerokością i wysokością', 'Width × Height': 'Szerokość × Wysokość', 'Length ∠ Angle': 'Długość ∠ Kąt',
   // Decision 516: mouse navigation styles

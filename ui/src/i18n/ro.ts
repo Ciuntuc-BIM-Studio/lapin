@@ -1,6 +1,29 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // Decision 536: a graph's palette, its tool in My tools, groups
+  "Open the graph in the Graphs panel": "Deschide graful în panoul Grafuri",
+  "This graph has no inputs yet: add Number, Choice, Storey or other input nodes in the Graphs panel, and they become its fields here.": "Graful nu are încă intrări: adaugă noduri Număr, Alegere, Nivel sau alte noduri de intrare în panoul Grafuri și devin câmpurile lui aici.",
+  "Open the palette of this graph": "Deschide paleta acestui graf",
+  "Open the graph's palette: its inputs as fields, Bake without the canvas": "Deschide paleta grafului: intrările lui ca câmpuri, Creează fără canvas",
+  "Collapse the selected nodes into one group (G)": "Strânge nodurile selectate într-un grup (G)",
+  "Nodes collapsed into one: its inputs and outputs are their ports wired from and to the rest of the graph.": "Noduri strânse într-unul singur: intrările și ieșirile lui sunt porturile lor legate de restul grafului.",
+  "nodes inside": "noduri înăuntru",
+  "Expand the group": "Desface grupul",
+  "In the palette": "În paletă",
+  "Show in the palette": "Arată în paletă",
+  "Label in the palette": "Eticheta în paletă",
+  "Show its values in the palette": "Arată-i valorile în paletă",
+  "The graph as a tool": "Graful ca unealtă",
+  "Show in My tools": "Arată în Uneltele mele",
+  "Its button opens the graph's palette: the input nodes as fields, the watched values, and Bake.": "Butonul lui deschide paleta grafului: nodurile de intrare ca câmpuri, valorile urmărite și Creează.",
+  "Button's name": "Numele butonului",
+  "Icon": "Pictogramă",
+  "Tooltip": "Indiciu",
+  "Group in My tools": "Grupul din Uneltele mele",
+  "Change graph inputs": "Schimbă intrările grafului",
+  "A type": "Un tip",
+  "A type of the project (a wall type, a slab type…) for a tool's Type; none chosen: the first of its class by name.": "Un tip al proiectului (un tip de perete, un tip de placă…) pentru Tipul unei unelte; niciunul ales: primul din clasa lui, după nume.",
   // Decision 524: the box by the cursor offers width and height for a rectangle
   'Space switches length and angle with width and height': 'Space comută între lungime și unghi și lățime și înălțime', 'Width × Height': 'Lățime × Înălțime', 'Length ∠ Angle': 'Lungime ∠ Unghi',
   // Decision 516: mouse navigation styles

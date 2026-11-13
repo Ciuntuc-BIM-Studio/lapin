@@ -3,6 +3,29 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  // Decision 536: a graph's palette, its tool in My tools, groups
+  "Open the graph in the Graphs panel": "Åbn grafen i panelet Grafer",
+  "This graph has no inputs yet: add Number, Choice, Storey or other input nodes in the Graphs panel, and they become its fields here.": "Grafen har endnu ingen input: tilføj noder som Tal, Valg, Etage eller andre inputnoder i panelet Grafer, så bliver de dens felter her.",
+  "Open the palette of this graph": "Åbn denne grafs palet",
+  "Open the graph's palette: its inputs as fields, Bake without the canvas": "Åbn grafens palet: dens input som felter, Generér uden lærredet",
+  "Collapse the selected nodes into one group (G)": "Saml de valgte noder i en gruppe (G)",
+  "Nodes collapsed into one: its inputs and outputs are their ports wired from and to the rest of the graph.": "Noder samlet i én: dens input og output er deres porte forbundet med resten af grafen.",
+  "nodes inside": "noder indeni",
+  "Expand the group": "Opløs gruppen",
+  "In the palette": "I paletten",
+  "Show in the palette": "Vis i paletten",
+  "Label in the palette": "Etiket i paletten",
+  "Show its values in the palette": "Vis dens værdier i paletten",
+  "The graph as a tool": "Grafen som værktøj",
+  "Show in My tools": "Vis i Mine værktøjer",
+  "Its button opens the graph's palette: the input nodes as fields, the watched values, and Bake.": "Dens knap åbner grafens palet: inputnoderne som felter, de overvågede værdier og Generér.",
+  "Button's name": "Knappens navn",
+  "Icon": "Ikon",
+  "Tooltip": "Værktøjstip",
+  "Group in My tools": "Gruppe i Mine værktøjer",
+  "Change graph inputs": "Ændr grafens input",
+  "A type": "En type",
+  "A type of the project (a wall type, a slab type…) for a tool's Type; none chosen: the first of its class by name.": "En type i projektet (en vægtype, en dæktype…) til et værktøjs Type; ingen valgt: den første i sin klasse efter navn.",
   // Decision 524: the box by the cursor offers width and height for a rectangle
   'Space switches length and angle with width and height': 'Mellemrum skifter mellem længde og vinkel og bredde og højde', 'Width × Height': 'Bredde × Højde', 'Length ∠ Angle': 'Længde ∠ Vinkel',
   // Decision 516: mouse navigation styles

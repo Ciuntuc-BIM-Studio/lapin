@@ -152,6 +152,15 @@ export function openPanel(): void {
 
 // ── the ghost, shared between the app's windows ──
 
+/** A palette's ghost shown in the views (the last evaluated, the panel's or a palette's, is the one drawn). */
+export const showGhost = (ghost: Ghost | null): void => shareGhost(ghost);
+
+/** The panel's ghost again (a palette closed, or baked): its graph's, when its preview is on. */
+export function panelGhost(): void {
+  const s = useGraphs.getState();
+  shareGhost(s.preview ? s.result?.ghost ?? null : null);
+}
+
 const GHOST_EVENT = 'graphs-ghost';
 
 function shareGhost(ghost: Ghost | null): void {

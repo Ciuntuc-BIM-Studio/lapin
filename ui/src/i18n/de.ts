@@ -3,6 +3,29 @@
 import type { Language } from './index';
 
 export const DE: Record<string, string> = {
+  // Decision 536: a graph's palette, its tool in My tools, groups
+  "Open the graph in the Graphs panel": "Den Graphen im Bereich Graphen öffnen",
+  "This graph has no inputs yet: add Number, Choice, Storey or other input nodes in the Graphs panel, and they become its fields here.": "Dieser Graph hat noch keine Eingaben: Fügen Sie im Bereich Graphen Knoten wie Zahl, Auswahl, Geschoss oder andere Eingabeknoten hinzu, dann werden sie hier seine Felder.",
+  "Open the palette of this graph": "Die Palette dieses Graphen öffnen",
+  "Open the graph's palette: its inputs as fields, Bake without the canvas": "Die Palette des Graphen öffnen: seine Eingaben als Felder, Erzeugen ohne die Zeichenfläche",
+  "Collapse the selected nodes into one group (G)": "Die ausgewählten Knoten zu einer Gruppe zusammenfassen (G)",
+  "Nodes collapsed into one: its inputs and outputs are their ports wired from and to the rest of the graph.": "Zu einem zusammengefasste Knoten: Ihre Ein- und Ausgänge sind ihre Anschlüsse, die mit dem Rest des Graphen verbunden sind.",
+  "nodes inside": "Knoten darin",
+  "Expand the group": "Gruppe auflösen",
+  "In the palette": "In der Palette",
+  "Show in the palette": "In der Palette zeigen",
+  "Label in the palette": "Beschriftung in der Palette",
+  "Show its values in the palette": "Seine Werte in der Palette zeigen",
+  "The graph as a tool": "Der Graph als Werkzeug",
+  "Show in My tools": "In Meine Werkzeuge zeigen",
+  "Its button opens the graph's palette: the input nodes as fields, the watched values, and Bake.": "Seine Schaltfläche öffnet die Palette des Graphen: die Eingabeknoten als Felder, die beobachteten Werte und Erzeugen.",
+  "Button's name": "Name der Schaltfläche",
+  "Icon": "Symbol",
+  "Tooltip": "Quickinfo",
+  "Group in My tools": "Gruppe in Meine Werkzeuge",
+  "Change graph inputs": "Eingaben des Graphen ändern",
+  "A type": "Ein Typ",
+  "A type of the project (a wall type, a slab type…) for a tool's Type; none chosen: the first of its class by name.": "Ein Typ des Projekts (ein Wandtyp, ein Deckentyp…) für den Typ eines Werkzeugs; keiner gewählt: der erste seiner Klasse nach Namen.",
   // Decision 524: the box by the cursor offers width and height for a rectangle
   'Space switches length and angle with width and height': 'Leertaste wechselt zwischen Länge und Winkel und Breite und Höhe', 'Width × Height': 'Breite × Höhe', 'Length ∠ Angle': 'Länge ∠ Winkel',
   // Decision 516: mouse navigation styles

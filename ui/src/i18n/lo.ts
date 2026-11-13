@@ -3,6 +3,29 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // Decision 536: a graph's palette, its tool in My tools, groups
+  "Open the graph in the Graphs panel": "ເປີດກຣາບໃນແຜງກຣາບ",
+  "This graph has no inputs yet: add Number, Choice, Storey or other input nodes in the Graphs panel, and they become its fields here.": "ກຣາບນີ້ຍັງບໍ່ມີຂໍ້ມູນປ້ອນ: ເພີ່ມໂນດຕົວເລກ, ການເລືອກ, ຊັ້ນ ຫຼື ໂນດປ້ອນອື່ນໆໃນແຜງກຣາບ, ແລ້ວພວກມັນຈະເປັນຊ່ອງຂອງມັນຢູ່ນີ້.",
+  "Open the palette of this graph": "ເປີດແຜງເຄື່ອງມືຂອງກຣາບນີ້",
+  "Open the graph's palette: its inputs as fields, Bake without the canvas": "ເປີດແຜງເຄື່ອງມືຂອງກຣາບ: ຂໍ້ມູນປ້ອນເປັນຊ່ອງ, ສ້າງໂດຍບໍ່ຕ້ອງໃຊ້ພື້ນທີ່ແຕ້ມ",
+  "Collapse the selected nodes into one group (G)": "ລວມໂນດທີ່ເລືອກເປັນກຸ່ມດຽວ (G)",
+  "Nodes collapsed into one: its inputs and outputs are their ports wired from and to the rest of the graph.": "ໂນດທີ່ລວມເປັນອັນດຽວ: ຂາເຂົ້າ ແລະ ຂາອອກຂອງມັນແມ່ນພອດຂອງພວກມັນທີ່ເຊື່ອມກັບສ່ວນທີ່ເຫຼືອຂອງກຣາບ.",
+  "nodes inside": "ໂນດຢູ່ພາຍໃນ",
+  "Expand the group": "ແຍກກຸ່ມອອກ",
+  "In the palette": "ໃນແຜງເຄື່ອງມື",
+  "Show in the palette": "ສະແດງໃນແຜງເຄື່ອງມື",
+  "Label in the palette": "ປ້າຍໃນແຜງເຄື່ອງມື",
+  "Show its values in the palette": "ສະແດງຄ່າຂອງມັນໃນແຜງເຄື່ອງມື",
+  "The graph as a tool": "ກຣາບເປັນເຄື່ອງມື",
+  "Show in My tools": "ສະແດງໃນເຄື່ອງມືຂອງຂ້ອຍ",
+  "Its button opens the graph's palette: the input nodes as fields, the watched values, and Bake.": "ປຸ່ມຂອງມັນເປີດແຜງເຄື່ອງມືຂອງກຣາບ: ໂນດປ້ອນເປັນຊ່ອງ, ຄ່າທີ່ຕິດຕາມ ແລະ ສ້າງ.",
+  "Button's name": "ຊື່ປຸ່ມ",
+  "Icon": "ໄອຄອນ",
+  "Tooltip": "ຄຳແນະນຳ",
+  "Group in My tools": "ກຸ່ມໃນເຄື່ອງມືຂອງຂ້ອຍ",
+  "Change graph inputs": "ປ່ຽນຂໍ້ມູນປ້ອນຂອງກຣາບ",
+  "A type": "ປະເພດໜຶ່ງ",
+  "A type of the project (a wall type, a slab type…) for a tool's Type; none chosen: the first of its class by name.": "ປະເພດໜຶ່ງຂອງໂຄງການ (ປະເພດຝາ, ປະເພດພື້ນ…) ສຳລັບປະເພດຂອງເຄື່ອງມື; ບໍ່ໄດ້ເລືອກ: ອັນທຳອິດຂອງຊັ້ນຂອງມັນຕາມຊື່.",
   // Decision 524: the box by the cursor offers width and height for a rectangle
   'Space switches length and angle with width and height': 'ປຸ່ມຍະຫວ່າງສະລັບລະຫວ່າງຄວາມຍາວກັບມຸມ ແລະ ຄວາມກວ້າງກັບຄວາມສູງ', 'Width × Height': 'ຄວາມກວ້າງ × ຄວາມສູງ', 'Length ∠ Angle': 'ຄວາມຍາວ ∠ ມຸມ',
   // Decision 516: mouse navigation styles
