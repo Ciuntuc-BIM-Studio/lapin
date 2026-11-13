@@ -171,6 +171,10 @@ with lapin.ui.panel("Walls"):                      # a group of My tools named W
 
 As for any tool, you can move them, make them small or take them out; once taken out, a tool stays out.
 
+## Messages
+
+At the bottom of the Script panel, a Messages strip keeps one row per run: started, done with how long it took, stopped, or failed with the error's last line and, when Python's traceback gives them, the script's name and line (`Walls:12`). Click a failed row to open that script in the editor at that line, when it is the one open, one of Mine or one of the project's. It also records the runs started from My tools and from palette buttons, even while the panel is closed, so a tool that failed is reported when you open it. Open it with its arrow, filter by Errors, Warnings or All, copy the rows as plain text, or clear them. The console on the right is unchanged: it still shows everything a script prints.
+
 ## Safety
 
 A script can do anything you can do on this computer: it runs in your own Python, with your rights. Run scripts you wrote or trust; a project's script and an installed one ask first.

@@ -13,6 +13,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Circle, Copy, ExternalLink, FilePlus, FolderInput, Play, RotateCcw, Save, ShieldOff, Square, SquareTerminal, Trash2, X, Eraser } from 'lucide-react';
 import { engineInBrowser, useSession } from '../../engine/session';
+import { MessageStrip } from '../../shell/MessageStrip';
 import { CodeEditor } from './CodeEditor';
 import { namespaces, scriptName, walk, type Completion } from './logic';
 import { trustQuestion, TRUST_WARNING } from './trust';
@@ -20,7 +21,7 @@ import { parseHeader } from './header';
 import { forgetTrust, isTrusted } from './scriptTools';
 import {
   answerTrust, clearConsole, clearRecording, closePanel, copyRecording, deleteFromProject, deleteScript, dirty, follow, newScript, openProjectScript, openScript,
-  projectScripts, recordedText, refreshStatus, restart, reveal, run, saveRecording, saveScript, saveToProject, setHeight, startRecording, stop, stopRecording, useScripting,
+  projectScripts, recordedText, refreshStatus, restart, reveal, run, saveRecording, saveScript, saveToProject, scriptLog, setHeight, showScriptAt, startRecording, stop, stopRecording, useScripting,
 } from './store';
 
 function Status() {
@@ -228,6 +229,8 @@ function Editor() {
 
 export function ScriptPanel() {
   const height = useScripting((s) => s.height);
+  // The messages strip, open, adds its height to the panel's: the editor and the console keep theirs.
+  const strip = scriptLog.use((s) => (s.open ? s.height : 0));
   // Typing in the panel is the panel's: the app's keys (a tool's letters, Delete), listened to on the window, wait outside it.
   // Stopped as React's own event (at the app's root, after the panel's handlers ran), not on the panel's element, which would hide the keys from React.
   const keep = (e: React.KeyboardEvent) => {
@@ -251,7 +254,7 @@ export function ScriptPanel() {
     window.addEventListener('pointerup', up);
   };
   return (
-    <section className="script-panel" onKeyDown={keep} style={{ height }} data-panel="script" data-i18n-ctx="script" aria-label="Script">
+    <section className="script-panel" onKeyDown={keep} style={{ height: height + strip }} data-panel="script" data-i18n-ctx="script" aria-label="Script">
       <div className="script-resize" onPointerDown={drag} title="Drag to resize" />
       <header className="script-head">
         <SquareTerminal size={15} /><span className="panel-title">Script</span>
@@ -262,6 +265,7 @@ export function ScriptPanel() {
       {engineInBrowser
         ? <div className="script-web"><p>Python runs in the desktop app.</p><p className="muted small">Lapin for the desktop runs your own Python (3.11 or newer) in the Script panel; in the browser there is none.</p></div>
         : <div className="script-body"><Library /><Editor /><Console /></div>}
+      {!engineInBrowser && <MessageStrip log={scriptLog} onOpen={(m) => void showScriptAt(m.target as { script?: string; line?: number })} />}
     </section>
   );
 }

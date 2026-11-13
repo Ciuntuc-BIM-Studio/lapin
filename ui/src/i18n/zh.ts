@@ -24,6 +24,23 @@ export const ZH: Record<string, string> = {
   "That sketch is not one of the part's own: use Constrain part first.": "该草图不属于零件自身：请先使用“约束零件”。",
   "Place the part first: its sketch is edited in the part's edit mode, on an object.": "请先放置零件：它的草图在零件的编辑模式中、在对象上编辑。",
   "Type the body's depth: a length, or =formula.": "输入实体的深度：长度或 =公式。",
+  // The messages console (decision 538)
+
+  // The messages console (decision 538)
+
+  // The messages console (decision 538)
+  "Errors": "错误",
+  "No messages.": "没有消息。",
+  "Copy the messages as text": "将消息复制为文本",
+  "Clear the messages": "清除消息",
+  "Show the messages": "显示消息",
+  "Hide the messages": "隐藏消息",
+  "Go to it": "转到它",
+  "Error": "错误",
+  "Warning": "警告",
+  "Info": "信息",
+  "The preview was cut: the ghost holds too many coordinates.": "预览已被截断：虚影的坐标过多。",
+  "One evaluation reached its limit of command calls.": "一次求值达到了命令调用的上限。",
   // Decision 537: a graph palette's values, shared or each user's own
   "Palette values": "面板数值",
   "Shared": "共享",
@@ -3389,6 +3406,8 @@ export const ZH: Record<string, string> = {
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [
+  [/^Commands: (\d+), (\d+) ms$/, (m) => `命令：${m[1]}，${m[2]} ms`],
+  [/^Elements made: (\d+), one undo step$/, (m) => `已创建元素：${m[1]}，一步撤销`],
   [/^(\d+) added, (\d+) updated, (\d+) the same, (\d+) skipped\.$/, (m) => `已添加 ${m[1]} 个，已更新 ${m[2]} 个，相同 ${m[3]} 个，已跳过 ${m[4]} 个。`],
   [/^(\d+) line types added, (\d+) updated, (\d+) skipped\.$/, (m) => `已添加 ${m[1]} 个线型，已更新 ${m[2]} 个，已跳过 ${m[3]} 个。`],
   [/^(\d+) parameters added, (\d+) updated\.$/, (m) => `已添加 ${m[1]} 个参数，已更新 ${m[2]} 个。`],

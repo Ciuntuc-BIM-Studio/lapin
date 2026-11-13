@@ -24,6 +24,23 @@ export const DA: Record<string, string> = {
   "That sketch is not one of the part's own: use Constrain part first.": "Den skitse hører ikke til delen: brug først Begræns delen.",
   "Place the part first: its sketch is edited in the part's edit mode, on an object.": "Placér først delen: dens skitse redigeres i delens redigeringstilstand, på et objekt.",
   "Type the body's depth: a length, or =formula.": "Skriv legemets dybde: en længde eller =formel.",
+  // The messages console (decision 538)
+
+  // The messages console (decision 538)
+
+  // The messages console (decision 538)
+  "Errors": "Fejl",
+  "No messages.": "Ingen beskeder.",
+  "Copy the messages as text": "Kopiér beskederne som tekst",
+  "Clear the messages": "Ryd beskederne",
+  "Show the messages": "Vis beskederne",
+  "Hide the messages": "Skjul beskederne",
+  "Go to it": "Gå til den",
+  "Error": "Fejl",
+  "Warning": "Advarsel",
+  "Info": "Info",
+  "The preview was cut: the ghost holds too many coordinates.": "Forhåndsvisningen blev afkortet: spøgelset har for mange koordinater.",
+  "One evaluation reached its limit of command calls.": "En evaluering nåede grænsen for kommandokald.",
   // Decision 537: a graph palette's values, shared or each user's own
   "Palette values": "Paletværdier",
   "Shared": "Fælles",
@@ -3395,6 +3412,8 @@ const n = (count: string, one: string, many: string) => `${count} ${count === '1
 
 /** Phrases with a number or a name in them. */
 export const DA_PATTERNS: Language['patterns'] = [
+  [/^Commands: (\d+), (\d+) ms$/, (m) => `Kommandoer: ${m[1]}, ${m[2]} ms`],
+  [/^Elements made: (\d+), one undo step$/, (m) => `Elementer oprettet: ${m[1]}, ét fortrydelsestrin`],
   [/^(\d+) added, (\d+) updated, (\d+) the same, (\d+) skipped\.$/, (m) => `${m[1]} tilføjet, ${m[2]} opdateret, ${m[3]} ens, ${m[4]} sprunget over.`],
   [/^(\d+) line types added, (\d+) updated, (\d+) skipped\.$/, (m) => `${m[1]} linjetyper tilføjet, ${m[2]} opdateret, ${m[3]} sprunget over.`],
   [/^(\d+) parameters added, (\d+) updated\.$/, (m) => `${m[1]} parametre tilføjet, ${m[2]} opdateret.`],

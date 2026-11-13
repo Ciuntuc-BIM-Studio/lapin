@@ -21,7 +21,8 @@ import { isInput, GRAPHS_GROUP, type GraphTool, type NodePalette } from './palet
 import { togglePalette } from './tools';
 import { isGuest } from '../../engine/share';
 import { commitNumber, NO_COMMIT } from '../../shell/fieldCommit';
-import { bake, currentGraph, GUEST_REFUSAL, deleteGraph, evaluate, loadSpecs, newGraph, openGraph, projectGraphs, renameGraph, saveGraph, setPreview, useGraphs } from './store';
+import { MessageStrip } from '../../shell/MessageStrip';
+import { bake, currentGraph, focusNode, graphLog, GUEST_REFUSAL, deleteGraph, evaluate, loadSpecs, newGraph, openGraph, projectGraphs, renameGraph, saveGraph, setPreview, useGraphs } from './store';
 
 type Drag =
   | { kind: 'move'; start: { x: number; y: number }; ids: Set<string>; moved: boolean }
@@ -51,6 +52,7 @@ function GraphPanel() {
           <button type="button" data-action="graph-new" onClick={() => void newGraph()}><Plus size={14} /> New graph</button>
         </div>
       )}
+      <MessageStrip log={graphLog} onOpen={(m) => { const node = (m.target as { node?: string } | undefined)?.node; if (node) focusNode(node); }} />
     </div>
   );
 }
@@ -135,6 +137,19 @@ function Editor() {
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+
+  // A message's node asked for: selected and put in the middle of the canvas (the zoom as it is).
+  const focus = useGraphs((s) => s.focus);
+  useEffect(() => {
+    if (!focus || !host.current) return;
+    const n = graph.nodes.find((x) => x.id === focus.node);
+    if (!n) return;
+    const r = host.current.getBoundingClientRect();
+    setSelected(new Set([n.id])); setWireSel(null);
+    touched.current = true;
+    setView((v) => ({ ...v, x: n.x + NODE_W / 2 - r.width / v.zoom / 2, y: n.y + nodeHeight(specOf(n.kind, n)) / 2 - r.height / v.zoom / 2 }));
+    host.current.focus();
+  }, [focus]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Evaluated after each change of the graph, and of the model (a graph reads it), a moment after the last.
   const graphText = JSON.stringify(saved);

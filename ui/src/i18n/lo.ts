@@ -24,6 +24,23 @@ export const LO: Record<string, string> = {
   "That sketch is not one of the part's own: use Constrain part first.": "ແຜນຮ່າງນັ້ນບໍ່ແມ່ນຂອງຊິ້ນສ່ວນເອງ: ໃຊ້ ຈຳກັດຊິ້ນສ່ວນ ກ່ອນ.",
   "Place the part first: its sketch is edited in the part's edit mode, on an object.": "ວາງຊິ້ນສ່ວນກ່ອນ: ແຜນຮ່າງຂອງມັນແກ້ໄຂໃນໂໝດແກ້ໄຂຂອງຊິ້ນສ່ວນ, ເທິງວັດຖຸ.",
   "Type the body's depth: a length, or =formula.": "ພິມຄວາມເລິກຂອງຕົວຖັນ: ຄວາມຍາວ ຫຼື =ສູດ.",
+  // The messages console (decision 538)
+
+  // The messages console (decision 538)
+
+  // The messages console (decision 538)
+  "Errors": "ຂໍ້ຜິດພາດ",
+  "No messages.": "ບໍ່ມີຂໍ້ຄວາມ.",
+  "Copy the messages as text": "ສຳເນົາຂໍ້ຄວາມເປັນຕົວອັກສອນ",
+  "Clear the messages": "ລຶບຂໍ້ຄວາມ",
+  "Show the messages": "ສະແດງຂໍ້ຄວາມ",
+  "Hide the messages": "ເຊື່ອງຂໍ້ຄວາມ",
+  "Go to it": "ໄປທີ່ມັນ",
+  "Error": "ຂໍ້ຜິດພາດ",
+  "Warning": "ຄຳເຕືອນ",
+  "Info": "ຂໍ້ມູນ",
+  "The preview was cut: the ghost holds too many coordinates.": "ຕົວຢ່າງຖືກຕັດ: ເງົາມີພິກັດຫຼາຍເກີນໄປ.",
+  "One evaluation reached its limit of command calls.": "ການປະເມີນຄັ້ງໜຶ່ງໄດ້ເຖິງຂີດຈຳກັດການເອີ້ນຄຳສັ່ງ.",
   // Decision 537: a graph palette's values, shared or each user's own
   "Palette values": "ຄ່າຂອງແຜງເຄື່ອງມື",
   "Shared": "ໃຊ້ຮ່ວມກັນ",
@@ -3452,6 +3469,8 @@ export const LO: Record<string, string> = {
 
 /** Phrases with a number or a name in them. */
 export const LO_PATTERNS: Language['patterns'] = [
+  [/^Commands: (\d+), (\d+) ms$/, (m) => `ຄຳສັ່ງ: ${m[1]}, ${m[2]} ms`],
+  [/^Elements made: (\d+), one undo step$/, (m) => `ອົງປະກອບທີ່ສ້າງ: ${m[1]}, ຍົກເລີກຄັ້ງດຽວ`],
   [/^(\d+) added, (\d+) updated, (\d+) the same, (\d+) skipped\.$/, (m) => `ເພີ່ມ ${m[1]}, ອັບເດດ ${m[2]}, ຄືກັນ ${m[3]}, ຂ້າມ ${m[4]}.`],
   [/^(\d+) line types added, (\d+) updated, (\d+) skipped\.$/, (m) => `ເພີ່ມ ${m[1]} ປະເພດເສັ້ນ, ອັບເດດ ${m[2]}, ຂ້າມ ${m[3]}.`],
   [/^(\d+) parameters added, (\d+) updated\.$/, (m) => `ເພີ່ມ ${m[1]} ພາຣາມິເຕີ, ອັບເດດ ${m[2]}.`],

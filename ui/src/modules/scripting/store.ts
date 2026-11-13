@@ -9,6 +9,8 @@
  */
 
 import { create } from 'zustand';
+import { createMessageLog } from '../../platform/messages';
+import { runMessages } from './messages';
 import { engine, engineInBrowser, useSession } from '../../engine/session';
 import { usePrefs } from '../../app/prefs';
 import { useUi } from '../../app/store';
@@ -75,10 +77,16 @@ export const useScripting = create<ScriptingState>(() => ({
   tab: 'console', recording: false, recorded: [], recordSelection: true, trust: EMPTY_TRUST, asking: null,
 }));
 
+/** The panel's messages console (decision 538): kept while the panel is closed, so a tool that failed is there when it opens. */
+export const scriptLog = createMessageLog('script');
+
 const set = useScripting.setState;
 const get = useScripting.getState;
 /** A line of Lapin's own (translated as the interface is), or the script's (shown as it is). */
-const say = (kind: ConsoleLine['kind'], text: string) => set({ lines: [...get().lines, own(kind, text)] });
+const say = (kind: ConsoleLine['kind'], text: string) => {
+  set({ lines: [...get().lines, own(kind, text)] });
+  if (kind === 'err') scriptLog.add({ kind: 'error', source: 'Python', text });
+};
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 export function setHeight(h: number): void {
@@ -92,9 +100,15 @@ let listening = false;
 export function listen(): void {
   if (listening || engineInBrowser) return;
   listening = true;
+  // The runs by id: what they were called, and whether they were the console's (those have their own lines).
+  const runs = new Map<number, string | null>();
   engine.onEvent('script.output', (d) => {
     const e = d as ScriptEvent;
     const s = get();
+    if (typeof e.id === 'number' && e.type === 'start') runs.set(e.id, e.console ? null : e.name ?? 'Script');
+    const row = runMessages(e, typeof e.id === 'number' ? runs.get(e.id) ?? (e.type === 'done' && !e.console ? e.name ?? 'Script' : null) : null);
+    if (row.length) scriptLog.add(...row);
+    if (e.type === 'done' && typeof e.id === 'number') runs.delete(e.id);
     const patch: Partial<ScriptingState> = { lines: foldOutput(s.lines, e) };
     if (e.type === 'start') { patch.running = e.id ?? null; patch.runningName = e.name ?? null; }
     if (e.type === 'done' && (s.running === e.id || s.running === null)) {
@@ -198,6 +212,23 @@ export async function restart(): Promise<void> {
 }
 
 export const clearConsole = () => set({ lines: [] });
+
+/** A message's script opened in the editor, at its line, when it is the one open or one of Mine or the project's. */
+export async function showScriptAt(target: { script?: string; line?: number } | undefined): Promise<void> {
+  const name = target?.script;
+  if (!name) return;
+  const base = (x: string) => x.replace(/\.py$/i, '');
+  const s = get();
+  const open = s.projectId ? projectScript(s.projectId)?.name ?? null : s.file;
+  if (!(open !== null && base(open) === name)) {
+    const mine = s.files.find((f) => base(f.name) === name);
+    const project = projectScripts().find((p) => base(p.name) === name);
+    if (mine) await openScript(mine.name);
+    else if (project) openProjectScript(project.id);
+    else return;
+  }
+  set({ errorLine: target?.line ?? null });
+}
 
 // ------------------------------------------------------------ Mine: the user's scripts
 

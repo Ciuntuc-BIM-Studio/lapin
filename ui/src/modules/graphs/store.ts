@@ -11,6 +11,8 @@ import { activeStorey, engine, execute, query, useSession } from '../../engine/s
 import { focusPane, notify, useUi } from '../../app/store';
 import { isDesktop } from '../../engine/files';
 import { isGuest } from '../../engine/share';
+import { createMessageLog } from '../../platform/messages';
+import { bakeMessage, EVALUATION, evaluationMessages } from './messages';
 import { emptyGraph, graphOf, nodeSpecs, type Catalogue, type EngineNodes, type GraphJson, type NodeSpec } from './graph';
 
 export const GRAPH_CLASS = 'LapinGraph';
@@ -36,9 +38,19 @@ interface GraphsState {
   /** The ghost shown in this window: this window's evaluation, or another window's. */
   ghost: Ghost | null;
   busy: boolean;
+  /** A message's node to show: selected and centred by the editor (n: asked again for the same node). */
+  focus: { node: string; n: number } | null;
 }
 
-export const useGraphs = create<GraphsState>(() => ({ graphId: null, specs: null, preview: true, result: null, ghost: null, busy: false }));
+export const useGraphs = create<GraphsState>(() => ({ graphId: null, specs: null, preview: true, result: null, ghost: null, busy: false, focus: null }));
+
+/** The editor's messages console (decision 538). */
+export const graphLog = createMessageLog('graphs');
+
+/** A message's node asked to be shown. */
+export const focusNode = (node: string): void => useGraphs.setState((s) => ({ focus: { node, n: (s.focus?.n ?? 0) + 1 } }));
+
+const kindLabel = (kind: string): string => useGraphs.getState().specs?.get(kind)?.label ?? kind;
 
 /** The project's graphs, by name. */
 export function projectGraphs(nodes: Map<string, { id: string; type: string; name: string }>): { id: string; name: string }[] {
@@ -85,7 +97,8 @@ export async function newGraph(): Promise<void> {
 export function openGraph(id: string | null): void {
   // The graph open already keeps its evaluation (opened again by a link or the guide, nothing changes).
   if (id === useGraphs.getState().graphId) return;
-  useGraphs.setState({ graphId: id, result: null });
+  useGraphs.setState({ graphId: id, result: null, focus: null });
+  graphLog.replace(EVALUATION, []);
   shareGhost(null);
 }
 
@@ -112,6 +125,7 @@ export async function evaluate(): Promise<void> {
   const r = await query<Evaluation>('graphs.evaluate', { id: graphId, storey: activeStorey()?.id });
   if (mine !== asked) return;
   useGraphs.setState({ result: r, busy: false });
+  if (r) graphLog.replace(EVALUATION, evaluationMessages(r, currentGraph(), kindLabel));
   shareGhost(useGraphs.getState().preview ? r?.ghost ?? null : null);
 }
 
@@ -126,7 +140,8 @@ export async function bake(): Promise<void> {
   if (!id) return;
   const r = await execute('graphs.bake', { id, storey: activeStorey()?.id }) as { made?: string[] } | null;
   // Made: the ghost goes (it would draw the same again over them); the eye brings it back.
-  if (r) { setPreview(false); notify('Baked: the elements are made. Undo takes them back in one step.'); }
+  if (r) { setPreview(false); notify('Baked: the elements are made. Undo takes them back in one step.'); graphLog.add(bakeMessage(r.made?.length ?? 0, null)); }
+  else graphLog.add(bakeMessage(null, useSession.getState().error));
 }
 
 /** Graphs opened beside the view (the panel: split on the web, a window of its own on the desktop from its tab). */

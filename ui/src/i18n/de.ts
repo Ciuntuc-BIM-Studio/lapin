@@ -24,6 +24,23 @@ export const DE: Record<string, string> = {
   "That sketch is not one of the part's own: use Constrain part first.": "Diese Skizze gehört nicht zum Bauteil: zuerst Bauteil bemaßen verwenden.",
   "Place the part first: its sketch is edited in the part's edit mode, on an object.": "Das Bauteil zuerst platzieren: seine Skizze wird im Bearbeitungsmodus des Bauteils an einem Objekt bearbeitet.",
   "Type the body's depth: a length, or =formula.": "Die Tiefe des Körpers eingeben: eine Länge oder =Formel.",
+  // The messages console (decision 538)
+
+  // The messages console (decision 538)
+
+  // The messages console (decision 538)
+  "Errors": "Fehler",
+  "No messages.": "Keine Meldungen.",
+  "Copy the messages as text": "Die Meldungen als Text kopieren",
+  "Clear the messages": "Die Meldungen leeren",
+  "Show the messages": "Die Meldungen zeigen",
+  "Hide the messages": "Die Meldungen ausblenden",
+  "Go to it": "Dorthin springen",
+  "Error": "Fehler",
+  "Warning": "Warnung",
+  "Info": "Info",
+  "The preview was cut: the ghost holds too many coordinates.": "Die Vorschau wurde gekürzt: der Geist enthält zu viele Koordinaten.",
+  "One evaluation reached its limit of command calls.": "Eine Auswertung hat ihre Grenze an Befehlsaufrufen erreicht.",
   // Decision 537: a graph palette's values, shared or each user's own
   "Palette values": "Palettenwerte",
   "Shared": "Gemeinsam",
@@ -3400,6 +3417,8 @@ const n = (count: string, one: string, many: string) => `${count} ${count === '1
 
 /** Phrases with a number or a name in them. */
 export const DE_PATTERNS: Language['patterns'] = [
+  [/^Commands: (\d+), (\d+) ms$/, (m) => `Befehle: ${m[1]}, ${m[2]} ms`],
+  [/^Elements made: (\d+), one undo step$/, (m) => `Elemente erzeugt: ${m[1]}, ein Rückgängig-Schritt`],
   [/^(\d+) added, (\d+) updated, (\d+) the same, (\d+) skipped\.$/, (m) => `${m[1]} hinzugefügt, ${m[2]} aktualisiert, ${m[3]} gleich, ${m[4]} übersprungen.`],
   [/^(\d+) line types added, (\d+) updated, (\d+) skipped\.$/, (m) => `${m[1]} Linientypen hinzugefügt, ${m[2]} aktualisiert, ${m[3]} übersprungen.`],
   [/^(\d+) parameters added, (\d+) updated\.$/, (m) => `${m[1]} Parameter hinzugefügt, ${m[2]} aktualisiert.`],

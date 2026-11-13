@@ -22,6 +22,19 @@ export const RO: Record<string, string> = {
   "That sketch is not one of the part's own: use Constrain part first.": "Schița aceea nu este a piesei: folosește întâi Constrânge piesa.",
   "Place the part first: its sketch is edited in the part's edit mode, on an object.": "Plasează întâi piesa: schița ei se editează în modul de editare al piesei, pe un obiect.",
   "Type the body's depth: a length, or =formula.": "Scrie adâncimea corpului: o lungime sau =formulă.",
+  // The messages console (decision 538)
+  "Errors": "Erori",
+  "No messages.": "Niciun mesaj.",
+  "Copy the messages as text": "Copiază mesajele ca text",
+  "Clear the messages": "Golește mesajele",
+  "Show the messages": "Arată mesajele",
+  "Hide the messages": "Ascunde mesajele",
+  "Go to it": "Du-te la el",
+  "Error": "Eroare",
+  "Warning": "Avertisment",
+  "Info": "Info",
+  "The preview was cut: the ghost holds too many coordinates.": "Previzualizarea a fost tăiată: fantoma are prea multe coordonate.",
+  "One evaluation reached its limit of command calls.": "O evaluare a atins limita de apeluri de comenzi.",
   // Decision 537: a graph palette's values, shared or each user's own
   "Palette values": "Valorile paletei",
   "Shared": "Comune",
@@ -3398,6 +3411,8 @@ export const RO: Record<string, string> = {
 
 /** Phrases with a number or a name in them. */
 export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
+  [/^Commands: (\d+), (\d+) ms$/, (m) => `Comenzi: ${m[1]}, ${m[2]} ms`],
+  [/^Elements made: (\d+), one undo step$/, (m) => `Elemente create: ${m[1]}, un singur pas de anulare`],
   [/^(\d+) added, (\d+) updated, (\d+) the same, (\d+) skipped\.$/, (m) => `${m[1]} adăugate, ${m[2]} actualizate, ${m[3]} la fel, ${m[4]} omise.`],
   [/^(\d+) line types added, (\d+) updated, (\d+) skipped\.$/, (m) => `${m[1]} tipuri de linie adăugate, ${m[2]} actualizate, ${m[3]} omise.`],
   [/^(\d+) parameters added, (\d+) updated\.$/, (m) => `${m[1]} parametri adăugați, ${m[2]} actualizați.`],

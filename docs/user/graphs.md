@@ -76,6 +76,10 @@ Select some nodes and press **G** (or the group button in the canvas's corner) t
 
 A node that fails turns red and says why in the inspector (and when hovered): a wall of no length, a division by zero. The nodes after it say which input has nothing; the rest of the graph is still worked out. When only some items of a list fail, the node turns amber and says how many.
 
+## Messages
+
+Under the canvas, a strip called Messages lists what the last evaluation found: each node that failed or warned, with its name and the reason; nodes left with nothing to work on because an input before them failed; the limits the graph reached; and one line with how many commands it ran and how long it took. Open it with its arrow, filter by Errors, Warnings or All, copy the rows as plain text, or clear them. Click a row to select its node and bring it to the middle of the canvas. Each evaluation replaces the rows of the one before, so editing never floods the list; Bake adds its own row, how many elements it made in one undo step, or why it refused. Collapsed, the strip is one line with the latest message and the number of errors. Its height, and whether it is open, are remembered. Guests have no Graphs panel, so nothing changes for them.
+
 ## Bake
 
 **Bake** makes what the ghost shows, in one undo step named **Bake graph**. If any of the tools' nodes fails, nothing is made and Lapin says which node failed. Once baked, the ghost is hidden (the eye shows it again).

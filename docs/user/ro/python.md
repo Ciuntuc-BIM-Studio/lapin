@@ -171,6 +171,10 @@ with lapin.ui.panel("Walls"):                      # un grup din Uneltele mele n
 
 Ca pe orice unealtă, le poți muta, face mici sau scoate; o unealtă scoasă rămâne scoasă.
 
+## Mesaje
+
+Jos în panoul Script, banda Mesaje păstrează un rând pe rulare: pornită, terminată cu cât a durat, oprită, sau eșuată cu ultima linie a erorii și, când traceback-ul Python le dă, numele scriptului și linia (`Pereti:12`). Un clic pe un rând eșuat deschide scriptul în editor la acea linie, dacă e cel deschis, unul dintre ale tale sau unul al proiectului. Înregistrează și rulările pornite din Uneltele mele și din butoanele paletelor, chiar cu panoul închis, deci o unealtă care a eșuat e raportată când deschizi panoul. O deschizi cu săgeata ei, filtrezi după Erori, Avertismente sau Toate, copiezi rândurile ca text simplu sau le golești. Consola din dreapta e neschimbată: arată în continuare tot ce tipărește un script.
+
 ## Siguranța
 
 Un script poate face orice poți face tu pe acest calculator: rulează în Python-ul tău, cu drepturile tale. Rulează scripturi scrise de tine sau în care ai încredere; un script al proiectului și unul instalat întreabă mai întâi.

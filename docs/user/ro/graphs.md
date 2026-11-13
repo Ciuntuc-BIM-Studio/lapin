@@ -76,6 +76,10 @@ Selectează câteva noduri și apasă **G** (sau butonul de grup din colțul pâ
 
 Un nod care cade se face roșu și spune de ce în inspector (și când treci cu mouse-ul peste el): un perete fără lungime, o împărțire la zero. Nodurile de după el spun care intrare nu are nimic; restul grafului se calculează mai departe. Când cad doar câteva elemente ale unei liste, nodul se face chihlimbariu și spune câte.
 
+## Mesaje
+
+Sub canvas, o bandă numită Mesaje arată ce a găsit ultima evaluare: fiecare nod care a eșuat sau a avertizat, cu numele lui și motivul; nodurile rămase fără ce să lucreze pentru că a eșuat o intrare dinaintea lor; limitele atinse de graf; și o linie cu câte comenzi a rulat și cât a durat. O deschizi cu săgeata ei, filtrezi după Erori, Avertismente sau Toate, copiezi rândurile ca text simplu sau le golești. Un clic pe un rând selectează nodul lui și îl aduce în mijlocul canvasului. Fiecare evaluare înlocuiește rândurile celei dinainte, deci editarea nu umple lista; Creează adaugă propriul rând, câte elemente a făcut într-un singur pas de anulare, sau de ce a refuzat. Închisă, banda e o singură linie cu ultimul mesaj și numărul de erori. Înălțimea ei și dacă e deschisă se rețin. Oaspeții nu au panoul Grafuri, deci pentru ei nu se schimbă nimic.
+
 ## Creează
 
 **Creează** face ce arată fantoma, într-un singur pas de anulare numit **Creare din graf**. Dacă un nod al uneltelor cade, nu se face nimic, iar Lapin spune care nod a căzut. După creare fantoma se ascunde (ochiul o arată din nou).
