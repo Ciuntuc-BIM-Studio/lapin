@@ -24,7 +24,25 @@ const ROOM_FIELDS: { key: string; label: string }[] = [
 
 const TEXT = '';
 /** A line's field when it is exactly one, else '' (a text of one's own). */
-const fieldOf = (line: string) => /^\{([A-Za-z]+)\}$/.exec(line.trim())?.[1] ?? TEXT;
+const fieldOf = (line: string) => /^\{([^{}=|]+)\}$/.exec(line.trim())?.[1] ?? TEXT;
+
+/** A field the engine offers for a room (params.fields): its parameters and its scopes' (decision 550: its storey's, the project's). */
+interface FieldDto { field: string; set: string | null; name: string; group: string; value: string }
+const SCOPE_GROUPS: [string, string][] = [['element', 'Parameters'], ['storey', 'Its storey'], ['building', 'Its building'], ['site', 'Its site'], ['project', 'The project']];
+
+/** What a room can show beyond its own fields, read on a room of the model (none yet: nothing more). */
+function useRoomFields(): FieldDto[] {
+  const nodes = useSession((s) => s.nodes);
+  const sample = [...nodes.values()].find((n) => n.type === 'IfcSpace')?.id;
+  const [fields, setFields] = useState<FieldDto[]>([]);
+  useEffect(() => {
+    let live = true;
+    if (sample) void query<FieldDto[]>('params.fields', { id: sample }).then((r) => { if (live) setFields(Array.isArray(r) ? r : []); });
+    else setFields([]);
+    return () => { live = false; };
+  }, [sample, nodes]);
+  return fields.filter((f) => !ROOM_FIELDS.some((r) => r.key === f.field) && !['mark', 'class', 'type'].includes(f.field));
+}
 
 const splitTemplate = (t: string) => t.split('|').map((l) => l.trim()).filter((l) => l.length > 0);
 const joinTemplate = (lines: string[]) => lines.map((l) => l.trim()).filter((l) => l.length > 0).join('|');
@@ -37,6 +55,7 @@ export function RoomTagDialog() {
   const [tag, setTag] = useState<TagType | null>(null);
   const [lines, setLines] = useState<string[]>([]);
   const [missing, setMissing] = useState(false);
+  const more = useRoomFields();
   const close = () => useUi.setState({ dialog: null });
   useEffect(() => {
     let live = true;
@@ -72,6 +91,11 @@ export function RoomTagDialog() {
                     <td>
                       <select value={field} aria-label="Line" onChange={(e) => { const n = [...lines]; n[i] = e.target.value ? `{${e.target.value}}` : line.replace(/[{}]/g, ''); save(n); }}>
                         {ROOM_FIELDS.map((f) => <option key={f.key} value={f.key}>{f.label}</option>)}
+                        {SCOPE_GROUPS.map(([g, label]) => {
+                          const list = more.filter((f) => f.group === g);
+                          return list.length ? <optgroup key={g} label={label}>{list.map((f) => <option key={f.field} value={f.field} data-no-i18n>{f.field + (f.value ? ` = ${f.value}` : '')}</option>)}</optgroup> : null;
+                        })}
+                        {field && !ROOM_FIELDS.some((f) => f.key === field) && !more.some((f) => f.field === field) && <option value={field} data-no-i18n>{field}</option>}
                         <option value={TEXT}>Text…</option>
                       </select>
                     </td>

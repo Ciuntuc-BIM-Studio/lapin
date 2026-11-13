@@ -471,21 +471,28 @@ public sealed class RoomSchedule : IScheduleSource
         string N(double v) => v.ToString("0.00", CultureInfo.InvariantCulture);
         var step = DraftingResources.Book(m).AreaRounding;
         string A(double v) => AreaRounding.Text(v, step, "m", withUnit: false);
-        foreach (var r in m.OfClass(Rooms.Class)
+        var units = DraftingResources.Book(m).Units;
+        var rooms = m.OfClass(Rooms.Class).ToList();
+        // The rooms' own parameters, a column each after the measures, formulas worked out as their stamps write them (decision 549).
+        var own = rooms.SelectMany(r => r.Attrs["params"] is JsonArray l ? l.OfType<JsonObject>() : [])
+            .Where(p => Params.SetOf(p) == null).Select(p => ((string?)p["name"])?.Trim()).OfType<string>().Where(n => n.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        foreach (var r in rooms
                      .Select(r => (Room: r, Storey: Spatial.StoreyOf(m, r.Id)))
                      .OrderBy(x => x.Storey == null ? int.MaxValue : storeys.GetValueOrDefault(x.Storey.Id))
                      .ThenBy(x => x.Room.Str("number") ?? "", StringComparer.OrdinalIgnoreCase))
         {
             var h = Rooms.HeightOf(r.Room, m);
             string[] named = [r.Storey?.Name ?? "", r.Room.Str("number") ?? "", r.Room.Name, r.Room.Str("function") ?? "", r.Room.Str("department") ?? ""];
+            string[] parameters = [.. own.Select(n => TagText.Value(m, r.Room, n, null, units))];
             // A room without an outline yet (a space imported without a shape) is listed, unmeasured.
             keys.Add(r.Room.Id);
-            if (Rooms.Of(r.Room, m, q.Geometry) is not { } o) { rows.Add([.. named, "", "", N(h), ""]); continue; }
+            if (Rooms.Of(r.Room, m, q.Geometry) is not { } o) { rows.Add([.. named, "", "", N(h), "", .. parameters]); continue; }
             total += AreaRounding.Shown(o.NetArea, step);
-            rows.Add([.. named, A(o.NetArea), N(o.Perimeter), N(h), N(o.NetArea * h)]);
+            rows.Add([.. named, A(o.NetArea), N(o.Perimeter), N(h), N(o.NetArea * h), .. parameters]);
         }
-        if (rows.Count > 0) { rows.Add(["Total", "", "", "", "", A(total), "", "", ""]); keys.Add(null); }
-        return new ScheduleGrid(Label, ["Storey", "Number", "Name", "Function", "Department", "Area (m²)", "Perimeter (m)", "Height (m)", "Volume (m³)"], rows, keys);
+        if (rows.Count > 0) { rows.Add(["Total", "", "", "", "", A(total), "", "", "", .. own.Select(_ => "")]); keys.Add(null); }
+        return new ScheduleGrid(Label, ["Storey", "Number", "Name", "Function", "Department", "Area (m²)", "Perimeter (m)", "Height (m)", "Volume (m³)", .. own], rows, keys);
     }
 
     /// <summary>A value typed in the schedule goes into the room: its number, name, function, department or height.</summary>

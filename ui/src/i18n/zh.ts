@@ -3465,6 +3465,20 @@ export const ZH: Record<string, string> = {
   'Draw the part to show on the view.': '请在视图上画出要显示的部分。',
   // Doors and windows in one object (forum topic 34).
   'Interior sill over the parapet': '护墙上的内窗台', 'Exterior sill over the parapet': '护墙上的外窗台', 'Lift & slide (HS), runs left': '提升推拉 (HS)，向左', 'Lift & slide (HS), runs right': '提升推拉 (HS)，向右', 'Tilt & slide (PSK), runs left': '平移内倒 (PSK)，向左', 'Tilt & slide (PSK), runs right': '平移内倒 (PSK)，向右', 'Door leaves': '门扇', 'Window sashes': '窗扇', 'Garage doors': '车库门', 'New balcony door + window': '新建阳台门 + 窗', 'New door with sidelights and transom': '新建带侧亮和亮子的门', 'New lift-and-slide (HS) portal': '新建提升推拉门 (HS)', 'New French window': '新建法式窗', 'Glazing build-up': '玻璃构造', 'Panes and cavities in mm, from outside in: 4-16-4 double, 4-12-4-12-4 triple, 33.1-16-4 laminated outside': '玻璃与空腔厚度 (mm)，由外向内：4-16-4 双层，4-12-4-12-4 三层，33.1-16-4 外侧夹胶', 'laminated': '夹胶', 'U-value, g-value and safety glass: the type\'s Data, below.': 'U 值、g 值和安全玻璃：见下方类型的数据。', 'How plans draw window sashes\' swings (French windows, balcony doors), for the whole project': '平面图如何绘制窗扇的开启线（法式窗、阳台门），适用于整个项目', 'Sash swings: dashed to the floor': '窗扇开启线：落地的为虚线', 'Sash swings: none': '窗扇开启线：无', 'Sash swings: all dashed': '窗扇开启线：全部虚线', 'Sash swings: all solid': '窗扇开启线：全部实线', 'A door leaf makes it a door, and a window type stays a window type: create a new type for it.': '有门扇即为门，而窗类型始终是窗类型：请为其新建一个类型。', 'With window sashes and no door leaf it is a window, and a door type stays a door type: create a new type for it.': '有窗扇而无门扇即为窗，而门类型始终是门类型：请为其新建一个类型。', 'Create as a new type': '新建为类型', 'A lift-and-slide leaf stands on the threshold: put it in the bottom row.': '提升推拉门扇立于门槛上：请将其放在最下一行。', 'The glazing is thicker than the sash and frame hold: a thinner build-up or a deeper profile.': '玻璃比窗扇和框所能容纳的更厚：请使用更薄的构造或更深的型材。',
+  "Its storey": "所在楼层",
+  "Its building": "所在建筑",
+  "Its site": "所在场地",
+  "The project": "项目",
+  "Its group": "所在组",
+  "Its assembly": "所属组件",
+  "Its host": "所在宿主（墙）",
+  "Its room": "所在房间",
+  "Room on the exterior side": "外侧房间",
+  "Room on the interior side": "内侧房间",
+  "Another element's, written before a dot: ": "其他元素的，写在点之前： ",
+  "The project's own parameters (Manage → Project information): by their key alone.": "项目自己的参数（管理 → 项目信息）：只写其键即可。",
+  "Texts in quotes, joined by &, and their functions: ": "引号中的文本，用 & 连接，以及文本函数： ",
+  "A text's formula may also be a text with fields in braces: ": "文本的公式也可以是带有花括号字段的文本： ",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

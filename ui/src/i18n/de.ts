@@ -3473,6 +3473,20 @@ export const DE: Record<string, string> = {
   'Draw the part to show on the view.': 'Den zu zeigenden Teil auf der Ansicht zeichnen.',
   // Doors and windows in one object (forum topic 34).
   'Interior sill over the parapet': 'Innenfensterbank über der Brüstung', 'Exterior sill over the parapet': 'Außenfensterbank über der Brüstung', 'Lift & slide (HS), runs left': 'Hebe-Schiebe (HS), läuft nach links', 'Lift & slide (HS), runs right': 'Hebe-Schiebe (HS), läuft nach rechts', 'Tilt & slide (PSK), runs left': 'Parallel-Schiebe-Kipp (PSK), läuft nach links', 'Tilt & slide (PSK), runs right': 'Parallel-Schiebe-Kipp (PSK), läuft nach rechts', 'Door leaves': 'Türflügel', 'Window sashes': 'Fensterflügel', 'Garage doors': 'Garagentore', 'New balcony door + window': 'Neue Balkontür + Fenster', 'New door with sidelights and transom': 'Neue Tür mit Seitenteilen und Oberlicht', 'New lift-and-slide (HS) portal': 'Neue Hebe-Schiebe-Tür (HS)', 'New French window': 'Neues französisches Fenster', 'Glazing build-up': 'Glasaufbau', 'Panes and cavities in mm, from outside in: 4-16-4 double, 4-12-4-12-4 triple, 33.1-16-4 laminated outside': 'Scheiben und Zwischenräume in mm, von außen nach innen: 4-16-4 Zweifach, 4-12-4-12-4 Dreifach, 33.1-16-4 außen Verbundglas', 'laminated': 'Verbundglas', 'U-value, g-value and safety glass: the type\'s Data, below.': 'U-Wert, g-Wert und Sicherheitsglas: die Daten des Typs, unten.', 'How plans draw window sashes\' swings (French windows, balcony doors), for the whole project': 'Wie Grundrisse den Aufschlag von Fensterflügeln zeichnen (französische Fenster, Balkontüren), für das ganze Projekt', 'Sash swings: dashed to the floor': 'Flügelaufschlag: gestrichelt bis zum Boden', 'Sash swings: none': 'Flügelaufschlag: keiner', 'Sash swings: all dashed': 'Flügelaufschlag: alle gestrichelt', 'Sash swings: all solid': 'Flügelaufschlag: alle durchgezogen', 'A door leaf makes it a door, and a window type stays a window type: create a new type for it.': 'Ein Türflügel macht es zur Tür, und ein Fenstertyp bleibt ein Fenstertyp: Legen Sie dafür einen neuen Typ an.', 'With window sashes and no door leaf it is a window, and a door type stays a door type: create a new type for it.': 'Mit Fensterflügeln und ohne Türflügel ist es ein Fenster, und ein Türtyp bleibt ein Türtyp: Legen Sie dafür einen neuen Typ an.', 'Create as a new type': 'Als neuen Typ anlegen', 'A lift-and-slide leaf stands on the threshold: put it in the bottom row.': 'Ein Hebe-Schiebe-Flügel steht auf der Schwelle: Setzen Sie ihn in die unterste Reihe.', 'The glazing is thicker than the sash and frame hold: a thinner build-up or a deeper profile.': 'Das Glas ist dicker, als Flügel und Rahmen aufnehmen: ein dünnerer Aufbau oder ein tieferes Profil.',
+  "Its storey": "Sein Geschoss",
+  "Its building": "Sein Gebäude",
+  "Its site": "Sein Grundstück",
+  "The project": "Das Projekt",
+  "Its group": "Seine Gruppe",
+  "Its assembly": "Seine Baugruppe",
+  "Its host": "Sein Wirt (die Wand)",
+  "Its room": "Sein Raum",
+  "Room on the exterior side": "Raum auf der Außenseite",
+  "Room on the interior side": "Raum auf der Innenseite",
+  "Another element's, written before a dot: ": "Die eines anderen Elements, vor einem Punkt geschrieben: ",
+  "The project's own parameters (Manage → Project information): by their key alone.": "Die eigenen Parameter des Projekts (Verwalten → Projektinformationen): allein über ihren Schlüssel.",
+  "Texts in quotes, joined by &, and their functions: ": "Texte in Anführungszeichen, verbunden mit &, und ihre Funktionen: ",
+  "A text's formula may also be a text with fields in braces: ": "Die Formel eines Textes kann auch ein Text mit Feldern in geschweiften Klammern sein: ",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

@@ -56,9 +56,12 @@ public sealed class ParamFormulaTests
         Assert.Null(broken["value"]);
         Assert.Contains("Nothing", (string)broken["error"]!);
         Assert.Equal(10, (double)f.Session.Query("params.tryFormula", new JsonObject { ["id"] = wall, ["formula"] = "Length * 2" })!["value"]!, 6);
-        // A formula that does not read is refused; a formula for a text is refused.
+        // A formula that does not read is refused; a text's formula gives a text (decision 549), a template only a text.
         Assert.Throws<CommandException>(() => Set(f, wall, "Bad", new JsonObject { ["formula"] = "1 +" }));
-        Assert.Throws<CommandException>(() => Set(f, wall, "Words", new JsonObject { ["formula"] = "2", ["kind"] = "text" }));
+        Set(f, wall, "Words", new JsonObject { ["formula"] = "2", ["kind"] = "text" });
+        Assert.Equal("2", TagText.Value(f.Model, f.Model.Get(wall)!, "Words"));
+        Assert.Throws<CommandException>(() => Set(f, wall, "Template", new JsonObject { ["formula"] = "{name}", ["kind"] = "number" }));
+        Assert.Throws<CommandException>(() => Set(f, wall, "Open", new JsonObject { ["formula"] = "{name" }));
     }
 
     [Fact]

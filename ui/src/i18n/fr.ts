@@ -3477,6 +3477,20 @@ export const FR: Record<string, string> = {
   'Draw the part to show on the view.': 'Dessinez sur la vue la partie à montrer.',
   // Doors and windows in one object (forum topic 34).
   'Interior sill over the parapet': 'Tablette intérieure sur l\'allège', 'Exterior sill over the parapet': 'Appui extérieur sur l\'allège', 'Lift & slide (HS), runs left': 'Levant-coulissant (HS), vers la gauche', 'Lift & slide (HS), runs right': 'Levant-coulissant (HS), vers la droite', 'Tilt & slide (PSK), runs left': 'Oscillo-coulissant (PSK), vers la gauche', 'Tilt & slide (PSK), runs right': 'Oscillo-coulissant (PSK), vers la droite', 'Door leaves': 'Vantaux de porte', 'Window sashes': 'Ouvrants de fenêtre', 'Garage doors': 'Portes de garage', 'New balcony door + window': 'Nouvelle porte de balcon + fenêtre', 'New door with sidelights and transom': 'Nouvelle porte avec parties latérales et imposte', 'New lift-and-slide (HS) portal': 'Nouvelle baie levante-coulissante (HS)', 'New French window': 'Nouvelle porte-fenêtre', 'Glazing build-up': 'Composition du vitrage', 'Panes and cavities in mm, from outside in: 4-16-4 double, 4-12-4-12-4 triple, 33.1-16-4 laminated outside': 'Verres et lames en mm, de l\'extérieur vers l\'intérieur : 4-16-4 double, 4-12-4-12-4 triple, 33.1-16-4 feuilleté à l\'extérieur', 'laminated': 'feuilleté', 'U-value, g-value and safety glass: the type\'s Data, below.': 'Valeur U, facteur g et verre de sécurité : les Données du type, ci-dessous.', 'How plans draw window sashes\' swings (French windows, balcony doors), for the whole project': 'Comment les plans dessinent le débattement des ouvrants (portes-fenêtres, portes de balcon), pour tout le projet', 'Sash swings: dashed to the floor': 'Débattement des ouvrants : tireté jusqu\'au sol', 'Sash swings: none': 'Débattement des ouvrants : aucun', 'Sash swings: all dashed': 'Débattement des ouvrants : tous en tireté', 'Sash swings: all solid': 'Débattement des ouvrants : tous en trait plein', 'A door leaf makes it a door, and a window type stays a window type: create a new type for it.': 'Un vantail de porte en fait une porte, et un type de fenêtre reste un type de fenêtre : créez un nouveau type pour elle.', 'With window sashes and no door leaf it is a window, and a door type stays a door type: create a new type for it.': 'Avec des ouvrants de fenêtre et sans vantail de porte, c\'est une fenêtre, et un type de porte reste un type de porte : créez un nouveau type pour elle.', 'Create as a new type': 'Créer comme nouveau type', 'A lift-and-slide leaf stands on the threshold: put it in the bottom row.': 'Un vantail levant-coulissant repose sur le seuil : placez-le dans la rangée du bas.', 'The glazing is thicker than the sash and frame hold: a thinner build-up or a deeper profile.': 'Le vitrage est plus épais que ce que l\'ouvrant et le dormant peuvent recevoir : une composition plus mince ou un profil plus profond.',
+  "Its storey": "Son niveau",
+  "Its building": "Son bâtiment",
+  "Its site": "Son site",
+  "The project": "Le projet",
+  "Its group": "Son groupe",
+  "Its assembly": "Son assemblage",
+  "Its host": "Son hôte (le mur)",
+  "Its room": "Sa pièce",
+  "Room on the exterior side": "Pièce du côté extérieur",
+  "Room on the interior side": "Pièce du côté intérieur",
+  "Another element's, written before a dot: ": "Ceux d'un autre élément, écrits avant un point : ",
+  "The project's own parameters (Manage → Project information): by their key alone.": "Les paramètres propres du projet (Gérer → Informations du projet) : par leur seule clé.",
+  "Texts in quotes, joined by &, and their functions: ": "Textes entre guillemets, joints par &, et leurs fonctions : ",
+  "A text's formula may also be a text with fields in braces: ": "La formule d'un texte peut aussi être un texte avec des champs entre accolades : ",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

@@ -203,7 +203,7 @@ Rotița din bara liniei de comandă arată ce se preia, iar Lapin ține minte al
 
 ## Parametri calculați prin formule
 
-Un parametru al tău care e număr, lungime, arie, unghi sau da/nu (nu text sau alegere) poate fi calculat în loc să fie scris. În **Proprietăți → Parametri**, apasă butonul **Σ** dinaintea valorii lui: valoarea devine un câmp de **formulă**. Scrie formula și apasă <kbd>Enter</kbd> (sau părăsește câmpul) ca s-o păstrezi. Sub câmp, Lapin arată ce dă formula, *= 21*, sau de ce nu se citește; o formulă care nu se citește nu se păstrează. Apasă **Σ** din nou ca să te întorci la o valoare: ultimul rezultat rămâne valoare.
+Un parametru al tău care e număr, lungime, arie, unghi, da/nu sau text (nu alegere) poate fi calculat în loc să fie scris. În **Proprietăți → Parametri**, apasă butonul **Σ** dinaintea valorii lui: valoarea devine un câmp de **formulă**. Scrie formula și apasă <kbd>Enter</kbd> (sau părăsește câmpul) ca s-o păstrezi. Sub câmp, Lapin arată ce dă formula, *= 21*, sau de ce nu se citește; o formulă care nu se citește nu se păstrează. Apasă **Σ** din nou ca să te întorci la o valoare: ultimul rezultat rămâne valoare.
 
 ![Un parametru Studs calculat din lungimea peretelui și dintr-un parametru Spacing](shots/param-formula.webp)
 
@@ -218,6 +218,31 @@ O formulă se păstrează cum e scrisă și se calculează la fiecare cerere, de
 ![O formulă care nu se citește spune de ce](shots/param-formula-error.webp)
 
 Același limbaj merge în textul viu al [simbolurilor și etichetelor](drafting.md), scris `{= attr.w * 2 | 0.00}`.
+
+### Texte calculate
+
+Formula unui parametru text dă un text. Scrie-o într-unul din două feluri:
+
+- **Un text cu câmpuri între acolade**, cum le scrie o etichetă: `{storey.code}.{Hall}.{Flat}.{number}` dă *K1.A.3.1* pentru o cameră cu numărul 1, cu parametrii *Hall* = A și *Flat* = 3, pe un nivel al cărui *code* e K1. Ce e în afara acoladelor se scrie așa cum e.
+- **O expresie cu texte**: texte între ghilimele (`"K"` sau `'K'`), unite cu `&` (`storey.code & "." & number`) sau cu *concat* (`concat(storey.code; "."; number)`).
+
+Funcțiile pentru texte: *text(x; "00")* scrie un număr cum spune formatul (*7* → *07*; `"0.00"` cu două zecimale), *pad(x; 3)* îl completează la trei caractere cu zerouri în față, *upper*, *lower*, *trim*, *left(x; n)*, *right(x; n)* și *len*. Două texte se compară ca texte, fără să conteze literele mari: `if(storey.code == "K1"; "subsol"; "etaj")`. O formulă dată unui parametru nou fără fel îl face text când dă un text.
+
+### Citirea altor elemente: nivelul, proiectul, gazda, camerele
+
+Un nume poate citi parametrul sau câmpul altui element, scris înainte de un punct:
+
+- `storey.…` nivelul pe care stă elementul (`storey.code`, `storey.name`, `storey.elevation`); `building.…` și `site.…` deasupra lui;
+- `project.…` datele proiectului (`project.number`, `project.client`) și parametrii lui proprii;
+- `type.…` tipul elementului; `group.…` grupul din care face parte; `assembly.…` întregul al cărui parte este;
+- `host.…` peretele unei uși sau ferestre (`host.FireRating`);
+- `room.…` camera în care stă elementul (a unei uși sau ferestre: cea din partea interioară); `fromRoom.…` și `toRoom.…` camerele din partea exterioară și interioară a unei uși (își schimbă locul când ușa e întoarsă).
+
+**Parametrii proprii ai proiectului sunt globali.** Adaugă-i în **Gestionare → Datele proiectului…**, la **Parametrii proprii ai proiectului**, jos (o cheie, o etichetă, un fel și o valoare): formula sau eticheta oricărui element citește unul doar prin cheia lui (`zone`) sau ca `project.zone`.
+
+Nimic din toate acestea nu se păstrează pe element: se citește la fiecare cerere. Schimbă *code* al nivelului din K1 în K2 și formula fiecărei camere, ștampila, eticheta, extrasul și exportul IFC spun K2 imediat. O formulă care se citește pe ea însăși, direct sau prin altele, nu dă nicio valoare și spune de ce.
+
+![Indexul unei camere calculat din codul nivelului ei și din parametrii ei](shots/param-scopes.webp)
 
 ## Scurtăturile de tastatură
 

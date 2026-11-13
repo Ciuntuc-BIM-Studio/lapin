@@ -1,10 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { canFormula, formulaArgs, initialState, resultText, toggled, usableNames, valueArgs, worthTrying } from './formulaModel';
+import { canFormula, formulaArgs, initialState, isTemplate, resultText, toggled, usableNames, valueArgs, worthTrying } from './formulaModel';
 
 describe('parameter formulas', () => {
-  it('lets numbers, lengths, areas, angles and yes/no have one, not text', () => {
-    expect(['number', 'length', 'area', 'angle', 'bool'].every(canFormula)).toBe(true);
-    expect(canFormula('text')).toBe(false);
+  it('lets numbers, lengths, areas, angles, yes/no and texts have one, not choices', () => {
+    expect(['number', 'length', 'area', 'angle', 'bool', 'text'].every(canFormula)).toBe(true);
+    expect(canFormula('choice')).toBe(false);
+  });
+  it('starts a text formula from the text in quotes, and keeps a text worked out as the value (decision 549)', () => {
+    expect(toggled(initialState({ kind: 'text', value: 'say "hi"' }), { kind: 'text', value: 'say "hi"' })).toEqual({ mode: 'formula', text: '"say ""hi"""' });
+    expect(valueArgs(['a'], { name: 'Index', kind: 'text' }, 'K1.1')).toMatchObject({ value: 'K1.1' });
+    expect(resultText('K1.1', 'text', String)).toBe('K1.1');
+    expect(isTemplate('{storey.code}.{number}')).toBe(true);
+    expect(isTemplate('upper(name)')).toBe(false);
   });
   it('switches from a value to a formula starting from the number, and back', () => {
     const p = { kind: 'length', value: 2.5 };

@@ -3468,6 +3468,20 @@ export const DA: Record<string, string> = {
   'Draw the part to show on the view.': 'Tegn den del, der skal vises, på visningen.',
   // Doors and windows in one object (forum topic 34).
   'Interior sill over the parapet': 'Indvendig sålbænk over brystningen', 'Exterior sill over the parapet': 'Udvendig sålbænk over brystningen', 'Lift & slide (HS), runs left': 'Løfte-skyde (HS), kører til venstre', 'Lift & slide (HS), runs right': 'Løfte-skyde (HS), kører til højre', 'Tilt & slide (PSK), runs left': 'Vippe-skyde (PSK), kører til venstre', 'Tilt & slide (PSK), runs right': 'Vippe-skyde (PSK), kører til højre', 'Door leaves': 'Dørfløje', 'Window sashes': 'Vinduesrammer', 'Garage doors': 'Garageporte', 'New balcony door + window': 'Ny altandør + vindue', 'New door with sidelights and transom': 'Ny dør med sidepartier og overvindue', 'New lift-and-slide (HS) portal': 'Ny løfte-skydedør (HS)', 'New French window': 'Nyt fransk vindue', 'Glazing build-up': 'Glasopbygning', 'Panes and cavities in mm, from outside in: 4-16-4 double, 4-12-4-12-4 triple, 33.1-16-4 laminated outside': 'Ruder og mellemrum i mm, udefra og ind: 4-16-4 to-lags, 4-12-4-12-4 tre-lags, 33.1-16-4 lamineret udvendigt', 'laminated': 'lamineret', 'U-value, g-value and safety glass: the type\'s Data, below.': 'U-værdi, g-værdi og sikkerhedsglas: typens Data, nedenfor.', 'How plans draw window sashes\' swings (French windows, balcony doors), for the whole project': 'Hvordan planer tegner vinduesrammers åbning (franske vinduer, altandøre), for hele projektet', 'Sash swings: dashed to the floor': 'Rammers åbning: stiplet til gulvet', 'Sash swings: none': 'Rammers åbning: ingen', 'Sash swings: all dashed': 'Rammers åbning: alle stiplede', 'Sash swings: all solid': 'Rammers åbning: alle fuldt optrukne', 'A door leaf makes it a door, and a window type stays a window type: create a new type for it.': 'Et dørfløj gør den til en dør, og en vinduestype forbliver en vinduestype: opret en ny type til den.', 'With window sashes and no door leaf it is a window, and a door type stays a door type: create a new type for it.': 'Med vinduesrammer og uden dørfløj er det et vindue, og en dørtype forbliver en dørtype: opret en ny type til den.', 'Create as a new type': 'Opret som ny type', 'A lift-and-slide leaf stands on the threshold: put it in the bottom row.': 'Et løfte-skydefløj står på tærsklen: placer det i nederste række.', 'The glazing is thicker than the sash and frame hold: a thinner build-up or a deeper profile.': 'Glasset er tykkere, end rammen og karmen kan rumme: en tyndere opbygning eller en dybere profil.',
+  "Its storey": "Dets etage",
+  "Its building": "Dets bygning",
+  "Its site": "Dets grund",
+  "The project": "Projektet",
+  "Its group": "Dets gruppe",
+  "Its assembly": "Dets samling",
+  "Its host": "Dets vært (væggen)",
+  "Its room": "Dets rum",
+  "Room on the exterior side": "Rum på ydersiden",
+  "Room on the interior side": "Rum på indersiden",
+  "Another element's, written before a dot: ": "Et andet elements, skrevet foran et punktum: ",
+  "The project's own parameters (Manage → Project information): by their key alone.": "Projektets egne parametre (Administrer → Projektoplysninger): alene ved deres nøgle.",
+  "Texts in quotes, joined by &, and their functions: ": "Tekster i anførselstegn, sat sammen med &, og deres funktioner: ",
+  "A text's formula may also be a text with fields in braces: ": "En teksts formel kan også være en tekst med felter i krøllede parenteser: ",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

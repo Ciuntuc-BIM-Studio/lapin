@@ -3471,6 +3471,20 @@ export const PT: Record<string, string> = {
   'Draw the part to show on the view.': 'Desenhe na vista a parte a mostrar.',
   // Doors and windows in one object (forum topic 34).
   'Interior sill over the parapet': 'Peitoril interior sobre o parapeito', 'Exterior sill over the parapet': 'Peitoril exterior sobre o parapeito', 'Lift & slide (HS), runs left': 'Elevatória-deslizante (HS), para a esquerda', 'Lift & slide (HS), runs right': 'Elevatória-deslizante (HS), para a direita', 'Tilt & slide (PSK), runs left': 'Basculante-deslizante (PSK), para a esquerda', 'Tilt & slide (PSK), runs right': 'Basculante-deslizante (PSK), para a direita', 'Door leaves': 'Folhas de porta', 'Window sashes': 'Folhas de janela', 'Garage doors': 'Portões de garagem', 'New balcony door + window': 'Nova porta de varanda + janela', 'New door with sidelights and transom': 'Nova porta com laterais e bandeira', 'New lift-and-slide (HS) portal': 'Novo pórtico elevatório-deslizante (HS)', 'New French window': 'Nova janela francesa', 'Glazing build-up': 'Composição do vidro', 'Panes and cavities in mm, from outside in: 4-16-4 double, 4-12-4-12-4 triple, 33.1-16-4 laminated outside': 'Vidros e câmaras em mm, de fora para dentro: 4-16-4 duplo, 4-12-4-12-4 triplo, 33.1-16-4 laminado por fora', 'laminated': 'laminado', 'U-value, g-value and safety glass: the type\'s Data, below.': 'Valor U, fator g e vidro de segurança: os Dados do tipo, abaixo.', 'How plans draw window sashes\' swings (French windows, balcony doors), for the whole project': 'Como as plantas desenham a abertura das folhas de janela (janelas francesas, portas de varanda), para todo o projeto', 'Sash swings: dashed to the floor': 'Abertura das folhas: tracejada até ao piso', 'Sash swings: none': 'Abertura das folhas: nenhuma', 'Sash swings: all dashed': 'Abertura das folhas: todas tracejadas', 'Sash swings: all solid': 'Abertura das folhas: todas contínuas', 'A door leaf makes it a door, and a window type stays a window type: create a new type for it.': 'Uma folha de porta faz dela uma porta, e um tipo de janela continua a ser um tipo de janela: crie um novo tipo para ela.', 'With window sashes and no door leaf it is a window, and a door type stays a door type: create a new type for it.': 'Com folhas de janela e sem folha de porta é uma janela, e um tipo de porta continua a ser um tipo de porta: crie um novo tipo para ela.', 'Create as a new type': 'Criar como novo tipo', 'A lift-and-slide leaf stands on the threshold: put it in the bottom row.': 'Uma folha elevatória-deslizante assenta na soleira: coloque-a na fila de baixo.', 'The glazing is thicker than the sash and frame hold: a thinner build-up or a deeper profile.': 'O vidro é mais espesso do que a folha e o caixilho comportam: uma composição mais fina ou um perfil mais profundo.',
+  "Its storey": "O seu piso",
+  "Its building": "O seu edifício",
+  "Its site": "O seu terreno",
+  "The project": "O projeto",
+  "Its group": "O seu grupo",
+  "Its assembly": "O seu conjunto",
+  "Its host": "O seu hospedeiro (a parede)",
+  "Its room": "O seu compartimento",
+  "Room on the exterior side": "Compartimento do lado exterior",
+  "Room on the interior side": "Compartimento do lado interior",
+  "Another element's, written before a dot: ": "De outro elemento, escritos antes de um ponto: ",
+  "The project's own parameters (Manage → Project information): by their key alone.": "Os parâmetros próprios do projeto (Gerir → Informação do projeto): só pela sua chave.",
+  "Texts in quotes, joined by &, and their functions: ": "Textos entre aspas, unidos por &, e as suas funções: ",
+  "A text's formula may also be a text with fields in braces: ": "A fórmula de um texto também pode ser um texto com campos entre chavetas: ",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

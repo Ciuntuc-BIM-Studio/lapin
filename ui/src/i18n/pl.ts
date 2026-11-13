@@ -3474,6 +3474,20 @@ export const PL: Record<string, string> = {
   'Draw the part to show on the view.': 'Narysuj na widoku część do pokazania.',
   // Doors and windows in one object (forum topic 34).
   'Interior sill over the parapet': 'Parapet wewnętrzny nad panelem podokiennym', 'Exterior sill over the parapet': 'Parapet zewnętrzny nad panelem podokiennym', 'Lift & slide (HS), runs left': 'Podnoszono-przesuwne (HS), w lewo', 'Lift & slide (HS), runs right': 'Podnoszono-przesuwne (HS), w prawo', 'Tilt & slide (PSK), runs left': 'Uchylno-przesuwne (PSK), w lewo', 'Tilt & slide (PSK), runs right': 'Uchylno-przesuwne (PSK), w prawo', 'Door leaves': 'Skrzydła drzwiowe', 'Window sashes': 'Skrzydła okienne', 'Garage doors': 'Bramy garażowe', 'New balcony door + window': 'Nowe drzwi balkonowe + okno', 'New door with sidelights and transom': 'Nowe drzwi z naświetlami bocznymi i górnym', 'New lift-and-slide (HS) portal': 'Nowy portal podnoszono-przesuwny (HS)', 'New French window': 'Nowe okno francuskie', 'Glazing build-up': 'Układ szyb', 'Panes and cavities in mm, from outside in: 4-16-4 double, 4-12-4-12-4 triple, 33.1-16-4 laminated outside': 'Szyby i przestrzenie w mm, od zewnątrz do wewnątrz: 4-16-4 dwuszybowa, 4-12-4-12-4 trzyszybowa, 33.1-16-4 laminowana od zewnątrz', 'laminated': 'laminowana', 'U-value, g-value and safety glass: the type\'s Data, below.': 'Współczynnik U, współczynnik g i szkło bezpieczne: Dane typu, poniżej.', 'How plans draw window sashes\' swings (French windows, balcony doors), for the whole project': 'Jak rzuty rysują otwieranie skrzydeł okiennych (okna francuskie, drzwi balkonowe), dla całego projektu', 'Sash swings: dashed to the floor': 'Otwieranie skrzydeł: przerywane do podłogi', 'Sash swings: none': 'Otwieranie skrzydeł: brak', 'Sash swings: all dashed': 'Otwieranie skrzydeł: wszystkie przerywane', 'Sash swings: all solid': 'Otwieranie skrzydeł: wszystkie ciągłe', 'A door leaf makes it a door, and a window type stays a window type: create a new type for it.': 'Skrzydło drzwiowe czyni z tego drzwi, a typ okna pozostaje typem okna: utwórz dla niego nowy typ.', 'With window sashes and no door leaf it is a window, and a door type stays a door type: create a new type for it.': 'Ze skrzydłami okiennymi i bez skrzydła drzwiowego to jest okno, a typ drzwi pozostaje typem drzwi: utwórz dla niego nowy typ.', 'Create as a new type': 'Utwórz jako nowy typ', 'A lift-and-slide leaf stands on the threshold: put it in the bottom row.': 'Skrzydło podnoszono-przesuwne stoi na progu: umieść je w dolnym rzędzie.', 'The glazing is thicker than the sash and frame hold: a thinner build-up or a deeper profile.': 'Szklenie jest grubsze, niż mieszczą skrzydło i ościeżnica: cieńszy układ lub głębszy profil.',
+  "Its storey": "Jego kondygnacja",
+  "Its building": "Jego budynek",
+  "Its site": "Jego teren",
+  "The project": "Projekt",
+  "Its group": "Jego grupa",
+  "Its assembly": "Jego zespół",
+  "Its host": "Jego element nośny (ściana)",
+  "Its room": "Jego pomieszczenie",
+  "Room on the exterior side": "Pomieszczenie po stronie zewnętrznej",
+  "Room on the interior side": "Pomieszczenie po stronie wewnętrznej",
+  "Another element's, written before a dot: ": "Innego elementu, zapisane przed kropką: ",
+  "The project's own parameters (Manage → Project information): by their key alone.": "Własne parametry projektu (Zarządzaj → Informacje o projekcie): samym kluczem.",
+  "Texts in quotes, joined by &, and their functions: ": "Teksty w cudzysłowie, łączone przez &, i ich funkcje: ",
+  "A text's formula may also be a text with fields in braces: ": "Formuła tekstu może też być tekstem z polami w nawiasach klamrowych: ",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

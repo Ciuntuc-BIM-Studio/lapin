@@ -9625,6 +9625,37 @@ export const scenes = [
       await input.fill('ceil(Length / Spacing) + 1');
     },
   },
+  {
+    // A text worked out from another element's parameter (decisions 549, 550; a tester's topics #36–#38): a room's index,
+    // {storey.code}.{Hall}.{Flat}.{number}, read from its storey's code and its own parameters, following the storey's change.
+    id: 'param-scopes',
+    touches: ['core', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      await t.cmd('element.setParam', { ids: [storey], name: 'code', kind: 'text', value: 'K1' });
+      const room = (await t.cmd('architecture.addRoom', { storeyId: storey, x: 3, y: 4, name: 'Living', function: 'Living', number: '1' })).id;
+      await t.cmd('element.setParam', { ids: [room], name: 'Hall', kind: 'text', value: 'A' });
+      await t.cmd('element.setParam', { ids: [room], name: 'Flat', kind: 'number', value: 3 });
+      await t.cmd('element.setParam', { ids: [room], name: 'Room index', kind: 'text', value: '' });
+      await select(t, room);
+      await t.wait(700);
+      const sw = t.page.locator('[data-param-formula-switch="Room index"]');
+      if (await sw.count() === 0) { await t.page.locator('[data-group=params] .sect-head').click(); await t.wait(300); }
+      await sw.click();
+      const input = t.page.locator('[data-param-formula="Room index"]');
+      await input.fill('{storey.code}.{Hall}.{Flat}.{number}');
+      await input.press('Enter');
+      const result = () => t.page.locator('[data-param-result="Room index"]').innerText();
+      await t.until(async () => (await result()).includes('K1.A.3.1'), 'the room\'s index reads its storey\'s code');
+      await t.page.locator('.param-formula-help summary').first().click();
+      await t.wait(300);
+      await t.shot('param-scopes', { of: t.page.locator('dl:has([data-param-formula-switch="Room index"])').first(), pad: 6 });
+      // The storey's code changed: the room's index follows, nothing stored on the room.
+      await t.cmd('element.setParam', { ids: [storey], name: 'code', value: 'K2' });
+      await t.until(async () => (await result()).includes('K2.A.3.1'), 'the index follows the storey\'s code');
+    },
+  },
   // [scenes:B1]
   {
     // Rule packs (docs/plan-user-extensibility.md §5.4): Lapin's own read only, a copy of the project's with a stricter riser, in use; the check

@@ -1656,11 +1656,17 @@ public static partial class IfcExport
             return o;
         }
 
+        /// <summary>
+        /// An entity's parameters as the file writes them: a formula's value worked out (decision 549: a number, or a text from its
+        /// storey's, its project's… parameters), as the model's tags and schedules show it; the formula itself is the model's alone.
+        /// </summary>
+        List<JsonObject> WorkedOut(Entity e) => ParamFormulas.Resolved(m, e, m.RelatingOf(e.Id, IfcClass.RelDefinesByType));
+
         /// <summary>An entity's own parameters (those in no named set) as a typed property set; null when it has none.</summary>
         string? ParamsOf(Entity e, string gid)
         {
             var own = new List<string>();
-            foreach (var p in (e.Attrs["params"] as JsonArray)?.OfType<JsonObject>() ?? [])
+            foreach (var p in WorkedOut(e))
             {
                 // A type's instance default is each element's, not the type's (TypeDefaults).
                 if (Params.SetOf(p) != null || Params.IsInstanceDefault(p) || (string?)p["name"] is not { } pname || ParamValue(p, false) is not { } value) continue;
@@ -1728,10 +1734,10 @@ public static partial class IfcExport
         }
 
         /// <summary>The user's parameters in named sets (Pset_DoorCommon, a set of their own), set by set.</summary>
-        static List<(string Set, List<(string Name, string Value)> Props)> NamedParams(Entity e)
+        List<(string Set, List<(string Name, string Value)> Props)> NamedParams(Entity e)
         {
             var sets = new List<(string Set, List<(string Name, string Value)> Props)>();
-            foreach (var p in (e.Attrs["params"] as JsonArray)?.OfType<JsonObject>() ?? [])
+            foreach (var p in WorkedOut(e))
             {
                 if (Params.SetOf(p) is not { } set || Params.IsInstanceDefault(p) || (string?)p["name"] is not { } name || ParamValue(p, StandardPsets.IsStandard(set)) is not { } value) continue;
                 var i = sets.FindIndex(x => string.Equals(x.Set, set, StringComparison.OrdinalIgnoreCase));

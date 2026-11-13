@@ -307,11 +307,16 @@ function MarkerParts({ node, tagType }: { node: NodeDto; tagType: string }) {
   );
 }
 
-interface FieldDto { field: string; set: string | null; name: string; group: string; value: string }
-const GROUPS: [string, string][] = [['element', 'Element'], ['type', 'Its type'], ['standard', 'Standard properties'], ['imported', 'From the file']];
+export interface FieldDto { field: string; set: string | null; name: string; group: string; value: string }
+/** The groups of fields a tag offers: the element's own, then those it reads through its scopes (decision 550: {storey.code}, {project.number}). */
+export const GROUPS: [string, string][] = [
+  ['element', 'Element'], ['type', 'Its type'], ['standard', 'Standard properties'], ['imported', 'From the file'],
+  ['storey', 'Its storey'], ['building', 'Its building'], ['site', 'Its site'], ['project', 'The project'], ['group', 'Its group'],
+  ['assembly', 'Its assembly'], ['host', 'Its host'], ['room', 'Its room'], ['fromRoom', 'Room on the exterior side'], ['toRoom', 'Room on the interior side'],
+];
 
 /** What a tag of `element` can show, read again when the model changes. */
-function useTagFields(element: string | undefined): FieldDto[] {
+export function useTagFields(element: string | undefined): FieldDto[] {
   const nodes = useSession((s) => s.nodes);
   const [fields, setFields] = useState<FieldDto[]>([]);
   useEffect(() => {
