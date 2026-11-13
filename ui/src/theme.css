@@ -2541,6 +2541,12 @@ polygon.part-plane { fill: var(--accent); fill-opacity: 0.14; stroke: var(--acce
 .graphs-inspector { border-left: 1px solid var(--rule); padding: 8px; overflow-y: auto; background: var(--panel); display: flex; flex-direction: column; gap: 6px; }
 .graphs-inspector .field { display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
 .graphs-inspector .field.check { flex-direction: row; align-items: center; }
+.graphs-examples { position: relative; display: inline-block; }
+.graphs-example-list { position: absolute; z-index: 20; top: 100%; left: 0; margin-top: 4px; width: min(340px, 90vw); background: var(--panel); border: 1px solid var(--rule-strong); border-radius: 6px; box-shadow: 0 6px 18px rgba(0, 0, 0, .18); padding: 4px; display: flex; flex-direction: column; }
+.graphs-example-list button { display: flex; gap: 8px; align-items: flex-start; text-align: left; background: none; border: 0; padding: 6px; border-radius: 4px; color: var(--ink); cursor: pointer; }
+.graphs-example-list button:hover { background: var(--accent-wash); }
+.graphs-example-list svg { flex: none; margin-top: 2px; }
+.graphs-example-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .graphs-xyz { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
 .graphs-xyz input { min-width: 0; }
 .graphs-pick { display: flex; align-items: center; gap: 6px; }
@@ -2614,3 +2620,4 @@ polygon.part-plane { fill: var(--accent); fill-opacity: 0.14; stroke: var(--acce
 .part-flex { display: flex; flex-direction: column; gap: 4px; border-top: 1px solid var(--rule); padding-top: 6px; }
 path.part-flex-ghost { fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-dasharray: 5 3; stroke-linecap: round; }
 .fields .badge.small { font-size: 10px; padding: 0 5px; border: 1px solid var(--rule-strong); border-radius: 8px; color: var(--ink-muted); }
+.graphs-empty .graphs-example-list { left: 50%; transform: translateX(-50%); text-align: left; }

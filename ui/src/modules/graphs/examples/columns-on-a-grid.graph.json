@@ -1,0 +1,107 @@
+{
+  "format": 2,
+  "nodes": [
+    {
+      "id": "nx",
+      "kind": "integer",
+      "x": 0,
+      "y": 0,
+      "values": {
+        "value": 5
+      },
+      "label": "Columns along X",
+      "palette": {
+        "order": 1,
+        "min": 1,
+        "max": 20,
+        "step": 1
+      }
+    },
+    {
+      "id": "ny",
+      "kind": "integer",
+      "x": 0,
+      "y": 140,
+      "values": {
+        "value": 4
+      },
+      "label": "Columns along Y",
+      "palette": {
+        "order": 2,
+        "min": 1,
+        "max": 20,
+        "step": 1
+      }
+    },
+    {
+      "id": "span",
+      "kind": "number",
+      "x": 0,
+      "y": 280,
+      "values": {
+        "value": 6,
+        "unit": "length"
+      },
+      "label": "Spacing",
+      "palette": {
+        "order": 3,
+        "min": 2,
+        "max": 12,
+        "step": 0.5
+      }
+    },
+    {
+      "id": "grid",
+      "kind": "grid",
+      "x": 300,
+      "y": 100,
+      "label": "Column positions"
+    },
+    {
+      "id": "columns",
+      "kind": "command:structure.addColumn",
+      "x": 600,
+      "y": 100,
+      "label": "Columns"
+    }
+  ],
+  "wires": [
+    {
+      "from": "nx",
+      "out": "value",
+      "to": "grid",
+      "in": "nx"
+    },
+    {
+      "from": "ny",
+      "out": "value",
+      "to": "grid",
+      "in": "ny"
+    },
+    {
+      "from": "span",
+      "out": "value",
+      "to": "grid",
+      "in": "dx"
+    },
+    {
+      "from": "span",
+      "out": "value",
+      "to": "grid",
+      "in": "dy"
+    },
+    {
+      "from": "grid",
+      "out": "points",
+      "to": "columns",
+      "in": "pt:"
+    }
+  ],
+  "tool": {
+    "show": true,
+    "name": "Columns on a grid",
+    "icon": "grid",
+    "tooltip": "A column at each point of a grid",
+    "group": "Graphs"
+  }
+}

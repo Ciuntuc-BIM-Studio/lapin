@@ -56,15 +56,23 @@ The classic: floors from a series, each turned a little more than the one below,
 
 
 1. Five input nodes: **Whole number** „Floors” (12), **Number** „Floor height” (3.2, metres), **Number** „Total twist” (90, degrees), **Number** „Width” (24, metres), **Number** „Taper” (0.7: the top floor's size, the bottom's being 1).
-2. **Series** „Levels”: Start 0, Step ← Floor height, Count ← Floors. Then the **New storey** tool's node: Elevation ← Levels, Height ← Floor height. It makes a storey at each level.
+2. **Series** „Levels”: Start ← Floor height, Step ← Floor height, Count ← a **Formula** `a - 1` of Floors. Then the **New storey** tool's node: Elevation ← Levels, Height ← Floor height. It makes a storey at each level above the ground. A new project already has its storey at level 0, which carries the first floor: a **Storeys** node, a **Compare** (its levels `=` 0) and a **Filter** pick it out, and **Join lists** puts it before the new storeys.
 3. **Rectangle**: Width and Depth ← Width. **Centre** ← the rectangle's Outline: the point the floors turn about.
-4. The turns: **Divide** A ← Total twist, B ← Floors; a **Series** „Turns”: Start 0, Step ← Divide, Count ← Floors.
+4. The turns: a **Formula** `a / max(b - 1, 1)`, a ← Total twist, b ← Floors (the top floor turns the whole twist); a **Series** „Turns”: Start 0, Step ← Formula, Count ← Floors.
 5. The sizes: a **Formula** `(a - 1) / max(b - 1, 1)`, a ← Taper, b ← Floors; a **Series** „Sizes”: Start 1, Step ← Formula, Count ← Floors.
 6. **Scale**: Points or polyline ← the rectangle's Outline, Centre ← Centre, Factor ← Sizes. Then **Rotate**: Points or polyline ← Scale, Centre ← Centre, Angle ← Turns: one outline per floor, each turned and scaled.
-7. The **Floor** tool's node: Points ← Rotate, Storey ← the New storey node's Elements made. One floor on each new storey.
-8. Columns, if you like: a **Scale** with Factor 0.85 of the turned outlines about the Centre, its **Corners**' Points into a **Column**'s Point, Storey ← the storeys, Rotation ← Turns.
+7. The **Floor** tool's node: Points ← Rotate, Storey ← the joined storeys. One floor on each storey, the first on the ground storey.
+8. Columns, if you like: a **Scale** with Factor 0.85 of the turned outlines about the Centre, its **Corners**' Points into a **Column**'s Point, Storey ← the joined storeys, Rotation ← Turns.
 
 Make it a tool (**Show in My tools**), give the five inputs a least and a most, and the palette's sliders turn and taper the tower as you drag them; **Bake** makes the storeys, floors and columns in one undo step. Thirty floors with their columns preview in about a third of a second.
+
+## Examples
+
+**New from example…**, beside **New graph** (and on the empty panel), lists the graphs that come with Lapin, each with a line about what it makes. Pick one and a copy is saved into the project, with a name not taken yet, and opens on the canvas, fitted: change it, press **Bake**, or open its palette. The copy is yours; the example itself never changes, and the project is the host's like every graph.
+
+- **Twisted tower**: the one above, ready: floors, height, twist, width and taper as sliders; it makes the storeys, a floor on each and four columns on each floor, the first floor on the project's ground storey.
+- **Columns on a grid**: a **Grid of points** into a **Column**; how many columns each way and their spacing as sliders.
+- **Walls round a rectangle**: a **Rectangle**'s **Corners** into a **Wall**'s Start and End; width and depth as sliders.
 
 ## Reading the model
 

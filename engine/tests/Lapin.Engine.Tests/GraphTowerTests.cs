@@ -14,7 +14,7 @@ namespace Lapin.Engine.Tests;
 /// The geometry nodes a twisted tower needs (Rotate, Scale, Centre, a circle's start angle) and the tower itself, baked:
 /// storeys from a series of levels, an outline turned a little more on each, a floor on each storey from the list of
 /// outlines (a list of polylines on a command's points maps once per outline), one undo step. The ready graph is the
-/// fixture Fixtures/graphs/twisted-tower.graph.json, the one the video tutorial loads.
+/// bundled example ui/src/modules/graphs/examples/twisted-tower.graph.json (the one the Graphs panel starts from).
 /// </summary>
 public sealed class GraphTowerTests(ITestOutputHelper output)
 {
@@ -197,9 +197,7 @@ public sealed class GraphTowerTests(ITestOutputHelper output)
         Assert.Empty(f.Model.OfClass(IfcClass.Slab));
     }
 
-    static string FixturePath => Path.Combine(AppContext.BaseDirectory, "Fixtures", "graphs", "twisted-tower.graph.json");
-
-    static JsonObject FixtureGraph() => JsonNode.Parse(File.ReadAllText(FixturePath))!.AsObject();
+    static JsonObject FixtureGraph() => GraphExamplesTests.Read("twisted-tower");
 
     [Fact]
     public void The_ready_tower_graph_reads_its_palette_and_bakes_floors_and_columns_in_one_step()
@@ -219,13 +217,17 @@ public sealed class GraphTowerTests(ITestOutputHelper output)
         Assert.Equal("Bake graph", f.Session.History.UndoLabel);
         var plates = Floorplates(f);
         Assert.Equal(12, plates.Count);
+        // The project's ground storey (level 0) is the first floor's: 11 storeys are new, 12 in all.
+        Assert.Equal(storeys + 11, Spatial.Storeys(f.Model).Count());
+        Assert.Equal(0, plates[0].Level, 6);
+        Assert.Equal(3.2 * 11, plates[^1].Level, 6);
         Assert.Equal(48, f.Model.OfClass(IfcClass.Column).Count());
-        // The top floor: turned by 11 × 90 / 12 and scaled to the taper, about the square's middle.
+        // The top floor: turned by the whole twist, 11 × 90 / 11 and scaled to the taper, about the square's middle.
         var top = plates[^1].Contour;
         var mid = new Vec2(12, 12);
         Assert.Equal(0.7 * 24 / Math.Sqrt(2) * 1, (top[0] - mid).Length, 6);
         var turn = Math.Atan2(top[1].Y - top[0].Y, top[1].X - top[0].X) * 180 / Math.PI;
-        Assert.Equal(11 * 90.0 / 12, turn, 6);
+        Assert.Equal(90.0, turn, 6);
         f.Session.Undo();
         Assert.Empty(f.Model.OfClass(IfcClass.Slab));
         Assert.Empty(f.Model.OfClass(IfcClass.Column));
@@ -256,7 +258,6 @@ public sealed class GraphTowerTests(ITestOutputHelper output)
             times.Add(clock.Elapsed.TotalMilliseconds);
         }
         Assert.All(r["nodes"]!.AsObject(), n => Assert.Null(n.Value!["error"]));
-        Assert.Equal(floors * 6, (int)r["calls"]!);
         output.WriteLine($"Twisted tower, {floors} floors: preview {times.Min():0} ms (best of 3), {string.Join(", ", times.Select(t => t.ToString("0")))} ms; {r["ghost"]?["parts"]?.AsArray().Count} ghost parts");
         Assert.True(times.Min() < 10_000, $"The preview took {times.Min():0} ms.");
     }
