@@ -264,4 +264,25 @@ public partial class IfcRecognitionTests
         var type = f.Model.RelatingOf(Guid("foreign-test", "a-win"), IfcClass.RelDefinesByType)!;
         Assert.Equal("none", JoinerySpec.From(type.Attrs["spec"])!.Details!.Reveal!.Mode);
     }
+
+    [Fact]
+    public void A_recognised_wall_moved_joins_nothing_new_and_its_copy_joins_as_the_users_own()
+    {
+        // Forum 47, decision 531: a moved recognised wall keeps the file's joins (none here) and makes none of Lapin's; a copy
+        // of it is the user's own new element, which joins what it lands on as one drawn there.
+        var x = new Foreign();
+        FootprintWall(x, "a", (-150, -150), (5000, -150), (5000, 150), (-150, 150));
+        FootprintWall(x, "b", (7850, 1000), (8150, 1000), (8150, 4000), (7850, 4000));
+        var (f, _, join) = Imported(x, "moved-recognised.ifc");
+        Assert.Null(join);
+        var (a, b) = (Guid("foreign-test", "a"), Guid("foreign-test", "b"));
+        f.Run("element.transform", new System.Text.Json.Nodes.JsonObject { ["ids"] = new System.Text.Json.Nodes.JsonArray(b), ["op"] = "move", ["by"] = new System.Text.Json.Nodes.JsonArray(-5.5, -1) });
+        Assert.Empty(Joins.Of(f.Model, b));
+        Assert.Equal(new Vec2(2.5, 0), Walls.Start(f.Model.Get(b)!));
+        // Moved back off, then copied onto a: the copy makes the T.
+        f.Run("element.transform", new System.Text.Json.Nodes.JsonObject { ["ids"] = new System.Text.Json.Nodes.JsonArray(b), ["op"] = "move", ["by"] = new System.Text.Json.Nodes.JsonArray(0, 1) });
+        var copy = (string)f.Run("element.transform", new System.Text.Json.Nodes.JsonObject { ["ids"] = new System.Text.Json.Nodes.JsonArray(b), ["op"] = "copy", ["by"] = new System.Text.Json.Nodes.JsonArray(1, -1) })!["ids"]![0]!;
+        Assert.Equal("T", (string?)Joins.Between(f.Model, a, copy)?.Attrs?["kind"]);
+        Assert.Empty(Joins.Of(f.Model, b));
+    }
 }

@@ -344,13 +344,24 @@ public static class Joins
     /// <summary>How near ends must be to share a node of three or more.</summary>
     public const double NodeTolerance = 0.01;
 
-    public static void Auto(IEdit edit, IPathElements paths, string id, JoinStyle style = JoinStyle.Mitre)
+    /// <param name="skip">Elements left out (what moved or was copied with it keeps its joins among them as they were, decision 531).</param>
+    /// <param name="thickness">Each element's thickness as joins see it, kept across the calls of one command (null: worked out each call).</param>
+    public static void Auto(IEdit edit, IPathElements paths, string id, JoinStyle style = JoinStyle.Mitre, IReadOnlySet<string>? skip = null,
+        Dictionary<string, double>? thickness = null)
     {
         var m = edit.Model;
         if (m.Get(id) is not { } e || !paths.IsPath(e.Class)) return;
         var storey = Spatial.StoreyOf(m, id);
+        // Only those near enough to meet are tried (a move of hundreds of walls tried each against the whole storey, decision 531):
+        // two meet only within twice the thicker's thickness of each other's ends (WallJoins.Compute); the margin covers an end a join moves first.
+        thickness ??= [];
+        double Thick(Entity x) => thickness.TryGetValue(x.Id, out var t) ? t : thickness[x.Id] = paths.FrameOf(x, m)?.Thickness ?? double.PositiveInfinity;
+        var straight = !PathCurve.Of(e).IsArc;
+        var (s0, s1) = (Start(e), End(e));
+        bool Near(Entity o) => !straight || PathCurve.Of(o).IsArc || SegmentsDistance(s0, s1, Start(o), End(o)) <= 6 * Math.Max(Thick(e), Thick(o)) + 0.05;
         var others = (storey == null ? m.OfClass(e.Class) : m.RelatedOf(storey.Id, IfcClass.RelContainedInSpatialStructure))
-            .Where(o => o.Class == e.Class && o.Id != id && Between(m, id, o.Id) == null).ToList();
+            .Where(o => o.Class == e.Class && o.Id != id && skip?.Contains(o.Id) != true && o.Attrs["start"] is JsonArray && o.Attrs["end"] is JsonArray
+                && Near(o) && Between(m, id, o.Id) == null).ToList();
         foreach (var end in new[] { 0, 1 })
         {
             e = m.Get(id)!;
@@ -406,6 +417,16 @@ public static class Joins
             if (trial.Kind != JoinKind.X) continue;
             Join(edit, paths, current, e);
         }
+    }
+
+    /// <summary>How near two straight axes come (0 when they cross).</summary>
+    static double SegmentsDistance(Vec2 a, Vec2 b, Vec2 c, Vec2 d)
+    {
+        double Side(Vec2 p, Vec2 q, Vec2 r) => Vec2.Cross(q - p, r - p);
+        var (d1, d2, d3, d4) = (Side(c, d, a), Side(c, d, b), Side(a, b, c), Side(a, b, d));
+        if ((d1 > 0) != (d2 > 0) && (d3 > 0) != (d4 > 0) && d1 != 0 && d2 != 0 && d3 != 0 && d4 != 0) return 0;
+        return Math.Min(Math.Min(Polyline2.SegmentDistance(a, c, d), Polyline2.SegmentDistance(b, c, d)),
+            Math.Min(Polyline2.SegmentDistance(c, a, b), Polyline2.SegmentDistance(d, a, b)));
     }
 
     static double DistanceTo(Entity e, Vec2 p)
@@ -465,10 +486,11 @@ public static class Joins
     }
 
     /// <summary>Works out these elements' joins again: still meeting, they are rewritten (axes to the crossing); not, they go.</summary>
-    public static void Refresh(IEdit edit, IPathElements paths, IEnumerable<string> ids)
+    /// <param name="only">The joins to work out again (all of them when null).</param>
+    public static void Refresh(IEdit edit, IPathElements paths, IEnumerable<string> ids, Func<Relation, bool>? only = null)
     {
         var m = edit.Model;
-        foreach (var r in ids.SelectMany(id => Of(m, id)).DistinctBy(r => r.Id).ToList())
+        foreach (var r in ids.SelectMany(id => Of(m, id)).DistinctBy(r => r.Id).Where(r => only?.Invoke(r) != false).ToList())
         {
             if (m.GetRelation(r.Id) is not { } current) continue;
             if (Compute(m, current, paths, out _) == null) { edit.RemoveRelation(current.Id); continue; }

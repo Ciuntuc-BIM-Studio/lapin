@@ -88,12 +88,18 @@ public static class Grids
     /// line and ends on its last. An axis keeps its own direction, so its
     /// bubble stays at the end it was on. Axes alone in their family, and
     /// those not in <paramref name="only"/>, stay as they are.
+    /// With <paramref name="to"/> (an axis's tag, forum 47, decision 531), that axis is the reference: the others of its
+    /// family (those in <paramref name="only"/>, when given) take its start and end lines, it stays as it is, and the
+    /// other families are left alone.
     /// </summary>
-    public static List<Axis> Align(IReadOnlyList<Axis> axes, IReadOnlySet<string>? only, out int aligned)
+    public static List<Axis> Align(IReadOnlyList<Axis> axes, IReadOnlySet<string>? only, out int aligned, string? to = null)
     {
         var result = axes.ToList();
         aligned = 0;
-        var todo = Enumerable.Range(0, axes.Count).Where(i => only == null || only.Contains(axes[i].Tag)).ToList();
+        var reference = to == null ? -1 : axes.ToList().FindIndex(x => x.Tag == to);
+        if (to != null && reference < 0) throw new CommandException($"The grid has no axis {to}.");
+        var todo = Enumerable.Range(0, axes.Count).Where(i => only == null || only.Contains(axes[i].Tag) || i == reference).ToList();
+        if (reference >= 0) todo = todo.Where(i => Math.Abs(Vec2.Cross(axes[i].Dir, axes[reference].Dir)) < 0.02).Prepend(reference).Distinct().ToList();
         while (todo.Count > 0)
         {
             var d = axes[todo[0]].Dir;
@@ -101,10 +107,12 @@ public static class Grids
             todo.RemoveAll(family.Contains);
             if (family.Count < 2) continue;
             double S(Vec2 p) => Vec2.Dot(p, d);
-            var lo = family.Min(i => Math.Min(S(axes[i].A), S(axes[i].B)));
-            var hi = family.Max(i => Math.Max(S(axes[i].A), S(axes[i].B)));
+            var lines = reference >= 0 ? new List<int> { reference } : family;
+            var lo = lines.Min(i => Math.Min(S(axes[i].A), S(axes[i].B)));
+            var hi = lines.Max(i => Math.Max(S(axes[i].A), S(axes[i].B)));
             foreach (var i in family)
             {
+                if (i == reference) continue;
                 var x = axes[i];
                 // The axis's line, as a point on it and the family's direction.
                 var o = x.A - d * S(x.A);
