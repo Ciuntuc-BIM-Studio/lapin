@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { scriptIcon } from '../../shell/toolIcons';
 import { EXAMPLES, exampleFiles, loadExample, uniqueName } from './examples';
 
 describe('the example graphs', () => {
@@ -19,6 +20,16 @@ describe('the example graphs', () => {
     const a = await loadExample('twisted-tower');
     a.nodes.length = 0;
     expect((await loadExample('twisted-tower')).nodes.length).toBeGreaterThan(0);
+  });
+
+  it('gives every example, and its own tool, an icon that is a drawing and not a letter', async () => {
+    const letter = (name: string, label: string) => String((scriptIcon(name, label) as { displayName?: string }).displayName).startsWith('Letter(');
+    for (const e of EXAMPLES) {
+      expect(letter(e.icon, e.name), e.id).toBe(false);
+      expect(letter(String((await loadExample(e.id)).tool?.icon), e.name), `${e.id} tool`).toBe(false);
+    }
+    // A name no icon has still falls back to a letter.
+    expect(letter('no-such-icon-name', 'Tower')).toBe(true);
   });
 
   it('refuses an example that is not there', async () => {

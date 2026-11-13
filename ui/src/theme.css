@@ -2538,7 +2538,7 @@ polygon.part-plane { fill: var(--accent); fill-opacity: 0.14; stroke: var(--acce
 .graphs-search-list { max-height: 280px; overflow-y: auto; margin-top: 4px; display: flex; flex-direction: column; }
 .graphs-search-list button { display: flex; justify-content: space-between; gap: 8px; text-align: left; background: none; border: 0; padding: 4px 6px; border-radius: 3px; color: var(--ink); cursor: pointer; }
 .graphs-search-list button.on, .graphs-search-list button:hover { background: var(--accent-wash); }
-.graphs-inspector { border-left: 1px solid var(--rule); padding: 8px; overflow-y: auto; background: var(--panel); display: flex; flex-direction: column; gap: 6px; }
+.graphs-inspector { border-left: 1px solid var(--rule); padding: 8px; overflow-y: auto; overflow-x: hidden; min-width: 0; background: var(--panel); display: flex; flex-direction: column; gap: 6px; }
 .graphs-inspector .field { display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
 .graphs-inspector .field.check { flex-direction: row; align-items: center; }
 .graphs-examples { position: relative; display: inline-block; }
@@ -2547,7 +2547,7 @@ polygon.part-plane { fill: var(--accent); fill-opacity: 0.14; stroke: var(--acce
 .graphs-example-list button:hover { background: var(--accent-wash); }
 .graphs-example-list svg { flex: none; margin-top: 2px; }
 .graphs-example-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.graphs-xyz { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
+.graphs-xyz { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; }
 .graphs-xyz input { min-width: 0; }
 .graphs-pick { display: flex; align-items: center; gap: 6px; }
 .graphs-output { overflow-wrap: anywhere; }
@@ -2566,8 +2566,9 @@ polygon.part-plane { fill: var(--accent); fill-opacity: 0.14; stroke: var(--acce
 .graph-palette-foot .btn { width: auto; display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; }
 .graphs-inspector .graphs-section { border-top: 1px solid var(--rule); padding-top: 6px; margin-top: 4px; display: flex; flex-direction: column; gap: 6px; }
 .graphs-inspector .graphs-section-title { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted); }
-.graphs-limits { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
-.graphs-limits input { min-width: 0; }
+.graphs-limits { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 56px), 1fr)); gap: 3px; min-width: 0; }
+.graphs-limits .field { min-width: 0; }
+.graphs-limits input { min-width: 0; width: 100%; box-sizing: border-box; }
 .graph-node.group:not(.failed):not(.warned) .head { fill: var(--accent-wash); }
 /* A narrow panel (beside the model, the usual split): the inspector under the canvas. */
 @container (max-width: 640px) { .graphs-body { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) minmax(0, 34%); } .graphs-inspector { border-left: 0; border-top: 1px solid var(--rule); } }
