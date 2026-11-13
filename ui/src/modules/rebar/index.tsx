@@ -4,7 +4,7 @@
  * or a column at a click, inset beside it in the same view, with the context round it.
  */
 
-import { Crosshair, Minus, PictureInPicture2, Scissors, Settings2, Slice, Table2 } from 'lucide-react';
+import { Crosshair, FileDown, Minus, PictureInPicture2, Scissors, Settings2, Shapes, Slice, Table2, Ruler } from 'lucide-react';
 import { SectionIcon } from '../../icons';
 import type { Grip, GripView, LapinModule, ToolDef, Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
@@ -19,10 +19,14 @@ import { bars3d } from './bars3d';
 import { labelPlaceGrips, type LabelData } from './labelGrips';
 import { anchorGrips, type AnchorData } from './anchors';
 import { lazyPart } from '../../platform/lazyPart';
-import { PartitionOptions, partitionArg } from './partitions';
+import { PartitionOptions, partitionArg, useShapePick } from './partitions';
+import { ShapeToolOptions } from './ShapeTool';
+import { exportBvbsFile } from './barShapes';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const InsetPickDialog = lazyPart(() => import('./RebarDialogs').then((m) => m.InsetPickDialog), { title: 'Inset view' });
+const BarShapesDialog = lazyPart(() => import('./BarShapesDialog').then((m) => m.BarShapesDialog), { title: 'Bar shapes' });
+const BendingScheduleDialog = lazyPart(() => import('./BendingScheduleDialog').then((m) => m.BendingScheduleDialog), { title: 'Bending schedule' });
 const RebarSettingsDialog = lazyPart(() => import('./RebarDialogs').then((m) => m.RebarSettingsDialog), { title: 'Rebar settings' });
 
 // The stirrups of a beam's or a column's type are set in the Structure types dialog (decision 215).
@@ -96,6 +100,23 @@ const schedule: ToolDef = {
   id: 'rebar.schedule', label: 'Bar schedule', icon: Table2,
   run: () => void execute('architecture.createSchedule', { kind: 'rebar' }).then((r) => { if (r) notify('Bar bending schedule made: it is in the project browser, under Schedules.'); }),
 };
+/** A bar of one of the project's own shapes (Bar shapes…), placed with a click; the shape is chosen in the tool bar. */
+const userShapeBar: ToolDef = {
+  id: 'rebar.userShape', label: 'Bar of a shape', icon: Shapes,
+  gesture: { kind: 'point' },
+  options: ShapeToolOptions,
+  complete: async ({ points: [p] }, ctx) => {
+    const shapeId = useShapePick.getState().shapeId;
+    if (!shapeId) { notify('Make a bar shape first: Bar shapes…'); return; }
+    await ctx.execute('rebar.add', { viewId: ctx.viewId, shapeId, at: [p.x, p.y], ...partitionArg() });
+  },
+};
+/** The project's bar shapes: the codes of the user's standard (BS 8666, ISO 4066, the office's), edited with a live drawing. */
+const barShapes: ToolDef = { id: 'rebar.shapes', label: 'Bar shapes…', icon: Shapes, run: () => useUi.setState({ dialog: 'barShapes' }) };
+/** The bars' marks as the standard writes them (shape code, A B C, number, length, mass), as CSV or BVBS. */
+const bendingSchedule: ToolDef = { id: 'rebar.bendingSchedule', label: 'Bending schedule (standard)', icon: Ruler, run: () => useUi.setState({ dialog: 'bendingSchedule' }) };
+/** The marks as a BVBS file (.abs) for the bending machine. */
+const exportBvbs: ToolDef = { id: 'rebar.exportBvbs', label: 'Export BVBS (.abs)…', icon: FileDown, run: () => void exportBvbsFile() };
 const settings: ToolDef = { id: 'rebar.settings', label: 'Rebar settings', icon: Settings2, run: () => useUi.setState({ dialog: 'rebarSettings' }) };
 /**
  * A longitudinal bar cut in two with a lap where the engineer puts it (decision 227): a click on the bar at one end of the lap, a
@@ -202,9 +223,9 @@ export const rebarModule: LapinModule = {
     id: 'rebar', label: 'Simple rebar', order: 35, include: ['modify'],
     groups: [
       { label: 'Sections', tools: [sectionHere, sectionAcross, insetView] },
-      { label: 'Bars', tools: [straight, lBar, uBar, stirrup, polylineBar], small: [tie, dot, asSection, splitBar] },
+      { label: 'Bars', tools: [straight, lBar, uBar, stirrup, polylineBar], small: [tie, dot, userShapeBar, asSection, splitBar] },
       { label: 'Distribution', tools: [run] },
-      { label: 'Schedule', tools: [schedule, settings, bars3d] },
+      { label: 'Schedule', tools: [schedule, bendingSchedule, barShapes, settings, bars3d], small: [exportBvbs] },
     ],
   }],
   hotbar: [straight, stirrup, run, sectionHere],
@@ -214,7 +235,7 @@ export const rebarModule: LapinModule = {
     { id: 'rebar.bar', label: 'Bar', classes: ['LapinRebar'], component: RebarSection },
     { id: 'rebar.run', label: 'Distribution', classes: ['LapinRebarRun'], component: RebarRunSection },
   ],
-  dialogs: { rebarSettings: RebarSettingsDialog, insetPick: InsetPickDialog },
+  dialogs: { rebarSettings: RebarSettingsDialog, insetPick: InsetPickDialog, barShapes: BarShapesDialog, bendingSchedule: BendingScheduleDialog },
 };
 
 export default rebarModule;

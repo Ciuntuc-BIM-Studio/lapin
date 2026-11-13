@@ -13,6 +13,8 @@ import {
   balanced, BUILDUP_DEFAULTS, ELEMENT_FIELDS, insertField, LAYER_FIELDS, materialFields, orderLabels, parseWidth, wrapOptional, type BuildupEntry,
 } from './buildupTag';
 import { LeaderFields, LeaderPreview } from './LeaderEditor';
+import { useSystems } from './classifications/classifications';
+import { classificationFields } from './classifications/classModel';
 
 interface Preview {
   sample?: { id: string; name: string; class: string };
@@ -25,6 +27,7 @@ const BULLETS: [string, string][] = [['bullet', '• bullet'], ['dash', '– das
 
 export function BuildupEditor({ entry, onClose }: { entry: BuildupEntry; onClose: () => void }) {
   const nodes = useSession((s) => s.nodes);
+  const systems = useSystems();
   const [draft, setDraft] = useState<BuildupEntry>(entry);
   const [sample, setSample] = useState('');
   const [preview, setPreview] = useState<Preview | null>(null);
@@ -69,6 +72,7 @@ export function BuildupEditor({ entry, onClose }: { entry: BuildupEntry; onClose
                 <optgroup label="Layer">{LAYER_FIELDS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</optgroup>
                 {params.length > 0 && <optgroup label="Material parameters">{params.map((k) => <option key={k} value={k} data-no-i18n>{k}</option>)}</optgroup>}
                 <optgroup label="Element">{ELEMENT_FIELDS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</optgroup>
+                {systems.length > 0 && <optgroup label="Classification">{classificationFields(systems).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</optgroup>}
               </select>
               <button type="button" className="btn mini" data-field="tag-line-optional" title="Make the selection an optional part: dropped where a field in it is empty" onClick={() => edit((t, s, x) => wrapOptional(t, s, x))}>[ ]</button>
             </div>

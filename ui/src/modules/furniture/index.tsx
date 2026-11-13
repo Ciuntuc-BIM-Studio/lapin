@@ -18,6 +18,7 @@ import { relatingOf } from '../../engine/model';
 import { CLASS, chooseType, chosenType, furnitureGrips, sizeOf, specOf, typesOfKind, useFurniturePrefs } from './furniture';
 import { FurnitureSection } from './FurnitureSection';
 import { FurnitureTypesDialog, editType, useKinds } from './FurnitureTypesDialog';
+import { UserModelsDialog } from './UserModelsDialog';
 import { FurnitureLibraryDialog, SaveToLibraryDialog } from './FurnitureLibraryDialog';
 import { refreshLibrary, useFurnitureLibrary } from './library';
 import { addTemplateAddition } from '../../engine/templates';
@@ -190,7 +191,7 @@ const furniture: LapinModule = {
   propertySections: [
     { id: 'furniture', label: 'Furniture', classes: [CLASS], component: FurnitureSection, replacesFields: () => true },
   ],
-  dialogs: { furnitureTypes: FurnitureTypesDialog, furnitureLibrary: FurnitureLibraryDialog, furnitureSaveToLibrary: SaveToLibraryDialog },
+  dialogs: { furnitureModels: UserModelsDialog, furnitureTypes: FurnitureTypesDialog, furnitureLibrary: FurnitureLibraryDialog, furnitureSaveToLibrary: SaveToLibraryDialog },
   background: LibraryWatch,
   grips: {
     [CLASS]: (node: NodeDto) => {

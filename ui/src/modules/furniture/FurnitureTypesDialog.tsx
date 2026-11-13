@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { BookmarkPlus, Copy, Library, Plus, Trash2, X } from 'lucide-react';
+import { BookmarkPlus, Copy, FileUp, Library, Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
@@ -15,6 +15,7 @@ import { LengthField } from '../../shell/cells';
 import { KitchenUnitsEditor } from './KitchenUnitsEditor';
 import { CaseworkEditor } from './CaseworkEditor';
 import { ModelEditor, useModelsCatalog } from './ModelEditor';
+import { SymbolPicker, useSymbolList } from '../core/symbols/SlotPicker';
 import { byGroup } from './models';
 import { ParamField } from './ParamField';
 import { saveTypeToLibrary } from './library';
@@ -107,6 +108,7 @@ export function FurnitureTypesDialog() {
   const [newPreset, setNewPreset] = useState('sideboard');
   const [newModel, setNewModel] = useState('loungeSofa');
   const modelsCat = useModelsCatalog();
+  const symbols = useSymbolList();
   const casework = useSession((s) => s.info?.catalogs['furniture.casework']) as unknown as CaseworkCatalog | undefined;
   const layouts = ((useSession((s) => s.info?.catalogs['furniture.kitchenLayouts']) ?? []) as unknown as KitchenLayout[]);
   const types = useMemo(() => [...nodes.values()].filter((n) => n.type === TYPE_CLASS), [nodes]);
@@ -157,6 +159,7 @@ export function FurnitureTypesDialog() {
                 </select>
               )}
               <button type="button" className="btn small" data-action="furniture-new-type" onClick={() => void create()}><Plus size={13} /> New type</button>
+              <button type="button" className="btn small" data-action="furniture-import-model" title="A GLB of your own, with its licence: its materials given roles, its stretch zones set" onClick={() => useUi.setState({ dialog: 'furnitureModels' })}><FileUp size={13} /> Import model (GLB)…</button>
               <button type="button" className="btn small" data-action="furniture-my-library" title="Your own furniture types, for every project" onClick={() => useUi.setState({ dialog: 'furnitureLibrary' })}><Library size={13} /> My furniture…</button>
             </div>
             {groups.map((g) => {
@@ -202,6 +205,9 @@ export function FurnitureTypesDialog() {
                       <dd><ParamField p={p} value={spec[p.key] ?? kind.defaults[p.key]} onCommit={(v) => update(p.key === 'layout' ? (layouts.find((l) => l.key === v)?.preset ?? { layout: v }) : { [p.key]: v })} /></dd>
                     </div>
                   ))}
+                  <dt title="The symbol a plan draws this piece with (Manage → Symbols…); none: its body seen from above">Plan symbol</dt>
+                  <dd><SymbolPicker field="furniture-plan-symbol" value={typeof spec.planSymbol === 'string' && spec.planSymbol ? spec.planSymbol : null} list={symbols} category="Furniture"
+                    noneLabel="Drawn from above" onChange={(id) => update({ planSymbol: id ?? '' })} /></dd>
                   <dt className="section-dt">Materials</dt><dd />
                   {rolesOf(spec, kind.roles, modelsCat?.models).map((role) => (
                     <div key={role} style={{ display: 'contents' }}>

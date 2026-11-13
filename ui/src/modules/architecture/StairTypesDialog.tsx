@@ -83,6 +83,9 @@ function Drawn({ drawing, width, label }: { drawing: DrawingDto | null; width: n
   );
 }
 
+/** The project's rules for a stair set (docs/plan-user-extensibility.md §5.4): the rule pack in use, over Lapin's. */
+const projectRules = (set: string) => query<Omit<Rules, 'set'>>('architecture.stairRules', { set }).then((r) => (r ? { ...r, set } as Rules : null));
+
 export function StairTypesDialog() {
   const nodes = useSession((s) => s.nodes);
   const relations = useSession((s) => s.relations);
@@ -107,6 +110,12 @@ export function StairTypesDialog() {
     const t = editing ? modelRef.current.nodes.get(editing) : undefined;
     const s = (t?.props.spec as unknown as Spec | undefined) ?? (freshKind === 'ramp' ? defaults?.ramp : defaults?.spec) ?? null;
     setSpec(s ? structuredClone(s) : null);
+    // A new type starts from the project's rules for its set (the rule pack in use), not the catalog's.
+    if (!t && s) {
+      let live = true;
+      void projectRules(s.rules.set).then((r) => { if (live && r) setSpec((cur) => (cur && cur.rules.set === r.set ? { ...cur, rules: r } : cur)); });
+      return () => { live = false; };
+    }
   }, [editing, defaults, freshTick, freshKind]);
 
   useEffect(() => {
@@ -254,7 +263,7 @@ export function StairTypesDialog() {
               </>}
               {tab === 'rules' && ramp && <>
                 <label className="field-line"><span className="eyebrow">Rule set</span>
-                  <select value={spec.rules.set} onChange={(e) => set({ rules: structuredClone(defaults.rules[e.target.value] ?? spec.rules) })}>
+                  <select value={spec.rules.set} onChange={(e) => { const next = e.target.value; void projectRules(next).then((r) => set({ rules: r ?? structuredClone(defaults.rules[next] ?? spec.rules) })); }}>
                     <option value="ramp">ramp</option><option value="public">public</option><option value="residential">residential</option>
                   </select>
                 </label>
@@ -266,7 +275,7 @@ export function StairTypesDialog() {
               </>}
               {tab === 'rules' && !ramp && <>
                 <label className="field-line"><span className="eyebrow">Rule set</span>
-                  <select value={spec.rules.set} onChange={(e) => set({ rules: structuredClone(defaults.rules[e.target.value] ?? spec.rules) })}>
+                  <select value={spec.rules.set} onChange={(e) => { const next = e.target.value; void projectRules(next).then((r) => set({ rules: r ?? structuredClone(defaults.rules[next] ?? spec.rules) })); }}>
                     <option value="residential">residential</option><option value="public">public</option><option value="entrance">entrance steps</option>
                   </select>
                 </label>

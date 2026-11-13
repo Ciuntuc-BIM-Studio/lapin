@@ -14,6 +14,12 @@ import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { PendingDialog } from './PendingDialog';
 import { MarkerSymbolsStandards } from './symbols/SlotPicker';
+import { LineTypesTab } from './lineTypes/LineTypesTab';
+import { useLineTypes } from './lineTypes/lineTypes';
+import { lineTypeNames, withCurrent } from './lineTypes/lineTypeModel';
+import { useSystems } from './classifications/classifications';
+import { classificationFields } from './classifications/classModel';
+import { StandardsImportPanel, StandardsLibraryButtons, type PackRead } from './StandardsLibrary';
 import { BuildupEditor } from './BuildupEditor';
 import { LeaderEditor, type LeaderEntry } from './LeaderEditor';
 import { BUILDUP_DEFAULTS, type BuildupEntry } from './buildupTag';
@@ -87,6 +93,10 @@ export function StandardsDialog() {
   const [tab, setTab] = useState<Tab>(() => TABS.find((t) => t.id === standardsTab()) ?? TABS[0]);
   const [group, setGroup] = useState('');
   const [project, setProject] = useState(() => standardsTab() === 'project');
+  const [lines, setLines] = useState(false);
+  const [pack, setPack] = useState<PackRead | null>(null);
+  const lineTypes = useLineTypes();
+  const systems = useSystems();
   const [editing, setEditing] = useState<string | null>(null);
   useEffect(() => { clearStandardsTab(); }, []);
   useEffect(() => {
@@ -113,7 +123,11 @@ export function StandardsDialog() {
     switch (c.kind) {
       case 'bool': return <input type="checkbox" checked={v === true || (c.key === 'visible' && v !== false)} onChange={(ev) => put(ev.target.checked)} />;
       case 'color': return <input type="color" value={typeof v === 'string' ? v : '#18181b'} onChange={(ev) => put(ev.target.value)} />;
-      case 'choice': return <select value={String(v ?? '')} onChange={(ev) => put(ev.target.value)}>{c.key === 'lineType' && tab.id === 'layer' && <option value="">continuous</option>}{c.choices!.map((x) => <option key={x} value={x}>{CHOICE_LABELS[x] ?? x}</option>)}</select>;
+      case 'choice': {
+        // A line type is chosen among Lapin's and the project's own (Line types tab).
+        const names = c.key === 'lineType' ? withCurrent(lineTypeNames(lineTypes, c.choices), String(v ?? '') || null).filter((x) => !(tab.id === 'layer' && x === 'continuous')) : c.choices!;
+        return <select value={String(v ?? '')} onChange={(ev) => put(ev.target.value)}>{c.key === 'lineType' && tab.id === 'layer' && <option value="">continuous</option>}{names.map((x) => <option key={x} value={x}>{CHOICE_LABELS[x] ?? x}</option>)}</select>;
+      }
       case 'style': return <select value={String(v ?? 'standard')} onChange={(ev) => put(ev.target.value)}>{book.textStyles.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select>;
       case 'group': return <select value={String(v ?? '')} onChange={(ev) => put(ev.target.value || null)}><option value="">—</option>{book.layerGroups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}</select>;
       // Decimals: empty is the unit's usual (none in mm, one in cm, two in m, 1/16" in imperial), kept as −1.
@@ -198,10 +212,13 @@ export function StandardsDialog() {
         </header>
         <div className="dialog-body">
           <div className="tabs-inline">
-            {TABS.map((t) => <button key={t.id} type="button" className={`tab-chip${t.id === tab.id ? ' on' : ''}`} onClick={() => { setTab(t); setProject(false); }}>{t.label}</button>)}
-            <button type="button" className={`tab-chip${project ? ' on' : ''}`} onClick={() => setProject(true)}>Project</button>
+            {TABS.map((t) => <button key={t.id} type="button" className={`tab-chip${t.id === tab.id && !project && !lines ? ' on' : ''}`} onClick={() => { setTab(t); setProject(false); setLines(false); setPack(null); }}>{t.label}</button>)}
+            <button type="button" className={`tab-chip${lines ? ' on' : ''}`} data-field="standards-tab-lines" onClick={() => { setLines(true); setProject(false); setPack(null); }}>Line types</button>
+            <button type="button" className={`tab-chip${project ? ' on' : ''}`} onClick={() => { setProject(true); setLines(false); setPack(null); }}>Project</button>
+            <span className="grow" />
+            <StandardsLibraryButtons onRead={setPack} />
           </div>
-          {project ? options : tab.id === 'tag' && rows.some((r) => r.id === editing && r.shape === 'buildup')
+          {pack ? <StandardsImportPanel read={pack} onDone={() => setPack(null)} /> : lines ? <LineTypesTab /> : project ? options : tab.id === 'tag' && rows.some((r) => r.id === editing && r.shape === 'buildup')
             ? <BuildupEditor entry={rows.find((r) => r.id === editing) as unknown as BuildupEntry} onClose={() => setEditing(null)} />
             : tab.id === 'tag' && rows.some((r) => r.id === editing)
             ? <LeaderEditor entry={rows.find((r) => r.id === editing) as unknown as LeaderEntry} onClose={() => setEditing(null)} />
@@ -215,7 +232,14 @@ export function StandardsDialog() {
                   {tab.cols.map((c) => <td key={c.key}>{cell(e, c)}</td>)}
                   {tab.id === 'tag' && <td>{e.shape === 'buildup'
                     ? <button type="button" className={`btn mini${editing === e.id ? ' on' : ''}`} data-field="tag-shape-buildup" title="Its header, line per layer, footer, order, leaders and width, with a preview" onClick={() => setEditing(editing === e.id ? null : e.id)}>Build-up…</button>
-                    : <button type="button" className="btn mini" data-field="tag-leader" title="Its leader: straight from a box, or an elbow under the text, with a preview" onClick={() => setEditing(e.id)}>Leader…</button>}</td>}
+                    : <><button type="button" className="btn mini" data-field="tag-leader" title="Its leader: straight from a box, or an elbow under the text, with a preview" onClick={() => setEditing(e.id)}>Leader…</button>
+                      {systems.length > 0 && (
+                        <select className="mini" value="" data-field="tag-class-field" title="Add a classification field to the text: {classification.code}, {classification.title}, or a system's own code"
+                          onChange={(ev) => { if (ev.target.value) set({ id: e.id, template: `${String(e.template ?? '')}${e.template ? ' ' : ''}{${ev.target.value}}` }); }}>
+                          <option value="">+ Classification…</option>
+                          {classificationFields(systems).map(([k, l]) => <option key={k} value={k} data-no-i18n={k.split('.').length > 1 && k !== 'classification.code' && k !== 'classification.title' ? true : undefined}>{l}</option>)}
+                        </select>
+                      )}</>}</td>}
                   <td className="row-tools">{!fixed(e) && <button type="button" className="icon mini" title="Remove" onClick={() => void execute('standards.remove', { kind: tab.id, id: e.id })}><Trash2 size={12} /></button>}</td>
                 </tr>
               ))}
@@ -223,6 +247,7 @@ export function StandardsDialog() {
           </table>
           {tab.id === 'tag' && <p className="muted small" data-tag-help>{TAG_HELP}</p>}
           {tab.id === 'tag' && <p className="muted small">{BUILDUP_HELP}</p>}
+          {tab.id === 'tag' && systems.length > 0 && <p className="muted small">{'A tag may also read the classification: {classification.code}, {classification.title} or a system\'s own code, {classification.<System>}; the + Classification… list adds one.'}</p>}
           <div className="row">
             <button type="button" className="btn" onClick={() => set({ ...tab.fresh, name: `${tab.fresh.name} ${rows.length + 1}` })}><Plus size={14} />New</button>
             {tab.id === 'layer' && (

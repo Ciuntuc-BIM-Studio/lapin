@@ -68,3 +68,6 @@ export function RebarScheduleControls({ id, partitions }: { id: string; partitio
     </select>
   );
 }
+
+/** The shape the "Bar of a shape" tool lays: one of the project's bar shapes (docs/plan-user-extensibility.md §6.3). */
+export const useShapePick = create<{ shapeId: string }>(() => ({ shapeId: '' }));

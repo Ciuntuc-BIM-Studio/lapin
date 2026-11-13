@@ -12,6 +12,9 @@ import { parseNumber } from './cellKeys';
 import { execute, query, useSession } from '../engine/session';
 import { notify } from '../app/store';
 import { paramKey, sameKind, type Param } from './params';
+import { ParamValue, useEvaluated } from './ParamFormula';
+import { useParamDefs } from '../modules/core/classifications/classifications';
+import { defNamed } from '../modules/core/classifications/classModel';
 import type { NodeDto } from '../engine/protocol';
 
 // ─── The user's own parameters ──────────────────────────────────────────────
@@ -54,11 +57,20 @@ export function ParamsSection({ node, ids: who, shadowed, isType = node.type.end
   };
   const [name, setName] = useState('');
   const [kind, setKind] = useState<string>('text');
+  const defs = useParamDefs();
+  const evaluated = useEvaluated(node.id, params.some((p) => !!p.formula));
   const ids = who ?? (() => sameKind(node));
   const set = (p: Param, value: unknown) => void execute('element.setParam', { ids: ids(), name: p.name, value, ...(p.pset ? { pset: p.pset } : {}) });
   const add = () => {
     const n = name.trim();
     if (!n) return;
+    // A shared definition's name: its kind, property set and choices are its (docs/plan-user-extensibility.md §7.3).
+    const def = defNamed(defs, n);
+    if (def) {
+      void execute('element.setParam', { ids: ids(), name: def.name, kind: def.kind, ...(def.pset ? { pset: def.pset } : {}), ...(def.options?.length ? { options: def.options } : {}),
+        value: def.kind === 'bool' ? false : def.kind === 'text' || def.kind === 'choice' ? (def.options?.[0] ?? '') : 0 }).then(() => setName(''));
+      return;
+    }
     const options = kind === 'choice' ? (window.prompt('The choices, separated by commas') ?? '').split(',').map((x) => x.trim()).filter(Boolean) : undefined;
     void execute('element.setParam', { ids: ids(), name: n, kind, value: kind === 'bool' ? false : kind === 'text' || kind === 'choice' ? (options?.[0] ?? '') : 0, ...(options ? { options } : {}) }).then(() => setName(''));
   };
@@ -78,12 +90,14 @@ export function ParamsSection({ node, ids: who, shadowed, isType = node.type.end
             <span key={paramKey(p)} className="qrow">
               <dt title={`${p.pset ? `${p.pset} · ` : ''}${shadowed?.has(paramKey(p)) ? `${p.kind} · this element has its own value` : p.kind}`} className={shadowed?.has(paramKey(p)) ? 'shadowed' : undefined}>{p.pset && <span className="muted small" data-no-i18n>{p.pset} · </span>}{p.name}<button type="button" className="icon mini row-x" title="Remove the parameter" onClick={() => void execute('element.removeParam', { ids: ids(), name: p.name, ...(p.pset ? { pset: p.pset } : {}) })}><X size={10} /></button></dt>
               <dd>
+                <ParamValue p={p} id={node.id} ids={ids} evaluated={evaluated} params={params} attrs={node.props}>
                 {p.kind === 'length' ? <LengthCell metres={p.value as number} onCommit={(m) => set(p, m)} />
                   : p.kind === 'bool' ? <input type="checkbox" checked={p.value === true} onChange={(e) => set(p, e.target.checked)} />
                   : p.kind === 'choice' ? <select className="cell" value={String(p.value ?? '')} onChange={(e) => set(p, e.target.value)}>{(p.options ?? []).map((o) => <option key={o} value={o}>{o}</option>)}</select>
                   : p.kind === 'text' ? <Cell value={String(p.value ?? '')} onCommit={(t) => set(p, t)} />
                   : <Cell className="num" value={p.value == null ? '' : String(p.value)} suffix={p.kind === 'area' ? 'm²' : p.kind === 'angle' ? '°' : undefined}
                       onCommit={(t) => { const n = parseNumber(t); if (n != null) set(p, n); }} />}
+                </ParamValue>
               </dd>
               {isType && (
                 <label className="small muted param-instance" title="An instance default: each element given this type gets a copy it may change (Renovation status, a room's use), and the type's IFC property sets leave it out. Unticked: a property of the type itself (FireRating), shared by every element.">
@@ -103,7 +117,7 @@ export function ParamsSection({ node, ids: who, shadowed, isType = node.type.end
       )}
       <div className="param-add">
         <input placeholder="New parameter" value={name} list="param-suggestions" onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') add(); }} />
-        <datalist id="param-suggestions">{SUGGESTED.map((x) => <option key={x} value={x} />)}</datalist>
+        <datalist id="param-suggestions">{[...new Set([...defs.map((d) => d.name), ...SUGGESTED])].map((x) => <option key={x} value={x} />)}</datalist>
         <select value={kind} onChange={(e) => setKind(e.target.value)} title="Kind">{KINDS.map((k) => <option key={k} value={k}>{k}</option>)}</select>
         <button type="button" className="icon" title="Add the parameter" onClick={add} disabled={!name.trim()}><Plus size={14} /></button>
       </div>

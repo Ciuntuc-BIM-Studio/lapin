@@ -31,7 +31,7 @@ export function ImportTableDialog() {
   const [table, setTable] = useState<TableRead | null>(null);
   const [headerRow, setHeaderRow] = useState(0);
   const [mapping, setMapping] = useState<MapItem[]>([]);
-  const [defaults, setDefaults] = useState<Record<string, string>>({});
+  const [defaults, setDefaults] = useState<Record<string, string>>(preset.defaults ?? {});
   const [skip, setSkip] = useState(false);
   const [preview, setPreview] = useState<TablePreview | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -82,7 +82,7 @@ export function ImportTableDialog() {
 
   // The defaults the target may need: a storey when the file has no storey column, and any required column the table lacks.
   const hasKey = (k: string) => mapping.some((m) => m.key === k);
-  const defaultKeys = target ? target.columns.filter((c) => !hasKey(c.key) && (c.key === 'storey' || c.required) && (c.key === 'storey' || c.kind === 'choice' || c.kind === 'text')).map((c) => c.key) : [];
+  const defaultKeys = target ? target.columns.filter((c) => !hasKey(c.key) && (c.key === 'storey' || c.required || c.key in (preset.defaults ?? {})) && (c.key === 'storey' || c.kind === 'choice' || c.kind === 'text')).map((c) => c.key) : [];
   const effDefaults = useMemo(() => {
     const d: Record<string, string> = {};
     for (const k of defaultKeys) {

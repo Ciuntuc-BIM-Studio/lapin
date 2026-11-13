@@ -21,6 +21,7 @@ import { useLiveRise } from '../viewport/viewFrame';
 import { fieldShown, type FieldDescriptor, type NodeDto } from '../engine/protocol';
 import type { PropertySectionDef } from '../platform/module';
 import { findTool, propertySections, typeFieldsOf } from '../platform/modules';
+import { ClassificationSection } from '../modules/core/classifications/ClassificationSection';
 import { QuantitiesSection } from './QuantitiesSection';
 import { DependenciesSection } from './DependenciesSection';
 import { deleteElements } from '../engine/dependents';
@@ -338,10 +339,13 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
         </Group>
       )}
       {node.editable && <Group id="params" label="Parameters"><ParamsSection node={node} /></Group>}
+      {/* The codes of the classification systems the project holds (docs/plan-user-extensibility.md §7.3). */}
+      {node.editable && node.type !== 'IfcProject' && <Group id="classification" label="Classification"><ClassificationSection node={node} /></Group>}
       {node.editable && type && (
         <Group id="typeParams" label={`Type parameters · ${type.name}`}>
           <p className="muted small pad">Every element of the type has these; a change here changes them all ({relatedOf(model, type.id, 'IfcRelDefinesByType').length}).</p>
           {TypeFields && <TypeFields type={type} node={node} />}
+          <ClassificationSection node={type} ids={() => [type.id]} />
           <ParamsSection node={type} ids={() => [type.id]} shadowed={new Set(((Array.isArray(node.props.params) ? node.props.params : []) as unknown as Param[]).map(paramKey))} />
         </Group>
       )}

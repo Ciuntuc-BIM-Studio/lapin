@@ -7,11 +7,14 @@ import { execute } from '../../engine/session';
 import { useCad } from '../../viewport/cad/session';
 import { useLayers, type DraftLayer as Layer } from '../../viewport/cad/layers';
 import { NumberField } from '../../shell/cells';
+import { useLineTypes } from '../core/lineTypes/lineTypes';
+import { lineTypeNames, withCurrent } from '../core/lineTypes/lineTypeModel';
 const TYPES = ['continuous', 'dashed', 'dotted', 'dashdot'];
 
 export function LayersDialog() {
   const current = useCad((s) => s.layer);
   const layers = useLayers();
+  const own = useLineTypes();
   const [fresh, setFresh] = useState('');
   const close = () => useUi.setState({ dialog: null });
   const set = (name: string, patch: Partial<Layer> & { newName?: string }) => void execute('drafting.setLayer', { name, ...patch });
@@ -29,7 +32,7 @@ export function LayersDialog() {
                 <td><input defaultValue={l.name} disabled={l.name === '0'} onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== l.name) set(l.name, { newName: v }); }} /></td>
                 <td><input type="color" value={l.color} onChange={(e) => set(l.name, { color: e.target.value })} /></td>
                 <td><NumberField value={l.weight} min={0.05} max={2} onCommit={(w) => { if (w != null) set(l.name, { weight: w }); }} /></td>
-                <td><select value={l.lineType} onChange={(e) => set(l.name, { lineType: e.target.value })}>{TYPES.map((t) => <option key={t} value={t}>{t}</option>)}</select></td>
+                <td><select value={l.lineType} onChange={(e) => set(l.name, { lineType: e.target.value })}>{withCurrent(lineTypeNames(own, TYPES), l.lineType).map((t) => <option key={t} value={t}>{t}</option>)}</select></td>
                 <td><input type="checkbox" checked={l.visible} onChange={(e) => set(l.name, { visible: e.target.checked })} /></td>
                 <td><input type="checkbox" checked={l.locked} onChange={(e) => set(l.name, { locked: e.target.checked })} /></td>
                 <td>{l.name !== '0' && <button type="button" className="icon" title="Remove (its shapes go to layer 0)" onClick={() => void execute('drafting.removeLayer', { name: l.name })}><X size={13} /></button>}</td>

@@ -5,17 +5,22 @@
  * step on the type (furniture.updateType); a new model brings its own size and roles.
  */
 
+import { useMemo } from 'react';
 import { useSession } from '../../engine/session';
+import { useUserModels } from './userModels';
 import { LengthField } from '../../shell/cells';
 import { ROLE_LABELS, type FurnitureSpec } from './furniture';
-import { byGroup, isLook, lookPatch, thumbnailUrl, zonedAxes, type ModelsCatalog } from './models';
+import { byGroup, isLook, lookPatch, mergeModels, thumbnailUrl, zonedAxes, type ModelsCatalog } from './models';
 
 const mm = (m: number) => Math.round(m * 1000);
 /** The register's sources (furniture-assets.json), as the dialog credits them. */
 const SOURCES: Record<string, string> = { 'kenney-furniture-kit': 'Kenney, Furniture Kit', 'poly-haven': 'Poly Haven' };
 
+/** Lapin's models with the project's own after them (docs/plan-user-extensibility.md §3.5): the gallery, the roles and the limits serve both. */
 export function useModelsCatalog(): ModelsCatalog | undefined {
-  return useSession((s) => s.info?.catalogs['furniture.models']) as unknown as ModelsCatalog | undefined;
+  const cat = useSession((s) => s.info?.catalogs['furniture.models']) as unknown as ModelsCatalog | undefined;
+  const users = useUserModels();
+  return useMemo(() => mergeModels(cat, users), [cat, users]);
 }
 
 /** A gallery of the models, the one chosen marked; picking one calls <code>onPick</code>. */
@@ -30,8 +35,8 @@ export function ModelGallery({ value, onPick }: { value: string; onPick: (id: st
           <div className="model-gallery-items">
             {models.map((m) => (
               <button key={m.id} type="button" className={`model-tile${m.id === value ? ' on' : ''}`} data-model={m.id} title={m.name} onClick={() => onPick(m.id)}>
-                <img src={thumbnailUrl(m)} alt="" loading="lazy" width={56} height={56} />
-                <span className="small">{m.name}</span>
+                {m.thumbnail ? <img src={thumbnailUrl(m)} alt="" loading="lazy" width={56} height={56} /> : <span className="model-thumb-none" style={{ width: 56, height: 56, display: 'inline-block' }} />}
+                <span className="small" data-no-i18n={m.thumbnail ? undefined : true}>{m.name}</span>
               </button>
             ))}
           </div>

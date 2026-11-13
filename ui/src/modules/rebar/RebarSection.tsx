@@ -11,6 +11,9 @@ import { LengthField, NumberField } from '../../shell/cells';
 import { lengthText } from '../../engine/unitsStore';
 import { LabelStyleFields, useRebarSettings, type LabelStylePatch } from './LabelStyleFields';
 import { lapFromTo, overStock, splitRefusal, stockLap } from './split';
+import { diameterChoices, useRebarRules } from './rebarRules';
+import { useShapeLibrary } from './barShapes';
+import { paramsOf, type ShapeDef } from './shapeModel';
 
 export interface ShapeInfo { code: string; label: string; layer: string; diameter: number; freeVertices: boolean; hooks: boolean; params: { key: string; label: string; default: number; min: number }[] }
 export interface RebarCatalog { shapes: ShapeInfo[]; diameters: number[]; steels: string[]; views: string[] }
@@ -175,7 +178,14 @@ export function RebarSection({ node }: { node: NodeDto }) {
   const catalog = useRebarCatalog();
   const nodes = useSession((s) => s.nodes);
   const d = useDescribed(node.id);
-  const shape = catalog?.shapes.find((s) => s.code === node.props.shape) ?? null;
+  const rules = useRebarRules();
+  const lib = useShapeLibrary();
+  // A bar of one of the project's shapes (docs/plan-user-extensibility.md §6.3) keeps its definition: its parameters are the definition's.
+  const userId = typeof node.props.shapeId === 'string' ? node.props.shapeId : null;
+  const userDef = (node.props.shapeDef as unknown as ShapeDef | undefined) ?? lib?.shapes.find((x) => x.id === userId)?.def ?? null;
+  const shape = userDef
+    ? ({ code: String(node.props.shape), label: userDef.label, layer: userDef.layer ?? '', diameter: userDef.diameter ?? 0.012, freeVertices: false, hooks: true, params: paramsOf(userDef) } as ShapeInfo)
+    : catalog?.shapes.find((s) => s.code === node.props.shape) ?? null;
   const params = (node.props.params as Record<string, number> | undefined) ?? {};
   const hooks = (node.props.hooks as { start?: HookJson; end?: HookJson } | undefined) ?? {};
   const diameter = typeof node.props.diameter === 'number' ? node.props.diameter : 0.012;
@@ -187,15 +197,17 @@ export function RebarSection({ node }: { node: NodeDto }) {
     <div className="layers">
       <label className="type-pick">
         <span className="eyebrow">Shape</span>
-        <select value={String(node.props.shape ?? 'straight')} disabled={!node.editable} onChange={(e) => set({ shape: e.target.value })}>
+        <select value={userId ? `@${userId}` : String(node.props.shape ?? 'straight')} disabled={!node.editable} data-field="rebar-shape"
+          onChange={(e) => { const v = e.target.value; set(v.startsWith('@') ? { shapeId: v.slice(1) } : { shape: v }); }}>
           {catalog.shapes.map((s) => <option key={s.code} value={s.code}>{s.label}</option>)}
+          {(lib?.shapes.length ?? 0) > 0 && <optgroup label="This project's shapes">{lib!.shapes.map((s) => <option key={s.id} value={`@${s.id}`} data-no-i18n>{s.name}</option>)}</optgroup>}
         </select>
       </label>
       {shape?.params.map((p) => <Len key={p.key} label={p.label} value={params[p.key] ?? p.default} min={p.min} onChange={(v) => set({ params: { [p.key]: v } })} />)}
       {shape && !shape.freeVertices && shape.code !== 'dot' && <CoverField node={node} d={d} set={set} />}
       <label className="field-line"><span className="eyebrow">Diameter</span>
         <select value={diameter} onChange={(e) => set({ diameter: Number(e.target.value) })}>
-          {catalog.diameters.map((x) => <option key={x} value={x}>Ø{Math.round(x * 1000)}</option>)}
+          {diameterChoices(rules, catalog.diameters, diameter).map((x) => <option key={x} value={x}>Ø{Math.round(x * 1000 * 10) / 10}</option>)}
         </select>
       </label>
       <p className="eyebrow">Hooks</p>
@@ -257,7 +269,13 @@ export function RebarRunSection({ node }: { node: NodeDto }) {
   const catalog = useRebarCatalog();
   const d = useDescribed(node.id);
   const zones = (node.props.zones as Zone[] | undefined) ?? [];
-  const shape = catalog?.shapes.find((s) => s.code === node.props.shape) ?? null;
+  const rules = useRebarRules();
+  const lib = useShapeLibrary();
+  const userId = typeof node.props.shapeId === 'string' ? node.props.shapeId : null;
+  const userDef = (node.props.shapeDef as unknown as ShapeDef | undefined) ?? lib?.shapes.find((x) => x.id === userId)?.def ?? null;
+  const shape = userDef
+    ? ({ code: String(node.props.shape), label: userDef.label, layer: userDef.layer ?? '', diameter: userDef.diameter ?? 0.008, freeVertices: false, hooks: true, params: paramsOf(userDef) } as ShapeInfo)
+    : catalog?.shapes.find((s) => s.code === node.props.shape) ?? null;
   const params = (node.props.params as Record<string, number> | undefined) ?? {};
   const set = (args: Record<string, unknown>) => void execute('rebar.updateRun', { id: node.id, ...args });
   const setZones = (z: Zone[]) => set({ zones: z });
@@ -266,14 +284,16 @@ export function RebarRunSection({ node }: { node: NodeDto }) {
     <div className="layers">
       <label className="type-pick">
         <span className="eyebrow">Bar</span>
-        <select value={String(node.props.shape ?? 'stirrup')} disabled={!node.editable} onChange={(e) => set({ shape: e.target.value })}>
+        <select value={userId ? `@${userId}` : String(node.props.shape ?? 'stirrup')} disabled={!node.editable}
+          onChange={(e) => { const v = e.target.value; set(v.startsWith('@') ? { shapeId: v.slice(1) } : { shape: v }); }}>
           {catalog.shapes.filter((s) => s.code !== 'dot').map((s) => <option key={s.code} value={s.code}>{s.label}</option>)}
+          {(lib?.shapes.length ?? 0) > 0 && <optgroup label="This project's shapes">{lib!.shapes.map((s) => <option key={s.id} value={`@${s.id}`} data-no-i18n>{s.name}</option>)}</optgroup>}
         </select>
       </label>
       {shape?.params.map((p) => <Len key={p.key} label={p.label} value={params[p.key] ?? p.default} min={p.min} onChange={(v) => set({ params: { [p.key]: v } })} />)}
       <label className="field-line"><span className="eyebrow">Diameter</span>
         <select value={typeof node.props.diameter === 'number' ? node.props.diameter : 0.008} onChange={(e) => set({ diameter: Number(e.target.value) })}>
-          {catalog.diameters.map((x) => <option key={x} value={x}>Ø{Math.round(x * 1000)}</option>)}
+          {diameterChoices(rules, catalog.diameters, typeof node.props.diameter === 'number' ? node.props.diameter : 0.008).map((x) => <option key={x} value={x}>Ø{Math.round(x * 1000 * 10) / 10}</option>)}
         </select>
       </label>
       <p className="eyebrow">Zones</p>

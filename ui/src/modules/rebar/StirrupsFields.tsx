@@ -7,6 +7,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { execute } from '../../engine/session';
 import { LengthField, NumberField } from '../../shell/cells';
 import { useRebarCatalog } from './RebarSection';
+import { diameterChoices, useRebarRules } from './rebarRules';
 import { LabelStyleFields, useRebarSettings, type LabelStylePatch } from './LabelStyleFields';
 import { PartitionInput } from './partitions';
 
@@ -18,6 +19,7 @@ const COLUMN_BARS: ColumnBars = { enabled: false, perFace: 3, diameter: 0.016, l
 const DEFAULT: Spec = { enabled: false, diameter: 0.008, cover: 0.025, mode: 'uniform', step: 0.15, zones: [{ share: 1 / 3, step: 0.1 }, { share: 1 / 3, step: 0.2 }, { share: 1 / 3, step: 0.1 }], mark: 0 };
 export function StirrupsFields({ type, kind }: { type: NodeDto; kind: string }) {
   const catalog = useRebarCatalog();
+  const rules = useRebarRules();
   const settings = useRebarSettings();
   const section = type.props.section as { kind?: string } | undefined;
   const s: Spec = { ...DEFAULT, ...((type.props.stirrups as Partial<Spec> | undefined) ?? {}) };
@@ -32,7 +34,7 @@ export function StirrupsFields({ type, kind }: { type: NodeDto; kind: string }) 
       {s.enabled && <>
         <label className="field-line"><span className="eyebrow">Diameter</span>
           <select value={s.diameter} onChange={(e) => set({ diameter: Number(e.target.value) })}>
-            {catalog.diameters.filter((x) => x <= 0.02).map((x) => <option key={x} value={x}>Ø{Math.round(x * 1000)}</option>)}
+            {diameterChoices(rules, catalog.diameters, s.diameter).filter((x) => x <= 0.02 || x === s.diameter).map((x) => <option key={x} value={x}>Ø{Math.round(x * 1000 * 10) / 10}</option>)}
           </select>
         </label>
         <label className="field-line"><span className="eyebrow">Cover</span><LengthField metres={s.cover} min={0} max={0.2} onCommit={(m) => { if (m != null) set({ cover: m }); }} /></label>
@@ -67,6 +69,7 @@ export function StirrupsFields({ type, kind }: { type: NodeDto; kind: string }) 
 /** A column type's longitudinal bars: so many on each face, their diameter, how they end at the top (decision 232), the starter bars past it. */
 function ColumnBarsFields({ type }: { type: NodeDto }) {
   const catalog = useRebarCatalog();
+  const rules = useRebarRules();
   const settings = useRebarSettings();
   const b: ColumnBars = { ...COLUMN_BARS, ...((type.props.bars as Partial<ColumnBars> | undefined) ?? {}) };
   const set = (patch: Partial<ColumnBars>) => void execute('rebar.setColumnBars', { id: type.id, ...patch });
@@ -79,7 +82,7 @@ function ColumnBarsFields({ type }: { type: NodeDto }) {
           <span className="eyebrow">Each face</span>
           <NumberField style={{ width: 44 }} value={b.perFace} min={2} max={20} integer onCommit={(n) => { if (n != null) set({ perFace: n }); }} />
           <span>×</span>
-          <select value={b.diameter} onChange={(e) => set({ diameter: Number(e.target.value) })}>{catalog.diameters.map((x) => <option key={x} value={x}>Ø{Math.round(x * 1000)}</option>)}</select>
+          <select value={b.diameter} onChange={(e) => set({ diameter: Number(e.target.value) })}>{diameterChoices(rules, catalog.diameters, b.diameter).map((x) => <option key={x} value={x}>Ø{Math.round(x * 1000 * 10) / 10}</option>)}</select>
           {b.mark ? <span className="muted small">mark {b.mark}</span> : null}
         </div>
         <label className="field-line"><span className="eyebrow">At the top</span>

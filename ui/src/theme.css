@@ -2312,3 +2312,21 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .import-table .row-bad td { color: var(--danger, #b3261e); }
 .import-table .row-head td { font-weight: 600; background: var(--hover, rgba(0, 0, 0, .06)); }
 .convert-dialog .opt-grid { display: grid; grid-template-columns: max-content 1fr; gap: 6px 12px; align-items: center; }
+
+/* Line types, classifications, rules, bar shapes (docs/plan-user-extensibility.md §10). */
+.line-sample { display: block; color: var(--ink); }
+.lt-list { list-style: none; padding: 0; margin: 0 0 12px; }
+.lt-list button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; text-align: left; }
+.lt-preview { padding: 8px 0; }
+.class-tree { list-style: none; margin: 0; padding: 0; }
+.class-row { display: flex; align-items: center; gap: 4px; }
+.class-row.on { background: var(--accent-soft, rgba(181, 83, 45, 0.12)); }
+.class-spacer { display: inline-block; width: 20px; }
+.class-tree-box { max-height: 320px; overflow: auto; margin-top: 6px; }
+.rules-table td, .rules-table th { padding: 2px 6px; }
+.rules-finding-list { list-style: none; margin: 0 0 8px; padding: 0; }
+.param-value { display: inline-flex; flex-wrap: wrap; align-items: flex-start; gap: 4px; width: 100%; }
+.param-formula { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.param-formula-switch.on { color: var(--accent); }
+.shape-preview { color: var(--ink); }
+.tabs-inline { flex-wrap: wrap; align-items: center; }

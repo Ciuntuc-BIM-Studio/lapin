@@ -13,6 +13,7 @@ import { execute, query, useSession } from '../../engine/session';
 import { label } from './format';
 import { NumberField } from '../../shell/cells';
 import { PendingDialog } from './PendingDialog';
+import { useLineTypes } from './lineTypes/lineTypes';
 
 interface Spec { pen?: number; color?: string; pattern?: string }
 interface Dto {
@@ -26,6 +27,7 @@ interface Dto {
 
 
 export function ObjectStylesDialog() {
+  const ownLines = useLineTypes();
   const nodes = useSession((s) => s.nodes);
   const error = useSession((s) => s.error);
   const [d, setD] = useState<Dto | null>(null);
@@ -67,7 +69,7 @@ export function ObjectStylesDialog() {
                             <option value="">pen —</option>{Array.from({ length: 16 }, (_, i) => <option key={i + 1} value={i + 1}>pen {i + 1}</option>)}
                           </select>
                           <select title="Pattern" value={s.pattern ?? ''} onChange={(e) => set(c, r, { pattern: e.target.value || undefined })}>
-                            <option value="">—</option>{d.patterns.map((p) => <option key={p} value={p}>{p}</option>)}
+                            <option value="">—</option>{[...d.patterns, ...(ownLines?.own ?? []).map((o) => o.name).filter((n) => !d.patterns.includes(n))].map((p) => <option key={p} value={p}>{p}</option>)}
                           </select>
                           <input type="color" title="Colour" value={s.color ?? '#000000'} onChange={(e) => set(c, r, { color: e.target.value })} />
                         </td>

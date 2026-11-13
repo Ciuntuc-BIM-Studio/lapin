@@ -123,3 +123,14 @@ export function ImportSummary({ r }: { r: ImportSummaryData }) {
     </dl>
   );
 }
+
+/**
+ * A command whose refusal is shown and whose success may answer nothing (most commands answer null): null only when it was refused;
+ * a command that answered nothing gives `true` (cast: callers of such commands do not read its answer).
+ */
+export async function runOk<T>(command: string, args: Record<string, unknown>): Promise<T | null> {
+  const r = await execute(command, args) as T | null;
+  const err = useSession.getState().error;
+  if (r == null && err) { notify(err); return null; }
+  return (r ?? true) as T;
+}

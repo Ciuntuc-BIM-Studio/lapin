@@ -5,6 +5,7 @@ import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { useRebarCatalog } from './RebarSection';
+import { steelChoices, useRebarRules } from './rebarRules';
 import { LengthField, NumberField } from '../../shell/cells';
 import { LabelStyleFields, useRebarSettings, type LabelKind, type LabelStylePatch, type RebarSettings as Settings } from './LabelStyleFields';
 
@@ -36,6 +37,7 @@ function StockAndLapFields({ s, set }: { s: Settings; set: (patch: Partial<Setti
 
 export function RebarSettingsDialog() {
   const catalog = useRebarCatalog();
+  const rules = useRebarRules();
   const live = useRebarSettings();
   const [edited, setEdited] = useState<Settings | null>(null);
   const [kind, setKind] = useState<LabelKind>('bars');
@@ -59,7 +61,7 @@ export function RebarSettingsDialog() {
           <label className="field-line"><span className="eyebrow">Text height</span><NumberField value={s.textHeight} min={1} max={10} onCommit={(n) => { if (n != null) set({ textHeight: n }); }} /><span className="muted small"> mm on paper</span></label>
           <label className="field-line"><span className="eyebrow">Mark balloon</span><NumberField value={s.balloon} min={3} max={20} onCommit={(n) => { if (n != null) set({ balloon: n }); }} /><span className="muted small"> mm on paper</span></label>
           <label className="field-line"><span className="eyebrow">Steel</span>
-            <select value={s.steel} onChange={(e) => set({ steel: e.target.value })}>{catalog.steels.map((x) => <option key={x} value={x}>{x}</option>)}</select>
+            <select value={s.steel} onChange={(e) => set({ steel: e.target.value })}>{steelChoices(rules, catalog.steels, s.steel).map((x) => <option key={x} value={x}>{x}</option>)}</select>
           </label>
           <label className="field-line"><span className="eyebrow">Cover</span><LengthField metres={s.cover} min={0} max={0.2} onCommit={(m) => { if (m != null) set({ cover: m }); }} /></label>
           <p className="muted small">Bars are drawn as thick as they are; bend radii follow SR EN 1992-1-1 (a mandrel of 4Ø up to Ø16, 7Ø over). The schedule's lengths are the nominal ones, hooks included.</p>

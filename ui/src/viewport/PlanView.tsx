@@ -57,6 +57,7 @@ import type { Shape } from './cad/shapes';
 import { actualScale, boundsOf, coreBounds, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelGesture, wheelZoom, type Bounds, type View2, type ZoomHost } from './zoom';
 import { ScaleChip, ScalePicker, StructurePicker } from './ScaleChip';
 import { DASHES, planDetail, shownAt } from './planDetail';
+import { useLineTypes } from '../modules/core/lineTypes/lineTypes';
 import { axisLine, riseThrough } from './arc';
 import { useLang } from '../i18n';
 import { others, reportPresence, useShare } from '../engine/share';
@@ -88,6 +89,8 @@ function walkIntoRoom(room: NodeDto, item: RenderItem, storeyElevation: number) 
 }
 
 export function PlanView() {
+  // The project's own line types are drawn with their dashes (they join the table the plan dashes by).
+  useLineTypes();
   const svgRef = useRef<SVGSVGElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [pts, setPts] = useState<Vec2[]>([]);

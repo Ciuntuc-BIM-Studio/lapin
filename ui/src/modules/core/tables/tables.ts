@@ -30,10 +30,10 @@ export async function importTable(args: TableRequest & { skipErrors?: boolean })
 }
 
 /** What Import table… opens with: the target (none: the dialog asks) and its heading. */
-export const tableDialog = create<{ target: string | null; title: string | null }>(() => ({ target: null, title: null }));
+export const tableDialog = create<{ target: string | null; title: string | null; defaults: Record<string, string> | null }>(() => ({ target: null, title: null, defaults: null }));
 
 /** Opens Import table…, on a target when one is given (Import loads…, Import property values…). */
-export function openImportTable(target?: string, title?: string): void {
-  tableDialog.setState({ target: target ?? null, title: title ?? null });
+export function openImportTable(target?: string, title?: string, defaults?: Record<string, string>): void {
+  tableDialog.setState({ target: target ?? null, title: title ?? null, defaults: defaults ?? null });
   useUi.setState({ dialog: 'importTable' });
 }
