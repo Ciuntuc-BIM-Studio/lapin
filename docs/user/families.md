@@ -47,7 +47,7 @@ An object is moved, turned, mirrored, copied and deleted like any element. It is
 
 ## An object's properties
 
-Select an object to see its **Family** section in the properties. It shows the family and its IFC class, and **Edit family…** opens the dialog on it. Each parameter has its own value: the family's value is shown in grey, and an empty field is the family's. Type a value to give this object its own, and clear the field to go back. With several objects of a family selected, a value is set on all of them. Under it, **Rotation**, **Height above the storey** and **Mirrored** are the object's own fields.
+Select an object to see its **Family** section in the properties. It shows the family and its IFC class, and **Edit family…** opens the dialog on it. Under it, the **Parameters** section lists only the parameters the part **publishes**: an instance parameter is a field for this object (an empty field is the part's value; type a value to give this object its own, clear it to go back), a type parameter is read-only, a derived one shows its formula. With several objects of a family selected, a value is set on all of them. See [Parts](studio-parts.md) for setting the parameters up. Under it, **Rotation**, **Height above the storey** and **Mirrored** are the object's own fields.
 
 ![An object's properties: its own width, the shelf switched off, the family's values in grey](shots/family-properties.webp)
 

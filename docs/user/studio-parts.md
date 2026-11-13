@@ -37,7 +37,34 @@ The panel on the left of the view lists what the part is made of, and is read ag
 - **Origin** has the three planes of the part: top (xy), front (xz) and right (yz). Point at one to see it in 3D, or click it to keep it shown; click again to hide it.
 - **Sketches** lists the part's sketches. A sketch of a solid (an extrusion, a sweep, a revolution, a loft) opens on its view, as **Edit sketch** does; because the sketch lives on its view, the edit mode ends as it opens. A part made of bodies opens in its editor, with the part chosen.
 - **Steps** lists what makes the part, in order: its operation or its bodies, then the steps done to it (push/pull, fillet, shell, split…). A step that is off is greyed; a body made only when a condition holds shows it (*off when not HasShelf*). For the steps done to the part, the buttons switch one off or on, move it earlier or later, or remove it. Pressing a step's name shows the part in Properties, where its numbers are edited.
-- **Parameters** lists each parameter with its value, its unit, its default, and whether it belongs to each object (*instance*) and is *published*. Type a new value and press Enter: the part's object follows. A parameter that differs from its default is in bold. The flags can be read for now; they become editable when parameters grow formulas.
+- **Parameters** lists each parameter with its value, its unit and its default, and whether it belongs to each object (*instance*) and is *published*. Type a new value and press Enter: the part's object follows. A parameter that differs from its default is in bold; a derived one shows its formula. **Parameters…** opens the full table (next section).
+
+## The parameter table
+
+**Parameters…** in the tree opens a wider table beside it, where the parameters are made and set up. Rows are grouped by their *group*, and each has:
+
+- **Name**: the label and, beside it, the key used in formulas.
+- **Default or formula**: the part's own value, which every object starts from. Type a value (a length in the project's unit, or with one: `1600`, `1.6m`), or type `=` and a formula of the other parameters (`=W / 2`): the parameter is then **derived**, its value is worked out on every ask and never stored. A value typed over a formula takes the formula away.
+- **This object**: this object's own value, for an *instance* parameter. A *type* parameter shows only its default, the same for every object, and a derived one shows `= value`, with its formula on hover.
+- **Inst.**: instance (each object may have its own value) or type (the part's value for all). Changing an instance parameter to type drops the objects' own values, and the table says so.
+- **Pub.**: published, shown in the object's Properties in the model. A parameter you leave unpublished is the part's inner working.
+- **⋯**: the row menu opens the rest: the key (renaming it renames it in formulas), label, description, group, minimum and maximum, kind and unit, **Move up**, **Move down** and **Delete**. The engine refuses a **Delete** while a formula or a sketch's dimension still uses the parameter, and says where, under the row.
+
+**+ Parameter** adds one of the kind picked beside it: length, number, angle, yes/no, text or whole number. Every change is one undo step.
+
+![The parameter table: groups, a derived parameter with its formula, type and instance, published](shots/studio-part-params.webp)
+
+## Flex
+
+**Flex** (the switch in the table) lets you try values without changing the part. While it is on, changing a value only asks the engine for a **preview**: the part with those values is drawn as a dashed **ghost** over the part in 3D, with its **volume** under the table. A value that does not give a part (a depth that is not positive, a formula that fails) shows the engine's reason instead of a ghost. An instance parameter flexes in **This object**, a type parameter in its default's cell.
+
+**Keep** applies the flexed values: an instance value to this object, a type parameter's value as the part's new default, all in one undo step. **Put back** forgets them; turning Flex off, or closing the table, does the same.
+
+![Flex: Width changed to 2 m, the ghost drawn dashed over the table, the volume under the table](shots/studio-part-flex.webp)
+
+## In the model: the published parameters
+
+Back in the model, a placed part's Properties show **only its published parameters**. An instance parameter is a field to edit for this object (an empty field is the part's default); a type parameter is read-only, with a *type* badge, since it belongs to the part; a derived one is read-only with a *formula* badge and its formula on hover. **Edit part (Tab)** goes into the edit mode, where the rest is set up.
 
 ## Constrain part: a part's own sketches
 

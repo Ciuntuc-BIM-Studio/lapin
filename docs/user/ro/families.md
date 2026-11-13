@@ -47,7 +47,7 @@ Un obiect se mută, se rotește, se oglindește, se copiază și se șterge ca o
 
 ## Proprietățile unui obiect
 
-Selectează un obiect ca să vezi secțiunea **Familie** din proprietăți. Arată familia și clasa ei IFC, iar **Editează familia…** deschide dialogul pe ea. Fiecare parametru are valoarea lui: cea a familiei e arătată cenușiu, iar un câmp gol este al familiei. Scrie o valoare ca să-i dai obiectului una proprie și golește câmpul ca să revii. Cu mai multe obiecte ale unei familii selectate, o valoare se pune pe toate. Dedesubt, **Rotație**, **Înălțimea deasupra nivelului** și **Oglindit** sunt câmpurile proprii ale obiectului.
+Selectează un obiect ca să vezi secțiunea **Familie** din proprietăți. Arată familia și clasa ei IFC, iar **Editează familia…** deschide dialogul pe ea. Dedesubt, secțiunea **Parametri** listează doar parametrii pe care piesa îi **publică**: un parametru de instanță este un câmp pentru acest obiect (un câmp gol e valoarea piesei; scrie o valoare ca să dai obiectului una proprie, șterge-o ca să te întorci), unul de tip este doar de citit, unul derivat își arată formula. Cu mai multe obiecte ale unei familii selectate, o valoare se pune pe toate. Vezi [Piese](studio-parts.md) pentru configurarea parametrilor. Mai jos, **Rotație**, **Înălțime deasupra nivelului** și **Oglindit** sunt câmpurile proprii ale obiectului.
 
 ![Proprietățile unui obiect: lățimea lui proprie, raftul oprit, valorile familiei cenușii](shots/family-properties.webp)
 

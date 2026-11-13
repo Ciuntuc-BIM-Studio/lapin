@@ -1,7 +1,7 @@
 /** The part's tree as `studio.partTree` answers it, and what the panel shows of it (pure, tested in editMode.test.ts). */
 
 export type PartPlane = 'xy' | 'xz' | 'yz';
-export type PartParamKind = 'length' | 'number' | 'angle' | 'bool';
+export type PartParamKind = 'length' | 'number' | 'angle' | 'bool' | 'text' | 'integer';
 
 export interface TreeFrame { origin: number[]; right: number[]; up: number[]; normal: number[] }
 export interface TreeSketch {
@@ -24,7 +24,7 @@ export interface StoredSketch {
 export interface TreeStep { index: number; kind: string; label: string; suppressed?: boolean; when?: string | number; sketch?: string; feature?: number }
 export interface TreeParam {
   key: string; label: string; kind: PartParamKind; default: number; value: number; instance: boolean; published: boolean;
-  unit?: string; group?: string; description?: string;
+  unit?: string; group?: string; description?: string; formula?: string; derived?: boolean; min?: number; max?: number;
 }
 export interface PartTree {
   id: string; name: string; kind: 'formula' | 'recipe'; partTypeId?: string; planes: PartPlane[];
@@ -43,7 +43,7 @@ export interface StepRow {
   feature: number | null;
   canUp: boolean; canDown: boolean; canRemove: boolean; canToggle: boolean;
 }
-export interface ParamRow { key: string; label: string; kind: PartParamKind; value: number; default: number; unit: string; changed: boolean; instance: boolean; published: boolean; group: string }
+export interface ParamRow { key: string; label: string; kind: PartParamKind; value: number; default: number; unit: string; changed: boolean; instance: boolean; published: boolean; group: string; derived: boolean; formula: string }
 
 /** A recipe sketch opens on its view; a formula part's body opens in the part's editor; one with neither is only listed. */
 export function sketchRows(tree: PartTree): SketchRow[] {
@@ -79,7 +79,7 @@ export function stepRows(tree: PartTree): StepRow[] {
 
 export const paramRows = (tree: PartTree): ParamRow[] => tree.params.map((p) => ({
   key: p.key, label: p.label, kind: p.kind, value: p.value, default: p.default, unit: p.unit ?? (p.kind === 'angle' ? '°' : ''),
-  changed: Math.abs(p.value - p.default) > 1e-9, instance: p.instance, published: p.published, group: p.group ?? '',
+  changed: Math.abs(p.value - p.default) > 1e-9, instance: p.instance, published: p.published, group: p.group ?? '', derived: !!p.derived || !!p.formula, formula: p.formula ?? '',
 }));
 
 /** The origin plane's corners (metres) in the part's frame: a square of `half` round the origin; x then y of the plane, z up. */
