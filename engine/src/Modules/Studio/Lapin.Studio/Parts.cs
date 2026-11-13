@@ -56,7 +56,7 @@ public static class Parts
         return o;
     }
 
-    static double Eval(JsonNode? n, IReadOnlyDictionary<string, double> values, string what)
+    internal static double Eval(JsonNode? n, IReadOnlyDictionary<string, double> values, string what)
     {
         if (n is null) return 0;
         var text = n is JsonValue jv && jv.TryGetValue<double>(out var d) ? d.ToString("R", CultureInfo.InvariantCulture) : n.ToString();
@@ -72,7 +72,7 @@ public static class Parts
         _ => (new Vec3(1, 0, 0), new Vec3(0, 1, 0), Vec3.UnitZ),
     };
 
-    static string BodyName(JsonObject b, int i) => (string?)b["name"] is { Length: > 0 } nm ? nm : $"Body {i}";
+    internal static string BodyName(JsonObject b, int i) => (string?)b["name"] is { Length: > 0 } nm ? nm : $"Body {i}";
 
     /// <summary>The bodies of a part for some values, in the part's own frame (metres): each with its name and material role.</summary>
     public static List<(string Name, string? Material, Solid Solid)> Bodies(JsonObject def, IReadOnlyDictionary<string, double> values)
@@ -83,12 +83,30 @@ public static class Parts
         {
             var name = BodyName(b, ++i);
             if (b["when"] is { } when && Eval(when, values, $"{name}'s condition") == 0) continue;
-            var (u, v, n) = Frame((string?)b["plane"] ?? "xy");
-            var off = b["offset"] is JsonArray oa && oa.Count == 3 ? new Vec3(Eval(oa[0], values, name), Eval(oa[1], values, name), Eval(oa[2], values, name)) : default;
-            List<Vec3> Ring(JsonNode? pts) => [.. (pts as JsonArray ?? []).OfType<JsonArray>().Select(p => off + u * Eval(p[0], values, $"{name}'s corners") + v * Eval(p[1], values, $"{name}'s corners"))];
-            var outer = Ring(b["points"]);
+            Vec3 Offset(JsonNode? o) => o is JsonArray oa && oa.Count == 3 ? new Vec3(Eval(oa[0], values, name), Eval(oa[1], values, name), Eval(oa[2], values, name)) : default;
+            var off = Offset(b["offset"]);
+            List<Vec3> outer;
+            List<IReadOnlyList<Vec3>> holes;
+            Vec3 n;
+            if (b["sketch"] != null)
+            {
+                // Drawn from a part's own sketch (§9 point 2): its outline solved with these values, on the sketch's plane.
+                var (plane, sketchOffset, ring, inner) = PartSketches.Profile(def, b, values, name);
+                var (su, sv, sn) = Frame(plane);
+                off += Offset(sketchOffset);
+                n = sn;
+                outer = [.. ring.Select(p => off + su * p.X + sv * p.Y)];
+                holes = [.. inner.Select(h => (IReadOnlyList<Vec3>)h.Select(p => off + su * p.X + sv * p.Y).ToList())];
+            }
+            else
+            {
+                var (u, v, pn) = Frame((string?)b["plane"] ?? "xy");
+                n = pn;
+                List<Vec3> Ring(JsonNode? pts) => [.. (pts as JsonArray ?? []).OfType<JsonArray>().Select(p => off + u * Eval(p[0], values, $"{name}'s corners") + v * Eval(p[1], values, $"{name}'s corners"))];
+                outer = Ring(b["points"]);
+                holes = (b["holes"] as JsonArray ?? []).Select(h => (IReadOnlyList<Vec3>)Ring(h)).Where(h => h.Count >= 3).ToList();
+            }
             if (outer.Count < 3) continue;
-            var holes = (b["holes"] as JsonArray ?? []).Select(h => (IReadOnlyList<Vec3>)Ring(h)).Where(h => h.Count >= 3).ToList();
             var depth = Eval(b["depth"], values, $"{name}'s depth");
             if (Math.Abs(depth) < 1e-6) continue;
             if (Prism.Extrude(outer, holes, n * depth, "part") is { } solid) o.Add((name, (string?)b["material"], solid));
@@ -120,10 +138,19 @@ public static class Parts
                 if (Flag(po[flag]) is { } fb) pc[flag] = fb;
             ps.Add((JsonNode)pc);
         }
+        // A part's own sketches (§9 point 2), checked and solved with the defaults.
+        var defaults = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+        foreach (var p in ps.OfType<JsonObject>()) defaults[(string)p["key"]!] = Num(p["default"]) ?? 0;
+        var sketches = o["sketches"] is JsonArray { Count: > 0 } given ? PartSketches.Check(given, defaults) : null;
         var bodies = new JsonArray();
         foreach (var b in o["bodies"] as JsonArray ?? [])
         {
             if (b is not JsonObject bo) throw new CommandException("Each body is {plane, points, depth}.");
+            if (bo["sketch"] is JsonValue sv && sv.TryGetValue<string>(out _))
+            {
+                bodies.Add((JsonNode)PartSketches.CheckBody(bo, sketches ?? []));
+                continue;
+            }
             var plane = (string?)bo["plane"] ?? "xy";
             if (!Planes.Contains(plane)) throw new CommandException($"A body's plane is {string.Join(", ", Planes)}.");
             if (bo["points"] is not JsonArray { Count: >= 3 } pts || pts.Any(p => p is not JsonArray { Count: 2 })) throw new CommandException("A body's outline has three corners at least, each [x, y].");
@@ -131,7 +158,9 @@ public static class Parts
         }
         if (bodies.Count == 0) throw new CommandException("A part has one body at least.");
         var cls = ((string?)o["ifcClass"])?.Trim() is { Length: > 3 } c && c.StartsWith("Ifc", StringComparison.Ordinal) ? c : IfcClass.BuildingElementProxy;
-        var def = new JsonObject { ["ifcClass"] = cls, ["params"] = ps, ["bodies"] = bodies };
+        var def = new JsonObject { ["ifcClass"] = cls, ["params"] = ps };
+        if (sketches != null) def["sketches"] = sketches;
+        def["bodies"] = bodies;
         if (((string?)o["description"])?.Trim() is { Length: > 0 } desc) def["description"] = desc;
         if (((string?)o["planSymbol"])?.Trim() is { Length: > 0 } sym) def["planSymbol"] = sym;
         // Built with its defaults: every corner, depth and condition reads, and something is made.
@@ -413,10 +442,37 @@ public static class Parts
             var def = DefOf(type);
             var values = def != null ? Values(def, e.Attrs["values"] as JsonObject) : [];
             var (place, dir, _) = Placing(e, m);
+            // The part's own sketches (§9 point 2): solved with this instance's values, their constraints and how they stand.
+            foreach (var sk in (def != null ? PartSketches.SketchesOf(def) : []).OfType<JsonObject>())
+            {
+                var plane = (string?)sk["plane"] ?? "xy";
+                var (u, v, n) = Frame(plane);
+                Vec3 off = default;
+                try { if (sk["offset"] is JsonArray oa && oa.Count == 3) off = new Vec3(Eval(oa[0], values, "offset"), Eval(oa[1], values, "offset"), Eval(oa[2], values, "offset")); }
+                catch (CommandException) { }
+                var o = new JsonObject
+                {
+                    ["id"] = (string?)sk["id"], ["name"] = (string?)sk["name"], ["plane"] = plane, ["local"] = true, ["shapeIds"] = new JsonArray(),
+                    ["frame"] = FrameJson(place(off), dir(u), dir(v), dir(n)),
+                };
+                foreach (var (key, val) in PartSketches.Describe(sk, values)) o[key] = val?.DeepClone();
+                sketches.Add((JsonNode)o);
+            }
             var i = 0;
             foreach (var b in (def?["bodies"] as JsonArray ?? []).OfType<JsonObject>())
             {
                 var name = BodyName(b, ++i);
+                if ((string?)b["sketch"] is { } bodySketch)
+                {
+                    var made = new JsonObject { ["index"] = k++, ["kind"] = "extrude", ["label"] = name, ["sketch"] = bodySketch };
+                    if (b["when"] is { } bw)
+                    {
+                        made["when"] = bw.DeepClone();
+                        try { if (Eval(bw, values, name) == 0) made["suppressed"] = true; } catch (CommandException) { }
+                    }
+                    steps.Add((JsonNode)made);
+                    continue;
+                }
                 var plane = (string?)b["plane"] ?? "xy";
                 var (u, v, n) = Frame(plane);
                 Vec3 off = default;
@@ -426,8 +482,8 @@ public static class Parts
                 {
                     ["id"] = $"body:{i}", ["name"] = name, ["plane"] = plane, ["shapeIds"] = new JsonArray(),
                     ["points"] = b["points"]?.DeepClone(), ["frame"] = FrameJson(place(off), dir(u), dir(v), dir(n)),
-                    // A body's corners stay formulas until the upgrade of §9 makes them a drafted sketch with fix and distanceX/Y constraints:
-                    // every corner given, nothing left free.
+                    // A body's corners stay formulas until studio.constrainPart makes them a sketch of the part's own with distanceX/Y
+                    // constraints (PartSketches): every corner given, nothing left free.
                     ["constraintCount"] = 0, ["constraints"] = new JsonArray(), ["status"] = "solved", ["dof"] = 0,
                 });
                 var step = new JsonObject { ["index"] = k++, ["kind"] = "extrude", ["label"] = name, ["sketch"] = $"body:{i}" };
@@ -540,6 +596,8 @@ public static class Parts
         r.Command("partFromSketch", "Part from sketch", (ctx, a) => FromSketch(ctx, a, "Part"));
         r.Query("exportPart", (q, a) => FileText(Require(q.Model, (string?)a["id"], withDef: false), FileFormat, FileVersion, FileExtension));
         r.Command("importPart", "Import part", Import);
+        // A part's own sketches: the conversion of formula corners and their editing (§9 point 2).
+        PartSketches.Register(r);
     }
 
     /// <summary>A parameter of a definition as read (declared last, so the catalogue's reading of this file finds the commands' class).</summary>
