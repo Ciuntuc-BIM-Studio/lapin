@@ -3,6 +3,18 @@
 import type { Language } from './index';
 
 export const IT: Record<string, string> = {
+  // Decision 537: a graph palette's values, shared or each user's own
+  "Palette values": "Valori della palette",
+  "Shared": "Condivisi",
+  "Each user's own": "Propri di ogni utente",
+  "The graph's values are the defaults: what each user changes in the palette stays on their computer, and Bake does not change the graph.": "I valori del grafo sono quelli predefiniti: ciò che ogni utente cambia nella palette resta sul suo computer, e Genera non cambia il grafo.",
+  "What the palette changes is written into the graph: everyone sees the same values.": "Ciò che la palette cambia viene scritto nel grafo: tutti vedono gli stessi valori.",
+  "Your own value: the graph's differs": "Il tuo valore: quello del grafo è diverso",
+  "Your own values, kept on this computer": "I tuoi valori, conservati su questo computer",
+  "Forget your values: the graph's again": "Dimentica i tuoi valori: di nuovo quelli del grafo",
+  "Reset to the graph's values": "Ripristina i valori del grafo",
+  "Write your values into the graph, for everyone (one undo step)": "Scrivi i tuoi valori nel grafo, per tutti (un passo di annullamento)",
+  "Save as the graph's values": "Salva come valori del grafo",
   // Decision 536: a graph's palette, its tool in My tools, groups
   "Open the graph in the Graphs panel": "Apri il grafo nel pannello Grafi",
   "This graph has no inputs yet: add Number, Choice, Storey or other input nodes in the Graphs panel, and they become its fields here.": "Questo grafo non ha ancora input: aggiungi nodi Numero, Scelta, Piano o altri nodi di input nel pannello Grafi, e diventano qui i suoi campi.",

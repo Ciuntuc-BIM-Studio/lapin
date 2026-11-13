@@ -6,7 +6,8 @@
  *
  * A field's value belongs to the graph: while a field changes the graph is evaluated with it (graphs.evaluate's
  * `values`, no undo step), and once it is let go of it is written into the input node (graphs.set, one undo step), so
- * the canvas, Bake and a colleague opening the project see the same values.
+ * the canvas, Bake and a colleague opening the project see the same values. A graph whose Palette values are each user's
+ * own keeps them on the user's computer instead (ownValues.ts, decision 537).
  */
 
 import { readNumber, type AskField, type FieldState } from '../../shell/askFields';
@@ -15,8 +16,11 @@ import { showValue, type GraphJson, type GraphNode, type NodeSpec } from './grap
 /** What a node shows in the palette (format 2): an input's field label, hidden, order, least, most, step; an output shown. */
 export interface NodePalette { label?: string; hide?: boolean; order?: number; min?: number; max?: number; step?: number; show?: boolean }
 
-/** The graph as a tool of My tools (format 2): shown, its button's name, icon and tooltip, its group. */
-export interface GraphTool { show?: boolean; name?: string; icon?: string; tooltip?: string; group?: string }
+/**
+ * The graph as a tool of My tools (format 2): shown, its button's name, icon and tooltip, its group, and whose its
+ * palette's values are ("shared", the default, or each user's "own": ownValues.ts, decision 537).
+ */
+export interface GraphTool { show?: boolean; name?: string; icon?: string; tooltip?: string; group?: string; values?: 'shared' | 'own' }
 
 /** The group of My tools a graph's tool goes in when it names none. */
 export const GRAPHS_GROUP = 'Graphs';

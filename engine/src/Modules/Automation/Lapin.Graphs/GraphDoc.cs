@@ -45,8 +45,15 @@ public sealed class GraphDoc
     public const int MaxDepth = 8;
     public IReadOnlyList<GraphNode> Nodes { get; }
     public IReadOnlyList<GraphWire> Wires { get; }
-    /// <summary>The graph as a tool of My tools: show, name, icon, tooltip, group (format 2); null when it is none.</summary>
+    /// <summary>The graph as a tool of My tools: show, name, icon, tooltip, group, values (format 2); null when it is none.</summary>
     public JsonObject? Tool { get; init; }
+    /// <summary>The tool's palette values: "shared" (the default, also when the key is absent) or "own".</summary>
+    public const string SharedValues = "shared", OwnValues = "own";
+    /// <summary>
+    /// Whether each user keeps the palette's values on their own computer (the tool's <c>values: "own"</c>, decision 537):
+    /// the graph's values are then only the defaults, and Bake from the palette does not write them into the graph.
+    /// </summary>
+    public bool EachUsersOwnValues => (string?)Tool?["values"] == OwnValues;
     readonly Dictionary<string, GraphNode> _byId;
 
     GraphDoc(List<GraphNode> nodes, List<GraphWire> wires)
@@ -175,13 +182,14 @@ public sealed class GraphDoc
         return o.Count > 0 ? o : null;
     }
 
-    /// <summary>The graph's tool settings, only those known: show, name, icon, tooltip, group.</summary>
+    /// <summary>The graph's tool settings, only those known: show, name, icon, tooltip, group, values ("shared" or "own"; anything else dropped).</summary>
     static JsonObject? ToolOf(JsonNode? n)
     {
         if (n is not JsonObject t) return null;
         var o = new JsonObject();
         if (Flag(t["show"]) is { } show) o["show"] = show;
         foreach (var (k, most) in new[] { ("name", 80), ("icon", 40), ("tooltip", 300), ("group", 60) }) if (Text(t[k], most) is { } s) o[k] = s;
+        if (Text(t["values"], 10) is SharedValues or OwnValues) o["values"] = (string?)t["values"];
         return o.Count > 0 ? o : null;
     }
 

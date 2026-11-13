@@ -3,6 +3,18 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // Decision 537: a graph palette's values, shared or each user's own
+  "Palette values": "面板数值",
+  "Shared": "共享",
+  "Each user's own": "每位用户各自的",
+  "The graph's values are the defaults: what each user changes in the palette stays on their computer, and Bake does not change the graph.": "图的数值是默认值：每位用户在面板中更改的内容保留在其本人的计算机上，烘焙不会更改图.",
+  "What the palette changes is written into the graph: everyone sees the same values.": "面板中的更改会写入图中：所有人看到相同的数值.",
+  "Your own value: the graph's differs": "您自己的数值：与图的数值不同",
+  "Your own values, kept on this computer": "您自己的数值，保存在此计算机上",
+  "Forget your values: the graph's again": "忘记您的数值：恢复为图的数值",
+  "Reset to the graph's values": "恢复为图的数值",
+  "Write your values into the graph, for everyone (one undo step)": "将您的数值写入图中，供所有人使用（一个撤销步骤）",
+  "Save as the graph's values": "保存为图的数值",
   // Decision 536: a graph's palette, its tool in My tools, groups
   "Open the graph in the Graphs panel": "在图面板中打开该图",
   "This graph has no inputs yet: add Number, Choice, Storey or other input nodes in the Graphs panel, and they become its fields here.": "此图还没有输入项：在图面板中添加数字、选择、楼层或其他输入节点，它们就会成为这里的字段.",

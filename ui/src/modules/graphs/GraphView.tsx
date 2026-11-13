@@ -528,6 +528,16 @@ function ToolSettings({ graph, onChange }: { graph: GraphJson; onChange: (g: Gra
           {text('icon', 'Icon', 'wall, grid, star, P…')}
           {text('tooltip', 'Tooltip', '')}
           {text('group', 'Group in My tools', tr(GRAPHS_GROUP))}
+          <label className="field"><span>Palette values</span>
+            <select value={t.values === 'own' ? 'own' : 'shared'} data-tool-setting="values"
+              onChange={(e) => change({ values: e.target.value === 'own' ? 'own' : undefined })}>
+              <option value="shared">Shared</option>
+              <option value="own">Each user's own</option>
+            </select>
+          </label>
+          <p className="muted small">{t.values === 'own'
+            ? "The graph's values are the defaults: what each user changes in the palette stays on their computer, and Bake does not change the graph."
+            : 'What the palette changes is written into the graph: everyone sees the same values.'}</p>
         </>
       )}
     </div>

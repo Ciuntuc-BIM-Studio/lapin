@@ -3,6 +3,18 @@
 import type { Language } from './index';
 
 export const FR: Record<string, string> = {
+  // Decision 537: a graph palette's values, shared or each user's own
+  "Palette values": "Valeurs de la palette",
+  "Shared": "Partagées",
+  "Each user's own": "Propres à chaque utilisateur",
+  "The graph's values are the defaults: what each user changes in the palette stays on their computer, and Bake does not change the graph.": "Les valeurs du graphe sont les valeurs par défaut : ce que chaque utilisateur change dans la palette reste sur son ordinateur, et Générer ne modifie pas le graphe.",
+  "What the palette changes is written into the graph: everyone sees the same values.": "Ce que la palette change est écrit dans le graphe : tout le monde voit les mêmes valeurs.",
+  "Your own value: the graph's differs": "Votre propre valeur : celle du graphe est différente",
+  "Your own values, kept on this computer": "Vos propres valeurs, gardées sur cet ordinateur",
+  "Forget your values: the graph's again": "Oublier vos valeurs : de nouveau celles du graphe",
+  "Reset to the graph's values": "Revenir aux valeurs du graphe",
+  "Write your values into the graph, for everyone (one undo step)": "Écrire vos valeurs dans le graphe, pour tous (une étape d'annulation)",
+  "Save as the graph's values": "Enregistrer comme valeurs du graphe",
   // Decision 536: a graph's palette, its tool in My tools, groups
   "Open the graph in the Graphs panel": "Ouvrir le graphe dans le panneau Graphes",
   "This graph has no inputs yet: add Number, Choice, Storey or other input nodes in the Graphs panel, and they become its fields here.": "Ce graphe n'a pas encore de saisies : ajoutez des nœuds Nombre, Choix, Niveau ou d'autres nœuds de saisie dans le panneau Graphes, et ils deviennent ses champs ici.",

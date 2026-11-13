@@ -62,7 +62,11 @@ A graph can be a tool of its own: its inputs become the fields of a small **pale
 - **What it gives**: every **Watch** node shows its value in the palette, under the fields; tick **Show its values in the palette** on any other node (a **Count** of the walls made, a **Sum** of lengths) to show it too. A list shows its first items and how many in all, a list of lists as a small table.
 - **Using it**: change a field and the ghost follows at once, the model untouched. Let go of it (release the slider, press **Enter**, tick a box, choose) and the value is written into the graph: one undo step, and the canvas shows it too. **Bake** makes what the ghost shows, in one undo step.
 
-The values belong to the graph, kept with the project: a colleague opening it gets the same tool, the same fields and the values last used. In a shared session the guests get no palette, as they get no graph.
+- **Palette values**, under **The graph as a tool**, says whose the values are:
+  - **Shared** (the default): what you let go of in the palette is written into the graph, as above. The values belong to the graph, kept with the project: a colleague opening it gets the same tool, the same fields and the values last used.
+  - **Each user's own**: the graph's values are only the defaults. What you change in the palette is kept on your computer, for this project and this graph, and never written into the graph; a colleague sees the graph's values, or their own. A small dot beside a field marks a value of yours that differs from the graph's. The ghost and **Bake** use your values, and Bake makes only the elements: the graph stays as it was, and the undo step is still "Bake graph". **Reset to the graph's values** forgets yours; **Save as the graph's values** writes them into the graph for everyone, in one undo step. A value of yours that no longer fits (its input node deleted or changed, a choice no longer offered, a number outside its least and most, a storey or a type gone) gives way to the graph's.
+
+In a shared session the guests get no palette, as they get no graph.
 
 ## Groups
 

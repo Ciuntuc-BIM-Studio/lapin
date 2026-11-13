@@ -805,6 +805,52 @@ public sealed class GraphTests : IDisposable
     }
 
     [Fact]
+    public void The_tools_palette_values_setting_is_kept_only_when_known_and_shared_by_default()
+    {
+        Assert.False(GraphDoc.Read(PaletteWalls()).EachUsersOwnValues);
+        var own = PaletteWalls();
+        own["tool"]!["values"] = "own";
+        var doc = GraphDoc.Read(own);
+        Assert.True(doc.EachUsersOwnValues);
+        Assert.Equal("own", (string?)doc.ToJson()["tool"]!["values"]);
+        var other = PaletteWalls();
+        other["tool"]!["values"] = "everyone";
+        Assert.Null(GraphDoc.Read(other).ToJson()["tool"]!["values"]);
+        Assert.False(GraphDoc.Read(other).EachUsersOwnValues);
+    }
+
+    [Fact]
+    public void Baking_with_each_users_own_values_makes_the_elements_and_leaves_the_graphs_constants()
+    {
+        var f = Project();
+        var g = PaletteWalls();
+        g["tool"]!["values"] = "own";
+        var id = (string)f.Run("graphs.save", new JsonObject { ["name"] = "Row", ["graph"] = g })!["id"]!;
+        var before = f.Model.Get(id)!.Attrs["graph"]!.ToJsonString();
+        // The user's own values: the walls made with them, the graph untouched, the step still "Bake graph".
+        f.Run("graphs.bake", new JsonObject { ["id"] = id, ["values"] = new JsonObject { ["count"] = 2 } });
+        Assert.Equal("Bake graph", f.Session.History.UndoLabel);
+        Assert.Equal(2, f.Model.OfClass(IfcClass.Wall).Count());
+        Assert.Equal(before, f.Model.Get(id)!.Attrs["graph"]!.ToJsonString());
+        f.Session.Undo();
+        Assert.Empty(f.Model.OfClass(IfcClass.Wall));
+        Assert.Equal(before, f.Model.Get(id)!.Attrs["graph"]!.ToJsonString());
+        // Save as the graph's values: graphs.set writes them, one step of its own.
+        f.Run("graphs.set", new JsonObject { ["id"] = id, ["values"] = new JsonObject { ["count"] = 4 } });
+        Assert.Equal("Change graph inputs", f.Session.History.UndoLabel);
+        Assert.Equal(4, Lapin.Model.Json.Number(GraphDoc.Read(f.Model.Get(id)!.Attrs["graph"]).Find("count")!.Values["value"]));
+
+        // A shared graph keeps its values with write: false too (a caller's own choice).
+        var shared = (string)f.Run("graphs.save", new JsonObject { ["name"] = "Shared", ["graph"] = PaletteWalls() })!["id"]!;
+        var kept = f.Model.Get(shared)!.Attrs["graph"]!.ToJsonString();
+        f.Run("graphs.bake", new JsonObject { ["id"] = shared, ["values"] = new JsonObject { ["count"] = 1 }, ["write"] = false });
+        Assert.Equal(kept, f.Model.Get(shared)!.Attrs["graph"]!.ToJsonString());
+        // And an own graph written when the caller asks (write: true).
+        f.Run("graphs.bake", new JsonObject { ["id"] = id, ["values"] = new JsonObject { ["count"] = 5 }, ["write"] = true });
+        Assert.Equal(5, Lapin.Model.Json.Number(GraphDoc.Read(f.Model.Get(id)!.Attrs["graph"]).Find("count")!.Values["value"]));
+    }
+
+    [Fact]
     public void A_type_node_gives_the_type_chosen_else_the_first_of_its_class_by_name()
     {
         var f = Project();
