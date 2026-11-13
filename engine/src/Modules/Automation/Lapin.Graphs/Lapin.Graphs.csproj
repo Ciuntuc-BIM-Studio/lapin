@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Visual graphs (docs/plan-visual-graphs.md, decision 527): LapinGraph entities, nodes wired into a graph the engine
+    evaluates (its own nodes and the product's commands and queries), a ghost of what it would make built on a copy of the
+    model, and Bake, one undo step. An open module, in the free edition and in the browser.
+  -->
+  <PropertyGroup>
+    <LapinModuleId>graphs</LapinModuleId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../Model/Lapin.Model/Lapin.Model.csproj" Private="false" />
+    <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
+  </ItemGroup>
+</Project>

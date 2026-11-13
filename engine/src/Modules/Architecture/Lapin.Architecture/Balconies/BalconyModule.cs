@@ -336,6 +336,13 @@ public static class BalconyModule
         ctx.Replace(b.With(attrs: attrs));
     }
 
+    /// <summary>A loggia's back wall takes its host's top (<see cref="WallTop"/>).</summary>
+    static void CopyTop(Entity host, JsonObject attrs)
+    {
+        foreach (var k in new[] { WallTop.Key, WallTop.OffsetKey })
+            if (host.Attrs[k] is { } v) attrs[k] = v.DeepClone(); else attrs.Remove(k);
+    }
+
     public static Entity? RecessOf(IModelView m, string balconyId) => m.OfClass(IfcClass.OpeningElement).FirstOrDefault(o => o.Str("balconyId") == balconyId);
     public static Entity? BackWallOf(IModelView m, string balconyId) => m.OfClass(IfcClass.Wall).FirstOrDefault(o => o.Str("balconyId") == balconyId);
 
@@ -361,7 +368,7 @@ public static class BalconyModule
         var fields = BalconySpec.Read(b);
         var width = Math.Max(0.3, Json.Number(fields["width"]) ?? 3);
         var depth = Math.Max(0, Json.Number(fields["depth"]) ?? 1.5);
-        var height = Math.Min(Math.Max(1.8, Json.Number(fields["recessHeight"]) ?? 2.6), wall.Num("height", Walls.DefaultHeight));
+        var height = Math.Min(Math.Max(1.8, Json.Number(fields["recessHeight"]) ?? 2.6), Walls.HeightOf(m, wall));
         var cheek = Math.Max(0.05, Json.Number(fields["cheekThickness"]) ?? 0.2);
         var along = b.Num("along");
         if (recess != null && Openings.WallOf(m, recess.Id)?.Id != wall.Id) { ctx.Remove(recess.Id); recess = null; }
@@ -389,10 +396,12 @@ public static class BalconyModule
             if (back == null)
             {
                 var storey = Spatial.StoreyOf(m, wall.Id)?.Id ?? Spatial.StoreyOf(m, b.Id)!.Id;
-                back = Walls.AddUnjoined(ctx, storey, s, e, wall.Num("height", Walls.DefaultHeight), wall.Num("baseOffset"), Walls.TypeOf(m, wall.Id));
+                back = Walls.AddUnjoined(ctx, storey, s, e, WallTop.Stored(wall), wall.Num("baseOffset"), Walls.TypeOf(m, wall.Id));
                 back = m.Get(back.Id)!;
                 var ba = back.CloneAttrs();
                 ba["balconyId"] = b.Id;
+                // Its top as its host's: the storey above it follows both.
+                CopyTop(wall, ba);
                 ctx.Replace(back.With(name: $"{back.Name} (loggia)", attrs: ba));
                 // Its exterior on the same side as its host's.
                 var hostUsage = Walls.UsageOf(m, wall.Id) is { } hu ? Layers.ReadUsage(hu)?.Negative : null;
@@ -402,7 +411,8 @@ public static class BalconyModule
             else
             {
                 var ba = back.CloneAttrs();
-                (ba["start"], ba["end"], ba["height"], ba["baseOffset"]) = (new JsonArray(s.X, s.Y), new JsonArray(e.X, e.Y), wall.Num("height", Walls.DefaultHeight), wall.Num("baseOffset"));
+                (ba["start"], ba["end"], ba["height"], ba["baseOffset"]) = (new JsonArray(s.X, s.Y), new JsonArray(e.X, e.Y), WallTop.Stored(wall), wall.Num("baseOffset"));
+                CopyTop(wall, ba);
                 ctx.Replace(back.With(attrs: ba));
             }
         }

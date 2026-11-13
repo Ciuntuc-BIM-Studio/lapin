@@ -23,6 +23,28 @@ sealed class StoreyCopies : IStoreyCopy
 
     public IEnumerable<string> RelationKeys => ["roofIds"];
 
+    /// <summary>
+    /// A wall copied whose top went to a storey named (WallTop): its copy's goes as many storeys up from its new storey as
+    /// the original's went from its own; with none so high, the copy stands unconnected at the original's height. A top to
+    /// the storey above needs nothing: it is the storey above the copy's.
+    /// </summary>
+    static void RemapTop(ICommandContext ctx, Entity copy, string originalId, Entity target)
+    {
+        var m = ctx.Model;
+        if (WallTop.Of(copy) is not { } top || top == WallTop.Above || m.Get(originalId) is not { } original || Spatial.StoreyOf(m, original.Id) is not { } from) return;
+        var storeys = Spatial.Storeys(m).ToList();
+        var (i, j, k) = (storeys.FindIndex(s => s.Id == from.Id), storeys.FindIndex(s => s.Id == top), storeys.FindIndex(s => s.Id == target.Id));
+        var attrs = copy.CloneAttrs();
+        if (i >= 0 && j >= 0 && k >= 0 && k + (j - i) is var n && n >= 0 && n < storeys.Count && n != k) attrs[WallTop.Key] = storeys[n].Id;
+        else
+        {
+            attrs["height"] = System.Math.Round(WallTop.Height(m, original), 6);
+            attrs.Remove(WallTop.Key);
+            attrs.Remove(WallTop.OffsetKey);
+        }
+        ctx.Replace(copy.With(attrs: attrs));
+    }
+
     public void Copied(ICommandContext ctx, StoreyCopyStep step)
     {
         var m = ctx.Model;
@@ -35,6 +57,7 @@ sealed class StoreyCopies : IStoreyCopy
                 ctx.Remove(copy.Id);
                 continue;
             }
+            if (copy.Class == IfcClass.Wall) { RemapTop(ctx, copy, o, step.Target); continue; }
             if (copy.Class is not (IfcClass.Stair or IfcClass.Ramp)) continue;
             if (copy.Str("topStoreyId") is { } top && m.Get(o) is { } original && Spatial.StoreyOf(m, original.Id) is { } from)
             {

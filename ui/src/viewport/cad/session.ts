@@ -15,6 +15,7 @@ import { beginMove3d } from '../moveIn3d';
 import { useWorkPlane } from '../sketch/sketch3d';
 import { deleteElements } from '../../engine/dependents';
 import { ucsOf, useLocation } from '../../app/location';
+import { directionFrom, directionOf, normalizeTurn, rotatedShape, rotationFromReference } from './rotate';
 import { applyOrtho, parseCoordinateInput, parseScalar, pointAlong } from './input';
 import { lengthText, parseLength } from '../../engine/unitsStore';
 import { arcThrough, dist, fromJson, toJson, type Shape } from './shapes';
@@ -77,6 +78,8 @@ export interface Step {
   escape?: () => void | Promise<void>;
   /** An element clicked in the 3D view (where a click has no point on a drawing): the step takes it, rather than the selection. */
   element?: (id: string) => Next;
+  /** The step is a rectangle's other corner: the box at the cursor offers width and height as well as length and angle (the mode remembered by this key). */
+  rect?: string;
   /** The element under the cursor is lit while the step waits for one (Match properties' targets, decision 490). */
   hover?: boolean;
 }
@@ -131,7 +134,7 @@ async function advance(next: Next): Promise<void> {
   if (step) useCad.setState({ step });
   else useCad.setState({ step: null, command: null });
   // A point asked for from a base: its length and angle can be typed at the cursor.
-  if (step && step.want === 'point' && step.base) liveBegin('cad', step.base, (p, typed, angle) => void feedPoint(p, { length: typed, angle }), { delta: !!step.trace });
+  if (step && step.want === 'point' && step.base) liveBegin('cad', step.base, (p, typed, angle) => void feedPoint(p, { length: typed, angle }), { delta: !!step.trace, ...(step.rect ? { rect: step.rect } : {}) });
   else liveEnd('cad');
   if (step?.trace && step.base) traceBegin('cad', step.base, step.trace);
   else traceEnd('cad');
@@ -245,7 +248,7 @@ const rectOf = (a: Vec2, b: Vec2): Shape => ({ type: 'polyline', pts: [a, { x: b
 function rectangle(): Step {
   return {
     prompt: 'First corner', want: 'point',
-    point: (a) => ({ prompt: 'Other corner (or @width,height)', want: 'point', base: a, preview: (c) => [rectOf(a, c)], point: async (b) => { await draw([rectOf(a, b)], { rect: true }); return null; } }),
+    point: (a) => ({ prompt: 'Other corner (or @width,height)', want: 'point', base: a, rect: 'RECTANGLE', preview: (c) => [rectOf(a, c)], point: async (b) => { await draw([rectOf(a, b)], { rect: true }); return null; } }),
   };
 }
 
@@ -368,12 +371,58 @@ function moveOnPlane(copy: boolean, ids: string[]): Step {
   };
 }
 
-function rotate(): Step | null | void | Promise<Step | null | void> {
+/** The UCS's X axis in the plan (degrees), for a typed direction; 0 outside a plan. */
+const ucsDegrees = (): number => (useCad.getState().host?.isPlan?.() ? ucsOf(useLocation.getState().loc)?.angle ?? 0 : 0);
+
+/**
+ * ROTATE: the base point (the hinge), then the angle (typed, or a point: measured from X), with the keywords
+ * [Reference/Copy] as AutoCAD's. Reference: the hinge, a point (or a typed angle) giving the reference direction,
+ * then a point (or a typed angle) giving the new one; the turn is the difference. Copy turns a copy and leaves the
+ * originals. Either way the selection turns in the preview and the angle shows at the cursor.
+ */
+function rotate(startWith: 'angle' | 'reference' = 'angle'): Step | null | void | Promise<Step | null | void> {
+  let copy = false;
   return withSelection((ids) => ({
     prompt: 'Base point', want: 'point',
     point: (c) => {
-      const go = async (deg: number) => { await execute('element.transform', { ids, op: 'rotate', center: xy(c), angle: deg, ...frameArg(c) }); return null; };
-      return { prompt: 'Angle (degrees, or a point)', want: 'point', base: c, preview: (p) => [{ type: 'line', a: c, b: p }], scalar: go, point: (p) => go((Math.atan2(p.y - c.y, p.x - c.x) * 180) / Math.PI) };
+      const ghost = shapesOf(ids);
+      const go = async (deg: number) => {
+        await execute('element.transform', { ids, op: 'rotate', center: xy(c), angle: deg, ...(copy ? { copy: true } : {}), ...frameArg(c) });
+        return null;
+      };
+      const turnPreview = (deg: number): Shape[] => ghost.map((g) => rotatedShape(g, c, deg));
+      const readout = (deg: number) => (cursor: Vec2) => [{ at: cursor, text: `∠ ${fmt(normalizeTurn(deg))}°` }];
+      const flag = () => `Copy: ${copy ? 'yes' : 'no'}`;
+      const keywords = (): Record<string, () => Next> => ({ R: () => reference(), C: () => { copy = !copy; return angle(); } });
+      // The new direction, after a reference direction (an angle in degrees from +X in the plan).
+      const target = (ref: number): Step => ({
+        prompt: 'New direction (a point or an angle)', want: 'point', base: c,
+        preview: (p) => [{ type: 'line', a: c, b: p }, ...turnPreview(rotationFromReference(c, ref, p))],
+        labels: (p) => readout(rotationFromReference(c, ref, p))(p),
+        scalar: (n) => go(rotationFromReference(c, ref, n, ucsDegrees())),
+        point: (p) => go(rotationFromReference(c, ref, p)),
+      });
+      const reference = (): Step => ({
+        prompt: 'Reference direction (a point, or an angle)', want: 'point', base: c,
+        preview: (p) => [{ type: 'line', a: c, b: p }],
+        scalar: (n) => target(directionFrom(c, n, ucsDegrees())),
+        point: (p) => target(directionOf(c, p)),
+      });
+      // The ribbon's Rotate: hinge → reference point → target point; an angle typed at the reference step is the turn itself.
+      const hingeFirst = (): Step => ({
+        prompt: `Reference point (or a rotation angle) [Copy] (${flag()})`, want: 'point', base: c,
+        preview: (p) => [{ type: 'line', a: c, b: p }],
+        scalar: go, point: (p) => target(directionOf(c, p)),
+        keywords: { C: () => { copy = !copy; return hingeFirst(); } },
+      });
+      if (startWith === 'reference') return hingeFirst();
+      const angle = (): Step => ({
+        prompt: `Angle (degrees, or a point) [Reference/Copy] (${flag()})`, want: 'point', base: c,
+        preview: (p) => [{ type: 'line', a: c, b: p }, ...turnPreview(directionOf(c, p))],
+        labels: (p) => readout(directionOf(c, p))(p),
+        scalar: go, point: (p) => go(directionOf(c, p)), keywords: keywords(),
+      });
+      return angle();
     },
   }));
 }
@@ -510,7 +559,9 @@ export const COMMANDS: CommandDef[] = [
   { names: ['ARC', 'A'], label: 'Arc', start: arc },
   { names: ['MOVE', 'M', 'MV'], label: 'Move', start: () => moveOrCopy(false) },
   { names: ['COPY', 'CO', 'CP'], label: 'Copy', start: () => moveOrCopy(true) },
-  { names: ['ROTATE', 'RO'], label: 'Rotate', start: rotate },
+  { names: ['ROTATE', 'RO'], label: 'Rotate', start: () => rotate() },
+  // The ribbon's Rotate: the same command, starting in the Reference flow (hinge, reference point, target point).
+  { names: ['ROTATEREF'], label: 'Rotate', start: () => rotate('reference') },
   { names: ['MIRROR', 'MI', 'MM'], label: 'Mirror', start: mirror },
   { names: ['SCALE', 'SC'], label: 'Scale', start: scale },
   { names: ['ERASE', 'E', 'DELETE'], label: 'Erase', start: erase },

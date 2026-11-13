@@ -43,7 +43,7 @@ sealed class OpeningMaker : IOpeningMaker
             var u = Openings.AlongOf(host, centre.Xy);
             var f = Openings.FrameOf(m, host, u);
             var length = PathCurve.Of(host).Length;
-            var wallHeight = host.Num("height", Walls.DefaultHeight);
+            var wallHeight = Walls.HeightOf(m, host);
             var (w, h) = (Math.Min(width, length), Math.Min(height, wallHeight));
             u = Math.Clamp(u, w / 2, Math.Max(w / 2, length - w / 2));
             var sill = Math.Clamp(centre.Z - f.Base - h / 2, 0, Math.Max(0, wallHeight - h));
@@ -123,7 +123,7 @@ sealed class OpeningMaker : IOpeningMaker
             (along, zc) = ((a0 + a1) / 2, (z0 + z1) / 2);
         }
         var length = PathCurve.Of(wall).Length;
-        var height = wall.Num("height", Walls.DefaultHeight);
+        var height = Walls.HeightOf(m, wall);
         // Kept within the wall: a pipe at the floor or by an end has its opening pushed in, not cut off.
         along = Math.Clamp(along, w / 2, Math.Max(w / 2, length - w / 2));
         var sill = Math.Clamp(zc - h / 2, 0, Math.Max(0, height - h));

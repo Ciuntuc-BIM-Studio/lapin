@@ -15,11 +15,11 @@
  */
 
 import { useEffect } from 'react';
-import { useUi } from './store';
+import { select, useUi } from './store';
 import { findTool, hotbarIds, useToolTick } from '../platform/modules';
 import { reach } from './hotbar';
 import { cancel, submit, useCad } from '../viewport/cad/session';
-import { liveCommit, useLive } from '../viewport/liveInput';
+import { liveCommit, liveToggleMode, useLive } from '../viewport/liveInput';
 import { chordOf, isBareKey, matchSequence, PendingSequence, type Keymap } from './shortcuts';
 import { keymap, runCommand } from './commands';
 import { useKeymap } from './shortcuts';
@@ -64,7 +64,7 @@ export interface KeySnapshot {
   /** The command line takes all typing (the ` key). */
   takeAll?: boolean;
   /** A segment being drawn from a base: its length and angle can be typed (the focused field's text). */
-  live?: { active: boolean; text: string; typed: boolean };
+  live?: { active: boolean; text: string; typed: boolean; /** A rectangle tool: Space switches length/angle with width/height. */ rect?: boolean; mode?: 'polar' | 'rect' };
   /** A 3D tool waits for a typed value (valueOwner.ts): what is typed so far. */
   value?: { text: string } | null;
 }
@@ -76,10 +76,10 @@ export type KeyIntent =
   | { kind: 'toolSpace' }
   /** The ` key: the command line takes all typing, or gives it back. */
   | { kind: 'cmdMode' }
-  | { kind: 'closeDialog' } | { kind: 'cancel' } | { kind: 'submit' } | { kind: 'backspace' }
+  | { kind: 'closeDialog' } | { kind: 'deselect' } | { kind: 'cancel' } | { kind: 'submit' } | { kind: 'backspace' }
   | { kind: 'type'; buffer: string }
   | { kind: 'valueType'; key: string } | { kind: 'valueBack' } | { kind: 'valueEnter' }
-  | { kind: 'liveType'; key: string } | { kind: 'liveBack' } | { kind: 'liveFocus'; field?: 'len' | 'ang' } | { kind: 'liveClear' } | { kind: 'liveCommit' };
+  | { kind: 'liveType'; key: string } | { kind: 'liveBack' } | { kind: 'liveFocus'; field?: 'len' | 'ang' } | { kind: 'liveClear' } | { kind: 'liveCommit' } | { kind: 'liveMode' };
 
 /** The units a typed length may end in (parseLength reads them). */
 const UNIT_SUFFIXES = ['mm', 'cm', 'dm', 'm', 'in', 'ft', "'", '"'];
@@ -139,14 +139,18 @@ export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
   if (s.live?.active && !s.buffer && !all) {
     if (e.key === 'Tab') return { kind: 'liveFocus' };
     if (e.key === '<') return { kind: 'liveFocus', field: 'ang' };
+    // A rectangle: Space switches length/angle with width/height; in width/height a comma goes on to the height.
+    if (e.key === ' ' && s.live.rect) return { kind: 'liveMode' };
+    if (e.key === ',' && s.live.rect && s.live.mode === 'rect') return { kind: 'liveFocus', field: 'ang' };
     if (e.key === 'Enter' && s.live.typed) return { kind: 'liveCommit' };
     if (e.key === 'Escape' && s.live.typed) return { kind: 'liveClear' };
     if (e.key === 'Backspace' && s.live.text) return { kind: 'liveBack' };
-    if (/^[0-9.,+]$/.test(e.key) || (e.key === '-' && s.live.text)) return { kind: 'liveType', key: e.key };
+    if (/^[0-9.,+]$/.test(e.key) || (e.key === '-' && (s.live.text || (s.live.rect && s.live.mode === 'rect')))) return { kind: 'liveType', key: e.key };
     if (unitKey(s.live.text, e.key)) return { kind: 'liveType', key: e.key.toLowerCase() };
   }
   const typing = s.buffer.length > 0 || !!s.step;
-  if (e.key === 'Escape') return s.step || s.buffer || all ? { kind: 'cancel' } : null;
+  // Esc: first the running command (or what is typed), then, with nothing on, the selection lets go (a drilled one steps up first: DrillCrumbs).
+  if (e.key === 'Escape') return s.step || s.buffer || all ? { kind: 'cancel' } : !s.tool && s.selected.length ? { kind: 'deselect' } : null;
   if (e.key === ' ' && !typing && s.toolSpace) return { kind: 'toolSpace' };
   if (e.key === 'Enter' || (e.key === ' ' && (typing || s.hasLast) && s.step?.want !== 'text')) {
     // Plan gestures (a floor's outline) take their own Enter.
@@ -178,14 +182,17 @@ export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
   return { kind: 'type', buffer };
 }
 
+/** The tool at the start of a key press, before a view's own Esc handler ends it: that Esc ends the tool and does no more. */
+let toolAtKeydown: string | null = null;
+
 function snapshot(): KeySnapshot {
   const ui = useUi.getState();
   const cad = useCad.getState();
   return {
-    screen: ui.screen, dialog: openDialog(ui.dialog, !!document.querySelector('[role="dialog"]')), tool: ui.tool, selected: ui.selected, toolSpace: !!(ui.tool && findTool(ui.tool)?.space),
+    screen: ui.screen, dialog: openDialog(ui.dialog, !!document.querySelector('[role="dialog"]')), tool: ui.tool ?? toolAtKeydown, selected: ui.selected, toolSpace: !!(ui.tool && findTool(ui.tool)?.space),
     buffer: cad.buffer, step: cad.step ? { want: cad.step.want } : null, hasLast: !!cad.last,
     hotbar: reach(hotbarIds()), keymap: keymap(), letters: useKeymap.getState().letters, takeAll: cad.takeAll,
-    live: (() => { const l = useLive.getState(); return { active: !!l.owner, text: l[l.focus], typed: !!(l.len || l.ang) }; })(),
+    live: (() => { const l = useLive.getState(); return { active: !!l.owner, text: l[l.focus], typed: !!(l.len || l.ang), rect: !!l.rect, mode: l.mode }; })(),
     value: (() => { const o = valueOwner(); return o ? { text: o.text() } : null; })(),
   };
 }
@@ -211,6 +218,7 @@ export function carryOut(intent: KeyIntent): void {
     }
     case 'toolSpace': { const t = useUi.getState().tool; if (t) findTool(t)?.space?.(); useToolTick.setState((s) => ({ n: s.n + 1 })); break; }
     case 'closeDialog': useUi.setState({ dialog: null }); break;
+    case 'deselect': select(null); break;
     case 'cancel': cancel(); useCad.setState({ takeAll: false }); break;
     case 'cmdMode': useCad.setState((c) => ({ takeAll: !c.takeAll })); break;
     case 'submit': {
@@ -229,6 +237,7 @@ export function carryOut(intent: KeyIntent): void {
     case 'liveFocus': useLive.setState((l) => ({ focus: intent.field ?? (l.focus === 'len' ? 'ang' : 'len') })); break;
     case 'liveClear': useLive.setState({ len: '', ang: '' }); break;
     case 'liveCommit': liveCommit(); break;
+    case 'liveMode': liveToggleMode(); break;
   }
 }
 
@@ -253,8 +262,10 @@ export function handleKeydown(e: KeyEventLike, snap: () => KeySnapshot = snapsho
 
 export function useShortcuts(): void {
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => handleKeydown(e);
+    const onKey = (e: KeyboardEvent) => { handleKeydown(e); toolAtKeydown = null; };
+    const first = () => { toolAtKeydown = useUi.getState().tool; };
+    window.addEventListener('keydown', first, true);
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => { window.removeEventListener('keydown', first, true); window.removeEventListener('keydown', onKey); };
   }, []);
 }

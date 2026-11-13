@@ -14,7 +14,8 @@ import { collect, elementsOf, fromSelection, initialState, storeysOf, typesOf, t
 import { answer, answerToolTrust, useScriptTools } from './scriptTools';
 import { trustQuestion, TRUST_WARNING } from './trust';
 
-function useFacts(): ModelFacts {
+/** What the fields know of the model (also a palette's, PaletteWindow.tsx). */
+export function useFacts(): ModelFacts {
   const nodes = useSession((s) => s.nodes);
   const selected = useUi((s) => s.selected);
   const selection = useUi((s) => s.selection);
@@ -26,8 +27,9 @@ function useFacts(): ModelFacts {
   }), [nodes, selected, selection, storey]);
 }
 
-function Field({ f, value, set, facts, wrong }: { f: AskField; value: FieldState; set: (v: FieldState) => void; facts: ModelFacts; wrong: boolean }) {
-  const id = `ask-${f.key}`;
+/** One field drawn by the window (a question's, a palette's: `prefix` keeps their ids apart). */
+export function Field({ f, value, set, facts, wrong, prefix = 'ask' }: { f: AskField; value: FieldState; set: (v: FieldState) => void; facts: ModelFacts; wrong: boolean; prefix?: string }) {
+  const id = `${prefix}-${f.key}`;
   const label = <label htmlFor={id} className="script-ask-label" data-no-i18n>{f.label}</label>;
   const cls = wrong ? ' wrong' : '';
   switch (f.kind) {

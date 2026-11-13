@@ -29,6 +29,18 @@ const LASSO_STEP = 2;
 
 export const isWindow = (d: SelectDrag): boolean => (d.mode ? d.mode === 'window' : d.lasso ? !!d.window : d.b.x >= d.a.x);
 
+/** A press that moved this far (px) in a box and no further is a click that wobbled (the move threshold is 4). */
+export const TINY_BOX = 8;
+
+/**
+ * What a released box does: `click` (a tiny box: the press, taken as a click at its start), `keep` (it took nothing: the
+ * selection stays, an empty box never lets it go), or `select` (the box's ids join the selection by the style's keys).
+ */
+export function boxOutcome(d: SelectDrag, taken: number): 'click' | 'keep' | 'select' {
+  if (!d.lasso && Math.max(Math.abs(d.b.x - d.a.x), Math.abs(d.b.y - d.a.y)) <= TINY_BOX) return 'click';
+  return taken === 0 ? 'keep' : 'select';
+}
+
 /** The drag followed to `to`. */
 export function dragTo(d: SelectDrag, to: Vec2): SelectDrag {
   if (!d.lasso) return { ...d, b: to };

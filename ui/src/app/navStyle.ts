@@ -149,6 +149,15 @@ export function clickMode(style: NavStyle, mods: Mods): ClickMode {
   return style.clicks.find((c) => held(c.mods, mods))?.mode ?? 'replace';
 }
 
+/**
+ * What a region (a box, a lasso) does to the selection with these keys. As a click's, except in Lapin's own style, where Ctrl/Cmd
+ * with a region takes it out of the selection (a click keeps Ctrl for drilling to a part).
+ */
+export function regionMode(style: NavStyle, mods: Mods): ClickMode {
+  if (style.native && mods.ctrl && !mods.shift) return 'remove';
+  return clickMode(style, mods);
+}
+
 /** Whether these keys pick a part, not the whole. */
 export const picksLeaf = (style: NavStyle, mods: Mods): boolean => !!style.leaf && held(style.leaf, mods) && style.leaf.length > 0;
 

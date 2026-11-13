@@ -96,7 +96,7 @@ public static class Openings
     public static void CheckFits(IModelView m, Entity wall, double along, double sill, double width, double height, string? except = null)
     {
         var length = PathCurve.Of(wall).Length;
-        var wallHeight = wall.Num("height", Walls.DefaultHeight);
+        var wallHeight = Walls.HeightOf(m, wall);
         if (!(width > 0 && height > 0)) throw new CommandException("An opening needs a width and a height.");
         if (along - width / 2 < -1e-9 || along + width / 2 > length + 1e-9) throw new CommandException($"The opening, {width * 1000:0} mm wide, does not fit along the wall ({length * 1000:0} mm) there.");
         if (sill < -1e-9 || sill + height > wallHeight + 1e-9) throw new CommandException($"The opening, {height * 1000:0} mm high from {sill * 1000:0} mm, does not fit in the wall's height ({wallHeight * 1000:0} mm).");

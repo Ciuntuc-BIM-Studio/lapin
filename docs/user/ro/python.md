@@ -134,6 +134,43 @@ De unde vin uneltele:
 
 Un script șters, dezinstalat sau fără încredere nu mai are uneltele în Uneltele mele.
 
+### Panouri, meniuri și palete
+
+Un script își poate așeza singur partea lui din **Uneltele mele**, totul din cod, iar Lapin o desenează; rulează scriptul o dată din panoul Script și apare ce înregistrează:
+
+```python
+with lapin.ui.panel("Walls"):                      # un grup din Uneltele mele numit Walls
+    @lapin.ui.tool("Perimeter", icon="square", size="small")
+    def perimeter(): ...
+
+    with lapin.ui.menu("Openings", icon="door"):   # un singur buton cu o listă de unelte
+        lapin.ui.tool("Door here", run=door)
+        lapin.ui.tool("Window here", run=window)
+
+    p = lapin.ui.palette("Wall tools", icon="wall")
+    p.heading("New wall")
+    p.field("length", lapin.ui.number(5.0, unit="m", min=0.5))
+    p.field("height", lapin.ui.number(2.8, unit="m"))
+    p.field("storey", lapin.ui.storey())
+
+    @p.button("Make wall", icon="hammer")
+    def make(v):                                   # v are valorile din paletă
+        lapin.architecture.add_wall(storey_id=v["storey"].id, x1=0, y1=0, x2=v["length"], y2=0, height=v["height"])
+```
+
+- **Un panou** e un grup din Uneltele mele, cu numele dat de script: uneltele lui ajung acolo în loc de **Scripturi**, prima dată când apar. În antet, `panel="Walls"` face același lucru pentru unealta din antet.
+- **size="small"** pune unealta mică: un rând cu iconița ei, câte trei una sub alta.
+- **Un meniu** e un singur buton care deschide lista uneltelor lui. Fiecare rămâne o unealtă de sine stătătoare: o găsește **Comenzi…** și o poate așeza singură **Personalizează Uneltele mele…**.
+- **O paletă** e un mic panou plutitor pe care butonul ei din Uneltele mele îl deschide și îl închide: titluri, texte, separatoare, câmpuri (aceleași ca într-o întrebare) și butoane (`with p.row():` pune butoanele unul lângă altul). O muți trăgând de titlu; rămâne deschisă cât lucrezi și ține minte unde era și ce ai scris. Un buton e o singură **Rulare**, un singur pas de anulare numit după buton; funcția lui primește valorile din paletă dacă are un parametru. Cât rulează un script, butoanele așteaptă.
+
+![Grupul propriu al unui script în Uneltele mele: un meniu și o paletă](shots/python-tools-panel.webp)
+
+![Lista de unelte a meniului](shots/python-tools-menu.webp)
+
+![Paleta: câmpurile și butonul ei](shots/python-tools-palette.webp)
+
+Ca pe orice unealtă, le poți muta, face mici sau scoate; o unealtă scoasă rămâne scoasă.
+
 ## Siguranța
 
 Un script poate face orice poți face tu pe acest calculator: rulează în Python-ul tău, cu drepturile tale. Rulează scripturi scrise de tine sau în care ai încredere; un script al proiectului și unul instalat întreabă mai întâi.

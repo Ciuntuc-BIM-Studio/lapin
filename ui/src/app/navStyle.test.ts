@@ -4,7 +4,7 @@ import { boxEdges, projectSegments, takes } from '../viewport/select3d';
 import { dragTo, isWindow, regionTestOf, toggleLasso, type SelectDrag } from '../viewport/selectDrag';
 import { DEFAULT_PREFS, readPrefs } from './prefs';
 import {
-  NAV_STYLES, NAV_STYLE_IDS, clickMode, clickSelection, dragAction, modsOf, navStyleOf, pansIn2d, picksLeaf, regionSelection, wheelFactor, zoomsToCursor, type Mods,
+  NAV_STYLES, NAV_STYLE_IDS, clickMode, clickSelection, dragAction, modsOf, navStyleOf, pansIn2d, picksLeaf, regionMode, regionSelection, wheelFactor, zoomsToCursor, type Mods,
 } from './navStyle';
 
 const none: Mods = { shift: false, ctrl: false, alt: false };
@@ -140,6 +140,19 @@ describe('what a click and a region do to the selection', () => {
     expect(regionSelection(['a'], ['b', 'a'], 'add')).toEqual(['a', 'b']);
     expect(regionSelection(['a'], ['b'], 'toggle')).toEqual(['a', 'b']);
     expect(regionSelection(['a', 'b', 'c'], ['b', 'x'], 'remove')).toEqual(['a', 'c']);
+  });
+});
+
+describe('a region\'s keys', () => {
+  it('takes the region out of the selection with Ctrl or Cmd in Lapin\'s style only; a click keeps Ctrl for the part', () => {
+    expect(regionMode(NAV_STYLES.lapin, m('ctrl'))).toBe('remove');
+    expect(regionMode(NAV_STYLES.lapin, m('shift'))).toBe('toggle');
+    expect(regionMode(NAV_STYLES.lapin, m('ctrl', 'shift'))).toBe('toggle');
+    expect(regionMode(NAV_STYLES.lapin, none)).toBe('replace');
+    expect(clickMode(NAV_STYLES.lapin, m('ctrl'))).toBe('replace');
+    expect(picksLeaf(NAV_STYLES.lapin, m('ctrl'))).toBe(true);
+    expect(regionMode(NAV_STYLES.revit, m('ctrl'))).toBe('add');
+    expect(regionMode(NAV_STYLES.rhino, m('ctrl'))).toBe('remove');
   });
 });
 

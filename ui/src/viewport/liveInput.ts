@@ -33,6 +33,8 @@ export function parseAngle(text: string): number | null {
 }
 
 export type LiveField = 'len' | 'ang';
+/** What the two fields mean: a segment's length and angle, or (a rectangle) its width and height; `len` holds the first, `ang` the second. */
+export type LiveMode = 'polar' | 'rect';
 
 interface LiveState {
   /** Who asked for it ("tool", "grip", "cad"); null: nothing is being drawn. */
@@ -46,28 +48,51 @@ interface LiveState {
   commit: ((p: Vec2, typed?: number, typedAngle?: number) => void) | null;
   /** A move from the base (MOVE, COPY, a dragged grip): the cells at the cursor also show Δx and Δy. */
   delta: boolean;
+  /** The two fields as length and angle, or as width and height. */
+  mode: LiveMode;
+  /** Set when the tool draws a rectangle (its key, to remember the mode by): Space switches the mode. */
+  rect: string | null;
 }
 
-export const useLive = create<LiveState>(() => ({ owner: null, base: null, cursor: null, len: '', ang: '', focus: 'len', commit: null, delta: false }));
+/** The mode each rectangle tool was last left in (the box by the cursor opens as it was). */
+const modes = new Map<string, LiveMode>();
+
+export const useLive = create<LiveState>(() => ({ owner: null, base: null, cursor: null, len: '', ang: '', focus: 'len', commit: null, delta: false, mode: 'polar', rect: null }));
 
 /** A segment starts at `base`: its length and angle can now be typed. */
-export function liveBegin(owner: string, base: Vec2, commit: (p: Vec2, typed?: number, typedAngle?: number) => void, o: { delta?: boolean } = {}): void {
+export function liveBegin(owner: string, base: Vec2, commit: (p: Vec2, typed?: number, typedAngle?: number) => void, o: { delta?: boolean; rect?: string } = {}): void {
   const s = useLive.getState();
   const delta = !!o.delta;
+  const rect = o.rect ?? null;
   if (s.owner === owner && s.base && Math.hypot(s.base.x - base.x, s.base.y - base.y) < 1e-12) { useLive.setState({ commit, delta }); return; }
-  useLive.setState({ owner, base, commit, delta, len: '', ang: '', focus: 'len' });
+  useLive.setState({ owner, base, commit, delta, len: '', ang: '', focus: 'len', rect, mode: rect ? modes.get(rect) ?? 'polar' : 'polar' });
 }
 export const liveCursor = (p: Vec2 | null) => useLive.setState({ cursor: p });
 export function liveEnd(owner?: string): void {
   if (owner && useLive.getState().owner !== owner) return;
-  useLive.setState({ owner: null, base: null, commit: null, len: '', ang: '', delta: false });
+  useLive.setState({ owner: null, base: null, commit: null, len: '', ang: '', delta: false, rect: null, mode: 'polar' });
+}
+
+/** Space (or the button): length and angle become width and height, or back; what was typed is cleared, the first field is focused, the mode is remembered for the tool. */
+export function liveToggleMode(): void {
+  const s = useLive.getState();
+  if (!s.rect) return;
+  const mode: LiveMode = s.mode === 'rect' ? 'polar' : 'rect';
+  modes.set(s.rect, mode);
+  useLive.setState({ mode, len: '', ang: '', focus: 'len' });
 }
 
 /** Where the segment ends: the typed length and angle, else the cursor's. */
-export function livePoint(s: Pick<LiveState, 'base' | 'cursor' | 'len' | 'ang'> = useLive.getState()): Vec2 | null {
+export function livePoint(s: Pick<LiveState, 'base' | 'cursor' | 'len' | 'ang'> & { mode?: LiveMode } = useLive.getState()): Vec2 | null {
   if (!s.base) return null;
   const c = s.cursor ?? { x: s.base.x + 1, y: s.base.y };
   const dx = c.x - s.base.x, dy = c.y - s.base.y;
+  if (s.mode === 'rect') {
+    // Width and height, signed as on the command line (@2000,-1500): a field left empty follows the cursor.
+    const w = parseLength(s.len), h = parseLength(s.ang);
+    if (w == null && h == null) return c;
+    return { x: s.base.x + (w ?? dx), y: s.base.y + (h ?? dy) };
+  }
   const typedLen = parseLength(s.len), typedAng = parseAngle(s.ang);
   const len = typedLen ?? Math.hypot(dx, dy);
   const ang = typedAng != null ? (typedAng * Math.PI) / 180 : Math.atan2(dy, dx);
@@ -81,7 +106,7 @@ export function livePoint(s: Pick<LiveState, 'base' | 'cursor' | 'len' | 'ang'> 
 }
 
 /** The segment as shown: its length (m) and angle (degrees from +X). */
-export function liveMeasure(s: Pick<LiveState, 'base' | 'cursor' | 'len' | 'ang'> = useLive.getState()): { len: number; ang: number; dx: number; dy: number; end: Vec2 } | null {
+export function liveMeasure(s: Pick<LiveState, 'base' | 'cursor' | 'len' | 'ang'> & { mode?: LiveMode } = useLive.getState()): { len: number; ang: number; dx: number; dy: number; end: Vec2 } | null {
   const end = livePoint(s);
   if (!s.base || !end) return null;
   const dx = end.x - s.base.x, dy = end.y - s.base.y;
@@ -95,8 +120,8 @@ export function liveCommit(): boolean {
   const p = livePoint(s);
   if (!p) return false;
   const commit = s.commit;
-  const typed = parseLength(s.len) ?? undefined;
-  const typedAngle = parseAngle(s.ang) ?? undefined;
+  const typed = s.mode === 'rect' ? undefined : parseLength(s.len) ?? undefined;
+  const typedAngle = s.mode === 'rect' ? undefined : parseAngle(s.ang) ?? undefined;
   useLive.setState({ len: '', ang: '' });
   commit(p, typed, typedAngle);
   return true;

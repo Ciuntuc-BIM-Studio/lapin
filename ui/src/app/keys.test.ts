@@ -119,6 +119,14 @@ describe('keyIntent', () => {
     expect(keyIntent(press('m'), live())).toEqual({ kind: 'type', buffer: 'm' });
     expect(keyIntent(press('-'), live())).toEqual({ kind: 'command', id: 'app.zoomOut' });
     expect(keyIntent(press('Tab'), live())).toEqual({ kind: 'liveFocus' });
+    // A rectangle: Space switches length/angle with width/height; a comma in width/height goes on to the height; elsewhere Space is not the box's.
+    const rect = (mode: 'polar' | 'rect') => state({ live: { active: true, text: '2000', typed: true, rect: true, mode }, hotbar: 9 });
+    expect(keyIntent(press(' '), rect('polar'))).toEqual({ kind: 'liveMode' });
+    expect(keyIntent(press(','), rect('rect'))).toEqual({ kind: 'liveFocus', field: 'ang' });
+    expect(keyIntent(press(','), rect('polar'))).toEqual({ kind: 'liveType', key: ',' });
+    expect(keyIntent(press(' '), live())).not.toEqual({ kind: 'liveMode' });
+    // A negative width or height can be typed from an empty field in width/height (elsewhere a minus is zoom out).
+    expect(keyIntent(press('-'), state({ live: { active: true, text: '', typed: false, rect: true, mode: 'rect' }, hotbar: 9 }))).toEqual({ kind: 'liveType', key: '-' });
     expect(keyIntent(press('<'), live('2400'))).toEqual({ kind: 'liveFocus', field: 'ang' });
     expect(keyIntent(press('Enter'), live('2400', true))).toEqual({ kind: 'liveCommit' });
     expect(keyIntent(press('Escape'), live('2400', true))).toEqual({ kind: 'liveClear' });
@@ -143,6 +151,12 @@ describe('keyIntent', () => {
   it('cancels a running command with Escape, toggles with the F keys, picks the hotbar with digits', () => {
     expect(keyIntent(press('Escape'), state({ step: { want: 'point' } }))).toEqual({ kind: 'cancel' });
     expect(keyIntent(press('Escape'), state())).toBeNull();
+    // Nothing running: Esc lets the selection go (after a tool ends, not with it).
+    expect(keyIntent(press('Escape'), state({ selected: ['w1'] }))).toEqual({ kind: 'deselect' });
+    expect(keyIntent(press('Escape'), state({ selected: ['w1'], tool: 'architecture.wall' }))).toBeNull();
+    expect(keyIntent(press('Escape'), state({ selected: ['w1'], buffer: 'ab' }))).toEqual({ kind: 'cancel' });
+    expect(keyIntent(press('Escape'), state({ selected: ['w1'], step: { want: 'point' } }))).toEqual({ kind: 'cancel' });
+    expect(keyIntent(press('Escape'), state({ selected: ['w1'], dialog: 'x' }))).toEqual({ kind: 'closeDialog' });
     expect(keyIntent(press('F8'), state())).toEqual({ kind: 'command', id: 'app.ortho' });
     expect(keyIntent(press('3'), state())).toEqual({ kind: 'command', id: 'hotbar.3' });
     expect(keyIntent(press('9'), state())).toBeNull();

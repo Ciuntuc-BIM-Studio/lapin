@@ -603,6 +603,8 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
         // Anywhere in the call (a query's args, a batch's steps, an attribute set): a file or folder named by its path.
         if (NamesHostFile(p)) return HostFiles.Refused;
         var editor = role is "editor" or "owner";
+        // A project's graphs are the host's (docs/plan-visual-graphs.md §7, the user's answer of 13.11.2026): a guest neither evaluates one.
+        if (method == "doc.query" && (string?)p["name"] is { } q && HostOnlyQueries.Any(x => q.StartsWith(x, StringComparison.Ordinal))) return "Only the host can do that.";
         switch (method)
         {
             case "session.info" or "session.catalogue" or "doc.snapshot" or "doc.query" or "quantities.of" or "quantities.many" or "view.caps" or "view.fine" or "pointcloud.tiles"
@@ -633,8 +635,14 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
     /// or a daily report added (the premium planning edition's, stage 8). Named here rather than read from the module, so a
     /// product without them refuses them like any command it lacks.
     /// </summary>
-    /// <summary>The namespaces of commands no guest runs: a project's scripts (<c>scripting.save</c>, <c>scripting.rename</c>, <c>scripting.delete</c>).</summary>
-    public static readonly string[] HostOnlyCommands = ["scripting."];
+    /// <summary>
+    /// The namespaces of commands no guest runs: a project's scripts (<c>scripting.save</c>, <c>scripting.rename</c>,
+    /// <c>scripting.delete</c>) and its graphs (<c>graphs.*</c>, decision 527: the host's, like scripts).
+    /// </summary>
+    public static readonly string[] HostOnlyCommands = ["scripting.", "graphs."];
+
+    /// <summary>The namespaces of queries no guest asks: a project's graphs (their evaluation runs the host's commands on a copy of the model).</summary>
+    public static readonly string[] HostOnlyQueries = ["graphs."];
 
     /// <summary>Whether a <c>doc.execute</c> names a host-only command, itself or as a step of its batch.</summary>
     static bool HostOnly(JsonObject p)

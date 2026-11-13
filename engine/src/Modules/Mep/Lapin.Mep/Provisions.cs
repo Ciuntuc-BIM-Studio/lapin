@@ -155,7 +155,7 @@ sealed class MepProvisions : IProvisionOpenings
         var straight = Openings.FrameOf(m, wall);
         var thickness = straight.YMax - straight.YMin;
         var z0 = straight.Base;
-        var z1 = z0 + wall.Num("height", Walls.DefaultHeight);
+        var z1 = z0 + Walls.HeightOf(m, wall);
         var openings = Openings.PlacedOn(m, wall.Id);
         var storey = Spatial.StoreyOf(m, wall.Id)?.Id;
         for (var i = 1; i < line.Count; i++)

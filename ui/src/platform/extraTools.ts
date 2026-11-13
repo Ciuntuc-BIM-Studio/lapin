@@ -14,7 +14,8 @@ export const useExtraTools = create<ExtraToolsState>(() => ({ byOwner: {}, rev: 
 
 /** The same tools as drawn (a tool's `run` looks its script up when pressed, so a new closure is no change). */
 const sameTools = (a: readonly ToolDef[] | undefined, b: readonly ToolDef[]) =>
-  !!a && a.length === b.length && a.every((t, i) => t.id === b[i].id && t.label === b[i].label && t.icon === b[i].icon && t.tooltip === b[i].tooltip);
+  !!a && a.length === b.length && a.every((t, i) => t.id === b[i].id && t.label === b[i].label && t.icon === b[i].icon && t.tooltip === b[i].tooltip
+    && (t.items ?? []).map((x) => x.id).join('\n') === (b[i].items ?? []).map((x) => x.id).join('\n'));
 
 /** An owner's tools now (none: its tools go). */
 export function setExtraTools(owner: string, tools: readonly ToolDef[]): void {

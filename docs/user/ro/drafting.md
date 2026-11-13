@@ -12,6 +12,12 @@ Coordonatele tastate sunt în unitatea proiectului, ca lungimile de lângă curs
 
 ![Copierea unui perete: după punctul de bază, linia de comandă și căsuțele arată lungimea și unghiul până la mouse](shots/command-line.webp)
 
+**Căsuța de lângă cursor.** Cât timp se desenează un segment, căsuța mică de lângă cursor arată **L**ungimea și unghiul **∠** lui, și poți scrie în ea fără să dai clic nicăieri: cifrele (cu unitate, dacă vrei: `240cm`, `2.4m`) merg în câmpul activ, <kbd>Tab</kbd> trece la celălalt, <kbd>Enter</kbd> ia punctul, iar <kbd>Esc</kbd> șterge ce ai scris. Pentru un dreptunghi (**Dreptunghi** din desen, o placă sau orice altă unealtă desenată ca dreptunghi) căsuța poate cere și **L**ățimea și **Î**nălțimea, ca `@2000,1500` pe linia de comandă: apasă <kbd>Space</kbd> (sau butonul de mod din bara de deasupra vederii) ca să treci între *Lungime ∠ Unghi* și *Lățime × Înălțime*. În *Lățime × Înălțime*, <kbd>Tab</kbd> sau o virgulă trece de la lățime la înălțime, iar valorile au semn ca pe linia de comandă: o lățime negativă pune dreptunghiul în stânga primului colț, o înălțime negativă dedesubt. Un câmp lăsat gol urmează mouse-ul. Fiecare unealtă de dreptunghi își ține minte modul.
+
+![Căsuța dreptunghiului în Lățime × Înălțime: 2000 lățime și 1500 sub primul colț](shots/rectangle-box.webp)
+
+**Rotirea.** **Rotire** din panglică (și **Modificare → Rotire**) merge în trei clicuri: **balamaua**, un **punct de referință** (încotro arată acum obiectul: dă clic pe muchia pe care vrei s-o îndrepți) și un **punct țintă** (încotro trebuie să arate). Selecția se rotește în previzualizare pe măsură ce muți mouse-ul, unghiul se vede la cursor, iar snap-ul și urmărirea polară te ajută să țintești. Rotirea e diferența dintre cele două direcții, oricare ar fi UCS-ul. La orice pas poți scrie în loc: un unghi la pasul de referință e chiar rotirea (`30`), iar un unghi la pasul țintă e direcția nouă, măsurată de la axa X a UCS-ului. <kbd>C</kbd> rotește o copie și lasă originalul. Dacă scrii **ROTATE** (sau <kbd>RO</kbd>) pe linia de comandă, primești varianta AutoCAD: punctul de bază, apoi unghiul (scris, sau un punct măsurat de la X), cu **[Reference/Copy]**; <kbd>R</kbd> acolo e același flux cu referință.
+
 Fiecare unealtă își arată literele când ții mouse-ul peste ea; le poți schimba în **Vedere → Scurtături de tastatură…** (vezi [Interfața și scurtăturile](interface.md)). Acestea sunt cele mai folosite:
 
 | Model | | Desen | |
@@ -181,7 +187,7 @@ Ca orice etichetă, eticheta de stratificație își urmează elementul, iar pla
 
 ![Dialogul Rețea de axe](shots/grid-dialog.webp)
 
-Dă clic pe o axă ca s-o selectezi. Proprietățile ei arată **Începutul** și **Sfârșitul**, **Lungimea**, **Unghiul** și distanța față de axa paralelă dinaintea ei (↔). Scrie o distanță nouă și axa se mută; se mută și axele de după ea, dacă nu debifezi **se mută și axele de după ea**. **Buline** alege capetele care au bulină. **Stiluri de axe…** deschide **Standarde de desen → Axe**, unde se stabilesc bulina, mărimea ei, tipul de linie și prima etichetă. Selectează toată rețeaua ca să vezi axele și distanțele dintre ele.
+Dă clic pe o axă ca s-o selectezi. Proprietățile ei arată **Începutul** și **Sfârșitul**, **Lungimea**, **Unghiul** și distanța față de axa paralelă dinaintea ei (↔). Scrie o distanță nouă și axa se mută; se mută și axele de după ea, dacă nu debifezi **se mută și axele de după ea**. **Buline** alege capetele care au bulină. **Stiluri de axe…** deschide **Standarde de desen → Axe**, unde se stabilesc bulina, mărimea ei, tipul de linie și prima etichetă. Selectează toată rețeaua ca să vezi axele și distanțele dintre ele. **Aliniază axele** face ca axele paralele să înceapă și să se sfârșească pe aceleași linii, luând axa selectată ca referință: cu mai multe axe selectate se aliniază doar acelea la ea; cu una singură, toate axele grilei paralele cu ea.
 
 ![Proprietățile unei axe](shots/axis-properties.webp)
 

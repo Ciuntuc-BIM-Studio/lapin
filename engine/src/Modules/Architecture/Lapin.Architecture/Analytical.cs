@@ -32,7 +32,7 @@ public sealed class ArchitectureAnalytical : IAnalyticalElements
             var z0 = (Spatial.StoreyOf(m, w.Id)?.Num("elevation") ?? 0) + w.Num("baseOffset");
             var type = Walls.TypeOf(m, w.Id);
             var thickness = core.To - core.From;
-            var height = w.Num("height", Walls.DefaultHeight);
+            var height = Walls.HeightOf(m, w);
             // Its doors, windows and openings, each over its span; a wall under a roof or an attached slab up to its top.
             var openings = new List<AnalyticalOpening>();
             foreach (var o in Openings.PlacedOn(m, w.Id))

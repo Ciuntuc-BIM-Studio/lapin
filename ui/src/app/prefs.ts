@@ -46,6 +46,8 @@ export interface Prefs {
   navStyle: NavStyleId;
   /** Drawing in a sketch records what the inference found as constraints (decision 520, C2); Ctrl on a click places that point free. */
   constrainWhileDrawing: boolean;
+  /** What an opening's "Along the wall" measures (Properties): from the wall's start, the meeting wall's face or its core face, to the opening's start, centre or end. */
+  openingAlong: { from: 'start' | 'face' | 'core'; point: 'start' | 'centre' | 'end' };
 }
 
 export const SNAP_MODES: readonly SnapMode[] = ['endpoint', 'midpoint', 'intersection', 'center', 'quadrant', 'perpendicular', 'nearest'];
@@ -55,6 +57,7 @@ export const DEFAULT_PREFS: Prefs = {
   snapModes: [...SNAP_MODES], polarStep: 45, coords: 'internal',
   profileStandardsHidden: [], newProjectProfileStandards: null, defaultTemplate: null,
   developerExtras: false, pythonPath: null, externalEditor: null, navStyle: DEFAULT_NAV_STYLE, constrainWhileDrawing: true,
+  openingAlong: { from: 'start', point: 'centre' },
 };
 
 const names = (v: unknown): string[] | null => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && !!x.trim()).map((x) => x.trim()))] : null);
@@ -85,6 +88,10 @@ export function readPrefs(stored: unknown): Prefs {
     externalEditor: typeof o.externalEditor === 'string' && o.externalEditor.trim() ? o.externalEditor.trim() : null,
     navStyle: pick(o.navStyle, NAV_STYLE_IDS, d.navStyle),
     constrainWhileDrawing: o.constrainWhileDrawing !== false,
+    openingAlong: {
+      from: pick((o.openingAlong as { from?: unknown } | undefined)?.from, ['start', 'face', 'core'] as const, d.openingAlong.from),
+      point: pick((o.openingAlong as { point?: unknown } | undefined)?.point, ['start', 'centre', 'end'] as const, d.openingAlong.point),
+    },
   };
 }
 

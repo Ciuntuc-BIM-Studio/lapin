@@ -7,9 +7,10 @@
  */
 
 import type { Vec2 } from '../platform/module';
-import { formatAngle, formatLength, liveCommit, liveMeasure, useLive, type LiveField } from './liveInput';
+import { formatAngle, formatLength, liveCommit, liveMeasure, liveToggleMode, useLive, type LiveField } from './liveInput';
 import { unitLabel } from '../engine/unitsStore';
 import { useInterface } from '../app/interface';
+import { t } from '../i18n';
 
 type ToScreen = (p: Vec2) => { x: number; y: number };
 
@@ -31,8 +32,14 @@ export function LiveBox({ toScreen }: { toScreen: ToScreen }) {
         <span className="live-cell ro"><span className="live-label">Δx</span>{formatLength(m.dx)}<span className="live-unit">{unitLabel()}</span></span>
         <span className="live-cell ro"><span className="live-label">Δy</span>{formatLength(m.dy)}<span className="live-unit">{unitLabel()}</span></span>
       </>}
-      {cell('len', 'L', formatLength(m.len), unitLabel())}
-      {cell('ang', '∠', formatAngle(m.ang), '°')}
+      {live.mode === 'rect' ? <>
+        {cell('len', 'W', formatLength(m.dx), unitLabel())}
+        {cell('ang', 'H', formatLength(m.dy), unitLabel())}
+      </> : <>
+        {cell('len', 'L', formatLength(m.len), unitLabel())}
+        {cell('ang', '∠', formatAngle(m.ang), '°')}
+      </>}
+      {live.rect && <span className="live-hint" title={t('Space switches length and angle with width and height')}>␣</span>}
     </div>
   );
 }
@@ -50,6 +57,8 @@ export function LiveBar({ inline }: { inline?: boolean }) {
         onFocus={() => useLive.setState({ focus: f })}
         onChange={(e) => useLive.setState({ [f]: e.target.value })}
         onKeyDown={(e) => {
+          if (e.key === ' ' && live.rect) { e.preventDefault(); liveToggleMode(); return; }
+          if (e.key === ',' && live.rect && live.mode === 'rect' && f === 'len') { e.preventDefault(); useLive.setState({ focus: 'ang' }); return; }
           if (e.key === 'Enter') { e.preventDefault(); liveCommit(); }
           if (e.key === 'Tab') { e.preventDefault(); useLive.setState({ focus: f === 'len' ? 'ang' : 'len' }); }
           if (e.key === 'Escape') (e.target as HTMLInputElement).blur();
@@ -58,8 +67,14 @@ export function LiveBar({ inline }: { inline?: boolean }) {
   );
   return (
     <div className={`live-bar${inline ? ' inline' : ''}`} role="group" aria-label="Segment">
-      {field('len', `Length${unitLabel() ? ` (${unitLabel()})` : ''}`, formatLength(m.len))}
-      {field('ang', 'Angle (°)', formatAngle(m.ang))}
+      {live.rect && <button type="button" className="live-mode" title={t('Space switches length and angle with width and height')} onClick={liveToggleMode}>{live.mode === 'rect' ? t('Width × Height') : t('Length ∠ Angle')}</button>}
+      {live.mode === 'rect' ? <>
+        {field('len', `${t('Width')}${unitLabel() ? ` (${unitLabel()})` : ''}`, formatLength(m.dx))}
+        {field('ang', `${t('Height')}${unitLabel() ? ` (${unitLabel()})` : ''}`, formatLength(m.dy))}
+      </> : <>
+        {field('len', `Length${unitLabel() ? ` (${unitLabel()})` : ''}`, formatLength(m.len))}
+        {field('ang', 'Angle (°)', formatAngle(m.ang))}
+      </>}
       <span className="live-ro"><span>Δx</span>{formatLength(m.dx)}</span>
       <span className="live-ro"><span>Δy</span>{formatLength(m.dy)}</span>
       <span className="live-ro"><span>x</span>{formatLength(m.end.x)}</span>

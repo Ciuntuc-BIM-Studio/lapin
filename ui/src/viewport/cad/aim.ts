@@ -115,7 +115,11 @@ export function useCadCanvas(o: {
   outlines?: (id: string) => Shape[];
   /** Everything selectable a region takes (the command line's WP and CP). */
   inRegion?: (takes: RegionTest) => string[];
+  /** The axes ortho, polar tracking and the grid follow where no UCS is set: a turned plan's screen axes (decision 526). */
+  axes?: Frame | null;
 }) {
+  const axesRef = useRef(o.axes ?? null);
+  axesRef.current = o.axes ?? null;
   // A section's or an elevation's frame: its moves are also given in the model (a wall sweep moved up its wall).
   const frameRef = useRef(o.drawing ?? null);
   frameRef.current = o.drawing ?? null;
@@ -199,7 +203,7 @@ export function useCadCanvas(o: {
         }, 350) };
       }
     } else if (hold.current) { clearTimeout(hold.current.timer); hold.current = null; }
-    const frame = planRef.current ? ucsOf(useLocation.getState().loc) : null;
+    const frame = planRef.current ? ucsOf(useLocation.getState().loc) ?? axesRef.current : null;
     const aimed = resolveAim(raw, { base, ortho: cad.ortho || !!o2.orthoHeld, polar: cad.polar, polarStep: prefs.polarStep, snap: s, acquired: acquired.current, tol, grid: o2.grid, frame });
     // The drafted shape the point lies on: the snap's own, else the first drafted shape through the point (the model's lines may be found first where they coincide).
     const owner = aimed.mode ? (s && aimed.mode === s.mode ? owners[s.shape] : null) ?? draftThrough(drafts, aimed.point, aimed.mode) : null;

@@ -96,7 +96,7 @@ public static class FinishLayers
             var dir = (hb - ha).Normalized();
             if (Math.Abs(Vec2.Cross(dir, fDir)) > 0.01) continue;
             if (Spatial.StoreyOf(m, h.Id)?.Id != storey) continue;
-            if (Math.Abs(h.Num("baseOffset") - finish.Num("baseOffset")) > Level || Math.Abs(h.Num("height") - finish.Num("height")) > Level) continue;
+            if (Math.Abs(h.Num("baseOffset") - finish.Num("baseOffset")) > Level || Math.Abs(Walls.HeightOf(m, h) - Walls.HeightOf(m, finish)) > Level) continue;
             var n = dir.Perp;
             // The finish's faces across the wall's axis.
             var c0 = Vec2.Dot(fa + fDir.Perp * fBand.From - ha, n);

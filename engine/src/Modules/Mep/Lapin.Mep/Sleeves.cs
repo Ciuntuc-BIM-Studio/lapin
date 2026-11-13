@@ -39,7 +39,7 @@ public static class Sleeves
             var along = axis * (1 / length);
             var normal = new Vec2(-along.Y, along.X);
             var z0 = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
-            var z1 = z0 + (wall.NumOrNull("height") ?? Walls.DefaultHeight);
+            var z1 = z0 + Walls.HeightOf(m, wall);
             for (var i = 1; i < line.Count; i++)
             {
                 Vec2 a = line[i - 1].Xy, b = line[i].Xy;

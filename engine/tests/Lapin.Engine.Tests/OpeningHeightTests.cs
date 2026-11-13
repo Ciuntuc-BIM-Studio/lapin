@@ -23,7 +23,8 @@ public class OpeningHeightTests
         var f = new Fixture(new ArchitectureModule(), new DraftingModule());
         if (fresh) f.Session.New();
         var type = f.Type("Core 20", ("Brick", 0.2, true));
-        var wall = f.Wall(0, 0, 6, 0, type);
+        // 3 m high, whatever the new project's storeys (its lowest, the foundations, under the ground floor).
+        var wall = f.Wall(0, 0, 6, 0, type, height: 3.0);
         var opening = (string)f.Run("architecture.addWallOpening", new JsonObject { ["wallId"] = wall, ["along"] = 3, ["width"] = 1.2, ["height"] = 1.5, ["sill"] = 0.9 })!["id"]!;
         return (f, wall, opening);
     }

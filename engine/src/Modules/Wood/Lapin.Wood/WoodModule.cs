@@ -273,7 +273,7 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
         if (axis.Length < 1e-6) return null;
         var dir = axis.Normalized();
         var baseZ = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
-        var height = wall.Num("height", Walls.DefaultHeight);
+        var height = Walls.HeightOf(m, wall);
         // The core's run, from its part's bottom: at each end the inner one of the end face's corners (a mitre's or a butt's).
         var corePart = g.Parts.FirstOrDefault(p => p.Key == $"layer:{core.Index}");
         double u0 = 0, u1 = axis.Length;

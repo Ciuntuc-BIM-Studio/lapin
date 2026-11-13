@@ -25,6 +25,7 @@ import { layerRankHint } from './layerRank';
 import { flagsJson, flagsOf, newWallFlags, type LayerFlags } from './layerFlags';
 import { CATEGORY_TIP, LayerCategory } from './LayerCategory';
 import { LintelRuleEditor } from './LintelRule';
+import { WallTypeTop } from './WallTop';
 import { DEFAULT_RULE, type Rule } from './lintels';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { TypeFiles } from './TypeFiles';
@@ -271,6 +272,7 @@ export function WallTypesDialog() {
               </table>
             )}
             <LintelRuleEditor rule={lintels} onChange={(r) => setLintels(r ?? DEFAULT_RULE)} />
+            {editing && <WallTypeTop typeId={editing} />}
             {zones.length > 0 && <button type="button" className="btn" onClick={() => setZones([...zones, { key: '', name: 'Zone', role: 'masonry', height: 0.25, rest: false, material: 'Brick', block: null, rebar: null }])}><Plus size={14} />Zone</button>}
             <div className="row">
               <button type="button" className="btn" onClick={() => setRows([...rows, layer('Plaster', 0.015)])}><Plus size={14} />Layer</button>

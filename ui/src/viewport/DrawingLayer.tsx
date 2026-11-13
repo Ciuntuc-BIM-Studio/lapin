@@ -9,6 +9,7 @@ import { useSession } from '../engine/session';
 import { screenWidth, useDisplay } from '../app/display';
 import { screenFill, screenInk, type DrawingDto, type PenDto } from './drawing';
 import { imageUrl, visibleCrop } from './imageCrop';
+import { uprightText } from './orientation';
 
 type ToScreen = (p: { x: number; y: number }) => { x: number; y: number };
 
@@ -43,15 +44,17 @@ export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPe
       return (
         <g key={i} className="pen-text" fill={stroke ?? '#000'}>
           {p.texts.map((t, k) => {
-            const at = toScreen({ x: t.x, y: t.y });
             const size = t.height * pxPerMm;
             if (size < minText) return null;
+            // A turned plan (decision 526, or true north up) keeps its texts readable: upright within ±90°, as the engine prints them.
+            const u = uprightText(t, turnDeg, (drawing.scale ?? 100) / 1000);
+            const at = toScreen({ x: u.x, y: u.y });
             return (
               <text key={k} x={at.x} y={at.y} fontSize={size} fontWeight={t.bold ? 700 : 400} fontStyle={t.italic ? 'italic' : undefined}
                 fontFamily={t.font === 'serif' ? 'ui-serif, Georgia, serif' : t.font === 'mono' ? 'ui-monospace, Menlo, monospace' : 'ui-sans-serif, system-ui, sans-serif'}
-                textAnchor={t.anchor === 'start' ? 'start' : t.anchor === 'end' ? 'end' : 'middle'}
+                textAnchor={u.anchor === 'start' ? 'start' : u.anchor === 'end' ? 'end' : 'middle'}
                 dominantBaseline={t.baseline === 'middle' ? 'central' : 'alphabetic'}
-                transform={t.angle || turnDeg ? `rotate(${-(t.angle ?? 0) - turnDeg} ${at.x} ${at.y})` : undefined}>{t.text}</text>
+                transform={u.angle ? `rotate(${-u.angle} ${at.x} ${at.y})` : undefined}>{t.text}</text>
             );
           })}
         </g>

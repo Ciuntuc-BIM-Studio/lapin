@@ -37,6 +37,22 @@ The properties panel shows the selected wall. The top of the panel holds its typ
 
 ![A wall's properties](shots/wall-properties.webp)
 
+### The wall's top
+
+A wall goes up to the level above by itself. Its **Top**, in its properties, says where it goes:
+
+- **Storey above** (a new wall's default): to the level of the storey above its own. On the topmost storey, to that storey's own top (its level and height).
+- a storey of the project: to that storey's level, two storeys up for a wall through a double-height hall.
+- **Unconnected height**: to a height of its own, the **Height** you type.
+
+![A wall's top: the storey above, its offset and the height it comes to](shots/wall-top.webp)
+
+**Top offset** is added to the level it goes to: −300 stops a wall under a floor's structure, +900 takes a parapet over the roof's level. The **Height** shown below is worked out from the storeys every time, so raising or lowering a storey (its **Base level** in its properties) moves the tops of the walls going to it, and lowering the storey a wall stands on lowers its base and keeps its top. Their joins, layers that stop at a height, doors and windows, sweeps, quantities, schedules, drawings and the IFC export all follow. A change reaches every selected wall in one step.
+
+A top that would come at or below the wall's base is refused; one that comes so later (the storey above brought down to the wall's) leaves the wall at its own height, and **Problems** says so. Deleting a storey lets the walls going to it stand unconnected at the height they had. **Copy to storeys** sends a copy as many storeys up as the original went. Typing a height in a wall's properties makes it unconnected. **Attach to roof** still takes the wall up to a roof's underside from wherever its top is.
+
+While the Wall tool is on, the list after the line's in the command line's bar chooses the top of the walls you draw: **as the type**, **storey above** or a storey with an offset, or **unconnected height** with a height. A wall type gives its walls a top too: **Wall top** in **Wall types**, under the lintels, is the storey above with an offset (−450 for walls under the beams) or an unconnected height (1100 for a parapet type). Walls drawn before this stay at the height they had (unconnected); walls from an IFC file stand as the file says, and Lapin's own IFC files bring their tops back.
+
 Further down, **Dependencies** shows what is built from the wall and what the wall is built from. **Used by** lists the elements that change when the wall changes: the walls it joins, its doors and windows, a wall attached to it. Click a name to select that element. **Built from** lists the elements the wall depends on, then its type and materials. When you delete an element that others depend on, a message names the ones that were rebuilt; <kbd>Ctrl</kbd> <kbd>Z</kbd> brings everything back.
 
 **Flip** turns the wall's layers to the other side. You can also click the small arrows shown next to a selected wall in the plan.

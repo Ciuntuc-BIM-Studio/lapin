@@ -79,6 +79,83 @@ public sealed record PenText(Vec2 At, string Text, double Height, double Angle =
 }
 
 /// <summary>
+/// A drawing turned on its paper (a plan's orientation, decision 526): its points turned about the drawing's origin, its
+/// texts with it, each kept readable (upright within ±90°, as drafting conventions do: read from the bottom or the right).
+/// </summary>
+public static class Turning
+{
+    /// <summary>A point turned anticlockwise by <paramref name="radians"/> about the origin.</summary>
+    public static Vec2 Turn(Vec2 p, double radians)
+    {
+        if (radians == 0) return p;
+        var (c, s) = (Math.Cos(radians), Math.Sin(radians));
+        return new Vec2(p.X * c - p.Y * s, p.X * s + p.Y * c);
+    }
+
+    /// <summary>An angle (degrees) brought into (−180°, 180°].</summary>
+    public static double Normalize(double deg)
+    {
+        var a = deg % 360;
+        if (a <= -180) a += 360;
+        if (a > 180) a -= 360;
+        return a;
+    }
+
+    /// <summary>Whether a text at <paramref name="deg"/> (anticlockwise) reads upright: from the bottom, or from the right when vertical.</summary>
+    public static bool Readable(double deg)
+    {
+        var a = Normalize(deg);
+        return a > -90 + 1e-6 && a <= 90 + 1e-6;
+    }
+
+    /// <summary>
+    /// A text as a drawing turned by <paramref name="turnDeg"/> shows it, still in the drawing's own coordinates (its
+    /// point is placed by the caller's map, which turns it): its angle the turned one; one that would read upside down is
+    /// turned over on its own footprint (anchor start ↔ end, its point moved across by its height), so it stays where it was.
+    /// <paramref name="unitsPerMm"/>: drawing units per paper millimetre (the text's height is paper mm).
+    /// </summary>
+    public static PenText Upright(PenText t, double turnDeg, double unitsPerMm)
+    {
+        if (turnDeg == 0) return t;
+        var a = t.Angle + turnDeg;
+        if (Readable(a)) return t with { Angle = Normalize(a) };
+        var r = t.Angle * Math.PI / 180;
+        var up = new Vec2(-Math.Sin(r), Math.Cos(r));
+        var at = t.Baseline == "middle" ? t.At : t.At + up * (t.Height * unitsPerMm);
+        var anchor = t.Anchor switch { "start" => "end", "end" => "start", _ => t.Anchor };
+        return t with { At = at, Angle = Normalize(a + 180), Anchor = anchor };
+    }
+
+    /// <summary>A pen turned by <paramref name="radians"/> about the drawing's origin, its texts readable (<see cref="Upright"/>).</summary>
+    public static Pen Turned(Pen pen, double radians, double unitsPerMm)
+    {
+        if (radians == 0) return pen;
+        var deg = radians * 180 / Math.PI;
+        var o = new Pen(pen.Layer, pen.Stroke, pen.Width, pen.Fill, pen.Dash) { Viewport = pen.Viewport, Block = pen.Block, Clip = pen.Clip };
+        o.Segments.AddRange(pen.Segments.Select(s => (Turn(s.A, radians), Turn(s.B, radians))));
+        o.Loops.AddRange(pen.Loops.Select(l => (IReadOnlyList<Vec2>)l.Select(p => Turn(p, radians)).ToList()));
+        o.Texts.AddRange(pen.Texts.Select(t => { var u = Upright(t, deg, unitsPerMm); return u with { At = Turn(u.At, radians) }; }));
+        o.Images.AddRange(pen.Images.Select(i => i with { Corners = [.. i.Corners.Select(p => Turn(p, radians))] }));
+        return o;
+    }
+
+    /// <summary>The bounds of pens' points (segments, loops, texts' points; not pictures, which reach far past the model); null when they draw nothing.</summary>
+    /// <paramref name="radians"/>: as the pens show turned by it about the origin.
+    public static (Vec2 Min, Vec2 Max)? Bounds(IEnumerable<Pen> pens, double radians = 0)
+    {
+        double x0 = double.PositiveInfinity, y0 = double.PositiveInfinity, x1 = double.NegativeInfinity, y1 = double.NegativeInfinity;
+        void Add(Vec2 p) { p = Turn(p, radians); x0 = Math.Min(x0, p.X); y0 = Math.Min(y0, p.Y); x1 = Math.Max(x1, p.X); y1 = Math.Max(y1, p.Y); }
+        foreach (var pen in pens)
+        {
+            foreach (var (a, b) in pen.Segments) { Add(a); Add(b); }
+            foreach (var l in pen.Loops) foreach (var p in l) Add(p);
+            foreach (var t in pen.Texts) Add(t.At);
+        }
+        return x0 <= x1 ? (new Vec2(x0, y0), new Vec2(x1, y1)) : null;
+    }
+}
+
+/// <summary>
 /// A view's per-category graphics: line colour and weight, fill colour, a cut
 /// hatch over the materials'. The weight is a pen of the ISO 128 series in mm
 /// ("0.13" … "1.0", see <see cref="Pens.IsoWeights"/>); the older names heavy,

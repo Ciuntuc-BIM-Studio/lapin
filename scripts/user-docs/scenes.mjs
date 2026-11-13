@@ -478,6 +478,8 @@ export const scenes = [
       await t.shot('wall-drawing');
       // The line it is drawn on (decision 237): offered in the command line's bar while the tool is on.
       t.expect(await t.page.locator('[data-testid=wall-line]').count() > 0, 'the Wall tool offers the line it is drawn on');
+      // And the top of the walls drawn (the forum's topic #45): as the type, the storey above, a storey, or a height.
+      t.expect(await t.page.locator('[data-testid=wall-tool-top]').count() > 0, 'the Wall tool offers the top of the walls it draws');
       await t.keys('Escape', 'Escape');
       const walls = (await t.nodes()).filter((n) => n.type === 'IfcWall');
       t.expect(walls.length === 2, `two walls drawn, found ${walls.length}`);
@@ -489,6 +491,21 @@ export const scenes = [
       // Each wall's own length and thickness (report #107).
       t.expect(await t.page.locator('[data-field=wall-length]').count() === 1 && await t.page.locator('[data-field=wall-thickness]').count() === 1, 'the wall\'s length and thickness are fields');
       await t.shot('wall-properties', { of: 'aside.props', pad: 0, maxHeight: 620 });
+      // Its top (the forum's topic #45): the storey above by default, its height worked out from the storeys, following them.
+      t.expect(await t.page.locator('[data-testid=wall-top]').inputValue() === 'above', 'a new wall goes up to the storey above');
+      const levels = (await t.nodes()).filter((n) => n.type === 'IfcBuildingStorey').sort((p, q) => (p.props.elevation ?? 0) - (q.props.elevation ?? 0));
+      const above = levels[levels.findIndex((n) => n.id === walls[0].storeyId) + 1];
+      if (above) {
+        const was = above.props.elevation ?? 0;
+        const height = async () => (await t.call('doc.query', { name: 'architecture.wallTop', args: { id: walls[0].id } })).height;
+        const before = await height();
+        await t.cmd('storey.update', { id: above.id, elevation: was + 0.2, keepTop: true });
+        const after = await height();
+        t.expect(Math.abs(after - before - 0.2) < 1e-6, `the wall follows the storey above raised 200 (${before} → ${after})`);
+        await t.cmd('storey.update', { id: above.id, elevation: was, keepTop: true });
+      }
+      await t.wait(400);
+      await t.shot('wall-top', { of: 'aside.props dl:has([data-testid=wall-top])', pad: 6 });
       await t.tool('architecture.wallTypes');
       t.expect(await t.page.locator('.dialog [data-testid=wall-legend]').count() === 1, 'the wall types show their legend');
       await t.shot('wall-types', { of: '.dialog', pad: 0 });
@@ -729,6 +746,18 @@ export const scenes = [
       const along = async (id) => { const ns = await t.nodes(); const fill = ns.find((n) => n.id === id); const rel = (await t.call('doc.query', { name: 'architecture.openingReferences', args: { id: fill.id } })); return rel.opening.along; };
       t.expect(Math.abs((await along(w2)) - (await along(w1)) - 2.5) < 1e-6, 'the windows\' middles 2500 apart');
       await t.shot('temp-dims-axes', { clip: await box() });
+      // Properties: "Along the wall" with its two choices (measured from the meeting wall's face, to the window's start); a value typed moves it.
+      await t.page.locator('[data-field=along-from]').selectOption('face');
+      await t.page.locator('[data-field=along-point]').selectOption('start');
+      await t.wait(400);
+      const shown = await t.page.locator('[data-field=along] input').first().inputValue();
+      const was = await along(w2);
+      const input = t.page.locator('[data-field=along] input').first();
+      await input.fill(String(Number(shown.replace(/[^0-9.-]/g, '')) + 100));
+      await input.press('Enter');
+      await t.wait(700);
+      t.expect(Math.abs(Math.abs((await along(w2)) - was) - 0.1) < 1e-6, 'Along the wall, measured from the face to the window\'s start: 100 more moved it 100');
+      await t.shot('along-field', { of: '[data-field=along]', pad: 12 });
       // Too far: refused, nothing moves.
       const before = await along(w2);
       await type('-1:1', '9000');
@@ -4490,6 +4519,73 @@ export const scenes = [
     },
   },
   {
+    // Decision 525 (a tester's question: how to rotate the view along the screen): a plan turned to align with a wall, on
+    // screen and on its sheet, its texts readable.
+    id: 'views-plan-orientation',
+    touches: ['core', 'architecture', 'drafting'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      // A house standing at 30° to the plan's axes: 12 × 8 m, a door, its rooms named.
+      const c = Math.cos(Math.PI / 6), n = Math.sin(Math.PI / 6);
+      const at = (x, y) => [x * c - y * n, x * n + y * c];
+      const outline = [[0, 0], [12, 0], [12, 8], [0, 8]].map(([x, y]) => at(x, y));
+      const walls = [];
+      for (let i = 0; i < 4; i++) {
+        const [a, b] = [outline[i], outline[(i + 1) % 4]];
+        walls.push((await t.cmd('architecture.addWall', { storeyId: s, x1: a[0], y1: a[1], x2: b[0], y2: b[1] })).id);
+      }
+      const [i0, i1] = [at(7, 0), at(7, 8)];
+      await t.cmd('architecture.addWall', { storeyId: s, x1: i0[0], y1: i0[1], x2: i1[0], y2: i1[1] });
+      await t.cmd('architecture.addDoor', { wallId: walls[0], x: at(3, 0)[0], y: at(3, 0)[1] });
+      const plan = `plan:${s}`;
+      await t.cmd('drafting.addText', { viewId: plan, at: at(3.5, 4), text: 'Living room' });
+      await t.cmd('drafting.addText', { viewId: plan, at: at(9.5, 4), text: 'Bedroom' });
+      await t.cmd('drafting.addDimension', { viewId: plan, a: outline[0], b: outline[1], at: at(0, -1.5) });
+      await t.ui({ view: 'plan', keyPlan: false, planDrawing: true });
+      await t.wait(1200);
+      await t.fit();
+      // The plan's Rotate view button: its menu.
+      await t.until(async () => (await t.page.locator('[data-testid=plan-orientation]').count()) > 0, 'the Rotate view button on the plan');
+      await t.page.locator('[data-testid=plan-orientation]').first().click();
+      await t.wait(400);
+      t.expect(await t.page.getByRole('menuitem').count() >= 4, 'Rotate view offers north up, an angle, an edge and the UCS');
+      await t.shot('plan-orientation-menu', { clip: await t.page.evaluate(() => { const m = document.querySelector('[role=menu]') ?? document.querySelector('.context-menu'); const r = (m ?? document.body).getBoundingClientRect(); return { x: Math.max(0, r.left - 360), y: Math.max(0, r.top - 60), width: Math.min(window.innerWidth, r.width + 480), height: Math.min(window.innerHeight - Math.max(0, r.top - 60), r.height + 140) }; }) });
+      // Rotate view to align with an edge: the house's front wall, picked by its two corners.
+      await t.page.getByRole('menuitem').nth(2).click();
+      await t.wait(400);
+      for (const [x, y] of [outline[0], outline[1]]) {
+        const [px, py] = await t.planPoint(x, y);
+        await t.page.mouse.move(px, py, { steps: 4 });
+        await t.wait(200);
+        await t.page.mouse.click(px, py);
+        await t.wait(500);
+      }
+      const turnedView = async () => (await t.nodes()).find((v) => v.props?.kind === 'plan' && v.props.orientation != null);
+      await t.until(async () => Math.abs(Number((await turnedView())?.props.orientation) - 30) < 0.5, 'the plan view turned to 30°, its front wall along the screen');
+      const turned = await turnedView();
+      await t.wait(800);
+      await t.fit();
+      await t.wait(800);
+      t.expect(((await t.page.locator('[data-testid=plan-orientation]').first().getAttribute('class')) ?? '').includes('on'), 'the Rotate view button says the plan is turned');
+      await t.shot('plan-orientation', { of: '[data-testid=plan]', pad: 0 });
+      // On its sheet the plan prints as it shows: the walls level and upright, the texts readable.
+      const sheet = await t.cmd('sheet.create', { name: 'Turned plan', number: 'A-110', paper: 'A3' });
+      await t.cmd('sheet.addViewport', { id: sheet.id, viewId: turned.id, x: 200, y: 140 });
+      const page = await t.call('doc.query', { name: 'sheet.drawing', args: { id: sheet.id } });
+      const cuts = page.pens.filter((p) => p.layer === 'CUT').flatMap((p) => { const q = p.segments ?? []; const o = []; for (let k = 0; k + 3 < q.length; k += 4) o.push([q[k], q[k + 1], q[k + 2], q[k + 3]]); return o; });
+      const long = cuts.filter(([x1, y1, x2, y2]) => Math.hypot(x2 - x1, y2 - y1) > 30);
+      t.expect(long.length > 0 && long.every(([x1, y1, x2, y2]) => { const l = Math.hypot(x2 - x1, y2 - y1); return Math.abs(y2 - y1) < l * 0.01 || Math.abs(x2 - x1) < l * 0.01; }), 'the sheet prints the walls level and upright');
+      const texts = page.pens.filter((p) => p.viewport).flatMap((p) => p.texts ?? []);
+      t.expect(texts.some((x) => x.text === 'Living room') && texts.every((x) => x.angle > -90 + 1e-6 && x.angle <= 90 + 1e-6), 'the texts on the sheet read upright (within ±90°)');
+      await t.wait(800);
+      const sheetLabel = await t.page.locator('nav.browser').getByText(/Turned plan/).first().textContent();
+      await openFromBrowser(t, sheetLabel?.trim() || 'Turned plan', 3000);
+      await t.fit();
+      await t.shot('plan-orientation-sheet', { clip: { x: 250, y: 120, width: 1190, height: 730 } });
+    },
+  },
+  {
     // A section seen in 3D (the browser's right-click), and a walk into a room (the plan's right-click).
     id: 'views-3d',
     async run(t) {
@@ -5032,6 +5128,20 @@ export const scenes = [
       const asks = await t.page.locator('[data-testid=command-line]').innerText();
       t.expect(/point/i.test(asks), `the command line asks for the next point (it says: ${asks.replace(/\s+/g, ' ').slice(0, 120)})`);
       await t.shot('command-line', { clip: { x: 250, y: 120, width: 860, height: 730 } });
+      await t.keys('Escape', 'Escape');
+      // Rectangle: the box by the cursor switches to width and height with Space (the mode is remembered), Tab goes to the height.
+      await t.page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
+      await t.page.keyboard.type('REC'); await t.page.keyboard.press('Enter');
+      const [rx, ry] = await t.planPoint(2, 2);
+      await t.page.mouse.move(rx, ry, { steps: 3 }); await t.page.mouse.click(rx, ry);
+      const [sx, sy] = await t.planPoint(4, 3.2);
+      await t.page.mouse.move(sx, sy, { steps: 6 });
+      await t.wait(300);
+      await t.page.keyboard.press(' ');
+      await t.page.keyboard.type('2000'); await t.page.keyboard.press('Tab'); await t.page.keyboard.type('-1500');
+      await t.wait(300);
+      t.expect(await t.page.locator('.live-box .live-label', { hasText: 'W' }).count() === 1, 'Space turns the box by the cursor into width and height');
+      await t.shot('rectangle-box', { clip: { x: 250, y: 120, width: 860, height: 730 } });
       await t.keys('Escape', 'Escape');
       // Move the inner wall (decision 165): from its middle (snapped), partway across the room with ortho on.
       await select(t, walls.inner);
@@ -7137,6 +7247,7 @@ export const scenes = [
     // My tools (group Scripts) without being run; a click runs it: its lapin.ui.ask dialog (sizes in metres, the storey) is the
     // window's own; OK makes four walls as one undo step named after the tool; one Undo takes them away. Developer extras stay
     // off: a tool is for anyone. Python is this computer's own: with none, the tool is photographed and the run left out.
+    // Decision 528: then a script's own panel in My tools, with a menu (its pulldown) and a palette whose button makes a wall.
     id: 'python-tools',
     touches: ['scripting', 'architecture', 'core'],
     async run(t) {
@@ -7144,6 +7255,7 @@ export const scenes = [
       const page = t.page;
       const walls = async () => (await t.nodes()).filter((n) => n.type === 'IfcWall').length;
       const file = `${say({ en: 'Perimeter walls', ro: 'Pereți perimetrali' }, t.lang)}.py`;
+      const file2 = `${say({ en: 'Wall tools', ro: 'Unelte pereți' }, t.lang)}.py`;
       const tool = say({ en: 'Perimeter walls', ro: 'Pereți perimetrali' }, t.lang);
       const code = [
         `# lapin: name="${tool}", version="1.0.0", tool="${tool}", icon="square", run="perimeter"`,
@@ -7196,8 +7308,67 @@ export const scenes = [
         // One Undo takes the four walls away.
         await page.locator('.undo-btn').first().click();
         await t.until(async () => (await walls()) === 0, 'one Undo takes the four walls away');
+
+        // Decision 528: a second script, run once, registers a panel of its own with a menu (a pulldown of two tools) and a
+        // palette (fields and a button). The palette's button makes a wall from its fields, one undo step named after it.
+        const panelName = say({ en: 'Walls', ro: 'Pereți' }, t.lang);
+        const menuName = say({ en: 'Openings', ro: 'Goluri' }, t.lang);
+        const paletteName = say({ en: 'Wall tools', ro: 'Unelte pereți' }, t.lang);
+        const buttonName = say({ en: 'Make wall', ro: 'Fă peretele' }, t.lang);
+        const length = say({ en: 'length', ro: 'lungime' }, t.lang);
+        const height = say({ en: 'height', ro: 'înălțime' }, t.lang);
+        const storey = say({ en: 'storey', ro: 'nivel' }, t.lang);
+        const code2 = [
+          `with lapin.ui.panel("${panelName}"):`,
+          `    with lapin.ui.menu("${menuName}", icon="door"):`,
+          `        @lapin.ui.tool("${say({ en: 'Door here', ro: 'Ușă aici' }, t.lang)}", icon="door")`,
+          '        def door():',
+          '            print("door")',
+          `        @lapin.ui.tool("${say({ en: 'Window here', ro: 'Fereastră aici' }, t.lang)}", icon="frame")`,
+          '        def window():',
+          '            print("window")',
+          `    p = lapin.ui.palette("${paletteName}", icon="wall")`,
+          `    p.heading("${say({ en: 'New wall', ro: 'Perete nou' }, t.lang)}")`,
+          `    p.field("${length}", lapin.ui.number(5.0, unit="m", min=0.5))`,
+          `    p.field("${height}", lapin.ui.number(2.8, unit="m", min=0.5))`,
+          `    p.field("${storey}", lapin.ui.storey())`,
+          `    @p.button("${buttonName}", icon="hammer")`,
+          '    def make(v):',
+          `        lapin.architecture.add_wall(storey_id=v["${storey}"].id, x1=0, y1=0, x2=v["${length}"], y2=0, height=v["${height}"])`,
+          '',
+        ].join('\n');
+        await t.call('script.save', { name: file2, code: code2 });
+        await page.evaluate(async () => { await (await import('/src/modules/scripting/store.ts')).refreshFiles(); });
+        // Run once (as the Script panel's Run does): the kernel says back what the script registered.
+        await t.call('script.run', { code: code2, name: file2, source: `mine:${file2}` });
+        const menuId = `script:mine:${file2}#${menuName}`, paletteId = `script:mine:${file2}#${paletteName}`;
+        await t.until(async () => page.evaluate(async ([g, m, p]) => (await import('/src/app/myTools.ts')).myTab().groups.some((x) => x.label === g && x.items.some((i) => i.tool === m) && x.items.some((i) => i.tool === p)), [panelName, menuId, paletteId]),
+          'the menu and the palette are put in My tools, in the script\'s own group', 60_000);
+        await t.until(async () => (await page.evaluate(async () => (await import('/src/modules/scripting/store.ts')).useScripting.getState().running)) == null, 'the run ends');
+        await t.wait(400);
+        await t.shot('python-tools-panel', { of: '.topbar', pad: 0 });
+        // The menu's button opens its tools' list under it.
+        await page.locator(`.my-band [data-my-tool="${menuId}"]`).click();
+        await page.locator('.context-menu').waitFor({ timeout: 10_000 });
+        await t.wait(200);
+        await t.shot('python-tools-menu', { of: '.context-menu', pad: 24 });
+        await page.keyboard.press('Escape');
+        // The palette's button opens the palette; its button makes the wall from the fields.
+        await page.locator(`.my-band [data-my-tool="${paletteId}"]`).click();
+        const palette = page.locator(`[data-palette="${paletteName}"]`);
+        await palette.waitFor({ timeout: 10_000 });
+        await palette.locator(`[data-ask-field="${length}"] input`).fill('6');
+        await t.wait(300);
+        await t.shot('python-tools-palette', { of: `[data-palette="${paletteName}"]`, pad: 16 });
+        await palette.locator(`[data-palette-button="${buttonName}"]`).click();
+        await t.until(async () => (await walls()) === 1, 'the palette\'s button makes one wall', 60_000);
+        await t.until(async () => (await page.evaluate(async () => (await import('/src/modules/scripting/store.ts')).useScripting.getState().running)) == null, 'the run ends');
+        const after = await page.evaluate(async () => (await import('/src/engine/session.ts')).useSession.getState().doc);
+        t.expect(after?.undoLabel === buttonName, `the button's run is one undo step named after it (${after?.undoLabel})`);
+        await palette.locator('[data-action=palette-close]').click();
       } finally {
         await t.call('script.delete', { name: file }).catch(() => undefined);
+        await t.call('script.delete', { name: file2 }).catch(() => undefined);
       }
     },
   },
@@ -9563,6 +9734,50 @@ export const scenes = [
       await t.fit();
       await t.wait(1200);
       await t.shot('furniture-plan-symbol', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
+    // Visual graphs (decision 527, docs/plan-visual-graphs.md, stage 1): a graph of a series, two points and the Wall command
+    // (a row of three walls), kept in the project; View → Graphs opens it beside the plan; the engine's ghost shows the three
+    // walls in the plan before anything is made (the model untouched); Bake makes them in one undo step.
+    id: 'graphs',
+    touches: ['graphs', 'architecture', 'core'],
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const walls = async () => (await t.nodes()).filter((n) => n.type === 'IfcWall').length;
+      const N = (id, kind, x, y, values) => ({ id, kind, x, y, ...(values ? { values } : {}) });
+      const graph = {
+        format: 1,
+        nodes: [
+          N('n1', 'series', 20, 40, { start: 0, step: 4, count: 3 }),
+          N('n2', 'point', 260, 0),
+          N('n3', 'point', 260, 120, { y: 6 }),
+          N('n4', 'command:architecture.addWall', 500, 40, { height: 2.8 }),
+        ],
+        wires: [
+          { from: 'n1', out: 'list', to: 'n2', in: 'x' }, { from: 'n1', out: 'list', to: 'n3', in: 'x' },
+          { from: 'n2', out: 'point', to: 'n4', in: 'pt:1' }, { from: 'n3', out: 'point', to: 'n4', in: 'pt:2' },
+        ],
+      };
+      const name = say({ en: 'Row of walls', ro: 'Rând de pereți' }, t.lang);
+      const saved = await t.cmd('graphs.save', { name, graph });
+      t.expect(saved?.id, 'the graph is kept in the project');
+      await t.tool('graphs.panel');
+      await page.waitForSelector('[data-testid=graphs-view]', { timeout: 10_000 });
+      await page.evaluate(async (id) => (await import('/src/modules/graphs/store.ts')).openGraph(id), saved.id);
+      await page.waitForSelector('[data-graph-node=n4]', { timeout: 10_000 });
+      await t.until(async () => (await page.locator('[data-testid=graph-ghost-plan]').getAttribute('data-count').catch(() => null)) !== null, 'the ghost is drawn in the plan');
+      t.expect(await walls() === 0, 'the preview makes nothing in the model');
+      await page.locator('[data-graph-node=n4] .head').click();
+      await t.wait(600);
+      await t.shot('graphs-panel');
+      await page.locator('[data-action=graph-bake]').click();
+      await t.until(async () => (await walls()) === 3, 'Bake makes the three walls');
+      const doc = await page.evaluate(async () => (await import('/src/engine/session.ts')).useSession.getState().doc);
+      t.expect(doc?.undoLabel === 'Bake graph', `Bake is one undo step (${doc?.undoLabel})`);
+      await t.wait(800);
+      await t.shot('graphs-baked');
     },
   },
   // [scenes:C]

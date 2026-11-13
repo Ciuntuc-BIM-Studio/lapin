@@ -590,7 +590,7 @@ sealed class GateCuts : IGeometryFilter
         if (services.Get<ISolidBooleans>() is not { } booleans) return geometry with { Diagnostics = [.. geometry.Diagnostics ?? [], "A gate's cut needs the boolean library (manifold), missing here."] };
         var bands = Walls.Section(model, entity);
         var z = (Spatial.StoreyOf(model, entity.Id)?.Num("elevation") ?? 0) + entity.Num("baseOffset");
-        var top = z + entity.Num("height", Walls.DefaultHeight);
+        var top = z + Walls.HeightOf(model, entity);
         var (a, b) = (Walls.Start(entity), Walls.End(entity));
         var u = (b - a).Normalized();
         var cutters = new List<Solid>();

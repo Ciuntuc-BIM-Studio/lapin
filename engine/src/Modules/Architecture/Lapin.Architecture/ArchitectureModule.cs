@@ -120,8 +120,11 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         });
         r.Class(new(IfcClass.Wall, "Wall",
         [
-            new("height", "Height", "length", Min: 0.01),
+            // Its own height, shown while it is unconnected; a wall with a top (WallTop) shows its height worked out in its Wall section.
+            new("height", "Height", "length", Min: 0.01, ShowIf: FieldDescriptor.When(WallTop.Key, "")),
             new("baseOffset", "Base offset", "length"),
+            // Its top's offset: a length (IFC writes it so), set in the Wall section with the top (architecture.setWallTop), never here.
+            new(WallTop.OffsetKey, "Top offset", "length", ShowIf: FieldDescriptor.When(WallTop.OffsetKey, "\u0001never")),
             new(PathCurve.Key, "Arc rise", "length"),
             new("cutPriority", "Cut priority", "number", Min: 0, Max: 100),
             new("roofTop", "Top under a roof", "choice", Choices: RoofTop.Modes),
@@ -158,6 +161,10 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Service<IElementPlacement>(new WallPlacement());
         r.Service<IHostedPlacement>(new HostedOpenings());
         r.Service<IDeletion>(new Roofs.RoofDeletion());
+        // A storey deleted that walls' tops go to: they stand unconnected at the height they had (WallTop).
+        r.Service<IDeletion>(new WallTopDeletion());
+        // A height typed on a wall with a top (the inspector's element.update): a height of its own, the wall unconnected.
+        r.Service<IElementUpdate>(new WallTopDeletion());
         r.Geometry(IfcClass.Door, (fill, model, _) => Openings.FillGeometry(fill, model));
         r.Geometry(IfcClass.Window, (fill, model, _) => Openings.FillGeometry(fill, model));
         r.Geometry(IfcClass.OpeningElement, (opening, model, _) => Openings.BareGeometry(opening, model));
@@ -738,7 +745,17 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var (p1, p2) = (P(a, "x1", "y1"), P(a, "x2", "y2"));
             var rise = Args.Rise(a, p1, p2);
             var unjoined = a["join"] is JsonValue j && j.TryGetValue<bool>(out var join) && !join;
-            var wall = Walls.AddUnjoined(ctx, storeyId, p1, p2, Json.Number(a["height"]) ?? Walls.DefaultHeight, Json.Number(a["baseOffset"]) ?? 0, type);
+            // Its top (the forum's topic #45): the one asked, else unconnected at a height given, else its type's, else the storey above.
+            var (top, topOffset, height, asked) = WallTop.ForNew(a, type ?? WallTypes.EnsureDefault(ctx));
+            var wall = Walls.AddUnjoined(ctx, storeyId, p1, p2, height, Json.Number(a["baseOffset"]) ?? 0, type);
+            if (top != null)
+            {
+                var ta = wall.CloneAttrs();
+                try { WallTop.Set(ctx.Model, wall, ta, top, topOffset, null); }
+                // A top asked for that cannot be is refused; one by default leaves the wall its own height.
+                catch (CommandException) when (!asked) { ta = wall.CloneAttrs(); }
+                ctx.Replace(wall = wall.With(attrs: ta));
+            }
             // Drawn on another line than the core's centre (decision 237): the axis set off from it; a straight wall only.
             if ((string?)a["reference"] is { Length: > 0 } reference && reference != "core" && rise == 0) wall = WallReference.Apply(ctx, wall, reference);
             // A curved wall: the arc through its ends, rising off the chord (or through a third point), before it joins.
@@ -817,8 +834,16 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             if (Json.Number(a["x2"]) is { } x2) end = end with { X = x2 };
             if (Json.Number(a["y2"]) is { } y2) end = end with { Y = y2 };
             if ((end - start).Length < 1e-3) throw new CommandException("A wall needs two different points: it would have no length.");
-            var height = Json.Number(a["height"]) ?? wall.Num("height", Walls.DefaultHeight);
+            // A height typed is a height of its own: the wall goes unconnected (its top, WallTop, let go).
+            var height = Json.Number(a["height"]) ?? WallTop.Stored(wall);
             if (!(height > 0)) throw new CommandException("A wall's height must be positive.");
+            if (Json.Number(a["height"]) != null && WallTop.Of(wall) != null)
+            {
+                var freed = wall.CloneAttrs();
+                freed.Remove(WallTop.Key);
+                freed.Remove(WallTop.OffsetKey);
+                wall = wall.With(attrs: freed);
+            }
             var thickness = Json.Number(a["thickness"]) ?? wall.NumOrNull("thickness");
             if (thickness is <= 0) throw new CommandException("A wall's thickness must be positive.");
             var baseOffset = Json.Number(a["baseOffset"]) ?? wall.Num("baseOffset");
@@ -837,6 +862,47 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             if ((start - Walls.Start(wall)).Length > 1e-12 || (end - Walls.End(wall)).Length > 1e-12)
                 Joins.MoveEnds(ctx, Paths(ctx), ctx.Model.Get(wall.Id)!, start, end, moveJoined, a["detachJoinedEnds"] is JsonValue dj && dj.TryGetValue<bool>(out var detach) && detach);
             return null;
+        });
+
+        // A wall's top (the forum's topic #45): {ids, top?: "above" | a storey's id | null (unconnected), topOffset?, height? (its own, unconnected)};
+        // what is not given stays. Each wall's height then worked out on every ask (WallTop); one disconnected keeps the height it had.
+        r.Command("setWallTop", "Wall top", (ctx, a) =>
+        {
+            var ids = Ids(a).ToList();
+            if (ids.Count == 0) throw new CommandException("Which wall?");
+            foreach (var id in ids)
+            {
+                var wall = Spatial.Require(ctx.Model, id, IfcClass.Wall);
+                var top = a.ContainsKey("top") ? ((string?)a["top"] is { Length: > 0 } t && t != WallTop.Unconnected ? t : null) : WallTop.Of(wall);
+                var offset = a.ContainsKey("topOffset") ? Json.Number(a["topOffset"]) ?? 0 : wall.Num(WallTop.OffsetKey);
+                var attrs = wall.CloneAttrs();
+                WallTop.Set(ctx.Model, wall, attrs, top, offset, Json.Number(a["height"]));
+                var after = wall.With(attrs: attrs);
+                // The openings must still fit the wall as it will stand.
+                foreach (var o in Openings.PlacedOn(ctx.Model, wall.Id)) Openings.CheckFits(ctx.Model, after, o.Along, o.Sill, o.Width, o.Height, o.Opening.Id);
+                ctx.Replace(after);
+            }
+            return null;
+        });
+
+        // A wall type's top for the walls drawn with it: {id, top?: "above" | "unconnected", topOffset?, height? (unconnected walls'; null: 3 m)}.
+        r.Command("setWallTypeTop", "Wall type's top", (ctx, a) =>
+        {
+            WallTop.SetTypeDefaults(ctx, a, Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.WallType));
+            return null;
+        });
+
+        // A wall's top as worked out now: {id} → {top, topOffset, height, base, level, storey (the one it goes to), problem}.
+        r.Query("wallTop", (q, a) =>
+        {
+            var wall = Spatial.Require(q.Model, (string?)a["id"], IfcClass.Wall);
+            var b = WallTop.Base(q.Model, wall);
+            var h = WallTop.Height(q.Model, wall);
+            return new JsonObject
+            {
+                ["top"] = WallTop.Of(wall), ["topOffset"] = wall.Num(WallTop.OffsetKey), ["height"] = Math.Round(h, 6), ["base"] = Math.Round(b, 6), ["level"] = Math.Round(b + h, 6),
+                ["storey"] = WallTop.TargetStorey(q.Model, wall)?.Id, ["problem"] = WallTop.Problem(q.Model, wall),
+            };
         });
 
         r.Command("setWallType", "Change type", (ctx, a) =>
@@ -1088,4 +1154,26 @@ static class RoofCuts
     static readonly RevisionCache<Solid?> RoofEnvelopes = new();
     public static Solid? Envelope(Entity roof, IModelView m) => RoofEnvelopes.Get(roof, m, v => Roof.Envelope(roof, v));
 
+}
+
+/// <summary>
+/// Before a storey goes, the walls whose top goes to it are let go, keeping their height (<see cref="WallTop.Release"/>);
+/// the storey is deleted as any. A height typed on a wall with a top (element.update) makes it unconnected at that height.
+/// </summary>
+sealed class WallTopDeletion : IDeletion, IElementUpdate
+{
+    public void Updated(ICommandContext ctx, Entity before, Entity after)
+    {
+        if (after.Class != IfcClass.Wall || WallTop.Of(after) == null || Math.Abs(after.Num("height", Walls.DefaultHeight) - before.Num("height", Walls.DefaultHeight)) < 1e-12) return;
+        var attrs = after.CloneAttrs();
+        attrs.Remove(WallTop.Key);
+        attrs.Remove(WallTop.OffsetKey);
+        ctx.Replace(after.With(attrs: attrs));
+    }
+
+    public bool Delete(ICommandContext ctx, string id)
+    {
+        if (ctx.Model.Get(id) is { Class: IfcClass.BuildingStorey } storey) WallTop.Release(ctx, storey);
+        return false;
+    }
 }

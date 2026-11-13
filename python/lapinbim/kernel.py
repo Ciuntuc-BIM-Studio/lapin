@@ -22,6 +22,9 @@ own, as ``__main__`` when the tool is the whole script (a header's ``tool=`` wit
 name, else the one ``lapin.ui.tool`` registered under the tool's name as the script loaded). A Run from the panel
 (``"source"``: the window's key for the script) says back the tools the script registered with ``lapin.ui.tool``:
 ``{"type": "tools", "id", "source", "tools": [{"name", "icon", "tooltip", "call", "main"}]}``, before its ``done``.
+Decision 528: an entry may name its ``panel``, ``size`` and ``menu``; ``{"kind": "menu"}`` and ``{"kind": "palette",
+"rows"}`` entries are a script's pulldowns and palettes. A palette's button run is ``"tool": {"name", "call", "palette",
+"values"}``: the script loaded as a module, then the button's function, given the values when it takes a parameter.
 
 The engine gives the kernel a token (``LAPIN_SCRIPT_TOKEN``, taken out of the environment as lapinbim loads): every
 connection lapinbim opens to that engine shows it (``script.join``), so one a script opens itself joins the run's step
@@ -175,6 +178,8 @@ def _run(job: dict, namespace: dict, step: bool) -> dict:
         shown = compile(echo, filename, "eval") if echo is not None else None
         # What lapin.ui.tool registers while the script loads: a Run from the panel says it back; a tool's run finds its function there.
         _ui._functions = {}
+        _ui._palettes = {}
+        _ui._within = []
         _ui._registered = [] if not console else None
         if tool is not None:
             # A tool's run: the script in a namespace of its own, never the console's.
@@ -183,7 +188,10 @@ def _run(job: dict, namespace: dict, step: bool) -> dict:
         if _stop_asked:
             raise KeyboardInterrupt
         exec(compiled, namespace)
-        if tool is not None and not tool.get("main"):
+        if tool is not None and isinstance(tool.get("palette"), str):
+            # A palette's button: its function, given the palette's values when it takes them.
+            _ui.press(tool["palette"], str(tool.get("name") or ""), tool.get("values"), lambda: lapinbim.client()._elements())
+        elif tool is not None and not tool.get("main"):
             call = tool.get("call")
             target = namespace.get(call) if call else None
             if target is None:

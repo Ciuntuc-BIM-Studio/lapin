@@ -45,36 +45,42 @@ export function readQuestion(e: unknown): AskQuestion | null {
   const fields: AskField[] = [];
   const seen = new Set<string>();
   for (const raw of o.fields.slice(0, 64)) {
-    if (!raw || typeof raw !== 'object') continue;
-    const f = raw as Record<string, unknown>;
-    const key = str(f.key, 64);
-    const kind = f.kind as FieldKind;
-    if (!key || seen.has(key) || !KINDS.has(kind)) continue;
-    seen.add(key);
-    const field: AskField = { key, kind, label: str(f.label, 120) ?? key };
-    if (f.value !== undefined) field.value = f.value;
-    const unit = str(f.unit, 20); if (unit) field.unit = unit;
-    for (const k of ['min', 'max', 'step'] as const) { const n = num(f[k]); if (n !== undefined) field[k] = n; }
-    if (f.integer === true) field.integer = true;
-    if (f.multiline === true) field.multiline = true;
-    if (f.multiple === true) field.multiple = true;
-    if (f.selection === false) field.selection = false; else if (kind === 'element') field.selection = true;
-    if (f.required === false) field.required = false;
-    const cls = str(f.cls, 80); if (cls) field.cls = cls;
-    if (Array.isArray(f.classes)) field.classes = f.classes.filter((c): c is string => typeof c === 'string' && !!c).slice(0, 20);
-    if (Array.isArray(f.choices)) {
-      field.choices = f.choices.flatMap((c) => {
-        if (!c || typeof c !== 'object') return [];
-        const v = (c as { value?: unknown }).value;
-        if (!['string', 'number', 'boolean'].includes(typeof v)) return [];
-        return [{ value: v as string | number | boolean, label: str((c as { label?: unknown }).label, 120) ?? String(v) }];
-      }).slice(0, 500);
-      if (!field.choices.length) continue;
-    } else if (kind === 'choice') continue;
-    fields.push(field);
+    const field = readField(raw, seen);
+    if (field) fields.push(field);
   }
   if (!fields.length) return null;
   return { ask, title: str(o.title, 200) ?? 'Script', text: str(o.text, 2000), ok: str(o.ok, 40), fields };
+}
+
+/** One field as a script sent it (a question's, a palette's), read so that only what the window draws is kept; null when it is none, or its key is in `seen` already. */
+export function readField(raw: unknown, seen: Set<string>): AskField | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const f = raw as Record<string, unknown>;
+  const key = str(f.key, 64);
+  const kind = f.kind as FieldKind;
+  if (!key || seen.has(key) || !KINDS.has(kind)) return null;
+  const field: AskField = { key, kind, label: str(f.label, 120) ?? key };
+  if (f.value !== undefined) field.value = f.value;
+  const unit = str(f.unit, 20); if (unit) field.unit = unit;
+  for (const k of ['min', 'max', 'step'] as const) { const n = num(f[k]); if (n !== undefined) field[k] = n; }
+  if (f.integer === true) field.integer = true;
+  if (f.multiline === true) field.multiline = true;
+  if (f.multiple === true) field.multiple = true;
+  if (f.selection === false) field.selection = false; else if (kind === 'element') field.selection = true;
+  if (f.required === false) field.required = false;
+  const cls = str(f.cls, 80); if (cls) field.cls = cls;
+  if (Array.isArray(f.classes)) field.classes = f.classes.filter((c): c is string => typeof c === 'string' && !!c).slice(0, 20);
+  if (Array.isArray(f.choices)) {
+    field.choices = f.choices.flatMap((c) => {
+      if (!c || typeof c !== 'object') return [];
+      const v = (c as { value?: unknown }).value;
+      if (!['string', 'number', 'boolean'].includes(typeof v)) return [];
+      return [{ value: v as string | number | boolean, label: str((c as { label?: unknown }).label, 120) ?? String(v) }];
+    }).slice(0, 500);
+    if (!field.choices.length) return null;
+  } else if (kind === 'choice') return null;
+  seen.add(key);
+  return field;
 }
 
 /** What the dialog knows of the model: its entities (id → class, name, attributes), the selection, the active storey. */

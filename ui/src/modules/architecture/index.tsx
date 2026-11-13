@@ -19,6 +19,7 @@ import { GateSection } from './gates/GateSection';
 import { CLASS as GATE_CLASS, gateGrips, overallOf } from './gates/gates';
 import { setJoinStyle, setWallLine, useWallPrefs, type WallLine } from './prefs';
 import { WallLayers } from './WallLayers';
+import { WallTopOption, wallTopArgs } from './WallTop';
 import { JoinerySection } from './JoinerySection';
 import { SlabSection } from './SlabSection';
 import { RoofSection } from './RoofSection';
@@ -70,9 +71,9 @@ const wall: ToolDef = {
   complete: async ({ points: [a, b] }, ctx) => {
     const typeId = useUi.getState().wallTypeId;
     const { joinStyle, line } = useWallPrefs.getState();
-    await ctx.execute('architecture.addWall', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, joinStyle, ...(line !== 'core' ? { reference: line } : {}), ...(typeId ? { typeId } : {}) });
+    await ctx.execute('architecture.addWall', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, joinStyle, ...(line !== 'core' ? { reference: line } : {}), ...(typeId ? { typeId } : {}), ...wallTopArgs() });
   },
-  options: WallLineOption,
+  options: () => <><WallLineOption /><WallTopOption /></>,
 };
 
 /** The line a wall is drawn on, chosen in the command line's bar while the Wall tool is on (decision 237). */
@@ -96,8 +97,9 @@ const curvedWall: ToolDef = {
   gesture: { kind: 'threePoints', arc: true },
   complete: async ({ points: [a, b, p] }, ctx) => {
     const typeId = useUi.getState().wallTypeId;
-    await ctx.execute('architecture.addWall', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, x3: p.x, y3: p.y, joinStyle: useWallPrefs.getState().joinStyle, ...(typeId ? { typeId } : {}) });
+    await ctx.execute('architecture.addWall', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, x3: p.x, y3: p.y, joinStyle: useWallPrefs.getState().joinStyle, ...(typeId ? { typeId } : {}), ...wallTopArgs() });
   },
+  options: WallTopOption,
 };
 /** A curtain wall: two points (chained), of the type picked in the configurator, else the project's first. */
 const curtainWall: ToolDef = {

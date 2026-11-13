@@ -33,6 +33,9 @@ public static class Walls
         return o;
     }
 
+    /// <summary>The wall's height, worked out on every ask: to its top (<see cref="WallTop"/>), else its own.</summary>
+    public static double HeightOf(IModelView m, Entity wall) => WallTop.Height(m, wall);
+
     public static Entity? TypeOf(IModelView m, string wallId) =>
         m.RelatingOf(wallId, IfcClass.RelDefinesByType) is { Class: IfcClass.WallType } t ? t : null;
 
@@ -160,7 +163,7 @@ public static class Walls
             ];
             return Pieces(whole, crossings(band), start, dir, length);
         }
-        return new Layout(start, end, dir, length, z, wall.Num("height", DefaultHeight), bands, Footprints);
+        return new Layout(start, end, dir, length, z, HeightOf(m, wall), bands, Footprints);
     }
 
     /// <summary>
@@ -250,6 +253,7 @@ public static class Walls
         if ((end - start).Length < MinLength) return new ElementGeometry([], Diagnostics: ["The wall has no length."]);
         if (PathCurve.Of(wall) is { IsArc: true } arc) return ArcGeometry(wall, arc, m, services);
         var problems = new List<string>();
+        if (WallTop.Problem(m, wall) is { } topProblem) problems.Add(topProblem);
         var paths = services?.Get<IPathElements>();
         // Its ends where its joins put them; a free end cut at its own angle (startAngle, endAngle).
         var ends = Joins.WithOwnEnds(paths != null ? Joins.EndsOf(m, wall, paths, problems) : new (Vec2 Point, EndCut Cut)?[2], wall, Frame(wall, m));
@@ -263,7 +267,7 @@ public static class Walls
         var left = dir.Perp;
         var storey = Spatial.StoreyOf(m, wall.Id);
         var z = (storey?.Num("elevation") ?? 0) + wall.Num("baseOffset");
-        var height = wall.Num("height", DefaultHeight);
+        var height = HeightOf(m, wall);
 
         var bands = Section(m, wall);
         var yMin = bands.Min(b => b.From);
@@ -728,11 +732,12 @@ public static class Walls
     static ElementGeometry ArcGeometry(Entity wall, PathCurve c, IModelView m, IServices? services)
     {
         var problems = new List<string>();
+        if (WallTop.Problem(m, wall) is { } topProblem) problems.Add(topProblem);
         var paths = services?.Get<IPathElements>();
         var ends = paths != null ? Joins.EndsOf(m, wall, paths, problems) : new (Vec2 Point, EndCut Cut)?[2];
         var length = c.Length;
         var z = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
-        var height = wall.Num("height", DefaultHeight);
+        var height = HeightOf(m, wall);
         var bands = Section(m, wall);
         var (yMin, yMax) = (bands.Min(x => x.From), bands.Max(x => x.To));
         // Each face ends where it meets its joint's cut (along the tangent past an end).
@@ -890,7 +895,7 @@ public static class Walls
         var z = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
         var c = PathCurve.Of(wall);
         IReadOnlyList<Vec2> fp = c.IsArc ? c.Band(_ => 0, _ => c.Length, y0, y1) : [start + left * y0, end + left * y0, end + left * y1, start + left * y1];
-        return Prism.ExtrudeFootprint(fp, z, wall.Num("height", DefaultHeight), "wall");
+        return Prism.ExtrudeFootprint(fp, z, HeightOf(m, wall), "wall");
     }
 
     /// <summary>
@@ -918,7 +923,7 @@ public static class Walls
         var (yMin, yMax) = (bands.Min(b => b.From), bands.Max(b => b.To));
         double At(EndCut c, double y) => yMax - yMin < 1e-12 ? c.Right : c.Right + (c.Left - c.Right) * (y - yMin) / (yMax - yMin);
         var z = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
-        var height = wall.Num("height", DefaultHeight);
+        var height = HeightOf(m, wall);
         var zones = TypeOf(m, wall.Id) is { } type ? WallZones.Bands(WallZones.Of(type), height) : [];
         var shift = Vec2.Dot(start - Start(wall), dir);
         // To the core's farther corner at a joint (the corner settles the rest), to its nearer at a free end cut at an angle (inside the wall).
@@ -989,7 +994,7 @@ public static class Walls
     {
         if (geometry == null || geometry.Parts.Count == 0) yield break;
         var length = PathCurve.Of(wall).Length;
-        var height = wall.Num("height", DefaultHeight);
+        var height = HeightOf(m, wall);
         var bands = Section(m, wall);
         var width = bands.Max(b => b.To) - bands.Min(b => b.From);
         // A layer interrupted by a wall crossing it is several parts of one key: measured together.

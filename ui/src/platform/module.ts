@@ -87,6 +87,12 @@ export interface ToolDef {
   complete?: (input: ToolInput, ctx: ToolContext) => Promise<void> | void;
   /** A button: what it does when pressed (a tool with a gesture is switched on instead). */
   run?: () => void;
+  /**
+   * A pulldown (decision 528: a script's `lapin.ui.menu`): its button in the ribbon and in My tools opens a list of these
+   * tools (shell/pulldown.ts), each pressed as itself. Elsewhere (Commands…, a quick slot) its `run` is pressed, which
+   * should open the same list.
+   */
+  items?: readonly ToolDef[];
   /** What Space does while the tool is on and nothing is typed (a door's other hand). */
   space?: () => void;
   /** What the tool lets one choose while it is on (the line a wall is drawn on), shown in the command line's bar. */
