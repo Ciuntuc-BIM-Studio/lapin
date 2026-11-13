@@ -174,16 +174,15 @@ function model3d(data: PageData, t: (s: string) => string, select: (ids: Iterabl
   controls.enableDamping = false;
   controls.screenSpacePanning = true;
 
-  let pending = false;
+  let pending = 0;
+  const draw = () => {
+    const bg = getComputedStyle(document.documentElement).getPropertyValue('--view').trim() || '#eef0f2';
+    scene.background = new Color(bg);
+    renderer.render(scene, camera);
+  };
   const render = () => {
     if (pending) return;
-    pending = true;
-    requestAnimationFrame(() => {
-      pending = false;
-      const bg = getComputedStyle(document.documentElement).getPropertyValue('--view').trim() || '#eef0f2';
-      scene.background = new Color(bg);
-      renderer.render(scene, camera);
-    });
+    pending = requestAnimationFrame(() => { pending = 0; draw(); });
   };
   setRender(render);
   controls.addEventListener('change', render);
@@ -193,7 +192,9 @@ function model3d(data: PageData, t: (s: string) => string, select: (ids: Iterabl
     renderer.setSize(w, hh, false);
     camera.aspect = w / hh;
     camera.updateProjectionMatrix();
-    render();
+    // setSize clears the canvas: draw now, before the paint, not on the next frame.
+    if (pending) { cancelAnimationFrame(pending); pending = 0; }
+    draw();
   };
   window.addEventListener('resize', resize);
   new ResizeObserver(resize).observe(box);

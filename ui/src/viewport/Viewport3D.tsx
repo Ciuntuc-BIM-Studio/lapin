@@ -952,8 +952,9 @@ export function Viewport3D() {
       else if (!trailing) trailing = window.setTimeout(() => { trailing = 0; invalidate.current(); }, LOD_EVERY);
     };
     let frame = 0;
+    const draw = () => { relevel(); clouds.update(cam, lodCamera(), qualityRef.current, engineInBrowser); fitShadow(); realism.render(cam); if (host.current) host.current.dataset.cloudPoints = String(clouds.drawn()); };
     invalidate.current = () => {
-      if (!frame) frame = requestAnimationFrame(() => { frame = 0; relevel(); clouds.update(cam, lodCamera(), qualityRef.current, engineInBrowser); fitShadow(); realism.render(cam); if (host.current) host.current.dataset.cloudPoints = String(clouds.drawn()); });
+      if (!frame) frame = requestAnimationFrame(() => { frame = 0; draw(); });
     };
     controls.addEventListener('change', invalidate.current);
     controls.addEventListener('change', publish);
@@ -966,7 +967,9 @@ export function Viewport3D() {
       persp.aspect = w / Math.max(h, 1);
       persp.updateProjectionMatrix();
       orthoFrustum(pose().distance);
-      invalidate.current();
+      // setSize clears the canvas: draw in this same callback (it runs before the paint), so a divider drag never shows a blank frame.
+      if (frame) { cancelAnimationFrame(frame); frame = 0; }
+      draw();
     };
     const ro = new ResizeObserver(resize);
     ro.observe(el);
