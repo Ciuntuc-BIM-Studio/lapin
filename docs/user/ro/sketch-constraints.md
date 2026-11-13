@@ -53,6 +53,7 @@ Fiecare altă constrângere are un simbol mic lângă ce ține: **H**, **V**, **
 
 - Clic pe un simbol sau pe o cotă o selectează (Shift adaugă); **Delete** șterge selecția, ca un singur pas de anulare.
 - **Dublu clic** pe o cotă îi editează valoarea pe loc, în câmpul care se deschide: un număr sau `=formulă`. O cotă de referință devine conducătoare când îi dai o valoare, dacă prin asta schița nu e supra-constrânsă.
+- **Trage** o cotă de valoare sau de linie ca s-o așezi: urmează cursorul și rămâne unde îi dai drumul, ca un singur pas de anulare. O cotă pe care n-ai așezat-o stă în afara formelor ei, de partea dinspre exterior. Una așezată își păstrează locul față de ce măsoară și se mută, se rotește și se oglindește cu formele ei.
 - Ochiul de pe insigna de jos ascunde constrângerile în această vedere și le arată din nou. Se ține minte pentru vedere.
 
 ![O cotă editată pe loc](shots/sketch-constraints-edit.webp)
@@ -95,7 +96,7 @@ Trage un punct al unei forme constrânse de mânerul lui: restul schiței urmeaz
 - o lungime sau un unghi tastat devine o cotă conducătoare; o rază tastată, o rază;
 - un dreptunghi are două laturi orizontale și două verticale, iar o linie începută unde s-a sfârșit precedenta se leagă de ea.
 
-Ține apăsat **Ctrl** (⌘ pe Mac) la clic ca să pui punctul acela fără constrângeri. Comutatorul **CNSTR** din linia de comandă pornește și oprește totul. Constrângerile se adaugă imediat după formă, ca un pas aparte: un **Undo** le scoate și păstrează forma.
+Ține apăsat **Ctrl** (⌘ pe Mac) la clic ca să pui punctul acela fără constrângeri. Comutatorul **CNSTR** din linia de comandă pornește și oprește totul. Forma și constrângerile ei sunt un singur pas: un **Undo** le scoate pe amândouă. O constrângere care ar intra în conflict cu schița e lăsată deoparte; forma se desenează oricum.
 
 ![O linie trasă din colț pe linia ortho](shots/sketch-constraints-drawing.webp)
 

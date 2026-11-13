@@ -2,8 +2,10 @@
  * Sketch constraints drawn in a plan, a section or an elevation (stage C3 of decision 520): the sketch's shapes coloured by how
  * free they are (blue free, ink fixed, red in conflict), a glyph at each geometric constraint, each dimension drawn with its
  * value (driven ones in parentheses, a formula's on hover), and the live preview of a constrained drag. A glyph is clicked to
- * select it (Delete removes it); a dimension is double-clicked to edit its value in place. Asked of the engine again after each
- * change of the model (`studio.constraints`, `studio.sketchStatus`).
+ * select it (Delete removes it); a dimension is double-clicked to edit its value in place, and dragged by its text or its line to
+ * place it (previewed while dragged, `studio.updateConstraint {place}` on release; one undo step). A dimension not placed by the
+ * user stands outside its shapes (`autoPlace`). Asked of the engine again after each change of the model (`studio.constraints`,
+ * `studio.sketchStatus`).
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -11,7 +13,8 @@ import type { Vec2 } from '../../platform/module';
 import { execute, useSession } from '../../engine/session';
 import { lengthText, parseLength } from '../../engine/unitsStore';
 import {
-  constraintState, dimensionDraw, dimensionText, freePoints, glyphAnchor, GLYPHS, isDimension, parseDimensionInput, pointOf, shapeStates, spreadGlyphs, type ConstraintDto,
+  constraintState, dimensionDraw, dimensionText, freePoints, glyphAnchor, GLYPHS, isDimension, parseDimensionInput, placeAt, pointOf, shapeStates, spreadGlyphs,
+  type ConstraintDto, type DimensionPlace,
 } from '../../viewport/cad/constraints';
 import { useCad } from '../../viewport/cad/session';
 import { fromJson, polylines, type Shape } from '../../viewport/cad/shapes';
@@ -20,6 +23,8 @@ import { constraintCommandOn } from './constraintTools';
 
 interface Props {
   toScreen: (p: Vec2) => { x: number; y: number };
+  /** An SVG point (pixels from the view's top left) as a view point: where a dragged dimension goes. */
+  toWorld?: (x: number, y: number) => Vec2;
   scale: number;
   view: { id: string | null; storeyId?: string | null };
 }
@@ -66,8 +71,11 @@ function EditField({ c, x, y, done }: { c: ConstraintDto; x: number; y: number; 
   );
 }
 
+/** A press that moves this many pixels is a drag (placing a dimension), not a click. */
+const DRAG_PX = 4;
+
 /** The sketch overlay of the view this is drawn in. */
-export function ConstraintOverlay({ toScreen, scale, view }: Props) {
+export function ConstraintOverlay({ toScreen, toWorld, scale, view }: Props) {
   const viewId = view.id ?? (view.storeyId ? `plan:${view.storeyId}` : null);
   const nodes = useSession((s) => s.nodes);
   const version = useSession((s) => s.version);
@@ -76,6 +84,8 @@ export function ConstraintOverlay({ toScreen, scale, view }: Props) {
   const { selected, editing, preview } = useSketch();
   const command = useCad((s) => s.command);
   const toolOn = !!command && constraintCommandOn();
+  /** The dimension being dragged to a new place, previewed there until released. */
+  const [drag, setDrag] = useState<{ id: string; place: DimensionPlace } | null>(null);
 
   // The engine's answer, asked again after each change of the model.
   useEffect(() => {
@@ -130,6 +140,35 @@ export function ConstraintOverlay({ toScreen, scale, view }: Props) {
   const showAll = active && !hidden;
   const hit = !toolOn;
   const off = 46 / scale;
+  const byId = new Map(drafts.map((d) => [d.id, d.shape]));
+  const shapesOf = (c: ConstraintDto) => [...new Set(c.refs.map((r) => r.shape))].map((id) => byId.get(id)).filter((x): x is Shape => !!x);
+
+  /** A press on a dimension: selects it; moved past a few pixels, drags it to a new place, set on release. */
+  const press = (c: ConstraintDto) => (e: React.PointerEvent) => {
+    if (e.button !== 0) return;
+    useSketch.setState((s) => ({ selected: e.shiftKey ? [...s.selected, c.id] : [c.id] }));
+    const svg = (e.currentTarget as SVGElement).ownerSVGElement;
+    if (!toWorld || !svg) return;
+    // The release comes back here, not to the view underneath (no click there when the drag ends).
+    try { (e.currentTarget as Element).setPointerCapture(e.pointerId); } catch { /* not every target captures */ }
+    const x0 = e.clientX, y0 = e.clientY;
+    let moved = false, last: DimensionPlace | null = null;
+    const at = (ev: PointerEvent) => { const r = svg.getBoundingClientRect(); return toWorld(ev.clientX - r.left, ev.clientY - r.top); };
+    const move = (ev: PointerEvent) => {
+      if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < DRAG_PX) return;
+      moved = true;
+      last = placeAt(c, at(ev), off);
+      if (last) setDrag({ id: c.id, place: last });
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move, true);
+      window.removeEventListener('pointerup', up, true);
+      if (moved && last) void execute('studio.updateConstraint', { id: c.id, place: last }).finally(() => setDrag(null));
+      else setDrag(null);
+    };
+    window.addEventListener('pointermove', move, true);
+    window.addEventListener('pointerup', up, true);
+  };
 
   const spots = anchors.at.map((p) => (p ? toScreen(p) : { x: 0, y: 0 }));
   const spread = spreadGlyphs(spots);
@@ -148,7 +187,7 @@ export function ConstraintOverlay({ toScreen, scale, view }: Props) {
         return <circle key={`${f.shape}:${f.part}`} className="sk-free-point" cx={s.x} cy={s.y} r={3.5} />;
       })}
       {showAll && dims.map((c) => {
-        const d = dimensionDraw(c, off);
+        const d = dimensionDraw(c, off, { place: drag?.id === c.id ? drag.place : null, shapes: shapesOf(c), scale });
         if (!d) return null;
         const t = toScreen(d.text);
         const state = constraintState(c, status);
@@ -158,13 +197,14 @@ export function ConstraintOverlay({ toScreen, scale, view }: Props) {
         return (
           <g key={c.id} className={cls} data-constraint={c.id} data-kind={c.kind}>
             {d.lines.map((l, i) => <polyline key={i} className="sk-dim-line" points={pts(l, toScreen)} />)}
+            {hit && d.lines.length === 3 && <polyline className="sk-dim-grab" data-overlay-hit points={pts(d.lines[2], toScreen)} onPointerDown={press(c)} />}
             {editing === c.id ? <EditField c={c} x={t.x} y={t.y} done={() => useSketch.setState({ editing: null })} /> : (
               <g data-overlay-hit style={{ pointerEvents: hit ? 'all' : 'none' }}
-                onPointerDown={(e) => { if (e.button === 0) useSketch.setState((s) => ({ selected: e.shiftKey ? [...s.selected, c.id] : [c.id] })); }}
+                onPointerDown={press(c)}
                 onDoubleClick={() => useSketch.setState({ editing: c.id, selected: [c.id] })}>
                 <rect className="sk-dim-hit" x={t.x - text.length * 3.6 - 4} y={t.y - 10} width={text.length * 7.2 + 8} height={20} rx={3} />
                 <text className="sk-dim-text" x={t.x} y={t.y} textAnchor="middle" dominantBaseline="central" data-testid="constraint-dimension">{text}</text>
-                <title>{c.problem ?? (c.formula ? `=${c.formula}` : c.driving ? 'Double-click to change it' : 'Driven: it only reports')}</title>
+                <title>{c.problem ?? (c.formula ? `=${c.formula}` : c.driving ? 'Double-click to change it; drag to place it' : 'Driven: it only reports; drag to place it')}</title>
               </g>
             )}
           </g>

@@ -53,6 +53,7 @@ Each other constraint has a small glyph near what it holds: **H**, **V**, **∥*
 
 - Click a glyph or a dimension to select it (Shift adds); **Delete** removes the selection, as one undo step.
 - **Double-click** a dimension to edit its value in place, in the field that opens: a number or `=formula`. A driven dimension becomes driving when you give it a value, unless that would over-constrain the sketch.
+- **Drag** a dimension by its value or its line to place it: it follows the cursor and stays where you let go, as one undo step. A dimension you have not placed stands outside its shapes, on the side away from them. A placed one keeps its place relative to what it measures, and moves, turns and mirrors with its shapes.
 - The eye on the chip below hides the constraints in this view, and shows them again. It is remembered for the view.
 
 ![A dimension edited in place](shots/sketch-constraints-edit.webp)
@@ -95,7 +96,7 @@ In a sketch (a view whose shapes build a Studio solid, a view that already has c
 - a length or angle you type becomes a driving dimension; a typed radius a radius;
 - a rectangle is made of two horizontal and two vertical sides, and a line begun where the last one ended is joined to it.
 
-Hold **Ctrl** (⌘ on a Mac) on a click to place that point without constraints. The **CNSTR** switch in the command line turns the whole thing off and on. The constraints are added right after the shape, as a step of their own: one **Undo** takes them off and keeps the shape.
+Hold **Ctrl** (⌘ on a Mac) on a click to place that point without constraints. The **CNSTR** switch in the command line turns the whole thing off and on. The shape and its constraints are one step: one **Undo** takes both away. A constraint that would conflict with the sketch is left out; the shape is drawn all the same.
 
 ![A line drawn from the corner along the ortho line](shots/sketch-constraints-drawing.webp)
 

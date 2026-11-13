@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  candidatesAt, canExtend, choose, chipOf, classify, constraintState, dimensionDraw, dimensionFor, dimensionText, glyphAnchor, isComplete, isFinal,
+  autoPlace, candidatesAt, canExtend, choose, chipOf, classify, constraintState, dimensionDraw, dimensionFor, placeAt, dimensionText, glyphAnchor, isComplete, isFinal,
   measure, parseDimensionInput, sketchPartOf, pointOf, segmentOf, shapeStates, spreadGlyphs, wanted, freePoints, type ConstraintDto, type SketchStatus,
 } from './constraints';
 import type { Shape } from './shapes';
@@ -183,5 +183,46 @@ describe('the solved state as colours and a chip', () => {
     expect(chipOf(status({ conflicting: ['c1'] })).tone).toBe('conflict');
     expect(chipOf(status({ redundant: ['c1'], dof: 0 })).tone).toBe('redundant');
     expect(chipOf(null).tone).toBe('unknown');
+  });
+});
+
+describe('where a dimension stands', () => {
+  const rect = { type: 'polyline' as const, pts: [{ x: 0, y: 0 }, { x: 5, y: 0 }, { x: 5, y: 2 }, { x: 0, y: 2 }], closed: true };
+  const edge = (i: number) => { const a = rect.pts[i], b = rect.pts[(i + 1) % 4]; return { shape: 'r', part: `edge:${i}`, a: [a.x, a.y], b: [b.x, b.y] }; };
+  const side = (i: number, kind = 'distance') => dto({ id: 'd', kind, refs: [edge(i)] });
+  it('stands outside a shape, on the side of the edge away from its middle', () => {
+    // The bottom side runs +x (its left is up, into the rectangle): the dimension goes below; the top side runs -x: above.
+    const bottom = dimensionDraw(side(0), 0.5, { shapes: [rect], scale: 100 })!;
+    expect(bottom.text.y).toBeCloseTo(-0.5);
+    const top = dimensionDraw(side(2), 0.5, { shapes: [rect], scale: 100 })!;
+    expect(top.text.y).toBeCloseTo(2.5);
+    const right = dimensionDraw(side(1), 0.5, { shapes: [rect], scale: 100 })!;
+    expect(right.text.x).toBeCloseTo(5.5);
+  });
+  it('clears a small shape whole: a diagonal is dimensioned outside it, a large one only past its own ends', () => {
+    const diag = dto({ id: 'd', kind: 'distance', refs: [{ shape: 'r', part: 'vertex:0', at: [0, 0] }, { shape: 'r', part: 'vertex:2', at: [5, 2] }] });
+    // Small on screen (5 m at 20 px/m): the line clears the corner (0, 2), 10/√29 to the diagonal's left.
+    expect(autoPlace(diag, 0.5, [rect], 20)!.offset).toBeCloseTo(10 / Math.sqrt(29) + 0.5);
+    // Large (5 m at 1000 px/m): only past the dimension's own ends.
+    const large = autoPlace(side(0), 0.05, [rect], 1000)!;
+    expect(large.offset).toBeCloseTo(-0.05);
+  });
+  it('with no shapes keeps the left, as before', () => {
+    expect(autoPlace(side(0), 0.5)!.offset).toBeCloseTo(0.5);
+  });
+  it('a place the user gave wins; a drag makes the place through the cursor', () => {
+    const c = { ...side(0), place: { offset: 1.25 } };
+    expect(dimensionDraw(c, 0.5, { shapes: [rect], scale: 100 })!.text).toEqual({ x: 2.5, y: 1.25 });
+    expect(placeAt(side(0), { x: 1, y: -0.75 }, 0.5)).toEqual({ offset: -0.75 });
+    const vertical = dto({ id: 'd', kind: 'distanceY', refs: [edge(1)] });
+    // A vertical distance's offset is to the left of +y: a line at x = 7 is 2 m right of its first end, offset -2.
+    expect(placeAt(vertical, { x: 7, y: 1 }, 0.5)).toEqual({ offset: -2 });
+    expect(dimensionDraw({ ...vertical, place: { offset: -2 } }, 0.5)!.text).toEqual({ x: 7, y: 1 });
+    const radius = dto({ id: 'r', kind: 'radius', refs: [{ shape: 'c', part: 'whole', c: [0, 0], r: 1 }] });
+    const p = placeAt(radius, { x: 0, y: 3 }, 0.5)!;
+    expect(p.offset).toBeCloseTo(2);
+    expect(p.angle).toBeCloseTo(90);
+    const t = dimensionDraw({ ...radius, place: p }, 0.5)!.text;
+    expect(t.x).toBeCloseTo(0); expect(t.y).toBeCloseTo(3);
   });
 });

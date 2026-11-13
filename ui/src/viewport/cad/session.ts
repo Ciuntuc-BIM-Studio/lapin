@@ -25,7 +25,7 @@ import { lassoTest, type RegionTest } from '../selectBox';
 import { xy } from '../../platform/vec';
 import { usePrefs } from '../../app/prefs';
 import type { Aimed } from './aim';
-import { inferConstraints, sketchViews, type DrawHints, type Drawn, type PlacedPoint } from './recorded';
+import { drawConstrainedArgs, inferConstraints, newShapeId, newShapeIndex, sketchViews, type ConstraintSpec, type DrawHints, type Drawn, type PlacedPoint } from './recorded';
 import { viewHasConstraints } from './sketchStore';
 import type { ViewFrame } from '../viewFrame';
 
@@ -146,13 +146,25 @@ function host(): CadHost | null {
   return h;
 }
 
+/**
+ * Shapes drawn on the host's view. In a sketch, with the constraints recorded while drawing them, as one command and so one undo
+ * step (`studio.drawConstrained`); else, or where that cannot run (no Studio), as `drafting.draw`.
+ */
 async function draw(shapes: Shape[], hints?: DrawHints): Promise<string[]> {
   const h = host();
   if (!h || !shapes.length) return [];
   const { layer, role } = useCad.getState();
-  const r = await execute('drafting.draw', { viewId: h.viewId, layer, shapes: shapes.map(toJson), ...(role ? { role } : {}) }) as { ids?: string[] } | null;
+  const body = { viewId: h.viewId, layer, shapes: shapes.map(toJson), ...(role ? { role } : {}) };
+  const specs = recordWhileDrawing(h.viewId, role, shapes, hints);
+  let r: { ids?: string[] } | null = null;
+  if (specs.length) {
+    r = await execute('studio.drawConstrained', drawConstrainedArgs(body, specs)) as { ids?: string[] } | null;
+  }
+  if (!r) r = await execute('drafting.draw', body) as { ids?: string[] } | null;
   const ids = r?.ids ?? [];
-  if (ids.length) await recordWhileDrawing(h.viewId, role, ids, shapes, hints);
+  // The shape drawn last is named now: the next one of a chain is joined to it by its id.
+  const i = prevDrawn ? newShapeIndex(prevDrawn.id) : null;
+  if (prevDrawn && i != null) prevDrawn = ids[i] ? { id: ids[i], shape: prevDrawn.shape } : null;
   return ids;
 }
 
@@ -191,26 +203,21 @@ function draftsOf(viewId: string): Map<string, Shape> {
 }
 
 /**
- * Right after shapes are drawn in a sketch (a view whose shapes build a Studio solid, one that has constraints, or drawing with a
- * role), what the inference found for their points becomes constraints, solved with the shapes. A batch the solver refuses (one
- * of them conflicts) is tried one by one, so what holds stays.
+ * What shapes about to be drawn in a sketch (a view whose shapes build a Studio solid, one that has constraints, or drawing with
+ * a role) keep of how their points were placed: constraints whose refs name the new shapes by `newShapeId`, sent with them. The
+ * engine adds and solves them with the drawing; a batch the solver refuses is tried one by one there, so what holds stays.
  */
-async function recordWhileDrawing(viewId: string, role: string, ids: string[], shapes: Shape[], hints?: DrawHints): Promise<void> {
-  if (!usePrefs.getState().constrainWhileDrawing) { prevDrawn = null; return; }
-  if (!(viewHasConstraints(viewId) || role || sketchViews(useSession.getState().nodes.values()).has(viewId))) { prevDrawn = null; return; }
+function recordWhileDrawing(viewId: string, role: string, shapes: Shape[], hints?: DrawHints): ConstraintSpec[] {
+  if (!usePrefs.getState().constrainWhileDrawing) { prevDrawn = null; return []; }
+  if (!(viewHasConstraints(viewId) || role || sketchViews(useSession.getState().nodes.values()).has(viewId))) { prevDrawn = null; return []; }
   const world = draftsOf(viewId);
   if (prevDrawn) world.set(prevDrawn.id, prevDrawn.shape);
-  const specs = ids.flatMap((id, i) => {
-    const drawn = { id, shape: shapes[i] };
+  return shapes.flatMap((shape, i) => {
+    const drawn = { id: newShapeId(i), shape };
     const list = inferConstraints(drawn, trail, world, { prev: prevDrawn, hints });
     prevDrawn = drawn;
     return list;
   });
-  if (!specs.length) return;
-  const body = specs.map((c) => ({ kind: c.kind, refs: c.refs, ...(c.value != null ? { value: c.value } : {}) }));
-  if (await execute('studio.addConstraint', { viewId, constraints: body })) return;
-  for (const one of body) await execute('studio.addConstraint', { viewId, ...one });
-  useSession.setState({ error: null });
 }
 
 // ─── Commands ──────────────────────────────────────────────────────────────

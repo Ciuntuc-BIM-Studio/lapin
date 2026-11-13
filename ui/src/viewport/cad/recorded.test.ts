@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { inferConstraints, sketchViews, type PlacedPoint } from './recorded';
+import { drawConstrainedArgs, inferConstraints, newShapeId, newShapeIndex, sketchViews, type PlacedPoint } from './recorded';
 import type { Shape } from './shapes';
 
 const P = (x: number, y: number) => ({ x, y });
@@ -85,5 +85,28 @@ describe('which views are sketches', () => {
       { id: 's1', props: { operation: 'extrude', profile: 'd1' } }, { id: 's2', props: { operation: '', profile: 'd2' } }, { id: 'w', props: {} },
     ];
     expect([...sketchViews(nodes)]).toEqual(['plan:a']);
+  });
+});
+
+describe('the drawConstrained request', () => {
+  it('sends the drawing as drafting.draw takes it, with refs to the new shapes written {new: i, part}', () => {
+    const draw = { viewId: 'v', layer: '0', shapes: [{ type: 'line', a: [0, 0], b: [4, 0] }, { type: 'line', a: [4, 0], b: [4, 3] }] };
+    const specs = [
+      ...inferConstraints({ id: newShapeId(0), shape: line(P(4, 3), P(8, 3)) }, [placed(P(4, 3), { mode: 'endpoint', shapeId: 'rect' }), placed(P(8, 3), { lock: 'ortho' }, { typed: { length: 4 } })], world),
+      { kind: 'coincident', refs: [{ shape: newShapeId(1), part: 'start' }, { shape: newShapeId(0), part: 'end' }] },
+    ];
+    expect(drawConstrainedArgs(draw, specs)).toEqual({
+      ...draw,
+      constraints: [
+        { kind: 'coincident', refs: [{ new: 0, part: 'start' }, { shape: 'rect', part: 'vertex:2' }] },
+        { kind: 'horizontal', refs: [{ new: 0, part: 'whole' }] },
+        { kind: 'distance', refs: [{ new: 0, part: 'whole' }], value: 4 },
+        { kind: 'coincident', refs: [{ new: 1, part: 'start' }, { new: 0, part: 'end' }] },
+      ],
+    });
+  });
+  it('tells a placeholder id from a drafted shape\'s own', () => {
+    expect(newShapeIndex(newShapeId(3))).toBe(3);
+    expect(newShapeIndex('rect')).toBeNull();
   });
 });

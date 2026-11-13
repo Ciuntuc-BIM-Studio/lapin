@@ -4,7 +4,8 @@
  * endpoint snap is a coincidence, a midpoint snap the midpoint, "on edge" a point on the object, a perpendicular snap a
  * perpendicular; a side drawn along an ortho or polar line is horizontal or vertical; a typed length or angle is a driving
  * dimension; a rectangle is two horizontal and two vertical sides. Ctrl held on a click places that point free. Pure: the
- * session gathers what was placed, the engine takes what this returns (`studio.addConstraint`).
+ * session gathers what was placed and sends the shapes with what this returns as one command (`studio.drawConstrained`,
+ * `drawConstrainedArgs`), so one Undo takes a shape and its constraints together.
  */
 
 import type { Vec2 } from '../../platform/module';
@@ -137,4 +138,29 @@ export function sketchViews(nodes: Iterable<{ id: string; props: Record<string, 
     if (typeof v === 'string') out.add(v);
   }
   return out;
+}
+
+// ─── The request: shapes and their constraints, one command ─────────────────
+
+const NEW = '\u0000new:';
+/** The id a shape about to be drawn goes by until the engine names it: the `i`-th of the shapes sent. */
+export const newShapeId = (i: number): string => `${NEW}${i}`;
+/** Which of the shapes sent a placeholder id names; null for a drafted shape's own id. */
+export const newShapeIndex = (id: string): number | null => (id.startsWith(NEW) ? Number(id.slice(NEW.length)) : null);
+
+/** A reference as `studio.drawConstrained` takes it: a shape drawn by the same command as `{new: i, part}`. */
+export type DrawRef = Ref | { new: number; part: string };
+
+/**
+ * The `studio.drawConstrained` arguments: what `drafting.draw` takes (`draw`), and the constraints recorded for the shapes, each
+ * reference to one of them (a `newShapeId`) written `{new: i, part}`. The engine draws, adds and solves in one undo step, and
+ * reports the constraints the solver refuses instead of refusing the drawing.
+ */
+export function drawConstrainedArgs<T extends Record<string, unknown>>(draw: T, specs: readonly ConstraintSpec[]): T & { constraints: { kind: string; refs: DrawRef[]; value?: number }[] } {
+  const constraints = specs.map((c) => ({
+    kind: c.kind,
+    refs: c.refs.map((r): DrawRef => { const i = newShapeIndex(r.shape); return i == null ? { shape: r.shape, part: r.part } : { new: i, part: r.part }; }),
+    ...(c.value != null ? { value: c.value } : {}),
+  }));
+  return { ...draw, constraints };
 }

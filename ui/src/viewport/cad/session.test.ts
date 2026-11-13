@@ -248,7 +248,7 @@ describe('constraints recorded while drawing (decision 520, C2)', () => {
       ['s1', { id: 's1', props: { operation: 'extrude', profile: 'd1' } }],
     ]),
   });
-  const added = () => engine.execute.mock.calls.filter(([c]) => c === 'studio.addConstraint').map(([, a]) => a as { constraints?: { kind: string; refs: { shape: string; part: string }[]; value?: number }[] });
+  const added = () => engine.execute.mock.calls.filter(([c]) => c === 'studio.drawConstrained').map(([, a]) => a as { shapes: unknown[]; constraints?: { kind: string; refs: ({ shape: string; part: string } | { new: number; part: string })[]; value?: number }[] });
   const aim = (p: Vec2, mode?: string, shapeId?: string, lock?: string) => useCad.setState({ aim: { point: p, kind: 'point', guides: [], ...(mode ? { mode } : {}), ...(shapeId ? { shapeId } : {}), ...(lock ? { lock } : {}) } as never });
   beforeEach(async () => {
     sketch();
@@ -256,7 +256,7 @@ describe('constraints recorded while drawing (decision 520, C2)', () => {
     setPrefs({ constrainWhileDrawing: true });
   });
 
-  it('an endpoint snap and a held ortho line become a coincidence and a horizontal side, in one batch', async () => {
+  it('an endpoint snap and a held ortho line become a coincidence and a horizontal side, sent with the line as one command', async () => {
     await startCommand('LINE');
     aim(P(4, 0), 'endpoint', 'd1');
     await feedPoint(P(4, 0));
@@ -264,7 +264,23 @@ describe('constraints recorded while drawing (decision 520, C2)', () => {
     await feedPoint(P(9, 0));
     const [call] = added();
     expect(call.constraints?.map((c) => c.kind)).toEqual(['coincident', 'horizontal']);
-    expect(call.constraints?.[0].refs).toEqual([{ shape: 'x', part: 'start' }, { shape: 'd1', part: 'end' }]);
+    expect(call.constraints?.[0].refs).toEqual([{ new: 0, part: 'start' }, { shape: 'd1', part: 'end' }]);
+    expect(call.shapes).toHaveLength(1);
+    // Drawn once: not again by drafting.draw.
+    expect(engine.execute.mock.calls.filter(([c]) => c === 'drafting.draw')).toHaveLength(0);
+  });
+
+  it('a chain joins the next line to the one drawn before it by the id the engine gave it', async () => {
+    await startCommand('LINE');
+    aim(P(0, 5));
+    await feedPoint(P(0, 5));
+    aim(P(3, 5), undefined, undefined, 'ortho');
+    await feedPoint(P(3, 5));
+    aim(P(3, 8), undefined, undefined, 'ortho');
+    await feedPoint(P(3, 8));
+    const calls = added();
+    expect(calls).toHaveLength(2);
+    expect(calls[1].constraints?.[0]).toEqual({ kind: 'coincident', refs: [{ new: 0, part: 'start' }, { shape: 'x', part: 'end' }] });
   });
 
   it('a typed length is a driving dimension of the side', async () => {
@@ -273,7 +289,7 @@ describe('constraints recorded while drawing (decision 520, C2)', () => {
     await feedPoint(P(0, 5));
     aim(P(0.5, 5.1));
     await feedPoint(P(3, 5), { length: 3 });
-    expect(added()[0].constraints).toEqual([{ kind: 'distance', refs: [{ shape: 'x', part: 'whole' }], value: 3 }]);
+    expect(added()[0].constraints).toEqual([{ kind: 'distance', refs: [{ new: 0, part: 'whole' }], value: 3 }]);
   });
 
   it('a rectangle is two horizontal and two vertical sides; a typed radius a radius', async () => {
@@ -285,7 +301,7 @@ describe('constraints recorded while drawing (decision 520, C2)', () => {
     await startCommand('CIRCLE');
     await feedPoint(P(10, 10));
     await submit('2');
-    expect(added()[0].constraints).toEqual([{ kind: 'radius', refs: [{ shape: 'x', part: 'whole' }], value: 0.002 }]);
+    expect(added()[0].constraints).toEqual([{ kind: 'radius', refs: [{ new: 0, part: 'whole' }], value: 0.002 }]);
   });
 
   it('records nothing with the setting off, in a view that is no sketch, or with the point placed free', async () => {
@@ -301,11 +317,10 @@ describe('constraints recorded while drawing (decision 520, C2)', () => {
     expect(added()).toEqual([]);
   });
 
-  it('tries the constraints one by one when the solver refuses the batch', async () => {
+  it('draws the shape alone when the constrained drawing cannot run (no Studio)', async () => {
     await startCommand('RECTANGLE');
-    engine.execute.mockImplementation((cmd: string, args: { constraints?: unknown[] }) => new Promise((r) => setTimeout(() => r(cmd === 'studio.addConstraint' && args.constraints ? null : { ids: ['x'] }), 2)));
+    engine.execute.mockImplementation((cmd: string) => new Promise((r) => setTimeout(() => r(cmd === 'studio.drawConstrained' ? null : { ids: ['x'] }), 2)));
     await feedPoint(P(0, 0)); await feedPoint(P(5, 2));
-    const calls = engine.execute.mock.calls.filter(([c]) => c === 'studio.addConstraint');
-    expect(calls.length).toBe(5);
+    expect(engine.execute.mock.calls.map(([c]) => c)).toEqual(['studio.drawConstrained', 'drafting.draw']);
   });
 });

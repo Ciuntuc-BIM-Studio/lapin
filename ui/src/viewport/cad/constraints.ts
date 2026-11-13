@@ -6,7 +6,7 @@
  */
 
 import type { Vec2 } from '../../platform/module';
-import { angleInArc, dist, nearestOnSegment, normAngle, prims, sweepOf, type Shape } from './shapes';
+import { angleInArc, dist, nearestOnSegment, normAngle, polylines, prims, sweepOf, type Shape } from './shapes';
 
 /** What a pick is: a point, a straight edge, a circle or an arc, a polyline as a whole. */
 export type RefKind = 'point' | 'line' | 'curve' | 'shape';
@@ -17,8 +17,15 @@ export interface Ref { shape: string; part: string }
 export interface ResolvedRef extends Ref {
   at?: number[]; a?: number[]; b?: number[]; c?: number[]; r?: number; start?: number[]; end?: number[]; pts?: number[][]; missing?: boolean;
 }
+/**
+ * Where a dimension is drawn, as the engine keeps it (§4.2 of docs/plan-studio-parametric.md): `offset` metres from what it measures
+ * (a distance's line across its direction, positive to the left; an angle's arc radius; a radius' text beyond the rim) and, for a
+ * radius or a diameter, the `angle` (degrees) of the ray its text stands on. None: placed automatically.
+ */
+export interface DimensionPlace { offset: number; angle?: number }
 export interface ConstraintDto {
   id: string; kind: string; refs: ResolvedRef[]; value?: number | null; formula?: string; driving: boolean; measured?: number; problem?: string; viewId?: string;
+  place?: DimensionPlace | null;
 }
 export interface SketchStatus {
   viewId?: string; status: string; dof: number; freeShapes: Ref[]; redundant: string[]; conflicting: string[]; problem?: string;
@@ -319,71 +326,141 @@ export function spreadGlyphs(at: readonly { x: number; y: number }[], gap = 16):
 
 export interface DimensionDraw { lines: Vec2[][]; text: Vec2 }
 
+/** A dimension's ends as the engine measures them: a line's ends, two points, a point and its foot on a line, a lone point from the origin. */
+function dimensionEnds(c: ConstraintDto): [Vec2, Vec2] | null {
+  const r0 = c.refs[0], r1 = c.refs[1];
+  const a0 = world(r0?.a), b0 = world(r0?.b);
+  if (c.refs.length === 1) {
+    if (a0 && b0) return [a0, b0];
+    const p = world(r0?.at);
+    return p ? [{ x: 0, y: 0 }, p] : null;
+  }
+  const p0 = world(r0?.at), p1 = world(r1?.at);
+  if (p0 && p1) return [p0, p1];
+  const a1 = world(r1?.a), b1 = world(r1?.b);
+  if (p0 && a1 && b1) return [p0, foot(p0, a1, b1)];
+  if (a0 && b0 && p1) return [p1, foot(p1, a0, b0)];
+  return null;
+}
+
 /**
- * A dimension's lines and its text's place, in view coordinates; `off` the distance (view units) its dimension line stands from
- * the measured thing. A radius and a diameter are a leader through the rim; an angle an arc about the lines' crossing.
+ * The frame a linear dimension's offset is measured in (the engine's `LinearFrame`): its first end `a`, its second `b`, and `n` the
+ * unit vector to the left of its direction (a distance's from a to b, a horizontal one's +x, a vertical one's +y).
  */
-export function dimensionDraw(c: ConstraintDto, off: number): DimensionDraw | null {
-  const ends = (): [Vec2, Vec2] | null => {
-    const r0 = c.refs[0], r1 = c.refs[1];
-    const a0 = world(r0?.a), b0 = world(r0?.b);
-    if (c.refs.length === 1) {
-      if (a0 && b0) return [a0, b0];
-      const p = world(r0?.at);
-      return p ? [{ x: 0, y: 0 }, p] : null;
-    }
-    const p0 = world(r0?.at), p1 = world(r1?.at);
-    if (p0 && p1) return [p0, p1];
-    const a1 = world(r1?.a), b1 = world(r1?.b);
-    if (p0 && a1 && b1) return [p0, foot(p0, a1, b1)];
-    if (a0 && b0 && p1) return [p1, foot(p1, a0, b0)];
-    return null;
-  };
+export function linearFrame(c: ConstraintDto): { a: Vec2; b: Vec2; n: Vec2 } | null {
+  if (c.kind !== 'distance' && c.kind !== 'distanceX' && c.kind !== 'distanceY') return null;
+  const e = dimensionEnds(c);
+  if (!e) return null;
+  const [a, b] = e;
+  if (c.kind === 'distanceX') return { a, b, n: { x: 0, y: 1 } };
+  if (c.kind === 'distanceY') return { a, b, n: { x: -1, y: 0 } };
+  const l = dist(a, b);
+  return { a, b, n: l < 1e-12 ? { x: 0, y: 1 } : { x: -(b.y - a.y) / l, y: (b.x - a.x) / l } };
+}
+
+/** Shapes this many screen pixels across or less are cleared whole by an automatic dimension; past it only its ends are. */
+export const SMALL_SHAPE_PX = 240;
+
+/**
+ * Where a dimension goes when the user has not placed it. A linear one stands on the side of what it measures away from the middle
+ * of its shapes (`shapes`, those its references are on: a rectangle's side is dimensioned outside the rectangle), `gap` (view units)
+ * past them when they are small on screen (`scale` pixels per unit), else past its own ends; with no shapes, on the left. An
+ * angle's arc is 1.6 gaps out; a radius' text 1.2 gaps beyond the rim, half way round an arc or at 45 degrees on a circle.
+ */
+export function autoPlace(c: ConstraintDto, gap: number, shapes: readonly Shape[] = [], scale = 1): DimensionPlace | null {
+  if (c.kind === 'angle') return { offset: gap * 1.6 };
+  if (c.kind === 'radius' || c.kind === 'diameter') {
+    const r = c.refs[0], ctr = world(r?.c);
+    if (!ctr) return null;
+    const s = world(r.start), e = world(r.end);
+    let ang = Math.PI / 4;
+    if (s && e) { const a0 = Math.atan2(s.y - ctr.y, s.x - ctr.x), a1 = Math.atan2(e.y - ctr.y, e.x - ctr.x); ang = a0 + sweepOf(a0, a1) / 2; }
+    return { offset: gap * 1.2, angle: normAngleDeg((ang * 180) / Math.PI) };
+  }
+  const f = linearFrame(c);
+  if (!f) return null;
+  const across = (p: Vec2) => (p.x - f.a.x) * f.n.x + (p.y - f.a.y) * f.n.y;
+  const e1 = across(f.b), endHi = Math.max(0, e1), endLo = Math.min(0, e1);
+  const pts = shapes.flatMap((sh) => polylines(sh).flat());
+  if (!pts.length) return { offset: endHi + gap };
+  let lo = Infinity, hi = -Infinity, minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const p of pts) {
+    const t = across(p);
+    lo = Math.min(lo, t); hi = Math.max(hi, t);
+    minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+  }
+  const middle = across({ x: (minX + maxX) / 2, y: (minY + maxY) / 2 });
+  // Away from the shapes' middle; a middle on the dimension's own line (a diagonal) keeps the left.
+  const left = middle <= (endHi + endLo) / 2 + 1e-9;
+  if (left) return { offset: ((hi - endHi) * scale <= SMALL_SHAPE_PX ? Math.max(hi, endHi) : endHi) + gap };
+  return { offset: ((endLo - lo) * scale <= SMALL_SHAPE_PX ? Math.min(lo, endLo) : endLo) - gap };
+}
+
+/** Where an angle's arc turns about, and the way it runs: from `from` radians through `span`. */
+function angleArc(c: ConstraintDto): { base: Vec2; from: number; span: number } | null {
+  const s0 = segPair(c.refs[0]);
+  if (!s0) return null;
+  const s1 = c.refs.length > 1 ? segPair(c.refs[1]) : null;
+  const a0 = Math.atan2(s0[1].y - s0[0].y, s0[1].x - s0[0].x);
+  const sweep = c.refs.length > 1 && s1 ? Math.atan2(s1[1].y - s1[0].y, s1[1].x - s1[0].x) - a0 : a0;
+  const base = c.refs.length > 1 && s1 ? crossing(s0, s1) ?? mid(s0[0], s0[1]) : s0[0];
+  return { base, from: c.refs.length > 1 ? a0 : 0, span: c.refs.length > 1 ? signedSweep(sweep) : a0 };
+}
+
+/**
+ * The place a dimension takes when its text is dragged to `p` (view coordinates): a linear one's line through it, an angle's arc
+ * with its text there, a radius' text there. `gap` as for `dimensionDraw`.
+ */
+export function placeAt(c: ConstraintDto, p: Vec2, gap: number): DimensionPlace | null {
+  const f = linearFrame(c);
+  if (f) return { offset: round9((p.x - f.a.x) * f.n.x + (p.y - f.a.y) * f.n.y) };
+  if (c.kind === 'angle') {
+    const g = angleArc(c);
+    return g ? { offset: round9(Math.max(dist(g.base, p) - gap * 0.5, gap * 0.3)) } : null;
+  }
+  if (c.kind === 'radius' || c.kind === 'diameter') {
+    const r = c.refs[0], ctr = world(r?.c);
+    if (!ctr || r?.r == null) return null;
+    return { offset: round9(dist(ctr, p) - r.r), angle: normAngleDeg((Math.atan2(p.y - ctr.y, p.x - ctr.x) * 180) / Math.PI) };
+  }
+  return null;
+}
+const round9 = (v: number) => Math.round(v * 1e9) / 1e9;
+
+/**
+ * A dimension's lines and its text's place, in view coordinates; `off` the gap (view units) an automatic dimension leaves. Drawn
+ * at `o.place` (a drag's preview), else at the place the user gave it, else automatically (`autoPlace`, given the shapes its
+ * references are on and the view's pixels per unit). A radius and a diameter are a leader through the rim; an angle an arc
+ * about the lines' crossing.
+ */
+export function dimensionDraw(c: ConstraintDto, off: number, o: { place?: DimensionPlace | null; shapes?: readonly Shape[]; scale?: number } = {}): DimensionDraw | null {
+  const place = o.place ?? c.place ?? autoPlace(c, off, o.shapes, o.scale);
+  if (!place) return null;
   switch (c.kind) {
-    case 'distance': {
-      const e = ends();
-      if (!e) return null;
-      const [a, b] = e, l = dist(a, b) || 1, n = { x: -(b.y - a.y) / l, y: (b.x - a.x) / l };
-      const a2 = { x: a.x + n.x * off, y: a.y + n.y * off }, b2 = { x: b.x + n.x * off, y: b.y + n.y * off };
-      return { lines: [[a, a2], [b, b2], [a2, b2]], text: mid(a2, b2) };
-    }
-    case 'distanceX': {
-      const e = ends();
-      if (!e) return null;
-      const [a, b] = e, y = Math.max(a.y, b.y) + off;
-      const a2 = { x: a.x, y }, b2 = { x: b.x, y };
-      return { lines: [[a, a2], [b, b2], [a2, b2]], text: mid(a2, b2) };
-    }
-    case 'distanceY': {
-      const e = ends();
-      if (!e) return null;
-      const [a, b] = e, x = Math.max(a.x, b.x) + off;
-      const a2 = { x, y: a.y }, b2 = { x, y: b.y };
+    case 'distance': case 'distanceX': case 'distanceY': {
+      const f = linearFrame(c);
+      if (!f) return null;
+      const { a, b, n } = f, k = place.offset, kb = k - ((b.x - a.x) * n.x + (b.y - a.y) * n.y);
+      const a2 = { x: a.x + n.x * k, y: a.y + n.y * k }, b2 = { x: b.x + n.x * kb, y: b.y + n.y * kb };
       return { lines: [[a, a2], [b, b2], [a2, b2]], text: mid(a2, b2) };
     }
     case 'radius': case 'diameter': {
       const r = c.refs[0], ctr = world(r?.c);
       if (!ctr || r?.r == null) return null;
-      const s = world(r.start), e = world(r.end);
-      let ang = Math.PI / 4;
-      if (s && e) { const a0 = Math.atan2(s.y - ctr.y, s.x - ctr.x), a1 = Math.atan2(e.y - ctr.y, e.x - ctr.x); ang = a0 + sweepOf(a0, a1) / 2; }
-      const rim = arcAt(ctr, r.r, ang), out = arcAt(ctr, r.r + off * 0.7, ang);
+      const ang = ((place.angle ?? 45) * Math.PI) / 180;
+      const rim = arcAt(ctr, r.r, ang), text = arcAt(ctr, r.r + place.offset, ang);
+      // The leader runs through the rim to just short of the text (a text inside stops it at the rim).
+      const out = arcAt(ctr, r.r + Math.max(place.offset - off * 0.5, 0), ang);
       const from = c.kind === 'diameter' ? arcAt(ctr, r.r, ang + Math.PI) : ctr;
-      return { lines: [[from, rim, out]], text: arcAt(ctr, r.r + off * 1.2, ang) };
+      return { lines: [[from, rim, out]], text };
     }
     case 'angle': {
-      const s0 = segPair(c.refs[0]);
-      if (!s0) return null;
-      const s1 = c.refs.length > 1 ? segPair(c.refs[1]) : null;
-      const a0 = Math.atan2(s0[1].y - s0[0].y, s0[1].x - s0[0].x);
-      const sweep = c.refs.length > 1 && s1 ? Math.atan2(s1[1].y - s1[0].y, s1[1].x - s1[0].x) - a0 : a0;
-      const base = c.refs.length > 1 && s1 ? crossing(s0, s1) ?? mid(s0[0], s0[1]) : s0[0];
-      const from = c.refs.length > 1 ? a0 : 0;
-      const span = c.refs.length > 1 ? signedSweep(sweep) : a0;
-      const radius = off * 1.6;
-      const n = Math.max(6, Math.ceil(Math.abs(span) / (Math.PI / 24)));
-      const arc = Array.from({ length: n + 1 }, (_, i) => arcAt(base, radius, from + (span * i) / n));
-      return { lines: [arc], text: arcAt(base, radius + off * 0.5, from + span / 2) };
+      const g = angleArc(c);
+      if (!g) return null;
+      const radius = place.offset;
+      const n = Math.max(6, Math.ceil(Math.abs(g.span) / (Math.PI / 24)));
+      const arc = Array.from({ length: n + 1 }, (_, i) => arcAt(g.base, radius, g.from + (g.span * i) / n));
+      return { lines: [arc], text: arcAt(g.base, radius + off * 0.5, g.from + g.span / 2) };
     }
   }
   return null;
