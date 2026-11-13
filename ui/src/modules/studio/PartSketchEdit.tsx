@@ -371,7 +371,7 @@ export function PartSketch3D({ camera, canvas }: Overlay3DProps) {
         <button type="button" className="btn small" data-testid="part-sketch-finish" title={tr('Back to the part (Esc)')} onClick={() => leavePartSketch()}><Check size={12} />{tr('Finish sketch')}</button>
         {(tool || cmdOn) && (
           <div className="part-sketch-prompt" data-testid="part-sketch-prompt">
-            <span data-no-i18n>{tool ? (tool === 'delete' ? tr('Click a shape to delete it') : `${tr(TOOL_LABELS[tool])}: ${pts.length + 1} / ${POINTS_NEEDED[tool as DrawTool]}`) : step?.prompt ?? ''}</span>
+            {tool ? (tool === 'delete' ? <span>{tr('Click a shape to delete it')}</span> : <span><span>{tr(TOOL_LABELS[tool])}</span><span data-no-i18n>{`: ${pts.length + 1} / ${POINTS_NEEDED[tool as DrawTool]}`}</span></span>) : <span data-no-i18n>{step?.prompt ?? ''}</span>}
             {cmdOn && step?.want === 'text' && (
               <input className="part-sketch-input" data-testid="part-sketch-value" value={typed} autoFocus aria-label={tr('Value')} onChange={(e) => setTyped(e.target.value)}
                 onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter') { const v = typed; setTyped(''); void submit(v); } else if (e.key === 'Escape') cancel(); }} />
