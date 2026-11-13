@@ -4,6 +4,7 @@ import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
   // Decision 525: visual graphs
+  "Graphs are the host's: in a shared session only the host opens, previews and bakes them.": "图归主持人所有：在共享会话中只有主持人能打开、预览和烘焙它们。",
   "Storey levels": "楼层标高",
   "Round off": "取整",
   "Elements made": "生成的构件",

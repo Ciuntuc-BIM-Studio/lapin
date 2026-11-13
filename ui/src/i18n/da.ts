@@ -4,6 +4,7 @@ import type { Language } from './index';
 
 export const DA: Record<string, string> = {
   // Decision 525: visual graphs
+  "Graphs are the host's: in a shared session only the host opens, previews and bakes them.": "Grafer tilhører værten: i en delt session er det kun værten, der åbner, forhåndsviser og genererer dem.",
   "Storey levels": "Etagekoter",
   "Round off": "Afrund",
   "Elements made": "Lavede elementer",

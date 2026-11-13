@@ -2,6 +2,7 @@
 
 export const RO: Record<string, string> = {
   // Decision 525: visual graphs
+  "Graphs are the host's: in a shared session only the host opens, previews and bakes them.": "Grafurile sunt ale gazdei: într-o sesiune partajată doar gazda le deschide, le previzualizează și creează din ele.",
   "Storey levels": "Cotele nivelurilor",
   "Round off": "Rotunjește",
   "Elements made": "Elemente făcute",

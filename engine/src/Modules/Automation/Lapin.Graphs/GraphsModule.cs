@@ -166,8 +166,17 @@ public sealed class GraphsModule : ILapinModule, IPackageTexts, IDrivenElements
 
     public bool Drives(IModelView m, Entity e) => e.Class == Class;
 
+    /// <summary>What a guest is told when a generic command reaches a project's graph (the host's, as the graphs.* commands are).</summary>
+    public const string HostOnly = "Only the host can do that.";
+
+    /// <summary>
+    /// The core's edits refused on a graph (it changes through graphs.save); a guest of a shared session is refused every
+    /// generic command on one, delete, group, copy and move too, alone or in a batch (the user's answer of 13.11.2026: graphs
+    /// are the host's, like scripts; <c>EngineDispatcher.HostOnlyCommands</c> keeps <c>graphs.*</c>).
+    /// </summary>
     public void Before(ICommandContext ctx, DrivenEdit edit, DrivenOutcome outcome)
     {
+        if (HostFiles.GuestCall) throw new CommandException(HostOnly);
         if (edit.Command is "element.delete") return;
         throw new CommandException("A graph is changed in the Graphs panel (View → Graphs), not here.");
     }

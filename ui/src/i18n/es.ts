@@ -4,6 +4,7 @@ import type { Language } from './index';
 
 export const ES: Record<string, string> = {
   // Decision 525: visual graphs
+  "Graphs are the host's: in a shared session only the host opens, previews and bakes them.": "Los grafos son del anfitrión: en una sesión compartida solo el anfitrión los abre, previsualiza y genera.",
   "Storey levels": "Cotas de las plantas",
   "Round off": "Redondear",
   "Elements made": "Elementos creados",

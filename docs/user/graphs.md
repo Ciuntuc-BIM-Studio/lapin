@@ -45,4 +45,4 @@ A node that fails turns red and says why in the inspector (and when hovered): a 
 
 - A graph does not run code and cannot read or write files: tools that import, export or open projects are not offered as nodes.
 - A graph is evaluated for at most 5 seconds and runs at most 2,000 commands at once; a list holds at most 10,000 items.
-- In a shared session, a guest who edits may change and bake graphs, as they may use the tools; one who looks sees the ghost.
+- In a shared session, graphs are the host's, like scripts: a guest cannot open, preview, bake, rename or delete them; their Graphs panel says so.

@@ -17,7 +17,8 @@ import {
   addNode, connect, fitView, moveNodes, nodeHeight, nodesIn, portAt, PORT_COLOURS, removeNodes, removeWire, searchNodes, setLabel, setValue, showValue,
   sockets, unknownSpec, wireKey, wirePath, zoomAt, HEAD_H, NODE_W, ROW_H, type GraphJson, type GraphView as ViewT, type NodeSpec, type PortSpec,
 } from './graph';
-import { bake, currentGraph, deleteGraph, evaluate, loadSpecs, newGraph, openGraph, projectGraphs, renameGraph, saveGraph, setPreview, useGraphs } from './store';
+import { isGuest } from '../../engine/share';
+import { bake, currentGraph, GUEST_REFUSAL, deleteGraph, evaluate, loadSpecs, newGraph, openGraph, projectGraphs, renameGraph, saveGraph, setPreview, useGraphs } from './store';
 
 type Drag =
   | { kind: 'move'; start: { x: number; y: number }; ids: Set<string>; moved: boolean }
@@ -26,6 +27,12 @@ type Drag =
   | { kind: 'pan'; sx: number; sy: number; view: ViewT };
 
 export function GraphView() {
+  // A tab of the host's window shown to a guest (a pane they share): the graphs are the host's, so it says so and nothing more.
+  if (isGuest()) return <div className="graphs-view" data-testid="graphs-view"><div className="graphs-empty muted"><Workflow size={28} /><p>{GUEST_REFUSAL}</p></div></div>;
+  return <GraphPanel />;
+}
+
+function GraphPanel() {
   const graphId = useGraphs((s) => s.graphId);
   const nodes = useSession((s) => s.nodes);
   const graphs = useMemo(() => projectGraphs(nodes), [nodes]);

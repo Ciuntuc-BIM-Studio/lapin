@@ -2,7 +2,7 @@
 
 Cerut de utilizator (13.11.2026): automatizarea Python să meargă mai departe, într-o **automatizare vizuală în Lapin, ceva ca Grasshopper dar mai prietenos, cu intrările și ieșirile direct în interfață odată ce automatizările sunt făcute**. Răspunsurile utilizatorului la propunere: (1) **ediția gratuită** (un modul deschis, în `products/lapin.json`); (2) **ediția web de la etapa 1** (motorul rulează acolo într-un Web Worker, `engine/src/Host/Lapin.Browser`); (3) **un panou lateral**: pe web împarte ecranul (split), pe desktop poate pluti. Decizia 525 (`docs/decisions-pending.md`).
 
-**Stare (13.11.2026):** **etapa 1 e făcută** pe ramura `feature/visual-graphs` (pornită din `feature/script-ui-panels`, decizia 516, ale cărei palete le refolosește etapa 2): modulul `graphs` (motor și interfață), evaluarea, fantoma, Bake, panoul, testele, ghidul (`docs/user/graphs.md`). Hotărâri luate în lucru: un nod-comandă fără nivel lucrează pe nivelul vederii (`storey` trimis de fereastră, ca o unealtă care desenează pe nivelul arătat); după Bake fantoma se ascunde. Rămân pentru etapa 1b: cache-ul pe nod (§3) și construirea ediției web pe o mașină cu `wasm-tools` (aici lipsește; modulul nu are nimic doar pentru desktop). O comandă care cade la jumătate în previzualizare își lasă pe copie ce apucase să facă până la sfârșitul evaluării (copia e dată înapoi oricum; la Bake totul e refuzat).
+**Stare (13.11.2026):** **etapa 1 e făcută** pe ramura `feature/visual-graphs` (pornită din `feature/script-ui-panels`, decizia 516, ale cărei palete le refolosește etapa 2): modulul `graphs` (motor și interfață), evaluarea, fantoma, Bake, panoul, testele, ghidul (`docs/user/graphs.md`). Utilizatorul a răspuns la §9 (13.11.2026): grafurile sunt ale gazdei (§7), restul cum e. Hotărâri luate în lucru: un nod-comandă fără nivel lucrează pe nivelul vederii (`storey` trimis de fereastră, ca o unealtă care desenează pe nivelul arătat); după Bake fantoma se ascunde. Rămân pentru etapa 1b: cache-ul pe nod (§3) și construirea ediției web pe o mașină cu `wasm-tools` (aici lipsește; modulul nu are nimic doar pentru desktop). O comandă care cade la jumătate în previzualizare își lasă pe copie ce apucase să facă până la sfârșitul evaluării (copia e dată înapoi oricum; la Bake totul e refuzat).
 
 ## 0. Pe scurt
 
@@ -78,7 +78,7 @@ Un **graf** e o schemă de noduri legate prin fire, ținută **în proiect** (o 
 
 - **Un graf nu rulează cod**: nodurile sunt comenzile utilizatorului și funcții proprii fără efecte. De aceea **nu cere încredere** (ca un script al proiectului): Bake face exact ce ar face utilizatorul cu uneltele lui, într-un pas de undo. Nodurile Python (etapa 4) vor cere încrederea scripturilor (după hash).
 - **Nu rulează niciodată singur**: un graf deschis nu face nimic până nu e previzualizat (ce nu schimbă modelul) sau copt.
-- **Oaspeții**: `graphs.evaluate` e o întrebare (oricine poate previzualiza); `graphs.save/rename/delete/bake` sunt comenzi, deci doar pentru oaspeții editori, ca orice comandă: un graf rulează doar comenzi pe care un editor le poate rula oricum, iar cele ale gazdei (`scripting.*`, fișierele) sunt refuzate ca noduri (§3).
+- **Oaspeții** (răspunsul utilizatorului din 13.11.2026: grafurile sunt ale gazdei, ca scripturile): un oaspete nu rulează și nu evaluează niciun graf. `graphs.*` e în `EngineDispatcher.HostOnlyCommands` (singură sau într-un `edit.batch`), întrebările `graphs.*` în `HostOnlyQueries` (și pentru cine doar privește), iar comenzile generice pe un `LapinGraph` (ștergere, redenumire, grupare, copiere, mutare) sunt refuzate unui oaspete în `GraphsModule.Before` (`HostFiles.GuestCall`), ca la `ScriptingModule`. În fereastra unui oaspete, View → Graphs spune de ce nu se deschide, iar o filă Graphs arată același mesaj; fantoma nu se calculează.
 
 ## 8. Etape
 
@@ -92,7 +92,9 @@ Un **graf** e o schemă de noduri legate prin fire, ținută **în proiect** (o 
 - **Teste**: xUnit (`GraphTests`): evaluarea și ordinea, maparea (lungime, repetarea ultimului, liste de liste, `whole`), erorile pe nod și restul evaluat, limitele (noduri, cicluri, liste, apeluri), previzualizarea care lasă modelul neschimbat (revizia și entitățile) și copia refolosită, Bake = un pas de undo (Undo îl scoate), Bake refuzat la o eroare fără să lase nimic, comenzile refuzate ca noduri, salvarea și deschiderea `.lapin` cu `graphs/<nume>.json`; vitest pentru logica pură a canvasului (fire, tipuri, cicluri, căutare, porturile de punct, transformările de vedere).
 - **Ghidul**: `docs/user/graphs.md` și `docs/user/ro/graphs.md`, scena `graphs` în `scripts/user-docs/scenes.mjs` (un graf care pune un rând de pereți, cu fantoma și Bake).
 
-## 9. Întrebări pentru utilizator
+## 9. Întrebări pentru utilizator și răspunsurile lui
+
+Răspunsurile (13.11.2026): 1. listele se mapează după cea mai lungă, cum e; 2. Bake refuzat întreg la o eroare, cum e; 3. fără încredere pentru grafuri; 4. **grafurile rămân ale gazdei, ca scripturile** (făcut: comenzile și întrebările `graphs.*` doar ale gazdei, comenzile generice pe un graf refuzate oaspeților, panoul unui oaspete spune de ce; §7); 5. limitele de la §2 sunt bune; 6. numele „Graphs” rămâne.
 
 1. Maparea listelor după **cea mai lungă** (cele scurte își repetă ultimul element), ca în Grasshopper — sau după cea mai scurtă (fără repetări, mai puțin surprinzătoare)?
 2. Bake **refuzat întreg** când un nod-comandă cade (nimic pe jumătate) — de acord, sau coace ce a reușit și arată erorile?

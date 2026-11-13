@@ -4,6 +4,7 @@ import type { Language } from './index';
 
 export const LO: Record<string, string> = {
   // Decision 525: visual graphs
+  "Graphs are the host's: in a shared session only the host opens, previews and bakes them.": "ກຣາບເປັນຂອງເຈົ້າພາບ: ໃນເຊດຊັນທີ່ແບ່ງປັນ ມີແຕ່ເຈົ້າພາບທີ່ເປີດ, ເບິ່ງຕົວຢ່າງ ແລະ ສ້າງຈາກມັນ.",
   "Storey levels": "ລະດັບຊັ້ນ",
   "Round off": "ປັດເສດ",
   "Elements made": "ອົງປະກອບທີ່ສ້າງ",

@@ -277,4 +277,55 @@ public sealed class GraphTests : IDisposable
         // Every command of the module is in the source catalogue (node:check keeps it fresh).
         foreach (var c in new[] { "graphs.save", "graphs.rename", "graphs.delete", "graphs.bake" }) Assert.Contains(c, CommandCatalogue.SourceCommands);
     }
+
+    static JsonObject Exec(string command, JsonObject args) => new() { ["command"] = command, ["args"] = args };
+
+    [Fact]
+    public void Graphs_are_the_hosts_a_guest_neither_runs_evaluates_nor_touches_one()
+    {
+        var f = Project();
+        var graph = (string)f.Run("graphs.save", new JsonObject { ["name"] = "Row of walls", ["graph"] = Walls() })!["id"]!;
+        var other = (string)f.Run("storey.create", new JsonObject { ["name"] = "First floor", ["elevation"] = 3.0 })!["id"]!;
+        var wall = f.Wall(0, 0, 5, 0);
+        var d = new EngineDispatcher(f.Session, PackageFiles.Create());
+        string? Error(string method, JsonObject p, string role = "editor")
+        {
+            var (reply, _) = d.Handle(new JsonObject { ["id"] = 1, ["method"] = method, ["params"] = p }.ToJsonString(), new Caller("guest-1", role));
+            var h = BinaryFrame.Decode(reply).Header.RootElement;
+            return h.TryGetProperty("error", out var e) ? e.GetString() : null;
+        }
+        var refused = new (string Method, JsonObject Params)[]
+        {
+            ("doc.execute", Exec("graphs.save", new JsonObject { ["name"] = "Mine", ["graph"] = Walls() })),
+            ("doc.execute", Exec("graphs.bake", new JsonObject { ["id"] = graph })),
+            ("doc.execute", Exec("graphs.rename", new JsonObject { ["id"] = graph, ["name"] = "x" })),
+            ("doc.execute", Exec("graphs.delete", new JsonObject { ["id"] = graph })),
+            ("doc.execute", Exec("edit.batch", new JsonObject { ["steps"] = new JsonArray(Exec("graphs.bake", new JsonObject { ["id"] = graph })) })),
+            ("doc.execute", Exec("element.delete", new JsonObject { ["ids"] = new JsonArray(graph) })),
+            ("doc.execute", Exec("element.delete", new JsonObject { ["ids"] = new JsonArray(wall, graph) })),
+            ("doc.execute", Exec("element.rename", new JsonObject { ["id"] = graph, ["name"] = "x" })),
+            ("doc.execute", Exec("group.create", new JsonObject { ["ids"] = new JsonArray(graph, wall) })),
+            ("doc.execute", Exec("element.copyToStoreys", new JsonObject { ["ids"] = new JsonArray(graph), ["storeyIds"] = new JsonArray(other) })),
+            ("doc.execute", Exec("element.moveToStorey", new JsonObject { ["ids"] = new JsonArray(graph), ["storeyId"] = other })),
+            ("doc.execute", Exec("element.transform", new JsonObject { ["ids"] = new JsonArray(graph), ["op"] = "copy", ["by"] = new JsonArray(1.0, 0.0) })),
+            ("doc.execute", Exec("edit.batch", new JsonObject { ["steps"] = new JsonArray(Exec("element.delete", new JsonObject { ["ids"] = new JsonArray(graph) })) })),
+            ("doc.query", new JsonObject { ["name"] = "graphs.evaluate", ["args"] = new JsonObject { ["id"] = graph } }),
+            ("doc.query", new JsonObject { ["name"] = "graphs.get", ["args"] = new JsonObject { ["id"] = graph } }),
+            ("doc.query", new JsonObject { ["name"] = "graphs.list", ["args"] = new JsonObject() }),
+        };
+        foreach (var (method, p) in refused) Assert.Equal("Only the host can do that.", Error(method, p));
+        // One who joined to look is refused the queries too.
+        Assert.Equal("Only the host can do that.", Error("doc.query", new JsonObject { ["name"] = "graphs.nodes", ["args"] = new JsonObject() }, "viewer"));
+        Assert.Equal("Only the host can do that.", EngineDispatcher.AllowedRemote("doc.query", new JsonObject { ["name"] = "graphs.evaluate" }, "owner"));
+        Assert.Null(EngineDispatcher.AllowedRemote("doc.query", new JsonObject { ["name"] = "architecture.wallTypes" }, "viewer"));
+        Assert.Single(f.Model.OfClass(GraphsModule.Class));
+        Assert.Equal("Row of walls", f.Model.Get(graph)!.Name);
+        Assert.Single(f.Model.OfClass(IfcClass.Wall));
+        // The guest's own work goes on; the host bakes and deletes as before.
+        Assert.Null(Error("doc.execute", Exec("element.delete", new JsonObject { ["ids"] = new JsonArray(wall) })));
+        f.Run("graphs.bake", new JsonObject { ["id"] = graph });
+        Assert.Equal(3, f.Model.OfClass(IfcClass.Wall).Count());
+        f.Run("element.delete", new JsonObject { ["ids"] = new JsonArray(graph) });
+        Assert.Empty(f.Model.OfClass(GraphsModule.Class));
+    }
 }

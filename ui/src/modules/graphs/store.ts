@@ -10,6 +10,7 @@ import { create } from 'zustand';
 import { activeStorey, engine, execute, query, useSession } from '../../engine/session';
 import { focusPane, notify, useUi } from '../../app/store';
 import { isDesktop } from '../../engine/files';
+import { isGuest } from '../../engine/share';
 import { emptyGraph, graphOf, nodeSpecs, type Catalogue, type EngineNodes, type GraphJson, type NodeSpec } from './graph';
 
 export const GRAPH_CLASS = 'LapinGraph';
@@ -105,7 +106,7 @@ let asked = 0;
 /** The open graph evaluated by the engine (its values, and its ghost when the preview is on): the model untouched. */
 export async function evaluate(): Promise<void> {
   const { graphId } = useGraphs.getState();
-  if (!graphId) return;
+  if (!graphId || isGuest()) return;
   const mine = ++asked;
   useGraphs.setState({ busy: true });
   const r = await query<Evaluation>('graphs.evaluate', { id: graphId, storey: activeStorey()?.id });
@@ -129,7 +130,11 @@ export async function bake(): Promise<void> {
 }
 
 /** Graphs opened beside the view (the panel: split on the web, a window of its own on the desktop from its tab). */
+/** What a guest of a shared session is told: the project's graphs are the host's, like its scripts (decision 525). */
+export const GUEST_REFUSAL = "Graphs are the host's: in a shared session only the host opens, previews and bakes them.";
+
 export function openPanel(): void {
+  if (isGuest()) { notify(GUEST_REFUSAL); return; }
   void loadSpecs();
   if (!useGraphs.getState().graphId) openGraph(projectGraphs(useSession.getState().nodes)[0]?.id ?? null);
   const s = useUi.getState();

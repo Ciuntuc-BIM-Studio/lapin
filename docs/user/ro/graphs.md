@@ -45,4 +45,4 @@ Un nod care cade se face roșu și spune de ce în inspector (și când treci cu
 
 - Un graf nu rulează cod și nu poate citi sau scrie fișiere: uneltele care importă, exportă sau deschid proiecte nu sunt oferite ca noduri.
 - Un graf se calculează cel mult 5 secunde și rulează cel mult 2.000 de comenzi deodată; o listă are cel mult 10.000 de elemente.
-- Într-o sesiune partajată, un invitat care editează poate schimba grafuri și crea din ele, cum poate folosi uneltele; unul care doar privește vede fantoma.
+- Într-o sesiune partajată, grafurile sunt ale gazdei, ca scripturile: un invitat nu le poate deschide, previzualiza, crea din ele, redenumi sau șterge; panoul lui Grafuri spune asta.
