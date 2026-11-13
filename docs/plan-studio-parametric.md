@@ -142,3 +142,16 @@ Order: P0, C0–C3, P1, P3, X1, P2, X3, X2, X4, P4, C5. About 6–8 weeks to con
 5. A step with no FreeCAD counterpart is exported as a **fixed shape**, never refused.
 6. C5 (walls and rooms driven by constrained outlines) **waits** for another request.
 7. A **`.lapinpart`** file for the part library, as `.lapintypes`, so parts can go to the store too.
+
+## 9. Families become parts (the user's answers, 13.11.2026)
+
+The light families of decision 515 (`LapinFamily` / `LapinFamilyInstance`, `Lapin.Studio/Families.cs`, `.lapinfamily`, `docs/user/families.md`) were made the same day as this plan. They overlap, so the user decided (all as recommended):
+
+1. **Families become parts.** One class: a family is a part (`LapinSolidType` grown). An `IProjectUpgrade` turns saved families and their objects into parts and their instances (GlobalIds kept); a `.lapinfamily` file is read as a `.lapinpart`; the `studio.createFamily`, `placeFamily`, `setFamilyValues`, `familyFromSketch`, `exportFamily`, `importFamily` commands stay as shortcuts onto the part commands (extend, never break).
+2. **A formula corner is a constraint.** A family's corner written as formulas (`["W", "T"]`) becomes a fixed point with driving `distanceX` / `distanceY` from the sketch's origin, carrying those formulas; one sketch may mix such points with points the solver moves. The upgrade converts families with no loss: the same bodies, the same volumes.
+3. **Parts take over from families:**
+   - `when`: a body or a step suppressed by a boolean formula of the parameters (Inventor's and FreeCAD's suppress by expression);
+   - `exportAs`: the IFC class a part is written as, with its type;
+   - **part from a sketch** with W, H, D stretching it (`familyFromSketch`), its dimensions placed automatically;
+   - the **ghost** under the cursor while placing (the point gesture's `ghost`).
+4. **When: in P0**, with the edit mode and `LapinSolidType` grown, so the part type and the upgrade are made once; the part's tree shows former families too. `FamilyTests` stay and pass through the shortcuts; the upgrade gets its own test (a project saved with families opens as parts with the same bodies and ids).
