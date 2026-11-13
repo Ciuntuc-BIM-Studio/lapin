@@ -9,7 +9,7 @@
 import type { ComponentType } from 'react';
 import { create } from 'zustand';
 import type { Vec2 } from '../../platform/module';
-import { select, useUi } from '../../app/store';
+import { notify, select, useUi } from '../../app/store';
 import { execute, undo, useSession } from '../../engine/session';
 import { beginMove3d } from '../moveIn3d';
 import { useWorkPlane } from '../sketch/sketch3d';
@@ -18,7 +18,7 @@ import { ucsOf, useLocation } from '../../app/location';
 import { directionFrom, directionOf, normalizeTurn, rotatedShape, rotationFromReference } from './rotate';
 import { applyOrtho, parseCoordinateInput, parseScalar, pointAlong } from './input';
 import { lengthText, parseLength } from '../../engine/unitsStore';
-import { arcThrough, dist, fromJson, toJson, type Shape } from './shapes';
+import { arcThrough, arcTangent, dist, fromJson, toJson, type Shape } from './shapes';
 import { liveBegin, liveEnd } from '../liveInput';
 import { traceBegin, traceEnd } from '../moveTrace';
 import { lassoTest, type RegionTest } from '../selectBox';
@@ -158,12 +158,14 @@ async function draw(shapes: Shape[], hints?: DrawHints): Promise<string[]> {
   const { layer, role } = useCad.getState();
   const body = { viewId: h.viewId, layer, shapes: shapes.map(toJson), ...(role ? { role } : {}) };
   const specs = recordWhileDrawing(h.viewId, role, shapes, hints);
-  let r: { ids?: string[] } | null = null;
+  let r: { ids?: string[]; refused?: { kind?: string; reason?: string }[] } | null = null;
   if (specs.length) {
-    r = await execute('studio.drawConstrained', drawConstrainedArgs(body, specs)) as { ids?: string[] } | null;
+    r = await execute('studio.drawConstrained', drawConstrainedArgs(body, specs)) as { ids?: string[]; refused?: { kind?: string; reason?: string }[] } | null;
+    reportRefused(r);
   }
   if (!r) r = await execute('drafting.draw', body) as { ids?: string[] } | null;
   const ids = r?.ids ?? [];
+  if (ids.length) lastDrawn = { id: ids[ids.length - 1], cw: !!hints?.cw };
   // The shape drawn last is named now: the next one of a chain is joined to it by its id.
   const i = prevDrawn ? newShapeIndex(prevDrawn.id) : null;
   if (prevDrawn && i != null) prevDrawn = ids[i] ? { id: ids[i], shape: prevDrawn.shape } : null;
@@ -177,6 +179,36 @@ let trail: PlacedPoint[] = [];
 /** The shape drawn just before in the same command: a chain of lines is joined as it is drawn. */
 let prevDrawn: Drawn | null = null;
 const resetRecording = () => { trail = []; prevDrawn = null; };
+
+/** What the last command drew, for a tangent arc to continue from: the shape's id, and whether it is an arc travelled clockwise (its far end is then its `start`). Kept across commands. */
+let lastDrawn: { id: string; cw: boolean } | null = null;
+
+/** Constraints the solver refused while drawing (`refused`): left out of the drawing, and said so with why. */
+function reportRefused(result: { refused?: { kind?: string; reason?: string }[] } | null): void {
+  const refused = result?.refused;
+  if (!Array.isArray(refused) || !refused.length) return;
+  const why = `${refused[0].kind ?? 'constraint'} — ${refused[0].reason ?? 'it conflicts with the others'}`;
+  notify(refused.length === 1 ? `Constraint left out: ${why}` : `${refused.length} constraints left out: ${why}`);
+}
+
+/** Where a tangent arc continues from: the last drawn line's, polyline's or arc's end, the direction it arrives there, and the part that ends it. */
+function continuation(viewId: string): { p: Vec2; dir: Vec2; ref: { shape: string; part: string } } | null {
+  if (!lastDrawn) return null;
+  const s = draftsOf(viewId).get(lastDrawn.id);
+  if (!s) return null;
+  const ref = (part: string) => ({ shape: lastDrawn!.id, part });
+  if (s.type === 'line') return dist(s.a, s.b) < 1e-9 ? null : { p: s.b, dir: { x: s.b.x - s.a.x, y: s.b.y - s.a.y }, ref: ref('end') };
+  if (s.type === 'polyline' && !s.closed && s.pts.length >= 2) {
+    const n = s.pts.length, a = s.pts[n - 2], b = s.pts[n - 1];
+    return dist(a, b) < 1e-9 ? null : { p: b, dir: { x: b.x - a.x, y: b.y - a.y }, ref: ref(`vertex:${n - 1}`) };
+  }
+  if (s.type === 'arc') {
+    // Counter-clockwise it ends at `end` heading along the perpendicular; clockwise it ends at `start` heading the other way.
+    const a = lastDrawn.cw ? s.start : s.end, k = lastDrawn.cw ? -1 : 1;
+    return { p: { x: s.c.x + s.r * Math.cos(a), y: s.c.y + s.r * Math.sin(a) }, dir: { x: -k * Math.sin(a), y: k * Math.cos(a) }, ref: ref(lastDrawn.cw ? 'start' : 'end') };
+  }
+  return null;
+}
 
 /** Ctrl (or ⌘) held at the press: the click places its point without constraints. Read when the click is fed, not when it is run. */
 let ctrlHeld = false;
@@ -273,9 +305,34 @@ function circle(): Step {
   };
 }
 
+/** The arc that goes on from the last line's or arc's end, tangent to it: only its end point is picked. */
+function arcContinued(): Step | null {
+  const h = host();
+  const k = h ? continuation(h.viewId) : null;
+  if (!h || !k) { log('There is no line or arc to continue from.'); return null; }
+  const unit = Math.hypot(k.dir.x, k.dir.y);
+  return {
+    prompt: 'End point (tangent to the last line or arc)', want: 'point', base: k.p,
+    // The arc, with the tangent it leaves along drawn as a line, as the hint of what holds it.
+    preview: (c) => {
+      const hint: Shape = { type: 'line', a: k.p, b: { x: k.p.x + (k.dir.x / unit) * Math.max(dist(k.p, c) * 0.5, 0.05), y: k.p.y + (k.dir.y / unit) * Math.max(dist(k.p, c) * 0.5, 0.05) } };
+      const t = arcTangent(k.p, k.dir, c);
+      return t ? [{ type: 'arc', c: t.c, r: t.r, start: t.start, end: t.end }, hint] : [hint, { type: 'line', a: k.p, b: c }];
+    },
+    point: async (e) => {
+      const t = arcTangent(k.p, k.dir, e);
+      if (!t) { log('The end point lies on the tangent line.'); return null; }
+      await draw([{ type: 'arc', c: t.c, r: t.r, start: t.start, end: t.end }], { tangentFrom: { ref: k.ref, p: k.p }, cw: t.cw });
+      return null;
+    },
+  };
+}
+
 function arc(): Step {
   return {
-    prompt: 'Start point', want: 'point',
+    prompt: 'Start point [Tangent]', want: 'point',
+    keywords: { T: () => arcContinued() },
+    enter: () => arcContinued(),
     point: (a) => ({
       prompt: 'Point on the arc', want: 'point', base: a, preview: (c) => [{ type: 'line', a, b: c }],
       point: (m) => ({

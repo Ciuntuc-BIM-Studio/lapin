@@ -3373,6 +3373,12 @@ export const DE: Record<string, string> = {
   "edge": "Kante",
   "curve": "Kurve",
   "whole": "ganz",
+  'Automatic position': 'Automatische Position',
+  'Automatic position: press A, or the button': 'Automatische Position: A drücken oder die Schaltfläche',
+  'Start point [Tangent]': 'Startpunkt [Tangent]',
+  'End point (tangent to the last line or arc)': 'Endpunkt (tangential zur letzten Linie oder zum letzten Bogen)',
+  'There is no line or arc to continue from.': 'Keine Linie oder kein Bogen zum Fortsetzen.',
+  'The end point lies on the tangent line.': 'Der Endpunkt liegt auf der Tangente.',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -3663,4 +3669,6 @@ export const DE_PATTERNS: Language['patterns'] = [
   [/^(\d+) constraints$/, (m) => `${m[1]} Zwangsbedingungen`],
   [/^Constraint dropped: (.+)$/, (m) => `Zwangsbedingung entfernt: ${m[1]}`],
   [/^(\d+) constraints dropped: (.+)$/, (m) => `${m[1]} Zwangsbedingungen entfernt: ${m[2]}`],
+  [/^Constraint left out: (.+)$/, (m) => `Zwangsbedingung weggelassen: ${m[1]}`],
+  [/^(\d+) constraints left out: (.+)$/, (m) => `${m[1]} Zwangsbedingungen weggelassen: ${m[2]}`],
 ];

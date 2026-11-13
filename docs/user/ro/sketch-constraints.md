@@ -54,6 +54,7 @@ Fiecare altă constrângere are un simbol mic lângă ce ține: **H**, **V**, **
 - Clic pe un simbol sau pe o cotă o selectează (Shift adaugă); **Delete** șterge selecția, ca un singur pas de anulare.
 - **Dublu clic** pe o cotă îi editează valoarea pe loc, în câmpul care se deschide: un număr sau `=formulă`. O cotă de referință devine conducătoare când îi dai o valoare, dacă prin asta schița nu e supra-constrânsă.
 - **Trage** o cotă de valoare sau de linie ca s-o așezi: urmează cursorul și rămâne unde îi dai drumul, ca un singur pas de anulare. O cotă pe care n-ai așezat-o stă în afara formelor ei, de partea dinspre exterior. Una așezată își păstrează locul față de ce măsoară și se mută, se rotește și se oglindește cu formele ei.
+- O cotă pe care ai așezat-o poate reveni: selecteaz-o și apasă **A**, sau fă clic pe butonul mic **A** de lângă valoare (*Poziție automată*); stă din nou în afara formelor ei, ca un singur pas de anulare.
 - Ochiul de pe insigna de jos ascunde constrângerile în această vedere și le arată din nou. Se ține minte pentru vedere.
 
 ![O cotă editată pe loc](shots/sketch-constraints-edit.webp)
@@ -95,6 +96,8 @@ Trage un punct al unei forme constrânse de mânerul lui: restul schiței urmeaz
 - o latură trasă pe linia **ortho** sau pe una **polară** este orizontală sau verticală;
 - o linie trasă lângă o altă linie desenată, într-o direcție la câteva grade de a ei, se fixează pe ea și arată indiciul **Paralelă**: cele două laturi devin paralele. O linie începută pe un arc sau pe un cerc și trasă pe tangenta lui, sau care se termină unde ar atinge doar cercul, arată indiciul **Tangentă** și devine tangentă la el (capăt la capăt când începe la un capăt al arcului). Niciuna nu se oferă cu ortho pornit;
 - o lungime sau un unghi tastat devine o cotă conducătoare; o rază tastată, o rază; un dreptunghi tastat ca `@lățime,înălțime` păstrează ambele dimensiuni ca distanțe conducătoare;
+- **Arc → Tangent** (sau Enter la primul mesaj) continuă din capătul ultimei linii sau ultimului arc desenat: se alege doar punctul final, se arată tangenta pe care pornește, iar îmbinarea devine coincidentă și tangentă capăt la capăt;
+- o regulă pe care rezolvitorul o refuză cât desenezi rămâne în afara desenului, nu desenul însuși, iar o notificare spune care și de ce (*2 constrângeri lăsate deoparte: horizontal — …*);
 - un dreptunghi are două laturi orizontale și două verticale, iar o linie începută unde s-a sfârșit precedenta se leagă de ea.
 
 Ține apăsat **Ctrl** (⌘ pe Mac) la clic ca să pui punctul acela fără constrângeri. Comutatorul **CNSTR** din linia de comandă pornește și oprește totul. Forma și constrângerile ei sunt un singur pas: un **Undo** le scoate pe amândouă. O constrângere care ar intra în conflict cu schița e lăsată deoparte; forma se desenează oricum.

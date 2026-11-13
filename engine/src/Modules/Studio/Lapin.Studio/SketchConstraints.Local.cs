@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Lapin.Drafting.Cad;
+using Lapin.Geometry;
 using Lapin.Geometry.Constraints;
 using Lapin.Model;
 using Lapin.Platform;
@@ -140,6 +141,34 @@ public static partial class SketchConstraints
     /// </summary>
     internal static LocalSolve SolveLocal(IReadOnlyList<(string Id, Shape Shape)> shapes, IReadOnlyList<JsonObject> constraints, IReadOnlyDictionary<string, double> values, IReadOnlyDictionary<string, Shape>? edited = null)
     {
+        var s = BuildLocal(shapes, constraints, values, edited);
+        var goals = edited != null ? GoalsOf(s, edited) : [];
+        var r = Run(s, goals);
+        if (!r.Succeeded) return new LocalSolve(s, r, Failure(s, r));
+        if (!Reached(goals, r)) return new LocalSolve(s, r, Blocked(s, goals, r));
+        return new LocalSolve(s, r, null);
+    }
+
+    /// <summary>
+    /// A part sketch with one point (<paramref name="shape"/>'s <paramref name="part"/>, a point part written the one way) dragged
+    /// to <paramref name="to"/> (the sketch's plane coordinates), the rest following its constraints solved with
+    /// <paramref name="values"/>; as the view's <c>dragSketch</c> does. A goal the constraints cannot reach comes back with its
+    /// <see cref="LocalSolve.Error"/>, naming the constraints that hold the point.
+    /// </summary>
+    internal static LocalSolve DragLocal(IReadOnlyList<(string Id, Shape Shape)> shapes, IReadOnlyList<JsonObject> constraints, IReadOnlyDictionary<string, double> values, string shape, string part, Vec2 to)
+    {
+        var s = BuildLocal(shapes, constraints, values, null);
+        var p = s.PointAt(shape, part) ?? throw new CommandException($"„{part}” is not a point of „{shape}”.");
+        var goals = new List<DragGoal> { new(p, to.X, to.Y) };
+        var r = Run(s, goals);
+        if (!r.Succeeded) return new LocalSolve(s, r, Failure(s, r));
+        if (!Reached(goals, r)) return new LocalSolve(s, r, Blocked(s, goals, r));
+        return new LocalSolve(s, r, null);
+    }
+
+    /// <summary>A part sketch's solver system: every shape an unknown, its constraints translated with <paramref name="values"/>.</summary>
+    static SolverSketch BuildLocal(IReadOnlyList<(string Id, Shape Shape)> shapes, IReadOnlyList<JsonObject> constraints, IReadOnlyDictionary<string, double> values, IReadOnlyDictionary<string, Shape>? edited)
+    {
         var s = new SolverSketch();
         foreach (var (id, now) in shapes)
             s.AddShape(id, id, now, edited != null && edited.TryGetValue(id, out var was) && Pairs(was, now) ? was : now);
@@ -155,11 +184,7 @@ public static partial class SketchConstraints
                 s.Owner.Add(index);
             }
         }
-        var goals = edited != null ? GoalsOf(s, edited) : [];
-        var r = Run(s, goals);
-        if (!r.Succeeded) return new LocalSolve(s, r, Failure(s, r));
-        if (!Reached(goals, r)) return new LocalSolve(s, r, Blocked(s, goals, r));
-        return new LocalSolve(s, r, null);
+        return s;
     }
 
     /// <summary>

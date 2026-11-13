@@ -13,11 +13,18 @@ namespace Lapin.Studio;
 ///
 /// <para><b>The schema.</b> A part definition may hold <c>sketches: [{id, name, plane (xy, xz, yz), offset?: [x, y, z] (numbers or
 /// formulas), shapes: [{id, type: line | polyline | circle | arc, …}], constraints: [{id, kind, refs: [{shape, part}], value?,
-/// formula?, driving}]}]</c>: shapes in the sketch's plane in the part's coordinates (metres), constraints in the view store's schema
+/// formula?, driving}]}]</c>: shapes in the sketch's plane (metres), constraints in the view store's schema
 /// (<see cref="SketchConstraints"/>) with refs naming the sketch's own shape ids, formulas naming the part's parameters. A body may
 /// take its outline from a sketch, <c>{name, sketch, shape?, holes?: [shape ids], depth, when?, offset?, material?}</c> (a closed
-/// polyline or a circle; without <c>shape</c>, the sketch's first closed one), instead of its <c>points</c>; bodies of
-/// <c>points</c> stay as they are, read forever. The stored shapes are the sketch solved with the part's defaults.</para>
+/// polyline, a circle, or a closed chain of lines and arcs that <c>shape</c> names one of, <see cref="Loops"/>; without
+/// <c>shape</c>, the sketch's first closed one), instead of its <c>points</c>; bodies of <c>points</c> stay as they are, read
+/// forever. The stored shapes are the sketch solved with the part's defaults.</para>
+///
+/// <para><b>Coordinates.</b> A sketch's shapes are 2D, <c>(u, v)</c> on its plane: <c>xy</c> takes the part's x and y, <c>xz</c> its
+/// x and z, <c>yz</c> its y and z (<c>Parts.Frame</c>), from the sketch's <c>offset</c>, so a point is <c>offset + u·U + v·V</c> in the
+/// part's frame. For a placed part, <c>studio.partTree</c>'s <c>frame {origin, right, up, normal}</c> takes it into the world:
+/// <c>origin + u·right + v·up</c> (the instance's point, height, rotation and mirror applied, <c>Parts.Tree</c>). A drag's
+/// <c>to</c> is in the same <c>(u, v)</c>.</para>
 ///
 /// <para><b>Per instance.</b> The sketch is solved again with the instance's values (its own over the defaults) for its formula
 /// dimensions, from the stored shapes, by Lapin's solver; the bodies are pushed from the solved outlines. The solve is cached per
@@ -31,7 +38,7 @@ namespace Lapin.Studio;
 /// carrying its formula or number (FreeCAD's Lock), so the bodies and volumes stay the same. Nothing is converted on opening a
 /// project: the families' editor edits corners, and a saved part changes only when its user asks.</para>
 /// </summary>
-public static class PartSketches
+public static partial class PartSketches
 {
     /// <summary>How many parameter sets a sketch keeps solved (a flex run asks many; the oldest go first).</summary>
     const int CacheSize = 256;
@@ -61,14 +68,6 @@ public static class PartSketches
         var max = used.Select(u => u.StartsWith(prefix, StringComparison.Ordinal) && int.TryParse(u[prefix.Length..], NumberStyles.None, CultureInfo.InvariantCulture, out var n) ? n : 0).DefaultIfEmpty(0).Max();
         return prefix + (max + 1);
     }
-
-    /// <summary>A closed outline: a closed polyline's corners, a circle's chords (<see cref="Chords"/>); null for anything else.</summary>
-    static List<Vec2>? Ring(Shape s) => s switch
-    {
-        Polyline { Closed: true } p when p.Pts.Count >= 3 => [.. p.Pts],
-        Circle c => [.. Enumerable.Range(0, Chords.Circle(c.R)).Select(k => c.C + new Vec2(Math.Cos(2 * Math.PI * k / Chords.Circle(c.R)), Math.Sin(2 * Math.PI * k / Chords.Circle(c.R))) * c.R)],
-        _ => null,
-    };
 
     // ------------------------------------------------------------ checking
 
@@ -123,12 +122,21 @@ public static class PartSketches
                 foreach (var (k, v) in c) stored[k] = v?.DeepClone();
                 cs.Add(stored);
             }
-            // Solved with the defaults: the shapes stored as the solve leaves them.
-            var r = SketchConstraints.SolveLocal(shapes, cs, defaults);
-            if (r.Error != null) throw new CommandException($"„{name}”: {r.Error}");
-            var solved = r.Shapes();
+            // Solved with the defaults: the shapes stored as the solve leaves them (a new sketch has none yet).
+            var solved = new Dictionary<string, Shape>();
+            if (shapes.Count > 0)
+            {
+                var r = SketchConstraints.SolveLocal(shapes, cs, defaults);
+                if (r.Error != null) throw new CommandException($"„{name}”: {r.Error}");
+                solved = r.Shapes();
+            }
             var sk = new JsonObject { ["id"] = id, ["name"] = name, ["plane"] = plane };
-            if (so["offset"] is JsonArray { Count: 3 } off) sk["offset"] = off.DeepClone();
+            if (so["offset"] is JsonArray { Count: 3 } off)
+            {
+                foreach (var ox in off) Parts.Eval(ox, defaults, $"„{name}”'s offset");
+                sk["offset"] = off.DeepClone();
+            }
+            else if (so["offset"] != null) throw new CommandException($"„{name}”'s offset is [x, y, z], numbers or formulas.");
             sk["shapes"] = new JsonArray(shapes.Select(s => (JsonNode)ShapeJson(s.Id, solved.TryGetValue(s.Id, out var sv) ? sv : s.Shape)).ToArray());
             sk["constraints"] = new JsonArray(cs.Select(c => (JsonNode)c).ToArray());
             o.Add((JsonNode)sk);
@@ -136,24 +144,18 @@ public static class PartSketches
         return o;
     }
 
-    /// <summary>A body drawn from a sketch checked: its sketch among <paramref name="sketches"/>, its outline and holes closed shapes of it.</summary>
+    /// <summary>A body drawn from a sketch checked: its sketch among <paramref name="sketches"/>, its outline and holes closed outlines of it (<see cref="Loops"/>).</summary>
     internal static JsonObject CheckBody(JsonObject b, JsonArray sketches)
     {
         var sid = (string)b["sketch"]!;
         var sketch = sketches.OfType<JsonObject>().FirstOrDefault(s => (string?)s["id"] == sid) ?? throw new CommandException($"A body's sketch „{sid}” is not among the part's sketches.");
+        var given = new List<string>();
+        foreach (var h in b["holes"] as JsonArray ?? []) given.Add((string?)h ?? throw new CommandException("A body's holes name shapes of its sketch."));
         var shapes = ShapesOf(sketch);
-        var outline = (string?)b["shape"] ?? shapes.FirstOrDefault(s => Ring(s.Shape) != null).Id
-            ?? throw new CommandException($"„{(string?)sketch["name"]}” has no closed outline for a body.");
-        if (shapes.FirstOrDefault(s => s.Id == outline).Shape is not { } os || Ring(os) == null)
-            throw new CommandException($"A body's outline is a closed polyline or a circle of its sketch („{outline}” is not).");
-        var holes = new JsonArray();
-        foreach (var h in b["holes"] as JsonArray ?? [])
-        {
-            var hid = (string?)h ?? throw new CommandException("A body's holes name shapes of its sketch.");
-            if (hid == outline || shapes.FirstOrDefault(s => s.Id == hid).Shape is not { } hs || Ring(hs) == null)
-                throw new CommandException($"A body's hole is another closed shape of its sketch („{hid}” is not).");
-            holes.Add((JsonNode)hid);
-        }
+        var what = (string?)b["name"] is { Length: > 0 } bn ? $"„{bn}”" : "A body";
+        var (outer, _) = ProfileLoops(shapes, (string?)b["shape"], given, what);
+        var outline = (string?)b["shape"] ?? outer.Ids[0];
+        var holes = new JsonArray(given.Select(h => (JsonNode)h).ToArray());
         var o = (JsonObject)b.DeepClone();
         o.Remove("points");
         o.Remove("plane");
@@ -215,10 +217,10 @@ public static class PartSketches
     {
         var sketch = Find(def, (string?)body["sketch"]) ?? throw new CommandException($"{name}'s sketch is gone.");
         var solved = Solve(sketch, values);
-        List<Vec2> RingOf(string? id) => id != null && solved.TryGetValue(id, out var s) && Ring(s) is { } r ? r : throw new CommandException($"{name}'s outline „{id}” is not a closed shape of its sketch.");
-        var outer = RingOf((string?)body["shape"] ?? solved.FirstOrDefault(s => Ring(s.Value) != null).Key);
-        var holes = (body["holes"] as JsonArray ?? []).Select(h => RingOf((string?)h)).ToList();
-        return ((string?)sketch["plane"] ?? "xy", sketch["offset"] as JsonArray, outer, holes);
+        // In the sketch's order, as solved with these values: a chain closed for the defaults may open for others, and is told.
+        var shapes = ShapesOf(sketch).Select(s => (s.Id, solved.TryGetValue(s.Id, out var sv) ? sv : s.Shape)).ToList();
+        var (outer, holes) = ProfileLoops(shapes, (string?)body["shape"], (body["holes"] as JsonArray ?? []).Select(h => (string?)h).OfType<string>(), name);
+        return ((string?)sketch["plane"] ?? "xy", sketch["offset"] as JsonArray, outer.Ring, [.. holes.Select(h => h.Ring)]);
     }
 
     // ------------------------------------------------------------ the conversion
@@ -304,6 +306,19 @@ public static class PartSketches
     {
         var o = new JsonObject();
         var stored = ConstraintsOf(sketch);
+        if (ShapesOf(sketch).Count == 0)
+        {
+            // A new sketch, nothing drawn yet: nothing to solve.
+            o["shapes"] = new JsonArray();
+            o["constraints"] = new JsonArray();
+            o["constraintCount"] = 0;
+            o["status"] = "solved";
+            o["dof"] = 0;
+            o["freeShapes"] = new JsonArray();
+            o["redundant"] = new JsonArray();
+            o["conflicting"] = new JsonArray();
+            return o;
+        }
         SketchConstraints.LocalSolve r;
         try { r = SketchConstraints.SolveLocal(ShapesOf(sketch), stored, values); }
         catch (CommandException ex)
@@ -503,6 +518,7 @@ public static class PartSketches
         r.Command("partSketchUpdateConstraint", "Change constraint", UpdateConstraint);
         r.Command("partSketchRemoveConstraint", "Remove constraint", RemoveConstraint);
         r.Command("partSketchSetShapes", "Edit part sketch", SetShapes);
+        RegisterEdit(r);
     }
 
     /// <summary>A sketch's solves by the values its formulas name (declared last, so the catalogue's reading of this file finds the commands' class).</summary>

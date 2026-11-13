@@ -3365,6 +3365,12 @@ export const ZH: Record<string, string> = {
   "edge": "边",
   "curve": "曲线",
   "whole": "整体",
+  'Automatic position': '自动位置',
+  'Automatic position: press A, or the button': '自动位置：按 A 或点击按钮',
+  'Start point [Tangent]': '起点 [Tangent]',
+  'End point (tangent to the last line or arc)': '终点（与上一条线或弧相切）',
+  'There is no line or arc to continue from.': '没有可延续的线或弧。',
+  'The end point lies on the tangent line.': '终点位于切线上。',
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [
@@ -3652,4 +3658,6 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^(\d+) constraints$/, (m) => `${m[1]} 个约束`],
   [/^Constraint dropped: (.+)$/, (m) => `已移除约束：${m[1]}`],
   [/^(\d+) constraints dropped: (.+)$/, (m) => `已移除 ${m[1]} 个约束：${m[2]}`],
+  [/^Constraint left out: (.+)$/, (m) => `已略去约束：${m[1]}`],
+  [/^(\d+) constraints left out: (.+)$/, (m) => `已略去 ${m[1]} 个约束：${m[2]}`],
 ];
