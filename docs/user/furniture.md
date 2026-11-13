@@ -272,6 +272,10 @@ Its thumbnail is drawn from the type's preview. The type goes with everything it
 
 On the desktop the library is kept in your Lapin folder, one file per item. In the browser it is kept by the browser. To move it between the two, or to another computer, export it and import the file. A project template keeps the furniture types of the project it is saved from. **Save as template…** can also add every type in My furniture (**Add every type in My furniture**).
 
+In the desktop app, **My furniture** also has a **Firm folders** block: the `.lapinlib` files in your firm's folders, one click adding their items to your library (those it already has are skipped), and **Save to firm folder…** writing the whole library or one item into a writable folder.
+
+![My furniture: the firm folder's file](shots/furniture-firm-folder.webp)
+
 ## Schedules and IFC
 
 **Furniture schedule** lists each type with its kind, size, how many pieces use it and the rooms they stand in, with the total. **Furniture by room** lists each room with what stands in it. Both are in the project browser under **Schedules**, and print and export like any schedule. A furniture type with a cost article is priced per piece in the estimate.

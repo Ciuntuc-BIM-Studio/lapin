@@ -1,21 +1,26 @@
 /**
  * Families as a library kind (docs/plan-user-extensibility.md §4): a .lapinfamily (`{format: "lapin-family", version: 1, name,
  * def}`) read without the engine, brought into the project by `studio.importFamily`, and the extension kind `families`. Only
- * the library plumbing: the families' editor and placing are Studio's own.
+ * the library plumbing (the project's families come from `studio.families` and `studio.exportFamily`): the families' editor and
+ * placing are in ./families.
  */
 
 import { notify } from '../../app/store';
-import { execute, useSession } from '../../engine/session';
+import { useSession } from '../../engine/session';
+import { exportFamily, importFamily } from './families/familyApi';
 import { readFamily } from '../../platform/extensions/packs';
 import { fileKindInstaller } from '../../platform/extensions/fileKind';
 import { addContentInstaller } from '../../platform/extensions/runtime';
 import { computerFileId, computerFileRows, forgetComputerFile, keepComputerFile, registerLibraryKind } from '../../platform/libraries';
 
-export interface FamilyDto { id: string; name: string; def: unknown; uses: number }
+export type { FamilyDto } from './families/familyModel';
+
+/** A project family as a .lapinfamily file's text (the firm folders' and this computer's saving). */
+export const familyFileText = async (id: string): Promise<{ text: string; file: string } | null> => exportFamily(id);
 
 async function bring(text: string): Promise<string | null> {
   if (!useSession.getState().connected) { notify('Open a project first.'); return null; }
-  const r = await execute('studio.importFamily', { text }) as { id: string } | null;
+  const r = await importFamily(text);
   const said = r ? `Family added to the project: ${readFamily(new TextEncoder().encode(text)).name}.` : null;
   if (said) notify(said);
   return said;

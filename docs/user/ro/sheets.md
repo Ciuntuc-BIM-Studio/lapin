@@ -42,6 +42,10 @@ Planșele, PDF-ul lor, Tipărirea și emiterea îl desenează cu valorile fiecă
 
 ![Planșa cu cartușul ei](shots/sheet-title-block.webp)
 
+În aplicația desktop, **Cartușe** are și un bloc **Folderele firmei**: fișierele `.lapintitleblock` din folderele firmei, un clic adăugând un cartuș în proiect, iar **Salvează în folderul firmei…** scriind cartușul ales într-un folder care poate fi scris, ca toate proiectele biroului să pornească din aceleași cartușe.
+
+![Cartușe: fișierul din folderul firmei](shots/title-blocks-firm-folder.webp)
+
 ## Tipărirea
 
 Butoanele **PDF** și **DXF** din bara planșei o exportă. Un PDF e gata de tipărit sau de trimis. Un DXF se deschide în AutoCAD și în alte programe CAD cu layerele, liniile și hașurile lui. **Tipărește** trimite planșa la imprimantă sau plotter la formatul ei, la 1:1, în linii vectoriale: alegi plotterul și hârtia în fereastra de tipărire. Pe o imprimantă mai mică, alegi încadrarea în pagină.

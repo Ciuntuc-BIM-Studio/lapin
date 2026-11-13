@@ -2344,3 +2344,31 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .firm-list li > button:first-child { flex: 1; }
 .firm-folders li { align-items: center; gap: 8px; padding: 2px 0; }
 .catalog-lib-row .catalog-text { min-width: 0; overflow-wrap: anywhere; }
+
+/* Families (Studio → Families…): the editor, its tables and the live wireframe. */
+.families-dialog .tpl-body { grid-template-columns: 270px 1fr; }
+.fam-editor { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.fam-top { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.fam-field { display: flex; flex-direction: column; gap: 2px; }
+.fam-field.grow { flex: 1; min-width: 160px; }
+.fam-field input { width: 100%; box-sizing: border-box; }
+.fam-table td, .fam-table th { padding: 2px 4px; text-align: left; }
+.fam-table th { font-weight: 600; font-size: 11px; color: var(--ink-muted); }
+.fam-table .nowrap { white-space: nowrap; }
+.fam-cell { font-size: 12px; box-sizing: border-box; }
+.fam-cell.formula { color: var(--accent); }
+.fam-cell.bad, input[aria-invalid="true"] { border-color: var(--err); outline-color: var(--err); }
+.fam-body { border: 1px solid var(--rule); border-radius: 6px; padding: 8px; display: flex; flex-direction: column; gap: 6px; background: var(--panel); }
+.fam-body-grid { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: start; }
+.fam-fields dt { white-space: nowrap; }
+.fam-sticky { position: sticky; top: -1px; z-index: 2; background: var(--panel); padding: 6px 0; border-bottom: 1px solid var(--rule); }
+.fam-preview { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: start; }
+.fam-wire-box { display: flex; flex-direction: column; gap: 4px; max-width: 300px; }
+.fam-wire { background: var(--raised); border: 1px solid var(--rule); border-radius: 6px; color: var(--ink); }
+.fam-error { margin: 0; white-space: pre-wrap; }
+.fam-try { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.fam-try p { margin: 0; }
+.fam-try-row { display: grid; grid-template-columns: minmax(80px, 1fr) 110px; gap: 8px; align-items: center; font-size: 12px; }
+.fam-note { margin: 0; }
+.fam-help { margin-top: 4px; }
+@media (max-width: 900px) { .fam-body-grid, .fam-preview { grid-template-columns: 1fr; } }

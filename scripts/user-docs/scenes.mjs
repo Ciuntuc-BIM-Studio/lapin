@@ -7414,7 +7414,7 @@ export const scenes = [
     // The libraries of the firm (docs/plan-user-extensibility.md §4): a folder of library files read by every library's dialog and by the
     // Catalog's „From the libraries”, a configured type saved to a library. The folder is the temporary one of this run, writable.
     id: 'libraries-firm',
-    touches: ['core', 'architecture'],
+    touches: ['core', 'architecture', 'furniture'],
     async run(t) {
       await t.fresh();
       await house(t, { roof: false });
@@ -7422,13 +7422,21 @@ export const scenes = [
       const symbol = { name: 'Firm north arrow', def: { scale: 'annotation', category: 'north', attributes: [], items: [{ type: 'circle', c: [0, 0], r: 6, stroke: 0.35 }, { type: 'line', a: [0, -6], b: [0, 8], w: 0.5 }, { type: 'line', a: [0, 8], b: [-2.5, 3], w: 0.5 }, { type: 'line', a: [0, 8], b: [2.5, 3], w: 0.5 }] } };
       writeFileSync(join(dir, 'Office symbols.lapinsymbols'), JSON.stringify({ format: 'lapin-symbols', version: 1, name: 'Office symbols', symbols: [symbol] }, null, 2));
       writeFileSync(join(dir, 'Office lines.lin'), '*FIRM-DASHDOT, dash dot\nA,12,-4,1,-4\n*FIRM-LONG, long dash\nA,20,-5\n');
+      // A title block and a furniture library, as Lapin writes them (Export in each dialog).
+      const block = await t.call('doc.query', { name: 'titleBlock.export', args: { id: 'builtin:standard' } });
+      writeFileSync(join(dir, 'Office title block.lapintitleblock'), JSON.stringify({ ...block, name: 'Office title block' }, null, 2));
+      const desk = (await t.cmd('furniture.createType', { kind: 'casework', preset: 'desk', name: 'Office desk', spec: { width: 1.6 } })).id;
+      const entry = await t.page.evaluate(async (typeId) => (await import('/src/modules/furniture/library.ts')).saveToLibrary(typeId, { name: 'Office desk', category: 'office', tags: ['firm'] }), desk);
+      const packed = await t.call('furnitureLibrary.export', { ids: [entry] });
+      writeFileSync(join(dir, 'Office furniture.lapinlib'), Buffer.from(packed.data, 'base64'));
+      await t.call('furnitureLibrary.delete', { id: entry });
       await t.page.evaluate(async (path) => {
         (await import('/src/modules/core/profileLibraries/store.ts')).setSharedFolders([{ path, writable: true }]);
       }, dir);
       await t.ui({ dialog: 'preferences' });
       await t.page.locator('[data-field=prefs-libraries]').click();
       await t.page.waitForSelector('[data-testid=prefs-firm-folders] li', { timeout: 10_000 });
-      await t.until(async () => (await t.page.locator('[data-testid=prefs-firm-folders] li').first().innerText()).includes('2'), 'the folder counts its two library files');
+      await t.until(async () => (await t.page.locator('[data-testid=prefs-firm-folders] li').first().innerText()).includes('4'), 'the folder counts its four library files');
       await t.shot('preferences-libraries', { of: '.prefs-dialog', pad: 0 });
       await t.ui({ dialog: null });
       // The Symbols dialog lists the folder's file and reads it through its own import.
@@ -7438,6 +7446,20 @@ export const scenes = [
       await t.page.locator('[data-dialog=symbols] [data-field=sy-import-where]').selectOption('project');
       await t.page.locator('[data-dialog=symbols] [data-firm-file="Office symbols"]').click();
       await t.until(async () => (await t.page.locator('[data-dialog=symbols] [data-field^="sy-item-"]').allInnerTexts()).some((x) => x.includes('Firm north arrow')), 'the symbol of the firm\'s file is in the project');
+      await t.ui({ dialog: null });
+      // The title blocks and the furniture library list the folder's files too.
+      await t.ui({ dialog: 'titleBlocks' });
+      await t.page.waitForSelector('[data-dialog=title-blocks] [data-firm-file="Office title block"]', { timeout: 10_000 });
+      await t.shot('title-blocks-firm-folder', { of: '[data-dialog=title-blocks]', pad: 0, maxHeight: 760 });
+      await t.page.locator('[data-dialog=title-blocks] [data-firm-file="Office title block"]').click();
+      await t.until(async () => (await t.call('doc.query', { name: 'titleBlock.list', args: {} })).items.some((x) => x.name === 'Office title block'), 'the folder\'s title block is in the project');
+      await t.ui({ dialog: null });
+      await t.ui({ dialog: 'furnitureLibrary' });
+      await t.page.waitForSelector('[data-dialog=furniture-library] [data-firm-file="Office furniture"]', { timeout: 10_000 });
+      await t.shot('furniture-firm-folder', { of: '[data-dialog=furniture-library]', pad: 0, maxHeight: 760 });
+      await t.page.locator('[data-dialog=furniture-library] [data-firm-file="Office furniture"]').click();
+      await t.until(async () => (await t.call('furnitureLibrary.list', {})).some((x) => x.name === 'Office desk'), 'the folder\'s furniture is in My furniture');
+      for (const e of await t.call('furnitureLibrary.list', {})) if (e.name === 'Office desk') await t.call('furnitureLibrary.delete', { id: e.id });
       await t.ui({ dialog: null });
       // The Catalog's libraries: the line types of the folder, with their source.
       await t.page.locator('nav.browser [data-tab=catalog]').click();
@@ -9451,6 +9473,109 @@ export const scenes = [
     },
   },
   // [scenes:C]
+  {
+    // Families of the user's own (docs/plan-user-extensibility.md §5.6): a table with parameters, a shelf made only when it is wanted,
+    // the dialog with its live wireframe and the engine's sentence when a formula does not read, the Family tool and its bar, the
+    // object's own values in Properties, and a family made from drafted outlines.
+    id: 'families',
+    touches: ['studio', 'core'],
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const plan = `plan:${storey}`;
+      const leg = (name, x) => ({ name, plane: 'xy', points: [[0, 0], ['L', 0], ['L', 'L'], [0, 'L']], depth: 'H - T', offset: [x, name.endsWith('2') || name.endsWith('4') ? 'D - L' : 0, 0] });
+      const def = {
+        ifcClass: 'IfcFurnishingElement', description: 'A table with legs, and a shelf when it is wanted',
+        params: [
+          { key: 'W', label: 'Width', kind: 'length', default: 1.2 }, { key: 'D', label: 'Depth', kind: 'length', default: 0.7 },
+          { key: 'H', label: 'Height', kind: 'length', default: 0.75 }, { key: 'L', label: 'Leg', kind: 'length', default: 0.06 },
+          { key: 'T', label: 'Top thickness', kind: 'length', default: 0.03 }, { key: 'HasShelf', label: 'Shelf', kind: 'bool', default: 1 },
+        ],
+        bodies: [
+          { name: 'Top', plane: 'xy', points: [[0, 0], ['W', 0], ['W', 'D'], [0, 'D']], depth: 'T', offset: [0, 0, 'H - T'] },
+          leg('Leg 1', 0), leg('Leg 2', 0), leg('Leg 3', 'W - L'), leg('Leg 4', 'W - L'),
+          { name: 'Shelf', plane: 'xy', points: [['L', 'L'], ['W - L', 'L'], ['W - L', 'D - L'], ['L', 'D - L']], depth: 0.02, offset: [0, 0, 0.2], when: 'HasShelf' },
+        ],
+      };
+      const family = await t.cmd('studio.createFamily', { name: 'Table', def });
+      t.expect(family?.id, 'the family is made');
+      // Studio → Families…: the family chosen, its wireframe built by the engine, a value tried.
+      await t.button('Studio', { exact: true });
+      await t.tool('studio.families');
+      const dlg = page.locator('[data-dialog=families]');
+      await dlg.waitFor({ timeout: 10_000 });
+      await dlg.locator(`[data-field="fam-item-${family.id}"]`).click();
+      await t.until(async () => (await dlg.locator('[data-field=fam-preview] line').count()) > 20, 'the wireframe is drawn');
+      await dlg.locator('[data-fam-try=W]').fill('1600');
+      await t.wait(700);
+      await t.shot('families-dialog', { of: '[data-dialog=families]', pad: 0, maxHeight: 820 });
+      // A condition that does not read: the engine says why, under the picture.
+      const shelf = dlg.locator('[data-fam-when="5"]');
+      await shelf.fill('HasShelf +');
+      await t.until(async () => (await dlg.locator('[data-field=fam-error]').count()) === 1, 'the engine says why the condition does not read');
+      await t.shot('families-error', { of: '.fam-sticky', pad: 4 });
+      await shelf.fill('HasShelf');
+      await t.until(async () => (await dlg.locator('[data-field=fam-error]').count()) === 0, 'the error goes when the condition reads');
+      // The description changed and saved: the family keeps it.
+      await dlg.locator('[data-field=fam-description]').fill('A table, with a shelf when it is wanted');
+      await dlg.locator('[data-field=fam-save]').click();
+      await t.until(async () => ((await t.call('doc.query', { name: 'studio.families', args: {} })).families[0].def.description ?? '').includes('when it is wanted'), 'Save keeps the description');
+      // Place on a plan: the tool and its bar; R turns it a quarter, the width asked in the bar.
+      await dlg.locator('[data-field=fam-place]').click();
+      await t.ui({ view: 'plan', keyPlan: false });
+      await t.wait(800);
+      await t.fit();
+      t.expect(await page.locator('[data-family-pick]').count() === 1, 'the bar offers the family');
+      await page.locator('[data-family-value=W]').fill('1600');
+      await page.locator('[data-family-rotate]').click();
+      const [x1, y1] = await t.planPoint(3, 4);
+      await page.mouse.move(x1, y1, { steps: 3 }); await page.mouse.click(x1, y1);
+      await t.wait(4500);
+      await t.shot('family-place-bar', { of: '[data-testid=command-line]', pad: 4 });
+      await page.locator('[data-family-value=W]').fill('');
+      await page.locator('[data-family-rotate]').click();
+      await page.locator('[data-family-mirror]').click();
+      const [x2, y2] = await t.planPoint(9, 4);
+      await page.mouse.move(x2, y2, { steps: 3 }); await page.mouse.click(x2, y2);
+      await t.wait(900);
+      await t.keys('Escape');
+      const placed = (await t.nodes()).filter((n) => n.type === 'LapinFamilyInstance');
+      t.expect(placed.length === 2, `two table objects, found ${placed.length}`);
+      const first = placed.find((n) => n.props.values?.W === 1.6) ?? placed[0];
+      t.expect(first.props.values?.W === 1.6 && first.props.rotation === 90, 'the first one has its own width and is turned a quarter');
+      // Its Properties: the family, each parameter's own value, the shelf switched off.
+      await select(t, first.id);
+      await t.wait(900);
+      await page.locator('[data-family-param=HasShelf]').selectOption('no');
+      await t.until(async () => (await t.nodes()).find((n) => n.id === first.id)?.props.values?.HasShelf === 0, 'the shelf is switched off on this object');
+      await t.shot('family-properties', { of: 'aside.props', pad: 0, maxHeight: 700 });
+      await t.ui({ view: '3d', selection: null, selected: [] });
+      await t.wait(1500);
+      await t.fit();
+      await t.shot('family-3d', { of: '[data-testid=view3d]', pad: 0 });
+      // Make family from sketch…: a closed outline drafted on the plan, then the dialog asks the name, the depth and the class.
+      await t.ui({ view: 'plan', keyPlan: false });
+      await t.wait(600);
+      const outline = (await t.cmd('drafting.draw', { viewId: plan, shape: { type: 'polyline', pts: [[14, 0], [15.2, 0], [15.2, 0.4], [14.4, 0.4], [14.4, 1.2], [14, 1.2]], closed: true } })).ids[0];
+      await select(t, outline);
+      await t.wait(400);
+      await t.tool('studio.familyFromSketch');
+      const from = page.locator('[data-dialog=family-from-sketch]');
+      await from.waitFor({ timeout: 10_000 });
+      await from.locator('[data-field=fs-name]').fill('Corner bench');
+      await from.locator('[data-field=fs-depth]').fill('450 mm');
+      await from.locator('[data-field=fs-class]').selectOption('IfcFurnishingElement');
+      await t.shot('family-from-sketch', { of: '[data-dialog=family-from-sketch]', pad: 0 });
+      await from.locator('[data-field=fs-go]').click();
+      await t.until(async () => (await t.call('doc.query', { name: 'studio.families', args: {} })).families.some((f) => f.name === 'Corner bench'), 'the family is made from the outline');
+      const bench = (await t.call('doc.query', { name: 'studio.families', args: {} })).families.find((f) => f.name === 'Corner bench');
+      t.expect(bench.def.params.map((p) => p.key).join() === 'W,H,D' && bench.def.ifcClass === 'IfcFurnishingElement', 'its parameters are W, H and D, its class the one chosen');
+      await dlg.waitFor({ timeout: 10_000 });
+      await t.until(async () => (await dlg.locator('[data-field=fam-preview] line').count()) > 10, 'the new family opens in the editor');
+      await t.keys('Escape');
+    },
+  },
 ];
 
 /** A zip of stored entries (name, text), enough for a BCF file: the local headers, the central directory and its end, with CRC-32. */

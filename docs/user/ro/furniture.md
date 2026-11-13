@@ -272,6 +272,10 @@ Miniatura e desenată din previzualizarea tipului. Tipul pleacă cu tot ce îi t
 
 Pe desktop biblioteca e păstrată în dosarul tău Lapin, câte un fișier pentru fiecare element. În browser o păstrează browserul. Ca s-o muți între cele două sau pe alt calculator, o exporți și imporți fișierul. Un șablon de proiect păstrează tipurile de mobilier ale proiectului din care e salvat. **Salvează ca șablon…** poate adăuga și toate tipurile din Mobilierul meu (**Adaugă toate tipurile din Mobilierul meu**).
 
+În aplicația desktop, **Mobilierul meu** are și un bloc **Folderele firmei**: fișierele `.lapinlib` din folderele firmei, un clic adăugând piesele lor în bibliotecă (cele pe care le are deja sunt sărite), iar **Salvează în folderul firmei…** scriind toată biblioteca sau o piesă într-un folder care poate fi scris.
+
+![Mobilierul meu: fișierul din folderul firmei](shots/furniture-firm-folder.webp)
+
 ## Extrase și IFC
 
 **Furniture schedule** (extrasul de mobilier) arată fiecare tip cu felul, dimensiunile, numărul de piese și încăperile în care stau, plus totalul. **Furniture by room** (mobilierul pe încăperi) arată ce stă în fiecare încăpere. Amândouă sunt în navigatorul proiectului, la **Schedules**, și se tipăresc și se exportă ca orice extras. Un tip de mobilier cu articol de deviz se plătește pe bucată în deviz.

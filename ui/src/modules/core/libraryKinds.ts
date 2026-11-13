@@ -8,7 +8,7 @@
 
 import { notify, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
-import { readLineTypes, readMapping, readParameters, readPatterns, readRulePack, readStandards, readSymbolPack, readTypePack } from '../../platform/extensions/packs';
+import { readTitleBlock, readLineTypes, readMapping, readParameters, readPatterns, readRulePack, readStandards, readSymbolPack, readTypePack } from '../../platform/extensions/packs';
 import { fileKindInstaller } from '../../platform/extensions/fileKind';
 import { addContentInstaller } from '../../platform/extensions/runtime';
 import { computerFileId, computerFileRows, forgetComputerFile, keepComputerFile, registerLibraryKind } from '../../platform/libraries';
@@ -22,6 +22,8 @@ import { defaultStandardsChoices, type StandardsPack } from './standardsLibraryM
 import { forgetMappingReceipt, parseMappingFile, rememberMappingFile, type MappingReceipt } from './tables/tableModel';
 import { keepPatterns } from './myPatterns';
 import { forgetHatchPreviews } from './hatchCache';
+import { importTitleBlock } from './titleBlocks/titleBlocks';
+import type { TbFile } from './titleBlocks/titleBlockModel';
 
 const bytes = (text: string) => new TextEncoder().encode(text);
 const connected = () => useSession.getState().connected;
@@ -78,6 +80,14 @@ export async function bringPatterns(text: string, file: string): Promise<string 
   return `${r.count} hatch pattern${r.count === 1 ? '' : 's'} added to the project.`;
 }
 
+/** A title block file (format lapin.titleBlock) added to the project's title blocks. */
+export async function bringTitleBlock(text: string): Promise<string | null> {
+  if (!needProject()) return null;
+  const file = readTitleBlock(bytes(text));
+  const id = await importTitleBlock(file as unknown as TbFile);
+  return id ? `Title block added to the project: ${file.name}.` : null;
+}
+
 const said = (f: (text: string, file: string) => Promise<string | null>) => async (text: string, file: string): Promise<string | null> => {
   const r = await f(text, file);
   if (r) notify(r);
@@ -96,6 +106,7 @@ registerLibraryKind({ ext: 'lapinstandards', label: 'Drafting standards', names:
 registerLibraryKind({ ext: 'lapinrules', label: 'Rule packs', names: (t) => [readRulePack(bytes(t)).name], bring: said(bringRules) });
 registerLibraryKind({ ext: 'lapinparams', label: 'Shared parameters', names: names(readParameters), bring: said(bringParameters) });
 registerLibraryKind({ ext: 'pat', label: 'Hatch patterns', names: names(readPatterns), bring: said(bringPatterns) });
+registerLibraryKind({ ext: 'lapintitleblock', label: 'Title blocks', names: (t) => [readTitleBlock(bytes(t)).name], bring: said(bringTitleBlock) });
 registerLibraryKind({ ext: 'lapinmapping', label: 'Mappings', names: names(readMapping) });
 
 // ------------------------------------------------------------ extension installers

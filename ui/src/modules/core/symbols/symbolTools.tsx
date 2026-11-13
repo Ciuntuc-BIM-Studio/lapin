@@ -17,6 +17,7 @@ import type { Shape } from '../../../viewport/cad/shapes';
 import { explodeSymbol, flipSymbol, getSymbol, lastSymbol, listSymbols, placeSymbol, previewSymbol, rememberSymbol, type SymList } from './symbols';
 import { byCategory, defaultValues, ghostFactor, ghostShapes, toggled, turned, type SymAttr, type SymScale } from './symbolModel';
 import type { PenDto } from '../../../viewport/drawing';
+import { draftMenuItems } from '../../../viewport/draftMenu';
 
 // ------------------------------------------------------------ the place tool
 
@@ -186,6 +187,7 @@ export function symbolMenuItems(ids: string[], nodes: Map<string, NodeDto>): Men
   if (ids.some((id) => { const n = nodes.get(id); return n?.type === 'IfcAnnotation' && typeof n.props.viewId === 'string' && !!n.props.shape && n.props.predefinedType !== 'SYMBOL'; })) {
     out.push({ label: 'Convert to…', onSelect: () => void import('../../drafting/convert/convert').then((m) => m.convertSelection()) });
   }
+  out.push(...draftMenuItems(ids, nodes));
   const placed = ids.filter((id) => nodes.get(id)?.props.predefinedType === 'SYMBOL');
   if (placed.length) {
     out.push(

@@ -104,7 +104,7 @@ Fila **Catalog** din browserul proiectului arată tipurile proiectului pentru fi
 
 ### Folderele firmei în dialogurile bibliotecilor
 
-Dialogul fiecărei biblioteci (**Simboluri…**, **Pachete de tipuri…**, **Tipuri de linie** din Standarde de desen, **Standarde de desen**, **Reguli…**, **Forme de bare…**, **Parametri comuni**, **Materiale** pentru fișierele `.pat`, **Liste de prețuri…**) are un bloc **Folderele firmei** cu fișierele de felul lui din folderele firmei. Un clic citește fișierul prin importul dialogului, cu aceleași alegeri ca la **Importă…**. **Salvează în folderul firmei…** scrie exportul propriu al bibliotecii într-un folder de scris, înlocuind un fișier cu același nume. Butonul mic cu disc păstrează o copie a fișierului pe acest calculator.
+Dialogul fiecărei biblioteci (**Simboluri…**, **Pachete de tipuri…**, **Tipuri de linie** din Standarde de desen, **Standarde de desen**, **Reguli…**, **Forme de bare…**, **Parametri comuni**, **Materiale** pentru fișierele `.pat`, **Liste de prețuri…**, **Studio → Familii…**, **Gestionare → Cartușe…** și **Interior → Mobilierul meu…**) are un bloc **Folderele firmei** cu fișierele de felul lui din folderele firmei. Un clic citește fișierul prin importul dialogului, cu aceleași alegeri ca la **Importă…**. **Salvează în folderul firmei…** scrie exportul propriu al bibliotecii într-un folder de scris, înlocuind un fișier cu același nume. Butonul mic cu disc păstrează o copie a fișierului pe acest calculator.
 
 ![Simboluri: fișierul din folderul firmei lângă Acest proiect și Acest calculator](shots/symbols-firm-folder.webp)
 

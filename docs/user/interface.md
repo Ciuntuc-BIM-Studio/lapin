@@ -104,7 +104,7 @@ The project browser's **Catalog** tab shows the project's types for each tool th
 
 ### Firm folders in the library dialogs
 
-Each library's dialog (**Symbols…**, **Type packs…**, **Line types** in Drafting standards, **Drafting standards**, **Rules…**, **Bar shapes…**, **Shared parameters**, **Materials** for `.pat` files, **Price lists…**) has a **Firm folders** block that lists the files of its kind in your firm folders. A click reads the file through the dialog's own import, with the same choices as **Import…**. **Save to firm folder…** writes the library's own export into a writable folder, replacing a file of the same name. The small disk button keeps a copy of a file on this computer.
+Each library's dialog (**Symbols…**, **Type packs…**, **Line types** in Drafting standards, **Drafting standards**, **Rules…**, **Bar shapes…**, **Shared parameters**, **Materials** for `.pat` files, **Price lists…**, **Studio → Families…**, **Manage → Title blocks…** and **Interior → My furniture…**) has a **Firm folders** block that lists the files of its kind in your firm folders. A click reads the file through the dialog's own import, with the same choices as **Import…**. **Save to firm folder…** writes the library's own export into a writable folder, replacing a file of the same name. The small disk button keeps a copy of a file on this computer.
 
 ![Symbols: the firm folder's file beside This project and This computer](shots/symbols-firm-folder.webp)
 

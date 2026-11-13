@@ -14,6 +14,7 @@ import { pickFile, safeFileName, saveFile } from '../../../engine/files';
 import { t as tr } from '../../../i18n';
 import { pensToSvg } from '../documents/docModel';
 import { TitleBlockDesigner } from './TitleBlockDesigner';
+import { FirmFolderFiles } from '../FirmFolderFiles';
 import {
   createTitleBlock, deleteTitleBlock, exportTitleBlock, importTitleBlock, listTitleBlocks, previewTitleBlock, setDefaultTitleBlock, updateTitleBlock,
   type TbList,
@@ -121,8 +122,8 @@ export function TitleBlocksDialog() {
     if (saved) notify(`Exported ${saved}.`);
   };
 
-  const importOne = async () => {
-    const f = await pickFile('Title block (JSON)', 'json');
+  const importOne = async (given?: { bytes: Uint8Array }) => {
+    const f = given ?? await pickFile('Title block (JSON)', 'json');
     if (!f) return;
     let json: unknown;
     try { json = JSON.parse(new TextDecoder().decode(f.bytes)); } catch { notify('That file is not a title block.'); return; }
@@ -176,6 +177,8 @@ export function TitleBlocksDialog() {
                 </section>
               );
             })}
+            <FirmFolderFiles ext="lapintitleblock" onPick={(f) => importOne(f)}
+              save={{ disabled: !current, get: async () => { if (!current) { notify('Choose a title block to save.'); return null; } const file = await whole(current); return file ? { text: JSON.stringify(file, null, 2) + '\n', name: current.name } : null; } }} />
           </aside>
           <main className="tpl-detail">
             {!current ? <p className="muted">Choose a title block: edit it, make it the project's default, duplicate or export it. A sheet chooses its own in its properties.</p> : (

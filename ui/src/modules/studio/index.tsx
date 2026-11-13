@@ -9,7 +9,7 @@
  */
 
 import {
-  ArrowUpDown, ArrowUpToLine, ArrowRightToLine, Eraser, Keyboard, Rainbow, Ruler, Spline, CopyPlus, CornerUpRight, Slash, Redo2, ScanEye, SquarePen, CircleCheckBig, Circle, Hexagon, RectangleHorizontal, Blocks, Box, BrickWall, CircleDot, Cone, Container, Cylinder, Eye, FlipHorizontal2, Frame, Grid3x3, Layers2, Move3d, Octagon, PackageOpen, PenTool, Pyramid,
+  Boxes, PackagePlus, ArrowUpDown, ArrowUpToLine, ArrowRightToLine, Eraser, Keyboard, Rainbow, Ruler, Spline, CopyPlus, CornerUpRight, Slash, Redo2, ScanEye, SquarePen, CircleCheckBig, Circle, Hexagon, RectangleHorizontal, Blocks, Box, BrickWall, CircleDot, Cone, Container, Cylinder, Eye, FlipHorizontal2, Frame, Grid3x3, Layers2, Move3d, Octagon, PackageOpen, PenTool, Pyramid,
   RefreshCcw, Rotate3d, RotateCw, Scissors, Slice, SquareMinus, SquarePlus, SquareRoundCorner, SquareSplitHorizontal, SquareSquare, SquareStack, Torus, TriangleRight, Unlink, Waypoints,
 } from 'lucide-react';
 import type { Grip, LapinModule, RefLine, ToolDef, ToolInput } from '../../platform/module';
@@ -35,6 +35,8 @@ import { frameOfView } from '../../viewport/workPlane';
 import { cancel as cancelCommand } from '../../viewport/cad/session';
 import { toggleSketchupKeys, useDisplay } from '../../app/display';
 import './familyLibrary';
+import { FamiliesDialog } from './families/FamiliesDialog';
+import { FAMILY_CLASS, FamilyFromSketchDialog, FamilySection, placeFamilyTool, startFamilyFromSketch } from './families/FamilyTools';
 
 /** The thickness and height last used, the next command's defaults. */
 const last = { thickness: 0.2, height: 3 };
@@ -741,11 +743,18 @@ const primitive = (shape: string, label: string, icon: ToolDef['icon']): ToolDef
   },
 });
 
+/** Families of the user's own (docs/plan-user-extensibility.md §5.6): the place tool, the dialog with the editor, and one made from drafted outlines. */
+const familiesDialogTool: ToolDef = { id: 'studio.families', label: 'Families…', icon: Boxes, run: () => useUi.setState({ dialog: 'families' }) };
+const familyFromSketch: ToolDef = { id: 'studio.familyFromSketch', label: 'Family from sketch…', icon: PackagePlus, run: startFamilyFromSketch };
+
 const studio: LapinModule = {
   id: 'studio',
   name: 'Studio',
   summary: 'Free-form solids: sketches on any face, extrude, sweep, loft, revolve, primitives, push/pull, fillets, shells, arrays and live booleans.',
-  tabs: [{
+  tabs: [
+    // Beside Save as symbol: closed drafting made a family.
+    { id: 'draft', label: 'Draft', order: 10, groups: [{ label: 'Family', tools: [familyFromSketch] }] },
+    {
     id: 'studio', label: 'Studio', order: 50,
     groups: [
       { label: 'Solids', tools: [cmd('extrude', 'Extrude', Box, 'EXTRUDE'), cmd('sweep', 'Sweep', Waypoints, 'SWEEP'), cmd('revolve', 'Revolve', RefreshCcw, 'REVOLVE'), cmd('loft', 'Loft', Layers2, 'LOFT'), { id: 'studio.editSketch', label: 'Edit sketch', icon: PenTool, run: () => void editSketch() }] },
@@ -767,6 +776,7 @@ const studio: LapinModule = {
         tools: [primitive('box', 'Cuboid', Box), primitive('cylinder', 'Cylinder', Cylinder)],
         small: [primitive('sphere', 'Sphere', CircleDot), primitive('cone', 'Cone', Cone), primitive('torus', 'Torus', Torus), primitive('wedge', 'Wedge', TriangleRight), primitive('pyramid', 'Pyramid', Pyramid)],
       },
+      { label: 'Families', tools: [placeFamilyTool, familiesDialogTool], small: [familyFromSketch] },
       {
         label: 'Modify',
         tools: [pushPull, roundTool('fillet'), roundTool('chamfer'), shell],
@@ -786,7 +796,9 @@ const studio: LapinModule = {
       },
     ],
   }],
+  dialogs: { families: FamiliesDialog, familyFromSketch: FamilyFromSketchDialog },
   propertySections: [
+    { id: 'studioFamily', label: 'Family', classes: [FAMILY_CLASS], component: FamilySection },
     { id: 'studioFeature', label: 'Studio', classes: SOLID_CLASSES, component: FeatureCard, fieldKeys: featureFieldKeys },
     { id: 'studioRefPlane', label: 'Reference plane', classes: ['LapinView'], component: RefPlaneSection },
     // Any element some solid cuts, unites or intersects: those solids listed, selectable even when never drawn.

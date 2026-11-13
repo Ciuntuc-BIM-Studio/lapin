@@ -160,3 +160,7 @@ Proprietățile unei polilinii îi arată laturile. Scrie lungimea unei laturi, 
 ## Booleene
 
 **Scade**, **Unește** și **Intersectează** combină orice elemente, primul selectat fiind ținta. Uneltele rămân editabile, iar rezultatul le urmează. **Arată operanzii** arată uneltele ascunse ale unei uniri, ca să le editezi. **Anulează operația** separă din nou elementele.
+
+## Familii
+
+O **familie** este un solid propriu cu parametri, așezat de câte ori ai nevoie. Vezi pagina Familii.

@@ -42,6 +42,10 @@ The sheets, their PDF, Print and the issue draw it with each sheet's values. In 
 
 ![The sheet with its own title block](shots/sheet-title-block.webp)
 
+In the desktop app, **Title blocks** also has a **Firm folders** block: the `.lapintitleblock` files in your firm's folders, one click adding a block to the project, and **Save to firm folder…** writing the chosen block into a writable folder, so every drawing office project starts from the same blocks.
+
+![Title blocks: the firm folder's file](shots/title-blocks-firm-folder.webp)
+
 ## Printing
 
 The **PDF** and **DXF** buttons in the sheet's bar export the sheet. A PDF is ready to print or send. A DXF opens in AutoCAD and other CAD programs with its layers, lines and hatches. **Print** sends the sheet to a printer or plotter at its own paper size, at 1:1, as vector lines: choose the plotter and the paper in the print dialog. On a smaller printer, choose fit to page.

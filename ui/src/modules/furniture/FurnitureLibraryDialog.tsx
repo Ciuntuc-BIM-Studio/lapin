@@ -13,6 +13,8 @@ import { engineInBrowser, useSession } from '../../engine/session';
 import { pickFile, pickPath, saveFile, toBase64 } from '../../engine/files';
 import { addFurnitureToTemplate, refreshTemplates, useTemplates } from '../../engine/templates';
 import { specOf, TYPE_CLASS } from './furniture';
+import { FirmFolderFiles } from '../core/FirmFolderFiles';
+import { t as tr } from '../../i18n';
 import {
   CATEGORIES, CATEGORY_LABELS, allTags, deleteEntry, duplicateEntry, exportEntries, filterEntries, importLibrary, parseTags, refreshLibrary,
   guessCategory, saveToLibrary, takeEntry, thumbnailOf, updateEntry, useFurnitureLibrary, useSaveToLibrary, type Category, type LibraryEntry,
@@ -147,6 +149,12 @@ export function FurnitureLibraryDialog() {
           </div>
           {read && !entries.length && <p className="muted small">Your library is empty. In Furniture types, Save to my library… keeps a type here for every project.</p>}
           {read && !!entries.length && !shown.length && <p className="muted small">Nothing matches.</p>}
+          <FirmFolderFiles ext="lapinlib" onPick={async (f) => { try { const r = await importLibrary({ data: toBase64(f.bytes) }); notify(`${r.added.length} added, ${r.skipped} already in your library.`); } catch (e) { notify(message(e)); } }}
+            save={{ disabled: !entries.length, choices: [tr('My furniture'), ...entries.map((e) => e.name)], get: async (choice) => {
+              const one = choice && choice !== tr('My furniture') ? entries.find((e) => e.name === choice) : undefined;
+              const r = await exportEntries(one ? [one.id] : null);
+              return r.data ? { text: new TextDecoder().decode(Uint8Array.from(atob(r.data), (c) => c.charCodeAt(0))), name: one?.name ?? 'My furniture' } : null;
+            } }} />
           <p className="muted small">{engineInBrowser ? 'Kept in this browser. Export it to keep a file, or to take it to the desktop app.' : 'Kept on this computer, in your Lapin folder. Export it to take it to another computer or the browser.'}</p>
         </div>
       </div>
