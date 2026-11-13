@@ -26,6 +26,12 @@ export const DA: Record<string, string> = {
   "Change graph inputs": "Ændr grafens input",
   "A type": "En type",
   "A type of the project (a wall type, a slab type…) for a tool's Type; none chosen: the first of its class by name.": "En type i projektet (en vægtype, en dæktype…) til et værktøjs Type; ingen valgt: den første i sin klasse efter navn.",
+  // Decision 537: bodies made by a script (docs/plan-external-geometry.md, L1)
+  "Made by a script:": "Lavet af et script:",
+  "Its shape is changed in the script; here it moves, turns, copies and is cut like any element.": "Dens form ændres i scriptet; her flyttes, drejes, kopieres og snittes den som ethvert element.",
+  "This shape is made by a script; change it in the script, or move, rotate or cut it here.": "Denne form er lavet af et script; ændr den i scriptet, eller flyt, drej eller snit den her.",
+  "Create body": "Opret legeme",
+  "Set body": "Angiv legeme",
   // Decision 524: the box by the cursor offers width and height for a rectangle
   'Space switches length and angle with width and height': 'Mellemrum skifter mellem længde og vinkel og bredde og højde', 'Width × Height': 'Bredde × Højde', 'Length ∠ Angle': 'Længde ∠ Vinkel',
   // Decision 516: mouse navigation styles

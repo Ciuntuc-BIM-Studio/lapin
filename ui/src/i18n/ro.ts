@@ -24,6 +24,12 @@ export const RO: Record<string, string> = {
   "Change graph inputs": "Schimbă intrările grafului",
   "A type": "Un tip",
   "A type of the project (a wall type, a slab type…) for a tool's Type; none chosen: the first of its class by name.": "Un tip al proiectului (un tip de perete, un tip de placă…) pentru Tipul unei unelte; niciunul ales: primul din clasa lui, după nume.",
+  // Decision 537: bodies made by a script (docs/plan-external-geometry.md, L1)
+  "Made by a script:": "Făcut de un script:",
+  "Its shape is changed in the script; here it moves, turns, copies and is cut like any element.": "Forma lui se schimbă în script; aici se mută, se rotește, se copiază și se secționează ca orice element.",
+  "This shape is made by a script; change it in the script, or move, rotate or cut it here.": "Forma aceasta e făcută de un script; schimbă-o în script, sau mut-o, rotește-o ori secționeaz-o aici.",
+  "Create body": "Creează corp",
+  "Set body": "Schimbă corpul",
   // Decision 524: the box by the cursor offers width and height for a rectangle
   'Space switches length and angle with width and height': 'Space comută între lungime și unghi și lățime și înălțime', 'Width × Height': 'Lățime × Înălțime', 'Length ∠ Angle': 'Lungime ∠ Unghi',
   // Decision 516: mouse navigation styles

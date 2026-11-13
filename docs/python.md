@@ -49,6 +49,7 @@ The engine is found as the MCP bridge finds it (docs/mcp.md):
 | `lapin.batch(label)` | `with lapin.batch("Facades"):` the commands inside as one `edit.batch`: one undo step named `label`. |
 | `lapin.step(label)` | `with lapin.step("Facades"):` a step held open on the engine: one undo step, each command answered at once (below). |
 | `lapin.selection()` | What the window has selected now, as elements (the desktop app with the scripting module). |
+| `lapin.create_body(ifc_class, body, storey=…, global_id=…, owner=…)`, `lapin.set_body(id, body)` | An element whose body the script computes (`element.createBody`, `element.setBody`; below, *External geometry and live scripts*). |
 | `lapin.on("diff", f)` | `f(diff)` for every change the engine sends (an edit, an undo, the window's own); returns what removes it. |
 | `lapin.model` | The model's entities (below). |
 | `lapin.call(method, params)` | Any protocol call (`doc.execute`, `project.new`, …). |

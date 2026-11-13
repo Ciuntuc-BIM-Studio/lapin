@@ -26,6 +26,12 @@ export const PT: Record<string, string> = {
   "Change graph inputs": "Alterar as entradas do grafo",
   "A type": "Um tipo",
   "A type of the project (a wall type, a slab type…) for a tool's Type; none chosen: the first of its class by name.": "Um tipo do projeto (um tipo de parede, um tipo de laje…) para o Tipo de uma ferramenta; nenhum escolhido: o primeiro da sua classe por nome.",
+  // Decision 537: bodies made by a script (docs/plan-external-geometry.md, L1)
+  "Made by a script:": "Criado por um script:",
+  "Its shape is changed in the script; here it moves, turns, copies and is cut like any element.": "A sua forma muda-se no script; aqui move-se, roda, copia-se e corta-se como qualquer elemento.",
+  "This shape is made by a script; change it in the script, or move, rotate or cut it here.": "Esta forma é criada por um script; altere-a no script, ou mova-a, rode-a ou corte-a aqui.",
+  "Create body": "Criar corpo",
+  "Set body": "Definir corpo",
   // Decision 524: the box by the cursor offers width and height for a rectangle
   'Space switches length and angle with width and height': 'Espaço alterna entre comprimento e ângulo e largura e altura', 'Width × Height': 'Largura × Altura', 'Length ∠ Angle': 'Comprimento ∠ Ângulo',
   // Decision 516: mouse navigation styles

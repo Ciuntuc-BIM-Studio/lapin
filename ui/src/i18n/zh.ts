@@ -26,6 +26,12 @@ export const ZH: Record<string, string> = {
   "Change graph inputs": "更改图的输入",
   "A type": "一种类型",
   "A type of the project (a wall type, a slab type…) for a tool's Type; none chosen: the first of its class by name.": "项目中的一种类型（墙类型、楼板类型…），用于工具的类型；未选择：按名称取其类别的第一个.",
+  // Decision 537: bodies made by a script (docs/plan-external-geometry.md, L1)
+  "Made by a script:": "由脚本生成：",
+  "Its shape is changed in the script; here it moves, turns, copies and is cut like any element.": "其形状在脚本中修改；在此可像任何构件一样移动、旋转、复制和剖切。",
+  "This shape is made by a script; change it in the script, or move, rotate or cut it here.": "此形状由脚本生成；请在脚本中修改，或在此移动、旋转或剖切。",
+  "Create body": "创建实体",
+  "Set body": "设置实体",
   // Decision 524: the box by the cursor offers width and height for a rectangle
   'Space switches length and angle with width and height': '空格键在长度与角度、宽度与高度之间切换', 'Width × Height': '宽度 × 高度', 'Length ∠ Angle': '长度 ∠ 角度',
   // Decision 516: mouse navigation styles

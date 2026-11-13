@@ -1258,6 +1258,14 @@ public static partial class IfcImport
         void Referenced(IEdit edit, StepEntity e, string gid, JsonObject attrs, Prepared p)
         {
             var cls = ClassName(e.Type);
+            // A body an external program made in Lapin (docs/plan-external-geometry.md) comes back as one: its owner, its own
+            // attributes and its class (an IFC class Lapin's writer does not name was written as a proxy naming it).
+            if (!o.ReferenceOnly && IntentOf(e.Id) is { } own && (string?)own.Attrs[ExternalBodies.OwnerKey] is { Length: > 0 } owner)
+            {
+                attrs[ExternalBodies.OwnerKey] = owner;
+                if (own.Attrs[ExternalBodies.ExtraKey] is JsonObject extra) attrs[ExternalBodies.ExtraKey] = extra.DeepClone();
+                if (IfcElementClasses.Resolve(own.Class) is { } given) cls = given;
+            }
             // Its layers' direction, so the views split its body by them (ReferenceLayers); the element it is a part of, for its category.
             if (LayerAxis(e) is { } axis && axis.Length > 1e-9)
                 attrs[ReferenceLayers.AxisKey] = new JsonArray(Math.Round(axis.X, 9), Math.Round(axis.Y, 9), Math.Round(axis.Z, 9));

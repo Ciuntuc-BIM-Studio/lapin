@@ -22,6 +22,7 @@ from typing import Any, Callable
 from ._version import __version__
 from ._client import Batch, Deferred, Lapin, LapinError, Step
 from ._frame import Obj
+from ._ids import global_id
 from ._model import Element, Model
 from ._ui import UI
 
@@ -29,6 +30,7 @@ __all__ = [
     "__version__", "Lapin", "LapinError", "Batch", "Deferred", "Step", "Element", "Model", "Obj",
     "connect", "client", "close", "call", "execute", "query", "undo", "redo", "save", "info", "quantities",
     "snapshot", "state", "batch", "step", "selection", "on", "catalogue", "ns", "command", "ui", "UI",
+    "create_body", "set_body", "global_id",
 ]
 
 _default: Lapin | None = None
@@ -90,6 +92,16 @@ def info() -> Obj:
 
 def quantities(id: str | Element) -> Any:
     return client().quantities(id)
+
+
+def create_body(ifc_class: str, body: Any, **options: Any) -> Any:
+    """An element whose body this program computes (``element.createBody``): see ``Lapin.create_body``."""
+    return client().create_body(ifc_class, body, **options)
+
+
+def set_body(id: Any, body: Any, **options: Any) -> Any:
+    """A new body for an element made by ``create_body`` (``element.setBody``), its GlobalId kept."""
+    return client().set_body(id, body, **options)
 
 
 def snapshot() -> Obj:

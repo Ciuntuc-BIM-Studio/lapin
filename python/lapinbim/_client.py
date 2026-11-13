@@ -368,6 +368,40 @@ class Lapin:
         """An element's quantity sets."""
         return self.call("quantities.of", {"id": id.id if isinstance(id, Element) else id})
 
+    # ------------------------------------------------------------------ bodies an external program computes (L1)
+
+    def create_body(self, ifc_class: str, body: Any, *, storey: str | Element | None = None, name: str | None = None,
+                    type: str | Element | None = None, material: str | None = None, global_id: str | None = None,
+                    owner: str | None = None, placement: Any = None, attrs: dict | None = None, units: str | None = None) -> Any:
+        """An element whose body this program computes (``element.createBody``; docs/plan-external-geometry.md): one undo
+        step, its id (its GlobalId) in the result as ``r.id``.
+
+        ``body`` is ``{"positions": [x, y, z, …], "indices": [a, b, c, …]}`` (a triangle mesh, metres; numpy arrays are
+        fine), ``{"faces": [{"outer": [[x, y, z], …], "holes": [...]}, …]}`` (planar polygons), or ``{"parts": [...]}``
+        of either with a ``name`` and ``color`` each. ``placement``: a 4×4 matrix or ``{"at": [x, y, z], "angle": deg}``.
+        ``global_id`` pins the element's IFC GlobalId (refused when the model has it); ``owner`` names the program
+        (``"script:<id>"``); ``attrs`` are the program's own values, kept with the element and in its IFC. ``units``:
+        ``"m"`` (the default) or ``"mm"`` for a body and placement in millimetres. A mesh's lists may be flat or rows of
+        three (``vertices`` N×3, ``faces``/``triangles`` M×3, as manifold3d or trimesh give them).
+        ``lapinbim.global_id(name)`` makes a GlobalId that is the same each time for the same name.
+        """
+        a: dict[str, Any] = {"ifcClass": ifc_class, "body": body}
+        for key, value in (("storey", storey), ("name", name), ("type", type), ("material", material), ("globalId", global_id),
+                           ("owner", owner), ("placement", placement), ("attrs", attrs), ("units", units)):
+            if value is not None:
+                a[key] = value
+        return self.execute("element.createBody", a)
+
+    def set_body(self, id: str | Element, body: Any, *, placement: Any = None, units: str | None = None) -> Any:
+        """A new body for an element made by ``create_body`` (``element.setBody``): one undo step, its GlobalId kept;
+        without ``placement`` it stays where it stood."""
+        a: dict[str, Any] = {"id": id, "body": body}
+        if placement is not None:
+            a["placement"] = placement
+        if units is not None:
+            a["units"] = units
+        return self.execute("element.setBody", a)
+
     def snapshot(self) -> Obj:
         """The whole model as the engine sends it to a window (``doc.snapshot``): nodes, relations, render, state.
 
