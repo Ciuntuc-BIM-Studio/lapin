@@ -4,14 +4,14 @@
  * object), as the engine lists them (`studio.partTree`), asked again after each change of the model.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import * as THREE from 'three';
 import { ArrowDown, ArrowUp, CircleCheckBig, Eye, EyeOff, PenTool, PencilRuler, Trash2 } from 'lucide-react';
 import { create } from 'zustand';
 import type { Overlay3DProps } from '../../platform/module';
 import { showPropsTab } from '../../app/panels';
 import { notify, useUi } from '../../app/store';
-import { execute, query, useSession } from '../../engine/session';
+import { execute, useSession } from '../../engine/session';
 import { LengthField, NumberField } from '../../shell/cells';
 import { formatLength } from '../../engine/unitsStore';
 import { modelBounds } from '../../viewport/sectionBox';
@@ -19,6 +19,8 @@ import { useCamera } from '../../viewport/camera';
 import { useScope } from '../../platform/scope';
 import type { NodeDto } from '../../engine/protocol';
 import { editedPartId, editPart, finishPart } from './editMode';
+import { usePartTree } from './partTreeStore';
+import { ParamsButton } from './PartParams';
 import { editFamily } from './families/FamilyTools';
 import { editSketch } from './sketch';
 import { AddBody, AddSketch, BodyControls, ConstrainPartButton, LocalSketchActions } from './PartSketchTree';
@@ -31,19 +33,7 @@ import { PLANE_LABELS, paramRows, planeCorners, sketchRows, stepRows, type Param
 /** The origin plane shown in 3D: the one the pointer is over, else the one clicked. */
 export const usePartPlane = create<{ hover: PartPlane | null; pinned: PartPlane | null }>(() => ({ hover: null, pinned: null }));
 
-/** The tree of the part being edited, asked again as the model changes. */
-export function usePartTree(id: string | null): PartTree | null {
-  const version = useSession((s) => s.version);
-  const [tree, setTree] = useState<PartTree | null>(null);
-  useEffect(() => { setTree(null); }, [id]);
-  useEffect(() => {
-    if (!id) return;
-    let live = true;
-    void query<PartTree>('studio.partTree', { id }).then((r) => { if (live && r) setTree(r); });
-    return () => { live = false; };
-  }, [id, version]);
-  return tree;
-}
+export { usePartTree } from './partTreeStore';
 
 /** A sketch's constraints and how free it is, beside it in the tree; read again as the model changes. */
 function SketchState({ viewId }: { viewId: string }) {
@@ -58,6 +48,7 @@ function SketchState({ viewId }: { viewId: string }) {
 const setValue = (id: string, key: string, value: number | null) => void execute('studio.setPartValues', { ids: [id], values: { [key]: value } });
 
 function ParamValue({ id, p }: { id: string; p: ParamRow }) {
+  if (p.derived) return <span className="muted" title={`= ${p.formula}`} data-no-i18n>{p.kind === 'length' ? formatLength(p.value) : String(Math.round(p.value * 1e6) / 1e6)}</span>;
   if (p.kind === 'bool') return <input type="checkbox" aria-label={p.label} checked={p.value !== 0} onChange={(e) => setValue(id, p.key, e.target.checked ? 1 : 0)} />;
   if (p.kind === 'length') return <LengthField metres={p.value} title={p.label} style={{ width: 76 }} onCommit={(m) => setValue(id, p.key, m)} />;
   return <NumberField value={Math.round(p.value * 1e6) / 1e6} title={p.label} style={{ width: 76 }} onCommit={(n) => setValue(id, p.key, n)} />;
@@ -144,7 +135,7 @@ export function PartTreePanel() {
             <AddBody tree={tree} />
           </div>
           <div className="part-section">
-            <div className="part-title">Parameters</div>
+            <div className="row between"><div className="part-title">Parameters</div><ParamsButton /></div>
             {!params.length && <p className="muted small">None.</p>}
             {params.length > 0 && (
               <table className="part-params">
@@ -154,7 +145,7 @@ export function PartTreePanel() {
                     <tr key={p.key} data-part-param={p.key} className={p.changed ? 'changed' : ''}>
                       <td title={p.key}><span data-no-i18n>{p.label}</span></td>
                       <td><ParamValue id={id} p={p} />{p.unit && <span className="muted small"> <span data-no-i18n>{p.unit}</span></span>}</td>
-                      <td className="muted small" data-no-i18n>{shownDefault(p)}</td>
+                      <td className="muted small" data-no-i18n>{p.derived ? `= ${p.formula}` : shownDefault(p)}</td>
                       <td className="muted small">{p.instance ? 'instance' : ''}{p.instance && p.published ? ' · ' : ''}{p.published ? 'published' : ''}</td>
                     </tr>
                   ))}

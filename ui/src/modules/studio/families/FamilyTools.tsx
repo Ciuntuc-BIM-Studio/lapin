@@ -14,7 +14,7 @@ import { activeStorey, execute, useSession } from '../../../engine/session';
 import { formatLength, parseLength } from '../../../engine/unitsStore';
 import { t as tr } from '../../../i18n';
 import { registerDraftMenu } from '../../../viewport/draftMenu';
-import { familiesDialog, listFamilies, previewFamily, setFamilyValues, useFamilies, useFromSketch, usePlaceFamily } from './familyApi';
+import { familiesDialog, listFamilies, previewFamily, useFamilies, useFromSketch, usePlaceFamily } from './familyApi';
 import { IFC_CLASSES, className, parseValue, placedEdges, planEdges, sketchSources, valuesOf, type FamilyDto } from './familyModel';
 
 /** An object of a family is a placed part (decision 517): a Studio solid of operation `part`, typed by its part (IfcRelDefinesByType). */
@@ -117,26 +117,11 @@ export function editFamily(id: string | null | undefined): void {
 
 // ------------------------------------------------------------ the object's Properties
 
-const shownValue = (v: unknown, kind: string): string => (typeof v === 'number' ? (kind === 'bool' ? (v ? 'yes' : 'no') : String(Math.round(v * 1e6) / 1e6)) : '');
-
 export function FamilySection({ node }: { node: NodeDto }) {
   const { families } = useFamilies();
   const relations = useSession((x) => x.relations);
   const familyId = relations && partOf(node.id);
   const family: FamilyDto | undefined = families.find((f) => f.id === familyId);
-  const own = (node.props.values ?? {}) as Record<string, unknown>;
-  // The objects of the family selected with this one are changed together.
-  const ids = (): string[] => {
-    const sel = useUi.getState().selected;
-    const nodes = useSession.getState().nodes;
-    return sel.includes(node.id) ? sel.filter((id) => isPlacedPart(nodes.get(id))) : [node.id];
-  };
-  const commit = async (key: string, kind: 'length' | 'number' | 'angle' | 'bool', text: string) => {
-    const v = parseValue(text, kind, (t) => parseLength(t));
-    if (v === 'bad') { notify(kind === 'bool' ? 'Yes or no, or empty for the default.' : 'A parameter is a number, or empty for the default.'); return; }
-    await setFamilyValues(ids(), { [key]: v });
-    if (useSession.getState().error) notify(useSession.getState().error);
-  };
   if (!family) return <p className="muted small">Its family is not in the project.</p>;
   return (
     <dl className="fields" data-section="family">
@@ -144,27 +129,7 @@ export function FamilySection({ node }: { node: NodeDto }) {
       <dd className="row"><strong data-no-i18n>{family.name}</strong><span className="grow" />
         <button type="button" className="btn small" data-field="family-edit" onClick={() => editFamily(family.id)}><Pencil size={12} />Edit family…</button></dd>
       <dt>IFC class</dt><dd className="muted" data-no-i18n>{className(family.def.ifcClass)}</dd>
-      {family.def.params.map((p) => (
-        <FamilyValue key={`${p.key}:${shownValue(own[p.key], p.kind)}`} label={p.label} kind={p.kind} pkey={p.key} initial={own[p.key]} def={p.default} onCommit={commit} />
-      ))}
-      {family.def.params.length > 0 && <dd className="muted small fam-note">An empty value is the family's own.</dd>}
     </dl>
-  );
-}
-
-function FamilyValue({ label, kind, pkey, initial, def, onCommit }: { label: string; kind: 'length' | 'number' | 'angle' | 'bool'; pkey: string; initial: unknown; def: number; onCommit: (k: string, kind: 'length' | 'number' | 'angle' | 'bool', text: string) => Promise<void> }) {
-  const shown = typeof initial === 'number' ? (kind === 'length' ? formatLength(initial) : shownValue(initial, kind)) : '';
-  const [text, setText] = useState(shown);
-  const go = () => { if (text.trim() !== shown.trim()) void onCommit(pkey, kind, text); };
-  const placeholder = kind === 'bool' ? (def ? 'yes' : 'no') : kind === 'length' ? formatLength(def) : String(def);
-  return (
-    <>
-      <dt data-no-i18n>{label}</dt>
-      <dd>{kind === 'bool'
-        ? <select value={text} data-family-param={pkey} onChange={(e) => { setText(e.target.value); void onCommit(pkey, kind, e.target.value); }}>
-          <option value="">{tr(def ? 'Yes (the family\'s)' : 'No (the family\'s)')}</option><option value="yes">Yes</option><option value="no">No</option></select>
-        : <input className="mono" value={text} placeholder={placeholder} data-no-i18n data-family-param={pkey} onChange={(e) => setText(e.target.value)} onBlur={go} onKeyDown={(e) => { if (e.key === 'Enter') go(); }} />}</dd>
-    </>
   );
 }
 

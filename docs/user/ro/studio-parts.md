@@ -37,7 +37,34 @@ Panoul din stânga vederii arată din ce e făcută piesa și se citește din no
 - **Origine** are cele trei planuri ale piesei: sus (xy), față (xz) și dreapta (yz). Du cursorul pe unul ca să-l vezi în 3D, sau dă clic pe el ca să rămână afișat; încă un clic îl ascunde.
 - **Schițe** listează schițele piesei. O schiță a unui solid (extrudare, baleiere, revoluție, loft) se deschide pe vederea ei, ca la **Editează schița**; fiindcă schița trăiește pe vederea ei, modul de editare se încheie când o deschizi. O piesă făcută din corpuri se deschide în editorul ei, cu piesa aleasă.
 - **Pași** listează din ce e făcută piesa, în ordine: operația ei sau corpurile, apoi pașii făcuți asupra ei (împinge/trage, racordare, golire, împărțire…). Un pas oprit apare cenușiu; un corp făcut doar când se îndeplinește o condiție o arată (*oprit când nu HasShelf*). La pașii făcuți asupra piesei, butoanele pornesc sau opresc pasul, îl mută mai devreme sau mai târziu ori îl scot. Un clic pe numele unui pas arată piesa în Proprietăți, unde se editează numerele lui.
-- **Parametri** listează fiecare parametru cu valoarea, unitatea, valoarea implicită și dacă ține de fiecare obiect (*instanță*) și este *publicat*. Scrie o valoare nouă și apasă Enter: obiectul piesei o urmează. Un parametru diferit de cel implicit apare îngroșat. Marcajele se pot doar citi deocamdată; devin editabile când parametrii primesc formule.
+- **Parametri** listează fiecare parametru cu valoarea, unitatea și valoarea implicită, și dacă ține de fiecare obiect (*instanță*) și este *publicat*. Scrie o valoare nouă și apasă Enter: obiectul piesei o urmează. Un parametru diferit de cel implicit apare îngroșat; unul derivat își arată formula. **Parametri…** deschide tabelul întreg (secțiunea următoare).
+
+## Tabelul de parametri
+
+**Parametri…** în arbore deschide lângă el un tabel mai lat, unde parametrii se fac și se pun la punct. Rândurile sunt grupate după *grup*, și fiecare are:
+
+- **Nume**: eticheta și, lângă ea, cheia folosită în formule.
+- **Valoare sau formulă**: valoarea proprie a piesei, de la care pornește fiecare obiect. Scrie o valoare (o lungime în unitatea proiectului sau cu a ei: `1600`, `1.6m`) sau `=` și o formulă din ceilalți parametri (`=W / 2`): parametrul devine **derivat**, valoarea lui se calculează la fiecare cerere și nu se păstrează. O valoare scrisă peste o formulă o ia pe aceasta.
+- **Acest obiect**: valoarea proprie a obiectului, pentru un parametru de *instanță*. Un parametru de *tip* arată doar valoarea implicită, aceeași pentru fiecare obiect, iar unul derivat arată `= valoare`, cu formula la trecerea mouse-ului.
+- **Inst.**: instanță (fiecare obiect poate avea valoarea lui) sau tip (valoarea piesei pentru toate). Dacă schimbi un parametru de instanță în tip, valorile proprii ale obiectelor se pierd, iar tabelul o spune.
+- **Publ.**: publicat, adică apare în Proprietățile obiectului din model. Un parametru nepublicat rămâne treaba internă a piesei.
+- **⋯**: meniul rândului deschide restul: cheia (redenumirea ei o redenumește și în formule), eticheta, descrierea, grupul, minimul și maximul, felul și unitatea, **Mută în sus**, **Mută în jos** și **Șterge**. Motorul refuză **Șterge** cât timp o formulă sau o cotă de schiță încă folosește parametrul, și spune unde, sub rând.
+
+**+ Parametru** adaugă unul din felul ales alături: lungime, număr, unghi, da/nu, text sau număr întreg. Fiecare schimbare este un pas de anulare.
+
+![Tabelul de parametri: grupe, un parametru derivat cu formula lui, tip și instanță, publicat](shots/studio-part-params.webp)
+
+## Flex
+
+**Flex** (comutatorul din tabel) te lasă să încerci valori fără să schimbi piesa. Cât timp e pornit, schimbarea unei valori cere motorului doar o **previzualizare**: piesa cu acele valori se desenează ca o **fantomă** punctată peste piesă în 3D, iar **volumul** ei apare sub tabel. O valoare care nu dă o piesă (o adâncime nepozitivă, o formulă care eșuează) arată motivul motorului în locul fantomei. Un parametru de instanță flexează în **Acest obiect**, unul de tip în celula valorii lui implicite.
+
+**Păstrează** aplică valorile încercate: o valoare de instanță obiectului acesta, valoarea unui parametru de tip ca noua valoare implicită a piesei, totul într-un singur pas de anulare. **Pune înapoi** le uită; oprirea Flex-ului sau închiderea tabelului face la fel.
+
+![Flex: lățimea schimbată la 2 m, fantoma punctată peste masă, volumul sub tabel](shots/studio-part-flex.webp)
+
+## În model: parametrii publicați
+
+Înapoi în model, Proprietățile unei piese puse arată **doar parametrii ei publicați**. Un parametru de instanță este un câmp de editat pentru acest obiect (un câmp gol e valoarea implicită a piesei); unul de tip este doar de citit, cu insigna *tip*, fiindcă ține de piesă; unul derivat este doar de citit, cu insigna *formulă* și formula la trecerea mouse-ului. **Editează piesa (Tab)** intră în modul de editare, unde se pun la punct restul.
 
 ## Constrânge piesa: schițele proprii ale piesei
 

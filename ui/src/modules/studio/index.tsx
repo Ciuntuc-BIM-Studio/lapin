@@ -26,6 +26,7 @@ import { OperationsCard, hasTools } from './OperationsCard';
 import { RefPlaneSection } from './RefPlaneSection';
 import { editPart, finishPart, isEditable, registerEditMode } from './editMode';
 import { EditPartSection, PartPlane3D, PartTreePanel } from './PartTree';
+import { PartFlex3D, PartParamsPanel, PublishedParamsSection } from './PartParams';
 import { PartSketch3D } from './PartSketchEdit';
 import { ConstraintOverlay } from './ConstraintOverlay';
 import { SketchChip } from './SketchChip';
@@ -811,16 +812,17 @@ const studio: LapinModule = {
   dialogs: { families: FamiliesDialog, familyFromSketch: FamilyFromSketchDialog },
   propertySections: [
     { id: 'studioFamily', label: 'Family', classes: SOLID_CLASSES, shows: isPlacedPart, component: FamilySection },
+    { id: 'studioParams', label: 'Parameters', classes: SOLID_CLASSES, shows: isPlacedPart, component: PublishedParamsSection },
     { id: 'studioEditPart', label: 'Part', classes: SOLID_CLASSES, shows: isEditable, component: EditPartSection },
     { id: 'studioFeature', label: 'Studio', classes: SOLID_CLASSES, component: FeatureCard, fieldKeys: featureFieldKeys },
     { id: 'studioRefPlane', label: 'Reference plane', classes: ['LapinView'], component: RefPlaneSection },
     // Any element some solid cuts, unites or intersects: those solids listed, selectable even when never drawn.
     { id: 'studioOperations', label: 'Boolean', classes: ['*'], shows: hasTools, component: OperationsCard },
   ],
-  overlays: [PartTreePanel, SketchChip],
+  overlays: [PartTreePanel, PartParamsPanel, SketchChip],
   planOverlays: [ConstraintOverlay],
   drawingOverlays: [ConstraintOverlay],
-  overlays3d: [PartPlane3D, PartSketch3D],
+  overlays3d: [PartPlane3D, PartFlex3D, PartSketch3D],
   grips: Object.fromEntries(SOLID_CLASSES.map((c) => [c, solidGrips])),
   references: Object.fromEntries(SOLID_CLASSES.map((c) => [c, solidRefs])),
 };

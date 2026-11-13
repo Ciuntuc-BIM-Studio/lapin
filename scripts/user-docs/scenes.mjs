@@ -9985,7 +9985,7 @@ export const scenes = [
       // Its Properties: the family, each parameter's own value, the shelf switched off.
       await select(t, first.id);
       await t.wait(900);
-      await page.locator('[data-family-param=HasShelf]').selectOption('no');
+      await page.locator('[data-published-param=HasShelf] input').uncheck();
       await t.until(async () => (await t.nodes()).find((n) => n.id === first.id)?.props.values?.HasShelf === 0, 'the shelf is switched off on this object');
       await t.shot('family-properties', { of: 'aside.props', pad: 0, maxHeight: 700 });
       await t.ui({ view: '3d', selection: null, selected: [] });
@@ -10062,6 +10062,33 @@ export const scenes = [
       await width.press('Enter');
       await t.until(async () => Math.abs((await t.nodes()).find((n) => n.id === placed.id)?.props.values?.W - 1.6) < 1e-6, 'the width typed in the tree reaches the object');
       await t.shot('studio-part-tree', { of: '[data-testid=part-tree]', pad: 6 });
+      // The parameter table: a derived parameter (a formula of the others), then Flex: Width tried at 2 m, drawn as a ghost, kept.
+      await tree.locator('[data-testid=part-params-open]').click();
+      const table = page.locator('[data-testid=part-params]');
+      await table.waitFor({ timeout: 10_000 });
+      await table.locator('[data-testid=param-add]').click();
+      const added = table.locator('[data-part-param-row=L1]');
+      await added.waitFor({ timeout: 10_000 });
+      await added.locator('[data-field=param-default]').fill('=W / 2');
+      await added.locator('[data-field=param-default]').press('Enter');
+      await t.until(async () => (await added.locator('[data-testid=param-derived]').count()) === 1, 'a formula in the default makes the parameter derived');
+      await t.shot('studio-part-params', { of: '[data-testid=part-params]', pad: 6 });
+      await table.locator('[data-testid=part-flex]').check();
+      const flexW = table.locator('[data-part-param-row=W] [data-field=param-own]');
+      await flexW.fill('2000');
+      await flexW.press('Enter');
+      await t.until(async () => (await page.locator('path.part-flex-ghost').count()) === 1, 'the flexed part is drawn as a ghost');
+      await t.until(async () => (await table.locator('[data-testid=flex-volume]').count()) === 1, 'the ghost\'s volume is shown');
+      await t.wait(800);
+      await t.shot('studio-part-flex', { of: '[data-testid=view3d]', pad: 0 });
+      await table.locator('[data-testid=flex-keep]').click();
+      await t.until(async () => Math.abs((await t.nodes()).find((n) => n.id === placed.id)?.props.values?.W - 2) < 1e-6, 'Keep gives the object the flexed width');
+      await table.locator('[data-testid=part-flex]').uncheck();
+      const own = table.locator('[data-part-param-row=W] [data-field=param-own]');
+      await own.fill('1600');
+      await own.press('Enter');
+      await t.until(async () => Math.abs((await t.nodes()).find((n) => n.id === placed.id)?.props.values?.W - 1.6) < 1e-6, 'the width is put back to 1.6 m');
+      await table.locator('[aria-label=Close]').click();
       // Constrain part: the corners become sketches of the part's own, listed in the tree.
       await tree.locator('[data-testid=constrain-part]').click();
       await t.until(async () => (await tree.locator('[data-part-sketch]').count()) > 0 && (await tree.locator('[data-testid=constrain-part]').count()) === 0, 'Constrain part turns the corners into sketches of the part');
