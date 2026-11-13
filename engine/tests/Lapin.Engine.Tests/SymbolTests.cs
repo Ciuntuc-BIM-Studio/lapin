@@ -320,4 +320,18 @@ public sealed class SymbolTests
         // A file that is not a symbol library is refused whole.
         Assert.Throws<CommandException>(() => g.Run("symbols.importFrom", new JsonObject { ["text"] = "{\"format\":\"lapin-type-pack\"}" }));
     }
+
+    [Fact]
+    public void A_placed_symbol_is_deleted_as_any_annotation()
+    {
+        var f = F();
+        var plan = Plan(f);
+        var i = Place(f, plan, Create(f, Def("annotation", LineItem(0, 0, 1, 0))), 0, 0);
+        f.Run("element.delete", new JsonObject { ["ids"] = new JsonArray(i) });
+        Assert.Null(f.Model.Get(i));
+        var sheet = (string)f.Run("sheet.create", new JsonObject { ["name"] = "S", ["paper"] = "A3" })!["id"]!;
+        var onSheet = (string)f.Run("drafting.placeSymbol", new JsonObject { ["sheetId"] = sheet, ["symbolId"] = BuiltinSymbols.Prefix + "north-arrow", ["at"] = J(30, 30) })!["id"]!;
+        f.Run("element.delete", new JsonObject { ["ids"] = new JsonArray(onSheet) });
+        Assert.Null(f.Model.Get(onSheet));
+    }
 }

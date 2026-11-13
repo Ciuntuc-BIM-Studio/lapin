@@ -172,4 +172,19 @@ public sealed class TableImportTests
             Assert.All(t.Columns, c => Assert.Contains(guess, g => g.Key == c.Key));
         }
     }
+
+    [Fact]
+    public void A_unit_written_in_the_cell_counts_over_the_heading_s()
+    {
+        Assert.Equal((4.5, "kN/m"), TableUnits.Split("4.5 kN/m"));
+        Assert.Equal((250, "mm"), TableUnits.Split("250mm"));
+        Assert.Equal((1.2, null), TableUnits.Split("1,2"));
+        Assert.Null(TableUnits.Split("ten"));
+        var f = F();
+        var csv = $"Kind;Storey;x1;y1;x2;y2;Value\nline;{f.Model.Get(f.Storey)!.Name};0;0;6000 mm;0;450 daN/m\n";
+        f.Run("tables.import", Table(AnalysisTables.LoadsId, csv));
+        var line = UserLoads.All(f.Model).Single(l => l.Kind == UserLoads.Line);
+        Assert.Equal(4.5, line.Value, 9);
+        Assert.Equal(6, line.Points[1].X, 9);
+    }
 }

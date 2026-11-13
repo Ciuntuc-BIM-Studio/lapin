@@ -50,8 +50,9 @@ public sealed class TableRow(int number, IReadOnlyDictionary<string, string> cel
     public double? Num(string key, string? kind = null)
     {
         if (Text(key) is not { } t) return null;
-        var n = TableUnits.Parse(t) ?? throw new CommandException($"„{t}” is not a number.");
-        var unit = Unit(key);
+        // A unit written in the cell itself („250 mm”) over the column's.
+        var (n, own) = TableUnits.Split(t) ?? throw new CommandException($"„{t}” is not a number.");
+        var unit = own ?? Unit(key);
         return kind != null || unit != null ? n * TableUnits.Factor(kind, unit) : n;
     }
 }
@@ -116,6 +117,15 @@ public static class TableUnits
             if (list.FirstOrDefault(x => Norm(x.Name) == u || x.Spellings.Contains(u)) is { } found) return found.Name;
         }
         return null;
+    }
+
+    /// <summary>A cell that holds a number and its unit („4.5 kN/m”, „250mm”, „1,2 kPa”): the number and the unit; no unit, null.</summary>
+    public static (double Value, string? Unit)? Split(string text)
+    {
+        var m = System.Text.RegularExpressions.Regex.Match(text.Trim(), @"^([-+−]?[\d.,' \u00a0\u202f]*\d(?:[eE][-+]?\d+)?)\s*([^\d\s].*)?$");
+        if (!m.Success || Parse(m.Groups[1].Value) is not { } n) return null;
+        var unit = m.Groups[2].Success ? m.Groups[2].Value.Trim() : null;
+        return (n, unit is { Length: > 0 } ? unit : null);
     }
 
     /// <summary>A number as people write it: a dot or a comma for decimals, spaces or the other mark grouping thousands, a minus of any kind.</summary>

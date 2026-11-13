@@ -118,8 +118,9 @@ public static class AnalysisTables
         var family = kind switch { UserLoads.Area => "areaLoad", UserLoads.Line => "lineLoad", _ => "force" };
         // Its value in the unit the row gives, else the heading's, else the base unit of its kind.
         var raw = row.Need("value", "The value");
-        var number = TableUnits.Parse(raw) ?? throw new CommandException($"„{raw}” is not a number.");
-        var unit = row.Text("unit") ?? row.Unit("value");
+        // The number, and a unit written in the cell itself („4.5 kN/m”) over the row's and the heading's.
+        var (number, inCell) = TableUnits.Split(raw) ?? throw new CommandException($"„{raw}” is not a number.");
+        var unit = inCell ?? row.Text("unit") ?? row.Unit("value");
         var factor = 1.0;
         if (unit != null)
         {
