@@ -3,6 +3,7 @@
 import type { Language } from './index';
 
 export const FR: Record<string, string> = {
+  "Some constraints could not stay with the shapes and were dropped.": "Certaines contraintes n'ont pas pu rester avec les formes et ont été retirées.",
   // Editing a part's own sketch in place (decision 520)
   "Constrain part": "Contraindre la pièce",
   "Body from sketch": "Corps depuis une esquisse",

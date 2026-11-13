@@ -3,6 +3,7 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  "Some constraints could not stay with the shapes and were dropped.": "部分约束无法保留在形状上，已被移除。",
   // Editing a part's own sketch in place (decision 520)
   "Constrain part": "约束零件",
   "Body from sketch": "由草图生成实体",

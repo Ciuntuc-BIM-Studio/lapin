@@ -1,6 +1,7 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  "Some constraints could not stay with the shapes and were dropped.": "Unele constrângeri n-au putut rămâne cu formele și au fost scoase.",
   // Editing a part's own sketch in place (decision 520)
   "Constrain part": "Constrânge piesa",
   "Body from sketch": "Corp din schiță",

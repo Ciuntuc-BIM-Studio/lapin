@@ -3,6 +3,7 @@
 import type { Language } from './index';
 
 export const PL: Record<string, string> = {
+  "Some constraints could not stay with the shapes and were dropped.": "Niektóre więzy nie mogły pozostać przy kształtach i zostały usunięte.",
   // Editing a part's own sketch in place (decision 520)
   "Constrain part": "Zwiąż część więzami",
   "Body from sketch": "Bryła ze szkicu",

@@ -3,6 +3,7 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  "Some constraints could not stay with the shapes and were dropped.": "ຂໍ້ຈຳກັດບາງຢ່າງບໍ່ສາມາດຢູ່ກັບຮູບຮ່າງໄດ້ ແລະ ຖືກລຶບອອກ.",
   // Editing a part's own sketch in place (decision 520)
   "Constrain part": "ຈຳກັດຊິ້ນສ່ວນ",
   "Body from sketch": "ຕົວຖັນຈາກແຜນຮ່າງ",

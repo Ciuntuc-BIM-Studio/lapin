@@ -194,6 +194,7 @@ export function PartSketch3D({ camera, canvas }: Overlay3DProps) {
     if (!partId || !sketchId) return;
     const r = await execute('studio.partSketchSetShapes', { partId, sketchId, shapes: shapesPayload(list) });
     if (!r) { const e = useSession.getState().error; if (e) notify(e); }
+    else if (Array.isArray((r as { dropped?: unknown[] }).dropped) && (r as { dropped: unknown[] }).dropped.length) notify('Some constraints could not stay with the shapes and were dropped.');
   };
 
   const point = (e: { clientX: number; clientY: number }, snap = true): Vec2 | null => {
