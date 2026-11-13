@@ -28,7 +28,7 @@ import { askPlacement, findTool, useToolTick } from '../platform/modules';
 import { placedAt, reasonLines, requestFor, resetPlacement, setPlacing, usePlacement, verdictFor } from '../platform/placement';
 import { useGripEditor } from './GripLayer';
 import { LiveBar, LiveBox } from './LiveBox';
-import { liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
+import { liveBegin, liveCursor, liveEnd, livePoint, liveTaken, useLive } from './liveInput';
 import { markSelected, nearestOf, pickAt, regionIds } from './planPick';
 import { boxOutcome, dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
 import { pickable, useScope } from '../platform/scope';
@@ -393,7 +393,11 @@ export function PlanView() {
     else setPts([]);
   }, [tool]);
 
-  const click = useCallback((p: Vec2, raw: Vec2, add: boolean, typed?: number, leaf = false, mods?: Mods) => {
+  const click = useCallback((p0: Vec2, raw: Vec2, add: boolean, typed0?: number, leaf = false, mods?: Mods) => {
+    // A typed length, angle, width or height holds: the click gives the direction only, as the preview showed.
+    const taken = liveTaken(p0);
+    const p = taken?.point ?? p0;
+    const typed = typed0 ?? taken?.typed;
     // A drafting command takes the click: a snapped point, or what lies under the cursor.
     const step = useCad.getState().step;
     if (step) { void feedPoint(step.want === 'pick' || step.want === 'select' ? raw : p); acquire(p); return; }
@@ -599,7 +603,8 @@ export function PlanView() {
           acquire(a);
           const next = useCad.getState().step;
           if (next?.want !== 'point') return;
-          const b = snapAt(e.clientX, e.clientY, next.base ?? a).point;
+          const b0 = snapAt(e.clientX, e.clientY, next.base ?? a).point;
+          const b = liveTaken(b0)?.point ?? b0;
           await feedPoint(b);
           acquire(b);
         })();

@@ -11,7 +11,7 @@ import type { DrawingDto } from '../drawing';
 import { SnapIndex, findSnap, type SnapMode } from './snaps';
 import { usePrefs } from '../../app/prefs';
 import { fromFrame, isIdentity, toFrame, ucsOf, useLocation, type Frame } from '../../app/location';
-import { fromJson, keyPoints, nearestOnShape, type Shape } from './shapes';
+import { fromJson, intersectPrims, keyPoints, nearestOnShape, prims, type Shape } from './shapes';
 import { applyOrtho } from './input';
 import { track, trackOnOrtho, type Guide } from './tracking';
 import { useCad, type CadHost } from './session';
@@ -30,14 +30,14 @@ export interface Aimed { point: Vec2; kind: 'point' | 'grid' | 'free'; mode?: Sn
  * angle; then the nearest snap; then the grid or the raw point (squared to
  * the base with ortho). `lock` says which constraint actually holds the point.
  */
-export interface AimInput { base: Vec2 | null; ortho: boolean; polar: boolean; snap: { point: Vec2; mode: SnapMode } | null; acquired: readonly Vec2[]; tol: number; grid?: number; polarStep?: number; frame?: Frame | null }
+export interface AimInput { base: Vec2 | null; ortho: boolean; polar: boolean; snap: { point: Vec2; mode: SnapMode; shape?: Shape } | null; acquired: readonly Vec2[]; tol: number; grid?: number; polarStep?: number; frame?: Frame | null }
 
 export function resolveAim(raw: Vec2, c: AimInput): Aimed {
   // In a UCS (decision 445) ortho, the guides, polar angles and the grid follow its axes: the same rule in its coordinates.
   if (c.frame && !isIdentity(c.frame)) {
     const f = c.frame;
     const L = (p: Vec2) => toFrame(f, p), W = (q: Vec2) => fromFrame(f, q);
-    const a = resolveAim(L(raw), { ...c, frame: null, base: c.base ? L(c.base) : null, snap: c.snap ? { ...c.snap, point: L(c.snap.point) } : null, acquired: c.acquired.map(L) });
+    const a = resolveAim(L(raw), { ...c, frame: null, base: c.base ? L(c.base) : null, snap: c.snap ? { ...c.snap, point: L(c.snap.point), shape: c.snap.shape ? shapeIn(c.snap.shape, L, f.angle) : undefined } : null, acquired: c.acquired.map(L) });
     return { ...a, point: W(a.point), guides: a.guides.map((g) => ({ ...g, from: W(g.from), to: W(g.to) })) };
   }
   const { base, snap: s, tol } = c;
@@ -52,7 +52,11 @@ export function resolveAim(raw: Vec2, c: AimInput): Aimed {
     const t = track(raw, pool, tol, { base, polarStep: c.polar ? c.polarStep ?? 45 : null });
     if (t) return { point: t.point, kind: 'point', guides: t.guides, lock: t.guides.some((g) => g.kind === 'polar') ? 'polar' : 'tracking' };
   }
-  if (s) return { point: s.point, kind: 'point', mode: s.mode, guides: [] };
+  if (s) {
+    // Nearest, with the grid on: the point slides along the shape to the nearest grid line, so one axis is the object's and the other the grid's.
+    const slid = c.grid && c.grid > 0 && s.shape ? onGrid(s.shape, raw, s.point, c.grid) : null;
+    return { point: slid ?? s.point, kind: 'point', mode: s.mode, guides: [] };
+  }
   let q = ortho && base ? applyOrtho(base, raw) : raw;
   const lock: AimLock | undefined = ortho ? 'ortho' : undefined;
   if (c.grid && c.grid > 0) {
@@ -62,6 +66,30 @@ export function resolveAim(raw: Vec2, c: AimInput): Aimed {
     return { point: q, kind: 'grid', guides: [], lock };
   }
   return { point: q, kind: 'free', guides: [], lock };
+}
+
+/** A shape in a frame's own coordinates (`L` takes a point there, `angle` is the frame's turn in degrees). */
+function shapeIn(s: Shape, L: (p: Vec2) => Vec2, angle: number): Shape {
+  const a = (angle * Math.PI) / 180;
+  switch (s.type) {
+    case 'line': return { type: 'line', a: L(s.a), b: L(s.b) };
+    case 'polyline': return { type: 'polyline', pts: s.pts.map(L), closed: s.closed };
+    case 'circle': return { type: 'circle', c: L(s.c), r: s.r };
+    case 'arc': return { type: 'arc', c: L(s.c), r: s.r, start: s.start - a, end: s.end - a };
+  }
+}
+
+/** Where a shape crosses the grid line (x or y a whole step) nearest `raw`, among the two lines through `near`; null when it crosses neither. */
+function onGrid(shape: Shape, raw: Vec2, near: Vec2, g: number): Vec2 | null {
+  const R = 1e5;
+  const x = Math.round(near.x / g) * g, y = Math.round(near.y / g) * g;
+  const lines: [Vec2, Vec2][] = [[{ x, y: raw.y - R }, { x, y: raw.y + R }], [{ x: raw.x - R, y }, { x: raw.x + R, y }]];
+  let best: Vec2 | null = null, bd = Infinity;
+  for (const [a, b] of lines) for (const p of prims(shape)) for (const q of intersectPrims({ kind: 'seg', a, b }, p)) {
+    const d = Math.hypot(q.x - raw.x, q.y - raw.y);
+    if (d < bd) { bd = d; best = q; }
+  }
+  return best;
 }
 
 /** The drawing's lines a cursor can snap to (no hatches, fills or texts). */
@@ -204,7 +232,7 @@ export function useCadCanvas(o: {
       }
     } else if (hold.current) { clearTimeout(hold.current.timer); hold.current = null; }
     const frame = planRef.current ? ucsOf(useLocation.getState().loc) ?? axesRef.current : null;
-    const aimed = resolveAim(raw, { base, ortho: cad.ortho || !!o2.orthoHeld, polar: cad.polar, polarStep: prefs.polarStep, snap: s, acquired: acquired.current, tol, grid: o2.grid, frame });
+    const aimed = resolveAim(raw, { base, ortho: cad.ortho || !!o2.orthoHeld, polar: cad.polar, polarStep: prefs.polarStep, snap: s ? { point: s.point, mode: s.mode, shape: shapes[s.shape] } : null, acquired: acquired.current, tol, grid: o2.grid, frame });
     // The drafted shape the point lies on: the snap's own, else the first drafted shape through the point (the model's lines may be found first where they coincide).
     const owner = aimed.mode ? (s && aimed.mode === s.mode ? owners[s.shape] : null) ?? draftThrough(drafts, aimed.point, aimed.mode) : null;
     return owner ? { ...aimed, shapeId: owner } : aimed;
