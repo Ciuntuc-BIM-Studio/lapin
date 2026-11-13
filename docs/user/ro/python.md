@@ -171,6 +171,12 @@ with lapin.ui.panel("Walls"):                      # un grup din Uneltele mele n
 
 Ca pe orice unealtă, le poți muta, face mici sau scoate; o unealtă scoasă rămâne scoasă.
 
+## Forme făcute de un script
+
+Un script, sau un program de pe calculatorul tău (un script Python în VS Code, de exemplu), poate face elemente a căror formă o calculează el: o fermă peste o încăpere, un panou de fațadă, o formă proiectată de alt instrument. Sunt elemente obișnuite: apar în planuri, secțiuni și 3D, se măsoară în extrase, se exportă în IFC și le muți, rotești, copiezi, ascunzi sau ștergi ca pe oricare altul. Proprietățile spun **Făcut de un script:** și care. Forma lor e a scriptului: ce le-ar schimba forma aici e refuzat (*Forma aceasta e făcută de un script; schimbă-o în script, sau mut-o, rotește-o ori secționeaz-o aici.*).
+
+Un script poate urmări din ce e făcut. Rulat din afara lui Lapin, își actualizează singur elementele când schimbi încăperea sau peretele pe care îl urmărește. Un script al proiectului care urmărește elemente e rulat din nou de Lapin după schimbarea ta, doar dacă are încrederea ta pe acest calculator, ca pas de anulare propriu numit *„<script> regenerated”*: Ctrl+Z ia înapoi doar regenerarea. Un script fără încredere nu e rulat; panoul Script spune asta.
+
 ## Siguranța
 
 Un script poate face orice poți face tu pe acest calculator: rulează în Python-ul tău, cu drepturile tale. Rulează scripturi scrise de tine sau în care ai încredere; un script al proiectului și unul instalat întreabă mai întâi.

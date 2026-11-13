@@ -134,6 +134,12 @@ De onde vêm as ferramentas:
 
 Um script excluído, desinstalado ou em que já não se confia tira as suas ferramentas de Minhas ferramentas.
 
+## Formas criadas por um script
+
+Um script, ou um programa do seu computador (um script Python no VS Code, por exemplo), pode criar elementos cuja forma ele próprio calcula: uma tesoura sobre um cômodo, um painel de fachada, uma forma desenhada por outra ferramenta. São elementos normais: aparecem em plantas, cortes e 3D, são medidos nas tabelas, exportados para IFC, e você os move, gira, copia, oculta ou apaga como qualquer outro. As propriedades indicam **Criado por um script:** e qual. A sua forma é do script: o que a alteraria aqui é recusado.
+
+Um script pode seguir aquilo de que é feito. Executado fora do Lapin, atualiza ele próprio os seus elementos quando você muda o cômodo ou a parede que observa. Um script do projeto que observa elementos volta a ser executado pelo Lapin após a sua alteração, só se você confiar nele neste computador, como um passo de desfazer próprio, *«<script> regenerated»*. Um script sem confiança não é executado; o painel Script avisa.
+
 ## Segurança
 
 Um script pode fazer tudo o que você pode fazer neste computador: ele roda no seu próprio Python, com os seus direitos. Execute scripts que você mesmo escreveu ou em que confia; um script do projeto e um instalado perguntam antes.

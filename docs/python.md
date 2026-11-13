@@ -138,7 +138,7 @@ print(s.kept)
 
 ```python
 off = lapin.on("diff", lambda d: print(len(d.nodes), "changed,", len(d.removed_nodes), "removed"))
-lapin.on("*", lambda name, data: print(name))      # every event: diff, progress, presence, delivery
+lapin.on("*", lambda name, data: print(name))      # every event: diff, progress, presence, delivery, selection, measure, watch
 off()
 ```
 
@@ -183,6 +183,62 @@ with lapin.batch("Walls +20 cm"):
     for w in lapin.model.walls:
         w.update(height=w.height + 0.2)
 ```
+
+## External geometry and live scripts
+
+A program that computes geometry (a generator, a DSL's compiler, a parametric script) works with Lapin through this package, never inside it: it gives Lapin bodies, Lapin keeps them as elements, and each side tells the other what changed. The contract, the four steps (decisions 537–540) and what Lapin deliberately does not do are in `docs/plan-external-geometry.md`.
+
+### Bodies a program computes
+
+```python
+import lapinbim as lapin
+
+r = lapin.create_body("IfcMember", {"positions": [...], "indices": [...]},       # a triangle mesh, metres
+                      storey="Ground floor", name="Truss T1",
+                      global_id=lapin.global_id("truss:t1", "my-generator"),      # stable across runs
+                      owner="script:my-generator", attrs={"span": 6.0})
+lapin.set_body(r.id, new_body)                                                     # the same element, a new shape
+```
+
+| Argument | What it is |
+|---|---|
+| `ifc_class` | Any IfcElement subtype of IFC4 or IFC 4.3 (`IfcMember`, `IfcSlab`, `IfcPump`, …; a standard case is its class); another name makes an `IfcBuildingElementProxy` and the result's `notes` say so. |
+| `body` | `{"positions", "indices"}` (each flat, or rows of three: `vertices` and `faces`/`triangles` as numpy N×3 and M×3 arrays come out of manifold3d, trimesh or ifcopenshell), `{"faces": [{"outer": [[x, y, z], …], "holes": [...]}]}` (planar polygons, holes allowed), or `{"parts": [{"name", "color": "#rrggbb", …one of those}]}`. |
+| `units` | `"m"` (default), `"cm"` or `"mm"`: a program working in integer millimetres sends its numbers as they are. |
+| `placement` | A 4×4 matrix (row major) or `{"at": [x, y, z], "angle": degrees}`; the body is then in its own coordinates, so the same body placed many times is stored once. |
+| `global_id` | The element's IFC GlobalId (22 characters), refused when the model has it. `lapin.global_id(name, namespace)` makes one from a name (UUID 5, compressed as IFC writes it), the same at every run. |
+| `owner`, `attrs` | Who made it (`"script:<id>"` or free text; Properties shows *Made by a script: …*) and the program's own values; both go into the IFC's `Lapin_Intent` and come back on import. |
+| `storey`, `name`, `type`, `material` | The storey (id or name; else the lowest), the name, a type's id (`IfcRelDefinesByType`: a definition placed many times), a material's id or name. |
+
+The result: `id`, `shared` (the shared body's id: one per distinct content, by SHA-256), `closed`, `triangles`, `notes`. Each call is one undo step (inside `lapin.step` or `lapin.batch`, part of it). The checks: finite numbers, indices in range, at most 2 000 000 triangles and 10 km from the origin, polygon faces planar within 1 mm; a body that is not closed is accepted and reported (its volume is not measured).
+
+In Lapin it is an ordinary element: drawn and cut in plans and sections, in 3D, picked, measured (`BaseQuantities`: `NetVolume` of a closed body, `NetSurfaceArea`, `Length`, `Width`, `Height`), in schedules, phases and Visibility/Graphics by its class, moved, rotated, copied (sharing its body, a new GlobalId), hidden and deleted. Its shape is the program's: `element.update`, *Make Studio solid* and *Convert to native* refuse it. The IFC export writes it with its class where Lapin's writer knows the class's attributes, else as a proxy naming it; Lapin reads its own IFC back as the same element.
+
+### The selection, measures and watches
+
+```python
+lapin.on("selection", lambda s: print([i["ifcClass"] for i in s["items"]]))
+lapin.selected()                         # [{id, globalId, ifcClass, name, storey, path, bbox}, …]
+
+lapin.measure(f"wall.{wall_id}.top")                                  # a built-in
+lapin.measure("ridge", id=roof_id, expr="bbox.zmax")                  # a formula over one element
+lapin.measure("deps", query="core.dependents", args={"id": wall_id})  # a catalogue query's result
+lapin.on("measure", lambda m: print(m["name"], m["was"], "→", m["value"]))
+
+w = lapin.watch([room_id], ["storey.Ground floor.elevation"])
+lapin.on("watch", lambda e: rebuild(e["ids"], e["measures"]))
+lapin.unwatch(w.watch)
+```
+
+- **`selection`**: the window's selection, sent to every connection of this computer whenever it changes (on the desktop; the window tells the host), each element with its GlobalId, IFC class, name, storey, assembly path (outermost first, itself last) and the box of its body.
+- **Measures** (`measure.define`, `measure.get`, `measure.remove`, `measure.list`): built-ins `storey.<name or id>.elevation`, `storey.<…>.height`, `element.<id>.bbox` (`[[xmin, ymin, zmin], [xmax, ymax, zmax]]`), `wall.<id>.top`; a formula in Lapin's `Expr` over one element (`attr.<field>`, `qty.<Quantity>`, `bbox.xmin` … `bbox.zmax`); or a catalogue query and its arguments. After each change the host recomputes only the measures that read an element it touched (a query naming no element: every time) and sends `measure {name, value, was, error?}` when the value changed. They are this connection's, gone when it closes; never in the model.
+- **Watches** (`script.watch`, `script.unwatch`): the `watch` event `{watch, ids, measures}` after a change by **another** connection (the window, an undo, another program) touching one of the elements (an attribute, or its body rebuilt) or changing one of the measures. Your own edits never fire your watch, so updating your bodies on the event cannot loop.
+- **A project script's watch**: `lapin.watch(ids, measures, script="truss.py")` keeps it in the project (`scripting.watch`, one undo step; built-in measures only). After a change it touches, Lapin runs that script again in the Script panel's Python, only when it is trusted on this computer, as its own undo step *“truss regenerated”* right after the change; what a script run changes never sets off a project script; 300 ms after the last change; 60 s at most; a run going on puts it off. Why it was not run shows in the Script panel.
+
+### Examples
+
+- `python/examples/truss_over_room.py`: takes the selected room (or the first), builds a Warren truss over its short side at its ceiling as one `IfcMember` body (owner `script:truss_over_room`, its GlobalId from the room's), watches the room and builds it again with `set_body` when the room changes. `python python/examples/truss_over_room.py` against `pnpm dev` or the app; `--once` builds and stops. `python/tests/test_live.py` runs it against a test engine.
+- `python/examples/litestep_bridge.py` (optional, a sketch): a [Lite-STEP](https://github.com/ginnung-tech/lite-step) model (MIT; a Python DSL compiling to IFC4X3 with ifcopenshell) compiled by its own compiler, each product meshed by ifcopenshell and pushed with `create_body`/`set_body` in one step, GlobalIds from the products' names, removed products deleted; `--watch` pushes again at every save. It imports `lite_step` and `ifcopenshell` only when it runs: `lapinbim` depends on neither.
 
 ## The Script panel (stage 2)
 
@@ -324,7 +380,7 @@ with lapin.ui.panel("Walls"):                                # a group of My too
 
 ## Tests
 
-`pnpm test:python` (`scripts/test-python.mjs`, part of `pnpm test`) runs `python/tests` with the standard library's `unittest` on the oldest Python found from 3.11 and the newest, each against an engine of its own: the built Debug host on a free port with a temporary user folder (`python/tests/engine.py`), as `scripts/lapin-mcp-check.mjs` starts it, never the engine of `pnpm dev`. They cover the WebSocket client against a small server of the test's own (fragments, ping, a 64-bit length, masking, close, a wrong handshake), the LPF1 reader, names and arguments, and against the engine: connecting by `LAPIN_PORT` and by `host.json`, typed commands, a batch as one named undo step (and all or nothing), undo and redo, a refused command, binary frames, quantities, element edits, diff events, saving, the module's own connection, the catalogue and the stubs. No Python 3.11 or newer: the run says so and passes; no built engine, no dotnet or no node: the engine's tests are skipped, saying why. `--all` runs every Python found.
+`pnpm test:python` (`scripts/test-python.mjs`, part of `pnpm test`) runs `python/tests` with the standard library's `unittest` on the oldest Python found from 3.11 and the newest, each against an engine of its own: the built Debug host on a free port with a temporary user folder (`python/tests/engine.py`), as `scripts/lapin-mcp-check.mjs` starts it, never the engine of `pnpm dev`. They cover the WebSocket client against a small server of the test's own (fragments, ping, a 64-bit length, masking, close, a wrong handshake), the LPF1 reader, names and arguments, and against the engine: connecting by `LAPIN_PORT` and by `host.json`, typed commands, a batch as one named undo step (and all or nothing), undo and redo, a refused command, binary frames, quantities, element edits, diff events, saving, the module's own connection, the catalogue and the stubs; and (`test_live.py`) bodies made and set in metres and millimetres, stable GlobalIds, measures and the selection, a connection's watch, a trusted project script run again by the real Python as its own undo step, and `examples/truss_over_room.py` run against the engine, built and following its room. No Python 3.11 or newer: the run says so and passes; no built engine, no dotnet or no node: the engine's tests are skipped, saying why. `--all` runs every Python found.
 
 ## Publishing on PyPI
 

@@ -134,6 +134,12 @@ Skąd biorą się narzędzia:
 
 Skrypt usunięty, odinstalowany lub któremu już nie ufasz zabiera swoje narzędzia z Moje narzędzia.
 
+## Kształty utworzone przez skrypt
+
+Skrypt albo program na Twoim komputerze (np. skrypt Pythona w VS Code) może tworzyć elementy, których kształt sam oblicza: wiązar nad pomieszczeniem, panel elewacyjny, kształt zaprojektowany w innym narzędziu. To zwykłe elementy: widać je w rzutach, przekrojach i 3D, są liczone w zestawieniach, eksportowane do IFC, a Ty przesuwasz, obracasz, kopiujesz, ukrywasz i usuwasz je jak każde inne. Właściwości pokazują **Utworzone przez skrypt:** i który. Ich kształt należy do skryptu: to, co by go tu zmieniło, jest odrzucane.
+
+Skrypt może śledzić to, z czego powstaje. Uruchomiony poza Lapinem sam aktualizuje swoje elementy, gdy zmienisz obserwowane pomieszczenie lub ścianę. Skrypt projektu, który obserwuje elementy, Lapin uruchamia ponownie po Twojej zmianie, tylko jeśli ufasz mu na tym komputerze, jako osobny krok cofania *„<script> regenerated”*. Skrypt bez zaufania nie jest uruchamiany; mówi o tym panel Script.
+
 ## Bezpieczeństwo
 
 Skrypt może zrobić wszystko, co możesz zrobić na tym komputerze: działa w twoim własnym Pythonie, z twoimi uprawnieniami. Uruchamiaj skrypty, które sam napisałeś lub którym ufasz; skrypt projektu i zainstalowany najpierw pytają.

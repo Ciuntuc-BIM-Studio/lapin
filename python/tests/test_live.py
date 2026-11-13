@@ -135,6 +135,50 @@ class LiveTests(unittest.TestCase):
         self.lapin.unwatch(script="regen.py")
 
 
+    def test_the_truss_example_builds_over_a_room_and_follows_it(self):
+        import os
+        import subprocess
+        import sys
+        import time
+        from pathlib import Path
+
+        python_dir = Path(__file__).resolve().parents[1]
+        example = python_dir / "examples" / "truss_over_room.py"
+        room = self.lapin.architecture.add_room(storey_id=self.storey, points=[[0, 0], [6, 0], [6, 4], [0, 4]], height=2.5).id
+        env = dict(os.environ, LAPIN_PORT=str(self.engine.port), PYTHONPATH=str(python_dir))
+        env.pop("LAPIN_SCRIPT_TOKEN", None)
+        run = subprocess.run([sys.executable, "-u", str(example), "--once"], env=env, capture_output=True, text=True, timeout=60)
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        trusses = [m for m in self.lapin.model.of("IfcMember") if m.attrs.get("owner") == "script:truss_over_room"]
+        self.assertEqual(len(trusses), 1)
+        gid = trusses[0].id
+        box = self.lapin.measure_value(f"element.{gid}.bbox")
+        room_box = self.lapin.measure_value(f"element.{room}.bbox")
+        # Across the short side (y, 4 m), its bottom chord on the ceiling.
+        self.assertLess(abs(box[1][1] - box[0][1] - 4.0), 0.1)
+        self.assertLess(abs(box[0][2] - room_box[1][2]), 0.05)
+
+        # Live: the room raised, the truss follows, keeping its GlobalId.
+        proc = subprocess.Popen([sys.executable, "-u", str(example)], env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        try:
+            line = proc.stdout.readline()
+            while line and "Watching" not in line:
+                line = proc.stdout.readline()
+            self.lapin.element.update(id=room, attrs={"height": 3.0})
+            deadline = time.time() + 20
+            while time.time() < deadline:
+                b = self.lapin.measure_value(f"element.{gid}.bbox")
+                if abs(b[0][2] - box[0][2] - 0.5) < 1e-3:
+                    break
+                time.sleep(0.2)
+            self.assertAlmostEqual(self.lapin.measure_value(f"element.{gid}.bbox")[0][2], box[0][2] + 0.5, places=3)
+            self.assertEqual(len([m for m in self.lapin.model.of("IfcMember") if m.attrs.get("owner") == "script:truss_over_room"]), 1)
+        finally:
+            proc.terminate()
+            proc.wait(10)
+            proc.stdout.close()
+
+
 class GlobalIdTests(unittest.TestCase):
     def test_ids_are_ifcs_and_stable(self):
         self.assertEqual(compress(uuid.UUID(int=0)), "0" * 22)

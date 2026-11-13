@@ -134,6 +134,12 @@ D'où viennent les outils :
 
 Un script supprimé, désinstallé ou auquel on ne fait plus confiance retire ses outils de Mes outils.
 
+## Formes créées par un script
+
+Un script, ou un programme de votre ordinateur (un script Python dans VS Code, par exemple), peut créer des éléments dont il calcule la forme : une ferme au-dessus d'une pièce, un panneau de façade, une forme conçue par un autre outil. Ce sont des éléments ordinaires : ils apparaissent en plan, en coupe et en 3D, sont mesurés dans les nomenclatures, exportés en IFC, et vous les déplacez, tournez, copiez, masquez ou supprimez comme les autres. Les propriétés indiquent **Créé par un script :** et lequel. Leur forme appartient au script : ce qui la modifierait ici est refusé.
+
+Un script peut suivre ce dont il est fait. Lancé hors de Lapin, il met à jour lui-même ses éléments quand vous modifiez la pièce ou le mur qu'il surveille. Un script du projet qui surveille des éléments est relancé par Lapin après votre modification, seulement si vous lui faites confiance sur cet ordinateur, comme une étape d'annulation à part, *« <script> regenerated »*. Un script non approuvé n'est pas lancé ; le panneau Script le dit.
+
 ## Sécurité
 
 Un script peut faire tout ce que vous pouvez faire sur cet ordinateur : il s'exécute dans votre propre Python, avec vos droits. Exécutez des scripts que vous avez écrits ou en qui vous avez confiance ; un script du projet et un script installé demandent d'abord.
