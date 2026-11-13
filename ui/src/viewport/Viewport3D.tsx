@@ -69,7 +69,7 @@ import { InstanceLayer } from './instancing';
 import { openGroupOf, shownSelection, useExpansion } from '../platform/groups';
 import { useTagHover } from './tagTarget';
 import { pickByMods, pickRegion } from '../platform/assemblies';
-import { clickMode, dragAction, modsOf, regionSelection, wheelFactor, zoomsToCursor, type Mods } from '../app/navStyle';
+import { dragAction, modsOf, regionMode, regionSelection, wheelFactor, zoomsToCursor, type Mods } from '../app/navStyle';
 import { currentNavStyle } from '../app/navStyleStore';
 import { boxEdges, boxOf, projectSegments, takes, toggleRegion3d, useRegion3d, type Project } from './select3d';
 import { clippedAway, seenHit } from './seen3d';
@@ -1463,7 +1463,7 @@ export function Viewport3D() {
       useRegion3d.setState({ drag: null });
       const ids = regionSelect(d);
       // How it joins the selection is the style's (Lapin: Shift adds; Revit: Ctrl adds, Shift removes).
-      const next = regionSelection(useUi.getState().selected, ids, clickMode(currentNavStyle(), modsOf(e)));
+      const next = regionSelection(useUi.getState().selected, ids, regionMode(currentNavStyle(), modsOf(e)));
       useUi.setState({ selected: next, selection: next[next.length - 1] ?? null });
     };
     const onRegionKey = (e: KeyboardEvent) => {

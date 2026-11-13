@@ -11,6 +11,7 @@ import type { ToolDef } from '../../platform/module';
 import { useUi, type OpeningHead } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { relatedOf, relatingOf } from '../../engine/model';
+import { AlongField } from './AlongField';
 import { LengthField } from '../../shell/cells';
 import { sameKind } from '../../shell/params';
 import { draftOf, openOpeningDialog, revealMaterial, revealThickness, REVEALS } from './OpeningDialog';
@@ -101,7 +102,7 @@ export function WallOpeningSection({ node }: { node: NodeDto }) {
       <dl className="fields pad" data-field="wall-opening">
         <dt>Width</dt><dd><LengthField metres={num(node, 'width', 1)} min={0.05} onCommit={(m) => m != null && set({ width: m })} /></dd>
         <dt>Height</dt><dd><LengthField metres={num(node, 'height', 2)} min={0.05} onCommit={(m) => m != null && set({ height: m })} /></dd>
-        <dt>Along the wall</dt><dd><LengthField metres={num(node, 'along', 0)} min={0} onCommit={(m) => m != null && execute('architecture.updateWallOpening', { id: node.id, along: m })} /></dd>
+        <dt>Along the wall</dt><dd><AlongField id={node.id} along={num(node, 'along', 0)} width={num(node, 'width', 1)} /></dd>
         <dt>Sill</dt><dd><LengthField metres={num(node, 'sill', 0)} min={0} onCommit={(m) => m != null && set({ sill: m })} /></dd>
         <HeadFields kind={headOf(node)} rise={typeof node.props.rise === 'number' ? node.props.rise : null} width={num(node, 'width', 1)} onChange={set} />
         <dt>Reveal finish</dt>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dragTo, isWindow, regionTestOf, toggleLasso, type SelectDrag } from './selectDrag';
+import { boxOutcome, dragTo, isWindow, regionTestOf, toggleLasso, type SelectDrag } from './selectDrag';
 import { segsOf } from './selectBox';
 
 const P = (x: number, y: number) => ({ x, y });
@@ -40,5 +40,15 @@ describe('a selection drag', () => {
     expect(takes(segsOf([1, 0, 1, 2]))).toBe(false);
     d = { ...d, window: false };
     expect(regionTestOf(d, same)(segsOf([1, 0, 1, 2]))).toBe(true);
+  });
+});
+
+describe('a released box', () => {
+  it('is a click when it is tiny (a wobbled press), keeps the selection when it took nothing, else selects', () => {
+    expect(boxOutcome({ a: P(10, 10), b: P(15, 12) }, 0)).toBe('click');
+    expect(boxOutcome({ a: P(10, 10), b: P(15, 12) }, 3)).toBe('click');
+    expect(boxOutcome({ a: P(10, 10), b: P(80, 60) }, 0)).toBe('keep');
+    expect(boxOutcome({ a: P(10, 10), b: P(80, 60) }, 2)).toBe('select');
+    expect(boxOutcome({ a: P(10, 10), b: P(12, 11), lasso: [P(10, 10), P(12, 11)] }, 0)).toBe('keep');
   });
 });

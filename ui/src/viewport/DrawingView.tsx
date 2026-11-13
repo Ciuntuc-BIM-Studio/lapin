@@ -28,7 +28,7 @@ import { groupItems } from '../shell/selectionMenu';
 import { symbolMenuItems } from '../modules/core/symbols/symbolTools';
 import { membersOf, pickTarget, shownSelection } from '../platform/groups';
 import { pickByMods, pickRegion, wholeOf } from '../platform/assemblies';
-import { clickMode, modsOf, pansIn2d, regionSelection, wheelFactor } from '../app/navStyle';
+import { modsOf, pansIn2d, regionMode, regionSelection, wheelFactor } from '../app/navStyle';
 import { currentNavStyle } from '../app/navStyleStore';
 import { clearShown, hiddenInDrawing, publishShown } from './cad/shown';
 import { drawOrderItems, isDrafted } from './drawOrder';
@@ -40,7 +40,7 @@ import type { Shape } from './cad/shapes';
 import { carryBegin, carryBy, carryEnd, carrying, useTrace } from './moveTrace';
 import { clearLiveRise, inModel, setLiveRise, viewFrameAt } from './viewFrame';
 import { markIds, markSelected } from './planPick';
-import { dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
+import { boxOutcome, dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
 import { useGripEditor } from './GripLayer';
 import { DrawingOverlays } from './DrawingOverlays';
 import { LiveBar, LiveBox } from './LiveBox';
@@ -86,6 +86,8 @@ export function DrawingView() {
   useEffect(() => { if (view) remember(key, view); }, [key, view]);
   const go = useCallback((v: View) => { setView((old) => { if (old) pushHistory(key, old); return v; }); }, [key]);
   const [hover, setHover] = useState<Aimed | null>(null);
+  /** What a click would select under the cursor now (lit; null while a tool or a step takes the point). */
+  const [hoverId, setHoverId] = useState<string | null>(null);
   /** A press; `carry`: the selection it was pressed on (a drag moves it, or copies it with Ctrl/⌘/Alt), from `base` (the press, snapped). */
   const drag = useRef<{ x: number; y: number; view: View; moved: boolean; carry?: string[]; copy?: boolean; base?: Vec2; pan?: boolean } | null>(null);
   /** A selection box or lasso being dragged (screen px); Space turns the box into a lasso. */
@@ -141,10 +143,14 @@ export function DrawingView() {
   const pickAny = useCallback((p: Vec2): string | null => pickDrawing(p, 6 / v.scale, drawing?.marks, nodes), [drawing, nodes, v.scale]);
 
   /** The annotations and drafted shapes a box takes, added to the selection with shift (or while a command asks for a selection). */
-  const selectBox = (b: SelectDrag, e: React.PointerEvent) => {
+  const selectBox = (b: SelectDrag, e: React.PointerEvent): 'click' | 'done' => {
     const ids = pickRegion(markIds(regionTestOf(b, toWorld), nodes, drawing?.marks));
-    const next = regionSelection(useUi.getState().selected, ids, useCad.getState().step ? 'add' : clickMode(currentNavStyle(), modsOf(e)));
+    const outcome = boxOutcome(b, ids.length);
+    if (outcome === 'click') return 'click';
+    if (outcome === 'keep') return 'done';
+    const next = regionSelection(useUi.getState().selected, ids, useCad.getState().step ? 'add' : regionMode(currentNavStyle(), modsOf(e)));
     useUi.setState({ selected: next, selection: next[next.length - 1] ?? null });
+    return 'done';
   };
 
   const { aim, acquire } = useCadCanvas({ viewId: id, drawing, scale: v.scale, pickAny, inRegion: (takes) => markIds(takes, nodes, drawing?.marks) });
@@ -318,7 +324,7 @@ export function DrawingView() {
         <button type="button" className="icon" title="Fit (ZE)" onClick={fit}><Maximize size={14} /></button>
       </div>
       <KeyPlan mode="drawing" viewId={id} />
-      <svg ref={ref} className={`plan-svg drawing-svg${cadStep || tool?.gesture ? ' tool' : ''}`} data-testid="drawing"
+      <svg ref={ref} className={`plan-svg drawing-svg${tool?.gesture || cadStep?.want === 'point' ? ' tool' : tool || cadStep ? ' pick' : hoverId ? ' pick' : ''}`} data-testid="drawing"
         onWheel={(e) => {
           // A wheel, a pinch or two fingers up and down zoom; two fingers sideways or Shift pan; one or the other for a whole run.
           const mode = wheelMode.current(e);
@@ -382,13 +388,30 @@ export function DrawingView() {
           }
           const here = at(e);
           setHover(here.aimed);
+          {
+            const step = useCad.getState().step;
+            const idle = !tool?.gesture && !d && !editor.dragging && (!step || step.want === 'pick' || step.want === 'select');
+            const id = idle ? pickAny(here.raw) : null;
+            setHoverId((cur) => (cur === id ? cur : id));
+          }
           trackTagHover(here.raw, { pickElement: pickAny, pickTag: (q) => { const t = pickDrawing(q, 6 / v.scale, drawing?.marks, nodes, (n) => n.props.predefinedType === 'TAG'); return t ?? null; }, anyTags, busy: !!tool?.gesture || !!d });
         }}
         onPointerUp={(e) => {
           if (editor.onPointerUp()) return;
           const d = drag.current;
           drag.current = null;
-          if (box) { selectBox(box, e); setBox(null); return; }
+          if (box) {
+            const b = box;
+            setBox(null);
+            // A tiny box is the press taken as a click (where it began), not a window.
+            if (selectBox(b, e) === 'done' || !d) return;
+            const r = ref.current!.getBoundingClientRect();
+            const raw = toWorld(d.x - r.left, d.y - r.top);
+            const step = useCad.getState().step;
+            if (step) { void feedPoint(raw); return; }
+            pickByMods(pickAny(raw), modsOf(e), currentNavStyle());
+            return;
+          }
           if (d?.moved && e.button === 0 && d.carry && d.base) {
             const r = ref.current!.getBoundingClientRect();
             const to = aim(toWorld(e.clientX - r.left, e.clientY - r.top), d.base, { orthoHeld: e.shiftKey }).point;
@@ -413,7 +436,7 @@ export function DrawingView() {
           if (gestureClick(aimed.point, raw)) return;
           pickByMods(pickAny(raw), modsOf(e), currentNavStyle());
         }}
-        onPointerLeave={() => { setHover(null); trackTagHover(null, { pickElement: () => null, pickTag: () => null, anyTags, busy: true }); editor.onPointerLeave(); }}
+        onPointerLeave={() => { setHover(null); setHoverId(null); trackTagHover(null, { pickElement: () => null, pickTag: () => null, anyTags, busy: true }); editor.onPointerLeave(); }}
         onContextMenu={(e) => e.preventDefault()}
         onDoubleClick={(e) => {
           if (useCad.getState().step) return;
@@ -426,6 +449,12 @@ export function DrawingView() {
         {drawing && <DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={v.scale} onDark={onDark} screen={size} />}
         {(drawing?.marks ?? []).filter((m) => targets.size > 0 && markSelected(m.id, targetList) && !markSelected(m.id, shown)).map((m) => (
           <path key={`tag:${m.id}`} className="plan-mark tag-target" d={Array.from({ length: m.segments.length / 4 }, (_, k) => {
+            const a = toScreen({ x: m.segments[4 * k], y: m.segments[4 * k + 1] }), b = toScreen({ x: m.segments[4 * k + 2], y: m.segments[4 * k + 3] });
+            return `M${a.x} ${a.y}L${b.x} ${b.y}`;
+          }).join('')} />
+        ))}
+        {hoverId && !markSelected(hoverId, shown) && (drawing?.marks ?? []).filter((m) => m.id === hoverId || markSelected(m.id, [hoverId])).map((m) => (
+          <path key={`hover:${m.id}`} className="plan-mark plan-hover-mark" aria-hidden="true" d={Array.from({ length: m.segments.length / 4 }, (_, k) => {
             const a = toScreen({ x: m.segments[4 * k], y: m.segments[4 * k + 1] }), b = toScreen({ x: m.segments[4 * k + 2], y: m.segments[4 * k + 3] });
             return `M${a.x} ${a.y}L${b.x} ${b.y}`;
           }).join('')} />

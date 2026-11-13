@@ -7,7 +7,7 @@
 
 import { membersOf, openGroupOf, pickTarget, shownSelection, useExpansion } from '../platform/groups';
 import { drillInside, pickByMods, pickClick, pickRegion, useDrill, wholeOf } from '../platform/assemblies';
-import { clickMode, modsOf, pansIn2d, regionSelection, wheelFactor, type Mods } from '../app/navStyle';
+import { modsOf, pansIn2d, regionMode, regionSelection, wheelFactor, type Mods } from '../app/navStyle';
 import { currentNavStyle } from '../app/navStyleStore';
 import { orthophotos } from './textures';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -30,7 +30,7 @@ import { useGripEditor } from './GripLayer';
 import { LiveBar, LiveBox } from './LiveBox';
 import { liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
 import { markSelected, nearestOf, pickAt, regionIds } from './planPick';
-import { dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
+import { boxOutcome, dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
 import { pickable, useScope } from '../platform/scope';
 import { pairs } from './snap';
 import { formatLength, lengthText } from '../engine/unitsStore';
@@ -97,6 +97,8 @@ export function PlanView() {
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [pts, setPts] = useState<Vec2[]>([]);
   const [hover, setHover] = useState<Aimed | null>(null);
+  /** What a click would select under the cursor now (the outline lit; null while a tool or a step takes the point). */
+  const [hoverId, setHoverId] = useState<string | null>(null);
   /** Where the cursor is, unsnapped: what a pick reads, and the side of a wall a door opens to. */
   const rawHover = useRef<Vec2 | null>(null);
   // Space while a tool is on changes what its ghost shows.
@@ -546,13 +548,29 @@ export function PlanView() {
       const q = host && what ? requestFor(host, at, what) : null;
       if (q) { askPlacement(q.req); setPlacing(q.req); } else resetPlacement();
     }
+    {
+      // Idle, or a step asking for a pick or a selection: what a click would take is lit (the same pick the click uses: decision 498).
+      const step = useCad.getState().step;
+      const idle = !tool?.gesture && !d && !editor.dragging && (!step || step.want === 'pick' || step.want === 'select');
+      const hit = idle ? pick(rawHover.current) : null;
+      const id = hit ? pickTarget(hit.id) ?? hit.id : null;
+      setHoverId((cur) => (cur === id ? cur : id));
+    }
     trackTagHover(rawHover.current, { pickElement: (q) => pick(q)?.id ?? null, pickTag: (q) => pick(q, ['IfcAnnotation'])?.id ?? null, anyTags, busy: !!tool?.gesture || !!d });
   };
   const onPointerUp = (e: React.PointerEvent) => {
     if (editor.onPointerUp()) return;
     const d = drag.current;
     drag.current = null;
-    if (box) { selectBox(box, e); setBox(null); return; }
+    if (box) {
+      const b = box;
+      setBox(null);
+      // A tiny box is the press taken as a click (where it began), not a window.
+      if (selectBox(b, e) === 'done' || !d) return;
+      const rect = svgRef.current!.getBoundingClientRect();
+      click(constrained(snapAt(d.x, d.y, pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined)).point, toWorld(d.x - rect.left, d.y - rect.top), e.shiftKey, undefined, e.ctrlKey || e.metaKey, modsOf(e));
+      return;
+    }
     if (d?.moved && e.button === 0) {
       // A drag is two points: where it was pressed and where it was let go, both snapped.
       const step = useCad.getState().step;
@@ -607,11 +625,15 @@ export function PlanView() {
     openContextMenu(x, y, [...order, ...symbolMenuItems(selected, nodes), ...rooms, ...selectionItems()]);
   };
   /** What a selection box or lasso takes: inside it wholly (a window, dragged to the right) or touching it (crossing, to the left). */
-  const selectBox = (b: SelectDrag, e: React.PointerEvent) => {
+  const selectBox = (b: SelectDrag, e: React.PointerEvent): 'click' | 'done' => {
     const ids = pickRegion(regionIds(regionTestOf(b, toWorld), pickItems, nodes, scope ? undefined : drawing?.marks));
+    const outcome = boxOutcome(b, ids.length);
+    if (outcome === 'click') return 'click';
+    if (outcome === 'keep') return 'done';
     // How it joins the selection is the navigation style's (Shift adds in Lapin's; Ctrl adds and Shift removes in Revit's); a command asking for a selection collects.
-    const next = regionSelection(useUi.getState().selected, ids, useCad.getState().step ? 'add' : clickMode(currentNavStyle(), modsOf(e)));
+    const next = regionSelection(useUi.getState().selected, ids, useCad.getState().step ? 'add' : regionMode(currentNavStyle(), modsOf(e)));
     useUi.setState({ selected: next, selection: next[next.length - 1] ?? null });
+    return 'done';
   };
 
   const onWheel = (e: React.WheelEvent) => {
@@ -768,7 +790,7 @@ export function PlanView() {
     return null;
   })();
 
-  const marker = hover && (tool?.gesture || editor.dragging || cadStep || dragTrace) ? toScreen(hover.point) : null;
+  const marker = hover && (tool?.gesture || editor.dragging || cadStep?.want === 'point' || dragTrace) ? toScreen(hover.point) : null;
 
   return (
     <div className="view-pane">
@@ -816,9 +838,9 @@ export function PlanView() {
           }}><FileDown size={14} /><span className="small">DXF</span></button>}
       </div>
       <KeyPlan mode="plan" frame={measured ? [toWorld(0, size.h), toWorld(size.w, 0)] : null} onLookAt={(p) => go({ ...view, cx: p.x, cy: p.y })} />
-      <svg ref={svgRef} className={`plan-svg${tool?.gesture || cadStep ? ' tool' : ''}`} data-testid="plan"
+      <svg ref={svgRef} className={`plan-svg${tool?.gesture || cadStep?.want === 'point' ? ' tool' : tool || cadStep ? ' pick' : hoverId ? ' pick' : ''}`} data-testid="plan"
         onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
-        onPointerLeave={() => { setHover(null); trackTagHover(null, { pickElement: () => null, pickTag: () => null, anyTags, busy: true }); editor.onPointerLeave(); }} onWheel={onWheel} onContextMenu={(e) => e.preventDefault()}
+        onPointerLeave={() => { setHover(null); setHoverId(null); trackTagHover(null, { pickElement: () => null, pickTag: () => null, anyTags, busy: true }); editor.onPointerLeave(); }} onWheel={onWheel} onContextMenu={(e) => e.preventDefault()}
         onDoubleClick={(e) => {
           if (tool?.gesture || useCad.getState().step) return;
           const rect = svgRef.current!.getBoundingClientRect();
@@ -846,6 +868,11 @@ export function PlanView() {
               className={`plan-item ${kind}${closed ? ' closed' : ''}${r.editable ? '' : ' foreign'}${shown.has(r.nodeId) ? ' selected' : targets.has(r.nodeId) ? ' tag-target' : ''}${scope && pickable(nodes.get(r.nodeId)) ? ' in-scope' : ''}${inside?.has(r.nodeId) ? ' in-drill' : ''}`} />
           ))}
         </g>
+        {hoverId && !shown.has(hoverId) && (
+          <g className="plan-hover" aria-hidden="true">
+            {drawn.filter((x) => x.kind !== 'label' && x.kind !== 'hit' && (x.r.nodeId === hoverId || membersOf(hoverId).includes(x.r.nodeId))).map((x) => <path key={x.key} d={x.d} />)}
+          </g>
+        )}
         {peers.map((p) => {
           const theirs = new Set(p.presence.selection ?? []);
           return theirs.size === 0 ? null : (

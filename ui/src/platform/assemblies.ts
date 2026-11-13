@@ -133,8 +133,9 @@ export const drilling = (): boolean => useDisplay.getState().drillSelect;
  */
 export function pickClick(id: string | null | undefined, mods: { add?: boolean; leaf?: boolean } = {}): void {
   const add = !!mods.add;
+  if (!id && add) return;
   if (!drilling()) { select(pickTarget(id), add); return; }
-  if (!id) { useDrill.setState({ path: null }); select(null, add); return; }
+  if (!id) { if (add) return; useDrill.setState({ path: null }); select(null); return; }
   const chain = chainFor(id);
   if (add) { select(mods.leaf ? chain[chain.length - 1] : chain[0], true); return; }
   const target = drillTarget(chain, useDrill.getState().path, useUi.getState().selected, mods.leaf);
@@ -149,6 +150,8 @@ export function pickClick(id: string | null | undefined, mods: { add?: boolean; 
  */
 export function pickByMods(id: string | null | undefined, mods: Mods, style: NavStyle): void {
   const mode = clickMode(style, mods), leaf = picksLeaf(style, mods);
+  // Shift on empty space leaves the selection as it is, in every style (only a plain click on nothing lets go).
+  if (!id && mode !== 'replace') return;
   if (style.native || mode === 'replace') { pickClick(id, { add: mode === 'toggle', leaf }); return; }
   if (!id) return;
   const before = useUi.getState().selected;

@@ -47,6 +47,12 @@ html, body { overflow: hidden; overscroll-behavior: none; }
 #root { position: fixed; inset: 0; overflow: hidden; }
 body { background: var(--bg); color: var(--ink); font: 13px/1.4 var(--font); -webkit-font-smoothing: antialiased; }
 button, input, select { font: inherit; color: inherit; }
+/* A button with no class of its own reads the theme, not the WebView's light default (dark mode showed light text on a light face). Any rule of a class or a container that styles buttons comes later and wins. */
+button:not([class]) { padding: 4px 10px; border: 1px solid var(--rule-strong); border-radius: 3px; background: var(--panel); color: var(--ink); cursor: pointer; }
+button:not([class]):hover:not(:disabled) { border-color: var(--accent); background: var(--raised); }
+button:not([class]):active:not(:disabled) { background: var(--wash); }
+button:not([class]):disabled { cursor: not-allowed; color: var(--ink-muted); background: var(--wash); border-color: var(--rule); opacity: 0.7; }
+button:not([class]):focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-strong); border-radius: 3px; background: var(--wash); }
 .eyebrow { font-size: 10.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-muted); }
 .muted { color: var(--ink-muted); }
@@ -346,6 +352,9 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 .view-title { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-muted); }
 .plan-svg { flex: 1; width: 100%; height: 100%; background: var(--bg); touch-action: none; user-select: none; }
 .plan-svg.tool { cursor: crosshair; }
+.plan-svg.pick { cursor: pointer; }
+.plan-hover path { fill: none; stroke: var(--accent); stroke-width: 2; stroke-opacity: 0.55; pointer-events: none; }
+.plan-mark.plan-hover-mark { stroke: var(--accent); stroke-width: 2; stroke-opacity: 0.55; fill: none; pointer-events: none; }
 .plan-grid path { stroke: var(--rule); stroke-width: 0.5; }
 .plan-grid path.major { stroke: var(--rule-strong); stroke-width: 0.8; }
 .plan-item { fill: none; stroke: var(--ink); stroke-width: 1; vector-effect: non-scaling-stroke; }
@@ -796,7 +805,10 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .props .fields { display: grid; grid-template-columns: minmax(92px, 44%) 1fr; gap: 0; margin: 0; border: 1px solid var(--rule); border-radius: 3px; overflow: hidden; background: var(--raised); align-items: stretch; }
 .props .fields dt, .props .fields dd { display: flex; align-items: center; min-height: 27px; margin: 0; border-bottom: 1px solid var(--rule); }
 .props .fields dt { position: relative; padding: 0 8px; background: var(--wash); border-right: 1px solid var(--rule); color: var(--ink-muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.props .fields dd { padding: 0 6px; gap: 4px; min-width: 0; }
+.props .fields dd { padding: 0 6px; gap: 4px; min-width: 0; flex-wrap: wrap; }
+.along-field { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; width: 100%; padding: 2px 0; }
+.along-field select { flex: 1 1 90px; min-width: 0; }
+.along-field .num { flex: 1 1 70px; }
 /* A heading across both columns (a member's haunch, with its × at the end), never cut short; rows grouped in a div. */
 .props .fields dt.wide { grid-column: 1 / -1; justify-content: space-between; overflow: visible; white-space: normal; border-right: 0; }
 .fields .contents { display: contents; }

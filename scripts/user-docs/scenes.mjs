@@ -746,6 +746,18 @@ export const scenes = [
       const along = async (id) => { const ns = await t.nodes(); const fill = ns.find((n) => n.id === id); const rel = (await t.call('doc.query', { name: 'architecture.openingReferences', args: { id: fill.id } })); return rel.opening.along; };
       t.expect(Math.abs((await along(w2)) - (await along(w1)) - 2.5) < 1e-6, 'the windows\' middles 2500 apart');
       await t.shot('temp-dims-axes', { clip: await box() });
+      // Properties: "Along the wall" with its two choices (measured from the meeting wall's face, to the window's start); a value typed moves it.
+      await t.page.locator('[data-field=along-from]').selectOption('face');
+      await t.page.locator('[data-field=along-point]').selectOption('start');
+      await t.wait(400);
+      const shown = await t.page.locator('[data-field=along] input').first().inputValue();
+      const was = await along(w2);
+      const input = t.page.locator('[data-field=along] input').first();
+      await input.fill(String(Number(shown.replace(/[^0-9.-]/g, '')) + 100));
+      await input.press('Enter');
+      await t.wait(700);
+      t.expect(Math.abs(Math.abs((await along(w2)) - was) - 0.1) < 1e-6, 'Along the wall, measured from the face to the window\'s start: 100 more moved it 100');
+      await t.shot('along-field', { of: '[data-field=along]', pad: 12 });
       // Too far: refused, nothing moves.
       const before = await along(w2);
       await type('-1:1', '9000');

@@ -212,7 +212,8 @@ function SelectionPanel({ selection }: { selection: string | null }) {
         <div className="pad"><button type="button" className="btn" title="Parallel axes start and end on the same lines; with several axes selected, only those"
           onClick={() => {
             const tags = useUi.getState().selected.filter((s) => s.startsWith(`${axis.gridId}#`)).map((s) => s.slice(axis.gridId.length + 1));
-            void execute('drafting.alignAxes', { gridId: axis.gridId, ...(tags.length > 1 ? { tags } : {}) });
+            // `to`: the axis selected is the reference the others line up with (an engine that does not read it lines them up as before).
+            void execute('drafting.alignAxes', { gridId: axis.gridId, to: axis.tag, ...(tags.length > 1 ? { tags } : {}) });
           }}><AlignHorizontalJustifyCenter size={14} />Line up the axes</button></div>
         <div className="pad"><button type="button" className="btn" onClick={() => void execute('element.delete', { ids: [selection] }).then(() => useUi.setState({ selection: null, selected: [] }))}><Trash2 size={14} />Delete axis</button></div>
       </aside>
