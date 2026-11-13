@@ -303,7 +303,7 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
     <aside className="panel props" aria-label="Properties" ref={body} onKeyDown={panelKeys} onFocus={panelFocus}>
       <div className="props-resize" onPointerDown={startResize} title="Drag to widen the panel" />
       <div className="panel-head">
-        <span className="eyebrow">{cls?.label ?? node.type}{inFront ? ' · in front' : selectedCount > 1 ? ` · ${selectedCount} selected` : ''}</span>
+        <span className="eyebrow"><span data-i18n-ctx="class">{cls?.label ?? node.type}</span>{inFront ? ' · in front' : selectedCount > 1 ? ` · ${selectedCount} selected` : ''}</span>
         {node.editable
           ? <Commit className="panel-title-input" value={node.name} onCommit={(name) => void execute('element.rename', { id: node.id, name })} />
           : <span className="panel-title">{node.name}</span>}

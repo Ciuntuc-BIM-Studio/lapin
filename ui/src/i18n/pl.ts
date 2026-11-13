@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const PL: Record<string, string> = {
+  // Names of the engine's classes (data-i18n-ctx="class"): the plain word keeps its other meaning.
+  'class|Solid': 'Bryła', 'class|Bar': 'Pręt zbrojeniowy', 'class|Issue': 'Problem', 'class|Grid': 'Siatka', 'class|Covering': 'Okładzina',
   "Some constraints could not stay with the shapes and were dropped.": "Niektóre więzy nie mogły pozostać przy kształtach i zostały usunięte.",
   "Editing the part: values shown are its defaults": "Edytujesz część: pokazane wartości są jej domyślnymi",
   "Some constraints the drawing made could not hold and were left out.": "Niektóre więzy utworzone podczas rysowania nie mogły zostać spełnione i zostały pominięte.",

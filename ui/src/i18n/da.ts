@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  // Names of the engine's classes (data-i18n-ctx="class"): the plain word keeps its other meaning.
+  'class|Solid': 'Legeme', 'class|Bar': 'Armeringsjern', 'class|Issue': 'Problem', 'class|Grid': 'Gitter', 'class|Covering': 'Beklædning',
   "Some constraints could not stay with the shapes and were dropped.": "Nogle begrænsninger kunne ikke blive ved formerne og blev fjernet.",
   "Editing the part: values shown are its defaults": "Du redigerer delen: de viste værdier er dens standardværdier",
   "Some constraints the drawing made could not hold and were left out.": "Nogle begrænsninger fra tegningen kunne ikke holde og blev udeladt.",

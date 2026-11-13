@@ -251,6 +251,19 @@ describe('labels the guide found in English', () => {
   });
 });
 
+describe('a class name from the engine', () => {
+  it('takes the class context, while the plain word keeps its panel meaning', async () => {
+    await loadAllLanguages();
+    // IfcBuildingElementProxy is a Studio "Solid"; a bay's sides are "Solid" as opposed to glazed (Pline).
+    expect(translate('Solid', 'ro', 'class')).toBe('Solid');
+    expect(translate('Solid', 'ro')).toBe('Pline');
+    expect(translate('Bar', 'ro', 'class')).toBe('Bară de armătură');
+    expect(translate('Bar', 'ro')).toBe('Mâna curentă');
+    expect(translate('Solid', 'de', 'class')).toBe('Volumenkörper');
+    expect(translate('Wall', 'ro', 'class')).toBe('Perete');
+  });
+});
+
 describe('a word with two meanings', () => {
   it('takes its context first (data-i18n-ctx), else its common meaning', () => {
     expect(translate('Join', 'es')).toBe('Unir');
