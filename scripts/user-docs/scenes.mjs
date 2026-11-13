@@ -7168,6 +7168,7 @@ export const scenes = [
     // My tools (group Scripts) without being run; a click runs it: its lapin.ui.ask dialog (sizes in metres, the storey) is the
     // window's own; OK makes four walls as one undo step named after the tool; one Undo takes them away. Developer extras stay
     // off: a tool is for anyone. Python is this computer's own: with none, the tool is photographed and the run left out.
+    // Decision 526: then a script's own panel in My tools, with a menu (its pulldown) and a palette whose button makes a wall.
     id: 'python-tools',
     touches: ['scripting', 'architecture', 'core'],
     async run(t) {
@@ -7175,6 +7176,7 @@ export const scenes = [
       const page = t.page;
       const walls = async () => (await t.nodes()).filter((n) => n.type === 'IfcWall').length;
       const file = `${say({ en: 'Perimeter walls', ro: 'Pereți perimetrali' }, t.lang)}.py`;
+      const file2 = `${say({ en: 'Wall tools', ro: 'Unelte pereți' }, t.lang)}.py`;
       const tool = say({ en: 'Perimeter walls', ro: 'Pereți perimetrali' }, t.lang);
       const code = [
         `# lapin: name="${tool}", version="1.0.0", tool="${tool}", icon="square", run="perimeter"`,
@@ -7227,8 +7229,67 @@ export const scenes = [
         // One Undo takes the four walls away.
         await page.locator('.undo-btn').first().click();
         await t.until(async () => (await walls()) === 0, 'one Undo takes the four walls away');
+
+        // Decision 526: a second script, run once, registers a panel of its own with a menu (a pulldown of two tools) and a
+        // palette (fields and a button). The palette's button makes a wall from its fields, one undo step named after it.
+        const panelName = say({ en: 'Walls', ro: 'Pereți' }, t.lang);
+        const menuName = say({ en: 'Openings', ro: 'Goluri' }, t.lang);
+        const paletteName = say({ en: 'Wall tools', ro: 'Unelte pereți' }, t.lang);
+        const buttonName = say({ en: 'Make wall', ro: 'Fă peretele' }, t.lang);
+        const length = say({ en: 'length', ro: 'lungime' }, t.lang);
+        const height = say({ en: 'height', ro: 'înălțime' }, t.lang);
+        const storey = say({ en: 'storey', ro: 'nivel' }, t.lang);
+        const code2 = [
+          `with lapin.ui.panel("${panelName}"):`,
+          `    with lapin.ui.menu("${menuName}", icon="door"):`,
+          `        @lapin.ui.tool("${say({ en: 'Door here', ro: 'Ușă aici' }, t.lang)}", icon="door")`,
+          '        def door():',
+          '            print("door")',
+          `        @lapin.ui.tool("${say({ en: 'Window here', ro: 'Fereastră aici' }, t.lang)}", icon="frame")`,
+          '        def window():',
+          '            print("window")',
+          `    p = lapin.ui.palette("${paletteName}", icon="wall")`,
+          `    p.heading("${say({ en: 'New wall', ro: 'Perete nou' }, t.lang)}")`,
+          `    p.field("${length}", lapin.ui.number(5.0, unit="m", min=0.5))`,
+          `    p.field("${height}", lapin.ui.number(2.8, unit="m", min=0.5))`,
+          `    p.field("${storey}", lapin.ui.storey())`,
+          `    @p.button("${buttonName}", icon="hammer")`,
+          '    def make(v):',
+          `        lapin.architecture.add_wall(storey_id=v["${storey}"].id, x1=0, y1=0, x2=v["${length}"], y2=0, height=v["${height}"])`,
+          '',
+        ].join('\n');
+        await t.call('script.save', { name: file2, code: code2 });
+        await page.evaluate(async () => { await (await import('/src/modules/scripting/store.ts')).refreshFiles(); });
+        // Run once (as the Script panel's Run does): the kernel says back what the script registered.
+        await t.call('script.run', { code: code2, name: file2, source: `mine:${file2}` });
+        const menuId = `script:mine:${file2}#${menuName}`, paletteId = `script:mine:${file2}#${paletteName}`;
+        await t.until(async () => page.evaluate(async ([g, m, p]) => (await import('/src/app/myTools.ts')).myTab().groups.some((x) => x.label === g && x.items.some((i) => i.tool === m) && x.items.some((i) => i.tool === p)), [panelName, menuId, paletteId]),
+          'the menu and the palette are put in My tools, in the script\'s own group', 60_000);
+        await t.until(async () => (await page.evaluate(async () => (await import('/src/modules/scripting/store.ts')).useScripting.getState().running)) == null, 'the run ends');
+        await t.wait(400);
+        await t.shot('python-tools-panel', { of: '.topbar', pad: 0 });
+        // The menu's button opens its tools' list under it.
+        await page.locator(`.my-band [data-my-tool="${menuId}"]`).click();
+        await page.locator('.context-menu').waitFor({ timeout: 10_000 });
+        await t.wait(200);
+        await t.shot('python-tools-menu', { of: '.context-menu', pad: 24 });
+        await page.keyboard.press('Escape');
+        // The palette's button opens the palette; its button makes the wall from the fields.
+        await page.locator(`.my-band [data-my-tool="${paletteId}"]`).click();
+        const palette = page.locator(`[data-palette="${paletteName}"]`);
+        await palette.waitFor({ timeout: 10_000 });
+        await palette.locator(`[data-ask-field="${length}"] input`).fill('6');
+        await t.wait(300);
+        await t.shot('python-tools-palette', { of: `[data-palette="${paletteName}"]`, pad: 16 });
+        await palette.locator(`[data-palette-button="${buttonName}"]`).click();
+        await t.until(async () => (await walls()) === 1, 'the palette\'s button makes one wall', 60_000);
+        await t.until(async () => (await page.evaluate(async () => (await import('/src/modules/scripting/store.ts')).useScripting.getState().running)) == null, 'the run ends');
+        const after = await page.evaluate(async () => (await import('/src/engine/session.ts')).useSession.getState().doc);
+        t.expect(after?.undoLabel === buttonName, `the button's run is one undo step named after it (${after?.undoLabel})`);
+        await palette.locator('[data-action=palette-close]').click();
       } finally {
         await t.call('script.delete', { name: file }).catch(() => undefined);
+        await t.call('script.delete', { name: file2 }).catch(() => undefined);
       }
     },
   },
@@ -9594,6 +9655,50 @@ export const scenes = [
       await t.fit();
       await t.wait(1200);
       await t.shot('furniture-plan-symbol', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
+    // Visual graphs (decision 525, docs/plan-visual-graphs.md, stage 1): a graph of a series, two points and the Wall command
+    // (a row of three walls), kept in the project; View → Graphs opens it beside the plan; the engine's ghost shows the three
+    // walls in the plan before anything is made (the model untouched); Bake makes them in one undo step.
+    id: 'graphs',
+    touches: ['graphs', 'architecture', 'core'],
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const walls = async () => (await t.nodes()).filter((n) => n.type === 'IfcWall').length;
+      const N = (id, kind, x, y, values) => ({ id, kind, x, y, ...(values ? { values } : {}) });
+      const graph = {
+        format: 1,
+        nodes: [
+          N('n1', 'series', 20, 40, { start: 0, step: 4, count: 3 }),
+          N('n2', 'point', 260, 0),
+          N('n3', 'point', 260, 120, { y: 6 }),
+          N('n4', 'command:architecture.addWall', 500, 40, { height: 2.8 }),
+        ],
+        wires: [
+          { from: 'n1', out: 'list', to: 'n2', in: 'x' }, { from: 'n1', out: 'list', to: 'n3', in: 'x' },
+          { from: 'n2', out: 'point', to: 'n4', in: 'pt:1' }, { from: 'n3', out: 'point', to: 'n4', in: 'pt:2' },
+        ],
+      };
+      const name = say({ en: 'Row of walls', ro: 'Rând de pereți' }, t.lang);
+      const saved = await t.cmd('graphs.save', { name, graph });
+      t.expect(saved?.id, 'the graph is kept in the project');
+      await t.tool('graphs.panel');
+      await page.waitForSelector('[data-testid=graphs-view]', { timeout: 10_000 });
+      await page.evaluate(async (id) => (await import('/src/modules/graphs/store.ts')).openGraph(id), saved.id);
+      await page.waitForSelector('[data-graph-node=n4]', { timeout: 10_000 });
+      await t.until(async () => (await page.locator('[data-testid=graph-ghost-plan]').getAttribute('data-count').catch(() => null)) !== null, 'the ghost is drawn in the plan');
+      t.expect(await walls() === 0, 'the preview makes nothing in the model');
+      await page.locator('[data-graph-node=n4] .head').click();
+      await t.wait(600);
+      await t.shot('graphs-panel');
+      await page.locator('[data-action=graph-bake]').click();
+      await t.until(async () => (await walls()) === 3, 'Bake makes the three walls');
+      const doc = await page.evaluate(async () => (await import('/src/engine/session.ts')).useSession.getState().doc);
+      t.expect(doc?.undoLabel === 'Bake graph', `Bake is one undo step (${doc?.undoLabel})`);
+      await t.wait(800);
+      await t.shot('graphs-baked');
     },
   },
   // [scenes:C]

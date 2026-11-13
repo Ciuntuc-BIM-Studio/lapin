@@ -7,13 +7,13 @@
  */
 
 import { useLayoutEffect, useRef, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from 'react';
-import { Settings2 } from 'lucide-react';
+import { ChevronDown, Settings2 } from 'lucide-react';
 import { create } from 'zustand';
 import { TOOL_DRAG, parseSlot } from '../app/hotbar';
 import { bindingText, hint, useBindings } from '../app/commands';
 import { notify, useUi } from '../app/store';
 import { pickFile, safeFileName, saveFile } from '../engine/files';
-import { activate, allTools } from '../platform/modules';
+import { allTools } from '../platform/modules';
 import type { ToolDef } from '../platform/module';
 import { useExtraTools } from '../platform/extraTools';
 import {
@@ -22,6 +22,7 @@ import {
 } from '../app/myTools';
 import { openContextMenu, type MenuItem } from './ContextMenu';
 import { useFlip } from './flip';
+import { pressTool } from './pulldown';
 
 /** The group a tool added by a menu goes to: the one last added to, else the last. */
 let lastGroup: string | null = null;
@@ -122,7 +123,8 @@ export function MyToolsBand({ icons, drop, onPicked }: { icons: boolean; drop?: 
     refocus.setState({ tool: null });
   }, [focus, stored]);
 
-  const press = (tl: ToolDef) => { activate(tl); onPicked?.(); };
+  // A pulldown (a script's menu, decision 526) opens its list under its button; the band stays open while one is chosen.
+  const press = (tl: ToolDef, el: HTMLElement) => { pressTool(tl, el); if (!tl.items?.length) onPicked?.(); };
   const clear = () => { setOver(null); setDragged(null); };
 
   // Dragging over: a tool lands before or after the one under the cursor; a group among the groups.
@@ -221,22 +223,22 @@ export function MyToolsBand({ icons, drop, onPicked }: { icons: boolean; drop?: 
     const small = !it.large;
     const common = {
       'data-flip': it.tool, 'data-my-tool': it.tool, type: 'button' as const,
-      onClick: () => press(tl), onContextMenu: (e: MouseEvent) => itemMenu(e, it.tool, it), onKeyDown: (e: KeyboardEvent) => key(e, it.tool),
+      onClick: (e: MouseEvent<HTMLButtonElement>) => press(tl, e.currentTarget), onContextMenu: (e: MouseEvent) => itemMenu(e, it.tool, it), onKeyDown: (e: KeyboardEvent) => key(e, it.tool),
       onDragOver: (e: DragEvent) => overItem(e, g, i, small), onDrop: dropped,
       ...toolDragProps(it.tool, true),
     };
     if (icons) return (
       <button key={it.tool} {...common} className={`tool icon-only${tool === tl.id ? ' on' : ''}${mark(g, i)}`} title={titleOf(tl, g.label)} aria-label={tl.label}>
-        <tl.icon size={18} strokeWidth={1.5} />
+        <tl.icon size={18} strokeWidth={1.5} />{tl.items?.length ? <ChevronDown className="pulldown-mark" size={9} strokeWidth={2} aria-hidden /> : null}
       </button>
     );
     return small ? (
       <button key={it.tool} {...common} className={`tool small${tool === tl.id ? ' on' : ''}${mark(g, i)}`} title={titleOf(tl)}>
-        <tl.icon size={14} strokeWidth={1.6} /><span>{tl.label}</span>
+        <tl.icon size={14} strokeWidth={1.6} /><span>{tl.label}</span>{tl.items?.length ? <ChevronDown size={10} strokeWidth={2} aria-hidden /> : null}
       </button>
     ) : (
       <button key={it.tool} {...common} className={`tool${tool === tl.id ? ' on' : ''}${mark(g, i)}`} title={titleOf(tl)}>
-        <tl.icon size={22} strokeWidth={1.5} /><span>{tl.label}</span>
+        <tl.icon size={22} strokeWidth={1.5} /><span>{tl.label}{tl.items?.length ? <ChevronDown className="pulldown-mark" size={10} strokeWidth={2} aria-hidden /> : null}</span>
         {keys && <kbd className="tool-key" data-no-i18n>{keys.split(', ')[0]}</kbd>}
       </button>
     );

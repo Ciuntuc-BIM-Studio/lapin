@@ -134,6 +134,43 @@ Where tools come from:
 
 A script deleted, uninstalled or no longer trusted takes its tools out of My tools.
 
+### Panels, menus and palettes
+
+A script can lay out its own part of **My tools**, all from code, and Lapin draws it; run the script once from the Script panel and what it registers appears:
+
+```python
+with lapin.ui.panel("Walls"):                      # a group of My tools named Walls
+    @lapin.ui.tool("Perimeter", icon="square", size="small")
+    def perimeter(): ...
+
+    with lapin.ui.menu("Openings", icon="door"):   # one button with a list of tools
+        lapin.ui.tool("Door here", run=door)
+        lapin.ui.tool("Window here", run=window)
+
+    p = lapin.ui.palette("Wall tools", icon="wall")
+    p.heading("New wall")
+    p.field("length", lapin.ui.number(5.0, unit="m", min=0.5))
+    p.field("height", lapin.ui.number(2.8, unit="m"))
+    p.field("storey", lapin.ui.storey())
+
+    @p.button("Make wall", icon="hammer")
+    def make(v):                                   # v holds the palette's values
+        lapin.architecture.add_wall(storey_id=v["storey"].id, x1=0, y1=0, x2=v["length"], y2=0, height=v["height"])
+```
+
+- **A panel** is a group of My tools with the script's name for it: its tools go there instead of **Scripts**, the first time they appear. In the header, `panel="Walls"` does the same for the header's tool.
+- **size="small"** puts a tool small: a line with its icon, three stacked one above the other.
+- **A menu** is one button that opens a list of its tools. Each of them is still a tool of its own: **Commands…** finds it and **Customize My tools…** can place it alone.
+- **A palette** is a small floating panel that its button in My tools opens and closes: headings, texts, separators, fields (the same as in a question) and buttons (`with p.row():` puts buttons side by side). Move it by its title; it stays open while you work, and remembers where it was and what you typed. A button is one **Run**, one undo step named after the button; its function gets the palette's values when it takes a parameter. The buttons wait while a script runs.
+
+![A script's own group in My tools: a menu and a palette](shots/python-tools-panel.webp)
+
+![The menu's list of tools](shots/python-tools-menu.webp)
+
+![The palette: its fields and its button](shots/python-tools-palette.webp)
+
+As for any tool, you can move them, make them small or take them out; once taken out, a tool stays out.
+
 ## Safety
 
 A script can do anything you can do on this computer: it runs in your own Python, with your rights. Run scripts you wrote or trust; a project's script and an installed one ask first.

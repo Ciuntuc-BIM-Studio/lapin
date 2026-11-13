@@ -106,6 +106,103 @@ class ToolTests(unittest.TestCase):
             lapinbim.ui.tool("  ")
 
 
+class PanelTests(unittest.TestCase):
+    """Decision 526: panels, sizes, menus and palettes, as registered for the window."""
+
+    def setUp(self):
+        _ui._registered = []
+
+    def tearDown(self):
+        _ui._registered = None
+        _ui._functions = {}
+        _ui._palettes = {}
+        _ui._within = []
+
+    def test_a_panels_tools_and_menus_name_it_and_a_menus_tools_name_their_menu(self):
+        with lapinbim.ui.panel("Walls") as walls:
+            lapinbim.ui.tool("Perimeter", run=lambda: None, size="small")
+            with lapinbim.ui.menu("Openings", icon="door", tooltip="Doors and windows"):
+                @lapinbim.ui.tool("Door")
+                def door():
+                    pass
+            walls.tool("Window", run=door, menu="Openings")
+        lapinbim.ui.tool("Loose", run=door)
+        roofs = lapinbim.ui.panel("Roofs")
+        roofs.tool("Gable", run=door, size="large")
+        by = {s["name"]: s for s in _ui._registered}
+        self.assertEqual([s["name"] for s in _ui._registered], ["Perimeter", "Openings", "Door", "Window", "Loose", "Gable"])
+        self.assertEqual(by["Perimeter"], {"name": "Perimeter", "icon": None, "tooltip": None, "call": None, "main": False, "panel": "Walls", "size": "small"})
+        self.assertEqual(by["Openings"], {"kind": "menu", "name": "Openings", "icon": "door", "tooltip": "Doors and windows", "panel": "Walls"})
+        self.assertEqual(by["Door"], {"name": "Door", "icon": None, "tooltip": None, "call": "door", "main": False, "panel": "Walls", "menu": "Openings"})
+        self.assertEqual(by["Window"]["menu"], "Openings")
+        self.assertEqual(by["Window"]["panel"], "Walls")
+        self.assertNotIn("panel", by["Loose"])
+        self.assertEqual((by["Gable"]["panel"], by["Gable"]["size"]), ("Roofs", "large"))
+        self.assertEqual(_ui._within, [])
+        with self.assertRaises(ValueError):
+            lapinbim.ui.tool("Big", run=door, size="huge")
+        with self.assertRaises(ValueError):
+            lapinbim.ui.panel("")
+
+    def test_a_palette_says_its_rows_in_order(self):
+        with lapinbim.ui.panel("Walls"):
+            p = lapinbim.ui.palette("Wall tools", icon="wall", tooltip="Make walls")
+        p.heading("New wall").text("Drawn on the active storey.").separator()
+        p.field("height", lapinbim.ui.number(2.8, unit="m", min=0.1))
+        p.field("kind", ["brick", "concrete"])
+
+        @p.button("Make", icon="hammer", tooltip="Make it")
+        def make(v):
+            return v
+
+        with p.row():
+            p.button("One", run=lambda: 1)
+            p.button("Two", run=lambda: 2)
+        spec = _ui._registered[0]
+        self.assertEqual({k: spec[k] for k in ("kind", "name", "icon", "tooltip", "panel")},
+                         {"kind": "palette", "name": "Wall tools", "icon": "wall", "tooltip": "Make walls", "panel": "Walls"})
+        self.assertEqual(spec["rows"], [
+            {"row": "heading", "text": "New wall"},
+            {"row": "text", "text": "Drawn on the active storey."},
+            {"row": "separator"},
+            {"row": "field", "field": {"key": "height", "kind": "number", "label": "Height", "value": 2.8, "unit": "m", "min": 0.1}},
+            {"row": "field", "field": {"key": "kind", "kind": "choice", "label": "Kind", "value": "brick",
+                                       "choices": [{"value": "brick", "label": "brick"}, {"value": "concrete", "label": "concrete"}]}},
+            {"row": "button", "name": "Make", "icon": "hammer", "tooltip": "Make it", "call": "make"},
+            {"row": "buttons", "buttons": [{"name": "One", "icon": None, "tooltip": None, "call": None},
+                                           {"name": "Two", "icon": None, "tooltip": None, "call": None}]},
+        ])
+        with self.assertRaises(ValueError):
+            p.field("height", 3.0)
+
+    def test_a_button_is_given_the_palettes_values_when_it_takes_them(self):
+        p = lapinbim.ui.palette("Wall tools")
+        p.field("height", lapinbim.ui.number(2.8, unit="m"))
+        p.field("count", 2)
+        got = []
+        p.button("With", run=lambda v: got.append(v))
+        p.button("Without", run=lambda: got.append("none"))
+        _ui.press("Wall tools", "With", {"height": 3, "count": 4.0})
+        _ui.press("Wall tools", "With", None)
+        _ui.press("Wall tools", "Without", {"height": 3})
+        self.assertEqual(got, [{"height": 3.0, "count": 4}, {"height": 2.8, "count": 2}, "none"])
+        self.assertIsInstance(got[0]["height"], float)
+        with self.assertRaises(LookupError):
+            _ui.press("Wall tools", "Missing", {})
+        with self.assertRaises(LookupError):
+            _ui.press("Nope", "With", {})
+
+    def test_outside_the_panel_nothing_is_registered_and_the_functions_come_back(self):
+        _ui._registered = None
+        p = lapinbim.ui.palette("P")
+
+        def f():
+            pass
+
+        self.assertIs(p.button("B", run=f), f)
+        self.assertIs(lapinbim.ui.menu("M").tool("T")(f), f)
+
+
 SCRIPT = (
     "# lapin: name=\"Tools\", tool=\"Hello\", run=\"hello\"\n"
     "print('loaded as', __name__)\n"
@@ -115,6 +212,11 @@ SCRIPT = (
     "def registered():\n"
     "    print('registered tool')\n"
     "lapin.ui.tool('By name', run=lambda: print('by name'))\n"
+    "p = lapin.ui.palette('Palette', panel='Walls')\n"
+    "p.field('height', lapin.ui.number(2.5, unit='m'))\n"
+    "@p.button('Make')\n"
+    "def make(v):\n"
+    "    print('make', v['height'])\n"
 )
 
 
@@ -147,7 +249,9 @@ class KernelToolTests(unittest.TestCase):
         self.assertTrue(done["ok"], done)
         self.assertEqual(out, "loaded as __main__\n")
         self.assertEqual(tools["source"], "mine:tools.py")
-        self.assertEqual([t["name"] for t in tools["tools"]], ["Registered", "By name"])
+        self.assertEqual([t["name"] for t in tools["tools"]], ["Registered", "By name", "Palette"])
+        self.assertEqual(tools["tools"][2]["kind"], "palette")
+        self.assertEqual(tools["tools"][2]["rows"][1]["name"], "Make")
         self.assertEqual(tools["tools"][0]["call"], "registered")
         # Without a source (the console, a script not saved), nothing is said back.
         _, none, _ = self.run_job()
@@ -165,6 +269,15 @@ class KernelToolTests(unittest.TestCase):
         _, _, done = self.run_job(tool={"name": "Missing", "call": "nope"})
         self.assertFalse(done["ok"])
         self.assertIn("no tool „Missing”", done["error"])
+
+    def test_a_palettes_button_runs_its_function_with_the_palettes_values(self):
+        out, tools, done = self.run_job(tool={"name": "Make", "call": "make", "palette": "Palette", "values": {"height": 3}})
+        self.assertTrue(done["ok"], done)
+        self.assertEqual(out, "loaded as __lapin_tool__\nmake 3.0\n")
+        self.assertIsNone(tools)
+        _, _, done = self.run_job(tool={"name": "Gone", "palette": "Palette", "values": {}})
+        self.assertFalse(done["ok"])
+        self.assertIn("no button „Gone”", done["error"])
 
     def test_a_tools_run_leaves_the_consoles_names_alone(self):
         self.k.run("x = 'console'", console=True)

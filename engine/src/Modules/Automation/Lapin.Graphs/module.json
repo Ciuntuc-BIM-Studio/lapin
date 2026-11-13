@@ -1,0 +1,1 @@
+{ "id": "graphs", "name": "Graphs", "assembly": "Lapin.Graphs.dll", "requires": ["core"] }

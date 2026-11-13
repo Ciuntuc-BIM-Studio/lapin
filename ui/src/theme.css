@@ -2304,6 +2304,21 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .script-ask-element select, .script-ask-picked { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .script-ask-element .btn { width: auto; padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .script-tool-trust { max-width: 520px; }
+/* A script's palette (decision 526): a small floating panel of the window's own, moved by its title bar. */
+.script-palette { position: fixed; z-index: 29; width: 280px; max-width: calc(100vw - 16px); max-height: calc(100vh - 80px); display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--rule-strong); border-radius: 3px; box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18); }
+.script-palette-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 6px 6px 6px 10px; border-bottom: 1px solid var(--rule); cursor: move; user-select: none; -webkit-user-select: none; touch-action: none; }
+.script-palette-head .panel-title { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.script-palette-head .icon { width: 22px; height: 22px; margin: 0; }
+.script-palette-body { display: grid; gap: 6px; padding: 10px; overflow-y: auto; }
+.script-palette-body p, .script-palette-body hr { margin: 0; }
+.script-palette-body hr { border: 0; border-top: 1px solid var(--rule); }
+.script-palette-heading { margin: 2px 0 0; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted); }
+.script-palette-body .script-ask-row { grid-template-columns: minmax(80px, 40%) 1fr; gap: 6px; }
+.script-palette-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+.script-palette-buttons .btn { flex: 1 1 auto; width: auto; padding: 6px 10px; justify-content: center; gap: 6px; font-size: 11.5px; letter-spacing: 0.03em; }
+.tool .pulldown-mark { vertical-align: middle; margin-left: 2px; }
+.tool.icon-only .pulldown-mark { position: absolute; right: 1px; bottom: 1px; }
+.tool.icon-only:has(.pulldown-mark) { position: relative; }
 @media (max-width: 900px) { .script-body { grid-template-columns: 1fr; grid-template-rows: auto 1fr 1fr; } .script-library { border-right: 0; max-height: 90px; } }
 
 /* Marker symbols (symbol pickers with previews) and the table import / convert dialogs. */
@@ -2392,3 +2407,48 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .part-tree .part-params td { padding: 2px 4px 2px 0; vertical-align: middle; }
 .part-tree .part-params tr.changed td:first-child { font-weight: 600; }
 polygon.part-plane { fill: var(--accent); fill-opacity: 0.14; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 6 4; }
+/* Visual graphs (docs/plan-visual-graphs.md, decision 525): the Graphs panel, a view beside the model's. */
+.graphs-view { position: absolute; inset: 0; container-type: size; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); }
+.graphs-toolbar { display: flex; align-items: center; gap: 6px; padding: 4px 8px; border-bottom: 1px solid var(--rule); background: var(--panel); flex-wrap: wrap; }
+.graphs-toolbar select { max-width: 180px; }
+.graphs-toolbar .graphs-name { width: 150px; }
+.graphs-toolbar .grow { flex: 1; }
+.graphs-toolbar .icon.on { color: var(--accent); }
+.graphs-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px; text-align: center; }
+.graphs-empty p { max-width: 380px; }
+.graphs-body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 230px; }
+.graphs-canvas { position: relative; overflow: hidden; outline: none; cursor: default; background-color: var(--bg);
+  background-image: radial-gradient(var(--rule-strong) 1px, transparent 1px); background-size: 20px 20px; touch-action: none; }
+.graphs-canvas.panning { cursor: grab; }
+.graphs-canvas svg { display: block; user-select: none; }
+.graph-node .body { fill: var(--raised); stroke: var(--rule-strong); }
+.graph-node .head { fill: var(--wash); stroke: var(--rule-strong); cursor: move; }
+.graph-node.on .body, .graph-node.on .head { stroke: var(--accent); stroke-width: 2; }
+.graph-node.failed .head { fill: var(--err); }
+.graph-node.failed .graph-node-title { fill: #fff; }
+.graph-node.warned .head { fill: #e8b04a; }
+.graph-node-title { font-size: 12px; font-weight: 600; fill: var(--ink); cursor: move; }
+.graph-port-label { font-size: 11px; fill: var(--ink-muted); pointer-events: none; }
+.graph-port-value { font-size: 10px; fill: var(--accent); pointer-events: none; }
+.graph-port { cursor: crosshair; }
+.graph-wire .hit { stroke: transparent; stroke-width: 10; fill: none; cursor: pointer; }
+.graph-wire.on path:not(.hit) { filter: drop-shadow(0 0 2px var(--accent)); }
+.graph-wire-count { font-size: 10px; fill: var(--ink-muted); text-anchor: middle; pointer-events: none; }
+.graph-wire-draft { stroke: var(--accent); stroke-width: 2; stroke-dasharray: 5 4; fill: none; pointer-events: none; }
+.graph-box { fill: var(--accent-wash); fill-opacity: .4; stroke: var(--accent); stroke-dasharray: 4 3; }
+.graphs-hint { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); pointer-events: none; }
+.graphs-refusal { position: absolute; left: 8px; bottom: 8px; background: var(--panel); border: 1px solid var(--rule); padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+.graphs-search { position: absolute; z-index: 5; width: 260px; background: var(--panel); border: 1px solid var(--rule-strong); border-radius: 6px; box-shadow: 0 6px 18px rgba(0, 0, 0, .18); padding: 6px; }
+.graphs-search input { width: 100%; box-sizing: border-box; }
+.graphs-search-list { max-height: 280px; overflow-y: auto; margin-top: 4px; display: flex; flex-direction: column; }
+.graphs-search-list button { display: flex; justify-content: space-between; gap: 8px; text-align: left; background: none; border: 0; padding: 4px 6px; border-radius: 3px; color: var(--ink); cursor: pointer; }
+.graphs-search-list button.on, .graphs-search-list button:hover { background: var(--accent-wash); }
+.graphs-inspector { border-left: 1px solid var(--rule); padding: 8px; overflow-y: auto; background: var(--panel); display: flex; flex-direction: column; gap: 6px; }
+.graphs-inspector .field { display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
+.graphs-inspector .field.check { flex-direction: row; align-items: center; }
+.graphs-xyz { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
+.graphs-xyz input { min-width: 0; }
+.graphs-pick { display: flex; align-items: center; gap: 6px; }
+.graphs-output { overflow-wrap: anywhere; }
+/* A narrow panel (beside the model, the usual split): the inspector under the canvas. */
+@container (max-width: 640px) { .graphs-body { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) minmax(0, 34%); } .graphs-inspector { border-left: 0; border-top: 1px solid var(--rule); } }

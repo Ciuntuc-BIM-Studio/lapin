@@ -12,7 +12,7 @@ import { Moon, Redo2, Search, Sun, Undo2 } from 'lucide-react';
 import { HelpMenu } from './HelpMenu';
 import { BrandName } from './BrandMark';
 import { useUi } from '../app/store';
-import { activate, ribbonTabs } from '../platform/modules';
+import { ribbonTabs } from '../platform/modules';
 import { redo, undo, useSession } from '../engine/session';
 import { fileActions, GUEST_SECTIONS, HOST_SECTIONS, type FileSection } from './fileActions';
 import { isGuest } from '../engine/share';
@@ -21,6 +21,7 @@ import { TabStrip, WorkspaceSwitch } from './TabStrip';
 import { useInterface, visibleTabIds } from '../app/interface';
 import { MY_TAB } from '../app/myTools';
 import { MyToolsBand, toolDragProps, toolMenu } from './MyToolsBand';
+import { pressTool } from './pulldown';
 import { bindingText, hint, useBindings } from '../app/commands';
 import type { FileAction, RibbonTabDef, ToolDef } from '../platform/module';
 
@@ -101,14 +102,14 @@ function Band({ tab: all, icons, onPicked, drop }: { tab: RibbonTabDef; icons: b
   // A group shown only while something holds (`shown`): drawn again when the preferences change (Developer extras).
   usePrefs();
   const tab = { ...all, groups: all.groups.filter((g) => g.shown?.() ?? true) };
-  const press = (tl: ToolDef) => { activate(tl); onPicked?.(); };
+  const press = (tl: ToolDef, el?: HTMLElement) => { pressTool(tl, el); if (!tl.items?.length) onPicked?.(); };
   if (icons) return (
     <div className={`band icons${drop ? ' drop' : ''}`} role="toolbar" aria-label={tab.label} data-i18n-ctx={tab.i18nCtx} onWheel={wheelAcross}>
       {tab.groups.map((g, gi) => (
         <div className="group-inline" key={g.label} role="group" aria-label={g.label}>
           {gi > 0 && <span className="group-rule" aria-hidden />}
           {[...g.tools, ...(g.small ?? [])].map((tl) => (
-            <button type="button" key={tl.id} className={`tool icon-only${tool === tl.id ? ' on' : ''}`} onClick={() => press(tl)} {...dragTool(tl)} title={hint(tl.id, tl.label, g.label)} aria-label={tl.label}>
+            <button type="button" key={tl.id} className={`tool icon-only${tool === tl.id ? ' on' : ''}`} onClick={(e) => press(tl, e.currentTarget)} {...dragTool(tl)} title={hint(tl.id, tl.label, g.label)} aria-label={tl.label}>
               <tl.icon size={18} strokeWidth={1.5} />
             </button>
           ))}
@@ -124,7 +125,7 @@ function Band({ tab: all, icons, onPicked, drop }: { tab: RibbonTabDef; icons: b
             {g.tools.map((tl) => {
               const keys = bindingText(tl.id);
               return (
-                <button type="button" key={tl.id} className={`tool${tool === tl.id ? ' on' : ''}`} onClick={() => press(tl)} {...dragTool(tl)} title={hint(tl.id, tl.label)}>
+                <button type="button" key={tl.id} className={`tool${tool === tl.id ? ' on' : ''}`} onClick={(e) => press(tl, e.currentTarget)} {...dragTool(tl)} title={hint(tl.id, tl.label)}>
                   <tl.icon size={22} strokeWidth={1.5} />
                   <span>{tl.label}</span>
                   {keys && <kbd className="tool-key" data-no-i18n>{keys.split(', ')[0]}</kbd>}
@@ -134,7 +135,7 @@ function Band({ tab: all, icons, onPicked, drop }: { tab: RibbonTabDef; icons: b
             {g.small && g.small.length > 0 && (
               <div className="small-tools">
                 {g.small.map((tl) => (
-                  <button type="button" key={tl.id} className={`tool small${tool === tl.id ? ' on' : ''}`} onClick={() => press(tl)} {...dragTool(tl)} title={hint(tl.id, tl.label)}>
+                  <button type="button" key={tl.id} className={`tool small${tool === tl.id ? ' on' : ''}`} onClick={(e) => press(tl, e.currentTarget)} {...dragTool(tl)} title={hint(tl.id, tl.label)}>
                     <tl.icon size={14} strokeWidth={1.6} /><span>{tl.label}</span>
                   </button>
                 ))}

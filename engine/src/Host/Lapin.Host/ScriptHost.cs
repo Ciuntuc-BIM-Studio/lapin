@@ -486,7 +486,9 @@ public sealed class ScriptHost(bool enabled, string? userDir, Func<JsonObject, T
     /// What a tool's run calls (<c>script.run {tool}</c>; the kernel's side is python/lapinbim/kernel.py): its name (what
     /// <c>lapin.ui.tool</c> registered it as, or its header's <c>tool=</c>), the function of the script it calls, if any
     /// (a name, never an expression), and whether the script runs as <c>__main__</c> (a header tool with no <c>run=</c>).
-    /// Null when the run is not a tool's.
+    /// A palette's button (<c>lapin.ui.palette</c>) also names its palette (<c>palette</c>) and carries the palette's values as the window holds them
+    /// (<c>values</c>: an object of at most <see cref="MaxToolValues"/> keys, at most <see cref="MaxToolValuesBytes"/> bytes
+    /// as JSON), given to its function. Null when the run is not a tool's.
     /// </summary>
     public static JsonObject? ToolOf(JsonObject? t)
     {
@@ -494,8 +496,25 @@ public sealed class ScriptHost(bool enabled, string? userDir, Func<JsonObject, T
         var name = ((string?)t["name"])?.Trim() is { Length: > 0 and <= 120 } n ? n : throw new CommandException("A script's tool has a name.");
         var call = (string?)t["call"] is { Length: > 0 } c ? Identifier.IsMatch(c) ? c : throw new CommandException("A tool calls a function of its script by its name.") : null;
         var main = t["main"] is JsonValue m && m.TryGetValue<bool>(out var b) && b;
-        return new JsonObject { ["name"] = name, ["call"] = call, ["main"] = main };
+        var o = new JsonObject { ["name"] = name, ["call"] = call, ["main"] = main };
+        if (t["palette"] is not null)
+            o["palette"] = ((string?)t["palette"])?.Trim() is { Length: > 0 and <= 120 } pal ? pal : throw new CommandException("A palette's button names its palette.");
+        switch (t["values"])
+        {
+            case null: break;
+            case JsonObject v:
+                if (v.Count > MaxToolValues) throw new CommandException($"A palette gives its button at most {MaxToolValues} values.");
+                var json = v.ToJsonString();
+                if (Encoding.UTF8.GetByteCount(json) > MaxToolValuesBytes) throw new CommandException($"A palette's values are at most {MaxToolValuesBytes / 1024} KB.");
+                o["values"] = JsonNode.Parse(json);
+                break;
+            default: throw new CommandException("A palette's values are an object of names and values.");
+        }
+        return o;
     }
+
+    /// <summary>The most values a palette's button carries (<see cref="ToolOf"/>), and their most size in bytes as JSON.</summary>
+    public const int MaxToolValues = 64, MaxToolValuesBytes = 64 * 1024;
 
     /// <summary>A question a script asks (<c>lapin.ui.ask</c>): whose connection asked it, whether that is the kernel's (a Stop takes it away), and its answer to come.</summary>
     sealed record Question(object Owner, bool Kernel, TaskCompletionSource<JsonObject> Answer);

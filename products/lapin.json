@@ -19,6 +19,7 @@
     "cost",
     "mep",
     "clash",
-    "scripting"
+    "scripting",
+    "graphs"
   ]
 }
