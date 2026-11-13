@@ -247,15 +247,40 @@ public static class Builtins
                 for (var j = 0; j < ny; j++) for (var i = 0; i < nx; i++) list.Add(o + new Vec3(i * dx, j * dy, 0));
                 return One(list);
             }, "Row by row, from the origin."),
-        new("circle", "Points on a circle", "Geometry", [In("center", "Centre", "point"), In("radius", "Radius", "number", 5), In("count", "Count", "integer", 8)], [Out("points", "Points", "point")], c =>
+        new("circle", "Points on a circle", "Geometry", [In("center", "Centre", "point"), In("radius", "Radius", "number", 5), In("count", "Count", "integer", 8), In("start", "Start angle", "number", 0)], [Out("points", "Points", "point")], c =>
         {
             var n = c.Int("count", 8);
             if (n < 1) throw new CommandException("A circle has one point or more.");
             Limit(n);
             var o = c["center"] == null ? default : c.Pt("center");
             var r = c.Num("radius", 5);
-            return One(Enumerable.Range(0, n).Select(i => (object?)(o + new Vec3(r * Math.Cos(2 * Math.PI * i / n), r * Math.Sin(2 * Math.PI * i / n), 0))).ToList());
-        }),
+            var a0 = c.Num("start", 0) * Math.PI / 180;
+            return One(Enumerable.Range(0, n).Select(i => (object?)(o + new Vec3(r * Math.Cos(a0 + 2 * Math.PI * i / n), r * Math.Sin(a0 + 2 * Math.PI * i / n), 0))).ToList());
+        }, "Count points evenly round a circle, anticlockwise from the start angle (degrees, 0 along X)."),
+        new("rotate", "Rotate", "Geometry", [In("geometry", "Points or polyline"), In("center", "Centre", "point"), In("angle", "Angle", "number", 0)], [Out("geometry", "Rotated")], c =>
+        {
+            var o = c["center"] == null ? default : c.Pt("center");
+            var a = c.Num("angle", 0) * Math.PI / 180;
+            double cos = Math.Cos(a), sin = Math.Sin(a);
+            return One(Transform(c["geometry"], "Rotate", p =>
+            {
+                double x = p.X - o.X, y = p.Y - o.Y;
+                return new Vec3(o.X + x * cos - y * sin, o.Y + x * sin + y * cos, p.Z);
+            }));
+        }, "Points or polylines turned about the vertical through the centre (none: the origin) by the angle in degrees, anticlockwise; a list of angles gives one copy for each."),
+        new("scale", "Scale", "Geometry", [In("geometry", "Points or polyline"), In("center", "Centre", "point"), In("factor", "Factor", "number", 1), In("zfactor", "Z factor", "number")], [Out("geometry", "Scaled")], c =>
+        {
+            var o = c["center"] == null ? default : c.Pt("center");
+            var k = c.Num("factor", 1);
+            var kz = c.Num("zfactor", k);
+            return One(Transform(c["geometry"], "Scale", p => new Vec3(o.X + (p.X - o.X) * k, o.Y + (p.Y - o.Y) * k, o.Z + (p.Z - o.Z) * kz)));
+        }, "Points or polylines made larger or smaller about the centre (none: the origin): 2 doubles them, 0.5 halves them; Z factor, if given, scales the heights apart."),
+        new("center", "Centre", "Geometry", [Whole("geometry", "Points or polyline", "any")], [Out("point", "Centre", "point")], c =>
+        {
+            var pts = Flat(Values.List(c["geometry"])).SelectMany(x => x is Polyline l ? l.Points : [Values.Point(x, "Points or polyline")]).ToList();
+            if (pts.Count == 0) throw new CommandException("Centre takes points or a polyline.");
+            return One(new Vec3((pts.Min(p => p.X) + pts.Max(p => p.X)) / 2, (pts.Min(p => p.Y) + pts.Max(p => p.Y)) / 2, (pts.Min(p => p.Z) + pts.Max(p => p.Z)) / 2));
+        }, "The middle of the box round the points or polylines given (all of them together): a rectangle's centre."),
         new("line", "Line", "Geometry", [In("a", "Start", "point"), In("b", "End", "point")], [Out("line", "Line", "geometry")], c => One(new Polyline([c.Pt("a"), c.Pt("b")]))),
         new("polyline", "Polyline", "Geometry", [Whole("points", "Points", "point"), Set("closed", "Closed", "bool", false)], [Out("line", "Polyline", "geometry")], c =>
         {
@@ -357,6 +382,17 @@ public static class Builtins
 
     static NodeDef Binary(string kind, string label, Func<double, double, double> f) =>
         new(kind, label, "Maths", [In("a", "A", "number", 0), In("b", "B", "number", 0)], [Out("value", "Value", "number")], c => One(f(c.Num("a", 0), c.Num("b", 0))));
+
+    /// <summary>A point or a polyline moved point by point; a list of them each (a point written as [x, y] too).</summary>
+    static object? Transform(object? v, string node, Func<Vec3, Vec3> f) => v switch
+    {
+        Vec3 p => f(p),
+        Polyline l => new Polyline(l.Points.Select(f).ToList(), l.Closed),
+        List<object?> l when l.Count is 2 or 3 && l.All(x => x is double) => f(Values.Point(l, node)),
+        List<object?> l => l.Select(x => Transform(x, node, f)).ToList(),
+        null => throw new CommandException($"{node}: points or a polyline are missing."),
+        _ => throw new CommandException($"{node} takes points or polylines, not {Values.Describe(v)}."),
+    };
 
     static IEnumerable<object?> Flat(IEnumerable<object?> l) => l.SelectMany(x => x is List<object?> inner ? Flat(inner) : [x]);
 

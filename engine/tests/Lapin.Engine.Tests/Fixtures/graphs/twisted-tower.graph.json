@@ -1,0 +1,384 @@
+{
+  "format": 2,
+  "nodes": [
+    {
+      "id": "floors",
+      "kind": "integer",
+      "x": 0,
+      "y": 0,
+      "values": {
+        "value": 12
+      },
+      "label": "Floors",
+      "palette": {
+        "order": 1,
+        "min": 3,
+        "max": 40,
+        "step": 1
+      }
+    },
+    {
+      "id": "height",
+      "kind": "number",
+      "x": 0,
+      "y": 140,
+      "values": {
+        "value": 3.2,
+        "unit": "length"
+      },
+      "label": "Floor height",
+      "palette": {
+        "order": 2,
+        "min": 2.8,
+        "max": 5,
+        "step": 0.1
+      }
+    },
+    {
+      "id": "twist",
+      "kind": "number",
+      "x": 0,
+      "y": 280,
+      "values": {
+        "value": 90,
+        "unit": "angle"
+      },
+      "label": "Total twist (degrees)",
+      "palette": {
+        "order": 3,
+        "min": 0,
+        "max": 360,
+        "step": 5
+      }
+    },
+    {
+      "id": "width",
+      "kind": "number",
+      "x": 0,
+      "y": 420,
+      "values": {
+        "value": 24,
+        "unit": "length"
+      },
+      "label": "Width",
+      "palette": {
+        "order": 4,
+        "min": 10,
+        "max": 50,
+        "step": 1
+      }
+    },
+    {
+      "id": "taper",
+      "kind": "number",
+      "x": 0,
+      "y": 560,
+      "values": {
+        "value": 0.7
+      },
+      "label": "Taper",
+      "palette": {
+        "order": 5,
+        "min": 0.4,
+        "max": 1.5,
+        "step": 0.05
+      }
+    },
+    {
+      "id": "levels",
+      "kind": "series",
+      "x": 280,
+      "y": 40,
+      "values": {
+        "start": 0
+      },
+      "label": "Levels"
+    },
+    {
+      "id": "storeys",
+      "kind": "command:storey.create",
+      "x": 560,
+      "y": 40,
+      "label": "Storeys"
+    },
+    {
+      "id": "outline",
+      "kind": "rectangle",
+      "x": 280,
+      "y": 420,
+      "label": "Outline"
+    },
+    {
+      "id": "mid",
+      "kind": "center",
+      "x": 560,
+      "y": 480,
+      "label": "Middle"
+    },
+    {
+      "id": "step",
+      "kind": "divide",
+      "x": 280,
+      "y": 240,
+      "label": "Turn per floor"
+    },
+    {
+      "id": "angles",
+      "kind": "series",
+      "x": 560,
+      "y": 240,
+      "values": {
+        "start": 0
+      },
+      "label": "Turns"
+    },
+    {
+      "id": "shrink",
+      "kind": "formula",
+      "x": 280,
+      "y": 600,
+      "values": {
+        "formula": "(a - 1) / max(b - 1, 1)"
+      },
+      "label": "Size step"
+    },
+    {
+      "id": "sizes",
+      "kind": "series",
+      "x": 560,
+      "y": 600,
+      "values": {
+        "start": 1
+      },
+      "label": "Sizes"
+    },
+    {
+      "id": "scaled",
+      "kind": "scale",
+      "x": 840,
+      "y": 480,
+      "label": "Taper each floor"
+    },
+    {
+      "id": "turned",
+      "kind": "rotate",
+      "x": 1120,
+      "y": 380,
+      "label": "Twist each floor"
+    },
+    {
+      "id": "floor",
+      "kind": "command:architecture.addSlab",
+      "x": 1400,
+      "y": 120,
+      "label": "Floor slabs"
+    },
+    {
+      "id": "inset",
+      "kind": "scale",
+      "x": 1400,
+      "y": 420,
+      "values": {
+        "factor": 0.85
+      },
+      "label": "Column line"
+    },
+    {
+      "id": "corners",
+      "kind": "corners",
+      "x": 1680,
+      "y": 420,
+      "label": "Column points"
+    },
+    {
+      "id": "columns",
+      "kind": "command:structure.addColumn",
+      "x": 1960,
+      "y": 380,
+      "label": "Columns"
+    }
+  ],
+  "wires": [
+    {
+      "from": "height",
+      "out": "value",
+      "to": "levels",
+      "in": "step"
+    },
+    {
+      "from": "floors",
+      "out": "value",
+      "to": "levels",
+      "in": "count"
+    },
+    {
+      "from": "levels",
+      "out": "list",
+      "to": "storeys",
+      "in": "elevation"
+    },
+    {
+      "from": "height",
+      "out": "value",
+      "to": "storeys",
+      "in": "height"
+    },
+    {
+      "from": "width",
+      "out": "value",
+      "to": "outline",
+      "in": "width"
+    },
+    {
+      "from": "width",
+      "out": "value",
+      "to": "outline",
+      "in": "depth"
+    },
+    {
+      "from": "outline",
+      "out": "line",
+      "to": "mid",
+      "in": "geometry"
+    },
+    {
+      "from": "twist",
+      "out": "value",
+      "to": "step",
+      "in": "a"
+    },
+    {
+      "from": "floors",
+      "out": "value",
+      "to": "step",
+      "in": "b"
+    },
+    {
+      "from": "step",
+      "out": "value",
+      "to": "angles",
+      "in": "step"
+    },
+    {
+      "from": "floors",
+      "out": "value",
+      "to": "angles",
+      "in": "count"
+    },
+    {
+      "from": "taper",
+      "out": "value",
+      "to": "shrink",
+      "in": "a"
+    },
+    {
+      "from": "floors",
+      "out": "value",
+      "to": "shrink",
+      "in": "b"
+    },
+    {
+      "from": "shrink",
+      "out": "value",
+      "to": "sizes",
+      "in": "step"
+    },
+    {
+      "from": "floors",
+      "out": "value",
+      "to": "sizes",
+      "in": "count"
+    },
+    {
+      "from": "outline",
+      "out": "line",
+      "to": "scaled",
+      "in": "geometry"
+    },
+    {
+      "from": "mid",
+      "out": "point",
+      "to": "scaled",
+      "in": "center"
+    },
+    {
+      "from": "sizes",
+      "out": "list",
+      "to": "scaled",
+      "in": "factor"
+    },
+    {
+      "from": "scaled",
+      "out": "geometry",
+      "to": "turned",
+      "in": "geometry"
+    },
+    {
+      "from": "mid",
+      "out": "point",
+      "to": "turned",
+      "in": "center"
+    },
+    {
+      "from": "angles",
+      "out": "list",
+      "to": "turned",
+      "in": "angle"
+    },
+    {
+      "from": "turned",
+      "out": "geometry",
+      "to": "floor",
+      "in": "points"
+    },
+    {
+      "from": "storeys",
+      "out": "ids",
+      "to": "floor",
+      "in": "storeyId"
+    },
+    {
+      "from": "turned",
+      "out": "geometry",
+      "to": "inset",
+      "in": "geometry"
+    },
+    {
+      "from": "mid",
+      "out": "point",
+      "to": "inset",
+      "in": "center"
+    },
+    {
+      "from": "inset",
+      "out": "geometry",
+      "to": "corners",
+      "in": "line"
+    },
+    {
+      "from": "corners",
+      "out": "points",
+      "to": "columns",
+      "in": "pt:"
+    },
+    {
+      "from": "storeys",
+      "out": "ids",
+      "to": "columns",
+      "in": "storeyId"
+    },
+    {
+      "from": "angles",
+      "out": "list",
+      "to": "columns",
+      "in": "rotation"
+    }
+  ],
+  "tool": {
+    "show": true,
+    "name": "Twisted tower",
+    "icon": "building",
+    "tooltip": "A tower of floors, each turned a little more than the one below",
+    "group": "Graphs"
+  }
+}
