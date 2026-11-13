@@ -3276,6 +3276,29 @@ export const PL: Record<string, string> = {
   'Measured from': 'Mierzone od', 'Measured to': 'Mierzone do', 'Wall start': 'Początek ściany', 'Meeting wall’s face': 'Lico ściany stykającej się', 'Meeting wall’s core face': 'Lico rdzenia ściany stykającej się', 'Opening start': 'Początek otworu', 'Opening centre': 'Środek otworu', 'Opening end': 'Koniec otworu',
   // The type configurators' preview (decision 529)
   "Drawn by the engine, as the drawings draw it: a sample wall of the type with another joined to it in T. Hover a layer's row to light it up in all three.": "Narysowane przez silnik, tak jak rysują to rysunki: ściana wzorcowa tego typu z drugą dołączoną w T. Najedź na wiersz warstwy, aby podświetlić ją we wszystkich trzech.", "The sample wall's length": "Długość ściany wzorcowej", "The sample wall's height; empty: as the type's top says, the storey above": "Wysokość ściany wzorcowej; puste: jak mówi góra typu, kondygnacja powyżej", "The preview could not be drawn.": "Nie udało się narysować podglądu.",
+  // The CAD command line's prompts of the constraint tools
+  "{0}: pick {1} (Esc ends)": "{0}: wskaż {1} (Esc kończy)",
+  "{0} takes {1}: nothing like that is drafted there.": "{0} przyjmuje {1}: nic takiego tam nie jest narysowane.",
+  "Dimension: pick a second point or line, or Enter for the length (Esc ends)": "Wymiar: wskaż drugi punkt lub linię albo Enter dla długości (Esc kończy)",
+  "Dimension: pick a point, a line or a circle (Esc ends)": "Wymiar: wskaż punkt, linię lub okrąg (Esc kończy)",
+  "Dimension takes a point, a line, a circle or an arc: nothing like that is drafted there.": "Wymiar przyjmuje punkt, linię, okrąg lub łuk: nic takiego tam nie jest narysowane.",
+  "{0} {1}: type a value, =formula, or Enter to keep it {2}": "{0} {1}: wpisz wartość, =formułę albo Enter, aby ją zachować {2}",
+  "a point": "punkt",
+  "a line": "linię",
+  "a circle or an arc": "okrąg lub łuk",
+  "a polyline": "polilinię",
+  "nothing more": "nic więcej",
+  "or": "lub",
+  "Type a value, or =formula.": "Wpisz wartość lub =formułę.",
+  "Type a formula after =.": "Wpisz formułę po =.",
+  "An angle is a number of degrees.": "Kąt to liczba stopni.",
+  "A length is a number, with its unit if you like.": "Długość to liczba, w razie potrzeby z jednostką.",
+  "A radius or a diameter is more than nothing.": "Promień lub średnica jest większa od zera.",
+  "A distance is not negative.": "Odległość nie jest ujemna.",
+  "vertex": "wierzchołek",
+  "edge": "krawędź",
+  "curve": "krzywa",
+  "whole": "całość",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

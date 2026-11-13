@@ -768,6 +768,7 @@ const studio: LapinModule = {
     groups: [
       { label: 'Solids', tools: [cmd('extrude', 'Extrude', Box, 'EXTRUDE'), cmd('sweep', 'Sweep', Waypoints, 'SWEEP'), cmd('revolve', 'Revolve', RefreshCcw, 'REVOLVE'), cmd('loft', 'Loft', Layers2, 'LOFT'), { id: 'studio.editSketch', label: 'Edit sketch', icon: PenTool, run: () => void editSketch() }] },
       { label: 'Thick', tools: [cmd('ring', 'Ring', Cylinder, 'RING'), cmd('box', 'Box', Container, 'BOX'), cmd('wallStrip', 'Wall strip', BrickWall, 'TWALL')] },
+      { label: 'Constraints', tools: [constraintTool(GEOMETRIC[0]), constraintTool(GEOMETRIC[2]), constraintTool(GEOMETRIC[3]), constraintTool(DIMENSIONS[0])], small: [...GEOMETRIC.filter((t) => !['coincident', 'horizontal', 'vertical'].includes(t.kind)).map(constraintTool), ...DIMENSIONS.slice(1).map(constraintTool)] },
       {
         label: 'Sketch',
         tools: [sketchTool('line', 'LINE', 'Line', Slash, 'KL'), sketchTool('rect', 'RECTANGLE', 'Rectangle', RectangleHorizontal, 'KR'), sketchTool('circle', 'CIRCLE', 'Circle', Circle, 'KC'),
@@ -785,7 +786,6 @@ const studio: LapinModule = {
         tools: [primitive('box', 'Cuboid', Box), primitive('cylinder', 'Cylinder', Cylinder)],
         small: [primitive('sphere', 'Sphere', CircleDot), primitive('cone', 'Cone', Cone), primitive('torus', 'Torus', Torus), primitive('wedge', 'Wedge', TriangleRight), primitive('pyramid', 'Pyramid', Pyramid)],
       },
-      { label: 'Constraints', tools: [constraintTool(GEOMETRIC[0]), constraintTool(GEOMETRIC[2]), constraintTool(GEOMETRIC[3]), constraintTool(DIMENSIONS[0])], small: [...GEOMETRIC.filter((t) => !['coincident', 'horizontal', 'vertical'].includes(t.kind)).map(constraintTool), ...DIMENSIONS.slice(1).map(constraintTool)] },
       { label: 'Part', tools: [editPartTool, finishPartTool] },
       { label: 'Families', tools: [placeFamilyTool, familiesDialogTool], small: [familyFromSketch] },
       {

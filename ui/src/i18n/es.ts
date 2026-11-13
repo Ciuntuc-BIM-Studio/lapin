@@ -3275,6 +3275,29 @@ export const ES: Record<string, string> = {
   'Measured from': 'Medido desde', 'Measured to': 'Medido hasta', 'Wall start': 'Inicio del muro', 'Meeting wall’s face': 'Cara del muro que concurre', 'Meeting wall’s core face': 'Cara del núcleo del muro que concurre', 'Opening start': 'Inicio del hueco', 'Opening centre': 'Centro del hueco', 'Opening end': 'Final del hueco',
   // The type configurators' preview (decision 529)
   "Drawn by the engine, as the drawings draw it: a sample wall of the type with another joined to it in T. Hover a layer's row to light it up in all three.": "Dibujado por el motor, como lo dibujan los planos: un muro de muestra del tipo con otro unido en T. Pase el ratón por la fila de una capa para resaltarla en los tres.", "The sample wall's length": "Longitud del muro de muestra", "The sample wall's height; empty: as the type's top says, the storey above": "Altura del muro de muestra; vacía: según la parte superior del tipo, la planta de arriba", "The preview could not be drawn.": "No se pudo dibujar la vista previa.",
+  // The CAD command line's prompts of the constraint tools
+  "{0}: pick {1} (Esc ends)": "{0}: elige {1} (Esc termina)",
+  "{0} takes {1}: nothing like that is drafted there.": "{0} toma {1}: no hay nada así dibujado ahí.",
+  "Dimension: pick a second point or line, or Enter for the length (Esc ends)": "Cota: elige un segundo punto o línea, o Intro para la longitud (Esc termina)",
+  "Dimension: pick a point, a line or a circle (Esc ends)": "Cota: elige un punto, una línea o un círculo (Esc termina)",
+  "Dimension takes a point, a line, a circle or an arc: nothing like that is drafted there.": "La cota toma un punto, una línea, un círculo o un arco: no hay nada así dibujado ahí.",
+  "{0} {1}: type a value, =formula, or Enter to keep it {2}": "{0} {1}: escribe un valor, =fórmula, o Intro para conservarlo {2}",
+  "a point": "un punto",
+  "a line": "una línea",
+  "a circle or an arc": "un círculo o un arco",
+  "a polyline": "una polilínea",
+  "nothing more": "nada más",
+  "or": "o",
+  "Type a value, or =formula.": "Escribe un valor o =fórmula.",
+  "Type a formula after =.": "Escribe una fórmula después de =.",
+  "An angle is a number of degrees.": "Un ángulo es un número de grados.",
+  "A length is a number, with its unit if you like.": "Una longitud es un número, con su unidad si quieres.",
+  "A radius or a diameter is more than nothing.": "Un radio o un diámetro es mayor que cero.",
+  "A distance is not negative.": "Una distancia no es negativa.",
+  "vertex": "vértice",
+  "edge": "arista",
+  "curve": "curva",
+  "whole": "todo",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

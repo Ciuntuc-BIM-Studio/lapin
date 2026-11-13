@@ -10048,8 +10048,10 @@ export const scenes = [
       await fitSmall();
       await t.button('Studio', { exact: true });
       await t.wait(400);
-      // The ribbon is wider than the window: scrolled to where the Constraints group stands.
-      await page.evaluate(() => { const g = [...document.querySelectorAll('.band .group-label')].find((x) => x.textContent === 'Constraints'); g?.scrollIntoView({ inline: 'start', block: 'nearest' }); });
+      // The group is the third of the tab: whole in the window without scrolling the ribbon (scrolled to only if a narrow window needs it).
+      const seen = await page.evaluate(() => { const g = [...document.querySelectorAll('.band .group-label')].find((x) => x.textContent === 'Constraints')?.closest('.group'); const r = g?.getBoundingClientRect(); return r ? { left: r.left, right: r.right, width: window.innerWidth } : null; });
+      t.expect(seen && seen.right <= seen.width, 'the Constraints group is whole in the window at 1440 px');
+      if (seen && seen.right > seen.width) await page.evaluate(() => { const g = [...document.querySelectorAll('.band .group-label')].find((x) => x.textContent === 'Constraints'); g?.scrollIntoView({ inline: 'start', block: 'nearest' }); });
       await page.mouse.move(700, 600);
       await t.wait(400);
       t.expect((await page.locator('.band').getByText('Constraints', { exact: true }).count()) > 0, 'the Studio tab has a Constraints group');

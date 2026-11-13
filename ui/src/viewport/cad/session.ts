@@ -183,11 +183,11 @@ if (typeof window !== 'undefined') window.addEventListener('pointerdown', (e) =>
 /** What was typed for a point put down (a length in metres, an angle in degrees), as `draw` will want it. */
 export const typedAt = (p: Vec2): { length?: number; angle?: number } | undefined => trail.find((x) => dist(x.p, p) < 1e-7)?.typed;
 
-function noteFed(p: Vec2, o: { typed?: { length?: number; angle?: number }; free?: boolean; aim?: Aimed | null } = {}): void {
+function noteFed(p: Vec2, o: { typed?: PlacedPoint['typed']; free?: boolean; aim?: Aimed | null } = {}): void {
   const a = o.aim;
-  const typed = o.typed && (o.typed.length != null || o.typed.angle != null) ? o.typed : undefined;
+  const typed = o.typed && (o.typed.length != null || o.typed.angle != null || o.typed.size) ? o.typed : undefined;
   // A typed point lies where the typing put it, off the aim's own; the line that held the direction still holds it.
-  const inference = !a ? null : typed ? (a.lock ? { lock: a.lock } : null) : dist(a.point, p) < 1e-9 && (a.mode || a.lock) ? { mode: a.mode, shapeId: a.shapeId, lock: a.lock } : null;
+  const inference = !a ? null : typed ? (a.lock ? { lock: a.lock, ...(a.to ? { to: a.to } : {}) } : null) : dist(a.point, p) < 1e-9 && (a.mode || a.lock) ? { mode: a.mode, shapeId: a.shapeId, lock: a.lock, ...(a.to ? { to: a.to } : {}) } : null;
   trail = [...trail, { p, inference, free: !!o.free, ...(typed ? { typed } : {}) }].slice(-64);
 }
 
@@ -701,7 +701,14 @@ export const submit = serial(async (raw: string): Promise<void> => {
   if (step.want === 'point' || step.want === 'select' || step.want === 'pick' || step.want === 'none') {
     const frame = s.host?.isPlan?.() ? ucsOf(useLocation.getState().loc) : null;
     const parsed = parseCoordinateInput(text, { last: step.base ?? s.lastPoint, frame });
-    if (parsed?.kind === 'point' && step.point) { useCad.setState({ lastPoint: parsed.pt }); noteFed(parsed.pt); await advance(step.point(parsed.pt)); return; }
+    if (parsed?.kind === 'point' && step.point) {
+      useCad.setState({ lastPoint: parsed.pt });
+      // A rectangle's corner typed as @width,height: its size is what was typed.
+      const base = step.base, size = step.rect && base && /^@/.test(text) && text.includes(',') ? { w: Math.abs(parsed.pt.x - base.x), h: Math.abs(parsed.pt.y - base.y) } : undefined;
+      noteFed(parsed.pt, size ? { typed: { size } } : {});
+      await advance(step.point(parsed.pt));
+      return;
+    }
     if (parsed?.kind === 'distance') {
       if (step.value) { await advance(step.value(parsed.d)); return; }
       // A distance from the base toward the cursor (squared by ortho).

@@ -1,5 +1,6 @@
 /** The overlay a 2D view draws for drafting: the snap, the guides, the running command's preview and a move's trace (the aim itself is in aim.ts). */
 
+import { t } from '../../i18n';
 import type { Vec2 } from '../../platform/module';
 import type { SnapMode } from './snaps';
 import { polylines, type Shape } from './shapes';
@@ -68,6 +69,7 @@ export function CadOverlay({ aimed, toScreen }: { aimed: Aimed | null; toScreen:
       })}
       {preview.flatMap((s, i) => pointsOf(s, toScreen).map((pts, j) => <polyline key={`${i}:${j}`} className="cad-preview" points={pts} />))}
       {labels.map((l, i) => { const q = toScreen(l.at); return <text key={`t${i}`} className="cad-preview-text" x={q.x} y={q.y - 4} textAnchor="middle">{l.text}</text>; })}
+      {(aimed.lock === 'parallel' || aimed.lock === 'tangent') && <text className="cad-preview-text" x={c.x + 9} y={c.y - 9}>{t(aimed.lock === 'parallel' ? 'Parallel' : 'Tangent')}</text>}
       {aimed.mode && <g className="cad-snap">{GLYPH[aimed.mode](c.x, c.y)}<text x={c.x + 9} y={c.y - 9}>{aimed.mode}</text></g>}
     </g>
   );

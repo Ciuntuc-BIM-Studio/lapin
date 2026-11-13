@@ -12,7 +12,7 @@ Constrângerile aparțin schiței și se salvează cu proiectul. Nu se scriu în
 
 ## Uneltele Constrângeri
 
-**Studio → Constrângeri** are câte o unealtă pentru fiecare fel. Fiecare cere în vedere ce îi trebuie: clic pe un punct, o muchie, un cerc sau un arc. Partea de sub cursor se luminează și își spune numele (*vertex*, *start*, *end*, *centru*, *muchie*, *curbă*) și se prinde ca la desenare. Când alegerile sunt complete, constrângerea se face, iar unealta rămâne pornită pentru următoarea; **Esc** o oprește.
+**Studio → Constrângeri** (al treilea grup din fila Studio, deci se vede întreg la 1440 px fără să derulezi panglica) are câte o unealtă pentru fiecare fel. Fiecare cere în vedere ce îi trebuie: clic pe un punct, o muchie, un cerc sau un arc. Partea de sub cursor se luminează și își spune numele (*vertex*, *start*, *end*, *centru*, *muchie*, *curbă*) și se prinde ca la desenare. Când alegerile sunt complete, constrângerea se face, iar unealta rămâne pornită pentru următoarea; **Esc** o oprește.
 
 ![O unealtă luminează muchia de sub cursor și o numește](shots/sketch-constraints-pick.webp)
 
@@ -93,7 +93,8 @@ Trage un punct al unei forme constrânse de mânerul lui: restul schiței urmeaz
 
 - o prindere de **capăt** sau de **centru** face punctul coincident cu el; o prindere de **mijloc** îl face mijlocul acelei muchii; **pe muchie**, **cadran** și **intersecție** pun punctul pe obiect; **perpendicular** îl pune pe muchie și face latura perpendiculară pe ea;
 - o latură trasă pe linia **ortho** sau pe una **polară** este orizontală sau verticală;
-- o lungime sau un unghi tastat devine o cotă conducătoare; o rază tastată, o rază;
+- o linie trasă lângă o altă linie desenată, într-o direcție la câteva grade de a ei, se fixează pe ea și arată indiciul **Paralelă**: cele două laturi devin paralele. O linie începută pe un arc sau pe un cerc și trasă pe tangenta lui, sau care se termină unde ar atinge doar cercul, arată indiciul **Tangentă** și devine tangentă la el (capăt la capăt când începe la un capăt al arcului). Niciuna nu se oferă cu ortho pornit;
+- o lungime sau un unghi tastat devine o cotă conducătoare; o rază tastată, o rază; un dreptunghi tastat ca `@lățime,înălțime` păstrează ambele dimensiuni ca distanțe conducătoare;
 - un dreptunghi are două laturi orizontale și două verticale, iar o linie începută unde s-a sfârșit precedenta se leagă de ea.
 
 Ține apăsat **Ctrl** (⌘ pe Mac) la clic ca să pui punctul acela fără constrângeri. Comutatorul **CNSTR** din linia de comandă pornește și oprește totul. Forma și constrângerile ei sunt un singur pas: un **Undo** le scoate pe amândouă. O constrângere care ar intra în conflict cu schița e lăsată deoparte; forma se desenează oricum.

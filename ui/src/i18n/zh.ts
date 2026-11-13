@@ -3267,6 +3267,29 @@ export const ZH: Record<string, string> = {
   'Measured from': '测量起点', 'Measured to': '测量终点', 'Wall start': '墙起点', 'Meeting wall’s face': '相交墙的表面', 'Meeting wall’s core face': '相交墙的芯层表面', 'Opening start': '洞口起点', 'Opening centre': '洞口中心', 'Opening end': '洞口终点',
   // The type configurators' preview (decision 529)
   "Drawn by the engine, as the drawings draw it: a sample wall of the type with another joined to it in T. Hover a layer's row to light it up in all three.": "由引擎按图纸的画法绘制：该类型的一段样墙，另一段墙以 T 形连接。将鼠标悬停在某层的行上，即可在三个视图中高亮该层。", "The sample wall's length": "样墙的长度", "The sample wall's height; empty: as the type's top says, the storey above": "样墙的高度；留空：按类型的顶部设定，即上一楼层", "The preview could not be drawn.": "无法绘制预览。",
+  // The CAD command line's prompts of the constraint tools
+  "{0}: pick {1} (Esc ends)": "{0}：选取{1}（Esc 结束）",
+  "{0} takes {1}: nothing like that is drafted there.": "{0}需要{1}：那里没有绘制这样的对象。",
+  "Dimension: pick a second point or line, or Enter for the length (Esc ends)": "尺寸标注：选取第二个点或线，或按 Enter 取长度（Esc 结束）",
+  "Dimension: pick a point, a line or a circle (Esc ends)": "尺寸标注：选取点、线或圆（Esc 结束）",
+  "Dimension takes a point, a line, a circle or an arc: nothing like that is drafted there.": "尺寸标注需要点、线、圆或圆弧：那里没有绘制这样的对象。",
+  "{0} {1}: type a value, =formula, or Enter to keep it {2}": "{0} {1}：输入数值、=公式，或按 Enter 保持原值 {2}",
+  "a point": "一个点",
+  "a line": "一条线",
+  "a circle or an arc": "一个圆或圆弧",
+  "a polyline": "一条多段线",
+  "nothing more": "没有更多",
+  "or": "或",
+  "Type a value, or =formula.": "输入数值或 =公式。",
+  "Type a formula after =.": "在 = 之后输入公式。",
+  "An angle is a number of degrees.": "角度是以度为单位的数字。",
+  "A length is a number, with its unit if you like.": "长度是一个数字，可带单位。",
+  "A radius or a diameter is more than nothing.": "半径或直径必须大于零。",
+  "A distance is not negative.": "距离不能为负。",
+  "vertex": "顶点",
+  "edge": "边",
+  "curve": "曲线",
+  "whole": "整体",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

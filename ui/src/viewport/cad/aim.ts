@@ -14,14 +14,16 @@ import { fromFrame, isIdentity, toFrame, ucsOf, useLocation, type Frame } from '
 import { fromJson, keyPoints, nearestOnShape, type Shape } from './shapes';
 import { applyOrtho } from './input';
 import { track, trackOnOrtho, type Guide } from './tracking';
+import { parallelHold, relatables, tangentHold, type CurveRef, type SideRef } from './relations';
+import type { Ref } from './constraints';
 import { useCad, type CadHost } from './session';
 import type { RegionTest } from '../selectBox';
 import { viewFrameAt } from '../viewFrame';
 
 /** What holds an aimed point that no object snap took: the ortho line from the base (on, or Shift held), a polar angle from the base, or a tracking guide through an acquired point. */
-export type AimLock = 'ortho' | 'polar' | 'tracking';
+export type AimLock = 'ortho' | 'polar' | 'tracking' | 'parallel' | 'tangent';
 
-export interface Aimed { point: Vec2; kind: 'point' | 'grid' | 'free'; mode?: SnapMode; guides: Guide[]; lock?: AimLock; /** The drafted shape the object snap took the point from (its id), when it is one. */ shapeId?: string }
+export interface Aimed { point: Vec2; kind: 'point' | 'grid' | 'free'; mode?: SnapMode; guides: Guide[]; lock?: AimLock; /** The drafted shape the object snap took the point from (its id), when it is one. */ shapeId?: string; /** With a parallel or tangent lock: the drafted side or curve that holds it. */ to?: Ref }
 
 /**
  * The aim's rule, with the snap already found: an object snap (other than
@@ -30,9 +32,14 @@ export interface Aimed { point: Vec2; kind: 'point' | 'grid' | 'free'; mode?: Sn
  * angle; then the nearest snap; then the grid or the raw point (squared to
  * the base with ortho). `lock` says which constraint actually holds the point.
  */
-export interface AimInput { base: Vec2 | null; ortho: boolean; polar: boolean; snap: { point: Vec2; mode: SnapMode } | null; acquired: readonly Vec2[]; tol: number; grid?: number; polarStep?: number; frame?: Frame | null }
+export interface AimInput { base: Vec2 | null; ortho: boolean; polar: boolean; snap: { point: Vec2; mode: SnapMode } | null; acquired: readonly Vec2[]; tol: number; grid?: number; polarStep?: number; frame?: Frame | null; /** The drafted sides and curves a line may be held parallel or tangent to, and how near the cursor they must pass (metres). */ relate?: { sides: readonly SideRef[]; curves: readonly CurveRef[]; reach: number } }
 
 export function resolveAim(raw: Vec2, c: AimInput): Aimed {
+  // A line held parallel to a drafted one, or tangent to a curve (in the world: the sides and curves are): after the object snaps, before the ortho and guide lines (and never with ortho on).
+  if (c.relate && c.base && !c.ortho && !(c.snap && c.snap.mode !== 'nearest')) {
+    const h = tangentHold(c.base, raw, c.relate.curves, c.tol) ?? parallelHold(c.base, raw, c.relate.sides, c.relate.reach, c.tol);
+    if (h) return { point: h.point, kind: 'point', guides: [{ from: h.guide.from, to: h.guide.to, kind: h.lock }], lock: h.lock, to: h.to };
+  }
   // In a UCS (decision 445) ortho, the guides, polar angles and the grid follow its axes: the same rule in its coordinates.
   if (c.frame && !isIdentity(c.frame)) {
     const f = c.frame;
@@ -127,6 +134,7 @@ export function useCadCanvas(o: {
   const planRef = useRef(o.drawing?.kind === 'plan');
   planRef.current = o.drawing?.kind === 'plan';
   const { shapes, drafts, owners } = useMemo(() => snapShapes(o.drawing, o.extra), [o.drawing, o.extra]);
+  const related = useMemo(() => relatables(drafts), [drafts]);
   const index = useMemo(() => new SnapIndex(shapes), [shapes]);
   const acquired = useRef<Vec2[]>([]);
   const hold = useRef<{ p: Vec2; timer: ReturnType<typeof setTimeout> } | null>(null);
@@ -204,11 +212,11 @@ export function useCadCanvas(o: {
       }
     } else if (hold.current) { clearTimeout(hold.current.timer); hold.current = null; }
     const frame = planRef.current ? ucsOf(useLocation.getState().loc) ?? axesRef.current : null;
-    const aimed = resolveAim(raw, { base, ortho: cad.ortho || !!o2.orthoHeld, polar: cad.polar, polarStep: prefs.polarStep, snap: s, acquired: acquired.current, tol, grid: o2.grid, frame });
+    const aimed = resolveAim(raw, { base, ortho: cad.ortho || !!o2.orthoHeld, polar: cad.polar, polarStep: prefs.polarStep, snap: s, acquired: acquired.current, tol, grid: o2.grid, frame, relate: { ...related, reach: 40 / scaleRef.current } });
     // The drafted shape the point lies on: the snap's own, else the first drafted shape through the point (the model's lines may be found first where they coincide).
     const owner = aimed.mode ? (s && aimed.mode === s.mode ? owners[s.shape] : null) ?? draftThrough(drafts, aimed.point, aimed.mode) : null;
     return owner ? { ...aimed, shapeId: owner } : aimed;
-  }, [shapes, index, owners, drafts]);
+  }, [shapes, index, owners, drafts, related]);
 
   /** A point the gesture placed: acquired for the guides. */
   const acquire = useCallback((p: Vec2) => {

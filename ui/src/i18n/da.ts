@@ -3270,6 +3270,29 @@ export const DA: Record<string, string> = {
   'Measured from': 'Målt fra', 'Measured to': 'Målt til', 'Wall start': 'Vægstart', 'Meeting wall’s face': 'Mødende vægs flade', 'Meeting wall’s core face': 'Mødende vægs kerneflade', 'Opening start': 'Åbningens start', 'Opening centre': 'Åbningens midte', 'Opening end': 'Åbningens slutning',
   // The type configurators' preview (decision 529)
   "Drawn by the engine, as the drawings draw it: a sample wall of the type with another joined to it in T. Hover a layer's row to light it up in all three.": "Tegnet af motoren, som tegningerne tegner den: en prøvevæg af typen med en anden sluttet til den i T. Hold musen over et lags række for at fremhæve det i alle tre.", "The sample wall's length": "Prøvevæggens længde", "The sample wall's height; empty: as the type's top says, the storey above": "Prøvevæggens højde; tom: som typens top siger, etagen over", "The preview could not be drawn.": "Forhåndsvisningen kunne ikke tegnes.",
+  // The CAD command line's prompts of the constraint tools
+  "{0}: pick {1} (Esc ends)": "{0}: vælg {1} (Esc afslutter)",
+  "{0} takes {1}: nothing like that is drafted there.": "{0} tager {1}: der er ikke tegnet noget lignende dér.",
+  "Dimension: pick a second point or line, or Enter for the length (Esc ends)": "Mål: vælg et andet punkt eller en anden linje, eller Enter for længden (Esc afslutter)",
+  "Dimension: pick a point, a line or a circle (Esc ends)": "Mål: vælg et punkt, en linje eller en cirkel (Esc afslutter)",
+  "Dimension takes a point, a line, a circle or an arc: nothing like that is drafted there.": "Målet tager et punkt, en linje, en cirkel eller en bue: der er ikke tegnet noget lignende dér.",
+  "{0} {1}: type a value, =formula, or Enter to keep it {2}": "{0} {1}: skriv en værdi, =formel, eller Enter for at beholde den {2}",
+  "a point": "et punkt",
+  "a line": "en linje",
+  "a circle or an arc": "en cirkel eller en bue",
+  "a polyline": "en polylinje",
+  "nothing more": "ikke mere",
+  "or": "eller",
+  "Type a value, or =formula.": "Skriv en værdi eller =formel.",
+  "Type a formula after =.": "Skriv en formel efter =.",
+  "An angle is a number of degrees.": "En vinkel er et antal grader.",
+  "A length is a number, with its unit if you like.": "En længde er et tal, med enhed hvis du vil.",
+  "A radius or a diameter is more than nothing.": "En radius eller en diameter er større end nul.",
+  "A distance is not negative.": "En afstand er ikke negativ.",
+  "vertex": "hjørne",
+  "edge": "kant",
+  "curve": "kurve",
+  "whole": "hele",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

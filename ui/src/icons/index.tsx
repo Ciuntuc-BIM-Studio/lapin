@@ -80,6 +80,8 @@ export const AttachRoofIcon = icon('attachRoof');
 export const DetachRoofIcon = icon('detachRoof');
 export const AngleIcon = icon('angle');
 export const RadiusIcon = icon('radius');
+/** Coincident: two lines running into one ringed point. */
+export const CoincidentIcon = icon('coincident');
 export const DiameterIcon = icon('diameter');
 export const ArcLengthIcon = icon('arcLength');
 export const SlopeIcon = icon('slope');

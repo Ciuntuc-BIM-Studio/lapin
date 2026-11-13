@@ -3329,6 +3329,29 @@ export const LO: Record<string, string> = {
   'Measured from': 'ວັດແທກຈາກ', 'Measured to': 'ວັດແທກເຖິງ', 'Wall start': 'ຈຸດເລີ່ມຂອງຝາ', 'Meeting wall’s face': 'ໜ້າຂອງຝາທີ່ຕັດກັນ', 'Meeting wall’s core face': 'ໜ້າແກນຂອງຝາທີ່ຕັດກັນ', 'Opening start': 'ຈຸດເລີ່ມຂອງຊ່ອງເປີດ', 'Opening centre': 'ກາງຊ່ອງເປີດ', 'Opening end': 'ຈຸດສຸດຂອງຊ່ອງເປີດ',
   // The type configurators' preview (decision 529)
   "Drawn by the engine, as the drawings draw it: a sample wall of the type with another joined to it in T. Hover a layer's row to light it up in all three.": "ແຕ້ມໂດຍເຄື່ອງຈັກ ຕາມທີ່ແບບແຕ້ມແຕ້ມມັນ: ຝາຕົວຢ່າງຂອງປະເພດນີ້ ກັບອີກຝາໜຶ່ງຕໍ່ເປັນຮູບ T. ວາງເມົາສ໌ເທິງແຖວຂອງຊັ້ນເພື່ອເນັ້ນມັນໃນທັງສາມ.", "The sample wall's length": "ຄວາມຍາວຂອງຝາຕົວຢ່າງ", "The sample wall's height; empty: as the type's top says, the storey above": "ຄວາມສູງຂອງຝາຕົວຢ່າງ; ຫວ່າງ: ຕາມທີ່ດ້ານເທິງຂອງປະເພດກຳນົດ, ຊັ້ນຂ້າງເທິງ", "The preview could not be drawn.": "ບໍ່ສາມາດແຕ້ມຕົວຢ່າງໄດ້.",
+  // The CAD command line's prompts of the constraint tools
+  "{0}: pick {1} (Esc ends)": "{0}: ເລືອກ {1} (Esc ເພື່ອຈົບ)",
+  "{0} takes {1}: nothing like that is drafted there.": "{0} ຮັບ {1}: ບໍ່ມີສິ່ງທີ່ຄ້າຍກັນແຕ້ມຢູ່ບ່ອນນັ້ນ.",
+  "Dimension: pick a second point or line, or Enter for the length (Esc ends)": "ເສັ້ນບອກຂະໜາດ: ເລືອກຈຸດ ຫຼື ເສັ້ນທີສອງ ຫຼື Enter ສຳລັບຄວາມຍາວ (Esc ເພື່ອຈົບ)",
+  "Dimension: pick a point, a line or a circle (Esc ends)": "ເສັ້ນບອກຂະໜາດ: ເລືອກຈຸດ, ເສັ້ນ ຫຼື ວົງມົນ (Esc ເພື່ອຈົບ)",
+  "Dimension takes a point, a line, a circle or an arc: nothing like that is drafted there.": "ເສັ້ນບອກຂະໜາດຮັບຈຸດ, ເສັ້ນ, ວົງມົນ ຫຼື ສ່ວນໂຄ້ງ: ບໍ່ມີສິ່ງທີ່ຄ້າຍກັນແຕ້ມຢູ່ບ່ອນນັ້ນ.",
+  "{0} {1}: type a value, =formula, or Enter to keep it {2}": "{0} {1}: ພິມຄ່າ, =ສູດ ຫຼື Enter ເພື່ອຮັກສາໄວ້ {2}",
+  "a point": "ຈຸດ",
+  "a line": "ເສັ້ນ",
+  "a circle or an arc": "ວົງມົນ ຫຼື ສ່ວນໂຄ້ງ",
+  "a polyline": "ເສັ້ນຫຼາຍທ່ອນ",
+  "nothing more": "ບໍ່ມີຫຍັງອີກ",
+  "or": "ຫຼື",
+  "Type a value, or =formula.": "ພິມຄ່າ ຫຼື =ສູດ.",
+  "Type a formula after =.": "ພິມສູດຫຼັງ =.",
+  "An angle is a number of degrees.": "ມຸມແມ່ນຈຳນວນອົງສາ.",
+  "A length is a number, with its unit if you like.": "ຄວາມຍາວແມ່ນຕົວເລກ, ມີຫົວໜ່ວຍກໍໄດ້.",
+  "A radius or a diameter is more than nothing.": "ລັດສະໝີ ຫຼື ເສັ້ນຜ່າສູນກາງຕ້ອງໃຫຍ່ກວ່າສູນ.",
+  "A distance is not negative.": "ໄລຍະບໍ່ເປັນລົບ.",
+  "vertex": "ຈຸດຍອດ",
+  "edge": "ຂອບ",
+  "curve": "ເສັ້ນໂຄ້ງ",
+  "whole": "ທັງໝົດ",
 };
 
 /** Phrases with a number or a name in them. */
