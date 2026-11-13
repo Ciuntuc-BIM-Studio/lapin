@@ -107,6 +107,8 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
             r.Cutter(cls, cls == "IfcFurnishingElement" ? 10 : 40, (e, m) => !IsVoid(e) && Geometry(e, m, null)?.Parts is [{ } only] ? only.Solid : null);
         }
         r.Class(new(TypeClass, "Solid type", [new("description", "Description", "text")], "#b9b2a6", Kind: "type"));
+        // Families of the user's own: parametric objects from formulas or a sketch (docs/plan-user-extensibility.md §5.6).
+        Families.Register(r);
         // A box's walls with its bottom and top: an assembly (IfcElementAssembly) of separate elements, without a body of its own.
         r.Class(new(Boxes.AssemblyClass, "Assembly", [], "#b9b2a6"));
         r.Service<IGeometryFilter>(this);
