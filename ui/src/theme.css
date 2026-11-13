@@ -2326,6 +2326,8 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .script-ask-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .script-ask-number { display: flex; align-items: center; gap: 6px; }
 .script-ask-number input { flex: 1; min-width: 0; text-align: right; }
+.script-ask-number .script-ask-slider { flex: 2 1 70px; min-width: 50px; padding: 0; }
+.script-ask-number:has(.script-ask-slider) input[type=text] { flex: 0 0 58px; }
 .script-ask-element { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .script-ask-element select, .script-ask-picked { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .script-ask-element .btn { width: auto; padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }

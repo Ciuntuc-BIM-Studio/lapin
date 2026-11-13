@@ -197,6 +197,41 @@ export function importTab(text: string, id = MY_TAB): MyTab | null {
   return tab ? { ...tab, id } : null;
 }
 
+/** A tool as My tools first takes it: its id, its group (none: the default one), whether small, whether it is in a menu (then not put alone). */
+export interface NewTool { id: string; panel?: string; small?: boolean; menu?: string }
+
+/**
+ * The tools seen for the first time put in My tools (a script's, a graph's): in their own group (`panel`), else in
+ * `group` (a group made when missing: after the group of the nearest one before it in the tools' order, else before the
+ * nearest after it, else at the end); small ones small. `added` remembers each one put in, so a tool the user took out
+ * stays out. A tool in a menu is reached through its menu: it is not put in alone.
+ */
+export function addNewToolsTo(tab: MyTab, tools: readonly (string | NewTool)[], added: ReadonlySet<string>, group: string): { tab: MyTab; added: Set<string> } {
+  const list = tools.map((x) => (typeof x === 'string' ? { id: x } : x));
+  const order = [...new Set(list.map((x) => x.panel || group))];
+  const next = new Set(added);
+  let t = tab;
+  const groupFor = (label: string): string => {
+    const found = t.groups.find((g) => g.label === label);
+    if (found) return found.id;
+    const at = order.indexOf(label);
+    let index: number | undefined;
+    for (let i = at - 1; i >= 0 && index === undefined; i--) { const g = t.groups.findIndex((x) => x.label === order[i]); if (g >= 0) index = g + 1; }
+    for (let i = at + 1; i < order.length && index === undefined; i++) { const g = t.groups.findIndex((x) => x.label === order[i]); if (g >= 0) index = g; }
+    const made = addGroup(t, label, index);
+    t = made.tab;
+    return made.id;
+  };
+  for (const x of list) {
+    if (x.menu || next.has(x.id)) continue;
+    next.add(x.id);
+    if (has(t, x.id)) continue;
+    const into = groupFor(x.panel || group);
+    t = addTool(t, x.id, { group: into }, !x.small);
+  }
+  return { tab: t, added: next };
+}
+
 // ---- the store
 
 const KEY = 'lapin.myTools';

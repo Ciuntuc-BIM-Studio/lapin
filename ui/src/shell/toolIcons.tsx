@@ -11,7 +11,7 @@ import {
   Pencil, PenTool, Play, Printer, Rows3, Ruler, Scaling, Scissors, Search, Settings, Shapes, Sigma, Sofa, Sparkles, Spline, Square, SquareDashed, Stamp, Star, Sun,
   Table, Tag, Terminal, Trash2, TreePine, Trees, Triangle, Type, Upload, WandSparkles, Warehouse, Wrench, Zap,
 } from 'lucide-react';
-import { lapinIcon, type Icon, type IconProps } from '../../icons';
+import { lapinIcon, type Icon, type IconProps } from '../icons';
 
 /** The lucide icons a script may name, by their name in lowercase without dashes (`grid-3x3`, `grid3x3`, `Grid3x3` alike). */
 const LUCIDE: Record<string, Icon> = {

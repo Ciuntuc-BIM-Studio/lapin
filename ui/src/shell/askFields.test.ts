@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { collect, elementsOf, initialState, readNumber, readQuestion, storeysOf, type ModelFacts } from './ask';
+import { collect, elementsOf, initialState, readNumber, readQuestion, storeysOf, type ModelFacts } from './askFields';
 
 const node = (id: string, type: string, name: string, props: Record<string, unknown> = {}) => [id, { id, type, name, props }] as const;
 

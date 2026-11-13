@@ -9,9 +9,9 @@
 
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 import { PanelsTopLeft, X } from 'lucide-react';
-import { collect, initialState, type FieldState } from './ask';
-import { Field, useFacts } from './AskDialog';
-import { scriptIcon } from './icons';
+import { collect, initialState, type FieldState } from '../../shell/askFields';
+import { Field, useFacts } from '../../shell/AskField';
+import { scriptIcon } from '../../shell/toolIcons';
 import { clampAt, fieldsOf, readMemory, type PaletteButton, type PaletteMemory } from './palette';
 import { runTool, togglePalette, useScriptTools } from './scriptTools';
 import { useScripting } from './store';

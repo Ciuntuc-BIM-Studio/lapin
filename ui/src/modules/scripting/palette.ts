@@ -6,7 +6,7 @@
  * apart from what draws it (PaletteWindow.tsx), for the tests.
  */
 
-import { readField, type AskField, type FieldState } from './ask';
+import { readField, type AskField, type FieldState } from '../../shell/askFields';
 
 export interface PaletteButton { name: string; icon?: string; tooltip?: string; call: string | null }
 

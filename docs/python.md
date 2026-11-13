@@ -305,7 +305,7 @@ with lapin.ui.panel("Walls"):                                # a group of My too
 ```
 
 `# lapin:` lines among the comments at the top of the script (before its code), each `key=value` pairs (quoted, or bare up to the next comma), read without running anything (`ui/src/modules/scripting/header.ts`; `script.files` gives each script of Mine's first 4 KB and hash for it):
-- `tool`: the tool's name (`tool=yes`: the script's `name`); `run`: the function it calls (a Python name; none: the whole script as `__main__`); `icon`: one of Lapin's icons (`ui/src/icons/icons.json`: `wall`, `door`, `stair`…) or of a set of lucide's (`square`, `ruler`, `layers`, `grid`, `star`, `wrench`…: `ui/src/modules/scripting/icons.tsx`), else a letter (`icon="P"`, else the name's first); `tooltip`;
+- `tool`: the tool's name (`tool=yes`: the script's `name`); `run`: the function it calls (a Python name; none: the whole script as `__main__`); `icon`: one of Lapin's icons (`ui/src/icons/icons.json`: `wall`, `door`, `stair`…) or of a set of lucide's (`square`, `ruler`, `layers`, `grid`, `star`, `wrench`…: `ui/src/shell/toolIcons.tsx`), else a letter (`icon="P"`, else the name's first); `tooltip`;
 - `name`, `version`, `description`; `requires`: modules the edition must have and `lapin>=0.1.N` — a tool whose script needs what this Lapin lacks is not offered;
 - `panel`: the group of My tools the tool goes in (else Scripts); `size="small"`: put small (decision 528).
 
