@@ -95,6 +95,25 @@ public static class Drafts
         return flat.Count == 0 ? null : new ElementGeometry([], Lines: flat.Select(run => (IReadOnlyList<Vec3>)run.Select(plane.World).ToList()).ToList(), LineColor: color);
     }
 
+    /// <summary>
+    /// A drafted shape in the model for a graph (decision 534), placed as <see cref="Geometry3d"/> places it but whatever its
+    /// role or origin (construction lines and a DXF's flat linework too: the user picked them): on its view's plane, a
+    /// DXF's 3D lines at their heights; a closed shape without its start repeated. Null: not a drafted shape, or on a 3D view.
+    /// </summary>
+    public static IReadOnlyList<DraftedRun>? Runs(Entity e, IModelView m, IServices services)
+    {
+        if (e.Class != IfcClass.Annotation || e.PredefinedType != Predefined || ShapeOf(e) is not { } shape) return null;
+        var closed = shape is Circle || shape is Polyline { Closed: true };
+        static List<T> Open<T>(List<T> run, bool closed) => closed && run.Count > 2 ? run[..^1] : run;
+        if (e.Attrs["heights"] is JsonArray && Geometry3d(e, m, services) is { Lines: { Count: > 0 } lines })
+            return [.. lines.Select(l => new DraftedRun(Open(l.ToList(), closed), closed))];
+        if (Views.Find(m, e.Str("viewId") ?? "") is not { } view || view.Str("kind") is "3d") return null;
+        var (lo, hi) = Geo.Bounds(shape);
+        if (Views.PlaneOf(m, services, view, (lo.X + hi.X) / 2) is not { } plane) return null;
+        Vec3? centre = shape switch { Circle c => plane.World(c.C), Arc a => plane.World(a.C), _ => null };
+        return [.. Flatten(shape).Select(run => new DraftedRun(Open(run.Select(plane.World).ToList(), closed), closed, centre))];
+    }
+
     /// <summary>A shape's runs of points on its view: a polyline closed back to its start, a circle and an arc in chords (decision 203: at most 1 mm off).</summary>
     public static List<List<Vec2>> Flatten(Shape s)
     {

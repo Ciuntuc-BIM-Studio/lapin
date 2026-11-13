@@ -35,6 +35,18 @@ export const DE: Record<string, string> = {
   "Count items from Start (from 0; a negative start counts from the end); no count: to the end. The first 3: start 0, count 3; the last 3: start -3.": "Anzahl Einträge ab Start (ab 0; ein negativer Start zählt vom Ende); ohne Anzahl: bis zum Ende. Die ersten 3: Start 0, Anzahl 3; die letzten 3: Start -3.",
   "Each value once, in the order first seen, and how many times it was there; numbers a billionth apart or less are the same.": "Jeder Wert einmal, in der Reihenfolge seines ersten Auftretens, und wie oft er vorkam; Zahlen, die höchstens ein Milliardstel auseinander liegen, sind gleich.",
   "Every pair of an item of A and an item of B: each of A's repeated, B's over again, so that the next node, fed both, runs on every pair.": "Jedes Paar aus einem Eintrag von A und einem von B: jeder von A wiederholt, die von B immer wieder, sodass der nächste Knoten, mit beiden gespeist, für jedes Paar läuft.",
+  // Decision 534: the model's geometry read by graphs
+  "Bounding box": "Umgebender Quader",
+  "Drafting geometry": "Zeichnungsgeometrie",
+  "Lowest corner": "Unterste Ecke",
+  "Highest corner": "Oberste Ecke",
+  "Size along X": "Größe in X",
+  "Size along Y": "Größe in Y",
+  "The axis of a wall (curved too), a beam, a footing, a railing or each axis of a grid, as a polyline; its start and end.": "Die Achse einer Wand (auch gekrümmt), eines Trägers, eines Fundaments, eines Geländers oder jede Achse eines Rasters, als Polylinie; ihr Anfang und Ende.",
+  "The closed outline of a floor, a room, a roof or a site zone, at its level, and its corners.": "Der geschlossene Umriss einer Decke, eines Raums, eines Dachs oder einer Geländezone, auf seiner Höhe, und seine Ecken.",
+  "Where a column, a pad footing, furniture, a door or a window stands, and its turn in degrees.": "Wo eine Stütze, ein Einzelfundament, ein Möbel, eine Tür oder ein Fenster steht, und seine Drehung in Grad.",
+  "The box round any element's body, as the model builds it.": "Der Quader um den Körper eines beliebigen Bauteils, wie das Modell ihn erzeugt.",
+  "A drafted line, polyline, rectangle, arc or circle (or a DXF's linework) in the model, on its view's level; arcs as points. Pick them in a plan with Elements picked.": "Eine gezeichnete Linie, Polylinie, ein Rechteck, Bogen oder Kreis (oder die Linien einer DXF) im Modell, auf der Höhe ihrer Ansicht; Bögen als Punkte. Wählen Sie sie in einem Grundriss mit Gewählte Elemente.",
   // Decision 527: visual graphs
   "Graphs are the host's: in a shared session only the host opens, previews and bakes them.": "Graphen gehören dem Gastgeber: in einer geteilten Sitzung öffnet, zeigt und erzeugt nur der Gastgeber sie.",
   "Storey levels": "Geschosshöhen",

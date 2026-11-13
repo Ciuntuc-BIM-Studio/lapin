@@ -35,6 +35,18 @@ export const DA: Record<string, string> = {
   "Count items from Start (from 0; a negative start counts from the end); no count: to the end. The first 3: start 0, count 3; the last 3: start -3.": "Antal elementer fra Start (fra 0; en negativ start tæller fra slutningen); uden antal: til slutningen. De første 3: start 0, antal 3; de sidste 3: start -3.",
   "Each value once, in the order first seen, and how many times it was there; numbers a billionth apart or less are the same.": "Hver værdi én gang, i den rækkefølge den først ses, og hvor mange gange den var der; tal højst en milliardtedel fra hinanden er de samme.",
   "Every pair of an item of A and an item of B: each of A's repeated, B's over again, so that the next node, fed both, runs on every pair.": "Hvert par af et element fra A og et fra B: hvert af A's gentaget, B's forfra, så den næste node, fodret med begge, kører på hvert par.",
+  // Decision 534: the model's geometry read by graphs
+  "Bounding box": "Omsluttende kasse",
+  "Drafting geometry": "Tegningsgeometri",
+  "Lowest corner": "Laveste hjørne",
+  "Highest corner": "Højeste hjørne",
+  "Size along X": "Størrelse langs X",
+  "Size along Y": "Størrelse langs Y",
+  "The axis of a wall (curved too), a beam, a footing, a railing or each axis of a grid, as a polyline; its start and end.": "Aksen for en væg (også buet), en bjælke, et fundament, et rækværk eller hver akse i et net, som polylinje; dens start og slut.",
+  "The closed outline of a floor, a room, a roof or a site zone, at its level, and its corners.": "Den lukkede omrids af et dæk, et rum, et tag eller en grundzone, i dens niveau, og dens hjørner.",
+  "Where a column, a pad footing, furniture, a door or a window stands, and its turn in degrees.": "Hvor en søjle, et punktfundament, et møbel, en dør eller et vindue står, og dens drejning i grader.",
+  "The box round any element's body, as the model builds it.": "Kassen om ethvert elements krop, som modellen bygger den.",
+  "A drafted line, polyline, rectangle, arc or circle (or a DXF's linework) in the model, on its view's level; arcs as points. Pick them in a plan with Elements picked.": "En tegnet linje, polylinje, rektangel, bue eller cirkel (eller en DXF's streger) i modellen, i dens visnings niveau; buer som punkter. Vælg dem i en plan med Valgte elementer.",
   // Decision 527: visual graphs
   "Graphs are the host's: in a shared session only the host opens, previews and bakes them.": "Grafer tilhører værten: i en delt session er det kun værten, der åbner, forhåndsviser og genererer dem.",
   "Storey levels": "Etagekoter",

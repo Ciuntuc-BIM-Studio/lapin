@@ -35,6 +35,18 @@ export const FR: Record<string, string> = {
   "Count items from Start (from 0; a negative start counts from the end); no count: to the end. The first 3: start 0, count 3; the last 3: start -3.": "Nombre d'éléments à partir de Début (à partir de 0 ; un début négatif compte depuis la fin) ; sans nombre : jusqu'à la fin. Les 3 premiers : début 0, nombre 3 ; les 3 derniers : début -3.",
   "Each value once, in the order first seen, and how many times it was there; numbers a billionth apart or less are the same.": "Chaque valeur une fois, dans l'ordre où elle apparaît d'abord, et combien de fois elle y était ; des nombres distants d'un milliardième ou moins sont les mêmes.",
   "Every pair of an item of A and an item of B: each of A's repeated, B's over again, so that the next node, fed both, runs on every pair.": "Chaque paire d'un élément de A et d'un élément de B : chacun de A répété, ceux de B repris, pour que le nœud suivant, alimenté par les deux, tourne sur chaque paire.",
+  // Decision 534: the model's geometry read by graphs
+  "Bounding box": "Boîte englobante",
+  "Drafting geometry": "Géométrie du dessin",
+  "Lowest corner": "Coin le plus bas",
+  "Highest corner": "Coin le plus haut",
+  "Size along X": "Taille selon X",
+  "Size along Y": "Taille selon Y",
+  "The axis of a wall (curved too), a beam, a footing, a railing or each axis of a grid, as a polyline; its start and end.": "L'axe d'un mur (courbe aussi), d'une poutre, d'une fondation, d'un garde-corps ou chaque axe d'une trame, en polyligne ; son début et sa fin.",
+  "The closed outline of a floor, a room, a roof or a site zone, at its level, and its corners.": "Le contour fermé d'un plancher, d'une pièce, d'un toit ou d'une zone du terrain, à son niveau, et ses coins.",
+  "Where a column, a pad footing, furniture, a door or a window stands, and its turn in degrees.": "Où se trouve un poteau, une semelle isolée, un meuble, une porte ou une fenêtre, et sa rotation en degrés.",
+  "The box round any element's body, as the model builds it.": "La boîte autour du corps de n'importe quel élément, tel que le modèle le construit.",
+  "A drafted line, polyline, rectangle, arc or circle (or a DXF's linework) in the model, on its view's level; arcs as points. Pick them in a plan with Elements picked.": "Une ligne, polyligne, un rectangle, arc ou cercle dessiné (ou les traits d'un DXF) dans le modèle, au niveau de sa vue ; les arcs en points. Choisissez-les dans un plan avec Éléments choisis.",
   // Decision 527: visual graphs
   "Graphs are the host's: in a shared session only the host opens, previews and bakes them.": "Les graphes sont à l'hôte : dans une session partagée, seul l'hôte les ouvre, les prévisualise et les génère.",
   "Storey levels": "Niveaux des étages",

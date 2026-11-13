@@ -13,8 +13,10 @@ namespace Lapin.Graphs;
 public sealed record Port(string Name, string Label, string Type = "any", bool Whole = false, bool Setting = false, JsonNode? Default = null, string[]? Choices = null);
 
 /// <summary>What a node's run is given: its inputs (wired, else its constants, else the ports' defaults), its node, the model.</summary>
-public sealed class NodeCall(GraphNode node, IReadOnlyDictionary<string, object?> inputs, IModelView model, string? storey = null)
+public sealed class NodeCall(GraphNode node, IReadOnlyDictionary<string, object?> inputs, IModelView model, string? storey = null, IQueryContext? query = null)
 {
+    /// <summary>The model's geometry and the product's services, over the same model (the preview's copy, the bake's edit).</summary>
+    public IQueryContext? Query => query;
     /// <summary>The view's storey, what a storey left unchosen means (<see cref="Evaluator.Storey"/>).</summary>
     public string? Storey => storey;
     public GraphNode Node => node;
@@ -295,6 +297,20 @@ public static class Builtins
                 _ => e.Attrs[key] is { } v ? Values.FromJson(v) : throw new CommandException($"„{e.Name}” has no property „{key}”."),
             });
         }, "An element's attribute by its key (height, thickness…), or its name, class or id."),
+
+        // ── the model's geometry, read as references (decision 534) ──
+        new("axis", "Axis", "Model", [In("id", "Element", "element")], [Out("line", "Axis", "geometry"), Out("start", "Start", "point"), Out("end", "End", "point")], References.Axis,
+            "The axis of a wall (curved too), a beam, a footing, a railing or each axis of a grid, as a polyline; its start and end."),
+        new("outline", "Outline", "Model", [In("id", "Element", "element")], [Out("line", "Outline", "geometry"), Out("points", "Corners", "point")], References.Outline,
+            "The closed outline of a floor, a room, a roof or a site zone, at its level, and its corners."),
+        new("location", "Location", "Model", [In("id", "Element", "element")], [Out("point", "Point", "point"), Out("rotation", "Rotation", "number")], References.Location,
+            "Where a column, a pad footing, furniture, a door or a window stands, and its turn in degrees."),
+        new("box", "Bounding box", "Model", [In("id", "Element", "element")],
+            [Out("min", "Lowest corner", "point"), Out("max", "Highest corner", "point"), Out("center", "Centre", "point"), Out("x", "Size along X", "number"), Out("y", "Size along Y", "number"), Out("z", "Height", "number")],
+            References.Box, "The box round any element's body, as the model builds it."),
+        new("drafted", "Drafting geometry", "Model", [In("id", "Element", "element")],
+            [Out("line", "Line", "geometry"), Out("points", "Points", "point"), Out("start", "Start", "point"), Out("end", "End", "point"), Out("center", "Centre", "point")], References.Drafted,
+            "A drafted line, polyline, rectangle, arc or circle (or a DXF's linework) in the model, on its view's level; arcs as points. Pick them in a plan with Elements picked."),
 
         // ── outputs ──
         new("watch", "Watch", "Outputs", [Whole("value", "Value", "any")], [Out("value", "Value")], c => One(c["value"]), "Shows what it is given."),

@@ -133,7 +133,7 @@ public sealed class Evaluator(GraphDoc doc, IModelView model, ModuleCatalog cata
                 inputs[p.Name] = node.Values[p.Name] is { } v ? Values.FromConstant(v) : p.Default is { } d ? Values.FromConstant(d) : null;
             }
             var call = def.Run;
-            return (inputs, whole, def.Outputs.Select(o => o.Name).ToArray(), i => Timed(() => call(new NodeCall(node, i, model, Storey))));
+            return (inputs, whole, def.Outputs.Select(o => o.Name).ToArray(), i => Timed(() => call(new NodeCall(node, i, model, Storey, query))));
         }
         foreach (var (k, v) in node.Values) if (!inputs.ContainsKey(k)) inputs[k] = Values.FromConstant(v);
         if (node.Kind.StartsWith(CommandPrefix, StringComparison.Ordinal))

@@ -35,6 +35,18 @@ export const LO: Record<string, string> = {
   "Count items from Start (from 0; a negative start counts from the end); no count: to the end. The first 3: start 0, count 3; the last 3: start -3.": "ຈຳນວນລາຍການຈາກຈຸດເລີ່ມ (ຈາກ 0; ຈຸດເລີ່ມລົບນັບຈາກທ້າຍ); ບໍ່ມີຈຳນວນ: ຈົນຮອດທ້າຍ. 3 ອັນທຳອິດ: ເລີ່ມ 0, ຈຳນວນ 3; 3 ອັນສຸດທ້າຍ: ເລີ່ມ -3.",
   "Each value once, in the order first seen, and how many times it was there; numbers a billionth apart or less are the same.": "ແຕ່ລະຄ່າຄັ້ງດຽວ, ຕາມລຳດັບທີ່ພົບກ່ອນ, ແລະ ມີຈັກເທື່ອ; ຕົວເລກທີ່ຕ່າງກັນບໍ່ເກີນໜຶ່ງສ່ວນພັນລ້ານແມ່ນອັນດຽວກັນ.",
   "Every pair of an item of A and an item of B: each of A's repeated, B's over again, so that the next node, fed both, runs on every pair.": "ທຸກຄູ່ຂອງລາຍການໃນ A ແລະ ລາຍການໃນ B: ແຕ່ລະອັນຂອງ A ຊ້ຳ, ຂອງ B ວົນຄືນ, ເພື່ອໃຫ້ໂນດຕໍ່ໄປທີ່ໄດ້ຮັບທັງສອງ ເຮັດວຽກກັບທຸກຄູ່.",
+  // Decision 534: the model's geometry read by graphs
+  "Bounding box": "ກ່ອງຫຸ້ມ",
+  "Drafting geometry": "ເລຂາຄະນິດຂອງການແຕ້ມ",
+  "Lowest corner": "ມຸມຕ່ຳສຸດ",
+  "Highest corner": "ມຸມສູງສຸດ",
+  "Size along X": "ຂະໜາດຕາມ X",
+  "Size along Y": "ຂະໜາດຕາມ Y",
+  "The axis of a wall (curved too), a beam, a footing, a railing or each axis of a grid, as a polyline; its start and end.": "ແກນຂອງຝາ (ລວມທັງຝາໂຄ້ງ), ຄານ, ຖານ, ຮາວກັນຕົກ ຫຼື ແຕ່ລະແກນຂອງຕາໜ່າງ, ເປັນເສັ້ນຫຼາຍທ່ອນ; ຈຸດເລີ່ມ ແລະ ຈຸດສຸດທ້າຍ.",
+  "The closed outline of a floor, a room, a roof or a site zone, at its level, and its corners.": "ເສັ້ນຂອບປິດຂອງພື້ນ, ຫ້ອງ, ຫຼັງຄາ ຫຼື ເຂດທີ່ດິນ, ຢູ່ລະດັບຂອງມັນ, ແລະ ມຸມຂອງມັນ.",
+  "Where a column, a pad footing, furniture, a door or a window stands, and its turn in degrees.": "ບ່ອນທີ່ເສົາ, ຖານເດີ່ຍວ, ເຟີນີເຈີ, ປະຕູ ຫຼື ປ່ອງຢ້ຽມຕັ້ງຢູ່, ແລະ ການໝຸນເປັນອົງສາ.",
+  "The box round any element's body, as the model builds it.": "ກ່ອງອ້ອມຮອບຕົວຂອງອົງປະກອບໃດກໍໄດ້, ຕາມທີ່ແບບຈຳລອງສ້າງມັນ.",
+  "A drafted line, polyline, rectangle, arc or circle (or a DXF's linework) in the model, on its view's level; arcs as points. Pick them in a plan with Elements picked.": "ເສັ້ນ, ເສັ້ນຫຼາຍທ່ອນ, ຮູບສີ່ແຈ, ເສັ້ນໂຄ້ງ ຫຼື ວົງມົນທີ່ແຕ້ມ (ຫຼື ເສັ້ນຂອງ DXF) ໃນແບບຈຳລອງ, ຢູ່ລະດັບຂອງມຸມມອງ; ເສັ້ນໂຄ້ງເປັນຈຸດ. ເລືອກພວກມັນໃນແຜນຜັງດ້ວຍ ອົງປະກອບທີ່ເລືອກ.",
   // Decision 527: visual graphs
   "Graphs are the host's: in a shared session only the host opens, previews and bakes them.": "ກຣາບເປັນຂອງເຈົ້າພາບ: ໃນເຊດຊັນທີ່ແບ່ງປັນ ມີແຕ່ເຈົ້າພາບທີ່ເປີດ, ເບິ່ງຕົວຢ່າງ ແລະ ສ້າງຈາກມັນ.",
   "Storey levels": "ລະດັບຊັ້ນ",

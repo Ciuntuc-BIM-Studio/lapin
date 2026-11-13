@@ -35,6 +35,18 @@ export const ZH: Record<string, string> = {
   "Count items from Start (from 0; a negative start counts from the end); no count: to the end. The first 3: start 0, count 3; the last 3: start -3.": "从起点开始取若干项 (从 0 起; 负的起点从末尾数); 不填数量: 取到末尾. 前 3 项: 起点 0, 数量 3; 后 3 项: 起点 -3.",
   "Each value once, in the order first seen, and how many times it was there; numbers a billionth apart or less are the same.": "每个值只取一次, 按首次出现的顺序, 并给出出现次数; 相差不超过十亿分之一的数字视为相同.",
   "Every pair of an item of A and an item of B: each of A's repeated, B's over again, so that the next node, fed both, runs on every pair.": "A 的每一项与 B 的每一项组成的所有对: A 的每项重复, B 的各项循环, 这样接收两者的下一个节点会对每一对运行.",
+  // Decision 534: the model's geometry read by graphs
+  "Bounding box": "包围盒",
+  "Drafting geometry": "绘图几何",
+  "Lowest corner": "最低角点",
+  "Highest corner": "最高角点",
+  "Size along X": "X 向尺寸",
+  "Size along Y": "Y 向尺寸",
+  "The axis of a wall (curved too), a beam, a footing, a railing or each axis of a grid, as a polyline; its start and end.": "墙 (含弧形墙)、梁、基础、栏杆的轴线或轴网的每条轴线, 作为多段线; 及其起点和终点.",
+  "The closed outline of a floor, a room, a roof or a site zone, at its level, and its corners.": "楼板、房间、屋顶或场地分区的闭合轮廓, 位于其标高, 以及其角点.",
+  "Where a column, a pad footing, furniture, a door or a window stands, and its turn in degrees.": "柱、独立基础、家具、门或窗所在的位置, 及其转角 (度).",
+  "The box round any element's body, as the model builds it.": "任意构件实体的包围盒, 按模型生成的几何计算.",
+  "A drafted line, polyline, rectangle, arc or circle (or a DXF's linework) in the model, on its view's level; arcs as points. Pick them in a plan with Elements picked.": "绘制的直线、多段线、矩形、圆弧或圆 (或 DXF 的线条) 在模型中的位置, 位于其视图的标高; 圆弧以点表示. 在平面图中用 所选构件 选取它们.",
   // Decision 527: visual graphs
   "Graphs are the host's: in a shared session only the host opens, previews and bakes them.": "图归主持人所有：在共享会话中只有主持人能打开、预览和烘焙它们。",
   "Storey levels": "楼层标高",

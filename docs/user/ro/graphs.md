@@ -41,6 +41,16 @@ Pe lângă **Interval**, **Serie**, **Număr**, **Element din listă**, **Invers
 - **Unice**: fiecare valoare o dată, în ordinea în care apare prima dată, și **De câte ori** era. Numerele care diferă cu cel mult o miliardime sunt aceleași, punctele la fel; textele se compară cum sunt scrise (majusculele contează), iar numărul 1 nu e textul „1”.
 - **Fiecare cu fiecare**: fiecare pereche dintre un element din A și unul din B. Ieșirile A și B sunt cât perechile (fiecare element din A repetat, cele din B reluate), deci nodul următor, legat la amândouă, rulează o dată pentru fiecare pereche: o **Listă** de valori X și una de valori Y prin Fiecare cu fiecare, apoi într-un **Punct**, dau un punct la fiecare încrucișare. Cel mult 10.000 de perechi.
 
+## Citirea modelului
+
+Grupul **Model** citește elementele pe care le alegi (**Elemente alese** și **Folosește selecția**, sau **Elementele unei clase**) ca referințe. Fiecare nod ia un element sau o listă de elemente; un element de alt fel cade doar pe elementul lui și spune de ce, celelalte se citesc. Modelul e citit așa cum e acum: mută un perete și previzualizarea a ce face graful din el se mută și ea. Curbele vin ca puncte după aceeași regulă ca orice curbă din Lapin (nicio coardă la mai mult de un milimetru de arc).
+
+- **Axă**: axul unui perete (și curb), al unei grinzi, al unei fundații continue sau al unei balustrade, ori fiecare ax al unei rețele, ca polilinie, cu **Început** și **Sfârșit**. Al unui perete la baza lui, al unei grinzi la partea ei de sus.
+- **Contur**: conturul închis al unui planșeu, al unei încăperi, al unui acoperiș sau al unei zone de teren (o plantație), la cota lui, și **Colțurile** lui.
+- **Amplasament**: unde stă un stâlp, o fundație izolată, o piesă de mobilier, o ușă sau o fereastră, și **Rotirea** ei în grade. O ușă sau o fereastră e pe axul peretelui ei, la parapet.
+- **Cutia încadratoare**: cutia din jurul corpului oricărui element, așa cum îl construiește Lapin: colțurile cel mai de jos și cel mai de sus, centrul, mărimea pe X și pe Y și înălțimea.
+- **Geometria desenului**: o linie, polilinie, dreptunghi, arc sau cerc desenat cu uneltele de desen, ori liniile unui DXF importat, în model: la cota vederii lui (a unui plan la cota nivelului), arcele și cercurile ca puncte. Dă **Linie**, **Puncte**, **Început**, **Sfârșit** și **Centru** pentru un arc sau un cerc. Selectează formele în plan, apasă **Folosește selecția** pe un nod Elemente alese și leagă-l: o polilinie desenată în **Colțuri**, apoi începuturile și capetele segmentelor într-un **Perete**, face un perete pe fiecare latură; o linie desenată în **Împarte linia**, apoi într-un **Stâlp**, pune stâlpi în punctele de împărțire.
+
 ## Erori
 
 Un nod care cade se face roșu și spune de ce în inspector (și când treci cu mouse-ul peste el): un perete fără lungime, o împărțire la zero. Nodurile de după el spun care intrare nu are nimic; restul grafului se calculează mai departe. Când cad doar câteva elemente ale unei liste, nodul se face chihlimbariu și spune câte.

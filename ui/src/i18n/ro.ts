@@ -33,6 +33,18 @@ export const RO: Record<string, string> = {
   "Count items from Start (from 0; a negative start counts from the end); no count: to the end. The first 3: start 0, count 3; the last 3: start -3.": "Număr elemente de la Început (de la 0; un început negativ numără de la sfârșit); fără număr: până la capăt. Primele 3: început 0, număr 3; ultimele 3: început -3.",
   "Each value once, in the order first seen, and how many times it was there; numbers a billionth apart or less are the same.": "Fiecare valoare o singură dată, în ordinea în care apare prima dată, și de câte ori era; numerele care diferă cu cel mult o miliardime sunt aceleași.",
   "Every pair of an item of A and an item of B: each of A's repeated, B's over again, so that the next node, fed both, runs on every pair.": "Fiecare pereche dintre un element din A și unul din B: fiecare din A repetat, cele din B reluate, astfel încât nodul următor, alimentat cu amândouă, rulează pe fiecare pereche.",
+  // Decision 534: the model's geometry read by graphs
+  "Bounding box": "Cutia încadratoare",
+  "Drafting geometry": "Geometria desenului",
+  "Lowest corner": "Colțul cel mai de jos",
+  "Highest corner": "Colțul cel mai de sus",
+  "Size along X": "Mărimea pe X",
+  "Size along Y": "Mărimea pe Y",
+  "The axis of a wall (curved too), a beam, a footing, a railing or each axis of a grid, as a polyline; its start and end.": "Axul unui perete (și curb), al unei grinzi, al unei fundații, al unei balustrade sau fiecare ax al unei rețele, ca polilinie; începutul și sfârșitul lui.",
+  "The closed outline of a floor, a room, a roof or a site zone, at its level, and its corners.": "Conturul închis al unui planșeu, al unei încăperi, al unui acoperiș sau al unei zone de teren, la cota lui, și colțurile lui.",
+  "Where a column, a pad footing, furniture, a door or a window stands, and its turn in degrees.": "Unde stă un stâlp, o fundație izolată, o piesă de mobilier, o ușă sau o fereastră, și rotirea ei în grade.",
+  "The box round any element's body, as the model builds it.": "Cutia din jurul corpului oricărui element, așa cum îl construiește modelul.",
+  "A drafted line, polyline, rectangle, arc or circle (or a DXF's linework) in the model, on its view's level; arcs as points. Pick them in a plan with Elements picked.": "O linie, polilinie, dreptunghi, arc sau cerc desenat (sau liniile unui DXF) în model, la cota vederii lui; arcele ca puncte. Alege-le într-un plan cu Elemente alese.",
   // Decision 527: visual graphs
   "Graphs are the host's: in a shared session only the host opens, previews and bakes them.": "Grafurile sunt ale gazdei: într-o sesiune partajată doar gazda le deschide, le previzualizează și creează din ele.",
   "Storey levels": "Cotele nivelurilor",

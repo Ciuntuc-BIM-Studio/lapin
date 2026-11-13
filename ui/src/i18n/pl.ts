@@ -35,6 +35,18 @@ export const PL: Record<string, string> = {
   "Count items from Start (from 0; a negative start counts from the end); no count: to the end. The first 3: start 0, count 3; the last 3: start -3.": "Liczba elementów od Początku (od 0; ujemny początek liczy od końca); bez liczby: do końca. Pierwsze 3: początek 0, liczba 3; ostatnie 3: początek -3.",
   "Each value once, in the order first seen, and how many times it was there; numbers a billionth apart or less are the same.": "Każda wartość raz, w kolejności pierwszego wystąpienia, i ile razy była; liczby różniące się o miliardową część lub mniej są tym samym.",
   "Every pair of an item of A and an item of B: each of A's repeated, B's over again, so that the next node, fed both, runs on every pair.": "Każda para elementu z A i elementu z B: każdy z A powtórzony, te z B od nowa, tak aby następny węzeł, zasilony obiema, działał na każdej parze.",
+  // Decision 534: the model's geometry read by graphs
+  "Bounding box": "Prostopadłościan otaczający",
+  "Drafting geometry": "Geometria rysunku",
+  "Lowest corner": "Najniższy narożnik",
+  "Highest corner": "Najwyższy narożnik",
+  "Size along X": "Wymiar wzdłuż X",
+  "Size along Y": "Wymiar wzdłuż Y",
+  "The axis of a wall (curved too), a beam, a footing, a railing or each axis of a grid, as a polyline; its start and end.": "Oś ściany (także łukowej), belki, fundamentu, balustrady lub każda oś siatki, jako polilinia; jej początek i koniec.",
+  "The closed outline of a floor, a room, a roof or a site zone, at its level, and its corners.": "Zamknięty obrys stropu, pomieszczenia, dachu lub strefy terenu, na jego poziomie, i jego narożniki.",
+  "Where a column, a pad footing, furniture, a door or a window stands, and its turn in degrees.": "Gdzie stoi słup, stopa fundamentowa, mebel, drzwi lub okno, i jego obrót w stopniach.",
+  "The box round any element's body, as the model builds it.": "Prostopadłościan wokół bryły dowolnego elementu, tak jak buduje ją model.",
+  "A drafted line, polyline, rectangle, arc or circle (or a DXF's linework) in the model, on its view's level; arcs as points. Pick them in a plan with Elements picked.": "Narysowana linia, polilinia, prostokąt, łuk lub okrąg (albo linie DXF) w modelu, na poziomie jego widoku; łuki jako punkty. Wybierz je w rzucie węzłem Wybrane elementy.",
   // Decision 527: visual graphs
   "Graphs are the host's: in a shared session only the host opens, previews and bakes them.": "Grafy należą do gospodarza: w udostępnionej sesji tylko gospodarz je otwiera, podgląda i tworzy z nich elementy.",
   "Storey levels": "Poziomy kondygnacji",

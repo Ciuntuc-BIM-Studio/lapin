@@ -35,6 +35,18 @@ export const PT: Record<string, string> = {
   "Count items from Start (from 0; a negative start counts from the end); no count: to the end. The first 3: start 0, count 3; the last 3: start -3.": "Quantidade de itens a partir de Início (a partir de 0; um início negativo conta a partir do fim); sem quantidade: até ao fim. Os 3 primeiros: início 0, quantidade 3; os 3 últimos: início -3.",
   "Each value once, in the order first seen, and how many times it was there; numbers a billionth apart or less are the same.": "Cada valor uma vez, pela ordem em que aparece primeiro, e quantas vezes lá estava; números a uma milésima de milionésima ou menos de distância são o mesmo.",
   "Every pair of an item of A and an item of B: each of A's repeated, B's over again, so that the next node, fed both, runs on every pair.": "Cada par de um item de A e um de B: cada um de A repetido, os de B de novo, para que o nó seguinte, alimentado com ambos, corra em cada par.",
+  // Decision 534: the model's geometry read by graphs
+  "Bounding box": "Caixa envolvente",
+  "Drafting geometry": "Geometria do desenho",
+  "Lowest corner": "Canto mais baixo",
+  "Highest corner": "Canto mais alto",
+  "Size along X": "Tamanho segundo X",
+  "Size along Y": "Tamanho segundo Y",
+  "The axis of a wall (curved too), a beam, a footing, a railing or each axis of a grid, as a polyline; its start and end.": "O eixo de uma parede (também curva), uma viga, uma fundação, um guarda-corpo ou cada eixo de uma grelha, como polilinha; o seu início e fim.",
+  "The closed outline of a floor, a room, a roof or a site zone, at its level, and its corners.": "O contorno fechado de uma laje, um compartimento, uma cobertura ou uma zona do terreno, ao seu nível, e os seus cantos.",
+  "Where a column, a pad footing, furniture, a door or a window stands, and its turn in degrees.": "Onde está um pilar, uma sapata isolada, um móvel, uma porta ou uma janela, e a sua rotação em graus.",
+  "The box round any element's body, as the model builds it.": "A caixa à volta do corpo de qualquer elemento, tal como o modelo o constrói.",
+  "A drafted line, polyline, rectangle, arc or circle (or a DXF's linework) in the model, on its view's level; arcs as points. Pick them in a plan with Elements picked.": "Uma linha, polilinha, retângulo, arco ou círculo desenhado (ou as linhas de um DXF) no modelo, ao nível da sua vista; os arcos como pontos. Escolha-os numa planta com Elementos escolhidos.",
   // Decision 527: visual graphs
   "Graphs are the host's: in a shared session only the host opens, previews and bakes them.": "Os grafos são do anfitrião: numa sessão partilhada só o anfitrião os abre, pré-visualiza e gera.",
   "Storey levels": "Cotas dos pisos",

@@ -41,6 +41,16 @@ Besides **Range**, **Series**, **Count**, **Item**, **Reverse**, **Flatten**, **
 - **Unique**: each value once, in the order first seen, and **How many** times each was there. Numbers a billionth apart or less are the same, points too; texts are compared as written (capitals count), and the number 1 is not the text „1”.
 - **Every with every**: every pair of an item of A and an item of B. Its outputs A and B are as long as the pairs (A's items each repeated, B's over and over), so the next node, fed both, runs once for every pair: a **List** of X values and one of Y values into Every with every, then into a **Point**, give a point at every crossing. At most 10,000 pairs.
 
+## Reading the model
+
+The **Model** group reads the elements you pick (**Elements picked** and **Use the selection**, or **Elements of a class**) as references. Each node takes one element or a list of them; an element of the wrong kind fails on its own item and says why, the others are read. The model is read as it is now: move a wall and the preview of what the graph makes from it moves too. Curves come as points by the same rule as every curve in Lapin (no chord more than a millimetre off).
+
+- **Axis**: the axis of a wall (a curved one too), a beam, a strip footing or a railing, or every axis of a grid, as a polyline, with its **Start** and **End**. A wall's at its base, a beam's at its top.
+- **Outline**: the closed outline of a floor, a room, a roof or a site zone (a planting), at its level, and its **Corners**.
+- **Location**: where a column, a pad footing, a piece of furniture, a door or a window stands, and its **Rotation** in degrees. A door or a window is on its wall's axis, at its sill.
+- **Bounding box**: the box round any element's body as Lapin builds it: its lowest and highest corners, its centre, its size along X and Y and its height.
+- **Drafting geometry**: a line, polyline, rectangle, arc or circle drawn with the drafting tools, or the linework of an imported DXF, in the model: on its view's level (a plan's at its storey's level), arcs and circles as points. It gives the **Line**, its **Points**, **Start**, **End** and the **Centre** of an arc or a circle. Select the shapes in the plan, press **Use the selection** on an Elements picked node, and wire it in: a drafted polyline into **Corners**, then its segment starts and ends into a **Wall**, makes a wall along each side; a drafted line into **Divide line**, then into a **Column**, makes columns at its division points.
+
 ## Errors
 
 A node that fails turns red and says why in the inspector (and when hovered): a wall of no length, a division by zero. The nodes after it say which input has nothing; the rest of the graph is still worked out. When only some items of a list fail, the node turns amber and says how many.
