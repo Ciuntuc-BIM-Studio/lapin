@@ -124,6 +124,32 @@ Unde se întâlnesc două canate, **Canate care se întâlnesc** spune cum:
 
 ![O ușă dublă: fără montant între canate, cu falț, canatul drept activ](shots/joinery-double-door.webp)
 
+### Uși și ferestre în același toc
+
+Canatele de ușă și cercevelele de fereastră pot sta în același toc: o ușă de balcon cu fereastra ei, o ușă de intrare cu lumini laterale și supralumină, un portal cu ridicare și glisare. În **Se deschide**, lista e grupată în **Canate de ușă**, **Cercevele de fereastră** și, la o ușă, **Uși de garaj**, iar orice ochi al unei uși sau ferestre poate lua oricare dintre ele. Rămâne un singur obiect, cu un singur marcaj și un singur rând în tabel:
+
+- Cu cel puțin un canat de ușă este **ușă** (IfcDoor). Un tip nou de fereastră căruia îi dați un canat devine ușă; rândul de sub desene spune ce este, **IfcDoor** sau **IfcWindow**.
+- Cu cercevele de fereastră și fără canat este **fereastră**. Unul doar cu ochiuri fixe rămâne ce a fost făcut.
+- Un tip salvat își păstrează clasa: un tip de fereastră nu poate primi un canat pe loc. **Creați ca tip nou** face ușa (sau fereastra) alături.
+
+O cercevea pe rândul de jos al unei uși stă pe o **traversă inferioară**, cât lățimea tocului peste prag, ca cerceveaua unei ferestre; canatele păstrează pragul. Glafurile (**Glaf interior peste parapet**, **Solbanc peste parapet**) se pun doar peste un **panou plin** la baza unei coloane a ușii (parapetul de sub partea de fereastră), pe traversa de deasupra lui; unde sticla sau un canat ajunge la pardoseală nu sunt. O cercevea dintr-o ușă are mâner de fereastră; canatele păstrează mânerul ușii.
+
+Presetările: **Ușă de balcon + fereastră nouă** (un canat vitrat și, alături, o cercevea oscilobatantă peste un panou plin de parapet, PVC, 4-16-4), **Ușă nouă cu lumini laterale și supralumină**, **Portal nou cu ridicare și glisare (HS)** și **Fereastră franțuzească nouă** (două cercevele cu balamale laterale până la pardoseală, fără glafuri; o fereastră).
+
+Canatele **Ridicare și glisare (HS)** și **Oscilo-glisant (PSK)** alunecă pe șina interioară a tocului, peste ochiul fix de alături, aflat pe cea exterioară; mânerul lor lung e pe montantul de care trageți. Stau pe prag, deci se pun pe rândul de jos; pragul portalului HS e la nivelul pardoselii. Simbolul lor în elevație e săgeata sensului în care alunecă, cu ridicarea (HS) sau basculare (PSK).
+
+![O ușă de balcon și fereastra ei în același toc: un canat, o cercevea oscilobatantă peste un panou de parapet, geam 4-16-4](shots/joinery-balcony-door.webp)
+
+![Un portal cu ridicare și glisare: canatul de pe șina interioară alunecă spre stânga peste ochiul fix](shots/joinery-lift-slide.webp)
+
+**Sticla.** Sub **Sticlă**, **Structura geamului** este geamul așa cum îl scriu producătorii: foile de sticlă și spațiile în milimetri, dinspre exterior spre interior, `4-16-4` dublu, `4-12-4-12-4` triplu, `33.1-16-4` cu o foaie laminată la exterior (33.1 înseamnă două foi de 3 mm și o folie). Ea dă grosimea sticlei în 3D, în secțiuni și în planuri, afișată alături; fără ea, scrieți **Grosimea sticlei**. O structură mai groasă decât încap cerceveaua și tocul este refuzată. Valoarea U, valoarea g și sticla de siguranță sunt [Datele](#date-valoarea-u-rezistenta-la-foc-feronerie) tipului.
+
+**Deschiderea cercevelelor în plan.** Ferestrele franțuzești și ușile de balcon se desenează adesea cu deschiderea cercevelelor, punctat. Lista de sub desene o stabilește pentru tot proiectul: **Deschiderea cercevelelor: punctat până la pardoseală** (implicit: cercevelele cu balamale laterale și oscilobatante a căror bază e la cel mult 150 mm de pardoseală), **deloc**, **toate punctat** sau **toate continuu**. Arcul unui canat de ușă se desenează mereu; cercevelele glisante își păstrează săgeata.
+
+![O fereastră franțuzească: deschiderea cercevelelor punctată în plan](shots/joinery-french-window.webp)
+
+În IFC elementul este un IfcDoor al cărui OperationType este cel mai apropiat pe care îl are IFC (o ușă cu un canat, o ușă cu un ochi fix lateral, o ușă glisantă pentru un portal HS), iar fiecare ochi este un IfcDoorPanelProperties: operația canatului, FIXEDPANEL pentru un ochi fix, USERDEFINED pentru o cercevea. Ce nu poate spune IFC merge în setul `Lapin_Joinery` al tipului: **PanelOperations** (fiecare ochi în termenii IFC pentru ferestre, SIDEHUNGRIGHTHAND, TILTANDTURNLEFTHAND…, sau LIFTANDSLIDE), **Opening** (lift-and-slide) și **Glazing** (structura geamului); sticla este și în `Pset_DoorWindowGlazingType` (foile, grosimile lor, laminată sau nu). Lapin își citește propriul fișier înapoi întreg, iar operațiile ochiurilor din `Lapin_Joinery` dintr-un fișier venit din altă parte.
+
 **Sistem de profile** pornește tipul de la un profil **PVC**, **Aluminiu**, **Lemn** sau **Oțel (profile subțiri)**: stabilește dimensiunile tocului, montanților, traverselor și cercevelelor și dă profilelor formele lor fine. Tocul are un **Falț** pe care se închide cerceveaua, cerceveaua se suprapune peste toc cu **Suprapunerea cercevelei**, **baghetele de fixare a geamului** țin sticla, iar o fereastră are un lăcrimar sub traversa de jos. Fiecare dimensiune rămâne editabilă. **Simplu (profile drepte)** păstrează profile dreptunghiulare simple, ca până acum.
 
 **Toc dintr-o bibliotecă** și **Cercevea dintr-o bibliotecă** iau un profil din [bibliotecile de profile](profiles.md) (o secțiune de aluminiu sau PVC citită dintr-un DXF, de pildă): barele drepte ale tocului și cercevelei au atunci conturul lui real, cu goluri cu tot, în 3D, în secțiuni și în planuri, cu lățimea și adâncimea lui. Înlocuiește ce e forma lui reală, opritorul, buza și lăcrimarele sistemului; baghetele de geam rămân. Capetele curbe și ferestrele rotunde rămân o bandă simplă, la fel montanții și traversele grilei. **Simplu** se întoarce la un dreptunghi de aceeași mărime.
