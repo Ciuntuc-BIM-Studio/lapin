@@ -50,6 +50,20 @@ class EngineTests(unittest.TestCase):
         with self.assertRaises(LapinError):
             Lapin(1)  # nothing listens there
 
+    def test_the_engine_says_it_is_lapin_on_health_and_engine_hello(self):
+        from lapinbim import _discovery as discovery
+
+        e = discovery.identify(self.engine.port)
+        self.assertEqual(e["engine"], "lapin")
+        self.assertEqual(e["product"], "lapin")
+        self.assertEqual(e["port"], self.engine.port)
+        hello = self.lapin.call("engine.hello")
+        self.assertEqual(hello["engine"], "lapin")
+        self.assertEqual(hello["port"], self.engine.port)
+        self.assertEqual(hello["pid"], e["pid"])
+        # Its own host file, among the user folder's.
+        self.assertIn(self.engine.port, [h["port"] for h in discovery.host_files([self.engine.user_dir])])
+
     def test_a_typed_command_adds_a_wall_in_one_undo_step_and_reads_it_back(self):
         r = self.lapin.architecture.add_wall(storey_id=self.storey, x1=0, y1=0, x2=5, y2=0, height=2.8)
         self.assertTrue(r.id)

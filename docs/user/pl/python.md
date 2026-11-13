@@ -149,3 +149,5 @@ Gość wspólnej sesji nie może uruchamiać skryptów na twoim komputerze, wsta
 ## Dla programistów
 
 To, co oferuje `lapin` (polecenia, zapytania, partie, model, zdarzenia), opisuje przewodnik dla programistów *Lapin from Python* (`docs/python.md` w repozytorium Lapina); pakiet jest w PyPI jako `lapinbim`.
+
+Program na Twoim komputerze znajduje Lapina na porcie **14912**; drugi Lapin otwarty w tym samym czasie bierze 14913 i tak dalej. Gdy otwartych jest kilka, program pyta, który (`lapin.connect(project="Dom")`); aby wymusić jeden, ustaw `LAPIN_PORT`.

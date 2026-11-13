@@ -11,8 +11,9 @@
     for wall in lapin.model.walls:
         print(wall.name, wall.quantities())
 
-The module's functions use one connection, made at the first call (``LAPIN_PORT``, else the open engine's host.json);
-``lapin.connect(port)`` makes it explicitly, ``lapin.Lapin(port)`` makes another. Standard library only.
+The module's functions use one connection, made at the first call to the open Lapin (``LAPIN_PORT``, else the engines'
+host files, else the ports from 14912 probed; docs/python.md); ``lapin.connect(port)`` or ``lapin.connect(project=...)``
+makes it explicitly, ``lapin.Lapin(port)`` makes another. Standard library only.
 """
 
 from __future__ import annotations
@@ -28,7 +29,7 @@ from ._ui import UI
 
 __all__ = [
     "__version__", "Lapin", "LapinError", "Batch", "Deferred", "Step", "Element", "Model", "Obj",
-    "connect", "client", "close", "call", "execute", "query", "undo", "redo", "save", "info", "quantities",
+    "connect", "engines", "client", "close", "call", "execute", "query", "undo", "redo", "save", "info", "quantities",
     "snapshot", "state", "batch", "step", "selection", "on", "catalogue", "ns", "command", "ui", "UI",
     "create_body", "set_body", "global_id", "selected", "measure", "measure_value", "remove_measure", "watch", "unwatch",
 ]
@@ -40,12 +41,20 @@ ui = UI(lambda: client())
 
 
 def connect(port: int | None = None, **options: Any) -> Lapin:
-    """The module's connection, made anew (to ``port``, else the open engine)."""
+    """The module's connection, made anew: to ``port``, else the open engine (with several open, the one whose
+    ``project=`` or ``product=`` matches)."""
     global _default
     if _default is not None:
         _default.close()
     _default = Lapin(port, **options)
     return _default
+
+
+def engines() -> list[dict]:
+    """The open Lapins on this computer, each as its engine says (``engine.hello``): port, product, version, pid, project."""
+    from ._discovery import find_engines
+
+    return find_engines()
 
 
 def client() -> Lapin:

@@ -194,26 +194,29 @@ class Step:
 class Lapin:
     """One connection to an open Lapin (the desktop app, or ``pnpm dev``).
 
-    ``Lapin()`` finds the engine (``LAPIN_PORT``, else its ``host.json``); ``Lapin(port)`` names it. Calls are made one
-    at a time, from any thread; the engine sends every change as a ``diff`` event, which ``on("diff", f)`` receives.
+    ``Lapin()`` finds the engine (``LAPIN_PORT``, else the engines' host files, else the ports from 14912 probed:
+    docs/python.md, How a program finds Lapin) and connects to the only one open; with several open,
+    ``Lapin(project="House.lapin")`` or ``Lapin(product="lapin")`` names which (else LapinError lists them).
+    ``Lapin(port)`` names the port. Calls are made one at a time, from any thread; the engine sends every change as a
+    ``diff`` event, which ``on("diff", f)`` receives.
     """
 
-    def __init__(self, port: int | None = None, *, connect_timeout: float = 5.0):
-        tried = port or discovery.find_port()
-        candidates = [tried] if tried else [discovery.DEV_PORT]
-        last: Exception | None = None
-        ws: WebSocket | None = None
-        for p in candidates:
+    def __init__(self, port: int | None = None, *, project: str | None = None, product: str | None = None,
+                 connect_timeout: float = 5.0):
+        tried = port or discovery.env_port()
+        #: What the engine said it is (engine.hello) when it was found by looking; None when the port was named.
+        self.engine: dict | None = None
+        if not tried:
             try:
-                ws = WebSocket("127.0.0.1", p, timeout=connect_timeout)
-                self.port = p
-                break
-            except OSError as e:
-                last = e
-        if ws is None:
-            if tried:
-                raise LapinError(f"Lapin's engine did not answer on port {tried}: {last}")
-            raise LapinError("No open Lapin found: start the app (or pnpm dev), or set LAPIN_PORT.")
+                self.engine = discovery.choose(discovery.find_engines(), project, product)
+            except LookupError as e:
+                raise LapinError(str(e)) from None
+            tried = self.engine["port"]
+        try:
+            ws = WebSocket("127.0.0.1", tried, timeout=connect_timeout)
+        except OSError as e:
+            raise LapinError(f"Lapin's engine did not answer on port {tried}: {e}") from None
+        self.port = tried
         self._ws: WebSocket = ws
         self._next = 1
         self._pending: dict[int, _Slot] = {}

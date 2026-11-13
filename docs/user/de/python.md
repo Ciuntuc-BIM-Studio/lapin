@@ -149,3 +149,5 @@ Ein Gast einer geteilten Sitzung kann weder Skripte auf deinem Computer ausführ
 ## Für Entwickler
 
 Was `lapin` bietet (Befehle, Abfragen, Stapel, das Modell, Ereignisse), beschreibt der Entwicklerleitfaden *Lapin from Python* (`docs/python.md` im Repository von Lapin); das Paket ist auf PyPI als `lapinbim`.
+
+Ein Programm auf Ihrem Computer findet Lapin auf Port **14912**; ein zweites gleichzeitig geöffnetes Lapin nimmt 14913 und so weiter. Sind mehrere geöffnet, fragt das Programm, welches (`lapin.connect(project="Haus")`); um eines festzulegen, setzen Sie `LAPIN_PORT`.

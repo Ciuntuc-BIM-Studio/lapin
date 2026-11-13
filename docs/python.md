@@ -26,12 +26,26 @@ import lapinbim as lapin
 print(lapin.info().product.name)     # the module's own connection, made at the first call
 ```
 
-The engine is found as the MCP bridge finds it (docs/mcp.md):
-1. `LAPIN_PORT`, when set;
-2. else the first live `host.json` the engine writes while it runs, in `LAPIN_USER_DIR`, then the desktop app's user folder (`~/Library/Application Support/ro.ciuntucbimstudio.lapin` on macOS, `~/.local/share/Lapin` on Linux, `%LOCALAPPDATA%\Lapin` on Windows); a file whose process is gone is skipped;
-3. else port 47810, the one `pnpm dev` uses (its user folder is the repo's `.artifacts/user`).
+### How a program finds Lapin
 
-`lapin.connect(port)` makes the module's connection to a given port; `lapin.Lapin(port)` makes another one (`with lapin.Lapin() as l: …` closes it).
+The desktop app's engine listens on **14912** (L A P I N, the letters' places in the alphabet: 12 1 16 9 14 → 1 4 9 1 2), on 127.0.0.1 only. When 14912 is taken (a second Lapin open, or another program), it takes the next free one: 14913, 14914, … up to 15011; all of those taken, a port the system gives, said on its stderr. `pnpm dev`'s engine stays on 47810 (the Vite proxy's), so a dev engine never takes 14912 from the app. The engine is started with `--port auto` (also no `--port`, or `--port 0`); `--port N` is N exactly, or an error when N is taken.
+
+`lapinbim`, and the MCP bridge in the same way (docs/mcp.md), finds the engines in this order:
+
+1. `LAPIN_PORT`, when set: that port and no other (the Script panel's Python is given its engine's);
+2. the host files the engines write while they run: `<user-dir>/hosts/host-<pid>.json`, one per engine, and `<user-dir>/host.json`, the latest started (what older readers read), each `{"port", "pid", "product", "version", "started"}`, removed when the engine stops. A file whose process is gone (killed) is stale and skipped. The user folders: `~/Library/Application Support/ro.ciuntucbimstudio.lapin` on macOS, `~/.local/share/Lapin` on Linux, `%LOCALAPPDATA%\Lapin` on Windows (the repo's `.artifacts/user` under `pnpm dev`). `LAPIN_USER_DIR` names the one folder to read, and then nothing is probed;
+3. the ports 14912–15011 and 47810, probed: a fast connect and `GET /health` (half a second each, all at once).
+
+Every port found is confirmed by asking it who it is: `GET /health` (only by a loopback name: `127.0.0.1` or `localhost` in the `Host` header) and the WebSocket call `engine.hello` (answered at once, past the queue of calls) both answer
+
+```json
+{"engine": "lapin", "ok": true, "product": "lapin", "productName": "Lapin", "version": "0.1.900", "pid": 4242,
+ "port": 14912, "project": "/Users/me/House.lapin", "modules": ["core", "architecture", "…"]}
+```
+
+so another program listening on 14913 is never taken for Lapin (`project` is null until the project is saved). An engine from before this answers `/health` with `{"ok", "product", "modules"}` and is still recognised.
+
+`lapin.connect()` (and `Lapin()`) connects to the only Lapin open. With several open, it raises `LapinError` listing them (port, product, project) unless told which: `lapin.connect(project="House.lapin")` (the project's path, its file name, its name, or a part of its path), `lapin.connect(product="lapin")`, `lapin.connect(14913)`, or `LAPIN_PORT`. `lapin.engines()` (and `python -m lapinbim engines`) lists them, each as its engine says. `lapin.connect(port)` makes the module's connection to a given port; `lapin.Lapin(port)` makes another one (`with lapin.Lapin() as l: …` closes it).
 
 ## Calls
 
@@ -380,7 +394,7 @@ with lapin.ui.panel("Walls"):                                # a group of My too
 
 ## Tests
 
-`pnpm test:python` (`scripts/test-python.mjs`, part of `pnpm test`) runs `python/tests` with the standard library's `unittest` on the oldest Python found from 3.11 and the newest, each against an engine of its own: the built Debug host on a free port with a temporary user folder (`python/tests/engine.py`), as `scripts/lapin-mcp-check.mjs` starts it, never the engine of `pnpm dev`. They cover the WebSocket client against a small server of the test's own (fragments, ping, a 64-bit length, masking, close, a wrong handshake), the LPF1 reader, names and arguments, and against the engine: connecting by `LAPIN_PORT` and by `host.json`, typed commands, a batch as one named undo step (and all or nothing), undo and redo, a refused command, binary frames, quantities, element edits, diff events, saving, the module's own connection, the catalogue and the stubs; and (`test_live.py`) bodies made and set in metres and millimetres, stable GlobalIds, measures and the selection, a connection's watch, a trusted project script run again by the real Python as its own undo step, and `examples/truss_over_room.py` run against the engine, built and following its room. No Python 3.11 or newer: the run says so and passes; no built engine, no dotnet or no node: the engine's tests are skipped, saying why. `--all` runs every Python found.
+`pnpm test:python` (`scripts/test-python.mjs`, part of `pnpm test`) runs `python/tests` with the standard library's `unittest` on the oldest Python found from 3.11 and the newest, each against an engine of its own: the built Debug host on a free port with a temporary user folder (`python/tests/engine.py`), as `scripts/lapin-mcp-check.mjs` starts it, never the engine of `pnpm dev`. They cover the WebSocket client against a small server of the test's own (fragments, ping, a 64-bit length, masking, close, a wrong handshake), the LPF1 reader, names and arguments, and against the engine: connecting by `LAPIN_PORT` and by its host files, its `/health` and `engine.hello`; how a program finds Lapin against fake engines of the test's own (`test_discovery.py`: a probe finding a live one and skipping a listener that is not Lapin, a refused or silent one, stale host files, choosing among several, an engine from before `engine.hello`), typed commands, a batch as one named undo step (and all or nothing), undo and redo, a refused command, binary frames, quantities, element edits, diff events, saving, the module's own connection, the catalogue and the stubs; and (`test_live.py`) bodies made and set in metres and millimetres, stable GlobalIds, measures and the selection, a connection's watch, a trusted project script run again by the real Python as its own undo step, and `examples/truss_over_room.py` run against the engine, built and following its room. No Python 3.11 or newer: the run says so and passes; no built engine, no dotnet or no node: the engine's tests are skipped, saying why. `--all` runs every Python found.
 
 ## Publishing on PyPI
 

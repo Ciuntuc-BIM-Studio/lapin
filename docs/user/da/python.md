@@ -149,3 +149,5 @@ En gæst i en delt session kan hverken køre scripts på din computer, lægge et
 ## For udviklere
 
 Hvad `lapin` tilbyder (kommandoer, forespørgsler, batches, modellen, hændelser), beskrives i udviklervejledningen *Lapin from Python* (`docs/python.md` i Lapins repository); pakken findes på PyPI som `lapinbim`.
+
+Et program på din computer finder Lapin på port **14912**; et andet Lapin, der er åbent samtidig, tager 14913 og så videre. Er flere åbne, spørger programmet hvilket (`lapin.connect(project="Hus")`); for at vælge et bestemt, sæt `LAPIN_PORT`.

@@ -175,6 +175,24 @@ public sealed class EngineHub
         || origin.StartsWith("http://127.0.0.1:", StringComparison.Ordinal)
         || origin is "tauri://localhost" or "http://tauri.localhost" or "https://tauri.localhost";
 
+    /// <summary>Whether a request's Host names this computer's loopback (what /health answers to).</summary>
+    public static bool LoopbackHost(string host) => host is "127.0.0.1" or "localhost" or "[::1]" or "::1";
+
+    /// <summary>The port the engine listens on (0 before it does).</summary>
+    public int Port { get; set; }
+
+    /// <summary>
+    /// Who this is, for a program looking for Lapin on this computer (docs/python.md, How a program finds Lapin): the
+    /// <c>engine.hello</c> call's answer and /health's. <c>engine</c> is always "lapin", so another program listening on
+    /// 14913 is never taken for one. Read without the calls' queue: the project's path is a reference read at once.
+    /// </summary>
+    public JsonObject Hello() => new()
+    {
+        ["engine"] = "lapin", ["ok"] = true, ["product"] = _session.Product.Id, ["productName"] = _session.Product.Name,
+        ["version"] = Session.AppVersion, ["pid"] = Environment.ProcessId, ["port"] = Port,
+        ["project"] = _session.Path, ["modules"] = new JsonArray(_session.Product.Modules.Select(m => (JsonNode?)JsonValue.Create(m)).ToArray()),
+    };
+
     public async Task Serve(WebSocket ws, CancellationToken ct)
     {
         var client = new SocketClient(ws);
@@ -292,17 +310,19 @@ public sealed class EngineHub
         }
     }
 
-    /// <summary>A share.*, presence.*, cancel.*, extensions.* or script.* call, parsed; null for any other. They are answered at once, past the queue of calls (a cancel stops the one running).</summary>
+    /// <summary>A share.*, presence.*, cancel.*, extensions.*, script.*, measure.* or engine.hello call, parsed; null for any other. They are answered at once, past the queue of calls (a cancel stops the one running).</summary>
     static JsonObject? Own(string text)
     {
         // Cheap test first: every other call goes on untouched.
         if (!text.Contains("\"share.", StringComparison.Ordinal) && !text.Contains("\"presence.", StringComparison.Ordinal) && !text.Contains("\"cancel.", StringComparison.Ordinal)
-            && !text.Contains("\"extensions.", StringComparison.Ordinal) && !text.Contains("\"script.", StringComparison.Ordinal) && !text.Contains("\"measure.", StringComparison.Ordinal)) return null;
+            && !text.Contains("\"extensions.", StringComparison.Ordinal) && !text.Contains("\"script.", StringComparison.Ordinal) && !text.Contains("\"measure.", StringComparison.Ordinal)
+            && !text.Contains("\"engine.hello\"", StringComparison.Ordinal)) return null;
         try
         {
             return JsonNode.Parse(text) is JsonObject o && (string?)o["method"] is { } m
                 && (m.StartsWith("share.", StringComparison.Ordinal) || m.StartsWith("presence.", StringComparison.Ordinal) || m.StartsWith("cancel.", StringComparison.Ordinal)
-                    || m.StartsWith("extensions.", StringComparison.Ordinal) || m.StartsWith("script.", StringComparison.Ordinal) || m.StartsWith("measure.", StringComparison.Ordinal)) ? o : null;
+                    || m.StartsWith("extensions.", StringComparison.Ordinal) || m.StartsWith("script.", StringComparison.Ordinal) || m.StartsWith("measure.", StringComparison.Ordinal)
+                    || m == "engine.hello") ? o : null;
         }
         catch (System.Text.Json.JsonException) { return null; }
     }
@@ -317,6 +337,12 @@ public sealed class EngineHub
             object? result;
             switch (method)
             {
+                // Who this is (docs/python.md, How a program finds Lapin): answered at once, past the queue of calls, so a
+                // program looking for Lapin is not held up by a long call. This computer's own clients only (the project's path).
+                case "engine.hello":
+                    if (caller.Remote) throw new CommandException("Only the host can do that.");
+                    result = Hello();
+                    break;
                 case "presence.update":
                     if (client?.Participant is { } me) { me.Presence = (JsonObject)p.DeepClone(); await BroadcastPresence(); }
                     return null;

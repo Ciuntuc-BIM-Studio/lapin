@@ -149,3 +149,5 @@ Un ospite di una sessione condivisa non può eseguire script sul tuo computer, n
 ## Per gli sviluppatori
 
 Ciò che offre `lapin` (i comandi, le interrogazioni, i lotti, il modello, gli eventi) è descritto nella guida per sviluppatori, *Lapin from Python* (`docs/python.md` nel repository di Lapin); il pacchetto è su PyPI come `lapinbim`.
+
+Un programma sul tuo computer trova Lapin sulla porta **14912**; un secondo Lapin aperto contemporaneamente prende la 14913, e così via. Con più Lapin aperti, il programma chiede quale (`lapin.connect(project="Casa")`); per imporne uno, imposta `LAPIN_PORT`.

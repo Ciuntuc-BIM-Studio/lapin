@@ -64,6 +64,15 @@ element.setBody    {id, body, placement?}                                       
 
 `python/examples/truss_over_room.py` connects, takes the selected room (or the first), builds a planar Warren truss over its short side at its ceiling as one body with owner `script:truss_over_room`, watches the room, and on a change rebuilds the body with `element.setBody`, keeping the GlobalId. It runs from VS Code or a terminal against `pnpm dev`.
 
+### 2.5 Finding the engine (the contract, decision 541)
+
+Asked by Lite-STEP's author on 13.11.2026: a user cannot be sure of a port the system picks. An external program finds Lapin so (docs/python.md, How a program finds Lapin):
+
+- **The port**: the desktop app's engine (`--port auto`) listens on 127.0.0.1:**14912** (L A P I N → 12 1 16 9 14 → 1 4 9 1 2); taken, the next free of 14913…15011 (bound, not only looked at: a port another program takes meanwhile moves it on); all taken, a port the system gives, said on stderr. `--port N` is N exactly. `pnpm dev` stays on 47810.
+- **Who it is**: `GET /health` (loopback `Host` only) and the WebSocket call `engine.hello` (past the queue of calls) answer `{"engine": "lapin", "product", "productName", "version", "pid", "port", "project", "modules"}`. A client confirms `engine == "lapin"` before using a port, so another program on 14913 is never taken for Lapin.
+- **Several engines**: each writes `<user-dir>/hosts/host-<pid>.json` and `<user-dir>/host.json` (the latest; the old readers' file), removed when it stops; a file whose process is gone is stale. Discovery: `LAPIN_PORT` → host files → ports 14912–15011 and 47810 probed; `lapinbim.connect()` takes the only one, or the one whose `project`/`product` matches, else raises listing them; the MCP bridge the same, with `LAPIN_PROJECT`/`LAPIN_PRODUCT`.
+- Engine: `engine/src/Host/Lapin.Host/EnginePort.cs`, `EngineHostFiles.cs`, `EngineHub.Hello`; Python: `python/lapinbim/_discovery.py`; bridge: `scripts/lapin-mcp.mjs`; tests: `EnginePortTests`, `python/tests/test_discovery.py`.
+
 ## 3. What we deliberately do not do
 
 - **Route IFC through an external engine.** Lapin's IFC import and export stay Lapin's own (decision 129, docs/spec-ifc.md; exchange formats after their public specifications, no dependency). An external program gives Lapin bodies; Lapin writes the IFC. A second path would split fidelity rules (`RecognitionFidelity`) and GlobalId stability across two codebases.

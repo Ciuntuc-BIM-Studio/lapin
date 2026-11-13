@@ -186,3 +186,5 @@ Un invitat al unei sesiuni partajate nu poate rula scripturi pe calculatorul tă
 ## Pentru dezvoltatori
 
 Ce oferă `lapin` (comenzile, interogările, loturile, modelul, evenimentele) e descris în ghidul pentru dezvoltatori, *Lapin from Python* (`docs/python.md` în depozitul lui Lapin); pachetul e pe PyPI ca `lapinbim`.
+
+Un program de pe calculatorul tău găsește Lapin pe portul **14912**; un al doilea Lapin deschis în același timp ia 14913, și tot așa. Cu mai multe deschise, programul întreabă care (`lapin.connect(project="Casa")`); ca să impui unul, setează `LAPIN_PORT`.

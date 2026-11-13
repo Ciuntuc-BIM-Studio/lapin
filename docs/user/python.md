@@ -186,3 +186,5 @@ A guest of a shared session cannot run scripts on your computer, nor put one in 
 ## For developers
 
 What `lapin` offers (the commands, queries, batches, the model, events) is described in the developer guide, *Lapin from Python* (`docs/python.md` in Lapin's repository); the package is on PyPI as `lapinbim`.
+
+A program on your computer finds Lapin on port **14912**; a second Lapin open at the same time takes 14913, and so on. With several open, the program asks which one (`lapin.connect(project="House")`); to force one, set `LAPIN_PORT`.
