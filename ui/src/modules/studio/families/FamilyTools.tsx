@@ -100,7 +100,7 @@ function FamilyPlaceOptions() {
         <label key={p.key} className="cad-toggle" title={p.label}>
           <span data-no-i18n>{p.label}</span>{' '}
           <input value={s.values[p.key] ?? ''} size={6} data-no-i18n data-family-value={p.key} aria-invalid={parseValue(s.values[p.key] ?? '', p.kind, (t) => parseLength(t)) === 'bad'}
-            placeholder={p.kind === 'bool' ? (p.default ? 'yes' : 'no') : p.kind === 'length' ? formatLength(p.default) : String(p.default)}
+            placeholder={p.kind === 'bool' ? (p.default ? 'yes' : 'no') : p.kind === 'length' ? formatLength(Number(p.default)) : String(p.default)}
             onKeyDown={(e) => e.stopPropagation()} onChange={(e) => { const v = e.target.value; usePlaceFamily.setState((x) => ({ values: { ...x.values, [p.key]: v } })); }} />
         </label>
       ))}

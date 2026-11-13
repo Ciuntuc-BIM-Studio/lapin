@@ -831,6 +831,8 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .props .fields input:not([type=checkbox]):not([type=color]):not([type=radio]), .props .fields select { width: 100%; min-width: 0; height: 26px; margin: 0; padding: 0 4px; border: 0; border-radius: 0; background: transparent; color: var(--ink); }
 .props .fields input.num, .props .fields .cell.num { text-align: right; font-variant-numeric: tabular-nums; }
 .props .fields input:focus, .props .fields select:focus { outline: 2px solid var(--accent); outline-offset: -1px; background: var(--accent-wash); }
+.props .fields input[type=checkbox] { width: auto; margin: 0 4px; }
+.props .fields input[type=checkbox]:focus { outline-offset: 1px; background: none; }
 .props .fields input::placeholder { color: var(--ink-muted); font-style: italic; }
 .cell-wrap { display: flex; align-items: center; width: 100%; min-width: 0; }
 .cell-unit { padding-left: 4px; color: var(--ink-muted); font-size: 11px; }

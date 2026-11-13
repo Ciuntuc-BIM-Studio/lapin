@@ -100,7 +100,7 @@ export function FamilyEditor({ def, onChange, onEditSketch }: { def: FamilyDef; 
                 {p.kind === 'bool'
                   ? <select value={typed[p.key] ?? ''} data-fam-try={p.key} onChange={(e) => setTyped({ ...typed, [p.key]: e.target.value })}>
                     <option value="">{tr(p.default ? 'Yes (default)' : 'No (default)')}</option><option value="yes">Yes</option><option value="no">No</option></select>
-                  : <input className="mono" value={typed[p.key] ?? ''} placeholder={p.kind === 'length' ? formatLength(p.default) : String(p.default)} data-fam-try={p.key} data-no-i18n
+                  : <input className="mono" value={typed[p.key] ?? ''} placeholder={p.kind === 'length' ? formatLength(Number(p.default)) : String(p.default)} data-fam-try={p.key} data-no-i18n
                     aria-invalid={parseValue(typed[p.key] ?? '', p.kind, (t) => parseLength(t)) === 'bad'} onChange={(e) => setTyped({ ...typed, [p.key]: e.target.value })} />}
               </label>
             ))}

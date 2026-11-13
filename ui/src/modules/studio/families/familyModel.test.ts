@@ -80,6 +80,18 @@ describe('editing a definition', () => {
     expect(normaliseFamily(null).bodies).toEqual([]);
     expect(quickProblem(normaliseFamily(null))).toMatch(/one body/);
   });
+  it('keeps a parameter\'s table fields (formula, instance, published, group, bounds) and the text and integer kinds', () => {
+    const d = normaliseFamily({ params: [
+      { key: 'A', label: 'A', kind: 'length', default: 1, min: 0.1, max: 3, unit: 'm', group: 'Size', description: 'd', instance: false, published: false },
+      { key: 'B', label: 'B', kind: 'length', default: 2, formula: 'A * 2' },
+      { key: 'T', label: 'T', kind: 'text', default: 'oak' },
+      { key: 'N', label: 'N', kind: 'integer', default: 3 },
+    ], bodies: [] });
+    expect(d.params[0]).toEqual({ key: 'A', label: 'A', kind: 'length', default: 1, min: 0.1, max: 3, unit: 'm', group: 'Size', description: 'd', instance: false, published: false });
+    expect(d.params[1].formula).toBe('A * 2');
+    expect(d.params[2]).toMatchObject({ kind: 'text', default: 'oak' });
+    expect(d.params[3]).toMatchObject({ kind: 'integer', default: 3 });
+  });
   it('names a class plainly', () => {
     expect(className('IfcFlowTerminal')).toBe('Flow terminal');
     expect(className('IfcBuildingElementProxy')).toBe('Building element proxy');

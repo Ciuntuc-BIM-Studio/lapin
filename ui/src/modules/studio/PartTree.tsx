@@ -45,16 +45,21 @@ function SketchState({ viewId }: { viewId: string }) {
   return <span className={`muted small sketch-state ${chip.tone}`} data-testid="part-sketch-state">{n === 1 ? '1 constraint' : `${n} constraints`} · {chip.text}</span>;
 }
 
-const setValue = (id: string, key: string, value: number | null) => void execute('studio.setPartValues', { ids: [id], values: { [key]: value } });
+const setValue = (id: string, key: string, value: number | string | null) => void execute('studio.setPartValues', { ids: [id], values: { [key]: value } });
 
 function ParamValue({ id, p }: { id: string; p: ParamRow }) {
-  if (p.derived) return <span className="muted" title={`= ${p.formula}`} data-no-i18n>{p.kind === 'length' ? formatLength(p.value) : String(Math.round(p.value * 1e6) / 1e6)}</span>;
-  if (p.kind === 'bool') return <input type="checkbox" aria-label={p.label} checked={p.value !== 0} onChange={(e) => setValue(id, p.key, e.target.checked ? 1 : 0)} />;
-  if (p.kind === 'length') return <LengthField metres={p.value} title={p.label} style={{ width: 76 }} onCommit={(m) => setValue(id, p.key, m)} />;
-  return <NumberField value={Math.round(p.value * 1e6) / 1e6} title={p.label} style={{ width: 76 }} onCommit={(n) => setValue(id, p.key, n)} />;
+  if (p.kind === 'text') {
+    if (p.derived) return <span className="muted" title={`= ${p.formula}`} data-no-i18n>{String(p.value)}</span>;
+    return <input type="text" defaultValue={String(p.value)} key={String(p.value)} aria-label={p.label} style={{ width: 76 }} data-no-i18n onKeyDown={(e) => e.stopPropagation()} onBlur={(e) => { if (e.target.value !== String(p.value)) setValue(id, p.key, e.target.value); }} />;
+  }
+  const v = Number(p.value);
+  if (p.derived) return <span className="muted" title={`= ${p.formula}`} data-no-i18n>{p.kind === 'length' ? formatLength(v) : String(Math.round(v * 1e6) / 1e6)}</span>;
+  if (p.kind === 'bool') return <input type="checkbox" aria-label={p.label} checked={v !== 0} onChange={(e) => setValue(id, p.key, e.target.checked ? 1 : 0)} />;
+  if (p.kind === 'length') return <LengthField metres={v} title={p.label} style={{ width: 76 }} onCommit={(m) => setValue(id, p.key, m)} />;
+  return <NumberField value={Math.round(v * 1e6) / 1e6} title={p.label} style={{ width: 76 }} onCommit={(n) => setValue(id, p.key, n)} />;
 }
 
-const shownDefault = (p: ParamRow): string => (p.kind === 'bool' ? (p.default ? 'yes' : 'no') : p.kind === 'length' ? formatLength(p.default) : String(Math.round(p.default * 1e6) / 1e6));
+const shownDefault = (p: ParamRow): string => (p.kind === 'bool' ? (p.default ? 'yes' : 'no') : p.kind === 'length' ? formatLength(Number(p.default)) : typeof p.default === 'string' ? p.default : String(Math.round(p.default * 1e6) / 1e6));
 
 function openSketch(tree: PartTree, row: SketchRow): void {
   if (row.opens === 'sketch') void enterPartSketch(tree.id, row.id);

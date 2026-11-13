@@ -23,7 +23,7 @@ export interface StoredSketch {
 }
 export interface TreeStep { index: number; kind: string; label: string; suppressed?: boolean; when?: string | number; sketch?: string; feature?: number }
 export interface TreeParam {
-  key: string; label: string; kind: PartParamKind; default: number; value: number; instance: boolean; published: boolean;
+  key: string; label: string; kind: PartParamKind; default: number | string; value: number | string; instance: boolean; published: boolean;
   unit?: string; group?: string; description?: string; formula?: string; derived?: boolean; min?: number; max?: number;
 }
 export interface PartTree {
@@ -43,7 +43,7 @@ export interface StepRow {
   feature: number | null;
   canUp: boolean; canDown: boolean; canRemove: boolean; canToggle: boolean;
 }
-export interface ParamRow { key: string; label: string; kind: PartParamKind; value: number; default: number; unit: string; changed: boolean; instance: boolean; published: boolean; group: string; derived: boolean; formula: string }
+export interface ParamRow { key: string; label: string; kind: PartParamKind; value: number | string; default: number | string; unit: string; changed: boolean; instance: boolean; published: boolean; group: string; derived: boolean; formula: string }
 
 /** A recipe sketch opens on its view; a formula part's body opens in the part's editor; one with neither is only listed. */
 export function sketchRows(tree: PartTree): SketchRow[] {
@@ -77,9 +77,13 @@ export function stepRows(tree: PartTree): StepRow[] {
   });
 }
 
+/** A value differs from its default: numbers by more than 1e-9, a text exactly. */
+export const paramChanged = (value: number | string, def: number | string): boolean =>
+  typeof value === 'string' || typeof def === 'string' ? String(value) !== String(def) : Math.abs(value - def) > 1e-9;
+
 export const paramRows = (tree: PartTree): ParamRow[] => tree.params.map((p) => ({
   key: p.key, label: p.label, kind: p.kind, value: p.value, default: p.default, unit: p.unit ?? (p.kind === 'angle' ? '°' : ''),
-  changed: Math.abs(p.value - p.default) > 1e-9, instance: p.instance, published: p.published, group: p.group ?? '', derived: !!p.derived || !!p.formula, formula: p.formula ?? '',
+  changed: paramChanged(p.value, p.default), instance: p.instance, published: p.published, group: p.group ?? '', derived: !!p.derived || !!p.formula, formula: p.formula ?? '',
 }));
 
 /** The origin plane's corners (metres) in the part's frame: a square of `half` round the origin; x then y of the plane, z up. */

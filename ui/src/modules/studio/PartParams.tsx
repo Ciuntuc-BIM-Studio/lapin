@@ -17,6 +17,7 @@ import { formatLength, parseLength, unitLabel } from '../../engine/unitsStore';
 import { useCamera } from '../../viewport/camera';
 import { runSteps } from '../../viewport/grips';
 import { useScope } from '../../platform/scope';
+import { setLooks } from '../../platform/looks';
 import { t as tr } from '../../i18n';
 import { editedPartId, editPart } from './editMode';
 import { usePartTree } from './partTreeStore';
@@ -182,6 +183,13 @@ export function PartParamsPanel() {
     }, 250);
     return () => { live = false; clearTimeout(timer); };
   }, [id, flex.on, wantedKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  // While the ghost shows, the real part is drawn faded (as the scope fades the rest); restored on Keep, Put back or leaving.
+  const ghostShown = !!id && flex.on && !!preview?.ok;
+  useEffect(() => {
+    if (!ghostShown || !id) return;
+    setLooks('part-flex', { [id]: { opacity: 0.25 } });
+    return () => setLooks('part-flex', {});
+  }, [ghostShown, id]);
   if (!id || !open) return null;
   const changed = flexChanged(params, flex);
   const volume = previewVolume(preview);
@@ -297,8 +305,13 @@ export function PublishedParamsSection({ node }: { node: NodeDto }) {
   };
   const set = async (key: string, value: number | string | null) => {
     setError('');
+    // Shown at once (a checkbox would spring back until the engine answers), put right by the refetch if refused.
+    if (value != null) setValues((vs) => (vs.some((v) => v.key === key) ? vs.map((v) => (v.key === key ? { ...v, value } : v)) : [...vs, { key, value } as ValueDto]));
     const r = await execute('studio.setPartValues', { ids: ids(), values: { [key]: value } });
-    if (r === null) setError(useSession.getState().error ?? '');
+    if (r === null) {
+      setError(useSession.getState().error ?? '');
+      void query<{ values: ValueDto[] }>('studio.partValues', { id: node.id }).then((q) => setValues(q?.values ?? []));
+    }
   };
   return (
     <dl className="fields" data-section="part-params">

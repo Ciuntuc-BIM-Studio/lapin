@@ -113,6 +113,15 @@ describe("the part's tree as rows", () => {
     expect(r[1]).toMatchObject({ changed: false, unit: '°', group: 'Roof', published: false });
   });
 
+  it("keeps a text parameter's value a string and compares texts exactly", () => {
+    const r = paramRows(tree({ params: [
+      { key: 'T', label: 'Label', kind: 'text', default: 'oak', value: 'pine', instance: true, published: true },
+      { key: 'U', label: 'Same', kind: 'text', default: 'oak', value: 'oak', instance: true, published: true },
+    ] }));
+    expect(r[0]).toMatchObject({ value: 'pine', default: 'oak', changed: true });
+    expect(r[1].changed).toBe(false);
+  });
+
   it("draws an origin plane as a square in that plane", () => {
     expect(planeCorners('xy', 1).every((p) => p[2] === 0)).toBe(true);
     expect(planeCorners('xz', 1).every((p) => p[1] === 0)).toBe(true);

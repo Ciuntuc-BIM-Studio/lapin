@@ -5,9 +5,10 @@
  * project the engine's preview edges into a small isometric wireframe.
  */
 
-export type ParamKind = 'length' | 'number' | 'angle' | 'bool';
-export const PARAM_KINDS: ParamKind[] = ['length', 'number', 'angle', 'bool'];
-export const PARAM_KIND_LABELS: Record<ParamKind, string> = { length: 'Length', number: 'Number', angle: 'Angle', bool: 'Yes/no' };
+export type ParamKind = 'length' | 'number' | 'angle' | 'bool' | 'integer' | 'text';
+/** The kinds this editor offers; a family may hold a text or integer parameter made in the part's table, which it keeps. */
+export const PARAM_KINDS: ParamKind[] = ['length', 'number', 'angle', 'bool', 'integer'];
+export const PARAM_KIND_LABELS: Record<ParamKind, string> = { length: 'Length', number: 'Number', angle: 'Angle', bool: 'Yes/no', integer: 'Whole number', text: 'Text' };
 export type Plane = 'xy' | 'xz' | 'yz';
 export const PLANES: Plane[] = ['xy', 'xz', 'yz'];
 export const PLANE_LABELS: Record<Plane, string> = { xy: 'Lying (xy)', xz: 'Standing, front (xz)', yz: 'Standing, side (yz)' };
@@ -15,7 +16,11 @@ export const PLANE_LABELS: Record<Plane, string> = { xy: 'Lying (xy)', xz: 'Stan
 /** A number, or a formula of the family's parameters. */
 export type Cell = number | string;
 
-export interface FParam { key: string; label: string; kind: ParamKind; default: number }
+export interface FParam {
+  key: string; label: string; kind: ParamKind; default: number | string;
+  /** The part parameter table's fields (decision 520), kept as the engine has them. */
+  formula?: string; instance?: boolean; published?: boolean; group?: string; description?: string; unit?: string; min?: number; max?: number;
+}
 export interface FBody {
   name: string; plane: Plane; points: [Cell, Cell][]; holes?: [Cell, Cell][][]; depth: Cell; offset?: [Cell, Cell, Cell]; when?: string; material?: string;
   /** A body drawn from one of the part's own sketches (studio.constrainPart), its outline that sketch's shape: kept as the engine gives it. */
@@ -112,7 +117,7 @@ export function keyProblem(def: FamilyDef, at: number): string | null {
 }
 
 /** A parameter's default, as its kind allows (a yes/no is 0 or 1). */
-export const defaultFor = (kind: ParamKind, v: number): number => (kind === 'bool' ? (v ? 1 : 0) : v);
+export const defaultFor = (kind: ParamKind, v: number | string): number | string => (kind === 'text' ? String(v) : kind === 'bool' ? (Number(v) ? 1 : 0) : kind === 'integer' ? Math.round(Number(v) || 0) : Number(v) || 0);
 
 export function addBody(def: FamilyDef): FamilyDef {
   const name = freeKey(def.bodies.map((b) => b.name), 'Body');
@@ -229,7 +234,16 @@ export function normaliseFamily(d: Partial<FamilyDef> | null | undefined): Famil
     ifcClass: d?.ifcClass || 'IfcBuildingElementProxy',
     ...(d?.description ? { description: d.description } : {}), ...(d?.planSymbol ? { planSymbol: d.planSymbol } : {}),
     ...(d?.sketches?.length ? { sketches: d.sketches } : {}),
-    params: (d?.params ?? []).map((p) => ({ key: p.key, label: p.label || p.key, kind: p.kind ?? 'length', default: Number(p.default) || 0 })),
+    params: (d?.params ?? []).map((p): FParam => {
+      const kind = p.kind ?? 'length';
+      const out: FParam = { key: p.key, label: p.label || p.key, kind, default: kind === 'text' ? String(p.default ?? '') : Number(p.default) || 0 };
+      if (p.formula) out.formula = p.formula;
+      if (p.instance !== undefined) out.instance = p.instance;
+      if (p.published !== undefined) out.published = p.published;
+      for (const k of ['group', 'description', 'unit'] as const) if (p[k]) out[k] = p[k];
+      for (const k of ['min', 'max'] as const) if (typeof p[k] === 'number') out[k] = p[k];
+      return out;
+    }),
     bodies: (d?.bodies ?? []).map((b) => ({ ...b, name: b.name ?? '', plane: b.plane ?? 'xy', points: (b.points ?? []) as [Cell, Cell][], depth: b.depth ?? 0 })),
   };
 }

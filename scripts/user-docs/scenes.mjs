@@ -10073,6 +10073,9 @@ export const scenes = [
       await added.locator('[data-field=param-default]').press('Enter');
       await t.until(async () => (await added.locator('[data-testid=param-derived]').count()) === 1, 'a formula in the default makes the parameter derived');
       await t.shot('studio-part-params', { of: '[data-testid=part-params]', pad: 6 });
+      // The part comes into the free corner of the view, below the table, so the ghost is not drawn behind the panels.
+      await page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 0.7, pitch: -0.5, distance: 7.5, target: { x: 4.6, y: 3.4, z: 3.0 } }, false));
+      await t.wait(600);
       await table.locator('[data-testid=part-flex]').check();
       const flexW = table.locator('[data-part-param-row=W] [data-field=param-own]');
       await flexW.fill('2000');
