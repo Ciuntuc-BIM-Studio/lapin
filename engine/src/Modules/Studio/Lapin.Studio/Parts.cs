@@ -442,7 +442,9 @@ public static class Parts
             var def = DefOf(type);
             var values = def != null ? Values(def, e.Attrs["values"] as JsonObject) : [];
             var (place, dir, _) = Placing(e, m);
-            // The part's own sketches (§9 point 2): solved with this instance's values, their constraints and how they stand.
+            // The part's own sketches (§9 point 2): solved with this instance's values, their constraints and how they stand. Their
+            // shapes are (u, v) on the sketch's plane; the frame takes them to the world, origin + u·right + v·up (place is affine,
+            // dir its linear part, so place(off + u·U + v·V) = place(off) + u·dir(U) + v·dir(V)).
             foreach (var sk in (def != null ? PartSketches.SketchesOf(def) : []).OfType<JsonObject>())
             {
                 var plane = (string?)sk["plane"] ?? "xy";
@@ -456,6 +458,8 @@ public static class Parts
                     ["frame"] = FrameJson(place(off), dir(u), dir(v), dir(n)),
                 };
                 foreach (var (key, val) in PartSketches.Describe(sk, values)) o[key] = val?.DeepClone();
+                // The bodies drawn from it, and on each shape whether it is in their outlines (inProfile) or in any closed one (inLoop).
+                PartSketches.Annotate(def!, sk, o);
                 sketches.Add((JsonNode)o);
             }
             var i = 0;
