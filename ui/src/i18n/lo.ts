@@ -3141,6 +3141,26 @@ export const LO: Record<string, string> = {
   "That sketch is not in the model any more: redraw it to rebuild the solid.": "ຮ່າງນັ້ນບໍ່ຢູ່ໃນແບບຈຳລອງອີກຕໍ່ໄປ: ແຕ້ມໃໝ່ເພື່ອສ້າງແຂງຄືນ.",
   "Tab, or a double click on it in 3D": "Tab ຫຼື ກົດສອງຄັ້ງໃສ່ມັນໃນ 3D",
   "Layer from": "ຊັ້ນຈາກ", "Layer up to": "ຊັ້ນເຖິງ", "wall top": "ເທິງສຸດຂອງຝາ", "Layers 1 to n from the R face (right of the drawn direction) to the L face, as in the picture. Wall drawn anticlockwise: R is the exterior, L the interior. The core carries the wall's axis.": "ຊັ້ນ 1 ຫາ n ຈາກໜ້າ R (ເບື້ອງຂວາຂອງທິດທາງການແຕ້ມ) ຫາໜ້າ L ຕາມຮູບ. ຝາທີ່ແຕ້ມທວນເຂັມໂມງ: R ແມ່ນດ້ານນອກ, L ແມ່ນດ້ານໃນ. ແກນກາງຮັບແກນຂອງຝາ.", "Reverse layers": "ກັບຊັ້ນ", "Run the layers the other way: the R face's layer goes to the L face. Walls of the type swap faces once it is saved": "ວາງຊັ້ນຕາມລຳດັບກົງກັນຂ້າມ: ຊັ້ນຂອງໜ້າ R ຍ້າຍໄປໜ້າ L. ຝາຂອງປະເພດຈະສະຫຼັບໜ້າເມື່ອບັນທຶກ", "Reverse the order of the layers? Once the type is saved, its walls swap faces: what is exterior becomes interior.": "ກັບລຳດັບຂອງຊັ້ນບໍ? ເມື່ອບັນທຶກປະເພດແລ້ວ ຝາຂອງມັນຈະສະຫຼັບໜ້າ: ສິ່ງທີ່ເປັນດ້ານນອກຈະກາຍເປັນດ້ານໃນ.", "Open in Materials…": "ເປີດໃນວັດສະດຸ…", "Back to Wall types": "ກັບໄປປະເພດຝາ", "Back to Floor types": "ກັບໄປປະເພດພື້ນ",
+  // Sketch constraints (decision 520, stage C3)
+  "Constraints": "ຂໍ້ຈຳກັດ",
+  "Coincident": "ຊ້ອນກັນ",
+  "Point on object": "ຈຸດເທິງວັດຖຸ",
+  "Parallel": "ຂະໜານ",
+  "Tangent": "ແຕະ",
+  "Equal": "ເທົ່າກັນ",
+  "Symmetric": "ສົມມາດ",
+  "Fix": "ຕິດຕາຍ",
+  "Horizontal distance": "ໄລຍະແນວນອນ",
+  "Vertical distance": "ໄລຍະແນວຕັ້ງ",
+  "Fully constrained": "ຈຳກັດຄົບແລ້ວ",
+  "Conflicting constraints": "ຂໍ້ຈຳກັດຂັດແຍ້ງກັນ",
+  "Redundant constraints": "ຂໍ້ຈຳກັດຊ້ຳຊ້ອນ",
+  "The sketch does not solve": "ແບບຮ່າງແກ້ບໍ່ໄດ້",
+  "Reading the sketch…": "ກຳລັງອ່ານແບບຮ່າງ…",
+  "Show the constraints": "ສະແດງຂໍ້ຈຳກັດ",
+  "Hide the constraints": "ເຊື່ອງຂໍ້ຈຳກັດ",
+  "1 degree of freedom": "1 ລະດັບເສລີ",
+  "1 constraint": "1 ຂໍ້ຈຳກັດ",
 };
 
 /** Phrases with a number or a name in them. */
@@ -3425,4 +3445,8 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^Saved to (.+)\.$/, (m) => `ບັນທຶກໃສ່ ${m[1]}.`],
   [/^Title block added to the project: (.+)\.$/, (m) => `ເພີ່ມກອບຊື່ເຂົ້າໂຄງການແລ້ວ: ${m[1]}.`],
   [/^Furniture added to My furniture: (\d+) new, (\d+) already there\.$/, (m) => `ເພີ່ມເຟີນິເຈີເຂົ້າ ເຟີນິເຈີຂອງຂ້ອຍແລ້ວ: ໃໝ່ ${m[1]}, ມີແລ້ວ ${m[2]}.`],
+  [/^(\d+) degrees of freedom$/, (m) => `${m[1]} ລະດັບເສລີ`],
+  [/^(\d+) constraints$/, (m) => `${m[1]} ຂໍ້ຈຳກັດ`],
+  [/^Constraint dropped: (.+)$/, (m) => `ລຶບຂໍ້ຈຳກັດແລ້ວ: ${m[1]}`],
+  [/^(\d+) constraints dropped: (.+)$/, (m) => `ລຶບ ${m[1]} ຂໍ້ຈຳກັດແລ້ວ: ${m[2]}`],
 ];

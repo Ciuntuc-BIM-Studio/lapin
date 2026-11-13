@@ -3082,6 +3082,26 @@ export const DA: Record<string, string> = {
   "That sketch is not in the model any more: redraw it to rebuild the solid.": "Skitsen er ikke længere i modellen: tegn den igen for at genopbygge legemet.",
   "Tab, or a double click on it in 3D": "Tab, eller dobbeltklik på den i 3D",
   "Layer from": "Lag fra", "Layer up to": "Lag op til", "wall top": "vægtop", "Layers 1 to n from the R face (right of the drawn direction) to the L face, as in the picture. Wall drawn anticlockwise: R is the exterior, L the interior. The core carries the wall's axis.": "Lag 1 til n fra siden H (til højre for tegneretningen) til siden V, som på tegningen. Væg tegnet mod uret: H er ydersiden, V indersiden. Kernen bærer væggens akse.", "Reverse layers": "Vend lagene", "Run the layers the other way: the R face's layer goes to the L face. Walls of the type swap faces once it is saved": "Lægger lagene i omvendt rækkefølge: laget på siden H flyttes til siden V. Vægge af typen bytter side, når den er gemt", "Reverse the order of the layers? Once the type is saved, its walls swap faces: what is exterior becomes interior.": "Vende lagenes rækkefølge? Når typen er gemt, bytter dens vægge side: det der var ydre bliver indre.", "Open in Materials…": "Åbn i Materialer…", "Back to Wall types": "Tilbage til Vægtyper", "Back to Floor types": "Tilbage til Dæktyper",
+  // Sketch constraints (decision 520, stage C3)
+  "Constraints": "Geometriske bånd",
+  "Coincident": "Sammenfaldende",
+  "Point on object": "Punkt på objekt",
+  "Parallel": "Parallel",
+  "Tangent": "Tangent",
+  "Equal": "Lige",
+  "Symmetric": "Symmetrisk",
+  "Fix": "Fastlås",
+  "Horizontal distance": "Vandret afstand",
+  "Vertical distance": "Lodret afstand",
+  "Fully constrained": "Fuldt bundet",
+  "Conflicting constraints": "Modstridende bånd",
+  "Redundant constraints": "Overflødige bånd",
+  "The sketch does not solve": "Skitsen kan ikke løses",
+  "Reading the sketch…": "Læser skitsen…",
+  "Show the constraints": "Vis båndene",
+  "Hide the constraints": "Skjul båndene",
+  "1 degree of freedom": "1 frihedsgrad",
+  "1 constraint": "1 bånd",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -3368,4 +3388,8 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^Saved to (.+)\.$/, (m) => `Gemt i ${m[1]}.`],
   [/^Title block added to the project: (.+)\.$/, (m) => `Tegningshoved føjet til projektet: ${m[1]}.`],
   [/^Furniture added to My furniture: (\d+) new, (\d+) already there\.$/, (m) => `Møbler føjet til Mine møbler: ${m[1]} nye, ${m[2]} var der allerede.`],
+  [/^(\d+) degrees of freedom$/, (m) => `${m[1]} frihedsgrader`],
+  [/^(\d+) constraints$/, (m) => `${m[1]} bånd`],
+  [/^Constraint dropped: (.+)$/, (m) => `Bånd fjernet: ${m[1]}`],
+  [/^(\d+) constraints dropped: (.+)$/, (m) => `${m[1]} bånd fjernet: ${m[2]}`],
 ];

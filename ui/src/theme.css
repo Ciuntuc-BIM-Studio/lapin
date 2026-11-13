@@ -2390,3 +2390,37 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .part-tree .part-params td { padding: 2px 4px 2px 0; vertical-align: middle; }
 .part-tree .part-params tr.changed td:first-child { font-weight: 600; }
 polygon.part-plane { fill: var(--accent); fill-opacity: 0.14; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 6 4; }
+
+/* Sketch constraints (decision 520, C3): the sketch's shapes by how free they are, glyphs, dimensions, the chip. */
+.sketch-overlay .sk-shape { fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.sketch-overlay .sk-shape.free { stroke: #2f6db5; }
+.sketch-overlay .sk-shape.fixed { stroke: var(--ink); }
+.sketch-overlay .sk-shape.conflict { stroke: #d64545; stroke-width: 2.4; }
+.sketch-overlay .sk-free-point { fill: #2f6db5; stroke: var(--bg); stroke-width: 1; pointer-events: none; }
+.sketch-overlay .sk-badge { fill: var(--bg); stroke: var(--accent); stroke-width: 1.2; }
+.sketch-overlay .sk-glyph { cursor: pointer; }
+.sketch-overlay .sk-glyph.selected .sk-badge { fill: var(--accent-wash); stroke-width: 2.2; }
+.sketch-overlay .sk-glyph.conflict .sk-badge { stroke: #d64545; fill: #fbe3e3; }
+.sketch-overlay .sk-glyph.redundant .sk-badge { stroke: #c98a12; }
+.sketch-overlay .sk-icon { fill: none; stroke: var(--ink); stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
+.sketch-overlay .sk-letter { fill: var(--ink); font: 700 11px var(--font); pointer-events: none; }
+.sketch-overlay .sk-dim-line { fill: none; stroke: var(--accent); stroke-width: 1; pointer-events: none; }
+.sketch-overlay .sk-dim.driven .sk-dim-line { stroke-dasharray: 4 3; stroke: var(--ink-muted); }
+.sketch-overlay .sk-dim.conflict .sk-dim-line { stroke: #d64545; }
+.sketch-overlay .sk-dim-text { fill: var(--accent); font: 600 12px var(--font); paint-order: stroke; stroke: var(--bg); stroke-width: 3px; cursor: pointer; }
+.sketch-overlay .sk-dim.driven .sk-dim-text { fill: var(--ink-muted); font-weight: 500; }
+.sketch-overlay .sk-dim.conflict .sk-dim-text, .sketch-overlay .sk-dim.bad .sk-dim-text { fill: #d64545; }
+.sketch-overlay .sk-dim.selected .sk-dim-text { text-decoration: underline; }
+.sketch-overlay .sk-dim-hit { fill: transparent; }
+.sketch-overlay .sk-dim.selected .sk-dim-hit { fill: var(--accent-wash); }
+.sketch-overlay .sk-edit { width: 100%; box-sizing: border-box; height: 24px; padding: 0 6px; border: 1px solid var(--accent); border-radius: 3px; background: var(--bg); color: var(--ink); font: 600 12px var(--font); text-align: center; }
+.sketch-overlay .cad-preview.refused { stroke: #d64545; stroke-dasharray: 4 3; }
+.sketch-overlay .sk-reason { fill: #d64545; font: 600 12px var(--font); paint-order: stroke; stroke: var(--bg); stroke-width: 3px; }
+.sketch-chip { position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%); z-index: 5; display: inline-flex; align-items: center; gap: 7px; padding: 3px 4px 3px 10px; background: var(--hud); border: 1px solid var(--rule); border-radius: 999px; font-size: 12px; font-weight: 600; backdrop-filter: blur(4px); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); }
+.sketch-chip-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-muted); }
+.sketch-chip.free .sketch-chip-dot { background: #2f6db5; }
+.sketch-chip.fixed .sketch-chip-dot { background: var(--ink); }
+.sketch-chip.conflict .sketch-chip-dot { background: #d64545; }
+.sketch-chip.redundant .sketch-chip-dot { background: #c98a12; }
+.sketch-chip-eye { display: inline-grid; place-items: center; width: 22px; height: 22px; border: 0; border-radius: 50%; background: none; color: var(--ink-muted); cursor: pointer; }
+.sketch-chip-eye:hover { background: var(--accent-wash); color: var(--ink); }

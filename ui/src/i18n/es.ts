@@ -3087,6 +3087,26 @@ export const ES: Record<string, string> = {
   "That sketch is not in the model any more: redraw it to rebuild the solid.": "Ese boceto ya no está en el modelo: vuelva a dibujarlo para reconstruir el sólido.",
   "Tab, or a double click on it in 3D": "Tab, o doble clic sobre ella en 3D",
   "Layer from": "Capa desde", "Layer up to": "Capa hasta", "wall top": "parte superior del muro", "Layers 1 to n from the R face (right of the drawn direction) to the L face, as in the picture. Wall drawn anticlockwise: R is the exterior, L the interior. The core carries the wall's axis.": "Capas 1 a n desde la cara D (a la derecha del sentido de dibujo) hasta la cara I, como en el dibujo. Muro dibujado en sentido antihorario: D es el exterior, I el interior. El núcleo lleva el eje del muro.", "Reverse layers": "Invertir capas", "Run the layers the other way: the R face's layer goes to the L face. Walls of the type swap faces once it is saved": "Pone las capas en orden inverso: la capa de la cara D pasa a la cara I. Los muros del tipo intercambian sus caras al guardarlo", "Reverse the order of the layers? Once the type is saved, its walls swap faces: what is exterior becomes interior.": "¿Invertir el orden de las capas? Al guardar el tipo, sus muros intercambian las caras: lo que era exterior pasa a ser interior.", "Open in Materials…": "Abrir en Materiales…", "Back to Wall types": "Volver a Tipos de muro", "Back to Floor types": "Volver a Tipos de losa",
+  // Sketch constraints (decision 520, stage C3)
+  "Constraints": "Restricciones",
+  "Coincident": "Coincidente",
+  "Point on object": "Punto sobre objeto",
+  "Parallel": "Paralela",
+  "Tangent": "Tangente",
+  "Equal": "Igual",
+  "Symmetric": "Simétrica",
+  "Fix": "Fijar",
+  "Horizontal distance": "Distancia horizontal",
+  "Vertical distance": "Distancia vertical",
+  "Fully constrained": "Totalmente restringido",
+  "Conflicting constraints": "Restricciones en conflicto",
+  "Redundant constraints": "Restricciones redundantes",
+  "The sketch does not solve": "El boceto no se resuelve",
+  "Reading the sketch…": "Leyendo el boceto…",
+  "Show the constraints": "Mostrar las restricciones",
+  "Hide the constraints": "Ocultar las restricciones",
+  "1 degree of freedom": "1 grado de libertad",
+  "1 constraint": "1 restricción",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -3373,4 +3393,8 @@ export const ES_PATTERNS: Language['patterns'] = [
   [/^Saved to (.+)\.$/, (m) => `Guardado en ${m[1]}.`],
   [/^Title block added to the project: (.+)\.$/, (m) => `Cajetín añadido al proyecto: ${m[1]}.`],
   [/^Furniture added to My furniture: (\d+) new, (\d+) already there\.$/, (m) => `Mobiliario añadido a Mi mobiliario: ${m[1]} nuevos, ${m[2]} ya estaban.`],
+  [/^(\d+) degrees of freedom$/, (m) => `${m[1]} grados de libertad`],
+  [/^(\d+) constraints$/, (m) => `${m[1]} restricciones`],
+  [/^Constraint dropped: (.+)$/, (m) => `Restricción eliminada: ${m[1]}`],
+  [/^(\d+) constraints dropped: (.+)$/, (m) => `${m[1]} restricciones eliminadas: ${m[2]}`],
 ];

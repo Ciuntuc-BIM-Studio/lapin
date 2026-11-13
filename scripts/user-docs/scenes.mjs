@@ -9743,6 +9743,109 @@ export const scenes = [
       await t.until(async () => (await tree.count()) === 0, 'Tab leaves it too');
     },
   },
+  {
+    // Sketch constraints (docs/plan-studio-parametric.md §4, stage C3): a rectangle drawn a little crooked on a plan and extruded,
+    // made square with Horizontal and Vertical, held with Fix, sized with two dimensions; the glyphs, the colours and the chip say
+    // how free it is, and a dimension changed in place moves the solid.
+    id: 'sketch-constraints',
+    touches: ['studio', 'drafting'],
+    async run(t) {
+      const { page } = t;
+      // The plan fitted, then a little smaller, so the sketch is clear of the view's toolbar and the chip.
+      const fitSmall = async () => { await t.fit(); const b = await page.locator('[data-testid=plan]').boundingBox(); await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await page.mouse.wheel(0, 250); await t.wait(600); };
+      await t.fresh();
+      const storey = await t.storey();
+      const plan = `plan:${storey}`;
+      const outline = (await t.cmd('drafting.draw', { viewId: plan, shape: { type: 'polyline', pts: [[0, 0], [4.1, 0.15], [3.9, 3.05], [-0.1, 2.9]], closed: true } })).ids[0];
+      const block = (await t.cmd('studio.extrude', { profileId: outline, depth: 1 })).id;
+      t.expect(block, 'the rectangle is extruded');
+      await t.ui({ view: 'plan', keyPlan: false, selection: null, selected: [] });
+      await t.wait(800);
+      await fitSmall();
+      await t.button('Studio', { exact: true });
+      await t.wait(400);
+      // The ribbon is wider than the window: scrolled to where the Constraints group stands.
+      await page.evaluate(() => { const g = [...document.querySelectorAll('.band .group-label')].find((x) => x.textContent === 'Constraints'); g?.scrollIntoView({ inline: 'start', block: 'nearest' }); });
+      await page.mouse.move(700, 600);
+      await t.wait(400);
+      t.expect((await page.locator('.band').getByText('Constraints', { exact: true }).count()) > 0, 'the Studio tab has a Constraints group');
+      await t.shot('sketch-constraints-ribbon', { of: '.topbar', pad: 0 });
+      await page.evaluate(() => { const b = document.querySelector('.band'); if (b) b.scrollLeft = 0; });
+      const status = async () => t.call('doc.query', { name: 'studio.sketchStatus', args: { viewId: plan } });
+      const draft = async () => (await t.nodes()).find((n) => n.id === outline)?.props.shape.pts;
+      const click = async (x, y) => { const [px, py] = await t.planPoint(x, y); await page.mouse.move(px, py, { steps: 4 }); await page.mouse.click(px, py); await t.wait(700); };
+      const chip = page.locator('[data-testid=sketch-chip]');
+
+      // Horizontal on the two long sides: the edge under the cursor is lit and named before it is clicked.
+      await t.tool('studio.constrain.horizontal');
+      { const [px, py] = await t.planPoint(2.05, 0.075); await page.mouse.move(px - 20, py + 20); await page.mouse.move(px, py, { steps: 6 }); await t.wait(500); }
+      await t.shot('sketch-constraints-pick', { of: '[data-testid=plan]', pad: 0 });
+      await page.mouse.click(...(await t.planPoint(2.05, 0.075)));
+      await t.wait(700);
+      await click(1.9, 2.975);
+      await t.tool('studio.constrain.vertical');
+      await click(4.0, 1.6);
+      await click(-0.05, 1.45);
+      await t.keys('Escape');
+      await t.wait(500);
+      let pts = await draft();
+      t.expect(Math.abs(pts[0][1] - pts[1][1]) < 1e-6 && Math.abs(pts[2][1] - pts[3][1]) < 1e-6, 'the long sides are horizontal');
+      t.expect(Math.abs(pts[1][0] - pts[2][0]) < 1e-6 && Math.abs(pts[3][0] - pts[0][0]) < 1e-6, 'the short sides are vertical');
+      t.expect((await page.locator('[data-constraint][data-kind=horizontal]').count()) === 2, 'a glyph stands on each horizontal side');
+      await chip.waitFor({ timeout: 10_000 });
+      await t.until(async () => (await status()).dof === 4, 'the sketch has four degrees of freedom left');
+      t.expect(/4 degrees of freedom/.test(await chip.innerText()), 'the chip says four degrees of freedom');
+      t.expect((await page.locator('.sk-shape.free').count()) > 0, 'the free shape is blue');
+      await t.shot('sketch-constraints-free', { of: '[data-testid=plan]', pad: 0 });
+
+      // Fix the corner, then size the sketch with two dimensions: a line is picked, Enter takes its length, a value is typed.
+      await t.tool('studio.constrain.fix');
+      { const [v0] = await draft(); await click(v0[0], v0[1]); }
+      await t.keys('Escape');
+      await t.tool('studio.constrain.dimension');
+      { const [v0, v1] = await draft(); await click((v0[0] + v1[0]) / 2, (v0[1] + v1[1]) / 2); }
+      await t.keys('Enter');
+      await page.keyboard.type('4m');
+      await t.keys('Enter');
+      await t.wait(700);
+      { const [, v1, v2] = await draft(); await click((v1[0] + v2[0]) / 2, (v1[1] + v2[1]) / 2); }
+      await t.keys('Enter');
+      await page.keyboard.type('3m');
+      await t.keys('Enter');
+      await t.wait(700);
+      await t.keys('Escape');
+      await t.until(async () => (await status()).dof === 0, 'the sketch is fully constrained');
+      t.expect(/Fully constrained/.test(await chip.innerText()), 'the chip says fully constrained');
+      pts = await draft();
+      t.expect(Math.abs(pts[1][0] - pts[0][0] - 4) < 1e-6 && Math.abs(pts[2][1] - pts[1][1] - 3) < 1e-6, `the rectangle is 4 × 3 (corners ${JSON.stringify(pts)})`);
+      await t.shot('sketch-constraints-fixed', { of: '[data-testid=plan]', pad: 0 });
+      await t.shot('sketch-constraints-chip', { of: '[data-testid=sketch-chip]', pad: 6 });
+
+      // A dimension changed in place: the sketch, and the solid built from it, follow.
+      const dim = page.locator('[data-testid=constraint-dimension]', { hasText: '4' }).first();
+      await dim.dblclick();
+      const field = page.locator('[data-testid=constraint-edit]');
+      await field.waitFor({ timeout: 10_000 });
+      await t.shot('sketch-constraints-edit', { of: '[data-testid=plan]', pad: 0 });
+      await field.fill('6 m');
+      await field.press('Enter');
+      await t.until(async () => { const p = await draft(); return Math.abs(p[1][0] - p[0][0] - 6) < 1e-6; }, 'the width typed in place moves the sketch');
+      await fitSmall();
+      await t.shot('sketch-constraints-wide', { of: '[data-testid=plan]', pad: 0 });
+      t.expect((await t.nodes()).some((n) => n.id === block), 'the solid is still there, rebuilt from the sketch');
+      await t.ui({ view: '3d', selection: block, selected: [block] });
+      await t.wait(1500);
+      await t.fit();
+      await t.shot('sketch-constraints-3d', { of: '[data-testid=view3d]', pad: 0 });
+      // The glyphs can be hidden and shown again.
+      await t.ui({ view: 'plan', selection: null, selected: [] });
+      await t.wait(800);
+      await page.locator('[data-testid=sketch-constraints-toggle]').click();
+      await t.until(async () => (await page.locator('[data-constraint]').count()) === 0, 'hiding the constraints takes their glyphs off the view');
+      await page.locator('[data-testid=sketch-constraints-toggle]').click();
+      await t.until(async () => (await page.locator('[data-constraint]').count()) > 0, 'showing them puts them back');
+    },
+  },
 ];
 
 /** A zip of stored entries (name, text), enough for a BCF file: the local headers, the central directory and its end, with CRC-32. */

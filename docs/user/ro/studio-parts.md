@@ -42,3 +42,5 @@ Panoul din stânga vederii arată din ce e făcută piesa și se citește din no
 ## Mai departe
 
 Pagina Studio spune cum modelezi solide, iar pagina Familii cum fac parametrii și formulele o piesă.
+
+Schițele unei piese pot fi ținute cu **constrângeri** și cote: vezi [Constrângerile schiței](sketch-constraints.md).

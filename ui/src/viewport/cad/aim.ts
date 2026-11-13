@@ -138,6 +138,12 @@ export function useCadCanvas(o: {
         }
         return best ? { id: best.id, shape: best.shape } : null;
       },
+      pickDrafts: (p) => {
+        const tol = 8 / scaleRef.current;
+        const out: { id: string; shape: Shape; d: number }[] = [];
+        for (const [id, list] of drafts) for (const s of list) { const d = nearestOnShape(s, p).dist; if (d <= tol) out.push({ id, shape: s, d }); }
+        return out.sort((a, b) => a.d - b.d);
+      },
       pickAny: (p) => pickRef.current(p),
       shapeOf: (id) => drafts.get(id)?.[0] ?? null,
       outlinesOf: (id) => {

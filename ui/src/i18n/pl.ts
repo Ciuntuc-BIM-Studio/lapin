@@ -3088,6 +3088,26 @@ export const PL: Record<string, string> = {
   "That sketch is not in the model any more: redraw it to rebuild the solid.": "Tego szkicu nie ma już w modelu: narysuj go ponownie, aby odbudować bryłę.",
   "Tab, or a double click on it in 3D": "Tab lub dwukrotne kliknięcie w 3D",
   "Layer from": "Warstwa od", "Layer up to": "Warstwa do", "wall top": "góra ściany", "Layers 1 to n from the R face (right of the drawn direction) to the L face, as in the picture. Wall drawn anticlockwise: R is the exterior, L the interior. The core carries the wall's axis.": "Warstwy od 1 do n od lica P (po prawej stronie kierunku rysowania) do lica L, jak na rysunku. Ściana rysowana przeciwnie do ruchu wskazówek zegara: P to zewnątrz, L to wnętrze. Rdzeń niesie oś ściany.", "Reverse layers": "Odwróć warstwy", "Run the layers the other way: the R face's layer goes to the L face. Walls of the type swap faces once it is saved": "Układa warstwy w odwrotnej kolejności: warstwa lica P trafia na lico L. Ściany tego typu zamieniają się licami po zapisaniu", "Reverse the order of the layers? Once the type is saved, its walls swap faces: what is exterior becomes interior.": "Odwrócić kolejność warstw? Po zapisaniu typu jego ściany zamieniają się licami: to, co było zewnątrz, będzie wewnątrz.", "Open in Materials…": "Otwórz w Materiałach…", "Back to Wall types": "Wróć do Typów ścian", "Back to Floor types": "Wróć do Typów stropów",
+  // Sketch constraints (decision 520, stage C3)
+  "Constraints": "Więzy",
+  "Coincident": "Zbieżność",
+  "Point on object": "Punkt na obiekcie",
+  "Parallel": "Równolegle",
+  "Tangent": "Styczność",
+  "Equal": "Równość",
+  "Symmetric": "Symetria",
+  "Fix": "Zablokuj",
+  "Horizontal distance": "Odległość pozioma",
+  "Vertical distance": "Odległość pionowa",
+  "Fully constrained": "W pełni określony",
+  "Conflicting constraints": "Sprzeczne więzy",
+  "Redundant constraints": "Nadmiarowe więzy",
+  "The sketch does not solve": "Szkic nie daje się rozwiązać",
+  "Reading the sketch…": "Odczytywanie szkicu…",
+  "Show the constraints": "Pokaż więzy",
+  "Hide the constraints": "Ukryj więzy",
+  "1 degree of freedom": "1 stopień swobody",
+  "1 constraint": "1 więz",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {
@@ -3379,4 +3399,8 @@ export const PL_PATTERNS: Language['patterns'] = [
   [/^Saved to (.+)\.$/, (m) => `Zapisano w ${m[1]}.`],
   [/^Title block added to the project: (.+)\.$/, (m) => `Tabliczkę dodano do projektu: ${m[1]}.`],
   [/^Furniture added to My furniture: (\d+) new, (\d+) already there\.$/, (m) => `Meble dodano do Moich mebli: ${m[1]} nowych, ${m[2]} już było.`],
+  [/^(\d+) degrees of freedom$/, (m) => `${m[1]} stopni swobody`],
+  [/^(\d+) constraints$/, (m) => `${m[1]} więzów`],
+  [/^Constraint dropped: (.+)$/, (m) => `Usunięto więz: ${m[1]}`],
+  [/^(\d+) constraints dropped: (.+)$/, (m) => `Usunięto więzy (${m[1]}): ${m[2]}`],
 ];

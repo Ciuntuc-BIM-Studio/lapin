@@ -97,11 +97,20 @@ export async function execute(command: string, args: Record<string, unknown> = {
   try {
     const result = await engine.call('doc.execute', { command, args });
     useSession.setState({ error: null });
+    reportDropped(result);
     return result;
   } catch (e) {
     useSession.setState({ error: e instanceof Error ? e.message : String(e) });
     return null;
   }
+}
+
+/** A command that took sketch constraints off shapes it replaced says which and why (`dropped`): shown, never silent. */
+function reportDropped(result: unknown): void {
+  const dropped = (result as { dropped?: { kind?: string; reason?: string }[] } | null)?.dropped;
+  if (!Array.isArray(dropped) || !dropped.length) return;
+  const reason = dropped[0].reason ?? 'its shape changed';
+  notify(dropped.length === 1 ? `Constraint dropped: ${reason}` : `${dropped.length} constraints dropped: ${reason}`);
 }
 
 let recording: { command: string; args: Record<string, unknown> }[] | null = null;

@@ -33,6 +33,8 @@ export interface CadHost {
   pxPerMetre?(): number;
   /** The drafted shape under a point, with its exact geometry. */
   pickDraft(p: Vec2): { id: string; shape: Shape } | null;
+  /** Every drafted shape within a click's reach of a point, nearest first (a corner two shapes share has both). */
+  pickDrafts?(p: Vec2): { id: string; shape: Shape; d: number }[];
   /** Anything selectable under a point (a drafted shape, an annotation, an element). */
   pickAny(p: Vec2): string | null;
   /** A drafted shape's geometry, for previews. */

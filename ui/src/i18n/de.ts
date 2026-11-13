@@ -3087,6 +3087,26 @@ export const DE: Record<string, string> = {
   "That sketch is not in the model any more: redraw it to rebuild the solid.": "Diese Skizze ist nicht mehr im Modell: zeichnen Sie sie neu, um den Körper aufzubauen.",
   "Tab, or a double click on it in 3D": "Tab oder Doppelklick darauf in 3D",
   "Layer from": "Schicht von", "Layer up to": "Schicht bis", "wall top": "Wandoberkante", "Layers 1 to n from the R face (right of the drawn direction) to the L face, as in the picture. Wall drawn anticlockwise: R is the exterior, L the interior. The core carries the wall's axis.": "Schichten 1 bis n von der Seite R (rechts der Zeichenrichtung) zur Seite L, wie im Bild. Gegen den Uhrzeigersinn gezeichnete Wand: R ist außen, L innen. Der Kern trägt die Achse der Wand.", "Reverse layers": "Schichten umkehren", "Run the layers the other way: the R face's layer goes to the L face. Walls of the type swap faces once it is saved": "Die Schichten in umgekehrter Reihenfolge: die Schicht der Seite R kommt auf die Seite L. Die Wände des Typs tauschen nach dem Speichern ihre Seiten", "Reverse the order of the layers? Once the type is saved, its walls swap faces: what is exterior becomes interior.": "Reihenfolge der Schichten umkehren? Nach dem Speichern des Typs tauschen seine Wände die Seiten: was außen war, wird innen.", "Open in Materials…": "In Materialien öffnen…", "Back to Wall types": "Zurück zu Wandtypen", "Back to Floor types": "Zurück zu Deckentypen",
+  // Sketch constraints (decision 520, stage C3)
+  "Constraints": "Zwangsbedingungen",
+  "Coincident": "Deckungsgleich",
+  "Point on object": "Punkt auf Objekt",
+  "Parallel": "Parallel",
+  "Tangent": "Tangential",
+  "Equal": "Gleich",
+  "Symmetric": "Symmetrisch",
+  "Fix": "Fixieren",
+  "Horizontal distance": "Horizontaler Abstand",
+  "Vertical distance": "Vertikaler Abstand",
+  "Fully constrained": "Vollständig bestimmt",
+  "Conflicting constraints": "Widersprüchliche Zwangsbedingungen",
+  "Redundant constraints": "Überflüssige Zwangsbedingungen",
+  "The sketch does not solve": "Die Skizze lässt sich nicht lösen",
+  "Reading the sketch…": "Skizze wird gelesen…",
+  "Show the constraints": "Zwangsbedingungen anzeigen",
+  "Hide the constraints": "Zwangsbedingungen ausblenden",
+  "1 degree of freedom": "1 Freiheitsgrad",
+  "1 constraint": "1 Zwangsbedingung",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -3373,4 +3393,8 @@ export const DE_PATTERNS: Language['patterns'] = [
   [/^Saved to (.+)\.$/, (m) => `Gespeichert in ${m[1]}.`],
   [/^Title block added to the project: (.+)\.$/, (m) => `Plankopf zum Projekt hinzugefügt: ${m[1]}.`],
   [/^Furniture added to My furniture: (\d+) new, (\d+) already there\.$/, (m) => `Möbel zu Meine Möbel hinzugefügt: ${m[1]} neu, ${m[2]} waren schon da.`],
+  [/^(\d+) degrees of freedom$/, (m) => `${m[1]} Freiheitsgrade`],
+  [/^(\d+) constraints$/, (m) => `${m[1]} Zwangsbedingungen`],
+  [/^Constraint dropped: (.+)$/, (m) => `Zwangsbedingung entfernt: ${m[1]}`],
+  [/^(\d+) constraints dropped: (.+)$/, (m) => `${m[1]} Zwangsbedingungen entfernt: ${m[2]}`],
 ];

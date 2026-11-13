@@ -13,6 +13,8 @@ import { DimensionSection } from './DimensionSection';
 import { DimensionOptions, isSamePoint, pickDirection, segmentLabels, setContinuous, useDimTool } from './dimensionTool';
 import { DraftSection } from './DraftSection';
 import { fromJson, keyPoints, toJson, type Shape } from '../../viewport/cad/shapes';
+import { sketchPartOf } from '../../viewport/cad/constraints';
+import { viewHasConstraints } from '../../viewport/cad/sketchStore';
 import { frontView } from '../../viewport/frontView';
 import { BoundarySection, boundaryGrips, viewBoundary } from './ViewBoundary';
 import { xy } from '../../platform/vec';
@@ -505,7 +507,22 @@ function draftGrips(node: NodeDto): Grip[] {
       }
     }
   })();
-  return grips.map((g) => ({ ...g, view }));
+  return grips.map((g) => withSketch(g, node.id, view, s));
+}
+
+/**
+ * A point grip of a shape in a constrained sketch: dragging it asks the sketch's solver (`studio.dragSketch`, previewed live),
+ * so what the constraints tie to the point follows, or the drag is refused with its reason. The constraints are read when the
+ * drag drops, not when the grips are made.
+ */
+function withSketch(g: Grip, id: string, view: string | undefined, s: Shape): Grip {
+  const part = sketchPartOf(s, g.key);
+  if (!view || !part || !g.step) return { ...g, view };
+  const plain = g.step;
+  return {
+    ...g, view, sketch: { viewId: view, shape: id, part },
+    step: (to) => (viewHasConstraints(view) ? { command: 'studio.dragSketch', args: { viewId: view, shape: id, part, to: [to.x, to.y] } } : plain(to)),
+  };
 }
 
 /**

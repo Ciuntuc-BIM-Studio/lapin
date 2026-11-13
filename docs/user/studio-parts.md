@@ -42,3 +42,5 @@ The panel on the left of the view lists what the part is made of, and is read ag
 ## Where to go next
 
 The Studio page tells how to model solids, and the Families page how parameters and formulas make a part.
+
+Sketches in a part can be held with **constraints** and dimensions: see [Sketch constraints](sketch-constraints.md).

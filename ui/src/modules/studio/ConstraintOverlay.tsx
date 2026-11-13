@@ -1,0 +1,182 @@
+/**
+ * Sketch constraints drawn in a plan, a section or an elevation (stage C3 of decision 520): the sketch's shapes coloured by how
+ * free they are (blue free, ink fixed, red in conflict), a glyph at each geometric constraint, each dimension drawn with its
+ * value (driven ones in parentheses, a formula's on hover), and the live preview of a constrained drag. A glyph is clicked to
+ * select it (Delete removes it); a dimension is double-clicked to edit its value in place. Asked of the engine again after each
+ * change of the model (`studio.constraints`, `studio.sketchStatus`).
+ */
+
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { Vec2 } from '../../platform/module';
+import { execute, useSession } from '../../engine/session';
+import { lengthText, parseLength } from '../../engine/unitsStore';
+import {
+  constraintState, dimensionDraw, dimensionText, freePoints, glyphAnchor, GLYPHS, isDimension, parseDimensionInput, pointOf, shapeStates, spreadGlyphs, type ConstraintDto,
+} from '../../viewport/cad/constraints';
+import { useCad } from '../../viewport/cad/session';
+import { fromJson, polylines, type Shape } from '../../viewport/cad/shapes';
+import { refreshSketch, useSketch } from '../../viewport/cad/sketchStore';
+import { constraintCommandOn } from './constraintTools';
+
+interface Props {
+  toScreen: (p: Vec2) => { x: number; y: number };
+  scale: number;
+  view: { id: string | null; storeyId?: string | null };
+}
+
+const pts = (line: Vec2[], toScreen: Props['toScreen']) => line.map((p) => { const q = toScreen(p); return `${q.x.toFixed(1)},${q.y.toFixed(1)}`; }).join(' ');
+
+/** A glyph: a letter or a small drawing in a badge. */
+function Glyph({ c, x, y, selected, state, hit }: { c: ConstraintDto; x: number; y: number; selected: boolean; state: string; hit: boolean }) {
+  const g = GLYPHS[c.kind];
+  if (!g) return null;
+  const select = (e: React.PointerEvent) => {
+    if (e.button !== 0) return;
+    useSketch.setState((s) => ({ selected: e.shiftKey ? (s.selected.includes(c.id) ? s.selected.filter((i) => i !== c.id) : [...s.selected, c.id]) : [c.id] }));
+  };
+  return (
+    <g className={`sk-glyph${selected ? ' selected' : ''} ${state}`} data-overlay-hit data-constraint={c.id} data-kind={c.kind} transform={`translate(${x} ${y})`} style={{ pointerEvents: hit ? 'all' : 'none' }} onPointerDown={select}>
+      <circle r={9} className="sk-badge" />
+      {g.path ? <path d={g.path} className="sk-icon" /> : <text className="sk-letter" textAnchor="middle" dominantBaseline="central">{g.text}</text>}
+      <title>{`${g.label}${c.problem ? `: ${c.problem}` : ''}`}</title>
+    </g>
+  );
+}
+
+/** What a dimension is made of: the value as the engine knows it, in the project's unit. */
+const textOf = (c: ConstraintDto) => dimensionText(c, lengthText);
+
+/** The value typed in place: a number with its unit, or =formula. */
+function EditField({ c, x, y, done }: { c: ConstraintDto; x: number; y: number; done: () => void }) {
+  const initial = c.formula ? `=${c.formula}` : c.kind === 'angle' ? String(c.value ?? c.measured ?? '') : lengthText(c.value ?? c.measured ?? 0);
+  const [text, setText] = useState(initial);
+  const input = useRef<HTMLInputElement>(null);
+  useEffect(() => { input.current?.focus(); input.current?.select(); }, []);
+  const commit = () => {
+    const r = parseDimensionInput(text, c.kind, parseLength);
+    if ('error' in r) { useSession.setState({ error: r.error }); return; }
+    done();
+    void execute('studio.updateConstraint', { id: c.id, ...('formula' in r ? { formula: r.formula } : { value: r.value }), driving: true });
+  };
+  return (
+    <foreignObject x={x - 60} y={y - 13} width={120} height={26} data-overlay-hit style={{ pointerEvents: 'all' }}>
+      <input ref={input} className="sk-edit" data-testid="constraint-edit" value={text} aria-label="Dimension value" onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter') commit(); else if (e.key === 'Escape') done(); }} onBlur={done} />
+    </foreignObject>
+  );
+}
+
+/** The sketch overlay of the view this is drawn in. */
+export function ConstraintOverlay({ toScreen, scale, view }: Props) {
+  const viewId = view.id ?? (view.storeyId ? `plan:${view.storeyId}` : null);
+  const nodes = useSession((s) => s.nodes);
+  const version = useSession((s) => s.version);
+  const sketch = useSketch((s) => (viewId ? s.views[viewId] : undefined));
+  const hidden = useSketch((s) => (viewId ? !!s.hidden[viewId] : false));
+  const { selected, editing, preview } = useSketch();
+  const command = useCad((s) => s.command);
+  const toolOn = !!command && constraintCommandOn();
+
+  // The engine's answer, asked again after each change of the model.
+  useEffect(() => {
+    if (!viewId) return;
+    useSketch.setState({ shown: viewId });
+    const t = setTimeout(() => void refreshSketch(viewId), 40);
+    return () => clearTimeout(t);
+  }, [viewId, version]);
+  useEffect(() => () => { useSketch.setState((s) => (s.shown === viewId ? { shown: null } : s)); }, [viewId]);
+
+  // Delete takes the selected constraints off; Escape lets go; a press elsewhere lets go too.
+  useEffect(() => {
+    if (!selected.length) return;
+    const key = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement | null)?.closest?.('input, textarea, select')) return;
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault(); e.stopImmediatePropagation();
+        void execute('studio.removeConstraint', { ids: useSketch.getState().selected });
+      } else if (e.key === 'Escape') useSketch.setState({ selected: [] });
+    };
+    const press = (e: PointerEvent) => { if (!(e.target instanceof Element) || !e.target.closest('[data-constraint]')) useSketch.setState({ selected: [] }); };
+    window.addEventListener('keydown', key, true);
+    window.addEventListener('pointerdown', press, true);
+    return () => { window.removeEventListener('keydown', key, true); window.removeEventListener('pointerdown', press, true); };
+  }, [selected.length]);
+
+  /** The view's drafted shapes, as the model has them now. */
+  const drafts = useMemo(() => {
+    const out: { id: string; shape: Shape }[] = [];
+    if (!viewId) return out;
+    for (const n of nodes.values()) {
+      if (n.props.predefinedType !== 'DRAFT' || n.props.viewId !== viewId || !n.props.shape || n.props.hatch) continue;
+      const s = fromJson(n.props.shape as Record<string, unknown>);
+      if (s) out.push({ id: n.id, shape: s });
+    }
+    return out;
+  }, [nodes, viewId]);
+
+  const constraints = sketch?.constraints ?? [];
+  const status = sketch?.status ?? null;
+  const states = useMemo(() => shapeStates(drafts.map((d) => d.id), constraints, status), [drafts, constraints, status]);
+  const anchors = useMemo(() => {
+    const geo = constraints.filter((c) => !isDimension(c.kind));
+    const at = geo.map((c) => glyphAnchor(c));
+    return { geo, at };
+  }, [constraints]);
+
+  if (!viewId) return null;
+  const active = constraints.length > 0 || toolOn;
+  const dragShapes = preview && preview.viewId === viewId ? preview : null;
+  if (!active && !dragShapes) return null;
+  const showAll = active && !hidden;
+  const hit = !toolOn;
+  const off = 46 / scale;
+
+  const spots = anchors.at.map((p) => (p ? toScreen(p) : { x: 0, y: 0 }));
+  const spread = spreadGlyphs(spots);
+  const dims = constraints.filter((c) => isDimension(c.kind));
+
+  return (
+    <g className="sketch-overlay" data-testid="sketch-overlay" data-view={viewId}>
+      {showAll && status && drafts.map((d) => polylines(d.shape).map((line, i) => (
+        <polyline key={`${d.id}:${i}`} className={`sk-shape ${states.get(d.id) ?? 'free'}`} points={pts(line, toScreen)} />
+      )))}
+      {showAll && freePoints(status).map((f) => {
+        const at = drafts.find((d) => d.id === f.shape);
+        const q = at ? pointOf(at.shape, f.part) : null;
+        if (!q) return null;
+        const s = toScreen(q);
+        return <circle key={`${f.shape}:${f.part}`} className="sk-free-point" cx={s.x} cy={s.y} r={3.5} />;
+      })}
+      {showAll && dims.map((c) => {
+        const d = dimensionDraw(c, off);
+        if (!d) return null;
+        const t = toScreen(d.text);
+        const state = constraintState(c, status);
+        const on = selected.includes(c.id);
+        const cls = `sk-dim ${c.driving ? 'driving' : 'driven'} ${state}${on ? ' selected' : ''}${c.problem ? ' bad' : ''}`;
+        const text = textOf(c);
+        return (
+          <g key={c.id} className={cls} data-constraint={c.id} data-kind={c.kind}>
+            {d.lines.map((l, i) => <polyline key={i} className="sk-dim-line" points={pts(l, toScreen)} />)}
+            {editing === c.id ? <EditField c={c} x={t.x} y={t.y} done={() => useSketch.setState({ editing: null })} /> : (
+              <g data-overlay-hit style={{ pointerEvents: hit ? 'all' : 'none' }}
+                onPointerDown={(e) => { if (e.button === 0) useSketch.setState((s) => ({ selected: e.shiftKey ? [...s.selected, c.id] : [c.id] })); }}
+                onDoubleClick={() => useSketch.setState({ editing: c.id, selected: [c.id] })}>
+                <rect className="sk-dim-hit" x={t.x - text.length * 3.6 - 4} y={t.y - 10} width={text.length * 7.2 + 8} height={20} rx={3} />
+                <text className="sk-dim-text" x={t.x} y={t.y} textAnchor="middle" dominantBaseline="central" data-testid="constraint-dimension">{text}</text>
+                <title>{c.problem ?? (c.formula ? `=${c.formula}` : c.driving ? 'Double-click to change it' : 'Driven: it only reports')}</title>
+              </g>
+            )}
+          </g>
+        );
+      })}
+      {showAll && anchors.geo.map((c, i) => {
+        const p = anchors.at[i];
+        if (!p) return null;
+        return <Glyph key={c.id} c={c} x={spots[i].x + spread[i].dx} y={spots[i].y + spread[i].dy} selected={selected.includes(c.id)} state={constraintState(c, status)} hit={hit} />;
+      })}
+      {dragShapes?.shapes.flatMap((d) => polylines(d.shape).map((line, i) => <polyline key={`${d.id}:${i}`} className={`cad-preview${dragShapes.ok ? '' : ' refused'}`} points={pts(line, toScreen)} />))}
+      {dragShapes && !dragShapes.ok && dragShapes.reason && <text className="sk-reason" x={12} y={24}>{dragShapes.reason}</text>}
+    </g>
+  );
+}

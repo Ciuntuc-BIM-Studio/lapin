@@ -17,7 +17,7 @@ export interface PartTree {
 /** The origin's three planes as the panel names them. */
 export const PLANE_LABELS: Record<PartPlane, string> = { xy: 'Top plane (xy)', xz: 'Front plane (xz)', yz: 'Right plane (yz)' };
 
-export interface SketchRow { id: string; label: string; plane: string; opens: 'view' | 'body' | 'none'; missing: boolean }
+export interface SketchRow { id: string; label: string; viewId?: string; plane: string; opens: 'view' | 'body' | 'none'; missing: boolean }
 export interface StepRow {
   index: number; label: string; kind: string; suppressed: boolean; when: string | null;
   /** The feature's own index (updateFeature, moveFeature, removeFeature); null for a step the part is made by (its operation, its bodies). */
@@ -31,6 +31,7 @@ export function sketchRows(tree: PartTree): SketchRow[] {
   return tree.sketches.map((s) => ({
     id: s.id,
     label: s.name ?? s.role ?? s.id,
+    viewId: s.viewId,
     plane: s.plane,
     opens: tree.kind === 'formula' ? 'body' : s.viewId && !s.missing ? 'view' : 'none',
     missing: !!s.missing,

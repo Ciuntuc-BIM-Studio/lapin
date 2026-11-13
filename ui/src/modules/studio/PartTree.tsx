@@ -21,6 +21,8 @@ import type { NodeDto } from '../../engine/protocol';
 import { editedPartId, editPart, finishPart } from './editMode';
 import { editFamily } from './families/FamilyTools';
 import { editSketch } from './sketch';
+import { chipOf } from '../../viewport/cad/constraints';
+import { refreshSketch, useSketch } from '../../viewport/cad/sketchStore';
 import { PLANE_LABELS, paramRows, planeCorners, sketchRows, stepRows, type ParamRow, type PartPlane, type PartTree, type SketchRow } from './partTreeModel';
 
 /** The origin plane shown in 3D: the one the pointer is over, else the one clicked. */
@@ -38,6 +40,16 @@ function usePartTree(id: string | null): PartTree | null {
     return () => { live = false; };
   }, [id, version]);
   return tree;
+}
+
+/** A sketch's constraints and how free it is, beside it in the tree; read again as the model changes. */
+function SketchState({ viewId }: { viewId: string }) {
+  const version = useSession((s) => s.version);
+  const sketch = useSketch((s) => s.views[viewId]);
+  useEffect(() => { void refreshSketch(viewId); }, [viewId, version]);
+  if (!sketch?.constraints.length) return null;
+  const n = sketch.constraints.length, chip = chipOf(sketch.status);
+  return <span className={`muted small sketch-state ${chip.tone}`} data-testid="part-sketch-state">{n === 1 ? '1 constraint' : `${n} constraints`} · {chip.text}</span>;
 }
 
 const setValue = (id: string, key: string, value: number | null) => void execute('studio.setPartValues', { ids: [id], values: { [key]: value } });
@@ -98,6 +110,7 @@ export function PartTreePanel() {
                 <li key={s.id} className={s.missing ? 'off' : ''}>
                   <button type="button" className="link" data-part-sketch={s.id} onClick={() => openSketch(tree, s)}><PenTool size={12} /><span data-no-i18n>{s.label}</span></button>
                   <span className="muted small" data-no-i18n>{s.plane}</span>
+                  {s.viewId && !s.missing && <SketchState viewId={s.viewId} />}
                 </li>
               ))}
             </ul>

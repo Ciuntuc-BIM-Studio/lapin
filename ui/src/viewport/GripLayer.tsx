@@ -29,6 +29,7 @@ import type { Shape } from './cad/shapes';
 import { useLang } from '../i18n';
 import { faceLetters } from './faceMarks';
 import { setGripDrag } from './gripDrag';
+import { endPreview, previewDrag, viewHasConstraints } from './cad/sketchStore';
 
 /** Where a model point shows on screen; `z` (the 3D view's) is the height it stands at. */
 type ToScreen = (p: Vec2, z?: number) => { x: number; y: number };
@@ -123,7 +124,7 @@ export function useGripEditor(o: GripEditorOptions) {
   };
 
   // A view that goes while a grip is dragged takes its trace with it.
-  useEffect(() => () => traceEnd('grip'), []);
+  useEffect(() => () => { traceEnd('grip'); endPreview(); }, []);
   // In 2D, the drag told to what follows it (a door's temporary dimensions, decision 511).
   useEffect(() => {
     if (o.zOf) return;
@@ -196,7 +197,7 @@ export function useGripEditor(o: GripEditorOptions) {
     (e.target as Element).setPointerCapture?.(e.pointerId);
     setDrag({ group: g, members: insert ? [first] : who, at: g.at, moved: false, copy, insert });
     // Its length and angle can be typed while dragging; Enter puts it there.
-    liveBegin('grip', g.at, (p) => { void dropGrips(movers(g, pickOf(g), alt.current), p); setDrag(null); liveEnd('grip'); traceEnd('grip'); }, { delta: true });
+    liveBegin('grip', g.at, (p) => { void dropGrips(movers(g, pickOf(g), alt.current), p); setDrag(null); endPreview(); liveEnd('grip'); traceEnd('grip'); }, { delta: true });
     // In 2D the move's trace: the ghost of what the grip moves left where it is (a move grip carries it along).
     if (!o.zOf) traceBegin('grip', g.at, ghostOf(who), who[0].kind === 'move');
     return true;
@@ -222,7 +223,11 @@ export function useGripEditor(o: GripEditorOptions) {
     const kept = keep ? keep(typed, e.shiftKey) : typed;
     // A module's own snap for a grip of an element it does not own (a generated block's grid), after the owner's.
     const at = members.length === 1 ? gripSnapped(members[0], kept, e.shiftKey) : kept;
-    setDrag({ ...drag, members, at, moved: drag.moved || Math.hypot(at.x - drag.group.at.x, at.y - drag.group.at.y) > 1e-6 });
+    const moved = drag.moved || Math.hypot(at.x - drag.group.at.x, at.y - drag.group.at.y) > 1e-6;
+    setDrag({ ...drag, members, at, moved });
+    // A point of a constrained sketch: what the solver would make of it, shown live.
+    const sk = members.length === 1 ? members[0].sketch : undefined;
+    if (moved && sk && viewHasConstraints(sk.viewId)) void previewDrag(sk.viewId, sk.shape, sk.part, at);
     return true;
   };
   const onPointerUp = (): boolean => {
@@ -235,6 +240,7 @@ export function useGripEditor(o: GripEditorOptions) {
       const ids = [...new Set(drag.members.map((m) => m.owner).filter((x): x is string => !!x))];
       if (ids.length) void execute('element.transform', { ids, op: 'copy', by: [drag.at.x - drag.group.at.x, drag.at.y - drag.group.at.y], ...frameArg(drag.group.at) });
     } else if (drag.moved) void dropGrips(drag.members, drag.at);
+    endPreview();
     setDrag(null);
     liveEnd('grip');
     traceEnd('grip');

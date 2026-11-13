@@ -3079,6 +3079,26 @@ export const ZH: Record<string, string> = {
   "That sketch is not in the model any more: redraw it to rebuild the solid.": "该草图已不在模型中：重新绘制它以重建实体。",
   "Tab, or a double click on it in 3D": "Tab，或在 3D 中双击它",
   "Layer from": "层起点", "Layer up to": "层终点", "wall top": "墙顶", "Layers 1 to n from the R face (right of the drawn direction) to the L face, as in the picture. Wall drawn anticlockwise: R is the exterior, L the interior. The core carries the wall's axis.": "第 1 至 n 层，从 R 面（绘制方向的右侧）到 L 面，与图中一致。逆时针绘制的墙：R 为外侧，L 为内侧。核心层承载墙的轴线。", "Reverse layers": "反转层", "Run the layers the other way: the R face's layer goes to the L face. Walls of the type swap faces once it is saved": "将各层按相反顺序排列：R 面的层移到 L 面。保存后，该类型的墙会交换两面", "Reverse the order of the layers? Once the type is saved, its walls swap faces: what is exterior becomes interior.": "反转各层的顺序？保存该类型后，其墙的两面会互换：原来的外侧变为内侧。", "Open in Materials…": "在材料中打开…", "Back to Wall types": "返回墙类型", "Back to Floor types": "返回楼板类型",
+  // Sketch constraints (decision 520, stage C3)
+  "Constraints": "约束",
+  "Coincident": "重合",
+  "Point on object": "点在对象上",
+  "Parallel": "平行",
+  "Tangent": "相切",
+  "Equal": "相等",
+  "Symmetric": "对称",
+  "Fix": "固定",
+  "Horizontal distance": "水平距离",
+  "Vertical distance": "垂直距离",
+  "Fully constrained": "完全约束",
+  "Conflicting constraints": "约束冲突",
+  "Redundant constraints": "冗余约束",
+  "The sketch does not solve": "草图无法求解",
+  "Reading the sketch…": "正在读取草图…",
+  "Show the constraints": "显示约束",
+  "Hide the constraints": "隐藏约束",
+  "1 degree of freedom": "1 个自由度",
+  "1 constraint": "1 个约束",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [
@@ -3362,4 +3382,8 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^Saved to (.+)\.$/, (m) => `已保存到 ${m[1]}.`],
   [/^Title block added to the project: (.+)\.$/, (m) => `已将标题栏添加到项目：${m[1]}.`],
   [/^Furniture added to My furniture: (\d+) new, (\d+) already there\.$/, (m) => `已添加到“我的家具”：新增 ${m[1]} 个，已有 ${m[2]} 个.`],
+  [/^(\d+) degrees of freedom$/, (m) => `${m[1]} 个自由度`],
+  [/^(\d+) constraints$/, (m) => `${m[1]} 个约束`],
+  [/^Constraint dropped: (.+)$/, (m) => `已移除约束：${m[1]}`],
+  [/^(\d+) constraints dropped: (.+)$/, (m) => `已移除 ${m[1]} 个约束：${m[2]}`],
 ];

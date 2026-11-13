@@ -26,6 +26,9 @@ import { OperationsCard, hasTools } from './OperationsCard';
 import { RefPlaneSection } from './RefPlaneSection';
 import { editPart, finishPart, isEditable, registerEditMode } from './editMode';
 import { EditPartSection, PartPlane3D, PartTreePanel } from './PartTree';
+import { ConstraintOverlay } from './ConstraintOverlay';
+import { SketchChip } from './SketchChip';
+import { constraintTool, DIMENSIONS, GEOMETRIC } from './constraintTools';
 import { COMMAND, DEFAULT_JUSTIFY, JUSTIFY, frontViewId, makesNative, nativeArgs, shapeFits, solidArgs, threePoints, viewOf, type ThickChoice, type ThickOp } from './thick';
 import { cadLog, registerCommand, startCommand, type Step } from '../../viewport/cad/session';
 import { useCamera, type Vec3 } from '../../viewport/camera';
@@ -782,6 +785,7 @@ const studio: LapinModule = {
         tools: [primitive('box', 'Cuboid', Box), primitive('cylinder', 'Cylinder', Cylinder)],
         small: [primitive('sphere', 'Sphere', CircleDot), primitive('cone', 'Cone', Cone), primitive('torus', 'Torus', Torus), primitive('wedge', 'Wedge', TriangleRight), primitive('pyramid', 'Pyramid', Pyramid)],
       },
+      { label: 'Constraints', tools: [constraintTool(GEOMETRIC[0]), constraintTool(GEOMETRIC[2]), constraintTool(GEOMETRIC[3]), constraintTool(DIMENSIONS[0])], small: [...GEOMETRIC.filter((t) => !['coincident', 'horizontal', 'vertical'].includes(t.kind)).map(constraintTool), ...DIMENSIONS.slice(1).map(constraintTool)] },
       { label: 'Part', tools: [editPartTool, finishPartTool] },
       { label: 'Families', tools: [placeFamilyTool, familiesDialogTool], small: [familyFromSketch] },
       {
@@ -812,7 +816,9 @@ const studio: LapinModule = {
     // Any element some solid cuts, unites or intersects: those solids listed, selectable even when never drawn.
     { id: 'studioOperations', label: 'Boolean', classes: ['*'], shows: hasTools, component: OperationsCard },
   ],
-  overlays: [PartTreePanel],
+  overlays: [PartTreePanel, SketchChip],
+  planOverlays: [ConstraintOverlay],
+  drawingOverlays: [ConstraintOverlay],
   overlays3d: [PartPlane3D],
   grips: Object.fromEntries(SOLID_CLASSES.map((c) => [c, solidGrips])),
   references: Object.fromEntries(SOLID_CLASSES.map((c) => [c, solidRefs])),

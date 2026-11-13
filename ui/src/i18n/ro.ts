@@ -3087,6 +3087,26 @@ export const RO: Record<string, string> = {
   "That sketch is not in the model any more: redraw it to rebuild the solid.": "Schița nu mai este în model: desenați-o din nou ca să se refacă solidul.",
   "Tab, or a double click on it in 3D": "Tab sau dublu clic pe ea în 3D",
   "Layer from": "Strat de la", "Layer up to": "Strat până la", "wall top": "sus perete", "Layers 1 to n from the R face (right of the drawn direction) to the L face, as in the picture. Wall drawn anticlockwise: R is the exterior, L the interior. The core carries the wall's axis.": "Straturile 1…n de la fața D (dreapta direcției de desenare) la fața S, ca în desen. Perete desenat în sens antiorar: D este exteriorul, S interiorul. Miezul poartă axa peretelui.", "Reverse layers": "Inversează straturile", "Run the layers the other way: the R face's layer goes to the L face. Walls of the type swap faces once it is saved": "Pune straturile în ordine inversă: stratul de pe fața D trece pe fața S. Pereții tipului își schimbă fețele după salvare", "Reverse the order of the layers? Once the type is saved, its walls swap faces: what is exterior becomes interior.": "Inversezi ordinea straturilor? După salvarea tipului, pereții lui își schimbă fețele: ce era exterior devine interior.", "Open in Materials…": "Deschide în Materiale…", "Back to Wall types": "Înapoi la Tipuri de pereți", "Back to Floor types": "Înapoi la Tipuri de plăci",
+  // Sketch constraints (decision 520, stage C3)
+  "Constraints": "Constrângeri",
+  "Coincident": "Coincidentă",
+  "Point on object": "Punct pe obiect",
+  "Parallel": "Paralelă",
+  "Tangent": "Tangentă",
+  "Equal": "Egală",
+  "Symmetric": "Simetrică",
+  "Fix": "Fixează",
+  "Horizontal distance": "Distanță orizontală",
+  "Vertical distance": "Distanță verticală",
+  "Fully constrained": "Complet constrâns",
+  "Conflicting constraints": "Constrângeri în conflict",
+  "Redundant constraints": "Constrângeri redundante",
+  "The sketch does not solve": "Schița nu se rezolvă",
+  "Reading the sketch…": "Se citește schița…",
+  "Show the constraints": "Arată constrângerile",
+  "Hide the constraints": "Ascunde constrângerile",
+  "1 degree of freedom": "1 grad de libertate",
+  "1 constraint": "1 constrângere",
 };
 
 /** Phrases with a number or a name in them. */
@@ -3371,4 +3391,8 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^Saved to (.+)\.$/, (m) => `Salvat în ${m[1]}.`],
   [/^Title block added to the project: (.+)\.$/, (m) => `Cartuș adăugat în proiect: ${m[1]}.`],
   [/^Furniture added to My furniture: (\d+) new, (\d+) already there\.$/, (m) => `Mobilier adăugat în Mobilierul meu: ${m[1]} noi, ${m[2]} erau deja.`],
+  [/^(\d+) degrees of freedom$/, (m) => `${m[1]} grade de libertate`],
+  [/^(\d+) constraints$/, (m) => `${m[1]} constrângeri`],
+  [/^Constraint dropped: (.+)$/, (m) => `Constrângere eliminată: ${m[1]}`],
+  [/^(\d+) constraints dropped: (.+)$/, (m) => `${m[1]} constrângeri eliminate: ${m[2]}`],
 ];

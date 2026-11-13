@@ -3091,6 +3091,26 @@ export const FR: Record<string, string> = {
   "That sketch is not in the model any more: redraw it to rebuild the solid.": "Cette esquisse n'est plus dans le modèle : redessinez-la pour reconstruire le solide.",
   "Tab, or a double click on it in 3D": "Tab, ou double-clic dessus en 3D",
   "Layer from": "Couche de", "Layer up to": "Couche jusqu’à", "wall top": "haut du mur", "Layers 1 to n from the R face (right of the drawn direction) to the L face, as in the picture. Wall drawn anticlockwise: R is the exterior, L the interior. The core carries the wall's axis.": "Couches 1 à n de la face D (à droite du sens de tracé) à la face G, comme sur le dessin. Mur tracé dans le sens antihoraire : D est l’extérieur, G l’intérieur. Le noyau porte l’axe du mur.", "Reverse layers": "Inverser les couches", "Run the layers the other way: the R face's layer goes to the L face. Walls of the type swap faces once it is saved": "Met les couches dans l’ordre inverse : la couche de la face D passe sur la face G. Les murs du type échangent leurs faces une fois enregistré", "Reverse the order of the layers? Once the type is saved, its walls swap faces: what is exterior becomes interior.": "Inverser l’ordre des couches ? Une fois le type enregistré, ses murs échangent leurs faces : ce qui était extérieur devient intérieur.", "Open in Materials…": "Ouvrir dans Matériaux…", "Back to Wall types": "Retour à Types de murs", "Back to Floor types": "Retour à Types de dalles",
+  // Sketch constraints (decision 520, stage C3)
+  "Constraints": "Contraintes",
+  "Coincident": "Coïncidente",
+  "Point on object": "Point sur objet",
+  "Parallel": "Parallèle",
+  "Tangent": "Tangente",
+  "Equal": "Égale",
+  "Symmetric": "Symétrique",
+  "Fix": "Fixer",
+  "Horizontal distance": "Distance horizontale",
+  "Vertical distance": "Distance verticale",
+  "Fully constrained": "Entièrement contraint",
+  "Conflicting constraints": "Contraintes en conflit",
+  "Redundant constraints": "Contraintes redondantes",
+  "The sketch does not solve": "L'esquisse ne se résout pas",
+  "Reading the sketch…": "Lecture de l'esquisse…",
+  "Show the constraints": "Afficher les contraintes",
+  "Hide the constraints": "Masquer les contraintes",
+  "1 degree of freedom": "1 degré de liberté",
+  "1 constraint": "1 contrainte",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;
@@ -3377,4 +3397,8 @@ export const FR_PATTERNS: Language['patterns'] = [
   [/^Saved to (.+)\.$/, (m) => `Enregistré dans ${m[1]}.`],
   [/^Title block added to the project: (.+)\.$/, (m) => `Cartouche ajouté au projet : ${m[1]}.`],
   [/^Furniture added to My furniture: (\d+) new, (\d+) already there\.$/, (m) => `Mobilier ajouté à Mon mobilier : ${m[1]} nouveaux, ${m[2]} déjà là.`],
+  [/^(\d+) degrees of freedom$/, (m) => `${m[1]} degrés de liberté`],
+  [/^(\d+) constraints$/, (m) => `${m[1]} contraintes`],
+  [/^Constraint dropped: (.+)$/, (m) => `Contrainte supprimée : ${m[1]}`],
+  [/^(\d+) constraints dropped: (.+)$/, (m) => `${m[1]} contraintes supprimées : ${m[2]}`],
 ];
