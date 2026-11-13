@@ -1316,6 +1316,36 @@ export const scenes = [
     },
   },
   {
+    // Floor types: a layer moves up or down with its arrows, Reverse layers turns the build-up over, asking first (the forum's topic #52).
+    id: 'floor-layers',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      await t.tool('architecture.slabTypes');
+      await t.wait(600);
+      const dialog = t.page.locator('.dialog');
+      await dialog.locator('.layer-edit').waitFor({ timeout: 15000 });
+      const first = async () => dialog.locator('.layer-material select').first().inputValue();
+      const before = await first();
+      t.expect(await dialog.locator('[data-testid=layer-up]').first().isDisabled(), 'the top layer cannot go up');
+      await dialog.locator('[data-testid=layer-down]').first().click();
+      await t.wait(200);
+      t.expect(await first() !== before, 'Move layer down puts the next layer on top');
+      await dialog.locator('[data-testid=layer-up]').nth(1).click();
+      await t.wait(200);
+      t.expect(await first() === before, 'Move layer up puts it back');
+      const answers = t.page.listeners('dialog');
+      t.page.removeAllListeners('dialog');
+      t.page.on('dialog', (d) => void d.accept());
+      await dialog.locator('[data-testid=reverse-layers]').click();
+      await t.wait(300);
+      t.expect(await first() !== before, 'Reverse layers runs the rows the other way');
+      t.page.removeAllListeners('dialog');
+      for (const l of answers) t.page.on('dialog', l);
+      await t.shot('floor-types', { of: '.dialog', pad: 0 });
+    },
+  },
+  {
     id: 'floors-roofs',
     async run(t) {
       await t.fresh();

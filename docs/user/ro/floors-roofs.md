@@ -8,6 +8,10 @@ summary: Desenezi plăci și acoperișuri după contur, alegi forma și streași
 
 Alege **Arhitectură → Placă** (<kbd>SB</kbd>), apoi dă clic în colțurile conturului. Închide conturul pe primul punct sau apasă <kbd>Enter</kbd>. Și placa e făcută din straturi, setate în **Arhitectură → Tipuri de plăci**. Un strat al unui tip de placă poate avea grosimea 0 (o hidroizolație, vopseaua): nu construiește nimic, e desenat ca o linie în secțiuni și e măsurat pe suprafața plăcii.
 
+În **Tipuri de plăci**, straturile merg de sus în jos. Săgețile de la capătul rândului unui strat îl mută cu un loc în sus sau în jos (sunt butoane, accesibile cu <kbd>Tab</kbd>), iar **Inversează straturile** pune toată alcătuirea în ordine inversă, deci stratul de sus ajunge dedesubt; întreabă mai întâi, fiindcă toate plăcile tipului se răstoarnă după ce tipul e salvat.
+
+![Straturile unui tip de placă, cu săgețile și Inversează straturile](shots/floor-types.webp)
+
 În **Tipuri de plăci**, fiecare strat are o **Prioritate** (0 la 100) și o **Categorie**, ca straturile unui tip de perete. Un strat de perete care coboară în placă (**În plăci** în **Tipuri de pereți**) trece prin straturile plăcii cu prioritate mai mică și se oprește pe primul cu prioritate cel puțin egală. Goală, prioritatea e a materialului din **Gestionare → Ordinea de tăiere**, altfel 50 pentru miez și 0 pentru celelalte straturi. Un strat marcat **Finisaj** dispare când o vedere lasă deoparte finisajele pardoselilor.
 
 Ca să schimbi conturul, selectează placa și trage de colțuri. **Gol în placă** (<kbd>SH</kbd>) taie o gaură în placă, pentru o scară sau un ghen.

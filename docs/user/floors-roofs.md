@@ -8,6 +8,10 @@ summary: Draw floors and roofs by their outline, choose a roof's shape and edges
 
 Choose **Architecture → Floor** (<kbd>SB</kbd>), then click the corners of its outline. Close the outline on the first point, or press <kbd>Enter</kbd>. A floor is made of layers too, set in **Architecture → Floor types**. A layer of a floor type may have a thickness of 0 (a waterproofing, paint): it builds nothing, is drawn as a line in sections and is measured by the floor's area.
 
+In **Floor types**, the layers run from the top down. The arrows at the end of a layer's row move it up or down one place (they are buttons, reachable with <kbd>Tab</kbd>), and **Reverse layers** runs the whole build-up the other way, so the top layer goes to the underside; it asks first, because every floor of the type turns over once the type is saved.
+
+![The layers of a floor type, with the arrows and Reverse layers](shots/floor-types.webp)
+
 In **Floor types**, each layer has a **Priority** (0 to 100) and a **Category**, as a wall type's layers do. A wall layer that goes down into the floor (**Into floors** in **Wall types**) passes the floor's layers of a lower priority and stops on the first as high or higher. Empty, the priority is the material's in **Manage → Cut order**, else 50 for the core and 0 for the other layers. A layer marked **Finish** goes when a view leaves out the floors' finishes.
 
 To change the outline, select the floor and drag its corners. **Floor opening** (<kbd>SH</kbd>) cuts a hole in a floor, for a stair or a shaft.

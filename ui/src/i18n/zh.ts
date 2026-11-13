@@ -3365,6 +3365,7 @@ export const ZH: Record<string, string> = {
   "That sketch is not in the model any more: redraw it to rebuild the solid.": "该草图已不在模型中：重新绘制它以重建实体。",
   "Tab, or a double click on it in 3D": "Tab，或在 3D 中双击它",
   "Layer from": "层起点", "Layer up to": "层终点", "wall top": "墙顶", "Layers 1 to n from the R face (right of the drawn direction) to the L face, as in the picture. Wall drawn anticlockwise: R is the exterior, L the interior. The core carries the wall's axis.": "第 1 至 n 层，从 R 面（绘制方向的右侧）到 L 面，与图中一致。逆时针绘制的墙：R 为外侧，L 为内侧。核心层承载墙的轴线。", "Reverse layers": "反转层", "Run the layers the other way: the R face's layer goes to the L face. Walls of the type swap faces once it is saved": "将各层按相反顺序排列：R 面的层移到 L 面。保存后，该类型的墙会交换两面", "Reverse the order of the layers? Once the type is saved, its walls swap faces: what is exterior becomes interior.": "反转各层的顺序？保存该类型后，其墙的两面会互换：原来的外侧变为内侧。", "Open in Materials…": "在材料中打开…", "Back to Wall types": "返回墙类型", "Back to Floor types": "返回楼板类型",
+  "Move layer up": "上移图层", "Move layer down": "下移图层", "Reverse the order of the layers? Once the type is saved, the floors of this type turn over: the top layer goes to the underside.": "要颠倒各层的顺序吗？保存类型后，此类型的楼板会翻转：最上面的层移到底面。", "Run the layers the other way: the top layer goes to the underside. Floors of the type follow once it is saved": "将各层顺序颠倒：最上面的层移到底面。保存后该类型的楼板随之改变",
   // Sketch constraints (decision 520, stage C3)
   "Constraints": "约束",
   "Coincident": "重合",

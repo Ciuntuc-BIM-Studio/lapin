@@ -20,7 +20,7 @@ import { Cell, LengthField, NumberField } from '../../shell/cells';
 import { LayerThickness } from '../core/LayerThickness';
 import { MaterialHatchButton } from '../core/MaterialHatchButton';
 import { takeStash } from '../core/dialogReturn';
-import { reverseLayers } from './reverseLayers';
+import { moveLayer, reverseLayers } from './reverseLayers';
 import { layerRankHint } from './layerRank';
 import { flagsJson, flagsOf, newWallFlags, type LayerFlags } from './layerFlags';
 import { CATEGORY_TIP, LayerCategory } from './LayerCategory';
@@ -125,13 +125,7 @@ export function WallTypesDialog() {
 
   const close = () => useUi.setState({ dialog: null });
   const set = (i: number, patch: Partial<Row>) => setRows(rows.map((r, k) => (k === i ? { ...r, ...patch } : patch.core ? { ...r, core: false } : r)));
-  const move = (i: number, d: number) => {
-    const j = i + d;
-    if (j < 0 || j >= rows.length) return;
-    const next = [...rows];
-    [next[i], next[j]] = [next[j], next[i]];
-    setRows(next);
-  };
+  const move = (i: number, d: number) => setRows(moveLayer(rows, i, d));
   const reverse = () => {
     if (window.confirm(t('Reverse the order of the layers? Once the type is saved, its walls swap faces: what is exterior becomes interior.'))) setRows(reverseLayers(rows));
   };
