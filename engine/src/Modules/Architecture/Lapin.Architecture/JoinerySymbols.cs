@@ -160,6 +160,8 @@ public static class JoinerySymbols
         // A floor spring's cover plate, seen on the floor (topic #28).
         if (level >= PlanDetail.Medium)
             foreach (var b in boxes.Where(b => b.Underfloor && Math.Abs(b.Max.Z) < 1e-9)) o.Add(Rect(b.Min.X, b.Min.Y, b.Max.X, b.Max.Y, "thin"));
+        // A garage door (topic #48, decision 523): its curtain at the opening, and its tracks, box or open panel dashed overhead.
+        if (GarageDoors.Of(s)) { o.AddRange(GarageDoors.Plan(s, z, level)); return o; }
         var view = new JinerySpecView(s);
         foreach (var p in Joinery.Normalised(s))
         {
@@ -301,6 +303,7 @@ public static class JoinerySymbols
                 var g = Math.Min(0.06, Math.Min(r.X1 - r.X0 - 2 * sw, r.Z1 - r.Z0 - 2 * sw) / 6);
                 o.Add(Loop(sw + g, "thin"));
             }
+            if (GarageDoors.Is(p.Operation)) { o.AddRange(GarageDoors.Elevation(s, exterior)); continue; }
             o.AddRange(OpeningMarks(p.Operation, r, exterior, convention, JoineryShapes.PaneTop(s, r)));
             if (hardware && s.Frameless == null) o.AddRange(Hardware(s, p, r, pairs.FirstOrDefault(m => m.Left == p || m.Right == p)));
         }

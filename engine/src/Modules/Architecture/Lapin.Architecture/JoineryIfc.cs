@@ -49,7 +49,10 @@ public sealed class JoineryIfc : IJoineryIfc
         var lining = spec.Frameless is { } fl
             ? new IfcJoineryLining(fl.Glass, 0, fl.Gap, fl.Gap, 0, mullions, transoms)
             : new IfcJoineryLining(spec.Frame.Depth, spec.Frame.Width, mw, tw, spec.IsDoor ? Math.Max(0, spec.Threshold) : 0, mullions, transoms);
-        return new IfcJoineryType(spec.IsDoor, M(op), user is { } u && mirrored ? IfcHands.MirrorText(u) : user, panels, lining);
+        // A garage door (topic #48, decision 530): IFC4X3 names a lifting door, IFC4 only a rolling one; its user-defined text in capitals.
+        var garage = GarageDoors.KindOf(spec) is { } g ? GarageDoors.Operation(g).Ifc4X3 : null;
+        string? Text(string u) => !mirrored ? u : u.Any(char.IsLower) ? IfcHands.MirrorText(u) : IfcHands.Mirror(u);
+        return new IfcJoineryType(spec.IsDoor, M(op), user is { } u ? Text(u) : null, panels, lining) { Operation4X3 = garage is { } g43 ? M(g43) : null };
     }
 
     /// <summary>A curtain wall's door at the size it stands in its cell (report #133); null for any other.</summary>
@@ -139,6 +142,11 @@ public sealed class JoineryIfc : IJoineryIfc
 
     static JoinerySpec? Door(JoinerySpec s, string? operation, string? userDefined, IReadOnlyList<IfcJoineryPanel> panels)
     {
+        // A garage door (topic #48, decision 530): ROLLINGUP, IFC4X3's LIFTING_HORIZONTAL, or Lapin's user-defined names (and a
+        // file's whose only panel rolls up); one panel filling the opening, the rest of its settings the defaults.
+        var garage = GarageDoors.FromIfc(operation, userDefined)
+            ?? (operation is null or "USERDEFINED" && panels.Count == 1 && panels[0].Operation == "ROLLINGUP" ? "roller" : null);
+        if (garage != null) return s with { Columns = [1], Rows = [1], Panels = [new JoineryPanel(0, 0, garage)], Mullions = null, Meeting = null, Threshold = 0 };
         string[]? leaves = operation == null ? null : Leaves(operation);
         double[]? widths = null;
         if (leaves == null && userDefined is { Length: > 0 } text)

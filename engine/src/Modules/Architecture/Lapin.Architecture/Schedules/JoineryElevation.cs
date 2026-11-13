@@ -41,6 +41,16 @@ public static class JoineryElevation
             var inset = Joinery.IsDoorLeaf(op) ? 0 : Math.Min(s.Sash.Width * 0.5, Math.Min(r.X1 - r.X0, r.Z1 - r.Z0) / 6);
             var (x0, x1, y0, y1) = (r.X0 + inset, r.X1 - inset, r.Z0 + inset, r.Z1 - inset);
             Rect(x0, y0, x1, y1, "outline");
+            // A garage door (topic #48): its panels' joints, face and wicket, a roll box, the way a side-sliding one runs.
+            if (GarageDoors.Is(op))
+            {
+                foreach (var st in GarageDoors.Elevation(s, exterior))
+                {
+                    var pts = st.Closed ? [.. st.Pts, st.Pts[0]] : st.Pts;
+                    for (var k = 0; k + 1 < pts.Count; k++) o.Add(new(pts[k], pts[k + 1], st.Weight, st.Dashed));
+                }
+                continue;
+            }
             // Frameless glass (tester's question 7): no leaf frame inside the glass.
             if (Joinery.IsDoorLeaf(op) && Joinery.InfillOf(p) == "glass" && s.Frameless == null)
             {

@@ -58,13 +58,15 @@ public sealed record JoinerySash(double Width, double Depth, double LeafThicknes
 
 /// <summary>
 /// Where the frame sits across the wall (report #76), as a value from a reference: <see cref="From"/> "exterior" (the wall's
-/// exterior finish face), "core" (the core's exterior face) or "centre" (the wall's middle plane); <see cref="Distance"/> metres
-/// inwards (negative: proud). For the faces it is the frame's outer face that is that far back; from the centre, the frame's
-/// centre. A type without one keeps <see cref="JoineryFrame.Offset"/>.
+/// exterior finish face), "core" (the core's exterior face), "centre" (the wall's middle plane) or "interior" (the wall's
+/// interior finish face, where a garage door is hung behind its opening, decision 530); <see cref="Distance"/> metres
+/// inwards (from the interior face: outwards, into the wall; negative: proud). For the exterior faces it is the frame's outer
+/// face that is that far back, from the interior face its inner face; from the centre, the frame's centre. A type without one
+/// keeps <see cref="JoineryFrame.Offset"/>.
 /// </summary>
 public sealed record JoineryPosition(string From = "exterior", double Distance = 0)
 {
-    public static readonly string[] Froms = ["exterior", "core", "centre"];
+    public static readonly string[] Froms = ["exterior", "core", "centre", "interior"];
 
     /// <summary>A position as a command or an element's <c>position</c> attribute gives it; null when it names none.</summary>
     public static JoineryPosition? From_(JsonNode? node)
@@ -197,7 +199,9 @@ public sealed record JoinerySpec(
     double?[]? Mullions = null,
     double?[]? Transoms = null,
     /// <summary>How two leaves meet where no mullion parts them (decision 466); null: butt, both leaves with their handles (as before).</summary>
-    JoineryMeeting? Meeting = null)
+    JoineryMeeting? Meeting = null,
+    /// <summary>A garage door's settings (topic #48, decision 530), for a type whose panel is a garage door's operation; null: the defaults.</summary>
+    JoineryGarage? Garage = null)
 {
     public static JoinerySpec DefaultWindow(string name = "Window") => new(
         "window", name, "W", 1.2, 1.5, 0.9,
@@ -239,6 +243,8 @@ public sealed record JoinerySpec(
             var sy = flipSide ? -1 : 1;
             double Y(double w) => sy * (centre - w);
             var face = bands.Max(b => Math.Max(Y(b.From), Y(b.To)));
+            if (pos.From == "interior")
+                return this with { Frame = Frame with { Offset = bands.Min(b => Math.Min(Y(b.From), Y(b.To))) + pos.Distance + (Frameless?.Glass ?? Frame.Depth) / 2 } };
             var reference = pos.From == "core" && bands.Where(b => b.Core).ToList() is { Count: > 0 } core ? core.Max(b => Math.Max(Y(b.From), Y(b.To))) : face;
             // Frameless glass (tester's question 7) is as deep as its glass.
             offset = reference - pos.Distance - (Frameless?.Glass ?? Frame.Depth) / 2;
@@ -317,6 +323,8 @@ public static class Joinery
     [
         "swing-left", "swing-right", "double-acting-left", "double-acting-right",
         "door-sliding-left", "door-sliding-right", "folding-left", "folding-right",
+        // Garage doors (topic #48, decision 530): one panel filling the opening.
+        "sectional-overhead", "roller", "up-and-over", "sectional-side-left", "sectional-side-right",
     ];
 
     /// <summary>A door leaf (opaque unless glazed) rather than a glazed sash.</summary>
@@ -513,6 +521,8 @@ public static class Joinery
             if (meet.Thickness is { } mt && (!double.IsFinite(mt) || mt <= 0 || mt > 0.04)) return "An astragal is over 0 and up to 40 mm thick.";
         }
         if (s.Frameless != null) return Frameless.Problem(s);
+        if (s.Panels.Any(p => GarageDoors.Is(p.Operation)))
+            return !s.IsDoor ? "A garage door's operation is a door's." : GarageDoors.Problem(s);
         if (JoineryShapes.Round(s))
             return s.Width < 2 * s.Frame.Width + 0.1 || s.Height < 2 * s.Frame.Width + 0.1 ? "A round window needs room inside its frame." : null;
         if (JoineryShapes.Headed(s) && !JoineryShapes.ArchedPanes(s) && JoineryShapes.Spring(s) - Math.Max(s.Frame.Transom, 0.02) - InnerRect(s).Z0 < 0.1)
@@ -556,6 +566,7 @@ public static class Joinery
         "double-acting-left" or "double-acting-right" => "DOUBLE_ACTING",
         "door-sliding-left" or "door-sliding-right" => "SLIDING",
         "folding-left" or "folding-right" => "FOLDING",
+        _ when GarageDoors.Is(op) => GarageDoors.PanelOperation(op),
         _ => "FIXEDPANEL",
     };
 
@@ -612,6 +623,7 @@ public static class Joinery
                 case "door-sliding-right": return ("SLIDING_TO_RIGHT", null);
                 case "folding-left": return ("FOLDING_TO_LEFT", null);
                 case "folding-right": return ("FOLDING_TO_RIGHT", null);
+                case var g when GarageDoors.Is(g): { var (op, user, _) = GarageDoors.Operation(g); return (op, user); }
             }
         if (ops.Count == 2)
         {
@@ -794,6 +806,8 @@ public static class Joinery
         // Frameless glass (tester's question 7): the panes and their fittings, and the window boards under them.
         if (s.Frameless != null) return [.. Frameless.Boxes(s), .. Boards(s, y0, y1, new CellRect(-s.Width / 2, s.Width / 2, 0, s.Height))];
         if (JoineryShapes.Round(s)) return JoineryShapes.RoundBoxes(s, y0, y1);
+        // A garage door (topic #48): its frame, its curtain or panel, its tracks or roll box.
+        if (GarageDoors.Of(s)) return GarageDoors.Boxes(s);
         var outer = new CellRect(-s.Width / 2, s.Width / 2, 0, s.Height);
         var inner = InnerRect(s);
         var headed = JoineryShapes.Headed(s);

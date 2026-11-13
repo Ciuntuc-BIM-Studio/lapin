@@ -187,7 +187,23 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             ["defaultDoor"] = JoinerySpecs.Door.ToJson(),
             ["defaultWindow"] = JoinerySpecs.Window.ToJson(),
             // Door presets (decision 466): a double door, no mullion between its leaves, a rebated meeting, the right leaf active.
-            ["doorPresets"] = new JsonObject { ["double"] = JoinerySpecs.DoubleDoor.ToJson(), ["floor-spring"] = JoinerySpecs.FloorSpringDoor.ToJson() },
+            ["doorPresets"] = new JsonObject
+            {
+                ["double"] = JoinerySpecs.DoubleDoor.ToJson(), ["floor-spring"] = JoinerySpecs.FloorSpringDoor.ToJson(),
+                // Garage doors (topic #48, decision 530), indicative sizes.
+                ["garage-sectional"] = JoinerySpecs.SectionalGarageDoor.ToJson(), ["garage-roller"] = JoinerySpecs.RollerGarageDoor.ToJson(),
+                ["garage-up-and-over"] = JoinerySpecs.UpAndOverGarageDoor.ToJson(), ["garage-side-sliding"] = JoinerySpecs.SideSlidingGarageDoor.ToJson(),
+                ["garage-side-hinged"] = JoinerySpecs.SideHingedGarageDoors.ToJson(),
+            },
+            // Garage doors: their operations, finishes, tracks, and the common sizes (indicative: Australia's and Europe's).
+            ["garage"] = new JsonObject
+            {
+                ["operations"] = new JsonArray(GarageDoors.Operations.Select(x => (JsonNode)x).ToArray()),
+                ["finishes"] = new JsonArray(GarageDoors.Finishes.Select(x => (JsonNode)x).ToArray()),
+                ["tracks"] = new JsonArray(GarageDoors.Tracks.Select(x => (JsonNode)x).ToArray()),
+                ["sizes"] = new JsonArray(GarageDoors.Sizes.Select(z => (JsonNode)new JsonObject { ["region"] = z.Region, ["width"] = z.Width, ["height"] = z.Height }).ToArray()),
+                ["indicative"] = true,
+            },
             // The floor springs a frameless leaf may hang on (topic #28; indicative): the heaviest and widest leaf, the closing force.
             ["floorSprings"] = new JsonArray(Frameless.Springs.Select(m => (JsonNode)new JsonObject
             {
@@ -249,6 +265,11 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                     ["section"] = Strokes([.. JoinerySymbols.Section(spec), .. JoinerySymbols.Dressings(spec, wall, "section", JoinerySymbols.SectionCut(spec))]),
                 },
                 ["symbols"] = new JsonObject { ["convention"] = convention, ["hardware"] = hardware },
+                // A garage door's room and panels as the engine works them out (topic #48), for the configurator's read-out.
+                ["garage"] = problem != null || !GarageDoors.Of(spec) ? null : new JsonObject
+                {
+                    ["panels"] = GarageDoors.SectionCount(spec), ["headroom"] = GarageDoors.HeadroomOf(spec), ["backroom"] = GarageDoors.BackroomOf(spec), ["sideroom"] = GarageDoors.SideroomOf(spec),
+                },
             };
         });
 
@@ -1101,6 +1122,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         // The details around it: the reveal's finish, the sills, the surround, the threshold.
         var details = Openings.DetailQuantities(m, fill).Select(q => new Quantity(q.Name, q.Value, q.Unit)).ToList();
         if (details.Count > 0) yield return new QuantitySet("Lapin_Details", details);
+        // A garage door's own (topic #48): its curtain's area, its panels, the headroom, backroom and sideroom it needs.
+        if (GarageDoors.Of(spec)) yield return new QuantitySet("Lapin_GarageDoor", [.. GarageDoors.Quantities(spec).Select(q => new Quantity(q.Name, q.Value, q.Unit))]);
     }
 
     static IPathElements Paths(ICommandContext ctx) => ctx.Services.Get<IPathElements>()!;

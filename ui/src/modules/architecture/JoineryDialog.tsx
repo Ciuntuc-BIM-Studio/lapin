@@ -28,6 +28,7 @@ import { JoineryPreview3D } from './JoineryPreview3D';
 import { barWidths, fitBars, leafPairs, merge, neighbour, normalised, resized, shifted, split, withBar, type Bars, type GridSpec } from './joineryGrid';
 import { JoineryDataButton } from './JoineryData';
 import { ProfilePickerField } from '../core/profileLibraries/ProfilePickerField';
+import { GARAGE_LABELS, GARAGE_OPERATIONS, garageName, garageOf, sizeLabel, withGarageKind, type Garage, type GarageOperation } from './garageDoors';
 
 interface Panel { col: number; row: number; operation: string; colSpan?: number; rowSpan?: number; glazed?: boolean; infill?: string | null }
 /** A profile system's finer shapes (decision 370): the frame's rebate, the sash lapping over it, glazing beads, a drip. */
@@ -47,6 +48,8 @@ const HAND_LABELS: Record<string, string> = {
   // A window's hand seen from inside, the side its sashes open to; the grid is seen from outside.
   'side-left': 'Side hung right (hinges at left)', 'side-right': 'Side hung left (hinges at right)',
   'tilt-turn-left': 'Tilt & turn right (hinges at left)', 'tilt-turn-right': 'Tilt & turn left (hinges at right)',
+  // Garage doors (topic #48): one panel filling the opening.
+  ...GARAGE_LABELS,
 };
 /** Two leaves meeting: butt, a rebated meeting stile or a cover strip (astragal); the active leaf opens first with the handle, the passive one has flush bolts. */
 export interface Meeting { kind: 'butt' | 'rebated' | 'astragal'; active: 'left' | 'right'; width?: number | null; thickness?: number | null; bolts: boolean }
@@ -79,6 +82,8 @@ interface Spec {
   position?: Position | null;
   /** Frameless toughened glass, no frame or sash (tester's question 7): what holds a leaf, the glass, the gaps; none: framed. */
   frameless?: Frameless | null;
+  /** A garage door's settings (topic #48, decision 530), on a door whose panel is a garage door's operation. */
+  garage?: Garage | null;
 }
 /** How a frameless leaf is held (pivots with patch fittings, or glass hinges), the glass's thickness, the gaps round it and under a leaf. */
 interface Frameless { fixing: 'pivot' | 'hinges' | 'floor-spring'; glass: number; gap: number; floor: number;
@@ -90,7 +95,7 @@ const FRAMELESS: Frameless = { fixing: 'pivot', glass: 0.012, gap: 0.004, floor:
 /** What a frameless pane may do: a door's leaves swing, swing both ways or slide; a window's panes are fixed. */
 const FRAMELESS_DOOR_OPS = ['swing-left', 'swing-right', 'double-acting-left', 'double-acting-right', 'door-sliding-left', 'door-sliding-right', 'fixed'];
 /** From the wall's exterior finish face, its core's exterior face or its middle plane, the frame (its outer face; from the middle, its centre) this far back. */
-export interface Position { from: 'exterior' | 'core' | 'centre'; distance: number }
+export interface Position { from: 'exterior' | 'core' | 'centre' | 'interior'; distance: number }
 /** The parts' materials by name (report #76); a part without one keeps its colour. */
 interface Materials { frame?: string | null; sash?: string | null; glass?: string | null; leaf?: string | null; board?: string | null; hardware?: string | null }
 type MaterialPart = keyof Materials;
@@ -178,7 +183,9 @@ export interface Preview { problem: string | null; boxes: { role: string; x0: nu
 export interface Stroke { pts: [number, number][]; weight: string; closed: boolean; dashed: boolean }
 export interface Drawing { strokes: Stroke[] }
 export interface Drawings { elevation: Drawing; exterior: Drawing; plan: Drawing; section: Drawing }
-export type Preview2 = Preview & { drawings?: Drawings | null; symbols?: { convention: string; hardware: boolean } };
+export type Preview2 = Preview & { drawings?: Drawings | null; symbols?: { convention: string; hardware: boolean };
+  /** A garage door's panels and the room it needs, as the engine works them out (topic #48). */
+  garage?: { panels: number; headroom: number; backroom: number; sideroom: number } | null };
 
 /**
  * One of the symbol engine's drawings in a box: X across, Y up, fitted; strokes by weight (cut, outline, thin), dashed where asked.
@@ -423,6 +430,77 @@ function ShapeFields({ spec, onChange }: { spec: Spec; onChange: (patch: Partial
       {sh.kind !== 'circle' && mu.pattern === 'prairie' && <Mm label="Margin" value={mu.margin} onChange={(v) => setMuntins({ margin: v })} />}
       {sh.kind !== 'circle' && mu.pattern !== 'none' && <Mm label="Bar width" value={mu.width} onChange={(v) => setMuntins({ width: v })} />}
     </>
+  );
+}
+
+/** A garage door's size the list offers (indicative). */
+interface GarageSize { region: string; width: number; height: number }
+
+/**
+ * A garage door (topic #48, decision 530): its kind, a common size, its panels and finish, a wicket door, the track (sectional),
+ * the roll box (roller) or the mechanism (up-and-over), the room it needs (blank: the kind's, as the engine works it out).
+ */
+function GarageFields({ spec, sizes, preview, onChange }: { spec: Spec; sizes?: GarageSize[]; preview: Preview2 | null; onChange: (patch: Partial<Spec>) => void }) {
+  const op = garageOf(spec);
+  if (!op) return null;
+  const g: Garage = spec.garage ?? {};
+  const setG = (p: Partial<Garage>) => onChange({ garage: { ...g, ...p } });
+  const auto = preview?.garage;
+  const room = (key: 'headroom' | 'backroom' | 'sideroom', label: string) => (
+    <label className="field-line"><span className="eyebrow">{label}</span>
+      <LengthField metres={g[key] ?? auto?.[key] ?? 0} onCommit={(m) => setG({ [key]: m } as Partial<Garage>)} />
+      {g[key] != null && <button type="button" data-testid={`garage-${key}-auto`} title="The kind's, as the engine works it out" onClick={() => setG({ [key]: null } as Partial<Garage>)}>Auto</button>}
+    </label>
+  );
+  return (
+    <div data-testid="garage-fields">
+      <p className="eyebrow">Garage door</p>
+      <label className="field-line"><span className="eyebrow">Kind</span>
+        <select data-field="garage-kind" value={op} onChange={(e) => onChange(withGarageKind(spec, e.target.value as GarageOperation))}>
+          {GARAGE_OPERATIONS.map((o) => <option key={o} value={o}>{GARAGE_LABELS[o]}</option>)}
+        </select></label>
+      {sizes && sizes.length > 0 && <label className="field-line"><span className="eyebrow">Common size</span>
+        <select data-field="garage-size" title="Common sizes, indicative: check the maker's" value=""
+          onChange={(e) => { const z = sizes[Number(e.target.value)]; if (z) onChange({ width: z.width, height: z.height, name: garageName(op, z.width, z.height) }); }}>
+          <option value="">{`${Math.round(spec.width * 1000)} × ${Math.round(spec.height * 1000)}`}</option>
+          {sizes.map((z, i) => <option key={i} value={i}>{sizeLabel(z)}</option>)}
+        </select></label>}
+      {op !== 'roller' && <label className="field-line"><span className="eyebrow">Finish</span>
+        <select data-field="garage-finish" value={g.finish ?? 'ribbed'} onChange={(e) => setG({ finish: e.target.value as Garage['finish'] })}>
+          <option value="ribbed">Ribbed</option><option value="flat">Flat</option><option value="v-groove">V-groove</option><option value="glazed-top">Glazed top panel</option>
+        </select></label>}
+      {(op === 'sectional-overhead' || op.startsWith('sectional-side')) && <label className="field-line"><span className="eyebrow">Panels</span>
+        <NumberField value={g.sections ?? auto?.panels ?? 4} integer min={2} onCommit={(n) => setG({ sections: n ?? null })} />
+        {g.sections != null && <button type="button" title="From the door's height" onClick={() => setG({ sections: null })}>Auto</button>}</label>}
+      {op === 'sectional-overhead' && <>
+        <label className="field-line"><span className="eyebrow">Track</span>
+          <select data-field="garage-track" value={g.track ?? 'standard'} onChange={(e) => setG({ track: e.target.value as Garage['track'] })}>
+            <option value="standard">Standard</option><option value="low-headroom">Low headroom</option><option value="high-lift">High lift</option>
+          </select></label>
+        {g.track === 'high-lift' && <Mm label="Extra lift" value={g.lift ?? 0.6} onChange={(v) => setG({ lift: v })} />}
+        <label className="field-line check"><input type="checkbox" data-field="garage-wicket" checked={!!g.wicket} onChange={(e) => setG({ wicket: e.target.checked })} /><span>Wicket door</span></label>
+        {g.wicket && <>
+          <Mm label="Wicket width" value={g.wicketWidth ?? 0.9} onChange={(v) => setG({ wicketWidth: v })} />
+          <label className="field-line"><span className="eyebrow">Wicket side</span>
+            <select data-field="garage-wicket-side" value={g.wicketSide ?? 'left'} onChange={(e) => setG({ wicketSide: e.target.value as Garage['wicketSide'] })}>
+              <option value="left">Left, seen from inside</option><option value="centre">Centre</option><option value="right">Right, seen from inside</option>
+            </select></label>
+        </>}
+      </>}
+      {op === 'roller' && <label className="field-line"><span className="eyebrow">Roll box</span>
+        <select data-field="garage-box" value={g.box ?? 'inside'} onChange={(e) => setG({ box: e.target.value as Garage['box'] })}>
+          <option value="inside">Inside</option><option value="outside">Outside</option>
+        </select></label>}
+      {op === 'up-and-over' && <label className="field-line"><span className="eyebrow">Mechanism</span>
+        <select data-field="garage-mechanism" value={g.mechanism ?? 'canopy'} onChange={(e) => setG({ mechanism: e.target.value as Garage['mechanism'] })}>
+          <option value="canopy">Canopy</option><option value="retractable">Retractable</option>
+        </select></label>}
+      {room('headroom', 'Headroom over the opening')}
+      {room('backroom', 'Backroom')}
+      {room('sideroom', 'Sideroom')}
+      {op !== 'roller' && <label className="field-line check"><input type="checkbox" data-field="garage-tracks" checked={g.tracks ?? true} onChange={(e) => setG({ tracks: e.target.checked })} /><span>Tracks in 3D</span></label>}
+      <p className="muted small">Sizes and clearances are indicative: check the maker's.</p>
+    </div>
   );
 }
 
@@ -753,6 +831,7 @@ export function JoineryDialog() {
   const types = [...ofClass(model, 'IfcDoorType'), ...ofClass(model, 'IfcWindowType')];
   const catalog = info?.catalogs['architecture.joinery'] as unknown as { windowOperations: string[]; doorOperations: string[]; defaultDoor: Spec; defaultWindow: Spec;
     doorPresets?: Record<string, Spec>; defaultMeeting?: Meeting & { astragalWidth?: number }; floorSprings?: FloorSpringModel[];
+    garage?: { sizes?: GarageSize[] };
     profileSystems?: Record<string, { frame: Spec['frame']; sash: Spec['sash']; profile: Profile }> } | undefined;
   const bayStyles = info?.catalogs['architecture.bayStyles'] as unknown as { spec: Spec }[] | undefined;
   const [editing, setEditing] = useState<string | null>(types[0]?.id ?? null);
@@ -896,6 +975,8 @@ export function JoineryDialog() {
             ))}
             <li><button type="button" className="tree-item" onClick={() => startNew('door')}><Plus size={12} /> New door</button></li>
             {catalog.doorPresets?.double && <li><button type="button" className="tree-item" data-action="new-double-door" onClick={() => startNew('door', false, 'double')}><Plus size={12} /> New double door</button></li>}
+            {catalog.doorPresets?.['garage-sectional'] && <li><button type="button" className="tree-item" data-action="new-garage-door" onClick={() => startNew('door', false, 'garage-sectional')}><Plus size={12} /> New garage door</button></li>}
+            {catalog.doorPresets?.['garage-side-hinged'] && <li><button type="button" className="tree-item" data-action="new-side-hinged-garage-doors" onClick={() => startNew('door', false, 'garage-side-hinged')}><Plus size={12} /> New side-hinged garage doors</button></li>}
             {catalog.doorPresets?.['floor-spring'] && <li><button type="button" className="tree-item" data-action="new-floor-spring-door" onClick={() => startNew('door', false, 'floor-spring')}><Plus size={12} /> New frameless door on floor spring</button></li>}
             <li><button type="button" className="tree-item" onClick={() => startNew('window')}><Plus size={12} /> New window</button></li>
             <li><button type="button" className="tree-item" data-action="new-bay-window" onClick={() => startNew('window', true)}><Plus size={12} /> New bay window</button></li>
@@ -919,8 +1000,13 @@ export function JoineryDialog() {
                     if (patch.columns) setCols(patch.columns.join(' '));
                     if (patch.rows) setRows(patch.rows.join(' '));
                   }} /></label>
-              {!spec.bay && <FramelessFields spec={spec} springs={catalog.floorSprings} onChange={set} />}
-              {!spec.bay && !spec.frameless && <ShapeFields spec={spec} onChange={set} />}
+              <GarageFields spec={spec} sizes={catalog.garage?.sizes} preview={preview} onChange={(patch) => {
+                set(patch);
+                if (patch.columns) setCols(patch.columns.join(' '));
+                if (patch.rows) setRows(patch.rows.join(' '));
+              }} />
+              {!spec.bay && !garageOf(spec) && <FramelessFields spec={spec} springs={catalog.floorSprings} onChange={set} />}
+              {!spec.bay && !spec.frameless && !garageOf(spec) && <ShapeFields spec={spec} onChange={set} />}
               {spec.kind === 'window' && !spec.frameless && <BayFields spec={spec} onChange={(patch) => set(patch as Partial<Spec>)} onGrid={(c) => setCols(c.join(' '))} />}
               {!spec.frameless && <>
               <Mm label="Frame depth" value={spec.frame.depth} onChange={(v) => set({ frame: { ...spec.frame, depth: v }, frameSection: null })} />
@@ -928,13 +1014,13 @@ export function JoineryDialog() {
               <label className="field-line"><span className="eyebrow">Position in the wall</span>
                 <select data-field="position-from" title="Where the frame sits across the wall, as a value from a face of the wall" value={spec.position?.from ?? ''}
                   onChange={(e) => set({ position: e.target.value ? { from: e.target.value as Position['from'], distance: spec.position?.distance ?? 0 } : null })}>
-                  <option value="">Centred in the wall</option><option value="exterior">From the exterior finish</option><option value="core">From the core</option><option value="centre">From the wall’s centre</option>
+                  <option value="">Centred in the wall</option><option value="exterior">From the exterior finish</option><option value="core">From the core</option><option value="centre">From the wall’s centre</option><option value="interior">From the interior finish</option>
                 </select></label>
               </>}
               {spec.frameless && <label className="field-line"><span className="eyebrow">Position in the wall</span>
                 <select data-field="position-from" title="Where the glass sits across the wall, as a value from a face of the wall" value={spec.position?.from ?? ''}
                   onChange={(e) => set({ position: e.target.value ? { from: e.target.value as Position['from'], distance: spec.position?.distance ?? 0 } : null })}>
-                  <option value="">Centred in the wall</option><option value="exterior">From the exterior finish</option><option value="core">From the core</option><option value="centre">From the wall’s centre</option>
+                  <option value="">Centred in the wall</option><option value="exterior">From the exterior finish</option><option value="core">From the core</option><option value="centre">From the wall’s centre</option><option value="interior">From the interior finish</option>
                 </select></label>}
               {spec.position && <Mm label="Set back" value={spec.position.distance} onChange={(v) => set({ position: { ...spec.position!, distance: v } })} />}
               {!spec.frameless && <>

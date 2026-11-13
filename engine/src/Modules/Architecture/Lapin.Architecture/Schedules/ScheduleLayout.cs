@@ -92,7 +92,7 @@ public static class ScheduleLayout
             var pair = leaves.All(o => o.StartsWith("double-acting", StringComparison.Ordinal)) ? "double acting, double" : "double swing";
             return string.Join(" + ", ops.Where(o => !leaves.Contains(o)).Distinct().Select(o => OperationLabel.GetValueOrDefault(o, o)).Prepend(pair));
         }
-        return string.Join(" + ", ops.Distinct().Select(o => OperationLabel.GetValueOrDefault(o, o)));
+        return string.Join(" + ", ops.Distinct().Select(o => GarageDoors.Is(o) ? GarageDoors.Label(o) : OperationLabel.GetValueOrDefault(o, o)));
     }
 
     /// <summary>
@@ -101,6 +101,8 @@ public static class ScheduleLayout
     /// </summary>
     public static string? HangingText(JoinerySpec spec)
     {
+        // A garage door (topic #48): its panels, finish, track or box, wicket and the room it needs.
+        if (GarageDoors.Of(spec)) return GarageDoors.Describe(spec);
         if (spec.Frameless is not { } f || !spec.IsDoor) return null;
         if (f.Fixing == "hinges") return "glass hinges";
         if (f.Fixing != "floor-spring") return "pivots and patch fittings";

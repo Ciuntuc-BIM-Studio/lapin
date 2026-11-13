@@ -889,6 +889,36 @@ public static class JoinerySpecs
     /// A frameless glass door on a floor spring (topic #28): one 1000 × 2100 leaf of 12 mm toughened glass, double acting, the
     /// spring the lightest that carries it, the pivot 55 mm in, a top patch fitting and a bottom one, held open at 90°.
     /// </summary>
+    /// <summary>
+    /// A garage door's frame: a steel angle 40 mm on the face, 80 mm deep, hung behind the opening (its inner face on the wall's
+    /// interior face, decision 530), no threshold; steel grey, a white curtain.
+    /// </summary>
+    static JoinerySpec Garage(string name, string mark, double width, double height, string op, JoineryGarage garage) => JoinerySpec.DefaultDoor(name) with
+    {
+        Mark = mark, Width = width, Height = height, Columns = [1], Rows = [1], Panels = [new(0, 0, op)], Threshold = 0, IsExternal = true,
+        Frame = new JoineryFrame(0.08, 0.04, 0.06, 0.06, 0), Colors = new JoineryColors("#8c9096", "#9cc8e8", "#e9e9e6"),
+        Position = new JoineryPosition("interior", 0), Hardware = new JoineryHardware("lever"), Garage = garage,
+    };
+
+    /// <summary>A sectional overhead garage door (topic #48: a steel sectional panel lift door), 2400 × 2100 as Australia's standard size; ribbed panels, a standard track.</summary>
+    public static JoinerySpec SectionalGarageDoor => Garage("Sectional garage door 2400×2100", "GD", 2.4, 2.1, "sectional-overhead", new JoineryGarage());
+
+    /// <summary>A roller garage door, 2400 × 2100, its roll box inside.</summary>
+    public static JoinerySpec RollerGarageDoor => Garage("Roller garage door 2400×2100", "GD", 2.4, 2.1, "roller", new JoineryGarage(Finish: "flat"));
+
+    /// <summary>An up-and-over (tilting) garage door, 2500 × 2125 as Europe's common size; canopy, vertical ribs.</summary>
+    public static JoinerySpec UpAndOverGarageDoor => Garage("Up-and-over garage door 2500×2125", "GD", 2.5, 2.125, "up-and-over", new JoineryGarage());
+
+    /// <summary>A side-sliding sectional garage door, 2500 × 2125, running to the left.</summary>
+    public static JoinerySpec SideSlidingGarageDoor => Garage("Side-sliding garage door 2500×2125", "GD", 2.5, 2.125, "sectional-side-left", new JoineryGarage(Finish: "v-groove"));
+
+    /// <summary>Side-hinged garage doors: a pair of leaves, 2400 × 2100, meeting rebated, no mullion (a double door the size of a garage's).</summary>
+    public static JoinerySpec SideHingedGarageDoors => DoubleDoor with
+    {
+        Name = "Side-hinged garage doors 2400×2100", Mark = "GD", Width = 2.4, Height = 2.1, Threshold = 0, IsExternal = true,
+        Frame = new JoineryFrame(0.09, 0.06, 0.06, 0.06, 0), Sash = new JoinerySash(0.1, 0.06, 0.045, 0.024),
+    };
+
     public static JoinerySpec FloorSpringDoor => JoinerySpec.DefaultDoor("Frameless door on floor spring 1000×2100") with
     {
         Mark = "GD", Width = 1.0, Columns = [1], Rows = [1], Panels = [new(0, 0, "double-acting-left")], Threshold = 0, Style = "frameless-glass",

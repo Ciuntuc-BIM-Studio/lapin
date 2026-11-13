@@ -18,7 +18,21 @@ public sealed record IfcJoineryLining(double Depth, double Thickness, double Mul
 /// Left and right are IFC's: as seen looking the way the panels open, which is
 /// the local +Y of the element's placement.
 /// </summary>
-public sealed record IfcJoineryType(bool Door, string Operation, string? UserDefined, IReadOnlyList<IfcJoineryPanel> Panels, IfcJoineryLining Lining);
+public sealed record IfcJoineryType(bool Door, string Operation, string? UserDefined, IReadOnlyList<IfcJoineryPanel> Panels, IfcJoineryLining Lining)
+{
+    /// <summary>
+    /// The OperationType in IFC4X3 where it names more than IFC4 (a garage door's LIFTING_HORIZONTAL, decision 530); null: <see cref="Operation"/>.
+    /// The user-defined text goes only with USERDEFINED.
+    /// </summary>
+    public string? Operation4X3 { get; init; }
+
+    /// <summary>The OperationType and its user-defined text in the schema written.</summary>
+    public (string Operation, string? UserDefined) In(bool ifc43)
+    {
+        var op = ifc43 && Operation4X3 is { } x ? x : Operation;
+        return (op, op == "USERDEFINED" ? UserDefined : null);
+    }
+}
 
 /// <summary>
 /// Where a door or window stands, as IFC needs its placement: the origin at the
