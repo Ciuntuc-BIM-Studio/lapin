@@ -178,3 +178,50 @@ export interface LocalSketchState { status?: string; dof?: number; freeShapes?: 
 export const statusOf = (s: LocalSketchState): { status: string; dof: number; freeShapes: { shape: string; part: string }[]; redundant: string[]; conflicting: string[]; problem?: string } => ({
   status: s.status ?? 'unknown', dof: s.dof ?? 0, freeShapes: s.freeShapes ?? [], redundant: s.redundant ?? [], conflicting: s.conflicting ?? [], ...(s.problem ? { problem: s.problem } : {}),
 });
+
+// ─── What the editor edits: the part's definition ─────────────────────────────────────
+
+/** The fields of a part-tree sketch the editor draws and edits from. */
+export interface EditedSketchSource {
+  shapes?: Record<string, unknown>[]; constraints?: unknown[]; frame?: SketchFrame;
+  status?: string; dof?: number; freeShapes?: { shape: string; part: string }[]; redundant?: string[]; conflicting?: string[]; problem?: string;
+  stored?: Omit<EditedSketchSource, 'stored'>;
+}
+
+/**
+ * The sketch the editor edits: the one the part stores (solved with its defaults), since editing a part's sketch edits the part
+ * (every placed part rebuilds from it); the object's own (`shapes`, solved with its values) only when the tree gives no stored one.
+ * `differs` tells whether the object's values move the sketch away from the stored one (its dimensions then show the defaults).
+ */
+export function editedSketch(sk: EditedSketchSource): { source: Omit<EditedSketchSource, 'stored'>; differs: boolean } {
+  const st = sk.stored;
+  if (!st) return { source: sk, differs: false };
+  const differs = JSON.stringify(st.shapes ?? []) !== JSON.stringify(sk.shapes ?? []);
+  return { source: { ...st, frame: st.frame ?? sk.frame }, differs };
+}
+
+/** A point a drawing tool put down: where, the grip it snapped onto (if any), and whether Ctrl placed it free. */
+export interface DrawnPoint { p: Vec2; grip: Grip | null; free?: boolean }
+
+export interface RecordedConstraint { kind: string; refs: ({ shape: string; part: string } | { new: number; part: string })[] }
+
+/**
+ * The constraints a shape drawn in a part sketch records, as the main CAD's drawing does (`studio.partSketchSetShapes`'s
+ * `constraints`, refs to the new shape as `{new: 0, part}`): each point put down on an existing point (a grip snap, not with Ctrl)
+ * coincident with it; a rectangle's sides horizontal and vertical.
+ */
+export function recordedConstraints(tool: DrawTool, made: Shape, points: readonly DrawnPoint[]): RecordedConstraint[] {
+  const out: RecordedConstraint[] = [];
+  const mine = gripsOf([{ id: '', shape: made }]);
+  const taken = new Set<string>();
+  for (const pt of points) {
+    if (!pt.grip || pt.free) continue;
+    const own = mine.find((g) => !taken.has(g.part) && dist(g.at, pt.p) < 1e-7);
+    if (!own) continue;
+    taken.add(own.part);
+    out.push({ kind: 'coincident', refs: [{ new: 0, part: own.part }, { shape: pt.grip.shape, part: pt.grip.part }] });
+  }
+  if (tool === 'rectangle' && made.type === 'polyline' && made.closed && made.pts.length === 4)
+    for (let i = 0; i < 4; i++) out.push({ kind: i % 2 === 0 ? 'horizontal' : 'vertical', refs: [{ new: 0, part: `edge:${i}` }] });
+  return out;
+}

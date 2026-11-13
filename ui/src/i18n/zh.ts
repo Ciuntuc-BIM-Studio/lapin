@@ -4,6 +4,8 @@ import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
   "Some constraints could not stay with the shapes and were dropped.": "部分约束无法保留在形状上，已被移除。",
+  "Editing the part: values shown are its defaults": "正在编辑零件：显示的值为其默认值",
+  "Some constraints the drawing made could not hold and were left out.": "绘图产生的部分约束无法成立，已被略去。",
   // Editing a part's own sketch in place (decision 520)
   "Constrain part": "约束零件",
   "Body from sketch": "由草图生成实体",

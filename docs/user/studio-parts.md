@@ -52,11 +52,12 @@ Click a sketch of the part in the tree (or double-click the part in its edit mod
 - the 3D camera turns to look straight at the sketch's plane, with a smooth move, and goes back to where it was when you leave;
 - the rest of the part stays faded behind, and the sketch is drawn over the view: its shapes coloured by how free they are (blue free, dark fully held, red in conflict), its constraint glyphs and its dimensions;
 - the bar at the bottom names the sketch, tells how many **degrees of freedom** it still has, and holds the tools.
+- editing the sketch edits the **part**, so every object of it follows. The sketch is shown as the part stores it, with the part's **default** values: when this object has values of its own (a width of 1600 where the part's default is 1200), the bar says *Editing the part: values shown are its defaults*, and the object's own outline is drawn dashed behind.
 
 ![A part's sketch edited in place: the camera square to its plane, the shapes, the glyphs and the tool bar](shots/studio-part-sketch.webp)
 
 - **Move a point** by dragging its square grip: the engine solves the constraints while you drag, and shows the result live; if the move is not possible it says why. One drag is one undo step.
-- **Draw**: **Line**, **Rectangle**, **Circle** and **Arc (3 points)** in the bar. Click the points; a point near an existing one snaps to it. Each shape is one undo step, and the shapes already there keep their identity, so their constraints stay. **Delete** takes away the shape you click (or select a shape and press Delete). Esc puts the tool down.
+- **Draw**: **Line**, **Rectangle**, **Circle** and **Arc (3 points)** in the bar. Click the points; a point near an existing one snaps to it and stays **coincident** with it (hold Ctrl while clicking to place it free), and a rectangle's sides stay horizontal and vertical. Each shape is one undo step, and the shapes already there keep their identity, so their constraints stay. **Delete** takes away the shape you click (or select a shape and press Delete). Esc puts the tool down.
 - **Constraints**: the same tools as in a plan's sketch (Coincident, Horizontal, Equal, Fix… and the dimensions), picked on this sketch. Double-click a dimension to change its value, or type `=` and a formula of the part's parameters (`=W - 2*L`): the part follows, in every object of it. See [Sketch constraints](sketch-constraints.md).
 
 ![A line added with the Line tool](shots/studio-part-sketch-line.webp)

@@ -4,6 +4,8 @@ import type { Language } from './index';
 
 export const PL: Record<string, string> = {
   "Some constraints could not stay with the shapes and were dropped.": "Niektóre więzy nie mogły pozostać przy kształtach i zostały usunięte.",
+  "Editing the part: values shown are its defaults": "Edytujesz część: pokazane wartości są jej domyślnymi",
+  "Some constraints the drawing made could not hold and were left out.": "Niektóre więzy utworzone podczas rysowania nie mogły zostać spełnione i zostały pominięte.",
   // Editing a part's own sketch in place (decision 520)
   "Constrain part": "Zwiąż część więzami",
   "Body from sketch": "Bryła ze szkicu",

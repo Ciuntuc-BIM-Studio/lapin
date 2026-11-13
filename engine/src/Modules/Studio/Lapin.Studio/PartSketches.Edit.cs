@@ -32,7 +32,12 @@ public static partial class PartSketches
         return (id!, part, to);
     }
 
-    /// <summary>{partId, sketchId, shape, part, to: [u, v]} → {ok, reason?, shapes}: the sketch's shapes after the drag, solved with the placed part's values (or the defaults); nothing kept.</summary>
+    /// <summary>
+    /// {partId, sketchId, shape, part, to: [u, v], values?: "instance" | "defaults"} → {ok, reason?, shapes}: the sketch's shapes after
+    /// the drag, solved with the placed part's values (or the defaults for the part itself); nothing kept. <c>values: "defaults"</c>
+    /// solves with the part's defaults whatever <c>partId</c> names: what <c>partSketchDrag</c> keeps, so the sketch editor (which edits
+    /// the part's definition, its stored shapes) previews exactly what is committed.
+    /// </summary>
     public static JsonNode DragPreview(IQueryContext q, JsonObject a)
     {
         var m = q.Model;
@@ -40,7 +45,13 @@ public static partial class PartSketches
         var sketch = Find(def, (string?)a["sketchId"]) ?? throw new CommandException($"„{type.Name}” has no sketch „{(string?)a["sketchId"]}”.");
         var (shape, part, to) = DragArgs(sketch, a);
         var order = ShapesOf(sketch);
-        var r = SketchConstraints.DragLocal(order, ConstraintsOf(sketch), ValuesFor(m, (string?)a["partId"], def), shape, part, to);
+        var values = (string?)a["values"] switch
+        {
+            null or "instance" => ValuesFor(m, (string?)a["partId"], def),
+            "defaults" => Parts.Values(def, null),
+            var other => throw new CommandException($"values is „instance” or „defaults”, not „{other}”."),
+        };
+        var r = SketchConstraints.DragLocal(order, ConstraintsOf(sketch), values, shape, part, to);
         if (r.Error != null) return new JsonObject { ["ok"] = false, ["reason"] = r.Error, ["shapes"] = new JsonArray() };
         return new JsonObject { ["ok"] = true, ["shapes"] = ShapesJson(order, r.Shapes()) };
     }

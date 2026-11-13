@@ -4,6 +4,8 @@ import type { Language } from './index';
 
 export const DE: Record<string, string> = {
   "Some constraints could not stay with the shapes and were dropped.": "Einige Bedingungen konnten bei den Formen nicht bleiben und wurden entfernt.",
+  "Editing the part: values shown are its defaults": "Sie bearbeiten das Bauteil: die gezeigten Werte sind seine Standardwerte",
+  "Some constraints the drawing made could not hold and were left out.": "Einige beim Zeichnen gesetzte Bedingungen konnten nicht gelten und wurden weggelassen.",
   // Editing a part's own sketch in place (decision 520)
   "Constrain part": "Bauteil bemaßen",
   "Body from sketch": "Körper aus Skizze",

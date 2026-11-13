@@ -58,13 +58,17 @@ public static partial class SketchConstraints
         if (!ValueKinds.Contains(kind))
         {
             if (c["value"] != null || c["formula"] != null) throw new CommandException($"{Label(kind)} takes no value.");
+            if (c["place"] != null) throw new CommandException($"{Label(kind)} has no place of its own; only a dimension is placed.");
             if (!driving) throw new CommandException($"{Label(kind)} is always driving; only a dimension may be driven.");
             c.Remove("driving");
             c["driving"] = true;
+            c.Remove("place");
             return;
         }
         c.Remove("driving");
         c["driving"] = driving;
+        // Where it is drawn, as a view's dimension (SketchConstraints.Place.cs); none: placed automatically.
+        if (c.ContainsKey("place")) CheckPlace(c, kind);
         var formula = ((string?)c["formula"])?.Trim();
         if (formula is { Length: 0 }) formula = null;
         if (formula != null && c["value"] != null) throw new CommandException("A dimension takes a value or a formula, not both.");

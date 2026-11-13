@@ -4,6 +4,8 @@ import type { Language } from './index';
 
 export const IT: Record<string, string> = {
   "Some constraints could not stay with the shapes and were dropped.": "Alcuni vincoli non hanno potuto restare con le forme e sono stati rimossi.",
+  "Editing the part: values shown are its defaults": "Stai modificando il pezzo: i valori mostrati sono i suoi predefiniti",
+  "Some constraints the drawing made could not hold and were left out.": "Alcuni vincoli creati dal disegno non potevano reggere e sono stati tralasciati.",
   // Editing a part's own sketch in place (decision 520)
   "Constrain part": "Vincola il componente",
   "Body from sketch": "Corpo da schizzo",

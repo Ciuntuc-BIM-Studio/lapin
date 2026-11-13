@@ -52,11 +52,12 @@ Dă clic pe o schiță a piesei din arbore (sau dublu clic pe piesă în modul e
 - camera 3D se întoarce să privească drept spre planul schiței, cu o mișcare lină, și revine unde era când ieși;
 - restul piesei rămâne estompat în spate, iar schița este desenată peste vedere: formele ei colorate după cât de libere sunt (albastru liber, închis complet ținut, roșu în conflict), glifele constrângerilor și cotele;
 - bara de jos numește schița, spune câte **grade de libertate** mai are și ține uneltele.
+- editarea schiței editează **piesa**, deci fiecare obiect al ei urmează. Schița se arată cum o păstrează piesa, cu valorile ei **implicite**: când obiectul are valori proprii (o lățime de 1600 unde implicitul piesei este 1200), bara spune *Editezi piesa: valorile arătate sunt cele implicite*, iar conturul propriu al obiectului este desenat punctat în spate.
 
 ![Schița unei piese editată pe loc: camera drept spre plan, formele, glifele și bara de unelte](shots/studio-part-sketch.webp)
 
 - **Mută un punct** trăgându-l de mânerul pătrat: motorul rezolvă constrângerile în timp ce tragi și arată rezultatul pe loc; dacă mutarea nu e posibilă, spune de ce. O tragere este un singur pas de anulare.
-- **Desenează**: **Linie**, **Dreptunghi**, **Cerc** și **Arc (3 puncte)** în bară. Dă clic pe puncte; un punct aproape de unul existent se lipește de el. Fiecare formă este un pas de anulare, iar formele deja existente își păstrează identitatea, deci constrângerile lor rămân. **Șterge** scoate forma pe care dai clic (sau selectează o formă și apasă Delete). Esc lasă unealta jos.
+- **Desenează**: **Linie**, **Dreptunghi**, **Cerc** și **Arc (3 puncte)** în bară. Dă clic pe puncte; un punct aproape de unul existent se lipește de el și rămâne **coincident** cu el (ține Ctrl apăsat la clic ca să-l pui liber), iar laturile unui dreptunghi rămân orizontale și verticale. Fiecare formă este un pas de anulare, iar formele deja existente își păstrează identitatea, deci constrângerile lor rămân. **Șterge** scoate forma pe care dai clic (sau selectează o formă și apasă Delete). Esc lasă unealta jos.
 - **Constrângeri**: aceleași unelte ca la schița unui plan (Coincident, Orizontal, Egal, Fixează… și cotele), alese pe această schiță. Dublu clic pe o cotă îi schimbă valoarea, sau scrie `=` și o formulă din parametrii piesei (`=W - 2*L`): piesa o urmează, în fiecare obiect al ei. Vezi [Constrângerile schiței](sketch-constraints.md).
 
 ![O linie adăugată cu unealta Linie](shots/studio-part-sketch-line.webp)

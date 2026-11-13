@@ -27,8 +27,8 @@ import { constraintCommandOn, DIMENSIONS, GEOMETRIC } from './constraintTools';
 import { editedPartId, editPart } from './editMode';
 import { usePartTree } from './PartTree';
 import {
-  dragShapes, gripsOf, localShapes, POINTS_NEEDED, poseForSketch, previewShapes, rayToSketch, shapeAt, shapeFrom, shapesPayload, sketchExtent,
-  sketchToWorld, snapToGrip, statusOf, withoutShape, withShape, type DrawTool, type Grip, type LocalShape, type SketchFrame, type SketchTool,
+  dragShapes, editedSketch, gripsOf, localShapes, POINTS_NEEDED, recordedConstraints, poseForSketch, previewShapes, rayToSketch, shapeAt, shapeFrom, shapesPayload, sketchExtent,
+  sketchToWorld, snapToGrip, statusOf, withoutShape, withShape, type DrawnPoint, type DrawTool, type Grip, type LocalShape, type SketchFrame, type SketchTool,
 } from './partSketchModel';
 import { sketchHooks, usePartSketch } from './partSketchStore';
 import type { PartTree, TreeSketch } from './partTreeModel';
@@ -63,7 +63,9 @@ function hostFor(partId: string, sketchId: string): CadHost {
 export async function enterPartSketch(partId: string, sketchId: string): Promise<boolean> {
   if (editedPartId() !== partId && !editPart(partId)) return false;
   const tree = await query<PartTree>('studio.partTree', { id: partId });
-  const sk = tree?.sketches.find((s) => s.local && s.id === sketchId);
+  const found = tree?.sketches.find((s) => s.local && s.id === sketchId);
+  // The sketch as the part stores it: what is edited (editedSketch).
+  const sk = found ? editedSketch(found).source : null;
   if (!sk?.frame) { notify('That sketch is not one of the part\'s own: use Constrain part first.'); return false; }
   const cam = useCamera.getState();
   const state = usePartSketch.getState();
@@ -150,14 +152,19 @@ export function PartSketch3D({ camera, canvas }: Overlay3DProps) {
   const command = useCad((s) => s.command);
   const step = useCad((s) => s.step);
   const cursor = useCad((s) => s.cursor);
-  const [pts, setPts] = useState<Vec2[]>([]);
+  const [drawn, setDrawn] = useState<DrawnPoint[]>([]);
+  const pts = useMemo(() => drawn.map((d) => d.p), [drawn]);
   const [hover, setHover] = useState<Vec2 | null>(null);
   const [drag, setDrag] = useState<{ grip: Grip; to: Vec2; ok: boolean; reason?: string; shapes: { id: string; shape: Shape }[] } | null>(null);
   const [typed, setTyped] = useState('');
   const sketch: TreeSketch | undefined = tree?.sketches.find((s) => s.local && s.id === sketchId);
-  const shapes = useMemo(() => localShapes(sketch?.shapes), [sketch?.shapes]);
-  const constraints = (sketch?.constraints ?? []) as ConstraintDto[];
-  const status = useMemo(() => (sketch ? (statusOf(sketch) as SketchStatus) : null), [sketch]);
+  // Editing a part's sketch edits the part: the sketch as stored (solved with the defaults) is drawn and sent back; this object's
+  // own (solved with its values) is drawn faintly behind when its values move it.
+  const edited = useMemo(() => (sketch ? editedSketch(sketch) : null), [sketch]);
+  const shapes = useMemo(() => localShapes(edited?.source.shapes), [edited]);
+  const instanceShapes = useMemo(() => (edited?.differs ? localShapes(sketch?.shapes) : []), [edited, sketch?.shapes]);
+  const constraints = (edited?.source.constraints ?? []) as ConstraintDto[];
+  const status = useMemo(() => (edited ? (statusOf(edited.source) as SketchStatus) : null), [edited]);
   const cmdOn = !!command && constraintCommandOn();
 
   // It ends with the part's edit mode, or with the sketch (removed, undone away).
@@ -168,11 +175,11 @@ export function PartSketch3D({ camera, canvas }: Overlay3DProps) {
   }, [partId, scope, tree, sketch]);
   // A drawing tool and a constraint command exclude each other; a tool changed drops its points.
   useEffect(() => { if (cmdOn && tool) usePartSketch.setState({ tool: null }); }, [cmdOn, tool]);
-  useEffect(() => { setPts([]); setHover(null); }, [tool, sketchId]);
+  useEffect(() => { setDrawn([]); setHover(null); }, [tool, sketchId]);
   useEffect(() => { setTyped(''); }, [step]);
 
   const cam = camera.current, rect = canvas.current?.getBoundingClientRect();
-  const frame = sketch?.frame;
+  const frame = edited?.source.frame;
   const proj = cam && rect && frame ? projectionOf(cam, rect) : null;
   const toScreen = (p: Vec2) => proj!.toScreen(frame!, p);
   const scale = useMemo(() => {
@@ -190,21 +197,26 @@ export function PartSketch3D({ camera, canvas }: Overlay3DProps) {
     remove: (ids) => execute('studio.partSketchRemoveConstraint', { partId, sketchId, ids }),
   } : undefined), [partId, sketchId, shapes, constraints, status]);
 
-  const send = async (list: { id?: string; shape: Shape }[]) => {
+  /** The shapes sent back (the part's definition), with what drawing recorded (one undo step). */
+  const send = async (list: { id?: string; shape: Shape }[], recorded: unknown[] = []) => {
     if (!partId || !sketchId) return;
-    const r = await execute('studio.partSketchSetShapes', { partId, sketchId, shapes: shapesPayload(list) });
-    if (!r) { const e = useSession.getState().error; if (e) notify(e); }
-    else if (Array.isArray((r as { dropped?: unknown[] }).dropped) && (r as { dropped: unknown[] }).dropped.length) notify('Some constraints could not stay with the shapes and were dropped.');
+    const r = await execute('studio.partSketchSetShapes', { partId, sketchId, shapes: shapesPayload(list), ...(recorded.length ? { constraints: recorded } : {}) });
+    if (!r) { const e = useSession.getState().error; if (e) notify(e); return; }
+    const o = r as { dropped?: unknown[]; refused?: unknown[] };
+    if (Array.isArray(o.dropped) && o.dropped.length) notify('Some constraints could not stay with the shapes and were dropped.');
+    if (Array.isArray(o.refused) && o.refused.length) notify('Some constraints the drawing made could not hold and were left out.');
   };
 
-  const point = (e: { clientX: number; clientY: number }, snap = true): Vec2 | null => {
+  /** A pointer's point on the sketch, snapped onto an existing point (the grip it snapped to with it). */
+  const pointAt = (e: { clientX: number; clientY: number }, snap = true): { p: Vec2; grip: Grip | null } | null => {
     const r = svg.current?.getBoundingClientRect();
     if (!r || !proj || !frame) return null;
     const p = proj.toSketch(frame, e.clientX - r.left, e.clientY - r.top);
     if (!p) return null;
     const g = snap ? snapToGrip(grips, p, SNAP_PX / scale) : null;
-    return g ? g.at : p;
+    return g ? { p: g.at, grip: g } : { p, grip: null };
   };
+  const point = (e: { clientX: number; clientY: number }, snap = true): Vec2 | null => pointAt(e, snap)?.p ?? null;
 
   // Esc, Delete and Tab: taken before the shell's.
   useEffect(() => {
@@ -216,7 +228,7 @@ export function PartSketch3D({ camera, canvas }: Overlay3DProps) {
         if ((e.target as HTMLElement | null)?.closest?.('[data-testid="constraint-edit"]')) return;
         e.preventDefault(); e.stopImmediatePropagation();
         if (useCad.getState().command) cancel();
-        else if (st.tool && pts.length) setPts([]);
+        else if (st.tool && pts.length) setDrawn([]);
         else if (st.tool) usePartSketch.setState({ tool: null });
         else if (st.selected) usePartSketch.setState({ selected: null });
         else leavePartSketch();
@@ -245,8 +257,9 @@ export function PartSketch3D({ camera, canvas }: Overlay3DProps) {
   const onDown = (e: React.PointerEvent) => {
     if (e.button === 2) { if (cmdOn) { e.preventDefault(); void finishStep(); } return; }
     if (e.button !== 0) return;
-    const p = point(e);
-    if (!p) return;
+    const at = pointAt(e);
+    if (!at) return;
+    const p = at.p;
     if (cmdOn) { useCad.setState({ cursor: p }); void feedPoint(p); return; }
     if (tool === 'delete') {
       const hit = shapeAt(shapes, p, PICK_PX / scale, (s, q) => nearestOnShape(s, q).dist);
@@ -254,11 +267,12 @@ export function PartSketch3D({ camera, canvas }: Overlay3DProps) {
       return;
     }
     if (tool) {
-      const next = [...pts, p];
-      if (next.length < POINTS_NEEDED[tool]) { setPts(next); return; }
-      const made = shapeFrom(tool, next);
-      setPts([]);
-      if (made) void send(withShape(shapes, made));
+      // Ctrl (or ⌘) at the press: the point is placed free, no constraint recorded (as the main CAD).
+      const next = [...drawn, { ...at, free: e.ctrlKey || e.metaKey }];
+      if (next.length < POINTS_NEEDED[tool]) { setDrawn(next); return; }
+      const made = shapeFrom(tool, next.map((d) => d.p));
+      setDrawn([]);
+      if (made) void send(withShape(shapes, made), recordedConstraints(tool, made, next));
       else notify('Those points make no shape.');
     }
   };
@@ -276,7 +290,7 @@ export function PartSketch3D({ camera, canvas }: Overlay3DProps) {
       if (!p) return;
       last = p;
       const n = ++ask;
-      void query<{ ok: boolean; reason?: string; shapes?: unknown }>('studio.partSketchDragPreview', { partId, sketchId, shape: g.shape, part: g.part, to: [p.x, p.y] }).then((r) => {
+      void query<{ ok: boolean; reason?: string; shapes?: unknown }>('studio.partSketchDragPreview', { partId, sketchId, shape: g.shape, part: g.part, to: [p.x, p.y], values: 'defaults' }).then((r) => {
         if (n !== ask || !r) return;
         setDrag({ grip: g, to: p, ok: r.ok, reason: r.reason, shapes: dragShapes(r.shapes) });
       });
@@ -300,6 +314,7 @@ export function PartSketch3D({ camera, canvas }: Overlay3DProps) {
     <>
       <svg ref={svg} className="grip-overlay face-sketch part-sketch" data-sketch3d="part-sketch" data-testid="part-sketch" data-part-sketch-id={sketchId} style={{ pointerEvents: 'none' }}>
         <g className="sketch-overlay">
+          {instanceShapes.flatMap((s) => polylines(s.shape).map((line, i) => <polyline key={`i${s.id}:${i}`} className="ps-instance" data-instance-shape={s.id} points={pts2(line)} />))}
           {shapes.map((s) => (
             <g key={s.id}>
               {s.inProfile && s.shape.type === 'polyline' && s.shape.closed && <polygon className="ps-profile" points={pts2(s.shape.pts)} />}
@@ -352,6 +367,7 @@ export function PartSketch3D({ camera, canvas }: Overlay3DProps) {
             );
           })}
         </span>
+        {edited?.differs && <span className="part-sketch-note" data-testid="part-sketch-defaults">{tr('Editing the part: values shown are its defaults')}</span>}
         <button type="button" className="btn small" data-testid="part-sketch-finish" title={tr('Back to the part (Esc)')} onClick={() => leavePartSketch()}><Check size={12} />{tr('Finish sketch')}</button>
         {(tool || cmdOn) && (
           <div className="part-sketch-prompt" data-testid="part-sketch-prompt">

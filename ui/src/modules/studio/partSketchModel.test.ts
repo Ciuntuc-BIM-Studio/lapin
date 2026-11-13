@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { nearestOnShape } from '../../viewport/cad/shapes';
 import { bodySketchName, isSketchBody, quickProblem, type FamilyDef } from './families/familyModel';
 import {
-  dragShapes, gripsOf, localShapes, poseForSketch, previewShapes, rayToSketch, shapeAt, shapeFrom, shapesPayload, sketchExtent, sketchToWorld, snapToGrip, statusOf, toolAllowed,
+  dragShapes, editedSketch, gripsOf, recordedConstraints, localShapes, poseForSketch, previewShapes, rayToSketch, shapeAt, shapeFrom, shapesPayload, sketchExtent, sketchToWorld, snapToGrip, statusOf, toolAllowed,
   withReplaced, withShape, withoutShape, worldToSketch, type SketchFrame,
 } from './partSketchModel';
 import { canConstrain, depthInput, localSketches, sketchBodySteps, sketchRows, stepRows, type PartTree } from './partTreeModel';
@@ -189,5 +189,52 @@ describe('the families dialog on a body drawn from a sketch', () => {
     expect(bodySketchName(def, def.bodies[0])).toBe('Side');
     expect(bodySketchName({ ...def, sketches: [] }, def.bodies[0])).toBe('s1');
     expect(quickProblem(def)).toBeNull();
+  });
+});
+
+describe('editing the part, not the object', () => {
+  const sq = (w: number) => [{ id: 'sq', type: 'polyline', pts: [[0, 0], [w, 0], [w, 1], [0, 1]], closed: true }];
+  const F2: SketchFrame = { origin: [5, 0, 0], right: [1, 0, 0], up: [0, 1, 0], normal: [0, 0, 1] };
+  it('takes the stored sketch (the defaults) and tells when the object\'s values move it', () => {
+    const sk = {
+      shapes: sq(1.6), constraints: [{ id: 'c1', value: 1.6 }], status: 'underconstrained', dof: 1, frame: XY,
+      stored: { shapes: sq(1), constraints: [{ id: 'c1', value: 1 }], status: 'underconstrained', dof: 1, frame: F2 },
+    };
+    const e = editedSketch(sk);
+    expect(e.differs).toBe(true);
+    expect(localShapes(e.source.shapes)[0].shape).toMatchObject({ pts: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }, { x: 0, y: 1 }] });
+    expect((e.source.constraints![0] as { value: number }).value).toBe(1);
+    expect(e.source.frame).toBe(F2);
+    // The same values: nothing to tell; no stored one (an older engine): the object's own.
+    expect(editedSketch({ ...sk, stored: { ...sk.stored, shapes: sq(1.6) } }).differs).toBe(false);
+    expect(editedSketch({ shapes: sq(2), frame: XY }).source.shapes).toEqual(sq(2));
+    // A stored one without its frame takes the object's.
+    expect(editedSketch({ shapes: sq(1), frame: XY, stored: { shapes: sq(1) } }).source.frame).toBe(XY);
+  });
+});
+
+describe('what drawing records', () => {
+  const grip = (shape: string, part: string, x: number, y: number) => ({ shape, part, at: { x, y } });
+  it('makes a point put down on an existing one coincident, unless Ctrl placed it free', () => {
+    const line = shapeFrom('line', [{ x: 1, y: 1 }, { x: 2, y: 2 }])!;
+    expect(recordedConstraints('line', line, [{ p: { x: 1, y: 1 }, grip: grip('sq', 'vertex:2', 1, 1) }, { p: { x: 2, y: 2 }, grip: null }])).toEqual([
+      { kind: 'coincident', refs: [{ new: 0, part: 'start' }, { shape: 'sq', part: 'vertex:2' }] },
+    ]);
+    expect(recordedConstraints('line', line, [{ p: { x: 1, y: 1 }, grip: grip('sq', 'vertex:2', 1, 1), free: true }, { p: { x: 2, y: 2 }, grip: grip('a', 'end', 2, 2) }])).toEqual([
+      { kind: 'coincident', refs: [{ new: 0, part: 'end' }, { shape: 'a', part: 'end' }] },
+    ]);
+  });
+  it('holds a rectangle\'s sides and its corners on points', () => {
+    const rect = shapeFrom('rectangle', [{ x: 0, y: 0 }, { x: 2, y: 1 }])!;
+    const r = recordedConstraints('rectangle', rect, [{ p: { x: 0, y: 0 }, grip: grip('sq', 'vertex:0', 0, 0) }, { p: { x: 2, y: 1 }, grip: grip('l', 'end', 2, 1) }]);
+    expect(r.filter((c) => c.kind === 'coincident').map((c) => c.refs[0])).toEqual([{ new: 0, part: 'vertex:0' }, { new: 0, part: 'vertex:2' }]);
+    expect(r.filter((c) => c.kind !== 'coincident').map((c) => `${c.kind}:${(c.refs[0] as { part: string }).part}`)).toEqual(['horizontal:edge:0', 'vertical:edge:1', 'horizontal:edge:2', 'vertical:edge:3']);
+  });
+  it('takes an arc\'s ends, not its middle point', () => {
+    const arc = shapeFrom('arc', [{ x: 1, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 }])!;
+    const r = recordedConstraints('arc', arc, [
+      { p: { x: 1, y: 0 }, grip: grip('a', 'end', 1, 0) }, { p: { x: 0, y: 1 }, grip: grip('b', 'end', 0, 1) }, { p: { x: -1, y: 0 }, grip: grip('c', 'start', -1, 0) },
+    ]);
+    expect(r.map((c) => (c.refs[1] as { shape: string }).shape).sort()).toEqual(['a', 'c']);
   });
 });

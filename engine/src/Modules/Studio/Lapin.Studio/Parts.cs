@@ -425,6 +425,32 @@ public static class Parts
         new() { ["origin"] = V(origin), ["right"] = V(right), ["up"] = V(up), ["normal"] = V(normal) };
 
     /// <summary>
+    /// A part's own sketch as stored (solved with the part's defaults): its shapes (with <c>inProfile</c>, <c>inLoop</c>), constraints
+    /// resolved on them, how it stands for the defaults, and its frame with the defaults' offset. The same as <paramref name="described"/>
+    /// when the instance's values are the defaults for everything the sketch names.
+    /// </summary>
+    static JsonObject StoredSketch(JsonObject def, JsonObject sk, JsonObject described, Dictionary<string, double> values, Func<Vec3, Vec3> place, Func<Vec3, Vec3> dir)
+    {
+        var defaults = Values(def, null);
+        var o = new JsonObject();
+        if (values.Count == defaults.Count && defaults.All(kv => values.TryGetValue(kv.Key, out var v) && v == kv.Value))
+        {
+            foreach (var key in new[] { "shapes", "constraints", "constraintCount", "status", "dof", "freeShapes", "redundant", "conflicting", "problem", "frame" })
+                if (described[key] is { } n) o[key] = n.DeepClone();
+            return o;
+        }
+        foreach (var (key, val) in PartSketches.Describe(sk, defaults)) o[key] = val?.DeepClone();
+        PartSketches.Annotate(def, sk, o);
+        o.Remove("bodies");
+        var (u, v, n2) = Frame((string?)sk["plane"] ?? "xy");
+        Vec3 off = default;
+        try { if (sk["offset"] is JsonArray oa && oa.Count == 3) off = new Vec3(Eval(oa[0], defaults, "offset"), Eval(oa[1], defaults, "offset"), Eval(oa[2], defaults, "offset")); }
+        catch (CommandException) { }
+        o["frame"] = FrameJson(place(off), dir(u), dir(v), dir(n2));
+        return o;
+    }
+
+    /// <summary>
     /// What the edit mode shows of a Studio solid (docs/plan-studio-parametric.md §3.2): its part, the origin planes, the sketches,
     /// the steps and the parameters. A solid drawn from a sketch: its drafted profile, path, rail… as sketches, its operation and
     /// Studio steps as steps, no parameters yet. A placed part: each body's outline a sketch on its origin plane and a step, the
@@ -460,6 +486,9 @@ public static class Parts
                 foreach (var (key, val) in PartSketches.Describe(sk, values)) o[key] = val?.DeepClone();
                 // The bodies drawn from it, and on each shape whether it is in their outlines (inProfile) or in any closed one (inLoop).
                 PartSketches.Annotate(def!, sk, o);
+                // The sketch as the part stores it, solved with the defaults: what editing the sketch edits (the definition), so the
+                // sketch editor draws and sends these, its dimensions showing the defaults; `shapes` above stay this object's.
+                o["stored"] = StoredSketch(def!, sk, o, values, place, dir);
                 sketches.Add((JsonNode)o);
             }
             var i = 0;

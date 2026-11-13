@@ -11,6 +11,15 @@ export interface TreeSketch {
   freeShapes?: { shape: string; part: string }[]; redundant?: string[]; conflicting?: string[]; problem?: string;
   /** The names of the bodies drawn from it. */
   bodies?: string[];
+  /**
+   * The sketch as the part stores it (solved with the part's defaults): what editing the sketch edits, the definition. Its shapes,
+   * constraints, how it stands and its frame for the defaults; the same as the fields above when the object's values are the defaults.
+   */
+  stored?: StoredSketch;
+}
+export interface StoredSketch {
+  shapes?: Record<string, unknown>[]; constraints?: unknown[]; constraintCount?: number; status?: string; dof?: number;
+  freeShapes?: { shape: string; part: string }[]; redundant?: string[]; conflicting?: string[]; problem?: string; frame?: TreeFrame;
 }
 export interface TreeStep { index: number; kind: string; label: string; suppressed?: boolean; when?: string | number; sketch?: string; feature?: number }
 export interface TreeParam {

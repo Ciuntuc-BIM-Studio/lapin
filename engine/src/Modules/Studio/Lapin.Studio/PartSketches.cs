@@ -114,6 +114,7 @@ public static partial class PartSketches
                 if (co["value"] is { } value) c["value"] = value.DeepClone();
                 if (co["formula"] is { } formula) c["formula"] = formula.DeepClone();
                 if (co["driving"] is { } driving) c["driving"] = driving.DeepClone();
+                if (co["place"] is { } place) c["place"] = place.DeepClone();
                 try { SketchConstraints.CheckLocal(dict, c, defaults); }
                 catch (CommandException ex) { throw new CommandException($"„{name}”: {ex.Message}"); }
                 var cid = ((string?)co["id"])?.Trim() is { Length: > 0 } c0 ? c0 : Next(cids.Concat(cs.Select(z => (string)z["id"]!)), "c");
@@ -388,6 +389,7 @@ public static partial class PartSketches
     {
         ["kind"] = (string?)a["kind"], ["refs"] = (a["refs"] as JsonArray)?.DeepClone(), ["value"] = a["value"]?.DeepClone(), ["formula"] = (string?)a["formula"],
         ["driving"] = a["driving"] is JsonValue dv && dv.TryGetValue<bool>(out var driving) ? driving : null,
+        ["place"] = a["place"] is JsonObject place ? place.DeepClone() : null,
     };
 
     static JsonObject Clean(JsonObject c)
@@ -396,7 +398,7 @@ public static partial class PartSketches
         return c;
     }
 
-    /// <summary>{partId, sketchId, kind, refs, value?, formula?, driving?} → {id}; or {partId, sketchId, constraints: [{…}]} → {ids}.</summary>
+    /// <summary>{partId, sketchId, kind, refs, value?, formula?, driving?, place?} → {id}; or {partId, sketchId, constraints: [{…}]} → {ids}.</summary>
     public static JsonNode? AddConstraint(ICommandContext ctx, JsonObject a)
     {
         var (type, def, sketch) = Target(ctx, a);
@@ -421,7 +423,11 @@ public static partial class PartSketches
         return many != null ? new JsonObject { ["ids"] = new JsonArray(ids.Select(x => (JsonNode)x).ToArray()) } : new JsonObject { ["id"] = ids[0] };
     }
 
-    /// <summary>{partId, sketchId, id, value?, formula?, driving?}: a value takes the place of a formula and the other way round; null clears.</summary>
+    /// <summary>
+    /// {partId, sketchId, id, value?, formula?, driving?, place?}: a value takes the place of a formula and the other way round; null
+    /// clears. A dimension's <c>place</c> ({offset, angle?}, as <c>studio.updateConstraint</c> takes it, SketchConstraints.Place.cs)
+    /// is where it is drawn; null: placed automatically.
+    /// </summary>
     public static JsonNode? UpdateConstraint(ICommandContext ctx, JsonObject a)
     {
         var (type, def, sketch) = Target(ctx, a);
@@ -433,6 +439,7 @@ public static partial class PartSketches
         if (a.ContainsKey("value")) { c.Remove("value"); if (a["value"] != null) { c["value"] = a["value"]!.DeepClone(); c.Remove("formula"); } }
         if (a.ContainsKey("formula")) { c.Remove("formula"); if (a["formula"] != null) { c["formula"] = a["formula"]!.DeepClone(); c.Remove("value"); } }
         if (a["driving"] != null) c["driving"] = a["driving"]!.DeepClone();
+        if (a.ContainsKey("place")) { c.Remove("place"); if (a["place"] != null) c["place"] = a["place"]!.DeepClone(); }
         SketchConstraints.CheckLocal(ShapesOf(sketch).ToDictionary(s => s.Id, s => s.Shape), c, Parts.Values(def, null));
         list[at] = c;
         Commit(ctx, type, def);
@@ -457,10 +464,14 @@ public static partial class PartSketches
     }
 
     /// <summary>
-    /// {partId, sketchId, shapes: [{id?, type, …}]}: the sketch's shapes replaced. A shape keeping its id and its sort is the same
-    /// shape moved: the points it moved are the edit's goals and the rest follows the constraints, or the edit is refused with the
-    /// constraints that hold it; constraints naming a shape gone (or a part it no longer has) are dropped and listed
-    /// (<c>dropped: [{id, kind, reason}]</c>). A shape without an id is new.
+    /// {partId, sketchId, shapes: [{id?, type, …}], constraints?: [{kind, refs: [{shape, part} | {new: i, part}], value?, formula?,
+    /// driving?, place?}]}: the sketch's shapes replaced. A shape keeping its id and its sort is the same shape moved: the points it
+    /// moved are the edit's goals and the rest follows the constraints, or the edit is refused with the constraints that hold it;
+    /// constraints naming a shape gone (or a part it no longer has) are dropped and listed (<c>dropped: [{id, kind, reason}]</c>). A
+    /// shape without an id is new. <c>constraints</c> are what drawing recorded (a new line's end on an existing point, a rectangle's
+    /// sides), added in the same step: a ref <c>{new: i}</c> names the i-th new shape (the i-th given without an id). Solved with the
+    /// rest at once; when that fails they are tried one by one, those that hold kept, the others listed (<c>refused: [{index, kind,
+    /// reason}]</c>), never the drawing refused for them. → {ids, constraints: [ids added], dropped?, refused?}.
     /// </summary>
     public static JsonNode? SetShapes(ICommandContext ctx, JsonObject a)
     {
@@ -469,33 +480,97 @@ public static partial class PartSketches
         var given = a["shapes"] as JsonArray ?? throw new CommandException("Which shapes: {shapes: [{id?, type, …}]}?");
         var named = given.OfType<JsonObject>().Select(s => ((string?)s["id"])?.Trim()).OfType<string>().ToList();
         var now = new List<(string Id, Shape Shape)>();
+        var fresh = new List<string>();
         foreach (var sx in given)
         {
             var shape = Shape.From(sx) ?? throw new CommandException("A shape is a line, a polyline, a circle or an arc.");
-            var id = ((string?)sx!["id"])?.Trim() is { Length: > 0 } s0 ? s0 : Next(named.Concat(before.Keys).Concat(now.Select(s => s.Id)), "p");
+            var isNew = ((string?)sx!["id"])?.Trim() is not { Length: > 0 };
+            var id = !isNew ? ((string?)sx["id"])!.Trim() : Next(named.Concat(before.Keys).Concat(now.Select(s => s.Id)), "p");
             if (!GoodId(id)) throw new CommandException($"A shape's id is letters and digits („{id}”).");
             if (now.Any(s => s.Id == id)) throw new CommandException($"The shape „{id}” is there twice.");
             now.Add((id, shape));
+            if (isNew) fresh.Add(id);
         }
         var dict = now.ToDictionary(s => s.Id, s => s.Shape);
         var defaults = Parts.Values(def, null);
-        var kept = new JsonArray();
+        var kept = new List<JsonObject>();
         var dropped = new JsonArray();
         foreach (var c in ConstraintsOf(sketch))
         {
             if (SketchConstraints.InvalidLocal(dict, c, defaults) is { } why)
                 dropped.Add((JsonNode)new JsonObject { ["id"] = (string?)c["id"], ["kind"] = (string?)c["kind"], ["reason"] = why });
-            else kept.Add(c.DeepClone());
+            else kept.Add((JsonObject)c.DeepClone());
         }
-        var r = SketchConstraints.SolveLocal(now, [.. kept.OfType<JsonObject>()], defaults, before);
+        // What drawing recorded: refs to new shapes named, each checked, given its id.
+        var refused = new List<(int Index, string? Kind, string Reason)>();
+        var recorded = new List<(int Index, JsonObject C)>();
+        var given2 = a["constraints"] as JsonArray ?? [];
+        var used = kept.Select(c => (string?)c["id"]).OfType<string>().ToList();
+        for (var i = 0; i < given2.Count; i++)
+        {
+            if (given2[i] is not JsonObject item) { refused.Add((i, null, "A constraint is {kind, refs, …}.")); continue; }
+            try
+            {
+                var c = Recorded(item, fresh);
+                SketchConstraints.CheckLocal(dict, c, defaults);
+                var cid = Next(used, "c");
+                used.Add(cid);
+                var stored = new JsonObject { ["id"] = cid };
+                foreach (var (k, v) in c) stored[k] = v?.DeepClone();
+                recorded.Add((i, stored));
+            }
+            catch (CommandException ex) { refused.Add((i, (string?)item["kind"], ex.Message)); }
+        }
+        // The edit with the kept constraints alone must solve; the recorded ones are added on top, all at once, else one by one.
+        var r = SketchConstraints.SolveLocal(now, kept, defaults, before);
         if (r.Error != null) throw new CommandException(r.Error + " Nothing was changed.");
+        var added = new List<JsonObject>();
+        if (recorded.Count > 0)
+        {
+            var all = SketchConstraints.SolveLocal(now, [.. kept, .. recorded.Select(x => x.C)], defaults, before);
+            if (all.Error == null) { r = all; added.AddRange(recorded.Select(x => x.C)); }
+            else
+                foreach (var (index, c) in recorded)
+                {
+                    var one = SketchConstraints.SolveLocal(now, [.. kept, .. added, c], defaults, before);
+                    if (one.Error == null) { r = one; added.Add(c); }
+                    else refused.Add((index, (string?)c["kind"], one.Error));
+                }
+        }
         var solved = r.Shapes();
         sketch["shapes"] = new JsonArray(now.Select(s => (JsonNode)ShapeJson(s.Id, solved.TryGetValue(s.Id, out var sv) ? sv : s.Shape)).ToArray());
-        sketch["constraints"] = kept;
+        sketch["constraints"] = new JsonArray([.. kept.Concat(added).Select(c => (JsonNode)c)]);
         Commit(ctx, type, def);
-        var o = new JsonObject { ["ids"] = new JsonArray(now.Select(s => (JsonNode)s.Id).ToArray()) };
+        var o = new JsonObject
+        {
+            ["ids"] = new JsonArray(now.Select(s => (JsonNode)s.Id).ToArray()),
+            ["constraints"] = new JsonArray(added.Select(c => (JsonNode)(string)c["id"]!).ToArray()),
+        };
         if (dropped.Count > 0) o["dropped"] = dropped;
+        if (refused.Count > 0)
+            o["refused"] = new JsonArray(refused.OrderBy(x => x.Index).Select(x => (JsonNode)new JsonObject { ["index"] = x.Index, ["kind"] = x.Kind, ["reason"] = x.Reason }).ToArray());
         return o;
+    }
+
+    /// <summary>A constraint drawing recorded, its {new: i} refs named by the new shapes' ids; throws when one names none.</summary>
+    static JsonObject Recorded(JsonObject item, IReadOnlyList<string> fresh)
+    {
+        var refs = new JsonArray();
+        foreach (var x in item["refs"] as JsonArray ?? [])
+        {
+            if (x is not JsonObject ro) throw new CommandException("A reference is {shape, part} or {new, part}.");
+            var part = (string?)ro["part"] ?? "whole";
+            if (ro["new"] is { } n)
+            {
+                var i = Json.Number(n) is { } v && v == Math.Floor(v) ? (int)v : -1;
+                if (i < 0 || i >= fresh.Count) throw new CommandException($"No new shape {n.ToJsonString()} was drawn.");
+                refs.Add((JsonNode)new JsonObject { ["shape"] = fresh[i], ["part"] = part });
+            }
+            else refs.Add((JsonNode)new JsonObject { ["shape"] = (string?)ro["shape"], ["part"] = part });
+        }
+        var c = Item(item);
+        c["refs"] = refs;
+        return Clean(c);
     }
 
     /// <summary>{id}: the part's bodies of formula corners made sketches with their formulas as dimensions → {sketches: [ids]}.</summary>

@@ -2482,16 +2482,21 @@ polygon.part-plane { fill: var(--accent); fill-opacity: 0.14; stroke: var(--acce
 .part-sketch .ps-grip:hover { fill: var(--accent); }
 .part-sketch .ps-preview { fill: none; stroke: var(--accent); stroke-width: 1.4; stroke-dasharray: 6 3; pointer-events: none; }
 .part-sketch .ps-point { fill: var(--accent); pointer-events: none; }
+.part-sketch .ps-instance { fill: none; stroke: var(--ink-muted); stroke-width: 1; stroke-dasharray: 2 3; opacity: 0.6; pointer-events: none; }
 .part-sketch .ps-label { font: 600 11px var(--font); fill: var(--accent); paint-order: stroke; stroke: var(--bg); stroke-width: 3px; pointer-events: none; }
-.part-sketch-bar { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 6; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 8px; max-width: calc(100% - 24px); padding: 4px 8px; background: var(--hud); border: 1px solid var(--rule); border-radius: 10px; font-size: 12px; backdrop-filter: blur(4px); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); }
+.part-sketch-bar { position: absolute; left: calc(50% + 162px); bottom: 14px; transform: translateX(-50%); z-index: 6; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 8px; max-width: calc(100% - 348px); padding: 4px 8px; background: var(--hud); border: 1px solid var(--rule); border-radius: 10px; font-size: 12px; backdrop-filter: blur(4px); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); }
 .part-sketch-bar .sketch-chip.inline { position: static; transform: none; padding: 3px 10px; box-shadow: none; }
 .part-sketch-name { font-weight: 600; }
+.part-sketch-note { color: var(--ink-muted); font-size: 11px; font-style: italic; }
 .part-sketch-group { display: inline-flex; align-items: center; gap: 1px; padding-left: 8px; border-left: 1px solid var(--rule); }
 .part-sketch-group .icon.on { color: var(--accent); background: var(--accent-wash); }
 .part-sketch-prompt { flex-basis: 100%; display: flex; justify-content: center; align-items: center; gap: 8px; color: var(--ink-muted); }
 .part-sketch-input { width: 120px; height: 22px; padding: 0 6px; border: 1px solid var(--accent); border-radius: 3px; background: var(--bg); color: var(--ink); font: 600 12px var(--font); }
 .part-add { margin-top: 4px; gap: 4px; flex-wrap: wrap; }
-.part-body-edit { flex-basis: 100%; gap: 4px; padding: 2px 0 2px 16px; flex-wrap: wrap; align-items: center; }
+/* A body's depth and condition under its step: two rows, the labels in one column, the fields filling the rest, the remove button beside the first. */
+.part-body-edit { flex-basis: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) 20px; gap: 3px 6px; padding: 2px 0 4px 16px; align-items: center; }
+.part-body-edit .cell-wrap { width: 100% !important; min-width: 0; }
+.part-body-edit .cell { min-width: 0; }
 .fam-sketch-body { padding: 6px 0; }
 /* Visual graphs (docs/plan-visual-graphs.md, decision 527): the Graphs panel, a view beside the model's. */
 .graphs-view { position: absolute; inset: 0; container-type: size; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); }
