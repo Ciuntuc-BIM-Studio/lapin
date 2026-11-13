@@ -25,7 +25,8 @@ import { LintelRuleEditor } from './LintelRule';
 import type { Rule } from './lintels';
 import { BayFields, type Bay } from './BayFields';
 import { JoineryPreview3D } from './JoineryPreview3D';
-import { barWidths, fitBars, leafPairs, merge, neighbour, normalised, resized, shifted, split, withBar, type Bars, type GridSpec } from './joineryGrid';
+import { barWidths, fitBars, kindOf, leafPairs, merge, neighbour, normalised, operationGroups, resized, shifted, split, withBar, type Bars, type GridSpec } from './joineryGrid';
+import { t } from '../../i18n';
 import { JoineryDataButton } from './JoineryData';
 import { ProfilePickerField } from '../core/profileLibraries/ProfilePickerField';
 import { GARAGE_LABELS, GARAGE_OPERATIONS, garageName, garageOf, sizeLabel, withGarageKind, type Garage, type GarageOperation } from './garageDoors';
@@ -48,6 +49,9 @@ const HAND_LABELS: Record<string, string> = {
   // A window's hand seen from inside, the side its sashes open to; the grid is seen from outside.
   'side-left': 'Side hung right (hinges at left)', 'side-right': 'Side hung left (hinges at right)',
   'tilt-turn-left': 'Tilt & turn right (hinges at left)', 'tilt-turn-right': 'Tilt & turn left (hinges at right)',
+  // Lift-and-slide (HS) and tilt-and-slide (PSK) leaves (forum topic 34), named by the way they run, seen from outside as the grid is.
+  'lift-slide-left': 'Lift & slide (HS), runs left', 'lift-slide-right': 'Lift & slide (HS), runs right',
+  'tilt-slide-left': 'Tilt & slide (PSK), runs left', 'tilt-slide-right': 'Tilt & slide (PSK), runs right',
   // Garage doors (topic #48): one panel filling the opening.
   ...GARAGE_LABELS,
 };
@@ -56,7 +60,8 @@ export interface Meeting { kind: 'butt' | 'rebated' | 'astragal'; active: 'left'
 interface Spec {
   kind: 'door' | 'window'; name: string; mark: string; width: number; height: number; sillHeight: number;
   frame: { depth: number; width: number; mullion: number; transom: number; offset: number };
-  sash: { width: number; depth: number; leafThickness: number; glassThickness: number };
+  /** glazing: the glass's build-up as the makers write it, 4-16-4 (forum topic 34); the engine sets the glass thickness from it. */
+  sash: { width: number; depth: number; leafThickness: number; glassThickness: number; glazing?: string | null };
   columns: number[]; rows: number[]; panels: Panel[];
   /** One width per column boundary (left to right) and per row boundary (bottom up), metres: null the frame's, 0 none (decision 466). */
   mullions?: Bars; transoms?: Bars;
@@ -183,7 +188,11 @@ export interface Preview { problem: string | null; boxes: { role: string; x0: nu
 export interface Stroke { pts: [number, number][]; weight: string; closed: boolean; dashed: boolean }
 export interface Drawing { strokes: Stroke[] }
 export interface Drawings { elevation: Drawing; exterior: Drawing; plan: Drawing; section: Drawing }
-export type Preview2 = Preview & { drawings?: Drawings | null; symbols?: { convention: string; hardware: boolean };
+export type Preview2 = Preview & { drawings?: Drawings | null; symbols?: { convention: string; hardware: boolean; windowSwing?: string };
+  /** What the type is as the engine sees it (forum topic 34): a door when it has a leaf, a window when its sashes open and no leaf does. */
+  kind?: 'door' | 'window';
+  /** The glazing's build-up as read: its thickness (mm), panes, laminated or not. */
+  glazing?: { thickness: number; panes: number; laminated: boolean } | null;
   /** A garage door's panels and the room it needs, as the engine works them out (topic #48). */
   garage?: { panels: number; headroom: number; backroom: number; sideroom: number } | null };
 
@@ -626,6 +635,30 @@ function SizeRow({ label, sizes, field, onCommit }: { label: string; sizes: numb
 
 const INFILL_LABELS: Record<string, string> = { glass: 'Glass', solid: 'Solid panel' };
 
+/** Common glazing build-ups (forum topic 34), outside to inside, in millimetres: double, triple, laminated inside or out. */
+const GLAZING_PRESETS = ['4-16-4', '4-14-4-14-4', '4-12-4-12-4', '33.1-16-4', '4-16-33.1', '44.2-14-4-14-4'];
+
+/**
+ * The glass (forum topic 34): its build-up as the makers write it (panes and cavities from outside in, 4-16-4; 33.1 a laminated
+ * pane), which sets its thickness, or a thickness alone. Its U-value, g-value and safety glass are the type's Data.
+ */
+function GlassFields({ spec, preview, onChange }: { spec: Spec; preview: Preview2 | null; onChange: (sash: Spec['sash']) => void }) {
+  const glazing = spec.sash.glazing ?? '';
+  const read = preview?.glazing;
+  return (
+    <div className="pane-editor" data-testid="glass-fields">
+      <p className="eyebrow">Glass</p>
+      <label className="field-line"><span className="eyebrow">Glazing build-up</span>
+        <input data-field="glazing" list="joinery-glazing" value={glazing} placeholder="4-16-4" title="Panes and cavities in mm, from outside in: 4-16-4 double, 4-12-4-12-4 triple, 33.1-16-4 laminated outside"
+          onChange={(e) => onChange({ ...spec.sash, glazing: e.target.value.trim() ? e.target.value : null })} />
+        <datalist id="joinery-glazing">{GLAZING_PRESETS.map((g) => <option key={g} value={g} />)}</datalist></label>
+      {glazing && read ? <p className="muted small"><span>Glass thickness</span> <span data-no-i18n>{read.thickness} mm</span>{read.laminated && <> · <span>laminated</span></>}</p>
+        : !glazing && <Mm label="Glass thickness" value={spec.sash.glassThickness} onChange={(v) => onChange({ ...spec.sash, glassThickness: v })} />}
+      <p className="muted small">U-value, g-value and safety glass: the type's Data, below.</p>
+    </div>
+  );
+}
+
 /**
  * The pane picked (decision 370): how it opens, what fills it (glass, or a solid panel: a door's lower panel, a window's
  * opaque infill), split in two at a distance from its left or bottom edge, merged with the pane beside it.
@@ -675,7 +708,9 @@ function PaneEditor({ spec, preview, pane, operations, onPick, onPanels, onGrid,
       <p className="muted small"><span>Pane</span> <span data-no-i18n>{cur.col + 1}·{cur.row + 1}: {width} × {height} mm</span></p>
       <label className="field-line"><span className="eyebrow">Opens</span>
         <select data-field="pane-operation" value={cur.operation} onChange={(e) => patch({ operation: e.target.value })}>
-          {operations.map((o) => <option key={o} value={o}>{HAND_LABELS[o] ?? o}</option>)}
+          {operationGroups(operations, GARAGE_OPERATIONS).map((g, i) => g.label
+            ? <optgroup key={i} label={t(g.label)}>{g.ops.map((o) => <option key={o} value={o}>{HAND_LABELS[o] ?? o}</option>)}</optgroup>
+            : g.ops.map((o) => <option key={o} value={o}>{HAND_LABELS[o] ?? o}</option>))}
         </select></label>
       {!spec.frameless && <label className="field-line"><span className="eyebrow">Infill</span>
         <select data-field="pane-infill" value={infill} onChange={(e) => patch({ infill: e.target.value, glazed: e.target.value === 'glass' })}>
@@ -698,7 +733,9 @@ function PaneEditor({ spec, preview, pane, operations, onPick, onPanels, onGrid,
   );
 }
 /** The window operations: a pane of a door that opens as one is a sash, glass unless asked. */
-const catalogWindowOps = new Set(['side-left', 'side-right', 'tilt-turn-left', 'tilt-turn-right', 'bottom-hung', 'top-hung', 'pivot-horizontal', 'pivot-vertical', 'sliding-left', 'sliding-right', 'sliding-vertical']);
+const catalogWindowOps = new Set(['side-left', 'side-right', 'tilt-turn-left', 'tilt-turn-right', 'bottom-hung', 'top-hung', 'pivot-horizontal', 'pivot-vertical', 'sliding-left', 'sliding-right', 'sliding-vertical',
+  // A lift-and-slide or tilt-and-slide leaf is glazed unless asked (forum topic 34).
+  'lift-slide-left', 'lift-slide-right', 'tilt-slide-left', 'tilt-slide-right']);
 
 /**
  * The mullion or transom picked in the elevation (decision 466): its width, the frame's by default, or none, so two panes meet.
@@ -865,6 +902,13 @@ export function JoineryDialog() {
     if (s) { setCols(s.columns.join(' ')); setRows(s.rows.join(' ')); }
   }, [editing, catalog, fresh, bayStyles]);
 
+  // A fresh type is what its panes make it (forum topic 34): a door with a leaf, a window with sashes and no leaf.
+  useEffect(() => {
+    if (!spec || editing || spec.frameless || spec.bay) return;
+    const k = kindOf(spec);
+    if (k !== spec.kind) setSpec({ ...spec, kind: k });
+  }, [spec, editing]);
+
   // The engine builds the preview from the spec as it is now.
   useEffect(() => {
     if (!spec) return;
@@ -895,7 +939,13 @@ export function JoineryDialog() {
   };
   const details: Details = spec.details ?? {};
   const setDetails = (patch: Partial<Details>) => set({ details: { ...details, ...patch } });
-  const operations = spec.frameless ? (spec.kind === 'door' ? FRAMELESS_DOOR_OPS : ['fixed']) : spec.kind === 'door' ? [...catalog.doorOperations, 'fixed'] : catalog.windowOperations;
+  // Door leaves and window sashes in one frame, for both kinds (forum topic 34): a leaf makes it a door, sashes alone a window.
+  // A bay window stays a window; frameless glass keeps its own.
+  const operations = spec.frameless ? (spec.kind === 'door' ? FRAMELESS_DOOR_OPS : ['fixed'])
+    : spec.bay ? catalog.windowOperations : ['fixed', ...catalog.doorOperations, ...catalog.windowOperations.filter((o) => o !== 'fixed')];
+  // What the engine makes of it: a fresh type follows (a window given a leaf becomes a door); a saved one keeps its class.
+  const kind = preview?.kind ?? kindOf(spec);
+  const kindChanges = Boolean(editing) && kind !== spec.kind;
   const close = () => useUi.setState({ dialog: null });
   const startNew = (kind: 'door' | 'window', bay = false, preset?: string) => { setEditing(null); setFresh({ kind, bay, preset }); pickBar(null); };
   const setGrid = (c: string, r: string) => {
@@ -978,7 +1028,11 @@ export function JoineryDialog() {
             {catalog.doorPresets?.['garage-sectional'] && <li><button type="button" className="tree-item" data-action="new-garage-door" onClick={() => startNew('door', false, 'garage-sectional')}><Plus size={12} /> New garage door</button></li>}
             {catalog.doorPresets?.['garage-side-hinged'] && <li><button type="button" className="tree-item" data-action="new-side-hinged-garage-doors" onClick={() => startNew('door', false, 'garage-side-hinged')}><Plus size={12} /> New side-hinged garage doors</button></li>}
             {catalog.doorPresets?.['floor-spring'] && <li><button type="button" className="tree-item" data-action="new-floor-spring-door" onClick={() => startNew('door', false, 'floor-spring')}><Plus size={12} /> New frameless door on floor spring</button></li>}
+            {catalog.doorPresets?.['balcony-door-window'] && <li><button type="button" className="tree-item" data-action="new-balcony-door-window" onClick={() => startNew('door', false, 'balcony-door-window')}><Plus size={12} /> New balcony door + window</button></li>}
+            {catalog.doorPresets?.['door-sidelights'] && <li><button type="button" className="tree-item" data-action="new-door-sidelights" onClick={() => startNew('door', false, 'door-sidelights')}><Plus size={12} /> New door with sidelights and transom</button></li>}
+            {catalog.doorPresets?.['lift-slide'] && <li><button type="button" className="tree-item" data-action="new-lift-slide" onClick={() => startNew('door', false, 'lift-slide')}><Plus size={12} /> New lift-and-slide (HS) portal</button></li>}
             <li><button type="button" className="tree-item" onClick={() => startNew('window')}><Plus size={12} /> New window</button></li>
+            {catalog.doorPresets?.['french-window'] && <li><button type="button" className="tree-item" data-action="new-french-window" onClick={() => startNew('window', false, 'french-window')}><Plus size={12} /> New French window</button></li>}
             <li><button type="button" className="tree-item" data-action="new-bay-window" onClick={() => startNew('window', true)}><Plus size={12} /> New bay window</button></li>
           </ul>
           <div className="joinery-edit">
@@ -1056,6 +1110,7 @@ export function JoineryDialog() {
                 onPick={pickPane} onPanels={(panels) => set({ panels })} at={splitAt} setAt={setSplitAt}
                 onGrid={(g) => { set({ columns: g.columns, rows: g.rows, panels: g.panels, mullions: g.mullions, transoms: g.transoms }); setCols(g.columns.map(roundW).join(' ')); setRows(g.rows.map(roundW).join(' ')); }}
                 colSizes={colSizes} rowSizes={rowSizes} />
+              {!spec.frameless && !garageOf(spec) && <GlassFields spec={spec} preview={preview} onChange={(sash) => set({ sash })} />}
               {spec.kind === 'door' && !spec.frameless && <MeetingFields spec={spec} preview={preview} defaults={catalog.defaultMeeting} onChange={(meeting) => set({ meeting })} />}
               <PartMaterials spec={spec} onChange={(materials) => set({ materials })} />
               {!spec.materials?.frame && !spec.frameless && <label className="field-line"><span className="eyebrow">Frame</span><input type="color" value={spec.colors.frame} onChange={(e) => set({ colors: { ...spec.colors, frame: e.target.value } })} /></label>}
@@ -1073,7 +1128,12 @@ export function JoineryDialog() {
               </>}
               {spec.kind === 'window' && <SillFields label="Interior sill" sill={details.sillInside ?? null} board={spec.board.interior} fallback={{ ...SILL_IN, projection: spec.board.interior || SILL_IN.projection }}
                 onChange={(v) => setDetails({ sillInside: v })} onBoard={(m) => set({ board: { ...spec.board, interior: m }, details: { ...details, sillInside: { ...(details.sillInside ?? SILL_IN), on: false } } })} />}
-              {spec.kind === 'window' && <SillFields label="Exterior sill" sill={details.sillOutside ?? null} board={spec.board.exterior} fallback={{ ...SILL_OUT, projection: spec.board.exterior || SILL_OUT.projection }} slope
+              {spec.kind === 'door' && !spec.frameless && (normalised(spec as unknown as GridSpec)).some((p) => p.row === 0 && p.operation === 'fixed' && p.infill === 'solid' && (p.rowSpan ?? 1) < spec.rows.length) && <>
+                {/* A door's window part over a parapet panel (forum topic 34): its boards on the transom over the panel. */}
+                <Mm label="Interior sill over the parapet" value={spec.board.interior} onChange={(v) => set({ board: { ...spec.board, interior: v } })} />
+                <Mm label="Exterior sill over the parapet" value={spec.board.exterior} onChange={(v) => set({ board: { ...spec.board, exterior: v } })} />
+              </>}
+              {spec.kind === 'window' && <SillFields label="Exterior sill"sill={details.sillOutside ?? null} board={spec.board.exterior} fallback={{ ...SILL_OUT, projection: spec.board.exterior || SILL_OUT.projection }} slope
                 onChange={(v) => setDetails({ sillOutside: v })} onBoard={(m) => set({ board: { ...spec.board, exterior: m }, details: { ...details, sillOutside: { ...(details.sillOutside ?? SILL_OUT), on: false } } })} />}
               <label className="field-line check"><input type="checkbox" data-field="jamb-linings" checked={(details.reveal?.mode ?? 'wall') !== 'none'}
                 onChange={(e) => setDetails({ reveal: { ...(details.reveal ?? { thickness: 0.015 }), mode: e.target.checked ? 'wall' : 'none' } })} /><span>Jamb linings (the reveal's finish)</span></label>
@@ -1122,8 +1182,14 @@ export function JoineryDialog() {
                   <option value="handle">Apex at the handle (makers)</option><option value="hinge">Apex at the hinges (DIN 1356)</option>
                 </select>
                 <label className="small"><input type="checkbox" checked={preview?.symbols?.hardware ?? false} onChange={(e) => void execute('architecture.joinerySymbols', { hardware: e.target.checked }).then(() => setSpec({ ...spec }))} /> Hardware</label>
+                <select className="mini-select" data-field="window-swing" title="How plans draw window sashes' swings (French windows, balcony doors), for the whole project" value={preview?.symbols?.windowSwing ?? 'auto'}
+                  onChange={(e) => void execute('architecture.joinerySymbols', { windowSwing: e.target.value }).then(() => setSpec({ ...spec }))}>
+                  <option value="auto">Sash swings: dashed to the floor</option><option value="none">Sash swings: none</option>
+                  <option value="dashed">Sash swings: all dashed</option><option value="solid">Sash swings: all solid</option>
+                </select>
               </div>
-              <p className="muted small">IFC: {preview?.ifcType ?? '—'}</p>
+              <p className="muted small">IFC: <span data-no-i18n>{kind === 'door' ? 'IfcDoor' : 'IfcWindow'} · {preview?.ifcType ?? '—'}</span></p>
+              {kindChanges && <p className="error-text" data-testid="kind-changes">{kind === 'door' ? 'A door leaf makes it a door, and a window type stays a window type: create a new type for it.' : 'With window sashes and no door leaf it is a window, and a door type stays a door type: create a new type for it.'}</p>}
               {preview?.problem && <p className="error-text">{preview.problem}</p>}
               <JoineryPreview3D spec={spec} width={W} height={190} />
             </div>
@@ -1132,7 +1198,8 @@ export function JoineryDialog() {
               {editing && <SaveTypeToLibrary ids={[editing]} />}
               {editing && <button type="button" className="btn" title="Delete the type (refused while elements use it)" onClick={() => void deleteType(editing).then((ok) => { if (ok) setEditing(null); })}><Trash2 size={14} />Delete type</button>}
               {editing && <button type="button" className="btn" onClick={() => useUi.setState(spec.kind === 'door' ? { doorTypeId: editing } : { windowTypeId: editing })}>Place with it</button>}
-              <button type="button" className="btn primary" disabled={Boolean(preview?.problem)} onClick={() => void save()}>{editing ? 'Save type' : 'Create type'}</button>
+              {kindChanges && <button type="button" className="btn" data-action="create-as-new" onClick={() => void execute('architecture.createJoineryType', { spec: { ...spec, kind } }).then((r) => { const id = (r as { id?: string } | null)?.id; if (id) setEditing(id); })}>Create as a new type</button>}
+              <button type="button" className="btn primary" disabled={Boolean(preview?.problem) || kindChanges} onClick={() => void save()}>{editing ? 'Save type' : 'Create type'}</button>
             </div>
             {error && <p className="error-text" role="alert">{error}</p>}
           </div>

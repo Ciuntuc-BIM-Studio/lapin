@@ -76,7 +76,7 @@
     {"name":"architecture.importTypes","module":"architecture","label":"Import types","args":[{"name":"text","type":"str"},{"name":"materials"},{"name":"types"}]},
     {"name":"architecture.joinWalls","module":"architecture","label":"Join walls","args":[{"name":"a","type":"str"},{"name":"b","type":"str"},{"name":"priority","type":"str"},{"name":"style"}]},
     {"name":"architecture.joineryMaterials","module":"architecture","label":"Set door and window materials","args":[{"name":"kind","type":"str"}]},
-    {"name":"architecture.joinerySymbols","module":"architecture","label":"Opening symbols","args":[{"name":"convention","type":"str"},{"name":"hardware","type":"bool"}]},
+    {"name":"architecture.joinerySymbols","module":"architecture","label":"Opening symbols","args":[{"name":"convention","type":"str"},{"name":"hardware","type":"bool"},{"name":"windowSwing","type":"str"}]},
     {"name":"architecture.makeDownpipes","module":"architecture","label":"Make downpipes editable","args":[{"name":"id","type":"str"}]},
     {"name":"architecture.moveOpening","module":"architecture","label":"Move opening","args":[{"name":"along","type":"float"},{"name":"sill","type":"float"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},
     {"name":"architecture.openingToFill","module":"architecture","label":"Change to door or window","args":[{"name":"id","type":"str"},{"name":"typeId","type":"str"},{"name":"kind","type":"str"},{"name":"fit","type":"bool"}]},

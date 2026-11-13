@@ -958,6 +958,43 @@ export const scenes = [
     },
   },
   {
+    // Doors and windows in one object (forum topic 34): the balcony door + window preset (a leaf, a tilt-and-turn sash over a
+    // parapet panel, one IfcDoor), the Opens list grouped, the glass's build-up; the lift-and-slide portal; a French window's plan.
+    id: 'joinery-combination',
+    async run(t) {
+      await t.fresh();
+      const { page } = t;
+      const d = page.locator('.dialog');
+      await t.tool('architecture.joineryTypes');
+      await page.waitForSelector('.dialog [data-testid=pane-editor]', { timeout: 15000 });
+      await d.locator('[data-action=new-balcony-door-window]').click();
+      await d.locator('[data-testid=glass-fields]').waitFor({ timeout: 15000 });
+      await t.wait(800);
+      t.expect(await d.locator('select[data-field=pane-operation] optgroup').count() >= 2, 'the Opens list has door leaves and window sashes');
+      t.expect(await d.locator('input[data-field=glazing]').inputValue() === '4-16-4', 'the preset is glazed 4-16-4');
+      await d.locator('[data-pane="1:1"]').click();
+      await t.wait(500);
+      t.expect(await d.locator('select[data-field=pane-operation]').inputValue() === 'tilt-turn-right', 'the window part is a tilt-and-turn sash');
+      await d.locator('[data-testid=glass-fields]').evaluate((el) => el.scrollIntoView({ block: 'center' }));
+      await t.wait(600);
+      await t.shot('joinery-balcony-door', { of: '.dialog', pad: 0 });
+      await d.locator('[data-action=new-lift-slide]').click();
+      await t.wait(1200);
+      await d.locator('[data-pane="1:0"]').click();
+      await t.wait(500);
+      t.expect(await d.locator('select[data-field=pane-operation]').inputValue() === 'lift-slide-left', 'the portal has a lift-and-slide leaf');
+      await d.locator('[data-testid=pane-editor]').evaluate((el) => el.scrollIntoView({ block: 'center' }));
+      await t.wait(600);
+      await t.shot('joinery-lift-slide', { of: '.dialog', pad: 0 });
+      await d.locator('[data-action=new-french-window]').click();
+      await t.wait(1200);
+      t.expect(await d.locator('select[data-field=window-swing]').inputValue() === 'auto', 'sash swings drawn dashed to the floor by default');
+      await d.locator('select[data-field=window-swing]').evaluate((el) => el.scrollIntoView({ block: 'center' }));
+      await t.wait(500);
+      await t.shot('joinery-french-window', { of: '.dialog', pad: 0 });
+    },
+  },
+  {
     // Panes, mullions and profiles (decision 370, a tester's questions): a shop door made in the pane editor (four columns, a
     // transom split off each and merged across, two leaves, one solid side panel), then a PVC window in a wall, in 3D.
     id: 'joinery-panes',

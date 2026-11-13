@@ -26,6 +26,15 @@ public sealed record IfcJoineryType(bool Door, string Operation, string? UserDef
     /// </summary>
     public string? Operation4X3 { get; init; }
 
+    /// <summary>
+    /// What IFC's terms cannot say, written as text in the type's <c>Lapin_Joinery</c> set (forum topic 34): a door's panels' own
+    /// operations (PanelOperations, in the order of <see cref="Panels"/>), a lift-and-slide's opening, the glazing's build-up.
+    /// </summary>
+    public IReadOnlyList<(string Name, string Value)>? Properties { get; init; }
+
+    /// <summary>The set <see cref="Properties"/> are written to.</summary>
+    public const string PropertySet = "Lapin_Joinery";
+
     /// <summary>The OperationType and its user-defined text in the schema written.</summary>
     public (string Operation, string? UserDefined) In(bool ifc43)
     {

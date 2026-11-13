@@ -31,9 +31,9 @@ public sealed class JoineryIfc : IJoineryIfc
         // A door panel's width is a ratio of the clear opening's (inside the lining).
         var inner = Joinery.InnerRect(spec);
         var clear = Math.Max(1e-9, inner.X1 - inner.X0);
-        var panels = Joinery.Normalised(spec)
-            .Where(p => !spec.IsDoor || p.RowSpan == spec.Rows.Length || Joinery.IsDoorLeaf(p.Operation))
-            .OrderBy(p => p.Row).ThenBy(p => p.Col)
+        // Every panel (forum topic 34: a door's transom lights and sashes too, each with its own operation).
+        var ordered = Joinery.Normalised(spec).OrderBy(p => p.Row).ThenBy(p => p.Col).ToList();
+        var panels = ordered
             .Select(p =>
             {
                 var r = Joinery.PanelRect(spec, p);
@@ -41,6 +41,13 @@ public sealed class JoineryIfc : IJoineryIfc
                     ? new IfcJoineryPanel(Joinery.DoorPanelOperation(p.Operation), M(Joinery.PanelPosition(spec, p, "door")), Math.Round(Math.Min(1, (r.X1 - r.X0) / clear), 4))
                     : new IfcJoineryPanel(M(Joinery.WindowPanelOperation(p.Operation)), M(Joinery.PanelPosition(spec, p, "window")));
             }).ToList();
+        // What IFC's terms lose, in Lapin_Joinery on the type: a door's panels' own operations (a sash's in
+        // IfcWindowPanelOperationEnum's terms, a lift-and-slide leaf's LIFTANDSLIDE), in the panels' order; the glazing's build-up.
+        var props = new List<(string Name, string Value)>();
+        if (spec.IsDoor && ordered.Any(p => Joinery.IsSash(p.Operation) || Joinery.LiftSlides(p.Operation)))
+            props.Add(("PanelOperations", string.Join("; ", ordered.Select(p => M(Joinery.DoorPanelTerm(p.Operation))))));
+        if (ordered.FirstOrDefault(p => Joinery.LiftSlides(p.Operation)) is { } hs) props.Add(("Opening", hs.Operation.StartsWith("lift", StringComparison.Ordinal) ? "lift-and-slide" : "tilt-and-slide"));
+        if (spec.Sash.Glazing is { Length: > 0 } glazing && spec.Frameless == null) props.Add(("Glazing", glazing));
         var (mullions, transoms) = Joinery.LiningOffsets(spec);
         if (mirrored) mullions = mullions.Select(x => Math.Round(1 - x, 6)).Reverse().ToList();
         // IFC has one mullion and one transom thickness: the widest there is (decision 466).
@@ -52,7 +59,11 @@ public sealed class JoineryIfc : IJoineryIfc
         // A garage door (topic #48, decision 530): IFC4X3 names a lifting door, IFC4 only a rolling one; its user-defined text in capitals.
         var garage = GarageDoors.KindOf(spec) is { } g ? GarageDoors.Operation(g).Ifc4X3 : null;
         string? Text(string u) => !mirrored ? u : u.Any(char.IsLower) ? IfcHands.MirrorText(u) : IfcHands.Mirror(u);
-        return new IfcJoineryType(spec.IsDoor, M(op), user is { } u ? Text(u) : null, panels, lining) { Operation4X3 = garage is { } g43 ? M(g43) : null };
+        return new IfcJoineryType(spec.IsDoor, M(op), user is { } u ? Text(u) : null, panels, lining)
+        {
+            Operation4X3 = garage is { } g43 ? M(g43) : null,
+            Properties = props.Count > 0 ? props : null,
+        };
     }
 
     /// <summary>A curtain wall's door at the size it stands in its cell (report #133); null for any other.</summary>
@@ -153,20 +164,30 @@ public sealed class JoineryIfc : IJoineryIfc
         {
             // Lapin's own user-defined text: its operations, left to right.
             var ops = text.Split('+', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-            if (ops.Length > 0 && ops.All(o => o == "fixed" || Joinery.IsDoorLeaf(o))) leaves = ops;
+            // A window's sashes beside the leaves too (forum topic 34).
+            if (ops.Length > 0 && ops.All(o => o == "fixed" || Joinery.IsDoorLeaf(o) || Joinery.IsSash(o))) leaves = ops;
         }
         if (panels.Count > 0)
         {
             var ordered = panels.OrderBy(p => Order(p.Position)).ToList();
-            if (leaves == null)
-                leaves = [.. ordered.Select(p => p.Operation switch
-                {
-                    "SWINGING" => p.Position == "RIGHT" ? "swing-right" : "swing-left",
-                    "DOUBLE_ACTING" => p.Position == "RIGHT" ? "double-acting-right" : "double-acting-left",
-                    "SLIDING" => p.Position == "RIGHT" ? "door-sliding-right" : "door-sliding-left",
-                    "FOLDING" => p.Position == "RIGHT" ? "folding-right" : "folding-left",
-                    _ => "fixed",
-                })];
+            // The way a sliding door runs, when its operation says it.
+            var hand = operation is "SLIDING_TO_LEFT" ? "left" : operation is "SLIDING_TO_RIGHT" ? "right" : null;
+            string Of(IfcJoineryPanel p) => p.Operation switch
+            {
+                "SWINGING" => p.Position == "RIGHT" ? "swing-right" : "swing-left",
+                "DOUBLE_ACTING" => p.Position == "RIGHT" ? "double-acting-right" : "double-acting-left",
+                "SLIDING" => p.Position == "RIGHT" ? "door-sliding-right" : "door-sliding-left",
+                "FOLDING" => p.Position == "RIGHT" ? "folding-right" : "folding-left",
+                // Lapin's own terms (forum topic 34): a lift-and-slide leaf slides away from its side's fixed pane, a sash is its window operation.
+                "LIFTANDSLIDE" => "lift-slide-" + (hand ?? (p.Position == "LEFT" ? "right" : "left")),
+                "TILTANDSLIDE" => "tilt-slide-" + (hand ?? (p.Position == "LEFT" ? "right" : "left")),
+                "SLIDINGHORIZONTAL" => p.Position == "RIGHT" ? "sliding-right" : "sliding-left",
+                var w when Lapin(w) is { } sash => sash,
+                _ => "fixed",
+            };
+            // The file's panels say more than its operation when they carry Lapin's own terms (one row, as many as the leaves named).
+            var own = ordered.Any(p => p.Operation is "LIFTANDSLIDE" or "TILTANDSLIDE" || Lapin(p.Operation) is { } x && x != "fixed");
+            if (leaves == null || own && (leaves.Length == ordered.Count || leaves.Length == 1 && ordered.Count == 2)) leaves = [.. ordered.Select(Of)];
             if (ordered.Count == leaves.Length && ordered.All(p => p.Width is > 0 and <= 1)) widths = [.. ordered.Select(p => p.Width!.Value)];
         }
         if (leaves == null || leaves.Length == 0) return null;
