@@ -3350,6 +3350,12 @@ export const DA: Record<string, string> = {
   "edge": "kant",
   "curve": "kurve",
   "whole": "hele",
+  'Automatic position': 'Automatisk position',
+  'Automatic position: press A, or the button': 'Automatisk position: tryk på A eller knappen',
+  'Start point [Tangent]': 'Startpunkt [Tangent]',
+  'End point (tangent to the last line or arc)': 'Slutpunkt (tangent til sidste linje eller bue)',
+  'There is no line or arc to continue from.': 'Ingen linje eller bue at fortsætte fra.',
+  'The end point lies on the tangent line.': 'Slutpunktet ligger på tangenten.',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -3640,4 +3646,6 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^(\d+) constraints$/, (m) => `${m[1]} bånd`],
   [/^Constraint dropped: (.+)$/, (m) => `Bånd fjernet: ${m[1]}`],
   [/^(\d+) constraints dropped: (.+)$/, (m) => `${m[1]} bånd fjernet: ${m[2]}`],
+  [/^Constraint left out: (.+)$/, (m) => `Bånd udeladt: ${m[1]}`],
+  [/^(\d+) constraints left out: (.+)$/, (m) => `${m[1]} bånd udeladt: ${m[2]}`],
 ];

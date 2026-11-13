@@ -4,7 +4,8 @@
  * value (driven ones in parentheses, a formula's on hover), and the live preview of a constrained drag. A glyph is clicked to
  * select it (Delete removes it); a dimension is double-clicked to edit its value in place, and dragged by its text or its line to
  * place it (previewed while dragged, `studio.updateConstraint {place}` on release; one undo step). A dimension not placed by the
- * user stands outside its shapes (`autoPlace`). Asked of the engine again after each change of the model (`studio.constraints`,
+ * user stands outside its shapes (`autoPlace`); a placed one selected offers "Automatic position" (a button beside it, or A) to take
+ * it back there (`studio.updateConstraint {place: null}`). Asked of the engine again after each change of the model (`studio.constraints`,
  * `studio.sketchStatus`).
  */
 
@@ -105,12 +106,19 @@ export function ConstraintOverlay({ toScreen, toWorld, scale, view }: Props) {
         e.preventDefault(); e.stopImmediatePropagation();
         void execute('studio.removeConstraint', { ids: useSketch.getState().selected });
       } else if (e.key === 'Escape') useSketch.setState({ selected: [] });
+      else if ((e.key === 'a' || e.key === 'A') && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const list = (viewId ? useSketch.getState().views[viewId]?.constraints : undefined) ?? [];
+        const placed = list.filter((c) => isDimension(c.kind) && c.place && useSketch.getState().selected.includes(c.id));
+        if (!placed.length) return;
+        e.preventDefault(); e.stopImmediatePropagation();
+        for (const c of placed) void execute('studio.updateConstraint', { id: c.id, place: null });
+      }
     };
     const press = (e: PointerEvent) => { if (!(e.target instanceof Element) || !e.target.closest('[data-constraint]')) useSketch.setState({ selected: [] }); };
     window.addEventListener('keydown', key, true);
     window.addEventListener('pointerdown', press, true);
     return () => { window.removeEventListener('keydown', key, true); window.removeEventListener('pointerdown', press, true); };
-  }, [selected.length]);
+  }, [selected.length, viewId]);
 
   /** The view's drafted shapes, as the model has them now. */
   const drafts = useMemo(() => {
@@ -198,13 +206,21 @@ export function ConstraintOverlay({ toScreen, toWorld, scale, view }: Props) {
           <g key={c.id} className={cls} data-constraint={c.id} data-kind={c.kind}>
             {d.lines.map((l, i) => <polyline key={i} className="sk-dim-line" points={pts(l, toScreen)} />)}
             {hit && d.lines.length === 3 && <polyline className="sk-dim-grab" data-overlay-hit points={pts(d.lines[2], toScreen)} onPointerDown={press(c)} />}
+            {on && c.place && editing !== c.id && hit && (
+              <g className="sk-dim-auto" data-overlay-hit data-testid="constraint-auto-place" style={{ pointerEvents: 'all', cursor: 'pointer' }} transform={`translate(${t.x + text.length * 3.6 + 22} ${t.y})`}
+                onPointerDown={(e) => { e.stopPropagation(); void execute('studio.updateConstraint', { id: c.id, place: null }); }}>
+                <circle r={9} className="sk-badge" />
+                <text className="sk-letter" textAnchor="middle" dominantBaseline="central">A</text>
+                <title>Automatic position</title>
+              </g>
+            )}
             {editing === c.id ? <EditField c={c} x={t.x} y={t.y} done={() => useSketch.setState({ editing: null })} /> : (
               <g data-overlay-hit style={{ pointerEvents: hit ? 'all' : 'none' }}
                 onPointerDown={press(c)}
                 onDoubleClick={() => useSketch.setState({ editing: c.id, selected: [c.id] })}>
                 <rect className="sk-dim-hit" x={t.x - text.length * 3.6 - 4} y={t.y - 10} width={text.length * 7.2 + 8} height={20} rx={3} />
                 <text className="sk-dim-text" x={t.x} y={t.y} textAnchor="middle" dominantBaseline="central" data-testid="constraint-dimension">{text}</text>
-                <title>{c.problem ?? (c.formula ? `=${c.formula}` : c.driving ? 'Double-click to change it; drag to place it' : 'Driven: it only reports; drag to place it')}</title>
+                <title>{c.problem ?? (c.place ? 'Automatic position: press A, or the button' : c.formula ? `=${c.formula}` : c.driving ? 'Double-click to change it; drag to place it' : 'Driven: it only reports; drag to place it')}</title>
               </g>
             )}
           </g>

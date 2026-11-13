@@ -3359,6 +3359,12 @@ export const FR: Record<string, string> = {
   "edge": "arête",
   "curve": "courbe",
   "whole": "entier",
+  'Automatic position': 'Position automatique',
+  'Automatic position: press A, or the button': 'Position automatique : appuyez sur A ou sur le bouton',
+  'Start point [Tangent]': 'Point de départ [Tangent]',
+  'End point (tangent to the last line or arc)': 'Point final (tangent à la dernière ligne ou au dernier arc)',
+  'There is no line or arc to continue from.': 'Aucune ligne ou arc à prolonger.',
+  'The end point lies on the tangent line.': 'Le point final est sur la tangente.',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;
@@ -3649,4 +3655,6 @@ export const FR_PATTERNS: Language['patterns'] = [
   [/^(\d+) constraints$/, (m) => `${m[1]} contraintes`],
   [/^Constraint dropped: (.+)$/, (m) => `Contrainte supprimée : ${m[1]}`],
   [/^(\d+) constraints dropped: (.+)$/, (m) => `${m[1]} contraintes supprimées : ${m[2]}`],
+  [/^Constraint left out: (.+)$/, (m) => `Contrainte laissée de côté : ${m[1]}`],
+  [/^(\d+) constraints left out: (.+)$/, (m) => `${m[1]} contraintes laissées de côté : ${m[2]}`],
 ];

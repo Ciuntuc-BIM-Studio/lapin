@@ -3355,6 +3355,12 @@ export const RO: Record<string, string> = {
   "edge": "muchie",
   "curve": "curbă",
   "whole": "întreg",
+  'Automatic position': 'Poziție automată',
+  'Automatic position: press A, or the button': 'Poziție automată: apasă A sau butonul',
+  'Start point [Tangent]': 'Punct de start [Tangent]',
+  'End point (tangent to the last line or arc)': 'Punct final (tangent la ultima linie sau arc)',
+  'There is no line or arc to continue from.': 'Nu există nicio linie sau arc de continuat.',
+  'The end point lies on the tangent line.': 'Punctul final se află pe tangentă.',
 };
 
 /** Phrases with a number or a name in them. */
@@ -3643,4 +3649,6 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^(\d+) constraints$/, (m) => `${m[1]} constrângeri`],
   [/^Constraint dropped: (.+)$/, (m) => `Constrângere eliminată: ${m[1]}`],
   [/^(\d+) constraints dropped: (.+)$/, (m) => `${m[1]} constrângeri eliminate: ${m[2]}`],
+  [/^Constraint left out: (.+)$/, (m) => `Constrângere lăsată deoparte: ${m[1]}`],
+  [/^(\d+) constraints left out: (.+)$/, (m) => `${m[1]} constrângeri lăsate deoparte: ${m[2]}`],
 ];

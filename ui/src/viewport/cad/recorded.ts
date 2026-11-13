@@ -20,7 +20,8 @@ export interface Inference { mode?: string; shapeId?: string; lock?: InferenceLo
 export interface PlacedPoint { p: Vec2; inference: Inference | null; free: boolean; typed?: { length?: number; angle?: number; /** A rectangle's corner typed as @width,height. */ size?: { w: number; h: number } } }
 export interface Drawn { id: string; shape: Shape }
 export interface ConstraintSpec { kind: string; refs: Ref[]; value?: number }
-export interface DrawHints { rect?: boolean; radius?: number }
+/** `tangentFrom`: an arc drawn as the continuation of a line or arc, leaving the point `p` (the end `ref` of that shape) tangent to it. */
+export interface DrawHints { rect?: boolean; radius?: number; /** A tangent arc travelled clockwise. */ cw?: boolean; tangentFrom?: { ref: Ref; p: Vec2 } }
 
 const EPS = 1e-7;
 const near = (a: Vec2, b: Vec2) => dist(a, b) < EPS;
@@ -97,6 +98,16 @@ export function inferConstraints(drawn: Drawn, placed: readonly PlacedPoint[], w
     if (!done && o.prev && o.prev.id !== id) {
       const q = partAt(o.prev.shape, p);
       if (q && pointOf(o.prev.shape, q)) out.push({ kind: 'coincident', refs: [mine(part), { shape: o.prev.id, part: q }] });
+    }
+  }
+
+  // A tangent continuation: the arc starts where the shape before ended, joined to it end to end and tangent there.
+  const tf = o.hints?.tangentFrom;
+  if (tf && s.type === 'arc') {
+    const part = partAt(s, tf.p);
+    if (part) {
+      if (!out.some((c) => c.kind === 'coincident' && c.refs[0].part === part)) out.push({ kind: 'coincident', refs: [mine(part), tf.ref] });
+      out.push({ kind: 'tangent', refs: [tf.ref, mine(part)] });
     }
   }
 

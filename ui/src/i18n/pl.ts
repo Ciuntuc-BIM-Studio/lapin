@@ -3356,6 +3356,12 @@ export const PL: Record<string, string> = {
   "edge": "krawędź",
   "curve": "krzywa",
   "whole": "całość",
+  'Automatic position': 'Pozycja automatyczna',
+  'Automatic position: press A, or the button': 'Pozycja automatyczna: naciśnij A lub przycisk',
+  'Start point [Tangent]': 'Punkt początkowy [Tangent]',
+  'End point (tangent to the last line or arc)': 'Punkt końcowy (styczny do ostatniej linii lub łuku)',
+  'There is no line or arc to continue from.': 'Brak linii ani łuku do kontynuacji.',
+  'The end point lies on the tangent line.': 'Punkt końcowy leży na stycznej.',
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {
@@ -3651,4 +3657,6 @@ export const PL_PATTERNS: Language['patterns'] = [
   [/^(\d+) constraints$/, (m) => `${m[1]} więzów`],
   [/^Constraint dropped: (.+)$/, (m) => `Usunięto więz: ${m[1]}`],
   [/^(\d+) constraints dropped: (.+)$/, (m) => `Usunięto więzy (${m[1]}): ${m[2]}`],
+  [/^Constraint left out: (.+)$/, (m) => `Pominięto więz: ${m[1]}`],
+  [/^(\d+) constraints left out: (.+)$/, (m) => `Pominięto więzy (${m[1]}): ${m[2]}`],
 ];

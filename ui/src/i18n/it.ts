@@ -3358,6 +3358,12 @@ export const IT: Record<string, string> = {
   "edge": "spigolo",
   "curve": "curva",
   "whole": "intero",
+  'Automatic position': 'Posizione automatica',
+  'Automatic position: press A, or the button': 'Posizione automatica: premi A o il pulsante',
+  'Start point [Tangent]': 'Punto iniziale [Tangent]',
+  'End point (tangent to the last line or arc)': 'Punto finale (tangente all\'ultima linea o arco)',
+  'There is no line or arc to continue from.': 'Nessuna linea o arco da proseguire.',
+  'The end point lies on the tangent line.': 'Il punto finale è sulla tangente.',
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 
@@ -3647,4 +3653,6 @@ export const IT_PATTERNS: Language['patterns'] = [
   [/^(\d+) constraints$/, (m) => `${m[1]} vincoli`],
   [/^Constraint dropped: (.+)$/, (m) => `Vincolo eliminato: ${m[1]}`],
   [/^(\d+) constraints dropped: (.+)$/, (m) => `${m[1]} vincoli eliminati: ${m[2]}`],
+  [/^Constraint left out: (.+)$/, (m) => `Vincolo escluso: ${m[1]}`],
+  [/^(\d+) constraints left out: (.+)$/, (m) => `${m[1]} vincoli esclusi: ${m[2]}`],
 ];
