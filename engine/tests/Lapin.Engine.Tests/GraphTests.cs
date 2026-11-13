@@ -681,4 +681,31 @@ public sealed class GraphTests : IDisposable
         var at = f.Model.OfClass(IfcClass.Column).Single().Attrs["at"]!.AsArray();
         Assert.Equal([7.0, 2.0], at.Select(x => (double)x!));
     }
+
+    [Fact]
+    public void A_commands_list_argument_takes_the_whole_list_once_and_maps_only_over_a_list_of_lists()
+    {
+        var f = Site();
+        var cols = Enumerable.Range(0, 4).Select(i => Id(f.Run("structure.addColumn", new JsonObject { ["storeyId"] = f.Storey, ["x"] = i * 5.0, ["y"] = 0 }))).ToList();
+        // Filmed: 12 picked columns into Pad footings under columns answered „11 of 12 failed”, mapped column by column. The
+        // node here does not say ids is whole (a graph made by a script): the engine knows the argument is a list.
+        var g = G([Picked("c", [.. cols]), N("pads", "command:structure.padsUnderColumns")], W("c", "ids", "pads", "ids"));
+        var r = Evaluate(f, g);
+        Assert.Null(NodeOf(r, "pads")["error"]);
+        Assert.Null(NodeOf(r, "pads")["warning"]);
+        Assert.Equal(1, (int)r["calls"]!);
+        Assert.Equal(4, Out(r, "pads", "ids")!.AsArray().Count);
+        Assert.True(Evaluator.ListArgument("ids") && Evaluator.ListArgument("storeyIds") && Evaluator.ListArgument("points") && !Evaluator.ListArgument("id"));
+
+        // A list of lists: one run for each list.
+        r = Evaluate(f, G([N("pads", "command:structure.padsUnderColumns", new() { ["ids"] = new JsonArray(new JsonArray(cols[0], cols[1]), new JsonArray(cols[2], cols[3])) })]));
+        Assert.Equal(2, (int)r["calls"]!);
+        Assert.Equal(2, (int)NodeOf(r, "pads")["items"]!);
+        Assert.All(Out(r, "pads", "ids")!.AsArray(), made => Assert.Equal(2, made!.AsArray().Count));
+
+        // Points written as [x, y] are one list of points, not a list of lists to map over: one floor.
+        r = Evaluate(f, G([N("slab", "command:architecture.addSlab", new() { ["points"] = P([20, 0], [26, 0], [26, 4], [20, 4]) })]));
+        Assert.Equal(1, (int)r["calls"]!);
+        Assert.Null(NodeOf(r, "slab")["error"]);
+    }
 }

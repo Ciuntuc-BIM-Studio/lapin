@@ -67,6 +67,9 @@ const MODULE_GROUPS: Record<string, string> = {
 
 const groupOf = (module: string) => MODULE_GROUPS[module] ?? module.charAt(0).toUpperCase() + module.slice(1);
 
+/** The arguments the commands read as lists by their name (the engine's Evaluator.ListArgument): ids, points, pts, shapes, every …Ids. */
+export const LIST_ARG = /^(ids|points|pts|shapes)$|.Ids$/;
+
 /** A catalogue argument's type as a port's. */
 export function portType(t: string | undefined): PortType {
   switch (t) {
@@ -99,7 +102,8 @@ export function argPorts(args: { name: string; type?: string }[]): PortSpec[] {
     const k = /^x(\d*)$/.exec(a.name)?.[1];
     if (k !== undefined && paired.has(a.name)) { ports.push({ name: `pt:${k}`, label: pointLabel(k), type: 'point' }); continue; }
     if (paired.has(a.name)) continue;
-    const type = a.name === 'storeyId' ? 'storey' : portType(a.type);
+    // An argument the catalogue could not type but the commands read as a list (ids, points…): a list too, as the engine takes it.
+    const type = a.name === 'storeyId' ? 'storey' : !a.type && LIST_ARG.test(a.name) ? 'list' : portType(a.type);
     ports.push({ name: a.name, label: argLabel(a.name), type, ...(type === 'list' ? { whole: true } : {}) });
   }
   return ports;
@@ -344,4 +348,28 @@ export function showValue(v: unknown, depth = 0): string {
     return '{…}';
   }
   return String(v);
+}
+
+/**
+ * A constant as a node's input row shows it, in the room between its label and <right> (valueEnd: up to the output's label
+ * on the same row, else to the node's edge): a storey by its name (none: the view's, nothing shown), picked elements by their count, the rest as
+ * showValue gives it, cut with … to fit, or nothing when there is no room.
+ */
+export function rowValue(v: unknown, type: PortType, label: string, storeyName: (id: string) => string | undefined, right = valueEnd()): string {
+  const text = type === 'storey' ? (typeof v === 'string' && v ? storeyName(v) ?? '?' : '')
+    : type === 'element' && Array.isArray(v) ? String(v.length)
+    : showValue(v);
+  const room = Math.floor((right - 10 - label.length * 6 - 6) / 5.5);
+  if (room < 2 || !text) return '';
+  return text.length > room ? `${text.slice(0, room - 1)}…` : text;
+}
+
+/** A number as the inspector writes it, as the nodes show it: a decimal point, whatever the browser's language. */
+export function numberText(v: unknown): string {
+  return typeof v === 'number' && Number.isFinite(v) ? String(Math.round(v * 1e9) / 1e9) : '';
+}
+
+/** Where a row's constant ends: before the label of the output on the same row (if any), else at the node's right edge. */
+export function valueEnd(outLabel?: string): number {
+  return outLabel ? NODE_W - 10 - outLabel.length * 6 - 8 : NODE_W - 10;
 }

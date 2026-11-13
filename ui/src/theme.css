@@ -2480,6 +2480,7 @@ polygon.part-plane { fill: var(--accent); fill-opacity: 0.14; stroke: var(--acce
 .graphs-canvas { position: relative; overflow: hidden; outline: none; cursor: default; background-color: var(--bg);
   background-image: radial-gradient(var(--rule-strong) 1px, transparent 1px); background-size: 20px 20px; touch-action: none; }
 .graphs-canvas.panning { cursor: grab; }
+.graphs-fit { position: absolute; top: 6px; right: 6px; z-index: 2; background: var(--panel); }
 .graphs-canvas svg { display: block; user-select: none; }
 .graph-node .body { fill: var(--raised); stroke: var(--rule-strong); }
 .graph-node .head { fill: var(--wash); stroke: var(--rule-strong); cursor: move; }

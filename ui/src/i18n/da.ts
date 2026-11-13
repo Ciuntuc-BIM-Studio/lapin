@@ -47,6 +47,8 @@ export const DA: Record<string, string> = {
   "Where a column, a pad footing, furniture, a door or a window stands, and its turn in degrees.": "Hvor en søjle, et punktfundament, et møbel, en dør eller et vindue står, og dens drejning i grader.",
   "The box round any element's body, as the model builds it.": "Kassen om ethvert elements krop, som modellen bygger den.",
   "A drafted line, polyline, rectangle, arc or circle (or a DXF's linework) in the model, on its view's level; arcs as points. Pick them in a plan with Elements picked.": "En tegnet linje, polylinje, rektangel, bue eller cirkel (eller en DXF's streger) i modellen, i dens visnings niveau; buer som punkter. Vælg dem i en plan med Valgte elementer.",
+  // Decision 535: the graphs canvas's Fit
+  "Fit the graph in the canvas (F)": "Tilpas grafen til lærredet (F)",
   // Decision 527: visual graphs
   "Graphs are the host's: in a shared session only the host opens, previews and bakes them.": "Grafer tilhører værten: i en delt session er det kun værten, der åbner, forhåndsviser og genererer dem.",
   "Storey levels": "Etagekoter",

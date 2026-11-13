@@ -47,6 +47,8 @@ export const ES: Record<string, string> = {
   "Where a column, a pad footing, furniture, a door or a window stands, and its turn in degrees.": "Dónde está un pilar, una zapata aislada, un mueble, una puerta o una ventana, y su giro en grados.",
   "The box round any element's body, as the model builds it.": "La caja alrededor del cuerpo de cualquier elemento, tal como lo construye el modelo.",
   "A drafted line, polyline, rectangle, arc or circle (or a DXF's linework) in the model, on its view's level; arcs as points. Pick them in a plan with Elements picked.": "Una línea, polilínea, rectángulo, arco o círculo dibujado (o las líneas de un DXF) en el modelo, al nivel de su vista; los arcos como puntos. Elíjalos en una planta con Elementos elegidos.",
+  // Decision 535: the graphs canvas's Fit
+  "Fit the graph in the canvas (F)": "Encajar el grafo en el lienzo (F)",
   // Decision 527: visual graphs
   "Graphs are the host's: in a shared session only the host opens, previews and bakes them.": "Los grafos son del anfitrión: en una sesión compartida solo el anfitrión los abre, previsualiza y genera.",
   "Storey levels": "Cotas de las plantas",

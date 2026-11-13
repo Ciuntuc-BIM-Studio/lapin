@@ -68,7 +68,9 @@ public sealed class Evaluator(GraphDoc doc, IModelView model, ModuleCatalog cata
         try
         {
             var (inputs, whole, outputs, run) = Prepare(node);
-            var (values, items, failed, first) = Map(run, inputs, whole, outputs.Length);
+            // A command's or a query's list argument takes a list whole, and maps only over a list of lists (one list each run).
+            var nested = node.Kind.StartsWith(CommandPrefix, StringComparison.Ordinal) || node.Kind.StartsWith(QueryPrefix, StringComparison.Ordinal) ? whole : null;
+            var (values, items, failed, first) = Map(run, inputs, whole, outputs.Length, nested);
             for (var i = 0; i < outputs.Length; i++) result.Outputs[outputs[i]] = values[i];
             result.Items = items;
             result.Failed = failed;
@@ -136,6 +138,8 @@ public sealed class Evaluator(GraphDoc doc, IModelView model, ModuleCatalog cata
             return (inputs, whole, def.Outputs.Select(o => o.Name).ToArray(), i => Timed(() => call(new NodeCall(node, i, model, Storey, query))));
         }
         foreach (var (k, v) in node.Values) if (!inputs.ContainsKey(k)) inputs[k] = Values.FromConstant(v);
+        // The arguments the commands read as lists, whatever the graph noted (one made by a script, or before the interface knew).
+        foreach (var k in inputs.Keys) if (ListArgument(k)) whole.Add(k);
         if (node.Kind.StartsWith(CommandPrefix, StringComparison.Ordinal))
         {
             var name = node.Kind[CommandPrefix.Length..];
@@ -152,6 +156,13 @@ public sealed class Evaluator(GraphDoc doc, IModelView model, ModuleCatalog cata
         }
         throw new CommandException($"„{node.Kind}” is not a node this edition knows.");
     }
+
+    /// <summary>
+    /// An argument the commands read as a list by its name (the catalogue's list arguments: ids, points, pts, shapes, storeyIds
+    /// and every …Ids): taken whole by a command or query node even when the graph does not say so.
+    /// </summary>
+    public static bool ListArgument(string name) =>
+        name is "ids" or "points" or "pts" or "shapes" || (name.Length > 3 && name.EndsWith("Ids", StringComparison.Ordinal));
 
     static string Name(GraphNode n) => n.Label ?? (Builtins.Of(n.Kind)?.Label ?? n.Kind.Split(':')[^1]);
 
@@ -203,9 +214,10 @@ public sealed class Evaluator(GraphDoc doc, IModelView model, ModuleCatalog cata
     /// <paramref name="run"/> over its inputs: once, or mapped over the lists given to inputs that take one value (§3). The
     /// values by output (lists when mapped), how many items ran, how many failed and the first failure's message.
     /// </summary>
-    static (object?[] Values, int Items, int Failed, string? First) Map(Func<Dictionary<string, object?>, object?[]> run, Dictionary<string, object?> inputs, HashSet<string> whole, int outputs)
+    static (object?[] Values, int Items, int Failed, string? First) Map(Func<Dictionary<string, object?>, object?[]> run, Dictionary<string, object?> inputs, HashSet<string> whole, int outputs, HashSet<string>? nested = null)
     {
-        var listed = inputs.Where(kv => !whole.Contains(kv.Key) && kv.Value is List<object?>).Select(kv => kv.Key).ToList();
+        var listed = inputs.Where(kv => kv.Value is List<object?> l && (!whole.Contains(kv.Key) || nested?.Contains(kv.Key) == true && l.Count > 0 && l.All(x => x is List<object?> inner && !PointLike(inner))))
+            .Select(kv => kv.Key).ToList();
         if (listed.Count == 0) return (Fit(run(inputs), outputs), 1, 0, null);
         var n = listed.Max(k => ((List<object?>)inputs[k]!).Count);
         if (listed.Any(k => ((List<object?>)inputs[k]!).Count == 0)) n = 0;
@@ -218,7 +230,7 @@ public sealed class Evaluator(GraphDoc doc, IModelView model, ModuleCatalog cata
             foreach (var k in listed) { var l = (List<object?>)inputs[k]!; one[k] = l[Math.Min(i, l.Count - 1)]; }
             try
             {
-                var (v, it, f, msg) = Map(run, one, whole, outputs);
+                var (v, it, f, msg) = Map(run, one, whole, outputs, nested);
                 for (var o = 0; o < outputs; o++) columns[o].Add(v[o]);
                 items += it;
                 failed += f;
@@ -235,6 +247,9 @@ public sealed class Evaluator(GraphDoc doc, IModelView model, ModuleCatalog cata
         }
         return (columns.Cast<object?>().ToArray(), items, failed, first);
     }
+
+    /// <summary>A list of two or three numbers: a point written as [x, y] or [x, y, z], an item of a list of points, never a list to map over.</summary>
+    static bool PointLike(List<object?> l) => l.Count is 2 or 3 && l.All(x => x is double);
 
     static object?[] Fit(object?[] v, int n) => v.Length == n ? v : [.. v.Concat(Enumerable.Repeat<object?>(null, Math.Max(0, n - v.Length))).Take(n)];
 

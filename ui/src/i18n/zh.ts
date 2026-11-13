@@ -47,6 +47,8 @@ export const ZH: Record<string, string> = {
   "Where a column, a pad footing, furniture, a door or a window stands, and its turn in degrees.": "柱、独立基础、家具、门或窗所在的位置, 及其转角 (度).",
   "The box round any element's body, as the model builds it.": "任意构件实体的包围盒, 按模型生成的几何计算.",
   "A drafted line, polyline, rectangle, arc or circle (or a DXF's linework) in the model, on its view's level; arcs as points. Pick them in a plan with Elements picked.": "绘制的直线、多段线、矩形、圆弧或圆 (或 DXF 的线条) 在模型中的位置, 位于其视图的标高; 圆弧以点表示. 在平面图中用 所选构件 选取它们.",
+  // Decision 535: the graphs canvas's Fit
+  "Fit the graph in the canvas (F)": "使图适合画布 (F)",
   // Decision 527: visual graphs
   "Graphs are the host's: in a shared session only the host opens, previews and bakes them.": "图归主持人所有：在共享会话中只有主持人能打开、预览和烘焙它们。",
   "Storey levels": "楼层标高",

@@ -45,6 +45,8 @@ export const RO: Record<string, string> = {
   "Where a column, a pad footing, furniture, a door or a window stands, and its turn in degrees.": "Unde stă un stâlp, o fundație izolată, o piesă de mobilier, o ușă sau o fereastră, și rotirea ei în grade.",
   "The box round any element's body, as the model builds it.": "Cutia din jurul corpului oricărui element, așa cum îl construiește modelul.",
   "A drafted line, polyline, rectangle, arc or circle (or a DXF's linework) in the model, on its view's level; arcs as points. Pick them in a plan with Elements picked.": "O linie, polilinie, dreptunghi, arc sau cerc desenat (sau liniile unui DXF) în model, la cota vederii lui; arcele ca puncte. Alege-le într-un plan cu Elemente alese.",
+  // Decision 535: the graphs canvas's Fit
+  "Fit the graph in the canvas (F)": "Încadrează graful în pânză (F)",
   // Decision 527: visual graphs
   "Graphs are the host's: in a shared session only the host opens, previews and bakes them.": "Grafurile sunt ale gazdei: într-o sesiune partajată doar gazda le deschide, le previzualizează și creează din ele.",
   "Storey levels": "Cotele nivelurilor",

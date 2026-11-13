@@ -47,6 +47,8 @@ export const LO: Record<string, string> = {
   "Where a column, a pad footing, furniture, a door or a window stands, and its turn in degrees.": "ບ່ອນທີ່ເສົາ, ຖານເດີ່ຍວ, ເຟີນີເຈີ, ປະຕູ ຫຼື ປ່ອງຢ້ຽມຕັ້ງຢູ່, ແລະ ການໝຸນເປັນອົງສາ.",
   "The box round any element's body, as the model builds it.": "ກ່ອງອ້ອມຮອບຕົວຂອງອົງປະກອບໃດກໍໄດ້, ຕາມທີ່ແບບຈຳລອງສ້າງມັນ.",
   "A drafted line, polyline, rectangle, arc or circle (or a DXF's linework) in the model, on its view's level; arcs as points. Pick them in a plan with Elements picked.": "ເສັ້ນ, ເສັ້ນຫຼາຍທ່ອນ, ຮູບສີ່ແຈ, ເສັ້ນໂຄ້ງ ຫຼື ວົງມົນທີ່ແຕ້ມ (ຫຼື ເສັ້ນຂອງ DXF) ໃນແບບຈຳລອງ, ຢູ່ລະດັບຂອງມຸມມອງ; ເສັ້ນໂຄ້ງເປັນຈຸດ. ເລືອກພວກມັນໃນແຜນຜັງດ້ວຍ ອົງປະກອບທີ່ເລືອກ.",
+  // Decision 535: the graphs canvas's Fit
+  "Fit the graph in the canvas (F)": "ປັບກຣາຟໃຫ້ພໍດີກັບພື້ນທີ່ (F)",
   // Decision 527: visual graphs
   "Graphs are the host's: in a shared session only the host opens, previews and bakes them.": "ກຣາບເປັນຂອງເຈົ້າພາບ: ໃນເຊດຊັນທີ່ແບ່ງປັນ ມີແຕ່ເຈົ້າພາບທີ່ເປີດ, ເບິ່ງຕົວຢ່າງ ແລະ ສ້າງຈາກມັນ.",
   "Storey levels": "ລະດັບຊັ້ນ",

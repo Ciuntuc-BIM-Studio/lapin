@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  numberText, rowValue, valueEnd,
   addNode, argLabel, argPorts, connect, emptyGraph, fits, fitView, graphOf, moveNodes, nodeHeight, nodeSpecs, nodesIn, portAt, removeNodes, removeWire,
   searchNodes, setLabel, setValue, showValue, wireKey, wouldCycle, zoomAt, HEAD_H, NODE_W, ROW_H, type EngineNodes, type GraphJson, type NodeSpec,
 } from './graph';
@@ -147,5 +148,36 @@ describe('opening a graph', () => {
     expect((440 + NODE_W - v.x) * v.zoom).toBeLessThanOrEqual(400.001);
     expect(fitView(emptyGraph(), spec, 400, 300)).toEqual({ x: -40, y: -40, zoom: 1 });
     expect(fitView({ ...g, nodes: [g.nodes[0]!] }, spec, 2000, 2000).zoom).toBe(1);
+  });
+});
+
+describe('what the nodes and the inspector show', () => {
+  it('takes an untyped ids or points argument as a list, whole, as the engine does', () => {
+    const ports = argPorts([{ name: 'ids' }, { name: 'points' }, { name: 'storeyIds' }, { name: 'id', type: 'str' }, { name: 'idsx' }]);
+    expect(ports.map((p) => [p.name, p.type, p.whole ?? false])).toEqual([['ids', 'list', true], ['points', 'list', true], ['storeyIds', 'list', true], ['id', 'text', false], ['idsx', 'any', false]]);
+  });
+
+  it("shows a storey by its name, picked elements by their count, and cuts a value to the room its label leaves", () => {
+    const names = (id: string) => (id === 's1' ? 'Ground floor' : undefined);
+    expect(rowValue('s1', 'storey', 'Storey', names)).toBe('Ground floor');
+    expect(rowValue('', 'storey', 'Storey', names)).toBe('');
+    expect(rowValue('1ylyWM9x8CnC$zlUb', 'storey', 'Storey', names)).toBe('?');
+    expect(rowValue(['a', 'b', 'c'], 'element', 'Elements', names)).toBe('3');
+    expect(rowValue(2.8, 'number', 'Height', names)).toBe('2.8');
+    const long = rowValue('a very long text that does not fit the node at all', 'text', 'Name', names);
+    expect(long.endsWith('…')).toBe(true);
+    expect(long.length).toBeLessThan(30);
+    expect(rowValue('x', 'text', 'A label far too long for the row', names)).toBe('');
+    // Beside an output's label, only the room before it: the storey's name cut, never over Elements made.
+    const beside = rowValue('s1', 'storey', 'Storey', names, valueEnd('Elements made'));
+    expect(beside.length).toBeLessThan('Ground floor'.length);
+    expect(valueEnd('Elements made')).toBeLessThan(NODE_W - 10 - 'Elements made'.length * 6 + 1);
+  });
+
+  it('writes numbers with a decimal point whatever the language, as the nodes show them', () => {
+    expect(numberText(2.8)).toBe('2.8');
+    expect(numberText(0.1 + 0.2)).toBe('0.3');
+    expect(numberText(undefined)).toBe('');
+    expect(showValue(2.8)).toBe(numberText(2.8));
   });
 });

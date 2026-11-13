@@ -17,7 +17,7 @@ Open **View → Graphs**. The panel opens beside the view: drag the line between
 ![A graph making a row of walls: the panel beside the plan, the walls as a ghost](shots/graphs-panel.webp)
 
 - **Above**: the project's graphs, **New graph**, the graph's name (type to rename it), **Delete graph**, the eye that shows or hides the ghost, and **Bake**.
-- **The canvas**: double-click an empty place to add a node: type a few letters (`wall`, `range`, `point`) and press **Enter**. Drag from an output (right side of a node) to an input (left side) to wire them. Drag a node by its title; Shift-click to select more, or drag a box round them; **Delete** takes them out. The wheel zooms, the middle button (or **Space** and drag) moves the canvas.
+- **The canvas**: double-click an empty place to add a node: type a few letters (`wall`, `range`, `point`) and press **Enter**. Drag from an output (right side of a node) to an input (left side) to wire them. Drag a node by its title; Shift-click to select more, or drag a box round them; **Delete** takes them out. The wheel zooms, the middle button (or **Space** and drag) moves the canvas. The graph fits the canvas when it opens and as the panel is resized, until you zoom or move the canvas yourself; the **Fit** button in the canvas's corner (or **F**, or **Home**) fits it again. Numbers are written with a decimal point, as the nodes show them; a decimal comma typed is read too.
 - **The inspector**, on the right: the selected node's inputs that have no wire (type a value), what it gives, and why it failed if it did.
 
 Every change is one undo step: **Ctrl+Z** undoes a node added, moved or wired as it undoes a wall.
@@ -26,7 +26,7 @@ Every change is one undo step: **Ctrl+Z** undoes a node added, moved or wired as
 
 Ports are coloured by what they carry: numbers blue, texts amber, points green, elements purple, lists grey. A wire between kinds that do not meet is refused, with why.
 
-There are no data trees. A **list** wired into an input that takes one value runs the node once for each item: a **Series** of three numbers into a **Point**'s X gives three points, and three points into a **Wall**'s Start give three walls. Several lists run side by side; a shorter list repeats its last item. A wire carrying a list is drawn thicker, with the number of items on it. Some inputs take the whole list instead (**Count**, **Sum**, **Item**, **Polyline**).
+There are no data trees. A **list** wired into an input that takes one value runs the node once for each item: a **Series** of three numbers into a **Point**'s X gives three points, and three points into a **Wall**'s Start give three walls. Several lists run side by side; a shorter list repeats its last item. A wire carrying a list is drawn thicker, with the number of items on it. Some inputs take the whole list instead (**Count**, **Sum**, **Item**, **Polyline**). A tool's list input (the elements a **Pad footings under columns** works on, a floor's points) takes the whole list in one run; a list of lists runs it once for each list.
 
 A tool's node takes the same inputs as its command: a **Wall** has **Start** and **End** points, a height, a storey, a type. Its outputs are **Elements made** and **Result** (what the command answered).
 
