@@ -3,6 +3,16 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // Decision 516: mouse navigation styles
+  "Mouse navigation": "鼠标导航",
+  "Left drag orbits, right drag pans, wheel zooms; Alt + left drag selects a region": "左键拖动旋转，右键拖动平移，滚轮缩放；Alt + 左键拖动选择区域",
+  "Middle drag pans, Shift + middle drag orbits; left drag selects a window or crossing; Ctrl adds, Shift removes": "中键拖动平移，Shift + 中键拖动旋转；左键拖动以窗口或交叉方式选择；Ctrl 添加，Shift 移除",
+  "Middle drag pans, Shift + middle drag orbits; left drag selects a window or crossing; Shift removes, Ctrl adds": "中键拖动平移，Shift + 中键拖动旋转；左键拖动以窗口或交叉方式选择；Shift 移除，Ctrl 添加",
+  "Middle drag pans, Shift + middle drag orbits; left drag draws a marquee; Shift adds or removes": "中键拖动平移，Shift + 中键拖动旋转；左键拖动绘制选择框；Shift 添加或移除",
+  "Middle drag orbits, Shift + middle drag pans; left drag selects a window or crossing; Ctrl adds, Shift toggles, Ctrl + Shift removes": "中键拖动旋转，Shift + 中键拖动平移；左键拖动以窗口或交叉方式选择；Ctrl 添加，Shift 切换，Ctrl + Shift 移除",
+  "Middle drag orbits, Shift + middle drag pans, Ctrl + middle drag zooms; left drag selects a box; Shift toggles": "中键拖动旋转，Shift + 中键拖动平移，Ctrl + 中键拖动缩放；左键拖动框选；Shift 切换",
+  "Right drag orbits, Shift + right drag pans; left drag selects a window or crossing; Shift adds, Ctrl removes": "右键拖动旋转，Shift + 右键拖动平移；左键拖动以窗口或交叉方式选择；Shift 添加，Ctrl 移除",
+  "How the mouse orbits, pans, zooms and selects in the 3D view and in plans, sections, elevations and sheets; the menu in the status bar chooses it too. Lapin's own is the default; the others assume a three-button mouse.": "鼠标在三维视图以及平面图、剖面图、立面图和图纸中如何旋转、平移、缩放和选择；状态栏中的菜单也可选择。默认为 Lapin 自己的方式；其他方式假定使用三键鼠标。",
   // Decision 507: pad footings under columns, their level
   "Pad footings under columns": "柱下独立基础",
   "At the base of the column": "位于柱底",

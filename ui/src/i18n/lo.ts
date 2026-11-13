@@ -3,6 +3,16 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // Decision 516: mouse navigation styles
+  "Mouse navigation": "ການນຳທາງດ້ວຍເມົາ",
+  "Left drag orbits, right drag pans, wheel zooms; Alt + left drag selects a region": "ລາກດ້ວຍປຸ່ມຊ້າຍໝູນ, ລາກດ້ວຍປຸ່ມຂວາເລື່ອນ, ລໍ້ຊູມ; Alt + ລາກດ້ວຍປຸ່ມຊ້າຍເລືອກພື້ນທີ່",
+  "Middle drag pans, Shift + middle drag orbits; left drag selects a window or crossing; Ctrl adds, Shift removes": "ລາກດ້ວຍປຸ່ມກາງເລື່ອນ, Shift + ລາກດ້ວຍປຸ່ມກາງໝູນ; ລາກດ້ວຍປຸ່ມຊ້າຍເລືອກດ້ວຍໜ້າຕ່າງ ຫຼື ການຂ້າມ; Ctrl ເພີ່ມ, Shift ເອົາອອກ",
+  "Middle drag pans, Shift + middle drag orbits; left drag selects a window or crossing; Shift removes, Ctrl adds": "ລາກດ້ວຍປຸ່ມກາງເລື່ອນ, Shift + ລາກດ້ວຍປຸ່ມກາງໝູນ; ລາກດ້ວຍປຸ່ມຊ້າຍເລືອກດ້ວຍໜ້າຕ່າງ ຫຼື ການຂ້າມ; Shift ເອົາອອກ, Ctrl ເພີ່ມ",
+  "Middle drag pans, Shift + middle drag orbits; left drag draws a marquee; Shift adds or removes": "ລາກດ້ວຍປຸ່ມກາງເລື່ອນ, Shift + ລາກດ້ວຍປຸ່ມກາງໝູນ; ລາກດ້ວຍປຸ່ມຊ້າຍແຕ້ມກອບເລືອກ; Shift ເພີ່ມ ຫຼື ເອົາອອກ",
+  "Middle drag orbits, Shift + middle drag pans; left drag selects a window or crossing; Ctrl adds, Shift toggles, Ctrl + Shift removes": "ລາກດ້ວຍປຸ່ມກາງໝູນ, Shift + ລາກດ້ວຍປຸ່ມກາງເລື່ອນ; ລາກດ້ວຍປຸ່ມຊ້າຍເລືອກດ້ວຍໜ້າຕ່າງ ຫຼື ການຂ້າມ; Ctrl ເພີ່ມ, Shift ສະລັບ, Ctrl + Shift ເອົາອອກ",
+  "Middle drag orbits, Shift + middle drag pans, Ctrl + middle drag zooms; left drag selects a box; Shift toggles": "ລາກດ້ວຍປຸ່ມກາງໝູນ, Shift + ລາກດ້ວຍປຸ່ມກາງເລື່ອນ, Ctrl + ລາກດ້ວຍປຸ່ມກາງຊູມ; ລາກດ້ວຍປຸ່ມຊ້າຍເລືອກດ້ວຍກອບ; Shift ສະລັບ",
+  "Right drag orbits, Shift + right drag pans; left drag selects a window or crossing; Shift adds, Ctrl removes": "ລາກດ້ວຍປຸ່ມຂວາໝູນ, Shift + ລາກດ້ວຍປຸ່ມຂວາເລື່ອນ; ລາກດ້ວຍປຸ່ມຊ້າຍເລືອກດ້ວຍໜ້າຕ່າງ ຫຼື ການຂ້າມ; Shift ເພີ່ມ, Ctrl ເອົາອອກ",
+  "How the mouse orbits, pans, zooms and selects in the 3D view and in plans, sections, elevations and sheets; the menu in the status bar chooses it too. Lapin's own is the default; the others assume a three-button mouse.": "ເມົາໝູນ, ເລື່ອນ, ຊູມ ແລະ ເລືອກແນວໃດໃນມຸມມອງ 3D ແລະ ໃນແຜນຜັງ, ສ່ວນຕັດ, ດ້ານຕັ້ງ ແລະ ແຜ່ນແຕ້ມ; ເມນູໃນແຖບສະຖານະກໍເລືອກໄດ້ຄືກັນ. ຂອງ Lapin ເປັນຄ່າເລີ່ມຕົ້ນ; ແບບອື່ນສົມມຸດວ່າໃຊ້ເມົາສາມປຸ່ມ.",
   // Decision 507: pad footings under columns, their level
   "Pad footings under columns": "ຖານຮາກດ່ຽວໃຕ້ເສົາ",
   "At the base of the column": "ຢູ່ຖານຂອງເສົາ",

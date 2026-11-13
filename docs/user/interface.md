@@ -150,6 +150,28 @@ A click, a selection box or a lasso takes only what the view shows, in plans, se
 
 Select several elements (Shift-click, or drag a box) and the properties panel shows the last one picked, with **N selected** beside its class. A value they share is shown; one that differs reads *varies*. Change a field and every selected element that has it takes the new value, in one step that **Undo** takes back: the height and base offset of walls, the type of every selected wall, door or beam, the sill of windows, the phases of every selected element whatever its class, the layer and colour of drafted lines, the style of texts. What is each element's own stays its own: a room's number, a wall's length, a door's place along its wall.
 
+## Mouse navigation styles
+
+The status bar, at the bottom, names the mouse navigation style in use (*Lapin* to begin with). Click it to choose another: **Revit-like**, **AutoCAD-like**, **ArchiCAD-like**, **SketchUp-like**, **Blender-like** or **Rhino-like**, each listed with its main gestures. **File → Preferences → Display → Mouse navigation** sets it too. It is kept for you, on this computer, for every project, and it applies to the 3D view and to plans, sections, elevations and sheets alike.
+
+![The status bar's menu of navigation styles](shots/nav-styles-menu.webp)
+
+| Style | Orbit (3D) | Pan | Zoom | Select | Region |
+|---|---|---|---|---|---|
+| Lapin | left drag | right drag (also Shift or Ctrl + left drag) | wheel; middle drag | click; <kbd>Shift</kbd> toggles; <kbd>Ctrl</kbd> picks the part | <kbd>Alt</kbd> + left drag |
+| Revit-like | <kbd>Shift</kbd> + middle drag | middle drag | wheel | <kbd>Ctrl</kbd> adds, <kbd>Shift</kbd> removes | left drag |
+| AutoCAD-like | <kbd>Shift</kbd> + middle drag | middle drag | wheel | <kbd>Shift</kbd> removes, <kbd>Ctrl</kbd> adds | left drag |
+| ArchiCAD-like | <kbd>Shift</kbd> + middle drag | middle drag | wheel | <kbd>Shift</kbd> adds or removes | left drag |
+| SketchUp-like | middle drag | <kbd>Shift</kbd> + middle drag | wheel | <kbd>Ctrl</kbd> adds, <kbd>Shift</kbd> toggles, <kbd>Ctrl</kbd> + <kbd>Shift</kbd> removes | left drag |
+| Blender-like | middle drag | <kbd>Shift</kbd> + middle drag | wheel (to the middle of the view); <kbd>Ctrl</kbd> + middle drag | <kbd>Shift</kbd> toggles | left drag (a box) |
+| Rhino-like | right drag | <kbd>Shift</kbd> + right drag | wheel | <kbd>Shift</kbd> adds, <kbd>Ctrl</kbd> removes | left drag |
+
+**Lapin** is the way Lapin always worked and stays the default: nothing changes until you choose another. In the others a left drag that starts on empty space (or on an element that is not selected) draws a selection region in the 3D view, as it does in plans: dragged to the right, a window (a solid outline) takes the elements whose whole visible geometry lies inside it; dragged to the left, a crossing (dashed) takes every element it touches. Blender-like always takes what the box touches, whichever way it is dragged. <kbd>Space</kbd> while dragging turns the box into a lasso. The keys in the table's *Select* column say how the region joins the selection: with <kbd>Ctrl</kbd> in Revit-like it adds, with <kbd>Shift</kbd> it takes out; held with no key it replaces. Pressing on a selected element, holding a moment and dragging still moves it, in every style. Only what the view shows counts: an element hidden, isolated out, cut away by a section box or on another phase is never taken, and a group or an assembly is taken as a click would take it.
+
+![A crossing dragged over the house in 3D with the Revit-like style](shots/nav-3d-crossing.webp)
+
+In plans, sections, elevations and sheets the style chooses which button pans and which keys add to or remove from the selection; a left drag still draws a window or a crossing, and the middle button pressed twice still fits the view (in 3D too, in Revit-like and AutoCAD-like). The other styles assume a mouse with three buttons: on a trackpad, with no middle button, keep Lapin's. Only the controls are borrowed: the names are plain labels, and nothing else of those programs is imitated.
+
 ## Match properties
 
 **Modify → Match properties** (<kbd>MA</kbd>, or `MATCHPROP` on the command line as in AutoCAD; Revit calls it Match Type) gives other elements what one element has. Select the element to copy from, or start the command and click it first; then click each element that should take its properties. The element under the cursor lights up before you click, in plans, sections and 3D. Each click is one step that **Undo** takes back. **Apply to the selection** gives them to every other selected element at once. Press <kbd>Enter</kbd> or <kbd>Esc</kbd> when you are done.

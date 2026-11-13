@@ -20,6 +20,8 @@ export interface MenuItem {
   ctx?: string;
   /** The label is the user's own text (a group's name): never translated. */
   raw?: boolean;
+  /** A line under the label saying more (a navigation style's main gestures), translated. */
+  hint?: string;
 }
 
 interface MenuState { at: { x: number; y: number } | null; items: MenuItem[] }
@@ -81,7 +83,9 @@ export function ContextMenuHost() {
         <button key={i} type="button" role="menuitem" className="context-item" disabled={it.disabled}
           onClick={() => { closeContextMenu(); it.onSelect(); }}>
           <span className="context-icon">{it.checked ? '✓' : it.icon}</span>
-          <span data-i18n-ctx={it.ctx} data-no-i18n={it.raw ? '' : undefined}>{it.label}</span>
+          {it.hint
+            ? <span className="context-text"><span data-i18n-ctx={it.ctx} data-no-i18n={it.raw ? '' : undefined}>{it.label}</span><span className="context-hint">{it.hint}</span></span>
+            : <span data-i18n-ctx={it.ctx} data-no-i18n={it.raw ? '' : undefined}>{it.label}</span>}
           {it.shortcut && <span className="context-keys">{it.shortcut}</span>}
         </button>
       ))}

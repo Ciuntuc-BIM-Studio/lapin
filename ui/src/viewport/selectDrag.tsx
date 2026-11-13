@@ -20,16 +20,18 @@ export interface SelectDrag {
   lasso?: Vec2[];
   /** A lasso's mode, fixed when it began. */
   window?: boolean;
+  /** Always a window or always a crossing, whatever way it is dragged (a navigation style's: Blender's box); unset, by the direction. */
+  mode?: 'window' | 'crossing';
 }
 
 /** A lasso takes a point every so many pixels; closer moves only move its end. */
 const LASSO_STEP = 2;
 
-export const isWindow = (d: SelectDrag): boolean => (d.lasso ? !!d.window : d.b.x >= d.a.x);
+export const isWindow = (d: SelectDrag): boolean => (d.mode ? d.mode === 'window' : d.lasso ? !!d.window : d.b.x >= d.a.x);
 
 /** The drag followed to `to`. */
 export function dragTo(d: SelectDrag, to: Vec2): SelectDrag {
-  if (!d.lasso) return { a: d.a, b: to };
+  if (!d.lasso) return { ...d, b: to };
   const last = d.lasso[d.lasso.length - 1];
   const lasso = Math.hypot(to.x - last.x, to.y - last.y) >= LASSO_STEP ? [...d.lasso, to] : d.lasso;
   return { ...d, b: to, lasso };
@@ -37,8 +39,8 @@ export function dragTo(d: SelectDrag, to: Vec2): SelectDrag {
 
 /** The box turned into a lasso from here on (its mode as the box's now), or the lasso back into a box. */
 export function toggleLasso(d: SelectDrag): SelectDrag {
-  if (d.lasso) return { a: d.a, b: d.b };
-  return { a: d.a, b: d.b, lasso: [d.a, d.b], window: d.b.x >= d.a.x };
+  if (d.lasso) return { a: d.a, b: d.b, mode: d.mode };
+  return { a: d.a, b: d.b, mode: d.mode, lasso: [d.a, d.b], window: d.b.x >= d.a.x };
 }
 
 /** The region's test in world coordinates. */

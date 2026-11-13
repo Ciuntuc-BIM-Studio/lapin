@@ -3,6 +3,16 @@
 import type { Language } from './index';
 
 export const FR: Record<string, string> = {
+  // Decision 516: mouse navigation styles
+  "Mouse navigation": "Navigation à la souris",
+  "Left drag orbits, right drag pans, wheel zooms; Alt + left drag selects a region": "Glisser à gauche fait tourner, glisser à droite déplace, la molette zoome ; Alt + glisser à gauche sélectionne une région",
+  "Middle drag pans, Shift + middle drag orbits; left drag selects a window or crossing; Ctrl adds, Shift removes": "Glisser au milieu déplace, Maj + glisser au milieu fait tourner ; glisser à gauche sélectionne par fenêtre ou par capture ; Ctrl ajoute, Maj retire",
+  "Middle drag pans, Shift + middle drag orbits; left drag selects a window or crossing; Shift removes, Ctrl adds": "Glisser au milieu déplace, Maj + glisser au milieu fait tourner ; glisser à gauche sélectionne par fenêtre ou par capture ; Maj retire, Ctrl ajoute",
+  "Middle drag pans, Shift + middle drag orbits; left drag draws a marquee; Shift adds or removes": "Glisser au milieu déplace, Maj + glisser au milieu fait tourner ; glisser à gauche trace un cadre de sélection ; Maj ajoute ou retire",
+  "Middle drag orbits, Shift + middle drag pans; left drag selects a window or crossing; Ctrl adds, Shift toggles, Ctrl + Shift removes": "Glisser au milieu fait tourner, Maj + glisser au milieu déplace ; glisser à gauche sélectionne par fenêtre ou par capture ; Ctrl ajoute, Maj bascule, Ctrl + Maj retire",
+  "Middle drag orbits, Shift + middle drag pans, Ctrl + middle drag zooms; left drag selects a box; Shift toggles": "Glisser au milieu fait tourner, Maj + glisser au milieu déplace, Ctrl + glisser au milieu zoome ; glisser à gauche sélectionne par un cadre ; Maj bascule",
+  "Right drag orbits, Shift + right drag pans; left drag selects a window or crossing; Shift adds, Ctrl removes": "Glisser à droite fait tourner, Maj + glisser à droite déplace ; glisser à gauche sélectionne par fenêtre ou par capture ; Maj ajoute, Ctrl retire",
+  "How the mouse orbits, pans, zooms and selects in the 3D view and in plans, sections, elevations and sheets; the menu in the status bar chooses it too. Lapin's own is the default; the others assume a three-button mouse.": "Comment la souris fait tourner, déplace, zoome et sélectionne dans la vue 3D et dans les plans, coupes, élévations et planches ; le menu de la barre d'état la choisit aussi. Celle de Lapin est la valeur par défaut ; les autres supposent une souris à trois boutons.",
   // Decision 507: pad footings under columns, their level
   "Pad footings under columns": "Semelles isolées sous poteaux",
   "At the base of the column": "À la base du poteau",

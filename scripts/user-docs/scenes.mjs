@@ -4266,6 +4266,73 @@ export const scenes = [
     },
   },
   {
+    // Mouse navigation styles (decision 516, docs/user/interface.md): the status bar's menu, and the Revit-like style's 3D window and crossing.
+    id: 'nav-styles',
+    touches: ['core'],
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      await open3d(t);
+      await t.fit();
+      const { page } = t;
+      const view = await page.locator('[data-testid=view3d]').boundingBox();
+      const state = () => page.evaluate(async () => {
+        const { useUi } = await import('/src/app/store.ts');
+        const { usePrefs } = await import('/src/app/prefs.ts');
+        return { selected: useUi.getState().selected.length, style: usePrefs.getState().navStyle };
+      });
+      // The status bar names the style; its menu lists them with their main gestures.
+      const chip = page.locator('[data-testid=nav-style]');
+      t.expect((await chip.innerText()).trim() === 'Lapin', 'the status bar names Lapin\'s style by default');
+      await chip.click();
+      await t.wait(400);
+      const menu = page.locator('.context-menu');
+      const items = await menu.locator('[role=menuitem]').count();
+      t.expect(items === 7, `the menu lists seven styles, listed ${items}`);
+      const m = await menu.boundingBox(), bar = await page.locator('footer.status').boundingBox();
+      const top = Math.min(m.y, bar.y) - 6;
+      await t.shot('nav-styles-menu', { clip: { x: Math.min(m.x, bar.x) - 6, y: top, width: Math.max(m.x + m.width, bar.x + bar.width) - Math.min(m.x, bar.x) + 12, height: bar.y + bar.height - top + 6 } });
+      await menu.locator('[role=menuitem]').filter({ hasText: 'Revit-like' }).click();
+      await t.wait(400);
+      let st = await state();
+      t.expect(st.style === 'revit' && (await chip.innerText()).trim() === 'Revit-like', 'choosing Revit-like sets it, kept in the preferences');
+      // A left drag on empty space draws a region: to the right a window (solid), to the left a crossing (dashed).
+      const at = (fx, fy) => [view.x + view.width * fx, view.y + view.height * fy];
+      const drag = async (from, to, name) => {
+        await page.mouse.move(...from);
+        await page.mouse.down();
+        await page.mouse.move(...to, { steps: 14 });
+        await t.wait(300);
+        const cls = await page.locator('svg.region-3d .select-box').getAttribute('class');
+        if (name) await t.shot(name, { clip: view });
+        await page.mouse.up();
+        await t.wait(600);
+        return cls;
+      };
+      // A window over the middle of the house takes only what lies wholly inside; the crossing over the same corners takes more.
+      const a = at(0.30, 0.30), b = at(0.70, 0.75);
+      const winCls = await drag(a, b, null);
+      const win = (await state()).selected;
+      t.expect(/\bwindow\b/.test(winCls), 'a drag to the right draws a window');
+      await page.keyboard.press('Escape');
+      const crossCls = await drag(b, a, 'nav-3d-crossing');
+      const cross = (await state()).selected;
+      t.expect(/\bcrossing\b/.test(crossCls), 'a drag to the left draws a crossing');
+      t.expect(cross >= win && cross >= 1, `the crossing takes at least what the window took (${cross} against ${win})`);
+      // Ctrl adds a window to the selection and Shift takes from it, as in Revit.
+      const before = (await state()).selected;
+      await page.keyboard.down('Shift');
+      await drag(b, a, null);
+      await page.keyboard.up('Shift');
+      t.expect((await state()).selected < before, 'Shift with a region takes its elements out of the selection');
+      // Lapin's style back: Alt + left drag is its region.
+      await chip.click();
+      await t.wait(300);
+      await page.locator('.context-menu [role=menuitem]').filter({ hasText: /^Lapin/ }).first().click();
+      t.expect((await state()).style === 'lapin', 'Lapin\'s style comes back from the menu');
+    },
+  },
+  {
     // A click takes only what the view shows (decision 498), as the snaps do (decision 491); Properties says so of an element picked by its name.
     id: 'select-shown',
     async run(t) {

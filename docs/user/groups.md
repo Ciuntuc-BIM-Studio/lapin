@@ -85,6 +85,8 @@ Every IFC, Fragments or mesh file you import comes in as one group named after t
 
 **View → Select region** (<kbd>SR</kbd>) turns a left drag in the 3D view into a selection, as in plans. Dragged to the right, a window takes what lies wholly inside it. Dragged to the left, a crossing takes what it touches. Press <kbd>Space</kbd> while dragging to draw a lasso, and <kbd>Shift</kbd> to add to the selection. While it is on, the right button turns the view and the middle one moves it. The **×** on its chip, or <kbd>SR</kbd> again, turns it off.
 
+In Lapin's own navigation style <kbd>Alt</kbd> + left drag draws the same region with no mode to turn on; in the Revit-like, AutoCAD-like, ArchiCAD-like, SketchUp-like, Blender-like and Rhino-like styles a plain left drag does (see *Mouse navigation styles* in The interface and shortcuts).
+
 ![A crossing dragged over the house in 3D](shots/select-region-3d.webp)
 
 ## Hiding for now

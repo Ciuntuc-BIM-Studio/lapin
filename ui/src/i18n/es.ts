@@ -3,6 +3,16 @@
 import type { Language } from './index';
 
 export const ES: Record<string, string> = {
+  // Decision 516: mouse navigation styles
+  "Mouse navigation": "Navegación con el ratón",
+  "Left drag orbits, right drag pans, wheel zooms; Alt + left drag selects a region": "Arrastrar con la izquierda orbita, arrastrar con la derecha desplaza, la rueda hace zoom; Alt + arrastrar con la izquierda selecciona una región",
+  "Middle drag pans, Shift + middle drag orbits; left drag selects a window or crossing; Ctrl adds, Shift removes": "Arrastrar con el centro desplaza, Mayús + arrastrar con el centro orbita; arrastrar con la izquierda selecciona por ventana o por captura; Ctrl añade, Mayús quita",
+  "Middle drag pans, Shift + middle drag orbits; left drag selects a window or crossing; Shift removes, Ctrl adds": "Arrastrar con el centro desplaza, Mayús + arrastrar con el centro orbita; arrastrar con la izquierda selecciona por ventana o por captura; Mayús quita, Ctrl añade",
+  "Middle drag pans, Shift + middle drag orbits; left drag draws a marquee; Shift adds or removes": "Arrastrar con el centro desplaza, Mayús + arrastrar con el centro orbita; arrastrar con la izquierda dibuja un marco de selección; Mayús añade o quita",
+  "Middle drag orbits, Shift + middle drag pans; left drag selects a window or crossing; Ctrl adds, Shift toggles, Ctrl + Shift removes": "Arrastrar con el centro orbita, Mayús + arrastrar con el centro desplaza; arrastrar con la izquierda selecciona por ventana o por captura; Ctrl añade, Mayús alterna, Ctrl + Mayús quita",
+  "Middle drag orbits, Shift + middle drag pans, Ctrl + middle drag zooms; left drag selects a box; Shift toggles": "Arrastrar con el centro orbita, Mayús + arrastrar con el centro desplaza, Ctrl + arrastrar con el centro hace zoom; arrastrar con la izquierda selecciona con un cuadro; Mayús alterna",
+  "Right drag orbits, Shift + right drag pans; left drag selects a window or crossing; Shift adds, Ctrl removes": "Arrastrar con la derecha orbita, Mayús + arrastrar con la derecha desplaza; arrastrar con la izquierda selecciona por ventana o por captura; Mayús añade, Ctrl quita",
+  "How the mouse orbits, pans, zooms and selects in the 3D view and in plans, sections, elevations and sheets; the menu in the status bar chooses it too. Lapin's own is the default; the others assume a three-button mouse.": "Cómo el ratón orbita, desplaza, hace zoom y selecciona en la vista 3D y en plantas, secciones, alzados y láminas; el menú de la barra de estado también lo elige. El de Lapin es el predeterminado; los demás suponen un ratón de tres botones.",
   // Decision 507: pad footings under columns, their level
   "Pad footings under columns": "Zapatas aisladas bajo pilares",
   "At the base of the column": "En la base del pilar",

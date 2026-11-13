@@ -12,6 +12,7 @@ import { setKeymap, useKeymap } from '../app/shortcuts';
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { useUi } from '../app/store';
+import { NAV_STYLES, NAV_STYLE_IDS, type NavStyleId } from '../app/navStyle';
 import { POLAR_STEPS, SNAP_MODES, resolveTheme, setPrefs, usePrefs, type CoordSystem, type ThemeChoice } from '../app/prefs';
 import { setDisplay, useDisplay, type Display } from '../app/display';
 import { setLocationShown, setUcs, surveyPoint, ucsOf, useLocation } from '../app/location';
@@ -187,6 +188,16 @@ export function PreferencesDialog() {
                 ))}
               </div>
               <p className="row small"><button type="button" className="btn" onClick={() => useUi.setState({ dialog: 'displayQuality' })}>Display quality…</button></p>
+              <h4>Mouse navigation</h4>
+              <div className="pref-radios" role="radiogroup" aria-label="Mouse navigation" data-testid="prefs-nav-style">
+                {NAV_STYLE_IDS.map((id: NavStyleId) => (
+                  <label key={id} className="row small nav-style-row">
+                    <input type="radio" name="Mouse navigation" checked={p.navStyle === id} onChange={() => setPrefs({ navStyle: id })} />
+                    <span className="nav-style-text"><span data-no-i18n>{NAV_STYLES[id].label}</span><span className="muted">{NAV_STYLES[id].hint}</span></span>
+                  </label>
+                ))}
+              </div>
+              <p className="muted small">How the mouse orbits, pans, zooms and selects in the 3D view and in plans, sections, elevations and sheets; the menu in the status bar chooses it too. Lapin's own is the default; the others assume a three-button mouse.</p>
             </>}
             {page === 'profiles' && <ProfilesPage />}
           </section>

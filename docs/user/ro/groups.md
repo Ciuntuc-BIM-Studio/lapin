@@ -85,6 +85,8 @@ Fiecare fișier IFC, Fragments sau rețea pe care îl imporți intră ca un sing
 
 **Vedere → Selectare regiune** (<kbd>SR</kbd>) face din tragerea cu butonul stâng în 3D o selecție, ca în planuri. Trasă spre dreapta, o fereastră ia ce e cuprins în întregime în ea. Trasă spre stânga, un crossing ia tot ce atinge. Apasă <kbd>Space</kbd> în timp ce tragi ca să desenezi un lasou, și <kbd>Shift</kbd> ca să adaugi la selecție. Cât e pornită, butonul drept rotește vederea, iar cel din mijloc o mută. **×** de pe eticheta ei, sau din nou <kbd>SR</kbd>, o oprește.
 
+În stilul de navigare al Lapin, <kbd>Alt</kbd> + tragere cu stânga desenează aceeași regiune, fără un mod de pornit; în stilurile Revit-like, AutoCAD-like, ArchiCAD-like, SketchUp-like, Blender-like și Rhino-like o face o simplă tragere cu stânga (vezi *Stiluri de navigare cu mouse-ul* în Interfața și scurtăturile).
+
 ![Un crossing tras peste casă în 3D](shots/select-region-3d.webp)
 
 ## Ascunderea temporară

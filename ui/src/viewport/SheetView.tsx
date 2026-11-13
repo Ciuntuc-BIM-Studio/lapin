@@ -29,6 +29,8 @@ import { VIEW_DRAG } from '../shell/browserSets';
 import { ScalePicker, StructurePicker } from './ScaleChip';
 import { listSymbols, placeSymbol, rememberSymbol, type SymList } from '../modules/core/symbols/symbols';
 import { byCategory } from '../modules/core/symbols/symbolModel';
+import { currentNavStyle } from '../app/navStyleStore';
+import { modsOf, pansIn2d, wheelFactor } from '../app/navStyle';
 import { PX_PER_MM, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelZoom, type ZoomHost } from './zoom';
 
 interface Vp {
@@ -258,7 +260,7 @@ export function SheetView() {
           const now = performance.now();
           if (now - wheelBurst.current > 400) pushHistory(key, v);
           wheelBurst.current = now;
-          setZ(zoomAbout(v.k * wheelZoom(e, size.h), e.clientX - r.left, e.clientY - r.top));
+          setZ(zoomAbout(v.k * wheelFactor(currentNavStyle(), wheelZoom(e, size.h)), e.clientX - r.left, e.clientY - r.top));
         }}
         onPointerDown={(e) => {
           if (middleTwice.current(e)) { fit(); return; }
@@ -268,7 +270,8 @@ export function SheetView() {
           // A pinned view is picked, not moved: the drag pans the paper.
           if (vp && e.button === 0 && e.shiftKey && !vp.pinned && !vp.content) { drag.current = { kind: 'slide', x: e.clientX, y: e.clientY, vp }; setActive(vp.id); }
           else if (vp && e.button === 0 && !vp.pinned) { drag.current = { kind: 'vp', x: e.clientX, y: e.clientY, vp }; setActive(vp.id); select(sheet.id); }
-          else { drag.current = { kind: 'pan', x: e.clientX, y: e.clientY, start: v }; if (e.button === 0) setActive(vp?.id ?? null); }
+          // The paper pans with the left button (as it always did) and with the style's pan buttons; its other buttons do nothing.
+          else if (e.button === 0 || pansIn2d(currentNavStyle(), e.button, modsOf(e))) { drag.current = { kind: 'pan', x: e.clientX, y: e.clientY, start: v }; if (e.button === 0) setActive(vp?.id ?? null); }
           (e.target as Element).setPointerCapture?.(e.pointerId);
         }}
         onPointerMove={(e) => {

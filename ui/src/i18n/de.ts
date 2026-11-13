@@ -3,6 +3,16 @@
 import type { Language } from './index';
 
 export const DE: Record<string, string> = {
+  // Decision 516: mouse navigation styles
+  "Mouse navigation": "Mausnavigation",
+  "Left drag orbits, right drag pans, wheel zooms; Alt + left drag selects a region": "Ziehen mit links dreht, Ziehen mit rechts verschiebt, das Rad zoomt; Alt + Ziehen mit links wählt einen Bereich",
+  "Middle drag pans, Shift + middle drag orbits; left drag selects a window or crossing; Ctrl adds, Shift removes": "Ziehen mit der Mitte verschiebt, Umschalt + Ziehen mit der Mitte dreht; Ziehen mit links wählt per Fenster oder Kreuzen; Strg fügt hinzu, Umschalt entfernt",
+  "Middle drag pans, Shift + middle drag orbits; left drag selects a window or crossing; Shift removes, Ctrl adds": "Ziehen mit der Mitte verschiebt, Umschalt + Ziehen mit der Mitte dreht; Ziehen mit links wählt per Fenster oder Kreuzen; Umschalt entfernt, Strg fügt hinzu",
+  "Middle drag pans, Shift + middle drag orbits; left drag draws a marquee; Shift adds or removes": "Ziehen mit der Mitte verschiebt, Umschalt + Ziehen mit der Mitte dreht; Ziehen mit links zeichnet einen Auswahlrahmen; Umschalt fügt hinzu oder entfernt",
+  "Middle drag orbits, Shift + middle drag pans; left drag selects a window or crossing; Ctrl adds, Shift toggles, Ctrl + Shift removes": "Ziehen mit der Mitte dreht, Umschalt + Ziehen mit der Mitte verschiebt; Ziehen mit links wählt per Fenster oder Kreuzen; Strg fügt hinzu, Umschalt schaltet um, Strg + Umschalt entfernt",
+  "Middle drag orbits, Shift + middle drag pans, Ctrl + middle drag zooms; left drag selects a box; Shift toggles": "Ziehen mit der Mitte dreht, Umschalt + Ziehen mit der Mitte verschiebt, Strg + Ziehen mit der Mitte zoomt; Ziehen mit links wählt per Rahmen; Umschalt schaltet um",
+  "Right drag orbits, Shift + right drag pans; left drag selects a window or crossing; Shift adds, Ctrl removes": "Ziehen mit rechts dreht, Umschalt + Ziehen mit rechts verschiebt; Ziehen mit links wählt per Fenster oder Kreuzen; Umschalt fügt hinzu, Strg entfernt",
+  "How the mouse orbits, pans, zooms and selects in the 3D view and in plans, sections, elevations and sheets; the menu in the status bar chooses it too. Lapin's own is the default; the others assume a three-button mouse.": "Wie die Maus in der 3D-Ansicht und in Plänen, Schnitten, Ansichten und Blättern dreht, verschiebt, zoomt und wählt; das Menü in der Statusleiste wählt sie ebenfalls. Lapins eigene ist die Voreinstellung; die anderen setzen eine Maus mit drei Tasten voraus.",
   // Decision 507: pad footings under columns, their level
   "Pad footings under columns": "Einzelfundamente unter Stützen",
   "At the base of the column": "Am Fuß der Stütze",
