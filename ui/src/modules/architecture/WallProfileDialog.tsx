@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
-import { execute, useSession } from '../../engine/session';
+import { execute, query, useSession } from '../../engine/session';
 import { wallLength } from '../../engine/model';
 
 type Pt = [number, number];
@@ -38,13 +38,25 @@ export function WallProfileDialog() {
   const wall = useSession((s) => (id ? s.nodes.get(id) : undefined));
   const close = () => useUi.setState({ dialog: null });
   const l = wall ? wallLength(wall) : 0;
-  const h = Number(wall?.props.height ?? 3);
+  // Its height as the engine works it out (to its top, the forum's topic #45), its own until that comes.
+  const [h, setH] = useState(() => Number(wall?.props.height ?? 3));
   const stored = (Array.isArray(wall?.props.topProfile) ? wall!.props.topProfile : null) as Pt[] | null;
   const [pts, setPts] = useState<Pt[]>(() => stored ?? [[0, h], [l, h]]);
   const [peak, setPeak] = useState(() => String(Math.round((h + 1.5) * 1000)));
   const [drag, setDrag] = useState<number | null>(null);
   const svg = useRef<SVGSVGElement>(null);
-  useEffect(() => { setPts(stored ?? [[0, h], [l, h]]); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    let live = true;
+    const own = Number(wall?.props.height ?? 3);
+    setH(own);
+    setPts(stored ?? [[0, own], [l, own]]);
+    if (id) void query<{ height: number }>('architecture.wallTop', { id }).then((r) => {
+      if (!live || !r) return;
+      setH(r.height);
+      if (!stored) setPts([[0, r.height], [l, r.height]]);
+    });
+    return () => { live = false; };
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const W = 560, H = 300, pad = 30;
   const top = Math.max(h, ...pts.map((p) => p[1])) * 1.1 + 0.2;

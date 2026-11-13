@@ -478,6 +478,8 @@ export const scenes = [
       await t.shot('wall-drawing');
       // The line it is drawn on (decision 237): offered in the command line's bar while the tool is on.
       t.expect(await t.page.locator('[data-testid=wall-line]').count() > 0, 'the Wall tool offers the line it is drawn on');
+      // And the top of the walls drawn (the forum's topic #45): as the type, the storey above, a storey, or a height.
+      t.expect(await t.page.locator('[data-testid=wall-tool-top]').count() > 0, 'the Wall tool offers the top of the walls it draws');
       await t.keys('Escape', 'Escape');
       const walls = (await t.nodes()).filter((n) => n.type === 'IfcWall');
       t.expect(walls.length === 2, `two walls drawn, found ${walls.length}`);
@@ -489,6 +491,21 @@ export const scenes = [
       // Each wall's own length and thickness (report #107).
       t.expect(await t.page.locator('[data-field=wall-length]').count() === 1 && await t.page.locator('[data-field=wall-thickness]').count() === 1, 'the wall\'s length and thickness are fields');
       await t.shot('wall-properties', { of: 'aside.props', pad: 0, maxHeight: 620 });
+      // Its top (the forum's topic #45): the storey above by default, its height worked out from the storeys, following them.
+      t.expect(await t.page.locator('[data-testid=wall-top]').inputValue() === 'above', 'a new wall goes up to the storey above');
+      const levels = (await t.nodes()).filter((n) => n.type === 'IfcBuildingStorey').sort((p, q) => (p.props.elevation ?? 0) - (q.props.elevation ?? 0));
+      const above = levels[levels.findIndex((n) => n.id === walls[0].storeyId) + 1];
+      if (above) {
+        const was = above.props.elevation ?? 0;
+        const height = async () => (await t.call('doc.query', { name: 'architecture.wallTop', args: { id: walls[0].id } })).height;
+        const before = await height();
+        await t.cmd('storey.update', { id: above.id, elevation: was + 0.2, keepTop: true });
+        const after = await height();
+        t.expect(Math.abs(after - before - 0.2) < 1e-6, `the wall follows the storey above raised 200 (${before} → ${after})`);
+        await t.cmd('storey.update', { id: above.id, elevation: was, keepTop: true });
+      }
+      await t.wait(400);
+      await t.shot('wall-top', { of: 'aside.props dl:has([data-testid=wall-top])', pad: 6 });
       await t.tool('architecture.wallTypes');
       t.expect(await t.page.locator('.dialog [data-testid=wall-legend]').count() === 1, 'the wall types show their legend');
       await t.shot('wall-types', { of: '.dialog', pad: 0 });

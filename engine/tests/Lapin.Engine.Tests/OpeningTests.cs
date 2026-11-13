@@ -317,7 +317,7 @@ public class OpeningsOnUpperStoreysTests
     public void A_door_cuts_a_wall_on_an_upper_storey_too()
     {
         var f = new Fixture(new ArchitectureModule());
-        var upper = (string)f.Run("storey.create", new JsonObject { ["name"] = "Etaj 1", ["elevation"] = 2.8 })!["id"]!;
+        var upper = (string)f.Run("storey.create", new JsonObject { ["name"] = "Etaj 1", ["elevation"] = 2.8, ["height"] = 2.8 })!["id"]!;
         var ground = f.Wall(0, 0, 5, 0);
         f.Run("architecture.addDoor", new JsonObject { ["wallId"] = ground, ["along"] = 2.5 });
         var wall = (string)f.Run("architecture.addWall", new JsonObject { ["storeyId"] = upper, ["x1"] = 0, ["y1"] = 3, ["x2"] = 5, ["y2"] = 3 })!["id"]!;

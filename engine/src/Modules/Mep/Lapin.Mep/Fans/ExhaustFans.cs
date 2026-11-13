@@ -290,7 +290,7 @@ public static class ExhaustFans
             if (bands.Count == 0) continue;
             var u = (b - a) * (1 / len);
             var z = w.Num("baseOffset");
-            yield return new WallFaces(w, a, u, u.Perp, len, bands.Min(x => x.From), bands.Max(x => x.To), z, z + w.Num("height", Walls.DefaultHeight));
+            yield return new WallFaces(w, a, u, u.Perp, len, bands.Min(x => x.From), bands.Max(x => x.To), z, z + Walls.HeightOf(m, w));
         }
     }
 

@@ -12,6 +12,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { lengthText } from '../../engine/unitsStore';
 import { sameKind } from '../../shell/params';
 import { LengthField } from '../../shell/cells';
+import { WallTopFields } from './WallTop';
 
 const THICKNESS_TIP = 'The wall\'s thickness comes from its type\'s layers. Type a new one and the selected walls take the type with the same build-up and that thickness (the core resized, the finishes kept): the project\'s, or a new one named after their type, e.g. Partition wall 150mm.';
 
@@ -80,6 +81,8 @@ export function WallLayers({ node }: { node: NodeDto }) {
           : <dd className="num">{lengthText(total)}</dd>}
         <dt>Layers run</dt><dd>{usage ? (usage.negative ? 'flipped' : 'as drawn') : '—'}</dd>
       </dl>
+      {/* Where it goes up to (the forum's topic #45): the storey above, a storey, or a height of its own. */}
+      <WallTopFields node={node} />
       {node.editable && (
         <span className="row" style={{ gap: 6 }}>
           <button type="button" className="btn" title="Swap the wall's faces (its ends stay)" onClick={() => void execute('architecture.flipWall', { ids: sameKind(node) })}>

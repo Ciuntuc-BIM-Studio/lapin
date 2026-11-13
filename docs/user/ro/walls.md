@@ -37,6 +37,22 @@ Panoul de proprietăți arată peretele selectat. Sus sunt tipul și straturile 
 
 ![Proprietățile unui perete](shots/wall-properties.webp)
 
+### Partea de sus a peretelui
+
+Un perete urcă singur până la nivelul de deasupra. **Sus** (Top), în proprietățile lui, spune până unde:
+
+- **Etajul de deasupra** (implicit pentru un perete nou): până la nivelul etajului de deasupra celui propriu. Pe ultimul etaj, până sus la acel etaj (nivelul și înălțimea lui).
+- un etaj al proiectului: până la nivelul acelui etaj, de pildă două etaje mai sus pentru un perete dintr-un hol cu dublă înălțime.
+- **Înălțime neconectată**: până la o înălțime proprie, **Înălțimea** pe care o scrii.
+
+![Partea de sus a unui perete: etajul de deasupra, decalajul și înălțimea la care ajunge](shots/wall-top.webp)
+
+**Decalajul la partea de sus** se adaugă la nivelul până la care urcă: −300 oprește peretele sub structura plăcii, +900 ridică un parapet peste nivelul acoperișului. **Înălțimea** arătată dedesubt se calculează de fiecare dată din etaje, așa că ridicarea sau coborârea unui etaj (**Nivelul de bază** în proprietățile lui) mută partea de sus a pereților care urcă la el, iar coborârea etajului pe care stă un perete îi coboară baza și îi păstrează partea de sus. Îmbinările, straturile care se opresc la o înălțime, ușile și ferestrele, profilele, cantitățile, tabelele, desenele și exportul IFC urmează toate. O schimbare ajunge la toți pereții selectați, într-un singur pas.
+
+O parte de sus care ar ajunge la baza peretelui sau sub ea e refuzată; una care ajunge așa mai târziu (etajul de deasupra coborât până la cel al peretelui) lasă peretele la înălțimea lui proprie, iar **Probleme** spune asta. Ștergerea unui etaj lasă pereții care urcau la el neconectați, la înălțimea pe care o aveau. **Copy to storeys** trimite copia cu tot atâtea etaje mai sus cât urca originalul. O înălțime scrisă în proprietățile peretelui îl face neconectat. **Atașează la acoperiș** duce în continuare peretele până la fața de jos a acoperișului, oriunde i-ar fi partea de sus.
+
+Cât e pornită unealta Perete, lista de după cea a liniei, în bara liniei de comandă, alege partea de sus a pereților pe care îi desenezi: **ca tipul**, **etajul de deasupra** sau un etaj cu un decalaj, ori **înălțime neconectată** cu o înălțime. Și un tip de perete dă pereților lui o parte de sus: **Partea de sus a peretelui** în **Tipuri de pereți**, sub buiandrugi, e etajul de deasupra cu un decalaj (−450 pentru pereții de sub grinzi) sau o înălțime neconectată (1100 pentru un tip de parapet). Pereții desenați înainte de asta rămân la înălțimea pe care o aveau (neconectați); pereții dintr-un fișier IFC stau cum spune fișierul, iar fișierele IFC ale Lapin își aduc înapoi părțile de sus.
+
 Mai jos, **Dependențe** arată ce e construit din perete și din ce e construit peretele. **Folosit de** enumeră elementele care se schimbă când se schimbă peretele: pereții cu care se îmbină, ușile și ferestrele lui, un perete atașat de el. Dai clic pe un nume ca să selectezi elementul. **Construit din** enumeră elementele de care depinde peretele, apoi tipul și materialele lui. Când ștergi un element de care depind altele, un mesaj le numește pe cele reconstruite; <kbd>Ctrl</kbd> <kbd>Z</kbd> le aduce pe toate înapoi.
 
 **Întoarce** mută straturile peretelui pe partea cealaltă. Poți da clic și pe săgețile mici de lângă un perete selectat în plan.

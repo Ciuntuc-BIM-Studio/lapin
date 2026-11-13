@@ -50,7 +50,7 @@ public sealed class ArchitectureFaces : IElementFaces
     {
         if (Walls.Frame(wall, m) is not { } f) return [];
         var z0 = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
-        var z1 = z0 + wall.Num("height", Walls.DefaultHeight);
+        var z1 = z0 + Walls.HeightOf(m, wall);
         if (PathCurve.Of(wall) is { IsArc: true } c)
         {
             // A curved wall: its faces as curves along the arc at its base, its top a band.

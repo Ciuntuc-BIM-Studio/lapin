@@ -173,7 +173,7 @@ public static class WallSweeps
         var fromTop = a["fromTop"] is JsonValue ft && ft.TryGetValue<bool>(out var t) && t;
         double height;
         if (Json.Number(a["height"]) is { } h) height = h;
-        else if (point is { Count: >= 3 } && Json.Number(point[2]) is { } z) height = fromTop ? base0 + wall.Num("height", Walls.DefaultHeight) - z : z - base0;
+        else if (point is { Count: >= 3 } && Json.Number(point[2]) is { } z) height = fromTop ? base0 + Walls.HeightOf(ctx.Model, wall) - z : z - base0;
         else height = mode == "cut" ? 1.0 : 0.3;
         attrs["height"] = Math.Round(height, 4);
         if (fromTop) attrs["fromTop"] = true;
@@ -266,7 +266,7 @@ public static class WallSweeps
     public static double Level(IModelView m, Entity sweep, Entity wall)
     {
         var h = sweep.Num("height");
-        return Base(m, wall) + (sweep.Bool("fromTop") ? wall.Num("height", Walls.DefaultHeight) - h : h);
+        return Base(m, wall) + (sweep.Bool("fromTop") ? Walls.HeightOf(m, wall) - h : h);
     }
 
     /// <summary>The profile across the face: x out of the face (into the wall for a reveal), moved out by the offset; y up from the level (down, flipped).</summary>

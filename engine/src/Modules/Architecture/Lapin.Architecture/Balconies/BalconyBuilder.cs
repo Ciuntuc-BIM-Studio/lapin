@@ -71,7 +71,7 @@ public static class BalconyBuilder
             var side = e.Num("side", 1) < 0 ? -1 : 1;
             var face = side > 0 ? f.YMax : f.YMin;
             var at = f.Start + f.Dir * along + f.Left * face;
-            return new BalconyFrame(at, f.Dir * side, f.Left * side, top, storey, wall, f.YMax - f.YMin, storey + wall.Num("baseOffset"), wall.Num("height", Walls.DefaultHeight));
+            return new BalconyFrame(at, f.Dir * side, f.Left * side, top, storey, wall, f.YMax - f.YMin, storey + wall.Num("baseOffset"), Walls.HeightOf(m, wall));
         }
         if (Points(e) is { Count: >= 3 } pts)
         {
