@@ -444,8 +444,43 @@ class Lapin:
         elements = self._elements()
         return [elements[i] for i in ids if i in elements]
 
+    def selected(self) -> list[Obj]:
+        """What the window has selected now, each with what it is: ``id`` (its GlobalId), ``ifc_class``, ``name``,
+        ``storey``, ``path`` (the wholes it is part of, outermost first, itself last) and ``bbox`` (``[[xmin, ymin, zmin],
+        [xmax, ymax, zmax]]`` of its body). The same as the ``selection`` event carries (``on("selection", f)``)."""
+        return list((self.call("script.selection", {"details": True}) or {}).get("items") or [])
+
+    # ------------------------------------------------------------------ measures (L2) and watches (L3)
+
+    def measure(self, name: str, *, query: str | None = None, args: dict | None = None, expr: str | None = None,
+                id: str | Element | None = None) -> Any:
+        """A named measure kept by the engine for this connection (``measure.define``); its value now.
+
+        ``query`` (a catalogue query's name, with ``args``): its result is the value; ``expr`` with ``id``: a formula of
+        Lapin's over one element (``attr.<field>``, ``qty.<Quantity>``, ``bbox.zmax``…); neither: a built-in name
+        (``storey.<name>.elevation``, ``storey.<name>.height``, ``element.<id>.bbox``, ``wall.<id>.top``). After a change
+        that touches what it reads, a new value comes as the ``measure`` event (``on("measure", f)``)."""
+        p: dict[str, Any] = {"name": name}
+        for key, value in (("query", query), ("args", args), ("expr", expr), ("id", id)):
+            if value is not None:
+                p[key] = value
+        r = self.call("measure.define", p) or {}
+        if r.get("error"):
+            raise LapinError(r["error"], "measure.define", name)
+        return r.get("value")
+
+    def measure_value(self, name: str) -> Any:
+        """A measure's value now: one this connection defined, or a built-in (``measure.get``)."""
+        r = self.call("measure.get", {"name": name}) or {}
+        if r.get("error"):
+            raise LapinError(r["error"], "measure.get", name)
+        return r.get("value")
+
+    def remove_measure(self, name: str) -> bool:
+        return bool((self.call("measure.remove", {"name": name}) or {}).get("removed"))
+
     def on(self, event: str, handler: Callable[[Any], Any]) -> Callable[[], None]:
-        """``handler(data)`` for each ``event`` the engine sends ("diff", "progress", "presence", "delivery"); "*" gets
+        """``handler(data)`` for each ``event`` the engine sends ("diff", "progress", "presence", "delivery", "selection", "measure", "watch"); "*" gets
         ``handler(name, data)`` for all. Handlers run one at a time on a thread of their own. Returns what removes it."""
         self._handlers.setdefault(event, []).append(handler)
         if self._dispatcher is None:

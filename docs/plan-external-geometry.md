@@ -50,7 +50,7 @@ element.setBody    {id, body, placement?}                                       
   - `measure.define {name, query?, args?, expr?, id?}`: a catalogue query by name with its arguments (its JSON result is the value), or a formula in Lapin's `Expr` over one element (`id`): `attr.<field>`, `qty.<QuantityName>`, `bbox.xmin` … `bbox.zmax`; or no definition: a built-in name;
   - built-ins: `storey.<name>.elevation`, `storey.<name>.height`, `element.<id>.bbox`, `wall.<id>.top` (the wall's highest point);
   - `measure.get {name}` → `{name, value, error?}`, `measure.remove {name}`, `measure.list`;
-  - after every change the host recomputes only the measures whose dependencies it touched (the entities they read, through `TrackingView`, and what their element is built from, `core.dependents`'s record) and sends the `measure` event `{name, value, was}` to the connection that defined it when the value changed. A query measure whose arguments name no element is recomputed after every change.
+  - after every change the host recomputes only the measures whose dependencies it touched (the elements they read: a diff's changed entities and the bodies it rebuilt, which already follow `TrackingView`'s record of what each body is built from) and sends the `measure` event `{name, value, was}` to the connection that defined it when the value changed. A query measure whose arguments name no element is recomputed after every change.
 - Measures belong to the connection (gone when it closes); they are not in the model and not in undo.
 
 ### 2.3 L3: regeneration

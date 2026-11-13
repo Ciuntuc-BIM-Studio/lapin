@@ -3,8 +3,8 @@
 
 from __future__ import annotations
 
+import threading
 import unittest
-
 import uuid
 
 from lapinbim import Lapin, LapinError, global_id
@@ -57,6 +57,34 @@ class LiveTests(unittest.TestCase):
         r = self.lapin.create_body("IfcColumn", rows, units="mm", global_id=global_id("column:c1:storey:ground", "tests"))
         self.assertAlmostEqual(self.lapin.model[r.id].quantity("NetVolume"), 2.0, places=6)
         self.assertEqual(r.id, global_id("column:c1:storey:ground", "tests"))
+
+
+    def test_measures_are_told_when_they_change_and_the_selection_with_what_it_is(self):
+        wall = self.lapin.architecture.add_wall(storey_id=self.storey, x1=0, y1=0, x2=5, y2=0, height=3).id
+        top = self.lapin.measure(f"wall.{wall}.top")
+        self.assertAlmostEqual(top - self.lapin.model[self.storey].elevation, 3.0)
+        self.assertAlmostEqual(self.lapin.measure("half", id=wall, expr="attr.height / 2"), 1.5)
+        got: list = []
+        told = threading.Event()
+
+        def on_measure(d):
+            got.append(d)
+            if d["name"] == "half":
+                told.set()
+
+        off = self.lapin.on("measure", on_measure)
+        with Lapin(self.engine.port) as other:
+            other.element.update(id=wall, attrs={"height": 4})
+            self.assertTrue(told.wait(5))
+            self.assertAlmostEqual(self.lapin.measure_value("half"), 2.0)
+            # The window's selection (here told by another connection, as the window tells it), with what it is.
+            other.call("script.selected", {"ids": [wall]})
+        off()
+        self.assertIn(f"wall.{wall}.top", [d["name"] for d in got])
+        items = self.lapin.selected()
+        self.assertEqual(items[0].ifc_class, "IfcWall")
+        self.assertAlmostEqual(items[0]["bbox"][1][2], top + 1.0)
+        self.assertTrue(self.lapin.remove_measure("half"))
 
 
 class GlobalIdTests(unittest.TestCase):

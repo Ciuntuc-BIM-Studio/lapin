@@ -41,6 +41,8 @@ public sealed class EngineHub
         Sharing = new Sharing(this);
         // Python in Lapin (docs/plan-python-scripting.md): where the edition has the scripting module.
         Scripts = new ScriptHost(session.Product.Modules.Contains("scripting"), userDir, o => TellLocal("script.output", o));
+        // External programs' measures and watches, the selection told with what it is (docs/plan-external-geometry.md, L2–L3).
+        Live = new LiveLinks(session);
         session.History.AuthorName = id => Participant(id)?.Name;
         // A module's background result (docs/overrides.md) waits for the calls' queue like a call, then goes out as a diff.
         session.DeliveryWaiting += () => _ = Deliveries();
@@ -57,7 +59,7 @@ public sealed class EngineHub
         {
             foreach (var o in _session.TakeDeliveries())
             {
-                if (o.Diff != null) Broadcast(o.Diff);
+                if (o.Diff != null) { Broadcast(o.Diff); AfterChange(o.Diff, null, byScript: false); }
                 if (o.Status == "failed") Console.Error.WriteLine($"[engine] Delivery „{o.Label}” failed: {o.Error}");
                 await TellLocal("delivery", new JsonObject { ["label"] = o.Label, ["status"] = o.Status, ["error"] = o.Error });
             }
@@ -69,6 +71,7 @@ public sealed class EngineHub
     public Session Session => _session;
     public Sharing Sharing { get; }
     public ScriptHost Scripts { get; }
+    public LiveLinks Live { get; }
 
     /// <summary>
     /// One connected interface: who it is, and how a frame reaches it. What the hub sends it waits in its own queue,
@@ -210,6 +213,8 @@ public sealed class EngineHub
         c.Complete();
         // The questions it asked (lapin.ui.ask) taken away: the windows close their dialogs.
         Scripts.Forget(c);
+        // Its measures and watches with it.
+        Live.Forget(c);
         if (had && c.Participant != null) await BroadcastPresence();
         // A script's connection lost (its Python killed, stopped, crashed) with its step open: the step taken back, every window told.
         // A script's Python with several connections (one it opened itself) keeps its step until the last of them goes.
@@ -217,7 +222,8 @@ public sealed class EngineHub
         if (_session.OwnsStep(key) && !Clients().Any(o => ReferenceEquals(o.StepKey, key)))
         {
             await _gate.WaitAsync();
-            try { if (_session.RollbackFor(key) is { } back) Broadcast(back); }
+            // A script's step taken back is a script's change: it sets off no project script (AfterChange).
+            try { if (_session.RollbackFor(key) is { } back) { Broadcast(back); AfterChange(back, null, byScript: true); } }
             finally { _gate.Release(); }
             if (_session.DeliveriesWaiting) _ = Deliveries();
         }
@@ -271,7 +277,11 @@ public sealed class EngineHub
             _dispatcher.Progress = null;
             // A big snapshot's first parts, to the one who asked, before the reply that carries its last.
             foreach (var frame in _dispatcher.TakeCallerFrames()) client?.Post(frame);
-            if (diff != null) Broadcast(diff);
+            if (diff != null)
+            {
+                Broadcast(diff);
+                AfterChange(diff, client, byScript: client != null && ReferenceEquals(client.StepKey, Scripts.KernelKey));
+            }
             return reply;
         }
         finally
@@ -287,12 +297,12 @@ public sealed class EngineHub
     {
         // Cheap test first: every other call goes on untouched.
         if (!text.Contains("\"share.", StringComparison.Ordinal) && !text.Contains("\"presence.", StringComparison.Ordinal) && !text.Contains("\"cancel.", StringComparison.Ordinal)
-            && !text.Contains("\"extensions.", StringComparison.Ordinal) && !text.Contains("\"script.", StringComparison.Ordinal)) return null;
+            && !text.Contains("\"extensions.", StringComparison.Ordinal) && !text.Contains("\"script.", StringComparison.Ordinal) && !text.Contains("\"measure.", StringComparison.Ordinal)) return null;
         try
         {
             return JsonNode.Parse(text) is JsonObject o && (string?)o["method"] is { } m
                 && (m.StartsWith("share.", StringComparison.Ordinal) || m.StartsWith("presence.", StringComparison.Ordinal) || m.StartsWith("cancel.", StringComparison.Ordinal)
-                    || m.StartsWith("extensions.", StringComparison.Ordinal) || m.StartsWith("script.", StringComparison.Ordinal)) ? o : null;
+                    || m.StartsWith("extensions.", StringComparison.Ordinal) || m.StartsWith("script.", StringComparison.Ordinal) || m.StartsWith("measure.", StringComparison.Ordinal)) ? o : null;
         }
         catch (System.Text.Json.JsonException) { return null; }
     }
@@ -355,9 +365,37 @@ public sealed class EngineHub
                     if (id != null) _ = ReplyWhenAnswered(client, id, answer);
                     return null;
                 }
+                // External programs (docs/plan-external-geometry.md, L2): measures of the connection's own. Never a guest's.
+                case "measure.define" or "measure.get" or "measure.remove" or "measure.list":
+                {
+                    if (caller.Remote) throw new CommandException("Only the host can do that.");
+                    if (client == null) throw new CommandException("Measures and watches are a connection's.");
+                    await _gate.WaitAsync();
+                    try
+                    {
+                        result = method switch
+                        {
+                            "measure.define" => Live.Define(client, p),
+                            "measure.get" => Live.Get(client, (string?)p["name"]),
+                            "measure.remove" => Live.Remove(client, (string?)p["name"]),
+                            _ => Live.List(client),
+                        };
+                    }
+                    finally { _gate.Release(); }
+                    break;
+                }
                 case var _ when method.StartsWith("script.", StringComparison.Ordinal):
                     if (caller.Remote) throw new CommandException("Only the host can do that.");
                     result = await Scripts.Handle(method, p);
+                    // The window's selection, told to every program on this computer with what it is (L2).
+                    if (method == "script.selected") _ = TellSelection();
+                    // With details: what each selected element is, as the selection event tells it.
+                    if (method == "script.selection" && p["details"] is JsonValue dv && dv.TryGetValue<bool>(out var details) && details)
+                    {
+                        await _gate.WaitAsync();
+                        try { result = Live.Selection(Scripts.Selection); }
+                        finally { _gate.Release(); }
+                    }
                     break;
                 default:
                     if (caller.Remote) throw new CommandException("Only the host can do that.");
@@ -380,6 +418,30 @@ public sealed class EngineHub
         try { frame = BinaryFrame.Encode(new Reply(id, await answer)); }
         catch (Exception ex) when (ex is CommandException or InvalidOperationException) { frame = BinaryFrame.Encode(new Reply(id, null, ex.Message)); }
         client.Post(frame);
+    }
+
+    // ------------------------------------------------------------ external programs (docs/plan-external-geometry.md, L2–L3)
+
+    /// <summary>After a change (under the gate): measures told to their connections.</summary>
+    void AfterChange(Diff diff, Client? author, bool byScript)
+    {
+        List<LiveLinks.Note> notes;
+        try { (notes, _) = Live.Changed(diff, author, byScript); }
+        catch (Exception ex) { Console.Error.WriteLine($"[engine] Measures after a change: {ex}"); return; }
+        var clients = Clients();
+        foreach (var n in notes)
+            if (n.Owner is Client c && clients.Contains(c)) c.Post(new JsonObject { ["event"] = n.Event, ["data"] = n.Data }.ToJsonString());
+    }
+
+    /// <summary>The window's selection with what it is, to every connection of this computer (the event <c>selection</c>).</summary>
+    async Task TellSelection()
+    {
+        JsonObject data;
+        await _gate.WaitAsync();
+        try { data = Live.Selection(Scripts.Selection); }
+        catch (Exception ex) { Console.Error.WriteLine($"[engine] The selection: {ex}"); return; }
+        finally { _gate.Release(); }
+        await TellLocal("selection", data);
     }
 
     /// <summary>The participants now: the host and each guest connected, with where each is.</summary>

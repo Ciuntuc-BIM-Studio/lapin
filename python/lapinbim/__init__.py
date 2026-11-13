@@ -30,7 +30,7 @@ __all__ = [
     "__version__", "Lapin", "LapinError", "Batch", "Deferred", "Step", "Element", "Model", "Obj",
     "connect", "client", "close", "call", "execute", "query", "undo", "redo", "save", "info", "quantities",
     "snapshot", "state", "batch", "step", "selection", "on", "catalogue", "ns", "command", "ui", "UI",
-    "create_body", "set_body", "global_id",
+    "create_body", "set_body", "global_id", "selected", "measure", "measure_value", "remove_measure",
 ]
 
 _default: Lapin | None = None
@@ -124,6 +124,24 @@ def step(label: str | None = None) -> Step:
 def selection() -> list[Element]:
     """What the window has selected now, as elements."""
     return client().selection()
+
+
+def selected() -> list[Obj]:
+    """What the window has selected now, each with its GlobalId, class, name, storey, assembly path and box."""
+    return client().selected()
+
+
+def measure(name: str, **definition: Any) -> Any:
+    """A named measure kept by the engine (``measure.define``): see ``Lapin.measure``."""
+    return client().measure(name, **definition)
+
+
+def measure_value(name: str) -> Any:
+    return client().measure_value(name)
+
+
+def remove_measure(name: str) -> bool:
+    return client().remove_measure(name)
 
 
 def on(event: str, handler: Callable[..., Any]) -> Callable[[], None]:
