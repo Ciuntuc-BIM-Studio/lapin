@@ -3,6 +3,24 @@
 import type { Language } from './index';
 
 export const DE: Record<string, string> = {
+  // Editing a part's own sketch in place (decision 520)
+  "Constrain part": "Bauteil bemaßen",
+  "Body from sketch": "Körper aus Skizze",
+  "Rename the sketch": "Skizze umbenennen",
+  "Remove the sketch (and the bodies drawn from it)": "Skizze entfernen (und die daraus gezeichneten Körper)",
+  "Drawn from sketch": "Gezeichnet aus Skizze",
+  "Its outline is that sketch's: it is edited in the part's edit mode, with its constraints.": "Seine Kontur ist die dieser Skizze: sie wird im Bearbeitungsmodus des Bauteils bearbeitet, mit ihren Bedingungen.",
+  "Edit the sketch in the part": "Skizze im Bauteil bearbeiten",
+  "The corners of its bodies become a sketch of the part's own, each dimension a formula of the parameters": "Die Ecken seiner Körper werden zu einer eigenen Skizze des Bauteils, jede Maßangabe eine Formel der Parameter",
+  "A length, or =formula of the parameters": "Eine Länge oder =Formel der Parameter",
+  "Sketch tools": "Skizzenwerkzeuge",
+  "Back to the part (Esc)": "Zurück zum Bauteil (Esc)",
+  "Arc (3 points)": "Bogen (3 Punkte)",
+  "Click a shape to delete it": "Auf eine Form klicken, um sie zu löschen",
+  "Those points make no shape.": "Diese Punkte ergeben keine Form.",
+  "That sketch is not one of the part's own: use Constrain part first.": "Diese Skizze gehört nicht zum Bauteil: zuerst Bauteil bemaßen verwenden.",
+  "Place the part first: its sketch is edited in the part's edit mode, on an object.": "Das Bauteil zuerst platzieren: seine Skizze wird im Bearbeitungsmodus des Bauteils an einem Objekt bearbeitet.",
+  "Type the body's depth: a length, or =formula.": "Die Tiefe des Körpers eingeben: eine Länge oder =Formel.",
   // Decision 536: a graph's palette, its tool in My tools, groups
   "Open the graph in the Graphs panel": "Den Graphen im Bereich Graphen öffnen",
   "This graph has no inputs yet: add Number, Choice, Storey or other input nodes in the Graphs panel, and they become its fields here.": "Dieser Graph hat noch keine Eingaben: Fügen Sie im Bereich Graphen Knoten wie Zahl, Auswahl, Geschoss oder andere Eingabeknoten hinzu, dann werden sie hier seine Felder.",

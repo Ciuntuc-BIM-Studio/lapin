@@ -3,6 +3,24 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // Editing a part's own sketch in place (decision 520)
+  "Constrain part": "约束零件",
+  "Body from sketch": "由草图生成实体",
+  "Rename the sketch": "重命名草图",
+  "Remove the sketch (and the bodies drawn from it)": "删除草图（以及由它绘制的实体）",
+  "Drawn from sketch": "由草图绘制",
+  "Its outline is that sketch's: it is edited in the part's edit mode, with its constraints.": "它的轮廓就是该草图的轮廓：在零件的编辑模式中编辑，连同它的约束。",
+  "Edit the sketch in the part": "在零件中编辑草图",
+  "The corners of its bodies become a sketch of the part's own, each dimension a formula of the parameters": "其实体的角点变成零件自己的草图，每个尺寸都是参数的公式",
+  "A length, or =formula of the parameters": "长度，或参数的 =公式",
+  "Sketch tools": "草图工具",
+  "Back to the part (Esc)": "返回零件（Esc）",
+  "Arc (3 points)": "圆弧（3 点）",
+  "Click a shape to delete it": "点击一个形状将其删除",
+  "Those points make no shape.": "这些点构不成形状。",
+  "That sketch is not one of the part's own: use Constrain part first.": "该草图不属于零件自身：请先使用“约束零件”。",
+  "Place the part first: its sketch is edited in the part's edit mode, on an object.": "请先放置零件：它的草图在零件的编辑模式中、在对象上编辑。",
+  "Type the body's depth: a length, or =formula.": "输入实体的深度：长度或 =公式。",
   // Decision 536: a graph's palette, its tool in My tools, groups
   "Open the graph in the Graphs panel": "在图面板中打开该图",
   "This graph has no inputs yet: add Number, Choice, Storey or other input nodes in the Graphs panel, and they become its fields here.": "此图还没有输入项：在图面板中添加数字、选择、楼层或其他输入节点，它们就会成为这里的字段.",

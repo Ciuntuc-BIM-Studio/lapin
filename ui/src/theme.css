@@ -2427,7 +2427,7 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .sel-card.part-tree { left: 12px; right: auto; top: 132px; bottom: 12px; width: 300px; overflow-y: auto; gap: 8px; }
 .part-tree .part-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); margin-bottom: 2px; }
 .part-tree .part-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-.part-tree .part-list li { display: flex; align-items: center; gap: 6px; }
+.part-tree .part-list li { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .part-tree .part-list li.off > :not(.icon) { opacity: 0.45; }
 .part-tree .part-list li.on button.link { font-weight: 600; }
 .part-tree .part-list button.link { display: inline-flex; align-items: center; gap: 5px; }
@@ -2472,6 +2472,27 @@ polygon.part-plane { fill: var(--accent); fill-opacity: 0.14; stroke: var(--acce
 .sketch-chip.redundant .sketch-chip-dot { background: #c98a12; }
 .sketch-chip-eye { display: inline-grid; place-items: center; width: 22px; height: 22px; border: 0; border-radius: 50%; background: none; color: var(--ink-muted); cursor: pointer; }
 .sketch-chip-eye:hover { background: var(--accent-wash); color: var(--ink); }
+/* A part's own sketch edited in place over the 3D view (decision 520). */
+.part-sketch .ps-hit { fill: none; stroke: transparent; stroke-width: 10px; pointer-events: stroke; cursor: pointer; }
+.part-sketch .ps-capture { fill: transparent; }
+.part-sketch .ps-profile { fill: var(--accent); fill-opacity: 0.08; stroke: none; pointer-events: none; }
+.part-sketch .sk-shape.ps-selected { stroke-width: 3; stroke: var(--accent); }
+.part-sketch .sk-shape.ps-dragged { opacity: 0.35; }
+.part-sketch .ps-grip { fill: var(--bg); stroke: var(--accent); stroke-width: 1.5; pointer-events: all; cursor: move; }
+.part-sketch .ps-grip:hover { fill: var(--accent); }
+.part-sketch .ps-preview { fill: none; stroke: var(--accent); stroke-width: 1.4; stroke-dasharray: 6 3; pointer-events: none; }
+.part-sketch .ps-point { fill: var(--accent); pointer-events: none; }
+.part-sketch .ps-label { font: 600 11px var(--font); fill: var(--accent); paint-order: stroke; stroke: var(--bg); stroke-width: 3px; pointer-events: none; }
+.part-sketch-bar { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 6; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 8px; max-width: calc(100% - 24px); padding: 4px 8px; background: var(--hud); border: 1px solid var(--rule); border-radius: 10px; font-size: 12px; backdrop-filter: blur(4px); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); }
+.part-sketch-bar .sketch-chip.inline { position: static; transform: none; padding: 3px 10px; box-shadow: none; }
+.part-sketch-name { font-weight: 600; }
+.part-sketch-group { display: inline-flex; align-items: center; gap: 1px; padding-left: 8px; border-left: 1px solid var(--rule); }
+.part-sketch-group .icon.on { color: var(--accent); background: var(--accent-wash); }
+.part-sketch-prompt { flex-basis: 100%; display: flex; justify-content: center; align-items: center; gap: 8px; color: var(--ink-muted); }
+.part-sketch-input { width: 120px; height: 22px; padding: 0 6px; border: 1px solid var(--accent); border-radius: 3px; background: var(--bg); color: var(--ink); font: 600 12px var(--font); }
+.part-add { margin-top: 4px; gap: 4px; flex-wrap: wrap; }
+.part-body-edit { flex-basis: 100%; gap: 4px; padding: 2px 0 2px 16px; flex-wrap: wrap; align-items: center; }
+.fam-sketch-body { padding: 6px 0; }
 /* Visual graphs (docs/plan-visual-graphs.md, decision 527): the Graphs panel, a view beside the model's. */
 .graphs-view { position: absolute; inset: 0; container-type: size; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); }
 .graphs-toolbar { display: flex; align-items: center; gap: 6px; padding: 4px 8px; border-bottom: 1px solid var(--rule); background: var(--panel); flex-wrap: wrap; }
@@ -2532,3 +2553,5 @@ polygon.part-plane { fill: var(--accent); fill-opacity: 0.14; stroke: var(--acce
 .graph-node.group:not(.failed):not(.warned) .head { fill: var(--accent-wash); }
 /* A narrow panel (beside the model, the usual split): the inspector under the canvas. */
 @container (max-width: 640px) { .graphs-body { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) minmax(0, 34%); } .graphs-inspector { border-left: 0; border-top: 1px solid var(--rule); } }
+
+.part-sketch-bar .btn.small, .part-add .btn.small, .part-tree > .part-section > .btn.small { width: auto; padding: 4px 10px; }

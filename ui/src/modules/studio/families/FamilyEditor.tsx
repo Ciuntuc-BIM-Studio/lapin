@@ -14,7 +14,7 @@ import { FORMULA_FUNCTIONS } from '../../../shell/formulaModel';
 import { MaterialPicker } from '../../core/MaterialPicker';
 import { previewFamily } from './familyApi';
 import {
-  IFC_CLASSES, PARAM_KINDS, PARAM_KIND_LABELS, PLANES, PLANE_LABELS, addBody, addParam, addPoint, cellText, className, defaultFor, formulaNames, isFormula, keyProblem, parseCell, parseValue, removeBody,
+  IFC_CLASSES, PARAM_KINDS, bodySketchName, isSketchBody, PARAM_KIND_LABELS, PLANES, PLANE_LABELS, addBody, addParam, addPoint, cellText, className, defaultFor, formulaNames, isFormula, keyProblem, parseCell, parseValue, removeBody,
   removeParam, removePoint, renameKey, setBody, setBodyOptional, setOffset, setParam, setPoint, sizeOf, valuesOf, wireframe,
   type Cell, type FamilyDef, type PreviewBody,
 } from './familyModel';
@@ -62,7 +62,7 @@ export function Wireframe({ bodies, width = 300, height = 190 }: { bodies: Previ
   );
 }
 
-export function FamilyEditor({ def, onChange }: { def: FamilyDef; onChange: (d: FamilyDef) => void }) {
+export function FamilyEditor({ def, onChange, onEditSketch }: { def: FamilyDef; onChange: (d: FamilyDef) => void; onEditSketch?: (sketchId: string) => void }) {
   const [typed, setTyped] = useState<Record<string, string>>({});
   const [shown, setShown] = useState<{ bodies: PreviewBody[] } | { error: string } | null>(null);
   const values = useMemo(() => valuesOf(def, typed, (t) => parseLength(t)), [def, typed]);
@@ -139,13 +139,19 @@ export function FamilyEditor({ def, onChange }: { def: FamilyDef; onChange: (d: 
         <section className="fam-body" key={bi} data-fam-body={bi}>
           <div className="row wrap">
             <input value={b.name} style={{ width: 140 }} aria-label={tr('Name')} data-no-i18n data-fam-body-name={bi} onChange={(e) => onChange(setBody(def, bi, { name: e.target.value }))} />
-            <select value={b.plane} aria-label={tr('Plane')} data-fam-plane={bi} onChange={(e) => onChange(setBody(def, bi, { plane: e.target.value as typeof b.plane }))}>
-              {PLANES.map((p) => <option key={p} value={p}>{PLANE_LABELS[p]}</option>)}</select>
+            {!isSketchBody(b) && <select value={b.plane} aria-label={tr('Plane')} data-fam-plane={bi} onChange={(e) => onChange(setBody(def, bi, { plane: e.target.value as typeof b.plane }))}>
+              {PLANES.map((p) => <option key={p} value={p}>{PLANE_LABELS[p]}</option>)}</select>}
             <span className="grow" />
             <button type="button" className="icon mini" title="Remove the body" disabled={def.bodies.length < 2} onClick={() => onChange(removeBody(def, bi))}><X size={12} /></button>
           </div>
           <div className="fam-body-grid">
-            <div>
+            {isSketchBody(b) ? (
+              <div className="fam-sketch-body" data-fam-sketch-body={bi}>
+                <p><span>Drawn from sketch</span> <b data-no-i18n>{bodySketchName(def, b)}</b></p>
+                <p className="muted small">Its outline is that sketch's: it is edited in the part's edit mode, with its constraints.</p>
+                {onEditSketch && <button type="button" className="btn small" data-field="fam-edit-sketch" onClick={() => onEditSketch(b.sketch!)}>Edit the sketch in the part</button>}
+              </div>
+            ) : <div>
               <table className="layer-table fam-table">
                 <thead><tr><th>#</th><th>x</th><th>y</th><th /></tr></thead>
                 <tbody>
@@ -162,11 +168,11 @@ export function FamilyEditor({ def, onChange }: { def: FamilyDef; onChange: (d: 
                   ))}
                 </tbody>
               </table>
-            </div>
+            </div>}
             <dl className="fields fam-fields">
               <dt>Depth</dt><dd><CellInput value={b.depth} label={tr('Depth')} width={110} onCommit={(t) => onChange(setBody(def, bi, { depth: parseCell(t) }))} /></dd>
-              <dt>Offset x, y, z</dt>
-              <dd className="row">{([0, 1, 2] as const).map((a) => <CellInput key={a} value={b.offset?.[a] ?? 0} label={`${tr('Offset')} ${'xyz'[a]}`} width={62} onCommit={(t) => onChange(setOffset(def, bi, a, t))} />)}</dd>
+              {!isSketchBody(b) && <><dt>Offset x, y, z</dt>
+              <dd className="row">{([0, 1, 2] as const).map((a) => <CellInput key={a} value={b.offset?.[a] ?? 0} label={`${tr('Offset')} ${'xyz'[a]}`} width={62} onCommit={(t) => onChange(setOffset(def, bi, a, t))} />)}</dd></>}
               <dt>Made when</dt>
               <dd><input className="mono fam-cell" style={{ width: 170 }} placeholder="HasShelf, W > 1.2" value={b.when ?? ''} spellCheck={false} data-no-i18n data-fam-when={bi}
                 onChange={(e) => onChange(setBodyOptional(def, bi, 'when', e.target.value))} /></dd>

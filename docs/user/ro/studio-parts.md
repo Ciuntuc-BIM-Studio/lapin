@@ -39,6 +39,37 @@ Panoul din stânga vederii arată din ce e făcută piesa și se citește din no
 - **Pași** listează din ce e făcută piesa, în ordine: operația ei sau corpurile, apoi pașii făcuți asupra ei (împinge/trage, racordare, golire, împărțire…). Un pas oprit apare cenușiu; un corp făcut doar când se îndeplinește o condiție o arată (*oprit când nu HasShelf*). La pașii făcuți asupra piesei, butoanele pornesc sau opresc pasul, îl mută mai devreme sau mai târziu ori îl scot. Un clic pe numele unui pas arată piesa în Proprietăți, unde se editează numerele lui.
 - **Parametri** listează fiecare parametru cu valoarea, unitatea, valoarea implicită și dacă ține de fiecare obiect (*instanță*) și este *publicat*. Scrie o valoare nouă și apasă Enter: obiectul piesei o urmează. Un parametru diferit de cel implicit apare îngroșat. Marcajele se pot doar citi deocamdată; devin editabile când parametrii primesc formule.
 
+## Constrânge piesa: schițele proprii ale piesei
+
+O piesă ale cărei corpuri sunt scrise ca colțuri (`[W, D]`, `[W - L, L]`…) poate deveni o piesă cu **schițe proprii**. În arborele piesei apasă **Constrânge piesa** (și în secțiunea **Piesă** din Proprietăți). Conturul fiecărui corp devine o schiță pe planul lui, fiecare colț ținut de cote orizontale și verticale care poartă aceleași formule, așa că piesa își păstrează exact forma și volumul. Arborele listează apoi schițele, cu cât de libere sunt, iar butonul dispare. Este un singur pas de anulare.
+
+![Arborele după Constrânge piesa: schițele piesei, fiecare complet constrânsă](shots/studio-part-constrained.webp)
+
+## Editarea schiței unei piese
+
+Dă clic pe o schiță a piesei din arbore (sau dublu clic pe piesă în modul ei de editare, care deschide prima schiță cu un corp). Schița se editează **pe loc**:
+
+- camera 3D se întoarce să privească drept spre planul schiței, cu o mișcare lină, și revine unde era când ieși;
+- restul piesei rămâne estompat în spate, iar schița este desenată peste vedere: formele ei colorate după cât de libere sunt (albastru liber, închis complet ținut, roșu în conflict), glifele constrângerilor și cotele;
+- bara de jos numește schița, spune câte **grade de libertate** mai are și ține uneltele.
+
+![Schița unei piese editată pe loc: camera drept spre plan, formele, glifele și bara de unelte](shots/studio-part-sketch.webp)
+
+- **Mută un punct** trăgându-l de mânerul pătrat: motorul rezolvă constrângerile în timp ce tragi și arată rezultatul pe loc; dacă mutarea nu e posibilă, spune de ce. O tragere este un singur pas de anulare.
+- **Desenează**: **Linie**, **Dreptunghi**, **Cerc** și **Arc (3 puncte)** în bară. Dă clic pe puncte; un punct aproape de unul existent se lipește de el. Fiecare formă este un pas de anulare, iar formele deja existente își păstrează identitatea, deci constrângerile lor rămân. **Șterge** scoate forma pe care dai clic (sau selectează o formă și apasă Delete). Esc lasă unealta jos.
+- **Constrângeri**: aceleași unelte ca la schița unui plan (Coincident, Orizontal, Egal, Fixează… și cotele), alese pe această schiță. Dublu clic pe o cotă îi schimbă valoarea, sau scrie `=` și o formulă din parametrii piesei (`=W - 2*L`): piesa o urmează, în fiecare obiect al ei. Vezi [Constrângerile schiței](sketch-constraints.md).
+
+![O linie adăugată cu unealta Linie](shots/studio-part-sketch-line.webp)
+
+Ieși cu **Termină schița**, cu **Esc** (după ce unealta e jos) sau cu **Tab**: ești înapoi în modul de editare al piesei, iar camera e cum era.
+
+## Schițe și corpuri în arbore
+
+- **+ Schiță** adaugă o schiță pe planul ales (sus, față sau dreapta). Lângă fiecare schiță a piesei sunt butoane pentru a o redenumi și a o șterge (corpurile desenate din ea pleacă odată cu ea).
+- **+ Corp din schiță** face un corp din forma închisă a unei schițe: alege schița și scrie **adâncimea** lui, o lungime sau o formulă din parametri (`=H - T`). Sub pasul corpului din arbore se pot schimba adâncimea și condiția *făcut când*, iar corpul se poate scoate.
+
+În dialogul Familii, un corp desenat dintr-o schiță spune *Desenat din schița* urmat de numele schiței, în loc de un tabel de colțuri: schița se editează în piesă, cu **Editează schița în piesă** (are nevoie de un obiect al piesei în proiect).
+
 ## Mai departe
 
 Pagina Studio spune cum modelezi solide, iar pagina Familii cum fac parametrii și formulele o piesă.

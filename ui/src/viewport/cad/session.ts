@@ -50,6 +50,8 @@ export interface CadHost {
   inRegion?(takes: RegionTest): string[];
   /** Where a section's or an elevation's point lies in the model (decision 453: element.transform carries the model's elements by it); none in a plan. */
   frameAt?(at: Vec2): ViewFrame | null;
+  /** A constraint put on this host's shapes by its own command (a part's own sketch in the edit mode: `studio.partSketchAddConstraint`), instead of `studio.addConstraint` on the view. */
+  addConstraint?(kind: string, refs: { shape: string; part: string }[], extra: { value?: number; formula?: string; driving?: boolean }): Promise<boolean>;
 }
 
 type Next = Step | null | void | Promise<Step | null | void>;

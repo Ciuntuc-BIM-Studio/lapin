@@ -3,6 +3,24 @@
 import type { Language } from './index';
 
 export const PT: Record<string, string> = {
+  // Editing a part's own sketch in place (decision 520)
+  "Constrain part": "Restringir a peça",
+  "Body from sketch": "Corpo a partir de esboço",
+  "Rename the sketch": "Renomear o esboço",
+  "Remove the sketch (and the bodies drawn from it)": "Remover o esboço (e os corpos desenhados a partir dele)",
+  "Drawn from sketch": "Desenhado a partir do esboço",
+  "Its outline is that sketch's: it is edited in the part's edit mode, with its constraints.": "O seu contorno é o desse esboço: edita-se no modo de edição da peça, com as suas restrições.",
+  "Edit the sketch in the part": "Editar o esboço na peça",
+  "The corners of its bodies become a sketch of the part's own, each dimension a formula of the parameters": "Os cantos dos seus corpos passam a ser um esboço próprio da peça, cada cota uma fórmula dos parâmetros",
+  "A length, or =formula of the parameters": "Um comprimento, ou =fórmula dos parâmetros",
+  "Sketch tools": "Ferramentas de esboço",
+  "Back to the part (Esc)": "Voltar à peça (Esc)",
+  "Arc (3 points)": "Arco (3 pontos)",
+  "Click a shape to delete it": "Clique numa forma para a apagar",
+  "Those points make no shape.": "Esses pontos não formam nenhuma forma.",
+  "That sketch is not one of the part's own: use Constrain part first.": "Esse esboço não é próprio da peça: use primeiro Restringir a peça.",
+  "Place the part first: its sketch is edited in the part's edit mode, on an object.": "Coloque primeiro a peça: o seu esboço edita-se no modo de edição da peça, num objeto.",
+  "Type the body's depth: a length, or =formula.": "Escreva a profundidade do corpo: um comprimento ou =fórmula.",
   // Decision 536: a graph's palette, its tool in My tools, groups
   "Open the graph in the Graphs panel": "Abrir o grafo no painel Grafos",
   "This graph has no inputs yet: add Number, Choice, Storey or other input nodes in the Graphs panel, and they become its fields here.": "Este grafo ainda não tem entradas: adicione nós Número, Escolha, Piso ou outros nós de entrada no painel Grafos, e passam a ser os seus campos aqui.",

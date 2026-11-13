@@ -3,6 +3,24 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  // Editing a part's own sketch in place (decision 520)
+  "Constrain part": "Begræns delen",
+  "Body from sketch": "Legeme fra skitse",
+  "Rename the sketch": "Omdøb skitsen",
+  "Remove the sketch (and the bodies drawn from it)": "Fjern skitsen (og legemerne tegnet ud fra den)",
+  "Drawn from sketch": "Tegnet ud fra skitsen",
+  "Its outline is that sketch's: it is edited in the part's edit mode, with its constraints.": "Dets kontur er den skitses: den redigeres i delens redigeringstilstand, med sine begrænsninger.",
+  "Edit the sketch in the part": "Rediger skitsen i delen",
+  "The corners of its bodies become a sketch of the part's own, each dimension a formula of the parameters": "Hjørnerne på dets legemer bliver til en skitse, der hører til delen, hvert mål en formel af parametrene",
+  "A length, or =formula of the parameters": "En længde eller =formel af parametrene",
+  "Sketch tools": "Skitseværktøjer",
+  "Back to the part (Esc)": "Tilbage til delen (Esc)",
+  "Arc (3 points)": "Bue (3 punkter)",
+  "Click a shape to delete it": "Klik på en form for at slette den",
+  "Those points make no shape.": "De punkter danner ingen form.",
+  "That sketch is not one of the part's own: use Constrain part first.": "Den skitse hører ikke til delen: brug først Begræns delen.",
+  "Place the part first: its sketch is edited in the part's edit mode, on an object.": "Placér først delen: dens skitse redigeres i delens redigeringstilstand, på et objekt.",
+  "Type the body's depth: a length, or =formula.": "Skriv legemets dybde: en længde eller =formel.",
   // Decision 536: a graph's palette, its tool in My tools, groups
   "Open the graph in the Graphs panel": "Åbn grafen i panelet Grafer",
   "This graph has no inputs yet: add Number, Choice, Storey or other input nodes in the Graphs panel, and they become its fields here.": "Grafen har endnu ingen input: tilføj noder som Tal, Valg, Etage eller andre inputnoder i panelet Grafer, så bliver de dens felter her.",

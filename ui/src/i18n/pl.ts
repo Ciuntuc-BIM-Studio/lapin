@@ -3,6 +3,24 @@
 import type { Language } from './index';
 
 export const PL: Record<string, string> = {
+  // Editing a part's own sketch in place (decision 520)
+  "Constrain part": "Zwiąż część więzami",
+  "Body from sketch": "Bryła ze szkicu",
+  "Rename the sketch": "Zmień nazwę szkicu",
+  "Remove the sketch (and the bodies drawn from it)": "Usuń szkic (i bryły narysowane z niego)",
+  "Drawn from sketch": "Narysowana ze szkicu",
+  "Its outline is that sketch's: it is edited in the part's edit mode, with its constraints.": "Jej kontur jest konturem tego szkicu: edytuje się go w trybie edycji części, z jego więzami.",
+  "Edit the sketch in the part": "Edytuj szkic w części",
+  "The corners of its bodies become a sketch of the part's own, each dimension a formula of the parameters": "Narożniki jej brył stają się własnym szkicem części, każdy wymiar to wzór parametrów",
+  "A length, or =formula of the parameters": "Długość lub =wzór parametrów",
+  "Sketch tools": "Narzędzia szkicu",
+  "Back to the part (Esc)": "Wróć do części (Esc)",
+  "Arc (3 points)": "Łuk (3 punkty)",
+  "Click a shape to delete it": "Kliknij kształt, aby go usunąć",
+  "Those points make no shape.": "Te punkty nie tworzą żadnego kształtu.",
+  "That sketch is not one of the part's own: use Constrain part first.": "Ten szkic nie należy do części: najpierw użyj Zwiąż część więzami.",
+  "Place the part first: its sketch is edited in the part's edit mode, on an object.": "Najpierw umieść część: jej szkic edytuje się w trybie edycji części, na obiekcie.",
+  "Type the body's depth: a length, or =formula.": "Wpisz głębokość bryły: długość lub =wzór.",
   // Decision 536: a graph's palette, its tool in My tools, groups
   "Open the graph in the Graphs panel": "Otwórz graf w panelu Grafy",
   "This graph has no inputs yet: add Number, Choice, Storey or other input nodes in the Graphs panel, and they become its fields here.": "Ten graf nie ma jeszcze danych wejściowych: dodaj w panelu Grafy węzły Liczba, Wybór, Kondygnacja lub inne węzły wejściowe, a staną się tu jego polami.",

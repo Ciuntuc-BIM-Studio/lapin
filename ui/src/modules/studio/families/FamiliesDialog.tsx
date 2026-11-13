@@ -14,6 +14,7 @@ import { t as tr } from '../../../i18n';
 import { keepComputerFile } from '../../../platform/libraries';
 import { FirmFolderFiles } from '../../core/FirmFolderFiles';
 import { FamilyEditor } from './FamilyEditor';
+import { editPartSketchIn } from '../PartSketchEdit';
 import { createFamily, deleteFamily, exportFamily, familiesDialog, importFamily, updateFamily, useFamilies, usePlaceFamily } from './familyApi';
 import { blankFamily, normaliseFamily, quickProblem, sameDef, type FamilyDef } from './familyModel';
 import { freeName } from '../../core/titleBlocks/titleBlockModel';
@@ -148,7 +149,7 @@ export function FamiliesDialog() {
                     <span className="muted small">{current.uses > 0 ? `${current.uses} ${tr(current.uses === 1 ? 'object stands in the project' : 'objects stand in the project')}` : 'No object of it yet.'}</span>
                   </div>
                 )}
-                <FamilyEditor def={def} onChange={setDef} />
+                <FamilyEditor def={def} onChange={setDef} onEditSketch={current ? (sk) => void editPartSketchIn(current.id, sk) : undefined} />
               </>
             )}
           </main>

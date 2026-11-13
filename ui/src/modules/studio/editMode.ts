@@ -7,6 +7,7 @@
 import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
 import { useSession } from '../../engine/session';
+import { activePartSketch, sketchHooks } from './partSketchStore';
 import { doubleClickHandlers, enterScope, exitScope, tabHandlers, useScope, type Scope } from '../../platform/scope';
 
 /** The scope's kind: what the bar says it is editing. */
@@ -79,6 +80,8 @@ const inField = (): boolean => !!(document.activeElement as HTMLElement | null)?
 /** Tab and the double click, taken before the shell's. Registered once, when Studio loads. */
 export function registerEditMode(): void {
   tabHandlers.add(() => {
+    // Tab leaves a part's sketch for the part's edit mode (the sketch's own Esc does the same).
+    if (activePartSketch() && !inField()) { sketchHooks.leave(); return true; }
     const ui = useUi.getState();
     const scope = useScope.getState().scope;
     const intent = tabIntent({
@@ -91,6 +94,11 @@ export function registerEditMode(): void {
     return false;
   });
   doubleClickHandlers.add((id) => {
+    // A double click on the part in its edit mode opens its own sketch, when it has one (decision 520).
+    if (id && !useUi.getState().tool && editedPartId() === id && !activePartSketch() && useSession.getState().nodes.get(id)?.props.operation === 'part') {
+      void sketchHooks.openFor(id);
+      return true;
+    }
     if (useScope.getState().scope || useUi.getState().tool || !id) return false;
     return isEditable(useSession.getState().nodes.get(id)) && editPart(id);
   });

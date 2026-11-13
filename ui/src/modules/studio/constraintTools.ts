@@ -93,6 +93,11 @@ const scaleOf = () => Math.max(cadHost()?.pxPerMetre?.() ?? 100, 1e-6);
 async function apply(kind: string, picks: readonly Pick[], extra: { value?: number; formula?: string; driving?: boolean } = {}): Promise<boolean> {
   const host = cadHost();
   if (!host) return false;
+  if (host.addConstraint) {
+    const ok = await host.addConstraint(kind, picks.map((p) => p.ref), extra);
+    if (!ok) { const e = useSession.getState().error; if (e) cadLog(e); }
+    return ok;
+  }
   const r = await execute('studio.addConstraint', { viewId: host.viewId, kind, refs: picks.map((p) => p.ref), ...extra });
   if (!r) { const e = useSession.getState().error; if (e) cadLog(e); return false; }
   return true;

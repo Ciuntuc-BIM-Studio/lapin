@@ -10062,6 +10062,31 @@ export const scenes = [
       await width.press('Enter');
       await t.until(async () => Math.abs((await t.nodes()).find((n) => n.id === placed.id)?.props.values?.W - 1.6) < 1e-6, 'the width typed in the tree reaches the object');
       await t.shot('studio-part-tree', { of: '[data-testid=part-tree]', pad: 6 });
+      // Constrain part: the corners become sketches of the part's own, listed in the tree.
+      await tree.locator('[data-testid=constrain-part]').click();
+      await t.until(async () => (await tree.locator('[data-part-sketch]').count()) > 0 && (await tree.locator('[data-testid=constrain-part]').count()) === 0, 'Constrain part turns the corners into sketches of the part');
+      await t.shot('studio-part-constrained', { of: '[data-testid=part-tree]', pad: 6 });
+      // A click on a sketch edits it in place: the camera turns to its plane, the sketch is drawn over the view with its chip and tools.
+      await tree.locator('[data-part-sketch]').first().click();
+      const sketch = page.locator('[data-testid=part-sketch]');
+      await sketch.waitFor({ timeout: 10_000 });
+      await t.until(async () => (await page.locator('[data-testid=sketch-chip-text]').count()) === 1, 'the sketch shows how free it is');
+      await t.wait(1500);
+      await t.shot('studio-part-sketch', { of: '[data-testid=view3d]', pad: 0 });
+      // The Line tool: two clicks add a line to the sketch (the whole list goes to the engine, the others keep their ids).
+      const shapeCount = async () => (await t.call('doc.query', { name: 'studio.partTree', args: { id: placed.id } })).sketches.find((x) => x.local)?.shapes.length ?? 0;
+      const before = await shapeCount();
+      await page.locator('[data-part-sketch-tool=line]').click();
+      const box = await page.locator('[data-testid=part-sketch]').boundingBox();
+      await page.mouse.click(box.x + box.width * 0.58, box.y + box.height * 0.2);
+      await page.mouse.click(box.x + box.width * 0.78, box.y + box.height * 0.2);
+      await t.until(async () => (await shapeCount()) === before + 1, 'two clicks with the Line tool add a line to the sketch');
+      await t.shot('studio-part-sketch-line', { of: '[data-testid=view3d]', pad: 0 });
+      // Esc puts the tool down, Esc again leaves the sketch for the part's edit mode (the tree stays).
+      await t.keys('Escape');
+      await t.keys('Escape');
+      await t.until(async () => (await sketch.count()) === 0, 'Esc leaves the sketch');
+      t.expect((await tree.count()) === 1, 'the part is still in its edit mode');
       // Finish part: the model is shown again.
       await tree.locator('[data-testid=part-finish]').click();
       await t.until(async () => (await tree.count()) === 0, 'Finish part leaves the edit mode');

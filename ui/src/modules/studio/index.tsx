@@ -26,6 +26,7 @@ import { OperationsCard, hasTools } from './OperationsCard';
 import { RefPlaneSection } from './RefPlaneSection';
 import { editPart, finishPart, isEditable, registerEditMode } from './editMode';
 import { EditPartSection, PartPlane3D, PartTreePanel } from './PartTree';
+import { PartSketch3D } from './PartSketchEdit';
 import { ConstraintOverlay } from './ConstraintOverlay';
 import { SketchChip } from './SketchChip';
 import { constraintTool, DIMENSIONS, GEOMETRIC } from './constraintTools';
@@ -819,7 +820,7 @@ const studio: LapinModule = {
   overlays: [PartTreePanel, SketchChip],
   planOverlays: [ConstraintOverlay],
   drawingOverlays: [ConstraintOverlay],
-  overlays3d: [PartPlane3D],
+  overlays3d: [PartPlane3D, PartSketch3D],
   grips: Object.fromEntries(SOLID_CLASSES.map((c) => [c, solidGrips])),
   references: Object.fromEntries(SOLID_CLASSES.map((c) => [c, solidRefs])),
 };

@@ -3,6 +3,24 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // Editing a part's own sketch in place (decision 520)
+  "Constrain part": "ຈຳກັດຊິ້ນສ່ວນ",
+  "Body from sketch": "ຕົວຖັນຈາກແຜນຮ່າງ",
+  "Rename the sketch": "ປ່ຽນຊື່ແຜນຮ່າງ",
+  "Remove the sketch (and the bodies drawn from it)": "ລຶບແຜນຮ່າງ (ແລະຕົວຖັນທີ່ແຕ້ມຈາກມັນ)",
+  "Drawn from sketch": "ແຕ້ມຈາກແຜນຮ່າງ",
+  "Its outline is that sketch's: it is edited in the part's edit mode, with its constraints.": "ຮູບຮ່າງຂອງມັນແມ່ນຂອງແຜນຮ່າງນັ້ນ: ແກ້ໄຂໃນໂໝດແກ້ໄຂຂອງຊິ້ນສ່ວນ, ພ້ອມຂໍ້ຈຳກັດຂອງມັນ.",
+  "Edit the sketch in the part": "ແກ້ໄຂແຜນຮ່າງໃນຊິ້ນສ່ວນ",
+  "The corners of its bodies become a sketch of the part's own, each dimension a formula of the parameters": "ແຈຂອງຕົວຖັນຂອງມັນກາຍເປັນແຜນຮ່າງຂອງຊິ້ນສ່ວນເອງ, ແຕ່ລະຂະໜາດເປັນສູດຂອງພາຣາມິເຕີ",
+  "A length, or =formula of the parameters": "ຄວາມຍາວ, ຫຼື =ສູດຂອງພາຣາມິເຕີ",
+  "Sketch tools": "ເຄື່ອງມືແຜນຮ່າງ",
+  "Back to the part (Esc)": "ກັບໄປຊິ້ນສ່ວນ (Esc)",
+  "Arc (3 points)": "ໂຄ້ງ (3 ຈຸດ)",
+  "Click a shape to delete it": "ຄລິກຮູບຮ່າງເພື່ອລຶບມັນ",
+  "Those points make no shape.": "ຈຸດເຫຼົ່ານັ້ນບໍ່ເປັນຮູບຮ່າງ.",
+  "That sketch is not one of the part's own: use Constrain part first.": "ແຜນຮ່າງນັ້ນບໍ່ແມ່ນຂອງຊິ້ນສ່ວນເອງ: ໃຊ້ ຈຳກັດຊິ້ນສ່ວນ ກ່ອນ.",
+  "Place the part first: its sketch is edited in the part's edit mode, on an object.": "ວາງຊິ້ນສ່ວນກ່ອນ: ແຜນຮ່າງຂອງມັນແກ້ໄຂໃນໂໝດແກ້ໄຂຂອງຊິ້ນສ່ວນ, ເທິງວັດຖຸ.",
+  "Type the body's depth: a length, or =formula.": "ພິມຄວາມເລິກຂອງຕົວຖັນ: ຄວາມຍາວ ຫຼື =ສູດ.",
   // Decision 536: a graph's palette, its tool in My tools, groups
   "Open the graph in the Graphs panel": "ເປີດກຣາບໃນແຜງກຣາບ",
   "This graph has no inputs yet: add Number, Choice, Storey or other input nodes in the Graphs panel, and they become its fields here.": "ກຣາບນີ້ຍັງບໍ່ມີຂໍ້ມູນປ້ອນ: ເພີ່ມໂນດຕົວເລກ, ການເລືອກ, ຊັ້ນ ຫຼື ໂນດປ້ອນອື່ນໆໃນແຜງກຣາບ, ແລ້ວພວກມັນຈະເປັນຊ່ອງຂອງມັນຢູ່ນີ້.",

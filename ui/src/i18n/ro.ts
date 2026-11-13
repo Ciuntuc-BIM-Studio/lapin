@@ -1,6 +1,24 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // Editing a part's own sketch in place (decision 520)
+  "Constrain part": "Constrânge piesa",
+  "Body from sketch": "Corp din schiță",
+  "Rename the sketch": "Redenumește schița",
+  "Remove the sketch (and the bodies drawn from it)": "Șterge schița (și corpurile desenate din ea)",
+  "Drawn from sketch": "Desenat din schița",
+  "Its outline is that sketch's: it is edited in the part's edit mode, with its constraints.": "Conturul lui este al acelei schițe: se editează în modul de editare al piesei, cu constrângerile ei.",
+  "Edit the sketch in the part": "Editează schița în piesă",
+  "The corners of its bodies become a sketch of the part's own, each dimension a formula of the parameters": "Colțurile corpurilor devin o schiță proprie a piesei, fiecare cotă o formulă a parametrilor",
+  "A length, or =formula of the parameters": "O lungime sau =formulă a parametrilor",
+  "Sketch tools": "Unelte de schiță",
+  "Back to the part (Esc)": "Înapoi la piesă (Esc)",
+  "Arc (3 points)": "Arc (3 puncte)",
+  "Click a shape to delete it": "Dă clic pe o formă ca s-o ștergi",
+  "Those points make no shape.": "Punctele acelea nu fac nicio formă.",
+  "That sketch is not one of the part's own: use Constrain part first.": "Schița aceea nu este a piesei: folosește întâi Constrânge piesa.",
+  "Place the part first: its sketch is edited in the part's edit mode, on an object.": "Plasează întâi piesa: schița ei se editează în modul de editare al piesei, pe un obiect.",
+  "Type the body's depth: a length, or =formula.": "Scrie adâncimea corpului: o lungime sau =formulă.",
   // Decision 536: a graph's palette, its tool in My tools, groups
   "Open the graph in the Graphs panel": "Deschide graful în panoul Grafuri",
   "This graph has no inputs yet: add Number, Choice, Storey or other input nodes in the Graphs panel, and they become its fields here.": "Graful nu are încă intrări: adaugă noduri Număr, Alegere, Nivel sau alte noduri de intrare în panoul Grafuri și devin câmpurile lui aici.",

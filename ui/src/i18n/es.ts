@@ -3,6 +3,24 @@
 import type { Language } from './index';
 
 export const ES: Record<string, string> = {
+  // Editing a part's own sketch in place (decision 520)
+  "Constrain part": "Restringir pieza",
+  "Body from sketch": "Cuerpo desde boceto",
+  "Rename the sketch": "Renombrar el boceto",
+  "Remove the sketch (and the bodies drawn from it)": "Quitar el boceto (y los cuerpos dibujados con él)",
+  "Drawn from sketch": "Dibujado desde el boceto",
+  "Its outline is that sketch's: it is edited in the part's edit mode, with its constraints.": "Su contorno es el de ese boceto: se edita en el modo de edición de la pieza, con sus restricciones.",
+  "Edit the sketch in the part": "Editar el boceto en la pieza",
+  "The corners of its bodies become a sketch of the part's own, each dimension a formula of the parameters": "Las esquinas de sus cuerpos pasan a ser un boceto propio de la pieza, cada cota una fórmula de los parámetros",
+  "A length, or =formula of the parameters": "Una longitud, o =fórmula de los parámetros",
+  "Sketch tools": "Herramientas de boceto",
+  "Back to the part (Esc)": "Volver a la pieza (Esc)",
+  "Arc (3 points)": "Arco (3 puntos)",
+  "Click a shape to delete it": "Haz clic en una forma para borrarla",
+  "Those points make no shape.": "Esos puntos no forman ninguna forma.",
+  "That sketch is not one of the part's own: use Constrain part first.": "Ese boceto no es propio de la pieza: usa primero Restringir pieza.",
+  "Place the part first: its sketch is edited in the part's edit mode, on an object.": "Coloca primero la pieza: su boceto se edita en el modo de edición de la pieza, sobre un objeto.",
+  "Type the body's depth: a length, or =formula.": "Escribe la profundidad del cuerpo: una longitud o =fórmula.",
   // Decision 536: a graph's palette, its tool in My tools, groups
   "Open the graph in the Graphs panel": "Abrir el grafo en el panel Grafos",
   "This graph has no inputs yet: add Number, Choice, Storey or other input nodes in the Graphs panel, and they become its fields here.": "Este grafo aún no tiene entradas: añade nodos Número, Elección, Planta u otros nodos de entrada en el panel Grafos y serán sus campos aquí.",

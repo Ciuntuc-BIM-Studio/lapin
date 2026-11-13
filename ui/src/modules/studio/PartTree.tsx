@@ -21,7 +21,10 @@ import type { NodeDto } from '../../engine/protocol';
 import { editedPartId, editPart, finishPart } from './editMode';
 import { editFamily } from './families/FamilyTools';
 import { editSketch } from './sketch';
-import { chipOf } from '../../viewport/cad/constraints';
+import { AddBody, AddSketch, BodyControls, ConstrainPartButton, LocalSketchActions } from './PartSketchTree';
+import { enterPartSketch } from './PartSketchEdit';
+import { chipOf, type SketchStatus } from '../../viewport/cad/constraints';
+import { statusOf } from './partSketchModel';
 import { refreshSketch, useSketch } from '../../viewport/cad/sketchStore';
 import { PLANE_LABELS, paramRows, planeCorners, sketchRows, stepRows, type ParamRow, type PartPlane, type PartTree, type SketchRow } from './partTreeModel';
 
@@ -29,7 +32,7 @@ import { PLANE_LABELS, paramRows, planeCorners, sketchRows, stepRows, type Param
 export const usePartPlane = create<{ hover: PartPlane | null; pinned: PartPlane | null }>(() => ({ hover: null, pinned: null }));
 
 /** The tree of the part being edited, asked again as the model changes. */
-function usePartTree(id: string | null): PartTree | null {
+export function usePartTree(id: string | null): PartTree | null {
   const version = useSession((s) => s.version);
   const [tree, setTree] = useState<PartTree | null>(null);
   useEffect(() => { setTree(null); }, [id]);
@@ -63,7 +66,8 @@ function ParamValue({ id, p }: { id: string; p: ParamRow }) {
 const shownDefault = (p: ParamRow): string => (p.kind === 'bool' ? (p.default ? 'yes' : 'no') : p.kind === 'length' ? formatLength(p.default) : String(Math.round(p.default * 1e6) / 1e6));
 
 function openSketch(tree: PartTree, row: SketchRow): void {
-  if (row.opens === 'view') {
+  if (row.opens === 'sketch') void enterPartSketch(tree.id, row.id);
+  else if (row.opens === 'view') {
     // The sketch lives on its view, where the part's own isolation would hold its shapes out of reach: the edit mode ends, as the sketch opens.
     void finishPart().then(() => editSketch(tree.id));
   } else if (row.opens === 'body' && tree.partTypeId) editFamily(tree.partTypeId);
@@ -111,9 +115,13 @@ export function PartTreePanel() {
                   <button type="button" className="link" data-part-sketch={s.id} onClick={() => openSketch(tree, s)}><PenTool size={12} /><span data-no-i18n>{s.label}</span></button>
                   <span className="muted small" data-no-i18n>{s.plane}</span>
                   {s.viewId && !s.missing && <SketchState viewId={s.viewId} />}
+                  {s.local && <span className="muted small" data-testid="part-sketch-dof">{chipOf(statusOf(tree.sketches.find((x) => x.id === s.id)!) as SketchStatus).text}</span>}
+                  {s.local && <><span className="grow" /><LocalSketchActions partId={id} sketch={tree.sketches.find((x) => x.id === s.id)!} /></>}
                 </li>
               ))}
             </ul>
+            <ConstrainPartButton tree={tree} />
+            <AddSketch partId={id} />
           </div>
           <div className="part-section">
             <div className="part-title">Steps</div>
@@ -129,9 +137,11 @@ export function PartTreePanel() {
                     <button type="button" className="icon mini" title="Later" disabled={!s.canDown} onClick={() => void execute('studio.moveFeature', { id, index: s.feature, to: s.feature! + 1 })}><ArrowDown size={11} /></button>
                     <button type="button" className="icon mini" title="Remove the step" disabled={!s.canRemove} onClick={() => void execute('studio.removeFeature', { id, index: s.feature })}><Trash2 size={11} /></button>
                   </>}
+                  {s.sketch && tree.sketches.some((x) => x.local && x.id === s.sketch) && <BodyControls tree={tree} step={s} />}
                 </li>
               ))}
             </ol>
+            <AddBody tree={tree} />
           </div>
           <div className="part-section">
             <div className="part-title">Parameters</div>
@@ -193,10 +203,12 @@ export function PartPlane3D({ camera, canvas }: Overlay3DProps) {
 /** Properties of a Studio solid: the way into the part's edit mode (Tab, or a double click in 3D). */
 export function EditPartSection({ node }: { node: NodeDto }) {
   const editing = editedPartId(useScope((s) => s.scope)) === node.id;
+  const tree = usePartTree(node.props.operation === 'part' ? node.id : null);
   return (
     <dl className="fields" data-section="edit-part">
       <dt />
       <dd>
+        <ConstrainPartButton tree={tree} className="btn small constrain-part" />
         {editing
           ? <button type="button" data-field="finish-part" onClick={() => void finishPart()}><CircleCheckBig size={13} /> Finish part</button>
           : <button type="button" data-field="edit-part" title="Tab, or a double click on it in 3D" onClick={() => editPart(node.id)}><PencilRuler size={13} /> Edit part</button>}

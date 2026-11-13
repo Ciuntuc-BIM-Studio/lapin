@@ -14,14 +14,28 @@ import { execute, useSession } from '../../engine/session';
 import { lengthText, parseLength } from '../../engine/unitsStore';
 import {
   constraintState, dimensionDraw, dimensionText, freePoints, glyphAnchor, GLYPHS, isDimension, parseDimensionInput, placeAt, pointOf, shapeStates, spreadGlyphs,
-  type ConstraintDto, type DimensionPlace,
+  type ConstraintDto, type DimensionPlace, type SketchStatus,
 } from '../../viewport/cad/constraints';
 import { useCad } from '../../viewport/cad/session';
 import { fromJson, polylines, type Shape } from '../../viewport/cad/shapes';
 import { refreshSketch, useSketch } from '../../viewport/cad/sketchStore';
 import { constraintCommandOn } from './constraintTools';
 
+/**
+ * A sketch the overlay draws that is not a view's drafted shapes: a part's own sketch in its edit mode. Its shapes, constraints and
+ * status are given, and the two edits the overlay makes (a dimension's value, removing constraints) go through its own commands.
+ */
+export interface LocalSource {
+  key: string;
+  shapes: { id: string; shape: Shape }[];
+  constraints: ConstraintDto[];
+  status: SketchStatus | null;
+  update(args: Record<string, unknown>): Promise<unknown>;
+  remove(ids: string[]): Promise<unknown>;
+}
+
 interface Props {
+  local?: LocalSource;
   toScreen: (p: Vec2) => { x: number; y: number };
   /** An SVG point (pixels from the view's top left) as a view point: where a dragged dimension goes. */
   toWorld?: (x: number, y: number) => Vec2;
@@ -52,7 +66,7 @@ function Glyph({ c, x, y, selected, state, hit }: { c: ConstraintDto; x: number;
 const textOf = (c: ConstraintDto) => dimensionText(c, lengthText);
 
 /** The value typed in place: a number with its unit, or =formula. */
-function EditField({ c, x, y, done }: { c: ConstraintDto; x: number; y: number; done: () => void }) {
+function EditField({ c, x, y, done, update }: { c: ConstraintDto; x: number; y: number; done: () => void; update: (args: Record<string, unknown>) => Promise<unknown> }) {
   const initial = c.formula ? `=${c.formula}` : c.kind === 'angle' ? String(c.value ?? c.measured ?? '') : lengthText(c.value ?? c.measured ?? 0);
   const [text, setText] = useState(initial);
   const input = useRef<HTMLInputElement>(null);
@@ -61,7 +75,7 @@ function EditField({ c, x, y, done }: { c: ConstraintDto; x: number; y: number; 
     const r = parseDimensionInput(text, c.kind, parseLength);
     if ('error' in r) { useSession.setState({ error: r.error }); return; }
     done();
-    void execute('studio.updateConstraint', { id: c.id, ...('formula' in r ? { formula: r.formula } : { value: r.value }), driving: true });
+    void update({ id: c.id, ...('formula' in r ? { formula: r.formula } : { value: r.value }), driving: true });
   };
   return (
     <foreignObject x={x - 60} y={y - 13} width={120} height={26} data-overlay-hit style={{ pointerEvents: 'all' }}>
@@ -75,11 +89,13 @@ function EditField({ c, x, y, done }: { c: ConstraintDto; x: number; y: number; 
 const DRAG_PX = 4;
 
 /** The sketch overlay of the view this is drawn in. */
-export function ConstraintOverlay({ toScreen, toWorld, scale, view }: Props) {
-  const viewId = view.id ?? (view.storeyId ? `plan:${view.storeyId}` : null);
+export function ConstraintOverlay({ local, toScreen, toWorld, scale, view }: Props) {
+  const viewId = local ? local.key : view.id ?? (view.storeyId ? `plan:${view.storeyId}` : null);
+  const update = (args: Record<string, unknown>) => (local ? local.update(args) : execute('studio.updateConstraint', args));
   const nodes = useSession((s) => s.nodes);
   const version = useSession((s) => s.version);
-  const sketch = useSketch((s) => (viewId ? s.views[viewId] : undefined));
+  const stored = useSketch((s) => (viewId && !local ? s.views[viewId] : undefined));
+  const sketch = local ? { constraints: local.constraints, status: local.status } : stored;
   const hidden = useSketch((s) => (viewId ? !!s.hidden[viewId] : false));
   const { selected, editing, preview } = useSketch();
   const command = useCad((s) => s.command);
@@ -89,12 +105,12 @@ export function ConstraintOverlay({ toScreen, toWorld, scale, view }: Props) {
 
   // The engine's answer, asked again after each change of the model.
   useEffect(() => {
-    if (!viewId) return;
+    if (!viewId || local) return;
     useSketch.setState({ shown: viewId });
     const t = setTimeout(() => void refreshSketch(viewId), 40);
     return () => clearTimeout(t);
-  }, [viewId, version]);
-  useEffect(() => () => { useSketch.setState((s) => (s.shown === viewId ? { shown: null } : s)); }, [viewId]);
+  }, [viewId, version, local]);
+  useEffect(() => () => { if (!local) useSketch.setState((s) => (s.shown === viewId ? { shown: null } : s)); }, [viewId, local]);
 
   // Delete takes the selected constraints off; Escape lets go; a press elsewhere lets go too.
   useEffect(() => {
@@ -103,17 +119,19 @@ export function ConstraintOverlay({ toScreen, toWorld, scale, view }: Props) {
       if ((e.target as HTMLElement | null)?.closest?.('input, textarea, select')) return;
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault(); e.stopImmediatePropagation();
-        void execute('studio.removeConstraint', { ids: useSketch.getState().selected });
+        const ids = useSketch.getState().selected;
+        void (local ? local.remove(ids) : execute('studio.removeConstraint', { ids }));
       } else if (e.key === 'Escape') useSketch.setState({ selected: [] });
     };
     const press = (e: PointerEvent) => { if (!(e.target instanceof Element) || !e.target.closest('[data-constraint]')) useSketch.setState({ selected: [] }); };
     window.addEventListener('keydown', key, true);
     window.addEventListener('pointerdown', press, true);
     return () => { window.removeEventListener('keydown', key, true); window.removeEventListener('pointerdown', press, true); };
-  }, [selected.length]);
+  }, [selected.length, local]);
 
   /** The view's drafted shapes, as the model has them now. */
   const drafts = useMemo(() => {
+    if (local) return local.shapes;
     const out: { id: string; shape: Shape }[] = [];
     if (!viewId) return out;
     for (const n of nodes.values()) {
@@ -122,7 +140,7 @@ export function ConstraintOverlay({ toScreen, toWorld, scale, view }: Props) {
       if (s) out.push({ id: n.id, shape: s });
     }
     return out;
-  }, [nodes, viewId]);
+  }, [nodes, viewId, local]);
 
   const constraints = sketch?.constraints ?? [];
   const status = sketch?.status ?? null;
@@ -163,7 +181,7 @@ export function ConstraintOverlay({ toScreen, toWorld, scale, view }: Props) {
     const up = () => {
       window.removeEventListener('pointermove', move, true);
       window.removeEventListener('pointerup', up, true);
-      if (moved && last) void execute('studio.updateConstraint', { id: c.id, place: last }).finally(() => setDrag(null));
+      if (moved && last) void update({ id: c.id, place: last }).finally(() => setDrag(null));
       else setDrag(null);
     };
     window.addEventListener('pointermove', move, true);
@@ -198,7 +216,7 @@ export function ConstraintOverlay({ toScreen, toWorld, scale, view }: Props) {
           <g key={c.id} className={cls} data-constraint={c.id} data-kind={c.kind}>
             {d.lines.map((l, i) => <polyline key={i} className="sk-dim-line" points={pts(l, toScreen)} />)}
             {hit && d.lines.length === 3 && <polyline className="sk-dim-grab" data-overlay-hit points={pts(d.lines[2], toScreen)} onPointerDown={press(c)} />}
-            {editing === c.id ? <EditField c={c} x={t.x} y={t.y} done={() => useSketch.setState({ editing: null })} /> : (
+            {editing === c.id ? <EditField c={c} x={t.x} y={t.y} update={update} done={() => useSketch.setState({ editing: null })} /> : (
               <g data-overlay-hit style={{ pointerEvents: hit ? 'all' : 'none' }}
                 onPointerDown={press(c)}
                 onDoubleClick={() => useSketch.setState({ editing: c.id, selected: [c.id] })}>

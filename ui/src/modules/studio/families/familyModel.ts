@@ -204,13 +204,22 @@ export function renameKey(def: FamilyDef, oldKey: string, newKey: string): Famil
   };
 }
 
+/** A body drawn from one of the part's own sketches (not corners of its own): read-only in the family editor, edited in the part's edit mode. */
+export const isSketchBody = (b: FBody): boolean => typeof b.sketch === 'string' && b.sketch !== '';
+
+/** The name of the sketch a body is drawn from (its id when the sketch has no name). */
+export function bodySketchName(def: FamilyDef, b: FBody): string {
+  const sk = (def.sketches ?? []).find((s) => !!s && typeof s === 'object' && (s as { id?: unknown }).id === b.sketch) as { name?: unknown } | undefined;
+  return typeof sk?.name === 'string' && sk.name ? sk.name : b.sketch ?? '';
+}
+
 /** The names a formula may use: the parameters' keys. */
 export const formulaNames = (def: FamilyDef): string[] => def.params.map((p) => p.key).filter(Boolean);
 
 /** What would make the family refused before the engine is asked: a body needs three corners, and the family one body. */
 export function quickProblem(def: FamilyDef): string | null {
   if (def.bodies.length === 0) return 'A family has one body at least.';
-  const b = def.bodies.find((x) => x.points.length < 3);
+  const b = def.bodies.find((x) => !isSketchBody(x) && x.points.length < 3);
   return b ? `${b.name || 'A body'}: an outline needs three corners at least.` : null;
 }
 

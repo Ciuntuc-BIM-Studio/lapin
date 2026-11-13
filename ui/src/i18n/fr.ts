@@ -3,6 +3,24 @@
 import type { Language } from './index';
 
 export const FR: Record<string, string> = {
+  // Editing a part's own sketch in place (decision 520)
+  "Constrain part": "Contraindre la pièce",
+  "Body from sketch": "Corps depuis une esquisse",
+  "Rename the sketch": "Renommer l'esquisse",
+  "Remove the sketch (and the bodies drawn from it)": "Supprimer l'esquisse (et les corps dessinés à partir d'elle)",
+  "Drawn from sketch": "Dessiné depuis l'esquisse",
+  "Its outline is that sketch's: it is edited in the part's edit mode, with its constraints.": "Son contour est celui de cette esquisse : elle se modifie dans le mode d'édition de la pièce, avec ses contraintes.",
+  "Edit the sketch in the part": "Modifier l'esquisse dans la pièce",
+  "The corners of its bodies become a sketch of the part's own, each dimension a formula of the parameters": "Les coins de ses corps deviennent une esquisse propre à la pièce, chaque cote une formule des paramètres",
+  "A length, or =formula of the parameters": "Une longueur, ou =formule des paramètres",
+  "Sketch tools": "Outils d'esquisse",
+  "Back to the part (Esc)": "Retour à la pièce (Échap)",
+  "Arc (3 points)": "Arc (3 points)",
+  "Click a shape to delete it": "Cliquez sur une forme pour la supprimer",
+  "Those points make no shape.": "Ces points ne font aucune forme.",
+  "That sketch is not one of the part's own: use Constrain part first.": "Cette esquisse n'est pas propre à la pièce : utilisez d'abord Contraindre la pièce.",
+  "Place the part first: its sketch is edited in the part's edit mode, on an object.": "Placez d'abord la pièce : son esquisse se modifie dans le mode d'édition de la pièce, sur un objet.",
+  "Type the body's depth: a length, or =formula.": "Saisissez la profondeur du corps : une longueur ou =formule.",
   // Decision 536: a graph's palette, its tool in My tools, groups
   "Open the graph in the Graphs panel": "Ouvrir le graphe dans le panneau Graphes",
   "This graph has no inputs yet: add Number, Choice, Storey or other input nodes in the Graphs panel, and they become its fields here.": "Ce graphe n'a pas encore de saisies : ajoutez des nœuds Nombre, Choix, Niveau ou d'autres nœuds de saisie dans le panneau Graphes, et ils deviennent ses champs ici.",

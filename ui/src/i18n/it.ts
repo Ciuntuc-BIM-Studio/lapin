@@ -3,6 +3,24 @@
 import type { Language } from './index';
 
 export const IT: Record<string, string> = {
+  // Editing a part's own sketch in place (decision 520)
+  "Constrain part": "Vincola il componente",
+  "Body from sketch": "Corpo da schizzo",
+  "Rename the sketch": "Rinomina lo schizzo",
+  "Remove the sketch (and the bodies drawn from it)": "Rimuovi lo schizzo (e i corpi disegnati da esso)",
+  "Drawn from sketch": "Disegnato dallo schizzo",
+  "Its outline is that sketch's: it is edited in the part's edit mode, with its constraints.": "Il suo contorno è quello di quello schizzo: si modifica nella modalità di modifica del componente, con i suoi vincoli.",
+  "Edit the sketch in the part": "Modifica lo schizzo nel componente",
+  "The corners of its bodies become a sketch of the part's own, each dimension a formula of the parameters": "Gli angoli dei suoi corpi diventano uno schizzo proprio del componente, ogni quota una formula dei parametri",
+  "A length, or =formula of the parameters": "Una lunghezza, o =formula dei parametri",
+  "Sketch tools": "Strumenti di schizzo",
+  "Back to the part (Esc)": "Torna al componente (Esc)",
+  "Arc (3 points)": "Arco (3 punti)",
+  "Click a shape to delete it": "Fai clic su una forma per eliminarla",
+  "Those points make no shape.": "Quei punti non formano nessuna forma.",
+  "That sketch is not one of the part's own: use Constrain part first.": "Quello schizzo non è proprio del componente: usa prima Vincola il componente.",
+  "Place the part first: its sketch is edited in the part's edit mode, on an object.": "Posiziona prima il componente: il suo schizzo si modifica nella modalità di modifica del componente, su un oggetto.",
+  "Type the body's depth: a length, or =formula.": "Scrivi la profondità del corpo: una lunghezza o =formula.",
   // Decision 536: a graph's palette, its tool in My tools, groups
   "Open the graph in the Graphs panel": "Apri il grafo nel pannello Grafi",
   "This graph has no inputs yet: add Number, Choice, Storey or other input nodes in the Graphs panel, and they become its fields here.": "Questo grafo non ha ancora input: aggiungi nodi Numero, Scelta, Piano o altri nodi di input nel pannello Grafi, e diventano qui i suoi campi.",
