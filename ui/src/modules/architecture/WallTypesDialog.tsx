@@ -32,6 +32,7 @@ import { TypeFiles } from './TypeFiles';
 import { deleteType } from '../core/deleteType';
 import { SaveTypeToLibrary } from '../core/SaveTypeToLibrary';
 import { WallLayersLegend } from './WallLayersLegend';
+import { TypePreview } from '../core/TypePreview';
 import { WallTypeSweeps, sweepJson, sweepRows, type TypeSweepRow } from './WallTypeSweeps';
 
 /** A layer as the editor holds it: lengths in metres; from and to null for the whole height. */
@@ -92,6 +93,8 @@ export function WallTypesDialog() {
   const [zones, setZones] = useState<ZoneRow[]>(k0?.zones ?? []);
   const [lintels, setLintels] = useState<Rule>(k0?.lintels ?? DEFAULT_RULE);
   const [sweeps, setSweeps] = useState<TypeSweepRow[]>(k0?.sweeps ?? []);
+  // The layer whose row the mouse is over: lit in the preview's plan, section and 3D.
+  const [hover, setHover] = useState<number | null>(null);
   const restoredFor = useRef<string | null | undefined>(k0 ? k0.editing : undefined);
   const info = useSession((s) => s.info);
   // The total and the heights below are written in the project's units: shown again when they change.
@@ -191,11 +194,12 @@ export function WallTypesDialog() {
             <label className="field-line"><span className="eyebrow">Name</span><input value={name} placeholder="(from its core and thickness)" onChange={(e) => setName(e.target.value)} /></label>
             <p className="muted small" data-testid="wall-face-note">Layers 1 to n from the R face (right of the drawn direction) to the L face, as in the picture. Wall drawn anticlockwise: R is the exterior, L the interior. The core carries the wall's axis.</p>
             <WallLayersLegend layers={rows} />
+            <TypePreview typeClass="IfcWallType" type={{ ...(editing ? { id: editing } : {}), name: name.trim() || 'Preview', layers, zones: zoneJson, lintels, sweeps: sweeps.map(sweepJson) }} highlight={hover} faces />
             <table className="layer-edit">
               <thead><tr><th>Material</th><th>Thickness</th><th>Core</th><th title="How high the layer goes over the wall's base; empty: the whole height">Layer from</th><th title="How high the layer goes over the wall's base; empty: the whole height">Layer up to</th><th title="Where walls join, a layer goes on through the other wall's layers of a lower priority and stops at the first as high or higher; empty: its material's priority in the cut order, else 50 for the core and 0 for the rest">Priority</th><th title={CATEGORY_TIP}>Category</th><th title={EXTEND_TIP}>Into floors</th><th title="How the layer is laid in this build-up (a build-up tag writes it)">Note</th><th /></tr></thead>
               <tbody>
                 {rows.map((r, i) => [
-                  <tr key={i}>
+                  <tr key={i} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)} className={hover === i ? 'lit' : undefined}>
                     <td><span className="layer-material"><MaterialPicker value={r.material} onChange={(material) => set(i, { material })} /><MaterialHatchButton material={r.material} from={hatchFrom} /></span></td>
                     <td className="num"><LayerThickness model={model} material={r.material} metres={r.thickness} onCommit={(m) => set(i, { thickness: m })} /></td>
                     <td><input type="radio" name="core" checked={r.core} onChange={() => set(i, { core: true })} /></td>

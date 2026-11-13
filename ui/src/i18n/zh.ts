@@ -3231,6 +3231,8 @@ export const ZH: Record<string, string> = {
   // A wall's top (the forum's topic #45)
   'Storey above': '上一楼层', 'Unconnected height': '非约束高度', 'Where the wall goes up to: the storey above its own (on the topmost storey, that storey\'s top), a storey of the project, or a height of its own. Its height follows the storeys when they move': '墙体向上延伸到的位置：其所在楼层的上一楼层（在最高楼层时为该楼层的顶部）、项目中的某一楼层，或其自身高度。楼层移动时，其高度随之变化', 'Added to the level the top goes to (negative: below it, under a floor\'s structure)': '加到顶部所到达的标高上（负值：在其下方，位于楼板结构之下）', 'From its base to its top, worked out from the storeys': '从底部到顶部，根据楼层计算', 'goes up to': '上至', 'to its storey\'s top': '至其楼层顶部', 'Top: as the type': '顶部：按类型', 'Top: storey above': '顶部：上一楼层', 'Top: unconnected height': '顶部：非约束高度', 'Wall top': '墙顶', 'Where new walls of this type go up to': '此类型的新墙向上延伸到的位置', 'for new walls; each wall\'s own in its properties': '用于新墙；每面墙在其属性中有自己的设置', 'Wall type\'s top': '墙类型的顶部',
   'Measured from': '测量起点', 'Measured to': '测量终点', 'Wall start': '墙起点', 'Meeting wall’s face': '相交墙的表面', 'Meeting wall’s core face': '相交墙的芯层表面', 'Opening start': '洞口起点', 'Opening centre': '洞口中心', 'Opening end': '洞口终点',
+  // The type configurators' preview (decision 529)
+  "Drawn by the engine, as the drawings draw it: a sample wall of the type with another joined to it in T. Hover a layer's row to light it up in all three.": "由引擎按图纸的画法绘制：该类型的一段样墙，另一段墙以 T 形连接。将鼠标悬停在某层的行上，即可在三个视图中高亮该层。", "The sample wall's length": "样墙的长度", "The sample wall's height; empty: as the type's top says, the storey above": "样墙的高度；留空：按类型的顶部设定，即上一楼层", "The preview could not be drawn.": "无法绘制预览。",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [
