@@ -114,6 +114,8 @@ public sealed partial class StudioModule
                 ["outline"] = new JsonArray(region.Outline.Select(q => (JsonNode)Features.J(q)).ToArray()) };
             var r = OnFace(ctx, args)!.AsObject();
             r["region"] = true;
+            // Its outline tied to the plane's constrained sketch where its corners stand on it.
+            SketchConstraints.TieRegion(ctx, (string?)r["planeId"], (string?)r["sketchId"]);
             return r;
         }
         if (e.Str("operation") != null) return PushStudio(ctx, e, face, p, d);

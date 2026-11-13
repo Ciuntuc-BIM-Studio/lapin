@@ -426,6 +426,8 @@ public static class Parts
                 {
                     ["id"] = $"body:{i}", ["name"] = name, ["plane"] = plane, ["shapeIds"] = new JsonArray(),
                     ["points"] = b["points"]?.DeepClone(), ["frame"] = FrameJson(place(off), dir(u), dir(v), dir(n)),
+                    // A body's corners stay formulas until the upgrade of §9 makes them a drafted sketch with fix and distanceX/Y constraints.
+                    ["constraintCount"] = 0, ["constraints"] = new JsonArray(),
                 });
                 var step = new JsonObject { ["index"] = k++, ["kind"] = "extrude", ["label"] = name, ["sketch"] = $"body:{i}" };
                 if (b["when"] is { } when)
@@ -470,6 +472,10 @@ public static class Parts
                 }
                 else o["missing"] = true;
                 o["shapeIds"] = new JsonArray(shapeIds.Distinct().Select(x => (JsonNode)x).ToArray());
+                // Its constraints (stage C0), resolved for the edit mode's glyphs.
+                var constraints = draft?.Str("viewId") is { } vid ? SketchConstraints.Touching(m, vid, shapeIds) : [];
+                o["constraintCount"] = constraints.Count;
+                o["constraints"] = constraints;
                 sketches.Add((JsonNode)o);
             }
             steps.Add((JsonNode)new JsonObject { ["index"] = k++, ["kind"] = op, ["label"] = OperationLabel(op) });

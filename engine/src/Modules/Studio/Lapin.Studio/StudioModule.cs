@@ -115,6 +115,8 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
         // (docs/plan-user-extensibility.md §5.6) are parts now, their commands shortcuts onto the parts' and saved ones upgraded.
         Parts.Register(r);
         Families.Register(r);
+        // Sketch constraints (stage C0): kept per sketch, carried through the drafting commands that replace shapes.
+        SketchConstraints.Register(r);
         r.Service<IProjectUpgrade>(new FamilyPartUpgrade());
         // A box's walls with its bottom and top: an assembly (IfcElementAssembly) of separate elements, without a body of its own.
         r.Class(new(Boxes.AssemblyClass, "Assembly", [], "#b9b2a6"));

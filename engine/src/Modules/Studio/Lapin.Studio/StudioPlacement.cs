@@ -115,6 +115,7 @@ public sealed class StudioPlacement : IElementPlacement
             foreach (var key in new[] { "profile", "guide", "endProfile", "rail" })
                 if (e.Str(key) is { } id) attrs[key] = map.GetValueOrDefault(id) ?? id;
             if (e.Attrs["profiles"] is JsonArray ps) attrs["profiles"] = new JsonArray(ps.Select(x => (JsonNode?)(map.GetValueOrDefault((string?)x ?? "") ?? (string?)x)).ToArray());
+            SketchConstraints.CopyAmong(ctx, map, t);
         }
         var copy = new Entity(ctx.NewId(), e.Class, e.Name, attrs, e.PredefinedType);
         ctx.Add(copy);

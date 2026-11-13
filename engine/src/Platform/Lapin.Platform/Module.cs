@@ -156,6 +156,17 @@ public interface IDeletion
     void Check(IModelView m, Entity e, IReadOnlySet<string> deleting) { }
 }
 
+/// <summary>
+/// After every command, in its undo step (after driven elements are told, before type defaults and components settle): what the
+/// command changed (<paramref name="edit"/>'s changes, each entity before and after), its name and arguments, and its result,
+/// which it returns, maybe with what it did added (Studio's sketch constraints carried through TRIM, JOIN… and the ones it had
+/// to drop, decision 520).
+/// </summary>
+public interface ICommandFollowUp
+{
+    JsonNode? After(ICommandContext ctx, Lapin.Model.IEdit edit, string command, JsonObject args, JsonNode? result);
+}
+
 public interface ICutters
 {
     /// <summary>The classes that take part in cutting, with the priority their module gives them.</summary>

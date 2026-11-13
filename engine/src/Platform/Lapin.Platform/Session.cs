@@ -360,6 +360,9 @@ public sealed partial class Session
             r = entry.Handler(ctx, args);
             // What the command changed of elements a module drives, written back in the module's terms (docs/overrides.md, Driven elements).
             Driven.After(ctx, edit, command);
+            // What follows from any command in a module's own terms (a sketch's constraints carried onto the shapes that replaced
+            // theirs), added to the command's result.
+            foreach (var f in ctx.Services.All<ICommandFollowUp>()) r = f.After(ctx, edit, command, args, r);
             // An element that took a type in the command: the type's instance defaults it lacks (TypeDefaults).
             TypeDefaults.Settle(edit);
             // An instance of a component changed: the others follow, in the same undo step (docs/components.md).
