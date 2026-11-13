@@ -18,8 +18,10 @@ export type Cell = number | string;
 export interface FParam { key: string; label: string; kind: ParamKind; default: number }
 export interface FBody {
   name: string; plane: Plane; points: [Cell, Cell][]; holes?: [Cell, Cell][][]; depth: Cell; offset?: [Cell, Cell, Cell]; when?: string; material?: string;
+  /** A body drawn from one of the part's own sketches (studio.constrainPart), its outline that sketch's shape: kept as the engine gives it. */
+  sketch?: string; shape?: string;
 }
-export interface FamilyDef { ifcClass: string; description?: string; planSymbol?: string; params: FParam[]; bodies: FBody[] }
+export interface FamilyDef { ifcClass: string; description?: string; planSymbol?: string; params: FParam[]; bodies: FBody[]; /** The part's own constrained sketches, kept untouched by this editor. */ sketches?: unknown[] }
 export interface FamilyDto { id: string; name: string; def: FamilyDef; uses: number }
 
 /** The IFC classes a family is exported as (a choice; the engine takes any Ifc class). */
@@ -217,6 +219,7 @@ export function normaliseFamily(d: Partial<FamilyDef> | null | undefined): Famil
   return {
     ifcClass: d?.ifcClass || 'IfcBuildingElementProxy',
     ...(d?.description ? { description: d.description } : {}), ...(d?.planSymbol ? { planSymbol: d.planSymbol } : {}),
+    ...(d?.sketches?.length ? { sketches: d.sketches } : {}),
     params: (d?.params ?? []).map((p) => ({ key: p.key, label: p.label || p.key, kind: p.kind ?? 'length', default: Number(p.default) || 0 })),
     bodies: (d?.bodies ?? []).map((b) => ({ ...b, name: b.name ?? '', plane: b.plane ?? 'xy', points: (b.points ?? []) as [Cell, Cell][], depth: b.depth ?? 0 })),
   };
