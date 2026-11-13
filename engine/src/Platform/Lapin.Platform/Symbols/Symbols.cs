@@ -149,6 +149,14 @@ public static class Symbols
         foreach (var (key, label, _) in Documents.ProjectInfo.Grouped) o.Add(("project." + key, label, "project"));
         foreach (var c in Documents.ProjectInfo.Customs(m)) o.Add(("project." + c.Key, c.Label, "project"));
         o.Add(("system.printDate", "Date of print", "system"));
+        // Drawn as a tag (decision 552): the tagged element's fields, its storey's parameters, any parameter by its name.
+        o.AddRange([
+            ("name", "Tagged element's name", "tag"), ("mark", "Tagged element's mark", "tag"), ("type", "Tagged element's type", "tag"),
+            ("number", "Room's number", "tag"), ("area", "Room's area", "tag"), ("storey.name", "Tagged element's storey", "tag"),
+        ]);
+        var storeyParams = Spatial.Storeys(m).SelectMany(s => s.Attrs["params"] is JsonArray l ? l.OfType<JsonObject>() : [])
+            .Where(p => Params.SetOf(p) == null).Select(p => ((string?)p["name"])?.Trim()).OfType<string>().Where(n => n.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase);
+        foreach (var p in storeyParams) o.Add(("storey." + p, p, "tag"));
         return o;
     }
 

@@ -10,10 +10,10 @@ import { Sigma } from 'lucide-react';
 import { execute, query, useSession } from '../engine/session';
 import { formatLength } from '../engine/unitsStore';
 import { notify } from '../app/store';
-import { FORMULA_FUNCTIONS, FORMULA_QUANTITIES, canFormula, formulaArgs, resultText, toggled, usableNames, valueArgs, worthTrying, type FormulaState, initialState } from './formulaModel';
+import { FORMULA_FUNCTIONS, FORMULA_QUANTITIES, FORMULA_SCOPES, TEXT_FUNCTIONS, canFormula, formulaArgs, resultText, toggled, usableNames, valueArgs, worthTrying, type FormulaState, initialState } from './formulaModel';
 import type { Param } from './params';
 
-export interface Evaluated { name: string; pset?: string | null; formula: string; value: number | null; error: string | null }
+export interface Evaluated { name: string; pset?: string | null; formula: string; value: number | string | null; error: string | null }
 
 /** What the engine works out for the formula parameters of one element or type (kept fresh as the model changes). */
 export function useEvaluated(id: string, any: boolean): Evaluated[] {
@@ -34,7 +34,7 @@ export function ParamValue({ p, id, ids, evaluated, params, attrs, children }: {
   p: Param & { formula?: string | null }; id: string; ids: () => string[]; evaluated: Evaluated[]; params: Param[]; attrs: Record<string, unknown>; children: ReactNode;
 }) {
   const [state, setState] = useState<FormulaState>(() => initialState(p));
-  const [tried, setTried] = useState<{ value: number | null; error: string | null } | null>(null);
+  const [tried, setTried] = useState<{ value: number | string | null; error: string | null } | null>(null);
   // A change from elsewhere (undo, another selection) is what the row shows.
   useEffect(() => { setState(initialState(p)); setTried(null); }, [p.formula, p.name]);
   const mine = evaluated.find((e) => same(p, e));
@@ -42,7 +42,7 @@ export function ParamValue({ p, id, ids, evaluated, params, attrs, children }: {
   useEffect(() => {
     if (state.mode !== 'formula' || !worthTrying(state.text, p.formula)) { setTried(null); return; }
     let live = true;
-    const t = setTimeout(() => { void query<{ value: number | null; error: string | null }>('params.tryFormula', { id, formula: state.text }).then((r) => { if (live) setTried(r); }); }, 200);
+    const t = setTimeout(() => { void query<{ value: number | string | null; error: string | null }>('params.tryFormula', { id, formula: state.text, kind: p.kind }).then((r) => { if (live) setTried(r); }); }, 200);
     return () => { live = false; clearTimeout(t); };
   }, [state.mode, state.text, id, p.formula]);
 
@@ -66,7 +66,7 @@ export function ParamValue({ p, id, ids, evaluated, params, attrs, children }: {
         title={state.mode === 'formula' ? 'A formula: press for a value' : 'A value: press to work it out by a formula'} onClick={toggle}><Sigma size={11} /></button>
       {state.mode === 'value' ? children : (
         <span className="param-formula">
-          <input className="mono" data-param-formula={p.name} value={state.text} placeholder="Height * 2" spellCheck={false}
+          <input className="mono" data-param-formula={p.name} value={state.text} placeholder={p.kind === 'text' ? '{storey.code}.{number}' : 'Height * 2'} spellCheck={false}
             onChange={(e) => setState({ ...state, text: e.target.value })} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') commit(); }} />
           <span className={`small param-result${shown?.error ? ' error-text' : ' muted'}`} data-param-result={p.name} data-no-i18n>
             {shown?.error ?? (shown?.value != null ? `= ${resultText(shown.value, p.kind, length)}` : '')}
@@ -76,6 +76,10 @@ export function ParamValue({ p, id, ids, evaluated, params, attrs, children }: {
             <p>{names.length ? 'Names you can use: ' : 'Names you can use: the element\'s parameters and numbers, '}<span data-no-i18n>{names.join(', ')}</span></p>
             <p>Quantities, when the element has them: <span data-no-i18n>{FORMULA_QUANTITIES.join(', ')}</span></p>
             <p>Functions: <span data-no-i18n>{FORMULA_FUNCTIONS.join(', ')}</span></p>
+            <p>Another element's, written before a dot: <span data-no-i18n>{FORMULA_SCOPES.map((s) => `${s}.…`).join(', ')}</span></p>
+            <p>The project's own parameters (Manage → Project information): by their key alone.</p>
+            <p>Texts in quotes, joined by &amp;, and their functions: <span data-no-i18n>{TEXT_FUNCTIONS.join(', ')}</span></p>
+            <p>A text's formula may also be a text with fields in braces: <span data-no-i18n>{'{storey.code}.{Flat}.{number}'}</span></p>
             <p>Decimals with a dot; arguments separated by , or ;. A name with spaces may be written without them (Fire rating or FireRating).</p>
           </details>
         </span>

@@ -15,8 +15,12 @@ namespace Lapin.Platform;
 /// imported element came with, or from the element's or its type's attribute
 /// of that name; an unknown field is left empty. Fields are case-free and a
 /// parameter is found without its spaces too ({FireRating} reads "Fire
-/// rating" and Pset_WallCommon.FireRating, the user's own first). "|"
-/// separates lines.
+/// rating" and Pset_WallCommon.FireRating, the user's own first), else from
+/// the project's own parameters by their key. A scope before a dot reads
+/// another entity as the element (decision 551, <see cref="ParamScopes"/>):
+/// {storey.code}, {project.number}, {host.FireRating}, {room.name}. A field
+/// {= …} is a formula (decision 550): {= upper(storey.code) &amp; "." &amp; number},
+/// {= area * 1.1 | 0.00}. "|" separates lines.
 /// </summary>
 public static partial class TagText
 {
@@ -41,10 +45,10 @@ public static partial class TagText
     /// <summary>A stored parameter of <paramref name="e"/> the field names: "Set.Name" in that set, else a name in any set, the user's own first.</summary>
     static JsonObject? Param(Entity? e, string key) => Param(Stored(e), key);
 
-    /// <summary>The same among parameters given (formulas worked out: <see cref="ParamFormulas.Resolved"/>).</summary>
+    /// <summary>The same among parameters given (with a value, or a formula to work it out).</summary>
     static JsonObject? Param(IEnumerable<JsonObject> stored, string key)
     {
-        var list = stored.Where(p => p["value"] != null).ToList();
+        var list = stored.Where(p => p["value"] != null || ParamFormulas.IsFormula(p)).ToList();
         var dot = key.IndexOf('.');
         if (dot > 0)
         {
@@ -96,10 +100,17 @@ public static partial class TagText
         return v is JsonValue s && s.TryGetValue<string>(out var str) ? str : v.ToString();
     }
 
-    public static string Value(IModelView m, Entity e, string field, IReadOnlyDictionary<string, string>? extra = null, string units = "mm")
+    public static string Value(IModelView m, Entity e, string field, IReadOnlyDictionary<string, string>? extra = null, string units = "mm", Func<string, double?>? more = null)
     {
         var key = field.Trim();
+        // A formula as a field ({= area * 1.1 | 0.00}, {= upper(storey.code)}), its names read as a formula's (decision 550).
+        if (key.StartsWith('=')) return FormulaText(m, e, key[1..], extra, more);
         if (extra != null && extra.FirstOrDefault(kv => string.Equals(kv.Key, key, StringComparison.OrdinalIgnoreCase)) is { Key: not null } x) return x.Value;
+        // A scope before a dot (decision 551): the storey's {storey.code}, the project's {project.number}, the wall's {host.FireRating}.
+        if (ParamScopes.Split(m, e, key) is { } scoped)
+            return scoped.Owner is not { } owner ? ""
+                : owner.Class == IfcClass.Project && ParamScopes.ProjectValue(m, scoped.Field) is { } pv ? pv
+                : Value(m, owner, scoped.Field, null, units);
         var type = m.RelatingOf(e.Id, IfcClass.RelDefinesByType);
         switch (key.ToLowerInvariant())
         {
@@ -108,11 +119,13 @@ public static partial class TagText
             case "type": return type?.Name ?? e.Name;
             case "class": return e.Class.StartsWith("Ifc", StringComparison.Ordinal) ? e.Class[3..] : e.Class;
         }
+        if (e.Class == IfcClass.Project && ParamScopes.ProjectValue(m, key) is { } info) return info;
         // Its classification's code or title, or one system's code (docs/plan-user-extensibility.md §7.3: a keynote is a tag of it).
         if (Classifications.TagValue(m, e, type, key) is { } classified) return classified;
         // The user's parameters, the element's own over its type's (as the properties panel shows them).
-        // A formula's value worked out from the element's other parameters and numbers (docs/plan-user-extensibility.md §5.3).
-        if ((Param(ParamFormulas.Resolved(m, e, type), key) ?? Param(ParamFormulas.Resolved(m, type, null), key)) is { } p) return ParamText(p, units);
+        // A formula's value worked out from the element's other parameters and numbers (docs/plan-user-extensibility.md §5.3), only the one asked.
+        if (Param(Stored(e), key) is { } own) return ParamText(ParamFormulas.IsFormula(own) ? ParamFormulas.ResolvedOne(m, e, type, own, more) : own, units);
+        if (Param(Stored(type), key) is { } typed) return ParamText(ParamFormulas.IsFormula(typed) ? ParamFormulas.ResolvedOne(m, type!, null, typed) : typed, units);
         if ((Imported(e, key) ?? Imported(type, key)) is { } imported) return imported;
         string? Of(Entity? x) => x?.Attrs.FirstOrDefault(kv => string.Equals(kv.Key, key, StringComparison.OrdinalIgnoreCase)).Value switch
         {
@@ -120,8 +133,26 @@ public static partial class TagText
             JsonValue v when Json.Number(v) is { } n => n.ToString("0.###", CultureInfo.InvariantCulture),
             _ => null,
         };
-        return Of(e) ?? Of(type) ?? "";
+        if ((Of(e) ?? Of(type)) is { } attr) return attr;
+        // The project's own parameters are global: read by their key from any element (decision 551).
+        var k = Squash(key);
+        return ParamScopes.Globals(m).FirstOrDefault(c => Squash(c.Key) == k || Squash(c.Label) == k) is { } g ? g.Printed ?? "" : "";
     }
+
+    /// <summary>A formula field's text: its value written as its format says (after a bar), or &lt;formula&gt; when it does not read.</summary>
+    static string FormulaText(IModelView m, Entity e, string body, IReadOnlyDictionary<string, string>? extra, Func<string, double?>? more)
+    {
+        var (formula, format) = LiveText.SplitFormat(body);
+        var type = m.RelatingOf(e.Id, IfcClass.RelDefinesByType);
+        var (value, _) = Expr.TryEvalValue(formula, n =>
+            extra?.FirstOrDefault(kv => string.Equals(kv.Key, n, StringComparison.OrdinalIgnoreCase)) is { Key: not null } x ? XValue.Read(x.Value)
+            : ParamFormulas.Read(m, e, type, more, n));
+        return value is { } v ? Expr.Format(v, format) : $"<{formula.Trim()}>";
+    }
+
+    /// <summary>A text with its {fields} (and {= formulas}) filled from <paramref name="e"/>, as a tag writes them.</summary>
+    public static string Fill(string template, IModelView m, Entity e, IReadOnlyDictionary<string, string>? extra = null, string units = "mm", Func<string, double?>? more = null) =>
+        Field().Replace(template, x => Value(m, e, x.Groups[1].Value, extra, units, more));
 
     /// <summary>
     /// What a tag of <paramref name="e"/> can show, for the interface's lists: the fields every element has, the user's
@@ -152,13 +183,26 @@ public static partial class TagText
                 foreach (var (set, props) in sets)
                     if (props is JsonObject po)
                         foreach (var (name, _) in po) Add($"{set}.{name}", set, name, "imported");
+        // Its scopes' (decision 551): the storey's, the building's, the project's, its host's, its room's names and parameters.
+        foreach (var scope in ParamScopes.Names.Where(s => s != "type"))
+        {
+            if (ParamScopes.Of(m, e, scope) is not { } owner || owner.Id == e.Id) continue;
+            Add($"{scope}.name", null, "name", scope);
+            if (owner.Class == IfcClass.Project)
+            {
+                foreach (var (key, label) in Documents.ProjectInfo.Fields) Add($"project.{key}", null, label, scope);
+                foreach (var c in ParamScopes.Globals(m)) Add($"project.{c.Key}", null, c.Label, scope);
+            }
+            foreach (var p in Stored(owner))
+                if (((string?)p["name"])?.Trim() is { Length: > 0 } name)
+                    Add(Params.SetOf(p) is { } set ? $"{scope}.{set}.{name}" : $"{scope}.{name}", Params.SetOf(p), name, scope);
+        }
         return list;
     }
 
     /// <summary>The template filled in, one string per line ("|"), empty lines dropped.</summary>
     public static IReadOnlyList<string> Lines(string template, IModelView m, Entity e, IReadOnlyDictionary<string, string>? extra = null, string units = "mm") =>
-        Field().Replace(template, x => Value(m, e, x.Groups[1].Value, extra, units))
-            .Split('|').Select(l => l.Trim()).Where(l => l.Length > 0).ToList();
+        Fill(template, m, e, extra, units).Split('|').Select(l => l.Trim()).Where(l => l.Length > 0).ToList();
 
     /// <summary>A length (metres) as a tag writes it: whole centimetres or millimetres (a tenth where it is not whole), metres to the centimetre, feet and inches to 1/16"; "project" in the project's units.</summary>
     public static string Length(double metres, string unit, string projectUnits = "mm")

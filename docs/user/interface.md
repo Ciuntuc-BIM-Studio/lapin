@@ -203,7 +203,7 @@ The gear in the command line's bar lists what is carried, and Lapin remembers yo
 
 ## Parameters worked out by formulas
 
-A parameter of your own that is a number, a length, an area, an angle or a yes/no (not a text or a choice) can be worked out instead of typed. In **Properties → Parameters**, press the **Σ** button before its value: the value becomes a **formula** field. Type the formula and press <kbd>Enter</kbd> (or leave the field) to keep it. Under the field Lapin shows what the formula gives, *= 21*, or why it does not read; a formula that does not read is not kept. Press **Σ** again to go back to a value: the last result stays as the value.
+A parameter of your own that is a number, a length, an area, an angle, a yes/no or a text (not a choice) can be worked out instead of typed. In **Properties → Parameters**, press the **Σ** button before its value: the value becomes a **formula** field. Type the formula and press <kbd>Enter</kbd> (or leave the field) to keep it. Under the field Lapin shows what the formula gives, *= 21*, or why it does not read; a formula that does not read is not kept. Press **Σ** again to go back to a value: the last result stays as the value.
 
 ![A Studs parameter worked out from the wall's length and a Spacing parameter](shots/param-formula.webp)
 
@@ -218,6 +218,31 @@ A formula is kept as written and worked out every time it is asked for, so it fo
 ![A formula that does not read says why](shots/param-formula-error.webp)
 
 The same language works in the live text of [symbols and tags](drafting.md), written `{= attr.w * 2 | 0.00}`.
+
+### Texts worked out
+
+A text parameter's formula gives a text. Write it in either of two ways:
+
+- **A text with fields in braces**, as a tag writes them: `{storey.code}.{Hall}.{Flat}.{number}` gives *K1.A.3.1* for a room numbered 1 with the parameters *Hall* = A and *Flat* = 3 on a storey whose *code* is K1. Whatever is outside the braces is written as it is.
+- **An expression with texts**: texts in quotes (`"K"` or `'K'`), joined by `&` (`storey.code & "." & number`) or by *concat* (`concat(storey.code; "."; number)`).
+
+The functions for texts: *text(x; "00")* writes a number as a format says (*7* → *07*; `"0.00"` two decimals), *pad(x; 3)* fills it to three characters with zeros in front, *upper*, *lower*, *trim*, *left(x; n)*, *right(x; n)* and *len*. Two texts compare as texts, case aside: `if(storey.code == "K1"; "basement"; "upper")`. A formula given to a new parameter with no kind makes it a text when it gives one.
+
+### Reading other elements: the storey, the project, the host, the rooms
+
+A name may read another element's parameter or field, written before a dot:
+
+- `storey.…` the storey the element stands on (`storey.code`, `storey.name`, `storey.elevation`); `building.…` and `site.…` above it;
+- `project.…` the project's information (`project.number`, `project.client`) and its own parameters;
+- `type.…` the element's type; `group.…` the group it is in; `assembly.…` the whole it is a part of;
+- `host.…` a door's or window's wall (`host.FireRating`);
+- `room.…` the room the element stands in (a door's or window's on its interior side); `fromRoom.…` and `toRoom.…` the rooms on a door's exterior and interior side (they change sides when the door is flipped).
+
+**The project's own parameters are global.** Add them in **Manage → Project information…**, under **The project's own parameters** at the bottom (a key, a label, a type and a value): any element's formula or tag reads one by its key alone (`zone`), or as `project.zone`.
+
+Nothing of this is stored on the element: it is read every time it is asked for. Change the storey's *code* from K1 to K2 and every room's formula, stamp, tag, schedule and the IFC export say K2 at once. A formula that reads itself, directly or through others, gives no value and says so.
+
+![A room's index worked out from its storey's code and its own parameters](shots/param-scopes.webp)
 
 ## Keyboard shortcuts
 

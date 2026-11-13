@@ -45,6 +45,12 @@ In an [apartment type](groups.md) these doors and windows go with the room: ever
 
 ![The Room tag dialog](shots/room-tag.webp)
 
+A line may also show the room's own parameters, its storey's and the project's: the list offers them under **Parameters**, **Its storey** and **The project** once a room has them. A storey's parameter is read by every room on it: give the storey a parameter *code* = K1 and a room's line `{storey.code}.{number}` writes *K1.1*; change it to K2 and every stamp follows. A room's parameter may be worked out by a formula from them (*Room index* = `{storey.code}.{Hall}.{Flat}.{number}`), and the room schedule has a column for each room parameter: see [Parameters worked out by formulas](interface.md#texts-worked-out).
+
+**Drawn as** a symbol of your own, the stamp looks as you drew it: boxes, lines, and texts that hold the fields (`{storey.code}.{number}`, `{name}`, `{area}`, `{Floor finish}`). Draw it in **Symbols…**, then choose it in **Drawn as**; **The lines below** goes back to the lines. See [A tag drawn by a symbol](drafting.md#a-tag-drawn-by-a-symbol).
+
+![A room stamp drawn by a symbol of one's own](shots/room-tag-symbol.webp)
+
 ## Area rounding
 
 Rooms show their area to the hundredth of a square metre. **Manage → Drafting standards → Project → Area rounding** rounds it instead to **0.1 m²**, **0.5 m²** or **1 m²**, half up, as the Nordic countries write room areas (12.27 m² becomes 12.5 m² at 0.5, and 12 m² at 1). It applies to every room area Lapin shows: the stamps on plans and sheets, the colour legend and the Room colours dialog, the room schedule, the floor areas in a room's quantities, and the areas a document fills in. Each room is rounded on its own and a total adds up the rounded rooms, so the schedule's column sums to its total. The model keeps the exact area: the IFC file, the volumes and the other quantities are never rounded. In a project in feet the step is in square feet.

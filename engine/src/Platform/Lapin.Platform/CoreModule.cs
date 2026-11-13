@@ -195,11 +195,13 @@ public sealed class CoreModule : ILapinModule
                 var (pset, standardKind) = StandardPsets.Check(e.Class, (string?)a["pset"] ?? shared?.Pset, name);
                 var list = e.Attrs["params"] is JsonArray old ? (JsonArray)old.DeepClone() : new JsonArray();
                 var existing = list.OfType<JsonObject>().FirstOrDefault(p => Params.Same(p, pset, name));
-                var kind = standardKind ?? (string?)a["kind"] ?? (string?)existing?["kind"] ?? shared?.Kind ?? ((string?)a[ParamFormulas.Key] is { Length: > 0 } ? "number" : null) ?? throw new CommandException($"A new parameter needs its kind ({string.Join(", ", Params.Kinds)}).");
-                var options = a["options"] as JsonArray ?? existing?["options"] as JsonArray;
                 // A formula instead of a value (docs/plan-user-extensibility.md §5.3): worked out on every ask, never stored.
                 var formula = (string?)a[ParamFormulas.Key] is { Length: > 0 } fx ? ParamFormulas.Check(fx) : null;
-                if (formula != null && kind is not ("number" or "length" or "area" or "angle" or "bool")) throw new CommandException("A formula gives a number: its parameter is a number, a length, an area, an angle or a yes/no.");
+                // A new parameter given only a formula is a text when it gives one (decision 550), else a number.
+                var kind = standardKind ?? (string?)a["kind"] ?? (string?)existing?["kind"] ?? shared?.Kind ?? (formula != null ? ParamFormulas.KindOf(ctx.Model, e, formula) : null) ?? throw new CommandException($"A new parameter needs its kind ({string.Join(", ", Params.Kinds)}).");
+                var options = a["options"] as JsonArray ?? existing?["options"] as JsonArray;
+                if (formula != null && kind is not ("number" or "length" or "area" or "angle" or "bool" or "text")) throw new CommandException("A formula gives a number or a text: its parameter is a number, a length, an area, an angle, a yes/no or a text.");
+                if (formula != null && ParamFormulas.IsTemplate(formula) && kind != "text") throw new CommandException("A formula with {fields} writes a text: its parameter is a text.");
                 var value = formula != null ? null : Params.Check(kind, a["value"], options);
                 var entry = new JsonObject { ["name"] = name, ["kind"] = kind, ["value"] = value };
                 if (formula != null) entry[ParamFormulas.Key] = formula;
