@@ -208,6 +208,13 @@ export const PT: Record<string, string> = {
   "Delete graph": "Eliminar grafo",
   "Bake graph": "Gerar grafo",
   "New graph": "Novo grafo",
+  "New from example…": "Novo a partir de um exemplo…",
+  "Twisted tower": "Torre torcida",
+  "Floors on a stack of storeys, each turned a little more than the one below, with columns; sliders for floors, height, twist, width and taper.": "Lajes numa pilha de pisos, cada uma rodada um pouco mais do que a de baixo, com pilares; controlos deslizantes para pisos, altura, torção, largura e afunilamento.",
+  "Columns on a grid": "Pilares numa malha",
+  "A column at each point of a grid: how many each way, and the spacing.": "Um pilar em cada ponto de uma malha: quantos em cada direção e o espaçamento.",
+  "Walls round a rectangle": "Paredes à volta de um retângulo",
+  "Four walls round a rectangle of the width and depth you set.": "Quatro paredes à volta de um retângulo com a largura e a profundidade definidas.",
   "A graph wires nodes (numbers, points, lists, the commands of the tools) into a recipe: Lapin shows what it would make as a ghost, and Bake makes it.": "Um grafo liga nós (números, pontos, listas, os comandos das ferramentas) numa receita: o Lapin mostra o que faria como um fantasma, e Gerar cria-o.",
   "The project's graphs": "Os grafos do projeto",
   "No graphs": "Sem grafos",
@@ -3458,6 +3465,21 @@ export const PT: Record<string, string> = {
   "The part's value, the same for every object": "O valor da peça, o mesmo para cada objeto",
   "type": "tipo",
   "formula": "fórmula",
+  'Join automatically': 'Unir automaticamente',
+  'Join automatically at start': 'Unir automaticamente no início',
+  'Join automatically at end': 'Unir automaticamente no fim',
+  'Don\'t join at this end': 'Não unir nesta extremidade',
+  'Join automatically at this end': 'Unir automaticamente nesta extremidade',
+  'Say which end: start, end or both.': 'Diga qual extremidade: início, fim ou ambas.',
+  'Select walls, beams or strip footings.': 'Selecione paredes, vigas ou sapatas corridas.',
+  'Place again at another scale': 'Colocar de novo noutra escala',
+  'Drag a rectangle on the view: the part to place beside it at the new scale (a click takes the view as cropped; Esc cancels).': 'Arraste um retângulo sobre a vista: a parte a colocar ao lado na nova escala (um clique usa a vista tal como está recortada; Esc cancela).',
+  'Give the scale.': 'Indique a escala.',
+  'The view is on no sheet: place it on one first.': 'A vista não está em nenhuma folha: coloque-a primeiro numa.',
+  'A schedule has no scale.': 'Uma tabela não tem escala.',
+  'Draw the part to show on the view.': 'Desenhe na vista a parte a mostrar.',
+  // Doors and windows in one object (forum topic 34).
+  'Interior sill over the parapet': 'Peitoril interior sobre o parapeito', 'Exterior sill over the parapet': 'Peitoril exterior sobre o parapeito', 'Lift & slide (HS), runs left': 'Elevatória-deslizante (HS), para a esquerda', 'Lift & slide (HS), runs right': 'Elevatória-deslizante (HS), para a direita', 'Tilt & slide (PSK), runs left': 'Basculante-deslizante (PSK), para a esquerda', 'Tilt & slide (PSK), runs right': 'Basculante-deslizante (PSK), para a direita', 'Door leaves': 'Folhas de porta', 'Window sashes': 'Folhas de janela', 'Garage doors': 'Portões de garagem', 'New balcony door + window': 'Nova porta de varanda + janela', 'New door with sidelights and transom': 'Nova porta com laterais e bandeira', 'New lift-and-slide (HS) portal': 'Novo pórtico elevatório-deslizante (HS)', 'New French window': 'Nova janela francesa', 'Glazing build-up': 'Composição do vidro', 'Panes and cavities in mm, from outside in: 4-16-4 double, 4-12-4-12-4 triple, 33.1-16-4 laminated outside': 'Vidros e câmaras em mm, de fora para dentro: 4-16-4 duplo, 4-12-4-12-4 triplo, 33.1-16-4 laminado por fora', 'laminated': 'laminado', 'U-value, g-value and safety glass: the type\'s Data, below.': 'Valor U, fator g e vidro de segurança: os Dados do tipo, abaixo.', 'How plans draw window sashes\' swings (French windows, balcony doors), for the whole project': 'Como as plantas desenham a abertura das folhas de janela (janelas francesas, portas de varanda), para todo o projeto', 'Sash swings: dashed to the floor': 'Abertura das folhas: tracejada até ao piso', 'Sash swings: none': 'Abertura das folhas: nenhuma', 'Sash swings: all dashed': 'Abertura das folhas: todas tracejadas', 'Sash swings: all solid': 'Abertura das folhas: todas contínuas', 'A door leaf makes it a door, and a window type stays a window type: create a new type for it.': 'Uma folha de porta faz dela uma porta, e um tipo de janela continua a ser um tipo de janela: crie um novo tipo para ela.', 'With window sashes and no door leaf it is a window, and a door type stays a door type: create a new type for it.': 'Com folhas de janela e sem folha de porta é uma janela, e um tipo de porta continua a ser um tipo de porta: crie um novo tipo para ela.', 'Create as a new type': 'Criar como novo tipo', 'A lift-and-slide leaf stands on the threshold: put it in the bottom row.': 'Uma folha elevatória-deslizante assenta na soleira: coloque-a na fila de baixo.', 'The glazing is thicker than the sash and frame hold: a thinner build-up or a deeper profile.': 'O vidro é mais espesso do que a folha e o caixilho comportam: uma composição mais fina ou um perfil mais profundo.',
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 
@@ -3754,4 +3776,5 @@ export const PT_PATTERNS: Language['patterns'] = [
   [/^(\d+) constraints dropped: (.+)$/, (m) => `${m[1]} restrições removidas: ${m[2]}`],
   [/^Constraint left out: (.+)$/, (m) => `Restrição deixada de fora: ${m[1]}`],
   [/^(\d+) constraints left out: (.+)$/, (m) => `${m[1]} restrições deixadas de fora: ${m[2]}`],
+  [/^Place again at 1:([\d.]+)…$/, (m) => `Colocar de novo a 1:${m[1]}…`],
 ];

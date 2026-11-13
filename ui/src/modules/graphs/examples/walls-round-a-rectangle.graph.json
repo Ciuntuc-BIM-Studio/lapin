@@ -1,0 +1,102 @@
+{
+  "format": 2,
+  "nodes": [
+    {
+      "id": "width",
+      "kind": "number",
+      "x": 0,
+      "y": 0,
+      "values": {
+        "value": 10,
+        "unit": "length"
+      },
+      "label": "Width",
+      "palette": {
+        "order": 1,
+        "min": 3,
+        "max": 40,
+        "step": 0.5
+      }
+    },
+    {
+      "id": "depth",
+      "kind": "number",
+      "x": 0,
+      "y": 140,
+      "values": {
+        "value": 7,
+        "unit": "length"
+      },
+      "label": "Depth",
+      "palette": {
+        "order": 2,
+        "min": 3,
+        "max": 40,
+        "step": 0.5
+      }
+    },
+    {
+      "id": "rect",
+      "kind": "rectangle",
+      "x": 300,
+      "y": 40,
+      "label": "Outline"
+    },
+    {
+      "id": "corners",
+      "kind": "corners",
+      "x": 600,
+      "y": 40,
+      "label": "Wall ends"
+    },
+    {
+      "id": "walls",
+      "kind": "command:architecture.addWall",
+      "x": 900,
+      "y": 40,
+      "values": {
+        "height": 2.8
+      },
+      "label": "Walls"
+    }
+  ],
+  "wires": [
+    {
+      "from": "width",
+      "out": "value",
+      "to": "rect",
+      "in": "width"
+    },
+    {
+      "from": "depth",
+      "out": "value",
+      "to": "rect",
+      "in": "depth"
+    },
+    {
+      "from": "rect",
+      "out": "line",
+      "to": "corners",
+      "in": "line"
+    },
+    {
+      "from": "corners",
+      "out": "starts",
+      "to": "walls",
+      "in": "pt:1"
+    },
+    {
+      "from": "corners",
+      "out": "ends",
+      "to": "walls",
+      "in": "pt:2"
+    }
+  ],
+  "tool": {
+    "show": true,
+    "name": "Walls round a rectangle",
+    "icon": "square",
+    "tooltip": "Four walls round a rectangle of the width and depth you set",
+    "group": "Graphs"
+  }
+}

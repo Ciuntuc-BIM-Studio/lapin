@@ -124,6 +124,32 @@ The **Active leaf** (**Left** or **Right**, as the grid reads, the left one hing
 
 ![A double door: no mullion between the leaves, rebated, the right leaf active](shots/joinery-double-door.webp)
 
+### Doors and windows in one frame
+
+Door leaves and window sashes can share one frame: a balcony door with its window, an entrance door with side lights and a transom, a lift-and-slide portal. In **Opens**, the list is grouped into **Door leaves**, **Window sashes** and, on a door, **Garage doors**, and every pane of a door or a window may take any of them. It stays one object with one mark and one line in the schedule:
+
+- With at least one door leaf it is a **door** (an IfcDoor). A new window type given a leaf becomes a door; the line under the drawings says which, **IfcDoor** or **IfcWindow**.
+- With window sashes and no leaf it is a **window**. A pane that is only fixed keeps what it was made as.
+- A saved type keeps its class: a window type cannot take a leaf in place. **Create as a new type** makes the door (or the window) beside it.
+
+A sash in a door's bottom row stands on a **bottom rail**, the frame's width over the threshold, as a window's sash does; the leaves keep the threshold. The window boards (**Interior sill over the parapet**, **Exterior sill over the parapet**) run only over a **solid panel** at the bottom of a door's column (the parapet under its window part), on the transom over it; where the glass or a leaf reaches the floor there are none. A sash in a door has a window handle; the leaves keep the door's.
+
+The presets: **New balcony door + window** (a glazed leaf, and beside it a tilt-and-turn sash over a solid parapet panel, PVC, 4-16-4), **New door with sidelights and transom**, **New lift-and-slide (HS) portal** and **New French window** (two side-hung sashes to the floor, no boards; a window).
+
+**Lift & slide (HS)** and **Tilt & slide (PSK)** leaves run on the frame's inner track, over the fixed pane beside them on the outer one; their long handle is on the stile you pull. They stand on the threshold, so they go in the bottom row; the HS portal's threshold is flush. Their elevation symbol is the arrow of the way they run, with the lift (HS) or the tilt (PSK).
+
+![A balcony door and its window in one frame: a leaf, a tilt-and-turn sash over a parapet panel, glazed 4-16-4](shots/joinery-balcony-door.webp)
+
+![A lift-and-slide portal: the leaf on the inner track runs left over the fixed pane](shots/joinery-lift-slide.webp)
+
+**The glass.** Under **Glass**, **Glazing build-up** is the glass as the makers write it: panes and cavities in millimetres, from outside in, `4-16-4` double, `4-12-4-12-4` triple, `33.1-16-4` with a laminated pane outside (33.1 is two 3 mm sheets and one interlayer). It sets the glass's thickness in 3D, in sections and in plans, shown beside it; without one, type a **Glass thickness**. A build-up thicker than the sash and frame can hold is refused. The U-value, g-value and safety glass are the type's [Data](#data-u-value-fire-rating-fittings).
+
+**Sashes' swings in plan.** French windows and balcony doors are often drawn with their sashes' sweep, dashed. The list under the drawings sets it for the whole project: **Sash swings: dashed to the floor** (the default: side-hung and tilt-and-turn sashes whose bottom is within 150 mm of the floor), **none**, **all dashed** or **all solid**. A door leaf's arc is always drawn; sliding sashes keep their arrow.
+
+![A French window: its sashes' swings dashed in the plan](shots/joinery-french-window.webp)
+
+In IFC the element is an IfcDoor whose OperationType is the nearest IFC has (a single swing door, a swing door with a fixed side pane, a sliding door for a lift-and-slide portal), and every pane is an IfcDoorPanelProperties: a leaf's own operation, a fixed pane FIXEDPANEL, a sash USERDEFINED. What IFC cannot say goes in the type's `Lapin_Joinery` set: **PanelOperations** (each pane in IFC's window terms, SIDEHUNGRIGHTHAND, TILTANDTURNLEFTHAND…, or LIFTANDSLIDE), **Opening** (lift-and-slide) and **Glazing** (the build-up); the glass is also in `Pset_DoorWindowGlazingType` (the panes, their thicknesses, laminated or not). Lapin reads its own file back whole, and the panes' own operations from `Lapin_Joinery` in a file from elsewhere.
+
 **Profile system** starts the type from a **PVC**, **Aluminium**, **Timber** or **Steel (slim)** profile: it sets the frame, mullion, transom and sash sizes and gives the profiles their finer shapes. The frame has a **Rebate** the sash closes on, the sash laps over the frame by its **Sash overlap**, **Glazing beads** hold the glass, and a window has a drip under its bottom rail. Every size stays editable. **Simple (plain profiles)** keeps plain rectangular members, as before.
 
 **Frame from a library** and **Sash from a library** take a profile from your [profile libraries](profiles.md) (an aluminium or PVC section read from a DXF, say): straight frame and sash members then have its real outline, holes included, in 3D, in sections and in plans, with its width and depth. It replaces what it is the real shape of, the system's stop, lip and drips; glazing beads stay. Curved heads and round windows keep a plain band, and so do this grid's mullions and transoms. **Plain** goes back to a rectangle of that size.

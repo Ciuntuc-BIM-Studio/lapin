@@ -208,6 +208,13 @@ export const DA: Record<string, string> = {
   "Delete graph": "Slet graf",
   "Bake graph": "Generér graf",
   "New graph": "Ny graf",
+  "New from example…": "Ny fra et eksempel…",
+  "Twisted tower": "Snoet tårn",
+  "Floors on a stack of storeys, each turned a little more than the one below, with columns; sliders for floors, height, twist, width and taper.": "Dæk på en stak af etager, hver drejet lidt mere end den under, med søjler; skydere til etager, højde, drejning, bredde og tilspidsning.",
+  "Columns on a grid": "Søjler på et gitter",
+  "A column at each point of a grid: how many each way, and the spacing.": "En søjle i hvert punkt af et gitter: hvor mange i hver retning, og afstanden.",
+  "Walls round a rectangle": "Vægge rundt om et rektangel",
+  "Four walls round a rectangle of the width and depth you set.": "Fire vægge rundt om et rektangel med den bredde og dybde, du angiver.",
   "A graph wires nodes (numbers, points, lists, the commands of the tools) into a recipe: Lapin shows what it would make as a ghost, and Bake makes it.": "En graf forbinder noder (tal, punkter, lister, værktøjernes kommandoer) til en opskrift: Lapin viser, hvad den ville lave, som et spøgelse, og Generér laver det.",
   "The project's graphs": "Projektets grafer",
   "No graphs": "Ingen grafer",
@@ -3455,6 +3462,21 @@ export const DA: Record<string, string> = {
   "The part's value, the same for every object": "Delens værdi, den samme for hvert objekt",
   "type": "type",
   "formula": "formel",
+  'Join automatically': 'Saml automatisk',
+  'Join automatically at start': 'Saml automatisk ved start',
+  'Join automatically at end': 'Saml automatisk ved slut',
+  'Don\'t join at this end': 'Saml ikke ved denne ende',
+  'Join automatically at this end': 'Saml automatisk ved denne ende',
+  'Say which end: start, end or both.': 'Angiv hvilken ende: start, slut eller begge.',
+  'Select walls, beams or strip footings.': 'Vælg vægge, bjælker eller stribefundamenter.',
+  'Place again at another scale': 'Placér igen i et andet målforhold',
+  'Drag a rectangle on the view: the part to place beside it at the new scale (a click takes the view as cropped; Esc cancels).': 'Træk et rektangel på visningen: den del, der placeres ved siden af i det nye målforhold (et klik tager visningen som beskåret; Esc annullerer).',
+  'Give the scale.': 'Angiv målforholdet.',
+  'The view is on no sheet: place it on one first.': 'Visningen er ikke på nogen tegning: placér den først på en.',
+  'A schedule has no scale.': 'En liste har intet målforhold.',
+  'Draw the part to show on the view.': 'Tegn den del, der skal vises, på visningen.',
+  // Doors and windows in one object (forum topic 34).
+  'Interior sill over the parapet': 'Indvendig sålbænk over brystningen', 'Exterior sill over the parapet': 'Udvendig sålbænk over brystningen', 'Lift & slide (HS), runs left': 'Løfte-skyde (HS), kører til venstre', 'Lift & slide (HS), runs right': 'Løfte-skyde (HS), kører til højre', 'Tilt & slide (PSK), runs left': 'Vippe-skyde (PSK), kører til venstre', 'Tilt & slide (PSK), runs right': 'Vippe-skyde (PSK), kører til højre', 'Door leaves': 'Dørfløje', 'Window sashes': 'Vinduesrammer', 'Garage doors': 'Garageporte', 'New balcony door + window': 'Ny altandør + vindue', 'New door with sidelights and transom': 'Ny dør med sidepartier og overvindue', 'New lift-and-slide (HS) portal': 'Ny løfte-skydedør (HS)', 'New French window': 'Nyt fransk vindue', 'Glazing build-up': 'Glasopbygning', 'Panes and cavities in mm, from outside in: 4-16-4 double, 4-12-4-12-4 triple, 33.1-16-4 laminated outside': 'Ruder og mellemrum i mm, udefra og ind: 4-16-4 to-lags, 4-12-4-12-4 tre-lags, 33.1-16-4 lamineret udvendigt', 'laminated': 'lamineret', 'U-value, g-value and safety glass: the type\'s Data, below.': 'U-værdi, g-værdi og sikkerhedsglas: typens Data, nedenfor.', 'How plans draw window sashes\' swings (French windows, balcony doors), for the whole project': 'Hvordan planer tegner vinduesrammers åbning (franske vinduer, altandøre), for hele projektet', 'Sash swings: dashed to the floor': 'Rammers åbning: stiplet til gulvet', 'Sash swings: none': 'Rammers åbning: ingen', 'Sash swings: all dashed': 'Rammers åbning: alle stiplede', 'Sash swings: all solid': 'Rammers åbning: alle fuldt optrukne', 'A door leaf makes it a door, and a window type stays a window type: create a new type for it.': 'Et dørfløj gør den til en dør, og en vinduestype forbliver en vinduestype: opret en ny type til den.', 'With window sashes and no door leaf it is a window, and a door type stays a door type: create a new type for it.': 'Med vinduesrammer og uden dørfløj er det et vindue, og en dørtype forbliver en dørtype: opret en ny type til den.', 'Create as a new type': 'Opret som ny type', 'A lift-and-slide leaf stands on the threshold: put it in the bottom row.': 'Et løfte-skydefløj står på tærsklen: placer det i nederste række.', 'The glazing is thicker than the sash and frame hold: a thinner build-up or a deeper profile.': 'Glasset er tykkere, end rammen og karmen kan rumme: en tyndere opbygning eller en dybere profil.',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -3752,4 +3774,5 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^(\d+) constraints dropped: (.+)$/, (m) => `${m[1]} bånd fjernet: ${m[2]}`],
   [/^Constraint left out: (.+)$/, (m) => `Bånd udeladt: ${m[1]}`],
   [/^(\d+) constraints left out: (.+)$/, (m) => `${m[1]} bånd udeladt: ${m[2]}`],
+  [/^Place again at 1:([\d.]+)…$/, (m) => `Placér igen i 1:${m[1]}…`],
 ];

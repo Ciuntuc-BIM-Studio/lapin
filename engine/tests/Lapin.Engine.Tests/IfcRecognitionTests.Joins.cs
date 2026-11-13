@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Lapin.Architecture;
 using Lapin.Geometry;
 using Lapin.Ifc;
@@ -284,5 +285,52 @@ public partial class IfcRecognitionTests
         var copy = (string)f.Run("element.transform", new System.Text.Json.Nodes.JsonObject { ["ids"] = new System.Text.Json.Nodes.JsonArray(b), ["op"] = "copy", ["by"] = new System.Text.Json.Nodes.JsonArray(1, -1) })!["ids"]![0]!;
         Assert.Equal("T", (string?)Joins.Between(f.Model, a, copy)?.Attrs?["kind"]);
         Assert.Empty(Joins.Of(f.Model, b));
+        // The copy's ends were set to join; the original's are still as the file has them.
+        Assert.True(Joins.AutoAt(f.Model.Get(copy)!, 0));
+        Assert.False(Joins.AutoAt(f.Model.Get(b)!, 0));
+    }
+
+    [Fact]
+    public void A_recognised_wall_edited_keeps_its_ends_and_its_openings_and_joins_nothing()
+    {
+        // The forum's topic #50 (decision 546): masonry between columns, imported; a wall drawn at its end, its height, its
+        // type and its start changed make no join of Lapin's, its ends stay the file's, and its window stays where it is in plan.
+        var x = new Foreign();
+        var wall = FootprintWall(x, "a", (0, -150), (5000, -150), (5000, 150), (0, 150));
+        var op = x.Element("IFCOPENINGELEMENT", "a-op", "Opening", x.Place(0, 0, 0), x.Shape(x.Box(2500, 0, 900, 1200, 500, 1500)), E("OPENING"));
+        var win = x.Element("IFCWINDOW", "a-win", "F1", x.Place(0, 0, 0), x.Shape(x.Box(2500, 0, 900, 1200, 100, 1500)), "1500.", "1200.", E("WINDOW"), E("SINGLE_PANEL"), Null);
+        x.F.Add("IFCRELVOIDSELEMENT", x.G("a-v"), Null, Null, Null, wall, op);
+        x.F.Add("IFCRELFILLSELEMENT", x.G("a-f"), Null, Null, Null, op, win);
+        var (f, _, _) = Imported(x, "edited-recognised.ifc");
+        var a = Guid("foreign-test", "a");
+        var e = f.Model.Get(a)!;
+        Assert.False(Joins.AutoAt(e, 0));
+        Assert.False(Joins.AutoAt(e, 1));
+        Assert.Equal(new Vec2(5, 0), Walls.End(e));
+        Assert.Equal(2.5, Openings.PlacedOn(f.Model, a).Single().Along, 6);
+
+        // A wall drawn from its end: a corner before, now nothing (the drawn one stays as drawn too).
+        var n = f.Wall(5, 0, 5, 3);
+        Assert.Empty(Joins.Of(f.Model, a));
+        Assert.Equal(new Vec2(5, 0), Walls.End(f.Model.Get(a)!));
+        f.Run("architecture.updateWall", new JsonObject { ["id"] = a, ["height"] = 2.6 });
+        f.Run("architecture.setWallType", new JsonObject { ["ids"] = new JsonArray(a), ["typeId"] = f.Type("Block 300", ("Brick", 0.3, true)) });
+        Assert.Empty(Joins.Of(f.Model, a));
+        Assert.Equal((new Vec2(0, 0), new Vec2(5, 0)), (Walls.Start(f.Model.Get(a)!), Walls.End(f.Model.Get(a)!)));
+
+        // Its start typed half a metre in: the window stays at 2.5 m in plan, 2.0 m from the new start.
+        f.Run("architecture.updateWall", new JsonObject { ["id"] = a, ["x1"] = 0.5 });
+        Assert.Empty(Joins.Of(f.Model, a));
+        Assert.Equal(2.0, Openings.PlacedOn(f.Model, a).Single().Along, 6);
+        Assert.Equal(new Vec2(5, 0), Walls.End(f.Model.Get(a)!));
+
+        // Its end set to join: it joins the wall drawn there now; undone, one step, as it was.
+        f.Run("element.setAutoJoin", new JsonObject { ["ids"] = new JsonArray(a), ["end"] = true });
+        Assert.NotNull(Joins.Between(f.Model, a, n));
+        Assert.True(Joins.AutoAt(f.Model.Get(a)!, 1));
+        Assert.False(Joins.AutoAt(f.Model.Get(a)!, 0));
+        f.Session.Undo();
+        Assert.Null(Joins.Between(f.Model, a, n));
+        Assert.Null(f.Model.Get(a)!.Attrs[Joins.AutoKey]);
     }
 }

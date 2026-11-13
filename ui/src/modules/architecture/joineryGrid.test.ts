@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { barWidths, fitBars, leafPairs, merge, neighbour, normalised, resized, shifted, split, tidy, withBar, type GridSpec } from './joineryGrid';
+import { barWidths, fitBars, kindOf, leafPairs, merge, neighbour, normalised, operationGroups, resized, shifted, split, tidy, withBar, type GridSpec } from './joineryGrid';
 
 const frame = { mullion: 0.05, transom: 0.05 };
 
@@ -115,5 +115,22 @@ describe('per-bar widths (decision 466)', () => {
     expect(leafPairs(s)).toEqual([0]);
     expect(leafPairs({ ...s, panels: [P(0, 'swing-right'), P(1, 'swing-left')] })).toEqual([]);
     expect(leafPairs({ ...s, columns: [1, 2, 1], panels: [P(0, 'fixed'), P(1, 'swing-left'), P(2, 'swing-right')] })).toEqual([1]);
+  });
+});
+
+describe('doors and windows in one frame (forum topic 34)', () => {
+  const frame = { mullion: 0.08, transom: 0.08 };
+  it('groups the Opens list: fixed, door leaves, window sashes, garage doors', () => {
+    const g = operationGroups(['fixed', 'swing-left', 'lift-slide-left', 'side-left', 'tilt-turn-right', 'roller'], ['roller']);
+    expect(g.map((x) => x.label)).toEqual([null, 'Door leaves', 'Window sashes', 'Garage doors']);
+    expect(g[1].ops).toEqual(['swing-left', 'lift-slide-left']);
+    expect(g[2].ops).toEqual(['side-left', 'tilt-turn-right']);
+  });
+  it('is a door with a leaf, a window with sashes and no leaf, else what it was', () => {
+    const s = (kind: 'door' | 'window', ops: string[]) => ({ kind, columns: ops.map(() => 1), rows: [1], frame, panels: ops.map((operation, col) => ({ col, row: 0, operation })) });
+    expect(kindOf(s('window', ['swing-left', 'side-right']))).toBe('door');
+    expect(kindOf(s('door', ['side-left']))).toBe('window');
+    expect(kindOf(s('door', ['fixed']))).toBe('door');
+    expect(kindOf(s('window', ['fixed', 'lift-slide-left']))).toBe('door');
   });
 });

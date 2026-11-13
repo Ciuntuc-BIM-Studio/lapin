@@ -295,6 +295,33 @@ public static class Views
     }
 
     /// <summary>"name copy", then "name copy 2", "name copy 3"…, the first not taken by an entity of <paramref name="cls"/>.</summary>
+    /// <summary>
+    /// A copy of a view (view.duplicate): its settings (kind, storey, range, scale, line, graphics, hidden elements, line
+    /// edits, discipline); with detailing, its annotations too. The implicit plan of a storey copies as a plan view of its
+    /// own; the 3D view as a saved 3D view. The copy, and how many annotations went with it.
+    /// </summary>
+    public static (Entity Copy, int Annotations) Duplicate(ICommandContext ctx, string id, string? name, string? discipline, bool withDetailing)
+    {
+        var src = Find(ctx.Model, id) ?? throw new CommandException("There is no such view.");
+        var attrs = src.CloneAttrs();
+        if (id == GraphicsSets.View3d) attrs["kind"] = "3d";
+        if (discipline is { Length: > 0 }) attrs["discipline"] = discipline;
+        var copy = new Entity(ctx.NewId(), Class, name is { Length: > 0 } ? name : CopyName(ctx.Model, src.Name, Class), attrs);
+        ctx.Add(copy);
+        var annotations = 0;
+        if (withDetailing)
+            foreach (var ann in ctx.Model.OfClass(IfcClass.Annotation).Where(x => x.Str("viewId") == id).ToList())
+            {
+                var aa = ann.CloneAttrs();
+                aa["viewId"] = copy.Id;
+                var ac = new Entity(ctx.NewId(), ann.Class, ann.Name, aa, ann.PredefinedType);
+                ctx.Add(ac);
+                foreach (var rel in ctx.Model.RelationsOf(ann.Id).Where(x => x.Related.Contains(ann.Id)).ToList()) ctx.Relate(rel.Class, rel.Relating, ac.Id);
+                annotations++;
+            }
+        return (copy, annotations);
+    }
+
     public static string CopyName(IModelView m, string name, string cls)
     {
         var taken = m.OfClass(cls).Select(e => e.Name).ToHashSet();
@@ -1525,23 +1552,8 @@ public static class Views
         r.Command("view.duplicate", "Duplicate view", (ctx, a) =>
         {
             var id = (string?)a["id"] ?? throw new CommandException("Which view?");
-            var src = Find(ctx.Model, id) ?? throw new CommandException("There is no such view.");
-            var attrs = src.CloneAttrs();
-            if (id == GraphicsSets.View3d) attrs["kind"] = "3d";
-            if ((string?)a["discipline"] is { Length: > 0 } discipline) attrs["discipline"] = discipline;
-            var copy = new Entity(ctx.NewId(), Class, (string?)a["name"] is { Length: > 0 } nm ? nm : CopyName(ctx.Model, src.Name, Class), attrs);
-            ctx.Add(copy);
-            var annotations = 0;
-            if (a["withDetailing"] is JsonValue dv && dv.TryGetValue<bool>(out var detailing) && detailing)
-                foreach (var ann in ctx.Model.OfClass(IfcClass.Annotation).Where(x => x.Str("viewId") == id).ToList())
-                {
-                    var aa = ann.CloneAttrs();
-                    aa["viewId"] = copy.Id;
-                    var ac = new Entity(ctx.NewId(), ann.Class, ann.Name, aa, ann.PredefinedType);
-                    ctx.Add(ac);
-                    foreach (var rel in ctx.Model.RelationsOf(ann.Id).Where(x => x.Related.Contains(ann.Id)).ToList()) ctx.Relate(rel.Class, rel.Relating, ac.Id);
-                    annotations++;
-                }
+            var (copy, annotations) = Duplicate(ctx, id, (string?)a["name"], (string?)a["discipline"],
+                a["withDetailing"] is JsonValue dv && dv.TryGetValue<bool>(out var detailing) && detailing);
             return new JsonObject { ["id"] = copy.Id, ["annotations"] = annotations };
         });
 

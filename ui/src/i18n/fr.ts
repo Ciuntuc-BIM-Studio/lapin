@@ -208,6 +208,13 @@ export const FR: Record<string, string> = {
   "Delete graph": "Supprimer le graphe",
   "Bake graph": "Générer le graphe",
   "New graph": "Nouveau graphe",
+  "New from example…": "Nouveau depuis un exemple…",
+  "Twisted tower": "Tour vrillée",
+  "Floors on a stack of storeys, each turned a little more than the one below, with columns; sliders for floors, height, twist, width and taper.": "Dalles sur une pile de niveaux, chacune tournée un peu plus que celle du dessous, avec des poteaux ; curseurs pour les étages, la hauteur, la torsion, la largeur et l’effilement.",
+  "Columns on a grid": "Poteaux sur une grille",
+  "A column at each point of a grid: how many each way, and the spacing.": "Un poteau à chaque point d’une grille : combien dans chaque sens, et l’espacement.",
+  "Walls round a rectangle": "Murs autour d’un rectangle",
+  "Four walls round a rectangle of the width and depth you set.": "Quatre murs autour d’un rectangle de la largeur et de la profondeur choisies.",
   "A graph wires nodes (numbers, points, lists, the commands of the tools) into a recipe: Lapin shows what it would make as a ghost, and Bake makes it.": "Un graphe relie des nœuds (nombres, points, listes, les commandes des outils) en une recette : Lapin montre ce qu'il ferait en fantôme, et Générer le crée.",
   "The project's graphs": "Les graphes du projet",
   "No graphs": "Aucun graphe",
@@ -3464,6 +3471,21 @@ export const FR: Record<string, string> = {
   "The part's value, the same for every object": "La valeur de la pièce, la même pour chaque objet",
   "type": "type",
   "formula": "formule",
+  'Join automatically': 'Joindre automatiquement',
+  'Join automatically at start': 'Joindre automatiquement au début',
+  'Join automatically at end': 'Joindre automatiquement à la fin',
+  'Don\'t join at this end': 'Ne pas joindre à cette extrémité',
+  'Join automatically at this end': 'Joindre automatiquement à cette extrémité',
+  'Say which end: start, end or both.': 'Indiquez quelle extrémité : début, fin ou les deux.',
+  'Select walls, beams or strip footings.': 'Sélectionnez des murs, des poutres ou des semelles filantes.',
+  'Place again at another scale': 'Placer à nouveau à une autre échelle',
+  'Drag a rectangle on the view: the part to place beside it at the new scale (a click takes the view as cropped; Esc cancels).': 'Tracez un rectangle sur la vue : la partie à placer à côté à la nouvelle échelle (un clic prend la vue telle que recadrée ; Échap annule).',
+  'Give the scale.': 'Indiquez l’échelle.',
+  'The view is on no sheet: place it on one first.': 'La vue n’est sur aucune feuille : placez-la d’abord sur une.',
+  'A schedule has no scale.': 'Une nomenclature n’a pas d’échelle.',
+  'Draw the part to show on the view.': 'Dessinez sur la vue la partie à montrer.',
+  // Doors and windows in one object (forum topic 34).
+  'Interior sill over the parapet': 'Tablette intérieure sur l\'allège', 'Exterior sill over the parapet': 'Appui extérieur sur l\'allège', 'Lift & slide (HS), runs left': 'Levant-coulissant (HS), vers la gauche', 'Lift & slide (HS), runs right': 'Levant-coulissant (HS), vers la droite', 'Tilt & slide (PSK), runs left': 'Oscillo-coulissant (PSK), vers la gauche', 'Tilt & slide (PSK), runs right': 'Oscillo-coulissant (PSK), vers la droite', 'Door leaves': 'Vantaux de porte', 'Window sashes': 'Ouvrants de fenêtre', 'Garage doors': 'Portes de garage', 'New balcony door + window': 'Nouvelle porte de balcon + fenêtre', 'New door with sidelights and transom': 'Nouvelle porte avec parties latérales et imposte', 'New lift-and-slide (HS) portal': 'Nouvelle baie levante-coulissante (HS)', 'New French window': 'Nouvelle porte-fenêtre', 'Glazing build-up': 'Composition du vitrage', 'Panes and cavities in mm, from outside in: 4-16-4 double, 4-12-4-12-4 triple, 33.1-16-4 laminated outside': 'Verres et lames en mm, de l\'extérieur vers l\'intérieur : 4-16-4 double, 4-12-4-12-4 triple, 33.1-16-4 feuilleté à l\'extérieur', 'laminated': 'feuilleté', 'U-value, g-value and safety glass: the type\'s Data, below.': 'Valeur U, facteur g et verre de sécurité : les Données du type, ci-dessous.', 'How plans draw window sashes\' swings (French windows, balcony doors), for the whole project': 'Comment les plans dessinent le débattement des ouvrants (portes-fenêtres, portes de balcon), pour tout le projet', 'Sash swings: dashed to the floor': 'Débattement des ouvrants : tireté jusqu\'au sol', 'Sash swings: none': 'Débattement des ouvrants : aucun', 'Sash swings: all dashed': 'Débattement des ouvrants : tous en tireté', 'Sash swings: all solid': 'Débattement des ouvrants : tous en trait plein', 'A door leaf makes it a door, and a window type stays a window type: create a new type for it.': 'Un vantail de porte en fait une porte, et un type de fenêtre reste un type de fenêtre : créez un nouveau type pour elle.', 'With window sashes and no door leaf it is a window, and a door type stays a door type: create a new type for it.': 'Avec des ouvrants de fenêtre et sans vantail de porte, c\'est une fenêtre, et un type de porte reste un type de porte : créez un nouveau type pour elle.', 'Create as a new type': 'Créer comme nouveau type', 'A lift-and-slide leaf stands on the threshold: put it in the bottom row.': 'Un vantail levant-coulissant repose sur le seuil : placez-le dans la rangée du bas.', 'The glazing is thicker than the sash and frame hold: a thinner build-up or a deeper profile.': 'Le vitrage est plus épais que ce que l\'ouvrant et le dormant peuvent recevoir : une composition plus mince ou un profil plus profond.',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;
@@ -3761,4 +3783,5 @@ export const FR_PATTERNS: Language['patterns'] = [
   [/^(\d+) constraints dropped: (.+)$/, (m) => `${m[1]} contraintes supprimées : ${m[2]}`],
   [/^Constraint left out: (.+)$/, (m) => `Contrainte laissée de côté : ${m[1]}`],
   [/^(\d+) constraints left out: (.+)$/, (m) => `${m[1]} contraintes laissées de côté : ${m[2]}`],
+  [/^Place again at 1:([\d.]+)…$/, (m) => `Placer à nouveau au 1:${m[1]}…`],
 ];

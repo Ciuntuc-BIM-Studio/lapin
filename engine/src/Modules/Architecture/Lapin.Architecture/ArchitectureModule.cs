@@ -194,6 +194,10 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 ["garage-sectional"] = JoinerySpecs.SectionalGarageDoor.ToJson(), ["garage-roller"] = JoinerySpecs.RollerGarageDoor.ToJson(),
                 ["garage-up-and-over"] = JoinerySpecs.UpAndOverGarageDoor.ToJson(), ["garage-side-sliding"] = JoinerySpecs.SideSlidingGarageDoor.ToJson(),
                 ["garage-side-hinged"] = JoinerySpecs.SideHingedGarageDoors.ToJson(),
+                // Doors and windows together (forum topic 34): a balcony door with its window, sidelights and a transom, an HS portal,
+                // and a French window (a window: its sashes reach the floor).
+                ["balcony-door-window"] = JoinerySpecs.BalconyDoorWindow.ToJson(), ["door-sidelights"] = JoinerySpecs.DoorWithSidelights.ToJson(),
+                ["lift-slide"] = JoinerySpecs.LiftSlidePortal.ToJson(), ["french-window"] = JoinerySpecs.FrenchWindow.ToJson(),
             },
             // Garage doors: their operations, finishes, tracks, and the common sizes (indicative: Australia's and Europe's).
             ["garage"] = new JsonObject
@@ -221,6 +225,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         {
             var spec = JsonSpec(a["spec"]);
             if (spec == null) return new JsonObject { ["problem"] = "The configuration is unreadable." };
+            // A door when it has a door leaf, a window when its sashes open and no leaf does (forum topic 34): drawn as what it is.
+            spec = spec with { Kind = Joinery.KindOf(spec) };
             var (convention, hardware) = Joinery.SymbolSettings(q.Model);
             var problem = Joinery.Problem(spec);
             // The drawings show the dressings on a wall this thick (the type's own walls vary: 300 mm unless asked).
@@ -250,6 +256,12 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 // The grid (decision 370): the columns' and rows' extents, mullions and transoms between them, for the pane editor.
                 ["grid"] = problem != null || bay ? null : GridJson(spec),
                 ["ifcType"] = spec.IsDoor ? Joinery.DoorOperation(spec).Type : Joinery.WindowPartitioning(spec).Type,
+                ["kind"] = spec.Kind,
+                // The glass's build-up as read (forum topic 34): its panes and total, in millimetres.
+                ["glazing"] = GlazingBuildUp.Parse(spec.Sash.Glazing) is { } gz ? new JsonObject
+                {
+                    ["thickness"] = Math.Round(gz.Thickness * 1000, 2), ["panes"] = gz.Panes.Count, ["laminated"] = gz.Laminated,
+                } : null,
                 // The drawings (the symbol engine's): the elevation from inside and from outside, the plan, the section.
                 ["drawings"] = problem != null ? null : bay ? new JsonObject
                 {
@@ -261,10 +273,10 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 {
                     ["elevation"] = Strokes([.. JoinerySymbols.Elevation(spec, false, convention, hardware), .. JoinerySymbols.Dressings(spec, wall, "elevation")]),
                     ["exterior"] = Strokes([.. JoinerySymbols.Elevation(spec, true, convention, hardware), .. JoinerySymbols.Dressings(spec, wall, "exterior")]),
-                    ["plan"] = Strokes([.. JoinerySymbols.Plan(spec), .. JoinerySymbols.Dressings(spec, wall, "plan")]),
+                    ["plan"] = Strokes([.. JoinerySymbols.Plan(spec, windowSwing: Joinery.WindowSwing(q.Model)), .. JoinerySymbols.Dressings(spec, wall, "plan")]),
                     ["section"] = Strokes([.. JoinerySymbols.Section(spec), .. JoinerySymbols.Dressings(spec, wall, "section", JoinerySymbols.SectionCut(spec))]),
                 },
-                ["symbols"] = new JsonObject { ["convention"] = convention, ["hardware"] = hardware },
+                ["symbols"] = new JsonObject { ["convention"] = convention, ["hardware"] = hardware, ["windowSwing"] = Joinery.WindowSwing(q.Model) },
                 // A garage door's room and panels as the engine works them out (topic #48), for the configurator's read-out.
                 ["garage"] = problem != null || !GarageDoors.Of(spec) ? null : new JsonObject
                 {
@@ -298,6 +310,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var o = attrs["joinerySymbols"] as JsonObject ?? [];
             if ((string?)a["convention"] is { } c) o["convention"] = Joinery.Conventions.Contains(c) ? c : throw new CommandException("The convention is handle or hinge.");
             if (a["hardware"] is JsonValue hv && hv.TryGetValue<bool>(out var h)) o["hardware"] = h;
+            // Window sashes' swings in plan (forum topic 34): auto, none, dashed, solid.
+            if ((string?)a["windowSwing"] is { } ws) o["windowSwing"] = Joinery.WindowSwings.Contains(ws) ? ws : throw new CommandException("The window swing is auto, none, dashed or solid.");
             attrs["joinerySymbols"] = o;
             ctx.Replace(project.With(attrs: attrs));
             return null;
@@ -647,13 +661,19 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Command("createJoineryType", "New door or window type", (ctx, a) =>
         {
             var spec = JoinerySpec.From(a["spec"]) ?? throw new CommandException("The type's configuration is missing or unreadable.");
-            return new JsonObject { ["id"] = Openings.CreateType(ctx, spec).Id };
+            // A door when it has a door leaf, a window when its sashes open and no leaf does (forum topic 34).
+            return new JsonObject { ["id"] = Openings.CreateType(ctx, spec with { Kind = Joinery.KindOf(spec) }).Id };
         });
 
         r.Command("updateJoineryType", "Change door or window type", (ctx, a) =>
         {
             var type = ctx.Model.Get((string?)a["id"] ?? "") is { Class: IfcClass.DoorType or IfcClass.WindowType } t ? t : throw new CommandException("There is no such door or window type.");
-            Openings.UpdateType(ctx, type, JinerySpecOrThrow(a["spec"]));
+            var spec = JinerySpecOrThrow(a["spec"]);
+            if (Joinery.KindOf(spec) is var kind && (kind == "door") != (type.Class == IfcClass.DoorType))
+                throw new CommandException(kind == "door"
+                    ? "A door leaf makes it a door, and a window type stays a window type: save it as a new type."
+                    : "With window sashes and no door leaf it is a window, and a door type stays a door type: save it as a new type.");
+            Openings.UpdateType(ctx, type, spec with { Kind = kind });
             return null;
         });
 
@@ -875,7 +895,15 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var next = Walls.Attrs(start, end, height, baseOffset, thickness);
             if (rise != 0) next[PathCurve.Key] = rise;
             var after = wall.With(attrs: next);
-            foreach (var o in Openings.PlacedOn(ctx.Model, wall.Id)) Openings.CheckFits(ctx.Model, after, o.Along, o.Sill, o.Width, o.Height, o.Opening.Id);
+            // A recognised wall's openings stay where the file put them in plan (decision 546): the wall's and its joined
+            // neighbours' (their joined ends move with it); a drawn wall's go with its start.
+            var places = Openings.PlacesOnRecognised(ctx.Model, Joins.Of(ctx.Model, wall.Id).Select(j => Joins.Other(j, wall.Id)).Prepend(wall.Id));
+            var kept = places.Where(p => p.Wall == wall.Id).ToDictionary(p => p.Opening, p => p.At);
+            foreach (var o in Openings.PlacedOn(ctx.Model, wall.Id))
+            {
+                var along = kept.TryGetValue(o.Opening.Id, out var at) ? Openings.AlongKept(after, at) ?? o.Along : o.Along;
+                Openings.CheckFits(ctx.Model, after, along, o.Sill, o.Width, o.Height, o.Opening.Id);
+            }
             // Only the wall's own fields change; what other modules wrote on it (its phase, its cut priority) stays.
             var attrs = wall.CloneAttrs();
             foreach (var (k, v) in Walls.Attrs(Walls.Start(wall), Walls.End(wall), height, baseOffset, thickness)) attrs[k] = v?.DeepClone();
@@ -884,6 +912,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var moveJoined = a["moveJoinedEnds"] is not JsonValue mj || !mj.TryGetValue<bool>(out var keep) || keep;
             if ((start - Walls.Start(wall)).Length > 1e-12 || (end - Walls.End(wall)).Length > 1e-12)
                 Joins.MoveEnds(ctx, Paths(ctx), ctx.Model.Get(wall.Id)!, start, end, moveJoined, a["detachJoinedEnds"] is JsonValue dj && dj.TryGetValue<bool>(out var detach) && detach);
+            Openings.KeepPlaces(ctx, places);
             return null;
         });
 

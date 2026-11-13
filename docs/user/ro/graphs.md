@@ -56,15 +56,23 @@ Exemplul clasic: etaje dintr-o serie, fiecare rotit puțin mai mult decât cel d
 
 
 1. Cinci noduri de intrare: **Număr întreg** „Etaje” (12), **Număr** „Înălțimea etajului” (3.2, metri), **Număr** „Răsucire totală” (90, grade), **Număr** „Lățime” (24, metri), **Număr** „Îngustare” (0.7: mărimea etajului de sus, cea a celui de jos fiind 1).
-2. **Serie** „Cote”: Început 0, Pas ← Înălțimea etajului, Număr ← Etaje. Apoi nodul uneltei **Nivel nou**: Cotă ← Cote, Înălțime ← Înălțimea etajului. Face câte un nivel la fiecare cotă.
+2. **Serie** „Cote”: Început ← Înălțimea etajului, Pas ← Înălțimea etajului, Număr ← o **Formulă** `a - 1` din Etaje. Apoi nodul uneltei **Nivel nou**: Cotă ← Cote, Înălțime ← Înălțimea etajului. Face câte un nivel la fiecare cotă de deasupra parterului. Un proiect nou are deja nivelul de la cota 0, care poartă primul planșeu: un nod **Niveluri**, o **Comparare** (cotele lui `=` 0) și un **Filtru** îl aleg, iar **Alătură listele** îl pune înaintea nivelurilor noi.
 3. **Dreptunghi**: Lățime și Adâncime ← Lățime. **Centru** ← Conturul dreptunghiului: punctul în jurul căruia se rotesc etajele.
-4. Rotirile: **Împarte** A ← Răsucire totală, B ← Etaje; o **Serie** „Rotiri”: Început 0, Pas ← Împarte, Număr ← Etaje.
+4. Rotirile: o **Formulă** `a / max(b - 1, 1)`, a ← Răsucire totală, b ← Etaje (ultimul etaj se rotește cu toată răsucirea); o **Serie** „Rotiri”: Început 0, Pas ← Formulă, Număr ← Etaje.
 5. Mărimile: o **Formulă** `(a - 1) / max(b - 1, 1)`, a ← Îngustare, b ← Etaje; o **Serie** „Mărimi”: Început 1, Pas ← Formulă, Număr ← Etaje.
 6. **Scalează**: Puncte sau polilinie ← Conturul dreptunghiului, Centru ← Centru, Factor ← Mărimi. Apoi **Rotește**: Puncte sau polilinie ← Scalează, Centru ← Centru, Unghi ← Rotiri: câte un contur pentru fiecare etaj, rotit și scalat.
-7. Nodul uneltei **Placă**: Puncte ← Rotește, Nivel ← Elementele făcute de nodul Nivel nou. Câte un planșeu pe fiecare nivel nou.
-8. Stâlpi, dacă vrei: un **Scalează** cu Factor 0.85 al contururilor rotite față de Centru, Punctele **Colțurilor** lui în Punctul unui **Stâlp**, Nivel ← nivelurile, Rotire ← Rotiri.
+7. Nodul uneltei **Placă**: Puncte ← Rotește, Nivel ← nivelurile alăturate. Câte un planșeu pe fiecare nivel, primul pe parter.
+8. Stâlpi, dacă vrei: un **Scalează** cu Factor 0.85 al contururilor rotite față de Centru, Punctele **Colțurilor** lui în Punctul unui **Stâlp**, Nivel ← nivelurile alăturate, Rotire ← Rotiri.
 
 Fă-l unealtă (**Arată în Uneltele mele**), dă celor cinci intrări un minim și un maxim, iar glisoarele paletei rotesc și îngustează turnul pe măsură ce le tragi; **Bake** face nivelurile, planșeele și stâlpii într-un singur pas de anulare. Treizeci de etaje cu stâlpii lor se previzualizează în aproximativ o treime de secundă.
+
+## Exemple
+
+**Nou dintr-un exemplu…**, lângă **Graf nou** (și pe panoul gol), listează grafurile care vin cu Lapin, fiecare cu o linie despre ce face. Alege unul și o copie e salvată în proiect, cu un nume încă nefolosit, și se deschide pe pânză, încadrată: schimb-o, apasă **Creează** sau deschide-i paleta. Copia e a ta; exemplul în sine nu se schimbă, iar proiectul e al gazdei ca orice graf.
+
+- **Turn răsucit**: cel de mai sus, gata făcut: etajele, înălțimea, răsucirea, lățimea și îngustarea ca glisoare; face nivelurile, câte un planșeu pe fiecare și patru stâlpi pe fiecare etaj, primul planșeu pe nivelul parter al proiectului.
+- **Stâlpi pe o grilă**: o **Grilă de puncte** într-un **Stâlp**; câți stâlpi pe fiecare direcție și distanța dintre ei, ca glisoare.
+- **Pereți în jurul unui dreptunghi**: **Colțurile** unui **Dreptunghi** în Începutul și Sfârșitul unui **Perete**; lățimea și adâncimea ca glisoare.
 
 ## Citirea modelului
 

@@ -89,10 +89,8 @@
       "kind": "series",
       "x": 280,
       "y": 40,
-      "values": {
-        "start": 0
-      },
-      "label": "Levels"
+      "values": {},
+      "label": "Levels above the ground"
     },
     {
       "id": "storeys",
@@ -117,10 +115,13 @@
     },
     {
       "id": "step",
-      "kind": "divide",
+      "kind": "formula",
       "x": 280,
       "y": 240,
-      "label": "Turn per floor"
+      "label": "Turn per floor",
+      "values": {
+        "formula": "a / max(b - 1, 1)"
+      }
     },
     {
       "id": "angles",
@@ -196,6 +197,48 @@
       "x": 1960,
       "y": 380,
       "label": "Columns"
+    },
+    {
+      "id": "fewer",
+      "kind": "formula",
+      "x": 280,
+      "y": -80,
+      "values": {
+        "formula": "a - 1"
+      },
+      "label": "New storeys"
+    },
+    {
+      "id": "ground",
+      "kind": "storeys",
+      "x": 560,
+      "y": -120,
+      "label": "Project storeys"
+    },
+    {
+      "id": "isground",
+      "kind": "compare",
+      "x": 560,
+      "y": -20,
+      "values": {
+        "op": "=",
+        "b": 0
+      },
+      "label": "At level 0"
+    },
+    {
+      "id": "first",
+      "kind": "filter",
+      "x": 840,
+      "y": -120,
+      "label": "Storey at level 0"
+    },
+    {
+      "id": "all",
+      "kind": "joinLists",
+      "x": 1120,
+      "y": -40,
+      "label": "Storey of each floor"
     }
   ],
   "wires": [
@@ -204,12 +247,6 @@
       "out": "value",
       "to": "levels",
       "in": "step"
-    },
-    {
-      "from": "floors",
-      "out": "value",
-      "to": "levels",
-      "in": "count"
     },
     {
       "from": "levels",
@@ -332,12 +369,6 @@
       "in": "points"
     },
     {
-      "from": "storeys",
-      "out": "ids",
-      "to": "floor",
-      "in": "storeyId"
-    },
-    {
       "from": "turned",
       "out": "geometry",
       "to": "inset",
@@ -362,23 +393,77 @@
       "in": "pt:"
     },
     {
-      "from": "storeys",
-      "out": "ids",
-      "to": "columns",
-      "in": "storeyId"
-    },
-    {
       "from": "angles",
       "out": "list",
       "to": "columns",
       "in": "rotation"
+    },
+    {
+      "from": "height",
+      "out": "value",
+      "to": "levels",
+      "in": "start"
+    },
+    {
+      "from": "floors",
+      "out": "value",
+      "to": "fewer",
+      "in": "a"
+    },
+    {
+      "from": "fewer",
+      "out": "value",
+      "to": "levels",
+      "in": "count"
+    },
+    {
+      "from": "ground",
+      "out": "ids",
+      "to": "first",
+      "in": "list"
+    },
+    {
+      "from": "first",
+      "out": "list",
+      "to": "all",
+      "in": "a"
+    },
+    {
+      "from": "storeys",
+      "out": "ids",
+      "to": "all",
+      "in": "b"
+    },
+    {
+      "from": "all",
+      "out": "list",
+      "to": "floor",
+      "in": "storeyId"
+    },
+    {
+      "from": "all",
+      "out": "list",
+      "to": "columns",
+      "in": "storeyId"
+    },
+    {
+      "from": "ground",
+      "out": "elevations",
+      "to": "isground",
+      "in": "a"
+    },
+    {
+      "from": "isground",
+      "out": "result",
+      "to": "first",
+      "in": "keep"
     }
   ],
   "tool": {
     "show": true,
     "name": "Twisted tower",
     "icon": "building",
-    "tooltip": "A tower of floors, each turned a little more than the one below",
+    "tooltip": "A tower of floors, each turned a little more than the one below; the first floor is on the project's ground storey",
     "group": "Graphs"
   }
 }

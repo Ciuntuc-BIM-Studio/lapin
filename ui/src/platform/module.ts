@@ -184,6 +184,8 @@ export interface Grip {
    * right-click on the grip, and Delete over the grip does it instead of deleting the selection (decision 280).
    */
   removeLabel?: string;
+  /** More a right-click on the grip offers (a wall's end: "Don't join at this end", decision 546), each one engine command. */
+  menu?: { label: string; run: () => GripStep | null }[];
 }
 
 /** A mark the engine drew: an annotation's points as drawn now, and what it tells of itself in `data`. */

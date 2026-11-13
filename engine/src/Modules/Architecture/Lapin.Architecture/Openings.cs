@@ -109,6 +109,55 @@ public static class Openings
         }
     }
 
+    /// <summary>
+    /// Where the openings of straight walls recognised from a file (their <c>imported</c> record) stand in plan, to keep across an
+    /// edit that moves a wall's start (decision 546). An opening is placed by its distance from its wall's start (<c>along</c>),
+    /// so a start that moves (a length typed, a joined neighbour's end dragged) would carry the openings with it; the file put
+    /// them where they are, and they stay there (<see cref="KeepPlaces"/>). Openings in walls drawn in Lapin go with the start.
+    /// </summary>
+    public static List<(string Opening, string Wall, Vec2 At)> PlacesOnRecognised(IModelView m, IEnumerable<string> wallIds)
+    {
+        var o = new List<(string, string, Vec2)>();
+        foreach (var id in wallIds.Distinct())
+        {
+            if (m.Get(id) is not { Class: IfcClass.Wall } w || w.Attrs["imported"] == null || PathCurve.Of(w).IsArc) continue;
+            var a = Walls.Start(w);
+            var d = Walls.End(w) - a;
+            if (d.Length < 1e-9) continue;
+            d = d * (1 / d.Length);
+            foreach (var p in PlacedOn(m, id)) o.Add((p.Opening.Id, id, a + d * p.Along));
+        }
+        return o;
+    }
+
+    /// <summary>
+    /// Where an opening of <paramref name="places"/> falls along its wall as it is now: the same point in plan when the wall is
+    /// still straight and still runs through it (only its ends moved along it), else null (turned, bent: it goes with the start).
+    /// </summary>
+    public static double? AlongKept(Entity wall, Vec2 at)
+    {
+        if (PathCurve.Of(wall).IsArc) return null;
+        var a = Walls.Start(wall);
+        var d = Walls.End(wall) - a;
+        if (d.Length < 1e-9 || Math.Abs(Vec2.Cross(d, at - a)) / d.Length > 1e-6) return null;
+        return AlongOf(wall, at);
+    }
+
+    /// <summary>The openings of <see cref="PlacesOnRecognised"/> brought back to where they stood in plan; refused where one would no longer fit its wall.</summary>
+    public static void KeepPlaces(IEdit edit, IEnumerable<(string Opening, string Wall, Vec2 At)> places)
+    {
+        foreach (var (openingId, wallId, at) in places)
+        {
+            if (edit.Model.Get(wallId) is not { } w || edit.Model.Get(openingId) is not { } opening) continue;
+            if (AlongKept(w, at) is not { } along || Math.Abs(along - opening.Num("along")) < 1e-9) continue;
+            var placed = Place(edit.Model, opening);
+            CheckFits(edit.Model, w, along, placed.Sill, placed.Width, placed.Height, openingId);
+            var attrs = opening.CloneAttrs();
+            attrs["along"] = along;
+            edit.Replace(opening.With(attrs: attrs));
+        }
+    }
+
     /// <summary>Where a point falls along the wall's axis, metres from its start.</summary>
     public static double AlongOf(Entity wall, Vec2 p)
     {
@@ -437,7 +486,7 @@ public static class Openings
         if (bay) return BayGeometry(fill, m, spec, wall, f, p, sx, sy, dressing);
         parts.AddRange(BodyParts(m, spec, Joinery.Boxes(spec).Where(b => dressing?.Replaces(b) != true), Map));
         if (dressing != null) parts.AddRange(dressing.Parts());
-        return new ElementGeometry(parts, Symbol(spec, f, p, sx, sy, dressing != null), [f.At(p.Along, f.Centre, 0).Xy]);
+        return new ElementGeometry(parts, Symbol(spec, f, p, sx, sy, dressing != null, Joinery.WindowSwing(m)), [f.At(p.Along, f.Centre, 0).Xy]);
     }
 
     /// <summary>The joinery's boxes as parts, one per role, each in its material (by name, report #76) or the type's colour for the part.</summary>
@@ -463,7 +512,7 @@ public static class Openings
         var sx = fill.Bool("flipHand") ? -1 : 1;
         var sy = fill.Bool("flipSide") ? -1 : 1;
         Vec3 Map(double x, double y, double z) => f.At(p.Along + sx * x, f.Centre - sy * y, p.FillSill + z);
-        return new ElementGeometry([.. BodyParts(m, spec, Joinery.Boxes(spec), Map)], Symbol(spec, f, p, sx, sy, false), [f.At(p.Along, f.Centre, 0).Xy]);
+        return new ElementGeometry([.. BodyParts(m, spec, Joinery.Boxes(spec), Map)], Symbol(spec, f, p, sx, sy, false, Joinery.WindowSwing(m)), [f.At(p.Along, f.Centre, 0).Xy]);
     }
 
     /// <summary>The colour of a part of a door's or window's body by its role: its material's, else the type's for the part.</summary>
@@ -847,7 +896,7 @@ public static class Openings
     /// leaves open at 90° with their arcs), in the wall's frame, mirrored with
     /// the occurrence.
     /// </summary>
-    static List<PlanItem> Symbol(JoinerySpec spec, WallFrame f, Placed p, int sx, int sy, bool dressed)
+    static List<PlanItem> Symbol(JoinerySpec spec, WallFrame f, Placed p, int sx, int sy, bool dressed, string windowSwing = "none")
     {
         var o = new List<PlanItem>();
         Vec2 P(double x, double y) => f.Start + f.Dir * (p.Along + sx * x) + f.Left * (f.Centre - sy * y);
@@ -860,7 +909,7 @@ public static class Openings
         // The symbol engine's plan (docs/simboluri-tamplarie.md): the frame cut, the glass, a door's leaves and their arcs; once
         // for each level a view may draw it at (decision 405: LOD 100 the opening and its swing, 200 simplified, 300 and up whole).
         foreach (var level in new[] { PlanDetail.Coarse, PlanDetail.Medium, PlanDetail.Fine })
-            foreach (var st in JoinerySymbols.Plan(spec, level: level))
+            foreach (var st in JoinerySymbols.Plan(spec, level: level, windowSwing: windowSwing, sill: p.FillSill))
                 o.Add(new PlanItem(st.Weight == "cut" ? "heavy" : st.Dashed ? "dashed" : "symbol", st.Closed, st.Pts.Select(q => P(q.X, q.Y)).ToList(), level, level));
         // The dressings seen in plan: what crosses the cut (shutters, a grille) cut, a window box below it seen, a canopy above it overhead.
         if (dressed)
@@ -919,7 +968,61 @@ public static class JoinerySpecs
         Frame = new JoineryFrame(0.09, 0.06, 0.06, 0.06, 0), Sash = new JoinerySash(0.1, 0.06, 0.045, 0.024),
     };
 
-    public static JoinerySpec FloorSpringDoor => JoinerySpec.DefaultDoor("Frameless door on floor spring 1000×2100") with
+    /// <summary>
+    /// A balcony door and window in one frame (forum topic 34): a glazed leaf full height on the left, beside it a tilt-and-turn
+    /// sash over an opaque panel (the parapet) with the window boards on the transom over it; PVC, 4-16-4 glass. One door, one mark.
+    /// </summary>
+    public static JoinerySpec BalconyDoorWindow
+    {
+        get
+        {
+            var (frame, sash, profile) = Joinery.ProfileSystems["pvc"];
+            return JoinerySpec.DefaultDoor("Balcony door + window 1600×2200") with
+            {
+                Mark = "DW", Width = 1.6, Height = 2.2, Columns = [0.85, 0.75], Rows = [0.85, 1.3], IsExternal = true, Threshold = 0.02,
+                Frame = frame, Sash = sash with { Glazing = "4-16-4" }, Profile = profile, Board = new JoineryBoard(0.2, 0.05),
+                Panels = [new(0, 0, "swing-left", RowSpan: 2, Infill: "glass"), new(1, 0, "fixed", Infill: "solid"), new(1, 1, "tilt-turn-right")],
+                Colors = new JoineryColors("#f2f2f2", "#9cc8e8", "#f2f2f2"), ThermalTransmittance = 1.1,
+            };
+        }
+    }
+
+    /// <summary>An entrance door with a glazed sidelight each side and a fixed transom light over all three (forum topic 34).</summary>
+    public static JoinerySpec DoorWithSidelights => JoinerySpec.DefaultDoor("Door with sidelights and transom 1900×2500") with
+    {
+        Mark = "DS", Width = 1.9, Height = 2.5, Columns = [0.4, 1.0, 0.4], Rows = [2.1, 0.35], IsExternal = true,
+        Sash = new JoinerySash(0.1, 0.06, 0.06, 0.024, "4-16-4"),
+        Panels = [new(0, 0, "fixed"), new(1, 0, "swing-left"), new(2, 0, "fixed"), new(0, 1, "fixed", ColSpan: 3)],
+    };
+
+    /// <summary>
+    /// A lift-and-slide (HS) portal (forum topic 34): a fixed pane on the outer track and a glazed leaf on the inner one running over
+    /// it, a flush threshold, the long handle on the leaf's stile; a deep aluminium frame, 4-16-4 glass.
+    /// </summary>
+    public static JoinerySpec LiftSlidePortal => JoinerySpec.DefaultDoor("Lift-and-slide portal 3000×2200") with
+    {
+        Mark = "HS", Width = 3.0, Height = 2.2, Columns = [1, 1], Rows = [1], IsExternal = true, Threshold = 0,
+        Frame = new JoineryFrame(0.16, 0.07, 0.08, 0.08, 0), Sash = new JoinerySash(0.09, 0.07, 0.07, 0.024, "4-16-4"),
+        Panels = [new(0, 0, "fixed"), new(1, 0, "lift-slide-left")], Colors = new JoineryColors("#5c6066", "#9cc8e8", "#5c6066"),
+        ThermalTransmittance = 1.2,
+    };
+
+    /// <summary>A French window (forum topic 34): two side-hung sashes to the floor, the left one tilting too, no window boards; its swings show in plan.</summary>
+    public static JoinerySpec FrenchWindow
+    {
+        get
+        {
+            var (frame, sash, profile) = Joinery.ProfileSystems["pvc"];
+            return JoinerySpec.DefaultWindow("French window 1400×2200") with
+            {
+                Mark = "FW", Width = 1.4, Height = 2.2, SillHeight = 0, Columns = [1, 1], Rows = [1], Board = new JoineryBoard(0, 0),
+                Frame = frame, Sash = sash with { Glazing = "4-16-4" }, Profile = profile,
+                Panels = [new(0, 0, "tilt-turn-left"), new(1, 0, "side-right")],
+            };
+        }
+    }
+
+    public static JoinerySpec FloorSpringDoor =>JoinerySpec.DefaultDoor("Frameless door on floor spring 1000×2100") with
     {
         Mark = "GD", Width = 1.0, Columns = [1], Rows = [1], Panels = [new(0, 0, "double-acting-left")], Threshold = 0, Style = "frameless-glass",
         Frameless = new JoineryFrameless("floor-spring", HoldOpen: 90),

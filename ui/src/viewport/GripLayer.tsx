@@ -202,11 +202,15 @@ export function useGripEditor(o: GripEditorOptions) {
     if (!o.zOf) traceBegin('grip', g.at, ghostOf(who), who[0].kind === 'move');
     return true;
   };
-  /** A right-click on a grip of a thing of its own: a menu to remove it. True when it opened. */
+  /** A right-click on a grip of a thing of its own, or one with a menu of its own: the menu. True when it opened. */
   const onContextMenu = (e: { clientX: number; clientY: number }): boolean => {
     const g = hit(e);
-    const items = (g?.members ?? []).filter((m) => m.remove && m.removeLabel)
-      .map((m) => ({ label: m.removeLabel!, onSelect: () => { setHover(null); void runSteps([m.remove!()]); } }));
+    const items = [
+      ...(g?.members ?? []).filter((m) => m.remove && m.removeLabel)
+        .map((m) => ({ label: m.removeLabel!, onSelect: () => { setHover(null); void runSteps([m.remove!()]); } })),
+      ...(g?.members ?? []).flatMap((m) => m.menu ?? [])
+        .map((x) => ({ label: x.label, onSelect: () => { setHover(null); void runSteps([x.run()]); } })),
+    ];
     if (!items.length) return false;
     openContextMenu(e.clientX, e.clientY, items);
     return true;

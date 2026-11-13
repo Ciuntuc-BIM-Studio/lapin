@@ -1179,8 +1179,15 @@ public static partial class IfcExport
                 // The type's parameters, which every element of the type has.
                 var sets = new List<string> { intent };
                 if (ParamsOf(type, Gid(key, ParamsKey)) is { } ps) sets.Add(ps);
+                // A door's or window's own terms IFC cannot say (forum topic 34) join the user's Lapin_Joinery set, or make it.
+                var joinery = (terms?.Properties ?? []).Select(p => (p.Name, Value: Typed("IFCLABEL", S(p.Value)))).ToList();
                 foreach (var (setName, props) in NamedParams(type))
-                    sets.Add(f.Add("IFCPROPERTYSET", Gid(key, "params:" + setName), Null, S(setName), Null, L(props.Select(p => Single(p.Name, p.Value)).ToArray())));
+                {
+                    var all = props;
+                    if (joinery.Count > 0 && setName == IfcJoineryType.PropertySet) { all = [.. props, .. joinery.Where(j => !props.Any(p => p.Name == j.Name))]; joinery.Clear(); }
+                    sets.Add(f.Add("IFCPROPERTYSET", Gid(key, "params:" + setName), Null, S(setName), Null, L(all.Select(p => Single(p.Name, p.Value)).ToArray())));
+                }
+                if (joinery.Count > 0) sets.Add(f.Add("IFCPROPERTYSET", Gid(key, "params:" + IfcJoineryType.PropertySet), Null, S(IfcJoineryType.PropertySet), Null, L(joinery.Select(p => Single(p.Name, p.Value)).ToArray())));
                 if (terms != null) sets.AddRange(JoinerySets(key, terms));
                 // Lapin's own sets a module gives the type (a part's type parameters, Lapin_PartParameters).
                 foreach (var src in s.Catalog.All<IIfcTypeShapes>())

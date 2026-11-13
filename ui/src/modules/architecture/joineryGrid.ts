@@ -57,7 +57,37 @@ export function leafPairs(s: GridSpec): number[] {
   return [...out].sort((a, b) => a - b);
 }
 
-const DOOR_LEAVES = new Set(['swing-left', 'swing-right', 'double-acting-left', 'double-acting-right', 'door-sliding-left', 'door-sliding-right', 'folding-left', 'folding-right']);
+const DOOR_LEAVES = new Set(['swing-left', 'swing-right', 'double-acting-left', 'double-acting-right', 'door-sliding-left', 'door-sliding-right', 'folding-left', 'folding-right',
+  'lift-slide-left', 'lift-slide-right', 'tilt-slide-left', 'tilt-slide-right']);
+
+/** A window's opening sashes (forum topic 34: in a window, or in a door beside its leaves). */
+export const WINDOW_SASHES = new Set(['side-left', 'side-right', 'tilt-turn-left', 'tilt-turn-right', 'bottom-hung', 'top-hung', 'pivot-horizontal', 'pivot-vertical', 'sliding-left', 'sliding-right', 'sliding-vertical']);
+
+export const isDoorLeaf = (op: string) => DOOR_LEAVES.has(op);
+
+/**
+ * The Opens list in groups (forum topic 34): fixed first, then the door leaves, the window sashes and the garage doors' operations,
+ * each as given (the order of the catalogue); empty groups left out.
+ */
+export function operationGroups(ops: readonly string[], garage: readonly string[] = []): { label: string | null; ops: string[] }[] {
+  const g = new Set(garage);
+  const groups: { label: string | null; ops: string[] }[] = [
+    { label: null, ops: ops.filter((o) => o === 'fixed') },
+    { label: 'Door leaves', ops: ops.filter((o) => DOOR_LEAVES.has(o)) },
+    { label: 'Window sashes', ops: ops.filter((o) => WINDOW_SASHES.has(o)) },
+    { label: 'Garage doors', ops: ops.filter((o) => g.has(o)) },
+  ];
+  const known = new Set(groups.flatMap((x) => x.ops));
+  groups.push({ label: null, ops: ops.filter((o) => !known.has(o)) });
+  return groups.filter((x) => x.ops.length > 0);
+}
+
+/** What a type is as the engine sees it (forum topic 34): a door with a door leaf, a window with opening sashes and no leaf, else its own kind. */
+export function kindOf(s: GridSpec & { kind: 'door' | 'window' }): 'door' | 'window' {
+  const ops = normalised(s).map((p) => p.operation);
+  if (ops.some((o) => DOOR_LEAVES.has(o))) return 'door';
+  return ops.some((o) => WINDOW_SASHES.has(o)) ? 'window' : s.kind;
+}
 
 /** The part over a door leaf split across: a fixed glazed light (a fanlight), as a leaf is never in two pieces. */
 const upper = (p: GridPanel, axis: 'col' | 'row'): GridPanel => (axis === 'row' && DOOR_LEAVES.has(p.operation) ? { ...p, operation: 'fixed', infill: 'glass', glazed: false } : p);

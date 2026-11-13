@@ -53,8 +53,53 @@ public sealed record JoineryMeeting(string Kind = "rebated", string Active = "ri
 /// <summary>Two leaves meeting at a column boundary with no mullion (<see cref="Joinery.Meetings"/>): which is which, and how they meet.</summary>
 public sealed record JoineryPair(int Boundary, JoineryPanel Left, JoineryPanel Right, JoineryPanel Active, JoineryPanel Passive, string Kind);
 
-/// <summary>A sash's profile, a door leaf's thickness, the glass.</summary>
-public sealed record JoinerySash(double Width, double Depth, double LeafThickness, double GlassThickness);
+/// <summary>
+/// A sash's profile, a door leaf's thickness, the glass. <see cref="Glazing"/> (forum topic 34): the glass's build-up as the makers
+/// write it, panes and cavities in millimetres from outside in ("4-16-4", "4-12-4-12-4", "33.1-16-4"); when it reads, the glass
+/// is as thick as it adds up to (<see cref="GlazingBuildUp"/>) and <see cref="GlassThickness"/> follows it.
+/// </summary>
+public sealed record JoinerySash(double Width, double Depth, double LeafThickness, double GlassThickness, string? Glazing = null);
+
+/// <summary>
+/// A glazing build-up read from its text (forum topic 34): the panes' thicknesses (a laminated pane "33.1" is two 3 mm sheets and
+/// one 0.38 mm interlayer, 6.38 mm; "44.2" two 4 mm and two interlayers, 8.76 mm), the cavities between them, all in metres.
+/// A letter after a number is a note (4T toughened, 16Ar argon) and is kept out of the sum.
+/// </summary>
+public sealed record GlazingBuildUp(IReadOnlyList<double> Panes, IReadOnlyList<double> Cavities, bool Laminated)
+{
+    /// <summary>One PVB interlayer, in metres.</summary>
+    public const double Interlayer = 0.00038;
+
+    public double Thickness => Panes.Sum() + Cavities.Sum();
+
+    /// <summary>The build-up a text says; null when it does not read (an empty text, a part that is not a number, an even count of parts).</summary>
+    public static GlazingBuildUp? Parse(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return null;
+        var parts = text.Split(['-', '/', '|'], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length is 0 or > 9 || parts.Length % 2 == 0) return null;
+        var panes = new List<double>();
+        var cavities = new List<double>();
+        var laminated = false;
+        for (var i = 0; i < parts.Length; i++)
+        {
+            var m = System.Text.RegularExpressions.Regex.Match(parts[i], @"^(\d+(?:[.,]\d+)?)\s*[A-Za-z]*$");
+            if (!m.Success) return null;
+            var number = m.Groups[1].Value.Replace(',', '.');
+            double mm;
+            if (i % 2 == 0 && number.Contains('.') && number.Split('.') is [var sheets, var layers] && sheets.Length == 2 && layers.Length == 1)
+            {
+                // A laminated pane: its two sheets' millimetres, then the number of interlayers.
+                mm = (sheets[0] - '0') + (sheets[1] - '0') + (layers[0] - '0') * Interlayer * 1000;
+                laminated = true;
+            }
+            else if (!double.TryParse(number, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out mm)) return null;
+            if (!(mm > 0) || mm > 60) return null;
+            (i % 2 == 0 ? panes : cavities).Add(mm / 1000);
+        }
+        return new GlazingBuildUp(panes, cavities, laminated);
+    }
+}
 
 /// <summary>
 /// Where the frame sits across the wall (report #76), as a value from a reference: <see cref="From"/> "exterior" (the wall's
@@ -266,6 +311,8 @@ public sealed record JoinerySpec(
             // A profile's sizes are the member's, even after the profile was updated from its library.
             if (s.FrameSection is { } fs && Json.Number(fs["width"]) is { } fw && Json.Number(fs["depth"]) is { } fd) s = s with { Frame = s.Frame with { Width = fw, Depth = fd } };
             if (s.SashSection is { } ss && Json.Number(ss["width"]) is { } sw && Json.Number(ss["depth"]) is { } sd) s = s with { Sash = s.Sash with { Width = sw, Depth = sd } };
+            // A glazing build-up (forum topic 34) is the glass's thickness.
+            if (GlazingBuildUp.Parse(s.Sash.Glazing) is { } g) s = s with { Sash = s.Sash with { GlassThickness = Math.Round(g.Thickness, 5) } };
             return s;
         }
         catch (JsonException) { return null; }
@@ -325,9 +372,11 @@ public static class Joinery
         "door-sliding-left", "door-sliding-right", "folding-left", "folding-right",
         // Garage doors (topic #48, decision 530): one panel filling the opening.
         "sectional-overhead", "roller", "up-and-over", "sectional-side-left", "sectional-side-right",
+        // Lift-and-slide (HS) and tilt-and-slide (PSK) leaves (forum topic 34): a glazed leaf on the inner track running over a
+        // fixed pane beside it, towards its side.
+        "lift-slide-left", "lift-slide-right", "tilt-slide-left", "tilt-slide-right",
     ];
 
-    /// <summary>A door leaf (opaque unless glazed) rather than a glazed sash.</summary>
     /// <summary>How the opening symbols are drawn: the makers' way (the apex at the handle, fixed panes crossed) or DIN 1356 (the lines meet at the hinges).</summary>
     public static readonly string[] Conventions = ["handle", "hinge"];
 
@@ -339,10 +388,46 @@ public static class Joinery
         return ((string?)o?["convention"] == "hinge" ? "hinge" : "handle", hardware);
     }
 
+    /// <summary>A door leaf (opaque unless glazed) rather than a glazed sash.</summary>
     public static bool IsDoorLeaf(string operation) => DoorOperations.Contains(operation);
 
+    /// <summary>A window's opening sash (side-hung, tilt-and-turn, sliding…), in a window or in a door beside its leaves (forum topic 34).</summary>
+    public static bool IsSash(string operation) => operation != "fixed" && WindowOperations.Contains(operation);
+
+    /// <summary>A lift-and-slide (HS) or tilt-and-slide (PSK) leaf: on the inner track, over the fixed pane beside it.</summary>
+    public static bool LiftSlides(string operation) => operation.StartsWith("lift-slide", StringComparison.Ordinal) || operation.StartsWith("tilt-slide", StringComparison.Ordinal);
+
+    /// <summary>
+    /// What a configured type is (forum topic 34): a door (IfcDoor) when it has a door leaf, a window when it has opening
+    /// sashes and no leaf, else what it says (a fixed light, a fixed door panel). Frameless glass and bay windows keep their kind.
+    /// </summary>
+    public static string KindOf(JoinerySpec s)
+    {
+        if (s.Frameless != null || s.Bay != null) return s.Kind;
+        var panels = Normalised(s);
+        if (panels.Any(p => IsDoorLeaf(p.Operation))) return "door";
+        return panels.Any(p => IsSash(p.Operation)) ? "window" : s.Kind;
+    }
+
+    /// <summary>
+    /// A sash standing in a door's bottom row (forum topic 34): the frame runs a bottom rail under it, as a window's bottom
+    /// member, since a door's bottom is its threshold.
+    /// </summary>
+    public static bool RailUnder(JoinerySpec s, JoineryPanel p) => s.IsDoor && s.Frameless == null && p.Row == 0 && IsSash(p.Operation);
+
+    /// <summary>
+    /// A door's column standing on a solid fixed panel (a parapet under the window part, forum topic 34): the window boards run on
+    /// the transom over it, the window part's sill, and not where the glazing reaches the floor. Null for any other column.
+    /// </summary>
+    public static double? ParapetTop(JoinerySpec s, JoineryPanel bottom)
+    {
+        if (!s.IsDoor || s.Frameless != null || bottom.Row != 0 || bottom.Operation != "fixed" || InfillOf(bottom) != "solid" || bottom.RowSpan >= s.Rows.Length) return null;
+        var (_, rows) = Grid(s);
+        return rows[bottom.Row + bottom.RowSpan].A;
+    }
+
     /// <summary>What fills a panel: its own infill, else a door leaf is solid unless glazed and everything else glass.</summary>
-    public static string InfillOf(JoineryPanel p) => p.Infill is "glass" or "solid" ? p.Infill : IsDoorLeaf(p.Operation) ? (p.Glazed ? "glass" : "solid") : "glass";
+    public static string InfillOf(JoineryPanel p) => p.Infill is "glass" or "solid" ? p.Infill : IsDoorLeaf(p.Operation) && !LiftSlides(p.Operation) ? (p.Glazed ? "glass" : "solid") : "glass";
 
     public static readonly string[] Infills = ["glass", "solid"];
 
@@ -362,6 +447,22 @@ public static class Joinery
     /// <summary>Hinged on a vertical side: the panel swings open in plan.</summary>
     public static bool SwingsInPlan(string operation) =>
         operation is "side-left" or "side-right" or "tilt-turn-left" or "tilt-turn-right" or "swing-left" or "swing-right" or "double-acting-left" or "double-acting-right";
+
+    /// <summary>A window sash hinged on a vertical side (side-hung, tilt-and-turn): its swing is what a plan may draw (forum topic 34).</summary>
+    public static bool SashSwingsInPlan(string operation) => operation is "side-left" or "side-right" or "tilt-turn-left" or "tilt-turn-right";
+
+    /// <summary>
+    /// How a plan draws window sashes' swings (<c>joinerySymbols.windowSwing</c>, forum topic 34): "auto" (dashed for the side-hung
+    /// sashes reaching the floor, French windows and balcony doors, none for the others), "none", "dashed", "solid" (every side-hung sash).
+    /// </summary>
+    public static readonly string[] WindowSwings = ["auto", "none", "dashed", "solid"];
+
+    /// <summary>The project's window-swing setting; auto without one.</summary>
+    public static string WindowSwing(IModelView m) =>
+        (Spatial.Project(m)?.Attrs["joinerySymbols"] as JsonObject)?["windowSwing"] is JsonValue v && v.TryGetValue<string>(out var w) && WindowSwings.Contains(w) ? w : "auto";
+
+    /// <summary>A sash's bottom at most this far over the floor reaches it (a French window's, over its frame and a low threshold).</summary>
+    public const double ReachesFloor = 0.15;
 
     /// <summary>The clear opening inside the outer frame members (a door has a threshold, not a bottom member).</summary>
     public static CellRect InnerRect(JoinerySpec s)
@@ -451,7 +552,8 @@ public static class Joinery
         var (cols, rows) = Grid(s);
         var c1 = Math.Min(cols.Count - 1, p.Col + p.ColSpan - 1);
         var r1 = Math.Min(rows.Count - 1, p.Row + p.RowSpan - 1);
-        return new CellRect(cols[p.Col].A, cols[c1].B, rows[p.Row].A, rows[r1].B);
+        var z0 = rows[p.Row].A + (RailUnder(s, p) ? s.Frame.Width : 0);
+        return new CellRect(cols[p.Col].A, cols[c1].B, z0, rows[r1].B);
     }
 
     /// <summary>
@@ -520,7 +622,14 @@ public static class Joinery
             if (meet.Width is { } mw && (!double.IsFinite(mw) || mw <= 0 || mw > 0.12)) return "A rebate's overlap or an astragal's width is over 0 and up to 120 mm.";
             if (meet.Thickness is { } mt && (!double.IsFinite(mt) || mt <= 0 || mt > 0.04)) return "An astragal is over 0 and up to 40 mm thick.";
         }
+        if (s.Sash.Glazing is { Length: > 0 } glazing)
+        {
+            if (GlazingBuildUp.Parse(glazing) is not { } g) return $"„{glazing}” is not a glazing build-up: panes and cavities in millimetres, from outside in, as 4-16-4 or 33.1-16-4.";
+            if (s.Frameless == null && g.Thickness > Math.Max(s.Sash.Depth, s.Frame.Depth) - 0.004) return "The glazing is thicker than the sash and frame hold: a thinner build-up or a deeper profile.";
+        }
         if (s.Frameless != null) return Frameless.Problem(s);
+        if (s.IsDoor && Normalised(s).Where(p => LiftSlides(p.Operation)) is var hs && hs.Any(p => p.Row != 0))
+            return "A lift-and-slide leaf stands on the threshold: put it in the bottom row.";
         if (s.Panels.Any(p => GarageDoors.Is(p.Operation)))
             return !s.IsDoor ? "A garage door's operation is a door's." : GarageDoors.Problem(s);
         if (JoineryShapes.Round(s))
@@ -565,10 +674,21 @@ public static class Joinery
         "swing-left" or "swing-right" => "SWINGING",
         "double-acting-left" or "double-acting-right" => "DOUBLE_ACTING",
         "door-sliding-left" or "door-sliding-right" => "SLIDING",
+        _ when LiftSlides(op) => "SLIDING",
         "folding-left" or "folding-right" => "FOLDING",
         _ when GarageDoors.Is(op) => GarageDoors.PanelOperation(op),
+        // A window's sash in a door (forum topic 34): IfcDoorPanelOperationEnum has no term for it; its own is in Lapin_Joinery.
+        _ when IsSash(op) => "USERDEFINED",
         _ => "FIXEDPANEL",
     };
+
+    /// <summary>
+    /// A door panel's exact operation for <c>Lapin_Joinery</c>'s PanelOperations (forum topic 34): a sash's in
+    /// IfcWindowPanelOperationEnum's terms, a lift-and-slide or tilt-and-slide leaf's LIFTANDSLIDE or TILTANDSLIDE, the rest
+    /// their door panel's term.
+    /// </summary>
+    public static string DoorPanelTerm(string op) =>
+        IsSash(op) ? WindowPanelOperation(op) : op.StartsWith("lift-slide", StringComparison.Ordinal) ? "LIFTANDSLIDE" : op.StartsWith("tilt-slide", StringComparison.Ordinal) ? "TILTANDSLIDE" : DoorPanelOperation(op);
 
     public static string PanelPosition(JoinerySpec s, JoineryPanel p, string kind)
     {
@@ -611,10 +731,14 @@ public static class Joinery
     {
         var all = Normalised(s);
         var ops = all.Where(p => IsDoorLeaf(p.Operation)).OrderBy(p => p.Col).Select(p => p.Operation).ToList();
-        var fixedBeside = all.Any(p => p.Operation == "fixed" && p.RowSpan == s.Rows.Length);
+        // A full-height pane beside a swinging leaf, fixed or a window's sash (forum topic 34: IFC has no closer term; each panel's
+        // own operation is in its panel properties and Lapin_Joinery).
+        var fixedBeside = all.Any(p => (p.Operation == "fixed" || IsSash(p.Operation)) && p.RowSpan == s.Rows.Length);
         if (ops.Count == 1)
             switch (ops[0])
             {
+                case "lift-slide-left" or "tilt-slide-left": return ("SLIDING_TO_LEFT", null);
+                case "lift-slide-right" or "tilt-slide-right": return ("SLIDING_TO_RIGHT", null);
                 case "swing-left": return (fixedBeside ? "SWING_FIXED_LEFT" : "SINGLE_SWING_LEFT", null);
                 case "swing-right": return (fixedBeside ? "SWING_FIXED_RIGHT" : "SINGLE_SWING_RIGHT", null);
                 case "double-acting-left": return ("DOUBLE_SWING_LEFT", null);
@@ -632,7 +756,7 @@ public static class Joinery
             if (a == "swing-left" && b == "swing-left") return ("DOUBLE_DOOR_SINGLE_SWING_OPPOSITE_LEFT", null);
             if (a == "swing-right" && b == "swing-right") return ("DOUBLE_DOOR_SINGLE_SWING_OPPOSITE_RIGHT", null);
             if (a == "double-acting-left" && b == "double-acting-right") return ("DOUBLE_DOOR_DOUBLE_SWING", null);
-            if (a.StartsWith("door-sliding") && b.StartsWith("door-sliding")) return ("DOUBLE_DOOR_SLIDING", null);
+            if ((a.StartsWith("door-sliding") || LiftSlides(a)) && (b.StartsWith("door-sliding") || LiftSlides(b))) return ("DOUBLE_DOOR_SLIDING", null);
             if (a.StartsWith("folding") && b.StartsWith("folding")) return ("DOUBLE_DOOR_FOLDING", null);
         }
         return ("USERDEFINED", ops.Count > 0 ? string.Join(" + ", ops) : "fixed");
@@ -722,6 +846,17 @@ public static class Joinery
     /// <summary>The handle's style for a type: its own, or a lever on a door and a window handle on a window.</summary>
     public static string HandleStyle(JoinerySpec s) => s.Hardware?.Handle is { } h && HandleStyles.Contains(h) && h != "auto" ? h : s.Frameless != null ? "pull" : s.IsDoor ? "lever" : "window";
 
+    /// <summary>
+    /// The handle of one panel (forum topic 34): a door's chosen handle is its leaves'; a window's sash in a door has a window
+    /// handle (none when the type's is none), and so has a lift-and-slide leaf, its long lever on the stile.
+    /// </summary>
+    public static string HandleStyle(JoinerySpec s, string op)
+    {
+        var style = HandleStyle(s);
+        if (style == "none" || !s.IsDoor || s.Frameless != null) return style;
+        return IsSash(op) || LiftSlides(op) ? "window" : style;
+    }
+
     /// <summary>Where a panel's handle goes: its centre in X and Z, and whether it lies across (a top- or bottom-hung sash); null for panels without one.</summary>
     public static (double X, double Z, bool Across)? HandleAt(JoinerySpec s, CellRect r, string op, bool door)
     {
@@ -748,7 +883,7 @@ public static class Joinery
     /// </summary>
     internal static IEnumerable<JoineryBox> HandleBoxes(JoinerySpec s, CellRect r, string op, double face, int outwards, bool door)
     {
-        var style = HandleStyle(s);
+        var style = HandleStyle(s, op);
         if (style == "none" || HandleAt(s, r, op, door) is not var (x, z, across)) yield break;
         double Y(double d) => face + outwards * d;
         JoineryBox Slab(string role, double x0, double x1, double d0, double d1, double z0, double z1) =>
@@ -824,10 +959,19 @@ public static class Joinery
         bool frameStop = s.FrameSection == null, sashLip = s.SashSection == null;
         var panels = Normalised(s);
         boxes.AddRange(Bars(s, panels, y0, y1));
+        // A window's sash in a door's bottom row (forum topic 34): a bottom rail under it, on the threshold.
+        foreach (var p in panels.Where(p => RailUnder(s, p)))
+        {
+            var pr0 = PanelRect(s, p);
+            boxes.AddRange(WithSection(new("frame", new(pr0.X0, y0, inner.Z0), new(pr0.X1, y1, pr0.Z0)), s.FrameSection, false, 1));
+        }
 
         var sh = s.Sash;
         var pr = s.Profile;
         var pairs = Meetings(s);
+        // A lift-and-slide or tilt-and-slide leaf runs on the inner track, the fixed panes beside it stand on the outer one.
+        var tracks = s.IsDoor && panels.Any(p => LiftSlides(p.Operation));
+        var track = Math.Min(sh.Depth, f.Depth / 2);
         foreach (var p in panels)
         {
             var r = PanelRect(s, p);
@@ -849,6 +993,17 @@ public static class Joinery
             var solid = InfillOf(p) == "solid";
             double sy0 = f.Offset - sh.Depth / 2, sy1 = f.Offset + sh.Depth / 2;
             var infillT = solid ? Math.Max(sh.LeafThickness, sh.GlassThickness) : sh.GlassThickness;
+            if (LiftSlides(p.Operation))
+            {
+                // A lift-and-slide (HS) or tilt-and-slide (PSK) leaf (forum topic 34): a glazed leaf framed like a sash, flush with the
+                // frame's room face on its inner track; its long handle on the stile it is pulled by, inside.
+                double ty0 = y0, ty1 = y0 + track, tc = (ty0 + ty1) / 2;
+                boxes.AddRange(Ring(r, sh.Width, ty0, ty1, "leaf"));
+                var hsT = Math.Min(infillT, track);
+                boxes.Add(new(solid ? "leaf" : "glass", new(r.X0 + sh.Width, tc - hsT / 2, r.Z0 + sh.Width), new(r.X1 - sh.Width, tc + hsT / 2, r.Z1 - sh.Width)));
+                boxes.AddRange(HandleBoxes(s, r, p.Operation, ty0, -1, true));
+                continue;
+            }
             if (IsDoorLeaf(p.Operation))
             {
                 var t = sh.LeafThickness;
@@ -871,17 +1026,19 @@ public static class Joinery
             }
             else if (p.Operation == "fixed")
             {
-                // Glazed straight into the frame (a rebate holds it, beads inside), or an opaque panel.
-                if (solid) boxes.Add(Sheet("leaf", 0, f.Offset, infillT));
+                // Glazed straight into the frame (a rebate holds it, beads inside), or an opaque panel; beside a lift-and-slide
+                // leaf, on the outer track (forum topic 34).
+                var yc = tracks && p.Row == 0 ? y1 - track / 2 : f.Offset;
+                if (solid) boxes.Add(Sheet("leaf", 0, yc, infillT));
                 else
                 {
-                    boxes.Add(Sheet("glass", 0, f.Offset, sh.GlassThickness));
-                    boxes.AddRange(Muntins(s, r, f.Offset, sh.Depth, Out(0)));
+                    boxes.Add(Sheet("glass", 0, yc, sh.GlassThickness));
+                    boxes.AddRange(Muntins(s, r, yc, sh.Depth, Out(0)));
                 }
                 if (pr != null)
                 {
-                    if (frameStop) boxes.AddRange(Band(0, pr.Rebate, f.Offset + infillT / 2, y1, "frame"));
-                    boxes.AddRange(Band(0, pr.Bead, f.Offset - infillT / 2 - 0.018, f.Offset - infillT / 2, "frame"));
+                    if (frameStop && yc + infillT / 2 < y1) boxes.AddRange(Band(0, pr.Rebate, yc + infillT / 2, y1, "frame"));
+                    boxes.AddRange(Band(0, pr.Bead, yc - infillT / 2 - 0.018, yc - infillT / 2, "frame"));
                 }
             }
             else
@@ -900,7 +1057,8 @@ public static class Joinery
                     if (frameStop) boxes.AddRange(Band(0, pr.Rebate, sy1, y1, "frame"));
                     if (sashLip && pr.Overlap > 0) boxes.AddRange(Band(-pr.Overlap, Math.Min(0.012, sh.Width / 3), sy0 - 0.006, sy0, "sash"));
                     boxes.AddRange(Band(sh.Width, sh.Width + pr.Bead, f.Offset - infillT / 2 - 0.018, f.Offset - infillT / 2, "sash"));
-                    if (sashLip && pr.Drip && !s.IsDoor) boxes.Add(new("sash", new(r.X0 + sh.Width, sy1, r.Z0 + 0.005), new(r.X1 - sh.Width, sy1 + 0.012, r.Z0 + 0.02)));
+                    // A sash in a door stands on its rail or a transom (forum topic 34), so it drips as a window's does.
+                    if (sashLip && pr.Drip) boxes.Add(new("sash", new(r.X0 + sh.Width, sy1, r.Z0 + 0.005), new(r.X1 - sh.Width, sy1 + 0.012, r.Z0 + 0.02)));
                 }
                 boxes.AddRange(HandleBoxes(s, r, p.Operation, sy0 - (pr != null && sashLip && pr.Overlap > 0 ? 0.006 : 0), -1, false));
             }
@@ -959,8 +1117,26 @@ public static class Joinery
     /// <summary>A window's boards inside and outside, under the frame's depth <paramref name="y0"/>..<paramref name="y1"/>.</summary>
     static IEnumerable<JoineryBox> Boards(JoinerySpec s, double y0, double y1, CellRect outer)
     {
-        if (s.IsDoor) yield break;
         const double t = 0.025;
+        if (s.IsDoor)
+        {
+            // A door's window part over a solid panel (forum topic 34): its boards on the transom over the panel, the window's
+            // sill; none where the glazing or a leaf reaches the floor.
+            if (s.Frameless != null || s.Board.Interior <= 0 && s.Board.Exterior <= 0) yield break;
+            var (cols, _) = Grid(s);
+            foreach (var p in Normalised(s).Where(p => p.Row == 0))
+            {
+                if (ParapetTop(s, p) is not { } top) continue;
+                // Out to the jamb's outer face at the door's ends, to the mullion's middle between columns.
+                var mw = MullionWidths(s);
+                var x0 = p.Col == 0 ? outer.X0 : cols[p.Col].A - mw[p.Col - 1] / 2;
+                var last = p.Col + p.ColSpan - 1;
+                var x1 = last == cols.Count - 1 ? outer.X1 : cols[last].B + mw[last] / 2;
+                if (s.Board.Interior > 0) yield return new("board", new(x0, y0 - s.Board.Interior, top - t), new(x1, y0, top));
+                if (s.Board.Exterior > 0) yield return new("board", new(x0, y1, top - t), new(x1, y1 + s.Board.Exterior, top));
+            }
+            yield break;
+        }
         if (s.Board.Interior > 0) yield return new("board", new(outer.X0, y0 - s.Board.Interior, 0), new(outer.X1, y0, t));
         if (s.Board.Exterior > 0) yield return new("board", new(outer.X0, y1, 0), new(outer.X1, y1 + s.Board.Exterior, t));
     }

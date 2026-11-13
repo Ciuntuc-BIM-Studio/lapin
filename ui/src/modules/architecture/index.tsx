@@ -45,6 +45,7 @@ import { WallSweepSection, WallSweepsOnWall, hasSweeps, revealSelected, sweepSel
 import { SkirtingSection, SkirtingTypesDialog, skirting, skirtingGrips, skirtingInRoom, skirtingSchedule, skirtingTypes } from './Skirtings';
 import { colorLegend, room, roomColors, roomOutline, roomTag, updateRooms } from './roomTools';
 import { sameKind } from '../../shell/params';
+import { withAutoJoinMenus } from '../core/autoJoin';
 import { SHADE, SunshadeSection, SunshadeTypesDialog, sunshade, sunshadeAlong, sunshadeGrips, sunshadeSchedule, sunshadeTypes } from './Sunshades';
 import { lazyPart } from '../../platform/lazyPart';
 
@@ -156,7 +157,7 @@ function wallGrips(node: NodeDto): Grip[] {
   if (!c) return [];
   const flipped = usageOf(useSession.getState(), node.id)?.negative ?? false;
   return [
-    ...pathGrips(c, (s, e, rise) => ({ command: 'architecture.updateWall', args: { id: node.id, x1: s.x, y1: s.y, x2: e.x, y2: e.y, arc: rise, detachJoinedEnds: true } })),
+    ...withAutoJoinMenus(node.id, node.props, pathGrips(c, (s, e, rise) => ({ command: 'architecture.updateWall', args: { id: node.id, x1: s.x, y1: s.y, x2: e.x, y2: e.y, arc: rise, detachJoinedEnds: true } }))),
     flipAcross(c, flipped ? 1 : -1, 'Flip: swap the wall\'s faces (its exterior goes to the other side)', () => ({ command: 'architecture.flipWall', args: { ids: sameKind(node) } })),
   ];
 }

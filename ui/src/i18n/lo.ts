@@ -208,6 +208,13 @@ export const LO: Record<string, string> = {
   "Delete graph": "ລຶບກຣາບ",
   "Bake graph": "ສ້າງຈາກກຣາບ",
   "New graph": "ກຣາບໃໝ່",
+  "New from example…": "ໃໝ່ຈາກຕົວຢ່າງ…",
+  "Twisted tower": "ຫໍຄອຍບິດ",
+  "Floors on a stack of storeys, each turned a little more than the one below, with columns; sliders for floors, height, twist, width and taper.": "ພື້ນຢູ່ເທິງຊັ້ນທີ່ຊ້ອນກັນ, ແຕ່ລະຊັ້ນບິດຫຼາຍກວ່າຊັ້ນລຸ່ມຈັກໜ້ອຍ, ມີເສົາ; ແຖບເລື່ອນສຳລັບຈຳນວນຊັ້ນ, ຄວາມສູງ, ການບິດ, ຄວາມກວ້າງ ແລະ ການຫຍໍ້.",
+  "Columns on a grid": "ເສົາເທິງຕາຂ່າຍ",
+  "A column at each point of a grid: how many each way, and the spacing.": "ເສົາຢູ່ທຸກຈຸດຂອງຕາຂ່າຍ: ຈຳນວນໃນແຕ່ລະທິດ ແລະ ໄລຍະຫ່າງ.",
+  "Walls round a rectangle": "ຝາອ້ອມສີ່ຫຼ່ຽມສາກ",
+  "Four walls round a rectangle of the width and depth you set.": "ຝາສີ່ດ້ານອ້ອມສີ່ຫຼ່ຽມສາກທີ່ມີຄວາມກວ້າງ ແລະ ຄວາມເລິກທີ່ທ່ານກຳນົດ.",
   "A graph wires nodes (numbers, points, lists, the commands of the tools) into a recipe: Lapin shows what it would make as a ghost, and Bake makes it.": "ກຣາບເຊື່ອມໂນດ (ຕົວເລກ, ຈຸດ, ລາຍການ, ຄຳສັ່ງຂອງເຄື່ອງມື) ເປັນສູດ: Lapin ສະແດງສິ່ງທີ່ມັນຈະສ້າງເປັນເງົາ, ແລະ ສ້າງ ຈະສ້າງມັນ.",
   "The project's graphs": "ກຣາບຂອງໂຄງການ",
   "No graphs": "ບໍ່ມີກຣາບ",
@@ -3514,6 +3521,21 @@ export const LO: Record<string, string> = {
   "The part's value, the same for every object": "ຄ່າຂອງຊິ້ນສ່ວນ, ຄືກັນສຳລັບທຸກວັດຖຸ",
   "type": "ປະເພດ",
   "formula": "ສູດ",
+  'Join automatically': 'ເຊື່ອມຕໍ່ອັດຕະໂນມັດ',
+  'Join automatically at start': 'ເຊື່ອມຕໍ່ອັດຕະໂນມັດທີ່ຈຸດເລີ່ມ',
+  'Join automatically at end': 'ເຊື່ອມຕໍ່ອັດຕະໂນມັດທີ່ຈຸດທ້າຍ',
+  'Don\'t join at this end': 'ບໍ່ເຊື່ອມຕໍ່ທີ່ປາຍນີ້',
+  'Join automatically at this end': 'ເຊື່ອມຕໍ່ອັດຕະໂນມັດທີ່ປາຍນີ້',
+  'Say which end: start, end or both.': 'ບອກວ່າປາຍໃດ: ຈຸດເລີ່ມ, ຈຸດທ້າຍ ຫຼື ທັງສອງ.',
+  'Select walls, beams or strip footings.': 'ເລືອກຝາ, ຄານ ຫຼື ຖານຮາກແບບແຖບ.',
+  'Place again at another scale': 'ວາງອີກຄັ້ງທີ່ມາດຕາສ່ວນອື່ນ',
+  'Drag a rectangle on the view: the part to place beside it at the new scale (a click takes the view as cropped; Esc cancels).': 'ລາກຮູບສີ່ຫຼ່ຽມໃສ່ມຸມມອງ: ສ່ວນທີ່ຈະວາງຂ້າງມັນໃນມາດຕາສ່ວນໃໝ່ (ຄລິກຈະເອົາມຸມມອງຕາມທີ່ຕັດໄວ້; Esc ຍົກເລີກ).',
+  'Give the scale.': 'ໃຫ້ມາດຕາສ່ວນ.',
+  'The view is on no sheet: place it on one first.': 'ມຸມມອງບໍ່ໄດ້ຢູ່ໃນແຜ່ນໃດ: ວາງມັນໃສ່ແຜ່ນໜຶ່ງກ່ອນ.',
+  'A schedule has no scale.': 'ຕາຕະລາງບໍ່ມີມາດຕາສ່ວນ.',
+  'Draw the part to show on the view.': 'ແຕ້ມສ່ວນທີ່ຈະສະແດງໃສ່ມຸມມອງ.',
+  // Doors and windows in one object (forum topic 34).
+  'Interior sill over the parapet': 'ຂອບປ່ອງຢ້ຽມດ້ານໃນເທິງກຳແພງກັນ', 'Exterior sill over the parapet': 'ຂອບປ່ອງຢ້ຽມດ້ານນອກເທິງກຳແພງກັນ', 'Lift & slide (HS), runs left': 'ຍົກ-ເລື່ອນ (HS), ໄປຊ້າຍ', 'Lift & slide (HS), runs right': 'ຍົກ-ເລື່ອນ (HS), ໄປຂວາ', 'Tilt & slide (PSK), runs left': 'ປິ່ນ-ເລື່ອນ (PSK), ໄປຊ້າຍ', 'Tilt & slide (PSK), runs right': 'ປິ່ນ-ເລື່ອນ (PSK), ໄປຂວາ', 'Door leaves': 'ບານປະຕູ', 'Window sashes': 'ບານປ່ອງຢ້ຽມ', 'Garage doors': 'ປະຕູບ່ອນຈອດລົດ', 'New balcony door + window': 'ປະຕູລະບຽງ + ປ່ອງຢ້ຽມໃໝ່', 'New door with sidelights and transom': 'ປະຕູໃໝ່ທີ່ມີແສງຂ້າງ ແລະ ແສງເທິງ', 'New lift-and-slide (HS) portal': 'ປະຕູຍົກ-ເລື່ອນ (HS) ໃໝ່', 'New French window': 'ປ່ອງຢ້ຽມແບບຝຣັ່ງໃໝ່', 'Glazing build-up': 'ໂຄງສ້າງແກ້ວ', 'Panes and cavities in mm, from outside in: 4-16-4 double, 4-12-4-12-4 triple, 33.1-16-4 laminated outside': 'ແຜ່ນແກ້ວ ແລະ ຊ່ອງວ່າງເປັນ mm, ຈາກນອກເຂົ້າໃນ: 4-16-4 ສອງຊັ້ນ, 4-12-4-12-4 ສາມຊັ້ນ, 33.1-16-4 ແກ້ວອັດຊັ້ນດ້ານນອກ', 'laminated': 'ອັດຊັ້ນ', 'U-value, g-value and safety glass: the type\'s Data, below.': 'ຄ່າ U, ຄ່າ g ແລະ ແກ້ວນິລະໄພ: ຂໍ້ມູນຂອງປະເພດ, ຂ້າງລຸ່ມ.', 'How plans draw window sashes\' swings (French windows, balcony doors), for the whole project': 'ວິທີທີ່ແຜນຜັງແຕ້ມການເປີດບານປ່ອງຢ້ຽມ (ປ່ອງຢ້ຽມແບບຝຣັ່ງ, ປະຕູລະບຽງ), ສຳລັບທັງໂຄງການ', 'Sash swings: dashed to the floor': 'ການເປີດບານ: ເສັ້ນປະເຖິງພື້ນ', 'Sash swings: none': 'ການເປີດບານ: ບໍ່ມີ', 'Sash swings: all dashed': 'ການເປີດບານ: ເສັ້ນປະທັງໝົດ', 'Sash swings: all solid': 'ການເປີດບານ: ເສັ້ນເຕັມທັງໝົດ', 'A door leaf makes it a door, and a window type stays a window type: create a new type for it.': 'ບານປະຕູເຮັດໃຫ້ມັນເປັນປະຕູ, ແລະ ປະເພດປ່ອງຢ້ຽມຍັງເປັນປະເພດປ່ອງຢ້ຽມ: ສ້າງປະເພດໃໝ່ສຳລັບມັນ.', 'With window sashes and no door leaf it is a window, and a door type stays a door type: create a new type for it.': 'ມີບານປ່ອງຢ້ຽມ ແລະ ບໍ່ມີບານປະຕູແມ່ນປ່ອງຢ້ຽມ, ແລະ ປະເພດປະຕູຍັງເປັນປະເພດປະຕູ: ສ້າງປະເພດໃໝ່ສຳລັບມັນ.', 'Create as a new type': 'ສ້າງເປັນປະເພດໃໝ່', 'A lift-and-slide leaf stands on the threshold: put it in the bottom row.': 'ບານຍົກ-ເລື່ອນຕັ້ງຢູ່ເທິງທໍລະນີປະຕູ: ວາງມັນໄວ້ແຖວລຸ່ມສຸດ.', 'The glazing is thicker than the sash and frame hold: a thinner build-up or a deeper profile.': 'ແກ້ວໜາກວ່າທີ່ບານ ແລະ ກອບຮັບໄດ້: ໂຄງສ້າງທີ່ບາງກວ່າ ຫຼື ໂປຣໄຟລ໌ທີ່ເລິກກວ່າ.',
 };
 
 /** Phrases with a number or a name in them. */
@@ -3809,4 +3831,5 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^(\d+) constraints dropped: (.+)$/, (m) => `ລຶບ ${m[1]} ຂໍ້ຈຳກັດແລ້ວ: ${m[2]}`],
   [/^Constraint left out: (.+)$/, (m) => `ຂ້າມຂໍ້ຈຳກັດ: ${m[1]}`],
   [/^(\d+) constraints left out: (.+)$/, (m) => `ຂ້າມ ${m[1]} ຂໍ້ຈຳກັດ: ${m[2]}`],
+  [/^Place again at 1:([\d.]+)…$/, (m) => `ວາງອີກຄັ້ງທີ່ 1:${m[1]}…`],
 ];

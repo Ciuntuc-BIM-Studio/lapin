@@ -208,6 +208,13 @@ export const DE: Record<string, string> = {
   "Delete graph": "Graph löschen",
   "Bake graph": "Graph erzeugen",
   "New graph": "Neuer Graph",
+  "New from example…": "Neu aus einem Beispiel…",
+  "Twisted tower": "Gedrehter Turm",
+  "Floors on a stack of storeys, each turned a little more than the one below, with columns; sliders for floors, height, twist, width and taper.": "Decken auf einem Stapel von Geschossen, jede etwas weiter gedreht als die darunter, mit Stützen; Regler für Geschosse, Höhe, Drehung, Breite und Verjüngung.",
+  "Columns on a grid": "Stützen auf einem Raster",
+  "A column at each point of a grid: how many each way, and the spacing.": "Eine Stütze an jedem Punkt eines Rasters: wie viele je Richtung und der Abstand.",
+  "Walls round a rectangle": "Wände um ein Rechteck",
+  "Four walls round a rectangle of the width and depth you set.": "Vier Wände um ein Rechteck mit der Breite und Tiefe, die Sie einstellen.",
   "A graph wires nodes (numbers, points, lists, the commands of the tools) into a recipe: Lapin shows what it would make as a ghost, and Bake makes it.": "Ein Graph verbindet Knoten (Zahlen, Punkte, Listen, die Befehle der Werkzeuge) zu einem Rezept: Lapin zeigt als Vorschau, was er erzeugen würde, und Erzeugen erstellt es.",
   "The project's graphs": "Die Graphen des Projekts",
   "No graphs": "Keine Graphen",
@@ -3460,6 +3467,21 @@ export const DE: Record<string, string> = {
   "The part's value, the same for every object": "Der Wert des Bauteils, für jedes Objekt gleich",
   "type": "Typ",
   "formula": "Formel",
+  'Join automatically': 'Automatisch verbinden',
+  'Join automatically at start': 'Am Anfang automatisch verbinden',
+  'Join automatically at end': 'Am Ende automatisch verbinden',
+  'Don\'t join at this end': 'An diesem Ende nicht verbinden',
+  'Join automatically at this end': 'An diesem Ende automatisch verbinden',
+  'Say which end: start, end or both.': 'Welches Ende: Anfang, Ende oder beide.',
+  'Select walls, beams or strip footings.': 'Wände, Träger oder Streifenfundamente auswählen.',
+  'Place again at another scale': 'In einem anderen Maßstab erneut platzieren',
+  'Drag a rectangle on the view: the part to place beside it at the new scale (a click takes the view as cropped; Esc cancels).': 'Ein Rechteck auf der Ansicht aufziehen: der Teil, der daneben im neuen Maßstab platziert wird (ein Klick nimmt die Ansicht wie zugeschnitten; Esc bricht ab).',
+  'Give the scale.': 'Den Maßstab angeben.',
+  'The view is on no sheet: place it on one first.': 'Die Ansicht ist auf keinem Plan: zuerst auf einem platzieren.',
+  'A schedule has no scale.': 'Eine Liste hat keinen Maßstab.',
+  'Draw the part to show on the view.': 'Den zu zeigenden Teil auf der Ansicht zeichnen.',
+  // Doors and windows in one object (forum topic 34).
+  'Interior sill over the parapet': 'Innenfensterbank über der Brüstung', 'Exterior sill over the parapet': 'Außenfensterbank über der Brüstung', 'Lift & slide (HS), runs left': 'Hebe-Schiebe (HS), läuft nach links', 'Lift & slide (HS), runs right': 'Hebe-Schiebe (HS), läuft nach rechts', 'Tilt & slide (PSK), runs left': 'Parallel-Schiebe-Kipp (PSK), läuft nach links', 'Tilt & slide (PSK), runs right': 'Parallel-Schiebe-Kipp (PSK), läuft nach rechts', 'Door leaves': 'Türflügel', 'Window sashes': 'Fensterflügel', 'Garage doors': 'Garagentore', 'New balcony door + window': 'Neue Balkontür + Fenster', 'New door with sidelights and transom': 'Neue Tür mit Seitenteilen und Oberlicht', 'New lift-and-slide (HS) portal': 'Neue Hebe-Schiebe-Tür (HS)', 'New French window': 'Neues französisches Fenster', 'Glazing build-up': 'Glasaufbau', 'Panes and cavities in mm, from outside in: 4-16-4 double, 4-12-4-12-4 triple, 33.1-16-4 laminated outside': 'Scheiben und Zwischenräume in mm, von außen nach innen: 4-16-4 Zweifach, 4-12-4-12-4 Dreifach, 33.1-16-4 außen Verbundglas', 'laminated': 'Verbundglas', 'U-value, g-value and safety glass: the type\'s Data, below.': 'U-Wert, g-Wert und Sicherheitsglas: die Daten des Typs, unten.', 'How plans draw window sashes\' swings (French windows, balcony doors), for the whole project': 'Wie Grundrisse den Aufschlag von Fensterflügeln zeichnen (französische Fenster, Balkontüren), für das ganze Projekt', 'Sash swings: dashed to the floor': 'Flügelaufschlag: gestrichelt bis zum Boden', 'Sash swings: none': 'Flügelaufschlag: keiner', 'Sash swings: all dashed': 'Flügelaufschlag: alle gestrichelt', 'Sash swings: all solid': 'Flügelaufschlag: alle durchgezogen', 'A door leaf makes it a door, and a window type stays a window type: create a new type for it.': 'Ein Türflügel macht es zur Tür, und ein Fenstertyp bleibt ein Fenstertyp: Legen Sie dafür einen neuen Typ an.', 'With window sashes and no door leaf it is a window, and a door type stays a door type: create a new type for it.': 'Mit Fensterflügeln und ohne Türflügel ist es ein Fenster, und ein Türtyp bleibt ein Türtyp: Legen Sie dafür einen neuen Typ an.', 'Create as a new type': 'Als neuen Typ anlegen', 'A lift-and-slide leaf stands on the threshold: put it in the bottom row.': 'Ein Hebe-Schiebe-Flügel steht auf der Schwelle: Setzen Sie ihn in die unterste Reihe.', 'The glazing is thicker than the sash and frame hold: a thinner build-up or a deeper profile.': 'Das Glas ist dicker, als Flügel und Rahmen aufnehmen: ein dünnerer Aufbau oder ein tieferes Profil.',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -3757,4 +3779,5 @@ export const DE_PATTERNS: Language['patterns'] = [
   [/^(\d+) constraints dropped: (.+)$/, (m) => `${m[1]} Zwangsbedingungen entfernt: ${m[2]}`],
   [/^Constraint left out: (.+)$/, (m) => `Zwangsbedingung weggelassen: ${m[1]}`],
   [/^(\d+) constraints left out: (.+)$/, (m) => `${m[1]} Zwangsbedingungen weggelassen: ${m[2]}`],
+  [/^Place again at 1:([\d.]+)…$/, (m) => `Erneut platzieren in 1:${m[1]}…`],
 ];

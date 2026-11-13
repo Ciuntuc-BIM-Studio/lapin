@@ -114,7 +114,18 @@ sealed class JoineryDataSets : IIfcElementSets
 {
     public IEnumerable<IfcStandardSet> Sets(IModelView model, Entity element)
     {
-        if (element.Class is not (IfcClass.Door or IfcClass.Window) || !JoineryData.Any(model, element)) yield break;
+        if (element.Class is not (IfcClass.Door or IfcClass.Window)) yield break;
+        // The glazing's build-up (forum topic 34) as IFC's Pset_DoorWindowGlazingType names it: the panes, the first three's
+        // thicknesses, laminated or not; the g-value as its solar heat gain when it reads as a ratio.
+        if (Openings.SpecOf(model, element.Id) is { Frameless: null } gs && GlazingBuildUp.Parse(gs.Sash.Glazing) is { } g)
+        {
+            var glazing = new List<IfcStandardProperty> { new("GlassLayers", "IFCCOUNTMEASURE", g.Panes.Count) };
+            for (var i = 0; i < Math.Min(3, g.Panes.Count); i++) glazing.Add(new($"GlassThickness{i + 1}", "IFCPOSITIVELENGTHMEASURE", Math.Round(g.Panes[i], 5)));
+            glazing.Add(new("IsLaminated", "IFCBOOLEAN", g.Laminated));
+            if (JoineryData.Parse(JoineryData.Get(model, element, "gValue")) is { } gv && gv <= 1) glazing.Add(new("SolarHeatGainTransmittance", "IFCNORMALISEDRATIOMEASURE", gv));
+            yield return new IfcStandardSet("Pset_DoorWindowGlazingType", glazing);
+        }
+        if (!JoineryData.Any(model, element)) yield break;
         var props = new List<IfcStandardProperty>();
         if (JoineryData.Parse(JoineryData.Get(model, element, "uValue")) is { } u) props.Add(new("ThermalTransmittance", "IFCTHERMALTRANSMITTANCEMEASURE", u));
         if (element.Class == IfcClass.Window && Openings.SpecOf(model, element.Id) is { } spec && spec.Width * spec.Height > 1e-9)

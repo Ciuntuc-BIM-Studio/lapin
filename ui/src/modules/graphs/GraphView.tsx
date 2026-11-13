@@ -19,6 +19,7 @@ import {
 } from './graph';
 import { isInput, GRAPHS_GROUP, type GraphTool, type NodePalette } from './palette';
 import { togglePalette } from './tools';
+import { ExampleMenu } from './ExampleMenu';
 import { isGuest } from '../../engine/share';
 import { commitNumber, NO_COMMIT } from '../../shell/fieldCommit';
 import { MessageStrip } from '../../shell/MessageStrip';
@@ -50,6 +51,7 @@ function GraphPanel() {
           <Workflow size={28} />
           <p>A graph wires nodes (numbers, points, lists, the commands of the tools) into a recipe: Lapin shows what it would make as a ghost, and Bake makes it.</p>
           <button type="button" data-action="graph-new" onClick={() => void newGraph()}><Plus size={14} /> New graph</button>
+          <ExampleMenu labelled />
         </div>
       )}
       <MessageStrip log={graphLog} onOpen={(m) => { const node = (m.target as { node?: string } | undefined)?.node; if (node) focusNode(node); }} />
@@ -73,6 +75,7 @@ function Toolbar({ graphs }: { graphs: { id: string; name: string }[] }) {
         {graphs.map((g) => <option key={g.id} value={g.id} data-no-i18n>{g.name}</option>)}
       </select>
       <button type="button" className="icon" title="New graph" data-action="graph-new" onClick={() => void newGraph()}><Plus size={14} /></button>
+      <ExampleMenu />
       {current && (
         <>
           <input className="graphs-name" value={name} onChange={(e) => setName(e.target.value)} data-field="graph-name" title="The graph's name"

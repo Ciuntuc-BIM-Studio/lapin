@@ -291,6 +291,34 @@ public sealed class CoreModule : ILapinModule
             return new JsonObject { ["changed"] = Pins.Set(ctx, ids, pinned) };
         });
 
+        // Each end of walls, beams and strip footings joining automatically or not (the forum's topic #50, decision 546):
+        // {ids, start?, end?} (what is not given stays). An end turned off keeps the joins it has; one turned on joins what it meets now.
+        r.Command("element.setAutoJoin", "Join automatically", (ctx, a) =>
+        {
+            static bool? Flag(JsonNode? n) => n is JsonValue v && v.TryGetValue<bool>(out var b) ? b : null;
+            var (start, end) = (Flag(a["start"]), Flag(a["end"]));
+            if (start == null && end == null) throw new CommandException("Say which end: start, end or both.");
+            var paths = ctx.Services.Get<IPathElements>();
+            var (ids, _) = Groups.Expand(ctx.Model, Args.Ids(a).ToList());
+            var targets = ids.Select(ctx.Model.Get).OfType<Entity>()
+                .Where(e => paths?.IsPath(e.Class) == true && e.Attrs["start"] is JsonArray && e.Attrs["end"] is JsonArray).ToList();
+            if (targets.Count == 0) throw new CommandException("Select walls, beams or strip footings.");
+            var changed = 0;
+            foreach (var e in targets)
+            {
+                if ((start == null || Joins.AutoAt(e, 0) == start) && (end == null || Joins.AutoAt(e, 1) == end) && e.Attrs[Joins.AutoKey] != null) continue;
+                var attrs = e.CloneAttrs();
+                Joins.SetAuto(attrs, e, start, end);
+                ctx.Replace(e.With(attrs: attrs));
+                changed++;
+            }
+            if (start == true || end == true)
+                foreach (var e in targets)
+                    try { Joins.Auto(ctx, paths!, e.Id); }
+                    catch (CommandException) { }
+            return new JsonObject { ["changed"] = changed };
+        });
+
         r.Command("element.transform", "Transform", (ctx, a) =>
         {
             var t = ElementTransform.Run(ctx, a);
@@ -376,8 +404,9 @@ public static class ElementTransform
     /// a strip footing) joins what it now meets, as one drawn there would (<see cref="Joins.Auto"/>), and a moved one's joins
     /// with what stayed are worked out again (one that no longer meets goes), as a wall's ends edited are (updateWall). What
     /// was carried together keeps its joins among them as they were: none is made between two of them. A copy is the user's
-    /// own new element, so a copy of one recognised from a file joins too; one recognised from a file (its <c>imported</c>
-    /// record) moved keeps its joins as the file had them, and joins nothing new (docs/spec-ifc.md, the import reproduces the file).
+    /// own new element, so a copy of one recognised from a file joins too (its ends set to join, decision 546); one recognised
+    /// from a file (its <c>imported</c> record) moved keeps its joins as the file had them, and joins nothing new
+    /// (docs/spec-ifc.md, the import reproduces the file). Each end joins only as its <see cref="Joins.AutoKey"/> says.
     /// </summary>
     /// <param name="together">More that counts as carried with it (an array's items: none joins another).</param>
     public static void JoinWhatMeets(ICommandContext ctx, Result r, IReadOnlySet<string>? together = null)
@@ -386,11 +415,20 @@ public static class ElementTransform
         bool IsPath(string id) => ctx.Model.Get(id) is { } e && paths.IsPath(e.Class) && e.Attrs["start"] is JsonArray && e.Attrs["end"] is JsonArray;
         // An apartment type's inner walls stop in the building's as its instances say (docs/plan-units.md), not joined here.
         var units = Components.UnitMembers(ctx.Model).ToHashSet();
-        var moved = r.Moved.Where(id => IsPath(id) && ctx.Model.Get(id)!.Attrs["imported"] == null && !units.Contains(id)).ToList();
+        var moved = r.Moved.Where(id => IsPath(id) && !units.Contains(id)).ToList();
         var copied = r.Copies.Values.Where(id => IsPath(id) && !units.Contains(id)).ToList();
         if (moved.Count == 0 && copied.Count == 0) return;
+        // A copy of one recognised from a file is the user's own: its ends join, unless they were set otherwise.
+        foreach (var id in copied)
+            if (ctx.Model.Get(id) is { } c && c.Attrs["imported"] != null && c.Attrs[Joins.AutoKey] == null)
+            {
+                var attrs = c.CloneAttrs();
+                Joins.SetAuto(attrs, c, true, true);
+                ctx.Replace(c.With(attrs: attrs));
+            }
         var with = r.Moved.Concat(r.Copies.Values).Concat(together ?? Enumerable.Empty<string>()).Concat(units).ToHashSet();
-        try { Joins.Refresh(ctx, paths, moved, j => !(with.Contains(j.Relating) && j.Related.All(with.Contains))); }
+        var refreshed = moved.Where(id => ctx.Model.Get(id)!.Attrs["imported"] == null).ToList();
+        try { Joins.Refresh(ctx, paths, refreshed, j => !(with.Contains(j.Relating) && j.Related.All(with.Contains))); }
         catch (CommandException) { }
         var thickness = new Dictionary<string, double>();
         foreach (var id in moved.Concat(copied))

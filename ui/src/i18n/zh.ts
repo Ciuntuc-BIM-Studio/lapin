@@ -208,6 +208,13 @@ export const ZH: Record<string, string> = {
   "Delete graph": "删除图",
   "Bake graph": "烘焙图",
   "New graph": "新建图",
+  "New from example…": "从示例新建…",
+  "Twisted tower": "扭转塔楼",
+  "Floors on a stack of storeys, each turned a little more than the one below, with columns; sliders for floors, height, twist, width and taper.": "叠放在多个楼层上的楼板，每层比下一层多转一点，并带柱；可用滑块调整层数、层高、扭转、宽度和收分。",
+  "Columns on a grid": "网格上的柱",
+  "A column at each point of a grid: how many each way, and the spacing.": "网格的每个点上放一根柱：每个方向的数量和间距。",
+  "Walls round a rectangle": "矩形四周的墙",
+  "Four walls round a rectangle of the width and depth you set.": "围绕按你设定的宽度和进深生成的矩形，建四面墙。",
   "A graph wires nodes (numbers, points, lists, the commands of the tools) into a recipe: Lapin shows what it would make as a ghost, and Bake makes it.": "图将节点（数字、点、列表、工具的命令）连接成一个配方：Lapin 以虚影显示它将生成的内容，“烘焙”则将其生成。",
   "The project's graphs": "项目的图",
   "No graphs": "没有图",
@@ -3452,6 +3459,21 @@ export const ZH: Record<string, string> = {
   "The part's value, the same for every object": "零件的值，对每个对象都相同",
   "type": "类型",
   "formula": "公式",
+  'Join automatically': '自动连接',
+  'Join automatically at start': '在起点自动连接',
+  'Join automatically at end': '在终点自动连接',
+  'Don\'t join at this end': '此端不连接',
+  'Join automatically at this end': '此端自动连接',
+  'Say which end: start, end or both.': '请说明哪一端：起点、终点或两端。',
+  'Select walls, beams or strip footings.': '请选择墙、梁或条形基础。',
+  'Place again at another scale': '以其他比例再次放置',
+  'Drag a rectangle on the view: the part to place beside it at the new scale (a click takes the view as cropped; Esc cancels).': '在视图上拖出一个矩形：以新比例放在其旁边的部分（单击则按当前裁剪的视图；Esc 取消）。',
+  'Give the scale.': '请给出比例。',
+  'The view is on no sheet: place it on one first.': '该视图不在任何图纸上：请先将其放到一张图纸上。',
+  'A schedule has no scale.': '明细表没有比例。',
+  'Draw the part to show on the view.': '请在视图上画出要显示的部分。',
+  // Doors and windows in one object (forum topic 34).
+  'Interior sill over the parapet': '护墙上的内窗台', 'Exterior sill over the parapet': '护墙上的外窗台', 'Lift & slide (HS), runs left': '提升推拉 (HS)，向左', 'Lift & slide (HS), runs right': '提升推拉 (HS)，向右', 'Tilt & slide (PSK), runs left': '平移内倒 (PSK)，向左', 'Tilt & slide (PSK), runs right': '平移内倒 (PSK)，向右', 'Door leaves': '门扇', 'Window sashes': '窗扇', 'Garage doors': '车库门', 'New balcony door + window': '新建阳台门 + 窗', 'New door with sidelights and transom': '新建带侧亮和亮子的门', 'New lift-and-slide (HS) portal': '新建提升推拉门 (HS)', 'New French window': '新建法式窗', 'Glazing build-up': '玻璃构造', 'Panes and cavities in mm, from outside in: 4-16-4 double, 4-12-4-12-4 triple, 33.1-16-4 laminated outside': '玻璃与空腔厚度 (mm)，由外向内：4-16-4 双层，4-12-4-12-4 三层，33.1-16-4 外侧夹胶', 'laminated': '夹胶', 'U-value, g-value and safety glass: the type\'s Data, below.': 'U 值、g 值和安全玻璃：见下方类型的数据。', 'How plans draw window sashes\' swings (French windows, balcony doors), for the whole project': '平面图如何绘制窗扇的开启线（法式窗、阳台门），适用于整个项目', 'Sash swings: dashed to the floor': '窗扇开启线：落地的为虚线', 'Sash swings: none': '窗扇开启线：无', 'Sash swings: all dashed': '窗扇开启线：全部虚线', 'Sash swings: all solid': '窗扇开启线：全部实线', 'A door leaf makes it a door, and a window type stays a window type: create a new type for it.': '有门扇即为门，而窗类型始终是窗类型：请为其新建一个类型。', 'With window sashes and no door leaf it is a window, and a door type stays a door type: create a new type for it.': '有窗扇而无门扇即为窗，而门类型始终是门类型：请为其新建一个类型。', 'Create as a new type': '新建为类型', 'A lift-and-slide leaf stands on the threshold: put it in the bottom row.': '提升推拉门扇立于门槛上：请将其放在最下一行。', 'The glazing is thicker than the sash and frame hold: a thinner build-up or a deeper profile.': '玻璃比窗扇和框所能容纳的更厚：请使用更薄的构造或更深的型材。',
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [
@@ -3746,4 +3768,5 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^(\d+) constraints dropped: (.+)$/, (m) => `已移除 ${m[1]} 个约束：${m[2]}`],
   [/^Constraint left out: (.+)$/, (m) => `已略去约束：${m[1]}`],
   [/^(\d+) constraints left out: (.+)$/, (m) => `已略去 ${m[1]} 个约束：${m[2]}`],
+  [/^Place again at 1:([\d.]+)…$/, (m) => `以 1:${m[1]} 再次放置…`],
 ];

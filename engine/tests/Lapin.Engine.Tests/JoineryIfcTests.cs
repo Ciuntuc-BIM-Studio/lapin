@@ -162,7 +162,10 @@ public class JoineryIfcTests : IDisposable
         static void Check(JoinerySpec spec)
         {
             var terms = JoineryIfc.Of(spec);
-            var back = JoineryIfc.FromIfc(spec with { Columns = [1], Rows = [1], Panels = [] }, terms.Operation, terms.UserDefined, terms.Panels)!;
+            // The panels as the import reads them: Lapin_Joinery's PanelOperations over the panels' own terms (forum topic 34).
+            var said = terms.Properties?.FirstOrDefault(p => p.Name == "PanelOperations").Value?.Split("; ");
+            var panels = said is { } ops && ops.Length == terms.Panels.Count ? [.. terms.Panels.Select((p, i) => p with { Operation = ops[i] })] : terms.Panels;
+            var back = JoineryIfc.FromIfc(spec with { Columns = [1], Rows = [1], Panels = [] }, terms.Operation, terms.UserDefined, panels)!;
             Assert.NotNull(back);
             string Says(JoinerySpec s) => string.Join(" ", Joinery.Normalised(s).OrderBy(p => p.Row).ThenBy(p => p.Col).Select(p => $"{p.Col},{p.Row},{p.ColSpan}x{p.RowSpan}:{p.Operation}"));
             Assert.Equal(Says(spec), Says(back));

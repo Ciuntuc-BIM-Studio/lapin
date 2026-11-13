@@ -484,13 +484,21 @@ public static partial class IfcImport
         {
             var sets = (type != null && type.Args.Count > 5 ? Items(type[5]) : []).Concat((definitions.GetValueOrDefault(filler.Id) ?? []).Select(f.Entities.GetValueOrDefault).OfType<StepEntity>());
             List<IfcJoineryPanel>? o = null;
+            string[]? own = null;
             foreach (var p in sets)
             {
                 if (p.Type == "IFCDOORPANELPROPERTIES" && Enum(p[5]) is { } dop)
                     (o ??= []).Add(new IfcJoineryPanel(dop, Enum(p[7]) ?? "NOTDEFINED", p[6] is null ? null : Num(p[6])));
                 else if (p.Type == "IFCWINDOWPANELPROPERTIES" && Enum(p[4]) is { } wop)
                     (o ??= []).Add(new IfcJoineryPanel(wop, Enum(p[5]) ?? "NOTDEFINED", null));
+                // Lapin's own terms for a door's panels (forum topic 34): a sash's window operation, a lift-and-slide leaf's.
+                else if (p.Type == "IFCPROPERTYSET" && Str(p[2]) == IfcJoineryType.PropertySet)
+                    foreach (var prop in Items(p[4]))
+                        if (prop.Type == "IFCPROPERTYSINGLEVALUE" && Str(prop[0]) == "PanelOperations" && prop[2] is StepTyped { Value: string text })
+                            own = text.Split(';', StringSplitOptions.TrimEntries);
             }
+            if (o != null && own != null && own.Length == o.Count && own.All(x => x.Length > 0))
+                o = [.. o.Select((x, i) => x with { Operation = own[i] })];
             return o;
         }
 

@@ -202,6 +202,13 @@ export const RO: Record<string, string> = {
   "Delete graph": "Șterge graful",
   "Bake graph": "Creare din graf",
   "New graph": "Graf nou",
+  "New from example…": "Nou dintr-un exemplu…",
+  "Twisted tower": "Turn răsucit",
+  "Floors on a stack of storeys, each turned a little more than the one below, with columns; sliders for floors, height, twist, width and taper.": "Planșee pe o stivă de niveluri, fiecare rotit puțin mai mult decât cel de dedesubt, cu stâlpi; glisoare pentru etaje, înălțime, răsucire, lățime și îngustare.",
+  "Columns on a grid": "Stâlpi pe o grilă",
+  "A column at each point of a grid: how many each way, and the spacing.": "Un stâlp în fiecare punct al unei grile: câți pe fiecare direcție și distanța dintre ei.",
+  "Walls round a rectangle": "Pereți în jurul unui dreptunghi",
+  "Four walls round a rectangle of the width and depth you set.": "Patru pereți în jurul unui dreptunghi cu lățimea și adâncimea stabilite de tine.",
   "A graph wires nodes (numbers, points, lists, the commands of the tools) into a recipe: Lapin shows what it would make as a ghost, and Bake makes it.": "Un graf leagă noduri (numere, puncte, liste, comenzile uneltelor) într-o rețetă: Lapin arată ce ar face ca o fantomă, iar Creează o face.",
   "The project's graphs": "Grafurile proiectului",
   "No graphs": "Niciun graf",
@@ -3456,6 +3463,21 @@ export const RO: Record<string, string> = {
   "The part's value, the same for every object": "Valoarea piesei, aceeași pentru fiecare obiect",
   "type": "tip",
   "formula": "formulă",
+  'Join automatically': 'Îmbinare automată',
+  'Join automatically at start': 'Îmbinare automată la început',
+  'Join automatically at end': 'Îmbinare automată la sfârșit',
+  'Don\'t join at this end': 'Nu îmbina la acest capăt',
+  'Join automatically at this end': 'Îmbină automat la acest capăt',
+  'Say which end: start, end or both.': 'Spune care capăt: începutul, sfârșitul sau amândouă.',
+  'Select walls, beams or strip footings.': 'Selectează pereți, grinzi sau fundații continue.',
+  'Place again at another scale': 'Plasează din nou la altă scară',
+  'Drag a rectangle on the view: the part to place beside it at the new scale (a click takes the view as cropped; Esc cancels).': 'Trage un dreptunghi pe vedere: partea de plasat lângă ea la noua scară (un clic ia vederea așa cum e decupată; Esc anulează).',
+  'Give the scale.': 'Dă scara.',
+  'The view is on no sheet: place it on one first.': 'Vederea nu e pe nicio planșă: plaseaz-o întâi pe una.',
+  'A schedule has no scale.': 'Un tabel nu are scară.',
+  'Draw the part to show on the view.': 'Desenează pe vedere partea de arătat.',
+  // Doors and windows in one object (forum topic 34).
+  'Interior sill over the parapet': 'Glaf interior peste parapet', 'Exterior sill over the parapet': 'Solbanc peste parapet', 'Lift & slide (HS), runs left': 'Ridicare și glisare (HS), spre stânga', 'Lift & slide (HS), runs right': 'Ridicare și glisare (HS), spre dreapta', 'Tilt & slide (PSK), runs left': 'Oscilo-glisant (PSK), spre stânga', 'Tilt & slide (PSK), runs right': 'Oscilo-glisant (PSK), spre dreapta', 'Door leaves': 'Canate de ușă', 'Window sashes': 'Cercevele de fereastră', 'Garage doors': 'Uși de garaj', 'New balcony door + window': 'Ușă de balcon + fereastră nouă', 'New door with sidelights and transom': 'Ușă nouă cu lumini laterale și supralumină', 'New lift-and-slide (HS) portal': 'Portal nou cu ridicare și glisare (HS)', 'New French window': 'Fereastră franțuzească nouă', 'Glazing build-up': 'Structura geamului', 'Panes and cavities in mm, from outside in: 4-16-4 double, 4-12-4-12-4 triple, 33.1-16-4 laminated outside': 'Foi de sticlă și spații în mm, dinspre exterior spre interior: 4-16-4 dublu, 4-12-4-12-4 triplu, 33.1-16-4 laminat la exterior', 'laminated': 'laminat', 'U-value, g-value and safety glass: the type\'s Data, below.': 'Valoarea U, valoarea g și sticla de siguranță: Datele tipului, mai jos.', 'How plans draw window sashes\' swings (French windows, balcony doors), for the whole project': 'Cum desenează planurile deschiderea cercevelelor (ferestre franțuzești, uși de balcon), pentru tot proiectul', 'Sash swings: dashed to the floor': 'Deschiderea cercevelelor: punctat până la pardoseală', 'Sash swings: none': 'Deschiderea cercevelelor: deloc', 'Sash swings: all dashed': 'Deschiderea cercevelelor: toate punctat', 'Sash swings: all solid': 'Deschiderea cercevelelor: toate continuu', 'A door leaf makes it a door, and a window type stays a window type: create a new type for it.': 'Un canat de ușă o face ușă, iar un tip de fereastră rămâne tip de fereastră: creați un tip nou pentru ea.', 'With window sashes and no door leaf it is a window, and a door type stays a door type: create a new type for it.': 'Cu cercevele de fereastră și fără canat de ușă este fereastră, iar un tip de ușă rămâne tip de ușă: creați un tip nou pentru ea.', 'Create as a new type': 'Creați ca tip nou', 'A lift-and-slide leaf stands on the threshold: put it in the bottom row.': 'Un canat cu ridicare și glisare stă pe prag: puneți-l pe rândul de jos.', 'The glazing is thicker than the sash and frame hold: a thinner build-up or a deeper profile.': 'Geamul este mai gros decât încap cercevelele și tocul: o structură mai subțire sau un profil mai adânc.',
 };
 
 /** Phrases with a number or a name in them. */
@@ -3751,4 +3773,5 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^(\d+) constraints dropped: (.+)$/, (m) => `${m[1]} constrângeri eliminate: ${m[2]}`],
   [/^Constraint left out: (.+)$/, (m) => `Constrângere lăsată deoparte: ${m[1]}`],
   [/^(\d+) constraints left out: (.+)$/, (m) => `${m[1]} constrângeri lăsate deoparte: ${m[2]}`],
+  [/^Place again at 1:([\d.]+)…$/, (m) => `Plasează din nou la 1:${m[1]}…`],
 ];

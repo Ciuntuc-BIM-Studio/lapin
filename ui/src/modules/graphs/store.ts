@@ -13,6 +13,7 @@ import { isDesktop } from '../../engine/files';
 import { isGuest } from '../../engine/share';
 import { createMessageLog } from '../../platform/messages';
 import { bakeMessage, EVALUATION, evaluationMessages } from './messages';
+import { EXAMPLES, loadExample, uniqueName } from './examples';
 import { emptyGraph, graphOf, nodeSpecs, type Catalogue, type EngineNodes, type GraphJson, type NodeSpec } from './graph';
 
 export const GRAPH_CLASS = 'LapinGraph';
@@ -91,6 +92,16 @@ export async function newGraph(): Promise<void> {
   let i = 1;
   while (taken.has(`graph ${i}`)) i++;
   const r = await execute('graphs.save', { name: `Graph ${i}`, graph: emptyGraph() }) as { id?: string } | null;
+  if (r?.id) openGraph(r.id);
+}
+
+/** A copy of a bundled example saved into the project (one undo step) under a name not taken, and opened. */
+export async function newGraphFromExample(id: string): Promise<void> {
+  const example = EXAMPLES.find((e) => e.id === id);
+  if (!example) return;
+  const graph = await loadExample(id);
+  const name = uniqueName(example.name, projectGraphs(useSession.getState().nodes).map((g) => g.name));
+  const r = await execute('graphs.save', { name, graph }) as { id?: string } | null;
   if (r?.id) openGraph(r.id);
 }
 
