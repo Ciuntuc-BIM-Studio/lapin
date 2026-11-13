@@ -46,6 +46,12 @@ public sealed class GraphStopped(string message) : ModelException(message);
 /// </summary>
 public sealed class Evaluator(GraphDoc doc, IModelView model, ModuleCatalog catalog, TrackingContext? commands, IQueryContext query, TimeSpan budget)
 {
+    /// <summary>
+    /// The storey a command node without one of its own works on (the view's, as a tool draws on the storey shown): set as its
+    /// <c>storeyId</c> when its inputs have none. Null: each command's own default (the first storey).
+    /// </summary>
+    public string? Storey { get; init; }
+
     public Dictionary<string, NodeResult> Results { get; } = new(StringComparer.Ordinal);
     /// <summary>What the commands made, in order (elements first: what has a geometry).</summary>
     public List<string> Made { get; } = [];
@@ -127,7 +133,7 @@ public sealed class Evaluator(GraphDoc doc, IModelView model, ModuleCatalog cata
                 inputs[p.Name] = node.Values[p.Name] is { } v ? Values.FromConstant(v) : p.Default is { } d ? Values.FromConstant(d) : null;
             }
             var call = def.Run;
-            return (inputs, whole, def.Outputs.Select(o => o.Name).ToArray(), i => Timed(() => call(new NodeCall(node, i, model))));
+            return (inputs, whole, def.Outputs.Select(o => o.Name).ToArray(), i => Timed(() => call(new NodeCall(node, i, model, Storey))));
         }
         foreach (var (k, v) in node.Values) if (!inputs.ContainsKey(k)) inputs[k] = Values.FromConstant(v);
         if (node.Kind.StartsWith(CommandPrefix, StringComparison.Ordinal))
@@ -181,6 +187,7 @@ public sealed class Evaluator(GraphDoc doc, IModelView model, ModuleCatalog cata
         if (++Calls > GraphLimits.MaxCalls) throw new GraphStopped($"A graph runs at most {GraphLimits.MaxCalls} commands at once: stopped here.");
         var ctx = commands!;
         var args = Args(inputs);
+        if (Storey != null && !args.ContainsKey("storeyId") && ctx.Model.Get(Storey) is { Class: IfcClass.BuildingStorey }) args["storeyId"] = Storey;
         ctx.Begin();
         var r = entry.Handler(ctx, args);
         Driven.After(ctx, ctx, entry.Name);

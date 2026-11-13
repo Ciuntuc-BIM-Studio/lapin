@@ -186,6 +186,13 @@ public sealed class GraphTests : IDisposable
         Assert.Empty(f.Model.OfClass(IfcClass.Wall));
         Assert.Equal("Save graph", f.Session.History.UndoLabel);
 
+        // A command node without a storey of its own works on the storey given (the view's), as a tool draws on the storey shown.
+        var upper = (string)f.Run("storey.create", new JsonObject { ["name"] = "First floor", ["elevation"] = 3 })!["id"]!;
+        f.Run("graphs.bake", new JsonObject { ["id"] = id, ["storey"] = upper });
+        Assert.All(f.Model.OfClass(IfcClass.Wall), w => Assert.Equal(upper, Spatial.StoreyOf(f.Model, w.Id)!.Id));
+        Assert.Equal(3, Out(Evaluate(f, Walls()), "wall", "ids")!.AsArray().Count);
+        f.Session.Undo();
+
         // A wall of no length fails: nothing of the graph is made.
         var bad = Walls();
         bad["nodes"]!.AsArray()[2]!["values"] = new JsonObject { ["y"] = 0 };

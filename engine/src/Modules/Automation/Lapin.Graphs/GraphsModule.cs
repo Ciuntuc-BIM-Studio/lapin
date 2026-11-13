@@ -74,13 +74,13 @@ public sealed class GraphsModule : ILapinModule, IPackageTexts, IDrivenElements
             return null;
         });
 
-        // {id} or {graph}: the graph made, one undo step; refused whole, with the first failure, when one of its commands fails.
+        // {id} or {graph}, storey? (the storey a command node without one works on: the view's): the graph made, one undo step; refused whole, with the first failure, when one of its commands fails.
         r.Command("bake", "Bake graph", (ctx, a) =>
         {
             var doc = DocOf(ctx.Model, a);
             var catalog = ctx.Services as ModuleCatalog ?? throw new CommandException("No commands to bake here.");
             var tracking = new TrackingContext(ctx, catalog, new ModelQuery(ctx.Model, catalog));
-            var e = new Evaluator(doc, ctx.Model, catalog, tracking, tracking.Query, GraphLimits.BakeTime).RunAll();
+            var e = new Evaluator(doc, ctx.Model, catalog, tracking, tracking.Query, GraphLimits.BakeTime) { Storey = (string?)a["storey"] }.RunAll();
             if (e.Results.FirstOrDefault(x => x.Value.IsCommand && (x.Value.Error != null || x.Value.Failed > 0)) is { Value: { } bad, Key: { } at })
                 throw new CommandException($"The graph was not baked: „{Label(doc.Node(at)!)}” failed: {bad.Error ?? bad.Warning}");
             return new JsonObject { ["made"] = new JsonArray(e.Made.Select(x => (JsonNode)x).ToArray()), ["calls"] = e.Calls };
@@ -96,8 +96,8 @@ public sealed class GraphsModule : ILapinModule, IPackageTexts, IDrivenElements
             return o;
         });
 
-        // {id} or {graph} (an unsaved one, or {id, graph}: the saved one as the editor has it now): its values and its ghost.
-        r.Query("evaluate", (q, a) => Preview.Of(q, DocOf(q.Model, a)));
+        // {id} or {graph} (an unsaved one, or {id, graph}: the saved one as the editor has it now), storey?: its values and its ghost.
+        r.Query("evaluate", (q, a) => Preview.Of(q, DocOf(q.Model, a), (string?)a["storey"]));
 
         // The module's own nodes with their ports, and the product's commands and queries a graph may run.
         r.Query("nodes", (q, _) =>

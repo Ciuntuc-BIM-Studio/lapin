@@ -13,8 +13,10 @@ namespace Lapin.Graphs;
 public sealed record Port(string Name, string Label, string Type = "any", bool Whole = false, bool Setting = false, JsonNode? Default = null, string[]? Choices = null);
 
 /// <summary>What a node's run is given: its inputs (wired, else its constants, else the ports' defaults), its node, the model.</summary>
-public sealed class NodeCall(GraphNode node, IReadOnlyDictionary<string, object?> inputs, IModelView model)
+public sealed class NodeCall(GraphNode node, IReadOnlyDictionary<string, object?> inputs, IModelView model, string? storey = null)
 {
+    /// <summary>The view's storey, what a storey left unchosen means (<see cref="Evaluator.Storey"/>).</summary>
+    public string? Storey => storey;
     public GraphNode Node => node;
     public IModelView Model => model;
     public object? this[string port] => inputs.GetValueOrDefault(port);
@@ -80,9 +82,10 @@ public static class Builtins
         new("storey", "Storey", "Inputs", [Set("value", "Storey", "storey", "")], [Out("value", "Storey", "storey")], c =>
         {
             var id = c.Text("value");
-            return One(c.Model.Get(id) is { Class: IfcClass.BuildingStorey } ? id : Spatial.Storeys(c.Model).FirstOrDefault()?.Id
-                ?? throw new CommandException("The project has no storey."));
-        }, "A storey of the project; none chosen: the first."),
+            if (c.Model.Get(id) is { Class: IfcClass.BuildingStorey }) return One(id);
+            if (c.Storey != null && c.Model.Get(c.Storey) is { Class: IfcClass.BuildingStorey }) return One(c.Storey);
+            return One(Spatial.Storeys(c.Model).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey."));
+        }, "A storey of the project; none chosen: the view's."),
 
         // ── lists ──
         new("range", "Range", "Lists", [In("start", "Start", "number", 0), In("end", "End", "number", 10), In("step", "Step", "number", 1)], [Out("list", "Numbers", "number")], c =>
@@ -143,7 +146,7 @@ public static class Builtins
                 var (v, error) = Expr.TryEval(f, n => n is "a" or "b" or "c" or "d" ? c[n] is { } x ? Values.Number(x, n) : null : null);
                 return v is { } d ? One(d) : throw new CommandException(error ?? "The formula does not read.");
             }, "A formula of a, b, c and d (+ - * / ^, min, max, round, sqrt, sin, cos, if…; angles in degrees)."),
-        new("round", "Round", "Maths", [In("value", "Value", "number"), In("step", "To the nearest", "number", 1)], [Out("value", "Value", "number")], c =>
+        new("round", "Round off", "Maths", [In("value", "Value", "number"), In("step", "To the nearest", "number", 1)], [Out("value", "Value", "number")], c =>
         {
             var s = Math.Abs(c.Num("step", 1));
             var v = c.Num("value");
@@ -236,7 +239,7 @@ public static class Builtins
             Limit(ids.Count);
             return One(ids);
         }, "Every element of a class (IfcWall, IfcSlab…) in the model as it is."),
-        new("storeys", "Storeys", "Model", [], [Out("ids", "Storeys", "storey"), Out("elevations", "Elevations", "number")], c =>
+        new("storeys", "Storeys", "Model", [], [Out("ids", "Storeys", "storey"), Out("elevations", "Storey levels", "number")], c =>
         {
             var s = Spatial.Storeys(c.Model).ToList();
             return [s.Select(e => (object?)e.Id).ToList(), s.Select(e => (object?)e.Num("elevation")).ToList()];
@@ -254,7 +257,7 @@ public static class Builtins
         }, "An element's attribute by its key (height, thickness…), or its name, class or id."),
 
         // ── outputs ──
-        new("watch", "Watch", "Outputs", [Whole("value", "Value", "any")], [Out("value", "Value")], c => One(c["value"]), "Shows what it is given (stage 2: in the graph's palette)."),
+        new("watch", "Watch", "Outputs", [Whole("value", "Value", "any")], [Out("value", "Value")], c => One(c["value"]), "Shows what it is given."),
     ];
 
     static readonly Dictionary<string, NodeDef> ByKind = All.ToDictionary(d => d.Kind);

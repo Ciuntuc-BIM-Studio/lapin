@@ -26,14 +26,14 @@ public static class Preview
     /// <summary>Thrown at the end of a preview's transaction so it is given back.</summary>
     sealed class GiveBack : Exception;
 
-    public static JsonObject Of(IQueryContext q, GraphDoc doc)
+    public static JsonObject Of(IQueryContext q, GraphDoc doc, string? storey = null)
     {
         var catalog = q.Services as ModuleCatalog ?? throw new CommandException("No commands to preview here.");
         var clock = Stopwatch.StartNew();
         JsonObject? result = null;
         if (!doc.Nodes.Any(n => n.Kind.StartsWith(Evaluator.CommandPrefix, StringComparison.Ordinal)))
         {
-            var e = new Evaluator(doc, q.Model, catalog, null, q, GraphLimits.PreviewTime).RunAll();
+            var e = new Evaluator(doc, q.Model, catalog, null, q, GraphLimits.PreviewTime) { Storey = storey }.RunAll();
             result = Result(e, null, catalog);
         }
         else
@@ -53,7 +53,7 @@ public static class Preview
                     {
                         var query = new ModelQuery(edit.Model, catalog);
                         var ctx = new TrackingContext(edit, catalog, query);
-                        var e = new Evaluator(doc, edit.Model, catalog, ctx, query, GraphLimits.PreviewTime).RunAll();
+                        var e = new Evaluator(doc, edit.Model, catalog, ctx, query, GraphLimits.PreviewTime) { Storey = storey }.RunAll();
                         // What a command settles after it in a session (types' defaults, components), as the bake will have it.
                         try { TypeDefaults.Settle(edit); Components.Settle(ctx, edit); } catch (Exception) { }
                         result = Result(e, edit, catalog);
