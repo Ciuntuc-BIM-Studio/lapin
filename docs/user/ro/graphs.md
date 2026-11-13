@@ -26,7 +26,7 @@ Fiecare schimbare e un pas de anulare: **Ctrl+Z** desface un nod adăugat, mutat
 
 Porturile sunt colorate după ce duc: numerele albastru, textele chihlimbariu, punctele verde, elementele mov, listele gri. Un fir între feluri care nu se potrivesc e refuzat, cu motivul.
 
-Nu există arbori de date. O **listă** legată la o intrare care ia o singură valoare rulează nodul o dată pentru fiecare element: o **Serie** de trei numere în X-ul unui **Punct** dă trei puncte, iar trei puncte în Începutul unui **Perete** dau trei pereți. Mai multe liste merg alături; o listă mai scurtă își repetă ultimul element. Un fir care duce o listă e desenat mai gros, cu numărul elementelor pe el. Unele intrări iau lista întreagă (**Număr**, **Sumă**, **Element din listă**, **Polilinie**). Intrarea de tip listă a unei unelte (elementele pe care lucrează **Fundații izolate sub stâlpi**, punctele unui planșeu) ia lista întreagă într-o singură rulare; o listă de liste o rulează o dată pentru fiecare listă.
+Nu există arbori de date. O **listă** legată la o intrare care ia o singură valoare rulează nodul o dată pentru fiecare element: o **Serie** de trei numere în X-ul unui **Punct** dă trei puncte, iar trei puncte în Începutul unui **Perete** dau trei pereți. Mai multe liste merg alături; o listă mai scurtă își repetă ultimul element. Un fir care duce o listă e desenat mai gros, cu numărul elementelor pe el. Unele intrări iau lista întreagă (**Număr**, **Sumă**, **Element din listă**, **Polilinie**). Intrarea de tip listă a unei unelte (elementele pe care lucrează **Fundații izolate sub stâlpi**, punctele unui planșeu) ia lista întreagă într-o singură rulare; o listă de liste o rulează o dată pentru fiecare listă, la fel ca o listă de polilinii legată la punctele unui planșeu: câte un planșeu pentru fiecare contur.
 
 Nodul unei unelte are aceleași intrări ca și comanda ei: un **Perete** are punctele **Început** și **Sfârșit**, o înălțime, un nivel, un tip. Ieșirile lui sunt **Elemente făcute** și **Rezultat** (ce a răspuns comanda).
 
@@ -40,6 +40,31 @@ Pe lângă **Interval**, **Serie**, **Număr**, **Element din listă**, **Invers
 - **Parte dintr-o listă**: **Număr** elemente de la **Început** (de la 0). Un început negativ numără de la sfârșit; fără număr ia tot până la capăt. Primele trei: început 0, număr 3; ultimele trei: început -3.
 - **Unice**: fiecare valoare o dată, în ordinea în care apare prima dată, și **De câte ori** era. Numerele care diferă cu cel mult o miliardime sunt aceleași, punctele la fel; textele se compară cum sunt scrise (majusculele contează), iar numărul 1 nu e textul „1”.
 - **Fiecare cu fiecare**: fiecare pereche dintre un element din A și unul din B. Ieșirile A și B sunt cât perechile (fiecare element din A repetat, cele din B reluate), deci nodul următor, legat la amândouă, rulează o dată pentru fiecare pereche: o **Listă** de valori X și una de valori Y prin Fiecare cu fiecare, apoi într-un **Punct**, dau un punct la fiecare încrucișare. Cel mult 10.000 de perechi.
+
+## Nodurile de geometrie
+
+Grupul **Geometrie** face puncte și forme simple: **Punct**, **Coordonatele punctului**, **Mută punctul**, **Distanță**, **Împarte linia**, **Grilă de puncte**, **Puncte pe cerc**, **Linie**, **Polilinie**, **Dreptunghi** și **Colțuri**, plus acestea, care schimbă puncte și polilinii:
+
+- **Rotește**: puncte sau polilinii rotite în jurul verticalei prin **Centru** cu **Unghiul** în grade, în sens trigonometric (fără centru: originea). O listă de unghiuri și un singur contur dau câte un contur rotit pentru fiecare unghi; o listă de contururi și o listă de unghiuri rotesc fiecare contur cu unghiul lui.
+- **Scalează**: puncte sau polilinii mărite sau micșorate față de **Centru** cu **Factorul** (2 le dublează, 0.5 le înjumătățește; fără centru: originea). Un **Factor pe Z**, dacă e dat, scalează înălțimile separat de plan.
+- **Centru**: mijlocul cutiei din jurul punctelor sau poliliniilor date, toate la un loc: centrul unui dreptunghi, punctul în jurul căruia îl rotești sau îl scalezi.
+- **Puncte pe cerc** are un **Unghi de început** în grade: unde e primul punct, măsurat în sens trigonometric de la X (0, implicit, îl pune pe X).
+
+## Un turn răsucit
+
+Exemplul clasic: etaje dintr-o serie, fiecare rotit puțin mai mult decât cel de dedesubt, eventual tot mai mic, cu glisoare pentru numărul de etaje, înălțimea lor, răsucire și mărime.
+
+
+1. Cinci noduri de intrare: **Număr întreg** „Etaje” (12), **Număr** „Înălțimea etajului” (3.2, metri), **Număr** „Răsucire totală” (90, grade), **Număr** „Lățime” (24, metri), **Număr** „Îngustare” (0.7: mărimea etajului de sus, cea a celui de jos fiind 1).
+2. **Serie** „Cote”: Început 0, Pas ← Înălțimea etajului, Număr ← Etaje. Apoi nodul uneltei **Nivel nou**: Cotă ← Cote, Înălțime ← Înălțimea etajului. Face câte un nivel la fiecare cotă.
+3. **Dreptunghi**: Lățime și Adâncime ← Lățime. **Centru** ← Conturul dreptunghiului: punctul în jurul căruia se rotesc etajele.
+4. Rotirile: **Împarte** A ← Răsucire totală, B ← Etaje; o **Serie** „Rotiri”: Început 0, Pas ← Împarte, Număr ← Etaje.
+5. Mărimile: o **Formulă** `(a - 1) / max(b - 1, 1)`, a ← Îngustare, b ← Etaje; o **Serie** „Mărimi”: Început 1, Pas ← Formulă, Număr ← Etaje.
+6. **Scalează**: Puncte sau polilinie ← Conturul dreptunghiului, Centru ← Centru, Factor ← Mărimi. Apoi **Rotește**: Puncte sau polilinie ← Scalează, Centru ← Centru, Unghi ← Rotiri: câte un contur pentru fiecare etaj, rotit și scalat.
+7. Nodul uneltei **Placă**: Puncte ← Rotește, Nivel ← Elementele făcute de nodul Nivel nou. Câte un planșeu pe fiecare nivel nou.
+8. Stâlpi, dacă vrei: un **Scalează** cu Factor 0.85 al contururilor rotite față de Centru, Punctele **Colțurilor** lui în Punctul unui **Stâlp**, Nivel ← nivelurile, Rotire ← Rotiri.
+
+Fă-l unealtă (**Arată în Uneltele mele**), dă celor cinci intrări un minim și un maxim, iar glisoarele paletei rotesc și îngustează turnul pe măsură ce le tragi; **Bake** face nivelurile, planșeele și stâlpii într-un singur pas de anulare. Treizeci de etaje cu stâlpii lor se previzualizează în aproximativ o treime de secundă.
 
 ## Citirea modelului
 

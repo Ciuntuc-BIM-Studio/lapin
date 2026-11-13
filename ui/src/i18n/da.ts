@@ -76,6 +76,14 @@ export const DA: Record<string, string> = {
   "Change graph inputs": "Ændr grafens input",
   "A type": "En type",
   "A type of the project (a wall type, a slab type…) for a tool's Type; none chosen: the first of its class by name.": "En type i projektet (en vægtype, en dæktype…) til et værktøjs Type; ingen valgt: den første i sin klasse efter navn.",
+  // Decision 541: a project script run again when what it watches changes (docs/plan-external-geometry.md, L3)
+  "Watch for script": "Overvågning for script",
+  // Decision 539: bodies made by a script (docs/plan-external-geometry.md, L1)
+  "Made by a script:": "Lavet af et script:",
+  "Its shape is changed in the script; here it moves, turns, copies and is cut like any element.": "Dens form ændres i scriptet; her flyttes, drejes, kopieres og snittes den som ethvert element.",
+  "This shape is made by a script; change it in the script, or move, rotate or cut it here.": "Denne form er lavet af et script; ændr den i scriptet, eller flyt, drej eller snit den her.",
+  "Create body": "Opret legeme",
+  "Set body": "Angiv legeme",
   // Decision 524: the box by the cursor offers width and height for a rectangle
   'Space switches length and angle with width and height': 'Mellemrum skifter mellem længde og vinkel og bredde og højde', 'Width × Height': 'Bredde × Højde', 'Length ∠ Angle': 'Længde ∠ Vinkel',
   // Decision 516: mouse navigation styles
@@ -144,6 +152,15 @@ export const DA: Record<string, string> = {
   "Divide line": "Del linje",
   "Grid of points": "Punktgitter",
   "Points on a circle": "Punkter på en cirkel",
+  "New storey": "Ny etage",
+  "Z factor": "Z-faktor",
+  "Points or polyline": "Punkter eller polylinje",
+  "Rotated": "Drejet",
+  "Scaled": "Skaleret",
+  "Count points evenly round a circle, anticlockwise from the start angle (degrees, 0 along X).": "Count punkter jævnt fordelt på en cirkel, mod uret fra startvinklen (i grader, 0 langs X).",
+  "Points or polylines turned about the vertical through the centre (none: the origin) by the angle in degrees, anticlockwise; a list of angles gives one copy for each.": "Punkter eller polylinjer drejet om lodlinjen gennem centrum (ellers: origo) med vinklen i grader, mod uret; en liste af vinkler giver én kopi for hver.",
+  "Points or polylines made larger or smaller about the centre (none: the origin): 2 doubles them, 0.5 halves them; Z factor, if given, scales the heights apart.": "Punkter eller polylinjer gjort større eller mindre om centrum (ellers: origo): 2 fordobler dem, 0.5 halverer dem; en Z-faktor, hvis angivet, skalerer højderne for sig.",
+  "The middle of the box round the points or polylines given (all of them together): a rectangle's centre.": "Midten af kassen om de givne punkter eller polylinjer (alle sammen): et rektangels centrum.",
   "Join texts": "Saml tekster",
   "Number as text": "Tal som tekst",
   "Elements of a class": "Elementer af en klasse",
@@ -3443,6 +3460,9 @@ const n = (count: string, one: string, many: string) => `${count} ${count === '1
 export const DA_PATTERNS: Language['patterns'] = [
   [/^Commands: (\d+), (\d+) ms$/, (m) => `Kommandoer: ${m[1]}, ${m[2]} ms`],
   [/^Elements made: (\d+), one undo step$/, (m) => `Elementer oprettet: ${m[1]}, ét fortrydelsestrin`],
+  [/^„(.+)” was not run again: it is not trusted on this computer\. Run it once from the Script panel and choose Trust\.$/, (m) => `„${m[1]}” blev ikke kørt igen: det er ikke betroet på denne computer. Kør det én gang fra Script-panelet og vælg Stol på.`],
+  [/^„(.+)” was not run again: another script kept running\.$/, (m) => `„${m[1]}” blev ikke kørt igen: et andet script blev ved med at køre.`],
+  [/^„(.+)” took more than (\d+) s to run again: it was stopped, and nothing it did is kept\.$/, (m) => `„${m[1]}” tog mere end ${m[2]} s at køre igen: det blev stoppet, og intet af det, det gjorde, beholdes.`],
   [/^(\d+) added, (\d+) updated, (\d+) the same, (\d+) skipped\.$/, (m) => `${m[1]} tilføjet, ${m[2]} opdateret, ${m[3]} ens, ${m[4]} sprunget over.`],
   [/^(\d+) line types added, (\d+) updated, (\d+) skipped\.$/, (m) => `${m[1]} linjetyper tilføjet, ${m[2]} opdateret, ${m[3]} sprunget over.`],
   [/^(\d+) parameters added, (\d+) updated\.$/, (m) => `${m[1]} parametre tilføjet, ${m[2]} opdateret.`],

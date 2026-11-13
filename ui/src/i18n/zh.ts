@@ -76,6 +76,14 @@ export const ZH: Record<string, string> = {
   "Change graph inputs": "更改图的输入",
   "A type": "一种类型",
   "A type of the project (a wall type, a slab type…) for a tool's Type; none chosen: the first of its class by name.": "项目中的一种类型（墙类型、楼板类型…），用于工具的类型；未选择：按名称取其类别的第一个.",
+  // Decision 541: a project script run again when what it watches changes (docs/plan-external-geometry.md, L3)
+  "Watch for script": "脚本监视",
+  // Decision 539: bodies made by a script (docs/plan-external-geometry.md, L1)
+  "Made by a script:": "由脚本生成：",
+  "Its shape is changed in the script; here it moves, turns, copies and is cut like any element.": "其形状在脚本中修改；在此可像任何构件一样移动、旋转、复制和剖切。",
+  "This shape is made by a script; change it in the script, or move, rotate or cut it here.": "此形状由脚本生成；请在脚本中修改，或在此移动、旋转或剖切。",
+  "Create body": "创建实体",
+  "Set body": "设置实体",
   // Decision 524: the box by the cursor offers width and height for a rectangle
   'Space switches length and angle with width and height': '空格键在长度与角度、宽度与高度之间切换', 'Width × Height': '宽度 × 高度', 'Length ∠ Angle': '长度 ∠ 角度',
   // Decision 516: mouse navigation styles
@@ -144,6 +152,15 @@ export const ZH: Record<string, string> = {
   "Divide line": "等分线段",
   "Grid of points": "点阵",
   "Points on a circle": "圆上的点",
+  "New storey": "新建楼层",
+  "Z factor": "Z 向系数",
+  "Points or polyline": "点或多段线",
+  "Rotated": "旋转后",
+  "Scaled": "缩放后",
+  "Count points evenly round a circle, anticlockwise from the start angle (degrees, 0 along X).": "在圆上均匀分布 Count 个点，从起始角（以度计，0 沿 X 轴）开始逆时针排列。",
+  "Points or polylines turned about the vertical through the centre (none: the origin) by the angle in degrees, anticlockwise; a list of angles gives one copy for each.": "点或多段线绕过中心（未给出时为原点）的竖直轴按角度（以度计）逆时针旋转；角度列表为每个角度各生成一个副本。",
+  "Points or polylines made larger or smaller about the centre (none: the origin): 2 doubles them, 0.5 halves them; Z factor, if given, scales the heights apart.": "点或多段线以中心（未给出时为原点）放大或缩小：2 为放大一倍，0.5 为缩小一半；如给出 Z 向系数，则单独缩放高度。",
+  "The middle of the box round the points or polylines given (all of them together): a rectangle's centre.": "所给点或多段线（全部合在一起）的包围盒的中点：矩形的中心。",
   "Join texts": "连接文本",
   "Number as text": "数字转文本",
   "Elements of a class": "某类的构件",
@@ -3437,6 +3454,9 @@ export const ZH: Record<string, string> = {
 export const ZH_PATTERNS: Language['patterns'] = [
   [/^Commands: (\d+), (\d+) ms$/, (m) => `命令：${m[1]}，${m[2]} ms`],
   [/^Elements made: (\d+), one undo step$/, (m) => `已创建元素：${m[1]}，一步撤销`],
+  [/^„(.+)” was not run again: it is not trusted on this computer\. Run it once from the Script panel and choose Trust\.$/, (m) => `“${m[1]}”未重新运行：它在这台计算机上不受信任。请在脚本面板中运行一次并选择“信任”。`],
+  [/^„(.+)” was not run again: another script kept running\.$/, (m) => `“${m[1]}”未重新运行：另一个脚本仍在运行。`],
+  [/^„(.+)” took more than (\d+) s to run again: it was stopped, and nothing it did is kept\.$/, (m) => `“${m[1]}”重新运行超过 ${m[2]} 秒：已停止，其所做的更改均未保留。`],
   [/^(\d+) added, (\d+) updated, (\d+) the same, (\d+) skipped\.$/, (m) => `已添加 ${m[1]} 个，已更新 ${m[2]} 个，相同 ${m[3]} 个，已跳过 ${m[4]} 个。`],
   [/^(\d+) line types added, (\d+) updated, (\d+) skipped\.$/, (m) => `已添加 ${m[1]} 个线型，已更新 ${m[2]} 个，已跳过 ${m[3]} 个。`],
   [/^(\d+) parameters added, (\d+) updated\.$/, (m) => `已添加 ${m[1]} 个参数，已更新 ${m[2]} 个。`],

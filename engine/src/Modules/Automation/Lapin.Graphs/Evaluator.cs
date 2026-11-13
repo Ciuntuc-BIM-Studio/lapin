@@ -286,12 +286,13 @@ public sealed class Evaluator
     }
 
     /// <summary>
-    /// <paramref name="run"/> over its inputs: once, or mapped over the lists given to inputs that take one value (§3). The
+    /// <paramref name="run"/> over its inputs: once, or mapped over the lists given to inputs that take one value (§3); a
+    /// command's list argument only over a list of lists, or a list of polylines on its points (decision 535). The
     /// values by output (lists when mapped), how many items ran, how many failed and the first failure's message.
     /// </summary>
     static (object?[] Values, int Items, int Failed, string? First) Map(Func<Dictionary<string, object?>, object?[]> run, Dictionary<string, object?> inputs, HashSet<string> whole, int outputs, HashSet<string>? nested = null)
     {
-        var listed = inputs.Where(kv => kv.Value is List<object?> l && (!whole.Contains(kv.Key) || nested?.Contains(kv.Key) == true && l.Count > 0 && l.All(x => x is List<object?> inner && !PointLike(inner))))
+        var listed = inputs.Where(kv => kv.Value is List<object?> l && (!whole.Contains(kv.Key) || nested?.Contains(kv.Key) == true && l.Count > 0 && l.All(x => x is List<object?> inner && !PointLike(inner) || x is Polyline && PointsArgument(kv.Key))))
             .Select(kv => kv.Key).ToList();
         if (listed.Count == 0) return (Fit(run(inputs), outputs), 1, 0, null);
         var n = listed.Max(k => ((List<object?>)inputs[k]!).Count);
@@ -322,6 +323,9 @@ public sealed class Evaluator
         }
         return (columns.Cast<object?>().ToArray(), items, failed, first);
     }
+
+    /// <summary>An argument that is one outline's points: a list of polylines on it is a list of outlines, one run each (a floor on each storey).</summary>
+    static bool PointsArgument(string name) => name is "points" or "pts";
 
     /// <summary>A list of two or three numbers: a point written as [x, y] or [x, y, z], an item of a list of points, never a list to map over.</summary>
     static bool PointLike(List<object?> l) => l.Count is 2 or 3 && l.All(x => x is double);

@@ -177,7 +177,7 @@ export async function runTool(id: string, button?: PaletteButtonRun): Promise<vo
 }
 
 async function startTool(t: ScriptTool, code: string, button?: PaletteButtonRun): Promise<void> {
-  // The window's selection as it is now, for lapin.selection() (told as it changes only with Developer extras on).
+  // The window's selection as it is now, for lapin.selection() (told as it changes too; this makes sure the run sees the last one).
   forgetSentSelection();
   tellSelection();
   const name = button?.name ?? t.name;

@@ -134,6 +134,12 @@ Woher Werkzeuge kommen:
 
 Ein gelöschtes, deinstalliertes oder nicht mehr vertrautes Skript nimmt seine Werkzeuge aus Meine Werkzeuge.
 
+## Von einem Skript erstellte Formen
+
+Ein Skript oder ein Programm auf deinem Computer (etwa ein Python-Skript in VS Code) kann Elemente erstellen, deren Form es selbst berechnet: einen Binder über einem Raum, ein Fassadenpaneel, eine Form aus einem anderen Werkzeug. Es sind gewöhnliche Elemente: Sie erscheinen in Grundrissen, Schnitten und 3D, werden in Listen gemessen, nach IFC exportiert, und du verschiebst, drehst, kopierst, verbirgst oder löschst sie wie jedes andere. Die Eigenschaften zeigen **Von einem Skript erstellt:** und welches. Ihre Form gehört dem Skript: Was sie hier umformen würde, wird abgelehnt.
+
+Ein Skript kann verfolgen, woraus es gebaut ist. Von außerhalb von Lapin ausgeführt, aktualisiert es seine Elemente selbst, wenn du den beobachteten Raum oder die Wand ändern. Ein Projektskript, das Elemente beobachtet, wird von Lapin nach deiner Änderung erneut ausgeführt, nur wenn du ihm auf diesem Computer vertraust, als eigener Rückgängig-Schritt *„<script> regenerated“*. Ein nicht vertrauenswürdiges Skript wird nicht ausgeführt; das Script-Fenster sagt es.
+
 ## Sicherheit
 
 Ein Skript kann alles, was du auf diesem Computer kannst: es läuft in deinem eigenen Python mit deinen Rechten. Führe Skripte aus, die du selbst geschrieben hast oder denen du vertraust; ein Projektskript und ein installiertes fragen zuerst.
@@ -143,3 +149,5 @@ Ein Gast einer geteilten Sitzung kann weder Skripte auf deinem Computer ausführ
 ## Für Entwickler
 
 Was `lapin` bietet (Befehle, Abfragen, Stapel, das Modell, Ereignisse), beschreibt der Entwicklerleitfaden *Lapin from Python* (`docs/python.md` im Repository von Lapin); das Paket ist auf PyPI als `lapinbim`.
+
+Ein Programm auf Ihrem Computer findet Lapin auf Port **14912**; ein zweites gleichzeitig geöffnetes Lapin nimmt 14913 und so weiter. Sind mehrere geöffnet, fragt das Programm, welches (`lapin.connect(project="Haus")`); um eines festzulegen, setzen Sie `LAPIN_PORT`.

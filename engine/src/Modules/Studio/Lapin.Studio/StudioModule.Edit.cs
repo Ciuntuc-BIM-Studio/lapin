@@ -526,6 +526,8 @@ public sealed partial class StudioModule
         {
             var e = ctx.Model.Get(id) ?? throw new CommandException($"There is no {id}.");
             if (e.Str("operation") != null && e.Str("operation") != "body") throw new CommandException($"„{e.Name}” is a Studio solid already.");
+            // A program's body is changed by the program; a solid made beside it (keep) is the user's own.
+            if (!keep && ExternalBodies.IsOwned(e)) throw new CommandException(ExternalBodies.Refused);
             var parts = ctx.Query.Geometry(e.Id)?.Parts ?? [];
             if (parts.Count == 0) throw new CommandException($"„{e.Name}” has no body to make a solid of.");
             if (Spatial.StoreyOf(ctx.Model, e.Id) == null) throw new CommandException($"„{e.Name}” is not an element.");

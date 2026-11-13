@@ -76,6 +76,14 @@ export const FR: Record<string, string> = {
   "Change graph inputs": "Modifier les saisies du graphe",
   "A type": "Un type",
   "A type of the project (a wall type, a slab type…) for a tool's Type; none chosen: the first of its class by name.": "Un type du projet (un type de mur, un type de dalle…) pour le Type d'un outil ; aucun choisi : le premier de sa classe par nom.",
+  // Decision 541: a project script run again when what it watches changes (docs/plan-external-geometry.md, L3)
+  "Watch for script": "Surveillance pour le script",
+  // Decision 539: bodies made by a script (docs/plan-external-geometry.md, L1)
+  "Made by a script:": "Créé par un script :",
+  "Its shape is changed in the script; here it moves, turns, copies and is cut like any element.": "Sa forme se modifie dans le script ; ici, il se déplace, tourne, se copie et se coupe comme tout élément.",
+  "This shape is made by a script; change it in the script, or move, rotate or cut it here.": "Cette forme est créée par un script ; modifiez-la dans le script, ou déplacez-la, tournez-la ou coupez-la ici.",
+  "Create body": "Créer un corps",
+  "Set body": "Définir le corps",
   // Decision 524: the box by the cursor offers width and height for a rectangle
   'Space switches length and angle with width and height': 'Espace bascule entre longueur et angle et largeur et hauteur', 'Width × Height': 'Largeur × Hauteur', 'Length ∠ Angle': 'Longueur ∠ Angle',
   // Decision 516: mouse navigation styles
@@ -144,6 +152,15 @@ export const FR: Record<string, string> = {
   "Divide line": "Diviser la ligne",
   "Grid of points": "Grille de points",
   "Points on a circle": "Points sur un cercle",
+  "New storey": "Nouveau niveau",
+  "Z factor": "Facteur Z",
+  "Points or polyline": "Points ou polyligne",
+  "Rotated": "Tournés",
+  "Scaled": "Mis à l'échelle",
+  "Count points evenly round a circle, anticlockwise from the start angle (degrees, 0 along X).": "Count points répartis régulièrement sur un cercle, dans le sens antihoraire à partir de l'angle de départ (en degrés, 0 selon X).",
+  "Points or polylines turned about the vertical through the centre (none: the origin) by the angle in degrees, anticlockwise; a list of angles gives one copy for each.": "Points ou polylignes tournés autour de la verticale passant par le centre (à défaut : l'origine) de l'angle en degrés, dans le sens antihoraire ; une liste d'angles donne une copie pour chacun.",
+  "Points or polylines made larger or smaller about the centre (none: the origin): 2 doubles them, 0.5 halves them; Z factor, if given, scales the heights apart.": "Points ou polylignes agrandis ou réduits autour du centre (à défaut : l'origine) : 2 les double, 0.5 les divise par deux ; le facteur Z, s'il est donné, met les hauteurs à l'échelle à part.",
+  "The middle of the box round the points or polylines given (all of them together): a rectangle's centre.": "Le milieu de la boîte entourant les points ou polylignes donnés (tous ensemble) : le centre d'un rectangle.",
   "Join texts": "Joindre les textes",
   "Number as text": "Nombre en texte",
   "Elements of a class": "Éléments d'une classe",
@@ -3452,6 +3469,9 @@ const n = (count: string, one: string, many: string) => `${count} ${count === '0
 export const FR_PATTERNS: Language['patterns'] = [
   [/^Commands: (\d+), (\d+) ms$/, (m) => `Commandes : ${m[1]}, ${m[2]} ms`],
   [/^Elements made: (\d+), one undo step$/, (m) => `Éléments créés : ${m[1]}, une seule étape d’annulation`],
+  [/^„(.+)” was not run again: it is not trusted on this computer\. Run it once from the Script panel and choose Trust\.$/, (m) => `« ${m[1]} » n'a pas été relancé : il n'est pas approuvé sur cet ordinateur. Lancez-le une fois depuis le panneau Script et choisissez Faire confiance.`],
+  [/^„(.+)” was not run again: another script kept running\.$/, (m) => `« ${m[1]} » n'a pas été relancé : un autre script était toujours en cours.`],
+  [/^„(.+)” took more than (\d+) s to run again: it was stopped, and nothing it did is kept\.$/, (m) => `« ${m[1]} » a mis plus de ${m[2]} s à se relancer : il a été arrêté, et rien de ce qu'il a fait n'est conservé.`],
   [/^(\d+) added, (\d+) updated, (\d+) the same, (\d+) skipped\.$/, (m) => `${m[1]} ajoutés, ${m[2]} mis à jour, ${m[3]} identiques, ${m[4]} ignorés.`],
   [/^(\d+) line types added, (\d+) updated, (\d+) skipped\.$/, (m) => `${m[1]} types de ligne ajoutés, ${m[2]} mis à jour, ${m[3]} ignorés.`],
   [/^(\d+) parameters added, (\d+) updated\.$/, (m) => `${m[1]} paramètres ajoutés, ${m[2]} mis à jour.`],

@@ -380,7 +380,8 @@ fn spawn_engine(app: &AppHandle) -> Result<Child, String> {
     cmd.arg("--product").arg(res.join("product.json"))
         .arg("--modules-dir").arg(res.join("modules"))
         .arg("--user-dir").arg(user)
-        .args(["--port", "0", "--parent-pid", &std::process::id().to_string()])
+        // The automatic port: the first free of 14912, 14913, … so programs on this computer find it (docs/python.md).
+        .args(["--port", "auto", "--parent-pid", &std::process::id().to_string()])
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit());
     // On Windows the engine is a console program: started without a console window of its own.

@@ -70,6 +70,14 @@ export const RO: Record<string, string> = {
   "Change graph inputs": "Schimbă intrările grafului",
   "A type": "Un tip",
   "A type of the project (a wall type, a slab type…) for a tool's Type; none chosen: the first of its class by name.": "Un tip al proiectului (un tip de perete, un tip de placă…) pentru Tipul unei unelte; niciunul ales: primul din clasa lui, după nume.",
+  // Decision 541: a project script run again when what it watches changes (docs/plan-external-geometry.md, L3)
+  "Watch for script": "Urmărire pentru script",
+  // Decision 539: bodies made by a script (docs/plan-external-geometry.md, L1)
+  "Made by a script:": "Făcut de un script:",
+  "Its shape is changed in the script; here it moves, turns, copies and is cut like any element.": "Forma lui se schimbă în script; aici se mută, se rotește, se copiază și se secționează ca orice element.",
+  "This shape is made by a script; change it in the script, or move, rotate or cut it here.": "Forma aceasta e făcută de un script; schimbă-o în script, sau mut-o, rotește-o ori secționeaz-o aici.",
+  "Create body": "Creează corp",
+  "Set body": "Schimbă corpul",
   // Decision 524: the box by the cursor offers width and height for a rectangle
   'Space switches length and angle with width and height': 'Space comută între lungime și unghi și lățime și înălțime', 'Width × Height': 'Lățime × Înălțime', 'Length ∠ Angle': 'Lungime ∠ Unghi',
   // Decision 516: mouse navigation styles
@@ -138,6 +146,15 @@ export const RO: Record<string, string> = {
   "Divide line": "Împarte linia",
   "Grid of points": "Grilă de puncte",
   "Points on a circle": "Puncte pe cerc",
+  "New storey": "Nivel nou",
+  "Z factor": "Factor pe Z",
+  "Points or polyline": "Puncte sau polilinie",
+  "Rotated": "Rotite",
+  "Scaled": "Scalate",
+  "Count points evenly round a circle, anticlockwise from the start angle (degrees, 0 along X).": "Count puncte la distanțe egale pe un cerc, în sens trigonometric de la unghiul de start (în grade, 0 de-a lungul lui X).",
+  "Points or polylines turned about the vertical through the centre (none: the origin) by the angle in degrees, anticlockwise; a list of angles gives one copy for each.": "Puncte sau polilinii rotite în jurul verticalei prin centru (dacă nu e dat: originea) cu unghiul în grade, în sens trigonometric; o listă de unghiuri dă câte o copie pentru fiecare.",
+  "Points or polylines made larger or smaller about the centre (none: the origin): 2 doubles them, 0.5 halves them; Z factor, if given, scales the heights apart.": "Puncte sau polilinii mărite sau micșorate față de centru (dacă nu e dat: originea): 2 le dublează, 0.5 le înjumătățește; Factorul pe Z, dacă e dat, scalează separat înălțimile.",
+  "The middle of the box round the points or polylines given (all of them together): a rectangle's centre.": "Mijlocul cutiei din jurul punctelor sau poliliniilor date (toate la un loc): centrul unui dreptunghi.",
   "Join texts": "Unește textele",
   "Number as text": "Număr ca text",
   "Elements of a class": "Elementele unei clase",
@@ -3442,6 +3459,9 @@ export const RO: Record<string, string> = {
 export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^Commands: (\d+), (\d+) ms$/, (m) => `Comenzi: ${m[1]}, ${m[2]} ms`],
   [/^Elements made: (\d+), one undo step$/, (m) => `Elemente create: ${m[1]}, un singur pas de anulare`],
+  [/^„(.+)” was not run again: it is not trusted on this computer\. Run it once from the Script panel and choose Trust\.$/, (m) => `„${m[1]}” nu a fost rulat din nou: nu are încredere pe acest calculator. Rulează-l o dată din panoul Script și alege Trust.`],
+  [/^„(.+)” was not run again: another script kept running\.$/, (m) => `„${m[1]}” nu a fost rulat din nou: alt script a rulat în continuare.`],
+  [/^„(.+)” took more than (\d+) s to run again: it was stopped, and nothing it did is kept\.$/, (m) => `„${m[1]}” a avut nevoie de mai mult de ${m[2]} s ca să ruleze din nou: a fost oprit, și nimic din ce a făcut nu se păstrează.`],
   [/^(\d+) added, (\d+) updated, (\d+) the same, (\d+) skipped\.$/, (m) => `${m[1]} adăugate, ${m[2]} actualizate, ${m[3]} la fel, ${m[4]} omise.`],
   [/^(\d+) line types added, (\d+) updated, (\d+) skipped\.$/, (m) => `${m[1]} tipuri de linie adăugate, ${m[2]} actualizate, ${m[3]} omise.`],
   [/^(\d+) parameters added, (\d+) updated\.$/, (m) => `${m[1]} parametri adăugați, ${m[2]} actualizați.`],

@@ -127,6 +127,8 @@ public sealed class CoreModule : ILapinModule
         Profiles.Register(r);
         ProfileLibraries.ProfileLibraryCommands.Register(r);
         Dependencies.Register(r);
+        // Bodies an external program computes (docs/plan-external-geometry.md, L1): element.createBody, element.setBody.
+        ExternalBodies.Register(r);
         Analysis.JgExchange.Register(r);
 
         r.Command("storey.create", "New storey", (ctx, a) =>

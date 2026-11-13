@@ -134,6 +134,12 @@ Hvor værktøjer kommer fra:
 
 Et script, der er slettet, afinstalleret eller ikke længere betroet, tager sine værktøjer ud af Mine værktøjer.
 
+## Former lavet af et script
+
+Et script, eller et program på din computer (fx et Python-script i VS Code), kan lave elementer, hvis form det selv beregner: et spær over et rum, et facadepanel, en form designet i et andet værktøj. Det er almindelige elementer: de vises i planer, snit og 3D, måles i lister, eksporteres til IFC, og du flytter, drejer, kopierer, skjuler eller sletter dem som alle andre. Egenskaber viser **Lavet af et script:** og hvilket. Deres form tilhører scriptet: det, der ville ændre den her, afvises.
+
+Et script kan følge det, det er bygget af. Kørt uden for Lapin opdaterer det selv sine elementer, når du ændrer det rum eller den væg, det overvåger. Et projektscript, der overvåger elementer, køres igen af Lapin efter din ændring, kun hvis du stoler på det på denne computer, som sit eget fortrydelsestrin *„<script> regenerated”*. Et script, du ikke stoler på, køres ikke; Script-panelet siger det.
+
 ## Sikkerhed
 
 Et script kan alt, hvad du kan på denne computer: det kører i din egen Python med dine rettigheder. Kør scripts, du selv har skrevet eller stoler på; et projekts script og et installeret spørger først.
@@ -143,3 +149,5 @@ En gæst i en delt session kan hverken køre scripts på din computer, lægge et
 ## For udviklere
 
 Hvad `lapin` tilbyder (kommandoer, forespørgsler, batches, modellen, hændelser), beskrives i udviklervejledningen *Lapin from Python* (`docs/python.md` i Lapins repository); pakken findes på PyPI som `lapinbim`.
+
+Et program på din computer finder Lapin på port **14912**; et andet Lapin, der er åbent samtidig, tager 14913 og så videre. Er flere åbne, spørger programmet hvilket (`lapin.connect(project="Hus")`); for at vælge et bestemt, sæt `LAPIN_PORT`.

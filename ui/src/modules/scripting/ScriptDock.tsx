@@ -22,15 +22,17 @@ export function ScriptDock() {
   const open = useScripting((s) => s.open);
   const on = usePrefs((s) => s.developerExtras);
   useEffect(() => { startScriptTools(); }, []);
+  // The selection told to the engine's host always on the desktop (not only with Developer extras): a program in a terminal or
+  // VS Code reads it and gets the selection event (docs/plan-external-geometry.md, L2).
   useEffect(() => {
-    if (!on || engineInBrowser) return;
+    if (engineInBrowser) return;
     let timer: ReturnType<typeof setTimeout> | null = null;
     const soon = () => { if (!timer) timer = setTimeout(() => { timer = null; tellSelection(); }, 100); };
     soon();
     const off = useUi.subscribe((s, was) => { if (s.selected !== was.selected || s.selection !== was.selection) soon(); });
     const back = engine.onStatus((connected) => { if (connected) { forgetSentSelection(); soon(); } });
     return () => { off(); back(); if (timer) clearTimeout(timer); };
-  }, [on]);
+  }, []);
   if (engineInBrowser) return on && open ? <ScriptPanel /> : null;
   return <>{on && open && <ScriptPanel />}<ScriptDialogs /><ScriptPalettes /></>;
 }

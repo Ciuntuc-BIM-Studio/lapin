@@ -634,7 +634,10 @@ public sealed partial class Session
     /// <summary>What an entity measures: its quantity sets and its parts' (none when its class has no measures).</summary>
     public IReadOnlyList<QuantitySet> Quantities(string id)
     {
-        if (_store.Get(id) is not { } e || _catalog.QuantitiesOf(e.Class) is not { } producer) return [];
+        if (_store.Get(id) is not { } e) return [];
+        // A body an external program made measures as a body, whatever class it was given (docs/plan-external-geometry.md).
+        if (ExternalBodies.IsOwned(e)) return ExternalBodies.Quantities(e, Geometry(id), _store);
+        if (_catalog.QuantitiesOf(e.Class) is not { } producer) return [];
         return producer(e, Geometry(id), _store).ToList();
     }
 
@@ -960,6 +963,8 @@ public sealed partial class Session
         // A remark's snapshots (a PNG each) are asked for when shown.
         Cde.Remarks.Remarks.Strip(e, props);
         if (e.PredefinedType != null) props["predefinedType"] = e.PredefinedType;
+        // A body an external program made (docs/plan-external-geometry.md): the window says so in Properties.
+        if (ExternalBodies.IsOwned(e)) props["scriptOwned"] = true;
         foreach (var extra in _catalog.All<INodeProps>())
             try { extra.Add(e, _store, props); } catch (Exception) { /* derived only: the node goes without it */ }
         var owner = _catalog.OwnerOf(e.Class);

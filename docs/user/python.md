@@ -175,6 +175,12 @@ As for any tool, you can move them, make them small or take them out; once taken
 
 At the bottom of the Script panel, a Messages strip keeps one row per run: started, done with how long it took, stopped, or failed with the error's last line and, when Python's traceback gives them, the script's name and line (`Walls:12`). Click a failed row to open that script in the editor at that line, when it is the one open, one of Mine or one of the project's. It also records the runs started from My tools and from palette buttons, even while the panel is closed, so a tool that failed is reported when you open it. Open it with its arrow, filter by Errors, Warnings or All, copy the rows as plain text, or clear them. The console on the right is unchanged: it still shows everything a script prints.
 
+## Shapes made by a script
+
+A script, or a program on your computer such as a Python script in VS Code, can make elements whose shape it computes: a truss over a room, a facade panel, a form another tool designs. They are ordinary elements: they show in plans, sections and 3D, are measured in schedules, exported to IFC, and you move, rotate, copy, hide or delete them as any other. Properties says **Made by a script:** and which one. Their shape belongs to the script: what would reshape one here is refused (*This shape is made by a script; change it in the script, or move, rotate or cut it here.*).
+
+A script can follow what it is built from. Run from outside Lapin, it updates its elements itself when you change the room or wall it watches. A project's script that watches elements is run again by Lapin after your change, only if you trust it on this computer, as an undo step of its own named *“<script> regenerated”*: Ctrl+Z takes back the regeneration alone. A script that is not trusted is not run; the Script panel says so.
+
 ## Safety
 
 A script can do anything you can do on this computer: it runs in your own Python, with your rights. Run scripts you wrote or trust; a project's script and an installed one ask first.
@@ -184,3 +190,5 @@ A guest of a shared session cannot run scripts on your computer, nor put one in 
 ## For developers
 
 What `lapin` offers (the commands, queries, batches, the model, events) is described in the developer guide, *Lapin from Python* (`docs/python.md` in Lapin's repository); the package is on PyPI as `lapinbim`.
+
+A program on your computer finds Lapin on port **14912**; a second Lapin open at the same time takes 14913, and so on. With several open, the program asks which one (`lapin.connect(project="House")`); to force one, set `LAPIN_PORT`.

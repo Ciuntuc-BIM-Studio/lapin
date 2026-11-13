@@ -7,7 +7,9 @@
 
 /** One event of the engine's kernel (engine/src/Host/Lapin.Host/ScriptHost.cs, python/lapinbim/kernel.py). */
 export interface ScriptEvent {
-  type: 'start' | 'out' | 'err' | 'done' | 'exit' | 'ready' | string;
+  type: 'start' | 'out' | 'err' | 'done' | 'exit' | 'ready' | 'note' | string;
+  /** A note's kind: 'err' or 'info' (a project script not run again, and why: docs/plan-external-geometry.md, L3). */
+  level?: string;
   id?: number;
   text?: string;
   name?: string;
@@ -63,6 +65,8 @@ export function foldOutput(lines: readonly ConsoleLine[], e: ScriptEvent): Conso
       return e.killed ? add(first) : add(first, own('err', NOTHING_KEPT, e.id));
     }
     case 'exit': return add(own('info', 'Python ended; the next Run starts it again.'));
+    // Lapin's own line: a project script watching the model was not run again, and why.
+    case 'note': return e.text ? add(own(e.level === 'err' ? 'err' : 'info', e.text)) : [...lines];
     default: return [...lines];
   }
 }

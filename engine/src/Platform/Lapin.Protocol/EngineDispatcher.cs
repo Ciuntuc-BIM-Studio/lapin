@@ -1138,6 +1138,10 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 // doors and windows, a slab, a column), the rest made Studio solids when editable is asked; one undo step.
                 var ids = (p["ids"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToList() ?? [];
                 if (ids.Count == 0) throw new CommandException("Select the references to convert.");
+                // A program's bodies stay its own (docs/plan-external-geometry.md): left out, or refused when nothing else is asked.
+                var own = ids.Where(id => session.Model.Get(id) is { } x && ExternalBodies.IsOwned(x)).ToHashSet();
+                if (own.Count > 0 && own.Count == ids.Count) throw new CommandException(ExternalBodies.Refused);
+                ids = ids.Where(id => !own.Contains(id)).ToList();
                 var editable = p["editable"] is not JsonValue ev || !ev.TryGetValue<bool>(out var eb) || eb;
                 MeshRecognitionReport rec = MeshRecognitionReport.None;
                 EditableReport made = EditableReport.None;

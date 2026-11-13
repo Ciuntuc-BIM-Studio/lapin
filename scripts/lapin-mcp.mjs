@@ -6,43 +6,88 @@
  * the same engine as the user's, show at once in the open window, and undo
  * one step each.
  *
- * It finds the engine through the port file the engine writes
- * (<user-dir>/host.json), or LAPIN_PORT. No dependencies (Node 22).
+ * It finds the engine as lapinbim does (docs/python.md, How a program finds
+ * Lapin): LAPIN_PORT, else the host files the engines write
+ * (<user-dir>/hosts/host-<pid>.json, <user-dir>/host.json), else the ports
+ * 14912-15011 and 47810 probed, each confirmed by its /health ("engine":
+ * "lapin"). Several open: LAPIN_PROJECT or LAPIN_PRODUCT says which. No
+ * dependencies (Node 22).
  *
  *   claude mcp add lapin -- node /path/to/lapin-pro/scripts/lapin-mcp.mjs
  */
 
-import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, isAbsolute, join, resolve } from 'node:path';
+import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 
 const VERSION = '0.1.0';
 
 const processAlive = (pid) => { try { process.kill(pid, 0); return true; } catch (e) { return e.code === 'EPERM'; } };
 
-/** Where an open engine left its port: LAPIN_PORT, else the newest host.json of the known user folders. */
-function enginePort() {
-  if (process.env.LAPIN_PORT) return Number(process.env.LAPIN_PORT);
-  const dirs = [
-    process.env.LAPIN_USER_DIR,
+/** The first port of an engine without one of its own (L A P I N), how many it tries, and pnpm dev's. */
+const FIRST_PORT = 14912, PORT_COUNT = 100, DEV_PORT = 47810;
+
+/** The live engines' host files (each engine's, then host.json), one per port; a file whose process is gone is skipped. */
+function hostFiles(dirs) {
+  const out = [], seen = new Set();
+  for (const d of dirs) {
+    const own = existsSync(join(d, 'hosts')) ? readdirSync(join(d, 'hosts')).filter((f) => /^host-.*\.json$/.test(f)).sort().map((f) => join(d, 'hosts', f)) : [];
+    for (const f of [...own, join(d, 'host.json')]) {
+      try {
+        const h = JSON.parse(readFileSync(f, 'utf8'));
+        if (!Number.isInteger(h.port) || seen.has(h.port)) continue;
+        // A file left by an engine that is gone (killed, or its image ejected) names a dead port.
+        if (h.pid && !processAlive(h.pid)) continue;
+        seen.add(h.port);
+        out.push(h);
+      } catch { /* missing or unreadable: next */ }
+    }
+  }
+  return out;
+}
+
+/** What the engine on a port says it is (GET /health); null when nothing answers there or it is not Lapin. */
+async function identify(port, ms = 500) {
+  try {
+    const r = await fetch(`http://127.0.0.1:${port}/health`, { signal: AbortSignal.timeout(ms) });
+    if (!r.ok) return null;
+    const b = await r.json();
+    if (b?.engine === 'lapin') return { ...b, port };
+    // An engine from before engine.hello.
+    if (b?.ok === true && typeof b.product === 'string' && Array.isArray(b.modules)) return { engine: 'lapin', product: b.product, port, project: null };
+  } catch { /* closed, slow or not HTTP */ }
+  return null;
+}
+
+/** Every live Lapin engine: the host files' and the probed ports', each confirmed (LAPIN_USER_DIR: that folder's only). */
+async function findEngines() {
+  const named = process.env.LAPIN_USER_DIR;
+  const dirs = named ? [named] : [
     join(homedir(), 'Library', 'Application Support', 'ro.ciuntucbimstudio.lapin'),
     join(homedir(), '.local', 'share', 'Lapin'),
     join(homedir(), 'AppData', 'Local', 'Lapin'),
     process.env.LOCALAPPDATA && join(process.env.LOCALAPPDATA, 'Lapin'),
   ].filter(Boolean);
-  for (const d of dirs) {
-    const f = join(d, 'host.json');
-    if (existsSync(f)) {
-      try {
-        const h = JSON.parse(readFileSync(f, 'utf8'));
-        // A file left by an engine that is gone (killed, or its image ejected) names a dead port.
-        if (h.pid && !processAlive(h.pid)) continue;
-        return h.port;
-      } catch { /* next */ }
-    }
-  }
-  return null;
+  const ports = hostFiles(dirs).map((h) => h.port);
+  if (!named) for (let p = FIRST_PORT; p < FIRST_PORT + PORT_COUNT; p++) if (!ports.includes(p)) ports.push(p);
+  if (!named && !ports.includes(DEV_PORT)) ports.push(DEV_PORT);
+  return (await Promise.all(ports.map((p) => identify(p)))).filter(Boolean).sort((a, b) => a.port - b.port);
+}
+
+const describe = (e) => `port ${e.port}: ${e.product ?? '?'}, ${e.project || 'no project saved'}`;
+
+/** LAPIN_PORT, else the one open engine's port, or the one LAPIN_PROJECT / LAPIN_PRODUCT names. */
+async function enginePort() {
+  if (process.env.LAPIN_PORT) return Number(process.env.LAPIN_PORT);
+  const engines = await findEngines();
+  if (!engines.length) return null;
+  const project = process.env.LAPIN_PROJECT?.toLowerCase(), product = process.env.LAPIN_PRODUCT;
+  const left = engines.filter((e) => (!product || e.product === product)
+    && (!project || (e.project && (e.project.toLowerCase().includes(project) || basename(e.project).toLowerCase() === project))));
+  if (left.length === 1) return left[0].port;
+  if (!left.length) throw new Error(`No open Lapin matches LAPIN_PROJECT/LAPIN_PRODUCT. Open: ${engines.map(describe).join('; ')}.`);
+  throw new Error(`${left.length} Lapins are open (${left.map(describe).join('; ')}): set LAPIN_PORT, LAPIN_PROJECT or LAPIN_PRODUCT in the bridge's environment.`);
 }
 
 /** The engine's binary frame: "LPF1", a uint32 header length, the JSON header (arrays left as references). */
@@ -81,7 +126,7 @@ const pending = new Map();
 
 async function connect() {
   if (ws && ws.readyState === WebSocket.OPEN) return ws;
-  const port = enginePort();
+  const port = await enginePort();
   if (!port) throw new Error('No open Lapin found: start the app (or pnpm dev), or set LAPIN_PORT.');
   ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
   ws.binaryType = 'arraybuffer';

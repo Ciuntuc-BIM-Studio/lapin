@@ -76,6 +76,14 @@ export const PL: Record<string, string> = {
   "Change graph inputs": "Zmień dane wejściowe grafu",
   "A type": "Typ",
   "A type of the project (a wall type, a slab type…) for a tool's Type; none chosen: the first of its class by name.": "Typ projektu (typ ściany, typ stropu…) dla Typu narzędzia; żaden nie wybrany: pierwszy z jego klasy według nazwy.",
+  // Decision 541: a project script run again when what it watches changes (docs/plan-external-geometry.md, L3)
+  "Watch for script": "Obserwacja dla skryptu",
+  // Decision 539: bodies made by a script (docs/plan-external-geometry.md, L1)
+  "Made by a script:": "Utworzone przez skrypt:",
+  "Its shape is changed in the script; here it moves, turns, copies and is cut like any element.": "Jego kształt zmienia się w skrypcie; tutaj przesuwa się, obraca, kopiuje i przecina jak każdy element.",
+  "This shape is made by a script; change it in the script, or move, rotate or cut it here.": "Ten kształt tworzy skrypt; zmień go w skrypcie albo przesuń, obróć lub przetnij go tutaj.",
+  "Create body": "Utwórz bryłę",
+  "Set body": "Ustaw bryłę",
   // Decision 524: the box by the cursor offers width and height for a rectangle
   'Space switches length and angle with width and height': 'Spacja przełącza między długością i kątem a szerokością i wysokością', 'Width × Height': 'Szerokość × Wysokość', 'Length ∠ Angle': 'Długość ∠ Kąt',
   // Decision 516: mouse navigation styles
@@ -144,6 +152,15 @@ export const PL: Record<string, string> = {
   "Divide line": "Podziel linię",
   "Grid of points": "Siatka punktów",
   "Points on a circle": "Punkty na okręgu",
+  "New storey": "Nowa kondygnacja",
+  "Z factor": "Współczynnik Z",
+  "Points or polyline": "Punkty lub polilinia",
+  "Rotated": "Obrócone",
+  "Scaled": "Przeskalowane",
+  "Count points evenly round a circle, anticlockwise from the start angle (degrees, 0 along X).": "Count punktów rozłożonych równo na okręgu, przeciwnie do ruchu wskazówek zegara od kąta początkowego (w stopniach, 0 wzdłuż X).",
+  "Points or polylines turned about the vertical through the centre (none: the origin) by the angle in degrees, anticlockwise; a list of angles gives one copy for each.": "Punkty lub polilinie obrócone wokół pionu przechodzącego przez środek (bez środka: początek układu) o kąt w stopniach, przeciwnie do ruchu wskazówek zegara; lista kątów daje po jednej kopii dla każdego.",
+  "Points or polylines made larger or smaller about the centre (none: the origin): 2 doubles them, 0.5 halves them; Z factor, if given, scales the heights apart.": "Punkty lub polilinie powiększone lub pomniejszone względem środka (bez środka: początek układu): 2 je podwaja, 0.5 zmniejsza o połowę; współczynnik Z, jeśli podany, skaluje osobno wysokości.",
+  "The middle of the box round the points or polylines given (all of them together): a rectangle's centre.": "Środek prostopadłościanu otaczającego podane punkty lub polilinie (wszystkie razem): środek prostokąta.",
   "Join texts": "Połącz teksty",
   "Number as text": "Liczba jako tekst",
   "Elements of a class": "Elementy klasy",
@@ -3454,6 +3471,9 @@ const n = (count: string, one: string, few: string, many: string) => `${count} $
 export const PL_PATTERNS: Language['patterns'] = [
   [/^Commands: (\d+), (\d+) ms$/, (m) => `Polecenia: ${m[1]}, ${m[2]} ms`],
   [/^Elements made: (\d+), one undo step$/, (m) => `Utworzone elementy: ${m[1]}, jeden krok cofania`],
+  [/^„(.+)” was not run again: it is not trusted on this computer\. Run it once from the Script panel and choose Trust\.$/, (m) => `„${m[1]}” nie został uruchomiony ponownie: nie jest zaufany na tym komputerze. Uruchom go raz z panelu Skrypt i wybierz Ufaj.`],
+  [/^„(.+)” was not run again: another script kept running\.$/, (m) => `„${m[1]}” nie został uruchomiony ponownie: inny skrypt wciąż działał.`],
+  [/^„(.+)” took more than (\d+) s to run again: it was stopped, and nothing it did is kept\.$/, (m) => `„${m[1]}” potrzebował ponad ${m[2]} s na ponowne uruchomienie: został zatrzymany i nic z tego, co zrobił, nie zostaje.`],
   [/^(\d+) added, (\d+) updated, (\d+) the same, (\d+) skipped\.$/, (m) => `Dodano ${m[1]}, zaktualizowano ${m[2]}, takich samych ${m[3]}, pominięto ${m[4]}.`],
   [/^(\d+) line types added, (\d+) updated, (\d+) skipped\.$/, (m) => `Dodano ${m[1]} typów linii, zaktualizowano ${m[2]}, pominięto ${m[3]}.`],
   [/^(\d+) parameters added, (\d+) updated\.$/, (m) => `Dodano ${m[1]} parametrów, zaktualizowano ${m[2]}.`],

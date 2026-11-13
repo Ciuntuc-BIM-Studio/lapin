@@ -76,6 +76,14 @@ export const IT: Record<string, string> = {
   "Change graph inputs": "Cambia gli input del grafo",
   "A type": "Un tipo",
   "A type of the project (a wall type, a slab type…) for a tool's Type; none chosen: the first of its class by name.": "Un tipo del progetto (un tipo di muro, un tipo di solaio…) per il Tipo di uno strumento; nessuno scelto: il primo della sua classe per nome.",
+  // Decision 541: a project script run again when what it watches changes (docs/plan-external-geometry.md, L3)
+  "Watch for script": "Osservazione per lo script",
+  // Decision 539: bodies made by a script (docs/plan-external-geometry.md, L1)
+  "Made by a script:": "Creato da uno script:",
+  "Its shape is changed in the script; here it moves, turns, copies and is cut like any element.": "La sua forma si cambia nello script; qui si sposta, ruota, copia e taglia come ogni elemento.",
+  "This shape is made by a script; change it in the script, or move, rotate or cut it here.": "Questa forma è creata da uno script; cambiala nello script, oppure spostala, ruotala o tagliala qui.",
+  "Create body": "Crea corpo",
+  "Set body": "Imposta corpo",
   // Decision 524: the box by the cursor offers width and height for a rectangle
   'Space switches length and angle with width and height': 'Spazio passa tra lunghezza e angolo e larghezza e altezza', 'Width × Height': 'Larghezza × Altezza', 'Length ∠ Angle': 'Lunghezza ∠ Angolo',
   // Decision 516: mouse navigation styles
@@ -144,6 +152,15 @@ export const IT: Record<string, string> = {
   "Divide line": "Dividi linea",
   "Grid of points": "Griglia di punti",
   "Points on a circle": "Punti su un cerchio",
+  "New storey": "Nuovo piano",
+  "Z factor": "Fattore Z",
+  "Points or polyline": "Punti o polilinea",
+  "Rotated": "Ruotati",
+  "Scaled": "Scalati",
+  "Count points evenly round a circle, anticlockwise from the start angle (degrees, 0 along X).": "Count punti distribuiti in modo uniforme su un cerchio, in senso antiorario dall'angolo iniziale (in gradi, 0 lungo X).",
+  "Points or polylines turned about the vertical through the centre (none: the origin) by the angle in degrees, anticlockwise; a list of angles gives one copy for each.": "Punti o polilinee ruotati attorno alla verticale passante per il centro (se non dato: l'origine) dell'angolo in gradi, in senso antiorario; una lista di angoli dà una copia per ciascuno.",
+  "Points or polylines made larger or smaller about the centre (none: the origin): 2 doubles them, 0.5 halves them; Z factor, if given, scales the heights apart.": "Punti o polilinee ingranditi o ridotti rispetto al centro (se non dato: l'origine): 2 li raddoppia, 0.5 li dimezza; il fattore Z, se dato, scala le altezze a parte.",
+  "The middle of the box round the points or polylines given (all of them together): a rectangle's centre.": "Il centro del riquadro attorno ai punti o alle polilinee dati (tutti insieme): il centro di un rettangolo.",
   "Join texts": "Unisci testi",
   "Number as text": "Numero come testo",
   "Elements of a class": "Elementi di una classe",
@@ -3450,6 +3467,9 @@ const n = (count: string, one: string, many: string) => `${count} ${count === '1
 export const IT_PATTERNS: Language['patterns'] = [
   [/^Commands: (\d+), (\d+) ms$/, (m) => `Comandi: ${m[1]}, ${m[2]} ms`],
   [/^Elements made: (\d+), one undo step$/, (m) => `Elementi creati: ${m[1]}, un solo passo di annullamento`],
+  [/^„(.+)” was not run again: it is not trusted on this computer\. Run it once from the Script panel and choose Trust\.$/, (m) => `«${m[1]}» non è stato rieseguito: non è attendibile su questo computer. Eseguilo una volta dal pannello Script e scegli Fidati.`],
+  [/^„(.+)” was not run again: another script kept running\.$/, (m) => `«${m[1]}» non è stato rieseguito: un altro script era ancora in esecuzione.`],
+  [/^„(.+)” took more than (\d+) s to run again: it was stopped, and nothing it did is kept\.$/, (m) => `«${m[1]}» ha impiegato più di ${m[2]} s per rieseguirsi: è stato fermato e nulla di ciò che ha fatto viene mantenuto.`],
   [/^(\d+) added, (\d+) updated, (\d+) the same, (\d+) skipped\.$/, (m) => `${m[1]} aggiunti, ${m[2]} aggiornati, ${m[3]} uguali, ${m[4]} saltati.`],
   [/^(\d+) line types added, (\d+) updated, (\d+) skipped\.$/, (m) => `${m[1]} tipi di linea aggiunti, ${m[2]} aggiornati, ${m[3]} saltati.`],
   [/^(\d+) parameters added, (\d+) updated\.$/, (m) => `${m[1]} parametri aggiunti, ${m[2]} aggiornati.`],

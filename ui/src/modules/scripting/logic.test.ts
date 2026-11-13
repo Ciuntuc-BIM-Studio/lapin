@@ -12,6 +12,13 @@ describe('the Script panel’s console (decision 489)', () => {
     expect(lines.map((l) => [l.kind, l.text])).toEqual([['out', 'hello\n'], ['out', 'two\n'], ['err', 'warn\n'], ['out', 'x']]);
   });
 
+  it('shows Lapin’s note that a watching project script was not run again (decision 541)', () => {
+    const text = '„truss.py” was not run again: it is not trusted on this computer. Run it once from the Script panel and choose Trust.';
+    expect(foldOutput([], { type: 'note', level: 'err', text })).toEqual([{ kind: 'err', text, run: undefined, own: true }]);
+    expect(foldOutput([], { type: 'note', text: 'x' })[0].kind).toBe('info');
+    expect(foldOutput([], { type: 'note' })).toEqual([]);
+  });
+
   it('says how a run ended: one undo step, nothing changed, its error with nothing kept, stopped', () => {
     // Lapin's own words are marked so (translated as the interface is); a traceback is the script's, shown as it is.
     expect(foldOutput([], { type: 'done', id: 1, ok: true, kept: true, seconds: 0.123 })).toEqual([{ kind: 'ok', text: 'Done in 0.12 s: one undo step.', run: 1, own: true }]);

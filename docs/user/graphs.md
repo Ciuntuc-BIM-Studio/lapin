@@ -26,7 +26,7 @@ Every change is one undo step: **Ctrl+Z** undoes a node added, moved or wired as
 
 Ports are coloured by what they carry: numbers blue, texts amber, points green, elements purple, lists grey. A wire between kinds that do not meet is refused, with why.
 
-There are no data trees. A **list** wired into an input that takes one value runs the node once for each item: a **Series** of three numbers into a **Point**'s X gives three points, and three points into a **Wall**'s Start give three walls. Several lists run side by side; a shorter list repeats its last item. A wire carrying a list is drawn thicker, with the number of items on it. Some inputs take the whole list instead (**Count**, **Sum**, **Item**, **Polyline**). A tool's list input (the elements a **Pad footings under columns** works on, a floor's points) takes the whole list in one run; a list of lists runs it once for each list.
+There are no data trees. A **list** wired into an input that takes one value runs the node once for each item: a **Series** of three numbers into a **Point**'s X gives three points, and three points into a **Wall**'s Start give three walls. Several lists run side by side; a shorter list repeats its last item. A wire carrying a list is drawn thicker, with the number of items on it. Some inputs take the whole list instead (**Count**, **Sum**, **Item**, **Polyline**). A tool's list input (the elements a **Pad footings under columns** works on, a floor's points) takes the whole list in one run; a list of lists runs it once for each list, and so does a list of polylines wired into a floor's points: one floor for each outline.
 
 A tool's node takes the same inputs as its command: a **Wall** has **Start** and **End** points, a height, a storey, a type. Its outputs are **Elements made** and **Result** (what the command answered).
 
@@ -40,6 +40,31 @@ Besides **Range**, **Series**, **Count**, **Item**, **Reverse**, **Flatten**, **
 - **Part of a list**: **Count** items from **Start** (from 0). A negative start counts from the end; no count takes everything to the end. The first three: start 0, count 3; the last three: start -3.
 - **Unique**: each value once, in the order first seen, and **How many** times each was there. Numbers a billionth apart or less are the same, points too; texts are compared as written (capitals count), and the number 1 is not the text „1”.
 - **Every with every**: every pair of an item of A and an item of B. Its outputs A and B are as long as the pairs (A's items each repeated, B's over and over), so the next node, fed both, runs once for every pair: a **List** of X values and one of Y values into Every with every, then into a **Point**, give a point at every crossing. At most 10,000 pairs.
+
+## Geometry nodes
+
+The **Geometry** group makes points and simple shapes: **Point**, **Point's coordinates**, **Move point**, **Distance**, **Divide line**, **Grid of points**, **Points on a circle**, **Line**, **Polyline**, **Rectangle** and **Corners**, and these, which change points and polylines:
+
+- **Rotate**: points or polylines turned about the vertical through the **Centre** by the **Angle** in degrees, anticlockwise (no centre: the origin). A list of angles and one outline give one turned outline for each angle; a list of outlines and a list of angles turn each outline by its own angle.
+- **Scale**: points or polylines made larger or smaller about the **Centre** by the **Factor** (2 doubles them, 0.5 halves them; no centre: the origin). A **Z factor**, when given, scales the heights apart from the plan.
+- **Centre**: the middle of the box round the points or polylines given, all of them together: a rectangle's centre, the point to turn or scale it about.
+- **Points on a circle** has a **Start angle** in degrees: where its first point is, counted anticlockwise from X (0, the default, puts it along X).
+
+## A twisted tower
+
+The classic: floors from a series, each turned a little more than the one below, tapering if you like, with sliders for the floors, their height, the twist and the size.
+
+
+1. Five input nodes: **Whole number** „Floors” (12), **Number** „Floor height” (3.2, metres), **Number** „Total twist” (90, degrees), **Number** „Width” (24, metres), **Number** „Taper” (0.7: the top floor's size, the bottom's being 1).
+2. **Series** „Levels”: Start 0, Step ← Floor height, Count ← Floors. Then the **New storey** tool's node: Elevation ← Levels, Height ← Floor height. It makes a storey at each level.
+3. **Rectangle**: Width and Depth ← Width. **Centre** ← the rectangle's Outline: the point the floors turn about.
+4. The turns: **Divide** A ← Total twist, B ← Floors; a **Series** „Turns”: Start 0, Step ← Divide, Count ← Floors.
+5. The sizes: a **Formula** `(a - 1) / max(b - 1, 1)`, a ← Taper, b ← Floors; a **Series** „Sizes”: Start 1, Step ← Formula, Count ← Floors.
+6. **Scale**: Points or polyline ← the rectangle's Outline, Centre ← Centre, Factor ← Sizes. Then **Rotate**: Points or polyline ← Scale, Centre ← Centre, Angle ← Turns: one outline per floor, each turned and scaled.
+7. The **Floor** tool's node: Points ← Rotate, Storey ← the New storey node's Elements made. One floor on each new storey.
+8. Columns, if you like: a **Scale** with Factor 0.85 of the turned outlines about the Centre, its **Corners**' Points into a **Column**'s Point, Storey ← the storeys, Rotation ← Turns.
+
+Make it a tool (**Show in My tools**), give the five inputs a least and a most, and the palette's sliders turn and taper the tower as you drag them; **Bake** makes the storeys, floors and columns in one undo step. Thirty floors with their columns preview in about a third of a second.
 
 ## Reading the model
 
