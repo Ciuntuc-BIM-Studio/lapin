@@ -19,7 +19,7 @@ export const isEditable = (node: NodeDto | null | undefined): boolean => !!node 
 
 /** The scope of a part: only that element belongs to it. */
 export function partScope(node: NodeDto): Scope {
-  return { id: PREFIX + node.id, kind: PART_KIND, label: node.name, includes: (n) => n.id === node.id };
+  return { id: PREFIX + node.id, kind: PART_KIND, label: node.name, includes: (n) => n.id === node.id, holdsEsc: () => !!activePartSketch() };
 }
 
 /** The part being edited (its element's id), or null. */

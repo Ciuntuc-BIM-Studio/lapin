@@ -88,14 +88,14 @@ export function BodyControls({ tree, step }: { tree: PartTree; step: StepRow }) 
   return (
     <div className="part-body-edit row" data-part-body={step.label}>
       <span className="muted small">Depth</span>
-      <Cell value={shownDepth(own?.depth)} testId="part-body-depth" style={{ width: 84 }} title="A length, or =formula of the parameters"
+      <Cell value={shownDepth(own?.depth)} testId="part-body-depth" style={{ width: 64 }} title="A length, or =formula of the parameters"
         onCommit={(text) => {
           const d = depthInput(text, parseLength);
           if (d == null) return false;
           void run('studio.updatePartBody', { partId: tree.id, name: step.label, depth: d });
         }} />
       <span className="muted small">Made when</span>
-      <Cell value={own?.when ?? ''} testId="part-body-when" style={{ width: 84 }} placeholder="HasShelf"
+      <Cell value={own?.when ?? ''} testId="part-body-when" style={{ width: 64 }} placeholder="HasShelf"
         onCommit={(text) => { void run('studio.updatePartBody', { partId: tree.id, name: step.label, when: text.trim() || null }); }} />
       <button type="button" className="icon mini" data-part-body-remove={step.label} title="Remove the body" onClick={() => void run('studio.removePartBody', { partId: tree.id, name: step.label })}><X size={11} /></button>
     </div>

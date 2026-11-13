@@ -19,6 +19,8 @@ export interface Scope {
   kind?: string;
   /** Whether an element belongs to the scope (read again as the model changes). */
   includes: (node: NodeDto) => boolean;
+  /** True while the module takes Esc itself (a sketch edited inside the scope): the shell's Esc does not leave the scope then. */
+  holdsEsc?: () => boolean;
   /** Called on Done, before the scope closes. */
   onDone?: () => void | Promise<void>;
 }

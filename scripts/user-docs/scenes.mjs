@@ -10066,6 +10066,9 @@ export const scenes = [
       await tree.locator('[data-testid=constrain-part]').click();
       await t.until(async () => (await tree.locator('[data-part-sketch]').count()) > 0 && (await tree.locator('[data-testid=constrain-part]').count()) === 0, 'Constrain part turns the corners into sketches of the part');
       await t.shot('studio-part-constrained', { of: '[data-testid=part-tree]', pad: 6 });
+      // The sketch is stored with the part's defaults: back to them, so what is drawn and what is stored are the same (the engine refuses a shape list that moves dimensioned points).
+      await t.cmd('studio.setPartValues', { ids: [placed.id], values: { W: null } });
+      await t.wait(600);
       // A click on a sketch edits it in place: the camera turns to its plane, the sketch is drawn over the view with its chip and tools.
       await tree.locator('[data-part-sketch]').first().click();
       const sketch = page.locator('[data-testid=part-sketch]');

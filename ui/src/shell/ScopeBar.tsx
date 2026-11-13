@@ -20,6 +20,7 @@ export function ScopeBar() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' || (e.target as HTMLElement)?.closest('input, select, textarea')) return;
       if (useUi.getState().tool || useUi.getState().dialog || useCad.getState().step) return;
+      if (scope.holdsEsc?.()) return;
       void exitScope();
     };
     // Read before the views' own Esc (capture), so an Esc that stops a tool does not also leave the scope.
