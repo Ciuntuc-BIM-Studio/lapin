@@ -134,6 +134,12 @@ Da dove vengono gli strumenti:
 
 Uno script eliminato, disinstallato o di cui non ci si fida più toglie i suoi strumenti da I miei strumenti.
 
+## Forme create da uno script
+
+Uno script, o un programma sul tuo computer (uno script Python in VS Code, per esempio), può creare elementi di cui calcola la forma: una capriata sopra un locale, un pannello di facciata, una forma progettata da un altro strumento. Sono elementi normali: compaiono in pianta, sezione e 3D, si misurano negli abachi, si esportano in IFC, e li sposti, ruoti, copi, nascondi o elimini come gli altri. Le proprietà dicono **Creato da uno script:** e quale. La loro forma è dello script: ciò che la cambierebbe qui viene rifiutato.
+
+Uno script può seguire ciò di cui è fatto. Eseguito fuori da Lapin, aggiorna da sé i suoi elementi quando cambi il locale o il muro che osserva. Uno script del progetto che osserva elementi viene rieseguito da Lapin dopo la tua modifica, solo se ti fidi di lui su questo computer, come passo di annullamento a sé, *«<script> regenerated»*. Uno script non attendibile non viene eseguito; il pannello Script lo dice.
+
 ## Sicurezza
 
 Uno script può fare tutto ciò che puoi fare tu su questo computer: gira nel tuo Python, con i tuoi diritti. Esegui script scritti da te o di cui ti fidi; uno script del progetto e uno installato chiedono prima.
@@ -143,3 +149,5 @@ Un ospite di una sessione condivisa non può eseguire script sul tuo computer, n
 ## Per gli sviluppatori
 
 Ciò che offre `lapin` (i comandi, le interrogazioni, i lotti, il modello, gli eventi) è descritto nella guida per sviluppatori, *Lapin from Python* (`docs/python.md` nel repository di Lapin); il pacchetto è su PyPI come `lapinbim`.
+
+Un programma sul tuo computer trova Lapin sulla porta **14912**; un secondo Lapin aperto contemporaneamente prende la 14913, e così via. Con più Lapin aperti, il programma chiede quale (`lapin.connect(project="Casa")`); per imporne uno, imposta `LAPIN_PORT`.

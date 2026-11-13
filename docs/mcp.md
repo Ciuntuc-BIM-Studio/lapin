@@ -16,11 +16,11 @@ Any MCP client that runs a stdio server works the same way. The bridge needs Nod
 
 ## Finding the engine
 
-While it runs, the engine writes its port to `<user-dir>/host.json`. The user folder is:
-- `~/Library/Application Support/ro.ciuntucbimstudio.lapin` for the desktop app on macOS;
-- `~/.local/share/Lapin` under `pnpm dev`.
+The bridge finds the engine as `lapinbim` does (docs/python.md, How a program finds Lapin): `LAPIN_PORT`, else the host files the engines write while they run (`<user-dir>/hosts/host-<pid>.json` and `<user-dir>/host.json`; stale ones skipped), else the ports 14912–15011 and 47810 probed, each confirmed by its `/health` answering `"engine": "lapin"`. The desktop app's engine is on 14912, a second one on 14913, and so on; `pnpm dev`'s on 47810. The user folder is:
+- `~/Library/Application Support/ro.ciuntucbimstudio.lapin` for the desktop app on macOS (`~/.local/share/Lapin` on Linux, `%LOCALAPPDATA%\Lapin` on Windows);
+- the repo's `.artifacts/user` under `pnpm dev`.
 
-`LAPIN_PORT` overrides this (`pnpm dev` uses 47810).
+With one Lapin open the bridge uses it. With several, a call says which are open; set `LAPIN_PORT`, `LAPIN_PROJECT` (a part of the project's path or its file name) or `LAPIN_PRODUCT` in the bridge's environment (`claude mcp add lapin -e LAPIN_PROJECT=House -- node …`). `LAPIN_USER_DIR` reads that folder's host files only.
 
 The engine listens only on 127.0.0.1.
 

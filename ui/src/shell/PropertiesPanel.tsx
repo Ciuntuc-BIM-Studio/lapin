@@ -6,7 +6,7 @@
  */
 
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
-import { AlignHorizontalJustifyCenter, ChevronRight, EyeOff, Search, Trash2 } from 'lucide-react';
+import { AlignHorizontalJustifyCenter, ChevronRight, Code2, EyeOff, Search, Trash2 } from 'lucide-react';
 import { Cell, LengthCell } from './cells';
 import { panelFocus, panelKeys, parseNumber } from './cellKeys';
 import { useUi } from '../app/store';
@@ -311,6 +311,7 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
       <label className="props-filter"><Search size={12} /><input placeholder="Filter properties" value={filter} onChange={(e) => setFilter(e.target.value)} onKeyDown={(e) => { if (e.key === 'Escape') setFilter(''); }} /></label>
       {notShown && <p className="muted small pad props-not-shown" data-testid="not-shown-here"><EyeOff size={12} /> Not shown in this view: hidden by its graphics, a filter, a phase, Hide / Isolate, its range or a level put away. A click or a box here does not take it.</p>}
       {!node.editable && <p className="muted small pad">This element belongs to a module this edition does not have: it is shown and kept, not edited.</p>}
+      {node.props.scriptOwned === true && <p className="muted small pad props-script-owned" data-testid="script-owned"><Code2 size={12} /> <span>Made by a script:</span> <b>{String(node.props.owner ?? '')}</b><br /><span>Its shape is changed in the script; here it moves, turns, copies and is cut like any element.</span></p>}
       {sections.map((s) => (
         <Group key={s.id} id={s.id} label={s.label}><s.component node={node} /></Group>
       ))}

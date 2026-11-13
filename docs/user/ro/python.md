@@ -175,6 +175,12 @@ Ca pe orice unealtă, le poți muta, face mici sau scoate; o unealtă scoasă r�
 
 Jos în panoul Script, banda Mesaje păstrează un rând pe rulare: pornită, terminată cu cât a durat, oprită, sau eșuată cu ultima linie a erorii și, când traceback-ul Python le dă, numele scriptului și linia (`Pereti:12`). Un clic pe un rând eșuat deschide scriptul în editor la acea linie, dacă e cel deschis, unul dintre ale tale sau unul al proiectului. Înregistrează și rulările pornite din Uneltele mele și din butoanele paletelor, chiar cu panoul închis, deci o unealtă care a eșuat e raportată când deschizi panoul. O deschizi cu săgeata ei, filtrezi după Erori, Avertismente sau Toate, copiezi rândurile ca text simplu sau le golești. Consola din dreapta e neschimbată: arată în continuare tot ce tipărește un script.
 
+## Forme făcute de un script
+
+Un script, sau un program de pe calculatorul tău (un script Python în VS Code, de exemplu), poate face elemente a căror formă o calculează el: o fermă peste o încăpere, un panou de fațadă, o formă proiectată de alt instrument. Sunt elemente obișnuite: apar în planuri, secțiuni și 3D, se măsoară în extrase, se exportă în IFC și le muți, rotești, copiezi, ascunzi sau ștergi ca pe oricare altul. Proprietățile spun **Făcut de un script:** și care. Forma lor e a scriptului: ce le-ar schimba forma aici e refuzat (*Forma aceasta e făcută de un script; schimbă-o în script, sau mut-o, rotește-o ori secționeaz-o aici.*).
+
+Un script poate urmări din ce e făcut. Rulat din afara lui Lapin, își actualizează singur elementele când schimbi încăperea sau peretele pe care îl urmărește. Un script al proiectului care urmărește elemente e rulat din nou de Lapin după schimbarea ta, doar dacă are încrederea ta pe acest calculator, ca pas de anulare propriu numit *„<script> regenerated”*: Ctrl+Z ia înapoi doar regenerarea. Un script fără încredere nu e rulat; panoul Script spune asta.
+
 ## Siguranța
 
 Un script poate face orice poți face tu pe acest calculator: rulează în Python-ul tău, cu drepturile tale. Rulează scripturi scrise de tine sau în care ai încredere; un script al proiectului și unul instalat întreabă mai întâi.
@@ -184,3 +190,5 @@ Un invitat al unei sesiuni partajate nu poate rula scripturi pe calculatorul tă
 ## Pentru dezvoltatori
 
 Ce oferă `lapin` (comenzile, interogările, loturile, modelul, evenimentele) e descris în ghidul pentru dezvoltatori, *Lapin from Python* (`docs/python.md` în depozitul lui Lapin); pachetul e pe PyPI ca `lapinbim`.
+
+Un program de pe calculatorul tău găsește Lapin pe portul **14912**; un al doilea Lapin deschis în același timp ia 14913, și tot așa. Cu mai multe deschise, programul întreabă care (`lapin.connect(project="Casa")`); ca să impui unul, setează `LAPIN_PORT`.

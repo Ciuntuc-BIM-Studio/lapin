@@ -194,26 +194,29 @@ class Step:
 class Lapin:
     """One connection to an open Lapin (the desktop app, or ``pnpm dev``).
 
-    ``Lapin()`` finds the engine (``LAPIN_PORT``, else its ``host.json``); ``Lapin(port)`` names it. Calls are made one
-    at a time, from any thread; the engine sends every change as a ``diff`` event, which ``on("diff", f)`` receives.
+    ``Lapin()`` finds the engine (``LAPIN_PORT``, else the engines' host files, else the ports from 14912 probed:
+    docs/python.md, How a program finds Lapin) and connects to the only one open; with several open,
+    ``Lapin(project="House.lapin")`` or ``Lapin(product="lapin")`` names which (else LapinError lists them).
+    ``Lapin(port)`` names the port. Calls are made one at a time, from any thread; the engine sends every change as a
+    ``diff`` event, which ``on("diff", f)`` receives.
     """
 
-    def __init__(self, port: int | None = None, *, connect_timeout: float = 5.0):
-        tried = port or discovery.find_port()
-        candidates = [tried] if tried else [discovery.DEV_PORT]
-        last: Exception | None = None
-        ws: WebSocket | None = None
-        for p in candidates:
+    def __init__(self, port: int | None = None, *, project: str | None = None, product: str | None = None,
+                 connect_timeout: float = 5.0):
+        tried = port or discovery.env_port()
+        #: What the engine said it is (engine.hello) when it was found by looking; None when the port was named.
+        self.engine: dict | None = None
+        if not tried:
             try:
-                ws = WebSocket("127.0.0.1", p, timeout=connect_timeout)
-                self.port = p
-                break
-            except OSError as e:
-                last = e
-        if ws is None:
-            if tried:
-                raise LapinError(f"Lapin's engine did not answer on port {tried}: {last}")
-            raise LapinError("No open Lapin found: start the app (or pnpm dev), or set LAPIN_PORT.")
+                self.engine = discovery.choose(discovery.find_engines(), project, product)
+            except LookupError as e:
+                raise LapinError(str(e)) from None
+            tried = self.engine["port"]
+        try:
+            ws = WebSocket("127.0.0.1", tried, timeout=connect_timeout)
+        except OSError as e:
+            raise LapinError(f"Lapin's engine did not answer on port {tried}: {e}") from None
+        self.port = tried
         self._ws: WebSocket = ws
         self._next = 1
         self._pending: dict[int, _Slot] = {}
@@ -368,6 +371,40 @@ class Lapin:
         """An element's quantity sets."""
         return self.call("quantities.of", {"id": id.id if isinstance(id, Element) else id})
 
+    # ------------------------------------------------------------------ bodies an external program computes (L1)
+
+    def create_body(self, ifc_class: str, body: Any, *, storey: str | Element | None = None, name: str | None = None,
+                    type: str | Element | None = None, material: str | None = None, global_id: str | None = None,
+                    owner: str | None = None, placement: Any = None, attrs: dict | None = None, units: str | None = None) -> Any:
+        """An element whose body this program computes (``element.createBody``; docs/plan-external-geometry.md): one undo
+        step, its id (its GlobalId) in the result as ``r.id``.
+
+        ``body`` is ``{"positions": [x, y, z, …], "indices": [a, b, c, …]}`` (a triangle mesh, metres; numpy arrays are
+        fine), ``{"faces": [{"outer": [[x, y, z], …], "holes": [...]}, …]}`` (planar polygons), or ``{"parts": [...]}``
+        of either with a ``name`` and ``color`` each. ``placement``: a 4×4 matrix or ``{"at": [x, y, z], "angle": deg}``.
+        ``global_id`` pins the element's IFC GlobalId (refused when the model has it); ``owner`` names the program
+        (``"script:<id>"``); ``attrs`` are the program's own values, kept with the element and in its IFC. ``units``:
+        ``"m"`` (the default) or ``"mm"`` for a body and placement in millimetres. A mesh's lists may be flat or rows of
+        three (``vertices`` N×3, ``faces``/``triangles`` M×3, as manifold3d or trimesh give them).
+        ``lapinbim.global_id(name)`` makes a GlobalId that is the same each time for the same name.
+        """
+        a: dict[str, Any] = {"ifcClass": ifc_class, "body": body}
+        for key, value in (("storey", storey), ("name", name), ("type", type), ("material", material), ("globalId", global_id),
+                           ("owner", owner), ("placement", placement), ("attrs", attrs), ("units", units)):
+            if value is not None:
+                a[key] = value
+        return self.execute("element.createBody", a)
+
+    def set_body(self, id: str | Element, body: Any, *, placement: Any = None, units: str | None = None) -> Any:
+        """A new body for an element made by ``create_body`` (``element.setBody``): one undo step, its GlobalId kept;
+        without ``placement`` it stays where it stood."""
+        a: dict[str, Any] = {"id": id, "body": body}
+        if placement is not None:
+            a["placement"] = placement
+        if units is not None:
+            a["units"] = units
+        return self.execute("element.setBody", a)
+
     def snapshot(self) -> Obj:
         """The whole model as the engine sends it to a window (``doc.snapshot``): nodes, relations, render, state.
 
@@ -410,8 +447,66 @@ class Lapin:
         elements = self._elements()
         return [elements[i] for i in ids if i in elements]
 
+    def selected(self) -> list[Obj]:
+        """What the window has selected now, each with what it is: ``id`` (its GlobalId), ``ifc_class``, ``name``,
+        ``storey``, ``path`` (the wholes it is part of, outermost first, itself last) and ``bbox`` (``[[xmin, ymin, zmin],
+        [xmax, ymax, zmax]]`` of its body). The same as the ``selection`` event carries (``on("selection", f)``)."""
+        return list((self.call("script.selection", {"details": True}) or {}).get("items") or [])
+
+    # ------------------------------------------------------------------ measures (L2) and watches (L3)
+
+    def measure(self, name: str, *, query: str | None = None, args: dict | None = None, expr: str | None = None,
+                id: str | Element | None = None) -> Any:
+        """A named measure kept by the engine for this connection (``measure.define``); its value now.
+
+        ``query`` (a catalogue query's name, with ``args``): its result is the value; ``expr`` with ``id``: a formula of
+        Lapin's over one element (``attr.<field>``, ``qty.<Quantity>``, ``bbox.zmax``…); neither: a built-in name
+        (``storey.<name>.elevation``, ``storey.<name>.height``, ``element.<id>.bbox``, ``wall.<id>.top``). After a change
+        that touches what it reads, a new value comes as the ``measure`` event (``on("measure", f)``)."""
+        p: dict[str, Any] = {"name": name}
+        for key, value in (("query", query), ("args", args), ("expr", expr), ("id", id)):
+            if value is not None:
+                p[key] = value
+        r = self.call("measure.define", p) or {}
+        if r.get("error"):
+            raise LapinError(r["error"], "measure.define", name)
+        return r.get("value")
+
+    def measure_value(self, name: str) -> Any:
+        """A measure's value now: one this connection defined, or a built-in (``measure.get``)."""
+        r = self.call("measure.get", {"name": name}) or {}
+        if r.get("error"):
+            raise LapinError(r["error"], "measure.get", name)
+        return r.get("value")
+
+    def remove_measure(self, name: str) -> bool:
+        return bool((self.call("measure.remove", {"name": name}) or {}).get("removed"))
+
+    def watch(self, ids: Any = None, measures: Any = None, *, script: str | None = None) -> Any:
+        """Be told when elements or measures change (``script.watch``; docs/plan-external-geometry.md, L3).
+
+        Without ``script``: this connection's watch; after another connection's change (the user's, an undo) that touches
+        one of ``ids`` (an attribute, or its body rebuilt) or changes one of ``measures`` (names this connection defined,
+        or built-ins), the ``watch`` event comes ``{watch, ids, measures}`` (``on("watch", f)``); this connection's own
+        edits never fire it. Returns ``{watch, ids, measures}``; ``unwatch(r.watch)`` ends it.
+
+        With ``script`` (a project script's name or id): kept in the project (one undo step); Lapin runs that script
+        again, trusted only, as its own undo step "<script> regenerated"."""
+        p: dict[str, Any] = {}
+        if ids is not None:
+            p["ids"] = [ids] if isinstance(ids, (str, Element)) else list(ids)
+        if measures is not None:
+            p["measures"] = [measures] if isinstance(measures, str) else list(measures)
+        if script is not None:
+            p["script"] = script
+        return self.call("script.watch", p)
+
+    def unwatch(self, watch: str | None = None, *, script: str | None = None) -> Any:
+        """A watch ended: this connection's by its id, or a project script's (``script``)."""
+        return self.call("script.unwatch", {"script": script} if script is not None else {"watch": watch})
+
     def on(self, event: str, handler: Callable[[Any], Any]) -> Callable[[], None]:
-        """``handler(data)`` for each ``event`` the engine sends ("diff", "progress", "presence", "delivery"); "*" gets
+        """``handler(data)`` for each ``event`` the engine sends ("diff", "progress", "presence", "delivery", "selection", "measure", "watch"); "*" gets
         ``handler(name, data)`` for all. Handlers run one at a time on a thread of their own. Returns what removes it."""
         self._handlers.setdefault(event, []).append(handler)
         if self._dispatcher is None:

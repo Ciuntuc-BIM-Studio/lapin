@@ -26,12 +26,26 @@ import lapinbim as lapin
 print(lapin.info().product.name)     # the module's own connection, made at the first call
 ```
 
-The engine is found as the MCP bridge finds it (docs/mcp.md):
-1. `LAPIN_PORT`, when set;
-2. else the first live `host.json` the engine writes while it runs, in `LAPIN_USER_DIR`, then the desktop app's user folder (`~/Library/Application Support/ro.ciuntucbimstudio.lapin` on macOS, `~/.local/share/Lapin` on Linux, `%LOCALAPPDATA%\Lapin` on Windows); a file whose process is gone is skipped;
-3. else port 47810, the one `pnpm dev` uses (its user folder is the repo's `.artifacts/user`).
+### How a program finds Lapin
 
-`lapin.connect(port)` makes the module's connection to a given port; `lapin.Lapin(port)` makes another one (`with lapin.Lapin() as l: …` closes it).
+The desktop app's engine listens on **14912** (L A P I N, the letters' places in the alphabet: 12 1 16 9 14 → 1 4 9 1 2), on 127.0.0.1 only. When 14912 is taken (a second Lapin open, or another program), it takes the next free one: 14913, 14914, … up to 15011; all of those taken, a port the system gives, said on its stderr. `pnpm dev`'s engine stays on 47810 (the Vite proxy's), so a dev engine never takes 14912 from the app. The engine is started with `--port auto` (also no `--port`, or `--port 0`); `--port N` is N exactly, or an error when N is taken.
+
+`lapinbim`, and the MCP bridge in the same way (docs/mcp.md), finds the engines in this order:
+
+1. `LAPIN_PORT`, when set: that port and no other (the Script panel's Python is given its engine's);
+2. the host files the engines write while they run: `<user-dir>/hosts/host-<pid>.json`, one per engine, and `<user-dir>/host.json`, the latest started (what older readers read), each `{"port", "pid", "product", "version", "started"}`, removed when the engine stops. A file whose process is gone (killed) is stale and skipped. The user folders: `~/Library/Application Support/ro.ciuntucbimstudio.lapin` on macOS, `~/.local/share/Lapin` on Linux, `%LOCALAPPDATA%\Lapin` on Windows (the repo's `.artifacts/user` under `pnpm dev`). `LAPIN_USER_DIR` names the one folder to read, and then nothing is probed;
+3. the ports 14912–15011 and 47810, probed: a fast connect and `GET /health` (half a second each, all at once).
+
+Every port found is confirmed by asking it who it is: `GET /health` (only by a loopback name: `127.0.0.1` or `localhost` in the `Host` header) and the WebSocket call `engine.hello` (answered at once, past the queue of calls) both answer
+
+```json
+{"engine": "lapin", "ok": true, "product": "lapin", "productName": "Lapin", "version": "0.1.900", "pid": 4242,
+ "port": 14912, "project": "/Users/me/House.lapin", "modules": ["core", "architecture", "…"]}
+```
+
+so another program listening on 14913 is never taken for Lapin (`project` is null until the project is saved). An engine from before this answers `/health` with `{"ok", "product", "modules"}` and is still recognised.
+
+`lapin.connect()` (and `Lapin()`) connects to the only Lapin open. With several open, it raises `LapinError` listing them (port, product, project) unless told which: `lapin.connect(project="House.lapin")` (the project's path, its file name, its name, or a part of its path), `lapin.connect(product="lapin")`, `lapin.connect(14913)`, or `LAPIN_PORT`. `lapin.engines()` (and `python -m lapinbim engines`) lists them, each as its engine says. `lapin.connect(port)` makes the module's connection to a given port; `lapin.Lapin(port)` makes another one (`with lapin.Lapin() as l: …` closes it).
 
 ## Calls
 
@@ -49,6 +63,10 @@ The engine is found as the MCP bridge finds it (docs/mcp.md):
 | `lapin.batch(label)` | `with lapin.batch("Facades"):` the commands inside as one `edit.batch`: one undo step named `label`. |
 | `lapin.step(label)` | `with lapin.step("Facades"):` a step held open on the engine: one undo step, each command answered at once (below). |
 | `lapin.selection()` | What the window has selected now, as elements (the desktop app with the scripting module). |
+| `lapin.selected()` | The same, each with its GlobalId, IFC class, name, storey, assembly path and box. |
+| `lapin.measure(name, query=… \| expr=…, id=…)`, `lapin.measure_value(name)` | A named measure the engine keeps and tells again (`measure` event) when what it reads changes. |
+| `lapin.watch(ids, measures)`, `lapin.watch(ids, script="truss.py")`, `lapin.unwatch(…)` | The `watch` event when another's change touches them; or a project script Lapin runs again (trusted only). |
+| `lapin.create_body(ifc_class, body, storey=…, global_id=…, owner=…)`, `lapin.set_body(id, body)` | An element whose body the script computes (`element.createBody`, `element.setBody`; below, *External geometry and live scripts*). |
 | `lapin.on("diff", f)` | `f(diff)` for every change the engine sends (an edit, an undo, the window's own); returns what removes it. |
 | `lapin.model` | The model's entities (below). |
 | `lapin.call(method, params)` | Any protocol call (`doc.execute`, `project.new`, …). |
@@ -134,7 +152,7 @@ print(s.kept)
 
 ```python
 off = lapin.on("diff", lambda d: print(len(d.nodes), "changed,", len(d.removed_nodes), "removed"))
-lapin.on("*", lambda name, data: print(name))      # every event: diff, progress, presence, delivery
+lapin.on("*", lambda name, data: print(name))      # every event: diff, progress, presence, delivery, selection, measure, watch
 off()
 ```
 
@@ -180,6 +198,62 @@ with lapin.batch("Walls +20 cm"):
         w.update(height=w.height + 0.2)
 ```
 
+## External geometry and live scripts
+
+A program that computes geometry (a generator, a DSL's compiler, a parametric script) works with Lapin through this package, never inside it: it gives Lapin bodies, Lapin keeps them as elements, and each side tells the other what changed. The contract, the four steps (decisions 541–542) and what Lapin deliberately does not do are in `docs/plan-external-geometry.md`.
+
+### Bodies a program computes
+
+```python
+import lapinbim as lapin
+
+r = lapin.create_body("IfcMember", {"positions": [...], "indices": [...]},       # a triangle mesh, metres
+                      storey="Ground floor", name="Truss T1",
+                      global_id=lapin.global_id("truss:t1", "my-generator"),      # stable across runs
+                      owner="script:my-generator", attrs={"span": 6.0})
+lapin.set_body(r.id, new_body)                                                     # the same element, a new shape
+```
+
+| Argument | What it is |
+|---|---|
+| `ifc_class` | Any IfcElement subtype of IFC4 or IFC 4.3 (`IfcMember`, `IfcSlab`, `IfcPump`, …; a standard case is its class); another name makes an `IfcBuildingElementProxy` and the result's `notes` say so. |
+| `body` | `{"positions", "indices"}` (each flat, or rows of three: `vertices` and `faces`/`triangles` as numpy N×3 and M×3 arrays come out of manifold3d, trimesh or ifcopenshell), `{"faces": [{"outer": [[x, y, z], …], "holes": [...]}]}` (planar polygons, holes allowed), or `{"parts": [{"name", "color": "#rrggbb", …one of those}]}`. |
+| `units` | `"m"` (default), `"cm"` or `"mm"`: a program working in integer millimetres sends its numbers as they are. |
+| `placement` | A 4×4 matrix (row major) or `{"at": [x, y, z], "angle": degrees}`; the body is then in its own coordinates, so the same body placed many times is stored once. |
+| `global_id` | The element's IFC GlobalId (22 characters), refused when the model has it. `lapin.global_id(name, namespace)` makes one from a name (UUID 5, compressed as IFC writes it), the same at every run. |
+| `owner`, `attrs` | Who made it (`"script:<id>"` or free text; Properties shows *Made by a script: …*) and the program's own values; both go into the IFC's `Lapin_Intent` and come back on import. |
+| `storey`, `name`, `type`, `material` | The storey (id or name; else the lowest), the name, a type's id (`IfcRelDefinesByType`: a definition placed many times), a material's id or name. |
+
+The result: `id`, `shared` (the shared body's id: one per distinct content, by SHA-256), `closed`, `triangles`, `notes`. Each call is one undo step (inside `lapin.step` or `lapin.batch`, part of it). The checks: finite numbers, indices in range, at most 2 000 000 triangles and 10 km from the origin, polygon faces planar within 1 mm; a body that is not closed is accepted and reported (its volume is not measured).
+
+In Lapin it is an ordinary element: drawn and cut in plans and sections, in 3D, picked, measured (`BaseQuantities`: `NetVolume` of a closed body, `NetSurfaceArea`, `Length`, `Width`, `Height`), in schedules, phases and Visibility/Graphics by its class, moved, rotated, copied (sharing its body, a new GlobalId), hidden and deleted. Its shape is the program's: `element.update`, *Make Studio solid* and *Convert to native* refuse it. The IFC export writes it with its class where Lapin's writer knows the class's attributes, else as a proxy naming it; Lapin reads its own IFC back as the same element.
+
+### The selection, measures and watches
+
+```python
+lapin.on("selection", lambda s: print([i["ifcClass"] for i in s["items"]]))
+lapin.selected()                         # [{id, globalId, ifcClass, name, storey, path, bbox}, …]
+
+lapin.measure(f"wall.{wall_id}.top")                                  # a built-in
+lapin.measure("ridge", id=roof_id, expr="bbox.zmax")                  # a formula over one element
+lapin.measure("deps", query="core.dependents", args={"id": wall_id})  # a catalogue query's result
+lapin.on("measure", lambda m: print(m["name"], m["was"], "→", m["value"]))
+
+w = lapin.watch([room_id], ["storey.Ground floor.elevation"])
+lapin.on("watch", lambda e: rebuild(e["ids"], e["measures"]))
+lapin.unwatch(w.watch)
+```
+
+- **`selection`**: the window's selection, sent to every connection of this computer whenever it changes (on the desktop; the window tells the host), each element with its GlobalId, IFC class, name, storey, assembly path (outermost first, itself last) and the box of its body.
+- **Measures** (`measure.define`, `measure.get`, `measure.remove`, `measure.list`): built-ins `storey.<name or id>.elevation`, `storey.<…>.height`, `element.<id>.bbox` (`[[xmin, ymin, zmin], [xmax, ymax, zmax]]`), `wall.<id>.top`; a formula in Lapin's `Expr` over one element (`attr.<field>`, `qty.<Quantity>`, `bbox.xmin` … `bbox.zmax`); or a catalogue query and its arguments. After each change the host recomputes only the measures that read an element it touched (a query naming no element: every time) and sends `measure {name, value, was, error?}` when the value changed. They are this connection's, gone when it closes; never in the model.
+- **Watches** (`script.watch`, `script.unwatch`): the `watch` event `{watch, ids, measures}` after a change by **another** connection (the window, an undo, another program) touching one of the elements (an attribute, or its body rebuilt) or changing one of the measures. Your own edits never fire your watch, so updating your bodies on the event cannot loop.
+- **A project script's watch**: `lapin.watch(ids, measures, script="truss.py")` keeps it in the project (`scripting.watch`, one undo step; built-in measures only). After a change it touches, Lapin runs that script again in the Script panel's Python, only when it is trusted on this computer, as its own undo step *“truss regenerated”* right after the change; what a script run changes never sets off a project script; 300 ms after the last change; 60 s at most; a run going on puts it off. Why it was not run shows in the Script panel.
+
+### Examples
+
+- `python/examples/truss_over_room.py`: takes the selected room (or the first), builds a Warren truss over its short side at its ceiling as one `IfcMember` body (owner `script:truss_over_room`, its GlobalId from the room's), watches the room and builds it again with `set_body` when the room changes. `python python/examples/truss_over_room.py` against `pnpm dev` or the app; `--once` builds and stops. `python/tests/test_live.py` runs it against a test engine.
+- `python/examples/litestep_bridge.py` (optional, a sketch): a [Lite-STEP](https://github.com/ginnung-tech/lite-step) model (MIT; a Python DSL compiling to IFC4X3 with ifcopenshell) compiled by its own compiler, each product meshed by ifcopenshell and pushed with `create_body`/`set_body` in one step, GlobalIds from the products' names, removed products deleted; `--watch` pushes again at every save. It imports `lite_step` and `ifcopenshell` only when it runs: `lapinbim` depends on neither.
+
 ## The Script panel (stage 2)
 
 The open module `scripting` (in the free edition, `products/lapin.json`) puts Python in the desktop app, behind **Preferences → Developer extras** (off by default; user guide: `docs/user/python.md`). Its engine half is the host's (`engine/src/Host/Lapin.Host/ScriptHost.cs`), its interface half `ui/src/modules/scripting` (the panel, CodeMirror 6 fetched with it on first open).
@@ -211,7 +285,7 @@ The engine gives each kernel it starts a token of its own (32 random bytes, `LAP
 - **`LapinScript`**, the open engine module `scripting` (`engine/src/Modules/Scripting/Lapin.Scripting`): a resource with its name (a file name ending `.py`, unique whatever its case), `code`, `language` (`python`), `description` and `sha256` (of the code, UTF-8, lowercase hex). Commands, one undo step each: `scripting.save {id?, name, code, description?}` (new, or by id changed and maybe renamed), `scripting.rename {id, name}`, `scripting.delete {id}`; queries `scripting.list` (no code), `scripting.get {id | name}`. The core's own edits (`element.update`, `element.rename`, `setParam`, moves) are refused on a script (its code and hash change together); `element.delete` takes it like any content, the host's only. A guest is refused every `scripting.*` command, alone or in a batch (`EngineDispatcher.HostOnlyCommands`), and every generic command on a script (delete, rename, group, copy, move; stage 4).
 - **In the .lapin**: each script is also written as `scripts/<name>` (UTF-8), a part listed in the manifest with `module: "scripting"` (`IPackageTexts`, `LapinPackage.TextFolders`); Lapin reads the entity, never the text. Another tool's files in `scripts/` are foreign parts, kept byte for byte beside them (decision 345); a project script named as one of them is what the package holds from then on. An edition without the module keeps the entities (decision 484) and writes their `scripts/` parts back as they came (`PackageForeign.ModuleParts`). Versions keep the scripts with the model.
 - **Trust** (`docs/plan-python-scripting.md` §7): a project's script never runs as it opens; the panel asks before its first run and after its code changed (Run once / Trust / Cancel). Trust is kept on this computer by the code's SHA-256 in `<user-dir>/scripting-trust.json`: `script.trusted {sha256}`, `script.trust {sha256}`. Code the user saves into the project is trusted as it is saved.
-- **The selection**: the window tells the host what it has selected as it changes (`script.selected {ids}`, a call with no id, with Developer extras on); `script.selection` answers it, `lapin.selection()` reads it as elements.
+- **The selection**: the window tells the host what it has selected as it changes (`script.selected {ids}`, a call with no id; on the desktop always, since decision 540, so a program in a terminal or VS Code has it too); `script.selection` answers it, `lapin.selection()` reads it as elements, `lapin.selected()` with what each is (`script.selection {details: true}`), and every connection of this computer gets it as the `selection` event (below, *External geometry and live scripts*).
 
 ## The recorder (stage 3)
 
@@ -320,7 +394,7 @@ with lapin.ui.panel("Walls"):                                # a group of My too
 
 ## Tests
 
-`pnpm test:python` (`scripts/test-python.mjs`, part of `pnpm test`) runs `python/tests` with the standard library's `unittest` on the oldest Python found from 3.11 and the newest, each against an engine of its own: the built Debug host on a free port with a temporary user folder (`python/tests/engine.py`), as `scripts/lapin-mcp-check.mjs` starts it, never the engine of `pnpm dev`. They cover the WebSocket client against a small server of the test's own (fragments, ping, a 64-bit length, masking, close, a wrong handshake), the LPF1 reader, names and arguments, and against the engine: connecting by `LAPIN_PORT` and by `host.json`, typed commands, a batch as one named undo step (and all or nothing), undo and redo, a refused command, binary frames, quantities, element edits, diff events, saving, the module's own connection, the catalogue and the stubs. No Python 3.11 or newer: the run says so and passes; no built engine, no dotnet or no node: the engine's tests are skipped, saying why. `--all` runs every Python found.
+`pnpm test:python` (`scripts/test-python.mjs`, part of `pnpm test`) runs `python/tests` with the standard library's `unittest` on the oldest Python found from 3.11 and the newest, each against an engine of its own: the built Debug host on a free port with a temporary user folder (`python/tests/engine.py`), as `scripts/lapin-mcp-check.mjs` starts it, never the engine of `pnpm dev`. They cover the WebSocket client against a small server of the test's own (fragments, ping, a 64-bit length, masking, close, a wrong handshake), the LPF1 reader, names and arguments, and against the engine: connecting by `LAPIN_PORT` and by its host files, its `/health` and `engine.hello`; how a program finds Lapin against fake engines of the test's own (`test_discovery.py`: a probe finding a live one and skipping a listener that is not Lapin, a refused or silent one, stale host files, choosing among several, an engine from before `engine.hello`), typed commands, a batch as one named undo step (and all or nothing), undo and redo, a refused command, binary frames, quantities, element edits, diff events, saving, the module's own connection, the catalogue and the stubs; and (`test_live.py`) bodies made and set in metres and millimetres, stable GlobalIds, measures and the selection, a connection's watch, a trusted project script run again by the real Python as its own undo step, and `examples/truss_over_room.py` run against the engine, built and following its room. No Python 3.11 or newer: the run says so and passes; no built engine, no dotnet or no node: the engine's tests are skipped, saying why. `--all` runs every Python found.
 
 ## Publishing on PyPI
 

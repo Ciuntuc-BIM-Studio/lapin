@@ -25,6 +25,17 @@ public sealed class ScriptingModule : ILapinModule, IPackageTexts, IDrivenElemen
     /// <summary>The longest script a project keeps (its code, UTF-8).</summary>
     public const int MaxBytes = 1 << 20;
 
+    /// <summary>What a script is run again for (<c>{ids, measures}</c>), set by <c>scripting.watch</c>.</summary>
+    public const string WatchKey = "watch";
+
+    /// <summary>A list of names (ids, measures): each once, none empty or longer than 300 characters, at most <paramref name="max"/>.</summary>
+    static JsonArray Names(JsonNode? n, int max, string what)
+    {
+        var list = (n as JsonArray ?? []).Select(x => (string?)x).OfType<string>().Where(x => x.Length is > 0 and <= 300).Distinct().ToList();
+        if (list.Count > max) throw new CommandException($"A script watches at most {max} {what}.");
+        return new JsonArray([.. list.Select(x => (JsonNode)x)]);
+    }
+
     public string Id => ModuleId;
     public string Name => "Scripting";
     string IPackageTexts.Module => ModuleId;
@@ -92,6 +103,24 @@ public sealed class ScriptingModule : ILapinModule, IPackageTexts, IDrivenElemen
             return null;
         });
 
+        // {id | name, ids?, measures?}: what the script is run again for when it changes (docs/plan-external-geometry.md, L3): elements
+        // (by GlobalId) and built-in measures (storey.<name>.elevation, element.<id>.bbox, wall.<id>.top); none: it watches nothing.
+        // The host re-runs it, trusted only, as its own undo step; the module keeps the list and never runs anything.
+        r.Command("watch", "Watch for script", (ctx, a) =>
+        {
+            var e = (string?)a["id"] is { Length: > 0 } id ? Script(ctx.Model, id)
+                : All(ctx.Model).FirstOrDefault(x => string.Equals(x.Name, ((string?)a["name"])?.Trim(), StringComparison.OrdinalIgnoreCase))
+                  ?? throw new CommandException($"The project has no script „{(string?)a["name"]}”.");
+            var ids = Names(a["ids"], 10_000, "elements");
+            foreach (var x in ids) if (ctx.Model.Get((string)x!) == null) throw new CommandException($"There is no {x} to watch.");
+            var measures = Names(a["measures"], 100, "measures");
+            var attrs = e.CloneAttrs();
+            if (ids.Count == 0 && measures.Count == 0) attrs.Remove(WatchKey);
+            else attrs[WatchKey] = new JsonObject { ["ids"] = ids, ["measures"] = measures };
+            if (attrs.ToJsonString() != e.Attrs.ToJsonString()) ctx.Replace(e.With(attrs: attrs));
+            return Json(e.With(attrs: attrs), created: false);
+        });
+
         // The project's scripts, by name: their ids, names, descriptions, hashes and sizes (no code).
         r.Query("list", (q, _) => new JsonArray(All(q.Model).Select(e => (JsonNode)Json(e, created: false)).ToArray()));
 
@@ -136,6 +165,7 @@ public sealed class ScriptingModule : ILapinModule, IPackageTexts, IDrivenElemen
             ["lines"] = code.Length == 0 ? 0 : code.Split('\n').Length - (code.EndsWith('\n') ? 1 : 0),
         };
         if (e.Str("description") is { } d) o["description"] = d;
+        if (e.Attrs[WatchKey] is JsonObject w) o[WatchKey] = w.DeepClone();
         if (created) o["created"] = true;
         return o;
     }

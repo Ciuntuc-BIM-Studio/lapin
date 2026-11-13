@@ -52,6 +52,8 @@ public static class EditableReferences
         foreach (var id in ids.ToList())
         {
             if (edit.Model.Get(id) is not { } e || !StoredBodies.Has(e) || e.Str(Links.Key) != null) continue;
+            // A program's body stays the program's (docs/plan-external-geometry.md).
+            if (ExternalBodies.IsOwned(e)) { kept["made by a script"] = kept.GetValueOrDefault("made by a script") + 1; continue; }
             if (editor.MakeEditable(edit, services, e, maxTriangles) is { } why) kept[why] = kept.GetValueOrDefault(why) + 1;
             else made++;
         }

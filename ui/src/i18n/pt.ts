@@ -76,6 +76,14 @@ export const PT: Record<string, string> = {
   "Change graph inputs": "Alterar as entradas do grafo",
   "A type": "Um tipo",
   "A type of the project (a wall type, a slab type…) for a tool's Type; none chosen: the first of its class by name.": "Um tipo do projeto (um tipo de parede, um tipo de laje…) para o Tipo de uma ferramenta; nenhum escolhido: o primeiro da sua classe por nome.",
+  // Decision 541: a project script run again when what it watches changes (docs/plan-external-geometry.md, L3)
+  "Watch for script": "Observação para o script",
+  // Decision 539: bodies made by a script (docs/plan-external-geometry.md, L1)
+  "Made by a script:": "Criado por um script:",
+  "Its shape is changed in the script; here it moves, turns, copies and is cut like any element.": "A sua forma muda-se no script; aqui move-se, roda, copia-se e corta-se como qualquer elemento.",
+  "This shape is made by a script; change it in the script, or move, rotate or cut it here.": "Esta forma é criada por um script; altere-a no script, ou mova-a, rode-a ou corte-a aqui.",
+  "Create body": "Criar corpo",
+  "Set body": "Definir corpo",
   // Decision 524: the box by the cursor offers width and height for a rectangle
   'Space switches length and angle with width and height': 'Espaço alterna entre comprimento e ângulo e largura e altura', 'Width × Height': 'Largura × Altura', 'Length ∠ Angle': 'Comprimento ∠ Ângulo',
   // Decision 516: mouse navigation styles
@@ -3416,6 +3424,9 @@ const n = (count: string, one: string, many: string) => `${count} ${count === '1
 export const PT_PATTERNS: Language['patterns'] = [
   [/^Commands: (\d+), (\d+) ms$/, (m) => `Comandos: ${m[1]}, ${m[2]} ms`],
   [/^Elements made: (\d+), one undo step$/, (m) => `Elementos criados: ${m[1]}, um só passo de desfazer`],
+  [/^„(.+)” was not run again: it is not trusted on this computer\. Run it once from the Script panel and choose Trust\.$/, (m) => `«${m[1]}» não voltou a ser executado: não é de confiança neste computador. Execute-o uma vez a partir do painel Script e escolha Confiar.`],
+  [/^„(.+)” was not run again: another script kept running\.$/, (m) => `«${m[1]}» não voltou a ser executado: outro script continuava em execução.`],
+  [/^„(.+)” took more than (\d+) s to run again: it was stopped, and nothing it did is kept\.$/, (m) => `«${m[1]}» demorou mais de ${m[2]} s a voltar a executar: foi parado e nada do que fez é mantido.`],
   [/^(\d+) added, (\d+) updated, (\d+) the same, (\d+) skipped\.$/, (m) => `${m[1]} adicionados, ${m[2]} atualizados, ${m[3]} iguais, ${m[4]} ignorados.`],
   [/^(\d+) line types added, (\d+) updated, (\d+) skipped\.$/, (m) => `${m[1]} tipos de linha adicionados, ${m[2]} atualizados, ${m[3]} ignorados.`],
   [/^(\d+) parameters added, (\d+) updated\.$/, (m) => `${m[1]} parâmetros adicionados, ${m[2]} atualizados.`],

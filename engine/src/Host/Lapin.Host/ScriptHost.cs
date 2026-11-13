@@ -52,6 +52,12 @@ public sealed class ScriptHost(bool enabled, string? userDir, Func<JsonObject, T
 
     public bool Enabled => enabled;
 
+    /// <summary>The run going on now (null: none), so a project script run again waits for it (docs/plan-external-geometry.md, L3).</summary>
+    public int? RunningId => _running;
+
+    /// <summary>Whether code of this SHA-256 is trusted on this computer (a project script is run again only then).</summary>
+    public bool IsTrusted(string sha256) => Trusted().Contains(sha256);
+
     readonly SemaphoreSlim _lock = new(1, 1);
     Process? _proc;
     PythonFound? _python;
