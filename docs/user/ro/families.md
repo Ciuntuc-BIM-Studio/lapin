@@ -18,7 +18,7 @@ O familie e mai ușoară decât un configurator de tip: nu are straturi sau dime
 
 - **Nume**, **Clasă IFC** și **Descriere** vin întâi. Clasa este ce devine obiectul la export: Building element proxy (implicit), Furnishing element, Column, Beam, Member, Plate, Slab, Wall, Flow terminal și altele.
 - **Schița în fire** e construită de motor din familia așa cum e acum, la fiecare schimbare. Scrie valori la **Încearcă valori** ca să vezi altă mărime; una goală e cea implicită.
-- **Parametrii** au o cheie (litere și cifre, începând cu o literă: `W`, `Height`, `HasShelf`), o etichetă, un fel și o valoare implicită. Felurile sunt Lungime, Număr, Unghi și Da/nu. Aici lungimile sunt în metri și unghiurile în grade.
+- **Parametrii** au o cheie (litere și cifre, începând cu o literă: `W`, `Height`, `HasShelf`), o etichetă, un fel și o valoare implicită. Felurile sunt Lungime, Număr, Unghi și Da/nu. Aici lungimile sunt în metri și unghiurile în grade. Când schimbi o cheie (`W` în `Width`), toate formulele familiei care o numesc o urmează: colțuri, găuri, adâncime, deplasare și condiții. Se schimbă doar nume întregi (`W2` și `max(` rămân), iar o cheie pe care o are deja alt parametru e refuzată cu un mesaj.
 - **Corpurile** au fiecare un plan: *Culcat (xy)* e un contur pe podea împins în sus, *În picioare, față (xz)* și *În picioare, lateral (yz)* stau în picioare. **Colțurile** sunt rânduri de două celule, x și y. **Adâncime** e distanța pe care e împins conturul. **Deplasare x, y, z** mută corpul față de originea obiectului. **Material** îi dă un material al proiectului; fără el e gri.
 
 Apasă **Salvează** ca să păstrezi schimbările: obiectele deja așezate le urmează. **Renunță la modificări** revine la familia salvată.
@@ -35,7 +35,9 @@ Când o formulă nu se citește, motorul spune de ce sub imagine, iar **Salveaz�
 
 ## Așezarea obiectelor
 
-**Studio → Familie** așază un obiect: alege familia în bară și dă clic pe plan. **R** îl întoarce un sfert, **M** îl oglindește, iar butoanele barei fac la fel. Bara are și un câmp pentru fiecare parametru: scrie o valoare pentru următorul obiect sau lasă-l gol pentru cea a familiei. **Editează…** deschide familia. **Așază pe plan** din dialog pornește aceeași unealtă.
+**Studio → Familie** așază un obiect: alege familia în bară și dă clic pe plan. **R** îl întoarce un sfert, **M** îl oglindește, iar butoanele barei fac la fel. O fantomă a obiectului, desenat în linii, urmează cursorul pe plan, întors și oglindit cum spune bara și cu mărimea dată de valorile din bară. Bara are și un câmp pentru fiecare parametru: scrie o valoare pentru următorul obiect sau lasă-l gol pentru cea a familiei. **Editează…** deschide familia. **Așază pe plan** din dialog pornește aceeași unealtă.
+
+![Fantoma mesei la cursor, întoarsă un sfert](shots/family-place-ghost.webp)
 
 ![Bara uneltei Familie: familia, întoarcerea, oglindirea și valorile ei](shots/family-place-bar.webp)
 

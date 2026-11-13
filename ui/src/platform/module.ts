@@ -16,7 +16,8 @@ export interface Vec2 { x: number; y: number }
 /** How a tool takes its input in a view: the gesture, then one engine command. */
 export type Gesture =
   | { kind: 'twoPoints'; /** Chained: the end of one is the start of the next (walls). */ repeat?: boolean }
-  | { kind: 'point' }
+  /** `ghost`: what the click would put there, as lines on the plan (metres), redrawn as the cursor moves (a family's outline, turned and mirrored). */
+  | { kind: 'point'; ghost?: (at: Vec2) => Vec2[][] }
   | { kind: 'rectangle' }
   /** Two points, then a third (a dimension's line; with `arc`, a point the arc passes through). */
   | {

@@ -9517,6 +9517,15 @@ export const scenes = [
       await t.shot('families-error', { of: '.fam-sticky', pad: 4 });
       await shelf.fill('HasShelf');
       await t.until(async () => (await dlg.locator('[data-field=fam-error]').count()) === 0, 'the error goes when the condition reads');
+      // A parameter's key renamed: the formulas that name it follow.
+      const keyField = dlg.locator('[data-fam-key="0"]');
+      await keyField.fill('Width');
+      await keyField.press('Enter');
+      await t.until(async () => (await dlg.locator('[data-fam-when="5"]').inputValue()) === 'HasShelf' && (await dlg.locator('input[aria-label="y 2"]').first().inputValue()).length > 0, 'the dialog still reads');
+      await t.until(async () => (await dlg.locator('input[aria-label="x 2"]').first().inputValue()) === 'Width', 'the corners that named W now name Width');
+      await dlg.locator('[data-fam-try=Width]').waitFor({ timeout: 5000 });
+      await t.wait(600);
+      t.expect(await dlg.locator('[data-field=fam-preview] line').count() > 20, 'the wireframe is still drawn after the rename');
       // The description changed and saved: the family keeps it.
       await dlg.locator('[data-field=fam-description]').fill('A table, with a shelf when it is wanted');
       await dlg.locator('[data-field=fam-save]').click();
@@ -9527,13 +9536,21 @@ export const scenes = [
       await t.wait(800);
       await t.fit();
       t.expect(await page.locator('[data-family-pick]').count() === 1, 'the bar offers the family');
-      await page.locator('[data-family-value=W]').fill('1600');
+      await page.locator('[data-family-value=Width]').fill('1600');
       await page.locator('[data-family-rotate]').click();
       const [x1, y1] = await t.planPoint(3, 4);
-      await page.mouse.move(x1, y1, { steps: 3 }); await page.mouse.click(x1, y1);
+      await page.mouse.move(x1, y1, { steps: 3 });
+      // The ghost: the table's outline at the cursor, turned a quarter, with the width of the bar.
+      const ghost = page.locator('[data-testid=point-ghost] polyline');
+      await t.until(async () => (await ghost.count()) >= 8, 'the ghost of the family follows the cursor');
+      const box = async () => ghost.evaluateAll((els) => { const xs = [], ys = []; for (const e of els) for (const p of e.getAttribute('points').trim().split(/\s+/)) { const [x, y] = p.split(',').map(Number); xs.push(x); ys.push(y); } return [Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)]; });
+      const [gw, gh] = await box();
+      t.expect(gh > gw, `turned a quarter, the 1.6 m table is taller than wide on the plan (${gw} x ${gh})`);
+      await t.shot('family-place-ghost', { of: '[data-testid=plan]', pad: 0 });
+      await page.mouse.click(x1, y1);
       await t.wait(4500);
       await t.shot('family-place-bar', { of: '[data-testid=command-line]', pad: 4 });
-      await page.locator('[data-family-value=W]').fill('');
+      await page.locator('[data-family-value=Width]').fill('');
       await page.locator('[data-family-rotate]').click();
       await page.locator('[data-family-mirror]').click();
       const [x2, y2] = await t.planPoint(9, 4);
@@ -9542,8 +9559,8 @@ export const scenes = [
       await t.keys('Escape');
       const placed = (await t.nodes()).filter((n) => n.type === 'LapinFamilyInstance');
       t.expect(placed.length === 2, `two table objects, found ${placed.length}`);
-      const first = placed.find((n) => n.props.values?.W === 1.6) ?? placed[0];
-      t.expect(first.props.values?.W === 1.6 && first.props.rotation === 90, 'the first one has its own width and is turned a quarter');
+      const first = placed.find((n) => n.props.values?.Width === 1.6) ?? placed[0];
+      t.expect(first.props.values?.Width === 1.6 && first.props.rotation === 90, 'the first one has its own width and is turned a quarter');
       // Its Properties: the family, each parameter's own value, the shelf switched off.
       await select(t, first.id);
       await t.wait(900);

@@ -18,7 +18,7 @@ A family is lighter than a type configurator: it has no layers or catalogue size
 
 - **Name**, **IFC class** and **Description** come first. The class is what the object is exported as: Building element proxy (the default), Furnishing element, Column, Beam, Member, Plate, Slab, Wall, Flow terminal and others.
 - The **wireframe** is built by the engine from the family as it stands, with each change. Type values under **Try values** to see another size; an empty one is the default.
-- **Parameters** have a key (letters and digits, starting with a letter: `W`, `Height`, `HasShelf`), a label, a kind and a default. The kinds are Length, Number, Angle and Yes/no. Lengths are in metres and angles in degrees here.
+- **Parameters** have a key (letters and digits, starting with a letter: `W`, `Height`, `HasShelf`), a label, a kind and a default. The kinds are Length, Number, Angle and Yes/no. Lengths are in metres and angles in degrees here. When you change a key (`W` to `Width`), every formula of the family that names it follows: corners, holes, depth, offset and conditions. Only whole names change (`W2` and `max(` are left alone), and a key another parameter already has is refused with a message.
 - **Bodies** each have a plane: *Lying (xy)* is an outline on the floor pushed up, *Standing, front (xz)* and *Standing, side (yz)* stand up. The **corners** are rows of two cells, x and y. **Depth** is the distance the outline is pushed. **Offset x, y, z** moves the body from the object's origin. **Material** gives it a project material, and without one it is grey.
 
 Press **Save** to keep the changes: the objects already placed follow. **Revert** goes back to the saved family.
@@ -35,7 +35,9 @@ When a formula does not read, the engine says why under the picture, and **Save*
 
 ## Placing objects
 
-**Studio → Family** places an object: choose the family in the bar, click on the plan. **R** turns it a quarter, **M** mirrors it, and the bar's buttons do the same. The bar also has one field per parameter: type a value for the next object, or leave it empty for the family's own. **Edit…** opens the family. **Place on a plan** in the dialog starts the same tool.
+**Studio → Family** places an object: choose the family in the bar, click on the plan. **R** turns it a quarter, **M** mirrors it, and the bar's buttons do the same. A ghost of the object, drawn as lines, follows the cursor on the plan, turned and mirrored as the bar says and as wide as the values in the bar make it. The bar also has one field per parameter: type a value for the next object, or leave it empty for the family's own. **Edit…** opens the family. **Place on a plan** in the dialog starts the same tool.
+
+![The ghost of the table at the cursor, turned a quarter](shots/family-place-ghost.webp)
 
 ![The Family tool's bar: the family, its turn, its mirror and its values](shots/family-place-bar.webp)
 

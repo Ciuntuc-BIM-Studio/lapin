@@ -8,23 +8,31 @@ import { useEffect, useState } from 'react';
 import { Component, FlipHorizontal2, Pencil, RotateCw, X } from 'lucide-react';
 import type { NodeDto } from '../../../engine/protocol';
 import type { ToolDef } from '../../../platform/module';
+import { useToolTick } from '../../../platform/modules';
 import { notify, select, useUi } from '../../../app/store';
 import { activeStorey, execute, useSession } from '../../../engine/session';
 import { formatLength, parseLength } from '../../../engine/unitsStore';
 import { t as tr } from '../../../i18n';
 import { registerDraftMenu } from '../../../viewport/draftMenu';
-import { familiesDialog, listFamilies, setFamilyValues, useFamilies, useFromSketch, usePlaceFamily } from './familyApi';
-import { IFC_CLASSES, className, parseValue, sketchSources, valuesOf, type FamilyDto } from './familyModel';
+import { familiesDialog, listFamilies, previewFamily, setFamilyValues, useFamilies, useFromSketch, usePlaceFamily } from './familyApi';
+import { IFC_CLASSES, className, parseValue, placedEdges, planEdges, sketchSources, valuesOf, type FamilyDto } from './familyModel';
 
 export const FAMILY_CLASS = 'LapinFamilyInstance';
 
 // ------------------------------------------------------------ the place tool
 
-const turn = () => usePlaceFamily.setState((s) => ({ rotation: (s.rotation + 90) % 360 }));
-const flip = () => usePlaceFamily.setState((s) => ({ mirror: !s.mirror }));
+const redraw = () => useToolTick.setState((s) => ({ n: s.n + 1 }));
+const turn = () => { usePlaceFamily.setState((s) => ({ rotation: (s.rotation + 90) % 360 })); redraw(); };
+const flip = () => { usePlaceFamily.setState((s) => ({ mirror: !s.mirror })); redraw(); };
+
+/** The ghost: the family's outline seen from above in its own frame, asked of the engine when the family or its values change. */
+let ghostEdges: [number, number, number, number][] = [];
 
 export const placeFamilyTool: ToolDef = {
-  id: 'studio.family', label: 'Family', icon: Component, gesture: { kind: 'point' }, options: FamilyPlaceOptions, space: turn,
+  id: 'studio.family', label: 'Family', icon: Component, gesture: {
+    kind: 'point',
+    ghost: (at) => { const s = usePlaceFamily.getState(); return placedEdges(ghostEdges, at, s.rotation, s.mirror); },
+  }, options: FamilyPlaceOptions, space: turn,
   complete: async ({ points }, ctx) => {
     const at = points[0];
     if (!at) return;
@@ -48,6 +56,19 @@ function FamilyPlaceOptions() {
   const { families } = useFamilies();
   const family = families.find((f) => f.id === s.familyId);
   useEffect(() => { if (families.length && !family) usePlaceFamily.setState({ familyId: families[0].id, values: {} }); }, [families, family]);
+  // The ghost's edges: asked again when the family, its values or the model change (typed values wait a moment), never on a mouse move.
+  const version = useSession((x) => x.version);
+  const typedKey = JSON.stringify(s.values);
+  useEffect(() => {
+    if (!family) { ghostEdges = []; redraw(); return; }
+    let live = true;
+    const timer = setTimeout(() => {
+      const values = valuesOf(family.def, s.values, (t) => parseLength(t));
+      void previewFamily({ id: family.id }, values).then((r) => { if (live) { ghostEdges = 'bodies' in r ? planEdges(r.bodies) : []; redraw(); } });
+    }, 250);
+    return () => { live = false; clearTimeout(timer); };
+  }, [family?.id, typedKey, version]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => { ghostEdges = []; }, []);
   // R and M while placing, unless a field has the key (taken before the command keys do).
   useEffect(() => {
     const on = (e: KeyboardEvent) => {

@@ -147,6 +147,61 @@ export function setPoint(def: FamilyDef, b: number, p: number, axis: 0 | 1, text
   return { ...def, bodies: replace(def.bodies, b, (x) => ({ ...x, points: replace(x.points, p, (pt) => (axis === 0 ? [parseCell(text), pt[1]] : [pt[0], parseCell(text)]) as [Cell, Cell]) })) };
 }
 
+/**
+ * A formula with every use of the name `oldKey` written `newKey`. Names are read as the engine's evaluator reads them (letters,
+ * digits, _ and dots, starting with a letter or _; case does not matter), so only a whole name is replaced: not a part of
+ * `W2`, `Width`, `attr.W` or `W_x`, not a function (`max(` is followed by a bracket), and not a number (`2e3`).
+ */
+export function renameInFormula(text: string, oldKey: string, newKey: string): string {
+  const old = oldKey.toLowerCase();
+  let out = '';
+  let i = 0;
+  while (i < text.length) {
+    const c = text[i];
+    if (/\d/.test(c) || (c === '.' && /\d/.test(text[i + 1] ?? ''))) {
+      // A number, with its exponent: 2e3, 1.5E-2.
+      let j = i;
+      while (j < text.length && /[\d.]/.test(text[j])) j++;
+      if (/[eE]/.test(text[j] ?? '') && (/\d/.test(text[j + 1] ?? '') || /[-+]/.test(text[j + 1] ?? ''))) { j += 2; while (j < text.length && /\d/.test(text[j])) j++; }
+      out += text.slice(i, j); i = j;
+    } else if (/[\p{L}_]/u.test(c)) {
+      let j = i;
+      while (j < text.length && /[\p{L}\p{N}_.]/u.test(text[j])) j++;
+      const word = text.slice(i, j);
+      const call = /^\s*\(/.test(text.slice(j));
+      out += !call && word.toLowerCase() === old ? newKey : word; i = j;
+    } else { out += c; i++; }
+  }
+  return out;
+}
+
+/** A cell with the name renamed (a number is left as it is). */
+const renameCell = (c: Cell, o: string, n: string): Cell => (typeof c === 'string' ? renameInFormula(c, o, n) : c);
+
+/**
+ * The definition with the parameter `oldKey` called `newKey`: the parameter's key, and every formula that names it (corners,
+ * holes, depth, offset, condition). Unchanged when the keys are the same, when no parameter has `oldKey`, or when another
+ * parameter already has `newKey` (case apart).
+ */
+export function renameKey(def: FamilyDef, oldKey: string, newKey: string): FamilyDef {
+  if (oldKey === newKey || !def.params.some((p) => p.key === oldKey)) return def;
+  if (def.params.some((p) => p.key !== oldKey && p.key.toLowerCase() === newKey.toLowerCase())) return def;
+  const r = (c: Cell) => renameCell(c, oldKey, newKey);
+  const pt = (p: [Cell, Cell]): [Cell, Cell] => [r(p[0]), r(p[1])];
+  return {
+    ...def,
+    params: def.params.map((p) => (p.key === oldKey ? { ...p, key: newKey } : p)),
+    bodies: def.bodies.map((b) => ({
+      ...b,
+      points: b.points.map(pt),
+      ...(b.holes ? { holes: b.holes.map((h) => h.map(pt)) } : {}),
+      depth: r(b.depth),
+      ...(b.offset ? { offset: b.offset.map(r) as [Cell, Cell, Cell] } : {}),
+      ...(b.when !== undefined ? { when: renameInFormula(b.when, oldKey, newKey) } : {}),
+    })),
+  };
+}
+
 /** The names a formula may use: the parameters' keys. */
 export const formulaNames = (def: FamilyDef): string[] => def.params.map((p) => p.key).filter(Boolean);
 
@@ -231,4 +286,32 @@ export function sketchSources(ids: string[], nodes: Map<string, SketchNode>): { 
   if (!mine.length) return null;
   const viewId = nodes.get(mine[0])!.props.viewId as string;
   return { viewId, ids: mine.filter((id) => nodes.get(id)!.props.viewId === viewId) };
+}
+
+// ------------------------------------------------------------ the ghost in a plan
+
+/** The bodies' edges seen from above, in the family's own frame: x, y only, each one once, those that stand on a point left out. */
+export function planEdges(bodies: PreviewBody[]): [number, number, number, number][] {
+  const seen = new Set<string>();
+  const out: [number, number, number, number][] = [];
+  for (const b of bodies) {
+    for (const e of b.edges) {
+      if (e.length < 4) continue;
+      const [x1, y1, x2, y2] = e.length >= 6 ? [e[0], e[1], e[3], e[4]] : [e[0], e[1], e[2], e[3]];
+      if (Math.hypot(x2 - x1, y2 - y1) < 1e-6) continue;
+      const a = `${x1.toFixed(5)},${y1.toFixed(5)}`, c = `${x2.toFixed(5)},${y2.toFixed(5)}`;
+      const key = a < c ? `${a}|${c}` : `${c}|${a}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push([round(x1), round(y1), round(x2), round(y2)]);
+    }
+  }
+  return out;
+}
+
+/** The plan edges standing at `at`: x flipped when mirrored, then turned `rotation` degrees (anticlockwise, y up), then moved. One segment each, [a, b]. */
+export function placedEdges(edges: [number, number, number, number][], at: { x: number; y: number }, rotation = 0, mirror = false): [{ x: number; y: number }, { x: number; y: number }][] {
+  const a = (rotation * Math.PI) / 180, cos = Math.cos(a), sin = Math.sin(a);
+  const P = (x: number, y: number) => { const fx = mirror ? -x : x; return { x: at.x + fx * cos - y * sin, y: at.y + fx * sin + y * cos }; };
+  return edges.map((e) => [P(e[0], e[1]), P(e[2], e[3])]);
 }

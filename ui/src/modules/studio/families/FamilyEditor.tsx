@@ -8,13 +8,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import { t as tr } from '../../../i18n';
+import { notify } from '../../../app/store';
 import { formatLength, parseLength } from '../../../engine/unitsStore';
 import { FORMULA_FUNCTIONS } from '../../../shell/formulaModel';
 import { MaterialPicker } from '../../core/MaterialPicker';
 import { previewFamily } from './familyApi';
 import {
   IFC_CLASSES, PARAM_KINDS, PARAM_KIND_LABELS, PLANES, PLANE_LABELS, addBody, addParam, addPoint, cellText, className, defaultFor, formulaNames, isFormula, keyProblem, parseCell, parseValue, removeBody,
-  removeParam, removePoint, setBody, setBodyOptional, setOffset, setParam, setPoint, sizeOf, valuesOf, wireframe,
+  removeParam, removePoint, renameKey, setBody, setBodyOptional, setOffset, setParam, setPoint, sizeOf, valuesOf, wireframe,
   type Cell, type FamilyDef, type PreviewBody,
 } from './familyModel';
 
@@ -27,6 +28,27 @@ export function CellInput({ value, onCommit, label, width = 64 }: { value: Cell 
       onChange={(e) => { setText(e.target.value); onCommit(e.target.value); }} />
   );
 }
+
+/**
+ * A parameter's key: typed freely, and committed on blur or Enter as one change. A new key that reads as a key and is not another
+ * parameter's renames the parameter and every formula that names it; else the sentence says why and the old key stays.
+ */
+function KeyInput({ value, index, problem, def, onChange }: { value: string; index: number; problem: string | null; def: FamilyDef; onChange: (d: FamilyDef) => void }) {
+  const [text, setText] = useState(value);
+  useEffect(() => setText(value), [value]);
+  const commit = () => {
+    const k = text.trim();
+    if (k === value) { setText(value); return; }
+    if (!k || k.length > 24 || !/^[A-Za-z][A-Za-z0-9_]*$/.test(k)) { notify(KEY_RULE); setText(value); return; }
+    if (def.params.some((p, i) => i !== index && p.key.toLowerCase() === k.toLowerCase())) { notify('Two parameters have this key.'); setText(value); return; }
+    onChange(renameKey(def, value, k));
+  };
+  return (
+    <input className={`mono fam-cell${problem ? ' bad' : ''}`} style={{ width: 90 }} value={text} title={problem ? tr(problem) : undefined} data-no-i18n data-fam-key={index}
+      onChange={(e) => setText(e.target.value)} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') commit(); }} />
+  );
+}
+const KEY_RULE = 'A key is letters and digits, starting with a letter (W, Height, HasShelf).';
 
 /** The wireframe, drawn from the engine's edges. */
 export function Wireframe({ bodies, width = 300, height = 190 }: { bodies: PreviewBody[]; width?: number; height?: number }) {
@@ -96,8 +118,7 @@ export function FamilyEditor({ def, onChange }: { def: FamilyDef; onChange: (d: 
             const problem = keyProblem(def, i);
             return (
               <tr key={i}>
-                <td><input className={`mono fam-cell${problem ? ' bad' : ''}`} style={{ width: 90 }} value={p.key} title={problem ? tr(problem) : undefined} data-no-i18n data-fam-key={i}
-                  onChange={(e) => onChange(setParam(def, i, { key: e.target.value }))} /></td>
+                <td><KeyInput value={p.key} index={i} problem={problem} def={def} onChange={onChange} /></td>
                 <td><input value={p.label} style={{ width: 130 }} data-no-i18n onChange={(e) => onChange(setParam(def, i, { label: e.target.value }))} /></td>
                 <td><select value={p.kind} onChange={(e) => { const kind = e.target.value as typeof p.kind; onChange(setParam(def, i, { kind, default: defaultFor(kind, p.default) })); }}>
                   {PARAM_KINDS.map((k) => <option key={k} value={k}>{PARAM_KIND_LABELS[k]}</option>)}</select></td>

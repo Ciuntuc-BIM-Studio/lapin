@@ -702,6 +702,11 @@ export function PlanView() {
         </g>
       );
     }
+    // A point tool's ghost: the outline of what the click would put down, at the cursor.
+    if (tool.gesture.kind === 'point' && tool.gesture.ghost) {
+      const lines = tool.gesture.ghost(cur);
+      if (lines.length) return <g className="plan-preview" data-testid="point-ghost">{lines.map((l, i) => <polyline key={i} fill="none" points={l.map(toScreen).map((p) => `${p.x},${p.y}`).join(' ')} />)}</g>;
+    }
     // The tool's own preview (a detour's bypass), when it has one for these points.
     const own = tool.gesture.kind === 'threePoints' && tool.gesture.preview && pts.length > 0 ? tool.gesture.preview(pts, cur) : null;
     if (own && own.length > 1) {

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   sketchSources, isClosedOutline, addBody, addParam, addPoint, blankFamily, cellText, className, formulaNames, freeKey, isoPoint, keyProblem, normaliseFamily, parseCell, parseValue, quickProblem,
-  removeParam, removePoint, setBodyOptional, setOffset, setParam, setPoint, sizeOf, valuesOf, wireframe,
+  removeParam, removePoint, renameInFormula, renameKey, planEdges, placedEdges, setBodyOptional, setOffset, setParam, setPoint, sizeOf, valuesOf, wireframe,
+  type FamilyDef, type PreviewBody,
 } from './familyModel';
 
 describe('a family cell', () => {
@@ -127,5 +128,97 @@ describe('a family from a sketch', () => {
   it('is made from one view\'s drafting', () => {
     expect(sketchSources(['c', 'e'], nodes)).toBeNull();
     expect(sketchSources(['a', 'c', 'b', 'd'], nodes)).toEqual({ viewId: 'plan:1', ids: ['a', 'b'] });
+  });
+});
+
+describe('renameInFormula', () => {
+  const r = (t: string) => renameInFormula(t, 'W', 'Width');
+  it('renames whole names', () => {
+    expect(r('W')).toBe('Width');
+    expect(r('W*2-T')).toBe('Width*2-T');
+    expect(r('T-W')).toBe('T-Width');
+    expect(r('if(W>1;W;0)')).toBe('if(Width>1;Width;0)');
+    expect(r('(W+W)/2')).toBe('(Width+Width)/2');
+    expect(r('max(W, 2)')).toBe('max(Width, 2)');
+  });
+  it('is case-insensitive like the evaluator', () => { expect(r('w + W')).toBe('Width + Width'); });
+  it('leaves longer names, dotted names and functions alone', () => {
+    expect(r('W2')).toBe('W2');
+    expect(r('Width')).toBe('Width');
+    expect(r('attr.W')).toBe('attr.W');
+    expect(r('W.x')).toBe('W.x');
+    expect(r('W_x * 2')).toBe('W_x * 2');
+    expect(r('_W')).toBe('_W');
+    expect(r('2W')).toBe('2Width');
+  });
+  it('leaves functions and numbers alone', () => {
+    expect(renameInFormula('max(1;2)', 'max', 'Top')).toBe('max(1;2)');
+    expect(renameInFormula('max + 1', 'max', 'Top')).toBe('Top + 1');
+    expect(renameInFormula('2e3 + E', 'e', 'Eps')).toBe('2e3 + Eps');
+    expect(renameInFormula('1.5E-2*E', 'E', 'Eps')).toBe('1.5E-2*Eps');
+    expect(renameInFormula('0.5', 'W', 'X')).toBe('0.5');
+  });
+});
+
+describe('renameKey', () => {
+  const def: FamilyDef = {
+    ifcClass: 'IfcBuildingElementProxy',
+    params: [{ key: 'W', label: 'Width', kind: 'length', default: 1 }, { key: 'T', label: 'T', kind: 'length', default: 0.1 }, { key: 'W2', label: 'W2', kind: 'length', default: 2 }],
+    bodies: [{
+      name: 'B', plane: 'xy', points: [[0, 0], ['W', 0], ['W*2-T', 'W2'], [0, 5]], holes: [[['W/2', 1], [2, 'w'], [3, 3]]],
+      depth: 'W - T', offset: [0, 'W', 0.5], when: 'W > 1 and W2 > 1',
+    }],
+  };
+  it('renames the key and every formula that uses it', () => {
+    const n = renameKey(def, 'W', 'Width');
+    expect(n.params.map((p) => p.key)).toEqual(['Width', 'T', 'W2']);
+    const b = n.bodies[0];
+    expect(b.points).toEqual([[0, 0], ['Width', 0], ['Width*2-T', 'W2'], [0, 5]]);
+    expect(b.holes).toEqual([[['Width/2', 1], [2, 'Width'], [3, 3]]]);
+    expect(b.depth).toBe('Width - T');
+    expect(b.offset).toEqual([0, 'Width', 0.5]);
+    expect(b.when).toBe('Width > 1 and W2 > 1');
+  });
+  it('does not mutate the original and keeps numbers numbers', () => {
+    const copy = JSON.stringify(def);
+    const n = renameKey(def, 'W', 'Width');
+    expect(JSON.stringify(def)).toBe(copy);
+    expect(n.bodies[0].points[0]).toEqual([0, 0]);
+  });
+  it('does nothing for the same key, an unknown key or a key another parameter has', () => {
+    expect(renameKey(def, 'W', 'W')).toBe(def);
+    expect(renameKey(def, 'Nope', 'X')).toBe(def);
+    expect(renameKey(def, 'W', 'w2')).toBe(def);
+    expect(renameKey(def, 'W', 't')).toBe(def);
+  });
+  it('can change only the case of a key', () => {
+    const n = renameKey(def, 'T', 't');
+    expect(n.params[1].key).toBe('t');
+    expect(n.bodies[0].depth).toBe('W - t');
+  });
+});
+
+describe('the ghost in a plan', () => {
+  const box: PreviewBody = { name: 'b', volume: 1, edges: [
+    [0, 0, 0, 2, 0, 0], [2, 0, 0, 2, 1, 0], [2, 1, 0, 0, 1, 0], [0, 1, 0, 0, 0, 0],
+    [0, 0, 1, 2, 0, 1], [2, 0, 1, 2, 1, 1], [2, 1, 1, 0, 1, 1], [0, 1, 1, 0, 0, 1],
+    [0, 0, 0, 0, 0, 1], [2, 0, 0, 2, 0, 1], [2, 1, 0, 2, 1, 1], [0, 1, 0, 0, 1, 1],
+  ] };
+  it('projects the edges, each once, and drops the vertical ones', () => {
+    const e = planEdges([box]);
+    expect(e).toHaveLength(4);
+  });
+  it('counts an edge once whichever way it runs', () => {
+    expect(planEdges([{ name: 'a', volume: 0, edges: [[0, 0, 0, 1, 0, 0], [1, 0, 5, 0, 0, 5]] }])).toHaveLength(1);
+  });
+  it('moves, turns and mirrors', () => {
+    const e: [number, number, number, number][] = [[0, 0, 2, 0]];
+    expect(placedEdges(e, { x: 10, y: 5 })).toEqual([[{ x: 10, y: 5 }, { x: 12, y: 5 }]]);
+    const t = placedEdges(e, { x: 10, y: 5 }, 90)[0];
+    expect(t[1].x).toBeCloseTo(10); expect(t[1].y).toBeCloseTo(7);
+    const m = placedEdges(e, { x: 10, y: 5 }, 0, true)[0];
+    expect(m[1].x).toBeCloseTo(8); expect(m[1].y).toBeCloseTo(5);
+    const mt = placedEdges(e, { x: 0, y: 0 }, 90, true)[0];
+    expect(mt[1].x).toBeCloseTo(0); expect(mt[1].y).toBeCloseTo(-2);
   });
 });
