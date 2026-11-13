@@ -9461,6 +9461,50 @@ export const scenes = [
       await t.shot('furniture-plan-symbol', { of: '[data-testid=plan]', pad: 0 });
     },
   },
+  {
+    // Visual graphs (decision 522, docs/plan-visual-graphs.md, stage 1): a graph of a series, two points and the Wall command
+    // (a row of three walls), kept in the project; View → Graphs opens it beside the plan; the engine's ghost shows the three
+    // walls in the plan before anything is made (the model untouched); Bake makes them in one undo step.
+    id: 'graphs',
+    touches: ['graphs', 'architecture', 'core'],
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const walls = async () => (await t.nodes()).filter((n) => n.type === 'IfcWall').length;
+      const N = (id, kind, x, y, values) => ({ id, kind, x, y, ...(values ? { values } : {}) });
+      const graph = {
+        format: 1,
+        nodes: [
+          N('n1', 'series', 20, 40, { start: 0, step: 4, count: 3 }),
+          N('n2', 'point', 260, 0),
+          N('n3', 'point', 260, 120, { y: 6 }),
+          N('n4', 'command:architecture.addWall', 500, 40, { height: 2.8 }),
+        ],
+        wires: [
+          { from: 'n1', out: 'list', to: 'n2', in: 'x' }, { from: 'n1', out: 'list', to: 'n3', in: 'x' },
+          { from: 'n2', out: 'point', to: 'n4', in: 'pt:1' }, { from: 'n3', out: 'point', to: 'n4', in: 'pt:2' },
+        ],
+      };
+      const name = say({ en: 'Row of walls', ro: 'Rând de pereți' }, t.lang);
+      const saved = await t.cmd('graphs.save', { name, graph });
+      t.expect(saved?.id, 'the graph is kept in the project');
+      await t.tool('graphs.panel');
+      await page.waitForSelector('[data-testid=graphs-view]', { timeout: 10_000 });
+      await page.evaluate(async (id) => (await import('/src/modules/graphs/store.ts')).openGraph(id), saved.id);
+      await page.waitForSelector('[data-graph-node=n4]', { timeout: 10_000 });
+      await t.until(async () => (await page.locator('[data-testid=graph-ghost-plan]').getAttribute('data-count').catch(() => null)) !== null, 'the ghost is drawn in the plan');
+      t.expect(await walls() === 0, 'the preview makes nothing in the model');
+      await page.locator('[data-graph-node=n4] .head').click();
+      await t.wait(600);
+      await t.shot('graphs-panel');
+      await page.locator('[data-action=graph-bake]').click();
+      await t.until(async () => (await walls()) === 3, 'Bake makes the three walls');
+      const doc = await page.evaluate(async () => (await import('/src/engine/session.ts')).useSession.getState().doc);
+      t.expect(doc?.undoLabel === 'Bake graph', `Bake is one undo step (${doc?.undoLabel})`);
+      await t.wait(800);
+      await t.shot('graphs-baked');
+    },
+  },
   // [scenes:C]
 ];
 

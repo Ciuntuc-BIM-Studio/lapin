@@ -82,6 +82,8 @@ export async function newGraph(): Promise<void> {
 }
 
 export function openGraph(id: string | null): void {
+  // The graph open already keeps its evaluation (opened again by a link or the guide, nothing changes).
+  if (id === useGraphs.getState().graphId) return;
   useGraphs.setState({ graphId: id, result: null });
   shareGhost(null);
 }
