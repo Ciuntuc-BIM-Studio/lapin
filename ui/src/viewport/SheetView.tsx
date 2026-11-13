@@ -12,6 +12,7 @@
  * stays put on the paper), what it shows slid inside it with Shift-drag, and
  * a view may be bound to one of its named boundaries (Annotate → View
  * boundary), which then gives its box; a pinned view stays where it is.
+ * A right-click on a view places it again at another scale beside itself, cropped to the part dragged on it (decision 547).
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -27,6 +28,9 @@ import type { PenDto } from './drawing';
 import { printSheet } from './printSheet';
 import { VIEW_DRAG } from '../shell/browserSets';
 import { ScalePicker, StructurePicker } from './ScaleChip';
+import { openContextMenu } from '../shell/ContextMenu';
+import { useStandards } from '../engine/unitsStore';
+import { otherScales, partOf, placeAgainLabel } from './placeAtScale';
 import { listSymbols, placeSymbol, rememberSymbol, type SymList } from '../modules/core/symbols/symbols';
 import { byCategory } from '../modules/core/symbols/symbolModel';
 import { currentNavStyle } from '../app/navStyleStore';
@@ -45,7 +49,9 @@ type Drag =
   /** A crop handle: which edges it moves (−1 the left or top, 1 the right or bottom, 0 neither). */
   | { kind: 'crop'; x: number; y: number; vp: Vp; ex: -1 | 0 | 1; ey: -1 | 0 | 1 }
   /** Shift-drag inside a view: what it shows slides in its box. */
-  | { kind: 'slide'; x: number; y: number; vp: Vp };
+  | { kind: 'slide'; x: number; y: number; vp: Vp }
+  /** The part of a view to place again at another scale, dragged on it (paper mm from where it started). */
+  | { kind: 'part'; x: number; y: number; vp: Vp; from: { x: number; y: number } };
 
 /** The crop handles: the corners and the edges' middles. */
 const CROP: [-1 | 0 | 1, -1 | 0 | 1][] = [[-1, -1], [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0]];
@@ -71,6 +77,10 @@ export function SheetView() {
   const [cropped, setCropped] = useState<{ id: string; x0: number; y0: number; x1: number; y1: number } | null>(null);
   const [slid, setSlid] = useState<{ id: string; dx: number; dy: number } | null>(null);
   const [active, setActive] = useState<string | null>(null);
+  // A view to place again at another scale (decision 547): the next drag on the paper is the part it shows; a click, its crop as it is.
+  const [placing, setPlacing] = useState<{ vp: Vp; scale: number } | null>(null);
+  const [part, setPart] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
+  const scales = useStandards((x) => x.scales);
   const [dropping, setDropping] = useState(false);
   // A symbol of the user's own, placed by the next click on the paper (docs/plan-user-extensibility.md §3).
   const [symbols, setSymbols] = useState<SymList>({ items: [], categories: [] });
@@ -254,7 +264,24 @@ export function SheetView() {
           const p = paperAt(e);
           void execute('sheet.addViewport', { id: sheet.id, viewId, x: p.x, y: p.y });
         }}
-        onKeyDown={(e) => { if (e.key === 'Escape' && placingSymbol) { setPlacingSymbol(null); e.stopPropagation(); } }}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape' && placingSymbol) { setPlacingSymbol(null); e.stopPropagation(); }
+          if (e.key === 'Escape' && placing) { setPlacing(null); setPart(null); notify(null); e.stopPropagation(); }
+        }}
+        onContextMenu={(e) => {
+          const vp = pick(paperAt(e));
+          if (!vp || vp.content) return;
+          e.preventDefault();
+          openContextMenu(e.clientX, e.clientY, otherScales(scales, vp.scale).map((scale) => ({
+            label: placeAgainLabel(scale),
+            onSelect: () => {
+              setActive(vp.id);
+              setPlacing({ vp, scale });
+              ref.current?.focus();
+              notify('Drag a rectangle on the view: the part to place beside it at the new scale (a click takes the view as cropped; Esc cancels).');
+            },
+          })));
+        }}
         onWheel={(e) => {
           const r = ref.current!.getBoundingClientRect();
           const now = performance.now();
@@ -266,6 +293,7 @@ export function SheetView() {
           if (middleTwice.current(e)) { fit(); return; }
           const p = paperAt(e);
           if (placingSymbol && e.button === 0) { void placeSymbol({ sheetId: sheet.id, symbolId: placingSymbol.id, at: [Math.round(p.x * 100) / 100, Math.round(p.y * 100) / 100] }).then((r) => { if (r?.id) select(r.id); }); return; }
+          if (placing && e.button === 0) { drag.current = { kind: 'part', x: e.clientX, y: e.clientY, vp: placing.vp, from: p }; (e.target as Element).setPointerCapture?.(e.pointerId); return; }
           const vp = pick(p);
           // A pinned view is picked, not moved: the drag pans the paper.
           if (vp && e.button === 0 && e.shiftKey && !vp.pinned && !vp.content) { drag.current = { kind: 'slide', x: e.clientX, y: e.clientY, vp }; setActive(vp.id); }
@@ -285,6 +313,7 @@ export function SheetView() {
             setCropped({ id: b.id, x0: b.x0 + (g.ex < 0 ? dx : 0), x1: b.x1 + (g.ex > 0 ? dx : 0), y0: b.y0 + (g.ey < 0 ? dy : 0), y1: b.y1 + (g.ey > 0 ? dy : 0) });
           }
           else if (g.kind === 'slide') setSlid({ id: g.vp.id, dx: (e.clientX - g.x) / v.k, dy: (e.clientY - g.y) / v.k });
+          else if (g.kind === 'part') setPart(partOf(g.from, paperAt(e)));
           else {
             const dx = (e.clientX - g.x) / v.k * g.side;
             setWidened({ id: g.vp.id, w: Math.max(60, (g.vp.x1 - g.vp.x0) + 2 * dx) });
@@ -297,6 +326,14 @@ export function SheetView() {
           if (g?.kind === 'width' && widened) void execute('sheet.updateViewport', { id: sheet.id, viewportId: g.vp.id, width: Math.round(widened.w) });
           if (g?.kind === 'crop' && cropped) void execute('sheet.cropViewport', { id: sheet.id, viewportId: g.vp.id, x0: cropped.x0, y0: cropped.y0, x1: cropped.x1, y1: cropped.y1 }).then(() => notify(null));
           if (g?.kind === 'slide' && slid && Math.hypot(slid.dx, slid.dy) > 0.5) void execute('sheet.panViewport', { id: sheet.id, viewportId: g.vp.id, dx: slid.dx, dy: slid.dy });
+          if (g?.kind === 'part' && placing) {
+            void execute('sheet.placeAtScale', { id: sheet.id, viewportId: placing.vp.id, scale: placing.scale, ...(part ?? {}) }).then((r) => {
+              const made = (r as { viewportId?: string } | null)?.viewportId;
+              if (made) { setActive(made); notify(null); }
+            });
+            setPlacing(null);
+            setPart(null);
+          }
           setMoved(null);
           setWidened(null);
           setCropped(null);
@@ -373,6 +410,7 @@ export function SheetView() {
                 </g>
               );
             })}
+            {part && (() => { const a = toScreen({ x: part.x0, y: part.y0 }); return <rect className="sheet-part" data-testid="sheet-place-part" x={a.x} y={a.y} width={(part.x1 - part.x0) * v.k} height={(part.y1 - part.y0) * v.k} fill="none" stroke="var(--accent, #2b7de9)" strokeDasharray="6 3" />; })()}
             {moved?.guides.map((g, i) => { const p = toScreen({ x: g[0], y: g[1] }), q = toScreen({ x: g[2], y: g[3] }); return <line key={i} className="sheet-guide" x1={p.x} y1={p.y} x2={q.x} y2={q.y} />; })}
             {showRemarks && <RemarksOverlay sheetId={sheet.id} toScreen={toScreen} k={v.k} />}
           </>

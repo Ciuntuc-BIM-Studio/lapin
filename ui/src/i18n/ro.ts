@@ -3461,6 +3461,12 @@ export const RO: Record<string, string> = {
   'Join automatically at this end': 'Îmbină automat la acest capăt',
   'Say which end: start, end or both.': 'Spune care capăt: începutul, sfârșitul sau amândouă.',
   'Select walls, beams or strip footings.': 'Selectează pereți, grinzi sau fundații continue.',
+  'Place again at another scale': 'Plasează din nou la altă scară',
+  'Drag a rectangle on the view: the part to place beside it at the new scale (a click takes the view as cropped; Esc cancels).': 'Trage un dreptunghi pe vedere: partea de plasat lângă ea la noua scară (un clic ia vederea așa cum e decupată; Esc anulează).',
+  'Give the scale.': 'Dă scara.',
+  'The view is on no sheet: place it on one first.': 'Vederea nu e pe nicio planșă: plaseaz-o întâi pe una.',
+  'A schedule has no scale.': 'Un tabel nu are scară.',
+  'Draw the part to show on the view.': 'Desenează pe vedere partea de arătat.',
 };
 
 /** Phrases with a number or a name in them. */
@@ -3756,4 +3762,5 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^(\d+) constraints dropped: (.+)$/, (m) => `${m[1]} constrângeri eliminate: ${m[2]}`],
   [/^Constraint left out: (.+)$/, (m) => `Constrângere lăsată deoparte: ${m[1]}`],
   [/^(\d+) constraints left out: (.+)$/, (m) => `${m[1]} constrângeri lăsate deoparte: ${m[2]}`],
+  [/^Place again at 1:([\d.]+)…$/, (m) => `Plasează din nou la 1:${m[1]}…`],
 ];

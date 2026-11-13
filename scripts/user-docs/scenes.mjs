@@ -6354,6 +6354,19 @@ export const scenes = [
       t.expect(bound?.boundary === boundary.id, 'the plan on the sheet shows its West wing boundary');
       { const b2 = await t.page.locator('[data-testid=sheet] .sheet-viewport.active > rect:first-child').first().boundingBox();
         await t.shot('sheet-view-boundary', { clip: { x: b2.x - 40, y: b2.y - 40, width: b2.width + 80, height: b2.height + 90 } }); }
+      // Placed again at another scale (the forum's topic #31, decision 547): the section right-clicked, at 1:50, a click taking it as cropped.
+      { const sec = await t.page.locator('[data-testid=sheet] .sheet-viewport > rect:first-child').nth(1).boundingBox();
+        await t.page.mouse.click(sec.x + sec.width / 2, sec.y + sec.height / 2, { button: 'right' });
+        await t.wait(300);
+        const item = t.page.getByRole('menuitem').filter({ hasText: /1:50…/ }).first();
+        t.expect(await item.count() === 1, 'a view\'s right-click offers to place it again at 1:50');
+        await item.click();
+        await t.page.mouse.click(sec.x + sec.width / 2, sec.y + sec.height / 2);
+        await t.wait(1200);
+        const again = (await t.nodes()).find((n) => n.type === 'LapinView' && n.props.scale === 50 && n.name.startsWith('A-A'));
+        t.expect(again && (await t.nodes()).find((n) => n.id === sheet.id)?.props?.viewports?.some((v) => v.viewId === again.id), 'the section is placed again at 1:50 on its sheet');
+        await t.fit();
+        await t.shot('sheet-place-again', { clip: { x: 250, y: 120, width: 1190, height: 730 } }); }
       await t.page.evaluate(() => { window.print = () => { window.__printed = true; }; });
       await t.page.locator('[data-testid=sheet-print]').click();
       await t.wait(600);

@@ -3465,6 +3465,12 @@ export const DE: Record<string, string> = {
   'Join automatically at this end': 'An diesem Ende automatisch verbinden',
   'Say which end: start, end or both.': 'Welches Ende: Anfang, Ende oder beide.',
   'Select walls, beams or strip footings.': 'Wände, Träger oder Streifenfundamente auswählen.',
+  'Place again at another scale': 'In einem anderen Maßstab erneut platzieren',
+  'Drag a rectangle on the view: the part to place beside it at the new scale (a click takes the view as cropped; Esc cancels).': 'Ein Rechteck auf der Ansicht aufziehen: der Teil, der daneben im neuen Maßstab platziert wird (ein Klick nimmt die Ansicht wie zugeschnitten; Esc bricht ab).',
+  'Give the scale.': 'Den Maßstab angeben.',
+  'The view is on no sheet: place it on one first.': 'Die Ansicht ist auf keinem Plan: zuerst auf einem platzieren.',
+  'A schedule has no scale.': 'Eine Liste hat keinen Maßstab.',
+  'Draw the part to show on the view.': 'Den zu zeigenden Teil auf der Ansicht zeichnen.',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -3762,4 +3768,5 @@ export const DE_PATTERNS: Language['patterns'] = [
   [/^(\d+) constraints dropped: (.+)$/, (m) => `${m[1]} Zwangsbedingungen entfernt: ${m[2]}`],
   [/^Constraint left out: (.+)$/, (m) => `Zwangsbedingung weggelassen: ${m[1]}`],
   [/^(\d+) constraints left out: (.+)$/, (m) => `${m[1]} Zwangsbedingungen weggelassen: ${m[2]}`],
+  [/^Place again at 1:([\d.]+)…$/, (m) => `Erneut platzieren in 1:${m[1]}…`],
 ];

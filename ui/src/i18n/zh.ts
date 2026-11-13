@@ -3457,6 +3457,12 @@ export const ZH: Record<string, string> = {
   'Join automatically at this end': '此端自动连接',
   'Say which end: start, end or both.': '请说明哪一端：起点、终点或两端。',
   'Select walls, beams or strip footings.': '请选择墙、梁或条形基础。',
+  'Place again at another scale': '以其他比例再次放置',
+  'Drag a rectangle on the view: the part to place beside it at the new scale (a click takes the view as cropped; Esc cancels).': '在视图上拖出一个矩形：以新比例放在其旁边的部分（单击则按当前裁剪的视图；Esc 取消）。',
+  'Give the scale.': '请给出比例。',
+  'The view is on no sheet: place it on one first.': '该视图不在任何图纸上：请先将其放到一张图纸上。',
+  'A schedule has no scale.': '明细表没有比例。',
+  'Draw the part to show on the view.': '请在视图上画出要显示的部分。',
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [
@@ -3751,4 +3757,5 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^(\d+) constraints dropped: (.+)$/, (m) => `已移除 ${m[1]} 个约束：${m[2]}`],
   [/^Constraint left out: (.+)$/, (m) => `已略去约束：${m[1]}`],
   [/^(\d+) constraints left out: (.+)$/, (m) => `已略去 ${m[1]} 个约束：${m[2]}`],
+  [/^Place again at 1:([\d.]+)…$/, (m) => `以 1:${m[1]} 再次放置…`],
 ];

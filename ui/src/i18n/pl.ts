@@ -3466,6 +3466,12 @@ export const PL: Record<string, string> = {
   'Join automatically at this end': 'Łącz automatycznie na tym końcu',
   'Say which end: start, end or both.': 'Podaj, który koniec: początek, koniec lub oba.',
   'Select walls, beams or strip footings.': 'Zaznacz ściany, belki lub ławy fundamentowe.',
+  'Place again at another scale': 'Umieść ponownie w innej skali',
+  'Drag a rectangle on the view: the part to place beside it at the new scale (a click takes the view as cropped; Esc cancels).': 'Przeciągnij prostokąt na widoku: część do umieszczenia obok w nowej skali (kliknięcie bierze widok tak, jak jest przycięty; Esc anuluje).',
+  'Give the scale.': 'Podaj skalę.',
+  'The view is on no sheet: place it on one first.': 'Widok nie jest na żadnym arkuszu: najpierw umieść go na jednym.',
+  'A schedule has no scale.': 'Zestawienie nie ma skali.',
+  'Draw the part to show on the view.': 'Narysuj na widoku część do pokazania.',
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {
@@ -3768,4 +3774,5 @@ export const PL_PATTERNS: Language['patterns'] = [
   [/^(\d+) constraints dropped: (.+)$/, (m) => `Usunięto więzy (${m[1]}): ${m[2]}`],
   [/^Constraint left out: (.+)$/, (m) => `Pominięto więz: ${m[1]}`],
   [/^(\d+) constraints left out: (.+)$/, (m) => `Pominięto więzy (${m[1]}): ${m[2]}`],
+  [/^Place again at 1:([\d.]+)…$/, (m) => `Umieść ponownie w skali 1:${m[1]}…`],
 ];

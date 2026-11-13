@@ -3468,6 +3468,12 @@ export const IT: Record<string, string> = {
   'Join automatically at this end': 'Unisci automaticamente a questa estremità',
   'Say which end: start, end or both.': 'Indica quale estremità: inizio, fine o entrambe.',
   'Select walls, beams or strip footings.': 'Seleziona muri, travi o fondazioni continue.',
+  'Place again at another scale': 'Posiziona di nuovo in un\'altra scala',
+  'Drag a rectangle on the view: the part to place beside it at the new scale (a click takes the view as cropped; Esc cancels).': 'Trascina un rettangolo sulla vista: la parte da posizionare accanto nella nuova scala (un clic prende la vista come ritagliata; Esc annulla).',
+  'Give the scale.': 'Indica la scala.',
+  'The view is on no sheet: place it on one first.': 'La vista non è su nessuna tavola: posizionala prima su una.',
+  'A schedule has no scale.': 'Un abaco non ha scala.',
+  'Draw the part to show on the view.': 'Disegna sulla vista la parte da mostrare.',
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 
@@ -3764,4 +3770,5 @@ export const IT_PATTERNS: Language['patterns'] = [
   [/^(\d+) constraints dropped: (.+)$/, (m) => `${m[1]} vincoli eliminati: ${m[2]}`],
   [/^Constraint left out: (.+)$/, (m) => `Vincolo escluso: ${m[1]}`],
   [/^(\d+) constraints left out: (.+)$/, (m) => `${m[1]} vincoli esclusi: ${m[2]}`],
+  [/^Place again at 1:([\d.]+)…$/, (m) => `Posiziona di nuovo in scala 1:${m[1]}…`],
 ];

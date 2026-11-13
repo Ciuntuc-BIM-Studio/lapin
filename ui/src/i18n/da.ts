@@ -3460,6 +3460,12 @@ export const DA: Record<string, string> = {
   'Join automatically at this end': 'Saml automatisk ved denne ende',
   'Say which end: start, end or both.': 'Angiv hvilken ende: start, slut eller begge.',
   'Select walls, beams or strip footings.': 'Vælg vægge, bjælker eller stribefundamenter.',
+  'Place again at another scale': 'Placér igen i et andet målforhold',
+  'Drag a rectangle on the view: the part to place beside it at the new scale (a click takes the view as cropped; Esc cancels).': 'Træk et rektangel på visningen: den del, der placeres ved siden af i det nye målforhold (et klik tager visningen som beskåret; Esc annullerer).',
+  'Give the scale.': 'Angiv målforholdet.',
+  'The view is on no sheet: place it on one first.': 'Visningen er ikke på nogen tegning: placér den først på en.',
+  'A schedule has no scale.': 'En liste har intet målforhold.',
+  'Draw the part to show on the view.': 'Tegn den del, der skal vises, på visningen.',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -3757,4 +3763,5 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^(\d+) constraints dropped: (.+)$/, (m) => `${m[1]} bånd fjernet: ${m[2]}`],
   [/^Constraint left out: (.+)$/, (m) => `Bånd udeladt: ${m[1]}`],
   [/^(\d+) constraints left out: (.+)$/, (m) => `${m[1]} bånd udeladt: ${m[2]}`],
+  [/^Place again at 1:([\d.]+)…$/, (m) => `Placér igen i 1:${m[1]}…`],
 ];

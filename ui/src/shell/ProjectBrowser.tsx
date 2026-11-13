@@ -27,6 +27,7 @@ import { createSiteView, SITE_PURPOSES, type SitePurpose } from '../modules/core
 import { countOpen } from '../modules/core/cde/pdfRemarks/remarks';
 import { formatLevel, useStandards } from '../engine/unitsStore';
 import { openDocuments, useDocumentsDialog } from '../modules/core/documents/documents';
+import { otherScales, placeAgainLabel, sheetOfView } from '../viewport/placeAtScale';
 
 const TAB_KEY = 'lapin.browser.tab';
 
@@ -118,14 +119,35 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
 
   // The level's own plan view is on while its plan is shown with none chosen (decision 386).
   const isPlanOn = (item: BrowserItem) => view === 'plan' && active?.id === item.storeyId && (active ? (ownPlanOf(nodes, active.id, ui.planViewId) ?? `plan:${active.id}`) === item.id : false);
-  // A section's or an elevation's right-click: open it, or show it in 3D (the model cut by it, its drawing on the cut; again: stop).
-  const drawingMenu = (item: BrowserItem) => (e: React.MouseEvent) => {
-    e.preventDefault();
-    const on = useSection3d.getState().viewId === item.id;
-    openContextMenu(e.clientX, e.clientY, [
-      { label: 'Open', icon: item.kind === 'section' ? <Scissors size={13} /> : <SquareStack size={13} />, onSelect: () => showDrawing(item.id) },
-      { label: 'Show in 3D', icon: <Box size={13} />, checked: on, onSelect: () => { toggleSection3d(item.id); if (!on && useUi.getState().view !== '3d') useUi.setState({ view: '3d' }); } },
-    ]);
+  // A view on a sheet: placed again at another scale beside itself there, as it is cropped (decision 547); its sheet opens.
+  const placeAgainItems = (item: BrowserItem) => {
+    if (!SHEETABLE.has(item.kind) || item.kind === 'schedule' || !sheetOfView(nodes, item.id)) return [];
+    const current = typeof item.node?.props.scale === 'number' ? item.node.props.scale : 100;
+    return otherScales(useStandards.getState().scales, current).map((scale) => ({
+      label: placeAgainLabel(scale),
+      onSelect: () => void execute('sheet.placeAtScale', { viewId: item.id, scale }).then((r) => {
+        const sheetId = (r as { sheetId?: string } | null)?.sheetId;
+        if (sheetId) showSheet(sheetId);
+      }),
+    }));
+  };
+  // A view's right-click: a section or an elevation opens, or shows in 3D (the model cut by it, its drawing on the cut; again:
+  // stop); a view on a sheet is placed again there at another scale.
+  const viewMenu = (item: BrowserItem) => {
+    const drawing = item.kind === 'section' || item.kind === 'elevation';
+    const again = placeAgainItems(item);
+    if (!drawing && again.length === 0) return undefined;
+    return (e: React.MouseEvent) => {
+      e.preventDefault();
+      const on = useSection3d.getState().viewId === item.id;
+      openContextMenu(e.clientX, e.clientY, [
+        ...(drawing ? [
+          { label: 'Open', icon: item.kind === 'section' ? <Scissors size={13} /> : <SquareStack size={13} />, onSelect: () => showDrawing(item.id) },
+          { label: 'Show in 3D', icon: <Box size={13} />, checked: on, onSelect: () => { toggleSection3d(item.id); if (!on && useUi.getState().view !== '3d') useUi.setState({ view: '3d' }); } },
+        ] : []),
+        ...again,
+      ]);
+    };
   };
   // A level's right-click: the 3D in front shows it alone, or with the levels below (report #29); it becomes the active level, which the 3D then follows.
   const levelMenu = (id: string) => (e: React.MouseEvent) => {
@@ -137,7 +159,7 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
   };
   const Row = ({ item, on, open, children }: { item: BrowserItem; on: boolean; open: () => void; children?: React.ReactNode }) => (
     <span className="tree-row">
-      <button type="button" className={`tree-item${on ? ' on' : ''}`} onClick={open} onContextMenu={item.kind === 'section' || item.kind === 'elevation' ? drawingMenu(item) : undefined}
+      <button type="button" className={`tree-item${on ? ' on' : ''}`} onClick={open} onContextMenu={viewMenu(item)}
         {...(SHEETABLE.has(item.kind) ? { draggable: true, onDragStart: (e: DragEvent) => { e.dataTransfer.setData(VIEW_DRAG, item.id); e.dataTransfer.effectAllowed = 'copy'; }, title: 'Drag onto an open sheet to place it there' } : {})}>{item.kind === 'sheet' ? `${String(item.node?.props.number ?? '')} · ${item.name}` : item.name}</button>
       {item.kind === 'sheet' && countOpen(nodes, item.id) > 0 && <span className="count remarks" title="Remarks read from PDFs, still open" data-testid="sheet-remark-count">{countOpen(nodes, item.id)}</span>}
       {children}

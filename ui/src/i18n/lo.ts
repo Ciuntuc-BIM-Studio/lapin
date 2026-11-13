@@ -3519,6 +3519,12 @@ export const LO: Record<string, string> = {
   'Join automatically at this end': 'ເຊື່ອມຕໍ່ອັດຕະໂນມັດທີ່ປາຍນີ້',
   'Say which end: start, end or both.': 'ບອກວ່າປາຍໃດ: ຈຸດເລີ່ມ, ຈຸດທ້າຍ ຫຼື ທັງສອງ.',
   'Select walls, beams or strip footings.': 'ເລືອກຝາ, ຄານ ຫຼື ຖານຮາກແບບແຖບ.',
+  'Place again at another scale': 'ວາງອີກຄັ້ງທີ່ມາດຕາສ່ວນອື່ນ',
+  'Drag a rectangle on the view: the part to place beside it at the new scale (a click takes the view as cropped; Esc cancels).': 'ລາກຮູບສີ່ຫຼ່ຽມໃສ່ມຸມມອງ: ສ່ວນທີ່ຈະວາງຂ້າງມັນໃນມາດຕາສ່ວນໃໝ່ (ຄລິກຈະເອົາມຸມມອງຕາມທີ່ຕັດໄວ້; Esc ຍົກເລີກ).',
+  'Give the scale.': 'ໃຫ້ມາດຕາສ່ວນ.',
+  'The view is on no sheet: place it on one first.': 'ມຸມມອງບໍ່ໄດ້ຢູ່ໃນແຜ່ນໃດ: ວາງມັນໃສ່ແຜ່ນໜຶ່ງກ່ອນ.',
+  'A schedule has no scale.': 'ຕາຕະລາງບໍ່ມີມາດຕາສ່ວນ.',
+  'Draw the part to show on the view.': 'ແຕ້ມສ່ວນທີ່ຈະສະແດງໃສ່ມຸມມອງ.',
 };
 
 /** Phrases with a number or a name in them. */
@@ -3814,4 +3820,5 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^(\d+) constraints dropped: (.+)$/, (m) => `ລຶບ ${m[1]} ຂໍ້ຈຳກັດແລ້ວ: ${m[2]}`],
   [/^Constraint left out: (.+)$/, (m) => `ຂ້າມຂໍ້ຈຳກັດ: ${m[1]}`],
   [/^(\d+) constraints left out: (.+)$/, (m) => `ຂ້າມ ${m[1]} ຂໍ້ຈຳກັດ: ${m[2]}`],
+  [/^Place again at 1:([\d.]+)…$/, (m) => `ວາງອີກຄັ້ງທີ່ 1:${m[1]}…`],
 ];

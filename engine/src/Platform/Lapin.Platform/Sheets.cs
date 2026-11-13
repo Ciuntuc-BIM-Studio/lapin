@@ -483,6 +483,74 @@ public static class Sheets
         return (vps, i, pl);
     }
 
+    /// <summary>
+    /// A view placed again at another scale (the forum's topic #31, decision 547), as a detail of it is drawn beside it: the
+    /// view duplicated with its annotations, at the scale asked, showing the part of the viewport given (a rectangle on the
+    /// paper, kept inside its box; none: the box as it is), on the same sheet beside it (to its right, else its left, below,
+    /// above, as the frame has room), all in one undo step. The original stays as it is, a pinned one too.
+    /// </summary>
+    public static JsonObject PlaceAtScale(ICommandContext ctx, JsonObject a)
+    {
+        var scale = Json.Number(a["scale"]) ?? throw new CommandException("Give the scale.");
+        if (!(scale >= 1 && scale <= 10000)) throw new CommandException("A scale is 1:1 to 1:10000.");
+        Entity sheet;
+        string vpId;
+        if ((string?)a["viewportId"] is { } given) (sheet, vpId) = (Require(ctx.Model, (string?)a["id"]), given);
+        else
+        {
+            var viewId = (string?)a["viewId"] ?? throw new CommandException("Which view?");
+            var on = ctx.Model.OfClass(Class).SelectMany(s => Viewports(s).Where(v => v.ViewId == viewId).Select(v => (Sheet: s, Vp: v))).FirstOrDefault();
+            if (on.Sheet == null) throw new CommandException("The view is on no sheet: place it on one first.");
+            (sheet, vpId) = (on.Sheet, on.Vp.Id);
+        }
+        var pl = Place(ctx.Query, sheet).FirstOrDefault(p => p.Viewport.Id == vpId) ?? throw new CommandException("The sheet has no such view.");
+        if (pl.Content) throw new CommandException("A schedule has no scale.");
+        var (x0, y0, x1, y1) = (Json.Number(a["x0"]) ?? pl.X0, Json.Number(a["y0"]) ?? pl.Y0, Json.Number(a["x1"]) ?? pl.X1, Json.Number(a["y1"]) ?? pl.Y1);
+        if (x1 < x0) (x0, x1) = (x1, x0);
+        if (y1 < y0) (y0, y1) = (y1, y0);
+        (x0, y0, x1, y1) = (Math.Max(x0, pl.X0), Math.Max(y0, pl.Y0), Math.Min(x1, pl.X1), Math.Min(y1, pl.Y1));
+        if (x1 - x0 < 1 || y1 - y0 < 1) throw new CommandException("Draw the part to show on the view.");
+        // The part's middle in the view's drawing, and its box at the new scale (paper mm grow as the scale's number falls).
+        var middle = pl.Middle + pl.FromPaper((x0 + x1) / 2 - pl.Viewport.X, (y0 + y1) / 2 - pl.Viewport.Y);
+        var f = pl.Drawing.Scale / scale;
+        var (w, h) = ((x1 - x0) * f, (y1 - y0) * f);
+        if (w < 10 || h < 10) throw new CommandException(FormattableString.Invariant($"At 1:{scale:0.##} the part would be under 10 mm across on the paper: draw a larger part, or a larger scale."));
+        var src = Views.Find(ctx.Model, pl.Viewport.ViewId)!;
+        // Named after it and its scale ("Ground floor 1:25"), a copy's name when that is taken.
+        var stem = FormattableString.Invariant($"{src.Name} 1:{scale:0.##}");
+        var name = (string?)a["name"] is { Length: > 0 } nm ? nm
+            : ctx.Model.OfClass(Views.Class).Any(v => v.Name == stem) ? Views.CopyName(ctx.Model, stem, Views.Class) : stem;
+        var (copy, _) = Views.Duplicate(ctx, pl.Viewport.ViewId, name, null, withDetailing: true);
+        var attrs = copy.CloneAttrs();
+        attrs["scale"] = scale;
+        ctx.Replace(copy.With(attrs: attrs));
+        var (x, y) = (Json.Number(a["x"]), Json.Number(a["y"]));
+        if (x == null || y == null)
+        {
+            var layout = TitleBlocks.Layout(ctx.Model, sheet);
+            var frame = layout.Frame;
+            const double gap = 10;
+            // Inside the frame, off the title block and the views already there.
+            var taken = Place(ctx.Query, sheet).Select(p => (p.X0, p.Y0, p.X1, p.Y1)).Append(layout.Block).ToList();
+            bool Fits(double cx, double cy) => cx - w / 2 >= frame.X0 && cx + w / 2 <= frame.X1 && cy - h / 2 >= frame.Y0 && cy + h / 2 <= frame.Y1
+                && !taken.Any(t => cx - w / 2 < t.X1 && cx + w / 2 > t.X0 && cy - h / 2 < t.Y1 && cy + h / 2 > t.Y0);
+            double Along(double c, double half, double lo, double hi) => Math.Clamp(c, lo + half, Math.Max(lo + half, hi - half));
+            var cy = Along(pl.Viewport.Y, h / 2, frame.Y0, frame.Y1);
+            var cx = Along(pl.Viewport.X, w / 2, frame.X0, frame.X1);
+            var spots = new (double X, double Y)[]
+            {
+                (pl.X1 + gap + w / 2, cy), (pl.X0 - gap - w / 2, cy), (cx, pl.Y1 + gap + h / 2), (cx, pl.Y0 - gap - h / 2),
+            };
+            var spot = spots.FirstOrDefault(s => Fits(s.X, s.Y), spots[0]);
+            (x, y) = (x ?? spot.X, y ?? spot.Y);
+        }
+        var vps = Viewports(sheet);
+        var vp = new SheetViewport(ctx.NewId(), copy.Id, x.Value, y.Value, w, h, middle);
+        vps.Add(vp);
+        Write(ctx, sheet, vps);
+        return new JsonObject { ["viewId"] = copy.Id, ["viewportId"] = vp.Id, ["sheetId"] = sheet.Id };
+    }
+
     static void SetBoundary(ICommandContext ctx, Entity b, Vec2 min, Vec2 max)
     {
         var attrs = b.CloneAttrs();
@@ -687,6 +755,11 @@ public static class Sheets
             }
             return null;
         });
+
+        // The same view again at another scale beside itself (the forum's topic #31, decision 547): {id, viewportId} (or {viewId}: the
+        // sheet it is on), {scale}, the part to show as a rectangle on the viewport {x0, y0, x1, y1} (paper mm; none: its box as it
+        // is), {x, y} where it goes (none: beside it), {name}. Returns {viewId, viewportId, sheetId}.
+        r.Command("sheet.placeAtScale", "Place again at another scale", (ctx, a) => Sheets.PlaceAtScale(ctx, a));
 
         r.Command("sheet.removeViewport", "Remove view from sheet", (ctx, a) =>
         {

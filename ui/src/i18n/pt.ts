@@ -3463,6 +3463,12 @@ export const PT: Record<string, string> = {
   'Join automatically at this end': 'Unir automaticamente nesta extremidade',
   'Say which end: start, end or both.': 'Diga qual extremidade: início, fim ou ambas.',
   'Select walls, beams or strip footings.': 'Selecione paredes, vigas ou sapatas corridas.',
+  'Place again at another scale': 'Colocar de novo noutra escala',
+  'Drag a rectangle on the view: the part to place beside it at the new scale (a click takes the view as cropped; Esc cancels).': 'Arraste um retângulo sobre a vista: a parte a colocar ao lado na nova escala (um clique usa a vista tal como está recortada; Esc cancela).',
+  'Give the scale.': 'Indique a escala.',
+  'The view is on no sheet: place it on one first.': 'A vista não está em nenhuma folha: coloque-a primeiro numa.',
+  'A schedule has no scale.': 'Uma tabela não tem escala.',
+  'Draw the part to show on the view.': 'Desenhe na vista a parte a mostrar.',
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 
@@ -3759,4 +3765,5 @@ export const PT_PATTERNS: Language['patterns'] = [
   [/^(\d+) constraints dropped: (.+)$/, (m) => `${m[1]} restrições removidas: ${m[2]}`],
   [/^Constraint left out: (.+)$/, (m) => `Restrição deixada de fora: ${m[1]}`],
   [/^(\d+) constraints left out: (.+)$/, (m) => `${m[1]} restrições deixadas de fora: ${m[2]}`],
+  [/^Place again at 1:([\d.]+)…$/, (m) => `Colocar de novo a 1:${m[1]}…`],
 ];

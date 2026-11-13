@@ -3465,6 +3465,12 @@ export const ES: Record<string, string> = {
   'Join automatically at this end': 'Unir automáticamente en este extremo',
   'Say which end: start, end or both.': 'Indica qué extremo: inicio, final o ambos.',
   'Select walls, beams or strip footings.': 'Selecciona muros, vigas o zapatas corridas.',
+  'Place again at another scale': 'Colocar de nuevo a otra escala',
+  'Drag a rectangle on the view: the part to place beside it at the new scale (a click takes the view as cropped; Esc cancels).': 'Arrastra un rectángulo sobre la vista: la parte que se coloca a su lado a la nueva escala (un clic toma la vista tal como está recortada; Esc cancela).',
+  'Give the scale.': 'Indica la escala.',
+  'The view is on no sheet: place it on one first.': 'La vista no está en ningún plano: colócala primero en uno.',
+  'A schedule has no scale.': 'Una tabla no tiene escala.',
+  'Draw the part to show on the view.': 'Dibuja sobre la vista la parte que se mostrará.',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -3762,4 +3768,5 @@ export const ES_PATTERNS: Language['patterns'] = [
   [/^(\d+) constraints dropped: (.+)$/, (m) => `${m[1]} restricciones eliminadas: ${m[2]}`],
   [/^Constraint left out: (.+)$/, (m) => `Restricción omitida: ${m[1]}`],
   [/^(\d+) constraints left out: (.+)$/, (m) => `${m[1]} restricciones omitidas: ${m[2]}`],
+  [/^Place again at 1:([\d.]+)…$/, (m) => `Colocar de nuevo a 1:${m[1]}…`],
 ];

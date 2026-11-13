@@ -3469,6 +3469,12 @@ export const FR: Record<string, string> = {
   'Join automatically at this end': 'Joindre automatiquement à cette extrémité',
   'Say which end: start, end or both.': 'Indiquez quelle extrémité : début, fin ou les deux.',
   'Select walls, beams or strip footings.': 'Sélectionnez des murs, des poutres ou des semelles filantes.',
+  'Place again at another scale': 'Placer à nouveau à une autre échelle',
+  'Drag a rectangle on the view: the part to place beside it at the new scale (a click takes the view as cropped; Esc cancels).': 'Tracez un rectangle sur la vue : la partie à placer à côté à la nouvelle échelle (un clic prend la vue telle que recadrée ; Échap annule).',
+  'Give the scale.': 'Indiquez l’échelle.',
+  'The view is on no sheet: place it on one first.': 'La vue n’est sur aucune feuille : placez-la d’abord sur une.',
+  'A schedule has no scale.': 'Une nomenclature n’a pas d’échelle.',
+  'Draw the part to show on the view.': 'Dessinez sur la vue la partie à montrer.',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;
@@ -3766,4 +3772,5 @@ export const FR_PATTERNS: Language['patterns'] = [
   [/^(\d+) constraints dropped: (.+)$/, (m) => `${m[1]} contraintes supprimées : ${m[2]}`],
   [/^Constraint left out: (.+)$/, (m) => `Contrainte laissée de côté : ${m[1]}`],
   [/^(\d+) constraints left out: (.+)$/, (m) => `${m[1]} contraintes laissées de côté : ${m[2]}`],
+  [/^Place again at 1:([\d.]+)…$/, (m) => `Placer à nouveau au 1:${m[1]}…`],
 ];
