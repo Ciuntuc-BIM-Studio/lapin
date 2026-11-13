@@ -9,6 +9,10 @@ describe('Ask Lapin', () => {
     expect(best('import of dwg/pdf should be allowed')).toBe('import-dwg-pdf');
     expect(best("Can't modify walls: I select a wall and try to drag a copy and nothing happens")).toBe('copy-move');
     expect(best('Material Joints not working in aligned walls')).toBe('material-joints');
+    // Forum topic #48.
+    expect(best('Cannot find Garage Doors: I want to use a garage door (steel sectional panel lift door - Australia) in my project')).toBe('garage-doors');
+    expect(best('roller door')).toBe('garage-doors');
+    expect(best('cum pun o usa de garaj')).toBe('garage-doors');
     expect(best('convert dxf file into a locked layer for guidance! I imported my dxf file. I want to lock the entire dxf file into a group')).toBe('dxf-locked-guide');
     expect(best('how to create 2 pane, 3 pane , 4 pane windows? I want to edit a 2 pane window to 2,3,4,6 pane windows with openable shutters.')).toBe('window-panels');
     expect(best('Window Safety grilles: it would be very cool to add window safety grilles to my windows as it is common in india')).toBe('window-dressings');

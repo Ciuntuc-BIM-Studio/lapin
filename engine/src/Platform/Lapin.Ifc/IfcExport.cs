@@ -1065,8 +1065,9 @@ public static partial class IfcExport
             string[] common = [gid, Null, S(name), Null, S(objectType), place, shape, S(tag)];
             var up = k.Class.ToUpperInvariant();
             // A door's operation: the joinery's terms, else what its type says (a gate's, decision of report #57).
-            var operation = E(terms?.Operation ?? operationOfType ?? "NOTDEFINED");
-            var userDefined = S(terms?.Operation == "USERDEFINED" ? terms.UserDefined : null);
+            var said = terms?.In(o.Ifc43);
+            var operation = E(said?.Operation ?? operationOfType ?? "NOTDEFINED");
+            var userDefined = S(said?.UserDefined);
             return k.Class switch
             {
                 IfcClass.Door => f.Add(up, [.. common, Opt(height), Opt(width), E(k.Predefined), operation, userDefined]),
@@ -1164,8 +1165,10 @@ public static partial class IfcExport
                 var name = mirrored ? $"{type.Name} (mirrored)" : type.Name;
                 string[] common = [gid, Null, S(name), Null, Null, L(sets), Null, S(type.Id), S(kind.Predefined == "USERDEFINED" ? kind.ObjectType : null)];
                 var up = typeClass.ToUpperInvariant();
-                var operation = E(terms?.Operation ?? type.Str("ifcOperation") ?? "NOTDEFINED");
-                var userDefined = S(terms?.Operation == "USERDEFINED" ? terms.UserDefined : type.Str("ifcOperation") == "USERDEFINED" ? type.Str("ifcUserOperation") : null);
+                // A door's operation in the schema written (a garage door's differs, decision 530).
+                var said = terms?.In(o.Ifc43);
+                var operation = E(said?.Operation ?? type.Str("ifcOperation") ?? "NOTDEFINED");
+                var userDefined = S(said != null ? said.Value.UserDefined : type.Str("ifcOperation") == "USERDEFINED" ? type.Str("ifcUserOperation") : null);
                 var r = kind.Class switch
                 {
                     IfcClass.Door => f.Add(up, [.. common, pre, operation, False, userDefined]),

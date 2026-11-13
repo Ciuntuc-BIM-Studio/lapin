@@ -1143,6 +1143,57 @@ export const scenes = [
     },
   },
   {
+    // Garage doors (a tester's request, forum topic #48: a steel sectional panel lift door): New garage door in the configurator,
+    // its kind, a common size and a wicket door; placed in a garage's front wall, in plan (its tracks dashed back to the
+    // backroom) and in 3D.
+    id: 'garage-door',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const outline = [[0, 0], [6, 0], [6, 7], [0, 7]];
+      const walls = [];
+      for (let i = 0; i < 4; i++) {
+        const [a, b] = [outline[i], outline[(i + 1) % 4]];
+        walls.push((await t.cmd('architecture.addWall', { storeyId: s, x1: a[0], y1: a[1], x2: b[0], y2: b[1] })).id);
+      }
+      await t.cmd('architecture.addSlab', { storeyId: s, points: outline });
+      await t.fit();
+      await t.tool('architecture.joineryTypes');
+      const dialog = t.page.locator('.dialog');
+      await dialog.locator('[data-action=new-garage-door]').click();
+      await dialog.locator('[data-testid=garage-fields]').waitFor({ timeout: 15000 });
+      await t.wait(600);
+      t.expect(await dialog.locator('select[data-field=garage-kind]').inputValue() === 'sectional-overhead', 'a new garage door is a sectional overhead door');
+      t.expect(await dialog.locator('select[data-field=garage-kind] option').count() === 5, 'five kinds of garage door');
+      t.expect(await dialog.locator('select[data-field=garage-size] option').count() >= 8, 'the common sizes offered');
+      await dialog.locator('select[data-field=garage-size]').selectOption({ label: '2700 × 2100 · AU' });
+      await dialog.locator('input[data-field=garage-wicket]').check();
+      await t.wait(900);
+      await dialog.locator('[data-testid=garage-fields]').evaluate((el) => el.scrollIntoView({ block: 'center' }));
+      await t.wait(500);
+      await t.shot('joinery-garage-door', { of: '.dialog', pad: 0 });
+      await dialog.locator('.btn.primary').first().click();
+      await t.wait(800);
+      await t.keys('Escape');
+      const type = (await t.nodes()).find((n) => n.type === 'IfcDoorType' && n.props?.spec?.panels?.[0]?.operation === 'sectional-overhead');
+      t.expect(type, 'the garage door type is saved');
+      t.expect(type?.props.spec.width === 2.7 && type?.props.spec.garage?.wicket === true, 'at 2700 × 2100 with its wicket door');
+      await t.cmd('architecture.addDoor', { wallId: walls[0], along: 3, typeId: type.id });
+      t.expect((await t.nodes()).some((n) => n.type === 'IfcDoor'), 'the garage door stands in the front wall');
+      await t.ui({ selection: null, selected: [] });
+      await t.fit();
+      await t.wait(1000);
+      const quiet = await t.page.addStyleTag({ content: '.hotbar, .hud-card { display: none !important }' });
+      await t.wait(300);
+      await t.shot('garage-door-plan', { of: '[data-testid=plan]', pad: 0 });
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 2.25, pitch: -0.22, distance: 11, target: { x: 3, y: 0, z: 1.3 } }, false));
+      await t.wait(1800);
+      await t.shot('garage-door-3d', { of: 'canvas', pad: 0 });
+      await quiet.evaluate((el) => el.remove());
+    },
+  },
+  {
     // Bay, bow and box windows (report #60): a bay window type from the configurator (New bay window, a bow style), placed
     // with the Bay window tool and by command, in plan (the projection, the roof dashed over it) and in 3D.
     id: 'bay-windows',
