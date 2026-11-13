@@ -20,13 +20,14 @@ namespace Lapin.Studio;
 /// because a storey's implicit plan has no entity, and so a view's other edits never touch its constraints. The carrier goes when
 /// its last constraint does.</para>
 ///
-/// <para><b>A constraint</b> is <c>{id, kind, refs: [{shape, part}], value?, formula?, driving}</c>: <c>shape</c> a drafted shape's id
+/// <para><b>A constraint</b> is <c>{id, kind, refs: [{shape, part}], value?, formula?, driving, place?}</c>: <c>shape</c> a drafted shape's id
 /// on the carrier's view, <c>part</c> one of <c>start</c>, <c>end</c>, <c>center</c> (points), <c>vertex:i</c> (a polyline's point),
 /// <c>edge:i</c> (a polyline's side), <c>whole</c> (a line's edge, a circle or an arc, or a polyline as a whole for <c>fix</c>). Lengths
 /// are metres; angles degrees, signed, counter-clockwise (one line: from the view's x axis; two: from the first to the second);
 /// <c>distanceX</c>/<c>distanceY</c> signed (a point from the sketch's origin, the second point from the first, a line's end from its
 /// start). A dimension (<see cref="ValueKinds"/>) is driving (its <c>value</c>, or a <c>formula</c> of the parameters of the part
-/// whose recipe uses the sketch, evaluated on every ask, never stored) or driven (a reference, measured).</para>
+/// whose recipe uses the sketch, evaluated on every ask, never stored) or driven (a reference, measured); its <c>place</c>, where
+/// it is drawn, is the user's (SketchConstraints.Place.cs), else the interface's.</para>
 /// </summary>
 public static partial class SketchConstraints
 {
@@ -275,12 +276,14 @@ public static partial class SketchConstraints
         if (!dimension)
         {
             if (c["value"] != null || c["formula"] != null) throw new CommandException($"{Label(kind)} takes no value.");
+            if (c["place"] != null) throw new CommandException($"{Label(kind)} has no place of its own; only a dimension is placed.");
             if (!driving) throw new CommandException($"{Label(kind)} is always driving; only a dimension may be driven.");
             c.Remove("driving");
             c["driving"] = true;
             return view!;
         }
         c["driving"] = driving;
+        CheckPlace(c, kind);
         var formula = ((string?)c["formula"])?.Trim();
         if (formula is { Length: 0 }) formula = null;
         if (formula != null && c["value"] != null) throw new CommandException("A dimension takes a value or a formula, not both.");
@@ -524,6 +527,7 @@ public static partial class SketchConstraints
                 if (item["value"] is { } value) c["value"] = Json.Number(value) is { } v ? v : value.DeepClone();
                 if ((string?)item["formula"] is { } formula) c["formula"] = formula;
                 if (item["driving"] is JsonValue dv && dv.TryGetValue<bool>(out var driving)) c["driving"] = driving;
+                if (item["place"] is JsonObject place) c["place"] = place.DeepClone();
                 var viewId = (string?)item["viewId"] ?? (string?)item["sketch"] ?? (string?)a["viewId"] ?? (string?)a["sketch"];
                 var view = Check(ctx.Model, c, viewId);
                 var id = ctx.NewId();
@@ -539,7 +543,8 @@ public static partial class SketchConstraints
             return Attach(ctx, many != null ? new JsonObject { ["ids"] = new JsonArray(ids.Select(x => (JsonNode)x).ToArray()) } : new JsonObject { ["id"] = ids[0] });
         });
 
-        // {id, value?, formula?, driving?}: a value takes the place of a formula and the other way round; null clears.
+        // {id, value?, formula?, driving?, place?}: a value takes the place of a formula and the other way round; null clears. A
+        // dimension's place ({offset, angle?}, §4.2; SketchConstraints.Place.cs) is where it is drawn; null: placed automatically.
         r.Command("updateConstraint", "Change constraint", (ctx, a) =>
         {
             var (carrier, list, i) = Find(ctx.Model, (string?)a["id"]);
@@ -548,6 +553,7 @@ public static partial class SketchConstraints
             if (a.ContainsKey("value")) { c.Remove("value"); if (a["value"] != null) { c["value"] = a["value"]!.DeepClone(); c.Remove("formula"); } }
             if (a.ContainsKey("formula")) { c.Remove("formula"); if (a["formula"] != null) { c["formula"] = a["formula"]!.DeepClone(); c.Remove("value"); } }
             if (a["driving"] != null) c["driving"] = a["driving"]!.DeepClone();
+            if (a.ContainsKey("place")) { c.Remove("place"); if (a["place"] != null) c["place"] = a["place"]!.DeepClone(); }
             Check(ctx.Model, c, view);
             list[i] = c;
             Write(ctx, view, list);
@@ -574,6 +580,7 @@ public static partial class SketchConstraints
 
         RegisterMapping(r);
         RegisterSolve(r);
+        RegisterDraw(r);
     }
 
     static JsonArray Query(IModelView m, string? viewId, JsonArray? shapeIds, string? elementId)

@@ -104,6 +104,9 @@ public static partial class SketchConstraints
                     Mode.Reshape => Reshaped(c, was, now, removed, changed, candidates),
                     _ => Geometric(c, was, now, removed, changed, candidates),
                 };
+                // A dimension's place follows a move, turn, mirror or scale of all its shapes; else it keeps its numbers.
+                if (mapped != null && mode == Mode.Transform && carry != null && Refs(c).All(r => changed.Contains(r.Shape)))
+                    CarryPlace(c, mapped, id => was.TryGetValue(id, out var w) ? w.Shape : null, id => now.TryGetValue(id, out var n) ? n.Shape : null, carry.T, carry.Scale);
                 if (mapped != null) kept.Add(mapped);
                 else Report(ctx).Dropped.Add(Dropped(c, reason ?? "it no longer holds"));
             }
@@ -385,6 +388,8 @@ public static partial class SketchConstraints
             var (copy, reason) = Carried(c, carry, pairs.Keys.ToHashSet(), r =>
                 (pairs[r.Shape], carry.T.Mirrored && arcs.Contains(r.Shape) ? r.Part switch { "start" => "end", "end" => "start", _ => r.Part } : r.Part));
             if (copy == null) { Report(ctx).Dropped.Add(Dropped(c, $"not copied: {reason}")); continue; }
+            Shape? InModel(string id) => ctx.Model.Get(id) is { } e ? Drafts.ShapeOf(e) : null;
+            CarryPlace(c, copy, InModel, InModel, carry.T, carry.Scale);
             copy["id"] = ctx.NewId();
             copies.Add(copy);
         }
