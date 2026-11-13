@@ -12,7 +12,7 @@ Constraints belong to the sketch and are saved with the project. They are not wr
 
 ## The Constraints tools
 
-**Studio → Constraints** has one tool for each kind. Each one asks for what it needs in the view: click a point, an edge, a circle or an arc. The part under the cursor is lit and named (*vertex*, *start*, *end*, *centre*, *edge*, *curve*), and it snaps as drawing does. When the picks are complete, the constraint is made and the tool stays on for the next one; **Esc** ends it.
+**Studio → Constraints** (the third group of the Studio tab, so it is whole on screen at 1440 px without scrolling the ribbon) has one tool for each kind. Each one asks for what it needs in the view: click a point, an edge, a circle or an arc. The part under the cursor is lit and named (*vertex*, *start*, *end*, *centre*, *edge*, *curve*), and it snaps as drawing does. When the picks are complete, the constraint is made and the tool stays on for the next one; **Esc** ends it.
 
 ![A tool lights the edge under the cursor and names it](shots/sketch-constraints-pick.webp)
 
@@ -92,7 +92,8 @@ In a sketch (a view whose shapes build a Studio solid, a view that already has c
 
 - an **endpoint** or **centre** snap makes the point coincident with it; a **midpoint** snap makes it the midpoint of that edge; **on edge**, **quadrant** and **intersection** put the point on the object; **perpendicular** puts it on the edge and makes the side perpendicular to it;
 - a side drawn along the **ortho** or a **polar** line is horizontal or vertical;
-- a length or angle you type becomes a driving dimension; a typed radius a radius;
+- a line drawn near another drafted line, in a direction within a few degrees of it, locks to it and shows a **Parallel** hint: the two sides are made parallel. A line begun on an arc or a circle and drawn along its tangent, or ending where it would just touch one, shows a **Tangent** hint and is made tangent to it (end to end when it begins at an end of the arc). Neither is offered with ortho on;
+- a length or angle you type becomes a driving dimension; a typed radius a radius; a rectangle typed as `@width,height` keeps both sizes as driving distances;
 - a rectangle is made of two horizontal and two vertical sides, and a line begun where the last one ended is joined to it.
 
 Hold **Ctrl** (⌘ on a Mac) on a click to place that point without constraints. The **CNSTR** switch in the command line turns the whole thing off and on. The constraints are added right after the shape, as a step of their own: one **Undo** takes them off and keeps the shape.

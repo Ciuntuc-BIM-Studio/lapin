@@ -61,13 +61,17 @@ export function isFinal(kind: string, picked: readonly RefKind[]): boolean {
   const have = letters(picked);
   return !(PATTERNS[kind] ?? []).some((p) => p.length > have.length && twoWays(p).some((q) => fitsPrefix(q, have)));
 }
-/** What the next pick should be, for the prompt (a word). */
-export function wanted(kind: string, picked: readonly RefKind[]): string {
+/** What the next pick may be, for the prompt (the words, each a phrase to translate). */
+export function wantedWords(kind: string, picked: readonly RefKind[]): string[] {
   const have = letters(picked);
   const next = new Set<string>();
   for (const p of PATTERNS[kind] ?? []) for (const q of twoWays(p)) if (fitsPrefix(q, have) && q.length > have.length) for (const l of q[have.length]) next.add(l);
   const words: Record<string, string> = { P: 'a point', L: 'a line', C: 'a circle or an arc', S: 'a polyline' };
-  return [...next].map((l) => words[l]).join(' or ') || 'nothing';
+  return [...next].map((l) => words[l]);
+}
+/** What the next pick should be, for the prompt (a word). */
+export function wanted(kind: string, picked: readonly RefKind[]): string {
+  return wantedWords(kind, picked).join(' or ') || 'nothing';
 }
 
 // ─── Parts of a shape ────────────────────────────────────────────────────────

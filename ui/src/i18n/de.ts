@@ -3275,6 +3275,29 @@ export const DE: Record<string, string> = {
   'Measured from': 'Gemessen von', 'Measured to': 'Gemessen bis', 'Wall start': 'Wandanfang', 'Meeting wall’s face': 'Fläche der anstoßenden Wand', 'Meeting wall’s core face': 'Kernfläche der anstoßenden Wand', 'Opening start': 'Anfang der Öffnung', 'Opening centre': 'Mitte der Öffnung', 'Opening end': 'Ende der Öffnung',
   // The type configurators' preview (decision 529)
   "Drawn by the engine, as the drawings draw it: a sample wall of the type with another joined to it in T. Hover a layer's row to light it up in all three.": "Von der Engine gezeichnet, wie die Zeichnungen sie zeichnen: eine Musterwand des Typs mit einer zweiten im T angeschlossen. Mit der Maus über die Zeile einer Schicht fahren, um sie in allen drei hervorzuheben.", "The sample wall's length": "Länge der Musterwand", "The sample wall's height; empty: as the type's top says, the storey above": "Höhe der Musterwand; leer: wie die Oberkante des Typs sagt, das Geschoss darüber", "The preview could not be drawn.": "Die Vorschau konnte nicht gezeichnet werden.",
+  // The CAD command line's prompts of the constraint tools
+  "{0}: pick {1} (Esc ends)": "{0}: {1} wählen (Esc beendet)",
+  "{0} takes {1}: nothing like that is drafted there.": "{0} nimmt {1}: dort ist nichts Derartiges gezeichnet.",
+  "Dimension: pick a second point or line, or Enter for the length (Esc ends)": "Bemaßung: zweiten Punkt oder zweite Linie wählen, oder Eingabe für die Länge (Esc beendet)",
+  "Dimension: pick a point, a line or a circle (Esc ends)": "Bemaßung: Punkt, Linie oder Kreis wählen (Esc beendet)",
+  "Dimension takes a point, a line, a circle or an arc: nothing like that is drafted there.": "Die Bemaßung nimmt einen Punkt, eine Linie, einen Kreis oder einen Bogen: dort ist nichts Derartiges gezeichnet.",
+  "{0} {1}: type a value, =formula, or Enter to keep it {2}": "{0} {1}: Wert, =Formel eingeben oder Eingabe zum Beibehalten {2}",
+  "a point": "einen Punkt",
+  "a line": "eine Linie",
+  "a circle or an arc": "einen Kreis oder einen Bogen",
+  "a polyline": "eine Polylinie",
+  "nothing more": "nichts weiter",
+  "or": "oder",
+  "Type a value, or =formula.": "Wert oder =Formel eingeben.",
+  "Type a formula after =.": "Nach = eine Formel eingeben.",
+  "An angle is a number of degrees.": "Ein Winkel ist eine Zahl in Grad.",
+  "A length is a number, with its unit if you like.": "Eine Länge ist eine Zahl, auf Wunsch mit Einheit.",
+  "A radius or a diameter is more than nothing.": "Ein Radius oder Durchmesser ist größer als null.",
+  "A distance is not negative.": "Ein Abstand ist nicht negativ.",
+  "vertex": "Ecke",
+  "edge": "Kante",
+  "curve": "Kurve",
+  "whole": "ganz",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

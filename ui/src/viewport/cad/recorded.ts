@@ -11,11 +11,12 @@ import type { Vec2 } from '../../platform/module';
 import { normAngleDeg, pointOf, type Ref } from './constraints';
 import { dist, nearestOnSegment, prims, type Shape } from './shapes';
 
-export type InferenceLock = 'ortho' | 'polar' | 'tracking';
+export type InferenceLock = 'ortho' | 'polar' | 'tracking' | 'parallel' | 'tangent';
 /** How a point was found: the snap that took it (and the drafted shape it is on), the line that held it. */
-export interface Inference { mode?: string; shapeId?: string; lock?: InferenceLock }
+/** `to`: with a parallel or tangent lock, the drafted side or curve that held the point. */
+export interface Inference { mode?: string; shapeId?: string; lock?: InferenceLock; to?: Ref }
 /** A point put down: where, how it was found, whether Ctrl held it free, what was typed for it (a length in metres, an angle in degrees). */
-export interface PlacedPoint { p: Vec2; inference: Inference | null; free: boolean; typed?: { length?: number; angle?: number } }
+export interface PlacedPoint { p: Vec2; inference: Inference | null; free: boolean; typed?: { length?: number; angle?: number; /** A rectangle's corner typed as @width,height. */ size?: { w: number; h: number } } }
 export interface Drawn { id: string; shape: Shape }
 export interface ConstraintSpec { kind: string; refs: Ref[]; value?: number }
 export interface DrawHints { rect?: boolean; radius?: number }
@@ -101,6 +102,11 @@ export function inferConstraints(drawn: Drawn, placed: readonly PlacedPoint[], w
   if (o.hints?.rect && s.type === 'polyline' && s.pts.length === 4 && s.closed) {
     const w = Math.abs(s.pts[1].x - s.pts[0].x), h = Math.abs(s.pts[3].y - s.pts[0].y);
     if (w > EPS && h > EPS) for (let i = 0; i < 4; i++) out.push({ kind: i % 2 === 0 ? 'horizontal' : 'vertical', refs: [mine(`edge:${i}`)] });
+    // Typed as @width,height: both are driving dimensions.
+    const size = at(s.pts[2])?.typed?.size;
+    if (size && size.w > EPS && size.h > EPS && Math.abs(size.w - w) < 1e-6 && Math.abs(size.h - h) < 1e-6) {
+      out.push({ kind: 'distance', refs: [mine('edge:0')], value: w }, { kind: 'distance', refs: [mine('edge:1')], value: h });
+    }
     return out;
   }
 
@@ -109,9 +115,22 @@ export function inferConstraints(drawn: Drawn, placed: readonly PlacedPoint[], w
     if (!pl || pl.free) continue;
     const dx = side.b.x - side.a.x, dy = side.b.y - side.a.y;
     let axis = false;
-    if (pl.inference?.lock) {
+    if (pl.inference?.lock && pl.inference.lock !== 'parallel' && pl.inference.lock !== 'tangent') {
       if (Math.abs(dy) < EPS && Math.abs(dx) > EPS) { out.push({ kind: 'horizontal', refs: [mine(side.part)] }); axis = true; }
       else if (Math.abs(dx) < EPS && Math.abs(dy) > EPS) { out.push({ kind: 'vertical', refs: [mine(side.part)] }); axis = true; }
+    }
+    // Held parallel to a drafted side, or tangent to a drafted arc or circle.
+    const inf = pl.inference;
+    if (inf?.lock === 'parallel' && inf.to) out.push({ kind: 'parallel', refs: [mine(side.part), inf.to] });
+    if (inf?.lock === 'tangent' && inf.to) {
+      const curve = world.get(inf.to.shape);
+      if (curve && (curve.type === 'circle' || curve.type === 'arc')) {
+        const on = (q: Vec2) => Math.abs(dist(q, curve.c) - curve.r) < 1e-6;
+        if (on(side.b)) out.push({ kind: 'pointOn', refs: [mine(side.endPart), { shape: inf.to.shape, part: 'whole' }] });
+        // A line begun at an end of the arc: the tangent is at the joint, end to end.
+        const joint = s.type === 'line' ? out.find((c) => c.kind === 'coincident' && c.refs[0].part === 'start' && c.refs[1].shape === inf.to!.shape && /^(start|end)$/.test(c.refs[1].part)) : undefined;
+        out.push(curve.type === 'arc' && joint ? { kind: 'tangent', refs: [joint.refs[0], joint.refs[1]] } : { kind: 'tangent', refs: [mine(side.part), inf.to] });
+      }
     }
     const t = pl.typed;
     if (t?.length != null && t.length > EPS) out.push({ kind: 'distance', refs: [mine(side.part)], value: t.length });

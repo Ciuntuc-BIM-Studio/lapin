@@ -3275,6 +3275,29 @@ export const RO: Record<string, string> = {
   'Measured from': 'Măsurat de la', 'Measured to': 'Măsurat până la', 'Wall start': 'Începutul peretelui', 'Meeting wall’s face': 'Fața peretelui care se întâlnește', 'Meeting wall’s core face': 'Fața miezului peretelui care se întâlnește', 'Opening start': 'Începutul golului', 'Opening centre': 'Centrul golului', 'Opening end': 'Sfârșitul golului',
   // The type configurators' preview (decision 529)
   "Drawn by the engine, as the drawings draw it: a sample wall of the type with another joined to it in T. Hover a layer's row to light it up in all three.": "Desenat de motor, cum îl desenează desenele: un perete-mostră de acest tip, cu altul îmbinat în T. Treceți cu mouse-ul peste rândul unui strat ca să-l evidențiați în toate trei.", "The sample wall's length": "Lungimea peretelui-mostră", "The sample wall's height; empty: as the type's top says, the storey above": "Înălțimea peretelui-mostră; goală: cum spune partea de sus a tipului, etajul de deasupra", "The preview could not be drawn.": "Previzualizarea nu a putut fi desenată.",
+  // The CAD command line's prompts of the constraint tools
+  "{0}: pick {1} (Esc ends)": "{0}: alege {1} (Esc încheie)",
+  "{0} takes {1}: nothing like that is drafted there.": "{0} primește {1}: nu e nimic asemănător desenat acolo.",
+  "Dimension: pick a second point or line, or Enter for the length (Esc ends)": "Cotă: alege un al doilea punct sau o a doua linie, sau Enter pentru lungime (Esc încheie)",
+  "Dimension: pick a point, a line or a circle (Esc ends)": "Cotă: alege un punct, o linie sau un cerc (Esc încheie)",
+  "Dimension takes a point, a line, a circle or an arc: nothing like that is drafted there.": "Cota primește un punct, o linie, un cerc sau un arc: nu e nimic asemănător desenat acolo.",
+  "{0} {1}: type a value, =formula, or Enter to keep it {2}": "{0} {1}: scrie o valoare, =formulă sau Enter ca s-o păstrezi {2}",
+  "a point": "un punct",
+  "a line": "o linie",
+  "a circle or an arc": "un cerc sau un arc",
+  "a polyline": "o polilinie",
+  "nothing more": "nimic mai mult",
+  "or": "sau",
+  "Type a value, or =formula.": "Scrie o valoare sau =formulă.",
+  "Type a formula after =.": "Scrie o formulă după =.",
+  "An angle is a number of degrees.": "Un unghi e un număr de grade.",
+  "A length is a number, with its unit if you like.": "O lungime e un număr, cu unitatea ei dacă vrei.",
+  "A radius or a diameter is more than nothing.": "O rază sau un diametru e mai mare decât zero.",
+  "A distance is not negative.": "O distanță nu e negativă.",
+  "vertex": "vârf",
+  "edge": "muchie",
+  "curve": "curbă",
+  "whole": "întreg",
 };
 
 /** Phrases with a number or a name in them. */

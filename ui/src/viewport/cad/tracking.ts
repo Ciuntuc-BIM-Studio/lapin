@@ -8,7 +8,7 @@
 
 import type { Vec2 } from '../../platform/module';
 
-export interface Guide { from: Vec2; to: Vec2; kind: 'h' | 'v' | 'polar' }
+export interface Guide { from: Vec2; to: Vec2; kind: 'h' | 'v' | 'polar' | 'parallel' | 'tangent' }
 export interface Tracked { point: Vec2; guides: Guide[] }
 
 /**

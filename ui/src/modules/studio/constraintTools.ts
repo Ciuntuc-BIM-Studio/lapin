@@ -5,15 +5,17 @@
  * Escape ends it. A dimension then asks for its value: a number (with its unit), `=formula`, Enter for what it measures now.
  */
 
-import { ArrowRightLeft, ArrowUpDown, CornerDownRight, Crosshair, Dot, Equal, FlipHorizontal2, Lock, Menu, MoveHorizontal, MoveVertical, Spline, SquareDot } from 'lucide-react';
+import { ArrowRightLeft, ArrowUpDown, CornerDownRight, Crosshair, Equal, FlipHorizontal2, Lock, Menu, MoveHorizontal, MoveVertical, Spline, SquareDot } from 'lucide-react';
 import type { ToolDef, Vec2 } from '../../platform/module';
 import { execute, useSession } from '../../engine/session';
 import { lengthText, parseLength } from '../../engine/unitsStore';
-import { AngleIcon, DiameterIcon, DimensionIcon, RadiusIcon } from '../../icons';
+import { AngleIcon, CoincidentIcon, DiameterIcon, DimensionIcon, RadiusIcon } from '../../icons';
 import {
-  candidatesAt, choose, dimensionFor, dimensionIsFinal, dimensionText, isComplete, isFinal, measure, parseDimensionInput, partLabel, pointOf, segmentOf, wanted,
+  candidatesAt, choose, dimensionFor, dimensionIsFinal, dimensionText, isComplete, isFinal, measure, parseDimensionInput, partLabel, pointOf, segmentOf, wantedWords,
   PATTERNS, type Candidate, type Ref, type RefKind,
 } from '../../viewport/cad/constraints';
+import { orList, tp } from '../../viewport/cad/prompts';
+import { t } from '../../i18n';
 import { cadHost, cadLog, registerCommand, startCommand, useCad, type Step } from '../../viewport/cad/session';
 import type { Shape } from '../../viewport/cad/shapes';
 
@@ -24,7 +26,7 @@ interface ToolKind { kind: string; label: string; icon: ToolDef['icon']; command
 
 /** The geometric constraints, in the ribbon's order. */
 export const GEOMETRIC: ToolKind[] = [
-  { kind: 'coincident', label: 'Coincident', icon: Dot, command: 'CNCOINCIDENT', shortcut: 'CNC' },
+  { kind: 'coincident', label: 'Coincident', icon: CoincidentIcon, command: 'CNCOINCIDENT', shortcut: 'CNC' },
   { kind: 'pointOn', label: 'Point on object', icon: Crosshair, command: 'CNPOINTON', shortcut: 'CNO' },
   { kind: 'horizontal', label: 'Horizontal', icon: MoveHorizontal, command: 'CNHORIZONTAL', shortcut: 'CNH' },
   { kind: 'vertical', label: 'Vertical', icon: MoveVertical, command: 'CNVERTICAL', shortcut: 'CNV' },
@@ -46,10 +48,12 @@ export const DIMENSIONS: ToolKind[] = [
   { kind: 'angle', label: 'Angle', icon: AngleIcon, command: 'CNANGLE', shortcut: 'CDA' },
 ];
 
-const label = (kind: string) => [...GEOMETRIC, ...DIMENSIONS].find((t) => t.kind === kind)?.label ?? kind;
+const label = (kind: string) => [...GEOMETRIC, ...DIMENSIONS].find((x) => x.kind === kind)?.label ?? kind;
+/** What the next pick may be, in the language chosen. */
+const wanted = (kind: string, picked: readonly RefKind[]) => orList(wantedWords(kind, picked)) || t('nothing');
 
 /** Why a pick was not taken, in the command line. */
-const refuse = (kind: string, picks: readonly Pick[]) => cadLog(`${label(kind)} takes ${wanted(kind, picks.map((p) => p.kind)) || 'nothing more'}: nothing like that is drafted there.`);
+const refuse = (kind: string, picks: readonly Pick[]) => cadLog(tp('{0} takes {1}: nothing like that is drafted there.', t(label(kind)), orList(wantedWords(kind, picks.map((p) => p.kind))) || t('nothing more')));
 
 /** Every shape within reach of a click, each with the parts the click may mean. */
 function foundAt(at: Vec2): { shape: string; candidates: Candidate[]; geometry: Shape }[] {
@@ -98,12 +102,12 @@ async function apply(kind: string, picks: readonly Pick[], extra: { value?: numb
 function constrain(kind: string): Step {
   const picks: Pick[] = [];
   const next = (): Step => ({
-    prompt: `${label(kind)}: pick ${wanted(kind, picks.map((p) => p.kind))} (Esc ends)`, want: 'pick',
+    prompt: tp('{0}: pick {1} (Esc ends)', t(label(kind)), wanted(kind, picks.map((p) => p.kind))), want: 'pick',
     preview: (c) => {
       const s = scaleOf(), h = pickAt(kind, picks, c);
       return [...picks, ...(h ? [h] : [])].flatMap((p) => lit(p, s));
     },
-    labels: (c) => { const h = pickAt(kind, picks, c); return h ? [{ at: c, text: partLabel(h.kind, h.ref.part) }] : []; },
+    labels: (c) => { const h = pickAt(kind, picks, c); return h ? [{ at: c, text: t(partLabel(h.kind, h.ref.part)) }] : []; },
     pick: async (_hit, at) => {
       const p = pickAt(kind, picks, where(at));
       if (!p) { refuse(kind, picks); return next(); }
@@ -128,14 +132,14 @@ function valueStep(kind: string, picks: Pick[], alternatives: string[], smart = 
   const make = async (extra: { value?: number; formula?: string; driving?: boolean }) => { await apply(kind, picks, extra); return smart ? dimension() : dimensionOf(kind); };
   const again = (k: string): Step => valueStep(k, picks, [kind, ...alternatives].filter((x) => x !== k), smart);
   return {
-    prompt: `${label(kind)} ${shown}: type a value, =formula, or Enter to keep it [Driven${alt ? `/${alt}` : ''}]`, want: 'text',
-    text: async (t) => {
-      const word = t.trim().toUpperCase();
+    prompt: tp('{0} {1}: type a value, =formula, or Enter to keep it {2}', t(label(kind)), shown, `[Driven${alt ? `/${alt}` : ''}]`), want: 'text',
+    text: async (input) => {
+      const word = input.trim().toUpperCase();
       const swap = { X: 'distanceX', Y: 'distanceY', D: 'diameter', R: 'radius' }[word];
       if (swap && (alternatives.includes(swap) || swap === kind)) return again(swap);
       if (word === 'DRIVEN' || word === 'REF') return measured == null ? null : make({ value: measured, driving: false });
-      const r = parseDimensionInput(t, kind, parseLength);
-      if ('error' in r) { cadLog(r.error); return valueStep(kind, picks, alternatives, smart); }
+      const r = parseDimensionInput(input, kind, parseLength);
+      if ('error' in r) { cadLog(t(r.error)); return valueStep(kind, picks, alternatives, smart); }
       return make('formula' in r ? { formula: r.formula } : { value: r.value });
     },
     enter: () => (measured == null ? null : make({ value: measured })),
@@ -150,12 +154,12 @@ function dimension(): Step {
   const fine = (k: RefKind[]) => (k.length === 1 ? k[0] !== 'shape' : dimensionFor(k) != null);
   const done = (): Step => { const d = dimensionFor(kinds()); return d ? valueStep(d.kind, picks, d.alternatives, true) : dimension(); };
   const next = (): Step => ({
-    prompt: picks.length ? 'Dimension: pick a second point or line, or Enter for the length (Esc ends)' : 'Dimension: pick a point, a line or a circle (Esc ends)', want: 'pick',
+    prompt: t(picks.length ? 'Dimension: pick a second point or line, or Enter for the length (Esc ends)' : 'Dimension: pick a point, a line or a circle (Esc ends)'), want: 'pick',
     preview: (c) => { const s = scaleOf(), h = pickAt('dimension', picks, c, fine); return [...picks, ...(h ? [h] : [])].flatMap((p) => lit(p, s)); },
-    labels: (c) => { const h = pickAt('dimension', picks, c, fine); return h ? [{ at: c, text: partLabel(h.kind, h.ref.part) }] : []; },
+    labels: (c) => { const h = pickAt('dimension', picks, c, fine); return h ? [{ at: c, text: t(partLabel(h.kind, h.ref.part)) }] : []; },
     pick: (_hit, at) => {
       const p = pickAt('dimension', picks, where(at), fine);
-      if (!p) { cadLog('Dimension takes a point, a line, a circle or an arc: nothing like that is drafted there.'); return next(); }
+      if (!p) { cadLog(t('Dimension takes a point, a line, a circle or an arc: nothing like that is drafted there.')); return next(); }
       picks.push(p);
       return dimensionIsFinal(kinds()) ? done() : next();
     },
@@ -169,9 +173,9 @@ function dimensionOf(kind: string): Step {
   const picks: Pick[] = [];
   const kindsOf = () => picks.map((p) => p.kind);
   const next = (): Step => ({
-    prompt: `${label(kind)}: pick ${wanted(kind, kindsOf())} (Esc ends)`, want: 'pick',
+    prompt: tp('{0}: pick {1} (Esc ends)', t(label(kind)), wanted(kind, kindsOf())), want: 'pick',
     preview: (c) => { const s = scaleOf(), h = pickAt(kind, picks, c); return [...picks, ...(h ? [h] : [])].flatMap((p) => lit(p, s)); },
-    labels: (c) => { const h = pickAt(kind, picks, c); return h ? [{ at: c, text: partLabel(h.kind, h.ref.part) }] : []; },
+    labels: (c) => { const h = pickAt(kind, picks, c); return h ? [{ at: c, text: t(partLabel(h.kind, h.ref.part)) }] : []; },
     pick: (_hit, at) => {
       const p = pickAt(kind, picks, where(at));
       if (!p) { refuse(kind, picks); return next(); }
