@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { reverseLayers } from './reverseLayers';
+import { moveLayer, reverseLayers } from './reverseLayers';
 import { dropStash, openMaterialsFrom, returnToDialog, takeStash } from '../core/dialogReturn';
 import { useUi } from '../../app/store';
 
@@ -32,5 +32,19 @@ describe('the way out to Materials and back', () => {
     dropStash();
     expect(takeStash('slabTypes')).toBeNull();
     expect(useUi.getState().returnTo).toBeNull();
+  });
+});
+
+describe('Move a layer', () => {
+  const rows = ['Finish', 'Screed', 'Concrete'];
+  it('swaps the layer with its neighbour and leaves the input untouched', () => {
+    expect(moveLayer(rows, 1, -1)).toEqual(['Screed', 'Finish', 'Concrete']);
+    expect(moveLayer(rows, 1, 1)).toEqual(['Finish', 'Concrete', 'Screed']);
+    expect(rows).toEqual(['Finish', 'Screed', 'Concrete']);
+  });
+  it('does nothing past either end', () => {
+    expect(moveLayer(rows, 0, -1)).toEqual(rows);
+    expect(moveLayer(rows, 2, 1)).toEqual(rows);
+    expect(moveLayer(rows, 5, 1)).toEqual(rows);
   });
 });

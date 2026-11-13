@@ -1,7 +1,7 @@
 /** Floor types: the project's IfcSlabTypes and their layers, top to bottom. Saving is one engine command; every floor of the type follows. */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Plus, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { materialName, ofClass, relatedOf, typeLayers } from '../../engine/model';
@@ -16,6 +16,8 @@ import { deleteType } from '../core/deleteType';
 import { SaveTypeToLibrary } from '../core/SaveTypeToLibrary';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { TypeFiles } from './TypeFiles';
+import { moveLayer, reverseLayers } from './reverseLayers';
+import { t } from '../../i18n';
 
 /** A layer as the editor holds it: the thickness in metres; its priority (null: its material's, else 50 for the core and 0 for the rest) and category (null: its material's). */
 interface Row { material: string; thickness: number; core: boolean; note?: string; priority?: number | null; category?: string | null }
@@ -52,6 +54,10 @@ export function SlabTypesDialog() {
       priority: typeof l.priority === 'number' ? l.priority : null, category: flagsOf(l).category })));
   }, [editing]);
   const set = (i: number, patch: Partial<Row>) => setRows(rows.map((r, k) => (k === i ? { ...r, ...patch } : patch.core ? { ...r, core: false } : r)));
+  const move = (i: number, d: number) => setRows(moveLayer(rows, i, d));
+  const reverse = () => {
+    if (window.confirm(t('Reverse the order of the layers? Once the type is saved, the floors of this type turn over: the top layer goes to the underside.'))) setRows(reverseLayers(rows));
+  };
   // Its priority and category kept when saved (a floor's layers were saved without the priority before).
   const layers = rows.map((r) => ({ material: r.material.trim(), thickness: r.thickness, core: r.core, ...(r.note?.trim() ? { note: r.note.trim() } : {}),
     ...(r.priority != null ? { priority: r.priority } : {}), ...flagsJson({ category: r.category ?? null, down: false, up: false }, false) }));
@@ -92,13 +98,17 @@ export function SlabTypesDialog() {
                       title={PRIORITY_TIP} onCommit={(n) => set(i, { priority: n })} /></td>
                     <td><LayerCategory value={r.category ?? null} onChange={(category) => set(i, { category })} /></td>
                     <td><Cell className="layer-note" testId="layer-note" value={r.note ?? ''} placeholder="—" title="How the layer is laid in this build-up (a build-up tag writes it)" onCommit={(t) => set(i, { note: t })} /></td>
-                    <td className="row-tools"><button type="button" className="icon mini" title="Remove" onClick={() => setRows(rows.filter((_, k) => k !== i))}><Trash2 size={12} /></button></td>
+                    <td className="row-tools">
+                      <button type="button" className="icon mini" data-testid="layer-up" title="Move layer up" aria-label="Move layer up" disabled={i === 0} onClick={() => move(i, -1)}><ArrowUp size={12} /></button>
+                      <button type="button" className="icon mini" data-testid="layer-down" title="Move layer down" aria-label="Move layer down" disabled={i === rows.length - 1} onClick={() => move(i, 1)}><ArrowDown size={12} /></button>
+                      <button type="button" className="icon mini" title="Remove" onClick={() => setRows(rows.filter((_, k) => k !== i))}><Trash2 size={12} /></button></td>
                   </tr>
                 ))}
               </tbody>
             </table>
             <div className="row">
               <button type="button" className="btn" onClick={() => setRows([...rows, { material: 'Insulation', thickness: 0.05, core: false }])}><Plus size={14} />Layer</button>
+              <button type="button" className="btn" data-testid="reverse-layers" title="Run the layers the other way: the top layer goes to the underside. Floors of the type follow once it is saved" disabled={rows.length < 2} onClick={reverse}><ArrowUpDown size={14} />Reverse layers</button>
               <span className="grow" />
               {editing && <SaveTypeToLibrary ids={[editing]} />}
               {editing && <button type="button" className="btn" title="Delete the type (refused while elements use it)" onClick={() => void deleteType(editing).then((ok) => { if (ok) setEditing(null); })}><Trash2 size={14} />Delete type</button>}
