@@ -85,14 +85,15 @@ public sealed class SketchConstraintStoreTests
         Assert.Equal([0.0, 0.0], c["refs"]![0]!["a"]!.AsArray().Select(x => (double)x!).ToArray());
         Assert.Equal([2.0, 0.0], c["refs"]![0]!["b"]!.AsArray().Select(x => (double)x!).ToArray());
 
-        // A dimension: its value, what it measures now.
+        // A dimension: its value, what it measures now (the sketch solved by stage C1: the line made 3 m long).
         var d = Add(f, "distance", 3, R(l));
         Assert.Equal(3, (double)One(f, plan, d)["value"]!);
-        Assert.Equal(2, (double)One(f, plan, d)["measured"]!, 9);
-        // Point on object given line first: written point first.
+        Assert.Equal(3, (double)One(f, plan, d)["measured"]!, 9);
+        // Point on object given line first: written point first; the point resolved where the solve put it, on the line.
         var on = Add(f, "pointOn", R(l), R(p, "start"));
         Assert.Equal([(p, "start"), (l, "whole")], Refs(One(f, plan, on)));
-        Assert.Equal([1.0, 1.0], One(f, plan, on)["refs"]![0]!["at"]!.AsArray().Select(x => (double)x!).ToArray());
+        var at = One(f, plan, on)["refs"]![0]!["at"]!.AsArray().Select(x => (double)x!).ToArray();
+        Assert.Equal((double)One(f, plan, on)["refs"]![1]!["a"]![1]!, at[1], 9);
 
         // Changed: a value, a formula of numbers alone (the sketch belongs to no part), driven.
         f.Run("studio.updateConstraint", new JsonObject { ["id"] = d, ["value"] = 2.5 });
@@ -488,9 +489,10 @@ public sealed class SketchConstraintStoreTests
         var f = F();
         var plan = Plan(f);
         var poly = Poly(f, plan, false, (0, 0), (1, 0), (1, 1));
-        var c = Add(f, "fix", R(poly, "vertex:2"));
+        var c = Add(f, "distanceY", 1, R(poly, "vertex:2"));
         var keep = Add(f, "horizontal", R(poly, "edge:0"));
-        // A grip edit that keeps its points keeps them; one that takes a point away finds the rest again by geometry.
+        // A grip edit that keeps its points keeps them (the vertex moved along what holds it); one that takes a point away finds the
+        // rest again by geometry.
         f.Run("drafting.updateDraft", new JsonObject { ["id"] = poly, ["shape"] = new JsonObject { ["type"] = "polyline", ["pts"] = new JsonArray(J(0, 0), J(1, 0), J(1.5, 1)), ["closed"] = false } });
         Assert.Equal([(poly, "vertex:2")], Refs(One(f, plan, c)));
         var r = f.Run("drafting.updateDraft", new JsonObject { ["id"] = poly, ["shape"] = new JsonObject { ["type"] = "polyline", ["pts"] = new JsonArray(J(0, 0), J(1, 0)), ["closed"] = false } })!;

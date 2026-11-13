@@ -75,8 +75,10 @@ public static partial class SketchConstraints
     static string Key(Shape s) => s.ToJson().ToJsonString();
 
     /// <summary>Each constrained sketch the command changed: its constraints carried onto what its shapes are now.</summary>
-    internal static void Remap(ICommandContext ctx, Snapshot before, Mode mode, Carry? carry = null)
+    internal static void Remap(ICommandContext ctx, Snapshot before, Mode mode, Carry? carry = null, bool lenient = false)
     {
+        // What the solve wrote in this command is its own (C1): never taken for a user's edit, so it is not solved again.
+        var solved = Report(ctx).Solved;
         foreach (var (view, was) in before.Shapes)
         {
             var now = new Dictionary<string, (Shape Shape, string Name)>();
@@ -84,7 +86,8 @@ public static partial class SketchConstraints
             foreach (var e in Drafts.On(ctx.Model, view))
                 if (e.Attrs["hatch"] == null && Drafts.ShapeOf(e) is { } s) { now[e.Id] = (s, e.Name); order.Add(e.Id); }
             var removed = was.Keys.Where(id => !now.ContainsKey(id)).ToHashSet();
-            var changed = was.Keys.Where(id => now.TryGetValue(id, out var n) && Key(n.Shape) != Key(was[id].Shape)).ToHashSet();
+            var changed = was.Keys.Where(id => now.TryGetValue(id, out var n) && Key(n.Shape) is var k && k != Key(was[id].Shape)
+                && !(solved.TryGetValue(id, out var mine) && mine == k)).ToHashSet();
             var added = order.Where(id => !was.ContainsKey(id)).ToList();
             var list = before.Constraints.GetValueOrDefault(view) ?? [];
             if (carry is { Copy: true }) CopyWithin(ctx, view, list, Pairs(carry, was, now, added), carry);
@@ -106,7 +109,10 @@ public static partial class SketchConstraints
             }
             if (mode == Mode.Geometric) KeepCorners(ctx, view, was, now, candidates, list, kept);
             Write(ctx, view, kept);
-            AfterChange(ctx, view);
+            // The user's edit as drag goals: the shapes it changed, from where they were. A whole sketch moved, turned or scaled
+            // keeps its constraints carried and needs no solve.
+            var whole = mode == Mode.Transform && kept.SelectMany(Refs).All(r => changed.Contains(r.Shape));
+            AfterChange(ctx, view, changed.ToDictionary(id => id, id => was[id].Shape), lenient, solve: !whole);
         }
     }
 
@@ -469,7 +475,7 @@ public static partial class SketchConstraints
                     var copy = (string?)args["op"] == "copy" || args["copy"] is JsonValue cv && cv.TryGetValue<bool>(out var cb) && cb;
                     Remap(ctx, before, Mode.Transform, new Carry(t, 1, copy, Args.Ids(args), o.Copies));
                 }
-                else Remap(ctx, before, Replacing.Contains(command) ? Mode.Geometric : Mode.Reshape);
+                else Remap(ctx, before, Replacing.Contains(command) ? Mode.Geometric : Mode.Reshape, lenient: command == "element.delete");
             }
             return Attach(ctx, result);
         }

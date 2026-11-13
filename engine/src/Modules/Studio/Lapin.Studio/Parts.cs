@@ -426,8 +426,9 @@ public static class Parts
                 {
                     ["id"] = $"body:{i}", ["name"] = name, ["plane"] = plane, ["shapeIds"] = new JsonArray(),
                     ["points"] = b["points"]?.DeepClone(), ["frame"] = FrameJson(place(off), dir(u), dir(v), dir(n)),
-                    // A body's corners stay formulas until the upgrade of §9 makes them a drafted sketch with fix and distanceX/Y constraints.
-                    ["constraintCount"] = 0, ["constraints"] = new JsonArray(),
+                    // A body's corners stay formulas until the upgrade of §9 makes them a drafted sketch with fix and distanceX/Y constraints:
+                    // every corner given, nothing left free.
+                    ["constraintCount"] = 0, ["constraints"] = new JsonArray(), ["status"] = "solved", ["dof"] = 0,
                 });
                 var step = new JsonObject { ["index"] = k++, ["kind"] = "extrude", ["label"] = name, ["sketch"] = $"body:{i}" };
                 if (b["when"] is { } when)
@@ -476,6 +477,12 @@ public static class Parts
                 var constraints = draft?.Str("viewId") is { } vid ? SketchConstraints.Touching(m, vid, shapeIds) : [];
                 o["constraintCount"] = constraints.Count;
                 o["constraints"] = constraints;
+                // How it stands (C1): derived on every ask, for the degrees-of-freedom chip.
+                if (draft?.Str("viewId") is { } sv && SketchConstraints.StatusOf(m, sv, shapeIds) is { } st)
+                {
+                    o["status"] = st["status"]?.DeepClone();
+                    o["dof"] = st["dof"]?.DeepClone();
+                }
                 sketches.Add((JsonNode)o);
             }
             steps.Add((JsonNode)new JsonObject { ["index"] = k++, ["kind"] = op, ["label"] = OperationLabel(op) });

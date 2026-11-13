@@ -10,7 +10,8 @@ namespace Lapin.Studio;
 
 /// <summary>
 /// Sketch constraints, stage C0 of decision 520 (docs/plan-studio-parametric.md §4): stored, checked, resolved for drawing, and
-/// carried through the drafting commands that replace shapes. The solve comes with stage C1 (<see cref="AfterChange"/>).
+/// carried through the drafting commands that replace shapes; solved inside each command by stage C1 (<see cref="AfterChange"/>,
+/// SketchConstraints.Solve.cs).
 ///
 /// <para><b>The carrier.</b> A sketch is the drafted shapes on one view (a plan, a section, an elevation, a reference plane, a
 /// storey's implicit plan <c>plan:&lt;storey&gt;</c>); its constraints are kept by one <see cref="Class"/> entity per view,
@@ -264,6 +265,8 @@ public static partial class SketchConstraints
         // Tangent end to end: the ends of lines, arcs or polylines, never a centre.
         if (kind == "tangent" && found[0].Kind == RefKind.Point && found.Any(f => f.Part == "center")) throw new CommandException("Tangent end to end takes the ends of two shapes, not a centre.");
         if (kind == "tangent" && found[0].Kind == RefKind.Point && found[0].Shape == found[1].Shape) throw new CommandException("Tangent end to end takes the ends of two shapes.");
+        // ... and an end the solver can make tangent: a line's, an arc's or an open polyline's, an arc among them (C1).
+        if (kind == "tangent" && found[0].Kind == RefKind.Point) CheckTangentEnds(m, found);
         c["kind"] = kind;
         c["refs"] = RefsJson(found.Select(f => (f.Shape, f.Part)));
 
@@ -299,7 +302,7 @@ public static partial class SketchConstraints
         else if (driving) throw new CommandException($"A driving {Label(kind).ToLowerInvariant()} needs its value or a formula.");
         if (c["value"] != null || formula != null)
         {
-            var v = Value(c, ParamsOf(m, view!));
+            var v = formula != null ? Value(c, ParamsOf(m, view!)) : Json.Number(c["value"])!.Value;
             switch (kind)
             {
                 case "distance" when v < 0: throw new CommandException("A distance is not negative.");
@@ -421,12 +424,15 @@ public static partial class SketchConstraints
     // ------------------------------------------------------------ the seam for the solver
 
     /// <summary>
-    /// After a command changed a sketch or its constraints, in the same undo step: today the constraints are checked against the
-    /// shapes as they are (one whose shape or part is gone is dropped, with the reason in the command's report). Stage C1 solves
-    /// here: the sketch's shapes and constraints to the solver (<c>Lapin.Geometry/Constraints</c>), the shapes written back with
-    /// <see cref="Drafts.Set"/>, so the solids built from them rebuild as they already do.
+    /// After a command changed a sketch or its constraints, in the same undo step: the constraints are checked against the shapes as
+    /// they are (one whose shape or part is gone is dropped, with the reason in the command's report), then the sketch is solved
+    /// (stage C1, SketchConstraints.Solve.cs): its shapes and constraints to the solver (<c>Lapin.Geometry/Constraints</c>), the shapes
+    /// written back with <see cref="Drafts.Set"/>, so the solids built from them rebuild as they already do.
+    /// <paramref name="editedFrom"/>: the shapes a user's edit changed, as they were before it (their moved points become drag
+    /// goals); <paramref name="lenient"/>: a command that must go through (a delete), a failed solve told, not refused;
+    /// <paramref name="solve"/> false: checked only (a whole sketch moved, its constraints carried).
     /// </summary>
-    internal static void AfterChange(ICommandContext ctx, string viewId)
+    internal static void AfterChange(ICommandContext ctx, string viewId, IReadOnlyDictionary<string, Shape>? editedFrom = null, bool lenient = false, bool solve = true)
     {
         var list = ListOf(CarrierOf(ctx.Model, viewId));
         if (list.Count == 0) return;
@@ -437,6 +443,7 @@ public static partial class SketchConstraints
             else kept.Add(c);
         }
         if (kept.Count != list.Count) Write(ctx, viewId, kept);
+        if (solve && kept.Count > 0) Solve(ctx, viewId, kept, editedFrom, lenient);
     }
 
     /// <summary>Why a stored constraint no longer holds together (a shape gone, a part it no longer has, its refs no longer of its kind's sorts); null when it does.</summary>
@@ -465,6 +472,10 @@ public static partial class SketchConstraints
         /// <summary>element.transform's own placement and copies, told by <see cref="TransformWatch"/>.</summary>
         public Placement2D? Transform { get; set; }
         public IReadOnlyDictionary<string, string>? Copies { get; set; }
+        /// <summary>The shapes the solve wrote in this command, as written: the follow-up takes them for the solve's, not a user's edit.</summary>
+        public Dictionary<string, string> Solved { get; } = [];
+        /// <summary>A sketch a delete left unsolvable: how it stands, told in the result.</summary>
+        public JsonObject? Sketch { get; set; }
     }
 
     static readonly ConditionalWeakTable<ICommandContext, Outcome> Outcomes = new();
@@ -474,7 +485,7 @@ public static partial class SketchConstraints
     /// <summary>The command's result with what happened to constraints: <c>dropped: [{id, kind, reason}]</c>, <c>constraintsCopied</c>, <c>constraintsAdded</c>.</summary>
     internal static JsonNode? Attach(ICommandContext ctx, JsonNode? result)
     {
-        if (!Outcomes.TryGetValue(ctx, out var o) || o.Dropped.Count == 0 && o.Added.Count == 0 && o.Copied == 0) return result;
+        if (!Outcomes.TryGetValue(ctx, out var o) || o.Dropped.Count == 0 && o.Added.Count == 0 && o.Copied == 0 && o.Sketch == null) return result;
         if (result is not JsonObject r)
         {
             if (result != null) return result;
@@ -483,6 +494,7 @@ public static partial class SketchConstraints
         if (o.Dropped.Count > 0) r["dropped"] = new JsonArray(o.Dropped.Select(d => (JsonNode)d.DeepClone()).ToArray());
         if (o.Copied > 0) r["constraintsCopied"] = o.Copied;
         if (o.Added.Count > 0) r["constraintsAdded"] = new JsonArray(o.Added.Select(x => (JsonNode)x).ToArray());
+        if (o.Sketch != null) r["sketch"] = o.Sketch.DeepClone();
         return r;
     }
 
@@ -492,23 +504,39 @@ public static partial class SketchConstraints
     {
         r.Class(new(Class, "Sketch constraints", [], "#8a94a6", Kind: "resource", Template: false));
 
-        // {viewId?, kind, refs: [{shape, part}], value?, formula?, driving?} → {id}.
+        // {viewId?, kind, refs: [{shape, part}], value?, formula?, driving?} → {id}; or {constraints: [{…}, …]} → {ids}, all in one
+        // step and one solve (what drawing records at once, C2). The sketch is solved: a constraint that conflicts is refused.
         r.Command("addConstraint", "Constraint", (ctx, a) =>
         {
-            var c = new JsonObject { ["kind"] = (string?)a["kind"], ["refs"] = (a["refs"] as JsonArray)?.DeepClone() };
-            if (a["value"] is { } value) c["value"] = Json.Number(value) is { } v ? v : value.DeepClone();
-            if ((string?)a["formula"] is { } formula) c["formula"] = formula;
-            if (a["driving"] is JsonValue dv && dv.TryGetValue<bool>(out var driving)) c["driving"] = driving;
-            var viewId = (string?)a["viewId"] ?? (string?)a["sketch"];
-            var view = Check(ctx.Model, c, viewId);
-            var id = ctx.NewId();
-            var stored = new JsonObject { ["id"] = id };
-            foreach (var (k, v) in c) stored[k] = v?.DeepClone();
-            var list = ListOf(CarrierOf(ctx.Model, view));
-            list.Add(stored);
-            Write(ctx, view, list);
-            AfterChange(ctx, view);
-            return Attach(ctx, new JsonObject { ["id"] = id });
+            var many = a["constraints"] as JsonArray;
+            var items = many?.Select(x => x as JsonObject ?? throw new CommandException("Each constraint is {kind, refs, …}.")).ToList()
+                ?? [new JsonObject
+                {
+                    ["kind"] = (string?)a["kind"], ["refs"] = (a["refs"] as JsonArray)?.DeepClone(), ["value"] = a["value"]?.DeepClone(), ["formula"] = (string?)a["formula"],
+                    ["driving"] = a["driving"] is JsonValue one && one.TryGetValue<bool>(out var drives) ? drives : null,
+                }];
+            if (items.Count == 0) throw new CommandException("Which constraints?");
+            var ids = new List<string>();
+            var views = new List<string>();
+            foreach (var item in items)
+            {
+                var c = new JsonObject { ["kind"] = (string?)item["kind"], ["refs"] = (item["refs"] as JsonArray)?.DeepClone() };
+                if (item["value"] is { } value) c["value"] = Json.Number(value) is { } v ? v : value.DeepClone();
+                if ((string?)item["formula"] is { } formula) c["formula"] = formula;
+                if (item["driving"] is JsonValue dv && dv.TryGetValue<bool>(out var driving)) c["driving"] = driving;
+                var viewId = (string?)item["viewId"] ?? (string?)item["sketch"] ?? (string?)a["viewId"] ?? (string?)a["sketch"];
+                var view = Check(ctx.Model, c, viewId);
+                var id = ctx.NewId();
+                var stored = new JsonObject { ["id"] = id };
+                foreach (var (k, v) in c) stored[k] = v?.DeepClone();
+                var list = ListOf(CarrierOf(ctx.Model, view));
+                list.Add(stored);
+                Write(ctx, view, list);
+                ids.Add(id);
+                if (!views.Contains(view)) views.Add(view);
+            }
+            foreach (var view in views) AfterChange(ctx, view);
+            return Attach(ctx, many != null ? new JsonObject { ["ids"] = new JsonArray(ids.Select(x => (JsonNode)x).ToArray()) } : new JsonObject { ["id"] = ids[0] });
         });
 
         // {id, value?, formula?, driving?}: a value takes the place of a formula and the other way round; null clears.
@@ -527,7 +555,7 @@ public static partial class SketchConstraints
             return Attach(ctx, null);
         });
 
-        // {ids} or {id}.
+        // {ids} or {id}: always goes through (no solve: what is left held before).
         r.Command("removeConstraint", "Remove constraint", (ctx, a) =>
         {
             var ids = Args.Ids(a);
@@ -545,6 +573,7 @@ public static partial class SketchConstraints
         r.Query("constraints", (q, a) => new JsonObject { ["constraints"] = Query(q.Model, (string?)a["viewId"], a["shapeIds"] as JsonArray, (string?)a["elementId"]) });
 
         RegisterMapping(r);
+        RegisterSolve(r);
     }
 
     static JsonArray Query(IModelView m, string? viewId, JsonArray? shapeIds, string? elementId)
