@@ -902,6 +902,7 @@ export const RO: Record<string, string> = {
   'The layer new shapes go on': 'Layerul pe care merg formele noi', 'Mode': 'Mod', 'Snap': 'Snap',
   'Length': 'Lungime', 'Layers run': 'Straturile merg', 'as drawn': 'cum s-a desenat', 'reversed': 'inversat', 'Flip': 'Întoarce', '(no phase)': '(fără fază)', '(stays)': '(rămâne)',
   'Dimensions': 'Dimensiuni', 'Element': 'Element', 'elements': 'elemente', ' · unsaved': ' · nesalvat', 'SELECT': 'SELECȚIE', 'DRAWING': 'DESEN', 'SHEET': 'PLANȘĂ', 'SCHEDULE': 'EXTRAS', '3D · SHADED': '3D · UMBRIT', 'Total': 'Total',
+  'Gross floor area': 'Aria brută a pardoselii', 'Net perimeter': 'Perimetru net', 'Finished ceiling height': 'Înălțimea liberă finisată',
   'Volume': 'Volum', 'Area': 'Arie', 'Net volume': 'Volum net', 'Gross volume': 'Volum brut', 'Net area': 'Arie netă', 'Gross area': 'Arie brută', 'Perimeter': 'Perimetru',
   'Surface area': 'Arie a suprafeței', 'Plan area': 'Arie în plan', 'Lowest point': 'Punctul cel mai jos', 'Highest point': 'Punctul cel mai înalt', 'Fill': 'Umplutură',
   // Panes, zoom, the key plan
@@ -3505,6 +3506,7 @@ export const RO: Record<string, string> = {
   "Room's number": "Numărul încăperii",
   "Room's area": "Aria încăperii",
   "Tagged element's storey": "Nivelul elementului etichetat",
+  "Panel sides": "Părțile panourilor", "Next view tab": "Fila de vizualizare următoare", "Previous view tab": "Fila de vizualizare anterioară",
 };
 
 /** Phrases with a number or a name in them. */

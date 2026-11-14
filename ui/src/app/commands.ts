@@ -7,7 +7,7 @@
  */
 
 import { useMemo } from 'react';
-import { select, useUi } from './store';
+import { cycleTab, select, useUi } from './store';
 import { toggleBothPanels, togglePanel, showOverlay, showPropsTab, usePanels, applyPanelsPart } from './panels';
 import { assistantAvailable } from '../assistant/available';
 import { toggleGrid, toggleThinLines } from './display';
@@ -51,6 +51,9 @@ function appCommands(): CommandDef[] {
     { id: 'app.myTools', label: 'Customize My tools…', category: general, defaults: [], run: dialog('myTools') },
     // The workspaces (decision 243), each a command of its own: Commands… → "Workspace: MEP".
     ...WORKSPACE_IDS.map((w) => ({ id: `app.workspace.${w}`, label: `Workspace: ${WORKSPACE_LABELS[w]}`, category: general, defaults: [], run: () => chooseWorkspace(w) })),
+    // Ctrl (Control on a Mac too: Cmd+Tab is the system's) with Tab or Page Down/Up: the next and previous view tab (forum topic 63).
+    { id: 'app.nextTab', label: 'Next view tab', category: views, defaults: ['Ctrl+Tab', 'Ctrl+PageDown'], run: () => cycleTab(1) },
+    { id: 'app.previousTab', label: 'Previous view tab', category: views, defaults: ['Ctrl+Shift+Tab', 'Ctrl+PageUp'], run: () => cycleTab(-1) },
     { id: 'app.osnap', label: 'Object snap', category: draw, defaults: ['F3'], run: () => useCad.setState((s) => ({ osnap: !s.osnap })) },
     { id: 'app.ortho', label: 'Ortho', category: draw, defaults: ['F8'], run: () => useCad.setState((s) => ({ ortho: !s.ortho })) },
     { id: 'app.grid', label: 'Grid', category: draw, defaults: ['F7'], run: toggleGrid },

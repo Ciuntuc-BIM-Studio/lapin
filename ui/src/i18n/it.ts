@@ -908,6 +908,7 @@ export const IT: Record<string, string> = {
   'The layer new shapes go on': 'Il layer su cui vanno le nuove forme', 'Mode': 'Modalità', 'Snap': 'Snap',
   'Length': 'Lunghezza', 'Layers run': 'Gli strati vanno', 'as drawn': 'come disegnato', 'reversed': 'invertito', 'Flip': 'Capovolgi', '(no phase)': '(nessuna fase)', '(stays)': '(rimane)',
   'Dimensions': 'Dimensioni', 'Element': 'Elemento', 'elements': 'elementi', ' · unsaved': ' · non salvato', 'SELECT': 'SELEZIONA', 'DRAWING': 'DISEGNO', 'SHEET': 'TAVOLA', 'SCHEDULE': 'ABACO', '3D · SHADED': '3D · OMBREGGIATO', 'Total': 'Totale',
+  'Gross floor area': 'Superficie lorda del pavimento', 'Net perimeter': 'Perimetro netto', 'Finished ceiling height': 'Altezza netta finita',
   'Volume': 'Volume', 'Area': 'Area', 'Net volume': 'Volume netto', 'Gross volume': 'Volume lordo', 'Net area': 'Area netta', 'Gross area': 'Area lorda', 'Perimeter': 'Perimetro',
   'Surface area': 'Area della superficie', 'Plan area': 'Area in pianta', 'Lowest point': 'Punto più basso', 'Highest point': 'Punto più alto', 'Fill': 'Riempimento',
   // Panes, zoom, the key plan
@@ -3512,6 +3513,7 @@ export const IT: Record<string, string> = {
   "Room's number": "Numero del locale",
   "Room's area": "Superficie del locale",
   "Tagged element's storey": "Piano dell'elemento etichettato",
+  "Panel sides": "Lati dei pannelli", "Next view tab": "Scheda vista successiva", "Previous view tab": "Scheda vista precedente",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

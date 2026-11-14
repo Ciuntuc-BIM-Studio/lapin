@@ -339,6 +339,12 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 .status { display: flex; gap: 18px; padding: 4px 12px; background: var(--panel); border-top: 1px solid var(--rule); color: var(--ink-muted); font-size: 11.5px; }
 .status .ok::before, .status .off::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: var(--ok); }
 .status .off::before { background: var(--accent); }
+.status { height: 28px; box-sizing: border-box; align-items: center; white-space: nowrap; overflow: hidden; }
+.status > * { flex: 0 0 auto; }
+.status .status-file { flex: 0 1 auto; min-width: 6ch; overflow: hidden; text-overflow: ellipsis; }
+.status .grow { flex: 1 1 0; min-width: 0; }
+.status .mods { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.status .status-coords { min-width: 26ch; text-align: left; }
 .status .mods { letter-spacing: 0.06em; text-transform: uppercase; font-size: 10.5px; font-weight: 600; }
 .error { position: absolute; left: 12px; bottom: 80px; max-width: 480px; padding: 8px 12px; background: var(--accent-wash); color: var(--err); border: 1px solid var(--accent); border-radius: 3px; }
 
@@ -398,7 +404,7 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 
 /* Dialogs. */
 /* A notice stays readable over an open dialog and off the view's headers: low in the window, above the dialogs. */
-.notice.notice-status { position: fixed; top: auto; bottom: 44px; z-index: 40; pointer-events: none; }
+.notice.notice-status { position: fixed; top: auto; bottom: 44px; z-index: 500; pointer-events: none; }
 [role="dialog"][tabindex="-1"]:focus { outline: none; }
 .lazy-part { padding: 16px; }
 .dialog-backdrop { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; background: rgba(20, 18, 15, 0.35); }
@@ -673,6 +679,7 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .small-tools { display: grid; grid-template-rows: repeat(3, auto); grid-auto-flow: column; align-content: center; gap: 2px 4px; }
 .tool.small { flex-direction: row; gap: 6px; height: auto; min-width: 0; padding: 1px 8px; line-height: 1.25; justify-content: flex-start; white-space: nowrap; }
 .cad-line { border-top: 1px solid var(--rule); background: var(--panel); font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; padding: 3px 10px 4px; }
+.cad-line.floating { position: absolute; left: 0; right: 0; bottom: 0; z-index: 12; }
 .cad-history { color: var(--ink-muted); min-height: 2.9em; white-space: pre; overflow: hidden; }
 .cad-prompt { display: flex; align-items: center; gap: 8px; }
 .cad-label { color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

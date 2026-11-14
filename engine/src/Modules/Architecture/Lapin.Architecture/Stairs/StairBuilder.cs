@@ -331,10 +331,13 @@ public static class StairBuilder
     /// <summary>
     /// The top of the stair under a post (world <paramref name="at"/>, <paramref name="half"/> its half size; null where there is
     /// none): the highest of the tread, landing or winder under its centre and its corners, so a post over a nosing stands on the
-    /// upper tread.
+    /// upper tread. Only what lies below the post's top (<paramref name="ceiling"/>, world) counts: a spiral that turns more than once
+    /// passes over itself, and its treads a turn up (or the floor above, over its foot) are over the post, not under it (forum
+    /// topic 86: the first turn's balusters were cut to stubs under the second turn's treads, the handrail left floating).
     /// </summary>
-    static double? GroundUnder(Resolved r, StairPlacement place, Vec3 at, double half)
+    static double? GroundUnder(Resolved r, StairPlacement place, Vec3 at, double half, double ceiling)
     {
+        var below = ceiling - place.Z0;
         double? best = null;
         var c = new Vec2(at.X, at.Y);
         var k = half * 0.9;
@@ -342,17 +345,20 @@ public static class StairBuilder
         {
             var d = w - place.At;
             var p = new Vec2(Vec2.Dot(d, place.Dir), Vec2.Dot(d, place.Dir.Perp));
-            if (SurfaceAt(r, p) is { } z && (best is not { } b || z > b)) best = z;
+            if (SurfaceAt(r, p, below) is { } z && (best is not { } b || z > b)) best = z;
         }
         return best is { } top ? place.Z0 + top : null;
     }
 
-    /// <summary>The finished surface of the stair at a point of its own frame (above its foot), or null outside it.</summary>
-    static double? SurfaceAt(Resolved r, Vec2 p)
+    /// <summary>
+    /// The finished surface of the stair at a point of its own frame (above its foot), or null outside it: the highest there no
+    /// higher than <paramref name="below"/> (over the foot) when given.
+    /// </summary>
+    static double? SurfaceAt(Resolved r, Vec2 p, double below = double.PositiveInfinity)
     {
         const double eps = 1e-6;
         double? best = null;
-        void Take(double z) { if (best is not { } b || z > b) best = z; }
+        void Take(double z) { if (z <= below + eps && (best is not { } b || z > b)) best = z; }
         // Behind the first riser the floor; just past the last the floor above (a little way only: a spiral's top may stand over its foot).
         var foot = r.Foot;
         if (Vec2.Dot(p - foot.At, foot.Dir) < eps && Math.Abs(Vec2.Dot(p - foot.At, foot.Left)) <= foot.Width / 2 + eps) Take(0);
@@ -399,7 +405,7 @@ public static class StairBuilder
         // Each path along its surface, built as any railing is (Railings, shared with the balconies').
         foreach (var path in RailingPaths(r, place, rail, left))
         {
-            var (m, g) = Railings.Solids(path.Select(p => place.World(p.P, p.Surface)).ToList(), rail, (at, half) => GroundUnder(r, place, at, half));
+            var (m, g) = Railings.Solids(path.Select(p => place.World(p.P, p.Surface)).ToList(), rail, (at, half) => GroundUnder(r, place, at, half, at.Z + Math.Max(0.3, rail.Height)));
             metal.AddRange(m);
             glass.AddRange(g);
         }

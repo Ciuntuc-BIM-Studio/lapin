@@ -908,6 +908,7 @@ export const DA: Record<string, string> = {
   'The layer new shapes go on': 'Laget, nye former kommer på', 'Mode': 'Tilstand', 'Snap': 'Fang',
   'Length': 'Længde', 'Layers run': 'Lagene løber', 'as drawn': 'som tegnet', 'reversed': 'omvendt', 'Flip': 'Vend', '(no phase)': '(ingen fase)', '(stays)': '(bliver)',
   'Dimensions': 'Mål', 'Element': 'Element', 'elements': 'elementer', ' · unsaved': ' · ikke gemt', 'SELECT': 'VÆLG', 'DRAWING': 'TEGNING', 'SHEET': 'TEGNINGSARK', 'SCHEDULE': 'SKEMA', '3D · SHADED': '3D · SKYGGELAGT', 'Total': 'I alt',
+  'Gross floor area': 'Brutto gulvareal', 'Net perimeter': 'Netto omkreds', 'Finished ceiling height': 'Færdig lofthøjde',
   'Volume': 'Volumen', 'Area': 'Areal', 'Net volume': 'Nettovolumen', 'Gross volume': 'Bruttovolumen', 'Net area': 'Nettoareal', 'Gross area': 'Bruttoareal', 'Perimeter': 'Omkreds',
   'Surface area': 'Overfladeareal', 'Plan area': 'Planareal', 'Lowest point': 'Laveste punkt', 'Highest point': 'Højeste punkt', 'Fill': 'Fyld',
   // Panes, zoom, the key plan
@@ -3504,6 +3505,7 @@ export const DA: Record<string, string> = {
   "Room's number": "Rummets nummer",
   "Room's area": "Rummets areal",
   "Tagged element's storey": "Det mærkede elements etage",
+  "Panel sides": "Panelernes sider", "Next view tab": "Næste visningsfane", "Previous view tab": "Forrige visningsfane",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

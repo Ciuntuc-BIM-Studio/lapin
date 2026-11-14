@@ -128,7 +128,7 @@ Apasă o pictogramă de pe bara unui panou pliat ca să-l deschizi peste vedere 
 
 ## Panourile pe oricare parte
 
-**View → Panels** pune browserul de proiect și panoul de proprietăți unde vrei, ca în Revit: **Browser în stânga, Proprietăți în dreapta** (implicit), **Browser în dreapta, Proprietăți în stânga**, **Ambele panouri în stânga** sau **Ambele panouri în dreapta**. Când sunt amândouă pe o parte, stau unul sub altul; trage separatorul dintre ele ca să împarți înălțimea (dublu clic îl pune la jumătate) și trage marginea părții ca să o lărgești. Fiecare panou se pliază în continuare singur: unul pliat e o bară subțire în coloană, sau o bandă laterală când sunt pliate ambele. Fila asistentului (desktop) rămâne cu proprietățile. Lapin ține minte aranjarea pe acest calculator.
+**View → Panels** pune browserul de proiect și panoul de proprietăți unde vrei, ca în Revit: **Browser în stânga, Proprietăți în dreapta** (implicit), **Browser în dreapta, Proprietăți în stânga**, **Ambele panouri în stânga** sau **Ambele panouri în dreapta**. Când sunt amândouă pe o parte, stau unul sub altul; trage separatorul dintre ele ca să împarți înălțimea (dublu clic îl pune la jumătate) și trage marginea părții ca să o lărgești. Fiecare panou se pliază în continuare singur: unul pliat e o bară subțire în coloană, sau o bandă laterală când sunt pliate ambele. Fila asistentului (desktop) rămâne cu proprietățile. Lapin ține minte aranjarea pe acest calculator. Aceleași patru alegeri sunt în **View → Interface…**, la **Părțile panourilor**, lângă celelalte părți ale interfeței.
 
 ![Browserul și proprietățile, unul sub altul în stânga](shots/panel-layouts.webp)
 
@@ -158,6 +158,10 @@ Tema se păstrează: Lapin pornește din nou în cea în care l-ai lăsat. **Fi�
 Trei butoane rapide stau înaintea tab-urilor: **3D** deschide vederea 3D, **Secțiune** (<kbd>SE</kbd>) pornește unealta de secțiune, iar **Măsoară** (<kbd>ME</kbd>) unealta de măsurare, deci cele mai folosite vederi și unelte sunt la un clic distanță din orice vedere.
 
 Fiecare vedere deschisă are un tab deasupra ei. Trage un tab ca să muți vederea în altă parte. Tras afară din fereastră, sau pe marginea ei, se deschide într-o **fereastră separată** acolo unde îl lași, pentru un al doilea ecran (aplicația desktop). Lăsat pe sfertul din dreapta sau de jos al unei vederi, o împarte și se deschide alături sau dedesubt. Lăsat pe celălalt panou, se deschide acolo. Cât timp tragi, locul în care ar ajunge e luminat și numit. Un clic pe tab doar îl deschide, ca înainte.
+
+<kbd>Ctrl</kbd> <kbd>Tab</kbd> aduce în față tab-ul următor, iar <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Tab</kbd> pe cel dinainte (și <kbd>Ctrl</kbd> <kbd>Page Down</kbd> și <kbd>Page Up</kbd>), trecând de la ultimul la primul; pe Mac e tasta <kbd>Control</kbd>, fiindcă <kbd>⌘</kbd> <kbd>Tab</kbd> e a sistemului. Nu fac nimic cât scrii într-un câmp. Sunt comenzi (**Next view tab**, **Previous view tab**) pe care le poți realoca în scurtături.
+
+Un tab 3D își păstrează starea cât lucrezi în altă vedere: camera (de unde privește, perspectivă sau ortogonală) și **caseta de secțiune**, pornită sau oprită și unde ai lăsat-o, sunt ca atunci când te întorci dintr-un plan sau dintr-o planșă. Fiecare vedere 3D (3D-ul simplu și fiecare vedere salvată) o ține pe a ei cât timp proiectul e deschis; camera și caseta proprii ale unei vederi salvate o deschid când nu s-a păstrat încă nimic.
 
 Un clic dreapta pe tab oferă același lucru: **Deschide într-o fereastră nouă**, **Împarte: deschide alături**, **Împarte: deschide dedesubt** (sau **Deschide în celălalt panou** când vederea e împărțită), **Închide** și **Închide-le pe celelalte**. Butonul de fereastră din dreapta taburilor și **Vedere → Fereastră nouă** deschid vederea din față într-o fereastră separată. Ferestrele împart modelul, selecția, nivelul și unealta; fiecare își păstrează zoomul.
 

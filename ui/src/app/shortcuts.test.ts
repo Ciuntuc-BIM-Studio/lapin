@@ -10,6 +10,7 @@ const COMMANDS = [
   cmd('app.save', ['Ctrl+S']), cmd('app.saveAs', ['Ctrl+Shift+S']), cmd('app.interface', ['Ctrl+.']),
   cmd('architecture.wall', ['WA']), cmd('architecture.door', ['DR']), cmd('modify.move', [], 'MOVE'), cmd('modify.copy', [], 'COPY'),
   cmd('civil.corridor', ['CO']), cmd('drafting.dimension', ['DI'], 'DIMALIGNED'), cmd('app.zoomFit'),
+  cmd('app.nextTab', ['Ctrl+Tab', 'Ctrl+PageDown']), cmd('app.previousTab', ['Ctrl+Shift+Tab', 'Ctrl+PageUp']),
 ];
 
 describe('bindings', () => {
@@ -130,6 +131,17 @@ describe('the keymap', () => {
     expect(keyIntent(press('a', { inField: true }), state)).toBeNull();
     expect(keyIntent(press('.', { ctrlKey: true }), { ...state, buffer: '' })).toEqual({ kind: 'command', id: 'app.interface' });
     expect(keyIntent(press('.', { ctrlKey: true, inField: true }), { ...state, buffer: '' })).toBeNull();
+  });
+
+  it('Ctrl+Tab, Ctrl+Shift+Tab and Ctrl+Page Down/Up switch the view tabs, but not in a field (forum topic 63)', () => {
+    const map = resolveKeymap(COMMANDS, effectiveBindings(COMMANDS, withPreset('classic')), cli);
+    const press = (key: string, more: Partial<KeyPress> = {}): KeyPress => ({ key, ctrlKey: true, metaKey: false, shiftKey: false, inField: false, inDialog: false, ...more });
+    const state: KeySnapshot = { screen: 'workspace', dialog: null, tool: null, selected: [], buffer: '', step: null, hasLast: false, hotbar: 9, keymap: map };
+    expect(keyIntent(press('Tab'), state)).toEqual({ kind: 'command', id: 'app.nextTab' });
+    expect(keyIntent(press('Tab', { shiftKey: true }), state)).toEqual({ kind: 'command', id: 'app.previousTab' });
+    expect(keyIntent(press('PageDown'), state)).toEqual({ kind: 'command', id: 'app.nextTab' });
+    expect(keyIntent(press('PageUp'), state)).toEqual({ kind: 'command', id: 'app.previousTab' });
+    expect(keyIntent(press('Tab', { inField: true }), state)).toBeNull();
   });
 
   it('goes to a file and back the same', () => {

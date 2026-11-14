@@ -906,6 +906,7 @@ export const ZH: Record<string, string> = {
   'The layer new shapes go on': '新图形所在的图层', 'Mode': '模式', 'Snap': '捕捉',
   'Length': '长度', 'Layers run': '图层走向', 'as drawn': '按绘制方向', 'reversed': '反向', 'Flip': '翻转', '(no phase)': '（无阶段）', '(stays)': '（保持）',
   'Dimensions': '尺寸标注', 'Element': '构件', 'elements': '个构件', ' · unsaved': ' · 未保存', 'SELECT': '选择', 'DRAWING': '绘图', 'SHEET': '图纸', 'SCHEDULE': '明细表', '3D · SHADED': '三维 · 着色', 'Total': '总计',
+  'Gross floor area': '毛地面面积', 'Net perimeter': '净周长', 'Finished ceiling height': '完成面净高',
   'Volume': '体积', 'Area': '面积', 'Net volume': '净体积', 'Gross volume': '毛体积', 'Net area': '净面积', 'Gross area': '毛面积', 'Perimeter': '周长',
   'Surface area': '表面积', 'Plan area': '平面面积', 'Lowest point': '最低点', 'Highest point': '最高点', 'Fill': '填充',
   // Panes, zoom, the key plan
@@ -3501,6 +3502,7 @@ export const ZH: Record<string, string> = {
   "Room's number": "房间编号",
   "Room's area": "房间面积",
   "Tagged element's storey": "被标注元素的楼层",
+  "Panel sides": "面板位置", "Next view tab": "下一个视图标签页", "Previous view tab": "上一个视图标签页",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

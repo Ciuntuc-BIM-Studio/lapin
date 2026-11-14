@@ -906,6 +906,7 @@ export const PT: Record<string, string> = {
   'The layer new shapes go on': 'O layer onde vão as novas formas', 'Mode': 'Modo', 'Snap': 'Snap',
   'Length': 'Comprimento', 'Layers run': 'As camadas vão', 'as drawn': 'como desenhado', 'reversed': 'invertido', 'Flip': 'Inverter', '(no phase)': '(sem fase)', '(stays)': '(permanece)',
   'Dimensions': 'Dimensões', 'Element': 'Elemento', 'elements': 'elementos', ' · unsaved': ' · não salvo', 'SELECT': 'SELECIONAR', 'DRAWING': 'DESENHO', 'SHEET': 'PRANCHA', 'SCHEDULE': 'TABELA', '3D · SHADED': '3D · SOMBREADO', 'Total': 'Total',
+  'Gross floor area': 'Área bruta do piso', 'Net perimeter': 'Perímetro útil', 'Finished ceiling height': 'Altura livre acabada',
   'Volume': 'Volume', 'Area': 'Área', 'Net volume': 'Volume líquido', 'Gross volume': 'Volume bruto', 'Net area': 'Área líquida', 'Gross area': 'Área bruta', 'Perimeter': 'Perímetro',
   'Surface area': 'Área de superfície', 'Plan area': 'Área em planta', 'Lowest point': 'Ponto mais baixo', 'Highest point': 'Ponto mais alto', 'Fill': 'Preenchimento',
   // Panes, zoom, the key plan
@@ -3507,6 +3508,7 @@ export const PT: Record<string, string> = {
   "Room's number": "Número do compartimento",
   "Room's area": "Área do compartimento",
   "Tagged element's storey": "Piso do elemento etiquetado",
+  "Panel sides": "Lados dos painéis", "Next view tab": "Separador de vista seguinte", "Previous view tab": "Separador de vista anterior",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

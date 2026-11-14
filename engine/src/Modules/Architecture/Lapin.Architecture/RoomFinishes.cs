@@ -405,6 +405,67 @@ public static class RoomFinishes
         return new RevealLining(f, p.Along - p.Width / 2, p.Along + p.Width / 2, face, frame, z0, z0 + p.Height, bottom);
     }
 
+    // ------------------------------------------------------------ the room measured to its finishes (forum topic 82)
+
+    /// <summary>
+    /// How far in from the walls' faces the finish of the walls is at the floor: each layer's ring lies past the layers before
+    /// it (their thicknesses), as thick as its first piece up the height (the tiles on the plaster), when that piece is
+    /// there; the innermost face of them.
+    /// </summary>
+    public static double WallFace(RoomFinishSpec spec)
+    {
+        double d = 0, face = 0;
+        foreach (var l in spec.Walls ?? [])
+        {
+            var piece = l.Parts is { Count: > 0 } ps ? ps[0] : new FinishPart(l.Material, double.PositiveInfinity);
+            var t = piece.Thickness ?? l.Thickness;
+            if (piece.Material.Length > 0 && t > 0) face = Math.Max(face, d + t);
+            d += l.Thickness;
+        }
+        return face;
+    }
+
+    /// <summary>A room as its finish leaves it: its outline to the walls' finished face, its finished ceiling's height over the floor, its floor's build-up.</summary>
+    public sealed record Finished(Rooms.Outline Outline, double? CeilingHeight, double? FloorThickness);
+
+    /// <summary>
+    /// The room as the finish parts laid in it leave it (none: null): the outline taken in by <see cref="WallFace"/> along every
+    /// edge and out round every island (the walls' part); the finished ceiling's height over the room's level, which is the
+    /// finished floor (the ceiling's part: under the slab above, else the room's height, less the ceiling's layers); the
+    /// floor's layers' thickness (the floor's part). Read from the model each time it is asked.
+    /// </summary>
+    public static Finished? FinishedOf(IModelView m, Entity room, Rooms.Outline o)
+    {
+        Rooms.Outline? net = null;
+        double? ceiling = null, floor = null;
+        foreach (var e in m.OfClass(Class).Where(e => e.Str("roomId") == room.Id))
+        {
+            if (SpecOf(m, e) is not { } spec) continue;
+            switch (e.Str("part"))
+            {
+                case "walls" when WallFace(spec) is var t && t > 0:
+                    net = Inset(o, t);
+                    break;
+                case "ceiling" when spec.Ceiling is { Count: > 0 } c:
+                    var level = Level(m, room);
+                    ceiling = Math.Max(0, Ceiling(m, room, o, level).Soffit - Thickness(c) - level);
+                    break;
+                case "floor" when spec.Floor is { Count: > 0 } fl:
+                    floor = Thickness(fl);
+                    break;
+            }
+        }
+        return net == null && ceiling == null && floor == null ? null : new Finished(net ?? o, ceiling, floor);
+    }
+
+    /// <summary>The outline taken in by <paramref name="t"/>, its islands out by it; as it was when nothing would be left.</summary>
+    static Rooms.Outline Inset(Rooms.Outline o, double t)
+    {
+        var outer = Polygon2.Offset(Polygon2.EnsureCcw(o.Outer), [-t]);
+        if (Polygon2.SignedArea(outer) <= 1e-9) return o;
+        return o with { Outer = outer, Islands = o.Islands.Select(i => (IReadOnlyList<Vec2>)Polygon2.Offset(Polygon2.EnsureCcw(i), [t])).ToList() };
+    }
+
     // ------------------------------------------------------------ in plans (decision 299)
 
     /// <summary>A finish's hatch as a plan draws it: a pattern, its scale on paper, its angle, its colour.</summary>

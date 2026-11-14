@@ -244,14 +244,14 @@ export function Draft3D({ camera, canvas, scene }: { camera: React.RefObject<THR
   ) : null;
 
   // The command line in 3D too, as on a plan: what is typed, the prompt.
-  if (!command) return <>{facePathEl}{sketchChip}<CommandLine /></>;
+  if (!command) return <>{facePathEl}{sketchChip}<CommandLine floating /></>;
   if (!active) {
     return (
       <>
         <div className="axis-drag-chip mode-chip" data-draft3d="none">
           <span>Choose a storey, or select a reference plane, to draft in 3D</span>
         </div>
-        <CommandLine />
+        <CommandLine floating />
       </>
     );
   }
@@ -268,7 +268,7 @@ export function Draft3D({ camera, canvas, scene }: { camera: React.RefObject<THR
         <button type="button" className={`toggle${facePick ? ' active' : ''}`} aria-pressed={facePick} data-draft3d="face"
           title="Click a face of the model: a reference plane is made on it, and the shapes go on it" onClick={() => setFacePick((v) => !v)}>Pick a face</button>
       </div>}
-      <CommandLine />
+      <CommandLine floating />
     </>
   );
 }
