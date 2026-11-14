@@ -145,3 +145,27 @@ describe('a hatch', () => {
     expect(boxIds(P(0, 0), P(5, 5), true, [], all, [solid])).toEqual(['h']);
   });
 });
+
+describe('a wall opening: a hit area over its gap and no lines (forum topic 72)', () => {
+  // The wall is cut either side of the gap at x = 1..2; the bare opening has only its hit area.
+  const w = item('w', [rect('cut', 0, 0, 1, 0.25), rect('cut', 2, 0, 4, 0.25)]);
+  const o = item('o', [rect('hit', 1, 0, 2, 0.25)]);
+  const ns = nodesOf(node('w'), node('o', 'IfcOpeningElement'));
+
+  it('a click in the gap takes the opening, a click on the wall the wall', () => {
+    expect(pickAt(P(1.5, 0.12), 0.01, [w, o], ns, undefined)?.id).toBe('o');
+    expect(pickAt(P(3, 0.12), 0.01, [w, o], ns, undefined)?.id).toBe('w');
+  });
+
+  it('a window box round the gap takes the opening alone; a crossing box across it takes both', () => {
+    expect(boxIds(P(0.9, -0.1), P(2.1, 0.4), true, [w, o], ns, undefined)).toEqual(['o']);
+    expect(boxIds(P(1.5, -0.1), P(1.6, 0.4), false, [w, o], ns, undefined).sort()).toEqual(['o']);
+    expect(boxIds(P(0.5, 0.1), P(1.5, 0.2), false, [w, o], ns, undefined).sort()).toEqual(['o', 'w']);
+  });
+
+  it('a door keeps its own lines: its hit area is not what a box takes it by', () => {
+    const d = item('d', [rect('hit', 1, 0, 2, 0.25), { kind: 'symbol', closed: false, points: [1, 0, 2, 0] }]);
+    expect(boxIds(P(1.4, -0.1), P(1.6, 0.4), false, [d], nodesOf(node('d', 'IfcDoor')), undefined)).toEqual(['d']);
+    expect(boxIds(P(1.4, 0.1), P(1.6, 0.2), false, [d], nodesOf(node('d', 'IfcDoor')), undefined)).toEqual([]);
+  });
+});
