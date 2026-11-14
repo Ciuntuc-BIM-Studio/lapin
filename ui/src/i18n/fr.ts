@@ -3795,6 +3795,8 @@ export const FR: Record<string, string> = {
   "shop|Projection": "Projection",
   "Make drawing": "Créer le plan",
   "Make drawing…": "Créer le plan…",
+  "Features (holes, notches)": "Usinages (trous, grugeages)",
+  "Sections at the notches": "Coupes aux grugeages",
   "Shop drawing": "Plan d'atelier",
   "Shop drawings": "Plans d'atelier",
   "Iso": "Isométrique",

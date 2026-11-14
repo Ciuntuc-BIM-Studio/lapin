@@ -386,7 +386,7 @@ Each stage: engine tests first, its guide page in both languages and its scene, 
   dialog with the face checkboxes, the section sliders and the engine's sheet preview. *Tests*: the generic rule on a
   box makes front, top, right and iso in first-angle positions on A4; made again keeps every id; one undo step removes
   it all; the layout picks A3 when A4 does not fit and the scale series when asked.
-- **S2 — Features, part dimensions, sections at features.** `IElementFeatures` for steel (cuts, notches, holes, bolts),
+- **S2 — Features, part dimensions, sections at features.** *Done 14.11.2026 as a correct slice* (decision 582): steel members' holes, copes and cut ends, holes from a body (plates, Studio parts), runs "n×p = total", ordinates from the start, rows across, hole tags, notch length and depth, cut angles, sections through notches, moved strings kept. *Left*: details (insets) at features, section markers on the front view, wood and Studio features from their sketches, plates' chamfers, mitred and fitted ends' angles, gauge strings of flange holes, dragging a derived string on screen. `IElementFeatures` for steel (cuts, notches, holes, bolts),
   wood, Studio, the fallback; `PartDimensionRules` (overall, chain, ordinate, hole groups, end angles); sections and
   details (insets) at features. *Tests*: a member with two hole groups gets "4×80 = 320" and ordinates from its start
   equal to the holes' stations; a notch gets its length and depth and a section through it; dimensions follow a hole

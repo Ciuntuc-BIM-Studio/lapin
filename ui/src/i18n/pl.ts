@@ -3792,6 +3792,8 @@ export const PL: Record<string, string> = {
   "shop|Projection": "Rzutowanie",
   "Make drawing": "Utwórz rysunek",
   "Make drawing…": "Utwórz rysunek…",
+  "Features (holes, notches)": "Obróbki (otwory, podcięcia)",
+  "Sections at the notches": "Przekroje przez podcięcia",
   "Shop drawing": "Rysunek warsztatowy",
   "Shop drawings": "Rysunki warsztatowe",
   "Iso": "Izometria",

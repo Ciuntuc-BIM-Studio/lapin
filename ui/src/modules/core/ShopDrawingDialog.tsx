@@ -99,6 +99,7 @@ export function ShopDrawingDialog() {
             <span className="eyebrow">Views</span>
             <IsoPicture iso={iso} c={c} toggleFace={toggleFace} setIso={(v) => set({ iso: v })} />
             <span className="eyebrow">Sections</span>
+            <label className="check shop-at-features"><input type="checkbox" data-testid="shop-at-features" checked={!!c?.atFeatures} disabled={!c} onChange={(e) => set({ atFeatures: e.target.checked })} />Sections at the notches</label>
             {SECTION_ROLES.map((role) => {
               const [lo, hi] = axisRange(frame, role);
               return (
@@ -136,6 +137,7 @@ export function ShopDrawingDialog() {
                 </select></label>
                 <label>Dimensions<select value={c.dims} onChange={(e) => set({ dims: e.target.value as Choices['dims'] })}>
                   <option value="overall">Overall</option>
+                  <option value="features">Features (holes, notches)</option>
                   <option value="none">None</option>
                 </select></label>
                 <label>Prefer<select value={c.prefer} onChange={(e) => set({ prefer: e.target.value as Choices['prefer'] })}>

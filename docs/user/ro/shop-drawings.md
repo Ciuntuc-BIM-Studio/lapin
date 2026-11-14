@@ -41,6 +41,20 @@ Alegerile pornesc de la regulă, așa că de cele mai multe ori poți apăsa **C
 
 Vederile sunt vederi obișnuite pe o planșă obișnuită: mută-le, schimbă-le scara, completează cartușul. Vederile **arată doar elementul lor**: restul modelului nu se desenează în spatele lui.
 
+## Bare metalice: găuri, degajări și capete tăiate
+
+O bară metalică (o bară, sau o grindă ori un stâlp din profil metalic) se desenează după regula **Steel member**: vederile din față și de sus, o izometrie, și **elementele** ei cotate. O placă metalică se desenează după regula **Steel plate**: fața și muchia ei.
+
+- **Găurile** văzute din față se cotează pe șiruri: un lanț de la capătul barei, prin prima și ultima gaură a fiecărui șir, până la celălalt capăt, un șir cu pas egal scris **4×80 = 320**; deasupra lui **cotele de la origine** ale fiecărei găuri, măsurate de la începutul barei; în stânga, unde sunt rândurile de găuri pe înălțime; lângă fiecare șir, numărul și diametrul găurilor (**5× Ø22**).
+- O **degajare** (un capăt crestat) primește lungimea și adâncimea ei, iar **Secțiuni prin degajări** adaugă o secțiune prin mijlocul fiecăreia.
+- Un capăt **tăiat oblic** își arată unghiul în vederea care îl vede: din față unghiul în plan vertical, de sus unghiul în plan.
+
+Alege **Dimensiuni → Elementele (găuri, degajări)** pentru orice element; simplul **Total** dă doar lungimea și înălțimea. Găurile unei plăci și ale unei piese Studio se găsesc din corpul lor.
+
+Găurile se dau pe șiruri cu comanda `steel.addHoles` (stația, numărul, pasul, diametrul, prin inimă sau printr-o talpă), din Python sau din asistent; găurile unui fișier SDNF vin odată cu barele.
+
+Cotele se calculează la fiecare desenare a vederii, deci urmează bara: dă o gaură în alt loc, lungește bara, și planșa arată asta. Un șir de cote pe care l-ai mutat rămâne unde l-ai pus când bara se schimbă (`drawing.moveDimension`).
+
 ## Fă-l din nou
 
 Deschide **Fă desenul…** pe același element și butonul se numește **Actualizează**. Actualizarea păstrează planșa și vederile ei, și modificările tale pe ele (o vedere redenumită, o linie sau o notă desenată pe o vedere, elemente ascunse în ea); vederile se așază din nou pe planșă. Un singur **Anulează** (Undo) scoate tot desenul: planșa, vederile și desenul însuși.

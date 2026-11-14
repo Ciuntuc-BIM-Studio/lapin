@@ -3786,6 +3786,8 @@ export const DA: Record<string, string> = {
   "shop|Projection": "Projektion",
   "Make drawing": "Lav tegning",
   "Make drawing…": "Lav tegning…",
+  "Features (holes, notches)": "Bearbejdninger (huller, udskæringer)",
+  "Sections at the notches": "Snit gennem udskæringerne",
   "Shop drawing": "Værkstedstegning",
   "Shop drawings": "Værkstedstegninger",
   "Iso": "Isometri",

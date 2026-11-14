@@ -15,7 +15,8 @@ namespace Lapin.Platform;
 /// stage S6, beside them.
 /// </summary>
 public sealed record DrawingRule(string Id, string Name, IReadOnlyList<string> Views, IReadOnlyList<(string Role, double? Station)> Sections,
-    bool Iso = true, string Dimensions = "overall", string Prefer = "paper", IReadOnlyList<string>? Papers = null, string SheetName = "{kind} {mark}")
+    bool Iso = true, string Dimensions = "overall", string Prefer = "paper", IReadOnlyList<string>? Papers = null, string SheetName = "{kind} {mark}",
+    bool AtFeatures = false)
 {
     public IReadOnlyList<string> PaperList => Papers ?? ShopDrawings.DefaultPapers;
 }
@@ -40,7 +41,8 @@ public static class ShopDrawings
     public const string Discipline = "Shop drawings";
     public static readonly string[] DefaultPapers = ["A4", "A3", "A2", "A1", "A0"];
     public static readonly string[] Projections = ["iso-e", "third-angle"];
-    public static readonly string[] DimensionModes = ["overall", "none"];
+    /// <summary>The part's dimensions on its views: overall (length, width, height), features (and its holes, hole groups, notches, cut ends; decision 582), none.</summary>
+    public static readonly string[] DimensionModes = ["overall", "features", "none"];
 
     /// <summary>The generic rule: front, top, the view from the right and an iso, overall dimensions (any element).</summary>
     public static readonly DrawingRule Generic = new("generic", "Generic", ["front", "top", "right"], [], true);
@@ -64,15 +66,18 @@ public static class ShopDrawings
 
     /// <summary>What a drawing is made with: the rule's choices and the user's over them.</summary>
     public sealed record Options(List<string> Views, List<(string Role, double? Station)> Sections, bool Iso, double? Scale, string? Paper,
-        string Projection, string Dims, string Prefer, string Rule)
+        string Projection, string Dims, string Prefer, string Rule, bool AtFeatures = false)
     {
+        /// <summary>The sections at the part's features (a notch's middle), worked out when the drawing is made: key and station along x.</summary>
+        public List<(string Key, double Station)> FeatureSections { get; init; } = [];
+
         public JsonObject ToJson()
         {
             var o = new JsonObject
             {
                 ["views"] = new JsonArray(Views.Select(v => (JsonNode)v).ToArray()),
                 ["sections"] = new JsonArray(Sections.Select(s => (JsonNode)new JsonObject { ["role"] = s.Role, ["station"] = s.Station is { } st ? Math.Round(st, 6) : null }).ToArray()),
-                ["iso"] = Iso, ["projection"] = Projection, ["dims"] = Dims, ["prefer"] = Prefer,
+                ["iso"] = Iso, ["projection"] = Projection, ["dims"] = Dims, ["prefer"] = Prefer, ["atFeatures"] = AtFeatures,
             };
             if (Scale is { } sc) o["scale"] = sc;
             if (Paper != null) o["paper"] = Paper;
@@ -104,7 +109,7 @@ public static class ShopDrawings
         var projection = (string?)Arg("projection") is { } pr && Projections.Contains(pr) ? pr : ProjectionOf(m);
         var dims = (string?)Arg("dims") is { } d && DimensionModes.Contains(d) ? d : rule.Dimensions;
         var prefer = (string?)Arg("prefer") is "scale" or "paper" ? (string)Arg("prefer")! : rule.Prefer;
-        return new Options(views, sections, Flag(Arg("iso")) ?? rule.Iso, scale, paper, projection, dims, prefer, rule.Id);
+        return new Options(views, sections, Flag(Arg("iso")) ?? rule.Iso, scale, paper, projection, dims, prefer, rule.Id, Flag(Arg("atFeatures")) ?? rule.AtFeatures);
     }
 
     // ------------------------------------------------------------ the layout
@@ -140,7 +145,8 @@ public static class ShopDrawings
     public static Arrangement Arrange(IModelView m, Entity sheetProto, ElementFrame f, Options o, IReadOnlyList<string> papers, int dataRows, Func<string, string>? titles = null)
     {
         var size = Math.Max(f.Length, Math.Max(f.Width, f.Height));
-        var s0 = o.Scale ?? ElementViews.AutoScale(size, 110);
+        // Auto: the part about 110 mm long, its features' dimensions about 250 mm, so they read.
+        var s0 = o.Scale ?? ElementViews.AutoScale(size, o.Dims == "features" ? 250 : 110);
         var scales = new List<double> { s0 };
         scales.AddRange(ElementViews.ShopScales.Where(s => s > s0 + 1e-9).Select(s => (double)s));
         var paperList = o.Paper != null ? [o.Paper] : papers.Where(Sheets.Papers.ContainsKey).ToList();
@@ -162,13 +168,16 @@ public static class ShopDrawings
         return last! with { Fits = false };
     }
 
-    sealed record Item(string Key, string Role, double? Station, bool Iso, double W, double H, double Scale, bool Dims, double TitleW = 0)
+    sealed record Item(string Key, string Role, double? Station, bool Iso, double W, double H, double Scale, bool Dims, double TitleW = 0, bool Features = false)
     {
         double K => 1000 / Scale;
-        public double L => W * K / 2 + Pad;
+        /// <summary>Room for the features' strings (decision 582): three over the drawing, two on its left.</summary>
+        double Over => Features ? 24 : 0;
+        double Beside => Features ? 16 : 0;
+        public double L => W * K / 2 + Pad + Beside;
         /// <summary>To the right of the middle: the drawing, its dimensions, and its title (written from the box's left) when that is wider.</summary>
         public double R => Math.Max(W * K / 2 + Pad + (Dims ? DimRoom : 0), TitleW - L);
-        public double U => H * K / 2 + Pad;
+        public double U => H * K / 2 + Pad + Over;
         public double D => H * K / 2 + Pad + (Dims ? DimRoom : 0) + TitleRoom;
     }
 
@@ -193,7 +202,7 @@ public static class ShopDrawings
         {
             var (w, h) = ElementViews.Size(f, v);
             var sc = Math.Max(w, h) * 1000 / scale < Tiny ? Own(w, h) : scale;
-            items.Add(new Item(v, v, null, false, w, h, sc, dims, TitleW(v, sc)));
+            items.Add(new Item(v, v, null, false, w, h, sc, dims, TitleW(v, sc), o.Dims == "features"));
         }
         for (var i = 0; i < o.Sections.Count; i++)
         {
@@ -202,6 +211,12 @@ public static class ShopDrawings
             var key = $"{role}#{i}";
             var sc = Own(w, h);
             items.Add(new Item(key, role, station, false, w, h, sc, dims, TitleW(key, sc)));
+        }
+        foreach (var (key, station) in o.FeatureSections)
+        {
+            var (w, h) = ElementViews.Size(f, "section:x");
+            var sc = Own(w, h);
+            items.Add(new Item($"feature:{key}", "section:x", station, false, w, h, sc, dims, TitleW($"feature:{key}", sc)));
         }
         if (o.Iso) { var (w, h) = ElementViews.IsoSize(f); items.Add(new Item(ElementViews.Iso, ElementViews.Iso, null, true, w, h, IsoScale(scale), false, TitleW(ElementViews.Iso, IsoScale(scale)))); }
         return items;
@@ -344,6 +359,13 @@ public static class ShopDrawings
         existing ??= Existing(m, e.Id, rule.Id);
         var opts = OptionsFrom(m, rule, a, existing?.Attrs["options"] as JsonObject);
         var frame = ElementFrames.Of(q, e) ?? throw new CommandException($"„{e.Name}” has nothing to draw.");
+        // Sections at the features (decision 582): through the middle of each notch.
+        if (opts.AtFeatures)
+            opts = opts with
+            {
+                FeatureSections = [.. ElementFeatures.Of(m, q.Services, e, frame, q.Geometry(e.Id)?.Parts.Select(p => p.Solid).ToList() ?? [])
+                    .Where(x => x.Kind == "notch").Select(x => (x.Key, Math.Round(x.At.X + x.Size.X / 2, 6)))],
+            };
         var keptViews = existing?.Attrs["views"] as JsonObject ?? [];
         var oldSheet = m.Get(existing?.Str("sheet") ?? "") is { Class: Sheets.Class } s ? s : null;
         var sheetProto = oldSheet ?? new Entity("", Sheets.Class, "", new JsonObject { ["titleBlock"] = new JsonObject(), ["viewports"] = new JsonArray() });
@@ -353,6 +375,11 @@ public static class ShopDrawings
         var names = new Dictionary<string, string>();
         foreach (var v in opts.Views) names[v] = $"{e.Name} · {ElementViews.Title(v)}";
         for (var i = 0; i < opts.Sections.Count; i++) names[$"{opts.Sections[i].Role}#{i}"] = $"{e.Name} · Section {(char)('A' + i)}–{(char)('A' + i)}";
+        for (var i = 0; i < opts.FeatureSections.Count; i++)
+        {
+            var letter = (char)('A' + opts.Sections.Count + i);
+            names[$"feature:{opts.FeatureSections[i].Key}"] = $"{e.Name} · Section {letter}–{letter}";
+        }
         names[ElementViews.Iso] = $"{e.Name} · {ElementViews.Title(ElementViews.Iso)}";
         foreach (var key in names.Keys.ToList())
             if ((string?)keptViews[key] is { } kid && m.Get(kid) is { Class: Views.Class } kv) names[key] = kv.Name;
@@ -473,6 +500,33 @@ public static class ShopDrawings
             return Result(Apply(ctx, e, a, d));
         });
 
+        // A part's derived dimension string moved (decision 582): {viewId, key (its partDim key: overall:x, holes:chain…), by: [dx, dy] (drawing m)}
+        // or {viewId, key, reset: true}; kept on the view by its key, so it stays moved as the part changes.
+        r.Command("drawing.moveDimension", "Move dimension", (ctx, a) =>
+        {
+            var view = ctx.Model.Get((string?)a["viewId"] ?? "") is { Class: Views.Class } v && ElementViews.Is(v) ? v : throw new CommandException("The dimension is on an element view.");
+            var key = (string?)a["key"] is { Length: > 0 } k ? k : throw new CommandException("Which dimension?");
+            var attrs = view.CloneAttrs();
+            var moves = attrs["partDimMoves"] as JsonObject ?? new JsonObject();
+            if (a["reset"] is JsonValue rv && rv.TryGetValue<bool>(out var reset) && reset) moves.Remove(key);
+            else
+            {
+                var by = Args.TryPoint(a["by"]) ?? throw new CommandException("By how much (by: [dx, dy])?");
+                var had = moves[key] is JsonArray { Count: >= 2 } h ? new Vec2(Json.Number(h[0]) ?? 0, Json.Number(h[1]) ?? 0) : default;
+                moves[key] = new JsonArray(Math.Round(had.X + by.X, 6), Math.Round(had.Y + by.Y, 6));
+            }
+            if (moves.Count == 0) attrs.Remove("partDimMoves"); else attrs["partDimMoves"] = moves;
+            ctx.Replace(view.With(attrs: attrs));
+            return null;
+        });
+
+        // An element's features in its frame (holes, notches, cut ends; decision 582): {id} → [{key, kind, at, axis, diameter?, size?, end?, planAngle?, elevAngle?}].
+        r.Query("element.features", (q, a) =>
+        {
+            var e = q.Model.Get((string?)a["id"] ?? "") ?? throw new CommandException("There is no such element.");
+            return new JsonArray(ElementFeatures.Of(q, e).Select(x => (JsonNode)ElementFeatures.ToJson(x)).ToArray());
+        });
+
         // A drawing removed with its sheet and its views: {id}.
         r.Command("drawing.remove", "Remove shop drawing", (ctx, a) =>
         {
@@ -511,7 +565,7 @@ public static class ShopDrawings
                 ["rule"] = own.Id,
                 ["rules"] = new JsonArray(Rules(q.Services).Select(x => (JsonNode)new JsonObject
                 {
-                    ["id"] = x.Id, ["name"] = x.Name, ["views"] = new JsonArray(x.Views.Select(v => (JsonNode)v).ToArray()), ["iso"] = x.Iso, ["dims"] = x.Dimensions,
+                    ["id"] = x.Id, ["name"] = x.Name, ["views"] = new JsonArray(x.Views.Select(v => (JsonNode)v).ToArray()), ["iso"] = x.Iso, ["dims"] = x.Dimensions, ["atFeatures"] = x.AtFeatures,
                     ["sections"] = new JsonArray(x.Sections.Select(s => (JsonNode)new JsonObject { ["role"] = s.Role, ["station"] = s.Station }).ToArray()),
                 }).ToArray()),
                 ["drawing"] = q.Model.OfClass(Class).FirstOrDefault(d => d.Str("element") == e.Id)?.Id,

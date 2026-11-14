@@ -41,6 +41,20 @@ The choices start from the rule, so most of the time you can click **Create** at
 
 The views are ordinary views on an ordinary sheet: move them, change their scale, edit the title block. The views **show only their element**: the rest of the model is not drawn behind it.
 
+## Steel members: holes, copes and cut ends
+
+A steel member (a member, or a steel beam or column) is drawn by the **Steel member** rule: its front and top views, an iso, and its **features** dimensioned. A steel plate is drawn by the **Steel plate** rule: its face and its edge.
+
+- **Holes** seen face on are dimensioned in runs: a chain from the member's end through the first and last hole of each run to its other end, a run of equal pitch written **4×80 = 320**; over it the **ordinates** of every hole from the member's start; on the left where the rows of holes are across the member; by each run its count and diameter (**5× Ø22**).
+- A **cope** (an end notched back) gets its length and its depth, and **Sections at the notches** adds a section through the middle of each one.
+- An end **cut off square** shows its angle in the view that sees it: about the side from the front, about the up from above.
+
+Choose **Dimensions → Features (holes, notches)** for any element; the plain **Overall** gives the length and the height only. A plate's holes and a Studio part's are found from its body.
+
+Holes are drilled in a run with the command `steel.addHoles` (station, count, pitch, diameter, through the web or a flange), from Python or the assistant; an SDNF file's holes come in with their members.
+
+The dimensions are worked out every time the view is drawn, so they follow the member: drill a hole elsewhere, lengthen it, and the sheet says so. A string you move stays where you put it as the member changes (`drawing.moveDimension`).
+
 ## Making it again
 
 Open **Make drawing…** on the same element and the button reads **Update**. Updating keeps the sheet and its views, and your own edits on them (a view renamed, a line or a note drawn on a view, elements hidden in it); the views are laid out on the sheet again. One **Undo** removes the whole drawing: the sheet, its views and the drawing itself.

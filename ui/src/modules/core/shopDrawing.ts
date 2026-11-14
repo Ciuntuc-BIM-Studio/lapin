@@ -13,12 +13,12 @@ export type SectionRole = (typeof SECTION_ROLES)[number];
 export const SCALES = [1, 2, 5, 10, 15, 20, 25, 50, 100] as const;
 export const PAPERS = ['A4', 'A3', 'A2', 'A1', 'A0'] as const;
 export type Projection = 'iso-e' | 'third-angle';
-export type Dims = 'overall' | 'none';
+export type Dims = 'overall' | 'features' | 'none';
 export type Prefer = 'paper' | 'scale';
 
 export interface SectionChoice { role: SectionRole; station: number }
 
-export interface RuleDto { id: string; name: string; views: string[]; iso: boolean; dims: string; sections: { role: string; station: number }[] }
+export interface RuleDto { id: string; name: string; views: string[]; iso: boolean; dims: string; atFeatures?: boolean; sections: { role: string; station: number }[] }
 
 /** What `drawing.rules` answers. The frame's min and max are in the element's own frame (metres). */
 export interface RulesDto {
@@ -33,6 +33,8 @@ export interface Choices {
   scale: number | null;
   paper: string | null;
   projection: Projection; dims: Dims; prefer: Prefer;
+  /** A section through each notch the part has (the engine finds them). */
+  atFeatures: boolean;
 }
 
 const isFace = (v: string): v is Face => (FACES as readonly string[]).includes(v);
@@ -73,7 +75,8 @@ export function defaultChoices(r: RulesDto, ruleId: string = r.rule, previous?: 
     scale: previous?.scale ?? null,
     paper: previous?.paper ?? null,
     projection: previous?.projection ?? r.projection,
-    dims: previous?.dims ?? (rule?.dims === 'none' ? 'none' : 'overall'),
+    dims: previous?.dims ?? (rule?.dims === 'none' || rule?.dims === 'features' ? rule.dims : 'overall'),
+    atFeatures: rule?.atFeatures ?? false,
     prefer: previous?.prefer ?? 'paper',
   };
 }
@@ -84,7 +87,7 @@ export function drawingArgs(element: string, c: Choices, existing?: string | nul
     element, rule: c.rule,
     views: FACES.filter((f) => c.views.includes(f)),
     sections: c.sections.map((s) => ({ role: s.role, station: s.station })),
-    iso: c.iso, scale: c.scale, paper: c.paper, projection: c.projection, dims: c.dims, prefer: c.prefer,
+    iso: c.iso, scale: c.scale, paper: c.paper, projection: c.projection, dims: c.dims, prefer: c.prefer, atFeatures: c.atFeatures,
   };
   if (existing) args.id = existing;
   return args;
@@ -94,7 +97,7 @@ export function drawingArgs(element: string, c: Choices, existing?: string | nul
 export const mm = (metres: number): string => `${Math.round(metres * 1000)} mm`;
 
 /** True when nothing is ticked: there would be no view to put on the sheet. */
-export const nothingChosen = (c: Choices): boolean => !c.views.length && !c.iso && !c.sections.length;
+export const nothingChosen = (c: Choices): boolean => !c.views.length && !c.iso && !c.sections.length && !c.atFeatures;
 
 /** The element classes a shop drawing is not of: drawings, sheets, annotations, groups and the spatial structure. */
 const NOT_DRAWN = new Set(['LapinView', 'LapinSheet', 'LapinSchedule', 'LapinShopDrawing', 'IfcAnnotation', 'IfcGroup', 'IfcGrid', 'IfcBuildingStorey', 'IfcBuilding', 'IfcSite', 'IfcProject']);

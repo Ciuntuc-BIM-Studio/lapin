@@ -3783,6 +3783,8 @@ export const ZH: Record<string, string> = {
   "shop|Projection": "投影",
   "Make drawing": "生成图纸",
   "Make drawing…": "生成图纸…",
+  "Features (holes, notches)": "加工特征（孔、切口）",
+  "Sections at the notches": "切口处的剖面",
   "Shop drawing": "加工图",
   "Shop drawings": "加工图",
   "Iso": "等轴测",

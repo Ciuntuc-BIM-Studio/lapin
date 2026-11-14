@@ -57,6 +57,8 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
         r.Service<IElementFrames>(new SteelFrames());
         // A member moved, turned or copied in plan keeps its roll about its axis (its rotation is not a plan angle).
         r.Service<IElementPlacement>(new MemberPlacement());
+        // Its part in shop drawings: features, rules, holes in a run (decision 582).
+        SteelShop.Register(r);
         r.Service<IIfcSweptBodies>(this);
         r.Service<IIfcSystems>(this);
         r.Service<IIfcConnections>(this);

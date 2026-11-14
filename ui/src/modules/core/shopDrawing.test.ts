@@ -34,8 +34,11 @@ describe('the shop drawing dialog', () => {
     const c = { ...defaultChoices(rules), views: ['top', 'front'] as ('top' | 'front')[] };
     expect(drawingArgs('e1', c)).toEqual({
       element: 'e1', rule: 'steel-member', views: ['front', 'top'], sections: [{ role: 'section:x', station: 3 }],
-      iso: true, scale: null, paper: null, projection: 'iso-e', dims: 'overall', prefer: 'paper',
+      iso: true, scale: null, paper: null, projection: 'iso-e', dims: 'overall', prefer: 'paper', atFeatures: false,
     });
+    // A rule that dimensions the features and cuts through the notches starts so.
+    const steel = { ...rules, rules: rules.rules.map((r) => ({ ...r, dims: 'features', atFeatures: true })) };
+    expect(defaultChoices(steel)).toMatchObject({ dims: 'features', atFeatures: true });
     expect(drawingArgs('e1', c, 'd1').id).toBe('d1');
   });
 
