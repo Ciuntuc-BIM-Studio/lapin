@@ -425,7 +425,7 @@ public static class Walls
                 var material = l.Kind == "downstand" ? ring?.Zone.Material : l.Rule?.Material is { } name ? Materials.Find(m, name)?.Id : Materials.Find(m, "Reinforced concrete")?.Id;
                 var color = material != null ? Materials.ColorOf(m, material) : "#a8a8a8";
                 var label = l.Kind == "downstand" ? "Ring beam over opening" : l.Precast ? "Lintel (precast)" : "Lintel (cast)";
-                parts.Add(new GeometryPart(label, color, box, material, $"{l.Kind}:{l.Key}:{i}"));
+                parts.Add(new GeometryPart(label, color, box, material, $"{l.Kind}:{l.Key}:{i}") { TypeId = l.Kind == "lintel" ? l.Rule?.BeamTypeIn(m) : null });
             }
         }
         // A bare opening's reveal finished (decision 392): a lining of its jambs and head, inside its hole.
@@ -774,7 +774,7 @@ public static class Walls
             var (x0, x1) = (Math.Max(From(core.From), From(core.To)), Math.Min(To(core.From), To(core.To)));
             var lintels = Lintels.ForWall(
                 openings.Select(o => new LintelOpening(o.Opening.Id, o.Along - o.Width / 2, o.Along + o.Width / 2, o.Sill, o.Sill + o.Height,
-                    o.Spec?.Lintel is { Mode: not "none" } own ? own : null, o.Spec?.Lintel is { Mode: "none" } || BareOpenings.NoLintel(o))).ToList(),
+                    o.Spec?.Lintel is { Mode: not "none" } own ? own.Resolve(m) : null, o.Spec?.Lintel is { Mode: "none" } || BareOpenings.NoLintel(o))).ToList(),
                 zones, LintelRuleOf(m, wall), (x0, x1, height));
             foreach (var l in lintels)
             {
@@ -855,7 +855,7 @@ public static class Walls
                 var material = l.Kind == "downstand" ? ring?.Zone.Material : l.Rule?.Material is { } name ? Materials.Find(m, name)?.Id : Materials.Find(m, "Reinforced concrete")?.Id;
                 var color = material != null ? Materials.ColorOf(m, material) : "#a8a8a8";
                 var label = l.Kind == "downstand" ? "Ring beam over opening" : l.Precast ? "Lintel (precast)" : "Lintel (cast)";
-                parts.Add(new GeometryPart(label, color, box, material, $"{l.Kind}:{l.Key}:{i}"));
+                parts.Add(new GeometryPart(label, color, box, material, $"{l.Kind}:{l.Key}:{i}") { TypeId = l.Kind == "lintel" ? l.Rule?.BeamTypeIn(m) : null });
             }
         }
         return new ElementGeometry(parts, plan, [c.Start, c.End, c.PointAt(length / 2)], problems.Count > 0 ? problems : null);
@@ -931,7 +931,7 @@ public static class Walls
         var (x0, x1) = (-Reach(startCut, ends[0] != null), length + Reach(endCut, ends[1] != null));
         var lintels = Lintels.ForWall(
             Openings.PlacedOn(m, wall.Id).Select(o => new LintelOpening(o.Opening.Id, o.Along - o.Width / 2 - shift, o.Along + o.Width / 2 - shift, o.Sill, o.Sill + o.Height,
-                o.Spec?.Lintel is { Mode: not "none" } own ? own : null, o.Spec?.Lintel is { Mode: "none" } || BareOpenings.NoLintel(o))).ToList(),
+                o.Spec?.Lintel is { Mode: not "none" } own ? own.Resolve(m) : null, o.Spec?.Lintel is { Mode: "none" } || BareOpenings.NoLintel(o))).ToList(),
             zones, LintelRuleOf(m, wall), (x0, x1, height));
         var pieces = new List<LintelPiece>();
         foreach (var l in lintels)
@@ -948,7 +948,8 @@ public static class Walls
     public static LintelRule? LintelRuleOf(IModelView m, Entity wall)
     {
         var rule = TypeOf(m, wall.Id) is { } type && type.Attrs["lintels"] is { } node ? LintelRule.From(node) : LintelRule.Default;
-        return rule is { Mode: not "none" } ? rule : null;
+        // A beam type as its product (report #135): its section, lengths, material and bearing read now, so the walls follow the type.
+        return rule is { Mode: not "none" } ? rule.Resolve(m) : null;
     }
 
     /// <summary>A prism's width across its length: its volume over its height and its longest horizontal extent.</summary>

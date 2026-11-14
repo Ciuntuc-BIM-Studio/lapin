@@ -3,6 +3,31 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // Structure types from a table, beam types as lintels (report #135)
+  "Beam types": "梁类型",
+  "Older catalogue": "旧目录",
+  "The beam type's bearing unless one is typed here; cleared, the type's again": "梁类型的支承长度，除非在此输入；清空后恢复为类型的值",
+  "Import a manufacturer's CSV: code; width; height; lengths (mm); manufacturer. Each product becomes a beam type (Structure types) too.": "导入制造商的 CSV：编码；宽度；高度；长度（mm）；制造商。每个产品也会成为一个梁类型（结构类型）。",
+  "As a lintel (a door's or window's precast product): the bearing its lintels take unless the rule says its own, and the lengths it is made in (none: cut to length).": "作为过梁（门或窗的预制产品）：其过梁的支承长度（除非规则有自己的），以及生产的长度（无：按需切割）。",
+  "Bearing": "支承长度",
+  "Stock lengths": "库存长度",
+  "Millimetres, separated by spaces or |": "毫米，以空格或 | 分隔",
+  "Beam, column and lintel types from a CSV or XLSX: one row a type (name, kind, profile or h and b, material, mark, bearing, manufacturer, code, lengths)": "从 CSV 或 XLSX 导入梁、柱和过梁类型：每行一个类型（名称、种类、型材或 h 和 b、材料、标记、支承长度、制造商、编码、长度）",
+  "The column and beam types as a CSV the import reads back": "柱和梁类型导出为可再次导入的 CSV",
+  "Import structure types": "导入结构类型",
+  "Rows that say no kind are": "未注明种类的行为",
+  "Lintels (precast)": "过梁（预制）",
+  "Rows of one section, material and maker whose names differ by their length become one type with all their lengths (KP 7 - 100, KP 7 - 125 → KP 7)": "截面、材料和制造商相同且名称仅长度不同的行合为一个类型，包含所有长度（KP 7 - 100, KP 7 - 125 → KP 7）",
+  "One type for the lengths of one section": "一个截面的各长度合为一个类型",
+  "Already in the project": "项目中已有",
+  "Differs": "不同",
+  "Not read": "未读取",
+  "The types were exported: one row a type, sizes in millimetres.": "类型已导出：每行一个类型，尺寸以毫米计。",
+  "The types were imported, in one step to undo.": "类型已导入，可一步撤销。",
+  "Structure types (CSV or XLSX)": "结构类型（CSV 或 XLSX）",
+  "Kind (beam, column, lintel)": "种类（梁、柱、过梁）",
+  "Height h": "高度 h",
+  "Codes of the lengths": "各长度的编码",
   // Names of the engine's classes (data-i18n-ctx="class"): the plain word keeps its other meaning.
   'class|Solid': '实体', 'class|Bar': '钢筋', 'class|Issue': '问题', 'class|Grid': '轴网', 'class|Covering': '覆层',
   "Some constraints could not stay with the shapes and were dropped.": "部分约束无法保留在形状上，已被移除。",

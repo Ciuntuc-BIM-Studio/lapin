@@ -47,6 +47,22 @@ Beams and footings join by themselves where they meet, a corner as a mitre. A be
 
 Any other profile comes from the libraries: **From a profile library…** searches them all (see [Profile libraries](profiles.md)).
 
+## Types from a table
+
+**Import…** under the list of column and beam types reads a CSV or an Excel workbook, one row a type: its name, its kind (beam, column or lintel), its profile, or its height h and width b for a rectangle, its material and mark, and for a lintel its bearing, manufacturer, code and the lengths it is made in. Lapin guesses each column from its heading, in English, Romanian, German, French or Czech (*Název*, *Výška*, *Šířka*, *Uložení*…), and reads a producer's export with columns such as *height.value* and *height.unit*; the dialog shows what it took, and you can give a field another column or another unit. A profile is looked for in the project, in your profile libraries and in Lapin's catalogue (IPE 300, HEA 240…); a row whose profile no library has is shown as not read. Rows that say no kind are what you choose (beams, columns or precast lintels). **One type for the lengths of one section** makes the rows of one section, material and maker whose names differ only by their length one type with all their stock lengths and the code of each (*KP 7 - 100*, *KP 7 - 125*… become *KP 7* with 1000 and 1250); Lapin ticks it when the file has such rows.
+
+The preview lists each type as **New**, **Already in the project** (left as it is) or **Differs**, with what differs (*section*, *lengths*, *material*…); for these you choose, as for the wall types, **Update the project's** (its elements and the lintels that use it follow), **Keep both** (*Name (2)*) or **Skip**. The import is one step to undo. **Export CSV** writes the types in the same columns, so a list can go to a spreadsheet and come back.
+
+![Structure types: a precast lintel type imported from a producer's table, its mark, bearing and stock lengths](shots/structure-types-lintel.webp)
+
+## Beam types as lintels
+
+A beam type can be the product of a precast lintel. In **Wall types** or in a door's or window's configurator, **Lintels → Precast**, then the arrow, **Product** lists the **Beam types** first: the lintel takes the type's section (its width across the wall, its height), the shortest of its lengths that covers the opening and both bearings (a type with no lengths is cut to length), and its material unless the rule names one. Its bearing is the type's own: the bearing field shows it greyed, and a value typed there is the rule's own, until you clear it. Clicked in **Structure types**, a beam type shows its **Mark**, its **Bearing** and its **Stock lengths** (millimetres, separated by spaces or |) to change; the lintels follow the type. Importing a manufacturer's lintel catalogue (the button beside **Product**) makes each product a beam type too, so lintels and beam types are one list; products imported before still work.
+
+![A wall type's lintels: precast, the beam type KP 7 as the product](shots/lintel-beam-type.webp)
+
+The lintels stay parts of their wall, as before; in IFC each is an *IfcBeam* LINTEL typed by its *IfcBeamType*, and the lintel schedule lists them by the type's mark and name, with the code of the length each takes.
+
 ## Strip footing profile
 
 A strip footing type is either the standard one, a stem with its layers on a footing, or any profile swept along the footing's axis, as with Revit's footing profiles. In **Structure types → Strip**, choose **Shape: Profile** and pick a profile: one of the catalogue's (rectangular, stepped in 2 or 3 steps, with a sloped top, eccentric with its stem at one edge, with a stem), made with its sizes, or one of the project's (**Manage → Profiles**, where you can also type its corners or read a drafted outline). The profile's insertion point goes on the footing's axis at the type's **Bottom** level.

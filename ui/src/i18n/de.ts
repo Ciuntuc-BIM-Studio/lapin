@@ -3,6 +3,31 @@
 import type { Language } from './index';
 
 export const DE: Record<string, string> = {
+  // Structure types from a table, beam types as lintels (report #135)
+  "Beam types": "Trägertypen",
+  "Older catalogue": "Älterer Katalog",
+  "The beam type's bearing unless one is typed here; cleared, the type's again": "Das Auflager des Trägertyps, sofern hier keines eingegeben ist; geleert, wieder das des Typs",
+  "Import a manufacturer's CSV: code; width; height; lengths (mm); manufacturer. Each product becomes a beam type (Structure types) too.": "CSV eines Herstellers importieren: Code; Breite; Höhe; Längen (mm); Hersteller. Jedes Produkt wird auch ein Trägertyp (Tragwerkstypen).",
+  "As a lintel (a door's or window's precast product): the bearing its lintels take unless the rule says its own, and the lengths it is made in (none: cut to length).": "Als Sturz (das Fertigteilprodukt einer Tür oder eines Fensters): das Auflager seiner Stürze, sofern die Regel kein eigenes angibt, und die Längen, in denen er hergestellt wird (keine: auf Länge geschnitten).",
+  "Bearing": "Auflager",
+  "Stock lengths": "Lieferlängen",
+  "Millimetres, separated by spaces or |": "Millimeter, getrennt durch Leerzeichen oder |",
+  "Beam, column and lintel types from a CSV or XLSX: one row a type (name, kind, profile or h and b, material, mark, bearing, manufacturer, code, lengths)": "Träger-, Stützen- und Sturztypen aus einer CSV oder XLSX: eine Zeile ein Typ (Name, Art, Profil oder h und b, Material, Kennzeichen, Auflager, Hersteller, Code, Längen)",
+  "The column and beam types as a CSV the import reads back": "Die Stützen- und Trägertypen als CSV, die der Import wieder liest",
+  "Import structure types": "Tragwerkstypen importieren",
+  "Rows that say no kind are": "Zeilen ohne Art sind",
+  "Lintels (precast)": "Stürze (Fertigteil)",
+  "Rows of one section, material and maker whose names differ by their length become one type with all their lengths (KP 7 - 100, KP 7 - 125 → KP 7)": "Zeilen eines Querschnitts, Materials und Herstellers, deren Namen sich nur in der Länge unterscheiden, werden ein Typ mit allen Längen (KP 7 - 100, KP 7 - 125 → KP 7)",
+  "One type for the lengths of one section": "Ein Typ für die Längen eines Querschnitts",
+  "Already in the project": "Schon im Projekt",
+  "Differs": "Abweichend",
+  "Not read": "Nicht gelesen",
+  "The types were exported: one row a type, sizes in millimetres.": "Die Typen wurden exportiert: eine Zeile ein Typ, Maße in Millimetern.",
+  "The types were imported, in one step to undo.": "Die Typen wurden importiert, in einem Schritt rückgängig zu machen.",
+  "Structure types (CSV or XLSX)": "Tragwerkstypen (CSV oder XLSX)",
+  "Kind (beam, column, lintel)": "Art (Träger, Stütze, Sturz)",
+  "Height h": "Höhe h",
+  "Codes of the lengths": "Codes der Längen",
   // Names of the engine's classes (data-i18n-ctx="class"): the plain word keeps its other meaning.
   'class|Solid': 'Volumenkörper', 'class|Bar': 'Bewehrungsstab', 'class|Issue': 'Problem', 'class|Grid': 'Raster', 'class|Covering': 'Belag',
   "Some constraints could not stay with the shapes and were dropped.": "Einige Bedingungen konnten bei den Formen nicht bleiben und wurden entfernt.",

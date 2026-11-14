@@ -3,6 +3,31 @@
 import type { Language } from './index';
 
 export const FR: Record<string, string> = {
+  // Structure types from a table, beam types as lintels (report #135)
+  "Beam types": "Types de poutre",
+  "Older catalogue": "Ancien catalogue",
+  "The beam type's bearing unless one is typed here; cleared, the type's again": "L'appui du type de poutre sauf si un appui est saisi ici ; effacé, de nouveau celui du type",
+  "Import a manufacturer's CSV: code; width; height; lengths (mm); manufacturer. Each product becomes a beam type (Structure types) too.": "Importer le CSV d'un fabricant : code ; largeur ; hauteur ; longueurs (mm) ; fabricant. Chaque produit devient aussi un type de poutre (Types de structure).",
+  "As a lintel (a door's or window's precast product): the bearing its lintels take unless the rule says its own, and the lengths it is made in (none: cut to length).": "Comme linteau (le produit préfabriqué d'une porte ou d'une fenêtre) : l'appui de ses linteaux sauf si la règle a le sien, et les longueurs dans lesquelles il est fabriqué (aucune : coupé à longueur).",
+  "Bearing": "Appui",
+  "Stock lengths": "Longueurs commerciales",
+  "Millimetres, separated by spaces or |": "Millimètres, séparés par des espaces ou |",
+  "Beam, column and lintel types from a CSV or XLSX: one row a type (name, kind, profile or h and b, material, mark, bearing, manufacturer, code, lengths)": "Types de poutre, poteau et linteau depuis un CSV ou XLSX : une ligne un type (nom, genre, profil ou h et b, matériau, repère, appui, fabricant, code, longueurs)",
+  "The column and beam types as a CSV the import reads back": "Les types de poteau et de poutre en CSV que l'import relit",
+  "Import structure types": "Importer des types de structure",
+  "Rows that say no kind are": "Les lignes qui ne disent pas leur genre sont",
+  "Lintels (precast)": "Linteaux (préfabriqués)",
+  "Rows of one section, material and maker whose names differ by their length become one type with all their lengths (KP 7 - 100, KP 7 - 125 → KP 7)": "Les lignes d'une même section, d'un même matériau et d'un même fabricant dont les noms ne diffèrent que par la longueur deviennent un type avec toutes leurs longueurs (KP 7 - 100, KP 7 - 125 → KP 7)",
+  "One type for the lengths of one section": "Un type pour les longueurs d'une section",
+  "Already in the project": "Déjà dans le projet",
+  "Differs": "Diffère",
+  "Not read": "Non lue",
+  "The types were exported: one row a type, sizes in millimetres.": "Les types ont été exportés : une ligne un type, dimensions en millimètres.",
+  "The types were imported, in one step to undo.": "Les types ont été importés, en une seule étape à annuler.",
+  "Structure types (CSV or XLSX)": "Types de structure (CSV ou XLSX)",
+  "Kind (beam, column, lintel)": "Genre (poutre, poteau, linteau)",
+  "Height h": "Hauteur h",
+  "Codes of the lengths": "Codes des longueurs",
   // Names of the engine's classes (data-i18n-ctx="class"): the plain word keeps its other meaning.
   'class|Solid': 'Solide', 'class|Bar': 'Barre d\'armature', 'class|Issue': 'Problème', 'class|Grid': 'Grille', 'class|Covering': 'Revêtement',
   "Some constraints could not stay with the shapes and were dropped.": "Certaines contraintes n'ont pas pu rester avec les formes et ont été retirées.",

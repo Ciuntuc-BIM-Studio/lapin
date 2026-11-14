@@ -3,6 +3,31 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // Structure types from a table, beam types as lintels (report #135)
+  "Beam types": "ປະເພດຄານ",
+  "Older catalogue": "ລາຍການເກົ່າ",
+  "The beam type's bearing unless one is typed here; cleared, the type's again": "ບ່ອນຮອງຮັບຂອງປະເພດຄານ ເວັ້ນເສຍແຕ່ພິມໃສ່ບ່ອນນີ້; ລຶບແລ້ວ ກັບເປັນຂອງປະເພດອີກ",
+  "Import a manufacturer's CSV: code; width; height; lengths (mm); manufacturer. Each product becomes a beam type (Structure types) too.": "ນຳເຂົ້າ CSV ຂອງຜູ້ຜະລິດ: ລະຫັດ; ຄວາມກວ້າງ; ຄວາມສູງ; ຄວາມຍາວ (mm); ຜູ້ຜະລິດ. ແຕ່ລະຜະລິດຕະພັນກາຍເປັນປະເພດຄານ (ປະເພດໂຄງສ້າງ) ນຳ.",
+  "As a lintel (a door's or window's precast product): the bearing its lintels take unless the rule says its own, and the lengths it is made in (none: cut to length).": "ເປັນຄານທັບໜ້າ (ຜະລິດຕະພັນສຳເລັດຮູບຂອງປະຕູ ຫຼື ປ່ອງຢ້ຽມ): ບ່ອນຮອງຮັບຂອງຄານທັບໜ້າ ເວັ້ນເສຍແຕ່ກົດມີຂອງຕົນເອງ, ແລະ ຄວາມຍາວທີ່ຜະລິດ (ບໍ່ມີ: ຕັດຕາມຄວາມຍາວ).",
+  "Bearing": "ບ່ອນຮອງຮັບ",
+  "Stock lengths": "ຄວາມຍາວມາດຕະຖານ",
+  "Millimetres, separated by spaces or |": "ມິນລິແມັດ, ແຍກດ້ວຍຍະຫວ່າງ ຫຼື |",
+  "Beam, column and lintel types from a CSV or XLSX: one row a type (name, kind, profile or h and b, material, mark, bearing, manufacturer, code, lengths)": "ປະເພດຄານ, ເສົາ ແລະ ຄານທັບໜ້າ ຈາກ CSV ຫຼື XLSX: ໜຶ່ງແຖວໜຶ່ງປະເພດ (ຊື່, ຊະນິດ, ໂປຣໄຟລ໌ ຫຼື h ແລະ b, ວັດສະດຸ, ເຄື່ອງໝາຍ, ບ່ອນຮອງຮັບ, ຜູ້ຜະລິດ, ລະຫັດ, ຄວາມຍາວ)",
+  "The column and beam types as a CSV the import reads back": "ປະເພດເສົາ ແລະ ຄານ ເປັນ CSV ທີ່ການນຳເຂົ້າອ່ານຄືນໄດ້",
+  "Import structure types": "ນຳເຂົ້າປະເພດໂຄງສ້າງ",
+  "Rows that say no kind are": "ແຖວທີ່ບໍ່ບອກຊະນິດແມ່ນ",
+  "Lintels (precast)": "ຄານທັບໜ້າ (ສຳເລັດຮູບ)",
+  "Rows of one section, material and maker whose names differ by their length become one type with all their lengths (KP 7 - 100, KP 7 - 125 → KP 7)": "ແຖວຂອງໜ້າຕັດ, ວັດສະດຸ ແລະ ຜູ້ຜະລິດດຽວກັນ ທີ່ຊື່ຕ່າງກັນພຽງຄວາມຍາວ ກາຍເປັນປະເພດດຽວທີ່ມີທຸກຄວາມຍາວ (KP 7 - 100, KP 7 - 125 → KP 7)",
+  "One type for the lengths of one section": "ປະເພດດຽວສຳລັບຄວາມຍາວຂອງໜ້າຕັດດຽວ",
+  "Already in the project": "ມີໃນໂຄງການແລ້ວ",
+  "Differs": "ແຕກຕ່າງ",
+  "Not read": "ອ່ານບໍ່ໄດ້",
+  "The types were exported: one row a type, sizes in millimetres.": "ສົ່ງອອກປະເພດແລ້ວ: ໜຶ່ງແຖວໜຶ່ງປະເພດ, ຂະໜາດເປັນມິນລິແມັດ.",
+  "The types were imported, in one step to undo.": "ນຳເຂົ້າປະເພດແລ້ວ, ຍົກເລີກໄດ້ໃນຂັ້ນດຽວ.",
+  "Structure types (CSV or XLSX)": "ປະເພດໂຄງສ້າງ (CSV ຫຼື XLSX)",
+  "Kind (beam, column, lintel)": "ຊະນິດ (ຄານ, ເສົາ, ຄານທັບໜ້າ)",
+  "Height h": "ຄວາມສູງ h",
+  "Codes of the lengths": "ລະຫັດຂອງຄວາມຍາວ",
   // Names of the engine's classes (data-i18n-ctx="class"): the plain word keeps its other meaning.
   'class|Solid': 'ຮູບທຶບ', 'class|Bar': 'ເຫຼັກເສີມ', 'class|Issue': 'ບັນຫາ', 'class|Grid': 'ໂຄງຕາໜ່າງ', 'class|Covering': 'ວັດສະດຸປົກຄຸມ',
   "Some constraints could not stay with the shapes and were dropped.": "ຂໍ້ຈຳກັດບາງຢ່າງບໍ່ສາມາດຢູ່ກັບຮູບຮ່າງໄດ້ ແລະ ຖືກລຶບອອກ.",

@@ -57,10 +57,40 @@ public static class LintelProducts
             var attrs = project.CloneAttrs();
             attrs["lintelProducts"] = new JsonArray(all.Select(p => (JsonNode)JsonSerializer(p)).ToArray());
             ctx.Replace(project.With(attrs: attrs));
-            return new JsonObject { ["added"] = products.Count, ["skipped"] = new JsonArray(skipped.Select(s => (JsonNode)s).ToArray()) };
+            // One catalogue (report #135): each product is a beam type too, the one of its code made again with the file's section and lengths
+            // (when the product has the structure module, whose class it is; an architecture-only edition keeps the catalogue alone).
+            var (made, updated) = (0, 0);
+            foreach (var p in ctx.Describe(IfcClass.BeamType) != null ? products : [])
+            {
+                if (AsBeamType(ctx, p)) made++; else updated++;
+            }
+            return new JsonObject { ["added"] = products.Count, ["skipped"] = new JsonArray(skipped.Select(s => (JsonNode)s).ToArray()), ["typesMade"] = made, ["typesChanged"] = updated };
         });
 
         r.Query("architecture.lintelProducts", (q, _) => new JsonArray(Of(q.Model).Select(p => (JsonNode)JsonSerializer(p)).ToArray()));
+
+        // The beam types a precast lintel can be (report #135): every beam type with a section, the lintels first.
+        r.Query("architecture.lintelTypes", (q, _) => new JsonArray(LintelTypes.All(q.Model).Select(b => (JsonNode)LintelTypes.ToJson(b)).ToArray()));
+    }
+
+    /// <summary>
+    /// A catalogue product as a beam type (PredefinedType LINTEL), named by its code: the beam type with that code (or that
+    /// name) changed in place, its elements and the rules naming it following; else a new one. True when one was made.
+    /// </summary>
+    public static bool AsBeamType(ICommandContext ctx, LintelProduct p)
+    {
+        var existing = ctx.Model.OfClass(IfcClass.BeamType).FirstOrDefault(t => string.Equals(t.Str(LintelTypes.CodeKey), p.Code, StringComparison.OrdinalIgnoreCase))
+            ?? ctx.Model.OfClass(IfcClass.BeamType).FirstOrDefault(t => string.Equals(t.Name, p.Code, StringComparison.OrdinalIgnoreCase));
+        if (existing == null)
+        {
+            LintelTypes.Create(ctx, p.Code, p.Width, p.Height, "Reinforced concrete", p.Lengths, null, p.Code, p.Manufacturer, null, null);
+            return true;
+        }
+        var attrs = existing.CloneAttrs();
+        attrs["section"] = new JsonObject { ["kind"] = "rectangle", ["width"] = p.Width, ["depth"] = p.Height };
+        LintelTypes.Write(attrs, p.Lengths, null, p.Code, p.Manufacturer, Json.Number(attrs[LintelTypes.BearingKey]), existing.Str(LintelTypes.MarkKey));
+        ctx.Replace(existing.With(attrs: attrs));
+        return false;
     }
 
     static JsonNode JsonSerializer(LintelProduct p) => System.Text.Json.JsonSerializer.SerializeToNode(p, ArchitectureJson.Default.LintelProduct)!;

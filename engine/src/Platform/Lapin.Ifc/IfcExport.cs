@@ -1304,6 +1304,8 @@ public static partial class IfcExport
                 var shape = f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { p.Unit != null && p.Instances is { Count: > 0 } copies ? Mapped(p.Unit, copies, StyleKey(p), fr) : BodyOf([Brep(p.Solid, StyleKey(p), fr)]) }));
                 var r = Product(pk, Gid(e.Id, key), p.Name, pk.ObjectType, Place(place, 0), shape, $"{e.Id}/{key}", flight: pk.Class == IfcClass.StairFlight ? FlightOf(e, key) : null);
                 if (p.Material != null) UseMaterial(p.Material, r);
+                // A part made of a type (a lintel of a beam type, report #135): typed by it, IfcBeamType LINTEL.
+                if (p.TypeId != null && m.Get(p.TypeId) is { } partType) TypeOf(partType, pk, r);
                 StandardSets(e, p, r, $"{e.Id}/{key}");
                 if (p.Properties is { Count: > 0 } own)
                     Define(r, f.Add("IFCPROPERTYSET", Gid(e.Id, key + "/pset"), Null, S(p.PropertySet ?? "Lapin_Part"), Null, L(own.Select(x => Single(x.Name, Typed("IFCLABEL", S(x.Value)))).ToArray())), Gid(e.Id, key + "/pset-rel"));

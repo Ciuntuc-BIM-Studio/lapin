@@ -132,7 +132,7 @@ Legenda de deasupra straturilor arată peretele în plan, într-o secțiune prin
 
 - **+ Layer** adaugă un strat. Săgețile mută un strat în sus sau în jos.
 - **Zone pe înălțime** împarte miezul de jos în sus, de exemplu un prim rând, zidăria și o centură.
-- **Buiandrugi** alege buiandrugii puși peste uși și ferestre: prefabricați sau turnați pe loc, cu rezemarea și înălțimea lor.
+- **Buiandrugi** alege buiandrugii puși peste uși și ferestre: prefabricați sau turnați pe loc, cu rezemarea și înălțimea lor. Un buiandrug prefabricat poate fi un tip de grindă din **Tipuri structurale**, cu secțiunea, lungimile, materialul și rezemarea luate de la el (vezi [Tipuri de grinzi ca buiandrugi](structure.md#tipuri-de-grinzi-ca-buiandrugi)).
 - **Desenează cu el** închide fereastra și începe desenarea pereților de acest tip.
 
 O schimbare a tipului schimbă toți pereții de acel tip.

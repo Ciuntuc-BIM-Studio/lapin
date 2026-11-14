@@ -3039,6 +3039,43 @@ export const scenes = [
     },
   },
   {
+    id: 'beam-type-lintels',
+    async run(t) {
+      await t.fresh();
+      // Report #135: precast lintels imported from a producer's table as beam types (one type for the lengths of one section), changed in
+      // Structure types, then chosen as a wall type's lintel product.
+      const csv = 'Name;Kind;h;b;Material;Mark;Bearing;Manufacturer;Lengths;Codes\n'
+        + 'KP 7;lintel;238;70;Precast concrete;P7;125;Heluz;1000|1250|1500|1750;64168410|64168412|64168415|64168417\n'
+        + 'KP 11,5;lintel;71;115;Precast concrete;P11;125;Heluz;1000|1250|1500;64168110|64168142|64168115\n';
+      const r = await t.cmd('structure.importTypes', { text: csv, kind: 'lintel' });
+      t.expect(r.typesMade === 2, 'two lintel types made');
+      await t.tool('structure.types');
+      const dialog = t.page.locator('.dialog');
+      await dialog.getByText('Beams', { exact: true }).click();
+      await dialog.locator('li.tree-item', { hasText: 'KP 7' }).first().click();
+      await t.wait(600);
+      t.expect(await dialog.locator('input[data-field=type-mark]').inputValue() === 'P7', 'the type shows its mark');
+      t.expect(await dialog.locator('[data-action=structure-types-import]').count() === 1, 'the types can be imported');
+      await t.shot('structure-types-lintel', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+      const kp7 = (await t.nodes()).find((n) => n.type === 'IfcBeamType' && n.name === 'KP 7');
+      const type = await t.cmd('architecture.createWallType', {
+        name: 'Brick 300', layers: [{ material: 'Brick', thickness: 0.3, core: true }],
+        lintels: { mode: 'precast', bearing: 0.25, height: 0.25, beamType: kp7.id, product: { code: 'KP 7', width: 0.07, height: 0.238, lengths: [1, 1.25, 1.5, 1.75] }, pieces: 3 },
+      });
+      await t.ui({ wallTypeId: type.id });
+      await t.tool('architecture.wallTypes');
+      await t.wait(800);
+      const rule = t.page.locator('.dialog .lintel-rule').first();
+      await rule.locator('button.icon.mini').first().click();
+      await rule.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+      await t.wait(400);
+      t.expect((await rule.locator('select[data-field=lintel-product]').inputValue()) === `type:${kp7.id}`, 'the rule takes the beam type');
+      await t.shot('lintel-beam-type', { of: '.dialog .lintel-rule', pad: 8 });
+      await t.ui({ dialog: null });
+    },
+  },
+  {
     id: 'room-finishes',
     async run(t) {
       await t.fresh();

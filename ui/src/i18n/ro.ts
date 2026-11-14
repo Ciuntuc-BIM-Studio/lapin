@@ -1,6 +1,31 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // Structure types from a table, beam types as lintels (report #135)
+  "Beam types": "Tipuri de grinzi",
+  "Older catalogue": "Catalog mai vechi",
+  "The beam type's bearing unless one is typed here; cleared, the type's again": "Rezemarea tipului de grindă, dacă nu scrii una aici; ștearsă, din nou a tipului",
+  "Import a manufacturer's CSV: code; width; height; lengths (mm); manufacturer. Each product becomes a beam type (Structure types) too.": "Importă CSV-ul unui producător: cod; lățime; înălțime; lungimi (mm); producător. Fiecare produs devine și tip de grindă (Tipuri structurale).",
+  "As a lintel (a door's or window's precast product): the bearing its lintels take unless the rule says its own, and the lengths it is made in (none: cut to length).": "Ca buiandrug (produsul prefabricat al unei uși sau ferestre): rezemarea buiandrugilor lui, dacă regula nu are una proprie, și lungimile în care se face (niciuna: tăiat la lungime).",
+  "Bearing": "Rezemare",
+  "Stock lengths": "Lungimi de stoc",
+  "Millimetres, separated by spaces or |": "Milimetri, separați prin spații sau |",
+  "Beam, column and lintel types from a CSV or XLSX: one row a type (name, kind, profile or h and b, material, mark, bearing, manufacturer, code, lengths)": "Tipuri de grinzi, stâlpi și buiandrugi dintr-un CSV sau XLSX: un rând un tip (nume, fel, profil sau h și b, material, marcaj, rezemare, producător, cod, lungimi)",
+  "The column and beam types as a CSV the import reads back": "Tipurile de stâlpi și grinzi ca CSV pe care importul îl citește înapoi",
+  "Import structure types": "Importă tipuri structurale",
+  "Rows that say no kind are": "Rândurile care nu spun felul sunt",
+  "Lintels (precast)": "Buiandrugi (prefabricați)",
+  "Rows of one section, material and maker whose names differ by their length become one type with all their lengths (KP 7 - 100, KP 7 - 125 → KP 7)": "Rândurile unei secțiuni, unui material și unui producător ale căror nume diferă prin lungime devin un singur tip cu toate lungimile (KP 7 - 100, KP 7 - 125 → KP 7)",
+  "One type for the lengths of one section": "Un tip pentru lungimile unei secțiuni",
+  "Already in the project": "Există deja în proiect",
+  "Differs": "Diferă",
+  "Not read": "Necitit",
+  "The types were exported: one row a type, sizes in millimetres.": "Tipurile au fost exportate: un rând un tip, dimensiuni în milimetri.",
+  "The types were imported, in one step to undo.": "Tipurile au fost importate, într-un singur pas de anulat.",
+  "Structure types (CSV or XLSX)": "Tipuri structurale (CSV sau XLSX)",
+  "Kind (beam, column, lintel)": "Fel (grindă, stâlp, buiandrug)",
+  "Height h": "Înălțime h",
+  "Codes of the lengths": "Codurile lungimilor",
   // Names of the engine's classes (data-i18n-ctx="class"): the plain word keeps its other meaning.
   'class|Solid': 'Solid', 'class|Bar': 'Bară de armătură', 'class|Issue': 'Problemă', 'class|Grid': 'Grilă', 'class|Covering': 'Finisaj',
   "Some constraints could not stay with the shapes and were dropped.": "Unele constrângeri n-au putut rămâne cu formele și au fost scoase.",

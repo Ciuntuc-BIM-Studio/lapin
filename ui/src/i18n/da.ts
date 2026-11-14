@@ -3,6 +3,31 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  // Structure types from a table, beam types as lintels (report #135)
+  "Beam types": "Bjælketyper",
+  "Older catalogue": "Ældre katalog",
+  "The beam type's bearing unless one is typed here; cleared, the type's again": "Bjælketypens vederlag, medmindre der skrives et her; ryddet, igen typens",
+  "Import a manufacturer's CSV: code; width; height; lengths (mm); manufacturer. Each product becomes a beam type (Structure types) too.": "Importér en producents CSV: kode; bredde; højde; længder (mm); producent. Hvert produkt bliver også en bjælketype (Konstruktionstyper).",
+  "As a lintel (a door's or window's precast product): the bearing its lintels take unless the rule says its own, and the lengths it is made in (none: cut to length).": "Som overligger (en dørs eller et vindues præfabrikerede produkt): vederlaget for dens overliggere, medmindre reglen har sit eget, og de længder den fremstilles i (ingen: skåret i længde).",
+  "Bearing": "Vederlag",
+  "Stock lengths": "Lagerlængder",
+  "Millimetres, separated by spaces or |": "Millimeter, adskilt af mellemrum eller |",
+  "Beam, column and lintel types from a CSV or XLSX: one row a type (name, kind, profile or h and b, material, mark, bearing, manufacturer, code, lengths)": "Bjælke-, søjle- og overliggertyper fra en CSV eller XLSX: én række én type (navn, art, profil eller h og b, materiale, mærke, vederlag, producent, kode, længder)",
+  "The column and beam types as a CSV the import reads back": "Søjle- og bjælketyperne som en CSV, importen læser igen",
+  "Import structure types": "Importér konstruktionstyper",
+  "Rows that say no kind are": "Rækker uden art er",
+  "Lintels (precast)": "Overliggere (præfabrikerede)",
+  "Rows of one section, material and maker whose names differ by their length become one type with all their lengths (KP 7 - 100, KP 7 - 125 → KP 7)": "Rækker med samme tværsnit, materiale og producent, hvis navne kun adskiller sig ved længden, bliver én type med alle længderne (KP 7 - 100, KP 7 - 125 → KP 7)",
+  "One type for the lengths of one section": "Én type for et tværsnits længder",
+  "Already in the project": "Allerede i projektet",
+  "Differs": "Afviger",
+  "Not read": "Ikke læst",
+  "The types were exported: one row a type, sizes in millimetres.": "Typerne blev eksporteret: én række én type, mål i millimeter.",
+  "The types were imported, in one step to undo.": "Typerne blev importeret, i ét trin at fortryde.",
+  "Structure types (CSV or XLSX)": "Konstruktionstyper (CSV eller XLSX)",
+  "Kind (beam, column, lintel)": "Art (bjælke, søjle, overligger)",
+  "Height h": "Højde h",
+  "Codes of the lengths": "Længdernes koder",
   // Names of the engine's classes (data-i18n-ctx="class"): the plain word keeps its other meaning.
   'class|Solid': 'Legeme', 'class|Bar': 'Armeringsjern', 'class|Issue': 'Problem', 'class|Grid': 'Gitter', 'class|Covering': 'Beklædning',
   "Some constraints could not stay with the shapes and were dropped.": "Nogle begrænsninger kunne ikke blive ved formerne og blev fjernet.",

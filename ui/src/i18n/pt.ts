@@ -3,6 +3,31 @@
 import type { Language } from './index';
 
 export const PT: Record<string, string> = {
+  // Structure types from a table, beam types as lintels (report #135)
+  "Beam types": "Tipos de viga",
+  "Older catalogue": "Catálogo anterior",
+  "The beam type's bearing unless one is typed here; cleared, the type's again": "O apoio do tipo de viga, a menos que se escreva um aqui; apagado, novamente o do tipo",
+  "Import a manufacturer's CSV: code; width; height; lengths (mm); manufacturer. Each product becomes a beam type (Structure types) too.": "Importar o CSV de um fabricante: código; largura; altura; comprimentos (mm); fabricante. Cada produto torna-se também um tipo de viga (Tipos de estrutura).",
+  "As a lintel (a door's or window's precast product): the bearing its lintels take unless the rule says its own, and the lengths it is made in (none: cut to length).": "Como verga (o produto pré-fabricado de uma porta ou janela): o apoio das suas vergas, a menos que a regra tenha o seu, e os comprimentos em que é fabricada (nenhum: cortada à medida).",
+  "Bearing": "Apoio",
+  "Stock lengths": "Comprimentos comerciais",
+  "Millimetres, separated by spaces or |": "Milímetros, separados por espaços ou |",
+  "Beam, column and lintel types from a CSV or XLSX: one row a type (name, kind, profile or h and b, material, mark, bearing, manufacturer, code, lengths)": "Tipos de viga, pilar e verga a partir de um CSV ou XLSX: uma linha um tipo (nome, espécie, perfil ou h e b, material, marca, apoio, fabricante, código, comprimentos)",
+  "The column and beam types as a CSV the import reads back": "Os tipos de pilar e viga como um CSV que a importação volta a ler",
+  "Import structure types": "Importar tipos de estrutura",
+  "Rows that say no kind are": "As linhas que não dizem a espécie são",
+  "Lintels (precast)": "Vergas (pré-fabricadas)",
+  "Rows of one section, material and maker whose names differ by their length become one type with all their lengths (KP 7 - 100, KP 7 - 125 → KP 7)": "As linhas de uma secção, material e fabricante cujos nomes diferem pelo comprimento tornam-se um tipo com todos os comprimentos (KP 7 - 100, KP 7 - 125 → KP 7)",
+  "One type for the lengths of one section": "Um tipo para os comprimentos de uma secção",
+  "Already in the project": "Já no projeto",
+  "Differs": "Difere",
+  "Not read": "Não lida",
+  "The types were exported: one row a type, sizes in millimetres.": "Os tipos foram exportados: uma linha um tipo, medidas em milímetros.",
+  "The types were imported, in one step to undo.": "Os tipos foram importados, num só passo a anular.",
+  "Structure types (CSV or XLSX)": "Tipos de estrutura (CSV ou XLSX)",
+  "Kind (beam, column, lintel)": "Espécie (viga, pilar, verga)",
+  "Height h": "Altura h",
+  "Codes of the lengths": "Códigos dos comprimentos",
   // Names of the engine's classes (data-i18n-ctx="class"): the plain word keeps its other meaning.
   'class|Solid': 'Sólido', 'class|Bar': 'Barra', 'class|Issue': 'Problema', 'class|Grid': 'Grade', 'class|Covering': 'Revestimento',
   "Some constraints could not stay with the shapes and were dropped.": "Algumas restrições não puderam ficar com as formas e foram removidas.",

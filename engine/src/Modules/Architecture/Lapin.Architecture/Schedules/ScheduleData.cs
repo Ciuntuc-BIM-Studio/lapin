@@ -8,7 +8,12 @@ namespace Lapin.Architecture.Schedules;
 public sealed record Occurrence(string Id, string Level, int Number, bool? External);
 
 /// <summary>A lintel group's facts: precast or cast, its product, section and length (m), steel per piece (kg), whether a stock length fits, concrete per piece (m³), the marks of what it spans.</summary>
-public sealed record LintelInfo(bool Precast, string? Product, double Width, double Height, double Length, double SteelKg, bool Fits, double Volume, List<string> Openings);
+public sealed record LintelInfo(bool Precast, string? Product, double Width, double Height, double Length, double SteelKg, bool Fits, double Volume, List<string> Openings)
+{
+    /// <summary>The beam type it is made of (report #135): its name and mark, the schedule's mark for it.</summary>
+    public string? BeamType { get; init; }
+    public string? TypeMark { get; init; }
+}
 
 /// <summary>
 /// One line of a schedule: a door or window type (or a lintel group), its
@@ -141,7 +146,7 @@ public static class Schedules
                 key = key[..key.LastIndexOf(':')];
                 // What it spans: each opening's filling (a door or window).
                 var fills = key.Split('+').SelectMany(o => m.RelatedOf(o, IfcClass.RelFillsElement)).Select(f => f.Id).ToList();
-                var own = fills.Select(f => Openings.SpecOf(m, f)?.Lintel).FirstOrDefault(r => r is { Mode: not "none" });
+                var own = fills.Select(f => Openings.SpecOf(m, f)?.Lintel).FirstOrDefault(r => r is { Mode: not "none" })?.Resolve(m);
                 var rule = own ?? wallRule;
                 var vs = part.Solid.Vertices;
                 double Extent(Func<Vec3, double> f) => vs.Max(f) - vs.Min(f);
@@ -151,11 +156,14 @@ public static class Schedules
                 var width = curve.IsArc ? Extent(v => (v.Xy - curve.Centre).Length) : Extent(v => v.X * across.X + v.Y * across.Y);
                 var height = Extent(v => v.Z);
                 var precast = part.Name.Contains("precast", StringComparison.OrdinalIgnoreCase);
-                var product = precast && rule?.Product is { } p ? $"{p.Manufacturer} {p.Code}".Trim() : null;
+                // A beam type's lintel (report #135): listed by its type, with the code of the stock length it takes.
+                var beam = precast ? LintelTypes.Read(m, part.TypeId) : null;
+                var product = beam != null ? $"{beam.Manufacturer} {beam.Name}".Trim() + (beam.CodeOf(Math.Round(length, 6)) is { } code && code != beam.Name ? $" ({code})" : "")
+                    : precast && rule?.Product is { } p ? $"{p.Manufacturer} {p.Code}".Trim() : null;
                 var steel = !precast && rule?.Reinforcement is { } r ? Steel(r, width, height, length) : 0;
-                var fits = !(precast && rule?.Product is { } pr && !pr.Lengths.Any(l => l >= length - 1e-6));
-                var info = new LintelInfo(precast, product, width, height, length, Math.Round(steel, 2), fits, Measure.Volume(part.Solid), []);
-                var group = new System.Text.Json.Nodes.JsonArray(precast, product, Mm(width), Mm(height), Mm(length), Math.Round(steel * 10)).ToJsonString();
+                var fits = !(precast && rule?.Product is { Lengths.Length: > 0 } pr && !pr.Lengths.Any(l => l >= length - 1e-6));
+                var info = new LintelInfo(precast, product, width, height, length, Math.Round(steel, 2), fits, Measure.Volume(part.Solid), []) { BeamType = beam?.Name, TypeMark = beam?.Mark };
+                var group = new System.Text.Json.Nodes.JsonArray(precast, product, Mm(width), Mm(height), Mm(length), Math.Round(steel * 10), beam?.TypeId).ToJsonString();
                 pieces.Add((group, info, levelOf(wall.Id), wall.Id, fills));
             }
         }
@@ -170,9 +178,13 @@ public static class Schedules
         })
         .OrderBy(x => x.Entry.Lintel!.Precast ? 0 : 1).ThenBy(x => x.Entry.Lintel!.Length).ThenBy(x => x.Entry.Lintel!.Height).ThenBy(x => x.Entry.Lintel!.Width).ToList();
         var marks = new Dictionary<string, string>();
-        var list = entries.Select((x, i) =>
+        // A beam type's mark marks its lintels (each length its own entry: P1, or P1-1, P1-2… when the type comes in several); the others B1, B2….
+        var byTypeMark = entries.Where(x => x.Entry.Lintel!.TypeMark != null).GroupBy(x => x.Entry.Lintel!.TypeMark!).ToDictionary(g => g.Key, g => g.Select(x => x.Entry.Key).ToList());
+        var plain = 0;
+        var list = entries.Select(x =>
         {
-            var mark = $"B{i + 1}";
+            var tm = x.Entry.Lintel!.TypeMark;
+            var mark = tm != null ? byTypeMark[tm] is { Count: > 1 } same ? $"{tm}-{same.IndexOf(x.Entry.Key) + 1}" : tm : $"B{++plain}";
             foreach (var f in x.Fills) marks[f] = mark;
             return x.Entry with { Mark = mark };
         }).ToList();

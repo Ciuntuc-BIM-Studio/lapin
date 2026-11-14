@@ -25,6 +25,8 @@ import { ProfilePickerField } from '../core/profileLibraries/ProfilePickerField'
 import { useLibraryPick } from '../core/profileLibraries/useLibraryPick';
 import { SectionGlyph } from '../steel/SteelTypesDialog';
 import type { ProfileJson } from '../core/profiles';
+import { TypeTableFiles } from './TypeTableImport';
+import { formatLengths, parseLengths } from './lintelFields';
 
 type Kind = 'column' | 'beam' | 'strip' | 'pad';
 type Shape = 'rectangle' | 'circle' | 'polygon' | 'library';
@@ -61,6 +63,10 @@ export function StructureTypesDialog() {
   // A strip foundation's shape: the standard stem on a footing, or a profile of the project.
   const [stripShape, setStripShape] = useState<'standard' | 'profile'>('standard');
   const [profileId, setProfileId] = useState<string | null>(null);
+  // A beam type as a lintel (report #135): its mark, the bearing its lintels take, its stock lengths.
+  const [mark, setMark] = useState('');
+  const [bearing, setBearing] = useState<number | null>(null);
+  const [lengths, setLengths] = useState<number[]>([]);
   const [steps, setSteps] = useState<Step[]>([{ length: 1.8, width: 1.8, height: 0.5 }, { length: 1, width: 1, height: 0.4 }]);
   const list = kind === 'column' ? ofClass(model, 'IfcColumnType') : kind === 'beam' ? ofClass(model, 'IfcBeamType')
     : ofClass(model, 'IfcFootingType').filter((t) => t.props.kind === kind);
@@ -76,6 +82,9 @@ export function StructureTypesDialog() {
       setShape(sec.kind === 'circle' || sec.kind === 'polygon' ? sec.kind : sec.kind && sec.kind !== 'rectangle' ? 'library' : 'rectangle'); setW(num(sec.width, 0.3)); setD(num(sec.depth, 0.3));
       if (sec.kind === 'polygon') setSides(num(sec.sides, 8));
     }
+    setMark(typeof t.props.mark === 'string' ? t.props.mark : '');
+    setBearing(typeof t.props.bearing === 'number' ? t.props.bearing : null);
+    setLengths(Array.isArray(t.props.lengths) ? (t.props.lengths as number[]) : []);
     if (t.props.kind === 'strip') {
       setStripShape(t.props.profile ? 'profile' : 'standard');
       setProfileId(typeof t.props.profileId === 'string' ? t.props.profileId : null);
@@ -100,6 +109,7 @@ export function StructureTypesDialog() {
     const args: Record<string, unknown> = { id: edited.id, name };
     if ((kind === 'column' || kind === 'beam') && shape === 'library') { if (lib.picked) Object.assign(args, { profile: lib.picked.profile, library: lib.picked.library }); }
     else if (kind === 'column' || kind === 'beam') args.section = section;
+    if (kind === 'column' || kind === 'beam') Object.assign(args, { mark, ...(kind === 'beam' ? { bearing, lengths } : {}) });
     else if (kind === 'strip' && stripShape === 'profile') Object.assign(args, { bottom, ...(profileId ? { profileId } : {}) });
     else if (kind === 'strip') Object.assign(args, { stemHeight: stem, footingWidth: fw, footingHeight: fh, bottom, ...(edited.props.profile ? { profile: null } : { core }) });
     else Object.assign(args, { bottom, steps });
@@ -152,6 +162,7 @@ export function StructureTypesDialog() {
                 </li>
               ))}
             </ul>
+            {(kind === 'column' || kind === 'beam') && <TypeTableFiles kind={kind} />}
           </div>
           <div className="type-edit">
             <div className="row">
@@ -175,6 +186,13 @@ export function StructureTypesDialog() {
               {shape === 'polygon' && <label className="field-line"><span className="eyebrow">Sides</span>
                 <input type="number" min={3} max={64} step={1} value={sides} onChange={(e) => setSides(Math.max(3, Math.min(64, Math.round(Number(e.target.value) || 3))))} /></label>}
               {shape === 'rectangle' && <Len label={kind === 'beam' ? 'Depth' : 'Length'} value={d} min={0.01} onChange={setD} />}
+            </>}
+            {edited && (kind === 'column' || kind === 'beam') && <label className="field-line"><span className="eyebrow">Mark</span><input data-field="type-mark" value={mark} onChange={(e) => setMark(e.target.value)} /></label>}
+            {edited && kind === 'beam' && <>
+              <p className="muted small">As a lintel (a door's or window's precast product): the bearing its lintels take unless the rule says its own, and the lengths it is made in (none: cut to length).</p>
+              <label className="field-line"><span className="eyebrow">Bearing</span><LengthField metres={bearing} blank min={0} onCommit={(m) => setBearing(m ?? null)} /></label>
+              <label className="field-line"><span className="eyebrow">Stock lengths</span>
+                <Cell value={formatLengths(lengths)} title="Millimetres, separated by spaces or |" onCommit={(t) => { const l = parseLengths(t); if (!l) return false; setLengths(l); }} /></label>
             </>}
             {edited && (kind === 'column' || kind === 'beam') && structureHooks.typeExtras.map((Extra, i) => <Extra key={i} type={edited} kind={kind} />)}
             {kind === 'strip' && <label className="field-line"><span className="eyebrow">Shape</span>
