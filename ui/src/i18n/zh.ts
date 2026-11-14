@@ -3541,6 +3541,22 @@ export const ZH: Record<string, string> = {
   "Duplicate type": "复制类型",
   "Move type": "移动类型",
   "Order types": "排序类型",
+  // Right-click selection menu and dimension grips (forum topics 73, 74)
+  "Select similar in this view": "在此视图中选择相似项",
+  "Select similar in the whole project": "在整个项目中选择相似项",
+  "Select all with the same…": "选择所有相同…",
+  "Same type": "相同类型",
+  "Same width": "相同宽度",
+  "Same core material": "相同核心材料",
+  "Same material": "相同材料",
+  "Same storey": "相同楼层",
+  "Previous selections": "以前的选择",
+  "Select the previous selection": "选择上一次的选择",
+  "Join selected dimensions": "合并所选标注",
+  "Align selected dimensions": "对齐所选标注",
+  "Only dimensions parallel to the first one are aligned.": "仅对齐与第一个平行的标注。",
+  "Drag: the point moves (and holds on what it lands on); Alt-click or Ctrl/⌘-click: take it out": "拖动：点移动（并吸附到所碰到的对象）；Alt+单击或 Ctrl/⌘+单击：移除该点",
+  "Drag: the dimension line goes through the point · Ctrl/⌘-click: go on, the next clicks add points beyond it": "拖动：标注线穿过该点 · Ctrl/⌘+单击：继续，之后的单击在其外侧添加点",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

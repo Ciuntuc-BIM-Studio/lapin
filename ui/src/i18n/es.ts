@@ -3549,6 +3549,22 @@ export const ES: Record<string, string> = {
   "Duplicate type": "Duplicar tipo",
   "Move type": "Mover tipo",
   "Order types": "Ordenar tipos",
+  // Right-click selection menu and dimension grips (forum topics 73, 74)
+  "Select similar in this view": "Seleccionar similares en esta vista",
+  "Select similar in the whole project": "Seleccionar similares en todo el proyecto",
+  "Select all with the same…": "Seleccionar todo con el mismo…",
+  "Same type": "Mismo tipo",
+  "Same width": "Mismo ancho",
+  "Same core material": "Mismo material del núcleo",
+  "Same material": "Mismo material",
+  "Same storey": "Misma planta",
+  "Previous selections": "Selecciones anteriores",
+  "Select the previous selection": "Seleccionar la selección anterior",
+  "Join selected dimensions": "Unir las cotas seleccionadas",
+  "Align selected dimensions": "Alinear las cotas seleccionadas",
+  "Only dimensions parallel to the first one are aligned.": "Solo se alinean las cotas paralelas a la primera.",
+  "Drag: the point moves (and holds on what it lands on); Alt-click or Ctrl/⌘-click: take it out": "Arrastrar: el punto se mueve (y se ancla a lo que toca); Alt+clic o Ctrl/⌘+clic: quitarlo",
+  "Drag: the dimension line goes through the point · Ctrl/⌘-click: go on, the next clicks add points beyond it": "Arrastrar: la línea de cota pasa por el punto · Ctrl/⌘+clic: continuar, los siguientes clics añaden puntos más allá",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

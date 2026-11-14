@@ -169,6 +169,16 @@ Un clic dreapta pe tab oferă același lucru: **Deschide într-o fereastră nou�
 
 Un clic, o fereastră de selecție sau un lasou iau doar ce arată vederea, în planuri, secțiuni, fațade, vederile de pe planșe și 3D. Un element pe care Vizibilitate / Grafică al vederii îl ascunde (categoria lui, o subcategorie, un filtru), unul pus deoparte cu Ascunde / Izolează sau de faza vederii, unul în afara domeniului sau a decupării vederii, pe un nivel, o legătură sau un grup care nu se arată, ori tăiat de o cutie de secțiune, e sărit: clicul ia ce e desenat sub el, iar elementul care se luminează sub cursor e unul pe care îl vezi. Cu **Selecție pe niveluri de ansamblu** pornit, un clic într-un întreg intră în continuare în părțile lui. Cu liniile de modelare arătate în locul desenului (butonul cu peniță din capul planului), tot ce e pe ecran se poate lua. Navigatorul proiectului, un tabel, o legătură din panoul de proprietăți și dependențele selectează în continuare un element după nume, ascuns sau nu; panoul de proprietăți spune atunci *Nu se vede în această vedere*.
 
+## Clic dreapta pe o selecție
+
+Un clic dreapta pe un element selectat (într-un plan, un desen sau în 3D) oferă ce se potrivește:
+
+- **Selectează similare în această vedere** și **Selectează similare în tot proiectul** selectează elementele din aceeași clasă și de același tip (din aceeași clasă, când elementul nu are tip). În vedere contează doar ce arată vederea, iar într-un plan doar nivelul pe care ești.
+- **Selectează tot ce are același…** deschide o listă cu ce deosebește elementul: tipul, lățimea, materialul miezului, materialul, nivelul. Fiecare intrare arată valoarea elementului; alegând-o se selectează toate elementele clasei care o au la fel, oricum ar fi restul.
+- **Editează tipul…** deschide dialogul de tipuri al tipului elementului (cel pe care îl deschide **Editează tipurile…**), cu acel tip curent.
+- **Selecții anterioare** arată ultimele zece selecții, cea mai nouă prima. O selecție intră în listă când o golești sau alegi altceva; una reluată trece în față, iar elementele șterse dispar din ea. Dai clic pe una ca s-o selectezi din nou. Comanda **Selectează selecția anterioară** (<kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>Z</kbd>, se schimbă în **Scurtături de tastatură**) o ia pe cea mai nouă, fără meniu.
+- În 3D, **Ascunde**, **Izolează** și **Arată tot** (HH, HI, HR) merg ca în Revit, pe moment.
+
 ## Mai multe elemente deodată
 
 Selectează mai multe elemente (Shift-clic sau trage un dreptunghi), iar panoul de proprietăți îl arată pe ultimul ales, cu **N selectate** lângă clasa lui. O valoare pe care o au toate e afișată; una care diferă apare ca *diferă*. Schimbă un câmp și fiecare element selectat care îl are primește noua valoare, într-un singur pas pe care **Anulează** îl desface: înălțimea și decalajul bazei pereților, tipul fiecărui perete, ușă sau grindă selectată, parapetul ferestrelor, fazele fiecărui element selectat oricare i-ar fi clasa, stratul și culoarea liniilor desenate, stilul textelor. Ce e al fiecărui element rămâne al lui: numărul unei încăperi, lungimea unui perete, locul unei uși de-a lungul peretelui.
