@@ -37,7 +37,7 @@ priorities, or a wall sweep.)
 - GlobalIds stay: the element is the same entity, its parts keep their keys.
 - **A floor's contour edited** (`updateSlab`): an edge's extent follows its edge (the new edge along the old line, its own
   index first); one whose edge is gone goes with it.
-- **Refused** (each with a message): a curved wall; a reference (its body is its file's); a layer of no thickness; an edge the
+- **Refused** (each with a message): a reference (its body is its file's); a layer of no thickness; an edge the
   element does not have; a layer stopping short of both ends (or bottom and top) by more than it is long (high); a floor
   layer's outline that would cross itself.
 - **IFC import**: nothing is added to imported elements; an extent is only set by the user.
@@ -50,17 +50,53 @@ others** — and **Add a layer extent** (the first free place, 2 cm past). Each 
 `architecture.clearLayerExtents` takes them all away. Both are in the command catalogue; a guest editor may run them (every
 `doc.execute` an editor may).
 
-## What is left (stage 2 and later)
+## Stage 2 (decision 578)
 
-- **Grips**: "Edit layers" in a section and a plan — each layer's edge grip on the selected element, dragged or typed (the
-  finish painter's edit scope). Stage 1 is numeric only.
-- Curved walls; a wall's top under a roof (the layers follow the roof; a top extent is not used there); the gable's piece over
-  a zoned core's ring beam.
-- Roofs: their coverings are not a layer set yet (`docs/view-styles.md`); when they are, the same `layerExtents`.
-- A type default for an extent (a floor type whose finish always runs 2 cm past); per-edge extents of a wall's end by face
-  (the imported `layerEnds` does it for free ends).
-- Cutting what is not a wall or a floor (columns, beams, footings) and following the cut order instead of the on/off choice.
+- **Edit layers** (Architecture → Edit layers, or the button under the rows): an edit scope (kind `Layers`, walls and floors
+  kept, the rest faded, the selection kept). The one wall or floor selected shows each layer's outline, dashed, and a grip on
+  each edge of each layer (`layerEdit.ts`, `LayerEditOverlays.tsx`). The engine says where the edges are as built
+  (`architecture.layerEdges {id}` → `{layers: [{layer, name, footprint, z0, z1}], grips: [{layer, name, edge, index?, line,
+  dir, offset, own}]}`, model coordinates; `LayerExtents.Edges`); the interface places them in the view: in a plan the edges
+  that move sideways (a wall's ends, a floor's edges), at their middle; in a section those moving in its plane, where the cut
+  crosses their line (a wall's base and top, a floor's edges), or, for an edge lying along the cut, where the cut runs
+  through its layer (a wall's end, the section along the wall); in an elevation the nearest of the edges seen at one point.
+  A developed section shows none. A grip is kept on its way (`constrain`), snaps as every grip does (the view's `aim`), takes a
+  typed distance while dragged (the live input); its drop is one `architecture.setLayerExtent` (its cut left as it is), one
+  undo step. The views lend a section's frame and kind to the grips (`GripView.frame`, `kind`, `developed`), and a module whose
+  grips change without the model changing bumps them (`bumpGrips`, `useGripRev`). Through an inset view the grips are not
+  mapped: the source's frame is not the host's (the inset's mapping is a plan's; left).
+- **Curved walls**: start, end, bottom and top, as straight ones. Short of an end, along the arc (`PathCurve.Band` with the
+  stations moved); past an end, on along the end's tangent, as the wall's own body is past its axis (`PathCurve.PointAt`), one
+  rule for curves (`Chords` through `PathCurve.Stations`). `Walls.ExtentFrame` gives straight and curved walls one shape for the
+  pieces and the grips (the axis as a `PathCurve`, where each band ends, the footprints, the roof).
+- **Under a roof**: a layer going up to the roof (no top of its own under the wall's) takes its top extent by following the
+  roof: its body built that much higher and cut along the roof's line moved by it (`Walls.RoofShift`, `HeightExtents`), so
+  10 cm under the roof or 5 cm into it; a layer with its own top keeps its extent from it. A zoned core's gable goes up with it,
+  and its strip past an end now includes the gable over the ring beam.
+- **Roofs' layer sets**: roofs have none (their covering, deck and framing are parts of their own, `RoofCoverings`,
+  `RoofParts`); giving them one is a decision of its own (the user's), so no roof extents; the guide says so.
+- **Type defaults**: a wall type's or a floor type's own `layerExtents` (a floor type's all round only), set with the same
+  command on the type. An element builds with `LayerExtents.Effective`: its type's, each one it sets at the same place replaced
+  (an own 0 keeps the layer at that edge, stored only where the type has one), then its own; `inherit: true` gives the place
+  back to the type. The holders of cutting extents include the elements of types that have them (`LayerExtentReads.Holders`
+  notes those types and their typing relations), the `extents:<class>` key is touched by a type's change and stamped with the
+  type class's stamp too. Properties → Layer extents shows on types, and an element's rows from its type marked *From the type*
+  (↺ back to the type's). A Lapin IFC file carries the type's in its Lapin_Intent.
+- **Cutting columns, beams and footings**: the platform's `ILayerExtentCuts`, provided by architecture, applied by structure's
+  columns, beams, strip footings and pads after their cut priorities (`LayerExtentCuts.Apply`).
+- **The cut order**: `cuts: "order"` (Properties: Overlaps / Cuts others / By cut order) cuts only the elements its element
+  outranks by the cut order (`ICutters.PriorityOf`): a floor's finish cuts the wall, a wall's plaster going down leaves the
+  floor whole.
+- Saved projects open unchanged: nothing is stored differently (`cuts` may now also be `"order"`; types may hold the
+  attribute); no upgrade. IFC import adds nothing.
+
+## What is left
+
+- Edit layers through an inset view (the source view's frame lent to the inset's grips) and in a developed section.
+- The grips in 3D: a wall's and floor's grips are placed as in a plan there (at the storey's height); grips of its own in 3D
+  (on the faces, the finish painter's way) would be better.
+- Roofs' layer sets (a decision of its own), then the same `layerExtents` on them.
+- Per-face extents of a wall's end (the imported `layerEnds` does it for free ends).
 - Extents follow the layer's index: a type changed for one with other layers keeps the indices (those past the last layer are
   ignored).
-- Copies and storey copies keep the attribute (it is an attribute), groups too; a floor's edge index after a contour drawn
-  again from scratch (`RemapEdges` finds the edge along the old line, or drops it).
+- A cutting piece under a roof's line (a layer going into the roof) does not cut the roof: roofs are not cut by layers.

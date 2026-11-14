@@ -125,7 +125,7 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
         // A timber-frame wall's frame elevation (decision 240): a section along its axis through the middle of its core, every
         // member cut, at 1:20, with the frame's dimensions; {id (the wall)} → the view.
         r.Command("frameView", "Frame elevation", (ctx, a) => new JsonObject { ["id"] = FrameView(ctx, ctx.Model.Get((string?)a["id"] ?? "") is { Class: IfcClass.Wall } w ? w : throw new CommandException("Pick a wall.")).Id });
-        // The frame elevation as an element view role (decision 578), of a timber-frame or CLT wall.
+        // The frame elevation as an element view role (decision 579), of a timber-frame or CLT wall.
         r.Service<IElementViewRoles>(new WoodViewRoles());
         r.Service<IScheduleSource>(new TimberSchedule());
 
@@ -569,7 +569,7 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
     static string Colour(string role) => role switch { "header" or "sill" => "#a87a46", "plate" => "#b48650", _ => "#c99a64" };
 }
 
-/// <summary>A timber-frame or CLT wall's frame elevation as an element view role (decision 578).</summary>
+/// <summary>A timber-frame or CLT wall's frame elevation as an element view role (decision 579).</summary>
 sealed class WoodViewRoles : IElementViewRoles
 {
     public IEnumerable<ElementViewRole> Roles() =>

@@ -14,6 +14,8 @@ Para cambiar el contorno, seleccione la losa y arrastre sus esquinas. **Hueco en
 
 Una losa dibujada fuera de los muros, delante de una puerta, es un porche. Para los peldaños que suben a él, consulte [Escaleras](stairs.md).
 
+Una capa de un forjado también puede ir más allá de su contorno, o detenerse antes, todo alrededor o en un borde, escrita en sus propiedades o arrastrada en planta o en sección con **Editar capas**, y un tipo de forjado puede dar a sus forjados sus extensiones: vea [Extensiones de capas](walls.md#extensiones-de-capas). Las cubiertas aún no tienen composición de capas (su cobertura, su losa y su estructura son partes propias), así que no tienen extensiones de capas.
+
 ## Cubiertas
 
 Elija **Arquitectura → Cubierta** (<kbd>RF</kbd>) y haga clic en el contorno de los muros que quedan debajo. Lapin construye la cubierta sobre ese contorno, en la parte superior de su nivel.

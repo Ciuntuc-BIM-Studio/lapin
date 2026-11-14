@@ -857,8 +857,9 @@ public sealed partial class Session
             // An element's layers reaching past its edges (forum topic 89): what they may now cut, or no longer cut.
             if (LayerExtentReads.Changed(c.Before, c.After))
             {
-                if (c.Before != null) touched.Add(LayerExtentReads.ReadKey(c.Before.Class));
-                if (c.After != null) touched.Add(LayerExtentReads.ReadKey(c.After.Class));
+                // A type's are its elements' defaults (stage 4).
+                foreach (var cls in new[] { c.Before?.Class, c.After?.Class }.OfType<string>().Distinct())
+                    touched.Add(LayerExtentReads.ReadKey(LayerExtentReads.ElementClassOf(cls) ?? cls));
             }
         }
         touched.Add("class:*");

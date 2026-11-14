@@ -5,7 +5,7 @@ using Lapin.Model;
 namespace Lapin.Platform;
 
 /// <summary>
-/// An element's own frame (docs/plan-shop-drawings.md §3, decision 578): <see cref="X"/> along its main extent (its
+/// An element's own frame (docs/plan-shop-drawings.md §3, decision 579): <see cref="X"/> along its main extent (its
 /// length), <see cref="Z"/> up as it is drawn in the shop, <see cref="Y"/> completing a right-handed frame
 /// (<c>X × Y = Z</c>), from <see cref="Origin"/>; <see cref="Min"/> and <see cref="Max"/> its body's box in the frame. Worked
 /// out from the element's attributes and body on every ask, never kept, so it follows a move, a turn or a new profile.

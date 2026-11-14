@@ -14,6 +14,8 @@ Um den Umriss zu ändern, wählen Sie die Decke aus und ziehen Sie ihre Ecken. *
 
 Eine außerhalb der Wände, vor einer Tür gezeichnete Decke ist ein Podest. Für die Stufen dort hinauf siehe [Treppen](stairs.md).
 
+Eine Schicht einer Decke kann auch über ihren Umriss hinausgehen oder davor enden, rundum oder an einer Kante, in ihren Eigenschaften eingetippt oder im Grundriss oder Schnitt mit **Schichten bearbeiten** gezogen, und ein Deckentyp kann seinen Decken ihre Verlängerungen geben: siehe [Schichtverlängerungen](walls.md#schichtverlangerungen). Dächer haben noch keinen Schichtaufbau (Eindeckung, Platte und Tragwerk sind eigene Teile), daher keine Schichtverlängerungen.
+
 ## Dächer
 
 Wählen Sie **Architektur → Dach** (<kbd>RF</kbd>) und klicken Sie den Umriss der Wände darunter an. Lapin baut das Dach über diesem Umriss, oben auf seiner Ebene.

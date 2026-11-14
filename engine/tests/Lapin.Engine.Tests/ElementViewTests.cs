@@ -12,7 +12,7 @@ using Lapin.Wood;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// Shop drawings, stage S0 (docs/plan-shop-drawings.md, decision 578): an element's own frame (a module's axes, the core's,
+/// Shop drawings, stage S0 (docs/plan-shop-drawings.md, decision 579): an element's own frame (a module's axes, the core's,
 /// or one from its body), element views read from it on every ask, the view's subject as the first rule of Visibility /
 /// Graphics, and the element-anchored views there were before registered as roles, drawing as they did.
 /// </summary>

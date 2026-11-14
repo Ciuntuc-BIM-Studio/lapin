@@ -8,7 +8,12 @@
 
 import type { NodeDto } from '../engine/protocol';
 import type { Grip, GripStep, Vec2 } from '../platform/module';
+import { create } from 'zustand';
 import { execute } from '../engine/session';
+
+/** Bumped when a module's grips change without the model or the selection changing (its own data arrived): the views take them again. */
+export const useGripRev = create<{ rev: number }>(() => ({ rev: 0 }));
+export const bumpGrips = (): void => useGripRev.setState((s) => ({ rev: s.rev + 1 }));
 
 export interface GripGroup { key: string; at: Vec2; members: Grip[] }
 

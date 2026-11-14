@@ -24,17 +24,24 @@ public static class LayerExtents
     /// <summary>The longest extent a command takes (m): a layer's edge, not a new element.</summary>
     public const double MaxOffset = 1.0;
 
-    public sealed record Extent(int Layer, string Edge, int? Index, double Offset, bool Cuts)
+    /// <summary><paramref name="ByOrder"/> (with <paramref name="Cuts"/>): it cuts only what its element outranks by the cut order (stage 4), stored as <c>cuts: "order"</c>.</summary>
+    public sealed record Extent(int Layer, string Edge, int? Index, double Offset, bool Cuts, bool ByOrder = false)
     {
         public JsonObject ToJson()
         {
             var o = new JsonObject { ["layer"] = Layer, ["edge"] = Edge };
             if (Index is { } i) o["index"] = i;
             o["offset"] = Offset;
-            if (Cuts) o["cuts"] = true;
+            if (Cuts) o["cuts"] = ByOrder ? JsonValue.Create(LayerExtents.ByOrder) : true;
             return o;
         }
     }
+
+    /// <summary>The <c>cuts</c> value of an extent that follows the cut order (<see cref="Extent.ByOrder"/>).</summary>
+    public const string ByOrder = "order";
+
+    /// <summary>A <c>cuts</c> argument or attribute: true, false, or <c>"order"</c> (cutting, by the order); null when it is none of them.</summary>
+    public static bool? CutsArg(JsonNode? n) => n is JsonValue v ? v.TryGetValue<bool>(out var b) ? b : v.TryGetValue<string>(out var s) && s == ByOrder ? true : null : null;
 
     /// <summary>The element's extents, as stored; none for an element without them (every element made before).</summary>
     public static IReadOnlyList<Extent> Of(Entity e)
@@ -45,10 +52,32 @@ public static class LayerExtents
         {
             if (Json.Number(n["layer"]) is not { } layer || (string?)n["edge"] is not { Length: > 0 } edge || Json.Number(n["offset"]) is not { } offset || !double.IsFinite(offset)) continue;
             var index = Json.Number(n["index"]) is { } i ? (int?)(int)i : null;
-            o.Add(new Extent((int)layer, edge, index, offset, n["cuts"] is JsonValue c && c.TryGetValue<bool>(out var cuts) && cuts));
+            var cuts = CutsArg(n["cuts"]) == true;
+            o.Add(new Extent((int)layer, edge, index, offset, cuts, cuts && n["cuts"] is JsonValue c && c.TryGetValue<string>(out var by) && by == ByOrder));
         }
         return o;
     }
+
+    /// <summary>The element's type (a wall's or a floor's), whose extents are the element's defaults.</summary>
+    public static Entity? TypeOf(IModelView m, Entity e) =>
+        e.Class is IfcClass.Wall or IfcClass.Slab && m.RelatingOf(e.Id, IfcClass.RelDefinesByType) is { Class: IfcClass.WallType or IfcClass.SlabType } t ? t : null;
+
+    /// <summary>
+    /// The extents an element is built with: its type's (the defaults every element of the type takes, stage 4), each one the
+    /// element sets itself at the same place (layer, edge, edge index) replacing it — an own offset of 0 keeps the layer at
+    /// that edge against its type's — and its own. Those of offset 0 are left out.
+    /// </summary>
+    public static IReadOnlyList<Extent> Effective(Entity e, IModelView m)
+    {
+        var own = Of(e);
+        var type = TypeOf(m, e) is { } t ? Of(t) : [];
+        if (type.Count == 0) return own.Where(x => Math.Abs(x.Offset) > 1e-9).ToList();
+        var o = type.Where(x => !own.Any(y => SamePlace(x, y))).Concat(own).Where(x => Math.Abs(x.Offset) > 1e-9).ToList();
+        return [.. o.OrderBy(y => y.Layer).ThenBy(y => y.Edge, StringComparer.Ordinal).ThenBy(y => y.Index ?? -1)];
+    }
+
+    /// <summary>Whether two extents are at the same place: the same layer, edge and edge index.</summary>
+    public static bool SamePlace(Extent a, Extent b) => a.Layer == b.Layer && a.Edge == b.Edge && a.Index == b.Index;
 
     /// <summary>A layer's extent at a wall's edge (0: none).</summary>
     public static double Offset(IReadOnlyList<Extent> xs, int layer, string edge)
@@ -60,11 +89,14 @@ public static class LayerExtents
     /// <summary>A layer's extent at an edge when it stops short of it (negative), else 0: what is taken off where the layer is built.</summary>
     public static double Short(IReadOnlyList<Extent> xs, int layer, string edge) => Math.Min(0, Offset(xs, layer, edge));
 
-    /// <summary>The extents with one set: the one of the same layer and edge replaced, dropped when its offset is 0.</summary>
-    public static List<Extent> With(IReadOnlyList<Extent> xs, Extent x)
+    /// <summary>
+    /// The extents with one set: the one of the same layer and edge replaced, dropped when its offset is 0 — unless
+    /// <paramref name="keepZero"/> (the type has an extent there, which an own 0 overrides).
+    /// </summary>
+    public static List<Extent> With(IReadOnlyList<Extent> xs, Extent x, bool keepZero = false)
     {
-        var o = xs.Where(y => !(y.Layer == x.Layer && y.Edge == x.Edge && y.Index == x.Index)).ToList();
-        if (Math.Abs(x.Offset) > 1e-9) o.Add(x);
+        var o = xs.Where(y => !SamePlace(x, y)).ToList();
+        if (keepZero || Math.Abs(x.Offset) > 1e-9) o.Add(x);
         return [.. o.OrderBy(y => y.Layer).ThenBy(y => y.Edge, StringComparer.Ordinal).ThenBy(y => y.Index ?? -1)];
     }
 
@@ -172,21 +204,31 @@ public static class LayerExtents
         else parts.Add(piece);
     }
 
-    /// <summary>The pieces past their edges of an element's layers set to cut (<see cref="Extent.Cuts"/>): what it takes out of the walls and floors it meets.</summary>
-    public static List<Piece> CuttingPieces(Entity e, IModelView m, IServices? services) => e.Class switch
+    /// <summary>
+    /// The pieces past their edges of an element's layers set to cut (<see cref="Extent.Cuts"/>), of the extents
+    /// <paramref name="which"/> keeps: what it takes out of the elements it meets.
+    /// </summary>
+    public static List<Piece> CuttingPieces(Entity e, IModelView m, IServices? services, Func<Extent, bool>? which = null) => e.Class switch
     {
-        IfcClass.Wall => Walls.ExtentPieces(e, m, services, cuttingOnly: true),
-        IfcClass.Slab => Slabs.ExtentPieces(e, m, services, cuttingOnly: true),
+        IfcClass.Wall => Walls.ExtentPieces(e, m, services, cuttingOnly: true, which),
+        IfcClass.Slab => Slabs.ExtentPieces(e, m, services, cuttingOnly: true, which),
         _ => [],
     };
 
     /// <summary>The classes whose layers may reach past their edges.</summary>
     public static readonly string[] Classes = [IfcClass.Wall, IfcClass.Slab];
 
+    /// <summary>What the platform's <see cref="ILayerExtentCuts"/> asks for: the elements of other modules (columns, beams, footings) cut too.</summary>
+    public sealed class Cuts : ILayerExtentCuts
+    {
+        public List<GeometryPart> Apply(Entity target, IModelView m, IServices? services, List<GeometryPart> parts, List<string> problems) => CutBy(target, m, services, parts, problems);
+    }
+
     /// <summary>
-    /// An element's parts less what the layers of the walls and floors round it take, where they reach past their own edges and
-    /// are set to cut (forum topic 89). Read under a narrow key (<see cref="LayerExtentReads"/>): only the elements with extents
-    /// are looked at, by a box round their attributes first.
+    /// An element's parts less what the layers of the walls and floors round take, where they reach past their own edges and
+    /// are set to cut (forum topic 89): every one so set, or (<see cref="Extent.ByOrder"/>) only when its element outranks this
+    /// one by the cut order. Read under a narrow key (<see cref="LayerExtentReads"/>): only the elements with extents (their own
+    /// or their type's) are looked at, by a box round their attributes first. Walls, floors, columns, beams and footings are cut.
     /// </summary>
     public static List<GeometryPart> CutBy(Entity target, IModelView m, IServices? services, List<GeometryPart> parts, List<string> problems)
     {
@@ -196,15 +238,26 @@ public static class LayerExtents
             if (Measure.Bounds(p.Solid) is { } b)
                 box = box is { } o ? (new Vec3(Math.Min(o.Min.X, b.Min.X), Math.Min(o.Min.Y, b.Min.Y), Math.Min(o.Min.Z, b.Min.Z)), new Vec3(Math.Max(o.Max.X, b.Max.X), Math.Max(o.Max.Y, b.Max.Y), Math.Max(o.Max.Z, b.Max.Z))) : b;
         if (box is not { } tb) return parts;
+        var order = services.Get<ICutters>();
+        int? mine = null;
+        var mineRead = false;
         var cutters = new List<Solid>();
         foreach (var cls in Classes)
             foreach (var id in LayerExtentReads.Holders(m, cls))
             {
                 if (id == target.Id) continue;
                 // Its place in plan from its attributes, before anything is built: most holders are far.
-                if (m.Get(id) is not { } e || !Of(e).Any(x => x.Cuts && x.Offset > 1e-9) || PlanBox(e) is not { } pb) continue;
+                if (m.Get(id) is not { } e || Effective(e, m).Where(x => x.Cuts && x.Offset > 1e-9).ToList() is not { Count: > 0 } cutting || PlanBox(e, m) is not { } pb) continue;
                 if (pb.X0 > tb.Max.X || pb.X1 < tb.Min.X || pb.Y0 > tb.Max.Y || pb.Y1 < tb.Min.Y) continue;
-                foreach (var piece in CuttingPieces(e, m, services))
+                // Those following the cut order: only when the holder outranks the target.
+                var outranks = false;
+                if (cutting.Any(x => x.ByOrder))
+                {
+                    if (!mineRead) { mine = order?.PriorityOf(target, m); mineRead = true; }
+                    outranks = mine is { } t && order?.PriorityOf(e, m) is { } h && h > t;
+                    if (!outranks && cutting.All(x => x.ByOrder)) continue;
+                }
+                foreach (var piece in CuttingPieces(e, m, services, x => !x.ByOrder || outranks))
                     if (Measure.Bounds(piece.Solid) is { } sb && sb.Min.X < tb.Max.X - 1e-6 && sb.Max.X > tb.Min.X + 1e-6 && sb.Min.Y < tb.Max.Y - 1e-6 && sb.Max.Y > tb.Min.Y + 1e-6 && sb.Min.Z < tb.Max.Z - 1e-6 && sb.Max.Z > tb.Min.Z + 1e-6)
                         cutters.Add(piece.Solid);
             }
@@ -219,13 +272,112 @@ public static class LayerExtents
         }).OfType<GeometryPart>().ToList();
     }
 
+    // ─── Grips ────────────────────────────────────────────────────────────
+
+    static JsonArray P3(Vec3 p) => new(Math.Round(p.X, 6), Math.Round(p.Y, 6), Math.Round(p.Z, 6));
+    static JsonArray P2(Vec2 p) => new(Math.Round(p.X, 6), Math.Round(p.Y, 6));
+
+    /// <summary>
+    /// A wall's or floor's layers' edges as they are built now, for the grips of "Edit layers" (forum topic 89, stage 2):
+    /// <c>{layers: [{layer, name, footprint: [[x, y]…], z0, z1}], grips: [{layer, name, edge, index?, line: [[x, y, z]…], dir:
+    /// [x, y, z], offset, own}]}</c>, model coordinates. Each layer is its footprint between two heights (a wall's under a roof
+    /// up to its highest point); each grip lies along its edge (<c>line</c>: a wall's end up its height, its base and top along
+    /// it, the roof's line under a roof; a floor's edge at the layer's middle height) and moves the edge along <c>dir</c>, out of
+    /// the element; <c>offset</c> is the extent it has there now (its own, else its type's; a floor's edge's own, else its
+    /// outline's), <c>own</c> whether the element sets it itself. Null for anything without layers.
+    /// </summary>
+    public static JsonObject? Edges(Entity e, IModelView m, IServices? services)
+    {
+        var xs = Effective(e, m);
+        var own = Of(e);
+        var layers = new JsonArray();
+        var grips = new JsonArray();
+        void Grip(int layer, string name, string edge, int? index, IEnumerable<Vec3> line, Vec3 dir, Extent? at)
+        {
+            var g = new JsonObject { ["layer"] = layer, ["name"] = name, ["edge"] = edge };
+            if (index is { } i) g["index"] = i;
+            g["line"] = new JsonArray([.. line.Select(p => (JsonNode)P3(p))]);
+            g["dir"] = P3(dir);
+            g["offset"] = Math.Round(at?.Offset ?? 0, 6);
+            g["own"] = at != null && own.Any(y => SamePlace(y, at));
+            grips.Add((JsonNode)g);
+        }
+        if (e.Class == IfcClass.Slab)
+        {
+            var contour = Slabs.Contour(e);
+            if (contour.Count < 3 || LayerSets.BandsOf(m, e.Id) is not { Count: > 0 }) return null;
+            var top = Slabs.Top(m, e);
+            foreach (var (from, to, _, name, index) in Slabs.Section(m, e))
+            {
+                if (!(to - from > 1e-9)) continue;
+                var c = SlabContour(contour, xs, index, x => x.Offset) ?? contour;
+                layers.Add((JsonNode)new JsonObject { ["layer"] = index, ["name"] = name, ["footprint"] = new JsonArray([.. c.Select(p => (JsonNode)P2(p))]), ["z0"] = Math.Round(top + from, 6), ["z1"] = Math.Round(top + to, 6) });
+                var zm = top + (from + to) / 2;
+                var outline = xs.FirstOrDefault(x => x.Layer == index && x.Edge == Outline);
+                for (var i = 0; i < contour.Count && i < c.Count; i++)
+                {
+                    var (a, b) = (c[i], c[(i + 1) % c.Count]);
+                    var d = (contour[(i + 1) % contour.Count] - contour[i]).Normalized();
+                    if (d.Length < 1e-9) continue;
+                    // Out of a counter-clockwise outline: on its right.
+                    Grip(index, name, Edge, i, [a.At(zm), b.At(zm)], new Vec3(d.Y, -d.X, 0), xs.FirstOrDefault(x => x.Layer == index && x.Edge == Edge && x.Index == i) ?? outline);
+                }
+            }
+            return new JsonObject { ["layers"] = layers, ["grips"] = grips };
+        }
+        if (e.Class != IfcClass.Wall || LayerSets.BandsOf(m, e.Id) is not { Count: > 0 } || Walls.ExtentFrameOf(e, m, services) is not { } f) return null;
+        var roofed = f.AboveRoof != null;
+        foreach (var band in f.Bands)
+        {
+            if (!(band.To - band.From > 1e-9)) continue;
+            Extent? At(string edge) => xs.FirstOrDefault(x => x.Layer == band.Index && x.Edge == edge);
+            double Off(string edge) => At(edge)?.Offset ?? 0;
+            var follows = roofed && Walls.FollowsRoof(band, f.Height);
+            var (below, above) = (Off(Bottom), Off(Top));
+            // Its height as built: its own bottom and top, else the wall's (under a roof, up to its highest point), with its extents.
+            var z0 = Math.Clamp(band.Z0 ?? 0, 0, f.Built) - below;
+            var z1 = (follows ? f.Built : Math.Clamp(band.Z1 ?? f.Built, 0, f.Built)) + above;
+            if (z1 - z0 < 1e-6) continue;
+            double EndAt(int end, bool atFrom) => f.EndAt(end, band, atFrom) + (end == 0 ? -Off(Start) : Off(End));
+            var footprint = f.Axis.Band(y => EndAt(0, Math.Abs(y - band.From) < Math.Abs(y - band.To)), y => EndAt(1, Math.Abs(y - band.From) < Math.Abs(y - band.To)), band.From, band.To);
+            layers.Add((JsonNode)new JsonObject { ["layer"] = band.Index, ["name"] = band.Name, ["footprint"] = new JsonArray([.. footprint.Select(p => (JsonNode)P2(p))]), ["z0"] = Math.Round(f.Z + z0, 6), ["z1"] = Math.Round(f.Z + z1, 6) });
+            var ym = (band.From + band.To) / 2;
+            var (s0, s1) = ((EndAt(0, true) + EndAt(0, false)) / 2, (EndAt(1, true) + EndAt(1, false)) / 2);
+            var (p0, p1) = (f.Axis.At(s0, ym), f.Axis.At(s1, ym));
+            var (t0, t1) = (f.Axis.TangentAt(s0), f.Axis.TangentAt(s1));
+            // Its ends up its height (under a roof, to the roof there); its base along it.
+            var roofLine = follows && f.RoofLine is { Count: > 1 } r ? r : null;
+            double TopAt(double s) => roofLine != null ? Math.Min(z1, Under(roofLine, s) + above) : z1;
+            Grip(band.Index, band.Name, Start, null, [p0.At(f.Z + z0), p0.At(f.Z + TopAt(s0))], new Vec3(-t0.X, -t0.Y, 0), At(Start));
+            Grip(band.Index, band.Name, End, null, [p1.At(f.Z + z0), p1.At(f.Z + TopAt(s1))], new Vec3(t1.X, t1.Y, 0), At(End));
+            var along = f.Axis.Stations(s0, s1);
+            Grip(band.Index, band.Name, Bottom, null, along.Select(s => f.Axis.At(s, ym).At(f.Z + z0)), new Vec3(0, 0, -1), At(Bottom));
+            // Its top along it: under a roof, the roof's line moved by its extent.
+            if (roofLine != null)
+                along = [.. along.Concat(roofLine.Select(p => p.S).Where(x => x > s0 + 1e-9 && x < s1 - 1e-9)).Order()];
+            var topLine = along.Select(s => f.Axis.At(s, ym).At(f.Z + TopAt(s))).ToList();
+            Grip(band.Index, band.Name, Top, null, topLine, new Vec3(0, 0, 1), At(Top));
+        }
+        return new JsonObject { ["layers"] = layers, ["grips"] = grips };
+    }
+
+    /// <summary>A roof's line (stations along the axis, heights) read at a station, on in line past its ends.</summary>
+    static double Under(List<(double S, double V)> line, double s)
+    {
+        if (s <= line[0].S) return line[0].V;
+        for (var i = 0; i + 1 < line.Count; i++)
+            if (s <= line[i + 1].S) { var (a, b) = (line[i], line[i + 1]); return b.S - a.S < 1e-12 ? a.V : a.V + (b.V - a.V) * (s - a.S) / (b.S - a.S); }
+        return line[^1].V;
+    }
+
     /// <summary>A holder's box in plan from its attributes, as far as its layers may reach.</summary>
-    static (double X0, double Y0, double X1, double Y1)? PlanBox(Entity e)
+    static (double X0, double Y0, double X1, double Y1)? PlanBox(Entity e, IModelView m)
     {
         var pts = e.Class == IfcClass.Wall ? [Walls.Start(e), Walls.End(e)] : Slabs.Contour(e);
         if (pts.Count == 0) return null;
-        // A wall's half thickness is not known without its type: a generous margin, the extents' and a metre.
-        var margin = Of(e).Select(x => Math.Abs(x.Offset)).DefaultIfEmpty(0).Max() + (e.Class == IfcClass.Wall ? 1.0 : 0.01);
+        // A wall's half thickness is not known without its type: a generous margin, the extents' and a metre (and a curved
+        // wall's rise, its arc bulging past its ends' box).
+        var margin = Effective(e, m).Select(x => Math.Abs(x.Offset)).DefaultIfEmpty(0).Max() + (e.Class == IfcClass.Wall ? 1.0 + Math.Abs(PathCurve.Of(e).Rise) : 0.01);
         return (pts.Min(p => p.X) - margin, pts.Min(p => p.Y) - margin, pts.Max(p => p.X) + margin, pts.Max(p => p.Y) + margin);
     }
 }

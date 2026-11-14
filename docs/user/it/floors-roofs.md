@@ -14,6 +14,8 @@ Per cambiare il contorno, seleziona il solaio e trascinane gli angoli. **Foro ne
 
 Un solaio disegnato fuori dai muri, davanti a una porta, è un portico. Per i gradini che vi salgono, vedi [Scale](stairs.md).
 
+Uno strato di un solaio può anche andare oltre il suo contorno, o fermarsi prima, tutto intorno o a un bordo, digitato nelle sue proprietà o trascinato in pianta o in sezione con **Modifica strati**, e un tipo di solaio può dare ai suoi solai i loro prolungamenti: vedete [Prolungamenti degli strati](walls.md#prolungamenti-degli-strati). I tetti non hanno ancora una stratigrafia (manto, soletta e orditura sono parti proprie), quindi non hanno prolungamenti degli strati.
+
 ## Tetti
 
 Scegli **Architettura → Tetto** (<kbd>RF</kbd>) e fai clic sul contorno dei muri sottostanti. Lapin costruisce il tetto su quel contorno, alla sommità del suo livello.

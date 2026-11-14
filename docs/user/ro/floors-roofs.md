@@ -18,7 +18,7 @@ Ca să schimbi conturul, selectează placa și trage de colțuri. **Gol în plac
 
 O placă desenată în afara pereților, în fața unei uși, e o terasă. Pentru treptele până la ea, vezi [Scări](stairs.md).
 
-Un strat al plăcii poate și să treacă de contur, ori să se oprească înaintea lui, pe tot conturul sau la o latură: vezi [Prelungirile straturilor](walls.md#prelungirile-straturilor).
+Un strat al plăcii poate și să treacă de contur, ori să se oprească înaintea lui, pe tot conturul sau la o latură, scris în proprietățile ei sau tras în plan ori în secțiune cu **Editează straturile**, iar un tip de placă le poate da plăcilor lui prelungirile: vezi [Prelungirile straturilor](walls.md#prelungirile-straturilor). Acoperișurile nu au încă un set de straturi (învelitoarea, placa și șarpanta lor sunt părți proprii), deci nu au prelungiri de straturi.
 
 ### Planșee din grinzi și blocuri
 

@@ -28,7 +28,7 @@ public static class SteelDrawings
         // A frame's elevation: {id (the hall, or one of its members), frame? (0…, a typical one when not given)} → {id (the view)}.
         r.Command("frameView", "Frame elevation", (ctx, a) => new JsonObject { ["id"] = FrameView(ctx, (string?)a["id"], Json.Number(a["frame"]) is { } fi ? (int)fi : null) });
 
-        // Both as element view roles (decision 578): a drawing rule asks for a hall's frame elevation or its anchor plan by them.
+        // Both as element view roles (decision 579): a drawing rule asks for a hall's frame elevation or its anchor plan by them.
         r.Service<IElementViewRoles>(new SteelViewRoles());
         r.Service<IScheduleSource>(new SteelMembersSchedule());
         r.Service<IViewAnnotations>(new SteelViewMarks());
@@ -349,7 +349,7 @@ public sealed class SteelMembersSchedule : IScheduleSource
     }
 }
 
-/// <summary>A hall's frame elevation and anchor plan as element view roles (decision 578), of the hall or any of its members.</summary>
+/// <summary>A hall's frame elevation and anchor plan as element view roles (decision 579), of the hall or any of its members.</summary>
 sealed class SteelViewRoles : IElementViewRoles
 {
     static bool OfHall(IModelView m, Entity e) => e.Class == Halls.Class || Halls.Of(m, e.Id) != null;

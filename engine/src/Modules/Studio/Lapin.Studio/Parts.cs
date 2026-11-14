@@ -849,7 +849,7 @@ public sealed class FamilyPartUpgrade : IProjectUpgrade
 }
 
 /// <summary>
-/// A placed part's frame (decision 578): its own axes as it is placed, from its point (<c>at</c>, <c>z</c> over its storey),
+/// A placed part's frame (decision 579): its own axes as it is placed, from its point (<c>at</c>, <c>z</c> over its storey),
 /// x turned by its <c>rotation</c> (and turned over when mirrored), z up: a part's drawings show it in the axes it was made in.
 /// </summary>
 sealed class PartFrames : IElementFrames

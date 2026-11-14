@@ -81,6 +81,24 @@ Bajo un contorno dibujado con **Perfil…** una puerta entra en una celda recort
 
 ![El símbolo de apertura de la puerta en el alzado](shots/curtain-cells-elevation.webp)
 
+### Extensiones de capas
+
+Una capa de un muro o de un forjado puede ir más allá del borde del elemento, o detenerse antes, sin dividir el elemento: un acabado de suelo que pasa 2 cm bajo el muro hasta el que se dibujó el forjado, un enlucido que baja por debajo de la base del muro hasta el acabado del forjado, un revoco que se detiene 10 cm bajo la coronación del muro. Seleccione el muro o el forjado y abra **Extensiones de capas** en sus propiedades. **Añadir una extensión de capa** añade una fila: elija la **Capa** (numerada como en su tipo), el **Borde** y la **Distancia**, positiva más allá del borde, negativa antes de él (como mucho 1 m en cada sentido). Los bordes de un muro son su **Inicio**, **Fin**, **Inferior** y **Superior**, recto o curvo (más allá del extremo de un muro curvo la capa sigue por la tangente del extremo, como el propio muro más allá de su eje); los de un forjado son **Todo alrededor** o un borde de su contorno, numerado desde su primer vértice (la extensión propia de un borde prevalece sobre la de todo alrededor). La × quita la extensión; una distancia de 0 hace lo mismo. Cada cambio es un paso de deshacer.
+
+La última elección de una fila dice qué hace la parte más allá del borde donde encuentra otro elemento: **Se solapa** (los dos se solapan y cada uno conserva su volumen), **Corta otros** (se quita del muro, forjado, pilar, viga o cimentación que encuentra: el muro pierde los 2 cm que toma el acabado del forjado) o **Según el orden de corte** (solo corta los elementos a los que el suyo precede en **Gestionar → Orden de corte**: el acabado de un forjado corta el muro, el enlucido de un muro que baja deja entero el forjado). Las plantas, las secciones, la vista 3D, las cantidades y la exportación IFC muestran el elemento tal como se construye, con sus composiciones de capas; las extensiones viajan en el conjunto de propiedades propio de Lapin (*Lapin_Intent*), así que un archivo IFC escrito por Lapin las trae de vuelta. Al mover un vértice del forjado, la extensión de un borde sigue a su borde; se va con un borde que quite. Las referencias de un archivo IFC no tienen extensiones de capas: sus cuerpos son los del archivo.
+
+**Editar capas** (el botón bajo las filas, o **Arquitectura → Editar capas**) arrastra los bordes en vez de escribirlos. En este modo un muro o forjado seleccionado muestra el contorno de cada capa a trazos y un pinzamiento en cada uno de sus bordes: en planta los extremos de un muro y los bordes de un forjado, en sección los bordes que cruza el corte (la base y la coronación de un muro, los bordes de un forjado; los extremos de un muro cuando la sección lo recorre). Arrastre un pinzamiento hacia fuera del elemento o hacia dentro: se ajusta como cualquier pinzamiento, y mientras arrastra puede escribir la distancia. Cada soltar es un paso de deshacer. **Hecho** (o Esc) sale del modo.
+
+Bajo una cubierta las capas de un muro suben hasta la cubierta; una extensión **Superior** mueve la capa a lo largo de la línea de la cubierta, 10 cm por debajo o 5 cm dentro, y el resto del muro sigue cortado por la cubierta. Un tipo de muro o de forjado también puede tener extensiones (seleccione el tipo en el navegador del proyecto, sus **Extensiones de capas** en sus propiedades): cada muro o forjado del tipo empieza con ellas, todo alrededor para un tipo de forjado. Un elemento muestra las filas de su tipo marcadas *Del tipo*; cambiada allí, una fila pasa a ser del elemento, que prevalece (un 0 propio mantiene la capa en su borde), y ↺ devuelve el lugar al tipo.
+
+![Las extensiones de capas de un forjado: su acabado 50 mm más allá del tercer borde del contorno, cortando el muro](shots/layer-extents.webp)
+
+![En sección, el acabado del forjado entra 5 cm en el muro que encuentra](shots/layer-extents-section.webp)
+
+![Editar capas en planta: las capas del forjado a trazos, un pinzamiento en cada borde, el primer borde del acabado arrastrado 30 cm hacia fuera](shots/layer-edit-plan.webp)
+
+![Editar capas en sección: los pinzamientos de las capas del forjado donde el corte cruza sus bordes](shots/layer-edit-section.webp)
+
 ## Tipos de muro
 
 Un tipo de muro es un conjunto de capas, desde la cara a la derecha del sentido en que se dibuja el muro (el exterior, si dibuja alrededor del edificio en sentido antihorario) hasta la cara de su izquierda. Cada capa tiene un material y un espesor, y una capa es el **núcleo**. La línea del muro va por el núcleo. Para editar los tipos, elija **Arquitectura → Tipos de muro**. Una capa que no sea el núcleo puede tener su propia altura: **Desde** y **Hasta** fijan hasta dónde llega sobre la base del muro (un alicatado hasta 1500, un aplacado desde 300); vacío, ocupa toda la altura.

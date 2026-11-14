@@ -7,7 +7,7 @@ Blender. Maybe an interactive window with a generic sketch of a part and checkbo
 front, back, sections parallel to faces) to place on sheet."
 
 The user (Ionuț) wants it **general, not only for steel**: any element or assembly of any module gets its own drawing,
-one at a time or all at once. This plan is that general system. Status: **approved** (decision 578): the user accepted
+one at a time or all at once. This plan is that general system. Status: **approved** (decision 579): the user accepted
 every recommended answer of §16 on 14.11.2026 ("toate recomandate"); stages S0–S3 in progress.
 
 ## 1. In one paragraph
@@ -375,7 +375,7 @@ The open repo holds hooks only for premium; open modules never depend on it.
 
 Each stage: engine tests first, its guide page in both languages and its scene, merged on its own.
 
-- **S0 — The frame and element views.** *Done 14.11.2026* (decision 579; frames for steel members, beams and columns, Studio parts, path elements, columns and footings, `IfcPlate` and the body fallback; timber members inside a framed wall and casework boards are not elements of their own yet and take theirs in S7). `IElementFrame` with the fallback from the body; frames for steel members,
+- **S0 — The frame and element views.** *Done 14.11.2026* (decision 580; frames for steel members, beams and columns, Studio parts, path elements, columns and footings, `IfcPlate` and the body fallback; timber members inside a framed wall and casework boards are not elements of their own yet and take theirs in S7). `IElementFrame` with the fallback from the body; frames for steel members,
   plates, timber members, walls, floors, Studio parts, casework; `of` on views (orthographic roles and sections at a
   station, read from the frame on every ask); `subject` and `context` in `VisibilityGraphics`; the existing four
   element-anchored views registered as roles. *Tests*: a member turned 37° and tilted gives the same front drawing as

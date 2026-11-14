@@ -620,6 +620,7 @@ export const scenes = [
   {
     // Layer extents (forum topic 89, docs/plan-layer-extents.md): a floor drawn to a wall's face whose finish goes on 5 cm into
     // the wall and cuts it, set in the floor's properties (Layer extents); the section shows the finish past the floor's edge.
+    // Edit layers (stage 2): the floor's layers' edges as grips in the plan, one dragged out (one undo step), and in the section.
     id: 'layer-extents',
     touches: ['architecture'],
     async run(t) {
@@ -650,11 +651,29 @@ export const scenes = [
       await offset.pressSequentially('50');
       await offset.press('Enter');
       await t.wait(800);
-      await section.locator('[data-testid=layer-extent-cuts]').click();
+      await section.locator('[data-testid=layer-extent-cuts]').selectOption('on');
       await t.wait(1200);
       const finishAfter = await volume(slab, 'layer:0');
       t.expect(Math.abs(finishAfter - finishBefore - 6 * 0.05 * 0.02) < 1e-6, `the finish goes 5 cm past the floor's top edge (${(finishAfter - finishBefore).toFixed(5)} m³ more)`);
       await t.shot('layer-extents', { of: 'aside.props [data-testid=layer-extents]', pad: 6 });
+      // Edit layers: a grip on each edge of each layer; the finish's first edge (y = −2) dragged 30 cm out (away from the snaps on the edge).
+      await section.locator('[data-testid=layer-extent-edit]').click();
+      await t.wait(1500);
+      const grips = t.page.locator('[data-testid=plan] [data-grip^="layer:"]');
+      const count = await grips.count();
+      t.expect(count >= 8, `Edit layers shows a grip on each edge of each layer (${count})`);
+      const r = await t.page.locator('[data-testid=plan] [data-grip="layer:0:edge:0"]').first().boundingBox();
+      t.expect(r, 'the finish\'s first edge has its grip');
+      const [gx, gy] = [r.x + r.width / 2, r.y + r.height / 2];
+      const [, y0] = await t.planPoint(1, -2), [, y1] = await t.planPoint(1, -2.3);
+      await t.page.mouse.move(gx, gy);
+      await t.page.mouse.down();
+      await t.page.mouse.move(gx, gy + (y1 - y0), { steps: 6 });
+      await t.page.mouse.up();
+      await t.wait(1500);
+      const dragged = ((await t.nodes()).find((n) => n.id === slab)?.props.layerExtents ?? []).find((x) => x.edge === 'edge' && x.index === 0);
+      t.expect(dragged && dragged.offset > 0.2, `the dragged edge moved out (${JSON.stringify(dragged)})`);
+      await t.shot('layer-edit-plan', { of: '[data-testid=plan]', pad: 0 });
       await t.ui({ selection: null, selected: [] });
       await t.cmd('view.create', { kind: 'section', name: 'E-E', start: [1, 1.4], end: [1, 2.8], depth: 1, scale: 10 });
       await openFromBrowser(t, 'E-E', 1500);
@@ -662,6 +681,13 @@ export const scenes = [
       await t.fit();
       await t.wait(800);
       await t.shot('layer-extents-section', { of: '[data-testid=drawing]', pad: 0 });
+      // The floor selected in the section: its layers' edges there, where the cut crosses them.
+      await select(t, slab);
+      await t.wait(1500);
+      const inSection = await t.page.locator('[data-testid=drawing] [data-grip^="layer:"]').count();
+      t.expect(inSection >= 2, `the section shows the layers' edges it cuts (${inSection})`);
+      await t.shot('layer-edit-section', { of: '[data-testid=drawing]', pad: 0 });
+      await t.page.evaluate(async () => (await import('/src/platform/scope.ts')).exitScope());
       await t.ui({ keyPlan: true });
     },
   },

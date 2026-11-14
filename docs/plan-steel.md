@@ -5,7 +5,7 @@ Cerut de utilizator la 03.11.2026, pornind de la o schiță în plan (un contur 
 ## Granița
 
 - Modulul deschis **`steel`**, în acest depozit, `requires: core, structure`: bara cu capete configurabile, nodurile hale­lor cu vute și piesele lor (plăci, șuruburi, suduri), generatorul de hală, elementele secundare, extrasele și desenele de ansamblu. În ediția `lapin`, ca `wood`.
-- Modulul premium **`steel-pro`**, într-un depozit privat alăturat (`../lapin-steel`, `requires: steel`, legat prin cârlige ca `mep-pro`): exportul pentru fabricație (DSTV/NC), convențiile de numerotare pentru atelier (serii pe faze, numerotare blocată între faze), simbolurile de sudură ISO 2553 pe desene; mai târziu, verificările îmbinărilor după EC3. Desenele de execuție pe piesă și pe ansamblu și mărcile pieselor sunt libere din 14.11.2026, generale pentru toate modulele (decizia 578, `docs/plan-shop-drawings.md`).
+- Modulul premium **`steel-pro`**, într-un depozit privat alăturat (`../lapin-steel`, `requires: steel`, legat prin cârlige ca `mep-pro`): exportul pentru fabricație (DSTV/NC), convențiile de numerotare pentru atelier (serii pe faze, numerotare blocată între faze), simbolurile de sudură ISO 2553 pe desene; mai târziu, verificările îmbinărilor după EC3. Desenele de execuție pe piesă și pe ansamblu și mărcile pieselor sunt libere din 14.11.2026, generale pentru toate modulele (decizia 579, `docs/plan-shop-drawings.md`).
 - Barele rămân `IfcBeam` / `IfcColumn` / `IfcMember` cu profilul din catalogul existent (`Section`: I, H, U, T, L), lărgit cu RHS, CHS și profilele formate la rece (Z, C, Σ) pentru pane și rigle.
 - Ca la șarpantă și la `wood`: **se stochează regulile, piesele sunt derivate**. Un nod își păstrează tipul și parametrii; plăcile, șuruburile, tăieturile și crestăturile se refac din bare și din tipul nodului.
 
@@ -59,7 +59,7 @@ Parametrii unui tip de nod: grosimea plăcilor, numărul, diametrul (M12–M30) 
 3. **Nodurile principale** — `LapinSteelNode`, găsirea nodurilor din topologia axelor, tipurile de nod: picior articulat și încastrat, streașină, coamă, înnădire; plăcile, șuruburile și sudurile ca piese derivate. **Făcută (03.11.2026, decizia 273)**, vezi mai jos.
 4. **Elementele secundare** — pane și rigle de perete (Z, C), clemele lor, contravântuirile cu gușeele, grinda de streașină, contrafișele. **Făcută (03.11.2026, decizia 275)**, vezi mai jos.
 5. **Extrase și desene** — lista de profile (greutăți), plăci, șuruburi și ancore, lista de debitare cu unghiurile; elevația cadrului (ca `wood.frameView`) și **planul ancorelor** (plăcile de bază și ancorele cotate, pentru fundații). **Făcută (03.11.2026, decizia 276)**, vezi mai jos.
-6. **Premium (`steel-pro`)** — DSTV/NC, numerotarea pe faze pentru atelier, simbolurile de sudură ISO 2553; verificările EC3 mai târziu. (Desenele de execuție și mărcile sunt libere, generale, decizia 578.)
+6. **Premium (`steel-pro`)** — DSTV/NC, numerotarea pe faze pentru atelier, simbolurile de sudură ISO 2553; verificările EC3 mai târziu. (Desenele de execuție și mărcile sunt libere, generale, decizia 579.)
 
 Fiecare etapă: teste în engine, pagina ei din ghid în toate limbile și scena ei.
 

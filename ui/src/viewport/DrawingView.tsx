@@ -301,6 +301,7 @@ export function DrawingView() {
   // Direct editing of the shapes drafted on this view (and of a solid sketched here): their grips and lines.
   const editor = useGripEditor({
     viewIds: [id], mode: 'drawing', toScreen, scale: v.scale, disabled: !!cadStep, svg: ref, marks: drawing?.marks,
+    frame: drawing?.frame, viewKind: drawing?.kind, developed: (drawing?.frames?.length ?? 0) > 0,
     aim: (cx, cy, from) => {
       const r = ref.current!.getBoundingClientRect();
       const a = aim(toWorld(cx - r.left, cy - r.top), from, { orthoHeld: false });

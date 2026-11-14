@@ -14,6 +14,8 @@ Pour changer le contour, sélectionnez la dalle et faites glisser ses angles. **
 
 Une dalle dessinée hors des murs, devant une porte, est un perron. Pour les marches qui y mènent, voir [Escaliers](stairs.md).
 
+Une couche d'une dalle peut aussi aller au-delà de son contour, ou s'arrêter avant, tout le tour ou à un bord, saisie dans ses propriétés ou tirée en plan ou en coupe avec **Modifier les couches**, et un type de dalle peut donner leurs prolongements à ses dalles : voir [Prolongements des couches](walls.md#prolongements-des-couches). Les toits n'ont pas encore de composition de couches (leur couverture, leur dalle et leur charpente sont des parties à part), donc pas de prolongements de couches.
+
 ## Toits
 
 Choisissez **Architecture → Toit** (<kbd>RF</kbd>) et cliquez le contour des murs qu’il couvre. Lapin construit le toit sur ce contour, en haut de son niveau.

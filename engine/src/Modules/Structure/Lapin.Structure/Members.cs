@@ -60,6 +60,8 @@ public static class Columns
         }
         var problems = new List<string>();
         var parts = CutPriorities.Apply(column, m, services, [new GeometryPart(column.Name, Materials.ColorOf(m, material), solid, material, "body")], problems);
+        // The walls' and floors' layers reaching into it and set to cut (forum topic 89).
+        parts = LayerExtentCuts.Apply(column, m, services, parts, problems);
         var footprint = Place.Placed(section.Outline(), Place.Point(column), column.Num("rotation"));
         return new ElementGeometry(parts, [new PlanItem("cut", true, footprint)], [Place.Point(column)], problems.Count > 0 ? problems : null) { FineShape = section.HasRealShape };
     }
@@ -327,6 +329,8 @@ public static class Beams
         else solid = Prism.ExtrudeFootprint(fp, Top(m, beam) - section.Depth, section.Depth, "beam");
         if (solid == null) return new ElementGeometry([], Diagnostics: ["The beam has no section."]);
         var parts = CutPriorities.Apply(beam, m, services, [new GeometryPart(beam.Name, Materials.ColorOf(m, material), solid, material, "body")], problems);
+        // The walls' and floors' layers reaching into it and set to cut (forum topic 89).
+        parts = LayerExtentCuts.Apply(beam, m, services, parts, problems);
         // Snaps on the axis's ends (the column centres) and, trimmed, on the faces it stops at.
         IReadOnlyList<Vec2> snaps = trimmed ? [c.Start, c.End, span.Start, span.End] : [c.Start, c.End];
         return new ElementGeometry(parts, [new PlanItem("outline", true, fp)], snaps, problems.Count > 0 ? problems : null) { FineShape = section.HasRealShape };

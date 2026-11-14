@@ -2,7 +2,7 @@
 
 import { Armchair, ArrowLeftRight, CornerDownRight, Layers3, Link2, Settings2, Slash, Table2 } from 'lucide-react';
 import { AttachRoofIcon, CurtainWallIcon, CurvedWallIcon, DetachRoofIcon, DoorIcon, DormerIcon, RoofIcon, RampIcon, RoofWindowIcon, SlabIcon, SlabOpeningIcon, StairIcon, WallIcon, WallTypesIcon, WindowIcon } from '../../icons';
-import type { Grip, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
+import type { Grip, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { flipAcross, frameAt, outlineGrips, outlineRef, pathGrips, pathRef, toPairs } from '../../viewport/gripKit';
 import { arcOf, project } from '../../viewport/arc';
 import { fromPairs } from '../../viewport/contour';
@@ -23,6 +23,8 @@ import { WallTopOption, wallTopArgs } from './WallTop';
 import { JoinerySection } from './JoinerySection';
 import { SlabSection } from './SlabSection';
 import { LayerExtentsSection, hasLayerExtents } from './LayerExtentsSection';
+import { editLayers, editingLayersOf, layerGrips } from './layerEdit';
+import { LayerEditDrawing, LayerEditPlan, LayerEditWatcher } from './LayerEditOverlays';
 import { RoofSection } from './RoofSection';
 import { roofOpeningGrips, roofOpeningRefs } from './roofOpeningGrips';
 import { DownpipeSection, downpipe, downpipeGrips } from './Downpipe';
@@ -155,6 +157,12 @@ const mitreNew: ToolDef = {
  * a curved one, and a flip arrow on its exterior face (its right one, the left
  * once flipped) that swaps its faces.
  */
+/** A wall's or floor's grips: its layers' edges in "Edit layers" (forum topic 89), else its own. */
+const withLayers = (own: (node: NodeDto, view?: GripView) => Grip[]) => (node: NodeDto, view?: GripView): Grip[] => {
+  const data = editingLayersOf(node);
+  return data ? layerGrips(node, data, view) : own(node, view);
+};
+
 function wallGrips(node: NodeDto): Grip[] {
   const c = arcOf(node.props);
   if (!c) return [];
@@ -458,6 +466,8 @@ const architecture: LapinModule = {
   id: 'architecture',
   name: 'Architecture',
   summary: 'Layered walls and their joins, doors and windows, floors, roofs and rooms.',
+  // The edges of the wall or floor edited in "Edit layers", kept in step with the model (forum topic 89).
+  background: LayerEditWatcher,
   tabs: [{
     id: 'architecture', label: 'Architecture', order: 20, include: ['modify'],
     groups: [
@@ -467,7 +477,7 @@ const architecture: LapinModule = {
       { label: 'Sunshades', tools: [sunshade], small: [sunshadeAlong, sunshadeSchedule] },
       // Profiles swept along a wall's face: added (a cornice, a band) or taken out (a reveal), decision 297.
       { label: 'Sweeps', tools: [wallSweep, wallReveal], small: [sweepSelected, revealSelected, wallSweepSchedule] },
-      { label: 'Joins', tools: [join, mitre, butt, swap, mitreNew], small: [attachRoof, detachRoof] },
+      { label: 'Joins', tools: [join, mitre, butt, swap, mitreNew], small: [attachRoof, detachRoof, editLayers] },
       { label: 'Room', tools: [room, roomColors], small: [roomOutline, roomDividers, updateRooms, roomTag] },
       { label: 'Circulation', tools: [stair, ramp, stairTypes], small: [entranceSteps, entranceRamp, underStair, underStairSchedule] },
       // Balconies (a tester's report, #96): by a wall's face in a style, by outline, a gallery's edge; the configurator, stacking, the schedule.
@@ -505,7 +515,7 @@ const architecture: LapinModule = {
     { id: 'joinery', label: 'Door or window', classes: ['IfcDoor', 'IfcWindow'], component: JoinerySection },
     { id: 'wallOpening', label: 'Opening', classes: ['IfcOpeningElement'], shows: isWallOpening, component: WallOpeningSection },
     { id: 'slab', label: 'Floor', classes: ['IfcSlab'], component: SlabSection },
-    { id: 'layerExtents', label: 'Layer extents', classes: ['IfcWall', 'IfcSlab'], shows: hasLayerExtents, component: LayerExtentsSection },
+    { id: 'layerExtents', label: 'Layer extents', classes: ['IfcWall', 'IfcSlab', 'IfcWallType', 'IfcSlabType'], shows: hasLayerExtents, component: LayerExtentsSection },
     { id: 'downpipe', label: 'Downpipe', classes: ['LapinDownpipe'], component: DownpipeSection },
     { id: 'roof', label: 'Roof', classes: ['IfcRoof'], component: RoofSection },
     { id: 'stair', label: 'Stair', classes: ['IfcStair', 'IfcRamp'], component: StairSection },
@@ -520,7 +530,8 @@ const architecture: LapinModule = {
     { id: 'gate', label: 'Gate', classes: [GATE_CLASS], component: GateSection },
   ],
   dialogs: { wallOpening: OpeningDialog, wallProfile: WallProfileDialog, curtainMembers: CurtainMembersDialog, curtainCells: CurtainCellsDialog, roof: RoofDialog, wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog, ceilingTypes: CeilingTypesDialog, skirtingTypes: SkirtingTypesDialog, roomFinishes: RoomFinishesDialog, curtainWalls: CurtainWallDialog, roomColors: RoomColorsDialog, roomTag: RoomTagDialog, underStair: UnderStairDialog, sunshades: SunshadeTypesDialog, balcony: BalconyDialog, gateTypes: GateTypesDialog },
-  grips: { IfcWall: wallGrips, IfcDoor: joineryGrips, IfcWindow: joineryGrips, IfcCurtainWall: curtainGrips, IfcSlab: contourGrips('architecture.updateSlab'), LapinCeiling: contourGrips('architecture.updateCeiling'), IfcOpeningElement: openingGrips, IfcRoof: roofGrips, IfcSpace: roomGrips, LapinDownpipe: downpipeGrips, LapinRailing: railingGrips, LapinSkirting: skirtingGrips, [SHADE]: sunshadeGrips, [BALCONY]: balconyGrips,
+  // In "Edit layers" (forum topic 89) a wall's or floor's grips are its layers' edges.
+  grips: { IfcWall: withLayers(wallGrips), IfcDoor: joineryGrips, IfcWindow: joineryGrips, IfcCurtainWall: curtainGrips, IfcSlab: withLayers(contourGrips('architecture.updateSlab')), LapinCeiling: contourGrips('architecture.updateCeiling'), IfcOpeningElement: openingGrips, IfcRoof: roofGrips, IfcSpace: roomGrips, LapinDownpipe: downpipeGrips, LapinRailing: railingGrips, LapinSkirting: skirtingGrips, [SHADE]: sunshadeGrips, [BALCONY]: balconyGrips,
     [GATE_CLASS]: (n: NodeDto) => {
       const { nodes, relations } = useSession.getState();
       const kinds = (useSession.getState().info?.catalogs['architecture.gateKinds'] ?? []) as unknown as Parameters<typeof overallOf>[1];
@@ -528,9 +539,9 @@ const architecture: LapinModule = {
     },
   },
   // A door's, window's or wall opening's temporary dimensions (decision 511).
-  planOverlays: [OpeningDims],
+  planOverlays: [OpeningDims, LayerEditPlan],
   overlays: [FinishPainterPanel],
-  drawingOverlays: [OpeningDimsInView],
+  drawingOverlays: [OpeningDimsInView, LayerEditDrawing],
   references: { IfcWall: wallRefs, IfcCurtainWall: pathRefs, IfcSlab: contourRefs, IfcOpeningElement: contourRefs, IfcRoof: (n) => [...contourRefs(n), ...roofOpeningRefs(n)], IfcSpace: roomRefs },
   similar: {
     IfcWall: (n) => { useUi.setState({ wallTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(wall); },

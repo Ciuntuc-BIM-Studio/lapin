@@ -106,7 +106,7 @@ public static class Slabs
         var parts = new List<GeometryPart>();
         var problems = new List<string>();
         // A layer's own extents short of the outline (forum topic 89); those past it are pieces of their own (ExtentPieces), added after the cut priorities.
-        var extents = LayerExtents.Of(slab);
+        var extents = LayerExtents.Effective(slab, m);
         foreach (var (from, to, material, name, index) in Section(m, slab))
         {
             if (!(to - from > 1e-9)) continue;
@@ -168,18 +168,19 @@ public static class Slabs
     /// outline with its edges moved out takes beyond the outline it is built to (its extents short of the edges taken off).
     /// <paramref name="cuttingOnly"/>: only the extents set to cut what they meet. None without the boolean library.
     /// </summary>
-    public static List<LayerExtents.Piece> ExtentPieces(Entity slab, IModelView m, IServices? services, bool cuttingOnly)
+    public static List<LayerExtents.Piece> ExtentPieces(Entity slab, IModelView m, IServices? services, bool cuttingOnly, Func<LayerExtents.Extent, bool>? which = null)
     {
         var o = new List<LayerExtents.Piece>();
-        var extents = LayerExtents.Of(slab);
-        if (!extents.Any(x => x.Offset > 1e-9 && (!cuttingOnly || x.Cuts)) || services?.Get<ISolidBooleans>() is not { } booleans) return o;
+        var extents = LayerExtents.Effective(slab, m);
+        bool Takes(LayerExtents.Extent x) => x.Offset > 1e-9 && (!cuttingOnly || (x.Cuts && (which?.Invoke(x) ?? true)));
+        if (!extents.Any(Takes) || services?.Get<ISolidBooleans>() is not { } booleans) return o;
         var contour = Contour(slab);
         if (contour.Count < 3) return o;
         var top = Top(m, slab);
-        double Past(LayerExtents.Extent x) => x.Offset > 1e-9 && (!cuttingOnly || x.Cuts) ? x.Offset : Short(x);
+        double Past(LayerExtents.Extent x) => Takes(x) ? x.Offset : Short(x);
         foreach (var (from, to, material, name, index) in Section(m, slab))
         {
-            if (!(to - from > 1e-9) || LayerExtents.SlabDistances(extents, index, contour.Count, x => x.Offset > 1e-9 && (!cuttingOnly || x.Cuts) ? x.Offset : 0) == null) continue;
+            if (!(to - from > 1e-9) || LayerExtents.SlabDistances(extents, index, contour.Count, x => Takes(x) ? x.Offset : 0) == null) continue;
             if (LayerExtents.SlabContour(contour, extents, index, Past) is not { } outer) continue;
             var inner = LayerExtents.SlabContour(contour, extents, index, Short) ?? contour;
             if (Prism.ExtrudeFootprint(outer, top + from, to - from, name) is not { } whole) continue;
