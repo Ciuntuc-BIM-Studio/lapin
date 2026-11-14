@@ -60,13 +60,17 @@ export function ElevatorSection({ node }: { node: NodeDto }) {
             </label>
           ))}
         </dd>
-        <dt>Shaft walls</dt>
-        <dd>
-          <select value={(node.props.shaftWallTypeId as string | undefined) ?? ''} data-field="elevator-shaft-type" onChange={(e) => setAttrs({ shaftWallTypeId: e.target.value || null })}>
-            <option value="">Concrete, the thickness below</option>
-            {wallTypes.map((t) => <option key={t.id} value={t.id} data-no-i18n>{t.name}</option>)}
-          </select>
-        </dd>
+        {node.props.drive !== 'vacuum' && (
+          <>
+            <dt>Shaft walls</dt>
+            <dd>
+              <select value={(node.props.shaftWallTypeId as string | undefined) ?? ''} data-field="elevator-shaft-type" onChange={(e) => setAttrs({ shaftWallTypeId: e.target.value || null })}>
+                <option value="">Concrete, the thickness below</option>
+                {wallTypes.map((t) => <option key={t.id} value={t.id} data-no-i18n>{t.name}</option>)}
+              </select>
+            </dd>
+          </>
+        )}
       </dl>
       {preview?.checks && preview.checks.length > 0 && (
         <ul className="elevator-checks small pad" data-no-i18n>

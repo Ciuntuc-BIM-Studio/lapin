@@ -3,7 +3,8 @@
  * own styles on the left; on the right the elevator being configured — its car and load, its doors and stops, its shaft —
  * over a plan of it at its lowest stop and a section through the car from the pit to the top of the shaft, both as the
  * engine would build the draft, with what EN 81-20 and EN 81-70 say of it. A style picked fills every field in; any
- * field may then be changed by hand. Apply is one engine command, one undo step.
+ * field may then be changed by hand. Apply is one engine command, one undo step. A circular vacuum lift (report #149)
+ * shows its tube, cabin, frame and doors instead: tube presets, and each landing's door facing its own angle.
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -15,20 +16,21 @@ import { execute, query, useSession } from '../../engine/session';
 import { fieldShown, type FieldDescriptor } from '../../engine/protocol';
 import { relatingOf } from '../../engine/model';
 import { t, useLang } from '../../i18n';
-import { CLASS, groupStyles, itemPath, planBox, stopsBetween, styleAbout, toggleStop, useElevatorDialog, type ElevatorStyle, type OwnStyle, type Preview } from './elevator';
+import { CLASS, DOOR_ANGLES, TUBE_PRESETS, groupStyles, isVacuum, itemPath, landingAngle, planBox, setLandingAngle, stopsBetween, styleAbout, toggleStop, useElevatorDialog, type ElevatorStyle, type OwnStyle, type Preview } from './elevator';
 
 interface Draft { style?: string; attrs: Record<string, unknown> }
 
 const TABS = [['car', 'Car and load'], ['doors', 'Doors and stops'], ['shaft', 'Shaft']] as const;
 type Tab = (typeof TABS)[number][0];
 
+// Each tab's fields; those that do not apply to the drive hide (the engine's ShowIf): a vacuum lift's tube, cabin, frame and doors.
 const FIELDS: Record<Tab, string[]> = {
-  car: ['drive', 'load', 'persons', 'speed', 'accessible', 'cabinWidth', 'cabinDepth', 'cabinHeight', 'glass', 'fireFighting', 'fireExit'],
-  doors: ['entrances', 'doorWidth', 'doorHeight', 'doorOpening', 'doorPanels'],
-  shaft: ['counterweight', 'jackSide', 'pit', 'headroom', 'machineRoom', 'shaftGlass', 'shaftThickness', 'rotation'],
+  car: ['drive', 'load', 'persons', 'speed', 'accessible', 'tubeDiameter', 'cabinDiameter', 'cabinWidth', 'cabinDepth', 'cabinHeight', 'glass', 'tubeMaterial', 'tubeColor', 'cabinColor', 'fireFighting', 'fireExit'],
+  doors: ['entrances', 'doorKind', 'doorWidth', 'doorHeight', 'doorOpening', 'doorPanels', 'doorFrame', 'cabinDoor', 'doorAngle'],
+  shaft: ['counterweight', 'jackSide', 'pit', 'headroom', 'machineRoom', 'shaftGlass', 'shaftThickness', 'columns', 'columnSize', 'frameColor', 'ringBeamHeight', 'headUnitHeight', 'baseRingHeight', 'rotation'],
 };
 
-const FILL: Record<string, string> = { shaft: '#b8b4ad', machine: '#c9c4bb', cabin: '#e4e8ec', door: '#8d959d', weight: '#5d646c' };
+const FILL: Record<string, string> = { shaft: '#b8b4ad', machine: '#c9c4bb', cabin: '#e4e8ec', door: '#8d959d', weight: '#5d646c', tube: '#9cc8e8', frame: '#2b2f33' };
 
 function FieldInput({ f, value, onChange }: { f: FieldDescriptor; value: unknown; onChange: (v: unknown) => void }) {
   if (f.kind === 'choice') {
@@ -40,6 +42,7 @@ function FieldInput({ f, value, onChange }: { f: FieldDescriptor; value: unknown
     );
   }
   if (f.kind === 'bool') return <input type="checkbox" checked={value === true} onChange={(e) => onChange(e.target.checked)} />;
+  if (f.kind === 'color') return <input type="color" value={typeof value === 'string' ? value : '#2b2f33'} onChange={(e) => onChange(e.target.value)} />;
   const n = typeof value === 'number' ? value : null;
   return f.kind === 'length'
     ? <LengthField metres={n} min={f.min ?? undefined} max={f.max ?? undefined} onCommit={(m) => { if (m != null) onChange(m); }} />
@@ -140,12 +143,21 @@ export function ElevatorDialog() {
   const stops = stopsBetween(storeys, bottom, top);
   const unserved = (value('unserved') as string[] | undefined) ?? [];
   const wallTypes = [...nodes.values()].filter((n) => n.type === 'IfcWallType').sort((a, b) => a.name.localeCompare(b.name));
+  const vacuum = isVacuum(props);
+  const doorAngles = value('doorAngles') as Record<string, number> | undefined;
 
   const rows = FIELDS[tab].filter((k) => fields.has(k) && fieldShown(fields.get(k)!, props)).map((k) => {
     const f = fields.get(k)!;
     return (
       <label key={k} className="field-line roof-field"><span className="eyebrow">{f.label}</span>
         <FieldInput f={f} value={value(k)} onChange={(v) => set(k, v)} />
+        {k === 'tubeDiameter' && (
+          <span className="row" style={{ gap: 4 }} data-testid="vacuum-tube-presets">
+            {TUBE_PRESETS.map((d) => (
+              <button key={d} type="button" className={`btn small${Math.abs(Number(value(k)) - d) < 1e-6 ? ' on' : ''}`} data-no-i18n onClick={() => set(k, d)}>Ø {Math.round(d * 1000)}</button>
+            ))}
+          </span>
+        )}
       </label>
     );
   });
@@ -186,12 +198,12 @@ export function ElevatorDialog() {
           </div>
           <div className="roof-edit">
             <div className="tabs-inline" role="tablist">
-              {TABS.map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
+              {TABS.map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{vacuum && k === 'shaft' ? 'Tube and frame' : l}</button>)}
             </div>
             <div className="joinery-edit">
               <div className="joinery-form">
                 {rows}
-                {tab === 'car' && preview?.suggested && (
+                {tab === 'car' && !vacuum && preview?.suggested && (
                   <button type="button" className="btn small" title="The least rated load EN 81-20 gives this car, and the persons it carries"
                     onClick={() => setDraft((d) => ({ ...d, attrs: { ...d.attrs, load: preview.suggested!.load, persons: preview.suggested!.persons } }))}>
                     <Scale size={13} /> Load and persons from the car
@@ -207,17 +219,26 @@ export function ElevatorDialog() {
                     <div className="field-line roof-field"><span className="eyebrow">Stops on</span>
                       <div className="elevator-stops">
                         {[...stops].reverse().map((s) => (
-                          <label key={s.id} className="row small" style={{ gap: 4 }}>
-                            <input type="checkbox" checked={!unserved.includes(s.id)} disabled={s.id === stops[0]?.id || s.id === stops[stops.length - 1]?.id}
-                              onChange={(e) => set('unserved', toggleStop(unserved, s.id, e.target.checked))} />
-                            <span data-no-i18n>{s.name}</span>
-                          </label>
+                          <div key={s.id} className="row small" style={{ gap: 4 }}>
+                            <label className="row small" style={{ gap: 4 }}>
+                              <input type="checkbox" checked={!unserved.includes(s.id)} disabled={s.id === stops[0]?.id || s.id === stops[stops.length - 1]?.id}
+                                onChange={(e) => set('unserved', toggleStop(unserved, s.id, e.target.checked))} />
+                              <span data-no-i18n>{s.name}</span>
+                            </label>
+                            {vacuum && !unserved.includes(s.id) && (
+                              <select value={doorAngles?.[s.id] ?? ''} title="Where the door faces at this landing" data-field="vacuum-landing-angle"
+                                onChange={(e) => set('doorAngles', setLandingAngle(doorAngles, s.id, e.target.value === '' ? null : Number(e.target.value)))}>
+                                <option value="">{`${t('As the doors')} (${landingAngle({ doorAngle: value('doorAngle') }, s.id)}°)`}</option>
+                                {DOOR_ANGLES.map((a) => <option key={a} value={a} data-no-i18n>{a}°</option>)}
+                              </select>
+                            )}
+                          </div>
                         ))}
                       </div>
                     </div>
                   </>
                 )}
-                {tab === 'shaft' && (
+                {tab === 'shaft' && !vacuum && (
                   <label className="field-line roof-field"><span className="eyebrow">Shaft walls</span>
                     <select value={(value('shaftWallTypeId') as string | undefined) ?? ''} onChange={(e) => set('shaftWallTypeId', e.target.value || null)}>
                       <option value="">Concrete, the thickness below</option>
@@ -228,14 +249,15 @@ export function ElevatorDialog() {
               </div>
               <div className="joinery-preview">
                 {preview && !preview.problem && (tab === 'shaft' || tab === 'doors') && preview.section ? <SectionPlot s={preview.section} /> : preview && !preview.problem && <PlanPlot p={preview} />}
-                <p className="muted small">{tab === 'car' ? 'Plan at the lowest stop, the doors at the bottom.' : 'Section through the car, its front on the left.'}</p>
+                <p className="muted small">{tab === 'car' ? 'Plan at the lowest stop, the doors at the bottom.' : vacuum ? 'Section through the tube, its front on the left.' : 'Section through the car, its front on the left.'}</p>
                 {preview?.problem && <p className="error-text" data-no-i18n>{preview.problem}</p>}
                 {preview?.checks && preview.checks.length > 0 && (
                   <ul className="elevator-checks small" data-no-i18n>
                     {preview.checks.map((c) => <li key={c}><AlertTriangle size={12} /> {c}</li>)}
                   </ul>
                 )}
-                {preview?.checks && preview.checks.length === 0 && <p className="small ok-text">Meets EN 81-20 and EN 81-70 as configured.</p>}
+                {preview?.checks && preview.checks.length === 0 && !preview.indicative && <p className="small ok-text">Meets EN 81-20 and EN 81-70 as configured.</p>}
+                {preview?.indicative && <p className="muted small">Indicative values: the maker's data and EN 81-41 decide.</p>}
                 {preview?.summary && (
                   <dl className="fields roof-summary">
                     {preview.summary.map(([k, v]) => <div key={k} className="contents"><dt>{k}</dt><dd className="num" data-no-i18n>{v}</dd></div>)}
