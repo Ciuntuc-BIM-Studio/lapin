@@ -18,6 +18,26 @@ To change the outline, select the floor and drag its corners. **Floor opening** 
 
 A floor drawn outside the walls, in front of a door, is a porch. For the steps up to it, see [Stairs](stairs.md).
 
+### Beam-and-block floors
+
+A floor type can be of **beam and block** instead of plain layers: precast joists (a POT joist, say) laid side by side at a spacing, ceramic infill blocks (MIAKO) between them, and a cast concrete topping over them. In **Floor types**, set **Kind** to **Beam and block** and fill in:
+
+- **Preset.** A few systems to start from (POT + MIAKO 19/62.5, 19/50, 23/62.5, 25/50). They are indicative: check the maker's tables and change any size; once a size is changed the preset reads **Own sizes**.
+- **Joist**: the foot's **Width** and **Foot height**, the **Web width**, the joist's **Height**, its **Spacing** axis to axis and its **Material**.
+- **Infill block**: its **Height**, its **Length** along the joists and its **Material**. Its width is the gap between the joists' feet.
+- **Topping**: its **Thickness**, its **Material**, and the **Mesh** in it (a name, measured by the floor's area; empty, none).
+- **Span**: the joists run the short way of the floor, along x, along y or at an angle; the **Bearing** is how far they go into the supports past the floor's edge (125 mm by default), so draw the floor to the supports' faces.
+
+The **Depth** is worked out: the block and the topping. It is the type's core, set by itself when the type is saved; the layers over it (a screed, a finish) stay as they are. Beside the fields the engine lays out a sample floor with an opening, in plan and in section, as it will build yours, and counts its joists and blocks.
+
+![A beam-and-block floor type, with its plan and section](shots/beam-block-type.webp)
+
+A floor of the type is built of its joists (each from edge to edge and into the supports), whole blocks from the start of each row and one cut at its end, and the cast concrete: the topping, the ribs over the joists' feet, the strips at the sides and, round an opening, the headers that take the joists stopped short of it. Its properties set its own **Span direction**: the type's, or across one of its edges (the edge the joists bear on). A plan draws the span arrow and, in a detail plan, each joist's axis; a section cuts the joists, the blocks and the concrete, each hatched by its material.
+
+**Beam and block floors** in the schedules lists, per floor, the joists by their ordered length (rounded up to 250 mm), the whole and the cut blocks, the cast concrete and the mesh's area; the floor's quantities carry the same. IFC writes the floor as an IfcSlab whose parts are the joists (IfcBeam JOIST), the blocks and the concrete (IfcBuildingElementPart), each of its material; a part keeps its GlobalId when the floor is rebuilt.
+
+Your own catalogue comes in from a spreadsheet: **Import catalogue…** reads a CSV (one row a system, sizes in millimetres; **CSV template** gives the columns) and makes a floor type of each row, or changes the type of the same name, in one step to undo.
+
 ## Roofs
 
 Choose **Architecture → Roof** (<kbd>RF</kbd>) and click the outline of the walls under it. Lapin builds the roof over that outline, at the top of its level.

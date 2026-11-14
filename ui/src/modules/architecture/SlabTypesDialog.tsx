@@ -18,6 +18,8 @@ import { MaterialPicker } from '../core/MaterialPicker';
 import { TypeFiles } from './TypeFiles';
 import { moveLayer, reverseLayers } from './reverseLayers';
 import { t } from '../../i18n';
+import { BeamBlockFields } from './BeamBlockFields';
+import { BEAM_BLOCK_DEFAULT, beamBlockDepth, beamBlockOf, withCoreDepth, type BeamBlockSpec } from './beamBlock';
 
 /** A layer as the editor holds it: the thickness in metres; its priority (null: its material's, else 50 for the core and 0 for the rest) and category (null: its material's). */
 interface Row { material: string; thickness: number; core: boolean; note?: string; priority?: number | null; category?: string | null }
@@ -38,6 +40,8 @@ export function SlabTypesDialog() {
   const [editing, setEditing] = useState<string | null>(k0 ? k0.editing : types[0]?.id ?? null);
   const [name, setName] = useState(k0?.name ?? '');
   const [rows, setRows] = useState<Row[]>(k0?.rows ?? blank());
+  // Report #134: a layered floor, or one of beam and block (its core the structure).
+  const [beamBlock, setBeamBlock] = useState<BeamBlockSpec | null>(() => beamBlockOf(k0?.editing ? model.nodes.get(k0.editing)?.props.beamBlock : types[0] ? types[0].props.beamBlock : null));
   const restoredFor = useRef<string | null | undefined>(k0 ? k0.editing : undefined);
   // The editor loads when the picked type changes, not on every diff (which
   // would throw away what is being typed): it reads the model through a ref.
@@ -48,8 +52,9 @@ export function SlabTypesDialog() {
     restoredFor.current = undefined;
     const model = modelRef.current;
     const t = editing ? model.nodes.get(editing) : undefined;
-    if (!t) { setName(''); setRows(blank()); return; }
+    if (!t) { setName(''); setRows(blank()); setBeamBlock(null); return; }
     setName(t.name);
+    setBeamBlock(beamBlockOf(t.props.beamBlock));
     setRows(typeLayers(model, t.id).map((l) => ({ material: materialName(model, l.material), thickness: l.thickness, core: l.core === true, note: l.note ?? '',
       priority: typeof l.priority === 'number' ? l.priority : null, category: flagsOf(l).category })));
   }, [editing]);
@@ -59,12 +64,13 @@ export function SlabTypesDialog() {
     if (window.confirm(t('Reverse the order of the layers? Once the type is saved, the floors of this type turn over: the top layer goes to the underside.'))) setRows(reverseLayers(rows));
   };
   // Its priority and category kept when saved (a floor's layers were saved without the priority before).
-  const layers = rows.map((r) => ({ material: r.material.trim(), thickness: r.thickness, core: r.core, ...(r.note?.trim() ? { note: r.note.trim() } : {}),
+  const shown = beamBlock ? withCoreDepth(rows, beamBlockDepth(beamBlock)) : rows;
+  const layers = shown.map((r) => ({ material: r.material.trim(), thickness: r.thickness, core: r.core, ...(r.note?.trim() ? { note: r.note.trim() } : {}),
     ...(r.priority != null ? { priority: r.priority } : {}), ...flagsJson({ category: r.category ?? null, down: false, up: false }, false) }));
   const save = async () => {
-    if (editing) await execute('architecture.updateSlabType', { id: editing, name, layers });
+    if (editing) await execute('architecture.updateSlabType', { id: editing, name, layers, beamBlock });
     else {
-      const r = await execute('architecture.createSlabType', { name, layers }) as { id?: string } | null;
+      const r = await execute('architecture.createSlabType', { name, layers, ...(beamBlock ? { beamBlock } : {}) }) as { id?: string } | null;
       if (r?.id) { setEditing(r.id); useUi.setState({ slabTypeId: r.id }); }
     }
   };
@@ -85,11 +91,19 @@ export function SlabTypesDialog() {
           </ul>
           <div className="type-edit">
             <label className="field-line"><span className="eyebrow">Name</span><input value={name} placeholder="(from its core and thickness)" onChange={(e) => setName(e.target.value)} /></label>
+            <label className="field-line"><span className="eyebrow">Kind</span>
+              <select value={beamBlock ? 'beamBlock' : 'layered'} data-testid="slab-type-kind" onChange={(e) => setBeamBlock(e.target.value === 'beamBlock' ? (beamBlock ?? BEAM_BLOCK_DEFAULT) : null)}>
+                <option value="layered">Layered</option>
+                <option value="beamBlock">Beam and block</option>
+              </select>
+            </label>
+            {beamBlock && <BeamBlockFields spec={beamBlock} onChange={setBeamBlock} onImported={(names) => { const n = ofClass(useSession.getState(), 'IfcSlabType').find((x) => x.name === names[0]); if (n) setEditing(n.id); }} />}
             <p className="muted small">Layers from the top down.</p>
+            {beamBlock && <p className="muted small">The core is the beam-and-block structure: it is as deep as the block and the topping.</p>}
             <table className="layer-edit">
               <thead><tr><th>Material</th><th>Thickness</th><th>Core</th><th title={PRIORITY_TIP}>Priority</th><th title={CATEGORY_TIP}>Category</th><th title="How the layer is laid in this build-up (a build-up tag writes it)">Note</th><th /></tr></thead>
               <tbody>
-                {rows.map((r, i) => (
+                {shown.map((r, i) => (
                   <tr key={i}>
                     <td><span className="layer-material"><MaterialPicker value={r.material} onChange={(material) => set(i, { material })} /><MaterialHatchButton material={r.material} from={{ kind: 'slabTypes', snapshot: () => ({ editing, name, rows }) }} /></span></td>
                     <td className="num"><LayerThickness model={model} material={r.material} metres={r.thickness} onCommit={(m) => set(i, { thickness: m })} /></td>

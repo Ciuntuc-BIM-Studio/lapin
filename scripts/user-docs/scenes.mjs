@@ -1391,6 +1391,25 @@ export const scenes = [
     },
   },
   {
+    // A beam-and-block floor type (report #134): the kind, its fields, the engine's plan and section of a sample floor.
+    id: 'beam-block-type',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      await t.tool('architecture.slabTypes');
+      await t.wait(600);
+      const dialog = t.page.locator('.dialog');
+      await dialog.locator('[data-testid=slab-type-kind]').waitFor({ timeout: 15000 });
+      await dialog.locator('[data-testid=slab-type-kind]').selectOption('beamBlock');
+      await dialog.locator('[data-testid=beam-block-plan]').waitFor({ timeout: 15000 });
+      await t.wait(600);
+      t.expect(await dialog.locator('[data-testid=beam-block-plan] polygon').count() > 20, 'the engine lays out the sample floor');
+      t.expect(await dialog.locator('[data-testid=beam-block-section] polygon').count() >= 6, 'the section shows the joists, the blocks and the concrete');
+      t.expect((await dialog.locator('[data-testid=beam-block-depth]').innerText()).includes('250'), 'the depth is the block and the topping');
+      await t.shot('beam-block-type', { of: '.dialog', pad: 0 });
+    },
+  },
+  {
     id: 'floors-roofs',
     async run(t) {
       await t.fresh();
