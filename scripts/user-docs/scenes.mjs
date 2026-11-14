@@ -1621,6 +1621,79 @@ export const scenes = [
     },
   },
   {
+    // Curved edges, fillets and chamfers, and the Floor tool's shapes (forum topic 97, stage 2).
+    id: 'floors-curved',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      await t.ui({ keyPlan: false });
+      const storey = await t.storey();
+      const rect = await t.cmd('architecture.addSlab', { storeyId: storey, points: [[0, 0], [6, 0], [6, 4], [0, 4]] });
+      // A second floor only to frame the plan for both, gone before the circle is drawn where it was.
+      const frame = await t.cmd('architecture.addSlab', { storeyId: storey, points: [[8, 0], [12, 0], [12, 4], [8, 4]] });
+      await t.fit();
+      await t.cmd('element.delete', { id: frame.id });
+      await t.wait(500);
+      // The Floor tool's bar: Polygon (with arcs), Rectangle, Circle, Inside walls; a circle from its centre and a point on it.
+      await t.tool('architecture.slab');
+      await t.page.locator('[data-testid=outline-shape] [data-shape=circle]').click();
+      const [cx, cy] = await t.planPoint(10, 2), [ox, oy] = await t.planPoint(11.6, 2);
+      await t.page.mouse.click(cx, cy);
+      await t.page.mouse.move(ox, oy, { steps: 6 });
+      await t.wait(300);
+      t.expect(await t.page.locator('[data-testid=outline-preview]').count() > 0, 'the circle is previewed as the cursor moves');
+      t.expect(await t.page.locator('.cad-prompt [data-testid=outline-shape]').count() === 1, 'the command line shows the Floor tool\'s shapes');
+      await t.shot('floor-shapes');
+      await t.page.mouse.click(ox, oy);
+      await t.wait(1200);
+      const round = (await t.nodes()).find((n) => n.type === 'IfcSlab' && Array.isArray(n.props.arcs));
+      t.expect(round && round.props.contour.length === 4, 'the circle drawn is a floor of four quarter arcs');
+      await t.page.locator('[data-testid=outline-shape] [data-shape=polygon]').click();
+      await t.keys('Escape');
+      await t.ui({ tool: null });
+      await t.wait(300);
+      // The rectangle selected: a right-click near its top edge bends it out ("Make arc").
+      await select(t, rect.id);
+      await t.wait(600);
+      const [ex, ey] = await t.planPoint(1.5, 4);
+      await t.page.mouse.click(ex, ey, { button: 'right' });
+      await t.wait(300);
+      t.expect(await t.page.locator('.context-menu .context-item', { hasText: 'Make arc' }).count() === 1, 'a right-click near a straight edge offers Make arc');
+      await t.page.locator('.context-menu .context-item', { hasText: 'Make arc' }).click();
+      await t.wait(1000);
+      const bent = (await t.nodes()).find((n) => n.id === rect.id);
+      t.expect(Array.isArray(bent.props.arcs) && Math.abs(bent.props.arcs[2]) > 0.5, `the top edge is an arc (${JSON.stringify(bent.props.arcs)})`);
+      // Its round grip at the arc's middle, dragged up: the arc through the point.
+      const grip = async (key) => { const r = await t.page.locator(`[data-testid=plan] [data-grip="${key}"]`).first().boundingBox(); return r ? [r.x + r.width / 2, r.y + r.height / 2] : null; };
+      const [ax, ay] = (await grip('a2')) ?? [0, 0];
+      t.expect(ax > 0, 'the curved edge shows its arc grip');
+      const [, ty] = await t.planPoint(3, 5.4);
+      await t.page.mouse.move(ax, ay);
+      await t.page.mouse.down();
+      await t.page.mouse.move(ax, ty, { steps: 8 });
+      await t.page.mouse.up();
+      await t.wait(1000);
+      const dragged = (await t.nodes()).find((n) => n.id === rect.id);
+      t.expect(Math.abs(Math.abs(dragged.props.arcs[2]) - 1.4) < 0.1, `the arc goes through the point it was dragged to (rise ${dragged.props.arcs[2]})`);
+      // A right-click on a corner rounds it: Fillet corner…, its radius typed.
+      const [vx, vy] = (await grip('v0')) ?? [0, 0];
+      await t.page.mouse.click(vx, vy, { button: 'right' });
+      await t.wait(300);
+      t.expect(await t.page.locator('.context-menu .context-item', { hasText: 'Chamfer corner' }).count() === 1, 'a corner offers Fillet corner and Chamfer corner');
+      await t.page.locator('.context-menu .context-item', { hasText: 'Fillet corner' }).click();
+      await t.wait(400);
+      await t.page.keyboard.type('1000');
+      await t.page.keyboard.press('Enter');
+      await t.wait(1200);
+      const filleted = (await t.nodes()).find((n) => n.id === rect.id);
+      t.expect(filleted.props.contour.length === 5, `the corner is rounded: five corners (${filleted.props.contour.length})`);
+      await t.page.mouse.move(vx - 60, vy + 60);
+      await t.wait(400);
+      await t.shot('floor-curved-edge', { of: '.plan-svg', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     id: 'schedules',
     async run(t) {
       await t.fresh();

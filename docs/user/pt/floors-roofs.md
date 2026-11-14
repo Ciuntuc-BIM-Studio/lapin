@@ -12,6 +12,18 @@ Em **Tipos de piso**, cada camada tem uma **Prioridade** (de 0 a 100) e uma **Ca
 
 Para mudar o contorno, selecione o piso e arraste os cantos. Para adicionar um canto, mantenha <kbd>Ctrl/⌘</kbd> pressionado e clique no pequeno losango no meio de uma aresta, ou clique com o botão direito no piso selecionado perto de uma aresta e escolha **Adicionar canto aqui**: o novo canto fica onde você clicou. Para remover um, faça <kbd>Ctrl/⌘</kbd>-clique nele, ou clique com o botão direito e escolha **Remover canto** (um contorno mantém pelo menos três cantos). Cada ação é um único passo de desfazer, e o mesmo vale para aberturas no piso, telhados, ambientes e varandas. **Abertura no piso** (<kbd>SH</kbd>) corta um furo no piso, para uma escada ou um shaft.
 
+### Arestas curvas, arredondamentos e pisos redondos
+
+A barra da ferramenta **Piso**, na linha de comando, desenha o contorno como **Polígono** (clicando nos cantos), **Retângulo** (dois cantos opostos), **Círculo** (o centro e depois um ponto nele) ou **Dentro das paredes** (um clique dentro das paredes que o fecham; o piso vai até as faces delas). Num polígono, **Linhas (Espaço)** passa a **Arcos (Espaço)**: as arestas seguintes são arcos, cada um tangente à aresta anterior, até premir <kbd>Espaço</kbd> de novo. **Abertura no piso** e **Forro** têm a mesma barra, sem **Dentro das paredes**.
+
+![A ferramenta Piso desenhando um círculo ao lado de um piso](shots/floor-shapes.webp)
+
+Qualquer aresta de um piso, de uma abertura no piso ou de um forro pode ser curva. Clique com o botão direito no piso selecionado perto de uma aresta e escolha **Tornar arco**: a aresta curva-se para fora um oitavo do seu comprimento e aparece uma alça redonda no meio do arco. Arraste-a para curvar o arco pelo ponto desejado (o losango, agora no meio da corda, continua a mover a aresta). **Tornar reto** volta a fazê-la uma linha. Um canto entre duas arestas retas pode ser arredondado ou chanfrado: clique nele com o botão direito e escolha **Arredondar canto…** (digite o raio) ou **Chanfrar canto…** (digite quanto recua ao longo de cada aresta). O canto torna-se dois, onde o arco ou o chanfro encontra as arestas; um raio grande demais para as arestas é recusado. Cada um é um passo de desfazer.
+
+![Um piso com uma aresta curva e um canto arredondado](shots/floor-curved-edge.webp)
+
+O piso é construído ao longo dos seus arcos, nenhuma corda a mais de 1 mm deles, em 3D, plantas e cortes; a sua área e o seu perímetro são medidos nos arcos verdadeiros. Uma camada que passa uma aresta curva (veja [Extensões de camada](walls.md#layer-extents)) segue o arco. Uma abertura também pode ter arestas curvas, e um piso curvo pode ter aberturas. Em IFC o piso leva o seu contorno com os arcos verdadeiros como pegada (uma IfcIndexedPolyCurve com segmentos de arco), ao lado do seu corpo. As coberturas mantêm arestas retas, porque as suas regras de aresta (beiral, empena) são definidas por aresta reta.
+
 Um piso desenhado fora das paredes, diante de uma porta, é uma varanda. Para os degraus até ela, veja [Escadas](stairs.md).
 
 Uma camada de uma laje também pode ir além do seu contorno, ou parar antes, à volta toda ou numa aresta, escrita nas suas propriedades ou arrastada em planta ou em corte com **Editar camadas**, e um tipo de laje pode dar às suas lajes as suas extensões: veja [Extensões de camadas](walls.md#extensoes-de-camadas). Os telhados ainda não têm composição de camadas (a cobertura, a laje e a estrutura são partes próprias), por isso não têm extensões de camadas.

@@ -27,7 +27,8 @@ export type Gesture =
     /** What the tool would make, drawn as the cursor moves (a detour's bypass); null: the gesture's own preview. */
     preview?: (placed: Vec2[], aimed: Vec2) => Vec2[] | null;
   }
-  | { kind: 'polygon' }
+  /** `shapes` (forum topic 97): in a plan, its bar's shape (viewport/outlineShape: polygon with arcs, rectangle, circle, inside walls) is drawn. */
+  | { kind: 'polygon'; shapes?: boolean }
   /** `constrain`: where the next point may go, given the points placed (a pipe of copper turns only by 45°): the aimed point moved onto what is allowed. */
   | { kind: 'polyline'; constrain?: (placed: Vec2[], aimed: Vec2) => Vec2 }
   | {
@@ -61,6 +62,8 @@ export interface ToolInput {
   points: Vec2[]; entity?: NodeDto; face?: FaceHit;
   /** The length typed in the live input (m) when the last point came from it, so a tool may measure along its own path rather than the screen. */
   typed?: number;
+  /** An outline drawn with curved edges (forum topic 97): each edge's rise off its chord, edge i from point i to the next (the last back to the first), left of it positive. */
+  arcs?: number[];
   /** In the 3D view, the height (m) of each point as clicked (a snap on a ridge, a corner above the level); a tool that measures in space reads it, the others work on the level. */
   heights?: number[];
 }
@@ -183,8 +186,16 @@ export interface Grip {
    * An outline's edge (its two ends) with `addCornerAt`: a right-click near the edge of a selected element offers "Add corner here",
    * which puts a vertex on the edge at the point clicked (forum topic 97). A vertex grip's `remove` is offered as "Remove corner".
    */
-  edge?: [Vec2, Vec2];
+  edge?: Vec2[];
   addCornerAt?: (to: Vec2) => GripStep | null;
+  /** An outline's edge that may be curved (forum topic 97, stage 2): a right-click near it offers "Make arc" (straight) or "Make straight" (curved). */
+  bend?: () => GripStep | null;
+  straighten?: () => GripStep | null;
+  /**
+   * An outline's corner that may be rounded or cut (forum topic 97): a right-click on it offers "Fillet corner…" and "Chamfer
+   * corner…", the radius or distance typed; `straight` says whether both its edges are straight (else they are offered disabled).
+   */
+  corner?: { straight: boolean; fillet: (radius: number) => GripStep | null; chamfer: (distance: number) => GripStep | null };
   /** Alt-click (a click, not a drag) does `remove` as well, as Ctrl/⌘-click does (a dimension's point, forum topic 74); a drag with Alt still moves it alone. */
   altRemove?: boolean;
   /** Ctrl/⌘-click: continue from here (a dimension line's end: the next clicks add points beyond it, forum topic 74). Runs before `insert` and `remove`. */

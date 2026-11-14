@@ -12,6 +12,18 @@ En **Tipos de losa**, cada capa tiene una **Prioridad** (de 0 a 100) y una **Cat
 
 Para cambiar el contorno, seleccione la losa y arrastre sus esquinas. Para añadir una esquina, mantenga pulsado <kbd>Ctrl/⌘</kbd> y haga clic en el pequeño rombo del centro de un borde, o haga clic derecho en la losa seleccionada cerca de un borde y elija **Añadir esquina aquí**: la nueva esquina queda donde hizo clic. Para quitar una, haga <kbd>Ctrl/⌘</kbd>-clic en ella, o clic derecho en ella y elija **Quitar esquina** (un contorno conserva al menos tres esquinas). Cada cambio es un solo paso de deshacer, y lo mismo vale para huecos en losa, cubiertas, locales y balcones. **Hueco en losa** (<kbd>SH</kbd>) abre un hueco en una losa, para una escalera o un patinillo.
 
+### Bordes curvos, redondeos y losas redondas
+
+La barra de la herramienta **Losa**, en la línea de comandos, dibuja el contorno como **Polígono** (haciendo clic en sus esquinas), **Rectángulo** (dos esquinas opuestas), **Círculo** (su centro y luego un punto sobre él) o **Dentro de los muros** (un clic dentro de los muros que la cierran; la losa llega hasta sus caras). En un polígono, **Líneas (Espacio)** pasa a **Arcos (Espacio)**: los bordes siguientes son arcos, cada uno tangente al borde anterior, hasta que vuelva a pulsar <kbd>Espacio</kbd>. **Hueco en losa** y **Falso techo** tienen la misma barra, sin **Dentro de los muros**.
+
+![La herramienta Losa dibujando un círculo junto a una losa](shots/floor-shapes.webp)
+
+Cualquier borde de una losa, de un hueco en losa o de un falso techo puede ser curvo. Haga clic derecho en la losa seleccionada cerca de un borde y elija **Convertir en arco**: el borde se curva hacia fuera un octavo de su longitud y aparece un pinzamiento redondo en el centro del arco. Arrástrelo para curvar el arco por el punto que quiera (el rombo, ahora en el centro de la cuerda, sigue moviendo el borde). **Convertir en recto** lo vuelve una línea. Una esquina entre dos bordes rectos se puede redondear o achaflanar: haga clic derecho en ella y elija **Redondear esquina…** (escriba el radio) o **Achaflanar esquina…** (escriba cuánto retrocede por cada borde). La esquina se convierte en dos, donde el arco o el chaflán encuentran los bordes; un radio demasiado grande para los bordes se rechaza. Cada uno es un paso de deshacer.
+
+![Una losa con un borde curvo y una esquina redondeada](shots/floor-curved-edge.webp)
+
+La losa se construye a lo largo de sus arcos, ninguna cuerda a más de 1 mm de ellos, en 3D, plantas y secciones; su área y su perímetro se miden sobre los arcos verdaderos. Una capa que pasa de un borde curvo (vea [Extensiones de capa](walls.md#layer-extents)) sigue el arco. Un hueco también puede tener bordes curvos, y una losa curva puede tener huecos. En IFC la losa lleva su contorno con los arcos verdaderos como huella (una IfcIndexedPolyCurve con segmentos de arco), junto a su cuerpo. Las cubiertas mantienen bordes rectos, porque sus reglas de borde (alero, piñón) se fijan por borde recto.
+
 Una losa dibujada fuera de los muros, delante de una puerta, es un porche. Para los peldaños que suben a él, consulte [Escaleras](stairs.md).
 
 Una capa de un forjado también puede ir más allá de su contorno, o detenerse antes, todo alrededor o en un borde, escrita en sus propiedades o arrastrada en planta o en sección con **Editar capas**, y un tipo de forjado puede dar a sus forjados sus extensiones: vea [Extensiones de capas](walls.md#extensiones-de-capas). Las cubiertas aún no tienen composición de capas (su cobertura, su losa y su estructura son partes propias), así que no tienen extensiones de capas.

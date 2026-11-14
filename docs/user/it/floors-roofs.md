@@ -12,6 +12,18 @@ In **Tipi di solaio** ogni strato ha una **Priorità** (da 0 a 100) e una **Cate
 
 Per cambiare il contorno, seleziona il solaio e trascinane gli angoli. Per aggiungere un angolo, tieni premuto <kbd>Ctrl/⌘</kbd> e fai clic sul piccolo rombo a metà di un lato, oppure fai clic destro sul solaio selezionato vicino a un lato e scegli **Aggiungi un angolo qui**: il nuovo angolo va dove hai fatto clic. Per toglierne uno, fai <kbd>Ctrl/⌘</kbd>-clic su di esso, oppure clic destro e scegli **Rimuovi angolo** (un contorno mantiene almeno tre angoli). Ogni modifica è un solo passo di annullamento, e lo stesso vale per fori nel solaio, tetti, locali e balconi. **Foro nel solaio** (<kbd>SH</kbd>) taglia un foro in un solaio, per una scala o un cavedio.
 
+### Lati curvi, raccordi e solai rotondi
+
+La barra dello strumento **Solaio**, nella riga di comando, disegna il contorno come **Poligono** (cliccandone gli angoli), **Rettangolo** (due angoli opposti), **Cerchio** (il centro, poi un punto su di esso) o **Dentro i muri** (un clic dentro i muri che lo racchiudono; il solaio arriva alle loro facce). In un poligono, **Linee (Spazio)** diventa **Archi (Spazio)**: i lati successivi sono archi, ognuno tangente al lato precedente, finché non premi di nuovo <kbd>Spazio</kbd>. **Foro nel solaio** e **Controsoffitto** hanno la stessa barra, senza **Dentro i muri**.
+
+![Lo strumento Solaio che disegna un cerchio accanto a un solaio](shots/floor-shapes.webp)
+
+Qualsiasi lato di un solaio, di un foro nel solaio o di un controsoffitto può essere curvo. Fai clic destro sul solaio selezionato vicino a un lato e scegli **Rendi arco**: il lato si incurva verso l'esterno di un ottavo della sua lunghezza e al centro dell'arco compare una maniglia rotonda. Trascinala per curvare l'arco attraverso il punto voluto (il rombo, ora al centro della corda, sposta ancora il lato). **Rendi diritto** lo riporta a linea. Un angolo tra due lati diritti si può raccordare o smussare: fai clic destro su di esso e scegli **Raccorda l'angolo…** (digita il raggio) o **Smussa l'angolo…** (digita di quanto arretra lungo ogni lato). L'angolo diventa due, dove l'arco o lo smusso incontrano i lati; un raggio troppo grande per i lati viene rifiutato. Ognuno è un solo passo di annullamento.
+
+![Un solaio con un lato curvo e un angolo raccordato](shots/floor-curved-edge.webp)
+
+Il solaio è costruito lungo i suoi archi, nessuna corda a più di 1 mm da essi, in 3D, piante e sezioni; area e perimetro sono misurati sugli archi veri. Uno strato che va oltre un lato curvo (vedi [Estensioni degli strati](walls.md#layer-extents)) segue l'arco. Anche un foro può avere lati curvi, e un solaio curvo può avere fori. In IFC il solaio porta il suo contorno con gli archi veri come impronta (una IfcIndexedPolyCurve con segmenti d'arco), accanto al suo corpo. Le coperture mantengono lati diritti, perché le loro regole dei lati (gronda, timpano) si impostano per lato diritto.
+
 Un solaio disegnato fuori dai muri, davanti a una porta, è un portico. Per i gradini che vi salgono, vedi [Scale](stairs.md).
 
 Uno strato di un solaio può anche andare oltre il suo contorno, o fermarsi prima, tutto intorno o a un bordo, digitato nelle sue proprietà o trascinato in pianta o in sezione con **Modifica strati**, e un tipo di solaio può dare ai suoi solai i loro prolungamenti: vedete [Prolungamenti degli strati](walls.md#prolungamenti-degli-strati). I tetti non hanno ancora una stratigrafia (manto, soletta e orditura sono parti proprie), quindi non hanno prolungamenti degli strati.

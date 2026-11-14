@@ -2757,3 +2757,6 @@ path.part-flex-ghost { fill: none; stroke: var(--accent); stroke-width: 1.6; str
 .cp-tools, .cp-add { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 .cp-add input[type=color] { width: 26px; height: 20px; padding: 0; }
 .cp-add input[type=text] { flex: 1; min-width: 80px; }
+
+/* The outline tools' shapes in the command line (forum topic 97): toggles in a row, as SNAP and ORTHO. */
+.outline-shape { display: inline-flex; gap: 4px; align-items: center; flex-wrap: nowrap; }

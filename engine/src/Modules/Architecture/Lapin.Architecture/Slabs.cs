@@ -21,12 +21,70 @@ public static class Slabs
         new("Reinforced concrete", 0.15, Core: true),
     ];
 
-    public static IReadOnlyList<Vec2> Contour(Entity slab) =>
+    /// <summary>The outline's corners as stored (its <c>contour</c>), whatever its edges: what grips, edge indices and layer extents count.</summary>
+    public static IReadOnlyList<Vec2> Corners(Entity slab) =>
         slab.Attrs["contour"] is JsonArray arr
             ? arr.OfType<JsonArray>().Where(p => p.Count >= 2).Select(p => new Vec2(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0)).ToList()
             : [];
 
+    /// <summary>The rises of the outline's edges (forum topic 97, <see cref="ArcOutline"/>); null when every edge is straight.</summary>
+    public static double[]? Rises(Entity e) => e.Attrs[ArcOutline.Key] is JsonArray ? ArcOutline.Rises(e.Attrs[ArcOutline.Key], Corners(e).Count) : null;
+
+    /// <summary>
+    /// The outline as built (storey-local metres, counter-clockwise): its corners, and along each curved edge the points of
+    /// its arc by the chord rule (<see cref="Chords"/>). The same as <see cref="Corners"/> when every edge is straight.
+    /// </summary>
+    public static IReadOnlyList<Vec2> Contour(Entity slab)
+    {
+        var c = Corners(slab);
+        return slab.Attrs[ArcOutline.Key] is JsonArray && ArcOutline.Rises(slab.Attrs[ArcOutline.Key], c.Count) is { } r ? ArcOutline.Points(c, r) : c;
+    }
+
+    /// <summary>
+    /// The outline as built and the layer extents on it: an extent at a curved edge goes on each chord of its arc, so the layer's
+    /// edge follows the arc out or in. <paramref name="edgeOf"/>: the corner edge each built edge lies on.
+    /// </summary>
+    public static (IReadOnlyList<Vec2> Contour, IReadOnlyList<LayerExtents.Extent> Extents) Built(Entity slab, IReadOnlyList<LayerExtents.Extent> extents, List<int>? edgeOf = null)
+    {
+        var c = Corners(slab);
+        if (Rises(slab) is not { } r)
+        {
+            edgeOf?.AddRange(Enumerable.Range(0, c.Count));
+            return (c, extents);
+        }
+        var of = edgeOf ?? [];
+        var pts = ArcOutline.Points(c, r, of);
+        var o = new List<LayerExtents.Extent>();
+        foreach (var x in extents)
+            if (x.Edge == LayerExtents.Edge && x.Index is { } i) { for (var k = 0; k < of.Count; k++) if (of[k] == i) o.Add(x with { Index = k }); }
+            else o.Add(x);
+        return (pts, o);
+    }
+
     public static JsonArray ContourJson(IEnumerable<Vec2> pts) => new(pts.Select(p => (JsonNode)new JsonArray(p.X, p.Y)).ToArray());
+
+    /// <summary>Writes an outline into the attributes: its corners, and its edges' rises (taken away when every edge is straight).</summary>
+    public static void SetOutline(JsonObject attrs, IReadOnlyList<Vec2> corners, IReadOnlyList<double>? rises)
+    {
+        attrs["contour"] = ContourJson(corners);
+        ArcOutline.Write(attrs, rises);
+    }
+
+    /// <summary>
+    /// The outline a command gives (<c>points</c> and, optional, <paramref name="arcs"/>: each edge's rise, <see cref="ArcOutline"/>),
+    /// checked; <paramref name="was"/>: the element changed, whose arcs stay when only its corners are given, as many as it has.
+    /// </summary>
+    public static (List<Vec2> Corners, double[]? Rises) OutlineArg(JsonNode? arcs, IReadOnlyList<Vec2> points, Entity? was = null, string what = "A floor")
+    {
+        double[]? rises = arcs is JsonArray arr ? [.. arr.Select(x => Json.Number(x) ?? 0)]
+            : was != null && Rises(was) is { } r && r.Length == points.Count ? r : null;
+        if (rises == null)
+        {
+            var straight = what == "A floor" ? CheckContour(points) : ArcOutline.Check(points, null, what).Corners;
+            return ([.. straight], null);
+        }
+        return ArcOutline.Check(points, rises, what);
+    }
 
     /// <summary>A contour as a command gives it: at least three distinct points, made counter-clockwise; refused when it encloses nothing.</summary>
     public static IReadOnlyList<Vec2> CheckContour(IReadOnlyList<Vec2> pts)
@@ -78,11 +136,13 @@ public static class Slabs
         LayOut(edit, slab, type);
     }
 
-    public static Entity Add(IEdit edit, string storeyId, IReadOnlyList<Vec2> contour, double offset, Entity? type)
+    public static Entity Add(IEdit edit, string storeyId, IReadOnlyList<Vec2> contour, double offset, Entity? type, IReadOnlyList<double>? rises = null)
     {
-        var pts = CheckContour(contour);
+        var (pts, arcs) = rises != null ? ArcOutline.Check(contour, rises) : ([.. CheckContour(contour)], null);
         type ??= EnsureDefaultType(edit);
-        var slab = new Entity(edit.NewId(), IfcClass.Slab, type.Name, new JsonObject { ["contour"] = ContourJson(pts), ["offset"] = offset }, "FLOOR");
+        var attrs = new JsonObject { ["offset"] = offset };
+        SetOutline(attrs, pts, arcs);
+        var slab = new Entity(edit.NewId(), IfcClass.Slab, type.Name, attrs, "FLOOR");
         edit.Add(slab);
         Spatial.Contain(edit, storeyId, slab.Id);
         SetType(edit, slab, type);
@@ -100,13 +160,12 @@ public static class Slabs
     /// <summary>The floor: a slab per layer, from its top down; in plan, its outline (it lies below the cut).</summary>
     public static ElementGeometry? Geometry(Entity slab, IModelView m, IServices? services = null)
     {
-        var contour = Contour(slab);
+        // A layer's own extents short of the outline (forum topic 89); those past it are pieces of their own (ExtentPieces), added after the cut priorities.
+        var (contour, extents) = Built(slab, LayerExtents.Effective(slab, m));
         if (contour.Count < 3) return new ElementGeometry([], Diagnostics: ["The floor has no outline."]);
         var top = Top(m, slab);
         var parts = new List<GeometryPart>();
         var problems = new List<string>();
-        // A layer's own extents short of the outline (forum topic 89); those past it are pieces of their own (ExtentPieces), added after the cut priorities.
-        var extents = LayerExtents.Effective(slab, m);
         foreach (var (from, to, material, name, index) in Section(m, slab))
         {
             if (!(to - from > 1e-9)) continue;
@@ -171,10 +230,9 @@ public static class Slabs
     public static List<LayerExtents.Piece> ExtentPieces(Entity slab, IModelView m, IServices? services, bool cuttingOnly, Func<LayerExtents.Extent, bool>? which = null)
     {
         var o = new List<LayerExtents.Piece>();
-        var extents = LayerExtents.Effective(slab, m);
+        var (contour, extents) = Built(slab, LayerExtents.Effective(slab, m));
         bool Takes(LayerExtents.Extent x) => x.Offset > 1e-9 && (!cuttingOnly || (x.Cuts && (which?.Invoke(x) ?? true)));
         if (!extents.Any(Takes) || services?.Get<ISolidBooleans>() is not { } booleans) return o;
-        var contour = Contour(slab);
         if (contour.Count < 3) return o;
         var top = Top(m, slab);
         double Past(LayerExtents.Extent x) => Takes(x) ? x.Offset : Short(x);
@@ -236,10 +294,12 @@ public static class Slabs
     public static IReadOnlyList<Vec2> HoleContour(IModelView m, Entity opening) =>
         opening.Str("stairId") is { } stairId && m.Get(stairId) is { Class: IfcClass.Stair or IfcClass.Ramp } stair ? Stairs.StairBuilder.OpeningContour(m, stair) ?? [] : Contour(opening);
 
-    public static Entity AddOpening(IEdit edit, Entity slab, IReadOnlyList<Vec2> contour)
+    public static Entity AddOpening(IEdit edit, Entity slab, IReadOnlyList<Vec2> contour, IReadOnlyList<double>? rises = null)
     {
-        var pts = CheckContour(contour);
-        var opening = new Entity(edit.NewId(), IfcClass.OpeningElement, "Floor opening", new JsonObject { ["contour"] = ContourJson(pts) }, "OPENING");
+        var (pts, arcs) = rises != null ? ArcOutline.Check(contour, rises, "An opening") : ([.. CheckContour(contour)], null);
+        var attrs = new JsonObject();
+        SetOutline(attrs, pts, arcs);
+        var opening = new Entity(edit.NewId(), IfcClass.OpeningElement, "Floor opening", attrs, "OPENING");
         edit.Add(opening);
         edit.AddRelation(new Relation(edit.NewId(), IfcClass.RelVoidsElement, slab.Id, [opening.Id]));
         return opening;
@@ -279,15 +339,16 @@ public static class Slabs
         if (g == null || g.Parts.Count == 0) yield break;
         if (BeamBlock.Of(m, slab) is { } bb)
             foreach (var q in BeamBlock.Quantities(bb, g, m)) yield return q;
-        var contour = Contour(slab);
-        var area = Math.Abs(Polygon2.SignedArea(contour));
+        // Exactly, its arcs as arcs (forum topic 97).
+        var (corners, rises) = (Corners(slab), Rises(slab));
+        var area = Math.Abs(ArcOutline.SignedArea(corners, rises));
         var section = Section(m, slab);
         var width = section.Max(b => b.To) - section.Min(b => b.From);
         var net = g.Parts.Sum(p => Measure.Volume(p.Solid));
         yield return new QuantitySet("Qto_SlabBaseQuantities",
         [
             new("Width", width, "LENGTH"),
-            new("Perimeter", Polygon2.Perimeter(contour), "LENGTH"),
+            new("Perimeter", ArcOutline.Perimeter(corners, rises), "LENGTH"),
             new("GrossArea", area, "AREA", "Gross area"),
             new("NetArea", width > 0 ? net / width : 0, "AREA", "Net area"),
             new("GrossVolume", area * width, "VOLUME", "Gross volume"),

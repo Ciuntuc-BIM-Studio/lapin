@@ -850,6 +850,7 @@ public static partial class IfcExport
                 && Mapped(inst, z0) is { } mapped) reps.Add(mapped);
             else if (!grouped) reps.Add(BodyOf(parts.Select(p => at is { } jp2 ? Brep(p.Solid, StyleKey(p), v => Local(jp2, v)) : Brep(p.Solid, StyleKey(p), fr))));
             if (AxisOf(e) is { } ax) reps.Add(ax);
+            if (ArcFootprint(e) is { } fp) reps.Add(fp);
             reps.AddRange(Plan2dOf(e));
             var shape = reps.Count > 0 ? f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(reps)) : Null;
             var (height, width) = Overall(e, type);
@@ -873,6 +874,31 @@ public static partial class IfcExport
             if (swept is { Parts.Count: > 0 }) SweptParts(e, swept, entity, spatial, place, fr, parts);
             Properties(e, kind, entity, type, hostedBy != null ? [("LapinHost", hostedBy.Id)] : null);
             Quantities(e, entity, grouped);
+        }
+
+        /// <summary>
+        /// An outline with curved edges (a floor's, a ceiling's; forum topic 97) as its FootPrint beside the body's facets: an
+        /// IfcIndexedPolyCurve of its corners (storey-local, the element's placement) and each arc's middle, its straight edges
+        /// IfcLineIndex and its arcs IfcArcIndex (start, a point on the arc, end), the true curve the body was laid in chords from.
+        /// </summary>
+        string? ArcFootprint(Entity e)
+        {
+            if (e.Attrs[ArcOutline.Key] is not JsonArray || e.Attrs["contour"] is not JsonArray) return null;
+            var corners = Args.StoredPoints(e.Attrs["contour"]);
+            if (corners.Count < 3 || ArcOutline.Rises(e.Attrs[ArcOutline.Key], corners.Count) is not { } rises) return null;
+            var pts = new List<Vec2>(corners);
+            var segments = new List<string>();
+            for (var i = 0; i < corners.Count; i++)
+            {
+                var (a, b) = (i + 1, (i + 1) % corners.Count + 1);
+                var c = ArcOutline.Edge(corners, rises, i);
+                if (!c.IsArc) { segments.Add(Typed("IFCLINEINDEX", L(new[] { a, b }))); continue; }
+                pts.Add(c.PointAt(c.Length / 2));
+                segments.Add(Typed("IFCARCINDEX", L(new[] { a, pts.Count, b })));
+            }
+            var list = f.Add("IFCCARTESIANPOINTLIST2D", L(pts.Select(p => L(new[] { R(p.X), R(p.Y) }))), Null);
+            if (footprint == "") footprint = f.Add("IFCGEOMETRICREPRESENTATIONSUBCONTEXT", S("FootPrint"), S("Model"), Derived, Derived, Derived, Derived, model, Null, E("PLAN_VIEW"), Null);
+            return f.Add("IFCSHAPEREPRESENTATION", footprint, S("FootPrint"), S("Curve2D"), L(new[] { f.Add("IFCINDEXEDPOLYCURVE", list, L(segments), False) }));
         }
 
         /// <summary>

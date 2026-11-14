@@ -5,7 +5,8 @@ import { AttachRoofIcon, CurtainWallIcon, CurvedWallIcon, DetachRoofIcon, DoorIc
 import type { Grip, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { flipAcross, frameAt, outlineGrips, outlineRef, pathGrips, pathRef, toPairs } from '../../viewport/gripKit';
 import { arcOf, project } from '../../viewport/arc';
-import { fromPairs } from '../../viewport/contour';
+import { arcsOf, fromPairs } from '../../viewport/contour';
+import { FloorShapeBar, PlainShapeBar, toggleOutlineArcs } from '../../viewport/outlineShape';
 import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
 import { activeStorey, execute, query, useSession } from '../../engine/session';
@@ -218,13 +219,23 @@ function curtainGrips(node: NodeDto): Grip[] {
   const c = arcOf(node.props);
   return c ? pathGrips(c, (s, e, rise) => ({ command: 'architecture.updateCurtainWall', args: { id: node.id, x1: s.x, y1: s.y, x2: e.x, y2: e.y, arc: rise } })) : [];
 }
-/** A slab, floor opening or roof: its outline's vertices and edges (a roof's edge rules follow its edges). */
+/**
+ * A slab, floor opening, ceiling or roof: its outline's vertices and edges (a roof's edge rules follow its edges). A floor's,
+ * an opening's and a ceiling's edges may be arcs and their corners rounded or cut (forum topic 97, stage 2); a roof's stay
+ * straight, its edge rules being per straight edge.
+ */
 function contourGrips(command: string, withEdges = false) {
   return (node: NodeDto): Grip[] => {
     const pts = fromPairs(node.props.contour);
     if (pts.length < 3) return [];
     const edges = withEdges && Array.isArray(node.props.edges) && node.props.edges.length === pts.length ? (node.props.edges as unknown[]) : undefined;
-    return outlineGrips({ pts, edges }, (o) => ({ command, args: { id: node.id, points: toPairs(o.pts), ...(o.edges ? { edges: o.edges } : {}) } }));
+    const curved = !withEdges && !node.props.stairId;
+    const arcs = curved ? arcsOf(node.props.arcs, pts.length) : undefined;
+    return outlineGrips({ pts, edges, arcs }, (o) => ({ command, args: { id: node.id, points: toPairs(o.pts), ...(o.edges ? { edges: o.edges } : {}), ...(curved ? { arcs: o.arcs ?? o.pts.map(() => 0) } : {}) } }),
+      curved ? {
+        fillet: (index, radius) => ({ command: 'architecture.roundCorner', args: { id: node.id, index, radius } }),
+        chamfer: (index, distance) => ({ command: 'architecture.chamferCorner', args: { id: node.id, index, distance } }),
+      } : undefined);
   };
 }
 /**
@@ -233,7 +244,7 @@ function contourGrips(command: string, withEdges = false) {
  * over a grip or its right-click menu takes it out.
  */
 const roofGrips = (node: NodeDto): Grip[] => [...contourGrips('architecture.updateRoof', true)(node), ...roofOpeningGrips(node)];
-const contourRefs = (node: NodeDto): RefLine[] => { const pts = fromPairs(node.props.contour); return pts.length >= 3 ? [outlineRef(pts)] : []; };
+const contourRefs = (node: NodeDto): RefLine[] => { const pts = fromPairs(node.props.contour); return pts.length >= 3 ? [outlineRef(pts, arcsOf(node.props.arcs, pts.length))] : []; };
 
 /**
  * The selected walls rise to the underside of the element clicked, from any
@@ -333,13 +344,19 @@ const bayWindow: ToolDef = {
   },
 };
 const joineryTypes: ToolDef = { id: 'architecture.joineryTypes', label: 'Doors & windows', icon: Settings2, run: () => useUi.setState({ dialog: 'joinery' }) };
-/** A floor: click its corners, then the first one again (or Enter). */
+/**
+ * A floor: click its corners, then the first one again (or Enter); its bar draws it as a rectangle, a circle, a polygon whose
+ * edges may be arcs (Space), or inside the walls clicked in (forum topic 97).
+ */
 const slab: ToolDef = {
   id: 'architecture.slab', label: 'Floor', icon: SlabIcon, shortcut: 'SB', properties: newElement('IfcSlabType', 'slabTypeId', 'slabTypes'), typed: typedBy('IfcSlabType', 'slabTypeId', 'slabTypes', SlabThumb),
-  gesture: { kind: 'polygon' },
-  complete: async ({ points }, ctx) => {
+  gesture: { kind: 'polygon', shapes: true },
+  options: FloorShapeBar,
+  space: toggleOutlineArcs,
+  complete: async ({ points, arcs }, ctx) => {
     const typeId = useUi.getState().slabTypeId;
-    await ctx.execute('architecture.addSlab', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]), ...(typeId ? { typeId } : {}) });
+    const where = points.length === 1 ? { x: points[0].x, y: points[0].y } : { points: points.map((p) => [p.x, p.y]), ...(arcs ? { arcs } : {}) };
+    await ctx.execute('architecture.addSlab', { storeyId: ctx.storeyId, ...where, ...(typeId ? { typeId } : {}) });
   },
 };
 /** A roof: click the wall line's corners, then the first one again (or Enter); it sits on the storey's top, in the style picked. */
@@ -354,9 +371,12 @@ const roof: ToolDef = {
 /** An opening through a floor (a stairwell, a shaft): its outline, inside the floor. */
 const slabOpening: ToolDef = {
   id: 'architecture.slabOpening', label: 'Floor opening', icon: SlabOpeningIcon, shortcut: 'SH',
-  gesture: { kind: 'polygon' },
-  complete: async ({ points }, ctx) => {
-    await ctx.execute('architecture.addSlabOpening', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]) });
+  gesture: { kind: 'polygon', shapes: true },
+  options: PlainShapeBar,
+  space: toggleOutlineArcs,
+  complete: async ({ points, arcs }, ctx) => {
+    if (points.length < 3) return;
+    await ctx.execute('architecture.addSlabOpening', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]), ...(arcs ? { arcs } : {}) });
   },
 };
 /** The roof configurator, on the roof selected (decision 231). */

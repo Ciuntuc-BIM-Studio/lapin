@@ -12,6 +12,18 @@ I **Dæktyper** har hvert lag en **Prioritet** (0 til 100) og en **Kategori**, s
 
 Vil du ændre omridset, så markér dækket og træk i dets hjørner. Hold <kbd>Ctrl/⌘</kbd> nede og klik på den lille rombe midt på en kant for at tilføje et hjørne, eller højreklik på det markerede dæk nær en kant og vælg **Tilføj hjørne her**: det nye hjørne kommer, hvor du klikkede. Du fjerner et hjørne med <kbd>Ctrl/⌘</kbd>-klik på det, eller ved at højreklikke på det og vælge **Fjern hjørne** (et omrids beholder mindst tre hjørner). Hver ændring er ét trin at fortryde, og det virker også på dækåbninger, tage, rum og altaner. **Dækåbning** (<kbd>SH</kbd>) skærer et hul i et dæk, til en trappe eller en skakt.
 
+### Buede kanter, afrundinger og runde dæk
+
+Værktøjet **Dæk** har en bjælke i kommandolinjen, der tegner omridset som **Polygon** (klik på hjørnerne), **Rektangel** (to modstående hjørner), **Cirkel** (centrum, derefter et punkt på den) eller **Inden for vægge** (et klik inden for de vægge, der lukker om den; dækket går ud til deres flader). I en polygon bliver **Linjer (Mellemrum)** til **Buer (Mellemrum)**: de næste kanter er buer, der hver fortsætter tangentielt fra kanten før, indtil du trykker <kbd>Mellemrum</kbd> igen. **Dækåbning** og **Loft** har samme bjælke, uden **Inden for vægge**.
+
+![Værktøjet Dæk tegner en cirkel ved siden af et dæk](shots/floor-shapes.webp)
+
+Enhver kant af et dæk, en dækåbning eller et loft kan være buet. Højreklik på det markerede dæk nær en kant og vælg **Gør til bue**: kanten buer ud med en ottendedel af sin længde, og et rundt greb vises midt på buen. Træk i det for at bøje buen gennem det ønskede punkt (romben, nu midt på korden, flytter stadig kanten). **Gør lige** gør den til en linje igen. Et hjørne mellem to lige kanter kan afrundes eller affases: højreklik på det og vælg **Afrund hjørne…** (skriv radius) eller **Affas hjørne…** (skriv hvor langt tilbage langs hver kant). Hjørnet bliver til to, hvor buen eller affasningen møder kanterne; en radius, der er for stor til kanterne, afvises. Hver er ét fortryd-trin.
+
+![Et dæk med en buet kant og et afrundet hjørne](shots/floor-curved-edge.webp)
+
+Dækket bygges langs sine buer, ingen korde mere end 1 mm fra dem, i 3D, planer og snit; dets areal og omkreds måles på de sande buer. Et lag, der går forbi en buet kant (se [Lagudstrækninger](walls.md#layer-extents)), følger buen. En åbning kan også have buede kanter, og et buet dæk kan have åbninger. I IFC bærer dækket sit omrids med de sande buer som fodaftryk (en IfcIndexedPolyCurve med buesegmenter) ved siden af sit legeme. Tage beholder lige kanter, fordi et tags kantregler (tagfod, gavl) sættes pr. lige kant.
+
 Et dæk tegnet uden for væggene, foran en dør, er en trappeafsats. Om trinene op til den, se [Trapper](stairs.md).
 
 Et lag i et dæk kan også gå forbi dets omrids eller stoppe før det, hele vejen rundt eller ved én kant, skrevet i dets egenskaber eller trukket i plan eller snit med **Rediger lag**, og en dæktype kan give sine dæk deres forlængelser: se [Lagforlængelser](walls.md#lagforl-ngelser). Tage har endnu ingen lagopbygning (deres tagdækning, plade og konstruktion er egne dele), så de har ingen lagforlængelser.

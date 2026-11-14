@@ -12,6 +12,18 @@ W **Typy stropów** każda warstwa ma **Priorytet** (od 0 do 100) i **Kategorię
 
 Aby zmienić obrys, zaznacz strop i przeciągnij jego narożniki. Aby dodać narożnik, przytrzymaj <kbd>Ctrl/⌘</kbd> i kliknij mały romb pośrodku krawędzi albo kliknij prawym przyciskiem zaznaczony strop blisko krawędzi i wybierz **Dodaj narożnik tutaj**: nowy narożnik pojawi się tam, gdzie kliknięto. Aby usunąć narożnik, kliknij go z <kbd>Ctrl/⌘</kbd> albo kliknij prawym przyciskiem i wybierz **Usuń narożnik** (obrys zachowuje co najmniej trzy narożniki). Każda zmiana to jeden krok cofania; to samo działa dla otworów w stropie, dachów, pomieszczeń i balkonów. **Otwór w stropie** (<kbd>SH</kbd>) wycina w stropie otwór na schody lub szyb.
 
+### Krzywe krawędzie, zaokrąglenia i okrągłe stropy
+
+Pasek narzędzia **Strop** w wierszu poleceń rysuje obrys jako **Wielokąt** (klikane narożniki), **Prostokąt** (dwa przeciwległe narożniki), **Okrąg** (środek, potem punkt na okręgu) lub **Wewnątrz ścian** (kliknięcie wewnątrz ścian, które go zamykają; strop dochodzi do ich lic). W wielokącie **Linie (Spacja)** zmienia się w **Łuki (Spacja)**: kolejne krawędzie są łukami, każdy styczny do poprzedniej krawędzi, dopóki ponownie nie naciśniesz <kbd>Spacja</kbd>. **Otwór w stropie** i **Sufit podwieszany** mają ten sam pasek, bez **Wewnątrz ścian**.
+
+![Narzędzie Strop rysujące okrąg obok stropu](shots/floor-shapes.webp)
+
+Każda krawędź stropu, otworu w stropie lub sufitu może być krzywa. Kliknij prawym przyciskiem zaznaczony strop przy krawędzi i wybierz **Zamień na łuk**: krawędź wygina się na zewnątrz o jedną ósmą swojej długości, a na środku łuku pojawia się okrągły uchwyt. Przeciągnij go, aby wygiąć łuk przez wybrany punkt (romb, teraz na środku cięciwy, nadal przesuwa krawędź). **Wyprostuj** zamienia ją z powrotem w linię. Narożnik między dwiema prostymi krawędziami można zaokrąglić lub sfazować: kliknij go prawym przyciskiem i wybierz **Zaokrąglij narożnik…** (wpisz promień) lub **Sfazuj narożnik…** (wpisz, jak daleko wstecz wzdłuż każdej krawędzi). Narożnik staje się dwoma, tam gdzie łuk lub faza spotyka krawędzie; zbyt duży promień jest odrzucany. Każde z nich to jeden krok cofania.
+
+![Strop z krzywą krawędzią i zaokrąglonym narożnikiem](shots/floor-curved-edge.webp)
+
+Strop jest budowany wzdłuż łuków, żadna cięciwa nie dalej niż 1 mm od nich, w 3D, rzutach i przekrojach; jego pole i obwód mierzone są na prawdziwych łukach. Warstwa wychodząca poza krzywą krawędź (zobacz [Wysunięcia warstw](walls.md#layer-extents)) biegnie wzdłuż łuku. Otwór także może mieć krzywe krawędzie, a krzywy strop może mieć otwory. W IFC strop niesie obrys z prawdziwymi łukami jako ślad (IfcIndexedPolyCurve z segmentami łuku) obok swojej bryły. Dachy zachowują proste krawędzie, bo reguły krawędzi dachu (okap, szczyt) ustala się dla każdej prostej krawędzi.
+
 Strop narysowany poza ścianami, przed drzwiami, to ganek. Schody prowadzące na niego opisuje strona [Schody](stairs.md).
 
 Warstwa stropu może też wychodzić poza jego obrys albo kończyć się przed nim, dookoła lub na jednej krawędzi, wpisana we właściwościach albo przeciągnięta w rzucie lub przekroju przez **Edytuj warstwy**, a typ stropu może dać swoim stropom ich przedłużenia: zobacz [Przedłużenia warstw](walls.md#przed-uzenia-warstw). Dachy nie mają jeszcze układu warstw (pokrycie, płyta i więźba to ich osobne części), więc nie mają przedłużeń warstw.

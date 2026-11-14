@@ -16,6 +16,18 @@ Alege **Arhitectură → Placă** (<kbd>SB</kbd>), apoi dă clic în colțurile 
 
 Ca să schimbi conturul, selectează placa și trage de colțuri. Ca să adaugi un colț, ține apăsat <kbd>Ctrl/⌘</kbd> și dă clic pe romburile mici din mijlocul unei laturi, sau dă clic dreapta pe placa selectată lângă o latură și alege **Adaugă colț aici**: colțul nou apare unde ai dat clic. Ca să scoți unul, dă <kbd>Ctrl/⌘</kbd>-clic pe el sau clic dreapta pe el și alege **Elimină colțul** (un contur păstrează cel puțin trei colțuri). Fiecare e un singur pas de anulare, și la fel merge la goluri în placă, acoperișuri, camere și balcoane. **Gol în placă** (<kbd>SH</kbd>) taie o gaură în placă, pentru o scară sau un ghen.
 
+### Laturi curbe, racordări și plăci rotunde
+
+Bara uneltei **Placă**, din linia de comandă, desenează conturul ca **Poligon** (îi dai clic pe colțuri), **Dreptunghi** (două colțuri opuse), **Cerc** (centrul, apoi un punct pe el) sau **În interiorul pereților** (un clic în interiorul pereților care o închid; placa ajunge până la fețele lor). Într-un poligon, **Linii (Spațiu)** devine **Arce (Spațiu)**: laturile următoare sunt arce, fiecare continuând tangent din latura dinainte, până apeși iar <kbd>Spațiu</kbd>. **Gol în placă** și **Tavan** au aceeași bară, fără **În interiorul pereților**.
+
+![Unealta Placă desenând un cerc lângă o placă](shots/floor-shapes.webp)
+
+Orice latură a unei plăci, a unui gol în placă sau a unui tavan poate fi curbă. Dă clic dreapta pe placa selectată lângă o latură și alege **Fă arc**: latura se bombează în afară cu o optime din lungimea ei, iar la mijlocul arcului apare un mâner rotund. Trage de el ca să curbezi arcul prin punctul dorit (rombul, acum la mijlocul coardei, mută în continuare latura). **Fă dreaptă** o face din nou linie. Un colț între două laturi drepte poate fi rotunjit sau teșit: dă clic dreapta pe el și alege **Racordează colțul…** (tastezi raza) sau **Teșește colțul…** (tastezi cât se retrage pe fiecare latură). Colțul devine două, unde arcul sau teșitura întâlnește laturile; o rază prea mare pentru laturi e refuzată. Fiecare e un singur pas de anulare.
+
+![O placă cu o latură curbă și un colț rotunjit](shots/floor-curved-edge.webp)
+
+Placa e construită de-a lungul arcelor, nicio coardă mai departe de 1 mm de ele, în 3D, planuri și secțiuni; aria și perimetrul ei se măsoară pe arcele adevărate. Un strat care trece de o latură curbă (vezi [Prelungirile straturilor](walls.md#layer-extents)) urmează arcul. Și un gol poate avea laturi curbe, iar o placă curbă poate avea goluri. În IFC placa își poartă conturul cu arcele adevărate ca amprentă (un IfcIndexedPolyCurve cu segmente de arc), pe lângă corpul ei. Acoperișurile păstrează laturi drepte, pentru că regulile laturilor unui acoperiș (streașină, fronton) se dau pe fiecare latură dreaptă.
+
 O placă desenată în afara pereților, în fața unei uși, e o terasă. Pentru treptele până la ea, vezi [Scări](stairs.md).
 
 Un strat al plăcii poate și să treacă de contur, ori să se oprească înaintea lui, pe tot conturul sau la o latură, scris în proprietățile ei sau tras în plan ori în secțiune cu **Editează straturile**, iar un tip de placă le poate da plăcilor lui prelungirile: vezi [Prelungirile straturilor](walls.md#prelungirile-straturilor). Acoperișurile nu au încă un set de straturi (învelitoarea, placa și șarpanta lor sunt părți proprii), deci nu au prelungiri de straturi.

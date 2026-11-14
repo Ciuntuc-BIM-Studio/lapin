@@ -72,7 +72,8 @@ public static class Roof
         public double Thickness => StructureDepth + Covering.Thickness;
     }
 
-    public static IReadOnlyList<Vec2> Contour(Entity roof) => Slabs.Contour(roof);
+    /// <summary>A roof's outline: its corners, its edges straight (its edge rules are per straight edge; a curved edge is not offered on roofs).</summary>
+    public static IReadOnlyList<Vec2> Contour(Entity roof) => Slabs.Corners(roof);
 
     public static Resolved? Resolve(Entity roof, IModelView m)
     {

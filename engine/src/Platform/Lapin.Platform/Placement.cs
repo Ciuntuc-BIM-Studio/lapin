@@ -174,6 +174,8 @@ public static class Placement
             var pts = c.OfType<JsonArray>().Select(p => t.Point(Args.PointOf(p))).ToList();
             if (t.Mirrored) pts.Reverse(); // a mirrored outline keeps running counter-clockwise
             a["contour"] = new JsonArray(pts.Select(p => (JsonNode)J(p)).ToArray());
+            // Its curved edges (forum topic 97): mirrored, each bulges to the other side, and run back with the corners, back again.
+            if (t.Mirrored && ArcOutline.Rises(a[ArcOutline.Key], pts.Count) is { } rises) ArcOutline.Write(a, ArcOutline.Reversed(rises)!.Select(r => -r).ToList());
         }
         // The points a room's doors and windows are found again by (docs/rooms.md).
         if ((a["roomOpenings"] as JsonObject)?["items"] is JsonArray entries)

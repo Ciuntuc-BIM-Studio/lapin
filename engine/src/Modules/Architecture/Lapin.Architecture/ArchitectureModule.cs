@@ -375,7 +375,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 var attrs = slab.CloneAttrs();
                 if (Json.Number(a["edge"]) is { } e)
                 {
-                    var c = Slabs.Contour(slab);
+                    var c = Slabs.Corners(slab);
                     var i = (int)e;
                     if (i < 0 || i >= c.Count) throw new CommandException("The floor has no such edge.");
                     var d = c[(i + 1) % c.Count] - c[i];
@@ -407,8 +407,44 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         {
             var storeyId = (string?)a["storeyId"] ?? Spatial.Storeys(ctx.Model).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
             var type = (string?)a["typeId"] is { } typeId ? Spatial.Require(ctx.Model, typeId, IfcClass.SlabType) : null;
-            var slab = Slabs.Add(ctx, storeyId, Points(a), Json.Number(a["offset"]) ?? 0, type);
+            // Inside the walls round a point (forum topic 97): the region they close there, as a room finds it.
+            IReadOnlyList<Vec2> pts;
+            double[]? arcs = null;
+            if (a["points"] == null && a["x1"] == null && Json.Number(a["x"]) != null)
+            {
+                var (region, problem) = RoomBounds.At(ctx.Model, ctx.Services, storeyId, Args.Point(a, "x", "y"));
+                pts = region?.Outer ?? throw new CommandException(problem ?? "No walls close round that point: draw the floor's outline.");
+            }
+            else (pts, arcs) = Slabs.OutlineArg(a["arcs"], Points(a));
+            var slab = Slabs.Add(ctx, storeyId, pts, Json.Number(a["offset"]) ?? 0, type, arcs);
             return new JsonObject { ["id"] = slab.Id };
+        });
+
+        // An outline's corner rounded (a fillet tangent to its two straight edges) or cut straight across, or an edge bent into an
+        // arc or made straight (forum topic 97): a floor, a floor opening or a ceiling. {id, index (the corner; the edge from it),
+        // radius | distance | rise (m off the chord at its middle, left of the edge's way positive; 0 straight)}.
+        r.Command("roundCorner", "Fillet corner", (ctx, a) =>
+        {
+            var (e, corners, rises) = OutlineOf(ctx, a);
+            var (c, r2) = ArcOutline.Fillet(corners, rises, Index(a, corners.Count), Json.Number(a["radius"]) ?? throw new CommandException("What radius? A length in metres."));
+            ReplaceOutline(ctx, e, corners, c, r2);
+            return null;
+        });
+        r.Command("chamferCorner", "Chamfer corner", (ctx, a) =>
+        {
+            var (e, corners, rises) = OutlineOf(ctx, a);
+            var (c, r2) = ArcOutline.Chamfer(corners, rises, Index(a, corners.Count), Json.Number(a["distance"]) ?? throw new CommandException("What distance? A length in metres."));
+            ReplaceOutline(ctx, e, corners, c, r2);
+            return null;
+        });
+        r.Command("setEdgeArc", "Edge arc", (ctx, a) =>
+        {
+            var (e, corners, rises) = OutlineOf(ctx, a);
+            var i = Index(a, corners.Count);
+            var next = rises?.ToArray() ?? new double[corners.Count];
+            next[i] = Json.Number(a["rise"]) ?? 0;
+            ReplaceOutline(ctx, e, corners, corners, next);
+            return null;
         });
 
         r.Command("updateSlab", "Change floor", (ctx, a) =>
@@ -417,14 +453,9 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var attrs = slab.CloneAttrs();
             if (a["points"] != null || a["x1"] != null)
             {
-                var contour = Slabs.CheckContour(Points(a));
-                attrs["contour"] = Slabs.ContourJson(contour);
-                // The layers' edge extents go with their edges (forum topic 89); one whose edge is gone goes with it.
-                if (LayerExtents.Of(slab) is { Count: > 0 } extents)
-                {
-                    if (LayerExtents.ToJson(LayerExtents.RemapEdges(extents, Slabs.Contour(slab), contour)) is { } kept) attrs[LayerExtents.Key] = kept;
-                    else attrs.Remove(LayerExtents.Key);
-                }
+                var (contour, arcs) = Slabs.OutlineArg(a["arcs"], Points(a), slab);
+                Slabs.SetOutline(attrs, contour, arcs);
+                RemapExtents(slab, attrs, contour);
             }
             if (Json.Number(a["offset"]) is { } offset) attrs["offset"] = offset;
             ctx.Replace(slab.With(attrs: attrs));
@@ -496,7 +527,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var slab = (string?)a["slabId"] is { } sid ? Spatial.Require(ctx.Model, sid, IfcClass.Slab)
                 : ctx.Model.OfClass(IfcClass.Slab).FirstOrDefault(s => ((string?)a["storeyId"] == null || Spatial.StoreyOf(ctx.Model, s.Id)?.Id == (string?)a["storeyId"]) && Polygon2.Contains(Slabs.Contour(s), mid))
                   ?? throw new CommandException("Draw the opening inside a floor.");
-            return new JsonObject { ["id"] = Slabs.AddOpening(ctx, slab, pts).Id };
+            return new JsonObject { ["id"] = Slabs.AddOpening(ctx, slab, pts, Slabs.OutlineArg(a["arcs"], pts, null, "An opening").Rises).Id };
         });
 
         r.Command("updateSlabOpening", "Change floor opening", (ctx, a) =>
@@ -504,7 +535,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var o = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.OpeningElement);
             if (o.Attrs["contour"] == null) throw new CommandException("Not a floor opening.");
             var attrs = o.CloneAttrs();
-            attrs["contour"] = Slabs.ContourJson(Slabs.CheckContour(Points(a)));
+            var (contour, arcs) = Slabs.OutlineArg(a["arcs"], Points(a), o, "An opening");
+            Slabs.SetOutline(attrs, contour, arcs);
             ctx.Replace(o.With(attrs: attrs));
             return null;
         });
@@ -1342,8 +1374,41 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         }
         if (edge == LayerExtents.Outline) { index = null; return; }
         if (edge != LayerExtents.Edge) throw new CommandException("A floor's layer extends all round its outline or at one edge of it.");
-        var n = Slabs.Contour(e).Count;
+        var n = Slabs.Corners(e).Count;
         if (index is not { } i || i < 0 || i >= n) throw new CommandException($"Which edge? The floor's outline has {n}, from 0.");
+    }
+
+    /// <summary>The floor's edge extents gone with their edges after its outline changed (forum topic 89); one whose edge is gone goes with it.</summary>
+    static void RemapExtents(Entity slab, JsonObject attrs, IReadOnlyList<Vec2> corners)
+    {
+        if (LayerExtents.Of(slab) is not { Count: > 0 } extents) return;
+        if (LayerExtents.ToJson(LayerExtents.RemapEdges(extents, Slabs.Corners(slab), corners)) is { } kept) attrs[LayerExtents.Key] = kept;
+        else attrs.Remove(LayerExtents.Key);
+    }
+
+    /// <summary>The element an outline edit names: a floor, a floor opening or a ceiling, its corners and its edges' rises.</summary>
+    static (Entity E, IReadOnlyList<Vec2> Corners, double[]? Rises) OutlineOf(ICommandContext ctx, JsonObject a)
+    {
+        var e = ctx.Model.Get((string?)a["id"] ?? "") ?? throw new CommandException("The element is not in the project.");
+        if (!(e.Class is IfcClass.Slab || e.Class == Ceilings.Class || (e.Class == IfcClass.OpeningElement && e.Attrs["contour"] != null && e.Str("stairId") == null)))
+            throw new CommandException("Only a floor, a floor opening or a ceiling has its outline's edges bent and its corners rounded here.");
+        if (StoredBodies.Has(e) || e.Attrs["reference"] != null) throw new CommandException("An element kept as it came from its file is not edited by its outline.");
+        var corners = Slabs.Corners(e);
+        if (corners.Count < 3) throw new CommandException("The element has no outline.");
+        return (e, corners, Slabs.Rises(e));
+    }
+
+    static int Index(JsonObject a, int n) =>
+        Json.Number(a["index"]) is { } ix && ix >= 0 && ix < n && ix == Math.Floor(ix) ? (int)ix : throw new CommandException($"Which corner? The outline has {n}, from 0.");
+
+    /// <summary>An outline edit written: checked, its arcs with it, a floor's layer extents following its edges.</summary>
+    static void ReplaceOutline(ICommandContext ctx, Entity e, IReadOnlyList<Vec2> was, IReadOnlyList<Vec2> corners, IReadOnlyList<double>? rises)
+    {
+        var (c, r) = ArcOutline.Check(corners, rises, e.Class == IfcClass.Slab ? "A floor" : e.Class == Ceilings.Class ? "A ceiling" : "An opening");
+        var attrs = e.CloneAttrs();
+        Slabs.SetOutline(attrs, c, r);
+        if (e.Class == IfcClass.Slab) RemapExtents(e, attrs, c);
+        ctx.Replace(e.With(attrs: attrs));
     }
 
     /// <summary>Refused when a layer's extents would leave nothing of it: a wall's layer shorter than nothing along or up, a floor's outline crossing itself.</summary>
@@ -1366,7 +1431,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 throw new CommandException("The layer would stop short of its bottom and top by more than it is high.");
             return;
         }
-        var contour = Slabs.Contour(e);
+        var (contour, built) = Slabs.Built(e, xs);
+        xs = [.. built];
         if (LayerExtents.SlabContour(contour, xs, layer, x => x.Offset) == null || LayerExtents.SlabContour(contour, xs, layer, x => Math.Min(0, x.Offset)) == null)
             throw new CommandException("The layer's outline would cross itself: a smaller extent.");
     }

@@ -12,6 +12,18 @@ Dans **Types de dalles**, chaque couche a une **Priorité** (de 0 à 100) et une
 
 Pour changer le contour, sélectionnez la dalle et faites glisser ses angles. Pour ajouter un angle, maintenez <kbd>Ctrl/⌘</kbd> et cliquez sur le petit losange au milieu d'une arête, ou faites un clic droit sur la dalle sélectionnée près d'une arête et choisissez **Ajouter un coin ici** : le nouveau coin se place là où vous avez cliqué. Pour en retirer un, faites <kbd>Ctrl/⌘</kbd>-clic dessus, ou clic droit dessus et choisissez **Retirer le coin** (un contour garde au moins trois coins). Chaque action est une seule étape d'annulation, et il en va de même pour les trémies, les toits, les pièces et les balcons. **Trémie de dalle** (<kbd>SH</kbd>) perce un trou dans une dalle, pour un escalier ou une gaine.
 
+### Arêtes courbes, arrondis et dalles rondes
+
+La barre de l'outil **Dalle**, dans la ligne de commande, dessine le contour en **Polygone** (ses coins cliqués), **Rectangle** (deux coins opposés), **Cercle** (son centre, puis un point sur lui) ou **À l'intérieur des murs** (un clic à l'intérieur des murs qui la ferment ; la dalle va jusqu'à leurs faces). Dans un polygone, **Lignes (Espace)** devient **Arcs (Espace)** : les arêtes suivantes sont des arcs, chacun tangent à l'arête précédente, jusqu'à ce que vous appuyiez de nouveau sur <kbd>Espace</kbd>. **Trémie de dalle** et **Plafond** ont la même barre, sans **À l'intérieur des murs**.
+
+![L'outil Dalle dessinant un cercle à côté d'une dalle](shots/floor-shapes.webp)
+
+Toute arête d'une dalle, d'une trémie ou d'un faux plafond peut être courbe. Faites un clic droit sur la dalle sélectionnée près d'une arête et choisissez **Faire un arc** : l'arête se bombe vers l'extérieur d'un huitième de sa longueur, et une poignée ronde apparaît au milieu de l'arc. Faites-la glisser pour courber l'arc par le point voulu (le losange, désormais au milieu de la corde, déplace toujours l'arête). **Rendre droite** la refait en ligne. Un coin entre deux arêtes droites peut être arrondi ou chanfreiné : faites un clic droit dessus et choisissez **Arrondir le coin…** (saisissez le rayon) ou **Chanfreiner le coin…** (saisissez le recul le long de chaque arête). Le coin devient deux, là où l'arc ou le chanfrein rencontre les arêtes ; un rayon trop grand pour les arêtes est refusé. Chacun est une seule étape d'annulation.
+
+![Une dalle avec une arête courbe et un coin arrondi](shots/floor-curved-edge.webp)
+
+La dalle est construite le long de ses arcs, aucune corde à plus de 1 mm d'eux, en 3D, en plan et en coupe ; son aire et son périmètre sont mesurés sur les arcs vrais. Une couche qui dépasse une arête courbe (voir [Extensions de couche](walls.md#layer-extents)) suit l'arc. Une trémie peut aussi avoir des arêtes courbes, et une dalle courbe peut avoir des trémies. En IFC la dalle porte son contour avec les arcs vrais comme empreinte (une IfcIndexedPolyCurve à segments d'arc), à côté de son corps. Les toitures gardent des arêtes droites, car leurs règles d'arête (égout, pignon) se fixent par arête droite.
+
 Une dalle dessinée hors des murs, devant une porte, est un perron. Pour les marches qui y mènent, voir [Escaliers](stairs.md).
 
 Une couche d'une dalle peut aussi aller au-delà de son contour, ou s'arrêter avant, tout le tour ou à un bord, saisie dans ses propriétés ou tirée en plan ou en coupe avec **Modifier les couches**, et un type de dalle peut donner leurs prolongements à ses dalles : voir [Prolongements des couches](walls.md#prolongements-des-couches). Les toits n'ont pas encore de composition de couches (leur couverture, leur dalle et leur charpente sont des parties à part), donc pas de prolongements de couches.

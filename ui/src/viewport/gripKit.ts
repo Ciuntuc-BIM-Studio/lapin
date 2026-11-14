@@ -6,7 +6,7 @@
  */
 
 import type { Grip, GripStep, RefLine, Vec2 } from '../platform/module';
-import { edgeMiddles, insertVertex, moveVertex, offsetEdge, removeVertex, toPairs, type Outline } from './contour';
+import { anticlockwise, edgeArc, edgeMiddles, insertVertex, moveVertex, offsetEdge, outlinePoints, removeVertex, setArc, toPairs, type Outline } from './contour';
 import { arcLength, axisLine, isArc, middle, pointAt, riseThrough, tangentAt, type Arc } from './arc';
 export { pt } from '../platform/vec';
 
@@ -65,31 +65,66 @@ export function nearestOnSegment(a: Vec2, b: Vec2, p: Vec2): { at: Vec2; dist: n
   return { at, dist: Math.hypot(p.x - at.x, p.y - at.y), t };
 }
 
+/** What an outline whose edges may be curved and whose corners may be rounded asks the element's module (forum topic 97). */
+export interface CurvedOutline {
+  /** Corner i rounded by an arc of `radius` (one engine command, one undo step). */
+  fillet: (i: number, radius: number) => GripStep | null;
+  /** Corner i cut straight across `distance` back along each edge. */
+  chamfer: (i: number, distance: number) => GripStep | null;
+}
+
 /**
  * A closed outline's grips; `save` turns the edited outline into the element's update command. Each corner takes Ctrl/⌘-click
  * to be removed (never under three), each edge's middle Ctrl/⌘-click to put a corner there; a right-click on the element
- * offers the same (GripLayer's cornerItems), where the corner goes at the point clicked.
+ * offers the same (GripLayer's cornerItems), where the corner goes at the point clicked. With `curved` (a floor, a floor
+ * opening, a ceiling; forum topic 97, stage 2) an edge may be an arc: a curved edge has a round grip at its arc's middle,
+ * dragged to bend it through the point, and its diamond at its chord's middle moves it; a right-click offers "Make arc",
+ * "Make straight", "Fillet corner…" and "Chamfer corner…".
  */
-export function outlineGrips<E>(o: Outline<E>, save: (next: Outline<E>) => GripStep): Grip[] {
+export function outlineGrips<E>(o: Outline<E>, save: (next: Outline<E>) => GripStep, curved?: CurvedOutline): Grip[] {
+  const n = o.pts.length;
+  const straightAt = (i: number) => Math.abs(o.arcs?.[i] ?? 0) <= 1e-6;
   const grips: Grip[] = o.pts.map((p, i) => ({
     key: `v${i}`, kind: 'vertex' as const, at: p,
     title: o.pts.length > 3 ? 'Drag to move the corner · Ctrl/⌘-click: remove this corner' : 'Drag to move the corner (an outline keeps three corners at least)',
     step: (to: Vec2) => save(moveVertex(o, i, to)),
     remove: () => { const next = removeVertex(o, i); return next ? save(next) : null; },
+    ...(curved ? { corner: { straight: straightAt(i) && straightAt((i - 1 + n) % n), fillet: (r: number) => curved.fillet(i, r), chamfer: (d: number) => curved.chamfer(i, d) } } : {}),
   }));
   edgeMiddles(o.pts).forEach((m, i) => {
-    const a = o.pts[i], b = o.pts[(i + 1) % o.pts.length];
+    const a = o.pts[i], b = o.pts[(i + 1) % n];
+    const c = edgeArc(o, i);
+    const bent = isArc(c);
     grips.push({
       key: `e${i}`, kind: 'edgeMid', at: m,
       title: 'Drag to move the edge · Ctrl/⌘-click: add a corner',
       step: (to: Vec2) => { const next = offsetEdge(o, i, to); return next ? save(next) : null; },
       insert: () => save(insertVertex(o, i)),
-      edge: [a, b],
-      addCornerAt: (to: Vec2) => save(insertVertex(o, i, nearestOnSegment(a, b, to).at)),
+      edge: bent ? axisLine(c) : [a, b],
+      addCornerAt: (to: Vec2) => save(insertVertex(o, i, bent ? to : nearestOnSegment(a, b, to).at)),
+      ...(curved ? bent
+        ? { straighten: () => save(setArc(o, i, 0)) }
+        // Bulging out of the outline by an eighth of its length.
+        : { bend: () => save(setArc(o, i, (anticlockwise(o.pts) ? -1 : 1) * Math.hypot(b.x - a.x, b.y - a.y) / 8)) } : {}),
     });
+    if (curved && bent) grips.push({ key: `a${i}`, kind: 'radius', at: middle(c), title: 'Drag to bend the edge through the point', step: (to: Vec2) => save(setArc(o, i, riseThrough(a, b, to))) });
   });
   return grips;
 }
 
-export const outlineRef = (pts: Vec2[]): RefLine => ({ points: pts, closed: true, kind: 'outline' });
+/** The point of a line (a polyline: an arc in steps) nearest to p, how far p is from it and how far along it is (0 to 1). */
+export function nearestOnLine(pts: Vec2[], p: Vec2): { at: Vec2; dist: number; t: number } {
+  if (pts.length === 2) return nearestOnSegment(pts[0], pts[1], p);
+  const lens = pts.slice(1).map((q, i) => Math.hypot(q.x - pts[i].x, q.y - pts[i].y));
+  const total = lens.reduce((x, y) => x + y, 0) || 1;
+  let best = { at: pts[0], dist: Infinity, t: 0 }, before = 0;
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const h = nearestOnSegment(pts[i], pts[i + 1], p);
+    if (h.dist < best.dist) best = { at: h.at, dist: h.dist, t: (before + h.t * lens[i]) / total };
+    before += lens[i];
+  }
+  return best;
+}
+
+export const outlineRef = (pts: Vec2[], arcs?: number[]): RefLine => ({ points: arcs ? outlinePoints({ pts, arcs }) : pts, closed: true, kind: 'outline' });
 export { toPairs };

@@ -22,7 +22,8 @@ import type { Grip, GripView, RefLine, Vec2 } from '../platform/module';
 import { gripsOf, gripSnapped, referencesOf } from '../platform/modules';
 import { throughInset, viaOf } from './insetMap';
 import { dropGrips, groupGrips, movers, runSteps, setHotRemove, useGripRev, type GripGroup } from './grips';
-import { nearestOnSegment } from './gripKit';
+import { nearestOnLine } from './gripKit';
+import { askLength } from '../shell/AskBox';
 import { openContextMenu, type MenuItem } from '../shell/ContextMenu';
 import { formatAngle, formatLength, liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
 import { traceBegin, traceEnd } from './moveTrace';
@@ -239,25 +240,44 @@ export function useGripEditor(o: GripEditorOptions) {
   /**
    * A right-click on a selected outline (a floor, an opening, a roof, a room…): "Remove corner" on one of its corners (refused
    * under three), else "Add corner here" when the cursor is near one of its edges, the corner put on the edge at the point
-   * clicked (forum topic 97). Each is the element's own update command, one undo step. For the menu the view opens.
+   * clicked (forum topic 97). An outline whose edges may be curved (a floor, a floor opening, a ceiling; stage 2) offers also
+   * "Fillet corner…" and "Chamfer corner…" on a corner (the radius or distance typed), and "Make arc" or "Make straight" on an
+   * edge. Each is one engine command, one undo step. For the menu the view opens.
    */
   const cornerItems = (e: { clientX: number; clientY: number }): MenuItem[] => {
     if (o.disabled || drag) return [];
     const g = hit(e);
+    const run = (step: () => ReturnType<NonNullable<Grip['remove']>>) => () => { setHover(null); void runSteps([step()]); };
     const corner = g?.members.find((m) => m.kind === 'vertex' && m.remove && !m.removeLabel);
-    if (corner) return [{ label: 'Remove corner', disabled: !corner.remove!(), onSelect: () => { setHover(null); void runSteps([corner.remove!()]); } }];
+    if (corner) {
+      const items: MenuItem[] = [{ label: 'Remove corner', disabled: !corner.remove!(), onSelect: run(corner.remove!) }];
+      const c = corner.corner;
+      if (c) {
+        const asked = (title: string, label: string, act: (v: number) => ReturnType<NonNullable<Grip['remove']>>) => async () => {
+          setHover(null);
+          const v = await askLength(title, label, 0.5);
+          if (v != null && v > 0) void runSteps([act(v)]);
+        };
+        items.push({ label: 'Fillet corner…', disabled: !c.straight, onSelect: () => void asked('Fillet corner', 'Radius', c.fillet)() });
+        items.push({ label: 'Chamfer corner…', disabled: !c.straight, onSelect: () => void asked('Chamfer corner', 'Distance', c.chamfer)() });
+      }
+      return items;
+    }
     if (g) return [];
     const p = o.raw ? o.raw(e.clientX, e.clientY) : o.aim(e.clientX, e.clientY, { x: 0, y: 0 });
     let best: { grip: Grip; dist: number } | null = null;
     for (const m of grips) {
       if (!m.edge || !m.addCornerAt) continue;
-      const d = nearestOnSegment(m.edge[0], m.edge[1], p);
+      const d = nearestOnLine(m.edge, p);
       if (d.t <= 1e-6 || d.t >= 1 - 1e-6) continue;
       if (!best || d.dist < best.dist) best = { grip: m, dist: d.dist };
     }
     if (!best || best.dist * o.scale > 10) return [];
     const at = best.grip;
-    return [{ label: 'Add corner here', onSelect: () => { setHover(null); void runSteps([at.addCornerAt!(p)]); } }];
+    const items: MenuItem[] = [{ label: 'Add corner here', onSelect: run(() => at.addCornerAt!(p)) }];
+    if (at.bend) items.push({ label: 'Make arc', onSelect: run(at.bend) });
+    if (at.straighten) items.push({ label: 'Make straight', onSelect: run(at.straighten) });
+    return items;
   };
   /** True while dragging a grip. */
   const onPointerMove = (e: React.PointerEvent): boolean => {

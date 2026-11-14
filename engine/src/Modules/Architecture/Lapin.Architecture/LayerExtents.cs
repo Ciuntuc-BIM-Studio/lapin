@@ -304,23 +304,29 @@ public static class LayerExtents
         }
         if (e.Class == IfcClass.Slab)
         {
-            var contour = Slabs.Contour(e);
+            // A curved edge (forum topic 97) is built in chords, each moved by its edge's extent: one grip along them all.
+            var edgeOf = new List<int>();
+            var (contour, built) = Slabs.Built(e, xs, edgeOf);
+            var corners = Slabs.Corners(e).Count;
             if (contour.Count < 3 || LayerSets.BandsOf(m, e.Id) is not { Count: > 0 }) return null;
             var top = Slabs.Top(m, e);
             foreach (var (from, to, _, name, index) in Slabs.Section(m, e))
             {
                 if (!(to - from > 1e-9)) continue;
-                var c = SlabContour(contour, xs, index, x => x.Offset) ?? contour;
+                var c = SlabContour(contour, built, index, x => x.Offset) ?? contour;
                 layers.Add((JsonNode)new JsonObject { ["layer"] = index, ["name"] = name, ["footprint"] = new JsonArray([.. c.Select(p => (JsonNode)P2(p))]), ["z0"] = Math.Round(top + from, 6), ["z1"] = Math.Round(top + to, 6) });
                 var zm = top + (from + to) / 2;
                 var outline = xs.FirstOrDefault(x => x.Layer == index && x.Edge == Outline);
-                for (var i = 0; i < contour.Count && i < c.Count; i++)
+                for (var i = 0; i < corners; i++)
                 {
-                    var (a, b) = (c[i], c[(i + 1) % c.Count]);
-                    var d = (contour[(i + 1) % contour.Count] - contour[i]).Normalized();
+                    var ks = Enumerable.Range(0, Math.Min(edgeOf.Count, c.Count)).Where(k => edgeOf[k] == i).ToList();
+                    if (ks.Count == 0) continue;
+                    var line = ks.Select(k => c[k]).Append(c[(ks[^1] + 1) % c.Count]).ToList();
+                    var mid = ks[ks.Count / 2];
+                    var d = (contour[(mid + 1) % contour.Count] - contour[mid]).Normalized();
                     if (d.Length < 1e-9) continue;
                     // Out of a counter-clockwise outline: on its right.
-                    Grip(index, name, Edge, i, [a.At(zm), b.At(zm)], new Vec3(d.Y, -d.X, 0), xs.FirstOrDefault(x => x.Layer == index && x.Edge == Edge && x.Index == i) ?? outline);
+                    Grip(index, name, Edge, i, line.Select(p => p.At(zm)), new Vec3(d.Y, -d.X, 0), xs.FirstOrDefault(x => x.Layer == index && x.Edge == Edge && x.Index == i) ?? outline);
                 }
             }
             return new JsonObject { ["layers"] = layers, ["grips"] = grips };

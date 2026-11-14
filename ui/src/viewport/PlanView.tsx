@@ -68,6 +68,7 @@ import { ScaleChip, ScalePicker, StructurePicker } from './ScaleChip';
 import { DASHES, planDetail, shownAt } from './planDetail';
 import { useLineTypes } from '../modules/core/lineTypes/lineTypes';
 import { axisLine, riseThrough } from './arc';
+import { arrivingDir, circleOutline, rectangleOutline, tangentRise, useOutlineShape } from './outlineShape';
 import { useLang } from '../i18n';
 import { others, reportPresence, useShare } from '../engine/share';
 
@@ -103,6 +104,9 @@ export function PlanView() {
   const svgRef = useRef<SVGSVGElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [pts, setPts] = useState<Vec2[]>([]);
+  // A shaped outline's edges as drawn (forum topic 97): edge i's rise, from pts[i] to pts[i + 1].
+  const rises = useRef<number[]>([]);
+  useEffect(() => { rises.current = pts.length < 2 ? [] : rises.current.slice(0, pts.length - 1); }, [pts]);
   const [hover, setHover] = useState<Aimed | null>(null);
   /** What a click would select under the cursor now (the outline lit; null while a tool or a step takes the point). */
   const [hoverId, setHoverId] = useState<string | null>(null);
@@ -389,16 +393,24 @@ export function PlanView() {
   const picked = useRef<NodeDto | undefined>(undefined);
   useEffect(() => { picked.current = undefined; }, [toolId]);
 
-  const complete = useCallback(async (points: Vec2[], entity?: NodeDto, face?: FaceHit, typed?: number) => {
+  const complete = useCallback(async (points: Vec2[], entity?: NodeDto, face?: FaceHit, typed?: number, arcs?: number[]) => {
     if (!tool) return;
     picked.current = undefined;
     // An annotation drawn over an inset view goes on its source, in its own coordinates (decision 576); the model's tools stay on the plan.
     const inset = drawsThroughInsets(tool.id) ? insetUnder(drawing?.marks, points) : null;
     if (inset) await completeTool(tool, { points: points.map(inset.map), entity, typed }, inset.source);
-    else await completeTool(tool, { points, entity, face, typed });
+    else await completeTool(tool, { points, entity, face, typed, ...(arcs?.some((r) => Math.abs(r) > 1e-6) ? { arcs } : {}) });
     if (tool.gesture?.kind === 'twoPoints' && tool.gesture.repeat) setPts([points[points.length - 1]]);
     else setPts([]);
   }, [tool, drawing]);
+
+  /** The rise of the edge from the last point to q: an arc going on tangent from the edge before (straight after the first point). */
+  const nextRise = (q: Vec2): number => {
+    const dir = arrivingDir(pts, rises.current);
+    return dir ? tangentRise(pts[pts.length - 1], dir, q) : 0;
+  };
+  /** The drawn polygon's rises, its closing edge's last. */
+  const polygonArcs = (closing: number): number[] => [...pts.slice(0, -1).map((_, i) => rises.current[i] ?? 0), closing];
 
   const click = useCallback((p0: Vec2, raw: Vec2, add: boolean, typed0?: number, leaf = false, mods?: Mods) => {
     // A typed length, angle, width or height holds: the click gives the direction only, as the preview showed.
@@ -452,9 +464,19 @@ export function PlanView() {
         else void complete([pts[0], pts[1], p]);
         break;
       case 'polygon': {
+        // A shaped outline (forum topic 97): a rectangle, a circle, inside walls, or a polygon whose edges may be arcs.
+        const shaped = g.shapes ? useOutlineShape.getState() : null;
+        if (shaped?.shape === 'inside') { void complete([p]); break; }
+        if (shaped?.shape === 'rectangle' || shaped?.shape === 'circle') {
+          if (!pts.length) { setPts([p]); break; }
+          if (shaped.shape === 'rectangle') void complete(rectangleOutline(pts[0], p));
+          else { const c = circleOutline(pts[0], p); if (c) void complete(c.pts, undefined, undefined, undefined, c.arcs); }
+          break;
+        }
         const first = pts[0];
-        if (first && pts.length >= 3 && Math.hypot(first.x - p.x, first.y - p.y) < 8 / view.scale) void complete(pts);
-        else setPts([...pts, p]);
+        const rise = shaped?.arcs ? nextRise(p) : 0;
+        if (first && pts.length >= 3 && Math.hypot(first.x - p.x, first.y - p.y) < 8 / view.scale) void complete(pts, undefined, undefined, undefined, polygonArcs(shaped?.arcs ? nextRise(first) : 0));
+        else { if (pts.length) rises.current = [...rises.current.slice(0, pts.length - 1), rise]; setPts([...pts, p]); }
         break;
       }
       case 'polyline': {
@@ -483,7 +505,7 @@ export function PlanView() {
         return;
       }
       if (e.key === 'Escape') { if (pts.length) setPts([]); else setTool(null); }
-      if (e.key === 'Enter' && tool?.gesture?.kind === 'polygon' && pts.length >= 3) void complete(pts);
+      if (e.key === 'Enter' && tool?.gesture?.kind === 'polygon' && pts.length >= 3) void complete(pts, undefined, undefined, undefined, polygonArcs(tool.gesture.shapes && useOutlineShape.getState().arcs ? nextRise(pts[0]) : 0));
       if (e.key === 'Enter' && tool?.gesture?.kind === 'polyline' && pts.length >= 2) void complete(pts);
     };
     const onUp = (e: KeyboardEvent) => { if (e.key === 'Shift') setOrtho(false); };
@@ -799,6 +821,32 @@ export function PlanView() {
         <g className="plan-preview">
           <rect x={Math.min(a.x, b.x)} y={Math.min(a.y, b.y)} width={Math.abs(b.x - a.x)} height={Math.abs(b.y - a.y)} />
           <text x={Math.max(a.x, b.x) + 8} y={Math.min(a.y, b.y) - 6}>{formatLength(Math.abs(cur.x - pts[0].x))} × {lengthText(Math.abs(cur.y - pts[0].y))}</text>
+        </g>
+      );
+    }
+    // A shaped outline (forum topic 97): the rectangle or circle as it would be, or the polygon with its arcs and the next edge.
+    if (g === 'polygon' && tool.gesture.shapes && pts.length > 0) {
+      const { shape, arcs } = useOutlineShape.getState();
+      const outline = shape === 'rectangle' ? { pts: rectangleOutline(pts[0], cur), arcs: undefined as number[] | undefined }
+        : shape === 'circle' ? circleOutline(pts[0], cur) : null;
+      const line = (ps: Vec2[], rs: (number | undefined)[], closed: boolean) => ps.flatMap((a, i) => {
+        if (!closed && i === ps.length - 1) return [a];
+        const seg = axisLine({ a, b: ps[(i + 1) % ps.length], rise: rs[i] ?? 0 });
+        return seg.slice(0, -1);
+      });
+      if (outline) {
+        const ps = line(outline.pts, outline.arcs ?? [], true).map(toScreen);
+        ps.push(ps[0]);
+        const label = shape === 'circle' ? `R ${lengthText(Math.hypot(cur.x - pts[0].x, cur.y - pts[0].y))}` : `${formatLength(Math.abs(cur.x - pts[0].x))} × ${lengthText(Math.abs(cur.y - pts[0].y))}`;
+        return <g className="plan-preview" data-testid="outline-preview"><polyline points={ps.map((p) => `${p.x},${p.y}`).join(' ')} /><text x={toScreen(cur).x + 10} y={toScreen(cur).y - 8}>{label}</text></g>;
+      }
+      const all = [...pts, cur];
+      const rs = [...pts.slice(0, -1).map((_, i) => rises.current[i] ?? 0), arcs ? nextRise(cur) : 0];
+      const ps = line(all, rs, false).map(toScreen);
+      return (
+        <g className="plan-preview" data-testid="outline-preview">
+          <polyline points={ps.map((p) => `${p.x},${p.y}`).join(' ')} />
+          {pts.length >= 2 && <line className="closing" x1={ps[ps.length - 1].x} y1={ps[ps.length - 1].y} x2={ps[0].x} y2={ps[0].y} />}
         </g>
       );
     }

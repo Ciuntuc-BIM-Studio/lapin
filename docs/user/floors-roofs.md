@@ -16,6 +16,18 @@ In **Floor types**, each layer has a **Priority** (0 to 100) and a **Category**,
 
 To change the outline, select the floor and drag its corners. To add a corner, hold <kbd>Ctrl/⌘</kbd> and click the small diamond in the middle of an edge, or right-click the selected floor near an edge and choose **Add corner here**: the new corner goes where you clicked. To remove one, <kbd>Ctrl/⌘</kbd>-click it, or right-click it and choose **Remove corner** (an outline keeps three corners at least). Each is one undo step, and the same works on floor openings, roofs, rooms and balconies. **Floor opening** (<kbd>SH</kbd>) cuts a hole in a floor, for a stair or a shaft.
 
+### Curved edges, fillets and round floors
+
+The **Floor** tool's bar, in the command line, draws the outline as a **Polygon** (its corners clicked), a **Rectangle** (two opposite corners), a **Circle** (its centre, then a point on it) or **Inside walls** (a click inside the walls that close round it; the floor goes up to their faces). In a polygon, **Lines (Space)** turns into **Arcs (Space)**: the next edges are arcs, each going on tangent from the edge before, until you press <kbd>Space</kbd> again. **Floor opening** and **Ceiling** have the same bar, without **Inside walls**.
+
+![The Floor tool drawing a circle beside a floor](shots/floor-shapes.webp)
+
+Any edge of a floor, a floor opening or a ceiling can be curved. Right-click the selected floor near an edge and choose **Make arc**: the edge bulges out by an eighth of its length, and a round grip appears at the middle of its arc. Drag that grip to bend the arc through the point you want (the diamond, now in the middle of the chord, still moves the edge). **Make straight** turns it back into a line. A corner between two straight edges can be rounded or cut: right-click it and choose **Fillet corner…** (type the radius) or **Chamfer corner…** (type how far back along each edge). The corner becomes two, where the arc or the cut meets its edges; a radius too large for the edges is refused. Each is one undo step.
+
+![A floor with a curved edge and a rounded corner](shots/floor-curved-edge.webp)
+
+The floor is built along its arcs, no chord more than 1 mm off them, in 3D, plans and sections; its area and perimeter are measured on the true arcs. A layer that goes past a curved edge (see [Layer extents](walls.md#layer-extents)) follows the arc. An opening can have curved edges too, and a curved floor can have openings. In IFC the floor carries its outline with its true arcs as its footprint (an IfcIndexedPolyCurve with arc segments), beside its body. Roofs keep straight edges, because a roof's edge rules (eave, gable) are set per straight edge.
+
 A floor drawn outside the walls, in front of a door, is a porch. For the steps up to it, see [Stairs](stairs.md).
 
 A floor's layer can also go on past its outline, or stop short of it, all round or at one edge, typed in its properties or dragged in a plan or a section with **Edit layers**, and a floor type can give its floors their extents: see [Layer extents](walls.md#layer-extents). Roofs have no layer set yet (their covering, deck and framing are parts of their own), so they have no layer extents.

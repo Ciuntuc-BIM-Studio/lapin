@@ -93,7 +93,8 @@ public static class Ceilings
             var storeyId = (string?)a["storeyId"] ?? Spatial.Storeys(ctx.Model).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
             Spatial.Require(ctx.Model, storeyId, IfcClass.BuildingStorey);
             IReadOnlyList<Vec2> outline;
-            if (a["points"] is JsonArray) outline = Slabs.CheckContour(Points(a["points"]));
+            double[]? arcs = null;
+            if (a["points"] is JsonArray) (outline, arcs) = Slabs.OutlineArg(a["arcs"], Points(a["points"]), null, "A ceiling");
             else
             {
                 var at = Args.Point(a, "x", "y");
@@ -104,6 +105,7 @@ public static class Ceilings
             }
             var type = (string?)a["typeId"] is { } tid ? Spatial.Require(ctx.Model, tid, TypeClass) : DefaultType(ctx);
             var attrs = new JsonObject { ["contour"] = Slabs.ContourJson(outline), ["height"] = Json.Number(a["height"]) ?? 2.7, ["exportAs"] = "IfcCovering", ["fixtures"] = new JsonArray() };
+            ArcOutline.Write(attrs, arcs);
             var ceiling = new Entity(ctx.NewId(), Class, $"Ceiling {Numbering.Next(ctx.Model.OfClass(Class))}", attrs, "CEILING");
             ctx.Add(ceiling);
             Spatial.Contain(ctx, storeyId, ceiling.Id);
@@ -115,7 +117,11 @@ public static class Ceilings
         {
             var c = Spatial.Require(ctx.Model, (string?)a["id"], Class);
             var attrs = c.CloneAttrs();
-            if (a["points"] is JsonArray) attrs["contour"] = Slabs.ContourJson(Slabs.CheckContour(Points(a["points"])));
+            if (a["points"] is JsonArray)
+            {
+                var (outline, arcs) = Slabs.OutlineArg(a["arcs"], Points(a["points"]), c, "A ceiling");
+                Slabs.SetOutline(attrs, outline, arcs);
+            }
             if (Json.Number(a["height"]) is { } h) attrs["height"] = Math.Clamp(h, 1.5, 20);
             if (a.ContainsKey("origin")) { if (a["origin"] is JsonArray o && o.Count == 2) attrs["origin"] = o.DeepClone(); else attrs.Remove("origin"); }
             if ((string?)a["typeId"] is { } tid) ctx.Relate(IfcClass.RelDefinesByType, Spatial.Require(ctx.Model, tid, TypeClass).Id, c.Id);
@@ -372,8 +378,10 @@ public static class Ceilings
         var grid = GridOf(m, c);
         var fixtures = Fixtures(c).Where(f => grid.Whole(f.I, f.J)).ToList();
         var spec = SpecOf(m, c);
-        var area = Math.Abs(Polygon2.SignedArea(outline));
-        var perimeter = outline.Select((p, k) => (outline[(k + 1) % outline.Count] - p).Length).Sum();
+        // Exactly, its arcs as arcs (forum topic 97).
+        var (corners, rises) = (Slabs.Corners(c), Slabs.Rises(c));
+        var area = Math.Abs(ArcOutline.SignedArea(corners, rises));
+        var perimeter = ArcOutline.Perimeter(corners, rises);
         yield return new QuantitySet("Qto_CoveringBaseQuantities", [new("Width", spec.Thickness, "LENGTH"), new("GrossArea", area, "AREA"), new("NetArea", area, "AREA")]);
         yield return new QuantitySet("Lapin_CeilingQuantities",
         [
