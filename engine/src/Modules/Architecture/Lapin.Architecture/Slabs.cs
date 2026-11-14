@@ -104,12 +104,20 @@ public static class Slabs
         if (contour.Count < 3) return new ElementGeometry([], Diagnostics: ["The floor has no outline."]);
         var top = Top(m, slab);
         var parts = new List<GeometryPart>();
-        foreach (var (from, to, material, name, index) in Section(m, slab))
-            if (to - from > 1e-9 && Prism.ExtrudeFootprint(contour, top + from, to - from, name) is { } solid)
-                parts.Add(new GeometryPart(name, Materials.ColorOf(m, material), solid, material, $"layer:{index}"));
         var problems = new List<string>();
+        // A layer's own extents short of the outline (forum topic 89); those past it are pieces of their own (ExtentPieces), added after the cut priorities.
+        var extents = LayerExtents.Of(slab);
+        foreach (var (from, to, material, name, index) in Section(m, slab))
+        {
+            if (!(to - from > 1e-9)) continue;
+            var own = LayerExtents.SlabContour(contour, extents, index, Short);
+            if (own == null) problems.Add($"{name}: its edges moved as its extents say would leave no outline; built to the floor's.");
+            if (Prism.ExtrudeFootprint(own ?? contour, top + from, to - from, name) is { } solid)
+                parts.Add(new GeometryPart(name, Materials.ColorOf(m, material), solid, material, $"layer:{index}"));
+        }
         var holes = Holes(m, slab.Id).Select(h => h.Contour).ToList();
-        if (holes.Count > 0 && parts.Count > 0 && (services?.Get<GeometryOptions>()?.CutOpenings ?? true))
+        var pieces = ExtentPieces(slab, m, services, cuttingOnly: false);
+        if (holes.Count > 0 && (parts.Count > 0 || pieces.Count > 0) && (services?.Get<GeometryOptions>()?.CutOpenings ?? true))
         {
             if (services?.Get<ISolidBooleans>() is { } booleans)
             {
@@ -118,6 +126,7 @@ public static class Slabs
                 var (z0, z1) = (top + section.Min(b => b.From) - 0.05, top + section.Max(b => b.To) + 0.05);
                 var cutters = holes.Select(h => Prism.ExtrudeFootprint(h, z0, z1 - z0, "opening")).OfType<Solid>().ToList();
                 parts = parts.Select(p => booleans.Difference(p.Solid, cutters, p.Solid.Tag) is { } cut ? p with { Solid = cut } : null).OfType<GeometryPart>().ToList();
+                pieces = pieces.Select(p => booleans.Difference(p.Solid, cutters, p.Solid.Tag) is { } cut ? p with { Solid = cut } : null).OfType<LayerExtents.Piece>().ToList();
             }
             else problems.Add("Openings in floors need the boolean library (manifold), missing here.");
         }
@@ -132,11 +141,57 @@ public static class Slabs
                 try { return cut.Difference(p.Solid, reach, p.Solid.Tag) is { } s && Measure.Volume(s) > 1e-9 ? p with { Solid = s } : null; }
                 catch (InvalidOperationException ex) { problems.Add($"{p.Name}: a wall's layer could not be taken out of it ({ex.Message})."); return p; }
             }).OfType<GeometryPart>().ToList();
-        var plan = new List<PlanItem> { new("outline", true, contour) };
+        // The layers past the outline (forum topic 89): one body with the layer each goes on from.
+        foreach (var x in pieces)
+            LayerExtents.AddJoined(parts, new GeometryPart(x.Name, Materials.ColorOf(m, x.Material), x.Solid, x.Material, x.Key), services?.Get<ISolidBooleans>());
+        // What the walls and floors round reaching into this one and set to cut take out of it.
+        parts = LayerExtents.CutBy(slab, m, services, parts, problems);
+        // In plan, each layer's own outline, drawn once (the floor's alone when no layer moves its edges).
+        var outlines = new List<IReadOnlyList<Vec2>>();
+        foreach (var (from, to, _, _, index) in Section(m, slab))
+            if (to - from > 1e-9 && (LayerExtents.SlabContour(contour, extents, index, x => x.Offset) ?? contour) is var c && !outlines.Any(o => Same(o, c)))
+                outlines.Add(c);
+        if (outlines.Count == 0) outlines.Add(contour);
+        var plan = outlines.Select(c => new PlanItem("outline", true, c)).ToList();
         plan.AddRange(holes.Select(h => new PlanItem("outline", true, h)));
         var built = new ElementGeometry(parts, plan, contour, problems.Count > 0 ? problems : null);
         // A beam-and-block floor (report #134): its core as joists, blocks and cast concrete.
         return BeamBlock.Of(m, slab) is { } bb ? BeamBlock.Apply(slab, built, m, services, bb) : built;
+    }
+
+    static double Short(LayerExtents.Extent x) => Math.Min(0, x.Offset);
+
+    static bool Same(IReadOnlyList<Vec2> a, IReadOnlyList<Vec2> b) => a.Count == b.Count && a.Zip(b).All(p => (p.First - p.Second).Length < 1e-9);
+
+    /// <summary>
+    /// The pieces of a floor's layers past its outline (forum topic 89, <see cref="LayerExtents"/>): for each layer, what its
+    /// outline with its edges moved out takes beyond the outline it is built to (its extents short of the edges taken off).
+    /// <paramref name="cuttingOnly"/>: only the extents set to cut what they meet. None without the boolean library.
+    /// </summary>
+    public static List<LayerExtents.Piece> ExtentPieces(Entity slab, IModelView m, IServices? services, bool cuttingOnly)
+    {
+        var o = new List<LayerExtents.Piece>();
+        var extents = LayerExtents.Of(slab);
+        if (!extents.Any(x => x.Offset > 1e-9 && (!cuttingOnly || x.Cuts)) || services?.Get<ISolidBooleans>() is not { } booleans) return o;
+        var contour = Contour(slab);
+        if (contour.Count < 3) return o;
+        var top = Top(m, slab);
+        double Past(LayerExtents.Extent x) => x.Offset > 1e-9 && (!cuttingOnly || x.Cuts) ? x.Offset : Short(x);
+        foreach (var (from, to, material, name, index) in Section(m, slab))
+        {
+            if (!(to - from > 1e-9) || LayerExtents.SlabDistances(extents, index, contour.Count, x => x.Offset > 1e-9 && (!cuttingOnly || x.Cuts) ? x.Offset : 0) == null) continue;
+            if (LayerExtents.SlabContour(contour, extents, index, Past) is not { } outer) continue;
+            var inner = LayerExtents.SlabContour(contour, extents, index, Short) ?? contour;
+            if (Prism.ExtrudeFootprint(outer, top + from, to - from, name) is not { } whole) continue;
+            // The layer as built, a little proud above and below so no face of the two lies in another.
+            var built = Prism.ExtrudeFootprint(inner, top + from - 1e-3, to - from + 2e-3, name);
+            Solid? piece;
+            try { piece = built != null ? booleans.Difference(whole, [built], whole.Tag) : whole; }
+            catch (InvalidOperationException) { piece = null; }
+            if (piece != null && Measure.Volume(piece) > 1e-9)
+                o.Add(new LayerExtents.Piece(piece, material, name, $"layer:{index}", LayerSets.BandsOf(m, slab.Id)?.Any(b => b.Index == index && b.Core) == true, top + from, top + to));
+        }
+        return o;
     }
 
     /// <summary>

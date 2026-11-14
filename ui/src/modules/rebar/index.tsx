@@ -4,7 +4,7 @@
  * or a column at a click, inset beside it in the same view, with the context round it.
  */
 
-import { Crosshair, FileDown, Minus, PictureInPicture2, Scissors, Settings2, Shapes, Slice, Square, Table2, Ruler } from 'lucide-react';
+import { Crosshair, FileDown, Minus, Scissors, Settings2, Shapes, Slice, Square, Table2, Ruler } from 'lucide-react';
 import { SectionIcon } from '../../icons';
 import type { Grip, GripView, LapinModule, ToolDef, Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
@@ -24,9 +24,10 @@ import { ShapeToolOptions } from './ShapeTool';
 import { AlongEdgesOptions, placeAlongEdges } from './AlongEdgesTool';
 import { exportBvbsFile } from './barShapes';
 import './extensionKind';
+import { insetTool } from '../core/insets';
+import { mapper, viaOf } from '../../viewport/insetMap';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
-const InsetPickDialog = lazyPart(() => import('./RebarDialogs').then((m) => m.InsetPickDialog), { title: 'Inset view' });
 const BarShapesDialog = lazyPart(() => import('./BarShapesDialog').then((m) => m.BarShapesDialog), { title: 'Bar shapes' });
 const BendingScheduleDialog = lazyPart(() => import('./BendingScheduleDialog').then((m) => m.BendingScheduleDialog), { title: 'Bending schedule' });
 const RebarSettingsDialog = lazyPart(() => import('./RebarDialogs').then((m) => m.RebarSettingsDialog), { title: 'Rebar settings' });
@@ -92,12 +93,8 @@ const sectionAcross: ToolDef = {
     await open(await ctx.execute('rebar.sectionHere', { viewId: ctx.viewId, id: entity.id, point: [p.x, p.y], inset: false }));
   },
 };
-/** Another view drawn in this one: click where it goes, then choose it. */
-const insetView: ToolDef = {
-  id: 'rebar.inset', label: 'Inset view', icon: PictureInPicture2, shortcut: 'IV',
-  gesture: { kind: 'point' },
-  complete: ({ points: [p] }, ctx) => { useUi.setState({ dialog: 'insetPick', insetAt: { viewId: ctx.viewId, x: p.x, y: p.y } }); },
-};
+/** Another view drawn in this one (the core's tool, decision 576), kept here under its own id so a quick slot or a key given to it stays. */
+const insetView: ToolDef = { ...insetTool, id: 'rebar.inset', shortcut: undefined };
 const schedule: ToolDef = {
   id: 'rebar.schedule', label: 'Bar schedule', icon: Table2,
   run: () => void execute('architecture.createSchedule', { kind: 'rebar' }).then((r) => { if (r) notify('Bar bending schedule made: it is in the project browser, under Schedules.'); }),
@@ -158,16 +155,11 @@ const asSection: ToolDef = {
   },
 };
 
-/** How a mark seen through an inset view maps between its source's coordinates and the host's (`via` in the mark's data). */
-interface Via { inset: string; host: string; source: string; at: number[]; centre: number[]; factor: number }
+/** How a mark seen through an inset view maps between its source's coordinates and the host's (`via` in the mark's data; viewport/insetMap.ts). */
 function mapping(mark?: GripView['mark']): { show: (p: Vec2) => Vec2; back: (p: Vec2) => Vec2; host?: string; source?: string } {
-  const via = (mark?.data as { via?: Via } | undefined)?.via;
+  const via = viaOf(mark);
   if (!via) return { show: (p) => p, back: (p) => p };
-  return {
-    show: (p) => ({ x: via.at[0] + (p.x - via.centre[0]) * via.factor, y: via.at[1] + (p.y - via.centre[1]) * via.factor }),
-    back: (p) => ({ x: via.centre[0] + (p.x - via.at[0]) / via.factor, y: via.centre[1] + (p.y - via.at[1]) / via.factor }),
-    host: via.host, source: via.source,
-  };
+  return { ...mapper(via), host: via.host, source: via.source };
 }
 
 /**
@@ -178,11 +170,12 @@ function labelGrips(_node: NodeDto, view?: GripView): Grip[] {
   const grips: Grip[] = [];
   for (const mark of view?.marks ?? []) {
     const labels = (mark.data as { labels?: ({ owner: string; key: string } & LabelData)[] } | undefined)?.labels ?? [];
-    const { show, back, source } = mapping(mark);
+    const { show, back, source, host } = mapping(mark);
     const viewId = source ?? view?.view;
     if (!viewId) continue;
+    // Through an inset, shown on its host (already mapped: the platform's own mapping leaves them).
     for (const l of labels)
-      grips.push(...labelPlaceGrips(l, `label:${l.key}`, (patch) => ({ command: 'rebar.placeLabel', args: { viewId, owner: l.owner, key: l.key, ...patch } }), { show, back }).map((g) => ({ ...g, view: view?.view })));
+      grips.push(...labelPlaceGrips(l, `label:${l.key}`, (patch) => ({ command: 'rebar.placeLabel', args: { viewId, owner: l.owner, key: l.key, ...patch } }), { show, back }).map((g) => ({ ...g, view: host ?? view?.view })));
   }
   return grips;
 }
@@ -219,14 +212,6 @@ function runGrips(node: NodeDto, view?: GripView): Grip[] {
   return grips.map((g) => ({ ...g, view: viewId }));
 }
 
-/** An inset view's point. */
-function insetGrips(node: NodeDto): Grip[] {
-  const at = pt(node.props.at);
-  if (!at) return [];
-  const viewId = typeof node.props.viewId === 'string' ? node.props.viewId : undefined;
-  return [{ key: 'at', kind: 'move', at, view: viewId, title: 'Drag: move the inset', step: (to: Vec2) => ({ command: 'view.updateInset', args: { id: node.id, at: [to.x, to.y] } }) }];
-}
-
 export const rebarModule: LapinModule = {
   id: 'rebar',
   name: 'Rebar 2D',
@@ -242,12 +227,12 @@ export const rebarModule: LapinModule = {
   }],
   hotbar: [straight, stirrup, run, sectionHere],
   // A beam's and a column's grips here are their generated labels' (the stirrups', the column bars'), beside the structure module's own.
-  grips: { LapinRebar: barGrips, LapinRebarRun: runGrips, LapinInset: insetGrips, IfcBeam: labelGrips, IfcColumn: labelGrips },
+  grips: { LapinRebar: barGrips, LapinRebarRun: runGrips, IfcBeam: labelGrips, IfcColumn: labelGrips },
   propertySections: [
     { id: 'rebar.bar', label: 'Bar', classes: ['LapinRebar'], component: RebarSection },
     { id: 'rebar.run', label: 'Distribution', classes: ['LapinRebarRun'], component: RebarRunSection },
   ],
-  dialogs: { rebarSettings: RebarSettingsDialog, insetPick: InsetPickDialog, barShapes: BarShapesDialog, bendingSchedule: BendingScheduleDialog },
+  dialogs: { rebarSettings: RebarSettingsDialog, barShapes: BarShapesDialog, bendingSchedule: BendingScheduleDialog },
 };
 
 export default rebarModule;

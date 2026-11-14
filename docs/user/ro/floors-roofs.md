@@ -18,6 +18,8 @@ Ca să schimbi conturul, selectează placa și trage de colțuri. **Gol în plac
 
 O placă desenată în afara pereților, în fața unei uși, e o terasă. Pentru treptele până la ea, vezi [Scări](stairs.md).
 
+Un strat al plăcii poate și să treacă de contur, ori să se oprească înaintea lui, pe tot conturul sau la o latură: vezi [Prelungirile straturilor](walls.md#prelungirile-straturilor).
+
 ### Planșee din grinzi și blocuri
 
 Un tip de placă poate fi din **grinzi și blocuri** în loc de straturi simple: grinzi prefabricate (de pildă POT) puse una lângă alta la o distanță, blocuri ceramice de umplutură (MIAKO) între ele și o suprabetonare turnată peste. În **Tipuri de plăci**, alege la **Fel** **Grinzi și blocuri** și completează:

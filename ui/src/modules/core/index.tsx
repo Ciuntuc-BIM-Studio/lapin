@@ -38,6 +38,7 @@ import { toggleRegion3d } from '../../viewport/select3d';
 import { hideHere, isolateHere, resetHere } from '../../viewport/viewTemporary';
 import { QuickSelectDialog } from './QuickSelectDialog';
 import { cropGrips } from './ViewCrop';
+import { InsetSection, insetGrips, insetTool } from './insets';
 import { Storeys3DLooks } from './Storeys3D';
 import { setStoreys3d, showAllStoreys3d } from '../../viewport/storeys3dActions';
 import { ViewSettingsDialog, ViewSettingsSection, ViewStylesDialog } from './ViewSettings';
@@ -54,6 +55,7 @@ import { FieldsInspectorDialog } from '../../shell/FieldsInspector';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const ProfileLibrariesDialog = lazyPart(() => import('./profileLibraries/ProfileLibrariesDialog').then((m) => m.ProfileLibrariesDialog), { title: 'Profile libraries' });
+const InsetPickDialog = lazyPart(() => import('./InsetPickDialog').then((m) => m.InsetPickDialog), { title: 'Inset view' });
 const ComponentsDialog = lazyPart(() => import('./ComponentsDialog').then((m) => m.ComponentsDialog), { title: 'Components' });
 const SheetRemarksDialog = lazyPart(() => import('./cde/pdfRemarks/RemarksDialog').then((m) => m.RemarksDialog), { title: 'Remarks' });
 const RemarksDialog = lazyPart(() => import('./remarks/RemarksDialog').then((m) => m.RemarksDialog), { title: 'Remarks' });
@@ -223,6 +225,8 @@ const core: LapinModule = {
         { id: 'view.elevations', label: 'Elevations', icon: ElevationIcon, run: () => void (async () => {
           for (const direction of ['south', 'east', 'north', 'west']) await execute('view.create', { kind: 'elevation', direction, discipline: frontDiscipline() });
         })() },
+        // Another view drawn in this one, live, at its own scale (decision 576): for details, as rebar's sections across.
+        insetTool,
       ] },
       { label: 'Cut', tools: [
         { id: 'view.sectionBox', label: 'Section box', icon: BoxSelect, shortcut: 'BX', run: toggleSectionBox },
@@ -312,9 +316,9 @@ const core: LapinModule = {
     ],
   }],
   // An opening void's label is held by its opening (a roof window's by its roof) where a view draws the voids (decision 292).
-  grips: { LapinView: (n, v) => [...sectionGrips(n, v), ...cropGrips(n)], IfcOpeningElement: voidLabelGrips, IfcRoof: voidLabelGrips },
+  grips: { LapinView: (n, v) => [...sectionGrips(n, v), ...cropGrips(n)], LapinInset: insetGrips, IfcOpeningElement: voidLabelGrips, IfcRoof: voidLabelGrips },
   references: { LapinView: sectionRefs },
-  dialogs: { components: ComponentsDialog, importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, copyToStoreys: CopyToStoreysDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, typePacks: TypePacksDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, exportHtml: ExportHtmlDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, documents: DocumentsDialog, documentTemplates: TemplatesDialog, titleBlocks: TitleBlocksDialog, symbols: SymbolsDialog, rules: RulesDialog, classifications: ClassificationsDialog, importTable: ImportTableDialog, saveSymbol: SaveSymbolDialog, projectInfo: ProjectInfoDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, sun: SunDialog, exportExchange: ExchangeExportDialog, exportJg: JgExportDialog, sections: SectionsDialog, coordination: CoordinationDialog, profiles: ProfilesDialog, profileLibraries: ProfileLibrariesDialog, quickSelect: QuickSelectDialog, fieldsInspector: FieldsInspectorDialog },
+  dialogs: { insetPick: InsetPickDialog, components: ComponentsDialog, importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, copyToStoreys: CopyToStoreysDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, typePacks: TypePacksDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, exportHtml: ExportHtmlDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, documents: DocumentsDialog, documentTemplates: TemplatesDialog, titleBlocks: TitleBlocksDialog, symbols: SymbolsDialog, rules: RulesDialog, classifications: ClassificationsDialog, importTable: ImportTableDialog, saveSymbol: SaveSymbolDialog, projectInfo: ProjectInfoDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, sun: SunDialog, exportExchange: ExchangeExportDialog, exportJg: JgExportDialog, sections: SectionsDialog, coordination: CoordinationDialog, profiles: ProfilesDialog, profileLibraries: ProfileLibrariesDialog, quickSelect: QuickSelectDialog, fieldsInspector: FieldsInspectorDialog },
   background: CoreBackground,
   propertySections: [
     { id: 'group', label: 'Group', classes: ['IfcGroup'], component: GroupSection },
@@ -324,6 +328,7 @@ const core: LapinModule = {
     { id: 'titleBlock', label: 'Title block', classes: ['LapinSheet'], component: SheetSection, fieldKeys: butDiscipline('LapinSheet') },
     { id: 'storeyLevels', label: 'Levels', classes: ['IfcBuildingStorey'], component: StoreySection, replacesFields: () => true },
     { id: 'viewSettings', label: 'View settings', classes: ['LapinView'], component: ViewSettingsSection, fieldKeys: viewFields },
+    { id: 'inset', label: 'Inset view', classes: ['LapinInset'], component: InsetSection, replacesFields: () => true },
     // The symbol a section, an elevation, a grid axis, a level, a callout or a view is marked with (docs/plan-user-extensibility.md §3.3).
     { id: 'markerSymbol', label: 'Marker symbol', classes: ['LapinView', 'IfcGrid', 'IfcBuildingStorey', 'LapinInset'], shows: (n) => slotsFor(n).length > 0, component: MarkerSymbolSection },
   ],

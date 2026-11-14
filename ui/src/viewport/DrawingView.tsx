@@ -50,6 +50,7 @@ import { liveBegin, liveCursor, liveEnd, livePoint, liveTaken, useLive } from '.
 import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelGesture, wheelZoom, type View2, type ZoomHost } from './zoom';
 import { ScaleChip, ScalePicker, StructurePicker } from './ScaleChip';
 import { KeyPlan } from './KeyPlan';
+import { insetUnder as insetUnderMarks, PLACES_INSETS } from './insetMap';
 import { tagTargets, trackTagHover, useTagHover, viewHasTags } from './tagTarget';
 
 type View = View2;
@@ -158,18 +159,7 @@ export function DrawingView() {
   const { aim, acquire } = useCadCanvas({ viewId: id, drawing, scale: v.scale, pickAny, inRegion: (takes) => markIds(takes, nodes, drawing?.marks) });
 
   /** The inset view the points all fall in, with its mapping into its source (host → source: centre + (p − at) / factor); null when none. */
-  const insetUnder = useCallback((points: Vec2[]) => {
-    for (const m of drawing?.marks ?? []) {
-      const d = m.data as { source?: string; at?: number[]; centre?: number[]; factor?: number; bounds?: number[] } | undefined;
-      if (!d?.source || !d.bounds || !d.at || !d.centre || !d.factor) continue;
-      const [x0, y0, x1, y1] = d.bounds;
-      if (points.every((p) => p.x >= x0 && p.x <= x1 && p.y >= y0 && p.y <= y1)) {
-        const { at, centre, factor, source } = d;
-        return { source, map: (p: Vec2): Vec2 => ({ x: centre[0] + (p.x - at[0]) / factor, y: centre[1] + (p.y - at[1]) / factor }) };
-      }
-    }
-    return null;
-  }, [drawing]);
+  const insetUnder = useCallback((points: Vec2[]) => insetUnderMarks(drawing?.marks, points), [drawing]);
 
   /** The element a pick-then-point gesture took with its first click. */
   const picked = useRef<NodeDto | undefined>(undefined);
@@ -180,7 +170,7 @@ export function DrawingView() {
     picked.current = undefined;
     // Drawn on an inset view: it goes on the source view, in its own coordinates, and shows here through the inset.
     const inset = insetUnder(points);
-    if (inset && tool.id !== 'rebar.inset') await completeTool(tool, { points: points.map(inset.map), entity, typed }, inset.source);
+    if (inset && !PLACES_INSETS.has(tool.id)) await completeTool(tool, { points: points.map(inset.map), entity, typed }, inset.source);
     else await completeTool(tool, { points, entity, typed });
     if (tool.gesture?.kind === 'twoPoints' && tool.gesture.repeat) setPts([points[points.length - 1]]);
     else setPts([]);
@@ -280,8 +270,17 @@ export function DrawingView() {
     const by = carryBy(base, to);
     carryEnd();
     clearLiveRise();
-    if (by) void execute('element.transform', { ids, op: copy ? 'copy' : 'move', by, ...frameArg(base) });
-  }, []);
+    if (!by) return;
+    // What is drafted on an inset's source, dragged through the inset (decision 576): moved on its source, by the source's metres.
+    const inset = insetUnderMarks(drawing?.marks, [base]);
+    const nodes = useSession.getState().nodes;
+    if (inset && ids.every((i) => nodes.get(i)?.props.viewId === inset.source)) {
+      const [a, b] = [inset.map(base), inset.map({ x: base.x + by[0], y: base.y + by[1] })];
+      void execute('element.transform', { ids, op: copy ? 'copy' : 'move', by: [b.x - a.x, b.y - a.y] });
+      return;
+    }
+    void execute('element.transform', { ids, op: copy ? 'copy' : 'move', by, ...frameArg(base) });
+  }, [drawing]);
   /** While dragged: what the move raises the model's elements by so far, for their offset in Properties. */
   const showRise = useCallback((ids: string[], base: Vec2, to: Vec2) => {
     const f = viewFrameAt(drawing, base);

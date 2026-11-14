@@ -37,6 +37,7 @@ import { pickable, useScope } from '../platform/scope';
 import { pairs } from './snap';
 import { formatLength, lengthText } from '../engine/unitsStore';
 import { completeTool } from './tools';
+import { drawsThroughInsets, insetUnder } from './insetMap';
 import { DrawingLayer } from './DrawingLayer';
 import { PlanOverlays } from './PlanOverlays';
 import { useShallow } from 'zustand/react/shallow';
@@ -390,10 +391,13 @@ export function PlanView() {
   const complete = useCallback(async (points: Vec2[], entity?: NodeDto, face?: FaceHit, typed?: number) => {
     if (!tool) return;
     picked.current = undefined;
-    await completeTool(tool, { points, entity, face, typed });
+    // An annotation drawn over an inset view goes on its source, in its own coordinates (decision 576); the model's tools stay on the plan.
+    const inset = drawsThroughInsets(tool.id) ? insetUnder(drawing?.marks, points) : null;
+    if (inset) await completeTool(tool, { points: points.map(inset.map), entity, typed }, inset.source);
+    else await completeTool(tool, { points, entity, face, typed });
     if (tool.gesture?.kind === 'twoPoints' && tool.gesture.repeat) setPts([points[points.length - 1]]);
     else setPts([]);
-  }, [tool]);
+  }, [tool, drawing]);
 
   const click = useCallback((p0: Vec2, raw: Vec2, add: boolean, typed0?: number, leaf = false, mods?: Mods) => {
     // A typed length, angle, width or height holds: the click gives the direction only, as the preview showed.

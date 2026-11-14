@@ -12,7 +12,7 @@ Tabul **Armare simplă** desenează armătura așa cum se face un extras: bare c
 
 Armarea are nevoie de secțiunea transversală lângă cea longitudinală. **Secțiune aici** le face pe amândouă: alegi o grindă, un stâlp sau un perete în vederea în care ești, iar acolo unde apeși se taie o secțiune *transversală*, perpendiculară pe axa lui, desenată lângă punctul apăsat, în aceeași vedere, cu o jumătate de metru din ce e în jur (placa, stâlpul). Un stâlp se taie orizontal, la înălțimea apăsată. Apasă înăuntrul tăieturii elementului, nu doar pe muchia ei: într-o secțiune sau o fațadă, ca în plan, clicul ia elementul a cărui tăietură îl cuprinde.
 
-Vederea inserată urmărește elementul: muți grinda și secțiunea se mută cu ea. Tragi inserarea de gripul ei; proprietățile îi dau un factor de scară și un chenar. **Secțiune transversală** face aceeași secțiune ca vedere de sine stătătoare, iar **Vedere inserată** pune orice vedere existentă în cea în care ești, la mărime reală și la scara gazdei, ca barele desenate peste ea să se potrivească pe beton.
+Vederea inserată urmărește elementul: muți grinda și secțiunea se mută cu ea. Tragi inserarea de gripul ei; proprietățile îi dau un factor de scară și un chenar. **Secțiune transversală** face aceeași secțiune ca vedere de sine stătătoare, iar **Vedere inserată** pune orice vedere existentă în cea în care ești, la mărime reală și la scara gazdei, ca barele desenate peste ea să se potrivească pe beton. Vederile inserate nu sunt doar ale armării: **Vedere → Vedere inserată** merge în orice plan, secțiune sau fațadă, cu o scară și un decupaj proprii (vezi [Vederi inserate](views.md#vederi-inserate)).
 
 ![Secțiunea longitudinală a unei grinzi cu secțiunea transversală inserată și armătura ei](shots/rebar-section.webp)
 

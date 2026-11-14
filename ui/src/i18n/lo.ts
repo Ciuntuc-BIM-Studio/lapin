@@ -3,6 +3,10 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // Layer extents (forum topic 89)
+  "Layer extents": "ການຂະຫຍາຍຊັ້ນ", "Add a layer extent": "ເພີ່ມການຂະຫຍາຍຊັ້ນ", "How far the layer goes past this edge (positive) or stops short of it (negative)": "ຊັ້ນເລີຍຂອບນີ້ໄປເທົ່າໃດ (ບວກ) ຫຼື ຢຸດກ່ອນຮອດມັນ (ລົບ)", "Whether the layer past the edge cuts the walls and floors it meets; off, it overlaps them": "ຊັ້ນທີ່ເລີຍຂອບຕັດຝາ ແລະ ພື້ນທີ່ມັນພົບຫຼືບໍ່; ຖ້າບໍ່, ມັນຊ້ອນທັບກັນ", "Every layer ends at the element's edges.": "ທຸກຊັ້ນສິ້ນສຸດຢູ່ຂອບຂອງອົງປະກອບ.", "Take the extent away": "ເອົາການຂະຫຍາຍອອກ", "Which edge of the outline, numbered from its first corner": "ຂອບໃດຂອງເສັ້ນຂອບ, ນັບຈາກມຸມທຳອິດຂອງມັນ", "Cuts others": "ຕັດອື່ນໆ", "Layer extent": "ການຂະຫຍາຍຊັ້ນ", "Clear layer extents": "ລຶບການຂະຫຍາຍຊັ້ນ",
+  // Inset views anywhere (decision 576)
+  "Another view drawn in this one, live, at its own scale: what you draw over it goes on that view": "ມຸມມອງອື່ນທີ່ແຕ້ມໃນມຸມມອງນີ້, ສົດ, ຕາມມາດຕາສ່ວນຂອງມັນ: ສິ່ງທີ່ເຈົ້າແຕ້ມທັບຈະໄປຢູ່ໃນມຸມມອງນັ້ນ", "Drag: the crop's corner": "ລາກ: ມຸມຂອງການຕັດຂອບ", "View shown": "ມຸມມອງທີ່ສະແດງ", "The inset's own scale on paper; empty: the shown view's own, so it is the size it has on its sheet": "ມາດຕາສ່ວນຂອງມຸມມອງແຊກເທິງເຈ້ຍ; ຫວ່າງ: ຂອງມຸມມອງທີ່ສະແດງ, ຄືຂະໜາດຂອງມັນເທິງແຜ່ນຂອງມັນ", "Crop": "ຕັດຂອບ", "Only a part of the shown view: drag the crop's corners in the view; off, the whole view": "ພຽງແຕ່ສ່ວນໜຶ່ງຂອງມຸມມອງທີ່ສະແດງ: ລາກມຸມຂອງການຕັດຂອບໃນມຸມມອງ; ປິດ, ມຸມມອງທັງໝົດ", "The view drawn where you clicked, live, at its own scale: what you draw over it goes on that view, so it fits.": "ມຸມມອງທີ່ແຕ້ມບ່ອນທີ່ເຈົ້າຄລິກ, ສົດ, ຕາມມາດຕາສ່ວນຂອງມັນ: ສິ່ງທີ່ເຈົ້າແຕ້ມທັບຈະໄປຢູ່ໃນມຸມມອງນັ້ນ, ສະນັ້ນມັນພໍດີ.", "A thin frame round it, with the shown view's name and scale under it": "ກອບບາງອ້ອມມັນ, ມີຊື່ ແລະ ມາດຕາສ່ວນຂອງມຸມມອງທີ່ສະແດງຢູ່ລຸ່ມ",
   // The finish painter (forum topic 83)
   "Paint with it": "ທາດ້ວຍສິ່ງນີ້",
   // The finish painter (forum topic 83)

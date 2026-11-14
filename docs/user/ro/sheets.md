@@ -12,6 +12,8 @@ Apasă **+** lângă **Planșe** în navigatorul proiectului. Ca să pui o veder
 
 ![O planșă A3 cu un plan și o secțiune](shots/sheet.webp)
 
+O **vedere 3D** salvată se pune pe planșă la fel. Se desenează în linii, ca o fațadă, din camera pe care o păstrează vederea (butonul cu cameră de lângă ea din navigatorul proiectului, **Păstrează camera așa cum e acum**, salvează camera așa cum e). O cameră ortografică arată tot modelul văzut din acea parte, o axonometrie la scara vederii (1:100 până alegi alta). O cameră în perspectivă arată ce îi cuprinde câmpul vizual, la mărimea reală acolo unde privește camera. Desenul ține cont de Vizibilitate / Grafică a vederii, de elementele ascunse în ea, de nivelurile pe care le arată și de cutia de secțiune, și iese la fel în PDF. O vedere 3D salvată fără cameră se vede dinspre sud-vest, de sus. Dă dublu clic pe ea pe planșă sau apasă ✎ ca s-o deschizi în 3D, cu camera ei.
+
 Selectează planșa ca să-i completezi **cartușul** în panoul de proprietăți: proiectul, beneficiarul, cine a desenat, cine a verificat, data și revizia. Tot acolo se setează numărul, formatul și orientarea. Formatul e unul A (A0 până la A4), unul din formatele lungi ISO (A0×2, A1×3, A2×3, A3×3, A3×4, A4×3), unul nord-american (Letter, Tabloid, ARCH D, ARCH E) sau **personalizat**, cu **Lățimea hârtiei** și **Înălțimea hârtiei** în milimetri. Lăsat gol, câmpul proiectului arată numele proiectului: numele dat proiectului, altfel numele fișierului lui.
 
 ## Ce arată o vedere

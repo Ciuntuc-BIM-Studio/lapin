@@ -22,6 +22,7 @@ import { WallLayers } from './WallLayers';
 import { WallTopOption, wallTopArgs } from './WallTop';
 import { JoinerySection } from './JoinerySection';
 import { SlabSection } from './SlabSection';
+import { LayerExtentsSection, hasLayerExtents } from './LayerExtentsSection';
 import { RoofSection } from './RoofSection';
 import { roofOpeningGrips, roofOpeningRefs } from './roofOpeningGrips';
 import { DownpipeSection, downpipe, downpipeGrips } from './Downpipe';
@@ -504,6 +505,7 @@ const architecture: LapinModule = {
     { id: 'joinery', label: 'Door or window', classes: ['IfcDoor', 'IfcWindow'], component: JoinerySection },
     { id: 'wallOpening', label: 'Opening', classes: ['IfcOpeningElement'], shows: isWallOpening, component: WallOpeningSection },
     { id: 'slab', label: 'Floor', classes: ['IfcSlab'], component: SlabSection },
+    { id: 'layerExtents', label: 'Layer extents', classes: ['IfcWall', 'IfcSlab'], shows: hasLayerExtents, component: LayerExtentsSection },
     { id: 'downpipe', label: 'Downpipe', classes: ['LapinDownpipe'], component: DownpipeSection },
     { id: 'roof', label: 'Roof', classes: ['IfcRoof'], component: RoofSection },
     { id: 'stair', label: 'Stair', classes: ['IfcStair', 'IfcRamp'], component: StairSection },

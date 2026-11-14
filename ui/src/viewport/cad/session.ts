@@ -18,7 +18,8 @@ import { ucsOf, useLocation } from '../../app/location';
 import { directionFrom, directionOf, normalizeTurn, rotatedShape, rotationFromReference } from './rotate';
 import { applyOrtho, parseCoordinateInput, parseScalar, pointAlong } from './input';
 import { lengthText, parseLength } from '../../engine/unitsStore';
-import { arcThrough, arcTangent, dist, fromJson, toJson, type Shape } from './shapes';
+import { arcThrough, arcTangent, bounds, dist, fromJson, toJson, type Shape } from './shapes';
+import { mapShape } from '../insetMap';
 import { liveBegin, liveEnd } from '../liveInput';
 import { traceBegin, traceEnd } from '../moveTrace';
 import { lassoTest, type RegionTest } from '../selectBox';
@@ -50,6 +51,8 @@ export interface CadHost {
   inRegion?(takes: RegionTest): string[];
   /** Where a section's or an elevation's point lies in the model (decision 453: element.transform carries the model's elements by it); none in a plan. */
   frameAt?(at: Vec2): ViewFrame | null;
+  /** The inset view all these points fall in (decision 576): its source, and the host → source mapping; what is drawn there goes on the source. */
+  insetUnder?(points: Vec2[]): { source: string; map: (p: Vec2) => Vec2 } | null;
   /** A constraint put on this host's shapes by its own command (a part's own sketch in the edit mode: `studio.partSketchAddConstraint`), instead of `studio.addConstraint` on the view. */
   addConstraint?(kind: string, refs: { shape: string; part: string }[], extra: { value?: number; formula?: string; driving?: boolean }): Promise<boolean>;
 }
@@ -156,6 +159,13 @@ async function draw(shapes: Shape[], hints?: DrawHints): Promise<string[]> {
   const h = host();
   if (!h || !shapes.length) return [];
   const { layer, role } = useCad.getState();
+  // Drawn over an inset view: on its source, in its own coordinates, so it shows here through the inset at the inset's scale.
+  const into = h.insetUnder?.(shapes.flatMap((s) => { const b = bounds(s); return [b.min, b.max]; }));
+  if (into) {
+    const r = await execute('drafting.draw', { viewId: into.source, layer, shapes: shapes.map((s) => toJson(mapShape(s, into.map))), ...(role ? { role } : {}) }) as { ids?: string[] } | null;
+    prevDrawn = null;
+    return r?.ids ?? [];
+  }
   const body = { viewId: h.viewId, layer, shapes: shapes.map(toJson), ...(role ? { role } : {}) };
   const specs = recordWhileDrawing(h.viewId, role, shapes, hints);
   let r: { ids?: string[]; refused?: { kind?: string; reason?: string }[] } | null = null;

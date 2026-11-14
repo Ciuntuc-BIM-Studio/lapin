@@ -618,6 +618,54 @@ export const scenes = [
     },
   },
   {
+    // Layer extents (forum topic 89, docs/plan-layer-extents.md): a floor drawn to a wall's face whose finish goes on 5 cm into
+    // the wall and cuts it, set in the floor's properties (Layer extents); the section shows the finish past the floor's edge.
+    id: 'layer-extents',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const slab = (await t.cmd('architecture.addSlab', { storeyId: s, points: [[-2, -2], [4, -2], [4, 2], [-2, 2]] })).id;
+      const type = (await t.cmd('architecture.createWallType', { name: 'Brick 250 plastered', layers: [
+        { material: 'Plaster', thickness: 0.015 }, { material: 'Brick', thickness: 0.25, core: true }, { material: 'Plaster', thickness: 0.015 }] })).id;
+      // A wall beside the floor's top edge, its right face on it, standing on the floor's underside.
+      const wall = (await t.cmd('architecture.addWall', { storeyId: s, typeId: type, x1: -1, y1: 2.14, x2: 3, y2: 2.14, height: 1.2 })).id;
+      await t.cmd('architecture.updateWall', { id: wall, baseOffset: -0.22 });
+      const volume = async (id, part) => (await t.call('quantities.of', { id })).filter((q) => !part || q.part === part).flatMap((q) => q.quantities).filter((x) => x.name === 'NetVolume').reduce((a, x) => a + x.value, 0);
+      const finishBefore = await volume(slab, 'layer:0');
+      await select(t, slab);
+      await t.wait(600);
+      const section = t.page.locator('aside.props [data-testid=layer-extents]');
+      t.expect(await section.count() === 1, 'a floor shows its Layer extents');
+      await section.locator('[data-testid=layer-extent-add]').click();
+      await t.wait(800);
+      const row = section.locator('[data-testid=layer-extent]');
+      t.expect(await row.count() === 1, 'Add a layer extent makes a row');
+      // The finish (layer 1) at the top edge (the third, from the outline's first corner), 50 mm past it, cutting the wall.
+      await row.locator('select').nth(1).selectOption('edge:2');
+      await t.wait(800);
+      const offset = section.locator('[data-field=layer-extent-offset]');
+      await offset.click();
+      await offset.press('ControlOrMeta+a');
+      await offset.pressSequentially('50');
+      await offset.press('Enter');
+      await t.wait(800);
+      await section.locator('[data-testid=layer-extent-cuts]').click();
+      await t.wait(1200);
+      const finishAfter = await volume(slab, 'layer:0');
+      t.expect(Math.abs(finishAfter - finishBefore - 6 * 0.05 * 0.02) < 1e-6, `the finish goes 5 cm past the floor's top edge (${(finishAfter - finishBefore).toFixed(5)} m³ more)`);
+      await t.shot('layer-extents', { of: 'aside.props [data-testid=layer-extents]', pad: 6 });
+      await t.ui({ selection: null, selected: [] });
+      await t.cmd('view.create', { kind: 'section', name: 'E-E', start: [1, 1.4], end: [1, 2.8], depth: 1, scale: 10 });
+      await openFromBrowser(t, 'E-E', 1500);
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      await t.wait(800);
+      await t.shot('layer-extents-section', { of: '[data-testid=drawing]', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     // The partial structure display (decision 500, as ArchiCAD's; the forum's topic #30): a new project's plans without the
     // finishes, its sections the entire model, set by kind of view in Manage → View styles and per view from its corner.
     id: 'finishes-by-view',
@@ -4890,6 +4938,42 @@ export const scenes = [
       await t.wait(400);
       await t.shot('view-crop-settings', { of: '.dialog', pad: 0 });
       await t.ui({ dialog: null });
+    },
+  },
+  {
+    // Decision 574: any view inset in any other (View → Inset view), at its own scale, cropped, a dimension drawn on its source showing through it.
+    id: 'views-inset',
+    touches: ['core', 'architecture', 'drafting'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      for (const [x1, y1, x2, y2] of [[0, 0, 6, 0], [6, 0, 6, 4], [6, 4, 0, 4], [0, 4, 0, 0]]) await t.cmd('architecture.addWall', { storeyId: s, x1, y1, x2, y2 });
+      // A section across the room at 1:20, its x along its line from (3, -1.5): the south wall at 1.5.
+      const section = (await t.cmd('view.create', { kind: 'section', start: [3, -1.5], end: [3, 5.5], scale: 20, name: 'Wall detail' })).id;
+      await t.cmd('drafting.addDimension', { viewId: section, a: [1.2, 0], b: [1.2, 2.5], at: [0.9, 0] });
+      await t.ui({ view: 'plan', keyPlan: false, planDrawing: true, selection: null, selected: [] });
+      await t.wait(1500);
+      await t.fit();
+      // The tool, a click beside the room (west of it, on the screen), the section chosen in the list.
+      await t.tool('view.inset');
+      const [x, y] = await t.planPoint(-2, 2);
+      await t.page.mouse.click(x, y);
+      await t.until(async () => (await t.page.locator(`[data-inset-source="${section}"]`).count()) > 0, 'Inset view lists the section');
+      await t.page.locator(`[data-inset-source="${section}"]`).first().click();
+      await t.wait(800);
+      const inset = (await t.nodes()).find((n) => n.type === 'LapinInset');
+      t.expect(!!inset && inset.props.source === section, 'the section is inset in the plan');
+      // Cut to the south wall and what is round it.
+      await t.cmd('view.updateInset', { id: inset.id, crop: { min: [0.4, -0.6], max: [2.6, 3.4] } });
+      await t.ui({ tool: null, selected: [inset.id], selection: inset.id });
+      await t.wait(1200);
+      await t.fit();
+      await t.wait(600);
+      const d = await t.call('doc.query', { name: 'view.drawing', args: { id: `plan:${s}` } });
+      const mark = d.marks.find((m) => m.id === inset.id);
+      t.expect(mark?.data?.factor === 5 && !!mark?.data?.crop, 'the inset is drawn at the section\'s 1:20 in the 1:100 plan, cropped');
+      t.expect(d.marks.some((m) => m.data?.via?.source === section), 'the dimension drawn on the section shows through the inset');
+      await t.shot('inset-view', { of: '[data-testid=plan]', pad: 0 });
     },
   },
   {

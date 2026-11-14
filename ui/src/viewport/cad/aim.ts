@@ -19,6 +19,7 @@ import type { Ref } from './constraints';
 import { useCad, type CadHost } from './session';
 import type { RegionTest } from '../selectBox';
 import { viewFrameAt } from '../viewFrame';
+import { insetUnder } from '../insetMap';
 
 /** What holds an aimed point that no object snap took: the ortho line from the base (on, or Shift held), a polar angle from the base, or a tracking guide through an acquired point. */
 export type AimLock = 'ortho' | 'polar' | 'tracking' | 'parallel' | 'tangent';
@@ -213,6 +214,7 @@ export function useCadCanvas(o: {
       },
       inRegion: (takes) => regionRef.current?.(takes) ?? [],
       frameAt: (at) => viewFrameAt(frameRef.current, at),
+      insetUnder: (pts) => insetUnder(marks, pts),
     };
     useCad.setState({ host });
     return () => { if (useCad.getState().host === host) useCad.setState({ host: null }); };
