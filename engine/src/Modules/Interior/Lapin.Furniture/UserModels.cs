@@ -77,18 +77,6 @@ public static class UserModels
         foreach (var e in m.OfClass(Class)) Ensure(m, e.Str("code"));
     }
 
-    /// <summary>A GLB's extent (metres, Lapin's frame: Z up) and its material names.</summary>
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    static (double[] Natural, List<string> Materials) Read(byte[] bytes)
-    {
-        var pieces = Lapin.Mesh.MeshImport.Gltf(bytes, true, null, []);
-        var all = pieces.SelectMany(p => p.Vertices).Select(v => new Vec3(v.X, -v.Z, v.Y)).ToList();
-        if (all.Count == 0) throw new CommandException("The file has no triangles to make a model of.");
-        double[] ext = [all.Max(v => v.X) - all.Min(v => v.X), all.Max(v => v.Y) - all.Min(v => v.Y), all.Max(v => v.Z) - all.Min(v => v.Z)];
-        if (ext.Any(x => x < 1e-4)) throw new CommandException("The model is flat on one axis: a piece of furniture has width, depth and height.");
-        return ([.. ext.Select(x => Math.Round(x, 6))], [.. pieces.Where(p => p.Triangles.Count > 0).Select(p => p.Material ?? "_defaultMat").Distinct()]);
-    }
-
     /// <summary>A model's settings from a command over <paramref name="attrs"/>, checked: sizes, zones within 0–1, roles of Lapin's.</summary>
     static void Apply(JsonObject attrs, JsonObject a)
     {
@@ -190,7 +178,7 @@ public static class UserModels
             if (bytes.Length == 0 || bytes.Length > MaxBytes) throw new CommandException("A model's GLB is at most 16 MB.");
             if (bytes.Length < 12 || bytes[0] != (byte)'g' || bytes[1] != (byte)'l' || bytes[2] != (byte)'T' || bytes[3] != (byte)'F') throw new CommandException("That is not a GLB (binary glTF) file.");
             if (((string?)a["licence"])?.Trim() is not { Length: > 0 }) throw new CommandException("Say the model's licence (CC0, CC-BY-4.0, your own…): it travels with it.");
-            var (natural, materials) = Read(bytes);
+            var (natural, materials) = Glb.Read(bytes);
             var attrs = new JsonObject
             {
                 ["glb"] = Convert.ToBase64String(bytes), ["natural"] = new JsonArray(natural.Select(x => (JsonNode)x).ToArray()),
@@ -228,5 +216,25 @@ public static class UserModels
             ctx.Remove(e.Id);
             return null;
         });
+    }
+
+    /// <summary>
+    /// What reads a GLB, in a class of its own: its lambdas name Lapin.Mesh's types, and a class's lambdas share one closure
+    /// class whose fields are all set up when the first is cached. Kept beside <see cref="Register"/>'s, they made every start
+    /// of the browser's engine fetch Lapin.Mesh, a lazy part (docs/plan-browser-engine.md, Lazy parts).
+    /// </summary>
+    static class Glb
+    {
+        /// <summary>A GLB's extent (metres, Lapin's frame: Z up) and its material names.</summary>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static (double[] Natural, List<string> Materials) Read(byte[] bytes)
+        {
+            var pieces = Lapin.Mesh.MeshImport.Gltf(bytes, true, null, []);
+            var all = pieces.SelectMany(p => p.Vertices).Select(v => new Vec3(v.X, -v.Z, v.Y)).ToList();
+            if (all.Count == 0) throw new CommandException("The file has no triangles to make a model of.");
+            double[] ext = [all.Max(v => v.X) - all.Min(v => v.X), all.Max(v => v.Y) - all.Min(v => v.Y), all.Max(v => v.Z) - all.Min(v => v.Z)];
+            if (ext.Any(x => x < 1e-4)) throw new CommandException("The model is flat on one axis: a piece of furniture has width, depth and height.");
+            return ([.. ext.Select(x => Math.Round(x, 6))], [.. pieces.Where(p => p.Triangles.Count > 0).Select(p => p.Material ?? "_defaultMat").Distinct()]);
+        }
     }
 }
