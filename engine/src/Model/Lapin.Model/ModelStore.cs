@@ -67,6 +67,8 @@ public sealed class ModelStore : IModelView
     int _next;
     // Per class, the sum of a mix of its entities' versions: the same whatever their order, and back to what it was when an undo puts the entities back.
     readonly Dictionary<string, (ulong A, ulong B)> _classStamp = [];
+    // Per cell of PlaceCells, the elements in it.
+    readonly Dictionary<string, HashSet<string>> _inCell = [];
     static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Relation, object> _relationVersions = [];
     static long _relationVersion;
 
@@ -123,13 +125,25 @@ public sealed class ModelStore : IModelView
         var (a, b) = _classStamp.GetValueOrDefault(cls);
         var (x, y) = (Mix((ulong)e.Version), Mix2((ulong)e.Version));
         _classStamp[cls] = sign > 0 ? (a + x, b + y) : (a - x, b - y);
-        // Where an element along an axis lies (PlaceCells): each of its cells' stamps.
+        // Where an element along an axis lies (PlaceCells): each of its cells' stamps, a sum over where its elements are (not their
+        // versions: a name changed leaves them), and the cell's elements.
+        var placed = false;
+        ulong h = 0;
         foreach (var cell in PlaceCells.Of(e))
         {
+            if (!placed) { h = PlaceCells.Hash(e); placed = true; }
+            var (px, py) = (Mix(h), Mix2(h));
             var (ca, cb) = _classStamp.GetValueOrDefault(cell);
-            _classStamp[cell] = sign > 0 ? (ca + x, cb + y) : (ca - x, cb - y);
+            if (!_inCell.TryGetValue(cell, out var ids)) _inCell[cell] = ids = [];
+            if (sign > 0) { _classStamp[cell] = (ca + px, cb + py); ids.Add(e.Id); continue; }
+            ids.Remove(e.Id);
+            if (ids.Count == 0) { _inCell.Remove(cell); _classStamp.Remove(cell); }
+            else _classStamp[cell] = (ca - px, cb - py);
         }
     }
+
+    /// <summary>The ids of the elements in a cell (<see cref="PlaceCells"/>), in no order.</summary>
+    public IReadOnlyCollection<string> InCell(string cell) => _inCell.TryGetValue(cell, out var ids) ? ids : [];
 
     /// <summary>Whether the class has any entity, without sorting them.</summary>
     public bool HasClass(string @class) => _byClass.TryGetValue(@class, out var ids) && ids.Count > 0;
@@ -206,7 +220,7 @@ public sealed class ModelStore : IModelView
 
     internal void Clear()
     {
-        _entities.Clear(); _relations.Clear(); _order.Clear(); _byClass.Clear(); _touching.Clear(); _relatedIn.Clear(); _classStamp.Clear();
+        _entities.Clear(); _relations.Clear(); _order.Clear(); _byClass.Clear(); _touching.Clear(); _relatedIn.Clear(); _classStamp.Clear(); _inCell.Clear();
         _next = 0;
         Revision++;
     }

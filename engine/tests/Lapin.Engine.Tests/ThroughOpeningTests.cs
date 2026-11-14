@@ -5,6 +5,7 @@ using Lapin.Geometry;
 using Lapin.Ifc;
 using Lapin.Model;
 using Lapin.Platform;
+using Xunit.Abstractions;
 
 namespace Lapin.Engine.Tests;
 
@@ -14,7 +15,7 @@ namespace Lapin.Engine.Tests;
 /// An opening cuts every wall along its host its box passes through, worked out on every build; one moved out of a wall no longer
 /// cuts it; IFC has an opening element for each wall voided; walls recognised from a file are left as the file has them.
 /// </summary>
-public sealed class ThroughOpeningTests
+public sealed class ThroughOpeningTests(ITestOutputHelper output)
 {
     static Fixture F() => new(new ArchitectureModule());
 
@@ -227,5 +228,129 @@ public sealed class ThroughOpeningTests
             Assert.Equal(6 * 2.0 * 0.25, Volume(f, brick), 6);
         }
         finally { Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public void Kept_builds_follow_a_wall_moved_in_and_out_through_undo_redo_delete_and_a_batch()
+    {
+        var f = F();
+        f.Session.Tuning = SessionTuning.Desktop with { MemoFromEntities = 0 };
+        var core = f.Type("Block 250", ("Concrete block", 0.25, true));
+        var lining = f.Type("Lining 100", ("Brick", 0.1, true));
+        // A lining against each face of where the wall comes; the wall 80 m long, starting 20 m off.
+        var skin = Wall(f, lining, 0, 0.175, 3, 0.175, 3.0);
+        var skin2 = Wall(f, lining, 0, -0.175, 3, -0.175, 3.0);
+        var wall = Wall(f, core, -40, -20, 40, -20, 3.0);
+        var window = (string)f.Run("architecture.addWindow", new JsonObject { ["wallId"] = wall, ["along"] = 41.5 })!["id"]!;
+        var spec = Openings.SpecOf(f.Model, window)!;
+        double whole = 3 * 3.0 * 0.1, cut = whole - spec.Width * spec.Height * 0.1;
+        void Check(string what, bool expect)
+        {
+            Assert.True(Math.Abs(Volume(f, skin) - (expect ? cut : whole)) < 1e-6, what);
+            Assert.True(Math.Abs(Volume(f, skin2) - (expect ? cut : whole)) < 1e-6, what);
+        }
+        void Move(double y) => f.Run("architecture.updateWall", new JsonObject { ["id"] = wall, ["y1"] = y, ["y2"] = y });
+        Check("start", false);
+        Move(0); Check("in", true);
+        Move(-20); Check("out", false);
+        Move(0.0000001); Check("in again", true);
+        f.Session.Undo(f.Session.Author); Check("undo in again", false);
+        f.Session.Undo(f.Session.Author); Check("undo out", true);
+        f.Session.Undo(f.Session.Author); Check("undo in", false);
+        f.Session.Redo(f.Session.Author); Check("redo in", true);
+        f.Session.Redo(f.Session.Author); Check("redo out", false);
+        f.Session.Redo(f.Session.Author); Check("redo in again", true);
+        f.Run("architecture.moveOpening", new JsonObject { ["id"] = window, ["along"] = 70 }); Check("window off", false);
+        f.Session.Undo(f.Session.Author); Check("undo window off", true);
+        f.Session.Redo(f.Session.Author); Check("redo window off", false);
+        f.Session.Undo(f.Session.Author); Check("undo again", true);
+        f.Run("element.delete", new JsonObject { ["ids"] = new JsonArray(wall) }); Check("deleted", false);
+        f.Session.Undo(f.Session.Author); Check("undo delete", true);
+        f.Run("edit.batch", new JsonObject { ["steps"] = new JsonArray(
+            new JsonObject { ["command"] = "architecture.updateWall", ["args"] = new JsonObject { ["id"] = wall, ["y1"] = 30.0, ["y2"] = 30.0 } },
+            new JsonObject { ["command"] = "architecture.updateWall", ["args"] = new JsonObject { ["id"] = wall, ["y1"] = 0.0, ["y2"] = 0.0 } }) });
+        Check("batch", true);
+        f.Session.Undo(f.Session.Author); Check("undo batch", true);
+        // An undo takes back the builds it had: none made for the linings.
+        Move(-20);
+        var made = f.Session.BuildsMade;
+        f.Session.Undo(f.Session.Author);
+        Check("undo kept", true);
+        Assert.Equal(made, f.Session.BuildsMade);
+    }
+
+    [Fact]
+    public void A_wall_moved_by_whole_numbers_is_found_where_it_is()
+    {
+        var f = F();
+        var core = f.Type("Block 250", ("Concrete block", 0.25, true));
+        var lining = f.Type("Lining 100", ("Brick", 0.1, true));
+        var skin = Wall(f, lining, 0, 0.175, 3, 0.175, 3.0);
+        var wall = Wall(f, core, 0, -20, 6, -20, 3.0);
+        f.Run("architecture.addWindow", new JsonObject { ["wallId"] = wall, ["along"] = 1.5 });
+        // Its axis written as integers (a graph's values are), not as doubles.
+        f.Session.Edit("Move", e =>
+        {
+            var w = e.Model.Get(wall)!;
+            var a = w.CloneAttrs();
+            a["start"] = new JsonArray(0, 0);
+            a["end"] = new JsonArray(6, 0);
+            e.Replace(w.With(attrs: a));
+        });
+        var now = Volume(f, skin);
+        f.Session.Snapshot();
+        Assert.Equal(Volume(f, skin), now, 9);
+        Assert.True(now < 3 * 3.0 * 0.1 - 1e-6);
+    }
+
+    [Fact]
+    public void A_wall_renamed_is_the_only_one_built_again_and_a_long_wall_is_still_found()
+    {
+        var f = F();
+        var core = f.Type("Block 250", ("Concrete block", 0.25, true));
+        var storeys = new List<string> { f.Storey };
+        for (var i = 1; i < 10; i++) storeys.Add((string)f.Run("storey.create", new JsonObject { ["name"] = $"S{i}", ["elevation"] = i * 3.0, ["height"] = 3.0 })!["id"]!);
+        var ids = new List<string>();
+        foreach (var st in storeys)
+            for (var k = 0; k < 5; k++)
+                ids.Add((string)f.Run("architecture.addWall", new JsonObject { ["storeyId"] = st, ["typeId"] = core, ["x1"] = 0, ["y1"] = k * 2.5, ["x2"] = 6, ["y2"] = k * 2.5, ["height"] = 2.8, ["join"] = false })!["id"]!);
+        f.Session.Snapshot();
+        var made = f.Session.BuildsMade;
+        f.Run("element.rename", new JsonObject { ["id"] = ids[2], ["name"] = "X" });
+        Assert.Equal(1, f.Session.BuildsMade - made);
+
+        // A wall too long for cells (its box over thousands of them) still cuts and is cut.
+        var lining = f.Type("Lining 100", ("Brick", 0.1, true));
+        var far = Wall(f, core, -3000, 100, 3000, 3100, 3.0);
+        var skin = (string)f.Run("architecture.addWall", new JsonObject { ["storeyId"] = f.Storey, ["typeId"] = lining, ["x1"] = 0, ["y1"] = 0, ["x2"] = 1, ["y2"] = 0, ["height"] = 3.0, ["join"] = false })!["id"]!;
+        var dir = new Vec2(6000, 3000).Normalized();
+        var (a, n) = (new Vec2(-3000, 100), dir.Perp);
+        // The lining moved against its face, along its middle.
+        var p0 = a + dir * 3354 + n * 0.175;
+        var p1 = p0 + dir * 3;
+        f.Run("architecture.updateWall", new JsonObject { ["id"] = skin, ["x1"] = p0.X, ["y1"] = p0.Y, ["x2"] = p1.X, ["y2"] = p1.Y });
+        var window = (string)f.Run("architecture.addWindow", new JsonObject { ["wallId"] = far, ["along"] = 3355.5 })!["id"]!;
+        var spec = Openings.SpecOf(f.Model, window)!;
+        Assert.Equal(3 * 3.0 * 0.1 - spec.Width * spec.Height * 0.1, Volume(f, skin), 6);
+    }
+
+    [Fact]
+    public void Two_thousand_walls_are_built_in_time_linear_in_their_number()
+    {
+        long Build(int n)
+        {
+            var f = F();
+            var core = f.Type("Block 250", ("Concrete block", 0.25, true));
+            var side = (int)Math.Ceiling(Math.Sqrt(n));
+            for (var i = 0; i < n; i++) { double x = i % side * 5, y = i / side * 5; Wall(f, core, x, y, x + 3, y, 2.8); }
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            f.Session.Snapshot();
+            return sw.ElapsedMilliseconds;
+        }
+        Build(200);
+        var (small, large) = (Build(500), Build(2000));
+        output.WriteLine($"snapshot of 500 walls {small} ms, of 2000 walls {large} ms");
+        // Four times the walls: about four times the time, nowhere near the sixteen times of each wall looking at every other.
+        Assert.True(large < Math.Max(small, 50) * 8, $"500 walls {small} ms, 2000 walls {large} ms");
     }
 }

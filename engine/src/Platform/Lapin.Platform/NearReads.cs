@@ -59,8 +59,14 @@ public static class PlaceReads
     /// </summary>
     public static IEnumerable<Entity> Candidates(IModelView m, string ifcClass, Vec2 a, Vec2 b, double reach)
     {
-        if (m is not TrackingView tv) return m.OfClass(ifcClass);
-        foreach (var k in PlaceCells.Round(ifcClass, a.X, a.Y, b.X, b.Y, reach)) tv.Read.Add(k);
-        return tv.Inner.OfClass(ifcClass);
+        var keys = PlaceCells.Round(ifcClass, a.X, a.Y, b.X, b.Y, reach).ToList();
+        var tv = m as TrackingView;
+        if (tv != null) tv.Read.UnionWith(keys);
+        // The store's cells give the elements in them; a view over an edit (a command checking) lists the class.
+        if ((tv?.Inner ?? m) is not ModelStore store || keys.Any(k => !PlaceCells.IsKey(k))) return tv?.Inner.OfClass(ifcClass) ?? m.OfClass(ifcClass);
+        var ids = new HashSet<string>();
+        foreach (var k in keys) ids.UnionWith(store.InCell(k));
+        // In the document's order, so what is built from them is the same whichever way the cells listed them.
+        return ids.Select(store.Get).OfType<Entity>().Where(e => e.Class == ifcClass).OrderBy(e => store.Order(e.Id)).ToList();
     }
 }

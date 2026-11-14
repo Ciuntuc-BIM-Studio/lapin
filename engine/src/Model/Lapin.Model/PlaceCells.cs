@@ -17,18 +17,51 @@ public static class PlaceCells
     const int MaxCells = 4096;
     const string Prefix = "place:";
 
+    /// <summary>The classes laid in cells: those some build reads so (the walls). Others are not, so a section's or a dimension's edit costs nothing here.</summary>
+    static readonly HashSet<string> Classes = [IfcClass.Wall];
+
+    /// <summary>
+    /// What says where such an element is, beyond its axis, so its cells' stamp changes with them and nothing else (a name, a property
+    /// set): its arc, its base, height and top, its own thickness, and whether it was read from a file.
+    /// </summary>
+    static readonly string[] PlaceKeys = ["arc", "baseOffset", "height", "top", "topOffset", "thickness"];
+
     public static bool IsKey(string key) => key.StartsWith(Prefix, StringComparison.Ordinal);
 
     /// <summary>The key of the class's elements too large for cells.</summary>
     public static string Wide(string ifcClass) => $"{Prefix}{ifcClass}:*";
 
-    /// <summary>The cells an element along an axis lies in (those its axis crosses, an arc's rise round it); none for an element with no axis.</summary>
+    /// <summary>The cells an element along an axis lies in (those its axis crosses, an arc's rise round it); none for an element with no axis, or of a class not laid in cells.</summary>
     public static IEnumerable<string> Of(Entity e)
     {
-        if (e.Attrs["start"] is not JsonArray { Count: >= 2 } s || e.Attrs["end"] is not JsonArray { Count: >= 2 } t) return [];
-        if (!(Num(s[0]) is { } x0 && Num(s[1]) is { } y0 && Num(t[0]) is { } x1 && Num(t[1]) is { } y1)) return [];
-        return Along(e.Class, x0, y0, x1, y1, Math.Abs(Num(e.Attrs["rise"]) ?? 0), reader: false);
+        if (!Classes.Contains(e.Class) || Axis(e) is not var (x0, y0, x1, y1)) return [];
+        return Along(e.Class, x0, y0, x1, y1, Math.Abs(Json.Number(e.Attrs["arc"]) ?? 0), reader: false);
     }
+
+    static (double, double, double, double)? Axis(Entity e) =>
+        e.Attrs["start"] is JsonArray { Count: >= 2 } s && e.Attrs["end"] is JsonArray { Count: >= 2 } t
+        && Json.Number(s[0]) is { } x0 && Json.Number(s[1]) is { } y0 && Json.Number(t[0]) is { } x1 && Json.Number(t[1]) is { } y1 ? (x0, y0, x1, y1) : null;
+
+    /// <summary>
+    /// A hash of where the element is (its id, axis and <see cref="PlaceKeys"/>, whether it was imported): what its cells' stamps sum,
+    /// the same for the same place whatever else changed (its version does with its name).
+    /// </summary>
+    public static ulong Hash(Entity e)
+    {
+        var h = 14695981039346656037UL;
+        void Add(ulong v) => h = ModelStore.Mix(h ^ v);
+        void Text(string t) { foreach (var c in t) h = (h ^ c) * 1099511628211UL; Add((ulong)t.Length); }
+        Text(e.Id);
+        Text(e.Class);
+        if (Axis(e) is var (x0, y0, x1, y1)) foreach (var v in new[] { x0, y0, x1, y1 }) Add((ulong)BitConverter.DoubleToInt64Bits(v));
+        foreach (var k in PlaceKeys) Text(e.Attrs[k]?.ToJsonString() ?? "");
+        Add(e.Attrs["imported"] != null ? 1UL : 0UL);
+        return h;
+    }
+
+    /// <summary>Whether an edit from <paramref name="before"/> to <paramref name="after"/> moves the element in its cells (and so touches them).</summary>
+    public static bool Moved(Entity? before, Entity? after) =>
+        before == null || after == null || before.Class != after.Class || Hash(before) != Hash(after);
 
     /// <summary>The keys a build looking within <paramref name="reach"/> of a segment in plan reads: the cells round it and the class's <see cref="Wide"/>.</summary>
     public static IEnumerable<string> Round(string ifcClass, double x0, double y0, double x1, double y1, double reach) => Along(ifcClass, x0, y0, x1, y1, reach, reader: true);
@@ -72,8 +105,8 @@ public static class PlaceCells
             var u = len2 > 0 ? Math.Clamp(((px - x0) * dx + (py - y0) * dy) / len2, 0, 1) : 0;
             return Math.Sqrt(Math.Pow(x0 + dx * u - px, 2) + Math.Pow(y0 + dy * u - py, 2));
         }
-        return new[] { ToRect(x0, y0, rx0, ry0, rx1, ry1), ToRect(x1, y1, rx0, ry0, rx1, ry1), ToSegment(rx0, ry0), ToSegment(rx1, ry0), ToSegment(rx0, ry1), ToSegment(rx1, ry1) }.Min();
+        return Math.Min(Math.Min(ToRect(x0, y0, rx0, ry0, rx1, ry1), ToRect(x1, y1, rx0, ry0, rx1, ry1)),
+            Math.Min(Math.Min(ToSegment(rx0, ry0), ToSegment(rx1, ry0)), Math.Min(ToSegment(rx0, ry1), ToSegment(rx1, ry1))));
     }
 
-    static double? Num(JsonNode? n) => n is JsonValue v && v.TryGetValue<double>(out var d) ? d : null;
 }

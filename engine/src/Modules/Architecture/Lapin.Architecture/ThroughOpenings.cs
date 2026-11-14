@@ -65,25 +65,34 @@ public static class ThroughOpenings
     static bool Meet(double a0, double a1, double b0, double b1) => Math.Min(a1, b1) - Math.Max(a0, b0) >= -Touch;
 
     /// <summary>
+    /// How far from a wall's axis another wall's axis may lie and their bodies still meet: the wall's own half body and this much
+    /// more, the other's (a wall up to 3 m thick, or drawn on a face up to 1.5 m off its axis). A wall farther is not looked at.
+    /// </summary>
+    const double OtherReach = 1.5;
+
+    /// <summary>
     /// The straight walls round <paramref name="s"/> that lie along it (over it, under it, against its face, in line with it), their
-    /// bodies touching or overlapping its own, each in its frame. Read
-    /// near it only (<see cref="PlaceReads"/>): sorted by the place in their attributes, then read through the model.
+    /// bodies touching or overlapping its own, each in its frame. Only the walls near it are looked at (<see cref="PlaceReads"/>),
+    /// sorted by where their attributes put them (axis, base, height: what the cells' stamps go by); only those that meet it are
+    /// then read through the model, so an edit of a wall elsewhere (on another storey) does not build this one again.
     /// </summary>
     static IEnumerable<(Span Other, (double X0, double X1, double Y0, double Y1) At)> Along(IModelView m, Span s)
     {
         var end = s.Start + s.Dir * s.Length;
-        var reach = Math.Max(Math.Abs(s.YMin), Math.Abs(s.YMax)) + 1.0;
+        var reach = Math.Max(Math.Abs(s.YMin), Math.Abs(s.YMax)) + OtherReach;
         foreach (var found in PlaceReads.Candidates(m, IfcClass.Wall, s.Start, end, reach))
         {
             if (found.Id == s.Wall.Id || found.Attrs["imported"] != null) continue;
-            // Parallel and near, by its attributes alone, before it is read.
+            // Parallel and near, by its attributes alone.
             var (a, b) = (Walls.Start(found), Walls.End(found));
             var d = b - a;
             if (d.Length < 1e-3 || Math.Abs(Vec2.Cross(s.Dir, d.Normalized())) > Parallel || Math.Abs(Vec2.Cross(s.Dir, a - s.Start)) > reach) continue;
             var (t0, t1) = (Vec2.Dot(a - s.Start, s.Dir), Vec2.Dot(b - s.Start, s.Dir));
             if (!Meet(Math.Min(t0, t1), Math.Max(t0, t1), 0, s.Length)) continue;
-            if (m.Get(found.Id) is not { } wall || SpanOf(m, wall) is not { } o || In(s, o) is not { } at) continue;
+            // Where it is in height and across (its storey and type read, the wall itself not yet): only one meeting this wall is read.
+            if (SpanOf(m, found) is not { } o || In(s, o) is not { } at) continue;
             if (!Meet(at.X0, at.X1, 0, s.Length) || !Meet(at.Y0, at.Y1, s.YMin, s.YMax) || !Meet(o.Base, o.Base + o.Height, s.Base, s.Base + s.Height)) continue;
+            if (m.Get(found.Id) == null) continue;
             yield return (o, at);
         }
     }
@@ -142,9 +151,15 @@ public static class ThroughOpenings
     /// <summary>The straight walls drawn in Lapin parallel to <paramref name="s"/> whose bodies meet its own across it (in line with it, or over it): any along it.</summary>
     static IEnumerable<(Span Other, (double X0, double X1, double Y0, double Y1) At)> WallsBeside(IModelView m, Span s)
     {
+        var reach = Math.Max(Math.Abs(s.YMin), Math.Abs(s.YMax)) + OtherReach;
         foreach (var other in m.OfClass(IfcClass.Wall))
         {
-            if (other.Id == s.Wall.Id || SpanOf(m, other) is not { } o || In(s, o) is not { } at) continue;
+            if (other.Id == s.Wall.Id || other.Attrs["imported"] != null) continue;
+            // Parallel and near by its attributes before its section is worked out (this runs at every step of a drag).
+            var (a, b) = (Walls.Start(other), Walls.End(other));
+            var d = b - a;
+            if (d.Length < 1e-3 || Math.Abs(Vec2.Cross(s.Dir, d.Normalized())) > Parallel || Math.Abs(Vec2.Cross(s.Dir, a - s.Start)) > reach) continue;
+            if (SpanOf(m, other) is not { } o || In(s, o) is not { } at) continue;
             if (!Meet(at.Y0, at.Y1, s.YMin, s.YMax)) continue;
             yield return (o, at);
         }
