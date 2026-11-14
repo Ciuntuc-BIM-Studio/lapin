@@ -148,11 +148,15 @@ export function regionIds(takes: RegionTest, items: readonly RenderItem[], nodes
   const ids: string[] = [];
   for (const r of items) {
     const segs: Seg[] = [];
+    const hits: Seg[] = [];
     for (const it of r.plan) {
-      if (it.kind === 'label' || it.kind === 'hit' || it.kind === 'grid' || it.kind === 'reach') continue;
+      if (it.kind === 'label' || it.kind === 'grid' || it.kind === 'reach') continue;
       const ps = pairs(it.points);
-      for (let i = 0; i + 1 < ps.length + (it.closed ? 1 : 0); i++) segs.push([ps[i], ps[(i + 1) % ps.length]]);
+      const into = it.kind === 'hit' ? hits : segs;
+      for (let i = 0; i + 1 < ps.length + (it.closed ? 1 : 0); i++) into.push([ps[i], ps[(i + 1) % ps.length]]);
     }
+    // An element with nothing but its hit area (a wall's bare opening: its gap) is taken by that area's outline; one with lines of its own, by those.
+    if (!segs.length) segs.push(...hits);
     if (nodes.get(r.nodeId) && takes(segs)) ids.push(r.nodeId);
   }
   return markIds(takes, nodes, marks, ids);
