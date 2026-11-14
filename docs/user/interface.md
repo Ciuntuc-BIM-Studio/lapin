@@ -248,6 +248,14 @@ Nothing of this is stored on the element: it is read every time it is asked for.
 
 ![A room's index worked out from its storey's code and its own parameters](shots/param-scopes.webp)
 
+### The Parameters inspector
+
+Which names can an element read? **Properties → Parameters → Parameters inspector** lists every one, with its value now: the fields every element has (`{name}`, `{mark}`, `{type}`, `{class}`), its attributes (a room's `{number}`, a wall's `{height}`), what its module works out (a room's `{finish.floor}`), its quantities, its own parameters, the standard IFC properties of its class, the project's parameters by their key, and then, group by group, what it reads through its storey, building, site, the project, its type, group, assembly, host and rooms (`{storey.code}`, `{project.number}`, `{room.name}`, `{host.FireRating}`…). Type in **Search the fields** to narrow it down; hover a field for what it is. Click one to copy it, then paste it into a tag, a title block, a symbol's text or a formula.
+
+![The Parameters inspector of a room: its own fields, then its storey's and the project's](shots/fields-inspector.webp)
+
+While a formula is open, the **{ }** button beside it (**Insert field…**) opens the same list under it: a click puts the field where the cursor is, `{storey.code}` in a text with fields, the bare name (`storey.code`, *FireRating*) in an expression. A quantity is read only by formulas: in a text it goes in as `{= NetArea}`.
+
 ## Keyboard shortcuts
 
 **View → Keyboard shortcuts…** (<kbd>KS</kbd>) lists every command the keyboard can reach, by tab. Each row shows the command's shortcuts.

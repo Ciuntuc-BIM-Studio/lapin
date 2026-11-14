@@ -60,6 +60,8 @@ public sealed class CoreModule : ILapinModule
         // Classifications, keynotes and shared parameter definitions (docs/plan-user-extensibility.md §7.3).
         Classifications.Register(r);
         ParamFormulas.Register(r);
+        // Every field a tag or a formula can read on an element, for the Parameters inspector (forum topic 84).
+        FieldCatalog.Register(r);
         Images.Register(r);
         Views.Register(r);
         // The type configurators' preview, drawn as the drawings are (decision 529).

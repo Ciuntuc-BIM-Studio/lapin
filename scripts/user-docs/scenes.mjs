@@ -9655,6 +9655,29 @@ export const scenes = [
     },
   },
   {
+    // The Parameters inspector (forum topic 84): every field a room's tags and formulas can read, its own and its storey's and
+    // the project's, each with its value, opened from Properties → Parameters.
+    id: 'fields-inspector',
+    touches: ['core', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      await t.cmd('element.setParam', { ids: [storey], name: 'code', kind: 'text', value: 'K1' });
+      const room = (await t.cmd('architecture.addRoom', { storeyId: storey, x: 3, y: 4, name: 'Living', function: 'Living', number: '1' })).id;
+      await t.cmd('element.setParam', { ids: [room], name: 'Flat', kind: 'number', value: 3 });
+      await select(t, room);
+      await t.wait(700);
+      const open = t.page.locator('[data-action=fields-inspector]');
+      if (await open.count() === 0) { await t.page.locator('[data-group=params] .sect-head').click(); await t.wait(300); }
+      await open.first().click();
+      const dialog = t.page.locator('.fields-inspector-dialog');
+      await t.until(async () => (await dialog.locator('[data-field-token="storey.code"]').count()) > 0, 'the inspector lists the storey\'s code');
+      t.expect((await dialog.locator('[data-field-token="storey.code"]').innerText()).includes('K1'), 'with its value');
+      await t.shot('fields-inspector', { of: dialog, pad: 0 });
+      await t.page.keyboard.press('Escape');
+    },
+  },
+  {
     // A room stamp drawn by a symbol of one's own (decision 552, a tester's topic #37): index | name over area | finish, the
     // texts' fields read from the room, its storey's code among them; the Room tag dialog's Drawn as.
     id: 'room-tag-symbol',

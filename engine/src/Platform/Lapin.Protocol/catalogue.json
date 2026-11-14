@@ -769,6 +769,7 @@
     {"name":"drafting.tagFields","module":"drafting","args":[{"name":"element","type":"str"}]},
     {"name":"drafting.tagPreview","module":"drafting","args":[{"name":"entry","type":"dict"},{"name":"tagType","type":"str"},{"name":"type","type":"str"}]},
     {"name":"drafting.underlays3d","module":"drafting","args":[{"name":"viewId","type":"str"}]},
+    {"name":"fields.available","module":"core","args":[{"name":"id","type":"str"}]},
     {"name":"furniture.libraryItem","module":"furniture","args":[{"name":"typeId","type":"str"}]},
     {"name":"furniture.models","module":"furniture","args":[]},
     {"name":"furniture.preview","module":"furniture","args":[{"name":"kind","type":"str"},{"name":"spec","type":"dict"},{"name":"length","type":"float"}]},

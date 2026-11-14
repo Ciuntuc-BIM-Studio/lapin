@@ -20,6 +20,7 @@ Selectezi o încăpere cu un clic pe eticheta ei sau oriunde în interiorul ei. 
 
 - **Nume** și **Număr.** Încăperile noi sunt numerotate pe niveluri: 101, 102… la parter. Numele încăperii e cel al funcțiunii până îi dai unul al tău; golit, revine la funcțiune.
 - **Funcțiune**, **Departament** și **Finisajul pardoselii.** Scrii ce vrei sau alegi o valoare pe care o au deja alte încăperi.
+  Lăsat gol, **Finisajul pardoselii** unei încăperi finisate este pardoseala finisajului ei (materialul stratului de sus, arătat estompat în câmp): eticheta, formulele și documentele ei citesc `{finishFloor}` astfel până scrii unul al tău.
 - **Înălțime.** Gol înseamnă înălțimea nivelului.
 - **Culoare proprie** și **Hașură proprie** înlocuiesc schema de culori doar pentru această încăpere.
 
@@ -106,6 +107,8 @@ Un finisaj are:
 Fiecare finisaj măsoară, pe material, suprafața **brută** (conturul încăperii, nimic scăzut: aria pardoselii, perimetrul pereților înmulțit cu înălțimea fiecărei bucăți) și cea **netă** (ce e construit: ușile, ferestrele și golurile din placă scoase, glafurile și pardoseala de sub uși adăugate; partea glafurilor e în cantități, ca RevealArea), și volumul. **Interior → Extrasul finisajelor** listează fiecare încăpere finisată pe parte și material, cu totalurile pe material la sfârșit; ca orice extras, face grafice, se exportă și merge pe o planșă. În IFC un finisaj e un IfcCovering: FLOORING, CLADDING sau CEILING.
 
 Un finisaj îmbracă ce au deja pereții încăperii: dacă tipurile de pereți au tencuiala lor, dă pereților încăperii doar ce vine peste ea (vopsea, faianță), sau folosește tipuri de pereți doar cu miezul.
+
+**Câmpurile unei încăperi din finisajul ei.** O etichetă, formula unui extras sau textul unui simbol citește ce arată finisajul încăperii: `{finish.name}` numele finisajului, `{finish.floor}` stratul de sus al pardoselii (*Ceramic tiles*), `{finish.walls}` și `{finish.ceiling}` stratul dinspre încăpere. **Eticheta încăperii** le oferă ca **Finisaj**, **Finisaj: pardoseală**, **Finisaj: pereți** și **Finisaj: tavan**. Se calculează de fiecare dată, nu se păstrează: pune alt finisaj și etichetele urmează. O ușă le citește pe ale încăperii ei prin `{room.finish.floor}`.
 
 **O încăpere finisată se măsoară la finisaje.** Aria, perimetrul și volumul ei, în cantități, pe etichetă, în extrasul de încăperi, în legenda culorilor și în aria utilă a unui document, se măsoară la fața finisată a pereților: finisajul pereților de la pardoseală (faianța pe adeziv, de exemplu 1,5 cm) se scade pe fiecare latură, deci o încăpere de 4 × 5 m finisată așa are 3,97 × 4,97 m. Volumul merge până la tavanul finisat (straturile tavanului sub placa de deasupra, altfel sub înălțimea încăperii). Golurile ușilor nu sunt ale încăperii: fața finisată trece peste ele, chiar și când pardoseala trece prin uși. Măsurile la pereți rămân în cantități: aria brută a pardoselii, perimetrul și volumul brut. Schimbi finisajul sau îl scoți și aria încăperii urmează imediat, fără **Actualizează încăperile**.
 

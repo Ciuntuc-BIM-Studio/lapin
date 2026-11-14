@@ -23,6 +23,9 @@ const ROOM_FIELDS: { key: string; label: string }[] = [
   { key: 'department', label: 'Department' }, { key: 'area', label: 'Area' }, { key: 'grossArea', label: 'Gross area' },
   { key: 'perimeter', label: 'Perimeter' }, { key: 'height', label: 'Height' }, { key: 'volume', label: 'Volume' },
   { key: 'finishFloor', label: 'Floor finish' },
+  // From the room's finish, worked out on every ask (forum topic 84).
+  { key: 'finish.name', label: 'Finish' }, { key: 'finish.floor', label: 'Finish: floor' },
+  { key: 'finish.walls', label: 'Finish: walls' }, { key: 'finish.ceiling', label: 'Finish: ceiling' },
 ];
 
 const TEXT = '';
