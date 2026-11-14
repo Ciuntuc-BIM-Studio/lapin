@@ -3507,6 +3507,7 @@ export const PT: Record<string, string> = {
   "Room's number": "Número do compartimento",
   "Room's area": "Área do compartimento",
   "Tagged element's storey": "Piso do elemento etiquetado",
+  "Panel sides": "Lados dos painéis", "Next view tab": "Separador de vista seguinte", "Previous view tab": "Separador de vista anterior",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

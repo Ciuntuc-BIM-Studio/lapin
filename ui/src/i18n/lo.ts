@@ -3563,6 +3563,7 @@ export const LO: Record<string, string> = {
   "Room's number": "ເລກຫ້ອງ",
   "Room's area": "ເນື້ອທີ່ຫ້ອງ",
   "Tagged element's storey": "ຊັ້ນຂອງອົງປະກອບທີ່ຕິດປ້າຍ",
+  "Panel sides": "ດ້ານຂອງແຜງ", "Next view tab": "ແຖບມຸມມອງຖັດໄປ", "Previous view tab": "ແຖບມຸມມອງກ່ອນໜ້າ",
 };
 
 /** Phrases with a number or a name in them. */
