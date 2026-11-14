@@ -728,7 +728,8 @@ public sealed partial class Session
         var pattern = look.Hatch is { } h ? Lapin.Drawing.Hatch.HatchLibrary.Find(h, patterns) : null;
         var hatch = new List<float>();
         if (pattern == null) return (fill, []);
-        if (pattern.Solid) return ("#2b2b2b", []);
+        // A solid pattern fills the cap in the material's fill colour, else dark (forum topic 88).
+        if (pattern.Solid) return (look.Fill ?? "#2b2b2b", []);
         foreach (var f in faces)
         {
             var n = f.Normal;
