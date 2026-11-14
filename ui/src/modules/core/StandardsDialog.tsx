@@ -25,7 +25,7 @@ import { LeaderEditor, type LeaderEntry } from './LeaderEditor';
 import { BUILDUP_DEFAULTS, type BuildupEntry } from './buildupTag';
 
 type Entry = Record<string, string | number | boolean | null | undefined> & { id: string; name: string };
-type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string; sectionMarkSize?: number; sectionMarkText?: number; elevationMarkSize?: number; elevationMarkText?: number; areaRounding?: number; suppressZeros?: boolean; scales?: number[]; scaleChoices?: number[]; planScale?: number; sectionScale?: number; elevationScale?: number };
+type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string; sectionMarkSize?: number; sectionMarkText?: number; elevationMarkSize?: number; elevationMarkText?: number; areaRounding?: number; suppressZeros?: boolean; levelDecimals?: number; levelZeros?: string; scales?: number[]; scaleChoices?: number[]; planScale?: number; sectionScale?: number; elevationScale?: number };
 type Col = { key: string; label: string; title?: string; kind: 'text' | 'mm' | 'number' | 'decimals' | 'bool' | 'color' | 'choice' | 'style' | 'group'; choices?: string[] };
 type Tab = { id: 'text' | 'dim' | 'axis' | 'tag' | 'layer'; label: string; list: keyof Book; cols: Col[]; fresh: Record<string, unknown> };
 
@@ -174,6 +174,15 @@ export function StandardsDialog() {
       {/* Dimensions drop their trailing zeros (2.500 → 2.5) unless their style keeps them (forum #81). */}
       <dt title="Dimension values drop their trailing zeros (2.500 → 2.5, 3.000 → 3), unless a dimension style keeps them">Suppress trailing zeros</dt>
       <dd><input type="checkbox" data-field="suppressZeros" checked={book.suppressZeros === true} onChange={(e) => void execute('standards.options', { suppressZeros: e.target.checked })} /></dd>
+      {/* Levels (+3.00) wherever a drawing writes one: their decimals and trailing zeros (follow-up to forum #81). */}
+      <dt title="Level marks, spot levels and level dimensions, base and survey points, terrain levels: the decimals they are written with (metres)">Level decimals</dt>
+      <dd><select data-field="levelDecimals" value={String(book.levelDecimals ?? 2)} onChange={(e) => void execute('standards.options', { levelDecimals: Number(e.target.value) })}>
+        {['0', '1', '2', '3', '4'].map((v) => <option key={v} value={v}>{v === '0' ? '+3' : `+${(3).toFixed(Number(v))}`}</option>)}
+      </select></dd>
+      <dt title="Whether levels drop their trailing zeros (+3.150 → +3.15, +3.00 → +3) or keep them; as the project: as Suppress trailing zeros says">Level trailing zeros</dt>
+      <dd><select data-field="levelZeros" value={String(book.levelZeros ?? 'project')} onChange={(e) => void execute('standards.options', { levelZeros: e.target.value })}>
+        {[['project', 'as the project'], ['keep', 'keep (+3.150)'], ['suppress', 'suppress (+3.15)']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+      </select></dd>
       <dt title="How lines of true weight end and meet, on screen and on paper: round, or square caps with mitred corners">Line ends</dt>
       <dd><select value={String(book.lineCap ?? 'round')} onChange={(e) => void execute('standards.options', { lineCap: e.target.value })}>
         <option value="round">round</option><option value="square">square (mitred)</option>

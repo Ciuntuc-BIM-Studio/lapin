@@ -107,7 +107,7 @@ public static class Symbols
                     return k switch
                     {
                         "name" => (true, storey.Name),
-                        "elevation" => (true, Level(z)),
+                        "elevation" => (true, Standards.FormatLevel(z, DraftingResources.Book(m))),
                         "z" => (true, Num(z)),
                         _ => (false, null),
                     };
@@ -130,8 +130,8 @@ public static class Symbols
 
     static string Num(double v) => Math.Round(v, 6).ToString("0.######", CultureInfo.InvariantCulture);
 
-    /// <summary>A level as drawings write it: +3.00, −0.45, ±0.00.</summary>
-    public static string Level(double z) => Math.Abs(z) < 0.005 ? "±0.00" : $"{(z >= 0 ? "+" : "−")}{Math.Abs(z):0.00}".Replace(',', '.');
+    /// <summary>A level as drawings write it by default: +3.00, −0.45, ±0.00 (the project's own decimals and zeros: <see cref="Standards.FormatLevel(double, StyleBook, bool)"/>).</summary>
+    public static string Level(double z) => Standards.FormatLevel(z);
 
     /// <summary>The tokens offered to insert in a symbol's text, by group (its attributes first).</summary>
     public static List<(string Key, string Label, string Group)> FieldList(IModelView m, SymbolDef? def)
@@ -190,7 +190,7 @@ public static class Symbols
             return key switch
             {
                 "point.z" when z is { } h => (true, Num(h)),
-                "point.elevation" when z is { } h => (true, Standards.IsImperial(c.Book.Units) ? Standards.FormatLevel(h, c.Book.Units) : Level(h)),
+                "point.elevation" when z is { } h => (true, Standards.FormatLevel(h, c.Book)),
                 _ => (false, null),
             };
         };

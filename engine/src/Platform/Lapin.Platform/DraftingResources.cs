@@ -473,7 +473,7 @@ public static class DraftingResources
             return null;
         });
 
-        // The project's options: the unit the interface shows lengths in (mm, cm, m, ft-in, in), the step areas are shown to (areaRounding), how lines end on screen and paper (round, square), whether dimensions drop their trailing zeros (suppressZeros), the section and elevation markers' sizes (sectionMarkSize, sectionMarkText, elevationMarkSize, elevationMarkText; markSize and markText both).
+        // The project's options: the unit the interface shows lengths in (mm, cm, m, ft-in, in), the step areas are shown to (areaRounding), how lines end on screen and paper (round, square), whether dimensions drop their trailing zeros (suppressZeros), the decimals and trailing zeros levels are written with (levelDecimals 0–4, levelZeros project, keep or suppress), the section and elevation markers' sizes (sectionMarkSize, sectionMarkText, elevationMarkSize, elevationMarkText; markSize and markText both).
         r.Command("standards.options", "Change drafting standards", (ctx, a) =>
         {
             var raw = Standards.ToJson(Book(ctx.Model));
@@ -487,6 +487,17 @@ public static class DraftingResources
             if (a.ContainsKey("lineCap")) raw["lineCap"] = (string?)a["lineCap"] is { } c && Standards.LineCaps.Contains(c) ? c : throw new CommandException("Lines end round or square.");
             // Dimensions drop their trailing zeros (2.5, not 2.500), unless their style keeps them (forum #81).
             if (a.ContainsKey("suppressZeros")) raw["suppressZeros"] = a["suppressZeros"] is JsonValue zv && zv.TryGetValue<bool>(out var z) ? z : throw new CommandException("Trailing zeros are suppressed or not (true or false).");
+            // Levels (+3.00): their decimals and trailing zeros, wherever a drawing writes one (follow-up to forum #81); null: the defaults.
+            if (a.ContainsKey("levelDecimals"))
+            {
+                if (a["levelDecimals"] is null) raw.Remove("levelDecimals");
+                else raw["levelDecimals"] = Standards.LevelDecimalsOf(a["levelDecimals"]) ?? throw new CommandException($"Levels are written with 0 to {Standards.MaxLevelDecimals} decimals.");
+            }
+            if (a.ContainsKey("levelZeros"))
+            {
+                if (a["levelZeros"] is null) raw.Remove("levelZeros");
+                else raw["levelZeros"] = (string?)a["levelZeros"] is { } lz && Standards.ZeroChoices.Contains(lz) ? lz : throw new CommandException("A level's trailing zeros are as the project's, kept or suppressed (project, keep, suppress).");
+            }
             // The section and elevation markers' symbol size and text height (paper mm, decision 455); null: the defaults.
             void Mark(string key, double min, double max, string what)
             {
