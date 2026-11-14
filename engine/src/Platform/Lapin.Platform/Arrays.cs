@@ -49,8 +49,8 @@ public interface IArrayPaths
 }
 
 /// <summary>
-/// An array that keeps its arrangement (decision 481): Modify → Array in a row, round a centre or along a path makes a
-/// <c>LapinArray</c> beside its copies, holding the rule (the count, the step or the extent filled, the angle and its
+/// An array that keeps its arrangement (decision 481): Modify → Array in a row, in a grid (columns × rows × levels, forum 90),
+/// round a centre or along a path makes a <c>LapinArray</c> beside its copies, holding the rule (the count, the step or the extent filled, the angle and its
 /// centre, the path with its offset, its ends and the copies' turn) and its items (the original first, then each copy:
 /// the ids it is and where the rule put it). Changing the rule (array.update) places the items again: those that stay
 /// are moved by the difference, keeping their ids (and whatever was done to one of them since, a copy moved by hand
@@ -93,7 +93,9 @@ public static class Arrays
         return new Vec2(p.X * c - p.Y * s, p.X * s + p.Y * c);
     }
 
-    public sealed record Item(List<string> Ids, Pose At);
+    /// <summary>An item: the ids it is, where the rule put it, and in a grid its cell (column, row, level), which keeps its ids
+    /// when the columns, rows or levels change.</summary>
+    public sealed record Item(List<string> Ids, Pose At, int[]? Cell = null);
 
     public static bool Is(Entity? e) => e?.Class == Class;
 
@@ -101,10 +103,16 @@ public static class Arrays
 
     public static List<Item> Items(Entity array) =>
         (array.Attrs["items"] as JsonArray)?.OfType<JsonObject>()
-            .Select(o => new Item((o["ids"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToList() ?? [], Pose.Of(o["at"]))).ToList() ?? [];
+            .Select(o => new Item((o["ids"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToList() ?? [], Pose.Of(o["at"]),
+                o["cell"] is JsonArray { Count: 3 } c ? c.Select(x => (int)Math.Round(Json.Number(x) ?? 0)).ToArray() : null)).ToList() ?? [];
 
     static JsonArray ItemsJson(IEnumerable<Item> items) =>
-        new(items.Select(i => (JsonNode)new JsonObject { ["ids"] = new JsonArray(i.Ids.Select(x => (JsonNode)x).ToArray()), ["at"] = i.At.ToJson() }).ToArray());
+        new(items.Select(i =>
+        {
+            var o = new JsonObject { ["ids"] = new JsonArray(i.Ids.Select(x => (JsonNode)x).ToArray()), ["at"] = i.At.ToJson() };
+            if (i.Cell is { } c) o["cell"] = new JsonArray(c.Select(x => (JsonNode)x).ToArray());
+            return (JsonNode)o;
+        }).ToArray());
 
     /// <summary>The array an element (or group) is an item of, and which item (0 the original); null when it is in none.</summary>
     public static (Entity Array, int Index)? Of(IModelView m, string id)
@@ -122,7 +130,8 @@ public static class Arrays
         r.Class(new(Class, "Array", [], "#8a94a6", Kind: "resource", Template: false));
         r.Service<IDrivenElements>(new Watch());
 
-        // An array kept as an arrangement (docs: Modify → Array): {ids, count, step} in a row, {kind: "polar", count, angle, center}
+        // An array kept as an arrangement (docs: Modify → Array): {ids, count, step} in a row, {kind: "grid", count (columns),
+        // step, rows, rowStep, levels, levelStep} in a grid, {kind: "polar", count, angle, center}
         // round a centre, or {kind: "path", along (an element) | points, count | spacing, start, end, offset, orient, flip, base}.
         r.Command("array.update", "Change array", (ctx, a) =>
         {
@@ -198,7 +207,7 @@ public static class Arrays
             ? Is(e) ? e : Of(m, id)?.Array ?? throw new CommandException($"„{e.Name}” is not in an array.")
             : throw new CommandException("Which array?");
 
-    static readonly string[] RuleKeys = ["kind", "count", "step", "fit", "angle", "center", "along", "points", "spacing", "start", "end", "offset", "orient", "flip", "base", "refAngle"];
+    static readonly string[] RuleKeys = ["kind", "count", "step", "fit", "angle", "center", "along", "points", "spacing", "start", "end", "offset", "orient", "flip", "base", "refAngle", "rows", "rowStep", "levels", "levelStep"];
 
     static JsonObject RuleAttrs(JsonObject a)
     {
@@ -237,13 +246,17 @@ public static class Arrays
         public Vec2 Base;
         public double? RefAngle;
         public bool HasBase;
+        /// <summary>A grid: its rows and levels (the columns are <see cref="Count"/>), the steps between them, and each item's cell.</summary>
+        public int Rows = 1, Levels = 1;
+        public Vec3 RowStep, LevelStep;
+        public List<int[]>? Cells;
         IModelView? _m;
         IServices? _services;
 
         public static Rule Of(IModelView m, IServices? services, JsonObject a)
         {
             var r = new Rule { _m = m, _services = services, Kind = (string?)a["kind"] ?? "row" };
-            if (r.Kind is not ("row" or "polar" or "path")) throw new CommandException($"„{r.Kind}” is not a row, a polar array or one along a path.");
+            if (r.Kind is not ("row" or "grid" or "polar" or "path")) throw new CommandException($"„{r.Kind}” is not a row, a grid, a polar array or one along a path.");
             r.Count = (int)Math.Round(Json.Number(a["count"]) ?? 0);
             switch (r.Kind)
             {
@@ -254,6 +267,22 @@ public static class Arrays
                     r.Step = r.Fit is { } fit ? fit * (1.0 / (r.Count - 1)) : V3(a["step"]) ?? default;
                     if (!double.IsFinite(r.Step.X + r.Step.Y + r.Step.Z) || Math.Abs(r.Step.X) + Math.Abs(r.Step.Y) + Math.Abs(r.Step.Z) < 1e-9)
                         throw new CommandException("An array's step cannot be nothing.");
+                    break;
+                }
+                case "grid":
+                {
+                    r.Rows = (int)Math.Round(Json.Number(a["rows"]) ?? 1);
+                    r.Levels = (int)Math.Round(Json.Number(a["levels"]) ?? 1);
+                    if (r.Count < 1 || r.Rows < 1 || r.Levels < 1) throw new CommandException("A grid has at least one column, one row and one level.");
+                    var total = (long)r.Count * r.Rows * r.Levels;
+                    if (total < 2 || total > Most) throw new CommandException($"An array has 2 to {Most} items, the first among them: {r.Count} × {r.Rows} × {r.Levels} is {total}.");
+                    r.Step = V3(a["step"]) ?? default;
+                    r.RowStep = V3(a["rowStep"]) ?? default;
+                    r.LevelStep = V3(a["levelStep"]) ?? default;
+                    static bool Nothing(Vec3 v) => !double.IsFinite(v.X + v.Y + v.Z) || Math.Abs(v.X) + Math.Abs(v.Y) + Math.Abs(v.Z) < 1e-9;
+                    if (r.Count > 1 && Nothing(r.Step)) throw new CommandException("A grid's step between columns cannot be nothing.");
+                    if (r.Rows > 1 && Nothing(r.RowStep)) throw new CommandException("A grid's step between rows cannot be nothing.");
+                    if (r.Levels > 1 && Nothing(r.LevelStep)) throw new CommandException("A grid's step between levels cannot be nothing.");
                     break;
                 }
                 case "polar":
@@ -309,6 +338,19 @@ public static class Arrays
             {
                 case "row":
                     for (var i = 0; i < Count; i++) o.Add(new Pose(Step.X * i, Step.Y * i, 0, Step.Z * i));
+                    Base = HasBase ? Base : default;
+                    return o;
+                case "grid":
+                    // Column by column along a row, row by row, then level by level: the original the first cell.
+                    Cells = [];
+                    for (var l = 0; l < Levels; l++)
+                        for (var r = 0; r < Rows; r++)
+                            for (var c = 0; c < Count; c++)
+                            {
+                                var d = Step * c + RowStep * r + LevelStep * l;
+                                o.Add(new Pose(d.X, d.Y, 0, d.Z));
+                                Cells.Add([c, r, l]);
+                            }
                     Base = HasBase ? Base : default;
                     return o;
                 case "polar":
@@ -424,33 +466,51 @@ public static class Arrays
         var items = Items(array).Select(i => i with { Ids = i.Ids.Where(id => ctx.Model.Get(id) != null).ToList() }).ToList();
         var (moved, added, removed) = (0, 0, 0);
         var carried = new List<ElementTransform.Result>();
-        // Past the count: deleted (one removed by hand stays a gap).
-        if (items.Count > poses.Count)
+        // Which item stands for each place: in a grid the item of the same cell (so a new column count keeps every row's ids),
+        // otherwise the item of the same index; null where a copy is to be made.
+        var cells = rule.Cells;
+        var slots = new List<Item?>();
+        List<Item> surplusItems;
+        if (cells != null && items.All(i => i.Cell != null))
         {
-            var surplus = items.Skip(poses.Count).SelectMany(i => i.Ids).Where(id => ctx.Model.Get(id) != null).ToList();
-            items = items.Take(poses.Count).ToList();
-            if (surplus.Count > 0) { Delete(ctx, surplus); removed = surplus.Count; }
+            static string K(int[] c) => $"{c[0]},{c[1]},{c[2]}";
+            var byCell = new Dictionary<string, Item>();
+            var others = new List<Item>();
+            foreach (var i in items) if (!byCell.TryAdd(K(i.Cell!), i)) others.Add(i);
+            foreach (var c in cells) slots.Add(byCell.Remove(K(c), out var it) ? it : null);
+            surplusItems = [.. byCell.Values, .. others];
         }
-        for (var i = 0; i < items.Count; i++)
+        else
         {
-            var item = items[i];
-            if (item.Ids.Count == 0 || item.At.Same(poses[i])) { items[i] = item with { At = poses[i] }; continue; }
+            slots.AddRange(items.Take(poses.Count));
+            while (slots.Count < poses.Count) slots.Add(null);
+            surplusItems = items.Skip(poses.Count).ToList();
+        }
+        // Past the count: deleted (one removed by hand stays a gap).
+        var surplus = surplusItems.SelectMany(i => i.Ids).Where(id => ctx.Model.Get(id) != null).ToList();
+        if (surplus.Count > 0) { Delete(ctx, surplus); removed = surplus.Count; }
+        for (var i = 0; i < slots.Count; i++)
+        {
+            if (slots[i] is not { } item) continue;
+            if (item.Ids.Count == 0 || item.At.Same(poses[i])) { slots[i] = item with { At = poses[i] }; continue; }
             // What is pinned stands where it is (decision 449): it keeps its place, and where the rule last put it.
             if (item.Ids.Any(id => Pins.Is(ctx.Model.Get(id)) || Groups.Expand(ctx.Model, [id]).Elements.Any(x => Pins.Is(ctx.Model.Get(x))))) continue;
             Carry(ctx, item.Ids, item.At, poses[i], copy: false, carried);
-            items[i] = item with { At = poses[i] };
+            slots[i] = item with { At = poses[i] };
             moved++;
         }
-        if (poses.Count > items.Count)
+        if (slots.Any(x => x == null))
         {
-            var source = items.FirstOrDefault(i => i.Ids.Count > 0) ?? throw new CommandException("Nothing of the array is left to copy.");
-            for (var i = items.Count; i < poses.Count; i++)
+            var source = slots.FirstOrDefault(i => i is { Ids.Count: > 0 }) ?? throw new CommandException("Nothing of the array is left to copy.");
+            for (var i = 0; i < slots.Count; i++)
             {
+                if (slots[i] != null) continue;
                 var made = Carry(ctx, source.Ids, source.At, poses[i], copy: true, carried);
-                items.Add(new Item(made, poses[i]));
+                slots[i] = new Item(made, poses[i]);
                 added++;
             }
         }
+        items = slots.Select((x, i) => x! with { Cell = cells?[i] }).ToList();
         // Walls, beams and strip footings carried join what they now meet outside the array; its items keep their joins
         // among them as they were, so each stays where the rule puts it, and none joins the path it follows (forum 47, decision 531).
         if (carried.Count > 0)
@@ -461,7 +521,8 @@ public static class Arrays
         }
         attrs["items"] = ItemsJson(items);
         // A count follows from a spacing along a path when none was given: worked out each time, not kept.
-        if (!(rule.Kind == "path" && rule.Spacing != null && rule.Count < 2)) attrs["count"] = poses.Count;
+        // A grid's count is its columns, kept as given.
+        if (!(rule.Kind == "path" && rule.Spacing != null && rule.Count < 2) && rule.Kind != "grid") attrs["count"] = poses.Count;
         ctx.Replace(ctx.Model.Get(array.Id)!.With(attrs: attrs));
         return new JsonObject { ["count"] = poses.Count, ["moved"] = moved, ["added"] = added, ["removed"] = removed };
     }

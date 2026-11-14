@@ -338,7 +338,8 @@ public sealed class CoreModule : ILapinModule
 
         // Copies in a row or round a centre (decision 448), or along a path, kept as an arrangement (decision 481, Arrays):
         // {ids, count (with the first), step: [x, y, z] | fit: [x, y, z]} or {kind: "polar", count, angle filled (degrees,
-        // 360 a full turn), center: [x, y]} or {kind: "path", along | points, count | spacing, start, end, offset, orient,
+        // 360 a full turn), center: [x, y]} or {kind: "grid", count (the columns), step, rows, rowStep, levels, levelStep;
+        // forum 90} or {kind: "path", along | points, count | spacing, start, end, offset, orient,
         // flip, base}; each copy as element.transform copies, one undo step. Returns the copies and the array.
         r.Command("element.array", "Array", (ctx, a) => Arrays.Make(ctx, a));
 

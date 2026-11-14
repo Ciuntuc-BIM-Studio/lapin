@@ -658,10 +658,14 @@ const array: ToolDef = {
     const { solids, others } = solidsAndOthers();
     if (!solids.length && !others.length) { notify('Select what to array first, then Array.'); return; }
     void (async () => {
-      const r = await ask('Array in a row', [numberField('count', 'Copies (with the first)', 3), lengthField('dx', 'Step x', 1), lengthField('dy', 'Step y', 0), lengthField('dz', 'Step z', 0)]);
+      // Rows past one make it a grid (forum 90): the copies are then its columns.
+      const r = await ask('Array in a row or a grid', [numberField('count', 'Copies (with the first; in a grid, the columns)', 3), lengthField('dx', 'Step x', 1), lengthField('dy', 'Step y', 0), lengthField('dz', 'Step z', 0),
+        numberField('rows', 'Rows (in a grid)', 1), lengthField('rx', 'Row step x (in a grid)', 0), lengthField('ry', 'Row step y (in a grid)', 1)]);
       if (!r) return;
-      if (solids.length) await execute('studio.addFeature', { ids: solids, feature: { op: 'array', count: r.count, step: [r.dx, r.dy, r.dz] } });
-      if (others.length) await execute('element.array', { ids: others, count: r.count, step: [r.dx, r.dy, r.dz] });
+      const rows = Math.max(1, Math.round(Number(r.rows)));
+      const step = [r.dx, r.dy, r.dz], rowStep = [r.rx, r.ry, 0];
+      if (solids.length) await execute('studio.addFeature', { ids: solids, feature: { op: 'array', count: r.count, step, ...(rows > 1 ? { rows, rowStep } : {}) } });
+      if (others.length) await execute('element.array', rows > 1 ? { ids: others, kind: 'grid', count: r.count, step, rows, rowStep } : { ids: others, count: r.count, step });
     })();
   },
 };

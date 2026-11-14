@@ -56,7 +56,11 @@ An apartment type has a fixed size: it does not stretch to fit a wider or narrow
 
 ## Arrays
 
-**Modify → Array** makes copies of the selection, any element or group, in one of three ways. **In a row** gives a step along x, y and z. **Round a centre** gives the angle the copies fill and the centre (360° shares a full turn out). **Along a path** puts them along a line you click.
+**Modify → Array** makes copies of the selection, any element or group, in one of four ways. **In a row** gives a step along x, y and z. **In a grid** gives columns × rows (and levels, if you want more than one): the step x, y, z goes from one column to the next, the row step from one row to the next, and the level step lifts each level. **Round a centre** gives the angle the copies fill and the centre (360° shares a full turn out). **Along a path** puts them along a line you click.
+
+For a row or a grid, **Step given by** chooses how the step comes: by typing it, or by **clicking two points in a plan**. Clicking: give the first point, then the second, the step to the next copy (in a grid, to the next column). Type a distance instead of the second click, 100 mm say, and it goes that far in the direction of the pointer. In a grid with more than one row, a third point gives the step to the next row, from the first point. While you move the pointer, the selection is drawn at every place the copies will take.
+
+![A grid of columns, one copy selected](shots/array-grid.webp)
 
 For a path, the dialog asks for these:
 
@@ -69,7 +73,7 @@ Then click the path, in a plan. It can be a line, a polyline, an arc or a circle
 
 ![Columns along an arc, one selected with its Array section](shots/array-path.webp)
 
-An array stays an arrangement. Select any copy and the properties show an **Array** section: its kind, the number of copies and its rule (the step, the angle and centre, or the spacing, start, end, offset, orientation and the path's name). Change the count and copies are added or removed; change the spacing or the offset and the copies move. The copies keep their ids, so what refers to them keeps working. Edit the path, and the copies follow it. A copy you moved by hand keeps its offset from its place when the rule changes, and a copy you deleted stays a gap. **Select the array** selects every copy, and **Explode** ends the arrangement: the copies stay as plain elements.
+An array stays an arrangement. Select any copy and the properties show an **Array** section: its kind, the number of copies and its rule (the step, a grid's columns, rows, levels and their steps, the angle and centre, or the spacing, start, end, offset, orientation and the path's name). Change the count and copies are added or removed (in a grid, a column more adds one to every row, and each copy keeps its place); change the spacing or the offset and the copies move. The copies keep their ids, so what refers to them keeps working. Edit the path, and the copies follow it. A copy you moved by hand keeps its offset from its place when the rule changes, and a copy you deleted stays a gap. **Select the array** selects every copy, and **Explode** ends the arrangement: the copies stay as plain elements.
 
 ## Drilling into assemblies
 

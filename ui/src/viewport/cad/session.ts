@@ -385,12 +385,12 @@ function selectPolygon(windowMode: boolean, back: () => Step): Step {
 }
 
 /** What the ids look like in the view: every shape of each (an element's outline in plan), else a drafted shape's first. */
-const shapesOf = (ids: string[]): Shape[] => {
+export const shapesOf = (ids: string[]): Shape[] => {
   const h = useCad.getState().host;
   if (!h) return [];
   return ids.flatMap((id) => { const o = h.outlinesOf?.(id); if (o?.length) return o; const s = h.shapeOf(id); return s ? [s] : []; });
 };
-const moved = (s: Shape, d: Vec2): Shape => {
+export const moved = (s: Shape, d: Vec2): Shape => {
   const m = (p: Vec2) => ({ x: p.x + d.x, y: p.y + d.y });
   switch (s.type) {
     case 'line': return { ...s, a: m(s.a), b: m(s.b) };

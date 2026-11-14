@@ -17,7 +17,8 @@ namespace Lapin.Studio;
 /// <item><c>chamfer</c> {a, b, distance} and <c>fillet</c> {a, b, radius}: an edge bevelled or rounded (a concave one filled);</item>
 /// <item><c>shell</c> {thickness, open}: hollowed, the walls that thick, open at the ends named;</item>
 /// <item><c>slice</c> {point, normal, keep}: cut by a plane, the side behind it kept (<c>back</c>) or in front (<c>front</c>);</item>
-/// <item><c>array</c> {kind: linear, count, step} or {kind: polar, count, angle, centre, axis}: copies in a row or round an axis;</item>
+/// <item><c>array</c> {kind: linear, count, step, rows?, rowStep?, levels?, levelStep?} or {kind: polar, count, angle, centre, axis}:
+/// copies in a row (or a grid: count columns × rows × levels) or round an axis;</item>
 /// <item><c>move</c> {by}, <c>rotate</c> {centre, axis, angle}, <c>mirror</c> {point, normal}: the body placed in 3D.</item>
 /// </list>
 /// </summary>
@@ -38,7 +39,9 @@ public static class Features
             "fillet" => $"Fillet r {N(Json.Number(f["radius"]))} m",
             "shell" => $"Shell {N(Json.Number(f["thickness"]))} m",
             "slice" => "Slice",
-            "array" => (string?)f["kind"] == "polar" ? $"Polar array × {N(Json.Number(f["count"]))}" : $"Array × {N(Json.Number(f["count"]))}",
+            "array" => (string?)f["kind"] == "polar" ? $"Polar array × {N(Json.Number(f["count"]))}"
+                : GridOf(f) is (var rows, var levels) && rows * levels > 1 ? $"Array {N(Json.Number(f["count"]))} × {rows}" + (levels > 1 ? $" × {levels}" : "")
+                : $"Array × {N(Json.Number(f["count"]))}",
             "move" => "Move",
             "rotate" => $"Rotate {N(Json.Number(f["angle"]))}°",
             "mirror" => "Mirror",
@@ -131,6 +134,32 @@ public static class Features
             case "array":
             {
                 var count = (int)Math.Round(Json.Number(f["count"]) ?? 1);
+                var polar = (string?)f["kind"] == "polar";
+                var (rows, levels) = polar ? (1, 1) : GridOf(f);
+                if (rows > 1 || levels > 1)
+                {
+                    // A grid: count columns along the step, rows along the row step, levels along the level step.
+                    if (count < 1 || rows < 1 || levels < 1) return (null, "a grid has at least one column, one row and one level.");
+                    if ((long)count * rows * levels > 500) return (null, "an array keeps to 500 copies.");
+                    var (s1, s2, s3) = (P(f["step"]) ?? new Vec3(1, 0, 0), P(f["rowStep"]) ?? new Vec3(0, 1, 0), P(f["levelStep"]) ?? new Vec3(0, 0, 1));
+                    var grid = new Solid?[levels, rows, count];
+                    var all = new List<Solid>();
+                    for (var l = 0; l < levels; l++)
+                        for (var r = 0; r < rows; r++)
+                            for (var k = 0; k < count; k++)
+                            {
+                                var by = s1 * k + s2 * r + s3 * l;
+                                var s = k + r + l == 0 ? cur : SolidBuilder.Translate(cur, by);
+                                // Face to face with its neighbours before it (in the row, the row, the level), sunk a hair so they join.
+                                if (k > 0) s = Flush.Sunk(s, grid[l, r, k - 1]!);
+                                if (r > 0) s = Flush.Sunk(s, grid[l, r - 1, k]!);
+                                if (l > 0) s = Flush.Sunk(s, grid[l - 1, r, k]!);
+                                grid[l, r, k] = s;
+                                all.Add(s);
+                            }
+                    if (c.Booleans == null) return (null, "it needs the boolean library (manifold), missing here.");
+                    return (c.Booleans.Union(all, cur.Tag), null);
+                }
                 if (count < 2) return (null, null);
                 if (count > 500) return (null, "an array keeps to 500 copies.");
                 var copies = new List<Solid> { cur };
@@ -181,6 +210,10 @@ public static class Features
         }
         return (null, $"„{(string?)f["op"]}” is not a step Studio knows.");
     }
+
+    /// <summary>A linear array's rows and levels (1 each in a plain row).</summary>
+    static (int Rows, int Levels) GridOf(JsonObject f) =>
+        ((int)Math.Round(Json.Number(f["rows"]) ?? 1), (int)Math.Round(Json.Number(f["levels"]) ?? 1));
 
     public static Vec3 Turn(Vec3 p, Vec3 c, Vec3 d, double t)
     {
@@ -299,7 +332,7 @@ public static class Features
                 foreach (var pair in edges.OfType<JsonArray>())
                     for (var j = 0; j < pair.Count; j++)
                         if (P(pair[j]) is { } p) { var q = t.Point(p.Xy); pair[j] = J(new Vec3(q.X, q.Y, p.Z)); }
-            foreach (var key in new[] { "normal", "step", "axis", "by" })
+            foreach (var key in new[] { "normal", "step", "rowStep", "levelStep", "axis", "by" })
                 if (P(g[key]) is { } d) { var q = t.Dir(d.Xy); g[key] = J(new Vec3(q.X, q.Y, d.Z)); }
             // A mirror in plan turns the other way round an upright axis.
             if (t.Mirrored && Json.Number(g["angle"]) is { } ang && (string?)g["op"] is "rotate" or "array") g["angle"] = -ang;

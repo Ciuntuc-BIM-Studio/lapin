@@ -358,6 +358,25 @@ public class StudioEditorTests
     }
 
     [Fact]
+    public void A_solid_repeated_in_a_grid_of_columns_rows_and_levels()
+    {
+        var (f, _, _, _) = Cube();
+        // 3 columns 2 m apart × 2 rows 2 m apart: six posts.
+        var post = Id(f.Run("studio.primitive", new JsonObject { ["shape"] = "box", ["at"] = J(20, 0), ["width"] = 0.5, ["length"] = 0.5, ["height"] = 1 }));
+        var x0 = f.Bounds(post).Min.X;
+        var y0 = f.Bounds(post).Min.Y;
+        f.Run("studio.addFeature", new JsonObject { ["id"] = post, ["feature"] = new JsonObject { ["op"] = "array", ["count"] = 3, ["step"] = J3(2, 0, 0), ["rows"] = 2, ["rowStep"] = J3(0, 2, 0) } });
+        Assert.Equal(1.5, Vol(f, post), 6);
+        Assert.Equal(x0 + 4.5, f.Bounds(post).Max.X, 6);
+        Assert.Equal(y0 + 2.5, f.Bounds(post).Max.Y, 6);
+        // Face to face, two levels: blocks set on each other join into one 1 × 1 × 2 body.
+        var block = Id(f.Run("studio.primitive", new JsonObject { ["shape"] = "box", ["at"] = J(40, 0), ["width"] = 0.5, ["length"] = 0.5, ["height"] = 1 }));
+        f.Run("studio.addFeature", new JsonObject { ["id"] = block, ["feature"] = new JsonObject { ["op"] = "array", ["count"] = 2, ["step"] = J3(0.5, 0, 0), ["rows"] = 2, ["rowStep"] = J3(0, 0.5, 0), ["levels"] = 2, ["levelStep"] = J3(0, 0, 1) } });
+        Assert.Equal(2, Vol(f, block), 4);
+        Assert.Equal(2, f.Bounds(block).Max.Z - f.Bounds(block).Min.Z, 6);
+    }
+
+    [Fact]
     public void A_solid_turned_mirrored_and_moved_in_3D_and_one_on_a_section_moved_in_plan()
     {
         var (f, _, _, cube) = Cube();

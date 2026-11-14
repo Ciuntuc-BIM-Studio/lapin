@@ -8699,6 +8699,52 @@ export const scenes = [
     },
   },
   {
+    // A grid array (forum 90): columns × rows of columns, the steps clicked in the plan (ARRAYSTEP), then more columns in the Array section.
+    id: 'array-grid',
+    touches: ['structure'],
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const storey = await t.storey();
+      const type = await t.cmd('structure.createColumnType', { section: 'HEA 200' });
+      const column = (await t.cmd('structure.addColumn', { storeyId: storey, typeId: type.id, x: 0, y: 0 })).id;
+      await t.ui({ view: 'plan', keyPlan: false, selection: column, selected: [column] });
+      await t.wait(1000);
+      const columns = async () => (await t.nodes()).filter((x) => x.type === 'IfcColumn');
+      // Modify → Array → In a grid: four columns, three rows, the steps given by clicking.
+      await t.tool('modify.array');
+      t.expect(await page.locator('.ask-box').count() === 1, 'Array asks how');
+      await page.locator('.ask-box select').nth(0).selectOption('grid');
+      await page.locator('.ask-box select').nth(1).selectOption('click');
+      const inputs = page.locator('.ask-box input');
+      await inputs.nth(0).fill('4');
+      await inputs.nth(11).fill('3');
+      await page.locator('.ask-box button.primary').click();
+      await t.wait(600);
+      // The first point, the next column 3 m east, the next row 2.5 m north: the ghost follows the pointer.
+      for (const [x, y] of [[0, 0], [3, 0], [0, 2.5]]) {
+        const [px, py] = await t.planPoint(x, y);
+        await page.mouse.move(px, py, { steps: 4 });
+        await t.wait(400);
+        await page.mouse.click(px, py);
+        await t.wait(400);
+      }
+      await t.until(async () => (await columns()).length === 12, 'twelve columns in a grid');
+      // A copy selected shows the grid: five columns instead of four, every row follows.
+      const copy = (await columns()).find((x) => x.id !== column);
+      await t.ui({ selection: copy.id, selected: [copy.id] });
+      await t.wait(800);
+      t.expect(await page.locator('[data-testid=array-title]').count() === 1, 'a copy shows its Array section');
+      await page.locator('aside.props dl.fields dt:text-is("Columns") + dd input').fill('5');
+      await page.keyboard.press('Enter');
+      await t.until(async () => (await columns()).length === 15, 'fifteen columns after a column more');
+      await t.fit();
+      await t.ui({ selection: copy.id, selected: [copy.id] });
+      await t.wait(800);
+      await t.shot('array-grid', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
     // Studio as a geometry editor (docs/plan-studio-editor.md): push/pull and a fillet in 3D, a pipe's steps, a rising handrail.
     id: 'studio-editor',
     async run(t) {

@@ -1,6 +1,7 @@
 /**
  * An array in the inspector (decision 481): an arrangement kept beside its copies. Any copy shows its rule (the count,
- * the step, the angle, the path…) to change, and selecting the array or exploding it into plain copies.
+ * the step, a grid's columns, rows and levels, the angle, the path…) to change, and selecting the array or exploding it
+ * into plain copies.
  */
 
 import { Blocks, MousePointer2 } from 'lucide-react';
@@ -45,9 +46,22 @@ export function ArraySection({ node }: { node: NodeDto }) {
       <p className="pad" data-testid="array-title"><span>Array</span> <span data-no-i18n>„{arr.name}”</span>{index >= 0 && <> · <span>{`item ${index + 1} of ${items.length}`}</span></>}</p>
       <dl className="fields">
         <dt>Kind</dt>
-        <dd className="ro">{kind === 'path' ? 'Along a path' : kind === 'polar' ? 'Round a centre' : 'In a row'}</dd>
-        <dt>Copies</dt>
-        <dd><NumberField value={live} onCommit={(n) => { if (n != null && n >= 1) set({ count: Math.round(n) }); }} /></dd>
+        <dd className="ro">{kind === 'path' ? 'Along a path' : kind === 'polar' ? 'Round a centre' : kind === 'grid' ? 'In a grid' : 'In a row'}</dd>
+        {kind !== 'grid' && <>
+          <dt>Copies</dt>
+          <dd><NumberField value={live} onCommit={(n) => { if (n != null && n >= 1) set({ count: Math.round(n) }); }} /></dd>
+        </>}
+        {kind === 'grid' && <>
+          <dt>Columns</dt><dd><NumberField value={num('count') ?? 1} onCommit={(n) => { if (n != null && n >= 1) set({ count: Math.round(n) }); }} /></dd>
+          <dt>Rows</dt><dd><NumberField value={num('rows') ?? 1} onCommit={(n) => { if (n != null && n >= 1) set({ rows: Math.round(n) }); }} /></dd>
+          <dt>Levels</dt><dd><NumberField value={num('levels') ?? 1} onCommit={(n) => { if (n != null && n >= 1) set({ levels: Math.round(n), ...(n > 1 && !Array.isArray(p.levelStep) ? { levelStep: [0, 0, 3] } : {}) }); }} /></dd>
+          <dt>Step x</dt><dd><LengthCell metres={vec('step', 0)} onCommit={(m) => setVec('step', 0, m)} /></dd>
+          <dt>Step y</dt><dd><LengthCell metres={vec('step', 1)} onCommit={(m) => setVec('step', 1, m)} /></dd>
+          <dt>Step z</dt><dd><LengthCell metres={vec('step', 2)} onCommit={(m) => setVec('step', 2, m)} /></dd>
+          <dt>Row step x</dt><dd><LengthCell metres={vec('rowStep', 0)} onCommit={(m) => setVec('rowStep', 0, m)} /></dd>
+          <dt>Row step y</dt><dd><LengthCell metres={vec('rowStep', 1)} onCommit={(m) => setVec('rowStep', 1, m)} /></dd>
+          <dt>Level step z</dt><dd><LengthCell metres={vec('levelStep', 2)} onCommit={(m) => setVec('levelStep', 2, m)} /></dd>
+        </>}
         {kind === 'row' && <>
           <dt>Step x</dt><dd><LengthCell metres={vec('step', 0)} onCommit={(m) => setVec('step', 0, m)} /></dd>
           <dt>Step y</dt><dd><LengthCell metres={vec('step', 1)} onCommit={(m) => setVec('step', 1, m)} /></dd>

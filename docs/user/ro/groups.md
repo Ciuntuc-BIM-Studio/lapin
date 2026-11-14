@@ -56,7 +56,11 @@ Un tip de apartament are dimensiuni fixe: nu se întinde după un loc mai lat sa
 
 ## Repetări
 
-**Modificare → Repetare** face copii ale selecției, orice element sau grup, în trei feluri. **Pe un șir** cere un pas pe x, y și z. **În jurul unui centru** cere unghiul pe care îl umplu copiile și centrul (360° le împarte pe un cerc întreg). **Pe un traseu** le pune de-a lungul unei linii pe care dai clic.
+**Modificare → Repetare** face copii ale selecției, orice element sau grup, în patru feluri. **Pe un șir** cere un pas pe x, y și z. **În rețea** cere coloane × rânduri (și niveluri, dacă vrei mai multe): pasul x, y, z merge de la o coloană la următoarea, pasul între rânduri de la un rând la următorul, iar pasul între niveluri ridică fiecare nivel. **În jurul unui centru** cere unghiul pe care îl umplu copiile și centrul (360° le împarte pe un cerc întreg). **Pe un traseu** le pune de-a lungul unei linii pe care dai clic.
+
+Pentru un șir sau o rețea, **Pasul dat prin** alege cum vine pasul: tastat sau prin **clic pe două puncte într-un plan**. Cu clic: dai primul punct, apoi al doilea, pasul până la copia următoare (în rețea, până la coloana următoare). Tastează o distanță în locul celui de-al doilea clic, de pildă 100 mm, și pasul merge atât pe direcția cursorului. Într-o rețea cu mai multe rânduri, un al treilea punct dă pasul până la rândul următor, pornind din primul punct. Cât timp muți cursorul, selecția e desenată în fiecare loc pe care îl vor lua copiile.
+
+![O rețea de stâlpi, o copie selectată](shots/array-grid.webp)
 
 Pentru un traseu, fereastra cere:
 
@@ -69,7 +73,7 @@ Apoi dai clic pe traseu, într-un plan. Poate fi o linie, o polilinie, un arc sa
 
 ![Stâlpi de-a lungul unui arc, unul selectat, cu secțiunea Repetare](shots/array-path.webp)
 
-O repetare rămâne o aranjare. Selectează orice copie și proprietățile arată o secțiune **Repetare**: felul ei, numărul de copii și regula (pasul, unghiul și centrul, sau pasul, începutul, sfârșitul, decalajul, orientarea și numele traseului). Schimbă numărul și se adaugă sau se șterg copii; schimbă pasul sau decalajul și copiile se mută. Copiile își păstrează identificatorii, deci ce se referă la ele continuă să funcționeze. Modifică traseul și copiile îl urmează. O copie mutată de mână își păstrează decalajul față de locul ei când regula se schimbă, iar una ștearsă rămâne un gol. **Selectează matricea** selectează toate copiile, iar **Explodează** încheie aranjarea: copiile rămân elemente obișnuite.
+O repetare rămâne o aranjare. Selectează orice copie și proprietățile arată o secțiune **Repetare**: felul ei, numărul de copii și regula (pasul, coloanele, rândurile și nivelurile unei rețele cu pașii lor, unghiul și centrul, sau pasul, începutul, sfârșitul, decalajul, orientarea și numele traseului). Schimbă numărul și se adaugă sau se șterg copii (într-o rețea, o coloană în plus adaugă câte una pe fiecare rând, iar fiecare copie își păstrează locul); schimbă pasul sau decalajul și copiile se mută. Copiile își păstrează identificatorii, deci ce se referă la ele continuă să funcționeze. Modifică traseul și copiile îl urmează. O copie mutată de mână își păstrează decalajul față de locul ei când regula se schimbă, iar una ștearsă rămâne un gol. **Selectează matricea** selectează toate copiile, iar **Explodează** încheie aranjarea: copiile rămân elemente obișnuite.
 
 ## Selecția pe niveluri de ansamblu
 
