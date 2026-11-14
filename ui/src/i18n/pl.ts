@@ -3512,6 +3512,18 @@ export const PL: Record<string, string> = {
   "Room's area": "Powierzchnia pomieszczenia",
   "Tagged element's storey": "Kondygnacja oznaczonego elementu",
   "Panel sides": "Strony paneli", "Next view tab": "Następna karta widoku", "Previous view tab": "Poprzednia karta widoku",
+  // View crop and annotation crop (forum topic 68)
+  "Crop view": "Przytnij widok",
+  "Only what lies inside the crop region is drawn, its lines cut at its edge, on screen, on sheets, in PDF and DXF (as Revit's Crop view); off, the view draws everything and keeps the region": "Rysowane jest tylko to, co leży wewnątrz obszaru kadrowania, z liniami uciętymi na jego krawędzi, na ekranie, na arkuszach, w PDF i DXF (jak Przytnij widok w Revit); wyłączone — widok rysuje wszystko i zachowuje obszar",
+  "Crop region visible": "Obszar kadrowania widoczny",
+  "The crop region's frame drawn on screen and printed; hidden, neither (the view stays cropped). Click the frame to drag its corners and edges": "Ramka obszaru kadrowania rysowana na ekranie i drukowana; ukryta — ani jedno, ani drugie (widok pozostaje przycięty). Kliknij ramkę, aby przeciągać jej narożniki i krawędzie",
+  "Crop region": "Obszar kadrowania",
+  "The crop region's corners, as the view shows (a turned plan's on the screen)": "Narożniki obszaru kadrowania, tak jak pokazuje je widok (obróconego rzutu — na ekranie)",
+  "Annotation crop": "Kadrowanie opisów",
+  "Annotations (dimensions, tags, texts, symbols) wholly outside a second region round the crop region are not drawn, one across it cut at its edge (as Revit's Annotation crop)": "Opisy (wymiary, etykiety, teksty, symbole) całkowicie poza drugim obszarem wokół obszaru kadrowania nie są rysowane; te, które go przecinają, są ucinane na jego krawędzi (jak kadrowanie opisów w Revit)",
+  "Annotation offsets (mm)": "Odsunięcia kadrowania opisów (mm)",
+  "How far beyond the crop region the annotation crop reaches, in millimetres on paper: left, bottom, right, top": "Jak daleko poza obszar kadrowania sięga kadrowanie opisów, w milimetrach na papierze: lewo, dół, prawo, góra",
+  "Drag: move the crop region": "Przeciągnij: przesuń obszar kadrowania",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

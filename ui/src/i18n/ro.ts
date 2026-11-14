@@ -3507,6 +3507,18 @@ export const RO: Record<string, string> = {
   "Room's area": "Aria încăperii",
   "Tagged element's storey": "Nivelul elementului etichetat",
   "Panel sides": "Părțile panourilor", "Next view tab": "Fila de vizualizare următoare", "Previous view tab": "Fila de vizualizare anterioară",
+  // View crop and annotation crop (forum topic 68)
+  "Crop view": "Decupează vederea",
+  "Only what lies inside the crop region is drawn, its lines cut at its edge, on screen, on sheets, in PDF and DXF (as Revit's Crop view); off, the view draws everything and keeps the region": "Se desenează doar ce se află în regiunea de decupare, cu liniile tăiate la marginea ei, pe ecran, pe planșe, în PDF și DXF (ca Crop view din Revit); oprită, vederea desenează tot și păstrează regiunea",
+  "Crop region visible": "Regiune de decupare vizibilă",
+  "The crop region's frame drawn on screen and printed; hidden, neither (the view stays cropped). Click the frame to drag its corners and edges": "Cadrul regiunii de decupare desenat pe ecran și tipărit; ascuns, niciuna (vederea rămâne decupată). Dă clic pe cadru ca să-i tragi colțurile și laturile",
+  "Crop region": "Regiune de decupare",
+  "The crop region's corners, as the view shows (a turned plan's on the screen)": "Colțurile regiunii de decupare, cum le arată vederea (ale unui plan rotit, pe ecran)",
+  "Annotation crop": "Decupare adnotări",
+  "Annotations (dimensions, tags, texts, symbols) wholly outside a second region round the crop region are not drawn, one across it cut at its edge (as Revit's Annotation crop)": "Adnotările (cote, etichete, texte, simboluri) aflate cu totul în afara unei a doua regiuni din jurul regiunii de decupare nu se desenează, cele care o traversează se taie la marginea ei (ca Annotation crop din Revit)",
+  "Annotation offsets (mm)": "Decalaje decupare adnotări (mm)",
+  "How far beyond the crop region the annotation crop reaches, in millimetres on paper: left, bottom, right, top": "Cât de departe dincolo de regiunea de decupare ajunge decuparea adnotărilor, în milimetri pe hârtie: stânga, jos, dreapta, sus",
+  "Drag: move the crop region": "Trage: mută regiunea de decupare",
 };
 
 /** Phrases with a number or a name in them. */

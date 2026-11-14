@@ -50,6 +50,31 @@ public static class Views
         return null;
     }
 
+    /// <summary>
+    /// A setting kept on a view (its crop, its hidden elements): <paramref name="change"/> made to its attributes, in the command's
+    /// step. A level's default plan (<c>plan:&lt;storey&gt;</c>) has no entity to keep it: the level's floor plan view takes it
+    /// when there is one, else the default plan is saved as its plan view with it, what was drawn on it going along (decision
+    /// 386, as <c>view.setOrientation</c> does). The id of the view that keeps it.
+    /// </summary>
+    public static string OwnView(ICommandContext ctx, Entity view, Action<JsonObject> change)
+    {
+        if (ctx.Model.Get(view.Id) is { Class: Class } saved)
+        {
+            var attrs = saved.CloneAttrs();
+            change(attrs);
+            ctx.Replace(saved.With(attrs: attrs));
+            return saved.Id;
+        }
+        if (!view.Id.StartsWith(StoreyPlans.Prefix, StringComparison.Ordinal) || view.Str("storeyId") is not { } storeyId) throw new CommandException("That view keeps no settings of its own.");
+        if (StoreyPlans.Of(ctx.Model, storeyId) is { } plan) return OwnView(ctx, plan, change);
+        var pa = view.CloneAttrs();
+        change(pa);
+        var made = new Entity(ctx.NewId(), Class, view.Name, pa);
+        ctx.Add(made);
+        StoreyPlans.Rehome(ctx, storeyId, made.Id);
+        return made.Id;
+    }
+
     /// <summary>A level's default plan's scale: the project's for new plans (Drafting standards → Project, decision 492), else 1:100.</summary>
     static double DefaultPlanScale(IModelView m) => Standards.ViewScale(Spatial.Project(m)?.Attrs["drafting"]?["planScale"]) ?? 100;
 
@@ -829,6 +854,9 @@ public static class Views
         // The sun's shadows on what the view sees (ViewShadows), filled under everything it draws: over the surfaces' fills, under their hatches.
         var shadows = ViewShadows.PenOf(m, view, scenes);
         pens.InsertRange(0, [.. surfaces.Where(p => p.Layer == SurfaceHatches.FillLayer), .. shadows != null ? [shadows] : Array.Empty<Pen>(), .. surfaces.Where(p => p.Layer != SurfaceHatches.FillLayer)]);
+        // The view's crop region (forum topic 68): the model's lines and fills cut at its edge.
+        var crop = ViewCrops.ActiveOf(m, view, scale);
+        if (crop != null) pens = [.. pens.Select(p => crop.Clip(p, crop.Model)).OfType<Pen>()];
 
         // Annotations: the views' own marks, then each module's (grids, dimensions, texts), over the drawing.
         var ctx = new ViewContext(m, view, spec.Kind, spec.Frame, scale, DraftingResources.Book(m), drawing, q.Geometry) { Services = q.Services };
@@ -861,6 +889,12 @@ public static class Views
             catch (CommandException) { }
         // An annotation category's colour or halftone (decision 394).
         if (vg.Graphics?["annotations"] is JsonObject { Count: > 0 }) foreach (var mk in marks) vg.Recolor(mk);
+        // Cropped: the model's marks to the region, annotations to the annotation crop when it is on; the region's frame when it is visible.
+        if (crop != null)
+        {
+            crop.Marks(marks);
+            if (crop.Crop.Visible) marks.Add(crop.Frame(view.Id));
+        }
         // The marks' pens: those drawn under the model (rooms' fills) go first, the others over it; fills before lines in each.
         // A drafted element given a place in the view's draw order (decision 339) draws in that order instead, in runs: a
         // run takes the next element until one with a fill or a picture comes after lines, so a fill covers what is under it.
@@ -933,6 +967,7 @@ public static class Views
         {
             var pictures = new Pen("IMAGE", null, 0, null, null);
             pictures.Images.AddRange(images);
+            if (crop is { Turn: 0 }) pictures.Clip = (crop.Model.Min.X, crop.Model.Min.Y, crop.Model.Max.X, crop.Model.Max.Y);
             pens.Insert(0, pictures);
         }
         pens.AddRange(overPens);
@@ -941,9 +976,12 @@ public static class Views
         marks = [.. free, .. Enumerable.Reverse(ordered).Select(x => x.Mark)];
         // What the view shows: the drawing and its annotations (a text counted by its anchor and height).
         var pts = new List<Vec2>();
-        if (drawing.Bounds is { } b) pts.AddRange([b.Min, b.Max]);
+        // Cropped: the region itself, and the annotations left (the model drawn inside it).
+        if (crop != null) pts.AddRange(crop.Corners(crop.Model));
+        else if (drawing.Bounds is { } b) pts.AddRange([b.Min, b.Max]);
         foreach (var mk in marks)
         {
+            if (crop != null && ViewCrops.Active.OfModel(mk)) continue;
             foreach (var l in mk.Lines) pts.AddRange([l.A, l.B]);
             foreach (var (t, _) in mk.Texts) pts.AddRange([t.At, t.At + new Vec2(0, t.Height * scale / 1000)]);
             // A point cloud's slice is what the view shows of it (an orthophoto is not counted: it reaches far past the model).
@@ -1556,6 +1594,7 @@ public static class Views
 
         Insets.Register(r);
         ViewBoundaries.Register(r);
+        ViewCrops.Register(r);
         SectionMarkers.Register(r);
         ElevationMarkers.Register(r);
         SectionHeads.Register(r);

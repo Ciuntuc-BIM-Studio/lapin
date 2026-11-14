@@ -4663,6 +4663,36 @@ export const scenes = [
     },
   },
   {
+    // Forum topic 68: a plan cropped to a rectangle (its frame shown), a dimension outside the annotation crop left out.
+    id: 'views-crop',
+    touches: ['core', 'architecture', 'drafting'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      for (const [x1, y1, x2, y2] of [[0, 0, 12, 0], [12, 0, 12, 8], [12, 8, 0, 8], [0, 8, 0, 0], [7, 0, 7, 8]]) await t.cmd('architecture.addWall', { storeyId: s, x1, y1, x2, y2 });
+      const plan = (await t.cmd('view.create', { kind: 'plan', storeyId: s, name: 'West wing 1:50', scale: 50 })).id;
+      await t.cmd('drafting.addDimension', { viewId: plan, a: [0, 0], b: [7, 0], at: [0, -1.2] });
+      await t.cmd('drafting.addDimension', { viewId: plan, a: [7, 8], b: [12, 8], at: [7, 9.2] });
+      await t.cmd('view.setCrop', { id: plan, on: true, min: [-1, -2], max: [7.6, 9], annotation: true, offset: 12 });
+      await t.ui({ view: 'plan', planViewId: plan, keyPlan: false, planDrawing: true });
+      await t.wait(1500);
+      await t.fit();
+      const d = await t.call('doc.query', { name: 'view.drawing', args: { id: plan } });
+      const xs = d.pens.filter((p) => p.layer === 'CUT').flatMap((p) => (p.segments ?? []).filter((_, k) => k % 2 === 0));
+      t.expect(xs.length > 0 && Math.max(...xs) <= 7.6 + 1e-6, 'the cropped plan draws nothing east of its crop region');
+      t.expect(d.pens.some((p) => p.layer === 'CROP'), 'the crop region\'s frame is drawn');
+      const texts = d.pens.flatMap((p) => (p.texts ?? []).map((x) => x.text));
+      t.expect(texts.some((x) => x.includes('7000')) && !texts.some((x) => x.includes('5000')), 'the dimension outside the annotation crop is left out, the one inside kept');
+      await t.shot('view-crop', { of: '[data-testid=plan]', pad: 0 });
+      await t.ui({ dialog: 'viewSettings' });
+      await t.until(async () => (await t.page.locator('[data-testid=view-crop]').count()) > 0, 'Crop view in View settings');
+      await t.page.locator('[data-testid=view-crop]').first().scrollIntoViewIfNeeded();
+      await t.wait(400);
+      await t.shot('view-crop-settings', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+    },
+  },
+  {
     // Decision 525 (a tester's question: how to rotate the view along the screen): a plan turned to align with a wall, on
     // screen and on its sheet, its texts readable.
     id: 'views-plan-orientation',

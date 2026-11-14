@@ -3514,6 +3514,18 @@ export const IT: Record<string, string> = {
   "Room's area": "Superficie del locale",
   "Tagged element's storey": "Piano dell'elemento etichettato",
   "Panel sides": "Lati dei pannelli", "Next view tab": "Scheda vista successiva", "Previous view tab": "Scheda vista precedente",
+  // View crop and annotation crop (forum topic 68)
+  "Crop view": "Ritaglia vista",
+  "Only what lies inside the crop region is drawn, its lines cut at its edge, on screen, on sheets, in PDF and DXF (as Revit's Crop view); off, the view draws everything and keeps the region": "Si disegna solo ciò che sta dentro la regione di ritaglio, con le linee tagliate al suo bordo, a schermo, sulle tavole, in PDF e DXF (come Ritaglia vista di Revit); disattivato, la vista disegna tutto e conserva la regione",
+  "Crop region visible": "Regione di ritaglio visibile",
+  "The crop region's frame drawn on screen and printed; hidden, neither (the view stays cropped). Click the frame to drag its corners and edges": "Il riquadro della regione di ritaglio, disegnato a schermo e stampato; nascosto, nessuno dei due (la vista resta ritagliata). Fai clic sul riquadro per trascinarne angoli e lati",
+  "Crop region": "Regione di ritaglio",
+  "The crop region's corners, as the view shows (a turned plan's on the screen)": "Gli angoli della regione di ritaglio, come li mostra la vista (quelli di una pianta ruotata, a schermo)",
+  "Annotation crop": "Ritaglio annotazioni",
+  "Annotations (dimensions, tags, texts, symbols) wholly outside a second region round the crop region are not drawn, one across it cut at its edge (as Revit's Annotation crop)": "Le annotazioni (quote, etichette, testi, simboli) del tutto fuori da una seconda regione attorno alla regione di ritaglio non si disegnano; quelle che la attraversano si tagliano al suo bordo (come il ritaglio annotazioni di Revit)",
+  "Annotation offsets (mm)": "Scostamenti del ritaglio annotazioni (mm)",
+  "How far beyond the crop region the annotation crop reaches, in millimetres on paper: left, bottom, right, top": "Quanto oltre la regione di ritaglio arriva il ritaglio annotazioni, in millimetri sulla carta: sinistra, basso, destra, alto",
+  "Drag: move the crop region": "Trascina: sposta la regione di ritaglio",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

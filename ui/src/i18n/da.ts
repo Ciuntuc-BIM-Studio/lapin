@@ -3506,6 +3506,18 @@ export const DA: Record<string, string> = {
   "Room's area": "Rummets areal",
   "Tagged element's storey": "Det mærkede elements etage",
   "Panel sides": "Panelernes sider", "Next view tab": "Næste visningsfane", "Previous view tab": "Forrige visningsfane",
+  // View crop and annotation crop (forum topic 68)
+  "Crop view": "Beskær visning",
+  "Only what lies inside the crop region is drawn, its lines cut at its edge, on screen, on sheets, in PDF and DXF (as Revit's Crop view); off, the view draws everything and keeps the region": "Kun det, der ligger inden for beskæringsområdet, tegnes, med linjerne skåret ved kanten, på skærmen, på tegningsark, i PDF og DXF (som Revits Crop view); slået fra tegner visningen alt og beholder området",
+  "Crop region visible": "Beskæringsområde synligt",
+  "The crop region's frame drawn on screen and printed; hidden, neither (the view stays cropped). Click the frame to drag its corners and edges": "Beskæringsområdets ramme tegnet på skærmen og udskrevet; skjult, ingen af delene (visningen forbliver beskåret). Klik på rammen for at trække i hjørner og kanter",
+  "Crop region": "Beskæringsområde",
+  "The crop region's corners, as the view shows (a turned plan's on the screen)": "Beskæringsområdets hjørner, som visningen viser dem (en drejet plans på skærmen)",
+  "Annotation crop": "Beskæring af annoteringer",
+  "Annotations (dimensions, tags, texts, symbols) wholly outside a second region round the crop region are not drawn, one across it cut at its edge (as Revit's Annotation crop)": "Annoteringer (mål, mærker, tekster, symboler) helt uden for et andet område omkring beskæringsområdet tegnes ikke; dem, der krydser det, skæres ved kanten (som Revits Annotation crop)",
+  "Annotation offsets (mm)": "Forskydninger for beskæring af annoteringer (mm)",
+  "How far beyond the crop region the annotation crop reaches, in millimetres on paper: left, bottom, right, top": "Hvor langt ud over beskæringsområdet beskæringen af annoteringer rækker, i millimeter på papiret: venstre, nederst, højre, øverst",
+  "Drag: move the crop region": "Træk: flyt beskæringsområdet",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

@@ -3515,6 +3515,18 @@ export const FR: Record<string, string> = {
   "Room's area": "Surface de la pièce",
   "Tagged element's storey": "Niveau de l'élément étiqueté",
   "Panel sides": "Côtés des panneaux", "Next view tab": "Onglet de vue suivant", "Previous view tab": "Onglet de vue précédent",
+  // View crop and annotation crop (forum topic 68)
+  "Crop view": "Cadrer la vue",
+  "Only what lies inside the crop region is drawn, its lines cut at its edge, on screen, on sheets, in PDF and DXF (as Revit's Crop view); off, the view draws everything and keeps the region": "Seul ce qui se trouve dans la zone cadrée est dessiné, ses lignes coupées à son bord, à l’écran, sur les feuilles, en PDF et DXF (comme Cadrer la vue de Revit) ; désactivé, la vue dessine tout et garde la zone",
+  "Crop region visible": "Zone cadrée visible",
+  "The crop region's frame drawn on screen and printed; hidden, neither (the view stays cropped). Click the frame to drag its corners and edges": "Le cadre de la zone cadrée, dessiné à l’écran et imprimé ; masqué, ni l’un ni l’autre (la vue reste cadrée). Cliquez sur le cadre pour en tirer les coins et les côtés",
+  "Crop region": "Zone cadrée",
+  "The crop region's corners, as the view shows (a turned plan's on the screen)": "Les coins de la zone cadrée, tels que la vue les montre (ceux d’un plan tourné, à l’écran)",
+  "Annotation crop": "Cadrage des annotations",
+  "Annotations (dimensions, tags, texts, symbols) wholly outside a second region round the crop region are not drawn, one across it cut at its edge (as Revit's Annotation crop)": "Les annotations (cotes, étiquettes, textes, symboles) entièrement hors d’une seconde zone autour de la zone cadrée ne sont pas dessinées ; celles qui la traversent sont coupées à son bord (comme le cadrage des annotations de Revit)",
+  "Annotation offsets (mm)": "Décalages du cadrage des annotations (mm)",
+  "How far beyond the crop region the annotation crop reaches, in millimetres on paper: left, bottom, right, top": "Jusqu’où le cadrage des annotations va au-delà de la zone cadrée, en millimètres sur le papier : gauche, bas, droite, haut",
+  "Drag: move the crop region": "Glisser : déplacer la zone cadrée",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

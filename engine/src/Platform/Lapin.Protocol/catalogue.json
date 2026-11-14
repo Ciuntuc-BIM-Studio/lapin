@@ -631,6 +631,7 @@
     {"name":"view.removeGraphicsSet","module":"core","label":"Remove graphics set","args":[{"name":"setId","type":"str"}]},
     {"name":"view.saveGraphicsSet","module":"core","label":"Save graphics set","args":[{"name":"id","type":"str"},{"name":"name","type":"str"}]},
     {"name":"view.setCamera","module":"core","label":"View camera","args":[{"name":"id","type":"str"},{"name":"camera"}]},
+    {"name":"view.setCrop","module":"core","label":"Crop view","args":[{"name":"id","type":"str"},{"name":"on"},{"name":"min","type":"list"},{"name":"max","type":"list"},{"name":"offset"},{"name":"visible"},{"name":"annotation"}]},
     {"name":"view.setExtent","module":"core","label":"Elevation extent","args":[{"name":"id","type":"str"}]},
     {"name":"view.setLine","module":"core","label":"Move section","args":[{"name":"id","type":"str"}]},
     {"name":"view.setOrientation","module":"core","label":"Rotate view","args":[{"name":"id","type":"str"},{"name":"angle"},{"name":"ucs"}]},

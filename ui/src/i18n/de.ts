@@ -3511,6 +3511,18 @@ export const DE: Record<string, string> = {
   "Room's area": "Raumfläche",
   "Tagged element's storey": "Geschoss des markierten Elements",
   "Panel sides": "Seiten der Bereiche", "Next view tab": "Nächster Ansichts-Tab", "Previous view tab": "Vorheriger Ansichts-Tab",
+  // View crop and annotation crop (forum topic 68)
+  "Crop view": "Ansicht zuschneiden",
+  "Only what lies inside the crop region is drawn, its lines cut at its edge, on screen, on sheets, in PDF and DXF (as Revit's Crop view); off, the view draws everything and keeps the region": "Nur was im Zuschneidebereich liegt, wird gezeichnet, seine Linien an dessen Rand geschnitten, am Bildschirm, auf Plänen, in PDF und DXF (wie Revits Ansicht zuschneiden); aus, zeichnet die Ansicht alles und behält den Bereich",
+  "Crop region visible": "Zuschneidebereich sichtbar",
+  "The crop region's frame drawn on screen and printed; hidden, neither (the view stays cropped). Click the frame to drag its corners and edges": "Der Rahmen des Zuschneidebereichs am Bildschirm gezeichnet und gedruckt; ausgeblendet, beides nicht (die Ansicht bleibt zugeschnitten). Den Rahmen anklicken, um Ecken und Kanten zu ziehen",
+  "Crop region": "Zuschneidebereich",
+  "The crop region's corners, as the view shows (a turned plan's on the screen)": "Die Ecken des Zuschneidebereichs, wie die Ansicht sie zeigt (bei einem gedrehten Grundriss am Bildschirm)",
+  "Annotation crop": "Beschriftungszuschnitt",
+  "Annotations (dimensions, tags, texts, symbols) wholly outside a second region round the crop region are not drawn, one across it cut at its edge (as Revit's Annotation crop)": "Beschriftungen (Bemaßungen, Bauteilbeschriftungen, Texte, Symbole) ganz außerhalb eines zweiten Bereichs um den Zuschneidebereich werden nicht gezeichnet, solche quer darüber an dessen Rand geschnitten (wie Revits Beschriftungszuschnitt)",
+  "Annotation offsets (mm)": "Abstände des Beschriftungszuschnitts (mm)",
+  "How far beyond the crop region the annotation crop reaches, in millimetres on paper: left, bottom, right, top": "Wie weit der Beschriftungszuschnitt über den Zuschneidebereich hinausreicht, in Millimetern auf dem Papier: links, unten, rechts, oben",
+  "Drag: move the crop region": "Ziehen: den Zuschneidebereich verschieben",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

@@ -3503,6 +3503,18 @@ export const ZH: Record<string, string> = {
   "Room's area": "房间面积",
   "Tagged element's storey": "被标注元素的楼层",
   "Panel sides": "面板位置", "Next view tab": "下一个视图标签页", "Previous view tab": "上一个视图标签页",
+  // View crop and annotation crop (forum topic 68)
+  "Crop view": "裁剪视图",
+  "Only what lies inside the crop region is drawn, its lines cut at its edge, on screen, on sheets, in PDF and DXF (as Revit's Crop view); off, the view draws everything and keeps the region": "只绘制裁剪区域内的内容，线条在其边缘截断，在屏幕、图纸、PDF 和 DXF 中均如此（同 Revit 的“裁剪视图”）；关闭时视图绘制全部内容并保留该区域",
+  "Crop region visible": "裁剪区域可见",
+  "The crop region's frame drawn on screen and printed; hidden, neither (the view stays cropped). Click the frame to drag its corners and edges": "裁剪区域的边框在屏幕上绘制并打印；隐藏时两者皆无（视图仍保持裁剪）。单击边框可拖动其角点和边",
+  "Crop region": "裁剪区域",
+  "The crop region's corners, as the view shows (a turned plan's on the screen)": "裁剪区域的角点，按视图显示的方式（旋转平面图按屏幕方向）",
+  "Annotation crop": "注释裁剪",
+  "Annotations (dimensions, tags, texts, symbols) wholly outside a second region round the crop region are not drawn, one across it cut at its edge (as Revit's Annotation crop)": "完全位于裁剪区域外围第二个区域之外的注释（尺寸、标记、文字、符号）不绘制，跨越它的注释在其边缘截断（同 Revit 的“注释裁剪”）",
+  "Annotation offsets (mm)": "注释裁剪偏移 (mm)",
+  "How far beyond the crop region the annotation crop reaches, in millimetres on paper: left, bottom, right, top": "注释裁剪超出裁剪区域的距离，单位为图纸上的毫米：左、下、右、上",
+  "Drag: move the crop region": "拖动：移动裁剪区域",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

@@ -3509,6 +3509,18 @@ export const PT: Record<string, string> = {
   "Room's area": "Área do compartimento",
   "Tagged element's storey": "Piso do elemento etiquetado",
   "Panel sides": "Lados dos painéis", "Next view tab": "Separador de vista seguinte", "Previous view tab": "Separador de vista anterior",
+  // View crop and annotation crop (forum topic 68)
+  "Crop view": "Recortar vista",
+  "Only what lies inside the crop region is drawn, its lines cut at its edge, on screen, on sheets, in PDF and DXF (as Revit's Crop view); off, the view draws everything and keeps the region": "Só se desenha o que está dentro da região de recorte, com as linhas cortadas no seu limite, no ecrã, nas folhas, em PDF e DXF (como Recortar vista do Revit); desligado, a vista desenha tudo e mantém a região",
+  "Crop region visible": "Região de recorte visível",
+  "The crop region's frame drawn on screen and printed; hidden, neither (the view stays cropped). Click the frame to drag its corners and edges": "O contorno da região de recorte, desenhado no ecrã e impresso; oculto, nenhum dos dois (a vista continua recortada). Clica no contorno para arrastar os cantos e os lados",
+  "Crop region": "Região de recorte",
+  "The crop region's corners, as the view shows (a turned plan's on the screen)": "Os cantos da região de recorte, como a vista os mostra (os de uma planta rodada, no ecrã)",
+  "Annotation crop": "Recorte de anotações",
+  "Annotations (dimensions, tags, texts, symbols) wholly outside a second region round the crop region are not drawn, one across it cut at its edge (as Revit's Annotation crop)": "As anotações (cotas, etiquetas, textos, símbolos) totalmente fora de uma segunda região à volta da região de recorte não são desenhadas; as que a atravessam são cortadas no seu limite (como o recorte de anotações do Revit)",
+  "Annotation offsets (mm)": "Desvios do recorte de anotações (mm)",
+  "How far beyond the crop region the annotation crop reaches, in millimetres on paper: left, bottom, right, top": "Até onde o recorte de anotações vai além da região de recorte, em milímetros no papel: esquerda, baixo, direita, cima",
+  "Drag: move the crop region": "Arrastar: mover a região de recorte",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

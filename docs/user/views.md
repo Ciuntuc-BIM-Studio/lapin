@@ -244,6 +244,21 @@ The orientation belongs to the view: it is kept with the project and the view's 
 
 Only plans turn (floor, ceiling, foundation, site and location plans); a section or an elevation looks where its line or side says. A view boundary stays square to the plan's axes: on a sheet, a plan turned by other than a quarter turn shows the box round it, and the boundary is cropped in the view.
 
+## Crop region
+
+A plan, a section, an elevation or a reference plane can be cut to a rectangle, as Revit's **Crop view** does. In the view's **View settings** (in its properties, or **View → View settings**):
+
+- **Crop view** turns the crop on or off. Turned on the first time, the region is drawn round what the view shows, with half a metre to spare. Only what lies inside it is drawn, the walls' and floors' lines and hatches cut at its edge; turned off, the view draws everything again and keeps the region for next time.
+- **Crop region visible** draws the region's frame, on the screen and on sheets. Click the frame to select the view: its corners and edges have grips to drag, and its middle moves it whole. Hidden, the frame is not drawn or printed, and the view stays cropped.
+- **Crop region** shows its corners (left, bottom, right, top) to type exactly, and its size.
+- **Annotation crop** adds a second rectangle round the region, wider by the **Annotation offsets** (millimetres on paper: left, bottom, right, top; 10 mm each by default). An annotation (a dimension, a tag, a text, a symbol) wholly outside it is not drawn; one across its edge is cut there. Without it, annotations are drawn wherever they are.
+
+Each change is one undo step. A level's default plan becomes its plan view when it is cropped, with what was drawn on it. The engine cuts the drawing, so the view's sheets, its PDF and its DXF print what the screen shows; on a sheet, the viewport is the crop region (the annotation crop when it is on), with no margin. A turned plan's region stays square to the screen. The 3D view keeps its section box instead.
+
+![A plan cropped to the west wing, its frame shown; the dimension outside the annotation crop is left out](shots/view-crop.webp)
+
+![Crop view in View settings](shots/view-crop-settings.webp)
+
 ## What a view shows
 
 The **View** tab sets what the view in front shows and how it looks.

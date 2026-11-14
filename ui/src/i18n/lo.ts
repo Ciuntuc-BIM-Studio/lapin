@@ -3565,6 +3565,18 @@ export const LO: Record<string, string> = {
   "Room's area": "ເນື້ອທີ່ຫ້ອງ",
   "Tagged element's storey": "ຊັ້ນຂອງອົງປະກອບທີ່ຕິດປ້າຍ",
   "Panel sides": "ດ້ານຂອງແຜງ", "Next view tab": "ແຖບມຸມມອງຖັດໄປ", "Previous view tab": "ແຖບມຸມມອງກ່ອນໜ້າ",
+  // View crop and annotation crop (forum topic 68)
+  "Crop view": "ຕັດມຸມມອງ",
+  "Only what lies inside the crop region is drawn, its lines cut at its edge, on screen, on sheets, in PDF and DXF (as Revit's Crop view); off, the view draws everything and keeps the region": "ແຕ້ມສະເພາະສິ່ງທີ່ຢູ່ໃນເຂດຕັດ, ເສັ້ນຖືກຕັດຢູ່ຂອບ, ເທິງໜ້າຈໍ, ເທິງແຜ່ນ, ໃນ PDF ແລະ DXF (ຄື Crop view ຂອງ Revit); ປິດ, ມຸມມອງແຕ້ມທັງໝົດ ແລະ ຮັກສາເຂດໄວ້",
+  "Crop region visible": "ສະແດງເຂດຕັດ",
+  "The crop region's frame drawn on screen and printed; hidden, neither (the view stays cropped). Click the frame to drag its corners and edges": "ກອບຂອງເຂດຕັດແຕ້ມເທິງໜ້າຈໍ ແລະ ພິມ; ເຊື່ອງ, ບໍ່ທັງສອງ (ມຸມມອງຍັງຖືກຕັດ). ຄລິກກອບເພື່ອລາກມຸມ ແລະ ຂອບ",
+  "Crop region": "ເຂດຕັດ",
+  "The crop region's corners, as the view shows (a turned plan's on the screen)": "ມຸມຂອງເຂດຕັດ ຕາມທີ່ມຸມມອງສະແດງ (ຂອງແຜນທີ່ໝູນ, ເທິງໜ້າຈໍ)",
+  "Annotation crop": "ຕັດຄຳອະທິບາຍ",
+  "Annotations (dimensions, tags, texts, symbols) wholly outside a second region round the crop region are not drawn, one across it cut at its edge (as Revit's Annotation crop)": "ຄຳອະທິບາຍ (ຂະໜາດ, ປ້າຍ, ຂໍ້ຄວາມ, ສັນຍາລັກ) ທີ່ຢູ່ນອກເຂດທີສອງອ້ອມເຂດຕັດທັງໝົດຈະບໍ່ຖືກແຕ້ມ, ອັນທີ່ຂ້າມມັນຈະຖືກຕັດຢູ່ຂອບ (ຄື Annotation crop ຂອງ Revit)",
+  "Annotation offsets (mm)": "ໄລຍະຫ່າງຂອງການຕັດຄຳອະທິບາຍ (mm)",
+  "How far beyond the crop region the annotation crop reaches, in millimetres on paper: left, bottom, right, top": "ການຕັດຄຳອະທິບາຍໄປໄກກວ່າເຂດຕັດເທົ່າໃດ, ເປັນມິນລີແມັດເທິງເຈ້ຍ: ຊ້າຍ, ລຸ່ມ, ຂວາ, ເທິງ",
+  "Drag: move the crop region": "ລາກ: ຍ້າຍເຂດຕັດ",
 };
 
 /** Phrases with a number or a name in them. */
