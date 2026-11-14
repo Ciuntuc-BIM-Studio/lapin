@@ -816,7 +816,8 @@ export function Viewport3D() {
     // Back from another tab: the camera this 3D view had (forum topic 62); a camera moved is kept as it moves.
     const kept = recall3d(keyRef.current);
     if (kept?.pose) { api.setOrtho(Boolean(kept.ortho)); api.orbitTo(kept.pose, false); }
-    const unkeep = useCamera.subscribe((c) => remember3d(keyRef.current, { pose: { azimuth: c.azimuth, pitch: c.pitch, distance: c.distance, target: c.target }, ortho: c.ortho }));
+    // A walk's eye is not the camera the tab keeps: when the walk ends the camera there was comes back (and is what a returning viewport recalls).
+    const unkeep = useCamera.subscribe((c) => { if (useWalk.getState().start) return; remember3d(keyRef.current, { pose: { azimuth: c.azimuth, pitch: c.pitch, distance: c.distance, target: c.target }, ortho: c.ortho }); });
     s.add(new THREE.HemisphereLight(0xffffff, 0xd6cebf, 2.2));
     const hemi = s.children[s.children.length - 1] as THREE.HemisphereLight;
     const sun = new THREE.DirectionalLight(0xffffff, 1.6);

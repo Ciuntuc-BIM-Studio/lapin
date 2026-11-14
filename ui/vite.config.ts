@@ -87,6 +87,15 @@ export default defineConfig({
   clearScreen: false,
   // The guide's parallel runs (scripts/user-docs/run.mjs --jobs) give each of their dev servers a dependency cache of its own.
   ...(process.env.LAPIN_VITE_CACHE_DIR ? { cacheDir: process.env.LAPIN_VITE_CACHE_DIR } : {}),
+  // Packages only a lazily loaded panel imports (the Script panel's editor, the rich text editor) are found by no dependency scan, since the
+  // modules come through a virtual module: met at run time, Vite optimises them and reloads the page, which drops an open project to the start
+  // screen (the guide's scenes saw it on a fresh cache). Listed, they are bundled when the server starts.
+  optimizeDeps: {
+    include: [
+      '@codemirror/state', '@codemirror/view', '@codemirror/commands', '@codemirror/language', '@codemirror/autocomplete', '@codemirror/lang-python',
+      '@tiptap/core', '@tiptap/react', '@tiptap/starter-kit', '@tiptap/pm/model', '@tiptap/pm/state',
+    ],
+  },
   // The sibling repositories too, for the modules that live there.
   server: { port: Number(process.env.LAPIN_UI_PORT ?? 5180), strictPort: true, fs: { allow: [resolve(__dirname, '../..')] } },
   // Each interface language is a chunk of its own (lang-<id>), fetched when chosen; the web build's budget counts one.

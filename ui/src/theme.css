@@ -680,6 +680,12 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .tool.small { flex-direction: row; gap: 6px; height: auto; min-width: 0; padding: 1px 8px; line-height: 1.25; justify-content: flex-start; white-space: nowrap; }
 .cad-line { border-top: 1px solid var(--rule); background: var(--panel); font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; padding: 3px 10px 4px; }
 .cad-line.floating { position: absolute; left: 0; right: 0; bottom: 0; z-index: 12; }
+/* The floating line over the 3D view: its empty areas let clicks through to what lies under it (cards, the view), an empty history takes no
+   room, and the cards anchored to the view's bottom sit above it; only its own controls take the pointer. */
+.cad-line.floating { pointer-events: none; }
+.cad-line.floating .cad-history { min-height: 0; }
+.cad-line.floating button, .cad-line.floating select, .cad-line.floating input, .cad-line.floating .cad-prompt > * { pointer-events: auto; }
+.view-area:has(.cad-line.floating) .sel-card { bottom: 44px; }
 .cad-history { color: var(--ink-muted); min-height: 2.9em; white-space: pre; overflow: hidden; }
 .cad-prompt { display: flex; align-items: center; gap: 8px; }
 .cad-label { color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
