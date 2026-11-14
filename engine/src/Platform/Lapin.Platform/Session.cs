@@ -838,6 +838,9 @@ public sealed partial class Session
         {
             if (c.Before != null) touched.Add(TrackingView.ClassKey(c.Before.Class));
             if (c.After != null) touched.Add(TrackingView.ClassKey(c.After.Class));
+            // Where an element along an axis was and is (PlaceCells): what reads round it is built again.
+            if (c.Before != null) touched.UnionWith(PlaceCells.Of(c.Before));
+            if (c.After != null) touched.UnionWith(PlaceCells.Of(c.After));
             // An element's own cut priority: what lower classes it may now cut (or no longer cuts).
             var (was, now) = (c.Before?.NumOrNull("cutPriority"), c.After?.NumOrNull("cutPriority"));
             if (was != now || c.Before?.Str("exportAs") != c.After?.Str("exportAs"))

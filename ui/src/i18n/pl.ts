@@ -512,6 +512,11 @@ export const PL: Record<string, string> = {
   "Frame profile": "Profil ościeżnicy",
   "Its width and height are the cell's, and follow it when the grid changes": "Szerokość i wysokość są takie jak pola i podążają za nim, gdy siatka się zmienia",
   "Fill the cell": "Wypełnij pole",
+  // Openings through every wall they pass (forum topic 64)
+  "Cut also the walls it passes through": "Tnij też ściany, przez które przechodzi",
+  "Cuts each wall along its own that its opening reaches into (one stacked on it, a lining against it), not only the wall it is in": "Tnie każdą ścianę wzdłuż swojej, do której sięga jej otwór (postawioną na niej, okładzinę przy niej), nie tylko ścianę, w której jest",
+  "Cuts each wall along its own that it reaches into (one stacked on it, a lining against it), not only the wall it is in": "Tnie każdą ścianę wzdłuż swojej, do której sięga (postawioną na niej, okładzinę przy niej), nie tylko ścianę, w której jest",
+  "Cut the walls it passes through": "Tnij ściany, przez które przechodzi",
   "In the cell": "W polu",
   "From where it is aligned, into the cell": "Od miejsca wyrównania, w głąb pola",
   "Door in the chosen": "Drzwi w wybranych",

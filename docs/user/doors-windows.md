@@ -71,6 +71,12 @@ Selected, an opening has grips like a window: drag its middle to slide it along 
 
 ![A wall opening in its configurator: a semicircular head, the reveal plastered](shots/wall-opening-dialog.webp)
 
+### Openings through several walls
+
+A door, a window or an opening cuts every wall its hole passes through, not only the wall it is in: a wall stacked on it (a door that starts in a 1 m reinforced concrete wall and goes on up through the masonry on it), a wall under it, or a lining against its face. Each wall that lies along the opening's wall — parallel to it, touching or overlapping it — is cut where the hole reaches into it, through its whole thickness, in 3D, plans, sections, elevations and quantities, and the lintel goes into the wall the head is in. Nothing is stored for it: move the opening, or move the walls, and the cut follows; a wall the hole no longer reaches is whole again. So a door may run out of its own wall into the walls it cuts, but not into nothing.
+
+**Cut also the walls it passes through**, in the properties panel of a door, a window or an opening, is on unless you turn it off; off, it cuts its own wall alone and must fit in it again. In IFC each wall cut gets an opening element of its own. Walls imported from an IFC file from another program keep the file's holes and are not cut this way. Walls meeting at a corner, curved walls, floors, beams and columns are not cut by it.
+
 ## The configurator
 
 **Architecture → Doors & windows** opens the configurator. Every door and window type of the project is listed on the left. You can change:

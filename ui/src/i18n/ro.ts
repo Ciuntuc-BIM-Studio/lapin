@@ -506,6 +506,11 @@ export const RO: Record<string, string> = {
   "Frame profile": "Profilul tocului",
   "Its width and height are the cell's, and follow it when the grid changes": "Lățimea și înălțimea ei sunt ale celulei și o urmează când se schimbă grila",
   "Fill the cell": "Umple celula",
+  // Openings through every wall they pass (forum topic 64)
+  "Cut also the walls it passes through": "Taie și pereții prin care trece",
+  "Cuts each wall along its own that its opening reaches into (one stacked on it, a lining against it), not only the wall it is in": "Taie fiecare perete de-a lungul peretelui său în care ajunge golul (unul așezat pe el, o căptușeală lipită de el), nu doar peretele în care se află",
+  "Cuts each wall along its own that it reaches into (one stacked on it, a lining against it), not only the wall it is in": "Taie fiecare perete de-a lungul peretelui său în care ajunge (unul așezat pe el, o căptușeală lipită de el), nu doar peretele în care se află",
+  "Cut the walls it passes through": "Taie pereții prin care trece",
   "In the cell": "În celulă",
   "From where it is aligned, into the cell": "De unde e aliniată, spre interiorul celulei",
   "Door in the chosen": "Ușă în cele alese",

@@ -91,15 +91,20 @@ public static class Openings
     /// <summary>
     /// Refused unless the opening lies within its wall, along it and up its
     /// height, and clear of the wall's other openings (<paramref name="except"/>:
-    /// the opening itself, when it is already there).
+    /// the opening itself, when it is already there). An opening that cuts the
+    /// walls it passes through (<see cref="ThroughOpenings"/>, forum topic 64)
+    /// may run out of its wall into those: a door from a concrete wall up into
+    /// the masonry on it. <paramref name="alone"/>: within its wall only (an opening read from a file).
     /// </summary>
-    public static void CheckFits(IModelView m, Entity wall, double along, double sill, double width, double height, string? except = null)
+    public static void CheckFits(IModelView m, Entity wall, double along, double sill, double width, double height, string? except = null, bool alone = false)
     {
         var length = PathCurve.Of(wall).Length;
         var wallHeight = Walls.HeightOf(m, wall);
         if (!(width > 0 && height > 0)) throw new CommandException("An opening needs a width and a height.");
-        if (along - width / 2 < -1e-9 || along + width / 2 > length + 1e-9) throw new CommandException($"The opening, {width * 1000:0} mm wide, does not fit along the wall ({length * 1000:0} mm) there.");
-        if (sill < -1e-9 || sill + height > wallHeight + 1e-9) throw new CommandException($"The opening, {height * 1000:0} mm high from {sill * 1000:0} mm, does not fit in the wall's height ({wallHeight * 1000:0} mm).");
+        var through = !alone && (except == null || m.Get(except) is not { } self || ThroughOpenings.On(self));
+        var (x0, x1, z0, z1) = ThroughOpenings.Reach(m, wall, along, sill, width, height, through);
+        if (along - width / 2 < x0 - 1e-9 || along + width / 2 > x1 + 1e-9) throw new CommandException($"The opening, {width * 1000:0} mm wide, does not fit along the wall ({length * 1000:0} mm) there.");
+        if (sill < z0 - 1e-9 || sill + height > z1 + 1e-9) throw new CommandException($"The opening, {height * 1000:0} mm high from {sill * 1000:0} mm, does not fit in the wall's height ({wallHeight * 1000:0} mm).");
         foreach (var o in PlacedOn(m, wall.Id))
         {
             if (o.Opening.Id == except) continue;

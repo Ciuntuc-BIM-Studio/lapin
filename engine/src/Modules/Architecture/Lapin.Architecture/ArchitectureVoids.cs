@@ -17,8 +17,13 @@ sealed class ArchitectureVoids : IOpeningVoids
     public IEnumerable<OpeningVoid> Voids(IModelView m, double offset)
     {
         foreach (var wall in m.OfClass(IfcClass.Wall))
+        {
             foreach (var opening in Openings.Of(m, wall.Id))
-                if (InWall(m, wall, opening, offset) is { } v) yield return v;
+                if (InWall(m, wall, Openings.Place(m, opening), opening.Id, offset) is { } v) yield return v;
+            // The openings of the walls along it passing through it (forum topic 64): a void in this wall too.
+            foreach (var (p, _) in ThroughOpenings.Into(m, wall))
+                if (InWall(m, wall, p, $"{p.Opening.Id}@{wall.Id}", offset) is { } v) yield return v;
+        }
         foreach (var slab in m.OfClass(IfcClass.Slab))
             foreach (var (opening, contour) in Slabs.Holes(m, slab.Id))
                 if (InSlab(m, slab, opening, contour, offset) is { } v) yield return v;
@@ -26,9 +31,9 @@ sealed class ArchitectureVoids : IOpeningVoids
             foreach (var v in InRoof(m, roof, offset)) yield return v;
     }
 
-    static OpeningVoid? InWall(IModelView m, Entity wall, Entity opening, double offset)
+    static OpeningVoid? InWall(IModelView m, Entity wall, Openings.Placed p0, string key, double offset)
     {
-        var p0 = Openings.Place(m, opening);
+        var opening = p0.Opening;
         var p = p0 with { Width = p0.Width + 2 * offset, Height = p0.Height + 2 * offset, Sill = p0.Sill - offset };
         if (p.Width < 0.005 || p.Height < 0.005) return null;
         var bands = Walls.Section(m, wall);
@@ -54,7 +59,7 @@ sealed class ArchitectureVoids : IOpeningVoids
         if (solid == null) return null;
         var kind = p.Fill == null ? OpeningVoids.Wall : p.Fill.Class == IfcClass.Door ? OpeningVoids.Door : OpeningVoids.Window;
         var shape = !isShaped ? OpeningVoids.Rectangle : shaped!.Shape?.Kind == "circle" ? OpeningVoids.Round : OpeningVoids.Undefined;
-        return new OpeningVoid(opening.Id, wall.Id, opening.Id, p.Fill?.Id, kind, shape, p.Width, p.Height, f.YMax - f.YMin, solid, Spatial.StoreyOf(m, wall.Id)?.Id) { Along = f.Dir };
+        return new OpeningVoid(key, wall.Id, opening.Id, p.Fill?.Id, kind, shape, p.Width, p.Height, f.YMax - f.YMin, solid, Spatial.StoreyOf(m, wall.Id)?.Id) { Along = f.Dir };
     }
 
     static OpeningVoid? InSlab(IModelView m, Entity slab, Entity opening, IReadOnlyList<Vec2> contour, double offset)

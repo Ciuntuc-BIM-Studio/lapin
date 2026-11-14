@@ -512,6 +512,11 @@ export const LO: Record<string, string> = {
   "Frame profile": "ໂປຣໄຟລ໌ກອບ",
   "Its width and height are the cell's, and follow it when the grid changes": "ຄວາມກວ້າງ ແລະ ຄວາມສູງເປັນຂອງຊ່ອງ, ແລະ ຕາມມັນເມື່ອຕາຂ່າຍປ່ຽນ",
   "Fill the cell": "ເຕັມຊ່ອງ",
+  // Openings through every wall they pass (forum topic 64)
+  "Cut also the walls it passes through": "ຕັດຝາທີ່ມັນຜ່ານນຳ",
+  "Cuts each wall along its own that its opening reaches into (one stacked on it, a lining against it), not only the wall it is in": "ຕັດທຸກຝາທີ່ຢູ່ຕາມຝາຂອງມັນ ທີ່ຊ່ອງເປີດໄປເຖິງ (ຝາທີ່ວາງຢູ່ເທິງ, ຝາບຸທີ່ຕິດກັບມັນ), ບໍ່ແມ່ນພຽງແຕ່ຝາທີ່ມັນຢູ່",
+  "Cuts each wall along its own that it reaches into (one stacked on it, a lining against it), not only the wall it is in": "ຕັດທຸກຝາທີ່ຢູ່ຕາມຝາຂອງມັນ ທີ່ມັນໄປເຖິງ (ຝາທີ່ວາງຢູ່ເທິງ, ຝາບຸທີ່ຕິດກັບມັນ), ບໍ່ແມ່ນພຽງແຕ່ຝາທີ່ມັນຢູ່",
+  "Cut the walls it passes through": "ຕັດຝາທີ່ມັນຜ່ານ",
   "In the cell": "ໃນຊ່ອງ",
   "From where it is aligned, into the cell": "ຈາກບ່ອນທີ່ຈັດແນວ, ເຂົ້າໄປໃນຊ່ອງ",
   "Door in the chosen": "ປະຕູໃນອັນທີ່ເລືອກ",

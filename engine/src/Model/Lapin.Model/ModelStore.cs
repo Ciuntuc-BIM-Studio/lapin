@@ -89,7 +89,7 @@ public sealed class ModelStore : IModelView
     /// <summary>
     /// What one thing a build read stands for right now, as a stamp that is the same exactly when the read would give the same:
     /// an entity's (or relationship's) version, 0 when it is not there; <c>rel:id</c> the relationships it takes part in; <c>class:X</c>
-    /// and <c>cut:X</c> the class's entities. Two sums of mixed unique versions under independent mixers (128 bits, with every
+    /// and <c>cut:X</c> the class's entities; <c>place:X:i,j</c> the class's elements in a cell (<see cref="PlaceCells"/>). Two sums of mixed unique versions under independent mixers (128 bits, with every
     /// key's own hash going in, in <c>Session.StampOf</c>), so two different states give the same stamp only by a 2^-128 coincidence
     /// (a test checks that an edit, an undo and a redo each give the stamp they should). Null for a key that stands for something else (a derived cell, the whole model): those builds are not kept.
     /// </summary>
@@ -105,6 +105,8 @@ public sealed class ModelStore : IModelView
         }
         if (key.StartsWith("class:", StringComparison.Ordinal) || key.StartsWith("cut:", StringComparison.Ordinal))
             return key == "class:*" ? null : _classStamp.GetValueOrDefault(key[(key.IndexOf(':') + 1)..]);
+        // The elements along an axis lying in a cell (PlaceCells), kept under the cell's own key.
+        if (PlaceCells.IsKey(key)) return _classStamp.GetValueOrDefault(key);
         if (key.Contains(':')) return null;
         if (_entities.TryGetValue(key, out var e)) return ((ulong)e.Version, Mix2((ulong)e.Version));
         if (_relations.TryGetValue(key, out var rel)) { var v = VersionOf(rel) + (1UL << 62); return (v, Mix2(v)); }
@@ -121,6 +123,12 @@ public sealed class ModelStore : IModelView
         var (a, b) = _classStamp.GetValueOrDefault(cls);
         var (x, y) = (Mix((ulong)e.Version), Mix2((ulong)e.Version));
         _classStamp[cls] = sign > 0 ? (a + x, b + y) : (a - x, b - y);
+        // Where an element along an axis lies (PlaceCells): each of its cells' stamps.
+        foreach (var cell in PlaceCells.Of(e))
+        {
+            var (ca, cb) = _classStamp.GetValueOrDefault(cell);
+            _classStamp[cell] = sign > 0 ? (ca + x, cb + y) : (ca - x, cb - y);
+        }
     }
 
     /// <summary>Whether the class has any entity, without sorting them.</summary>

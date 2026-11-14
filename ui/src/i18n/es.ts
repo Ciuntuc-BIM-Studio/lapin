@@ -512,6 +512,11 @@ export const ES: Record<string, string> = {
   "Frame profile": "Perfil del marco",
   "Its width and height are the cell's, and follow it when the grid changes": "Su ancho y su alto son los de la celda, y la siguen cuando cambia la retícula",
   "Fill the cell": "Llenar la celda",
+  // Openings through every wall they pass (forum topic 64)
+  "Cut also the walls it passes through": "Cortar también los muros que atraviesa",
+  "Cuts each wall along its own that its opening reaches into (one stacked on it, a lining against it), not only the wall it is in": "Corta cada muro a lo largo del suyo al que llega su hueco (uno apoyado encima, un trasdosado contra él), no solo el muro en que está",
+  "Cuts each wall along its own that it reaches into (one stacked on it, a lining against it), not only the wall it is in": "Corta cada muro a lo largo del suyo al que llega (uno apoyado encima, un trasdosado contra él), no solo el muro en que está",
+  "Cut the walls it passes through": "Cortar los muros que atraviesa",
   "In the cell": "En la celda",
   "From where it is aligned, into the cell": "Desde donde está alineada, hacia dentro de la celda",
   "Door in the chosen": "Puerta en las elegidas",

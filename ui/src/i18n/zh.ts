@@ -512,6 +512,11 @@ export const ZH: Record<string, string> = {
   "Frame profile": "框型材",
   "Its width and height are the cell's, and follow it when the grid changes": "其宽度和高度取单元格的，网格改变时随之变化",
   "Fill the cell": "填满单元格",
+  // Openings through every wall they pass (forum topic 64)
+  "Cut also the walls it passes through": "同时切割其穿过的墙",
+  "Cuts each wall along its own that its opening reaches into (one stacked on it, a lining against it), not only the wall it is in": "切割沿其所在墙、其洞口伸入的每一面墙（叠在其上的墙、贴在其面上的衬墙），而不仅是其所在的墙",
+  "Cuts each wall along its own that it reaches into (one stacked on it, a lining against it), not only the wall it is in": "切割沿其所在墙、其伸入的每一面墙（叠在其上的墙、贴在其面上的衬墙），而不仅是其所在的墙",
+  "Cut the walls it passes through": "切割其穿过的墙",
   "In the cell": "在单元格中",
   "From where it is aligned, into the cell": "从对齐位置起，向单元格内",
   "Door in the chosen": "在所选单元格中放门",

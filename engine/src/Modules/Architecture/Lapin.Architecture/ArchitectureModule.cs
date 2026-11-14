@@ -703,6 +703,28 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             return null;
         });
 
+        // Whether openings cut every wall they pass through or their own wall alone (forum topic 64): {id | ids (openings, or the doors
+        // and windows filling them), on}. Off, an opening must fit its own wall again.
+        r.Command("setCutThrough", "Cut the walls it passes through", (ctx, a) =>
+        {
+            var ids = Ids(a).ToList();
+            if (ids.Count == 0) throw new CommandException("Select a door, a window or an opening.");
+            var on = a["on"] is not JsonValue v || !v.TryGetValue<bool>(out var b) || b;
+            foreach (var id in ids)
+            {
+                var e = ctx.Model.Get(id) ?? throw new CommandException("Select a door, a window or an opening.");
+                var opening = e.Class == IfcClass.OpeningElement ? e : Openings.OpeningOf(ctx.Model, id) ?? throw new CommandException($"„{e.Name}” fills no opening.");
+                var wall = Openings.WallOf(ctx.Model, opening.Id) ?? throw new CommandException("The opening is in no wall.");
+                if (ThroughOpenings.On(opening) == on) continue;
+                var attrs = opening.CloneAttrs();
+                if (on) attrs.Remove(ThroughOpenings.Key); else attrs[ThroughOpenings.Key] = false;
+                ctx.Replace(opening.With(attrs: attrs));
+                var p = Openings.Place(ctx.Model, ctx.Model.Get(opening.Id)!);
+                Openings.CheckFits(ctx.Model, wall, p.Along, p.Sill, p.Width, p.Height, opening.Id);
+            }
+            return null;
+        });
+
         // What a selected door's, window's or opening's temporary dimensions measure to along its wall (decision 511):
         // {id (the opening, or the door or window filling it) | wallId (one being placed)}.
         r.Query("openingReferences", (q, a) => OpeningReferences.Of(q, a));
@@ -1244,6 +1266,14 @@ sealed class VoidShapes : IVoidShapes
             IfcClass.Slab => Slabs.OpeningSolid(m, host, opening),
             _ => null,
         };
+    }
+
+    /// <summary>The openings of the walls along a wall that pass through it (forum topic 64), each its box through this wall.</summary>
+    public IEnumerable<(string OpeningId, Solid Body)> Through(Entity element, IModelView m)
+    {
+        if (element.Class != IfcClass.Wall) yield break;
+        foreach (var (p, _) in ThroughOpenings.Into(m, element))
+            if (Openings.Cutter(Openings.FrameOf(m, element), p) is { } body) yield return (p.Opening.Id, body);
     }
 }
 
