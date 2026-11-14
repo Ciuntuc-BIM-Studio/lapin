@@ -259,6 +259,20 @@ Each change is one undo step. A level's default plan becomes its plan view when 
 
 ![Crop view in View settings](shots/view-crop-settings.webp)
 
+## Inset views
+
+A detail often needs another view beside it at its own scale: a wall's section next to the plan, a node at 1:5 in a section at 1:50, a stair's plan in its section. **View → Inset view** (or type **IV**) draws any other view inside the one you are in, live: click where it goes, then choose the view in the list (every plan, section, elevation and reference plane's view, and each level's own plan). It is drawn there round your click, at the shown view's own scale, so it is the size it has on its own sheet, in a thin frame with its name and scale under it.
+
+- **It follows the model.** The inset is the other view drawn as it is now: change a wall and both views change. An inset does not show the insets of the view it shows.
+- **Draw over it, and it goes on that view.** A dimension, a text, a line, a rectangle or a bar drawn over an inset is put on the view the inset shows, in its own coordinates, so it fits what is drawn there and shows on that view too. In a plan, the annotation tools (Draft, Annotate, Simple rebar) do this; the model's tools (walls, floors) stay on the plan.
+- **Edit through it.** What is drafted on the shown view is selected through the inset; its grips are where the inset shows them, and dragging one, or the shape itself, changes it on its own view, at its own size.
+- **Move it** by its grip (its point), or with Move.
+- **Its properties** (select its frame): **View shown** changes the view; **Scale 1:** gives it a scale of its own (empty: the shown view's); **Framed** draws or hides its frame and title; **Crop** cuts it to a part of the shown view: drag the crop's corners in the view. The shown view's own crop region is kept too.
+
+Each change is one undo step. The engine draws the inset with the view, so sheets, PDF and DXF print it as the screen shows it, its lines cut to its crop, and what the shown view keeps for the screen (its reference planes) is left out on paper. Visibility / Graphics shows or hides insets with the callouts.
+
+![A plan with its wall's section inset at 1:20, cropped, a dimension drawn over it](shots/inset-view.webp)
+
 ## What a view shows
 
 The **View** tab sets what the view in front shows and how it looks.

@@ -1,6 +1,8 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // Inset views anywhere (decision 574)
+  "Another view drawn in this one, live, at its own scale: what you draw over it goes on that view": "O altă vedere desenată în aceasta, vie, la scara ei: ce desenezi peste ea intră în acea vedere", "Drag: the crop's corner": "Trage: colțul decupajului", "View shown": "Vederea arătată", "The inset's own scale on paper; empty: the shown view's own, so it is the size it has on its sheet": "Scara proprie a vederii inserate pe hârtie; goală: a vederii arătate, deci mărimea pe care o are pe planșa ei", "Crop": "Decupaj", "Only a part of the shown view: drag the crop's corners in the view; off, the whole view": "Doar o parte din vederea arătată: trage colțurile decupajului în vedere; oprit, toată vederea", "The view drawn where you clicked, live, at its own scale: what you draw over it goes on that view, so it fits.": "Vederea desenată unde ai apăsat, vie, la scara ei: ce desenezi peste ea intră în acea vedere, deci se potrivește.", "A thin frame round it, with the shown view's name and scale under it": "Un chenar subțire în jurul ei, cu numele și scara vederii arătate dedesubt",
   // The finish painter (forum topic 83)
   "Paint with it": "Pictează cu el",
   // The finish painter (forum topic 83)

@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const PL: Record<string, string> = {
+  // Inset views anywhere (decision 574)
+  "Another view drawn in this one, live, at its own scale: what you draw over it goes on that view": "Inny widok narysowany w tym, na żywo, w swojej skali: to, co rysujesz na nim, trafia do tamtego widoku", "Drag: the crop's corner": "Przeciągnij: narożnik kadru", "View shown": "Pokazany widok", "The inset's own scale on paper; empty: the shown view's own, so it is the size it has on its sheet": "Własna skala widoku wstawionego na papierze; puste: skala pokazanego widoku, czyli jego wielkość na jego arkuszu", "Crop": "Kadr", "Only a part of the shown view: drag the crop's corners in the view; off, the whole view": "Tylko część pokazanego widoku: przeciągnij narożniki kadru w widoku; wyłączone, cały widok", "The view drawn where you clicked, live, at its own scale: what you draw over it goes on that view, so it fits.": "Widok narysowany tam, gdzie kliknięto, na żywo, w swojej skali: to, co rysujesz na nim, trafia do tamtego widoku, więc pasuje.", "A thin frame round it, with the shown view's name and scale under it": "Cienka ramka wokół, z nazwą i skalą pokazanego widoku pod nią",
   // The finish painter (forum topic 83)
   "Paint with it": "Maluj nim",
   // The finish painter (forum topic 83)

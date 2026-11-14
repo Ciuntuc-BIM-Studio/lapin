@@ -20,6 +20,7 @@ import { useUi } from '../app/store';
 import { execute, useSession } from '../engine/session';
 import type { Grip, GripView, RefLine, Vec2 } from '../platform/module';
 import { gripsOf, gripSnapped, referencesOf } from '../platform/modules';
+import { throughInset, viaOf } from './insetMap';
 import { dropGrips, groupGrips, movers, runSteps, setHotRemove, type GripGroup } from './grips';
 import { openContextMenu } from '../shell/ContextMenu';
 import { formatAngle, formatLength, liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
@@ -102,6 +103,17 @@ export function useGripEditor(o: GripEditorOptions) {
       if (!n?.editable) continue;
       const marks = o.marks?.filter((m) => m.id === n.id || m.id.startsWith(`${n.id}:`));
       for (const g of gripsOf(n, { mark: marks?.find((m) => m.id === n.id), marks, view: views[0] })) if ((!tag || g.key.startsWith(`${tag}:`)) && inView(g.view, n.storeyId)) gs.push(g);
+      // Seen through an inset view (decision 574): the grips it has on its own view, where the inset shows them.
+      for (const m of marks ?? []) {
+        const via = m.id === n.id ? viaOf(m) : null;
+        if (!via || !views.includes(via.host)) continue;
+        const through = marks?.filter((x) => viaOf(x)?.inset === via.inset);
+        for (const g of gripsOf(n, { mark: m, marks: through, view: via.source })) {
+          if ((tag && !g.key.startsWith(`${tag}:`)) || g.view !== via.source) continue;
+          const t = throughInset(g, via);
+          if (t) gs.push({ ...t, key: `${t.key}@${via.inset}` });
+        }
+      }
       for (const r of referencesOf(n)) if ((!tag || !r.tag || r.tag === tag) && inView(r.view, n.storeyId)) rs.push({ ...r, owner: n.id });
     }
     return { grips: gs, refs: rs };

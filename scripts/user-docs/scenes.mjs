@@ -4893,6 +4893,42 @@ export const scenes = [
     },
   },
   {
+    // Decision 574: any view inset in any other (View → Inset view), at its own scale, cropped, a dimension drawn on its source showing through it.
+    id: 'views-inset',
+    touches: ['core', 'architecture', 'drafting'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      for (const [x1, y1, x2, y2] of [[0, 0, 6, 0], [6, 0, 6, 4], [6, 4, 0, 4], [0, 4, 0, 0]]) await t.cmd('architecture.addWall', { storeyId: s, x1, y1, x2, y2 });
+      // A section across the room at 1:20, its x along its line from (3, -1.5): the south wall at 1.5.
+      const section = (await t.cmd('view.create', { kind: 'section', start: [3, -1.5], end: [3, 5.5], scale: 20, name: 'Wall detail' })).id;
+      await t.cmd('drafting.addDimension', { viewId: section, a: [1.2, 0], b: [1.2, 2.5], at: [0.9, 0] });
+      await t.ui({ view: 'plan', keyPlan: false, planDrawing: true, selection: null, selected: [] });
+      await t.wait(1500);
+      await t.fit();
+      // The tool, a click beside the room (west of it, on the screen), the section chosen in the list.
+      await t.tool('view.inset');
+      const [x, y] = await t.planPoint(-2, 2);
+      await t.page.mouse.click(x, y);
+      await t.until(async () => (await t.page.locator(`[data-inset-source="${section}"]`).count()) > 0, 'Inset view lists the section');
+      await t.page.locator(`[data-inset-source="${section}"]`).first().click();
+      await t.wait(800);
+      const inset = (await t.nodes()).find((n) => n.type === 'LapinInset');
+      t.expect(!!inset && inset.props.source === section, 'the section is inset in the plan');
+      // Cut to the south wall and what is round it.
+      await t.cmd('view.updateInset', { id: inset.id, crop: { min: [0.4, -0.6], max: [2.6, 3.4] } });
+      await t.ui({ tool: null, selected: [inset.id], selection: inset.id });
+      await t.wait(1200);
+      await t.fit();
+      await t.wait(600);
+      const d = await t.call('doc.query', { name: 'view.drawing', args: { id: `plan:${s}` } });
+      const mark = d.marks.find((m) => m.id === inset.id);
+      t.expect(mark?.data?.factor === 5 && !!mark?.data?.crop, 'the inset is drawn at the section\'s 1:20 in the 1:100 plan, cropped');
+      t.expect(d.marks.some((m) => m.data?.via?.source === section), 'the dimension drawn on the section shows through the inset');
+      await t.shot('inset-view', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
     // Forum topic 73: Quick select by type in the whole project, the count found shown before selecting.
     id: 'interface-quick-select',
     touches: ['core', 'architecture'],

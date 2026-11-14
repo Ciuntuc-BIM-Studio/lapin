@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  // Inset views anywhere (decision 574)
+  "Another view drawn in this one, live, at its own scale: what you draw over it goes on that view": "En anden visning tegnet i denne, levende, i sin egen målestok: det du tegner ovenpå, kommer på den visning", "Drag: the crop's corner": "Træk: beskæringens hjørne", "View shown": "Vist visning", "The inset's own scale on paper; empty: the shown view's own, so it is the size it has on its sheet": "Den indsatte visnings egen målestok på papir; tom: den viste visnings egen, altså dens størrelse på dens tegning", "Crop": "Beskæring", "Only a part of the shown view: drag the crop's corners in the view; off, the whole view": "Kun en del af den viste visning: træk beskæringens hjørner i visningen; slået fra, hele visningen", "The view drawn where you clicked, live, at its own scale: what you draw over it goes on that view, so it fits.": "Visningen tegnet hvor du klikkede, levende, i sin egen målestok: det du tegner ovenpå, kommer på den visning, så det passer.", "A thin frame round it, with the shown view's name and scale under it": "En tynd ramme om den, med den viste visnings navn og målestok nedenunder",
   // The finish painter (forum topic 83)
   "Paint with it": "Mal med det",
   // The finish painter (forum topic 83)

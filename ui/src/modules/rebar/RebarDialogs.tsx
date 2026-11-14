@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
-import { execute, useSession } from '../../engine/session';
+import { execute } from '../../engine/session';
 import { useRebarCatalog } from './RebarSection';
 import { steelChoices, useRebarRules } from './rebarRules';
 import { LengthField, NumberField } from '../../shell/cells';
@@ -79,33 +79,5 @@ export function RebarSettingsDialog() {
   );
 }
 
-/** The views that can be inset where the user clicked (the host itself left out); a click on one makes the inset. */
-export function InsetPickDialog() {
-  const nodes = useSession((s) => s.nodes);
-  const at = useUi((s) => s.insetAt);
-  const close = () => useUi.setState({ dialog: null, insetAt: null });
-  if (!at) return null;
-  const views = [...nodes.values()].filter((n) => n.type === 'LapinView' && ['section', 'elevation', 'plan', 'plane'].includes(String(n.props.kind)) && n.id !== at.viewId);
-  const choose = async (id: string) => {
-    const r = await execute('view.inset', { viewId: at.viewId, source: id, at: [at.x, at.y] }) as { id?: string } | null;
-    close();
-    if (r?.id) useUi.setState({ selected: [r.id] });
-  };
-  return (
-    <div className="dialog-backdrop" role="dialog" aria-label="Inset view">
-      <div className="dialog narrow">
-        <header className="dialog-head">
-          <span className="panel-title">Inset view</span>
-          <button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button>
-        </header>
-        <div className="dialog-body">
-          <p className="muted small">The view drawn where you clicked, at real size, so bars drawn over it fit.</p>
-          {views.length === 0 && <p className="muted small">There is no other view to show. Make a section first.</p>}
-          <ul className="type-list">
-            {views.map((v) => <li key={v.id}><button type="button" className="tree-item" onClick={() => void choose(v.id)}><span data-no-i18n>{v.name}</span><span className="muted small"> · {String(v.props.kind)}</span></button></li>)}
-          </ul>
-        </div>
-      </div>
-    </div>
-  );
-}
+/** The inset view's picker is the core's now, for every view (decision 574): re-exported for what imported it from here. */
+export { InsetPickDialog } from '../core/InsetPickDialog';

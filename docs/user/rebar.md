@@ -12,7 +12,7 @@ The **Simple rebar** tab draws reinforcement the way a bar list is made: bars as
 
 Reinforcement needs the cross-section beside the longitudinal one. **Section here** does both: pick a beam, a column or a wall in the view you are in, and where you click a section is cut *across* it, perpendicular to its axis, and drawn beside your click, in the same view, with half a metre of what surrounds it (the slab, the column). A column is cut horizontally at the height you clicked. Click inside the element's cut, not only on its edge: in a section or an elevation, as in a plan, the click takes the element whose cut holds it.
 
-The inset view follows the element: move the beam and the section moves with it. Drag the inset by its grip; its properties give it a scale factor and a frame. **Section across** makes the same section as a view of its own, and **Inset view** puts any existing view into the one you are in, at real size and the host's scale, so the bars you draw over it fit its concrete.
+The inset view follows the element: move the beam and the section moves with it. Drag the inset by its grip; its properties give it a scale factor and a frame. **Section across** makes the same section as a view of its own, and **Inset view** puts any existing view into the one you are in, at real size and the host's scale, so the bars you draw over it fit its concrete. Inset views are not only rebar's: **View → Inset view** works in any plan, section or elevation, with a scale and a crop of its own (see [Inset views](views.md#inset-views)).
 
 ![A beam's longitudinal section with its cross-section inset and its reinforcement](shots/rebar-section.webp)
 

@@ -863,7 +863,7 @@ public static class Views
 
         // Annotations: the views' own marks, then each module's (grids, dimensions, texts), over the drawing.
         var ctx = new ViewContext(m, view, spec.Kind, spec.Frame, scale, DraftingResources.Book(m), drawing, q.Geometry) { Services = q.Services };
-        var marks = Marks(ctx).Concat(Location.Marks(ctx)).Concat(SitePlans.Marks(ctx)).Concat(insets ? Insets.Marks(q, ctx) : []).ToList();
+        var marks = Marks(ctx).Concat(Location.Marks(ctx)).Concat(SitePlans.Marks(ctx)).Concat(insets ? Insets.Marks(q, ctx, print) : []).ToList();
         // The reference planes where they cut this view, on the screen only: never on a sheet.
         if (!print) marks.AddRange(RefPlaneMarks(ctx));
         // The view's named boundaries (decision 236), on the screen only.

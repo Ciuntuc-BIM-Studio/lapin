@@ -259,6 +259,20 @@ Fiecare schimbare e un singur pas de anulare. Planul implicit al unui nivel devi
 
 ![Decupează vederea în Setările vederii](shots/view-crop-settings.webp)
 
+## Vederi inserate
+
+Un detaliu are adesea nevoie de altă vedere lângă el, la scara ei: secțiunea unui perete lângă plan, un nod la 1:5 într-o secțiune la 1:50, planul unei scări în secțiunea ei. **Vedere → Vedere inserată** (sau tastezi **IV**) desenează orice altă vedere în cea în care ești, vie: apeși unde vine, apoi alegi vederea din listă (orice plan, secțiune, fațadă și vedere a unui plan de referință, și planul propriu al fiecărui nivel). Se desenează acolo, în jurul punctului apăsat, la scara proprie a vederii arătate, deci la mărimea pe care o are pe planșa ei, într-un chenar subțire cu numele și scara ei dedesubt.
+
+- **Urmărește modelul.** Inserarea este cealaltă vedere desenată așa cum e acum: schimbi un perete și se schimbă amândouă vederile. O inserare nu arată inserările vederii pe care o arată.
+- **Desenezi peste ea, și intră în acea vedere.** O cotă, un text, o linie, un dreptunghi sau o bară desenate peste o inserare se pun pe vederea pe care o arată, în coordonatele ei, deci se potrivesc cu ce e desenat acolo și se văd și în acea vedere. Într-un plan fac asta uneltele de adnotare (Desen, Adnotare, Armare simplă); uneltele modelului (pereți, plăci) rămân pe plan.
+- **Editezi prin ea.** Ce e desenat pe vederea arătată se selectează prin inserare; gripurile lui stau unde le arată inserarea, iar tras de unul, sau de forma însăși, se schimbă pe vederea lui, la mărimea lui.
+- **O muți** de gripul ei (punctul ei) sau cu Mută.
+- **Proprietățile ei** (selectezi chenarul): **Vederea arătată** schimbă vederea; **Scara 1:** îi dă o scară proprie (gol: a vederii arătate); **Cu chenar** desenează sau ascunde chenarul și titlul; **Decupaj** o taie la o parte din vederea arătată: tragi colțurile decupajului în vedere. Regiunea de decupare a vederii arătate se păstrează și ea.
+
+Fiecare schimbare e un singur pas de anulare. Motorul desenează inserarea împreună cu vederea, așa că planșele, PDF-ul și DXF-ul o tipăresc cum o arată ecranul, cu liniile tăiate la decupajul ei, iar ce păstrează vederea arătată doar pentru ecran (planurile ei de referință) lipsește pe hârtie. Vizibilitate / Grafică arată sau ascunde inserările împreună cu chemările de detaliu.
+
+![Un plan cu secțiunea peretelui inserată la 1:20, decupată, cu o cotă desenată peste ea](shots/inset-view.webp)
+
 ## Ce arată o vedere
 
 Tabul **Vedere** setează ce arată vederea din față și cum arată.
