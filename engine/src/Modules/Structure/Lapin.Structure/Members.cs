@@ -153,7 +153,10 @@ public static class Beams
         var bottom = top - Spec(m, beam).Section.Depth;
         var hits = new List<(double In, double Out)>();
         if (length > 1e-9)
-            foreach (var column in m.OfClass(IfcClass.Column))
+            // A project of many columns: only those near the axis are read (report #148: a beam read every column, so thousands of
+            // beams built in a time growing with the square of the frame). Sorted by the place in their own attributes first, a
+            // footprint reaching at most ColumnReach from its point. A few hundred are read whole, as before (NearReads.WholeUpTo).
+            foreach (var column in NearReads.Many(m, IfcClass.Column) ? NearReads.Candidates(m, IfcClass.Column, AxisBox(c, ColumnReach)).Where(x => c.Distance(Place.Point(x)) <= ColumnReach) : m.OfClass(IfcClass.Column))
             {
                 var (section, _, height) = Columns.Spec(m, column);
                 if (!(height > 0)) continue;
@@ -181,6 +184,16 @@ public static class Beams
         // as nothing cuts it; it still stops at the faces of those its ends stand in.
         if (!Materials.Joins(m, beam)) merged = [.. merged.Where(h => h.In <= 1e-6 || h.Out >= length - 1e-6)];
         return new BeamSpan(c, s0, Math.Max(s0, s1), merged);
+    }
+
+    /// <summary>How far from its point a column's footprint may reach for a beam to find it (m): a column 7 m across.</summary>
+    public const double ColumnReach = 5;
+
+    /// <summary>The box in plan round an axis, <paramref name="margin"/> wider all round (an arc's by its rise too), at height 0.</summary>
+    static (Vec3 Min, Vec3 Max) AxisBox(PathCurve c, double margin)
+    {
+        var r = margin + Math.Abs(c.Rise);
+        return (new Vec3(Math.Min(c.Start.X, c.End.X) - r, Math.Min(c.Start.Y, c.End.Y) - r, 0), new Vec3(Math.Max(c.Start.X, c.End.X) + r, Math.Max(c.Start.Y, c.End.Y) + r, 0));
     }
 
     /// <summary>The stations of the axis (between its ends) inside the footprint: exactly on a straight axis, by samples refined to a micron on an arc.</summary>

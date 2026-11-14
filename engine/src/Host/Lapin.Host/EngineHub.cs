@@ -356,7 +356,7 @@ public sealed class EngineHub
                     }
                     return null;
                 case "cancel.long":
-                    // The long call running (an IFC file being optimised) stopped: this computer's own interface only.
+                    // The long call running (an IFC file being optimised, an SDNF import) stopped: this computer's own interface only.
                     if (caller.Remote) throw new CommandException("Only the host can do that.");
                     _dispatcher.CancelLong();
                     result = new JsonObject { ["cancelled"] = true };

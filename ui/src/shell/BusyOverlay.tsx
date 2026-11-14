@@ -2,11 +2,12 @@
  * A long engine call shown while it runs (an IFC read or imported): what it
  * does, its stage, a bar when the engine says how far along it is (moving
  * on its own when it does not: the browser's engine runs in one go), and the
- * time so far. Over everything, so nothing is clicked meanwhile.
+ * time so far, and Cancel when the call can be stopped (an SDNF import, until
+ * it builds the bodies). Over everything, so nothing is clicked meanwhile.
  */
 
 import { useEffect, useState } from 'react';
-import { useIfcImport } from '../engine/ifcImport';
+import { cancellable, useIfcImport } from '../engine/ifcImport';
 
 const seconds = (ms: number) => (ms < 60_000 ? `${Math.floor(ms / 1000)} s` : `${Math.floor(ms / 60_000)} min ${Math.floor((ms % 60_000) / 1000)} s`);
 
@@ -33,6 +34,7 @@ export function BusyOverlay() {
           <span style={share != null ? { width: `${Math.round(share * 100)}%` } : undefined} />
         </div>
         <div className="busy-time muted small" data-no-i18n>{seconds(Math.max(0, now - busy.started))}</div>
+        {cancellable(busy) && <div className="row"><span className="grow" /><button type="button" className="btn" data-action="busy-cancel" onClick={busy.cancel}>Cancel</button></div>}
       </div>
     </div>
   );

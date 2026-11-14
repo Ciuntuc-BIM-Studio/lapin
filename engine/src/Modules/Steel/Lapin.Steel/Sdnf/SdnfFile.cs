@@ -22,6 +22,10 @@ public sealed record SdnfFile(SdnfTitle Title, IReadOnlyList<SdnfMember> Members
     public IReadOnlyList<string> Notes { get; init; } = [];
     /// <summary>The members' linear unit as the file names it (<c>millimeters</c>, <c>feet</c>).</summary>
     public string Unit { get; init; } = "millimeters";
+    /// <summary>The packets in the file, in order: each one's header line, what its count announced and what was read.</summary>
+    public IReadOnlyList<SdnfPacketInfo> Packets { get; init; } = [];
+    /// <summary>The file's lines.</summary>
+    public int Lines { get; init; }
     /// <summary>Whether Lapin wrote the file (its issue code, its comments).</summary>
     public bool FromLapin => Title.IssueCode.StartsWith("Lapin", StringComparison.OrdinalIgnoreCase) || LapinIds.Count > 0;
 }
@@ -53,6 +57,8 @@ public sealed record SdnfMember(long Id, int Cardinal, string Type, string Piece
     public IReadOnlyList<int> Releases { get; init; } = new int[12];
     /// <summary>A curved member's arc (packet 60): <see cref="Start"/> and <see cref="End"/> are then the arc's ends; null for a linear member (packet 10).</summary>
     public SdnfArc? Arc { get; init; }
+    /// <summary>The line of its first record in the file (0: not read from one).</summary>
+    public int Line { get; init; }
 }
 
 /// <summary>
@@ -91,6 +97,8 @@ public sealed record SdnfHole(long Id, long Parent, int Periphery, double Thickn
 {
     /// <summary>Record 4: approval status, design status, fabricator's note, hole treatment.</summary>
     public IReadOnlyList<int> Status { get; init; } = new int[4];
+    /// <summary>The line of its first record in the file (0: not read from one).</summary>
+    public int Line { get; init; }
 }
 
 /// <summary>
@@ -106,6 +114,8 @@ public sealed record SdnfPlate(long Id, int ConnectPoint, string Type, string Pi
     public int Status { get; init; }
     public int Class { get; init; }
     public int Revision { get; init; }
+    /// <summary>The line of its first record in the file (0: not read from one).</summary>
+    public int Line { get; init; }
 }
 
 /// <summary>A set of grid lines (packet 50): its number, description and lines (a label, a start and an end).</summary>
@@ -288,10 +298,25 @@ public static class SdnfWriter
 }
 
 /// <summary>
+/// A file Lapin cannot read as SDNF, with where: the line (1 the file's first) and the packet it is in (null before the first).
+/// The message names both, so the user finds the record in the file.
+/// </summary>
+public sealed class SdnfFormatException(string message, int line, string? packet) : FormatException(message)
+{
+    public int Line { get; } = line;
+    public string? Packet { get; } = packet;
+}
+
+/// <summary>A packet as the file has it: its number, the line of its header, how many items its count announces and how many were read.</summary>
+public sealed record SdnfPacketInfo(string Id, int Line, int Announced, int Read);
+
+/// <summary>
 /// Reads an SDNF file, version 2.0 or 3.0 (its title says which): the title, the linear members (six records each in version
 /// 2, ten in version 3, as many as the packet holds per member when a program writes more), the plates, their holes, the
 /// grids, the curved members (eleven records each); the loads and connections are noted in <see cref="SdnfFile.Notes"/>. Lapin's comments
-/// (<c># Lapin member 12 GlobalId</c>) give back the elements it wrote.
+/// (<c># Lapin member 12 GlobalId</c>) give back the elements it wrote. A record that cannot be read (a coordinate that is no
+/// number, a packet that ends before its last record) stops the reading with an <see cref="SdnfFormatException"/> naming its
+/// line, packet and item; a packet holding fewer items than its count announces is read as far as it goes and said.
 /// </summary>
 public static partial class SdnfReader
 {
@@ -324,27 +349,57 @@ public static partial class SdnfReader
         return o;
     }
 
-    sealed class Cursor(List<string> lines, string packet)
+    /// <summary>A record: its fields and its line in the file.</summary>
+    readonly record struct Line(int No, string Text);
+
+    /// <summary>A packet's records read one after the other, remembering the line of the last, for an error to name.</summary>
+    sealed class Cursor(List<Line> lines, string packet, int header)
     {
         int at;
+        public string Packet => packet;
         public bool More => at < lines.Count;
         public int Left => lines.Count - at;
-        public List<string> Next() => More ? Fields(lines[at++]) : throw new FormatException($"Packet {packet} ends before its last record.");
-        public void Skip(int n) => at = Math.Min(lines.Count, at + n);
+        /// <summary>The line of the record read last (the packet's header before any).</summary>
+        public int Last { get; private set; } = header;
+        public List<string> Next()
+        {
+            if (!More) throw new SdnfFormatException($"Line {Last}, packet {packet}: the packet ends before its last record.", Last, packet);
+            Last = lines[at].No;
+            return Fields(lines[at++].Text);
+        }
+        public void Skip(int n) { var to = Math.Min(lines.Count, at + n); if (to > at) Last = lines[to - 1].No; at = to; }
     }
 
     static double D(List<string> f, int i) => i < f.Count && double.TryParse(f[i], NumberStyles.Float, Inv, out var v) ? v : 0;
+    /// <summary>A coordinate or a length that must be there and be a number: else the record is not one the format allows.</summary>
+    static double N(List<string> f, int i, string what) =>
+        i >= f.Count ? throw new FormatException($"{what} is missing (the record has {f.Count} field{(f.Count == 1 ? "" : "s")}).")
+        : double.TryParse(f[i], NumberStyles.Float, Inv, out var v) && double.IsFinite(v) ? v
+        : throw new FormatException($"{what} is „{f[i]}”, not a number.");
     static int I(List<string> f, int i) => i < f.Count && int.TryParse(f[i], NumberStyles.Integer, Inv, out var v) ? v
         : i < f.Count && double.TryParse(f[i], NumberStyles.Float, Inv, out var d) ? (int)Math.Round(d) : 0;
     static long Id(List<string> f, int i) => i < f.Count && long.TryParse(f[i], NumberStyles.Integer, Inv, out var v) ? v : throw new FormatException($"„{(i < f.Count ? f[i] : "")}” is not a member or plate number.");
     static string S(List<string> f, int i) => i < f.Count ? f[i].Trim() : "";
 
+    /// <summary>An item of a packet read by <paramref name="read"/>: a failure in it said with its line, packet and place in the packet.</summary>
+    static T Item<T>(Cursor c, string what, int index, int count, Func<T> read)
+    {
+        try { return read(); }
+        catch (SdnfFormatException) { throw; }
+        catch (FormatException ex)
+        {
+            throw new SdnfFormatException($"Line {c.Last}, packet {c.Packet}, {what} {index + 1} of {count}: {ex.Message}", c.Last, c.Packet);
+        }
+    }
+
     public static SdnfFile Read(string text)
     {
-        var packets = new List<(string Id, List<string> Lines)>();
+        var packets = new List<(string Id, int Line, List<Line> Lines)>();
         var lapin = new Dictionary<string, string>();
+        var no = 0;
         foreach (var raw in text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n'))
         {
+            no++;
             var line = raw.TrimEnd();
             var trimmed = line.TrimStart();
             if (trimmed.Length == 0) continue;
@@ -353,57 +408,71 @@ public static partial class SdnfReader
                 if (LapinComment().Match(trimmed) is { Success: true } c) lapin[$"{c.Groups[1].Value.ToLowerInvariant()} {c.Groups[2].Value}"] = c.Groups[3].Value;
                 continue;
             }
-            if (Header().Match(trimmed) is { Success: true } h) { packets.Add((h.Groups[1].Value.PadLeft(2, '0'), [])); continue; }
-            if (packets.Count == 0) throw new FormatException("The file does not start with a packet (Packet 00): it is no SDNF file.");
-            packets[^1].Lines.Add(line);
+            if (Header().Match(trimmed) is { Success: true } h) { packets.Add((h.Groups[1].Value.PadLeft(2, '0'), no, [])); continue; }
+            if (packets.Count == 0) throw new SdnfFormatException($"Line {no}: the file does not start with a packet (Packet 00): it is no SDNF file.", no, null);
+            packets[^1].Lines.Add(new Line(no, line));
         }
-        if (packets.Count == 0 || packets[0].Id != "00") throw new FormatException("The file has no title packet (Packet 00) first: it is no SDNF file.");
+        if (packets.Count == 0 || packets[0].Id != "00") throw new SdnfFormatException("The file has no title packet (Packet 00) first: it is no SDNF file.", packets.Count == 0 ? 1 : packets[0].Line, null);
 
-        var title = Title(packets[0].Lines);
+        var title = Title(packets[0].Lines, packets[0].Line);
         var v3 = title.Version.Contains('3');
         var members = new List<SdnfMember>();
         var plates = new List<SdnfPlate>();
         var grids = new List<SdnfGridSet>();
         var holes = new List<SdnfHole>();
         var notes = new List<string>();
+        var infos = new List<SdnfPacketInfo>();
         string? unit = null;
         double scale = 1;
-        foreach (var (id, lines) in packets.Skip(1))
+        void Told(string id, int line, int announced, int read, string what)
+        {
+            infos.Add(new SdnfPacketInfo(id, line, announced, read));
+            if (read < announced) notes.Add($"Packet {id} (line {line}) announces {announced} {what} but holds {read}: the file may be cut short; the {read} were read.");
+        }
+        foreach (var (id, at, lines) in packets.Skip(1))
             switch (id)
             {
                 case "10":
+                case "60":
                 {
-                    var (u, s, list) = Members(lines, v3);
-                    (unit, scale) = (unit ?? u, unit == null ? s : scale);
+                    var (u, s, list, announced) = Members(lines, v3, at, curved: id == "60");
+                    if (unit == null) (unit, scale) = (u, s);
                     members.AddRange(list);
+                    Told(id, at, announced, list.Count, id == "60" ? "curved members" : "members");
                     break;
                 }
                 case "20":
                 {
-                    var (u, s, list) = Plates(lines, v3);
+                    var (u, s, list, announced) = Plates(lines, v3, at);
                     if (unit == null) (unit, scale) = (u, s);
                     plates.AddRange(list);
+                    Told(id, at, announced, list.Count, "plates");
                     break;
                 }
-                case "50": grids.AddRange(Grids(lines, scale)); break;
-                case "22": holes.AddRange(Holes(lines)); break;
-                case "60":
+                case "50":
                 {
-                    var (u, s, list) = Members(lines, v3, curved: true);
-                    if (unit == null) (unit, scale) = (u, s);
-                    members.AddRange(list);
+                    var (list, announced) = Grids(lines, scale, at);
+                    grids.AddRange(list);
+                    Told(id, at, announced, list.Count, "grid sets");
                     break;
                 }
-                case "30": notes.Add("The member loads (packet 30) were left out: Lapin keeps no loads."); break;
-                case "40": notes.Add("The connection details (packet 40, text only) were left out."); break;
-                default: notes.Add($"Packet {id} is not one SDNF defines: left out."); break;
+                case "22":
+                {
+                    var (list, announced) = Holes(lines, at);
+                    holes.AddRange(list);
+                    Told(id, at, announced, list.Count, "holes");
+                    break;
+                }
+                case "30": infos.Add(new(id, at, 0, 0)); notes.Add("The member loads (packet 30) were left out: Lapin keeps no loads."); break;
+                case "40": infos.Add(new(id, at, 0, 0)); notes.Add("The connection details (packet 40, text only) were left out."); break;
+                default: infos.Add(new(id, at, 0, 0)); notes.Add($"Packet {id} (line {at}) is not one SDNF defines: left out."); break;
             }
-        return new SdnfFile(title, members, plates, grids) { LapinIds = lapin, Notes = notes, Unit = unit ?? "meters", Holes = holes };
+        return new SdnfFile(title, members, plates, grids) { LapinIds = lapin, Notes = notes, Unit = unit ?? "meters", Holes = holes, Packets = infos, Lines = no };
     }
 
-    static SdnfTitle Title(List<string> lines)
+    static SdnfTitle Title(List<Line> lines, int header)
     {
-        var c = new Cursor(lines, "00");
+        var c = new Cursor(lines, "00", header);
         var first = c.Next();
         // Version 3 begins with its version; version 2 with the engineering firm.
         string version = "SDNF Version 2.0";
@@ -417,89 +486,99 @@ public static partial class SdnfReader
         return new SdnfTitle(version, S(first, 0), client, structure, project, S(when, 0), S(when, 1), I(issue, 0), S(issue, 1), design);
     }
 
-    static (string Unit, double Scale) Units(List<string> f, string packet)
+    static (string Unit, double Scale) Units(List<string> f, string packet, int line)
     {
         var name = S(f, 0);
-        return (name, SdnfUnits.Metres(name) ?? throw new FormatException($"Packet {packet} is in „{name}”, a unit Lapin does not know (millimeters, centimeters, meters, inches, feet)."));
+        return (name, SdnfUnits.Metres(name) ?? throw new SdnfFormatException($"Line {line}, packet {packet}: the unit is „{name}”, one Lapin does not know (millimeters, centimeters, meters, inches, feet).", line, packet));
     }
 
-    static (string Unit, double Scale, List<SdnfMember> Members) Members(List<string> lines, bool v3, bool curved = false)
+    static (string Unit, double Scale, List<SdnfMember> Members, int Announced) Members(List<Line> lines, bool v3, int header, bool curved = false)
     {
-        if (lines.Count == 0) return ("meters", 1, []);
+        if (lines.Count == 0) return ("meters", 1, [], 0);
         var packet = curved ? "60" : "10";
-        var head = Fields(lines[0]);
-        var (unit, k) = Units(head, packet);
+        var head = Fields(lines[0].Text);
+        var (unit, k) = Units(head, packet, lines[0].No);
         var n = I(head, head.Count - 1);
         var body = lines.Skip(1).ToList();
         // Ten records a member in version 3, six in version 2, a curved member's arc one more (eleven); as many as the packet
         // holds per member when a program writes more.
         var least = curved ? 7 : 6;
         var per = n > 0 && body.Count % n == 0 && body.Count / n >= least ? body.Count / n : curved ? 11 : v3 ? 10 : 6;
-        var c = new Cursor(body, packet);
-        var o = new List<SdnfMember>();
+        var c = new Cursor(body, packet, lines[0].No);
+        var o = new List<SdnfMember>(Math.Max(0, Math.Min(n, body.Count / least + 1)));
+        var what = curved ? "curved member" : "member";
         for (var i = 0; i < n && c.Left >= least; i++)
-        {
-            var r1 = c.Next();
-            var r2 = c.Next();
-            var arc = curved ? c.Next() : null;
-            var r3 = c.Next();
-            var r4 = c.Next();
-            var r5 = c.Next();
-            var r6 = c.Next();
-            c.Skip(per - least);
-            Vec3 V(List<string> f, int at, double s) => new(D(f, at) * s, D(f, at + 1) * s, D(f, at + 2) * s);
-            o.Add(new SdnfMember(Id(r1, 0), I(r1, 1), S(r1, 4), S(r1, 5), S(r2, 0), S(r2, 1), D(r2, 2), I(r2, 3) != 0, I(r2, 4) != 0,
-                V(r3, 0, 1), V(r3, 3, k), V(r3, 6, k), D(r3, 9) * k, D(r3, 10) * k)
+            o.Add(Item(c, what, i, n, () =>
             {
-                Status = I(r1, 2), Class = I(r1, 3), Revision = I(r1, 6),
-                OffsetX = D(r4, 0) * k, OffsetY = D(r4, 1) * k,
-                StartOffset = V(r5, 0, k), EndOffset = V(r5, 3, k),
-                Releases = Enumerable.Range(0, 12).Select(j => I(r6, j)).ToArray(),
-                Arc = arc == null ? null : new SdnfArc(V(arc, 0, k), D(arc, 3), D(arc, 4), V(arc, 5, 1)),
-            });
-        }
-        return (unit, k, o);
+                var r1 = c.Next();
+                var line = c.Last;
+                var r2 = c.Next();
+                var arc = curved ? c.Next() : null;
+                var r3 = c.Next();
+                // The orientation vector, the start and the end: nine numbers (the cutbacks may be left out).
+                Vec3 P(int at, double s, string name) => new(N(r3, at, $"its {name}'s x") * s, N(r3, at + 1, $"its {name}'s y") * s, N(r3, at + 2, $"its {name}'s z") * s);
+                var (orientation, start, end) = (P(0, 1, "orientation vector"), P(3, k, "start"), P(6, k, "end"));
+                var r4 = c.Next();
+                var r5 = c.Next();
+                var r6 = c.Next();
+                c.Skip(per - least);
+                Vec3 V(List<string> f, int at, double s) => new(D(f, at) * s, D(f, at + 1) * s, D(f, at + 2) * s);
+                return new SdnfMember(Id(r1, 0), I(r1, 1), S(r1, 4), S(r1, 5), S(r2, 0), S(r2, 1), D(r2, 2), I(r2, 3) != 0, I(r2, 4) != 0,
+                    orientation, start, end, D(r3, 9) * k, D(r3, 10) * k)
+                {
+                    Status = I(r1, 2), Class = I(r1, 3), Revision = I(r1, 6),
+                    OffsetX = D(r4, 0) * k, OffsetY = D(r4, 1) * k,
+                    StartOffset = V(r5, 0, k), EndOffset = V(r5, 3, k),
+                    Releases = Enumerable.Range(0, 12).Select(j => I(r6, j)).ToArray(),
+                    Arc = arc == null ? null : new SdnfArc(new Vec3(N(arc, 0, "its arc's centre x") * k, N(arc, 1, "its arc's centre y") * k, N(arc, 2, "its arc's centre z") * k), D(arc, 3), N(arc, 4, "its arc's sweep"), V(arc, 5, 1)),
+                    Line = line,
+                };
+            }));
+        return (unit, k, o, n);
     }
 
-    static (string Unit, double Scale, List<SdnfPlate> Plates) Plates(List<string> lines, bool v3)
+    static (string Unit, double Scale, List<SdnfPlate> Plates, int Announced) Plates(List<Line> lines, bool v3, int header)
     {
-        if (lines.Count == 0) return ("meters", 1, []);
-        var head = Fields(lines[0]);
-        var (unit, k) = Units(head, "20");
+        if (lines.Count == 0) return ("meters", 1, [], 0);
+        var head = Fields(lines[0].Text);
+        var (unit, k) = Units(head, "20", lines[0].No);
         var tk = head.Count >= 3 ? SdnfUnits.Metres(S(head, 1)) ?? k : k;
         var n = I(head, head.Count - 1);
-        var c = new Cursor(lines.Skip(1).ToList(), "20");
+        var c = new Cursor(lines.Skip(1).ToList(), "20", lines[0].No);
         var o = new List<SdnfPlate>();
         for (var i = 0; i < n && c.More; i++)
-        {
-            var r1 = c.Next();
-            var r2 = c.Next();
-            // Version 3: piece mark, grade, thickness, vertices per face, offset, periphery; version 2: piece mark, grade, thickness, vertices.
-            var three = v3 && r2.Count >= 6;
-            var count = I(r2, 3);
-            var periphery = three ? I(r2, 5) : 0;
-            List<(Vec3, double)> Loop(int m, bool scaledFlag) => Vertices(c, m, k, scaledFlag);
-            List<(Vec3, double)> top, bottom;
-            if (!three) { top = Loop(count, false); bottom = []; }
-            else if (periphery == 2) { top = Loop(1, true); bottom = Loop(1, true); }
-            else { top = Loop(count, false); bottom = Loop(count, false); }
-            if (three) c.Skip(4);
-            o.Add(new SdnfPlate(Id(r1, 0), I(r1, 1), S(r1, 4), S(r2, 0), S(r2, 1), D(r2, 2) * tk, periphery, top, bottom)
+            o.Add(Item(c, "plate", i, n, () =>
             {
-                Status = I(r1, 2), Class = I(r1, 3), Revision = I(r1, 5),
-            });
-        }
-        return (unit, k, o);
+                var r1 = c.Next();
+                var line = c.Last;
+                var r2 = c.Next();
+                // Version 3: piece mark, grade, thickness, vertices per face, offset, periphery; version 2: piece mark, grade, thickness, vertices.
+                var three = v3 && r2.Count >= 6;
+                var count = I(r2, 3);
+                if (count < 0 || count > 100_000) throw new FormatException($"it has {S(r2, 3)} vertices per face.");
+                var periphery = three ? I(r2, 5) : 0;
+                List<(Vec3, double)> Loop(int m, bool scaledFlag) => Vertices(c, m, k, scaledFlag);
+                List<(Vec3, double)> top, bottom;
+                if (!three) { top = Loop(count, false); bottom = []; }
+                else if (periphery == 2) { top = Loop(1, true); bottom = Loop(1, true); }
+                else { top = Loop(count, false); bottom = Loop(count, false); }
+                if (three) c.Skip(4);
+                return new SdnfPlate(Id(r1, 0), I(r1, 1), S(r1, 4), S(r2, 0), S(r2, 1), N(r2, 2, "its thickness") * tk, periphery, top, bottom)
+                {
+                    Status = I(r1, 2), Class = I(r1, 3), Revision = I(r1, 5), Line = line,
+                };
+            }));
+        return (unit, k, o, n);
     }
 
     /// <summary>A loop's vertices: x, y, z and the flag (a circle's radius, then scaled as a length).</summary>
     static List<(Vec3, double)> Vertices(Cursor c, int m, double k, bool scaledFlag)
     {
-        var l = new List<(Vec3, double)>();
+        var l = new List<(Vec3, double)>(m);
         for (var j = 0; j < m; j++)
         {
             var f = c.Next();
-            l.Add((new Vec3(D(f, 0) * k, D(f, 1) * k, D(f, 2) * k), f.Count > 3 ? D(f, 3) * (scaledFlag ? k : 1) : 1));
+            l.Add((new Vec3(N(f, 0, $"vertex {j + 1}'s x") * k, N(f, 1, $"vertex {j + 1}'s y") * k, N(f, 2, $"vertex {j + 1}'s z") * k), f.Count > 3 ? D(f, 3) * (scaledFlag ? k : 1) : 1));
         }
         return l;
     }
@@ -509,48 +588,52 @@ public static partial class SdnfReader
     /// depth and vertices per face, its two loops (a circle's centre on each face, its radius the flag), then its status
     /// record and three user attributes.
     /// </summary>
-    static List<SdnfHole> Holes(List<string> lines)
+    static (List<SdnfHole> Holes, int Announced) Holes(List<Line> lines, int header)
     {
-        if (lines.Count == 0) return [];
-        var head = Fields(lines[0]);
-        var (_, k) = Units(head, "22");
+        if (lines.Count == 0) return ([], 0);
+        var head = Fields(lines[0].Text);
+        var (_, k) = Units(head, "22", lines[0].No);
         var tk = head.Count >= 3 ? SdnfUnits.Metres(S(head, 1)) ?? k : k;
         var n = I(head, head.Count - 1);
-        var c = new Cursor(lines.Skip(1).ToList(), "22");
+        var c = new Cursor(lines.Skip(1).ToList(), "22", lines[0].No);
         var o = new List<SdnfHole>();
         for (var i = 0; i < n && c.More; i++)
-        {
-            var r1 = c.Next();
-            var r2 = c.Next();
-            var periphery = I(r2, 0);
-            var count = periphery == 2 ? 1 : I(r2, 2);
-            var top = Vertices(c, count, k, periphery == 2);
-            var bottom = Vertices(c, count, k, periphery == 2);
-            var r4 = c.More ? c.Next() : [];
-            c.Skip(1);
-            o.Add(new SdnfHole(Id(r1, 0), Id(r1, 1), periphery, D(r2, 1) * tk, top, bottom) { Status = Enumerable.Range(0, 4).Select(j => I(r4, j)).ToArray() });
-        }
-        return o;
+            o.Add(Item(c, "hole", i, n, () =>
+            {
+                var r1 = c.Next();
+                var line = c.Last;
+                var r2 = c.Next();
+                var periphery = I(r2, 0);
+                var count = periphery == 2 ? 1 : I(r2, 2);
+                if (count < 0 || count > 100_000) throw new FormatException($"it has {S(r2, 2)} vertices per face.");
+                var top = Vertices(c, count, k, periphery == 2);
+                var bottom = Vertices(c, count, k, periphery == 2);
+                var r4 = c.More ? c.Next() : [];
+                c.Skip(1);
+                return new SdnfHole(Id(r1, 0), Id(r1, 1), periphery, D(r2, 1) * tk, top, bottom) { Status = Enumerable.Range(0, 4).Select(j => I(r4, j)).ToArray(), Line = line };
+            }));
+        return (o, n);
     }
 
-    static List<SdnfGridSet> Grids(List<string> lines, double k)
+    static (List<SdnfGridSet> Sets, int Announced) Grids(List<Line> lines, double k, int header)
     {
-        if (lines.Count == 0) return [];
-        var c = new Cursor(lines, "50");
+        if (lines.Count == 0) return ([], 0);
+        var c = new Cursor(lines, "50", header);
         var sets = I(c.Next(), 0);
         var o = new List<SdnfGridSet>();
         for (var i = 0; i < sets && c.More; i++)
-        {
-            var r = c.Next();
-            var n = I(r, 1);
-            var list = new List<(string, Vec3, Vec3)>();
-            for (var j = 0; j < n && c.More; j++)
+            o.Add(Item(c, "grid set", i, sets, () =>
             {
-                var f = c.Next();
-                list.Add((S(f, 0), new Vec3(D(f, 1) * k, D(f, 2) * k, D(f, 3) * k), new Vec3(D(f, 4) * k, D(f, 5) * k, D(f, 6) * k)));
-            }
-            o.Add(new SdnfGridSet(I(r, 0), S(r, 2), list));
-        }
-        return o;
+                var r = c.Next();
+                var n = I(r, 1);
+                var list = new List<(string, Vec3, Vec3)>();
+                for (var j = 0; j < n && c.More; j++)
+                {
+                    var f = c.Next();
+                    list.Add((S(f, 0), new Vec3(N(f, 1, "a line's start x") * k, N(f, 2, "a line's start y") * k, D(f, 3) * k), new Vec3(N(f, 4, "a line's end x") * k, N(f, 5, "a line's end y") * k, D(f, 6) * k)));
+                }
+                return new SdnfGridSet(I(r, 0), S(r, 2), list);
+            }));
+        return (o, sets);
     }
 }

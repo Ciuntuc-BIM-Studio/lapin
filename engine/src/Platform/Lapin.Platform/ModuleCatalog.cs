@@ -134,16 +134,26 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
             {
                 var whole = classPriority > mine || CutOrder.MaterialsOf(model) != null;
                 var list = CandidatesOf(store, cls, envelope, whole);
-                // What the search reads, as the plain loop below notes it.
+                // What the search reads, as the plain loop below notes it: the class's listing, and what working out its cutters read.
+                // Past NearReads.WholeUpTo of them, only the cutters round the target (report #148: every beam read every column, a
+                // frame of thousands built in a time growing with its square); one elsewhere that comes near, or leaves, is built
+                // again where it was and is, which touches the cells read here.
                 view.Read.Add(whole ? TrackingView.ClassKey(cls) : TrackingView.CutKey(cls));
-                view.Read.UnionWith(list.Reads);
-                foreach (var c in list.All)
+                var near = list.Count > NearReads.WholeUpTo;
+                if (near)
                 {
+                    view.Read.Add(NearReads.Any(cls));
+                    foreach (var k in NearReads.Cells(cls, bounds)) view.Read.Add(k);
+                }
+                else view.Read.UnionWith(list.Reads);
+                foreach (var c in near ? list.Near(bounds) : list.All)
+                {
+                    const double tolerance = 1e-6;
+                    if (c.Bounds is not { } cb || cb.Min.X >= bounds.Max.X - tolerance || cb.Max.X <= bounds.Min.X + tolerance || cb.Min.Y >= bounds.Max.Y - tolerance || cb.Max.Y <= bounds.Min.Y + tolerance || cb.Min.Z >= bounds.Max.Z - tolerance || cb.Max.Z <= bounds.Min.Z + tolerance) continue;
+                    if (near) view.Read.UnionWith(c.Reads);
                     if (c.Entity.Id == target.Id || joined.Contains(c.Entity.Id) || c.Priority is not { } theirs || theirs <= mine || !c.Joins) continue;
                     if (!whole && !Raised(c.Entity, model, mine)) continue;
-                    if (c.Solid is null || c.Bounds is not { } cb) continue;
-                    const double tolerance = 1e-6;
-                    if (cb.Min.X >= bounds.Max.X - tolerance || cb.Max.X <= bounds.Min.X + tolerance || cb.Min.Y >= bounds.Max.Y - tolerance || cb.Max.Y <= bounds.Min.Y + tolerance || cb.Min.Z >= bounds.Max.Z - tolerance || cb.Max.Z <= bounds.Min.Z + tolerance) continue;
+                    if (c.Solid is null) continue;
                     o.Add(c.Solid);
                 }
                 continue;
@@ -171,8 +181,61 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
     /// </summary>
     public bool CacheCutters { get; set; } = true;
 
-    sealed record Candidate(Entity Entity, int? Priority, Solid? Solid, (Vec3 Min, Vec3 Max)? Bounds, bool Joins = true);
-    sealed record Candidates(List<Candidate> All, HashSet<string> Reads);
+    sealed record Candidate(Entity Entity, int? Priority, Solid? Solid, (Vec3 Min, Vec3 Max)? Bounds, HashSet<string> Reads, bool Joins = true);
+
+    /// <summary>A class's possible cutters at a revision, found by the cells in plan their boxes fall in (<see cref="NearReads.Size"/>).</summary>
+    sealed class Candidates
+    {
+        readonly Dictionary<(long X, long Y), List<Candidate>> _cells;
+        readonly List<Candidate> _wide;
+
+        public Candidates(List<Candidate> all)
+        {
+            All = all;
+            _cells = Index(all, out _wide);
+            // A few: every reader notes what all of them read (NearReads.WholeUpTo).
+            if (all.Count <= NearReads.WholeUpTo) foreach (var c in all) Reads.UnionWith(c.Reads);
+        }
+
+        public List<Candidate> All { get; }
+        public int Count => All.Count;
+        /// <summary>What working them all out read, for a few of them; empty past <see cref="NearReads.WholeUpTo"/>.</summary>
+        public HashSet<string> Reads { get; } = [];
+
+        static (long, long, long, long)? Span((Vec3 Min, Vec3 Max) b)
+        {
+            double x0 = Math.Floor(b.Min.X / NearReads.Size), y0 = Math.Floor(b.Min.Y / NearReads.Size), x1 = Math.Floor(b.Max.X / NearReads.Size), y1 = Math.Floor(b.Max.Y / NearReads.Size);
+            if (!double.IsFinite(x0 + y0 + x1 + y1) || (x1 - x0 + 1) * (y1 - y0 + 1) > 4096) return null;
+            return ((long)x0, (long)y0, (long)x1, (long)y1);
+        }
+
+        static Dictionary<(long, long), List<Candidate>> Index(List<Candidate> all, out List<Candidate> wide)
+        {
+            var o = new Dictionary<(long, long), List<Candidate>>();
+            wide = [];
+            foreach (var c in all)
+            {
+                if (c.Bounds is not { } b) continue;
+                if (Span(b) is not var (x0, y0, x1, y1)) { wide.Add(c); continue; }
+                for (var x = x0; x <= x1; x++)
+                    for (var y = y0; y <= y1; y++)
+                        (o.TryGetValue((x, y), out var l) ? l : o[(x, y)] = []).Add(c);
+            }
+            return o;
+        }
+
+        /// <summary>The cutters whose boxes may meet <paramref name="b"/>, each once; those with no box are none of them.</summary>
+        public IEnumerable<Candidate> Near((Vec3 Min, Vec3 Max) b)
+        {
+            if (Span(b) is not var (x0, y0, x1, y1)) { foreach (var c in _cells.Values.SelectMany(l => l).Concat(_wide).Distinct()) yield return c; yield break; }
+            var seen = new HashSet<Candidate>(ReferenceEqualityComparer.Instance);
+            for (var x = x0; x <= x1; x++)
+                for (var y = y0; y <= y1; y++)
+                    if (_cells.TryGetValue((x, y), out var l))
+                        foreach (var c in l) if (seen.Add(c)) yield return c;
+            foreach (var c in _wide) if (seen.Add(c)) yield return c;
+        }
+    }
     sealed class CandidateCache(ModelStore store, long revision)
     {
         public readonly ModelStore Store = store;
@@ -197,18 +260,19 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
         }
         return cache.Lists.GetOrAdd((cls, whole), _ => new Lazy<Candidates>(() =>
         {
-            var rec = new TrackingView(store);
             var all = new List<Candidate>();
             foreach (var e in store.OfClass(cls))
             {
                 if (!whole && !e.Attrs.ContainsKey("cutPriority") && !e.Attrs.ContainsKey("exportAs")) continue;
+                // What each one read, for the targets it may cut to note (only those it is near).
+                var rec = new TrackingView(store);
                 rec.Get(e.Id);
                 var priority = PriorityOf(e, rec);
                 var joins = priority == null || Materials.Joins(rec, e);
                 var solid = priority != null && joins ? envelope(e, rec) : null;
-                all.Add(new Candidate(e, priority, solid, solid != null ? Measure.Bounds(solid) : null, joins));
+                all.Add(new Candidate(e, priority, solid, solid != null ? Measure.Bounds(solid) : null, rec.Read, joins));
             }
-            return new Candidates(all, rec.Read);
+            return new Candidates(all);
         })).Value;
     }
 

@@ -455,7 +455,7 @@ public class SdnfTests
         var r = Import(f, text);
         Assert.Equal(1, (int)r["made"]!);
         Assert.Equal(1, (int)r["skipped"]!);
-        Assert.Contains(((JsonArray)r["notes"]!).Select(x => (string)x!), x => x.Contains("Curved member 32") && x.Contains("level"));
+        Assert.Contains(((JsonArray)r["notes"]!).Select(x => (string)x!), x => x.Contains("curved member 32") && x.Contains("level"));
         var beam = f.Model.OfClass(IfcClass.Beam).Single();
         Assert.Equal("R1", beam.Name);
         var c = PathCurve.Of(beam);
@@ -482,7 +482,7 @@ public class SdnfTests
         Assert.Equal(1, (int)r["plates"]!);
         Assert.Equal(3, (int)r["holes"]!);
         var notes = ((JsonArray)r["notes"]!).Select(x => (string)x!).ToList();
-        Assert.Contains(notes, x => x.Contains("Hole 24") && x.Contains("recess"));
+        Assert.Contains(notes, x => x.Contains("hole 24") && x.Contains("recess"));
         Assert.Contains(notes, x => x.Contains("99") && x.Contains("does not have"));
         Assert.Contains(notes, x => x.Contains("no bolts"));
 

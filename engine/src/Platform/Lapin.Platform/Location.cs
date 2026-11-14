@@ -139,7 +139,7 @@ public static class Location
         mk.Polyline(ViewMark.Circle(b.At, r, 24), true, "LOCATION", Pens.Default.Seen, color);
         mk.Line(b.At - new Vec2(r * 1.4, 0), b.At + new Vec2(r * 1.4, 0), "LOCATION", Pens.Default.Hatch, color);
         mk.Line(b.At - new Vec2(0, r * 1.4), b.At + new Vec2(0, r * 1.4), "LOCATION", Pens.Default.Hatch, color);
-        mk.Text(new PenText(b.At + new Vec2(r * 1.6, r * 0.4), $"Base point {Standards.FormatLevel(b.Elevation, c.Book.Units)}", text.Height * 0.8, 0, "start", "bottom"), color);
+        mk.Text(new PenText(b.At + new Vec2(r * 1.6, r * 0.4), $"Base point {Standards.FormatLevel(b.Elevation, c.Book)}", text.Height * 0.8, 0, "start", "bottom"), color);
         var line = 1;
         if (Survey(c.Model) != null)
         {
@@ -164,7 +164,7 @@ public static class Location
         if (Survey(c.Model) is not { } s) yield break;
         var sk = new ViewMark(null);
         sk.Polyline([s.At + new Vec2(0, r * 1.2), s.At + new Vec2(-r, -r * 0.6), s.At + new Vec2(r, -r * 0.6)], true, "LOCATION", Pens.Default.Seen, color);
-        sk.Text(new PenText(s.At + new Vec2(r * 1.6, r * 0.4), $"Survey point E {F(s.Easting)} N {F(s.Northing)} {Standards.FormatLevel(s.Elevation, c.Book.Units)}", text.Height * 0.8, 0, "start", "bottom"), color);
+        sk.Text(new PenText(s.At + new Vec2(r * 1.6, r * 0.4), $"Survey point E {F(s.Easting)} N {F(s.Northing)} {Standards.FormatLevel(s.Elevation, c.Book)}", text.Height * 0.8, 0, "start", "bottom"), color);
         sk.Snaps.Add(s.At);
         yield return sk;
     }

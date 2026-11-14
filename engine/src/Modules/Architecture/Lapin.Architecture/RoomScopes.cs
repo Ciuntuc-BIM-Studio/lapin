@@ -22,6 +22,29 @@ public static class RoomScopes
         ParamScopes.Add("room", Room);
         ParamScopes.Add("fromRoom", (m, e) => Sides(m, e) is { } s ? At(m, s.Storey, s.Exterior) : null);
         ParamScopes.Add("toRoom", (m, e) => Sides(m, e) is { } s ? At(m, s.Storey, s.Interior) : null);
+        // A room's fields from its finish (forum topic 84), worked out on every ask: a tag or a schedule shows what the finish says now.
+        DerivedFields.Add(Rooms.Class, new("finish.name", "Finish", (m, r) => FinishType(m, r)?.Name));
+        DerivedFields.Add(Rooms.Class, new("finish.floor", "Finish: floor", (m, r) => Face(m, r, "floor")));
+        DerivedFields.Add(Rooms.Class, new("finish.walls", "Finish: walls", (m, r) => Face(m, r, "walls")));
+        DerivedFields.Add(Rooms.Class, new("finish.ceiling", "Finish: ceiling", (m, r) => Face(m, r, "ceiling")));
+        // The floor finish a room is given inherits its finish's floor while it has none of its own.
+        DerivedFields.Add(Rooms.Class, new("finishFloor", "Floor finish", (m, r) => Face(m, r, "floor")));
+    }
+
+    /// <summary>The room finish type a room is finished with; null when it has none.</summary>
+    public static Entity? FinishType(IModelView m, Entity room) =>
+        room.Str("finishType") is { } id && m.Get(id) is { Class: RoomFinishes.TypeClass } t ? t : null;
+
+    /// <summary>
+    /// The material a room's finish shows on a part: the floor's top layer, the walls' and the ceiling's layer facing the room (their
+    /// last, laid from the wall's face and from the slab); null when the room has no finish or the finish nothing on that part.
+    /// </summary>
+    public static string? Face(IModelView m, Entity room, string part)
+    {
+        if (FinishType(m, room) is not { } type || RoomFinishes.SpecOf(m, type) is not { } spec) return null;
+        var layers = part switch { "floor" => spec.Floor, "walls" => spec.Walls, _ => spec.Ceiling };
+        if (layers is not { Count: > 0 }) return null;
+        return part == "floor" ? layers[0].Material : layers[^1].Material;
     }
 
     /// <summary>The room <paramref name="e"/> stands in; a door's or window's on its interior side, else its exterior one; null for a room or what stands in none.</summary>
