@@ -550,7 +550,8 @@ function dimensionGrips(node: NodeDto, view?: GripView): Grip[] {
     : pts.map((p) => { const o = (at.x - p.x) * n.x + (at.y - p.y) * n.y; return { x: p.x + n.x * o, y: p.y + n.y * o }; });
   const id = node.id;
   const grips: Grip[] = pts.map((p, i) => ({
-    key: `p${i}`, kind: 'vertex' as const, at: p, title: 'Drag: the point moves (and holds on what it lands on); Ctrl/⌘-click: take it out',
+    key: `p${i}`, kind: 'vertex' as const, at: p, title: 'Drag: the point moves (and holds on what it lands on); Alt-click or Ctrl/⌘-click: take it out',
+    altRemove: true,
     step: (to: Vec2) => ({ command: 'drafting.moveDimensionPoint', args: { id, index: i, point: [to.x, to.y] } }),
     remove: () => (pts.length > 2 ? { command: 'drafting.removeDimensionPoint', args: { id, index: i } } : null),
   }));
@@ -579,8 +580,9 @@ function dimensionGrips(node: NodeDto, view?: GripView): Grip[] {
   const t = line.map((q) => (q.x - line[0].x) * u.x + (q.y - line[0].y) * u.y);
   for (const [key, s] of [['l0', Math.min(...t)], ['l1', Math.max(...t)]] as const) {
     grips.push({
-      key, kind: 'end', at: { x: line[0].x + u.x * s, y: line[0].y + u.y * s }, title: 'Drag: the dimension line goes through the point',
+      key, kind: 'end', at: { x: line[0].x + u.x * s, y: line[0].y + u.y * s }, title: 'Drag: the dimension line goes through the point · Ctrl/⌘-click: go on, the next clicks add points beyond it',
       step: (to: Vec2) => ({ command: 'drafting.moveDimension', args: { id, at: [to.x, to.y] } }),
+      extend: () => { select(id); void startCommand('DIMADD'); },
     });
   }
   const viewId = typeof node.props.viewId === 'string' ? node.props.viewId : undefined;
