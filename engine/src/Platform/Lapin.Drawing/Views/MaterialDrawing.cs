@@ -6,7 +6,8 @@ namespace Lapin.Drawing.Views;
 public sealed record LayerRef(string? Material, string Name, double Thickness);
 
 /// <summary>A hatch to lay over a cut band: its loops, pattern, scale and pen, and the class it belongs to.</summary>
-public sealed record MaterialHatch(IReadOnlyList<Vec2[]> Loops, string Pattern, double Scale, int? Pen, string Class, double Angle = 0, Vec2? Origin = null)
+/// <param name="Fill">The band's fill colour (its material's), which a solid pattern is drawn in (forum topic 88); null: none.</param>
+public sealed record MaterialHatch(IReadOnlyList<Vec2[]> Loops, string Pattern, double Scale, int? Pen, string Class, double Angle = 0, Vec2? Origin = null, string? Fill = null)
 {
     /// <summary>A hatch aligned to the band it fills: its origin at the start of the band's longest edge, its angle along that edge (plus the material's own).</summary>
     public static MaterialHatch Aligned(IReadOnlyList<Vec2[]> loops, string pattern, double scale, int? pen, string cls, double angle, string align)
@@ -224,8 +225,8 @@ public static class MaterialDrawing
             if (g.Hatch == null) continue;
             // The element's own alignment over its material's: along its axis (one angle and origin for all its bands), or the view's.
             if (elementHatch?.Invoke(p.Element) is { } own)
-                o.Hatches.Add(new MaterialHatch(p.Loops, g.Hatch, g.HatchScale, g.HatchPen, p.Class, (own.Angle ?? 0) + g.HatchAngle, own.Origin));
-            else o.Hatches.Add(MaterialHatch.Aligned(p.Loops, g.Hatch, g.HatchScale, g.HatchPen, p.Class, g.HatchAngle, g.HatchAlign));
+                o.Hatches.Add(new MaterialHatch(p.Loops, g.Hatch, g.HatchScale, g.HatchPen, p.Class, (own.Angle ?? 0) + g.HatchAngle, own.Origin, g.Fill));
+            else o.Hatches.Add(MaterialHatch.Aligned(p.Loops, g.Hatch, g.HatchScale, g.HatchPen, p.Class, g.HatchAngle, g.HatchAlign) with { Fill = g.Fill });
         }
 
         // Edges of every band, by join key.

@@ -137,7 +137,13 @@ public static class SurfaceHatches
             if (g.Fill != null) Get("fill:" + g.Fill, () => new Pen(FillLayer, null, 0, g.Fill, null)).Loops.AddRange(cells.Select(c => c.Select(Laid).ToArray()));
             if (g.Hatch == null || HatchLibrary.Find(g.Hatch, options.Patterns) is not { } pattern) continue;
             var color = options.ElementColors?.GetValueOrDefault(part.Element) ?? Cat(part.Class)?.LineColor ?? "#000000";
-            if (pattern.Solid) { Get("solid:" + color, () => new Pen(Layer, null, 0, color, null)).Loops.AddRange(cells.Select(c => c.Select(Laid).ToArray())); continue; }
+            // A solid pattern is the face's fill: in its fill colour, else in ink (forum topic 88); an element's override colour over both.
+            if (pattern.Solid)
+            {
+                var solid = options.ElementColors?.GetValueOrDefault(part.Element) ?? g.Fill ?? color;
+                Get("solid:" + solid, () => new Pen(Layer, null, 0, solid, null)).Loops.AddRange(cells.Select(c => c.Select(Laid).ToArray()));
+                continue;
+            }
             if (budget <= 0) continue;
             var width = g.HatchPen is { } pn ? LineStyles.PenWidth(options.Table ?? LineStyles.DefaultPenTable(), pn, options.Scale) : Pens.Default.Hatch;
             var pen = Get($"hatch:{color}:{width}", () => new Pen(Layer, color, width, null, null));

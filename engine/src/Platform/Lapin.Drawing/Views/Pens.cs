@@ -264,7 +264,9 @@ public static class Pens
             }
             if (pattern.Solid)
             {
-                Get("solid:" + color, () => new Pen(PenLayer.Hatch, null, 0, color, null)).Loops.AddRange(h.Loops);
+                // A solid pattern is the band's fill: in its fill colour (the category's, else the material's), else in ink (forum topic 88).
+                var solid = Cat(h.Class)?.FillColor ?? h.Fill ?? color;
+                Get("solid:" + solid, () => new Pen(PenLayer.Hatch, null, 0, solid, null)).Loops.AddRange(h.Loops);
                 continue;
             }
             // Patterns are paper millimetres at 1:1: at 1:scale a millimetre is scale/1000 m.
