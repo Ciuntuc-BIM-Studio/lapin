@@ -3604,7 +3604,6 @@ export const LO: Record<string, string> = {
   "Topping": "ຊັ້ນເທທັບໜ້າ",
   "The mesh in the topping: its name, measured by the floor's area": "ຕາໜ່າງໃນຊັ້ນເທທັບໜ້າ: ຊື່ຂອງມັນ, ວັດຕາມເນື້ອທີ່ພື້ນ",
   "at an angle": "ຕາມມຸມ",
-  "Bearing": "ການວາງບ່າ",
   "How far the joists go into the supports past the floor's edge": "ຄານຍ່ອຍເຂົ້າໄປໃນບ່ອນຮອງຮັບເລີຍຂອບພື້ນໄກປານໃດ",
   "(block and topping: the core)": "(ບລັອກ ແລະ ຊັ້ນເທທັບໜ້າ: ແກນ)",
   "Import catalogue…": "ນຳເຂົ້າລາຍການ…",

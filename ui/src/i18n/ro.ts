@@ -3546,7 +3546,6 @@ export const RO: Record<string, string> = {
   "Topping": "Suprabetonare",
   "The mesh in the topping: its name, measured by the floor's area": "Plasa din suprabetonare: numele ei, măsurată după aria planșeului",
   "at an angle": "sub un unghi",
-  "Bearing": "Rezemare",
   "How far the joists go into the supports past the floor's edge": "Cât intră grinzile în reazeme dincolo de marginea planșeului",
   "(block and topping: the core)": "(bloc și suprabetonare: miezul)",
   "Import catalogue…": "Importă catalogul…",

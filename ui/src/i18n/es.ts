@@ -3550,7 +3550,6 @@ export const ES: Record<string, string> = {
   "Topping": "Capa de compresión",
   "The mesh in the topping: its name, measured by the floor's area": "La malla de la capa de compresión: su nombre, medida por el área del forjado",
   "at an angle": "con un ángulo",
-  "Bearing": "Entrega",
   "How far the joists go into the supports past the floor's edge": "Cuánto entran las viguetas en los apoyos más allá del borde del forjado",
   "(block and topping: the core)": "(bovedilla y capa de compresión: el núcleo)",
   "Import catalogue…": "Importar catálogo…",

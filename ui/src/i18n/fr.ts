@@ -3554,7 +3554,6 @@ export const FR: Record<string, string> = {
   "Topping": "Dalle de compression",
   "The mesh in the topping: its name, measured by the floor's area": "Le treillis de la dalle de compression : son nom, mesuré par la surface du plancher",
   "at an angle": "selon un angle",
-  "Bearing": "Appui",
   "How far the joists go into the supports past the floor's edge": "Jusqu'où les poutrelles entrent dans les appuis au-delà du bord du plancher",
   "(block and topping: the core)": "(entrevous et dalle de compression : le noyau)",
   "Import catalogue…": "Importer le catalogue…",

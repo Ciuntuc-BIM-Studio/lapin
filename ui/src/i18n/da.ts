@@ -3545,7 +3545,6 @@ export const DA: Record<string, string> = {
   "Topping": "Overbeton",
   "The mesh in the topping: its name, measured by the floor's area": "Nettet i overbetonen: dets navn, målt efter dækkets areal",
   "at an angle": "i en vinkel",
-  "Bearing": "Vederlag",
   "How far the joists go into the supports past the floor's edge": "Hvor langt bjælkerne går ind i understøtningerne forbi dækkets kant",
   "(block and topping: the core)": "(blok og overbeton: kernen)",
   "Import catalogue…": "Importér katalog…",

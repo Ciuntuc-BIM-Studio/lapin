@@ -3550,7 +3550,6 @@ export const DE: Record<string, string> = {
   "Topping": "Aufbeton",
   "The mesh in the topping: its name, measured by the floor's area": "Die Matte im Aufbeton: ihr Name, nach der Fläche der Decke gemessen",
   "at an angle": "in einem Winkel",
-  "Bearing": "Auflager",
   "How far the joists go into the supports past the floor's edge": "Wie weit die Träger über den Deckenrand in die Auflager reichen",
   "(block and topping: the core)": "(Stein und Aufbeton: der Kern)",
   "Import catalogue…": "Katalog importieren…",

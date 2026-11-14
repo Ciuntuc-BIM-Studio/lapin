@@ -3551,7 +3551,6 @@ export const PL: Record<string, string> = {
   "Topping": "Nadbeton",
   "The mesh in the topping: its name, measured by the floor's area": "Siatka w nadbetonie: jej nazwa, mierzona powierzchnią stropu",
   "at an angle": "pod kątem",
-  "Bearing": "Oparcie",
   "How far the joists go into the supports past the floor's edge": "Jak głęboko belki wchodzą w podpory poza krawędzią stropu",
   "(block and topping: the core)": "(pustak i nadbeton: rdzeń)",
   "Import catalogue…": "Importuj katalog…",

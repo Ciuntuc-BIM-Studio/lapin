@@ -3548,7 +3548,6 @@ export const PT: Record<string, string> = {
   "Topping": "Capa de concreto",
   "The mesh in the topping: its name, measured by the floor's area": "A tela na capa de concreto: o seu nome, medida pela área da laje",
   "at an angle": "num ângulo",
-  "Bearing": "Apoio",
   "How far the joists go into the supports past the floor's edge": "Quanto as vigotas entram nos apoios além da borda da laje",
   "(block and topping: the core)": "(bloco e capa: o núcleo)",
   "Import catalogue…": "Importar catálogo…",

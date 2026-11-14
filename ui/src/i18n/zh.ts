@@ -3542,7 +3542,6 @@ export const ZH: Record<string, string> = {
   "Topping": "现浇面层",
   "The mesh in the topping: its name, measured by the floor's area": "面层中的钢筋网：其名称，按楼板面积计量",
   "at an angle": "按角度",
-  "Bearing": "支承长度",
   "How far the joists go into the supports past the floor's edge": "小梁伸入支座超出楼板边缘的长度",
   "(block and topping: the core)": "（砌块和面层：核心层）",
   "Import catalogue…": "导入目录…",

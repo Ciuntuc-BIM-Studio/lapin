@@ -3553,7 +3553,6 @@ export const IT: Record<string, string> = {
   "Topping": "Cappa",
   "The mesh in the topping: its name, measured by the floor's area": "La rete nella cappa: il suo nome, misurata sull'area del solaio",
   "at an angle": "con un angolo",
-  "Bearing": "Appoggio",
   "How far the joists go into the supports past the floor's edge": "Quanto entrano i travetti negli appoggi oltre il bordo del solaio",
   "(block and topping: the core)": "(pignatta e cappa: il nucleo)",
   "Import catalogue…": "Importa catalogo…",
