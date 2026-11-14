@@ -165,6 +165,28 @@ Un tip nou are articolul de deviz `LAP-FAN`, numărat pe bucată (Execuție → 
 
 IFC scrie un ventilator ca **IfcFan** al unui **IfcFanType**, cu felul lui predefinit (PROPELLORAXIAL pentru unul de perete sau de geam, CENTRIFUGALRADIAL pentru unul de tavan, TUBEAXIAL pentru unul de tubulatură) și **Pset_FanTypeCommon** (NominalAirFlowRate, NominalPowerRate); golul din perete ca IfcOpeningElement. Lapin le citește înapoi ca ventilatoarele lui.
 
+## Jgheaburi de cabluri și canale
+
+Grupul **Suporturi de cabluri** din fila Instalații desenează ce poartă cablurile: **scări de cabluri**, **jgheaburi perforate** și **pline**, **canale de cablu** (o cutie închisă, cu capac) și **tuburi de protecție**.
+
+**Jgheab de cabluri** (<kbd>CT</kbd>) desenează un suport ca pe un traseu: clic pe punctele lui în plan, Enter (sau un clic pe ultimul punct) îl încheie. Tronsoanele se așază în pași de 45°, deci se întoarce la 45° sau 90°. Bara liniei de comandă alege tipul și **cota** (2,4 m peste nivel, implicit). Tipurile sunt cele ale proiectului și cele incluse în Lapin, grupate pe feluri: jgheaburi 100×60, 200×60, 300×60 și 400×100, un jgheab plin 200×60, scări 300×100 și 600×100, canale 40×40, 60×40 și 100×60, tuburi Ø20, Ø25 și Ø32. Dimensiunile și limitele incluse sunt orientative: verificați-le cu datele producătorului.
+
+Un capăt care cade pe alt suport se leagă de el: în lungul lui un **teu** (o **cruce** acolo unde două se întâlnesc față în față), la capătul lui o **reducție** când dimensiunile diferă. Fiecare colț este un **cot** cu raza interioară a tipului. Fitingurile rezultă din suporturi, nu se desenează de mână: mutați un suport și ele îl urmează.
+
+![Un jgheab pe hol care cotește spre nord, o ramificație din el în camera de est, un canal de cablu lângă peretele de nord](shots/mep-carriers-plan.webp)
+
+Planurile desenează conturul suportului și axa lui linie-punct; secțiunea unui tronson vertical, tăiată în cruce. Etichetele (Adnotări → Etichetă) îi scriu tipul, ca pentru orice element.
+
+Selectați un suport ca să-i schimbați tipul, **cota** sau o dimensiune proprie (**Lățime** și **Înălțime**, **Diametru** la tub); **Salvează dimensiunea ca tip** păstrează dimensiunea ca tip al dumneavoastră. Trageți de puncte ca să-l remodelați. Un punct poate avea cota lui (`mep.setCarrierLevels`): suportul urcă sau coboară acolo printr-un tronson vertical, cu câte un cot.
+
+**Cabluri în suport.** Un traseu de cablu spune în ce suport stă: alegeți-l la **Suport** în proprietățile traseului, sau selectați traseele de cablu și folosiți **Pozează în suportul de cabluri**, apoi clic pe suport. Suportul își arată **gradul de umplere**: secțiunile cablurilor (dimensiunea fiecărui traseu e diametrul cablului) raportate la aria utilă a suportului, față de limita tipului (orientativă: 50 % la jgheaburi și scări, 45 % la canale, 40 % la tuburi). O umplere peste limită este semnalată.
+
+![Proprietățile unui jgheab: tipul, dimensiunea și gradul de umplere](shots/mep-carriers-properties.webp)
+
+![Jgheaburile și canalul în 3D: U-ul deschis al jgheaburilor cu coturile și teul, capacul canalului](shots/mep-carriers-3d.webp)
+
+**Lista suporturilor de cabluri** dă fiecare suport cu tipul, felul, dimensiunea, nivelul, lungimea, coturile, teurile, crucile și reducțiile și gradul de umplere, cu totaluri pe tip. IFC scrie un suport ca **IfcCableCarrierSegment** (CABLELADDERSEGMENT, CABLETRAYSEGMENT, CABLETRUNKINGSEGMENT sau CONDUITSEGMENT) al unui **IfcCableCarrierSegmentType**, fitingurile ca **IfcCableCarrierFitting** (BEND, TEE, CROSS, REDUCER) agregate în el, porturile (CABLECARRIER) și legăturile lor. Verificarea coliziunilor și volumele de gol văd suporturile ca pe celelalte elemente de instalații.
+
 ## Coordonare: volume de gol și verificarea coliziunilor
 
 Fiecare gol dintr-un perete, o placă sau un acoperiș poate fi un **volum de gol** al lui: un solid cât golul, prin toată grosimea elementului-gazdă, cu finisaje cu tot. Programele de coliziuni (Navisworks, Solibri, BIMcollab) verifică instalațiile față de astfel de volume cu „complet în interior”: o țeavă, o tubulatură sau un jgheab de cabluri aflat în întregime într-un volum trece; unul care iese din el, sau care trece printr-un perete unde nu e niciun gol, e o coliziune. Lapin face aceeași verificare singur.

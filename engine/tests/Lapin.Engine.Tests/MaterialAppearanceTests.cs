@@ -289,4 +289,33 @@ public class MaterialAppearanceTests
         // One style per material: the window's frame and the door's frame share it.
         Assert.Single(styles, s => (string?)s[0] == "Aluminium RAL 7016 anthracite");
     }
+
+    [Fact]
+    public void Ifc_carries_a_window_and_door_material_per_part_as_a_constituent_set_and_reads_it_back()
+    {
+        var f = Rendered();
+        var path = Path.Combine(Directory.CreateTempSubdirectory("lapin-mat76").FullName, "house.ifc");
+        IfcExport.Write(f.Session, path);
+        var file = StepFile.Parse(File.ReadAllText(path));
+        var sets = file.OfType("IFCMATERIALCONSTITUENTSET").ToList();
+        var windowSet = sets.Single(s => (string?)s[0] == "Window");
+        var constituents = Items(windowSet[2]).Select(c => file.Get(c)!).ToDictionary(c => (string)c[0]!, c => (string?)file.Get(c[2])![0]);
+        Assert.Equal("Aluminium RAL 7016 anthracite", constituents["Frame"]);
+        Assert.Equal("Glass blue tinted", constituents["Glazing"]);
+        Assert.Contains("Board", constituents.Keys);
+        Assert.Contains("Panel", sets.Where(s => (string?)s[0] == "Door").SelectMany(s => Items(s[2])).Select(c => (string?)file.Get(c)![0]));
+        // Associated to the window and to its type.
+        var rel = file.OfType("IFCRELASSOCIATESMATERIAL").Single(r => file.Get(r[5])?.Id == windowSet.Id);
+        var related = Items(rel[4]).Select(r => file.Get(r)!.Type).ToList();
+        Assert.Contains("IFCWINDOW", related);
+        Assert.Contains("IFCWINDOWTYPE", related);
+
+        // Read back into a new project: the window type is made of the same materials, part by part.
+        var back = new Fixture();
+        IfcImport.Run(back.Session, path, null, out _);
+        var window = back.Model.OfClass(IfcClass.Window).Single();
+        var spec = Openings.SpecOf(back.Model, window.Id)!;
+        Assert.Equal("Aluminium RAL 7016 anthracite", spec.Materials!.Frame);
+        Assert.Equal("Glass blue tinted", spec.Materials.Glass);
+    }
 }

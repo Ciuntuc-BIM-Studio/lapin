@@ -165,6 +165,28 @@ A new type has the cost article `LAP-FAN`, counted per fan (Construction → Map
 
 IFC writes a fan as an **IfcFan** of an **IfcFanType** with its predefined type (PROPELLORAXIAL for a wall or window fan, CENTRIFUGALRADIAL for a ceiling fan, TUBEAXIAL for an inline one) and **Pset_FanTypeCommon** (NominalAirFlowRate, NominalPowerRate); the wall's opening as an IfcOpeningElement. Lapin reads them back as its own fans.
 
+## Cable trays and trunking
+
+The **Cable carriers** group on the MEP tab draws what cables lie in: **cable ladders**, **perforated** and **solid trays**, **trunking** (a closed box with its lid) and **conduit**.
+
+**Cable tray** (<kbd>CT</kbd>) draws a carrier as a run is drawn: click its points on the plan, Enter (or a click on the last point) finishes it. Its legs are laid at 45° steps, so it turns by 45° or 90°. The command line's bar chooses its type and its **elevation** (2.4 m above the storey by default). The types are the project's own and Lapin's built-in ones, grouped by kind: trays 100×60, 200×60, 300×60 and 400×100, a solid tray 200×60, ladders 300×100 and 600×100, trunking 40×40, 60×40 and 100×60, conduit Ø20, Ø25 and Ø32. The built-in sizes and limits are indicative: check them against the manufacturer's.
+
+An end that lands on another carrier joins it: inside its length a **tee** (a **cross** where two meet it across from each other), at its end a **reducer** when the sizes differ. Each corner is a **bend** of the type's inside radius. Fittings are worked out from the carriers, never drawn by hand: move a carrier and they follow.
+
+![A tray along the corridor turning north, a branch off it into the east room, trunking along the north wall](shots/mep-carriers-plan.webp)
+
+Plans draw a carrier's outline and its dash-dotted centreline; a vertical leg's section crossed. Tags (Annotate → Tag) name its type, as for any element.
+
+Select a carrier to change its type, its **elevation**, or a size of its own (**Width** and **Height**, a conduit's **Diameter**); **Save size as a type** keeps that size as a type of your own. Drag its handles to reshape it. A point can take a level of its own (`mep.setCarrierLevels`): the carrier goes up or down there in a vertical leg, with a bend each way.
+
+**Cables in a carrier.** A cable run says which carrier it lies in: choose it under **Carrier** in the run's properties, or select the cable runs and use **Lay in carrier**, then click the carrier. The carrier shows its **fill**: the cables' cross-sections (each run's size is its cable's diameter) over the carrier's usable area, against its type's limit (indicative: 50 % for trays and ladders, 45 % for trunking, 40 % for conduit). A fill over the limit is marked.
+
+![A tray's properties: its type, size and fill](shots/mep-carriers-properties.webp)
+
+![The trays and the trunking in 3D: the open U of the trays with their bends and tee, the trunking's lid](shots/mep-carriers-3d.webp)
+
+The **Cable carriers schedule** lists each carrier with its type, kind, size, storey, length, bends, tees, crosses and reducers and its fill, with totals by type. IFC writes a carrier as an **IfcCableCarrierSegment** (CABLELADDERSEGMENT, CABLETRAYSEGMENT, CABLETRUNKINGSEGMENT or CONDUITSEGMENT) of an **IfcCableCarrierSegmentType**, its fittings as **IfcCableCarrierFitting**s (BEND, TEE, CROSS, REDUCER) aggregated in it, its ports (CABLECARRIER) and their connections. The clash checks and opening voids see carriers as the other MEP elements.
+
 ## Coordination: opening voids and clash checks
 
 Every opening in a wall, floor or roof can be a **void** of its own: a solid as large as the opening, through the whole thickness of its host, finishes included. Clash programs (Navisworks, Solibri, BIMcollab) test MEP against such voids with "completely inside": a pipe, duct or cable tray wholly inside a void passes, one that sticks out of it, or crosses a wall where there is none, is a clash. Lapin runs the same check itself.

@@ -1029,6 +1029,7 @@ export const ZH: Record<string, string> = {
   'Ends, cut across (3D)': '端面，横向剖切（三维）', 'Top and bottom (3D)': '顶面和底面（三维）', 'Zones in height': '高度分区',
   'Base level': '底部标高', 'Top level': '顶部标高', 'No underlay': '无底图', 'Ask Lapin…': '询问 Lapin…',
   'Own image (3D, exports)': '自定义图像（三维、导出）', 'Membrane (a dashed line, not a band)': '膜层（虚线，而非带状）', 'Look': '外观',
+  'Normal map': '法线贴图', 'Bump map': '凹凸贴图', 'How strongly it shows: 1 as the image says, 0 flat': '强度：1 按图像，0 为平面', 'A normal map (tangent space, green up, as glTF): the faces shade as if they had its relief. Kept in the project; carried by GLB, glTF, USD/USDZ and OBJ.': '法线贴图（切线空间，绿色向上，同 glTF）：表面按其凹凸着色。保存在项目中；随 GLB、glTF、USD/USDZ 和 OBJ 导出。', 'A bump map (white high, black low): the faces shade as if raised where it is light. Kept in the project; carried by OBJ (map_Bump).': '凹凸贴图（白高黑低）：表面在亮处按凸起着色。保存在项目中；随 OBJ（map_Bump）导出。',
   'from the name': '按名称', 'From the name': '按名称', 'none (default)': '无（默认）', 'Cut (section)': '剖切（剖面）', 'Cut (plan)': '剖切（平面）',
   'guessed': '推测', 'as the faces (brick: its holes)': '同面（砖：其孔洞）', 'as the ends': '同端面',
   // Rooms and their colours (docs/rooms.md)
@@ -3613,6 +3614,8 @@ export const ZH: Record<string, string> = {
   "Only dimensions parallel to the first one are aligned.": "仅对齐与第一个平行的标注。",
   "Drag: the point moves (and holds on what it lands on); Alt-click or Ctrl/⌘-click: take it out": "拖动：点移动（并吸附到所碰到的对象）；Alt+单击或 Ctrl/⌘+单击：移除该点",
   "Drag: the dimension line goes through the point · Ctrl/⌘-click: go on, the next clicks add points beyond it": "拖动：标注线穿过该点 · Ctrl/⌘+单击：继续，之后的单击在其外侧添加点",
+  // Cable carriers (report #147).
+  "Cable tray": "电缆桥架", "Lay in carrier": "敷设于桥架", "Cable carriers schedule": "电缆桥架明细表", "Cable carriers": "电缆桥架与线管", "Built-in types (indicative)": "内置类型（参考）", "Cable carrier": "电缆支架", "no cables": "无电缆", "Save size as a type": "将尺寸保存为类型", "Carrier": "桥架", "Cable carrier type": "电缆支架类型", "Cable ladder": "梯级式桥架", "Perforated cable tray": "有孔托盘式桥架", "Solid cable tray": "槽式桥架", "Trunking": "线槽", "Conduit": "线管", "Bends": "弯头", "Tees": "三通", "Crosses": "四通", "Reducers": "变径", "Fill (%)": "填充率 (%)", "Move cable carrier": "移动电缆支架", "Carrier levels": "支架标高", "Connect carrier": "连接支架", "Disconnect carrier": "断开支架", "New cable carrier type": "新建电缆支架类型", "Change cable carrier type": "更改电缆支架类型", "Bend": "弯头", "Tee": "三通", "Reducer": "变径", "Lid": "盖板", "Rungs": "横档", "over the limit": "超出限值", "The cables' cross-sections over the carrier's usable area, against its type's limit (indicative)": "电缆截面积与支架可用面积之比，对照其类型的限值（参考）", "Built-in types are indicative: check them against the manufacturer's.": "内置类型仅供参考：请与制造商的数据核对。", "Select the cable runs first, then pick the carrier they lie in.": "请先选择电缆线路，然后选取它们所在的桥架。", "The tray, trunking or conduit the cable lies in (its fill is shown on the carrier)": "电缆所在的桥架、线槽或线管（填充率显示在支架上）", "Ctrl-click adds a handle here": "Ctrl 单击在此添加控制点", "Cable ladder (indicative)": "梯级式桥架（参考）", "Perforated cable tray (indicative)": "有孔托盘式桥架（参考）", "Solid cable tray (indicative)": "槽式桥架（参考）", "Trunking (indicative)": "线槽（参考）", "Conduit (indicative)": "线管（参考）",
   // View crop, hide in view, quick select (forum topics 68 and 73)
   "Hide in view": "在视图中隐藏",
   "Hide for now": "临时隐藏",
@@ -3942,4 +3945,5 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^Place again at 1:([\d.]+)…$/, (m) => `以 1:${m[1]} 再次放置…`],
   [/^(\d+) joists · (\d+) whole blocks · (\d+) cut$/, (m) => `${m[1]} 根小梁 · ${m[2]} 块整砌块 · ${m[3]} 块切割`],
   [/^Across edge (\d+) \((.+)\)$/, (m) => `垂直于边 ${m[1]}（${m[2]}）`],
+  [/^([\d.]+) % of ([\d.]+) % · (\d+) cables$/, (m) => `${m[1]} %，限值 ${m[2]} % · ${m[3]} 根电缆`],
 ];

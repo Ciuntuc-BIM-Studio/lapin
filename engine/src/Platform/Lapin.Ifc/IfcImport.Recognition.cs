@@ -378,7 +378,7 @@ public static partial class IfcImport
                     var y = model.Placement(filler[5]).Y;
                     Vec2? opens = new Vec2(y.X, y.Y) is { Length: > 1e-6 } yy ? yy.Normalized() : null;
                     fill = new ForeignFill(Str(filler[0]) ?? "", ClassName(filler.Type), Str(filler[2]), w is > 0 ? w : null, h is > 0 ? h : null, operation, style == null ? null : Str(style[2]), style == null ? null : Str(style[0]), PropertiesJson(filler.Id),
-                        UserDefined: userDefined, Panels: Panels(filler, style), OpensTowards: opens);
+                        UserDefined: userDefined, Panels: Panels(filler, style), OpensTowards: opens, Constituents: Constituents(filler.Id, style?.Id));
                 }
                 openings.Add(new ForeignOpening(Str(op[0]) ?? "", Str(op[2]), opPrisms, fill));
             }
@@ -500,6 +500,18 @@ public static partial class IfcImport
             if (o != null && own != null && own.Length == o.Count && own.All(x => x.Length > 0))
                 o = [.. o.Select((x, i) => x with { Operation = own[i] })];
             return o;
+        }
+
+        /// <summary>The constituents of the material constituent set the file associates to an object (or its type): each its name and its material's; null without one.</summary>
+        List<(string Name, string Material)>? Constituents(int id, int? typeId)
+        {
+            var mat = materialOf?.GetValueOrDefault(id) is { Type: "IFCMATERIALCONSTITUENTSET" } own ? own
+                : typeId != null && materialOf?.GetValueOrDefault(typeId.Value) is { Type: "IFCMATERIALCONSTITUENTSET" } typed ? typed : null;
+            if (mat == null) return null;
+            var o = new List<(string, string)>();
+            foreach (var c in Items(mat[2]))
+                if (Str(c[0]) is { Length: > 0 } name && f.Get(c[2]) is { Type: "IFCMATERIAL" } m && Str(m[0]) is { Length: > 0 } material) o.Add((name, material));
+            return o.Count > 0 ? o : null;
         }
 
         /// <summary>What the file associates as material to an object (or its type): a layer set (with its usage, when the object has one), or one material.</summary>

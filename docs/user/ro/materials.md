@@ -65,7 +65,9 @@ Twinmotion, Lumion, Enscape, Blender și alte programe de randare înlocuiesc ma
 
 ![O casă cu tocuri gri închis și sticlă albastră](shots/materials-render-3d.webp)
 
-Și exportul IFC numește stilul de suprafață al fiecărui material după el, cu transparența și felul în care reflectă.
+Și exportul IFC numește stilul de suprafață al fiecărui material după el, cu transparența și felul în care reflectă. Ușile și ferestrele duc și materialul fiecărei părți: un set de constituenți de material numiți **Frame** (tocul), **Sash** (cerceveaua), **Glazing** (sticla), **Panel** (foaia), **Board** (glaful) și **Hardware** (feroneria), pe fiecare ușă și fereastră și pe tipul ei, așa că un vizualizator sau un program de randare care citește IFC-ul găsește metalul tocului și sticla pe părți. Când imporți un astfel de fișier (din Lapin sau din alt program care scrie **Lining**, **Framing** și **Glazing** din IFC4), tipurile de uși și ferestre primesc din nou acele materiale.
+
+Un fișier IFC din alt program își aduce sticla transparentă: transparența stilului de suprafață al unui material, sau a stilului de pe un corp, devine **Transparența** materialului (stilul unui corp dă părții lui un material numit după stil). Fișierul importat nu se schimbă niciodată.
 
 ## Ce setează un material
 
@@ -90,6 +92,22 @@ Imaginea se vede în vederea 3D și e salvată în fișierul proiectului. Merge 
 ![Aceeași casă cu imaginea proprie a materialului în 3D](shots/own-image-3d.webp)
 
 Imaginile mai mari de 2048 de pixeli se micșorează la această mărime când le imporți. Butonul cu coș de gunoi scoate imaginea de pe material.
+
+## Hărți de normale și de relief
+
+Sub imaginea proprie, un material poate primi două hărți de relief, fiecare un PNG sau JPEG al tău:
+
+- **Hartă de normale**: imaginea mov-albăstruie pe care programele de randare și site-urile de texturi o dau cu un material (spațiul tangent, verde în sus, cum o citește glTF). Fețele se umbresc ca și cum ar avea relieful ei: rosturile unei cărămizi, fibra unui lemn, asperitățile unei pietre.
+- **Hartă de relief**: o imagine gri, albul sus și negrul jos. Fețele se umbresc ca și cum ar fi ridicate unde e deschisă.
+
+Apasă **Importă o imagine…** lângă una și alege fișierul. Amândouă stau pe model ca imaginea proprie, la **W** × **H** și rotite cu **Rotire**; prima hartă de relief pe un material fără mărime îi dă una de 1 m lățime, înaltă cât proporția imaginii. **Intensitate** spune cât de tare se vede relieful: 1 cum spune imaginea, 0 plat, până la 10. Sfera de previzualizare și vederea 3D le arată pe amândouă, iar butonul cu coș de gunoi scoate una.
+
+În exporturi:
+
+- **GLB** și **glTF** duc harta de normale ca textura de normale a materialului, la intensitatea ei.
+- **USDZ** împachetează harta de normale lângă model și o leagă de normala suprafeței.
+- **OBJ + MTL** scrie harta de normale ca `norm` și harta de relief ca `map_Bump` cu intensitatea ei (`-bm`). Un material cu hartă de normale și fără hartă de relief scrie harta de normale și ca `map_Bump`, unde o citesc Blender și majoritatea programelor de randare.
+- glTF nu are hartă de relief, așa că GLB, glTF și USD o lasă afară; **DAE** și **USDA** nu duc deloc imagini, așa că acolo nu merge niciuna.
 
 ## Hașurile tale (.pat)
 
