@@ -49,27 +49,27 @@ public sealed class RoomDividerTests : IDisposable
     {
         var f = Box();
         var west = Room(f, 1.5, 2);
-        Assert.Equal(24, Area(f, west), 2);
+        Assert.Equal(24, Area(f, west), 9);
         var line = Divider(f, "line", 3, 0, 3, 4);
         // The room keeps up: its outline found again on its side of the line, nothing stored.
-        Assert.Equal(12, Area(f, west), 2);
+        Assert.Equal(12, Area(f, west), 9);
         // The other side is free: a room placed there is the other half.
         var east = Room(f, 4.5, 2);
-        Assert.Equal(12, Area(f, east), 2);
+        Assert.Equal(12, Area(f, east), 9);
         Assert.True(Rooms.Live(f.Model.Get(west)!, f.Model, f.Session.Catalog)!.Holds(new Lapin.Geometry.Vec2(1, 1)));
         Assert.False(Rooms.Live(f.Model.Get(west)!, f.Model, f.Session.Catalog)!.Holds(new Lapin.Geometry.Vec2(5, 1)));
         // A room cannot be placed on the line itself, nor twice on one side.
         Assert.Throws<CommandException>(() => Room(f, 1, 3));
         // The line moved: both rooms follow.
         f.Run("architecture.updateRoomDivider", new JsonObject { ["id"] = line, ["kind"] = "line", ["points"] = new JsonArray(new JsonArray(2, 0), new JsonArray(2, 4)) });
-        Assert.Equal(8, Area(f, west), 2);
-        Assert.Equal(16, Area(f, east), 2);
+        Assert.Equal(8, Area(f, west), 9);
+        Assert.Equal(16, Area(f, east), 9);
         // Deleted, it is one room again (undo brings the line back, the rooms split again).
         f.Run("element.delete", new JsonObject { ["ids"] = new JsonArray(line) });
         Assert.Null(f.Model.Get(line));
-        Assert.Equal(24, Area(f, west), 2);
+        Assert.Equal(24, Area(f, west), 9);
         f.Session.Undo();
-        Assert.Equal(8, Area(f, west), 2);
+        Assert.Equal(8, Area(f, west), 9);
         // Its length is its quantity.
         Assert.Equal(4, f.Session.Quantities(line).Single().Quantities.Single(q => q.Name == "Length").Value, 3);
     }
@@ -81,29 +81,56 @@ public sealed class RoomDividerTests : IDisposable
         var big = Room(f, 1.5, 2);
         Divider(f, "polyline", 3, 0, 3, 2, 6, 2);
         var corner = Room(f, 4.5, 1);
-        Assert.Equal(6, Area(f, corner), 2);
-        Assert.Equal(18, Area(f, big), 2);
+        Assert.Equal(6, Area(f, corner), 9);
+        Assert.Equal(18, Area(f, big), 9);
 
         var g = Box();
         var hall = Room(g, 0.5, 0.5);
         // A rectangle standing free in the room: the zone inside it is a room of its own, the rest goes round it.
         Divider(g, "rectangle", 2, 1, 4, 3);
         var zone = Room(g, 3, 2);
-        Assert.Equal(4, Area(g, zone), 2);
-        Assert.Equal(20, Area(g, hall), 2);
+        Assert.Equal(4, Area(g, zone), 9);
+        Assert.Equal(20, Area(g, hall), 9);
         // An arc from wall to wall (centred at (4, 2), bulging into the corner) cuts the corner off beyond it.
         var h = Box();
         var main = Room(h, 1, 1);
         Divider(h, "arc", 4, 4, 6, 2, 4 + Math.Sqrt(2), 2 + Math.Sqrt(2));
         var bay = Room(h, 5.6, 3.6);
         Assert.Equal(4 - Math.PI, Area(h, bay), 2);
-        Assert.Equal(20 + Math.PI, Area(h, main), 2);
+        Assert.Equal(24, Area(h, bay) + Area(h, main), 9);
         // A circle standing free: the round zone inside it.
         var round = Divider(h, "circle", 2, 2, 3, 2);
         var disc = Room(h, 2, 2);
         Assert.Equal(Math.PI, Area(h, disc), 2);
-        Assert.Equal(20, Area(h, main), 2);
+        Assert.Equal(24, Area(h, bay) + Area(h, main) + Area(h, disc), 9);
         Assert.Equal(2 * Math.PI, RoomDividers.LengthOf(h.Model.Get(round)!), 2);
+    }
+
+    [Fact]
+    public void Halves_meet_on_the_line_and_a_line_ending_in_the_room_changes_nothing()
+    {
+        var f = Box();
+        var west = Room(f, 1.5, 2);
+        var whole = Rooms.Live(f.Model.Get(west)!, f.Model, f.Session.Catalog)!;
+        Assert.Equal(20, whole.Perimeter, 9);
+        // A line from a wall that stops in the room, and one standing free: the room's area and perimeter stay as they were.
+        Divider(f, "line", 3, 0, 3, 2);
+        Divider(f, "line", 4, 3, 5, 3);
+        var o = Rooms.Live(f.Model.Get(west)!, f.Model, f.Session.Catalog)!;
+        Assert.Equal(24, o.NetArea, 9);
+        Assert.Equal(20, o.Perimeter, 9);
+        Assert.Empty(o.Islands);
+        // Across the room: the halves' outlines meet on the line, their perimeters 3 + 4 + 3 + 4.
+        var g = Box();
+        var a = Room(g, 1.5, 2);
+        Divider(g, "line", 3, 0, 3, 4);
+        var b = Room(g, 4.5, 2);
+        var (oa, ob) = (Rooms.Live(g.Model.Get(a)!, g.Model, g.Session.Catalog)!, Rooms.Live(g.Model.Get(b)!, g.Model, g.Session.Catalog)!);
+        Assert.Equal(14, oa.Perimeter, 9);
+        Assert.Equal(14, ob.Perimeter, 9);
+        Assert.All(oa.Outer, p => Assert.True(p.X <= 3 + 1e-12));
+        Assert.Contains(oa.Outer, p => Math.Abs(p.X - 3) < 1e-12 && Math.Abs(p.Y) < 1e-12);
+        Assert.Equal(24, Area(g, a) + Area(g, b), 9);
     }
 
     [Fact]
@@ -158,6 +185,6 @@ public sealed class RoomDividerTests : IDisposable
         f.Run("drafting.convert", new JsonObject { ["viewId"] = plan, ["converter"] = "roomDivider", ["ids"] = new JsonArray(drawn[0]) });
         Assert.Single(f.Model.OfClass(RoomDividers.Class));
         var room = Room(f, 1, 1);
-        Assert.Equal(12, Area(f, room), 2);
+        Assert.Equal(12, Area(f, room), 9);
     }
 }

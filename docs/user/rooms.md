@@ -20,7 +20,7 @@ An open-plan kitchen and living room, the two ends of a hall, a gallery's landin
 
 ![An open-plan kitchen and living room parted by a room separation line, each room with its own area](shots/room-dividers.webp)
 
-The rooms around it find their outlines again at once, with no **Update rooms**: a 6 × 4 m room split by a line down its middle is two rooms of 3 × 4 m, each with its own area, stamp and finish; place a room on the other side with **Room**. Move the line (draw it again) or delete it and the rooms follow: deleted, the room is whole again. A line that stops in the middle of a room bounds nothing.
+The rooms around it find their outlines again at once, with no **Update rooms**: a 6 × 4 m room split by a line down its middle is two rooms of 3 × 4 m, each with its own area, stamp and finish; place a room on the other side with **Room**. Move the line (draw it again) or delete it and the rooms follow: deleted, the room is whole again. The rooms on either side meet exactly on the line, so their areas add up to the whole room. A line that stops in the middle of a room bounds nothing and changes nothing.
 
 On plans of its storey it is drawn as a thin dashed line; it has no body, so the 3D view, sections and quantities of the building leave it out (its length is in its quantities). Drafted linework becomes room separation lines too: **Draft → Convert → Convert to…**, **Room separation lines**. In IFC it is an **IfcVirtualElement** (BOUNDARY in IFC 4.3) with its line as a FootPrint curve, which Lapin reads back as a room separation line.
 

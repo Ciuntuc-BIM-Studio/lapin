@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Lapin.Drawing.Hatch;
 using Lapin.Geometry;
 using Lapin.Model;
 
@@ -12,8 +13,8 @@ namespace Lapin.Platform;
 /// pts, closed}</c>, <c>{type: circle, c, r}</c>, <c>{type: arc, c, r, start, end}</c>, counter-clockwise, radians), in the
 /// model's plan metres. <see cref="RoomBounds"/> reads it as a strip <see cref="HalfWidth"/> to either side of the line, a
 /// little longer than the line at its ends so one drawn to a wall's face closes on it: the rooms on either side are found
-/// apart, their areas short of the whole by the strip's (0.2 mm × its length). Nothing is stored on the rooms: they find their
-/// outlines again as the dividers are drawn, moved or deleted.
+/// apart, then made exact (<see cref="Exact"/>): their corners on the strip put back on the line, so their areas add up to the
+/// whole. Nothing is stored on the rooms: they find their outlines again as the dividers are drawn, moved or deleted.
 /// </summary>
 public static class RoomDividers
 {
@@ -132,6 +133,95 @@ public static class RoomDividers
 
     /// <summary>A divider's length along its line (its quantity).</summary>
     public static double LengthOf(Entity e) => Paths(e.Attrs["shape"]).Sum(p => Length(p.Points, p.Closed));
+
+    /// <summary>The storey's dividers as straight pieces (arcs and circles in chords), each with whether its ends are an open line's.</summary>
+    public static List<(Vec2 A, Vec2 B)> Pieces(IModelView m, string storeyId)
+    {
+        var o = new List<(Vec2, Vec2)>();
+        foreach (var e in m.OfClass(Class))
+        {
+            if (!Is(e) || Spatial.StoreyOf(m, e.Id)?.Id != storeyId) continue;
+            foreach (var (pts, closed) in Paths(e.Attrs["shape"]))
+                for (var i = 0; i < (closed ? pts.Count : pts.Count - 1); i++)
+                    if ((pts[(i + 1) % pts.Count] - pts[i]).Length >= 1e-6) o.Add((pts[i], pts[(i + 1) % pts.Count]));
+        }
+        return o;
+    }
+
+    /// <summary>
+    /// A region found with the storey's dividers made exact: its corners on a divider's strip put back on the divider's line
+    /// (where two pieces meet, on their meeting point; where the strip meets a wall, along the wall's face), so the rooms on
+    /// either side meet on the line and their areas, perimeters and volumes add up to the room undivided; what the strip of a
+    /// line ending in the room cut into the outline, there and back, taken out, and an island left with no area dropped.
+    /// </summary>
+    public static FreeRegion Exact(IModelView m, string storeyId, FreeRegion r)
+    {
+        var pieces = Pieces(m, storeyId);
+        if (pieces.Count == 0) return r;
+        var outer = Clean(Snap(r.Outer, pieces));
+        if (outer.Count < 3) return r;
+        var islands = r.Islands.Select(i => (IReadOnlyList<Vec2>)Clean(Snap(i, pieces))).Where(i => i.Count >= 3 && Math.Abs(Polygon2.SignedArea(i)) > 1e-12).ToList();
+        return new FreeRegion(outer, islands);
+    }
+
+    /// <summary>Each corner on a piece's strip (within its half width and a little) moved onto the piece's line.</summary>
+    static List<Vec2> Snap(IReadOnlyList<Vec2> loop, List<(Vec2 A, Vec2 B)> pieces)
+    {
+        const double Near = HalfWidth * 1.5;
+        var o = new List<Vec2>(loop.Count);
+        for (var i = 0; i < loop.Count; i++)
+        {
+            var v = loop[i];
+            var near = new List<(Vec2 A, Vec2 D, double Off)>();
+            foreach (var (a, b) in pieces)
+            {
+                var len = (b - a).Length;
+                var d = (b - a) * (1 / len);
+                var t = Vec2.Dot(v - a, d);
+                var off = Math.Abs(Vec2.Cross(d, v - a));
+                if (off <= Near && t >= -(Reach + 2 * HalfWidth) && t <= len + Reach + 2 * HalfWidth) near.Add((a, d, off));
+            }
+            if (near.Count == 0) { o.Add(v); continue; }
+            // Where two pieces meet (a corner, a chord of an arc, a crossing): on their meeting point.
+            Vec2? meet = null;
+            for (var x = 0; x < near.Count && meet == null; x++)
+                for (var y = x + 1; y < near.Count && meet == null; y++)
+                    if (Meet(near[x].A, near[x].D, near[y].A, near[y].D) is { } q && (q - v).Length <= 3 * HalfWidth) meet = q;
+            if (meet is { } mq) { o.Add(mq); continue; }
+            var (pa, pd, _) = near.OrderBy(n => n.Off).First();
+            // Else along the edge that crosses the piece (a wall's face, the strip's end) onto its line; else straight across.
+            var (prev, next) = (loop[(i - 1 + loop.Count) % loop.Count], loop[(i + 1) % loop.Count]);
+            var edge = new[] { (v - prev).Normalized(), (next - v).Normalized() }.OrderByDescending(e => Math.Abs(Vec2.Cross(e, pd))).First();
+            o.Add(Math.Abs(Vec2.Cross(edge, pd)) > 1e-6 && Meet(v, edge, pa, pd) is { } on ? on : pa + pd * Vec2.Dot(v - pa, pd));
+        }
+        return o;
+    }
+
+    /// <summary>Where the line through <paramref name="a"/> along <paramref name="da"/> meets the one through <paramref name="b"/> along <paramref name="db"/>; null when they run side by side.</summary>
+    static Vec2? Meet(Vec2 a, Vec2 da, Vec2 b, Vec2 db)
+    {
+        var c = Vec2.Cross(da, db);
+        if (Math.Abs(c) < 1e-9) return null;
+        return a + da * (Vec2.Cross(b - a, db) / c);
+    }
+
+    /// <summary>A loop without corners repeated, nor the spikes going out and back to the same point.</summary>
+    static List<Vec2> Clean(List<Vec2> pts)
+    {
+        const double Same = 1e-9;
+        var changed = true;
+        while (changed && pts.Count >= 3)
+        {
+            changed = false;
+            for (var i = 0; i < pts.Count && pts.Count >= 3; i++)
+            {
+                var n = pts.Count;
+                if ((pts[i] - pts[(i + 1) % n]).Length < Same) { pts.RemoveAt((i + 1) % n); changed = true; break; }
+                if ((pts[(i - 1 + n) % n] - pts[(i + 1) % n]).Length < Same) { pts.RemoveAt(i); changed = true; break; }
+            }
+        }
+        return pts;
+    }
 
     /// <summary>
     /// What the storey's dividers bound rooms with, as areas for <see cref="Lapin.Drawing.Hatch.FreeSpace"/>: a thin strip along

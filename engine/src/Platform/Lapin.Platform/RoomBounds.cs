@@ -79,6 +79,7 @@ public static class RoomBounds
         var space = Of(m, services, storeyId);
         if (space == null) return (null, "The room's storey is gone.");
         if (space.InMaterial(p)) return (null, "That point is inside a wall or a column: click inside the room.");
-        return space.Around(p) is { } r ? (r, null) : (null, "Nothing closes round that point: walls, curtain walls or columns must enclose the room. Close it, or draw the room's outline instead.");
+        // Made exact on the room separation lines: the rooms on either side meet on the line (forum topic 80).
+        return space.Around(p) is { } r ? (RoomDividers.Exact(m, storeyId, r), null) : (null, "Nothing closes round that point: walls, curtain walls or columns must enclose the room. Close it, or draw the room's outline instead.");
     }
 }
