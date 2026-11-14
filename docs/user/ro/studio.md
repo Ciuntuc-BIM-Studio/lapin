@@ -36,6 +36,8 @@ Fiecare solid rămâne legat de schița lui. Schimbi forma și solidul o urmeaz�
 
 Un solid abia făcut e selectat, deci se luminează cu mânerele schiței lui. Într-un plan, o secțiune sau o fațadă, acolo unde vederea taie un solid, tăietura lui e umplută cu alb: liniile schiței devin o formă care se vede că e plină. Un material cu umplutură sau hașură proprie o desenează cu ele, în locul albului.
 
+**Material.** Alege materialul unui solid la **Material** în panoul de proprietăți, dintre materialele proiectului, sau fă unul nou cu **Material nou…**; cu mai multe solide selectate, se aplică tuturor. Materialul colorează solidul în 3D, îi dă tăieturii hașura și umplutura materialului și după el se fac antemăsurătoarea, costul și ordinea de tăiere pe materiale; exportul IFC îl asociază elementului. Și un tip de solid are **Material**: solidele de acel tip care nu au unul propriu îl iau și îl urmează când se schimbă. Materialul propriu al unui solid are mereu întâietate față de cel al tipului; alege **niciunul** ca să revii la cel al tipului. La o piesă plasată, **Materialul** ei propriu se folosește pentru toate corpurile ei; **Materialul** tipului de piesă se folosește pentru corpurile care nu au material în definiția piesei.
+
 ## Inel, Cutie și Fâșie de perete
 
 Aceste trei unelte dau unei forme desenate o grosime în planul ei, apoi o înălțime față de acel plan:

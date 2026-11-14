@@ -102,7 +102,7 @@ export interface Diff {
 
 export interface FieldDescriptor {
   key: string; label: string;
-  kind: 'number' | 'length' | 'angle' | 'text' | 'bool' | 'choice' | 'ref' | 'color' | 'table' | 'material';
+  kind: 'number' | 'length' | 'angle' | 'text' | 'bool' | 'choice' | 'ref' | 'color' | 'table' | 'material' | 'materialRef';
   min?: number | null; max?: number | null; choices?: string[] | null; readOnly?: boolean;
   /**
    * When the field applies (decision 333): alternatives, any one holding shows it, each attributes and the values they may

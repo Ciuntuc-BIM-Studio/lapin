@@ -36,6 +36,8 @@ Each solid stays tied to its sketch. Change the shape and the solid follows, wit
 
 A solid just made is selected, so it lights up with its sketch's grips. In a plan, a section or an elevation, where the view cuts a solid its cut is filled white: the sketch's lines become a shape you can see is solid. A material with its own fill or hatch draws it in that instead.
 
+**Material.** Pick a solid's material under **Material** in the properties panel, from the project's materials, or make a new one with **New material…**; with several solids selected, it goes to all of them. The material colours the solid in 3D, gives its cut the material's hatch and fill, and is what the quantity takeoff, the cost and the cut order by material go by; the IFC export associates it with the element. A solid type has a **Material** too: the solids of that type that have none of their own take it, and follow it when it changes. A solid's own material always wins over its type's; choose **none** to go back to the type's. On a placed part, its own **Material** is used for all of its bodies; the part type's **Material** is used for the bodies that have no material in the part's definition.
+
 ## Ring, Box and Wall strip
 
 These three tools give a drafted shape a thickness in its own plane, then a height away from that plane:

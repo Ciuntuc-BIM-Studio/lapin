@@ -256,7 +256,7 @@ public sealed class CoreModule : ILapinModule
                     var f = d.Fields.FirstOrDefault(x => x.Key == key) ?? throw new CommandException($"{d.Label} has no field „{key}”.");
                     if (f.ReadOnly) throw new CommandException($"{f.Label} cannot be changed.");
                     if (value is null) { attrs.Remove(key); continue; }
-                    attrs[key] = Fields.Check(f, value);
+                    attrs[key] = Fields.Check(f, value, ctx.Model);
                 }
                 ctx.Replace(e.With(attrs: attrs));
                 // What follows the element (the runs on a node moved by its x) is told, in the same step.
@@ -768,10 +768,17 @@ public static class Materials
 /// <summary>A value checked against the field that holds it.</summary>
 public static class Fields
 {
-    public static JsonNode Check(FieldDescriptor f, JsonNode value)
+    /// <param name="model">The project, for a material field (<c>materialRef</c>): its value a material's id, or its name, kept as the id.</param>
+    public static JsonNode Check(FieldDescriptor f, JsonNode value, IModelView? model = null)
     {
         switch (f.Kind)
         {
+            case "materialRef":
+            {
+                var s = value is JsonValue sv && sv.TryGetValue<string>(out var text) && text.Length > 0 ? text : throw new CommandException($"{f.Label} is a material of the project.");
+                if (model == null || model.Get(s) is { Class: IfcClass.Material }) return s;
+                return Materials.Find(model, s)?.Id ?? throw new CommandException($"The project has no material „{s}”.");
+            }
             case "number" or "length" or "angle":
             {
                 var n = Json.Number(value) ?? throw new CommandException($"{f.Label} must be a number.");

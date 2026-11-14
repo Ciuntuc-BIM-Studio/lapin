@@ -249,7 +249,7 @@ public interface IQueryContext
 public sealed record FieldDescriptor(
     string Key,
     string Label,
-    string Kind = "number",          // number | length | angle | text | bool | choice | ref | color | table | material
+    string Kind = "number",          // number | length | angle | text | bool | choice | ref | color | table | material (by name) | materialRef (by id)
     double? Min = null,
     double? Max = null,
     string[]? Choices = null,

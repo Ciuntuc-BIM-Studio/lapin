@@ -48,7 +48,7 @@ public sealed partial class StudioModule
             solid = done;
         }
         if (Placed(e) is { } xf) solid = StoredBodies.Place(solid, xf);
-        var material = e.Str("material");
+        var material = MaterialOf(e, m);
         // In plan: the outline of what it covers (its sketch, when an extrusion drawn in plan is all it is; else its shadow's hull).
         var plan = new List<PlanItem>();
         if (sketchPlan != null && features is not { Count: > 0 } && Placed(e) == null) plan.AddRange(sketchPlan);

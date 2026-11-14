@@ -76,6 +76,8 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
         {
             r.Class(new(cls, cls == IfcClass.BuildingElementProxy ? "Solid" : Offered.FirstOrDefault(o => o.Class == cls).Label ?? cls[3..],
             [
+                // Its material (forum topic 60): a project material's id; none, its type's.
+                new("material", "Material", "materialRef"),
                 new("depth", "Depth", "length"),
                 new("angle", "Angle (°)", "number", Min: -360, Max: 360),
                 new("offset", "Offset from the sketch", "length"),
@@ -110,7 +112,8 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
             // Studio solids give way to the building's elements; furniture to everything.
             r.Cutter(cls, cls == "IfcFurnishingElement" ? 10 : 40, (e, m) => !IsVoid(e) && Geometry(e, m, null)?.Parts is [{ } only] ? only.Solid : null);
         }
-        r.Class(new(TypeClass, "Solid type", [new("description", "Description", "text")], "#b9b2a6", Kind: "type"));
+        // Its material: what its solids are made of when they name none of their own (forum topic 60).
+        r.Class(new(TypeClass, "Solid type", [new("description", "Description", "text"), new("material", "Material", "materialRef")], "#b9b2a6", Kind: "type"));
         // Parts (decision 517): a solid type carrying a definition, placed as Studio solids; the families of the user's own
         // (docs/plan-user-extensibility.md §5.6) are parts now, their commands shortcuts onto the parts' and saved ones upgraded.
         Parts.Register(r);
@@ -427,7 +430,7 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
             plan.AddRange(holes.Select(x => new PlanItem("outline", true, x)));
         }
         else if (Polygon2.ConvexHull(solid.Vertices.Select(v => new Vec2(v.X, v.Y))) is { Length: >= 3 } hull) plan.Add(new PlanItem("outline", true, hull));
-        var material = e.Str("material");
+        var material = MaterialOf(e, m);
         var parts = new List<GeometryPart> { new(e.Name, material != null ? Materials.ColorOf(m, material) : "#b9b2a6", solid, material, "body") };
         var problems = new List<string>();
         parts = CutPriorities.Apply(e, m, services, parts, problems);
@@ -520,6 +523,21 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
     static string TypeOf(Relation r) => (string?)r.Attrs?["interferenceType"] ?? "Subtract";
 
     /// <summary>A Studio solid that only cuts (an extrusion made to cut, a face pushed into an element): never drawn itself.</summary>
+    /// <summary>
+    /// A Studio solid's material (forum topic 60): its own (<c>material</c>, a project material's id), else its solid type's
+    /// default; worked out on every ask, never copied onto the solid. Null when neither names a material of the project.
+    /// </summary>
+    public static string? MaterialOf(Entity e, IModelView m) =>
+        OwnMaterial(m, e) ?? (m.RelatingOf(e.Id, IfcClass.RelDefinesByType) is { Class: TypeClass } type ? OwnMaterial(m, type) : null);
+
+    /// <summary>
+    /// The material an entity names itself: a project material's id; a name, the project's material of that name (else the name,
+    /// as before: a drawing guesses its look from it).
+    /// </summary>
+    internal static string? OwnMaterial(IModelView m, Entity e) => e.Str("material") is { Length: > 0 } mat
+        ? m.Get(mat) is { Class: IfcClass.Material } ? mat : Materials.Find(m, mat)?.Id ?? mat
+        : null;
+
     public static bool IsVoid(Entity e) => e.Str("operation") != null && e.Attrs["void"] is JsonValue v && v.TryGetValue<bool>(out var b) && b;
 
     public ElementGeometry? Apply(Entity e, ElementGeometry g, IModelView m, IServices services)
