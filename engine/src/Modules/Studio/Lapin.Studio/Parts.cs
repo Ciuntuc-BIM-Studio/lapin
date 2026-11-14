@@ -255,12 +255,14 @@ public static class Parts
         var set = SetOf(type!.Id, def, values);
         if (set.Error is { } error) return ([], [error], null);
         var (at, rotation, mirror) = Pose(e);
-        var local = set.Local(m, mirror);
+        // The placed part's own material over every body's, its part's for the bodies without one (forum topic 60).
+        var (over, fallback) = (StudioModule.OwnMaterial(m, e), StudioModule.OwnMaterial(m, type));
+        var local = set.Local(m, mirror, over, fallback);
         if (local.Count == 0) return ([], [], null);
         var z = (Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0) + e.Num("z");
         var xf = Xf(at, z, rotation);
         var parts = local.Select(p => p with { Solid = StoredBodies.Place(p.Solid, xf) }).ToList();
-        return (parts, [], new SharedInstance(set.KeyOf(mirror), xf) { Local = local });
+        return (parts, [], new SharedInstance(set.KeyOf(mirror, over, fallback), xf) { Local = local });
     }
 
     /// <summary>A placed part's placement: 12 numbers, the images of x, y, z and the origin (<see cref="StoredBodies.Place"/>), a turn about z and a move.</summary>
@@ -773,24 +775,35 @@ public static class Parts
     internal sealed class BodySet(string key, Func<(List<(string Name, string? Material, Solid Solid)>? Bodies, string? Error)> build)
     {
         readonly Lazy<(List<(string Name, string? Material, Solid Solid)>? Bodies, string? Error)> _built = new(build, LazyThreadSafetyMode.ExecutionAndPublication);
-        (string Signature, IReadOnlyList<GeometryPart> Parts)? _local, _mirrored;
+        readonly Dictionary<(bool Mirror, string? Over, string? Fallback), (string Signature, IReadOnlyList<GeometryPart> Parts)> _local = [];
 
         public string Key { get; } = key;
         public string? Error => _built.Value.Error;
-        public string KeyOf(bool mirror) => mirror ? Key + ":m" : Key;
 
-        /// <summary>The bodies as geometry parts in the part's frame (turned over when mirrored): the same list for as long as the materials are.</summary>
-        public IReadOnlyList<GeometryPart> Local(IModelView m, bool mirror)
+        /// <summary>
+        /// The shared body's key: turned over, and in the material the placed part gives every body (<paramref name="over"/>), else
+        /// with its type's for the bodies without one (<paramref name="fallback"/>; forum topic 60).
+        /// </summary>
+        public string KeyOf(bool mirror, string? over = null, string? fallback = null) =>
+            (mirror ? Key + ":m" : Key) + (over != null ? "@" + over : fallback != null ? "~" + fallback : "");
+
+        /// <summary>
+        /// The bodies as geometry parts in the part's frame (turned over when mirrored): the same list for as long as the materials
+        /// are. Each in its own material (a name of the project's), unless <paramref name="over"/> (a material id) takes them all;
+        /// one without takes <paramref name="fallback"/>.
+        /// </summary>
+        public IReadOnlyList<GeometryPart> Local(IModelView m, bool mirror, string? over = null, string? fallback = null)
         {
             var bodies = _built.Value.Bodies ?? [];
-            var mats = bodies.Select(b => b.Material != null ? Materials.Find(m, b.Material) : null).ToList();
+            Entity? Id(string? id) => id != null && m.Get(id) is { Class: IfcClass.Material } x ? x : null;
+            var (overMat, fallbackMat) = (Id(over), Id(fallback));
+            var mats = bodies.Select(b => overMat ?? (b.Material != null ? Materials.Find(m, b.Material) : null) ?? fallbackMat).ToList();
             var signature = string.Join("|", mats.Select(x => x == null ? "" : x.Id + "=" + x.Str("color")));
             lock (this)
             {
-                var known = mirror ? _mirrored : _local;
-                if (known is { } k && k.Signature == signature) return k.Parts;
+                if (_local.TryGetValue((mirror, over, fallback), out var k) && k.Signature == signature) return k.Parts;
                 var parts = bodies.Select((b, i) => new GeometryPart(b.Name, mats[i]?.Str("color") ?? "#b9b2a6", mirror ? Mirrored(b.Solid) : b.Solid, mats[i]?.Id, "part:" + b.Name)).ToList();
-                if (mirror) _mirrored = (signature, parts); else _local = (signature, parts);
+                _local[(mirror, over, fallback)] = (signature, parts);
                 return parts;
             }
         }

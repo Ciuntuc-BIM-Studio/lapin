@@ -25,6 +25,29 @@ export interface Preview {
   summary?: [string, string][];
   checks?: string[];
   suggested?: { load: number; persons: number };
+  /** A vacuum lift's values are indicative: the maker's data decide. */
+  indicative?: boolean;
+}
+
+/** A circular vacuum lift (report #149): its drive. */
+export const VACUUM = 'vacuum';
+export const isVacuum = (props: Record<string, unknown>): boolean => props.drive === VACUUM;
+/** The tubes the makers offer (outside diameter, m): one person, two, a wheelchair. */
+export const TUBE_PRESETS = [0.75, 0.933, 1.3];
+/** The angles a landing's door may face, 0° the lift's front. */
+export const DOOR_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
+
+/** The angle a vacuum lift's door faces at a landing: its own, else the lift's. */
+export function landingAngle(props: Record<string, unknown>, storeyId: string): number {
+  const own = (props.doorAngles as Record<string, unknown> | undefined)?.[storeyId];
+  return typeof own === 'number' ? own : Number(props.doorAngle ?? 0);
+}
+
+/** The landings' own angles with one set (null: as the lift's), none left: null. */
+export function setLandingAngle(map: Record<string, number> | undefined, storeyId: string, angle: number | null): Record<string, number> | null {
+  const next = { ...(map ?? {}) };
+  if (angle == null) delete next[storeyId]; else next[storeyId] = ((angle % 360) + 360) % 360;
+  return Object.keys(next).length ? next : null;
 }
 
 /** What the tool puts down: a style (the catalogue's or the project's) and a turn. */
@@ -44,6 +67,7 @@ export function groupStyles(styles: ElevatorStyle[]): [string, ElevatorStyle[]][
 /** A style in a few words: persons, load, car in mm. */
 export function styleAbout(values: Record<string, unknown>): string {
   const mm = (v: unknown) => Math.round(Number(v ?? 0) * 1000);
+  if (isVacuum(values)) return `${values.persons ?? '?'} p · ${values.load ?? '?'} kg · Ø ${mm(values.tubeDiameter ?? 0.933)}`;
   return `${values.persons ?? '?'} p · ${values.load ?? '?'} kg · ${mm(values.cabinWidth)} × ${mm(values.cabinDepth)}`;
 }
 

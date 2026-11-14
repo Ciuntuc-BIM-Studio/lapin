@@ -18,6 +18,26 @@ Ca să schimbi conturul, selectează placa și trage de colțuri. **Gol în plac
 
 O placă desenată în afara pereților, în fața unei uși, e o terasă. Pentru treptele până la ea, vezi [Scări](stairs.md).
 
+### Planșee din grinzi și blocuri
+
+Un tip de placă poate fi din **grinzi și blocuri** în loc de straturi simple: grinzi prefabricate (de pildă POT) puse una lângă alta la o distanță, blocuri ceramice de umplutură (MIAKO) între ele și o suprabetonare turnată peste. În **Tipuri de plăci**, alege la **Fel** **Grinzi și blocuri** și completează:
+
+- **Presetare.** Câteva sisteme de la care să pornești (POT + MIAKO 19/62.5, 19/50, 23/62.5, 25/50). Sunt orientative: verifică tabelele producătorului și schimbă orice dimensiune; după ce schimbi o dimensiune, presetarea arată **Dimensiuni proprii**.
+- **Grindă**: **Lățimea** și **Înălțimea tălpii**, **Lățimea inimii**, **Înălțimea** grinzii, **Distanța** ax la ax și **Materialul**.
+- **Bloc de umplutură**: **Înălțimea**, **Lungimea** de-a lungul grinzilor și **Materialul**. Lățimea lui e golul dintre tălpile grinzilor.
+- **Suprabetonare**: **Grosimea**, **Materialul** și **Plasa** din ea (un nume, măsurată după aria plăcii; goală, fără plasă).
+- **Deschidere**: grinzile merg pe latura scurtă a plăcii, după x, după y sau sub un unghi; **Rezemarea** e cât intră ele în reazeme dincolo de marginea plăcii (125 mm implicit), deci desenează placa până la fețele reazemelor.
+
+**Adâncimea** se calculează: blocul și suprabetonarea. E miezul tipului, setat singur când salvezi tipul; straturile de deasupra (o șapă, un finisaj) rămân cum sunt. Lângă câmpuri, motorul așază o placă de probă cu un gol, în plan și în secțiune, cum o va construi pe a ta, și îi numără grinzile și blocurile.
+
+![Un tip de placă din grinzi și blocuri, cu planul și secțiunea lui](shots/beam-block-type.webp)
+
+O placă de acest tip e construită din grinzile ei (fiecare de la o margine la alta și în reazeme), blocuri întregi de la începutul fiecărui rând și unul tăiat la capăt, și betonul turnat: suprabetonarea, nervurile peste tălpile grinzilor, fâșiile de pe margini și, în jurul unui gol, centurile care preiau grinzile oprite înaintea lui. Proprietățile ei au propria **Direcție de descărcare**: a tipului, sau perpendicular pe una dintre margini (marginea pe care reazemă grinzile). Planul desenează săgeata de descărcare și, într-un plan de detaliu, axul fiecărei grinzi; secțiunea taie grinzile, blocurile și betonul, fiecare hașurat după materialul lui.
+
+**Planșee din grinzi și blocuri** din liste arată, pe placă, grinzile după lungimea comandată (rotunjită în sus la 250 mm), blocurile întregi și tăiate, betonul turnat și aria plasei; cantitățile plăcii le au și ele. IFC scrie placa ca IfcSlab cu părțile ei: grinzile (IfcBeam JOIST), blocurile și betonul (IfcBuildingElementPart), fiecare cu materialul lui; o parte își păstrează GlobalId-ul când placa e reconstruită.
+
+Catalogul tău vine dintr-o foaie de calcul: **Importă catalogul…** citește un CSV (un rând un sistem, dimensiuni în milimetri; **Șablon CSV** dă coloanele) și face câte un tip de placă din fiecare rând, sau îl schimbă pe cel cu același nume, într-un singur pas de anulare.
+
 ## Acoperișuri
 
 Alege **Arhitectură → Acoperiș** (<kbd>RF</kbd>) și dă clic pe conturul pereților de dedesubt. Lapin construiește acoperișul peste acel contur, la partea de sus a nivelului.

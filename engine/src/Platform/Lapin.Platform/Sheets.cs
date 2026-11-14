@@ -161,6 +161,16 @@ public static class Sheets
             var shown = turn == 0 ? r.Bounds : Turning.Bounds(r.Pens, turn);
             var (w, h) = vp.Width > 0 && vp.Height > 0 ? (vp.Width, vp.Height) : shown is { } b ? Fit(b, r.Scale) : (120, 80);
             var c = vp.Center ?? (shown is { } bb ? Turning.Turn((bb.Min + bb.Max) * 0.5, -turn) : new Vec2(0, 0));
+            // A cropped view (forum topic 68): its box is its crop region as it shows (its annotation crop when that is on; else
+            // the annotations it draws outside the region too), with no margin round it.
+            if (!(vp.Width > 0 && vp.Height > 0) && ViewCrops.ActiveOf(q.Model, view, r.Scale) is { } crop)
+            {
+                var (lo, hi) = crop.Annotations ?? crop.Model;
+                if (crop.Annotations == null && Turning.Bounds(r.Pens, turn) is { } drawn)
+                    (lo, hi) = (new Vec2(Math.Min(lo.X, drawn.Min.X), Math.Min(lo.Y, drawn.Min.Y)), new Vec2(Math.Max(hi.X, drawn.Max.X), Math.Max(hi.Y, drawn.Max.Y)));
+                (w, h) = ((hi.X - lo.X) * k, (hi.Y - lo.Y) * k);
+                c = vp.Center ?? crop.World((lo + hi) * 0.5);
+            }
             // Bound to a named boundary of its view: its box and middle are the boundary's (turned: the box round the boundary as it shows).
             var boundary = BoundaryOf(q.Model, vp);
             if (boundary != null)
@@ -178,7 +188,7 @@ public static class Sheets
 
     // ------------------------------------------------------------ clipping to a viewport's box
 
-    static bool ClipSegment(ref Vec2 a, ref Vec2 b, double x0, double y0, double x1, double y1)
+    internal static bool ClipSegment(ref Vec2 a, ref Vec2 b, double x0, double y0, double x1, double y1)
     {
         double t0 = 0, t1 = 1, dx = b.X - a.X, dy = b.Y - a.Y;
         foreach (var (p, q) in new[] { (-dx, a.X - x0), (dx, x1 - a.X), (-dy, a.Y - y0), (dy, y1 - a.Y) })
@@ -194,7 +204,7 @@ public static class Sheets
         return true;
     }
 
-    static List<Vec2> ClipLoop(IReadOnlyList<Vec2> loop, double x0, double y0, double x1, double y1)
+    internal static List<Vec2> ClipLoop(IReadOnlyList<Vec2> loop, double x0, double y0, double x1, double y1)
     {
         var pts = loop.ToList();
         foreach (var (inside, cut) in new (Func<Vec2, bool>, Func<Vec2, Vec2, Vec2>)[]

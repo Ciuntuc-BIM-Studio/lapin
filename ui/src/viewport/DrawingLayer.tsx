@@ -7,7 +7,7 @@
 import { memo, useId, useMemo } from 'react';
 import { useSession } from '../engine/session';
 import { screenWidth, useDisplay } from '../app/display';
-import { screenFill, screenInk, type DrawingDto, type PenDto } from './drawing';
+import { screenFill, screenInk, splitAlpha, type DrawingDto, type PenDto } from './drawing';
 import { imageUrl, visibleCrop } from './imageCrop';
 import { uprightText } from './orientation';
 
@@ -25,7 +25,9 @@ export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPe
   const thin = useDisplay((s) => s.thinLines);
   const cap = drawing.lineCap === 'square' ? 'square' : 'round';
   const paths = useMemo(() => drawing.pens.map((p, i) => {
-    const stroke = screenInk(p.stroke, onDark), fill = screenFill(p.fill, onDark);
+    // A fill with an opacity (#rrggbbaa, a room colour's, forum #79) is drawn as its colour at that opacity.
+    const seen = splitAlpha(p.fill);
+    const stroke = screenInk(p.stroke, onDark), fill = screenFill(seen.color, onDark);
     let d = '';
     const pt = (x: number, y: number) => { const s = toScreen({ x, y }); return `${s.x.toFixed(1)} ${s.y.toFixed(1)}`; };
     for (const loop of p.loops ?? []) {
@@ -61,7 +63,7 @@ export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPe
       );
     }
     return (
-      <path key={i} d={d} className={`pen pen-${p.layer.toLowerCase()}`} fill={fill ?? 'none'} fillRule="evenodd"
+      <path key={i} d={d} className={`pen pen-${p.layer.toLowerCase()}`} fill={fill ?? 'none'} fillOpacity={seen.opacity < 1 ? seen.opacity : undefined} fillRule="evenodd"
         stroke={stroke ?? 'none'} strokeWidth={width} strokeLinecap={cap} strokeLinejoin={cap === 'square' ? 'miter' : 'round'}
         strokeDasharray={p.dash ? p.dash.map((v) => Math.max(1, Math.min(v * pxPerMm, v * 8)).toFixed(1)).join(' ') : undefined} />
     );

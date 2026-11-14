@@ -98,6 +98,8 @@ public sealed class CoreModule : ILapinModule
         TypeMappings.Register(r);
         TypePacks.Register(r);
         TypeDefaults.Register(r);
+        // Any type duplicated, and each class's types in an order of the user's (forum #71).
+        TypeOrder.Register(r);
         Sheets.Register(r);
         TitleBlocks.Register(r);
         // 2D symbols of the user's own (docs/plan-user-extensibility.md §3).
@@ -258,7 +260,7 @@ public sealed class CoreModule : ILapinModule
                     var f = d.Fields.FirstOrDefault(x => x.Key == key) ?? throw new CommandException($"{d.Label} has no field „{key}”.");
                     if (f.ReadOnly) throw new CommandException($"{f.Label} cannot be changed.");
                     if (value is null) { attrs.Remove(key); continue; }
-                    attrs[key] = Fields.Check(f, value);
+                    attrs[key] = Fields.Check(f, value, ctx.Model);
                 }
                 ctx.Replace(e.With(attrs: attrs));
                 // What follows the element (the runs on a node moved by its x) is told, in the same step.
@@ -745,6 +747,14 @@ public static class Materials
         return finishes.Any(n.Contains);
     }
 
+    /// <summary>
+    /// Whether an element joins others (forum topic 59): unless its main material (<see cref="CutOrder.MainMaterial"/>) is one
+    /// that stays out of joins (<c>joins: false</c>, a steel or timber member keeping its shape). Off, it is not joined
+    /// automatically, cuts nothing and is cut by nothing by the cut order, and a drawing keeps its own outline.
+    /// </summary>
+    public static bool Joins(IModelView m, Entity e) =>
+        CutOrder.MainMaterial(e, m) is not { } id || m.Get(id) is not { Class: IfcClass.Material } mat || Lapin.Drawing.MaterialGraphics.JoinsOf(mat);
+
     public static string ColorOf(IModelView m, string? materialId) =>
         materialId != null && m.Get(materialId) is { } mat ? mat.Str("color") ?? DefaultColor(mat.Name) : "#c9ced6";
 
@@ -770,10 +780,17 @@ public static class Materials
 /// <summary>A value checked against the field that holds it.</summary>
 public static class Fields
 {
-    public static JsonNode Check(FieldDescriptor f, JsonNode value)
+    /// <param name="model">The project, for a material field (<c>materialRef</c>): its value a material's id, or its name, kept as the id.</param>
+    public static JsonNode Check(FieldDescriptor f, JsonNode value, IModelView? model = null)
     {
         switch (f.Kind)
         {
+            case "materialRef":
+            {
+                var s = value is JsonValue sv && sv.TryGetValue<string>(out var text) && text.Length > 0 ? text : throw new CommandException($"{f.Label} is a material of the project.");
+                if (model == null || model.Get(s) is { Class: IfcClass.Material }) return s;
+                return Materials.Find(model, s)?.Id ?? throw new CommandException($"The project has no material „{s}”.");
+            }
             case "number" or "length" or "angle":
             {
                 var n = Json.Number(value) ?? throw new CommandException($"{f.Label} must be a number.");

@@ -10,7 +10,7 @@ import { execute } from '../../engine/session';
 import { HatchSwatch } from './HatchSwatch';
 
 export type MaterialKind = 'section' | 'plan' | 'elevation';
-export type ResolvedGraphics = { hatch: string | null; hatchScale: number; fill: string | null; hatchPen?: number; hatchAngle?: number; hatchAlign?: 'view' | 'layer'; membrane: boolean; drawJoints: boolean; source: 'own' | 'name' };
+export type ResolvedGraphics = { hatch: string | null; hatchScale: number; fill: string | null; hatchPen?: number; hatchAngle?: number; hatchAlign?: 'view' | 'layer'; membrane: boolean; drawJoints: boolean; joins?: boolean; source: 'own' | 'name' };
 export type OwnGraphics = { hatch?: string | null; hatchScale?: number; fill?: string | null; hatchPen?: number; hatchAngle?: number; hatchAlign?: 'view' | 'layer' };
 /** A material as material.list gives it. */
 export type MaterialRow = { id: string; name: string; color: string; inUse: boolean; category?: string | null; section: ResolvedGraphics; plan: ResolvedGraphics; elevation: ResolvedGraphics; own: Partial<Record<MaterialKind, OwnGraphics>> };

@@ -24,12 +24,19 @@ public static class UsdWriter
 
     /// <summary>A USDZ package: an uncompressed zip whose files' data each start on a 64-byte boundary, the root layer first.</summary>
     public static byte[] Usdz(MeshScene scene) =>
-        Package([(LayerName, Usda(scene)), .. TextureFiles(scene).Select(t => (t.Path, t.Texture.Bytes))]);
+        Package([(LayerName, Usda(scene)), .. MapFiles(scene).Where(t => t.Kind != "bump").Select(t => (t.Path, t.Texture.Bytes))]);
 
     /// <summary>The materials' own images as the layer refers to them (textures/…), packed beside it in a USDZ.</summary>
     public static List<(int Material, string Path, MeshTexture Texture)> TextureFiles(MeshScene scene) =>
-        scene.Materials.Select((m, i) => (m, i)).Where(x => x.m.Texture != null)
-            .Select(x => (x.i, $"textures/{Identifier(x.m.Name)}_{x.i}.{(x.m.Texture!.Mime == "image/jpeg" ? "jpg" : "png")}", x.m.Texture!)).ToList();
+        [.. MapFiles(scene).Where(x => x.Kind == "color").Select(x => (x.Material, x.Path, x.Texture))];
+
+    /// <summary>
+    /// Every image of the materials (their own, their normal and bump maps) as the files refer to them: textures/name_index.png,
+    /// a normal map's with _normal and a bump map's with _bump before its extension.
+    /// </summary>
+    public static List<(int Material, string Kind, string Path, MeshTexture Texture)> MapFiles(MeshScene scene) =>
+        [.. scene.Materials.SelectMany((m, i) => m.Maps().Select(x => (i, x.Kind,
+            $"textures/{Identifier(m.Name)}_{i}{(x.Kind == "color" ? "" : "_" + x.Kind)}.{(x.Texture.Mime == "image/jpeg" ? "jpg" : "png")}", x.Texture)))];
 
     static string Quote(string s) => "\"" + s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "") + "\"";
 
@@ -97,6 +104,7 @@ public static class UsdWriter
         var materialPaths = new List<string>();
         o.Append("\n    def Scope \"Materials\"\n    {\n");
         var files = TextureFiles(scene).ToDictionary(t => t.Material, t => t.Path);
+        var normals = MapFiles(scene).Where(t => t.Kind == "normal").ToDictionary(t => t.Material, t => t.Path);
         for (var mi = 0; mi < scene.Materials.Count; mi++)
         {
             var m = scene.Materials[mi];
@@ -123,8 +131,32 @@ public static class UsdWriter
             o.Append($"                float inputs:metallic = {F((float)look.Metalness)}\n");
             if (m.Alpha < 1) o.Append($"                float inputs:opacity = {F(m.Alpha)}\n");
             o.Append($"                float inputs:roughness = {F((float)look.Roughness)}\n");
+            // Its normal map: read raw, from 0–1 to −1–1, its x and y by its strength (UsdPreviewSurface's normal input, tangent space).
+            if (normals.ContainsKey(mi)) o.Append($"                normal3f inputs:normal.connect = <{path}/Normal.outputs:rgb>\n");
             o.Append("                token outputs:surface\n");
             o.Append("            }\n");
+            if (normals.TryGetValue(mi, out var normalFile))
+            {
+                var k = (float)look.NormalStrength;
+                o.Append("\n            def Shader \"Normal\"\n            {\n");
+                o.Append("                uniform token info:id = \"UsdUVTexture\"\n");
+                o.Append($"                asset inputs:file = @{normalFile}@\n");
+                o.Append("                token inputs:sourceColorSpace = \"raw\"\n");
+                o.Append($"                float4 inputs:scale = ({F(2 * k)}, {F(2 * k)}, 2, 1)\n");
+                o.Append($"                float4 inputs:bias = ({F(-k)}, {F(-k)}, -1, 0)\n");
+                o.Append($"                float2 inputs:st.connect = <{path}/St.outputs:result>\n");
+                o.Append("                token inputs:wrapS = \"repeat\"\n                token inputs:wrapT = \"repeat\"\n");
+                o.Append("                float3 outputs:rgb\n");
+                o.Append("            }\n");
+                if (!files.ContainsKey(mi))
+                {
+                    o.Append("\n            def Shader \"St\"\n            {\n");
+                    o.Append("                uniform token info:id = \"UsdPrimvarReader_float2\"\n");
+                    o.Append("                string inputs:varname = \"st\"\n");
+                    o.Append("                float2 outputs:result\n");
+                    o.Append("            }\n");
+                }
+            }
             if (files.TryGetValue(mi, out var image))
             {
                 o.Append("\n            def Shader \"Image\"\n            {\n");

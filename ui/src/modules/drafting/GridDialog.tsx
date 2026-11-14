@@ -119,6 +119,7 @@ export function GridSection({ node }: { node: NodeDto }) {
       <p className="muted small">Click an axis in a plan to set its ends, length, angle and spacing.</p>
       <div className="row">
         <button type="button" className="btn" onClick={() => useUi.setState({ dialog: 'grid' })}>Axis grid…</button>
+        <button type="button" className="btn" title="The axes renumbered in order across them" onClick={() => useUi.setState({ dialog: 'renumberAxes' })}>Renumber axes…</button>
         <button type="button" className="btn" onClick={() => openStandards('axis')}>Axis styles…</button>
       </div>
     </>

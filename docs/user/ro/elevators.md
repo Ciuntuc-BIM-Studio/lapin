@@ -1,7 +1,7 @@
 ---
 title: Lifturi
 order: 43
-summary: Lifturi dintr-un configurator cu douăsprezece feluri dimensionate după EN 81-20 și EN 81-70, cu puțul, groapa, înălțimea de siguranță, camera mașinii, cabina și ușile de palier, golurile din plăcile prin care trec, planuri pe fiecare nivel, extras și IFC.
+summary: Lifturi dintr-un configurator cu douăsprezece feluri dimensionate după EN 81-20 și EN 81-70, și lifturi circulare cu vacuum pentru case, cu puțul, groapa, înălțimea de siguranță, camera mașinii, cabina și ușile de palier, golurile din plăcile prin care trec, planuri pe fiecare nivel, extras și IFC.
 ---
 
 ## Așezarea unui lift
@@ -42,6 +42,28 @@ Stilurile sunt în stânga. Un stil completează toate câmpurile, iar apoi poț
 Previzualizarea arată planul la oprirea cea mai de jos și, pe celelalte file, o secțiune prin cabină cu fiecare oprire (opririle deservite cu roșu, cele pe lângă care trece întrerupt). Dedesubt, ce spune EN 81: o cabină mai mare decât permite sarcina ei, mai multe persoane decât duc sarcina sau aria, o cabină sau o ușă accesibilă prea mică, un lift hidraulic cu o cursă de peste circa 18 m. Urmează dimensiunile puțului la interior și la exterior, aria cabinei față de cât permite sarcina, opririle, cursa și plăcile pe care le deschide puțul.
 
 **Aplică** schimbă liftul într-un singur pas de anulare. **Salvează ca stil…** îl păstrează ca stil al proiectului; **Actualizează stilul** îl salvează din nou și toate lifturile acelui stil îl urmează. Un stil al proiectului se poate redenumi sau șterge (lifturile lui rămân cum sunt).
+
+## Un lift circular cu vacuum
+
+![Configuratorul unui lift circular cu vacuum: tubul, ușile paliere, fiecare privind în altă parte](shots/vacuum-lift-configurator.webp)
+
+Pentru o casă, un **lift cu vacuum** e un tub transparent în care aerul ridică o cabină: fără puț, fără groapă și fără cameră a mașinii. Trei stiluri din grupul **Vacuum** al barei îl pun:
+
+| Stil | Persoane | Sarcină nominală | Tub (exterior) | Ușă |
+|---|---|---|---|---|
+| Lift cu vacuum, o persoană | 1 | 160 kg | Ø 750 | glisantă curbă |
+| Lift cu vacuum, două persoane | 2 | 205 kg | Ø 933 | glisantă curbă |
+| Lift cu vacuum, scaun rulant | 2 | 240 kg | Ø 1300 | batantă |
+
+Valorile sunt orientative: decid datele producătorului și EN 81-41. În configurator:
+
+- **Cabină și sarcină**: diametrul exterior al tubului (butoanele Ø 750, Ø 933 și Ø 1300, sau orice valoare scrii), diametrul cabinei (cu 120 mm mai mic decât tubul până când scrii unul al tău), înălțimea cabinei, tubul din policarbonat sau sticlă, culorile tubului și ale cabinei.
+- **Uși și opriri**: ușile de palier (glisante curbe, batante sau deloc, un palier deschis), lățimea, înălțimea și tocul lor, ușa cabinei (glisantă curbă sau deloc), unghiul spre care privesc ușile (0° fața, 90° dreapta). Fiecare oprire deservită are lângă ea lista ei: **Ca ușile** sau un unghi al ei, așa că pe fiecare nivel ușa poate da spre altă cameră.
+- **Tub și cadru**: stâlpii cadrului (câți și latura lor; doi stau lângă ușa de jos, ceilalți în jurul tubului, iar unul care ar sta în ușa altui palier e lăsat deoparte), culoarea cadrului, inelul din fiecare placă prin care trece, unitatea de capăt de sus și inelul de bază pe care stă.
+
+Tubul stă pe inelul de bază pe placa de jos și deschide o gaură rotundă în fiecare placă de deasupra, umplută de inelul ei; când unitatea de capăt trece peste placa următoare, se deschide și aceea. În plan tubul și stâlpii sunt secționați, cabina e un cerc cu crucea ei, o ușă glisantă își arată foaia și, întrerupt, locul în care glisează, o ușă batantă foaia deschisă cu arcul ei.
+
+![Un lift cu vacuum în 3D, cu tubul trecând prin placa etajului](shots/vacuum-lift-3d.webp)
 
 ## În desene
 

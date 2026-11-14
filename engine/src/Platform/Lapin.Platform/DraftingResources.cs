@@ -78,6 +78,22 @@ public static class DraftingResources
         _ => false,
     };
 
+    /// <summary>
+    /// A material that stops joining (forum topic 59): the walls, beams and strip footings mainly of it lose their joins, in the
+    /// same step; one that joins again: they join what they meet, as drawing them does.
+    /// </summary>
+    static void Rejoin(ICommandContext ctx, string materialId, bool joins)
+    {
+        if (ctx.Services.Get<IPathElements>() is not { } paths) return;
+        var elements = ctx.Model.Entities.Where(e => paths.IsPath(e.Class) && e.Attrs["start"] is JsonArray && e.Attrs["end"] is JsonArray && CutOrder.MainMaterial(e, ctx.Model) == materialId).ToList();
+        foreach (var e in elements)
+        {
+            if (!joins) { foreach (var r in Joins.Of(ctx.Model, e.Id).ToList()) ctx.RemoveRelation(r.Id); continue; }
+            try { Joins.Auto(ctx, paths, e.Id); }
+            catch (CommandException) { }
+        }
+    }
+
     /// <summary>A material with a command's changes (material.update's fields), checked.</summary>
     static Entity Updated(ICommandContext ctx, Entity mat, JsonObject a)
     {
@@ -94,17 +110,19 @@ public static class DraftingResources
                     attrs[key] = Textures.Contains(tex) ? tex : throw new CommandException($"„{tex}” is not a texture: {string.Join(", ", Textures)}.");
                 else attrs.Remove(key);
             }
-        // Its own texture: an image of the project (null takes it off; an image nothing uses goes) and how large it lies on the model, metres.
-        if (a.ContainsKey("textureImage"))
+        // Its own texture, its normal map and its bump map: each an image of the project (null takes it off; an image nothing uses
+        // goes), all three laid on at one size, metres, and turned alike.
+        foreach (var key in Images.MaterialKeys)
         {
-            var had = attrs["textureImage"] is JsonValue hv ? (string?)hv : null;
-            if ((string?)a["textureImage"] is { Length: > 0 } img)
+            if (!a.ContainsKey(key)) continue;
+            var had = attrs[key] is JsonValue hv ? (string?)hv : null;
+            if ((string?)a[key] is { Length: > 0 } img)
             {
                 if (ctx.Model.Get(img) is not { Class: Images.Class }) throw new CommandException("There is no such image in the project.");
-                attrs["textureImage"] = img;
+                attrs[key] = img;
             }
-            else attrs.Remove("textureImage");
-            if (had != null && had != (string?)attrs["textureImage"]) Images.DropIfUnused(ctx, had, mat.Id);
+            else attrs.Remove(key);
+            if (had != null && had != (string?)attrs[key] && !Images.MaterialKeys.Any(k => (string?)attrs[k] == had)) Images.DropIfUnused(ctx, had, mat.Id);
         }
         if (a.ContainsKey("textureSize"))
         {
@@ -121,6 +139,11 @@ public static class DraftingResources
             {
                 if (a[flag] is JsonValue fv && fv.TryGetValue<bool>(out var b)) attrs[flag] = b; else attrs.Remove(flag);
             }
+        // Whether its elements join others (forum topic 59): kept only when they do not, the default being that they do.
+        if (a.ContainsKey("joins"))
+        {
+            if (a["joins"] is JsonValue jv && jv.TryGetValue<bool>(out var joins) && !joins) attrs["joins"] = false; else attrs.Remove("joins");
+        }
         // What it says of itself (docs/plan-buildup-tags.md): its description, its parameters, how it is measured and bought.
         MaterialFields.Apply(attrs, a);
         foreach (var kind in MaterialGraphics.Kinds)
@@ -284,6 +307,7 @@ public static class DraftingResources
             var renamed = ((string?)a["name"])?.Trim() is { Length: > 0 } nn && nn != mat.Name ? nn : null;
             var updated = Updated(ctx, mat, a);
             ctx.Replace(updated);
+            if (MaterialGraphics.JoinsOf(mat) != MaterialGraphics.JoinsOf(updated)) Rejoin(ctx, updated.Id, MaterialGraphics.JoinsOf(updated));
             // A material named elsewhere by its name (a door's frame, a sill, a zone) follows the new name.
             if (renamed != null) Rename(ctx, mat.Name, renamed, mat.Id);
             return null;
@@ -451,7 +475,7 @@ public static class DraftingResources
             return null;
         });
 
-        // The project's options: the unit the interface shows lengths in (mm, cm, m, ft-in, in), the step areas are shown to (areaRounding), how lines end on screen and paper (round, square), the section and elevation markers' sizes (sectionMarkSize, sectionMarkText, elevationMarkSize, elevationMarkText; markSize and markText both).
+        // The project's options: the unit the interface shows lengths in (mm, cm, m, ft-in, in), the step areas are shown to (areaRounding), how lines end on screen and paper (round, square), whether dimensions drop their trailing zeros (suppressZeros), the section and elevation markers' sizes (sectionMarkSize, sectionMarkText, elevationMarkSize, elevationMarkText; markSize and markText both).
         r.Command("standards.options", "Change drafting standards", (ctx, a) =>
         {
             var raw = Standards.ToJson(Book(ctx.Model));
@@ -463,6 +487,8 @@ public static class DraftingResources
                 else raw["areaRounding"] = AreaRounding.Read(step) ?? throw new CommandException("Areas are rounded to 0.1, 0.5 or 1 m², or not at all.");
             }
             if (a.ContainsKey("lineCap")) raw["lineCap"] = (string?)a["lineCap"] is { } c && Standards.LineCaps.Contains(c) ? c : throw new CommandException("Lines end round or square.");
+            // Dimensions drop their trailing zeros (2.5, not 2.500), unless their style keeps them (forum #81).
+            if (a.ContainsKey("suppressZeros")) raw["suppressZeros"] = a["suppressZeros"] is JsonValue zv && zv.TryGetValue<bool>(out var z) ? z : throw new CommandException("Trailing zeros are suppressed or not (true or false).");
             // The section and elevation markers' symbol size and text height (paper mm, decision 455); null: the defaults.
             void Mark(string key, double min, double max, string what)
             {

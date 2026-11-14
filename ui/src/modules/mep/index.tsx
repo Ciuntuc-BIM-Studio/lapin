@@ -30,6 +30,9 @@ import { fanGroup } from './fans/tools';
 import { FanSection } from './fans/FanSection';
 import { CLASS as FAN_CLASS, fanGrips } from './fans/fans';
 import { lazyPart } from '../../platform/lazyPart';
+import { carrierGroup } from './carriers/tools';
+import { CarrierSection } from './carriers/CarrierSection';
+import { CLASS as CARRIER_CLASS, carrierPoints } from './carriers/carriers';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const SystemsDialog = lazyPart(() => import('./SystemsDialog').then((m) => m.SystemsDialog), { title: 'Systems' });
@@ -391,6 +394,22 @@ function runGrips(node: NodeDto): Grip[] {
   return grips;
 }
 
+/** A cable carrier: its vertices to drag (Ctrl-click takes one out), a vertex added at a leg's middle; laid again at 45° steps. */
+function carrierGrips(node: NodeDto): Grip[] {
+  const pts = carrierPoints(node);
+  const save = (next: Vec2[]) => ({ command: 'mep.setCarrierPoints', args: { id: node.id, points: next.map((q) => [q.x, q.y]) } });
+  const grips: Grip[] = pts.map((q, i) => ({
+    key: `v${i}`, kind: 'vertex', at: q, title: 'Drag the handle · Ctrl-click takes it out',
+    step: (p) => save(pts.map((x, k) => (k === i ? p : x))),
+    remove: pts.length > 2 ? () => save(pts.filter((_, k) => k !== i)) : undefined,
+  }));
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const mid = { x: (pts[i].x + pts[i + 1].x) / 2, y: (pts[i].y + pts[i + 1].y) / 2 };
+    grips.push({ key: `e${i}`, kind: 'edgeMid', at: mid, title: 'Ctrl-click adds a handle here', step: () => save(pts), insert: () => save([...pts.slice(0, i + 1), mid, ...pts.slice(i + 1)]) });
+  }
+  return grips;
+}
+
 const grips = (n: NodeDto): Grip[] => (isRun(n) ? runGrips(n) : isNode(n) ? nodeGrips(n) : []);
 const references = (n: NodeDto): RefLine[] => (isRun(n) ? [{ points: runPoints(n), closed: false, kind: 'axis' }] : []);
 const byClass = <T,>(f: (n: NodeDto) => T): Record<string, (n: NodeDto) => T> => Object.fromEntries(PICKABLE.map((c) => [c, f]));
@@ -405,6 +424,8 @@ const mep: LapinModule = {
       { label: 'New system', tools: [], small: newSystems },
       { label: 'System', tools: [edit], small: [systems, mepPlan, openPorts, equipmentSchedule, runSchedule, gasSchedule, fireSchedule] },
       { label: 'Runs', tools: [run], small: [connect, disconnect, addHandle, detour, redraw] },
+      // Cable trays, ladders, trunking and conduit (report #147).
+      carrierGroup,
       { label: 'Heating', tools: [], small: [nodeTool(role('boiler')), nodeTool(role('radiator')), nodeTool(role('manifold'))] },
       { label: 'Plumbing', tools: [], small: [nodeTool(role('basin')), nodeTool(role('wc')), nodeTool(role('sink')), nodeTool(role('shower')), nodeTool(role('bath')), nodeTool(role('waterMeter')), nodeTool(role('stack')), nodeTool(role('cleanout'))] },
       { label: 'Electrical', tools: [], small: [nodeTool(role('panel')), nodeTool(role('outlet')), nodeTool(role('light')), nodeTool(role('switch'))] },
@@ -423,12 +444,13 @@ const mep: LapinModule = {
   propertySections: [
     { id: 'mep', label: 'MEP', classes: PICKABLE, component: MepSection, fieldKeys: (n) => (isRun(n) ? RUN_FIELDS : isNode(n) ? NODE_FIELDS : null) },
     { id: 'fan', label: 'Exhaust fan', classes: [FAN_CLASS], component: FanSection },
+    { id: 'carrier', label: 'Cable carrier', classes: [CARRIER_CLASS], component: CarrierSection },
   ],
   dialogs: { mepSystems: SystemsDialog, fanTypes: FanTypesDialog },
   background: Background,
-  grips: { ...byClass(grips), [FAN_CLASS]: fanGrips },
+  grips: { ...byClass(grips), [FAN_CLASS]: fanGrips, [CARRIER_CLASS]: carrierGrips },
   setType: { [FAN_CLASS]: (ids, typeId) => execute('mep.setFanType', { ids, typeId }) },
-  references: byClass(references),
+  references: { ...byClass(references), [CARRIER_CLASS]: (n: NodeDto): RefLine[] => [{ points: carrierPoints(n), closed: false, kind: 'axis' }] },
 };
 
 export default mep;

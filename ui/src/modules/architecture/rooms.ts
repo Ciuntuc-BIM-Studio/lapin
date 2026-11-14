@@ -11,7 +11,8 @@ import type { NodeDto } from '../../engine/protocol';
 import { outlineGrips, outlineRef, pt, toPairs } from '../../viewport/gripKit';
 import { fromPairs } from '../../viewport/contour';
 
-export interface SchemeEntry { value: string; color?: string; hatch?: string; hatchScale?: number; hatchColor?: string }
+/** A scheme value's look; opacity: the fill colour's, 0–100 % (none: opaque, forum #79). */
+export interface SchemeEntry { value: string; color?: string; opacity?: number; hatch?: string; hatchScale?: number; hatchColor?: string }
 interface ColorScheme { id: string; name: string; by: string; entries: SchemeEntry[] }
 interface SchemeValue { value: string; count: number; area: number }
 export interface Schemes {

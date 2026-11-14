@@ -303,7 +303,7 @@ public static class StandardsLibrary
                 raw[key] = list;
             }
             if (withOptions)
-                foreach (var k in new[] { "units", "lineCap", "areaRounding", "sectionMarkSize", "sectionMarkText", "elevationMarkSize", "elevationMarkText", "scales", "planScale", "sectionScale", "elevationScale", "defaultAxisStyle" })
+                foreach (var k in new[] { "units", "lineCap", "areaRounding", "suppressZeros", "sectionMarkSize", "sectionMarkText", "elevationMarkSize", "elevationMarkText", "scales", "planScale", "sectionScale", "elevationScale", "defaultAxisStyle" })
                     if (theirs[k] != null) raw[k] = theirs[k]!.DeepClone();
             WriteBook(ctx, raw);
 

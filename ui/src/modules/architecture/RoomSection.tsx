@@ -85,6 +85,10 @@ export function RoomSection({ node }: { node: NodeDto }) {
           <input type="color" value={str('fillColor') || '#ffffff'} onChange={(e) => update('fillColor', e.target.value)} />
           {str('fillColor') && <button type="button" className="icon mini" title="As its scheme says" onClick={() => update('fillColor', null)}><X size={10} /></button>}
         </dd>
+        {/* The room's own opacity over its scheme entry's (forum #79): empty, its scheme's. */}
+        <dt title="How much of the room's colour covers the plan under it, 0–100 %; empty: as its scheme says">Own opacity</dt>
+        <dd><NumberField className="narrow" testId="room-fill-opacity" min={0} max={100} suffix="%" placeholder="as its scheme" value={typeof node.props.fillOpacity === 'number' ? node.props.fillOpacity : null}
+          onCommit={(v) => update('fillOpacity', v)} /></dd>
         <dt title="The room's own hatch, over its colour scheme's">Own hatch</dt>
         <dd className="row">
           <select value={hatch} onChange={(e) => update('fillHatch', e.target.value)}>

@@ -65,7 +65,9 @@ Twinmotion, Lumion, Enscape, Blender and other renderers swap materials by name.
 
 ![A house with dark grey frames and blue glass](shots/materials-render-3d.webp)
 
-The IFC export names each material's surface style after it too, with its transparency and how it reflects.
+The IFC export names each material's surface style after it too, with its transparency and how it reflects. Doors and windows also carry their material per part: a material constituent set named **Frame**, **Sash**, **Glazing**, **Panel**, **Board** and **Hardware**, on each door and window and on its type, so a viewer or renderer reading the IFC finds the frame's metal and the glass by part. Importing such a file (from Lapin, or from another program that writes IFC4's **Lining**, **Framing** and **Glazing**) gives the door and window types those materials again.
+
+An IFC file from another program brings its glass see-through: the transparency of a material's surface style, or of the style on a body itself, becomes the material's **Transparency** (a body's style gives its part a material named after the style). The imported file itself is never changed.
 
 ## What a material sets
 
@@ -74,6 +76,7 @@ The IFC export names each material's surface style after it too, with its transp
 - **Category**, for example finish, insulation or structure. The view styles use it to leave the finishes out of a structural view.
 - **Membrane** draws a thin layer as a dashed line instead of a band.
 - **Draw joints.** By default, a material runs on from one element into the next without a line, like two walls in line or render over two storeys. Tick it to draw the joint.
+- **Joins with other elements.** On by default: elements of this material join where they meet others. Walls join at their corners and beams into columns, the cut order lets one element cut another (a column through a beam, a beam into a wall's head), and a drawing merges the cuts of touching elements of the same material into one area. Untick it for members that must keep their shape, such as steel girders or timber trusses. Their elements are then not joined automatically, nothing cuts them and they cut nothing, and plans and sections draw each one's own outline. A beam stops at the faces of the columns its ends stand in, but runs whole through a column it passes. Unticking it takes off the joins of the walls, beams and strip footings mainly of this material; ticking it again joins them to what they meet. You can undo either in one step. The library's steel and timber materials join by default, as before.
 
 ## Your own image on a material
 
@@ -89,6 +92,22 @@ The picture shows in the 3D view and is saved inside the project file. It also g
 ![The same house with the material's own image in 3D](shots/own-image-3d.webp)
 
 Pictures larger than 2048 pixels are reduced to that size when you import them. The trash button removes the picture from the material.
+
+## Normal and bump maps
+
+Under the own image, a material can take two relief maps, each a PNG or JPEG of your own:
+
+- **Normal map**: the purple-blue picture renderers and texture sites give with a material (tangent space, green up, as glTF reads it). The faces shade as if they had its relief: a brick's mortar joints, a timber's grain, a stone's roughness.
+- **Bump map**: a grey picture, white high and black low. The faces shade as if raised where it is light.
+
+Click **Import image…** beside one and choose the file. Both lie on the model as the own image does, at **W** × **H** and turned by **Rotation**; a first relief map on a material without a size gives it one 1 m wide, as high as the picture's proportion. **Strength** sets how strongly the relief shows: 1 as the picture says, 0 flat, up to 10. The preview sphere and the 3D view show both, and the trash button takes one off.
+
+In the exports:
+
+- **GLB** and **glTF** carry the normal map as the material's normal texture, at its strength.
+- **USDZ** packs the normal map beside the model and connects it to the surface's normal.
+- **OBJ + MTL** writes the normal map as `norm` and the bump map as `map_Bump` with its strength (`-bm`). A material with a normal map and no bump map writes the normal map as `map_Bump` too, where Blender and most renderers read it.
+- glTF has no bump map, so GLB, glTF and USD leave it out; **DAE** and **USDA** carry no pictures at all, so neither map goes there.
 
 ## Your own hatch patterns (.pat)
 

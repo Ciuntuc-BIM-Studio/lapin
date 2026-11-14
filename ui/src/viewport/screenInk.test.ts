@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DARK_INK, DARK_PAPER, drawsOnDark, screenFill, screenInk } from './drawing';
+import { DARK_INK, DARK_PAPER, drawsOnDark, screenFill, screenInk, splitAlpha, withOpacity } from './drawing';
 
 describe('screenInk (report #36: a plan in the dark theme)', () => {
   it('draws black and near-black pens in the theme ink on a dark plan', () => {
@@ -31,5 +31,20 @@ describe('drawsOnDark (report #90: sections and elevations follow the dark theme
     expect(drawsOnDark('graphite')).toBe(true);
     expect(drawsOnDark('paper')).toBe(false);
     expect(drawsOnDark(undefined)).toBe(false);
+  });
+});
+
+describe('a fill with an opacity (forum #79: room colours)', () => {
+  it('reads #rrggbbaa as its colour and opacity, any other colour as opaque', () => {
+    expect(splitAlpha('#f4c7a180')).toEqual({ color: '#f4c7a1', opacity: 0.502 });
+    expect(splitAlpha('#f4c7a1')).toEqual({ color: '#f4c7a1', opacity: 1 });
+    expect(splitAlpha(null)).toEqual({ color: null, opacity: 1 });
+  });
+
+  it('writes an opacity in per cent as the engine does, the colour alone at 100 % or none', () => {
+    expect(withOpacity('#f4c7a1', 50)).toBe('#f4c7a180');
+    expect(withOpacity('#a7c7e7', 25)).toBe('#a7c7e740');
+    expect(withOpacity('#a7c7e7', 100)).toBe('#a7c7e7');
+    expect(withOpacity('#a7c7e740', null)).toBe('#a7c7e7');
   });
 });

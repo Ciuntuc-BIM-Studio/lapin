@@ -18,6 +18,7 @@ import { NumberField } from '../../shell/cells';
 import { activate } from '../../platform/modules';
 import { useSchemes, type SchemeEntry } from './rooms';
 import { colorLegend } from './roomTools';
+import { withOpacity } from '../../viewport/drawing';
 import { areaText as area, useStandards } from '../../engine/unitsStore';
 
 
@@ -102,9 +103,9 @@ export function RoomColorsDialog() {
           )}
           {scheme && (
             <table className="layer-table room-colors-table">
-              <thead><tr><th>Value</th><th title="Rooms with this value">Rooms</th><th>Area</th><th>Colour</th><th>Hatch</th><th title="Hatch scale">Scale</th><th title="Hatch colour">Ink</th><th>Looks</th><th /></tr></thead>
+              <thead><tr><th>Value</th><th title="Rooms with this value">Rooms</th><th>Area</th><th>Colour</th><th title="How much of the colour covers what is under it: 100 % opaque, less lets the plan's lines show through (dark screens)">Opacity</th><th>Hatch</th><th title="Hatch scale">Scale</th><th title="Hatch colour">Ink</th><th>Looks</th><th /></tr></thead>
               <tbody>
-                {rows.length === 0 && <tr><td colSpan={9} className="muted">No room has a value for this field yet. Give rooms a {s.fields.find((f) => f.key === scheme.by)?.label.toLowerCase() ?? scheme.by} in their properties.</td></tr>}
+                {rows.length === 0 && <tr><td colSpan={10} className="muted">No room has a value for this field yet. Give rooms a {s.fields.find((f) => f.key === scheme.by)?.label.toLowerCase() ?? scheme.by} in their properties.</td></tr>}
                 {shown.map(({ entry, value, used }) => (
                   <tr key={value} className={used ? undefined : 'unused'}>
                     <td className="value">{value}</td>
@@ -116,6 +117,9 @@ export function RoomColorsDialog() {
                         {entry?.color && <button type="button" className="icon mini" title="No fill colour" onClick={() => set(value, { color: null })}><X size={10} /></button>}
                       </span>
                     </td>
+                    {/* The fill colour's opacity (forum #79): empty or 100 is opaque. */}
+                    <td><NumberField className="narrow" title="Opacity of the fill colour, 0–100 %; empty: opaque" min={0} max={100} suffix="%" placeholder="100" readOnly={!entry?.color} value={entry?.opacity ?? null}
+                      onCommit={(v) => set(value, { opacity: v == null || v >= 100 ? null : v })} /></td>
                     <td>
                       <select value={entry?.hatch ?? ''} onChange={(e) => set(value, { hatch: e.target.value || null })}>
                         <option value="">none</option>
@@ -125,7 +129,7 @@ export function RoomColorsDialog() {
                     <td><NumberField className="narrow" title="Hatch scale" min={0.1} readOnly={!entry?.hatch} value={entry?.hatchScale ?? 1}
                       onCommit={(v) => { if (v != null) set(value, { hatchScale: v }); }} /></td>
                     <td><input type="color" disabled={!entry?.hatch} value={entry?.hatchColor ?? '#555555'} onChange={(e) => set(value, { hatchColor: e.target.value })} /></td>
-                    <td><HatchSwatch hatch={entry?.hatch ?? null} scale={entry?.hatchScale ?? 1} fill={entry?.color ?? (entry?.hatch ? '#ffffff' : null)} size={28} /></td>
+                    <td><HatchSwatch hatch={entry?.hatch ?? null} scale={entry?.hatchScale ?? 1} fill={entry?.color ? withOpacity(entry.color, entry.opacity) : entry?.hatch ? '#ffffff' : null} size={28} /></td>
                     <td>{entry && <button type="button" className="icon mini" title="Take the value out of the scheme" onClick={() => void execute('architecture.setColorSchemeEntry', { id: scheme.id, value, remove: true })}><Trash2 size={11} /></button>}</td>
                   </tr>
                 ))}

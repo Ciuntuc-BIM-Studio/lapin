@@ -30,6 +30,7 @@ import { t } from '../../i18n';
 import { JoineryDataButton } from './JoineryData';
 import { ProfilePickerField } from '../core/profileLibraries/ProfilePickerField';
 import { GARAGE_LABELS, GARAGE_OPERATIONS, garageName, garageOf, sizeLabel, withGarageKind, type Garage, type GarageOperation } from './garageDoors';
+import { TypeListActions, endsOf } from '../../shell/TypeListActions';
 
 interface Panel { col: number; row: number; operation: string; colSpan?: number; rowSpan?: number; glazed?: boolean; infill?: string | null }
 /** A profile system's finer shapes (decision 370): the frame's rebate, the sash lapping over it, glazing beads, a drip. */
@@ -1195,6 +1196,8 @@ export function JoineryDialog() {
             </div>
             <div className="row joinery-actions">
               <span className="grow" />
+              {/* Duplicate, and the type's place in its list (forum #71): doors and windows each their own. */}
+              <TypeListActions id={editing} onDuplicated={setEditing} {...endsOf(types.filter((x) => x.type === (editing ? model.nodes.get(editing)?.type : '')), editing)} />
               {editing && <SaveTypeToLibrary ids={[editing]} />}
               {editing && <button type="button" className="btn" title="Delete the type (refused while elements use it)" onClick={() => void deleteType(editing).then((ok) => { if (ok) setEditing(null); })}><Trash2 size={14} />Delete type</button>}
               {editing && <button type="button" className="btn" onClick={() => useUi.setState(spec.kind === 'door' ? { doorTypeId: editing } : { windowTypeId: editing })}>Place with it</button>}

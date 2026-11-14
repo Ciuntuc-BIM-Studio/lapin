@@ -244,6 +244,21 @@ Orientarea ține de vedere: se păstrează cu proiectul, iar planșele vederii, 
 
 Doar planurile se rotesc (planuri de nivel, de tavan, de fundații, de situație și de încadrare); o secțiune sau o fațadă privește unde spun linia sau latura ei. O limită a vederii rămâne paralelă cu axele planului: pe o planșă, un plan rotit cu alt unghi decât un sfert de tură arată chenarul din jurul ei, iar limita se decupează în vedere.
 
+## Regiunea de decupare
+
+Un plan, o secțiune, o fațadă sau un plan de referință pot fi tăiate la un dreptunghi, cum face **Crop view** din Revit. În **Setările vederii** (în proprietățile ei sau din **Vedere → Setările vederii**):
+
+- **Decupează vederea** pornește sau oprește decuparea. Pornită prima dată, regiunea se trage în jurul a ce arată vederea, cu o jumătate de metru în plus. Se desenează doar ce se află înăuntru, liniile și hașurile pereților și planșeelor tăiate la marginea ei; oprită, vederea desenează iar tot și păstrează regiunea pentru data viitoare.
+- **Regiune de decupare vizibilă** desenează cadrul regiunii, pe ecran și pe planșe. Dă clic pe cadru ca să selectezi vederea: colțurile și laturile lui au mânere de tras, iar mijlocul îl mută întreg. Ascuns, cadrul nu se desenează și nu se tipărește, iar vederea rămâne decupată.
+- **Regiune de decupare** îi arată colțurile (stânga, jos, dreapta, sus), ca să le scrii exact, și mărimea.
+- **Decupare adnotări** adaugă un al doilea dreptunghi în jurul regiunii, mai larg cu **Decalajele decupării adnotărilor** (milimetri pe hârtie: stânga, jos, dreapta, sus; câte 10 mm implicit). O adnotare (o cotă, o etichetă, un text, un simbol) aflată cu totul în afara lui nu se desenează; una care îi trece marginea se taie acolo. Fără ea, adnotările se desenează oriunde ar fi.
+
+Fiecare schimbare e un singur pas de anulare. Planul implicit al unui nivel devine vederea lui de plan când e decupat, cu ce s-a desenat pe el. Motorul taie desenul, așa că planșele vederii, PDF-ul și DXF-ul ei tipăresc ce arată ecranul; pe o planșă, fereastra vederii este regiunea de decupare (decuparea adnotărilor, când e pornită), fără margine. Regiunea unui plan rotit rămâne dreaptă față de ecran. Vederea 3D își păstrează în schimb cutia de secțiune.
+
+![Un plan decupat la aripa de vest, cu cadrul arătat; cota din afara decupării adnotărilor lipsește](shots/view-crop.webp)
+
+![Decupează vederea în Setările vederii](shots/view-crop-settings.webp)
+
 ## Ce arată o vedere
 
 Tabul **Vedere** setează ce arată vederea din față și cum arată.

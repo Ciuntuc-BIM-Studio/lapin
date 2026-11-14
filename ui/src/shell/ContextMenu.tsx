@@ -22,6 +22,8 @@ export interface MenuItem {
   raw?: boolean;
   /** A line under the label saying more (a navigation style's main gestures), translated. */
   hint?: string;
+  /** Entries of its own, opened beside it (Select all with the same…): a click or the pointer over it opens them. */
+  submenu?: MenuItem[];
 }
 
 interface MenuState { at: { x: number; y: number } | null; items: MenuItem[] }
@@ -51,9 +53,11 @@ export function ContextMenuHost() {
   const { at, items } = useContextMenu();
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const [sub, setSub] = useState<number | null>(null);
 
   useLayoutEffect(() => {
     const el = ref.current;
+    setSub(null);
     if (!at || !el) { setPos(null); return; }
     setPos(placeMenu(at, { w: el.offsetWidth, h: el.offsetHeight }, { w: window.innerWidth, h: window.innerHeight }));
   }, [at, items]);
@@ -80,14 +84,29 @@ export function ContextMenuHost() {
     <div ref={ref} className="context-menu" role="menu" style={{ left: (pos ?? at).x, top: (pos ?? at).y, visibility: pos ? 'visible' : 'hidden' }}
       onContextMenu={(e) => e.preventDefault()}>
       {items.map((it, i) => (
-        <button key={i} type="button" role="menuitem" className="context-item" disabled={it.disabled}
-          onClick={() => { closeContextMenu(); it.onSelect(); }}>
-          <span className="context-icon">{it.checked ? '✓' : it.icon}</span>
-          {it.hint
-            ? <span className="context-text"><span data-i18n-ctx={it.ctx} data-no-i18n={it.raw ? '' : undefined}>{it.label}</span><span className="context-hint">{it.hint}</span></span>
-            : <span data-i18n-ctx={it.ctx} data-no-i18n={it.raw ? '' : undefined}>{it.label}</span>}
-          {it.shortcut && <span className="context-keys">{it.shortcut}</span>}
-        </button>
+        <div key={i} className="context-row" onPointerEnter={() => setSub(it.submenu ? i : null)}>
+          <button type="button" role="menuitem" className="context-item" disabled={it.disabled} aria-haspopup={it.submenu ? 'menu' : undefined}
+            onClick={() => { if (it.submenu) { setSub(sub === i ? null : i); return; } closeContextMenu(); it.onSelect(); }}>
+            <span className="context-icon">{it.checked ? '✓' : it.icon}</span>
+            {it.hint
+              ? <span className="context-text"><span data-i18n-ctx={it.ctx} data-no-i18n={it.raw ? '' : undefined}>{it.label}</span><span className="context-hint">{it.hint}</span></span>
+              : <span data-i18n-ctx={it.ctx} data-no-i18n={it.raw ? '' : undefined}>{it.label}</span>}
+            {it.shortcut && <span className="context-keys">{it.shortcut}</span>}
+            {it.submenu && <span className="context-keys">▸</span>}
+          </button>
+          {it.submenu && sub === i && (
+            <div className={`context-menu context-sub${(pos ?? at).x + 420 > window.innerWidth ? ' left' : ''}`} role="menu">
+              {it.submenu.map((x, j) => (
+                <button key={j} type="button" role="menuitem" className="context-item" disabled={x.disabled} onClick={() => { closeContextMenu(); x.onSelect(); }}>
+                  <span className="context-icon">{x.checked ? '✓' : x.icon}</span>
+                  {x.hint
+                    ? <span className="context-text"><span data-no-i18n={x.raw ? '' : undefined}>{x.label}</span><span className="context-hint" data-no-i18n="">{x.hint}</span></span>
+                    : <span data-no-i18n={x.raw ? '' : undefined}>{x.label}</span>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       ))}
     </div>
   );

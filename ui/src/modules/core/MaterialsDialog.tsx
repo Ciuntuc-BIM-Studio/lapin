@@ -20,7 +20,7 @@ import { notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
 import { MaterialGraphicsTable, type HatchPattern as Hatch, type MaterialRow as Material } from './MaterialGraphicsTable';
-import { OwnImage } from './OwnImage';
+import { OwnImage, ReliefMaps } from './OwnImage';
 import { MaterialPreview } from './MaterialPreview';
 import { forgetPatterns, keepPatterns, myPatterns } from './myPatterns';
 import { FirmFolderFiles } from './FirmFolderFiles';
@@ -45,7 +45,7 @@ const SLIDERS: { key: LookKey; label: string; step: number; title: string }[] = 
   { key: 'transmission', label: 'Glass (transmission)', step: 0.01, title: 'Light through the body, as glass and water let it: renderers refract it.' },
 ];
 /** Every look field, to take them all back to the name's. */
-const LOOK_KEYS = ['roughness', 'metalness', 'transparency', 'transmission', 'ior', 'emissive', 'emissiveStrength', 'textureRotation'];
+const LOOK_KEYS = ['roughness', 'metalness', 'transparency', 'transmission', 'ior', 'emissive', 'emissiveStrength', 'textureRotation', 'normalStrength', 'bumpStrength'];
 
 export function MaterialsDialog() {
   const nodes = useSession((s) => s.nodes);
@@ -274,6 +274,7 @@ export function MaterialsDialog() {
                         onBlur={(e) => { const v = Number(e.target.value.replace(',', '.')); if (Number.isFinite(v) && v >= -360 && v <= 360 && v !== look.textureRotation) update({ textureRotation: v }); }} />°</label>
                     </div>
                     <OwnImage materialId={m.id} />
+                    <ReliefMaps materialId={m.id} strengths={look} />
                     {SLIDERS.map(({ key, label, step, title }) => (
                       <label key={key} className={`slider-line${ownLook(key) ? ' own' : ''}`} title={title}>
                         <span className="small">{label}</span>
@@ -314,6 +315,7 @@ export function MaterialsDialog() {
                   <div className="row">
                     <label className="check"><input type="checkbox" checked={m.section.membrane} onChange={(e) => update({ membrane: e.target.checked })} /> Membrane (a dashed line, not a band)</label>
                     <label className="check" title="Off (the default): where this material goes on from one element into another (two walls' cores, footings round a corner) no line is drawn between them. On: the joint is drawn."><input type="checkbox" checked={m.section.drawJoints} onChange={(e) => update({ drawJoints: e.target.checked })} /> Draw joints</label>
+                    <label className="check" title="On (the default): its elements join where they meet others (walls at a corner, a beam into a column, one hatch where one material goes on). Off: they keep their shape (steel, timber): not joined, not cut by the cut order nor cutting others, their own outline drawn."><input type="checkbox" checked={m.section.joins !== false} onChange={(e) => update({ joins: e.target.checked })} /> Joins with other elements</label>
                   </div>
                   <MaterialGraphicsTable m={m} hatches={hatches} />
                   <p className="muted small">Hatches are paper millimetres at 1:1; a scale enlarges them. A fill is off unless asked.</p>

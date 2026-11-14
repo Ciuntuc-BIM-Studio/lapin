@@ -25,6 +25,8 @@ import { openPickedView } from './openView';
 import { pickDrawing } from './drawingPick';
 import { openContextMenu } from '../shell/ContextMenu';
 import { groupItems } from '../shell/selectionMenu';
+import { viewHideItems } from '../shell/viewHideMenu';
+import { dimensionItems } from '../modules/drafting/dimensionMenu';
 import { symbolMenuItems } from '../modules/core/symbols/symbolTools';
 import { membersOf, pickTarget, shownSelection } from '../platform/groups';
 import { pickByMods, pickRegion, wholeOf } from '../platform/assemblies';
@@ -426,7 +428,7 @@ export function DrawingView() {
             const target = under ? pickTarget(under) : null;
             let sel = useUi.getState().selected;
             if (under && target && isDrafted(nodes.get(under)) && !sel.includes(target)) { select(target); sel = [target]; }
-            openContextMenu(e.clientX, e.clientY, [...drawOrderItems(sel.flatMap((id) => [id, ...membersOf(id)]), nodes), ...symbolMenuItems(sel, nodes), ...groupItems()]);
+            openContextMenu(e.clientX, e.clientY, [...drawOrderItems(sel.flatMap((id) => [id, ...membersOf(id)]), nodes), ...symbolMenuItems(sel, nodes), ...dimensionItems(), ...groupItems(), ...viewHideItems(id)]);
             return;
           }
           if (!d || d.moved || e.button !== 0) return;

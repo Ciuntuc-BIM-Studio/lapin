@@ -3,7 +3,7 @@
  * room it reflects, before a checkered backdrop so glass shows what is behind
  * it (three.js's physical material: glass refracts through its transmission).
  * Its texture, drawn or the user's image, lies at its size in metres on a
- * sphere one metre across. Drawn when the material changes, not every frame.
+ * sphere one metre across, its normal and bump maps with it. Drawn when the material changes, not every frame.
  */
 
 import { useEffect, useRef } from 'react';
@@ -13,7 +13,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { useSession } from '../../engine/session';
 import { lookOf } from '../../viewport/look';
 import { previewMaterial } from '../../viewport/materialLook';
-import { imageOf, imageTexture, textureFor, textureOf, tileOf, TILE, whenImagesLoad } from '../../viewport/textures';
+import { imageOf, imageTexture, reliefOf, sizeOf, textureFor, textureOf, tileOf, TILE, whenImagesLoad, withRelief } from '../../viewport/textures';
 
 interface Stage { renderer: THREE.WebGLRenderer; scene: THREE.Scene; camera: THREE.PerspectiveCamera; sphere: THREE.Mesh; env: THREE.Texture }
 
@@ -63,7 +63,7 @@ export function MaterialPreview({ material, size = 168 }: { material: NodeDto; s
         const m = o as THREE.Mesh;
         m.geometry?.dispose();
         const mat = m.material as THREE.MeshPhysicalMaterial | undefined;
-        if (mat) { if (mat.map && !mat.map.userData.shared) mat.map.dispose(); mat.dispose(); }
+        if (mat) { for (const t of [mat.map, mat.normalMap, mat.bumpMap]) if (t && !t.userData.shared) t.dispose(); mat.dispose(); }
       });
       env.dispose();
       renderer.dispose();
@@ -92,8 +92,22 @@ export function MaterialPreview({ material, size = 168 }: { material: NodeDto; s
       }
       const old = s.sphere.material as THREE.MeshPhysicalMaterial;
       if (old.map) old.map.dispose();
+      if (old.normalMap) old.normalMap.dispose();
+      if (old.bumpMap) old.bumpMap.dispose();
       old.dispose();
-      s.sphere.material = previewMaterial(map ? 0xffffff : color, map, look, s.env);
+      // Its relief on the sphere, repeated as its images lie on the model (its own size, else 1 × 1 m) and turned alike.
+      const [rw, rh] = own ? [own.width, own.height] : sizeOf(material);
+      const copy = (t: THREE.Texture) => {
+        const c = t.clone();
+        c.userData = {};
+        c.wrapS = c.wrapT = THREE.RepeatWrapping;
+        c.repeat.set(Math.PI / rw, (Math.PI / 2) / rh);
+        c.center.set(0.5, 0.5);
+        c.rotation = (look.textureRotation * Math.PI) / 180;
+        c.needsUpdate = true;
+        return c;
+      };
+      s.sphere.material = withRelief(previewMaterial(map ? 0xffffff : color, map, look, s.env), reliefOf(material, nodes), look.normalStrength, look.bumpStrength, copy);
       s.renderer.render(s.scene, s.camera);
     };
     draw();

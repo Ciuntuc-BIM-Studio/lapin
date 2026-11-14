@@ -154,6 +154,9 @@ public static partial class IfcExport
         // The distribution elements (the MEP module's nodes and runs), IFC4's enumerations.
         ["IfcDuctSegment"] = ["RIGIDSEGMENT", "FLEXIBLESEGMENT"],
         ["IfcCableSegment"] = ["BUSBARSEGMENT", "CABLESEGMENT", "CONDUCTORSEGMENT", "CORESEGMENT"],
+        // Cable carriers (report #147): trays, ladders, trunking and conduit, their bends, tees, crosses and reducers.
+        ["IfcCableCarrierSegment"] = ["CABLELADDERSEGMENT", "CABLETRAYSEGMENT", "CABLETRUNKINGSEGMENT", "CONDUITSEGMENT"],
+        ["IfcCableCarrierFitting"] = ["BEND", "CROSS", "REDUCER", "TEE"],
         ["IfcPipeFitting"] = ["BEND", "CONNECTOR", "ENTRY", "EXIT", "JUNCTION", "OBSTRUCTION", "TRANSITION"],
         ["IfcDuctFitting"] = ["BEND", "CONNECTOR", "ENTRY", "EXIT", "JUNCTION", "OBSTRUCTION", "TRANSITION"],
         ["IfcBoiler"] = ["WATER", "STEAM"],
@@ -241,6 +244,9 @@ public static partial class IfcExport
         const string MaterialKey = "material:";
         readonly Dictionary<string, (string Ref, List<string> Occurrences)> types = [];
         readonly Dictionary<string, List<string>> materialUses = [];
+        /// <summary>The doors' and windows' constituent sets by their parts and materials: the set, its association's GlobalId, what it is associated to.</summary>
+        readonly Dictionary<string, (string Ref, string Gid, List<string> Users)> constituentSets = [];
+        readonly HashSet<string> constituentTypes = [];
         readonly Dictionary<(string Element, string Key), string> partRefs = [];
         readonly List<Relation> pendingFills = [];
         /// <summary>The fills of a reference's kept openings: the IfcRelFillsElement's GlobalId, the opening written, the filler's id.</summary>
@@ -821,12 +827,16 @@ public static partial class IfcExport
             // A wall of layers only is one body with its layer set; one with zones, lintels or a ring beam (a roof with its planes and timber, a footing with its sole) is a parent over its parts.
             // A door's frame and leaf, a column's body, a terrain: one element. Only a wall, a roof and a footing hold parts that are elements of their own.
             var grouped = o.Grouped && (kind.Class is IfcClass.Wall or IfcClass.Roof or IfcClass.Footing or "IfcCurtainWall" or IfcClass.Stair or IfcClass.Ramp or "IfcElementAssembly"
-                || kind.Class == IfcClass.Slab && parts.Any(p => p.Key?.StartsWith("clt:", StringComparison.Ordinal) == true || p.Key?.StartsWith("wood:", StringComparison.Ordinal) == true)) && parts.Count > 1 && !parts.All(p => (p.Key ?? "").StartsWith("layer:", StringComparison.Ordinal));
+                || kind.Class == IfcClass.Slab && parts.Any(p => p.Key?.StartsWith("clt:", StringComparison.Ordinal) == true || p.Key?.StartsWith("wood:", StringComparison.Ordinal) == true || p.Key?.StartsWith("bb-", StringComparison.Ordinal) == true)) && parts.Count > 1 && !parts.All(p => (p.Key ?? "").StartsWith("layer:", StringComparison.Ordinal));
             // A door or window: placed with its local +Y the way its panels open, which IFC's left and right are seen along.
             var joinery = e.Class is IfcClass.Door or IfcClass.Window && !grouped ? s.Catalog.Get<IJoineryIfc>() : null;
             var at = joinery?.Place(m, e);
             // A railway element already has its linear placement and frame; the rest stand on their storey (or in the joinery's frame).
             place ??= at is { } jp ? JoineryPlace(relTo, jp, z0) : Place(relTo, 0);
+            // A cable carrier's fittings (report #147): its bends, tees, crosses and reducers, IfcCableCarrierFittings aggregated in it; its body the rest.
+            var fittings = o.Grouped && !grouped && kind.Class == "IfcCableCarrierSegment" ? parts.Where(p => p.Key?.StartsWith("fitting:", StringComparison.Ordinal) == true).ToList() : [];
+            if (fittings.Count > 0 && fittings.Count < parts.Count) parts = [.. parts.Except(fittings)];
+            else fittings = [];
             var reps = new List<string>();
             // A type with a body of its own (a part): its map written before the type is, whatever this element's body.
             var typeMap = type != null ? TypeMap(type) : null;
@@ -854,8 +864,9 @@ public static partial class IfcExport
             Contain(spatial, entity);
             Elements++;
             if (type != null) TypeOf(type, kind, entity, mirrored, terms);
-            if (src?["material"] == null) MaterialsOf(e, entity, parts, grouped);
+            if (src?["material"] == null) MaterialsOf(e, entity, parts, grouped, type != null && types.TryGetValue(mirrored ? type.Id + MirrorKey : type.Id, out var written2) ? (type.Id + (mirrored ? MirrorKey : ""), written2.Ref) : null);
             if (grouped) Parts(e, kind, parts, place, fr, entity);
+            if (fittings.Count > 0) Parts(e, kind, fittings, place, fr, entity);
             Openings(e, entity, place, z0, voids);
             KeptOpenings(e, entity, place, z0);
             if (swept != null) SweptOpenings(e, swept, entity, place, fr);
@@ -1294,11 +1305,41 @@ public static partial class IfcExport
             return r;
         }
 
+        /// <summary>
+        /// The IfcMaterialConstituentSet of a door's or window's parts (report #76): a constituent per part of the joinery that
+        /// is made of a material, named after what it is (<see cref="JoineryConstituents"/>: Frame, Sash, Glazing, Panel, Board,
+        /// Hardware), so a viewer or renderer reading IFC finds the material per part; one set per combination, shared. Null when
+        /// fewer than two parts name a material (one material is associated as before).
+        /// </summary>
+        string? ConstituentsOf(Entity e, List<GeometryPart> parts)
+        {
+            var list = new List<(string Name, string Material)>();
+            foreach (var p in parts)
+                if (p.Key is { } k && JoineryConstituents.Name(k) is { } name && p.Material is { } mat && m.Get(mat) is { Class: IfcClass.Material } && !list.Any(x => x.Name == name))
+                    list.Add((name, mat));
+            if (list.Count < 2) return null;
+            var signature = string.Join("|", list.Select(x => x.Name + "=" + x.Material));
+            if (constituentSets.TryGetValue(signature, out var known)) return known.Ref;
+            var constituents = list.Select(x => f.Add("IFCMATERIALCONSTITUENT", S(x.Name), Null, Material(x.Material), Null, Null)).ToArray();
+            var set = f.Add("IFCMATERIALCONSTITUENTSET", S(e.Class == IfcClass.Door ? "Door" : "Window"), Null, L(constituents));
+            constituentSets[signature] = (set, Gid(e.Id, "constituents"), []);
+            return set;
+        }
+
+        void Associate(string set, string entity) => constituentSets.Values.First(x => x.Ref == set).Users.Add(entity);
+
         void UseMaterial(string materialId, string entity) => (materialUses.TryGetValue(materialId, out var l) ? l : materialUses[materialId] = []).Add(entity);
 
         /// <summary>A layered element's usage of its type's layer set; else the one material of its body (a grouped element's parts carry theirs).</summary>
-        void MaterialsOf(Entity e, string entity, List<GeometryPart> parts, bool grouped)
+        void MaterialsOf(Entity e, string entity, List<GeometryPart> parts, bool grouped, (string Key, string Ref)? type = null)
         {
+            // A door or window of several materials (report #76): a constituent set, one constituent per part, on it and its type.
+            if (!grouped && e.Class is IfcClass.Door or IfcClass.Window && ConstituentsOf(e, parts) is { } constituents)
+            {
+                Associate(constituents, entity);
+                if (type is var (key, typeRef) && constituentTypes.Add(key)) Associate(constituents, typeRef);
+                return;
+            }
             if (LayerSets.UsageOf(m, e.Id) is { } u && Layers.ReadUsage(u) is { } usage && m.Get(usage.ForLayerSet) is { } set)
             {
                 var direction = e.Class is IfcClass.Slab or IfcClass.Roof ? "AXIS3" : "AXIS2";
@@ -1329,6 +1370,8 @@ public static partial class IfcExport
                 var shape = f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { p.Unit != null && p.Instances is { Count: > 0 } copies ? Mapped(p.Unit, copies, StyleKey(p), fr) : BodyOf([Brep(p.Solid, StyleKey(p), fr)]) }));
                 var r = Product(pk, Gid(e.Id, key), p.Name, pk.ObjectType, Place(place, 0), shape, $"{e.Id}/{key}", flight: pk.Class == IfcClass.StairFlight ? FlightOf(e, key) : null);
                 if (p.Material != null) UseMaterial(p.Material, r);
+                // A part made of a type (a lintel of a beam type, report #135): typed by it, IfcBeamType LINTEL.
+                if (p.TypeId != null && m.Get(p.TypeId) is { } partType) TypeOf(partType, pk, r);
                 StandardSets(e, p, r, $"{e.Id}/{key}");
                 if (p.Properties is { Count: > 0 } own)
                     Define(r, f.Add("IFCPROPERTYSET", Gid(e.Id, key + "/pset"), Null, S(p.PropertySet ?? "Lapin_Part"), Null, L(own.Select(x => Single(x.Name, Typed("IFCLABEL", S(x.Value)))).ToArray())), Gid(e.Id, key + "/pset-rel"));
@@ -1376,6 +1419,7 @@ public static partial class IfcExport
                 }
             return (host, prefix) switch
             {
+                ("IfcCableCarrierSegment", "fitting") => new("IfcCableCarrierFitting", rest.Split(':')[0].ToUpperInvariant(), null),
                 (IfcClass.Wall, "lintel") => new(IfcClass.Beam, "LINTEL", null),
                 (IfcClass.Wall, "downstand") => new(IfcClass.Beam, "USERDEFINED", "Ring beam"),
                 (IfcClass.Wall, "zone") when zones.FirstOrDefault(z => (string?)z["key"] == rest) is { } zone && (string?)zone["role"] == "ringBeam" => new(IfcClass.Beam, "USERDEFINED", "Ring beam"),
@@ -1400,6 +1444,10 @@ public static partial class IfcExport
                     _ => new("IfcMember", "MEMBER", null),
                 },
                 (IfcClass.Slab, "wood-insulation") => new("IfcCovering", "INSULATION", null),
+                // A beam-and-block floor's parts (report #134): the precast joists, the infill blocks, the cast concrete.
+                (IfcClass.Slab, "bb-joist") => new(IfcClass.Beam, "JOIST", null),
+                (IfcClass.Slab, "bb-blocks" or "bb-cut-blocks") => new("IfcBuildingElementPart", "USERDEFINED", "Infill block"),
+                (IfcClass.Slab, "bb-concrete") => new("IfcBuildingElementPart", "USERDEFINED", "Cast concrete topping"),
                 (IfcClass.Roof, "drainage" or "gutter") => new("IfcPipeSegment", "GUTTER", null),
                 (IfcClass.Roof, "downpipe") => new("IfcPipeSegment", "RIGIDSEGMENT", "Downpipe"),
                 (IfcClass.Roof, "snow") => new("IfcDiscreteAccessory", "USERDEFINED", "Snow guard"),
@@ -2233,6 +2281,7 @@ public static partial class IfcExport
             }
             foreach (var (typeId, t) in types) f.Add("IFCRELDEFINESBYTYPE", Gid(typeId, "defines"), Null, Null, Null, L(t.Occurrences), t.Ref);
             foreach (var (materialId, list) in materialUses) f.Add("IFCRELASSOCIATESMATERIAL", Gid(materialId, "associates"), Null, Null, Null, L(list), Material(materialId));
+            foreach (var (set, gid, users) in constituentSets.Values) f.Add("IFCRELASSOCIATESMATERIAL", gid, Null, Null, Null, L(users), set);
             Classified();
             foreach (var fill in pendingFills)
                 if (written.TryGetValue(fill.Relating, out var opening) && fill.Related.Count > 0 && written.TryGetValue(fill.Related[0], out var filler))

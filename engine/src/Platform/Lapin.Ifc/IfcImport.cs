@@ -663,7 +663,17 @@ public static partial class IfcImport
                 }
                 else
                 {
+                    var had = Lapin.Platform.Materials.Find(edit.Model, name);
                     var found = Lapin.Platform.Materials.Ensure(edit, name, Colour(mat.Id));
+                    // See-through in its file (glass: its surface style's transparency, report #76): a material the import makes, or one
+                    // that sets no transparency of its own, takes it.
+                    if (Transparency(mat.Id) is { } t && (had == null || had.Attrs["transparency"] == null))
+                    {
+                        var a = found.CloneAttrs();
+                        a["transparency"] = Math.Round(t, 3);
+                        found = found.With(attrs: a);
+                        edit.Replace(found);
+                    }
                     id = found.Id;
                     // Another program's material: its description and its property sets (docs/plan-buildup-tags.md), what the project's lacks.
                     if (ForeignData(found, mat) is { } withData) edit.Replace(withData);
@@ -728,6 +738,18 @@ public static partial class IfcImport
                         foreach (var shading in Items(style[2]))
                             if (f.Get(shading[0]) is { Type: "IFCCOLOURRGB" } rgb)
                                 return HexColor.Of(Num(rgb[1]), Num(rgb[2]), Num(rgb[3]));
+            return null;
+        }
+
+        /// <summary>A material's transparency from its representation's surface style (IfcSurfaceStyleShading or Rendering), when it has one above 0.</summary>
+        double? Transparency(int material)
+        {
+            foreach (var rep in Rels.RepresentationsOf[material])
+                foreach (var styled in Items(rep[2]).SelectMany(r => Items(r[3])).Where(i => i.Type == "IFCSTYLEDITEM"))
+                    foreach (var style in Items(styled[1]).SelectMany(x => x.Type == "IFCPRESENTATIONSTYLEASSIGNMENT" ? Items(x[0]) : [x]).Where(x => x.Type == "IFCSURFACESTYLE"))
+                        foreach (var shading in Items(style[2]))
+                            if (shading.Type is "IFCSURFACESTYLESHADING" or "IFCSURFACESTYLERENDERING" && shading.Args.Count > 1 && shading[1] != null && Math.Clamp(Num(shading[1]), 0, 1) is var t)
+                                return t > 0.001 ? t : null;
             return null;
         }
 
@@ -1137,7 +1159,7 @@ public static partial class IfcImport
                 {
                     ["id"] = opGid, ["name"] = Str(op[2]), ["class"] = op.Type == "IFCVOIDINGFEATURE" ? "IfcVoidingFeature" : IfcClass.OpeningElement,
                     ["objectType"] = Str(op[4]), ["predefined"] = op.Args.Count > 8 ? Enum(op[8]) : null, ["rel"] = Str(rel[0]),
-                    [StoredBodies.Key] = StoredBodies.Write(parts), ["fills"] = fills,
+                    [StoredBodies.Key] = Colours(parts), ["fills"] = fills,
                 });
             }
             return list;
@@ -1195,14 +1217,14 @@ public static partial class IfcImport
                 instancesByContent++;
                 return;
             }
-            Referenced(edit, e, gid, WithOpenings(new JsonObject { [StoredBodies.Key] = StoredBodies.Write(p.Body.Parts) }, p), p);
+            Referenced(edit, e, gid, WithOpenings(new JsonObject { [StoredBodies.Key] = Stored(edit, p.Body.Parts) }, p), p);
         }
 
         /// <summary>A reference's attributes with what it keeps of its openings (<see cref="KeptOpenings"/>), if any: its uncut body and the openings.</summary>
         static JsonObject WithOpenings(JsonObject attrs, Prepared p)
         {
             if (p.Openings is not { } kept) return attrs;
-            if (kept.Uncut != null) attrs[StoredBodies.UncutKey] = StoredBodies.Write(kept.Uncut);
+            if (kept.Uncut != null) attrs[StoredBodies.UncutKey] = Colours(kept.Uncut);
             attrs[StoredBodies.OpeningsKey] = kept.Openings;
             return attrs;
         }
@@ -1316,7 +1338,7 @@ public static partial class IfcImport
             if (parts.Count > 0)
             {
                 id = Step.Guid(Seed, "shared-body\n" + key);
-                Put(edit, id, StoredBodies.SharedClass, $"{Str(first[2]) ?? ClassName(first.Type)[3..]} (shared)", new JsonObject { [StoredBodies.Key] = StoredBodies.Write(parts), ["source"] = key }, null, counts: false);
+                Put(edit, id, StoredBodies.SharedClass, $"{Str(first[2]) ?? ClassName(first.Type)[3..]} (shared)", new JsonObject { [StoredBodies.Key] = Stored(edit, parts), ["source"] = key }, null, counts: false);
             }
             return sharedBodies[key] = id;
         }

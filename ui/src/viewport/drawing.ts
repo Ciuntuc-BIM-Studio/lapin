@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { query, useSession } from '../engine/session';
+import { tempArgs, useViewTemporary } from './viewTemporary';
 
 export interface PenDto {
   layer: string;
@@ -64,6 +65,24 @@ export function screenFill(color: string | null | undefined, onDark: boolean): s
   return 0.2126 * lin(0) + 0.7152 * lin(2) + 0.0722 * lin(4) > 0.9 ? DARK_PAPER : screenInk(color, onDark);
 }
 
+/**
+ * A colour's opacity as drawings carry it (forum #79: a room colour's, #rrggbbaa, as the engine's HexColor writes it):
+ * the colour alone and its opacity 0–1 (1 for any other colour).
+ */
+export function splitAlpha(color: string | null | undefined): { color: string | null; opacity: number } {
+  if (!color) return { color: color ?? null, opacity: 1 };
+  const m = /^#([0-9a-f]{6})([0-9a-f]{2})$/i.exec(color.trim());
+  return m ? { color: `#${m[1]}`, opacity: Math.round((parseInt(m[2], 16) / 255) * 1000) / 1000 } : { color, opacity: 1 };
+}
+
+/** #rrggbb with an opacity in per cent: #rrggbbaa below 100 %, the colour alone otherwise (the engine's ColorSchemes.WithOpacity). */
+export function withOpacity(color: string, percent: number | null | undefined): string {
+  const base = splitAlpha(color).color ?? color;
+  if (percent == null || !Number.isFinite(percent) || percent >= 100 || !/^#[0-9a-f]{6}$/i.test(base)) return base;
+  const a = Math.round(Math.max(0, percent) / 100 * 255);
+  return `${base}${a.toString(16).padStart(2, '0')}`;
+}
+
 export interface DrawingDto {
   kind?: string;
   scale?: number;
@@ -91,18 +110,19 @@ export interface DrawingDto {
   frames?: { origin: number[]; right: number[]; up: number[]; dir: number[]; x0: number; x1: number }[];
 }
 
-/** The drawing of a view, fetched again (debounced) after every edit. */
+/** The drawing of a view, fetched again (debounced) after every edit, with the view's temporary hide, isolate and Reveal hidden (viewTemporary.ts). */
 export function useDrawing(viewId: string | null, enabled = true): DrawingDto | null {
   const nodes = useSession((s) => s.nodes);
+  const temp = useViewTemporary((s) => (viewId ? s.byView[viewId] : undefined));
   const [drawing, setDrawing] = useState<{ id: string; d: DrawingDto } | null>(null);
   useEffect(() => {
     if (!viewId || !enabled) { setDrawing(null); return; }
     let live = true;
     const t = setTimeout(() => {
-      void query<DrawingDto>('view.drawing', { id: viewId }).then((d) => { if (live && d) setDrawing({ id: viewId, d }); });
+      void query<DrawingDto>('view.drawing', { id: viewId, ...(temp ? tempArgs(temp) : {}) }).then((d) => { if (live && d) setDrawing({ id: viewId, d }); });
     }, 120);
     return () => { live = false; clearTimeout(t); };
-  }, [viewId, nodes, enabled]);
+  }, [viewId, nodes, enabled, temp]);
   // Another view's drawing is not this one's, even while this one is on its way.
   return drawing && drawing.id === viewId ? drawing.d : null;
 }

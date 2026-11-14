@@ -249,7 +249,7 @@ public interface IQueryContext
 public sealed record FieldDescriptor(
     string Key,
     string Label,
-    string Kind = "number",          // number | length | angle | text | bool | choice | ref | color | table | material
+    string Kind = "number",          // number | length | angle | text | bool | choice | ref | color | table | material (by name) | materialRef (by id)
     double? Min = null,
     double? Max = null,
     string[]? Choices = null,
@@ -311,6 +311,8 @@ public sealed record GeometryPart
     /// <summary>The part's own properties (a roof timber member's role, section, grade and length), written to IFC as the set <see cref="PropertySet"/>.</summary>
     public IReadOnlyList<(string Name, string Value)>? Properties { get; init; }
     public string? PropertySet { get; init; }
+    /// <summary>The type the part is an occurrence of (a wall's lintel made of a beam type, report #135): IFC types the part's element by it.</summary>
+    public string? TypeId { get; init; }
     /// <summary>A part plans cut as any other although its class draws by its symbols there (a lift's shaft walls round its car's symbol).</summary>
     public bool CutInPlan { get; init; }
 

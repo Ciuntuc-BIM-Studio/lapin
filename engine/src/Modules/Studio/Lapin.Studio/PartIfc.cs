@@ -24,8 +24,10 @@ public sealed class PartIfc : IIfcTypeShapes, IIfcElementSets
         catch (CommandException) { return null; }
         var set = Parts.SetOf(type.Id, def, values);
         if (set.Error != null) return null;
-        var local = set.Local(model, mirror: false);
-        return local.Count == 0 ? null : new IfcTypeBody(set.KeyOf(false), local);
+        // In the part's own material where a body names none (forum topic 60), as its placed parts without one of their own are.
+        var fallback = StudioModule.OwnMaterial(model, type);
+        var local = set.Local(model, mirror: false, fallback: fallback);
+        return local.Count == 0 ? null : new IfcTypeBody(set.KeyOf(false, fallback: fallback), local);
     }
 
     public IfcStandardSet? TypeSet(IModelView model, Entity type)

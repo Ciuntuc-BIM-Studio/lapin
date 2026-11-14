@@ -339,14 +339,65 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         RoomOpenings.Register(r);
         TypeExchange.Register(r);
 
+        // A floor type; beamBlock (report #134): its beam-and-block rules (null: a layered floor), set in the same step.
         r.Command("createSlabType", "New floor type", (ctx, a) =>
-            new JsonObject { ["id"] = Slabs.CreateType(ctx, (string?)a["name"], LayerSets.Parse(a["layers"], "A floor type")).Id });
+        {
+            var type = Slabs.CreateType(ctx, (string?)a["name"], LayerSets.Parse(a["layers"], "A floor type"));
+            if (a["beamBlock"] is JsonObject bb) BeamBlock.Set(ctx, type, BeamBlockSpec.From(bb));
+            return new JsonObject { ["id"] = type.Id };
+        });
 
         r.Command("updateSlabType", "Change floor type", (ctx, a) =>
         {
             var type = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.SlabType);
             Slabs.UpdateType(ctx, type, (string?)a["name"], a["layers"] is null ? null : LayerSets.Parse(a["layers"], "A floor type"));
+            if (a.ContainsKey("beamBlock")) BeamBlock.Set(ctx, ctx.Model.Get(type.Id)!, a["beamBlock"] is JsonObject bb ? BeamBlockSpec.From(bb) : null);
             return null;
+        });
+
+        // A beam-and-block floor type (report #134): {id (a floor type), spec (null: a layered floor again)}.
+        r.Command("setBeamBlock", "Beam and block floor", (ctx, a) =>
+        {
+            var type = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.SlabType);
+            BeamBlock.Set(ctx, type, a["spec"] is JsonObject o ? BeamBlockSpec.From(o) : null);
+            return null;
+        });
+
+        // A beam-and-block floor's own span direction: {ids, angle (degrees, the joists' way) | edge (an index of its outline: the joists across it) | neither: the type's}.
+        r.Command("setFloorSpan", "Span direction", (ctx, a) =>
+        {
+            foreach (var id in Ids(a))
+            {
+                var slab = Spatial.Require(ctx.Model, id, IfcClass.Slab);
+                var attrs = slab.CloneAttrs();
+                if (Json.Number(a["edge"]) is { } e)
+                {
+                    var c = Slabs.Contour(slab);
+                    var i = (int)e;
+                    if (i < 0 || i >= c.Count) throw new CommandException("The floor has no such edge.");
+                    var d = c[(i + 1) % c.Count] - c[i];
+                    // The joists bear on the edge: they run across it.
+                    var deg = Math.Atan2(d.X, -d.Y) * 180 / Math.PI;
+                    attrs[BeamBlock.SpanKey] = Math.Round(((deg % 180) + 180) % 180, 6);
+                }
+                else if (Json.Number(a["angle"]) is { } angle) attrs[BeamBlock.SpanKey] = Math.Round(((angle % 180) + 180) % 180, 6);
+                else attrs.Remove(BeamBlock.SpanKey);
+                ctx.Replace(slab.With(attrs: attrs));
+            }
+            return null;
+        });
+
+        // The user's catalogue of beam-and-block systems from a CSV: {csv} → {names} (each a floor type).
+        r.Command("importBeamBlockTypes", "Import beam and block types", (ctx, a) =>
+            new JsonObject { ["names"] = new JsonArray([.. BeamBlock.ImportCsv(ctx, (string?)a["csv"] ?? "").Select(n => (JsonNode)n)]) });
+
+        // The configurator's preview, from the floor's own layout: {spec}.
+        r.Query("beamBlockPreview", (q, a) => BeamBlock.Preview(BeamBlockSpec.From(a["spec"])));
+        // The indicative presets and the catalogue's CSV template.
+        r.Query("beamBlockPresets", (q, a) => new JsonObject
+        {
+            ["presets"] = new JsonArray([.. BeamBlockSpec.Presets.Select(p => (JsonNode)p.ToJson())]),
+            ["csvTemplate"] = BeamBlock.CsvTemplate(),
         });
 
         r.Command("addSlab", "Floor", (ctx, a) =>
@@ -399,6 +450,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         // ------------------------------------------------------------ schedules
         new Schedules.ScheduleEntity().Register(r);
         r.Service<IScheduleSource>(new RoomSchedule());
+        r.Service<IScheduleSource>(new BeamBlockSchedule());
         r.Service<IElementBuildUps>(new RoomFinishBuildUps());
         r.Service<IElementUpdate>(new RoomUpdate());
         r.Service<IProjectUpgrade>(new RoomNameUpgrade());
@@ -425,6 +477,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             new("height", "Height", "length", Min: 0.1),
             new("baseOffset", "Base offset", "length"),
             new("fillColor", "Own colour", "color"),
+            // Its own colour's opacity (forum #79), 0–100 %; absent: its scheme entry's.
+            new("fillOpacity", "Own opacity %", "number", Min: 0, Max: 100),
             new("fillHatch", "Own hatch", "text"),
             new("hatchScale", "Hatch scale", "number", Min: 0.01, Max: 100),
             new("hatchColor", "Hatch colour", "color"),

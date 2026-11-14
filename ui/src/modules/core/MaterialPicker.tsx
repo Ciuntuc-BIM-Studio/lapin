@@ -10,23 +10,32 @@ import { ofClass } from '../../engine/model';
 
 const NEW = '\u0000new';
 
-export function MaterialPicker({ value, onChange, placeholder, allowEmpty }: { value: string; onChange: (name: string) => void; placeholder?: string; allowEmpty?: boolean }) {
+export function MaterialPicker({ value, onChange, placeholder, allowEmpty, byId }: { value: string; onChange: (value: string) => void; placeholder?: string; allowEmpty?: boolean; byId?: boolean }) {
   const model = useSession();
-  const names = ofClass(model, 'IfcMaterial').map((m) => m.name).sort((a, b) => a.localeCompare(b));
-  const known = names.includes(value);
+  const materials = ofClass(model, 'IfcMaterial').sort((a, b) => a.name.localeCompare(b.name));
+  const names = materials.map((m) => m.name);
+  // By id (a Studio solid's material): the value and what is picked are material ids, shown by their names.
+  const options = byId ? materials.map((m) => ({ value: m.id, label: m.name })) : names.map((n) => ({ value: n, label: n }));
+  const known = options.some((o) => o.value === value);
   const pick = async (next: string) => {
     if (next !== NEW) { onChange(next); return; }
     const name = window.prompt('The new material\'s name')?.trim();
     if (!name) return;
-    if (!names.includes(name)) await execute('material.create', { name });
+    const existing = materials.find((m) => m.name === name);
+    if (byId) {
+      const id = existing?.id ?? ((await execute('material.create', { name })) as { id?: string } | undefined)?.id ?? '';
+      if (id) onChange(id);
+      return;
+    }
+    if (!existing) await execute('material.create', { name });
     onChange(name);
   };
   return (
-    <select value={known || !value ? value : value} onChange={(e) => void pick(e.target.value)}>
+    <select value={value} onChange={(e) => void pick(e.target.value)}>
       {(allowEmpty || !value) && <option value="">{placeholder ?? '—'}</option>}
       {!known && value && <option value={value} data-no-i18n>{value} (new)</option>}
       {/* Names are the project's data: never translated (a renderer finds them by name). */}
-      {names.map((n) => <option key={n} value={n} data-no-i18n>{n}</option>)}
+      {options.map((o) => <option key={o.value} value={o.value} data-no-i18n>{o.label}</option>)}
       <option value={NEW}>New material…</option>
     </select>
   );

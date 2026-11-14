@@ -189,8 +189,11 @@ export function useGripEditor(o: GripEditorOptions) {
     const first = who[0];
     // Ctrl/⌘ on a grip with an insert-by-drag (a dimension's segment middle): a click inserts halfway, a drag where it is dropped.
     const insert = (e.ctrlKey || e.metaKey) && !copy && !!first.insertAt && !!first.insert;
+    // Alt-click on a grip that takes its point out (a dimension's), alone in its group: it is taken out.
+    if (e.altKey && !e.ctrlKey && !e.metaKey && first.altRemove && first.remove && g.members.length === 1) { void runSteps([first.remove()]); return true; }
     if ((e.ctrlKey || e.metaKey) && !copy && !insert) {
-      if (first.insert) void runSteps([first.insert()]);
+      if (first.extend) first.extend();
+      else if (first.insert) void runSteps([first.insert()]);
       else if (first.remove) void runSteps([first.remove()]);
       return true;
     }

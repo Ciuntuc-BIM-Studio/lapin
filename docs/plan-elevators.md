@@ -45,6 +45,33 @@ for the load and says so in its description.
   step on place, configure, Properties, move/rotate/copy (`ITransformFollowers`), a slab changed, and deletion; a floor
   drawn after the elevator opens with `transport.syncOpenings` (Architecture → Shaft openings).
 
+## Circular vacuum lifts (tester's report #149)
+
+A pneumatic vacuum lift for houses is the drive `vacuum` of the same element (`VacuumLift.cs`, a part of
+`ElevatorLayout`), placed by the same tool and configured in the same configurator, its preview made by the same code
+as its bodies. Three catalogue styles in the group Vacuum: one person (tube Ø 750, 160 kg), two persons (Ø 933, 205 kg),
+a wheelchair (Ø 1300, 240 kg, a swing door); all values indicative (the maker's data and EN 81-41 decide).
+
+- Its own attributes (`ElevatorStyles.VacuumFields`, dropped when the drive changes): `tubeDiameter` (presets 750, 933,
+  1300 mm), `cabinDiameter` (the tube less 120 mm, following the tube until typed; at most 80 mm under it),
+  `tubeMaterial` (polycarbonate, glass), `columns`, `columnSize`, `ringBeamHeight`, `headUnitHeight`, `baseRingHeight`,
+  `doorKind` (sliding, swing, none), `doorAngle` (0° the front, 90° the right), `doorFrame`, `cabinDoor` (sliding, none),
+  `frameColor`, `tubeColor`, `cabinColor`; `doorAngles` {storeyId: angle} turns a landing's door its own way. A mirror
+  turns the angles the other way round. `cabinWidth`/`cabinDepth` are written as the cabin's diameter (the schedule and
+  Pset_TransportElementElevator's clear size read them).
+- Layout: `Wi` = `Di` the tube, `T` the floors' openings' margin round it (the ring beam, 60 mm, or the columns when
+  wider), `Tc` the head unit; no pit; the tube rises the cabin's height and 250 mm over the top stop, the head unit on
+  that. The floors from the lowest's (excluded) up to the head unit's top open in circles by `Chords`.
+- Bodies, every one a closed prism: the tube in bands between the landings' sills and heads, whole or an arc round the
+  open door; the frame (base ring, a ring beam in each floor above, the columns: two flank the lowest door, the others
+  evenly round, one in another landing's door left out and said; each door's frame); the head unit; the cabin at the
+  lowest stop (floor, roof, clear walls open towards the lowest door) and its curved sliding door; the landing doors (a
+  curved sliding panel outside the frame, or a swing leaf in the tube's line).
+- Plan: the tube and columns cut, the cabin's circle with the lift's cross, a sliding door's panel and dashed slide, a
+  swing door's open leaf and swing, the cabin door's panel and slide.
+- Checks: a door wider than 0.9 of the tube or higher than the cabin, over 0.15 m/s, 250 kg, 15 m or five stops, columns
+  left out, a head unit rising above the next floor (which it then opens).
+
 ## Open
 
 - A floor drawn after an elevator is not opened by itself.

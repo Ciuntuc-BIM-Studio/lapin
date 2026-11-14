@@ -25,6 +25,8 @@ public sealed class TransportModule : ILapinModule
     public const string TypeClass = "IfcTransportElementType";
     public const string Predefined = "ELEVATOR";
     public const string ShaftMaterial = "Reinforced concrete", GlassMaterial = "Glass", SteelMaterial = "Stainless steel", WeightMaterial = "Steel";
+    /// <summary>A vacuum lift's tube and its frame (report #149).</summary>
+    public const string PolycarbonateMaterial = "Clear polycarbonate", AluminiumMaterial = "Aluminium";
     /// <summary>The project's own lift styles, on the project.</summary>
     public const string StylesKey = "elevatorStyles";
     public const string OwnPrefix = "own:";
@@ -37,6 +39,7 @@ public sealed class TransportModule : ILapinModule
     };
 
     static IReadOnlyList<IReadOnlyDictionary<string, string[]>> When(string key, params string[] values) => FieldDescriptor.When(key, values);
+    static readonly IReadOnlyList<IReadOnlyDictionary<string, string[]>> NotVacuum = When("drive", "!vacuum"), IsVacuum = When("drive", "vacuum");
 
     public static readonly IReadOnlyList<FieldDescriptor> Fields =
     [
@@ -44,30 +47,46 @@ public sealed class TransportModule : ILapinModule
         new("load", "Rated load (kg)", "number", Min: 50, Max: 10000),
         new("persons", "Persons", "number", Min: 1, Max: 200),
         new("speed", "Speed (m/s)", "number", Min: 0.05, Max: 10),
-        new("cabinWidth", "Car width", "length", Min: 0.6, Max: 4),
-        new("cabinDepth", "Car depth", "length", Min: 0.6, Max: 6),
+        new("cabinWidth", "Car width", "length", Min: 0.6, Max: 4, ShowIf: NotVacuum),
+        new("cabinDepth", "Car depth", "length", Min: 0.6, Max: 6, ShowIf: NotVacuum),
         new("cabinHeight", "Car height", "length", Min: 1.9, Max: 4),
-        new("glass", "Glass car walls", "bool"),
-        new("entrances", "Entrances", "choice", Choices: ElevatorSpec.Entrances),
+        new("glass", "Glass car walls", "bool", ShowIf: NotVacuum),
+        new("entrances", "Entrances", "choice", Choices: ElevatorSpec.Entrances, ShowIf: NotVacuum),
         new("doorWidth", "Door width", "length", Min: 0.5, Max: 3),
         new("doorHeight", "Door height", "length", Min: 1.8, Max: 3.5),
-        new("doorOpening", "Door opening", "choice", Choices: ElevatorSpec.Openings),
-        new("doorPanels", "Door panels", "number", Min: 1, Max: 4),
-        new("counterweight", "Counterweight side", "choice", Choices: ElevatorSpec.Sides, ShowIf: When("drive", "!hydraulic")),
+        new("doorOpening", "Door opening", "choice", Choices: ElevatorSpec.Openings, ShowIf: NotVacuum),
+        new("doorPanels", "Door panels", "number", Min: 1, Max: 4, ShowIf: NotVacuum),
+        // A circular vacuum lift's own (report #149).
+        new("tubeDiameter", "Tube diameter (outside)", "length", Min: 0.6, Max: 1.6, ShowIf: IsVacuum),
+        new("cabinDiameter", "Cabin diameter", "length", Min: 0.4, Max: 1.52, ShowIf: IsVacuum),
+        new("tubeMaterial", "Tube", "choice", Choices: ElevatorSpec.TubeMaterials, ShowIf: IsVacuum),
+        new("columns", "Frame columns", "number", Min: 0, Max: 12, ShowIf: IsVacuum),
+        new("columnSize", "Column size", "length", Min: 0.02, Max: 0.2, ShowIf: IsVacuum),
+        new("ringBeamHeight", "Ring beam height", "length", Min: 0.03, Max: 0.6, ShowIf: IsVacuum),
+        new("headUnitHeight", "Head unit height", "length", Min: 0.2, Max: 1.5, ShowIf: IsVacuum),
+        new("baseRingHeight", "Base ring height", "length", Min: 0.02, Max: 0.3, ShowIf: IsVacuum),
+        new("doorKind", "Landing doors", "choice", Choices: ElevatorSpec.VacuumDoors, ShowIf: IsVacuum),
+        new("doorAngle", "Doors face (°)", "angle", Min: -360, Max: 360, ShowIf: IsVacuum),
+        new("doorFrame", "Door frame", "length", Min: 0, Max: 0.2, ShowIf: IsVacuum),
+        new("cabinDoor", "Cabin door", "choice", Choices: ElevatorSpec.CabinDoors, ShowIf: IsVacuum),
+        new("frameColor", "Frame colour", "color", ShowIf: IsVacuum),
+        new("tubeColor", "Tube colour", "color", ShowIf: IsVacuum),
+        new("cabinColor", "Cabin colour", "color", ShowIf: IsVacuum),
+        new("counterweight", "Counterweight side", "choice", Choices: ElevatorSpec.Sides, ShowIf: When("drive", "!hydraulic", "!vacuum")),
         new("jackSide", "Jack side", "choice", Choices: ["left", "right"], ShowIf: When("drive", "hydraulic")),
-        new("accessible", "Accessible (EN 81-70)", "choice", Choices: ElevatorSpec.AccessibleTypes),
-        new("pit", "Pit depth", "length", Min: 0.05, Max: 4),
-        new("headroom", "Headroom over the top stop", "length", Min: 2.2, Max: 8),
+        new("accessible", "Accessible (EN 81-70)", "choice", Choices: ElevatorSpec.AccessibleTypes, ShowIf: NotVacuum),
+        new("pit", "Pit depth", "length", Min: 0.05, Max: 4, ShowIf: NotVacuum),
+        new("headroom", "Headroom over the top stop", "length", Min: 2.2, Max: 8, ShowIf: NotVacuum),
         new("machineRoom", "Machine room", "choice", Choices: ElevatorSpec.MachineRooms, ShowIf: When("drive", "traction", "hydraulic")),
-        new("shaftGlass", "Glass shaft", "bool"),
-        new("shaftThickness", "Shaft wall thickness", "length", Min: 0.05, Max: 0.6, ShowIf: [new Dictionary<string, string[]> { ["shaftWallTypeId"] = [""], ["shaftGlass"] = ["!true"] }]),
-        new("fireFighting", "Firefighters lift (EN 81-72)", "bool"),
+        new("shaftGlass", "Glass shaft", "bool", ShowIf: NotVacuum),
+        new("shaftThickness", "Shaft wall thickness", "length", Min: 0.05, Max: 0.6, ShowIf: [new Dictionary<string, string[]> { ["shaftWallTypeId"] = [""], ["shaftGlass"] = ["!true"], ["drive"] = ["!vacuum"] }]),
+        new("fireFighting", "Firefighters lift (EN 81-72)", "bool", ShowIf: NotVacuum),
         new("fireExit", "Evacuation lift (fire exit)", "bool"),
         new("rotation", "Rotation (°)", "angle", Min: -360, Max: 360),
     ];
 
     /// <summary>What a lift's own section sets, besides its fields: the storeys, the stops it skips, its shaft's wall type, its style.</summary>
-    static readonly string[] OwnKeys = ["topStoreyId", "unserved", "shaftWallTypeId", "style", "kind", "at"];
+    static readonly string[] OwnKeys = ["topStoreyId", "unserved", "shaftWallTypeId", "style", "kind", "at", "doorAngles"];
 
     public void Register(IModuleRegistry r)
     {
@@ -100,7 +119,7 @@ public sealed class TransportModule : ILapinModule
             ApplyStyle(ctx.Model, attrs, (string?)a["style"] ?? "passenger-medium");
             if (a["attrs"] is JsonObject given) Merge(ctx, attrs, given, null);
             Normalize(attrs, null);
-            EnsureMaterials(ctx);
+            EnsureMaterials(ctx, attrs);
             var e = new Entity(ctx.NewId(), Class, "Elevator", attrs, Predefined);
             ctx.Add(e);
             Spatial.Contain(ctx, storey.Id, e.Id);
@@ -200,9 +219,14 @@ public sealed class TransportModule : ILapinModule
 
     public static Entity? TypeOf(IModelView m, Entity e) => m.RelatingOf(e.Id, IfcClass.RelDefinesByType) is { Class: TypeClass } t ? t : null;
 
-    static void EnsureMaterials(IEdit edit)
+    static void EnsureMaterials(IEdit edit, JsonObject? attrs = null)
     {
         foreach (var (name, color) in MaterialColors) Materials.Ensure(edit, name, color);
+        if (attrs == null || !new ElevatorSpec(attrs).Vacuum) return;
+        // A vacuum lift's clear tube (its look says it lets the light through) and its frame.
+        if (Materials.Find(edit.Model, PolycarbonateMaterial) == null)
+            edit.Add(new Entity(edit.NewId(), IfcClass.Material, PolycarbonateMaterial, new JsonObject { ["color"] = "#cfe6ee", ["transparency"] = 0.6, ["transmission"] = 0.9, ["roughness"] = 0.1, ["ior"] = 1.58 }));
+        Materials.Ensure(edit, AluminiumMaterial, "#8e959c");
     }
 
     // ---- Styles ----
@@ -271,6 +295,21 @@ public sealed class TransportModule : ILapinModule
                 else attrs[k] = m.Get(wt) is { Class: IfcClass.WallType } ? wt : throw new CommandException("The shaft's walls take a wall type.");
                 continue;
             }
+            if (k == "doorAngles")
+            {
+                // A vacuum lift's doors landing by landing: {storeyId: angle}; a landing left out faces doorAngle.
+                if (v is not JsonObject map) { attrs.Remove(k); continue; }
+                var o = new JsonObject();
+                foreach (var (sid, ang) in map)
+                {
+                    Spatial.Require(m, sid, IfcClass.BuildingStorey);
+                    if (ang is null) continue;
+                    var n = Json.Number(ang) is { } d && double.IsFinite(d) ? d : throw new CommandException("A landing's door faces an angle in degrees.");
+                    o[sid] = Math.Round(((n % 360) + 360) % 360, 6);
+                }
+                if (o.Count == 0) attrs.Remove(k); else attrs[k] = o;
+                continue;
+            }
             if (k == "at") { attrs[k] = new JsonArray(R(Args.Point(v, "at").X), R(Args.Point(v, "at").Y)); continue; }
             var f = Fields.FirstOrDefault(x => x.Key == k) ?? throw new CommandException($"An elevator has no field „{k}”.");
             if (v is null) attrs.Remove(k); else attrs[k] = Lapin.Platform.Fields.Check(f, v);
@@ -287,12 +326,24 @@ public sealed class TransportModule : ILapinModule
         var old = before != null ? new ElevatorSpec(before) : null;
         if (old != null && old.Drive != now.Drive)
             attrs["machineRoom"] = now.Drive switch { "traction" => "top", "hydraulic" => "beside", _ => "none" };
+        // Out of a vacuum lift: the new drive's pit and headroom, and none of the tube's fields.
+        if (old is { Vacuum: true } && !now.Vacuum)
+        {
+            attrs["pit"] = ElevatorSpec.SuggestedPit(now.Drive, now.Speed);
+            attrs["headroom"] = ElevatorSpec.SuggestedHeadroom(now.Drive, now.Speed);
+        }
+        if (!now.Vacuum) { foreach (var k in ElevatorStyles.VacuumFields) attrs.Remove(k); attrs.Remove("doorAngles"); }
+        // A vacuum lift's cabin follows its tube until it is given its own.
+        if (now.Vacuum && old is { Vacuum: true } && Math.Abs(old.TubeDiameter - now.TubeDiameter) > 1e-9
+            && Json.Number(attrs["cabinDiameter"]) == Json.Number(before!["cabinDiameter"])
+            && Math.Abs(old.CabinDiameter - ElevatorSpec.DerivedCabinDiameter(old.TubeDiameter)) < 1e-6)
+            attrs["cabinDiameter"] = ElevatorSpec.DerivedCabinDiameter(now.TubeDiameter);
         if (old != null && (old.Drive != now.Drive || Math.Abs(old.Speed - now.Speed) > 1e-9))
         {
             if (Math.Abs(old.Pit - ElevatorSpec.SuggestedPit(old.Drive, old.Speed)) < 1e-6) attrs["pit"] = ElevatorSpec.SuggestedPit(now.Drive, now.Speed);
             if (Math.Abs(old.Headroom - ElevatorSpec.SuggestedHeadroom(old.Drive, old.Speed)) < 1e-6) attrs["headroom"] = ElevatorSpec.SuggestedHeadroom(now.Drive, now.Speed);
         }
-        if (now.Drive is "mrl" or "home") attrs["machineRoom"] = "none";
+        if (now.Drive is "mrl" or "home" or "vacuum") attrs["machineRoom"] = "none";
         if (now.Drive != "hydraulic" && (string?)attrs["machineRoom"] == "beside") attrs["machineRoom"] = "top";
         // A hydraulic lift's jack stands where its counterweight would: the jack side is that, at a side.
         if (now.Drive == "hydraulic")
@@ -310,6 +361,15 @@ public sealed class TransportModule : ILapinModule
         attrs["accessible"] = s.Accessible; attrs["pit"] = s.Pit; attrs["headroom"] = s.Headroom; attrs["machineRoom"] = s.MachineRoom;
         attrs["shaftThickness"] = s.ShaftThickness;
         foreach (var b in new[] { "glass", "shaftGlass", "fireFighting", "fireExit" }) attrs[b] = attrs[b] is JsonValue bv && bv.TryGetValue<bool>(out var bb) && bb;
+        if (s.Vacuum)
+        {
+            attrs["glass"] = false; attrs["shaftGlass"] = false;
+            attrs["tubeDiameter"] = s.TubeDiameter; attrs["cabinDiameter"] = s.CabinDiameter; attrs["tubeMaterial"] = s.TubeMaterial;
+            attrs["columns"] = s.Columns; attrs["columnSize"] = s.ColumnSize; attrs["ringBeamHeight"] = s.RingBeamHeight;
+            attrs["headUnitHeight"] = s.HeadUnitHeight; attrs["baseRingHeight"] = s.BaseRingHeight; attrs["doorKind"] = s.DoorKind;
+            attrs["doorAngle"] = s.DoorAngle; attrs["doorFrame"] = s.DoorFrame; attrs["cabinDoor"] = s.CabinDoor;
+            attrs["frameColor"] = s.FrameColor; attrs["tubeColor"] = s.TubeColor; attrs["cabinColor"] = s.CabinColor;
+        }
     }
 
     /// <summary>A lift configured: a style, values by hand, its storeys; its type, its floors' openings after it.</summary>
@@ -320,8 +380,8 @@ public sealed class TransportModule : ILapinModule
         if (a["attrs"] is JsonObject given) Merge(ctx, attrs, given, null);
         Normalize(attrs, e.Attrs);
         var draft = e.With(attrs: attrs);
+        EnsureMaterials(ctx, attrs);
         if (ElevatorLayout.Resolve(ctx.Model, draft, out var problem) == null) throw new CommandException(problem ?? "The elevator cannot be built so.");
-        EnsureMaterials(ctx);
         ctx.Replace(draft);
         if ((string?)a["bottomStoreyId"] is { } bottom && bottom != Spatial.StoreyOf(ctx.Model, e.Id)?.Id)
             Spatial.Contain(ctx, Spatial.Require(ctx.Model, bottom, IfcClass.BuildingStorey).Id, e.Id);
@@ -349,8 +409,8 @@ public sealed class TransportModule : ILapinModule
         var e = ctx.Model.Get(id)!;
         var s = new ElevatorSpec(e.Attrs);
         var label = KindLabel(ctx.Model, e);
-        var key = $"{label}|{s.Drive}|{s.Load}|{Mm(s.CabinWidth)}x{Mm(s.CabinDepth)}";
-        var name = $"{label} {s.Load.ToString(CultureInfo.InvariantCulture)} kg, {Mm(s.CabinWidth)} × {Mm(s.CabinDepth)}";
+        var key = s.Vacuum ? $"{label}|vacuum|{s.Load}|{Mm(s.TubeDiameter)}" : $"{label}|{s.Drive}|{s.Load}|{Mm(s.CabinWidth)}x{Mm(s.CabinDepth)}";
+        var name = s.Vacuum ? $"{label}, Ø {Mm(s.TubeDiameter)}" : $"{label} {s.Load.ToString(CultureInfo.InvariantCulture)} kg, {Mm(s.CabinWidth)} × {Mm(s.CabinDepth)}";
         var old = TypeOf(ctx.Model, e);
         if (old?.Str("key") == key) return;
         var type = ctx.Model.OfClass(TypeClass).FirstOrDefault(t => t.Str("key") == key);
@@ -376,7 +436,7 @@ public sealed class TransportModule : ILapinModule
         foreach (var slab in m.OfClass(IfcClass.Slab))
         {
             var top = Slabs.Top(m, slab);
-            if (top <= l.ZPit + 0.01 || top >= l.ZHead - 0.01) continue;
+            if (top <= l.ZPit + 0.01 || top >= l.ZOpenTo - 0.01) continue;
             var contour = Slabs.Contour(slab);
             if (contour.Count >= 3 && Overlaps(outer, contour)) o.Add(slab);
         }
@@ -436,6 +496,7 @@ public sealed class TransportModule : ILapinModule
     {
         var l = ElevatorLayout.Resolve(m, e, out var problem);
         if (l == null) return new ElementGeometry([], null, null, [problem ?? "The elevator cannot be built."]);
+        if (l.Spec.Vacuum) return VacuumGeometry(e, m, l);
         var parts = new List<GeometryPart>();
         foreach (var (key, name, solids, role) in l.Bodies())
         {
@@ -452,6 +513,27 @@ public sealed class TransportModule : ILapinModule
         }
         var plan = l.PlanOn(Spatial.StoreyOf(m, e.Id)?.Id ?? l.Stops[0].Storey.Id);
         List<Vec2> snaps = [l.At, .. l.Outer, .. l.Inner];
+        return new ElementGeometry(parts, plan, snaps);
+    }
+
+    /// <summary>A vacuum lift's parts: the tube, its doors and the cabin's walls in the tube's material and colour, the frame and head unit in the frame's, the cabin in its own; the tube and frame cut in plans.</summary>
+    static ElementGeometry VacuumGeometry(Entity e, IModelView m, ElevatorLayout l)
+    {
+        var s = l.Spec;
+        var metal = Materials.Find(m, AluminiumMaterial)?.Id ?? Materials.Find(m, SteelMaterial)?.Id;
+        var parts = new List<GeometryPart>();
+        foreach (var (key, name, solids, role) in l.Bodies())
+        {
+            var (mat, color) = role switch
+            {
+                "tube" or "glass" or "doors" => (l.WallMaterial, s.TubeColor),
+                "cabin" => (metal, s.CabinColor),
+                _ => (metal, s.FrameColor),
+            };
+            parts.Add(new GeometryPart(name, color, Combine(solids), mat, key) { CutInPlan = role is "tube" or "frame" });
+        }
+        var plan = l.PlanOn(Spatial.StoreyOf(m, e.Id)?.Id ?? l.Stops[0].Storey.Id);
+        List<Vec2> snaps = [l.At, .. l.Outer];
         return new ElementGeometry(parts, plan, snaps);
     }
 
@@ -480,7 +562,7 @@ public sealed class TransportModule : ILapinModule
             new Quantity("ServedStops", l.Stops.Count(s => s.Served), "COUNT", "Stops served"),
             new Quantity("TravelHeight", R(l.Travel), "LENGTH", "Travel"),
             new Quantity("ShaftHeight", R(l.ZHead + l.Tc - l.ZBottom), "LENGTH", "Shaft height"),
-            new Quantity("ShaftArea", R(l.OuterW * l.OuterD), "AREA", "Shaft footprint"),
+            new Quantity("ShaftArea", R(l.FootprintArea), "AREA", "Shaft footprint"),
         ]);
     }
 
@@ -497,6 +579,7 @@ public sealed class TransportModule : ILapinModule
             Dx0 = lay.Dx0, Dx1 = lay.Dx1, Stops = lay.Stops, WallMaterial = lay.WallMaterial,
         };
         var s = l.Spec;
+        if (s.Vacuum) return VacuumPreview(m, l, lay, attrs);
         var plan = new JsonArray();
         // The shaft's walls in plan, with the landing door's opening.
         var (x0, x1, y0, y1, t) = (-l.Wi / 2, l.Wi / 2, -l.Di / 2, l.Di / 2, l.T);
@@ -572,6 +655,38 @@ public sealed class TransportModule : ILapinModule
     }
 
     static JsonNode Row(string k, string v) => new JsonArray(k, v);
+
+    /// <summary>A vacuum lift's preview: its plan at the lowest stop and its section, made by the code that builds it (<see cref="ElevatorLayout.VacuumPlanPreview"/>, <see cref="ElevatorLayout.VacuumSection"/>).</summary>
+    static JsonObject VacuumPreview(IModelView m, ElevatorLayout l, ElevatorLayout placed, JsonObject attrs)
+    {
+        var s = l.Spec;
+        var plan = new JsonArray([.. l.VacuumPlanPreview().Select(i => (JsonNode)new JsonObject { ["kind"] = i.Kind, ["closed"] = i.Closed, ["points"] = Pts(i.Points) })]);
+        var section = new JsonArray([.. l.VacuumSection().Select(b => (JsonNode)new JsonObject
+        {
+            ["role"] = b.Role, ["y0"] = R(b.Y0), ["y1"] = R(b.Y1), ["z0"] = R(b.Z0 - l.ZB), ["z1"] = R(b.Z1 - l.ZB),
+        })]);
+        var levels = new JsonArray([.. l.Stops.Select(x => (JsonNode)new JsonObject { ["name"] = x.Storey.Name, ["z"] = R(x.Z - l.ZB), ["served"] = x.Served, ["id"] = x.Storey.Id })]);
+        var summary = new JsonArray
+        {
+            Row("Tube, outside", $"Ø {Mm(s.TubeDiameter)} mm"),
+            Row("Cabin", $"Ø {Mm(s.CabinDiameter)} × {Mm(s.CabinHeight)} mm"),
+            Row("Floor opening", $"Ø {Mm(2 * (l.TubeR + l.T))} mm"),
+            Row("Door", $"{Mm(l.Dx1 - l.Dx0)} × {Mm(l.DoorH)} mm"),
+            Row("Stops served", $"{l.Stops.Count(x => x.Served)} / {l.Stops.Count}"),
+            Row("Travel", $"{M2(l.Travel)} m"),
+            Row("Top of the head unit over the top stop", $"+{M2(l.ZTop - l.ZT)} m"),
+            Row("Floors opened", FloorsCut(m, placed).Count.ToString(CultureInfo.InvariantCulture)),
+        };
+        return new JsonObject
+        {
+            ["attrs"] = attrs.DeepClone(),
+            ["plan"] = plan,
+            ["section"] = new JsonObject { ["items"] = section, ["levels"] = levels, ["top"] = R(l.ZTop - l.ZB), ["bottom"] = R(l.ZBottom - l.ZB), ["width"] = R(l.OuterD) },
+            ["summary"] = summary,
+            ["checks"] = new JsonArray([.. s.Checks(l.Travel).Concat(placed.VacuumNotes(m)).Select(x => (JsonNode)x)]),
+            ["indicative"] = true,
+        };
+    }
 }
 
 /// <summary>
@@ -588,6 +703,11 @@ sealed class ElevatorFollowers : IElementPlacement, ITransformFollowers, IElemen
         attrs["rotation"] = Math.Round((((Json.Number(attrs["rotation"]) ?? 0) + 180) % 360 + 360) % 360, 6);
         foreach (var k in new[] { "counterweight", "jackSide" })
             if ((string?)attrs[k] is "left" or "right") attrs[k] = (string?)attrs[k] == "left" ? "right" : "left";
+        // A vacuum lift's doors turn the other way round its tube.
+        if (Json.Number(attrs["doorAngle"]) is { } da) attrs["doorAngle"] = Math.Round(((360 - da) % 360 + 360) % 360, 6);
+        if (attrs["doorAngles"] is JsonObject map)
+            foreach (var key in map.Select(x => x.Key).ToList())
+                if (Json.Number(map[key]) is { } a) map[key] = Math.Round(((360 - a) % 360 + 360) % 360, 6);
         return attrs;
     }
 
@@ -696,9 +816,10 @@ public sealed class ElevatorSchedule : IScheduleSource
             var s = l.Spec;
             rows.Add([
                 e.Name, TransportModule.KindLabel(m, e), s.Drive, N(s.Load), s.Persons.ToString(CultureInfo.InvariantCulture),
-                $"{Mm(s.CabinWidth)} × {Mm(s.CabinDepth)} × {Mm(s.CabinHeight)}", $"{Mm(s.DoorWidth)} × {Mm(s.DoorHeight)} {s.DoorOpening}",
+                s.Vacuum ? $"Ø {Mm(s.CabinDiameter)} × {Mm(s.CabinHeight)}" : $"{Mm(s.CabinWidth)} × {Mm(s.CabinDepth)} × {Mm(s.CabinHeight)}",
+                s.Vacuum ? $"{Mm(l.Dx1 - l.Dx0)} × {Mm(l.DoorH)} {s.DoorKind}" : $"{Mm(s.DoorWidth)} × {Mm(s.DoorHeight)} {s.DoorOpening}",
                 $"{l.Stops.Count(x => x.Served)}/{l.Stops.Count}", $"{l.Stops[0].Storey.Name} – {l.Stops[^1].Storey.Name}", N(l.Travel, "0.00"), N(s.Speed),
-                $"{Mm(l.Wi)} × {Mm(l.Di)}",
+                s.Vacuum ? $"Ø {Mm(s.TubeDiameter)}" : $"{Mm(l.Wi)} × {Mm(l.Di)}",
             ]);
             keys.Add(e.Id);
         }

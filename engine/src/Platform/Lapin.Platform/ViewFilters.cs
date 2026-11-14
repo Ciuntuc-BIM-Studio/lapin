@@ -17,7 +17,7 @@ public static class ViewFilters
 
     /// <summary>What a rule reads of an element; <c>param</c> names a parameter (the user's, a property set's) or any stored attribute in <c>name</c>.</summary>
     public static readonly string[] Fields = ["class", "category", "type", "name", "material", "storey", "group", "link", "phase", "predefinedType", "param"];
-    public static readonly string[] Ops = ["equals", "notEquals", "contains", "notContains", "beginsWith", "greater", "less", "hasValue", "hasNoValue"];
+    public static readonly string[] Ops = ["equals", "notEquals", "contains", "notContains", "beginsWith", "greater", "less", "between", "hasValue", "hasNoValue"];
 
     public sealed record Rule(string Field, string Op, string? Value, string? Name);
     public sealed record Filter(string Id, string Name, bool Any, IReadOnlyList<Rule> Rules);
@@ -49,7 +49,8 @@ public static class ViewFilters
         }).ToArray()),
     };
 
-    static IReadOnlyList<Rule> Rules(JsonNode? n)
+    /// <summary>Rules as a command gives them, checked: a field it reads, an operator, a parameter rule's name.</summary>
+    public static IReadOnlyList<Rule> Rules(JsonNode? n)
     {
         if (n is not JsonArray a) return [];
         var list = new List<Rule>();
@@ -99,6 +100,15 @@ public static class ViewFilters
         return n > 0 && double.TryParse(t[..n].Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? d : null;
     }
 
+    /// <summary>A range written "min..max" (either end empty: open); null ends both when it is not one.</summary>
+    static (double? Lo, double? Hi) Range(string s)
+    {
+        var k = s.IndexOf("..", StringComparison.Ordinal);
+        if (k < 0) return (Number(s), Number(s));
+        var (a, b) = (s[..k].Trim(), s[(k + 2)..].Trim());
+        return (a.Length > 0 ? Number(a) : null, b.Length > 0 ? Number(b) : null);
+    }
+
     public static bool Matches(IModelView m, Entity e, Rule r)
     {
         var values = Values(m, e, r).ToList();
@@ -115,6 +125,8 @@ public static class ViewFilters
             "beginsWith" => values.Any(v => v.StartsWith(want, StringComparison.OrdinalIgnoreCase)),
             "greater" => values.Any(v => Number(v) is { } a && Number(want) is { } b && a > b),
             "less" => values.Any(v => Number(v) is { } a && Number(want) is { } b && a < b),
+            // A range, both ends in it: "min..max", either end left empty for none (Quick select, forum topic 73).
+            "between" => Range(want) is var (lo, hi) && values.Any(v => Number(v) is { } a && (lo is not { } l || a >= l - 1e-9) && (hi is not { } h || a <= h + 1e-9)),
             "hasValue" => values.Any(v => v.Length > 0),
             "hasNoValue" => !values.Any(v => v.Length > 0),
             _ => false,

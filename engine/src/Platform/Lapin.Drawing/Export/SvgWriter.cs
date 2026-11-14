@@ -44,7 +44,7 @@ public static class SvgWriter
                     foreach (var p in loop.Skip(1)) d.Append('L').Append(P(p));
                     d.Append('Z');
                 }
-                if (d.Length > 0) o.Append("<path fill=\"").Append(Color(pen.Fill)).Append("\" fill-rule=\"evenodd\" d=\"").Append(d).Append("\"/>");
+                if (d.Length > 0) o.Append("<path fill=\"").Append(Color(HexColor.Opaque(pen.Fill))).Append('"').Append(HexColor.Alpha(pen.Fill) is var fa && fa < 0.999 ? $" fill-opacity=\"{F(fa)}\"" : "").Append(" fill-rule=\"evenodd\" d=\"").Append(d).Append("\"/>");
             }
             if (pen.Stroke != null && pen.Segments.Count > 0)
             {

@@ -73,7 +73,35 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             if ((q - p).Length < 1e-3) throw new CommandException("An axis needs two different points.");
             axes[i] = new Axis(tag, p, q, ends);
             Write(ctx, grid, axes);
+            // Dimensions on the axis follow its new name (forum #75).
+            if (tag != x.Tag) Grids.Retag(ctx, grid.Id, new Dictionary<string, string> { [x.Tag] = tag });
             return null;
+        });
+
+        // Axes renumbered in order across their family (forum #75): the axes named (tags), or all of a direction (x: those
+        // spaced along x, numbered left to right; y: along y, bottom to top), in numbers or letters (scheme; I and O left out
+        // unless skipIO is false) from start, after an optional prefix. What names them by their tag (dimensions) follows. One undo step.
+        r.Command("renumberAxes", "Renumber grid axes", (ctx, a) =>
+        {
+            var grid = (string?)a["gridId"] is { Length: > 0 } gid ? Spatial.Require(ctx.Model, gid, IfcClass.Grid)
+                : ctx.Model.OfClass(IfcClass.Grid).FirstOrDefault() ?? throw new CommandException("The project has no grid.");
+            if (ctx.Services.All<IDrivenElements>().Any(d => d.Drives(ctx.Model, grid))) throw new CommandException("This grid is made from its own settings (a hall's): renumber it there.");
+            var axes = Grids.Axes(grid);
+            var tags = (a["tags"] as JsonArray)?.Select(t => (string?)t).OfType<string>().ToList();
+            var direction = (string?)a["direction"];
+            var x = direction == "x" || (direction == null && tags is { Count: > 0 } && axes.FirstOrDefault(ax => tags.Contains(ax.Tag)) is { } first && Grids.AlongX(first));
+            var scheme = (string?)a["scheme"] is { Length: > 0 } sc ? sc : x ? "numbers" : "letters";
+            var skip = a["skipIO"] is not JsonValue sv || !sv.TryGetValue<bool>(out var skipIO) || skipIO;
+            var map = Grids.Renumber(axes, tags, direction, scheme, (string?)a["start"], ((string?)a["prefix"])?.Trim() ?? "", skip);
+            var changed = map.Count(p => p.Key != p.Value);
+            if (changed > 0)
+            {
+                Write(ctx, grid, axes.Select(ax => map.TryGetValue(ax.Tag, out var nt) ? ax with { Tag = nt } : ax).ToList());
+                Grids.Retag(ctx, grid.Id, map);
+            }
+            var o = new JsonObject();
+            foreach (var (k, v) in map) o[k] = v;
+            return new JsonObject { ["gridId"] = grid.Id, ["tags"] = o, ["changed"] = changed };
         });
 
         // A whole grid at once (report #68, Annotate → Grid…): axes square to x at the origin and after each spacing (labelled

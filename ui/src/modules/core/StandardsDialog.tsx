@@ -25,7 +25,7 @@ import { LeaderEditor, type LeaderEntry } from './LeaderEditor';
 import { BUILDUP_DEFAULTS, type BuildupEntry } from './buildupTag';
 
 type Entry = Record<string, string | number | boolean | null | undefined> & { id: string; name: string };
-type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string; sectionMarkSize?: number; sectionMarkText?: number; elevationMarkSize?: number; elevationMarkText?: number; areaRounding?: number; scales?: number[]; scaleChoices?: number[]; planScale?: number; sectionScale?: number; elevationScale?: number };
+type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string; sectionMarkSize?: number; sectionMarkText?: number; elevationMarkSize?: number; elevationMarkText?: number; areaRounding?: number; suppressZeros?: boolean; scales?: number[]; scaleChoices?: number[]; planScale?: number; sectionScale?: number; elevationScale?: number };
 type Col = { key: string; label: string; title?: string; kind: 'text' | 'mm' | 'number' | 'decimals' | 'bool' | 'color' | 'choice' | 'style' | 'group'; choices?: string[] };
 type Tab = { id: 'text' | 'dim' | 'axis' | 'tag' | 'layer'; label: string; list: keyof Book; cols: Col[]; fresh: Record<string, unknown> };
 
@@ -33,7 +33,9 @@ const LINE_TYPES = ['continuous', 'dashed', 'dotted', 'dashdot'];
 /** How a choice reads where its value alone would not say it. */
 const CHOICE_LABELS: Record<string, string> = { project: 'as the project', across: 'perpendicular to the tag line', along: 'along the tag line', buildup: 'build-up',
   // An opening's height under a dimension line across it (report #92, decision 338).
-  off: 'off', number: '150', h: 'h=150', hp: 'h=150, p=90', slash: '150/90' };
+  off: 'off', number: '150', h: 'h=150', hp: 'h=150, p=90', slash: '150/90',
+  // A dimension's trailing zeros (forum #81).
+  keep: 'keep (2.500)', suppress: 'suppress (2.5)' };
 const TABS: Tab[] = [
   { id: 'text', label: 'Text', list: 'textStyles', fresh: { name: 'Text', height: 2.5 }, cols: [
     { key: 'name', label: 'Name', kind: 'text' }, { key: 'height', label: 'Height mm', kind: 'mm' }, { key: 'font', label: 'Font', kind: 'choice', choices: ['sans', 'serif', 'mono'] },
@@ -43,6 +45,8 @@ const TABS: Tab[] = [
     { key: 'arrowSize', label: 'Arrow mm', kind: 'mm' }, { key: 'extGap', label: 'Gap mm', kind: 'mm' }, { key: 'extOver', label: 'Over mm', kind: 'mm' },
     { key: 'placement', label: 'Value', kind: 'choice', choices: ['above', 'centered', 'below'] }, { key: 'unit', label: 'Unit', kind: 'choice', choices: ['project', 'm', 'cm', 'mm', 'ft-in', 'in'] },
     { key: 'precision', label: 'Decimals', kind: 'decimals' },
+    // Trailing zeros dropped (2.500 → 2.5, 3.000 → 3) or kept, or as the project's standards say (forum #81).
+    { key: 'zeros', label: 'Trailing zeros', title: 'Whether a value drops its trailing zeros (2.500 → 2.5, 3.000 → 3) or keeps them; as the project: the Project tab says', kind: 'choice', choices: ['project', 'keep', 'suppress'] },
     // A segment across a door, a window or an opening writes its height under the line, and its sill in some forms (decision 338).
     { key: 'openingHeight', label: 'Opening height', title: 'Under a dimension segment across a door, window or opening: its height (and its sill), read from the model', kind: 'choice', choices: ['off', 'number', 'h', 'hp', 'slash'] }] },
   { id: 'axis', label: 'Grid axes', list: 'axisStyles', fresh: { name: 'Axis' }, cols: [
@@ -167,6 +171,9 @@ export function StandardsDialog() {
       <dd><select data-field="areaRounding" value={String(book.areaRounding ?? '')} onChange={(e) => void execute('standards.options', { areaRounding: e.target.value ? Number(e.target.value) : null })}>
         {[['', 'none (to 0.01 m²)'], ['0.1', 'to 0.1 m²'], ['0.5', 'to 0.5 m²'], ['1', 'to 1 m²']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}
       </select></dd>
+      {/* Dimensions drop their trailing zeros (2.500 → 2.5) unless their style keeps them (forum #81). */}
+      <dt title="Dimension values drop their trailing zeros (2.500 → 2.5, 3.000 → 3), unless a dimension style keeps them">Suppress trailing zeros</dt>
+      <dd><input type="checkbox" data-field="suppressZeros" checked={book.suppressZeros === true} onChange={(e) => void execute('standards.options', { suppressZeros: e.target.checked })} /></dd>
       <dt title="How lines of true weight end and meet, on screen and on paper: round, or square caps with mitred corners">Line ends</dt>
       <dd><select value={String(book.lineCap ?? 'round')} onChange={(e) => void execute('standards.options', { lineCap: e.target.value })}>
         <option value="round">round</option><option value="square">square (mitred)</option>

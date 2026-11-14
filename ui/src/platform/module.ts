@@ -179,6 +179,10 @@ export interface Grip {
   insertAt?: (to: Vec2) => GripStep | null;
   /** Ctrl/⌘-click: take this vertex out. */
   remove?: () => GripStep | null;
+  /** Alt-click (a click, not a drag) does `remove` as well, as Ctrl/⌘-click does (a dimension's point, forum topic 74); a drag with Alt still moves it alone. */
+  altRemove?: boolean;
+  /** Ctrl/⌘-click: continue from here (a dimension line's end: the next clicks add points beyond it, forum topic 74). Runs before `insert` and `remove`. */
+  extend?: () => void;
   /**
    * What `remove` takes out when it is a thing of its own (a roof window on its roof: "Remove roof window"): offered on a
    * right-click on the grip, and Delete over the grip does it instead of deleting the selection (decision 280).
