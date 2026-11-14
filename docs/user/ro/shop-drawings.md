@@ -55,8 +55,25 @@ Găurile se dau pe șiruri cu comanda `steel.addHoles` (stația, numărul, pasul
 
 Cotele se calculează la fiecare desenare a vederii, deci urmează bara: dă o gaură în alt loc, lungește bara, și planșa arată asta. Un șir de cote pe care l-ai mutat rămâne unde l-ai pus când bara se schimbă (`drawing.moveDimension`).
 
+## Mărci: piese identice
+
+Piesele identice au aceeași **marcă** (P12, C3, PL4…), iar desenul spune câte sunt. Două piese sunt identice când au aceeași formă în axele lor, la jumătate de milimetru, același material și aceeași finisare, oricum ar sta în clădire: o copie rotită sau mutată, ori o bară desenată de la celălalt capăt, este aceeași piesă. O piesă **în oglindă** nu este: primește marca ei.
+
+**Adnotări → Numerotează piesele** numerotează piesele metalice ale proiectului și fiecare piesă care are un desen de execuție; **Fă desenul…** își numerotează singur piesa. Numărul planșei este marca, numele ei felul piesei și marca, iar tabelul piesei arată marca și **cantitatea**. Etichetele, extrasele și filtrele le citesc drept câmpurile `{mark}` și `{qty}`.
+
+Mărcile nu se mai mută odată date, ca id-urile pieselor:
+
+- un fel nou de piesă ia următorul număr al prefixului său (piesele cele mai mari întâi);
+- o piesă pe care o modifici își păstrează marca dacă era singura cu ea; dacă marca mai are piese, cea modificată primește o marcă nouă, iar celelalte o păstrează pe a lor;
+- odată ce planșa unei piese a fost emisă, marca ei este **înghețată**: o piesă modificată primește o marcă nouă;
+- o marcă ale cărei piese au fost toate șterse rămâne liberă până renumerotezi (comanda `marks.renumber`, pe care doar gazda unei sesiuni partajate o poate rula).
+
+Un proiect metalic numerotat prima dată păstrează mărcile pe care le arăta extrasul barelor metalice (C1, R1, P1…), în afară de cazul în care o marcă de acolo cuprindea piese în oglindă: a doua primește un număr nou.
+
+Care latură a piesei este fața se deduce din piesă; ca s-o întorci pentru toate piesele mărcii ei folosește `marks.setFrame` (un sfert de tură în jurul înălțimii sau cu susul în jos). Se ține la marcă, niciodată pe piesă, deci o piesă dintr-un fișier IFC nu este scrisă niciodată.
+
 ## Fă-l din nou
 
 Deschide **Fă desenul…** pe același element și butonul se numește **Actualizează**. Actualizarea păstrează planșa și vederile ei, și modificările tale pe ele (o vedere redenumită, o linie sau o notă desenată pe o vedere, elemente ascunse în ea); vederile se așază din nou pe planșă. Un singur **Anulează** (Undo) scoate tot desenul: planșa, vederile și desenul însuși.
 
-> Marcajele pieselor și cantitățile, precum și desenele de ansamblu cu lista pieselor, vin într-o versiune ulterioară.
+> Desenele de ansamblu cu lista pieselor și toate piesele proiectului deodată vin într-o versiune ulterioară.

@@ -60,8 +60,22 @@ public static class ElementFrames
     public static ElementFrame? Of(IQueryContext q, Entity e) =>
         Of(q.Model, q.Services, e, q.Geometry(e.Id)?.Parts.SelectMany(p => p.Solid.Vertices).ToList() ?? []);
 
-    /// <summary>The element's frame, its box round <paramref name="body"/> (the element's body's points); null without points.</summary>
+    /// <summary>
+    /// The element's frame, its box round <paramref name="body"/> (the element's body's points), turned as its mark's register entry says
+    /// (decision 583: quarter turns about z, upside down), so every part of the mark is drawn the same way up; null without points.
+    /// </summary>
     public static ElementFrame? Of(IModelView m, IServices? services, Entity e, IReadOnlyList<Vec3> body)
+    {
+        if (Base(m, services, e, body) is not { } f) return null;
+        if (Marks.EntryOf(m, e.Id) is not { } entry || (entry.Turn == 0 && !entry.Flip)) return f;
+        var (x, y, z) = (f.X, f.Y, f.Z);
+        for (var i = 0; i < entry.Turn; i++) (x, y) = (y, -x);
+        if (entry.Flip) (y, z) = (-y, -z);
+        return Boxed(f.Origin, x, y, z, body, f.Source, originAtMin: false);
+    }
+
+    /// <summary>The element's frame as its module, the core or its body give it, not turned by its mark (what its signature reads).</summary>
+    public static ElementFrame? Base(IModelView m, IServices? services, Entity e, IReadOnlyList<Vec3> body)
     {
         if (body.Count == 0) return null;
         (Vec3 Origin, Vec3 X, Vec3 Z)? axes = null;

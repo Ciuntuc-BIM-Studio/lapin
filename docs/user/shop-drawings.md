@@ -55,8 +55,25 @@ Holes are drilled in a run with the command `steel.addHoles` (station, count, pi
 
 The dimensions are worked out every time the view is drawn, so they follow the member: drill a hole elsewhere, lengthen it, and the sheet says so. A string you move stays where you put it as the member changes (`drawing.moveDimension`).
 
+## Marks: identical parts
+
+Identical parts share a **mark** (P12, C3, PL4…) and a drawing says how many there are. Two parts are identical when they have the same shape in their own axes, to half a millimetre, the same material and the same finish, whichever way they lie in the building: a copy turned or moved, or a member drawn from its other end, is the same part. A **mirror image** is not: it gets a mark of its own.
+
+**Annotate → Number parts** numbers the project's steel parts and every part that has a shop drawing; **Make drawing…** numbers its part by itself. The sheet's number is the mark, its name the part's kind and mark, and the data table shows the mark and the **quantity**. Tags, schedules and filters read them as the fields `{mark}` and `{qty}`.
+
+Marks do not move once given, like the parts' ids:
+
+- a new kind of part takes the next number of its prefix (the biggest parts first);
+- a part you edit keeps its mark when it was the only one of it; when the mark has other parts, the edited one takes a new mark and the others keep theirs;
+- once a part's sheet has gone out in an issue, its mark is **frozen**: an edited part takes a new mark;
+- a mark whose parts were all deleted stays free until you renumber (the command `marks.renumber`, which only the host of a shared session can run).
+
+A steel project numbered for the first time keeps the marks its steel members schedule showed (C1, R1, P1…), except where one mark there held mirror images: the second takes a new number.
+
+Which side of a part is its front is worked out from the part; to turn it for all the parts of its mark use `marks.setFrame` (a quarter turn about its height, or upside down). It is kept with the mark, never on the part, so a part from an IFC file is never written to.
+
 ## Making it again
 
 Open **Make drawing…** on the same element and the button reads **Update**. Updating keeps the sheet and its views, and your own edits on them (a view renamed, a line or a note drawn on a view, elements hidden in it); the views are laid out on the sheet again. One **Undo** removes the whole drawing: the sheet, its views and the drawing itself.
 
-> Part marks and quantities, and drawings of assemblies with their parts list, come in a later version.
+> Drawings of assemblies with their parts list, and all the parts of the project at once, come in a later version.

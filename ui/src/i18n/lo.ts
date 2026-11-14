@@ -3845,6 +3845,8 @@ export const LO: Record<string, string> = {
   "shop|Projection": "ການຉາຍພາບ",
   "Make drawing": "ສ້າງແບບແຕ້ມ",
   "Make drawing…": "ສ້າງແບບແຕ້ມ…",
+  "Number parts": "ໃສ່ເລກຊິ້ນສ່ວນ",
+  "The parts are numbered: identical parts share a mark.": "ໃສ່ເລກຊິ້ນສ່ວນແລ້ວ: ຊິ້ນສ່ວນທີ່ຄືກັນມີເຄື່ອງໝາຍດຽວກັນ.",
   "Features (holes, notches)": "ລາຍລະອຽດ (ຮູ, ຮອຍບາກ)",
   "Sections at the notches": "ຮູບຕັດຜ່ານຮອຍບາກ",
   "Shop drawing": "ແບບແຕ້ມການຜະລິດ",

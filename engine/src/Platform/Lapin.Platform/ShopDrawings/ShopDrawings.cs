@@ -413,6 +413,10 @@ public static class ShopDrawings
         {
             ["number"] = Sheets.NextNumber(m), ["titleBlock"] = new JsonObject(), ["viewports"] = new JsonArray(), ["discipline"] = Discipline,
         };
+        // Its number: the part's mark (the user's own number kept), else the next sheet number.
+        var mark = Marks.MarkOf(m, e);
+        var autoNumber = oldSheet?.Str("autoNumber");
+        if (mark != null && (oldSheet == null || oldSheet.Str("number") == autoNumber)) { sheetAttrs["number"] = mark; sheetAttrs["autoNumber"] = mark; }
         sheetAttrs["paper"] = arr.Paper;
         sheetAttrs["orientation"] = "landscape";
         sheetAttrs["shopDrawing"] = drawingId;
@@ -452,7 +456,9 @@ public static class ShopDrawings
     /// <summary>The drawing made in the command's step: what is new added, what was kept replaced, the views no longer asked for removed with their drafting.</summary>
     public static Made Apply(ICommandContext ctx, Entity e, JsonObject a, Entity? existing = null)
     {
-        var made = Make(ctx.Query, e, a, ctx.NewId, existing);
+        // The part numbered first (decision 583), so its sheet takes its mark; read over the command's model as it is now.
+        Marks.Number(ctx, [e]);
+        var made = Make(new OverlayQuery(ctx.Query, ctx.Model), e, a, ctx.NewId, existing);
         void Put(Entity x) { if (ctx.Model.Get(x.Id) != null) ctx.Replace(x); else ctx.Add(x); }
         foreach (var v in made.Views) Put(v);
         Put(made.Sheet);
@@ -481,6 +487,7 @@ public static class ShopDrawings
             new("rule", "Rule", "text", ReadOnly: true),
         ], "#555555", Kind: "view"));
         r.Service<ISheetContent>(new PartData());
+        Marks.Register(r);
 
         // A part's drawing: {element, rule?, views?: [front, top…], sections?: [{role, station}], iso?, scale? (null: auto), paper? (null:
         // the first that fits), projection? (iso-e, third-angle), dims? (overall, none), prefer? (paper, scale)} → {id, sheet, views, paper, scale}.

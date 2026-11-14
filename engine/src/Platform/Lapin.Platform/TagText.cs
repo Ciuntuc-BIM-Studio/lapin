@@ -30,9 +30,10 @@ public static partial class TagText
     /// <summary>The fields every element has.</summary>
     public static readonly string[] Builtin = ["mark", "name", "class", "type"];
 
-    /// <summary>The element's mark: its own, its type's, else its type's name, else its name.</summary>
+    /// <summary>The element's mark: the project's register's (its part mark, decision 583), its own, its type's, else its type's name, else its name.</summary>
     public static string Mark(IModelView m, Entity e)
     {
+        if (Marks.MarkOf(m, e) is { } registered) return registered;
         var type = m.RelatingOf(e.Id, IfcClass.RelDefinesByType);
         return e.Str("mark") ?? type?.Str("mark") ?? type?.Name ?? e.Name;
     }
@@ -115,6 +116,8 @@ public static partial class TagText
         switch (key.ToLowerInvariant())
         {
             case "mark": case "tag": return Mark(m, e);
+            // How many parts share its mark (decision 583).
+            case "qty": return Marks.CountOf(m, e).ToString(System.Globalization.CultureInfo.InvariantCulture);
             case "name": return e.Name;
             case "type": return type?.Name ?? e.Name;
             case "class": return e.Class.StartsWith("Ifc", StringComparison.Ordinal) ? e.Class[3..] : e.Class;

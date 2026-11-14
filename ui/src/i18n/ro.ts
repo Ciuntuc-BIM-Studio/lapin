@@ -3787,6 +3787,8 @@ export const RO: Record<string, string> = {
   "shop|Projection": "Proiecție",
   "Make drawing": "Fă desenul",
   "Make drawing…": "Fă desenul…",
+  "Number parts": "Numerotează piesele",
+  "The parts are numbered: identical parts share a mark.": "Piesele sunt numerotate: piesele identice au aceeași marcă.",
   "Features (holes, notches)": "Elementele (găuri, degajări)",
   "Sections at the notches": "Secțiuni prin degajări",
   "Shop drawing": "Desen de execuție",

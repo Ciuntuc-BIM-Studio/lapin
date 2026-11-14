@@ -285,7 +285,7 @@ public sealed class SteelMembersSchedule : IScheduleSource
 
     static readonly string[] Order = ["C", "R", "GP", "P", "SR", "EB", "B", "FB", "M", "BM"];
 
-    static string Prefix(IModelView m, Entity e, Entity? hall)
+    internal static string Prefix(IModelView m, Entity e, Entity? hall)
     {
         if (hall != null && e.Str(Halls.RoleKey) is { } role)
             return Halls.KindOfRole(Halls.SpecOf(hall), role) switch
@@ -303,9 +303,15 @@ public sealed class SteelMembersSchedule : IScheduleSource
         return end.Coped ? $"{t} cope" : t;
     }
 
-    public static List<Row> Rows(IModelView m, Func<string, ElementGeometry?> geometry)
+    public static List<Row> Rows(IModelView m, Func<string, ElementGeometry?> geometry) => Marked(m, geometry, true).Rows;
+
+    /// <summary>
+    /// The rows, and each member's mark as the schedule gives it: per hall and kind, numbered heaviest and longest first. With
+    /// <paramref name="register"/>, a row whose members all have one mark of the project's register (decision 583) shows that mark.
+    /// </summary>
+    public static (List<Row> Rows, Dictionary<string, string> Marks) Marked(IModelView m, Func<string, ElementGeometry?> geometry, bool register)
     {
-        var items = new List<(string Hall, string Prefix, string Profile, double Length, string Start, string End, double KgPerM, double Each, double Paint)>();
+        var items = new List<(string Hall, string Prefix, string Profile, double Length, string Start, string End, double KgPerM, double Each, double Paint, string Id)>();
         foreach (var e in m.OfClass(SteelModule.Member).Concat(m.OfClass(IfcClass.Beam)).Concat(m.OfClass(IfcClass.Column)))
         {
             if (!MemberAxes.IsSteel(m, e) || MemberAxes.Of(m, e) is not { } ax) continue;
@@ -319,17 +325,23 @@ public sealed class SteelMembersSchedule : IScheduleSource
             var sec = ax.Section;
             var length = Math.Round(built.Length, 3);
             var paint = Polygon2.Perimeter(sec.Outline()) * built.Length;
-            items.Add((hall?.Name ?? "", Prefix(m, e, hall), sec.Label, length, Cut(built.Start, -ax.U, s), Cut(built.End, ax.U, t), sec.Area * SteelModule.SteelDensity, volume * SteelModule.SteelDensity, paint));
+            items.Add((hall?.Name ?? "", Prefix(m, e, hall), sec.Label, length, Cut(built.Start, -ax.U, s), Cut(built.End, ax.U, t), sec.Area * SteelModule.SteelDensity, volume * SteelModule.SteelDensity, paint, e.Id));
         }
         var o = new List<Row>();
+        var marks = new Dictionary<string, string>();
         foreach (var hall in items.GroupBy(x => x.Hall).OrderBy(g => g.Key.Length == 0).ThenBy(g => g.Key, StringComparer.Ordinal))
             foreach (var kind in hall.GroupBy(x => x.Prefix).OrderBy(g => Array.IndexOf(Order, g.Key)))
             {
                 var n = 0;
                 foreach (var g in kind.GroupBy(x => (x.Profile, x.Length, x.Start, x.End)).OrderByDescending(g => Math.Round(g.First().KgPerM, 6)).ThenBy(g => g.Key.Profile, StringComparer.Ordinal).ThenByDescending(g => g.Key.Length).ThenBy(g => g.Key.Start, StringComparer.Ordinal).ThenBy(g => g.Key.End, StringComparer.Ordinal))
-                    o.Add(new Row(hall.Key, $"{kind.Key}{++n}", g.Key.Profile, g.Key.Length, g.Key.Start, g.Key.End, g.Count(), g.First().KgPerM, g.Average(x => x.Each), g.Sum(x => x.Paint)));
+                {
+                    var mark = $"{kind.Key}{++n}";
+                    foreach (var x in g) marks[x.Id] = mark;
+                    if (register && g.Select(x => m.Get(x.Id) is { } el ? Lapin.Platform.Marks.MarkOf(m, el) : null).Distinct().ToList() is [{ } own]) mark = own;
+                    o.Add(new Row(hall.Key, mark, g.Key.Profile, g.Key.Length, g.Key.Start, g.Key.End, g.Count(), g.First().KgPerM, g.Average(x => x.Each), g.Sum(x => x.Paint)));
+                }
             }
-        return o;
+        return (o, marks);
     }
 
     public ScheduleGrid Grid(IQueryContext q)

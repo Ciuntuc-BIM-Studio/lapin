@@ -20,6 +20,7 @@ public static class SteelShop
     {
         r.Service<IElementFeatures>(new MemberFeatures());
         r.Service<IDrawingRules>(new SteelRules());
+        r.Service<IMarkKinds>(new SteelMarks());
 
         // A run of holes drilled through a member's web or a flange: {id, station (m from where its holes are measured, along its axis),
         // count?, pitch? (m), diameter? (m), face? (web, top, bottom), across? (m from the section's middle: up the web, along a flange)}.
@@ -116,5 +117,18 @@ public static class SteelShop
             }
             return o;
         }
+    }
+
+    /// <summary>
+    /// Steel parts' marks (decision 583): a member's prefix as the steel members schedule gives it (C, R, GP, P, SR, EB, B, FB, M, BM),
+    /// a plate's PL; the schedule's marks the register's first numbers, so an old project's marks do not change.
+    /// </summary>
+    sealed class SteelMarks : IMarkKinds
+    {
+        public string? PrefixOf(IModelView m, Entity e) =>
+            e.Class is SteelModule.Member or IfcClass.Beam or IfcClass.Column && MemberAxes.Of(m, e) != null && MemberAxes.IsSteel(m, e) ? SteelMembersSchedule.Prefix(m, e, Halls.Of(m, e.Id))
+            : e.Class == "IfcPlate" || e.Str("exportAs") == "IfcPlate" ? "PL" : null;
+
+        public IReadOnlyDictionary<string, string>? Seeds(IQueryContext q) => SteelMembersSchedule.Marked(q.Model, q.Geometry, false).Marks;
     }
 }

@@ -3783,6 +3783,8 @@ export const ZH: Record<string, string> = {
   "shop|Projection": "投影",
   "Make drawing": "生成图纸",
   "Make drawing…": "生成图纸…",
+  "Number parts": "零件编号",
+  "The parts are numbered: identical parts share a mark.": "零件已编号：相同的零件共用一个编号。",
   "Features (holes, notches)": "加工特征（孔、切口）",
   "Sections at the notches": "切口处的剖面",
   "Shop drawing": "加工图",

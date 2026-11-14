@@ -3791,6 +3791,8 @@ export const DE: Record<string, string> = {
   "shop|Projection": "Projektion",
   "Make drawing": "Zeichnung erstellen",
   "Make drawing…": "Zeichnung erstellen…",
+  "Number parts": "Teile nummerieren",
+  "The parts are numbered: identical parts share a mark.": "Die Teile sind nummeriert: gleiche Teile haben dieselbe Position.",
   "Features (holes, notches)": "Merkmale (Bohrungen, Ausklinkungen)",
   "Sections at the notches": "Schnitte durch die Ausklinkungen",
   "Shop drawing": "Werkstattzeichnung",

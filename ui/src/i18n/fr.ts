@@ -3795,6 +3795,8 @@ export const FR: Record<string, string> = {
   "shop|Projection": "Projection",
   "Make drawing": "Créer le plan",
   "Make drawing…": "Créer le plan…",
+  "Number parts": "Numéroter les pièces",
+  "The parts are numbered: identical parts share a mark.": "Les pièces sont numérotées : les pièces identiques partagent un repère.",
   "Features (holes, notches)": "Usinages (trous, grugeages)",
   "Sections at the notches": "Coupes aux grugeages",
   "Shop drawing": "Plan d'atelier",

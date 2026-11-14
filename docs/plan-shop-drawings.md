@@ -391,7 +391,7 @@ Each stage: engine tests first, its guide page in both languages and its scene, 
   details (insets) at features. *Tests*: a member with two hole groups gets "4×80 = 320" and ordinates from its start
   equal to the holes' stations; a notch gets its length and depth and a section through it; dimensions follow a hole
   moved; a moved string keeps its place.
-- **S3 — Marks.** Signatures (module ones and geometric), the register (prefixes, next numbers, modified numbering,
+- **S3 — Marks.** *Done 14.11.2026* (decision 583; marks are unique in the project, so where the steel schedule gave two different parts one mark, one per hall, or a mark to mirror images, the second takes a new number on the first numbering; numbering runs on demand and with each drawing, not on every edit; the register is on the IfcProject, never exported). Signatures (module ones and geometric), the register (prefixes, next numbers, modified numbering,
   frozen after issue), `{mark}` and `{qty}` fields, `marks.renumber`, `marks.setFrame`; the steel members marks and the
   wood panel marks brought into it with the same numbers. *Tests*: 20 copies turned and moved give one mark, qty 20; a
   mirrored copy a mark of its own; editing one of the 20 gives it a new mark and keeps the others; editing the only one

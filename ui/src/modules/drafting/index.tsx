@@ -719,6 +719,10 @@ const drafting: LapinModule = {
             if (!drawableElement(useUi.getState().selected, useSession.getState().nodes)) { notify('Select one element of the model to make its shop drawing.'); return; }
             useUi.setState({ dialog: 'shopDrawing' });
           },
+        }], small: [{
+          // Identical parts share a mark (decision 583): the project's steel parts and every drawn part numbered, marks kept as they were.
+          id: 'marks.number', label: 'Number parts', icon: ListOrdered,
+          run: () => void execute('marks.number', {}).then(() => notify('The parts are numbered: identical parts share a mark.')),
         }] },
         { label: 'Sheets', tools: [{ id: 'sheet', label: 'Sheet', icon: FileText, run: () => void execute('sheet.create', { name: 'Sheet', paper: 'A3' }).then((r) => { const id = (r as { id?: string } | null)?.id; if (id) useUi.setState({ view: 'sheet', sheetId: id, selection: id, selected: [id] }); }) }, viewBoundary] },
       ],

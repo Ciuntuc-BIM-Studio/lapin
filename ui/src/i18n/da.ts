@@ -3786,6 +3786,8 @@ export const DA: Record<string, string> = {
   "shop|Projection": "Projektion",
   "Make drawing": "Lav tegning",
   "Make drawing…": "Lav tegning…",
+  "Number parts": "Nummerér dele",
+  "The parts are numbered: identical parts share a mark.": "Delene er nummereret: ens dele har samme mærke.",
   "Features (holes, notches)": "Bearbejdninger (huller, udskæringer)",
   "Sections at the notches": "Snit gennem udskæringerne",
   "Shop drawing": "Værkstedstegning",
