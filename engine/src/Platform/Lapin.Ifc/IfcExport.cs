@@ -180,6 +180,8 @@ public static partial class IfcExport
         ["IfcSensor"] = ["CO2SENSOR", "CONDUCTANCESENSOR", "CONTACTSENSOR", "COSENSOR", "FIRESENSOR", "FLOWSENSOR", "FROSTSENSOR", "GASSENSOR", "HEATSENSOR", "HUMIDITYSENSOR", "IDENTIFIERSENSOR", "IONCONCENTRATIONSENSOR", "LEVELSENSOR", "LIGHTSENSOR", "MOISTURESENSOR", "MOVEMENTSENSOR", "PHSENSOR", "PRESSURESENSOR", "RADIATIONSENSOR", "RADIOACTIVITYSENSOR", "SMOKESENSOR", "SOUNDSENSOR", "TEMPERATURESENSOR", "WINDSENSOR"],
         ["IfcAlarm"] = ["BELL", "BREAKGLASSBUTTON", "LIGHT", "MANUALPULLBOX", "SIREN", "WHISTLE"],
         ["IfcFireSuppressionTerminal"] = ["BREECHINGINLET", "FIREHYDRANT", "HOSEREEL", "SPRINKLER", "SPRINKLERDEFLECTOR"],
+        // Room separation lines (forum topic 80): IFC4's IfcVirtualElement has no PredefinedType.
+        [RoomDividers.Class] = null,
         ["IfcSwitchingDevice"] = ["CONTACTOR", "DIMMERSWITCH", "EMERGENCYSTOP", "KEYPAD", "MOMENTARYSWITCH", "SELECTORSWITCH", "STARTER", "SWITCHDISCONNECTOR", "TOGGLESWITCH"],
     };
 
@@ -196,6 +198,7 @@ public static partial class IfcExport
         ["IfcTrackElement"] = ["TRACKENDOFALIGNMENT", "BLOCKINGDEVICE", "VEHICLESTOP", "SLEEPER", "HALF_SET_OF_BLADES", "SPEEDREGULATOR", "DERAILER", "FROG"],
         ["IfcCourse"] = ["ARMOUR", "FILTER", "BALLASTBED", "CORE", "PAVEMENT", "PROTECTION"],
         ["IfcSignal"] = ["VISUAL", "AUDIO", "MIXED"],
+        [RoomDividers.Class] = ["BOUNDARY", "CLEARANCE", "PROVISIONFORVOID"],
     };
 
     /// <summary>The element assembly in IFC4: its own enumeration, without the railway's panels.</summary>
@@ -798,6 +801,7 @@ public static partial class IfcExport
             if (parts.Count == 0)
             {
                 if (hostedBy != null) return;
+                if (RoomDividers.Is(e) && geo?.Plan is { Count: > 0 } lines) { Virtual(e, lines); return; }
                 if (geo?.Diagnostics is { Count: > 0 } d) Notes.Add($"„{e.Name}” has no body and was not exported: {d[0]}");
                 return;
             }
@@ -858,6 +862,27 @@ public static partial class IfcExport
             if (swept is { Parts.Count: > 0 }) SweptParts(e, swept, entity, spatial, place, fr, parts);
             Properties(e, kind, entity, type, hostedBy != null ? [("LapinHost", hostedBy.Id)] : null);
             Quantities(e, entity, grouped);
+        }
+
+        /// <summary>
+        /// A room separation line (forum topic 80): an IfcVirtualElement in its storey (BOUNDARY in IFC 4.3), no body, its line as the
+        /// FootPrint representation (Curve2D, the storey's plan metres), its shape in Lapin_Intent so Lapin reads it back as one.
+        /// </summary>
+        void Virtual(Entity e, IReadOnlyList<PlanItem> lines)
+        {
+            var storey = Spatial.StoreyOf(m, e.Id);
+            var (spatial, relTo) = storey != null && storeyRef.TryGetValue(storey.Id, out var sr) ? (sr, storeyPlace[storey.Id]) : (siteRef, sitePlace);
+            if (footprint == "") footprint = f.Add("IFCGEOMETRICREPRESENTATIONSUBCONTEXT", S("FootPrint"), S("Model"), Derived, Derived, Derived, Derived, model, Null, E("PLAN_VIEW"), Null);
+            var curves = lines.Where(l => l.Points.Count >= 2)
+                .Select(l => f.Add("IFCPOLYLINE", L((l.Closed ? [.. l.Points, l.Points[0]] : l.Points.ToList()).Select(P2).ToArray()))).ToArray();
+            var shape = f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { f.Add("IFCSHAPEREPRESENTATION", footprint, S("FootPrint"), S("Curve2D"), L(curves)) }));
+            var kind = KindOf(e);
+            var entity = Product(kind, Gid(e.Id), e.Name, kind.ObjectType, Place(relTo, 0), shape, e.Id);
+            written[e.Id] = entity;
+            Contain(spatial, entity);
+            Elements++;
+            Properties(e, kind, entity, null);
+            Quantities(e, entity, false);
         }
 
         /// <summary>A hosted element's body as a recess in its host, from the first module that gives one (<see cref="IIfcRecesses"/>).</summary>

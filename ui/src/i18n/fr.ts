@@ -3,6 +3,16 @@
 import type { Language } from './index';
 
 export const FR: Record<string, string> = {
+  // Room separation lines (forum topic 80)
+  "Room separation": "Séparation de pièces",
+  "Room separation line": "Ligne de séparation de pièces",
+  "Room separation lines": "Lignes de séparation de pièces",
+  "Room separation polyline": "Polyligne de séparation de pièces",
+  "Room separation rectangle": "Rectangle de séparation de pièces",
+  "Room separation arc": "Arc de séparation de pièces",
+  "Room separation circle": "Cercle de séparation de pièces",
+  "Lines that bound rooms as walls would, with no body: each zone a room of its own, with its own area": "Des lignes qui délimitent les pièces comme le feraient des murs, sans corps : chaque zone est une pièce à part, avec sa propre surface",
+  "A room separation line along each line, polyline, arc or circle: it bounds rooms as a wall would.": "Une ligne de séparation de pièces le long de chaque ligne, polyligne, arc ou cercle : elle délimite les pièces comme le ferait un mur.",
   // The Parameters inspector and a room's fields from its finish (forum topic 84)
   "Search the fields": "Rechercher les champs",
   "Reading the fields…": "Lecture des champs…",

@@ -3,6 +3,16 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  // Room separation lines (forum topic 80)
+  "Room separation": "Rumadskillelse",
+  "Room separation line": "Rumadskillelseslinje",
+  "Room separation lines": "Rumadskillelseslinjer",
+  "Room separation polyline": "Rumadskillelsespolylinje",
+  "Room separation rectangle": "Rumadskillelsesrektangel",
+  "Room separation arc": "Rumadskillelsesbue",
+  "Room separation circle": "Rumadskillelsescirkel",
+  "Lines that bound rooms as walls would, with no body: each zone a room of its own, with its own area": "Linjer der afgrænser rum som vægge ville, uden krop: hver zone et rum for sig, med sit eget areal",
+  "A room separation line along each line, polyline, arc or circle: it bounds rooms as a wall would.": "En rumadskillelseslinje langs hver linje, polylinje, bue eller cirkel: den afgrænser rum som en væg ville.",
   // The Parameters inspector and a room's fields from its finish (forum topic 84)
   "Search the fields": "Søg i felterne",
   "Reading the fields…": "Læser felterne…",

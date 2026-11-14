@@ -3150,6 +3150,29 @@ export const scenes = [
     },
   },
   {
+    // Room separation lines (forum topic 80): an open-plan kitchen and living room parted by a line across the room, each a
+    // room of its own with its own area, coloured by function.
+    id: 'room-dividers',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const line = await t.cmd('architecture.addRoomDivider', { storeyId: storey, kind: 'line', points: [[0, 4.2], [7, 4.2]] });
+      t.expect(!!line?.id, 'the room separation line is drawn');
+      await t.cmd('architecture.addRoom', { storeyId: storey, x: 3, y: 2, name: 'Kitchen', function: 'Kitchen' });
+      await t.cmd('architecture.addRoom', { storeyId: storey, x: 3, y: 6, name: 'Living room', function: 'Living' });
+      await t.cmd('architecture.addRoom', { storeyId: storey, x: 9.5, y: 4, name: 'Bedroom', function: 'Bedroom' });
+      const rooms = (await t.nodes()).filter((n) => n.type === 'IfcSpace');
+      t.expect(rooms.length === 3, `three rooms, found ${rooms.length}`);
+      const plan = await t.cmd('view.create', { kind: 'plan', storeyId: storey, name: 'Ground floor plan' });
+      await t.cmd('architecture.viewColorScheme', { viewId: plan.id, schemeId: 'by-function' });
+      await t.ui({ planViewId: plan.id, keyPlan: false });
+      await t.wait(1200);
+      await t.fit();
+      await t.shot('room-dividers', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
     id: 'rooms',
     async run(t) {
       await t.fresh();

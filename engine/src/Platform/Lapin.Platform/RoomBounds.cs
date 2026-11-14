@@ -8,7 +8,8 @@ namespace Lapin.Platform;
 /// What bounds rooms on a storey (docs/rooms.md): the walls, curtain walls and
 /// columns standing across a plane <see cref="Height"/> over the storey,
 /// their envelopes (their bodies without openings, so a door does not let a
-/// room through) cut by that plane, and the free space between them. Solved
+/// room through) cut by that plane, its room separation lines
+/// (<see cref="RoomDividers"/>, forum topic 80), and the free space between them. Solved
 /// once per model revision and storey, and shared by every room of it: a
 /// geometry producer that asks gets the reads of the first one that solved
 /// it, so it is rebuilt when a wall moves just the same.
@@ -47,6 +48,8 @@ public static class RoomBounds
                     var loops = HiddenLines.Section(env, frame);
                     if (loops.Count > 0) areas.Add(loops.Select(l => (IReadOnlyList<Vec2>)l).ToList());
                 }
+        // Room separation lines (forum topic 80): virtual walls with no body, bounding rooms as a wall would.
+        areas.AddRange(RoomDividers.Areas(m, storey.Id));
         return FreeSpace.Of(areas);
     }
 

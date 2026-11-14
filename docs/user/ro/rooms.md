@@ -14,6 +14,16 @@ Pentru un spațiu care nu e închis de pereți peste tot, cum e o terasă sau un
 
 ![Un plan cu două încăperi colorate după funcțiune și legenda culorilor](shots/rooms-plan.webp)
 
+## Linii de separare a încăperilor
+
+O bucătărie deschisă spre living, cele două capete ale unui hol, palierul unei galerii: spații fără perete între ele care trebuie totuși să fie încăperi separate. **Arhitectură → Separare încăperi** (<kbd>RS</kbd> pentru o linie) desenează o linie care mărginește încăperile cum ar face-o un perete, fără corp: o **linie** (înlănțuită, fiecare clic e începutul următoarei), o **polilinie** (colțurile ei, apoi <kbd>Enter</kbd>), un **dreptunghi** (două colțuri opuse: zona din interior devine o încăpere a ei), un **arc** (începutul, sfârșitul, un punct prin care trece) sau un **cerc** (centrul, un punct pe el). Desenează-o de la perete la perete; un capăt care se oprește la un fir de fața peretelui se închide totuși pe ea.
+
+![O bucătărie deschisă spre living, despărțite de o linie de separare, fiecare încăpere cu aria ei](shots/room-dividers.webp)
+
+Încăperile din jur își găsesc imediat conturul din nou, fără **Actualizează încăperile**: o încăpere de 6 × 4 m tăiată de o linie pe mijloc devine două încăperi de 3 × 4 m, fiecare cu aria, eticheta și finisajul ei; pune o încăpere de cealaltă parte cu **Încăpere**. Muți linia (o desenezi din nou) sau o ștergi și încăperile urmează: ștearsă, încăperea e din nou întreagă. O linie care se oprește în mijlocul unei încăperi nu mărginește nimic.
+
+În planurile nivelului ei se desenează ca o linie subțire întreruptă; nu are corp, așa că vederea 3D, secțiunile și cantitățile clădirii o lasă deoparte (lungimea ei e în cantitățile ei). Și desenul 2D devine linii de separare: **Desen → Convertește → Convertește în…**, **Room separation lines**. În IFC este un **IfcVirtualElement** (BOUNDARY în IFC 4.3) cu linia ca o curbă FootPrint, pe care Lapin o citește înapoi ca linie de separare.
+
 ## Proprietățile unei încăperi
 
 Selectezi o încăpere cu un clic pe eticheta ei sau oriunde în interiorul ei. În panoul de proprietăți:

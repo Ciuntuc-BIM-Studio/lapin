@@ -3,6 +3,16 @@
 import type { Language } from './index';
 
 export const DE: Record<string, string> = {
+  // Room separation lines (forum topic 80)
+  "Room separation": "Raumtrennung",
+  "Room separation line": "Raumtrennlinie",
+  "Room separation lines": "Raumtrennlinien",
+  "Room separation polyline": "Raumtrenn-Polylinie",
+  "Room separation rectangle": "Raumtrenn-Rechteck",
+  "Room separation arc": "Raumtrenn-Bogen",
+  "Room separation circle": "Raumtrenn-Kreis",
+  "Lines that bound rooms as walls would, with no body: each zone a room of its own, with its own area": "Linien, die Räume wie Wände begrenzen, ohne Körper: jede Zone ein eigener Raum mit eigener Fläche",
+  "A room separation line along each line, polyline, arc or circle: it bounds rooms as a wall would.": "Eine Raumtrennlinie entlang jeder Linie, Polylinie, jedes Bogens oder Kreises: sie begrenzt Räume wie eine Wand.",
   // The Parameters inspector and a room's fields from its finish (forum topic 84)
   "Search the fields": "Felder durchsuchen",
   "Reading the fields…": "Felder werden gelesen…",

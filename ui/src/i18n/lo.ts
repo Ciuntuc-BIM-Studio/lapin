@@ -3,6 +3,16 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // Room separation lines (forum topic 80)
+  "Room separation": "ການແບ່ງຫ້ອງ",
+  "Room separation line": "ເສັ້ນແບ່ງຫ້ອງ",
+  "Room separation lines": "ເສັ້ນແບ່ງຫ້ອງ",
+  "Room separation polyline": "ເສັ້ນຫຼາຍທ່ອນແບ່ງຫ້ອງ",
+  "Room separation rectangle": "ສີ່ຫຼ່ຽມແບ່ງຫ້ອງ",
+  "Room separation arc": "ເສັ້ນໂຄ້ງແບ່ງຫ້ອງ",
+  "Room separation circle": "ວົງມົນແບ່ງຫ້ອງ",
+  "Lines that bound rooms as walls would, with no body: each zone a room of its own, with its own area": "ເສັ້ນທີ່ກຳນົດຂອບເຂດຫ້ອງຄືກັບຝາ, ໂດຍບໍ່ມີໂຕເນື້ອ: ແຕ່ລະເຂດເປັນຫ້ອງຂອງມັນເອງ, ມີເນື້ອທີ່ຂອງມັນ",
+  "A room separation line along each line, polyline, arc or circle: it bounds rooms as a wall would.": "ເສັ້ນແບ່ງຫ້ອງຕາມແຕ່ລະເສັ້ນ, ເສັ້ນຫຼາຍທ່ອນ, ເສັ້ນໂຄ້ງ ຫຼືວົງມົນ: ມັນກຳນົດຂອບເຂດຫ້ອງຄືກັບຝາ.",
   // The Parameters inspector and a room's fields from its finish (forum topic 84)
   "Search the fields": "ຄົ້ນຫາຊ່ອງຂໍ້ມູນ",
   "Reading the fields…": "ກຳລັງອ່ານຊ່ອງຂໍ້ມູນ…",

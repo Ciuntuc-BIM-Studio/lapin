@@ -1,6 +1,16 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // Room separation lines (forum topic 80)
+  "Room separation": "Separare încăperi",
+  "Room separation line": "Linie de separare a încăperilor",
+  "Room separation lines": "Linii de separare a încăperilor",
+  "Room separation polyline": "Polilinie de separare a încăperilor",
+  "Room separation rectangle": "Dreptunghi de separare a încăperilor",
+  "Room separation arc": "Arc de separare a încăperilor",
+  "Room separation circle": "Cerc de separare a încăperilor",
+  "Lines that bound rooms as walls would, with no body: each zone a room of its own, with its own area": "Linii care mărginesc încăperile cum ar face-o pereții, fără corp: fiecare zonă e o încăpere a ei, cu aria ei",
+  "A room separation line along each line, polyline, arc or circle: it bounds rooms as a wall would.": "O linie de separare a încăperilor de-a lungul fiecărei linii, polilinii, arc sau cerc: mărginește încăperile cum ar face-o un perete.",
   // The Parameters inspector and a room's fields from its finish (forum topic 84)
   "Search the fields": "Caută câmpurile",
   "Reading the fields…": "Se citesc câmpurile…",

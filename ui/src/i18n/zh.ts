@@ -3,6 +3,16 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // Room separation lines (forum topic 80)
+  "Room separation": "房间分隔",
+  "Room separation line": "房间分隔线",
+  "Room separation lines": "房间分隔线组",
+  "Room separation polyline": "房间分隔多段线",
+  "Room separation rectangle": "房间分隔矩形",
+  "Room separation arc": "房间分隔弧",
+  "Room separation circle": "房间分隔圆",
+  "Lines that bound rooms as walls would, with no body: each zone a room of its own, with its own area": "像墙一样界定房间、但没有实体的线: 每个分区都是独立的房间, 有各自的面积",
+  "A room separation line along each line, polyline, arc or circle: it bounds rooms as a wall would.": "沿每条直线、多段线、弧或圆生成房间分隔线: 它像墙一样界定房间.",
   // The Parameters inspector and a room's fields from its finish (forum topic 84)
   "Search the fields": "搜索字段",
   "Reading the fields…": "正在读取字段…",
