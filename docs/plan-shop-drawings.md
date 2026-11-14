@@ -381,7 +381,7 @@ Each stage: engine tests first, its guide page in both languages and its scene, 
   element-anchored views registered as roles. *Tests*: a member turned 37° and tilted gives the same front drawing as
   one along X (same pens after the frame's map); a moved element's view follows; the fallback frame of a boxed proxy is
   its box's; subject hides everything else in plan, section, sheet, PDF and DXF; old projects draw the same.
-- **S1 — A single part on a sheet.** `LapinDrawingRule` with the generic built-in; `drawing.create` for one element
+- **S1 — A single part on a sheet.** *Done 14.11.2026* (decision 581; the dialog's *Turn frame*, *at features*, *Save as rule* and the scope tab come with S2, S3, S6 and S5). `LapinDrawingRule` with the generic built-in; `drawing.create` for one element
   (sheet, views, automatic layout in ISO E and third angle, paper choice, title block tokens); overall dimensions; the
   dialog with the face checkboxes, the section sliders and the engine's sheet preview. *Tests*: the generic rule on a
   box makes front, top, right and iso in first-angle positions on A4; made again keeps every id; one undo step removes

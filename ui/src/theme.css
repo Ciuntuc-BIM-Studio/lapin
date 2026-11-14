@@ -2671,3 +2671,21 @@ path.part-flex-ghost { fill: none; stroke: var(--accent); stroke-width: 1.6; str
 .finish-painter .part-list li.on .link { font-weight: 600; }
 .finish-painter .finish-painter-own { flex-wrap: wrap; gap: 4px; }
 .finish-painter .finish-painter-own .input:first-child { flex: 1; min-width: 0; }
+
+/* The shop drawing dialog (decision 581): the element's iso with a check box on each face, its sections, the rule's fields and the sheet. */
+.dialog.shop-drawing { min-width: min(900px, calc(100vw - 32px)); }
+.shop-body { display: grid; grid-template-columns: 380px 1fr; gap: 16px; }
+.shop-left, .shop-right { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.shop-iso { position: relative; border: 1px solid var(--rule); }
+.shop-iso svg { display: block; }
+.shop-face { position: absolute; transform: translate(-50%, -50%); display: inline-flex; align-items: center; gap: 3px; padding: 1px 5px; font-size: 11px; background: var(--panel); border: 1px solid var(--rule-strong); border-radius: 3px; cursor: pointer; white-space: nowrap; }
+.shop-iso-box { left: auto; top: 6px; right: 6px; transform: none; }
+.shop-axis { display: flex; align-items: center; gap: 8px; }
+.shop-section { display: flex; align-items: center; gap: 8px; }
+.shop-section input[type=range] { flex: 1; min-width: 0; }
+.shop-station { min-width: 64px; text-align: right; font-variant-numeric: tabular-nums; }
+.shop-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.shop-fields label { display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
+.shop-page { display: block; border: 1px solid var(--rule); background: var(--bg); }
+.shop-warn { margin: 0; }
+@media (max-width: 900px) { .shop-body { grid-template-columns: 1fr; } }

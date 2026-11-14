@@ -113,7 +113,7 @@ public static class Views
             }
             case "section":
             {
-                // An element view (decision 578): its plane from the element's own frame, as it is now.
+                // An element view (decision 579): its plane from the element's own frame, as it is now.
                 if (ElementViews.Is(view)) return ElementViews.Spec(m, view, parts, services, hidden);
                 // Across an element at a station: the plane perpendicular to its axis, the window round its section.
                 if (AcrossSections.Is(view)) return AcrossSections.Spec(m, view, parts, services, hidden);
@@ -1618,6 +1618,7 @@ public static class Views
 
         Insets.Register(r);
         ElementViews.Register(r);
+        ShopDrawings.Register(r);
         ViewBoundaries.Register(r);
         ViewCrops.Register(r);
         ViewHiding.Register(r);

@@ -8855,6 +8855,36 @@ export const scenes = [
     },
   },
   {
+    // A shop drawing (docs/plan-shop-drawings.md, decision 581): the Make drawing dialog of one element, then its sheet.
+    id: 'shop-drawings',
+    touches: ['studio'],
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const storey = await t.storey();
+      const rect = (x0, y0, x1, y1) => ({ type: 'polyline', pts: [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], closed: true });
+      const profile = (await t.cmd('drafting.draw', { viewId: 'plan:' + storey, shape: rect(0, 0, 2.4, 0.6) })).ids[0];
+      const part = (await t.cmd('studio.extrude', { profileId: profile, depth: 0.3 })).id;
+      await t.ui({ view: '3d', selection: part, selected: [part] });
+      await t.wait(1500);
+      // Annotate → Shop drawing: the element's iso with a check box on each face, its sections, the rule's choices and the live sheet.
+      await t.ui({ dialog: 'shopDrawing' });
+      await page.locator('.dialog.shop-drawing [data-testid=shop-note]').waitFor({ timeout: 20000 });
+      await page.locator('.dialog.shop-drawing [data-face=front] input').check();
+      await page.locator('.dialog.shop-drawing [data-face=top] input').check();
+      await page.locator('.dialog.shop-drawing [data-face=right] input').check();
+      await page.locator('.dialog.shop-drawing .shop-axis button').first().click();
+      await t.wait(1200);
+      await t.shot('shop-drawing-dialog', { of: '.dialog.shop-drawing', pad: 0 });
+      // Create: one step, and the sheet opens.
+      await page.locator('[data-testid=shop-create]').click();
+      await page.locator('[data-testid=sheet]').waitFor({ timeout: 20000 });
+      await t.until(async () => (await t.nodes()).some((n) => n.type === 'LapinShopDrawing'), 'the shop drawing exists');
+      await t.wait(1500);
+      await t.shot('shop-drawing-sheet', { of: '[data-testid=sheet]', pad: 0 });
+    },
+  },
+  {
     // Studio as a geometry editor (docs/plan-studio-editor.md): push/pull and a fillet in 3D, a pipe's steps, a rising handrail.
     id: 'studio-editor',
     async run(t) {

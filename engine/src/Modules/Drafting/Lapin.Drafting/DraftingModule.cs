@@ -548,7 +548,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         });
     }
 
-    public IEnumerable<ViewMark> Marks(ViewContext c) => Cad.ViewImages.Marks(c).Concat(Cad.Drafts.Marks(c)).Concat(Grids.Marks(c)).Concat(Dimensions.Marks(c)).Concat(DimensionKinds.Marks(c)).Concat(Texts.Marks(c)).Concat(Cad.SymbolInstances.Marks(c)).Concat(Tags.Marks(c));
+    public IEnumerable<ViewMark> Marks(ViewContext c) => Cad.ViewImages.Marks(c).Concat(Cad.Drafts.Marks(c)).Concat(Grids.Marks(c)).Concat(Dimensions.Marks(c)).Concat(PartDimensions.Marks(c)).Concat(DimensionKinds.Marks(c)).Concat(Texts.Marks(c)).Concat(Cad.SymbolInstances.Marks(c)).Concat(Tags.Marks(c));
 
     /// <summary>What each drafted element covers in a view, from what it draws there (its lines, fills and texts' anchors).</summary>
     static Dictionary<string, (Vec2 Min, Vec2 Max)> Boxes(IQueryContext q, Entity view)

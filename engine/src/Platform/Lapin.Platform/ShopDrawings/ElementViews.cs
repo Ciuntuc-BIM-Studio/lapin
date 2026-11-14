@@ -22,7 +22,7 @@ public interface IElementViewRoles
 }
 
 /// <summary>
-/// Element views (docs/plan-shop-drawings.md §4, decision 578): a view of an existing kind with
+/// Element views (docs/plan-shop-drawings.md §4, decision 579): a view of an existing kind with
 /// <c>of: {element, role, station?, flip?, margin?, depth?}</c> whose plane and window are worked out from the element's frame
 /// (<see cref="ElementFrames"/>) on every ask, so it follows the element. The orthographic roles (<see cref="Ortho"/>) are
 /// sections whose plane lies just outside the element's box, seeing through all of it; <c>section:x|y|z</c> cuts it square to a
@@ -145,6 +145,25 @@ public static class ElementViews
         var frame = new ViewFrame(f.World(local), f.Dir(r), f.Dir(u), f.Dir(d));
         var (hr, hu) = (Half(r), Half(u));
         return (frame, depth, (-hr - margin, hr + margin), (-hu - margin, hu + margin));
+    }
+
+    /// <summary>How large a role's drawing of the frame's box is (m): along the drawing's right and up.</summary>
+    public static (double W, double H) Size(ElementFrame f, string role)
+    {
+        var (r, u, _) = Axes(role);
+        var d = f.Max - f.Min;
+        double Along(Vec3 a) => Math.Abs(a.X) * d.X + Math.Abs(a.Y) * d.Y + Math.Abs(a.Z) * d.Z;
+        return (Along(r), Along(u));
+    }
+
+    /// <summary>How large the iso of the frame's box is (m): its corners seen from the frame's south-west.</summary>
+    public static (double W, double H) IsoSize(ElementFrame f)
+    {
+        var (right, up) = (new Vec3(1, -1, 0).Normalized(), new Vec3(1, 1, 2).Normalized());
+        var corners = new[] { f.Min.X, f.Max.X }.SelectMany(x => new[] { f.Min.Y, f.Max.Y }.SelectMany(y => new[] { f.Min.Z, f.Max.Z }.Select(z => new Vec3(x, y, z)))).ToList();
+        var xs = corners.Select(c => Vec3.Dot(c, right)).ToList();
+        var ys = corners.Select(c => Vec3.Dot(c, up)).ToList();
+        return (xs.Max() - xs.Min(), ys.Max() - ys.Min());
     }
 
     /// <summary>The view's spec: its plane from the element's frame as it is now; null with the reason when the element is gone or has no body.</summary>
@@ -300,6 +319,39 @@ public static class ElementViews
                 ["roles"] = new JsonArray(roles.Where(x => x.AppliesTo(q.Model, e)).Select(x => (JsonNode)new JsonObject { ["role"] = x.Id, ["title"] = x.Title }).ToArray()),
                 ["views"] = views,
             };
+        });
+
+        // An element's iso as the engine draws it, nothing kept (the shop drawing dialog's picture of the part): {element} → the drawing
+        // (as view.drawing), with where the frame's axes and the six faces' check boxes go on it (drawing metres): axes {origin, x, y, z},
+        // faces {front, back, top, bottom, left, right} each a point a little outside the face's middle.
+        r.Query("elementView.iso", (q, a) =>
+        {
+            var e = q.Model.Get((string?)a["element"] ?? "") ?? throw new CommandException("There is no such element.");
+            var f = ElementFrames.Of(q, e) ?? throw new CommandException($"„{e.Name}” has nothing to draw.");
+            var attrs = Attrs(q, e, Iso, new JsonObject());
+            var view = new Entity("preview:iso", Views.Class, e.Name, attrs);
+            var overlay = new OverlayQuery(q, new OverlayModel(q.Model, [view]));
+            var d = Views.Drawing(overlay, view);
+            var look = new ViewFrame(f.World(f.Centre), f.Dir(new Vec3(1, -1, 0)).Normalized(), f.Dir(new Vec3(1, 1, 2)).Normalized(), f.Dir(new Vec3(1, 1, -1)).Normalized());
+            static JsonArray P(Vec2 p) => new(Math.Round(p.X, 6), Math.Round(p.Y, 6));
+            var size = Math.Max(f.Length, Math.Max(f.Width, f.Height));
+            var corner = f.World(f.Min);
+            d["axes"] = new JsonObject
+            {
+                ["origin"] = P(look.Map(corner)),
+                ["x"] = P(look.Map(corner + f.X * (size * 0.35))), ["y"] = P(look.Map(corner + f.Y * (size * 0.35))), ["z"] = P(look.Map(corner + f.Z * (size * 0.35))),
+            };
+            var c = f.Centre;
+            var half = (f.Max - f.Min) * 0.5;
+            var faces = new JsonObject();
+            foreach (var (role, n) in new[] { ("front", new Vec3(0, -1, 0)), ("back", new Vec3(0, 1, 0)), ("top", new Vec3(0, 0, 1)), ("bottom", new Vec3(0, 0, -1)), ("left", new Vec3(-1, 0, 0)), ("right", new Vec3(1, 0, 0)) })
+            {
+                var reach = Math.Abs(n.X) * half.X + Math.Abs(n.Y) * half.Y + Math.Abs(n.Z) * half.Z + size * 0.12;
+                faces[role] = P(look.Map(f.World(c + n * reach)));
+            }
+            d["faces"] = faces;
+            d["frame3"] = f.ToJson();
+            return d;
         });
 
         // An element's frame (its origin, axes and box): {id} → the frame, or null when it has no body.

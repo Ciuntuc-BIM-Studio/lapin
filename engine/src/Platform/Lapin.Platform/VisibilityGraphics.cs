@@ -59,16 +59,20 @@ public sealed class VisibilityGraphics
     public bool FinishElements { get; }
 
     /// <summary>
-    /// What the view shows only (its subject, decision 578: an element view's element, or the ids a view keeps), the rest
+    /// What the view shows only (its subject, decision 579: an element view's element, or the ids a view keeps), the rest
     /// hidden or, <see cref="SubjectFaded"/>, halftone; null: the whole model. The first rule of all (<see cref="Hides"/>).
     /// </summary>
     public IReadOnlySet<string>? Subject { get; private init; }
     /// <summary>Whether what is not the subject draws halftone (<c>context: faded</c>) rather than not at all.</summary>
     public bool SubjectFaded { get; private init; }
 
-    /// <summary>Whether an entity is outside the view's subject: a model element not in it (never a view's own annotation or drafting).</summary>
+    /// <summary>
+    /// Whether an entity is outside the view's subject: a model element (one on a storey, a grid, a level) not in it; never a
+    /// view's own annotation or drafting, nor a view, a sheet or a resource.
+    /// </summary>
     public bool OutsideSubject(Entity e) =>
-        Subject != null && !Subject.Contains(e.Id) && e.Class != IfcClass.Annotation && e.Class != Insets.Class && e.Str("viewId") == null;
+        Subject != null && !Subject.Contains(e.Id)
+        && (e.Class is IfcClass.Grid or IfcClass.BuildingStorey || e.Class != IfcClass.Annotation && e.Str("viewId") == null && Spatial.StoreyOf(m, e.Id) != null);
 
     VisibilityGraphics(IModelView model, JsonObject? graphics, bool in3d, IReadOnlySet<string>? finishesHidden = null, string structure = "all", bool finishElements = true)
     {
@@ -139,7 +143,7 @@ public sealed class VisibilityGraphics
     /// <summary>Whether the view hides an element: the link hidden in this view, its category or IFC class hidden (the link's own when custom).</summary>
     public bool Hides(Entity e)
     {
-        // Outside the view's subject (decision 578): hidden, unless the view shows the rest faded.
+        // Outside the view's subject (decision 579): hidden, unless the view shows the rest faded.
         if (!SubjectFaded && OutsideSubject(e)) return true;
         if (LinkRow(e.Str(Links.Key)) is { } row && True(row["hidden"])) return true;
         var g = RulesFor(e);
@@ -187,7 +191,7 @@ public sealed class VisibilityGraphics
     public JsonObject? ImportRow(string? id) => id == null ? null : Graphics?["imports"]?[id] as JsonObject;
 
     /// <summary>The annotation category of a mark's owner (a dimension, a grid, a level, a room's stamp…), or null when it is not an annotation.</summary>
-    public static string? AnnotationOf(Entity e, ViewMark? mk = null) => e.Class switch
+    public static string? AnnotationOf(Entity e, ViewMark? mk = null) => mk?.Owner is { } ow && ow.Contains(":partdim:", StringComparison.Ordinal) ? "dimensions" : e.Class switch
     {
         IfcClass.Annotation => e.PredefinedType switch { "DIMENSION" => "dimensions", "TEXT" => "texts", "TAG" => "tags", "LEGEND" => "legends", "SYMBOL" => "symbols", _ => null },
         IfcClass.Grid => "grids",

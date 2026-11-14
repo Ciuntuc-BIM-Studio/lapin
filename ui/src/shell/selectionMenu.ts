@@ -7,6 +7,7 @@
 import { useUi } from '../app/store';
 import { useSession } from '../engine/session';
 import { copyable } from '../modules/core/CopyToStoreysDialog';
+import { drawableElement } from '../modules/core/shopDrawing';
 import { editSelectedGroup, groupSelection, removeFromGroup, ungroupSelection } from '../modules/core/groupTools';
 import { GROUP, groupOf } from '../platform/groups';
 import { allTools } from '../platform/modules';
@@ -100,7 +101,8 @@ export function selectionItems(): MenuItem[] {
     { label: 'Copy to storeys…', onSelect: () => useUi.setState({ dialog: 'copyToStoreys' }) },
     { label: 'Move to storey…', onSelect: () => useUi.setState({ dialog: 'moveToStorey' }) },
   ] : [];
-  return [...groupItems(), ...storeys, ...similarItems(), ...editTypeItems(), ...historyItems()];
+  const shop: MenuItem[] = drawableElement(selected, useSession.getState().nodes) ? [{ label: 'Make drawing…', onSelect: () => useUi.setState({ dialog: 'shopDrawing' }) }] : [];
+  return [...groupItems(), ...storeys, ...shop, ...similarItems(), ...editTypeItems(), ...historyItems()];
 }
 
 /** The 3D view's temporary Hide and Isolate (HH, HI) for the selection, and Show all (HR) while something is hidden. */

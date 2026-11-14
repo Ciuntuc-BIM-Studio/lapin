@@ -1,6 +1,6 @@
 /** Drafting: CAD drawing on views (lines, polylines, circles, arcs, hatches on layers, and their edits), dimensions that follow the elements, texts, grid axes. */
 
-import { ArrowRightToLine, Crosshair, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Unlink2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags, Grid3x3, Settings2, SlidersHorizontal, SquareDashed, Image as ImageIcon, Ruler, Replace, Shapes, Shapes as SymbolsIcon, FolderPlus, ListOrdered } from 'lucide-react';
+import { ArrowRightToLine, Crosshair, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Unlink2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags, Grid3x3, Settings2, SlidersHorizontal, SquareDashed, Image as ImageIcon, Ruler, Replace, Shapes, Shapes as SymbolsIcon, FolderPlus, ListOrdered, FileImage } from 'lucide-react';
 import { AngleIcon, ArcLengthIcon, DiameterIcon, DimensionIcon, GridAxisIcon, LevelIcon, OrdinateIcon, RadiusIcon, SlopeIcon } from '../../icons';
 import type { Grip, GripStep, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { axisGrips, axisRef, outlineGrips, pt } from '../../viewport/gripKit';
@@ -21,6 +21,7 @@ import { xy } from '../../platform/vec';
 import { GridDialog, GridSection } from './GridDialog';
 import { RenumberAxesDialog } from './RenumberAxesDialog';
 import { DimensionRulesDialog } from './DimensionRulesDialog';
+import { drawableElement } from '../core/shopDrawing';
 import { openStandards } from '../core/standardsTab';
 import { formatLength, formatLevel } from '../../engine/unitsStore';
 import { TagOptions, tagCommand, tagGrips, useTagPrefs } from './tag';
@@ -711,6 +712,14 @@ const drafting: LapinModule = {
         // Symbols of the user's own (docs/plan-user-extensibility.md §3): placed with a ghost (R/Space turns, X and Y flip), made from drafting, managed and edited in Manage → Symbols….
         { label: 'Symbols', tools: [cad('symbol', 'Symbol', Shapes, 'SYMBOL'), cad('saveSymbol', 'Save as symbol', FolderPlus, 'SAVESYMBOL')], small: [{ id: 'drafting.symbols', label: 'Symbols…', icon: SymbolsIcon, run: () => useUi.setState({ dialog: 'symbols' }) }] },
         orderGroup,
+        // An element's own sheet (decision 581): its views from its own axes, chosen in a dialog with the engine's live preview.
+        { label: 'Shop drawings', tools: [{
+          id: 'shopDrawing', label: 'Shop drawing', icon: FileImage,
+          run: () => {
+            if (!drawableElement(useUi.getState().selected, useSession.getState().nodes)) { notify('Select one element of the model to make its shop drawing.'); return; }
+            useUi.setState({ dialog: 'shopDrawing' });
+          },
+        }] },
         { label: 'Sheets', tools: [{ id: 'sheet', label: 'Sheet', icon: FileText, run: () => void execute('sheet.create', { name: 'Sheet', paper: 'A3' }).then((r) => { const id = (r as { id?: string } | null)?.id; if (id) useUi.setState({ view: 'sheet', sheetId: id, selection: id, selected: [id] }); }) }, viewBoundary] },
       ],
     },
