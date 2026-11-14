@@ -817,7 +817,7 @@ public static partial class IfcExport
             // A wall of layers only is one body with its layer set; one with zones, lintels or a ring beam (a roof with its planes and timber, a footing with its sole) is a parent over its parts.
             // A door's frame and leaf, a column's body, a terrain: one element. Only a wall, a roof and a footing hold parts that are elements of their own.
             var grouped = o.Grouped && (kind.Class is IfcClass.Wall or IfcClass.Roof or IfcClass.Footing or "IfcCurtainWall" or IfcClass.Stair or IfcClass.Ramp or "IfcElementAssembly"
-                || kind.Class == IfcClass.Slab && parts.Any(p => p.Key?.StartsWith("clt:", StringComparison.Ordinal) == true || p.Key?.StartsWith("wood:", StringComparison.Ordinal) == true)) && parts.Count > 1 && !parts.All(p => (p.Key ?? "").StartsWith("layer:", StringComparison.Ordinal));
+                || kind.Class == IfcClass.Slab && parts.Any(p => p.Key?.StartsWith("clt:", StringComparison.Ordinal) == true || p.Key?.StartsWith("wood:", StringComparison.Ordinal) == true || p.Key?.StartsWith("bb-", StringComparison.Ordinal) == true)) && parts.Count > 1 && !parts.All(p => (p.Key ?? "").StartsWith("layer:", StringComparison.Ordinal));
             // A door or window: placed with its local +Y the way its panels open, which IFC's left and right are seen along.
             var joinery = e.Class is IfcClass.Door or IfcClass.Window && !grouped ? s.Catalog.Get<IJoineryIfc>() : null;
             var at = joinery?.Place(m, e);
@@ -1304,6 +1304,8 @@ public static partial class IfcExport
                 var shape = f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { p.Unit != null && p.Instances is { Count: > 0 } copies ? Mapped(p.Unit, copies, StyleKey(p), fr) : BodyOf([Brep(p.Solid, StyleKey(p), fr)]) }));
                 var r = Product(pk, Gid(e.Id, key), p.Name, pk.ObjectType, Place(place, 0), shape, $"{e.Id}/{key}", flight: pk.Class == IfcClass.StairFlight ? FlightOf(e, key) : null);
                 if (p.Material != null) UseMaterial(p.Material, r);
+                // A part made of a type (a lintel of a beam type, report #135): typed by it, IfcBeamType LINTEL.
+                if (p.TypeId != null && m.Get(p.TypeId) is { } partType) TypeOf(partType, pk, r);
                 StandardSets(e, p, r, $"{e.Id}/{key}");
                 if (p.Properties is { Count: > 0 } own)
                     Define(r, f.Add("IFCPROPERTYSET", Gid(e.Id, key + "/pset"), Null, S(p.PropertySet ?? "Lapin_Part"), Null, L(own.Select(x => Single(x.Name, Typed("IFCLABEL", S(x.Value)))).ToArray())), Gid(e.Id, key + "/pset-rel"));
@@ -1375,6 +1377,10 @@ public static partial class IfcExport
                     _ => new("IfcMember", "MEMBER", null),
                 },
                 (IfcClass.Slab, "wood-insulation") => new("IfcCovering", "INSULATION", null),
+                // A beam-and-block floor's parts (report #134): the precast joists, the infill blocks, the cast concrete.
+                (IfcClass.Slab, "bb-joist") => new(IfcClass.Beam, "JOIST", null),
+                (IfcClass.Slab, "bb-blocks" or "bb-cut-blocks") => new("IfcBuildingElementPart", "USERDEFINED", "Infill block"),
+                (IfcClass.Slab, "bb-concrete") => new("IfcBuildingElementPart", "USERDEFINED", "Cast concrete topping"),
                 (IfcClass.Roof, "drainage" or "gutter") => new("IfcPipeSegment", "GUTTER", null),
                 (IfcClass.Roof, "downpipe") => new("IfcPipeSegment", "RIGIDSEGMENT", "Downpipe"),
                 (IfcClass.Roof, "snow") => new("IfcDiscreteAccessory", "USERDEFINED", "Snow guard"),

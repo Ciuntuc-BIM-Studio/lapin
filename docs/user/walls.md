@@ -134,7 +134,7 @@ The legend above the layers shows the wall in plan, a section across it, the way
 
 - **+ Layer** adds a layer. The arrows move a layer up or down.
 - **Zones in height** splits the core from bottom to top, for example a first course, the masonry and a ring beam.
-- **Lintels** chooses the lintels set over doors and windows: precast or cast in place, with their bearing and height.
+- **Lintels** chooses the lintels set over doors and windows: precast or cast in place, with their bearing and height. A precast lintel can be a beam type of **Structure types**, its section, lengths, material and bearing taken from it (see [Beam types as lintels](structure.md#beam-types-as-lintels)).
 - **Draw with it** closes the dialog and starts drawing walls of this type.
 
 A change to a type changes every wall of that type.

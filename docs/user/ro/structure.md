@@ -49,6 +49,22 @@ Grinzile și fundațiile se îmbină singure unde se întâlnesc, un colț la 45
 
 Orice alt profil vine din biblioteci: **Dintr-o bibliotecă de profile…** caută în toate (vezi [Biblioteci de profile](profiles.md)).
 
+## Tipuri dintr-un tabel
+
+**Importă…** sub lista tipurilor de stâlpi și grinzi citește un CSV sau un registru Excel, un rând un tip: numele, felul (grindă, stâlp sau buiandrug), profilul, ori înălțimea h și lățimea b pentru un dreptunghi, materialul și marcajul, iar pentru un buiandrug rezemarea, producătorul, codul și lungimile în care se face. Lapin ghicește fiecare coloană după antet, în engleză, română, germană, franceză sau cehă (*Název*, *Výška*, *Šířka*, *Uložení*…), și citește exportul unui producător cu coloane ca *height.value* și *height.unit*; dialogul arată ce a luat, iar tu poți da unui câmp altă coloană sau altă unitate. Profilul e căutat în proiect, în bibliotecile tale de profile și în catalogul Lapin (IPE 300, HEA 240…); un rând al cărui profil nu e în nicio bibliotecă apare ca necitit. Rândurile care nu spun felul sunt ce alegi tu (grinzi, stâlpi sau buiandrugi prefabricați). **Un tip pentru lungimile unei secțiuni** face din rândurile unei secțiuni, unui material și unui producător, ale căror nume diferă doar prin lungime, un singur tip cu toate lungimile de stoc și codul fiecăreia (*KP 7 - 100*, *KP 7 - 125*… devin *KP 7* cu 1000 și 1250); Lapin o bifează când fișierul are astfel de rânduri.
+
+Previzualizarea arată fiecare tip ca **Nou**, **Există deja în proiect** (lăsat cum e) sau **Diferă**, cu ce diferă (*secțiune*, *lungimi*, *material*…); pentru acestea alegi, ca la tipurile de pereți, **Actualizează-l pe al proiectului** (elementele lui și buiandrugii care îl folosesc îl urmează), **Păstrează-le pe amândouă** (*Nume (2)*) sau **Sari peste**. Importul e un singur pas de anulat. **Exportă CSV** scrie tipurile în aceleași coloane, ca o listă să poată merge într-un tabel și să se întoarcă.
+
+![Tipuri structurale: un tip de buiandrug prefabricat importat din tabelul unui producător, cu marca, rezemarea și lungimile de stoc](shots/structure-types-lintel.webp)
+
+## Tipuri de grinzi ca buiandrugi
+
+Un tip de grindă poate fi produsul unui buiandrug prefabricat. În **Tipuri de pereți** sau în configuratorul unei uși ori ferestre, **Buiandrugi → Prefabricat**, apoi săgeata: **Produs** arată întâi **Tipurile de grinzi**: buiandrugul ia secțiunea tipului (lățimea pe grosimea peretelui, înălțimea), cea mai scurtă dintre lungimile lui care acoperă golul și ambele rezemări (un tip fără lungimi se taie la lungime) și materialul lui, dacă regula nu numește altul. Rezemarea e a tipului: câmpul de rezemare o arată estompat, iar o valoare scrisă acolo e a regulii, până o ștergi. Ales în **Tipuri structurale**, un tip de grindă își arată **Marca**, **Rezemarea** și **Lungimile de stoc** (milimetri, separați prin spații sau |) ca să le schimbi; buiandrugii urmează tipul. Importul catalogului de buiandrugi al unui producător (butonul de lângă **Produs**) face din fiecare produs și un tip de grindă, așa că buiandrugii și tipurile de grinzi sunt o singură listă; produsele importate înainte merg mai departe.
+
+![Buiandrugii unui tip de perete: prefabricați, tipul de grindă KP 7 ca produs](shots/lintel-beam-type.webp)
+
+Buiandrugii rămân părți ale peretelui lor, ca până acum; în IFC fiecare e un *IfcBeam* LINTEL cu tipul său *IfcBeamType*, iar tabelul buiandrugilor îi listează după marcajul și numele tipului, cu codul lungimii pe care o ia fiecare.
+
 ## Fundații continue cu profil
 
 Un tip de fundație continuă e fie cel standard, o elevație cu straturile ei pe o talpă, fie orice profil extrudat de-a lungul axului fundației, ca profilele de fundație din Revit. În **Tipuri structurale → Strip**, alegi **Formă: Profil** și un profil: unul din catalog (dreptunghiulară, în 2 sau 3 trepte, cu fața de sus înclinată, excentrică cu elevația la o margine, cu elevație), făcut cu dimensiunile lui, sau unul al proiectului (**Gestionare → Profile**, unde poți și să-i tastezi colțurile sau să citești un contur desenat). Punctul de inserție al profilului stă pe axul fundației, la cota **Jos** a tipului.

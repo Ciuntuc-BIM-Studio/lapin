@@ -43,6 +43,8 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
                 var spec = JoistSpec.From(o);
                 if (spec.Problem() is { } problem) throw new CommandException(problem);
                 attrs[FrameSpec.Key] = spec.ToJson();
+                // A floor is joisted, CLT or beam and block (report #134): one at a time.
+                attrs.Remove(BeamBlockSpec.Key);
             }
             else attrs.Remove(FrameSpec.Key);
             ctx.Replace(type.With(attrs: attrs));
@@ -93,6 +95,8 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
                 var spec = CltSpec.From(o, type.Class == IfcClass.SlabType ? CltSpec.Floor : CltSpec.Wall);
                 if (spec.Problem() is { } problem) throw new CommandException(problem);
                 attrs[FrameSpec.Key] = spec.ToJson();
+                // A floor is joisted, CLT or beam and block (report #134): one at a time.
+                attrs.Remove(BeamBlockSpec.Key);
             }
             else attrs.Remove(FrameSpec.Key);
             ctx.Replace(type.With(attrs: attrs));
@@ -145,6 +149,8 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
                 var spec = FrameSpec.From(o);
                 if (spec.Problem() is { } problem) throw new CommandException(problem);
                 attrs[FrameSpec.Key] = spec.ToJson();
+                // A floor is joisted, CLT or beam and block (report #134): one at a time.
+                attrs.Remove(BeamBlockSpec.Key);
             }
             else attrs.Remove(FrameSpec.Key);
             ctx.Replace(type.With(attrs: attrs));

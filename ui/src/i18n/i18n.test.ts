@@ -165,6 +165,8 @@ describe('the languages', () => {
     'Guide line at 750 mm.',
     'Distance: 1250 mm.',
     'Apply to the selection (3)',
+    '8 joists · 112 whole blocks · 0 cut',
+    'Across edge 2 (4.00 m)',
   ];
   const first = (patterns: [RegExp, unknown][], s: string) => patterns.findIndex(([re]) => re.test(s));
 

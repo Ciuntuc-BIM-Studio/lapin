@@ -41,6 +41,21 @@ public static class StructureTypes
                     if (Json.Number(a["height"]) is { } h) attrs["height"] = h > 0 ? h : throw new CommandException("A column's height must be positive.");
                     else attrs.Remove("height");
                 }
+                // A beam type as a lintel (report #135): its mark, default bearing, stock lengths, manufacturer and code; a key sent empty taken away.
+                if (new[] { LintelTypes.MarkKey, LintelTypes.BearingKey, LintelTypes.LengthsKey, LintelTypes.ManufacturerKey, LintelTypes.CodeKey }.Any(a.ContainsKey))
+                {
+                    var lengths = a.ContainsKey(LintelTypes.LengthsKey)
+                        ? (a[LintelTypes.LengthsKey] as JsonArray ?? []).Select(Json.Number).OfType<double>().ToList()
+                        : (attrs[LintelTypes.LengthsKey] as JsonArray ?? []).Select(Json.Number).OfType<double>().ToList();
+                    if (lengths.Any(l => !(l > 0))) throw new CommandException("A stock length must be positive.");
+                    // Each length kept keeps its code.
+                    var had = LintelTypes.Read(edit.Model, type);
+                    var codes = lengths.Select(l => had?.CodeOf(l) is { } c && c != had.Code ? c : "").ToList();
+                    string? Text(string k) => a.ContainsKey(k) ? (string?)a[k] : attrs[k] is JsonValue v && v.TryGetValue<string>(out var x) ? x : null;
+                    var bearing = a.ContainsKey(LintelTypes.BearingKey) ? Json.Number(a[LintelTypes.BearingKey]) : Json.Number(attrs[LintelTypes.BearingKey]);
+                    if (bearing is < 0) throw new CommandException("A bearing is zero or more.");
+                    LintelTypes.Write(attrs, lengths, codes, Text(LintelTypes.CodeKey), Text(LintelTypes.ManufacturerKey), bearing, Text(LintelTypes.MarkKey));
+                }
                 break;
             case IfcClass.FootingType when StripFootings.IsStrip(type):
                 // Its profile (decision 297): one of the project's, a ready-made one, or none (profile: null) for the standard stem on a footing.
