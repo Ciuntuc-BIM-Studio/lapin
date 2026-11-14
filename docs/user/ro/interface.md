@@ -173,6 +173,14 @@ Un clic, o fereastră de selecție sau un lasou iau doar ce arată vederea, în 
 
 Selectează mai multe elemente (Shift-clic sau trage un dreptunghi), iar panoul de proprietăți îl arată pe ultimul ales, cu **N selectate** lângă clasa lui. O valoare pe care o au toate e afișată; una care diferă apare ca *diferă*. Schimbă un câmp și fiecare element selectat care îl are primește noua valoare, într-un singur pas pe care **Anulează** îl desface: înălțimea și decalajul bazei pereților, tipul fiecărui perete, ușă sau grindă selectată, parapetul ferestrelor, fazele fiecărui element selectat oricare i-ar fi clasa, stratul și culoarea liniilor desenate, stilul textelor. Ce e al fiecărui element rămâne al lui: numărul unei încăperi, lungimea unui perete, locul unei uși de-a lungul peretelui.
 
+## Ascunderea într-un plan sau o secțiune
+
+Un clic dreapta într-un plan, o secțiune sau o fațadă, cu ceva selectat, oferă să-l pui deoparte:
+
+- **Ascunde în vedere** ascunde selecția în această vedere de tot, ca *Hide in view* din Revit: se păstrează cu proiectul, iar planșele, PDF-ul și DXF-ul vederii o lasă și ele deoparte. Fiecare ascundere e un singur pas de anulare. Planul implicit al unui nivel devine vederea lui de plan când se ascunde ceva în el.
+- **Ascunde temporar** (<kbd>HH</kbd>) și **Izolează temporar** (<kbd>HI</kbd>) ascund selecția, sau tot restul, doar în această vedere, până la **Resetează ascunderea/izolarea temporară** (<kbd>HR</kbd>). Nu se salvează și nu se anulează, și nu schimbă nimic la tipărire. Aceleași taste în 3D ascund și izolează în vederea 3D, ca până acum.
+- **Arată ascunsele** desenează cu magenta ce ascunde vederea, ca să poată fi luat: selectează-l și alege **Reafișează în vedere** ca să-l arăți din nou. Alege iar **Arată ascunsele** ca s-o oprești.
+
 ## Stiluri de navigare cu mouse-ul
 
 Bara de stare, jos, arată stilul de navigare cu mouse-ul în uz (la început *Lapin*). Dă clic pe el ca să alegi altul: **Revit-like**, **AutoCAD-like**, **ArchiCAD-like**, **SketchUp-like**, **Blender-like** sau **Rhino-like**, fiecare cu gesturile lui principale. Îl setează și **Fișier → Preferințe → Afișare → Navigare cu mouse-ul**. Se păstrează pentru tine, pe acest calculator, pentru toate proiectele, și se aplică deopotrivă vederii 3D și planurilor, secțiunilor, fațadelor și planșelor.

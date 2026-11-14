@@ -3511,7 +3511,15 @@ export const DE: Record<string, string> = {
   "Room's area": "Raumfläche",
   "Tagged element's storey": "Geschoss des markierten Elements",
   "Panel sides": "Seiten der Bereiche", "Next view tab": "Nächster Ansichts-Tab", "Previous view tab": "Vorheriger Ansichts-Tab",
-  // View crop and annotation crop (forum topic 68)
+  // View crop, hide in view (forum topics 68 and 73)
+  "Hide in view": "In Ansicht ausblenden",
+  "Hide for now": "Vorübergehend ausblenden",
+  "Isolate for now": "Vorübergehend isolieren",
+  "Reset temporary hide/isolate": "Temporäres Ausblenden/Isolieren zurücksetzen",
+  "Reveal hidden": "Ausgeblendete anzeigen",
+  "Unhide in view": "In Ansicht einblenden",
+  "Select what to hide in the view first.": "Zuerst auswählen, was in der Ansicht ausgeblendet werden soll.",
+  "Select what to show again first (Reveal hidden shows what the view hides).": "Zuerst auswählen, was wieder angezeigt werden soll (Ausgeblendete anzeigen zeigt, was die Ansicht ausblendet).",
   "Crop view": "Ansicht zuschneiden",
   "Only what lies inside the crop region is drawn, its lines cut at its edge, on screen, on sheets, in PDF and DXF (as Revit's Crop view); off, the view draws everything and keeps the region": "Nur was im Zuschneidebereich liegt, wird gezeichnet, seine Linien an dessen Rand geschnitten, am Bildschirm, auf Plänen, in PDF und DXF (wie Revits Ansicht zuschneiden); aus, zeichnet die Ansicht alles und behält den Bereich",
   "Crop region visible": "Zuschneidebereich sichtbar",

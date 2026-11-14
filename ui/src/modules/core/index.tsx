@@ -35,7 +35,7 @@ import { AutoJoinSection } from './AutoJoinSection';
 import { isPathElement } from './autoJoin';
 import { editSelectedGroup, groupSelection, makeComponent, makeUnit, removeFromGroup, ungroupSelection } from './groupTools';
 import { toggleRegion3d } from '../../viewport/select3d';
-import { hideSelection, isolateSelection, resetTemporary } from '../../viewport/temporary';
+import { hideHere, isolateHere, resetHere } from '../../viewport/viewTemporary';
 import { cropGrips } from './ViewCrop';
 import { Storeys3DLooks } from './Storeys3D';
 import { setStoreys3d, showAllStoreys3d } from '../../viewport/storeys3dActions';
@@ -283,9 +283,10 @@ const core: LapinModule = {
       // Selecting and clearing up in 3D (docs/groups.md): a region, and hiding for now, with Revit's keys.
       { label: 'Select', tools: [
         { id: 'view.selectRegion', label: 'Select region', icon: BoxSelect, shortcut: 'SR', run: () => { if (useUi.getState().view !== '3d') useUi.setState({ view: '3d' }); toggleRegion3d(); } },
-        { id: 'view.hide', label: 'Hide', icon: EyeOff, shortcut: 'HH', run: hideSelection },
-        { id: 'view.isolate', label: 'Isolate', icon: Focus, shortcut: 'HI', run: isolateSelection },
-        { id: 'view.unhide', label: 'Show all', icon: Eye, shortcut: 'HR', run: resetTemporary },
+        // In a plan, section or elevation in front, its own temporary hide and isolate (forum topic 73).
+        { id: 'view.hide', label: 'Hide', icon: EyeOff, shortcut: 'HH', run: hideHere },
+        { id: 'view.isolate', label: 'Isolate', icon: Focus, shortcut: 'HI', run: isolateHere },
+        { id: 'view.unhide', label: 'Show all', icon: Eye, shortcut: 'HR', run: resetHere },
       ], small: [
         { id: 'view.graphicsVg', label: 'Graphics (VG)', icon: Layers3, shortcut: 'VG', run: () => useUi.setState({ dialog: 'visibility' }) },
         // The 3D view in front's storeys (report #29): the active storey alone, with those below, or every storey again.

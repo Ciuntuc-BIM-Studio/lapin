@@ -3565,7 +3565,15 @@ export const LO: Record<string, string> = {
   "Room's area": "ເນື້ອທີ່ຫ້ອງ",
   "Tagged element's storey": "ຊັ້ນຂອງອົງປະກອບທີ່ຕິດປ້າຍ",
   "Panel sides": "ດ້ານຂອງແຜງ", "Next view tab": "ແຖບມຸມມອງຖັດໄປ", "Previous view tab": "ແຖບມຸມມອງກ່ອນໜ້າ",
-  // View crop and annotation crop (forum topic 68)
+  // View crop, hide in view (forum topics 68 and 73)
+  "Hide in view": "ເຊື່ອງໃນມຸມມອງ",
+  "Hide for now": "ເຊື່ອງຊົ່ວຄາວ",
+  "Isolate for now": "ແຍກສະເພາະຊົ່ວຄາວ",
+  "Reset temporary hide/isolate": "ຣີເຊັດການເຊື່ອງ/ແຍກຊົ່ວຄາວ",
+  "Reveal hidden": "ສະແດງສິ່ງທີ່ເຊື່ອງ",
+  "Unhide in view": "ເລີກເຊື່ອງໃນມຸມມອງ",
+  "Select what to hide in the view first.": "ເລືອກສິ່ງທີ່ຈະເຊື່ອງໃນມຸມມອງກ່ອນ.",
+  "Select what to show again first (Reveal hidden shows what the view hides).": "ເລືອກສິ່ງທີ່ຈະສະແດງຄືນກ່ອນ (ສະແດງສິ່ງທີ່ເຊື່ອງ ຈະສະແດງສິ່ງທີ່ມຸມມອງເຊື່ອງໄວ້).",
   "Crop view": "ຕັດມຸມມອງ",
   "Only what lies inside the crop region is drawn, its lines cut at its edge, on screen, on sheets, in PDF and DXF (as Revit's Crop view); off, the view draws everything and keeps the region": "ແຕ້ມສະເພາະສິ່ງທີ່ຢູ່ໃນເຂດຕັດ, ເສັ້ນຖືກຕັດຢູ່ຂອບ, ເທິງໜ້າຈໍ, ເທິງແຜ່ນ, ໃນ PDF ແລະ DXF (ຄື Crop view ຂອງ Revit); ປິດ, ມຸມມອງແຕ້ມທັງໝົດ ແລະ ຮັກສາເຂດໄວ້",
   "Crop region visible": "ສະແດງເຂດຕັດ",

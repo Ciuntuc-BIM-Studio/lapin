@@ -3512,7 +3512,15 @@ export const PL: Record<string, string> = {
   "Room's area": "Powierzchnia pomieszczenia",
   "Tagged element's storey": "Kondygnacja oznaczonego elementu",
   "Panel sides": "Strony paneli", "Next view tab": "Następna karta widoku", "Previous view tab": "Poprzednia karta widoku",
-  // View crop and annotation crop (forum topic 68)
+  // View crop, hide in view (forum topics 68 and 73)
+  "Hide in view": "Ukryj w widoku",
+  "Hide for now": "Ukryj tymczasowo",
+  "Isolate for now": "Izoluj tymczasowo",
+  "Reset temporary hide/isolate": "Zresetuj tymczasowe ukrycie/izolację",
+  "Reveal hidden": "Pokaż ukryte",
+  "Unhide in view": "Odkryj w widoku",
+  "Select what to hide in the view first.": "Najpierw zaznacz, co ukryć w widoku.",
+  "Select what to show again first (Reveal hidden shows what the view hides).": "Najpierw zaznacz, co pokazać ponownie (Pokaż ukryte pokazuje, co widok ukrywa).",
   "Crop view": "Przytnij widok",
   "Only what lies inside the crop region is drawn, its lines cut at its edge, on screen, on sheets, in PDF and DXF (as Revit's Crop view); off, the view draws everything and keeps the region": "Rysowane jest tylko to, co leży wewnątrz obszaru kadrowania, z liniami uciętymi na jego krawędzi, na ekranie, na arkuszach, w PDF i DXF (jak Przytnij widok w Revit); wyłączone — widok rysuje wszystko i zachowuje obszar",
   "Crop region visible": "Obszar kadrowania widoczny",

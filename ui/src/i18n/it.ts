@@ -3514,7 +3514,15 @@ export const IT: Record<string, string> = {
   "Room's area": "Superficie del locale",
   "Tagged element's storey": "Piano dell'elemento etichettato",
   "Panel sides": "Lati dei pannelli", "Next view tab": "Scheda vista successiva", "Previous view tab": "Scheda vista precedente",
-  // View crop and annotation crop (forum topic 68)
+  // View crop, hide in view (forum topics 68 and 73)
+  "Hide in view": "Nascondi nella vista",
+  "Hide for now": "Nascondi temporaneamente",
+  "Isolate for now": "Isola temporaneamente",
+  "Reset temporary hide/isolate": "Reimposta nascondi/isola temporaneo",
+  "Reveal hidden": "Mostra nascosti",
+  "Unhide in view": "Mostra nella vista",
+  "Select what to hide in the view first.": "Seleziona prima cosa nascondere nella vista.",
+  "Select what to show again first (Reveal hidden shows what the view hides).": "Seleziona prima cosa mostrare di nuovo (Mostra nascosti mostra ciò che la vista nasconde).",
   "Crop view": "Ritaglia vista",
   "Only what lies inside the crop region is drawn, its lines cut at its edge, on screen, on sheets, in PDF and DXF (as Revit's Crop view); off, the view draws everything and keeps the region": "Si disegna solo ciò che sta dentro la regione di ritaglio, con le linee tagliate al suo bordo, a schermo, sulle tavole, in PDF e DXF (come Ritaglia vista di Revit); disattivato, la vista disegna tutto e conserva la regione",
   "Crop region visible": "Regione di ritaglio visibile",

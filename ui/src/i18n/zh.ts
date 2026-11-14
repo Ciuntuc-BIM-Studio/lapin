@@ -3503,7 +3503,15 @@ export const ZH: Record<string, string> = {
   "Room's area": "房间面积",
   "Tagged element's storey": "被标注元素的楼层",
   "Panel sides": "面板位置", "Next view tab": "下一个视图标签页", "Previous view tab": "上一个视图标签页",
-  // View crop and annotation crop (forum topic 68)
+  // View crop, hide in view (forum topics 68 and 73)
+  "Hide in view": "在视图中隐藏",
+  "Hide for now": "临时隐藏",
+  "Isolate for now": "临时隔离",
+  "Reset temporary hide/isolate": "重置临时隐藏/隔离",
+  "Reveal hidden": "显示隐藏的图元",
+  "Unhide in view": "在视图中取消隐藏",
+  "Select what to hide in the view first.": "请先选择要在视图中隐藏的内容。",
+  "Select what to show again first (Reveal hidden shows what the view hides).": "请先选择要重新显示的内容（“显示隐藏的图元”会显示视图隐藏的内容）。",
   "Crop view": "裁剪视图",
   "Only what lies inside the crop region is drawn, its lines cut at its edge, on screen, on sheets, in PDF and DXF (as Revit's Crop view); off, the view draws everything and keeps the region": "只绘制裁剪区域内的内容，线条在其边缘截断，在屏幕、图纸、PDF 和 DXF 中均如此（同 Revit 的“裁剪视图”）；关闭时视图绘制全部内容并保留该区域",
   "Crop region visible": "裁剪区域可见",

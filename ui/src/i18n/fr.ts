@@ -3515,7 +3515,15 @@ export const FR: Record<string, string> = {
   "Room's area": "Surface de la pièce",
   "Tagged element's storey": "Niveau de l'élément étiqueté",
   "Panel sides": "Côtés des panneaux", "Next view tab": "Onglet de vue suivant", "Previous view tab": "Onglet de vue précédent",
-  // View crop and annotation crop (forum topic 68)
+  // View crop, hide in view (forum topics 68 and 73)
+  "Hide in view": "Masquer dans la vue",
+  "Hide for now": "Masquer temporairement",
+  "Isolate for now": "Isoler temporairement",
+  "Reset temporary hide/isolate": "Réinitialiser le masquage/isolement temporaire",
+  "Reveal hidden": "Afficher les éléments masqués",
+  "Unhide in view": "Afficher dans la vue",
+  "Select what to hide in the view first.": "Sélectionnez d’abord ce qu’il faut masquer dans la vue.",
+  "Select what to show again first (Reveal hidden shows what the view hides).": "Sélectionnez d’abord ce qu’il faut réafficher (Afficher les éléments masqués montre ce que la vue masque).",
   "Crop view": "Cadrer la vue",
   "Only what lies inside the crop region is drawn, its lines cut at its edge, on screen, on sheets, in PDF and DXF (as Revit's Crop view); off, the view draws everything and keeps the region": "Seul ce qui se trouve dans la zone cadrée est dessiné, ses lignes coupées à son bord, à l’écran, sur les feuilles, en PDF et DXF (comme Cadrer la vue de Revit) ; désactivé, la vue dessine tout et garde la zone",
   "Crop region visible": "Zone cadrée visible",

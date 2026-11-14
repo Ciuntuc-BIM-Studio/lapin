@@ -3507,7 +3507,15 @@ export const RO: Record<string, string> = {
   "Room's area": "Aria încăperii",
   "Tagged element's storey": "Nivelul elementului etichetat",
   "Panel sides": "Părțile panourilor", "Next view tab": "Fila de vizualizare următoare", "Previous view tab": "Fila de vizualizare anterioară",
-  // View crop and annotation crop (forum topic 68)
+  // View crop, hide in view (forum topics 68 and 73)
+  "Hide in view": "Ascunde în vedere",
+  "Hide for now": "Ascunde temporar",
+  "Isolate for now": "Izolează temporar",
+  "Reset temporary hide/isolate": "Resetează ascunderea/izolarea temporară",
+  "Reveal hidden": "Arată ascunsele",
+  "Unhide in view": "Reafișează în vedere",
+  "Select what to hide in the view first.": "Selectează întâi ce să ascunzi în vedere.",
+  "Select what to show again first (Reveal hidden shows what the view hides).": "Selectează întâi ce să reafișezi (Arată ascunsele arată ce ascunde vederea).",
   "Crop view": "Decupează vederea",
   "Only what lies inside the crop region is drawn, its lines cut at its edge, on screen, on sheets, in PDF and DXF (as Revit's Crop view); off, the view draws everything and keeps the region": "Se desenează doar ce se află în regiunea de decupare, cu liniile tăiate la marginea ei, pe ecran, pe planșe, în PDF și DXF (ca Crop view din Revit); oprită, vederea desenează tot și păstrează regiunea",
   "Crop region visible": "Regiune de decupare vizibilă",

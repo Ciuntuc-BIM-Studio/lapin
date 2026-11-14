@@ -3506,7 +3506,15 @@ export const DA: Record<string, string> = {
   "Room's area": "Rummets areal",
   "Tagged element's storey": "Det mærkede elements etage",
   "Panel sides": "Panelernes sider", "Next view tab": "Næste visningsfane", "Previous view tab": "Forrige visningsfane",
-  // View crop and annotation crop (forum topic 68)
+  // View crop, hide in view (forum topics 68 and 73)
+  "Hide in view": "Skjul i visning",
+  "Hide for now": "Skjul midlertidigt",
+  "Isolate for now": "Isoler midlertidigt",
+  "Reset temporary hide/isolate": "Nulstil midlertidig skjul/isolering",
+  "Reveal hidden": "Vis skjulte",
+  "Unhide in view": "Vis i visning",
+  "Select what to hide in the view first.": "Vælg først, hvad der skal skjules i visningen.",
+  "Select what to show again first (Reveal hidden shows what the view hides).": "Vælg først, hvad der skal vises igen (Vis skjulte viser, hvad visningen skjuler).",
   "Crop view": "Beskær visning",
   "Only what lies inside the crop region is drawn, its lines cut at its edge, on screen, on sheets, in PDF and DXF (as Revit's Crop view); off, the view draws everything and keeps the region": "Kun det, der ligger inden for beskæringsområdet, tegnes, med linjerne skåret ved kanten, på skærmen, på tegningsark, i PDF og DXF (som Revits Crop view); slået fra tegner visningen alt og beholder området",
   "Crop region visible": "Beskæringsområde synligt",

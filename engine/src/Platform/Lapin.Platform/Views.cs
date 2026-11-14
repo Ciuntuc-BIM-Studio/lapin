@@ -824,11 +824,14 @@ public static class Views
         var vg = VisibilityGraphics.Of(m, view);
         // The view's filters' line styles (decision 394), per element, under the elements' own overrides.
         var elementLines = graphics?["elements"]?.DeepClone() as JsonObject;
-        if (filters.Count > 0 || halftoneOthers || vg.HasOverrides)
+        // Reveal hidden (forum topic 73): what the view hides drawn in its colour, so it can be picked and shown again.
+        var revealed = ViewHiding.Revealed(view);
+        if (filters.Count > 0 || halftoneOthers || vg.HasOverrides || revealed.Count > 0)
             foreach (var id in drawing.Cuts.Select(c => c.Element).Concat(drawing.Lines.Select(l => l.Element)).Concat((drawing.Fills ?? []).Select(f => f.Element)).Concat((drawing.Texts ?? []).Select(t => t.Element)).Distinct())
             {
                 if (m.Get(id) is not { } el) continue;
-                if (filters.Select(f => f.For(q, view, el)).FirstOrDefault(x => x != null) is { Color: { } c }) colors[id] = c;
+                if (revealed.Contains(id)) colors[id] = ViewHiding.RevealColor;
+                else if (filters.Select(f => f.For(q, view, el)).FirstOrDefault(x => x != null) is { Color: { } c }) colors[id] = c;
                 // A filter's colour or halftone, a category's halftone, a link halftone in this view (decisions 391, 394).
                 else if (vg.ColorOf(el) is { } vc) colors[id] = vc;
                 // Another storey's element in a plan that shows it halftone: grey, as a halftone link.
@@ -1595,6 +1598,7 @@ public static class Views
         Insets.Register(r);
         ViewBoundaries.Register(r);
         ViewCrops.Register(r);
+        ViewHiding.Register(r);
         SectionMarkers.Register(r);
         ElevationMarkers.Register(r);
         SectionHeads.Register(r);
@@ -1885,7 +1889,8 @@ public static class Views
         {
             var id = (string?)a["id"] ?? ((string?)a["storeyId"] is { } s ? "plan:" + s : "");
             var view = Find(q.Model, id) ?? throw new CommandException("There is no such view.");
-            return Drawing(q, view);
+            // With the interface's temporary hide and isolate, and Reveal hidden (ViewHiding): for the screen only, never kept.
+            return Drawing(q, ViewHiding.Temporary(q.Model, view, a));
         });
     }
 }

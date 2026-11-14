@@ -173,6 +173,14 @@ A click, a selection box or a lasso takes only what the view shows, in plans, se
 
 Select several elements (Shift-click, or drag a box) and the properties panel shows the last one picked, with **N selected** beside its class. A value they share is shown; one that differs reads *varies*. Change a field and every selected element that has it takes the new value, in one step that **Undo** takes back: the height and base offset of walls, the type of every selected wall, door or beam, the sill of windows, the phases of every selected element whatever its class, the layer and colour of drafted lines, the style of texts. What is each element's own stays its own: a room's number, a wall's length, a door's place along its wall.
 
+## Hide in a plan or a section
+
+A right click in a plan, a section or an elevation, with something selected, offers to put it away:
+
+- **Hide in view** hides the selection in this view for good, as Revit's *Hide in view*: it is kept with the project, and the view's sheets, PDF and DXF leave it out too. Each hide is one undo step. A level's default plan becomes its plan view when something is hidden in it.
+- **Hide for now** (<kbd>HH</kbd>) and **Isolate for now** (<kbd>HI</kbd>) hide the selection, or everything else, in this view only until **Reset temporary hide/isolate** (<kbd>HR</kbd>). They are not saved or undone, and they print nothing differently. The same keys in 3D hide and isolate in the 3D view, as before.
+- **Reveal hidden** draws what the view hides in magenta, so it can be picked: select it and choose **Unhide in view** to show it again. Choose **Reveal hidden** again to turn it off.
+
 ## Mouse navigation styles
 
 The status bar, at the bottom, names the mouse navigation style in use (*Lapin* to begin with). Click it to choose another: **Revit-like**, **AutoCAD-like**, **ArchiCAD-like**, **SketchUp-like**, **Blender-like** or **Rhino-like**, each listed with its main gestures. **File → Preferences → Display → Mouse navigation** sets it too. It is kept for you, on this computer, for every project, and it applies to the 3D view and to plans, sections, elevations and sheets alike.
