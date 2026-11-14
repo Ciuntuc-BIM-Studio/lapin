@@ -127,6 +127,29 @@ Un finisaj îmbracă ce au deja pereții încăperii: dacă tipurile de pereți 
 
 ![Proprietățile unei încăperi cu finisajul ei](shots/room-finish-properties.webp)
 
+## Pictorul de finisaje
+
+Finisajele încăperilor îmbracă încăperi întregi. **Pictorul de finisaje** pictează fețe: laturile unui perete, înăuntru și **afară** (termosistemul unei fațade, un soclu de piatră), fața de sus a unei plăci și cea de dedesubt (un tavan), muchiile unei plăci, laturile unui stâlp, fiecare întreagă sau pe părțile în care o împarți. **Interior → Pictorul de finisaje** (<kbd>FP</kbd>), sau **Pictorul de finisaje…** din **Finisajele încăperilor**, îl deschide ca mod de editare: pereții, plăcile, stâlpii, grinzile și ce e pictat rămân, restul se estompează, iar **Gata** (<kbd>Esc</kbd>) iese din el. Panoul lui are uneltele și **paleta**:
+
+- **Finisaje de suprafață**: ale proiectului, fiecare cu straturile de la față spre exterior. **Biblioteca** (Bibliotecă) aduce unele gata făcute (alcătuiri orientative): ETICS EPS 100 (adeziv, 10 cm EPS, tencuială), ETICS vată minerală 100, Tencuială de var 25, Faianță, Placare cu piatră 30, Vopsea, Gresie, Tavan din gips-carton.
+- **Finisajele încăperilor**: fiecare finisaj de încăpere al proiectului, împărțit în pereți, pardoseală și tavan (straturile pardoselii întoarse, de la placă în sus). Schimbi finisajul încăperii și fețele pictate cu el urmează. Bucățile pe înălțime (faianța până la 2100) nu se folosesc pe o față: împarte fața în locul lor.
+- **Un material**: un material și o grosime în milimetri, **Pictează cu el**.
+
+Uneltele:
+
+- **Pensulă**: dai clic pe o față și regiunea de sub cursor se pictează cu finisajul ales; în 3D regiunea se luminează când treci cu cursorul peste ea. Cu **Toată fața** bifat, se pictează toată fața, în locul a ce era pe ea. Un clic pe un finisaj deja pictat pictează fața de sub el. Pe un plan, pensula pictează latura unui perete (cea mai apropiată de clic) sau fața de sus a unei plăci.
+- **Împarte cu dreptunghi**, **Împarte cu linie**: desenezi direct pe o față, în 3D, ca Dreptunghiul și Linia din Studio (aceleași inferențe, o mărime tastată); fața se împarte după desen, iar fiecare parte se pictează separat. Un dreptunghi în interiorul unei fețe e un panou al lui, scos din partea din jur. O împărțire desenată după pictare împarte ce era pictat: regiunea de sub pensulă ia finisajul nou.
+- **Pipetă**: dai clic pe o față și finisajul ei se alege în paletă.
+- **Șterge**: dai clic pe o regiune și finisajul ei se scoate (cu **Toată fața**, al feței; împărțirile rămân).
+
+Fiecare clic e un singur pas de anulare. Ce e pictat ține de față, păstrat în coordonatele feței: muți, lungești sau schimbi tipul peretelui și finisajele merg cu el; îl ștergi și pleacă și ele. Un perete întors își păstrează finisajele pe aceeași parte a clădirii.
+
+Fiecare regiune pictată se construiește: straturile ei sunt corpuri din materialul lor, de la față spre exterior, cu ușile și ferestrele feței decupate, deci planurile și secțiunile le taie și le hașurează după material (un stil care scoate finisajele din planuri le scoate și pe acestea), fațadele și 3D-ul le arată, iar IFC-ul le exportă pe fiecare ca IfcCovering (CLADDING pe un perete, FLOORING pe fața de sus a unei plăci, CEILING sub ea) legat de elementul pe care îl acoperă (IfcRelCoversBldgElements). La un colț exterior al clădirii, straturile a două fațade se îmbină la 45° și se întâlnesc (colțuri în unghi drept). Fiecare se măsoară, pe strat și material: aria netă (fără goluri), aria brută și volumul; **Interior → Extrasul finisajelor de suprafață** le listează pe element, față și material, cu totalurile, iar devizul le ia ca finisaje.
+
+O încăpere se măsoară în continuare la finisajul ei de încăpere: o față pictată în ea nu îi schimbă aria.
+
+![Pictorul de finisaje: fațadele pictate cu termosistem, soclul împărțit la 900 și placat cu piatră](shots/finish-painter.webp)
+
 ## Încăperile în 3D și în IFC
 
 Încăperile sunt ascunse în vederea 3D, ca să nu acopere clădirea. **Vizibilitate / Grafică** în vederea 3D le poate arăta.

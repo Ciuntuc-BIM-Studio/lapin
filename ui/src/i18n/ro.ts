@@ -1,6 +1,12 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // The finish painter (forum topic 83)
+  "Paint with it": "Pictează cu el",
+  // The finish painter (forum topic 83)
+  "Finish painter…": "Pictorul de finisaje…", "Paint finishes on the faces of walls, floors and columns, inside and out": "Pictează finisaje pe fețele pereților, plăcilor și stâlpilor, înăuntru și afară",
+  // The finish painter (forum topic 83)
+  "Finish painter": "Pictorul de finisaje", "Painter": "Pictor", "Brush": "Pensulă", "Eyedropper": "Pipetă", "Split by rectangle": "Împarte cu dreptunghi", "Split by line": "Împarte cu linie", "Surface finishes schedule": "Extrasul finisajelor de suprafață", "Surface finishes schedule made: it is in the project browser, under Schedules.": "Extrasul finisajelor de suprafață e făcut: e în browserul proiectului, la Extrase.", "Choose a finish in the palette first.": "Alege întâi un finisaj din paletă.", "Nothing is painted there.": "Acolo nu e nimic pictat.", "The finish is in the palette now.": "Finisajul e acum în paletă.", "Draw the split on a face of a wall, a floor or a column.": "Desenează împărțirea pe o față a unui perete, a unei plăci sau a unui stâlp.", "The face is split: paint each part with the brush.": "Fața e împărțită: pictează fiecare parte cu pensula.", "Leave the finish painter (Esc)": "Ieși din pictorul de finisaje (Esc)", "The brush and Clear take the whole face, not the region under the cursor": "Pensula și Șterge iau toată fața, nu regiunea de sub cursor", "Whole face": "Toată fața", "Painting with": "Pictezi cu", "Choose a finish, then click a face": "Alege un finisaj, apoi dă clic pe o față", "Reading the palette…": "Se citește paleta…", "Surface finishes": "Finisaje de suprafață", "Surface finish": "Finisaj de suprafață", "Finish zone": "Zonă de finisaj", "Finish split": "Împărțire de finisaj", "Paint finish": "Pictează finisaj", "Split face": "Împarte fața", "Clear finish": "Șterge finisajul", "New surface finish": "Finisaj de suprafață nou", "Change surface finish": "Schimbă finisajul de suprafață", "Surface finish from the library": "Finisaj de suprafață din bibliotecă",
   // Structure types from a table, beam types as lintels (report #135)
   "Beam types": "Tipuri de grinzi",
   "Older catalogue": "Catalog mai vechi",

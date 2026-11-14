@@ -3,6 +3,12 @@
 import type { Language } from './index';
 
 export const FR: Record<string, string> = {
+  // The finish painter (forum topic 83)
+  "Paint with it": "Peindre avec",
+  // The finish painter (forum topic 83)
+  "Finish painter…": "Peintre de finitions…", "Paint finishes on the faces of walls, floors and columns, inside and out": "Peindre des finitions sur les faces des murs, dalles et poteaux, dedans et dehors",
+  // The finish painter (forum topic 83)
+  "Finish painter": "Peintre de finitions", "Painter": "Peintre", "Brush": "Pinceau", "Eyedropper": "Pipette", "Split by rectangle": "Diviser par rectangle", "Split by line": "Diviser par ligne", "Surface finishes schedule": "Nomenclature des revêtements de surface", "Surface finishes schedule made: it is in the project browser, under Schedules.": "Nomenclature des revêtements de surface créée : dans le navigateur du projet, sous Nomenclatures.", "Choose a finish in the palette first.": "Choisissez d’abord une finition dans la palette.", "Nothing is painted there.": "Rien n’est peint là.", "The finish is in the palette now.": "La finition est maintenant dans la palette.", "Draw the split on a face of a wall, a floor or a column.": "Dessinez la division sur une face d’un mur, d’une dalle ou d’un poteau.", "The face is split: paint each part with the brush.": "La face est divisée : peignez chaque partie au pinceau.", "Leave the finish painter (Esc)": "Quitter le peintre de finitions (Échap)", "The brush and Clear take the whole face, not the region under the cursor": "Le pinceau et Effacer prennent toute la face, pas la région sous le curseur", "Whole face": "Face entière", "Painting with": "Peinture avec", "Choose a finish, then click a face": "Choisissez une finition, puis cliquez sur une face", "Reading the palette…": "Lecture de la palette…", "Surface finishes": "Revêtements de surface", "Surface finish": "Revêtement de surface", "Finish zone": "Zone de finition", "Finish split": "Division de finition", "Paint finish": "Peindre une finition", "Split face": "Diviser la face", "Clear finish": "Effacer la finition", "New surface finish": "Nouveau revêtement de surface", "Change surface finish": "Modifier le revêtement de surface", "Surface finish from the library": "Revêtement de surface de la bibliothèque",
   // Structure types from a table, beam types as lintels (report #135)
   "Beam types": "Types de poutre",
   "Older catalogue": "Ancien catalogue",

@@ -3,6 +3,12 @@
 import type { Language } from './index';
 
 export const DE: Record<string, string> = {
+  // The finish painter (forum topic 83)
+  "Paint with it": "Damit malen",
+  // The finish painter (forum topic 83)
+  "Finish painter…": "Bekleidungsmaler…", "Paint finishes on the faces of walls, floors and columns, inside and out": "Bekleidungen auf die Flächen von Wänden, Decken und Stützen malen, innen und außen",
+  // The finish painter (forum topic 83)
+  "Finish painter": "Bekleidungsmaler", "Painter": "Maler", "Brush": "Pinsel", "Eyedropper": "Pipette", "Split by rectangle": "Mit Rechteck teilen", "Split by line": "Mit Linie teilen", "Surface finishes schedule": "Liste der Flächenbekleidungen", "Surface finishes schedule made: it is in the project browser, under Schedules.": "Liste der Flächenbekleidungen erstellt: im Projektbrowser unter Bauteillisten.", "Choose a finish in the palette first.": "Zuerst eine Bekleidung in der Palette wählen.", "Nothing is painted there.": "Dort ist nichts gemalt.", "The finish is in the palette now.": "Die Bekleidung ist jetzt in der Palette.", "Draw the split on a face of a wall, a floor or a column.": "Die Teilung auf eine Fläche einer Wand, einer Decke oder einer Stütze zeichnen.", "The face is split: paint each part with the brush.": "Die Fläche ist geteilt: jeden Teil mit dem Pinsel malen.", "Leave the finish painter (Esc)": "Bekleidungsmaler verlassen (Esc)", "The brush and Clear take the whole face, not the region under the cursor": "Pinsel und Entfernen nehmen die ganze Fläche, nicht den Bereich unter dem Cursor", "Whole face": "Ganze Fläche", "Painting with": "Malen mit", "Choose a finish, then click a face": "Eine Bekleidung wählen, dann auf eine Fläche klicken", "Reading the palette…": "Palette wird gelesen…", "Surface finishes": "Flächenbekleidungen", "Surface finish": "Flächenbekleidung", "Finish zone": "Bekleidungszone", "Finish split": "Bekleidungsteilung", "Paint finish": "Bekleidung malen", "Split face": "Fläche teilen", "Clear finish": "Bekleidung entfernen", "New surface finish": "Neue Flächenbekleidung", "Change surface finish": "Flächenbekleidung ändern", "Surface finish from the library": "Flächenbekleidung aus der Bibliothek",
   // Structure types from a table, beam types as lintels (report #135)
   "Beam types": "Trägertypen",
   "Older catalogue": "Älterer Katalog",

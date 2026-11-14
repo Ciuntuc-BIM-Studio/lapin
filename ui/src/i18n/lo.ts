@@ -3,6 +3,12 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // The finish painter (forum topic 83)
+  "Paint with it": "ທາດ້ວຍສິ່ງນີ້",
+  // The finish painter (forum topic 83)
+  "Finish painter…": "ເຄື່ອງທາສີງານຕົກແຕ່ງ…", "Paint finishes on the faces of walls, floors and columns, inside and out": "ທາງານຕົກແຕ່ງເທິງໜ້າຂອງຝາ, ພື້ນ ແລະ ເສົາ, ທັງພາຍໃນ ແລະ ພາຍນອກ",
+  // The finish painter (forum topic 83)
+  "Finish painter": "ເຄື່ອງທາສີງານຕົກແຕ່ງ", "Painter": "ທາສີ", "Brush": "ແປງທາສີ", "Eyedropper": "ເຄື່ອງດູດສີ", "Split by rectangle": "ແບ່ງດ້ວຍສີ່ຫຼ່ຽມ", "Split by line": "ແບ່ງດ້ວຍເສັ້ນ", "Surface finishes schedule": "ຕາຕະລາງງານຕົກແຕ່ງພື້ນຜິວ", "Surface finishes schedule made: it is in the project browser, under Schedules.": "ສ້າງຕາຕະລາງງານຕົກແຕ່ງພື້ນຜິວແລ້ວ: ຢູ່ໃນ ຕາຕະລາງລາຍການ.", "Choose a finish in the palette first.": "ເລືອກງານຕົກແຕ່ງໃນຈານສີກ່ອນ.", "Nothing is painted there.": "ບ່ອນນັ້ນບໍ່ມີຫຍັງທາໄວ້.", "The finish is in the palette now.": "ງານຕົກແຕ່ງຢູ່ໃນຈານສີແລ້ວ.", "Draw the split on a face of a wall, a floor or a column.": "ແຕ້ມເສັ້ນແບ່ງເທິງໜ້າຂອງຝາ, ພື້ນ ຫຼື ເສົາ.", "The face is split: paint each part with the brush.": "ແບ່ງໜ້າແລ້ວ: ທາແຕ່ລະສ່ວນດ້ວຍແປງ.", "Leave the finish painter (Esc)": "ອອກຈາກເຄື່ອງທາສີງານຕົກແຕ່ງ (Esc)", "The brush and Clear take the whole face, not the region under the cursor": "ແປງ ແລະ ລຶບອອກ ເອົາທັງໜ້າ, ບໍ່ແມ່ນພາກສ່ວນໃຕ້ເຄີເຊີ", "Whole face": "ທັງໜ້າ", "Painting with": "ກຳລັງທາດ້ວຍ", "Choose a finish, then click a face": "ເລືອກງານຕົກແຕ່ງ, ແລ້ວຄລິກໜ້າໜຶ່ງ", "Reading the palette…": "ກຳລັງອ່ານຈານສີ…", "Surface finishes": "ງານຕົກແຕ່ງພື້ນຜິວ", "Surface finish": "ງານຕົກແຕ່ງພື້ນຜິວ", "Finish zone": "ເຂດງານຕົກແຕ່ງ", "Finish split": "ເສັ້ນແບ່ງງານຕົກແຕ່ງ", "Paint finish": "ທາງານຕົກແຕ່ງ", "Split face": "ແບ່ງໜ້າ", "Clear finish": "ລຶບງານຕົກແຕ່ງ", "New surface finish": "ງານຕົກແຕ່ງພື້ນຜິວໃໝ່", "Change surface finish": "ປ່ຽນງານຕົກແຕ່ງພື້ນຜິວ", "Surface finish from the library": "ງານຕົກແຕ່ງພື້ນຜິວຈາກຫ້ອງສະໝຸດ",
   // Structure types from a table, beam types as lintels (report #135)
   "Beam types": "ປະເພດຄານ",
   "Older catalogue": "ລາຍການເກົ່າ",

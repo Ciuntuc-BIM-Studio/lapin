@@ -41,6 +41,8 @@ import { OpeningDims, OpeningDimsInView } from './TempDimensions';
 import { wallOpeningGrips } from './wallOpeningGrips';
 import { CeilingSection, CeilingTypesDialog, ceiling, ceilingDiffuser, ceilingInRoom, ceilingLight, ceilingTypes } from './Ceilings';
 import { finishRoom, roomFinishSchedule, roomFinishes } from './roomFinishTools';
+import { finishPainter, paintBrush, paintClear, paintEyedropper, splitLine, splitRect, surfaceFinishSchedule } from './finishPainter';
+import { FinishPainterPanel } from './FinishPainterPanel';
 import { WallSweepSection, WallSweepsOnWall, hasSweeps, revealSelected, sweepSelected, wallReveal, wallSweep, wallSweepSchedule } from './WallSweeps';
 import { SkirtingSection, SkirtingTypesDialog, skirting, skirtingGrips, skirtingInRoom, skirtingSchedule, skirtingTypes } from './Skirtings';
 import { colorLegend, room, roomColors, roomDivider, roomDividerArc, roomDividerCircle, roomDividerPolyline, roomDividerRectangle, roomDividers, roomOutline, roomTag, updateRooms } from './roomTools';
@@ -476,6 +478,8 @@ const architecture: LapinModule = {
     id: 'interior', label: 'Interior', order: 25, include: ['modify'], i18nCtx: 'furniture',
     groups: [
       { label: 'Room', tools: [finishRoom], small: [roomFinishes, roomFinishSchedule] },
+      // The finish painter (forum topic 83): faces of walls, floors and columns painted, inside and out.
+      { label: 'Painter', tools: [finishPainter], small: [paintBrush, splitRect, splitLine, paintEyedropper, paintClear, surfaceFinishSchedule] },
       { label: 'Ceiling', tools: [ceiling, ceilingInRoom], small: [ceilingLight, ceilingDiffuser, ceilingTypes] },
       { label: 'Skirtings', tools: [skirtingInRoom, skirting], small: [skirtingTypes, skirtingSchedule] },
     ],
@@ -523,6 +527,7 @@ const architecture: LapinModule = {
   },
   // A door's, window's or wall opening's temporary dimensions (decision 511).
   planOverlays: [OpeningDims],
+  overlays: [FinishPainterPanel],
   drawingOverlays: [OpeningDimsInView],
   references: { IfcWall: wallRefs, IfcCurtainWall: pathRefs, IfcSlab: contourRefs, IfcOpeningElement: contourRefs, IfcRoof: (n) => [...contourRefs(n), ...roofOpeningRefs(n)], IfcSpace: roomRefs },
   similar: {

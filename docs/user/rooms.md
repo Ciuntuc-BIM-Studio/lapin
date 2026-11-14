@@ -127,6 +127,29 @@ A finish lines what the room's walls already have: if the wall types carry their
 
 ![A room's properties with its finish](shots/room-finish-properties.webp)
 
+## Finish painter
+
+Room finishes line rooms whole. The **finish painter** paints faces: a wall's sides, inside and **outside** (a facade's ETICS, a plinth of stone), a floor's top and its underside (a ceiling), a floor's edges, a column's sides, each whole or in parts you divide it into. **Interior → Finish painter** (<kbd>FP</kbd>), or **Finish painter…** in **Room finishes**, enters it as an edit mode: walls, floors, columns, beams and what is painted stay, the rest is faded, and **Done** (<kbd>Esc</kbd>) leaves it. Its panel holds the tools and the **palette**:
+
+- **Surface finishes**: the project's own, each its layers from the face outward. The **Library** brings in ready-made ones (indicative build-ups): ETICS EPS 100 (adhesive, 10 cm EPS, render), ETICS mineral wool 100, Lime plaster 25, Wall tiles, Stone cladding 30, Paint, Floor tiles, Gypsum board ceiling.
+- **Room finishes**: each room finish of the project split into its walls, floor and ceiling (the floor's layers turned over, from the slab up). Change the room finish and the faces painted with it follow. Its pieces up the height (tiles to 2100) are not used on a face: split the face instead.
+- **A material**: one material and a thickness in millimetres, **Paint with it**.
+
+The tools:
+
+- **Brush**: click a face and the region under the cursor is painted with the finish chosen; in 3D the region lights up as the cursor moves over it. With **Whole face** on, the whole face is painted, replacing what was on it. A click on a finish already painted paints the face under it. In a plan the brush paints a wall's side (the one nearer the click) or a floor's top.
+- **Split by rectangle**, **Split by line**: draw right on a face in 3D, as Studio's Rectangle and Line do (the same inferences, a typed size); the face is divided along it, and each part is painted on its own. A rectangle inside a face is a panel of its own, taken out of the part round it. A split drawn after painting divides what was painted: the region under the brush gets the new finish.
+- **Eyedropper**: click a face and its finish is chosen in the palette.
+- **Clear**: click a region and its finish is taken off (with **Whole face**, the face's; its splits stay).
+
+Every click is one undo step. What is painted belongs to the face, kept in the face's own coordinates: move, lengthen or retype the wall and its finishes go with it; delete it and they go too. A flipped wall keeps its finishes on the same side of the building.
+
+Each painted region is built: its layers are bodies of their own material from the face outward, the face's doors and windows cut out of them, so plans and sections cut and hatch them by material (a style that leaves the finishes out of plans leaves them out too), elevations and the 3D show them, and IFC exports each as an IfcCovering (CLADDING on a wall, FLOORING on a floor's top, CEILING under it) related to the element it covers (IfcRelCoversBldgElements). At a building's outer corner the layers of two facades are mitred and meet (right-angled corners). Each measures, by layer and material, its net area (openings out), its gross area and volume; **Interior → Surface finishes schedule** lists them by element, face and material with the totals, and the cost estimate takes them as finishes.
+
+A room keeps being measured to its room finish: a face painted inside it does not change its area.
+
+![The finish painter: the facades painted with ETICS, the plinth split at 900 and clad in stone](shots/finish-painter.webp)
+
 ## Rooms in 3D and in IFC
 
 Rooms are hidden in the 3D view, so they do not cover the building. **Visibility / Graphics** in the 3D view can show them.

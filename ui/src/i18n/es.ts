@@ -3,6 +3,12 @@
 import type { Language } from './index';
 
 export const ES: Record<string, string> = {
+  // The finish painter (forum topic 83)
+  "Paint with it": "Pintar con él",
+  // The finish painter (forum topic 83)
+  "Finish painter…": "Pintor de acabados…", "Paint finishes on the faces of walls, floors and columns, inside and out": "Pintar acabados en las caras de muros, forjados y pilares, dentro y fuera",
+  // The finish painter (forum topic 83)
+  "Finish painter": "Pintor de acabados", "Painter": "Pintor", "Brush": "Pincel", "Eyedropper": "Cuentagotas", "Split by rectangle": "Dividir con rectángulo", "Split by line": "Dividir con línea", "Surface finishes schedule": "Tabla de acabados de superficie", "Surface finishes schedule made: it is in the project browser, under Schedules.": "Tabla de acabados de superficie hecha: está en el navegador del proyecto, en Tablas.", "Choose a finish in the palette first.": "Elija primero un acabado en la paleta.", "Nothing is painted there.": "Ahí no hay nada pintado.", "The finish is in the palette now.": "El acabado ya está en la paleta.", "Draw the split on a face of a wall, a floor or a column.": "Dibuje la división en una cara de un muro, un forjado o un pilar.", "The face is split: paint each part with the brush.": "La cara está dividida: pinte cada parte con el pincel.", "Leave the finish painter (Esc)": "Salir del pintor de acabados (Esc)", "The brush and Clear take the whole face, not the region under the cursor": "El pincel y Borrar toman toda la cara, no la región bajo el cursor", "Whole face": "Cara entera", "Painting with": "Pintando con", "Choose a finish, then click a face": "Elija un acabado y luego haga clic en una cara", "Reading the palette…": "Leyendo la paleta…", "Surface finishes": "Acabados de superficie", "Surface finish": "Acabado de superficie", "Finish zone": "Zona de acabado", "Finish split": "División de acabado", "Paint finish": "Pintar acabado", "Split face": "Dividir cara", "Clear finish": "Borrar acabado", "New surface finish": "Acabado de superficie nuevo", "Change surface finish": "Cambiar acabado de superficie", "Surface finish from the library": "Acabado de superficie de la biblioteca",
   // Structure types from a table, beam types as lintels (report #135)
   "Beam types": "Tipos de viga",
   "Older catalogue": "Catálogo anterior",

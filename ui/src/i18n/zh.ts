@@ -3,6 +3,12 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // The finish painter (forum topic 83)
+  "Paint with it": "用它绘制",
+  // The finish painter (forum topic 83)
+  "Finish painter…": "饰面绘制器…", "Paint finishes on the faces of walls, floors and columns, inside and out": "在墙、楼板和柱的各个面上绘制饰面，室内外均可",
+  // The finish painter (forum topic 83)
+  "Finish painter": "饰面绘制器", "Painter": "绘制器", "Brush": "画笔", "Eyedropper": "吸管", "Split by rectangle": "按矩形分割", "Split by line": "按线分割", "Surface finishes schedule": "表面饰面明细表", "Surface finishes schedule made: it is in the project browser, under Schedules.": "表面饰面明细表已创建：位于项目浏览器的明细表下。", "Choose a finish in the palette first.": "请先在调色板中选择饰面。", "Nothing is painted there.": "那里没有绘制任何饰面。", "The finish is in the palette now.": "该饰面现已在调色板中。", "Draw the split on a face of a wall, a floor or a column.": "请在墙、楼板或柱的某个面上绘制分割。", "The face is split: paint each part with the brush.": "该面已分割：请用画笔绘制每个部分。", "Leave the finish painter (Esc)": "退出饰面绘制器 (Esc)", "The brush and Clear take the whole face, not the region under the cursor": "画笔和清除作用于整个面，而不是光标下的区域", "Whole face": "整个面", "Painting with": "正在使用", "Choose a finish, then click a face": "选择一种饰面，然后单击一个面", "Reading the palette…": "正在读取调色板…", "Surface finishes": "表面饰面", "Surface finish": "表面饰面", "Finish zone": "饰面区域", "Finish split": "饰面分割", "Paint finish": "绘制饰面", "Split face": "分割面", "Clear finish": "清除饰面", "New surface finish": "新建表面饰面", "Change surface finish": "更改表面饰面", "Surface finish from the library": "库中的表面饰面",
   // Structure types from a table, beam types as lintels (report #135)
   "Beam types": "梁类型",
   "Older catalogue": "旧目录",

@@ -3,6 +3,12 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  // The finish painter (forum topic 83)
+  "Paint with it": "Mal med det",
+  // The finish painter (forum topic 83)
+  "Finish painter…": "Overflademaler…", "Paint finishes on the faces of walls, floors and columns, inside and out": "Mal overflader på fladerne af vægge, dæk og søjler, inde og ude",
+  // The finish painter (forum topic 83)
+  "Finish painter": "Overflademaler", "Painter": "Maler", "Brush": "Pensel", "Eyedropper": "Pipette", "Split by rectangle": "Del med rektangel", "Split by line": "Del med linje", "Surface finishes schedule": "Skema over fladeoverflader", "Surface finishes schedule made: it is in the project browser, under Schedules.": "Skema over fladeoverflader lavet: det er i projektbrowseren under Skemaer.", "Choose a finish in the palette first.": "Vælg først en overflade i paletten.", "Nothing is painted there.": "Der er intet malet der.", "The finish is in the palette now.": "Overfladen er nu i paletten.", "Draw the split on a face of a wall, a floor or a column.": "Tegn delingen på en flade af en væg, et dæk eller en søjle.", "The face is split: paint each part with the brush.": "Fladen er delt: mal hver del med penslen.", "Leave the finish painter (Esc)": "Forlad overflademaleren (Esc)", "The brush and Clear take the whole face, not the region under the cursor": "Penslen og Ryd tager hele fladen, ikke området under markøren", "Whole face": "Hele fladen", "Painting with": "Maler med", "Choose a finish, then click a face": "Vælg en overflade, og klik så på en flade", "Reading the palette…": "Læser paletten…", "Surface finishes": "Fladeoverflader", "Surface finish": "Fladeoverflade", "Finish zone": "Overfladezone", "Finish split": "Overfladedeling", "Paint finish": "Mal overflade", "Split face": "Del flade", "Clear finish": "Ryd overflade", "New surface finish": "Ny fladeoverflade", "Change surface finish": "Ændr fladeoverflade", "Surface finish from the library": "Fladeoverflade fra biblioteket",
   // Structure types from a table, beam types as lintels (report #135)
   "Beam types": "Bjælketyper",
   "Older catalogue": "Ældre katalog",

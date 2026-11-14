@@ -3,6 +3,12 @@
 import type { Language } from './index';
 
 export const PL: Record<string, string> = {
+  // The finish painter (forum topic 83)
+  "Paint with it": "Maluj nim",
+  // The finish painter (forum topic 83)
+  "Finish painter…": "Malarz wykończeń…", "Paint finishes on the faces of walls, floors and columns, inside and out": "Maluj wykończenia na licach ścian, stropów i słupów, wewnątrz i na zewnątrz",
+  // The finish painter (forum topic 83)
+  "Finish painter": "Malarz wykończeń", "Painter": "Malarz", "Brush": "Pędzel", "Eyedropper": "Pipeta", "Split by rectangle": "Podziel prostokątem", "Split by line": "Podziel linią", "Surface finishes schedule": "Zestawienie wykończeń powierzchni", "Surface finishes schedule made: it is in the project browser, under Schedules.": "Zestawienie wykończeń powierzchni utworzone: znajduje się w przeglądarce projektu, w Zestawieniach.", "Choose a finish in the palette first.": "Najpierw wybierz wykończenie z palety.", "Nothing is painted there.": "Nic tam nie jest pomalowane.", "The finish is in the palette now.": "Wykończenie jest teraz w palecie.", "Draw the split on a face of a wall, a floor or a column.": "Narysuj podział na licu ściany, stropu albo słupa.", "The face is split: paint each part with the brush.": "Lico jest podzielone: pomaluj każdą część pędzlem.", "Leave the finish painter (Esc)": "Opuść malarza wykończeń (Esc)", "The brush and Clear take the whole face, not the region under the cursor": "Pędzel i Wyczyść biorą całe lico, nie obszar pod kursorem", "Whole face": "Całe lico", "Painting with": "Malowanie:", "Choose a finish, then click a face": "Wybierz wykończenie, potem kliknij lico", "Reading the palette…": "Wczytywanie palety…", "Surface finishes": "Wykończenia powierzchni", "Surface finish": "Wykończenie powierzchni", "Finish zone": "Strefa wykończenia", "Finish split": "Podział wykończenia", "Paint finish": "Maluj wykończenie", "Split face": "Podziel lico", "Clear finish": "Wyczyść wykończenie", "New surface finish": "Nowe wykończenie powierzchni", "Change surface finish": "Zmień wykończenie powierzchni", "Surface finish from the library": "Wykończenie powierzchni z biblioteki",
   // Structure types from a table, beam types as lintels (report #135)
   "Beam types": "Typy belek",
   "Older catalogue": "Starszy katalog",

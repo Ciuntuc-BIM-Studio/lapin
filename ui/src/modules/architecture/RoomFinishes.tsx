@@ -7,7 +7,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Layers, Library, Plus, Settings2, Trash2, X } from 'lucide-react';
+import { Layers, Library, PaintBucket, Plus, Settings2, Trash2, X } from 'lucide-react';
 import type { NodeDto } from '../../engine/protocol';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
@@ -18,6 +18,7 @@ import { HatchSwatch } from '../core/HatchSwatch';
 import { hatchOf, withHatch, type FinishHatch, type FinishHatchMode, type HatchPart } from './finishHatch';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { PendingDialog } from '../core/PendingDialog';
+import { openPainter } from './finishPainter';
 
 interface FinishPart { material: string; height: number; thickness?: number | null }
 interface FinishLayer { material: string; thickness: number; parts?: FinishPart[] | null }
@@ -226,6 +227,7 @@ export function RoomFinishesDialog() {
             <div className="row">
               {editing && <span className="muted small">{using === 1 ? 'Laid in 1 room' : `Laid in ${using} rooms`}</span>}
               <span className="grow" />
+              <button type="button" className="btn" title="Paint finishes on the faces of walls, floors and columns, inside and out" onClick={() => { useUi.setState({ dialog: null }); openPainter(); }}><PaintBucket size={12} />Finish painter…</button>
               <button type="button" className="btn" disabled={rooms.length === 0} title={rooms.length ? 'Save, then lay it in the rooms selected' : 'Select rooms first (or use Finish room and click in one)'} onClick={() => void apply()}>
                 {rooms.length ? `Finish ${rooms.length} selected rooms` : 'Finish selected rooms'}</button>
               <button type="button" className="btn primary" onClick={() => void save()}>{editing ? 'Save' : 'Create'}</button>

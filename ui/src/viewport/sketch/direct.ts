@@ -19,8 +19,17 @@ export type DirectTool = 'line' | 'rect' | 'circle' | 'arc' | 'offset' | 'tape';
 /** The plane drawn on: a face's (its pick and outline) or the storey's level (no pick). */
 export interface DirectPlane { frame: WorkFrame; pick?: FacePick; outline?: Vec3[]; storeyId?: string | null; name: string; /** The face's key in the overlay's cache. */ key?: string }
 
+/**
+ * A module drawing with the direct tools for its own ends (the finish painter's splits, forum topic 83): what it does with a
+ * shape done on a face instead of Studio's push/pull, and the query that names the face under the cursor (default
+ * studio.faceAt: a body's flat face; it is given {id, point, normal} and answers {normal, outline}).
+ */
+export interface DirectOwner { store: (p: DirectPlane, o: Exclude<Outcome, { kind: 'none' } | { kind: 'more' }>) => void | Promise<void>; faceQuery?: string }
+
 export interface DirectState {
   tool: DirectTool | null;
+  /** Who the shapes drawn go to; null: Studio (a sketch on the face, the push/pull). */
+  owner?: DirectOwner | null;
   /** The plane under the cursor before the first click; locked by it. */
   plane: DirectPlane | null;
   locked: boolean;
@@ -39,8 +48,8 @@ export interface DirectState {
 const idle = { plane: null, locked: false, pts: [], inferred: null, text: '', lock: null, shiftLock: false, loop: null, tapeEdge: null };
 export const useDirect = create<DirectState>(() => ({ tool: null, ...idle }));
 
-export const startDirect = (tool: DirectTool) => useDirect.setState({ tool, ...idle });
-export const endDirect = () => useDirect.setState({ tool: null, ...idle });
+export const startDirect = (tool: DirectTool, owner: DirectOwner | null = null) => useDirect.setState({ tool, owner, ...idle });
+export const endDirect = () => useDirect.setState({ tool: null, owner: null, ...idle });
 /** The shape in hand dropped, the tool kept (SketchUp's: draw the next one). */
 export const resetDirect = () => useDirect.setState({ ...idle });
 

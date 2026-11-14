@@ -2651,3 +2651,17 @@ polygon.part-plane { fill: var(--accent); fill-opacity: 0.14; stroke: var(--acce
 path.part-flex-ghost { fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-dasharray: 5 3; stroke-linecap: round; }
 .fields .badge.small { font-size: 10px; padding: 0 5px; border: 1px solid var(--rule-strong); border-radius: 8px; color: var(--ink-muted); }
 .graphs-empty .graphs-example-list { left: 50%; transform: translateX(-50%); text-align: left; }
+
+/* The finish painter's panel (forum topic 83): on the left, as the part tree. */
+.sel-card.finish-painter { left: 12px; right: auto; top: 132px; bottom: auto; max-height: calc(100% - 144px); width: 280px; overflow-y: auto; gap: 8px; }
+.finish-painter .finish-painter-tools { gap: 4px; }
+.finish-painter .finish-painter-tools .icon { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; }
+.finish-painter .finish-painter-tools .icon.on { outline: 1px solid var(--accent, #2a6fdb); background: var(--hover, rgba(0, 0, 0, 0.06)); }
+.finish-painter .part-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); margin-bottom: 2px; }
+.finish-painter .part-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.finish-painter .part-list li { display: flex; align-items: center; gap: 8px; justify-content: space-between; flex-wrap: nowrap; }
+.finish-painter .part-list li .link { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+.finish-painter .part-list li > .muted { flex: none; }
+.finish-painter .part-list li.on .link { font-weight: 600; }
+.finish-painter .finish-painter-own { flex-wrap: wrap; gap: 4px; }
+.finish-painter .finish-painter-own .input:first-child { flex: 1; min-width: 0; }

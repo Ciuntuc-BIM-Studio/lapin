@@ -3162,6 +3162,37 @@ export const scenes = [
     },
   },
   {
+    // The finish painter (forum topic 83, docs/plan-finish-painter.md): the facades painted with ETICS, the south one split at
+    // 0.9 m and its plinth clad in stone; the painter's mode with its palette, in 3D.
+    id: 'finish-painter',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      const { walls } = await house(t, { roof: false });
+      const etics = (await t.cmd('architecture.surfaceFinishTypeFromLibrary', { name: 'ETICS EPS 100' })).id;
+      const stone = (await t.cmd('architecture.surfaceFinishTypeFromLibrary', { name: 'Stone cladding 30' })).id;
+      for (const i of [0, 1, 2, 3]) await t.cmd('architecture.paintFinish', { hostId: walls[i], face: 'Face.Right', whole: true, finishType: etics });
+      await t.cmd('architecture.splitFinishFace', { hostId: walls[0], face: 'Face.Right', height: 0.9 });
+      await t.cmd('architecture.splitFinishFace', { hostId: walls[1], face: 'Face.Right', height: 0.9 });
+      await t.cmd('architecture.paintFinish', { hostId: walls[0], point: [6, -0.2, 0.4], normal: [0, -1, 0], finishType: stone });
+      await t.cmd('architecture.paintFinish', { hostId: walls[1], point: [12.2, 2, 0.4], normal: [1, 0, 0], finishType: stone });
+      await t.wait(800);
+      const zones = (await t.nodes()).filter((n) => n.type === 'LapinFinishZone');
+      t.expect(zones.length === 6, `four facades of ETICS and two plinths of stone (${zones.length})`);
+      await open3d(t);
+      await t.tool('architecture.finishPainter');
+      await t.page.waitForSelector('[data-testid=finish-painter]', { timeout: 10_000 });
+      await t.page.locator('[data-testid=finish-painter] [data-palette="ETICS EPS 100"]').click();
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 1.15, pitch: -0.3, distance: 24, target: { x: 6, y: 4, z: 1.2 } }, false));
+      await t.wait(1800);
+      t.expect(await t.page.locator('.scope-bar').count() === 1, 'the painter is an edit mode');
+      await t.shot('finish-painter');
+      await t.page.locator('[data-testid=finish-painter-done]').click();
+      await t.wait(400);
+      t.expect(await t.page.locator('[data-testid=finish-painter]').count() === 0, 'Done leaves the painter');
+    },
+  },
+  {
     // Apartment types (docs/plan-units.md): a flat drawn inside the building's walls made a type, mirrored into the next
     // slot: a change in one reaches the other, each stopping in the building's walls and each with its room's door in the facade.
     id: 'units',

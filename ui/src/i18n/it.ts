@@ -3,6 +3,12 @@
 import type { Language } from './index';
 
 export const IT: Record<string, string> = {
+  // The finish painter (forum topic 83)
+  "Paint with it": "Dipingi con questo",
+  // The finish painter (forum topic 83)
+  "Finish painter…": "Pittore di finiture…", "Paint finishes on the faces of walls, floors and columns, inside and out": "Dipingi finiture sulle facce di muri, solai e pilastri, dentro e fuori",
+  // The finish painter (forum topic 83)
+  "Finish painter": "Pittore di finiture", "Painter": "Pittore", "Brush": "Pennello", "Eyedropper": "Contagocce", "Split by rectangle": "Dividi con rettangolo", "Split by line": "Dividi con linea", "Surface finishes schedule": "Abaco delle finiture di superficie", "Surface finishes schedule made: it is in the project browser, under Schedules.": "Abaco delle finiture di superficie creato: è nel browser di progetto, in Abachi.", "Choose a finish in the palette first.": "Scegli prima una finitura nella tavolozza.", "Nothing is painted there.": "Lì non è dipinto nulla.", "The finish is in the palette now.": "La finitura ora è nella tavolozza.", "Draw the split on a face of a wall, a floor or a column.": "Disegna la divisione su una faccia di un muro, di un solaio o di un pilastro.", "The face is split: paint each part with the brush.": "La faccia è divisa: dipingi ogni parte con il pennello.", "Leave the finish painter (Esc)": "Esci dal pittore di finiture (Esc)", "The brush and Clear take the whole face, not the region under the cursor": "Il pennello e Cancella prendono tutta la faccia, non la regione sotto il cursore", "Whole face": "Faccia intera", "Painting with": "Si dipinge con", "Choose a finish, then click a face": "Scegli una finitura, poi fai clic su una faccia", "Reading the palette…": "Lettura della tavolozza…", "Surface finishes": "Finiture di superficie", "Surface finish": "Finitura di superficie", "Finish zone": "Zona di finitura", "Finish split": "Divisione di finitura", "Paint finish": "Dipingi finitura", "Split face": "Dividi faccia", "Clear finish": "Cancella finitura", "New surface finish": "Nuova finitura di superficie", "Change surface finish": "Modifica finitura di superficie", "Surface finish from the library": "Finitura di superficie dalla libreria",
   // Structure types from a table, beam types as lintels (report #135)
   "Beam types": "Tipi di trave",
   "Older catalogue": "Catalogo precedente",

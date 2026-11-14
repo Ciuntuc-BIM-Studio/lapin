@@ -154,11 +154,12 @@ export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<TH
       const normal = { x: n3.x, y: n3.y, z: n3.z }, at = { x: hit.point.x, y: hit.point.y, z: hit.point.z };
       const id = String(hit.object.userData.nodeId);
       const pick: FacePick = { id, point: [at.x, at.y, at.z], normal: [normal.x, normal.y, normal.z] };
-      const key = faceKey(id, normal, at);
+      const faceQuery = useDirect.getState().owner?.faceQuery ?? 'studio.faceAt';
+      const key = `${faceQuery}|${faceKey(id, normal, at)}`;
       const outline = outlineAt(key, normal, at);
       if (!outline && !asking.has(key) && !flatless.has(key)) {
         asking.add(key);
-        void query<{ normal: number[]; outline: number[][] }>('studio.faceAt', { ...pick })
+        void query<{ normal: number[]; outline: number[][] }>(faceQuery, { ...pick })
           .then((f) => {
             if (f && f.outline.length >= 3) faces.set(key, [...(faces.get(key) ?? []), f.outline.map((q) => ({ x: q[0], y: q[1], z: q[2] }))]);
             else flatless.add(key);
@@ -376,8 +377,10 @@ export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<TH
     const p = s0.plane;
     if (o.kind === 'none') { if (!s0.pts.length || s0.tool !== 'line') return; resetDirect(); return; }
     if (o.kind === 'more') { useDirect.setState({ pts: o.pts, locked: true, text: '', lock: s0.shiftLock ? s0.lock : null }); return; }
+    const owner = s0.owner;
     resetDirect();
     if (!p) return;
+    if (owner) { void owner.store(p, o); return; }
     void store(p, o);
   }
 }
