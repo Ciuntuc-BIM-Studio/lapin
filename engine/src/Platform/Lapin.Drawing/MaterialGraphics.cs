@@ -35,11 +35,12 @@ public static class HatchAlign
 public sealed record ElementHatch(double? Angle, Vec2? Origin);
 
 /// <summary>A material's graphics in one kind of view, and where they came from: its own attributes ("own") or its name ("name").</summary>
-public sealed record ResolvedMaterial(string Name, string? Hatch, double HatchScale, string? Fill, int? HatchPen, bool Membrane, bool DrawJoints, string? Color, string Source, double HatchAngle = 0, string HatchAlign = HatchAlign.View)
+/// <param name="Joins">Whether its elements join others (forum topic 59): off, each keeps its own outline in a drawing, never merged with a neighbour's.</param>
+public sealed record ResolvedMaterial(string Name, string? Hatch, double HatchScale, string? Fill, int? HatchPen, bool Membrane, bool DrawJoints, string? Color, string Source, double HatchAngle = 0, string HatchAlign = HatchAlign.View, bool Joins = true)
 {
     public JsonObject ToJson()
     {
-        var o = new JsonObject { ["name"] = Name, ["hatch"] = Hatch, ["hatchScale"] = HatchScale, ["fill"] = Fill, ["membrane"] = Membrane, ["drawJoints"] = DrawJoints, ["source"] = Source, ["hatchAngle"] = HatchAngle, ["hatchAlign"] = HatchAlign };
+        var o = new JsonObject { ["name"] = Name, ["hatch"] = Hatch, ["hatchScale"] = HatchScale, ["fill"] = Fill, ["membrane"] = Membrane, ["drawJoints"] = DrawJoints, ["source"] = Source, ["hatchAngle"] = HatchAngle, ["hatchAlign"] = HatchAlign, ["joins"] = Joins };
         if (HatchPen is { } p) o["hatchPen"] = p;
         if (Color != null) o["color"] = Color;
         return o;
@@ -238,8 +239,12 @@ public static class MaterialGraphics
         var membrane = material?.Attrs["membrane"] is JsonValue mv && mv.TryGetValue<bool>(out var mb) ? mb : guess?.Membrane ?? false;
         if (membrane) hatch = null;
         var joints = material?.Attrs["drawJoints"] is JsonValue jv && jv.TryGetValue<bool>(out var j) && j;
-        return new ResolvedMaterial(name, hatch, own?.HatchScale ?? 1, fill, own?.HatchPen, membrane, joints, color, hasOwn ? "own" : "name", own?.HatchAngle ?? 0, own?.HatchAlign ?? HatchAlign.View);
+        return new ResolvedMaterial(name, hatch, own?.HatchScale ?? 1, fill, own?.HatchPen, membrane, joints, color, hasOwn ? "own" : "name", own?.HatchAngle ?? 0, own?.HatchAlign ?? HatchAlign.View,
+            JoinsOf(material));
     }
+
+    /// <summary>Whether a material's elements join others (<c>joins</c>, forum topic 59): unless it says no; no material joins.</summary>
+    public static bool JoinsOf(Entity? material) => !(material?.Attrs["joins"] is JsonValue v && v.TryGetValue<bool>(out var j) && !j);
 
     /// <summary>
     /// A hatch as an IFC file describes it, as a pattern of the library: a

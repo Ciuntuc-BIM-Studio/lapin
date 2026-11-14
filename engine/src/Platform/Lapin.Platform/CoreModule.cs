@@ -743,6 +743,14 @@ public static class Materials
         return finishes.Any(n.Contains);
     }
 
+    /// <summary>
+    /// Whether an element joins others (forum topic 59): unless its main material (<see cref="CutOrder.MainMaterial"/>) is one
+    /// that stays out of joins (<c>joins: false</c>, a steel or timber member keeping its shape). Off, it is not joined
+    /// automatically, cuts nothing and is cut by nothing by the cut order, and a drawing keeps its own outline.
+    /// </summary>
+    public static bool Joins(IModelView m, Entity e) =>
+        CutOrder.MainMaterial(e, m) is not { } id || m.Get(id) is not { Class: IfcClass.Material } mat || Lapin.Drawing.MaterialGraphics.JoinsOf(mat);
+
     public static string ColorOf(IModelView m, string? materialId) =>
         materialId != null && m.Get(materialId) is { } mat ? mat.Str("color") ?? DefaultColor(mat.Name) : "#c9ced6";
 

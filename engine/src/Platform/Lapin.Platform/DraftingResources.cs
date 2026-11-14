@@ -78,6 +78,22 @@ public static class DraftingResources
         _ => false,
     };
 
+    /// <summary>
+    /// A material that stops joining (forum topic 59): the walls, beams and strip footings mainly of it lose their joins, in the
+    /// same step; one that joins again: they join what they meet, as drawing them does.
+    /// </summary>
+    static void Rejoin(ICommandContext ctx, string materialId, bool joins)
+    {
+        if (ctx.Services.Get<IPathElements>() is not { } paths) return;
+        var elements = ctx.Model.Entities.Where(e => paths.IsPath(e.Class) && e.Attrs["start"] is JsonArray && e.Attrs["end"] is JsonArray && CutOrder.MainMaterial(e, ctx.Model) == materialId).ToList();
+        foreach (var e in elements)
+        {
+            if (!joins) { foreach (var r in Joins.Of(ctx.Model, e.Id).ToList()) ctx.RemoveRelation(r.Id); continue; }
+            try { Joins.Auto(ctx, paths, e.Id); }
+            catch (CommandException) { }
+        }
+    }
+
     /// <summary>A material with a command's changes (material.update's fields), checked.</summary>
     static Entity Updated(ICommandContext ctx, Entity mat, JsonObject a)
     {
@@ -121,6 +137,11 @@ public static class DraftingResources
             {
                 if (a[flag] is JsonValue fv && fv.TryGetValue<bool>(out var b)) attrs[flag] = b; else attrs.Remove(flag);
             }
+        // Whether its elements join others (forum topic 59): kept only when they do not, the default being that they do.
+        if (a.ContainsKey("joins"))
+        {
+            if (a["joins"] is JsonValue jv && jv.TryGetValue<bool>(out var joins) && !joins) attrs["joins"] = false; else attrs.Remove("joins");
+        }
         // What it says of itself (docs/plan-buildup-tags.md): its description, its parameters, how it is measured and bought.
         MaterialFields.Apply(attrs, a);
         foreach (var kind in MaterialGraphics.Kinds)
@@ -284,6 +305,7 @@ public static class DraftingResources
             var renamed = ((string?)a["name"])?.Trim() is { Length: > 0 } nn && nn != mat.Name ? nn : null;
             var updated = Updated(ctx, mat, a);
             ctx.Replace(updated);
+            if (MaterialGraphics.JoinsOf(mat) != MaterialGraphics.JoinsOf(updated)) Rejoin(ctx, updated.Id, MaterialGraphics.JoinsOf(updated));
             // A material named elsewhere by its name (a door's frame, a sill, a zone) follows the new name.
             if (renamed != null) Rename(ctx, mat.Name, renamed, mat.Id);
             return null;

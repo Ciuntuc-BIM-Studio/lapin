@@ -74,6 +74,7 @@ The IFC export names each material's surface style after it too, with its transp
 - **Category**, for example finish, insulation or structure. The view styles use it to leave the finishes out of a structural view.
 - **Membrane** draws a thin layer as a dashed line instead of a band.
 - **Draw joints.** By default, a material runs on from one element into the next without a line, like two walls in line or render over two storeys. Tick it to draw the joint.
+- **Joins with other elements.** On by default: elements of this material join where they meet others. Walls join at their corners and beams into columns, the cut order lets one element cut another (a column through a beam, a beam into a wall's head), and a drawing merges the cuts of touching elements of the same material into one area. Untick it for members that must keep their shape, such as steel girders or timber trusses. Their elements are then not joined automatically, nothing cuts them and they cut nothing, and plans and sections draw each one's own outline. A beam stops at the faces of the columns its ends stand in, but runs whole through a column it passes. Unticking it takes off the joins of the walls, beams and strip footings mainly of this material; ticking it again joins them to what they meet. You can undo either in one step. The library's steel and timber materials join by default, as before.
 
 ## Your own image on a material
 

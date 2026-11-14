@@ -1008,7 +1008,7 @@ export const RO: Record<string, string> = {
   'Open a project from a file on this computer.': 'Deschide un proiect dintr-un fișier de pe acest calculator.',
   // Materials, levels and help, as the user guide names them
   'Own image': 'Imagine proprie', 'Import image…': 'Importă o imagine…', 'Replace…': 'Înlocuiește…', 'Import .pat': 'Importă .pat', 'My patterns': 'Modelele mele',
-  'Add to this project': 'Adaugă în acest proiect', 'Draw joints': 'Desenează rosturile', 'Colour (3D)': 'Culoare (3D)', 'Faces (3D)': 'Fețe (3D)',
+  'Add to this project': 'Adaugă în acest proiect', 'Draw joints': 'Desenează rosturile', 'Joins with other elements': 'Se îmbină cu alte elemente', 'On (the default): its elements join where they meet others (walls at a corner, a beam into a column, one hatch where one material goes on). Off: they keep their shape (steel, timber): not joined, not cut by the cut order nor cutting others, their own outline drawn.': 'Bifat (implicit): elementele lui se îmbină unde întâlnesc altele (pereți la colț, o grindă într-un stâlp, o singură hașură unde un material continuă). Debifat: își păstrează forma (oțel, lemn): nu se îmbină, nu sunt tăiate după ordinea de tăiere și nu taie altele, li se desenează conturul propriu.', 'Colour (3D)': 'Culoare (3D)', 'Faces (3D)': 'Fețe (3D)',
   'Ends, cut across (3D)': 'Capete, tăiate transversal (3D)', 'Top and bottom (3D)': 'Sus și jos (3D)', 'Zones in height': 'Zone pe înălțime',
   'Base level': 'Cota de bază', 'Top level': 'Cota superioară', 'No underlay': 'Fără fundal', 'Ask Lapin…': 'Întreabă Lapin…',
   'Own image (3D, exports)': 'Imagine proprie (3D, exporturi)', 'Membrane (a dashed line, not a band)': 'Membrană (linie întreruptă, nu bandă)', 'Look': 'Aspect',

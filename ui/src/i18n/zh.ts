@@ -1000,7 +1000,7 @@ export const ZH: Record<string, string> = {
   'Open a project from a file on this computer.': '从此计算机上的文件打开项目。',
   // Materials, levels and help, as the user guide names them
   'Own image': '自定义图像', 'Import image…': '导入图像…', 'Replace…': '替换…', 'Import .pat': '导入 .pat', 'My patterns': '我的图案',
-  'Add to this project': '添加到本项目', 'Draw joints': '绘制缝线', 'Colour (3D)': '颜色（三维）', 'Faces (3D)': '面（三维）',
+  'Add to this project': '添加到本项目', 'Draw joints': '绘制缝线', 'Joins with other elements': '与其他构件连接', 'On (the default): its elements join where they meet others (walls at a corner, a beam into a column, one hatch where one material goes on). Off: they keep their shape (steel, timber): not joined, not cut by the cut order nor cutting others, their own outline drawn.': '开启（默认）：其构件在与其他构件相交处连接（转角处的墙、伸入柱中的梁、同一材料延续处只有一种填充）。关闭：构件保持自身形状（钢、木）：不连接，既不按剪切顺序被剪切也不剪切其他构件，绘制其自身轮廓。', 'Colour (3D)': '颜色（三维）', 'Faces (3D)': '面（三维）',
   'Ends, cut across (3D)': '端面，横向剖切（三维）', 'Top and bottom (3D)': '顶面和底面（三维）', 'Zones in height': '高度分区',
   'Base level': '底部标高', 'Top level': '顶部标高', 'No underlay': '无底图', 'Ask Lapin…': '询问 Lapin…',
   'Own image (3D, exports)': '自定义图像（三维、导出）', 'Membrane (a dashed line, not a band)': '膜层（虚线，而非带状）', 'Look': '外观',

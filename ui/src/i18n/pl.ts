@@ -1000,7 +1000,7 @@ export const PL: Record<string, string> = {
   'Open a project from a file on this computer.': 'Otwórz projekt z pliku na tym komputerze.',
   // Materials, levels and help, as the user guide names them
   'Own image': 'Własny obraz', 'Import image…': 'Importuj obraz…', 'Replace…': 'Zastąp…', 'Import .pat': 'Importuj .pat', 'My patterns': 'Moje wzory',
-  'Add to this project': 'Dodaj do tego projektu', 'Draw joints': 'Rysuj spoiny', 'Colour (3D)': 'Kolor (3D)', 'Faces (3D)': 'Lica (3D)',
+  'Add to this project': 'Dodaj do tego projektu', 'Draw joints': 'Rysuj spoiny', 'Joins with other elements': 'Łączy się z innymi elementami', 'On (the default): its elements join where they meet others (walls at a corner, a beam into a column, one hatch where one material goes on). Off: they keep their shape (steel, timber): not joined, not cut by the cut order nor cutting others, their own outline drawn.': 'Włączone (domyślnie): jego elementy łączą się tam, gdzie spotykają inne (ściany w narożniku, belka w słupie, jedno kreskowanie tam, gdzie materiał przechodzi dalej). Wyłączone: zachowują swój kształt (stal, drewno): nie są łączone, nie są przycinane według kolejności cięcia ani nie przycinają innych, rysowane z własnym konturem.', 'Colour (3D)': 'Kolor (3D)', 'Faces (3D)': 'Lica (3D)',
   'Ends, cut across (3D)': 'Końce, cięte w poprzek (3D)', 'Top and bottom (3D)': 'Góra i dół (3D)', 'Zones in height': 'Strefy na wysokości',
   'Base level': 'Poziom bazowy', 'Top level': 'Poziom górny', 'No underlay': 'Bez podkładu', 'Ask Lapin…': 'Zapytaj Lapina…',
   'Own image (3D, exports)': 'Własny obraz (3D, eksporty)', 'Membrane (a dashed line, not a band)': 'Membrana (linia przerywana, nie pas)', 'Look': 'Wygląd',

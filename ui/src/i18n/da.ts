@@ -1002,7 +1002,7 @@ export const DA: Record<string, string> = {
   'Open a project from a file on this computer.': 'Åbn et projekt fra en fil på denne computer.',
   // Materials, levels and help, as the user guide names them
   'Own image': 'Eget billede', 'Import image…': 'Importér billede…', 'Replace…': 'Erstat…', 'Import .pat': 'Importér .pat', 'My patterns': 'Mine mønstre',
-  'Add to this project': 'Føj til dette projekt', 'Draw joints': 'Tegn fuger', 'Colour (3D)': 'Farve (3D)', 'Faces (3D)': 'Flader (3D)',
+  'Add to this project': 'Føj til dette projekt', 'Draw joints': 'Tegn fuger', 'Joins with other elements': 'Samles med andre elementer', 'On (the default): its elements join where they meet others (walls at a corner, a beam into a column, one hatch where one material goes on). Off: they keep their shape (steel, timber): not joined, not cut by the cut order nor cutting others, their own outline drawn.': 'Til (standard): dets elementer samles, hvor de møder andre (vægge i et hjørne, en bjælke i en søjle, én skravering hvor et materiale fortsætter). Fra: de beholder deres form (stål, træ): ikke samlet, hverken skåret af skærerækkefølgen eller skærende andre, tegnet med deres egen kontur.', 'Colour (3D)': 'Farve (3D)', 'Faces (3D)': 'Flader (3D)',
   'Ends, cut across (3D)': 'Ender, skåret på tværs (3D)', 'Top and bottom (3D)': 'Top og bund (3D)', 'Zones in height': 'Zoner i højden',
   'Base level': 'Basisniveau', 'Top level': 'Topniveau', 'No underlay': 'Intet underlag', 'Ask Lapin…': 'Spørg Lapin…',
   'Own image (3D, exports)': 'Eget billede (3D, eksport)', 'Membrane (a dashed line, not a band)': 'Membran (en stiplet linje, ikke et bånd)', 'Look': 'Udseende',

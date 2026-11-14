@@ -177,6 +177,9 @@ public static class Beams
         var (s0, s1) = (0.0, length);
         if (merged.Count > 0 && merged[0].In <= 1e-6) s0 = merged[0].Out;
         if (merged.Count > 0 && merged[^1].Out >= length - 1e-6) s1 = merged[^1].In;
+        // A beam of a material that stays out of joins (forum topic 59, a steel girder) runs whole through the columns it passes,
+        // as nothing cuts it; it still stops at the faces of those its ends stand in.
+        if (!Materials.Joins(m, beam)) merged = [.. merged.Where(h => h.In <= 1e-6 || h.Out >= length - 1e-6)];
         return new BeamSpan(c, s0, Math.Max(s0, s1), merged);
     }
 

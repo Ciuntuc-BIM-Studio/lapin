@@ -368,6 +368,7 @@ public static class Joins
     /// <param name="skip">Elements left out (what moved or was copied with it keeps its joins among them as they were, decision 531).</param>
     /// <param name="thickness">Each element's thickness as joins see it, kept across the calls of one command (null: worked out each call).</param>
     /// <remarks>
+    /// An element whose main material stays out of joins (<see cref="Materials.Joins"/>, forum topic 59) neither joins nor is joined.
     /// Each end's <see cref="AutoKey"/> is kept (decision 546): an end that does not join automatically is not joined, nor is
     /// another's end brought to it; an element neither of whose ends does joins nothing, and nothing joins it along its run but
     /// an end stopping on it (it is left whole, as a T's through element is).
@@ -376,7 +377,8 @@ public static class Joins
         Dictionary<string, double>? thickness = null)
     {
         var m = edit.Model;
-        if (m.Get(id) is not { } e || !paths.IsPath(e.Class) || !AutoAny(e)) return;
+        // An element of a material that stays out of joins (forum topic 59) joins nothing automatically, nor is joined.
+        if (m.Get(id) is not { } e || !paths.IsPath(e.Class) || !AutoAny(e) || !Materials.Joins(m, e)) return;
         var storey = Spatial.StoreyOf(m, id);
         // Only those near enough to meet are tried (a move of hundreds of walls tried each against the whole storey, decision 531):
         // two meet only within twice the thicker's thickness of each other's ends (WallJoins.Compute); the margin covers an end a join moves first.
@@ -387,7 +389,7 @@ public static class Joins
         bool Near(Entity o) => !straight || PathCurve.Of(o).IsArc || SegmentsDistance(s0, s1, Start(o), End(o)) <= 6 * Math.Max(Thick(e), Thick(o)) + 0.05;
         var others = (storey == null ? m.OfClass(e.Class) : m.RelatedOf(storey.Id, IfcClass.RelContainedInSpatialStructure))
             .Where(o => o.Class == e.Class && o.Id != id && skip?.Contains(o.Id) != true && o.Attrs["start"] is JsonArray && o.Attrs["end"] is JsonArray
-                && Near(o) && Between(m, id, o.Id) == null).ToList();
+                && Near(o) && Between(m, id, o.Id) == null && Materials.Joins(m, o)).ToList();
         foreach (var end in new[] { 0, 1 })
         {
             e = m.Get(id)!;

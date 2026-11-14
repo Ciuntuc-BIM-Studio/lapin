@@ -986,7 +986,7 @@ export const LO: Record<string, string> = {
   'Open a project from a file on this computer.': 'ເປີດໂຄງການຈາກຟາຍໃນຄອມພິວເຕີເຄື່ອງນີ້.',
   // Materials, levels and help, as the user guide names them
   'Own image': 'ຮູບພາບຂອງຕົນເອງ', 'Import image…': 'ນຳເຂົ້າຮູບພາບ…', 'Replace…': 'ປ່ຽນແທນ…', 'Import .pat': 'ນຳເຂົ້າ .pat', 'My patterns': 'ລວດລາຍຂອງຂ້ອຍ',
-  'Add to this project': 'ເພີ່ມໃສ່ໂຄງການນີ້', 'Draw joints': 'ແຕ້ມຮອຍຕໍ່', 'Colour (3D)': 'ສີ (3D)', 'Faces (3D)': 'ໜ້າຜິວ (3D)',
+  'Add to this project': 'ເພີ່ມໃສ່ໂຄງການນີ້', 'Draw joints': 'ແຕ້ມຮອຍຕໍ່', 'Joins with other elements': 'ເຊື່ອມກັບອົງປະກອບອື່ນ', 'On (the default): its elements join where they meet others (walls at a corner, a beam into a column, one hatch where one material goes on). Off: they keep their shape (steel, timber): not joined, not cut by the cut order nor cutting others, their own outline drawn.': 'ເປີດ (ຄ່າເລີ່ມຕົ້ນ): ອົງປະກອບຂອງມັນເຊື່ອມກັນບ່ອນທີ່ພົບກັບອັນອື່ນ (ຝາຢູ່ມຸມ, ຄານເຂົ້າໃນເສົາ, ລາຍຂີດອັນດຽວບ່ອນວັດສະດຸຕໍ່ກັນ). ປິດ: ພວກມັນຮັກສາຮູບຮ່າງຂອງຕົນ (ເຫຼັກ, ໄມ້): ບໍ່ເຊື່ອມ, ບໍ່ຖືກຕັດຕາມລຳດັບການຕັດ ແລະ ບໍ່ຕັດອັນອື່ນ, ແຕ້ມເສັ້ນຂອບຂອງຕົນເອງ.', 'Colour (3D)': 'ສີ (3D)', 'Faces (3D)': 'ໜ້າຜິວ (3D)',
   'Ends, cut across (3D)': 'ສົ້ນຕັດຂວາງ (3D)', 'Top and bottom (3D)': 'ດ້ານເທິງ ແລະ ລຸ່ມ (3D)', 'Zones in height': 'ເຂດຕາມລວງສູງ',
   'Base level': 'ລະດັບພື້ນຖານ', 'Top level': 'ລະດັບສູງສຸດ', 'No underlay': 'ບໍ່ມີຮູບພື້ນຫຼັງ', 'Ask Lapin…': 'ຖາມ Lapin…',
   'Own image (3D, exports)': 'ຮູບພາບຂອງຕົນເອງ (3D, ສົ່ງອອກ)', 'Membrane (a dashed line, not a band)': 'ແຜ່ນກັນຊຶມ (ເສັ້ນຂາດ, ບໍ່ແມ່ນແຖບ)', 'Look': 'ຮູບລັກສະນະ',

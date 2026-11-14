@@ -1002,7 +1002,7 @@ export const ES: Record<string, string> = {
   'Open a project from a file on this computer.': 'Abrir un proyecto desde un archivo de este ordenador.',
   // Materials, levels and help, as the user guide names them
   'Own image': 'Imagen propia', 'Import image…': 'Importar imagen…', 'Replace…': 'Reemplazar…', 'Import .pat': 'Importar .pat', 'My patterns': 'Mis patrones',
-  'Add to this project': 'Añadir a este proyecto', 'Draw joints': 'Dibujar juntas', 'Colour (3D)': 'Color (3D)', 'Faces (3D)': 'Caras (3D)',
+  'Add to this project': 'Añadir a este proyecto', 'Draw joints': 'Dibujar juntas', 'Joins with other elements': 'Se une con otros elementos', 'On (the default): its elements join where they meet others (walls at a corner, a beam into a column, one hatch where one material goes on). Off: they keep their shape (steel, timber): not joined, not cut by the cut order nor cutting others, their own outline drawn.': 'Activado (por defecto): sus elementos se unen donde encuentran otros (muros en esquina, una viga en un pilar, un solo rayado donde un material continúa). Desactivado: conservan su forma (acero, madera): sin unir, sin ser cortados por el orden de corte ni cortar a otros, dibujados con su propio contorno.', 'Colour (3D)': 'Color (3D)', 'Faces (3D)': 'Caras (3D)',
   'Ends, cut across (3D)': 'Extremos, cortados transversalmente (3D)', 'Top and bottom (3D)': 'Superior e inferior (3D)', 'Zones in height': 'Zonas en altura',
   'Base level': 'Nivel de base', 'Top level': 'Nivel superior', 'No underlay': 'Sin calco', 'Ask Lapin…': 'Preguntar a Lapin…',
   'Own image (3D, exports)': 'Imagen propia (3D, exportaciones)', 'Membrane (a dashed line, not a band)': 'Membrana (una línea discontinua, no una banda)', 'Look': 'Aspecto',
