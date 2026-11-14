@@ -28,6 +28,16 @@ Orice latură a unei plăci, a unui gol în placă sau a unui tavan poate fi cur
 
 Placa e construită de-a lungul arcelor, nicio coardă mai departe de 1 mm de ele, în 3D, planuri și secțiuni; aria și perimetrul ei se măsoară pe arcele adevărate. Un strat care trece de o latură curbă (vezi [Prelungirile straturilor](walls.md#layer-extents)) urmează arcul. Și un gol poate avea laturi curbe, iar o placă curbă poate avea goluri. În IFC placa își poartă conturul cu arcele adevărate ca amprentă (un IfcIndexedPolyCurve cu segmente de arc), pe lângă corpul ei. Acoperișurile păstrează laturi drepte, pentru că regulile laturilor unui acoperiș (streașină, fronton) se dau pe fiecare latură dreaptă.
 
+#### Editează schița
+
+Pentru mai mult decât un colț sau un arc, dă clic dreapta pe placa selectată (sau pe golul în placă, sau pe tavan) și alege **Editează schița** (și **Studio → Editează schița**). Conturul ei se deschide ca schiță pe un plan al ei, câte o linie sau un arc pe latură, cu colțurile ținute împreună, iar placa însăși e ascunsă acolo; o bară deasupra planului spune a cui e schița. Desenează și schimbă cu fila **Desen** (Linie, Arc, Racordare, Taie, Prelungește, Paralelă…), constrânge și cotează cu **Studio → Constrângeri** (vezi [Constrângerile schiței](sketch-constraints.md)): schimbi o cotă și conturul o urmează. **Termină schița** o scrie înapoi în placă într-un singur pas de anulare, placa păstrându-și identitatea (GlobalId-ul); **Renunță** lasă placa așa cum era. Schița trebuie să fie un singur contur închis (laturile cap la cap, sau un cerc singur); altfel Termină spune ce e deschis.
+
+![Conturul unei plăci editat ca schiță: o racordare și o cotă](shots/floor-sketch-edit.webp)
+
+Schița, cu constrângerile și cotele ei, rămâne pe placă (merge în IFC cu intenția de proiectare a plăcii, în Lapin_Intent), așa că **Editează schița** o redeschide cum ai lăsat-o. Dacă între timp conturul a fost schimbat din mânere, schița pornește din nou de la contur, fără constrângeri. O placă recunoscută dintr-un fișier IFC primește o schiță doar când o editezi; una păstrată ca referință nu se editează așa.
+
+![Placa după Termină schița](shots/floor-sketch-done.webp)
+
 O placă desenată în afara pereților, în fața unei uși, e o terasă. Pentru treptele până la ea, vezi [Scări](stairs.md).
 
 Un strat al plăcii poate și să treacă de contur, ori să se oprească înaintea lui, pe tot conturul sau la o latură, scris în proprietățile ei sau tras în plan ori în secțiune cu **Editează straturile**, iar un tip de placă le poate da plăcilor lui prelungirile: vezi [Prelungirile straturilor](walls.md#prelungirile-straturilor). Acoperișurile nu au încă un set de straturi (învelitoarea, placa și șarpanta lor sunt părți proprii), deci nu au prelungiri de straturi.

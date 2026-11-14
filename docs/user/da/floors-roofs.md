@@ -24,6 +24,16 @@ Enhver kant af et dæk, en dækåbning eller et loft kan være buet. Højreklik 
 
 Dækket bygges langs sine buer, ingen korde mere end 1 mm fra dem, i 3D, planer og snit; dets areal og omkreds måles på de sande buer. Et lag, der går forbi en buet kant (se [Lagudstrækninger](walls.md#layer-extents)), følger buen. En åbning kan også have buede kanter, og et buet dæk kan have åbninger. I IFC bærer dækket sit omrids med de sande buer som fodaftryk (en IfcIndexedPolyCurve med buesegmenter) ved siden af sit legeme. Tage beholder lige kanter, fordi et tags kantregler (tagfod, gavl) sættes pr. lige kant.
 
+#### Redigér skitse
+
+For mere end et hjørne eller en bue: højreklik på det markerede dæk (eller dækåbning eller loft) og vælg **Redigér skitse** (også **Studio → Rediger skitse**). Omridset åbner som en skitse på sin egen plan, én linje eller bue pr. kant, hjørnerne holdt sammen, og selve dækket skjult der; en bjælke over planen siger, hvis skitse det er. Tegn og ret med fanen **Tegning** (Linje, Bue, Afrunding, Trim, Forlæng, Forskyd…), og bind og målsæt med **Studio → Geometriske bånd** (se [Skitsebindinger](sketch-constraints.md)): ændr et mål, og omridset følger med. **Afslut skitse** skriver den tilbage til dækket i ét fortryd-trin, og dækket beholder sin identitet (sin GlobalId); **Annuller** lader dækket være som før. Skitsen skal være ét lukket omrids (kanterne ende mod ende, eller en cirkel alene); ellers siger Afslut, hvad der er åbent.
+
+![Et dæks omrids redigeret som skitse: en afrunding og et mål](shots/floor-sketch-edit.webp)
+
+Skitsen med sine bindinger og mål bliver på dækket (den går til IFC med dækkets designhensigt i Lapin_Intent), så **Redigér skitse** åbner den igen, som du forlod den. Er omridset siden ændret med grebene, starter skitsen forfra fra omridset, uden sine bindinger. Et dæk genkendt fra en IFC-fil får kun en skitse, når du redigerer det; et dæk holdt som reference redigeres ikke sådan.
+
+![Dækket efter Afslut skitse](shots/floor-sketch-done.webp)
+
 Et dæk tegnet uden for væggene, foran en dør, er en trappeafsats. Om trinene op til den, se [Trapper](stairs.md).
 
 Et lag i et dæk kan også gå forbi dets omrids eller stoppe før det, hele vejen rundt eller ved én kant, skrevet i dets egenskaber eller trukket i plan eller snit med **Rediger lag**, og en dæktype kan give sine dæk deres forlængelser: se [Lagforlængelser](walls.md#lagforl-ngelser). Tage har endnu ingen lagopbygning (deres tagdækning, plade og konstruktion er egne dele), så de har ingen lagforlængelser.

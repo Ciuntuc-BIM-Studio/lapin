@@ -74,6 +74,19 @@ export function similarItems(): MenuItem[] {
 }
 
 /** Edit type: the types dialog of the selected element's type (the same one Edit types… opens), the type made the current one. */
+/**
+ * "Edit sketch" on a floor, a floor opening or a ceiling (forum topic 97, stage 3): its outline opened as a sketch, when the
+ * product has Studio's Edit sketch.
+ */
+export function editSketchItems(): MenuItem[] {
+  const { selected } = useUi.getState();
+  if (selected.length !== 1) return [];
+  const n = useSession.getState().nodes.get(selected[0]);
+  const outline = !!n && !n.props.reference && Array.isArray(n.props.contour) && (n.type === 'IfcSlab' || n.type === 'LapinCeiling' || (n.type === 'IfcOpeningElement' && !n.props.stairId));
+  const tool = outline ? allTools().find((t) => t.id === 'studio.editSketch') : undefined;
+  return tool?.run ? [{ label: 'Edit sketch', onSelect: () => tool.run!() }] : [];
+}
+
 export function editTypeItems(): MenuItem[] {
   const { selected } = useUi.getState();
   if (selected.length !== 1) return [];
@@ -102,7 +115,7 @@ export function selectionItems(): MenuItem[] {
     { label: 'Move to storey…', onSelect: () => useUi.setState({ dialog: 'moveToStorey' }) },
   ] : [];
   const shop: MenuItem[] = drawableElement(selected, useSession.getState().nodes) ? [{ label: 'Make drawing…', onSelect: () => useUi.setState({ dialog: 'shopDrawing' }) }] : [];
-  return [...groupItems(), ...storeys, ...shop, ...similarItems(), ...editTypeItems(), ...historyItems()];
+  return [...groupItems(), ...storeys, ...shop, ...similarItems(), ...editTypeItems(), ...editSketchItems(), ...historyItems()];
 }
 
 /** The 3D view's temporary Hide and Isolate (HH, HI) for the selection, and Show all (HR) while something is hidden. */

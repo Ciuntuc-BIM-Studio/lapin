@@ -28,6 +28,16 @@ Any edge of a floor, a floor opening or a ceiling can be curved. Right-click the
 
 The floor is built along its arcs, no chord more than 1 mm off them, in 3D, plans and sections; its area and perimeter are measured on the true arcs. A layer that goes past a curved edge (see [Layer extents](walls.md#layer-extents)) follows the arc. An opening can have curved edges too, and a curved floor can have openings. In IFC the floor carries its outline with its true arcs as its footprint (an IfcIndexedPolyCurve with arc segments), beside its body. Roofs keep straight edges, because a roof's edge rules (eave, gable) are set per straight edge.
 
+#### Edit sketch
+
+For more than a corner or an arc, right-click the selected floor (or floor opening, or ceiling) and choose **Edit sketch** (also **Studio → Edit sketch**). Its outline opens as a sketch on a plan of its own, one line or arc per edge, its corners held together, the floor itself hidden there; a bar over the plan says whose sketch it is. Draw and change it with the **Draft** tab (Line, Arc, Fillet, Trim, Extend, Offset…), and constrain and dimension it with **Studio → Constraints** (see [Sketch constraints](sketch-constraints.md)): change a dimension and the outline follows. **Finish sketch** writes it back to the floor in one undo step, the floor keeping its identity (its GlobalId); **Cancel** leaves the floor as it was. The sketch must be one closed outline (its edges end to end, or a circle alone); otherwise Finish says what is open.
+
+![A floor's outline edited as a sketch: a fillet and a dimension](shots/floor-sketch-edit.webp)
+
+The sketch, with its constraints and dimensions, stays on the floor (it goes to IFC with the floor's design intent, in Lapin_Intent), so **Edit sketch** opens it again as you left it. If the outline was changed since by its grips, the sketch starts again from the outline as it is, without its constraints. A floor recognised from an IFC file gets a sketch only when you edit it; one kept as a reference is not edited this way.
+
+![The floor after Finish sketch](shots/floor-sketch-done.webp)
+
 A floor drawn outside the walls, in front of a door, is a porch. For the steps up to it, see [Stairs](stairs.md).
 
 A floor's layer can also go on past its outline, or stop short of it, all round or at one edge, typed in its properties or dragged in a plan or a section with **Edit layers**, and a floor type can give its floors their extents: see [Layer extents](walls.md#layer-extents). Roofs have no layer set yet (their covering, deck and framing are parts of their own), so they have no layer extents.

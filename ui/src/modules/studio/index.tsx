@@ -31,6 +31,7 @@ import { PartSketch3D } from './PartSketchEdit';
 import { ConstraintOverlay } from './ConstraintOverlay';
 import { SketchChip } from './SketchChip';
 import { constraintTool, DIMENSIONS, GEOMETRIC } from './constraintTools';
+import { OutlineSketchBar } from './outlineSketch';
 import { COMMAND, DEFAULT_JUSTIFY, JUSTIFY, frontViewId, makesNative, nativeArgs, shapeFits, solidArgs, threePoints, viewOf, type ThickChoice, type ThickOp } from './thick';
 import { cadLog, registerCommand, startCommand, type Step } from '../../viewport/cad/session';
 import { useCamera, type Vec3 } from '../../viewport/camera';
@@ -823,7 +824,7 @@ const studio: LapinModule = {
     // Any element some solid cuts, unites or intersects: those solids listed, selectable even when never drawn.
     { id: 'studioOperations', label: 'Boolean', classes: ['*'], shows: hasTools, component: OperationsCard },
   ],
-  overlays: [PartTreePanel, PartParamsPanel, SketchChip],
+  overlays: [PartTreePanel, PartParamsPanel, SketchChip, OutlineSketchBar],
   planOverlays: [ConstraintOverlay],
   drawingOverlays: [ConstraintOverlay],
   overlays3d: [PartPlane3D, PartFlex3D, PartSketch3D],

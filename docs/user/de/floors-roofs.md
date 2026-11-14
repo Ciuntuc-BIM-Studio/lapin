@@ -24,6 +24,16 @@ Jede Kante einer Decke, einer Deckenöffnung oder einer abgehängten Decke kann 
 
 Die Decke wird entlang ihrer Bögen gebaut, keine Sehne mehr als 1 mm davon entfernt, in 3D, Grundrissen und Schnitten; ihre Fläche und ihr Umfang werden an den wahren Bögen gemessen. Eine Schicht, die über eine gebogene Kante hinausgeht (siehe [Schichtausdehnungen](walls.md#layer-extents)), folgt dem Bogen. Auch eine Öffnung kann gebogene Kanten haben, und eine gebogene Decke kann Öffnungen haben. In IFC trägt die Decke ihren Umriss mit den wahren Bögen als Grundriss-Darstellung (eine IfcIndexedPolyCurve mit Bogensegmenten) neben ihrem Körper. Dächer behalten gerade Kanten, weil die Kantenregeln eines Dachs (Traufe, Giebel) je gerader Kante gesetzt werden.
 
+#### Skizze bearbeiten
+
+Für mehr als eine Ecke oder einen Bogen: Klicken Sie mit der rechten Maustaste auf die ausgewählte Decke (oder Deckenöffnung oder abgehängte Decke) und wählen Sie **Skizze bearbeiten** (auch **Studio → Skizze bearbeiten**). Ihr Umriss öffnet sich als Skizze auf einem eigenen Grundriss, eine Linie oder ein Bogen je Kante, die Ecken zusammengehalten, die Decke selbst dort ausgeblendet; eine Leiste über dem Grundriss sagt, wessen Skizze es ist. Zeichnen und ändern Sie mit der Registerkarte **Zeichnen** (Linie, Bogen, Abrunden, Stutzen, Dehnen, Versatz…) und bestimmen und bemaßen Sie mit **Studio → Zwangsbedingungen** (siehe [Skizzen-Zwangsbedingungen](sketch-constraints.md)): Ändern Sie ein Maß, folgt der Umriss. **Skizze beenden** schreibt sie in einem Rückgängig-Schritt in die Decke zurück, die ihre Identität (ihre GlobalId) behält; **Abbrechen** lässt die Decke, wie sie war. Die Skizze muss ein geschlossener Umriss sein (Kanten Ende an Ende oder ein Kreis allein); sonst sagt Beenden, was offen ist.
+
+![Der Umriss einer Decke als Skizze bearbeitet: eine Abrundung und ein Maß](shots/floor-sketch-edit.webp)
+
+Die Skizze mit ihren Zwangsbedingungen und Maßen bleibt an der Decke (sie geht mit der Entwurfsabsicht der Decke in Lapin_Intent nach IFC), sodass **Skizze bearbeiten** sie wieder so öffnet, wie Sie sie verlassen haben. Wurde der Umriss seitdem mit den Griffen geändert, beginnt die Skizze neu am Umriss, ohne ihre Zwangsbedingungen. Eine aus einer IFC-Datei erkannte Decke erhält eine Skizze erst, wenn Sie sie bearbeiten; eine als Referenz behaltene wird so nicht bearbeitet.
+
+![Die Decke nach Skizze beenden](shots/floor-sketch-done.webp)
+
 Eine außerhalb der Wände, vor einer Tür gezeichnete Decke ist ein Podest. Für die Stufen dort hinauf siehe [Treppen](stairs.md).
 
 Eine Schicht einer Decke kann auch über ihren Umriss hinausgehen oder davor enden, rundum oder an einer Kante, in ihren Eigenschaften eingetippt oder im Grundriss oder Schnitt mit **Schichten bearbeiten** gezogen, und ein Deckentyp kann seinen Decken ihre Verlängerungen geben: siehe [Schichtverlängerungen](walls.md#schichtverlangerungen). Dächer haben noch keinen Schichtaufbau (Eindeckung, Platte und Tragwerk sind eigene Teile), daher keine Schichtverlängerungen.

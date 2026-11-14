@@ -124,6 +124,7 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
         r.Service<IIfcElementSets>(partIfc);
         // Sketch constraints (stage C0): kept per sketch, carried through the drafting commands that replace shapes.
         SketchConstraints.Register(r);
+        OutlineSketches.Register(r);
         r.Service<IProjectUpgrade>(new FamilyPartUpgrade());
         // A box's walls with its bottom and top: an assembly (IfcElementAssembly) of separate elements, without a body of its own.
         r.Class(new(Boxes.AssemblyClass, "Assembly", [], "#b9b2a6"));

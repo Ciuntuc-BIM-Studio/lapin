@@ -24,6 +24,16 @@ Toute arête d'une dalle, d'une trémie ou d'un faux plafond peut être courbe. 
 
 La dalle est construite le long de ses arcs, aucune corde à plus de 1 mm d'eux, en 3D, en plan et en coupe ; son aire et son périmètre sont mesurés sur les arcs vrais. Une couche qui dépasse une arête courbe (voir [Extensions de couche](walls.md#layer-extents)) suit l'arc. Une trémie peut aussi avoir des arêtes courbes, et une dalle courbe peut avoir des trémies. En IFC la dalle porte son contour avec les arcs vrais comme empreinte (une IfcIndexedPolyCurve à segments d'arc), à côté de son corps. Les toitures gardent des arêtes droites, car leurs règles d'arête (égout, pignon) se fixent par arête droite.
 
+#### Modifier l’esquisse
+
+Pour plus qu'un coin ou un arc, faites un clic droit sur la dalle sélectionnée (ou la trémie, ou le plafond) et choisissez **Modifier l’esquisse** (aussi **Studio → Modifier l’esquisse**). Son contour s'ouvre en esquisse sur un plan à lui, une ligne ou un arc par arête, ses coins tenus ensemble, la dalle elle-même masquée là ; une barre au-dessus du plan dit de qui est l'esquisse. Dessinez et modifiez avec l'onglet **Dessin** (Ligne, Arc, Raccord, Ajuster, Prolonger, Décaler…), contraignez et cotez avec **Studio → Contraintes** (voir [Contraintes d'esquisse](sketch-constraints.md)) : changez une cote et le contour suit. **Terminer l’esquisse** la réécrit dans la dalle en une seule étape d'annulation, la dalle gardant son identité (son GlobalId) ; **Annuler** laisse la dalle telle qu'elle était. L'esquisse doit être un seul contour fermé (arêtes bout à bout, ou un cercle seul) ; sinon Terminer dit ce qui est ouvert.
+
+![Le contour d'une dalle modifié en esquisse : un raccord et une cote](shots/floor-sketch-edit.webp)
+
+L'esquisse, avec ses contraintes et ses cotes, reste sur la dalle (elle part en IFC avec l'intention de conception de la dalle, dans Lapin_Intent), si bien que **Modifier l’esquisse** la rouvre comme vous l'avez laissée. Si le contour a été changé depuis par ses poignées, l'esquisse repart du contour tel qu'il est, sans ses contraintes. Une dalle reconnue d'un fichier IFC ne reçoit une esquisse que lorsque vous la modifiez ; une dalle gardée comme référence ne se modifie pas ainsi.
+
+![La dalle après Terminer l’esquisse](shots/floor-sketch-done.webp)
+
 Une dalle dessinée hors des murs, devant une porte, est un perron. Pour les marches qui y mènent, voir [Escaliers](stairs.md).
 
 Une couche d'une dalle peut aussi aller au-delà de son contour, ou s'arrêter avant, tout le tour ou à un bord, saisie dans ses propriétés ou tirée en plan ou en coupe avec **Modifier les couches**, et un type de dalle peut donner leurs prolongements à ses dalles : voir [Prolongements des couches](walls.md#prolongements-des-couches). Les toits n'ont pas encore de composition de couches (leur couverture, leur dalle et leur charpente sont des parties à part), donc pas de prolongements de couches.

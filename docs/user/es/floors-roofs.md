@@ -24,6 +24,16 @@ Cualquier borde de una losa, de un hueco en losa o de un falso techo puede ser c
 
 La losa se construye a lo largo de sus arcos, ninguna cuerda a más de 1 mm de ellos, en 3D, plantas y secciones; su área y su perímetro se miden sobre los arcos verdaderos. Una capa que pasa de un borde curvo (vea [Extensiones de capa](walls.md#layer-extents)) sigue el arco. Un hueco también puede tener bordes curvos, y una losa curva puede tener huecos. En IFC la losa lleva su contorno con los arcos verdaderos como huella (una IfcIndexedPolyCurve con segmentos de arco), junto a su cuerpo. Las cubiertas mantienen bordes rectos, porque sus reglas de borde (alero, piñón) se fijan por borde recto.
 
+#### Editar boceto
+
+Para algo más que una esquina o un arco, haga clic derecho en la losa seleccionada (o hueco en losa, o falso techo) y elija **Editar boceto** (también **Studio → Editar boceto**). Su contorno se abre como boceto en una planta propia, una línea o un arco por borde, sus esquinas unidas, y la propia losa oculta allí; una barra sobre la planta dice de quién es el boceto. Dibuje y cambie con la pestaña **Dibujo** (Línea, Arco, Empalme, Recortar, Alargar, Desfase…) y restrinja y acote con **Studio → Restricciones** (vea [Restricciones de boceto](sketch-constraints.md)): cambie una cota y el contorno la sigue. **Terminar boceto** lo escribe en la losa en un solo paso de deshacer, y la losa conserva su identidad (su GlobalId); **Cancelar** deja la losa como estaba. El boceto debe ser un único contorno cerrado (bordes extremo con extremo, o un círculo solo); si no, Terminar dice qué está abierto.
+
+![El contorno de una losa editado como boceto: un empalme y una cota](shots/floor-sketch-edit.webp)
+
+El boceto, con sus restricciones y cotas, queda en la losa (va a IFC con la intención de diseño de la losa, en Lapin_Intent), así que **Editar boceto** lo abre de nuevo como lo dejó. Si desde entonces el contorno se cambió con los pinzamientos, el boceto empieza de nuevo desde el contorno, sin sus restricciones. Una losa reconocida de un archivo IFC recibe un boceto solo cuando la edita; una mantenida como referencia no se edita así.
+
+![La losa tras Terminar boceto](shots/floor-sketch-done.webp)
+
 Una losa dibujada fuera de los muros, delante de una puerta, es un porche. Para los peldaños que suben a él, consulte [Escaleras](stairs.md).
 
 Una capa de un forjado también puede ir más allá de su contorno, o detenerse antes, todo alrededor o en un borde, escrita en sus propiedades o arrastrada en planta o en sección con **Editar capas**, y un tipo de forjado puede dar a sus forjados sus extensiones: vea [Extensiones de capas](walls.md#extensiones-de-capas). Las cubiertas aún no tienen composición de capas (su cobertura, su losa y su estructura son partes propias), así que no tienen extensiones de capas.

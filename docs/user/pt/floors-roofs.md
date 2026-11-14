@@ -24,6 +24,16 @@ Qualquer aresta de um piso, de uma abertura no piso ou de um forro pode ser curv
 
 O piso é construído ao longo dos seus arcos, nenhuma corda a mais de 1 mm deles, em 3D, plantas e cortes; a sua área e o seu perímetro são medidos nos arcos verdadeiros. Uma camada que passa uma aresta curva (veja [Extensões de camada](walls.md#layer-extents)) segue o arco. Uma abertura também pode ter arestas curvas, e um piso curvo pode ter aberturas. Em IFC o piso leva o seu contorno com os arcos verdadeiros como pegada (uma IfcIndexedPolyCurve com segmentos de arco), ao lado do seu corpo. As coberturas mantêm arestas retas, porque as suas regras de aresta (beiral, empena) são definidas por aresta reta.
 
+#### Editar esboço
+
+Para mais do que um canto ou um arco, clique com o botão direito no piso selecionado (ou abertura no piso, ou forro) e escolha **Editar esboço** (também **Studio → Editar esboço**). O seu contorno abre como esboço numa planta própria, uma linha ou um arco por aresta, os cantos mantidos juntos e o próprio piso oculto ali; uma barra sobre a planta diz de quem é o esboço. Desenhe e altere com o separador **Desenho** (Linha, Arco, Concordância, Aparar, Estender, Deslocar…) e restrinja e cote com **Studio → Restrições** (veja [Restrições de esboço](sketch-constraints.md)): mude uma cota e o contorno acompanha. **Terminar esboço** escreve-o de volta no piso num só passo de desfazer, e o piso mantém a sua identidade (o seu GlobalId); **Cancelar** deixa o piso como estava. O esboço tem de ser um só contorno fechado (arestas ponta com ponta, ou um círculo sozinho); caso contrário, Terminar diz o que está aberto.
+
+![O contorno de um piso editado como esboço: uma concordância e uma cota](shots/floor-sketch-edit.webp)
+
+O esboço, com as suas restrições e cotas, fica no piso (vai para o IFC com a intenção de projeto do piso, em Lapin_Intent), por isso **Editar esboço** abre-o de novo como o deixou. Se entretanto o contorno foi alterado pelas alças, o esboço recomeça a partir do contorno, sem as suas restrições. Um piso reconhecido de um ficheiro IFC só recebe um esboço quando o edita; um mantido como referência não é editado assim.
+
+![O piso depois de Terminar esboço](shots/floor-sketch-done.webp)
+
 Um piso desenhado fora das paredes, diante de uma porta, é uma varanda. Para os degraus até ela, veja [Escadas](stairs.md).
 
 Uma camada de uma laje também pode ir além do seu contorno, ou parar antes, à volta toda ou numa aresta, escrita nas suas propriedades ou arrastada em planta ou em corte com **Editar camadas**, e um tipo de laje pode dar às suas lajes as suas extensões: veja [Extensões de camadas](walls.md#extensoes-de-camadas). Os telhados ainda não têm composição de camadas (a cobertura, a laje e a estrutura são partes próprias), por isso não têm extensões de camadas.

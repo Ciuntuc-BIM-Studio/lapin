@@ -2,6 +2,7 @@
 
 import { notify, useUi } from '../../app/store';
 import { query, useSession } from '../../engine/session';
+import { editOutline, isOutlineElement } from './outlineSketch';
 
 /** A step of a solid as the engine lists it: its kind, its numbers, whether it is off, and its label. */
 export interface FeatureStep { op: string; label: string; off?: boolean; [key: string]: unknown }
@@ -15,6 +16,8 @@ export interface Feature {
 export async function editSketch(id?: string): Promise<void> {
   const target = id ?? useUi.getState().selection;
   if (!target) { notify('Select a solid first: its sketch opens on its view.'); return; }
+  // A floor's, an opening's or a ceiling's outline (forum topic 97): opened as a sketch of its own.
+  if (isOutlineElement(useSession.getState().nodes.get(target))) { await editOutline(target); return; }
   const f = await query<Feature>('studio.feature', { id: target });
   if (!f?.viewId) { notify('That is not a Studio solid: it is edited with its own tool.'); return; }
   const view = useSession.getState().nodes.get(f.viewId);

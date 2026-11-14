@@ -24,6 +24,16 @@ Każda krawędź stropu, otworu w stropie lub sufitu może być krzywa. Kliknij 
 
 Strop jest budowany wzdłuż łuków, żadna cięciwa nie dalej niż 1 mm od nich, w 3D, rzutach i przekrojach; jego pole i obwód mierzone są na prawdziwych łukach. Warstwa wychodząca poza krzywą krawędź (zobacz [Wysunięcia warstw](walls.md#layer-extents)) biegnie wzdłuż łuku. Otwór także może mieć krzywe krawędzie, a krzywy strop może mieć otwory. W IFC strop niesie obrys z prawdziwymi łukami jako ślad (IfcIndexedPolyCurve z segmentami łuku) obok swojej bryły. Dachy zachowują proste krawędzie, bo reguły krawędzi dachu (okap, szczyt) ustala się dla każdej prostej krawędzi.
 
+#### Edytuj szkic
+
+Gdy chodzi o więcej niż narożnik czy łuk, kliknij prawym przyciskiem zaznaczony strop (albo otwór w stropie, albo sufit) i wybierz **Edytuj szkic** (także **Studio → Edytuj szkic**). Jego obrys otwiera się jako szkic na własnym rzucie, jedna linia lub łuk na krawędź, narożniki trzymane razem, a sam strop ukryty; pasek nad rzutem mówi, czyj to szkic. Rysuj i zmieniaj kartą **Rysunek** (Linia, Łuk, Zaokrąglenie, Utnij, Wydłuż, Odsunięcie…), a wiąż i wymiaruj w **Studio → Więzy** (zobacz [Więzy szkicu](sketch-constraints.md)): zmień wymiar, a obrys za nim pójdzie. **Zakończ szkic** zapisuje go z powrotem w stropie w jednym kroku cofania, a strop zachowuje tożsamość (swój GlobalId); **Anuluj** zostawia strop bez zmian. Szkic musi być jednym zamkniętym obrysem (krawędzie koniec do końca albo sam okrąg); inaczej Zakończ mówi, co jest otwarte.
+
+![Obrys stropu edytowany jako szkic: zaokrąglenie i wymiar](shots/floor-sketch-edit.webp)
+
+Szkic z więzami i wymiarami zostaje na stropie (trafia do IFC z intencją projektową stropu, w Lapin_Intent), więc **Edytuj szkic** otwiera go ponownie tak, jak go zostawiłeś. Jeśli obrys zmieniono od tego czasu uchwytami, szkic zaczyna się od nowa od obrysu, bez więzów. Strop rozpoznany z pliku IFC dostaje szkic dopiero, gdy go edytujesz; strop zachowany jako odniesienie nie jest tak edytowany.
+
+![Strop po Zakończ szkic](shots/floor-sketch-done.webp)
+
 Strop narysowany poza ścianami, przed drzwiami, to ganek. Schody prowadzące na niego opisuje strona [Schody](stairs.md).
 
 Warstwa stropu może też wychodzić poza jego obrys albo kończyć się przed nim, dookoła lub na jednej krawędzi, wpisana we właściwościach albo przeciągnięta w rzucie lub przekroju przez **Edytuj warstwy**, a typ stropu może dać swoim stropom ich przedłużenia: zobacz [Przedłużenia warstw](walls.md#przed-uzenia-warstw). Dachy nie mają jeszcze układu warstw (pokrycie, płyta i więźba to ich osobne części), więc nie mają przedłużeń warstw.

@@ -2760,3 +2760,6 @@ path.part-flex-ghost { fill: none; stroke: var(--accent); stroke-width: 1.6; str
 
 /* The outline tools' shapes in the command line (forum topic 97): toggles in a row, as SNAP and ORTHO. */
 .outline-shape { display: inline-flex; gap: 4px; align-items: center; flex-wrap: nowrap; }
+/* An outline sketched on its own plan (forum topic 97, stage 3): whose sketch it is, Finish and Cancel. */
+.outline-sketch-bar { position: absolute; top: 56px; left: 50%; transform: translateX(-50%); z-index: 6; display: inline-flex; align-items: center; gap: 10px; padding: 4px 6px 4px 12px; background: var(--hud); border: 1px solid var(--accent); border-radius: 6px; font-size: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); white-space: nowrap; }
+.outline-sketch-title { font-weight: 600; }

@@ -1694,6 +1694,58 @@ export const scenes = [
     },
   },
   {
+    // Edit sketch on a floor (forum topic 97, stage 3): its outline opened as a sketch on a plan of its own, a fillet and a
+    // dimension added, Finish sketch writes it back; the sketch stays on the floor.
+    id: 'floors-sketch',
+    touches: ['architecture', 'studio', 'drafting'],
+    async run(t) {
+      await t.fresh();
+      await t.ui({ keyPlan: false });
+      const storey = await t.storey();
+      const floor = await t.cmd('architecture.addSlab', { storeyId: storey, points: [[0, 0], [6, 0], [6, 4], [0, 4]] });
+      await t.fit();
+      await select(t, floor.id);
+      await t.wait(600);
+      // Right-click inside the selected floor: Edit sketch.
+      const [fx, fy] = await t.planPoint(2, 2);
+      await t.page.mouse.click(fx, fy, { button: 'right' });
+      await t.wait(300);
+      const item = t.page.locator('.context-menu .context-item', { hasText: 'Edit sketch' });
+      t.expect(await item.count() === 1, 'a right-click on a selected floor offers Edit sketch');
+      await item.click();
+      await t.until(async () => (await t.page.locator('[data-testid=outline-sketch-bar]').count()) > 0, 'the sketch bar over its plan');
+      const view = (await t.nodes()).find((n) => n.props?.outlineSketchOf === floor.id);
+      t.expect(view, 'the floor\'s sketch has a plan of its own');
+      await t.fit();
+      const lines = (await t.nodes()).filter((n) => n.type === 'IfcAnnotation' && n.props?.viewId === view.id);
+      t.expect(lines.length === 4, `the outline drawn as four lines (${lines.length})`);
+      // A fillet at the corner (6, 0), as Draft → Fillet makes it, and the first edge dimensioned 7 m.
+      const at = (x, y) => lines.find((l) => { const s = l.props.shape; return Math.abs(s.a[0] - x) < 1e-6 && Math.abs(s.a[1] - y) < 1e-6; });
+      const [l0, l1] = [at(0, 0), at(6, 0)];
+      await t.cmd('drafting.fillet', { a: l1.id, atA: [6, 2], b: l0.id, atB: [3, 0], radius: 1.2 });
+      // Its top and bottom edges held horizontal, its left edge vertical, then the left edge dimensioned 5 m: the floor grows.
+      const whole = (l) => [{ shape: l.id, part: 'whole' }];
+      await t.cmd('studio.addConstraint', { constraints: [
+        { viewId: view.id, kind: 'horizontal', refs: whole(l0) }, { viewId: view.id, kind: 'horizontal', refs: whole(at(6, 4)) }, { viewId: view.id, kind: 'vertical', refs: whole(at(0, 4)) },
+        { viewId: view.id, kind: 'fix', refs: [{ shape: l0.id, part: 'start' }] },
+      ] });
+      await t.cmd('studio.addConstraint', { viewId: view.id, kind: 'distance', refs: whole(at(0, 4)), value: 5 });
+      await t.wait(1000);
+      await t.fit();
+      await t.page.mouse.move(10, 300);
+      await t.shot('floor-sketch-edit');
+      await t.page.locator('[data-action=finish-outline]').click();
+      await t.wait(1500);
+      const done = (await t.nodes()).find((n) => n.id === floor.id);
+      t.expect(done.props.contour.length === 5 && Array.isArray(done.props.arcs), `the floor takes the sketch: a rounded corner (${done.props.contour.length} corners)`);
+      t.expect(done.props.outlineSketch?.constraints?.some((c) => c.kind === 'distance'), 'the sketch and its dimension stay on the floor');
+      t.expect(!(await t.nodes()).some((n) => n.id === view.id), 'the sketch\'s plan is gone');
+      await t.fit();
+      await t.shot('floor-sketch-done', { of: '.plan-svg', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     id: 'schedules',
     async run(t) {
       await t.fresh();

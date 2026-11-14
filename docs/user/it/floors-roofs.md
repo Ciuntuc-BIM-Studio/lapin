@@ -24,6 +24,16 @@ Qualsiasi lato di un solaio, di un foro nel solaio o di un controsoffitto può e
 
 Il solaio è costruito lungo i suoi archi, nessuna corda a più di 1 mm da essi, in 3D, piante e sezioni; area e perimetro sono misurati sugli archi veri. Uno strato che va oltre un lato curvo (vedi [Estensioni degli strati](walls.md#layer-extents)) segue l'arco. Anche un foro può avere lati curvi, e un solaio curvo può avere fori. In IFC il solaio porta il suo contorno con gli archi veri come impronta (una IfcIndexedPolyCurve con segmenti d'arco), accanto al suo corpo. Le coperture mantengono lati diritti, perché le loro regole dei lati (gronda, timpano) si impostano per lato diritto.
 
+#### Modifica schizzo
+
+Per più di un angolo o di un arco, fai clic destro sul solaio selezionato (o foro nel solaio, o controsoffitto) e scegli **Modifica schizzo** (anche **Studio → Modifica schizzo**). Il suo contorno si apre come schizzo su una pianta propria, una linea o un arco per lato, gli angoli tenuti insieme, il solaio stesso nascosto lì; una barra sopra la pianta dice di chi è lo schizzo. Disegna e modifica con la scheda **Disegno** (Linea, Arco, Raccordo, Taglia, Estendi, Offset…) e vincola e quota con **Studio → Vincoli** (vedi [Vincoli dello schizzo](sketch-constraints.md)): cambi una quota e il contorno la segue. **Termina schizzo** lo riscrive nel solaio in un solo passo di annullamento, e il solaio mantiene la sua identità (il suo GlobalId); **Annulla** lascia il solaio com'era. Lo schizzo deve essere un solo contorno chiuso (lati estremo con estremo, o un cerchio da solo); altrimenti Termina dice cosa è aperto.
+
+![Il contorno di un solaio modificato come schizzo: un raccordo e una quota](shots/floor-sketch-edit.webp)
+
+Lo schizzo, con vincoli e quote, resta sul solaio (va in IFC con l'intento progettuale del solaio, in Lapin_Intent), così **Modifica schizzo** lo riapre come l'hai lasciato. Se nel frattempo il contorno è stato cambiato con le maniglie, lo schizzo riparte dal contorno com'è, senza i suoi vincoli. Un solaio riconosciuto da un file IFC riceve uno schizzo solo quando lo modifichi; uno tenuto come riferimento non si modifica così.
+
+![Il solaio dopo Termina schizzo](shots/floor-sketch-done.webp)
+
 Un solaio disegnato fuori dai muri, davanti a una porta, è un portico. Per i gradini che vi salgono, vedi [Scale](stairs.md).
 
 Uno strato di un solaio può anche andare oltre il suo contorno, o fermarsi prima, tutto intorno o a un bordo, digitato nelle sue proprietà o trascinato in pianta o in sezione con **Modifica strati**, e un tipo di solaio può dare ai suoi solai i loro prolungamenti: vedete [Prolungamenti degli strati](walls.md#prolungamenti-degli-strati). I tetti non hanno ancora una stratigrafia (manto, soletta e orditura sono parti proprie), quindi non hanno prolungamenti degli strati.
