@@ -15,7 +15,10 @@ namespace Lapin.Drafting;
 /// rotation), so the end follows a move, a turn, a thicker wall; elements
 /// without a frame keep the point from their middle (the old way);</item>
 /// <item>"grid": a grid axis (by its tag), how far along it;</item>
-/// <item>"axis": a wall's (or beam's) centre line, how far along it.</item>
+/// <item>"axis": a wall's (or beam's) centre line, how far along it;</item>
+/// <item>"opening": a door's, window's or bare opening's place in its wall (forum topic 78): <c>local</c> from its
+/// centre in the wall's frame (along, across), so the point goes where the opening is slid; with <c>localDir</c> a jamb,
+/// taken onto the wall's jamb face as the plan cuts it (an opening made wider moves it).</item>
 /// </list>
 /// </summary>
 public sealed record DimEndRef(string Kind, string Element, Vec2 Offset, Vec2 Dir, Vec2? Local = null, Vec2? LocalDir = null, string? Tag = null, double S = 0, double? S2 = null, double? Len = null)
@@ -30,6 +33,10 @@ public sealed record DimEndRef(string Kind, string Element, Vec2 Offset, Vec2 Di
         {
             case "grid": o["grid"] = Element; o["tag"] = Tag; o["s"] = S; if (S2 is { } g2) o["s2"] = g2; break;
             case "axis": o["element"] = Element; o["s"] = S; if (S2 is { } a2) o["s2"] = a2; break;
+            case "opening":
+                o["element"] = Element; o["local"] = J(Local ?? default);
+                if (LocalDir is { } jd) o["localDir"] = J(jd);
+                break;
             default:
                 o["element"] = Element; o["offset"] = J(Offset); o["dir"] = J(Dir);
                 if (Local is { } l && LocalDir is { } ld) { o["local"] = J(l); o["localDir"] = J(ld); }
@@ -46,6 +53,7 @@ public sealed record DimEndRef(string Kind, string Element, Vec2 Offset, Vec2 Di
         {
             case "grid" when (string?)o["grid"] is { } g && (string?)o["tag"] is { } t: return new("grid", g, default, default, Tag: t, S: Json.Number(o["s"]) ?? 0, S2: Json.Number(o["s2"]));
             case "axis" when (string?)o["element"] is { } e: return new("axis", e, default, default, S: Json.Number(o["s"]) ?? 0, S2: Json.Number(o["s2"]));
+            case "opening" when (string?)o["element"] is { Length: > 0 } e && V(o["local"]) is { } l: return new("opening", e, default, default, l, V(o["localDir"]));
             case "edge" when (string?)o["element"] is { Length: > 0 } e && V(o["offset"]) is { } off && V(o["dir"]) is { } d:
                 return new("edge", e, off, d, V(o["local"]), V(o["localDir"]), Len: Json.Number(o["len"]));
         }
@@ -167,6 +175,8 @@ public static class Dimensions
             }
             case "axis":
                 return m.Get(r.Element) is { } w && Frame(w) is { } f ? OnLine(f.O, P(w.Attrs["end"]), r, hint) : null;
+            case "opening":
+                return OnOpening(m, d, r);
         }
         Vec2 q, dir;
         if (viewKind == "plan" && r.Local is { } local && r.LocalDir is { } ld && Frame(m.Get(r.Element)) is { } frame && Middle(d, r.Element) != null)
@@ -191,6 +201,67 @@ public static class Dimensions
         }
         return best?.P;
     }
+
+    /// <summary>The wall an opening is in (a door or window: the wall of the opening it fills).</summary>
+    public static Entity? HostOf(IModelView m, string id) =>
+        m.RelatingOf(id, IfcClass.RelFillsElement) is { } opening ? m.RelatingOf(opening.Id, IfcClass.RelVoidsElement) : m.RelatingOf(id, IfcClass.RelVoidsElement);
+
+    /// <summary>The opening that holds a place in its wall (<c>along</c>): the opening itself, or the one a door or window fills.</summary>
+    static Entity? OpeningOf(IModelView m, string id) =>
+        m.Get(id) is not { } e ? null : e.NumOrNull("along") != null ? e : m.RelatingOf(id, IfcClass.RelFillsElement);
+
+    /// <summary>
+    /// A point held on an opening (<paramref name="p"/> on the plan; <paramref name="jamb"/>: the jamb's face direction, null: its centre):
+    /// where it lies from the opening's centre in its wall's frame; null when the opening has no wall with an axis.
+    /// </summary>
+    public static DimEndRef? HoldOnOpening(IModelView m, string openingId, Vec2 p, Vec2? jamb = null)
+    {
+        if (OpeningOf(m, openingId) is not { } o || HostOf(m, o.Id) is not { } wall || Frame(wall) is not { } f) return null;
+        var centre = f.O + f.U * o.Num("along");
+        var l = ToLocal((centre, f.U), p);
+        return new DimEndRef("opening", o.Id, default, default, l, jamb is { } j ? DirToLocal(f, j.Normalized()) : null);
+    }
+
+    static Vec2? OnOpening(IModelView m, ViewDrawing d, DimEndRef r)
+    {
+        if (OpeningOf(m, r.Element) is not { } o || HostOf(m, o.Id) is not { } wall || Frame(wall) is not { } f || r.Local is not { } l) return null;
+        var q = FromLocal((f.O + f.U * o.Num("along"), f.U), l);
+        if (r.LocalDir is not { } ld) return q;
+        // A jamb: onto the wall's jamb face nearest, as the plan cuts it (an opening made wider or narrower).
+        var dir = DirFromLocal(f, ld).Normalized();
+        (double Dist, Vec2 P)? best = null;
+        foreach (var (a, b) in Edges(d, wall.Id))
+        {
+            var e = b - a;
+            if (e.Length < 1e-9 || Math.Abs(Vec2.Cross(e.Normalized(), dir)) > Parallel) continue;
+            var u = e.Normalized();
+            var on = a + u * Vec2.Dot(q - a, u);
+            var dist = (q - on).Length;
+            if (dist <= OpeningHeights.Reach * 5 && (best == null || dist < best.Value.Dist)) best = (dist, on);
+        }
+        return best?.P ?? q;
+    }
+
+    /// <summary>
+    /// A point held on a face of <paramref name="element"/> that runs along <paramref name="dir"/> (an edge of its cut in that
+    /// direction), the point itself anywhere on that face's line: in a plan, kept in the element's frame, so it follows it.
+    /// </summary>
+    public static DimEndRef? HoldOn(IModelView m, string viewKind, ViewDrawing d, string element, Vec2 p, Vec2 dir)
+    {
+        if (Middle(d, element) is not { } mid) return null;
+        dir = dir.Normalized();
+        if (viewKind == "plan" && Frame(m.Get(element)) is { } f)
+            return new DimEndRef("edge", element, p - mid, dir, ToLocal(f, p), DirToLocal(f, dir), Len: LengthOf(m.Get(element)));
+        return new DimEndRef("edge", element, p - mid, dir);
+    }
+
+    /// <summary>A point held on a wall's (or beam's) centre line: how far along it it lies.</summary>
+    public static DimEndRef? HoldOnAxis(IModelView m, string element, Vec2 p) =>
+        m.Get(element) is { } e && Frame(e) is { } f ? new DimEndRef("axis", e.Id, default, default, S: Vec2.Dot(p - f.O, f.U), S2: Vec2.Dot(P(e.Attrs["end"]) - p, f.U)) : null;
+
+    /// <summary>A point held on a grid axis: how far along it it lies.</summary>
+    public static DimEndRef HoldOnGrid(string gridId, Axis ax, Vec2 p) =>
+        new("grid", gridId, default, default, Tag: ax.Tag, S: Vec2.Dot(p - ax.A, ax.Dir), S2: Vec2.Dot(ax.B - p, ax.Dir));
 
     /// <summary>
     /// A point held on a line (a grid axis, a wall's centre line), found by its distance from the start while the line keeps
@@ -505,6 +576,17 @@ public static class Dimensions
             foreach (var ax in (attrs["axes"] as JsonArray)?.OfType<JsonObject>() ?? [])
                 if ((string?)ax["tag"] == r.Tag) { ax["a"] = new JsonArray(P(ax["a"]).X + by.X, P(ax["a"]).Y + by.Y); ax["b"] = new JsonArray(P(ax["b"]).X + by.X, P(ax["b"]).Y + by.Y); }
             ctx.Replace(grid.With(attrs: attrs));
+            return;
+        }
+        if (r.Kind == "opening")
+        {
+            // An opening slides along its wall: what the string drives moves its place.
+            var o = OpeningOf(ctx.Model, r.Element) ?? throw new CommandException("The dimension's opening is gone.");
+            var f = HostOf(ctx.Model, o.Id) is { } host ? Frame(host) : null;
+            if (f == null) throw new CommandException("The dimension's opening has no wall to slide along.");
+            var oa = o.CloneAttrs();
+            oa["along"] = o.Num("along") + Vec2.Dot(by, f.Value.U);
+            ctx.Replace(o.With(attrs: oa));
             return;
         }
         var e = ctx.Model.Get(r.Element) ?? throw new CommandException("The dimension's element is gone.");

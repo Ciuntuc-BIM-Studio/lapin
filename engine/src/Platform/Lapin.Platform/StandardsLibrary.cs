@@ -12,7 +12,7 @@ namespace Lapin.Platform;
 /// made in Lapin or read from AutoCAD's <c>.lin</c>, kept in the project's standards (<c>drafting.lineTypes</c>), named by drafting
 /// layers, the standards' layers, axis styles and object styles. The standards' file, <c>.lapinstandards</c>: text, dimension and
 /// axis styles, tag types, layers and their groups, line types, hatch patterns, symbols and the marks' symbols, and with
-/// <c>options</c> the project's units, scales, marker sizes, object styles and pen table; brought into a project entry by entry,
+/// <c>options</c> the project's units, scales, marker sizes, object styles, pen table and dimension rules; brought into a project entry by entry,
 /// one that differs taking the choice given (update, keep both, skip). Each command one undo step.
 /// </summary>
 public static class StandardsLibrary
@@ -76,6 +76,8 @@ public static class StandardsLibrary
             o["symbolSlots"] = new JsonObject(slots.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)(BuiltinSymbols.Is((string?)kv.Value) ? (string?)kv.Value : Symbols.NameOf(m, (string?)kv.Value)))));
         if (project.Attrs["objectStyles"] is JsonObject ost) o["objectStyles"] = ost.DeepClone();
         if (project.Attrs["penTable"] is JsonObject pt) o["penTable"] = pt.DeepClone();
+        // The rules of the dimensions made at once (exterior, rooms: forum topic 78).
+        if (project.Attrs["dimensionRules"] is JsonObject dr) o["dimensionRules"] = dr.DeepClone();
         return o;
     }
 
@@ -257,13 +259,13 @@ public static class StandardsLibrary
             {
                 ["name"] = (string?)file["name"],
                 ["entries"] = new JsonArray(Compare(q.Model, file).Select(e => (JsonNode)new JsonObject { ["kind"] = e.Kind, ["id"] = e.Id, ["name"] = e.Name, ["exists"] = e.Exists, ["same"] = e.Same }).ToArray()),
-                ["options"] = file["objectStyles"] != null || file["penTable"] != null || file["symbolSlots"] != null,
+                ["options"] = file["objectStyles"] != null || file["penTable"] != null || file["symbolSlots"] != null || file["dimensionRules"] != null,
             };
         });
 
         // A standards file brought in, one undo step: each entry the project lacks added, one the same kept, one that differs taking
         // its choice ({"kind:id": update | both | skip}, else `all`, else update); `options`: the units, scales, marker sizes, object
-        // styles, pen table and the marks' symbols too.
+        // styles, pen table, the marks' symbols and the dimension rules too.
         r.Command("standards.importFrom", "Import drafting standards", (ctx, a) =>
         {
             var file = ReadFile((string?)a["text"] ?? "");
@@ -351,6 +353,7 @@ public static class StandardsLibrary
                 var attrs = project.CloneAttrs();
                 if (file["objectStyles"] is JsonObject os) attrs["objectStyles"] = os.DeepClone();
                 if (file["penTable"] is JsonObject ptab) attrs["penTable"] = ptab.DeepClone();
+                if (file["dimensionRules"] is JsonObject drules) attrs["dimensionRules"] = drules.DeepClone();
                 // The marks' symbols, named: a built-in by its id, else the project's symbol of that name.
                 if (file["symbolSlots"] is JsonObject slots)
                 {
