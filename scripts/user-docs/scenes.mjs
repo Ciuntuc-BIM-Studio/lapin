@@ -1126,8 +1126,8 @@ export const scenes = [
       await dialog.locator('.btn.primary').first().click();
       await t.wait(800);
       await t.keys('Escape');
-      const type = (await t.nodes()).find((n) => n.type === 'IfcWindowType' && n.props?.spec?.shape?.transom === false);
-      t.expect(type, 'the window type keeps its sash following the arch');
+      const arched = async () => (await t.nodes()).find((n) => n.type === 'IfcWindowType' && n.props?.spec?.shape?.transom === false);
+      await t.until(async () => Boolean(await arched()), 'the window type keeps its sash following the arch');
     },
   },
   {
@@ -1138,7 +1138,7 @@ export const scenes = [
       await house(t, { roof: false });
       await t.tool('architecture.joineryTypes');
       const dialog = t.page.locator('.dialog');
-      await dialog.locator('.tree-item').filter({ hasText: 'New door' }).click();
+      await dialog.getByRole('button', { name: 'New door', exact: true }).click();
       await t.wait(400);
       await dialog.locator('select[data-field=style]').selectOption('frameless-glass');
       await t.wait(600);

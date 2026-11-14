@@ -1994,6 +1994,7 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .dialog[data-dialog=furniture-types] .furniture-new { flex-wrap: wrap; }
 .dialog[data-dialog=furniture-types] .furniture-new select { flex: 1 1 100%; min-width: 0; max-width: 100%; }
 .dialog[data-dialog=furniture-types] .furniture-new .btn, .dialog[data-dialog=furniture-types] .furniture-edit-head .btn { white-space: nowrap; }
+.dialog[data-dialog=furniture-types] .furniture-new .btn { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .dialog[data-dialog=furniture-types] .furniture-edit-head { flex-wrap: wrap; }
 .dialog[data-dialog=furniture-types] .furniture-edit-head .eyebrow { flex: 0 1 auto; min-width: 0; overflow-wrap: anywhere; }
 .dialog[data-dialog=furniture-types] .furniture-edit .row { flex-wrap: wrap; }
