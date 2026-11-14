@@ -235,6 +235,10 @@ public interface IQueryContext
     IReadOnlyList<QuantitySet> Quantities(string id) => [];
     /// <summary>What a class is in this product (its label), whichever module owns it; null when none does.</summary>
     ClassDescriptor? Describe(string ifcClass) => null;
+    /// <summary>Told how a long command goes (its stage, how much of it is done) for the window to show; null when no one listens. Any thread.</summary>
+    Action<string, int, int>? Progress => null;
+    /// <summary>Set when the user stops the long call running (<c>cancel.long</c>): a command that looks at it throws, and its edit is undone.</summary>
+    CancellationToken Cancellation => default;
     /// <summary>Where a result worked out in the background goes once ready (<see cref="IDeliveries"/>); null where there is no session.</summary>
     IDeliveries? Deliveries => null;
 }

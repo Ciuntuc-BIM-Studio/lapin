@@ -75,8 +75,8 @@ export type ImportMode = 'auto' | 'editable' | 'reference' | 'link';
 /** The file the user picked: by path (the desktop) or its bytes as base64 (a browser). */
 export interface IfcSource { name: string; path?: string; data?: string }
 
-/** A long engine call in progress (a survey, an import): what it does now, and how far along. */
-export interface Busy { title: string; stage: string; done: number; total: number; started: number }
+/** A long engine call in progress (a survey, an import): what it does now, and how far along; `cancel` when it can be stopped. */
+export interface Busy { title: string; stage: string; done: number; total: number; started: number; cancel?: () => void }
 
 /** The exchange format: IFC, or That Open's Fragments. */
 export type ExchangeFormat = 'ifc' | 'frag' | 'bos';
@@ -102,10 +102,16 @@ export function onProgress(d: unknown): void {
 }
 
 let listening = false;
-export const begin = (title: string, stage: string) => {
+export const begin = (title: string, stage: string, cancel?: () => void) => {
   if (!listening) { engine.onEvent('progress', onProgress); listening = true; }
-  useIfcImport.setState({ busy: { title, stage, done: 0, total: 0, started: Date.now() } });
+  useIfcImport.setState({ busy: { title, stage, done: 0, total: 0, started: Date.now(), cancel } });
 };
+
+/** The stage the session tells while it builds the bodies of what an edit made: past the command, so no longer stopped. */
+export const BUILDING_STAGE = 'Building the model';
+
+/** Whether the overlay offers Cancel: the call can be stopped, and is not yet building the bodies (that runs to its end). */
+export const cancellable = (b: Busy) => !!b.cancel && b.stage !== BUILDING_STAGE;
 export const end = () => useIfcImport.setState({ busy: null });
 
 const args = (s: IfcSource) => (s.data != null ? { name: s.name, data: s.data } : { path: s.path });

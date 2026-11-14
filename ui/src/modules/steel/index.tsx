@@ -19,6 +19,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { newElement, typedBy } from '../architecture/NewElement';
 import { SteelSection } from './SteelSection';
 import { NodeSection } from './NodeSection';
+import { SdnfReportDialog } from './SdnfReportDialog';
 import { HallDialog, useHall } from './HallDialog';
 import { hallOf } from './hall';
 import { SectionGlyph, SteelTypesDialog } from './SteelTypesDialog';
@@ -162,7 +163,7 @@ const steel: LapinModule = {
     { id: 'steel', label: 'Steel', classes: STEEL, component: SteelSection },
     { id: 'steelNode', label: 'Connection', classes: ['LapinSteelNode'], component: NodeSection },
   ],
-  dialogs: { steelTypes: SteelTypesDialog, steelHall: HallDialog },
+  dialogs: { steelTypes: SteelTypesDialog, steelHall: HallDialog, sdnfReport: SdnfReportDialog },
   grips: { LapinSteelMember: memberGrips },
   setType: { LapinSteelMember: (ids, typeId) => execute('steel.setType', { ids, typeId }) },
 };

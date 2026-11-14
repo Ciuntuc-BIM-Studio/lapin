@@ -2183,6 +2183,8 @@ export const DA: Record<string, string> = {
   "wait a moment; Enter runs the alias": "til at vente et øjeblik; Enter kører aliasset",
   // SDNF, the steel detailing neutral file (docs/sdnf.md, decision 463)
   'Import SDNF…': 'Importér SDNF…', 'columns, beams, steel members and plates, for steel detailing programs': 'søjler, bjælker, stålprofiler og plader, til ståldetaljeringsprogrammer',
+  // The SDNF import's progress and protocol (report #148)
+  "SDNF import": "SDNF-import", "Time": "Tid", "lines": "linjer", "Packet": "Pakke", "Imported": "Importeret", "linear members": "lige stænger", "plates": "plader", "holes": "huller", "grid sets": "aksesæt", "curved members": "buede stænger", "member loads (not imported)": "stanglaster (ikke importeret)", "connection details (not imported)": "samlingsdetaljer (ikke importeret)", "not defined by SDNF (not imported)": "ikke defineret af SDNF (ikke importeret)", "Save…": "Gem…", "Copy failed.": "Kopiering mislykkedes.", "Bringing the members in": "Henter stængerne", "Bringing the plates in": "Henter pladerne", "Placing the holes": "Placerer hullerne", "The protocol is copied.": "Protokollen er kopieret.", "Profiles in no library, drawn as placeholders": "Profiler fra intet bibliotek, tegnet foreløbigt", "Nothing of the file was imported. Correct the record named above (or ask for the file again from the program that wrote it) and import it again.": "Intet fra filen blev importeret. Ret posten nævnt ovenfor (eller bed om filen igen fra programmet, der skrev den), og importér den igen.", "Cancelled: nothing of the file was imported.": "Annulleret: intet fra filen blev importeret.",
   // Casework of boards, its configurator and cut list (decision 475)
   "furniture|Side": "Side",
   "furniture|Bottom": "Bund",
@@ -3893,6 +3895,7 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^The template „(.+)” chosen for new projects is no longer on this computer: Lapin's default was used\.$/, (m) => `Skabelonen „${m[1]}”, der er valgt til nye projekter, er ikke længere på denne computer: Lapins standard blev brugt.`],
   [/^There is no template „(.+)”\.$/, (m) => `Der er ingen skabelon „${m[1]}”.`],
   [/^A template is already called „(.+)”\.$/, (m) => `En skabelon hedder allerede „${m[1]}”.`],
+  [/^Imported (.+): (\d+) new, (\d+) updated, (\d+) plates, (\d+) holes, (\d+) grids, (\d+) left out\.$/, (m) => `Importeret ${m[1]}: ${m[2]} nye, ${m[3]} opdaterede, ${m[4]} plader, ${m[5]} huller, ${m[6]} akser, ${m[7]} udeladt.`],
   [/^Imported (.+): (\d+) new, (\d+) updated, (\d+) plates\.$/, (m) => `Importeret ${m[1]}: ${m[2]} nye, ${m[3]} opdaterede, ${m[4]} plader.`],
   [/^Profiles in no library, drawn as placeholders: (.+)\.$/, (m) => `Profiler i intet bibliotek, tegnet som pladsholdere: ${m[1]}.`],
   [/^(\d+) added, (\d+) already in your library\.$/, (m) => `${m[1]} tilføjet, ${m[2]} var allerede i dit bibliotek.`],

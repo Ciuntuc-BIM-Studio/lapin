@@ -86,6 +86,10 @@ SDNF, the Steel Detailing Neutral File, is the text format steel detailing progr
 
 ![The hall read back from SDNF](shots/import-sdnf-3d.webp)
 
+While a file comes in, a window shows what Lapin is doing (reading the file, bringing the members in, the plates, the holes, building the model), how far it is and the time so far; **Cancel** stops it while it reads the file and makes the elements, and nothing of the file is kept. A frame of ten thousand members takes well under a minute. When it ends, the **SDNF import** window is its protocol: what came in, each packet of the file with how many items it holds and how many were imported, what was left out and why (a member shorter than a millimetre, one in the file twice, a curved member Lapin cannot make, a recess, a hole naming no plate), each with its number and its line in the file, what was changed, the profiles no library has, the notes and the time. ![The SDNF import's protocol](shots/import-sdnf-report.webp)
+
+**Copy** puts the protocol on the clipboard as text and **Save…** writes it to a file, to send to whoever made the SDNF. A file Lapin cannot read is not imported at all: the window says why and where, for example *Line 1234, packet 10, member 57 of 3000: its start's x is „12,5”, not a number*.
+
 ## JG Structures (structural analysis)
 
 **Export JG Structures (JSON)…** writes the project's analytical model in the exchange file of JG Structures, a structural analysis program: a JSON file after its contract (version 1.0.0). Lapin derives the model from what you drew. Columns, beams and steel members become frames on their axes; load-bearing walls (Pset_WallCommon.LoadBearing on the wall or its type) and floors become shells on the middle of their core layer, finishes left out. They share their nodes: a beam that carries a floor lies in the floor's mid-plane, column and wall ends meet the beam or floor at their head and foot, a floor's corners move onto the columns and walls under them, and a floor is split along the beams that cross it. The feet of columns and walls on a footing are fixed; a steel column base is pinned or fixed as its connection says.

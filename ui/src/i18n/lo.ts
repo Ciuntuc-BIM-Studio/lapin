@@ -2242,6 +2242,8 @@ export const LO: Record<string, string> = {
   "wait a moment; Enter runs the alias": "ລໍຖ້າຊົ່ວຄູ່; Enter ແລ່ນນາມແຝງ",
   // SDNF, the steel detailing neutral file (docs/sdnf.md, decision 463)
   'Import SDNF…': 'ນຳເຂົ້າ SDNF…', 'columns, beams, steel members and plates, for steel detailing programs': 'ເສົາ, ຄານ, ໂຄງເຫຼັກ ແລະ ແຜ່ນ, ສຳລັບໂປຣແກຣມລາຍລະອຽດໂຄງເຫຼັກ',
+  // The SDNF import's progress and protocol (report #148)
+  "SDNF import": "ການນຳເຂົ້າ SDNF", "Time": "ເວລາ", "lines": "ແຖວ", "Packet": "ແພັກເກັດ", "Imported": "ນຳເຂົ້າແລ້ວ", "linear members": "ທ່ອນຊື່", "plates": "ແຜ່ນ", "holes": "ຮູ", "grid sets": "ຊຸດເສັ້ນແກນ", "curved members": "ທ່ອນໂຄ້ງ", "member loads (not imported)": "ນ້ຳໜັກເທິງທ່ອນ (ບໍ່ໄດ້ນຳເຂົ້າ)", "connection details (not imported)": "ລາຍລະອຽດຈຸດຕໍ່ (ບໍ່ໄດ້ນຳເຂົ້າ)", "not defined by SDNF (not imported)": "SDNF ບໍ່ໄດ້ກຳນົດ (ບໍ່ໄດ້ນຳເຂົ້າ)", "Save…": "ບັນທຶກ…", "Copy failed.": "ສຳເນົາບໍ່ສຳເລັດ.", "Bringing the members in": "ກຳລັງນຳທ່ອນເຂົ້າ", "Bringing the plates in": "ກຳລັງນຳແຜ່ນເຂົ້າ", "Placing the holes": "ກຳລັງວາງຮູ", "The protocol is copied.": "ສຳເນົາບົດບັນທຶກແລ້ວ.", "Profiles in no library, drawn as placeholders": "ໂປຣໄຟລ໌ທີ່ບໍ່ມີໃນຫ້ອງສະໝຸດໃດ, ແຕ້ມແບບຊົ່ວຄາວ", "Nothing of the file was imported. Correct the record named above (or ask for the file again from the program that wrote it) and import it again.": "ບໍ່ມີຫຍັງຈາກໄຟລ໌ຖືກນຳເຂົ້າ. ແກ້ໄຂບັນທຶກທີ່ລະບຸຂ້າງເທິງ (ຫຼືຂໍໄຟລ໌ໃໝ່ຈາກໂປຣແກຣມທີ່ຂຽນມັນ) ແລ້ວນຳເຂົ້າອີກຄັ້ງ.", "Cancelled: nothing of the file was imported.": "ຍົກເລີກແລ້ວ: ບໍ່ມີຫຍັງຈາກໄຟລ໌ຖືກນຳເຂົ້າ.",
   // Casework of boards, its configurator and cut list (decision 475)
   "furniture|Side": "ແຜ່ນຂ້າງ",
   "furniture|Bottom": "ແຜ່ນພື້ນ",
@@ -3950,6 +3952,7 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^The template „(.+)” chosen for new projects is no longer on this computer: Lapin's default was used\.$/, (m) => `ແມ່ແບບ „${m[1]}” ທີ່ເລືອກສຳລັບໂຄງການໃໝ່ບໍ່ຢູ່ໃນຄອມພິວເຕີນີ້ແລ້ວ: ໄດ້ໃຊ້ຄ່າເລີ່ມຕົ້ນຂອງ Lapin.`],
   [/^There is no template „(.+)”\.$/, (m) => `ບໍ່ມີແມ່ແບບ „${m[1]}”.`],
   [/^A template is already called „(.+)”\.$/, (m) => `ມີແມ່ແບບຊື່ „${m[1]}” ແລ້ວ.`],
+  [/^Imported (.+): (\d+) new, (\d+) updated, (\d+) plates, (\d+) holes, (\d+) grids, (\d+) left out\.$/, (m) => `ນຳເຂົ້າ ${m[1]}: ໃໝ່ ${m[2]}, ອັບເດດ ${m[3]}, ແຜ່ນ ${m[4]}, ຮູ ${m[5]}, ເສັ້ນແກນ ${m[6]}, ຂ້າມ ${m[7]}.`],
   [/^Imported (.+): (\d+) new, (\d+) updated, (\d+) plates\.$/, (m) => `ນຳເຂົ້າ ${m[1]}: ໃໝ່ ${m[2]}, ອັບເດດ ${m[3]}, ແຜ່ນ ${m[4]}.`],
   [/^Profiles in no library, drawn as placeholders: (.+)\.$/, (m) => `ໂປຣໄຟລ໌ທີ່ບໍ່ຢູ່ໃນຫ້ອງສະໝຸດໃດ, ແຕ້ມເປັນຕົວແທນຊົ່ວຄາວ: ${m[1]}.`],
   [/^(\d+) added, (\d+) already in your library\.$/, (m) => `ເພີ່ມ ${m[1]}, ມີ ${m[2]} ຢູ່ໃນຫ້ອງສະໝຸດຂອງທ່ານແລ້ວ.`],

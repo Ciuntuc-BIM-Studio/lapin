@@ -2183,6 +2183,8 @@ export const RO: Record<string, string> = {
   "wait a moment; Enter runs the alias": "să aștepte puțin; Enter rulează aliasul",
   // SDNF, the steel detailing neutral file (docs/sdnf.md, decision 463)
   'Import SDNF…': 'Importă SDNF…', 'columns, beams, steel members and plates, for steel detailing programs': 'stâlpi, grinzi, bare de oțel și plăci, pentru programele de detaliere a oțelului',
+  // The SDNF import's progress and protocol (report #148)
+  "SDNF import": "Import SDNF", "Time": "Durata", "lines": "linii", "Packet": "Pachet", "Imported": "Importate", "linear members": "bare liniare", "plates": "plăci", "holes": "găuri", "grid sets": "seturi de axe", "curved members": "bare curbe", "member loads (not imported)": "încărcări pe bare (neimportate)", "connection details (not imported)": "detalii de îmbinare (neimportate)", "not defined by SDNF (not imported)": "nedefinit de SDNF (neimportat)", "Save…": "Salvează…", "Copy failed.": "Copierea a eșuat.", "Bringing the members in": "Se aduc barele", "Bringing the plates in": "Se aduc plăcile", "Placing the holes": "Se așază găurile", "The protocol is copied.": "Protocolul e copiat.", "Profiles in no library, drawn as placeholders": "Profile din nicio bibliotecă, desenate provizoriu", "Nothing of the file was imported. Correct the record named above (or ask for the file again from the program that wrote it) and import it again.": "Nimic din fișier n-a fost importat. Corectează înregistrarea numită mai sus (sau cere fișierul din nou de la programul care l-a scris) și importă-l din nou.", "Cancelled: nothing of the file was imported.": "Anulat: nimic din fișier n-a fost importat.",
   // Casework of boards, its configurator and cut list (decision 475)
   "furniture|Side": "Lateral",
   "furniture|Bottom": "Fund",
@@ -3892,6 +3894,7 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^The template „(.+)” chosen for new projects is no longer on this computer: Lapin's default was used\.$/, (m) => `Șablonul „${m[1]}” ales pentru proiectele noi nu mai e pe acest calculator: s-a folosit implicitul Lapin.`],
   [/^There is no template „(.+)”\.$/, (m) => `Nu există șablonul „${m[1]}”.`],
   [/^A template is already called „(.+)”\.$/, (m) => `Un șablon se numește deja „${m[1]}”.`],
+  [/^Imported (.+): (\d+) new, (\d+) updated, (\d+) plates, (\d+) holes, (\d+) grids, (\d+) left out\.$/, (m) => `Importat ${m[1]}: ${m[2]} noi, ${m[3]} actualizate, ${m[4]} plăci, ${m[5]} găuri, ${m[6]} axe, ${m[7]} lăsate deoparte.`],
   [/^Imported (.+): (\d+) new, (\d+) updated, (\d+) plates\.$/, (m) => `Importat ${m[1]}: ${m[2]} noi, ${m[3]} actualizate, ${m[4]} plăci.`],
   [/^Profiles in no library, drawn as placeholders: (.+)\.$/, (m) => `Profile din nicio bibliotecă, desenate provizoriu: ${m[1]}.`],
   [/^(\d+) added, (\d+) already in your library\.$/, (m) => `${m[1]} adăugate, ${m[2]} erau deja în biblioteca ta.`],

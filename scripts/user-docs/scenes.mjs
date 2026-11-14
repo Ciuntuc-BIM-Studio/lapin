@@ -6920,7 +6920,14 @@ export const scenes = [
       const chooser = t.page.waitForEvent('filechooser', { timeout: 10_000 });
       await t.page.getByRole('menuitem', { name: 'Import SDNF…' }).click();
       await (await chooser).setFiles(file);
-      await t.wait(2500);
+      // Report #148: the import's protocol when it ends (each packet's count, what was left out and why, the time).
+      const report = t.page.locator('[data-dialog=sdnf-report]');
+      await report.waitFor({ timeout: 60_000 });
+      t.expect(await report.locator('[data-field=sdnf-packets] tbody tr').count() >= 3, 'the protocol lists the file\'s packets');
+      t.expect(await report.locator('[data-action=sdnf-report-copy]').count() === 1 && await report.locator('[data-action=sdnf-report-save]').count() === 1, 'the protocol can be copied and saved');
+      await t.shot('import-sdnf-report', { of: '[data-dialog=sdnf-report]', pad: 0 });
+      await report.locator('button.btn.primary').click();
+      await t.wait(1000);
       const kinds = (await t.nodes()).map((n) => n.type);
       t.expect(kinds.includes('LapinSteelMember') && kinds.includes('IfcColumn') && kinds.includes('IfcPlate') && kinds.includes('IfcGrid'), 'the hall came back as members, columns, plates and its grid');
       await t.ui({ selected: [], selection: null });

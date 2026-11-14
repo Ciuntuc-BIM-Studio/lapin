@@ -2188,6 +2188,8 @@ export const DE: Record<string, string> = {
   "wait a moment; Enter runs the alias": "kurz warten; Enter führt den Alias aus",
   // SDNF, the steel detailing neutral file (docs/sdnf.md, decision 463)
   'Import SDNF…': 'SDNF importieren…', 'columns, beams, steel members and plates, for steel detailing programs': 'Stützen, Träger, Stahlprofile und Bleche, für Stahlbau-Detailprogramme',
+  // The SDNF import's progress and protocol (report #148)
+  "SDNF import": "SDNF-Import", "Time": "Dauer", "lines": "Zeilen", "Packet": "Paket", "Imported": "Importiert", "linear members": "gerade Stäbe", "plates": "Bleche", "holes": "Löcher", "grid sets": "Achsensätze", "curved members": "gekrümmte Stäbe", "member loads (not imported)": "Stablasten (nicht importiert)", "connection details (not imported)": "Anschlussdetails (nicht importiert)", "not defined by SDNF (not imported)": "von SDNF nicht definiert (nicht importiert)", "Save…": "Speichern…", "Copy failed.": "Kopieren fehlgeschlagen.", "Bringing the members in": "Stäbe werden übernommen", "Bringing the plates in": "Bleche werden übernommen", "Placing the holes": "Löcher werden gesetzt", "The protocol is copied.": "Das Protokoll ist kopiert.", "Profiles in no library, drawn as placeholders": "Profile aus keiner Bibliothek, vorläufig gezeichnet", "Nothing of the file was imported. Correct the record named above (or ask for the file again from the program that wrote it) and import it again.": "Nichts aus der Datei wurde importiert. Korrigieren Sie den oben genannten Datensatz (oder fordern Sie die Datei erneut bei dem Programm an, das sie geschrieben hat) und importieren Sie sie erneut.", "Cancelled: nothing of the file was imported.": "Abgebrochen: nichts aus der Datei wurde importiert.",
   // Casework of boards, its configurator and cut list (decision 475)
   "furniture|Side": "Seitenwand",
   "furniture|Bottom": "Boden",
@@ -3898,6 +3900,7 @@ export const DE_PATTERNS: Language['patterns'] = [
   [/^The template „(.+)” chosen for new projects is no longer on this computer: Lapin's default was used\.$/, (m) => `Die für neue Projekte gewählte Vorlage „${m[1]}” ist nicht mehr auf diesem Computer: der Lapin-Standard wurde verwendet.`],
   [/^There is no template „(.+)”\.$/, (m) => `Es gibt keine Vorlage „${m[1]}”.`],
   [/^A template is already called „(.+)”\.$/, (m) => `Eine Vorlage heißt bereits „${m[1]}”.`],
+  [/^Imported (.+): (\d+) new, (\d+) updated, (\d+) plates, (\d+) holes, (\d+) grids, (\d+) left out\.$/, (m) => `${m[1]} importiert: ${m[2]} neu, ${m[3]} aktualisiert, ${m[4]} Bleche, ${m[5]} Löcher, ${m[6]} Raster, ${m[7]} ausgelassen.`],
   [/^Imported (.+): (\d+) new, (\d+) updated, (\d+) plates\.$/, (m) => `${m[1]} importiert: ${m[2]} neu, ${m[3]} aktualisiert, ${m[4]} Bleche.`],
   [/^Profiles in no library, drawn as placeholders: (.+)\.$/, (m) => `Profile in keiner Bibliothek, als Platzhalter gezeichnet: ${m[1]}.`],
   [/^(\d+) added, (\d+) already in your library\.$/, (m) => `${m[1]} hinzugefügt, ${m[2]} waren schon in Ihrer Bibliothek.`],

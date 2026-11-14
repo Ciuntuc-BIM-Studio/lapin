@@ -2189,6 +2189,8 @@ export const PL: Record<string, string> = {
   "wait a moment; Enter runs the alias": "czeka chwilę; Enter uruchamia alias",
   // SDNF, the steel detailing neutral file (docs/sdnf.md, decision 463)
   'Import SDNF…': 'Importuj SDNF…', 'columns, beams, steel members and plates, for steel detailing programs': 'słupy, belki, pręty stalowe i blachy, dla programów do detalowania konstrukcji stalowych',
+  // The SDNF import's progress and protocol (report #148)
+  "SDNF import": "Import SDNF", "Time": "Czas", "lines": "wierszy", "Packet": "Pakiet", "Imported": "Zaimportowano", "linear members": "pręty proste", "plates": "blachy", "holes": "otwory", "grid sets": "zestawy osi", "curved members": "pręty łukowe", "member loads (not imported)": "obciążenia prętów (nie zaimportowano)", "connection details (not imported)": "szczegóły połączeń (nie zaimportowano)", "not defined by SDNF (not imported)": "niezdefiniowany przez SDNF (nie zaimportowano)", "Save…": "Zapisz…", "Copy failed.": "Kopiowanie nie powiodło się.", "Bringing the members in": "Wczytywanie prętów", "Bringing the plates in": "Wczytywanie blach", "Placing the holes": "Umieszczanie otworów", "The protocol is copied.": "Protokół został skopiowany.", "Profiles in no library, drawn as placeholders": "Profile spoza bibliotek, narysowane tymczasowo", "Nothing of the file was imported. Correct the record named above (or ask for the file again from the program that wrote it) and import it again.": "Nic z pliku nie zostało zaimportowane. Popraw wskazany wyżej rekord (lub poproś ponownie o plik program, który go zapisał) i zaimportuj go jeszcze raz.", "Cancelled: nothing of the file was imported.": "Anulowano: nic z pliku nie zostało zaimportowane.",
   // Casework of boards, its configurator and cut list (decision 475)
   "furniture|Side": "Bok",
   "furniture|Bottom": "Wieniec dolny",
@@ -3904,6 +3906,7 @@ export const PL_PATTERNS: Language['patterns'] = [
   [/^The template „(.+)” chosen for new projects is no longer on this computer: Lapin's default was used\.$/, (m) => `Szablonu „${m[1]}” wybranego dla nowych projektów nie ma już na tym komputerze: użyto domyślnego Lapin.`],
   [/^There is no template „(.+)”\.$/, (m) => `Nie ma szablonu „${m[1]}”.`],
   [/^A template is already called „(.+)”\.$/, (m) => `Szablon o nazwie „${m[1]}” już istnieje.`],
+  [/^Imported (.+): (\d+) new, (\d+) updated, (\d+) plates, (\d+) holes, (\d+) grids, (\d+) left out\.$/, (m) => `Zaimportowano ${m[1]}: ${m[2]} nowych, ${m[3]} zaktualizowanych, ${m[4]} blach, ${m[5]} otworów, ${m[6]} siatek, ${m[7]} pominiętych.`],
   [/^Imported (.+): (\d+) new, (\d+) updated, (\d+) plates\.$/, (m) => `Zaimportowano ${m[1]}: ${m[2]} nowych, ${m[3]} zaktualizowanych, ${m[4]} blach.`],
   [/^Profiles in no library, drawn as placeholders: (.+)\.$/, (m) => `Profile spoza bibliotek, narysowane zastępczo: ${m[1]}.`],
   [/^(\d+) added, (\d+) already in your library\.$/, (m) => `Dodano ${m[1]}, ${m[2]} było już w Twojej bibliotece.`],

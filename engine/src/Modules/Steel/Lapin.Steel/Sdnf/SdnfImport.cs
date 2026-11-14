@@ -44,8 +44,17 @@ public static class SdnfImport
 
     public static JsonObject Run(ICommandContext ctx, SdnfFile file, string name)
     {
+        var clock = System.Diagnostics.Stopwatch.StartNew();
         var m = ctx.Model;
-        var notes = new List<string>(file.Notes);
+        var notes = new SdnfProtocol(file.Notes);
+        var cancel = ctx.Query.Cancellation;
+        var progress = ctx.Query.Progress;
+        // How far along, every hundredth and at the end; a cancel asked for stops here (the edit is undone with it).
+        void Step(string stage, int done, int total)
+        {
+            cancel.ThrowIfCancellationRequested();
+            if (progress != null && total > 0 && (done == total || done % Math.Max(1, total / 100) == 0)) progress(stage, done, total);
+        }
         var source = file.Title.Source;
         var lapinFile = file.FromLapin;
         int made = 0, updated = 0, remade = 0, plates = 0, grids = 0, skipped = 0;
@@ -72,40 +81,73 @@ public static class SdnfImport
         var holes = 0;
 
         var seen = new HashSet<string>();
+        // The new elements' storeys and types, related at the end in one go each (one relationship holds a storey's thousands).
+        var relate = new Relations();
+        var holesLater = new List<(string Id, List<SdnfHole> Holes)>();
+        var (linear, curved) = (0, 0);
+        var done = 0;
         foreach (var mb in file.Members)
         {
+            Step("Bringing the members in", ++done, file.Members.Count);
             var id = file.LapinIds.TryGetValue($"member {mb.Id}", out var g) && GlobalId.IsValid(g) ? g
                 : own.TryGetValue(mb.Id, out var o) ? o
                 : hashed.TryGetValue(mb.Id, out var h) && lapinFile ? h
                 : DerivedId($"{source}\nmember\n{mb.Id}");
-            if (!seen.Add(id)) { skipped++; notes.Add($"Member {mb.Id} is in the file twice: the second was left out."); continue; }
+            if (!seen.Add(id)) { skipped++; notes.Skip("members in the file twice (the second left out)", Item(mb)); continue; }
             if (mb.Releases.Any(r => r != 0)) released++;
-            var r = mb.Arc is { } arc ? Curved(ctx, mb, arc, id, source, lapinFile, unknown, notes) : Member(ctx, mb, id, source, lapinFile, unknown, notes);
+            (string Class, string How)? r;
+            try { r = mb.Arc is { } arc ? Curved(ctx, mb, arc, id, source, lapinFile, unknown, notes, relate) : Member(ctx, mb, id, source, lapinFile, unknown, notes, relate); }
+            catch (Exception ex) when (ex is not (OperationCanceledException or CommandException))
+            {
+                notes.Skip($"members Lapin could not build ({ex.Message})", Item(mb));
+                r = null;
+            }
             if (r == null) { skipped++; continue; }
             var (cls, how) = r.Value;
             byClass[cls] = byClass.GetValueOrDefault(cls) + 1;
+            if (mb.Arc != null) curved++; else linear++;
             if (how == "made") made++; else if (how == "remade") remade++; else updated++;
-            // Its holes, when the file names it as their parent and no plate has its number.
+            // Its holes, when the file names it as their parent and no plate has its number: once it has its type (its section).
             var mine = !plateNumbers.Contains(mb.Id) && holesOf.TryGetValue(mb.Id, out var list) ? list : [];
             if (mine.Count > 0) placed.Add(mb.Id);
-            holes += SetHoles(ctx, id, mine, notes);
+            holesLater.Add((id, mine));
         }
 
+        done = 0;
         foreach (var p in file.Plates)
         {
+            Step("Bringing the plates in", ++done, file.Plates.Count);
             var tag = file.LapinIds.TryGetValue($"plate {p.Id}", out var t) ? t : null;
             placed.Add(p.Id);
             // A plate of one of Lapin's own connections still in the project: the connection builds it (its holes are its bolts').
             if (tag != null && tag.Split(':') is ["node", var nid, ..] && m.Get(nid) is { Class: SteelNodes.Class }) continue;
             var id = tag != null && GlobalId.IsValid(tag) ? tag : DerivedId(tag ?? $"{source}\nplate\n{p.Id}");
-            var cut = Plate(ctx, p, id, source, holesOf.GetValueOrDefault(p.Id) ?? [], notes);
-            if (cut >= 0) { plates++; holes += cut; } else skipped++;
+            int cut;
+            try { cut = Plate(ctx, p, id, source, holesOf.GetValueOrDefault(p.Id) ?? [], notes, relate); }
+            catch (Exception ex) when (ex is not (OperationCanceledException or CommandException))
+            {
+                notes.Skip($"plates Lapin could not build ({ex.Message})", Item(p));
+                cut = -2;
+            }
+            if (cut >= 0) { plates++; holes += cut; }
+            else
+            {
+                skipped++;
+                if (cut == -1) notes.Skip("plates with no shape Lapin can build (fewer than three vertices, or no thickness)", Item(p));
+            }
         }
-        var lost = file.Holes.Where(x => !placed.Contains(x.Parent)).ToList();
-        if (lost.Count > 0)
-            notes.Add($"{lost.Count} hole(s) name a plate or member the file does not have ({string.Join(", ", lost.Select(x => x.Parent).Distinct().Take(5))}): left out.");
+        // The storeys and types in one go, then the members' holes (which read the member's section from its type).
+        relate.Flush(ctx);
+        done = 0;
+        foreach (var (id, mine) in holesLater)
+        {
+            Step("Placing the holes", ++done, holesLater.Count);
+            holes += SetHoles(ctx, id, mine, notes);
+        }
+        foreach (var x in file.Holes.Where(x => !placed.Contains(x.Parent)))
+            notes.Skip("holes naming a plate or member the file does not have", $"hole {x.Id} in {x.Parent}{At(x.Line)}");
         if (file.Holes.Count > 0)
-            notes.Add("SDNF carries no bolts: the holes came in without them (Lapin's bolts belong to its own steel connections).");
+            notes.Note("SDNF carries no bolts: the holes came in without them (Lapin's bolts belong to its own steel connections).");
 
         foreach (var set in file.Grids)
         {
@@ -129,16 +171,52 @@ public static class SdnfImport
         }
 
         foreach (var u in unknown)
-            notes.Add($"The profile „{u}” is in none of the profile libraries: its members are drawn as a {SdnfProfiles.PlaceholderSize * 1000:0} mm square, named after it, until its type is given a profile.");
-        if (released > 0) notes.Add($"{released} member(s) have released ends in the file: Lapin keeps no end releases yet, they came in fixed.");
+            notes.Note($"The profile „{u}” is in none of the profile libraries: its members are drawn as a {SdnfProfiles.PlaceholderSize * 1000:0} mm square, named after it, until its type is given a profile.");
+        if (released > 0) notes.Note($"{released} member(s) have released ends in the file: Lapin keeps no end releases yet, they came in fixed.");
         return new JsonObject
         {
             ["name"] = name, ["version"] = file.Title.Version, ["source"] = file.Title.IssueCode,
             ["made"] = made, ["updated"] = updated, ["remade"] = remade, ["plates"] = plates, ["holes"] = holes, ["grids"] = grids, ["skipped"] = skipped,
             ["byClass"] = new JsonObject(byClass.OrderBy(k => k.Key).Select(k => KeyValuePair.Create(k.Key, (JsonNode?)k.Value))),
             ["unknownProfiles"] = new JsonArray([.. unknown.Select(u => (JsonNode)u)]),
-            ["notes"] = new JsonArray([.. notes.Select(n => (JsonNode)n)]),
+            ["notes"] = new JsonArray([.. notes.Lines().Select(n => (JsonNode)n)]),
+            // The protocol (docs/sdnf.md, report #148): each packet's count, what was imported of it, and what was left out or changed and why.
+            ["packets"] = new JsonArray([.. file.Packets.Select(x => (JsonNode)new JsonObject
+            {
+                ["packet"] = x.Id, ["line"] = x.Line, ["announced"] = x.Announced, ["read"] = x.Read,
+                ["imported"] = x.Id switch { "10" => linear, "60" => curved, "20" => plates, "22" => holes, "50" => grids, _ => 0 },
+            })]),
+            ["skips"] = SdnfProtocol.Json(notes.Skips),
+            ["warnings"] = SdnfProtocol.Json(notes.Warnings),
+            ["lines"] = file.Lines,
+            ["ms"] = clock.ElapsedMilliseconds,
         };
+    }
+
+    /// <summary>A member as the protocol names it: its number and line.</summary>
+    static string Item(SdnfMember mb) => $"{(mb.Arc != null ? "curved member" : "member")} {mb.Id}{At(mb.Line)}";
+    static string Item(SdnfPlate p) => $"plate {p.Id}{At(p.Line)}";
+    static string At(int line) => line > 0 ? $" (line {line})" : "";
+
+    /// <summary>
+    /// Relationships to make at the end of the import, each storey's and each type's in one go (<see cref="EditRelations.RelateAll"/>):
+    /// relating them one at a time copies the relationship's list each time, which for thousands of members is most of the import.
+    /// </summary>
+    sealed class Relations
+    {
+        readonly Dictionary<(string Class, string Relating), List<string>> _by = [];
+        readonly List<(string Class, string Relating)> _order = [];
+        public void Add(string relationClass, string relating, string related)
+        {
+            if (!_by.TryGetValue((relationClass, relating), out var l)) { _by[(relationClass, relating)] = l = []; _order.Add((relationClass, relating)); }
+            l.Add(related);
+        }
+        public void Flush(ICommandContext ctx)
+        {
+            foreach (var k in _order) ctx.RelateAll(k.Class, k.Relating, _by[k]);
+            _by.Clear();
+            _order.Clear();
+        }
     }
 
     /// <summary>The cardinal point's place on the section's box, in its x and y as halves of its width and depth (1–9 bottom to top, left to right; 10, 11 the centre).</summary>
@@ -216,11 +294,11 @@ public static class SdnfImport
 
     static string NameKey(string s) => new string(s.Where(c => !char.IsWhiteSpace(c)).ToArray()).ToUpperInvariant();
 
-    static (string Class, string How)? Member(ICommandContext ctx, SdnfMember mb, string id, string source, bool lapinFile, ISet<string> unknown, List<string> notes)
+    static (string Class, string How)? Member(ICommandContext ctx, SdnfMember mb, string id, string source, bool lapinFile, ISet<string> unknown, SdnfProtocol notes, Relations relate)
     {
         var m = ctx.Model;
         var length = (mb.End - mb.Start).Length;
-        if (length < 1e-3) { notes.Add($"Member {mb.Id} is shorter than a millimetre: left out."); return null; }
+        if (length < 1e-3) { notes.Skip("members shorter than a millimetre", Item(mb)); return null; }
         var section = SectionOf(m, mb, unknown);
         var u = (mb.End - mb.Start) * (1 / length);
         var (v, w, flipped) = Frame(u, mb.Orientation, mb.Rotation, mb.MirrorX, mb.MirrorY);
@@ -245,7 +323,7 @@ public static class SdnfImport
             IfcClass.Beam when level => IfcClass.Beam,
             _ => SteelModule.Member,
         };
-        if (existing != null && existing.Class != cls) notes.Add($"„{existing.Name}” no longer fits its class as the file has it: made again as a {(cls == SteelModule.Member ? "member" : cls[3..].ToLowerInvariant())}, its id kept.");
+        if (existing != null && existing.Class != cls) notes.Warn($"elements that no longer fit their class as the file has them, made again as a {(cls == SteelModule.Member ? "member" : cls[3..].ToLowerInvariant())} under their ids", $"„{existing.Name}”, {Item(mb)}");
 
         string typeClass = cls switch { IfcClass.Column => IfcClass.ColumnType, IfcClass.Beam => IfcClass.BeamType, _ => SteelModule.MemberType };
         // The type it has when its section and material are what the file says, else one that is.
@@ -323,11 +401,11 @@ public static class SdnfImport
         // A new steel element's cutbacks as its ends' extensions (an existing one keeps its own ends).
         if (existing?.Class != cls && section.IsProfile && (Math.Abs(mb.StartCutback) > 1e-6 || Math.Abs(mb.EndCutback) > 1e-6))
             attrs[SteelEnd.Key] = SteelEnd.Json2(new SteelEnd(Extension: R(-mb.StartCutback)), new SteelEnd(Extension: R(-mb.EndCutback)));
-        return (cls, Commit(ctx, mb, id, source, existing, cls, attrs, predefined, storey, type));
+        return (cls, Commit(ctx, mb, id, source, existing, cls, attrs, predefined, storey, type, relate));
     }
 
     /// <summary>The element as the file has it: updated in place when it is already of its class, else (made again) added under its id; its storey and type.</summary>
-    static string Commit(ICommandContext ctx, SdnfMember mb, string id, string source, Entity? existing, string cls, JsonObject attrs, string predefined, Entity storey, Entity type)
+    static string Commit(ICommandContext ctx, SdnfMember mb, string id, string source, Entity? existing, string cls, JsonObject attrs, string predefined, Entity storey, Entity type, Relations relate)
     {
         attrs[Key] = new JsonObject { ["id"] = mb.Id, ["source"] = source };
         string how;
@@ -343,8 +421,8 @@ public static class SdnfImport
             ctx.Add(new Entity(id, cls, name, attrs, predefined));
             how = existing != null ? "remade" : "made";
         }
-        if (Spatial.StoreyOf(ctx.Model, id)?.Id != storey.Id) Spatial.Contain(ctx, storey.Id, id);
-        if (ctx.Model.RelatingOf(id, IfcClass.RelDefinesByType)?.Id != type.Id) ctx.Relate(IfcClass.RelDefinesByType, type.Id, id);
+        if (Spatial.StoreyOf(ctx.Model, id)?.Id != storey.Id) relate.Add(IfcClass.RelContainedInSpatialStructure, storey.Id, id);
+        if (ctx.Model.RelatingOf(id, IfcClass.RelDefinesByType)?.Id != type.Id) relate.Add(IfcClass.RelDefinesByType, type.Id, id);
         return how;
     }
 
@@ -363,7 +441,7 @@ public static class SdnfImport
     /// larger radius; up or down), then the arc through its ends about the file's centre, the way its sweep turns. Lapin's
     /// own file's node offsets put its ends back on the columns' centres, as a straight beam's.
     /// </summary>
-    static (string Class, string How)? Curved(ICommandContext ctx, SdnfMember mb, SdnfArc arc, string id, string source, bool lapinFile, ISet<string> unknown, List<string> notes)
+    static (string Class, string How)? Curved(ICommandContext ctx, SdnfMember mb, SdnfArc arc, string id, string source, bool lapinFile, ISet<string> unknown, SdnfProtocol notes, Relations relate)
     {
         var m = ctx.Model;
         var section = SectionOf(m, mb, unknown);
@@ -372,7 +450,7 @@ public static class SdnfImport
         var c = arc.Centre;
         var n = arc.Normal.Length > 1e-9 ? arc.Normal.Normalized() : Vec3.UnitZ;
         var radius = (s - c).Length;
-        if (radius < 1e-3 || (e - c).Length < 1e-3) { notes.Add($"Curved member {mb.Id} has its ends on its centre: left out."); return null; }
+        if (radius < 1e-3 || (e - c).Length < 1e-3) { notes.Skip("curved members with their ends on their centre", Item(mb)); return null; }
         // The normal about which it runs counter-clockwise from its start to its end; its tangent at the start.
         var ccwN = arc.Sweep < 0 ? -n : n;
         var u0 = Vec3.Cross(ccwN, s - c).Normalized();
@@ -381,7 +459,7 @@ public static class SdnfImport
         var level = Math.Abs(n.Z) > 1 - 1e-6 && Math.Abs(s.Z - e.Z) < 1e-6 && Math.Abs(s.Z - c.Z) < 1e-6 && Vec3.Dot(w, Vec3.UnitZ) > 1 - 1e-6;
         if (!level)
         {
-            notes.Add($"Curved member {mb.Id} ({mb.Size}) arches out of a level plane or has its section turned: Lapin's curved members are level beams with their sections upright, so it was left out.");
+            notes.Skip("curved members arching out of a level plane or with their section turned (Lapin's curved members are level beams with their sections upright)", $"{Item(mb)}, {mb.Size}");
             return null;
         }
         // The section's top centre: across the arc by the cardinal point's x (v is radial, ±1 outward), up by what its y leaves.
@@ -398,11 +476,11 @@ public static class SdnfImport
         if (turn <= 1e-9) turn += 2 * Math.PI;
         var rise = rr * (1 - Math.Cos(turn / 2)) * (ccw ? -1 : 1);
         var chord = (b - a).Length;
-        if (chord < 1e-3 || Math.Abs(rise) > 10 * chord) { notes.Add($"Curved member {mb.Id} closes nearly a full circle: Lapin's curved beams do not, so it was left out."); return null; }
+        if (chord < 1e-3 || Math.Abs(rise) > 10 * chord) { notes.Skip("curved members closing nearly a full circle (Lapin's curved beams do not)", Item(mb)); return null; }
 
         var existing = m.Get(id);
         const string cls = IfcClass.Beam;
-        if (existing != null && existing.Class != cls) notes.Add($"„{existing.Name}” is curved in the file: made again as a curved beam, its id kept.");
+        if (existing != null && existing.Class != cls) notes.Warn("elements curved in the file, made again as curved beams under their ids", $"„{existing.Name}”, {Item(mb)}");
         var material = MaterialFor(ctx, mb.Grade, section);
         Entity? type = existing?.Class == cls && m.RelatingOf(id, IfcClass.RelDefinesByType) is { } had && Section.From(had.Attrs["section"]) is { } hs && SameProfile(hs, section)
             && (material == null || (string?)had.Attrs["material"] == Materials.Find(m, material)?.Id) ? had : null;
@@ -415,7 +493,7 @@ public static class SdnfImport
         attrs["topOffset"] = R(top - storey.Num("elevation") - storey.Num("height", 3));
         attrs[PathCurve.Key] = R(rise);
         if (flipped) attrs["flipped"] = true; else attrs.Remove("flipped");
-        return (cls, Commit(ctx, mb, id, source, existing, cls, attrs, "BEAM", storey, type));
+        return (cls, Commit(ctx, mb, id, source, existing, cls, attrs, "BEAM", storey, type, relate));
     }
 
     /// <summary>A loop without its closing vertex.</summary>
@@ -431,14 +509,14 @@ public static class SdnfImport
     /// none. A round hole by its centres and radius; any other by its two loops (curved edges straight between their
     /// vertices). The count put on it.
     /// </summary>
-    static int SetHoles(ICommandContext ctx, string id, IReadOnlyList<SdnfHole> holes, List<string> notes)
+    static int SetHoles(ICommandContext ctx, string id, IReadOnlyList<SdnfHole> holes, SdnfProtocol notes)
     {
         if (ctx.Model.Get(id) is not { } e) return 0;
         var list = new List<MemberHole>();
         if (holes.Count > 0)
         {
             if (MemberAxes.Of(ctx.Model, e) is not { } ax)
-                notes.Add($"„{e.Name}” is curved: its {holes.Count} hole(s) were left out (Lapin cuts holes in straight members).");
+                foreach (var h in holes) notes.Skip("holes in curved members (Lapin cuts holes in straight members)", $"hole {h.Id} in „{e.Name}”{At(h.Line)}");
             else
             {
                 var origin = MemberHoles.Origin(ctx.Model, e, ax);
@@ -449,10 +527,10 @@ public static class SdnfImport
                     var round = h.Periphery == 2;
                     if (top.Count == 0 || bottom.Count != top.Count || (top[0] - bottom[0]).Length < 1e-6 || (round ? !(h.Top[0].Flag > 0) : top.Count < 3))
                     {
-                        notes.Add($"Hole {h.Id} in „{e.Name}” has no shape or no depth: left out.");
+                        notes.Skip("holes with no shape or no depth", $"hole {h.Id} in „{e.Name}”{At(h.Line)}");
                         continue;
                     }
-                    if (h.Top.Any(x => x.Flag == 2) && !round) notes.Add($"Hole {h.Id}: its curved edges came in straight between their vertices.");
+                    if (h.Top.Any(x => x.Flag == 2) && !round) notes.Warn("holes whose curved edges came in straight between their vertices", $"hole {h.Id}{At(h.Line)}");
                     list.Add(new MemberHole(h.Id, round ? h.Top[0].Flag : 0, [.. top.Select(L)], [.. bottom.Select(L)]));
                 }
             }
@@ -479,7 +557,7 @@ public static class SdnfImport
     /// The plate as the file has it and its holes are kept with it (<c>sdnf.def</c>, <c>sdnf.holes</c>), so an SDNF export
     /// writes them back. The count of holes cut; −1 when the plate has no body.
     /// </summary>
-    static int Plate(ICommandContext ctx, SdnfPlate p, string id, string source, IReadOnlyList<SdnfHole> holes, List<string> notes)
+    static int Plate(ICommandContext ctx, SdnfPlate p, string id, string source, IReadOnlyList<SdnfHole> holes, SdnfProtocol notes, Relations relate)
     {
         List<Vec3>? outline = null;
         var sweep = Vec3.Zero;
@@ -524,28 +602,28 @@ public static class SdnfImport
         {
             if (h.Thickness > 1e-9 && h.Thickness < p.Thickness - 1e-4)
             {
-                notes.Add($"Hole {h.Id} goes {h.Thickness * 1000:0.#} mm into plate {p.Id}, {p.Thickness * 1000:0.#} mm thick: a recess, which Lapin's plates do not take, so it was left out.");
+                notes.Skip("recesses: holes less deep than their plate, which Lapin's plates do not take", $"hole {h.Id}{At(h.Line)}, {h.Thickness * 1000:0.#} mm into plate {p.Id}, {p.Thickness * 1000:0.#} mm thick");
                 continue;
             }
             var round = h.Periphery == 2;
             List<Vec3> ring;
             if (round)
             {
-                if (h.Top.Count == 0 || !(h.Top[0].Flag > 0)) { notes.Add($"Hole {h.Id} has no radius: left out."); continue; }
+                if (h.Top.Count == 0 || !(h.Top[0].Flag > 0)) { notes.Skip("round holes with no radius", $"hole {h.Id}{At(h.Line)}"); continue; }
                 var axis = h.Bottom.Count > 0 && (h.Bottom[0].P - h.Top[0].P).Length > 1e-9 ? h.Bottom[0].P - h.Top[0].P : sweep;
                 ring = MemberHoles.Ring(h.Top[0].P, axis, h.Top[0].Flag);
             }
             else
             {
                 ring = Open(h.Top);
-                if (ring.Count < 3) { notes.Add($"Hole {h.Id} has fewer than three vertices: left out."); continue; }
-                if (h.Top.Any(x => x.Flag == 2)) notes.Add($"Hole {h.Id}: its curved edges came in straight between their vertices.");
+                if (ring.Count < 3) { notes.Skip("holes with fewer than three vertices", $"hole {h.Id}{At(h.Line)}"); continue; }
+                if (h.Top.Any(x => x.Flag == 2)) notes.Warn("holes whose curved edges came in straight between their vertices", $"hole {h.Id}{At(h.Line)}");
             }
             // Laid onto the face along the plate's thickness.
             ring = [.. ring.Select(q => q + sweep * (Vec3.Dot(normal, outline[0] - q) / along))];
             if (!ring.All(q => Polygon2.Contains(face, In2(q))))
             {
-                notes.Add($"Hole {h.Id} is not inside plate {p.Id}: left out.");
+                notes.Skip("holes not inside their plate", $"hole {h.Id} in plate {p.Id}{At(h.Line)}");
                 continue;
             }
             rings.Add(ring);
@@ -598,7 +676,53 @@ public static class SdnfImport
         else ctx.Add(new Entity(id, "IfcPlate", name, attrs, "USERDEFINED"));
         var minZ = verts.Count > 0 ? verts.Min(x => x.Z) : 0;
         var storey = StoreyAt(ctx.Model, minZ);
-        if (Spatial.StoreyOf(ctx.Model, id)?.Id != storey.Id) Spatial.Contain(ctx, storey.Id, id);
+        if (Spatial.StoreyOf(ctx.Model, id)?.Id != storey.Id) relate.Add(IfcClass.RelContainedInSpatialStructure, storey.Id, id);
         return rings.Count;
     }
+}
+
+/// <summary>
+/// What an SDNF import says besides its counts (docs/sdnf.md, the protocol; report #148): notes, and what was left out or
+/// changed grouped by why, each group with its items (a member's number and line), so a file of thousands says a reason
+/// once with its count rather than a line per member.
+/// </summary>
+public sealed class SdnfProtocol(IEnumerable<string> notes)
+{
+    /// <summary>The items a group lists in the notes; the protocol's groups keep more.</summary>
+    public const int Shown = 10;
+    /// <summary>The items a group keeps.</summary>
+    public const int Kept = 200;
+
+    readonly List<string> _notes = [.. notes];
+    public sealed record Group(string Reason, List<string> Items) { public int Count { get; set; } }
+    readonly List<Group> _skips = [];
+    readonly List<Group> _warnings = [];
+    public IReadOnlyList<Group> Skips => _skips;
+    public IReadOnlyList<Group> Warnings => _warnings;
+
+    public void Note(string text) => _notes.Add(text);
+    /// <summary>An item left out, and why.</summary>
+    public void Skip(string reason, string item) => Add(_skips, reason, item);
+    /// <summary>An item brought in, changed from what the file says, and how.</summary>
+    public void Warn(string reason, string item) => Add(_warnings, reason, item);
+
+    static void Add(List<Group> into, string reason, string item)
+    {
+        var g = into.FirstOrDefault(x => x.Reason == reason);
+        if (g == null) into.Add(g = new Group(reason, []));
+        g.Count++;
+        if (g.Items.Count < Kept) g.Items.Add(item);
+    }
+
+    static string Line(string head, Group g) =>
+        $"{head}, {g.Reason}: {g.Count} — {string.Join(", ", g.Items.Take(Shown))}{(g.Count > Shown ? $" and {g.Count - Shown} more" : "")}.";
+
+    /// <summary>The notes, then a line for each group: left out first, then what changed.</summary>
+    public IEnumerable<string> Lines() =>
+        _notes.Concat(_skips.Select(g => Line("Left out", g))).Concat(_warnings.Select(g => Line("Changed", g)));
+
+    public static JsonArray Json(IReadOnlyList<Group> groups) => new([.. groups.Select(g => (JsonNode)new JsonObject
+    {
+        ["reason"] = g.Reason, ["count"] = g.Count, ["items"] = new JsonArray([.. g.Items.Select(i => (JsonNode)i)]),
+    })]);
 }

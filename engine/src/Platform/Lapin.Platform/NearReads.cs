@@ -16,6 +16,18 @@ public static class NearReads
     public const double Size = 4;
     /// <summary>How far round a box its cells reach (m).</summary>
     public const double Margin = 0.5;
+    /// <summary>
+    /// Up to this many elements a class is read whole by the builds that may look at all of it (a beam's columns, an element's
+    /// cutters; report #148): their dependencies stay exact and their earlier builds are found again on an undo (a cell has no
+    /// stamp, <c>Session.StampOf</c>). Past it they read only the cells round them, which keeps a frame of thousands linear; such a
+    /// build is then made again on an undo rather than found.
+    /// </summary>
+    public const int WholeUpTo = 500;
+
+    /// <summary>Whether a build reading <paramref name="ifcClass"/> through <paramref name="m"/> reads it only near (more than <see cref="WholeUpTo"/> of it).</summary>
+    public static bool Many(IModelView m, string ifcClass) =>
+        (m is TrackingView tv ? tv.Inner : m) is ModelStore s ? s.CountOf(ifcClass) > WholeUpTo : m.OfClass(ifcClass).Skip(WholeUpTo).Any();
+
     /// <summary>A box over more cells than this reads and touches <see cref="Any"/> alone.</summary>
     const int MaxCells = 4096;
 

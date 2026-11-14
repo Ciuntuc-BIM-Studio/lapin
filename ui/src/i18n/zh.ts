@@ -2186,6 +2186,8 @@ export const ZH: Record<string, string> = {
   "wait a moment; Enter runs the alias": "稍等片刻；按 Enter 运行别名",
   // SDNF, the steel detailing neutral file (docs/sdnf.md, decision 463)
   'Import SDNF…': '导入 SDNF…', 'columns, beams, steel members and plates, for steel detailing programs': '柱、梁、钢构件和钢板，供钢结构深化设计程序使用',
+  // The SDNF import's progress and protocol (report #148)
+  "SDNF import": "SDNF 导入", "Time": "用时", "lines": "行", "Packet": "数据包", "Imported": "已导入", "linear members": "直线构件", "plates": "钢板", "holes": "孔", "grid sets": "轴网组", "curved members": "曲线构件", "member loads (not imported)": "构件荷载（未导入）", "connection details (not imported)": "连接详图（未导入）", "not defined by SDNF (not imported)": "非 SDNF 定义（未导入）", "Save…": "保存…", "Copy failed.": "复制失败。", "Bringing the members in": "正在导入构件", "Bringing the plates in": "正在导入钢板", "Placing the holes": "正在布置孔", "The protocol is copied.": "已复制报告。", "Profiles in no library, drawn as placeholders": "不在任何库中的型材，以占位截面绘制", "Nothing of the file was imported. Correct the record named above (or ask for the file again from the program that wrote it) and import it again.": "文件中的内容均未导入。请更正上面指出的记录（或向写出该文件的程序重新索取文件），然后再次导入。", "Cancelled: nothing of the file was imported.": "已取消：文件中的内容均未导入。",
   // Casework of boards, its configurator and cut list (decision 475)
   "furniture|Side": "侧板",
   "furniture|Bottom": "底板",
@@ -3887,6 +3889,7 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^The template „(.+)” chosen for new projects is no longer on this computer: Lapin's default was used\.$/, (m) => `为新项目选择的模板 „${m[1]}” 已不在此计算机上：已使用 Lapin 默认。`],
   [/^There is no template „(.+)”\.$/, (m) => `没有模板 „${m[1]}”。`],
   [/^A template is already called „(.+)”\.$/, (m) => `已有名为 „${m[1]}” 的模板。`],
+  [/^Imported (.+): (\d+) new, (\d+) updated, (\d+) plates, (\d+) holes, (\d+) grids, (\d+) left out\.$/, (m) => `已导入 ${m[1]}：新建 ${m[2]} 个，更新 ${m[3]} 个，钢板 ${m[4]} 块，孔 ${m[5]} 个，轴网 ${m[6]} 组，略去 ${m[7]} 个。`],
   [/^Imported (.+): (\d+) new, (\d+) updated, (\d+) plates\.$/, (m) => `已导入 ${m[1]}：新建 ${m[2]} 个，更新 ${m[3]} 个，钢板 ${m[4]} 块。`],
   [/^Profiles in no library, drawn as placeholders: (.+)\.$/, (m) => `不在任何库中的型材，以占位截面绘制：${m[1]}。`],
   [/^(\d+) added, (\d+) already in your library\.$/, (m) => `已添加 ${m[1]} 项，${m[2]} 项已在您的库中。`],
