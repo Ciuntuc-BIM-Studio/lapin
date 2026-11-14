@@ -336,6 +336,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         Skirtings.Register(r);
         WallSweeps.Register(r);
         RoomFinishes.Register(r);
+        FinishZones.Register(r);
         RoomOpenings.Register(r);
         TypeExchange.Register(r);
 

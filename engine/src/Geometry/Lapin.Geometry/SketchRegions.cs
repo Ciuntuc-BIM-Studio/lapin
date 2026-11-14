@@ -1,13 +1,11 @@
-using Lapin.Geometry;
-
-namespace Lapin.Studio;
+namespace Lapin.Geometry;
 
 /// <summary>
 /// A face split by the lines sketched on it (docs/plan-studio-sketch.md, stage B, decision 375): the face's outline and
 /// the sketch's lines, arcs and shapes (flattened) make a planar graph; the region round a point is the smallest of its
 /// faces holding it. Segments are split where they cross or touch, ends within the tolerance are one vertex, and lines
 /// that stop short (a dangling end) bound nothing. Islands (a loop not touching the rest) are regions of their own; the
-/// region round them does not leave them out.
+/// region round them does not leave them out. Shared by Studio's faces and the finish painter's (docs/plan-finish-painter.md).
 /// </summary>
 public static class SketchRegions
 {

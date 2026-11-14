@@ -277,6 +277,8 @@ public sealed class VisibilityGraphics
     string? FinishOf(Entity e)
     {
         if (e.Class == "LapinRoomFinish") return e.Str("part") switch { "walls" => "walls", "floor" => "slabs", _ => null };
+        // A finish painted on a face (forum topic 83): a wall's side a wall finish, a floor's top a floor finish.
+        if (e.Class == "LapinFinishZone") return e.PredefinedType switch { "CLADDING" when m.Get(e.Str("hostId") ?? "")?.Class == IfcClass.Wall => "walls", "FLOORING" => "slabs", _ => null };
         return ReferenceLayers.CategoryOf(e) is { } c && c is "walls" or "slabs" && ReferenceLayers.WholeSub(m, e) == "finishes" ? c : null;
     }
 

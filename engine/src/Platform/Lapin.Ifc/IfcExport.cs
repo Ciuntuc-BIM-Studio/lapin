@@ -2306,6 +2306,9 @@ public static partial class IfcExport
                 if (e.Str("host") is { } host && written.TryGetValue(host, out var h))
                     f.Add("IFCRELCONNECTSELEMENTS", Gid(e.Id, "host-rel"), Null, S(e.Str("hostRelation") ?? "Formwork"), Null, Null, h, element);
             }
+            // Coverings on an element's faces (the finish painter, forum topic 83): one IfcRelCoversBldgElements per element covered.
+            foreach (var g in m.Entities.Where(e => e.Str("covers") is { } c && written.ContainsKey(e.Id) && written.ContainsKey(c)).GroupBy(e => e.Str("covers")!).OrderBy(g => g.Key, StringComparer.Ordinal))
+                f.Add("IFCRELCOVERSBLDGELEMENTS", Gid(g.Key, "covers"), Null, Null, Null, written[g.Key], L(g.Select(e => written[e.Id])));
             // A platform voiding the terrain: IFC 4.3 has it as a feature; in IFC4 it is a proxy and only stands there.
             if (o.Ifc43)
                 foreach (var (rel, host, v) in pendingVoids)

@@ -308,13 +308,13 @@ public static class ViewStyles
     /// </summary>
     public static string? FinishElementSub(IModelView m, Entity e)
     {
-        if (e.Class is "LapinRoomFinish" or "LapinSkirting") return "finishes";
+        if (e.Class is "LapinRoomFinish" or "LapinSkirting" or "LapinFinishZone") return "finishes";
         if (ReferenceLayers.WholeSub(m, e) is { } whole) return whole;
         return e.Class == "IfcCovering" ? CoveringSub(e.PredefinedType ?? m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.PredefinedType) : null;
     }
 
     /// <summary>The classes whose elements bear load or not (IFC's Pset_…Common LoadBearing), which the cores of the load-bearing elements only leave out when they do not.</summary>
-    static readonly HashSet<string> Bearing = [IfcClass.Wall, "IfcWallStandardCase", "IfcCurtainWall", IfcClass.Slab, IfcClass.Roof, IfcClass.Column, IfcClass.Beam, IfcClass.Footing, "IfcPile", "IfcMember", "IfcPlate", "IfcCovering", "LapinRoomFinish"];
+    static readonly HashSet<string> Bearing = [IfcClass.Wall, "IfcWallStandardCase", "IfcCurtainWall", IfcClass.Slab, IfcClass.Roof, IfcClass.Column, IfcClass.Beam, IfcClass.Footing, "IfcPile", "IfcMember", "IfcPlate", "IfcCovering", "LapinRoomFinish", "LapinFinishZone"];
 
     /// <summary>Those taken as bearing load when nothing says: columns, beams, footings and piles (as the IFC export writes them), floors and roofs.</summary>
     static readonly HashSet<string> BearingUnlessSaid = [IfcClass.Slab, IfcClass.Roof, IfcClass.Column, IfcClass.Beam, IfcClass.Footing, "IfcPile"];
@@ -332,7 +332,7 @@ public static class ViewStyles
     public static bool BearsLoad(IModelView m, Entity e)
     {
         if (!Bearing.Contains(e.Class)) return true;
-        if (e.Class is "IfcCovering" or "LapinRoomFinish") return false;
+        if (e.Class is "IfcCovering" or "LapinRoomFinish" or "LapinFinishZone") return false;
         if (Coordination.Provisions.LoadBearingOrNull(m, e) is { } said) return said;
         if (e.Class is IfcClass.Wall or "IfcWallStandardCase")
             return !(e.PredefinedType == "PARTITIONING" || m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.PredefinedType == "PARTITIONING");

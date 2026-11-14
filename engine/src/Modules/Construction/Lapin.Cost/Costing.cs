@@ -164,7 +164,7 @@ public static class Costing
         "IfcWall" or "IfcCurtainWall" or "LapinWallSweep" => "Walls",
         "IfcRoof" => "Roof",
         "IfcDoor" or "IfcWindow" => "Doors and windows",
-        "IfcCovering" or "LapinRoomFinish" or "LapinSkirting" or "LapinCeiling" or "IfcRailing" or "LapinRailing" => "Finishes and insulation",
+        "IfcCovering" or "LapinRoomFinish" or "LapinFinishZone" or "LapinSkirting" or "LapinCeiling" or "IfcRailing" or "LapinRailing" => "Finishes and insulation",
         "LapinFormwork" or "LapinScaffold" => "Site works",
         // Every building service by its supertype (a ventilation unit, a damper, a sensor), else by its name's words.
         _ when IfcSchema.IsDistribution(cls) || Mep.Any(x => cls.Contains(x, StringComparison.Ordinal)) => "Installations",
