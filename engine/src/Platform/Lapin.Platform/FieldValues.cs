@@ -129,6 +129,39 @@ public sealed record FieldCondition(string Field, string Op, string? Value)
         if (Value != null && Op is not ("exists" or "missing")) o["value"] = Value;
         return o;
     }
+
+    /// <summary>The condition in words, as a task's rule or a schedule's filter is described („Pset_Firma.Etapa = E2”, „Sector exists”).</summary>
+    public override string ToString() => Op is "exists" or "missing" ? $"{Field} {Op}" : $"{Field} {Op} {Value}";
+
+    /// <summary>Conditions as stored (<c>[{field, op, value}]</c>); those that do not read are left out.</summary>
+    public static List<FieldCondition> ReadAll(JsonNode? n) => (n as JsonArray ?? []).OfType<JsonObject>()
+        .Select(c => ((string?)c["field"])?.Trim() is { Length: > 0 } f && Normal((string?)c["op"]) is { } op ? new FieldCondition(f, op, ValueText(c["value"])) : null)
+        .OfType<FieldCondition>().ToList();
+
+    /// <summary>A condition's value as a text: a number written with a point, yes or no for a yes/no.</summary>
+    public static string? ValueText(JsonNode? v) => v switch
+    {
+        null => null,
+        JsonValue s when s.TryGetValue<string>(out var t) => t,
+        JsonValue b when b.TryGetValue<bool>(out var x) => x ? "yes" : "no",
+        _ => Json.Number(v) is { } n ? n.ToString("R", CultureInfo.InvariantCulture) : v.ToJsonString(),
+    };
+
+    /// <summary>Conditions as a command gives them, checked: each with a field, an operator Lapin knows and a value when it needs one; at most <paramref name="max"/>.</summary>
+    public static List<FieldCondition> CheckAll(JsonNode? n, int max = ElementFilter.MaxConditions)
+    {
+        if (n is null) return [];
+        if (n is not JsonArray conditions) throw new CommandException("Conditions are a list: [{field, op, value}].");
+        if (conditions.Count > max) throw new CommandException($"At most {max} conditions.");
+        foreach (var c in conditions)
+        {
+            if (c is not JsonObject co || ((string?)co["field"])?.Trim() is not { Length: > 0 } field) throw new CommandException("A condition names a field: {field, op, value}.");
+            if (Normal((string?)co["op"]) is not { } op) throw new CommandException($"„{field}”: a condition's operator is one of {string.Join(", ", Ops)}.");
+            if (op is not ("exists" or "missing") && co["value"] is null) throw new CommandException($"„{field} {op}”: which value?");
+            if (ElementFields.FormulaOf(field) is { } f) ParamFormulas.Check(f);
+        }
+        return ReadAll(n);
+    }
 }
 
 /// <summary>
@@ -161,34 +194,16 @@ public sealed record ElementFilter(IReadOnlyList<string> Classes, IReadOnlyList<
     public static ElementFilter? Read(JsonNode? n)
     {
         if (n is not JsonObject o) return null;
-        var conditions = (o["conditions"] as JsonArray ?? []).OfType<JsonObject>()
-            .Select(c => ((string?)c["field"])?.Trim() is { Length: > 0 } f && FieldCondition.Normal((string?)c["op"]) is { } op ? new FieldCondition(f, op, ValueText(c["value"])) : null)
-            .OfType<FieldCondition>().ToList();
-        return new(Strings(o["classes"]), Strings(o["types"]), Strings(o["storeys"]), Strings(o["materials"]), Strings(o["groups"]), Strings(o["phases"]), conditions);
+        return new(Strings(o["classes"]), Strings(o["types"]), Strings(o["storeys"]), Strings(o["materials"]), Strings(o["groups"]), Strings(o["phases"]), FieldCondition.ReadAll(o["conditions"]));
     }
-
-    static string? ValueText(JsonNode? v) => v switch
-    {
-        null => null,
-        JsonValue s when s.TryGetValue<string>(out var t) => t,
-        JsonValue b when b.TryGetValue<bool>(out var x) => x ? "yes" : "no",
-        _ => Json.Number(v) is { } n ? n.ToString("R", CultureInfo.InvariantCulture) : v.ToJsonString(),
-    };
 
     /// <summary>A filter as a command gives it, checked: each condition with a field and an operator Lapin knows.</summary>
     public static ElementFilter? Check(JsonNode? n)
     {
         if (n is null) return null;
         if (n is not JsonObject o) throw new CommandException("A filter is an object: {classes, types, storeys, materials, groups, phases, conditions}.");
-        var conditions = o["conditions"] as JsonArray ?? [];
-        if (conditions.Count > MaxConditions) throw new CommandException($"A filter has at most {MaxConditions} conditions.");
-        foreach (var c in conditions)
-        {
-            if (c is not JsonObject co || ((string?)co["field"])?.Trim() is not { Length: > 0 } field) throw new CommandException("A condition names a field: {field, op, value}.");
-            if (FieldCondition.Normal((string?)co["op"]) is not { } op) throw new CommandException($"„{field}”: a condition's operator is one of {string.Join(", ", FieldCondition.Ops)}.");
-            if (op is not ("exists" or "missing") && co["value"] is null) throw new CommandException($"„{field} {op}”: which value?");
-            if (ElementFields.FormulaOf(field) is { } f) ParamFormulas.Check(f);
-        }
+        if (o["conditions"] is JsonArray { Count: > MaxConditions }) throw new CommandException($"A filter has at most {MaxConditions} conditions.");
+        FieldCondition.CheckAll(o["conditions"]);
         return Read(o);
     }
 

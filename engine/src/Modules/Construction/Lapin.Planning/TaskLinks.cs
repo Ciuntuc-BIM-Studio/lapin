@@ -7,24 +7,38 @@ namespace Lapin.Planning;
 
 /// <summary>
 /// A task's rule (docs/plan-4d5d.md, stage 2): the filter its elements are found by, as a schedule's filter is — the IFC
-/// classes, the types, the storeys, the materials (an element with any of them), the groups and the phases created in —
-/// every condition given must hold, and one left empty lets everything through. Stored on the task; the elements are worked
-/// out from the model on every ask, so a wall drawn today joins the task "Masonry first floor" by itself.
+/// classes, the types, the storeys, the materials (an element with any of them), the groups and the phases created in, then
+/// conditions on any field (<see cref="FieldCondition"/>, read by <see cref="ElementFields"/>: a property set a file gave,
+/// the user's parameters, a quantity, a formula, the office's aliases; docs/plan-user-extensibility.md §12) — every condition
+/// given must hold, and one left empty lets everything through. Stored on the task; the elements are worked out from the
+/// model on every ask, so a wall drawn today joins the task "Masonry first floor" by itself.
 /// </summary>
 public sealed record TaskRule(IReadOnlyList<string> Classes, IReadOnlyList<string> Types, IReadOnlyList<string> Storeys,
-    IReadOnlyList<string> Materials, IReadOnlyList<string> Groups, IReadOnlyList<string> Phases, IReadOnlyList<string>? DemolishedIn = null)
+    IReadOnlyList<string> Materials, IReadOnlyList<string> Groups, IReadOnlyList<string> Phases, IReadOnlyList<string>? DemolishedIn = null,
+    IReadOnlyList<FieldCondition>? FieldConditions = null)
 {
     public static readonly string[] Keys = ["classes", "types", "storeys", "materials", "groups", "phases", "demolished"];
 
     /// <summary>The phases its elements are demolished in (stage 3: a demolition task's rule); empty: demolished or not.</summary>
     public IReadOnlyList<string> Demolished => DemolishedIn ?? [];
 
+    /// <summary>Its conditions on any field (<c>conditions: [{field, op, value}]</c>), all of which must hold.</summary>
+    public IReadOnlyList<FieldCondition> Conditions => FieldConditions ?? [];
+
     static List<string> Strings(JsonNode? n) => n is JsonArray a ? a.Select(x => (string?)x).OfType<string>().Where(s => s.Length > 0).Distinct().ToList() : [];
 
     /// <summary>A rule as stored (or as a command gives it); null when there is none.</summary>
     public static TaskRule? Read(JsonNode? n) => n is JsonObject o
-        ? new(Strings(o["classes"]), Strings(o["types"]), Strings(o["storeys"]), Strings(o["materials"]), Strings(o["groups"]), Strings(o["phases"]), Strings(o["demolished"]))
+        ? new(Strings(o["classes"]), Strings(o["types"]), Strings(o["storeys"]), Strings(o["materials"]), Strings(o["groups"]), Strings(o["phases"]), Strings(o["demolished"]),
+            FieldCondition.ReadAll(o["conditions"]))
         : null;
+
+    /// <summary>A rule as a command gives it, its conditions checked (a field, an operator Lapin knows, a value when it needs one).</summary>
+    public static TaskRule? Check(JsonNode? n)
+    {
+        if (n is JsonObject o) FieldCondition.CheckAll(o["conditions"]);
+        return Read(n);
+    }
 
     IEnumerable<(string Key, IReadOnlyList<string> Values)> Lists() =>
         [("classes", Classes), ("types", Types), ("storeys", Storeys), ("materials", Materials), ("groups", Groups), ("phases", Phases), ("demolished", Demolished)];
@@ -34,8 +48,12 @@ public sealed record TaskRule(IReadOnlyList<string> Classes, IReadOnlyList<strin
     {
         var o = new JsonObject();
         foreach (var (k, v) in Lists()) if (v.Count > 0) o[k] = new JsonArray(v.Select(x => (JsonNode)x).ToArray());
+        if (Conditions.Count > 0) o["conditions"] = new JsonArray(Conditions.Select(c => (JsonNode)c.ToJson()).ToArray());
         return o;
     }
+
+    /// <summary>The same rule with more conditions on fields (a step's split: one task a value).</summary>
+    public TaskRule With(IEnumerable<FieldCondition> more) => this with { FieldConditions = [.. Conditions, .. more] };
 
     /// <summary>
     /// Whether the rule's classes take an element's class: by its name, or a building service by a supertype the rule names
@@ -44,14 +62,16 @@ public sealed record TaskRule(IReadOnlyList<string> Classes, IReadOnlyList<strin
     public bool TakesClass(string cls) =>
         Classes.Contains(cls) || (IfcSchema.Parent(cls) != null && Classes.Any(c => IfcSchema.IsA(cls, c)));
 
-    public bool Matches(ElementFacts f, string defaultPhase) =>
+    /// <summary>Whether it takes an element; its conditions on fields read by <paramref name="field"/> (none given: they do not hold).</summary>
+    public bool Matches(ElementFacts f, string defaultPhase, Func<string, FieldValue>? field = null) =>
         (Classes.Count == 0 || TakesClass(f.Element.Class))
         && (Types.Count == 0 || f.Type != null && Types.Contains(f.Type))
         && (Storeys.Count == 0 || f.Storey != null && Storeys.Contains(f.Storey))
         && (Materials.Count == 0 || Materials.Any(f.Materials.Contains))
         && (Groups.Count == 0 || f.Group != null && Groups.Contains(f.Group))
         && (Phases.Count == 0 || Phases.Contains(f.Phase ?? defaultPhase))
-        && (Demolished.Count == 0 || f.Demolished != null && Demolished.Contains(f.Demolished));
+        && (Demolished.Count == 0 || f.Demolished != null && Demolished.Contains(f.Demolished))
+        && (Conditions.Count == 0 || field != null && Conditions.All(c => c.Holds(field(c.Field))));
 }
 
 /// <summary>
@@ -163,7 +183,11 @@ public sealed class TaskElements
     readonly IModelView m;
     readonly IServices services;
     readonly Func<string, ClassDescriptor?> describe;
+    readonly IQueryContext query;
+    readonly string units;
     readonly Dictionary<string, ElementFacts?> facts = [];
+    readonly Dictionary<string, ElementFields> readers = [];
+    readonly Dictionary<(string Id, string Field), FieldValue> values = [];
     readonly string defaultPhase;
     readonly PhaseSettings phases;
 
@@ -176,23 +200,29 @@ public sealed class TaskElements
     readonly HashSet<string> candidateIds = [];
     readonly Plan plan;
 
-    TaskElements(IModelView m, IServices services, Func<string, ClassDescriptor?> describe, Plan plan)
+    TaskElements(IModelView m, IServices services, Func<string, ClassDescriptor?> describe, Plan plan, IQueryContext? query)
     {
         this.m = m;
         this.services = services;
         this.describe = describe;
         this.plan = plan;
+        this.query = query != null && ReferenceEquals(query.Model, m) ? query : new ViewQuery(m, services, describe, query);
+        units = DraftingResources.Book(m).Units;
         phases = PhasesModule.Settings(m);
         defaultPhase = phases.DefaultCreated?.Id ?? "";
     }
 
-    public static TaskElements Resolve(ICommandContext ctx, Plan? plan = null) => Resolve(ctx.Model, ctx.Services, ctx.Describe, plan);
-    public static TaskElements Resolve(IQueryContext q, Plan? plan = null) => Resolve(q.Model, q.Services, q.Describe, plan);
+    public static TaskElements Resolve(ICommandContext ctx, Plan? plan = null) => Resolve(ctx.Model, ctx.Services, ctx.Describe, plan, ctx.Query);
+    public static TaskElements Resolve(IQueryContext q, Plan? plan = null) => Resolve(q.Model, q.Services, q.Describe, plan, q);
 
-    public static TaskElements Resolve(IModelView m, IServices services, Func<string, ClassDescriptor?> describe, Plan? plan = null)
+    /// <summary>
+    /// The links on a model (a draft of it, the generator's preview); <paramref name="query"/> gives the elements' geometry and
+    /// quantities the rules' conditions on fields may read (without it, fields read the model alone).
+    /// </summary>
+    public static TaskElements Resolve(IModelView m, IServices services, Func<string, ClassDescriptor?> describe, Plan? plan = null, IQueryContext? query = null)
     {
         plan ??= Plan.Read(m);
-        var t = new TaskElements(m, services, describe, plan);
+        var t = new TaskElements(m, services, describe, plan, query);
         var producers = services.Get<IGeometryProducers>();
         foreach (var e in m.Entities)
             if (t.IsCandidate(e, producers) && t.Facts(e.Id) is { } f) { t.Candidates.Add(f); t.candidateIds.Add(e.Id); }
@@ -271,6 +301,23 @@ public sealed class TaskElements
         return [new LayerFact(0, true, materials.Count > 0 ? NameOf(materials[0]) : e.Name, materials)];
     }
 
+    /// <summary>
+    /// A field's value on an element (<see cref="ElementFields"/>: its attributes, parameters, the property sets its file gave
+    /// it, its quantities, a formula, the office's aliases), read once per element and field however many tasks ask.
+    /// </summary>
+    public FieldValue Field(string elementId, string field)
+    {
+        if (values.TryGetValue((elementId, field), out var v)) return v;
+        if (!readers.TryGetValue(elementId, out var reader))
+        {
+            if (m.Get(elementId) is not { } e) return values[(elementId, field)] = FieldValue.Missing;
+            readers[elementId] = reader = new ElementFields(query, e, units);
+        }
+        return values[(elementId, field)] = reader.Value(field);
+    }
+
+    bool Takes(TaskRule rule, ElementFacts f) => rule.Matches(f, defaultPhase, field => Field(f.Element.Id, field));
+
     /// <summary>A task's own elements: those its rule takes, with those added by hand, without those taken off, each with the layers its part takes (none of it: left out).</summary>
     public Dictionary<string, ulong> Of(PlanTask task)
     {
@@ -283,13 +330,13 @@ public sealed class TaskElements
             var mask = TaskParts.Mask(task.Part, f, m);
             if (mask != 0) o[f.Element.Id] = mask;
         }
-        if (task.Rule is { } rule) foreach (var f in Candidates) if (rule.Matches(f, defaultPhase)) Take(f);
+        if (task.Rule is { } rule) foreach (var f in Candidates) if (Takes(rule, f)) Take(f);
         foreach (var id in task.Add) if (Facts(id) is { } f) Take(f);
         return o;
     }
 
     /// <summary>Whether a task's rule takes an element (its exceptions left aside).</summary>
-    public bool RuleTakes(PlanTask task, ElementFacts f) => task.Rule is { } r && candidateIds.Contains(f.Element.Id) && r.Matches(f, defaultPhase);
+    public bool RuleTakes(PlanTask task, ElementFacts f) => task.Rule is { } r && candidateIds.Contains(f.Element.Id) && Takes(r, f);
 
     /// <summary>A task's elements with those of every task under it (a summary's are its tasks').</summary>
     public HashSet<string> Under(string taskId)
@@ -340,6 +387,7 @@ public sealed class TaskElements
                 var ph = PhasesModule.Settings(m);
                 bits.Add("demolished in " + string.Join(", ", rule.Demolished.Select(p => ph.Phases.FirstOrDefault(x => x.Id == p)?.Name ?? p)));
             }
+            if (rule.Conditions.Count > 0) bits.Add(string.Join(", ", rule.Conditions));
             if (bits.Count == 0) bits.Add("every element");
         }
         if (part != null)
@@ -397,4 +445,17 @@ public static class TaskLinkData
         if (ElementMark.ReadAll(links["marks"]) is { } marks)
             attrs["marks"] = new JsonObject(marks.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value.ToJson())));
     }
+}
+
+/// <summary>
+/// A model view read as a query (a draft of the model, <see cref="ScheduleDraft"/>): its geometry and quantities those of the
+/// query given (the elements are the same), else none; what a rule's condition on a field reads on it.
+/// </summary>
+sealed class ViewQuery(IModelView m, IServices services, Func<string, ClassDescriptor?> describe, IQueryContext? inner) : IQueryContext
+{
+    public IModelView Model => m;
+    public IServices Services => services;
+    public ElementGeometry? Geometry(string entityId) => inner?.Geometry(entityId);
+    public IReadOnlyList<QuantitySet> Quantities(string id) => inner?.Quantities(id) ?? [];
+    public ClassDescriptor? Describe(string ifcClass) => describe(ifcClass);
 }

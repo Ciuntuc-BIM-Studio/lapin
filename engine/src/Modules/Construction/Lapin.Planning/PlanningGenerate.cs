@@ -18,7 +18,9 @@ public sealed partial class PlanningModule
         var baseSpec = (string?)a["style"] is { Length: > 0 } style
             ? Generator.StyleSpec(m, style) ?? throw new CommandException($"There is no schedule style „{style}”.")
             : Generator.Current(m);
-        return a["spec"] is JsonObject o ? GenSpec.Read(o, baseSpec) : baseSpec;
+        if (a["spec"] is not JsonObject o) return baseSpec;
+        GenSpec.Check(o);
+        return GenSpec.Read(o, baseSpec);
     }
 
     static bool Keep(JsonObject a) => a["keep"] is not JsonValue v || !v.TryGetValue<bool>(out var b) || b;
@@ -116,7 +118,7 @@ public sealed partial class PlanningModule
         var draft = new ScheduleDraft(q.Model, [o.Schedule, .. o.Tasks], o.Links);
         var p = Plan.Read(draft);
         var (r, problem) = Solve(p);
-        var links = TaskElements.Resolve(draft, q.Services, q.Describe, p);
+        var links = TaskElements.Resolve(draft, q.Services, q.Describe, p, q);
         var (none, partial) = links.Unlinked();
         var made = o.Made.ToDictionary(x => x.Id);
         var rows = new JsonArray();

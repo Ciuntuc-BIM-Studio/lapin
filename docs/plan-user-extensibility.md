@@ -408,7 +408,7 @@ Fiecare comandă e un pas de anulare. Un invitat editor al unei sesiuni partajat
 
 ### 11.4 Aliasurile (numele biroului)
 
-Pe IfcProject (`fieldAliases`), ca definițiile de parametri: `{name, sources: [în ordine], description?}`, de pildă `Length` ← `Qto_WallBaseQuantities.Length`, `Pset_X.L_m`; `Phase` ← `Pset_Firma.Etapa`, `ArchiCADProperties.Faza`. Un alias citește prima sursă pe care elementul o are (o valoare nevidă) și e un câmp ca oricare: etichete, text viu, formule, extrase, filtre (și, în etapa următoare, filtrele de vizibilitate și regulile sarcinilor). Are întâietate față de câmpul elementului cu același nume; o sursă care numește aliasul însuși citește câmpul elementului. Numele nu are punct, acoladă, bară sau egal și nu e un câmp al oricărui element (`name`, `mark`, `type`, `class`, `tag`) sau un domeniu. Un alias numit ca o cantitate standard (`Length`, `Width`, `Height`, `NetSideArea`, `GrossArea`, `NetVolume`, `Weight`… lista `ReferenceQuantities.Standard`) completează cantitatea pentru referințele al căror fișier n-o are, deci antemăsurătoarea și devizul o văd; ce dă fișierul rămâne al fișierului.
+Pe IfcProject (`fieldAliases`), ca definițiile de parametri: `{name, sources: [în ordine], description?}`, de pildă `Length` ← `Qto_WallBaseQuantities.Length`, `Pset_X.L_m`; `Phase` ← `Pset_Firma.Etapa`, `ArchiCADProperties.Faza`. Un alias citește prima sursă pe care elementul o are (o valoare nevidă) și e un câmp ca oricare: etichete, text viu, formule, extrase, filtre, regulile și graficul sarcinilor (§12), filtrele de vizibilitate prin regula `param` (§12.5). Are întâietate față de câmpul elementului cu același nume; o sursă care numește aliasul însuși citește câmpul elementului. Numele nu are punct, acoladă, bară sau egal și nu e un câmp al oricărui element (`name`, `mark`, `type`, `class`, `tag`) sau un domeniu. Un alias numit ca o cantitate standard (`Length`, `Width`, `Height`, `NetSideArea`, `GrossArea`, `NetVolume`, `Weight`… lista `ReferenceQuantities.Standard`) completează cantitatea pentru referințele al căror fișier n-o are, deci antemăsurătoarea și devizul o văd; ce dă fișierul rămâne al fișierului.
 
 ### 11.5 Bibliotecile
 
@@ -421,3 +421,80 @@ Extrasul e o entitate `LapinSchedule` ca celelalte, salvată în `.lapin` la fel
 ### 11.7 De făcut în interfață
 
 Felul „Field schedule” în dialogul de extras nou; editorul: filtrul (dimensiunile cu listele proiectului, condițiile cu alegătorul de câmpuri din `fields.model` și de valori din `fields.values`), gruparea, coloanele (câmp sau formulă, titlu, agregare, unitate, zecimale, previzualizarea cu `fields.read`), totalurile; „Păstrează în biblioteca calculatorului”, exportul și importul `.lapinschedule`, folderele firmei; tabelul aliasurilor (Gestionare → Nume de câmpuri…) cu sursele în ordine, export și import `.lapinaliases`; câmpurile în orice limbă din `ui/src/i18n`; pagina din ghid (en, ro) și scena ei.
+
+## 12. Graficele Gantt după numele biroului (motorul făcut, interfața de făcut)
+
+Cererea utilizatorului (14.11.2026): „configurarea graficelor Gantt să-i lase pe utilizatori să-și configureze parametrii când au alte standarde interne de numire a proprietăților”; răspunsul la întrebarea a doua din decizia 580: da, regulile sarcinilor citesc câmpurile și aliasurile (decizia 581). Totul trece prin același dicționar de câmpuri (§11.1, `ElementFields`) și același evaluator de condiții (`FieldCondition`, Platform/FieldValues.cs), deci un câmp e la fel într-un extras, într-o etichetă și într-o sarcină: parametrii utilizatorului (`Firma.Sector`), proprietățile fișierelor IFC, Fragments și BOS pe referințe (`Pset_Firma.Etapa`), cantitățile, formulele, aliasurile (`Zona` ← `Firma.Sector`, `Firma.Etapa`).
+
+### 12.1 Regula unei sarcini: condiții pe orice câmp
+
+Regula (`rule` pe IfcTask) primește `conditions`, cu forma și operatorii filtrului unui extras (§11.2). Toate condițiile trebuie să țină, după dimensiunile de până acum; regula rămâne calculată la fiecare cerere, deci un element nou cu acel câmp intră singur în sarcină.
+
+```json
+{
+  "classes": ["IfcWall"], "storeys": ["<id>"],          // ca până acum (types, materials, groups, phases, demolished)
+  "conditions": [
+    {"field": "Pset_Firma.Etapa", "op": "=", "value": "E2"},
+    {"field": "Zona", "op": "starts with", "value": "A"},     // un alias
+    {"field": "Firma.Sector", "op": "missing"}
+  ]
+}
+```
+
+- `planning.updateTask {id, rule}` verifică condițiile (câmp, operator cunoscut, valoare când trebuie, formula care se citește); una greșită e refuzată și nu se schimbă nimic. Un pas de anulare, ca înainte.
+- Regula călătorește întreagă: IFC (`Lapin_Task.Rule`, JSON-ul de mai sus; la import id-urile nivelurilor, tipurilor… se potrivesc ca înainte, condițiile rămân), MS Project XML (câmpul Text1 „Lapin elements”), XLSX (coloana Rule: „Wall · Firma.Sector = A, Firma.Etapa = E2”).
+- `ruleOptions` rămâne pentru dimensiuni; alegătorul de câmpuri și de valori al condițiilor e cel al extraselor (`fields.model`, `fields.values`).
+
+### 12.2 Generatorul: pași după câmpuri
+
+Un pas (`spec.steps[i]` la `planning.preview` / `planning.generate` / stilurile de grafic) primește, pe lângă cheile de până acum:
+
+```json
+{
+  "key": "walls", "name": "Load-bearing walls", "classes": ["IfcWall"], "split": "storey", "norm": "LAP-MASON",
+  "conditions": [{"field": "Sector", "op": "exists"}],     // elementele pasului, ca la regula unei sarcini
+  "splitBy": ["Sector"],                                     // cel mult 4 câmpuri: o sarcină pe valoare (sau pe combinație)
+  "durationField": "Firma.Durata",                          // zilele fiecărui element, adunate (rotunjit în sus, cel puțin 1)
+  "quantityField": "= Firma.Volum * 1.05"                   // cantitatea în locul măsurii încorporate, sub norma pasului
+}
+```
+
+- `splitBy`: elementele pasului (pe nivel, dacă pasul e pe niveluri) se împart după valorile câmpurilor; fiecare valoare e o sarcină cu regula pasului plus `{field, "=", valoare}` (sau `{field, "missing"}` pentru elementele fără câmp), sub un rezumat. Pe niveluri: „Masonry” → „Masonry · Ground floor” (rezumat) → „Masonry · Ground floor · Sector A”; o dată: „Masonry” → „Masonry · Sector A”. Numele: valoarea când spune ce e („Sector B”), altfel cu numele câmpului înainte („Sector A” din `Sector = A`), „no Sector” pentru cele fără; ordinea: numerele după mărime, textele cum le sortează un om, cele fără la urmă. Legăturile secvenței merg la rezumatul nivelului (deci pasul următor așteaptă toate valorile); valorile unui nivel sunt în paralel. Cel mult 200 de sarcini pe pas.
+- Id-urile (deci GlobalId-urile) rămân stabile la regenerare: cheia `gen` e pasul, nivelul și valorile (`walls/<nivel>/=a`), deci o valoare nouă primește o sarcină nouă și celelalte își păstrează id-ul; sarcinile editate de mână rămân ale utilizatorului, ca înainte.
+- Durata: `durationField` (câmp sau formulă) dă zilele, adunate pe elementele sarcinii (`durationFrom: "field"`); altfel, cu o normă, cantitatea din `quantityField` (adunată, citită în SI ca în formule și convertită în unitatea normei: m³, m², m, kg, t, 100 m²; o unitate necunoscută o ia așa cum e) sau, fără el, măsura încorporată de până acum × orele normei ÷ (echipă × orele zilei); altfel zilele pasului. Fără câmpuri totul e ca înainte. Sarcina păstrează `durationField` / `quantityField`.
+
+### 12.3 O sarcină cronometrată după câmpuri
+
+| Apel | Argumente | Rezultat |
+|---|---|---|
+| `planning.updateTask` | pe lângă cele de până acum: `durationField?`, `quantityField?`, `norm?`, `crew?` (null sau "" le scoate) | — (durata se calculează îndată din elementele sarcinii; nu pe un rezumat) |
+| `planning.retimeFromFields` | — | `{timed, changed}`: fiecare sarcină cu `durationField` / `quantityField` recalculată după ce s-a schimbat modelul, un pas de anulare |
+
+Durata rămâne păstrată pe sarcină (drumul critic o citește așa), deci după schimbări în model se apasă Retime from fields; scoasă, sarcina își păstrează durata.
+
+### 12.4 Afișarea Gantt după câmpuri
+
+Pe IfcWorkSchedule (`gantt`), setată cu `planning.updateSchedule {gantt: {...} | null}`:
+
+```json
+{
+  "colourBy": "Pset_Firma.Etapa",               // barele colorate după valoare
+  "colours": {"E1": "#4e79a7", "E2": "#112233"}, // culorile alese; celelalte din paleta Lapin, în ordinea valorilor
+  "groupBy": "Zona",                             // gruparea rândurilor (a ferestrei)
+  "columns": ["Firma.Sector", "task.norm"]       // coloane de câmpuri, cel mult 6
+}
+```
+
+Un câmp e al elementelor sarcinii (al unui rezumat: ale sarcinilor de sub el) sau al sarcinii însăși: `task.name`, `task.wbs`, `task.level`, `task.parent`, `task.kind`, `task.notes`, `task.<atribut>` (`task.norm`, `task.crew`, `task.durationFrom`). Valoarea sarcinii e cea pe care elementele o au toate, sau lista lor („E1, E2”, `mixed`, bara gri `#9aa3ad`); fără elemente cu câmpul, niciuna (bara obișnuită).
+
+- `planning.schedule` dă, când `gantt` e setat: `gantt` (setările), `legend: [{value, colour, tasks}]`, și pe fiecare sarcină `fields: {câmp: valoare|null}` și `colour`. Plus `durationField`, `quantityField` pe sarcinile care le au.
+- `planning.taskFields {fields: [...], tasks?: [id]}` → `{tasks: [{id, fields: {câmp: {value, mixed, values: [{value, count}], count, missing}}}]}`: valorile oricăror câmpuri, pentru alegătorul de grupare și culori al ferestrei (cel mult 32 de câmpuri).
+- Graficul pe foaie (`planning.ganttSheet`) desenează ce arată fereastra: barele în culorile valorilor (cele critice conturate cu roșu), coloanele câmpurilor în tabel, legenda sub grafic. Gruparea rândurilor e doar a ferestrei (foaia păstrează ordinea WBS).
+
+### 12.5 Filtrele de vizibilitate
+
+Filtrele de vizibilitate și Quick select (`ViewFilters`) sunt alt filtru decât `ElementFilter`, dar regula lor `param` citește deja câmpul prin `TagText.Value`: aliasurile, proprietățile fișierelor, parametrii, domeniile și formulele `=…`. Nu citesc cantitățile (n-au geometria la îndemână, `VisibilityGraphics` lucrează pe model); nu s-a schimbat nimic.
+
+### 12.6 De făcut în interfață
+
+Condițiile în editorul regulii sarcinii (alegătorul de câmpuri și valori al extraselor); în configuratorul generatorului, pe fiecare pas: condițiile, „Împarte după” (câmpuri), „Durata din câmp”, „Cantitatea din câmp”; pe sarcină: durata/cantitatea din câmp, Retime from fields; în Gantt: Colorează după, culorile valorilor, Grupează după, coloanele de câmpuri (din `planning.taskFields`), legenda; textele în toate limbile din `ui/src/i18n`; pagina din ghid (planning, en și ro) și scena ei.

@@ -11,11 +11,20 @@ namespace Lapin.Planning;
 /// no norm gives one, the norm its quantity is timed by and the crew, whether it is wet, and how it follows the step
 /// before it on the same storey (FS, or SS with a lag for finishes climbing after the structure). The step
 /// <c>demolition</c> takes the elements the phases demolish; a step with no classes is a task with no elements (site set-up).
+/// With the office's own naming (docs/plan-user-extensibility.md §12): conditions on any field its elements must meet
+/// (<c>conditions</c>, as a task's rule), the fields its tasks are split by (<c>splitBy</c>: a task a value, „Masonry ·
+/// Sector A”), the field or formula its quantity is read from in place of the built-in measure (<c>quantityField</c>) and
+/// the one each element's days are read from (<c>durationField</c>, summed over the task's elements).
 /// </summary>
 public sealed record GenStep(string Key, string Name, IReadOnlyList<string> Classes, string? Part, string Split, int Days, string? Norm, int Crew,
-    bool Wet = false, string Link = "FS", int Lag = 0, bool On = true, string? Kind = null, bool Cycle = false)
+    bool Wet = false, string Link = "FS", int Lag = 0, bool On = true, string? Kind = null, bool Cycle = false,
+    IReadOnlyList<FieldCondition>? FieldConditions = null, IReadOnlyList<string>? SplitFields = null, string? QuantityField = null, string? DurationField = null)
 {
     public const string Demolition = "demolition";
+    public const int MaxSplitFields = 4;
+
+    public IReadOnlyList<FieldCondition> Conditions => FieldConditions ?? [];
+    public IReadOnlyList<string> SplitBy => SplitFields ?? [];
 
     /// <summary>The Installations step's classes before every service was taken by its supertype: a spec stored with them is read as today's.</summary>
     static readonly HashSet<string> LegacyMep =
@@ -38,7 +47,25 @@ public sealed record GenStep(string Key, string Name, IReadOnlyList<string> Clas
         if (Wet) o["wet"] = true;
         if (Kind != null) o["kind"] = Kind;
         if (Cycle) o["cycle"] = true;
+        if (Conditions.Count > 0) o["conditions"] = new JsonArray(Conditions.Select(c => (JsonNode)c.ToJson()).ToArray());
+        if (SplitBy.Count > 0) o["splitBy"] = new JsonArray(SplitBy.Select(x => (JsonNode)x).ToArray());
+        if (QuantityField != null) o["quantityField"] = QuantityField;
+        if (DurationField != null) o["durationField"] = DurationField;
         return o;
+    }
+
+    static string? Text(JsonNode? n) => n is JsonValue v && v.TryGetValue<string>(out var s) && s.Trim().Length > 0 ? s.Trim() : null;
+
+    /// <summary>A step as a command gives it, checked: its conditions, the fields it splits by, the formulas it reads.</summary>
+    public static void Check(JsonNode? n)
+    {
+        if (n is not JsonObject o) return;
+        var name = Text(o["name"]) ?? Text(o["key"]) ?? "A step";
+        FieldCondition.CheckAll(o["conditions"]);
+        if (o["splitBy"] is not null and not JsonArray) throw new CommandException($"„{name}”: splitBy is a list of fields.");
+        if ((o["splitBy"] as JsonArray)?.Count > MaxSplitFields) throw new CommandException($"„{name}”: a step splits by at most {MaxSplitFields} fields.");
+        foreach (var f in (o["splitBy"] as JsonArray ?? []).Select(Text).OfType<string>().Append(Text(o["quantityField"])).Append(Text(o["durationField"])).OfType<string>())
+            if (ElementFields.FormulaOf(f) is { } fx && !ParamFormulas.IsTemplate(fx)) ParamFormulas.Check(fx);
     }
 
     public static GenStep? Read(JsonNode? n, int i)
@@ -57,7 +84,10 @@ public sealed record GenStep(string Key, string Name, IReadOnlyList<string> Clas
         return new(key, name, classes, part, split, Math.Max(1, (int)Math.Round(Json.Number(o["days"]) ?? 5)), ((string?)o["norm"])?.Trim() is { Length: > 0 } nr ? nr : null,
             Math.Max(0, (int)Math.Round(Json.Number(o["crew"]) ?? 0)), o["wet"] is JsonValue w && w.TryGetValue<bool>(out var wb) && wb, link,
             (int)Math.Round(Json.Number(o["lag"]) ?? 0), o["on"] is not JsonValue ov || !ov.TryGetValue<bool>(out var on) || on, kind,
-            o["cycle"] is JsonValue cy && cy.TryGetValue<bool>(out var cb) && cb);
+            o["cycle"] is JsonValue cy && cy.TryGetValue<bool>(out var cb) && cb,
+            FieldCondition.ReadAll(o["conditions"]) is { Count: > 0 } conds ? conds : null,
+            (o["splitBy"] as JsonArray)?.Select(Text).OfType<string>().Distinct(StringComparer.OrdinalIgnoreCase).Take(MaxSplitFields).ToList() is { Count: > 0 } splitBy ? splitBy : null,
+            Text(o["quantityField"]), Text(o["durationField"]));
     }
 }
 
@@ -76,6 +106,12 @@ public sealed record GenSpec(string Template, IReadOnlyList<GenStep> Steps, bool
     }
 
     static bool Flag(JsonNode? n, bool fallback) => n is JsonValue v && v.TryGetValue<bool>(out var b) ? b : fallback;
+
+    /// <summary>A spec as a command gives it, its steps' conditions and fields checked.</summary>
+    public static void Check(JsonObject o)
+    {
+        if (o["steps"] is JsonArray a) foreach (var step in a) GenStep.Check(step);
+    }
 
     /// <summary>A spec as stored or given; what it does not say is taken from <paramref name="fallback"/>.</summary>
     public static GenSpec Read(JsonObject o, GenSpec fallback)
@@ -356,20 +392,29 @@ public static class Generator
             return new Entity(id, Plan.TaskClass, name, attrs, kind);
         }
 
-        // A leaf's duration: its elements' quantity in the norm's unit × the norm's hours ÷ (crew × hours a day); else the step's days.
+        // A leaf's duration: its elements' days from the step's field, summed; else their quantity in the norm's unit (the
+        // step's field, or the built-in measure) × the norm's hours ÷ (crew × hours a day); else the step's days.
         (int Days, string Source, double? Qty, string? Unit, int Crew) Timing(GenStep step, Dictionary<string, ulong> elements)
         {
             var norm = norms.Find(step.Norm);
             var crew = step.Crew > 0 ? step.Crew : norm?.Crew ?? 1;
-            if (norm != null && Norms.BasisOf(norm.Unit) is { } basis && elements.Count > 0)
+            if (step.DurationField is { } df && TaskTiming.Days(links, elements.Keys, df) is { } fieldDays)
+                return (fieldDays, TaskTiming.FromField, null, null, crew);
+            if (norm != null && elements.Count > 0)
             {
-                double qty = 0;
-                foreach (var (id, mask) in elements) if (links.Facts(id) is { } f) qty += MeasureOf(SetsOf(id), f, mask, basis.Basis);
-                qty *= basis.Factor;
-                if (qty > 1e-9)
+                var basis = Norms.BasisOf(norm.Unit);
+                double? qty = null;
+                if (step.QuantityField is { } qf) qty = TaskTiming.Sum(links, elements.Keys, qf) * (basis?.Factor ?? 1);
+                else if (basis is { } b)
                 {
-                    var days = (int)Math.Ceiling(qty * norm.Hours / (crew * Math.Max(0.5, calendar.Hours)) - 1e-9);
-                    return (Math.Max(1, days), "norm", qty, norm.Unit, crew);
+                    double sum = 0;
+                    foreach (var (id, mask) in elements) if (links.Facts(id) is { } f) sum += MeasureOf(SetsOf(id), f, mask, b.Basis);
+                    qty = sum * b.Factor;
+                }
+                if (qty is { } qv && qv > 1e-9)
+                {
+                    var days = (int)Math.Ceiling(qv * norm.Hours / (crew * Math.Max(0.5, calendar.Hours)) - 1e-9);
+                    return (Math.Max(1, days), "norm", qv, norm.Unit, crew);
                 }
             }
             return (step.Days, "default", null, null, crew);
@@ -378,6 +423,7 @@ public static class Generator
         JsonObject Rule(GenStep step, string? storey, IReadOnlyList<string>? demolished = null)
         {
             var o = new JsonObject();
+            if (step.Conditions.Count > 0) o["conditions"] = new JsonArray(step.Conditions.Select(c => (JsonNode)c.ToJson()).ToArray());
             if (demolished != null) { o["demolished"] = Arr(demolished); return o; }
             o["classes"] = Arr(step.Classes);
             if (storey != null) o["storeys"] = Arr([storey]);
@@ -393,10 +439,68 @@ public static class Generator
             if (step.Part != null) extra["part"] = step.Part;
             if (step.Wet) extra["wet"] = true;
             if (step.Norm != null) extra["norm"] = step.Norm;
+            if (step.DurationField != null) extra[TaskTiming.DurationKey] = step.DurationField;
+            if (step.QuantityField != null) extra[TaskTiming.QuantityKey] = step.QuantityField;
             if (qty is { } qv) { extra["quantity"] = Math.Round(qv, 3); extra["unit"] = unit; }
             var e = Task(gen, name, parent, ord, extra, step.Kind);
             made.Add(new(e.Id, gen, step, storey, false, source, qty, unit, elements.Count));
             return e;
+        }
+
+        // A step's elements split by the values of its fields (docs/plan-user-extensibility.md §12): a task a value, its rule
+        // the step's with a condition a field (= the value, or missing), its name the step's with the values, its key from them.
+        List<(string Key, string Label, JsonObject Rule, Dictionary<string, ulong> Els)> Splits(GenStep step, JsonObject rule, Dictionary<string, ulong> els)
+        {
+            var groups = new Dictionary<string, FieldValue[]>(StringComparer.OrdinalIgnoreCase);
+            foreach (var id in els.Keys)
+            {
+                var vals = step.SplitBy.Select(field => links.Field(id, field)).ToArray();
+                groups.TryAdd(string.Join("|", vals.Select(v => v.Exists ? v.Shown.Trim() : "\u2205")), vals);
+            }
+            if (groups.Count > TaskTiming.MaxSplits)
+                throw new CommandException($"„{step.Name}” would be {groups.Count} tasks split by {string.Join(", ", step.SplitBy)}: at most {TaskTiming.MaxSplits}.");
+            var natural = StringComparer.Create(System.Globalization.CultureInfo.InvariantCulture, System.Globalization.CompareOptions.IgnoreCase | System.Globalization.CompareOptions.NumericOrdering);
+            int Compare(FieldValue[] a, FieldValue[] b)
+            {
+                for (var i = 0; i < a.Length; i++)
+                {
+                    if (a[i].Exists != b[i].Exists) return a[i].Exists ? -1 : 1;
+                    var c = a[i].Number is { } x && b[i].Number is { } y ? x.CompareTo(y) : natural.Compare(a[i].Shown, b[i].Shown);
+                    if (c != 0) return c;
+                }
+                return 0;
+            }
+            var baseRule = TaskRule.Read(rule)!;
+            var o = new List<(string, string, JsonObject, Dictionary<string, ulong>)>();
+            foreach (var (key, vals) in groups.OrderBy(g => g.Value, Comparer<FieldValue[]>.Create(Compare)))
+            {
+                var conditions = step.SplitBy.Select((field, i) => vals[i].Exists ? new FieldCondition(field, "=", vals[i].Shown.Trim()) : new FieldCondition(field, "missing", null));
+                var r = baseRule.With(conditions).ToJson();
+                var taken = links.Of(Probe(r, step.Part));
+                if (taken.Count == 0) continue;
+                var label = string.Join(" · ", step.SplitBy.Select((field, i) => TaskTiming.ValueLabel(field, vals[i])));
+                o.Add(("=" + key.ToLowerInvariant(), label, r, taken));
+            }
+            return o;
+        }
+
+        // A step's task (a storey's), or a summary over its tasks a value when it splits by fields: the task the sequence links.
+        string Place(GenStep step, string gen, string name, string? parent, int ord, JsonObject rule, Dictionary<string, ulong> els, string? storey)
+        {
+            if (step.SplitBy.Count == 0)
+            {
+                var leaf = Leaf(step, gen, name, parent, ord, rule, els, storey);
+                tasks.Add(leaf);
+                return leaf.Id;
+            }
+            var parts = Splits(step, rule, els);
+            var summary = Task(gen, name, parent, ord, new JsonObject { ["duration"] = 1 }, null);
+            tasks.Add(summary);
+            made.Add(new(summary.Id, gen, step, storey, true, "summary", null, null, els.Count));
+            var k = 0;
+            foreach (var (key, label, r, taken) in parts)
+                tasks.Add(Leaf(step, $"{gen}/{key}", $"{name} · {label}", summary.Id, ++k, r, taken, storey));
+            return summary.Id;
         }
 
         var demolishedIn = links.Candidates.Where(f => f.Demolished != null).Select(f => f.Demolished!).Distinct().ToList();
@@ -409,9 +513,7 @@ public static class Generator
                 var rule = Rule(step, null, demolishedIn);
                 var els = links.Of(Probe(rule, step.Part));
                 if (els.Count == 0) continue;
-                var e = Leaf(step, step.Key, step.Name, null, ++order, rule, els, null);
-                tasks.Add(e);
-                byStorey[""] = e.Id;
+                byStorey[""] = Place(step, step.Key, step.Name, null, ++order, rule, els, null);
                 stepTasks.Add((step, false, byStorey));
                 continue;
             }
@@ -439,11 +541,7 @@ public static class Generator
                 made.Add(new(summary.Id, summaryGen, step, null, true, "summary", null, null, children.Sum(c => c.Els.Count)));
                 var k = 0;
                 foreach (var (s, rule, els) in children)
-                {
-                    var e = Leaf(step, $"{step.Key}/{s.Id}", $"{step.Name} · {s.Name}", summary.Id, ++k, rule, els, s.Id);
-                    tasks.Add(e);
-                    byStorey[s.Id] = e.Id;
-                }
+                    byStorey[s.Id] = Place(step, $"{step.Key}/{s.Id}", $"{step.Name} · {s.Name}", summary.Id, ++k, rule, els, s.Id);
                 stepTasks.Add((step, true, byStorey));
             }
             else
@@ -451,9 +549,7 @@ public static class Generator
                 var rule = Rule(step, null);
                 var els = links.Of(Probe(rule, step.Part));
                 if (els.Count == 0) continue;
-                var e = Leaf(step, step.Key, step.Name, null, ++order, rule, els, null);
-                tasks.Add(e);
-                byStorey[""] = e.Id;
+                byStorey[""] = Place(step, step.Key, step.Name, null, ++order, rule, els, null);
                 stepTasks.Add((step, false, byStorey));
             }
         }

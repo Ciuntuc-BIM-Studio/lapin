@@ -28,12 +28,17 @@ public sealed class GanttSheet : ISheetContent
 
     public IReadOnlyList<(double W, double H, List<Pen> Pens)> Pages(IQueryContext q, Entity e, double maxWidth, double? maxHeight)
     {
-        var p = PlanningModule.ReadResolved(q);
+        var p = PlanningModule.ReadResolved(q, out var tl);
         var (r, _) = PlanningModule.Solve(p);
         var width = Math.Max(200, maxWidth);
-        // The table's columns: row, task (WBS and name), duration, start, finish; the task column gives way on narrow paper.
+        // The Gantt by fields as the window shows it (docs/plan-user-extensibility.md §12): its bars coloured by a field, its columns of fields.
+        var gantt = GanttSettings.Of(p.Schedule);
+        var values = gantt.IsEmpty ? null : TaskFields.All(p, q.Model, tl, gantt.Fields);
+        var legend = gantt.ColourBy is { } cb && values != null ? TaskFields.Legend(gantt, values.Values.Select(v => v[cb])) : null;
+        var display = new Display(gantt, values, legend);
+        // The table's columns: row, task (WBS and name), duration, start, finish, the fields asked; the task column gives way on narrow paper.
         var taskW = Math.Clamp(width * 0.22, 40, 80);
-        double[] cols = [8, taskW, 13, 19, 19];
+        double[] cols = [8, taskW, 13, 19, 19, .. gantt.Columns.Select(_ => 18.0)];
         var tableW = cols.Sum();
         var chartW = width - tableW;
         var finish = r.Times.Count > 0 ? r.Times.Values.Max(t => t.Finish) : p.Start;
@@ -42,22 +47,35 @@ public sealed class GanttSheet : ISheetContent
         var days = Math.Max(7, to.DayNumber - from.DayNumber);
         var k = chartW / days;
         double X(DateOnly d) => tableW + (d.DayNumber - from.DayNumber) * k;
-        var perPage = maxHeight is { } mh ? Math.Max(1, (int)((mh - TitleH - HeadH) / RowH)) : int.MaxValue;
+        // The legend under the chart takes a line or two of the page.
+        var legendH = legend is { Count: > 0 } ? (legend.Count > 8 ? 12 : 7.5) : 0;
+        var perPage = maxHeight is { } mh ? Math.Max(1, (int)((mh - TitleH - HeadH - legendH) / RowH)) : int.MaxValue;
         var rows = p.Rows.ToList();
         var pages = new List<(double, double, List<Pen>)>();
         var start = 0;
         do
         {
             var slice = rows.Skip(start).Take(perPage).ToList();
-            pages.Add(Page(p, r, slice, start, pages.Count == 0, cols, tableW, width, from, to, k, X));
+            pages.Add(Page(p, r, slice, start, pages.Count == 0, cols, tableW, width, from, to, k, X, display));
             start += perPage;
         } while (start < rows.Count);
         return pages;
     }
 
-    (double W, double H, List<Pen> Pens) Page(Plan p, CpmResult r, List<PlanTask> rows, int first, bool firstPage, double[] cols, double tableW, double width,
-        DateOnly from, DateOnly to, double k, Func<DateOnly, double> X)
+    /// <summary>What the settings show: each task's values of their fields, the colouring field's legend.</summary>
+    sealed record Display(GanttSettings Settings, Dictionary<string, Dictionary<string, TaskFieldValue>>? Values, List<(string Value, string Colour, int Tasks)>? Legend)
     {
+        public string? Colour(string task) => Settings.ColourBy is { } cb && Legend != null && Values?.GetValueOrDefault(task) is { } v ? TaskFields.ColourOf(v[cb], Legend) : null;
+        public string Cell(string task, string field) => Values?.GetValueOrDefault(task)?.GetValueOrDefault(field)?.Value ?? "";
+    }
+
+    (double W, double H, List<Pen> Pens) Page(Plan p, CpmResult r, List<PlanTask> rows, int first, bool firstPage, double[] cols, double tableW, double width,
+        DateOnly from, DateOnly to, double k, Func<DateOnly, double> X, Display display)
+    {
+        // A bar coloured by its value: a pen a colour; a critical one outlined in red over it.
+        var byColour = new Dictionary<string, Pen>();
+        var criticalOutline = new Pen("GANTT-CRITICAL", Critical, 0.35, null, null);
+        Pen ColourPen(string c) => byColour.TryGetValue(c, out var pen) ? pen : byColour[c] = new Pen("GANTT-BAR", "#000000", 0.1, c, null);
         var text = new Pen("TEXT", "#000000", 0, null, null);
         var rule = new Pen("GANTT", "#000000", 0.25, null, null);
         var thin = new Pen("GANTT-GRID", Grid, 0.1, null, null);
@@ -74,7 +92,7 @@ public sealed class GanttSheet : ISheetContent
         var finish = r.Times.Count > 0 ? r.Times.Values.Max(t => t.Finish) : p.Start;
         text.Texts.Add(new PenText(new Vec2(width, 6), $"{Dmy(p.Calendar.NextWorking(p.Start))} – {Dmy(finish)}", 3, Anchor: "end"));
         // The header: the columns' names, the time scale's two tiers.
-        string[] names = ["#", "Task", "Days", "Start", "Finish"];
+        string[] names = ["#", "Task", "Days", "Start", "Finish", .. display.Settings.Columns.Select(TaskTiming.FieldName)];
         var x = 0.0;
         for (var i = 0; i < cols.Length; i++)
         {
@@ -127,6 +145,12 @@ public sealed class GanttSheet : ISheetContent
             text.Texts.Add(new PenText(new Vec2(c2 + cols[2] - 1, baseLine), $"{(summary ? tm.Duration : milestone ? 0 : t.Duration)}", Text, Anchor: "end"));
             text.Texts.Add(new PenText(new Vec2(c2 + cols[2] + 1, baseLine), Dmy(tm.Start), Text, Anchor: "start"));
             text.Texts.Add(new PenText(new Vec2(c2 + cols[2] + cols[3] + 1, baseLine), Dmy(tm.Finish), Text, Anchor: "start"));
+            var cx = c2 + cols[2] + cols[3] + cols[4];
+            for (var ci = 0; ci < display.Settings.Columns.Count; ci++)
+            {
+                if (display.Cell(t.Id, display.Settings.Columns[ci]) is { Length: > 0 } cell) text.Texts.Add(new PenText(new Vec2(cx + 1, baseLine), Fit(cell, cols[5 + ci] - 2), Text, Anchor: "start"));
+                cx += cols[5 + ci];
+            }
             var xa = X(tm.Start);
             var xb = X(tm.Finish.AddDays(1));
             var cy = top + RowH / 2;
@@ -134,6 +158,12 @@ public sealed class GanttSheet : ISheetContent
                 black.Loops.Add([new(xa, cy - 1.6), new(xa + 1.6, cy), new(xa, cy + 1.6), new(xa - 1.6, cy)]);
             else if (summary)
                 black.Loops.Add([new(xa, cy - 1.2), new(xb, cy - 1.2), new(xb, cy + 1.4), new(xb - 1, cy + 0.4), new(xa + 1, cy + 0.4), new(xa, cy + 1.4)]);
+            else if (display.Colour(t.Id) is { } colour)
+            {
+                List<Vec2> bar = [new(xa, cy - 1.3), new(Math.Max(xb, xa + 0.4), cy - 1.3), new(Math.Max(xb, xa + 0.4), cy + 1.3), new(xa, cy + 1.3)];
+                ColourPen(colour).Loops.Add(bar);
+                if (tm.Critical) criticalOutline.Loops.Add(bar);
+            }
             else
                 (tm.Critical ? critical : bars).Loops.Add([new(xa, cy - 1.3), new(Math.Max(xb, xa + 0.4), cy - 1.3), new(Math.Max(xb, xa + 0.4), cy + 1.3), new(xa, cy + 1.3)]);
             if (!milestone && p.ProgressOf(t.Id).Complete is var pc && pc > 0)
@@ -166,7 +196,29 @@ public sealed class GanttSheet : ISheetContent
             links.Segments.Add((new Vec2(l.Type is "FS" ? xm : xb, yb), new Vec2((l.Type is "FS" ? xm : xb) + 0.6, yb - 0.9 * dir)));
         }
         if (p.DataDate is { } dd && dd >= from && dd <= to) status.Segments.Add((new Vec2(X(dd), y0 + HeadH / 2), new Vec2(X(dd), bodyBottom)));
-        return (width, bodyBottom, new List<Pen> { thin, rule, links, baselinePen, bars, critical, black, donePen, status, text }.Where(x => x.Segments.Count + x.Loops.Count + x.Texts.Count > 0).ToList());
+        // The colours' legend under the chart: the field, each value's swatch, a mixed task's grey.
+        var height = bodyBottom;
+        if (display.Legend is { Count: > 0 } legend)
+        {
+            var ly = bodyBottom + 5;
+            var lx = 0.0;
+            text.Texts.Add(new PenText(new Vec2(lx, ly), TaskTiming.FieldName(display.Settings.ColourBy!) + ":", Text, Anchor: "start", Bold: true));
+            lx += 4 + TaskTiming.FieldName(display.Settings.ColourBy!).Length * Text * 0.55;
+            var entries = legend.Select(l => (l.Value, l.Colour)).ToList();
+            if (display.Values!.Values.Any(v => v[display.Settings.ColourBy!].Mixed)) entries.Add(("mixed", TaskFields.MixedColour));
+            foreach (var (value, colour) in entries)
+            {
+                var label = Fit(value, 40);
+                var w = 6 + label.Length * Text * 0.55;
+                if (lx + w > width) { lx = 0; ly += 4.5; }
+                ColourPen(colour).Loops.Add([new(lx, ly - 2.4), new(lx + 4, ly - 2.4), new(lx + 4, ly - 0.2), new(lx, ly - 0.2)]);
+                text.Texts.Add(new PenText(new Vec2(lx + 5, ly), label, Text, Anchor: "start"));
+                lx += w + 3;
+            }
+            height = ly + 1.5;
+        }
+        List<Pen> pens = [thin, rule, links, baselinePen, bars, critical, .. byColour.Values, criticalOutline, black, donePen, status, text];
+        return (width, height, pens.Where(x => x.Segments.Count + x.Loops.Count + x.Texts.Count > 0).ToList());
     }
 }
 

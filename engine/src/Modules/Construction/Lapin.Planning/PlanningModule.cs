@@ -51,7 +51,8 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
     }
 
     /// <summary>What makes a generated task the user's when changed by hand.</summary>
-    static readonly string[] OwnKeys = ["name", "duration", "finish", "start", "constraint", "constraintDate", "milestone", "kind", "wet", "rule", "part"];
+    static readonly string[] OwnKeys = ["name", "duration", "finish", "start", "constraint", "constraintDate", "milestone", "kind", "wet", "rule", "part",
+        TaskTiming.DurationKey, TaskTiming.QuantityKey, "norm", "crew"];
 
     static Entity RequireTask(IModelView m, string? id) =>
         m.Get(id ?? "") is { Class: Plan.TaskClass } e ? e : throw new CommandException("There is no such task.");
@@ -215,7 +216,8 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
             var name = a.ContainsKey("name") ? ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : throw new CommandException("A task has a name.") : null;
             string? kind = null;
             if (a.ContainsKey("kind")) kind = (string?)a["kind"] is { } k && Plan.Kinds.Contains(k) ? k : (string?)a["kind"] is null or "" ? "" : throw new CommandException("Not a kind of task IFC knows.");
-            if (summary && (a.ContainsKey("duration") || a.ContainsKey("finish") || a.ContainsKey("start") || a.ContainsKey("milestone") || a.ContainsKey("constraint")))
+            if (summary && (a.ContainsKey("duration") || a.ContainsKey("finish") || a.ContainsKey("start") || a.ContainsKey("milestone") || a.ContainsKey("constraint")
+                || a[TaskTiming.DurationKey] is not null || a[TaskTiming.QuantityKey] is not null))
                 throw new CommandException("A summary task takes its dates from the tasks under it.");
             var attrs = e.CloneAttrs();
             if (a.ContainsKey("milestone"))
@@ -263,6 +265,8 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
             if (a.ContainsKey("wet")) { if (a["wet"] is JsonValue wv && wv.TryGetValue<bool>(out var w) && w) attrs["wet"] = true; else attrs.Remove("wet"); }
             if (a.ContainsKey("notes")) { if (((string?)a["notes"])?.Trim() is { Length: > 0 } notes) attrs["notes"] = notes; else attrs.Remove("notes"); }
             SetLinks(attrs, a);
+            // Its days or its quantity read from its elements' fields (docs/plan-user-extensibility.md §12), worked out now and on Retime from fields.
+            if (SetTiming(ctx, e, attrs, a) is { } timed) attrs = timed;
             // A generated task changed by hand is the user's now: the generator leaves it as it is (its exceptions are not such a change).
             if (a.ContainsKey("own")) { if (a["own"] is JsonValue ov && ov.TryGetValue<bool>(out var ob) && ob) attrs["own"] = true; else attrs.Remove("own"); }
             else if (e.Str("gen") != null && OwnKeys.Any(a.ContainsKey)) attrs["own"] = true;
@@ -524,6 +528,13 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
 
         r.Query("schedule", (q, _) => ScheduleJson(q));
 
+        // Every task timed by its elements' fields (durationField, quantityField) worked out again: one undo step → {timed, changed}.
+        r.Command("retimeFromFields", "Retime from fields", (ctx, _) => Retime(ctx));
+
+        // The tasks' values of any fields, their own (task.name…) or their elements' (a property set, a parameter, an alias, a formula), for the Gantt's grouping and colours:
+        // {fields, tasks?} → {tasks: [{id, fields: {token: {value, mixed, values: [{value, count}], count, missing}}}]}.
+        r.Query("taskFields", (q, a) => TaskFields.Query(q, a));
+
         // What a task's rule can name, from the model's elements: their classes, types, storeys, materials, groups and phases, each with how many elements have it.
         r.Query("ruleOptions", (q, _) => RuleOptions(q));
 
@@ -574,13 +585,63 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
     {
         if (a.ContainsKey("rule"))
         {
-            if (a["rule"] is JsonObject) attrs["rule"] = TaskRule.Read(a["rule"])!.ToJson();
+            if (a["rule"] is JsonObject) attrs["rule"] = TaskRule.Check(a["rule"])!.ToJson();
             else if (a["rule"] is null) attrs.Remove("rule");
-            else throw new CommandException("A task's rule is an object (classes, types, storeys, materials, groups, phases), or null.");
+            else throw new CommandException("A task's rule is an object (classes, types, storeys, materials, groups, phases, conditions), or null.");
         }
         if (a.ContainsKey("part")) { if (TaskParts.Parse(a["part"]) is { } part) attrs["part"] = part; else attrs.Remove("part"); }
         if (a.ContainsKey("add")) WriteIds(attrs, "add", IdList(a["add"]));
         if (a.ContainsKey("remove")) WriteIds(attrs, "remove", IdList(a["remove"]));
+    }
+
+    /// <summary>
+    /// A task's timing by fields set from a command's arguments (<c>durationField</c>, <c>quantityField</c>, <c>norm</c>,
+    /// <c>crew</c>; null or "" takes one off) and its duration worked out from them with its elements as they now are; null
+    /// when none was given.
+    /// </summary>
+    static JsonObject? SetTiming(ICommandContext ctx, Entity e, JsonObject attrs, JsonObject a)
+    {
+        string[] keys = [TaskTiming.DurationKey, TaskTiming.QuantityKey, "norm"];
+        if (!keys.Any(a.ContainsKey) && !a.ContainsKey("crew") && !(TaskLinkData.Keys.Any(a.ContainsKey) && (attrs[TaskTiming.DurationKey] ?? attrs[TaskTiming.QuantityKey]) != null)) return null;
+        foreach (var k in keys)
+        {
+            if (!a.ContainsKey(k)) continue;
+            var v = ((string?)a[k])?.Trim();
+            if (string.IsNullOrEmpty(v)) { attrs.Remove(k); continue; }
+            if (k != "norm" && ElementFields.FormulaOf(v) is { } fx && !ParamFormulas.IsTemplate(fx)) ParamFormulas.Check(fx);
+            if (k == "norm" && Norms.Of(ctx.Model).Find(v) == null) throw new CommandException($"The project has no norm „{v}”.");
+            attrs[k] = v;
+        }
+        if (a.ContainsKey("crew"))
+        {
+            if (a["crew"] is null) attrs.Remove("crew");
+            else if (Json.Number(a["crew"]) is { } c && c >= 1 && c <= 1000) attrs["crew"] = (int)Math.Round(c);
+            else throw new CommandException("A crew is a number of people, 1 or more.");
+        }
+        var task = Plan.ReadTask(new Entity(e.Id, e.Class, e.Name, attrs, e.PredefinedType));
+        var links = TaskElements.Resolve(ctx);
+        TaskTiming.Apply(attrs, links.Of(task), links, Norms.Of(ctx.Model), Plan.Read(ctx.Model).Calendar.Hours);
+        return attrs;
+    }
+
+    /// <summary>Every task timed by its elements' fields worked out again (the model changed since): how many changed.</summary>
+    static JsonObject Retime(ICommandContext ctx)
+    {
+        var p = Plan.Read(ctx.Model);
+        var links = TaskElements.Resolve(ctx, p);
+        var norms = Norms.Of(ctx.Model);
+        int timed = 0, changed = 0;
+        foreach (var t in p.Rows)
+        {
+            if (p.IsSummary(t.Id) || ctx.Model.Get(t.Id) is not { } e) continue;
+            var attrs = e.CloneAttrs();
+            if (!TaskTiming.Apply(attrs, links.ByTask.GetValueOrDefault(t.Id) ?? [], links, norms, p.Calendar.Hours)) continue;
+            timed++;
+            if (attrs.ToJsonString() == e.Attrs.ToJsonString()) continue;
+            ctx.Replace(e.With(attrs: attrs));
+            changed++;
+        }
+        return new JsonObject { ["timed"] = timed, ["changed"] = changed };
     }
 
     static JsonObject RuleOptions(IQueryContext q)
@@ -619,6 +680,8 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
         var attrs = s.CloneAttrs();
         if (a.ContainsKey("start")) attrs["start"] = WorkCalendar.Date(DateArg(a["start"], "start"));
         if (a.ContainsKey("dataDate")) { if ((string?)a["dataDate"] is { Length: > 0 }) attrs["dataDate"] = WorkCalendar.Date(DateArg(a["dataDate"], "status date")); else attrs.Remove("dataDate"); }
+        // How the Gantt shows its tasks by fields (colourBy, colours, groupBy, columns); null takes it off.
+        if (a.ContainsKey(GanttSettings.Key)) { if (GanttSettings.Check(a[GanttSettings.Key]) is { IsEmpty: false } g) attrs[GanttSettings.Key] = g.ToJson(); else attrs.Remove(GanttSettings.Key); }
         var name = a.ContainsKey("name") ? ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : throw new CommandException("A schedule has a name.") : s.Name;
         ctx.Replace(s.With(name: name, attrs: attrs));
     }
@@ -647,6 +710,10 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
         // Each task's cost from the estimate (stage 7), when the cost module is there and the project has one.
         var costs = p.Rows.Count > 0 ? q.Services.Get<IScheduleCosts>()?.Costs(q, ScheduleTimesOf.Of(p, r, links)) : null;
         var incoming = p.Links.GroupBy(l => l.To).ToDictionary(g => g.Key, g => g.OrderBy(l => p.RowOf.GetValueOrDefault(l.From)).ToList());
+        // The Gantt by fields (docs/plan-user-extensibility.md §12): each task's values of the fields its settings read, the colours.
+        var gantt = GanttSettings.Of(p.Schedule);
+        var fieldValues = gantt.IsEmpty ? null : TaskFields.All(p, m, links, gantt.Fields);
+        var legend = gantt.ColourBy is { } colourBy && fieldValues != null ? TaskFields.Legend(gantt, fieldValues.Values.Select(v => v[colourBy])) : null;
         var tasks = new JsonArray();
         foreach (var t in p.Rows)
         {
@@ -706,9 +773,14 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
             {
                 if (te.Str("gen") is { } gen) o["gen"] = gen;
                 if (te.Bool("own")) o["own"] = true;
-                foreach (var k in new[] { "durationFrom", "norm", "unit" }) if (te.Str(k) is { } v) o[k] = v;
+                foreach (var k in new[] { "durationFrom", "norm", "unit", TaskTiming.DurationKey, TaskTiming.QuantityKey }) if (te.Str(k) is { } v) o[k] = v;
                 if (te.NumOrNull("quantity") is { } qv) o["quantity"] = qv;
                 if (te.NumOrNull("crew") is { } cv) o["crew"] = (int)Math.Round(cv);
+            }
+            if (fieldValues != null && fieldValues.TryGetValue(t.Id, out var fv))
+            {
+                o["fields"] = new JsonObject(fv.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value.Value)));
+                if (gantt.ColourBy is { } cb && legend != null && TaskFields.ColourOf(fv[cb], legend) is { } colour) o["colour"] = colour;
             }
             tasks.Add((JsonNode)o);
         }
@@ -742,6 +814,9 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
             ["calendar"] = cal,
             ["nonWorking"] = new JsonArray(p.Calendar.NonWorking(shownFrom, shownTo).Select(x => (JsonNode)new JsonObject { ["date"] = D(x.Day), ["why"] = x.Why }).ToArray()),
             ["tasks"] = tasks, ["links"] = linkRows, ["problem"] = problem,
+            // How the Gantt shows its tasks by fields, and the colours of the colouring field's values.
+            ["gantt"] = gantt.IsEmpty ? null : gantt.ToJson(),
+            ["legend"] = legend == null ? null : new JsonArray(legend.Select(l => (JsonNode)new JsonObject { ["value"] = l.Value, ["colour"] = l.Colour, ["tasks"] = l.Tasks }).ToArray()),
             // The estimate on the schedule (stage 7): the budget at completion, what the tasks carry of it, the cost to date.
             ["cost"] = costs == null ? null : new JsonObject { ["currency"] = costs.Currency, ["budget"] = costs.Budget, ["scheduled"] = costs.Scheduled, ["toDate"] = costs.ToDate },
             // The elements a task could take, how many some task takes, and those no task takes (whole, or some of their layers).

@@ -106,15 +106,15 @@ public sealed class Timeline
     /// <summary>Whether a task takes its elements down rather than up.</summary>
     public static bool Demolishes(PlanTask t) => (t.Kind != null && DemolitionKinds.Contains(t.Kind)) || (t.Rule?.Demolished.Count ?? 0) > 0;
 
-    public static Timeline Build(IQueryContext q) => Build(q.Model, q.Services, q.Describe, q.Quantities);
+    public static Timeline Build(IQueryContext q) => Build(q.Model, q.Services, q.Describe, q.Quantities, q);
 
     public static Timeline Build(IModelView m, IServices services, Func<string, ClassDescriptor?> describe)
         => Build(m, services, describe, null);
 
-    public static Timeline Build(IModelView m, IServices services, Func<string, ClassDescriptor?> describe, Func<string, IReadOnlyList<QuantitySet>>? quantities)
+    public static Timeline Build(IModelView m, IServices services, Func<string, ClassDescriptor?> describe, Func<string, IReadOnlyList<QuantitySet>>? quantities, IQueryContext? query = null)
     {
         var p = Plan.Read(m);
-        var links = TaskElements.Resolve(m, services, describe, p);
+        var links = TaskElements.Resolve(m, services, describe, p, query);
         PlanningModule.ApplyProgress(m, quantities, p, links);
         var (r, _) = PlanningModule.Solve(p);
         var t = new Timeline(p, r);
