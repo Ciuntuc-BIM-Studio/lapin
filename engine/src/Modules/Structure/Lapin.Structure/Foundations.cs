@@ -281,6 +281,7 @@ public static class StripFootings
             plan.Add(new PlanItem("outline", true, fp));
         }
         parts = CutPriorities.Apply(footing, m, services, parts, problems);
+        parts = LayerExtentCuts.Apply(footing, m, services, parts, problems);
         IReadOnlyList<Vec2> snaps = c.IsArc ? [c.Start, c.End, c.PointAt(c.Length / 2)] : [Joins.Start(footing), Joins.End(footing)];
         return new ElementGeometry(parts, plan, snaps, problems.Count > 0 ? problems : null);
     }
@@ -427,6 +428,7 @@ public static class StripFootings
         }
         if (solid != null) parts.Add(new GeometryPart("Footing", Materials.ColorOf(m, concrete), solid, concrete, "footing"));
         parts = CutPriorities.Apply(footing, m, services, parts, problems);
+        parts = LayerExtentCuts.Apply(footing, m, services, parts, problems);
         IReadOnlyList<Vec2> snaps = c.IsArc ? [c.Start, c.End, c.PointAt(c.Length / 2)] : [Joins.Start(footing), Joins.End(footing)];
         return new ElementGeometry(parts, [new PlanItem("outline", true, footprint)], snaps, problems.Count > 0 ? problems : null);
     }
@@ -679,6 +681,7 @@ public static class PadFootings
         }
         var problems = new List<string>();
         parts = CutPriorities.Apply(pad, m, services, parts, problems);
+        parts = LayerExtentCuts.Apply(pad, m, services, parts, problems);
         return new ElementGeometry(parts, plan, [at], problems.Count > 0 ? problems : null);
     }
 

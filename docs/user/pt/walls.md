@@ -81,6 +81,24 @@ Sob um contorno desenhado com **Perfil…** uma porta entra numa célula recorta
 
 ![O símbolo de abertura da porta no alçado](shots/curtain-cells-elevation.webp)
 
+### Extensões de camadas
+
+Uma camada de uma parede ou de uma laje pode ir além da aresta do elemento, ou parar antes dela, sem dividir o elemento: um acabamento de piso que passa 2 cm sob a parede até à qual a laje foi desenhada, um reboco que desce abaixo da base da parede até ao acabamento da laje, um reboco exterior que para 10 cm abaixo do topo da parede. Selecione a parede ou a laje e abra **Extensões de camadas** nas suas propriedades. **Adicionar uma extensão de camada** adiciona uma linha: escolha a **Camada** (numerada como no seu tipo), a **Borda** e a **Distância**, positiva além da aresta, negativa antes dela (no máximo 1 m em cada sentido). As arestas de uma parede são o seu **Início**, **Fim**, **Inferior** e **Superior**, reta ou curva (além da ponta de uma parede curva a camada continua pela tangente da ponta, como a própria parede além do seu eixo); as de uma laje são **À volta toda** ou uma aresta do seu contorno, numerada a partir do primeiro vértice (a extensão própria de uma aresta prevalece sobre a da volta toda). O × retira a extensão; uma distância de 0 faz o mesmo. Cada alteração é um passo de anular.
+
+A última escolha de uma linha diz o que faz a parte além da aresta onde encontra outro elemento: **Sobrepõe-se** (os dois sobrepõem-se e cada um mantém o seu volume), **Corta outros** (é retirada da parede, laje, pilar, viga ou fundação que encontra: a parede perde os 2 cm que o acabamento da laje ocupa) ou **Pela ordem de corte** (só corta os elementos que o seu precede em **Gerenciar → Ordem de corte**: o acabamento de uma laje corta a parede, o reboco de uma parede que desce deixa a laje inteira). As plantas, os cortes, a vista 3D, as quantidades e a exportação IFC mostram o elemento como é construído, com as composições de camadas mantidas; as extensões viajam no conjunto de propriedades próprio do Lapin (*Lapin_Intent*), por isso um ficheiro IFC escrito pelo Lapin traz-as de volta. Quando move um vértice da laje, a extensão de uma aresta segue a sua aresta; vai-se com uma aresta que retire. As referências de um ficheiro IFC não têm extensões de camadas: os seus corpos são os do ficheiro.
+
+**Editar camadas** (o botão sob as linhas, ou **Arquitetura → Editar camadas**) arrasta as arestas em vez de as escrever. Neste modo uma parede ou laje selecionada mostra o contorno de cada camada tracejado e uma pega em cada uma das suas arestas: em planta as pontas de uma parede e as arestas de uma laje, em corte as arestas que o corte atravessa (a base e o topo de uma parede, as arestas de uma laje; as pontas de uma parede quando o corte a percorre). Arraste uma pega para fora do elemento ou para dentro: encaixa como qualquer pega, e enquanto arrasta pode escrever a distância. Cada largar é um passo de anular. **Concluído** (ou Esc) sai do modo.
+
+Sob um telhado as camadas de uma parede sobem até ao telhado; uma extensão **Superior** move a camada ao longo da linha do telhado, 10 cm abaixo ou 5 cm dentro, e o resto da parede continua cortado pelo telhado. Um tipo de parede ou de laje também pode ter extensões (selecione o tipo no navegador do projeto, as suas **Extensões de camadas** nas propriedades): cada parede ou laje do tipo começa com elas, à volta toda para um tipo de laje. Um elemento mostra as linhas do seu tipo marcadas *Do tipo*; alterada aí, uma linha passa a ser do elemento, que prevalece (um 0 próprio mantém a camada na sua aresta), e ↺ devolve o lugar ao tipo.
+
+![As extensões de camadas de uma laje: o seu acabamento 50 mm além da terceira aresta do contorno, cortando a parede](shots/layer-extents.webp)
+
+![Em corte, o acabamento da laje entra 5 cm na parede que encontra](shots/layer-extents-section.webp)
+
+![Editar camadas em planta: as camadas da laje tracejadas, uma pega em cada aresta, a primeira aresta do acabamento arrastada 30 cm para fora](shots/layer-edit-plan.webp)
+
+![Editar camadas em corte: as pegas das camadas da laje onde o corte atravessa as suas arestas](shots/layer-edit-section.webp)
+
 ## Tipos de parede
 
 Um tipo de parede é um conjunto de camadas, da face à direita do sentido em que a parede é desenhada (a externa, quando você desenha ao redor de um edifício no sentido anti-horário) à face à sua esquerda. Cada camada tem um material e uma espessura, e uma camada é o **núcleo**. A linha da parede corre ao longo do núcleo. Para editar os tipos, escolha **Arquitetura → Tipos de parede**. Uma camada que não é o núcleo pode ter uma altura própria: **De** e **Até** definem até onde ela sobe acima da base da parede (um barrado de azulejos até 1500, um revestimento de 300 para cima); vazios, ela ocupa a altura toda.

@@ -201,7 +201,11 @@ export interface MarkDto { id: string; segments: number[]; snaps?: number[]; dat
  * What a 2D view lends an entity's grips: the mark the engine drew it with (its own id), every mark of its (the owner's id or
  * `${owner}:…`: a type's stirrups on a beam, a bar seen in another view), and the view they are drawn in.
  */
-export interface GripView { mark?: MarkDto; marks?: MarkDto[]; view?: string }
+export interface GripView {
+  mark?: MarkDto; marks?: MarkDto[]; view?: string;
+  /** A section's or an elevation's frame (a drawing point (x, y) is origin + right·x + up·y; dir looks into it), its kind, and whether it is developed (forum topic 89: a layer's edges placed in it). */
+  frame?: { origin: number[]; right: number[]; up: number[]; dir: number[] } | null; kind?: string | null; developed?: boolean;
+}
 
 /** A line drawn over a selected element: its axis (walls, beams), its outline (slabs, roofs), its sketch (Studio). */
 export interface RefLine {

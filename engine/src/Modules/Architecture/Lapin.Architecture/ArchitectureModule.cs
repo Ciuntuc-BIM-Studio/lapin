@@ -109,6 +109,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Service<IViewAnnotations>(this);
         // The Wall types dialog's preview: the type in a sample wall with a T joined to it (decision 529).
         r.Service<ITypePreview>(new WallTypePreview());
+        // The walls' and floors' layers past their edges cutting columns, beams and footings too (forum topic 89, stage 4).
+        r.Service<ILayerExtentCuts>(new LayerExtents.Cuts());
         // Drafted linework made walls, floors, rooms and railings (docs/plan-user-extensibility.md §7.4).
         LineworkConverters.Register(r);
         r.Service<IInstanceMembers>(new RoomInstanceMembers());
@@ -432,14 +434,18 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         // A layer's extent past an edge of its wall or floor, or short of it (forum topic 89, docs/plan-layer-extents.md):
         // {id | ids, layer (its index in the layer set), edge (a wall's start, end, bottom or top; a floor's outline, or edge with
         // index, its contour's edge from corner index to the next), offset (m; positive past the edge, negative short of it; 0 takes
-        // the extent away), cuts? (whether the piece past the edge cuts the walls and floors it meets; kept when not given)}.
+        // the extent away), cuts? (whether the piece past the edge cuts the walls and floors it meets; kept when not given: false,
+        // true, or "order": only the elements its own outranks by the cut order, stage 4), inherit? (true: the element's own extent
+        // there taken away, so its type's applies)}. A wall type or a floor type takes the extents its elements start with (a floor
+        // type all round only); an element's own offset of 0 where its type has one keeps that layer at the edge.
         r.Command("setLayerExtent", "Layer extent", (ctx, a) =>
         {
             var ids = (string?)a["id"] is { } one ? [one] : Ids(a).ToList();
             if (ids.Count == 0) throw new CommandException("Which wall or floor?");
             var layer = Json.Number(a["layer"]) is { } l && l >= 0 && l == Math.Floor(l) ? (int)l : throw new CommandException("Which layer? Its index in the layer set, from 0.");
             var edge = (string?)a["edge"] ?? throw new CommandException("Which edge?");
-            var offset = Json.Number(a["offset"]) ?? throw new CommandException("How far? An offset in metres: past the edge positive, short of it negative.");
+            var inherit = a["inherit"] is JsonValue iv && iv.TryGetValue<bool>(out var ib) && ib;
+            var offset = Json.Number(a["offset"]) ?? (inherit ? 0 : throw new CommandException("How far? An offset in metres: past the edge positive, short of it negative."));
             if (!double.IsFinite(offset) || Math.Abs(offset) > LayerExtents.MaxOffset) throw new CommandException($"A layer reaches at most {LayerExtents.MaxOffset * 1000:0} mm past or short of its edge.");
             int? index = Json.Number(a["index"]) is { } ix ? (int)ix : null;
             foreach (var id in ids)
@@ -447,9 +453,13 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 var e = ctx.Model.Get(id) ?? throw new CommandException("The element is not in the project.");
                 LayerExtentCheck(ctx.Model, e, layer, edge, ref index);
                 var list = LayerExtents.Of(e);
-                var was = list.FirstOrDefault(x => x.Layer == layer && x.Edge == edge && x.Index == index);
-                var cuts = a["cuts"] is JsonValue c && c.TryGetValue<bool>(out var b) ? b : was?.Cuts ?? false;
-                var next = LayerExtents.With(list, new LayerExtents.Extent(layer, edge, index, offset, cuts));
+                var place = new LayerExtents.Extent(layer, edge, index, 0, false);
+                var fromType = LayerExtents.TypeOf(ctx.Model, e) is { } type ? LayerExtents.Of(type).FirstOrDefault(x => LayerExtents.SamePlace(x, place)) : null;
+                var was = list.FirstOrDefault(x => LayerExtents.SamePlace(x, place)) ?? fromType;
+                var cuts = LayerExtents.CutsArg(a["cuts"]) ?? was?.Cuts ?? false;
+                var order = a["cuts"] is JsonValue ov ? ov.TryGetValue<string>(out var os) && os == LayerExtents.ByOrder : was?.ByOrder ?? false;
+                var next = inherit ? [.. list.Where(x => !LayerExtents.SamePlace(x, place))]
+                    : LayerExtents.With(list, new LayerExtents.Extent(layer, edge, index, offset, cuts, cuts && order), keepZero: fromType != null);
                 LayerExtentFits(ctx.Model, e, next, layer);
                 var attrs = e.CloneAttrs();
                 if (LayerExtents.ToJson(next) is { } json) attrs[LayerExtents.Key] = json; else attrs.Remove(LayerExtents.Key);
@@ -457,6 +467,10 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             }
             return null;
         });
+
+        // A wall's or floor's layers' edges as built now, for the grips of "Edit layers" in plans and sections (forum topic 89,
+        // stage 2): {id} → {layers: [{layer, name, footprint, z0, z1}], grips: [{layer, name, edge, index?, line, dir, offset, own}]}.
+        r.Query("layerEdges", (q, a) => q.Model.Get((string?)a["id"] ?? "") is { } e && !StoredBodies.Has(e) && e.Attrs["reference"] == null ? LayerExtents.Edges(e, q.Model, q.Services) : null);
 
         // Every layer extent of the walls and floors named taken away: {id | ids}.
         r.Command("clearLayerExtents", "Clear layer extents", (ctx, a) =>
@@ -1301,10 +1315,21 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
     /// <summary>Whether a layer extent may be set on the element: a straight wall or a floor of Lapin's own with layers, the layer one with a thickness, the edge one it has.</summary>
     static void LayerExtentCheck(IModelView m, Entity e, int layer, string edge, ref int? index)
     {
-        if (e.Class is not (IfcClass.Wall or IfcClass.Slab)) throw new CommandException("Layer extents are for walls and floors.");
+        // A type's: the defaults its elements start with (stage 4); a floor type's all round, its elements' outlines being their own.
+        if (e.Class is IfcClass.WallType or IfcClass.SlabType)
+        {
+            var layers = LayerSets.LayersOf(m, e.Id);
+            if (layers.Count == 0) throw new CommandException("The type has no layers.");
+            if (layer >= layers.Count) throw new CommandException($"The type has no layer {layer + 1}.");
+            if (!(layers[layer].Thickness > 1e-9)) throw new CommandException("A layer of no thickness has no body to extend.");
+            if (e.Class == IfcClass.WallType ? !LayerExtents.WallEdges.Contains(edge) : edge != LayerExtents.Outline)
+                throw new CommandException(e.Class == IfcClass.WallType ? "A wall's layer extends at its start, end, bottom or top." : "A floor type's layer extends all round: one edge is a floor's own.");
+            index = null;
+            return;
+        }
+        if (e.Class is not (IfcClass.Wall or IfcClass.Slab)) throw new CommandException("Layer extents are for walls and floors and their types.");
         // A reference keeps the body its file gave it: Lapin does not build its layers, so it has none to extend.
         if (StoredBodies.Has(e) || e.Attrs["reference"] != null) throw new CommandException("A reference keeps its file's body: convert it to a native element first.");
-        if (e.Class == IfcClass.Wall && PathCurve.Of(e) is { IsArc: true }) throw new CommandException("Layer extents are for straight walls for now.");
         if (LayerSets.BandsOf(m, e.Id) is not { Count: > 0 } bands) throw new CommandException("The element has no layers: give it a type with layers first.");
         if (!bands.Any(b => b.Index == layer)) throw new CommandException($"The element has no layer {layer + 1}.");
         var band = bands.First(b => b.Index == layer);
@@ -1322,11 +1347,16 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
     }
 
     /// <summary>Refused when a layer's extents would leave nothing of it: a wall's layer shorter than nothing along or up, a floor's outline crossing itself.</summary>
-    static void LayerExtentFits(IModelView m, Entity e, IReadOnlyList<LayerExtents.Extent> xs, int layer)
+    static void LayerExtentFits(IModelView m, Entity e, IReadOnlyList<LayerExtents.Extent> own, int layer)
     {
+        // A type's are checked where its elements are built (a problem on the element, which keeps its layer whole there).
+        if (e.Class is not (IfcClass.Wall or IfcClass.Slab)) return;
+        // As the element builds: its type's under its own.
+        var type = LayerExtents.TypeOf(m, e) is { } t ? LayerExtents.Of(t) : [];
+        var xs = type.Where(x => !own.Any(y => LayerExtents.SamePlace(x, y))).Concat(own).Where(x => Math.Abs(x.Offset) > 1e-9).ToList();
         if (e.Class == IfcClass.Wall)
         {
-            var length = (Walls.End(e) - Walls.Start(e)).Length;
+            var length = PathCurve.Of(e).Length;
             if (length + LayerExtents.Short(xs, layer, LayerExtents.Start) + LayerExtents.Short(xs, layer, LayerExtents.End) < 0.01)
                 throw new CommandException("The layer would stop short of both ends by more than the wall is long.");
             var band = LayerSets.BandsOf(m, e.Id)!.First(b => b.Index == layer);

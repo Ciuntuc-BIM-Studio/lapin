@@ -21,7 +21,7 @@ import { execute, useSession } from '../engine/session';
 import type { Grip, GripView, RefLine, Vec2 } from '../platform/module';
 import { gripsOf, gripSnapped, referencesOf } from '../platform/modules';
 import { throughInset, viaOf } from './insetMap';
-import { dropGrips, groupGrips, movers, runSteps, setHotRemove, type GripGroup } from './grips';
+import { dropGrips, groupGrips, movers, runSteps, setHotRemove, useGripRev, type GripGroup } from './grips';
 import { openContextMenu } from '../shell/ContextMenu';
 import { formatAngle, formatLength, liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
 import { traceBegin, traceEnd } from './moveTrace';
@@ -70,6 +70,8 @@ export interface GripEditorOptions {
   scale: number;
   /** The view's drawn annotations: what an annotation's grips stand on (a dimension's points as drawn now). */
   marks?: NonNullable<GripView['mark']>[];
+  /** A section's or an elevation's frame, kind and whether it is developed, lent to the grips (GripView). */
+  frame?: GripView['frame']; viewKind?: string | null; developed?: boolean;
   /** A tool or a command is busy: no grips. */
   disabled: boolean;
   svg: React.RefObject<SVGSVGElement | null>;
@@ -86,6 +88,7 @@ export function useGripEditor(o: GripEditorOptions) {
   const [pick, setPick] = useState<Record<string, number>>({});
   const [drag, setDrag] = useState<Drag | null>(null);
   const alt = useRef(false);
+  const gripRev = useGripRev((s) => s.rev);
   const views = o.viewIds.filter(Boolean) as string[];
   const viewKey = views.join('|');
 
@@ -102,7 +105,7 @@ export function useGripEditor(o: GripEditorOptions) {
       const n = nodes.get(nodeId);
       if (!n?.editable) continue;
       const marks = o.marks?.filter((m) => m.id === n.id || m.id.startsWith(`${n.id}:`));
-      for (const g of gripsOf(n, { mark: marks?.find((m) => m.id === n.id), marks, view: views[0] })) if ((!tag || g.key.startsWith(`${tag}:`)) && inView(g.view, n.storeyId)) gs.push(g);
+      for (const g of gripsOf(n, { mark: marks?.find((m) => m.id === n.id), marks, view: views[0], frame: o.frame, kind: o.viewKind, developed: o.developed })) if ((!tag || g.key.startsWith(`${tag}:`)) && inView(g.view, n.storeyId)) gs.push(g);
       // Seen through an inset view (decision 576): the grips it has on its own view, where the inset shows them.
       for (const m of marks ?? []) {
         const via = m.id === n.id ? viaOf(m) : null;
@@ -118,7 +121,7 @@ export function useGripEditor(o: GripEditorOptions) {
     }
     return { grips: gs, refs: rs };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected, nodes, o.disabled, o.mode, o.storeyId, o.anyStorey, viewKey, o.marks]);
+  }, [selected, nodes, o.disabled, o.mode, o.storeyId, o.anyStorey, viewKey, o.marks, o.frame, o.viewKind, o.developed, gripRev]);
 
   const groups = useMemo(() => groupGrips(grips, 3 / Math.max(o.scale, 1e-9)), [grips, o.scale]);
   const pickOf = (g: GripGroup) => pick[g.key] ?? g.members.length;

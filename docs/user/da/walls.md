@@ -81,6 +81,24 @@ Under en kontur tegnet med **Profil…** går en dør ind i et afskåret felt, h
 
 ![Dørens åbningssymbol i opstalten](shots/curtain-cells-elevation.webp)
 
+### Lagforlængelser
+
+Et lag i en væg eller et dæk kan gå forbi elementets kant eller stoppe før den, uden at elementet deles: en gulvbelægning der går 2 cm ind under væggen, som dækket er tegnet hen til, en puds der går ned forbi vægfoden ind i dækkets belægning, en udvendig puds der stopper 10 cm under vægtoppen. Vælg væggen eller dækket og åbn **Lagforlængelser** i dens egenskaber. **Tilføj en lagforlængelse** tilføjer en række: vælg **Lag** (nummereret som i dens type), **Kant** og **Afstand**, positiv forbi kanten, negativ før den (højst 1 m hver vej). En vægs kanter er dens **Start**, **Slut**, **Bund** og **Top**, lige eller buet (forbi enden af en buet væg fortsætter laget ad endens tangent, som væggen selv forbi sin akse); et dæks er **hele vejen rundt** eller én kant af dets omrids, nummereret fra dets første hjørne (en kants egen forlængelse går forud for den hele vejen rundt). × fjerner forlængelsen; en afstand på 0 gør det samme. Hver ændring er ét fortryd-trin.
+
+Rækkens sidste valg siger, hvad delen forbi kanten gør, hvor den møder et andet element: **Overlapper** (de to overlapper og hver beholder sit volumen), **Skærer andre** (den tages ud af væggen, dækket, søjlen, bjælken eller fundamentet den møder: væggen mister de 2 cm, dækkets belægning tager) eller **Efter skærerækkefølge** (den skærer kun de elementer, dens eget kommer før i **Administrer → Snitrækkefølge**: et dæks belægning skærer væggen, en vægs puds der går ned lader dækket være helt). Planer, snit, 3D-visningen, mængderne og IFC-eksporten viser elementet som bygget, lagopbygninger bevaret; forlængelserne rejser i Lapins eget egenskabssæt (*Lapin_Intent*), så en IFC-fil skrevet af Lapin bringer dem tilbage. Når du flytter et hjørne af dækket, følger en kants forlængelse sin kant; den forsvinder med en kant, du fjerner. Referencer fra en IFC-fil har ingen lagforlængelser: deres legemer er filens.
+
+**Rediger lag** (knappen under rækkerne, eller **Arkitektur → Rediger lag**) trækker kanterne i stedet for at skrive dem. I denne tilstand viser en valgt væg eller et valgt dæk hvert lags omrids stiplet og et greb på hver af dets kanter: i plan en vægs ender og et dæks kanter, i snit de kanter snittet krydser (en vægs fod og top, et dæks kanter; en vægs ender når snittet løber langs den). Træk et greb ud af elementet eller ind i det: det fanger som ethvert greb, og mens du trækker, kan du skrive afstanden. Hvert slip er ét fortryd-trin. **Færdig** (eller Esc) forlader tilstanden.
+
+Under et tag går en vægs lag op til taget; en **Top**-forlængelse flytter laget langs tagets linje, 10 cm under den eller 5 cm ind i den, og resten af væggen skæres stadig af taget. En vægtype eller en dæktype kan også have forlængelser (vælg typen i projektbrowseren, dens **Lagforlængelser** i egenskaberne): hver væg eller hvert dæk af typen starter med dem, hele vejen rundt for en dæktype. Et element viser sin types rækker mærket *Fra typen*; ændret der bliver en række elementets egen, som går forud (et eget 0 holder laget ved kanten), og ↺ giver pladsen tilbage til typen.
+
+![Et dæks lagforlængelser: dets belægning 50 mm forbi omridsets tredje kant, skærende væggen](shots/layer-extents.webp)
+
+![I snit går dækkets belægning 5 cm ind i væggen, den møder](shots/layer-extents-section.webp)
+
+![Rediger lag i plan: dækkets lag stiplet, et greb på hver kant, belægningens første kant trukket 30 cm ud](shots/layer-edit-plan.webp)
+
+![Rediger lag i snit: grebene for dækkets lag, hvor snittet krydser deres kanter](shots/layer-edit-section.webp)
+
 ## Vægtyper
 
 En vægtype er et sæt lag, fra siden til højre for den retning, væggen tegnes i (ydersiden, når du tegner rundt om en bygning mod uret), til siden til venstre. Hvert lag har et materiale og en tykkelse, og ét lag er **Kerne**. Væggens linje løber langs kernen. Du redigerer typerne under **Arkitektur → Vægtyper**. Et andet lag end kernen kan have sin egen højde: **Fra** og **Op til** angiver, hvor højt det går over væggens fod (fliser op til 1500, en beklædning fra 300); tomt går det i hele højden.

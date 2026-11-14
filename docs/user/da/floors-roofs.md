@@ -14,6 +14,8 @@ Vil du ændre omridset, så markér dækket og træk i dets hjørner. **Dækåbn
 
 Et dæk tegnet uden for væggene, foran en dør, er en trappeafsats. Om trinene op til den, se [Trapper](stairs.md).
 
+Et lag i et dæk kan også gå forbi dets omrids eller stoppe før det, hele vejen rundt eller ved én kant, skrevet i dets egenskaber eller trukket i plan eller snit med **Rediger lag**, og en dæktype kan give sine dæk deres forlængelser: se [Lagforlængelser](walls.md#lagforl-ngelser). Tage har endnu ingen lagopbygning (deres tagdækning, plade og konstruktion er egne dele), så de har ingen lagforlængelser.
+
 ## Tage
 
 Vælg **Arkitektur → Tag** (<kbd>RF</kbd>), og klik på omridset af væggene under det. Lapin bygger taget over det omrids, øverst på dets niveau.

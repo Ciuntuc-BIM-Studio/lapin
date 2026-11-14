@@ -81,6 +81,24 @@ Sotto un contorno disegnato con **Profilo…** una porta entra in una cella tagl
 
 ![Il simbolo di apertura della porta nel prospetto](shots/curtain-cells-elevation.webp)
 
+### Prolungamenti degli strati
+
+Uno strato di un muro o di un solaio può andare oltre il bordo dell'elemento, o fermarsi prima, senza dividere l'elemento: una finitura del pavimento che passa 2 cm sotto il muro fino al quale è stato disegnato il solaio, un intonaco che scende sotto la base del muro nella finitura del solaio, un intonaco esterno che si ferma 10 cm sotto la testa del muro. Selezionate il muro o il solaio e aprite **Prolungamenti degli strati** nelle sue proprietà. **Aggiungi un prolungamento di strato** aggiunge una riga: scegliete lo **Strato** (numerato come nel suo tipo), il **Bordo** e la **Distanza**, positiva oltre il bordo, negativa prima (al massimo 1 m in ogni senso). I bordi di un muro sono **Inizio**, **Fine**, **Inferiore** e **Superiore**, dritto o curvo (oltre l'estremità di un muro curvo lo strato prosegue sulla tangente dell'estremità, come il muro stesso oltre il suo asse); quelli di un solaio sono **Tutto intorno** o un bordo del suo contorno, numerato dal primo vertice (il prolungamento proprio di un bordo prevale su quello tutto intorno). La × toglie il prolungamento; una distanza di 0 fa lo stesso. Ogni modifica è un passo di annullamento.
+
+L'ultima scelta di una riga dice cosa fa la parte oltre il bordo dove incontra un altro elemento: **Si sovrappone** (i due si sovrappongono e ognuno tiene il suo volume), **Taglia gli altri** (viene tolta dal muro, solaio, pilastro, trave o fondazione che incontra: il muro perde i 2 cm che prende la finitura del solaio) o **Secondo l'ordine di taglio** (taglia solo gli elementi che il suo precede in **Gestisci → Ordine di taglio**: la finitura di un solaio taglia il muro, l'intonaco di un muro che scende lascia intero il solaio). Piante, sezioni, vista 3D, quantità ed esportazione IFC mostrano l'elemento com'è costruito, con le stratigrafie conservate; i prolungamenti viaggiano nel set di proprietà proprio di Lapin (*Lapin_Intent*), quindi un file IFC scritto da Lapin li riporta. Quando spostate un vertice del solaio, il prolungamento di un bordo segue il suo bordo; se ne va con un bordo che togliete. I riferimenti da un file IFC non hanno prolungamenti degli strati: i loro corpi sono quelli del file.
+
+**Modifica strati** (il pulsante sotto le righe, o **Architettura → Modifica strati**) trascina i bordi invece di digitarli. In questa modalità un muro o un solaio selezionato mostra il contorno di ogni strato tratteggiato e una maniglia su ognuno dei suoi bordi: in pianta le estremità di un muro e i bordi di un solaio, in sezione i bordi che il taglio attraversa (base e testa di un muro, i bordi di un solaio; le estremità di un muro quando la sezione lo percorre). Trascinate una maniglia fuori dall'elemento o dentro: si aggancia come ogni maniglia, e mentre trascinate potete digitare la distanza. Ogni rilascio è un passo di annullamento. **Fatto** (o Esc) esce dalla modalità.
+
+Sotto un tetto gli strati di un muro salgono fino al tetto; un prolungamento **Superiore** sposta lo strato lungo la linea del tetto, 10 cm sotto o 5 cm dentro, e il resto del muro resta tagliato dal tetto. Anche un tipo di muro o di solaio può avere prolungamenti (selezionate il tipo nel browser del progetto, i suoi **Prolungamenti degli strati** nelle proprietà): ogni muro o solaio del tipo parte con essi, tutto intorno per un tipo di solaio. Un elemento mostra le righe del suo tipo segnate *Dal tipo*; cambiata lì, una riga diventa dell'elemento, che prevale (uno 0 proprio tiene lo strato al suo bordo), e ↺ restituisce il posto al tipo.
+
+![I prolungamenti degli strati di un solaio: la sua finitura 50 mm oltre il terzo bordo del contorno, che taglia il muro](shots/layer-extents.webp)
+
+![In sezione, la finitura del solaio entra 5 cm nel muro che incontra](shots/layer-extents-section.webp)
+
+![Modifica strati in pianta: gli strati del solaio tratteggiati, una maniglia su ogni bordo, il primo bordo della finitura trascinato fuori di 30 cm](shots/layer-edit-plan.webp)
+
+![Modifica strati in sezione: le maniglie degli strati del solaio dove il taglio attraversa i loro bordi](shots/layer-edit-section.webp)
+
 ## Tipi di muro
 
 Un tipo di muro è un insieme di strati, dalla faccia a destra del verso in cui il muro è disegnato (l’esterno, se disegni intorno all’edificio in senso antiorario) alla faccia alla sua sinistra. Ogni strato ha un materiale e uno spessore, e uno strato è il **nucleo**. La linea del muro corre lungo il nucleo. Per modificare i tipi, scegli **Architettura → Tipi di muro**. Uno strato diverso dal nucleo può avere un’altezza propria: **Da** e **Fino a** stabiliscono fin dove arriva sopra la base del muro (uno zoccolo piastrellato fino a 1500, un rivestimento da 300 in su); se vuoti, lo strato corre per tutta l’altezza.

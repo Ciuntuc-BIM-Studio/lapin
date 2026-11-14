@@ -81,6 +81,24 @@ Pod konturem narysowanym przez **Profil…** drzwi wchodzą do przyciętego pola
 
 ![Symbol otwierania drzwi na elewacji](shots/curtain-cells-elevation.webp)
 
+### Przedłużenia warstw
+
+Warstwa ściany lub stropu może wychodzić poza krawędź elementu albo kończyć się przed nią, bez dzielenia elementu: wykończenie podłogi, które wchodzi 2 cm pod ścianę, do której narysowano strop, tynk schodzący poniżej podstawy ściany w wykończenie stropu, tynk zewnętrzny kończący się 10 cm pod koroną ściany. Zaznacz ścianę lub strop i otwórz **Przedłużenia warstw** w jego właściwościach. **Dodaj przedłużenie warstwy** dodaje wiersz: wybierz **Warstwę** (numerowaną jak w jej typie), **Krawędź** i **Odległość**, dodatnią poza krawędź, ujemną przed nią (najwyżej 1 m w każdą stronę). Krawędzie ściany to jej **Początek**, **Koniec**, **Dół** i **Góra**, prostej lub łukowej (za końcem ściany łukowej warstwa biegnie dalej po stycznej w końcu, jak sama ściana poza swoją osią); krawędzie stropu to **Dookoła** albo jedna krawędź jego obrysu, numerowana od pierwszego narożnika (własne przedłużenie krawędzi ma pierwszeństwo przed tym dookoła). × usuwa przedłużenie; odległość 0 robi to samo. Każda zmiana to jeden krok cofania.
+
+Ostatni wybór wiersza mówi, co robi część za krawędzią tam, gdzie spotyka inny element: **Nakłada się** (oba się nakładają i każdy zachowuje swoją objętość), **Tnie inne** (jest wycinana ze ściany, stropu, słupa, belki lub fundamentu, które spotyka: ściana traci 2 cm zajęte przez wykończenie stropu) albo **Według kolejności cięcia** (tnie tylko elementy, przed którymi jej element stoi w **Zarządzaj → Kolejność cięcia**: wykończenie stropu tnie ścianę, schodzący tynk ściany zostawia strop cały). Rzuty, przekroje, widok 3D, ilości i eksport IFC pokazują element tak, jak jest zbudowany, z zachowanymi układami warstw; przedłużenia podróżują we własnym zestawie właściwości Lapina (*Lapin_Intent*), więc plik IFC zapisany przez Lapin je przywraca. Gdy przesuniesz narożnik stropu, przedłużenie krawędzi podąża za swoją krawędzią; znika z krawędzią, którą usuniesz. Odniesienia z pliku IFC nie mają przedłużeń warstw: ich bryły są z pliku.
+
+**Edytuj warstwy** (przycisk pod wierszami albo **Architektura → Edytuj warstwy**) przeciąga krawędzie zamiast je wpisywać. W tym trybie zaznaczona ściana lub strop pokazuje obrys każdej warstwy linią przerywaną i uchwyt na każdej jej krawędzi: w rzucie końce ściany i krawędzie stropu, w przekroju krawędzie, które przecina cięcie (podstawę i koronę ściany, krawędzie stropu; końce ściany, gdy przekrój biegnie wzdłuż niej). Przeciągnij uchwyt na zewnątrz elementu lub do środka: przyciąga się jak każdy uchwyt, a podczas przeciągania możesz wpisać odległość. Każde puszczenie to jeden krok cofania. **Gotowe** (lub Esc) kończy tryb.
+
+Pod dachem warstwy ściany sięgają do dachu; przedłużenie **Góra** przesuwa warstwę wzdłuż linii dachu, 10 cm pod nią lub 5 cm w nią, a reszta ściany nadal jest cięta przez dach. Także typ ściany lub stropu może mieć przedłużenia (zaznacz typ w przeglądarce projektu, jego **Przedłużenia warstw** we właściwościach): każda ściana lub strop tego typu zaczyna z nimi, dookoła dla typu stropu. Element pokazuje wiersze swojego typu oznaczone *Z typu*; zmieniony tam wiersz staje się własnym wierszem elementu, który ma pierwszeństwo (własne 0 zostawia warstwę przy krawędzi), a ↺ oddaje miejsce typowi.
+
+![Przedłużenia warstw stropu: jego wykończenie 50 mm poza trzecią krawędź obrysu, tnące ścianę](shots/layer-extents.webp)
+
+![W przekroju wykończenie stropu wchodzi 5 cm w ścianę, którą spotyka](shots/layer-extents-section.webp)
+
+![Edycja warstw w rzucie: warstwy stropu linią przerywaną, uchwyt na każdej krawędzi, pierwsza krawędź wykończenia wyciągnięta o 30 cm](shots/layer-edit-plan.webp)
+
+![Edycja warstw w przekroju: uchwyty warstw stropu tam, gdzie cięcie przecina ich krawędzie](shots/layer-edit-section.webp)
+
 ## Typy ścian
 
 Typ ściany to zestaw warstw, od lica po prawej stronie kierunku, w którym rysowana jest ściana (zewnętrznego, gdy rysujesz wokół budynku przeciwnie do ruchu wskazówek zegara), do lica po jej lewej. Każda warstwa ma materiał i grubość, a jedna warstwa jest **rdzeniem**. Linia ściany biegnie wzdłuż rdzenia. Aby edytować typy, wybierz **Architektura → Typy ścian**. Warstwa inna niż rdzeń może mieć własną wysokość: **Od** i **Do** określają, jak wysoko sięga ponad podstawę ściany (lamperia z płytek do 1500, okładzina od 300 w górę); gdy są puste, warstwa biegnie przez całą wysokość.

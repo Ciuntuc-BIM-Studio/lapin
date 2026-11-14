@@ -14,6 +14,8 @@ Para mudar o contorno, selecione o piso e arraste os cantos. **Abertura no piso*
 
 Um piso desenhado fora das paredes, diante de uma porta, é uma varanda. Para os degraus até ela, veja [Escadas](stairs.md).
 
+Uma camada de uma laje também pode ir além do seu contorno, ou parar antes, à volta toda ou numa aresta, escrita nas suas propriedades ou arrastada em planta ou em corte com **Editar camadas**, e um tipo de laje pode dar às suas lajes as suas extensões: veja [Extensões de camadas](walls.md#extensoes-de-camadas). Os telhados ainda não têm composição de camadas (a cobertura, a laje e a estrutura são partes próprias), por isso não têm extensões de camadas.
+
 ## Telhados
 
 Escolha **Arquitetura → Telhado** (<kbd>RF</kbd>) e clique no contorno das paredes sob ele. O Lapin constrói o telhado sobre esse contorno, no topo do seu nível.

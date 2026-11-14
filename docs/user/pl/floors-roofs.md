@@ -14,6 +14,8 @@ Aby zmienić obrys, zaznacz strop i przeciągnij jego narożniki. **Otwór w str
 
 Strop narysowany poza ścianami, przed drzwiami, to ganek. Schody prowadzące na niego opisuje strona [Schody](stairs.md).
 
+Warstwa stropu może też wychodzić poza jego obrys albo kończyć się przed nim, dookoła lub na jednej krawędzi, wpisana we właściwościach albo przeciągnięta w rzucie lub przekroju przez **Edytuj warstwy**, a typ stropu może dać swoim stropom ich przedłużenia: zobacz [Przedłużenia warstw](walls.md#przed-uzenia-warstw). Dachy nie mają jeszcze układu warstw (pokrycie, płyta i więźba to ich osobne części), więc nie mają przedłużeń warstw.
+
 ## Dachy
 
 Wybierz **Architektura → Dach** (<kbd>RF</kbd>) i kliknij obrys ścian pod nim. Lapin buduje dach nad tym obrysem, na wysokości szczytu jego poziomu.

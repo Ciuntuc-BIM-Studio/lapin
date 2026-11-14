@@ -156,7 +156,7 @@ public static class Walls
         var crossings = paths != null ? LayerCrossings(m, wall, paths, start, dir, bands, ranked) : _ => [];
         double BaseReach(int end, Band b, bool atFrom) =>
             corners[end] is { } f ? (atFrom ? f(b).From : f(b).To) : At(end == 0 ? startCut : endCut, atFrom ? b.From : b.To) + (ends[end] == null ? LayerEnd(wall, b.Index, end, atFrom) : 0);
-        var extents = LayerExtents.Of(wall);
+        var extents = LayerExtents.Effective(wall, m);
         // A layer's own extent short of an end (forum topic 89); one past it is a piece of its own (ExtentPieces).
         double Reach(int end, Band b, bool atFrom) => BaseReach(end, b, atFrom) + LayerExtents.Short(extents, b.Index, end == 0 ? LayerExtents.Start : LayerExtents.End);
         List<IReadOnlyList<Vec2>> Footprints(Band band)
@@ -288,7 +288,7 @@ public static class Walls
         var crossings = paths != null ? LayerCrossings(m, wall, paths, start, dir, bands, ranked) : _ => [];
         // A layer's own extents short of the wall's edges (forum topic 89): at its ends, over its base, under its top. Those past
         // them are pieces of their own (ExtentPieces), added after the cut priorities, which would take them back.
-        var extents = LayerExtents.Of(wall);
+        var extents = LayerExtents.Effective(wall, m);
         double Reach(int end, Band b, bool atFrom) =>
             (corners[end] is { } f ? (atFrom ? f(b).From : f(b).To) : At(end == 0 ? startCut : endCut, atFrom ? b.From : b.To) + (ends[end] == null ? LayerEnd(wall, b.Index, end, atFrom) : 0))
             + LayerExtents.Short(extents, b.Index, end == 0 ? LayerExtents.Start : LayerExtents.End);
@@ -364,8 +364,8 @@ public static class Walls
                 var footprint = bandPieces[pi];
                 var planFootprint = planPieces.Count == bandPieces.Count ? planPieces[pi] : footprint;
                 // The core of a zoned wall is its zones, bottom to top; every other layer runs the whole height.
-                // Under a roof the layers go up to it: a top extent is not used there.
-                var (below, above) = (LayerExtents.Short(extents, band.Index, LayerExtents.Bottom), roofTop == null ? LayerExtents.Short(extents, band.Index, LayerExtents.Top) : 0);
+                // Under a roof a layer going up to it follows it, its top extent moving the roof's cut (stage 3).
+                var (below, above) = HeightExtents(extents, band, height, roofTop != null);
                 if (band.Core && zones.Count > 0)
                 {
                     for (var zi = 0; zi < zones.Count; zi++)
@@ -378,8 +378,8 @@ public static class Walls
                     }
                     // A gable rising over the storey: the masonry goes on above the ring beam.
                     if (built > height + 1e-9 && (zones.LastOrDefault(zb => zb.Zone.Role == "masonry") ?? zones[^1]).Zone is var gz
-                        && Prism.ExtrudeFootprint(footprint, z + height, built - height, "gable") is { } gable)
-                        parts.Add(Cut(new GeometryPart($"Gable ({gz.Name})", Materials.ColorOf(m, gz.Material), gable, gz.Material, "zone:gable"), height, built, isCore: true));
+                        && Prism.ExtrudeFootprint(footprint, z + height, built + above - height, "gable") is { } gable)
+                        parts.Add(Cut(new GeometryPart($"Gable ({gz.Name})", Materials.ColorOf(m, gz.Material), gable, gz.Material, "zone:gable"), height, built + above, isCore: true));
                 }
                 // A layer of its own height (report #44): from its bottom to its top over the wall's base, never above the wall.
                 else if (LayerSpan(band, built, below, above) is var (lz0, lz1))
@@ -407,12 +407,18 @@ public static class Walls
         if (roofTop != null)
         {
             if (booleans == null) problems.Add("The roof needs the boolean library (manifold), missing here: the wall keeps its height.");
-            else if (AboveRoof(roofTop, shift, start, dir, left, z, yMin, yMax, built) is { } above)
+            else
+            {
+                // Each layer along the roof moved by its own top extent (stage 3 of forum topic 89): most by none.
+                var aboveBy = new Dictionary<double, Solid?>();
+                Solid? Above(double by) => aboveBy.TryGetValue(by, out var x) ? x : aboveBy[by] = AboveRoof(Shifted(roofTop, by), shift, start, dir, left, z, yMin, yMax, built + Math.Max(0, by));
                 parts = parts.Select(part =>
                 {
+                    if (Above(BandOfKey(bands, part.Key) is { } pb ? RoofShift(extents, pb, height) : 0) is not { } above) return part;
                     try { return booleans.Difference(part.Solid, [above], part.Solid.Tag) is { } cut && Measure.Volume(cut) > 1e-9 ? part with { Solid = cut } : null; }
                     catch (InvalidOperationException ex) { problems.Add($"{part.Name}: the roof could not be cut ({ex.Message})."); return part; }
                 }).OfType<GeometryPart>().ToList();
+            }
         }
         parts = CutPriorities.Apply(wall, m, services, parts, problems);
         // The layers going on into the floors' layers ranked under them (the forum's topic #30): added after the cut priorities, which
@@ -470,78 +476,171 @@ public static class Walls
     }
 
     /// <summary>
-    /// The pieces of a straight wall's layers past its edges (forum topic 89, <see cref="LayerExtents"/>): past an end, a strip
-    /// the layer's whole height (each of its pieces in height in its own material, a zoned core's zones); under its base and over
-    /// its top, its footprint as the joins leave it, in the material of its bottom or top piece. Under a roof a top extent is not
-    /// used (the layers go up to the roof) and what rises over the roof is cut off. <paramref name="cuttingOnly"/>: only the
-    /// extents set to cut what they meet (what the walls and floors round take out of themselves). Heights are absolute.
+    /// A wall as its layers' extents see it (forum topic 89): its axis as a curve (a straight one for a straight wall, from
+    /// where its joins put its start), where each band ends along it at each face as the joins leave it (before its own extents;
+    /// end 0 the start, 1 the end), its base, its height, how high it is built (under a roof, its highest point), its zones, each
+    /// band's footprint with its extents short of the ends taken off, and under a roof the roof's line along the axis (stations
+    /// and heights over the base) and what it takes off a layer whose top is moved by an offset (its top extent).
     /// </summary>
-    public static List<LayerExtents.Piece> ExtentPieces(Entity wall, IModelView m, IServices? services, bool cuttingOnly)
+    public sealed record ExtentFrame(PathCurve Axis, Func<int, Band, bool, double> EndAt, IReadOnlyList<Band> Bands, double Z, double Height, double Built,
+        IReadOnlyList<ZoneBand> Zones, Func<Band, List<IReadOnlyList<Vec2>>> Footprints, List<(double S, double V)>? RoofLine, Func<double, List<Solid>>? AboveRoof);
+
+    /// <summary>The wall's <see cref="ExtentFrame"/>, straight or curved; null for one of no length.</summary>
+    public static ExtentFrame? ExtentFrameOf(Entity wall, IModelView m, IServices? services)
+    {
+        var all = LayerExtents.Effective(wall, m);
+        var zonesOf = (double height) => TypeOf(m, wall.Id) is { } type ? WallZones.Bands(WallZones.Of(type), height) : [];
+        if (PathCurve.Of(wall) is { IsArc: true } c)
+        {
+            var paths = services?.Get<IPathElements>();
+            var ends = paths != null ? Joins.EndsOf(m, wall, paths, []) : new (Vec2 Point, EndCut Cut)?[2];
+            var bands = Section(m, wall);
+            var (yMin, yMax) = (bands.Min(x => x.From), bands.Max(x => x.To));
+            var (From, To) = c.Ends(ends[0], ends[1], yMin, yMax);
+            var z = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
+            var height = HeightOf(m, wall);
+            var (steps, built) = ArcRoof(wall, c, m, services, From, To, yMin, yMax, z, height);
+            List<(double S, double V)>? line = null;
+            if (steps.Any(x => x.Top != null))
+            {
+                line = [];
+                foreach (var x in steps)
+                    foreach (var (u, v) in x.Top ?? [(0, height), (x.Length, height)])
+                        if (line.Count == 0 || x.S + u - line[^1].S > 1e-9) line.Add((x.S + u, v));
+            }
+            var reach = 0.05 + (yMax - yMin) * 0.1;
+            return new ExtentFrame(c, (end, b, atFrom) => end == 0 ? From(atFrom ? b.From : b.To) : To(atFrom ? b.From : b.To), bands, z, height, built, zonesOf(height),
+                b => [c.Band(y => From(y) - LayerExtents.Short(all, b.Index, LayerExtents.Start), y => To(y) + LayerExtents.Short(all, b.Index, LayerExtents.End), b.From, b.To)],
+                line, line == null ? null : s => steps.Select(x => AboveRoof(Shifted(x.Top ?? [(0, height), (x.Length, height)], s), 0, x.A, x.Dir, x.Dir.Perp, z, yMin, yMax, built + Math.Max(0, s), reach)).OfType<Solid>().ToList());
+        }
+        if (LayoutOf(wall, m, services, []) is not { BaseReach: { } baseReach } l) return null;
+        var (sMin, sMax) = (l.Bands.Min(b => b.From), l.Bands.Max(b => b.To));
+        var axisDir = (End(wall) - Start(wall)).Normalized();
+        var roofTop = WallTops.Profile(wall, new RoofTop.WallAxis(Start(wall), axisDir, (End(wall) - Start(wall)).Length, l.Z, l.Height, sMax - sMin), m, services);
+        var top = roofTop == null ? l.Height : Math.Max(l.Height, roofTop.Max(p => p.V));
+        var shift = Vec2.Dot(l.Start - Start(wall), l.Dir);
+        return new ExtentFrame(new PathCurve(l.Start, l.End, 0), (end, b, atFrom) => end == 0 ? -baseReach(0, b, atFrom) : l.Length + baseReach(1, b, atFrom), l.Bands, l.Z, l.Height, top,
+            zonesOf(l.Height), l.Footprints, roofTop?.Select(p => (p.U - shift, p.V)).ToList(),
+            roofTop == null ? null : s => AboveRoof(Shifted(roofTop, s), shift, l.Start, l.Dir, l.Dir.Perp, l.Z, sMin, sMax, top + Math.Max(0, s)) is { } x ? [x] : []);
+    }
+
+    /// <summary>A curved wall's steps along its arc (from its stations, by the chord rule) with the top a roof gives each, and how high it is built.</summary>
+    internal static (List<(Vec2 A, Vec2 Dir, double Length, double S, List<(double U, double V)>? Top)> Steps, double Built) ArcRoof(Entity wall, PathCurve c, IModelView m, IServices? services,
+        Func<double, double> From, Func<double, double> To, double yMin, double yMax, double z, double height)
+    {
+        var reachLo = Math.Min(From(yMin), From(yMax));
+        var reachHi = Math.Max(To(yMin), To(yMax));
+        var stations = c.Stations(reachLo, reachHi);
+        var steps = new List<(Vec2 A, Vec2 Dir, double Length, double S, List<(double U, double V)>? Top)>();
+        for (var i = 0; i + 1 < stations.Count; i++)
+        {
+            var (a, b) = (c.PointAt(stations[i]), c.PointAt(stations[i + 1]));
+            var len = (b - a).Length;
+            if (len < 1e-9) continue;
+            var dir = (b - a) * (1 / len);
+            steps.Add((a, dir, len, stations[i], WallTops.Profile(wall, new RoofTop.WallAxis(a, dir, len, z, height, yMax - yMin), m, services)));
+        }
+        var roofed = steps.Any(x => x.Top != null);
+        return (steps, roofed ? Math.Max(height, steps.Where(x => x.Top != null).Max(x => x.Top!.Max(p => p.V))) : height);
+    }
+
+    /// <summary>A roof's line moved up (or down) by <paramref name="by"/>.</summary>
+    static List<(double U, double V)> Shifted(List<(double U, double V)> line, double by) => Math.Abs(by) < 1e-12 ? line : [.. line.Select(p => (p.U, p.V + by))];
+
+    /// <summary>Whether a layer goes up to the wall's top (no top of its own under it): under a roof it follows the roof.</summary>
+    internal static bool FollowsRoof(Band b, double height) => b.Z1 is not { } z1 || z1 >= height - 1e-9;
+
+    /// <summary>
+    /// A layer's extents in its height as its body takes them (forum topic 89): below, its own short of the base; above, short of
+    /// its top — under a roof, for a layer going up to it, past it too (its body built that much higher, then cut along the roof
+    /// moved up by it, <see cref="RoofShift"/>).
+    /// </summary>
+    internal static (double Below, double Above) HeightExtents(IReadOnlyList<LayerExtents.Extent> xs, Band b, double height, bool roofed) =>
+        (LayerExtents.Short(xs, b.Index, LayerExtents.Bottom),
+         roofed && FollowsRoof(b, height) ? Math.Max(0, LayerExtents.Offset(xs, b.Index, LayerExtents.Top)) : LayerExtents.Short(xs, b.Index, LayerExtents.Top));
+
+    /// <summary>How far a roof's cut moves up for a layer under it: its top extent (stage 3: the layer follows the roof that far over it, or short of it), 0 for a layer of a top of its own.</summary>
+    internal static double RoofShift(IReadOnlyList<LayerExtents.Extent> xs, Band b, double height) => FollowsRoof(b, height) ? LayerExtents.Offset(xs, b.Index, LayerExtents.Top) : 0;
+
+    /// <summary>The band a part of the wall's body is of, by its key: a layer's, or a zoned core's zone (the core); null for anything else (a lintel).</summary>
+    static Band? BandOfKey(IReadOnlyList<Band> bands, string? key) =>
+        key == null ? null
+        : key.StartsWith("layer:", StringComparison.Ordinal) && int.TryParse(key[6..], out var i) ? bands.Cast<Band?>().FirstOrDefault(b => b!.Value.Index == i)
+        : key.StartsWith("zone:", StringComparison.Ordinal) ? bands.Cast<Band?>().FirstOrDefault(b => b!.Value.Core) : null;
+
+    /// <summary>
+    /// The pieces of a wall's layers past its edges (forum topic 89, <see cref="LayerExtents"/>), straight or curved: past an
+    /// end, a strip the layer's whole height (each of its pieces in height in its own material, a zoned core's zones and its
+    /// gable); under its base and over its top, its footprint as the joins leave it, in the material of its bottom or top piece.
+    /// Past an end of a curved wall the strip goes on along the end's tangent, as the wall's own body does past its axis. Under a
+    /// roof a layer going up to the roof takes its top extent by following the roof (<see cref="RoofShift"/>), and what rises
+    /// over the roof (moved by that extent) is cut off. <paramref name="cuttingOnly"/>: only the extents set to cut what they
+    /// meet that <paramref name="which"/> keeps (what the elements round take out of themselves). Heights are absolute.
+    /// </summary>
+    public static List<LayerExtents.Piece> ExtentPieces(Entity wall, IModelView m, IServices? services, bool cuttingOnly, Func<LayerExtents.Extent, bool>? which = null)
     {
         var o = new List<LayerExtents.Piece>();
-        var all = LayerExtents.Of(wall);
-        var past = all.Where(x => x.Offset > 1e-9 && (!cuttingOnly || x.Cuts)).ToList();
-        if (past.Count == 0 || PathCurve.Of(wall) is { IsArc: true }) return o;
-        if (LayoutOf(wall, m, services, []) is not { BaseReach: { } baseReach } layout) return o;
-        var (start, dir, length, z, height) = (layout.Start, layout.Dir, layout.Length, layout.Z, layout.Height);
-        var left = dir.Perp;
-        Vec2 P(double x, double y) => start + dir * x + left * y;
-        var yMin = layout.Bands.Min(b => b.From);
-        var yMax = layout.Bands.Max(b => b.To);
-        var axisDir = (End(wall) - Start(wall)).Normalized();
-        var roofTop = WallTops.Profile(wall, new RoofTop.WallAxis(Start(wall), axisDir, (End(wall) - Start(wall)).Length, z, height, yMax - yMin), m, services);
-        var built = roofTop == null ? height : Math.Max(height, roofTop.Max(p => p.V));
-        var zones = TypeOf(m, wall.Id) is { } type ? WallZones.Bands(WallZones.Of(type), height) : [];
-        foreach (var band in layout.Bands)
+        var all = LayerExtents.Effective(wall, m);
+        var past = all.Where(x => x.Offset > 1e-9 && (!cuttingOnly || (x.Cuts && (which?.Invoke(x) ?? true)))).ToList();
+        if (past.Count == 0 || ExtentFrameOf(wall, m, services) is not { } f) return o;
+        var (c, z, height, built, zones) = (f.Axis, f.Z, f.Height, f.Built, f.Zones);
+        var roofed = f.AboveRoof != null;
+        var booleans = services?.Get<ISolidBooleans>();
+        foreach (var band in f.Bands)
         {
             if (band.To - band.From <= 1e-9) continue;
             double Past(string edge) => LayerExtents.Offset(past, band.Index, edge);
-            var (ps, pe, pb, pt) = (Past(LayerExtents.Start), Past(LayerExtents.End), Past(LayerExtents.Bottom), roofTop == null ? Past(LayerExtents.Top) : 0);
+            var (ps, pe, pb) = (Past(LayerExtents.Start), Past(LayerExtents.End), Past(LayerExtents.Bottom));
+            var pt = roofed && FollowsRoof(band, height) ? 0 : Past(LayerExtents.Top);
             if (ps + pe + pb + pt <= 1e-9) continue;
-            // The layer in its height as the wall builds it (its extents short of the base and top taken off).
-            var (below, above) = (LayerExtents.Short(all, band.Index, LayerExtents.Bottom), roofTop == null ? LayerExtents.Short(all, band.Index, LayerExtents.Top) : 0);
+            // The layer in its height as the wall builds it (its extents short of the base and top taken off; under a roof, past it too).
+            var (below, above) = HeightExtents(all, band, height, roofed);
             var stack = new List<(double Z0, double Z1, string? Material, string Name, string Key)>();
             if (band.Core && zones.Count > 0)
+            {
                 for (var zi = 0; zi < zones.Count; zi++)
                 {
                     var zb = zones[zi];
                     stack.Add((zb.Z0 - (zi == 0 ? below : 0), zb.Z1 + (zi == zones.Count - 1 && built <= height + 1e-9 ? above : 0), zb.Zone.Material, zb.Zone.Name, "zone:" + zb.Zone.Key));
                 }
+                // A gable over the storey: its masonry above the ring beam.
+                if (built > height + 1e-9 && (zones.LastOrDefault(zb => zb.Zone.Role == "masonry") ?? zones[^1]).Zone is var gz)
+                    stack.Add((height, built + above, gz.Material, $"Gable ({gz.Name})", "zone:gable"));
+            }
             else if (LayerSpan(band, built, below, above) is var (lz0, lz1))
                 foreach (var h in HeightPieces(m, band, lz0, lz1)) stack.Add((h.Z0, h.Z1, h.Material, h.Name, $"layer:{band.Index}"));
             stack.RemoveAll(h => h.Z1 - h.Z0 <= 1e-6);
             if (stack.Count == 0) continue;
+            var mine = new List<LayerExtents.Piece>();
             void Add(IReadOnlyList<Vec2> footprint, double h0, double h1, (double, double, string? Material, string Name, string Key) of)
             {
                 if (h1 - h0 > 1e-6 && Prism.ExtrudeFootprint(footprint, z + h0, h1 - h0, of.Name) is { } solid)
-                    o.Add(new LayerExtents.Piece(solid, of.Material, of.Name, of.Key, band.Core, z + h0, z + h1));
+                    mine.Add(new LayerExtents.Piece(solid, of.Material, of.Name, of.Key, band.Core, z + h0, z + h1));
             }
             // Past an end: a strip from where the layer ends now, its whole height (with its extents under and over).
             foreach (var (end, d) in new[] { (0, ps), (1, pe) })
             {
                 if (d <= 1e-9) continue;
-                var (rf, rt) = (baseReach(end, band, true), baseReach(end, band, false));
-                Vec2[] strip = end == 0
-                    ? [P(-rf - d, band.From), P(-rf, band.From), P(-rt, band.To), P(-rt - d, band.To)]
-                    : [P(length + rf, band.From), P(length + rf + d, band.From), P(length + rt + d, band.To), P(length + rt, band.To)];
+                double At(double y) => f.EndAt(end, band, Math.Abs(y - band.From) < Math.Abs(y - band.To));
+                var strip = end == 0 ? c.Band(y => At(y) - d, At, band.From, band.To) : c.Band(At, y => At(y) + d, band.From, band.To);
                 for (var i = 0; i < stack.Count; i++)
                     Add(strip, i == 0 ? stack[i].Z0 - pb : stack[i].Z0, i == stack.Count - 1 ? stack[i].Z1 + pt : stack[i].Z1, stack[i]);
             }
             // Under its base and over its top: its footprint.
-            foreach (var footprint in layout.Footprints(band))
+            foreach (var footprint in f.Footprints(band))
             {
                 if (pb > 1e-9) Add(footprint, stack[0].Z0 - pb, stack[0].Z0, stack[0]);
                 if (pt > 1e-9) Add(footprint, stack[^1].Z1, stack[^1].Z1 + pt, stack[^1]);
             }
+            // Under a roof: cut along it as the wall is (moved by the layer's top extent).
+            if (roofed && booleans != null && mine.Count > 0 && f.AboveRoof!(RoofShift(all, band, height)) is { Count: > 0 } over)
+                mine = mine.Select(p =>
+                {
+                    try { return booleans.Difference(p.Solid, over, p.Solid.Tag) is { } cut && Measure.Volume(cut) > 1e-9 ? p with { Solid = cut } : null; }
+                    catch (InvalidOperationException) { return p; }
+                }).OfType<LayerExtents.Piece>().ToList();
+            o.AddRange(mine);
         }
-        // A gable's ends cut along its roof as the wall is.
-        if (roofTop != null && o.Count > 0 && services?.Get<ISolidBooleans>() is { } booleans
-            && AboveRoof(roofTop, Vec2.Dot(start - Start(wall), dir), start, dir, left, z, yMin, yMax, built) is { } overRoof)
-            o = o.Select(p =>
-            {
-                try { return booleans.Difference(p.Solid, [overRoof], p.Solid.Tag) is { } cut && Measure.Volume(cut) > 1e-9 ? p with { Solid = cut } : null; }
-                catch (InvalidOperationException) { return p; }
-            }).OfType<LayerExtents.Piece>().ToList();
         return o;
     }
 
@@ -858,20 +957,13 @@ public static class Walls
         var (From, To) = c.Ends(ends[0], ends[1], yMin, yMax);
 
         // Under a roof: the top read along each step of the arc; built up to its highest point, then cut along it.
-        var reachLo = Math.Min(From(yMin), From(yMax));
-        var reachHi = Math.Max(To(yMin), To(yMax));
-        var stations = c.Stations(reachLo, reachHi);
-        var steps = new List<(Vec2 A, Vec2 Dir, double Length, List<(double U, double V)>? Top)>();
-        for (var i = 0; i + 1 < stations.Count; i++)
-        {
-            var (a, b) = (c.PointAt(stations[i]), c.PointAt(stations[i + 1]));
-            var len = (b - a).Length;
-            if (len < 1e-9) continue;
-            var dir = (b - a) * (1 / len);
-            steps.Add((a, dir, len, WallTops.Profile(wall, new RoofTop.WallAxis(a, dir, len, z, height, yMax - yMin), m, services)));
-        }
+        var (steps, built) = ArcRoof(wall, c, m, services, From, To, yMin, yMax, z, height);
         var roofed = steps.Any(x => x.Top != null);
-        var built = roofed ? Math.Max(height, steps.Where(x => x.Top != null).Max(x => x.Top!.Max(p => p.V))) : height;
+        // A layer's own extents short of the wall's edges (forum topic 89, stage 2): along the arc at its ends, over its base,
+        // under its top; those past them are pieces of their own (ExtentPieces), added after the cut priorities.
+        var extents = LayerExtents.Effective(wall, m);
+        double Short(Band b, string edge) => LayerExtents.Short(extents, b.Index, edge);
+        double Full(Band b, string edge) => LayerExtents.Offset(extents, b.Index, edge);
 
         var zones = TypeOf(m, wall.Id) is { } type ? WallZones.Bands(WallZones.Of(type), height) : [];
         var openings = Openings.PlacedOn(m, wall.Id);
@@ -915,31 +1007,39 @@ public static class Walls
         foreach (var band in bands)
         {
             if (!(band.To - band.From > 1e-9)) continue;
-            var footprint = c.Band(From, To, band.From, band.To);
+            var (s0, s1) = (Short(band, LayerExtents.Start), Short(band, LayerExtents.End));
+            var footprint = c.Band(y => From(y) - s0, y => To(y) + s1, band.From, band.To);
+            var (below, above) = HeightExtents(extents, band, height, roofed);
             if (band.Core && zones.Count > 0)
             {
-                foreach (var zb in zones)
-                    if (Prism.ExtrudeFootprint(footprint, z + zb.Z0, zb.Z1 - zb.Z0, zb.Zone.Name) is { } piece)
-                        parts.Add(Cut(new GeometryPart(zb.Zone.Name, Materials.ColorOf(m, zb.Zone.Material), piece, zb.Zone.Material, "zone:" + zb.Zone.Key), zb.Z0, zb.Z1, isCore: true));
+                for (var zi = 0; zi < zones.Count; zi++)
+                {
+                    var zb = zones[zi];
+                    // The extents go with the first zone down and the last one up.
+                    var (zz0, zz1) = (zb.Z0 - (zi == 0 ? below : 0), zb.Z1 + (zi == zones.Count - 1 && built <= height + 1e-9 ? above : 0));
+                    if (zz1 - zz0 > 1e-6 && Prism.ExtrudeFootprint(footprint, z + zz0, zz1 - zz0, zb.Zone.Name) is { } piece)
+                        parts.Add(Cut(new GeometryPart(zb.Zone.Name, Materials.ColorOf(m, zb.Zone.Material), piece, zb.Zone.Material, "zone:" + zb.Zone.Key), zz0, zz1, isCore: true));
+                }
                 // A gable rising over the storey: the masonry goes on above the ring beam.
                 if (built > height + 1e-9 && (zones.LastOrDefault(zb => zb.Zone.Role == "masonry") ?? zones[^1]).Zone is var gz
-                    && Prism.ExtrudeFootprint(footprint, z + height, built - height, "gable") is { } gable)
-                    parts.Add(Cut(new GeometryPart($"Gable ({gz.Name})", Materials.ColorOf(m, gz.Material), gable, gz.Material, "zone:gable"), height, built, isCore: true));
+                    && Prism.ExtrudeFootprint(footprint, z + height, built + above - height, "gable") is { } gable)
+                    parts.Add(Cut(new GeometryPart($"Gable ({gz.Name})", Materials.ColorOf(m, gz.Material), gable, gz.Material, "zone:gable"), height, built + above, isCore: true));
             }
             // A layer of its own height (report #44): from its bottom to its top over the wall's base, never above the wall.
-            else if (LayerSpan(band, built) is var (lz0, lz1))
+            else if (LayerSpan(band, built, below, above) is var (lz0, lz1))
             {
                 foreach (var h in HeightPieces(m, band, lz0, lz1))
                     if (Prism.ExtrudeFootprint(footprint, z + h.Z0, h.Z1 - h.Z0, h.Name) is { } solid)
                         parts.Add(Cut(new GeometryPart(h.Name, Materials.ColorOf(m, h.Material), solid, h.Material, $"layer:{band.Index}"), h.Z0, h.Z1, isCore: band.Core));
             }
-            // In plan, the band between the gaps the openings leave at the cut.
+            // In plan, the band between the gaps the openings leave at the cut (with its extents past the ends too).
+            var (f0, f1) = (Full(band, LayerExtents.Start), Full(band, LayerExtents.End));
             var at = double.NegativeInfinity;
             foreach (var g in gaps.Append((From: double.PositiveInfinity, To: double.PositiveInfinity)))
             {
                 var lo = at;
-                double Lo(double y) => Math.Max(From(y), lo);
-                double Hi(double y) => Math.Min(To(y), g.From);
+                double Lo(double y) => Math.Max(From(y) - f0, lo);
+                double Hi(double y) => Math.Min(To(y) + f1, g.From);
                 if (Hi(band.From) - Lo(band.From) > 1e-9 && Hi(band.To) - Lo(band.To) > 1e-9) plan.Add(new PlanItem("cut", true, c.Band(Lo, Hi, band.From, band.To)));
                 at = Math.Max(at, g.To);
             }
@@ -952,15 +1052,23 @@ public static class Walls
             {
                 // Each step's region above the roof (flat at the wall's height where no roof covers it), a little past its ends so the steps overlap.
                 var reach = 0.05 + (yMax - yMin) * 0.1;
-                var above = steps.Select(x => AboveRoof(x.Top ?? [(0, height), (x.Length, height)], 0, x.A, x.Dir, x.Dir.Perp, z, yMin, yMax, built, reach)).OfType<Solid>().ToList();
+                // Each layer along the roof moved by its own top extent (stage 3 of forum topic 89): most by none.
+                var aboveBy = new Dictionary<double, List<Solid>>();
+                List<Solid> Above(double by) => aboveBy.TryGetValue(by, out var x) ? x
+                    : aboveBy[by] = steps.Select(x => AboveRoof(Shifted(x.Top ?? [(0, height), (x.Length, height)], by), 0, x.A, x.Dir, x.Dir.Perp, z, yMin, yMax, built + Math.Max(0, by), reach)).OfType<Solid>().ToList();
                 parts = parts.Select(part =>
                 {
+                    var above = Above(BandOfKey(bands, part.Key) is { } pb ? RoofShift(extents, pb, height) : 0);
                     try { return booleans.Difference(part.Solid, above, part.Solid.Tag) is { } cut && Measure.Volume(cut) > 1e-9 ? part with { Solid = cut } : null; }
                     catch (InvalidOperationException ex) { problems.Add($"{part.Name}: the roof could not be cut ({ex.Message})."); return part; }
                 }).OfType<GeometryPart>().ToList();
             }
         }
         parts = CutPriorities.Apply(wall, m, services, parts, problems);
+        // The layers' own extents past the wall's edges (forum topic 89, stage 2): after the cut priorities, cut by the openings,
+        // one body with the part of its layer each goes on from.
+        foreach (var x in ExtentPieces(wall, m, services, cuttingOnly: false))
+            LayerExtents.AddJoined(parts, Cut(new GeometryPart(x.Name, Materials.ColorOf(m, x.Material), x.Solid, x.Material, x.Key), x.Z0 - z, x.Z1 - z, isCore: x.Core), booleans);
         if (booleans != null)
         {
             var ring = zones.FirstOrDefault(zb => zb.Zone.Role == "ringBeam");
@@ -972,6 +1080,8 @@ public static class Walls
                 parts.Add(new GeometryPart(label, color, box, material, $"{l.Kind}:{l.Key}:{i}") { TypeId = l.Kind == "lintel" ? l.Rule?.BeamTypeIn(m) : null });
             }
         }
+        // The layers of the walls and floors round reaching into this one and set to cut what they meet (forum topic 89).
+        parts = LayerExtents.CutBy(wall, m, services, parts, problems);
         return new ElementGeometry(parts, plan, [c.Start, c.End, c.PointAt(length / 2)], problems.Count > 0 ? problems : null);
     }
 

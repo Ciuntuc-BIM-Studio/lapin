@@ -18,7 +18,7 @@ To change the outline, select the floor and drag its corners. **Floor opening** 
 
 A floor drawn outside the walls, in front of a door, is a porch. For the steps up to it, see [Stairs](stairs.md).
 
-A floor's layer can also go on past its outline, or stop short of it, all round or at one edge: see [Layer extents](walls.md#layer-extents).
+A floor's layer can also go on past its outline, or stop short of it, all round or at one edge, typed in its properties or dragged in a plan or a section with **Edit layers**, and a floor type can give its floors their extents: see [Layer extents](walls.md#layer-extents). Roofs have no layer set yet (their covering, deck and framing are parts of their own), so they have no layer extents.
 
 ### Beam-and-block floors
 
