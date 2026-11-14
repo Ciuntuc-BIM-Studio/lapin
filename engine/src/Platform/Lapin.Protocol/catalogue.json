@@ -467,6 +467,7 @@
     {"name":"profiles.use","module":"core","label":"Use profile","args":[{"name":"library","type":"str"},{"name":"standard","type":"str"},{"name":"profile"}]},
     {"name":"project.location","module":"core","label":"Project location","args":[{"name":"show","type":"bool"},{"name":"ucs","type":"dict"},{"name":"crs","type":"str"}]},
     {"name":"project.removeParameter","module":"core","label":"Remove project parameter","args":[{"name":"key","type":"str"}]},
+    {"name":"project.setColourPalette","module":"core","label":"Colour palette","args":[{"name":"colours","type":"list"}]},
     {"name":"project.setDisplayQuality","module":"core","label":"Display quality","args":[{"name":"quality","type":"str"}]},
     {"name":"project.setInfo","module":"core","label":"Project information","args":[]},
     {"name":"project.setParameter","module":"core","label":"Project parameter","args":[]},
