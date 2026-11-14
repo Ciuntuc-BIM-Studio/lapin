@@ -6,7 +6,7 @@ import { drawsThroughInsets, insetUnder, mapShape, mapper, PLACES_INSETS, throug
 const via: Via = { inset: 'ins', host: 'plan:s1', source: 'sec', at: [20, 0], centre: [0, 1.5], factor: 5 };
 const insetMark: MarkDto = { id: 'ins', segments: [], data: { source: 'sec', at: via.at, centre: via.centre, factor: 5, bounds: [15, -10, 25, 10] } };
 
-describe('inset views (decision 574)', () => {
+describe('inset views (decision 576)', () => {
   it('maps the source to the host and back', () => {
     const { show, back } = mapper(via);
     expect(show({ x: 1, y: 1.5 })).toEqual({ x: 25, y: 0 });

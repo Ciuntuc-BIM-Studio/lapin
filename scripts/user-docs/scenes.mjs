@@ -618,6 +618,54 @@ export const scenes = [
     },
   },
   {
+    // Layer extents (forum topic 89, docs/plan-layer-extents.md): a floor drawn to a wall's face whose finish goes on 5 cm into
+    // the wall and cuts it, set in the floor's properties (Layer extents); the section shows the finish past the floor's edge.
+    id: 'layer-extents',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const slab = (await t.cmd('architecture.addSlab', { storeyId: s, points: [[-2, -2], [4, -2], [4, 2], [-2, 2]] })).id;
+      const type = (await t.cmd('architecture.createWallType', { name: 'Brick 250 plastered', layers: [
+        { material: 'Plaster', thickness: 0.015 }, { material: 'Brick', thickness: 0.25, core: true }, { material: 'Plaster', thickness: 0.015 }] })).id;
+      // A wall beside the floor's top edge, its right face on it, standing on the floor's underside.
+      const wall = (await t.cmd('architecture.addWall', { storeyId: s, typeId: type, x1: -1, y1: 2.14, x2: 3, y2: 2.14, height: 1.2 })).id;
+      await t.cmd('architecture.updateWall', { id: wall, baseOffset: -0.22 });
+      const volume = async (id, part) => (await t.call('quantities.of', { id })).filter((q) => !part || q.part === part).flatMap((q) => q.quantities).filter((x) => x.name === 'NetVolume').reduce((a, x) => a + x.value, 0);
+      const finishBefore = await volume(slab, 'layer:0');
+      await select(t, slab);
+      await t.wait(600);
+      const section = t.page.locator('aside.props [data-testid=layer-extents]');
+      t.expect(await section.count() === 1, 'a floor shows its Layer extents');
+      await section.locator('[data-testid=layer-extent-add]').click();
+      await t.wait(800);
+      const row = section.locator('[data-testid=layer-extent]');
+      t.expect(await row.count() === 1, 'Add a layer extent makes a row');
+      // The finish (layer 1) at the top edge (the third, from the outline's first corner), 50 mm past it, cutting the wall.
+      await row.locator('select').nth(1).selectOption('edge:2');
+      await t.wait(800);
+      const offset = section.locator('[data-field=layer-extent-offset]');
+      await offset.click();
+      await offset.press('ControlOrMeta+a');
+      await offset.pressSequentially('50');
+      await offset.press('Enter');
+      await t.wait(800);
+      await section.locator('[data-testid=layer-extent-cuts]').click();
+      await t.wait(1200);
+      const finishAfter = await volume(slab, 'layer:0');
+      t.expect(Math.abs(finishAfter - finishBefore - 6 * 0.05 * 0.02) < 1e-6, `the finish goes 5 cm past the floor's top edge (${(finishAfter - finishBefore).toFixed(5)} m³ more)`);
+      await t.shot('layer-extents', { of: 'aside.props [data-testid=layer-extents]', pad: 6 });
+      await t.ui({ selection: null, selected: [] });
+      await t.cmd('view.create', { kind: 'section', name: 'E-E', start: [1, 1.4], end: [1, 2.8], depth: 1, scale: 10 });
+      await openFromBrowser(t, 'E-E', 1500);
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      await t.wait(800);
+      await t.shot('layer-extents-section', { of: '[data-testid=drawing]', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     // The partial structure display (decision 500, as ArchiCAD's; the forum's topic #30): a new project's plans without the
     // finishes, its sections the entire model, set by kind of view in Manage → View styles and per view from its corner.
     id: 'finishes-by-view',

@@ -12,6 +12,8 @@ Click **+** next to **Sheets** in the project browser. To place a view, drag it 
 
 ![An A3 sheet with a plan and a section](shots/sheet.webp)
 
+A saved **3D view** goes on a sheet the same way. It is drawn in lines, as an elevation is, from the camera the view keeps (the camera button beside it in the project browser, **Keep the camera as it is now**, saves the camera as it is). An orthographic camera shows the whole model seen from that side, an axonometric at the view's scale (1:100 until you set another). A perspective camera shows what its field of view takes in, at its true size where the camera looks. The drawing follows the view's Visibility / Graphics, the elements hidden in it, the storeys it shows and its section box, and prints the same in the PDF. A 3D view saved without a camera is seen from the south-west, from above. Double-click it on the sheet, or click ✎, to open it in 3D with its camera.
+
 Select the sheet to fill in its **title block** in the properties panel: the project, the client, who drew it, who checked it, the date and the revision. Its number, paper and orientation are set there too. The paper is an A size (A0 to A4), one of ISO's long sheets (A0×2, A1×3, A2×3, A3×3, A3×4, A4×3), a North American size (Letter, Tabloid, ARCH D, ARCH E), or **custom**, with its **Paper width** and **Paper height** in millimetres. Left empty, the project field shows the project's name: the name given to the project, else its file's name.
 
 ## What a view shows

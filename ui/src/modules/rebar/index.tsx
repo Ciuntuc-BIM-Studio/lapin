@@ -93,7 +93,7 @@ const sectionAcross: ToolDef = {
     await open(await ctx.execute('rebar.sectionHere', { viewId: ctx.viewId, id: entity.id, point: [p.x, p.y], inset: false }));
   },
 };
-/** Another view drawn in this one (the core's tool, decision 574), kept here under its own id so a quick slot or a key given to it stays. */
+/** Another view drawn in this one (the core's tool, decision 576), kept here under its own id so a quick slot or a key given to it stays. */
 const insetView: ToolDef = { ...insetTool, id: 'rebar.inset', shortcut: undefined };
 const schedule: ToolDef = {
   id: 'rebar.schedule', label: 'Bar schedule', icon: Table2,

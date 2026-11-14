@@ -3,7 +3,9 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
-  // Inset views anywhere (decision 574)
+  // Layer extents (forum topic 89)
+  "Layer extents": "图层延伸", "Add a layer extent": "添加图层延伸", "How far the layer goes past this edge (positive) or stops short of it (negative)": "图层超出此边缘的距离（正值）或在其前停止的距离（负值）", "Whether the layer past the edge cuts the walls and floors it meets; off, it overlaps them": "超出边缘的图层是否剪切其遇到的墙和楼板；否则与之重叠", "Every layer ends at the element's edges.": "每个图层都止于构件的边缘。", "Take the extent away": "移除延伸", "Which edge of the outline, numbered from its first corner": "轮廓的哪条边，从其第一个角点起编号", "Cuts others": "剪切其他", "Layer extent": "图层延伸", "Clear layer extents": "清除图层延伸",
+  // Inset views anywhere (decision 576)
   "Another view drawn in this one, live, at its own scale: what you draw over it goes on that view": "在此视图中绘制另一个视图，实时更新，使用其自身比例：在其上绘制的内容会进入那个视图", "Drag: the crop's corner": "拖动：裁剪框的角点", "View shown": "显示的视图", "The inset's own scale on paper; empty: the shown view's own, so it is the size it has on its sheet": "嵌入视图在图纸上的自身比例；留空：采用所显示视图的比例，即它在其图纸上的大小", "Crop": "裁剪", "Only a part of the shown view: drag the crop's corners in the view; off, the whole view": "只显示所示视图的一部分：在视图中拖动裁剪框的角点；关闭时显示整个视图", "The view drawn where you clicked, live, at its own scale: what you draw over it goes on that view, so it fits.": "在点击处绘制的视图，实时更新，使用其自身比例：在其上绘制的内容会进入那个视图，因此相互吻合.", "A thin frame round it, with the shown view's name and scale under it": "周围一个细边框，下方注明所显示视图的名称和比例",
   // The finish painter (forum topic 83)
   "Paint with it": "用它绘制",

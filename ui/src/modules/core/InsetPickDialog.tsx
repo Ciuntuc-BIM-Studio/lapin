@@ -5,7 +5,7 @@ import { insetSources } from './insets';
 
 /**
  * The views that can be inset where the user clicked (the host itself left out; insets.tsx): a click on one makes the inset,
- * at the shown view's own scale, and selects it. Moved here from rebar (decision 574), where it opened from Rebar 2D → Inset view.
+ * at the shown view's own scale, and selects it. Moved here from rebar (decision 576), where it opened from Rebar 2D → Inset view.
  */
 export function InsetPickDialog() {
   const nodes = useSession((s) => s.nodes);

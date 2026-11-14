@@ -7,7 +7,7 @@ using Lapin.Model;
 namespace Lapin.Platform;
 
 /// <summary>
-/// A view drawn inside another (docs/plan-rebar.md, decision 211; any 2D view in any other, decision 574): a <c>LapinInset</c>
+/// A view drawn inside another (docs/plan-rebar.md, decision 211; any 2D view in any other, decision 576): a <c>LapinInset</c>
 /// on its host view (<c>viewId</c>: a plan, a section, an elevation, a reference plane's view) shows the <c>source</c> view
 /// rendered, its point <c>at</c> on the source's middle (the element's section, for a section across one), at a size of its
 /// own: by <c>factor</c> (host metres per source metre) when one is kept, else at its own <c>scale</c> (1:N on paper), else

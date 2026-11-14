@@ -98,6 +98,16 @@ Sub un contur desenat cu **Profil…**, o ușă intră într-o celulă tăiată 
 
 ![Simbolul de deschidere al ușii în fațadă](shots/curtain-cells-elevation.webp)
 
+### Prelungirile straturilor
+
+Un strat al unui perete sau al unei plăci poate trece de marginea elementului, ori se poate opri înaintea ei, fără ca elementul să fie împărțit: un finisaj de pardoseală care intră 2 cm sub peretele până la care a fost desenată placa, o tencuială care coboară sub baza peretelui, în finisajul plăcii, o tencuială exterioară care se oprește cu 10 cm sub capul peretelui. Selectează peretele sau placa și deschide **Prelungirile straturilor** în proprietățile lui. **Adaugă o prelungire de strat** adaugă un rând: alege **Stratul** (numerotat ca în tipul lui), **Latura** și **Distanța**, pozitivă dincolo de margine, negativă înaintea ei (cel mult 1 m în orice sens). Marginile unui perete drept sunt **Început**, **Sfârșit**, **Jos** și **Sus**; ale unei plăci, **Pe tot conturul** sau o latură a conturului, numerotată de la primul lui colț (prelungirea unei laturi o înlocuiește pe cea de pe tot conturul). × scoate prelungirea; o distanță 0 face la fel. Fiecare schimbare e un pas de anulare.
+
+**Taie celelalte** spune ce face partea trecută de margine acolo unde întâlnește alt perete sau altă placă: bifat, e scoasă din acel element (peretele pierde cei 2 cm pe care îi ia finisajul plăcii); nebifat, cele două se suprapun și fiecare își păstrează volumul. Planurile, secțiunile, vederea 3D, cantitățile și exportul IFC arată elementul cum e construit, cu seturile de straturi păstrate; prelungirile merg în setul de proprietăți al lui Lapin (*Lapin_Intent*), deci un fișier IFC scris de Lapin le aduce înapoi. Când muți un colț al plăcii, prelungirea unei laturi o urmează; pleacă odată cu o latură pe care o scoți. Pereții curbi și referințele dintr-un fișier IFC nu au încă prelungiri de straturi, iar sub un acoperiș straturile peretelui urcă până la acoperiș, deci acolo o prelungire la cap nu se folosește.
+
+![Prelungirile straturilor unei plăci: finisajul ei cu 50 mm dincolo de a treia latură a conturului, tăind peretele](shots/layer-extents.webp)
+
+![Într-o secțiune, finisajul plăcii intră 5 cm în peretele pe care îl întâlnește](shots/layer-extents-section.webp)
+
 ## Tipurile de pereți
 
 Un tip de perete e un set de straturi, de la fața din dreapta sensului în care e desenat peretele (exteriorul, când desenezi în jurul clădirii în sens trigonometric) la fața din stânga. Fiecare strat are un material și o grosime, iar unul dintre ele e **miezul**. Linia peretelui merge pe miez. Ca să editezi tipurile, alege **Arhitectură → Tipuri de pereți**. Un strat altul decât miezul poate avea înălțimea lui: **Strat de la** și **Strat până la** spun cât de sus merge stratul peste baza peretelui (nu e înălțimea peretelui: locul gol arată *sus perete*, adică până la capătul de sus al peretelui; un placaj de faianță până la 1500, un placaj de fațadă de la 300 în sus); gol, merge pe toată înălțimea.

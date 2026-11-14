@@ -7,7 +7,7 @@ const inset = node('ins', 'LapinInset', { viewId: 'plan:s1', source: 'sec', at: 
 // The engine's mark: the point, the mapping (1:20 in a 1:100 plan) and a crop in the section's coordinates.
 const mark = { id: 'ins', segments: [], data: { at: [20, 0], centre: [0, 1.5], factor: 5, crop: { min: [-1, 0], max: [1, 3] } } };
 
-describe('an inset view (decision 574)', () => {
+describe('an inset view (decision 576)', () => {
   it('is moved by its point, on its host', () => {
     const [g] = insetGrips(inset);
     expect(g.at).toEqual({ x: 20, y: 0 });

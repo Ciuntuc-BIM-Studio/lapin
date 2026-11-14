@@ -225,7 +225,7 @@ const core: LapinModule = {
         { id: 'view.elevations', label: 'Elevations', icon: ElevationIcon, run: () => void (async () => {
           for (const direction of ['south', 'east', 'north', 'west']) await execute('view.create', { kind: 'elevation', direction, discipline: frontDiscipline() });
         })() },
-        // Another view drawn in this one, live, at its own scale (decision 574): for details, as rebar's sections across.
+        // Another view drawn in this one, live, at its own scale (decision 576): for details, as rebar's sections across.
         insetTool,
       ] },
       { label: 'Cut', tools: [

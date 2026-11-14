@@ -9,7 +9,7 @@ using Lapin.Platform;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// Inset views anywhere (decision 574): any 2D view drawn inside any other, not only on rebar's sections, at the source's
+/// Inset views anywhere (decision 576): any 2D view drawn inside any other, not only on rebar's sections, at the source's
 /// scale or a scale of its own, cut to a crop of its own, live (it follows the model), with what is drafted on the source
 /// seen and edited through it; printed on sheets and in DXF as the view shows it, the source's screen-only marks left out.
 /// </summary>

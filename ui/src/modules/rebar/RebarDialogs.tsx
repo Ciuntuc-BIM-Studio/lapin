@@ -79,5 +79,5 @@ export function RebarSettingsDialog() {
   );
 }
 
-/** The inset view's picker is the core's now, for every view (decision 574): re-exported for what imported it from here. */
+/** The inset view's picker is the core's now, for every view (decision 576): re-exported for what imported it from here. */
 export { InsetPickDialog } from '../core/InsetPickDialog';

@@ -103,7 +103,7 @@ export function useGripEditor(o: GripEditorOptions) {
       if (!n?.editable) continue;
       const marks = o.marks?.filter((m) => m.id === n.id || m.id.startsWith(`${n.id}:`));
       for (const g of gripsOf(n, { mark: marks?.find((m) => m.id === n.id), marks, view: views[0] })) if ((!tag || g.key.startsWith(`${tag}:`)) && inView(g.view, n.storeyId)) gs.push(g);
-      // Seen through an inset view (decision 574): the grips it has on its own view, where the inset shows them.
+      // Seen through an inset view (decision 576): the grips it has on its own view, where the inset shows them.
       for (const m of marks ?? []) {
         const via = m.id === n.id ? viaOf(m) : null;
         if (!via || !views.includes(via.host)) continue;

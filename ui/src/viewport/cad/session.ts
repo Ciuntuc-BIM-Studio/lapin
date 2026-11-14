@@ -51,7 +51,7 @@ export interface CadHost {
   inRegion?(takes: RegionTest): string[];
   /** Where a section's or an elevation's point lies in the model (decision 453: element.transform carries the model's elements by it); none in a plan. */
   frameAt?(at: Vec2): ViewFrame | null;
-  /** The inset view all these points fall in (decision 574): its source, and the host → source mapping; what is drawn there goes on the source. */
+  /** The inset view all these points fall in (decision 576): its source, and the host → source mapping; what is drawn there goes on the source. */
   insetUnder?(points: Vec2[]): { source: string; map: (p: Vec2) => Vec2 } | null;
   /** A constraint put on this host's shapes by its own command (a part's own sketch in the edit mode: `studio.partSketchAddConstraint`), instead of `studio.addConstraint` on the view. */
   addConstraint?(kind: string, refs: { shape: string; part: string }[], extra: { value?: number; formula?: string; driving?: boolean }): Promise<boolean>;

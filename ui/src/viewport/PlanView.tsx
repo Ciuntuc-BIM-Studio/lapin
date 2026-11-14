@@ -391,7 +391,7 @@ export function PlanView() {
   const complete = useCallback(async (points: Vec2[], entity?: NodeDto, face?: FaceHit, typed?: number) => {
     if (!tool) return;
     picked.current = undefined;
-    // An annotation drawn over an inset view goes on its source, in its own coordinates (decision 574); the model's tools stay on the plan.
+    // An annotation drawn over an inset view goes on its source, in its own coordinates (decision 576); the model's tools stay on the plan.
     const inset = drawsThroughInsets(tool.id) ? insetUnder(drawing?.marks, points) : null;
     if (inset) await completeTool(tool, { points: points.map(inset.map), entity, typed }, inset.source);
     else await completeTool(tool, { points, entity, face, typed });

@@ -98,6 +98,16 @@ Under a boundary drawn with **Profile…** a door goes into a trimmed cell where
 
 ![The door's opening symbol in the elevation](shots/curtain-cells-elevation.webp)
 
+### Layer extents
+
+A wall's or a floor's layer can go on past the element's edge, or stop short of it, without splitting the element: a floor finish that runs 2 cm over the wall it was drawn to, a plaster that goes down past the wall's base into the floor's finish, a render that stops 10 cm short of the wall's top. Select the wall or the floor and open **Layer extents** in its properties. **Add a layer extent** adds a row: choose the **Layer** (numbered as in its type), the **Edge** and the **Distance**, positive past the edge, negative short of it (up to 1 m either way). A straight wall's edges are its **Start**, **End**, **Bottom** and **Top**; a floor's are **All round** or one edge of its outline, numbered from its first corner (an edge's own extent wins over the all-round one). The × takes the extent away; an offset of 0 does the same. Each change is one step to undo.
+
+**Cuts others** says what the part past the edge does where it meets another wall or floor: ticked, it is taken out of that element (the wall loses the 2 cm the floor finish takes); unticked, the two overlap and each keeps its volume. Plans, sections, the 3D view, the quantities and the IFC export all show the element as it is built, layer sets kept; the extents travel in Lapin's own property set (*Lapin_Intent*), so a Lapin IFC file brings them back. When you move a corner of a floor, an edge's extent follows its edge; it goes away with an edge you take out. Curved walls and references from an IFC file have no layer extents yet, and under a roof a wall's layers go up to the roof, so a top extent is not used there.
+
+![A floor's Layer extents: its finish 50 mm past the outline's third edge, cutting the wall](shots/layer-extents.webp)
+
+![In a section, the floor finish going on 5 cm into the wall it meets](shots/layer-extents-section.webp)
+
 ## Wall types
 
 A wall type is a set of layers, from the face on the right of the way the wall is drawn (the outside, when you draw round a building anticlockwise) to the face on its left. Each layer has a material and a thickness, and one layer is the **core**. The wall's line runs along the core. To edit the types, choose **Architecture → Wall types**. A layer other than the core may have a height of its own: **Layer from** and **Layer up to** set how high the layer goes over the wall's base (not the wall's own top: the placeholder says *wall top* where it runs to the wall's top; a tiled dado up to 1500, a cladding from 300 up); empty, it runs the whole height.

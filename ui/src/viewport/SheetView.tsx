@@ -31,6 +31,7 @@ import { ScalePicker, StructurePicker } from './ScaleChip';
 import { openContextMenu } from '../shell/ContextMenu';
 import { useStandards } from '../engine/unitsStore';
 import { otherScales, partOf, placeAgainLabel } from './placeAtScale';
+import { openPlaced } from './sheetOpen';
 import { listSymbols, placeSymbol, rememberSymbol, type SymList } from '../modules/core/symbols/symbols';
 import { byCategory } from '../modules/core/symbols/symbolModel';
 import { currentNavStyle } from '../app/navStyleStore';
@@ -198,13 +199,10 @@ export function SheetView() {
     if (r?.id) { await execute('sheet.addViewport', { id: r.id, viewId: vp.viewId, page: vp.page + 1 }); useUi.setState({ sheetId: r.id }); }
   };
 
-  /** Opening what a viewport shows. */
+  /** Opening what a viewport shows: a 3D view in the 3D pane with its camera (sheetOpen.ts). */
   const open = (vp: Vp) => {
-    const n = nodes.get(vp.viewId);
-    if (vp.viewId.startsWith('plan:')) useUi.setState({ view: 'plan', storeyId: vp.viewId.slice(5), planViewId: null });
-    else if (n?.type === 'LapinSchedule') useUi.setState({ view: 'schedule', scheduleId: n.id });
-    else if (n?.props.kind === 'plan') useUi.setState({ view: 'plan', planViewId: n.id, storeyId: String(n.props.storeyId ?? '') || null });
-    else if (n) useUi.setState({ view: 'drawing', drawingViewId: n.id });
+    const to = openPlaced(vp.viewId, nodes.get(vp.viewId));
+    if (to) useUi.setState(to);
   };
 
   if (!sheet) return <div className="view-pane"><p className="muted">No sheet.</p></div>;

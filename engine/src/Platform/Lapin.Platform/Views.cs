@@ -152,7 +152,8 @@ public static class Views
             case RefPlanes.Kind:
                 return (RefPlanes.Spec(view, hidden), null);
         }
-        if (kind == "3d") return (null, "A 3D view is not a drawing.");
+        // A saved 3D view drawn from its camera (forum topic 91): a sheet, its PDF and the drawing pane show it.
+        if (kind == "3d") return (View3dDrawings.Prepare(m, view, parts, services).Spec, null);
         return (null, $"„{kind}” is not a kind of view.");
     }
 
@@ -378,7 +379,7 @@ public static class Views
         return box;
     }
 
-    /// <summary>A 3D view's camera as a command gives it: {azimuth, pitch, distance, target: [x, y, z], ortho?} (radians, metres).</summary>
+    /// <summary>A 3D view's camera as a command gives it: {azimuth, pitch, distance, target: [x, y, z], ortho?, fov? (degrees), aspect?} (radians, metres).</summary>
     public static JsonObject Camera(JsonNode? n)
     {
         if (n is not JsonObject o) throw new CommandException("A camera is {azimuth, pitch, distance, target: [x, y, z], ortho}.");
@@ -390,6 +391,9 @@ public static class Views
             ["target"] = new JsonArray(Json.Number(t[0]) ?? 0, Json.Number(t[1]) ?? 0, Json.Number(t[2]) ?? 0),
         };
         if (o["ortho"] is JsonValue ov && ov.TryGetValue<bool>(out var ortho)) camera["ortho"] = ortho;
+        // Its vertical field of view (degrees) and the window's width over its height: what a perspective drawn on a sheet takes in.
+        if (Json.Number(o["fov"]) is { } fov && fov is > 1 and < 179) camera["fov"] = fov;
+        if (Json.Number(o["aspect"]) is { } aspect && aspect is > 0.05 and < 20) camera["aspect"] = aspect;
         return camera;
     }
 
@@ -688,7 +692,16 @@ public static class Views
     {
         var silhouettes = new List<DrawSilhouette>();
         var (parts, symbols, fills, texts) = Gather(q, view, silhouettes);
-        var (spec, problem) = Spec(q.Model, view, parts, q.Services);
+        ViewSpec? spec;
+        string? problem = null;
+        if (view.Str("kind") == "3d")
+        {
+            // A 3D view (forum topic 91): its parts as its camera sees them (a perspective's mapped), bodies only, no plan symbols.
+            (spec, parts) = View3dDrawings.Prepare(q.Model, view, parts, q.Services);
+            (symbols, fills, texts) = ([], [], []);
+            silhouettes.Clear();
+        }
+        else (spec, problem) = Spec(q.Model, view, parts, q.Services);
         // What is drawn by its silhouettes only sizes the view: the surface hatches and shadows never see its body.
         var drawn = parts.Any(p => p.BySilhouette) ? parts.Where(p => !p.BySilhouette).ToList() : parts;
         if (spec == null) return (null, null, problem, drawn, null);
@@ -764,7 +777,7 @@ public static class Views
         // The view's line edits (Linework) over its generated lines.
         var (drawing, lineworkOrphans) = Linework.Apply(generated, ViewLinework.Edits(view));
         // An elevation cut by its marker's line (decision 460) hatches its cut as a section does.
-        var kind = spec.Kind == "plan" ? "plan" : spec.Kind == "elevation" && !spec.Cut ? "elevation" : "section";
+        var kind = spec.Kind == "plan" ? "plan" : spec.Kind is "elevation" or "3d" && !spec.Cut ? "elevation" : "section";
         var resolved = new Dictionary<string, ResolvedMaterial?>();
         ResolvedMaterial? Resolved(string? id) => id == null ? null
             // A material named rather than kept (a track's ballast, its rails): its look guessed from the name.
@@ -853,9 +866,11 @@ public static class Views
         }
         List<SurfaceHatches.Piece> scenes = laid == null ? [PieceOf(spec, 0, drawing, 0)] : laid.Select((p, i) => PieceOf(p.Spec, p.Station, p.Drawing, i)).ToList();
         // The faces' surface hatches (SurfaceHatches): under the lines, the hatches over their fills.
-        var surfaces = SurfaceHatches.PensOf(m, view, scenes, drawnParts, penOptions, new Dictionary<string, string?>());
+        // A 3D view draws its lines alone: its parts may be a perspective's, mapped (View3dDrawings).
+        var flat = spec.Kind != "3d";
+        var surfaces = flat ? SurfaceHatches.PensOf(m, view, scenes, drawnParts, penOptions, new Dictionary<string, string?>()) : [];
         // The sun's shadows on what the view sees (ViewShadows), filled under everything it draws: over the surfaces' fills, under their hatches.
-        var shadows = ViewShadows.PenOf(m, view, scenes);
+        var shadows = flat ? ViewShadows.PenOf(m, view, scenes) : null;
         pens.InsertRange(0, [.. surfaces.Where(p => p.Layer == SurfaceHatches.FillLayer), .. shadows != null ? [shadows] : Array.Empty<Pen>(), .. surfaces.Where(p => p.Layer != SurfaceHatches.FillLayer)]);
         // The view's crop region (forum topic 68): the model's lines and fills cut at its edge.
         var crop = ViewCrops.ActiveOf(m, view, scale);
@@ -863,31 +878,35 @@ public static class Views
 
         // Annotations: the views' own marks, then each module's (grids, dimensions, texts), over the drawing.
         var ctx = new ViewContext(m, view, spec.Kind, spec.Frame, scale, DraftingResources.Book(m), drawing, q.Geometry) { Services = q.Services };
-        var marks = Marks(ctx).Concat(Location.Marks(ctx)).Concat(SitePlans.Marks(ctx)).Concat(insets ? Insets.Marks(q, ctx, print) : []).ToList();
-        // The reference planes where they cut this view, on the screen only: never on a sheet.
-        if (!print) marks.AddRange(RefPlaneMarks(ctx));
-        // The view's named boundaries (decision 236), on the screen only.
-        if (!print) marks.AddRange(ViewBoundaries.Marks(ctx));
-        foreach (var source in q.Services.All<IViewAnnotations>())
-            try { marks.AddRange(source.Marks(ctx)); }
-            catch (CommandException) { }
-        // The openings' voids when the view's style draws them (decision 290): a coordination drawing's provisions for voids.
-        if (ViewStyles.Of(m, view) is { Voids: true } voidStyle)
-            try { marks.AddRange(Coordination.VoidDrawings.Marks(q, ctx, spec, Pieces(q, view), voidStyle.VoidSizes, styles, categories?.GetValueOrDefault(Coordination.VoidDrawings.Category), marks)); }
-            catch (CommandException) { }
-        // The clash report's open problems as red clouds with their numbers (decision 293): on the screen, printed only when asked.
-        if (Coordination.ClashMarks.Shows(view, print))
-            try { marks.AddRange(Coordination.ClashMarks.Marks(q, ctx, spec, Pieces(q, view))); }
-            catch (CommandException) { }
+        // A 3D view's drawing has no annotations: its drawing's frame need not be the model's (a perspective).
+        var marks = flat ? Marks(ctx).Concat(Location.Marks(ctx)).Concat(SitePlans.Marks(ctx)).Concat(insets ? Insets.Marks(q, ctx, print) : []).ToList() : [];
+        if (flat)
+        {
+            // The reference planes where they cut this view, on the screen only: never on a sheet.
+            if (!print) marks.AddRange(RefPlaneMarks(ctx));
+            // The view's named boundaries (decision 236), on the screen only.
+            if (!print) marks.AddRange(ViewBoundaries.Marks(ctx));
+            foreach (var source in q.Services.All<IViewAnnotations>())
+                try { marks.AddRange(source.Marks(ctx)); }
+                catch (CommandException) { }
+            // The openings' voids when the view's style draws them (decision 290): a coordination drawing's provisions for voids.
+            if (ViewStyles.Of(m, view) is { Voids: true } voidStyle)
+                try { marks.AddRange(Coordination.VoidDrawings.Marks(q, ctx, spec, Pieces(q, view), voidStyle.VoidSizes, styles, categories?.GetValueOrDefault(Coordination.VoidDrawings.Category), marks)); }
+                catch (CommandException) { }
+            // The clash report's open problems as red clouds with their numbers (decision 293): on the screen, printed only when asked.
+            if (Coordination.ClashMarks.Shows(view, print))
+                try { marks.AddRange(Coordination.ClashMarks.Marks(q, ctx, spec, Pieces(q, view))); }
+                catch (CommandException) { }
+        }
         // Every element the drawing shows can be picked by what it drew: its cut outlines and its seen lines, as a
         // mark on the PICK layer (never drawn, only hit and highlighted). Hidden and overhead lines pick nothing.
         marks.AddRange(PickMarks(drawing, spec.Hidden));
         // A bare opening draws nothing of its own (its host's lines draw the hole): its outline where the view cuts or sees it (forum topic 72).
-        if (spec.Kind != "plan") marks.AddRange(OpeningPickMarks(q, view, laid?.Select(p => (p.Spec, p.Station, p.Drawing)).ToList() ?? [(spec, 0.0, generated)], vg));
+        if (flat && spec.Kind != "plan") marks.AddRange(OpeningPickMarks(q, view, laid?.Select(p => (p.Spec, p.Station, p.Drawing)).ToList() ?? [(spec, 0.0, generated)], vg));
         // What the view's Visibility / Graphics hides goes with its marks (decision 391): a hidden category's tags and bars, a link hidden here.
         marks.RemoveAll(vg.HidesMark);
         // The point clouds the view's cut takes, as dots under the drawing (decision 396; the view's Point clouds tab hides them, not its categories): a plan's or a section's slice, an elevation's front.
-        if (laid == null)
+        if (laid == null && flat)
             try { marks.AddRange(PointCloudSlices.Marks(ctx, spec, vg)); }
             catch (CommandException) { }
         // An annotation category's colour or halftone (decision 394).

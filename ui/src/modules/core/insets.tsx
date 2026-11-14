@@ -1,5 +1,5 @@
 /**
- * Inset views (decision 574; rebar's, decision 211, made general): any plan, section, elevation or reference plane's view drawn
+ * Inset views (decision 576; rebar's, decision 211, made general): any plan, section, elevation or reference plane's view drawn
  * inside another 2D view, where it was clicked (View → Inset view, IV), live: the engine draws the source as it is now
  * (`view.inset`, Insets.cs), at the source's scale or one of its own, cut to a crop of its own, framed with its name and scale.
  * What is drawn over it goes on the source (viewport/insetMap.ts), and what the source has of its own is edited through it.

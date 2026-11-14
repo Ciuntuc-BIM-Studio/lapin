@@ -271,7 +271,7 @@ export function DrawingView() {
     carryEnd();
     clearLiveRise();
     if (!by) return;
-    // What is drafted on an inset's source, dragged through the inset (decision 574): moved on its source, by the source's metres.
+    // What is drafted on an inset's source, dragged through the inset (decision 576): moved on its source, by the source's metres.
     const inset = insetUnderMarks(drawing?.marks, [base]);
     const nodes = useSession.getState().nodes;
     if (inset && ids.every((i) => nodes.get(i)?.props.viewId === inset.source)) {

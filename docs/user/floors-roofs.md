@@ -18,6 +18,8 @@ To change the outline, select the floor and drag its corners. **Floor opening** 
 
 A floor drawn outside the walls, in front of a door, is a porch. For the steps up to it, see [Stairs](stairs.md).
 
+A floor's layer can also go on past its outline, or stop short of it, all round or at one edge: see [Layer extents](walls.md#layer-extents).
+
 ### Beam-and-block floors
 
 A floor type can be of **beam and block** instead of plain layers: precast joists (a POT joist, say) laid side by side at a spacing, ceramic infill blocks (MIAKO) between them, and a cast concrete topping over them. In **Floor types**, set **Kind** to **Beam and block** and fill in:

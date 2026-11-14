@@ -413,9 +413,63 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         {
             var slab = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.Slab);
             var attrs = slab.CloneAttrs();
-            if (a["points"] != null || a["x1"] != null) attrs["contour"] = Slabs.ContourJson(Slabs.CheckContour(Points(a)));
+            if (a["points"] != null || a["x1"] != null)
+            {
+                var contour = Slabs.CheckContour(Points(a));
+                attrs["contour"] = Slabs.ContourJson(contour);
+                // The layers' edge extents go with their edges (forum topic 89); one whose edge is gone goes with it.
+                if (LayerExtents.Of(slab) is { Count: > 0 } extents)
+                {
+                    if (LayerExtents.ToJson(LayerExtents.RemapEdges(extents, Slabs.Contour(slab), contour)) is { } kept) attrs[LayerExtents.Key] = kept;
+                    else attrs.Remove(LayerExtents.Key);
+                }
+            }
             if (Json.Number(a["offset"]) is { } offset) attrs["offset"] = offset;
             ctx.Replace(slab.With(attrs: attrs));
+            return null;
+        });
+
+        // A layer's extent past an edge of its wall or floor, or short of it (forum topic 89, docs/plan-layer-extents.md):
+        // {id | ids, layer (its index in the layer set), edge (a wall's start, end, bottom or top; a floor's outline, or edge with
+        // index, its contour's edge from corner index to the next), offset (m; positive past the edge, negative short of it; 0 takes
+        // the extent away), cuts? (whether the piece past the edge cuts the walls and floors it meets; kept when not given)}.
+        r.Command("setLayerExtent", "Layer extent", (ctx, a) =>
+        {
+            var ids = (string?)a["id"] is { } one ? [one] : Ids(a).ToList();
+            if (ids.Count == 0) throw new CommandException("Which wall or floor?");
+            var layer = Json.Number(a["layer"]) is { } l && l >= 0 && l == Math.Floor(l) ? (int)l : throw new CommandException("Which layer? Its index in the layer set, from 0.");
+            var edge = (string?)a["edge"] ?? throw new CommandException("Which edge?");
+            var offset = Json.Number(a["offset"]) ?? throw new CommandException("How far? An offset in metres: past the edge positive, short of it negative.");
+            if (!double.IsFinite(offset) || Math.Abs(offset) > LayerExtents.MaxOffset) throw new CommandException($"A layer reaches at most {LayerExtents.MaxOffset * 1000:0} mm past or short of its edge.");
+            int? index = Json.Number(a["index"]) is { } ix ? (int)ix : null;
+            foreach (var id in ids)
+            {
+                var e = ctx.Model.Get(id) ?? throw new CommandException("The element is not in the project.");
+                LayerExtentCheck(ctx.Model, e, layer, edge, ref index);
+                var list = LayerExtents.Of(e);
+                var was = list.FirstOrDefault(x => x.Layer == layer && x.Edge == edge && x.Index == index);
+                var cuts = a["cuts"] is JsonValue c && c.TryGetValue<bool>(out var b) ? b : was?.Cuts ?? false;
+                var next = LayerExtents.With(list, new LayerExtents.Extent(layer, edge, index, offset, cuts));
+                LayerExtentFits(ctx.Model, e, next, layer);
+                var attrs = e.CloneAttrs();
+                if (LayerExtents.ToJson(next) is { } json) attrs[LayerExtents.Key] = json; else attrs.Remove(LayerExtents.Key);
+                ctx.Replace(e.With(attrs: attrs));
+            }
+            return null;
+        });
+
+        // Every layer extent of the walls and floors named taken away: {id | ids}.
+        r.Command("clearLayerExtents", "Clear layer extents", (ctx, a) =>
+        {
+            var ids = (string?)a["id"] is { } one ? [one] : Ids(a).ToList();
+            foreach (var id in ids)
+            {
+                var e = ctx.Model.Get(id) ?? throw new CommandException("The element is not in the project.");
+                if (e.Attrs[LayerExtents.Key] == null) continue;
+                var attrs = e.CloneAttrs();
+                attrs.Remove(LayerExtents.Key);
+                ctx.Replace(e.With(attrs: attrs));
+            }
             return null;
         });
 
@@ -1243,6 +1297,49 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
     static Vec2 P(JsonObject a, string x, string y) => Args.Point(a, x, y);
 
     static IEnumerable<string> Ids(JsonObject a) => Args.Ids(a);
+
+    /// <summary>Whether a layer extent may be set on the element: a straight wall or a floor of Lapin's own with layers, the layer one with a thickness, the edge one it has.</summary>
+    static void LayerExtentCheck(IModelView m, Entity e, int layer, string edge, ref int? index)
+    {
+        if (e.Class is not (IfcClass.Wall or IfcClass.Slab)) throw new CommandException("Layer extents are for walls and floors.");
+        // A reference keeps the body its file gave it: Lapin does not build its layers, so it has none to extend.
+        if (StoredBodies.Has(e) || e.Attrs["reference"] != null) throw new CommandException("A reference keeps its file's body: convert it to a native element first.");
+        if (e.Class == IfcClass.Wall && PathCurve.Of(e) is { IsArc: true }) throw new CommandException("Layer extents are for straight walls for now.");
+        if (LayerSets.BandsOf(m, e.Id) is not { Count: > 0 } bands) throw new CommandException("The element has no layers: give it a type with layers first.");
+        if (!bands.Any(b => b.Index == layer)) throw new CommandException($"The element has no layer {layer + 1}.");
+        var band = bands.First(b => b.Index == layer);
+        if (!(band.To - band.From > 1e-9)) throw new CommandException("A layer of no thickness has no body to extend.");
+        if (e.Class == IfcClass.Wall)
+        {
+            if (!LayerExtents.WallEdges.Contains(edge)) throw new CommandException("A wall's layer extends at its start, end, bottom or top.");
+            index = null;
+            return;
+        }
+        if (edge == LayerExtents.Outline) { index = null; return; }
+        if (edge != LayerExtents.Edge) throw new CommandException("A floor's layer extends all round its outline or at one edge of it.");
+        var n = Slabs.Contour(e).Count;
+        if (index is not { } i || i < 0 || i >= n) throw new CommandException($"Which edge? The floor's outline has {n}, from 0.");
+    }
+
+    /// <summary>Refused when a layer's extents would leave nothing of it: a wall's layer shorter than nothing along or up, a floor's outline crossing itself.</summary>
+    static void LayerExtentFits(IModelView m, Entity e, IReadOnlyList<LayerExtents.Extent> xs, int layer)
+    {
+        if (e.Class == IfcClass.Wall)
+        {
+            var length = (Walls.End(e) - Walls.Start(e)).Length;
+            if (length + LayerExtents.Short(xs, layer, LayerExtents.Start) + LayerExtents.Short(xs, layer, LayerExtents.End) < 0.01)
+                throw new CommandException("The layer would stop short of both ends by more than the wall is long.");
+            var band = LayerSets.BandsOf(m, e.Id)!.First(b => b.Index == layer);
+            var height = Walls.HeightOf(m, e);
+            var tall = Math.Clamp(band.Z1 ?? height, 0, height) - Math.Clamp(band.Z0 ?? 0, 0, height);
+            if (tall + LayerExtents.Short(xs, layer, LayerExtents.Bottom) + LayerExtents.Short(xs, layer, LayerExtents.Top) < 0.01)
+                throw new CommandException("The layer would stop short of its bottom and top by more than it is high.");
+            return;
+        }
+        var contour = Slabs.Contour(e);
+        if (LayerExtents.SlabContour(contour, xs, layer, x => x.Offset) == null || LayerExtents.SlabContour(contour, xs, layer, x => Math.Min(0, x.Offset)) == null)
+            throw new CommandException("The layer's outline would cross itself: a smaller extent.");
+    }
 }
 
 /// <summary>Heights over the storey: a wall's base, a floor's top, a roof's wall plate (over the storey's top).</summary>

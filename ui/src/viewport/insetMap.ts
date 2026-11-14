@@ -1,5 +1,5 @@
 /**
- * Inset views (decision 574): how the host view of an inset maps to its source. The engine draws each inset's source
+ * Inset views (decision 576): how the host view of an inset maps to its source. The engine draws each inset's source
  * at its point (`at`), its middle (`centre`) there, by `factor` host metres per source metre; what the source has of its
  * own (a bar, a drafted line, a dimension) comes through as its own mark with the mapping it came by (`via`). So:
  *
