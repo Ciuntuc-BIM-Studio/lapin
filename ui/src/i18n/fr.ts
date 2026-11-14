@@ -908,6 +908,7 @@ export const FR: Record<string, string> = {
   'The layer new shapes go on': 'Le calque sur lequel vont les nouvelles formes', 'Mode': 'Mode', 'Snap': 'Accrochage',
   'Length': 'Longueur', 'Layers run': 'Sens des couches', 'as drawn': 'comme dessiné', 'reversed': 'inversé', 'Flip': 'Retourner', '(no phase)': '(sans phase)', '(stays)': '(reste)',
   'Dimensions': 'Dimensions', 'Element': 'Élément', 'elements': 'éléments', ' · unsaved': ' · non enregistré', 'SELECT': 'SÉLECTION', 'DRAWING': 'DESSIN', 'SHEET': 'FEUILLE', 'SCHEDULE': 'NOMENCLATURE', '3D · SHADED': '3D · OMBRÉ', 'Total': 'Total',
+  'Gross floor area': 'Surface brute de plancher', 'Net perimeter': 'Périmètre net', 'Finished ceiling height': 'Hauteur sous plafond finie',
   'Volume': 'Volume', 'Area': 'Surface', 'Net volume': 'Volume net', 'Gross volume': 'Volume brut', 'Net area': 'Surface nette', 'Gross area': 'Surface brute', 'Perimeter': 'Périmètre',
   'Surface area': 'Aire de surface', 'Plan area': 'Surface en plan', 'Lowest point': 'Point le plus bas', 'Highest point': 'Point le plus haut', 'Fill': 'Remplissage',
   // Panes, zoom, the key plan

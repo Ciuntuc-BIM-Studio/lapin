@@ -908,6 +908,7 @@ export const ES: Record<string, string> = {
   'The layer new shapes go on': 'La capa en la que van las formas nuevas', 'Mode': 'Modo', 'Snap': 'Forzado',
   'Length': 'Longitud', 'Layers run': 'Las capas van', 'as drawn': 'como se dibujó', 'reversed': 'invertido', 'Flip': 'Voltear', '(no phase)': '(sin fase)', '(stays)': '(se mantiene)',
   'Dimensions': 'Dimensiones', 'Element': 'Elemento', 'elements': 'elementos', ' · unsaved': ' · sin guardar', 'SELECT': 'SELECCIONAR', 'DRAWING': 'DIBUJO', 'SHEET': 'LÁMINA', 'SCHEDULE': 'TABLA', '3D · SHADED': '3D · SOMBREADO', 'Total': 'Total',
+  'Gross floor area': 'Superficie bruta de suelo', 'Net perimeter': 'Perímetro neto', 'Finished ceiling height': 'Altura libre acabada',
   'Volume': 'Volumen', 'Area': 'Área', 'Net volume': 'Volumen neto', 'Gross volume': 'Volumen bruto', 'Net area': 'Área neta', 'Gross area': 'Área bruta', 'Perimeter': 'Perímetro',
   'Surface area': 'Área de superficie', 'Plan area': 'Área en planta', 'Lowest point': 'Punto más bajo', 'Highest point': 'Punto más alto', 'Fill': 'Relleno',
   // Panes, zoom, the key plan

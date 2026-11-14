@@ -118,7 +118,7 @@ public sealed class FanRoomCheck : IScheduleSource
         foreach (var (room, _, outline) in rooms.OrderBy(r => r.Room.Str("number") ?? r.Room.Name, StringComparer.Ordinal))
         {
             if (!Wet(room) && !byRoom.ContainsKey(room.Id)) continue;
-            var volume = outline.NetArea * Rooms.HeightOf(room, m);
+            var volume = Rooms.MeasuresOf(room, outline, m).NetVolume;
             var function = Function(room);
             var need = Required(volume, function);
             var given = byRoom.GetValueOrDefault(room.Id);

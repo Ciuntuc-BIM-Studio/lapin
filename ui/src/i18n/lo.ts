@@ -903,6 +903,7 @@ export const LO: Record<string, string> = {
   'The layer new shapes go on': 'ເລເຢີສຳລັບຮູບຊົງໃໝ່', 'Mode': 'ໂໝດ', 'Snap': 'ຈັບຈຸດ',
   'Length': 'ຄວາມຍາວ', 'Layers run': 'ທິດທາງຊັ້ນວັດສະດຸ', 'as drawn': 'ຕາມທີ່ແຕ້ມ', 'reversed': 'ປີ້ນກັບຄືນ', 'Flip': 'ພິກດ້ານ', '(no phase)': '(ບໍ່ມີໄລຍະກໍ່ສ້າງ)', '(stays)': '(ຄົງໄວ້)',
   'Dimensions': 'ຂະໜາດມິຕິ', 'Element': 'ອົງປະກອບ', 'elements': 'ອົງປະກອບ', ' · unsaved': ' · ຍັງບໍ່ໄດ້ບັນທຶກ', 'SELECT': 'ເລືອກ', 'DRAWING': 'ຮູບແຕ້ມ', 'SHEET': 'ແຜ່ນແບບ', 'SCHEDULE': 'ຕາຕະລາງ', '3D · SHADED': '3D · ໃສ່ເງົາ', 'Total': 'ລວມ',
+  'Gross floor area': 'ເນື້ອທີ່ພື້ນລວມ', 'Net perimeter': 'ເສັ້ນຮອບວຽນສຸດທິ', 'Finished ceiling height': 'ຄວາມສູງເພດານສຳເລັດ',
   'Volume': 'ບໍລິມາດ', 'Area': 'ເນື້ອທີ່', 'Net volume': 'ບໍລິມາດສຸດທິ', 'Gross volume': 'ບໍລິມາດລວມ', 'Net area': 'ເນື້ອທີ່ສຸດທິ', 'Gross area': 'ເນື້ອທີ່ລວມ', 'Perimeter': 'ລວງຮອບ',
   'Surface area': 'ເນື້ອທີ່ຜິວ', 'Plan area': 'ເນື້ອທີ່ຮູບແຜນຜັງ', 'Lowest point': 'ຈຸດຕ່ຳສຸດ', 'Highest point': 'ຈຸດສູງສຸດ', 'Fill': 'ສີຖົມ',
   // Panes, zoom, the key plan
