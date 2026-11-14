@@ -74,7 +74,7 @@ others** — and **Add a layer extent** (the first free place, 2 cm past). Each 
   10 cm under the roof or 5 cm into it; a layer with its own top keeps its extent from it. A zoned core's gable goes up with it,
   and its strip past an end now includes the gable over the ring beam.
 - **Roofs' layer sets**: roofs have none (their covering, deck and framing are parts of their own, `RoofCoverings`,
-  `RoofParts`); giving them one is a decision of its own (the user's), so no roof extents; the guide says so.
+  `RoofParts`); the user decided (14.11.2026) that roofs stay as they are, with no layer set, so no roof extents; the guide says so.
 - **Type defaults**: a wall type's or a floor type's own `layerExtents` (a floor type's all round only), set with the same
   command on the type. An element builds with `LayerExtents.Effective`: its type's, each one it sets at the same place replaced
   (an own 0 keeps the layer at that edge, stored only where the type has one), then its own; `inherit: true` gives the place
@@ -95,7 +95,7 @@ others** — and **Add a layer extent** (the first free place, 2 cm past). Each 
 - Edit layers through an inset view (the source view's frame lent to the inset's grips) and in a developed section.
 - The grips in 3D: a wall's and floor's grips are placed as in a plan there (at the storey's height); grips of its own in 3D
   (on the faces, the finish painter's way) would be better.
-- Roofs' layer sets (a decision of its own), then the same `layerExtents` on them.
+- Roofs' layer sets: not done, by the user's decision (14.11.2026: roofs stay as they are).
 - Per-face extents of a wall's end (the imported `layerEnds` does it for free ends).
 - Extents follow the layer's index: a type changed for one with other layers keeps the indices (those past the last layer are
   ignored).
