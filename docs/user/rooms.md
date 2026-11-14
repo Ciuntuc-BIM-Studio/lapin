@@ -82,6 +82,7 @@ The colours are drawn under the walls, the furniture and the door swings, so the
 - The points hold on the walls, like any dimension's. Move a wall and the strings follow it.
 - Run it again on a room to make its strings anew, for example after adding a door. The old strings are replaced, not doubled.
 - Very short sides, under 30 cm, are left out. Edit or delete any string as you would one you drew.
+- Which strings are made, their order, offset, spacing and style are set in **Annotate → Dimension rules…**; see [Exterior dimensions and dimension rules](drafting.md#exterior-dimensions-and-dimension-rules). The outside of the building has its own tool, **Exterior dimensions**.
 
 ![Two rooms dimensioned inside: each side's string with the door and windows on it](shots/room-dimensions.webp)
 

@@ -1,6 +1,6 @@
 /** Drafting: CAD drawing on views (lines, polylines, circles, arcs, hatches on layers, and their edits), dimensions that follow the elements, texts, grid axes. */
 
-import { ArrowRightToLine, Crosshair, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Unlink2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags, Grid3x3, Settings2, Image as ImageIcon, Ruler, Replace, Shapes, Shapes as SymbolsIcon, FolderPlus, ListOrdered } from 'lucide-react';
+import { ArrowRightToLine, Crosshair, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Unlink2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags, Grid3x3, Settings2, SlidersHorizontal, SquareDashed, Image as ImageIcon, Ruler, Replace, Shapes, Shapes as SymbolsIcon, FolderPlus, ListOrdered } from 'lucide-react';
 import { AngleIcon, ArcLengthIcon, DiameterIcon, DimensionIcon, GridAxisIcon, LevelIcon, OrdinateIcon, RadiusIcon, SlopeIcon } from '../../icons';
 import type { Grip, GripStep, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { axisGrips, axisRef, outlineGrips, pt } from '../../viewport/gripKit';
@@ -20,6 +20,7 @@ import { BoundarySection, boundaryGrips, viewBoundary } from './ViewBoundary';
 import { xy } from '../../platform/vec';
 import { GridDialog, GridSection } from './GridDialog';
 import { RenumberAxesDialog } from './RenumberAxesDialog';
+import { DimensionRulesDialog } from './DimensionRulesDialog';
 import { openStandards } from '../core/standardsTab';
 import { formatLength, formatLevel } from '../../engine/unitsStore';
 import { TagOptions, tagCommand, tagGrips, useTagPrefs } from './tag';
@@ -253,6 +254,27 @@ const roomDimensions: ToolDef = {
     else notify(r.rooms ? `${r.strings} dimension strings in ${r.rooms} rooms.` : 'No room here to dimension: place rooms first (Architecture → Room).');
   })(),
 };
+/**
+ * Exterior dimensions (forum #78): on a plan, parallel dimension strings outside the building along each straight exterior
+ * facade, in the order of the dimension rules (Annotate → Dimension rules…). The selected walls, or every exterior wall of
+ * the plan's storey; done again, the strings it made are replaced.
+ */
+const exteriorDimensions: ToolDef = {
+  id: 'drafting.exteriorDimensions', label: 'Exterior dimensions', icon: SquareDashed, shortcut: 'ED',
+  run: () => void (async () => {
+    if (useUi.getState().view !== 'plan') { notify('Exteriors are dimensioned on a plan: open one.'); return; }
+    const viewId = await frontView();
+    if (!viewId) return;
+    const nodes = useSession.getState().nodes;
+    const wallIds = useUi.getState().selected.filter((id) => { const t = nodes.get(id)?.type; return t === 'IfcWall' || t === 'IfcWallStandardCase'; });
+    const r = await execute('drafting.exteriorDimensions', { viewId, ...(wallIds.length ? { wallIds } : {}) }) as { facades?: number; strings?: number; views?: string[] } | null;
+    if (!r) return;
+    if (r.facades && r.views?.length) notify(`${r.strings} dimension strings on ${r.facades} facades, on the floor plan: ${r.views.join(', ')}.`);
+    else notify(r.facades ? `${r.strings} dimension strings on ${r.facades} facades.` : 'No exterior wall found on this plan.');
+  })(),
+};
+registerCommand({ names: ['EXTDIM', 'DEX'], label: 'Exterior dimensions', start: () => { void exteriorDimensions.run?.(); } });
+const dimensionRulesTool: ToolDef = { id: 'drafting.dimensionRules', label: 'Dimension rules…', icon: SlidersHorizontal, run: () => useUi.setState({ dialog: 'dimensionRules' }) };
 registerCommand({ names: ['DIMALIGNED', 'DAL', 'DIM'], label: 'Aligned dimension', start: () => dimCommand(false), options: DimensionOptions });
 registerCommand({ names: ['DIMLINEAR', 'DLI'], label: 'Linear dimension', start: () => dimCommand(true), options: DimensionOptions });
 
@@ -668,9 +690,9 @@ const drafting: LapinModule = {
     {
       id: 'annotate', label: 'Annotate', order: 60,
       groups: [
-        { label: 'Dimension', tools: [dimension, cad('dimLinear', 'Linear', MoveHorizontal, 'DIMLINEAR'), cad('dimAngular', 'Angle', AngleIcon, 'DIMANGULAR'), roomDimensions],
+        { label: 'Dimension', tools: [dimension, cad('dimLinear', 'Linear', MoveHorizontal, 'DIMLINEAR'), cad('dimAngular', 'Angle', AngleIcon, 'DIMANGULAR'), roomDimensions, exteriorDimensions],
           // Points clicked into a selected string, as ArchiCAD's Insert dimension point.
-          small: [cad('dimAdd', 'Add points', ListPlus, 'DIMADD'), cad('dimDel', 'Remove points', ListMinus, 'DIMDEL'), cad('dimRadius', 'Radius', RadiusIcon, 'DIMRADIUS'), cad('dimDiameter', 'Diameter', DiameterIcon, 'DIMDIAMETER'), cad('dimArc', 'Arc length', ArcLengthIcon, 'DIMARC'), cad('dimSlope', 'Slope', SlopeIcon, 'DIMSLOPE'), cad('dimOrdinate', 'Ordinate', OrdinateIcon, 'DIMORDINATE'), cad('dimCoord', 'Spot coordinate', Crosshair, 'DIMCOORD')] },
+          small: [dimensionRulesTool, cad('dimAdd', 'Add points', ListPlus, 'DIMADD'), cad('dimDel', 'Remove points', ListMinus, 'DIMDEL'), cad('dimRadius', 'Radius', RadiusIcon, 'DIMRADIUS'), cad('dimDiameter', 'Diameter', DiameterIcon, 'DIMDIAMETER'), cad('dimArc', 'Arc length', ArcLengthIcon, 'DIMARC'), cad('dimSlope', 'Slope', SlopeIcon, 'DIMSLOPE'), cad('dimOrdinate', 'Ordinate', OrdinateIcon, 'DIMORDINATE'), cad('dimCoord', 'Spot coordinate', Crosshair, 'DIMCOORD')] },
         { label: 'Text', small: [tagParameter], tools: [text, cad('tag', 'Tag', Tag, 'TAG'), {
           id: 'tagOpenings', label: 'Door & window tags', icon: Tags,
           run: () => void (async () => {
@@ -694,7 +716,7 @@ const drafting: LapinModule = {
     },
   ],
   hotbar: [dimension],
-  dialogs: { convertDrafting: ConvertDialog, convertLayers: ConvertLayersDialog, draftLayers: LayersDialog, importDxf: ImportDxfDialog, importTrace: ImportTraceDialog, grid: GridDialog, renumberAxes: RenumberAxesDialog },
+  dialogs: { convertDrafting: ConvertDialog, convertLayers: ConvertLayersDialog, draftLayers: LayersDialog, importDxf: ImportDxfDialog, importTrace: ImportTraceDialog, grid: GridDialog, renumberAxes: RenumberAxesDialog, dimensionRules: DimensionRulesDialog },
   propertySections: [
     // The drafted kinds show their own fields (a line its ends, a circle its radius), so the class's generic ones stay out.
     { id: 'draft', label: 'Drafting', classes: ['IfcAnnotation'], component: DraftSection, replacesFields: draftsFields },

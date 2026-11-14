@@ -82,6 +82,7 @@ Culorile se desenează sub pereți, sub mobilier și sub deschiderile ușilor, a
 - Punctele se țin de pereți, ca la orice cotă. Muți un perete și lanțurile îl urmează.
 - Rulează din nou comanda pe o încăpere ca să-i refaci lanțurile, de exemplu după ce ai adăugat o ușă. Lanțurile vechi sunt înlocuite, nu dublate.
 - Laturile foarte scurte, sub 30 cm, sunt lăsate deoparte. Orice lanț se editează sau se șterge ca unul desenat de mână.
+- Ce lanțuri se fac, ordinea, distanța, spațierea și stilul lor se setează în **Annotate → Dimension rules…**; vezi [Cote exterioare și reguli de cotare](drafting.md#cote-exterioare-și-reguli-de-cotare). Exteriorul clădirii are propria unealtă, **Exterior dimensions**.
 
 ![Două încăperi cotate în interior: lanțul fiecărei laturi, cu ușa și ferestrele pe el](shots/room-dimensions.webp)
 

@@ -139,6 +139,32 @@ Adnotările de pe un plan (cote, texte, linii desenate, etichete) pot trece pe a
 
 **Cote pe o linie.** Un punct de cotă pus pe o axă din grilă sau pe axa unui perete se ține de linie, nu de un punct al ei. Trage capătul axei de-a lungul ei ca să încapă bula în vedere, sau lungește ori scurtează peretele: cota măsoară mai departe unde ai pus-o, iar linia ei nu se rotește. Dacă axa sau peretele se mută de-a curmezișul, punctul merge cu ea, în același loc de-a lungul. La fel rămâne, când peretele e întins pe lungime, o cotă pusă pe fața lui. Cotele făcute înainte se țin de o axă din grilă la fel; una pe axa unui perete se atașează din nou dând clic pe punctul ei.
 
+### Cote exterioare și reguli de cotare
+
+**Annotate → Exterior dimensions** (<kbd>ED</kbd>, sau tastează **EXTDIM**) cotează dintr-o dată exteriorul clădirii pe un plan. Fiecare fațadă dreaptă primește în exterior lanțuri de cote paralele, unul lângă altul, în ordinea dată de regulile de cotare, începând de la perete. Punctele se țin de pereți, ca la orice cotă.
+
+- Cu pereți selectați, se cotează doar fațadele lor. Fără selecție, se cotează toți pereții exteriori ai nivelului planului.
+- Cerută pe o planimetrie, lanțurile se fac pe planul nivelului.
+- Rulează din nou comanda și lanțurile făcute de ea pe plan sunt înlocuite, nu dublate. Lanțurile desenate de tine rămân.
+
+**Annotate → Dimension rules…** (Reguli de cotare…) deschide setările pentru Cote exterioare și Cotele încăperilor, în două taburi. Aparțin proiectului și circulă cu standardele de desen (**Gestionare → Standarde de desen**, cu opțiunile). Fiecare lanț are o bifă și butoane **↑ ↓** pentru ordine: la exterior de la perete spre afară, la încăperi de la latură spre interior.
+
+| Lanț | Ce măsoară |
+| --- | --- |
+| Detalii | fiecare element de pe fațadă: colțuri și ancadramentele golurilor |
+| Goluri | de la începutul fațadei până la centrul fiecărei uși și ferestre și până la capătul lor |
+| Axe | de la început până la fiecare ax al grilei care intersectează fațada și până la capăt |
+| Camere | grosimile pereților care se întâlnesc cu fațada dinspre interior și distanțele dintre ei |
+| Total | întreaga fațadă |
+
+Cotele încăperilor au doar **Detalii** (latura, cu ancadramentele golurilor) și **Total** (lungimea întreagă a laturii). Pe lângă lanțuri:
+
+- **Distanța** este măsurată în milimetri pe hârtie de la fața peretelui (sau latura încăperii) până la primul lanț, iar **Spațierea** este distanța dintre lanțuri.
+- **Stil de cotare** este unul dintre stilurile de cotare ale proiectului; când e gol, stilul implicit.
+- **Măsoară până la** (doar la exterior) spune până la ce se măsoară colțurile și pereții despărțitori: fețele pereților, fețele miezului lor sau axele lor.
+- **Omite golurile mai înguste de** lasă deoparte golurile sub lățimea dată, în metri.
+- **Resetează la valorile implicite** aduce dialogul la regulile din program; nimic nu se schimbă până la **OK**, care e un singur pas de anulare.
+
 ### Etichete
 
 **Adnotări → Etichetă** (<kbd>TG</kbd>) pune pe o vedere o casetă cu ce spune un element despre el, cu o linie de indicație până la el. Cât timp unealta e pornită, bara de sub vedere alege ce arată eticheta: marca, numele, clasa sau tipul, **Rezistență la foc**, **Izolare acustică**, **Transmitanță termică** sau **Alt parametru…** după nume; ori un tip de etichetă din standardele de desen; iar **INDICAȚIE** pornește sau oprește linia de indicație. Dă clic pe element, apoi unde merge eticheta (tastează întâi **E** ca să frângi linia într-un cot). **Adnotări → Etichetează un parametru** cere numele parametrului și pornește unealta cu el.

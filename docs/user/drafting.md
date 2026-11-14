@@ -139,6 +139,32 @@ Annotations on a plan (dimensions, texts, drafted lines, tags) can go to another
 
 **Dimensions on a line.** A dimension point clicked on a grid axis or on a wall's centre line holds on the line, not on a point of it. Drag the axis's end along itself to make its head fit the view, or make the wall longer or shorter: the dimension keeps measuring where you put it and its line does not turn. If the axis or the wall moves across, the point goes with it, at the same place along. A dimension on a wall's face likewise stays where it measured when the wall is stretched along itself. Dimensions made before attach to a grid axis the same way; one on a wall's centre line is attached anew by clicking its point again.
 
+### Exterior dimensions and dimension rules
+
+**Annotate → Exterior dimensions** (<kbd>ED</kbd>, or type **EXTDIM**) dimensions the outside of the building on a plan at once. Each straight exterior facade gets parallel dimension strings outside it, one beside the other, in the order set by the dimension rules, starting at the wall. The points hold on the walls, like any dimension's.
+
+- With walls selected, only their facades are dimensioned. With nothing selected, every exterior wall of the plan's level is.
+- Asked on a site plan, the strings go to the level's floor plan instead.
+- Run it again and the strings it made on the plan are replaced, not doubled. Strings you drew yourself are kept.
+
+**Annotate → Dimension rules…** opens the settings of Exterior dimensions and of Room dimensions, in two tabs. They belong to the project and travel with the drafting standards (**Manage → Drafting standards**, with the options). Each string has a tick and **↑ ↓** buttons to put the strings in order: for the exterior from the wall outward, for rooms from the side inward.
+
+| String | What it measures |
+| --- | --- |
+| Details | every feature on the facade: corners and the openings' jambs |
+| Openings | from the facade's start to each door's and window's centre, and to its end |
+| Axes | from the start to each grid axis crossing the facade, and to the end |
+| Rooms | the thicknesses of the walls meeting the facade from inside, and the distances between them |
+| Overall | the whole facade |
+
+Room dimensions have only **Details** (the side, with the openings' jambs) and **Overall** (the side's whole length). Besides the strings:
+
+- **Offset** is the distance in millimetres on the paper from the wall's face (or the room's side) to the first string, and **Spacing** the distance between strings.
+- **Dimension style** is one of the project's dimension styles; the default style when empty.
+- **Measure to** (exterior only) says what corners and partitions are measured to: the walls' faces, their core's faces or their axes.
+- **Skip openings narrower than** leaves out the openings under that width, in metres.
+- **Reset to defaults** brings the dialog back to the built-in rules; nothing changes until **OK**, which is one undo step.
+
 ### Tags
 
 **Annotate → Tag** (<kbd>TG</kbd>) puts a box on a view with what an element says of itself, and a leader to it. While the tool is on, the bar under the view chooses what the tag shows: the mark, name, class or type, **Fire rating**, **Acoustic rating**, **Thermal transmittance**, or **Another parameter…** by its name; or a tag type of the drafting standards; and **LEADER** turns the leader on or off. Click the element, then where the tag goes (type **E** first to bend the leader at an elbow). **Annotate → Tag a parameter** asks for the parameter's name and starts the tool with it.
