@@ -10,7 +10,7 @@ Choisissez **Architecture → Dalle** (<kbd>SB</kbd>), puis cliquez les angles d
 
 Dans **Types de dalles**, chaque couche a une **Priorité** (de 0 à 100) et une **Catégorie**, comme les couches d’un type de mur. Une couche de mur qui descend dans la dalle (**Dans les dalles** dans **Types de murs**) traverse les couches de la dalle de priorité plus faible et s’arrête sur la première de priorité égale ou supérieure. Vide, la priorité est celle du matériau dans **Gérer → Ordre de coupe**, sinon 50 pour le noyau et 0 pour les autres couches. Une couche marquée **Finition** disparaît quand une vue omet les finitions des dalles.
 
-Pour changer le contour, sélectionnez la dalle et faites glisser ses angles. **Trémie de dalle** (<kbd>SH</kbd>) perce un trou dans une dalle, pour un escalier ou une gaine.
+Pour changer le contour, sélectionnez la dalle et faites glisser ses angles. Pour ajouter un angle, maintenez <kbd>Ctrl/⌘</kbd> et cliquez sur le petit losange au milieu d'une arête, ou faites un clic droit sur la dalle sélectionnée près d'une arête et choisissez **Ajouter un coin ici** : le nouveau coin se place là où vous avez cliqué. Pour en retirer un, faites <kbd>Ctrl/⌘</kbd>-clic dessus, ou clic droit dessus et choisissez **Retirer le coin** (un contour garde au moins trois coins). Chaque action est une seule étape d'annulation, et il en va de même pour les trémies, les toits, les pièces et les balcons. **Trémie de dalle** (<kbd>SH</kbd>) perce un trou dans une dalle, pour un escalier ou une gaine.
 
 Une dalle dessinée hors des murs, devant une porte, est un perron. Pour les marches qui y mènent, voir [Escaliers](stairs.md).
 

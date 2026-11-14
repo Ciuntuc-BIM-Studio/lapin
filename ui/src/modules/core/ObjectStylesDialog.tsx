@@ -6,6 +6,7 @@
  * Visibility / Graphics and an element's own override them.
  */
 
+import { ColourField } from '../../shell/ColourField';
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
@@ -71,7 +72,7 @@ export function ObjectStylesDialog() {
                           <select title="Pattern" value={s.pattern ?? ''} onChange={(e) => set(c, r, { pattern: e.target.value || undefined })}>
                             <option value="">—</option>{[...d.patterns, ...(ownLines?.own ?? []).map((o) => o.name).filter((n) => !d.patterns.includes(n))].map((p) => <option key={p} value={p}>{p}</option>)}
                           </select>
-                          <input type="color" title="Colour" value={s.color ?? '#000000'} onChange={(e) => set(c, r, { color: e.target.value })} />
+                          <ColourField title="Colour" value={s.color ?? '#000000'} onChange={(v) => set(c, r, { color: v })} />
                         </td>
                       );
                     })}

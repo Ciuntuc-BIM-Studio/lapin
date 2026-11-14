@@ -5,6 +5,7 @@
  * default the drawing convention: over the left shoulder, along a cube's diagonal.
  */
 
+import { ColourField } from '../../shell/ColourField';
 import { useEffect, useState } from 'react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute } from '../../engine/session';
@@ -77,7 +78,7 @@ export function ViewShadowFields({ view }: { view: NodeDto }) {
       {mode !== 'none' && (
         <>
           <dt>Shadow colour</dt>
-          <dd><input type="color" value={typeof view.props.shadowColor === 'string' ? view.props.shadowColor : '#cfcac0'} onChange={(e) => set({ color: e.target.value })} /></dd>
+          <dd><ColourField value={typeof view.props.shadowColor === 'string' ? view.props.shadowColor : '#cfcac0'} onChange={(v) => set({ color: v })} /></dd>
         </>
       )}
     </>

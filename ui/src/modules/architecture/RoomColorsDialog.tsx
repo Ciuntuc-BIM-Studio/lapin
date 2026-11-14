@@ -7,6 +7,7 @@
  * scheme chosen for it; a colour legend lists what it uses.
  */
 
+import { ColourField } from '../../shell/ColourField';
 import { useEffect, useMemo, useState } from 'react';
 import { Copy, Paintbrush, Plus, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
@@ -113,7 +114,7 @@ export function RoomColorsDialog() {
                     <td className="num">{used ? area(used.area) : ''}</td>
                     <td>
                       <span className="pick">
-                        <input type="color" value={entry?.color ?? '#ffffff'} onChange={(e) => set(value, { color: e.target.value })} />
+                        <ColourField value={entry?.color ?? '#ffffff'} onChange={(v) => set(value, { color: v })} />
                         {entry?.color && <button type="button" className="icon mini" title="No fill colour" onClick={() => set(value, { color: null })}><X size={10} /></button>}
                       </span>
                     </td>
@@ -128,7 +129,7 @@ export function RoomColorsDialog() {
                     </td>
                     <td><NumberField className="narrow" title="Hatch scale" min={0.1} readOnly={!entry?.hatch} value={entry?.hatchScale ?? 1}
                       onCommit={(v) => { if (v != null) set(value, { hatchScale: v }); }} /></td>
-                    <td><input type="color" disabled={!entry?.hatch} value={entry?.hatchColor ?? '#555555'} onChange={(e) => set(value, { hatchColor: e.target.value })} /></td>
+                    <td><ColourField disabled={!entry?.hatch} value={entry?.hatchColor ?? '#555555'} onChange={(v) => set(value, { hatchColor: v })} /></td>
                     <td><HatchSwatch hatch={entry?.hatch ?? null} scale={entry?.hatchScale ?? 1} fill={entry?.color ? withOpacity(entry.color, entry.opacity) : entry?.hatch ? '#ffffff' : null} size={28} /></td>
                     <td>{entry && <button type="button" className="icon mini" title="Take the value out of the scheme" onClick={() => void execute('architecture.setColorSchemeEntry', { id: scheme.id, value, remove: true })}><Trash2 size={11} /></button>}</td>
                   </tr>

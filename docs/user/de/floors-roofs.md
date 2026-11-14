@@ -10,7 +10,7 @@ Wählen Sie **Innenausbau → Decke** (<kbd>SB</kbd>) und klicken Sie dann auf d
 
 In **Deckentypen** hat jede Schicht eine **Priorität** (0 bis 100) und eine **Kategorie**, wie die Schichten eines Wandtyps. Eine Wandschicht, die in die Decke läuft (**In Decken** in **Wandtypen**), durchdringt die Deckenschichten mit niedrigerer Priorität und endet auf der ersten mit gleicher oder höherer. Leer ist die Priorität die des Materials in **Verwalten → Schnittreihenfolge**, sonst 50 für den Kern und 0 für die übrigen Schichten. Eine als **Bekleidung** markierte Schicht entfällt, wenn eine Ansicht die Bodenbeläge weglässt.
 
-Um den Umriss zu ändern, wählen Sie die Decke aus und ziehen Sie ihre Ecken. **Deckenöffnung** (<kbd>SH</kbd>) schneidet ein Loch in eine Decke, für eine Treppe oder einen Schacht.
+Um den Umriss zu ändern, wählen Sie die Decke aus und ziehen Sie ihre Ecken. Um eine Ecke hinzuzufügen, halten Sie <kbd>Strg/⌘</kbd> gedrückt und klicken auf die kleine Raute in der Mitte einer Kante, oder Sie klicken mit der rechten Maustaste nahe einer Kante auf die ausgewählte Decke und wählen **Ecke hier hinzufügen**: Die neue Ecke entsteht dort, wo Sie geklickt haben. Zum Entfernen klicken Sie mit <kbd>Strg/⌘</kbd> auf die Ecke oder klicken mit der rechten Maustaste darauf und wählen **Ecke entfernen** (ein Umriss behält mindestens drei Ecken). Jede Änderung ist ein Schritt zum Rückgängigmachen, und dasselbe gilt für Deckenöffnungen, Dächer, Räume und Balkone. **Deckenöffnung** (<kbd>SH</kbd>) schneidet ein Loch in eine Decke, für eine Treppe oder einen Schacht.
 
 Eine außerhalb der Wände, vor einer Tür gezeichnete Decke ist ein Podest. Für die Stufen dort hinauf siehe [Treppen](stairs.md).
 

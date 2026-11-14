@@ -5,6 +5,7 @@
  * the side its board lies on, the gaps at the doors).
  */
 
+import { ColourField } from '../../shell/ColourField';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FlipHorizontal2, Library, PanelBottom, Plus, Settings2, SquareSquare, Table2, X } from 'lucide-react';
 import type { NodeDto } from '../../engine/protocol';
@@ -134,7 +135,7 @@ export function SkirtingTypesDialog() {
             <label className="field-line"><span className="eyebrow">Thickness</span>
               <LengthField testId="skirting-thickness" metres={spec.thickness} min={0.005} max={0.04} onCommit={(m) => { if (m != null) set({ thickness: m }); }} /></label>
             <label className="field-line"><span className="eyebrow">Material</span><MaterialPicker value={spec.material} onChange={(material) => set({ material })} /></label>
-            <label className="field-line"><span className="eyebrow">Colour</span><input type="color" value={spec.color} onChange={(e) => set({ color: e.target.value })} /></label>
+            <label className="field-line"><span className="eyebrow">Colour</span><ColourField value={spec.color} onChange={(v) => set({ color: v })} /></label>
             <p className="muted small">A skirting in room runs round the room along the walls’ faces and stops at each door.</p>
             <div className="row joinery-actions">
               <span className="grow" />

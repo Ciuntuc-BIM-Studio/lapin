@@ -145,9 +145,24 @@ The theme is kept: Lapin starts again in the one you left it in. **File → Pref
 - **General**: the theme (light, dark, or as the system), the language, and links to **Interface…** and **Keyboard shortcuts…**.
 - **Grid and snaps**: the plan's grid, adaptive or fixed, snapping to it, which object snaps the cursor takes, and the polar tracking angle (see [Snaps and helpers](drafting.md#snaps-and-helpers)).
 - **Coordinates**: what the status line reads at the cursor, whether the project's points are shown, and the UCS (see [Real coordinates](site.md#real-coordinates)).
-- **Display**: the switches of View → Graphics (grid, thin lines, drafts and DXF in 3D) and how the 3D view is navigated, in one place.
+- **Display**: the switches of View → Graphics (grid, thin lines, drafts and DXF in 3D) and how the 3D view is navigated, in one place. Under **Selection and preselection**: **Preselection highlight** lights up what the cursor is over before you click, in plans, sections, sheets and 3D (drafted shapes, dimensions, tags, symbols, inset views and sheet views too; it is off while a tool is waiting for a point), and the **Preselection colour** and **Selection colour** are yours to choose; **Default colours** brings back the theme's.
+- **Colours**: the swatches the colour fields offer, below.
 - **Profiles**: the profile standards a new project offers and those the pickers show (see [Profile libraries](profiles.md#standards)).
 - **Libraries** (desktop app): the **firm folders**, any number of local, network or synced folders that hold library files (symbols, types, line types, standards, rule packs, bar shapes, parameters, hatches, price lists, profiles, families). Tick **writable** to let Lapin save into a folder. The library dialogs and the Catalog read them (below).
+
+### Colour swatches
+
+Every colour field in Lapin (materials, layers, room colours, hatches, view shadows, schedules…) is the system's colour input with a small arrow beside it. The arrow opens the swatches: type a hex colour, or pick one of
+
+- **Recent**: the colours you chose lately, kept for you automatically.
+- **Project palette**: swatches kept in the project, so everyone who opens it sees them. Each change is one undo step.
+- **Your palettes**: any number, kept on this computer for every project.
+
+The **+** beside a palette adds the colour in the field to it. **Edit palettes…** (also **File → Preferences → Colours**) creates, renames, moves and deletes your palettes, adds or removes a colour in a palette and reorders its colours (select a swatch, then the arrows), and **Add the colours of the materials in use** puts every colour of the materials the project uses into a palette. Palettes of your own are not part of the standards file (`.lapinstandards`); to share a set of colours with a team, put them in the project palette.
+
+![The colour swatches: recent colours, the project palette and a palette of your own](shots/colour-swatches.webp)
+
+![File → Preferences → Display: the selection and preselection colours](shots/preferences-highlight.webp)
 
 ![File → Preferences → Libraries: a firm folder](shots/preferences-libraries.webp)
 

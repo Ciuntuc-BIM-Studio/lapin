@@ -7,6 +7,7 @@
  * of the type is laid out again.
  */
 
+import { ColourField } from '../../shell/ColourField';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
@@ -185,12 +186,12 @@ export function CurtainWallDialog() {
               <Mm label="Panel thickness" value={spec.panel.thickness} onChange={(v) => set({ panel: { ...spec.panel, thickness: v } })} />
               <label className="field-line"><span className="eyebrow">Frame material</span>
                 <MaterialPicker value={spec.frameMaterial ?? ''} allowEmpty placeholder="its colour" onChange={(m) => set({ frameMaterial: m || null })} /></label>
-              {!spec.frameMaterial && <label className="field-line"><span className="eyebrow">Frame</span><input type="color" value={spec.frameColor} onChange={(e) => set({ frameColor: e.target.value })} /></label>}
+              {!spec.frameMaterial && <label className="field-line"><span className="eyebrow">Frame</span><ColourField value={spec.frameColor} onChange={(v) => set({ frameColor: v })} /></label>}
               <label className="field-line"><span className="eyebrow">{spec.panel.kind === 'glass' ? 'Glass material' : 'Panel material'}</span>
                 <MaterialPicker value={(spec.panel.kind === 'glass' ? spec.glassMaterial : spec.opaqueMaterial) ?? ''} allowEmpty placeholder="its colour"
                   onChange={(m) => set(spec.panel.kind === 'glass' ? { glassMaterial: m || null } : { opaqueMaterial: m || null })} /></label>
               {!(spec.panel.kind === 'glass' ? spec.glassMaterial : spec.opaqueMaterial) && <label className="field-line"><span className="eyebrow">{spec.panel.kind === 'glass' ? 'Glass' : 'Panel'}</span>
-                <input type="color" value={infill} onChange={(e) => set(spec.panel.kind === 'glass' ? { glassColor: e.target.value } : { opaqueColor: e.target.value })} />
+                <ColourField value={infill} onChange={(v) => set(spec.panel.kind === 'glass' ? { glassColor: v } : { opaqueColor: v })} />
               </label>}
             </div>
             <div className="joinery-preview">

@@ -10,7 +10,7 @@ Escolha **Arquitetura → Piso** (<kbd>SB</kbd>) e clique nos cantos do contorno
 
 Em **Tipos de piso**, cada camada tem uma **Prioridade** (de 0 a 100) e uma **Categoria**, como as camadas de um tipo de parede. Uma camada de parede que desce no piso (**Nos pisos** em **Tipos de parede**) atravessa as camadas do piso de prioridade menor e para na primeira de prioridade igual ou maior. Vazia, a prioridade é a do material em **Gerenciar → Ordem de corte**, senão 50 para o núcleo e 0 para as demais camadas. Uma camada marcada **Acabamento** sai quando uma vista omite os acabamentos dos pisos.
 
-Para mudar o contorno, selecione o piso e arraste os cantos. **Abertura no piso** (<kbd>SH</kbd>) corta um furo no piso, para uma escada ou um shaft.
+Para mudar o contorno, selecione o piso e arraste os cantos. Para adicionar um canto, mantenha <kbd>Ctrl/⌘</kbd> pressionado e clique no pequeno losango no meio de uma aresta, ou clique com o botão direito no piso selecionado perto de uma aresta e escolha **Adicionar canto aqui**: o novo canto fica onde você clicou. Para remover um, faça <kbd>Ctrl/⌘</kbd>-clique nele, ou clique com o botão direito e escolha **Remover canto** (um contorno mantém pelo menos três cantos). Cada ação é um único passo de desfazer, e o mesmo vale para aberturas no piso, telhados, ambientes e varandas. **Abertura no piso** (<kbd>SH</kbd>) corta um furo no piso, para uma escada ou um shaft.
 
 Um piso desenhado fora das paredes, diante de uma porta, é uma varanda. Para os degraus até ela, veja [Escadas](stairs.md).
 

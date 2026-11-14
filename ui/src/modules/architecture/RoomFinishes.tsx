@@ -6,6 +6,7 @@
  * room's finish in its properties; the tools are in roomFinishTools.ts.
  */
 
+import { ColourField } from '../../shell/ColourField';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Layers, Library, PaintBucket, Plus, Settings2, Trash2, X } from 'lucide-react';
 import type { NodeDto } from '../../engine/protocol';
@@ -110,7 +111,7 @@ function PlanHatchRow({ spec, part, onChange }: { spec: RoomFinishSpec; part: Ha
       )}
       {h.mode === 'own' && (
         <>
-          <input type="color" title="Hatch colour" value={h.color ?? '#7a7a7a'} onChange={(e) => set({ color: e.target.value })} />
+          <ColourField title="Hatch colour" value={h.color ?? '#7a7a7a'} onChange={(v) => set({ color: v })} />
           <HatchSwatch hatch={h.pattern} scale={h.scale} size={24} />
         </>
       )}

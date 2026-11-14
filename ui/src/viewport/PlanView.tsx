@@ -31,6 +31,7 @@ import { placedAt, reasonLines, requestFor, resetPlacement, setPlacing, usePlace
 import { useGripEditor } from './GripLayer';
 import { LiveBar, LiveBox } from './LiveBox';
 import { liveBegin, liveCursor, liveEnd, livePoint, liveTaken, useLive } from './liveInput';
+import { useHighlight } from '../app/highlight';
 import { markSelected, nearestOf, pickAt, regionIds } from './planPick';
 import { boxOutcome, dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
 import { pickable, useScope } from '../platform/scope';
@@ -509,6 +510,7 @@ export function PlanView() {
   const editor = useGripEditor({
     viewIds: [ownPlan, storey ? `plan:${storey.id}` : null], mode: 'plan', storeyId: storey?.id, toScreen, scale: view.scale,
     aim: (cx, cy, from) => { const s = snapAt(cx, cy, from); setHover(s); return s.point; },
+    raw: (cx, cy) => { const r = svgRef.current!.getBoundingClientRect(); return toWorld(cx - r.left, cy - r.top); },
     disabled: !!tool?.gesture || !!cadStep, svg: svgRef, marks: drawing?.marks,
   });
 
@@ -572,7 +574,7 @@ export function PlanView() {
     {
       // Idle, or a step asking for a pick or a selection: what a click would take is lit (the same pick the click uses: decision 498).
       const step = useCad.getState().step;
-      const idle = !tool?.gesture && !d && !editor.dragging && (!step || step.want === 'pick' || step.want === 'select');
+      const idle = useHighlight.getState().preselect && !tool?.gesture && !d && !editor.dragging && (!step || step.want === 'pick' || step.want === 'select');
       const hit = idle ? pick(rawHover.current) : null;
       const id = hit ? pickTarget(hit.id) ?? hit.id : null;
       setHoverId((cur) => (cur === id ? cur : id));
@@ -644,7 +646,7 @@ export function PlanView() {
       { label: 'Walk in 3D', icon: <Footprints size={13} />, onSelect: () => walkIntoRoom(room, item, num(storey ?? undefined, 'elevation')) },
       { label: 'Select', icon: <MousePointer2 size={13} />, onSelect: () => select(room.id) },
     ] : [];
-    openContextMenu(x, y, [...order, ...symbolMenuItems(selected, nodes), ...rooms, ...dimensionItems(), ...selectionItems(), ...viewHideItems(storey ? ownPlan ?? `plan:${storey.id}` : null)]);
+    openContextMenu(x, y, [...editor.cornerItems({ clientX: x, clientY: y }), ...order, ...symbolMenuItems(selected, nodes), ...rooms, ...dimensionItems(), ...selectionItems(), ...viewHideItems(storey ? ownPlan ?? `plan:${storey.id}` : null)]);
   };
   /** What a selection box or lasso takes: inside it wholly (a window, dragged to the right) or touching it (crossing, to the left). */
   const selectBox = (b: SelectDrag, e: React.PointerEvent): 'click' | 'done' => {
@@ -933,6 +935,12 @@ export function PlanView() {
         })}
         {(drawing?.marks ?? []).filter((m) => targets.size > 0 && markSelected(m.id, targetList) && !markSelected(m.id, shownList)).map((m) => (
           <path key={`tag:${m.id}`} className="plan-mark tag-target" d={Array.from({ length: m.segments.length / 4 }, (_, k) => {
+            const a = toScreen({ x: m.segments[4 * k], y: m.segments[4 * k + 1] }), b = toScreen({ x: m.segments[4 * k + 2], y: m.segments[4 * k + 3] });
+            return `M${a.x} ${a.y}L${b.x} ${b.y}`;
+          }).join('')} />
+        ))}
+        {hoverId && !markSelected(hoverId, shownList) && (drawing?.marks ?? []).filter((m) => m.id === hoverId || markSelected(m.id, [hoverId])).map((m) => (
+          <path key={`hover:${m.id}`} className="plan-mark plan-hover-mark" aria-hidden="true" d={Array.from({ length: m.segments.length / 4 }, (_, k) => {
             const a = toScreen({ x: m.segments[4 * k], y: m.segments[4 * k + 1] }), b = toScreen({ x: m.segments[4 * k + 2], y: m.segments[4 * k + 3] });
             return `M${a.x} ${a.y}L${b.x} ${b.y}`;
           }).join('')} />

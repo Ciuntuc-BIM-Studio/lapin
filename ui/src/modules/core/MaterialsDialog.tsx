@@ -14,6 +14,7 @@
  * description, parameters, measure and catalogue of thicknesses.
  */
 
+import { ColourField } from '../../shell/ColourField';
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Copy, FileUp, Library, MousePointerClick, Plus, Replace, RotateCcw, Search, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
@@ -258,7 +259,7 @@ export function MaterialsDialog() {
                   <div className="material-look-fields">
                     <div className="row">
                       <label className="field-line"><span className="eyebrow">Colour</span>
-                        <input type="color" data-field="material-color" value={m.color} onChange={(e) => update({ color: e.target.value })} /></label>
+                        <ColourField data-field="material-color" value={m.color} onChange={(v) => update({ color: v })} /></label>
                       <label className="field-line"><span className="eyebrow">Texture</span>
                         <select data-field="material-texture" value={textureValue} onChange={(e) => update({ texture: e.target.value || null })}>
                           <option value="">guessed</option>
@@ -289,7 +290,7 @@ export function MaterialsDialog() {
                         onBlur={(e) => { const v = Number(e.target.value.replace(',', '.')); if (v >= 1 && v <= 3 && v !== look.ior) update({ ior: v }); }} /></label>
                       <label className="check" title="The light it gives off, as a lamp's diffuser"><input type="checkbox" checked={look.emissive != null} onChange={(e) => update({ emissive: e.target.checked ? '#fff4e0' : '' })} /> Glows</label>
                       {look.emissive && <>
-                        <input type="color" value={look.emissive} onChange={(e) => update({ emissive: e.target.value })} />
+                        <ColourField value={look.emissive} onChange={(v) => update({ emissive: v })} />
                         <label className="small">Strength <input className="num" key={`${m.id}e${look.emissiveStrength}`} defaultValue={look.emissiveStrength}
                           onBlur={(e) => { const v = Number(e.target.value.replace(',', '.')); if (v >= 0 && v <= 100 && v !== look.emissiveStrength) update({ emissiveStrength: v }); }} /></label>
                       </>}

@@ -7,6 +7,7 @@
  * Lengths in the project's unit, angles in degrees, areas in m².
  */
 
+import { ColourField } from '../../shell/ColourField';
 import { Fragment, useEffect, useState } from 'react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, query, useSession } from '../../engine/session';
@@ -165,7 +166,7 @@ function Drafted({ node }: { node: NodeDto }) {
       </select></dd>
       <dt>Colour</dt>
       <dd className="pair">
-        <input type="color" value={own ?? layer?.color ?? '#18181b'} onChange={(e) => void execute('drafting.updateDraft', { ids: drafted(node), color: e.target.value })} />
+        <ColourField value={own ?? layer?.color ?? '#18181b'} onChange={(v) => void execute('drafting.updateDraft', { ids: drafted(node), color: v })} />
         {own
           ? <button type="button" className="link" onClick={() => void execute('drafting.updateDraft', { ids: drafted(node), color: null })}>by layer</button>
           : <span className="muted small">by layer</span>}

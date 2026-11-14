@@ -8,6 +8,7 @@
  * every view that takes it, or its view style's set; a 2D view's hidden lines.
  */
 
+import { ColourField } from '../../shell/ColourField';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useLineTypes } from './lineTypes/lineTypes';
 import { patternChoices } from './lineTypes/lineTypeModel';
@@ -189,10 +190,10 @@ export function VisibilityDialog() {
                 </td>
                 {!link && (
                   <>
-                    <td><input type="color" value={r.lineColor ?? '#000000'} onChange={(e) => setCategory(c, { lineColor: e.target.value })} />{r.lineColor && <button type="button" className="icon mini" title="As the object styles" onClick={() => setCategory(c, { lineColor: '' })}><X size={10} /></button>}</td>
+                    <td><ColourField value={r.lineColor ?? '#000000'} onChange={(v) => setCategory(c, { lineColor: v })} />{r.lineColor && <button type="button" className="icon mini" title="As the object styles" onClick={() => setCategory(c, { lineColor: '' })}><X size={10} /></button>}</td>
                     <td><select value={r.lineWeight ?? ''} onChange={(e) => setCategory(c, { lineWeight: e.target.value })}>{(r.lineWeight && !WEIGHTS.includes(r.lineWeight) ? [...WEIGHTS, r.lineWeight] : WEIGHTS).map((w) => <option key={w} value={w}>{w === '' ? 'as styled' : LEGACY[w] ? `${w} (${LEGACY[w]} mm)` : `${w} mm`}</option>)}</select></td>
                     <td><select aria-label="Pattern" value={r.lines?.projection?.pattern ?? r.lines?.cut?.pattern ?? ''} onChange={(e) => setCategory(c, { lines: withPattern(r.lines, e.target.value) })}>{patternChoices(PATTERNS, ownLines).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></td>
-                    <td><input type="color" value={r.fillColor ?? '#ffffff'} onChange={(e) => setCategory(c, { fillColor: e.target.value })} />{r.fillColor && <button type="button" className="icon mini" title="No fill of its own" onClick={() => setCategory(c, { fillColor: '' })}><X size={10} /></button>}</td>
+                    <td><ColourField value={r.fillColor ?? '#ffffff'} onChange={(v) => setCategory(c, { fillColor: v })} />{r.fillColor && <button type="button" className="icon mini" title="No fill of its own" onClick={() => setCategory(c, { fillColor: '' })}><X size={10} /></button>}</td>
                     <td><select value={r.cutHatch ?? ''} onChange={(e) => setCategory(c, { cutHatch: e.target.value })}><option value="">the materials'</option>{hatches.map((h) => <option key={h} value={h}>{h}</option>)}</select></td>
                     <td><input type="checkbox" aria-label="Halftone" checked={!!r.halftone} onChange={(e) => setCategory(c, { halftone: e.target.checked })} /></td>
                     <td><input type="number" className="vv-number" aria-label="Transparency" min={0} max={95} step={5} value={r.transparency ?? 0} onChange={(e) => setCategory(c, { transparency: Math.max(0, Math.min(95, Number(e.target.value) || 0)) })} /></td>
@@ -296,7 +297,7 @@ export function VisibilityDialog() {
                     <tr key={c} data-annotation={c}>
                       <td><input type="checkbox" aria-label={categoryName(c)} checked={!r.hidden} onChange={(e) => put({ hidden: !e.target.checked })} /></td>
                       <td>{categoryName(c)}</td>
-                      <td><input type="color" aria-label="Colour" value={r.color ?? '#000000'} onChange={(e) => put({ color: e.target.value })} />{r.color && <button type="button" className="icon mini" title="Its own colour" onClick={() => put({ color: '' })}><X size={10} /></button>}</td>
+                      <td><ColourField aria-label="Colour" value={r.color ?? '#000000'} onChange={(v) => put({ color: v })} />{r.color && <button type="button" className="icon mini" title="Its own colour" onClick={() => put({ color: '' })}><X size={10} /></button>}</td>
                       <td><input type="checkbox" aria-label="Halftone" checked={!!r.halftone} onChange={(e) => put({ halftone: e.target.checked })} /></td>
                     </tr>
                   );
@@ -407,7 +408,7 @@ function FiltersTab({ target, categories, rows, defs, counts, editing, setEditin
                   <td><input type="checkbox" aria-label={d.name} checked={!r.hidden} onChange={(e) => save(used.map((x) => (x.id === r.id ? { ...x, hidden: !e.target.checked } : x)))} /></td>
                   <td><button type="button" className="link-button" onClick={() => setEditing(editing === d.id ? null : d.id)}>{d.name}</button></td>
                   <td className="muted small">{counts[d.id] ?? '…'}</td>
-                  <td><input type="color" aria-label="Colour" value={r.color ?? '#000000'} onChange={(e) => put(r.id, { color: e.target.value })} />{r.color && <button type="button" className="icon mini" title="Its own colour" onClick={() => put(r.id, { color: undefined })}><X size={10} /></button>}</td>
+                  <td><ColourField aria-label="Colour" value={r.color ?? '#000000'} onChange={(v) => put(r.id, { color: v })} />{r.color && <button type="button" className="icon mini" title="Its own colour" onClick={() => put(r.id, { color: undefined })}><X size={10} /></button>}</td>
                   <td><select aria-label="Pattern" value={r.pattern ?? ''} onChange={(e) => put(r.id, { pattern: e.target.value || undefined })}>{patternChoices(PATTERNS, ownLines).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></td>
                   <td><input type="checkbox" aria-label="Halftone" checked={!!r.halftone} onChange={(e) => put(r.id, { halftone: e.target.checked || undefined })} /></td>
                   <td><input type="number" className="vv-number" aria-label="Transparency" min={0} max={95} step={5} value={r.transparency ?? 0} onChange={(e) => put(r.id, { transparency: Math.max(0, Math.min(95, Number(e.target.value) || 0)) || undefined })} /></td>

@@ -9,6 +9,7 @@ import { AppWindow, Bot, Box, Columns2, Ruler, FolderTree, Layers, ListTree, Pan
 import { closeOverlay, columns, panelsOn, setPanelWidth, setStackRatio, type PanelId, type Side, showOverlay, showPropsTab, togglePanel, usePanels, type PanelTab } from './app/panels';
 import { assistantAvailable } from './assistant/available';
 import { useInterface } from './app/interface';
+import './app/highlight';
 import { bindingText } from './app/commands';
 import { closePane, closeTab, focusPane, isTableView, notify, openTab, splitPane, tabKey, useUi, type ViewTab } from './app/store';
 import type { ToolDef } from './platform/module';

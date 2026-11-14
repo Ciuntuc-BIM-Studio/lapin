@@ -22,7 +22,8 @@ import type { Grip, GripView, RefLine, Vec2 } from '../platform/module';
 import { gripsOf, gripSnapped, referencesOf } from '../platform/modules';
 import { throughInset, viaOf } from './insetMap';
 import { dropGrips, groupGrips, movers, runSteps, setHotRemove, useGripRev, type GripGroup } from './grips';
-import { openContextMenu } from '../shell/ContextMenu';
+import { nearestOnSegment } from './gripKit';
+import { openContextMenu, type MenuItem } from '../shell/ContextMenu';
 import { formatAngle, formatLength, liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
 import { traceBegin, traceEnd } from './moveTrace';
 import { frameArg, useCad } from './cad/session';
@@ -62,6 +63,8 @@ export interface GripEditorOptions {
   toScreen: ToScreen;
   /** Where the cursor aims (snapped), measured from a base point (on the plane at height z, in 3D). */
   aim: (clientX: number, clientY: number, from: Vec2, z?: number) => Vec2;
+  /** Where a point of the window is on the drawing, unsnapped and with no side effect (a right-click's "Add corner here"); else `aim` is asked. */
+  raw?: (clientX: number, clientY: number) => Vec2;
   /** The height an element's grips stand at (3D); none in 2D. */
   zOf?: (owner: string | undefined) => number;
   /** Show every selected element's grips, whatever its storey (3D). */
@@ -233,6 +236,29 @@ export function useGripEditor(o: GripEditorOptions) {
     openContextMenu(e.clientX, e.clientY, items);
     return true;
   };
+  /**
+   * A right-click on a selected outline (a floor, an opening, a roof, a room…): "Remove corner" on one of its corners (refused
+   * under three), else "Add corner here" when the cursor is near one of its edges, the corner put on the edge at the point
+   * clicked (forum topic 97). Each is the element's own update command, one undo step. For the menu the view opens.
+   */
+  const cornerItems = (e: { clientX: number; clientY: number }): MenuItem[] => {
+    if (o.disabled || drag) return [];
+    const g = hit(e);
+    const corner = g?.members.find((m) => m.kind === 'vertex' && m.remove && !m.removeLabel);
+    if (corner) return [{ label: 'Remove corner', disabled: !corner.remove!(), onSelect: () => { setHover(null); void runSteps([corner.remove!()]); } }];
+    if (g) return [];
+    const p = o.raw ? o.raw(e.clientX, e.clientY) : o.aim(e.clientX, e.clientY, { x: 0, y: 0 });
+    let best: { grip: Grip; dist: number } | null = null;
+    for (const m of grips) {
+      if (!m.edge || !m.addCornerAt) continue;
+      const d = nearestOnSegment(m.edge[0], m.edge[1], p);
+      if (d.t <= 1e-6 || d.t >= 1 - 1e-6) continue;
+      if (!best || d.dist < best.dist) best = { grip: m, dist: d.dist };
+    }
+    if (!best || best.dist * o.scale > 10) return [];
+    const at = best.grip;
+    return [{ label: 'Add corner here', onSelect: () => { setHover(null); void runSteps([at.addCornerAt!(p)]); } }];
+  };
   /** True while dragging a grip. */
   const onPointerMove = (e: React.PointerEvent): boolean => {
     if (!drag) { setHover(hit(e)); return false; }
@@ -275,7 +301,7 @@ export function useGripEditor(o: GripEditorOptions) {
     const kind = g.members[0].kind ?? 'end';
     const shared = g.members.length > 1;
     const cls = `plan-grip ${kind}${shared ? ' shared' : ''}${hover === g ? ' hot' : ''}`;
-    const title = g.members[0].title ?? (shared ? `${g.members.map((m) => nameOf(m.owner)).join(' + ')} · Tab picks one · Alt moves one` : kind === 'edgeMid' ? 'Drag the edge · Ctrl/⌘-click adds a vertex' : kind === 'vertex' ? 'Drag · Ctrl/⌘-click removes it' : kind === 'move' ? 'Drag to move · Ctrl/⌘-drag to copy' : 'Drag');
+    const title = g.members[0].title ?? (shared ? `${g.members.map((m) => nameOf(m.owner)).join(' + ')} · Tab picks one · Alt moves one` : kind === 'edgeMid' ? 'Drag the edge · Ctrl/⌘-click: add a corner' : kind === 'vertex' ? 'Drag · Ctrl/⌘-click: remove this corner' : kind === 'move' ? 'Drag to move · Ctrl/⌘-drag to copy' : 'Drag');
     // A flip arrow: a small arrowhead pointing the way it flips, its stem back towards the element.
     if (kind === 'flip') {
       const { ux, uy } = q, nx = -uy, ny = ux;
@@ -341,5 +367,5 @@ export function useGripEditor(o: GripEditorOptions) {
     </g>
   );
 
-  return { render, onPointerDown, onPointerMove, onPointerUp, onContextMenu, onPointerLeave: () => { if (!drag) setHover(null); }, dragging: drag, hasGrips: groups.length > 0 };
+  return { render, onPointerDown, onPointerMove, onPointerUp, onContextMenu, cornerItems, onPointerLeave: () => { if (!drag) setHover(null); }, dragging: drag, hasGrips: groups.length > 0 };
 }

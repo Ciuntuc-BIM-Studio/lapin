@@ -145,9 +145,24 @@ Tema se păstrează: Lapin pornește din nou în cea în care l-ai lăsat. **Fi�
 - **General**: tema (luminoasă, întunecată sau ca sistemul), limba și legături spre **Interfață…** și **Scurtături de tastatură…**.
 - **Grilă și snap**: grila planului, adaptivă sau fixă, snap la ea, ce snap-uri la obiecte ia cursorul și unghiul urmăririi polare (vezi [Snap și ajutoare](drafting.md#snap-și-ajutoare)).
 - **Coordonate**: ce citește bara de stare la cursor, dacă punctele proiectului se văd și UCS-ul (vezi [Coordonate reale](site.md#coordonate-reale)).
-- **Afișare**: comutatoarele din Vedere → Grafică (grila, liniile subțiri, desenele și DXF-ul în 3D) și felul în care navighezi în vederea 3D, într-un singur loc.
+- **Afișare**: comutatoarele din Vedere → Grafică (grila, liniile subțiri, desenele și DXF-ul în 3D) și felul în care navighezi în vederea 3D, într-un singur loc. La **Selecție și preselecție**: **Evidențierea preselecției** luminează ce se află sub cursor înainte de clic, în planuri, secțiuni, planșe și 3D (și formele desenate, cotele, etichetele, simbolurile, vederile inserate și vederile din planșe; e oprită cât timp o unealtă așteaptă un punct), iar **Culoarea preselecției** și **Culoarea selecției** le alegi tu; **Culori implicite** le readuce pe ale temei.
+- **Culori**: mostrele pe care le oferă câmpurile de culoare, mai jos.
 - **Profile**: standardele de profile oferite de un proiect nou și cele arătate de alegătoare (vezi [Biblioteci de profile](profiles.md#standardele)).
 - **Biblioteci** (aplicația desktop): **folderele firmei**, oricâte foldere locale, din rețea sau sincronizate cu fișiere de bibliotecă (simboluri, tipuri, tipuri de linie, standarde, pachete de reguli, forme de bare, parametri, hașuri, liste de prețuri, profile, familii). Bifează **de scris** ca Lapin să poată salva într-un folder. Dialogurile bibliotecilor și Catalogul le citesc (mai jos).
+
+### Mostre de culoare
+
+Fiecare câmp de culoare din Lapin (materiale, straturi, culorile camerelor, hașuri, umbrele vederilor, tabele…) e căsuța de culoare a sistemului cu o săgeată mică alături. Săgeata deschide mostrele: scrii o culoare hex sau alegi una din
+
+- **Recente**: culorile alese de curând, păstrate automat pentru tine.
+- **Paleta proiectului**: mostre păstrate în proiect, deci le vede oricine îl deschide. Fiecare schimbare e un singur pas de anulare.
+- **Paletele tale**: oricâte, păstrate pe acest calculator pentru toate proiectele.
+
+**+** de lângă o paletă adaugă în ea culoarea din câmp. **Editează paletele…** (și **Fișier → Preferințe → Culori**) creează, redenumește, mută și șterge paletele tale, adaugă sau scoate o culoare dintr-o paletă și îi reordonează culorile (selectezi o mostră, apoi săgețile), iar **Adaugă culorile materialelor folosite** pune într-o paletă culorile tuturor materialelor folosite de proiect. Paletele tale nu fac parte din fișierul de standarde (`.lapinstandards`); ca să împarți un set de culori cu o echipă, pune-le în paleta proiectului.
+
+![Mostrele de culoare: culori recente, paleta proiectului și o paletă a ta](shots/colour-swatches.webp)
+
+![Fișier → Preferințe → Afișare: culorile selecției și preselecției](shots/preferences-highlight.webp)
 
 ![Fișier → Preferințe → Biblioteci: un folder al firmei](shots/preferences-libraries.webp)
 

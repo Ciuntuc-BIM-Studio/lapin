@@ -10,7 +10,7 @@ Wybierz **Architektura → Strop** (<kbd>SB</kbd>), a następnie kliknij narożn
 
 W **Typy stropów** każda warstwa ma **Priorytet** (od 0 do 100) i **Kategorię**, jak warstwy typu ściany. Warstwa ściany schodząca w strop (**W stropy** w **Typy ścian**) przechodzi przez warstwy stropu o niższym priorytecie i zatrzymuje się na pierwszej o priorytecie co najmniej równym. Pusty priorytet to priorytet materiału w **Zarządzaj → Kolejność cięcia**, w przeciwnym razie 50 dla rdzenia i 0 dla pozostałych warstw. Warstwa oznaczona **Wykończenie** znika, gdy widok pomija wykończenia podłóg.
 
-Aby zmienić obrys, zaznacz strop i przeciągnij jego narożniki. **Otwór w stropie** (<kbd>SH</kbd>) wycina w stropie otwór na schody lub szyb.
+Aby zmienić obrys, zaznacz strop i przeciągnij jego narożniki. Aby dodać narożnik, przytrzymaj <kbd>Ctrl/⌘</kbd> i kliknij mały romb pośrodku krawędzi albo kliknij prawym przyciskiem zaznaczony strop blisko krawędzi i wybierz **Dodaj narożnik tutaj**: nowy narożnik pojawi się tam, gdzie kliknięto. Aby usunąć narożnik, kliknij go z <kbd>Ctrl/⌘</kbd> albo kliknij prawym przyciskiem i wybierz **Usuń narożnik** (obrys zachowuje co najmniej trzy narożniki). Każda zmiana to jeden krok cofania; to samo działa dla otworów w stropie, dachów, pomieszczeń i balkonów. **Otwór w stropie** (<kbd>SH</kbd>) wycina w stropie otwór na schody lub szyb.
 
 Strop narysowany poza ścianami, przed drzwiami, to ganek. Schody prowadzące na niego opisuje strona [Schody](stairs.md).
 

@@ -5,6 +5,7 @@
  * A style picked fills every field in; any field may then be changed by hand. Apply is one engine command, one undo step.
  */
 
+import { ColourField } from '../../shell/ColourField';
 import { useEffect, useMemo, useState } from 'react';
 import { lengthText } from '../../engine/unitsStore';
 import { LengthField, NumberField } from '../../shell/cells';
@@ -283,7 +284,7 @@ export function RoofDialog() {
                   <>
                     {value('gutterProfile') !== 'none' && (
                       <label className="field-line roof-field"><span className="eyebrow">Gutter colour</span>
-                        <input type="color" value={typeof value('gutterColor') === 'string' && value('gutterColor') ? String(value('gutterColor')) : '#8a9096'} onChange={(e) => set('gutterColor', e.target.value)} />
+                        <ColourField value={typeof value('gutterColor') === 'string' && value('gutterColor') ? String(value('gutterColor')) : '#8a9096'} onChange={(v) => set('gutterColor', v)} />
                       </label>
                     )}
                     {value('gutterProfile') !== 'none' && preview?.downpipes === 'auto' && (

@@ -8,6 +8,7 @@
  * plays smoothly. A saved 3D view with a State at date shows that day even with the simulation off.
  */
 
+import { ColourField } from '../../shell/ColourField';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { create } from 'zustand';
 import { Clapperboard, LayoutPanelTop, Pause, Play, Settings2, SkipBack, SkipForward, X } from 'lucide-react';
@@ -152,7 +153,7 @@ function Legend({ look, tally, baseline }: { look: SimLookDto; tally?: Partial<R
 function SimulationSettings({ look, onClose }: { look: SimLookDto; onClose: () => void }) {
   const set = (args: Record<string, unknown>) => void execute('planning.setSimulation', args);
   const colour = (key: 'active' | 'demolishing' | 'temporary' | 'planned' | 'late' | 'ahead', label: string) => (
-    <label className="sim-colour"><input type="color" value={look[key]} onChange={(e) => set({ [key]: e.target.value })} data-sim-colour={key} /><span>{label}</span></label>
+    <label className="sim-colour"><ColourField value={look[key]} onChange={(v) => set({ [key]: v })} data-sim-colour={key} /><span>{label}</span></label>
   );
   return (
     <div className="sim-settings" role="dialog" aria-label="Simulation settings" data-testid="sim-settings" onPointerDown={(e) => e.stopPropagation()}>

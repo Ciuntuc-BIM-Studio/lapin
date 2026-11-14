@@ -14,7 +14,7 @@ Alege **Arhitectură → Placă** (<kbd>SB</kbd>), apoi dă clic în colțurile 
 
 În **Tipuri de plăci**, fiecare strat are o **Prioritate** (0 la 100) și o **Categorie**, ca straturile unui tip de perete. Un strat de perete care coboară în placă (**În plăci** în **Tipuri de pereți**) trece prin straturile plăcii cu prioritate mai mică și se oprește pe primul cu prioritate cel puțin egală. Goală, prioritatea e a materialului din **Gestionare → Ordinea de tăiere**, altfel 50 pentru miez și 0 pentru celelalte straturi. Un strat marcat **Finisaj** dispare când o vedere lasă deoparte finisajele pardoselilor.
 
-Ca să schimbi conturul, selectează placa și trage de colțuri. **Gol în placă** (<kbd>SH</kbd>) taie o gaură în placă, pentru o scară sau un ghen.
+Ca să schimbi conturul, selectează placa și trage de colțuri. Ca să adaugi un colț, ține apăsat <kbd>Ctrl/⌘</kbd> și dă clic pe romburile mici din mijlocul unei laturi, sau dă clic dreapta pe placa selectată lângă o latură și alege **Adaugă colț aici**: colțul nou apare unde ai dat clic. Ca să scoți unul, dă <kbd>Ctrl/⌘</kbd>-clic pe el sau clic dreapta pe el și alege **Elimină colțul** (un contur păstrează cel puțin trei colțuri). Fiecare e un singur pas de anulare, și la fel merge la goluri în placă, acoperișuri, camere și balcoane. **Gol în placă** (<kbd>SH</kbd>) taie o gaură în placă, pentru o scară sau un ghen.
 
 O placă desenată în afara pereților, în fața unei uși, e o terasă. Pentru treptele până la ea, vezi [Scări](stairs.md).
 

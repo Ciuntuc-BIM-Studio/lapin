@@ -5,6 +5,7 @@
  * height, fixtures laid out every so many cells).
  */
 
+import { ColourField } from '../../shell/ColourField';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Fan, Grid3x3, LayoutGrid, Lightbulb, Plus, Settings2, X } from 'lucide-react';
 import type { NodeDto } from '../../engine/protocol';
@@ -113,20 +114,20 @@ export function CeilingTypesDialog() {
             <Mm label={spec.system === 'grid' ? 'Tile length' : 'Module length'} value={spec.tileLength} onChange={(v) => set({ tileLength: v })} />
             <Mm label="Thickness" value={spec.thickness} onChange={(v) => set({ thickness: v })} />
             <label className="field-line"><span className="eyebrow">Material</span><MaterialPicker value={spec.tileMaterial} onChange={(tileMaterial) => set({ tileMaterial })} /></label>
-            <label className="field-line"><span className="eyebrow">Colour</span><input type="color" value={spec.tileColor} onChange={(e) => set({ tileColor: e.target.value })} /></label>
+            <label className="field-line"><span className="eyebrow">Colour</span><ColourField value={spec.tileColor} onChange={(v) => set({ tileColor: v })} /></label>
             {spec.system === 'grid' && <>
               <p className="eyebrow">Grid</p>
               <Mm label="Face width" value={spec.gridWidth} onChange={(v) => set({ gridWidth: v })} />
               <Mm label="Depth" value={spec.gridDepth} onChange={(v) => set({ gridDepth: v })} />
               <label className="field-line"><span className="eyebrow">Rotation (°)</span><NumberField value={spec.rotation} onCommit={(n) => { if (n != null) set({ rotation: n }); }} /></label>
               <label className="field-line"><span className="eyebrow">Grid material</span><MaterialPicker value={spec.gridMaterial} onChange={(gridMaterial) => set({ gridMaterial })} /></label>
-              <label className="field-line"><span className="eyebrow">Grid colour</span><input type="color" value={spec.gridColor} onChange={(e) => set({ gridColor: e.target.value })} /></label>
+              <label className="field-line"><span className="eyebrow">Grid colour</span><ColourField value={spec.gridColor} onChange={(v) => set({ gridColor: v })} /></label>
               <label className="field-line check"><input type="checkbox" checked={spec.hangers} onChange={(e) => set({ hangers: e.target.checked })} /><span>Hangers up to the structure</span></label>
               {spec.hangers && <Mm label="Hanger spacing" value={spec.hangerSpacing} onChange={(v) => set({ hangerSpacing: v })} />}
             </>}
             <p className="eyebrow">In the cells</p>
-            <label className="field-line"><span className="eyebrow">Light panels</span><input type="color" value={spec.lightColor} onChange={(e) => set({ lightColor: e.target.value })} /></label>
-            <label className="field-line"><span className="eyebrow">Air diffusers</span><input type="color" value={spec.diffuserColor} onChange={(e) => set({ diffuserColor: e.target.value })} /></label>
+            <label className="field-line"><span className="eyebrow">Light panels</span><ColourField value={spec.lightColor} onChange={(v) => set({ lightColor: v })} /></label>
+            <label className="field-line"><span className="eyebrow">Air diffusers</span><ColourField value={spec.diffuserColor} onChange={(v) => set({ diffuserColor: v })} /></label>
             <div className="row joinery-actions">
               <span className="grow" />
               {editing && <button type="button" className="btn" onClick={() => useUi.setState({ ceilingTypeId: editing })}>Place with it</button>}

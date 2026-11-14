@@ -15,6 +15,8 @@ import { useUi } from '../app/store';
 import { NAV_STYLES, NAV_STYLE_IDS, type NavStyleId } from '../app/navStyle';
 import { POLAR_STEPS, SNAP_MODES, resolveTheme, setPrefs, usePrefs, type CoordSystem, type ThemeChoice } from '../app/prefs';
 import { setDisplay, useDisplay, type Display } from '../app/display';
+import { ACCENT_3D, setHighlight, useHighlight } from '../app/highlight';
+import { ColourField, PaletteManager } from './ColourField';
 import { setLocationShown, setUcs, surveyPoint, ucsOf, useLocation } from '../app/location';
 import { LANGUAGES, setLang, useLang } from '../i18n';
 import { LengthField, NumberField } from './cells';
@@ -30,10 +32,10 @@ import { isDesktop } from '../engine/files';
 import { pickFolder } from '../modules/core/cde/cde';
 import { firmFoldersAvailable, prefsStart, setFirmFolders, useFirmFiles } from '../modules/core/firmFolders';
 
-type Page = 'general' | 'grid' | 'coords' | 'display' | 'profiles' | 'libraries';
+type Page = 'general' | 'grid' | 'coords' | 'display' | 'colours' | 'profiles' | 'libraries';
 const PAGES: { id: Page; label: string }[] = [
-  { id: 'general', label: 'General' }, { id: 'grid', label: 'Grid and snaps' }, { id: 'coords', label: 'Coordinates' }, { id: 'display', label: 'Display' },
-  { id: 'profiles', label: 'Profiles' }, { id: 'libraries', label: 'Libraries' },
+  { id: 'general', label: 'General' }, { id: 'grid', label: 'Grid and snaps' }, { id: 'coords', label: 'Coordinates' }, { id: 'display', label: 'Display' }, { id: 'colours', label: 'Colours' },
+  { id: 'colours', label: 'Colours' }, { id: 'profiles', label: 'Profiles' }, { id: 'libraries', label: 'Libraries' },
 ];
 
 /** The profile standards (decision 457): those a new project offers, those the pickers show. */
@@ -107,6 +109,7 @@ export function PreferencesDialog() {
   const [page, setPage] = useState<Page>(() => { const p = prefsStart.page as Page | null; prefsStart.page = null; return p && PAGES.some((x) => x.id === p) ? p : 'general'; });
   const p = usePrefs();
   const display = useDisplay();
+  const hl = useHighlight();
   const lang = useLang((s) => s.lang);
   const loc = useLocation((s) => s.loc);
   const ucs = ucsOf(loc);
@@ -217,6 +220,13 @@ export function PreferencesDialog() {
                 ))}
               </div>
               <p className="row small"><button type="button" className="btn" onClick={() => useUi.setState({ dialog: 'displayQuality' })}>Display quality…</button></p>
+              <h4>Selection and preselection</h4>
+              <label className="row small"><input type="checkbox" data-field="prefs-preselect" checked={hl.preselect} onChange={(e) => setHighlight({ preselect: e.target.checked })} /> Preselection highlight: light up what the cursor is over before a click, in plans, sections, sheets and 3D</label>
+              <div className="pref-colours" data-testid="prefs-highlight">
+                <label className="row small"><span>Preselection colour</span> <ColourField value={hl.preselectColour ?? hl.selectColour ?? ACCENT_3D} disabled={!hl.preselect} data-field="prefs-preselect-colour" onChange={(c) => setHighlight({ preselectColour: c })} /></label>
+                <label className="row small"><span>Selection colour</span> <ColourField value={hl.selectColour ?? ACCENT_3D} data-field="prefs-select-colour" onChange={(c) => setHighlight({ selectColour: c })} /></label>
+                <button type="button" className="btn compact" disabled={!hl.preselectColour && !hl.selectColour} onClick={() => setHighlight({ preselectColour: null, selectColour: null })}>Default colours</button>
+              </div>
               <h4>Mouse navigation</h4>
               <div className="pref-radios" role="radiogroup" aria-label="Mouse navigation" data-testid="prefs-nav-style">
                 {NAV_STYLE_IDS.map((id: NavStyleId) => (
@@ -227,6 +237,11 @@ export function PreferencesDialog() {
                 ))}
               </div>
               <p className="muted small">How the mouse orbits, pans, zooms and selects in the 3D view and in plans, sections, elevations and sheets; the menu in the status bar chooses it too. Lapin's own is the default; the others assume a three-button mouse.</p>
+            </>}
+            {page === 'colours' && <>
+              <h4>Colour swatches</h4>
+              <p className="muted small">What the colour fields' swatch button offers: the colours chosen lately (automatic), the project's palette and your own palettes.</p>
+              <PaletteManager />
             </>}
             {page === 'profiles' && <ProfilesPage />}
             {page === 'libraries' && <LibrariesPage />}

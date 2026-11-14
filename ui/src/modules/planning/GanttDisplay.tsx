@@ -4,6 +4,7 @@
  * `planning.updateSchedule {gantt}`; Reset takes the display off. The legend of the colours is drawn under the toolbar.
  */
 
+import { ColourField } from '../../shell/ColourField';
 import { useState } from 'react';
 import { Braces, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 import { execute } from '../../engine/session';
@@ -28,7 +29,7 @@ const save = (g: GanttDisplay) => void execute('planning.updateSchedule', { gant
 /** A colour chosen in the box, kept when the box is left (the picker fires on every move of the mouse). */
 function Swatch({ value, onCommit }: { value: string; onCommit: (hex: string) => void }) {
   const [v, setV] = useState(value);
-  return <input type="color" value={v} onChange={(e) => setV(e.target.value)} onBlur={() => v !== value && onCommit(v)} aria-label="Colour" />;
+  return <ColourField value={v} onChange={(c) => setV(c)} onCommit={(c) => c !== value && onCommit(c)} aria-label="Colour" />;
 }
 
 export function GanttDisplayPanel({ at, gantt, legend, onClose }: { at: { top: number; left: number }; gantt: GanttDisplay | null | undefined; legend: LegendEntry[]; onClose: () => void }) {

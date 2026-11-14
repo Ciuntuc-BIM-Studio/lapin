@@ -10,7 +10,7 @@ Vælg **Arkitektur → Dæk** (<kbd>SB</kbd>), og klik derefter på hjørnerne i
 
 I **Dæktyper** har hvert lag en **Prioritet** (0 til 100) og en **Kategori**, som lagene i en vægtype. Et væglag, der går ned i dækket (**Ind i dæk** i **Vægtyper**), går gennem dækkets lag med lavere prioritet og stopper på det første med samme eller højere. Tom er prioriteten materialets i **Administrer → Snitrækkefølge**, ellers 50 for kernen og 0 for de øvrige lag. Et lag markeret **Overflade** forsvinder, når en visning udelader dækkenes overflader.
 
-Vil du ændre omridset, så markér dækket og træk i dets hjørner. **Dækåbning** (<kbd>SH</kbd>) skærer et hul i et dæk, til en trappe eller en skakt.
+Vil du ændre omridset, så markér dækket og træk i dets hjørner. Hold <kbd>Ctrl/⌘</kbd> nede og klik på den lille rombe midt på en kant for at tilføje et hjørne, eller højreklik på det markerede dæk nær en kant og vælg **Tilføj hjørne her**: det nye hjørne kommer, hvor du klikkede. Du fjerner et hjørne med <kbd>Ctrl/⌘</kbd>-klik på det, eller ved at højreklikke på det og vælge **Fjern hjørne** (et omrids beholder mindst tre hjørner). Hver ændring er ét trin at fortryde, og det virker også på dækåbninger, tage, rum og altaner. **Dækåbning** (<kbd>SH</kbd>) skærer et hul i et dæk, til en trappe eller en skakt.
 
 Et dæk tegnet uden for væggene, foran en dør, er en trappeafsats. Om trinene op til den, se [Trapper](stairs.md).
 

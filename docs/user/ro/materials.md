@@ -14,7 +14,7 @@ Fila **Aspect** setează cum arată materialul în 3D și în programele de rand
 
 ![Aspectul unui material, cu previzualizarea lui](shots/material-appearance.webp)
 
-- **Culoare** și **Textură**: o textură desenată (cărămidă, scânduri de lemn, plăci…) sau imaginea ta. **W** și **H** spun cât de mare stă o placă pe model, în metri; **Rotirea** o întoarce.
+- **Culoare** și **Textură**: o textură desenată (cărămidă, scânduri de lemn, plăci…) sau imaginea ta. Săgeata de lângă culoare deschide mostrele: culori recente, paleta proiectului și ale tale, cu **Adaugă culorile materialelor folosite** (vezi [Mostre de culoare](interface.md#mostre-de-culoare)). **W** și **H** spun cât de mare stă o placă pe model, în metri; **Rotirea** o întoarce.
 - **Rugozitate**: 0 e o oglindă, 1 e cretă. **Metalicitate**: 1 pentru metal neacoperit (aluminiu eloxat, oțel, crom), 0 pentru tot ce e vopsit sau vopsit în câmp electrostatic, lemn și piatră.
 - **Transparență**: cât se vede prin el. **Sticlă (transmisie)** și **IOR** (1,52 pentru sticlă) fac sticla să refracte într-un program de randare.
 - **Strălucește** emite lumină, ca difuzorul unei lămpi.

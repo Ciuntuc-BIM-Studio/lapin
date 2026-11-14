@@ -9,6 +9,7 @@
  * refitted to its new size.
  */
 
+import { ColourField } from '../../shell/ColourField';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
@@ -290,7 +291,7 @@ function Look({ material, color, onChange }: { material?: string | null; color: 
   return (
     <>
       <Material value={material} onChange={(m) => onChange({ material: m })} />
-      <label className="field-line"><span className="eyebrow">Colour</span><input type="color" value={color} onChange={(e) => onChange({ color: e.target.value })} /></label>
+      <label className="field-line"><span className="eyebrow">Colour</span><ColourField value={color} onChange={(v) => onChange({ color: v })} /></label>
     </>
   );
 }
@@ -590,7 +591,7 @@ function HardwareFields({ spec, onChange }: { spec: Spec; onChange: (patch: Part
           <option value="lever">Lever</option><option value="knob">Knob</option><option value="pull">Pull bar</option><option value="window">Window handle</option><option value="none">None</option>
         </select></label>
       {spec.kind === 'door' && hw.handle !== 'none' && <Mm label="Handle height" value={hw.height} onChange={(v) => onChange({ hardware: { ...hw, height: v } })} />}
-      {hw.handle !== 'none' && <label className="field-line"><span className="eyebrow">Handle colour</span><input type="color" value={hw.color ?? '#5a5a5a'} onChange={(e) => onChange({ hardware: { ...hw, color: e.target.value } })} /></label>}
+      {hw.handle !== 'none' && <label className="field-line"><span className="eyebrow">Handle colour</span><ColourField value={hw.color ?? '#5a5a5a'} onChange={(v) => onChange({ hardware: { ...hw, color: v } })} /></label>}
     </>
   );
 }
@@ -1114,7 +1115,7 @@ export function JoineryDialog() {
               {!spec.frameless && !garageOf(spec) && <GlassFields spec={spec} preview={preview} onChange={(sash) => set({ sash })} />}
               {spec.kind === 'door' && !spec.frameless && <MeetingFields spec={spec} preview={preview} defaults={catalog.defaultMeeting} onChange={(meeting) => set({ meeting })} />}
               <PartMaterials spec={spec} onChange={(materials) => set({ materials })} />
-              {!spec.materials?.frame && !spec.frameless && <label className="field-line"><span className="eyebrow">Frame</span><input type="color" value={spec.colors.frame} onChange={(e) => set({ colors: { ...spec.colors, frame: e.target.value } })} /></label>}
+              {!spec.materials?.frame && !spec.frameless && <label className="field-line"><span className="eyebrow">Frame</span><ColourField value={spec.colors.frame} onChange={(v) => set({ colors: { ...spec.colors, frame: v } })} /></label>}
               <LintelRuleEditor inherit rule={spec.lintel ?? null} onChange={(r) => set({ lintel: r })} />
               <p className="eyebrow">Details</p>
 
@@ -1152,7 +1153,7 @@ export function JoineryDialog() {
               </>}
               <DressingFields kind={spec.kind} height={spec.height} details={details} onChange={setDetails} />
               <HardwareFields spec={spec} onChange={set} />
-              {spec.kind === 'door' && !spec.materials?.leaf && <label className="field-line"><span className="eyebrow">Leaf</span><input type="color" value={spec.colors.leaf} onChange={(e) => set({ colors: { ...spec.colors, leaf: e.target.value } })} /></label>}
+              {spec.kind === 'door' && !spec.materials?.leaf && <label className="field-line"><span className="eyebrow">Leaf</span><ColourField value={spec.colors.leaf} onChange={(v) => set({ colors: { ...spec.colors, leaf: v } })} /></label>}
               <p className="eyebrow">Data</p>
               {editing ? <JoineryDataButton type={model.nodes.get(editing) ?? null} /> : <p className="muted small">Save the type to give it data (U-value, g-value, safety glass, fire rating, fittings).</p>}
               <TypeParams typeId={editing} kind={spec.kind} />

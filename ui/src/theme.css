@@ -359,15 +359,15 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 .plan-svg { flex: 1; width: 100%; height: 100%; background: var(--bg); touch-action: none; user-select: none; }
 .plan-svg.tool { cursor: crosshair; }
 .plan-svg.pick { cursor: pointer; }
-.plan-hover path { fill: none; stroke: var(--accent); stroke-width: 2; stroke-opacity: 0.55; pointer-events: none; }
-.plan-mark.plan-hover-mark { stroke: var(--accent); stroke-width: 2; stroke-opacity: 0.55; fill: none; pointer-events: none; }
+.plan-hover path { fill: none; stroke: var(--hl-pre, var(--accent)); stroke-width: 2; stroke-opacity: 0.55; pointer-events: none; }
+.plan-mark.plan-hover-mark { stroke: var(--hl-pre, var(--accent)); stroke-width: 2; stroke-opacity: 0.55; fill: none; pointer-events: none; }
 .plan-grid path { stroke: var(--rule); stroke-width: 0.5; }
 .plan-grid path.major { stroke: var(--rule-strong); stroke-width: 0.8; }
 .plan-item { fill: none; stroke: var(--ink); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .plan-item.cut.closed { fill: var(--wash); stroke-width: 1.4; }
 .plan-item.outline { stroke-width: 0.8; }
 .plan-item.foreign { stroke: var(--ink-muted); stroke-dasharray: 4 3; }
-.plan-item.selected { stroke: var(--accent); fill: var(--accent-wash); stroke-width: 2; }
+.plan-item.selected { stroke: var(--hl-select, var(--accent)); fill: var(--hl-select-wash, var(--accent-wash)); stroke-width: 2; }
 .plan-item.hit.selected { stroke-dasharray: 4 3; stroke-width: 1.5; }
 .plan-label { font-size: 11px; fill: var(--ink-muted); }
 .plan-preview line, .plan-preview polyline, .plan-preview rect { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 6 4; }
@@ -586,7 +586,7 @@ label.check { display: inline-flex; gap: 6px; align-items: center; margin-right:
 .tree-row .icon.mini { opacity: 0; }
 .tree-row:hover .icon.mini { opacity: 1; }
 .icon.on { color: var(--accent); }
-.plan-mark.selected { stroke: var(--accent); stroke-width: 2; fill: none; }
+.plan-mark.selected { stroke: var(--hl-select, var(--accent)); stroke-width: 2; fill: none; }
 /* What a tag tags (report #130): the element, lit while its tag is hovered or selected or the TAG command hovers it. */
 .plan-item.tag-target { stroke: var(--accent); fill: var(--accent-wash); stroke-width: 2.5; }
 .plan-items.ghost .plan-item.tag-target { fill: none; }
@@ -619,7 +619,8 @@ table.layer-edit > tbody > tr.lit > td { background: var(--accent-wash); }
 .sheet-svg { background: var(--wash, #ecebe7); }
 .paper-sheet { fill: #ffffff; stroke: var(--rule-strong); filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.15)); }
 .sheet-viewport rect { fill: transparent; stroke: transparent; cursor: move; }
-.sheet-viewport:hover rect { stroke: var(--accent); stroke-dasharray: 4 3; }
+.sheet-viewport:hover rect { stroke: var(--hl-pre, var(--accent)); stroke-dasharray: 4 3; }
+html.no-preselect .sheet-viewport:not(.active):hover rect:first-child { stroke: transparent; }
 .sheet-viewport foreignObject { opacity: 0; }
 .sheet-viewport:hover foreignObject { opacity: 1; }
 .schedule-pane { display: flex; flex-direction: column; }
@@ -756,7 +757,7 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .loc .row { margin-bottom: 4px; }
 .loc-label { width: 110px; }
 .sheet-viewport.warn rect:first-child { stroke: #c0392b; stroke-dasharray: 4 3; }
-.sheet-viewport.active rect:first-child { stroke: var(--accent); stroke-width: 1.5; }
+.sheet-viewport.active rect:first-child { stroke: var(--hl-select, var(--accent)); stroke-width: 1.5; }
 .sheet-handle, .sheet-viewport rect.sheet-handle { fill: var(--panel); stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: none; cursor: ew-resize; }
 /* A pinned view: picked, never dragged; its tools stay in sight while it is active. */
 .sheet-viewport.pinned rect:first-child { cursor: default; }
@@ -2731,3 +2732,28 @@ path.part-flex-ghost { fill: none; stroke: var(--accent); stroke-width: 1.6; str
 .gantt-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
 .gen-fields { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
 .field-or-formula { display: inline-flex; align-items: center; gap: 4px; }
+
+/* The colour field (forum topic 97): the system's input and a button for the swatches; the popover over everything. */
+.colour-field { display: inline-flex; align-items: center; gap: 1px; vertical-align: middle; }
+.colour-more { display: inline-grid; place-items: center; width: 14px; height: 18px; padding: 0; border: 1px solid var(--rule); border-radius: 2px; background: var(--raised); color: var(--ink-muted); cursor: pointer; }
+.colour-more:hover:not(:disabled) { border-color: var(--accent); color: var(--ink); }
+.colour-more:disabled { opacity: 0.5; cursor: default; }
+.colour-pop { position: fixed; z-index: 70; width: 268px; max-height: min(480px, calc(100vh - 16px)); overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 8px 10px; background: var(--raised); color: var(--ink); border: 1px solid var(--rule-strong); border-radius: 4px; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22); font-size: 12px; }
+.colour-pop .eyebrow { display: flex; align-items: center; gap: 4px; margin-bottom: 3px; }
+.cp-head { display: flex; align-items: center; gap: 8px; }
+.cp-now { width: 22px; height: 22px; border: 1px solid var(--rule-strong); border-radius: 3px; flex: none; }
+.cp-hex { flex: 1; min-width: 0; height: 24px; font-family: var(--mono, monospace); }
+.cp-row { display: flex; flex-wrap: wrap; gap: 4px; }
+.cp-swatch { width: 18px; height: 18px; padding: 0; border: 1px solid var(--rule-strong); border-radius: 3px; cursor: pointer; }
+.cp-swatch:hover { outline: 2px solid var(--accent); outline-offset: 1px; }
+.cp-swatch.on { outline: 2px solid var(--ink); outline-offset: 1px; }
+.cp-foot { display: flex; justify-content: flex-end; border-top: 1px solid var(--rule); padding-top: 6px; }
+.palette-manager { display: flex; flex-direction: column; gap: 6px; }
+.palette-manager h4 { margin: 6px 0 0; }
+.cp-editor, .cp-palette { display: flex; flex-direction: column; gap: 5px; }
+.cp-palette { padding: 6px 0; border-top: 1px solid var(--rule); }
+.cp-palette-head { display: flex; align-items: center; gap: 4px; }
+.cp-palette-head input { flex: 1; min-width: 0; }
+.cp-tools, .cp-add { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.cp-add input[type=color] { width: 26px; height: 20px; padding: 0; }
+.cp-add input[type=text] { flex: 1; min-width: 80px; }

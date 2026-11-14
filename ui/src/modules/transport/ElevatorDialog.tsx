@@ -7,6 +7,7 @@
  * shows its tube, cabin, frame and doors instead: tube presets, and each landing's door facing its own angle.
  */
 
+import { ColourField } from '../../shell/ColourField';
 import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Pencil, RotateCcw, Save, Scale, Trash2, X } from 'lucide-react';
 import { LengthField, NumberField } from '../../shell/cells';
@@ -42,7 +43,7 @@ function FieldInput({ f, value, onChange }: { f: FieldDescriptor; value: unknown
     );
   }
   if (f.kind === 'bool') return <input type="checkbox" checked={value === true} onChange={(e) => onChange(e.target.checked)} />;
-  if (f.kind === 'color') return <input type="color" value={typeof value === 'string' ? value : '#2b2f33'} onChange={(e) => onChange(e.target.value)} />;
+  if (f.kind === 'color') return <ColourField value={typeof value === 'string' ? value : '#2b2f33'} onChange={(v) => onChange(v)} />;
   const n = typeof value === 'number' ? value : null;
   return f.kind === 'length'
     ? <LengthField metres={n} min={f.min ?? undefined} max={f.max ?? undefined} onCommit={(m) => { if (m != null) onChange(m); }} />

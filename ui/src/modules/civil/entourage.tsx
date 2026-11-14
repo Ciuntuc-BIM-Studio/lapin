@@ -5,6 +5,7 @@
  * Properties afterwards with its turn, height, height above the ground and colour.
  */
 
+import { ColourField } from '../../shell/ColourField';
 import { create } from 'zustand';
 import { CarFront, PersonStanding } from 'lucide-react';
 import type { ToolDef } from '../../platform/module';
@@ -102,7 +103,7 @@ export function EntourageSection({ node }: { node: NodeDto }) {
       <dt title="Raised above the ground under it (a deck, a balcony)">Above the ground</dt><dd><Mm value={node.props.offset} fallback={0} onCommit={(v) => update({ offset: v })} /></dd>
       {!picture && <>
         <dt title={kind.category === 'car' ? 'The body' : 'The clothes'}>Colour</dt>
-        <dd><input type="color" value={typeof node.props.color === 'string' ? node.props.color : kind.color} onChange={(e) => update({ color: e.target.value })} /></dd>
+        <dd><ColourField value={typeof node.props.color === 'string' ? node.props.color : kind.color} onChange={(v) => update({ color: v })} /></dd>
       </>}
     </dl>
   );

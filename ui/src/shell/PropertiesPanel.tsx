@@ -5,6 +5,7 @@
  * command (element.rename, element.update, or the module's own).
  */
 
+import { ColourField } from './ColourField';
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import { AlignHorizontalJustifyCenter, ChevronRight, Code2, EyeOff, ListOrdered, Search, Trash2 } from 'lucide-react';
 import { Cell, LengthCell } from './cells';
@@ -83,7 +84,7 @@ export function FieldRow({ node, field }: { node: NodeDto; field: FieldDescripto
     // A project material by its id (a Studio solid's, forum topic 60); none clears it (a solid then takes its type's).
     input = <MaterialPicker byId value={!varies && typeof v === 'string' ? v : ''} placeholder={varies ? 'varies' : 'none'} allowEmpty onChange={(id) => update(id || null)} />;
   } else if (field.kind === 'color') {
-    input = <input type="color" value={typeof v === 'string' ? v : '#c9ced6'} onChange={(e) => update(e.target.value)} />;
+    input = <ColourField value={typeof v === 'string' ? v : '#c9ced6'} onChange={(v) => update(v)} />;
   } else {
     input = <Cell value={!varies && typeof v === 'string' ? v : ''} placeholder={ph} onCommit={(t) => update(t)} />;
   }

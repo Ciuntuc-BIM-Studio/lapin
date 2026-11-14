@@ -7,6 +7,7 @@
  * slope, in flights no longer than its longest run, with landings between.
  */
 
+import { ColourField } from '../../shell/ColourField';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import { useUi } from '../../app/store';
@@ -342,7 +343,7 @@ export function StairTypesDialog() {
                 {spec.railing.style === 'balusters' && <Mm label="Baluster spacing" value={spec.railing.balusterSpacing ?? 0.11} onChange={(v) => set({ railing: { ...spec.railing, balusterSpacing: Math.max(0.05, v) } })} />}
                 <Mm label="In from the edge" value={spec.railing.inset ?? 0.05} onChange={(v) => set({ railing: { ...spec.railing, inset: Math.max(0, v) } })} />
                 <Mm label="Runs on past the ends" value={spec.railing.extension ?? 0} onChange={(v) => set({ railing: { ...spec.railing, extension: Math.max(0, v) } })} />
-                <label className="field-line"><span className="eyebrow">Colour</span><input type="color" value={spec.railing.color ?? '#4a4a4a'} onChange={(e) => set({ railing: { ...spec.railing, color: e.target.value } })} /></label>
+                <label className="field-line"><span className="eyebrow">Colour</span><ColourField value={spec.railing.color ?? '#4a4a4a'} onChange={(v) => set({ railing: { ...spec.railing, color: v } })} /></label>
               </>}
             </div>
             <div className="joinery-preview stair-preview">

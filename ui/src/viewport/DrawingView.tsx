@@ -24,6 +24,7 @@ import { editDimension } from './dimensionEdit';
 import { openPickedView } from './openView';
 import { pickDrawing } from './drawingPick';
 import { openContextMenu } from '../shell/ContextMenu';
+import { useHighlight } from '../app/highlight';
 import { groupItems } from '../shell/selectionMenu';
 import { viewHideItems } from '../shell/viewHideMenu';
 import { dimensionItems } from '../modules/drafting/dimensionMenu';
@@ -301,6 +302,7 @@ export function DrawingView() {
   // Direct editing of the shapes drafted on this view (and of a solid sketched here): their grips and lines.
   const editor = useGripEditor({
     viewIds: [id], mode: 'drawing', toScreen, scale: v.scale, disabled: !!cadStep, svg: ref, marks: drawing?.marks,
+    raw: (cx, cy) => { const r = ref.current!.getBoundingClientRect(); return toWorld(cx - r.left, cy - r.top); },
     frame: drawing?.frame, viewKind: drawing?.kind, developed: (drawing?.frames?.length ?? 0) > 0,
     aim: (cx, cy, from) => {
       const r = ref.current!.getBoundingClientRect();
@@ -392,7 +394,7 @@ export function DrawingView() {
           setHover(here.aimed);
           {
             const step = useCad.getState().step;
-            const idle = !tool?.gesture && !d && !editor.dragging && (!step || step.want === 'pick' || step.want === 'select');
+            const idle = useHighlight.getState().preselect && !tool?.gesture && !d && !editor.dragging && (!step || step.want === 'pick' || step.want === 'select');
             const id = idle ? pickAny(here.raw) : null;
             setHoverId((cur) => (cur === id ? cur : id));
           }
@@ -428,7 +430,7 @@ export function DrawingView() {
             const target = under ? pickTarget(under) : null;
             let sel = useUi.getState().selected;
             if (under && target && isDrafted(nodes.get(under)) && !sel.includes(target)) { select(target); sel = [target]; }
-            openContextMenu(e.clientX, e.clientY, [...drawOrderItems(sel.flatMap((id) => [id, ...membersOf(id)]), nodes), ...symbolMenuItems(sel, nodes), ...dimensionItems(), ...groupItems(), ...viewHideItems(id)]);
+            openContextMenu(e.clientX, e.clientY, [...editor.cornerItems(e), ...drawOrderItems(sel.flatMap((id) => [id, ...membersOf(id)]), nodes), ...symbolMenuItems(sel, nodes), ...dimensionItems(), ...groupItems(), ...viewHideItems(id)]);
             return;
           }
           if (!d || d.moved || e.button !== 0) return;

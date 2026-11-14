@@ -1,5 +1,6 @@
 /** Drafting layers: their colour, pen width, line type, whether they show and can be edited; a new one, renaming, removing (its shapes go to layer 0). */
 
+import { ColourField } from '../../shell/ColourField';
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
@@ -30,7 +31,7 @@ export function LayersDialog() {
               <tr key={l.name}>
                 <td><input type="radio" checked={current === l.name} onChange={() => useCad.setState({ layer: l.name })} /></td>
                 <td><input defaultValue={l.name} disabled={l.name === '0'} onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== l.name) set(l.name, { newName: v }); }} /></td>
-                <td><input type="color" value={l.color} onChange={(e) => set(l.name, { color: e.target.value })} /></td>
+                <td><ColourField value={l.color} onChange={(v) => set(l.name, { color: v })} /></td>
                 <td><NumberField value={l.weight} min={0.05} max={2} onCommit={(w) => { if (w != null) set(l.name, { weight: w }); }} /></td>
                 <td><select value={l.lineType} onChange={(e) => set(l.name, { lineType: e.target.value })}>{withCurrent(lineTypeNames(own, TYPES), l.lineType).map((t) => <option key={t} value={t}>{t}</option>)}</select></td>
                 <td><input type="checkbox" checked={l.visible} onChange={(e) => set(l.name, { visible: e.target.checked })} /></td>

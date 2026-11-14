@@ -5,6 +5,7 @@
  * step each change).
  */
 
+import { ColourField } from '../../shell/ColourField';
 import { RotateCcw } from 'lucide-react';
 import { execute } from '../../engine/session';
 import { HatchSwatch } from './HatchSwatch';
@@ -59,7 +60,7 @@ export function MaterialGraphicsTable({ m, hatches }: { m: MaterialRow; hatches:
                 <select data-field={`material-fill-${kind}`} value={fillMode} onChange={(e) => (e.target.value === '' ? clearField(kind, 'fill') : setView(kind, { fill: e.target.value === 'material' ? 'material' : (r.fill ?? '#ffffff') }))}>
                   <option value="">none</option><option value="material">material colour</option><option value="colour">colour…</option>
                 </select>
-                {fillMode === 'colour' && <input type="color" value={own?.fill ?? '#ffffff'} onChange={(e) => setView(kind, { fill: e.target.value })} />}
+                {fillMode === 'colour' && <ColourField value={own?.fill ?? '#ffffff'} onChange={(v) => setView(kind, { fill: v })} />}
               </td>
               <td><input className="num" key={`${m.id}${kind}p${r.hatchPen}`} defaultValue={r.hatchPen ?? ''} placeholder="—"
                 onBlur={(e) => { const v = Number(e.target.value); if (e.target.value && v >= 1 && v <= 16 && v !== r.hatchPen) setView(kind, { hatchPen: v }); }} /></td>

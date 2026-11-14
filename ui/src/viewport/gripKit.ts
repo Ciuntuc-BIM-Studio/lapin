@@ -57,18 +57,37 @@ export function flipAcross(c: Arc, side: number, title: string, click: () => Gri
   return { key: 'flip', kind: 'flip', at: f.at, dir: { x: f.left.x * side, y: f.left.y * side }, title, click };
 }
 
-/** A closed outline's grips; `save` turns the edited outline into the element's update command. */
+/** The point of the segment a→b nearest to p (clamped to the segment), and how far p is from it. */
+export function nearestOnSegment(a: Vec2, b: Vec2, p: Vec2): { at: Vec2; dist: number; t: number } {
+  const dx = b.x - a.x, dy = b.y - a.y, len2 = dx * dx + dy * dy;
+  const t = len2 < 1e-18 ? 0 : Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2));
+  const at = { x: a.x + dx * t, y: a.y + dy * t };
+  return { at, dist: Math.hypot(p.x - at.x, p.y - at.y), t };
+}
+
+/**
+ * A closed outline's grips; `save` turns the edited outline into the element's update command. Each corner takes Ctrl/⌘-click
+ * to be removed (never under three), each edge's middle Ctrl/⌘-click to put a corner there; a right-click on the element
+ * offers the same (GripLayer's cornerItems), where the corner goes at the point clicked.
+ */
 export function outlineGrips<E>(o: Outline<E>, save: (next: Outline<E>) => GripStep): Grip[] {
   const grips: Grip[] = o.pts.map((p, i) => ({
     key: `v${i}`, kind: 'vertex' as const, at: p,
+    title: o.pts.length > 3 ? 'Drag to move the corner · Ctrl/⌘-click: remove this corner' : 'Drag to move the corner (an outline keeps three corners at least)',
     step: (to: Vec2) => save(moveVertex(o, i, to)),
     remove: () => { const next = removeVertex(o, i); return next ? save(next) : null; },
   }));
-  edgeMiddles(o.pts).forEach((m, i) => grips.push({
-    key: `e${i}`, kind: 'edgeMid', at: m,
-    step: (to: Vec2) => { const next = offsetEdge(o, i, to); return next ? save(next) : null; },
-    insert: () => save(insertVertex(o, i)),
-  }));
+  edgeMiddles(o.pts).forEach((m, i) => {
+    const a = o.pts[i], b = o.pts[(i + 1) % o.pts.length];
+    grips.push({
+      key: `e${i}`, kind: 'edgeMid', at: m,
+      title: 'Drag to move the edge · Ctrl/⌘-click: add a corner',
+      step: (to: Vec2) => { const next = offsetEdge(o, i, to); return next ? save(next) : null; },
+      insert: () => save(insertVertex(o, i)),
+      edge: [a, b],
+      addCornerAt: (to: Vec2) => save(insertVertex(o, i, nearestOnSegment(a, b, to).at)),
+    });
+  });
   return grips;
 }
 

@@ -10,7 +10,7 @@ Scegli **Architettura → Solaio** (<kbd>SB</kbd>), poi fai clic sugli angoli de
 
 In **Tipi di solaio** ogni strato ha una **Priorità** (da 0 a 100) e una **Categoria**, come gli strati di un tipo di muro. Uno strato di muro che scende nel solaio (**Nei solai** in **Tipi di muro**) attraversa gli strati del solaio di priorità inferiore e si ferma sul primo di priorità uguale o maggiore. Vuota, la priorità è quella del materiale in **Gestisci → Ordine di taglio**, altrimenti 50 per il nucleo e 0 per gli altri strati. Uno strato marcato **Finitura** se ne va quando una vista tralascia le finiture dei solai.
 
-Per cambiare il contorno, seleziona il solaio e trascinane gli angoli. **Foro nel solaio** (<kbd>SH</kbd>) taglia un foro in un solaio, per una scala o un cavedio.
+Per cambiare il contorno, seleziona il solaio e trascinane gli angoli. Per aggiungere un angolo, tieni premuto <kbd>Ctrl/⌘</kbd> e fai clic sul piccolo rombo a metà di un lato, oppure fai clic destro sul solaio selezionato vicino a un lato e scegli **Aggiungi un angolo qui**: il nuovo angolo va dove hai fatto clic. Per toglierne uno, fai <kbd>Ctrl/⌘</kbd>-clic su di esso, oppure clic destro e scegli **Rimuovi angolo** (un contorno mantiene almeno tre angoli). Ogni modifica è un solo passo di annullamento, e lo stesso vale per fori nel solaio, tetti, locali e balconi. **Foro nel solaio** (<kbd>SH</kbd>) taglia un foro in un solaio, per una scala o un cavedio.
 
 Un solaio disegnato fuori dai muri, davanti a una porta, è un portico. Per i gradini che vi salgono, vedi [Scale](stairs.md).
 

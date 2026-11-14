@@ -1,5 +1,6 @@
 /** A placed symbol in the inspector (docs/plan-user-extensibility.md §3): its symbol, angle, scale, flips, each attribute's value, layer and colour; Edit symbol and Explode. */
 
+import { ColourField } from '../../../shell/ColourField';
 import { useEffect, useState } from 'react';
 import { FlipHorizontal2, FlipVertical2, Pencil, Unlink2 } from 'lucide-react';
 import type { NodeDto } from '../../../engine/protocol';
@@ -55,7 +56,7 @@ export function SymbolSection({ node }: { node: NodeDto }) {
       </select></dd>
       <dt>Colour</dt>
       <dd className="pair">
-        <input type="color" value={own ?? layer?.color ?? '#18181b'} onChange={(e) => set({ color: e.target.value })} />
+        <ColourField value={own ?? layer?.color ?? '#18181b'} onChange={(v) => set({ color: v })} />
         {own ? <button type="button" className="link" onClick={() => set({ color: null })}>by layer</button> : <span className="muted small">by layer</span>}
       </dd>
       <dt />

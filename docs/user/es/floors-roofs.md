@@ -10,7 +10,7 @@ Elija **Arquitectura → Losa** (<kbd>SB</kbd>) y haga clic en las esquinas de s
 
 En **Tipos de losa**, cada capa tiene una **Prioridad** (de 0 a 100) y una **Categoría**, como las capas de un tipo de muro. Una capa de muro que baja a la losa (**En losas** en **Tipos de muro**) atraviesa las capas de la losa de menor prioridad y se detiene sobre la primera de prioridad igual o mayor. Vacía, la prioridad es la del material en **Gestionar → Orden de corte**, si no 50 para el núcleo y 0 para las demás capas. Una capa marcada **Acabado** se va cuando una vista omite los acabados de las losas.
 
-Para cambiar el contorno, seleccione la losa y arrastre sus esquinas. **Hueco en losa** (<kbd>SH</kbd>) abre un hueco en una losa, para una escalera o un patinillo.
+Para cambiar el contorno, seleccione la losa y arrastre sus esquinas. Para añadir una esquina, mantenga pulsado <kbd>Ctrl/⌘</kbd> y haga clic en el pequeño rombo del centro de un borde, o haga clic derecho en la losa seleccionada cerca de un borde y elija **Añadir esquina aquí**: la nueva esquina queda donde hizo clic. Para quitar una, haga <kbd>Ctrl/⌘</kbd>-clic en ella, o clic derecho en ella y elija **Quitar esquina** (un contorno conserva al menos tres esquinas). Cada cambio es un solo paso de deshacer, y lo mismo vale para huecos en losa, cubiertas, locales y balcones. **Hueco en losa** (<kbd>SH</kbd>) abre un hueco en una losa, para una escalera o un patinillo.
 
 Una losa dibujada fuera de los muros, delante de una puerta, es un porche. Para los peldaños que suben a él, consulte [Escaleras](stairs.md).
 

@@ -7,6 +7,7 @@
  * Each change is one engine command; Standard (and layer 0) always stay.
  */
 
+import { ColourField } from '../../shell/ColourField';
 import { clearStandardsTab, standardsTab } from './standardsTab';
 import { useEffect, useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
@@ -127,7 +128,7 @@ export function StandardsDialog() {
     };
     switch (c.kind) {
       case 'bool': return <input type="checkbox" checked={v === true || (c.key === 'visible' && v !== false)} onChange={(ev) => put(ev.target.checked)} />;
-      case 'color': return <input type="color" value={typeof v === 'string' ? v : '#18181b'} onChange={(ev) => put(ev.target.value)} />;
+      case 'color': return <ColourField value={typeof v === 'string' ? v : '#18181b'} onChange={(v) => put(v)} />;
       case 'choice': {
         // A line type is chosen among Lapin's and the project's own (Line types tab).
         const names = c.key === 'lineType' ? withCurrent(lineTypeNames(lineTypes, c.choices), String(v ?? '') || null).filter((x) => !(tab.id === 'layer' && x === 'continuous')) : c.choices!;

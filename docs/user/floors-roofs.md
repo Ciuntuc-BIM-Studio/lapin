@@ -14,7 +14,7 @@ In **Floor types**, the layers run from the top down. The arrows at the end of a
 
 In **Floor types**, each layer has a **Priority** (0 to 100) and a **Category**, as a wall type's layers do. A wall layer that goes down into the floor (**Into floors** in **Wall types**) passes the floor's layers of a lower priority and stops on the first as high or higher. Empty, the priority is the material's in **Manage → Cut order**, else 50 for the core and 0 for the other layers. A layer marked **Finish** goes when a view leaves out the floors' finishes.
 
-To change the outline, select the floor and drag its corners. **Floor opening** (<kbd>SH</kbd>) cuts a hole in a floor, for a stair or a shaft.
+To change the outline, select the floor and drag its corners. To add a corner, hold <kbd>Ctrl/⌘</kbd> and click the small diamond in the middle of an edge, or right-click the selected floor near an edge and choose **Add corner here**: the new corner goes where you clicked. To remove one, <kbd>Ctrl/⌘</kbd>-click it, or right-click it and choose **Remove corner** (an outline keeps three corners at least). Each is one undo step, and the same works on floor openings, roofs, rooms and balconies. **Floor opening** (<kbd>SH</kbd>) cuts a hole in a floor, for a stair or a shaft.
 
 A floor drawn outside the walls, in front of a door, is a porch. For the steps up to it, see [Stairs](stairs.md).
 

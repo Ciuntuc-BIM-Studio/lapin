@@ -7,6 +7,7 @@
  * duplicate, Esc. Save writes the template as one undo step.
  */
 
+import { ColourField } from '../../../shell/ColourField';
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from 'react';
 import {
   Braces, Image as ImageIcon, Minus, MousePointer2, PenLine, Redo2, Save, Square, Table2, Trash2, Type, Undo2, X, ZoomIn, ZoomOut,
@@ -53,7 +54,7 @@ export function Colour({ label, value, onChange, none }: { label: string; value:
       <span className="muted small">{label}</span>
       <span className="row">
         {none && <input type="checkbox" checked={!!value} onChange={(e) => onChange(e.target.checked ? value || '#d9d9d9' : null)} aria-label={label} />}
-        <input type="color" value={value || '#000000'} disabled={none && !value} onChange={(e) => onChange(e.target.value)} />
+        <ColourField value={value || '#000000'} disabled={none && !value} onChange={(v) => onChange(v)} />
       </span>
     </label>
   );

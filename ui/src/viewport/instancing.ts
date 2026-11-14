@@ -19,13 +19,13 @@ import * as THREE from 'three';
 import type { RenderItem, RenderPart, SharedMesh } from '../engine/protocol';
 import type { Look } from '../platform/looks';
 import { elements, placedBox } from '../engine/instances';
+import { selectionColour } from '../app/highlight';
 import { copyArrays, levelFor, pixelsPerMetre, type DisplayQuality, type LodCamera } from './lod';
 import { useSession } from '../engine/session';
 import { lookOf } from './look';
 import { standardMaterial } from './materialLook';
 
 const ZERO = new THREE.Matrix4().makeScale(0, 0, 0).elements;
-const SELECTED = new THREE.Color(0xb5532d);
 const FIRST = 64;
 
 export type VisualStyle = 'shaded' | 'wireframe' | string;
@@ -168,6 +168,7 @@ class Batch {
     const at = new THREE.Matrix4();
     const c = new THREE.Color();
     let fadedOpacity: number | null = null;
+    const selectedHex = selectionColour(), selectedColour = new THREE.Color(selectedHex);
     for (let i = 0; i < this.ids.length; i++) {
       const id = this.ids[i];
       const l = looks[id];
@@ -175,7 +176,7 @@ class Batch {
       const opacity = l?.opacity ?? 1;
       if (opacity < 1 && fadedOpacity === null) fadedOpacity = opacity;
       const key = this.lodKeys[i];
-      const state = `${l?.hidden ? 'h' : opacity < 1 ? 'f' : 's'}|${l?.color ?? ''}|${sel ? 1 : 0}|${key}`;
+      const state = `${l?.hidden ? 'h' : opacity < 1 ? 'f' : 's'}|${l?.color ?? ''}|${sel ? selectedHex : 0}|${key}`;
       if (this.states[i] === state) continue;
       this.states[i] = state;
       changed = true;
@@ -190,7 +191,7 @@ class Batch {
           p.faded.instanceMatrix.array.set(mine && !l?.hidden && opacity < 1 ? shown : ZERO, i * 16);
           p.edgeMatrix?.array.set(mine ? shown : ZERO, i * 16);
           c.set(l?.color ?? p.colour);
-          if (sel) c.lerp(SELECTED, 0.55);
+          if (sel) c.lerp(selectedColour, 0.55);
           p.solid.setColorAt(i, c);
           p.faded.setColorAt(i, c);
         });

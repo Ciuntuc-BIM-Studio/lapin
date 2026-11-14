@@ -179,6 +179,12 @@ export interface Grip {
   insertAt?: (to: Vec2) => GripStep | null;
   /** Ctrl/⌘-click: take this vertex out. */
   remove?: () => GripStep | null;
+  /**
+   * An outline's edge (its two ends) with `addCornerAt`: a right-click near the edge of a selected element offers "Add corner here",
+   * which puts a vertex on the edge at the point clicked (forum topic 97). A vertex grip's `remove` is offered as "Remove corner".
+   */
+  edge?: [Vec2, Vec2];
+  addCornerAt?: (to: Vec2) => GripStep | null;
   /** Alt-click (a click, not a drag) does `remove` as well, as Ctrl/⌘-click does (a dimension's point, forum topic 74); a drag with Alt still moves it alone. */
   altRemove?: boolean;
   /** Ctrl/⌘-click: continue from here (a dimension line's end: the next clicks add points beyond it, forum topic 74). Runs before `insert` and `remove`. */

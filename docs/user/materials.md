@@ -14,7 +14,7 @@ The **Appearance** tab sets how the material looks in 3D and in the renderers yo
 
 ![A material's appearance, with its live preview](shots/material-appearance.webp)
 
-- **Colour** and **Texture**: a drawn texture (brick, wood planks, tiles…) or your own image. **W** and **H** set how large one tile lies on the model, in metres; **Rotation** turns it.
+- **Colour** and **Texture**: a drawn texture (brick, wood planks, tiles…) or your own image. The arrow beside the colour opens the swatches: recent colours, the project's palette and your own, with **Add the colours of the materials in use** (see [Colour swatches](interface.md#colour-swatches)). **W** and **H** set how large one tile lies on the model, in metres; **Rotation** turns it.
 - **Roughness**: 0 is a mirror, 1 is chalk. **Metalness**: 1 for bare metal (anodised aluminium, steel, chrome), 0 for anything painted or powder-coated, wood and stone.
 - **Transparency**: how much shows through. **Glass (transmission)** and **IOR** (1.52 for glass) make glass refract in a renderer.
 - **Glows** gives off light, like a lamp's diffuser.

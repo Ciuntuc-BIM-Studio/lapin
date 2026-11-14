@@ -5,6 +5,7 @@
  * `StyleForm` edits a style it is given; `DocumentStyleForm` reads and sets a document's through the engine.
  */
 
+import { ColourField } from '../../../shell/ColourField';
 import { useEffect, useRef, useState } from 'react';
 import { ImagePlus, RotateCcw, Trash2 } from 'lucide-react';
 import { notify } from '../../../app/store';
@@ -102,8 +103,7 @@ export function StyleForm({ style, onChange, disabled }: { style: DocStyle; onCh
         </label>
         <label className="doc-info-row"><span className="muted small">Headings' colour</span>
           <span className="row tight">
-            <input type="color" value={color} disabled={disabled} data-field="tpl-style-color" onChange={(e) => {
-              const v = e.target.value;
+            <ColourField value={color} disabled={disabled} data-field="tpl-style-color" onChange={(v) => {
               setColor(v);
               if (timer.current) clearTimeout(timer.current);
               timer.current = setTimeout(() => put('headingColor', v), 350);

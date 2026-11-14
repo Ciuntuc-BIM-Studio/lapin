@@ -5,6 +5,7 @@
  * the quantities below.
  */
 
+import { ColourField } from '../../shell/ColourField';
 import { useEffect, useState } from 'react';
 import { Palette, RefreshCw, SquareDashed, Tag, X } from 'lucide-react';
 import { RoomIcon } from '../../icons';
@@ -82,7 +83,7 @@ export function RoomSection({ node }: { node: NodeDto }) {
         <dd><LengthCell metres={typeof node.props.baseOffset === 'number' ? node.props.baseOffset : null} placeholder="0" onCommit={(m) => update('baseOffset', m)} /></dd>
         <dt title="The room's own colour, over its colour scheme's">Own colour</dt>
         <dd>
-          <input type="color" value={str('fillColor') || '#ffffff'} onChange={(e) => update('fillColor', e.target.value)} />
+          <ColourField value={str('fillColor') || '#ffffff'} onChange={(v) => update('fillColor', v)} />
           {str('fillColor') && <button type="button" className="icon mini" title="As its scheme says" onClick={() => update('fillColor', null)}><X size={10} /></button>}
         </dd>
         {/* The room's own opacity over its scheme entry's (forum #79): empty, its scheme's. */}

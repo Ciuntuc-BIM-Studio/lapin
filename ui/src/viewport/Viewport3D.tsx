@@ -69,6 +69,7 @@ import { TICK, Walker, worldOf } from './walkPhysics';
 import { InstanceLayer } from './instancing';
 import { openGroupOf, shownSelection, useExpansion } from '../platform/groups';
 import { useTagHover } from './tagTarget';
+import { preselectionColour, selectionColour, useHighlight } from '../app/highlight';
 import { pickByMods, pickRegion } from '../platform/assemblies';
 import { dragAction, modsOf, regionMode, regionSelection, wheelFactor, zoomsToCursor, type Mods } from '../app/navStyle';
 import { currentNavStyle } from '../app/navStyleStore';
@@ -94,7 +95,6 @@ const CLEAR = { paper: 0xf3efe7, graphite: 0x1c1b19 } as const;
 const LOD_EVERY = 150;
 /** The ground grid per theme: its axes in the accent, its lines a shade off the paper. */
 const GRID = { paper: [0xb5532d, 0xd6cebf], graphite: [0xe07a4f, 0x34312c] } as const;
-const SELECTED = new THREE.Color(0xb5532d);
 /** The edges' one material, shared by every element (highlights and looks change only the faces'). */
 const EDGES = new THREE.LineBasicMaterial({ color: 0x1e2a3a });
 EDGES.userData.shared = true;
@@ -368,15 +368,20 @@ function clipped(item: RenderItem, planes: readonly THREE.Plane[]): boolean {
   return !!b && clippedAway(b, planes);
 }
 
-function highlight(group: THREE.Object3D, on: boolean) {
+/**
+ * An element lit as the selection (the user's selection colour) or as the one under the cursor (their preselection colour,
+ * a little fainter); off, its own look back. Settings: app/highlight.ts.
+ */
+function highlight(group: THREE.Object3D, on: boolean, hex: string = selectionColour(), glow = 0.45) {
+  const lit = new THREE.Color(hex);
   group.traverse((c) => {
     // Linework has no faces to glow: its lines take the selection's colour.
-    if (typeof c.userData.linework === 'string') { (c as THREE.LineSegments).material = on ? lineworkMaterial('#b5532d') : c.userData.linework ? lineworkMaterial(c.userData.linework) : UNSEEN_LINE; return; }
+    if (typeof c.userData.linework === 'string') { (c as THREE.LineSegments).material = on ? lineworkMaterial(hex) : c.userData.linework ? lineworkMaterial(c.userData.linework) : UNSEEN_LINE; return; }
     const m = (c as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
     // Off, a glowing material gets its own glow back.
     const own = m?.userData.emissive as { hex: number; intensity: number } | undefined;
-    if (m && 'emissive' in m) m.emissive = on ? SELECTED : new THREE.Color(own?.hex ?? 0);
-    if (m && 'emissiveIntensity' in m) m.emissiveIntensity = on ? 0.45 : own?.intensity ?? 0;
+    if (m && 'emissive' in m) m.emissive = on ? lit : new THREE.Color(own?.hex ?? 0);
+    if (m && 'emissiveIntensity' in m) m.emissiveIntensity = on ? glow : own?.intensity ?? 0;
   });
 }
 
@@ -476,8 +481,8 @@ function faceMesh(face: FaceDto): THREE.Object3D {
   const geo = new THREE.BufferGeometry().setFromPoints(pts);
   geo.setIndex(tris.flat());
   const group = new THREE.Group();
-  group.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: SELECTED, transparent: true, opacity: 0.45, side: THREE.DoubleSide, depthWrite: false })));
-  group.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: SELECTED })));
+  group.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: selectionColour(), transparent: true, opacity: 0.45, side: THREE.DoubleSide, depthWrite: false })));
+  group.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: selectionColour() })));
   return group;
 }
 
@@ -648,6 +653,13 @@ export function Viewport3D() {
   useUi((s) => s.storeyId);
   useSession((s) => s.nodes);
   const quality = useSession((s) => displayQualityOf(s.nodes));
+  // The user's selection and preselection colours (View → Preferences → Display): a change lights the elements again.
+  const selColour = useHighlight((h) => h.selectColour);
+  const preColour = useHighlight((h) => h.preselectColour);
+  const preselect = useHighlight((h) => h.preselect);
+  // The element under the cursor, lit before a click (null: none, or no preselection).
+  const [hover3d, setHover3d] = useState<string | null>(null);
+  const hover3dRef = useRef<string | null>(null);
   qualityRef.current = quality;
   useEffect(() => { invalidate.current(); }, [quality]);
   // While a shape is drawn on a face or a distance set on the canvas, the face's name is put away: it would cover them.
@@ -1056,28 +1068,38 @@ export function Viewport3D() {
       invalidate.current();
     };
     clearFace.current = () => { hoverKey = ''; showFace(null); };
+    const setHoverEl = (id: string | null) => { if (id !== hover3dRef.current) { hover3dRef.current = id; setHover3d(id); } };
+    let lastHover = 0;
     const onMove = (e: PointerEvent) => {
       const types = faceTypes.current;
-      if (down || hoverFrame) return;
+      if (down) { setHoverEl(null); return; }
+      if (hoverFrame) return;
       const at = { x: e.clientX, y: e.clientY };
-      // No face tool: the reference plane under the cursor, if one is nearest, lights up.
+      // No face tool: the reference plane under the cursor, if one is nearest, lights up; and, while no tool waits, the element.
       if (!types) {
         const planes = s.getObjectByName('ref-planes');
-        if (!planes?.visible || useUi.getState().tool) {
-          if (planeHoverRef.current) { planeHoverRef.current = null; setPlaneHover(null); renderer.domElement.style.cursor = ''; }
-          return;
-        }
+        const planesOn = !!planes?.visible && !useUi.getState().tool;
+        const preOn = useHighlight.getState().preselect && !useUi.getState().tool;
+        if (!planesOn && planeHoverRef.current) { planeHoverRef.current = null; setPlaneHover(null); renderer.domElement.style.cursor = ''; }
+        if (!preOn) setHoverEl(null);
+        if (!planesOn && !preOn) return;
+        // The whole model is asked at most a dozen times a second: a heavy model is not walked on every move.
+        const now = performance.now();
+        if (preOn && !planesOn && now - lastHover < 80) return;
+        lastHover = now;
         hoverFrame = requestAnimationFrame(() => {
           hoverFrame = 0;
           const r = renderer.domElement.getBoundingClientRect();
           ray.setFromCamera(new THREE.Vector2(((at.x - r.left) / r.width) * 2 - 1, -((at.y - r.top) / r.height) * 2 + 1), cam);
           // The quads first (few): only when one is under the cursor is the whole model asked whether it stands in front.
-          const quads = planes.children.filter((c) => c.userData.refPlane);
-          const onQuad = ray.intersectObjects(quads, false).length > 0;
-          const hit = onQuad ? pickAt() : undefined;
-          const id = hit?.object.userData.refPlane ? nodeOfHit(hit) ?? null : null;
-          if (id !== planeHoverRef.current) { planeHoverRef.current = id; setPlaneHover(id); }
-          renderer.domElement.style.cursor = id ? 'pointer' : '';
+          const onQuad = planesOn && ray.intersectObjects(planes!.children.filter((c) => c.userData.refPlane), false).length > 0;
+          const hit = onQuad || preOn ? pickAt() : undefined;
+          if (planesOn) {
+            const id = hit?.object.userData.refPlane ? nodeOfHit(hit) ?? null : null;
+            if (id !== planeHoverRef.current) { planeHoverRef.current = id; setPlaneHover(id); }
+            renderer.domElement.style.cursor = id ? 'pointer' : '';
+          }
+          if (preOn) setHoverEl(hit && !hit.object.userData.refPlane && !hit.object.userData.openingVoid ? nodeOfHit(hit) ?? null : null);
         });
         return;
       }
@@ -1101,6 +1123,8 @@ export function Viewport3D() {
       });
     };
     renderer.domElement.addEventListener('pointermove', onMove);
+    const onLeave = () => setHoverEl(null);
+    renderer.domElement.addEventListener('pointerleave', onLeave);
     // A double click on a reference plane opens its view; on a group's member, the group for editing (docs/groups.md).
     const onDouble = (e: MouseEvent) => {
       if (e.button !== 0 || useUi.getState().tool || faceTypes.current) return;
@@ -1527,6 +1551,7 @@ export function Viewport3D() {
       unregion();
       unstyle();
       renderer.domElement.removeEventListener('pointermove', onMove);
+      renderer.domElement.removeEventListener('pointerleave', onLeave);
       cancelAnimationFrame(hoverFrame);
       faceAsk = -1;
       clearFace.current = () => undefined;
@@ -1734,7 +1759,7 @@ export function Viewport3D() {
     if (layer) { layer.sync(render, meshes); layer.restyle(seen, [...shown], visualStyle, layers); }
     boxDirty.current();
     invalidate.current();
-  }, [render, meshes, layers, selected, expansion, looks, visualStyle, walking, capsShown, drafts3d, fineBodies.on, fineBodies.version]);
+  }, [render, meshes, layers, selected, expansion, looks, visualStyle, walking, capsShown, drafts3d, fineBodies.on, fineBodies.version, selColour]);
 
   // The element a command waiting for one would take (Match properties' targets, decision 490), lit as the selection is
   // while the cursor is on it; its own look back when the cursor leaves (an instanced one is not lit).
@@ -1746,6 +1771,21 @@ export function Viewport3D() {
     invalidate.current();
     return () => { highlight(entry.object, shownSelection(useUi.getState().selected).has(hovered)); invalidate.current(); };
   }, [hovered, render, selected]);
+
+  // Preselection: the element under the cursor lit in the user's preselection colour (an instanced one is not lit, as above).
+  useEffect(() => {
+    if (!preselect && hover3dRef.current) { hover3dRef.current = null; setHover3d(null); }
+    const ids = hover3d && preselect ? [...shownSelection([hover3d])].filter((id) => !shownSelection(selected).has(id)) : [];
+    const objects = ids.map((id) => items.current.get(id)?.object).filter((o) => !!o) as THREE.Object3D[];
+    if (!objects.length) return;
+    for (const o of objects) highlight(o, true, preselectionColour(), 0.3);
+    invalidate.current();
+    return () => {
+      const now = shownSelection(useUi.getState().selected);
+      for (const id of ids) { const o = items.current.get(id)?.object; if (o) highlight(o, now.has(id)); }
+      invalidate.current();
+    };
+  }, [hover3d, preselect, preColour, selColour, render, selected, looks, visualStyle]);
 
   // A walk asked for (a plan's right-click on a room), or ended; the model changed or shown otherwise under a walker.
   useEffect(() => { if (walkStart) walkApi.current.start(walkStart); else walkApi.current.stop(); }, [walkStart]);

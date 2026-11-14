@@ -11063,6 +11063,52 @@ const REVIEW_MARKS = [
   `<< /Type /Annot /Subtype /Text /Rect [${ptX(240)} ${ptY(66)} ${ptX(246)} ${ptY(60)}] /Contents (Add the section mark here) /T (Ana Pop) /M (D:20261030102000+02'00') /NM (review-2) >>`,
   `<< /Type /Annot /Subtype /Ink /Rect [${ptX(60)} ${ptY(230)} ${ptX(120)} ${ptY(190)}] /InkList [[${ptX(60)} ${ptY(190)} ${ptX(80)} ${ptY(215)} ${ptX(100)} ${ptY(200)} ${ptX(120)} ${ptY(230)}]] /Contents (Move the window 300 mm) /T (Mihai) /M (D:20261030104500+02'00') /NM (review-3) >>`,
   `<< /Type /Annot /Subtype /FreeText /Rect [${ptX(260)} ${ptY(210)} ${ptX(360)} ${ptY(196)}] /Contents (12.40 m) /T (Mihai) /Subj (Length Measurement) /M (D:20261030105000+02'00') /NM (review-4) >>`,
+  {
+    // Forum topic 97: the colour field's swatches (recent colours, the project's palette, the user's palettes) and the
+    // preselection and selection colours in File → Preferences → Display.
+    id: 'colour-swatches',
+    touches: ['core'],
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      await t.cmd('project.setColourPalette', { colours: ['#b5532d', '#d9c9a8', '#6b7f5c', '#2f4b6e', '#e8e4da'] });
+      await t.page.evaluate(async () => {
+        const c = await import('/src/app/colours.ts');
+        let list = c.createPalette([], 'Facade');
+        list = c.addColour(list, list[0].id, '#c97b4a');
+        list = c.addColour(list, list[0].id, '#8a9096');
+        list = c.addColour(list, list[0].id, '#3a3d42');
+        c.setPalettes(list);
+        c.rememberColour('#1f9d55');
+      });
+      await t.tool('manage.materials');
+      await t.page.locator('.dialog').getByText('Render', { exact: true }).first().click();
+      await t.page.waitForSelector('[data-field=material-color]', { timeout: 10_000 });
+      await t.page.locator('.material-look-fields .colour-more').first().click();
+      await t.page.waitForSelector('.colour-pop', { timeout: 5000 });
+      t.expect(await t.page.locator('.colour-pop .cp-swatch').count() >= 9, 'the popover lists the recent colour, the project palette and the user palette');
+      await t.shot('colour-swatches', { of: '.colour-pop', pad: 10 });
+      // A swatch of the project's palette is the material's colour.
+      await t.page.locator('.colour-pop .cp-swatch[title="#2f4b6e"]').first().click();
+      await t.until(async () => (await t.nodes()).some((n) => n.type === 'IfcMaterial' && n.name === 'Render' && String(n.props.color).toLowerCase() === '#2f4b6e'), 'the swatch sets the material colour');
+      await t.keys('Escape');
+      await t.ui({ dialog: null });
+      // The colours of the selection and the preselection.
+      await t.ui({ dialog: 'preferences' });
+      await t.page.waitForSelector('[data-testid=preferences]', { timeout: 10_000 });
+      await t.page.locator('[data-field=prefs-display]').click();
+      await t.page.locator('[data-field=prefs-preselect-colour]').fill('#1f9d55');
+      await t.page.locator('[data-field=prefs-select-colour]').fill('#2f4b6e');
+      await t.wait(300);
+      t.expect(await t.page.evaluate(() => JSON.parse(localStorage.getItem('lapin.highlight') ?? '{}').preselectColour) === '#1f9d55', 'the preselection colour is kept');
+      await t.shot('preferences-highlight', { of: '.prefs-dialog', pad: 0 });
+      await t.page.locator('[data-field=prefs-colours]').click();
+      await t.page.waitForSelector('[data-testid=palette-manager]', { timeout: 5000 });
+      await t.shot('preferences-colours', { of: '.prefs-dialog', pad: 0 });
+      await t.page.evaluate(async () => { (await import('/src/app/highlight.ts')).setHighlight({ preselectColour: null, selectColour: null }); });
+      await t.ui({ dialog: null });
+    },
+  },
 ];
 
 /**
