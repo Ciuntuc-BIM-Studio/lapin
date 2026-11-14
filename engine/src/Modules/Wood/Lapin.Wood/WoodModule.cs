@@ -124,19 +124,9 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
 
         // A timber-frame wall's frame elevation (decision 240): a section along its axis through the middle of its core, every
         // member cut, at 1:20, with the frame's dimensions; {id (the wall)} → the view.
-        r.Command("frameView", "Frame elevation", (ctx, a) =>
-        {
-            var wall = ctx.Model.Get((string?)a["id"] ?? "") is { Class: IfcClass.Wall } w ? w : throw new CommandException("Pick a wall.");
-            var wallType = Walls.TypeOf(ctx.Model, wall.Id);
-            if (FrameSpec.Of(wallType) == null && CltSpec.Of(wallType) == null) throw new CommandException("The wall is not a timber frame or CLT: its type is built of layers.");
-            var core = Walls.Section(ctx.Model, wall).First(b => b.Core);
-            var attrs = new JsonObject { ["kind"] = "section", ["scale"] = 20, ["discipline"] = "Structure", [FrameViewKey] = wall.Id, ["depth"] = Math.Round((core.To - core.From) / 2 + 0.01, 4) };
-            var (s, e) = (Walls.Start(wall), Walls.End(wall));
-            SectionPaths.Set(ctx.Model, ctx.Services, attrs, new JsonObject { ["start"] = new JsonArray(s.X, s.Y), ["end"] = new JsonArray(e.X, e.Y) }, create: true);
-            var v = new Entity(ctx.NewId(), Views.Class, $"Frame · {wall.Name}", attrs);
-            ctx.Add(v);
-            return new JsonObject { ["id"] = v.Id };
-        });
+        r.Command("frameView", "Frame elevation", (ctx, a) => new JsonObject { ["id"] = FrameView(ctx, ctx.Model.Get((string?)a["id"] ?? "") is { Class: IfcClass.Wall } w ? w : throw new CommandException("Pick a wall.")).Id });
+        // The frame elevation as an element view role (decision 578), of a timber-frame or CLT wall.
+        r.Service<IElementViewRoles>(new WoodViewRoles());
         r.Service<IScheduleSource>(new TimberSchedule());
 
         // A wall type's frame: {id (the wall type), spec (null: not a timber frame)}.
@@ -251,6 +241,26 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
         ["warnings"] = new JsonArray([.. r.Warnings.Select(w => (JsonNode)w)]),
         ["panels"] = new JsonArray([.. (r.Panels ?? []).Select(p => (JsonNode)new JsonArray(Math.Round(p.U0, 4), Math.Round(p.U1, 4)))]),
     };
+
+    /// <summary>Whether a wall is a timber frame or CLT (its type has a frame or a panel spec): what has a frame elevation.</summary>
+    public static bool Framed(IModelView m, Entity wall) =>
+        wall.Class == IfcClass.Wall && Walls.TypeOf(m, wall.Id) is var t && (FrameSpec.Of(t) != null || CltSpec.Of(t) != null);
+
+    /// <summary>
+    /// A timber-frame or CLT wall's frame elevation (decision 240): a section along its axis through the middle of its core, every
+    /// member cut, at 1:20, with the frame's dimensions.
+    /// </summary>
+    public static Entity FrameView(ICommandContext ctx, Entity wall)
+    {
+        if (!Framed(ctx.Model, wall)) throw new CommandException("The wall is not a timber frame or CLT: its type is built of layers.");
+        var core = Walls.Section(ctx.Model, wall).First(b => b.Core);
+        var attrs = new JsonObject { ["kind"] = "section", ["scale"] = 20, ["discipline"] = "Structure", [FrameViewKey] = wall.Id, ["depth"] = Math.Round((core.To - core.From) / 2 + 0.01, 4) };
+        var (s, e) = (Walls.Start(wall), Walls.End(wall));
+        SectionPaths.Set(ctx.Model, ctx.Services, attrs, new JsonObject { ["start"] = new JsonArray(s.X, s.Y), ["end"] = new JsonArray(e.X, e.Y) }, create: true);
+        var v = new Entity(ctx.NewId(), Views.Class, $"Frame · {wall.Name}", attrs);
+        ctx.Add(v);
+        return v;
+    }
 
     /// <summary>A prefabricated panel's mark (decision 245): the wall's name and the panel's number along it, "W3-P2".</summary>
     public static string PanelMark(Entity wall, int n) => $"{(string.IsNullOrWhiteSpace(wall.Name) ? wall.Id : wall.Name)}-P{n}";
@@ -557,4 +567,13 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
     }
 
     static string Colour(string role) => role switch { "header" or "sill" => "#a87a46", "plate" => "#b48650", _ => "#c99a64" };
+}
+
+/// <summary>A timber-frame or CLT wall's frame elevation as an element view role (decision 578).</summary>
+sealed class WoodViewRoles : IElementViewRoles
+{
+    public IEnumerable<ElementViewRole> Roles() =>
+    [
+        new("wood.frame", "Frame elevation", WoodModule.Framed, v => v.Str(WoodModule.FrameViewKey), (ctx, e, _) => WoodModule.FrameView(ctx, e).Id),
+    ];
 }

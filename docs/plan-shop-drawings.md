@@ -375,7 +375,7 @@ The open repo holds hooks only for premium; open modules never depend on it.
 
 Each stage: engine tests first, its guide page in both languages and its scene, merged on its own.
 
-- **S0 — The frame and element views.** `IElementFrame` with the fallback from the body; frames for steel members,
+- **S0 — The frame and element views.** *Done 14.11.2026* (decision 579; frames for steel members, beams and columns, Studio parts, path elements, columns and footings, `IfcPlate` and the body fallback; timber members inside a framed wall and casework boards are not elements of their own yet and take theirs in S7). `IElementFrame` with the fallback from the body; frames for steel members,
   plates, timber members, walls, floors, Studio parts, casework; `of` on views (orthographic roles and sections at a
   station, read from the frame on every ask); `subject` and `context` in `VisibilityGraphics`; the existing four
   element-anchored views registered as roles. *Tests*: a member turned 37° and tilted gives the same front drawing as

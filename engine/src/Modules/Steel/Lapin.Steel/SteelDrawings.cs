@@ -23,40 +23,48 @@ public static class SteelDrawings
     public static void Register(IModuleRegistry r)
     {
         // A hall's anchor plan: {id (the hall, or one of its members or connections)} → {id (the view)}; the one it has, if any.
-        r.Command("anchorPlan", "Anchor plan", (ctx, a) =>
-        {
-            var hall = HallFor(ctx.Model, (string?)a["id"]);
-            if (ctx.Model.OfClass(Views.Class).FirstOrDefault(v => v.Str(AnchorKey) == hall.Id) is { } had) return new JsonObject { ["id"] = had.Id };
-            var storey = StoreyOf(ctx.Model, hall);
-            var attrs = new JsonObject
-            {
-                ["kind"] = "plan", ["scale"] = 50, ["storeyId"] = storey.Id, ["cutHeight"] = 0.12, ["discipline"] = "Structure", [AnchorKey] = hall.Id,
-            };
-            var v = new Entity(ctx.NewId(), Views.Class, $"Anchor plan · {hall.Name}", attrs);
-            ctx.Add(v);
-            return new JsonObject { ["id"] = v.Id };
-        });
+        r.Command("anchorPlan", "Anchor plan", (ctx, a) => new JsonObject { ["id"] = AnchorPlan(ctx, (string?)a["id"]) });
 
         // A frame's elevation: {id (the hall, or one of its members), frame? (0…, a typical one when not given)} → {id (the view)}.
-        r.Command("frameView", "Frame elevation", (ctx, a) =>
-        {
-            var hall = HallFor(ctx.Model, (string?)a["id"]);
-            var s = Halls.SpecOf(hall);
-            var i = Json.Number(a["frame"]) is { } fi ? (int)fi : (string?)a["id"] is { } mid && ctx.Model.Get(mid)?.Str(Halls.RoleKey) is { } role && Halls.FrameOf(role) is { } of ? of : s.Bays.Count >= 2 ? 1 : 0;
-            if (i < 0 || i > s.Bays.Count) throw new CommandException($"The hall has frames 1 to {s.Bays.Count + 1}.");
-            if (ctx.Model.OfClass(Views.Class).FirstOrDefault(v => v.Str(FrameKey) == hall.Id && (int)v.Num(FrameIndexKey) == i) is { } had) return new JsonObject { ["id"] = had.Id };
-            var y = s.Stations[i];
-            // Its line a little before the frame, looking at it along the hall (a section looks to the left of its line).
-            var (p0, p1) = (Halls.Plan(s, -2.5, y - 0.5), Halls.Plan(s, s.Span + 2.5, y - 0.5));
-            var attrs = new JsonObject { ["kind"] = "section", ["scale"] = 50, ["discipline"] = "Structure", ["depth"] = 1.0, [FrameKey] = hall.Id, [FrameIndexKey] = i };
-            SectionPaths.Set(ctx.Model, ctx.Services, attrs, new JsonObject { ["start"] = new JsonArray(p0.X, p0.Y), ["end"] = new JsonArray(p1.X, p1.Y) }, create: true);
-            var v = new Entity(ctx.NewId(), Views.Class, $"Frame {i + 1} · {hall.Name}", attrs);
-            ctx.Add(v);
-            return new JsonObject { ["id"] = v.Id };
-        });
+        r.Command("frameView", "Frame elevation", (ctx, a) => new JsonObject { ["id"] = FrameView(ctx, (string?)a["id"], Json.Number(a["frame"]) is { } fi ? (int)fi : null) });
 
+        // Both as element view roles (decision 578): a drawing rule asks for a hall's frame elevation or its anchor plan by them.
+        r.Service<IElementViewRoles>(new SteelViewRoles());
         r.Service<IScheduleSource>(new SteelMembersSchedule());
         r.Service<IViewAnnotations>(new SteelViewMarks());
+    }
+
+    /// <summary>The hall's anchor plan (the one it has, else a new one): its id.</summary>
+    public static string AnchorPlan(ICommandContext ctx, string? id)
+    {
+        var hall = HallFor(ctx.Model, id);
+        if (ctx.Model.OfClass(Views.Class).FirstOrDefault(v => v.Str(AnchorKey) == hall.Id) is { } had) return had.Id;
+        var storey = StoreyOf(ctx.Model, hall);
+        var attrs = new JsonObject
+        {
+            ["kind"] = "plan", ["scale"] = 50, ["storeyId"] = storey.Id, ["cutHeight"] = 0.12, ["discipline"] = "Structure", [AnchorKey] = hall.Id,
+        };
+        var v = new Entity(ctx.NewId(), Views.Class, $"Anchor plan · {hall.Name}", attrs);
+        ctx.Add(v);
+        return v.Id;
+    }
+
+    /// <summary>A frame's elevation (the one there is, else a new one): the frame asked, else the member's, else a typical one. Its id.</summary>
+    public static string FrameView(ICommandContext ctx, string? id, int? frame)
+    {
+        var hall = HallFor(ctx.Model, id);
+        var s = Halls.SpecOf(hall);
+        var i = frame ?? (id is { } mid && ctx.Model.Get(mid)?.Str(Halls.RoleKey) is { } role && Halls.FrameOf(role) is { } of ? of : s.Bays.Count >= 2 ? 1 : 0);
+        if (i < 0 || i > s.Bays.Count) throw new CommandException($"The hall has frames 1 to {s.Bays.Count + 1}.");
+        if (ctx.Model.OfClass(Views.Class).FirstOrDefault(v => v.Str(FrameKey) == hall.Id && (int)v.Num(FrameIndexKey) == i) is { } had) return had.Id;
+        var y = s.Stations[i];
+        // Its line a little before the frame, looking at it along the hall (a section looks to the left of its line).
+        var (p0, p1) = (Halls.Plan(s, -2.5, y - 0.5), Halls.Plan(s, s.Span + 2.5, y - 0.5));
+        var attrs = new JsonObject { ["kind"] = "section", ["scale"] = 50, ["discipline"] = "Structure", ["depth"] = 1.0, [FrameKey] = hall.Id, [FrameIndexKey] = i };
+        SectionPaths.Set(ctx.Model, ctx.Services, attrs, new JsonObject { ["start"] = new JsonArray(p0.X, p0.Y), ["end"] = new JsonArray(p1.X, p1.Y) }, create: true);
+        var v = new Entity(ctx.NewId(), Views.Class, $"Frame {i + 1} · {hall.Name}", attrs);
+        ctx.Add(v);
+        return v.Id;
     }
 
     /// <summary>The hall an id names (the hall, or a member or connection of it); with no id, the model's only hall.</summary>
@@ -339,4 +347,17 @@ public sealed class SteelMembersSchedule : IScheduleSource
         grid.Add(["Total", "", "", "", "", "", rows.Sum(r => r.Count).ToString(CultureInfo.InvariantCulture), "", "", N(rows.Sum(r => r.Each * r.Count), "0.0"), N(rows.Sum(r => r.Paint), "0.00")]);
         return new ScheduleGrid(Label, ["Halls", "Mark", "Profile", "Length (mm)", "Start cut", "End cut", "Count", "kg/m", "Each (kg)", "Weight (kg)", "Paint (m²)"], grid);
     }
+}
+
+/// <summary>A hall's frame elevation and anchor plan as element view roles (decision 578), of the hall or any of its members.</summary>
+sealed class SteelViewRoles : IElementViewRoles
+{
+    static bool OfHall(IModelView m, Entity e) => e.Class == Halls.Class || Halls.Of(m, e.Id) != null;
+
+    public IEnumerable<ElementViewRole> Roles() =>
+    [
+        new("steel.frame", "Frame elevation", OfHall, v => v.Str(SteelDrawings.FrameKey),
+            (ctx, e, a) => SteelDrawings.FrameView(ctx, e.Id, Json.Number(a["frame"]) is { } fi ? (int)fi : null)),
+        new("steel.anchorPlan", "Anchor plan", OfHall, v => v.Str(SteelDrawings.AnchorKey), (ctx, e, _) => SteelDrawings.AnchorPlan(ctx, e.Id)),
+    ];
 }

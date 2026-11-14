@@ -58,6 +58,18 @@ public sealed class VisibilityGraphics
     /// <summary>Whether the separate finish elements go with the finish layers in <see cref="Structure"/> (decision 502; false for a project made before, <see cref="ViewStyles.Style.FinishElements"/>).</summary>
     public bool FinishElements { get; }
 
+    /// <summary>
+    /// What the view shows only (its subject, decision 578: an element view's element, or the ids a view keeps), the rest
+    /// hidden or, <see cref="SubjectFaded"/>, halftone; null: the whole model. The first rule of all (<see cref="Hides"/>).
+    /// </summary>
+    public IReadOnlySet<string>? Subject { get; private init; }
+    /// <summary>Whether what is not the subject draws halftone (<c>context: faded</c>) rather than not at all.</summary>
+    public bool SubjectFaded { get; private init; }
+
+    /// <summary>Whether an entity is outside the view's subject: a model element not in it (never a view's own annotation or drafting).</summary>
+    public bool OutsideSubject(Entity e) =>
+        Subject != null && !Subject.Contains(e.Id) && e.Class != IfcClass.Annotation && e.Class != Insets.Class && e.Str("viewId") == null;
+
     VisibilityGraphics(IModelView model, JsonObject? graphics, bool in3d, IReadOnlySet<string>? finishesHidden = null, string structure = "all", bool finishElements = true)
     {
         m = model;
@@ -102,7 +114,11 @@ public sealed class VisibilityGraphics
     public static VisibilityGraphics Of(IModelView m, Entity view)
     {
         var style = StyleOf2d(m, view);
-        return new(m, GraphicsSets.Of(m, view), view.Str("kind") == "3d", FinishRule(view, style), style?.Layers ?? "all", style?.FinishElements ?? true);
+        return new(m, GraphicsSets.Of(m, view), view.Str("kind") == "3d", FinishRule(view, style), style?.Layers ?? "all", style?.FinishElements ?? true)
+        {
+            Subject = ElementViews.SubjectOf(view),
+            SubjectFaded = ElementViews.ContextOf(view) == "faded",
+        };
     }
 
     /// <summary>A view's graphics read as given (a test, an export with graphics of its own).</summary>
@@ -123,6 +139,8 @@ public sealed class VisibilityGraphics
     /// <summary>Whether the view hides an element: the link hidden in this view, its category or IFC class hidden (the link's own when custom).</summary>
     public bool Hides(Entity e)
     {
+        // Outside the view's subject (decision 578): hidden, unless the view shows the rest faded.
+        if (!SubjectFaded && OutsideSubject(e)) return true;
         if (LinkRow(e.Str(Links.Key)) is { } row && True(row["hidden"])) return true;
         var g = RulesFor(e);
         if (in3d ? GraphicsSets.Hides3d(g, e) : GraphicsSets.Hides(g, e)) return true;
@@ -190,12 +208,13 @@ public sealed class VisibilityGraphics
 
     /// <summary>Whether anything in the view's graphics draws an element otherwise than its styles (a filter's colour or lines, a halftone, a transparency).</summary>
     public bool HasOverrides =>
-        HasLinks || (Graphics?["filters"] as JsonArray)?.OfType<JsonObject>().Any(r => r.Count > 2 || r.Any(kv => kv.Key is not ("id" or "hidden"))) == true
+        HasLinks || (SubjectFaded && Subject != null) || (Graphics?["filters"] as JsonArray)?.OfType<JsonObject>().Any(r => r.Count > 2 || r.Any(kv => kv.Key is not ("id" or "hidden"))) == true
         || (Graphics?["categories"] as JsonObject)?.Any(c => c.Value?["halftone"] != null || c.Value?["transparency"] != null) == true;
 
     /// <summary>The colour an element's lines (and its fills, paled) draw in: a filter's colour or halftone, else its category's halftone, else its link's; null: its own.</summary>
     public string? ColorOf(Entity e)
     {
+        if (SubjectFaded && OutsideSubject(e)) return Links.Halftone;
         foreach (var r in FilterRows(e))
         {
             if ((string?)r["color"] is { Length: 7 } c) return c;

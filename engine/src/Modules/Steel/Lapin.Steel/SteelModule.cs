@@ -53,6 +53,10 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
         r.Quantities(Member, Quantities);
         r.Service<IGeometryFilter>(this);
         r.Service<IStickAxes>(this);
+        // A member's own frame for its drawings (decision 578): along its axis from where its holes are measured, the web up.
+        r.Service<IElementFrames>(new SteelFrames());
+        // A member moved, turned or copied in plan keeps its roll about its axis (its rotation is not a plan angle).
+        r.Service<IElementPlacement>(new MemberPlacement());
         r.Service<IIfcSweptBodies>(this);
         r.Service<IIfcSystems>(this);
         r.Service<IIfcConnections>(this);
@@ -435,5 +439,49 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
             }
             else if (js.Count >= 2) yield return new IfcConnection(node.Id, js[0].Id, js[1].Id, node.Name);
         }
+    }
+}
+
+/// <summary>
+/// The frame of a steel member, or a steel beam or column (decision 578): X along its axis, from where its holes are measured
+/// (<see cref="MemberHoles.Origin"/>), Z the section's y (the web up, after the member's turn), so its drawings show it as it
+/// lies on the shop's bench whatever way it stands in the building.
+/// </summary>
+sealed class SteelFrames : IElementFrames
+{
+    public (Vec3 Origin, Vec3 X, Vec3 Z)? AxesOf(IModelView m, Entity e)
+    {
+        if (e.Class is not (SteelModule.Member or IfcClass.Beam or IfcClass.Column) || MemberAxes.Of(m, e) is not { } ax || !MemberAxes.IsSteel(m, e)) return null;
+        return (MemberHoles.Origin(m, e, ax), ax.U, ax.Frame.W);
+    }
+}
+
+/// <summary>
+/// A steel member moved, turned, mirrored or copied in plan (decision 578's tests found it): its ends carried in plan with their
+/// heights (the platform's), its <c>rotation</c> kept, since it is the section's roll about the axis, not an angle in plan.
+/// </summary>
+sealed class MemberPlacement : IElementPlacement
+{
+    public bool Handles(Entity e) => e.Class == SteelModule.Member;
+
+    static void KeepRoll(ICommandContext ctx, string id, Entity before)
+    {
+        if (ctx.Model.Get(id) is not { } after) return;
+        var attrs = after.CloneAttrs();
+        if (before.Attrs["rotation"] is { } r) attrs["rotation"] = r.DeepClone(); else attrs.Remove("rotation");
+        ctx.Replace(after.With(attrs: attrs));
+    }
+
+    public void Transform(ICommandContext ctx, Entity e, Placement2D t, IReadOnlySet<string> moving)
+    {
+        Placement.Own(ctx, e, t, moving);
+        KeepRoll(ctx, e.Id, e);
+    }
+
+    public string? Copy(ICommandContext ctx, Entity e, Placement2D t)
+    {
+        var id = Placement.DeepCopy(ctx, e, t);
+        KeepRoll(ctx, id, e);
+        return id;
     }
 }

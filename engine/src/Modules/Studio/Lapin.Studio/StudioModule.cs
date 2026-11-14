@@ -130,6 +130,8 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
         r.Service<IGeometryFilter>(this);
         r.Service<IProjectUpgrade>(new RampSolidUpgrade());
         r.Service<IElementPlacement>(new StudioPlacement());
+        // A placed part's own axes for its drawings (decision 578).
+        r.Service<IElementFrames>(new PartFrames());
         // Raised or lowered by a 3D move: a move step (docs/plan-3d-modelling.md).
         r.Service<IElementRise>(new StudioRise());
         r.Service<IStoreyShift>(new StudioStoreyShift());

@@ -847,3 +847,20 @@ public sealed class FamilyPartUpgrade : IProjectUpgrade
         return (es, rs);
     }
 }
+
+/// <summary>
+/// A placed part's frame (decision 578): its own axes as it is placed, from its point (<c>at</c>, <c>z</c> over its storey),
+/// x turned by its <c>rotation</c> (and turned over when mirrored), z up: a part's drawings show it in the axes it was made in.
+/// </summary>
+sealed class PartFrames : IElementFrames
+{
+    public (Vec3 Origin, Vec3 X, Vec3 Z)? AxesOf(IModelView m, Entity e)
+    {
+        if (!Parts.IsInstance(e) || !StudioModule.Classes.Contains(e.Class) && e.Str("exportAs") == null) return null;
+        var at = Args.TryPoint(e.Attrs["at"]) ?? default;
+        var z = (Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0) + e.Num("z");
+        var r = e.Num("rotation") * Math.PI / 180;
+        var x = new Vec3(Math.Cos(r), Math.Sin(r), 0);
+        return (new Vec3(at.X, at.Y, z), e.Bool("mirror") ? -x : x, Vec3.UnitZ);
+    }
+}

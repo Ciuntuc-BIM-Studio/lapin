@@ -67,6 +67,9 @@ public static class View3dDrawings
             }).ToList();
         }
         if (SectionBoxOf(view) is { } box) parts = Keep(parts, box.ToBox, box.Min, box.Max, box.ToWorld, booleans);
+        // An element's iso (decision 578): from its own frame's south-west, orthographic, round its box's middle.
+        if (ElementViews.IsoFrame(m, services, view, parts) is { } iso)
+            return (new ViewSpec("3d", iso, false, double.PositiveInfinity, Hidden: false), parts);
         var camera = CameraOf(view, Bounds(parts));
         var (right, up, look) = (camera.Right, camera.Up, camera.Look);
         if (camera.Ortho)
