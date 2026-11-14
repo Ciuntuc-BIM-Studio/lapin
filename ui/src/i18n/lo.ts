@@ -3595,6 +3595,12 @@ export const LO: Record<string, string> = {
   "Renumber": "ລຳດັບໃໝ່",
   "The axes already have those labels.": "ແກນມີປ້າຍເຫຼົ່ານັ້ນແລ້ວ.",
   "Renumber grid axes": "ລຳດັບແກນຕາຂ່າຍໃໝ່",
+  "A copy of this type, with its own layers, to change": "ສຳເນົາຂອງປະເພດນີ້, ພ້ອມຊັ້ນຂອງມັນເອງ, ເພື່ອປ່ຽນ",
+  "Move the type up its list": "ຍ້າຍປະເພດຂຶ້ນໃນລາຍການ",
+  "Move the type down its list": "ຍ້າຍປະເພດລົງໃນລາຍການ",
+  "Duplicate type": "ສຳເນົາປະເພດ",
+  "Move type": "ຍ້າຍປະເພດ",
+  "Order types": "ຈັດລຳດັບປະເພດ",
 };
 
 /** Phrases with a number or a name in them. */

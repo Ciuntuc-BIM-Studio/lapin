@@ -3545,6 +3545,12 @@ export const FR: Record<string, string> = {
   "Renumber": "Renuméroter",
   "The axes already have those labels.": "Les axes ont déjà ces libellés.",
   "Renumber grid axes": "Renuméroter les axes de la grille",
+  "A copy of this type, with its own layers, to change": "Une copie de ce type, avec ses propres couches, à modifier",
+  "Move the type up its list": "Monter le type dans sa liste",
+  "Move the type down its list": "Descendre le type dans sa liste",
+  "Duplicate type": "Dupliquer le type",
+  "Move type": "Déplacer le type",
+  "Order types": "Ordonner les types",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

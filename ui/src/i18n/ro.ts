@@ -3537,6 +3537,12 @@ export const RO: Record<string, string> = {
   "Renumber": "Renumerotează",
   "The axes already have those labels.": "Axele au deja aceste etichete.",
   "Renumber grid axes": "Renumerotează axele rețelei",
+  "A copy of this type, with its own layers, to change": "O copie a acestui tip, cu straturile ei, de modificat",
+  "Move the type up its list": "Mută tipul în sus în listă",
+  "Move the type down its list": "Mută tipul în jos în listă",
+  "Duplicate type": "Duplică tipul",
+  "Move type": "Mută tipul",
+  "Order types": "Ordonează tipurile",
 };
 
 /** Phrases with a number or a name in them. */

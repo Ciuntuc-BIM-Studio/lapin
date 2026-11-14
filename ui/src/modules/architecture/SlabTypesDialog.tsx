@@ -18,6 +18,7 @@ import { MaterialPicker } from '../core/MaterialPicker';
 import { TypeFiles } from './TypeFiles';
 import { moveLayer, reverseLayers } from './reverseLayers';
 import { t } from '../../i18n';
+import { TypeListActions, endsOf } from '../../shell/TypeListActions';
 
 /** A layer as the editor holds it: the thickness in metres; its priority (null: its material's, else 50 for the core and 0 for the rest) and category (null: its material's). */
 interface Row { material: string; thickness: number; core: boolean; note?: string; priority?: number | null; category?: string | null }
@@ -85,6 +86,8 @@ export function SlabTypesDialog() {
           </ul>
           <div className="type-edit">
             <label className="field-line"><span className="eyebrow">Name</span><input value={name} placeholder="(from its core and thickness)" onChange={(e) => setName(e.target.value)} /></label>
+            {/* Duplicate, and the type's place in every list of floor types (forum #71). */}
+            <TypeListActions id={editing} onDuplicated={setEditing} {...endsOf(types, editing)} />
             <p className="muted small">Layers from the top down.</p>
             <table className="layer-edit">
               <thead><tr><th>Material</th><th>Thickness</th><th>Core</th><th title={PRIORITY_TIP}>Priority</th><th title={CATEGORY_TIP}>Category</th><th title="How the layer is laid in this build-up (a build-up tag writes it)">Note</th><th /></tr></thead>

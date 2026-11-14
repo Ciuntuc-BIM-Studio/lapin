@@ -3539,6 +3539,12 @@ export const PT: Record<string, string> = {
   "Renumber": "Renumerar",
   "The axes already have those labels.": "Os eixos já têm esses rótulos.",
   "Renumber grid axes": "Renumerar os eixos da grade",
+  "A copy of this type, with its own layers, to change": "Uma cópia deste tipo, com as suas próprias camadas, para alterar",
+  "Move the type up its list": "Subir o tipo na sua lista",
+  "Move the type down its list": "Descer o tipo na sua lista",
+  "Duplicate type": "Duplicar tipo",
+  "Move type": "Mover tipo",
+  "Order types": "Ordenar tipos",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

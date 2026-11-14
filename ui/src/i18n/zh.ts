@@ -3533,6 +3533,12 @@ export const ZH: Record<string, string> = {
   "Renumber": "重新编号",
   "The axes already have those labels.": "轴线已经是这些标签。",
   "Renumber grid axes": "重新编号轴网轴线",
+  "A copy of this type, with its own layers, to change": "此类型的副本，带有自己的层，可供修改",
+  "Move the type up its list": "在列表中上移此类型",
+  "Move the type down its list": "在列表中下移此类型",
+  "Duplicate type": "复制类型",
+  "Move type": "移动类型",
+  "Order types": "排序类型",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

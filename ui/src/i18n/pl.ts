@@ -3542,6 +3542,12 @@ export const PL: Record<string, string> = {
   "Renumber": "Przenumeruj",
   "The axes already have those labels.": "Osie mają już te etykiety.",
   "Renumber grid axes": "Przenumeruj osie siatki",
+  "A copy of this type, with its own layers, to change": "Kopia tego typu z własnymi warstwami, do zmiany",
+  "Move the type up its list": "Przesuń typ w górę listy",
+  "Move the type down its list": "Przesuń typ w dół listy",
+  "Duplicate type": "Duplikuj typ",
+  "Move type": "Przesuń typ",
+  "Order types": "Uporządkuj typy",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

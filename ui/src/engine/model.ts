@@ -17,7 +17,29 @@ export const num = (n: NodeDto | undefined, key: string, fallback = 0): number =
   return typeof v === 'number' ? v : fallback;
 };
 
-export const ofClass = (s: ModelState, cls: string): NodeDto[] => [...s.nodes.values()].filter((n) => n.type === cls);
+/**
+ * The nodes of a class. A class of types (…Type) comes in the project's order for it (forum #71, the engine's
+ * TypeOrder.Ordered): those the project's typeOrder lists, in that order, then the others as they were made, so
+ * every type list and picker reads the order the user gave.
+ */
+export const ofClass = (s: ModelState, cls: string): NodeDto[] => {
+  const out: NodeDto[] = [];
+  let project: NodeDto | undefined;
+  for (const n of s.nodes.values()) {
+    if (n.type === cls) out.push(n);
+    else if (n.type === 'IfcProject' && !project) project = n;
+  }
+  return cls.endsWith('Type') ? inTypeOrder(out, project?.props.typeOrder, cls) : out;
+};
+
+/** Types in the order a project's typeOrder ({class: [ids]}) gives their class: those it lists first, in its order, then the rest as they came. */
+export function inTypeOrder(types: NodeDto[], typeOrder: unknown, cls: string): NodeDto[] {
+  const list = typeOrder && typeof typeOrder === 'object' ? (typeOrder as Record<string, unknown>)[cls] : undefined;
+  if (!Array.isArray(list) || list.length === 0) return types;
+  const rank = new Map<string, number>();
+  list.forEach((id, i) => { if (typeof id === 'string' && !rank.has(id)) rank.set(id, i); });
+  return types.map((n, i) => ({ n, i })).sort((a, b) => (rank.get(a.n.id) ?? Infinity) - (rank.get(b.n.id) ?? Infinity) || a.i - b.i).map((x) => x.n);
+}
 
 /** The storeys, lowest first. */
 export const storeys = (s: ModelState): NodeDto[] => ofClass(s, 'IfcBuildingStorey').sort((a, b) => num(a, 'elevation') - num(b, 'elevation'));

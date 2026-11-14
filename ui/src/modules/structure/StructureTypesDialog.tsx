@@ -25,6 +25,7 @@ import { ProfilePickerField } from '../core/profileLibraries/ProfilePickerField'
 import { useLibraryPick } from '../core/profileLibraries/useLibraryPick';
 import { SectionGlyph } from '../steel/SteelTypesDialog';
 import type { ProfileJson } from '../core/profiles';
+import { TypeListActions, endsOf } from '../../shell/TypeListActions';
 
 type Kind = 'column' | 'beam' | 'strip' | 'pad';
 type Shape = 'rectangle' | 'circle' | 'polygon' | 'library';
@@ -160,6 +161,8 @@ export function StructureTypesDialog() {
               {edited && <button type="button" className="btn small" onClick={fresh}>New type</button>}
             </div>
             <label className="field-line"><span className="eyebrow">Name</span><input value={name} placeholder="(from its size)" onChange={(e) => setName(e.target.value)} /></label>
+            {/* Duplicate, and the type's place in every list of its types (forum #71). */}
+            <TypeListActions id={edited?.id ?? null} onDuplicated={(id) => { const t = useSession.getState().nodes.get(id); if (t) pick(t); }} {...endsOf(list, edited?.id ?? null)} />
             {(kind === 'column' || kind === 'beam') && <>
               <label className="field-line"><span className="eyebrow">Section</span>
                 <select value={shape} onChange={(e) => setShape(e.target.value as Shape)}><option value="rectangle">Rectangle</option><option value="circle">Circle</option>

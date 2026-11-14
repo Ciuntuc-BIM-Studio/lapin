@@ -3536,6 +3536,12 @@ export const DA: Record<string, string> = {
   "Renumber": "Omnummerér",
   "The axes already have those labels.": "Akserne har allerede de etiketter.",
   "Renumber grid axes": "Omnummerér netakser",
+  "A copy of this type, with its own layers, to change": "En kopi af denne type med egne lag, til at ændre",
+  "Move the type up its list": "Flyt typen op i listen",
+  "Move the type down its list": "Flyt typen ned i listen",
+  "Duplicate type": "Duplikér type",
+  "Move type": "Flyt type",
+  "Order types": "Ordn typer",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
