@@ -6,7 +6,7 @@
  */
 
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
-import { AlignHorizontalJustifyCenter, ChevronRight, Code2, EyeOff, Search, Trash2 } from 'lucide-react';
+import { AlignHorizontalJustifyCenter, ChevronRight, Code2, EyeOff, ListOrdered, Search, Trash2 } from 'lucide-react';
 import { Cell, LengthCell } from './cells';
 import { panelFocus, panelKeys, parseNumber } from './cellKeys';
 import { useUi } from '../app/store';
@@ -218,6 +218,7 @@ function SelectionPanel({ selection }: { selection: string | null }) {
             // `to`: the axis selected is the reference the others line up with (an engine that does not read it lines them up as before).
             void execute('drafting.alignAxes', { gridId: axis.gridId, to: axis.tag, ...(tags.length > 1 ? { tags } : {}) });
           }}><AlignHorizontalJustifyCenter size={14} />Line up the axes</button></div>
+        <div className="pad"><button type="button" className="btn" title="The axes renumbered in order across them; with several axes selected, only those" onClick={() => useUi.setState({ dialog: 'renumberAxes' })}><ListOrdered size={14} />Renumber axes…</button></div>
         <div className="pad"><button type="button" className="btn" onClick={() => void execute('element.delete', { ids: [selection] }).then(() => useUi.setState({ selection: null, selected: [] }))}><Trash2 size={14} />Delete axis</button></div>
       </aside>
     );

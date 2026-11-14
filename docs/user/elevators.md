@@ -1,7 +1,7 @@
 ---
 title: Elevators
 order: 43
-summary: Elevators from a configurator of twelve kinds sized after EN 81-20 and EN 81-70, with their shaft, pit, headroom, machine room, car and landing doors, the openings in the floors they pass through, plans on every storey, a schedule and IFC.
+summary: Elevators from a configurator of twelve kinds sized after EN 81-20 and EN 81-70, and circular vacuum lifts for houses, with their shaft, pit, headroom, machine room, car and landing doors, the openings in the floors they pass through, plans on every storey, a schedule and IFC.
 ---
 
 ## Placing an elevator
@@ -42,6 +42,28 @@ On the right, three tabs:
 The preview shows the plan at the lowest stop and, on the other tabs, a section through the car with every stop (served stops in red, those it passes dashed). Under it, what EN 81 says: a car larger than its rated load allows, more persons than the load or the area carries, an accessible car or door too small, a hydraulic lift travelling more than about 18 m. Below are the shaft's clear and outer sizes, the car's area against what its load allows, the stops, the travel and the floors the shaft opens.
 
 **Apply** changes the elevator in one undo step. **Save as style…** keeps it as a style of the project; **Update style** saves it again and every elevator of that style follows. A project style can be renamed or deleted (its elevators keep how they are).
+
+## A circular vacuum lift
+
+![The configurator of a circular vacuum lift: its tube, its landings' doors each facing its own way](shots/vacuum-lift-configurator.webp)
+
+For a house, a **vacuum lift** is a transparent tube with a cabin that air lifts: no shaft, no pit and no machine room. Three styles in the bar's **Vacuum** group put one down:
+
+| Style | Persons | Rated load | Tube (outside) | Door |
+|---|---|---|---|---|
+| Vacuum lift, one person | 1 | 160 kg | Ø 750 | curved sliding |
+| Vacuum lift, two persons | 2 | 205 kg | Ø 933 | curved sliding |
+| Vacuum lift, wheelchair | 2 | 240 kg | Ø 1300 | swing |
+
+Their values are indicative: the maker's data and EN 81-41 decide. In the configurator:
+
+- **Car and load**: the tube's outside diameter (the buttons Ø 750, Ø 933 and Ø 1300, or any you type), the cabin's diameter (120 mm less than the tube until you type your own), the cabin's height, the tube in polycarbonate or glass, the colours of the tube and the cabin.
+- **Doors and stops**: the landing doors (curved sliding, swing or none, an open landing), their width, height and frame, the cabin's door (curved sliding or none), the angle the doors face (0° the front, 90° the right). Each stop it serves has its own list beside it: **As the doors**, or an angle of its own, so a door can face another room on each floor.
+- **Tube and frame**: the frame's columns (how many and their size; two stand beside the lowest door, the others round the tube, and one that would stand in another landing's door is left out), the frame's colour, the ring beam in each floor it passes, the head unit on top and the base ring it stands on.
+
+The tube stands on its base ring on the lowest floor and opens a round hole in each floor above, its ring beam filling it; when the head unit rises over the next floor, that floor opens too. In plan the tube and the columns are cut, the cabin is a circle with its cross, a sliding door shows its panel and, dashed, where it slides, a swing door its leaf open with its swing.
+
+![A vacuum lift in 3D, its tube rising through the first floor](shots/vacuum-lift-3d.webp)
 
 ## In the drawings
 

@@ -21,7 +21,7 @@ Select a room by clicking its stamp or anywhere inside it. In the properties pan
 - **Name** and **Number.** New rooms are numbered by level: 101, 102… on the ground floor. A room's name is its function's until you give it one of your own; emptied, it goes back to the function.
 - **Function**, **Department** and **Floor finish.** Type anything, or pick a value other rooms already have.
 - **Height.** Empty means the level's height.
-- **Own colour** and **Own hatch** override the colour scheme for this one room.
+- **Own colour** and **Own hatch** override the colour scheme for this one room, and **Own opacity** its colour's opacity (empty: as its scheme).
 
 The quantities below show the room's net area (without the columns; with a finish, to the finish: see [Room finishes](#room-finishes)), its perimeter and its volume. Drag the grip on the stamp to move the stamp.
 
@@ -59,7 +59,7 @@ Rooms show their area to the hundredth of a square metre. **Manage → Drafting 
 
 **View → Room colours** colours the rooms of a plan. Pick a scheme, choose what it colours by (**Function**, **Name**, **Department**, **Number** or **Floor finish**), and set **This plan shows** to the scheme. Each value the rooms have gets a row with:
 
-- a **Colour**,
+- a **Colour**, and its **Opacity** (0–100 %; empty is opaque): below 100 % the plan's lines show through it, which keeps a plan readable on the dark theme's background,
 - a **Hatch** from the project's patterns, with its **Scale** and **Ink** colour,
 - and a preview of how it looks.
 
@@ -67,7 +67,7 @@ Rooms show their area to the hundredth of a square metre. **Manage → Drafting 
 
 ![The Room colours dialog](shots/room-colors.webp)
 
-The colours are drawn under the walls, the furniture and the door swings, so the plan stays readable. They print on sheets and go into PDF and DXF exports. A new plan shows no room colours until you choose a scheme for it, in **Room colours** or in the plan's properties.
+The colours are drawn under the walls, the furniture and the door swings, so the plan stays readable. They print on sheets and go into PDF and DXF exports; the PDF keeps their opacity, the DXF draws them opaque. A new plan shows no room colours until you choose a scheme for it, in **Room colours** or in the plan's properties.
 
 ## Colour legend
 

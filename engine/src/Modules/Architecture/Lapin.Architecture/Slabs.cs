@@ -134,7 +134,9 @@ public static class Slabs
             }).OfType<GeometryPart>().ToList();
         var plan = new List<PlanItem> { new("outline", true, contour) };
         plan.AddRange(holes.Select(h => new PlanItem("outline", true, h)));
-        return new ElementGeometry(parts, plan, contour, problems.Count > 0 ? problems : null);
+        var built = new ElementGeometry(parts, plan, contour, problems.Count > 0 ? problems : null);
+        // A beam-and-block floor (report #134): its core as joists, blocks and cast concrete.
+        return BeamBlock.Of(m, slab) is { } bb ? BeamBlock.Apply(slab, built, m, services, bb) : built;
     }
 
     /// <summary>
@@ -219,6 +221,8 @@ public static class Slabs
     public static IEnumerable<QuantitySet> Quantities(Entity slab, ElementGeometry? g, IModelView m)
     {
         if (g == null || g.Parts.Count == 0) yield break;
+        if (BeamBlock.Of(m, slab) is { } bb)
+            foreach (var q in BeamBlock.Quantities(bb, g, m)) yield return q;
         var contour = Contour(slab);
         var area = Math.Abs(Polygon2.SignedArea(contour));
         var section = Section(m, slab);

@@ -2,6 +2,7 @@
  * Transport (docs/plan-elevators.md, testers' reports #54 and #97): elevators in Architecture → Elevators. The Elevator
  * tool puts one down at a click in the style the bar says (the catalogue's twelve kinds or the project's own), from the
  * plan's storey to the highest, and opens its configurator; the Elevator schedule; Shaft openings for floors drawn after.
+ * The circular vacuum lifts of report #149 are styles of the same tool.
  */
 
 import { ListOrdered, SquareDashed } from 'lucide-react';
@@ -97,7 +98,7 @@ const openings: ToolDef = {
 const transport: LapinModule = {
   id: 'transport',
   name: 'Transport',
-  summary: 'Elevators from a configurator of twelve kinds after EN 81-20 and EN 81-70: the shaft over the storeys it serves with its pit, headroom and machine room, the car, the landing doors, the openings in the floors, plans, schedule, cost and IFC.',
+  summary: 'Elevators from a configurator of twelve kinds after EN 81-20 and EN 81-70: the shaft over the storeys it serves with its pit, headroom and machine room, the car, the landing doors, the openings in the floors, plans, schedule, cost and IFC; circular vacuum lifts for houses too.',
   tabs: [{
     id: 'architecture', label: 'Architecture', order: 20,
     groups: [{ label: 'Elevators', tools: [elevator], small: [schedule, openings] }],

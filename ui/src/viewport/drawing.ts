@@ -65,6 +65,24 @@ export function screenFill(color: string | null | undefined, onDark: boolean): s
   return 0.2126 * lin(0) + 0.7152 * lin(2) + 0.0722 * lin(4) > 0.9 ? DARK_PAPER : screenInk(color, onDark);
 }
 
+/**
+ * A colour's opacity as drawings carry it (forum #79: a room colour's, #rrggbbaa, as the engine's HexColor writes it):
+ * the colour alone and its opacity 0–1 (1 for any other colour).
+ */
+export function splitAlpha(color: string | null | undefined): { color: string | null; opacity: number } {
+  if (!color) return { color: color ?? null, opacity: 1 };
+  const m = /^#([0-9a-f]{6})([0-9a-f]{2})$/i.exec(color.trim());
+  return m ? { color: `#${m[1]}`, opacity: Math.round((parseInt(m[2], 16) / 255) * 1000) / 1000 } : { color, opacity: 1 };
+}
+
+/** #rrggbb with an opacity in per cent: #rrggbbaa below 100 %, the colour alone otherwise (the engine's ColorSchemes.WithOpacity). */
+export function withOpacity(color: string, percent: number | null | undefined): string {
+  const base = splitAlpha(color).color ?? color;
+  if (percent == null || !Number.isFinite(percent) || percent >= 100 || !/^#[0-9a-f]{6}$/i.test(base)) return base;
+  const a = Math.round(Math.max(0, percent) / 100 * 255);
+  return `${base}${a.toString(16).padStart(2, '0')}`;
+}
+
 export interface DrawingDto {
   kind?: string;
   scale?: number;

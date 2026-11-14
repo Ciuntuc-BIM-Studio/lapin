@@ -33,3 +33,18 @@ export function gridLines(s: GridSpec): { a: { x: number; y: number }; b: { x: n
   if (s.y.length || !s.x.length) for (const q of stations(s.y)) out.push({ a: w(-s.extend, q), b: w(width + s.extend, q), across: false });
   return out;
 }
+
+/** Selected axes (grid#tag) after a renumbering (forum #75): each one's new tag, the other selections as they were. */
+export function renumberedSelection(selected: string[], gridId: string, tags: Record<string, string>): string[] {
+  const hash = `${gridId}#`;
+  return selected.map((s) => (s.startsWith(hash) && tags[s.slice(hash.length)] ? hash + tags[s.slice(hash.length)] : s));
+}
+
+/** The selected axes of one grid (grid#tag): that grid and their tags, or null when none or several grids are selected. */
+export function selectedAxes(selected: string[]): { gridId: string; tags: string[] } | null {
+  const axes = selected.filter((s) => s.indexOf('#') > 0);
+  if (axes.length === 0) return null;
+  const gridId = axes[0].slice(0, axes[0].indexOf('#'));
+  if (axes.some((s) => !s.startsWith(`${gridId}#`))) return null;
+  return { gridId, tags: axes.map((s) => s.slice(gridId.length + 1)) };
+}

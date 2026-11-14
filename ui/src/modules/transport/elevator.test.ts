@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NodeDto } from '../../engine/protocol';
-import { elevatorGrips, groupStyles, itemPath, planBox, stopsBetween, styleAbout, toggleStop, type ElevatorStyle } from './elevator';
+import { elevatorGrips, groupStyles, isVacuum, itemPath, landingAngle, planBox, setLandingAngle, stopsBetween, styleAbout, toggleStop, type ElevatorStyle } from './elevator';
 
 const node = (id: string, type: string, props: Record<string, unknown>, name = id): NodeDto => ({ id, type, name, props } as unknown as NodeDto);
 
@@ -36,5 +36,15 @@ describe('elevators', () => {
     const i = { kind: 'wall', closed: true, points: [0, 0, 2, 0, 2, 1] };
     expect(itemPath(i)).toBe('M0.0000 0.0000 L2.0000 0.0000 L2.0000 -1.0000 Z');
     expect(planBox([i], 0)).toEqual([0, -1, 2, 1]);
+  });
+
+  it('says a vacuum lift by its tube, and turns its doors landing by landing', () => {
+    const v = { drive: 'vacuum', persons: 2, load: 205, tubeDiameter: 0.933, doorAngle: 90, doorAngles: { s1: 180 } };
+    expect(isVacuum(v)).toBe(true);
+    expect(styleAbout(v)).toBe('2 p · 205 kg · Ø 933');
+    expect(landingAngle(v, 's1')).toBe(180);
+    expect(landingAngle(v, 's0')).toBe(90);
+    expect(setLandingAngle(v.doorAngles, 's2', -90)).toEqual({ s1: 180, s2: 270 });
+    expect(setLandingAngle(v.doorAngles, 's1', null)).toBeNull();
   });
 });

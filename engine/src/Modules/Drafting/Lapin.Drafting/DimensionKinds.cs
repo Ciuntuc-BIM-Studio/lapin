@@ -195,7 +195,7 @@ public static class DimensionKinds
                     mk.Line(from, to, "DIMENSION", w, color);
                     Arrow(onCircle, dir);
                     if (diameter) Arrow(centre - dir * r, -dir);
-                    var s = (diameter ? "Ø" : "R") + Standards.FormatDimension(value, style.Unit, style.Precision);
+                    var s = (diameter ? "Ø" : "R") + Standards.FormatDimension(value, style.Unit, style.Precision, style.SuppressesZeros);
                     var ang = Math.Atan2(dir.Y, dir.X) * 180 / Math.PI;
                     Label(to + dir * (style.TextGap * mm), s, ang, dir.X >= 0 ? "start" : "end", "middle");
                     mk.Snaps.AddRange([centre, onCircle]);
@@ -218,7 +218,7 @@ public static class DimensionKinds
                     Arrow(pts[0], (pts[0] - pts[1]).Normalized());
                     Arrow(pts[^1], (pts[^1] - pts[^2]).Normalized());
                     var mid = s0 + sw / 2;
-                    Label(centre + new Vec2(Math.Cos(mid), Math.Sin(mid)) * (off + style.TextGap * mm), "⌒" + Standards.FormatDimension(value, style.Unit, style.Precision), mid * 180 / Math.PI - 90);
+                    Label(centre + new Vec2(Math.Cos(mid), Math.Sin(mid)) * (off + style.TextGap * mm), "⌒" + Standards.FormatDimension(value, style.Unit, style.Precision, style.SuppressesZeros), mid * 180 / Math.PI - 90);
                     break;
                 }
                 case "slope":
@@ -275,7 +275,7 @@ public static class DimensionKinds
                 {
                     mk.Line(a, at, "DIMENSION", w, color);
                     var dir = (at - a).Length > 1e-9 ? (at - a).Normalized() : new Vec2(0, 1);
-                    Label(at + dir * (style.TextGap * mm), Standards.FormatDimension(value, style.Unit, style.Precision), Math.Atan2(dir.Y, dir.X) * 180 / Math.PI, dir.X >= 0 ? "start" : "end", "middle");
+                    Label(at + dir * (style.TextGap * mm), Standards.FormatDimension(value, style.Unit, style.Precision, style.SuppressesZeros), Math.Atan2(dir.Y, dir.X) * 180 / Math.PI, dir.X >= 0 ? "start" : "end", "middle");
                     mk.Snaps.Add(a);
                     break;
                 }

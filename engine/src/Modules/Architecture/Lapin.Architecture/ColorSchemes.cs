@@ -9,8 +9,16 @@ using Lapin.Platform;
 
 namespace Lapin.Architecture;
 
-/// <summary>One value of a colour scheme and how its rooms look: a fill colour, a hatch (its scale on paper and its colour), either or both.</summary>
-public sealed record SchemeEntry(string Value, string? Color, string? Hatch = null, double HatchScale = 1, string? HatchColor = null);
+/// <summary>
+/// One value of a colour scheme and how its rooms look: a fill colour, a hatch (its scale on paper and its colour), either or both.
+/// <see cref="Opacity"/> (forum #79): the fill colour's opacity, 0–100 % (null: opaque), so the plan's lines show through it
+/// on a dark screen as on paper; the PDF keeps it.
+/// </summary>
+public sealed record SchemeEntry(string Value, string? Color, string? Hatch = null, double HatchScale = 1, string? HatchColor = null, double? Opacity = null)
+{
+    /// <summary>The fill as drawings carry it: the colour, with its opacity (#rrggbbaa) when it has one below 100 %.</summary>
+    public string? Fill => ColorSchemes.WithOpacity(Color, Opacity);
+}
 
 /// <summary>A colour scheme: rooms coloured by one of their fields (their function, name, department…), one entry per value.</summary>
 public sealed record ColorScheme(string Id, string Name, string By, IReadOnlyList<SchemeEntry> Entries)
@@ -29,6 +37,12 @@ public sealed record ColorScheme(string Id, string Name, string By, IReadOnlyLis
 public static class ColorSchemes
 {
     public const string Key = "colorSchemes";
+
+    /// <summary>An opacity in per cent, 0–100, read tolerantly; null when it is not one or is 100 (opaque).</summary>
+    public static double? Opacity(JsonNode? v) => Json.Number(v) is { } d && double.IsFinite(d) && d >= 0 && d < 100 ? Math.Round(d, 1) : null;
+
+    /// <summary>A colour with an opacity in per cent (#rrggbbaa below 100 %); the colour alone when it has none.</summary>
+    public static string? WithOpacity(string? color, double? opacity) => color != null && opacity is { } o && o < 100 ? HexColor.WithAlpha(color, o / 100) : color;
     public const string Legend = "LEGEND";
 
     /// <summary>Soft colours that read under black linework and print well; new values take the first one not used yet.</summary>
@@ -60,7 +74,7 @@ public static class ColorSchemes
         if (n is not JsonObject o || ((string?)o["value"])?.Trim() is not { } value) return null;
         static string? Colour(JsonNode? c) => (string?)c is { Length: 7 } s && s[0] == '#' && s[1..].All(Uri.IsHexDigit) ? s.ToLowerInvariant() : null;
         return new SchemeEntry(value, Colour(o["color"]), ((string?)o["hatch"])?.Trim() is { Length: > 0 } h ? h : null,
-            Json.Number(o["hatchScale"]) is { } sc && sc > 0 ? sc : 1, Colour(o["hatchColor"]));
+            Json.Number(o["hatchScale"]) is { } sc && sc > 0 ? sc : 1, Colour(o["hatchColor"]), Opacity(o["opacity"]));
     }
 
     static ColorScheme? Read(JsonNode? n)
@@ -76,6 +90,7 @@ public static class ColorSchemes
         if (e.Color != null) o["color"] = e.Color;
         if (e.Hatch != null) { o["hatch"] = e.Hatch; o["hatchScale"] = e.HatchScale; }
         if (e.HatchColor != null) o["hatchColor"] = e.HatchColor;
+        if (e.Opacity != null) o["opacity"] = e.Opacity;
         return o;
     }
 
@@ -125,13 +140,15 @@ public static class ColorSchemes
         };
     }
 
-    /// <summary>How a room looks under a scheme: its own colour and hatch over its entry's.</summary>
+    /// <summary>How a room looks under a scheme: its own colour and hatch over its entry's; the colour with its opacity (#rrggbbaa).</summary>
     public sealed record Look(string? Color, string? Hatch, double HatchScale, string HatchColor);
 
     public static Look? LookOf(ColorScheme s, Entity room)
     {
         var e = s.Entry(ValueOf(room, s.By));
-        var color = room.Str("fillColor") ?? e?.Color;
+        // A room's own opacity (fillOpacity, %) over its entry's (forum #79); its own colour takes its entry's opacity unless it has one.
+        var opacity = room.Attrs.ContainsKey("fillOpacity") ? Opacity(room.Attrs["fillOpacity"]) : e?.Opacity;
+        var color = WithOpacity(room.Str("fillColor") ?? e?.Color, opacity);
         var hatch = room.Str("fillHatch") ?? e?.Hatch;
         if (color == null && hatch == null) return null;
         var scale = room.Str("fillHatch") != null ? room.NumOrNull("hatchScale") ?? 1 : e?.HatchScale ?? 1;
@@ -158,7 +175,7 @@ public static class ColorSchemes
 
     static IReadOnlyList<SchemeEntry> ParseEntries(JsonNode? n) =>
         n is JsonArray arr ? arr.Select(ReadEntry).OfType<SchemeEntry>().GroupBy(e => e.Value, StringComparer.OrdinalIgnoreCase).Select(g => g.Last()).ToList()
-            : throw new CommandException("A scheme's entries are a list of {value, color, hatch, hatchScale, hatchColor}.");
+            : throw new CommandException("A scheme's entries are a list of {value, color, opacity, hatch, hatchScale, hatchColor}.");
 
     static string CheckBy(string? by) => by is { Length: > 0 } b && (Fields.Any(f => f.Key == b) || b.All(ch => char.IsLetterOrDigit(ch) || ch == '_'))
         ? b : throw new CommandException("A scheme colours rooms by a field: function, name, department, number or floor finish.");
@@ -191,7 +208,7 @@ public static class ColorSchemes
             return null;
         });
 
-        // One value's look: colour, hatch, hatch scale and colour (null clears a field); the value is added when the scheme has none.
+        // One value's look: colour, opacity (0–100 %), hatch, hatch scale and colour (null clears a field); the value is added when the scheme has none.
         r.Command("setColorSchemeEntry", "Room colour", (ctx, a) =>
         {
             var s = Require(ctx.Model, (string?)a["id"]);
@@ -199,7 +216,7 @@ public static class ColorSchemes
             var e = s.Entry(value) ?? new SchemeEntry(value, null);
             var patch = new JsonObject();
             foreach (var (k, v) in ToJson(e)) patch[k] = v?.DeepClone();
-            foreach (var k in new[] { "color", "hatch", "hatchScale", "hatchColor" })
+            foreach (var k in new[] { "color", "hatch", "hatchScale", "hatchColor", "opacity" })
                 if (a.ContainsKey(k)) { if (a[k] == null) patch.Remove(k); else patch[k] = a[k]!.DeepClone(); }
             var next = ReadEntry(patch) ?? e;
             List<SchemeEntry> entries = s.Entry(value) != null
@@ -331,7 +348,7 @@ public static class ColorSchemes
                 if (!used.TryGetValue(e.Value, out var its) || (e.Color == null && e.Hatch == null)) continue;
                 var box = new List<Vec2> { new(at.X, y), new(at.X + sw, y), new(at.X + sw, y + sh), new(at.X, y + sh) };
                 IReadOnlyList<IReadOnlyList<Vec2>> loops = [box];
-                if (e.Color != null) mark.Fills.Add((loops, e.Color));
+                if (e.Fill != null) mark.Fills.Add((loops, e.Fill));
                 if (e.Hatch != null && HatchLibrary.Find(e.Hatch, patterns) is { } pattern)
                 {
                     if (pattern.Solid) mark.Fills.Add((loops, e.HatchColor ?? "#555555"));

@@ -16,8 +16,9 @@ import { effectiveBindings, formatBinding, resolveAlias, resolveKeymap, useKeyma
 import { activate, activateSlot, allTools, defaultHotbar, hotbarSlots, ribbonTabs } from '../platform/modules';
 import { extraTools, extraToolsRev } from '../platform/extraTools';
 import { tabHandlers } from '../platform/scope';
-import { redo, undo } from '../engine/session';
+import { redo, undo, useSession } from '../engine/session';
 import { deleteElements } from '../engine/dependents';
+import { previousSelection } from '../shell/selectionHistory';
 import { runFileAction } from '../shell/fileActions';
 import { COMMANDS, TOOL_WORDS, findCommand, setAliasHook, setCommandFallback, startCommand, useCad } from '../viewport/cad/session';
 import { zoomHost } from '../viewport/zoom';
@@ -39,9 +40,13 @@ function appCommands(): CommandDef[] {
     { id: 'app.delete', label: 'Delete the selection', category: general, defaults: ['Delete', 'Backspace'], run: () => {
       // Over a roof window's grip on its selected roof: that window, not the roof (decision 280).
       if (takeHotRemove()) return;
-      const ids = useUi.getState().selected;
+      // A view selected by its crop frame is not deleted by the key: views are deleted from the project browser (forum topic 68).
+      const nodes = useSession.getState().nodes;
+      const ids = useUi.getState().selected.filter((id) => nodes.get(id)?.type !== 'LapinView');
       if (ids.length) { void deleteElements(ids); select(null); }
     } },
+    // The last ten selections (forum topic 73): this takes the newest again, and the right-click menu lists them all.
+    { id: 'app.previousSelection', label: 'Select the previous selection', category: general, defaults: ['Ctrl+Alt+Z'], run: previousSelection },
     { id: 'app.palette', label: 'Commands…', category: general, defaults: ['Ctrl+K'], run: dialog('palette') },
     { id: 'app.commandLine', label: 'Command line: take all typing', category: general, defaults: ['Backquote'], run: () => useCad.setState((s) => ({ takeAll: !s.takeAll })) },
     { id: 'app.shortcuts', label: 'Keyboard shortcuts…', category: general, defaults: [], run: dialog('shortcuts') },

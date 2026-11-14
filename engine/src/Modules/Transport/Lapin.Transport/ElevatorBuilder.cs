@@ -15,7 +15,7 @@ public sealed record Stop(Entity Storey, double Z, bool Served);
 /// car with the clearances its drive needs round it (the counterweight's or jack's zone at a side or behind, the doors'
 /// sills and panels in front), widened when the landing doors' panels need more wall to slide along.
 /// </summary>
-public sealed class ElevatorLayout
+public sealed partial class ElevatorLayout
 {
     public required ElevatorSpec Spec { get; init; }
     public required Vec2 At { get; init; }
@@ -51,6 +51,10 @@ public sealed class ElevatorLayout
     public double CabinW => Spec.CabinWidth;
     public double OuterW => Wi + 2 * T;
     public double OuterD => Di + 2 * T;
+    /// <summary>How high the floors it passes through are opened: up to its cap, a vacuum lift's to its head unit's top.</summary>
+    public double ZOpenTo => Spec.Vacuum ? ZTop : ZHead;
+    /// <summary>The area it takes in plan (its floors' openings).</summary>
+    public double FootprintArea => Spec.Vacuum ? Math.Abs(Polygon2.SignedArea(Outer)) : OuterW * OuterD;
 
     double Cos => Math.Cos(Rotation * Math.PI / 180);
     double Sin => Math.Sin(Rotation * Math.PI / 180);
@@ -59,8 +63,8 @@ public sealed class ElevatorLayout
     public Vec2[] Rect(double x0, double y0, double x1, double y1) => [W(x0, y0), W(x1, y0), W(x1, y1), W(x0, y1)];
 
     /// <summary>The shaft's outer footprint (counter-clockwise): what the floors it passes through open for.</summary>
-    public Vec2[] Outer => Rect(-Wi / 2 - T, -Di / 2 - T, Wi / 2 + T, Di / 2 + T);
-    public Vec2[] Inner => Rect(-Wi / 2, -Di / 2, Wi / 2, Di / 2);
+    public Vec2[] Outer => Spec.Vacuum ? CirclePts(Wi / 2 + T) : Rect(-Wi / 2 - T, -Di / 2 - T, Wi / 2 + T, Di / 2 + T);
+    public Vec2[] Inner => Spec.Vacuum ? CirclePts(Wi / 2) : Rect(-Wi / 2, -Di / 2, Wi / 2, Di / 2);
 
     /// <summary>The counterweight (or jack) in the shaft: its rectangle, local.</summary>
     public (double X0, double Y0, double X1, double Y1) Counterweight
@@ -136,6 +140,7 @@ public sealed class ElevatorLayout
         }
         else { t = spec.ShaftThickness; material = Materials.Find(m, TransportModule.ShaftMaterial)?.Id; }
         t = Math.Max(0.03, t);
+        if (spec.Vacuum) return ResolveVacuum(m, spec, at, e.Num("rotation"), stops);
 
         var (side, zone, front, back) = spec.Clearances;
         var cw = spec.Counterweight;
@@ -215,6 +220,7 @@ public sealed class ElevatorLayout
     /// <summary>Every part of the lift: the shaft (its pit floor, walls with the landings' openings, cap), the machine room, the car at the lowest stop with its doors, the landing doors, the counterweight or jack.</summary>
     public List<(string Key, string Name, List<Solid> Solids, string Role)> Bodies()
     {
+        if (Spec.Vacuum) return VacuumBodies();
         var s = Spec;
         var o = new List<(string, string, List<Solid>, string)>();
         var (x0, x1, y0, y1) = (-Wi / 2, Wi / 2, -Di / 2, Di / 2);
@@ -315,6 +321,7 @@ public sealed class ElevatorLayout
     /// </summary>
     public List<PlanItem> PlanOn(string storeyId)
     {
+        if (Spec.Vacuum) return VacuumPlanOn(storeyId);
         var o = new List<PlanItem>();
         var stop = Stops.FirstOrDefault(x => x.Storey.Id == storeyId);
         if (stop == null) return o;

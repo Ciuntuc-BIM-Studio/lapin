@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Lapin.Model;
+using Lapin.Platform;
 
 namespace Lapin.Architecture;
 
@@ -29,8 +30,32 @@ public sealed record LintelRule(
     int? Pieces = null,
     string? Material = null,
     LintelProduct? Product = null,
-    LintelReinforcement? Reinforcement = null)
+    LintelReinforcement? Reinforcement = null,
+    string? BeamType = null,
+    bool? OwnBearing = null)
 {
+    /// <summary>
+    /// The rule with its beam type (report #135) read from the model: a precast lintel of the type's section (its width across
+    /// the wall, its height), its lengths (none: cut to length), its material unless the rule names one, and its bearing unless
+    /// the rule has its own (<see cref="OwnBearing"/>). A type no longer there leaves the rule as it was stored (its product's
+    /// copy, else its height). Any other rule as it is.
+    /// </summary>
+    public LintelRule Resolve(IModelView m)
+    {
+        if (BeamType == null || Mode != "precast" || LintelTypes.Read(m, BeamType) is not { } b) return this;
+        return this with
+        {
+            Bearing = OwnBearing == true ? Bearing : b.Bearing ?? Bearing,
+            Height = b.Height,
+            Width = null,
+            Material = Material ?? b.Material,
+            Product = new LintelProduct(b.Name, b.Width, b.Height, b.Lengths, b.Manufacturer),
+        };
+    }
+
+    /// <summary>The beam type a precast lintel of this rule is an occurrence of, when it is still in the model.</summary>
+    public string? BeamTypeIn(IModelView m) => Mode == "precast" && BeamType != null && m.Get(BeamType) is { Class: IfcClass.BeamType } ? BeamType : null;
+
     public static readonly LintelRule Default = new("precast", 0.25, 0.25, MinWidth: 0);
 
     public double EndBearing => BearingEnd ?? Bearing;
@@ -70,7 +95,7 @@ public static class Lintels
         if (r.BearingEnd is { } be && !(be >= 0)) o.Add("the end bearing must be zero or more");
         if (r.Width is { } w && !(w > 0)) o.Add("the lintel width must be positive");
         if (r.Pieces is { } p && p is < 1 or > 6) o.Add("pieces must be 1 to 6");
-        if (r.Product is { } pr && !(pr.Width > 0 && pr.Height > 0 && pr.Lengths is { Length: > 0 } && pr.Lengths.All(l => l > 0))) o.Add("the product needs a section and at least one length");
+        if (r.Product is { } pr && !(pr.Width > 0 && pr.Height > 0 && (pr.Lengths is { Length: > 0 } || r.BeamType != null) && pr.Lengths.All(l => l > 0))) o.Add("the product needs a section and at least one length");
         return o;
     }
 
@@ -80,7 +105,7 @@ public static class Lintels
 
     /// <summary>The product's shortest length that covers <paramref name="need"/>, or null when none does.</summary>
     public static double? ProductLength(LintelProduct p, double need) =>
-        p.Lengths.Order().Cast<double?>().FirstOrDefault(l => l >= need - Eps);
+        p.Lengths.Length == 0 ? need : p.Lengths.Order().Cast<double?>().FirstOrDefault(l => l >= need - Eps);
 
     const double SteelKgM3 = 7850;
     static double BarArea(double d) => Math.PI * d * d / 4;

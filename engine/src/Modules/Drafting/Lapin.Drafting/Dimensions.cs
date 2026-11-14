@@ -389,7 +389,7 @@ public static class Dimensions
                     foreach (var (q, inward) in new[] { (qa, su), (qb, -su) })
                         mk.Line(q, q + inward * s + n * (s * 0.3), "DIMENSION", Pens.Default.Hatch, color).Line(q, q + inward * s - n * (s * 0.3), "DIMENSION", Pens.Default.Hatch, color);
                 // The value: in the style's unit (or the text written over it), reading left to right (bottom to top), above, on or below the line.
-                var value = texts[i] ?? Standards.FormatDimension(values[i], style.Unit, style.Precision);
+                var value = texts[i] ?? Standards.FormatDimension(values[i], style.Unit, style.Precision, style.SuppressesZeros);
                 var angle = Math.Atan2(su.Y, su.X) * 180 / Math.PI;
                 var readable = -Standards.ReadableDeg(-angle);
                 var up = new Vec2(-Math.Sin(readable * Math.PI / 180), Math.Cos(readable * Math.PI / 180));
@@ -420,7 +420,7 @@ public static class Dimensions
                 {
                     var h = text.Height * mm;
                     var top = style.Placement switch { "centered" => h * 0.5 + style.TextGap * mm, "below" => style.TextGap * mm + h * OpeningHeights.Pitch, _ => style.TextGap * mm };
-                    var rows = OpeningHeights.Rows(style.OpeningHeight, opening, style.Unit, style.Precision);
+                    var rows = OpeningHeights.Rows(style.OpeningHeight, opening, style.Unit, style.Precision, style.SuppressesZeros);
                     for (var k = 0; k < rows.Count; k++)
                         mk.Text(new PenText(mid - up * (top + h + k * h * OpeningHeights.Pitch) + (moved[i] ?? default), rows[k], text.Height, readable, "middle", "bottom", text.Bold, text.Font, text.Italic), color);
                 }

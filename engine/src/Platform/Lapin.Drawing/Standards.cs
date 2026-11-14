@@ -16,8 +16,16 @@ public sealed record TextStyle(string Id, string Name, double Height, string Fon
 /// "off", "number" (150), "h" (h=150), "hp" (h=150 and, under it, the sill p=90 when there is one) or "slash" (150/90).
 /// Off when a style does not say (older projects); a new project's Standard style says "number".
 /// </para>
+/// <para>
+/// <see cref="Zeros"/> (forum #81): whether a value's trailing zeros are written (2.500, "keep") or dropped (2.5, and 3 for
+/// 3.000, "suppress"), or as the project's standards say ("project", the default; <see cref="StyleBook.SuppressZeros"/>).
+/// </para>
 /// </summary>
-public sealed record DimStyle(string Id, string Name, string TextStyle, string Arrow, double ArrowSize, double ExtGap, double ExtOver, string Placement, double TextGap, int Precision, string Unit, string? Color = null, string OpeningHeight = "off");
+public sealed record DimStyle(string Id, string Name, string TextStyle, string Arrow, double ArrowSize, double ExtGap, double ExtOver, string Placement, double TextGap, int Precision, string Unit, string? Color = null, string OpeningHeight = "off", string Zeros = "project")
+{
+    /// <summary>Whether this (resolved) style drops its values' trailing zeros.</summary>
+    [JsonIgnore] public bool SuppressesZeros => Zeros == "suppress";
+}
 
 /// <summary>An axis (grid line) type: its label's text style, bubble and which ends carry it, size (paper mm), line type, colour and the label new axes start from.</summary>
 public sealed record AxisStyle(string Id, string Name, string TextStyle, string Bubble, string Ends, double Size, string LineType, string FirstLabel, string? Color = null);
@@ -105,13 +113,15 @@ public sealed record DraftLayer(string Id, string Name, string Color, bool Visib
 /// <see cref="Scales"/> (forum #30, decision 492): the project's standard scales, the ones a view's scale picker offers
 /// (null: <see cref="Standards.DefaultViewScales"/>); <see cref="PlanScale"/>, <see cref="SectionScale"/> and
 /// <see cref="ElevationScale"/>: the scale a new view of that kind takes when none is asked for (null: 1:100).
+/// <see cref="SuppressZeros"/> (forum #81): dimensions drop their trailing zeros (2.5, not 2.500; 3, not 3.000) unless their
+/// style says to keep them; off by default, as drawings were written before.
 /// </summary>
 public sealed record StyleBook(
     IReadOnlyList<TextStyle> TextStyles, IReadOnlyList<DimStyle> DimStyles, IReadOnlyList<AxisStyle> AxisStyles,
     string DefaultAxisStyle, IReadOnlyList<TagType> TagTypes, IReadOnlyList<DraftLayer> Layers, IReadOnlyList<LayerGroup> LayerGroups,
     string LineCap = "round", string Units = "mm", double? SectionMarkSize = null, double? SectionMarkText = null, double? ElevationMarkSize = null, double? ElevationMarkText = null,
     double? AreaRounding = null, IReadOnlyList<double>? Scales = null, double? PlanScale = null, double? SectionScale = null, double? ElevationScale = null,
-    IReadOnlyList<LineTypeDef>? LineTypes = null)
+    IReadOnlyList<LineTypeDef>? LineTypes = null, bool SuppressZeros = false)
 {
     public static StyleBook Default => Standards.Read(null);
 }
@@ -159,6 +169,8 @@ public static class Standards
     public static readonly string[] Placements = ["above", "centered", "below"];
     /// <summary>How a dimension writes an opening's height under its line (decision 338): not at all, 150, h=150, h=150 with p=90 under it, 150/90.</summary>
     public static readonly string[] OpeningHeights = ["off", "number", "h", "hp", "slash"];
+    /// <summary>A dimension style's trailing zeros (forum #81): as the project, kept, or dropped.</summary>
+    public static readonly string[] ZeroChoices = ["project", "keep", "suppress"];
     /// <summary>What a new project's Standard dimension style writes under a segment across an opening.</summary>
     public const string NewProjectOpeningHeight = "number";
     /// <summary>A dimension's unit: metric, or feet and inches / inches (fractions of an inch).</summary>
@@ -174,7 +186,7 @@ public static class Standards
 
     /// <summary>The fields an annotation may override, by kind (an axis overrides its line colour as lineColor).</summary>
     public static readonly string[] TextOverrides = ["height", "font", "bold", "italic", "color"];
-    public static readonly string[] DimOverrides = ["arrow", "arrowSize", "placement", "textGap", "precision", "unit", "color", "openingHeight"];
+    public static readonly string[] DimOverrides = ["arrow", "arrowSize", "placement", "textGap", "precision", "unit", "color", "openingHeight", "zeros"];
     public static readonly string[] AxisOverrides = ["bubble", "ends", "size", "lineType"];
 
     static string Str(JsonNode? v, string fallback) => v is JsonValue j && j.TryGetValue<string>(out var s) && s.Length > 0 ? s : fallback;
@@ -195,7 +207,8 @@ public static class Standards
         var d = DefaultDim;
         return new(Str(v["id"], d.Id), Str(v["name"], d.Name), Str(v["textStyle"], d.TextStyle), OneOf(v["arrow"], Arrows, d.Arrow), Num(v["arrowSize"], d.ArrowSize),
             Num(v["extGap"], d.ExtGap), Num(v["extOver"], d.ExtOver), OneOf(v["placement"], Placements, d.Placement), Num(v["textGap"], d.TextGap),
-            v["precision"] is JsonValue pv && Lapin.Model.Json.Number(pv) is { } pn && double.IsFinite(pn) ? Math.Max(-1, (int)Math.Round(pn)) : d.Precision, OneOf(v["unit"], Units, d.Unit), Color(v["color"]), OneOf(v["openingHeight"], OpeningHeights, d.OpeningHeight));
+            v["precision"] is JsonValue pv && Lapin.Model.Json.Number(pv) is { } pn && double.IsFinite(pn) ? Math.Max(-1, (int)Math.Round(pn)) : d.Precision, OneOf(v["unit"], Units, d.Unit), Color(v["color"]), OneOf(v["openingHeight"], OpeningHeights, d.OpeningHeight),
+            OneOf(v["zeros"], ZeroChoices, d.Zeros));
     }
 
     static AxisStyle ReadAxis(JsonObject v) => ReadAxis(v, LineTypes);
@@ -338,7 +351,7 @@ public static class Standards
             MarkValue(o["elevationMarkSize"] ?? o["markSize"], MinMarkSize, MaxMarkSize), MarkValue(o["elevationMarkText"] ?? o["markText"], MinMarkText, MaxMarkText),
             Lapin.Drawing.AreaRounding.Read(Lapin.Model.Json.Number(o["areaRounding"])),
             ViewScales(o["scales"]), ViewScale(o["planScale"]), ViewScale(o["sectionScale"]), ViewScale(o["elevationScale"]),
-            own.Count > 0 ? own : null);
+            own.Count > 0 ? own : null, True(o["suppressZeros"]));
     }
 
     public static JsonObject ToJson(StyleBook b) => (JsonObject)JsonSerializer.SerializeToNode(b, DrawingJson.Default.StyleBook)!;
@@ -375,8 +388,14 @@ public static class Standards
         return Overridden(baseStyle, DrawingJson.Default.TextStyle, p, TextOverrides);
     }
 
-    /// <summary>A dimension's style with its overrides, "project" units made the project's.</summary>
-    public static DimStyle ResolveDim(StyleBook b, JsonObject p) => Overridden(DimOf(b, (string?)p["dimStyle"]), DrawingJson.Default.DimStyle, p, DimOverrides) is var s && s.Unit == "project" ? s with { Unit = b.Units } : s;
+    /// <summary>A dimension's style with its overrides, "project" units and trailing zeros made the project's.</summary>
+    public static DimStyle ResolveDim(StyleBook b, JsonObject p)
+    {
+        var s = Overridden(DimOf(b, (string?)p["dimStyle"]), DrawingJson.Default.DimStyle, p, DimOverrides);
+        if (s.Unit == "project") s = s with { Unit = b.Units };
+        if (s.Zeros is not ("keep" or "suppress")) s = s with { Zeros = b.SuppressZeros ? "suppress" : "keep" };
+        return s;
+    }
 
     public static AxisStyle ResolveAxis(StyleBook b, JsonObject p)
     {
@@ -387,13 +406,26 @@ public static class Standards
     /// <summary>The decimals a unit is usually written with: none in millimetres, one in centimetres, two in metres; 1/16" in imperial.</summary>
     public static int UsualPrecision(string unit) => unit switch { "mm" => 0, "cm" => 1, _ => 2 };
 
-    /// <summary>A length (metres) in a dimension style's unit and precision (below 0: the unit's usual).</summary>
-    public static string FormatDimension(double metres, string unit, int precision)
+    /// <summary>
+    /// A length (metres) in a dimension style's unit and precision (below 0: the unit's usual); with
+    /// <paramref name="suppressZeros"/> (forum #81) its trailing zeros dropped, and the point with them (2.500 → 2.5, 3.000 → 3).
+    /// Feet and inches carry fractions, which have no trailing zeros.
+    /// </summary>
+    public static string FormatDimension(double metres, string unit, int precision, bool suppressZeros = false)
     {
         if (precision < 0) precision = UsualPrecision(unit);
         if (unit is "ft-in" or "in") return FormatImperial(metres, unit == "ft-in", precision);
         var factor = unit == "mm" ? 1000 : unit == "cm" ? 100 : 1;
-        return (metres * factor).ToString("F" + Math.Clamp(precision, 0, 6), CultureInfo.InvariantCulture);
+        var text = (metres * factor).ToString("F" + Math.Clamp(precision, 0, 6), CultureInfo.InvariantCulture);
+        return suppressZeros ? TrimZeros(text) : text;
+    }
+
+    /// <summary>A number's trailing zeros after its point dropped, and the point when nothing is left after it (2.500 → 2.5, 3.000 → 3, 120 stays); "-0" is "0".</summary>
+    public static string TrimZeros(string text)
+    {
+        if (!text.Contains('.')) return text;
+        var t = text.TrimEnd('0').TrimEnd('.');
+        return t is "-0" or "-" or "" ? "0" : t;
     }
 
     /// <summary>

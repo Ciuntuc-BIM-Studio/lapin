@@ -96,6 +96,8 @@ public sealed class CoreModule : ILapinModule
         TypeMappings.Register(r);
         TypePacks.Register(r);
         TypeDefaults.Register(r);
+        // Any type duplicated, and each class's types in an order of the user's (forum #71).
+        TypeOrder.Register(r);
         Sheets.Register(r);
         TitleBlocks.Register(r);
         // 2D symbols of the user's own (docs/plan-user-extensibility.md §3).

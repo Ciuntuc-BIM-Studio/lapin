@@ -22,3 +22,13 @@ describe('the Grid dialog (report #68)', () => {
     expect(lines[0].b.y).toBe(6);
   });
 });
+
+describe('Renumber axes (forum #75)', () => {
+  it('follows the selected axes to their new tags and reads which axes are selected', async () => {
+    const { renumberedSelection, selectedAxes } = await import('./gridSpec');
+    expect(renumberedSelection(['g#7', 'g#3', 'wall'], 'g', { '7': '1', '3': '2' })).toEqual(['g#1', 'g#2', 'wall']);
+    expect(selectedAxes(['g#1', 'g#B'])).toEqual({ gridId: 'g', tags: ['1', 'B'] });
+    expect(selectedAxes(['wall'])).toBeNull();
+    expect(selectedAxes(['g#1', 'h#1'])).toBeNull();
+  });
+});

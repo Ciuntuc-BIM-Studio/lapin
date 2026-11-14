@@ -198,6 +198,41 @@ public class AnnotationTests
     }
 
     [Fact]
+    public void Trailing_zeros_are_written_unless_the_project_or_the_style_suppresses_them()
+    {
+        // Forum #81: 2.500 with 3 decimals is 2.5 when suppressed, 2.500 when not; a whole 3.000 is 3.
+        Assert.Equal("2.500", Lapin.Drawing.Standards.FormatDimension(2.5, "m", 3));
+        Assert.Equal("2.5", Lapin.Drawing.Standards.FormatDimension(2.5, "m", 3, true));
+        Assert.Equal("3", Lapin.Drawing.Standards.FormatDimension(3, "m", 3, true));
+        Assert.Equal("2500", Lapin.Drawing.Standards.FormatDimension(2.5, "mm", 0, true));
+        Assert.Equal("0", Lapin.Drawing.Standards.FormatDimension(-0.0001, "m", 2, true));
+        Assert.Equal("12'-3 1/2\"", Lapin.Drawing.Standards.FormatDimension(147.5 * 0.0254, "ft-in", 2, true));
+
+        var f = F();
+        var view = "plan:" + f.Storey;
+        f.Run("drafting.addDimension", new JsonObject { ["viewId"] = view, ["a"] = new JsonArray(0, 0), ["b"] = new JsonArray(2.5, 0), ["at"] = new JsonArray(0, 1) });
+        f.Run("drafting.addDimension", new JsonObject { ["viewId"] = view, ["a"] = new JsonArray(0, 3), ["b"] = new JsonArray(3, 3), ["at"] = new JsonArray(0, 4) });
+        f.Run("standards.set", new JsonObject { ["kind"] = "dim", ["entry"] = new JsonObject { ["id"] = "standard", ["unit"] = "m", ["precision"] = 3 } });
+        // Off by default: today's output.
+        Assert.Contains("2.500", Texts(Draw(f, view)));
+        Assert.Contains("3.000", Texts(Draw(f, view)));
+        f.Run("standards.options", new JsonObject { ["suppressZeros"] = true });
+        Assert.Contains("2.5", Texts(Draw(f, view)));
+        Assert.Contains("3", Texts(Draw(f, view)));
+        Assert.DoesNotContain("2.500", Texts(Draw(f, view)));
+        // A style that keeps them goes before the project.
+        f.Run("standards.set", new JsonObject { ["kind"] = "dim", ["entry"] = new JsonObject { ["id"] = "standard", ["zeros"] = "keep" } });
+        Assert.Contains("2.500", Texts(Draw(f, view)));
+        f.Run("standards.options", new JsonObject { ["suppressZeros"] = false });
+        f.Run("standards.set", new JsonObject { ["kind"] = "dim", ["entry"] = new JsonObject { ["id"] = "standard", ["zeros"] = "suppress" } });
+        Assert.Contains("2.5", Texts(Draw(f, view)));
+        f.Session.Undo();
+        Assert.Contains("2.500", Texts(Draw(f, view)));
+        // An unknown value reads as the project's.
+        Assert.Equal("project", Lapin.Drawing.Standards.Read(new JsonObject { ["dimStyles"] = new JsonArray(new JsonObject { ["id"] = "standard", ["zeros"] = "maybe" }) }).DimStyles.Single().Zeros);
+    }
+
+    [Fact]
     public void Ends_on_no_element_are_left_as_drawn_and_a_dimension_moves_its_line()
     {
         var f = F();

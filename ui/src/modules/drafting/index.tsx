@@ -1,6 +1,6 @@
 /** Drafting: CAD drawing on views (lines, polylines, circles, arcs, hatches on layers, and their edits), dimensions that follow the elements, texts, grid axes. */
 
-import { ArrowRightToLine, Crosshair, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Unlink2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags, Grid3x3, Settings2, Image as ImageIcon, Ruler, Replace, Shapes, Shapes as SymbolsIcon, FolderPlus } from 'lucide-react';
+import { ArrowRightToLine, Crosshair, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Unlink2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags, Grid3x3, Settings2, Image as ImageIcon, Ruler, Replace, Shapes, Shapes as SymbolsIcon, FolderPlus, ListOrdered } from 'lucide-react';
 import { AngleIcon, ArcLengthIcon, DiameterIcon, DimensionIcon, GridAxisIcon, LevelIcon, OrdinateIcon, RadiusIcon, SlopeIcon } from '../../icons';
 import type { Grip, GripStep, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { axisGrips, axisRef, outlineGrips, pt } from '../../viewport/gripKit';
@@ -19,6 +19,7 @@ import { frontView } from '../../viewport/frontView';
 import { BoundarySection, boundaryGrips, viewBoundary } from './ViewBoundary';
 import { xy } from '../../platform/vec';
 import { GridDialog, GridSection } from './GridDialog';
+import { RenumberAxesDialog } from './RenumberAxesDialog';
 import { openStandards } from '../core/standardsTab';
 import { formatLength, formatLevel } from '../../engine/unitsStore';
 import { TagOptions, tagCommand, tagGrips, useTagPrefs } from './tag';
@@ -58,12 +59,15 @@ const axis: ToolDef = {
 };
 /** A whole grid from its spacings (report #68). */
 const gridTool: ToolDef = { id: 'drafting.grid', label: 'Axis grid…', icon: Grid3x3, run: () => useUi.setState({ dialog: 'grid' }) };
+/** The axes renumbered in order across them (forum #75). */
+const renumberAxesTool: ToolDef = { id: 'drafting.renumberAxes', label: 'Renumber axes…', icon: ListOrdered, run: () => useUi.setState({ dialog: 'renumberAxes' }) };
 /** How axes look: Drafting standards → Grid axes. */
 const axisStylesTool: ToolDef = { id: 'drafting.axisStyles', label: 'Axis styles…', icon: Settings2, run: () => openStandards('axis') };
 function AxisOptions() {
   return (
     <>
       <button type="button" className="cad-toggle" data-axis-grid title="A whole grid from its spacings" onClick={() => useUi.setState({ dialog: 'grid' })}>AXIS GRID…</button>
+      <button type="button" className="cad-toggle" title="The axes renumbered in order across them" onClick={() => useUi.setState({ dialog: 'renumberAxes' })}>RENUMBER…</button>
       <button type="button" className="cad-toggle" title="How axes look: bubbles, ends, size, line type, the first label" onClick={() => openStandards('axis')}>AXIS STYLES…</button>
     </>
   );
@@ -550,7 +554,8 @@ function dimensionGrips(node: NodeDto, view?: GripView): Grip[] {
     : pts.map((p) => { const o = (at.x - p.x) * n.x + (at.y - p.y) * n.y; return { x: p.x + n.x * o, y: p.y + n.y * o }; });
   const id = node.id;
   const grips: Grip[] = pts.map((p, i) => ({
-    key: `p${i}`, kind: 'vertex' as const, at: p, title: 'Drag: the point moves (and holds on what it lands on); Ctrl/⌘-click: take it out',
+    key: `p${i}`, kind: 'vertex' as const, at: p, title: 'Drag: the point moves (and holds on what it lands on); Alt-click or Ctrl/⌘-click: take it out',
+    altRemove: true,
     step: (to: Vec2) => ({ command: 'drafting.moveDimensionPoint', args: { id, index: i, point: [to.x, to.y] } }),
     remove: () => (pts.length > 2 ? { command: 'drafting.removeDimensionPoint', args: { id, index: i } } : null),
   }));
@@ -579,8 +584,9 @@ function dimensionGrips(node: NodeDto, view?: GripView): Grip[] {
   const t = line.map((q) => (q.x - line[0].x) * u.x + (q.y - line[0].y) * u.y);
   for (const [key, s] of [['l0', Math.min(...t)], ['l1', Math.max(...t)]] as const) {
     grips.push({
-      key, kind: 'end', at: { x: line[0].x + u.x * s, y: line[0].y + u.y * s }, title: 'Drag: the dimension line goes through the point',
+      key, kind: 'end', at: { x: line[0].x + u.x * s, y: line[0].y + u.y * s }, title: 'Drag: the dimension line goes through the point · Ctrl/⌘-click: go on, the next clicks add points beyond it',
       step: (to: Vec2) => ({ command: 'drafting.moveDimension', args: { id, at: [to.x, to.y] } }),
+      extend: () => { select(id); void startCommand('DIMADD'); },
     });
   }
   const viewId = typeof node.props.viewId === 'string' ? node.props.viewId : undefined;
@@ -676,7 +682,7 @@ const drafting: LapinModule = {
             if (r) notify(r.tagged ? `${r.tagged} doors and windows tagged.` : 'Every door and window here has its tag already.');
           })(),
         }] },
-        { label: 'Datum', small: [gridTool, axisStylesTool], tools: [
+        { label: 'Datum', small: [gridTool, renumberAxesTool, axisStylesTool], tools: [
           axis,
           { id: 'level', label: 'Level', icon: LevelIcon, shortcut: 'LL', run: () => void startCommand('DIMLEVEL') },
         ] },
@@ -688,7 +694,7 @@ const drafting: LapinModule = {
     },
   ],
   hotbar: [dimension],
-  dialogs: { convertDrafting: ConvertDialog, convertLayers: ConvertLayersDialog, draftLayers: LayersDialog, importDxf: ImportDxfDialog, importTrace: ImportTraceDialog, grid: GridDialog },
+  dialogs: { convertDrafting: ConvertDialog, convertLayers: ConvertLayersDialog, draftLayers: LayersDialog, importDxf: ImportDxfDialog, importTrace: ImportTraceDialog, grid: GridDialog, renumberAxes: RenumberAxesDialog },
   propertySections: [
     // The drafted kinds show their own fields (a line its ends, a circle its radius), so the class's generic ones stay out.
     { id: 'draft', label: 'Drafting', classes: ['IfcAnnotation'], component: DraftSection, replacesFields: draftsFields },
