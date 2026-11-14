@@ -35,7 +35,7 @@ import { firmFoldersAvailable, prefsStart, setFirmFolders, useFirmFiles } from '
 type Page = 'general' | 'grid' | 'coords' | 'display' | 'colours' | 'profiles' | 'libraries';
 const PAGES: { id: Page; label: string }[] = [
   { id: 'general', label: 'General' }, { id: 'grid', label: 'Grid and snaps' }, { id: 'coords', label: 'Coordinates' }, { id: 'display', label: 'Display' }, { id: 'colours', label: 'Colours' },
-  { id: 'colours', label: 'Colours' }, { id: 'profiles', label: 'Profiles' }, { id: 'libraries', label: 'Libraries' },
+  { id: 'profiles', label: 'Profiles' }, { id: 'libraries', label: 'Libraries' },
 ];
 
 /** The profile standards (decision 457): those a new project offers, those the pickers show. */

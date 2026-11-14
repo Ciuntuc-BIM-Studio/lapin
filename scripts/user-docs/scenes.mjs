@@ -11032,37 +11032,6 @@ export const scenes = [
       await page.evaluate(async () => (await import('/src/viewport/cad/session.ts')).useCad.setState({ ortho: false }));
     },
   },
-];
-
-/** A zip of stored entries (name, text), enough for a BCF file: the local headers, the central directory and its end, with CRC-32. */
-export function bcfZip(entries) {
-  const crcTable = new Uint32Array(256).map((_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
-  const crc32 = (buf) => { let c = 0xffffffff; for (const b of buf) c = crcTable[(c ^ b) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
-  const u16 = (v) => { const b = Buffer.alloc(2); b.writeUInt16LE(v); return b; };
-  const u32 = (v) => { const b = Buffer.alloc(4); b.writeUInt32LE(v >>> 0); return b; };
-  const locals = [], centrals = [];
-  let offset = 0;
-  for (const [name, text] of entries) {
-    const nameBytes = Buffer.from(name, 'utf8'), data = Buffer.from(text, 'utf8'), crc = crc32(data);
-    const local = Buffer.concat([u32(0x04034b50), u16(20), u16(0), u16(0), u16(0), u16(0x21), u32(crc), u32(data.length), u32(data.length), u16(nameBytes.length), u16(0), nameBytes, data]);
-    centrals.push(Buffer.concat([u32(0x02014b50), u16(20), u16(20), u16(0), u16(0), u16(0), u16(0x21), u32(crc), u32(data.length), u32(data.length), u16(nameBytes.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(offset), nameBytes]));
-    locals.push(local);
-    offset += local.length;
-  }
-  const directory = Buffer.concat(centrals);
-  const end = Buffer.concat([u32(0x06054b50), u16(0), u16(0), u16(entries.length), u16(entries.length), u32(directory.length), u32(offset), u16(0)]);
-  return Buffer.concat([...locals, directory, end]);
-}
-
-/** The marks a reviewer leaves on the A3 sheet of the remarks scene: PDF annotation dictionaries, in points, y up. */
-const PT = 72 / 25.4;
-const ptX = (mm) => (mm * PT).toFixed(3);
-const ptY = (mm) => ((297 - mm) * PT).toFixed(3);
-const REVIEW_MARKS = [
-  `<< /Type /Annot /Subtype /Square /Rect [${ptX(150)} ${ptY(170)} ${ptX(215)} ${ptY(120)}] /Contents (Check the kitchen door swing) /T (Ana Pop) /M (D:20261030101500+02'00') /C [0.85 0.2 0.1] /NM (review-1) >>`,
-  `<< /Type /Annot /Subtype /Text /Rect [${ptX(240)} ${ptY(66)} ${ptX(246)} ${ptY(60)}] /Contents (Add the section mark here) /T (Ana Pop) /M (D:20261030102000+02'00') /NM (review-2) >>`,
-  `<< /Type /Annot /Subtype /Ink /Rect [${ptX(60)} ${ptY(230)} ${ptX(120)} ${ptY(190)}] /InkList [[${ptX(60)} ${ptY(190)} ${ptX(80)} ${ptY(215)} ${ptX(100)} ${ptY(200)} ${ptX(120)} ${ptY(230)}]] /Contents (Move the window 300 mm) /T (Mihai) /M (D:20261030104500+02'00') /NM (review-3) >>`,
-  `<< /Type /Annot /Subtype /FreeText /Rect [${ptX(260)} ${ptY(210)} ${ptX(360)} ${ptY(196)}] /Contents (12.40 m) /T (Mihai) /Subj (Length Measurement) /M (D:20261030105000+02'00') /NM (review-4) >>`,
   {
     // Forum topic 97: the colour field's swatches (recent colours, the project's palette, the user's palettes) and the
     // preselection and selection colours in File → Preferences → Display.
@@ -11109,6 +11078,37 @@ const REVIEW_MARKS = [
       await t.ui({ dialog: null });
     },
   },
+];
+
+/** A zip of stored entries (name, text), enough for a BCF file: the local headers, the central directory and its end, with CRC-32. */
+export function bcfZip(entries) {
+  const crcTable = new Uint32Array(256).map((_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+  const crc32 = (buf) => { let c = 0xffffffff; for (const b of buf) c = crcTable[(c ^ b) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
+  const u16 = (v) => { const b = Buffer.alloc(2); b.writeUInt16LE(v); return b; };
+  const u32 = (v) => { const b = Buffer.alloc(4); b.writeUInt32LE(v >>> 0); return b; };
+  const locals = [], centrals = [];
+  let offset = 0;
+  for (const [name, text] of entries) {
+    const nameBytes = Buffer.from(name, 'utf8'), data = Buffer.from(text, 'utf8'), crc = crc32(data);
+    const local = Buffer.concat([u32(0x04034b50), u16(20), u16(0), u16(0), u16(0), u16(0x21), u32(crc), u32(data.length), u32(data.length), u16(nameBytes.length), u16(0), nameBytes, data]);
+    centrals.push(Buffer.concat([u32(0x02014b50), u16(20), u16(20), u16(0), u16(0), u16(0), u16(0x21), u32(crc), u32(data.length), u32(data.length), u16(nameBytes.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(offset), nameBytes]));
+    locals.push(local);
+    offset += local.length;
+  }
+  const directory = Buffer.concat(centrals);
+  const end = Buffer.concat([u32(0x06054b50), u16(0), u16(0), u16(entries.length), u16(entries.length), u32(directory.length), u32(offset), u16(0)]);
+  return Buffer.concat([...locals, directory, end]);
+}
+
+/** The marks a reviewer leaves on the A3 sheet of the remarks scene: PDF annotation dictionaries, in points, y up. */
+const PT = 72 / 25.4;
+const ptX = (mm) => (mm * PT).toFixed(3);
+const ptY = (mm) => ((297 - mm) * PT).toFixed(3);
+const REVIEW_MARKS = [
+  `<< /Type /Annot /Subtype /Square /Rect [${ptX(150)} ${ptY(170)} ${ptX(215)} ${ptY(120)}] /Contents (Check the kitchen door swing) /T (Ana Pop) /M (D:20261030101500+02'00') /C [0.85 0.2 0.1] /NM (review-1) >>`,
+  `<< /Type /Annot /Subtype /Text /Rect [${ptX(240)} ${ptY(66)} ${ptX(246)} ${ptY(60)}] /Contents (Add the section mark here) /T (Ana Pop) /M (D:20261030102000+02'00') /NM (review-2) >>`,
+  `<< /Type /Annot /Subtype /Ink /Rect [${ptX(60)} ${ptY(230)} ${ptX(120)} ${ptY(190)}] /InkList [[${ptX(60)} ${ptY(190)} ${ptX(80)} ${ptY(215)} ${ptX(100)} ${ptY(200)} ${ptX(120)} ${ptY(230)}]] /Contents (Move the window 300 mm) /T (Mihai) /M (D:20261030104500+02'00') /NM (review-3) >>`,
+  `<< /Type /Annot /Subtype /FreeText /Rect [${ptX(260)} ${ptY(210)} ${ptX(360)} ${ptY(196)}] /Contents (12.40 m) /T (Mihai) /Subj (Length Measurement) /M (D:20261030105000+02'00') /NM (review-4) >>`,
 ];
 
 /**
