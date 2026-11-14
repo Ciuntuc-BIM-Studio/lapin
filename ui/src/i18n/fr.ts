@@ -3513,6 +3513,13 @@ export const FR: Record<string, string> = {
   "Room's number": "Numéro de la pièce",
   "Room's area": "Surface de la pièce",
   "Tagged element's storey": "Niveau de l'élément étiqueté",
+  "Trailing zeros": "Zéros de fin",
+  "Whether a value drops its trailing zeros (2.500 → 2.5, 3.000 → 3) or keeps them; as the project: the Project tab says": "Si une valeur supprime ses zéros de fin (2.500 → 2.5, 3.000 → 3) ou les garde ; comme le projet : ce que dit l'onglet Projet",
+  "keep (2.500)": "garder (2.500)",
+  "suppress (2.5)": "supprimer (2.5)",
+  "Suppress trailing zeros": "Supprimer les zéros de fin",
+  "Dimension values drop their trailing zeros (2.500 → 2.5, 3.000 → 3), unless a dimension style keeps them": "Les cotes suppriment leurs zéros de fin (2.500 → 2.5, 3.000 → 3), sauf si un style de cote les garde",
+  "as the project": "comme le projet",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

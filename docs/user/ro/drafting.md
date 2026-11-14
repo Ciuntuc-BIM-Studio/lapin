@@ -135,6 +135,8 @@ Adnotările de pe un plan (cote, texte, linii desenate, etichete) pot trece pe a
 
 ![Înălțimea golului în stilurile de cotă](shots/dimension-opening-height-style.webp)
 
+**Zerourile de la final.** O cotă cu trei zecimale scrie `2.500` și `3.000`. Bifează **Gestionare → Standarde de desen → Proiect → Suprimă zerourile de la final** și toate cotele le lasă deoparte: `2.5` și `3`, ca în programele CAD. Fiecare stil de cotă poate alege și singur, în coloana **Zerouri de la final**, lângă **Zecimale**: *ca proiectul* (implicit), *păstrează (2.500)* sau *suprimă (2.5)*. Se aplică valorilor cotelor liniare, aliniate, de rază, de diametru, de lungime de arc și de ordonată și înălțimilor golurilor de sub ele, pe ecran, pe planșe, în PDF și în DXF; picioarele și țolii, scriși în fracții, nu au zerouri de lăsat deoparte. E oprit până îl pornești, așa că desenele existente arată la fel.
+
 **Cote pe o linie.** Un punct de cotă pus pe o axă din grilă sau pe axa unui perete se ține de linie, nu de un punct al ei. Trage capătul axei de-a lungul ei ca să încapă bula în vedere, sau lungește ori scurtează peretele: cota măsoară mai departe unde ai pus-o, iar linia ei nu se rotește. Dacă axa sau peretele se mută de-a curmezișul, punctul merge cu ea, în același loc de-a lungul. La fel rămâne, când peretele e întins pe lungime, o cotă pusă pe fața lui. Cotele făcute înainte se țin de o axă din grilă la fel; una pe axa unui perete se atașează din nou dând clic pe punctul ei.
 
 ### Etichete

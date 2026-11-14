@@ -3563,6 +3563,13 @@ export const LO: Record<string, string> = {
   "Room's number": "ເລກຫ້ອງ",
   "Room's area": "ເນື້ອທີ່ຫ້ອງ",
   "Tagged element's storey": "ຊັ້ນຂອງອົງປະກອບທີ່ຕິດປ້າຍ",
+  "Trailing zeros": "ເລກສູນທ້າຍ",
+  "Whether a value drops its trailing zeros (2.500 → 2.5, 3.000 → 3) or keeps them; as the project: the Project tab says": "ວ່າຄ່າຈະຕັດເລກສູນທ້າຍອອກ (2.500 → 2.5, 3.000 → 3) ຫຼື ເກັບໄວ້; ຕາມໂຄງການ: ຕາມແຖບໂຄງການ",
+  "keep (2.500)": "ເກັບໄວ້ (2.500)",
+  "suppress (2.5)": "ຕັດອອກ (2.5)",
+  "Suppress trailing zeros": "ຕັດເລກສູນທ້າຍອອກ",
+  "Dimension values drop their trailing zeros (2.500 → 2.5, 3.000 → 3), unless a dimension style keeps them": "ຄ່າຂະໜາດຕັດເລກສູນທ້າຍອອກ (2.500 → 2.5, 3.000 → 3), ເວັ້ນແຕ່ຮູບແບບຂະໜາດຈະເກັບໄວ້",
+  "as the project": "ຕາມໂຄງການ",
 };
 
 /** Phrases with a number or a name in them. */

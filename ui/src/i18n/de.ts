@@ -3509,6 +3509,13 @@ export const DE: Record<string, string> = {
   "Room's number": "Raumnummer",
   "Room's area": "Raumfläche",
   "Tagged element's storey": "Geschoss des markierten Elements",
+  "Trailing zeros": "Nachkommanullen",
+  "Whether a value drops its trailing zeros (2.500 → 2.5, 3.000 → 3) or keeps them; as the project: the Project tab says": "Ob ein Wert seine Nachkommanullen weglässt (2.500 → 2.5, 3.000 → 3) oder behält; wie das Projekt: wie der Reiter Projekt sagt",
+  "keep (2.500)": "behalten (2.500)",
+  "suppress (2.5)": "weglassen (2.5)",
+  "Suppress trailing zeros": "Nachkommanullen weglassen",
+  "Dimension values drop their trailing zeros (2.500 → 2.5, 3.000 → 3), unless a dimension style keeps them": "Maßzahlen lassen ihre Nachkommanullen weg (2.500 → 2.5, 3.000 → 3), sofern ein Bemaßungsstil sie nicht behält",
+  "as the project": "wie das Projekt",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

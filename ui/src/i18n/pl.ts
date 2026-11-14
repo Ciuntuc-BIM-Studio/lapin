@@ -3510,6 +3510,13 @@ export const PL: Record<string, string> = {
   "Room's number": "Numer pomieszczenia",
   "Room's area": "Powierzchnia pomieszczenia",
   "Tagged element's storey": "Kondygnacja oznaczonego elementu",
+  "Trailing zeros": "Zera końcowe",
+  "Whether a value drops its trailing zeros (2.500 → 2.5, 3.000 → 3) or keeps them; as the project: the Project tab says": "Czy wartość pomija zera końcowe (2.500 → 2.5, 3.000 → 3), czy je zachowuje; jak projekt: tak, jak mówi karta Projekt",
+  "keep (2.500)": "zachowaj (2.500)",
+  "suppress (2.5)": "pomiń (2.5)",
+  "Suppress trailing zeros": "Pomijaj zera końcowe",
+  "Dimension values drop their trailing zeros (2.500 → 2.5, 3.000 → 3), unless a dimension style keeps them": "Wartości wymiarów pomijają zera końcowe (2.500 → 2.5, 3.000 → 3), chyba że styl wymiaru je zachowuje",
+  "as the project": "jak projekt",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

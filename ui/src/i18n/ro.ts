@@ -3505,6 +3505,13 @@ export const RO: Record<string, string> = {
   "Room's number": "Numărul încăperii",
   "Room's area": "Aria încăperii",
   "Tagged element's storey": "Nivelul elementului etichetat",
+  "Trailing zeros": "Zerouri de la final",
+  "Whether a value drops its trailing zeros (2.500 → 2.5, 3.000 → 3) or keeps them; as the project: the Project tab says": "Dacă o valoare își lasă deoparte zerourile de la final (2.500 → 2.5, 3.000 → 3) sau le păstrează; ca proiectul: cum spune fila Proiect",
+  "keep (2.500)": "păstrează (2.500)",
+  "suppress (2.5)": "suprimă (2.5)",
+  "Suppress trailing zeros": "Suprimă zerourile de la final",
+  "Dimension values drop their trailing zeros (2.500 → 2.5, 3.000 → 3), unless a dimension style keeps them": "Valorile cotelor își lasă deoparte zerourile de la final (2.500 → 2.5, 3.000 → 3), dacă un stil de cotă nu le păstrează",
+  "as the project": "ca proiectul",
 };
 
 /** Phrases with a number or a name in them. */

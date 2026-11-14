@@ -483,7 +483,7 @@
     {"name":"sitework.updateScaffoldType","module":"sitework","label":"Change type","args":[{"name":"id","type":"str"},{"name":"spec","type":"dict"},{"name":"name","type":"str"}]},
     {"name":"standards.importFrom","module":"core","label":"Import drafting standards","args":[{"name":"text","type":"str"},{"name":"choices","type":"dict"},{"name":"all","type":"str"},{"name":"options","type":"bool"}]},
     {"name":"standards.importLin","module":"core","label":"Import line types","args":[{"name":"text","type":"str"},{"name":"names","type":"list"},{"name":"choices","type":"str"},{"name":"all","type":"str"},{"name":"units","type":"str"}]},
-    {"name":"standards.options","module":"core","label":"Change drafting standards","args":[{"name":"units","type":"str"},{"name":"areaRounding","type":"float"},{"name":"lineCap","type":"str"},{"name":"markSize"},{"name":"markText"},{"name":"scales","type":"list"}]},
+    {"name":"standards.options","module":"core","label":"Change drafting standards","args":[{"name":"units","type":"str"},{"name":"areaRounding","type":"float"},{"name":"lineCap","type":"str"},{"name":"suppressZeros","type":"bool"},{"name":"markSize"},{"name":"markText"},{"name":"scales","type":"list"}]},
     {"name":"standards.remove","module":"core","label":"Change drafting standards","args":[{"name":"kind","type":"str"},{"name":"id","type":"str"}]},
     {"name":"standards.removeLineType","module":"core","label":"Remove line type","args":[{"name":"name","type":"str"},{"name":"units","type":"str"}]},
     {"name":"standards.replace","module":"core","label":"Load drafting standards","args":[{"name":"standards"}]},

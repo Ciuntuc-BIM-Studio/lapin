@@ -61,10 +61,10 @@ public static class OpeningHeights
     }
 
     /// <summary>The rows written under the line, top down: the height alone (150), h=150, h=150 and p=90 (no p for a door), 150/90.</summary>
-    public static List<string> Rows(string format, WallOpening o, string unit, int precision)
+    public static List<string> Rows(string format, WallOpening o, string unit, int precision, bool suppressZeros = false)
     {
-        var h = Standards.FormatDimension(o.Height, unit, precision);
-        var sill = o.Sill > NoSill ? Standards.FormatDimension(o.Sill, unit, precision) : null;
+        var h = Standards.FormatDimension(o.Height, unit, precision, suppressZeros);
+        var sill = o.Sill > NoSill ? Standards.FormatDimension(o.Sill, unit, precision, suppressZeros) : null;
         return format switch
         {
             "number" => [h],

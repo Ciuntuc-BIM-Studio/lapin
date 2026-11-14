@@ -3504,6 +3504,13 @@ export const DA: Record<string, string> = {
   "Room's number": "Rummets nummer",
   "Room's area": "Rummets areal",
   "Tagged element's storey": "Det mærkede elements etage",
+  "Trailing zeros": "Afsluttende nuller",
+  "Whether a value drops its trailing zeros (2.500 → 2.5, 3.000 → 3) or keeps them; as the project: the Project tab says": "Om en værdi udelader sine afsluttende nuller (2.500 → 2.5, 3.000 → 3) eller beholder dem; som projektet: som fanen Projekt siger",
+  "keep (2.500)": "behold (2.500)",
+  "suppress (2.5)": "udelad (2.5)",
+  "Suppress trailing zeros": "Udelad afsluttende nuller",
+  "Dimension values drop their trailing zeros (2.500 → 2.5, 3.000 → 3), unless a dimension style keeps them": "Målværdier udelader deres afsluttende nuller (2.500 → 2.5, 3.000 → 3), medmindre en målstil beholder dem",
+  "as the project": "som projektet",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

@@ -135,6 +135,8 @@ Annotations on a plan (dimensions, texts, drafted lines, tags) can go to another
 
 ![Opening height in the dimension styles](shots/dimension-opening-height-style.webp)
 
+**Trailing zeros.** A dimension with three decimals writes `2.500` and `3.000`. Tick **Manage → Drafting standards → Project → Suppress trailing zeros** and every dimension drops them instead: `2.5` and `3`, as CAD programs do. Each dimension style can also choose for itself in its **Trailing zeros** column, next to **Decimals**: *as the project* (the default), *keep (2.500)* or *suppress (2.5)*. It applies to the values of linear, aligned, radius, diameter, arc-length and ordinate dimensions and to the opening heights under them, on screen, on sheets and in the PDF and the DXF; feet and inches, written in fractions, have none to drop. It is off until you turn it on, so existing drawings keep their look.
+
 **Dimensions on a line.** A dimension point clicked on a grid axis or on a wall's centre line holds on the line, not on a point of it. Drag the axis's end along itself to make its head fit the view, or make the wall longer or shorter: the dimension keeps measuring where you put it and its line does not turn. If the axis or the wall moves across, the point goes with it, at the same place along. A dimension on a wall's face likewise stays where it measured when the wall is stretched along itself. Dimensions made before attach to a grid axis the same way; one on a wall's centre line is attached anew by clicking its point again.
 
 ### Tags

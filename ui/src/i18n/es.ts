@@ -3509,6 +3509,13 @@ export const ES: Record<string, string> = {
   "Room's number": "Número del local",
   "Room's area": "Superficie del local",
   "Tagged element's storey": "Planta del elemento etiquetado",
+  "Trailing zeros": "Ceros finales",
+  "Whether a value drops its trailing zeros (2.500 → 2.5, 3.000 → 3) or keeps them; as the project: the Project tab says": "Si un valor omite sus ceros finales (2.500 → 2.5, 3.000 → 3) o los conserva; como el proyecto: lo que diga la pestaña Proyecto",
+  "keep (2.500)": "conservar (2.500)",
+  "suppress (2.5)": "suprimir (2.5)",
+  "Suppress trailing zeros": "Suprimir ceros finales",
+  "Dimension values drop their trailing zeros (2.500 → 2.5, 3.000 → 3), unless a dimension style keeps them": "Los valores de las cotas omiten sus ceros finales (2.500 → 2.5, 3.000 → 3), salvo que un estilo de cota los conserve",
+  "as the project": "como el proyecto",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

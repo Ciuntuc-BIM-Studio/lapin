@@ -3501,6 +3501,13 @@ export const ZH: Record<string, string> = {
   "Room's number": "房间编号",
   "Room's area": "房间面积",
   "Tagged element's storey": "被标注元素的楼层",
+  "Trailing zeros": "尾随零",
+  "Whether a value drops its trailing zeros (2.500 → 2.5, 3.000 → 3) or keeps them; as the project: the Project tab says": "数值是否去掉尾随零（2.500 → 2.5，3.000 → 3）或保留；按项目：由“项目”选项卡决定",
+  "keep (2.500)": "保留 (2.500)",
+  "suppress (2.5)": "去掉 (2.5)",
+  "Suppress trailing zeros": "去掉尾随零",
+  "Dimension values drop their trailing zeros (2.500 → 2.5, 3.000 → 3), unless a dimension style keeps them": "尺寸数值去掉尾随零（2.500 → 2.5，3.000 → 3），除非某个尺寸样式保留它们",
+  "as the project": "按项目",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [
