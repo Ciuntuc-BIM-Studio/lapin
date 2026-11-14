@@ -79,7 +79,12 @@ public static class En81
 /// </summary>
 public sealed class ElevatorSpec
 {
-    public static readonly string[] Drives = ["traction", "mrl", "hydraulic", "home"];
+    public static readonly string[] Drives = ["traction", "mrl", "hydraulic", "home", "vacuum"];
+    /// <summary>A vacuum lift's tube (report #149): polycarbonate or glass.</summary>
+    public static readonly string[] TubeMaterials = ["polycarbonate", "glass"];
+    /// <summary>A vacuum lift's landing doors: curved sliding, swing (hinged) or none (an open landing).</summary>
+    public static readonly string[] VacuumDoors = ["sliding", "swing", "none"];
+    public static readonly string[] CabinDoors = ["sliding", "none"];
     public static readonly string[] Openings = ["centre", "side"];
     public static readonly string[] Sides = ["left", "right", "back"];
     public static readonly string[] Entrances = ["front", "through"];
@@ -92,18 +97,22 @@ public sealed class ElevatorSpec
     double N(string k, double d) => Json.Number(a[k]) ?? d;
     string S(string k, string[] allowed, string d) => a[k] is JsonValue v && v.TryGetValue<string>(out var s) && allowed.Contains(s) ? s : d;
     bool B(string k) => a[k] is JsonValue v && v.TryGetValue<bool>(out var b) && b;
+    string C(string k, string d) => a[k] is JsonValue v && v.TryGetValue<string>(out var s) && s is { Length: 7 } && s[0] == '#' ? s : d;
 
     public string Drive => S("drive", Drives, "mrl");
-    public double Load => Math.Max(50, N("load", 630));
-    public double Speed => Math.Max(0.05, N("speed", Drive switch { "hydraulic" => 0.63, "home" => 0.15, _ => 1.0 }));
-    public double CabinWidth => Math.Clamp(N("cabinWidth", 1.1), 0.6, 4);
-    public double CabinDepth => Math.Clamp(N("cabinDepth", 1.4), 0.6, 6);
-    public double CabinHeight => Math.Clamp(N("cabinHeight", 2.2), 1.9, 4);
-    public double CabinArea => CabinWidth * CabinDepth;
-    /// <summary>Its passengers: as given, else what its load and area carry.</summary>
-    public int Persons => a["persons"] is { } p && Json.Number(p) is { } n && n >= 1 ? (int)Math.Round(n) : En81.Persons(Load, CabinArea);
-    public bool Glass => B("glass");
-    public string Entrance => S("entrances", Entrances, "front");
+    /// <summary>A circular pneumatic vacuum lift (report #149): a transparent tube, no shaft, no pit, a head unit on top.</summary>
+    public bool Vacuum => Drive == "vacuum";
+    public double Load => Math.Max(50, N("load", Vacuum ? 205 : 630));
+    public double Speed => Math.Max(0.05, N("speed", Drive switch { "hydraulic" => 0.63, "home" or "vacuum" => 0.15, _ => 1.0 }));
+    public double CabinWidth => Vacuum ? CabinDiameter : Math.Clamp(N("cabinWidth", 1.1), 0.6, 4);
+    public double CabinDepth => Vacuum ? CabinDiameter : Math.Clamp(N("cabinDepth", 1.4), 0.6, 6);
+    public double CabinHeight => Math.Clamp(N("cabinHeight", Vacuum ? 2.05 : 2.2), 1.9, 4);
+    public double CabinArea => Vacuum ? Math.PI * CabinDiameter * CabinDiameter / 4 : CabinWidth * CabinDepth;
+    /// <summary>Its passengers: as given, else what its load and area carry (a vacuum lift: one, two, or three in the widest tube).</summary>
+    public int Persons => a["persons"] is { } p && Json.Number(p) is { } n && n >= 1 ? (int)Math.Round(n)
+        : Vacuum ? TubeDiameter < 0.85 ? 1 : TubeDiameter < 1.1 ? 2 : 3 : En81.Persons(Load, CabinArea);
+    public bool Glass => !Vacuum && B("glass");
+    public string Entrance => Vacuum ? "front" : S("entrances", Entrances, "front");
     public bool Through => Entrance == "through";
     public double DoorWidth => Math.Clamp(N("doorWidth", 0.8), 0.5, 3);
     public double DoorHeight => Math.Clamp(N("doorHeight", 2.0), 1.8, 3.5);
@@ -112,14 +121,66 @@ public sealed class ElevatorSpec
     /// <summary>The counterweight's side (a hydraulic lift's jack, a home lift's drive): left, right or behind the car; a through car keeps it at a side.</summary>
     public string Counterweight => S("counterweight", Sides, "left") is var s && s == "back" && Through ? "left" : s;
     public string Accessible => S("accessible", AccessibleTypes, "none");
-    public string MachineRoom => S("machineRoom", MachineRooms, Drive switch { "traction" => "top", "hydraulic" => "beside", _ => "none" });
-    public double Pit => Math.Clamp(N("pit", SuggestedPit(Drive, Speed)), 0.05, 4);
-    public double Headroom => Math.Clamp(N("headroom", SuggestedHeadroom(Drive, Speed)), 2.2, 8);
+    public string MachineRoom => Vacuum ? "none" : S("machineRoom", MachineRooms, Drive switch { "traction" => "top", "hydraulic" => "beside", _ => "none" });
+    /// <summary>The pit under the lowest stop: none for a vacuum lift, which stands on the floor on its base ring.</summary>
+    public double Pit => Vacuum ? 0 : Math.Clamp(N("pit", SuggestedPit(Drive, Speed)), 0.05, 4);
+    /// <summary>Over the top stop to the underside of the cap; a vacuum lift's tube rises its cabin and a gap over the top floor, its head unit on that.</summary>
+    public double Headroom => Vacuum ? CabinHeight + CabinRoofGap : Math.Clamp(N("headroom", SuggestedHeadroom(Drive, Speed)), 2.2, 8);
     public string? ShaftWallType => a["shaftWallTypeId"] is JsonValue v && v.TryGetValue<string>(out var t) && t.Length > 0 ? t : null;
     public double ShaftThickness => Math.Clamp(N("shaftThickness", 0.2), 0.05, 0.6);
-    public bool ShaftGlass => B("shaftGlass");
+    public bool ShaftGlass => !Vacuum && B("shaftGlass");
     public bool FireFighting => B("fireFighting");
     public bool FireExit => B("fireExit");
+
+    // ---- A circular vacuum lift (report #149; indicative values after the makers' home units) ----
+
+    /// <summary>The tube's outside diameter: 750 (one person), 933 (two) or 1300 mm (a wheelchair), or any between.</summary>
+    public double TubeDiameter => Math.Clamp(N("tubeDiameter", 0.933), 0.6, 1.6);
+    public static readonly double[] TubePresets = [0.75, 0.933, 1.3];
+    /// <summary>The cabin a tube takes when none is set: 120 mm less (the tube's wall, the seals, the gap).</summary>
+    public static double DerivedCabinDiameter(double tube) => Math.Round((tube - 0.12) * 1000) / 1000;
+    /// <summary>The cabin's outside diameter: as set, else the tube's; at most 80 mm under the tube.</summary>
+    public double CabinDiameter => Math.Clamp(N("cabinDiameter", DerivedCabinDiameter(TubeDiameter)), 0.4, TubeDiameter - 0.08);
+    public string TubeMaterial => S("tubeMaterial", TubeMaterials, "polycarbonate");
+    public double TubeWall => TubeMaterial == "glass" ? 0.012 : 0.01;
+    /// <summary>The frame's columns round the tube (none to twelve) and their square size.</summary>
+    public int Columns => (int)Math.Clamp(Math.Round(N("columns", 4)), 0, 12);
+    public double ColumnSize => Math.Clamp(N("columnSize", 0.05), 0.02, 0.2);
+    /// <summary>The ring beam at each landing above the lowest, in the floor's opening round the tube: its height (its width fills the opening).</summary>
+    public double RingBeamHeight => Math.Clamp(N("ringBeamHeight", 0.2), 0.03, 0.6);
+    public const double RingWidth = 0.06;
+    /// <summary>How far the floors' openings reach out of the tube: the ring beam, or the columns when they are wider.</summary>
+    public double OpeningMargin => Math.Max(RingWidth, ColumnSize + 0.005);
+    /// <summary>The head unit (the turbines and valve) on top of the tube.</summary>
+    public double HeadUnitHeight => Math.Clamp(N("headUnitHeight", 0.55), 0.2, 1.5);
+    /// <summary>The base ring the tube and the cabin stand on, on the lowest floor.</summary>
+    public double BaseRingHeight => Math.Clamp(N("baseRingHeight", 0.08), 0.02, 0.3);
+    public const double CabinRoofGap = 0.25;
+    public string DoorKind => S("doorKind", VacuumDoors, "sliding");
+    public string CabinDoor => S("cabinDoor", CabinDoors, "sliding");
+    /// <summary>Where the landing doors face (0° the lift's front, down the plan at no rotation; 90° its right), unless a landing says otherwise.</summary>
+    public double DoorAngle => Angle(N("doorAngle", 0));
+    /// <summary>The door's own frame round the opening (none at 0).</summary>
+    public double DoorFrame => Math.Clamp(N("doorFrame", 0.04), 0, 0.2);
+    public string FrameColor => C("frameColor", "#2b2f33");
+    public string TubeColor => C("tubeColor", "#bcd9e6");
+    public string CabinColor => C("cabinColor", "#d4d8dc");
+    /// <summary>The angle the door faces at a landing: its own (<c>doorAngles</c>, by storey), else <see cref="DoorAngle"/>.</summary>
+    public double LandingAngle(string storeyId) => a["doorAngles"] is JsonObject o && Json.Number(o[storeyId]) is { } v ? Angle(v) : DoorAngle;
+    static double Angle(double v) => ((v % 360) + 360) % 360;
+
+    /// <summary>What a vacuum lift's makers allow, roughly: each line a warning (indicative, EN 81-41 and the maker's data decide).</summary>
+    List<string> VacuumChecks(double travel)
+    {
+        var o = new List<string>();
+        if (DoorWidth > TubeDiameter * 0.9) o.Add($"The door ({F0(DoorWidth * 1000)} mm) is wider than the tube allows ({F0(TubeDiameter * 900)} mm).");
+        if (DoorHeight > CabinHeight + 1e-6) o.Add("The door is higher than the cabin.");
+        if (Speed > 0.15 + 1e-6) o.Add("A vacuum lift (EN 81-41) runs at about 0.15 m/s at most.");
+        if (Load > 250) o.Add("Vacuum lifts carry up to about 250 kg (indicative).");
+        if (travel > 15) o.Add($"Vacuum lifts travel up to about 15 m (indicative); this one travels {F(travel)} m.");
+        if (Json.Number(a["cabinDiameter"]) is { } cd && cd > TubeDiameter - 0.08 + 1e-6) o.Add($"The cabin is at most {F0((TubeDiameter - 0.08) * 1000)} mm in this tube.");
+        return o;
+    }
 
     /// <summary>The pit a drive needs at a speed: EN 81-20's refuge under the car and the buffer's stroke grow with the speed (rounded to 50 mm).</summary>
     public static double SuggestedPit(string drive, double speed) => R05(drive switch
@@ -127,6 +188,7 @@ public sealed class ElevatorSpec
         "traction" => 1.2 + 0.25 * speed,
         "mrl" => 1.1 + 0.15 * speed,
         "hydraulic" => 1.2,
+        "vacuum" => 0,
         _ => 0.15,
     });
 
@@ -136,6 +198,7 @@ public sealed class ElevatorSpec
         "traction" => 3.4 + 0.3 * speed,
         "mrl" => 3.4 + 0.2 * speed,
         "hydraulic" => 3.5,
+        "vacuum" => 2.4,
         _ => 2.5,
     });
 
@@ -158,6 +221,7 @@ public sealed class ElevatorSpec
     /// <summary>What EN 81-20 and EN 81-70 say of the configuration: each line a warning; none when it complies.</summary>
     public List<string> Checks(double travel)
     {
+        if (Vacuum) return VacuumChecks(travel);
         var o = new List<string>();
         var area = CabinArea;
         var max = En81.AreaForLoad(Load);
@@ -195,15 +259,38 @@ public sealed record ElevatorStyle(string Id, string Label, string Group, string
 /// <summary>
 /// The twelve kinds testers asked for (reports #54 and #97), with sizes EN 81-20 allows for their loads (Table 6) and
 /// EN 81-70's for the accessible car; where a report's size would need a larger load, the size EN 81 gives for the load.
+/// Then the circular vacuum lifts of report #149, in the three tubes their makers offer (indicative values).
 /// </summary>
 public static class ElevatorStyles
 {
+    /// <summary>A vacuum lift's own fields (report #149), which another drive does without.</summary>
+    public static readonly string[] VacuumFields =
+    [
+        "tubeDiameter", "cabinDiameter", "tubeMaterial", "columns", "columnSize", "ringBeamHeight", "headUnitHeight", "baseRingHeight",
+        "doorKind", "doorAngle", "doorFrame", "cabinDoor", "frameColor", "tubeColor", "cabinColor",
+    ];
+
     /// <summary>The attributes a style sets (and a project style keeps).</summary>
     public static readonly string[] Fields =
     [
         "drive", "load", "persons", "speed", "cabinWidth", "cabinDepth", "cabinHeight", "glass", "entrances", "doorWidth", "doorHeight",
         "doorOpening", "doorPanels", "counterweight", "accessible", "pit", "headroom", "machineRoom", "shaftThickness", "shaftGlass", "fireFighting", "fireExit",
+        .. VacuumFields,
     ];
+
+    /// <summary>A circular vacuum lift's style: its tube, its load and persons, its door (indicative values after the makers' home units).</summary>
+    static ElevatorStyle V(string id, string label, string description, double tube, double load, int persons, double door, string doorKind)
+    {
+        var v = new JsonObject
+        {
+            ["drive"] = "vacuum", ["load"] = load, ["persons"] = persons, ["speed"] = 0.15, ["cabinHeight"] = 2.05,
+            ["doorWidth"] = door, ["doorHeight"] = 1.95, ["accessible"] = "none", ["fireFighting"] = false, ["fireExit"] = false,
+            ["tubeDiameter"] = tube, ["tubeMaterial"] = "polycarbonate", ["columns"] = 4, ["columnSize"] = 0.05, ["ringBeamHeight"] = 0.2,
+            ["headUnitHeight"] = 0.55, ["baseRingHeight"] = 0.08, ["doorKind"] = doorKind, ["doorAngle"] = 0, ["doorFrame"] = 0.04, ["cabinDoor"] = "sliding",
+            ["frameColor"] = "#2b2f33", ["tubeColor"] = "#bcd9e6", ["cabinColor"] = "#d4d8dc",
+        };
+        return new ElevatorStyle(id, label, "Vacuum", description, v);
+    }
 
     static ElevatorStyle S(string id, string label, string group, string description, string drive, double load, int persons, double w, double d, double h,
         double door, double doorH, string opening, int panels, double speed, string cw = "left", string accessible = "none", bool glass = false, bool shaftGlass = false, string entrances = "front")
@@ -233,6 +320,9 @@ public static class ElevatorStyles
         S("mrl", "Machine-room-less (MRL)", "Passenger", "320–1600 kg, the machine in the shaft's headroom; a stretcher fits.", "mrl", 1000, 13, 1.1, 2.1, 2.2, 0.9, 2.1, "side", 2, 1.0),
         S("panoramic", "Panoramic glass", "Special", "4–13 persons: a glass car in a glass shaft, a centre door.", "mrl", 630, 8, 1.1, 1.4, 2.2, 0.8, 2.0, "centre", 2, 1.0, glass: true, shaftGlass: true),
         S("home", "Home lift", "Home", "2–4 persons, 0.15 m/s (EN 81-41), a shallow pit, no machine room.", "home", 250, 3, 0.8, 0.95, 2.0, 0.7, 2.0, "side", 2, 0.15),
+        V("vacuum-750", "Vacuum lift, one person", "A circular pneumatic lift for one person: a tube of 750 mm, no shaft, no pit (indicative values).", 0.75, 160, 1, 0.52, "sliding"),
+        V("vacuum-933", "Vacuum lift, two persons", "A circular pneumatic lift for two persons: a tube of 933 mm, no shaft, no pit (indicative values).", 0.933, 205, 2, 0.6, "sliding"),
+        V("vacuum-1300", "Vacuum lift, wheelchair", "A circular pneumatic lift for a wheelchair and a companion: a tube of 1300 mm, a swing door (indicative values).", 1.3, 240, 2, 0.8, "swing"),
     ];
 
     public static ElevatorStyle? Find(string? id) => All.FirstOrDefault(s => s.Id == id);

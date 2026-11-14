@@ -6379,7 +6379,7 @@ export const scenes = [
       t.expect(await t.page.locator('.dialog .elevator-section rect').count() > 6, 'and its section from the pit to the top');
       await t.shot('elevator-section', { of: '.dialog', pad: 0 });
       await t.page.locator('.dialog [data-action=elevator-apply]').click();
-      await t.wait(1200);
+      for (let i = 0; i < 24 && !(await lifts())[0].props.doorAngles; i++) await t.wait(250);
       const applied = (await lifts())[0];
       t.expect(applied.props.accessible === 'type2' && applied.props.load === 630, `the style applied (${applied.props.accessible}, ${applied.props.load} kg)`);
       const openings = (await t.nodes()).filter((n) => n.type === 'IfcOpeningElement' && n.props.elevatorId === lift.id);
@@ -6397,6 +6397,55 @@ export const scenes = [
       await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 2.3, pitch: -0.55, distance: 24, target: { x: 9.6, y: 5.4, z: 3.5 } }, false));
       await t.wait(1500);
       await t.shot('elevator-3d', { of: 'canvas', pad: 0 });
+    },
+  },
+  {
+    // A circular vacuum lift (tester's report #149, docs/plan-elevators.md): the Elevator tool with the two-person vacuum
+    // style in a two-storey house, its configurator's Doors and stops tab with the first floor's door turned to the right,
+    // applied (the first floor opened round its tube), and 3D.
+    id: 'vacuum-lift',
+    touches: ['transport'],
+    async run(t) {
+      await t.fresh();
+      const { storey: s } = await house(t, { roof: false });
+      const first = await t.storey('First floor');
+      await t.cmd('architecture.addSlab', { storeyId: first, points: [[0, 0], [12, 0], [12, 8], [0, 8]] });
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      await t.button('Architecture', { exact: true });
+      await t.tool('transport.elevator');
+      await t.wait(400);
+      // The bar's style (its Vacuum group), set as the list would.
+      await t.page.evaluate(async () => (await import('/src/modules/transport/elevator.ts')).useElevatorPrefs.setState({ style: 'vacuum-933' }));
+      await t.wait(400);
+      t.expect(await t.page.locator('[data-testid=elevator-style]').inputValue() === 'vacuum-933', 'the bar shows the vacuum style');
+      { const [px, py] = await t.planPoint(9.4, 5.6); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(1200); }
+      const lifts = async () => (await t.nodes()).filter((n) => n.type === 'IfcTransportElement');
+      for (let i = 0; i < 20 && !(await lifts()).length; i++) await t.wait(250);
+      const lift = (await lifts())[0];
+      t.expect(lift && lift.props.drive === 'vacuum', 'a vacuum lift placed at the click');
+      // A tube's lift takes a moment to build and its configurator to open: waited for.
+      for (let i = 0; i < 20 && !(await t.page.locator('.dialog [data-testid=vacuum-tube-presets] button').count()); i++) await t.wait(250);
+      t.expect(await t.page.locator('.dialog [data-testid=vacuum-tube-presets] button').count() === 3, 'its configurator opens, with the tube presets');
+      await t.page.locator('.dialog [role=tab]').nth(1).click();
+      await t.wait(600);
+      const angles = t.page.locator('.dialog [data-field=vacuum-landing-angle]');
+      t.expect(await angles.count() === 2, 'each landing has its own door angle');
+      await angles.first().selectOption('90');
+      await t.wait(1200);
+      t.expect(await t.page.locator('.dialog .elevator-section rect').count() > 6, 'the configurator draws the section of the draft');
+      await t.shot('vacuum-lift-configurator', { of: '.dialog', pad: 0 });
+      await t.page.locator('.dialog [data-action=elevator-apply]').click();
+      for (let i = 0; i < 24 && !(await lifts())[0].props.doorAngles; i++) await t.wait(250);
+      const applied = (await lifts())[0];
+      t.expect(applied.props.doorAngles && applied.props.doorAngles[first] === 90, 'the first floor\'s door faces right');
+      const openings = (await t.nodes()).filter((n) => n.type === 'IfcOpeningElement' && n.props.elevatorId === lift.id);
+      t.expect(openings.length === 1, `the tube opens the first floor (${openings.length})`);
+      await t.ui({ dialog: null, selection: null, selected: [], storeyId: s });
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 2.3, pitch: -0.4, distance: 14, target: { x: 9.4, y: 5.6, z: 2.8 } }, false));
+      await t.wait(1500);
+      await t.shot('vacuum-lift-3d', { of: 'canvas', pad: 0 });
     },
   },
   {

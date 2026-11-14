@@ -5,7 +5,7 @@ using Lapin.Model;
 namespace Lapin.Platform;
 
 /// <summary>
-/// Any type duplicated, and the types of a class in an order of the user's (forum #71, decision 559): wall, floor, door,
+/// Any type duplicated, and the types of a class in an order of the user's (forum #71, decision 562): wall, floor, door,
 /// window, stair, column, beam types… are listed (every type list and picker) in the order the project keeps for their
 /// class, <c>typeOrder</c> on the project (<c>{class: [ids]}</c>); a type the list does not name comes after those it
 /// names, in creation order, so a project that never ordered its types lists them as before. The order is kept on the

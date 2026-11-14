@@ -41,7 +41,8 @@ public sealed class ElevatorTests
     [Fact]
     public void Every_style_builds_a_closed_lift_that_meets_EN_81()
     {
-        foreach (var style in ElevatorStyles.All)
+        // The vacuum lifts (report #149) have no shaft or pit: VacuumLiftTests.
+        foreach (var style in ElevatorStyles.All.Where(x => (string?)x.Values["drive"] != "vacuum"))
         {
             var f = F();
             var storeys = Building(f, style.Id == "home" ? 2 : 4);
@@ -78,9 +79,10 @@ public sealed class ElevatorTests
     [Fact]
     public void The_twelve_kinds_of_the_reports_are_there()
     {
-        Assert.Equal(12, ElevatorStyles.All.Count);
         string[] ids = ["residential-small", "passenger-standard", "passenger-medium", "passenger-large", "heavy-duty", "accessible", "hospital", "goods", "hydraulic", "mrl", "panoramic", "home"];
-        Assert.Equal(ids, ElevatorStyles.All.Select(s => s.Id));
+        Assert.Equal(ids, ElevatorStyles.All.Take(12).Select(s => s.Id));
+        // Then report #149's circular vacuum lifts.
+        Assert.Equal(["vacuum-750", "vacuum-933", "vacuum-1300"], ElevatorStyles.All.Skip(12).Select(s => s.Id));
         Assert.Equal("type2", (string?)ElevatorStyles.Find("accessible")!.Values["accessible"]);
         Assert.Equal("hydraulic", (string?)ElevatorStyles.Find("hydraulic")!.Values["drive"]);
         Assert.True((bool)ElevatorStyles.Find("panoramic")!.Values["glass"]!);
