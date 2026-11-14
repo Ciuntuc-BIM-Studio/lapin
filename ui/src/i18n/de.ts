@@ -3510,6 +3510,7 @@ export const DE: Record<string, string> = {
   "Room's number": "Raumnummer",
   "Room's area": "Raumfläche",
   "Tagged element's storey": "Geschoss des markierten Elements",
+  "Panel sides": "Seiten der Bereiche", "Next view tab": "Nächster Ansichts-Tab", "Previous view tab": "Vorheriger Ansichts-Tab",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

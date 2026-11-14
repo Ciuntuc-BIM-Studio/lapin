@@ -3513,6 +3513,7 @@ export const IT: Record<string, string> = {
   "Room's number": "Numero del locale",
   "Room's area": "Superficie del locale",
   "Tagged element's storey": "Piano dell'elemento etichettato",
+  "Panel sides": "Lati dei pannelli", "Next view tab": "Scheda vista successiva", "Previous view tab": "Scheda vista precedente",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

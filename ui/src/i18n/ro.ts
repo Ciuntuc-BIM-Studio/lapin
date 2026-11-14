@@ -3506,6 +3506,7 @@ export const RO: Record<string, string> = {
   "Room's number": "Numărul încăperii",
   "Room's area": "Aria încăperii",
   "Tagged element's storey": "Nivelul elementului etichetat",
+  "Panel sides": "Părțile panourilor", "Next view tab": "Fila de vizualizare următoare", "Previous view tab": "Fila de vizualizare anterioară",
 };
 
 /** Phrases with a number or a name in them. */

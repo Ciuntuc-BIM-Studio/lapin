@@ -3511,6 +3511,7 @@ export const PL: Record<string, string> = {
   "Room's number": "Numer pomieszczenia",
   "Room's area": "Powierzchnia pomieszczenia",
   "Tagged element's storey": "Kondygnacja oznaczonego elementu",
+  "Panel sides": "Strony paneli", "Next view tab": "Następna karta widoku", "Previous view tab": "Poprzednia karta widoku",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

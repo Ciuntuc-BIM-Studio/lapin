@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { closePane, closeTab, emptyPane, focusPane, openTab, setPane, splitPane, tabKey, useUi } from './store';
+import { cycleTab, neighbourTab, closePane, closeTab, emptyPane, focusPane, openTab, setPane, splitPane, tabKey, useUi } from './store';
 
 describe('the panes', () => {
   beforeEach(() => { useUi.setState({ panes: [emptyPane('plan')], pane: 0, ...emptyPane('plan') }); });
@@ -87,6 +87,16 @@ describe('the view tabs', () => {
     // The last tab closed leaves a plan.
     expect(useUi.getState().viewTabs).toHaveLength(1);
     expect(useUi.getState().view).toBe('plan');
+  });
+
+  it('cycles through the tabs, wrapping round (Ctrl+Tab)', () => {
+    useUi.setState({ screen: 'workspace', storeyId: 's1' });
+    useUi.setState({ view: '3d' });
+    expect(neighbourTab({ ...useUi.getState() }, 1)).toMatchObject({ view: 'plan', storeyId: 's1' });
+    cycleTab(1);
+    expect(useUi.getState()).toMatchObject({ view: 'plan', storeyId: 's1' });
+    cycleTab(-1);
+    expect(useUi.getState().view).toBe('3d');
   });
 
   it('entering the workspace starts the tabs afresh', () => {

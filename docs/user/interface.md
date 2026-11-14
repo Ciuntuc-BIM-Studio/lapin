@@ -128,7 +128,7 @@ Click an icon on a folded panel's rail to open the panel over the view without u
 
 ## Panels on either side
 
-**View → Panels** puts the project browser and the properties panel where you want them, as in Revit: **Browser left, Properties right** (the default), **Browser right, Properties left**, **Both panels on the left** or **Both panels on the right**. With both on one side they stand one under the other; drag the divider between them to share the height (double-click it to halve), and drag the side's edge to make it wider. Each panel still folds, on its own: a folded one is a thin bar in the stack, or a rail when both are folded. The assistant tab (desktop) stays with the properties. Lapin remembers the arrangement on this computer.
+**View → Panels** puts the project browser and the properties panel where you want them, as in Revit: **Browser left, Properties right** (the default), **Browser right, Properties left**, **Both panels on the left** or **Both panels on the right**. With both on one side they stand one under the other; drag the divider between them to share the height (double-click it to halve), and drag the side's edge to make it wider. Each panel still folds, on its own: a folded one is a thin bar in the stack, or a rail when both are folded. The assistant tab (desktop) stays with the properties. Lapin remembers the arrangement on this computer. The same four choices are in **View → Interface…**, under **Panel sides**, beside the other parts of the interface.
 
 ![Browser and properties stacked on the left](shots/panel-layouts.webp)
 
@@ -158,6 +158,10 @@ The theme is kept: Lapin starts again in the one you left it in. **File → Pref
 Three quick buttons stand before the tabs: **3D** opens the 3D view, **Section** (<kbd>SE</kbd>) starts the section tool and **Measure** (<kbd>ME</kbd>) the measure tool, so the three most used views and tools are one click away from any view.
 
 Each view opened has a tab above the view. Drag a tab to put the view somewhere else. Dragged out of the window, or onto its edge, it opens in a **window of its own** where you drop it, for a second screen (desktop app). Dropped on the right or bottom quarter of a view, it splits the view and opens beside it or under it. Dropped on the other pane, it opens there. While you drag, the place it would go is lit and named. A click on a tab still just opens it.
+
+<kbd>Ctrl</kbd> <kbd>Tab</kbd> brings the next tab in front and <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Tab</kbd> the one before (also <kbd>Ctrl</kbd> <kbd>Page Down</kbd> and <kbd>Page Up</kbd>), going round from the last to the first; on a Mac it is the <kbd>Control</kbd> key, since <kbd>⌘</kbd> <kbd>Tab</kbd> belongs to the system. They do nothing while you type in a field. They are commands (**Next view tab**, **Previous view tab**) you can reassign in the shortcuts.
+
+A 3D tab keeps its state while you work in another view: the camera (where it looks from, perspective or orthographic) and the **section box**, on or off and where you left it, are as they were when you come back from a plan or a sheet. Each 3D view (the plain 3D and every saved one) keeps its own, for as long as the project is open; a saved view's own camera and box open it when nothing was kept yet.
 
 A right click on a tab offers the same: **Open in a new window**, **Split: open beside**, **Split: open below** (or **Open in the other pane** when the view is split), **Close** and **Close the others**. The window button at the right of the tabs, and **View → New window**, open the view in front in a window of its own. The windows share the model, the selection, the storey and the tool; each keeps its own zoom.
 

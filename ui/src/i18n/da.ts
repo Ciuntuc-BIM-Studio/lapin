@@ -3505,6 +3505,7 @@ export const DA: Record<string, string> = {
   "Room's number": "Rummets nummer",
   "Room's area": "Rummets areal",
   "Tagged element's storey": "Det mærkede elements etage",
+  "Panel sides": "Panelernes sider", "Next view tab": "Næste visningsfane", "Previous view tab": "Forrige visningsfane",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

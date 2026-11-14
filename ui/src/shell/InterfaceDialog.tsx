@@ -13,6 +13,7 @@ import { ALWAYS_SHOWN_TABS, CHOICES, choosePart, choosePreset, moveTab, showTab,
 import { WorkspacePicker } from './WorkspacePicker';
 import { ribbonTabs } from '../platform/modules';
 import { bindingText } from '../app/commands';
+import { LAYOUTS, layoutName, setLayout, usePanels, type LayoutName } from '../app/panels';
 
 const PRESET_LABELS: Record<InterfacePreset, { label: string; note: string }> = {
   comfortable: { label: 'Comfortable', note: 'The ribbon with names, a command line under each drawing, the HUD over the view.' },
@@ -31,10 +32,16 @@ const PARTS: { key: keyof InterfaceParts; label: string; choices: Record<string,
   { key: 'rows', label: 'Property rows', choices: { normal: 'Normal', dense: 'Dense (22 px)' } },
 ];
 
+/** Where the project browser and the properties stand (View → Panels offers the same). */
+const SIDE_LABELS: Record<LayoutName, string> = {
+  default: 'Browser left, Properties right', swapped: 'Browser right, Properties left', bothLeft: 'Both panels on the left', bothRight: 'Both panels on the right',
+};
+
 export function InterfaceDialog() {
   const s = useInterface();
   const close = () => useUi.setState({ dialog: null });
   const keys = bindingText('app.interface');
+  const sides = usePanels((p) => layoutName(p));
   const all = ribbonTabs();
   const shownIds = visibleTabIds(s, all);
   return (
@@ -68,6 +75,14 @@ export function InterfaceDialog() {
                 </div>
               </div>
             ))}
+            <div className="part-row" data-testid="panel-sides">
+              <span className="part-label">Panel sides</span>
+              <div className="seg small" role="radiogroup" aria-label="Panel sides">
+                {(Object.keys(LAYOUTS) as LayoutName[]).map((v) => (
+                  <button type="button" key={v} role="radio" aria-checked={sides === v} className={`seg-item${sides === v ? ' on' : ''}`} onClick={() => setLayout(v)}>{SIDE_LABELS[v]}</button>
+                ))}
+              </div>
+            </div>
           </div>
           <div className="interface-tabs">
             <span className="part-label">Tabs</span>

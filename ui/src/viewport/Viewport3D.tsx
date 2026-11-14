@@ -51,6 +51,7 @@ import { useDirect } from './sketch/direct';
 import { useFaceSketch } from './faceSketch';
 import { useAxisDrag } from './axisDrag';
 import { SectionBox3D } from './SectionBox3D';
+import { changed3d, key3d, recall3d, remember3d } from './viewState3d';
 import { RefPlanes3D, useRefPlaneDrag } from './RefPlanes3D';
 import { Location3D } from './Location3D';
 import { coreBounds, type Bounds } from './zoom';
@@ -590,6 +591,8 @@ const gridsOf = (nodes: Map<string, NodeDto>) => [...nodes.values()].filter((n) 
 
 export function Viewport3D() {
   const host = useRef<HTMLDivElement>(null);
+  /** The 3D view this viewport shows now (a saved view's id, else "3d"), for the memory that outlives the viewport (viewState3d.ts). */
+  const keyRef = useRef('3d');
   const scene = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   /** The camera in use (perspective or orthographic), for the grips drawn over the scene. */
@@ -805,6 +808,10 @@ export function Viewport3D() {
       },
     };
     useCamera.setState({ api });
+    // Back from another tab: the camera this 3D view had (forum topic 62); a camera moved is kept as it moves.
+    const kept = recall3d(keyRef.current);
+    if (kept?.pose) { api.setOrtho(Boolean(kept.ortho)); api.orbitTo(kept.pose, false); }
+    const unkeep = useCamera.subscribe((c) => remember3d(keyRef.current, { pose: { azimuth: c.azimuth, pitch: c.pitch, distance: c.distance, target: c.target }, ortho: c.ortho }));
     s.add(new THREE.HemisphereLight(0xffffff, 0xd6cebf, 2.2));
     const hemi = s.children[s.children.length - 1] as THREE.HemisphereLight;
     const sun = new THREE.DirectionalLight(0xffffff, 1.6);
@@ -1487,6 +1494,7 @@ export function Viewport3D() {
       cancelAnimationFrame(frame);
       clearTimeout(trailing);
       cancelAnimationFrame(flight);
+      unkeep();
       if (useCamera.getState().api === api) useCamera.setState({ api: null });
       unlisten();
       invalidate.current = () => undefined;
@@ -1631,8 +1639,12 @@ export function Viewport3D() {
   useVoids3d(scene, invalidate);
   // A saved 3D view opened: its camera (where it looks from, perspective or orthographic).
   const view3dId = usePaneField('view3dId');
+  keyRef.current = key3d(view3dId);
   useEffect(() => {
     if (!view3dId) return;
+    // What this view had in this session (the viewport was away, or another 3D view was in front) comes before the saved camera.
+    const mine = recall3d(key3d(view3dId))?.pose;
+    if (mine) { const a = useCamera.getState().api; a?.setOrtho(Boolean(recall3d(key3d(view3dId))?.ortho)); a?.orbitTo(mine, false); return; }
     const cam = useSession.getState().nodes.get(view3dId)?.props.camera as { azimuth?: number; pitch?: number; distance?: number; target?: number[]; ortho?: boolean } | undefined;
     const api = useCamera.getState().api;
     if (!cam || !api) return;
@@ -1642,11 +1654,10 @@ export function Viewport3D() {
 
   // A saved 3D view's section box: shown when the view opens, and again when an undo brings it back; {3D} starts without one.
   const keptBox = useSession((st) => (view3dId && view3dId !== '3d' ? JSON.stringify(st.nodes.get(view3dId)?.props.sectionBox ?? null) : 'none'));
-  const lastView3d = useRef<string | null | undefined>(undefined);
   useEffect(() => {
-    const changed = lastView3d.current !== view3dId;
-    lastView3d.current = view3dId;
-    if (keptBox === 'none') { if (changed) useSectionBox.setState({ box: null }); return; }
+    // {3D}'s box is the session's (viewState3d.ts): it comes back with the tab, instead of starting without one each time.
+    const changed = changed3d(key3d(view3dId));
+    if (keptBox === 'none') { if (changed) useSectionBox.setState({ box: recall3d('3d')?.box ?? null }); return; }
     const kept = JSON.parse(keptBox) as SectionBox | null;
     if (JSON.stringify(useSectionBox.getState().box) !== keptBox) useSectionBox.setState({ box: kept });
   }, [view3dId, keptBox]);
@@ -1800,6 +1811,7 @@ export function Viewport3D() {
   const sectionNotes = useSection3d((st) => st.annotations);
   const capStyle = useSection3d((st) => st.caps);
   const box = useSectionBox((st) => st.box);
+  useEffect(() => { remember3d(keyRef.current, { box }); }, [box]);
   const shown = sectionId && sectionDrawing?.frame && sectionDrawing.kind === 'section' ? sectionDrawing : null;
   // What cuts the model: the section shown (its plane, and its depth) and the section box's faces.
   const planes: ClipPlane[] = [...(shown ? sectionPlanes(shown.frame!, shown.depth) : []), ...(box ? boxPlanes(box) : [])];

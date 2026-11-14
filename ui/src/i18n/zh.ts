@@ -3502,6 +3502,7 @@ export const ZH: Record<string, string> = {
   "Room's number": "房间编号",
   "Room's area": "房间面积",
   "Tagged element's storey": "被标注元素的楼层",
+  "Panel sides": "面板位置", "Next view tab": "下一个视图标签页", "Previous view tab": "上一个视图标签页",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

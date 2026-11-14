@@ -6,6 +6,7 @@
  * and goes back to it (or to a download), as bytes.
  */
 
+import { forget3d } from '../viewport/viewState3d';
 import { brand } from '../platform/brand';
 import { activeStorey, engine, engineInBrowser, useSession } from './session';
 import { LONG_TIMEOUT_MS } from './client';
@@ -215,6 +216,7 @@ function remember(path: string): void {
 /** Into the project: the ground floor's plan in front, the 3D open in a tab beside it. */
 export function enter(): void {
   select(null);
+  forget3d();
   const plan = emptyPane('plan');
   useUi.setState({ screen: 'workspace', storeyId: null, tool: null, panes: [plan], pane: 0, ...plan });
   useUi.setState((s) => ({ viewTabs: [...s.viewTabs, { ...emptyPane('3d'), storeyId: null }] }));

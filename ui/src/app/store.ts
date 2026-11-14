@@ -210,6 +210,22 @@ export function closeTab(key: string): void {
   rawSet({ viewTabs: rest.length ? rest : [fallback], panes, ...panes[s.pane], ...(activeShowed && fallback.view === 'plan' && fbStorey ? { storeyId: fbStorey } : {}) });
 }
 
+/** The tab that comes `delta` places after the active pane's (wrapping round); null with fewer than two tabs. Ctrl+Tab and Ctrl+Shift+Tab (forum topic 63). */
+export function neighbourTab(s: Pick<UiState, 'viewTabs' | 'panes' | 'pane' | 'storeyId'>, delta: number): ViewTab | null {
+  const n = s.viewTabs.length;
+  if (n < 2) return null;
+  const key = tabKey(tabOf(s.panes[s.pane], s.storeyId));
+  const k = s.viewTabs.findIndex((t) => tabKey(t) === key);
+  return s.viewTabs[(((k < 0 ? 0 : k) + delta) % n + n) % n];
+}
+
+/** Bring the next (delta 1) or previous (-1) view tab to the active pane. */
+export function cycleTab(delta: number): void {
+  const s = useUi.getState();
+  const t = neighbourTab(s, delta);
+  if (t) openTab(s.pane, t);
+}
+
 /** The pane at an index, as it is now. */
 export const paneAt = (s: UiState, i: number): Pane => s.panes[i] ?? s.panes[s.pane];
 
