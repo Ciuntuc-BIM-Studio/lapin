@@ -7,7 +7,8 @@ Blender. Maybe an interactive window with a generic sketch of a part and checkbo
 front, back, sections parallel to faces) to place on sheet."
 
 The user (Ionuț) wants it **general, not only for steel**: any element or assembly of any module gets its own drawing,
-one at a time or all at once. This plan is that general system. Status: **proposed** (decision 578), nothing built yet.
+one at a time or all at once. This plan is that general system. Status: **approved** (decision 578): the user accepted
+every recommended answer of §16 on 14.11.2026 ("toate recomandate"); stages S0–S3 in progress.
 
 ## 1. In one paragraph
 
@@ -90,7 +91,8 @@ The pieces are mostly there; what is missing is the element's frame, the rule th
 | core | groups, components, `IfcRelAggregates` chains (`Assemblies.cs`, `core.assemblyPath`) | an IFC file's `IfcElementAssembly`, a group, a component instance |
 
 `docs/plan-steel.md` put "shop drawings per part and per assembly, shop numbering" and DSTV/NC in the premium
-`steel-pro`. The user's new direction (general, every module) reopens that boundary: see §11 and question 1.
+`steel-pro`. The user's answer to question 1 (§16) moved shop drawings and marks to the open side; only DSTV/NC, BTLx,
+workshop numbering series by phase, ISO 2553 weld symbols and EC3/EC5 checks stay premium (§11).
 
 ### 2.5 What others do (the good ideas taken)
 
@@ -327,18 +329,18 @@ element's attributes, as face roles are).
 | Studio part | front, top, right, iso | overall, its driving dimensions shown | — |
 | Generic (anything) | front, top, right, iso | overall | — |
 
-## 11. Open and premium (a proposal; the user decides)
+## 11. Open and premium (decided 14.11.2026, question 1)
 
 The open repo holds hooks only for premium; open modules never depend on it.
 
-- **Proposed open** (core and the modules' own rules): the element frame and features services, element views, the kept
+- **Open** (core and the modules' own rules): the element frame and features services, element views, the kept
   subject in `VisibilityGraphics`, drawing rules and the dialog, single part, assembly and batch drawings, marks and the
   register, the BOM, the Drawing list with its flags, drawn layouts, the built-in rules of the open modules. This is
   what Victor1 asked for and what Revit lacks; it fits Lapin's helpware stance.
-- **Proposed premium** (`steel-pro`, and later `wood-pro`/`rebar-pro`, private repos, by hooks): DSTV/NC and BTLx files
+- **Premium** (`steel-pro`, and later `wood-pro`/`rebar-pro`, private repos, by hooks): DSTV/NC and BTLx files
   from the same features; workshop numbering conventions (series per phase, locked numbering across phases, mark
   comparison options by finish and camber), weld symbols after ISO 2553 on the drawings, EC3/EC5 checks.
-- This changes `docs/plan-steel.md`'s boundary (shop drawings and numbering were premium there): question 1.
+- This changed `docs/plan-steel.md`'s boundary (shop drawings and numbering were premium there); updated there too.
 
 ## 12. IFC and exports
 
@@ -427,7 +429,17 @@ project"; S6–S7 make it general for every module.
   the drawings are drawn lazily when shown or printed (as every view today); measured on a 1,000-part hall in S5.
 - **Signature churn**: tiny model changes must not renumber the shop; quantization and the frozen register guard it.
 
-## 16. Questions for the user
+## 16. Questions for the user (answered 14.11.2026: "toate recomandate")
+
+The user accepted every recommended answer below. In short: (1) the general system is open for every module; premium
+keeps DSTV/NC, BTLx, workshop numbering series by phase, ISO 2553 welds, EC3/EC5 checks; (2) ISO E by default, from the
+project's drawing standard, third angle per rule; (3) the marks register, frozen after issue; (4) identity at 0.5 mm +
+material + finish, a mirrored part has its own mark; (5) live drawings, the Drawing list flags, issued PDFs in the CDE;
+(6) sheet number = mark, name "{kind} {mark}", a "Shop drawings" set; (7) assemblies = IfcElementAssembly, component
+instances, furniture, framed walls, multi-body Studio parts, groups on request; (8) the part's frame turned per mark, in
+the register; (9) IFC: `Lapin_Fabrication` marks, `IfcDocumentReference` only if ticked; (10) start with steel bars and
+plates plus the generic rule.
+
 
 1. **Ce e liber și ce e premium?** `docs/plan-steel.md` punea desenele de execuție pe piesă și pe ansamblu și numerotarea
    pentru atelier în `steel-pro`. *Recomandat*: sistemul general (cadrul elementului, vederile elementului, regulile,
