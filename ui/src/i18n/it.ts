@@ -3524,11 +3524,33 @@ export const IT: Record<string, string> = {
   "How much of the room's colour covers the plan under it, 0–100 %; empty: as its scheme says": "Quanto il colore del locale copre la pianta sotto, 0–100 %; vuoto: come dice il suo schema",
   "Own opacity": "Opacità propria",
   "Own opacity %": "Opacità propria %",
+  "Renumber axes…": "Rinumera assi…",
+  "Renumber axes": "Rinumera assi",
+  "RENUMBER…": "RINUMERA…",
+  "The axes renumbered in order across them": "Gli assi rinumerati in ordine, trasversalmente",
+  "The axes renumbered in order across them; with several axes selected, only those": "Gli assi rinumerati in ordine, trasversalmente; con più assi selezionati, solo quelli",
+  "The project has no grid yet: draw axes or make a grid first.": "Il progetto non ha ancora una griglia: disegna prima degli assi o crea una griglia.",
+  "The axes renumbered, in order across them": "Gli assi rinumerati, in ordine trasversalmente",
+  "running up the plan, left to right": "che salgono nella pianta, da sinistra a destra",
+  "running across the plan, bottom to top": "che attraversano la pianta, dal basso verso l'alto",
+  "numbers (1, 2, 3…)": "numeri (1, 2, 3…)",
+  "letters (A, B, C…)": "lettere (A, B, C…)",
+  "The first axis's label: 1, 01, 101, A, AA…": "L'etichetta del primo asse: 1, 01, 101, A, AA…",
+  "Prefix": "Prefisso",
+  "Written before every label: S1, S2… or A-01": "Scritto prima di ogni etichetta: S1, S2… o A-01",
+  "I and O read as 1 and 0 on drawings": "I e O si leggono come 1 e 0 nei disegni",
+  "leave out I and O": "senza I e O",
+  "Dimensions on the axes keep measuring them.": "Le quote sugli assi continuano a misurarli.",
+  "Renumber": "Rinumera",
+  "The axes already have those labels.": "Gli assi hanno già queste etichette.",
+  "Renumber grid axes": "Rinumera gli assi della griglia",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 
 /** Phrases with a number or a name in them. */
 export const IT_PATTERNS: Language['patterns'] = [
+  [/^the selected axes \((\d+)\)$/, (m) => `gli assi selezionati (${m[1]})`],
+  [/^(\d+) axes renumbered\.$/, (m) => `${m[1]} assi rinumerati.`],
   [/^Commands: (\d+), (\d+) ms$/, (m) => `Comandi: ${m[1]}, ${m[2]} ms`],
   [/^Elements made: (\d+), one undo step$/, (m) => `Elementi creati: ${m[1]}, un solo passo di annullamento`],
   [/^„(.+)” was not run again: it is not trusted on this computer\. Run it once from the Script panel and choose Trust\.$/, (m) => `«${m[1]}» non è stato rieseguito: non è attendibile su questo computer. Eseguilo una volta dal pannello Script e scegli Fidati.`],

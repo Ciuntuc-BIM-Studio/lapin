@@ -124,6 +124,130 @@ public static class Grids
         return result;
     }
 
+    /// <summary>Across an axis, the way its family counts: towards +x, or towards +y for an axis along x (whichever way it was drawn).</summary>
+    public static Vec2 Across(Vec2 dir)
+    {
+        var n = new Vec2(-dir.Y, dir.X);
+        return n.X < -1e-9 || (Math.Abs(n.X) <= 1e-9 && n.Y < 0) ? new Vec2(-n.X, -n.Y) : n;
+    }
+
+    /// <summary>Whether an axis is one of the family spaced along x (it runs up the plan rather than across it).</summary>
+    public static bool AlongX(Axis x) => Math.Abs(x.B.Y - x.A.Y) >= Math.Abs(x.B.X - x.A.X);
+
+    /// <summary>Whether a label holds an I or an O, the letters grids leave out (they read as 1 and 0).</summary>
+    static bool HasIO(string label) => label.Any(ch => ch is 'I' or 'O' or 'i' or 'o');
+
+    /// <summary>
+    /// The labels of a renumbering (forum #75): numbers from <paramref name="start"/> (an integer, its leading zeros kept:
+    /// 01, 02…), or letters from it (A, B… Z, AA…), leaving out those with an I or an O when <paramref name="skipIO"/>;
+    /// each after <paramref name="prefix"/>.
+    /// </summary>
+    public static List<string> Labels(int count, string scheme, string? start, string prefix = "", bool skipIO = true)
+    {
+        var list = new List<string>(count);
+        if (scheme == "numbers")
+        {
+            var first = start?.Trim() is { Length: > 0 } st ? st : "1";
+            if (!long.TryParse(first, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var n)) throw new CommandException("Numbers start from a whole number: 1, 0, 101.");
+            for (var i = 0; i < count; i++) list.Add(prefix + (n + i).ToString(System.Globalization.CultureInfo.InvariantCulture).PadLeft(first.Length, '0'));
+            return list;
+        }
+        if (scheme != "letters") throw new CommandException("Axes are renumbered with numbers or letters.");
+        var label = start?.Trim() is { Length: > 0 } sl ? sl : "A";
+        if (!label.All(char.IsAsciiLetter)) throw new CommandException("Letters start from a letter: A, a, AA.");
+        if (skipIO) while (HasIO(label)) label = Next(label);
+        for (var i = 0; i < count; i++)
+        {
+            list.Add(prefix + label);
+            label = Next(label);
+            if (skipIO) while (HasIO(label)) label = Next(label);
+        }
+        return list;
+    }
+
+    /// <summary>
+    /// The new tags of a renumbering (forum #75): the axes named (all of the family when none is, x the ones spaced along x,
+    /// numbered left to right; y those spaced along y, bottom to top) in order across their family, each given the next
+    /// label. The axes named must run one way. Old tag → new tag, the unchanged ones too.
+    /// </summary>
+    public static Dictionary<string, string> Renumber(IReadOnlyList<Axis> axes, IReadOnlyCollection<string>? tags, string? direction, string scheme, string? start, string prefix = "", bool skipIO = true)
+    {
+        List<Axis> chosen;
+        if (tags is { Count: > 0 })
+        {
+            chosen = axes.Where(x => tags.Contains(x.Tag)).ToList();
+            if (chosen.Count == 0) throw new CommandException("The grid has none of those axes.");
+            var d0 = chosen[0].Dir;
+            if (chosen.Any(x => Math.Abs(Vec2.Cross(x.Dir, d0)) >= 0.02)) throw new CommandException("Renumber the axes of one direction at a time.");
+        }
+        else
+        {
+            var x = direction switch { "x" => true, "y" => false, _ => throw new CommandException("Which axes: x (numbered left to right) or y (bottom to top)?") };
+            chosen = axes.Where(a => AlongX(a) == x).ToList();
+            if (chosen.Count == 0) throw new CommandException(x ? "The grid has no axis running up the plan." : "The grid has no axis running across the plan.");
+        }
+        var n = Across(chosen[0].Dir);
+        var ordered = chosen.Select((a, i) => (a, i)).OrderBy(p => Math.Round(Vec2.Dot(p.a.A, n), 6)).ThenBy(p => p.i).Select(p => p.a).ToList();
+        var labels = Labels(ordered.Count, scheme, start, prefix ?? "", skipIO);
+        var map = new Dictionary<string, string>();
+        for (var i = 0; i < ordered.Count; i++) map[ordered[i].Tag] = labels[i];
+        var others = axes.Where(a => !map.ContainsKey(a.Tag)).Select(a => a.Tag).ToHashSet();
+        if (map.Values.FirstOrDefault(others.Contains) is { } clash) throw new CommandException($"The grid has an axis {clash} already: start the labels after it, or give them a prefix.");
+        return map;
+    }
+
+    /// <summary>
+    /// What names a grid's axes by their tag follows them when tags change (a renumbering, an axis renamed): a dimension's
+    /// end on an axis ({kind: grid, grid, tag}) and any "grid#tag" an element keeps (a selection, a view's list). One pass
+    /// over the model; only the elements that change are replaced, in the command's undo step.
+    /// </summary>
+    public static int Retag(ICommandContext ctx, string gridId, IReadOnlyDictionary<string, string> map)
+    {
+        var moves = map.Where(p => p.Key != p.Value).ToDictionary(p => p.Key, p => p.Value);
+        if (moves.Count == 0) return 0;
+        var hash = gridId + "#";
+        string? Moved(JsonNode? v) => v is JsonValue sv && sv.TryGetValue<string>(out var s) && s.StartsWith(hash, StringComparison.Ordinal) && moves.TryGetValue(s[hash.Length..], out var t) ? hash + t : null;
+        bool Walk(JsonNode? n, bool apply)
+        {
+            var changed = false;
+            switch (n)
+            {
+                case JsonObject o:
+                    if ((string?)(o["kind"] as JsonValue) == "grid" && o["grid"] is JsonValue gv && gv.TryGetValue<string>(out var g) && g == gridId
+                        && o["tag"] is JsonValue tv && tv.TryGetValue<string>(out var tag) && moves.TryGetValue(tag, out var nt))
+                    {
+                        if (!apply) return true;
+                        o["tag"] = nt;
+                        changed = true;
+                    }
+                    foreach (var (k, v) in o.ToList())
+                    {
+                        if (k == "tag" && changed) continue;
+                        if (Moved(v) is { } m) { if (!apply) return true; o[k] = m; changed = true; }
+                        else if (v is JsonObject or JsonArray && Walk(v, apply)) { if (!apply) return true; changed = true; }
+                    }
+                    break;
+                case JsonArray arr:
+                    for (var i = 0; i < arr.Count; i++)
+                    {
+                        if (Moved(arr[i]) is { } m) { if (!apply) return true; arr[i] = m; changed = true; }
+                        else if (arr[i] is JsonObject or JsonArray && Walk(arr[i], apply)) { if (!apply) return true; changed = true; }
+                    }
+                    break;
+            }
+            return changed;
+        }
+        var count = 0;
+        foreach (var e in ctx.Model.Entities.Where(e => e.Id != gridId && Walk(e.Attrs, false)).ToList())
+        {
+            var attrs = e.CloneAttrs();
+            Walk(attrs, true);
+            ctx.Replace(e.With(attrs: attrs));
+            count++;
+        }
+        return count;
+    }
+
     public static IEnumerable<ViewMark> Marks(ViewContext c)
     {
         var axisStyle = Standards.ResolveAxis(c.Book, new JsonObject { ["axisStyle"] = c.Book.DefaultAxisStyle });

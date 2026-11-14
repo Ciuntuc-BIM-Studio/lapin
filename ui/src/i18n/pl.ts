@@ -3522,6 +3522,26 @@ export const PL: Record<string, string> = {
   "How much of the room's colour covers the plan under it, 0–100 %; empty: as its scheme says": "Jak bardzo kolor pomieszczenia zakrywa rzut pod nim, 0–100 %; puste: jak mówi jego schemat",
   "Own opacity": "Własne krycie",
   "Own opacity %": "Własne krycie %",
+  "Renumber axes…": "Przenumeruj osie…",
+  "Renumber axes": "Przenumeruj osie",
+  "RENUMBER…": "PRZENUMERUJ…",
+  "The axes renumbered in order across them": "Osie przenumerowane po kolei, w poprzek nich",
+  "The axes renumbered in order across them; with several axes selected, only those": "Osie przenumerowane po kolei, w poprzek nich; przy kilku zaznaczonych osiach tylko te",
+  "The project has no grid yet: draw axes or make a grid first.": "Projekt nie ma jeszcze siatki: najpierw narysuj osie lub utwórz siatkę.",
+  "The axes renumbered, in order across them": "Przenumerowane osie, po kolei w poprzek nich",
+  "running up the plan, left to right": "biegnące w górę rzutu, od lewej do prawej",
+  "running across the plan, bottom to top": "biegnące w poprzek rzutu, od dołu do góry",
+  "numbers (1, 2, 3…)": "liczby (1, 2, 3…)",
+  "letters (A, B, C…)": "litery (A, B, C…)",
+  "The first axis's label: 1, 01, 101, A, AA…": "Etykieta pierwszej osi: 1, 01, 101, A, AA…",
+  "Prefix": "Prefiks",
+  "Written before every label: S1, S2… or A-01": "Pisany przed każdą etykietą: S1, S2… lub A-01",
+  "I and O read as 1 and 0 on drawings": "I i O czyta się na rysunkach jak 1 i 0",
+  "leave out I and O": "bez I i O",
+  "Dimensions on the axes keep measuring them.": "Wymiary na osiach nadal je mierzą.",
+  "Renumber": "Przenumeruj",
+  "The axes already have those labels.": "Osie mają już te etykiety.",
+  "Renumber grid axes": "Przenumeruj osie siatki",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {
@@ -3533,6 +3553,8 @@ const n = (count: string, one: string, few: string, many: string) => `${count} $
 
 /** Phrases with a number or a name in them. */
 export const PL_PATTERNS: Language['patterns'] = [
+  [/^the selected axes \((\d+)\)$/, (m) => `zaznaczone osie (${m[1]})`],
+  [/^(\d+) axes renumbered\.$/, (m) => `Przenumerowano osie: ${m[1]}.`],
   [/^Commands: (\d+), (\d+) ms$/, (m) => `Polecenia: ${m[1]}, ${m[2]} ms`],
   [/^Elements made: (\d+), one undo step$/, (m) => `Utworzone elementy: ${m[1]}, jeden krok cofania`],
   [/^„(.+)” was not run again: it is not trusted on this computer\. Run it once from the Script panel and choose Trust\.$/, (m) => `„${m[1]}” nie został uruchomiony ponownie: nie jest zaufany na tym komputerze. Uruchom go raz z panelu Skrypt i wybierz Ufaj.`],

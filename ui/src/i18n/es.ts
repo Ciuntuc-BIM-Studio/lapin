@@ -3521,12 +3521,34 @@ export const ES: Record<string, string> = {
   "How much of the room's colour covers the plan under it, 0–100 %; empty: as its scheme says": "Cuánto cubre el color del local el plano de debajo, 0–100 %; vacío: lo que diga su esquema",
   "Own opacity": "Opacidad propia",
   "Own opacity %": "Opacidad propia %",
+  "Renumber axes…": "Renumerar ejes…",
+  "Renumber axes": "Renumerar ejes",
+  "RENUMBER…": "RENUMERAR…",
+  "The axes renumbered in order across them": "Los ejes renumerados en orden, a través de ellos",
+  "The axes renumbered in order across them; with several axes selected, only those": "Los ejes renumerados en orden, a través de ellos; con varios ejes seleccionados, solo esos",
+  "The project has no grid yet: draw axes or make a grid first.": "El proyecto aún no tiene rejilla: dibuja ejes o crea primero una rejilla.",
+  "The axes renumbered, in order across them": "Los ejes renumerados, en orden a través de ellos",
+  "running up the plan, left to right": "que suben por el plano, de izquierda a derecha",
+  "running across the plan, bottom to top": "que cruzan el plano, de abajo arriba",
+  "numbers (1, 2, 3…)": "números (1, 2, 3…)",
+  "letters (A, B, C…)": "letras (A, B, C…)",
+  "The first axis's label: 1, 01, 101, A, AA…": "La etiqueta del primer eje: 1, 01, 101, A, AA…",
+  "Prefix": "Prefijo",
+  "Written before every label: S1, S2… or A-01": "Escrito antes de cada etiqueta: S1, S2… o A-01",
+  "I and O read as 1 and 0 on drawings": "La I y la O se leen como 1 y 0 en los planos",
+  "leave out I and O": "sin I ni O",
+  "Dimensions on the axes keep measuring them.": "Las cotas sobre los ejes siguen midiéndolos.",
+  "Renumber": "Renumerar",
+  "The axes already have those labels.": "Los ejes ya tienen esas etiquetas.",
+  "Renumber grid axes": "Renumerar los ejes de la rejilla",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 
 /** Phrases with a number or a name in them. */
 export const ES_PATTERNS: Language['patterns'] = [
+  [/^the selected axes \((\d+)\)$/, (m) => `los ejes seleccionados (${m[1]})`],
+  [/^(\d+) axes renumbered\.$/, (m) => `${m[1]} ejes renumerados.`],
   [/^Commands: (\d+), (\d+) ms$/, (m) => `Comandos: ${m[1]}, ${m[2]} ms`],
   [/^Elements made: (\d+), one undo step$/, (m) => `Elementos creados: ${m[1]}, un solo paso de deshacer`],
   [/^„(.+)” was not run again: it is not trusted on this computer\. Run it once from the Script panel and choose Trust\.$/, (m) => `«${m[1]}» no se volvió a ejecutar: no es de confianza en este ordenador. Ejecútelo una vez desde el panel Script y elija Confiar.`],

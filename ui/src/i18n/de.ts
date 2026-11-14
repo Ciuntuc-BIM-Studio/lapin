@@ -3521,12 +3521,34 @@ export const DE: Record<string, string> = {
   "How much of the room's colour covers the plan under it, 0–100 %; empty: as its scheme says": "Wie sehr die Farbe des Raums den Plan darunter verdeckt, 0–100 %; leer: wie sein Schema sagt",
   "Own opacity": "Eigene Deckkraft",
   "Own opacity %": "Eigene Deckkraft %",
+  "Renumber axes…": "Achsen neu nummerieren…",
+  "Renumber axes": "Achsen neu nummerieren",
+  "RENUMBER…": "NEU NUMMERIEREN…",
+  "The axes renumbered in order across them": "Die Achsen der Reihe nach quer zu ihnen neu nummeriert",
+  "The axes renumbered in order across them; with several axes selected, only those": "Die Achsen der Reihe nach quer zu ihnen neu nummeriert; mit mehreren gewählten Achsen nur diese",
+  "The project has no grid yet: draw axes or make a grid first.": "Das Projekt hat noch kein Raster: zeichne zuerst Achsen oder erstelle ein Raster.",
+  "The axes renumbered, in order across them": "Die neu nummerierten Achsen, der Reihe nach quer zu ihnen",
+  "running up the plan, left to right": "die im Plan nach oben laufen, von links nach rechts",
+  "running across the plan, bottom to top": "die quer durch den Plan laufen, von unten nach oben",
+  "numbers (1, 2, 3…)": "Zahlen (1, 2, 3…)",
+  "letters (A, B, C…)": "Buchstaben (A, B, C…)",
+  "The first axis's label: 1, 01, 101, A, AA…": "Die Beschriftung der ersten Achse: 1, 01, 101, A, AA…",
+  "Prefix": "Präfix",
+  "Written before every label: S1, S2… or A-01": "Vor jede Beschriftung geschrieben: S1, S2… oder A-01",
+  "I and O read as 1 and 0 on drawings": "I und O lesen sich auf Zeichnungen wie 1 und 0",
+  "leave out I and O": "ohne I und O",
+  "Dimensions on the axes keep measuring them.": "Maße an den Achsen messen sie weiter.",
+  "Renumber": "Neu nummerieren",
+  "The axes already have those labels.": "Die Achsen haben diese Beschriftungen schon.",
+  "Renumber grid axes": "Rasterachsen neu nummerieren",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 
 /** Phrases with a number or a name in them. */
 export const DE_PATTERNS: Language['patterns'] = [
+  [/^the selected axes \((\d+)\)$/, (m) => `die gewählten Achsen (${m[1]})`],
+  [/^(\d+) axes renumbered\.$/, (m) => `${m[1]} Achsen neu nummeriert.`],
   [/^Commands: (\d+), (\d+) ms$/, (m) => `Befehle: ${m[1]}, ${m[2]} ms`],
   [/^Elements made: (\d+), one undo step$/, (m) => `Elemente erzeugt: ${m[1]}, ein Rückgängig-Schritt`],
   [/^„(.+)” was not run again: it is not trusted on this computer\. Run it once from the Script panel and choose Trust\.$/, (m) => `„${m[1]}“ wurde nicht erneut ausgeführt: Es ist auf diesem Computer nicht vertrauenswürdig. Führen Sie es einmal im Skript-Bereich aus und wählen Sie Vertrauen.`],

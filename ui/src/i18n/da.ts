@@ -3516,12 +3516,34 @@ export const DA: Record<string, string> = {
   "How much of the room's colour covers the plan under it, 0–100 %; empty: as its scheme says": "Hvor meget rummets farve dækker tegningen under den, 0–100 %; tom: som dets skema siger",
   "Own opacity": "Egen opacitet",
   "Own opacity %": "Egen opacitet %",
+  "Renumber axes…": "Omnummerér akser…",
+  "Renumber axes": "Omnummerér akser",
+  "RENUMBER…": "OMNUMMERÉR…",
+  "The axes renumbered in order across them": "Akserne omnummereret i rækkefølge på tværs af dem",
+  "The axes renumbered in order across them; with several axes selected, only those": "Akserne omnummereret i rækkefølge på tværs af dem; med flere akser valgt kun dem",
+  "The project has no grid yet: draw axes or make a grid first.": "Projektet har endnu intet aksenet: tegn først akser eller lav et net.",
+  "The axes renumbered, in order across them": "De omnummererede akser, i rækkefølge på tværs af dem",
+  "running up the plan, left to right": "der løber op ad tegningen, fra venstre mod højre",
+  "running across the plan, bottom to top": "der løber på tværs af tegningen, nedefra og op",
+  "numbers (1, 2, 3…)": "tal (1, 2, 3…)",
+  "letters (A, B, C…)": "bogstaver (A, B, C…)",
+  "The first axis's label: 1, 01, 101, A, AA…": "Den første akses etiket: 1, 01, 101, A, AA…",
+  "Prefix": "Præfiks",
+  "Written before every label: S1, S2… or A-01": "Skrevet foran hver etiket: S1, S2… eller A-01",
+  "I and O read as 1 and 0 on drawings": "I og O læses som 1 og 0 på tegninger",
+  "leave out I and O": "uden I og O",
+  "Dimensions on the axes keep measuring them.": "Mål på akserne bliver ved med at måle dem.",
+  "Renumber": "Omnummerér",
+  "The axes already have those labels.": "Akserne har allerede de etiketter.",
+  "Renumber grid axes": "Omnummerér netakser",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 
 /** Phrases with a number or a name in them. */
 export const DA_PATTERNS: Language['patterns'] = [
+  [/^the selected axes \((\d+)\)$/, (m) => `de valgte akser (${m[1]})`],
+  [/^(\d+) axes renumbered\.$/, (m) => `${m[1]} akser omnummereret.`],
   [/^Commands: (\d+), (\d+) ms$/, (m) => `Kommandoer: ${m[1]}, ${m[2]} ms`],
   [/^Elements made: (\d+), one undo step$/, (m) => `Elementer oprettet: ${m[1]}, ét fortrydelsestrin`],
   [/^„(.+)” was not run again: it is not trusted on this computer\. Run it once from the Script panel and choose Trust\.$/, (m) => `„${m[1]}” blev ikke kørt igen: det er ikke betroet på denne computer. Kør det én gang fra Script-panelet og vælg Stol på.`],

@@ -286,6 +286,7 @@
     {"name":"drafting.removeAxis","module":"drafting","label":"Remove grid axis","args":[{"name":"gridId","type":"str"},{"name":"tag","type":"str"}]},
     {"name":"drafting.removeDimensionPoint","module":"drafting","label":"Remove dimension point","args":[{"name":"index","type":"float"}]},
     {"name":"drafting.removeLayer","module":"drafting","label":"Remove layer","args":[{"name":"name","type":"str"}]},
+    {"name":"drafting.renumberAxes","module":"drafting","label":"Renumber grid axes","args":[{"name":"gridId","type":"str"},{"name":"tags","type":"list"},{"name":"direction","type":"str"},{"name":"scheme","type":"str"},{"name":"skipIO","type":"bool"},{"name":"start","type":"str"},{"name":"prefix","type":"str"}]},
     {"name":"drafting.setDimensionText","module":"drafting","label":"Dimension text","args":[{"name":"segment","type":"float"},{"name":"text","type":"str"}]},
     {"name":"drafting.setDimensionValue","module":"drafting","label":"Dimension value","args":[{"name":"id","type":"str"},{"name":"value","type":"float"},{"name":"segment","type":"float"}]},
     {"name":"drafting.setLayer","module":"drafting","label":"Layer","args":[{"name":"name","type":"str"},{"name":"newName","type":"str"}]},

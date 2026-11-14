@@ -3525,12 +3525,34 @@ export const FR: Record<string, string> = {
   "How much of the room's colour covers the plan under it, 0–100 %; empty: as its scheme says": "Combien la couleur de la pièce couvre le plan dessous, 0–100 % ; vide : ce que dit son schéma",
   "Own opacity": "Opacité propre",
   "Own opacity %": "Opacité propre %",
+  "Renumber axes…": "Renuméroter les axes…",
+  "Renumber axes": "Renuméroter les axes",
+  "RENUMBER…": "RENUMÉROTER…",
+  "The axes renumbered in order across them": "Les axes renumérotés dans l'ordre, à travers eux",
+  "The axes renumbered in order across them; with several axes selected, only those": "Les axes renumérotés dans l'ordre, à travers eux ; avec plusieurs axes sélectionnés, seulement ceux-là",
+  "The project has no grid yet: draw axes or make a grid first.": "Le projet n'a pas encore de grille : dessinez d'abord des axes ou créez une grille.",
+  "The axes renumbered, in order across them": "Les axes renumérotés, dans l'ordre à travers eux",
+  "running up the plan, left to right": "qui montent sur le plan, de gauche à droite",
+  "running across the plan, bottom to top": "qui traversent le plan, de bas en haut",
+  "numbers (1, 2, 3…)": "chiffres (1, 2, 3…)",
+  "letters (A, B, C…)": "lettres (A, B, C…)",
+  "The first axis's label: 1, 01, 101, A, AA…": "Le libellé du premier axe : 1, 01, 101, A, AA…",
+  "Prefix": "Préfixe",
+  "Written before every label: S1, S2… or A-01": "Écrit avant chaque libellé : S1, S2… ou A-01",
+  "I and O read as 1 and 0 on drawings": "I et O se lisent comme 1 et 0 sur les dessins",
+  "leave out I and O": "sans I ni O",
+  "Dimensions on the axes keep measuring them.": "Les cotes sur les axes continuent de les mesurer.",
+  "Renumber": "Renuméroter",
+  "The axes already have those labels.": "Les axes ont déjà ces libellés.",
+  "Renumber grid axes": "Renuméroter les axes de la grille",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;
 
 /** Phrases with a number or a name in them. */
 export const FR_PATTERNS: Language['patterns'] = [
+  [/^the selected axes \((\d+)\)$/, (m) => `les axes sélectionnés (${m[1]})`],
+  [/^(\d+) axes renumbered\.$/, (m) => `${m[1]} axes renumérotés.`],
   [/^Commands: (\d+), (\d+) ms$/, (m) => `Commandes : ${m[1]}, ${m[2]} ms`],
   [/^Elements made: (\d+), one undo step$/, (m) => `Éléments créés : ${m[1]}, une seule étape d’annulation`],
   [/^„(.+)” was not run again: it is not trusted on this computer\. Run it once from the Script panel and choose Trust\.$/, (m) => `« ${m[1]} » n'a pas été relancé : il n'est pas approuvé sur cet ordinateur. Lancez-le une fois depuis le panneau Script et choisissez Faire confiance.`],
