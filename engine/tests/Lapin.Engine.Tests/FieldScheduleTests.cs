@@ -295,6 +295,32 @@ public class FieldScheduleTests : IDisposable
     }
 
     [Fact]
+    public void A_field_schedule_is_drawn_and_exported_under_its_own_name()
+    {
+        var f = New();
+        var t = f.Type("Brick 30", ("Brick", 0.3, true));
+        f.Wall(0, 0, 6, 0, t);
+        f.Wall(6, 0, 6, 4, t);
+        var id = Create(f, new JsonObject { ["filter"] = new JsonObject { ["classes"] = A("Wall") } }, "Walls by stage");
+        string[] Texts(string sid) => [.. new ScheduleEntity().Pages(f.Session.Reader, f.Model.Get(sid)!, 380, null)[0].Pens.SelectMany(p => p.Texts).Select(x => x.Text)];
+        Assert.Contains("Walls by stage", Texts(id));
+        Assert.DoesNotContain(FieldSchedule.Title, Texts(id));
+        // The workbook's sheet is named the same.
+        string Workbook(string sid)
+        {
+            using var zip = new System.IO.Compression.ZipArchive(new MemoryStream(Convert.FromBase64String((string)f.Session.Query("schedule.xlsx", new JsonObject { ["id"] = sid })!)));
+            using var r = new StreamReader(zip.GetEntry("xl/workbook.xml")!.Open());
+            return r.ReadToEnd();
+        }
+        Assert.Contains("name=\"Walls by stage\"", Workbook(id));
+        // Unnamed: the kind's title; another module's kind keeps its own label.
+        var entity = f.Model.Get(id)!;
+        Assert.Equal(FieldSchedule.Title, ScheduleEntity.TitleOf(new FieldSchedule(), new Entity(entity.Id, entity.Class, " ", entity.Attrs)));
+        var takeoff = new QuantityTakeoff();
+        Assert.Equal(takeoff.Label, ScheduleEntity.TitleOf(takeoff, entity));
+    }
+
+    [Fact]
     public void A_template_goes_to_another_project_by_names_and_a_schedule_is_saved_in_the_package()
     {
         var f = Referenced();

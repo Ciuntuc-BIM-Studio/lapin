@@ -164,13 +164,20 @@ public sealed class ScheduleEntity : ISheetContent, Lapin.Platform.Documents.IDo
     /// <summary>The module that fills a schedule of this kind (a planting schedule), if the kind is not one of the joinery's.</summary>
     static IScheduleSource? Source(IServices services, string? kind) => kind == null || Kinds.Contains(kind) ? null : services.All<IScheduleSource>().FirstOrDefault(x => x.Kind == kind);
 
+    /// <summary>
+    /// The title a module's schedule is drawn and exported under: a field schedule's own name (each is the user's own table,
+    /// „Walls by stage”), every other kind its module's label.
+    /// </summary>
+    public static string TitleOf(IScheduleSource source, Entity s) =>
+        source is FieldSchedule ? s.Name?.Trim() is { Length: > 0 } n ? n : FieldSchedule.Title : source.Label;
+
     public IReadOnlyList<(double W, double H, List<Pen> Pens)> Pages(IQueryContext q, Entity e, double maxWidth, double? maxHeight)
     {
         if (Source(q.Services, e.Str("kind")) is { } source)
         {
             // A type assemblies schedule's build-ups (reports #65–#67) after its table, at its scale, when it draws them.
             var buildUps = source is TypeAssemblies && DrawsBuildUps(e) ? TypeBuildUps.Bands(q.Model, Scale(e), maxWidth) : [];
-            return ScheduleLayout.Pages([(source.Label, ScheduleLayout.Table(SourceGrid(q, e, source).ToGrid(), maxWidth)),
+            return ScheduleLayout.Pages([(TitleOf(source, e), ScheduleLayout.Table(SourceGrid(q, e, source).ToGrid(), maxWidth)),
                 .. buildUps.Count > 0 ? [("Build-ups", buildUps)] : new List<(string, List<ScheduleBand>)>(), .. Charts(q, e, maxWidth)], maxHeight);
         }
         var data = Data(q, e);
@@ -591,7 +598,7 @@ public sealed class ScheduleEntity : ISheetContent, Lapin.Platform.Documents.IDo
             if (Source(q.Services, s.Str("kind")) is { } source)
             {
                 var g = SourceGrid(q, s, source).ToGrid();
-                return Convert.ToBase64String(Lapin.Drawing.Export.XlsxWriter.Write([(source.Label, (IReadOnlyList<IReadOnlyList<string>>)[g.Columns, .. g.Rows])]));
+                return Convert.ToBase64String(Lapin.Drawing.Export.XlsxWriter.Write([(TitleOf(source, s), (IReadOnlyList<IReadOnlyList<string>>)[g.Columns, .. g.Rows])]));
             }
             return Convert.ToBase64String(ToXlsx(s, Data(q, s)));
         });
