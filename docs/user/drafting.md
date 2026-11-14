@@ -137,7 +137,35 @@ Annotations on a plan (dimensions, texts, drafted lines, tags) can go to another
 
 **Trailing zeros.** A dimension with three decimals writes `2.500` and `3.000`. Tick **Manage → Drafting standards → Project → Suppress trailing zeros** and every dimension drops them instead: `2.5` and `3`, as CAD programs do. Each dimension style can also choose for itself in its **Trailing zeros** column, next to **Decimals**: *as the project* (the default), *keep (2.500)* or *suppress (2.5)*. It applies to the values of linear, aligned, radius, diameter, arc-length and ordinate dimensions and to the opening heights under them, on screen, on sheets and in the PDF and the DXF; feet and inches, written in fractions, have none to drop. It is off until you turn it on, so existing drawings keep their look.
 
+**Levels.** Levels are written in metres with two decimals: `+3.00`, `−0.15`, `±0.00`. **Manage → Drafting standards → Project** sets how many with **Level decimals** (0 to 4: `+3`, `+3.0`, `+3.00`, `+3.000`, `+3.0000`) and whether they drop their trailing zeros with **Level trailing zeros**: *as the project* (the default, so they follow **Suppress trailing zeros**), *keep (+3.150)* or *suppress (+3.15)*. With three decimals a level reads `+3.150`, suppressed `+3.15`, and a whole `+3.000` becomes `+3`. It applies wherever a drawing prints a level: the level marks across sections and elevations (Lapin's own and a level symbol of yours, its `{level.elevation}`), spot levels (`{point.elevation}`), level dimensions, the base and survey points and the terrain's levels. A level dimension placed by a script can carry its own (`decimals`, `zeros`). In an imperial project levels stay in feet and inches.
+
 **Dimensions on a line.** A dimension point clicked on a grid axis or on a wall's centre line holds on the line, not on a point of it. Drag the axis's end along itself to make its head fit the view, or make the wall longer or shorter: the dimension keeps measuring where you put it and its line does not turn. If the axis or the wall moves across, the point goes with it, at the same place along. A dimension on a wall's face likewise stays where it measured when the wall is stretched along itself. Dimensions made before attach to a grid axis the same way; one on a wall's centre line is attached anew by clicking its point again.
+
+### Exterior dimensions and dimension rules
+
+**Annotate → Exterior dimensions** (<kbd>ED</kbd>, or type **EXTDIM**) dimensions the outside of the building on a plan at once. Each straight exterior facade gets parallel dimension strings outside it, one beside the other, in the order set by the dimension rules, starting at the wall. The points hold on the walls, like any dimension's.
+
+- With walls selected, only their facades are dimensioned. With nothing selected, every exterior wall of the plan's level is.
+- Asked on a site plan, the strings go to the level's floor plan instead.
+- Run it again and the strings it made on the plan are replaced, not doubled. Strings you drew yourself are kept.
+
+**Annotate → Dimension rules…** opens the settings of Exterior dimensions and of Room dimensions, in two tabs. They belong to the project and travel with the drafting standards (**Manage → Drafting standards**, with the options). Each string has a tick and **↑ ↓** buttons to put the strings in order: for the exterior from the wall outward, for rooms from the side inward.
+
+| String | What it measures |
+| --- | --- |
+| Details | every feature on the facade: corners and the openings' jambs |
+| Openings | from the facade's start to each door's and window's centre, and to its end |
+| Axes | from the start to each grid axis crossing the facade, and to the end |
+| Rooms | the thicknesses of the walls meeting the facade from inside, and the distances between them |
+| Overall | the whole facade |
+
+Room dimensions have only **Details** (the side, with the openings' jambs) and **Overall** (the side's whole length). Besides the strings:
+
+- **Offset** is the distance in millimetres on the paper from the wall's face (or the room's side) to the first string, and **Spacing** the distance between strings.
+- **Dimension style** is one of the project's dimension styles; the default style when empty.
+- **Measure to** (exterior only) says what corners and partitions are measured to: the walls' faces, their core's faces or their axes.
+- **Skip openings narrower than** leaves out the openings under that width, in metres.
+- **Reset to defaults** brings the dialog back to the built-in rules; nothing changes until **OK**, which is one undo step.
 
 ### Tags
 
@@ -279,7 +307,7 @@ On a sheet, **Place symbol…** in the toolbar lists the symbols; choose one and
 
 Lines drawn in a plan, a drawing imported from DXF or traced from a PDF can become real elements. Lapin recognises what each shape is and makes it with the module that owns it.
 
-**Draft → Convert → Convert to…** works on the selection in the view in front: select drafted lines, polylines, arcs or circles first. The dialog lists what the shapes can become in your edition: **Walls** (along lines and outlines, joined), **Floor** (a closed outline), **Room** (a closed outline), **Railing** (an open line), **Beams**, **Strip foundations**, **Pad footings** and **Columns** (a circle or an outline, turned along its longest side), and **Reinforcement bars** (a straight, L, U or stirrup shape recognised, else a polyline bar). The options of the chosen conversion (a wall's type and height, a bar's diameter) are below it, and the dialog says how many shapes **can be converted** and how many **cannot**, with the reason (a floor needs a closed outline), and lists what each would become. Plans take the plan's storey; sections and elevations take bars. **Keep the drafting** leaves the shapes under the new elements as an underlay; without it they are replaced. One step of undo brings the drafting back.
+**Draft → Convert → Convert to…** works on the selection in the view in front: select drafted lines, polylines, arcs or circles first. The dialog lists what the shapes can become in your edition: **Walls** (along lines and outlines, joined), **Floor** (a closed outline), **Room** (a closed outline), **Room separation lines** (any line, polyline, arc or circle: see [Room separation lines](rooms.md#room-separation-lines)), **Railing** (an open line), **Beams**, **Strip foundations**, **Pad footings** and **Columns** (a circle or an outline, turned along its longest side), and **Reinforcement bars** (a straight, L, U or stirrup shape recognised, else a polyline bar). The options of the chosen conversion (a wall's type and height, a bar's diameter) are below it, and the dialog says how many shapes **can be converted** and how many **cannot**, with the reason (a floor needs a closed outline), and lists what each would become. Plans take the plan's storey; sections and elevations take bars. **Keep the drafting** leaves the shapes under the new elements as an underlay; without it they are replaced. One step of undo brings the drafting back.
 
 ![The Convert group of the Draft tab](shots/convert-ribbon.webp)
 

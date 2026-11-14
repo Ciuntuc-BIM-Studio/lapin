@@ -12,22 +12,24 @@ namespace Lapin.Drafting;
 /// that side (a wall's end or corner, a door's or window's jambs), each held on the edge it lies on, so the strings follow
 /// the walls as any dimension does. Sides in line one after another are one side; sides shorter than
 /// <see cref="MinSide"/> (a curved wall's chords, a pier's return) are left out. A room dimensioned again on the same
-/// plan has its strings made anew (new openings counted), the old ones taken away.
+/// plan has its strings made anew (new openings counted), the old ones taken away. The user's rules (forum topic 78,
+/// <see cref="DimensionRules"/>) say how far in the strings lie, whether the side's whole length is a second string further
+/// in, in which dimension style, and how narrow an opening is left out.
 /// </summary>
 public static class RoomDimensions
 {
     /// <summary>The shortest side dimensioned (m).</summary>
     public const double MinSide = 0.3;
-    /// <summary>How far in from its side a string lies, on the paper (m): 5 mm, 0.5 m at 1:100.</summary>
-    const double PaperOffset = 0.005;
     /// <summary>How close (m) a cut's corner must lie to a side to be a point of its string.</summary>
     const double OnSide = 0.002;
 
     /// <summary>The attribute that says which room a string dimensions.</summary>
     public const string RoomKey = "room";
+    /// <summary>The attribute that says which of a side's strings a dimension is (none: its details).</summary>
+    public const string StringKey = "roomString";
 
     /// <summary>The rooms' strings on the plan (<paramref name="ids"/>: those rooms; null: every room of its storey); how many rooms and strings.</summary>
-    public static (int Rooms, int Strings) Add(ICommandContext ctx, Entity view, IReadOnlyCollection<string>? ids, double? offset, Func<Vec2, Vec2, DimEndRef?> hold, ViewDrawing? drawing)
+    public static (int Rooms, int Strings) Add(ICommandContext ctx, Entity view, IReadOnlyCollection<string>? ids, double? offset, Func<Vec2, Vec2, DimEndRef?> hold, ViewDrawing? drawing, DimensionRules? rules = null)
     {
         var m = ctx.Model;
         var storey = view.Str("storeyId");
@@ -36,6 +38,11 @@ public static class RoomDimensions
             : m.OfClass(IfcClass.Space).Where(r => Spatial.StoreyOf(m, r.Id)?.Id == storey).ToList();
         var corners = Corners(drawing, rooms.Select(r => r.Id).ToHashSet());
         var scale = view.NumOrNull("scale") ?? 100;
+        rules ??= DimensionRules.RoomDefault;
+        // Openings narrower than the rules' least: their jambs left out of the strings.
+        var narrow = rules.MinOpening > 0
+            ? ctx.Services.All<IWallOpenings>().SelectMany(s => s.Openings(m)).Where(o => o.Width < rules.MinOpening).Select(o => (L: new Vec2(o.Left.X, o.Left.Y), R: new Vec2(o.Right.X, o.Right.Y))).ToList()
+            : [];
         var (roomCount, strings) = (0, 0);
         foreach (var room in rooms)
         {
@@ -43,19 +50,37 @@ public static class RoomDimensions
             // Dimensioned again: the old strings go.
             foreach (var old in m.OfClass(IfcClass.Annotation).Where(a => a.PredefinedType == "DIMENSION" && a.Str("viewId") == view.Id && a.Str(RoomKey) == room.Id).ToList())
                 ctx.Remove(old.Id);
-            var made = Strings(outline.Points, corners, offset ?? PaperOffset * scale);
-            foreach (var (pts, at) in made)
+            var first = offset ?? rules.Offset * scale / 1000;
+            var made = Strings(outline.Points, corners, first);
+            var n = 0;
+            foreach (var (all, at, inward) in made)
             {
-                var attrs = new JsonObject { ["viewId"] = view.Id, ["at"] = new JsonArray(at.X, at.Y), [RoomKey] = room.Id };
-                var u = (pts[^1] - pts[0]).Normalized();
-                Dimensions.Write(attrs, pts.Select(p => (p, hold(p, u))).ToList());
-                ctx.Add(new Entity(ctx.NewId(), IfcClass.Annotation, $"Dimension {room.Name}".Trim(), attrs, "DIMENSION"));
+                var u = (all[^1] - all[0]).Normalized();
+                var pts = all.Where((p, i) => i == 0 || i == all.Count - 1 || !narrow.Any(o => Jamb(p, u, o.L) || Jamb(p, u, o.R))).ToList();
+                var k = 0;
+                foreach (var kind in rules.Order)
+                {
+                    var these = kind == "overall" ? [pts[0], pts[^1]] : pts;
+                    // The whole side once: no second string that says only what the first said.
+                    if (kind == "overall" && pts.Count == 2 && rules.Has("details")) continue;
+                    var place = at + inward * (k * rules.Spacing * scale / 1000);
+                    var attrs = new JsonObject { ["viewId"] = view.Id, ["at"] = new JsonArray(place.X, place.Y), [RoomKey] = room.Id };
+                    if (kind != "details") attrs[StringKey] = kind;
+                    if (rules.DimStyle != null) attrs["dimStyle"] = rules.DimStyle;
+                    Dimensions.Write(attrs, these.Select(p => (p, hold(p, u))).ToList());
+                    ctx.Add(new Entity(ctx.NewId(), IfcClass.Annotation, $"Dimension {room.Name}".Trim(), attrs, "DIMENSION"));
+                    k++;
+                    n++;
+                }
             }
-            if (made.Count > 0) roomCount++;
-            strings += made.Count;
+            if (n > 0) roomCount++;
+            strings += n;
         }
         return (roomCount, strings);
     }
+
+    /// <summary>Whether a string's point (along <paramref name="u"/>) is an opening's jamb: in line with it, within its wall.</summary>
+    static bool Jamb(Vec2 p, Vec2 u, Vec2 jamb) => Math.Abs(Vec2.Dot(p - jamb, u)) <= OpeningHeights.Reach && Math.Abs(Vec2.Cross(u, p - jamb)) <= 1.0;
 
     /// <summary>The corners of what the plan cuts (walls, columns, doors and windows' openings), the rooms themselves left out.</summary>
     static List<Vec2> Corners(ViewDrawing? d, HashSet<string> rooms) =>
@@ -63,13 +88,13 @@ public static class RoomDimensions
 
     /// <summary>
     /// The strings for one outline: for each side (sides in line merged, short ones left out), its points from end to end
-    /// with the cut's corners on it between, and a point of the dimension line, <paramref name="offset"/> in from the side
-    /// (at most a quarter of the room's narrower extent, so two opposite strings do not cross).
+    /// with the cut's corners on it between, a point of the dimension line, <paramref name="offset"/> in from the side
+    /// (at most a quarter of the room's narrower extent, so two opposite strings do not cross), and the way in.
     /// </summary>
-    public static List<(List<Vec2> Pts, Vec2 At)> Strings(IReadOnlyList<Vec2> outline, IReadOnlyList<Vec2> corners, double offset)
+    public static List<(List<Vec2> Pts, Vec2 At, Vec2 In)> Strings(IReadOnlyList<Vec2> outline, IReadOnlyList<Vec2> corners, double offset)
     {
         var poly = Sides(outline);
-        var o = new List<(List<Vec2>, Vec2)>();
+        var o = new List<(List<Vec2>, Vec2, Vec2)>();
         if (poly.Count < 3) return o;
         var area = Polygon2.SignedArea(poly);
         if (Math.Abs(area) < 1e-9) return o;
@@ -98,7 +123,7 @@ public static class RoomDimensions
                 if (pts.Count == 0 || Vec2.Dot(a + u * t - pts[^1], u) > 0.005) pts.Add(a + u * t);
             // The far end exact, not a point 5 mm short of it.
             pts[^1] = b;
-            o.Add((pts, a + u * (len / 2) + inward * offset));
+            o.Add((pts, a + u * (len / 2) + inward * offset, inward));
         }
         return o;
     }

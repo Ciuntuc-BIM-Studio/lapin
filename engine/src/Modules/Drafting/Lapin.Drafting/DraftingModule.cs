@@ -198,7 +198,8 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             return new JsonObject { ["id"] = dim.Id, ["associated"] = new JsonArray(stations.Select(s => (JsonNode)(s.Item2 != null)).ToArray()) };
         });
 
-        // Rooms' interior dimensions (decision 249): {viewId (a plan), ids? (rooms; none: every room of its storey), offset? (m)}.
+        // Rooms' interior dimensions (decision 249): {viewId (a plan), ids? (rooms; none: every room of its storey), offset? (m),
+        // settings? (the room rules for this run over the project's, forum topic 78)}.
         r.Command("dimensionRooms", "Dimension rooms", (ctx, a) =>
         {
             var view = Views.Find(ctx.Model, (string?)a["viewId"] ?? "") is { } v && v.Str("kind") is "plan" or null ? v
@@ -224,11 +225,38 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
                 var (drawing, spec, _) = Views.Generate(ctx.Query, target);
                 var tolerance = Tolerance(target);
                 Func<Vec2, Vec2, DimEndRef?> hold = drawing == null || spec == null ? (_, _) => null : (p, u) => Dimensions.Associate(ctx.Model, spec.Kind, drawing, p, tolerance, u);
-                var (rc, sc) = RoomDimensions.Add(ctx, target, only, offset, hold, drawing);
+                var (rc, sc) = RoomDimensions.Add(ctx, target, only, offset, hold, drawing, DimensionRules.Rooms(ctx.Model, a["settings"]));
                 (rooms, strings) = (rooms + rc, strings + sc);
             }
             var result = new JsonObject { ["rooms"] = rooms, ["strings"] = strings };
             if (targets.Count > 0 && targets[0].View != view) result["views"] = new JsonArray(targets.Select(t => t.View.Name).Distinct().Select(n => (JsonNode)JsonValue.Create(n)!).ToArray());
+            return result;
+        });
+
+        // The rules of the dimensions made at once (forum topic 78): which strings, their order, distances, style.
+        DimensionRules.Register(r);
+
+        // A building's exterior dimensions (forum topic 78): {viewId (a plan), wallIds? (those walls' facades; none: every
+        // exterior wall of the plan), settings? (the rules for this run over the project's)}. A site plan sends them to its
+        // storey's floor plan, as rooms' are.
+        r.Command("exteriorDimensions", "Exterior dimensions", (ctx, a) =>
+        {
+            var view = Views.Find(ctx.Model, (string?)a["viewId"] ?? "") is { } v && v.Str("kind") is "plan" or null ? v
+                : throw new CommandException("Exterior dimensions are made on a plan.");
+            var rules = DimensionRules.Exterior(ctx.Model, a["settings"]);
+            var walls = a["wallIds"] is JsonArray wa && wa.Count > 0 ? wa.Select(x => (string?)x).OfType<string>().ToList() : null;
+            if (walls != null && walls.Any(id => ctx.Model.Get(id)?.Class != IfcClass.Wall)) throw new CommandException("Only walls' facades are dimensioned this way: select walls, or none for every exterior wall of the plan.");
+            var target = view;
+            if (SitePlans.Of(view) != null && view.Str("storeyId") is { } st)
+            {
+                foreach (var old in ctx.Model.OfClass(IfcClass.Annotation).Where(x => x.PredefinedType == "DIMENSION" && x.Str("viewId") == view.Id && x.Str(ExteriorDimensions.Key) != null).ToList())
+                    ctx.Remove(old.Id);
+                target = FloorPlan(ctx.Model, st);
+            }
+            var (drawing, _, _) = Views.Generate(ctx.Query, target);
+            var (facades, strings) = ExteriorDimensions.Add(ctx, target, walls, rules, drawing, Tolerance(target));
+            var result = new JsonObject { ["facades"] = facades, ["strings"] = strings };
+            if (target != view) result["views"] = new JsonArray(JsonValue.Create(target.Name)!);
             return result;
         });
 

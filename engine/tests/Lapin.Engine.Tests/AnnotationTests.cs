@@ -233,6 +233,71 @@ public class AnnotationTests
     }
 
     [Fact]
+    public void Levels_take_the_project_s_decimals_and_trailing_zeros()
+    {
+        // Follow-up to forum #81: 2 decimals kept +3.00, suppressed +3; 3 decimals +3.150, suppressed +3.15; a true minus below ±0.
+        Assert.Equal("+3.00", Lapin.Drawing.Standards.FormatLevel(3, 2, false));
+        Assert.Equal("+3", Lapin.Drawing.Standards.FormatLevel(3, 2, true));
+        Assert.Equal("+3.150", Lapin.Drawing.Standards.FormatLevel(3.15, 3, false));
+        Assert.Equal("+3.15", Lapin.Drawing.Standards.FormatLevel(3.15, 3, true));
+        Assert.Equal("\u22120.150", Lapin.Drawing.Standards.FormatLevel(-0.15, 3, false));
+        Assert.Equal("\u22120.15", Lapin.Drawing.Standards.FormatLevel(-0.15, 3, true));
+        Assert.Equal("\u22123", Lapin.Drawing.Standards.FormatLevel(-3, 2, true));
+        Assert.Equal("±0.000", Lapin.Drawing.Standards.FormatLevel(0.0001, 3, false));
+        Assert.Equal("±0", Lapin.Drawing.Standards.FormatLevel(0, 2, true));
+        Assert.Equal("+0.00", Lapin.Drawing.Standards.FormatLevel(0, 2, false, plusAtZero: true));
+        Assert.Equal("+4", Lapin.Drawing.Standards.FormatLevel(3.6, 0, false));
+        Assert.Equal("+3.1500", Lapin.Drawing.Standards.FormatLevel(3.15, 4, false));
+        // The default: two decimals, as before (the old formatter's output).
+        Assert.Equal("+3.06", Lapin.Drawing.Standards.FormatLevel(3.06, Lapin.Drawing.StyleBook.Default));
+        Assert.Equal("±0.00", Symbols.Level(0));
+        Assert.Equal(2, Lapin.Drawing.StyleBook.Default.LevelDecimals);
+        Assert.Equal("project", Lapin.Drawing.StyleBook.Default.LevelZeros);
+
+        var f = F();
+        f.Run("storey.create", []);
+        f.Wall(0, 0, 6, 0);
+        var s = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = new JsonArray(3, -2), ["end"] = new JsonArray(3, 2) })!["id"]!;
+        var plan = "plan:" + f.Storey;
+        var level = (string)f.Run("drafting.addDimension", new JsonObject { ["viewId"] = plan, ["dimKind"] = "level", ["a"] = new JsonArray(1, 1), ["at"] = new JsonArray(3, 1), ["z"] = -0.15 })!["id"]!;
+        Assert.Contains("Level 1 +3.00", Texts(Draw(f, s)));
+        Assert.Contains("\u22120.15", Texts(Draw(f, plan)));
+        // The project's trailing zeros drop the levels' too, unless the levels keep theirs.
+        f.Run("standards.options", new JsonObject { ["suppressZeros"] = true });
+        Assert.Contains("Level 1 +3", Texts(Draw(f, s)));
+        Assert.Contains("Ground floor +0", Texts(Draw(f, s)));
+        f.Run("standards.options", new JsonObject { ["levelZeros"] = "keep" });
+        Assert.Contains("Level 1 +3.00", Texts(Draw(f, s)));
+        f.Run("standards.options", new JsonObject { ["levelDecimals"] = 3 });
+        Assert.Contains("Level 1 +3.000", Texts(Draw(f, s)));
+        Assert.Contains("\u22120.150", Texts(Draw(f, plan)));
+        f.Run("standards.options", new JsonObject { ["levelZeros"] = "suppress", ["suppressZeros"] = false });
+        Assert.Contains("Level 1 +3", Texts(Draw(f, s)));
+        Assert.Contains("\u22120.15", Texts(Draw(f, plan)));
+        Assert.Throws<CommandException>(() => f.Run("standards.options", new JsonObject { ["levelDecimals"] = 5 }));
+        Assert.Throws<CommandException>(() => f.Run("standards.options", new JsonObject { ["levelZeros"] = "maybe" }));
+        f.Session.Undo();
+        Assert.Contains("Level 1 +3.000", Texts(Draw(f, s)));
+
+        // A level dimension's own decimals and zeros go before the project's.
+        var own = (string)f.Run("drafting.addDimension", new JsonObject { ["viewId"] = plan, ["dimKind"] = "level", ["a"] = new JsonArray(1, 3), ["at"] = new JsonArray(3, 3), ["z"] = 2.5, ["decimals"] = 1, ["zeros"] = "keep" })!["id"]!;
+        Assert.Contains("+2.5", Texts(Draw(f, plan)));
+        Assert.Throws<CommandException>(() => f.Run("drafting.addDimension", new JsonObject { ["viewId"] = plan, ["dimKind"] = "level", ["a"] = new JsonArray(1, 3), ["decimals"] = 7 }));
+        Assert.NotEqual(level, own);
+
+        // The standards file carries them.
+        var text = (string)f.Session.Query("standards.export", new JsonObject())!["text"]!;
+        var g = F();
+        g.Run("standards.importFrom", new JsonObject { ["text"] = text, ["options"] = true });
+        var book = DraftingResources.Book(g.Model);
+        Assert.Equal(3, book.LevelDecimals);
+        Assert.Equal("keep", book.LevelZeros);
+        // Unreadable values read as the defaults.
+        var odd = Lapin.Drawing.Standards.Read(new JsonObject { ["levelDecimals"] = 9, ["levelZeros"] = "maybe" });
+        Assert.Equal((2, "project"), (odd.LevelDecimals, odd.LevelZeros));
+    }
+
+    [Fact]
     public void Ends_on_no_element_are_left_as_drawn_and_a_dimension_moves_its_line()
     {
         var f = F();

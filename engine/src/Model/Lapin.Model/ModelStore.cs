@@ -147,6 +147,8 @@ public sealed class ModelStore : IModelView
 
     /// <summary>Whether the class has any entity, without sorting them.</summary>
     public bool HasClass(string @class) => _byClass.TryGetValue(@class, out var ids) && ids.Count > 0;
+    /// <summary>How many entities the class has, without sorting them.</summary>
+    public int CountOf(string @class) => _byClass.TryGetValue(@class, out var ids) ? ids.Count : 0;
     public int RelationCount => _relations.Count;
 
     public IEnumerable<Entity> OfClass(string @class) =>

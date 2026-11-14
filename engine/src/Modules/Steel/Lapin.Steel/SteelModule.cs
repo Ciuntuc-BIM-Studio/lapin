@@ -208,10 +208,12 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
             };
         });
 
-        // An SDNF file into the project (docs/sdnf.md): {name, data (base64) | text | path} → the import's report. One undo step.
+        // An SDNF file into the project (docs/sdnf.md): {name, data (base64) | text | path} → the import's report (its protocol). One undo
+        // step. Its stages told as it goes (reading, the members, the plates, the holes; the session's building after), stopped by cancel.long.
         r.Command("importSdnf", "Import SDNF", (ctx, a) =>
         {
             var name = (string?)a["name"] ?? "file.sdnf";
+            ctx.Query.Progress?.Invoke("Reading the file", 0, 0);
             string text;
             if ((string?)a["text"] is { } t) text = t;
             else if ((string?)a["data"] is { } d) text = System.Text.Encoding.Latin1.GetString(Convert.FromBase64String(d));
@@ -219,9 +221,10 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
             else throw new CommandException("Which SDNF file?");
             Sdnf.SdnfFile file;
             try { file = Sdnf.SdnfReader.Read(text); }
-            catch (FormatException ex) { throw new CommandException($"„{name}” is not an SDNF file Lapin can read: {ex.Message}"); }
+            catch (FormatException ex) { throw new CommandException($"„{name}” could not be read as SDNF. {ex.Message}"); }
             if (file.Members.Count + file.Plates.Count + file.Grids.Count == 0) throw new CommandException($"„{name}” has no members, plates or grids Lapin can bring in.");
-            return Sdnf.SdnfImport.Run(ctx, file, name);
+            try { return Sdnf.SdnfImport.Run(ctx, file, name); }
+            catch (OperationCanceledException) { throw new CommandException("Cancelled: nothing of the file was imported."); }
         });
     }
 

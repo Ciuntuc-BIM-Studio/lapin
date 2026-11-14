@@ -3248,6 +3248,29 @@ export const scenes = [
     },
   },
   {
+    // Room separation lines (forum topic 80): an open-plan kitchen and living room parted by a line across the room, each a
+    // room of its own with its own area, coloured by function.
+    id: 'room-dividers',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const line = await t.cmd('architecture.addRoomDivider', { storeyId: storey, kind: 'line', points: [[0, 4.2], [7, 4.2]] });
+      t.expect(!!line?.id, 'the room separation line is drawn');
+      await t.cmd('architecture.addRoom', { storeyId: storey, x: 3, y: 2, name: 'Kitchen', function: 'Kitchen' });
+      await t.cmd('architecture.addRoom', { storeyId: storey, x: 3, y: 6, name: 'Living room', function: 'Living' });
+      await t.cmd('architecture.addRoom', { storeyId: storey, x: 9.5, y: 4, name: 'Bedroom', function: 'Bedroom' });
+      const rooms = (await t.nodes()).filter((n) => n.type === 'IfcSpace');
+      t.expect(rooms.length === 3, `three rooms, found ${rooms.length}`);
+      const plan = await t.cmd('view.create', { kind: 'plan', storeyId: storey, name: 'Ground floor plan' });
+      await t.cmd('architecture.viewColorScheme', { viewId: plan.id, schemeId: 'by-function' });
+      await t.ui({ planViewId: plan.id, keyPlan: false });
+      await t.wait(1200);
+      await t.fit();
+      await t.shot('room-dividers', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
     id: 'rooms',
     async run(t) {
       await t.fresh();
@@ -6897,7 +6920,14 @@ export const scenes = [
       const chooser = t.page.waitForEvent('filechooser', { timeout: 10_000 });
       await t.page.getByRole('menuitem', { name: 'Import SDNF…' }).click();
       await (await chooser).setFiles(file);
-      await t.wait(2500);
+      // Report #148: the import's protocol when it ends (each packet's count, what was left out and why, the time).
+      const report = t.page.locator('[data-dialog=sdnf-report]');
+      await report.waitFor({ timeout: 60_000 });
+      t.expect(await report.locator('[data-field=sdnf-packets] tbody tr').count() >= 3, 'the protocol lists the file\'s packets');
+      t.expect(await report.locator('[data-action=sdnf-report-copy]').count() === 1 && await report.locator('[data-action=sdnf-report-save]').count() === 1, 'the protocol can be copied and saved');
+      await t.shot('import-sdnf-report', { of: '[data-dialog=sdnf-report]', pad: 0 });
+      await report.locator('button.btn.primary').click();
+      await t.wait(1000);
       const kinds = (await t.nodes()).map((n) => n.type);
       t.expect(kinds.includes('LapinSteelMember') && kinds.includes('IfcColumn') && kinds.includes('IfcPlate') && kinds.includes('IfcGrid'), 'the hall came back as members, columns, plates and its grid');
       await t.ui({ selected: [], selection: null });
@@ -9903,6 +9933,29 @@ export const scenes = [
       // The storey's code changed: the room's index follows, nothing stored on the room.
       await t.cmd('element.setParam', { ids: [storey], name: 'code', value: 'K2' });
       await t.until(async () => (await result()).includes('K2.A.3.1'), 'the index follows the storey\'s code');
+    },
+  },
+  {
+    // The Parameters inspector (forum topic 84): every field a room's tags and formulas can read, its own and its storey's and
+    // the project's, each with its value, opened from Properties → Parameters.
+    id: 'fields-inspector',
+    touches: ['core', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      await t.cmd('element.setParam', { ids: [storey], name: 'code', kind: 'text', value: 'K1' });
+      const room = (await t.cmd('architecture.addRoom', { storeyId: storey, x: 3, y: 4, name: 'Living', function: 'Living', number: '1' })).id;
+      await t.cmd('element.setParam', { ids: [room], name: 'Flat', kind: 'number', value: 3 });
+      await select(t, room);
+      await t.wait(700);
+      const open = t.page.locator('[data-action=fields-inspector]');
+      if (await open.count() === 0) { await t.page.locator('[data-group=params] .sect-head').click(); await t.wait(300); }
+      await open.first().click();
+      const dialog = t.page.locator('.fields-inspector-dialog');
+      await t.until(async () => (await dialog.locator('[data-field-token="storey.code"]').count()) > 0, 'the inspector lists the storey\'s code');
+      t.expect((await dialog.locator('[data-field-token="storey.code"]').innerText()).includes('K1'), 'with its value');
+      await t.shot('fields-inspector', { of: dialog, pad: 0 });
+      await t.page.keyboard.press('Escape');
     },
   },
   {

@@ -306,6 +306,9 @@ public sealed partial class Session
     /// <summary>Told how a long edit goes (an import: its stage, how much of it is done): the host shows it. May be called from any thread.</summary>
     public Action<string, int, int>? Progress { get; set; }
 
+    /// <summary>Set when the user stops the long call running (the host's <c>cancel.long</c>): a command that looks at it (<see cref="IQueryContext.Cancellation"/>) stops, its edit undone.</summary>
+    public CancellationToken Cancellation { get; set; }
+
     /// <summary>
     /// New ids from <paramref name="seed"/> until disposed, one after the other, so an edit done again from its source
     /// (a recovered import) makes the same ids as the first time, and the journal's later edits find them.
@@ -1325,6 +1328,8 @@ public sealed partial class Session
         public IReadOnlyList<QuantitySet> Quantities(string id) => s.Quantities(id);
         public ClassDescriptor? Describe(string ifcClass) => s._catalog.Class(ifcClass);
         public IDeliveries Deliveries => s.Deliveries;
+        public Action<string, int, int>? Progress => s.Progress;
+        public CancellationToken Cancellation => s.Cancellation;
     }
 }
 

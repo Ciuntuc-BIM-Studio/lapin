@@ -14,12 +14,23 @@ Pentru un spațiu care nu e închis de pereți peste tot, cum e o terasă sau un
 
 ![Un plan cu două încăperi colorate după funcțiune și legenda culorilor](shots/rooms-plan.webp)
 
+## Linii de separare a încăperilor
+
+O bucătărie deschisă spre living, cele două capete ale unui hol, palierul unei galerii: spații fără perete între ele care trebuie totuși să fie încăperi separate. **Arhitectură → Separare încăperi** (<kbd>RS</kbd> pentru o linie) desenează o linie care mărginește încăperile cum ar face-o un perete, fără corp: o **linie** (înlănțuită, fiecare clic e începutul următoarei), o **polilinie** (colțurile ei, apoi <kbd>Enter</kbd>), un **dreptunghi** (două colțuri opuse: zona din interior devine o încăpere a ei), un **arc** (începutul, sfârșitul, un punct prin care trece) sau un **cerc** (centrul, un punct pe el). Desenează-o de la perete la perete; un capăt care se oprește la un fir de fața peretelui se închide totuși pe ea.
+
+![O bucătărie deschisă spre living, despărțite de o linie de separare, fiecare încăpere cu aria ei](shots/room-dividers.webp)
+
+Încăperile din jur își găsesc imediat conturul din nou, fără **Actualizează încăperile**: o încăpere de 6 × 4 m tăiată de o linie pe mijloc devine două încăperi de 3 × 4 m, fiecare cu aria, eticheta și finisajul ei; pune o încăpere de cealaltă parte cu **Încăpere**. Muți linia (o desenezi din nou) sau o ștergi și încăperile urmează: ștearsă, încăperea e din nou întreagă. Încăperile de o parte și de alta se întâlnesc exact pe linie, așa că ariile lor se adună la încăperea întreagă. O linie care se oprește în mijlocul unei încăperi nu mărginește nimic și nu schimbă nimic.
+
+În planurile nivelului ei se desenează ca o linie subțire întreruptă; nu are corp, așa că vederea 3D, secțiunile și cantitățile clădirii o lasă deoparte (lungimea ei e în cantitățile ei). Și desenul 2D devine linii de separare: **Desen → Convertește → Convertește în…**, **Room separation lines**. În IFC este un **IfcVirtualElement** (BOUNDARY în IFC 4.3) cu linia ca o curbă FootPrint, pe care Lapin o citește înapoi ca linie de separare.
+
 ## Proprietățile unei încăperi
 
 Selectezi o încăpere cu un clic pe eticheta ei sau oriunde în interiorul ei. În panoul de proprietăți:
 
 - **Nume** și **Număr.** Încăperile noi sunt numerotate pe niveluri: 101, 102… la parter. Numele încăperii e cel al funcțiunii până îi dai unul al tău; golit, revine la funcțiune.
 - **Funcțiune**, **Departament** și **Finisajul pardoselii.** Scrii ce vrei sau alegi o valoare pe care o au deja alte încăperi.
+  Lăsat gol, **Finisajul pardoselii** unei încăperi finisate este pardoseala finisajului ei (materialul stratului de sus, arătat estompat în câmp): eticheta, formulele și documentele ei citesc `{finishFloor}` astfel până scrii unul al tău.
 - **Înălțime.** Gol înseamnă înălțimea nivelului.
 - **Culoare proprie** și **Hașură proprie** înlocuiesc schema de culori doar pentru această încăpere, iar **Opacitate proprie** opacitatea culorii ei (gol: ca în schemă).
 
@@ -82,6 +93,7 @@ Culorile se desenează sub pereți, sub mobilier și sub deschiderile ușilor, a
 - Punctele se țin de pereți, ca la orice cotă. Muți un perete și lanțurile îl urmează.
 - Rulează din nou comanda pe o încăpere ca să-i refaci lanțurile, de exemplu după ce ai adăugat o ușă. Lanțurile vechi sunt înlocuite, nu dublate.
 - Laturile foarte scurte, sub 30 cm, sunt lăsate deoparte. Orice lanț se editează sau se șterge ca unul desenat de mână.
+- Ce lanțuri se fac, ordinea, distanța, spațierea și stilul lor se setează în **Annotate → Dimension rules…**; vezi [Cote exterioare și reguli de cotare](drafting.md#cote-exterioare-și-reguli-de-cotare). Exteriorul clădirii are propria unealtă, **Exterior dimensions**.
 
 ![Două încăperi cotate în interior: lanțul fiecărei laturi, cu ușa și ferestrele pe el](shots/room-dimensions.webp)
 
@@ -106,6 +118,8 @@ Un finisaj are:
 Fiecare finisaj măsoară, pe material, suprafața **brută** (conturul încăperii, nimic scăzut: aria pardoselii, perimetrul pereților înmulțit cu înălțimea fiecărei bucăți) și cea **netă** (ce e construit: ușile, ferestrele și golurile din placă scoase, glafurile și pardoseala de sub uși adăugate; partea glafurilor e în cantități, ca RevealArea), și volumul. **Interior → Extrasul finisajelor** listează fiecare încăpere finisată pe parte și material, cu totalurile pe material la sfârșit; ca orice extras, face grafice, se exportă și merge pe o planșă. În IFC un finisaj e un IfcCovering: FLOORING, CLADDING sau CEILING.
 
 Un finisaj îmbracă ce au deja pereții încăperii: dacă tipurile de pereți au tencuiala lor, dă pereților încăperii doar ce vine peste ea (vopsea, faianță), sau folosește tipuri de pereți doar cu miezul.
+
+**Câmpurile unei încăperi din finisajul ei.** O etichetă, formula unui extras sau textul unui simbol citește ce arată finisajul încăperii: `{finish.name}` numele finisajului, `{finish.floor}` stratul de sus al pardoselii (*Ceramic tiles*), `{finish.walls}` și `{finish.ceiling}` stratul dinspre încăpere. **Eticheta încăperii** le oferă ca **Finisaj**, **Finisaj: pardoseală**, **Finisaj: pereți** și **Finisaj: tavan**. Se calculează de fiecare dată, nu se păstrează: pune alt finisaj și etichetele urmează. O ușă le citește pe ale încăperii ei prin `{room.finish.floor}`.
 
 **O încăpere finisată se măsoară la finisaje.** Aria, perimetrul și volumul ei, în cantități, pe etichetă, în extrasul de încăperi, în legenda culorilor și în aria utilă a unui document, se măsoară la fața finisată a pereților: finisajul pereților de la pardoseală (faianța pe adeziv, de exemplu 1,5 cm) se scade pe fiecare latură, deci o încăpere de 4 × 5 m finisată așa are 3,97 × 4,97 m. Volumul merge până la tavanul finisat (straturile tavanului sub placa de deasupra, altfel sub înălțimea încăperii). Golurile ușilor nu sunt ale încăperii: fața finisată trece peste ele, chiar și când pardoseala trece prin uși. Măsurile la pereți rămân în cantități: aria brută a pardoselii, perimetrul și volumul brut. Schimbi finisajul sau îl scoți și aria încăperii urmează imediat, fără **Actualizează încăperile**.
 

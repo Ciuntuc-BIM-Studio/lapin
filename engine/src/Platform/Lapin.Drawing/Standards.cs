@@ -115,13 +115,16 @@ public sealed record DraftLayer(string Id, string Name, string Color, bool Visib
 /// <see cref="ElevationScale"/>: the scale a new view of that kind takes when none is asked for (null: 1:100).
 /// <see cref="SuppressZeros"/> (forum #81): dimensions drop their trailing zeros (2.5, not 2.500; 3, not 3.000) unless their
 /// style says to keep them; off by default, as drawings were written before.
+/// <see cref="LevelDecimals"/> and <see cref="LevelZeros"/> (follow-up to forum #81): how levels are written wherever a drawing
+/// prints one (level marks on sections and elevations, spot levels, level dimensions, base and survey points, terrain levels):
+/// their decimals (0–4, metres; 2 by default) and their trailing zeros ("project": as <see cref="SuppressZeros"/>, "keep", "suppress").
 /// </summary>
 public sealed record StyleBook(
     IReadOnlyList<TextStyle> TextStyles, IReadOnlyList<DimStyle> DimStyles, IReadOnlyList<AxisStyle> AxisStyles,
     string DefaultAxisStyle, IReadOnlyList<TagType> TagTypes, IReadOnlyList<DraftLayer> Layers, IReadOnlyList<LayerGroup> LayerGroups,
     string LineCap = "round", string Units = "mm", double? SectionMarkSize = null, double? SectionMarkText = null, double? ElevationMarkSize = null, double? ElevationMarkText = null,
     double? AreaRounding = null, IReadOnlyList<double>? Scales = null, double? PlanScale = null, double? SectionScale = null, double? ElevationScale = null,
-    IReadOnlyList<LineTypeDef>? LineTypes = null, bool SuppressZeros = false)
+    IReadOnlyList<LineTypeDef>? LineTypes = null, bool SuppressZeros = false, int LevelDecimals = Standards.DefaultLevelDecimals, string LevelZeros = "project")
 {
     public static StyleBook Default => Standards.Read(null);
 }
@@ -351,7 +354,8 @@ public static class Standards
             MarkValue(o["elevationMarkSize"] ?? o["markSize"], MinMarkSize, MaxMarkSize), MarkValue(o["elevationMarkText"] ?? o["markText"], MinMarkText, MaxMarkText),
             Lapin.Drawing.AreaRounding.Read(Lapin.Model.Json.Number(o["areaRounding"])),
             ViewScales(o["scales"]), ViewScale(o["planScale"]), ViewScale(o["sectionScale"]), ViewScale(o["elevationScale"]),
-            own.Count > 0 ? own : null, True(o["suppressZeros"]));
+            own.Count > 0 ? own : null, True(o["suppressZeros"]),
+            LevelDecimalsOf(o["levelDecimals"]) ?? DefaultLevelDecimals, OneOf(o["levelZeros"], ZeroChoices, "project"));
     }
 
     public static JsonObject ToJson(StyleBook b) => (JsonObject)JsonSerializer.SerializeToNode(b, DrawingJson.Default.StyleBook)!;
@@ -449,13 +453,36 @@ public static class Standards
         return ft > 0 ? $"{sign}{ft}'-{Inches(whole % 12)}" : sign + Inches(whole);
     }
 
+    /// <summary>The decimals a level is written with unless the project says otherwise (+3.00), and the most it may ask for.</summary>
+    public const int DefaultLevelDecimals = 2, MaxLevelDecimals = 4;
+
+    /// <summary>A level's decimals as stored or asked: a whole number 0–4; null when it is not one.</summary>
+    public static int? LevelDecimalsOf(JsonNode? v) =>
+        Lapin.Model.Json.Number(v) is { } d && double.IsFinite(d) && Math.Abs(d - Math.Round(d)) < 1e-9 && d >= 0 && d <= MaxLevelDecimals ? (int)Math.Round(d) : null;
+
+    /// <summary>Whether the project's levels drop their trailing zeros: their own choice, else the project's dimensions'.</summary>
+    public static bool SuppressesLevelZeros(StyleBook b) => b.LevelZeros switch { "keep" => false, "suppress" => true, _ => b.SuppressZeros };
+
     /// <summary>A level as drawings write it: ±0.00, +3.06, −3.98 (metres, two decimals, a true minus).</summary>
-    public static string FormatLevel(double z)
+    public static string FormatLevel(double z) => FormatLevel(z, DefaultLevelDecimals, false);
+
+    /// <summary>
+    /// A level in metres with <paramref name="decimals"/> (0–4) and, with <paramref name="suppressZeros"/>, its trailing zeros
+    /// dropped (+3.150 → +3.15, +3.000 → +3, ±0.000 → ±0); signed with a true minus (−0.15). One that rounds to nothing is
+    /// ±0.00, or +0.00 with <paramref name="plusAtZero"/> (as the level marks across sections and elevations have written it).
+    /// </summary>
+    public static string FormatLevel(double z, int decimals, bool suppressZeros, bool plusAtZero = false)
     {
-        var r = Math.Round(z, 2);
-        if (Math.Abs(r) < 0.005) return "±0.00";
-        return (r > 0 ? "+" : "\u2212") + Math.Abs(r).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+        decimals = Math.Clamp(decimals, 0, MaxLevelDecimals);
+        var text = Math.Abs(z).ToString("F" + decimals, CultureInfo.InvariantCulture);
+        if (suppressZeros) text = TrimZeros(text);
+        var zero = text.All(ch => ch is '0' or '.');
+        return (zero ? (plusAtZero ? "+" : "±") : z > 0 ? "+" : "\u2212") + text;
     }
+
+    /// <summary>A level as the project's standards write it: in an imperial project in feet and inches or inches; else in metres with the project's level decimals and trailing zeros.</summary>
+    public static string FormatLevel(double z, StyleBook b, bool plusAtZero = false) =>
+        IsImperial(b.Units) ? FormatLevel(z, b.Units) : FormatLevel(z, b.LevelDecimals, SuppressesLevelZeros(b), plusAtZero);
 
     /// <summary>Whether a unit is feet and inches or inches.</summary>
     public static bool IsImperial(string unit) => unit is "ft-in" or "in";

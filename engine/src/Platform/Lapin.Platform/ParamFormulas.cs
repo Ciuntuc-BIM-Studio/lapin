@@ -91,6 +91,8 @@ public static class ParamFormulas
             case "type": return XValue.Of(type?.Name ?? e.Name);
             case "class": return XValue.Of(e.Class.StartsWith("Ifc", StringComparison.Ordinal) ? e.Class[3..] : e.Class);
         }
+        // What its module works out (forum topic 84: a room's finish.floor), never stored.
+        if (DerivedFields.Value(m, e, name) is { } derived) return XValue.Read(derived);
         // The project's parameters are global: read by their key from any element.
         return ParamScopes.Globals(m).Any(c => TagText.Squash(c.Key) == key) ? ParamScopes.ProjectFormulaValue(m, name) : null;
     }

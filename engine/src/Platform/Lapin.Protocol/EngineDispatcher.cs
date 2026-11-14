@@ -448,7 +448,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
         sink(new JsonObject { ["stage"] = stage, ["done"] = done, ["total"] = total });
     }
 
-    /// <summary>The long call that can be stopped now (an IFC file being optimised), and stopping it: the host calls it from outside the calls' queue.</summary>
+    /// <summary>The long call that can be stopped now (an IFC file being optimised, an SDNF import), and stopping it: the host calls it from outside the calls' queue.</summary>
     CancellationTokenSource? _long;
     public void CancelLong() { try { _long?.Cancel(); } catch (ObjectDisposedException) { } }
 
@@ -550,6 +550,10 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             session.Connection = caller.Connection;
             session.Progress = ReportProgress;
             HostFiles.GuestCall = caller.Remote;
+            // Any call may be stopped by cancel.long: a command that looks at the session's token (an SDNF import) stops, its edit undone.
+            using var stop = new CancellationTokenSource();
+            _long = stop;
+            session.Cancellation = stop.Token;
             try
             {
                 var (result, diff) = Dispatch(method, p);
@@ -565,7 +569,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 }
                 return (BinaryFrame.Encode(new Reply(id, result), ContractsOnly), diff);
             }
-            finally { session.Author = History.Me; session.Connection = null; session.Progress = null; HostFiles.GuestCall = false; }
+            finally { session.Author = History.Me; session.Connection = null; session.Progress = null; session.Cancellation = default; _long = null; HostFiles.GuestCall = false; }
         }
         // A refusal the user reads. InvalidOperationException is not one: it is what an empty First(), a JsonNode given two parents or a
         // null Value throws, an engine bug, logged below.

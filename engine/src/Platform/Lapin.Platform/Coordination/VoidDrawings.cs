@@ -215,7 +215,7 @@ public static class VoidDrawings
         var h = style.Height * mm;
         var (lo, hi) = (new Vec2(hull.Min(p => p.X), hull.Min(p => p.Y)) + shift, new Vec2(hull.Max(p => p.X), hull.Max(p => p.Y)) + shift);
         var text = new List<string> { v.Mark };
-        if (sizes) text.Add(Size(v, c.Book.Units));
+        if (sizes) text.Add(Size(v, c.Book));
         var (bw, bh) = (text.Max(t => LabelParts.Width(t, h)), h * (1 + 1.4 * (text.Count - 1)));
         // The label's own directions: along the wall (read left to right) and across it; the view's x and y for any other void.
         var u = new Vec2(1, 0);
@@ -300,12 +300,13 @@ public static class VoidDrawings
     }
 
     /// <summary>A void's size as a coordination drawing writes it: width × height (a round one's diameter), and a wall opening's bottom level.</summary>
-    public static string Size(OpeningVoid v, string units)
+    public static string Size(OpeningVoid v, StyleBook book)
     {
+        var units = book.Units;
         string L(double metres) => TagText.Length(metres, "project", units);
         var size = v.Diameter is { } d ? "Ø" + L(d) : $"{L(v.Width)}×{L(v.Height)}";
         if (v.Kind is OpeningVoids.Wall or OpeningVoids.Door or OpeningVoids.Window && Measure.Bounds(v.Solid) is { } b)
-            size += " " + Standards.FormatLevel(b.Min.Z, units);
+            size += " " + Standards.FormatLevel(b.Min.Z, book);
         return size;
     }
 

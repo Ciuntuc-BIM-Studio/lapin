@@ -134,6 +134,9 @@ public static partial class TagText
             _ => null,
         };
         if ((Of(e) ?? Of(type)) is { } attr) return attr;
+        // What its module works out (forum topic 84: a room's {finish.floor}), never stored; then a quantity the caller has ({NetArea}).
+        if (DerivedFields.Value(m, e, key) is { } derived) return derived;
+        if (more?.Invoke(key) is { } measured) return Expr.Format(measured, null);
         // The project's own parameters are global: read by their key from any element (decision 551).
         var k = Squash(key);
         return ParamScopes.Globals(m).FirstOrDefault(c => Squash(c.Key) == k || Squash(c.Label) == k) is { } g ? g.Printed ?? "" : "";

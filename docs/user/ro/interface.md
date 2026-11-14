@@ -272,6 +272,14 @@ Nimic din toate acestea nu se păstrează pe element: se citește la fiecare cer
 
 ![Indexul unei încăperi calculat din codul nivelului ei și din parametrii ei](shots/param-scopes.webp)
 
+### Inspectorul de parametri
+
+Ce nume poate citi un element? **Proprietăți → Parametri → Inspector de parametri** le arată pe toate, cu valoarea lor de acum: câmpurile pe care le are orice element (`{name}`, `{mark}`, `{type}`, `{class}`), atributele lui (`{number}` al unei încăperi, `{height}` al unui perete), ce calculează modulul lui (`{finish.floor}` al unei încăperi), cantitățile lui, parametrii lui proprii, proprietățile standard IFC ale clasei lui, parametrii proiectului după cheie și apoi, grup cu grup, ce citește prin nivelul, clădirea, amplasamentul lui, proiect, tipul, grupul, ansamblul, gazda și încăperile lui (`{storey.code}`, `{project.number}`, `{room.name}`, `{host.FireRating}`…). Scrie în **Caută câmpurile** ca să restrângi lista; ține mouse-ul pe un câmp ca să vezi ce este. Dă clic pe unul ca să-l copiezi, apoi lipește-l într-o etichetă, un cartuș, textul unui simbol sau o formulă.
+
+![Inspectorul de parametri al unei încăperi: câmpurile ei, apoi ale nivelului și ale proiectului](shots/fields-inspector.webp)
+
+Cât timp o formulă e deschisă, butonul **{ }** de lângă ea (**Inserează câmp…**) deschide aceeași listă sub ea: un clic pune câmpul unde e cursorul, `{storey.code}` într-un text cu câmpuri, numele simplu (`storey.code`, *FireRating*) într-o expresie. O cantitate e citită doar de formule: într-un text intră ca `{= NetArea}`.
+
 ## Scurtăturile de tastatură
 
 **Vedere → Scurtături de tastatură…** (<kbd>KS</kbd>) arată fiecare comandă la care ajunge tastatura, pe file. Fiecare rând arată scurtăturile comenzii.

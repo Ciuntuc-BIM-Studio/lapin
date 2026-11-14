@@ -22,20 +22,28 @@ import { RoomOpeningsField } from './RoomOpenings';
 import { sameKind } from '../../shell/params';
 
 /** A text field with suggestions (an HTML datalist): commits on blur or Enter. */
-function Suggest({ value, options, onCommit, id }: { value: string; options: string[]; onCommit: (v: string) => void; id: string }) {
+function Suggest({ value, options, onCommit, id, placeholder }: { value: string; options: string[]; onCommit: (v: string) => void; id: string; placeholder?: string }) {
   const [text, setText] = useState(value);
   useEffect(() => setText(value), [value]);
   return (
     <span className="cell-wrap">
-      <input className="cell" list={id} value={text} onChange={(e) => setText(e.target.value)} onBlur={() => { if (text !== value) onCommit(text); }}
+      <input className="cell" list={id} value={text} placeholder={placeholder} onChange={(e) => setText(e.target.value)} onBlur={() => { if (text !== value) onCommit(text); }}
         onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setText(value); }} />
       <datalist id={id}>{options.map((o) => <option key={o} value={o} />)}</datalist>
     </span>
   );
 }
 
+/** The material a room's finish shows on its floor (its top layer), which its floor finish inherits while it has none of its own (forum topic 84). */
+export function finishFloorOf(finish: NodeDto | undefined): string | null {
+  const floor = (finish?.props.spec as { floor?: { material?: string }[] } | undefined)?.floor;
+  return Array.isArray(floor) && typeof floor[0]?.material === 'string' ? floor[0].material : null;
+}
+
 export function RoomSection({ node }: { node: NodeDto }) {
   const [s] = useSchemes();
+  const finish = useSession((x) => (typeof node.props.finishType === 'string' ? x.nodes.get(node.props.finishType) : undefined));
+  const inherited = finishFloorOf(finish);
   const [hatches, setHatches] = useState<string[]>([]);
   useEffect(() => { void query<{ name: string }[]>('hatch.list').then((r) => r && setHatches(r.map((h) => h.name))); }, []);
   const str = (k: string) => (typeof node.props[k] === 'string' ? (node.props[k] as string) : '');
@@ -58,8 +66,8 @@ export function RoomSection({ node }: { node: NodeDto }) {
         <dd><Suggest id={`fn-${node.id}`} value={str('function')} options={known('function', s?.functions ?? [])} onCommit={(v) => update('function', v.trim())} /></dd>
         <dt>Department</dt>
         <dd><Suggest id={`dep-${node.id}`} value={str('department')} options={known('department')} onCommit={(v) => update('department', v.trim())} /></dd>
-        <dt>Floor finish</dt>
-        <dd><Suggest id={`ff-${node.id}`} value={str('finishFloor')} options={known('finishFloor')} onCommit={(v) => update('finishFloor', v.trim())} /></dd>
+        <dt title="Empty: the floor of its finish (its top layer), as its tag and formulas read {finishFloor}">Floor finish</dt>
+        <dd><Suggest id={`ff-${node.id}`} value={str('finishFloor')} placeholder={inherited ?? undefined} options={known('finishFloor', inherited ? [inherited] : [])} onCommit={(v) => update('finishFloor', v.trim())} /></dd>
         <dt title="What lines the room: its floor, walls and ceiling laid by Finishes → Finish room">Finish</dt>
         <dd><RoomFinishField node={node} /></dd>
         {typeof node.props.finishType === 'string' && (

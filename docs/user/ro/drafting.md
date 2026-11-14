@@ -137,7 +137,35 @@ Adnotările de pe un plan (cote, texte, linii desenate, etichete) pot trece pe a
 
 **Zerourile de la final.** O cotă cu trei zecimale scrie `2.500` și `3.000`. Bifează **Gestionare → Standarde de desen → Proiect → Suprimă zerourile de la final** și toate cotele le lasă deoparte: `2.5` și `3`, ca în programele CAD. Fiecare stil de cotă poate alege și singur, în coloana **Zerouri de la final**, lângă **Zecimale**: *ca proiectul* (implicit), *păstrează (2.500)* sau *suprimă (2.5)*. Se aplică valorilor cotelor liniare, aliniate, de rază, de diametru, de lungime de arc și de ordonată și înălțimilor golurilor de sub ele, pe ecran, pe planșe, în PDF și în DXF; picioarele și țolii, scriși în fracții, nu au zerouri de lăsat deoparte. E oprit până îl pornești, așa că desenele existente arată la fel.
 
+**Cotele de nivel.** Cotele de nivel se scriu în metri, cu două zecimale: `+3.00`, `−0.15`, `±0.00`. **Gestionare → Standarde de desen → Proiect** alege câte, cu **Zecimale la cote de nivel** (de la 0 la 4: `+3`, `+3.0`, `+3.00`, `+3.000`, `+3.0000`), și dacă își lasă deoparte zerourile de la final, cu **Zerouri de la final la cote de nivel**: *ca proiectul* (implicit, deci urmează **Suprimă zerourile de la final**), *păstrează (+3.150)* sau *suprimă (+3.15)*. Cu trei zecimale o cotă de nivel se scrie `+3.150`, suprimată `+3.15`, iar o valoare întreagă `+3.000` devine `+3`. Se aplică oriunde un desen scrie o cotă de nivel: marcajele nivelurilor din secțiuni și fațade (ale lui Lapin și un simbol de nivel al tău, cu `{level.elevation}`), cotele de nivel punctuale (`{point.elevation}`), cotele de nivel ca dimensiuni, punctul de bază și punctul topografic, cotele terenului. O cotă de nivel pusă dintr-un script își poate avea propriile valori (`decimals`, `zeros`). Într-un proiect imperial cotele de nivel rămân în picioare și țoli.
+
 **Cote pe o linie.** Un punct de cotă pus pe o axă din grilă sau pe axa unui perete se ține de linie, nu de un punct al ei. Trage capătul axei de-a lungul ei ca să încapă bula în vedere, sau lungește ori scurtează peretele: cota măsoară mai departe unde ai pus-o, iar linia ei nu se rotește. Dacă axa sau peretele se mută de-a curmezișul, punctul merge cu ea, în același loc de-a lungul. La fel rămâne, când peretele e întins pe lungime, o cotă pusă pe fața lui. Cotele făcute înainte se țin de o axă din grilă la fel; una pe axa unui perete se atașează din nou dând clic pe punctul ei.
+
+### Cote exterioare și reguli de cotare
+
+**Annotate → Exterior dimensions** (<kbd>ED</kbd>, sau tastează **EXTDIM**) cotează dintr-o dată exteriorul clădirii pe un plan. Fiecare fațadă dreaptă primește în exterior lanțuri de cote paralele, unul lângă altul, în ordinea dată de regulile de cotare, începând de la perete. Punctele se țin de pereți, ca la orice cotă.
+
+- Cu pereți selectați, se cotează doar fațadele lor. Fără selecție, se cotează toți pereții exteriori ai nivelului planului.
+- Cerută pe o planimetrie, lanțurile se fac pe planul nivelului.
+- Rulează din nou comanda și lanțurile făcute de ea pe plan sunt înlocuite, nu dublate. Lanțurile desenate de tine rămân.
+
+**Annotate → Dimension rules…** (Reguli de cotare…) deschide setările pentru Cote exterioare și Cotele încăperilor, în două taburi. Aparțin proiectului și circulă cu standardele de desen (**Gestionare → Standarde de desen**, cu opțiunile). Fiecare lanț are o bifă și butoane **↑ ↓** pentru ordine: la exterior de la perete spre afară, la încăperi de la latură spre interior.
+
+| Lanț | Ce măsoară |
+| --- | --- |
+| Detalii | fiecare element de pe fațadă: colțuri și ancadramentele golurilor |
+| Goluri | de la începutul fațadei până la centrul fiecărei uși și ferestre și până la capătul lor |
+| Axe | de la început până la fiecare ax al grilei care intersectează fațada și până la capăt |
+| Camere | grosimile pereților care se întâlnesc cu fațada dinspre interior și distanțele dintre ei |
+| Total | întreaga fațadă |
+
+Cotele încăperilor au doar **Detalii** (latura, cu ancadramentele golurilor) și **Total** (lungimea întreagă a laturii). Pe lângă lanțuri:
+
+- **Distanța** este măsurată în milimetri pe hârtie de la fața peretelui (sau latura încăperii) până la primul lanț, iar **Spațierea** este distanța dintre lanțuri.
+- **Stil de cotare** este unul dintre stilurile de cotare ale proiectului; când e gol, stilul implicit.
+- **Măsoară până la** (doar la exterior) spune până la ce se măsoară colțurile și pereții despărțitori: fețele pereților, fețele miezului lor sau axele lor.
+- **Omite golurile mai înguste de** lasă deoparte golurile sub lățimea dată, în metri.
+- **Resetează la valorile implicite** aduce dialogul la regulile din program; nimic nu se schimbă până la **OK**, care e un singur pas de anulare.
 
 ### Etichete
 
@@ -279,7 +307,7 @@ Pe o planșă, **Așază simbol…** din bara de unelte listează simbolurile; a
 
 Liniile desenate într-un plan, un desen adus din DXF sau calchiat dintr-un PDF pot deveni elemente adevărate. Lapin recunoaște ce e fiecare formă și o face cu modulul care o stăpânește.
 
-**Desen → Convertește → Convertește în…** lucrează pe selecția din vederea din față: selectează întâi linii, polilinii, arce sau cercuri desenate. Dialogul listează în ce se pot transforma formele în ediția ta: **Walls** (pe linii și contururi, îmbinați), **Floor** (un contur închis), **Room** (un contur închis), **Railing** (o linie deschisă), **Beams**, **Strip foundations**, **Pad footings** și **Columns** (un cerc sau un contur, rotit după latura cea mai lungă) și **Reinforcement bars** (o formă dreaptă, în L, în U sau un etrier recunoscută, altfel o bară polilinie). Numele conversiilor apar așa în listă, în engleză. Opțiunile conversiei alese (tipul și înălțimea unui perete, diametrul unei bare) sunt dedesubt, iar dialogul spune câte forme **pot fi convertite** și câte **nu**, cu motivul (o placă are nevoie de un contur închis), și listează ce ar deveni fiecare. Planurile iau etajul planului; secțiunile și fațadele iau bare. **Păstrează desenul** lasă formele sub elementele noi, ca fundal; fără el sunt înlocuite. Un pas de anulare readuce desenul.
+**Desen → Convertește → Convertește în…** lucrează pe selecția din vederea din față: selectează întâi linii, polilinii, arce sau cercuri desenate. Dialogul listează în ce se pot transforma formele în ediția ta: **Walls** (pe linii și contururi, îmbinați), **Floor** (un contur închis), **Room** (un contur închis), **Room separation lines** (orice linie, polilinie, arc sau cerc: vezi [Linii de separare a încăperilor](rooms.md#linii-de-separare-a-încăperilor)), **Railing** (o linie deschisă), **Beams**, **Strip foundations**, **Pad footings** și **Columns** (un cerc sau un contur, rotit după latura cea mai lungă) și **Reinforcement bars** (o formă dreaptă, în L, în U sau un etrier recunoscută, altfel o bară polilinie). Numele conversiilor apar așa în listă, în engleză. Opțiunile conversiei alese (tipul și înălțimea unui perete, diametrul unei bare) sunt dedesubt, iar dialogul spune câte forme **pot fi convertite** și câte **nu**, cu motivul (o placă are nevoie de un contur închis), și listează ce ar deveni fiecare. Planurile iau etajul planului; secțiunile și fațadele iau bare. **Păstrează desenul** lasă formele sub elementele noi, ca fundal; fără el sunt înlocuite. Un pas de anulare readuce desenul.
 
 ![Grupul Convertește din tabul Desen](shots/convert-ribbon.webp)
 

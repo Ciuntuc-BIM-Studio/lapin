@@ -10,7 +10,8 @@ import { forget3d } from '../viewport/viewState3d';
 import { brand } from '../platform/brand';
 import { activeStorey, engine, engineInBrowser, useSession } from './session';
 import { LONG_TIMEOUT_MS } from './client';
-import { editableText, surveyIfc, type EditableReport } from './ifcImport';
+import { begin, editableText, end, surveyIfc, type EditableReport } from './ifcImport';
+import { sdnfSummary, type SdnfImportReport } from '../modules/steel/sdnfReport';
 import { emptyPane, notify, select, useUi } from '../app/store';
 import { usePrefs } from '../app/prefs';
 import { fitAfterImport, poseKey } from '../viewport/camera';
@@ -546,7 +547,6 @@ export async function linkLapin(): Promise<void> {
   const r = await ask(`Link ${name}`, [lengthField('x', 'Placed at x', 0), lengthField('y', 'Placed at y', 0), numberField('rotation', 'Turned (°)', 0), choiceField('mirror', 'Mirrored', 'no', [{ value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }])]);
   if (!r) return;
   const place = { x: Number(r.x), y: Number(r.y), rotation: Number(r.rotation), mirror: r.mirror === 'yes' };
-  const { begin, end } = await import('./ifcImport');
   begin(`Linking ${name}`, 'Reading the project');
   try {
     await engine.call('project.linkLapin', picked ? { name: picked.name, data: toBase64(picked.bytes), ...place } : { path, ...place }, { timeoutMs: LONG_TIMEOUT_MS });
@@ -576,15 +576,29 @@ export async function importSdnf(): Promise<void> {
   const path = isDesktop() ? await pickPath('open', undefined, [{ name: 'SDNF', extensions: exts }]) : picked?.name ?? null;
   if (!path) return;
   const name = path.split(/[\\/]/).pop() ?? path;
+  // Its stages shown as it goes, Cancel while it reads and makes the model (report #148: a large file left the window busy
+  // with nothing to say); at the end its protocol, or why the file could not be read.
+  const { showSdnfReport } = await import('../modules/steel/SdnfReportDialog');
+  const started = Date.now();
+  // The engine in a page works the call in one go: nothing reaches it to stop it meanwhile.
+  begin(`Importing ${name}`, 'Reading the file', engineInBrowser ? undefined : () => { void engine.call('cancel.long', {}).catch(() => undefined); });
   try {
-    const r = await engine.call<{ made: number; updated: number; remade: number; plates: number; unknownProfiles: string[] }>('doc.execute',
-      { command: 'steel.importSdnf', args: picked ? { name: picked.name, data: toBase64(picked.bytes) } : { name, path } }, { timeoutMs: LONG_TIMEOUT_MS });
-    notify(`Imported ${name}: ${r.made} new, ${r.updated + r.remade} updated, ${r.plates} plates.`);
-    if (r.unknownProfiles.length) notify(`Profiles in no library, drawn as placeholders: ${r.unknownProfiles.join(', ')}.`);
+    const r = await engine.call<SdnfImportReport>('doc.execute',
+      { command: 'steel.importSdnf', args: picked ? { name: picked.name, data: toBase64(picked.bytes) } : { name, path } }, { timeoutMs: SDNF_TIMEOUT_MS });
+    end();
+    notify(sdnfSummary(r));
+    showSdnfReport(name, r, null, Date.now() - started);
   } catch (e) {
-    notify(e instanceof Error ? e.message : String(e));
+    end();
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.startsWith('Cancelled')) { notify(msg); return; }
+    notify(msg);
+    showSdnfReport(name, null, msg, Date.now() - started);
   }
 }
+
+/** A large SDNF may take longer than other imports on a slow computer: the overlay shows it working meanwhile. */
+const SDNF_TIMEOUT_MS = 30 * 60_000;
 
 /**
  * A mesh from another program into the open project as references (OBJ, STL, glTF, GLB: docs/plan-studio-editor.md);
