@@ -498,6 +498,13 @@ public sealed record GeometryOptions(bool CutOpenings = true, bool Fine = false)
 public interface IVoidShapes
 {
     Solid? Shape(Entity opening, IModelView model);
+
+    /// <summary>
+    /// The voids <paramref name="element"/> takes from openings other elements host (an opening cutting every wall it passes
+    /// through, the forum's topic 64): each the opening's id and its body in the element. IFC wants an opening element per
+    /// element voided, so each is written as an IfcOpeningElement of its own voiding this element.
+    /// </summary>
+    IEnumerable<(string OpeningId, Solid Body)> Through(Entity element, IModelView model) => [];
 }
 
 /// <summary>

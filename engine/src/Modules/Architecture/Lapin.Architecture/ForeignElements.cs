@@ -437,7 +437,7 @@ public sealed class ForeignElements : IIfcRecognizer
         if (holeFloor is { } hf && Math.Round(Math.Max(0, hf - baseZ), 4) is var floorSill && floorSill < sill - 5e-4)
             (fillOffset, h, sill) = (Math.Round(sill - floorSill, 4), Math.Round(h + sill - floorSill, 4), floorSill);
         if (!(w > 0 && h > 0)) { ctx.Skip($"a {kind} without a size"); return; }
-        try { Openings.CheckFits(edit.Model, wall, along, sill, w, h); }
+        try { Openings.CheckFits(edit.Model, wall, along, sill, w, h, alone: true); }
         catch (CommandException ex) { ctx.Skip($"a {kind} that does not fit its wall ({ex.Message.TrimEnd('.')})"); return; }
         // The hole is the file's opening, its own size and sill; its door or window the fill's size (OverallWidth/Height),
         // which may be smaller (a frame set in a larger structural opening) or larger (a door body running past the hole).

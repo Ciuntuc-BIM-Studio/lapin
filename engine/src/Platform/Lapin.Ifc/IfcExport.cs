@@ -1614,6 +1614,16 @@ public static partial class IfcExport
                     Define(opening, IntentOf(op, Gid(op.Id, IntentKey), null), Gid(op.Id, "intent-rel"));
                     pendingFills.AddRange(m.RelationsOf(op.Id, IfcClass.RelFillsElement).Where(r => r.Relating == op.Id));
                 }
+            // The openings other elements host that pass through this one (forum topic 64): IFC voids one element by one opening
+            // element, so each is an IfcOpeningElement of its own voiding this one, its GlobalId derived from the opening's and this element's.
+            if (voids != null)
+                foreach (var (oid, body) in voids.Through(e, m))
+                {
+                    var shape = f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { BodyOf([Brep(body, null, Frame.AtZ(z0))]) }));
+                    var opening = f.Add("IFCOPENINGELEMENT", Gid(oid, "through/" + e.Id), Null, S(m.Get(oid)?.Name ?? "Opening"), S("Through " + (m.Get(oid) is { } op && m.RelatingOf(op.Id, IfcClass.RelVoidsElement) is { } host ? host.Name : "another element")),
+                        Null, Place(place, 0), shape, S(oid), E("OPENING"));
+                    f.Add("IFCRELVOIDSELEMENT", Gid(oid, "through-voids/" + e.Id), Null, Null, Null, entity, opening);
+                }
             // The provision openings MEP runs cut by the cut order (decision 293): IfcOpeningElements of their own, voiding the host,
             // with what made them (Lapin_ProvisionOpening); the voids option writes them as provisions for voids too.
             if (e.Class is IfcClass.Wall or IfcClass.Slab or IfcClass.Roof)

@@ -83,6 +83,12 @@ export function JoinerySection({ node }: { node: NodeDto }) {
           </dd>
           {ownPosition && <><dt>Set back</dt><dd><LengthField metres={ownPosition.distance} onCommit={(v) => { if (v != null) setPosition({ ...ownPosition, distance: v }); }} /></dd></>}
         </>}
+        {/* Through every wall along its own it passes (forum topic 64): a door from a concrete wall up into the masonry on it. */}
+        {opening && wall?.type === 'IfcWall' && node.editable && <>
+          <dt>Cut also the walls it passes through</dt><dd><input type="checkbox" data-field="cut-through" checked={opening.props.cutThrough !== false}
+            title="Cuts each wall along its own that its opening reaches into (one stacked on it, a lining against it), not only the wall it is in"
+            onChange={(e) => void execute('architecture.setCutThrough', { ids: sameKind(node, JOINERY), on: e.target.checked })} /></dd>
+        </>}
         <dt>Of its type</dt><dd className="num">{type ? relatedOf(model, type.id, 'IfcRelDefinesByType').length : 0}</dd>
       </dl>
       {node.editable && (

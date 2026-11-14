@@ -120,6 +120,10 @@ export function WallOpeningSection({ node }: { node: NodeDto }) {
         <dd><select data-field="opening-lintel" value={d.lintel} onChange={(e) => set({ lintel: e.target.value })}>
           <option value="wall">The wall’s rule</option><option value="none">None</option>
         </select></dd>
+        {/* Through every wall along its own it passes (forum topic 64). */}
+        <dt>Cut also the walls it passes through</dt><dd><input type="checkbox" data-field="cut-through" checked={node.props.cutThrough !== false} disabled={node.editable === false}
+          title="Cuts each wall along its own that it reaches into (one stacked on it, a lining against it), not only the wall it is in"
+          onChange={(e) => void execute('architecture.setCutThrough', { ids: openingsWith(node), on: e.target.checked })} /></dd>
       </dl>
       {node.editable !== false && (
         <div className="row pad">

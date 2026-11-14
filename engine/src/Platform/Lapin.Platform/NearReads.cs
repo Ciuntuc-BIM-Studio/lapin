@@ -57,3 +57,28 @@ public static class NearReads
         return tv.Inner.OfClass(ifcClass);
     }
 }
+
+/// <summary>
+/// The elements along an axis (a wall) read only round a segment by where their attributes put them (<see cref="PlaceCells"/>): unlike
+/// <see cref="NearReads"/>, which goes by the built bodies, the cells are the store's, stamped, so a build that reads them is still
+/// taken back on an undo; an edit touches the cells of where an element was and is, which builds the readers round it again.
+/// </summary>
+public static class PlaceReads
+{
+    /// <summary>
+    /// The class's elements for a build looking within <paramref name="reach"/> of a segment in plan: every one of them, unnoted, for the caller to sort by the
+    /// place in their own attributes; it reads those it keeps through <paramref name="m"/> (<c>m.Get</c>). Outside a build it is simply the class.
+    /// </summary>
+    public static IEnumerable<Entity> Candidates(IModelView m, string ifcClass, Vec2 a, Vec2 b, double reach)
+    {
+        var keys = PlaceCells.Round(ifcClass, a.X, a.Y, b.X, b.Y, reach).ToList();
+        var tv = m as TrackingView;
+        if (tv != null) tv.Read.UnionWith(keys);
+        // The store's cells give the elements in them; a view over an edit (a command checking) lists the class.
+        if ((tv?.Inner ?? m) is not ModelStore store || keys.Any(k => !PlaceCells.IsKey(k))) return tv?.Inner.OfClass(ifcClass) ?? m.OfClass(ifcClass);
+        var ids = new HashSet<string>();
+        foreach (var k in keys) ids.UnionWith(store.InCell(k));
+        // In the document's order, so what is built from them is the same whichever way the cells listed them.
+        return ids.Select(store.Get).OfType<Entity>().Where(e => e.Class == ifcClass).OrderBy(e => store.Order(e.Id)).ToList();
+    }
+}

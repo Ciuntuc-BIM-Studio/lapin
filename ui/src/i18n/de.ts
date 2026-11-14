@@ -569,6 +569,11 @@ export const DE: Record<string, string> = {
   "Frame profile": "Rahmenprofil",
   "Its width and height are the cell's, and follow it when the grid changes": "Breite und Höhe sind die des Feldes und folgen ihm, wenn sich das Raster ändert",
   "Fill the cell": "Feld füllen",
+  // Openings through every wall they pass (forum topic 64)
+  "Cut also the walls it passes through": "Auch die Wände schneiden, durch die sie geht",
+  "Cuts each wall along its own that its opening reaches into (one stacked on it, a lining against it), not only the wall it is in": "Schneidet jede Wand entlang der eigenen, in die ihre Öffnung reicht (eine aufgesetzte Wand, eine Vorsatzschale daran), nicht nur die Wand, in der sie sitzt",
+  "Cuts each wall along its own that it reaches into (one stacked on it, a lining against it), not only the wall it is in": "Schneidet jede Wand entlang der eigenen, in die sie reicht (eine aufgesetzte Wand, eine Vorsatzschale daran), nicht nur die Wand, in der sie sitzt",
+  "Cut the walls it passes through": "Wände schneiden, durch die sie geht",
   "In the cell": "Im Feld",
   "From where it is aligned, into the cell": "Von der Ausrichtung aus, ins Feld hinein",
   "Door in the chosen": "Tür in die gewählten",

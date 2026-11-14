@@ -569,6 +569,11 @@ export const IT: Record<string, string> = {
   "Frame profile": "Profilo del telaio",
   "Its width and height are the cell's, and follow it when the grid changes": "Larghezza e altezza sono quelle della cella, e la seguono quando la griglia cambia",
   "Fill the cell": "Riempi la cella",
+  // Openings through every wall they pass (forum topic 64)
+  "Cut also the walls it passes through": "Taglia anche i muri che attraversa",
+  "Cuts each wall along its own that its opening reaches into (one stacked on it, a lining against it), not only the wall it is in": "Taglia ogni muro lungo il suo in cui arriva la sua apertura (uno posato sopra, una controparete contro), non solo il muro in cui si trova",
+  "Cuts each wall along its own that it reaches into (one stacked on it, a lining against it), not only the wall it is in": "Taglia ogni muro lungo il suo in cui arriva (uno posato sopra, una controparete contro), non solo il muro in cui si trova",
+  "Cut the walls it passes through": "Taglia i muri che attraversa",
   "In the cell": "Nella cella",
   "From where it is aligned, into the cell": "Da dove è allineata, verso l'interno della cella",
   "Door in the chosen": "Porta in quelle scelte",

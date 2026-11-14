@@ -569,6 +569,11 @@ export const DA: Record<string, string> = {
   "Frame profile": "Rammeprofil",
   "Its width and height are the cell's, and follow it when the grid changes": "Bredde og højde er feltets og følger det, når rasteret ændres",
   "Fill the cell": "Fyld feltet",
+  // Openings through every wall they pass (forum topic 64)
+  "Cut also the walls it passes through": "Skær også de vægge, den går igennem",
+  "Cuts each wall along its own that its opening reaches into (one stacked on it, a lining against it), not only the wall it is in": "Skærer hver væg langs dens egen, som dens åbning når ind i (en væg ovenpå, en forsatsvæg op ad den), ikke kun væggen den sidder i",
+  "Cuts each wall along its own that it reaches into (one stacked on it, a lining against it), not only the wall it is in": "Skærer hver væg langs dens egen, som den når ind i (en væg ovenpå, en forsatsvæg op ad den), ikke kun væggen den sidder i",
+  "Cut the walls it passes through": "Skær de vægge, den går igennem",
   "In the cell": "I feltet",
   "From where it is aligned, into the cell": "Fra hvor den er justeret, ind i feltet",
   "Door in the chosen": "Dør i de valgte",

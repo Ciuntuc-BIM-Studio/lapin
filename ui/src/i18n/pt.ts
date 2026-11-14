@@ -569,6 +569,11 @@ export const PT: Record<string, string> = {
   "Frame profile": "Perfil do aro",
   "Its width and height are the cell's, and follow it when the grid changes": "A largura e a altura são as da célula, e seguem-na quando a grelha muda",
   "Fill the cell": "Preencher a célula",
+  // Openings through every wall they pass (forum topic 64)
+  "Cut also the walls it passes through": "Cortar também as paredes que atravessa",
+  "Cuts each wall along its own that its opening reaches into (one stacked on it, a lining against it), not only the wall it is in": "Corta cada parede ao longo da sua onde chega o seu vão (uma assente sobre ela, um forro encostado), não só a parede onde está",
+  "Cuts each wall along its own that it reaches into (one stacked on it, a lining against it), not only the wall it is in": "Corta cada parede ao longo da sua onde chega (uma assente sobre ela, um forro encostado), não só a parede onde está",
+  "Cut the walls it passes through": "Cortar as paredes que atravessa",
   "In the cell": "Na célula",
   "From where it is aligned, into the cell": "A partir de onde está alinhada, para dentro da célula",
   "Door in the chosen": "Porta nas escolhidas",

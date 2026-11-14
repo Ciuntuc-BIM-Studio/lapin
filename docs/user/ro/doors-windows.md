@@ -71,6 +71,12 @@ Selectat, un gol are mânere ca o fereastră: trage de mijlocul lui ca să-l mu�
 
 ![Un gol în perete în configuratorul lui: cap semicircular, glafurile tencuite](shots/wall-opening-dialog.webp)
 
+### Goluri prin mai mulți pereți
+
+O ușă, o fereastră sau un gol taie fiecare perete prin care trece gaura, nu doar peretele în care se află: un perete așezat pe el (o ușă care pornește într-un perete de beton armat de 1 m și urcă prin zidăria de deasupra), un perete de sub el sau o căptușeală lipită de fața lui. Fiecare perete care stă de-a lungul peretelui golului — paralel cu el, atingându-l sau suprapus peste el — e tăiat acolo unde ajunge gaura în el, pe toată grosimea, în 3D, planuri, secțiuni, fațade și cantități, iar buiandrugul intră în peretele în care e capul golului. Nu se păstrează nimic pentru asta: muți golul sau pereții, iar tăietura urmează; un perete la care gaura nu mai ajunge e din nou întreg. Așa, o ușă poate ieși din peretele ei în pereții pe care îi taie, dar nu în gol.
+
+**Taie și pereții prin care trece**, în panoul de proprietăți al unei uși, ferestre sau al unui gol, e pornit dacă nu-l oprești; oprit, golul își taie doar peretele lui și trebuie să încapă din nou în el. În IFC, fiecare perete tăiat are propriul element de gol. Pereții importați dintr-un fișier IFC făcut de alt program păstrează golurile fișierului și nu sunt tăiați așa. Pereții care se întâlnesc într-un colț, pereții curbi, planșeele, grinzile și stâlpii nu sunt tăiați de el.
+
 ## Configuratorul
 
 **Arhitectură → Uși și ferestre** deschide configuratorul. În stânga sunt toate tipurile de uși și ferestre din proiect. Poți schimba:

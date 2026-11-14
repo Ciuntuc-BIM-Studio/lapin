@@ -115,6 +115,7 @@
     {"name":"architecture.setCurtainPanels","module":"architecture","label":"Curtain wall panels","args":[{"name":"id","type":"str"},{"name":"clear","type":"bool"},{"name":"typeId","type":"str"},{"name":"keys","type":"list"},{"name":"key","type":"str"}]},
     {"name":"architecture.setCurtainWallProfile","module":"architecture","label":"Curtain wall profile","args":[{"name":"top","type":"list"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},
     {"name":"architecture.setCurtainWallType","module":"architecture","label":"Change type","args":[{"name":"typeId","type":"str"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},
+    {"name":"architecture.setCutThrough","module":"architecture","label":"Cut the walls it passes through","args":[{"name":"on","type":"bool"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},
     {"name":"architecture.setFloorSpan","module":"architecture","label":"Span direction","args":[{"name":"edge","type":"float"},{"name":"angle","type":"float"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},
     {"name":"architecture.setGateType","module":"architecture","label":"Change type","args":[{"name":"typeId","type":"str"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},
     {"name":"architecture.setJoineryData","module":"architecture","label":"Door and window data","args":[{"name":"data","type":"dict"},{"name":"extras","type":"list"},{"name":"typeId","type":"str"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},

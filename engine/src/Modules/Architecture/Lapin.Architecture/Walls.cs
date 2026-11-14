@@ -296,6 +296,10 @@ public static class Walls
         var openings = Openings.PlacedOn(m, wall.Id);
         var frame = new Openings.WallFrame(start, dir, left, z, yMin, yMax);
         var cutters = openings.SelectMany(o => Openings.Cutters(m, wall, frame, o with { Along = o.Along - Vec2.Dot(start - Start(wall), dir) })).Select(c => (o: c.Reach, Box: (Solid?)c.Box)).ToList();
+        // The openings of the walls along this one that pass through it (forum topic 64): their box, through this wall's thickness.
+        var through = ThroughOpenings.Into(m, wall).Select(x => x.Placed).ToList();
+        foreach (var o in through)
+            if (Openings.Cutter(frame, o with { Along = o.Along - Vec2.Dot(start - Start(wall), dir) }) is { } box) cutters.Add((o, box));
         // An export wants the body the openings have not cut: IFC writes the openings and subtracts them itself.
         if (!(services?.Get<GeometryOptions>()?.CutOpenings ?? true)) cutters.Clear();
         var booleans = services?.Get<ISolidBooleans>();
@@ -303,7 +307,7 @@ public static class Walls
         // Lintels over the openings, through the core; the ring beam coming down over an opening close under it; at a corner, the longer of two that meet runs through.
         var shift = Vec2.Dot(start - Start(wall), dir);
         var lintelBoxes = new List<(Lintel Lintel, int Piece, Solid Box)>();
-        var lintelsIn = LintelJoins.Resolve(wall, LintelPieces(wall, m, services), m, services, out var intoCore);
+        var lintelsIn = LintelJoins.Resolve(wall, LintelPieces(wall, m, services, through), m, services, out var intoCore);
         foreach (var r in lintelsIn)
         {
             if (r.Piece.Box() is not { } box) continue;
@@ -326,7 +330,7 @@ public static class Walls
             catch (InvalidOperationException ex) { problems.Add($"{part.Name}: an opening could not be cut ({ex.Message})."); return part; }
         }
         var layered = LayerSets.BandsOf(m, wall.Id);
-        var gaps = openings.Where(o => o.Sill < PlanCutAbove(m, wall) && o.Sill + o.Height > PlanCutAbove(m, wall))
+        var gaps = openings.Concat(through).Where(o => o.Sill < PlanCutAbove(m, wall) && o.Sill + o.Height > PlanCutAbove(m, wall))
             .Select(o => (From: o.Along - o.Width / 2 - Vec2.Dot(start - Start(wall), dir), To: o.Along + o.Width / 2 - Vec2.Dot(start - Start(wall), dir))).OrderBy(g => g.From).ToList();
         foreach (var band in bands)
         {
@@ -903,7 +907,8 @@ public static class Walls
     /// <see cref="LintelJoins"/>): over its openings, through its core, inside
     /// its length as its joins leave it.
     /// </summary>
-    public static List<LintelPiece> LintelPieces(Entity wall, IModelView m, IServices? services)
+    /// <remarks><paramref name="through"/>: the openings of other walls passing through it (<see cref="ThroughOpenings.Into"/>), when the caller has them already.</remarks>
+    public static List<LintelPiece> LintelPieces(Entity wall, IModelView m, IServices? services, IReadOnlyList<Openings.Placed>? through = null)
     {
         var start = Start(wall);
         var end = End(wall);
@@ -930,7 +935,7 @@ public static class Walls
         double Reach(EndCut c, bool joint) => joint ? Math.Max(At(c, core.From), At(c, core.To)) : Math.Min(At(c, core.From), At(c, core.To));
         var (x0, x1) = (-Reach(startCut, ends[0] != null), length + Reach(endCut, ends[1] != null));
         var lintels = Lintels.ForWall(
-            Openings.PlacedOn(m, wall.Id).Select(o => new LintelOpening(o.Opening.Id, o.Along - o.Width / 2 - shift, o.Along + o.Width / 2 - shift, o.Sill, o.Sill + o.Height,
+            Openings.PlacedOn(m, wall.Id).Concat(through ?? ThroughOpenings.Into(m, wall).Select(x => x.Placed).ToList()).Select(o => new LintelOpening(o.Opening.Id, o.Along - o.Width / 2 - shift, o.Along + o.Width / 2 - shift, o.Sill, o.Sill + o.Height,
                 o.Spec?.Lintel is { Mode: not "none" } own ? own.Resolve(m) : null, o.Spec?.Lintel is { Mode: "none" } || BareOpenings.NoLintel(o))).ToList(),
             zones, LintelRuleOf(m, wall), (x0, x1, height));
         var pieces = new List<LintelPiece>();
