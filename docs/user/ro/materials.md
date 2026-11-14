@@ -74,6 +74,7 @@ Twinmotion, Lumion, Enscape, Blender și alte programe de randare înlocuiesc ma
 - **Categoria**, de exemplu finisaj, izolație sau structură. Stilurile de vedere o folosesc ca să lase finisajele afară dintr-o vedere de structură.
 - **Membrană** desenează un strat subțire ca linie întreruptă în loc de bandă.
 - **Desenează rosturile.** Implicit, un material trece de la un element la următorul fără linie, ca doi pereți în prelungire sau o tencuială peste două etaje. Bifează ca să se deseneze rostul.
+- **Se îmbină cu alte elemente.** Bifat implicit: elementele din acest material se îmbină unde întâlnesc altele. Pereții se îmbină la colțuri și grinzile în stâlpi, ordinea de tăiere lasă un element să taie altul (un stâlp printr-o grindă, o grindă în capul unui perete), iar un desen unește într-o singură suprafață tăieturile elementelor alăturate din același material. Debifează pentru elementele care trebuie să-și păstreze forma, ca grinzile de oțel sau fermele de lemn. Elementele lor nu se mai îmbină automat, nimic nu le taie și nu taie nimic, iar planurile și secțiunile desenează conturul fiecăruia. O grindă se oprește la fețele stâlpilor în care stau capetele ei, dar trece întreagă printr-un stâlp pe care îl traversează. Debifarea scoate îmbinările pereților, grinzilor și fundațiilor continue făcute în principal din acest material; bifarea din nou le îmbină cu ce întâlnesc. Le poți anula pe oricare într-un singur pas. Materialele de oțel și lemn din bibliotecă se îmbină implicit, ca până acum.
 
 ## O imagine proprie pe un material
 

@@ -95,10 +95,10 @@ function StatusBar() {
       {parts.hud === 'status' && <span className="status-hud">{facts.level} <span className="accent">{facts.elevation}</span> · {facts.view}</span>}
       <CursorCoords />
       <NavStyleMenu />
-      <span>{projectTitle(doc?.path)}{doc?.dirty ? ' · unsaved' : ''}</span>
+      <span className="status-file" title={`${projectTitle(doc?.path)}${doc?.dirty ? ' · unsaved' : ''}`}>{projectTitle(doc?.path)}{doc?.dirty ? ' · unsaved' : ''}</span>
       <span>{elements} elements</span>
       <button type="button" className="status-link" title="The project's units: change them in Drafting standards → Project" onClick={() => openStandards('project')}>Units: {unitLabel(units) || units}</button>
-      {!merged && <><span className="grow" /><span className="mods">{productInfo.name} · {modules.map((m) => m.id).join(' · ')}</span></>}
+      {!merged && <><span className="grow" /><span className="mods" title={`${productInfo.name} · ${modules.map((m) => m.id).join(' · ')}`}>{productInfo.name} · {modules.map((m) => m.id).join(' · ')}</span></>}
     </footer>
   );
 }
@@ -106,7 +106,7 @@ function StatusBar() {
 /** The engine has been unreachable for a while, or could not be restarted: said until it is back. */
 function EngineNotice() {
   const problem = useSession((s) => s.engineProblem);
-  return problem ? <div className="notice" role="alert" style={{ position: 'fixed', zIndex: 40 }}>{problem}</div> : null;
+  return problem ? <div className="notice" role="alert" style={{ position: 'fixed', zIndex: 500 }}>{problem}</div> : null;
 }
 
 function Notice() {

@@ -119,7 +119,8 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
 
     public IReadOnlyList<Solid> For(Entity target, IModelView model, (Vec3 Min, Vec3 Max) bounds)
     {
-        if (PriorityOf(target, model) is not { } mine) return [];
+        // An element of a material that stays out of joins (forum topic 59) is cut by nothing, and cuts nothing (below).
+        if (PriorityOf(target, model) is not { } mine || !Materials.Joins(model, target)) return [];
         // Elements joined to the target (two walls at a corner, a T or a crossing) settle their meeting layer by layer
         // in their join (testers' report #81): the higher one's envelope, square at its axis' end, would cut into the other's core.
         var joined = IsPath(target.Class) ? Joins.Of(model, target.Id).Select(r => Joins.Other(r, target.Id)).ToHashSet() : [];
@@ -138,7 +139,7 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
                 view.Read.UnionWith(list.Reads);
                 foreach (var c in list.All)
                 {
-                    if (c.Entity.Id == target.Id || joined.Contains(c.Entity.Id) || c.Priority is not { } theirs || theirs <= mine) continue;
+                    if (c.Entity.Id == target.Id || joined.Contains(c.Entity.Id) || c.Priority is not { } theirs || theirs <= mine || !c.Joins) continue;
                     if (!whole && !Raised(c.Entity, model, mine)) continue;
                     if (c.Solid is null || c.Bounds is not { } cb) continue;
                     const double tolerance = 1e-6;
@@ -155,7 +156,7 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
                 : model.OfClass(cls).Where(e => Raised(e, model, mine));
             foreach (var e in candidates)
             {
-                if (e.Id == target.Id || joined.Contains(e.Id) || PriorityOf(e, model) is not { } theirs || theirs <= mine) continue;
+                if (e.Id == target.Id || joined.Contains(e.Id) || PriorityOf(e, model) is not { } theirs || theirs <= mine || !Materials.Joins(model, e)) continue;
                 if (envelope(e, model) is not { } solid || Measure.Bounds(solid) is not { } b) continue;
                 const double eps = 1e-6;
                 if (b.Min.X >= bounds.Max.X - eps || b.Max.X <= bounds.Min.X + eps || b.Min.Y >= bounds.Max.Y - eps || b.Max.Y <= bounds.Min.Y + eps || b.Min.Z >= bounds.Max.Z - eps || b.Max.Z <= bounds.Min.Z + eps) continue;
@@ -170,7 +171,7 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
     /// </summary>
     public bool CacheCutters { get; set; } = true;
 
-    sealed record Candidate(Entity Entity, int? Priority, Solid? Solid, (Vec3 Min, Vec3 Max)? Bounds);
+    sealed record Candidate(Entity Entity, int? Priority, Solid? Solid, (Vec3 Min, Vec3 Max)? Bounds, bool Joins = true);
     sealed record Candidates(List<Candidate> All, HashSet<string> Reads);
     sealed class CandidateCache(ModelStore store, long revision)
     {
@@ -203,8 +204,9 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
                 if (!whole && !e.Attrs.ContainsKey("cutPriority") && !e.Attrs.ContainsKey("exportAs")) continue;
                 rec.Get(e.Id);
                 var priority = PriorityOf(e, rec);
-                var solid = priority != null ? envelope(e, rec) : null;
-                all.Add(new Candidate(e, priority, solid, solid != null ? Measure.Bounds(solid) : null));
+                var joins = priority == null || Materials.Joins(rec, e);
+                var solid = priority != null && joins ? envelope(e, rec) : null;
+                all.Add(new Candidate(e, priority, solid, solid != null ? Measure.Bounds(solid) : null, joins));
             }
             return new Candidates(all, rec.Read);
         })).Value;

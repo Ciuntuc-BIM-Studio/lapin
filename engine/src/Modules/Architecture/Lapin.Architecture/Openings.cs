@@ -450,12 +450,16 @@ public static class Openings
     /// <summary>
     /// What a bare wall opening is in the views (a tester's report, decision 312): no body (its wall is cut by it), but
     /// a hit area over the gap in plan and its outline on the wall's middle plane in 3D (drawn when selected), so it is
-    /// clicked and edited as a door or a window is; its jambs' middles snap. An opening a door or window fills, or a
-    /// floor's, has none.
+    /// clicked and edited as a door or a window is; its jambs' middles snap. An opening a door or window fills has none (the
+    /// fill is picked). An opening with an outline of its own (a floor's, a shaft's, in any host) or in a host that is no
+    /// wall (forum topic 72) has a hit outline too: its outline in plan, closed on itself, so its edge picks it and what stands
+    /// in it (a stair in its stairwell) keeps its own clicks; without an outline, the plan's footprint of its void's body.
     /// </summary>
-    public static ElementGeometry? BareGeometry(Entity opening, IModelView m)
+    public static ElementGeometry? BareGeometry(Entity opening, IModelView m, IServices? services = null)
     {
-        if (opening.Attrs["contour"] != null || FillOf(m, opening.Id) != null || WallOf(m, opening.Id) is not { Class: IfcClass.Wall } wall) return null;
+        if (FillOf(m, opening.Id) != null || WallOf(m, opening.Id) is not { } host) return null;
+        if (opening.Attrs["contour"] != null || host.Class != IfcClass.Wall) return OutlineGeometry(opening, host, m, services);
+        var wall = host;
         var p = Place(m, opening);
         var f = FrameOf(m, wall, p.Along);
         var (lo, hi) = (p.Along - p.Width / 2, p.Along + p.Width / 2);
@@ -463,6 +467,25 @@ public static class Openings
         var c = f.Centre;
         var outline = new List<Vec3> { f.At(lo, c, p.Sill), f.At(hi, c, p.Sill), f.At(hi, c, p.Sill + p.Height), f.At(lo, c, p.Sill + p.Height), f.At(lo, c, p.Sill) };
         return new ElementGeometry([], [new PlanItem("hit", true, plan)], [f.At(lo, c, 0).Xy, f.At(hi, c, 0).Xy, f.At(p.Along, c, 0).Xy], Lines: [outline], LineColor: "#b5532d");
+    }
+
+    /// <summary>
+    /// The hit outline of an opening that is not a wall's gap (<see cref="BareGeometry"/>): its own outline (a floor's at the
+    /// floor's top, drawn in 3D when selected), else the footprint of its void's body as its host's module makes it; null when neither.
+    /// </summary>
+    static ElementGeometry? OutlineGeometry(Entity opening, Entity host, IModelView m, IServices? services)
+    {
+        var contour = Slabs.HoleContour(m, opening);
+        if (contour.Count >= 3)
+        {
+            var z = host.Class == IfcClass.Slab ? Slabs.Top(m, host) : (Spatial.StoreyOf(m, host.Id)?.Num("elevation") ?? 0);
+            return new ElementGeometry([], [new PlanItem("hit", false, [.. contour, contour[0]])],
+                Lines: [[.. contour.Select(q => new Vec3(q.X, q.Y, z)), new Vec3(contour[0].X, contour[0].Y, z)]], LineColor: "#b5532d");
+        }
+        var body = services?.All<IVoidShapes>().Select(v => v.Shape(opening, m)).FirstOrDefault(s => s is { Vertices.Length: > 0 });
+        if (body == null) return null;
+        var hull = Polygon2.ConvexHull(body.Vertices.Select(v => v.Xy));
+        return hull.Length >= 3 ? new ElementGeometry([], [new PlanItem("hit", true, hull)]) : null;
     }
 
     public static ElementGeometry? FillGeometry(Entity fill, IModelView m)

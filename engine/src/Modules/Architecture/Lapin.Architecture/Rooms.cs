@@ -109,21 +109,58 @@ public static class Rooms
         return new ElementGeometry(solid == null ? [] : [new GeometryPart("Room", Color, solid, Key: "room")], plan, [.. o.Outer], diagnostics);
     }
 
-    /// <summary>IFC's base quantities of a space, from the outline: floor areas net (without the islands) and gross, perimeters, height and volumes.</summary>
+    /// <summary>
+    /// A room as it is measured (forum topic 82): <see cref="Gross"/> the outline between the walls' faces, <see cref="Net"/> the
+    /// same to the finished face of its finish's walls (the finish at the floor taken in along every edge, out round every island;
+    /// across a door's gap the face runs on, so a threshold is the floor finish's, not the room's); the room's height, and the
+    /// finished ceiling's over the finished floor when its finish has a ceiling. With no finish, net is the outline as before.
+    /// </summary>
+    public sealed record RoomMeasures(Outline Gross, Outline Net, double Height, double? FinishedHeight, double? FloorFinish)
+    {
+        /// <summary>The floor area to the finishes, the islands out: what the stamp, the schedule and the usable area read.</summary>
+        public double NetArea => Net.NetArea;
+        public double GrossArea => Gross.GrossArea;
+        /// <summary>The outline's perimeter to the finishes (the islands' left out).</summary>
+        public double Perimeter => Net.Perimeter;
+        public double NetPerimeter => Net.NetPerimeter;
+        public double ClearHeight => FinishedHeight ?? Height;
+        public double NetVolume => NetArea * ClearHeight;
+        public double GrossVolume => GrossArea * Height;
+    }
+
+    /// <summary>A room's floor area to its finishes, as its geometry has its outline (none: 0).</summary>
+    public static double NetAreaOf(Entity room, IModelView m, Func<string, ElementGeometry?>? geometry) =>
+        Of(room, m, geometry) is { } o ? MeasuresOf(room, o, m).NetArea : 0;
+
+    /// <summary>The room measured now, its finish read from the model on every ask (a finish laid, changed or taken off counts at once).</summary>
+    public static RoomMeasures MeasuresOf(Entity room, Outline o, IModelView m)
+    {
+        var f = RoomFinishes.FinishedOf(m, room, o);
+        return new RoomMeasures(o, f?.Outline ?? o, HeightOf(room, m), f?.CeilingHeight, f?.FloorThickness);
+    }
+
+    /// <summary>
+    /// IFC's base quantities of a space: the net ones (floor area without the islands, perimeter with them, volume) to its
+    /// finishes, the gross ones (floor area, perimeter, volume) and the height to its walls; a finished room adds its
+    /// finished ceiling's and floor's heights (FinishCeilingHeight, FinishFloorHeight).
+    /// </summary>
     public static IEnumerable<QuantitySet> Quantities(Entity room, ElementGeometry? g, IModelView m)
     {
         if ((OfGeometry(g) ?? Stored(room)) is not { } o) yield break;
-        var h = HeightOf(room, m);
-        yield return new QuantitySet("Qto_SpaceBaseQuantities",
-        [
-            new("NetFloorArea", o.NetArea, "AREA", "Net floor area"),
-            new("GrossFloorArea", o.GrossArea, "AREA", "Gross floor area"),
+        var x = MeasuresOf(room, o, m);
+        var q = new List<Quantity>
+        {
+            new("NetFloorArea", x.NetArea, "AREA", "Net floor area"),
+            new("GrossFloorArea", x.GrossArea, "AREA", "Gross floor area"),
             new("GrossPerimeter", o.Perimeter, "LENGTH", "Perimeter"),
-            new("NetPerimeter", o.NetPerimeter, "LENGTH", "Net perimeter"),
-            new("Height", h, "LENGTH", "Height"),
-            new("NetVolume", o.NetArea * h, "VOLUME", "Net volume"),
-            new("GrossVolume", o.GrossArea * h, "VOLUME", "Gross volume"),
-        ]);
+            new("NetPerimeter", x.NetPerimeter, "LENGTH", "Net perimeter"),
+            new("Height", x.Height, "LENGTH", "Height"),
+        };
+        if (x.FinishedHeight is { } fh) q.Add(new("FinishCeilingHeight", fh, "LENGTH", "Finished ceiling height"));
+        if (x.FloorFinish is { } ff) q.Add(new("FinishFloorHeight", ff, "LENGTH", "Floor finish"));
+        q.Add(new("NetVolume", x.NetVolume, "VOLUME", "Net volume"));
+        q.Add(new("GrossVolume", x.GrossVolume, "VOLUME", "Gross volume"));
+        yield return new QuantitySet("Qto_SpaceBaseQuantities", q);
     }
 
     /// <summary>
@@ -336,17 +373,17 @@ public static class Rooms
 
     static string FormatLength(double m, string units) => units is "ft-in" or "in" ? Standards.FormatImperial(m, units == "ft-in", 2) : m.ToString("0.00", CultureInfo.InvariantCulture) + " m";
 
-    /// <summary>What a stamp's template can read of a room besides its attributes: {area}, {grossArea}, {perimeter}, {height}, {volume}.</summary>
+    /// <summary>What a stamp's template can read of a room besides its attributes: {area}, {grossArea}, {perimeter}, {height}, {volume}; the area, perimeter and volume to its finishes.</summary>
     public static Dictionary<string, string> Values(Entity room, Outline o, IModelView m, string units, double? areaStep = null)
     {
-        var h = HeightOf(room, m);
+        var x = MeasuresOf(room, o, m);
         return new()
         {
-            ["area"] = FormatArea(o.NetArea, units, areaStep),
-            ["grossArea"] = FormatArea(o.GrossArea, units, areaStep),
-            ["perimeter"] = FormatLength(o.Perimeter, units),
-            ["height"] = FormatLength(h, units),
-            ["volume"] = units is "ft-in" or "in" ? (o.NetArea * h * 35.314666721).ToString("0.0", CultureInfo.InvariantCulture) + " ft³" : (o.NetArea * h).ToString("0.00", CultureInfo.InvariantCulture) + " m³",
+            ["area"] = FormatArea(x.NetArea, units, areaStep),
+            ["grossArea"] = FormatArea(x.GrossArea, units, areaStep),
+            ["perimeter"] = FormatLength(x.Perimeter, units),
+            ["height"] = FormatLength(x.Height, units),
+            ["volume"] = units is "ft-in" or "in" ? (x.NetVolume * 35.314666721).ToString("0.0", CultureInfo.InvariantCulture) + " ft³" : x.NetVolume.ToString("0.00", CultureInfo.InvariantCulture) + " m³",
         };
     }
 
@@ -462,7 +499,7 @@ public static class Rooms
 
 /// <summary>
 /// The room schedule: every room with its storey, number, name, function, department, net area, perimeter, height and
-/// volume, and the total area. A project that rounds its areas (decision 471) shows each room's to its step and totals what
+/// volume (the area, perimeter and volume to its finishes), and the total area. A project that rounds its areas (decision 471) shows each room's to its step and totals what
 /// the rows show (SFS 5139 rounds each room), so the column adds up; the volume stays the exact area times the height.
 /// </summary>
 public sealed class RoomSchedule : IScheduleSource
@@ -497,8 +534,9 @@ public sealed class RoomSchedule : IScheduleSource
             // A room without an outline yet (a space imported without a shape) is listed, unmeasured.
             keys.Add(r.Room.Id);
             if (Rooms.Of(r.Room, m, q.Geometry) is not { } o) { rows.Add([.. named, "", "", N(h), "", .. parameters]); continue; }
-            total += AreaRounding.Shown(o.NetArea, step);
-            rows.Add([.. named, A(o.NetArea), N(o.Perimeter), N(h), N(o.NetArea * h), .. parameters]);
+            var x = Rooms.MeasuresOf(r.Room, o, m);
+            total += AreaRounding.Shown(x.NetArea, step);
+            rows.Add([.. named, A(x.NetArea), N(x.Perimeter), N(h), N(x.NetVolume), .. parameters]);
         }
         if (rows.Count > 0) { rows.Add(["Total", "", "", "", "", A(total), "", "", "", .. own.Select(_ => "")]); keys.Add(null); }
         return new ScheduleGrid(Label, ["Storey", "Number", "Name", "Function", "Department", "Area (m²)", "Perimeter (m)", "Height (m)", "Volume (m³)", .. own], rows, keys);

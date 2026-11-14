@@ -23,7 +23,7 @@ Selectezi o încăpere cu un clic pe eticheta ei sau oriunde în interiorul ei. 
 - **Înălțime.** Gol înseamnă înălțimea nivelului.
 - **Culoare proprie** și **Hașură proprie** înlocuiesc schema de culori doar pentru această încăpere, iar **Opacitate proprie** opacitatea culorii ei (gol: ca în schemă).
 
-Cantitățile de dedesubt arată aria netă a încăperii (fără stâlpi), perimetrul și volumul ei. Ca să muți eticheta, trage de punctul de pe ea.
+Cantitățile de dedesubt arată aria netă a încăperii (fără stâlpi; cu un finisaj, la finisaj: vezi [Finisajele încăperilor](#finisajele-incaperilor)), perimetrul și volumul ei. Ca să muți eticheta, trage de punctul de pe ea.
 
 ![Proprietățile unei încăperi](shots/room-properties.webp)
 
@@ -106,6 +106,8 @@ Un finisaj are:
 Fiecare finisaj măsoară, pe material, suprafața **brută** (conturul încăperii, nimic scăzut: aria pardoselii, perimetrul pereților înmulțit cu înălțimea fiecărei bucăți) și cea **netă** (ce e construit: ușile, ferestrele și golurile din placă scoase, glafurile și pardoseala de sub uși adăugate; partea glafurilor e în cantități, ca RevealArea), și volumul. **Interior → Extrasul finisajelor** listează fiecare încăpere finisată pe parte și material, cu totalurile pe material la sfârșit; ca orice extras, face grafice, se exportă și merge pe o planșă. În IFC un finisaj e un IfcCovering: FLOORING, CLADDING sau CEILING.
 
 Un finisaj îmbracă ce au deja pereții încăperii: dacă tipurile de pereți au tencuiala lor, dă pereților încăperii doar ce vine peste ea (vopsea, faianță), sau folosește tipuri de pereți doar cu miezul.
+
+**O încăpere finisată se măsoară la finisaje.** Aria, perimetrul și volumul ei, în cantități, pe etichetă, în extrasul de încăperi, în legenda culorilor și în aria utilă a unui document, se măsoară la fața finisată a pereților: finisajul pereților de la pardoseală (faianța pe adeziv, de exemplu 1,5 cm) se scade pe fiecare latură, deci o încăpere de 4 × 5 m finisată așa are 3,97 × 4,97 m. Volumul merge până la tavanul finisat (straturile tavanului sub placa de deasupra, altfel sub înălțimea încăperii). Golurile ușilor nu sunt ale încăperii: fața finisată trece peste ele, chiar și când pardoseala trece prin uși. Măsurile la pereți rămân în cantități: aria brută a pardoselii, perimetrul și volumul brut. Schimbi finisajul sau îl scoți și aria încăperii urmează imediat, fără **Actualizează încăperile**.
 
 ![Finisajele încăperilor: pardoseala Băii, pereții cu faianță până la 2100 și tavanul](shots/room-finishes.webp)
 

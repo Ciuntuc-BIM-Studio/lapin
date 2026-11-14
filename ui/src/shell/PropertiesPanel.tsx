@@ -79,6 +79,9 @@ export function FieldRow({ node, field }: { node: NodeDto; field: FieldDescripto
   } else if (field.kind === 'material') {
     // A project material by name (a roof's covering, decision 328): picked from the project's, or a new one made.
     input = <MaterialPicker value={!varies && typeof v === 'string' ? v : ''} placeholder={varies ? 'varies' : 'none'} allowEmpty onChange={(name) => update(name)} />;
+  } else if (field.kind === 'materialRef') {
+    // A project material by its id (a Studio solid's, forum topic 60); none clears it (a solid then takes its type's).
+    input = <MaterialPicker byId value={!varies && typeof v === 'string' ? v : ''} placeholder={varies ? 'varies' : 'none'} allowEmpty onChange={(id) => update(id || null)} />;
   } else if (field.kind === 'color') {
     input = <input type="color" value={typeof v === 'string' ? v : '#c9ced6'} onChange={(e) => update(e.target.value)} />;
   } else {

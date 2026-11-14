@@ -908,6 +908,7 @@ export const FR: Record<string, string> = {
   'The layer new shapes go on': 'Le calque sur lequel vont les nouvelles formes', 'Mode': 'Mode', 'Snap': 'Accrochage',
   'Length': 'Longueur', 'Layers run': 'Sens des couches', 'as drawn': 'comme dessiné', 'reversed': 'inversé', 'Flip': 'Retourner', '(no phase)': '(sans phase)', '(stays)': '(reste)',
   'Dimensions': 'Dimensions', 'Element': 'Élément', 'elements': 'éléments', ' · unsaved': ' · non enregistré', 'SELECT': 'SÉLECTION', 'DRAWING': 'DESSIN', 'SHEET': 'FEUILLE', 'SCHEDULE': 'NOMENCLATURE', '3D · SHADED': '3D · OMBRÉ', 'Total': 'Total',
+  'Gross floor area': 'Surface brute de plancher', 'Net perimeter': 'Périmètre net', 'Finished ceiling height': 'Hauteur sous plafond finie',
   'Volume': 'Volume', 'Area': 'Surface', 'Net volume': 'Volume net', 'Gross volume': 'Volume brut', 'Net area': 'Surface nette', 'Gross area': 'Surface brute', 'Perimeter': 'Périmètre',
   'Surface area': 'Aire de surface', 'Plan area': 'Surface en plan', 'Lowest point': 'Point le plus bas', 'Highest point': 'Point le plus haut', 'Fill': 'Remplissage',
   // Panes, zoom, the key plan
@@ -1001,7 +1002,7 @@ export const FR: Record<string, string> = {
   'Open a project from a file on this computer.': 'Ouvrir un projet depuis un fichier de cet ordinateur.',
   // Materials, levels and help, as the user guide names them
   'Own image': 'Image personnelle', 'Import image…': 'Importer une image…', 'Replace…': 'Remplacer…', 'Import .pat': 'Importer .pat', 'My patterns': 'Mes motifs',
-  'Add to this project': 'Ajouter à ce projet', 'Draw joints': 'Dessiner les joints', 'Colour (3D)': 'Couleur (3D)', 'Faces (3D)': 'Faces (3D)',
+  'Add to this project': 'Ajouter à ce projet', 'Draw joints': 'Dessiner les joints', 'Joins with other elements': 'Se joint aux autres éléments', 'On (the default): its elements join where they meet others (walls at a corner, a beam into a column, one hatch where one material goes on). Off: they keep their shape (steel, timber): not joined, not cut by the cut order nor cutting others, their own outline drawn.': 'Activé (par défaut) : ses éléments se joignent là où ils en rencontrent d’autres (murs en angle, une poutre dans un poteau, une seule hachure là où un matériau se poursuit). Désactivé : ils gardent leur forme (acier, bois) : non joints, ni coupés par l’ordre de coupe ni coupant les autres, dessinés avec leur propre contour.', 'Colour (3D)': 'Couleur (3D)', 'Faces (3D)': 'Faces (3D)',
   'Ends, cut across (3D)': 'Extrémités, coupées en travers (3D)', 'Top and bottom (3D)': 'Dessus et dessous (3D)', 'Zones in height': 'Zones en hauteur',
   'Base level': 'Niveau de base', 'Top level': 'Niveau supérieur', 'No underlay': 'Sans calque de fond', 'Ask Lapin…': 'Demander à Lapin…',
   'Own image (3D, exports)': 'Image personnelle (3D, exports)', 'Membrane (a dashed line, not a band)': 'Membrane (une ligne pointillée, pas une bande)', 'Look': 'Aspect',
@@ -3513,6 +3514,7 @@ export const FR: Record<string, string> = {
   "Room's number": "Numéro de la pièce",
   "Room's area": "Surface de la pièce",
   "Tagged element's storey": "Niveau de l'élément étiqueté",
+  "Panel sides": "Côtés des panneaux", "Next view tab": "Onglet de vue suivant", "Previous view tab": "Onglet de vue précédent",
   "Trailing zeros": "Zéros de fin",
   "Whether a value drops its trailing zeros (2.500 → 2.5, 3.000 → 3) or keeps them; as the project: the Project tab says": "Si une valeur supprime ses zéros de fin (2.500 → 2.5, 3.000 → 3) ou les garde ; comme le projet : ce que dit l'onglet Projet",
   "keep (2.500)": "garder (2.500)",

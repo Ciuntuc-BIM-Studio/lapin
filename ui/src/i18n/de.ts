@@ -908,6 +908,7 @@ export const DE: Record<string, string> = {
   'The layer new shapes go on': 'Der Layer für neue Formen', 'Mode': 'Modus', 'Snap': 'Fang',
   'Length': 'Länge', 'Layers run': 'Schichtrichtung', 'as drawn': 'wie gezeichnet', 'reversed': 'umgekehrt', 'Flip': 'Umkehren', '(no phase)': '(keine Bauphase)', '(stays)': '(bleibt)',
   'Dimensions': 'Abmessungen', 'Element': 'Element', 'elements': 'Elemente', ' · unsaved': ' · nicht gespeichert', 'SELECT': 'AUSWAHL', 'DRAWING': 'ZEICHNUNG', 'SHEET': 'PLAN', 'SCHEDULE': 'BAUTEILLISTE', '3D · SHADED': '3D · SCHATTIERT', 'Total': 'Summe',
+  'Gross floor area': 'Brutto-Bodenfläche', 'Net perimeter': 'Netto-Umfang', 'Finished ceiling height': 'Lichte Höhe fertig',
   'Volume': 'Volumen', 'Area': 'Fläche', 'Net volume': 'Nettovolumen', 'Gross volume': 'Bruttovolumen', 'Net area': 'Nettofläche', 'Gross area': 'Bruttofläche', 'Perimeter': 'Umfang',
   'Surface area': 'Oberfläche', 'Plan area': 'Grundfläche', 'Lowest point': 'Tiefster Punkt', 'Highest point': 'Höchster Punkt', 'Fill': 'Füllung',
   // Panes, zoom, the key plan
@@ -1001,7 +1002,7 @@ export const DE: Record<string, string> = {
   'Open a project from a file on this computer.': 'Ein Projekt aus einer Datei auf diesem Computer öffnen.',
   // Materials, levels and help, as the user guide names them
   'Own image': 'Eigenes Bild', 'Import image…': 'Bild importieren…', 'Replace…': 'Ersetzen…', 'Import .pat': '.pat importieren', 'My patterns': 'Meine Muster',
-  'Add to this project': 'Zu diesem Projekt hinzufügen', 'Draw joints': 'Fugen zeichnen', 'Colour (3D)': 'Farbe (3D)', 'Faces (3D)': 'Flächen (3D)',
+  'Add to this project': 'Zu diesem Projekt hinzufügen', 'Draw joints': 'Fugen zeichnen', 'Joins with other elements': 'Verbindet sich mit anderen Bauteilen', 'On (the default): its elements join where they meet others (walls at a corner, a beam into a column, one hatch where one material goes on). Off: they keep their shape (steel, timber): not joined, not cut by the cut order nor cutting others, their own outline drawn.': 'Ein (Standard): seine Bauteile verbinden sich, wo sie auf andere treffen (Wände an einer Ecke, ein Träger in einer Stütze, eine Schraffur, wo ein Material weiterläuft). Aus: sie behalten ihre Form (Stahl, Holz): nicht verbunden, weder von der Schnittreihenfolge geschnitten noch andere schneidend, mit eigenem Umriss gezeichnet.', 'Colour (3D)': 'Farbe (3D)', 'Faces (3D)': 'Flächen (3D)',
   'Ends, cut across (3D)': 'Enden, quer geschnitten (3D)', 'Top and bottom (3D)': 'Oben und unten (3D)', 'Zones in height': 'Zonen in der Höhe',
   'Base level': 'Basisebene', 'Top level': 'Obere Ebene', 'No underlay': 'Keine Unterlage', 'Ask Lapin…': 'Lapin fragen…',
   'Own image (3D, exports)': 'Eigenes Bild (3D, Exporte)', 'Membrane (a dashed line, not a band)': 'Folie (eine gestrichelte Linie, kein Band)', 'Look': 'Darstellung',
@@ -3509,6 +3510,7 @@ export const DE: Record<string, string> = {
   "Room's number": "Raumnummer",
   "Room's area": "Raumfläche",
   "Tagged element's storey": "Geschoss des markierten Elements",
+  "Panel sides": "Seiten der Bereiche", "Next view tab": "Nächster Ansichts-Tab", "Previous view tab": "Vorheriger Ansichts-Tab",
   "Trailing zeros": "Nachkommanullen",
   "Whether a value drops its trailing zeros (2.500 → 2.5, 3.000 → 3) or keeps them; as the project: the Project tab says": "Ob ein Wert seine Nachkommanullen weglässt (2.500 → 2.5, 3.000 → 3) oder behält; wie das Projekt: wie der Reiter Projekt sagt",
   "keep (2.500)": "behalten (2.500)",

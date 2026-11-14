@@ -64,13 +64,14 @@ export function CadPrompt({ inline }: { inline?: boolean }) {
 }
 
 /** The command line under a 2D view (when it has a line of its own). */
-export function CommandLine() {
+/** `floating`: in 3D, where the view has no row for it, the line sits along the view's bottom edge, above the overlays. */
+export function CommandLine({ floating }: { floating?: boolean } = {}) {
   const history = useCad((s) => s.history);
   const own = useInterface((s) => s.parts.commandLine === 'own');
   if (!own) return null;
   const lines = history.slice(-2);
   return (
-    <div className="cad-line" data-testid="command-line">
+    <div className={`cad-line${floating ? ' floating' : ''}`} data-testid="command-line">
       <div className="cad-history">{lines.map((l, i) => <div key={i}>{l || ' '}</div>)}</div>
       <CadPrompt />
     </div>

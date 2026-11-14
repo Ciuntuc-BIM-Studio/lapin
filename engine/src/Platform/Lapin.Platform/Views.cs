@@ -851,6 +851,8 @@ public static class Views
         // Every element the drawing shows can be picked by what it drew: its cut outlines and its seen lines, as a
         // mark on the PICK layer (never drawn, only hit and highlighted). Hidden and overhead lines pick nothing.
         marks.AddRange(PickMarks(drawing, spec.Hidden));
+        // A bare opening draws nothing of its own (its host's lines draw the hole): its outline where the view cuts or sees it (forum topic 72).
+        if (spec.Kind != "plan") marks.AddRange(OpeningPickMarks(q, view, laid?.Select(p => (p.Spec, p.Station, p.Drawing)).ToList() ?? [(spec, 0.0, generated)], vg));
         // What the view's Visibility / Graphics hides goes with its marks (decision 391): a hidden category's tags and bars, a link hidden here.
         marks.RemoveAll(vg.HidesMark);
         // The point clouds the view's cut takes, as dots under the drawing (decision 396; the view's Point clouds tab hides them, not its categories): a plan's or a section's slice, an elevation's front.
@@ -1363,6 +1365,80 @@ public static class Views
                 if (loop.Length >= 2) { Of(f.Element).Polyline(loop, true, "PICK", 0); Loop(f.Element, loop); }
         foreach (var (id, all) in loops) Of(id).Data = new JsonObject { ["loops"] = all };
         return byElement.Values;
+    }
+
+    /// <summary>
+    /// A pick mark per bare opening (nothing filling it) a section or an elevation shows (forum topic 72): its void's body (the
+    /// host's module's, <see cref="IVoidShapes"/>) cut by the view's plane where the view cuts it, else its outline seen on the view,
+    /// as lines on the PICK layer and loops in its data, so a click inside or a box takes it. Shown means its host draws lines on
+    /// that outline (the jambs, a cut's edges at the sill and the head): an opening behind another element, or in a host the
+    /// view hides (its Visibility / Graphics, its own hidden elements), has none. <paramref name="pieces"/>: each piece's spec,
+    /// station and own drawing (one for a plain view).
+    /// </summary>
+    static List<ViewMark> OpeningPickMarks(IQueryContext q, Entity view, IReadOnlyList<(ViewSpec Spec, double Station, ViewDrawing Drawing)> pieces, VisibilityGraphics vg)
+    {
+        var o = new List<ViewMark>();
+        var voids = q.Services.All<IVoidShapes>();
+        if (voids.Count == 0) return o;
+        var m = q.Model;
+        var hidden = (view.Attrs["hiddenElements"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
+        // Each piece's lines its elements draw and see (hidden and overhead lines show nothing), by element.
+        var seen = pieces.Select(p => p.Drawing.Lines.Where(l => l.Role is not (LineRole.Hidden or LineRole.Overhead)).ToLookup(l => l.Element)).ToList();
+        const double tol = 2e-3;
+        static double ToEdge(Vec2 p, Vec2[] loop)
+        {
+            var best = double.PositiveInfinity;
+            for (var i = 0; i < loop.Length; i++)
+            {
+                var (a, b) = (loop[i], loop[(i + 1) % loop.Length]);
+                var ab = b - a;
+                var t = ab.Length < 1e-12 ? 0 : Math.Clamp(Vec2.Dot(p - a, ab) / Vec2.Dot(ab, ab), 0, 1);
+                best = Math.Min(best, (p - (a + ab * t)).Length);
+            }
+            return best;
+        }
+        foreach (var opening in m.OfClass(IfcClass.OpeningElement))
+        {
+            if (hidden.Contains(opening.Id) || m.RelatedOf(opening.Id, IfcClass.RelFillsElement).Any()) continue;
+            if (m.RelatingOf(opening.Id, IfcClass.RelVoidsElement) is not { } host || hidden.Contains(host.Id) || vg.Hides(opening)) continue;
+            if (!seen.Any(s => s.Contains(host.Id))) continue;
+            Solid? body = null;
+            foreach (var v in voids)
+                try { if ((body = v.Shape(opening, m)) is { Vertices.Length: > 0 }) break; }
+                catch (ModelException) { body = null; }
+            if (body is not { Vertices.Length: > 0 }) continue;
+            ViewMark? mk = null;
+            var loops = new JsonArray();
+            for (var k = 0; k < pieces.Count; k++)
+            {
+                var (s, station, _) = pieces[k];
+                var lines = seen[k][host.Id].ToList();
+                if (lines.Count == 0) continue;
+                double d0 = double.PositiveInfinity, d1 = double.NegativeInfinity;
+                foreach (var p in body.Vertices) { var d = s.Frame.Depth(p); d0 = Math.Min(d0, d); d1 = Math.Max(d1, d); }
+                List<Vec2[]> outlines;
+                var cut = s.Cut && d0 < -1e-9 && d1 > 1e-9;
+                if (cut) outlines = HiddenLines.Section(body, s.Frame);
+                else if ((!s.Cut || d0 >= -1e-9) && d0 <= s.Below) outlines = [Polygon2.ConvexHull(body.Vertices.Select(s.Frame.Map))];
+                else continue;
+                // Seen beyond the cut: by its host's seen lines only (a cut face in front of it hides it).
+                if (!cut) lines = lines.Where(l => l.Role != LineRole.Cut).ToList();
+                foreach (var loop in outlines)
+                {
+                    if (loop.Length < 3) continue;
+                    if (s.Span is { } span && (loop.Max(p => p.X) < span.Min - 1e-9 || loop.Min(p => p.X) > span.Max + 1e-9)) continue;
+                    // Shown only where its host draws on its outline.
+                    if (!lines.Any(l => ToEdge(l.A, loop) < tol && ToEdge(l.B, loop) < tol && (l.B - l.A).Length > tol)) continue;
+                    var at = loop.Select(p => new Vec2(p.X + station, p.Y)).ToArray();
+                    (mk ??= new ViewMark(opening.Id) { Pick = true }).Polyline(at, true, "PICK", 0);
+                    loops.Add((JsonNode)new JsonArray(at.SelectMany(p => new[] { p.X, p.Y }).Select(v => (JsonNode)Math.Round(v, 4)).ToArray()));
+                }
+            }
+            if (mk == null) continue;
+            mk.Data = new JsonObject { ["loops"] = loops };
+            o.Add(mk);
+        }
+        return o;
     }
 
     static JsonArray P2(JsonNode? n, string what) => n is JsonArray a && a.Count >= 2 && Json.Number(a[0]) is { } x && Json.Number(a[1]) is { } y

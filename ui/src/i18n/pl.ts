@@ -906,6 +906,7 @@ export const PL: Record<string, string> = {
   'The layer new shapes go on': 'Warstwa, na którą trafiają nowe kształty', 'Mode': 'Tryb', 'Snap': 'Przyciąganie',
   'Length': 'Długość', 'Layers run': 'Kolejność warstw', 'as drawn': 'jak narysowano', 'reversed': 'odwrócona', 'Flip': 'Odwróć', '(no phase)': '(brak fazy)', '(stays)': '(pozostaje)',
   'Dimensions': 'Wymiary', 'Element': 'Element', 'elements': 'elementy', ' · unsaved': ' · niezapisany', 'SELECT': 'ZAZNACZ', 'DRAWING': 'RYSUNEK', 'SHEET': 'ARKUSZ', 'SCHEDULE': 'ZESTAWIENIE', '3D · SHADED': '3D · CIENIOWANY', 'Total': 'Razem',
+  'Gross floor area': 'Powierzchnia brutto podłogi', 'Net perimeter': 'Obwód netto', 'Finished ceiling height': 'Wysokość w świetle po wykończeniu',
   'Volume': 'Objętość', 'Area': 'Powierzchnia', 'Net volume': 'Objętość netto', 'Gross volume': 'Objętość brutto', 'Net area': 'Powierzchnia netto', 'Gross area': 'Powierzchnia brutto', 'Perimeter': 'Obwód',
   'Surface area': 'Pole powierzchni', 'Plan area': 'Powierzchnia w rzucie', 'Lowest point': 'Najniższy punkt', 'Highest point': 'Najwyższy punkt', 'Fill': 'Wypełnienie',
   // Panes, zoom, the key plan
@@ -999,7 +1000,7 @@ export const PL: Record<string, string> = {
   'Open a project from a file on this computer.': 'Otwórz projekt z pliku na tym komputerze.',
   // Materials, levels and help, as the user guide names them
   'Own image': 'Własny obraz', 'Import image…': 'Importuj obraz…', 'Replace…': 'Zastąp…', 'Import .pat': 'Importuj .pat', 'My patterns': 'Moje wzory',
-  'Add to this project': 'Dodaj do tego projektu', 'Draw joints': 'Rysuj spoiny', 'Colour (3D)': 'Kolor (3D)', 'Faces (3D)': 'Lica (3D)',
+  'Add to this project': 'Dodaj do tego projektu', 'Draw joints': 'Rysuj spoiny', 'Joins with other elements': 'Łączy się z innymi elementami', 'On (the default): its elements join where they meet others (walls at a corner, a beam into a column, one hatch where one material goes on). Off: they keep their shape (steel, timber): not joined, not cut by the cut order nor cutting others, their own outline drawn.': 'Włączone (domyślnie): jego elementy łączą się tam, gdzie spotykają inne (ściany w narożniku, belka w słupie, jedno kreskowanie tam, gdzie materiał przechodzi dalej). Wyłączone: zachowują swój kształt (stal, drewno): nie są łączone, nie są przycinane według kolejności cięcia ani nie przycinają innych, rysowane z własnym konturem.', 'Colour (3D)': 'Kolor (3D)', 'Faces (3D)': 'Lica (3D)',
   'Ends, cut across (3D)': 'Końce, cięte w poprzek (3D)', 'Top and bottom (3D)': 'Góra i dół (3D)', 'Zones in height': 'Strefy na wysokości',
   'Base level': 'Poziom bazowy', 'Top level': 'Poziom górny', 'No underlay': 'Bez podkładu', 'Ask Lapin…': 'Zapytaj Lapina…',
   'Own image (3D, exports)': 'Własny obraz (3D, eksporty)', 'Membrane (a dashed line, not a band)': 'Membrana (linia przerywana, nie pas)', 'Look': 'Wygląd',
@@ -3510,6 +3511,7 @@ export const PL: Record<string, string> = {
   "Room's number": "Numer pomieszczenia",
   "Room's area": "Powierzchnia pomieszczenia",
   "Tagged element's storey": "Kondygnacja oznaczonego elementu",
+  "Panel sides": "Strony paneli", "Next view tab": "Następna karta widoku", "Previous view tab": "Poprzednia karta widoku",
   "Trailing zeros": "Zera końcowe",
   "Whether a value drops its trailing zeros (2.500 → 2.5, 3.000 → 3) or keeps them; as the project: the Project tab says": "Czy wartość pomija zera końcowe (2.500 → 2.5, 3.000 → 3), czy je zachowuje; jak projekt: tak, jak mówi karta Projekt",
   "keep (2.500)": "zachowaj (2.500)",

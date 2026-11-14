@@ -14,6 +14,19 @@ interface QuantitySet { name: string; quantities: Quantity[]; part?: string | nu
 
 const SHOWN = new Set(['Length', 'Height', 'Width', 'NetSideArea', 'NetVolume', 'BlockCount', 'MortarVolume', 'ReinforcementWeight', 'CrossSectionArea', 'NetFloorArea', 'GrossPerimeter']);
 
+/**
+ * A space's measures shown beside the one they pair with, when they differ (forum topic 82): the gross floor area (to the
+ * walls) beside the net (to the finishes, columns out), the net perimeter beside the perimeter, the finished ceiling's height
+ * beside the room's.
+ */
+const WHEN_DIFFERENT: Record<string, string> = { GrossFloorArea: 'NetFloorArea', NetPerimeter: 'GrossPerimeter', FinishCeilingHeight: 'Height' };
+
+const shown = (q: Quantity, all: Quantity[]) => {
+  if (SHOWN.has(q.name)) return true;
+  const other = WHEN_DIFFERENT[q.name] && all.find((x) => x.name === WHEN_DIFFERENT[q.name]);
+  return !!other && Math.abs(other.value - q.value) > 1e-6;
+};
+
 /** A space's floor areas, shown to the project's area rounding (decision 471); other areas are material quantities, kept to the millimetre. */
 const SPACE_AREAS = new Set(['NetFloorArea', 'GrossFloorArea']);
 
@@ -38,7 +51,7 @@ export function QuantitiesSection({ node }: { node: NodeDto }) {
         <div key={`${s.name}:${s.part ?? i}`} className="qset">
           <div className="qset-head">{s.partName ?? 'Element'}<span className="muted small"> · {s.name}</span></div>
           <dl className="fields">
-            {s.quantities.filter((q) => SHOWN.has(q.name)).map((q) => (
+            {s.quantities.filter((q) => shown(q, s.quantities)).map((q) => (
               <span key={q.name} className="qrow"><dt>{q.label ?? q.name}</dt><dd className="num">{format(q)}</dd></span>
             ))}
           </dl>

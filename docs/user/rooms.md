@@ -23,7 +23,7 @@ Select a room by clicking its stamp or anywhere inside it. In the properties pan
 - **Height.** Empty means the level's height.
 - **Own colour** and **Own hatch** override the colour scheme for this one room, and **Own opacity** its colour's opacity (empty: as its scheme).
 
-The quantities below show the room's net area (without the columns), its perimeter and its volume. Drag the grip on the stamp to move the stamp.
+The quantities below show the room's net area (without the columns; with a finish, to the finish: see [Room finishes](#room-finishes)), its perimeter and its volume. Drag the grip on the stamp to move the stamp.
 
 ![A room's properties](shots/room-properties.webp)
 
@@ -106,6 +106,8 @@ A finish has:
 Each finish measures, by material, its **gross** area (the room's outline, nothing deducted: the floor's area, the walls' perimeter times each piece's height) and its **net** area (what is built: the doors, windows and floor openings taken out, the reveals and the floor through the doors added; the reveals' share is in the quantities, as RevealArea), and its volume. **Interior → Finishes schedule** lists every finished room by part and material, with the totals by material at the end; like any schedule it charts, exports and goes on a sheet. In IFC a finish is an IfcCovering: FLOORING, CLADDING or CEILING.
 
 A finish lines what the room's walls already have: if the wall types carry their own plaster, give the room's walls only what goes over it (paint, tiles), or use wall types of the core only.
+
+**A finished room is measured to its finishes.** Its area, perimeter and volume, in its quantities, on its stamp, in the room schedule, the colour legend and a document's usable area, are measured to the finished face of its walls: the walls' finish at the floor (the tiles on the adhesive, say 1.5 cm) is taken in along every side, so a 4 × 5 m room finished so has 3.97 × 4.97 m. The volume goes up to the finished ceiling (the ceiling's layers under the slab above, else under the room's height). The doors' gaps are not the room's: the finished face runs on across them, even when the floor runs on through the doors. The measures to the walls stay in the quantities as the gross floor area, the perimeter and the gross volume. Change the finish or take it off and the room's area follows at once, with no **Update rooms**.
 
 ![The room finishes: the Bathroom's floor, walls with tiles up to 2100, and ceiling](shots/room-finishes.webp)
 

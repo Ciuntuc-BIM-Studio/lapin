@@ -906,6 +906,7 @@ export const ZH: Record<string, string> = {
   'The layer new shapes go on': '新图形所在的图层', 'Mode': '模式', 'Snap': '捕捉',
   'Length': '长度', 'Layers run': '图层走向', 'as drawn': '按绘制方向', 'reversed': '反向', 'Flip': '翻转', '(no phase)': '（无阶段）', '(stays)': '（保持）',
   'Dimensions': '尺寸标注', 'Element': '构件', 'elements': '个构件', ' · unsaved': ' · 未保存', 'SELECT': '选择', 'DRAWING': '绘图', 'SHEET': '图纸', 'SCHEDULE': '明细表', '3D · SHADED': '三维 · 着色', 'Total': '总计',
+  'Gross floor area': '毛地面面积', 'Net perimeter': '净周长', 'Finished ceiling height': '完成面净高',
   'Volume': '体积', 'Area': '面积', 'Net volume': '净体积', 'Gross volume': '毛体积', 'Net area': '净面积', 'Gross area': '毛面积', 'Perimeter': '周长',
   'Surface area': '表面积', 'Plan area': '平面面积', 'Lowest point': '最低点', 'Highest point': '最高点', 'Fill': '填充',
   // Panes, zoom, the key plan
@@ -999,7 +1000,7 @@ export const ZH: Record<string, string> = {
   'Open a project from a file on this computer.': '从此计算机上的文件打开项目。',
   // Materials, levels and help, as the user guide names them
   'Own image': '自定义图像', 'Import image…': '导入图像…', 'Replace…': '替换…', 'Import .pat': '导入 .pat', 'My patterns': '我的图案',
-  'Add to this project': '添加到本项目', 'Draw joints': '绘制缝线', 'Colour (3D)': '颜色（三维）', 'Faces (3D)': '面（三维）',
+  'Add to this project': '添加到本项目', 'Draw joints': '绘制缝线', 'Joins with other elements': '与其他构件连接', 'On (the default): its elements join where they meet others (walls at a corner, a beam into a column, one hatch where one material goes on). Off: they keep their shape (steel, timber): not joined, not cut by the cut order nor cutting others, their own outline drawn.': '开启（默认）：其构件在与其他构件相交处连接（转角处的墙、伸入柱中的梁、同一材料延续处只有一种填充）。关闭：构件保持自身形状（钢、木）：不连接，既不按剪切顺序被剪切也不剪切其他构件，绘制其自身轮廓。', 'Colour (3D)': '颜色（三维）', 'Faces (3D)': '面（三维）',
   'Ends, cut across (3D)': '端面，横向剖切（三维）', 'Top and bottom (3D)': '顶面和底面（三维）', 'Zones in height': '高度分区',
   'Base level': '底部标高', 'Top level': '顶部标高', 'No underlay': '无底图', 'Ask Lapin…': '询问 Lapin…',
   'Own image (3D, exports)': '自定义图像（三维、导出）', 'Membrane (a dashed line, not a band)': '膜层（虚线，而非带状）', 'Look': '外观',
@@ -3501,6 +3502,7 @@ export const ZH: Record<string, string> = {
   "Room's number": "房间编号",
   "Room's area": "房间面积",
   "Tagged element's storey": "被标注元素的楼层",
+  "Panel sides": "面板位置", "Next view tab": "下一个视图标签页", "Previous view tab": "上一个视图标签页",
   "Trailing zeros": "尾随零",
   "Whether a value drops its trailing zeros (2.500 → 2.5, 3.000 → 3) or keeps them; as the project: the Project tab says": "数值是否去掉尾随零（2.500 → 2.5，3.000 → 3）或保留；按项目：由“项目”选项卡决定",
   "keep (2.500)": "保留 (2.500)",

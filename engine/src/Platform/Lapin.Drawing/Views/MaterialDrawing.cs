@@ -51,7 +51,8 @@ public sealed class MaterialDrawingResult
 /// between them goes and their shared sides are marked as seams, so the
 /// material reads as one; elements with no material join the same way with
 /// others of their kind (walls with walls, beams with members, slabs, columns,
-/// footings); a material whose joints are drawn joins nothing;</item>
+/// footings); a material whose joints are drawn, or that stays out of joins
+/// (forum topic 59), joins nothing;</item>
 /// <item>a membrane — a layer under 2 mm, or a material marked as one — is a
 /// heavy dashed line: along the middle of its own thin band, or on the
 /// interface between its neighbouring layers when it has no band.</item>
@@ -173,12 +174,13 @@ public static class MaterialDrawing
     /// or class; null joins nothing (a membrane, a material whose joints are drawn).
     /// </summary>
     public static string? SeamKey(ResolvedMaterial? g, string ifcClass) =>
-        g != null ? (g.Membrane || g.DrawJoints ? null : MaterialGraphics.Normalise(g.Name)) : " kind:" + (KindOf(ifcClass) ?? ifcClass.ToUpperInvariant());
+        g != null ? (g.Membrane || g.DrawJoints || !g.Joins ? null : MaterialGraphics.Normalise(g.Name)) : " kind:" + (KindOf(ifcClass) ?? ifcClass.ToUpperInvariant());
 
     /// <summary>What a band joins by: its material's name, else its kind; null joins nothing (a membrane, a material whose joints are drawn).</summary>
     static string? JoinKey(DPolygon p, ResolvedMaterial? g)
     {
-        if (g != null) return g.Membrane || g.DrawJoints ? null : MaterialGraphics.Normalise(g.Name);
+        // A material that stays out of joins (forum topic 59) keeps each element's own outline, as one whose joints are drawn.
+        if (g != null) return g.Membrane || g.DrawJoints || !g.Joins ? null : MaterialGraphics.Normalise(g.Name);
         // A leading space: no trimmed material name can be the same key.
         return KindOf(p.Class) is { } k ? " kind:" + k : null;
     }

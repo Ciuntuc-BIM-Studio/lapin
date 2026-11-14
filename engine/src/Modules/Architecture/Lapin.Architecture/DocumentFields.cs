@@ -113,7 +113,7 @@ public sealed partial class DocumentFields : IDocumentFields
         yield return new("areas.gross", "Gross floor area", Area(Positive(foot.Values.Sum())));
         yield return new("areas.basement", "Basement area", Area(Positive(storeys.Where(s => s.Num("elevation") < BasementBelow).Sum(s => foot[s.Id]))));
         // The rooms as each is shown (decision 471), so the usable area adds up the room table.
-        yield return new("areas.usable", "Usable area", Area(Positive(AreaRounding.Sum(m.OfClass(Rooms.Class).Select(r => Rooms.Of(r, m, q.Geometry)?.NetArea ?? 0), f.AreaStep, f.Units))));
+        yield return new("areas.usable", "Usable area", Area(Positive(AreaRounding.Sum(m.OfClass(Rooms.Class).Select(r => Rooms.NetAreaOf(r, m, q.Geometry)), f.AreaStep, f.Units))));
         yield return new("height.max", "Maximum height", MaxHeight(q) is { } h ? DocNumbers.Length(h, f) : null);
         yield return new("levels.text", "Height regime", LevelsText(storeys) is { Length: > 0 } t ? t : null);
         yield return new("counts.doors", "Doors", m.OfClass(IfcClass.Door).Count().ToString(CultureInfo.InvariantCulture));
@@ -172,7 +172,7 @@ public sealed partial class DocumentFields : IDocumentFields
                 return Spatial.Storeys(m).Select(s =>
                 {
                     var rooms = m.RelatedOf(s.Id, IfcClass.RelContainedInSpatialStructure).Where(e => e.Class == Rooms.Class).ToList();
-                    var usable = AreaRounding.Sum(rooms.Select(r => Rooms.Of(r, m, q.Geometry)?.NetArea ?? 0), f.AreaStep, f.Units);
+                    var usable = AreaRounding.Sum(rooms.Select(r => Rooms.NetAreaOf(r, m, q.Geometry)), f.AreaStep, f.Units);
                     return (IReadOnlyDictionary<string, string>)new Dictionary<string, string>
                     {
                         ["id"] = s.Id, ["area"] = HasContent(m, s) ? DocNumbers.Area(Footprint(q, s), f) : "",
@@ -187,14 +187,14 @@ public sealed partial class DocumentFields : IDocumentFields
                     .ThenBy(x => x.Room.Str("number") ?? "", StringComparer.OrdinalIgnoreCase)
                     .Select(x =>
                     {
-                        var o = Rooms.Of(x.Room, m, q.Geometry);
+                        var o = Rooms.Of(x.Room, m, q.Geometry) is { } outline ? Rooms.MeasuresOf(x.Room, outline, m) : null;
                         var h = Rooms.HeightOf(x.Room, m);
                         return (IReadOnlyDictionary<string, string>)new Dictionary<string, string>
                         {
                             ["id"] = x.Room.Id, ["storeyId"] = x.Storey?.Id ?? "", ["storey"] = x.Storey?.Name ?? "",
                             ["number"] = x.Room.Str("number") ?? "", ["name"] = x.Room.Name, ["function"] = x.Room.Str("function") ?? "", ["department"] = x.Room.Str("department") ?? "",
                             ["area"] = o == null ? "" : DocNumbers.Area(o.NetArea, f), ["perimeter"] = o == null ? "" : DocNumbers.Length(o.Perimeter, f),
-                            ["height"] = DocNumbers.Length(h, f), ["volume"] = o == null ? "" : DocNumbers.Number(o.NetArea * h, f) + " m³",
+                            ["height"] = DocNumbers.Length(h, f), ["volume"] = o == null ? "" : DocNumbers.Number(o.NetVolume, f) + " m³",
                             ["floor"] = FinishText(m, x.Room, "floor", f) ?? "", ["walls"] = FinishText(m, x.Room, "walls", f) ?? "", ["ceiling"] = FinishText(m, x.Room, "ceiling", f) ?? "",
                         };
                     }).ToList();

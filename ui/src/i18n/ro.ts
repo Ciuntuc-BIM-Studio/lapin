@@ -902,6 +902,7 @@ export const RO: Record<string, string> = {
   'The layer new shapes go on': 'Layerul pe care merg formele noi', 'Mode': 'Mod', 'Snap': 'Snap',
   'Length': 'Lungime', 'Layers run': 'Straturile merg', 'as drawn': 'cum s-a desenat', 'reversed': 'inversat', 'Flip': 'Întoarce', '(no phase)': '(fără fază)', '(stays)': '(rămâne)',
   'Dimensions': 'Dimensiuni', 'Element': 'Element', 'elements': 'elemente', ' · unsaved': ' · nesalvat', 'SELECT': 'SELECȚIE', 'DRAWING': 'DESEN', 'SHEET': 'PLANȘĂ', 'SCHEDULE': 'EXTRAS', '3D · SHADED': '3D · UMBRIT', 'Total': 'Total',
+  'Gross floor area': 'Aria brută a pardoselii', 'Net perimeter': 'Perimetru net', 'Finished ceiling height': 'Înălțimea liberă finisată',
   'Volume': 'Volum', 'Area': 'Arie', 'Net volume': 'Volum net', 'Gross volume': 'Volum brut', 'Net area': 'Arie netă', 'Gross area': 'Arie brută', 'Perimeter': 'Perimetru',
   'Surface area': 'Arie a suprafeței', 'Plan area': 'Arie în plan', 'Lowest point': 'Punctul cel mai jos', 'Highest point': 'Punctul cel mai înalt', 'Fill': 'Umplutură',
   // Panes, zoom, the key plan
@@ -1007,7 +1008,7 @@ export const RO: Record<string, string> = {
   'Open a project from a file on this computer.': 'Deschide un proiect dintr-un fișier de pe acest calculator.',
   // Materials, levels and help, as the user guide names them
   'Own image': 'Imagine proprie', 'Import image…': 'Importă o imagine…', 'Replace…': 'Înlocuiește…', 'Import .pat': 'Importă .pat', 'My patterns': 'Modelele mele',
-  'Add to this project': 'Adaugă în acest proiect', 'Draw joints': 'Desenează rosturile', 'Colour (3D)': 'Culoare (3D)', 'Faces (3D)': 'Fețe (3D)',
+  'Add to this project': 'Adaugă în acest proiect', 'Draw joints': 'Desenează rosturile', 'Joins with other elements': 'Se îmbină cu alte elemente', 'On (the default): its elements join where they meet others (walls at a corner, a beam into a column, one hatch where one material goes on). Off: they keep their shape (steel, timber): not joined, not cut by the cut order nor cutting others, their own outline drawn.': 'Bifat (implicit): elementele lui se îmbină unde întâlnesc altele (pereți la colț, o grindă într-un stâlp, o singură hașură unde un material continuă). Debifat: își păstrează forma (oțel, lemn): nu se îmbină, nu sunt tăiate după ordinea de tăiere și nu taie altele, li se desenează conturul propriu.', 'Colour (3D)': 'Culoare (3D)', 'Faces (3D)': 'Fețe (3D)',
   'Ends, cut across (3D)': 'Capete, tăiate transversal (3D)', 'Top and bottom (3D)': 'Sus și jos (3D)', 'Zones in height': 'Zone pe înălțime',
   'Base level': 'Cota de bază', 'Top level': 'Cota superioară', 'No underlay': 'Fără fundal', 'Ask Lapin…': 'Întreabă Lapin…',
   'Own image (3D, exports)': 'Imagine proprie (3D, exporturi)', 'Membrane (a dashed line, not a band)': 'Membrană (linie întreruptă, nu bandă)', 'Look': 'Aspect',
@@ -3505,6 +3506,7 @@ export const RO: Record<string, string> = {
   "Room's number": "Numărul încăperii",
   "Room's area": "Aria încăperii",
   "Tagged element's storey": "Nivelul elementului etichetat",
+  "Panel sides": "Părțile panourilor", "Next view tab": "Fila de vizualizare următoare", "Previous view tab": "Fila de vizualizare anterioară",
   "Trailing zeros": "Zerouri de la final",
   "Whether a value drops its trailing zeros (2.500 → 2.5, 3.000 → 3) or keeps them; as the project: the Project tab says": "Dacă o valoare își lasă deoparte zerourile de la final (2.500 → 2.5, 3.000 → 3) sau le păstrează; ca proiectul: cum spune fila Proiect",
   "keep (2.500)": "păstrează (2.500)",
