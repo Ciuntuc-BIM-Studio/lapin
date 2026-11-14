@@ -1701,6 +1701,53 @@ export const scenes = [
     },
   },
   {
+    id: 'field-schedule',
+    touches: ['architecture', 'core'],
+    async run(t) {
+      // A schedule of any field (docs/plan-user-extensibility.md §11): the walls' own property (a Pset of the office), grouped by
+      // storey and stage, the lengths added up, a formula; its editor, and the table it makes.
+      await t.fresh();
+      const { storey, walls } = await house(t, { roof: false });
+      for (const [i, stage] of [[0, 'Foundation'], [1, 'Foundation'], [2, 'Structure'], [3, 'Structure'], ['inner', 'Finishes']]) {
+        await t.cmd('element.setParam', { ids: [walls[i]], pset: 'Firma', name: 'Etapa', kind: 'text', value: stage });
+      }
+      const made = await t.cmd('architecture.createSchedule', { kind: 'fields', name: 'Walls by stage' });
+      await t.cmd('architecture.updateSchedule', { id: made.id, fields: {
+        filter: { classes: ['IfcWall'], conditions: [{ field: 'Firma.Etapa', op: 'exists' }] },
+        groupBy: ['Firma.Etapa'],
+        columns: [
+          { field: 'Length', heading: 'Length', aggregate: 'sum', unit: 'm', decimals: 1 },
+          { formula: 'Length * 0.25', heading: 'Volume (0.25 m)', aggregate: 'sum', unit: 'm³', decimals: 1 },
+        ],
+        totals: true,
+      } });
+      await t.ui({ view: 'schedule', scheduleId: made.id, keyPlan: false });
+      await t.wait(1500);
+      t.expect(await t.page.locator('[data-testid=schedule-configure]').count() === 1, 'a field schedule has its Configure button');
+      t.expect(await t.page.locator('[data-testid=schedule] text', { hasText: 'Foundation' }).count() >= 1, 'the walls are grouped by the stage property of their own');
+      await t.shot('field-schedule', { of: '.schedule-pane', pad: 0 });
+      await t.page.locator('[data-testid=schedule-configure]').click();
+      await t.wait(1200);
+      t.expect(await t.page.locator('[data-testid=field-schedule-dialog]').count() === 1, 'Configure opens the editor');
+      await t.page.locator('[data-testid=fs-col-field-0]').click();
+      await t.wait(800);
+      await t.shot('field-schedule-editor', { of: '[data-testid=field-schedule-dialog]', pad: 8 });
+      await t.ui({ dialog: null });
+      await t.ui({ dialog: 'fieldAliases' });
+      await t.wait(800);
+      await t.page.locator('[data-testid=alias-add]').click();
+      await t.page.locator('[data-testid=alias-name-0]').fill('Stage');
+      await t.page.locator('[data-testid=alias-source-0-0]').click();
+      await t.page.locator('input[placeholder="Search the fields…"]').fill('Etapa');
+      await t.wait(600);
+      await t.page.locator('[data-field-token="Firma.Etapa"]').first().click();
+      await t.wait(400);
+      await t.shot('field-names', { of: '[data-testid=field-aliases-dialog]', pad: 8 });
+      await t.ui({ dialog: null });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     id: 'quantities',
     async run(t) {
       // Getting quantities (decision 287, the tester's report #75): Cost → Quantity takeoff, grouped by kind and

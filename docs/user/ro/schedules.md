@@ -100,6 +100,35 @@ Când vrei doar rezultatul, apasă **Editorul tabelului** deasupra tabelului de 
 
 Extrasul **Profile de perete** (**Arhitectură → Extras de profile de perete**, sau **Execuție → Extrase…** → **Profile de perete**) adună profilele și canalele din pereții proiectului pe profil, fel și material: câte sunt, bucățile lor (un profil tăiat de goluri e mai multe), lungimea de-a lungul fețelor și volumul; la un canal, volumul scos din perete. Un total pentru profile și unul pentru canale încheie tabelul. Bara lui le adună întâi **pe profil**, **pe nivel** sau **pe tip de perete**. Întoarcerile intră în volum, nu în lungime.
 
+## Extrase după orice câmp
+
+Un **Extras de câmpuri** listează orice câmp al elementelor: pe cele ale modelului (nume, tip, nivel, lungime, arie…), cantitățile și proprietățile aduse de un fișier (o proprietate `Pset_` dintr-un IFC, Fragments sau BOS importat) și parametrii tăi. Apasă **+** lângă **Extrase** în browserul proiectului și alege **Extras de câmpuri** (sau **Execuție → Extrase…**); se deschide editorul lui. **Configurează…** din bara extrasului îl deschide din nou.
+
+- **Care elemente.** Restrânge după fel, tip, nivel, material, grup sau fază (scrie o valoare sau alege una din cele ale proiectului), apoi adaugă rânduri de **Condiție**: un câmp, un operator (`=`, `≠`, `conține`, `începe cu`, `<`, `≤`, `>`, `≥`, `există`, `lipsește`) și o valoare. Alegătorul de câmpuri se poate căuta și arată, la fiecare câmp, câte elemente îl au și câteva valori, în grupurile modelului: câmpurile Lapin, ale tipului, cantități, parametri, fiecare set de proprietăți al fișierelor și numele tale de câmpuri.
+- **Grupează după.** Unul sau mai multe câmpuri, în ordine: un rând pentru fiecare valoare diferită (fiecare nivel, fiecare etapă). Fără nimic, un rând pentru fiecare element.
+- **Coloane.** Un câmp sau o formulă (**=**, de pildă `NetSideArea * 1.1`), cu titlu propriu, o agregare (sumă, medie, minim, maxim, număr, număr de valori diferite, prima, lista valorilor; implicit suma pentru numere și lista pentru texte), o unitate (m, cm, mm, m², m³, l, kg, t… convertite pentru tine) și zecimalele. Coloanele se mută în sus și în jos și se șterg.
+- **Rândul de total** și **coloana de număr** se pot opri.
+
+**Aplică** schimbă extrasul dintr-un singur pas (o anulare). Extrasul urmărește modelul ca oricare altul: graficele, planșa, CSV și XLSX merg la fel.
+
+![Un extras de câmpuri: pereții grupați după etapa din proprietatea lor, cu lungimi și un volum](shots/field-schedule.webp)
+
+![Editorul extrasului de câmpuri](shots/field-schedule-editor.webp)
+
+Ca să aduni un IFC importat după una din proprietățile lui, fă un extras de câmpuri, adaugă condiția **Pset_Firma.Etapa** *există*, grupează după acel câmp și adaugă coloana **Length** (sau **NetSideArea**) ca sumă. Numerele sunt în metri, metri pătrați, metri cubi și kilograme; coloana **Unitate** le convertește pentru afișare.
+
+**Antemăsurătoarea** poate grupa și ea după orice câmp: în bara ei, lista de grupări se încheie cu **Alt câmp…**.
+
+**Șabloane.** **Șablon…** din bara unui extras de câmpuri îi păstrează configurarea (filtrul, gruparea, coloanele) într-un fișier `.lapinschedule` sau în biblioteca acestui calculator. **Din șablon…** din lista **+** (sau din **Execuție → Extrase…**) face un extras dintr-unul păstrat pe acest calculator, dintr-un fișier sau din folderele firmei (vezi [Interfața](interface.md)). Un șablon numește tipurile, nivelurile, materialele, grupurile și fazele, nu id-urile, așa că merge în alt proiect.
+
+## Numele de câmpuri ale biroului
+
+Birourile numesc diferit același lucru: *Faza* poate fi `Pset_Firma.Etapa` într-un fișier și `ArchiCADProperties.Faza` în altul. **Gestionare → Nume de câmpuri…** (sau **Nume de câmpuri…** din bara unui extras de câmpuri) ține numele biroului tău: fiecare are un nume, sursele lui în ordine și o descriere. Un nume citește prima sursă pe care o are elementul, deci un extras, o etichetă, o formulă sau un filtru cere **Phase** și primește proprietatea potrivită din orice fișier vine elementul. Un nume care e și o cantitate standard (Length, NetSideArea…) completează acea cantitate pentru elementele importate al căror fișier n-o are, deci o văd antemăsurătoarea și devizul.
+
+![Tabelul numelor de câmpuri](shots/field-names.webp)
+
+**Aplică** înlocuiește tabelul dintr-un singur pas. **Importă…** și **Exportă…** citesc și scriu un fișier `.lapinaliases`; **Păstrează în biblioteca acestui calculator** păstrează setul pentru alte proiecte, iar dialogul citește și scrie și folderele firmei.
+
 ## Exportul
 
 **CSV** și **XLSX** din bară exportă extrasul ca tabel de calcul (un XLSX are câte o foaie pentru fiecare tabel). În aplicația desktop, Lapin te întreabă unde să salveze fișierul și propune numele extrasului; în browser fișierul se descarcă. Tipurile de pereți și de plăci exportate se salvează la fel.

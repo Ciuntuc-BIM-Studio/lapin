@@ -28,6 +28,7 @@ export function SchedulesDialog() {
             {ordered.map((k) => (
               <button type="button" key={k.kind} className={`btn${k.kind === 'quantities' ? ' primary' : ''}`} data-kind={k.kind} onClick={() => void newSchedule(k.kind)}>{k.label}</button>
             ))}
+            <button type="button" className="btn" data-kind="template" onClick={() => useUi.setState({ dialog: 'fieldTemplates' })}>From template…</button>
           </div>
           {made.length > 0 && <>
             <h4 className="eyebrow">In the project</h4>

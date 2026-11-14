@@ -12,6 +12,7 @@ import { useState, type DragEvent } from 'react';
 import { Box, Camera, ChevronDown, ChevronRight, Copy, CopyPlus, FileText, Frame, Layers, Map as MapIcon, Plus, Scissors, Settings2, Square, SquareStack, Table2, Trash2 } from 'lucide-react';
 import { notify, useUi } from '../app/store';
 import { execute, activeStorey, useSession } from '../engine/session';
+import { newSchedule } from '../modules/cost/schedules';
 import { ownPlanOf, storeyPlanView } from '../viewport/storeyPlan';
 import { num, storeys } from '../engine/model';
 import { projectTitle } from '../engine/files';
@@ -235,8 +236,8 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
           {/* Schedules are the Architecture module's views (a product without it has none). */}
           {hasModule('architecture') && <Kind id={`${id}:schedules`} icon={<Table2 size={13} />} label="Schedules" list={of('schedule')}
             plus={set && (
-              <select className="mini-select" value="" title="New schedule" onChange={(e) => { const kind = e.target.value; if (kind) void execute('architecture.createSchedule', { kind }).then((r) => { const n = made(r); if (n) showSchedule(n); }); }}>
-                <option value="">+</option><option value="quantities">Quantity takeoff</option><option value="all">Joinery</option><option value="parcel">Parcel coordinates</option><option value="door">Doors</option><option value="window">Windows</option><option value="lintel">Lintels</option><option value="rooms">Rooms</option><option value="skirtings">Skirtings</option><option value="types">Type assemblies</option><option value="planting">Planting</option>
+              <select className="mini-select" value="" title="New schedule" onChange={(e) => { const kind = e.target.value; if (kind === 'fields') { void newSchedule('fields'); return; } if (kind === 'template') { useUi.setState({ dialog: 'fieldTemplates' }); return; } if (kind) void execute('architecture.createSchedule', { kind }).then((r) => { const n = made(r); if (n) showSchedule(n); }); }}>
+                <option value="">+</option><option value="quantities">Quantity takeoff</option><option value="all">Joinery</option><option value="parcel">Parcel coordinates</option><option value="door">Doors</option><option value="window">Windows</option><option value="lintel">Lintels</option><option value="rooms">Rooms</option><option value="skirtings">Skirtings</option><option value="types">Type assemblies</option><option value="planting">Planting</option><option value="fields">Field schedule</option><option value="template">From template…</option>
               </select>
             )}>
             {(item) => <Row item={item} on={view === 'schedule' && ui.scheduleId === item.id} open={() => showSchedule(item.id)} />}

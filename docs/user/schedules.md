@@ -100,6 +100,35 @@ When only the result is wanted, click **Table editor** over the editing table un
 
 The **Wall sweeps** schedule (**Architecture → Wall sweeps schedule**, or **Construction → Schedules…** → **Wall sweeps**) adds up the project's wall sweeps and reveals by profile, kind and material: how many there are, their pieces (a sweep the openings cut is several), their length along the faces and their volume; for a reveal, the volume it takes out of the wall. A total for the sweeps and one for the reveals close the table. Its toolbar adds them up **by profile**, **by storey** or **by wall type** first. Returns count in the volume, not in the length.
 
+## Schedules of any field
+
+A **Field schedule** lists any field of the elements: the model's own (name, type, storey, length, area…), the quantities and properties a file brings (a `Pset_` property of an imported IFC, Fragments or BOS file) and your own parameters. Click **+** beside **Schedules** in the project browser and pick **Field schedule** (or **Construction → Schedules…**); its editor opens. **Configure…** in the schedule's toolbar opens it again.
+
+- **Which elements.** Narrow by kind, type, storey, material, group or phase (type a value or pick one of the project's), then add **Condition** rows: a field, an operator (`=`, `≠`, `contains`, `starts with`, `<`, `≤`, `>`, `≥`, `exists`, `missing`) and a value. The field picker is searchable and shows, for each field, how many elements have it and a few of its values, grouped as the model has them: Lapin's own, the type's, quantities, parameters, each property set of the files, and your field names.
+- **Group by.** One or more fields, in order: one row for each different value (each storey, each stage). With none, a row for each element.
+- **Columns.** A field or a formula (**=**, for instance `NetSideArea * 1.1`), with a heading of its own, an aggregate (sum, average, smallest, largest, count, count of different, first, list of values; the default is sum for numbers and the list for texts), a unit (m, cm, mm, m², m³, l, kg, t… converted for you) and the decimals. Move columns up and down, remove them.
+- **Total row** and **Count column** can be turned off.
+
+**Apply** changes the schedule in one step (one undo). The schedule follows the model, like any other: charts, a place on a sheet, CSV and XLSX all work.
+
+![A field schedule: the walls grouped by the stage of their own property, with lengths and a volume](shots/field-schedule.webp)
+
+![The field schedule's editor](shots/field-schedule-editor.webp)
+
+To total an imported IFC by one of its properties, make a field schedule, add the condition **Pset_Firma.Etapa** *exists*, group by that field, and add the **Length** (or **NetSideArea**) column as a sum. Numbers are in metres, square metres, cubic metres and kilograms; a **Unit** column converts them for display.
+
+The **quantity takeoff** can group by any field as well: in its toolbar, the grouping list ends with **Other field…**.
+
+**Templates.** **Template…** in a field schedule's toolbar saves its setup (filter, grouping, columns) as a `.lapinschedule` file, or keeps it in this computer's library. **From template…** in the **+** list (or in **Construction → Schedules…**) makes a schedule from one kept on this computer, from a file or from the firm's folders (see [The interface](interface.md)). A template names types, storeys, materials, groups and phases, not ids, so it works in another project.
+
+## Field names of your office
+
+Offices name the same thing differently: *Phase* may be `Pset_Firma.Etapa` in one file and `ArchiCADProperties.Faza` in another. **Manage → Field names…** (or **Field names…** in a field schedule's toolbar) holds your office's names: each one has a name, its sources in order and a description. A name reads the first source an element has, so a schedule, a tag, a formula or a filter asks for **Phase** and gets the right property whichever file the element comes from. A name that is also a standard quantity (Length, NetSideArea…) fills in that quantity for imported elements whose file has none, so the takeoff and the estimate see it.
+
+![The field names table](shots/field-names.webp)
+
+**Apply** replaces the table in one step. **Import…** and **Export…** read and write a `.lapinaliases` file; **Keep in this computer's library** keeps the set for other projects, and the dialog also reads and writes the firm's folders.
+
 ## Exporting
 
 **CSV** and **XLSX** in the toolbar export the schedule as a spreadsheet (an XLSX has one sheet for each table). In the desktop app Lapin asks where to save the file and offers the schedule's name; in a browser the file is downloaded. Exported wall and floor types are saved the same way.

@@ -18,6 +18,7 @@ import { execute, query, useSession } from '../engine/session';
 import { saveFile, safeFileName } from '../engine/files';
 import { DrawingLayer } from './DrawingLayer';
 import { TakeoffControls } from './TakeoffControls';
+import { FieldScheduleControls } from '../modules/architecture/FieldScheduleControls';
 import { RebarScheduleControls } from '../modules/rebar/partitions';
 import { placeOnSheet, sheetsFor } from '../modules/cost/schedules';
 import type { PenDto } from './drawing';
@@ -166,6 +167,7 @@ export function ScheduleView() {
         <button type="button" className={`icon${side === 'charts' ? ' on' : ''}`} title="Charts of the table" onClick={() => setSide(side === 'charts' ? null : 'charts')} data-testid="schedule-charts-toggle"><ChartColumn size={14} /><span className="small">Charts</span></button>
         {kind === 'rebar' && <RebarScheduleControls id={node.id} partitions={node.props.partitions} />}
         {kind === 'quantities' && <TakeoffControls id={node.id} groupBy={node.props.groupBy} classes={node.props.classes} />}
+        {kind === 'fields' && <FieldScheduleControls id={node.id} />}
         {kind === 'wallSweeps' && (
           <select value={Array.isArray(node.props.groupBy) ? String(node.props.groupBy[0] ?? '') : ''} title="What the wall sweeps are added up by first" data-testid="sweeps-group"
             onChange={(e) => void execute('architecture.updateSchedule', { id: node.id, groupBy: e.target.value ? [e.target.value] : null })}>

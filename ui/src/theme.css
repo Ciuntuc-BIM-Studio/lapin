@@ -2671,3 +2671,27 @@ path.part-flex-ghost { fill: none; stroke: var(--accent); stroke-width: 1.6; str
 .finish-painter .part-list li.on .link { font-weight: 600; }
 .finish-painter .finish-painter-own { flex-wrap: wrap; gap: 4px; }
 .finish-painter .finish-painter-own .input:first-child { flex: 1; min-width: 0; }
+
+/* Schedules of any field (docs/plan-user-extensibility.md §11): the field picker, the editor's rows, the field names table. */
+.field-picker { position: relative; display: inline-flex; min-width: 0; }
+.field-picker-button { display: inline-flex; align-items: center; justify-content: space-between; gap: 6px; min-width: 160px; max-width: 260px; padding: 3px 8px; border: 1px solid var(--rule); border-radius: 4px; background: var(--panel); color: inherit; font: inherit; cursor: pointer; text-align: left; }
+.field-picker-button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.field-picker-menu { position: fixed; z-index: 40; width: 340px; max-height: 360px; display: flex; flex-direction: column; gap: 4px; padding: 6px; background: var(--panel); border: 1px solid var(--rule-strong); border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,.2); }
+.field-picker-list { overflow: auto; min-height: 0; }
+.field-picker-list h5 { margin: 6px 0 2px; }
+.field-picker-item { display: flex; justify-content: space-between; gap: 8px; width: 100%; padding: 3px 6px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; border-radius: 3px; }
+.field-picker-item:hover { background: var(--hover, rgba(127,127,127,.15)); }
+.field-picker-item .muted { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 55%; }
+.fs-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 3px 0; }
+.fs-chips-label { min-width: 70px; color: var(--muted); }
+.fs-chips input { width: 140px; }
+.fs-rows { display: grid; gap: 4px; margin: 4px 0 8px; justify-items: start; }
+.fs-chips .chip { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.fs-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.fs-column .fs-formula { width: 220px; }
+.fs-column .fs-heading { width: 110px; }
+.fs-column .fs-unit { width: 60px; }
+.fs-column .fs-decimals { width: 48px; }
+.alias-row { width: 100%; display: grid; grid-template-columns: 140px 1fr 200px auto; gap: 8px; align-items: start; padding: 4px 0; border-bottom: 1px solid var(--rule); }
+.alias-row.bad .alias-name { outline: 1px solid var(--danger, #c0392b); }
+.alias-sources { display: grid; gap: 3px; justify-items: start; }

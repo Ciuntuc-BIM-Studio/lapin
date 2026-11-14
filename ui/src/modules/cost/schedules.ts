@@ -36,6 +36,8 @@ export async function newSchedule(kind: string, extra: Record<string, unknown> =
   if (!r?.id) return null;
   if (Object.keys(extra).length) await execute('architecture.updateSchedule', { id: r.id, ...extra });
   openSchedule(r.id);
+  // A field schedule is made to be configured: its editor opens with it.
+  if (kind === 'fields') useUi.setState({ dialog: 'fieldSchedule' });
   return r.id;
 }
 
