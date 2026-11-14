@@ -1031,6 +1031,7 @@ export const DA: Record<string, string> = {
   'Ends, cut across (3D)': 'Ender, skåret på tværs (3D)', 'Top and bottom (3D)': 'Top og bund (3D)', 'Zones in height': 'Zoner i højden',
   'Base level': 'Basisniveau', 'Top level': 'Topniveau', 'No underlay': 'Intet underlag', 'Ask Lapin…': 'Spørg Lapin…',
   'Own image (3D, exports)': 'Eget billede (3D, eksport)', 'Membrane (a dashed line, not a band)': 'Membran (en stiplet linje, ikke et bånd)', 'Look': 'Udseende',
+  'Normal map': 'Normal map', 'Bump map': 'Bump map', 'How strongly it shows: 1 as the image says, 0 flat': 'Hvor kraftigt den ses: 1 som billedet siger, 0 fladt', 'A normal map (tangent space, green up, as glTF): the faces shade as if they had its relief. Kept in the project; carried by GLB, glTF, USD/USDZ and OBJ.': 'Et normal map (tangentrum, grøn op, som glTF): fladerne skygges, som om de havde dets relief. Gemt i projektet; følger med GLB, glTF, USD/USDZ og OBJ.', 'A bump map (white high, black low): the faces shade as if raised where it is light. Kept in the project; carried by OBJ (map_Bump).': 'Et bump map (hvid høj, sort lav): fladerne skygges, som om de var hævet, hvor det er lyst. Gemt i projektet; følger med OBJ (map_Bump).',
   'from the name': 'ud fra navnet', 'From the name': 'Ud fra navnet', 'none (default)': 'ingen (standard)', 'Cut (section)': 'Snit (snit)', 'Cut (plan)': 'Snit (plan)',
   'guessed': 'gættet', 'as the faces (brick: its holes)': 'som fladerne (tegl: dets huller)', 'as the ends': 'som enderne',
   // Rooms and their colours (docs/rooms.md)

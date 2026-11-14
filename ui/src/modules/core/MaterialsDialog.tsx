@@ -20,7 +20,7 @@ import { notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
 import { MaterialGraphicsTable, type HatchPattern as Hatch, type MaterialRow as Material } from './MaterialGraphicsTable';
-import { OwnImage } from './OwnImage';
+import { OwnImage, ReliefMaps } from './OwnImage';
 import { MaterialPreview } from './MaterialPreview';
 import { forgetPatterns, keepPatterns, myPatterns } from './myPatterns';
 import { FirmFolderFiles } from './FirmFolderFiles';
@@ -45,7 +45,7 @@ const SLIDERS: { key: LookKey; label: string; step: number; title: string }[] = 
   { key: 'transmission', label: 'Glass (transmission)', step: 0.01, title: 'Light through the body, as glass and water let it: renderers refract it.' },
 ];
 /** Every look field, to take them all back to the name's. */
-const LOOK_KEYS = ['roughness', 'metalness', 'transparency', 'transmission', 'ior', 'emissive', 'emissiveStrength', 'textureRotation'];
+const LOOK_KEYS = ['roughness', 'metalness', 'transparency', 'transmission', 'ior', 'emissive', 'emissiveStrength', 'textureRotation', 'normalStrength', 'bumpStrength'];
 
 export function MaterialsDialog() {
   const nodes = useSession((s) => s.nodes);
@@ -274,6 +274,7 @@ export function MaterialsDialog() {
                         onBlur={(e) => { const v = Number(e.target.value.replace(',', '.')); if (Number.isFinite(v) && v >= -360 && v <= 360 && v !== look.textureRotation) update({ textureRotation: v }); }} />°</label>
                     </div>
                     <OwnImage materialId={m.id} />
+                    <ReliefMaps materialId={m.id} strengths={look} />
                     {SLIDERS.map(({ key, label, step, title }) => (
                       <label key={key} className={`slider-line${ownLook(key) ? ' own' : ''}`} title={title}>
                         <span className="small">{label}</span>

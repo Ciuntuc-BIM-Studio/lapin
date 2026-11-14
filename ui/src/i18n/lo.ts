@@ -1015,6 +1015,7 @@ export const LO: Record<string, string> = {
   'Ends, cut across (3D)': 'ສົ້ນຕັດຂວາງ (3D)', 'Top and bottom (3D)': 'ດ້ານເທິງ ແລະ ລຸ່ມ (3D)', 'Zones in height': 'ເຂດຕາມລວງສູງ',
   'Base level': 'ລະດັບພື້ນຖານ', 'Top level': 'ລະດັບສູງສຸດ', 'No underlay': 'ບໍ່ມີຮູບພື້ນຫຼັງ', 'Ask Lapin…': 'ຖາມ Lapin…',
   'Own image (3D, exports)': 'ຮູບພາບຂອງຕົນເອງ (3D, ສົ່ງອອກ)', 'Membrane (a dashed line, not a band)': 'ແຜ່ນກັນຊຶມ (ເສັ້ນຂາດ, ບໍ່ແມ່ນແຖບ)', 'Look': 'ຮູບລັກສະນະ',
+  'Normal map': 'ແຜນທີ່ນໍມໍ', 'Bump map': 'ແຜນທີ່ນູນ', 'How strongly it shows: 1 as the image says, 0 flat': 'ເຫັນແຮງປານໃດ: 1 ຕາມຮູບ, 0 ແປ', 'A normal map (tangent space, green up, as glTF): the faces shade as if they had its relief. Kept in the project; carried by GLB, glTF, USD/USDZ and OBJ.': 'ແຜນທີ່ນໍມໍ (ພື້ນທີ່ແທນເຈັນ, ສີຂຽວຂຶ້ນ, ຄື glTF): ໜ້າຕ່າງໆຈະມີເງົາຄືກັບມີຮອຍນູນຂອງມັນ. ເກັບໄວ້ໃນໂຄງການ; ສົ່ງອອກໄປກັບ GLB, glTF, USD/USDZ ແລະ OBJ.', 'A bump map (white high, black low): the faces shade as if raised where it is light. Kept in the project; carried by OBJ (map_Bump).': 'ແຜນທີ່ນູນ (ສີຂາວສູງ, ສີດຳຕ່ຳ): ໜ້າຕ່າງໆຈະມີເງົາຄືກັບນູນຂຶ້ນບ່ອນທີ່ມັນແຈ້ງ. ເກັບໄວ້ໃນໂຄງການ; ສົ່ງອອກໄປກັບ OBJ (map_Bump).',
   'from the name': 'ຕາມຊື່', 'From the name': 'ຕາມຊື່', 'none (default)': 'ບໍ່ມີ (ຄ່າເລີ່ມຕົ້ນ)', 'Cut (section)': 'ຕັດ (ໜ້າຕັດ)', 'Cut (plan)': 'ຕັດ (ແຜນຜັງ)',
   'guessed': 'ຄາດເດົາ', 'as the faces (brick: its holes)': 'ຄືກັບໜ້າຜິວ (ດິນຈີ່: ຮູເຈາະ)', 'as the ends': 'ຄືກັບສົ້ນ',
   // Rooms and their colours (docs/rooms.md)

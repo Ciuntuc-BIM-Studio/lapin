@@ -2958,6 +2958,48 @@ export const scenes = [
     },
   },
   {
+    // The False ceilings page (docs/user/ceilings.md): a ceiling type's dialog, a tile grid with fixtures every n cells seen
+    // in 3D, and the same ceilings in a reflected ceiling plan (the plan seen from below).
+    id: 'ceilings-guide',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      for (const [x, y] of [[3.5, 4], [9.5, 4]]) await t.cmd('architecture.addRoom', { storeyId: storey, x, y });
+      // A grid type turned a little, 600 × 1200 tiles, and a plain plasterboard one for the other room.
+      const grid = (await t.cmd('architecture.createCeilingType', { spec: { name: 'Grid ceiling 600×1200', system: 'grid', tileWidth: 0.6, tileLength: 1.2, thickness: 0.015, gridWidth: 0.024, gridDepth: 0.038, rotation: 0, hangers: true, hangerSpacing: 1.2, tileMaterial: 'Mineral fibre tile', gridMaterial: 'Steel', tileColor: '#f1f0ea', gridColor: '#e4e4e4', lightColor: '#fffbe6', diffuserColor: '#d5d9de' } })).id;
+      const a = (await t.cmd('architecture.addCeiling', { storeyId: storey, x: 3.5, y: 4, typeId: grid, height: 2.6 })).id;
+      const plain = (await t.cmd('architecture.createCeilingType', { spec: { name: 'Plasterboard ceiling', system: 'plain', tileWidth: 0.6, tileLength: 0.6, thickness: 0.0125, gridWidth: 0.024, gridDepth: 0.038, rotation: 0, hangers: false, hangerSpacing: 1.2, tileMaterial: 'Plasterboard', gridMaterial: 'Steel', tileColor: '#f4f4f2', gridColor: '#e4e4e4', lightColor: '#fffbe6', diffuserColor: '#d5d9de' } })).id;
+      const b = (await t.cmd('architecture.addCeiling', { storeyId: storey, x: 9.5, y: 4, typeId: plain, height: 2.6 })).id;
+      await t.cmd('architecture.ceilingLayout', { id: a, kind: 'light', every: 3 });
+      await t.cmd('architecture.ceilingLayout', { id: a, kind: 'diffuser', every: 3, offset: 0 });
+      await t.cmd('architecture.ceilingLayout', { id: b, kind: 'light', every: 3 });
+      await t.wait(800);
+      const nodes = await t.nodes();
+      t.expect(nodes.filter((n) => n.type === 'LapinCeiling').length === 2, 'two ceilings');
+      t.expect((nodes.find((n) => n.id === a).props.fixtures ?? []).length >= 4, 'the grid ceiling has its fixtures');
+      // The type's dialog.
+      await select(t, a);
+      await t.ui({ dialog: 'ceilingTypes' });
+      await t.wait(800);
+      await t.shot('ceilings-types', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+      // Seen from below: a plan whose range looks up.
+      const plan = (await t.cmd('view.create', { kind: 'plan', storeyId: storey, name: 'Ceiling plan' })).id;
+      const range = await t.cmd('view.setRange', { id: plan, look: 'up', top: { level: 'self', offset: 3 }, bottom: { level: 'self', offset: 0 }, depth: { level: 'self', offset: 0 } });
+      t.expect((range.problems ?? []).length === 0, 'the ceiling plan has a sound view range');
+      await openFromBrowser(t, 'Ceiling plan', 2500);
+      await t.fit();
+      await t.shot('ceilings-plan', { of: '[data-testid=plan]', pad: 0 });
+      // The floor slab would hide the ceilings from below: left out for the 3D picture.
+      await t.cmd('element.delete', { ids: (await t.nodes()).filter((n) => n.type === 'IfcSlab').map((n) => n.id) });
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 0.6, pitch: 0.9, distance: 16, target: { x: 6, y: 4, z: 2.6 } }, false));
+      await t.wait(1500);
+      await t.shot('ceilings-grid-3d', { of: 'canvas', pad: 0 });
+    },
+  },
+  {
     id: 'skirtings',
     async run(t) {
       await t.fresh();

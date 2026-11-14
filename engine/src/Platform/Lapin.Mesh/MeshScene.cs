@@ -73,6 +73,23 @@ public sealed record MeshTexture(string Name, string Mime, byte[] Bytes, double 
 public sealed record MeshMaterial(string Name, float R, float G, float B, float Alpha, string? Category, MeshTexture? Texture = null, MaterialLook? Look = null)
 {
     public MaterialLook Pbr => Look ?? MaterialLook.Plain;
+
+    /// <summary>Its normal map (tangent space, OpenGL's green up, as glTF takes it), laid on as its texture is; null for none.</summary>
+    public MeshTexture? NormalMap { get; init; }
+
+    /// <summary>Its bump map (a height image, white high), laid on as its texture is; null for none.</summary>
+    public MeshTexture? BumpMap { get; init; }
+
+    /// <summary>Whether its faces need texture coordinates: an image of any kind.</summary>
+    public bool Mapped => Texture != null || NormalMap != null || BumpMap != null;
+
+    /// <summary>Its images by what they are for (color, normal, bump), those it has.</summary>
+    public IEnumerable<(string Kind, MeshTexture Texture)> Maps()
+    {
+        if (Texture != null) yield return ("color", Texture);
+        if (NormalMap != null) yield return ("normal", NormalMap);
+        if (BumpMap != null) yield return ("bump", BumpMap);
+    }
 }
 
 /// <summary>
@@ -162,14 +179,19 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
             // A part without a material of its own renders as its colour; one with a material, as the material's look.
             var look = mat != null ? MaterialLook.Of(mat) : MaterialLook.Plain;
             var alpha = 1 - Math.Clamp(look.Transparency, 0, 1);
-            MeshTexture? texture = null;
-            if (mat != null && Images.Of(m, mat) is { } image)
+            // Its own image, its normal map and its bump map, all at the material's size.
+            MeshTexture? ImageOf(string key, string what)
             {
+                if (mat == null || Images.Of(m, mat, key) is not { } image) return null;
                 var size = Images.SizeOf(mat);
-                try { texture = new MeshTexture(image.Name, image.Str("mime") ?? "image/png", Images.Bytes(image), size[0], size[1]); }
-                catch (FormatException) { notes.Add($"The image of „{mat.Name}” could not be read: the material goes out in its colour."); }
+                try { return new MeshTexture(image.Name, image.Str("mime") ?? "image/png", Images.Bytes(image), size[0], size[1]); }
+                catch (FormatException) { notes.Add($"The {what} of „{mat.Name}” could not be read: the material goes out without it."); return null; }
             }
-            materials.Add(new MeshMaterial(mat?.Name ?? "Colour " + p.Color.TrimStart('#'), r, g, b, (float)alpha, mat?.Str("category"), texture, look));
+            var texture = ImageOf("textureImage", "image");
+            materials.Add(new MeshMaterial(mat?.Name ?? "Colour " + p.Color.TrimStart('#'), r, g, b, (float)alpha, mat?.Str("category"), texture, look)
+            {
+                NormalMap = ImageOf("normalImage", "normal map"), BumpMap = ImageOf("bumpImage", "bump map"),
+            });
             return materialIndex[key] = materials.Count - 1;
         }
 
@@ -216,7 +238,8 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
             {
                 var merged = TriMesh.Merge(kv.Value);
                 // A material's image is laid on in the model's own metres, before the origin moves (as the 3D view lays it).
-                var uvs = materials[kv.Key].Texture is { } t ? BoxUv(merged.Positions, merged.Normals, t.Width, t.Height, materials[kv.Key].Pbr.TextureRotation) : null;
+                var mm = materials[kv.Key];
+                var uvs = mm.Maps().Select(x => x.Texture).FirstOrDefault() is { } t ? BoxUv(merged.Positions, merged.Normals, t.Width, t.Height, mm.Pbr.TextureRotation) : null;
                 return new MeshPart(kv.Key, Shift(merged.Positions, ox, oy, oz), merged.Normals, merged.Indices, uvs);
             }).ToList();
             var type = m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.Name;

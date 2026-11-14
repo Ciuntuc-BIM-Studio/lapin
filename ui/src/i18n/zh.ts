@@ -1029,6 +1029,7 @@ export const ZH: Record<string, string> = {
   'Ends, cut across (3D)': '端面，横向剖切（三维）', 'Top and bottom (3D)': '顶面和底面（三维）', 'Zones in height': '高度分区',
   'Base level': '底部标高', 'Top level': '顶部标高', 'No underlay': '无底图', 'Ask Lapin…': '询问 Lapin…',
   'Own image (3D, exports)': '自定义图像（三维、导出）', 'Membrane (a dashed line, not a band)': '膜层（虚线，而非带状）', 'Look': '外观',
+  'Normal map': '法线贴图', 'Bump map': '凹凸贴图', 'How strongly it shows: 1 as the image says, 0 flat': '强度：1 按图像，0 为平面', 'A normal map (tangent space, green up, as glTF): the faces shade as if they had its relief. Kept in the project; carried by GLB, glTF, USD/USDZ and OBJ.': '法线贴图（切线空间，绿色向上，同 glTF）：表面按其凹凸着色。保存在项目中；随 GLB、glTF、USD/USDZ 和 OBJ 导出。', 'A bump map (white high, black low): the faces shade as if raised where it is light. Kept in the project; carried by OBJ (map_Bump).': '凹凸贴图（白高黑低）：表面在亮处按凸起着色。保存在项目中；随 OBJ（map_Bump）导出。',
   'from the name': '按名称', 'From the name': '按名称', 'none (default)': '无（默认）', 'Cut (section)': '剖切（剖面）', 'Cut (plan)': '剖切（平面）',
   'guessed': '推测', 'as the faces (brick: its holes)': '同面（砖：其孔洞）', 'as the ends': '同端面',
   // Rooms and their colours (docs/rooms.md)

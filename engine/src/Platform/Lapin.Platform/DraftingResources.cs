@@ -110,17 +110,19 @@ public static class DraftingResources
                     attrs[key] = Textures.Contains(tex) ? tex : throw new CommandException($"„{tex}” is not a texture: {string.Join(", ", Textures)}.");
                 else attrs.Remove(key);
             }
-        // Its own texture: an image of the project (null takes it off; an image nothing uses goes) and how large it lies on the model, metres.
-        if (a.ContainsKey("textureImage"))
+        // Its own texture, its normal map and its bump map: each an image of the project (null takes it off; an image nothing uses
+        // goes), all three laid on at one size, metres, and turned alike.
+        foreach (var key in Images.MaterialKeys)
         {
-            var had = attrs["textureImage"] is JsonValue hv ? (string?)hv : null;
-            if ((string?)a["textureImage"] is { Length: > 0 } img)
+            if (!a.ContainsKey(key)) continue;
+            var had = attrs[key] is JsonValue hv ? (string?)hv : null;
+            if ((string?)a[key] is { Length: > 0 } img)
             {
                 if (ctx.Model.Get(img) is not { Class: Images.Class }) throw new CommandException("There is no such image in the project.");
-                attrs["textureImage"] = img;
+                attrs[key] = img;
             }
-            else attrs.Remove("textureImage");
-            if (had != null && had != (string?)attrs["textureImage"]) Images.DropIfUnused(ctx, had, mat.Id);
+            else attrs.Remove(key);
+            if (had != null && had != (string?)attrs[key] && !Images.MaterialKeys.Any(k => (string?)attrs[k] == had)) Images.DropIfUnused(ctx, had, mat.Id);
         }
         if (a.ContainsKey("textureSize"))
         {

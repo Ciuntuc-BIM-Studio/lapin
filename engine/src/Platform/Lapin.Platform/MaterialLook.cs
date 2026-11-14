@@ -13,17 +13,25 @@ namespace Lapin.Platform;
 /// <item><see cref="Transmission"/> 0 to 1: glass's light through its body (glTF KHR_materials_transmission); <see cref="Ior"/> its index of refraction.</item>
 /// <item><see cref="Emissive"/> a colour it gives off (a lamp's diffuser), null for none, at <see cref="EmissiveStrength"/>.</item>
 /// <item><see cref="TextureRotation"/> degrees its texture (drawn or the user's image) turns on the faces.</item>
+/// <item><see cref="NormalStrength"/> and <see cref="BumpStrength"/> how strongly its relief maps (a normal map, a bump map: the user's
+/// images, laid on as its texture is, <c>normalImage</c> and <c>bumpImage</c>) show; 1 as the image says, 0 flat.</item>
 /// </list>
 /// What the material does not set comes from its name (<see cref="Guess"/>): glass is clear and smooth, a metal metallic, a tile glossy.
 /// The interface guesses the same (ui/src/viewport/look.ts).
 /// </summary>
 public sealed record MaterialLook(double Roughness, double Metalness, double Transparency, double Transmission, double Ior, string? Emissive, double EmissiveStrength, double TextureRotation)
 {
+    /// <summary>How strongly the normal map tilts the faces' shading (glTF's normalTexture scale): 1 as the image says.</summary>
+    public double NormalStrength { get; init; } = 1;
+
+    /// <summary>How high the bump map's white stands over its black (three.js's bumpScale, MTL's -bm): 1 as the image says.</summary>
+    public double BumpStrength { get; init; } = 1;
+
     /// <summary>The attributes of an IfcMaterial that hold its look, with their ranges.</summary>
     public static readonly (string Key, double Min, double Max)[] Numbers =
     [
         ("roughness", 0, 1), ("metalness", 0, 1), ("transparency", 0, 1), ("transmission", 0, 1), ("ior", 1, 3),
-        ("emissiveStrength", 0, 100), ("textureRotation", -360, 360),
+        ("emissiveStrength", 0, 100), ("textureRotation", -360, 360), ("normalStrength", 0, 10), ("bumpStrength", 0, 10),
     ];
 
     public static readonly MaterialLook Plain = new(0.85, 0, 0, 0, 1.5, null, 1, 0);
@@ -67,7 +75,10 @@ public sealed record MaterialLook(double Roughness, double Metalness, double Tra
         double V(string key, double fallback) => material.NumOrNull(key) is { } v && double.IsFinite(v) ? v : fallback;
         var emissive = material.Attrs.ContainsKey("emissive") ? material.Str("emissive") : g.Emissive;
         return new MaterialLook(V("roughness", g.Roughness), V("metalness", g.Metalness), V("transparency", g.Transparency), V("transmission", g.Transmission), V("ior", g.Ior),
-            emissive is { Length: 7 } ? emissive : null, V("emissiveStrength", g.EmissiveStrength), V("textureRotation", g.TextureRotation));
+            emissive is { Length: 7 } ? emissive : null, V("emissiveStrength", g.EmissiveStrength), V("textureRotation", g.TextureRotation))
+        {
+            NormalStrength = V("normalStrength", g.NormalStrength), BumpStrength = V("bumpStrength", g.BumpStrength),
+        };
     }
 
     /// <summary>The look as the interface reads it, with which fields the material sets itself.</summary>
@@ -77,6 +88,7 @@ public sealed record MaterialLook(double Roughness, double Metalness, double Tra
         {
             ["roughness"] = Roughness, ["metalness"] = Metalness, ["transparency"] = Transparency, ["transmission"] = Transmission, ["ior"] = Ior,
             ["emissive"] = Emissive, ["emissiveStrength"] = EmissiveStrength, ["textureRotation"] = TextureRotation,
+            ["normalStrength"] = NormalStrength, ["bumpStrength"] = BumpStrength,
         };
         o["own"] = new JsonArray(Numbers.Select(n => n.Key).Append("emissive").Where(k => material?.Attrs.ContainsKey(k) == true).Select(k => (JsonNode)k).ToArray());
         return o;
@@ -106,6 +118,7 @@ public sealed record MaterialLook(double Roughness, double Metalness, double Tra
     static string Label(string key) => key switch
     {
         "ior" => "The index of refraction", "emissiveStrength" => "The emissive strength", "textureRotation" => "The texture's rotation",
+        "normalStrength" => "The normal map's strength", "bumpStrength" => "The bump map's strength",
         _ => char.ToUpperInvariant(key[0]) + key[1..],
     };
 

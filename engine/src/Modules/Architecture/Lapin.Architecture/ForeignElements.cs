@@ -524,6 +524,23 @@ public sealed class ForeignElements : IIfcRecognizer
             IsExternal = Flag(fill.Properties, common, "IsExternal") ?? basis.IsExternal,
         };
         if (JoineryIfc.FromIfc(spec, fill.Operation, fill.UserDefined, fill.Panels) is { } told && Joinery.Problem(told) == null) spec = told;
+        // Its material per part as the file's constituent set says (report #76: Frame, Sash, Glazing, Panel…; IFC4's Lining and
+        // Framing): the parts it names take the file's materials, the others Lapin's shared ones.
+        if (fill.Constituents is { Count: > 0 } constituents)
+        {
+            var given = new Dictionary<string, string>();
+            foreach (var (cname, material) in constituents)
+                if (JoineryConstituents.Part(cname, kind == "door") is { } part) given.TryAdd(part, Materials.Ensure(edit, material).Name);
+            var mats = given.Aggregate(new JoineryMaterials(), (acc, kv) => acc.With(kv.Key, kv.Value));
+            if (given.Count > 0)
+            {
+                var shared = Openings.WithDefaultMaterials(edit, spec with { Materials = null }).Materials!;
+                spec = spec with
+                {
+                    Materials = new JoineryMaterials(mats.Frame ?? shared.Frame, mats.Glass ?? shared.Glass, mats.Leaf ?? shared.Leaf, mats.Hardware ?? shared.Hardware, mats.Board ?? shared.Board, mats.Sash),
+                };
+            }
+        }
         var type = Openings.CreateType(edit, spec);
         ctx.CreatedTypes.Add(type.Id);
         ctx.TypeIds[key] = type.Id;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { guessLook, lookOf, LOOK_RANGES, PLAIN, rotateUv } from './look';
-import { textureOf } from './textures';
+import { reliefArgs, reliefOf, sizeOf, textureOf } from './textures';
 import { freeName, matches, PRESETS, presetArgs } from '../modules/core/materialLibrary';
 import type { NodeDto } from '../engine/protocol';
 
@@ -63,5 +63,30 @@ describe('the material library', () => {
     expect(matches('Aluminium RAL 7016 anthracite', 'ral alu')).toBe(true);
     expect(matches('Sticlă albastră', 'sticla')).toBe(true);
     expect(matches('Brick', 'glass')).toBe(false);
+  });
+});
+
+describe('a material’s relief (report #76)', () => {
+  it('reads its normal and bump strengths, 1 when unset, within the engine’s range', () => {
+    expect(lookOf(mat('Oak', { normalStrength: 0.4 }))).toMatchObject({ normalStrength: 0.4, bumpStrength: 1 });
+    expect(PLAIN.normalStrength).toBe(1);
+    expect(LOOK_RANGES.normalStrength).toEqual([0, 10]);
+    expect(LOOK_RANGES.bumpStrength).toEqual([0, 10]);
+  });
+
+  it('finds its maps by their own attributes and lays them at the texture’s size', () => {
+    const nodes = new Map<string, NodeDto>([
+      ['n', { id: 'n', type: 'LapinImage', name: 'n.png', props: { mime: 'image/png', data: 'AAAA' } } as unknown as NodeDto],
+    ]);
+    const m = mat('Stone', { normalImage: 'n', textureSize: [2, 0.5] });
+    const r = reliefOf(m, nodes);
+    expect(r.normal).toMatchObject({ id: 'n', width: 2, height: 0.5 });
+    expect(r.bump).toBeNull();
+    expect(sizeOf(mat('Stone'))).toEqual([1, 1]);
+  });
+
+  it('gives a first map the size its picture asks, and keeps a size the material has', () => {
+    expect(reliefArgs('normalImage', 'img', 0.5, undefined)).toEqual({ normalImage: 'img', textureSize: [1, 0.5] });
+    expect(reliefArgs('bumpImage', 'img', 0.5, [2, 2])).toEqual({ bumpImage: 'img' });
   });
 });

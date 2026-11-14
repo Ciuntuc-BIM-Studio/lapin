@@ -14,7 +14,8 @@ namespace Lapin.Mesh;
 /// as glTF asks (the model's Z up turns: x, z, −y), metres; base colours in
 /// linear RGB with each material's metallic and roughness, glass through
 /// KHR_materials_transmission and KHR_materials_ior, blended where a material is
-/// transparent. Edges, when the scene has them, are a LINES primitive.
+/// transparent, a material's own image as its base colour texture and its normal map as its normalTexture.
+/// Edges, when the scene has them, are a LINES primitive.
 /// GLB is one binary file (JSON chunk, BIN chunk); .gltf keeps the buffer
 /// inside as a data URI, so either is one file.
 /// </summary>
@@ -131,13 +132,21 @@ public static class GltfWriter
             return (c.Name, Position: buffers.Vec3(c.Positions, true), Color: buffers.Vec3(lin, false));
         }).ToList();
         // The materials' own images: one each, in the buffer (GLB) or as data URIs (.gltf); a texture per image, all on one repeating sampler.
-        var textured = scene.Materials.Select((m, i) => (m.Texture, i)).Where(x => x.Texture != null).ToList();
+        // Its normal map too (glTF's normalTexture); a bump map has no place in glTF 2.0's core and stays out.
+        var textured = new List<MeshTexture>();
         var textureOf = new Dictionary<int, int>();
+        var normalOf = new Dictionary<int, int>();
         var imageViews = new List<int>();
-        foreach (var (t, i) in textured)
+        int Image(MeshTexture t)
         {
-            textureOf[i] = imageViews.Count;
-            imageViews.Add(binary ? buffers.Raw(t!.Bytes) : -1);
+            textured.Add(t);
+            imageViews.Add(binary ? buffers.Raw(t.Bytes) : -1);
+            return textured.Count - 1;
+        }
+        for (var i = 0; i < scene.Materials.Count; i++)
+        {
+            if (scene.Materials[i].Texture is { } t) textureOf[i] = Image(t);
+            if (scene.Materials[i].NormalMap is { } nm) normalOf[i] = Image(nm);
         }
 
         using var json = new MemoryStream();
@@ -253,7 +262,7 @@ public static class GltfWriter
                 w.WriteStartArray("images");
                 for (var k = 0; k < textured.Count; k++)
                 {
-                    var t = textured[k].Texture!;
+                    var t = textured[k];
                     w.WriteStartObject(); w.WriteString("name", t.Name);
                     if (binary) { w.WriteNumber("bufferView", imageViews[k]); w.WriteString("mimeType", t.Mime); }
                     else w.WriteString("uri", $"data:{t.Mime};base64,{Convert.ToBase64String(t.Bytes)}");
@@ -273,8 +282,9 @@ public static class GltfWriter
             {
                 var mat = scene.Materials[mi];
                 // Textured, the image carries the colour: the factor stays white.
-                if (textureOf.TryGetValue(mi, out var tex)) Material(w, mat.Name, 1, 1, 1, mat.Alpha, mat.Category, tex, mat.Pbr);
-                else Material(w, mat.Name, Linear(mat.R), Linear(mat.G), Linear(mat.B), mat.Alpha, mat.Category, null, mat.Pbr);
+                int? normal = normalOf.TryGetValue(mi, out var nt) ? nt : null;
+                if (textureOf.TryGetValue(mi, out var tex)) Material(w, mat.Name, 1, 1, 1, mat.Alpha, mat.Category, tex, mat.Pbr, normal);
+                else Material(w, mat.Name, Linear(mat.R), Linear(mat.G), Linear(mat.B), mat.Alpha, mat.Category, null, mat.Pbr, normal);
             }
             if (anyEdges) Material(w, "Edges", 0, 0, 0, 1, null);
             w.WriteEndArray();
@@ -339,7 +349,7 @@ public static class GltfWriter
     /// opacity, metallic and roughness from its look; glass with KHR_materials_transmission (and its alpha, for readers without it),
     /// its index of refraction (KHR_materials_ior), a light's emissive colour.
     /// </summary>
-    static void Material(Utf8JsonWriter w, string name, float r, float g, float b, float a, string? category, int? texture = null, MaterialLook? look = null)
+    static void Material(Utf8JsonWriter w, string name, float r, float g, float b, float a, string? category, int? texture = null, MaterialLook? look = null, int? normal = null)
     {
         var l = look ?? MaterialLook.Plain;
         w.WriteStartObject();
@@ -349,6 +359,8 @@ public static class GltfWriter
         if (texture is { } t) { w.WriteStartObject("baseColorTexture"); w.WriteNumber("index", t); w.WriteEndObject(); }
         w.WriteNumber("metallicFactor", Math.Round(l.Metalness, 4)); w.WriteNumber("roughnessFactor", Math.Round(l.Roughness, 4));
         w.WriteEndObject();
+        // Its normal map, at its strength (the scale glTF multiplies the map's x and y by).
+        if (normal is { } n) { w.WriteStartObject("normalTexture"); w.WriteNumber("index", n); w.WriteNumber("scale", Math.Round(l.NormalStrength, 4)); w.WriteEndObject(); }
         if (l.Emissive != null)
         {
             var (er, eg, eb) = MeshScene.Rgb(l.Emissive);
