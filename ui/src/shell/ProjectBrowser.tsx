@@ -42,7 +42,8 @@ function loadCollapsed(): Set<string> {
 /** The camera as it is now, as a saved 3D view keeps it. */
 function cameraNow(): Record<string, unknown> {
   const c = useCamera.getState();
-  return { azimuth: c.azimuth, pitch: c.pitch, distance: c.distance, target: [c.target.x, c.target.y, c.target.z], ortho: c.ortho };
+  // Its field of view (degrees) and the window's proportion too: what a perspective placed on a sheet takes in (forum topic 91).
+  return { azimuth: c.azimuth, pitch: c.pitch, distance: c.distance, target: [c.target.x, c.target.y, c.target.z], ortho: c.ortho, fov: (c.fov * 180) / Math.PI, aspect: c.aspect };
 }
 
 const made = (r: unknown): string | null => (r as { id?: string } | null)?.id ?? null;
