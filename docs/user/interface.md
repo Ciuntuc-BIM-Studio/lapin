@@ -169,6 +169,16 @@ A right click on a tab offers the same: **Open in a new window**, **Split: open 
 
 A click, a selection box or a lasso takes only what the view shows, in plans, sections, elevations, sheets' views and 3D. An element the view's Visibility / Graphics hides (its category, a subcategory, a filter), one put away with Hide / Isolate or by the view's phase, one outside the view range or crop, on a level, link or group not shown, or cut away by a section box, is passed over: the click takes what is drawn under it, and the element under the cursor that lights up is one you can see. With **Drill into assemblies** on, a click inside a whole still steps into its parts. With the modelling lines shown instead of the drawing (the pen button at the top of the plan), everything on the screen can be picked. The project browser, a schedule, a link in the properties panel and the dependencies still select an element by its name, hidden or not; the properties panel then says *Not shown in this view*.
 
+## Right-click on a selection
+
+A right click on a selected element (in a plan, a drawing or the 3D view) offers what applies to it:
+
+- **Select similar in this view** and **Select similar in the whole project** select the elements of the same class and the same type (those of the same class when the element has no type). In the view, only what the view shows counts, and in a plan only the level you are on.
+- **Select all with the same…** opens a list of what the element is told apart by: its type, its width, its core material, its material, its storey. Each entry shows the element's value; choosing it selects every element of the class that has the same one, whatever the rest.
+- **Edit type…** opens the types dialog of the element's type (the one **Edit types…** opens), with that type current.
+- **Previous selections** lists the last ten selections, the newest first. A selection goes in the list when you clear it or pick something else; one that was taken again moves to the front, and elements that are gone drop out. Click one to select it again. The command **Select the previous selection** (<kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>Z</kbd>, changeable in **Keyboard shortcuts**) takes the newest one without the menu.
+- In 3D, **Hide**, **Isolate** and **Show all** (HH, HI, HR) work as in Revit, for now.
+
 ## Several elements at once
 
 Select several elements (Shift-click, or drag a box) and the properties panel shows the last one picked, with **N selected** beside its class. A value they share is shown; one that differs reads *varies*. Change a field and every selected element that has it takes the new value, in one step that **Undo** takes back: the height and base offset of walls, the type of every selected wall, door or beam, the sill of windows, the phases of every selected element whatever its class, the layer and colour of drafted lines, the style of texts. What is each element's own stays its own: a room's number, a wall's length, a door's place along its wall.

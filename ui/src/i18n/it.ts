@@ -3514,6 +3514,22 @@ export const IT: Record<string, string> = {
   "Room's area": "Superficie del locale",
   "Tagged element's storey": "Piano dell'elemento etichettato",
   "Panel sides": "Lati dei pannelli", "Next view tab": "Scheda vista successiva", "Previous view tab": "Scheda vista precedente",
+  // Right-click selection menu and dimension grips (forum topics 73, 74)
+  "Select similar in this view": "Seleziona simili in questa vista",
+  "Select similar in the whole project": "Seleziona simili in tutto il progetto",
+  "Select all with the same…": "Seleziona tutto con lo stesso…",
+  "Same type": "Stesso tipo",
+  "Same width": "Stessa larghezza",
+  "Same core material": "Stesso materiale del nucleo",
+  "Same material": "Stesso materiale",
+  "Same storey": "Stesso piano",
+  "Previous selections": "Selezioni precedenti",
+  "Select the previous selection": "Seleziona la selezione precedente",
+  "Join selected dimensions": "Unisci le quote selezionate",
+  "Align selected dimensions": "Allinea le quote selezionate",
+  "Only dimensions parallel to the first one are aligned.": "Sono allineate solo le quote parallele alla prima.",
+  "Drag: the point moves (and holds on what it lands on); Alt-click or Ctrl/⌘-click: take it out": "Trascina: il punto si sposta (e si aggancia a ciò che tocca); Alt+clic o Ctrl/⌘+clic: toglilo",
+  "Drag: the dimension line goes through the point · Ctrl/⌘-click: go on, the next clicks add points beyond it": "Trascina: la linea di quota passa per il punto · Ctrl/⌘+clic: continua, i clic successivi aggiungono punti oltre",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

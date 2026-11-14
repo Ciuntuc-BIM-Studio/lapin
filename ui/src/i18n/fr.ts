@@ -3515,6 +3515,22 @@ export const FR: Record<string, string> = {
   "Room's area": "Surface de la pièce",
   "Tagged element's storey": "Niveau de l'élément étiqueté",
   "Panel sides": "Côtés des panneaux", "Next view tab": "Onglet de vue suivant", "Previous view tab": "Onglet de vue précédent",
+  // Right-click selection menu and dimension grips (forum topics 73, 74)
+  "Select similar in this view": "Sélectionner les éléments similaires dans cette vue",
+  "Select similar in the whole project": "Sélectionner les éléments similaires dans tout le projet",
+  "Select all with the same…": "Sélectionner tout ce qui a le même…",
+  "Same type": "Même type",
+  "Same width": "Même largeur",
+  "Same core material": "Même matériau du noyau",
+  "Same material": "Même matériau",
+  "Same storey": "Même niveau",
+  "Previous selections": "Sélections précédentes",
+  "Select the previous selection": "Resélectionner la sélection précédente",
+  "Join selected dimensions": "Joindre les cotes sélectionnées",
+  "Align selected dimensions": "Aligner les cotes sélectionnées",
+  "Only dimensions parallel to the first one are aligned.": "Seules les cotes parallèles à la première sont alignées.",
+  "Drag: the point moves (and holds on what it lands on); Alt-click or Ctrl/⌘-click: take it out": "Glisser : le point se déplace (et s'accroche à ce qu'il touche) ; Alt+clic ou Ctrl/⌘+clic : le retirer",
+  "Drag: the dimension line goes through the point · Ctrl/⌘-click: go on, the next clicks add points beyond it": "Glisser : la ligne de cote passe par le point · Ctrl/⌘+clic : continuer, les clics suivants ajoutent des points au-delà",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

@@ -18,6 +18,7 @@ import { extraTools, extraToolsRev } from '../platform/extraTools';
 import { tabHandlers } from '../platform/scope';
 import { redo, undo } from '../engine/session';
 import { deleteElements } from '../engine/dependents';
+import { previousSelection } from '../shell/selectionHistory';
 import { runFileAction } from '../shell/fileActions';
 import { COMMANDS, TOOL_WORDS, findCommand, setAliasHook, setCommandFallback, startCommand, useCad } from '../viewport/cad/session';
 import { zoomHost } from '../viewport/zoom';
@@ -42,6 +43,8 @@ function appCommands(): CommandDef[] {
       const ids = useUi.getState().selected;
       if (ids.length) { void deleteElements(ids); select(null); }
     } },
+    // The last ten selections (forum topic 73): this takes the newest again, and the right-click menu lists them all.
+    { id: 'app.previousSelection', label: 'Select the previous selection', category: general, defaults: ['Ctrl+Alt+Z'], run: previousSelection },
     { id: 'app.palette', label: 'Commands…', category: general, defaults: ['Ctrl+K'], run: dialog('palette') },
     { id: 'app.commandLine', label: 'Command line: take all typing', category: general, defaults: ['Backquote'], run: () => useCad.setState((s) => ({ takeAll: !s.takeAll })) },
     { id: 'app.shortcuts', label: 'Keyboard shortcuts…', category: general, defaults: [], run: dialog('shortcuts') },

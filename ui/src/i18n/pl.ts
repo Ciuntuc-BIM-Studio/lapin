@@ -3512,6 +3512,22 @@ export const PL: Record<string, string> = {
   "Room's area": "Powierzchnia pomieszczenia",
   "Tagged element's storey": "Kondygnacja oznaczonego elementu",
   "Panel sides": "Strony paneli", "Next view tab": "Następna karta widoku", "Previous view tab": "Poprzednia karta widoku",
+  // Right-click selection menu and dimension grips (forum topics 73, 74)
+  "Select similar in this view": "Zaznacz podobne w tym widoku",
+  "Select similar in the whole project": "Zaznacz podobne w całym projekcie",
+  "Select all with the same…": "Zaznacz wszystko z tym samym…",
+  "Same type": "Ten sam typ",
+  "Same width": "Ta sama szerokość",
+  "Same core material": "Ten sam materiał rdzenia",
+  "Same material": "Ten sam materiał",
+  "Same storey": "Ta sama kondygnacja",
+  "Previous selections": "Poprzednie zaznaczenia",
+  "Select the previous selection": "Zaznacz poprzednie zaznaczenie",
+  "Join selected dimensions": "Połącz zaznaczone wymiary",
+  "Align selected dimensions": "Wyrównaj zaznaczone wymiary",
+  "Only dimensions parallel to the first one are aligned.": "Wyrównywane są tylko wymiary równoległe do pierwszego.",
+  "Drag: the point moves (and holds on what it lands on); Alt-click or Ctrl/⌘-click: take it out": "Przeciągnij: punkt się przesuwa (i przyczepia do tego, na co trafi); Alt+klik lub Ctrl/⌘+klik: usuń go",
+  "Drag: the dimension line goes through the point · Ctrl/⌘-click: go on, the next clicks add points beyond it": "Przeciągnij: linia wymiarowa przechodzi przez punkt · Ctrl/⌘+klik: kontynuuj, kolejne kliknięcia dodają punkty dalej",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

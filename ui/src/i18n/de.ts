@@ -3511,6 +3511,22 @@ export const DE: Record<string, string> = {
   "Room's area": "Raumfläche",
   "Tagged element's storey": "Geschoss des markierten Elements",
   "Panel sides": "Seiten der Bereiche", "Next view tab": "Nächster Ansichts-Tab", "Previous view tab": "Vorheriger Ansichts-Tab",
+  // Right-click selection menu and dimension grips (forum topics 73, 74)
+  "Select similar in this view": "Ähnliche in dieser Ansicht auswählen",
+  "Select similar in the whole project": "Ähnliche im ganzen Projekt auswählen",
+  "Select all with the same…": "Alle mit gleichem Merkmal auswählen…",
+  "Same type": "Gleicher Typ",
+  "Same width": "Gleiche Breite",
+  "Same core material": "Gleiches Kernmaterial",
+  "Same material": "Gleiches Material",
+  "Same storey": "Gleiches Geschoss",
+  "Previous selections": "Frühere Auswahlen",
+  "Select the previous selection": "Vorherige Auswahl auswählen",
+  "Join selected dimensions": "Ausgewählte Bemaßungen verbinden",
+  "Align selected dimensions": "Ausgewählte Bemaßungen ausrichten",
+  "Only dimensions parallel to the first one are aligned.": "Nur Bemaßungen parallel zur ersten werden ausgerichtet.",
+  "Drag: the point moves (and holds on what it lands on); Alt-click or Ctrl/⌘-click: take it out": "Ziehen: der Punkt wird verschoben (und haftet an dem, worauf er trifft); Alt-Klick oder Strg/⌘-Klick: entfernen",
+  "Drag: the dimension line goes through the point · Ctrl/⌘-click: go on, the next clicks add points beyond it": "Ziehen: die Maßlinie geht durch den Punkt · Strg/⌘-Klick: fortsetzen, die nächsten Klicks fügen Punkte dahinter hinzu",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

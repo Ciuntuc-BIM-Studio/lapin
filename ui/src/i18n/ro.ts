@@ -3507,6 +3507,22 @@ export const RO: Record<string, string> = {
   "Room's area": "Aria încăperii",
   "Tagged element's storey": "Nivelul elementului etichetat",
   "Panel sides": "Părțile panourilor", "Next view tab": "Fila de vizualizare următoare", "Previous view tab": "Fila de vizualizare anterioară",
+  // Right-click selection menu and dimension grips (forum topics 73, 74)
+  "Select similar in this view": "Selectează similare în această vedere",
+  "Select similar in the whole project": "Selectează similare în tot proiectul",
+  "Select all with the same…": "Selectează tot ce are același…",
+  "Same type": "Același tip",
+  "Same width": "Aceeași lățime",
+  "Same core material": "Același material al miezului",
+  "Same material": "Același material",
+  "Same storey": "Același nivel",
+  "Previous selections": "Selecții anterioare",
+  "Select the previous selection": "Selectează selecția anterioară",
+  "Join selected dimensions": "Unește cotele selectate",
+  "Align selected dimensions": "Aliniază cotele selectate",
+  "Only dimensions parallel to the first one are aligned.": "Doar cotele paralele cu prima sunt aliniate.",
+  "Drag: the point moves (and holds on what it lands on); Alt-click or Ctrl/⌘-click: take it out": "Trage: punctul se mută (și se leagă de ce atinge); Alt-clic sau Ctrl/⌘-clic: îl scoate",
+  "Drag: the dimension line goes through the point · Ctrl/⌘-click: go on, the next clicks add points beyond it": "Trage: linia de cotă trece prin punct · Ctrl/⌘-clic: continuă, următoarele clicuri adaugă puncte dincolo de ea",
 };
 
 /** Phrases with a number or a name in them. */

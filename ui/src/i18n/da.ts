@@ -3506,6 +3506,22 @@ export const DA: Record<string, string> = {
   "Room's area": "Rummets areal",
   "Tagged element's storey": "Det mærkede elements etage",
   "Panel sides": "Panelernes sider", "Next view tab": "Næste visningsfane", "Previous view tab": "Forrige visningsfane",
+  // Right-click selection menu and dimension grips (forum topics 73, 74)
+  "Select similar in this view": "Markér lignende i denne visning",
+  "Select similar in the whole project": "Markér lignende i hele projektet",
+  "Select all with the same…": "Markér alt med samme…",
+  "Same type": "Samme type",
+  "Same width": "Samme bredde",
+  "Same core material": "Samme kernemateriale",
+  "Same material": "Samme materiale",
+  "Same storey": "Samme etage",
+  "Previous selections": "Tidligere markeringer",
+  "Select the previous selection": "Markér den forrige markering",
+  "Join selected dimensions": "Sammenføj de markerede målsætninger",
+  "Align selected dimensions": "Justér de markerede målsætninger",
+  "Only dimensions parallel to the first one are aligned.": "Kun målsætninger parallelle med den første justeres.",
+  "Drag: the point moves (and holds on what it lands on); Alt-click or Ctrl/⌘-click: take it out": "Træk: punktet flyttes (og fæstner sig til det, det rammer); Alt-klik eller Ctrl/⌘-klik: fjern det",
+  "Drag: the dimension line goes through the point · Ctrl/⌘-click: go on, the next clicks add points beyond it": "Træk: målelinjen går gennem punktet · Ctrl/⌘-klik: fortsæt, de næste klik tilføjer punkter bagved",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

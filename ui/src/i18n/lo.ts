@@ -3565,6 +3565,22 @@ export const LO: Record<string, string> = {
   "Room's area": "ເນື້ອທີ່ຫ້ອງ",
   "Tagged element's storey": "ຊັ້ນຂອງອົງປະກອບທີ່ຕິດປ້າຍ",
   "Panel sides": "ດ້ານຂອງແຜງ", "Next view tab": "ແຖບມຸມມອງຖັດໄປ", "Previous view tab": "ແຖບມຸມມອງກ່ອນໜ້າ",
+  // Right-click selection menu and dimension grips (forum topics 73, 74)
+  "Select similar in this view": "ເລືອກອັນທີ່ຄ້າຍກັນໃນມຸມມອງນີ້",
+  "Select similar in the whole project": "ເລືອກອັນທີ່ຄ້າຍກັນໃນທັງໂຄງການ",
+  "Select all with the same…": "ເລືອກທັງໝົດທີ່ຄືກັນ…",
+  "Same type": "ປະເພດດຽວກັນ",
+  "Same width": "ຄວາມກວ້າງດຽວກັນ",
+  "Same core material": "ວັດສະດຸແກນດຽວກັນ",
+  "Same material": "ວັດສະດຸດຽວກັນ",
+  "Same storey": "ຊັ້ນດຽວກັນ",
+  "Previous selections": "ການເລືອກກ່ອນໜ້າ",
+  "Select the previous selection": "ເລືອກການເລືອກກ່ອນໜ້າ",
+  "Join selected dimensions": "ລວມການບອກຂະໜາດທີ່ເລືອກ",
+  "Align selected dimensions": "ຈັດແນວການບອກຂະໜາດທີ່ເລືອກ",
+  "Only dimensions parallel to the first one are aligned.": "ຈັດແນວສະເພາະການບອກຂະໜາດທີ່ຂະໜານກັບອັນທຳອິດ.",
+  "Drag: the point moves (and holds on what it lands on); Alt-click or Ctrl/⌘-click: take it out": "ລາກ: ຈຸດເຄື່ອນທີ່ (ແລະຍຶດກັບສິ່ງທີ່ມັນແຕະ); Alt-ຄລິກ ຫຼື Ctrl/⌘-ຄລິກ: ເອົາອອກ",
+  "Drag: the dimension line goes through the point · Ctrl/⌘-click: go on, the next clicks add points beyond it": "ລາກ: ເສັ້ນຂະໜາດຜ່ານຈຸດ · Ctrl/⌘-ຄລິກ: ສືບຕໍ່, ການຄລິກຕໍ່ໄປເພີ່ມຈຸດເກີນຈາກມັນ",
 };
 
 /** Phrases with a number or a name in them. */
