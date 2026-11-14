@@ -80,7 +80,7 @@ One undo step; the report counts what was made, updated and made again, the plat
 - **Grids**: an IfcGrid per set, updated by its id.
 - **Left out**, in notes: loads (Lapin keeps none), connection details, end releases.
 
-### Large files, progress and the protocol (report #148, decision 568)
+### Large files, progress and the protocol (report #148, decision 569)
 
 A tester's report #148: *"I tried to load a file which is quite large and found myself back on the normal application desktop. Only now it was very slow to react to clicks … I waited a while but did not find anything from the file. Neither was there a protocol."* The window called the import with no overlay, so it stayed on the desktop while the engine worked, every other call queued behind it (the slow clicks), and the import took minutes, growing with the square of the frame, past the call's ten-minute wait on a slower computer; the timeout's notice was easy to miss and nothing said what the file held.
 
