@@ -181,6 +181,12 @@ Un clic dreapta într-un plan, o secțiune sau o fațadă, cu ceva selectat, ofe
 - **Ascunde temporar** (<kbd>HH</kbd>) și **Izolează temporar** (<kbd>HI</kbd>) ascund selecția, sau tot restul, doar în această vedere, până la **Resetează ascunderea/izolarea temporară** (<kbd>HR</kbd>). Nu se salvează și nu se anulează, și nu schimbă nimic la tipărire. Aceleași taste în 3D ascund și izolează în vederea 3D, ca până acum.
 - **Arată ascunsele** desenează cu magenta ce ascunde vederea, ca să poată fi luat: selectează-l și alege **Reafișează în vedere** ca să-l arăți din nou. Alege iar **Arată ascunsele** ca s-o oprești.
 
+## Selecția rapidă
+
+**Selecție rapidă…** (în meniul de clic dreapta al unei vederi, sau **Vedere → Selectează → Selecție rapidă**, <kbd>QS</kbd>) selectează elemente după reguli, cum fac QSELECT din AutoCAD și filtrele din Revit. Fiecare regulă citește un câmp al elementului (clasa, tipul, nivelul, materialul, numele sau un parametru după nume, cum ar fi o înălțime sau o rezistență la foc) și îl compară: **este egal cu**, **conține**, **este între** două numere (oricare capăt poate rămâne gol), **este mai mare decât**, **are o valoare** și celelalte pe care le au filtrele vederilor. Elementele trebuie să respecte **toate regulile** sau **oricare dintre reguli**. **Caută în** alege ce arată vederea din față (contează decuparea ei, ce ascunde și ce e ascuns temporar) sau tot proiectul. Numărul de elemente găsite se schimbă pe măsură ce scrii; **Selectează** le selectează, sau le adaugă la selecție cu **Adaugă la selecție** bifat.
+
+![Selecția rapidă: pereții unui tip, în tot proiectul](shots/quick-select.webp)
+
 ## Stiluri de navigare cu mouse-ul
 
 Bara de stare, jos, arată stilul de navigare cu mouse-ul în uz (la început *Lapin*). Dă clic pe el ca să alegi altul: **Revit-like**, **AutoCAD-like**, **ArchiCAD-like**, **SketchUp-like**, **Blender-like** sau **Rhino-like**, fiecare cu gesturile lui principale. Îl setează și **Fișier → Preferințe → Afișare → Navigare cu mouse-ul**. Se păstrează pentru tine, pe acest calculator, pentru toate proiectele, și se aplică deopotrivă vederii 3D și planurilor, secțiunilor, fațadelor și planșelor.

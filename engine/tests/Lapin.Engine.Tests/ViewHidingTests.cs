@@ -93,4 +93,45 @@ public class ViewHidingTests
         var plain = (JsonObject)f.Session.Query("view.drawing", new JsonObject { ["id"] = id })!;
         Assert.DoesNotContain(plain["pens"]!.AsArray(), p => (string?)p!["stroke"] == ViewHiding.RevealColor);
     }
+
+    static string[] Select(Fixture f, JsonObject a) => [.. ((JsonObject)f.Session.Query("select.query", a)!)["ids"]!.AsArray().Select(x => (string)x!)];
+
+    static JsonObject Rule(string field, string op, string? value, string? name = null)
+    {
+        var o = new JsonObject { ["field"] = field, ["op"] = op };
+        if (value != null) o["value"] = value;
+        if (name != null) o["name"] = name;
+        return o;
+    }
+
+    [Fact]
+    public void Quick_select_takes_the_elements_matching_its_rules()
+    {
+        var (f, a, b, c) = Walls();
+        Assert.Equal([a, b], Select(f, new JsonObject { ["rules"] = new JsonArray(Rule("type", "equals", "Block 30")) }));
+        Assert.Equal([a, b, c], Select(f, new JsonObject { ["rules"] = new JsonArray(Rule("class", "equals", IfcClass.Wall), Rule("storey", "equals", Spatial.StoreyOf(f.Model, a)!.Name)) }));
+        Assert.Equal([c], Select(f, new JsonObject { ["rules"] = new JsonArray(Rule("type", "contains", "20")) }));
+        // A parameter in a range (both ends in it), or open at one end.
+        Assert.Equal([b, c], Select(f, new JsonObject { ["rules"] = new JsonArray(Rule("param", "between", "3..3.5", "height")) }));
+        Assert.Equal([a, c], Select(f, new JsonObject { ["rules"] = new JsonArray(Rule("param", "between", "..3", "height")) }));
+        // Any of the rules.
+        Assert.Equal([a, c], Select(f, new JsonObject { ["match"] = "any", ["rules"] = new JsonArray(Rule("type", "equals", "Block 20"), Rule("param", "less", "3", "height")) }));
+        Assert.Throws<CommandException>(() => f.Session.Query("select.query", new JsonObject { ["rules"] = new JsonArray() }));
+        Assert.Throws<CommandException>(() => f.Session.Query("select.query", new JsonObject { ["rules"] = new JsonArray(Rule("colour", "equals", "red")) }));
+    }
+
+    [Fact]
+    public void Quick_select_in_a_view_takes_only_what_it_shows()
+    {
+        var (f, a, b, _) = Walls();
+        var id = (string)f.Run("view.hideElements", new JsonObject { ["viewId"] = "plan:" + f.Storey, ["ids"] = new JsonArray(a) })!["id"]!;
+        var rules = new JsonArray(Rule("type", "equals", "Block 30"));
+        Assert.Equal([b], Select(f, new JsonObject { ["rules"] = rules.DeepClone(), ["viewId"] = id }));
+        Assert.Equal([a, b], Select(f, new JsonObject { ["rules"] = rules.DeepClone() }));
+        // Cropped to the first wall's line: only it is shown, and it is hidden.
+        f.Run("view.setCrop", new JsonObject { ["id"] = id, ["on"] = true, ["min"] = new JsonArray(-1, -1), ["max"] = new JsonArray(11, 1) });
+        Assert.Empty(Select(f, new JsonObject { ["rules"] = rules.DeepClone(), ["viewId"] = id }));
+        // Its temporary state too.
+        Assert.Equal([a], Select(f, new JsonObject { ["rules"] = rules.DeepClone(), ["viewId"] = id, ["reveal"] = true }));
+    }
 }

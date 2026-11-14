@@ -853,6 +853,7 @@
     {"name":"schedule.xlsx","module":"architecture","args":[{"name":"id","type":"str"}]},
     {"name":"scripting.get","module":"scripting","args":[{"name":"id","type":"str"},{"name":"name","type":"str"}]},
     {"name":"scripting.list","module":"scripting","args":[]},
+    {"name":"select.query","module":"core","args":[{"name":"rules"},{"name":"match","type":"str"},{"name":"viewId","type":"str"}]},
     {"name":"sheet.drawing","module":"core","args":[{"name":"id","type":"str"}]},
     {"name":"sitework.formworkPreview","module":"sitework","args":[{"name":"kind","type":"str"},{"name":"spec","type":"dict"},{"name":"thickness","type":"float"},{"name":"width","type":"float"},{"name":"height","type":"float"},{"name":"depth","type":"float"}]},
     {"name":"sitework.scaffoldPreview","module":"sitework","args":[{"name":"spec","type":"dict"},{"name":"length","type":"float"},{"name":"height","type":"float"}]},

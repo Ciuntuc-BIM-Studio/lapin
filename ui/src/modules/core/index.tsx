@@ -3,7 +3,7 @@
 import { StoreySection } from './StoreySection';
 import { toggleDrafts3d, toggleDragMove3d, toggleDxf3d, toggleDrillSelect, toggleGrid, toggleOrbitSelection, toggleThinLines, toggleZoomToCursor, useDisplay } from '../../app/display';
 import { measure } from './measure';
-import { Scale, Tags, Pin, PinOff, PackageOpen, AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, ScanEye, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, Shapes, SlidersHorizontal, Square, Table2, SquareDashed, Star, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn, Building2 } from 'lucide-react';
+import { Scale, Tags, Pin, PinOff, PackageOpen, AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, ScanEye, ListFilter, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, Shapes, SlidersHorizontal, Square, Table2, SquareDashed, Star, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn, Building2 } from 'lucide-react';
 import { CopyToStoreysIcon, ElevationIcon, MoveToStoreyIcon, ProfileIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { notify } from '../../app/store';
@@ -36,6 +36,7 @@ import { isPathElement } from './autoJoin';
 import { editSelectedGroup, groupSelection, makeComponent, makeUnit, removeFromGroup, ungroupSelection } from './groupTools';
 import { toggleRegion3d } from '../../viewport/select3d';
 import { hideHere, isolateHere, resetHere } from '../../viewport/viewTemporary';
+import { QuickSelectDialog } from './QuickSelectDialog';
 import { cropGrips } from './ViewCrop';
 import { Storeys3DLooks } from './Storeys3D';
 import { setStoreys3d, showAllStoreys3d } from '../../viewport/storeys3dActions';
@@ -287,6 +288,8 @@ const core: LapinModule = {
         { id: 'view.hide', label: 'Hide', icon: EyeOff, shortcut: 'HH', run: hideHere },
         { id: 'view.isolate', label: 'Isolate', icon: Focus, shortcut: 'HI', run: isolateHere },
         { id: 'view.unhide', label: 'Show all', icon: Eye, shortcut: 'HR', run: resetHere },
+        // Elements by class, type, storey, material or a property, in the view in front or the project (forum topic 73).
+        { id: 'view.quickSelect', label: 'Quick select', icon: ListFilter, shortcut: 'QS', run: () => useUi.setState({ dialog: 'quickSelect' }) },
       ], small: [
         { id: 'view.graphicsVg', label: 'Graphics (VG)', icon: Layers3, shortcut: 'VG', run: () => useUi.setState({ dialog: 'visibility' }) },
         // The 3D view in front's storeys (report #29): the active storey alone, with those below, or every storey again.
@@ -310,7 +313,7 @@ const core: LapinModule = {
   // An opening void's label is held by its opening (a roof window's by its roof) where a view draws the voids (decision 292).
   grips: { LapinView: (n, v) => [...sectionGrips(n, v), ...cropGrips(n)], IfcOpeningElement: voidLabelGrips, IfcRoof: voidLabelGrips },
   references: { LapinView: sectionRefs },
-  dialogs: { components: ComponentsDialog, importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, copyToStoreys: CopyToStoreysDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, typePacks: TypePacksDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, exportHtml: ExportHtmlDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, documents: DocumentsDialog, documentTemplates: TemplatesDialog, titleBlocks: TitleBlocksDialog, symbols: SymbolsDialog, rules: RulesDialog, classifications: ClassificationsDialog, importTable: ImportTableDialog, saveSymbol: SaveSymbolDialog, projectInfo: ProjectInfoDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, sun: SunDialog, exportExchange: ExchangeExportDialog, exportJg: JgExportDialog, sections: SectionsDialog, coordination: CoordinationDialog, profiles: ProfilesDialog, profileLibraries: ProfileLibrariesDialog },
+  dialogs: { components: ComponentsDialog, importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, copyToStoreys: CopyToStoreysDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, typePacks: TypePacksDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, exportHtml: ExportHtmlDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, documents: DocumentsDialog, documentTemplates: TemplatesDialog, titleBlocks: TitleBlocksDialog, symbols: SymbolsDialog, rules: RulesDialog, classifications: ClassificationsDialog, importTable: ImportTableDialog, saveSymbol: SaveSymbolDialog, projectInfo: ProjectInfoDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, sun: SunDialog, exportExchange: ExchangeExportDialog, exportJg: JgExportDialog, sections: SectionsDialog, coordination: CoordinationDialog, profiles: ProfilesDialog, profileLibraries: ProfileLibrariesDialog, quickSelect: QuickSelectDialog },
   background: CoreBackground,
   propertySections: [
     { id: 'group', label: 'Group', classes: ['IfcGroup'], component: GroupSection },

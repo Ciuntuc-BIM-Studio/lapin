@@ -181,6 +181,12 @@ A right click in a plan, a section or an elevation, with something selected, off
 - **Hide for now** (<kbd>HH</kbd>) and **Isolate for now** (<kbd>HI</kbd>) hide the selection, or everything else, in this view only until **Reset temporary hide/isolate** (<kbd>HR</kbd>). They are not saved or undone, and they print nothing differently. The same keys in 3D hide and isolate in the 3D view, as before.
 - **Reveal hidden** draws what the view hides in magenta, so it can be picked: select it and choose **Unhide in view** to show it again. Choose **Reveal hidden** again to turn it off.
 
+## Quick select
+
+**Quick select…** (in the right-click menu of a view, or **View → Select → Quick select**, <kbd>QS</kbd>) selects elements by rules, as AutoCAD's QSELECT and Revit's filters do. Each rule reads one field of an element (its class, type, storey, material, name, or a parameter by its name, such as a height or a fire rating) and compares it: **equals**, **contains**, **is between** two numbers (either end may stay empty), **is greater than**, **has a value** and the others the view filters have. Elements must match **all the rules** or **any of the rules**. **Look in** chooses what the view in front shows (its crop, what it hides and what is hidden for now count) or the whole project. The count of elements found follows as you type; **Select** selects them, or adds them to the selection with **Add to the selection** ticked.
+
+![Quick select: the walls of one type in the whole project](shots/quick-select.webp)
+
 ## Mouse navigation styles
 
 The status bar, at the bottom, names the mouse navigation style in use (*Lapin* to begin with). Click it to choose another: **Revit-like**, **AutoCAD-like**, **ArchiCAD-like**, **SketchUp-like**, **Blender-like** or **Rhino-like**, each listed with its main gestures. **File → Preferences → Display → Mouse navigation** sets it too. It is kept for you, on this computer, for every project, and it applies to the 3D view and to plans, sections, elevations and sheets alike.

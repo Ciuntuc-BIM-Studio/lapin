@@ -1,11 +1,11 @@
 /**
  * What a right-click on a plan, a section or an elevation offers to hide and find things (forum topic 73): Hide in view
- * (kept), Hide and Isolate for now (HH, HI), Reset temporary hide/isolate (HR), Reveal hidden and, with it, Unhide in view.
- * Its own entries, put
+ * (kept), Hide and Isolate for now (HH, HI), Reset temporary hide/isolate (HR), Reveal hidden and, with it, Unhide in view;
+ * and Quick select… (the dialog choosing elements by class, type, storey, material or a property). Its own entries, put
  * after the selection's, so the menu's other providers stay as they are.
  */
 
-import { Eye, EyeOff, Focus, RotateCcw, ScanEye } from 'lucide-react';
+import { Eye, EyeOff, Focus, ListFilter, RotateCcw, ScanEye } from 'lucide-react';
 import { createElement } from 'react';
 import { useUi } from '../app/store';
 import { hiddenInView, hideInView, hideTemporarily, isolateTemporarily, resetTemporarily, tempOf, toggleReveal, unhideInView } from '../viewport/viewTemporary';
@@ -30,5 +30,6 @@ export function viewHideItems(viewId: string | null): MenuItem[] {
   const kept = hiddenInView(viewId);
   if (kept.length || t.reveal) items.push({ label: 'Reveal hidden', icon: icon(ScanEye), checked: t.reveal, onSelect: () => toggleReveal(viewId) });
   if (t.reveal && selected.some((id) => kept.includes(id))) items.push({ label: 'Unhide in view', icon: icon(Eye), onSelect: () => void unhideInView(viewId) });
+  items.push({ label: 'Quick select…', icon: icon(ListFilter), onSelect: () => useUi.setState({ dialog: 'quickSelect' }) });
   return items;
 }

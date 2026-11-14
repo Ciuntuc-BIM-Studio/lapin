@@ -4693,6 +4693,32 @@ export const scenes = [
     },
   },
   {
+    // Forum topic 73: Quick select by type in the whole project, the count found shown before selecting.
+    id: 'interface-quick-select',
+    touches: ['core', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const brick = (await t.cmd('architecture.createWallType', { name: 'Brick 250', layers: [{ material: 'Brick', thickness: 0.25, core: true }] })).id;
+      const board = (await t.cmd('architecture.createWallType', { name: 'Plasterboard 100', layers: [{ material: 'Plasterboard', thickness: 0.1, core: true }] })).id;
+      for (const [x1, y1, x2, y2] of [[0, 0, 10, 0], [10, 0, 10, 8], [10, 8, 0, 8], [0, 8, 0, 0]]) await t.cmd('architecture.addWall', { storeyId: s, x1, y1, x2, y2, typeId: brick });
+      for (const [x1, y1, x2, y2] of [[5, 0, 5, 8], [0, 4, 5, 4]]) await t.cmd('architecture.addWall', { storeyId: s, x1, y1, x2, y2, typeId: board });
+      await t.ui({ view: 'plan', keyPlan: false, planDrawing: true });
+      await t.wait(1200);
+      await t.fit();
+      await t.ui({ dialog: 'quickSelect' });
+      await t.until(async () => (await t.page.locator('[data-testid=qs-value]').count()) > 0, 'the Quick select dialog');
+      await t.page.locator('[data-testid=qs-scope]').selectOption('project');
+      await t.page.locator('[data-testid=qs-value]').first().fill('Plasterboard 100');
+      await t.until(async () => (await t.page.locator('[data-testid=qs-count]').innerText()).startsWith('2'), 'Quick select finds the two plasterboard walls');
+      await t.shot('quick-select', { of: '.dialog', pad: 0 });
+      await t.page.locator('[data-testid=qs-select]').click();
+      await t.wait(500);
+      const n = await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().selected.length);
+      t.expect(n === 2, `Select takes the two walls found (${n})`);
+    },
+  },
+  {
     // Decision 525 (a tester's question: how to rotate the view along the screen): a plan turned to align with a wall, on
     // screen and on its sheet, its texts readable.
     id: 'views-plan-orientation',

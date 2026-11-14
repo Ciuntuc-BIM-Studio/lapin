@@ -1599,6 +1599,7 @@ public static class Views
         ViewBoundaries.Register(r);
         ViewCrops.Register(r);
         ViewHiding.Register(r);
+        QuickSelect.Register(r);
         SectionMarkers.Register(r);
         ElevationMarkers.Register(r);
         SectionHeads.Register(r);
