@@ -57,6 +57,38 @@ public static class ReferenceQuantities
     }
 
     /// <summary>
+    /// The quantities IFC's base sets name, which an alias of the same name fills in for a reference whose file lacks them
+    /// (<see cref="FieldAliases"/>), each with its kind.
+    /// </summary>
+    public static readonly (string Name, string Kind)[] Standard =
+    [
+        ("Length", "LENGTH"), ("Width", "LENGTH"), ("Height", "LENGTH"), ("Depth", "LENGTH"), ("Thickness", "LENGTH"), ("Perimeter", "LENGTH"),
+        ("GrossSideArea", "AREA"), ("NetSideArea", "AREA"), ("GrossArea", "AREA"), ("NetArea", "AREA"), ("GrossFloorArea", "AREA"), ("NetFloorArea", "AREA"),
+        ("GrossSurfaceArea", "AREA"), ("NetSurfaceArea", "AREA"), ("GrossFootprintArea", "AREA"), ("NetFootprintArea", "AREA"), ("CrossSectionArea", "AREA"),
+        ("OuterSurfaceArea", "AREA"), ("Area", "AREA"),
+        ("GrossVolume", "VOLUME"), ("NetVolume", "VOLUME"), ("Volume", "VOLUME"),
+        ("GrossWeight", "WEIGHT"), ("NetWeight", "WEIGHT"), ("Weight", "WEIGHT"),
+    ];
+
+    /// <summary>
+    /// A number an alias's source names on a reference, read without its quantities (they are being made): a quantity of its
+    /// file's sets (<c>Qto_WallBaseQuantities.Length</c>, or by its name in any), else the field as a formula reads it (an
+    /// imported property <c>Pset_X.L_m</c>, a parameter, an attribute).
+    /// </summary>
+    static double? SourceNumber(IModelView m, Entity e, List<QuantitySet> file, string source)
+    {
+        var dot = source.LastIndexOf('.');
+        var (set, name) = dot > 0 ? (source[..dot], source[(dot + 1)..]) : ((string?)null, source);
+        foreach (var s in file)
+        {
+            if (set != null && !string.Equals(s.Name, set, StringComparison.OrdinalIgnoreCase)) continue;
+            if (s.Quantities.FirstOrDefault(q => string.Equals(q.Name, name, StringComparison.OrdinalIgnoreCase)) is { } hit) return hit.Value;
+        }
+        if (set != null && file.Any(s => string.Equals(s.Name, set, StringComparison.OrdinalIgnoreCase))) return null;
+        return ParamFormulas.Read(m, e, ReferenceTypes.TypeOf(m, e), null, source) is { Number: { } n } x && (x.Text == null || x.IsNumericText) ? n : null;
+    }
+
+    /// <summary>
     /// A reference's quantities: its file's sets, the base quantities first (Qto_…BaseQuantities, else the first), with what
     /// the body gives that no set of the file has added to that first one (or, when the file gave none, in <see cref="MeasuredSet"/>).
     /// </summary>
@@ -68,6 +100,18 @@ public static class ReferenceQuantities
             ?? file.FirstOrDefault();
         var have = file.SelectMany(s => s.Quantities).Select(q => q.Name).ToHashSet(StringComparer.Ordinal);
         var measured = new List<Quantity>();
+        // The office's aliases named like a standard quantity (FieldAliases): what the file lacks, from the sources they name.
+        foreach (var alias in FieldAliases.All(m))
+        {
+            if (Standard.FirstOrDefault(x => TagText.Squash(x.Name) == TagText.Squash(alias.Name)) is not { Name: { } std } stdq || have.Contains(std)) continue;
+            foreach (var source in alias.Sources)
+                if (SourceNumber(m, e, file, source) is { } v && double.IsFinite(v))
+                {
+                    measured.Add(new Quantity(std, v, stdq.Kind, std));
+                    have.Add(std);
+                    break;
+                }
+        }
         if (g is { Parts.Count: > 0 } && ExternalBodies.HasClosedBody(e, m))
         {
             var volume = g.Parts.Sum(p => Measure.Volume(p.Solid));

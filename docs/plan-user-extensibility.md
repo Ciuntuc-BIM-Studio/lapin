@@ -337,3 +337,87 @@ Fiecare etapă vine cu testele ei, pagina din ghid în engleză și română, sc
 - **Etapa 5, biblioteca unificată (interfața):** folderele firmei pentru orice fel de fișier (Preferințe → Biblioteci; aceeași listă `lapin.profileFolders` ca la profile; `library.readFolder` / `library.writeFolder`; fiecare dialog de bibliotecă — Simboluri, Pachete de tipuri, Tipuri de linie, Standarde, Reguli, Forme de bare, Parametri comuni, Hașurile mele, Liste de prețuri — arată fișierele folderelor și „Salvează în folderul firmei…”, citite prin importatorul felului); Catalogul („Din biblioteci”: Lapin, acest calculator, folderele firmei, extensiile; căutare, miniaturi la simboluri, sursă și licență, „Adaugă în proiect”); „Salvează în bibliotecă” la configuratoarele de tipuri (pereți, planșee, uși și ferestre, scări, pereți cortină, stâlpi și grinzi, oțel, mobilier); felurile de extensie `symbols`, `lineTypes`, `standards`, `rules`, `barShapes`, `parameters`, `mapping`, `families` (plan-extensions.md §3.1). Cartușele (`.lapintitleblock`) și mobilierul (`.lapinlib`) intră și ele în folderele firmei. Felul de extensie `models` (GLB) nu e făcut.
 - **Etapa 12, familia ușoară (Studio):** `Lapin.Studio/Families.cs`: o `LapinFamily` a proiectului are parametri (lungime, număr, unghi, da/nu, cu valori implicite) și corpuri, fiecare un contur închis pe xy, xz sau yz cu colțurile, adâncimea și decalajul numere sau formule de parametri, făcut doar când condiția lui ține; obiectele (`LapinFamilyInstance`) au valorile lor peste cele implicite, se rotesc, se oglindesc și se mută ca orice element, corpul lor se calculează la fiecare cerere și se exportă ca clasa IFC aleasă de familie; **din desen**: `studio.familyFromSketch` face o familie din contururile închise desenate, lățimea, înălțimea și adâncimea devenind parametrii W, H, D pe care îi urmează colțurile din dreapta și de sus; fișierele `.lapinfamily`, folderele firmei, Catalogul, felul de extensie `families`. Nu e un rezolvitor de constrângeri: formulele colțurilor țin locul cotelor legate. Teste `FamilyTests`.
 - **Formularele din schemă (§5.1), hotărâre:** dialogurile de configurare scrise de mână rămân cum sunt (funcționează și sunt testate; rescrierea lor ar risca ce merge). Formularul generic există pentru porți, ventilatoare și familii (parametrii lor), iar „Salvează în bibliotecă” e la toate dialogurile de tipuri. Un configurator nou se face de acum din schemă când se poate.
+
+## 11. Extrase și câmpuri configurabile (etapa 13; motorul făcut, interfața de făcut)
+
+Cererea utilizatorului (14.11.2026): utilizatorii își fac singuri antemăsurătorile și alte extrase din parametrii modelelor — și ai celor importate din IFC, Fragments și BOS —, iar când biroul are propria convenție de nume pentru proprietăți, o mapează o dată. Etapa 1 (decizia 579) a dat referințelor cantitățile fișierului; etapa aceasta e motorul extraselor de câmpuri. Dicționarul unic de câmpuri rămâne `FieldCatalog` (Platform): orice valoare se citește prin el (`ElementFields`: un câmp ca într-o formulă, `ParamFormulas.Read`, când e număr; altfel ca într-o etichetă, `TagText.Value`), deci etichetele, textul viu, formulele și extrasele văd aceleași câmpuri.
+
+### 11.1 Câmpurile
+
+Un câmp e un jeton: `name`, `mark`, `type`, `class`; un atribut (`height`); o cantitate (`Length`, `NetSideArea`, sau cu setul: `Qto_WallBaseQuantities.Length`); un parametru (`Fire rating`, `Firma.CodLucrare`); o proprietate din fișier, cu setul (`Pset_WallCommon.FireRating`, `Pset_Firma.CodLucrare`) sau doar cu numele când e unic; un domeniu (`storey.name`, `type.mark`, `host.FireRating`, `project.number`); un alias (§11.4); o formulă `= NetSideArea * 1.1` (sau `{= …}`, formatul după bară); un șablon `{storey.name}/{mark}`. Numerele sunt în SI (m, m², m³, kg), ca în formule. Formulele citesc acum și proprietățile importate (`Pset_X.L_m`), iar cantitățile se găsesc și cu numele setului.
+
+### 11.2 Extrasul de câmpuri (`kind: "fields"`)
+
+Un `LapinSchedule` cu `kind: "fields"` și opțiunile în `fields`:
+
+```json
+{
+  "filter": {
+    "classes": ["IfcWall", "Slab"],          // clasa sau numele fără Ifc; un supertip MEP își ia felurile
+    "types": ["WT-1"], "storeys": ["Parter"], "materials": ["Beton C25/30"],
+    "groups": ["Bloc A"], "phases": ["new-construction"],   // id-ul sau numele (un șablon dus în alt proiect le găsește după nume)
+    "conditions": [
+      {"field": "Pset_Firma.CodLucrare", "op": "=", "value": "L1"},
+      {"field": "Length", "op": ">", "value": 2.5},
+      {"field": "Pset_Firma.Etapa", "op": "missing"}
+    ]
+  },
+  "groupBy": ["Pset_Firma.Etapa", "storey.name"],   // lipsă sau []: un rând pe element
+  "columns": [
+    {"field": "name"},
+    {"field": "Length", "aggregate": "sum", "unit": "m", "decimals": 2},
+    {"formula": "NetSideArea * 1.1", "heading": "Arie +10%", "aggregate": "sum", "decimals": 1},
+    {"field": "Pset_Firma.Etapa", "aggregate": "list"}
+  ],
+  "totals": true,    // implicit true: rândul Total când sunt cel puțin două rânduri
+  "count": true      // implicit true: coloana Count când se grupează
+}
+```
+
+- Operatori: `=`, `≠`, `contains`, `starts with`, `<`, `≤`, `>`, `≥`, `exists`, `missing` (se primesc și `==`, `!=`, `<=`, `>=`, `startsWith`). Numerele se compară ca numere, textele fără majuscule; toate condițiile trebuie să țină. `≠` ține și pentru un element fără câmp.
+- Agregări: `sum`, `avg`, `min`, `max`, `count`, `countDistinct`, `first`, `list` (valorile distincte, cu virgulă). Implicit: numerele `sum`, textele `list`. Fără grupare, agregarea spune ce face rândul Total cu coloana.
+- `unit` convertește din SI când e cunoscută (`m`, `cm`, `mm`, `km`, `m²`, `cm²`, `mm²`, `ha`, `m³`, `dm³`, `l`, `cm³`, `kg`, `t`) și se scrie în titlul coloanei; alta doar se scrie. `decimals` 0–9; fără, până la trei zecimale.
+- Titlul implicit: numele câmpului cu majusculă, fără set (`Pset_Firma.CodLucrare` → CodLucrare), `class` → Kind; un titlu repetat e numerotat.
+- Rândurile: în ordinea celulelor (numerele ca numere, „—” la sfârșit pentru o grupare lipsă); cheia unui rând e id-ul elementului (fără grupare) sau celulele grupării, deci celulele scrise peste rămân la rândul lor. Restul e ca la orice extras: coloanele și rândurile proprii, `sortBy`, graficele, foile, CSV, XLSX, documentele.
+- Fără coloane: Kind, Type, Name. Ce nu e listat: goluri, adnotări, axe, corpuri partajate, înregistrările de tip ale fișierului.
+- Antemăsurătoarea (`quantities`) primește în `groupBy`, pe lângă kind, type, storey, material (neschimbate), orice câmp.
+
+### 11.3 Comenzile și interogările (API-ul pentru interfață)
+
+| Apel | Argumente | Rezultat |
+|---|---|---|
+| `architecture.createSchedule` | `{kind: "fields", name?, fields?}` | `{id}` |
+| `architecture.updateSchedule` | `{id, fields}` (opțiunile întregi, verificate; doar pe un extras de câmpuri), plus cheile de până acum (`sortBy`, `name`…) | — |
+| `architecture.importSchedule` | `{text}` (un `.lapinschedule`) sau `{template}` (obiectul din biblioteca calculatorului); `name?` | `{id, name}` |
+| `schedule.exportTemplate` | `{id}` | `{text, file: "<nume>.lapinschedule", template}` |
+| `schedule.layout`, `schedule.csv`, `schedule.xlsx` | `{id}` | ca la orice extras al unui modul (`grid`, `table`, `charts`) |
+| `fields.model` | `{filter?, sample?: 2000, examples?: 5}` | `{elements, sample, groups: [{id, label, set, sampled, fields: [{token, label, kind: number\|text\|bool, count, examples, set, short, description}]}]}` |
+| `fields.values` | `{field, filter?, limit?: 200, max?: 100000}` | `{field, kind, elements, count, missing, values: [{value, count}], truncated, sampled}` |
+| `fields.read` | `{id, fields: [...]}` | `{values: [{field, value, number}]}` (previzualizarea unei coloane pe un element) |
+| `fields.available` | `{id}` | ca până acum, cu grupul `aliases` |
+| `fields.aliases` | — | `{aliases: [{name, sources, description}]}` |
+| `fields.setAlias` | `{name, sources: [...], description?, rename?}` | `{name}` |
+| `fields.removeAlias` | `{name}` | — |
+| `fields.setAliases` | `{aliases: [...]}` (tabelul întreg) | — |
+| `fields.exportAliases` | — | `{text, file: "aliases.lapinaliases", aliases}` |
+| `fields.importAliases` | `{text}` sau `{aliases}`, `keep?` | `{added, updated}` |
+
+Grupurile din `fields.model`: `lapin` (câmpurile oricărui element, atributele, ce calculează modulele), `type` (`type.name`, `type.mark`, atributele și parametrii tipului), `quantities`, `params`, `pset:<Set>` (câte unul pe set de proprietăți al fișierului), `aliases`, `scopes` (`storey.name`, `building.name`, `group.name`…). Câmpurile păstrate (atribute, parametri, seturi) se numără pe toate elementele; cantitățile, câmpurile calculate, aliasurile și domeniile pe un eșantion de cel mult `sample` elemente împrăștiate pe listă (`sampled: true` pe grup). `short` e numele proprietății singur, când un singur set îl are și Lapin nu are un câmp cu acel nume.
+
+Fiecare comandă e un pas de anulare. Un invitat editor al unei sesiuni partajate le poate rula pe toate (`EngineDispatcher.AllowedRemote` lasă orice `doc.execute` editorilor; nimic nu atinge discul gazdei).
+
+### 11.4 Aliasurile (numele biroului)
+
+Pe IfcProject (`fieldAliases`), ca definițiile de parametri: `{name, sources: [în ordine], description?}`, de pildă `Length` ← `Qto_WallBaseQuantities.Length`, `Pset_X.L_m`; `Phase` ← `Pset_Firma.Etapa`, `ArchiCADProperties.Faza`. Un alias citește prima sursă pe care elementul o are (o valoare nevidă) și e un câmp ca oricare: etichete, text viu, formule, extrase, filtre (și, în etapa următoare, filtrele de vizibilitate și regulile sarcinilor). Are întâietate față de câmpul elementului cu același nume; o sursă care numește aliasul însuși citește câmpul elementului. Numele nu are punct, acoladă, bară sau egal și nu e un câmp al oricărui element (`name`, `mark`, `type`, `class`, `tag`) sau un domeniu. Un alias numit ca o cantitate standard (`Length`, `Width`, `Height`, `NetSideArea`, `GrossArea`, `NetVolume`, `Weight`… lista `ReferenceQuantities.Standard`) completează cantitatea pentru referințele al căror fișier n-o are, deci antemăsurătoarea și devizul o văd; ce dă fișierul rămâne al fișierului.
+
+### 11.5 Bibliotecile
+
+Ca listele de prețuri: biblioteca calculatorului e a interfeței (localStorage), cu obiectul `template` al lui `schedule.exportTemplate` și lista `aliases` a lui `fields.exportAliases`; fișierele `.lapinschedule` (`{format: "lapin-schedule", version: 1, name, fields, customColumns?, charts?}`) și `.lapinaliases` (`{format: "lapin-field-aliases", version: 1, aliases}`) se pot pune în folderele firmei (`library.readFolder` / `writeFolder` le cunosc). Un șablon scrie tipurile, nivelurile, materialele, grupurile și fazele filtrului după nume.
+
+### 11.6 Pachetul, IFC
+
+Extrasul e o entitate `LapinSchedule` ca celelalte, salvată în `.lapin` la fel; aliasurile sunt pe IfcProject. Un proiect mai vechi se deschide neschimbat (nimic nou de adus la zi). Extrasele nu se scriu în IFC (niciunul nu se scrie), deci nici acesta.
+
+### 11.7 De făcut în interfață
+
+Felul „Field schedule” în dialogul de extras nou; editorul: filtrul (dimensiunile cu listele proiectului, condițiile cu alegătorul de câmpuri din `fields.model` și de valori din `fields.values`), gruparea, coloanele (câmp sau formulă, titlu, agregare, unitate, zecimale, previzualizarea cu `fields.read`), totalurile; „Păstrează în biblioteca calculatorului”, exportul și importul `.lapinschedule`, folderele firmei; tabelul aliasurilor (Gestionare → Nume de câmpuri…) cu sursele în ordine, export și import `.lapinaliases`; câmpurile în orice limbă din `ui/src/i18n`; pagina din ghid (en, ro) și scena ei.

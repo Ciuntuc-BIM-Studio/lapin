@@ -63,7 +63,20 @@ public static partial class TagText
     }
 
     /// <summary>A value an imported element's property sets hold ({"Pset_WallCommon": {"FireRating": "REI 90"}}): "Set.Name", else the name in any set.</summary>
-    static string? Imported(Entity? e, string key)
+    static string? Imported(Entity? e, string key) => ImportedNode(e, key) is { } v ? ImportedText(v) : null;
+
+    /// <summary>An imported property's value as a tag writes it: a text, yes or no, a number to three decimals.</summary>
+    public static string ImportedText(JsonNode v) =>
+        v is JsonValue jv && jv.TryGetValue<string>(out var str) ? str
+        : v is JsonValue b && b.TryGetValue<bool>(out var flag) ? (flag ? "yes" : "no")
+        : Json.Number(v) is { } num ? num.ToString("0.###", CultureInfo.InvariantCulture)
+        : v is JsonObject vo && vo["value"] is JsonValue inner ? inner.ToString() : v.ToJsonString();
+
+    /// <summary>
+    /// The value an imported element's property sets hold for <paramref name="key"/>, as the file gave it: "Set.Name" in that set
+    /// the name in any set; null when none (a value the file gave with its unit is an object, its <c>value</c> in it).
+    /// </summary>
+    public static JsonNode? ImportedNode(Entity? e, string key)
     {
         if (e?.Attrs["properties"] is not JsonObject sets) return null;
         var dot = key.IndexOf('.');
@@ -73,11 +86,7 @@ public static partial class TagText
         {
             if (props is not JsonObject po || set != null && !string.Equals(s, set, StringComparison.OrdinalIgnoreCase)) continue;
             foreach (var (n, v) in po)
-                if (Squash(n) == name && v != null)
-                    return v is JsonValue jv && jv.TryGetValue<string>(out var str) ? str
-                        : v is JsonValue b && b.TryGetValue<bool>(out var flag) ? (flag ? "yes" : "no")
-                        : Json.Number(v) is { } num ? num.ToString("0.###", CultureInfo.InvariantCulture)
-                        : v is JsonObject vo && vo["value"] is JsonValue inner ? inner.ToString() : v.ToJsonString();
+                if (Squash(n) == name && v != null) return v;
         }
         return null;
     }
@@ -111,6 +120,8 @@ public static partial class TagText
             return scoped.Owner is not { } owner ? ""
                 : owner.Class == IfcClass.Project && ParamScopes.ProjectValue(m, scoped.Field) is { } pv ? pv
                 : Value(m, owner, scoped.Field, null, units);
+        // The office's own name for a field (FieldAliases): the first of its sources the element has.
+        if (FieldAliases.TryResolve(m, key, s => Value(m, e, s, extra, units, more), s => s.Length > 0, out var aliased)) return aliased ?? "";
         var type = m.RelatingOf(e.Id, IfcClass.RelDefinesByType);
         switch (key.ToLowerInvariant())
         {

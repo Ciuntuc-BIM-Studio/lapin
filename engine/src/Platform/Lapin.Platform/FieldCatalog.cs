@@ -44,7 +44,7 @@ public static class DerivedFields
 /// assembly, host and, as modules add them, its rooms), each field with the token to write, its value now and a few words on
 /// what it is. Read from the model as it is on every ask; nothing kept.
 /// </summary>
-public static class FieldCatalog
+public static partial class FieldCatalog
 {
     /// <summary>Attributes that are Lapin's own bookkeeping, not fields a tag would show.</summary>
     static readonly HashSet<string> Internal = new(StringComparer.OrdinalIgnoreCase)
@@ -146,6 +146,11 @@ public static class FieldCatalog
                         foreach (var (name, _) in po) Add(standard, $"{set}.{name}", name, "From the file it came from");
         groups.Add(standard);
 
+        var aliases = new Group("aliases", "Your office's names (aliases)", null, Spatial.Project(m));
+        foreach (var x in FieldAliases.All(m))
+            Add(aliases, x.Name, x.Name, x.Description ?? "Your office's name for the first of: " + string.Join(", ", x.Sources));
+        groups.Add(aliases);
+
         var globals = new Group("globals", "Project parameters, by their key", null, Spatial.Project(m));
         foreach (var c in ParamScopes.Globals(m))
             Add(globals, c.Key, c.Label, "A parameter of the project's (Manage → Project information): read by its key from any element", c.Type);
@@ -208,5 +213,8 @@ public static class FieldCatalog
             var e = q.Model.Get((string?)a["id"] ?? "") ?? throw new CommandException("Which element?");
             return Available(q, e);
         });
+        // The fields across the model or a filter's elements, and one field's values (FieldValues).
+        RegisterModel(r);
+        FieldAliases.Register(r);
     }
 }

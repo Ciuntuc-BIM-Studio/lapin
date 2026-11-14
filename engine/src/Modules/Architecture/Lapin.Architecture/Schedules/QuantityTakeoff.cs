@@ -12,7 +12,7 @@ namespace Lapin.Architecture.Schedules;
 /// the count, length, gross and net area, gross and net volume and weight. By material, each layer, zone or finish
 /// counts under its own material (a wall's plaster, brick and insulation apart); an element of one material counts whole.
 /// A schedule like any (on sheets, CSV, XLSX, columns and rows of its own); its options are the schedule's
-/// <c>groupBy</c> (a list of kind, type, storey, material; default kind and type) and <c>classes</c> (the IFC classes
+/// <c>groupBy</c> (a list of kind, type, storey, material or any other field; default kind and type) and <c>classes</c> (the IFC classes
 /// it lists; none: all).
 /// </summary>
 public sealed class QuantityTakeoff : IScheduleSource
@@ -44,7 +44,8 @@ public sealed class QuantityTakeoff : IScheduleSource
 
     public static IReadOnlyList<string> GroupsOf(Entity? schedule)
     {
-        var g = schedule?.Attrs["groupBy"] is JsonArray a ? a.Select(x => (string?)x).OfType<string>().Where(Dimensions.Contains).Distinct().ToList() : null;
+        // The four dimensions, else any field (docs/plan-user-extensibility.md: an imported property, a parameter, an alias).
+        var g = schedule?.Attrs["groupBy"] is JsonArray a ? a.Select(x => ((string?)x)?.Trim()).OfType<string>().Where(x => x.Length > 0).Distinct().ToList() : null;
         return g is { Count: > 0 } ? g : DefaultGroups;
     }
 
@@ -152,6 +153,7 @@ public sealed class QuantityTakeoff : IScheduleSource
         void Add(Entity e, string? material, IReadOnlyList<Quantity> qs, double share = 1, double? thickness = null, string? note = null)
         {
             var cells = new string[groups.Count];
+            ElementFields? fields = null;
             var order = new (int, string)[groups.Count + 1];
             for (var i = 0; i < groups.Count; i++)
             {
@@ -162,7 +164,12 @@ public sealed class QuantityTakeoff : IScheduleSource
                     case "storey":
                         var s = Spatial.StoreyOf(m, e.Id);
                         cells[i] = s?.Name ?? "—"; order[i] = (s == null ? int.MaxValue : storeyOrder.GetValueOrDefault(s.Id), ""); break;
-                    default: cells[i] = MaterialName(material); order[i] = (material == null ? 1 : 0, cells[i]); break;
+                    case "material": cells[i] = MaterialName(material); order[i] = (material == null ? 1 : 0, cells[i]); break;
+                    default:
+                        // Any other field, as a field schedule reads it.
+                        fields ??= new ElementFields(q, e);
+                        cells[i] = fields.Value(groups[i]) is { Exists: true } v ? v.Shown : "—";
+                        order[i] = (cells[i] == "—" ? 1 : 0, cells[i]); break;
                 }
             }
             var thick = thickness is { } th ? MaterialFields.Mm(th) : "";
@@ -239,7 +246,7 @@ public sealed class QuantityTakeoff : IScheduleSource
                 .. notesShown ? [""] : Array.Empty<string>()]);
             keys.Add(null);
         }
-        return new ScheduleGrid(Title, [.. groups.Select(g => Headings[g]), .. thicknessShown ? ["Thickness (mm)"] : Array.Empty<string>(), "Count", .. shown.Select(i => Measures[i].Heading),
+        return new ScheduleGrid(Title, [.. groups.Select(g => Headings.GetValueOrDefault(g) ?? FieldSchedule.FieldHeading(g)), .. thicknessShown ? ["Thickness (mm)"] : Array.Empty<string>(), "Count", .. shown.Select(i => Measures[i].Heading),
             .. notesShown ? ["Note"] : Array.Empty<string>()], rows, keys);
     }
 }

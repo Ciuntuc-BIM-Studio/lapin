@@ -302,6 +302,7 @@ public sealed class ScheduleEntity : ISheetContent, Lapin.Platform.Documents.IDo
         r.Service<ISheetContent>(this);
         r.Service<Lapin.Platform.Documents.IDocumentTables>(this);
         r.Service<IScheduleSource>(new QuantityTakeoff());
+        r.Service<IScheduleSource>(new FieldSchedule());
 
         r.Command("createSchedule", "New schedule", (ctx, a) =>
         {
@@ -312,6 +313,8 @@ public sealed class ScheduleEntity : ISheetContent, Lapin.Platform.Documents.IDo
             var attrs = new JsonObject { ["kind"] = kind, ["scale"] = 50 };
             // A new type assemblies schedule draws the build-ups (reports #65–#67); one made before keeps its plain table until asked.
             if (source is TypeAssemblies) attrs["drawings"] = new JsonArray((JsonNode)TypeBuildUps.Drawing);
+            // A field schedule's own options (docs/plan-user-extensibility.md): its filter, grouping and columns.
+            if (source is FieldSchedule) attrs[FieldScheduleOptions.Key] = FieldScheduleOptions.Check(a["fields"] as JsonObject).ToJson();
             var s = new Entity(ctx.NewId(), Class, name, attrs);
             ctx.Add(s);
             return new JsonObject { ["id"] = s.Id };
@@ -327,9 +330,27 @@ public sealed class ScheduleEntity : ISheetContent, Lapin.Platform.Documents.IDo
                 if (!a.ContainsKey(key)) continue;
                 if (a[key] is null) attrs.Remove(key); else attrs[key] = a[key]!.DeepClone();
             }
+            if (a.ContainsKey("fields"))
+            {
+                if (s.Str("kind") != FieldSchedule.KindId) throw new CommandException("Only a field schedule takes fields to list.");
+                attrs[FieldScheduleOptions.Key] = FieldScheduleOptions.Check(a["fields"] as JsonObject).ToJson();
+            }
             if (Json.Number(a["scale"]) is { } sc) attrs["scale"] = sc > 0 ? sc : throw new CommandException("A scale is positive.");
             ctx.Replace(s.With(name: ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : null, attrs: attrs));
             return null;
+        });
+
+        // A field schedule from a template (a .lapinschedule's `text`, or the library's `template` object): its options, columns of its own and charts.
+        r.Command("importSchedule", "Schedule from template", (ctx, a) =>
+        {
+            var t = FieldSchedule.ReadTemplate(a["text"] ?? a["template"] ?? throw new CommandException("Which template?"));
+            var name = ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : ((string?)t["name"])?.Trim() is { Length: > 0 } tn ? tn : FieldSchedule.Title;
+            var attrs = new JsonObject { ["kind"] = FieldSchedule.KindId, ["scale"] = 50, [FieldScheduleOptions.Key] = FieldScheduleOptions.Check(t[FieldScheduleOptions.Key]).ToJson() };
+            if (t["customColumns"] is JsonArray cc) attrs["customColumns"] = new JsonArray([.. cc.OfType<JsonObject>().Where(c => (string?)c["id"] != null).Select(c => (JsonNode)new JsonObject { ["id"] = (string?)c["id"], ["label"] = (string?)c["label"] ?? "" })]);
+            if (t["charts"] is JsonArray ch) attrs["charts"] = ch.DeepClone();
+            var s = new Entity(ctx.NewId(), Class, name, attrs);
+            ctx.Add(s);
+            return new JsonObject { ["id"] = s.Id, ["name"] = s.Name };
         });
 
         // A typed cell: a custom row's value, or a model value overridden on purpose (null: back to the model; "" on a model row too).
@@ -583,6 +604,16 @@ public sealed class ScheduleEntity : ISheetContent, Lapin.Platform.Documents.IDo
 
         // What a quantity takeoff can list: the classes the model measures, with their names and counts.
         r.Query("schedule.takeoffClasses", (q, _) => new JsonArray([.. QuantityTakeoff.Classes(q).Select(c => (JsonNode)new JsonObject { ["class"] = c.Class, ["label"] = c.Label, ["count"] = c.Count })]));
+
+        // A field schedule as a template: {id} → {text (a .lapinschedule), file, template (the same as an object, for the computer's library)}.
+        r.Query("schedule.exportTemplate", (q, a) =>
+        {
+            var s = Require(q.Model, (string?)a["id"]);
+            if (s.Str("kind") != FieldSchedule.KindId) throw new CommandException("Only a field schedule is kept as a template.");
+            var t = FieldSchedule.Template(q.Model, s);
+            var file = string.Concat(s.Name.Select(c => Path.GetInvalidFileNameChars().Contains(c) || c is '/' or '\\' or ':' ? '_' : c)).Trim();
+            return new JsonObject { ["text"] = FieldSchedule.TemplateText(t), ["file"] = (file.Length > 0 ? file : "schedule") + ".lapinschedule", ["template"] = t };
+        });
 
         r.Query("schedule.csv", (q, a) =>
         {

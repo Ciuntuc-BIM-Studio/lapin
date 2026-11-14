@@ -65,6 +65,8 @@ public static class ParamFormulas
             if (owner.Class == IfcClass.Project && ParamScopes.ProjectFormulaValue(m, scoped.Field) is { } pv) return pv;
             return Read(m, owner, owner.Class == IfcClass.Project ? null : m.RelatingOf(owner.Id, IfcClass.RelDefinesByType), null, scoped.Field);
         }
+        // The office's own name for a field (FieldAliases): the first of its sources the element has.
+        if (FieldAliases.TryResolve(m, name, s => Read(m, e, type, more, s), v => v is { } x && (x.Number != null || x.Text is { Length: > 0 }), out var aliased)) return aliased;
         var key = TagText.Squash(name.Contains('.') ? name[(name.LastIndexOf('.') + 1)..] : name);
         foreach (var x in new[] { e, type })
         {
@@ -79,6 +81,8 @@ public static class ParamFormulas
                 if (v.TryGetValue<string>(out var s)) return XValue.Read(s);
             }
         }
+        // A property of a set the file gave it, named with its set (Pset_WallCommon.FireRating, Pset_Firma.CodLucrare).
+        if (name.Contains('.') && (TagText.ImportedNode(e, name) ?? TagText.ImportedNode(type, name)) is { } setProperty) return Imported(setProperty);
         foreach (var x in new[] { e, type })
             if (x?.Attrs.FirstOrDefault(kv => TagText.Squash(kv.Key) == key).Value is JsonValue av && Json.Number(av) is { } an) return XValue.Of(an);
         if ((more?.Invoke(name) ?? more?.Invoke(key)) is { } q) return XValue.Of(q);
@@ -91,10 +95,21 @@ public static class ParamFormulas
             case "type": return XValue.Of(type?.Name ?? e.Name);
             case "class": return XValue.Of(e.Class.StartsWith("Ifc", StringComparison.Ordinal) ? e.Class[3..] : e.Class);
         }
+        // A property the file gave it, by its name in any set.
+        if ((TagText.ImportedNode(e, name) ?? TagText.ImportedNode(type, name)) is { } property) return Imported(property);
         // What its module works out (forum topic 84: a room's finish.floor), never stored.
         if (DerivedFields.Value(m, e, name) is { } derived) return XValue.Read(derived);
         // The project's parameters are global: read by their key from any element.
         return ParamScopes.Globals(m).Any(c => TagText.Squash(c.Key) == key) ? ParamScopes.ProjectFormulaValue(m, name) : null;
+    }
+
+    /// <summary>An imported property as a formula reads it: a number as a number, yes/no as 1/0, a text as a text (a number too when it starts with one).</summary>
+    static XValue Imported(JsonNode v)
+    {
+        if (v is JsonObject o && o["value"] is JsonValue inner) v = inner;
+        if (v is JsonValue b && b.TryGetValue<bool>(out var flag)) return XValue.Of(flag);
+        if (v is JsonValue s && s.TryGetValue<string>(out var text)) return XValue.Read(text);
+        return Json.Number(v) is { } n ? XValue.Of(n) : XValue.Of(TagText.ImportedText(v));
     }
 
     /// <summary>A formula parameter worked out: its value as a number, or null with why (a text that is not a number is not one).</summary>
@@ -126,7 +141,17 @@ public static class ParamFormulas
         Dictionary<string, double>? map = null;
         return name =>
         {
-            map ??= q.Quantities(id).SelectMany(s => s.Quantities).GroupBy(x => TagText.Squash(x.Name)).ToDictionary(g => g.Key, g => g.First().Value);
+            if (map == null)
+            {
+                map = [];
+                // By its name, the first of its sets'; and by its set and name (Qto_WallBaseQuantities.Length).
+                foreach (var set in q.Quantities(id))
+                    foreach (var x in set.Quantities)
+                    {
+                        map.TryAdd(TagText.Squash(x.Name), x.Value);
+                        map.TryAdd(TagText.Squash(set.Name + "." + x.Name), x.Value);
+                    }
+            }
             return map.TryGetValue(TagText.Squash(name), out var v) ? v : null;
         };
     }
