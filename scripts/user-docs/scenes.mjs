@@ -3558,6 +3558,54 @@ export const scenes = [
     },
   },
   {
+    // Cable trays and trunking (report #147): a perforated tray drawn with the Cable tray tool along the house's corridor
+    // under the ceiling, turning into the rooms, a branch off it (a tee), trunking along a wall; cables laid in the tray and
+    // its fill in Properties; the trays in 3D.
+    id: 'mep-carriers',
+    touches: ['mep'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      await t.button('MEP', { exact: true });
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      await t.wait(600);
+      // The tray by the tool: three clicks, Enter to finish; the legs laid at 45° steps.
+      await t.tool('mep.cableTray');
+      t.expect(await t.page.locator('[data-testid=carrier-type]').count() === 1, 'the Cable tray tool offers its type');
+      await t.page.locator('[data-testid=carrier-type]').selectOption('preset:tray300x60');
+      await t.wait(200);
+      for (const [x, y] of [[1, 4], [6, 4], [6, 7]]) { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(250); }
+      await t.keys('Enter');
+      await t.wait(800);
+      await t.keys('Escape');
+      const carriers = async () => (await t.nodes()).filter((n) => n.type === 'IfcCableCarrierSegment');
+      const tray = (await carriers())[0];
+      t.expect(!!tray, 'the tool draws a cable tray');
+      // A branch into the east room (a tee on the tray) and trunking along the north wall.
+      await t.cmd('mep.drawCarrier', { storeyId: storey, points: [[3, 4], [3, 1.5], [10, 1.5]], preset: 'tray100x60', start: { carrierId: tray.id } });
+      await t.cmd('mep.drawCarrier', { storeyId: storey, points: [[8, 7.6], [11.5, 7.6]], preset: 'trunking60x40', elevation: 1.1 });
+      // Three cables laid in the tray.
+      const sys = await t.cmd('mep.createSystem', { service: 'electrical' });
+      const ids = [];
+      for (const dy of [-0.05, 0, 0.05]) ids.push((await t.cmd('mep.drawRun', { systemId: sys.id, storeyId: storey, points: [[1, 4 + dy], [6, 4 + dy]], size: 0.012, elevation: 2.4 })).id);
+      await t.cmd('mep.setCableCarrier', { ids, carrierId: tray.id });
+      await t.ui({ selection: null, selected: [] });
+      await t.fit();
+      await t.wait(1200);
+      await t.shot('mep-carriers-plan', { of: '[data-testid=plan]', pad: 0 });
+      await select(t, tray.id);
+      await t.wait(1000);
+      t.expect(await t.page.locator('[data-testid=carrier-fill]').filter({ hasText: '%' }).count() === 1, 'the tray shows its fill');
+      await t.shot('mep-carriers-properties', { of: 'aside.props', pad: 0, maxHeight: 560 });
+      await t.ui({ selection: null, selected: [], keyPlan: true });
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 2.3, pitch: -0.5, distance: 9, target: { x: 5, y: 4, z: 2.3 } }, false));
+      await t.wait(1500);
+      await t.shot('mep-carriers-3d', { of: 'canvas', pad: 0 });
+    },
+  },
+  {
     id: 'structure',
     async run(t) {
       await t.fresh();

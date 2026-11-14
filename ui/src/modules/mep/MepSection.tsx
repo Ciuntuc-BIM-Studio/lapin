@@ -12,6 +12,7 @@ import { mepHooks } from './hooks';
 import { setMep } from './prefs';
 import { editSystem } from './edit';
 import { roles, templates } from './network';
+import { isCarrier } from './carriers/carriers';
 
 export function MepSection({ node }: { node: NodeDto }) {
   const version = useSession((s) => s.version);
@@ -62,6 +63,18 @@ export function MepSection({ node }: { node: NodeDto }) {
           <EndRow key={end} label={end === 'start' ? 'Start' : 'End'} text={describeEnd(me[end], nodes)} open={!me[end]} disabled={!node.editable}
             onDisconnect={() => void execute('mep.disconnect', { runId: node.id, end })} />
         ))}
+        {run && node.type === 'IfcCableSegment' && (
+          <>
+            <dt>Carrier</dt>
+            <dd>
+              <select value={typeof node.props.carrier === 'string' ? node.props.carrier : ''} data-field="cable-carrier" disabled={!node.editable} title="The tray, trunking or conduit the cable lies in (its fill is shown on the carrier)"
+                onChange={(e) => void execute('mep.setCableCarrier', { ids: [node.id], carrierId: e.target.value || null })}>
+                <option value="">(none)</option>
+                {[...nodes.values()].filter(isCarrier).sort((a, b) => a.name.localeCompare(b.name)).map((c) => <option key={c.id} value={c.id} data-no-i18n>{c.name}</option>)}
+              </select>
+            </dd>
+          </>
+        )}
       </dl>
       {systemId && (
         <div className="row" style={{ flexWrap: 'wrap', gap: 4, marginTop: 6 }}>

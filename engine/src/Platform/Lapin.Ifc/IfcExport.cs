@@ -154,6 +154,9 @@ public static partial class IfcExport
         // The distribution elements (the MEP module's nodes and runs), IFC4's enumerations.
         ["IfcDuctSegment"] = ["RIGIDSEGMENT", "FLEXIBLESEGMENT"],
         ["IfcCableSegment"] = ["BUSBARSEGMENT", "CABLESEGMENT", "CONDUCTORSEGMENT", "CORESEGMENT"],
+        // Cable carriers (report #147): trays, ladders, trunking and conduit, their bends, tees, crosses and reducers.
+        ["IfcCableCarrierSegment"] = ["CABLELADDERSEGMENT", "CABLETRAYSEGMENT", "CABLETRUNKINGSEGMENT", "CONDUITSEGMENT"],
+        ["IfcCableCarrierFitting"] = ["BEND", "CROSS", "REDUCER", "TEE"],
         ["IfcPipeFitting"] = ["BEND", "CONNECTOR", "ENTRY", "EXIT", "JUNCTION", "OBSTRUCTION", "TRANSITION"],
         ["IfcDuctFitting"] = ["BEND", "CONNECTOR", "ENTRY", "EXIT", "JUNCTION", "OBSTRUCTION", "TRANSITION"],
         ["IfcBoiler"] = ["WATER", "STEAM"],
@@ -823,6 +826,10 @@ public static partial class IfcExport
             var at = joinery?.Place(m, e);
             // A railway element already has its linear placement and frame; the rest stand on their storey (or in the joinery's frame).
             place ??= at is { } jp ? JoineryPlace(relTo, jp, z0) : Place(relTo, 0);
+            // A cable carrier's fittings (report #147): its bends, tees, crosses and reducers, IfcCableCarrierFittings aggregated in it; its body the rest.
+            var fittings = o.Grouped && !grouped && kind.Class == "IfcCableCarrierSegment" ? parts.Where(p => p.Key?.StartsWith("fitting:", StringComparison.Ordinal) == true).ToList() : [];
+            if (fittings.Count > 0 && fittings.Count < parts.Count) parts = [.. parts.Except(fittings)];
+            else fittings = [];
             var reps = new List<string>();
             // A type with a body of its own (a part): its map written before the type is, whatever this element's body.
             var typeMap = type != null ? TypeMap(type) : null;
@@ -852,6 +859,7 @@ public static partial class IfcExport
             if (type != null) TypeOf(type, kind, entity, mirrored, terms);
             if (src?["material"] == null) MaterialsOf(e, entity, parts, grouped);
             if (grouped) Parts(e, kind, parts, place, fr, entity);
+            if (fittings.Count > 0) Parts(e, kind, fittings, place, fr, entity);
             Openings(e, entity, place, z0, voids);
             KeptOpenings(e, entity, place, z0);
             if (swept != null) SweptOpenings(e, swept, entity, place, fr);
@@ -1353,6 +1361,7 @@ public static partial class IfcExport
                 }
             return (host, prefix) switch
             {
+                ("IfcCableCarrierSegment", "fitting") => new("IfcCableCarrierFitting", rest.Split(':')[0].ToUpperInvariant(), null),
                 (IfcClass.Wall, "lintel") => new(IfcClass.Beam, "LINTEL", null),
                 (IfcClass.Wall, "downstand") => new(IfcClass.Beam, "USERDEFINED", "Ring beam"),
                 (IfcClass.Wall, "zone") when zones.FirstOrDefault(z => (string?)z["key"] == rest) is { } zone && (string?)zone["role"] == "ringBeam" => new(IfcClass.Beam, "USERDEFINED", "Ring beam"),
