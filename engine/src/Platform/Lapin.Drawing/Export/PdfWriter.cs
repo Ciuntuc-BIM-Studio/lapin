@@ -85,6 +85,9 @@ public static class PdfWriter
             if (pen.Fill != null && pen.Loops.Count > 0)
             {
                 var (r, g, b) = Rgb(pen.Fill);
+                // A fill with an opacity (#rrggbbaa, a room colour's, forum #79): through a graphics state of that alpha.
+                var see = HexColor.Alpha(pen.Fill);
+                if (see < 0.999) c.Append("q /GS").Append(alpha(see)).Append(" gs\n");
                 c.Append(F(r)).Append(' ').Append(F(g)).Append(' ').Append(F(b)).Append(" rg\n");
                 foreach (var loop in pen.Loops)
                 {
@@ -93,7 +96,7 @@ public static class PdfWriter
                     foreach (var p in loop.Skip(1)) c.Append(X(p.X)).Append(' ').Append(Y(p.Y)).Append(" l\n");
                     c.Append("h\n");
                 }
-                c.Append("f*\n");
+                c.Append(see < 0.999 ? "f* Q\n" : "f*\n");
             }
             if (pen.Stroke != null && pen.Segments.Count > 0)
             {

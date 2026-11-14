@@ -423,6 +423,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             new("height", "Height", "length", Min: 0.1),
             new("baseOffset", "Base offset", "length"),
             new("fillColor", "Own colour", "color"),
+            // Its own colour's opacity (forum #79), 0–100 %; absent: its scheme entry's.
+            new("fillOpacity", "Own opacity %", "number", Min: 0, Max: 100),
             new("fillHatch", "Own hatch", "text"),
             new("hatchScale", "Hatch scale", "number", Min: 0.01, Max: 100),
             new("hatchColor", "Hatch colour", "color"),

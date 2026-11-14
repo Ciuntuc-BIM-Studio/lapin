@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using Lapin.Architecture;
 using Lapin.Drafting;
 using Lapin.Drawing;
+using Lapin.Drawing.Export;
 using Lapin.Drawing.Hatch;
 using Lapin.Drawing.Views;
 using Lapin.Geometry;
@@ -228,6 +229,57 @@ public sealed class RoomTests : IDisposable
         // A room's own colour wins over its scheme's.
         f.Run("element.update", new JsonObject { ["id"] = bedroom, ["attrs"] = new JsonObject { ["fillColor"] = "#123456" } });
         Assert.Contains(Render(f, plan).Pens, p => p.Layer == "ROOM-FILL" && p.Fill == "#123456");
+    }
+
+    [Fact]
+    public void A_scheme_entry_s_opacity_is_carried_by_the_plan_s_fill_the_legend_svg_and_pdf()
+    {
+        // Forum #79: room colours with an opacity, for dark screens; the drawing carries #rrggbbaa.
+        var (f, kitchen, bedroom, plan) = Flat();
+        f.Run("architecture.viewColorScheme", new JsonObject { ["viewId"] = plan, ["schemeId"] = "by-function" });
+        f.Run("architecture.setColorSchemeEntry", new JsonObject { ["id"] = "by-function", ["value"] = "Kitchen", ["opacity"] = 50 });
+        Assert.Equal(50, ColorSchemes.Find(f.Model, "by-function")!.Entry("Kitchen")!.Opacity);
+        var fills = Render(f, plan).Pens.Where(p => p.Layer == "ROOM-FILL").ToList();
+        Assert.Contains(fills, p => p.Fill == "#f4c7a180"); // the kitchen, half seen
+        Assert.Contains(fills, p => p.Fill == "#a7c7e7");   // the bedroom, opaque
+        // A room's own opacity goes before its entry's; 100 is opaque.
+        f.Run("element.update", new JsonObject { ["id"] = bedroom, ["attrs"] = new JsonObject { ["fillOpacity"] = 25 } });
+        Assert.Contains(Render(f, plan).Pens, p => p.Layer == "ROOM-FILL" && p.Fill == "#a7c7e740");
+        f.Run("element.update", new JsonObject { ["id"] = kitchen, ["attrs"] = new JsonObject { ["fillOpacity"] = 100 } });
+        Assert.Contains(Render(f, plan).Pens, p => p.Layer == "ROOM-FILL" && p.Fill == "#f4c7a1");
+        // Cleared (null), the entry's opacity is opaque again; the entry keeps none when 100 is given.
+        f.Run("architecture.setColorSchemeEntry", new JsonObject { ["id"] = "by-function", ["value"] = "Kitchen", ["opacity"] = 100 });
+        Assert.Null(ColorSchemes.Find(f.Model, "by-function")!.Entry("Kitchen")!.Opacity);
+        f.Run("architecture.setColorSchemeEntry", new JsonObject { ["id"] = "by-function", ["value"] = "Bedroom", ["opacity"] = 40 });
+        Assert.Equal("#a7c7e766", ColorSchemes.Find(f.Model, "by-function")!.Entry("Bedroom")!.Fill);
+        f.Run("architecture.setColorSchemeEntry", new JsonObject { ["id"] = "by-function", ["value"] = "Bedroom", ["opacity"] = null });
+        Assert.Null(ColorSchemes.Find(f.Model, "by-function")!.Entry("Bedroom")!.Opacity);
+
+        // The colour reads through it everywhere a colour is read.
+        Assert.Equal((0xf4, 0xc7, 0xa1), HexColor.Bytes("#f4c7a180"));
+        Assert.Equal(128 / 255.0, HexColor.Alpha("#f4c7a180"), 6);
+        Assert.Equal(1, HexColor.Alpha("#f4c7a1"));
+        Assert.Equal("#f4c7a1", HexColor.Opaque("#f4c7a180"));
+        Assert.Equal("#f4c7a1", HexColor.WithAlpha("#f4c7a1", 1));
+
+        // SVG: the colour and its fill-opacity; PDF: the fill through a graphics state of that alpha.
+        var pen = new Pen("ROOM-FILL", null, 0, "#f4c7a180", null);
+        pen.Loops.Add([new Vec2(10, 10), new Vec2(50, 10), new Vec2(50, 40)]);
+        var svg = SvgWriter.Write(new PaperPage(100, 100, [pen]));
+        Assert.Contains("fill=\"#f4c7a1\" fill-opacity=\"0.5\"", svg);
+        var pdf = PdfWriter.Write([new PaperPage(100, 100, [pen])]);
+        var text = System.Text.Encoding.Latin1.GetString(pdf);
+        Assert.Contains("/ExtGState << /GS0 << /ca 0.502 /CA 0.502 >> >>", text);
+        var at = text.IndexOf("stream\n", StringComparison.Ordinal) + 7;
+        var length = int.Parse(System.Text.RegularExpressions.Regex.Match(text, @"/Length (\d+) /Filter /FlateDecode").Groups[1].Value);
+        using var z = new System.IO.Compression.ZLibStream(new MemoryStream(pdf, at, length), System.IO.Compression.CompressionMode.Decompress);
+        var content = new StreamReader(z, System.Text.Encoding.Latin1).ReadToEnd();
+        Assert.Contains("q /GS0 gs", content);
+        Assert.Contains("f* Q", content);
+        // An opaque fill has no graphics state.
+        var opaque = new Pen("ROOM-FILL", null, 0, "#f4c7a1", null);
+        opaque.Loops.Add([new Vec2(10, 10), new Vec2(50, 10), new Vec2(50, 40)]);
+        Assert.DoesNotContain("/ExtGState", System.Text.Encoding.Latin1.GetString(PdfWriter.Write([new PaperPage(100, 100, [opaque])])));
     }
 
     [Fact]

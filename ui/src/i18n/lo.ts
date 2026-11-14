@@ -3570,6 +3570,11 @@ export const LO: Record<string, string> = {
   "Suppress trailing zeros": "ຕັດເລກສູນທ້າຍອອກ",
   "Dimension values drop their trailing zeros (2.500 → 2.5, 3.000 → 3), unless a dimension style keeps them": "ຄ່າຂະໜາດຕັດເລກສູນທ້າຍອອກ (2.500 → 2.5, 3.000 → 3), ເວັ້ນແຕ່ຮູບແບບຂະໜາດຈະເກັບໄວ້",
   "as the project": "ຕາມໂຄງການ",
+  "How much of the colour covers what is under it: 100 % opaque, less lets the plan's lines show through (dark screens)": "ສີປົກຄຸມສິ່ງທີ່ຢູ່ລຸ່ມຫຼາຍປານໃດ: 100 % ທຶບ, ໜ້ອຍກວ່າໃຫ້ເສັ້ນຂອງແຜນຜັງເຫັນຜ່ານໄດ້ (ໜ້າຈໍມືດ)",
+  "Opacity of the fill colour, 0–100 %; empty: opaque": "ຄວາມທຶບຂອງສີພື້ນ, 0–100 %; ວ່າງ: ທຶບ",
+  "How much of the room's colour covers the plan under it, 0–100 %; empty: as its scheme says": "ສີຂອງຫ້ອງປົກຄຸມແຜນຜັງລຸ່ມຫຼາຍປານໃດ, 0–100 %; ວ່າງ: ຕາມແຜນສີຂອງມັນ",
+  "Own opacity": "ຄວາມທຶບຂອງຕົນເອງ",
+  "Own opacity %": "ຄວາມທຶບຂອງຕົນເອງ %",
 };
 
 /** Phrases with a number or a name in them. */

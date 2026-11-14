@@ -21,7 +21,7 @@ Selectezi o încăpere cu un clic pe eticheta ei sau oriunde în interiorul ei. 
 - **Nume** și **Număr.** Încăperile noi sunt numerotate pe niveluri: 101, 102… la parter. Numele încăperii e cel al funcțiunii până îi dai unul al tău; golit, revine la funcțiune.
 - **Funcțiune**, **Departament** și **Finisajul pardoselii.** Scrii ce vrei sau alegi o valoare pe care o au deja alte încăperi.
 - **Înălțime.** Gol înseamnă înălțimea nivelului.
-- **Culoare proprie** și **Hașură proprie** înlocuiesc schema de culori doar pentru această încăpere.
+- **Culoare proprie** și **Hașură proprie** înlocuiesc schema de culori doar pentru această încăpere, iar **Opacitate proprie** opacitatea culorii ei (gol: ca în schemă).
 
 Cantitățile de dedesubt arată aria netă a încăperii (fără stâlpi), perimetrul și volumul ei. Ca să muți eticheta, trage de punctul de pe ea.
 
@@ -59,7 +59,7 @@ Un rând poate arăta și parametrii proprii ai încăperii, ai nivelului ei și
 
 **Vedere → Culorile încăperilor** colorează încăperile unui plan. Alege o schemă, alege în **Colorează după** ce anume colorează (**Funcțiune**, **Nume**, **Departament**, **Număr** sau **Finisajul pardoselii**) și alege schema la **Planul acesta arată**. Fiecare valoare pe care o au încăperile primește un rând cu:
 
-- o **Culoare**,
+- o **Culoare** și **Opacitatea** ei (0–100 %; gol înseamnă opacă): sub 100 % liniile planului se văd prin ea, ceea ce ține planul ușor de citit pe fundalul întunecat al temei închise,
 - o **Hașură** din modelele proiectului, cu scara ei (**Scalează**) și culoarea liniilor (**Cerneală**),
 - și o previzualizare a felului în care arată.
 
@@ -67,7 +67,7 @@ Un rând poate arăta și parametrii proprii ai încăperii, ai nivelului ei și
 
 ![Dialogul Culorile încăperilor](shots/room-colors.webp)
 
-Culorile se desenează sub pereți, sub mobilier și sub deschiderile ușilor, așa că planul rămâne ușor de citit. Se tipăresc pe planșe și intră în exporturile PDF și DXF. Un plan nou nu arată culorile încăperilor până nu îi alegi o schemă, în **Culorile încăperilor** sau în proprietățile planului.
+Culorile se desenează sub pereți, sub mobilier și sub deschiderile ușilor, așa că planul rămâne ușor de citit. Se tipăresc pe planșe și intră în exporturile PDF și DXF; PDF-ul le păstrează opacitatea, DXF-ul le desenează opace. Un plan nou nu arată culorile încăperilor până nu îi alegi o schemă, în **Culorile încăperilor** sau în proprietățile planului.
 
 ## Legenda culorilor
 

@@ -3511,6 +3511,11 @@ export const DA: Record<string, string> = {
   "Suppress trailing zeros": "Udelad afsluttende nuller",
   "Dimension values drop their trailing zeros (2.500 → 2.5, 3.000 → 3), unless a dimension style keeps them": "Målværdier udelader deres afsluttende nuller (2.500 → 2.5, 3.000 → 3), medmindre en målstil beholder dem",
   "as the project": "som projektet",
+  "How much of the colour covers what is under it: 100 % opaque, less lets the plan's lines show through (dark screens)": "Hvor meget farven dækker det under den: 100 % uigennemsigtig, mindre lader tegningens linjer skinne igennem (mørke skærme)",
+  "Opacity of the fill colour, 0–100 %; empty: opaque": "Fyldfarvens opacitet, 0–100 %; tom: uigennemsigtig",
+  "How much of the room's colour covers the plan under it, 0–100 %; empty: as its scheme says": "Hvor meget rummets farve dækker tegningen under den, 0–100 %; tom: som dets skema siger",
+  "Own opacity": "Egen opacitet",
+  "Own opacity %": "Egen opacitet %",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

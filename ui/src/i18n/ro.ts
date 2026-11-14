@@ -3512,6 +3512,11 @@ export const RO: Record<string, string> = {
   "Suppress trailing zeros": "Suprimă zerourile de la final",
   "Dimension values drop their trailing zeros (2.500 → 2.5, 3.000 → 3), unless a dimension style keeps them": "Valorile cotelor își lasă deoparte zerourile de la final (2.500 → 2.5, 3.000 → 3), dacă un stil de cotă nu le păstrează",
   "as the project": "ca proiectul",
+  "How much of the colour covers what is under it: 100 % opaque, less lets the plan's lines show through (dark screens)": "Cât acoperă culoarea din ce e sub ea: 100 % opacă, mai puțin lasă liniile planului să se vadă prin ea (ecrane întunecate)",
+  "Opacity of the fill colour, 0–100 %; empty: opaque": "Opacitatea culorii de umplere, 0–100 %; gol: opacă",
+  "How much of the room's colour covers the plan under it, 0–100 %; empty: as its scheme says": "Cât acoperă culoarea încăperii din planul de sub ea, 0–100 %; gol: cum spune schema ei",
+  "Own opacity": "Opacitate proprie",
+  "Own opacity %": "Opacitate proprie %",
 };
 
 /** Phrases with a number or a name in them. */

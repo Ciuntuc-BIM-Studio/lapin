@@ -3519,6 +3519,11 @@ export const IT: Record<string, string> = {
   "Suppress trailing zeros": "Sopprimi zeri finali",
   "Dimension values drop their trailing zeros (2.500 → 2.5, 3.000 → 3), unless a dimension style keeps them": "I valori delle quote omettono i loro zeri finali (2.500 → 2.5, 3.000 → 3), a meno che uno stile di quota li mantenga",
   "as the project": "come il progetto",
+  "How much of the colour covers what is under it: 100 % opaque, less lets the plan's lines show through (dark screens)": "Quanto il colore copre ciò che sta sotto: 100 % opaco, meno lascia vedere le linee della pianta (schermi scuri)",
+  "Opacity of the fill colour, 0–100 %; empty: opaque": "Opacità del colore di riempimento, 0–100 %; vuoto: opaco",
+  "How much of the room's colour covers the plan under it, 0–100 %; empty: as its scheme says": "Quanto il colore del locale copre la pianta sotto, 0–100 %; vuoto: come dice il suo schema",
+  "Own opacity": "Opacità propria",
+  "Own opacity %": "Opacità propria %",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

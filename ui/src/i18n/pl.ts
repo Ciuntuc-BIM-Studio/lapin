@@ -3517,6 +3517,11 @@ export const PL: Record<string, string> = {
   "Suppress trailing zeros": "Pomijaj zera końcowe",
   "Dimension values drop their trailing zeros (2.500 → 2.5, 3.000 → 3), unless a dimension style keeps them": "Wartości wymiarów pomijają zera końcowe (2.500 → 2.5, 3.000 → 3), chyba że styl wymiaru je zachowuje",
   "as the project": "jak projekt",
+  "How much of the colour covers what is under it: 100 % opaque, less lets the plan's lines show through (dark screens)": "Jak bardzo kolor zakrywa to, co pod nim: 100 % kryjący, mniej pozwala widzieć linie rzutu (ciemne ekrany)",
+  "Opacity of the fill colour, 0–100 %; empty: opaque": "Krycie koloru wypełnienia, 0–100 %; puste: kryjący",
+  "How much of the room's colour covers the plan under it, 0–100 %; empty: as its scheme says": "Jak bardzo kolor pomieszczenia zakrywa rzut pod nim, 0–100 %; puste: jak mówi jego schemat",
+  "Own opacity": "Własne krycie",
+  "Own opacity %": "Własne krycie %",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

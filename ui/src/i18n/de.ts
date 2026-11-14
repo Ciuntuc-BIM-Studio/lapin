@@ -3516,6 +3516,11 @@ export const DE: Record<string, string> = {
   "Suppress trailing zeros": "Nachkommanullen weglassen",
   "Dimension values drop their trailing zeros (2.500 → 2.5, 3.000 → 3), unless a dimension style keeps them": "Maßzahlen lassen ihre Nachkommanullen weg (2.500 → 2.5, 3.000 → 3), sofern ein Bemaßungsstil sie nicht behält",
   "as the project": "wie das Projekt",
+  "How much of the colour covers what is under it: 100 % opaque, less lets the plan's lines show through (dark screens)": "Wie sehr die Farbe verdeckt, was darunter liegt: 100 % deckend, weniger lässt die Linien des Plans durchscheinen (dunkle Bildschirme)",
+  "Opacity of the fill colour, 0–100 %; empty: opaque": "Deckkraft der Füllfarbe, 0–100 %; leer: deckend",
+  "How much of the room's colour covers the plan under it, 0–100 %; empty: as its scheme says": "Wie sehr die Farbe des Raums den Plan darunter verdeckt, 0–100 %; leer: wie sein Schema sagt",
+  "Own opacity": "Eigene Deckkraft",
+  "Own opacity %": "Eigene Deckkraft %",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

@@ -3508,6 +3508,11 @@ export const ZH: Record<string, string> = {
   "Suppress trailing zeros": "去掉尾随零",
   "Dimension values drop their trailing zeros (2.500 → 2.5, 3.000 → 3), unless a dimension style keeps them": "尺寸数值去掉尾随零（2.500 → 2.5，3.000 → 3），除非某个尺寸样式保留它们",
   "as the project": "按项目",
+  "How much of the colour covers what is under it: 100 % opaque, less lets the plan's lines show through (dark screens)": "颜色遮盖其下内容的程度：100 % 不透明，更低则可透出平面图的线条（深色屏幕）",
+  "Opacity of the fill colour, 0–100 %; empty: opaque": "填充颜色的不透明度，0–100 %；留空：不透明",
+  "How much of the room's colour covers the plan under it, 0–100 %; empty: as its scheme says": "房间颜色遮盖其下平面图的程度，0–100 %；留空：按其配色方案",
+  "Own opacity": "自身不透明度",
+  "Own opacity %": "自身不透明度 %",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [
