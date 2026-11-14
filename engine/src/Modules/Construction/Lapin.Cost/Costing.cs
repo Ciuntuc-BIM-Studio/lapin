@@ -185,7 +185,8 @@ public static class Costing
         return null;
     }
 
-    public static Entity? TypeOf(IModelView m, Entity e) => m.RelatingOf(e.Id, IfcClass.RelDefinesByType);
+    /// <summary>The element's type, whose articles price it: its own, or the file's type of a reference (<see cref="ReferenceTypes"/>).</summary>
+    public static Entity? TypeOf(IModelView m, Entity e) => ReferenceTypes.TypeOf(m, e);
 
     /// <summary>
     /// The project's phases' kinds by id (existing, construction, execution), as the phases module keeps them on the project
@@ -395,7 +396,7 @@ public static class Costing
                 if (!priced && arts.Count == 0)
                 {
                     var k = type?.Id ?? "class:" + e.Class;
-                    if (!unpriced.TryGetValue(k, out var u)) unpriced[k] = u = (type?.Id, e.Class, type?.Name is { Length: > 0 } tn ? tn : e.Class, []);
+                    if (!unpriced.TryGetValue(k, out var u)) unpriced[k] = u = (type?.Id, e.Class, type != null && ReferenceTypes.Name(type) is { Length: > 0 } tn ? tn : e.Class, []);
                     u.Elements.Add(e.Id);
                 }
             }

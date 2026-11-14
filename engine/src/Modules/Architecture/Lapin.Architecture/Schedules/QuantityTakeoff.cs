@@ -158,7 +158,7 @@ public sealed class QuantityTakeoff : IScheduleSource
                 switch (groups[i])
                 {
                     case "kind": cells[i] = KindLabel(q, e.Class); order[i] = (0, cells[i]); break;
-                    case "type": cells[i] = m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.Name is { Length: > 0 } t ? t : "—"; order[i] = (cells[i] == "—" ? 1 : 0, cells[i]); break;
+                    case "type": cells[i] = ReferenceTypes.NameOf(m, e) is { Length: > 0 } t ? t : "—"; order[i] = (cells[i] == "—" ? 1 : 0, cells[i]); break;
                     case "storey":
                         var s = Spatial.StoreyOf(m, e.Id);
                         cells[i] = s?.Name ?? "—"; order[i] = (s == null ? int.MaxValue : storeyOrder.GetValueOrDefault(s.Id), ""); break;

@@ -1311,12 +1311,15 @@ public static partial class IfcImport
             attrs["ifcClass"] = cls;
             attrs["objectType"] = Str(e[4]);
             attrs["properties"] = p.Properties;
+            // Its quantity sets in SI, by the file's units: what the takeoff and the estimate measure it by (ReferenceQuantities).
+            if (model.QuantitiesSi(e.Id, o.SkipSets == null ? null : name => o.Keeps(name)) is { Count: > 0 } quantities)
+                attrs[ReferenceQuantities.Key] = ReferenceQuantities.Write(quantities);
             attrs["shape"] = p.Shape;
             if (p.Plan2d.Count > 0) { attrs[Plan2d.Key] = Plan2d.Write(p.Plan2d, p.Sections2d, p.Elevations2d); with2d++; }
             // What the file says of it that Lapin does not model, for the export to write back as it came.
             attrs[IfcSource.Key] = p.Carried.Own;
             foreach (var r in p.Carried.Shared)
-                if (recordsPut.Add(r.Id)) Put(edit, r.Id, IfcSource.RecordClass, "IFC record", r.Attrs, null, counts: false);
+                if (recordsPut.Add(r.Id)) Put(edit, r.Id, IfcSource.RecordClass, IfcCarry.RecordName(r.Attrs) ?? ReferenceTypes.RecordDefault, r.Attrs, null, counts: false);
             Put(edit, gid, cls, Str(e[2]) ?? cls[3..], attrs, null, counts: false);
             references++;
             referencesByClass[cls] = referencesByClass.GetValueOrDefault(cls) + 1;

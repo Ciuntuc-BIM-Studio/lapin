@@ -640,6 +640,8 @@ public sealed partial class Session
         if (_store.Get(id) is not { } e) return [];
         // A body an external program made measures as a body, whatever class it was given (docs/plan-external-geometry.md).
         if (ExternalBodies.IsOwned(e)) return ExternalBodies.Quantities(e, Geometry(id), _store);
+        // A reference (its body from a file) measures by its file's quantities and its body, not by its class's native rules (ReferenceQuantities).
+        if (ReferenceQuantities.Applies(e)) return ReferenceQuantities.Quantities(e, Geometry(id), _store);
         if (_catalog.QuantitiesOf(e.Class) is not { } producer) return [];
         return producer(e, Geometry(id), _store).ToList();
     }

@@ -102,6 +102,12 @@ public static class IfcCarry
         return (own, shared);
     }
 
+    /// <summary>A type record's name (its snapshot's Name, decoded), so a reference's type is named in schedules and estimates; null for any other record.</summary>
+    public static string? RecordName(JsonObject attrs) =>
+        attrs[Snap] is JsonObject snap && ((string?)snap["t"] is { } st && (st.EndsWith("TYPE", StringComparison.Ordinal) || st.EndsWith("STYLE", StringComparison.Ordinal)))
+        && snap["a"] is JsonArray a && a.Count > 2 && (string?)a[2] is { Length: >= 2 } t && t[0] == '\'' && t[^1] == '\''
+            ? StepFile.Decode(t[1..^1].Replace("''", "'")) : null;
+
     /// <summary>A shared entity as a record: its id from the file and what it is (its GlobalId, or its content), the same at every import.</summary>
     static string? Record(StepFile f, Index ix, int id, string seed, string kind, List<Shared> into, string? services = null)
     {

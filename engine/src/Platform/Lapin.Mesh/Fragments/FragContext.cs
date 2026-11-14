@@ -100,12 +100,19 @@ public sealed class FragContext
         }
         catch (Exception ex) when (Unreadable(ex)) { }
 
+        // The quantities the modules measure (Qto_WallBaseQuantities…), a part's named after it.
+        IReadOnlyList<QuantitySet> quantities;
+        // An element its module cannot measure (a stair without its foot) goes without its quantities, as without a body it would not go at all.
+        try { quantities = session.Quantities(e.Id); }
+        catch (Exception ex) when (Unreadable(ex)) { quantities = []; }
+        // A reference's quantity sets go as quantities (typed, in SI), not again as property sets.
+        var asQuantities = ReferenceQuantities.Applies(e) ? quantities.Where(q => q.Part == null).Select(q => q.Name).ToHashSet(StringComparer.Ordinal) : [];
         var sets = new List<FragSet>();
         // The sets an imported element brought from its file (a reference's, a recognised element's), as they came.
         var imported = e.Attrs["properties"] as JsonObject ?? (e.Attrs["imported"] as JsonObject)?["properties"] as JsonObject;
         foreach (var (setName, set) in imported ?? [])
         {
-            if (set is not JsonObject props || setName == "Fragments") continue;
+            if (set is not JsonObject props || setName == "Fragments" || asQuantities.Contains(setName)) continue;
             var items = props.Where(kv => kv.Value is JsonValue).Select(kv => Single(kv.Key, kv.Value!.DeepClone(), TypeOf(kv.Value!))).ToList();
             if (items.Count > 0) sets.Add(new FragSet(setName, false, null, items));
         }
@@ -124,11 +131,6 @@ public sealed class FragContext
         }
         foreach (var (set, items) in named) if (!sets.Any(s => s.Name == set)) sets.Add(new FragSet(set, false, null, items));
         if (own.Count > 0) sets.Add(new FragSet("Lapin_Parameters", false, null, own));
-        // The quantities the modules measure (Qto_WallBaseQuantities…), a part's named after it.
-        IReadOnlyList<QuantitySet> quantities;
-        // An element its module cannot measure (a stair without its foot) goes without its quantities, as without a body it would not go at all.
-        try { quantities = session.Quantities(e.Id); }
-        catch (Exception ex) when (Unreadable(ex)) { quantities = []; }
         foreach (var q in quantities)
         {
             var items = new List<FragSetItem>();

@@ -18,6 +18,10 @@ By material, a material measured by **area** (see [Materials](materials.md)) get
 
 **Construction → Export XLSX** saves the takeoff as a workbook straight away (downloaded in a browser).
 
+## Quantities of imported elements
+
+An element imported as a reference (from IFC, Fragments or BIM Open Schema) keeps the body its file gave it, not Lapin's axis and layers, so it is not measured as a native wall or floor is. It takes its file's own quantities instead: the quantity sets the file gave it (*Qto_WallBaseQuantities*, *Qto_DoorBaseQuantities*…), converted from the file's units to metres, square metres and cubic metres. What the file does not give is measured on its body: its volume when the body is closed, and the count. Nothing else is made up: a reference whose file has no lengths or areas has none in the takeoff. Its type is the one its file gives it, so the takeoff lists it under that type's name and an estimate article set on that type prices it (see [Cost estimate](cost.md)). A project imported before this came in without its file's quantities: import the file again to get them.
+
 ## Quantities on a sheet
 
 A schedule goes on a sheet like a view, and is drawn there with all its rows and values, its totals and its charts:

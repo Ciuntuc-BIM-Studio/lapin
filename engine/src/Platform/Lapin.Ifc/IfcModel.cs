@@ -307,6 +307,51 @@ public sealed partial class IfcModel
         return o;
     }
 
+    /// <summary>
+    /// A product's quantity sets (its IfcElementQuantity) with each value in SI units: by the quantity's own unit when it
+    /// names one, else by the project's unit of its kind (a length in millimetres, an area in square metres, as the project
+    /// assigns them; SI when it assigns none). Each (set, name, kind, value): LENGTH, AREA, VOLUME, WEIGHT, COUNT, TIME.
+    /// </summary>
+    public List<(string Set, string Name, string Kind, double Value)> QuantitiesSi(int product, Func<string, bool>? keep = null)
+    {
+        var o = new List<(string, string, string, double)>();
+        foreach (var d in _definitions.GetValueOrDefault(product) ?? [])
+        {
+            if (File.Entities.GetValueOrDefault(d) is not { Type: "IFCELEMENTQUANTITY" } set) continue;
+            var setName = Str(set[2]) ?? set.Type;
+            if (keep != null && !keep(setName)) continue;
+            foreach (var q in Items(set[5]))
+            {
+                var (kind, unitType) = q.Type switch
+                {
+                    "IFCQUANTITYLENGTH" => ("LENGTH", "LENGTHUNIT"), "IFCQUANTITYAREA" => ("AREA", "AREAUNIT"), "IFCQUANTITYVOLUME" => ("VOLUME", "VOLUMEUNIT"),
+                    "IFCQUANTITYWEIGHT" => ("WEIGHT", "MASSUNIT"), "IFCQUANTITYCOUNT" => ("COUNT", null), "IFCQUANTITYTIME" => ("TIME", "TIMEUNIT"),
+                    _ => ((string?)null, (string?)null),
+                };
+                if (kind == null || Str(q[0]) is not { Length: > 0 } name || q.Args.Count < 4 || q[3] is not (double or long or StepTyped)) continue;
+                var factor = unitType == null ? 1 : File.Get(q[2]) is { } own ? UnitSize(own, 0) : ProjectUnit(unitType);
+                o.Add((setName, name, kind, Num(q[3]) * factor));
+            }
+        }
+        return o;
+    }
+
+    readonly Dictionary<string, double> _projectUnits = [];
+
+    /// <summary>The size in SI of the project's unit of a type (LENGTHUNIT, AREAUNIT…): 1 when it assigns none.</summary>
+    double ProjectUnit(string unitType)
+    {
+        lock (_projectUnits)
+        {
+            if (_projectUnits.TryGetValue(unitType, out var known)) return known;
+            var project = File.OfType("IFCPROJECT").FirstOrDefault() ?? File.OfType("IFCPROJECTLIBRARY").FirstOrDefault();
+            var size = 1.0;
+            foreach (var u in Items(File.Get(project?[8])?[0]))
+                if ((u[1] as StepEnum)?.Value == unitType) { size = UnitSize(u, 0); break; }
+            return _projectUnits[unitType] = size;
+        }
+    }
+
     static string Text(object? v) => v switch
     {
         StepTyped { Value: StepEnum e } => e.Value switch { "T" => "yes", "F" => "no", _ => e.Value.ToLowerInvariant() },

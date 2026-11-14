@@ -69,10 +69,12 @@ public static partial class ArticleMapping
         {
             var arts = ArticleRef.Of(type);
             var core = layered && LayerSets.LayersOf(m, type.Id) is { Count: > 0 } ls ? ls.FirstOrDefault(l => l.Core) ?? ls[0] : null;
-            var text = type.Name + (core != null ? " " + m.Get(core.Material)?.Name : "");
+            // A reference's type is its file's record (ReferenceTypes): named as the file names it.
+            var typeName = ReferenceTypes.Name(type) ?? type.Name;
+            var text = typeName + (core != null ? " " + m.Get(core.Material)?.Name : "");
             var o = new JsonObject
             {
-                ["id"] = type.Id, ["name"] = type.Name, ["class"] = type.Class, ["label"] = q.Describe(type.Class)?.Label ?? type.Class,
+                ["id"] = type.Id, ["name"] = typeName, ["class"] = type.Class, ["label"] = type.Class == IfcSource.RecordClass ? "IFC type" : q.Describe(type.Class)?.Label ?? type.Class,
                 ["count"] = count, ["layered"] = layered,
                 ["articles"] = new JsonArray(arts.Select(a => (JsonNode)a.ToJson()).ToArray()),
             };

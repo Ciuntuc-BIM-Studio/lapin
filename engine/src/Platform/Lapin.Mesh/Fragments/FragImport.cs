@@ -271,8 +271,11 @@ public static class FragImport
                 var properties = new JsonObject();
                 if (props.Count > 0) properties["Fragments"] = props;
                 // Its property and quantity sets, its type and its materials, as the file relates them, shown under IFC properties as an IFC reference's.
-                Definitions(local, props, properties);
+                var quantities = new List<(string, string, string, double)>();
+                Definitions(local, props, properties, quantities, scale);
                 if (properties.Count > 0) json["properties"] = properties;
+                // Its quantities in SI (ReferenceQuantities): what the takeoff and the estimate measure it by.
+                if (quantities.Count > 0) json[ReferenceQuantities.Key] = ReferenceQuantities.Write(quantities);
                 json["fragment"] = new JsonObject { ["localId"] = local, ["category"] = category, ["model"] = modelGuid };
                 Put(edit, new Entity(id, cls, elementName, json, Text(attrs, "PredefinedType")));
                 var storeyId = storeyOfElement.TryGetValue(local, out var sl) && storeyOfLocal.TryGetValue(sl, out var st) ? st : fallback;
@@ -341,7 +344,9 @@ public static class FragImport
         /// Quantities, its type) and associates it with (HasAssociations: its materials): each set under its name in
         /// <paramref name="properties"/>, the type's and materials' names with the item's own attributes.
         /// </summary>
-        void Definitions(uint local, JsonObject attributes, JsonObject properties)
+        /// <remarks><paramref name="quantities"/> takes each quantity in SI: its kind by the value it holds, a length in the file's unit by
+        /// <paramref name="scale"/> (the one its storeys' levels are read in), an area by its square, a volume by its cube.</remarks>
+        void Definitions(uint local, JsonObject attributes, JsonObject properties, List<(string Set, string Name, string Kind, double Value)> quantities, double scale)
         {
             var rels = model.RelationsOf(local);
             foreach (var def in rels.GetValueOrDefault("IsDefinedBy") ?? [])
@@ -364,8 +369,17 @@ public static class FragImport
                     if (!itemOf.TryGetValue(v, out var vi)) continue;
                     var va = model.AttributesOf(vi);
                     if (Text(va, "Name") is not { Length: > 0 } name) continue;
-                    var value = va.FirstOrDefault(kv => kv.Key is "NominalValue" or "LengthValue" or "AreaValue" or "VolumeValue" or "CountValue" or "WeightValue" or "TimeValue").Value;
+                    var (key, value) = va.FirstOrDefault(kv => kv.Key is "NominalValue" or "LengthValue" or "AreaValue" or "VolumeValue" or "CountValue" or "WeightValue" or "TimeValue");
                     if (value is JsonValue) set[name] = value.DeepClone();
+                    if (category == "IFCELEMENTQUANTITY" && value is JsonValue && Json.Number(value) is { } number)
+                    {
+                        (string Kind, double Factor)? measure = key switch
+                        {
+                            "LengthValue" => ("LENGTH", scale), "AreaValue" => ("AREA", scale * scale), "VolumeValue" => ("VOLUME", scale * scale * scale),
+                            "CountValue" => ("COUNT", 1), "WeightValue" => ("WEIGHT", 1), "TimeValue" => ("TIME", 1), _ => null,
+                        };
+                        if (measure is var (kind, factor)) quantities.Add((setName, name, kind, number * factor));
+                    }
                 }
                 if (set.Count > 0) properties[setName] = set;
             }

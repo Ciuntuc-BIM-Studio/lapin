@@ -18,6 +18,10 @@ Pe material, un material măsurat după **arie** (vezi [Materiale](materials.md)
 
 **Execuție → Export XLSX** salvează direct antemăsurătoarea ca registru de calcul (în browser se descarcă).
 
+## Cantitățile elementelor importate
+
+Un element importat ca referință (din IFC, Fragments sau BIM Open Schema) păstrează corpul dat de fișierul lui, nu axa și straturile Lapin, așa că nu se măsoară ca un perete sau o placă nativă. Primește în schimb cantitățile fișierului: seturile de cantități date de fișier (*Qto_WallBaseQuantities*, *Qto_DoorBaseQuantities*…), aduse din unitățile fișierului în metri, metri pătrați și metri cubi. Ce nu dă fișierul se măsoară pe corp: volumul, când corpul e închis, și numărul. Nimic altceva nu e inventat: o referință al cărei fișier nu are lungimi sau arii nu are nici în antemăsurătoare. Tipul ei e cel dat de fișier, așa că antemăsurătoarea o listează sub numele acelui tip, iar un articol de deviz pus pe acel tip o evaluează (vezi [Devizul](cost.md)). Un proiect importat înainte de asta a venit fără cantitățile fișierului: importă din nou fișierul ca să le ai.
+
 ## Cantitățile pe planșă
 
 Un extras se pune pe planșă ca o vedere și e desenat acolo cu toate rândurile și valorile, totalurile și graficele lui:

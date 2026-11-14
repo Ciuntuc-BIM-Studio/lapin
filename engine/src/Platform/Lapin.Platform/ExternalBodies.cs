@@ -376,8 +376,7 @@ public static class ExternalBodies
         if (g == null || g.Parts.Count == 0) return [];
         var parts = g.Parts.Select(p => p.Solid).ToList();
         // Its body: the shared one it is an instance of, or its own (a mirrored copy, or one read back from IFC).
-        var stored = StoredBodies.InstanceOf(e) is var (bodyId, _) ? m.Get(bodyId)?.Attrs[StoredBodies.Key] as JsonObject : e.Attrs[StoredBodies.Key] as JsonObject;
-        var closed = stored != null && ClosedStored(stored);
+        var closed = HasClosedBody(e, m);
         var area = parts.Sum(Measure.SurfaceArea);
         var boxes = parts.Select(Measure.Bounds).OfType<(Vec3 Min, Vec3 Max)>().ToList();
         var q = new List<Quantity>();
@@ -396,6 +395,13 @@ public static class ExternalBodies
             q.Add(new("Height", hi.Z - lo.Z, "LENGTH", "Height"));
         }
         return [new QuantitySet("BaseQuantities", q)];
+    }
+
+    /// <summary>Whether an element's stored body (the shared one it is an instance of, or its own) is closed in all its parts, so its volume is one.</summary>
+    public static bool HasClosedBody(Entity e, IModelView m)
+    {
+        var stored = StoredBodies.InstanceOf(e) is var (bodyId, _) ? m.Get(bodyId)?.Attrs[StoredBodies.Key] as JsonObject : e.Attrs[StoredBodies.Key] as JsonObject;
+        return stored != null && ClosedStored(stored);
     }
 
     static readonly System.Runtime.CompilerServices.ConditionalWeakTable<JsonObject, object> _closed = [];

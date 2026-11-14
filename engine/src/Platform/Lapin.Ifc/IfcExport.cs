@@ -1901,7 +1901,7 @@ public static partial class IfcExport
             foreach (var (key, v) in e.Attrs)
             {
                 // A stored body (a reference from IFC) is written as geometry, not as text; the project's standards stay in .lapin.
-                if (v == null || key == StoredBodies.Key || key == StoredBodies.SolidBodyKey || key == StoredBodies.BodyOf || key == StoredBodies.XfKey || StoredBodies.ExportOnly.Contains(key) || key == Plan2d.Key || key == IfcSource.Key || key == ReferenceLayers.AxisKey || key == ReferenceLayers.PartOfKey || privateKeys.Contains(key) || (only != null && !only.Contains(key))) continue;
+                if (v == null || key == StoredBodies.Key || key == StoredBodies.SolidBodyKey || key == StoredBodies.BodyOf || key == StoredBodies.XfKey || StoredBodies.ExportOnly.Contains(key) || key == Plan2d.Key || key == IfcSource.Key || key == ReferenceQuantities.Key || key == ReferenceLayers.AxisKey || key == ReferenceLayers.PartOfKey || privateKeys.Contains(key) || (only != null && !only.Contains(key))) continue;
                 // A foreign element's properties go as the sets its file had, not as text.
                 if (key == "properties" && e.Attrs[IfcSource.Key] != null) continue;
                 var field = fields.GetValueOrDefault(key);
@@ -1929,6 +1929,8 @@ public static partial class IfcExport
         void Quantities(Entity e, string entity, bool grouped)
         {
             var carried = e.Attrs[IfcSource.Key] is JsonObject src ? IfcCarry.Writer.SetNames(src).ToHashSet() : [];
+            // A reference from an IFC file goes back with its file's quantity sets only (carried): what Lapin measured on its body is not the file's.
+            if (e.Attrs[IfcSource.Key] != null && ReferenceQuantities.Applies(e)) return;
             foreach (var set in s.Quantities(e.Id))
             {
                 if (carried.Contains(set.Name)) continue;

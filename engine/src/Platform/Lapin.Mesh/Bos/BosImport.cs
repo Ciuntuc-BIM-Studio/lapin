@@ -398,8 +398,10 @@ public static class BosImport
                     if (parts.Count == 0) { skipped++; continue; }
                     json[StoredBodies.Key] = Stored(edit, parts);
                 }
-                var (properties, predefined) = Properties(e);
+                var (properties, predefined, quantities) = Properties(e);
                 if (properties.Count > 0) json["properties"] = properties;
+                // Its quantities in SI (ReferenceQuantities): what the takeoff and the estimate measure it by.
+                if (quantities.Count > 0) json[ReferenceQuantities.Key] = ReferenceQuantities.Write(quantities);
                 var ent = d.Entities[e];
                 json["bos"] = new JsonObject { ["entity"] = e, ["localId"] = ent.LocalId, ["category"] = v.Category[e], ["sourceId"] = v.SourceId(e) };
                 Put(edit, new Entity(id, cls, v.Name(e) ?? cls[3..], json, predefined));
@@ -486,8 +488,10 @@ public static class BosImport
         /// An entity's parameters as property sets: a set per group; an IFC attribute (<c>Ifc:Name</c> grouped by its class) under
         /// Attributes; a Revit parameter (<c>Rvt:Scope:Name</c>) by its last name. Its type's and materials' names with the attributes.
         /// </summary>
-        (JsonObject Properties, string? Predefined) Properties(int e)
+        /// <remarks>A quantity set's value (Qto_…, …Quantities) with units it names is also kept in SI, its kind by its unit (<see cref="QuantityUnit"/>).</remarks>
+        (JsonObject Properties, string? Predefined, List<(string Set, string Name, string Kind, double Value)> Quantities) Properties(int e)
         {
+            var quantities = new List<(string, string, string, double)>();
             var properties = new JsonObject();
             var attributes = new JsonObject();
             string? predefined = null;
@@ -510,6 +514,8 @@ public static class BosImport
                 if (key == "PredefinedType" && node is JsonValue pv && pv.TryGetValue<string>(out var p)) predefined = p.Trim('.');
                 var target = set == "Attributes" ? attributes : (properties[set] as JsonObject ?? (JsonObject)(properties[set] = new JsonObject()));
                 target[key] = node;
+                if (set != "Attributes" && IsQuantitySet(set) && Json.Number(node) is { } number && QuantityUnit(units) is var (kind, factor))
+                    quantities.Add((set, key, kind, number * factor));
             }
             if (d.Entities[e].Type is var t && t >= 0 && t < d.Entities.Count && v.Name(t) is { } typeName) attributes["Type"] = typeName;
             var materials = new List<string>();
@@ -522,7 +528,23 @@ public static class BosImport
             }
             if (materials.Count > 0) attributes["Material"] = string.Join(", ", materials.Distinct());
             if (attributes.Count > 0) properties["Attributes"] = attributes;
-            return (properties, predefined);
+            return (properties, predefined, quantities);
+        }
+
+        static bool IsQuantitySet(string set) => set.StartsWith("Qto_", StringComparison.Ordinal) || set.EndsWith("Quantities", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>A quantity's kind and its unit's size in SI, from the units the file names (m, mm, m², m3, kg…); null for a unit not known (the value is not guessed at).</summary>
+        static (string Kind, double Factor)? QuantityUnit(string? units)
+        {
+            if (string.IsNullOrWhiteSpace(units)) return null;
+            var u = units.Trim().Replace("^", "").Replace("²", "2").Replace("³", "3").ToLowerInvariant();
+            (string, double)? Length(string x) => x switch { "m" => ("LENGTH", 1), "mm" => ("LENGTH", 1e-3), "cm" => ("LENGTH", 1e-2), "dm" => ("LENGTH", 0.1), "km" => ("LENGTH", 1e3), "ft" => ("LENGTH", 0.3048), "in" => ("LENGTH", 0.0254), _ => null };
+            if (u is "kg") return ("WEIGHT", 1);
+            if (u is "g") return ("WEIGHT", 1e-3);
+            if (u is "t") return ("WEIGHT", 1e3);
+            if (u.EndsWith('2') && Length(u[..^1]) is var (_, f2)) return ("AREA", f2 * f2);
+            if (u.EndsWith('3') && Length(u[..^1]) is var (_, f3)) return ("VOLUME", f3 * f3 * f3);
+            return Length(u);
         }
 
         Dictionary<int, List<int>>? relationsOf;
