@@ -6,14 +6,15 @@
  * Every change one undo step.
  */
 
-import { Fragment } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Fragment, useState } from 'react';
+import { RefreshCw, Trash2, X } from 'lucide-react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute } from '../../engine/session';
 import { select } from '../../app/store';
 import { costText, linkLabel, parsePercent, percentText, showDate, varianceText, type LinkType, type TaskDto } from './gantt';
-import { openGantt, taskOf, useSchedule } from './schedule';
+import { openGantt, retimeFromFields, taskOf, useSchedule } from './schedule';
 import { quantityText } from './generator';
+import { FieldPicker } from '../../shell/FieldPicker';
 
 /** IFC's kinds of task (IfcTaskTypeEnum) and how the interface names them. */
 const KINDS: [string, string][] = [['', '(not set)'], ['CONSTRUCTION', 'Construction'], ['DEMOLITION', 'Demolition'], ['INSTALLATION', 'Installation'], ['RENOVATION', 'Renovation'],
@@ -51,6 +52,21 @@ export function TaskSection({ node }: { node: NodeDto }) {
         {t.durationFrom === 'default' && t.gen && <>
           <dt title="The elements' quantity × the norm's man-hours per unit ÷ (crew × hours a day)">Duration from</dt>
           <dd className="muted small">the step's days (no norm)</dd>
+        </>}
+        {!t.milestone && <>
+          <dt title="Read from each of its elements and added up: a field, or a formula (= Firma.Volum * 1.05). The days of the elements, rounded up.">Duration from field</dt>
+          <dd data-testid="task-duration-field"><FieldOrFormula value={t.durationField} onSet={(v) => update(t.id, { durationField: v })} testId="task-duration-field-picker" /></dd>
+          <dt title="Instead of the built-in measure, under the norm: a field, or a formula">Quantity from field</dt>
+          <dd data-testid="task-quantity-field"><FieldOrFormula value={t.quantityField} onSet={(v) => update(t.id, { quantityField: v })} testId="task-quantity-field-picker" /></dd>
+          <dt title="Its norm's code (Planning → Generate schedule… → Durations lists the norms)">Norm</dt>
+          <dd><input key={`${t.id}:${t.norm ?? ''}`} defaultValue={t.norm ?? ''} data-no-i18n data-testid="task-norm" placeholder="(none)" onBlur={(e) => e.target.value.trim() !== (t.norm ?? '') && update(t.id, { norm: e.target.value.trim() || null })} /></dd>
+          <dt title="People working together">Crew</dt>
+          <dd><input key={`${t.id}:${t.crew ?? ''}`} type="number" min={0} step={1} defaultValue={t.crew ?? ''} data-testid="task-crew"
+            onBlur={(e) => { const n = Math.round(Number(e.target.value)); const v = e.target.value.trim() === '' ? null : n; if (v === null ? t.crew != null : Number.isFinite(n) && n !== t.crew) update(t.id, { crew: v }); }} /></dd>
+        {(t.durationField || t.quantityField) && <>
+          <dt />
+          <dd><button type="button" className="link" title="Every task with a duration or quantity from a field, worked out again from the model as it is now" onClick={() => void retimeFromFields()} data-testid="task-retime"><RefreshCw size={12} />Retime from fields</button></dd>
+        </>}
         </>}
         <dt>Milestone</dt>
         <dd><input type="checkbox" checked={t.milestone} onChange={(e) => update(t.id, { milestone: e.target.checked })} /></dd>
@@ -110,6 +126,23 @@ export function TaskSection({ node }: { node: NodeDto }) {
       <dt />
       <dd><button type="button" className="link" onClick={openGantt}>Show in the Gantt</button></dd>
     </dl>
+  );
+}
+
+/** A field picked, or a formula typed (starting with =); empty takes it off. */
+function FieldOrFormula({ value, onSet, testId }: { value?: string; onSet: (v: string | null) => void; testId: string }) {
+  const [typing, setTyping] = useState(false);
+  const formula = typing || (value ?? '').startsWith('=');
+  return (
+    <span className="field-or-formula">
+      {formula
+        ? <input key={value} autoFocus={typing} defaultValue={value ?? '= '} data-no-i18n data-testid={`${testId}-formula`}
+          onBlur={(e) => { setTyping(false); const v = e.target.value.trim(); if (v !== (value ?? '') && v !== '=') onSet(v || null); }}
+          onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
+        : <FieldPicker value={value ?? ''} onPick={(t) => onSet(t)} placeholder="(none)" testId={testId} />}
+      {!value && !typing && <button type="button" className="link small" title="Type a formula such as = Firma.Volum * 1.05" onClick={() => setTyping(true)}>formula</button>}
+      {value && <button type="button" className="icon mini" title="Take it off" onClick={() => onSet(null)}><X size={11} /></button>}
+    </span>
   );
 }
 

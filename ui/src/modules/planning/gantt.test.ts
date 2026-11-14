@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  arrowPoints, barOf, dateOf, dayOf, dragDays, endAt, fitScale, linkLabel, linkType, movedFinish, movedStart, parseDate, rowWindow, showDate,
+  arrowPoints, barOf, dateOf, groupRows, dayOf, dragDays, endAt, fitScale, linkLabel, linkType, movedFinish, movedStart, parseDate, rowWindow, showDate,
   span, ticks, tierOf, visibleRows, weekday, workingDaysBetween, workingTest, type CalendarDto, type TaskDto,
 } from './gantt';
 
@@ -126,5 +126,23 @@ describe('the rows and bars', () => {
     expect(rowWindow(0, 240, 24, 5000)).toEqual([0, 16]);
     expect(rowWindow(24 * 1000, 240, 24, 5000)).toEqual([994, 1016]);
     expect(rowWindow(24 * 4995, 240, 24, 5000)).toEqual([4989, 4999]);
+  });
+});
+
+describe('the window grouped by a field', () => {
+  const f = (v: string | null) => ({ fields: { Zona: v } });
+  const tasks = [
+    task('s', null, '2026-11-02', '2026-11-20', { summary: true }),
+    task('a', 's', '2026-11-02', '2026-11-06', f('A')), task('b', 's', '2026-11-09', '2026-11-13', f('B')),
+    task('c', 's', '2026-11-16', '2026-11-20', f(null)), task('d', 's', '2026-11-04', '2026-11-10', f('A')),
+  ];
+  it('puts each group under a header covering its tasks, those without a value last, summaries left out', () => {
+    const rows = groupRows(tasks, 'Zona', new Set(), 'none');
+    expect(rows.map((r) => r.id)).toEqual(['group:A', 'a', 'd', 'group:B', 'b', 'group:', 'c']);
+    expect(rows[0]).toMatchObject({ header: true, name: 'A', start: '2026-11-02', finish: '2026-11-10' });
+    expect(rows[5].name).toBe('none');
+  });
+  it('shows a collapsed group by its header only', () => {
+    expect(groupRows(tasks, 'Zona', new Set(['group:A']), 'none').map((r) => r.id)).toEqual(['group:A', 'group:B', 'b', 'group:', 'c']);
   });
 });

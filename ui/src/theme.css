@@ -2695,3 +2695,22 @@ path.part-flex-ghost { fill: none; stroke: var(--accent); stroke-width: 1.6; str
 .alias-row { width: 100%; display: grid; grid-template-columns: 140px 1fr 200px auto; gap: 8px; align-items: start; padding: 4px 0; border-bottom: 1px solid var(--rule); }
 .alias-row.bad .alias-name { outline: 1px solid var(--danger, #c0392b); }
 .alias-sources { display: grid; gap: 3px; justify-items: start; }
+
+/* Gantt display by fields (docs/plan-user-extensibility.md §12.4) */
+.gantt-bar.coloured.critical { stroke: var(--gantt-critical); stroke-width: 2; }
+.gantt-display-anchor { display: inline-flex; }
+.rule-condition .fs-rows { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.rule-condition .fs-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.rule-condition .fs-row input, .rule-condition .fs-row select { width: auto; max-width: 120px; }
+.gantt-display { position: fixed; z-index: 60; max-height: calc(100vh - 120px); width: 320px; max-height: 70vh; overflow: auto; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 8px 10px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; gap: 6px; }
+.gantt-display .gd-row { display: flex; align-items: center; gap: 6px; }
+.gantt-display .gd-row .eyebrow { min-width: 64px; }
+.gantt-display .gd-columns { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.gantt-display .gd-legend { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.gantt-display .gd-swatch { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; }
+.gantt-display .gd-swatch input[type="color"] { width: 22px; height: 18px; padding: 0; border: 1px solid var(--rule); background: none; }
+.gantt-display .gd-foot { display: flex; justify-content: space-between; }
+.gantt-legend { display: flex; flex-wrap: wrap; gap: 2px 12px; padding: 3px 10px; font-size: 11px; border-bottom: 1px solid var(--rule); }
+.gantt-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+.gen-fields { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+.field-or-formula { display: inline-flex; align-items: center; gap: 4px; }

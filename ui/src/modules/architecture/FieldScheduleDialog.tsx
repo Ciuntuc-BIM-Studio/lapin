@@ -8,10 +8,11 @@ import { useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, Plus, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
+import { ConditionsEditor } from '../../shell/ConditionsEditor';
 import { FieldPicker } from '../../shell/FieldPicker';
 import {
-  AGGREGATES, AGGREGATE_LABELS, DIMENSIONS, NO_VALUE, OPERATORS, UNITS, cleanOptions, conditionValue, fieldValues, moved, shortToken,
-  type Condition, type FieldColumn, type FieldOptions, type Operator,
+  AGGREGATES, AGGREGATE_LABELS, DIMENSIONS, UNITS, cleanOptions, fieldValues, moved, shortToken,
+  type FieldColumn, type FieldOptions,
 } from '../../shell/fieldSchedule';
 
 /** Chips and a box that adds what is typed (or picked from the project's values). */
@@ -54,7 +55,6 @@ export function FieldScheduleDialog() {
   const columns = o.columns ?? [];
   const groupBy = o.groupBy ?? [];
   const setFilter = (patch: Partial<typeof filter>) => setO({ ...o, filter: { ...filter, ...patch } });
-  const setCondition = (i: number, patch: Partial<Condition>) => setFilter({ conditions: conditions.map((c, j) => (j === i ? { ...c, ...patch } : c)) });
   const setColumn = (i: number, patch: Partial<FieldColumn>) => setO({ ...o, columns: columns.map((c, j) => (j === i ? { ...c, ...patch } : c)) });
   const apply = async () => {
     const r = await execute('architecture.updateSchedule', { id: node.id, fields: cleanOptions(o) });
@@ -71,21 +71,7 @@ export function FieldScheduleDialog() {
           {DIMENSIONS.map((d) => (
             <Chips key={d.key} list={filter[d.key] ?? []} onChange={(l) => setFilter({ [d.key]: l })} suggest={values[d.key] ?? []} label={d.label} testId={`fs-${d.key}`} />
           ))}
-          <div className="fs-rows" data-testid="fs-conditions">
-            {conditions.map((c, i) => (
-              <div className="fs-row" key={i}>
-                <FieldPicker value={c.field} onPick={(t) => setCondition(i, { field: t })} placeholder="Field…" testId={`fs-cond-field-${i}`} />
-                <select value={c.op} aria-label="Operator" onChange={(e) => setCondition(i, { op: e.target.value as Operator })}>{OPERATORS.map((p) => <option key={p} value={p}>{p}</option>)}</select>
-                {!NO_VALUE.includes(c.op) && <>
-                  <input list={`fs-cv-${i}`} value={c.value == null ? '' : String(c.value)} placeholder="Value" aria-label="Value" onFocus={() => { if (c.field && !values[`c:${c.field}`]) void fieldValues(c.field).then((v) => setValues((x) => ({ ...x, [`c:${c.field}`]: v }))); }}
-                    onChange={(e) => setCondition(i, { value: e.target.value })} onBlur={(e) => setCondition(i, { value: conditionValue(e.target.value) })} />
-                  <datalist id={`fs-cv-${i}`}>{(values[`c:${c.field}`] ?? []).map((v) => <option key={v} value={v} />)}</datalist>
-                </>}
-                <button type="button" className="icon mini" title="Remove" onClick={() => setFilter({ conditions: conditions.filter((_, j) => j !== i) })}><Trash2 size={12} /></button>
-              </div>
-            ))}
-            <button type="button" className="btn small" data-testid="fs-add-condition" onClick={() => setFilter({ conditions: [...conditions, { field: '', op: '=', value: '' }] })}><Plus size={12} />Condition</button>
-          </div>
+          <ConditionsEditor conditions={conditions} onChange={(c) => setFilter({ conditions: c })} testPrefix="fs" />
 
           <h4 className="eyebrow">Group by</h4>
           <p className="muted small">One row for each different value of these fields, in this order. Nothing here: one row for each element.</p>

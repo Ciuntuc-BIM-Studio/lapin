@@ -13,17 +13,20 @@
 
 import { useEffect, useMemo, useRef, useState, type DragEvent as ReactDragEvent, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import {
-  CalendarDays, ChevronDown, ChevronRight, Clapperboard, Crosshair, Diamond, Flag, IndentDecrease, IndentIncrease, Link2, Maximize, Plus, Route, Trash2, Unlink2, Wand2, X,
+  CalendarDays, ChevronDown, ChevronRight, Clapperboard, Crosshair, Diamond, Flag, IndentDecrease, IndentIncrease, Link2, Maximize, Palette, Plus, RefreshCw, Route, Trash2, Unlink2, Wand2, X,
 } from 'lucide-react';
 import { select, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { useLang } from '../../i18n';
 import {
   arrowPoints, barOf, costText, baselineBarOf, dateOf, dayOf, doneBar, dragDays, endAt, fitScale, isLate, linkLabel, linkType, MAX_PX, MIN_PX, movedFinish, movedStart, namesOf, parseDate, parsePercent, percentText, varianceText,
-  rowWindow, showDate, span, ticks, tierOf, today, visibleRows, workingDaysBetween, workingTest, ZOOMS, type Bar, type LinkDto, type LinkType, type TaskDto, type Zoom,
+  groupRows, rowWindow, showDate, span, ticks, tierOf, today, visibleRows, workingDaysBetween, workingTest, ZOOMS, type Bar, type LinkDto, type LinkType, type TaskDto, type Zoom,
 } from './gantt';
-import { addTask, assignTo, deleteSelected, indent, linkSelected, outdent, selectUnlinked, showTaskElements, unlinkSelected, useSchedule } from './schedule';
+import { addTask, assignTo, deleteSelected, indent, linkSelected, outdent, retimeFromFields, selectUnlinked, showTaskElements, unlinkSelected, useSchedule } from './schedule';
 import { DRAG_TYPE, dropOf, elementIds, ruleSummary, tasksHolding } from './links';
+import { GanttDisplayPanel, GanttLegend } from './GanttDisplay';
+import { shortToken } from '../../shell/fieldSchedule';
+import { t as tr } from '../../i18n';
 import { setDay, SimulationBar, toggleSimulation, useSimulation } from './SimulationView';
 
 const ROW_H = 26;
@@ -42,12 +45,13 @@ const COLUMNS = [
   { key: 'variance', label: 'Variance', w: 58 },
   { key: 'cost', label: 'Cost', w: 72 },
 ] as const;
-type Column = (typeof COLUMNS)[number]['key'];
+type Column = string;
+type Col = { key: string; label: string; w: number; field?: string };
 /** The columns shown: the variance only with a baseline saved, the cost only with an estimate (stage 7). */
-const columnsOf = (baseline: boolean, cost: boolean) => COLUMNS.filter((c) => (baseline || c.key !== 'variance') && (cost || c.key !== 'cost'));
+const columnsOf = (baseline: boolean, cost: boolean): Col[] => COLUMNS.filter((c) => (baseline || c.key !== 'variance') && (cost || c.key !== 'cost'));
 /** The columns that leave the bars room in a narrow pane: the least needed go first while the table takes more than 60 % of the width. */
-const DROP: Column[] = ['elements', 'predecessors', 'float', 'wbs', 'variance', 'cost'];
-function fitColumns(cols: (typeof COLUMNS)[number][], width: number): (typeof COLUMNS)[number][] {
+const DROP: string[] = ['elements', 'predecessors', 'float', 'wbs', 'variance', 'cost'];
+function fitColumns(cols: Col[], width: number): Col[] {
   let o = cols;
   for (const k of DROP) {
     if (o.reduce((s, c) => s + c.w, 0) <= Math.max(360, width * 0.6)) break;
@@ -90,6 +94,8 @@ export function GanttView() {
   const [scroll, setScroll] = useState({ left: 0, top: 0 });
   const [ppd, setPpd] = useState<number>(ZOOMS.week);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [displayOpen, setDisplayOpen] = useState(false);
+  const [displayAt, setDisplayAt] = useState({ top: 80, left: 20 });
   const [critical, setCritical] = useState(true);
   const [showBaseline, setShowBaseline] = useState(true);
   const [editing, setEditing] = useState<{ id: string; col: Column } | null>(null);
@@ -112,8 +118,10 @@ export function GanttView() {
     return () => ro.disconnect();
   }, []);
 
-  const rows = useMemo(() => visibleRows(data?.tasks ?? [], collapsed), [data, collapsed]);
-  const columns = useMemo(() => fitColumns(columnsOf(!!data?.baseline, !!data?.cost), size.w), [data?.baseline, data?.cost, size.w]);
+  const display = data?.gantt ?? null;
+  const rows = useMemo(() => (display?.groupBy ? groupRows(data?.tasks ?? [], display.groupBy, collapsed, tr('(no value)')) : visibleRows(data?.tasks ?? [], collapsed)), [data, collapsed, display?.groupBy]);
+  const fieldCols = useMemo((): Col[] => (display?.columns ?? []).map((f) => ({ key: `f:${f}`, label: shortToken(f), w: 96, field: f })), [display?.columns]);
+  const columns = useMemo(() => [...fitColumns(columnsOf(!!data?.baseline, !!data?.cost), size.w - fieldCols.length * 96), ...fieldCols], [data?.baseline, data?.cost, size.w, fieldCols]);
   const TABLE_W = columns.reduce((s, c) => s + c.w, 0);
   const rowOf = useMemo(() => new Map(rows.map((t, i) => [t.id, i])), [rows]);
   const range = useMemo(() => (data ? span(data) : { from: today() - 7, to: today() + 90 }), [data]);
@@ -178,6 +186,7 @@ export function GanttView() {
     const t = rows[i];
     (e.target as Element).setPointerCapture?.(e.pointerId);
     if (e.button === 1 || !t) { setDrag({ kind: 'pan', x0: e.clientX, y0: e.clientY, left: scroll.left, top: scroll.top }); if (!t && e.button === 0) select(null); return; }
+    if (t.header) { setDrag({ kind: 'pan', x0: e.clientX, y0: e.clientY, left: scroll.left, top: scroll.top }); return; }
     const b = barFor(t, i);
     const cy = b.y + b.h / 2;
     const near = (x: number) => Math.hypot(p.x - x, p.y - cy) <= 7;
@@ -281,7 +290,7 @@ export function GanttView() {
   const drop = (e: ReactDragEvent, t: TaskDto | undefined) => {
     setDropRow(null);
     const d = dropOf(e.dataTransfer.getData(DRAG_TYPE), e.shiftKey);
-    if (!d || !t) return;
+    if (!d || !t || t.header) return;
     e.preventDefault();
     select(t.id);
     void assignTo(t.id, d.ids, d.remove);
@@ -298,8 +307,10 @@ export function GanttView() {
   const now = today();
 
   const cell = (t: TaskDto, col: Column): string => {
+    if (t.header && col !== 'name' && col !== 'start' && col !== 'finish' && col !== 'elements') return '';
+    if (col.startsWith('f:')) return t.fields?.[col.slice(2)] ?? '';
     switch (col) {
-      case 'row': return String(t.row);
+      case 'row': return t.header ? '' : String(t.row);
       case 'wbs': return t.wbs;
       case 'name': return t.name;
       case 'duration': return `${t.duration} d`;
@@ -313,7 +324,7 @@ export function GanttView() {
       default: return t.summary ? '' : `${t.totalFloat} d`;
     }
   };
-  const editable = (t: TaskDto, col: Column) => col === 'name' || (!t.summary && (col === 'duration' || col === 'start' || col === 'finish' || col === 'predecessors' || col === 'complete'));
+  const editable = (t: TaskDto, col: Column) => !t.header && (col === 'name' || (!t.summary && (col === 'duration' || col === 'start' || col === 'finish' || col === 'predecessors' || col === 'complete')));
 
   // The bar being dragged as it would land, and what it says.
   const ghost = (() => {
@@ -365,6 +376,11 @@ export function GanttView() {
         <button type="button" className="icon" title="Go to today" onClick={goToday}><Crosshair size={14} /><span className="small">Today</span></button>
         <button type="button" className={`icon${critical ? ' on' : ''}`} title="The critical path in red: the tasks with no float" onClick={() => setCritical(!critical)} data-testid="gantt-critical"><Route size={14} /><span className="small">Critical path</span></button>
         {data.baseline && <button type="button" className={`icon${showBaseline ? ' on' : ''}`} title="The baseline as a thin bar under each task" onClick={() => setShowBaseline(!showBaseline)} data-testid="gantt-baseline"><Flag size={14} /><span className="small">Baseline</span></button>}
+        <span className="gantt-display-anchor">
+          <button type="button" className={`icon${display ? ' on' : ''}${displayOpen ? ' open' : ''}`} title="Colour the bars, group the rows and add columns by any field of the elements" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); setDisplayAt({ top: r.bottom + 2, left: Math.max(4, Math.min(r.left, window.innerWidth - 340)) }); setDisplayOpen(!displayOpen); }} data-testid="gantt-display-button"><Palette size={14} /><span className="small">Display…</span></button>
+          {displayOpen && <GanttDisplayPanel at={displayAt} gantt={display} legend={data.legend ?? []} onClose={() => setDisplayOpen(false)} />}
+        </span>
+        {data.tasks.some((t) => t.durationField || t.quantityField) && <button type="button" className="icon" title="Every task timed from a field, worked out again from the model as it is now" onClick={() => void retimeFromFields()} data-testid="gantt-retime"><RefreshCw size={14} /><span className="small">Retime from fields</span></button>}
         <button type="button" className="icon" title="Working days and hours, holidays, the winter break" onClick={() => useUi.setState({ dialog: 'planning.calendar' })}><CalendarDays size={14} /><span className="small">Calendar…</span></button>
         <button type="button" className={`icon${simOn ? ' on' : ''}`} title="The model as it is built, day by day: drag the date line on the time scale, or play" onClick={() => void toggleSimulation()} data-testid="gantt-simulate"><Clapperboard size={14} /><span className="small">Simulate</span></button>
         <button type="button" className="icon" title="A schedule made from the model: its storeys, its elements and your norms" onClick={() => useUi.setState({ dialog: 'planning.generate' })} data-testid="gantt-generate-tool"><Wand2 size={14} /><span className="small">Generate schedule…</span></button>
@@ -383,6 +399,7 @@ export function GanttView() {
             : <span className="muted" data-testid="gantt-unlinked">{`all ${data.elements.total} elements have a task`}</span>)}
         </span>
       </div>
+      {display?.colourBy && <GanttLegend legend={data.legend ?? []} />}
       <SimulationBar />
       </div>
       <div className="gantt-scroll" ref={scroller} onScroll={(e) => { const el = e.currentTarget; setScroll({ left: el.scrollLeft, top: el.scrollTop }); setLinkEdit(null); }}>
@@ -447,8 +464,8 @@ export function GanttView() {
                       {t.summary
                         ? <path d={`M${b.x},${b.y + 2} h${b.w} v${b.h - 2} l-5,-4 h${-(b.w - 10)} l-5,4 z`} className={`gantt-summary${red ? ' critical' : ''}`} />
                         : t.milestone
-                          ? <path d={`M${b.x},${cy - 7} l7,7 l-7,7 l-7,-7 z`} className={`gantt-milestone${red ? ' critical' : ''}`} />
-                          : <rect x={b.x} y={b.y} width={Math.max(2, b.w)} height={b.h} rx={2} className={`gantt-bar${red ? ' critical' : ''}${t.wet ? ' wet' : ''}${t.status === 'done' ? ' done' : ''}`} />}
+                          ? <path d={`M${b.x},${cy - 7} l7,7 l-7,7 l-7,-7 z`} className={`gantt-milestone${red ? ' critical' : ''}${t.colour ? ' coloured' : ''}`} style={t.colour ? { fill: t.colour } : undefined} />
+                          : <rect x={b.x} y={b.y} width={Math.max(2, b.w)} height={b.h} rx={2} className={`gantt-bar${red ? ' critical' : ''}${t.wet ? ' wet' : ''}${t.status === 'done' ? ' done' : ''}${t.colour ? ' coloured' : ''}`} style={t.colour ? { fill: t.colour } : undefined} />}
                       {done && <rect x={done.x} y={done.y} width={Math.max(1, done.w)} height={done.h} className="gantt-done" data-testid="gantt-done-bar" />}
                       <text x={b.x + Math.max(b.w, 7) + 12} y={cy + 4} className="gantt-bar-label">{t.name}</text>
                       {!t.summary && (hover === t.id || drag?.kind === 'link') && <>
@@ -464,7 +481,7 @@ export function GanttView() {
             </svg>
             {/* The table's header and rows, over the chart's left */}
             <div className="gantt-head-table" style={{ width: TABLE_W, height: HEAD_H }}>
-              {columns.map((c) => <span key={c.key} className={`gantt-th c-${c.key}`} style={{ width: c.w }} data-i18n-ctx="schedule">{c.label}</span>)}
+              {columns.map((c) => <span key={c.key} className={`gantt-th c-${c.key}`} style={{ width: c.w }} data-i18n-ctx="schedule" data-no-i18n={c.field ? true : undefined} title={c.field}>{c.label}</span>)}
             </div>
             <div className="gantt-table" style={{ width: TABLE_W, top: HEAD_H, height: viewH }}>
               {rows.slice(r0, r1 + 1).map((t, k) => {
@@ -475,7 +492,7 @@ export function GanttView() {
                     onDragOver={(e) => { if (!e.dataTransfer.types.includes(DRAG_TYPE)) return; e.preventDefault(); e.dataTransfer.dropEffect = e.shiftKey ? 'move' : 'copy'; setDropRow(t.id); }}
                     onDragLeave={() => setDropRow((r) => (r === t.id ? null : r))}
                     onDrop={(e) => drop(e, t)}
-                    onPointerDown={(e) => { if (!(e.target as HTMLElement).closest('input')) { root.current?.focus(); select(t.id, e.shiftKey || e.ctrlKey || e.metaKey); } }}>
+                    onPointerDown={(e) => { if (!t.header && !(e.target as HTMLElement).closest('input')) { root.current?.focus(); select(t.id, e.shiftKey || e.ctrlKey || e.metaKey); } }}>
                     {columns.map((c) => (
                       <span key={c.key} className={`gantt-td c-${c.key}`} style={{ width: c.w, ...(c.key === 'name' ? { paddingLeft: 4 + t.level * 14 } : {}) }}
                         title={c.key === 'elements' && t.count ? ruleSummary(t, nameOf, classLabel) || undefined : undefined}
@@ -485,7 +502,7 @@ export function GanttView() {
                           : <span className="gantt-fold-space">{t.milestone ? <Diamond size={9} /> : null}</span>)}
                         {editing?.id === t.id && editing.col === c.key
                           ? <CellEditor value={c.key === 'duration' ? String(t.duration) : c.key === 'complete' ? (t.completeOwn != null ? String(t.completeOwn) : '') : cell(t, c.key)} onCommit={(text) => commit(t, c.key, text)} onDone={() => { setEditing(null); root.current?.focus(); }} testId={`gantt-edit-${c.key}`} />
-                          : <span className="gantt-text" data-no-i18n={c.key === 'name' || c.key === 'predecessors' ? true : undefined}>{cell(t, c.key)}</span>}
+                          : <span className="gantt-text" data-no-i18n={c.key === 'name' || c.key === 'predecessors' || c.field ? true : undefined}>{cell(t, c.key)}</span>}
                       </span>
                     ))}
                   </div>

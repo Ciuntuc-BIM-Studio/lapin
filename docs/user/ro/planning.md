@@ -127,6 +127,34 @@ Selectezi o sarcină și Proprietățile o arată: numele, felul ei în IFC, dur
 - **Rezervă totală** și **Rezervă liberă**: câte zile lucrătoare poate întârzia sarcina fără să mute finalul, respectiv fără să mute ce urmează după ea. **Început târziu** și **Sfârșit târziu** sunt cele mai târzii date care păstrează finalul.
 - **Predecesori**: fiecare legătură care intră, cu tipul și decalajul de schimbat, sau de scos. **Succesori** arată ce urmează după sarcină.
 
+## Planificare după câmpurile tale
+
+![Gantt-ul colorat după câmpul Sector, cu legenda și o coloană Sector](shots/planning-gantt-fields.webp)
+
+Birourile își numesc proprietățile în felul lor, iar programul le urmează. Oriunde o sarcină, un pas sau Gantt-ul cer un **câmp**, îl alegi dintre câmpurile proiectului: cele ale modelului, o proprietate dintr-un fișier IFC, Fragments sau BOS importat (`Pset_Firma.Etapa`), o cantitate, o formulă sau unul dintre numele biroului tău (**Gestionare → Nume de câmpuri…**, vezi [Extrase](schedules.md)). O proprietate dintr-un fișier și un parametru al tău lucrează la fel.
+
+### Reguli după orice câmp
+
+![Regula unei sarcini cu condiții pe un câmp](shots/planning-rule-fields.webp)
+
+La **Elements** în Proprietăți, sub **Găsește-le după o regulă**, **Condiții** adaugă un câmp, un operator (`=`, `≠`, conține, începe cu, `<`, `≤`, `>`, `≥`, există, lipsește) și o valoare, sugerată din ce are modelul. Toate condițiile trebuie să țină, împreună cu felurile, nivelurile și celelalte. Se păstrează regula, nu elementele: un perete desenat mai târziu cu acel câmp intră singur în sarcină.
+
+### Un pas generat, împărțit după un câmp
+
+În **Generează programul…**, creionul unui pas deschide **Doar elementele cu** (aceleași condiții), **Împarte după** (până la patru câmpuri, în ordine), **Durata din câmp** și **Cantitatea din câmp**. Un pas împărțit după *Sector* face o sarcină pentru fiecare sector (*Zidărie · Sector A*, *Zidărie · Sector B* și *fără Sector* pentru pereții fără), sub un rezumat; sectoarele unui nivel lucrează în paralel. Generat din nou, fiecare valoare își păstrează sarcina.
+
+**Durata din câmp** ia zilele pe care le poartă fiecare element (un câmp sau o formulă ca `= Firma.Volum * 2`), adunate și rotunjite în sus. **Cantitatea din câmp** înlocuiește măsura încorporată, sub norma pasului. Ambele se pot pune și pe o sarcină în Proprietăți, cu **Norma** și **Echipa** ei. Durata rămâne pe sarcină: după ce modelul se schimbă, **Recalculează din câmpuri** (bara Gantt-ului sau fila Execuție) calculează din nou fiecare astfel de sarcină.
+
+### Gantt-ul după câmpuri
+
+**Afișare…** în bara Gantt-ului:
+
+- **Colorează după** un câmp colorează barele după valoare, cu o legendă sub bară. Culoarea fiecărei valori se poate schimba; sarcinile ale căror elemente nu se potrivesc sunt gri, iar barele critice păstrează un contur roșu.
+- **Grupează după** un câmp grupează rândurile sub câte un antet pentru fiecare valoare, pe care îl poți strânge. Sunt listate doar sarcinile care fac lucrarea; se schimbă fereastra, planșa păstrează ordinea WBS.
+- **Coloane** adaugă până la șase coloane de câmpuri în tabel, lângă cele încorporate.
+
+**Resetează** scoate afișarea; **Nume de câmpuri…** deschide numele biroului. Gantt-ul pe planșă desenează ce arată fereastra.
+
 ## Drumul critic
 
 Lapin calculează programul după fiecare schimbare. O trecere înainte găsește datele cele mai devreme, una înapoi pe cele mai târzii. Sarcinile fără rezervă fac drumul critic: întârzierea oricăreia mută finalul. O legătură spre un rezumat ține toate sarcinile de sub el. O legătură dintr-un rezumat pornește de la începutul primei lui sarcini și se termină la sfârșitul ultimei. Lapin refuză o legătură care ar face o buclă.

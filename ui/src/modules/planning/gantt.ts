@@ -5,6 +5,8 @@
  * critical path) is the engine's; the interface only draws it and says what the user did.
  */
 
+import type { Condition } from '../../shell/fieldSchedule';
+
 export type LinkType = 'FS' | 'SS' | 'FF' | 'SF';
 
 export interface TaskDto {
@@ -26,12 +28,16 @@ export interface TaskDto {
   baselineStart?: string; baselineFinish?: string; baselineDuration?: number; startVariance?: number; finishVariance?: number;
   /** Its cost from the estimate (stage 7, with the cost module): its elements' share of the lines that price them, and the part done. */
   cost?: number; costDone?: number;
+  /** Fields (user fields, docs/plan-user-extensibility.md §12): the values of the fields the display asks for, the bar's colour, and what its duration and quantity are read from. */
+  fields?: Record<string, string | null>; colour?: string | null; durationField?: string; quantityField?: string;
+  /** A row of the group-by display that is not a task. */
+  header?: boolean;
 }
 export type TaskStatus = 'planned' | 'started' | 'done';
 export type ProgressFrom = 'none' | 'manual' | 'elements' | 'actual' | 'children';
 export interface ElementMark { started?: string; done?: string }
 /** A task's rule: every condition given must hold (ids, classes by their IFC name). */
-export interface TaskRule { classes?: string[]; types?: string[]; storeys?: string[]; materials?: string[]; groups?: string[]; phases?: string[]; demolished?: string[] }
+export interface TaskRule { classes?: string[]; types?: string[]; storeys?: string[]; materials?: string[]; groups?: string[]; phases?: string[]; demolished?: string[]; conditions?: Condition[] }
 /** A formwork's or a scaffold's time on site, from its hosts' tasks (stage 3). */
 export interface TemporaryDto { id: string; kind: 'formwork' | 'scaffold'; from: string; to: string; tasks: string[] }
 export interface LinkDto { id: string; from: string; to: string; type: LinkType; lag: number; critical: boolean }
@@ -51,7 +57,11 @@ export interface ScheduleDto {
   baseline?: { saved: string | null; finish: string; finishVariance: number; late: number } | null;
   /** The estimate on the schedule (stage 7): the budget at completion (its direct costs), what the tasks carry of it, the cost to date. */
   cost?: { currency: string; budget: number; scheduled: number; toDate: number } | null;
+  /** The Gantt's display by fields (null: the plain Gantt) and the legend of the colours. */
+  gantt?: GanttDisplay | null; legend?: LegendEntry[];
 }
+export interface GanttDisplay { colourBy?: string; colours?: Record<string, string>; groupBy?: string; columns?: string[] }
+export interface LegendEntry { value: string; colour: string; tasks: number }
 
 /** A cost as the Gantt's column shows it: whole units, thin spaces between the thousands; nothing for none. */
 export function costText(v: number | null | undefined): string {
@@ -241,6 +251,37 @@ export function visibleRows(tasks: TaskDto[], collapsed: ReadonlySet<string>): T
   const hidden = (t: TaskDto) => { for (let p = t.parent; p; p = parent.get(p) ?? null) if (collapsed.has(p)) return true; return false; };
   return tasks.filter((t) => !hidden(t));
 }
+
+/**
+ * The rows when the window groups by a field: the tasks that do the work (summaries are left out, their value is mixed),
+ * each group under a header row covering its tasks' dates, the tasks in their WBS order; the groups in the order of
+ * their first task, those without a value last. A collapsed group shows its header only.
+ */
+export function groupRows(tasks: readonly TaskDto[], groupBy: string, collapsed: ReadonlySet<string>, none: string): TaskDto[] {
+  const groups = new Map<string, TaskDto[]>();
+  for (const t of tasks) {
+    if (t.summary) continue;
+    const v = t.fields?.[groupBy];
+    const key = v == null || v === '' ? '' : v;
+    const list = groups.get(key);
+    if (list) list.push(t); else groups.set(key, [t]);
+  }
+  const keys = [...groups.keys()].sort((a, b) => (a === '' ? 1 : b === '' ? -1 : 0));
+  const out: TaskDto[] = [];
+  for (const k of keys) {
+    const list = groups.get(k)!;
+    const start = list.reduce((m, t) => (t.start < m ? t.start : m), list[0].start);
+    const finish = list.reduce((m, t) => (t.finish > m ? t.finish : m), list[0].finish);
+    const id = groupId(k);
+    out.push({ id, row: 0, name: k === '' ? none : k, wbs: '', level: 0, parent: null, summary: true, milestone: false, duration: 0, start, finish, lateStart: start, lateFinish: finish,
+      totalFloat: 0, freeFloat: 0, critical: false, predecessors: '', count: list.reduce((n, t) => n + t.count, 0), header: true, colour: list[0].colour });
+    if (!collapsed.has(id)) out.push(...list);
+  }
+  return out;
+}
+
+/** The id of a group's header row. */
+export const groupId = (value: string): string => `group:${value}`;
 
 export interface Bar { x: number; w: number; y: number; h: number }
 

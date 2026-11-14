@@ -127,6 +127,34 @@ Select a task and Properties shows it: its name, its IFC kind, its duration, whe
 - **Total float** and **Free float**: how many working days the task can slip without moving the finish, or without moving what follows it. **Late start** and **Late finish** are the latest dates that keep the finish.
 - **Predecessors**: each link in, with its type and lag to change, or removed. **Successors** lists what follows the task.
 
+## Planning by your own fields
+
+![The Gantt coloured by the Sector field, with its legend and a Sector column](shots/planning-gantt-fields.webp)
+
+Offices name properties their own way, and the schedule follows them. Wherever a task, a step or the Gantt asks for a **field**, you pick it from the project's fields: the model's own, a property of an imported IFC, Fragments or BOS file (`Pset_Firma.Etapa`), a quantity, a formula, or one of your office's names (**Manage → Field names…**, see [Schedules](schedules.md)). A file's property and your own parameter work the same way.
+
+### Rules by any field
+
+![A task's rule with conditions on a field](shots/planning-rule-fields.webp)
+
+In **Elements** in Properties, under **Find them by a rule**, **Conditions** adds a field, an operator (`=`, `≠`, contains, starts with, `<`, `≤`, `>`, `≥`, exists, missing) and a value, suggested from what the model has. Every condition must hold, together with the kinds, storeys and the others. The rule is kept, not the elements: a wall drawn later with that field joins the task by itself.
+
+### Splitting a generated step by a field
+
+In **Generate schedule…**, the pencil of a step opens **Only the elements with** (the same conditions), **Split by** (up to four fields, in order), **Duration from field** and **Quantity from field**. A step split by *Sector* makes a task for each sector (*Masonry · Sector A*, *Masonry · Sector B*, and *no Sector* for the walls without one), under a summary; the sectors of a storey work in parallel. Generated again, each value keeps its task.
+
+**Duration from field** takes the days each element carries (a field or a formula such as `= Firma.Volum * 2`), added up and rounded up. **Quantity from field** replaces the built-in measure under the step's norm. Both can also be set on a task in Properties, with its **Norm** and **Crew**. The duration is kept on the task: after the model changes, **Retime from fields** (the Gantt's toolbar, or the Construction tab) works every such task out again.
+
+### The Gantt by fields
+
+**Display…** in the Gantt's toolbar:
+
+- **Colour by** a field colours the bars by value, with a legend under the toolbar. Each value's colour can be changed; the tasks whose elements disagree are grey, and critical bars keep a red outline.
+- **Group by** a field groups the rows under a header for each value, which you fold. Only the tasks that do the work are listed; the window changes, a sheet keeps the WBS order.
+- **Columns** adds up to six field columns to the table, next to the built-in ones.
+
+**Reset** takes the display off; **Field names…** opens your office's names. The Gantt on a sheet draws what the window shows.
+
 ## The critical path
 
 Lapin works out the schedule after every change. A forward pass finds the earliest dates and a backward pass the latest. The tasks with no float make the critical path, and a delay to any of them moves the finish. A link to a summary holds every task under it. A link from a summary starts at its first task's start and ends at its last task's finish. Lapin refuses a link that would make a loop.

@@ -9,14 +9,16 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowDown, ArrowUp, CalendarDays, FileDown, FileUp, ListPlus, MousePointer2, Pencil, RotateCcw, Save, Trash2, TriangleAlert, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, CalendarDays, FileDown, FileUp, ListPlus, MousePointer2, Pencil, Plus, RotateCcw, Save, Trash2, TriangleAlert, X } from 'lucide-react';
 import { focusPane, notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { pickFile, saveFile, toBase64 } from '../../engine/files';
 import { t, useLang } from '../../i18n';
 import { showDate } from './gantt';
-import { bars, DEMOLITION, moveStep, normLabel, quantityText, stepForLeftovers, toggleClass, translateNames, withStep, type GeneratorOptions, type GenSpec, type GenStep, type PreviewDto, type Template } from './generator';
+import { bars, cleanSpec, DEMOLITION, moveStep, normLabel, quantityText, stepForLeftovers, toggleClass, translateNames, withStep, type GeneratorOptions, type GenSpec, type GenStep, type PreviewDto, type Template } from './generator';
 import { openGantt, useSchedule } from './schedule';
+import { DraftConditions } from '../../shell/ConditionsEditor';
+import { FieldPicker } from '../../shell/FieldPicker';
 
 const TABS = [['start', 'Start'], ['sequence', 'Sequence'], ['durations', 'Durations'], ['calendar', 'Calendar']] as const;
 type Tab = (typeof TABS)[number][0];
@@ -64,7 +66,7 @@ export function GenerateDialog() {
     if (!spec) return;
     let live = true;
     const id = setTimeout(() => {
-      void query<PreviewDto>('planning.preview', { spec, keep }).then((p) => { if (live) setPreview(p); });
+      void query<PreviewDto>('planning.preview', { spec: cleanSpec(spec), keep }).then((p) => { if (live) setPreview(p); });
     }, 120);
     return () => { live = false; clearTimeout(id); };
   }, [spec, keep, version]);
@@ -79,7 +81,7 @@ export function GenerateDialog() {
 
   const apply = async () => {
     if (!spec) return;
-    const r = await execute('planning.generate', { spec, keep, ...(start ? { start } : {}) }) as { tasks: number } | null;
+    const r = await execute('planning.generate', { spec: cleanSpec(spec), keep, ...(start ? { start } : {}) }) as { tasks: number } | null;
     if (!r || useSession.getState().error) return;
     close();
     openGantt();
@@ -89,7 +91,7 @@ export function GenerateDialog() {
     if (!spec) return;
     const name = window.prompt(t('Name of the schedule style'), '');
     if (!name?.trim()) return;
-    const r = await execute('planning.saveScheduleStyle', { spec, name }) as { styleId?: string } | null;
+    const r = await execute('planning.saveScheduleStyle', { spec: cleanSpec(spec), name }) as { styleId?: string } | null;
     if (r?.styleId) setStyle(r.styleId);
   };
   const ownStyle = own.find((s) => s.id === style);
@@ -147,7 +149,7 @@ export function GenerateDialog() {
         <div className="muted small gen-what">
           {demolition ? <span>the elements the phases demolish</span>
             : s.classes.length === 0 ? <span>no elements (site set-up)</span>
-            : <span data-no-i18n>{s.classes.map(classLabel).join(', ')}{s.part ? ` · ${t(s.part === 'core' ? 'core' : s.part === 'finishes' ? 'finishes' : s.part)}` : ''}</span>}
+            : <span data-no-i18n>{s.classes.map(classLabel).join(', ')}{s.part ? ` · ${t(s.part === 'core' ? 'core' : s.part === 'finishes' ? 'finishes' : s.part)}` : ''}{s.conditions?.length ? ` · ${s.conditions.length} ✓` : ''}{s.splitBy?.length ? ` · ⫽ ${s.splitBy.join(', ')}` : ''}</span>}
         </div>
         {open === s.key && (
           <div className="gen-classes">
@@ -165,6 +167,26 @@ export function GenerateDialog() {
                 </button>
               ))}
             </span>
+            <p className="eyebrow">Only the elements with</p>
+            <DraftConditions key={s.key} value={s.conditions} testPrefix={`gen-${s.key}`} onCommit={(c) => set({ conditions: c.length ? c : undefined })} />
+            <div className="gen-fields" data-field={`gen-fields-${s.key}`}>
+              <p className="eyebrow" title="A task for each value (or combination of values) of these fields, in this order: at most four">Split by</p>
+              <span className="fs-rows">
+                {(s.splitBy ?? []).map((f, i) => (
+                  <span className="fs-row" key={i}>
+                    <FieldPicker value={f} onPick={(t) => set({ splitBy: (s.splitBy ?? []).map((x, j) => (j === i ? t : x)) })} testId={`gen-split-field-${s.key}-${i}`} />
+                    <button type="button" className="icon mini" title="Remove" onClick={() => { const l = (s.splitBy ?? []).filter((_, j) => j !== i); set({ splitBy: l.length ? l : undefined }); }}><Trash2 size={12} /></button>
+                  </span>
+                ))}
+                {(s.splitBy ?? []).length < 4 && <button type="button" className="btn small" onClick={() => set({ splitBy: [...(s.splitBy ?? []), ''] })} data-testid={`gen-add-split-${s.key}`}><Plus size={12} />Field</button>}
+              </span>
+              <label className="field-line roof-field" title="The days of each element, added up: a field, or a formula (= Firma.Durata)"><span className="eyebrow">Duration from field</span>
+                <input value={s.durationField ?? ''} data-no-i18n placeholder="(none)" onChange={(e) => set({ durationField: e.target.value || undefined })} data-testid={`gen-duration-field-${s.key}`} />
+              </label>
+              <label className="field-line roof-field" title="Instead of the built-in measure, under the step's norm: a field, or a formula (= Firma.Volum * 1.05)"><span className="eyebrow">Quantity from field</span>
+                <input value={s.quantityField ?? ''} data-no-i18n placeholder="(none)" onChange={(e) => set({ quantityField: e.target.value || undefined })} data-testid={`gen-quantity-field-${s.key}`} />
+              </label>
+            </div>
           </div>
         )}
       </div>
@@ -318,7 +340,7 @@ export function GenerateDialog() {
               <div className="row joinery-actions">
                 <span className="muted small grow">{style ? (templates.find((x) => x.id === style)?.label ?? own.find((x) => x.id === style)?.label ?? '') : ''}</span>
                 <button type="button" className="btn" disabled={!dirty} onClick={() => { if (options) { setStyle(null); setSpec(options.generated ? options.spec : translateNames(options.spec, (s) => t(s))); setDirty(false); } }}><RotateCcw size={14} />Reset</button>
-                {ownStyle && <button type="button" className="btn" title="Save the spec into its style" onClick={() => void execute('planning.saveScheduleStyle', { spec, name: ownStyle.label, styleId: ownStyle.id })}><Save size={14} />Update style</button>}
+                {ownStyle && <button type="button" className="btn" title="Save the spec into its style" onClick={() => void execute('planning.saveScheduleStyle', { spec: cleanSpec(spec), name: ownStyle.label, styleId: ownStyle.id })}><Save size={14} />Update style</button>}
                 <button type="button" className="btn" title="Save the spec as a style of the project" onClick={() => void saveAs()}><Save size={14} />Save as style…</button>
                 <button type="button" className="btn primary" data-field="gen-apply" disabled={Boolean(preview?.problem)} onClick={() => void apply()}>Apply</button>
               </div>

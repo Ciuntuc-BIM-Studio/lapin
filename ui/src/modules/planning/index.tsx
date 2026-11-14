@@ -11,7 +11,7 @@
  * actual dates, the baseline and its variances, the progress read back from a workbook.
  */
 
-import { CalendarDays, ChartGantt, CheckCheck, CircleOff, CirclePlay, Clapperboard, Diamond, FileVideo, Flag, FlagOff, LayoutPanelTop, Sheet, FileDown, FileSpreadsheet, FileUp, IndentDecrease, IndentIncrease, Link2, ListPlus, Plus, SearchX, Unlink2, Wand2 } from 'lucide-react';
+import { RefreshCw, CalendarDays, ChartGantt, CheckCheck, CircleOff, CirclePlay, Clapperboard, Diamond, FileVideo, Flag, FlagOff, LayoutPanelTop, Sheet, FileDown, FileSpreadsheet, FileUp, IndentDecrease, IndentIncrease, Link2, ListPlus, Plus, SearchX, Unlink2, Wand2 } from 'lucide-react';
 import type { LapinModule } from '../../platform/module';
 import { useUi } from '../../app/store';
 import { exportIfc } from '../../engine/files';
@@ -19,7 +19,7 @@ import { TaskSection } from './TaskSection';
 import { SelectionToTask } from './SelectionToTask';
 import { ElementTasksSection, inSomeTask, TaskLinksSection } from './TaskLinksSection';
 import { ganttOnSheet, SimulationCard, SimulationLooks, toggleSimulation, ViewDateSection } from './SimulationView';
-import { addTask, assignSelection, clearBaseline, exportMsp, exportXlsx, importMsp, importProgress, indent, linkSelected, markSelection, openGantt, outdent, saveBaseline, selectUnlinked, taskElementsOf, unlinkSelected } from './schedule';
+import { addTask, assignSelection, clearBaseline, exportMsp, exportXlsx, importMsp, importProgress, retimeFromFields, indent, linkSelected, markSelection, openGantt, outdent, saveBaseline, selectUnlinked, taskElementsOf, unlinkSelected } from './schedule';
 import { lazyPart } from '../../platform/lazyPart';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
@@ -43,6 +43,9 @@ const planning: LapinModule = {
           { id: 'planning.generate', label: 'Generate schedule…', icon: Wand2, run: () => useUi.setState({ dialog: 'planning.generate' }) },
           { id: 'planning.gantt', label: 'Gantt', icon: ChartGantt, run: openGantt },
           { id: 'planning.calendar', label: 'Calendar…', icon: CalendarDays, run: () => useUi.setState({ dialog: 'planning.calendar' }) },
+        ],
+        small: [
+          { id: 'planning.retime', label: 'Retime from fields', icon: RefreshCw, run: () => void retimeFromFields() },
         ],
       },
       {

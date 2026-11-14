@@ -214,3 +214,11 @@ export async function importProgress(): Promise<void> {
   notify(`Progress from ${picked.name}: ${r.changed} of ${r.rows} task(s) changed, ${r.unknown} row(s) not found.`);
   openGantt();
 }
+
+// ── Fields (docs/plan-user-extensibility.md §12) ─────────────────────────────
+
+/** Every task timed from a field or a quantity field worked out again from the model as it is now. */
+export async function retimeFromFields(): Promise<void> {
+  const r = await execute('planning.retimeFromFields', {}) as { timed: number; changed: number } | null;
+  if (r) notify(r.timed ? `${t('Retimed from fields')}: ${r.changed}/${r.timed}` : 'No task takes its duration or quantity from a field.');
+}

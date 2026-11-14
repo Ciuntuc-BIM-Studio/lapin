@@ -10,6 +10,7 @@ import { CheckCheck, CircleOff, CirclePlay, ListChecks, MousePointer2, Wand2, X 
 import type { NodeDto } from '../../engine/protocol';
 import { execute, query, useSession } from '../../engine/session';
 import { select, useUi } from '../../app/store';
+import { DraftConditions } from '../../shell/ConditionsEditor';
 import { markOf, showDate, type TaskDto, type TaskRule } from './gantt';
 import { tasksOf, toggleRule, type RuleKey } from './links';
 import { assignTo, markSelection, selectedElements, showTaskElements, taskOf, usePlanning, useSchedule } from './schedule';
@@ -84,7 +85,7 @@ export function TaskLinksSection({ node }: { node: NodeDto }) {
 }
 
 /** The rule's conditions as chips, each value on or off, with how many elements have it. */
-function RuleEditor({ rule, options, onChange }: { task: TaskDto; rule: TaskRule; options: Options; onChange: (r: TaskRule) => void }) {
+function RuleEditor({ task, rule, options, onChange }: { task: TaskDto; rule: TaskRule; options: Options; onChange: (r: TaskRule) => void }) {
   return (
     <div className="rule-editor" data-testid="rule-editor">
       {ORDER.filter((k) => (options[k]?.length ?? 0) > (k === 'phases' ? 1 : 0) || (rule[k]?.length ?? 0) > 0).map((k) => (
@@ -103,6 +104,11 @@ function RuleEditor({ rule, options, onChange }: { task: TaskDto; rule: TaskRule
           </span>
         </div>
       ))}
+      <div className="rule-condition" data-testid="rule-conditions">
+        <span className="eyebrow" title="Any field of the elements: the model's own, a file's property, the office's field names. All must hold.">Conditions</span>
+        <DraftConditions key={task.id} value={rule.conditions} testPrefix="rule"
+          onCommit={(c) => { const next = { ...rule }; if (c.length) next.conditions = c; else delete next.conditions; onChange(next); }} />
+      </div>
     </div>
   );
 }

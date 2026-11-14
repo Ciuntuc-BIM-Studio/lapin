@@ -2621,6 +2621,52 @@ export const scenes = [
     },
   },
   {
+    // Planning by the office's fields (docs/plan-user-extensibility.md §12): a task's rule with a condition on a property of
+    // the walls, the generator's step split by that field, a duration from a field, and the Gantt coloured and grouped by it.
+    id: 'planning-fields',
+    touches: ['planning', 'architecture', 'core'],
+    async run(t) {
+      await t.fresh();
+      const { storey, walls } = await house(t, { roof: false });
+      for (const [i, sector, days] of [[0, 'A', 4], [1, 'B', 6], [2, 'A', 4], [3, 'B', 6], ['inner', 'C', 3]]) {
+        await t.cmd('element.setParam', { ids: [walls[i]], pset: 'Firma', name: 'Sector', kind: 'text', value: sector });
+        await t.cmd('element.setParam', { ids: [walls[i]], pset: 'Firma', name: 'Zile', kind: 'number', value: days });
+      }
+      await t.cmd('planning.updateSchedule', { name: 'House', start: '2027-03-01' });
+      // The generator's masonry step, split by the sector, each task timed by the days its walls carry.
+      const spec = { template: 'own', byStorey: false, demolition: false, formwork: false, scaffolding: false, steps: [
+        { key: 'walls', name: 'Masonry', classes: ['IfcWall'], split: 'once', days: 5, crew: 0, link: 'FS', lag: 0, on: true,
+          conditions: [{ field: 'Firma.Sector', op: 'exists' }], splitBy: ['Firma.Sector'], durationField: 'Firma.Zile' },
+      ] };
+      await t.cmd('planning.generate', { spec, keep: true });
+      await open3d(t);
+      await t.tool('planning.gantt');
+      await t.wait(1500);
+      let sched = await t.page.evaluate(async () => (await import('/src/engine/session.ts')).query('planning.schedule'));
+      const leaves = sched.tasks.filter((x) => !x.summary && x.count > 0);
+      t.expect(leaves.length === 3, 'one Masonry task for each sector');
+      // The Gantt coloured by the sector, its legend and a column of the field.
+      await t.cmd('planning.updateSchedule', { gantt: { colourBy: 'Firma.Sector', columns: ['Firma.Sector'] } });
+      await t.wait(1200);
+      t.expect(await t.page.locator('[data-testid=gantt-legend] > span').count() === 3, 'the legend names the three sectors');
+      t.expect(await t.page.locator('.gantt-bar.coloured').count() === 3, 'the bars take their sector\'s colour');
+      await t.page.locator('[data-testid=gantt-fit]').click();
+      await t.page.locator('[data-testid=gantt-display-button]').click();
+      await t.wait(600);
+      await t.shot('planning-gantt-fields');
+      await t.page.locator('[data-testid=gantt-display-button]').click();
+      // A task's rule with a condition, picked from the fields the walls have.
+      sched = await t.page.evaluate(async () => (await import('/src/engine/session.ts')).query('planning.schedule'));
+      const task = leaves.find((x) => x.name.includes('Sector A')) ?? leaves[0];
+      await t.ui({ selection: task.id, selected: [task.id] });
+      await t.wait(1000);
+      t.expect(await t.page.locator('[data-testid=rule-conditions] .fs-row').count() >= 1, 'the rule holds its condition');
+      await t.page.locator('[data-testid=task-links]').scrollIntoViewIfNeeded();
+      await t.wait(300);
+      await t.shot('planning-rule-fields', { of: '[data-testid=task-links]', pad: 8 });
+    },
+  },
+  {
     // Planning, stage 3 (docs/plan-4d5d.md): a two-storey concrete-frame house generated into a schedule — the configurator
     // with its templates, sequence and durations (Lapin's indicative norms), the preview and its counter of linked elements,
     // then the Gantt under the 3D, a generated task in Properties, the formwork's days on site.

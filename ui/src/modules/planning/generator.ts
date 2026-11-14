@@ -5,6 +5,7 @@
  * catalogue's steps put into the interface's language, and where a preview's bars stand.
  */
 
+import type { Condition } from '../../shell/fieldSchedule';
 import { dayOf } from './gantt';
 
 export type Split = 'once' | 'storey';
@@ -12,6 +13,8 @@ export type Split = 'once' | 'storey';
 export interface GenStep {
   key: string; name: string; classes: string[]; part?: string; split: Split; days: number; norm?: string; crew: number;
   wet?: boolean; link: 'FS' | 'SS' | 'FF' | 'SF'; lag: number; on: boolean; kind?: string; cycle?: boolean;
+  /** By any field: the elements the step takes, the fields it splits into tasks by, and where the duration and quantity come from. */
+  conditions?: Condition[]; splitBy?: string[]; durationField?: string; quantityField?: string;
 }
 
 export interface GenSpec { template: string; steps: GenStep[]; byStorey: boolean; demolition: boolean; formwork: boolean; scaffolding: boolean }
@@ -118,3 +121,18 @@ export function bars(tasks: readonly PreviewTask[]): { from: number; days: numbe
 
 /** The steps whose tasks took their days because no norm timed them (the warning's list), the site set-up left out. */
 export const untimed = (s: PreviewSummary | undefined): string[] => s?.noNorm ?? [];
+
+/** The spec as the engine takes it: no empty field in a step's split, no empty condition or field name. */
+export function cleanSpec(spec: GenSpec): GenSpec {
+  return { ...spec, steps: spec.steps.map((s) => {
+    const { conditions, splitBy, durationField, quantityField, ...rest } = s;
+    const out: GenStep = { ...rest };
+    const c = (conditions ?? []).filter((x) => x.field.trim());
+    if (c.length) out.conditions = c;
+    const by = (splitBy ?? []).map((x) => x.trim()).filter(Boolean).slice(0, 4);
+    if (by.length) out.splitBy = by;
+    if (durationField?.trim()) out.durationField = durationField.trim();
+    if (quantityField?.trim()) out.quantityField = quantityField.trim();
+    return out;
+  }) };
+}
