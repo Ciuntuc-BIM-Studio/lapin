@@ -161,7 +161,12 @@ public static class Placement
     {
         var a = e.CloneAttrs();
         foreach (var k in new[] { "start", "end", "at", "a", "b", "seed", "stampAt" })
-            if (a[k] is JsonArray { Count: >= 2 } p && e.Class != IfcClass.Annotation) a[k] = J(t.Point(Args.PointOf(p)));
+            if (a[k] is JsonArray { Count: >= 2 } p && e.Class != IfcClass.Annotation)
+            {
+                // A point in space (a steel member's end) keeps its height: the move and the turn are in plan.
+                var q = t.Point(Args.PointOf(p));
+                a[k] = p.Count >= 3 && Json.Number(p[2]) is { } z ? new JsonArray(q.X, q.Y, z) : J(q);
+            }
         // The attribute is in degrees; the transformation works in radians.
         if (a["rotation"] != null && e.Class != IfcClass.Annotation) a["rotation"] = t.Angle((Json.Number(a["rotation"]) ?? 0) * Math.PI / 180) * 180 / Math.PI;
         if (a["contour"] is JsonArray c)

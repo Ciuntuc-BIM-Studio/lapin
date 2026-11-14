@@ -423,90 +423,101 @@ public static class Dimensions
         {
             var (pts, orphan) = Points(c.Model, c.Kind, dim, c.Drawing);
             if (pts.Count < 2 || Lay(dim, pts) is not { } lay) continue;
-            var (u, n, line, offs) = (lay.U, lay.N, lay.Line, lay.Off);
-            var values = Enumerable.Range(0, pts.Count - 1).Select(i => Math.Abs(Vec2.Dot(line[i + 1] - line[i], u))).ToList();
-            if (values.All(v => v < 1e-6)) continue;
-            var style = Standards.ResolveDim(c.Book, ParamsOf(dim));
-            var text = Standards.ResolveText(c.Book, ParamsOf(dim));
-            var texts = TextsOf(dim.Attrs, pts.Count - 1);
-            var moved = OffsetsOf(dim.Attrs, pts.Count - 1);
-            var textAt = new JsonArray();
-            var color = orphan ? "#c0392b" : style.Color ?? "#000000";
-            var mm = c.Mm;
-            var mk = new ViewMark(dim.Id);
-            // One dimension line, from the first point to the last as they lie along it.
-            var ts = line.Select(q => Vec2.Dot(q - line[0], u)).ToList();
-            mk.Line(line[0] + u * ts.Min(), line[0] + u * ts.Max(), "DIMENSION", Pens.Default.Hatch, color);
-            var s = style.ArrowSize * mm;
-            // Each point once: its extension line (a gap from the measured point, past the dimension line by the overshoot), its tick or dot.
-            for (var i = 0; i < pts.Count; i++)
-            {
-                var (p, q, off) = (pts[i], line[i], offs[i]);
-                var side = off >= 0 ? 1 : -1;
-                if (Math.Abs(off) > style.ExtGap * mm) mk.Line(p + n * (side * style.ExtGap * mm), q + n * (side * style.ExtOver * mm), "DIMENSION", Pens.Default.Hatch, color);
-                switch (style.Arrow)
-                {
-                    case "tick": { var t = (u + n).Normalized() * (s / 2); mk.Line(q - t, q + t, "DIMENSION", Pens.Default.Seen, color); break; }
-                    case "dot": mk.Polyline(ViewMark.Circle(q, s / 4, 12), true, "DIMENSION", Pens.Default.Seen, color); break;
-                }
-            }
-            for (var i = 0; i + 1 < pts.Count; i++)
-            {
-                if (values[i] < 1e-6) { textAt.Add((JsonNode?)null); continue; }
-                var (qa, qb) = (line[i], line[i + 1]);
-                var su = Vec2.Dot(qb - qa, u) >= 0 ? u : -u;
-                // Arrows: each segment's, at both its ends, pointing in.
-                if (style.Arrow == "arrow")
-                    foreach (var (q, inward) in new[] { (qa, su), (qb, -su) })
-                        mk.Line(q, q + inward * s + n * (s * 0.3), "DIMENSION", Pens.Default.Hatch, color).Line(q, q + inward * s - n * (s * 0.3), "DIMENSION", Pens.Default.Hatch, color);
-                // The value: in the style's unit (or the text written over it), reading left to right (bottom to top), above, on or below the line.
-                var value = texts[i] ?? Standards.FormatDimension(values[i], style.Unit, style.Precision, style.SuppressesZeros);
-                var angle = Math.Atan2(su.Y, su.X) * 180 / Math.PI;
-                var readable = -Standards.ReadableDeg(-angle);
-                var up = new Vec2(-Math.Sin(readable * Math.PI / 180), Math.Cos(readable * Math.PI / 180));
-                var mid = (qa + qb) * 0.5;
-                var (tat, baseline) = style.Placement switch
-                {
-                    "centered" => (mid, "middle"),
-                    "below" => (mid - up * (style.TextGap * mm + text.Height * mm), "bottom"),
-                    _ => (mid + up * (style.TextGap * mm), "bottom"),
-                };
-                // Moved by hand (close values kept clear of one another): a leader back to its segment once it stands off it.
-                if (moved[i] is { } by)
-                {
-                    tat += by;
-                    var h = text.Height * mm;
-                    var across = Vec2.Dot(by, up);
-                    var along = Math.Abs(Vec2.Dot(by, su)) - (qb - qa).Length / 2;
-                    if (across < -h * 0.5 || across > h * 1.5 || along > 0)
-                    {
-                        var foot = baseline == "middle" ? tat - up * (h * 0.6) : tat - up * (h * 0.15);
-                        mk.Line(mid, foot, "DIMENSION", Pens.Default.Hatch, color);
-                    }
-                }
-                mk.Text(new PenText(tat, value, text.Height, readable, "middle", baseline, text.Bold, text.Font, text.Italic), color);
-                textAt.Add((JsonNode)J(tat));
-                // A segment across a door, a window or a bare opening: its height under the line (decision 338), moved with the value.
-                if (style.OpeningHeight != "off" && texts[i] == null && OpeningHeights.Spanned(c, openings ??= OpeningHeights.Of(c), pts[i], pts[i + 1], u) is { } opening)
-                {
-                    var h = text.Height * mm;
-                    var top = style.Placement switch { "centered" => h * 0.5 + style.TextGap * mm, "below" => style.TextGap * mm + h * OpeningHeights.Pitch, _ => style.TextGap * mm };
-                    var rows = OpeningHeights.Rows(style.OpeningHeight, opening, style.Unit, style.Precision, style.SuppressesZeros);
-                    for (var k = 0; k < rows.Count; k++)
-                        mk.Text(new PenText(mid - up * (top + h + k * h * OpeningHeights.Pitch) + (moved[i] ?? default), rows[k], text.Height, readable, "middle", "bottom", text.Bold, text.Font, text.Italic), color);
-                }
-            }
-            mk.Snaps.AddRange(line);
-            // For the grips: the points as drawn now, and where each lands on the dimension line.
-            mk.Data = new JsonObject
-            {
-                ["points"] = new JsonArray(pts.Select(p => (JsonNode)J(p)).ToArray()),
-                ["line"] = new JsonArray(line.Select(p => (JsonNode)J(p)).ToArray()),
-                // Where each segment's value stands (null: a segment of no length draws none), for its grip.
-                ["texts"] = textAt,
-            };
-            yield return mk;
+            if (Draw(c, dim.Id, pts, lay, ParamsOf(dim), TextsOf(dim.Attrs, pts.Count - 1), OffsetsOf(dim.Attrs, pts.Count - 1), orphan, ref openings) is { } mk) yield return mk;
         }
+    }
+
+    /// <summary>
+    /// A string of dimensions drawn: its line through <paramref name="lay"/>'s points, the extension lines, ticks (or dots, arrows)
+    /// and values in the style <paramref name="styleParams"/> names (the drafting standards' otherwise), each value the user's
+    /// text when given and moved by its offset; null when every segment has no length. What a dimension of the user's draws, and
+    /// what a part's derived dimensions draw (decision 581), so both look alike.
+    /// </summary>
+    public static ViewMark? Draw(ViewContext c, string owner, IReadOnlyList<Vec2> pts, Layout lay, JsonObject styleParams, IReadOnlyList<string?>? texts, IReadOnlyList<Vec2?>? moved, bool orphan, ref List<WallOpening>? openings)
+    {
+        var (u, n, line, offs) = (lay.U, lay.N, lay.Line, lay.Off);
+        var values = Enumerable.Range(0, pts.Count - 1).Select(i => Math.Abs(Vec2.Dot(line[i + 1] - line[i], u))).ToList();
+        if (values.All(v => v < 1e-6)) return null;
+        texts ??= Enumerable.Repeat<string?>(null, pts.Count - 1).ToList();
+        moved ??= Enumerable.Repeat<Vec2?>(null, pts.Count - 1).ToList();
+        var style = Standards.ResolveDim(c.Book, styleParams);
+        var text = Standards.ResolveText(c.Book, styleParams);
+        var textAt = new JsonArray();
+        var color = orphan ? "#c0392b" : style.Color ?? "#000000";
+        var mm = c.Mm;
+        var mk = new ViewMark(owner);
+        // One dimension line, from the first point to the last as they lie along it.
+        var ts = line.Select(q => Vec2.Dot(q - line[0], u)).ToList();
+        mk.Line(line[0] + u * ts.Min(), line[0] + u * ts.Max(), "DIMENSION", Pens.Default.Hatch, color);
+        var s = style.ArrowSize * mm;
+        // Each point once: its extension line (a gap from the measured point, past the dimension line by the overshoot), its tick or dot.
+        for (var i = 0; i < pts.Count; i++)
+        {
+            var (p, q, off) = (pts[i], line[i], offs[i]);
+            var side = off >= 0 ? 1 : -1;
+            if (Math.Abs(off) > style.ExtGap * mm) mk.Line(p + n * (side * style.ExtGap * mm), q + n * (side * style.ExtOver * mm), "DIMENSION", Pens.Default.Hatch, color);
+            switch (style.Arrow)
+            {
+                case "tick": { var t = (u + n).Normalized() * (s / 2); mk.Line(q - t, q + t, "DIMENSION", Pens.Default.Seen, color); break; }
+                case "dot": mk.Polyline(ViewMark.Circle(q, s / 4, 12), true, "DIMENSION", Pens.Default.Seen, color); break;
+            }
+        }
+        for (var i = 0; i + 1 < pts.Count; i++)
+        {
+            if (values[i] < 1e-6) { textAt.Add((JsonNode?)null); continue; }
+            var (qa, qb) = (line[i], line[i + 1]);
+            var su = Vec2.Dot(qb - qa, u) >= 0 ? u : -u;
+            // Arrows: each segment's, at both its ends, pointing in.
+            if (style.Arrow == "arrow")
+                foreach (var (q, inward) in new[] { (qa, su), (qb, -su) })
+                    mk.Line(q, q + inward * s + n * (s * 0.3), "DIMENSION", Pens.Default.Hatch, color).Line(q, q + inward * s - n * (s * 0.3), "DIMENSION", Pens.Default.Hatch, color);
+            // The value: in the style's unit (or the text written over it), reading left to right (bottom to top), above, on or below the line.
+            var value = texts[i] ?? Standards.FormatDimension(values[i], style.Unit, style.Precision, style.SuppressesZeros);
+            var angle = Math.Atan2(su.Y, su.X) * 180 / Math.PI;
+            var readable = -Standards.ReadableDeg(-angle);
+            var up = new Vec2(-Math.Sin(readable * Math.PI / 180), Math.Cos(readable * Math.PI / 180));
+            var mid = (qa + qb) * 0.5;
+            var (tat, baseline) = style.Placement switch
+            {
+                "centered" => (mid, "middle"),
+                "below" => (mid - up * (style.TextGap * mm + text.Height * mm), "bottom"),
+                _ => (mid + up * (style.TextGap * mm), "bottom"),
+            };
+            // Moved by hand (close values kept clear of one another): a leader back to its segment once it stands off it.
+            if (moved[i] is { } by)
+            {
+                tat += by;
+                var h = text.Height * mm;
+                var across = Vec2.Dot(by, up);
+                var along = Math.Abs(Vec2.Dot(by, su)) - (qb - qa).Length / 2;
+                if (across < -h * 0.5 || across > h * 1.5 || along > 0)
+                {
+                    var foot = baseline == "middle" ? tat - up * (h * 0.6) : tat - up * (h * 0.15);
+                    mk.Line(mid, foot, "DIMENSION", Pens.Default.Hatch, color);
+                }
+            }
+            mk.Text(new PenText(tat, value, text.Height, readable, "middle", baseline, text.Bold, text.Font, text.Italic), color);
+            textAt.Add((JsonNode)J(tat));
+            // A segment across a door, a window or a bare opening: its height under the line (decision 338), moved with the value.
+            if (style.OpeningHeight != "off" && texts[i] == null && OpeningHeights.Spanned(c, openings ??= OpeningHeights.Of(c), pts[i], pts[i + 1], u) is { } opening)
+            {
+                var h = text.Height * mm;
+                var top = style.Placement switch { "centered" => h * 0.5 + style.TextGap * mm, "below" => style.TextGap * mm + h * OpeningHeights.Pitch, _ => style.TextGap * mm };
+                var rows = OpeningHeights.Rows(style.OpeningHeight, opening, style.Unit, style.Precision, style.SuppressesZeros);
+                for (var k = 0; k < rows.Count; k++)
+                    mk.Text(new PenText(mid - up * (top + h + k * h * OpeningHeights.Pitch) + (moved[i] ?? default), rows[k], text.Height, readable, "middle", "bottom", text.Bold, text.Font, text.Italic), color);
+            }
+        }
+        mk.Snaps.AddRange(line);
+        // For the grips: the points as drawn now, and where each lands on the dimension line.
+        mk.Data = new JsonObject
+        {
+            ["points"] = new JsonArray(pts.Select(p => (JsonNode)J(p)).ToArray()),
+            ["line"] = new JsonArray(line.Select(p => (JsonNode)J(p)).ToArray()),
+            // Where each segment's value stands (null: a segment of no length draws none), for its grip.
+            ["texts"] = textAt,
+        };
+        return mk;
     }
 
     /// <summary>The style params an annotation names (its styles and o.* overrides).</summary>

@@ -450,7 +450,7 @@ public static class Sheets
         return Cde.CdeTransmittal.Sha256(sb.ToString());
     }
 
-    static JsonObject PageJson(IModelView m, PaperPage page, Entity sheet, List<Placement> placements)
+    internal static JsonObject PageJson(IModelView m, PaperPage page, Entity sheet, List<Placement> placements)
     {
         var (W, H) = (page.W, page.H);
         var l = TitleBlocks.Layout(m, sheet);

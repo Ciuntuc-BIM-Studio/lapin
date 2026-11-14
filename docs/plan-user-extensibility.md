@@ -340,7 +340,7 @@ Fiecare etapă vine cu testele ei, pagina din ghid în engleză și română, sc
 
 ## 11. Extrase și câmpuri configurabile (etapa 13; motorul făcut, interfața de făcut)
 
-Cererea utilizatorului (14.11.2026): utilizatorii își fac singuri antemăsurătorile și alte extrase din parametrii modelelor — și ai celor importate din IFC, Fragments și BOS —, iar când biroul are propria convenție de nume pentru proprietăți, o mapează o dată. Etapa 1 (decizia 579) a dat referințelor cantitățile fișierului; etapa aceasta e motorul extraselor de câmpuri. Dicționarul unic de câmpuri rămâne `FieldCatalog` (Platform): orice valoare se citește prin el (`ElementFields`: un câmp ca într-o formulă, `ParamFormulas.Read`, când e număr; altfel ca într-o etichetă, `TagText.Value`), deci etichetele, textul viu, formulele și extrasele văd aceleași câmpuri.
+Cererea utilizatorului (14.11.2026): utilizatorii își fac singuri antemăsurătorile și alte extrase din parametrii modelelor — și ai celor importate din IFC, Fragments și BOS —, iar când biroul are propria convenție de nume pentru proprietăți, o mapează o dată. Etapa 1 (decizia 584) a dat referințelor cantitățile fișierului; etapa aceasta e motorul extraselor de câmpuri. Dicționarul unic de câmpuri rămâne `FieldCatalog` (Platform): orice valoare se citește prin el (`ElementFields`: un câmp ca într-o formulă, `ParamFormulas.Read`, când e număr; altfel ca într-o etichetă, `TagText.Value`), deci etichetele, textul viu, formulele și extrasele văd aceleași câmpuri.
 
 ### 11.1 Câmpurile
 
@@ -424,7 +424,7 @@ Felul „Field schedule” în dialogul de extras nou; editorul: filtrul (dimens
 
 ## 12. Graficele Gantt după numele biroului (motorul făcut, interfața de făcut)
 
-Cererea utilizatorului (14.11.2026): „configurarea graficelor Gantt să-i lase pe utilizatori să-și configureze parametrii când au alte standarde interne de numire a proprietăților”; răspunsul la întrebarea a doua din decizia 580: da, regulile sarcinilor citesc câmpurile și aliasurile (decizia 581). Totul trece prin același dicționar de câmpuri (§11.1, `ElementFields`) și același evaluator de condiții (`FieldCondition`, Platform/FieldValues.cs), deci un câmp e la fel într-un extras, într-o etichetă și într-o sarcină: parametrii utilizatorului (`Firma.Sector`), proprietățile fișierelor IFC, Fragments și BOS pe referințe (`Pset_Firma.Etapa`), cantitățile, formulele, aliasurile (`Zona` ← `Firma.Sector`, `Firma.Etapa`).
+Cererea utilizatorului (14.11.2026): „configurarea graficelor Gantt să-i lase pe utilizatori să-și configureze parametrii când au alte standarde interne de numire a proprietăților”; răspunsul la întrebarea a doua din decizia 585: da, regulile sarcinilor citesc câmpurile și aliasurile (decizia 586). Totul trece prin același dicționar de câmpuri (§11.1, `ElementFields`) și același evaluator de condiții (`FieldCondition`, Platform/FieldValues.cs), deci un câmp e la fel într-un extras, într-o etichetă și într-o sarcină: parametrii utilizatorului (`Firma.Sector`), proprietățile fișierelor IFC, Fragments și BOS pe referințe (`Pset_Firma.Etapa`), cantitățile, formulele, aliasurile (`Zona` ← `Firma.Sector`, `Firma.Etapa`).
 
 ### 12.1 Regula unei sarcini: condiții pe orice câmp
 

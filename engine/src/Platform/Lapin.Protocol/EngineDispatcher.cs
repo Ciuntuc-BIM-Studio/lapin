@@ -641,9 +641,10 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
     /// </summary>
     /// <summary>
     /// The namespaces of commands no guest runs: a project's scripts (<c>scripting.save</c>, <c>scripting.rename</c>,
-    /// <c>scripting.delete</c>) and its graphs (<c>graphs.*</c>, decision 527: the host's, like scripts).
+    /// <c>scripting.delete</c>), its graphs (<c>graphs.*</c>, decision 527: the host's, like scripts) and renumbering the part marks
+    /// (<c>marks.renumber</c>, decision 583: it renames marks other people's sheets show).
     /// </summary>
-    public static readonly string[] HostOnlyCommands = ["scripting.", "graphs."];
+    public static readonly string[] HostOnlyCommands = ["scripting.", "graphs.", "marks.renumber"];
 
     /// <summary>The namespaces of queries no guest asks: a project's graphs (their evaluation runs the host's commands on a copy of the model).</summary>
     public static readonly string[] HostOnlyQueries = ["graphs."];
