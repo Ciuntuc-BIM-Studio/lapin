@@ -223,9 +223,12 @@ export function splitByFace(positions: Float32Array, indices: Uint32Array): Reco
 /** A material's own image: its id, its file as a data URL, and how large it lies on the model (metres). */
 export interface OwnImage { id: string; url: string; width: number; height: number }
 
-/** The image a material brings, or null (then its drawn texture, or its colour). */
-export function imageOf(material: NodeDto | undefined, nodes: Map<string, NodeDto>): OwnImage | null {
-  const id = material?.props.textureImage;
+/** The attributes a material names its images by: its own texture, its normal map, its bump map (Images.MaterialKeys). */
+export type ImageKey = 'textureImage' | 'normalImage' | 'bumpImage';
+
+/** The image a material brings (by default its own texture), or null (then its drawn texture, or its colour). */
+export function imageOf(material: NodeDto | undefined, nodes: Map<string, NodeDto>, key: ImageKey = 'textureImage'): OwnImage | null {
+  const id = material?.props[key];
   if (typeof id !== 'string') return null;
   const img = nodes.get(id);
   const data = img?.props.data, mime = img?.props.mime;
@@ -233,6 +236,48 @@ export function imageOf(material: NodeDto | undefined, nodes: Map<string, NodeDt
   const size = material?.props.textureSize;
   const [w, h] = Array.isArray(size) && size.length === 2 && size.every((x) => typeof x === 'number' && x > 0) ? (size as number[]) : [1, 1];
   return { id, url: `data:${mime};base64,${data}`, width: w, height: h };
+}
+
+/** A material's relief: its normal map and its bump map, each laid on as its own image is (its size in metres, its turn). */
+export interface Relief { normal: OwnImage | null; bump: OwnImage | null }
+
+export function reliefOf(material: NodeDto | undefined, nodes: Map<string, NodeDto>): Relief {
+  return { normal: imageOf(material, nodes, 'normalImage'), bump: imageOf(material, nodes, 'bumpImage') };
+}
+
+/**
+ * What a relief map's import sets on the material: the image, and the size its images lie at when it has none yet
+ * (1 m wide, high as the picture's proportion), so the map and the texture share one size.
+ */
+export function reliefArgs(key: string, imageId: string, aspect: number, size: unknown): Record<string, unknown> {
+  const args: Record<string, unknown> = { [key]: imageId };
+  if (!(Array.isArray(size) && size.length === 2)) args.textureSize = [1, Math.round(aspect * 1000) / 1000];
+  return args;
+}
+
+/** The size a material's images lie at, metres: its textureSize, else 1 × 1 (Images.SizeOf). */
+export function sizeOf(material: NodeDto | undefined): [number, number] {
+  return tileOf(material) ?? [1, 1];
+}
+
+/**
+ * A material given its relief (report #76): the normal map tilting its shading at its strength, the bump map raising
+ * its white at its own; read as data (no colour space), repeated as its texture is. The face needs its uv.
+ */
+export function withRelief<M extends THREE.MeshStandardMaterial>(m: M, relief: Relief, normalStrength: number, bumpStrength: number, copy?: (t: THREE.Texture) => THREE.Texture): M {
+  if (relief.normal) {
+    const t = imageTexture(relief.normal, THREE.RepeatWrapping, true);
+    m.normalMap = copy ? copy(t) : t;
+    m.normalScale = new THREE.Vector2(normalStrength, normalStrength);
+  }
+  if (relief.bump) {
+    const t = imageTexture(relief.bump, THREE.RepeatWrapping, true);
+    m.bumpMap = copy ? copy(t) : t;
+    // three's bumpScale is in the scene's units per the image's full range; a few millimetres at strength 1.
+    m.bumpScale = 0.005 * bumpStrength;
+  }
+  if (relief.normal || relief.bump) m.needsUpdate = true;
+  return m;
 }
 
 /** An entourage picture's coordinates on its card: the whole image across the card's width (turned by the figure's rotation) and up its height. */
@@ -283,13 +328,14 @@ export function whenImagesLoad(f: () => void): () => void {
 }
 
 /** The texture of an image (loaded once per image and wrap), repeated; shared by every mesh, so never freed with one. */
-export function imageTexture(img: OwnImage, wrap: THREE.Wrapping = THREE.RepeatWrapping): THREE.Texture {
-  const key = wrap === THREE.RepeatWrapping ? img.id : `${img.id}:${wrap}`;
+export function imageTexture(img: OwnImage, wrap: THREE.Wrapping = THREE.RepeatWrapping, data = false): THREE.Texture {
+  // A relief map is data, not a colour: loaded on its own, with no colour space.
+  const key = (wrap === THREE.RepeatWrapping ? img.id : `${img.id}:${wrap}`) + (data ? ':data' : '');
   let t = images.get(key);
   if (!t) {
     t = new THREE.TextureLoader().load(img.url, () => { for (const f of listeners) f(); });
     t.wrapS = t.wrapT = wrap;
-    t.colorSpace = THREE.SRGBColorSpace;
+    t.colorSpace = data ? THREE.NoColorSpace : THREE.SRGBColorSpace;
     t.anisotropy = 4;
     t.userData.shared = true;
     images.set(key, t);

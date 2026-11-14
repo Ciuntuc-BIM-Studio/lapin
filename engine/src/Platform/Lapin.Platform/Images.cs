@@ -45,9 +45,15 @@ public static class Images
         : b.Length > 3 && b[0] == 0xFF && b[1] == 0xD8 && b[2] == 0xFF ? "image/jpeg"
         : null;
 
-    /// <summary>A material's own image, or null.</summary>
-    public static Entity? Of(IModelView m, Entity material) =>
-        material.Str("textureImage") is { } id && m.Get(id) is { Class: Class } image ? image : null;
+    /// <summary>
+    /// The attributes a material names its images by: its own texture (<c>textureImage</c>), its normal map (<c>normalImage</c>)
+    /// and its bump map (<c>bumpImage</c>), all three laid on at its <c>textureSize</c> and turned by its <c>textureRotation</c>.
+    /// </summary>
+    public static readonly string[] MaterialKeys = ["textureImage", "normalImage", "bumpImage"];
+
+    /// <summary>A material's own image (or, by <paramref name="key"/>, its normal or bump map), or null.</summary>
+    public static Entity? Of(IModelView m, Entity material, string key = "textureImage") =>
+        material.Str(key) is { } id && m.Get(id) is { Class: Class } image ? image : null;
 
     /// <summary>How large a material's image lies on the model, metres (width, height); 1 × 1 when unset.</summary>
     public static double[] SizeOf(Entity material) =>
@@ -56,8 +62,8 @@ public static class Images
     /// <summary>The file's bytes.</summary>
     public static byte[] Bytes(Entity image) => Convert.FromBase64String(image.Str("data") ?? "");
 
-    /// <summary>The attributes an entity names an image by: a material's <c>textureImage</c>, an orthophoto's or an entourage kind's <c>image</c>.</summary>
-    static readonly string[] Uses = ["textureImage", "image"];
+    /// <summary>The attributes an entity names an image by: a material's <c>textureImage</c>, <c>normalImage</c> and <c>bumpImage</c>, an orthophoto's or an entourage kind's <c>image</c>.</summary>
+    static readonly string[] Uses = [.. MaterialKeys, "image"];
 
     /// <summary>Removes the image when nothing refers to it (but <paramref name="except"/>, the one changing): no material, orthophoto or entourage kind.</summary>
     public static void DropIfUnused(ICommandContext ctx, string? imageId, string except)

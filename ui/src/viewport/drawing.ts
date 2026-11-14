@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { query, useSession } from '../engine/session';
+import { tempArgs, useViewTemporary } from './viewTemporary';
 
 export interface PenDto {
   layer: string;
@@ -109,18 +110,19 @@ export interface DrawingDto {
   frames?: { origin: number[]; right: number[]; up: number[]; dir: number[]; x0: number; x1: number }[];
 }
 
-/** The drawing of a view, fetched again (debounced) after every edit. */
+/** The drawing of a view, fetched again (debounced) after every edit, with the view's temporary hide, isolate and Reveal hidden (viewTemporary.ts). */
 export function useDrawing(viewId: string | null, enabled = true): DrawingDto | null {
   const nodes = useSession((s) => s.nodes);
+  const temp = useViewTemporary((s) => (viewId ? s.byView[viewId] : undefined));
   const [drawing, setDrawing] = useState<{ id: string; d: DrawingDto } | null>(null);
   useEffect(() => {
     if (!viewId || !enabled) { setDrawing(null); return; }
     let live = true;
     const t = setTimeout(() => {
-      void query<DrawingDto>('view.drawing', { id: viewId }).then((d) => { if (live && d) setDrawing({ id: viewId, d }); });
+      void query<DrawingDto>('view.drawing', { id: viewId, ...(temp ? tempArgs(temp) : {}) }).then((d) => { if (live && d) setDrawing({ id: viewId, d }); });
     }, 120);
     return () => { live = false; clearTimeout(t); };
-  }, [viewId, nodes, enabled]);
+  }, [viewId, nodes, enabled, temp]);
   // Another view's drawing is not this one's, even while this one is on its way.
   return drawing && drawing.id === viewId ? drawing.d : null;
 }

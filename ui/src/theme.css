@@ -1994,6 +1994,7 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .dialog[data-dialog=furniture-types] .furniture-new { flex-wrap: wrap; }
 .dialog[data-dialog=furniture-types] .furniture-new select { flex: 1 1 100%; min-width: 0; max-width: 100%; }
 .dialog[data-dialog=furniture-types] .furniture-new .btn, .dialog[data-dialog=furniture-types] .furniture-edit-head .btn { white-space: nowrap; }
+.dialog[data-dialog=furniture-types] .furniture-new .btn { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .dialog[data-dialog=furniture-types] .furniture-edit-head { flex-wrap: wrap; }
 .dialog[data-dialog=furniture-types] .furniture-edit-head .eyebrow { flex: 0 1 auto; min-width: 0; overflow-wrap: anywhere; }
 .dialog[data-dialog=furniture-types] .furniture-edit .row { flex-wrap: wrap; }
@@ -2391,6 +2392,20 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .rules-finding-list { list-style: none; margin: 0 0 8px; padding: 0; }
 .param-value { display: inline-flex; flex-wrap: wrap; align-items: flex-start; gap: 4px; width: 100%; }
 .param-formula { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.param-formula-line { display: flex; gap: 2px; align-items: center; min-width: 0; }
+.param-formula-line input { flex: 1; min-width: 0; }
+/* The Parameters inspector (forum topic 84): fields by group, a click inserts or copies one. */
+.fields-inspector { display: flex; flex-direction: column; gap: 4px; min-width: 0; max-height: 60vh; overflow: auto; }
+.fields-inspector-search { display: flex; align-items: center; gap: 6px; position: sticky; top: 0; background: var(--panel, var(--bg)); padding: 2px 0; z-index: 1; }
+.fields-inspector-search input { flex: 1; min-width: 0; }
+.fields-inspector-group > summary { cursor: pointer; padding: 2px 0; }
+.fields-inspector-group ul { list-style: none; margin: 0; padding: 0; }
+.fields-inspector-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; align-items: center; width: 100%; text-align: left; background: none; border: 0; padding: 2px 4px; border-radius: 3px; cursor: pointer; color: inherit; font: inherit; }
+.fields-inspector-row:hover { background: var(--hover, rgba(127, 127, 127, 0.12)); }
+.fields-inspector-row code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fields-inspector-value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: 0.75; }
+.fields-inspector-dialog { width: min(560px, 94vw); }
+.param-formula .fields-inspector { max-height: 280px; border: 1px solid var(--rule); border-radius: 4px; padding: 4px; margin-top: 4px; }
 .param-formula-switch.on { color: var(--accent); }
 .shape-preview { color: var(--ink); }
 .tabs-inline { flex-wrap: wrap; align-items: center; }

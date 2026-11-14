@@ -10,7 +10,8 @@ namespace Lapin.Mesh;
 /// the materials' own images: <c>model.obj</c>, <c>model.mtl</c>, <c>textures/…</c>. Y up as most readers take OBJ (the model's
 /// Z up turns: x, z, −y), metres. An object per element (its name and GlobalId), a <c>usemtl</c> per material, one material
 /// per Lapin material named after it (spaces as underscores, as Blender writes them, since many readers stop at a space), with
-/// its colour (Kd), shine (Ks, Ns), opacity (d, Tr), index of refraction (Ni), a light's emission (Ke), its image (map_Kd) and
+/// its colour (Kd), shine (Ks, Ns), opacity (d, Tr), index of refraction (Ni), a light's emission (Ke), its image (map_Kd), its
+/// relief (norm for a normal map, map_Bump for a bump map, or for the normal map when there is none) and
 /// the PBR extension's roughness and metallic (Pr, Pm). The real coordinates' offset is not written: OBJ has no node to hold it.
 /// </summary>
 public static class ObjWriter
@@ -47,8 +48,8 @@ public static class ObjWriter
     /// <summary>The OBJ's text, the MTL's and the images (path in the zip, bytes).</summary>
     public static (string Obj, string Mtl, List<(string Path, byte[] Bytes)> Textures) Write(MeshScene scene)
     {
-        var files = UsdWriter.TextureFiles(scene);
-        var fileOf = files.ToDictionary(t => t.Material, t => t.Path);
+        var files = UsdWriter.MapFiles(scene);
+        var fileOf = files.ToDictionary(t => (t.Material, t.Kind), t => t.Path);
         var names = scene.Materials.Select(m => Name(m.Name)).ToList();
 
         var mtl = new StringBuilder();
@@ -72,7 +73,16 @@ public static class ObjWriter
             mtl.Append($"Pr {F(Math.Round(l.Roughness, 4))}\n");
             mtl.Append($"Pm {F(Math.Round(l.Metalness, 4))}\n");
             mtl.Append($"illum {(m.Alpha < 1 || l.Transmission > 0 ? 4 : 2)}\n");
-            if (fileOf.TryGetValue(i, out var path)) mtl.Append($"map_Kd {path}\n");
+            if (fileOf.TryGetValue((i, "color"), out var path)) mtl.Append($"map_Kd {path}\n");
+            // Relief (the MTL's PBR extension): the normal map as norm; a bump map as map_Bump at its strength (-bm). A material with
+            // a normal map and no bump map writes it as map_Bump too, as Blender reads and writes a normal map there.
+            var bump = fileOf.TryGetValue((i, "bump"), out var bumpPath);
+            if (fileOf.TryGetValue((i, "normal"), out var normalPath))
+            {
+                mtl.Append($"norm {normalPath}\n");
+                if (!bump) mtl.Append($"map_Bump -bm {F(Math.Round(l.NormalStrength, 4))} {normalPath}\n");
+            }
+            if (bump) mtl.Append($"map_Bump -bm {F(Math.Round(l.BumpStrength, 4))} {bumpPath}\n");
         }
 
         var obj = new StringBuilder();

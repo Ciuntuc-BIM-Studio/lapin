@@ -6,13 +6,14 @@
  */
 
 import { useEffect, useState } from 'react';
-import { CopyCheck, Plus, X } from 'lucide-react';
+import { Braces, CopyCheck, Plus, X } from 'lucide-react';
 import { Cell, LengthCell } from './cells';
 import { parseNumber } from './cellKeys';
 import { execute, query, useSession } from '../engine/session';
 import { notify } from '../app/store';
 import { paramKey, sameKind, type Param } from './params';
 import { ParamValue, useEvaluated } from './ParamFormula';
+import { openFieldsInspector } from './FieldsInspector';
 import { useParamDefs } from '../modules/core/classifications/classifications';
 import { defNamed } from '../modules/core/classifications/classModel';
 import type { NodeDto } from '../engine/protocol';
@@ -120,6 +121,10 @@ export function ParamsSection({ node, ids: who, shadowed, isType = node.type.end
         <datalist id="param-suggestions">{[...new Set([...defs.map((d) => d.name), ...SUGGESTED])].map((x) => <option key={x} value={x} />)}</datalist>
         <select value={kind} onChange={(e) => setKind(e.target.value)} title="Kind">{KINDS.map((k) => <option key={k} value={k}>{k}</option>)}</select>
         <button type="button" className="icon" title="Add the parameter" onClick={add} disabled={!name.trim()}><Plus size={14} /></button>
+      </div>
+      <div className="param-add">
+        <button type="button" className="btn small" data-action="fields-inspector" title="Every field its tags, texts and formulas can read ({name}, {storey.code}, {room.number}…), with its value now: click one to copy it"
+          onClick={() => openFieldsInspector(node.id)}><Braces size={13} /> Parameters inspector</button>
       </div>
       {standard.length > 0 && (
         <div className="param-add">

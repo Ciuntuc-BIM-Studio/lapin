@@ -14,12 +14,23 @@ For a space without walls all round, such as a terrace or one end of an open-pla
 
 ![A plan with two rooms coloured by function and a colour legend](shots/rooms-plan.webp)
 
+## Room separation lines
+
+An open-plan kitchen and living room, the two ends of a hall, a gallery's landing: spaces with no wall between them that should still be rooms of their own. **Architecture → Room separation** (<kbd>RS</kbd> for a line) draws a line that bounds rooms as a wall would, with no body: a **line** (chained, each click the start of the next), a **polyline** (its corners, then <kbd>Enter</kbd>), a **rectangle** (two opposite corners: the zone inside it becomes a room of its own), an **arc** (its start, its end, a point it passes through) or a **circle** (its centre, a point on it). Draw it from wall to wall; an end a hair short of a wall's face still closes on it.
+
+![An open-plan kitchen and living room parted by a room separation line, each room with its own area](shots/room-dividers.webp)
+
+The rooms around it find their outlines again at once, with no **Update rooms**: a 6 × 4 m room split by a line down its middle is two rooms of 3 × 4 m, each with its own area, stamp and finish; place a room on the other side with **Room**. Move the line (draw it again) or delete it and the rooms follow: deleted, the room is whole again. The rooms on either side meet exactly on the line, so their areas add up to the whole room. A line that stops in the middle of a room bounds nothing and changes nothing.
+
+On plans of its storey it is drawn as a thin dashed line; it has no body, so the 3D view, sections and quantities of the building leave it out (its length is in its quantities). Drafted linework becomes room separation lines too: **Draft → Convert → Convert to…**, **Room separation lines**. In IFC it is an **IfcVirtualElement** (BOUNDARY in IFC 4.3) with its line as a FootPrint curve, which Lapin reads back as a room separation line.
+
 ## A room's properties
 
 Select a room by clicking its stamp or anywhere inside it. In the properties panel:
 
 - **Name** and **Number.** New rooms are numbered by level: 101, 102… on the ground floor. A room's name is its function's until you give it one of your own; emptied, it goes back to the function.
 - **Function**, **Department** and **Floor finish.** Type anything, or pick a value other rooms already have.
+  Left empty, a finished room's **Floor finish** is its finish's floor (the material of its top layer, shown greyed in the field): its tag, its formulas and documents read `{finishFloor}` as that until you type one of your own.
 - **Height.** Empty means the level's height.
 - **Own colour** and **Own hatch** override the colour scheme for this one room, and **Own opacity** its colour's opacity (empty: as its scheme).
 
@@ -106,6 +117,8 @@ A finish has:
 Each finish measures, by material, its **gross** area (the room's outline, nothing deducted: the floor's area, the walls' perimeter times each piece's height) and its **net** area (what is built: the doors, windows and floor openings taken out, the reveals and the floor through the doors added; the reveals' share is in the quantities, as RevealArea), and its volume. **Interior → Finishes schedule** lists every finished room by part and material, with the totals by material at the end; like any schedule it charts, exports and goes on a sheet. In IFC a finish is an IfcCovering: FLOORING, CLADDING or CEILING.
 
 A finish lines what the room's walls already have: if the wall types carry their own plaster, give the room's walls only what goes over it (paint, tiles), or use wall types of the core only.
+
+**A room's fields from its finish.** A tag, a schedule's formula or a symbol's text reads what the room's finish shows: `{finish.name}` the finish's name, `{finish.floor}` its floor's top layer (*Ceramic tiles*), `{finish.walls}` and `{finish.ceiling}` the layer facing the room. **Room tag** offers them as **Finish**, **Finish: floor**, **Finish: walls** and **Finish: ceiling**. They are worked out every time, never stored: lay another finish and the stamps follow. A door reads its room's through `{room.finish.floor}`.
 
 **A finished room is measured to its finishes.** Its area, perimeter and volume, in its quantities, on its stamp, in the room schedule, the colour legend and a document's usable area, are measured to the finished face of its walls: the walls' finish at the floor (the tiles on the adhesive, say 1.5 cm) is taken in along every side, so a 4 × 5 m room finished so has 3.97 × 4.97 m. The volume goes up to the finished ceiling (the ceiling's layers under the slab above, else under the room's height). The doors' gaps are not the room's: the finished face runs on across them, even when the floor runs on through the doors. The measures to the walls stay in the quantities as the gross floor area, the perimeter and the gross volume. Change the finish or take it off and the room's area follows at once, with no **Update rooms**.
 

@@ -9,6 +9,7 @@ import { ImagePlus, Trash2 } from 'lucide-react';
 import { notify } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { LengthField } from '../../shell/cells';
+import { reliefArgs } from '../../viewport/textures';
 
 const MAX = 2048;
 
@@ -75,6 +76,60 @@ export function OwnImage({ materialId }: { materialId: string }) {
           <button type="button" className="icon" title="Take the image off" onClick={() => set({ textureImage: null })}><Trash2 size={13} /></button>
         </>}
       </div>
+    </div>
+  );
+}
+
+/** The relief maps a material may have (report #76): what each is, its attribute and its strength's. */
+export const RELIEF = [
+  { key: 'normalImage', strength: 'normalStrength', label: 'Normal map', title: 'A normal map (tangent space, green up, as glTF): the faces shade as if they had its relief. Kept in the project; carried by GLB, glTF, USD/USDZ and OBJ.' },
+  { key: 'bumpImage', strength: 'bumpStrength', label: 'Bump map', title: 'A bump map (white high, black low): the faces shade as if raised where it is light. Kept in the project; carried by OBJ (map_Bump).' },
+] as const;
+
+/** A material's normal and bump maps: each its image, its strength, taken off with the bin. Laid on at the texture's size and turn. */
+export function ReliefMaps({ materialId, strengths }: { materialId: string; strengths: { normalStrength: number; bumpStrength: number } }) {
+  const nodes = useSession((s) => s.nodes);
+  const mat = nodes.get(materialId);
+  const set = (args: Record<string, unknown>) => void execute('material.update', { id: materialId, ...args });
+
+  const choose = (key: string) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/png,image/jpeg';
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        const { mime, data, aspect } = await prepareImage(file);
+        const r = await execute('image.add', { name: file.name, mime, data }) as { id?: string } | null;
+        if (r?.id) set(reliefArgs(key, r.id, aspect, mat?.props.textureSize));
+      } catch (e) {
+        notify(`The image could not be read: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    };
+    input.click();
+  };
+
+  return (
+    <div className="own-image" data-testid="material-relief">
+      {RELIEF.map(({ key, strength, label, title }) => {
+        const imageId = typeof mat?.props[key] === 'string' ? mat.props[key] as string : null;
+        const image = imageId ? nodes.get(imageId) : undefined;
+        return (
+          <div key={key} className="row" data-field={`material-${key}`}>
+            <span className="eyebrow" title={title}>{label}</span>
+            {image && typeof image.props.data === 'string'
+              ? <img className="own-image-thumb" alt={image.name} src={`data:${String(image.props.mime)};base64,${image.props.data}`} />
+              : <span className="own-image-thumb empty muted small">none</span>}
+            <button type="button" className="btn compact" onClick={() => choose(key)}><ImagePlus size={13} />{image ? 'Replace…' : 'Import image…'}</button>
+            {image && <>
+              <label className="small" title="How strongly it shows: 1 as the image says, 0 flat">Strength <input className="num" data-field={`material-${strength}`} key={`${materialId}${strength}${strengths[strength]}`} defaultValue={strengths[strength]}
+                onBlur={(e) => { const v = Number(e.target.value.replace(',', '.')); if (Number.isFinite(v) && v >= 0 && v <= 10 && v !== strengths[strength]) set({ [strength]: v }); }} /></label>
+              <button type="button" className="icon" title="Take the image off" onClick={() => set({ [key]: null })}><Trash2 size={13} /></button>
+            </>}
+          </div>
+        );
+      })}
     </div>
   );
 }

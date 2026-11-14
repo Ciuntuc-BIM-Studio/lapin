@@ -27,7 +27,9 @@ public sealed record ShapePrism(IReadOnlyList<Vec3> Outer, IReadOnlyList<IReadOn
 /// seen looking that way).
 /// </summary>
 public sealed record ForeignFill(string GlobalId, string IfcClass, string? Name, double? Width, double? Height, string? Operation, string? TypeName, string? TypeGlobalId, JsonObject Properties,
-    string? UserDefined = null, IReadOnlyList<IfcJoineryPanel>? Panels = null, Vec2? OpensTowards = null);
+    string? UserDefined = null, IReadOnlyList<IfcJoineryPanel>? Panels = null, Vec2? OpensTowards = null,
+    // Its material per part (report #76): its IfcMaterialConstituentSet's constituents (or its type's), each its name and its material's.
+    IReadOnlyList<(string Name, string Material)>? Constituents = null);
 
 /// <summary>An opening that voids a foreign element: its body as prisms, and its fill when it has one.</summary>
 public sealed record ForeignOpening(string GlobalId, string? Name, IReadOnlyList<ShapePrism> Prisms, ForeignFill? Fill);

@@ -16,7 +16,7 @@ import { effectiveBindings, formatBinding, resolveAlias, resolveKeymap, useKeyma
 import { activate, activateSlot, allTools, defaultHotbar, hotbarSlots, ribbonTabs } from '../platform/modules';
 import { extraTools, extraToolsRev } from '../platform/extraTools';
 import { tabHandlers } from '../platform/scope';
-import { redo, undo } from '../engine/session';
+import { redo, undo, useSession } from '../engine/session';
 import { deleteElements } from '../engine/dependents';
 import { previousSelection } from '../shell/selectionHistory';
 import { runFileAction } from '../shell/fileActions';
@@ -40,7 +40,9 @@ function appCommands(): CommandDef[] {
     { id: 'app.delete', label: 'Delete the selection', category: general, defaults: ['Delete', 'Backspace'], run: () => {
       // Over a roof window's grip on its selected roof: that window, not the roof (decision 280).
       if (takeHotRemove()) return;
-      const ids = useUi.getState().selected;
+      // A view selected by its crop frame is not deleted by the key: views are deleted from the project browser (forum topic 68).
+      const nodes = useSession.getState().nodes;
+      const ids = useUi.getState().selected.filter((id) => nodes.get(id)?.type !== 'LapinView');
       if (ids.length) { void deleteElements(ids); select(null); }
     } },
     // The last ten selections (forum topic 73): this takes the newest again, and the right-click menu lists them all.

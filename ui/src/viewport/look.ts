@@ -18,13 +18,17 @@ export interface Look {
   emissive: string | null;
   emissiveStrength: number;
   textureRotation: number;
+  /** How strongly its normal map and its bump map show (1 as the image says, 0 flat). */
+  normalStrength: number;
+  bumpStrength: number;
 }
 
-export const PLAIN: Look = { roughness: 0.85, metalness: 0, transparency: 0, transmission: 0, ior: 1.5, emissive: null, emissiveStrength: 1, textureRotation: 0 };
+export const PLAIN: Look = { roughness: 0.85, metalness: 0, transparency: 0, transmission: 0, ior: 1.5, emissive: null, emissiveStrength: 1, textureRotation: 0, normalStrength: 1, bumpStrength: 1 };
 
 /** The look's numeric fields and their ranges, as the engine checks them. */
 export const LOOK_RANGES: Record<Exclude<keyof Look, 'emissive'>, [number, number]> = {
   roughness: [0, 1], metalness: [0, 1], transparency: [0, 1], transmission: [0, 1], ior: [1, 3], emissiveStrength: [0, 100], textureRotation: [-360, 360],
+  normalStrength: [0, 10], bumpStrength: [0, 10],
 };
 
 /** Lower case without diacritics, padded with spaces so a word's end can be matched. */
@@ -68,6 +72,7 @@ export function lookOf(material: NodeDto | undefined): Look {
   return {
     roughness: num('roughness'), metalness: num('metalness'), transparency: num('transparency'), transmission: num('transmission'), ior: num('ior'),
     emissive, emissiveStrength: num('emissiveStrength'), textureRotation: num('textureRotation'),
+    normalStrength: num('normalStrength'), bumpStrength: num('bumpStrength'),
   };
 }
 

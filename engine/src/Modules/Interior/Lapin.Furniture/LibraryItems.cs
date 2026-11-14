@@ -23,7 +23,10 @@ public static class LibraryItems
     public const string ItemClass = FurnitureModule.TypeClass;
 
     /// <summary>The attributes of a material that name another entity of its project: carried by value (the image), never by id.</summary>
-    static readonly string[] ByReference = ["textureImage"];
+    static readonly string[] ByReference = Images.MaterialKeys;
+
+    /// <summary>Where an item carries each of a material's images: its texture as <c>image</c>, its relief maps under their own keys.</summary>
+    static readonly (string Attr, string Item)[] Carried = [("textureImage", "image"), ("normalImage", "normalMap"), ("bumpImage", "bumpMap")];
 
     /// <summary>A furniture type as a library item: {class, name, predefinedType, spec, materials: [{name, attrs, image?}]}.</summary>
     public static JsonObject Of(IModelView m, Entity type)
@@ -37,8 +40,9 @@ public static class LibraryItems
             var attrs = mat.CloneAttrs();
             foreach (var k in ByReference) attrs.Remove(k);
             var o = new JsonObject { ["name"] = mat.Name, ["attrs"] = attrs };
-            if (Images.Of(m, mat) is { } image)
-                o["image"] = new JsonObject { ["name"] = image.Name, ["mime"] = image.Str("mime"), ["data"] = image.Str("data") };
+            foreach (var (attr, slot) in Carried)
+                if (Images.Of(m, mat, attr) is { } image)
+                    o[slot] = new JsonObject { ["name"] = image.Name, ["mime"] = image.Str("mime"), ["data"] = image.Str("data") };
             materials.Add((JsonNode)o);
         }
         var item = new JsonObject
@@ -100,13 +104,14 @@ public static class LibraryItems
                 var attrs = mo["attrs"] is JsonObject a ? (JsonObject)a.DeepClone() : new JsonObject();
                 foreach (var k in ByReference) attrs.Remove(k);
                 if ((string?)attrs["color"] is not { Length: 7 }) attrs["color"] = FurnitureKinds.ColorOf(name) ?? Materials.DefaultColor(name);
-                if (mo["image"] is JsonObject img && (string?)img["data"] is { Length: > 0 } data && (string?)img["mime"] is { } mime && Images.Mimes.Contains(mime))
-                {
-                    var image = new Entity(edit.NewId(), Images.Class, ((string?)img["name"])?.Trim() is { Length: > 0 } iname ? iname : name,
-                        new JsonObject { ["mime"] = mime, ["data"] = data });
-                    edit.Add(image);
-                    attrs["textureImage"] = image.Id;
-                }
+                foreach (var (attr, slot) in Carried)
+                    if (mo[slot] is JsonObject img && (string?)img["data"] is { Length: > 0 } data && (string?)img["mime"] is { } mime && Images.Mimes.Contains(mime))
+                    {
+                        var image = new Entity(edit.NewId(), Images.Class, ((string?)img["name"])?.Trim() is { Length: > 0 } iname ? iname : name,
+                            new JsonObject { ["mime"] = mime, ["data"] = data });
+                        edit.Add(image);
+                        attrs[attr] = image.Id;
+                    }
                 edit.Add(new Entity(edit.NewId(), IfcClass.Material, name, attrs));
             }
         // A material the spec names that the item did not carry (an item written by hand): made from its name, as a new type's are.

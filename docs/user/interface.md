@@ -183,6 +183,20 @@ A right click on a selected element (in a plan, a drawing or the 3D view) offers
 
 Select several elements (Shift-click, or drag a box) and the properties panel shows the last one picked, with **N selected** beside its class. A value they share is shown; one that differs reads *varies*. Change a field and every selected element that has it takes the new value, in one step that **Undo** takes back: the height and base offset of walls, the type of every selected wall, door or beam, the sill of windows, the phases of every selected element whatever its class, the layer and colour of drafted lines, the style of texts. What is each element's own stays its own: a room's number, a wall's length, a door's place along its wall.
 
+## Hide in a plan or a section
+
+A right click in a plan, a section or an elevation, with something selected, offers to put it away:
+
+- **Hide in view** hides the selection in this view for good, as Revit's *Hide in view*: it is kept with the project, and the view's sheets, PDF and DXF leave it out too. Each hide is one undo step. A level's default plan becomes its plan view when something is hidden in it.
+- **Hide for now** (<kbd>HH</kbd>) and **Isolate for now** (<kbd>HI</kbd>) hide the selection, or everything else, in this view only until **Reset temporary hide/isolate** (<kbd>HR</kbd>). They are not saved or undone, and they print nothing differently. The same keys in 3D hide and isolate in the 3D view, as before.
+- **Reveal hidden** draws what the view hides in magenta, so it can be picked: select it and choose **Unhide in view** to show it again. Choose **Reveal hidden** again to turn it off.
+
+## Quick select
+
+**Quick select…** (in the right-click menu of a view, or **View → Select → Quick select**, <kbd>QS</kbd>) selects elements by rules, as AutoCAD's QSELECT and Revit's filters do. Each rule reads one field of an element (its class, type, storey, material, name, or a parameter by its name, such as a height or a fire rating) and compares it: **equals**, **contains**, **is between** two numbers (either end may stay empty), **is greater than**, **has a value** and the others the view filters have. Elements must match **all the rules** or **any of the rules**. **Look in** chooses what the view in front shows (its crop, what it hides and what is hidden for now count) or the whole project. The count of elements found follows as you type; **Select** selects them, or adds them to the selection with **Add to the selection** ticked.
+
+![Quick select: the walls of one type in the whole project](shots/quick-select.webp)
+
 ## Mouse navigation styles
 
 The status bar, at the bottom, names the mouse navigation style in use (*Lapin* to begin with). Click it to choose another: **Revit-like**, **AutoCAD-like**, **ArchiCAD-like**, **SketchUp-like**, **Blender-like** or **Rhino-like**, each listed with its main gestures. **File → Preferences → Display → Mouse navigation** sets it too. It is kept for you, on this computer, for every project, and it applies to the 3D view and to plans, sections, elevations and sheets alike.
@@ -257,6 +271,14 @@ A name may read another element's parameter or field, written before a dot:
 Nothing of this is stored on the element: it is read every time it is asked for. Change the storey's *code* from K1 to K2 and every room's formula, stamp, tag, schedule and the IFC export say K2 at once. A formula that reads itself, directly or through others, gives no value and says so.
 
 ![A room's index worked out from its storey's code and its own parameters](shots/param-scopes.webp)
+
+### The Parameters inspector
+
+Which names can an element read? **Properties → Parameters → Parameters inspector** lists every one, with its value now: the fields every element has (`{name}`, `{mark}`, `{type}`, `{class}`), its attributes (a room's `{number}`, a wall's `{height}`), what its module works out (a room's `{finish.floor}`), its quantities, its own parameters, the standard IFC properties of its class, the project's parameters by their key, and then, group by group, what it reads through its storey, building, site, the project, its type, group, assembly, host and rooms (`{storey.code}`, `{project.number}`, `{room.name}`, `{host.FireRating}`…). Type in **Search the fields** to narrow it down; hover a field for what it is. Click one to copy it, then paste it into a tag, a title block, a symbol's text or a formula.
+
+![The Parameters inspector of a room: its own fields, then its storey's and the project's](shots/fields-inspector.webp)
+
+While a formula is open, the **{ }** button beside it (**Insert field…**) opens the same list under it: a click puts the field where the cursor is, `{storey.code}` in a text with fields, the bare name (`storey.code`, *FireRating*) in an expression. A quantity is read only by formulas: in a text it goes in as `{= NetArea}`.
 
 ## Keyboard shortcuts
 

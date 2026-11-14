@@ -236,7 +236,12 @@ public sealed partial class IfcModel
         return (Str(u[2]) ?? "").ToUpperInvariant() switch { "DEGREE" => Math.PI / 180, "FOOT" => 0.3048, "INCH" => 0.0254, "YARD" => 0.9144, "MILE" => 1609.344, _ => 1 };
     }
 
-    /// <summary>A surface style's colour, through IFC2X3's presentation style assignments.</summary>
+    /// <summary>
+    /// A surface style's colour, through IFC2X3's presentation style assignments: <c>#rrggbb</c>, or <c>#rrggbbaa</c> (its
+    /// opacity as the last byte) when its shading or rendering is see-through (IfcSurfaceStyleShading.Transparency in IFC4,
+    /// IfcSurfaceStyleRendering's in both schemas), the style's name kept in <see cref="StyleNames"/>. The import takes the
+    /// opacity off before it keeps a colour (<see cref="Opacity"/>) and gives such a part a material of that look.
+    /// </summary>
     string? Colour(object? styles, int depth = 0)
     {
         foreach (var s in Items(styles))
@@ -245,10 +250,26 @@ public sealed partial class IfcModel
             if (s.Type != "IFCSURFACESTYLE") continue;
             foreach (var r in Items(s[2]))
                 if (File.Get(r[0]) is { Type: "IFCCOLOURRGB" } rgb)
-                    return HexColor.Of(Num(rgb[1]), Num(rgb[2]), Num(rgb[3]));
+                {
+                    var hex = HexColor.Of(Num(rgb[1]), Num(rgb[2]), Num(rgb[3]));
+                    var transparency = r.Type is "IFCSURFACESTYLESHADING" or "IFCSURFACESTYLERENDERING" && r.Args.Count > 1 ? Math.Clamp(Num(r[1]), 0, 1) : 0;
+                    var alpha = (int)Math.Round((1 - transparency) * 255);
+                    if (alpha >= 255) return hex;
+                    var key = $"{hex}{alpha:x2}";
+                    if (Str(s[0]) is { Length: > 0 } name) StyleNames.TryAdd(key, name);
+                    return key;
+                }
         }
         return null;
     }
+
+    /// <summary>The names of the see-through styles, by the colour and opacity <see cref="Colour"/> gives them (#rrggbbaa).</summary>
+    public Dictionary<string, string> StyleNames { get; } = [];
+
+    /// <summary>A colour as the model reads it split into <c>#rrggbb</c> and its opacity (1 for a colour without one).</summary>
+    public static (string Colour, double Opacity) Opacity(string colour) =>
+        colour.Length == 9 && colour[0] == '#' && int.TryParse(colour.AsSpan(7), System.Globalization.NumberStyles.AllowHexSpecifier, null, out var a)
+            ? (colour[..7], a / 255.0) : (colour, 1);
 
     // ─── Properties ──────────────────────────────────────────────────────────
 

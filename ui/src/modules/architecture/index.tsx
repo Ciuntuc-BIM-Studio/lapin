@@ -43,7 +43,7 @@ import { CeilingSection, CeilingTypesDialog, ceiling, ceilingDiffuser, ceilingIn
 import { finishRoom, roomFinishSchedule, roomFinishes } from './roomFinishTools';
 import { WallSweepSection, WallSweepsOnWall, hasSweeps, revealSelected, sweepSelected, wallReveal, wallSweep, wallSweepSchedule } from './WallSweeps';
 import { SkirtingSection, SkirtingTypesDialog, skirting, skirtingGrips, skirtingInRoom, skirtingSchedule, skirtingTypes } from './Skirtings';
-import { colorLegend, room, roomColors, roomOutline, roomTag, updateRooms } from './roomTools';
+import { colorLegend, room, roomColors, roomDivider, roomDividerArc, roomDividerCircle, roomDividerPolyline, roomDividerRectangle, roomDividers, roomOutline, roomTag, updateRooms } from './roomTools';
 import { sameKind } from '../../shell/params';
 import { withAutoJoinMenus } from '../core/autoJoin';
 import { SHADE, SunshadeSection, SunshadeTypesDialog, sunshade, sunshadeAlong, sunshadeGrips, sunshadeSchedule, sunshadeTypes } from './Sunshades';
@@ -465,7 +465,7 @@ const architecture: LapinModule = {
       // Profiles swept along a wall's face: added (a cornice, a band) or taken out (a reveal), decision 297.
       { label: 'Sweeps', tools: [wallSweep, wallReveal], small: [sweepSelected, revealSelected, wallSweepSchedule] },
       { label: 'Joins', tools: [join, mitre, butt, swap, mitreNew], small: [attachRoof, detachRoof] },
-      { label: 'Room', tools: [room, roomColors], small: [roomOutline, updateRooms, roomTag] },
+      { label: 'Room', tools: [room, roomColors], small: [roomOutline, roomDividers, updateRooms, roomTag] },
       { label: 'Circulation', tools: [stair, ramp, stairTypes], small: [entranceSteps, entranceRamp, underStair, underStairSchedule] },
       // Balconies (a tester's report, #96): by a wall's face in a style, by outline, a gallery's edge; the configurator, stacking, the schedule.
       { label: 'Balconies', tools: [balcony, balconyConfigurator], small: [balconyOutline, galleryEdge, stackBalconies, balconySchedule] },
@@ -533,6 +533,11 @@ const architecture: LapinModule = {
     IfcRoof: (n) => { useUi.setState({ roofStyle: typeof n.props.style === 'string' ? n.props.style : null }); activate(roof); },
     IfcCurtainWall: (n) => { useUi.setState({ curtainTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(curtainWall); },
     IfcSpace: (n) => activate(n.props.auto === false ? roomOutline : room),
+    // Create similar on a room separation line: the same kind of line again.
+    IfcVirtualElement: (n) => {
+      const t = (n.props.shape as { type?: string; closed?: boolean } | undefined);
+      activate(t?.type === 'arc' ? roomDividerArc : t?.type === 'circle' ? roomDividerCircle : t?.type === 'polyline' ? (t.closed ? roomDividerRectangle : roomDividerPolyline) : roomDivider);
+    },
     [BALCONY]: (n) => { useUi.setState({ balconyStyle: styleOf(n) || null }); activate(n.props.kind === 'mezzanine' ? galleryEdge : n.props.contour ? balconyOutline : balcony); },
   },
   setType: {

@@ -183,6 +183,20 @@ Un clic dreapta pe un element selectat (într-un plan, un desen sau în 3D) ofer
 
 Selectează mai multe elemente (Shift-clic sau trage un dreptunghi), iar panoul de proprietăți îl arată pe ultimul ales, cu **N selectate** lângă clasa lui. O valoare pe care o au toate e afișată; una care diferă apare ca *diferă*. Schimbă un câmp și fiecare element selectat care îl are primește noua valoare, într-un singur pas pe care **Anulează** îl desface: înălțimea și decalajul bazei pereților, tipul fiecărui perete, ușă sau grindă selectată, parapetul ferestrelor, fazele fiecărui element selectat oricare i-ar fi clasa, stratul și culoarea liniilor desenate, stilul textelor. Ce e al fiecărui element rămâne al lui: numărul unei încăperi, lungimea unui perete, locul unei uși de-a lungul peretelui.
 
+## Ascunderea într-un plan sau o secțiune
+
+Un clic dreapta într-un plan, o secțiune sau o fațadă, cu ceva selectat, oferă să-l pui deoparte:
+
+- **Ascunde în vedere** ascunde selecția în această vedere de tot, ca *Hide in view* din Revit: se păstrează cu proiectul, iar planșele, PDF-ul și DXF-ul vederii o lasă și ele deoparte. Fiecare ascundere e un singur pas de anulare. Planul implicit al unui nivel devine vederea lui de plan când se ascunde ceva în el.
+- **Ascunde temporar** (<kbd>HH</kbd>) și **Izolează temporar** (<kbd>HI</kbd>) ascund selecția, sau tot restul, doar în această vedere, până la **Resetează ascunderea/izolarea temporară** (<kbd>HR</kbd>). Nu se salvează și nu se anulează, și nu schimbă nimic la tipărire. Aceleași taste în 3D ascund și izolează în vederea 3D, ca până acum.
+- **Arată ascunsele** desenează cu magenta ce ascunde vederea, ca să poată fi luat: selectează-l și alege **Reafișează în vedere** ca să-l arăți din nou. Alege iar **Arată ascunsele** ca s-o oprești.
+
+## Selecția rapidă
+
+**Selecție rapidă…** (în meniul de clic dreapta al unei vederi, sau **Vedere → Selectează → Selecție rapidă**, <kbd>QS</kbd>) selectează elemente după reguli, cum fac QSELECT din AutoCAD și filtrele din Revit. Fiecare regulă citește un câmp al elementului (clasa, tipul, nivelul, materialul, numele sau un parametru după nume, cum ar fi o înălțime sau o rezistență la foc) și îl compară: **este egal cu**, **conține**, **este între** două numere (oricare capăt poate rămâne gol), **este mai mare decât**, **are o valoare** și celelalte pe care le au filtrele vederilor. Elementele trebuie să respecte **toate regulile** sau **oricare dintre reguli**. **Caută în** alege ce arată vederea din față (contează decuparea ei, ce ascunde și ce e ascuns temporar) sau tot proiectul. Numărul de elemente găsite se schimbă pe măsură ce scrii; **Selectează** le selectează, sau le adaugă la selecție cu **Adaugă la selecție** bifat.
+
+![Selecția rapidă: pereții unui tip, în tot proiectul](shots/quick-select.webp)
+
 ## Stiluri de navigare cu mouse-ul
 
 Bara de stare, jos, arată stilul de navigare cu mouse-ul în uz (la început *Lapin*). Dă clic pe el ca să alegi altul: **Revit-like**, **AutoCAD-like**, **ArchiCAD-like**, **SketchUp-like**, **Blender-like** sau **Rhino-like**, fiecare cu gesturile lui principale. Îl setează și **Fișier → Preferințe → Afișare → Navigare cu mouse-ul**. Se păstrează pentru tine, pe acest calculator, pentru toate proiectele, și se aplică deopotrivă vederii 3D și planurilor, secțiunilor, fațadelor și planșelor.
@@ -257,6 +271,14 @@ Un nume poate citi parametrul sau câmpul altui element, scris înainte de un pu
 Nimic din toate acestea nu se păstrează pe element: se citește la fiecare cerere. Schimbă *code* al nivelului din K1 în K2 și formula fiecărei încăperi, eticheta ei, celelalte etichete, extrasul și exportul IFC spun K2 imediat. O formulă care se citește pe ea însăși, direct sau prin altele, nu dă nicio valoare și spune de ce.
 
 ![Indexul unei încăperi calculat din codul nivelului ei și din parametrii ei](shots/param-scopes.webp)
+
+### Inspectorul de parametri
+
+Ce nume poate citi un element? **Proprietăți → Parametri → Inspector de parametri** le arată pe toate, cu valoarea lor de acum: câmpurile pe care le are orice element (`{name}`, `{mark}`, `{type}`, `{class}`), atributele lui (`{number}` al unei încăperi, `{height}` al unui perete), ce calculează modulul lui (`{finish.floor}` al unei încăperi), cantitățile lui, parametrii lui proprii, proprietățile standard IFC ale clasei lui, parametrii proiectului după cheie și apoi, grup cu grup, ce citește prin nivelul, clădirea, amplasamentul lui, proiect, tipul, grupul, ansamblul, gazda și încăperile lui (`{storey.code}`, `{project.number}`, `{room.name}`, `{host.FireRating}`…). Scrie în **Caută câmpurile** ca să restrângi lista; ține mouse-ul pe un câmp ca să vezi ce este. Dă clic pe unul ca să-l copiezi, apoi lipește-l într-o etichetă, un cartuș, textul unui simbol sau o formulă.
+
+![Inspectorul de parametri al unei încăperi: câmpurile ei, apoi ale nivelului și ale proiectului](shots/fields-inspector.webp)
+
+Cât timp o formulă e deschisă, butonul **{ }** de lângă ea (**Inserează câmp…**) deschide aceeași listă sub ea: un clic pune câmpul unde e cursorul, `{storey.code}` într-un text cu câmpuri, numele simplu (`storey.code`, *FireRating*) într-o expresie. O cantitate e citită doar de formule: într-un text intră ca `{= NetArea}`.
 
 ## Scurtăturile de tastatură
 

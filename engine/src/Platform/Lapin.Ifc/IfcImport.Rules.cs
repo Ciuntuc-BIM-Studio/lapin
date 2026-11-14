@@ -28,6 +28,46 @@ public static partial class IfcImport
         static readonly HashSet<string> KindProperties = new(StringComparer.OrdinalIgnoreCase) { "Tipo", "Type", "IfcClass", "IfcEntity", "Entity", "Category", "Categoría", "Class", "Clase" };
 
         readonly ConcurrentDictionary<string, Lazy<BodyRead>> sharedReads = [];
+
+        /// <summary>
+        /// The parts as a stored body (report #76): a part the file styles see-through (glass: its surface style's transparency,
+        /// read as #rrggbbaa by <see cref="IfcModel.Colour"/>) keeps its colour and takes a material named after the style, of that
+        /// colour and transparency, so it draws, renders and exports see-through as in the file. The file's own surfaces are not
+        /// changed: the material only carries their look.
+        /// </summary>
+        JsonObject Stored(IEdit edit, IEnumerable<Part> parts)
+        {
+            var list = parts.ToList();
+            var body = StoredBodies.Write(list.Select(p => (p.Name, IfcModel.Opacity(p.Color).Colour, p.Vertices, p.Triangles)));
+            if (body["parts"] is not JsonArray written) return body;
+            for (var i = 0; i < list.Count && i < written.Count; i++)
+            {
+                var (hex, opacity) = IfcModel.Opacity(list[i].Color);
+                if (opacity >= 1 || written[i] is not JsonObject part) continue;
+                part["material"] = SeeThrough(edit, list[i].Color, hex, opacity);
+            }
+            return body;
+        }
+
+        /// <summary>The parts as a stored body in their colours alone (an opening's, a body kept uncut for the export): no opacity kept.</summary>
+        static JsonObject Colours(IEnumerable<Part> parts) => StoredBodies.Write(parts.Select(p => (p.Name, IfcModel.Opacity(p.Color).Colour, p.Vertices, p.Triangles)));
+
+        readonly Dictionary<string, string> seeThrough = [];
+
+        /// <summary>The material of a see-through style: the style's name (else its colour and opacity), its transparency where it sets none of its own.</summary>
+        string SeeThrough(IEdit edit, string key, string hex, double opacity)
+        {
+            if (seeThrough.TryGetValue(key, out var id)) return id;
+            var name = model.StyleNames.GetValueOrDefault(key) ?? $"IFC {hex.TrimStart('#').ToUpperInvariant()} {Math.Round(100 * opacity)}%";
+            var material = Lapin.Platform.Materials.Find(edit.Model, name) ?? Lapin.Platform.Materials.Ensure(edit, name, hex);
+            if (material.Attrs["transparency"] == null)
+            {
+                var a = material.CloneAttrs();
+                a["transparency"] = Math.Round(1 - opacity, 3);
+                edit.Replace(material.With(attrs: a));
+            }
+            return seeThrough[key] = material.Id;
+        }
         readonly ConcurrentDictionary<string, int> hashUses = [];
         long trianglesRead, trianglesKept;
         Vec3? middle;
@@ -192,7 +232,7 @@ public static partial class IfcImport
             var parts = fromCorner ? body.Parts.Select(p => (p.Name, p.Color, (IReadOnlyList<Vec3>)p.Vertices.Select(v => v - body.Lo).ToList(), p.Triangles)).ToList() : body.Parts;
             var lo = fromCorner ? Vec3.Zero : body.Lo;
             var id = Step.Guid(Seed, "shared-body\ncontent\n" + body.Hash);
-            Put(edit, id, StoredBodies.SharedClass, $"{Str(first[2]) ?? ClassName(first.Type)[3..]} (shared)", new JsonObject { [StoredBodies.Key] = StoredBodies.Write(parts), ["source"] = "content:" + body.Hash }, null, counts: false);
+            Put(edit, id, StoredBodies.SharedClass, $"{Str(first[2]) ?? ClassName(first.Type)[3..]} (shared)", new JsonObject { [StoredBodies.Key] = Stored(edit, parts), ["source"] = "content:" + body.Hash }, null, counts: false);
             contentBodies[body.Hash] = (id, lo);
             return (id, lo);
         }

@@ -1,11 +1,13 @@
-/** The room tools: a room by a click inside walls, or by its outline; rooms brought up to date; the room colours; a colour legend. */
+/** The room tools: a room by a click inside walls, or by its outline; room separation lines; rooms brought up to date; the room colours; a colour legend. */
 
-import { Palette, RefreshCw, Shapes, SquareDashed, Tag } from 'lucide-react';
+import { Circle, Minus, Palette, RectangleHorizontal, RefreshCw, Shapes, Spline, SquareDashed, SquareSplitHorizontal, Tag, Waypoints } from 'lucide-react';
 import { RoomIcon } from '../../icons';
 import type { ToolDef } from '../../platform/module';
 import { notify, useUi } from '../../app/store';
 import { activeStorey, execute } from '../../engine/session';
 import { frontView } from '../../viewport/frontView';
+import { openPulldown } from '../../shell/pulldown';
+import type { ToolContext, Vec2 } from '../../platform/module';
 
 /**
  * A room the next Room or Room by outline gives its outline to instead of
@@ -68,4 +70,48 @@ export const colorLegend: ToolDef = {
     if (!viewId || viewId === '3d') { notify('A colour legend goes on a plan: open one.'); return; }
     await execute('architecture.addColorLegend', { viewId, x: p.x, y: p.y });
   },
+};
+
+// ─── Room separation lines (forum topic 80) ────────────────────────────────
+
+/** A room separation line of a kind, from the points drawn, on the plan's storey: the rooms around it find their outlines again. */
+const divider = (ctx: ToolContext, kind: 'line' | 'polyline' | 'rectangle' | 'arc' | 'circle', points: Vec2[], closed = false) =>
+  ctx.execute('architecture.addRoomDivider', { storeyId: ctx.storeyId, kind, points: points.map((p) => [p.x, p.y]), ...(closed ? { closed: true } : {}) });
+
+/** A straight room separation line (chained): it bounds rooms as a wall would, with no body (an open-plan kitchen and living room). */
+export const roomDivider: ToolDef = {
+  id: 'architecture.roomDivider', label: 'Room separation line', icon: Minus, shortcut: 'RS',
+  gesture: { kind: 'twoPoints', repeat: true },
+  complete: async ({ points: [a, b] }, ctx) => { await divider(ctx, 'line', [a, b]); },
+};
+/** A room separation polyline: its corners, then Enter (or a double click). */
+export const roomDividerPolyline: ToolDef = {
+  id: 'architecture.roomDividerPolyline', label: 'Room separation polyline', icon: Waypoints,
+  gesture: { kind: 'polyline' },
+  complete: async ({ points }, ctx) => { if (points.length >= 2) await divider(ctx, 'polyline', points); },
+};
+/** A room separation rectangle: two opposite corners; the zone inside it is a room of its own. */
+export const roomDividerRectangle: ToolDef = {
+  id: 'architecture.roomDividerRectangle', label: 'Room separation rectangle', icon: RectangleHorizontal,
+  gesture: { kind: 'rectangle' },
+  complete: async ({ points: [a, b] }, ctx) => { await divider(ctx, 'rectangle', [a, b]); },
+};
+/** A room separation arc: its start, its end, then a point it passes through. */
+export const roomDividerArc: ToolDef = {
+  id: 'architecture.roomDividerArc', label: 'Room separation arc', icon: Spline,
+  gesture: { kind: 'threePoints', arc: true },
+  complete: async ({ points: [a, b, p] }, ctx) => { await divider(ctx, 'arc', [a, b, p]); },
+};
+/** A room separation circle: its centre, then a point on it. */
+export const roomDividerCircle: ToolDef = {
+  id: 'architecture.roomDividerCircle', label: 'Room separation circle', icon: Circle,
+  gesture: { kind: 'twoPoints' },
+  complete: async ({ points: [c, p] }, ctx) => { await divider(ctx, 'circle', [c, p]); },
+};
+/** The room separation tools, one button: a line, a polyline, a rectangle, an arc or a circle. */
+export const roomDividers: ToolDef = {
+  id: 'architecture.roomDividers', label: 'Room separation', icon: SquareSplitHorizontal,
+  tooltip: 'Lines that bound rooms as walls would, with no body: each zone a room of its own, with its own area',
+  items: [roomDivider, roomDividerPolyline, roomDividerRectangle, roomDividerArc, roomDividerCircle],
+  run: () => openPulldown(roomDividers),
 };

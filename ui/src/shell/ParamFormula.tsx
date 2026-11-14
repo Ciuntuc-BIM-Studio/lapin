@@ -5,13 +5,15 @@
  * numbers (and its quantities).
  */
 
-import { useEffect, useState, type ReactNode } from 'react';
-import { Sigma } from 'lucide-react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Braces, Sigma } from 'lucide-react';
 import { execute, query, useSession } from '../engine/session';
 import { formatLength } from '../engine/unitsStore';
 import { notify } from '../app/store';
 import { FORMULA_FUNCTIONS, FORMULA_QUANTITIES, FORMULA_SCOPES, TEXT_FUNCTIONS, canFormula, formulaArgs, resultText, toggled, usableNames, valueArgs, worthTrying, type FormulaState, initialState } from './formulaModel';
 import type { Param } from './params';
+import { FieldsInspector } from './FieldsInspector';
+import { insertAt, modeOf } from './fieldsModel';
 
 export interface Evaluated { name: string; pset?: string | null; formula: string; value: number | string | null; error: string | null }
 
@@ -35,6 +37,10 @@ export function ParamValue({ p, id, ids, evaluated, params, attrs, children }: {
 }) {
   const [state, setState] = useState<FormulaState>(() => initialState(p));
   const [tried, setTried] = useState<{ value: number | string | null; error: string | null } | null>(null);
+  // The Parameters inspector under the formula (forum topic 84): a field picked goes where the caret is.
+  const [picking, setPicking] = useState(false);
+  const input = useRef<HTMLInputElement>(null);
+  const caret = useRef<[number, number]>([0, 0]);
   // A change from elsewhere (undo, another selection) is what the row shows.
   useEffect(() => { setState(initialState(p)); setTried(null); }, [p.formula, p.name]);
   const mine = evaluated.find((e) => same(p, e));
@@ -66,8 +72,22 @@ export function ParamValue({ p, id, ids, evaluated, params, attrs, children }: {
         title={state.mode === 'formula' ? 'A formula: press for a value' : 'A value: press to work it out by a formula'} onClick={toggle}><Sigma size={11} /></button>
       {state.mode === 'value' ? children : (
         <span className="param-formula">
-          <input className="mono" data-param-formula={p.name} value={state.text} placeholder={p.kind === 'text' ? '{storey.code}.{number}' : 'Height * 2'} spellCheck={false}
-            onChange={(e) => setState({ ...state, text: e.target.value })} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') commit(); }} />
+          <span className="param-formula-line">
+            <input ref={input} className="mono" data-param-formula={p.name} value={state.text} placeholder={p.kind === 'text' ? '{storey.code}.{number}' : 'Height * 2'} spellCheck={false}
+              onChange={(e) => setState({ ...state, text: e.target.value })} onSelect={(e) => { caret.current = [e.currentTarget.selectionStart ?? 0, e.currentTarget.selectionEnd ?? 0]; }}
+              onBlur={(e) => { if (!(e.relatedTarget as HTMLElement | null)?.closest?.('.fields-inspector, [data-action="insert-field"]')) commit(); }} onKeyDown={(e) => { if (e.key === 'Enter') commit(); }} />
+            <button type="button" className={`icon mini${picking ? ' on' : ''}`} data-action="insert-field" aria-pressed={picking} title="Insert field…: the Parameters inspector, every field it can read with its value"
+              onClick={() => { if (picking) commit(); setPicking(!picking); }}><Braces size={11} /></button>
+          </span>
+          {picking && (
+            <FieldsInspector id={id} mode={modeOf(state.text, p.kind)} autoFocus={false} onPick={(piece) => {
+              const [a, b] = caret.current[1] > 0 || caret.current[0] > 0 ? caret.current : [state.text.length, state.text.length];
+              const next = insertAt(state.text, a, b, piece);
+              setState({ ...state, text: next.text });
+              caret.current = [next.caret, next.caret];
+              requestAnimationFrame(() => { input.current?.focus(); input.current?.setSelectionRange(next.caret, next.caret); });
+            }} />
+          )}
           <span className={`small param-result${shown?.error ? ' error-text' : ' muted'}`} data-param-result={p.name} data-no-i18n>
             {shown?.error ?? (shown?.value != null ? `= ${resultText(shown.value, p.kind, length)}` : '')}
           </span>

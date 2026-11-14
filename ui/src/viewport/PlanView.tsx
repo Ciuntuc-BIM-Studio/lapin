@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Compass, FileDown, Footprints, Layers, Maximize, MousePointer2, PenLine, RotateCw } from 'lucide-react';
 import { openContextMenu } from '../shell/ContextMenu';
 import { selectionItems } from '../shell/selectionMenu';
+import { viewHideItems } from '../shell/viewHideMenu';
 import { dimensionItems } from '../modules/drafting/dimensionMenu';
 import { symbolMenuItems } from '../modules/core/symbols/symbolTools';
 import { drawOrderItems, isDrafted } from './drawOrder';
@@ -639,7 +640,7 @@ export function PlanView() {
       { label: 'Walk in 3D', icon: <Footprints size={13} />, onSelect: () => walkIntoRoom(room, item, num(storey ?? undefined, 'elevation')) },
       { label: 'Select', icon: <MousePointer2 size={13} />, onSelect: () => select(room.id) },
     ] : [];
-    openContextMenu(x, y, [...order, ...symbolMenuItems(selected, nodes), ...rooms, ...dimensionItems(), ...selectionItems()]);
+    openContextMenu(x, y, [...order, ...symbolMenuItems(selected, nodes), ...rooms, ...dimensionItems(), ...selectionItems(), ...viewHideItems(storey ? ownPlan ?? `plan:${storey.id}` : null)]);
   };
   /** What a selection box or lasso takes: inside it wholly (a window, dragged to the right) or touching it (crossing, to the left). */
   const selectBox = (b: SelectDrag, e: React.PointerEvent): 'click' | 'done' => {

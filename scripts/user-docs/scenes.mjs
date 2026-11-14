@@ -1126,8 +1126,8 @@ export const scenes = [
       await dialog.locator('.btn.primary').first().click();
       await t.wait(800);
       await t.keys('Escape');
-      const type = (await t.nodes()).find((n) => n.type === 'IfcWindowType' && n.props?.spec?.shape?.transom === false);
-      t.expect(type, 'the window type keeps its sash following the arch');
+      const arched = async () => (await t.nodes()).find((n) => n.type === 'IfcWindowType' && n.props?.spec?.shape?.transom === false);
+      await t.until(async () => Boolean(await arched()), 'the window type keeps its sash following the arch');
     },
   },
   {
@@ -1138,7 +1138,7 @@ export const scenes = [
       await house(t, { roof: false });
       await t.tool('architecture.joineryTypes');
       const dialog = t.page.locator('.dialog');
-      await dialog.locator('.tree-item').filter({ hasText: 'New door' }).click();
+      await dialog.getByRole('button', { name: 'New door', exact: true }).click();
       await t.wait(400);
       await dialog.locator('select[data-field=style]').selectOption('frameless-glass');
       await t.wait(600);
@@ -2958,6 +2958,48 @@ export const scenes = [
     },
   },
   {
+    // The False ceilings page (docs/user/ceilings.md): a ceiling type's dialog, a tile grid with fixtures every n cells seen
+    // in 3D, and the same ceilings in a reflected ceiling plan (the plan seen from below).
+    id: 'ceilings-guide',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      for (const [x, y] of [[3.5, 4], [9.5, 4]]) await t.cmd('architecture.addRoom', { storeyId: storey, x, y });
+      // A grid type turned a little, 600 × 1200 tiles, and a plain plasterboard one for the other room.
+      const grid = (await t.cmd('architecture.createCeilingType', { spec: { name: 'Grid ceiling 600×1200', system: 'grid', tileWidth: 0.6, tileLength: 1.2, thickness: 0.015, gridWidth: 0.024, gridDepth: 0.038, rotation: 0, hangers: true, hangerSpacing: 1.2, tileMaterial: 'Mineral fibre tile', gridMaterial: 'Steel', tileColor: '#f1f0ea', gridColor: '#e4e4e4', lightColor: '#fffbe6', diffuserColor: '#d5d9de' } })).id;
+      const a = (await t.cmd('architecture.addCeiling', { storeyId: storey, x: 3.5, y: 4, typeId: grid, height: 2.6 })).id;
+      const plain = (await t.cmd('architecture.createCeilingType', { spec: { name: 'Plasterboard ceiling', system: 'plain', tileWidth: 0.6, tileLength: 0.6, thickness: 0.0125, gridWidth: 0.024, gridDepth: 0.038, rotation: 0, hangers: false, hangerSpacing: 1.2, tileMaterial: 'Plasterboard', gridMaterial: 'Steel', tileColor: '#f4f4f2', gridColor: '#e4e4e4', lightColor: '#fffbe6', diffuserColor: '#d5d9de' } })).id;
+      const b = (await t.cmd('architecture.addCeiling', { storeyId: storey, x: 9.5, y: 4, typeId: plain, height: 2.6 })).id;
+      await t.cmd('architecture.ceilingLayout', { id: a, kind: 'light', every: 3 });
+      await t.cmd('architecture.ceilingLayout', { id: a, kind: 'diffuser', every: 3, offset: 0 });
+      await t.cmd('architecture.ceilingLayout', { id: b, kind: 'light', every: 3 });
+      await t.wait(800);
+      const nodes = await t.nodes();
+      t.expect(nodes.filter((n) => n.type === 'LapinCeiling').length === 2, 'two ceilings');
+      t.expect((nodes.find((n) => n.id === a).props.fixtures ?? []).length >= 4, 'the grid ceiling has its fixtures');
+      // The type's dialog.
+      await select(t, a);
+      await t.ui({ dialog: 'ceilingTypes' });
+      await t.wait(800);
+      await t.shot('ceilings-types', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+      // Seen from below: a plan whose range looks up.
+      const plan = (await t.cmd('view.create', { kind: 'plan', storeyId: storey, name: 'Ceiling plan' })).id;
+      const range = await t.cmd('view.setRange', { id: plan, look: 'up', top: { level: 'self', offset: 3 }, bottom: { level: 'self', offset: 0 }, depth: { level: 'self', offset: 0 } });
+      t.expect((range.problems ?? []).length === 0, 'the ceiling plan has a sound view range');
+      await openFromBrowser(t, 'Ceiling plan', 2500);
+      await t.fit();
+      await t.shot('ceilings-plan', { of: '[data-testid=plan]', pad: 0 });
+      // The floor slab would hide the ceilings from below: left out for the 3D picture.
+      await t.cmd('element.delete', { ids: (await t.nodes()).filter((n) => n.type === 'IfcSlab').map((n) => n.id) });
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 0.6, pitch: 0.9, distance: 16, target: { x: 6, y: 4, z: 2.6 } }, false));
+      await t.wait(1500);
+      await t.shot('ceilings-grid-3d', { of: 'canvas', pad: 0 });
+    },
+  },
+  {
     id: 'skirtings',
     async run(t) {
       await t.fresh();
@@ -3203,6 +3245,29 @@ export const scenes = [
       await panel.scrollIntoViewIfNeeded();
       await t.shot('room-openings', { of: 'aside.props', pad: 0, maxHeight: 520 });
       await t.shot('room-openings-plan', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
+    // Room separation lines (forum topic 80): an open-plan kitchen and living room parted by a line across the room, each a
+    // room of its own with its own area, coloured by function.
+    id: 'room-dividers',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const line = await t.cmd('architecture.addRoomDivider', { storeyId: storey, kind: 'line', points: [[0, 4.2], [7, 4.2]] });
+      t.expect(!!line?.id, 'the room separation line is drawn');
+      await t.cmd('architecture.addRoom', { storeyId: storey, x: 3, y: 2, name: 'Kitchen', function: 'Kitchen' });
+      await t.cmd('architecture.addRoom', { storeyId: storey, x: 3, y: 6, name: 'Living room', function: 'Living' });
+      await t.cmd('architecture.addRoom', { storeyId: storey, x: 9.5, y: 4, name: 'Bedroom', function: 'Bedroom' });
+      const rooms = (await t.nodes()).filter((n) => n.type === 'IfcSpace');
+      t.expect(rooms.length === 3, `three rooms, found ${rooms.length}`);
+      const plan = await t.cmd('view.create', { kind: 'plan', storeyId: storey, name: 'Ground floor plan' });
+      await t.cmd('architecture.viewColorScheme', { viewId: plan.id, schemeId: 'by-function' });
+      await t.ui({ planViewId: plan.id, keyPlan: false });
+      await t.wait(1200);
+      await t.fit();
+      await t.shot('room-dividers', { of: '[data-testid=plan]', pad: 0 });
     },
   },
   {
@@ -3555,6 +3620,54 @@ export const scenes = [
       await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 2.4, pitch: -0.55, distance: 9, target: { x: 10, y: 3.5, z: 1.8 } }, false));
       await t.wait(1500);
       await t.shot('fans-3d', { of: 'canvas', pad: 0 });
+    },
+  },
+  {
+    // Cable trays and trunking (report #147): a perforated tray drawn with the Cable tray tool along the house's corridor
+    // under the ceiling, turning into the rooms, a branch off it (a tee), trunking along a wall; cables laid in the tray and
+    // its fill in Properties; the trays in 3D.
+    id: 'mep-carriers',
+    touches: ['mep'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      await t.button('MEP', { exact: true });
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      await t.wait(600);
+      // The tray by the tool: three clicks, Enter to finish; the legs laid at 45° steps.
+      await t.tool('mep.cableTray');
+      t.expect(await t.page.locator('[data-testid=carrier-type]').count() === 1, 'the Cable tray tool offers its type');
+      await t.page.locator('[data-testid=carrier-type]').selectOption('preset:tray300x60');
+      await t.wait(200);
+      for (const [x, y] of [[1, 4], [6, 4], [6, 7]]) { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(250); }
+      await t.keys('Enter');
+      await t.wait(800);
+      await t.keys('Escape');
+      const carriers = async () => (await t.nodes()).filter((n) => n.type === 'IfcCableCarrierSegment');
+      const tray = (await carriers())[0];
+      t.expect(!!tray, 'the tool draws a cable tray');
+      // A branch into the east room (a tee on the tray) and trunking along the north wall.
+      await t.cmd('mep.drawCarrier', { storeyId: storey, points: [[3, 4], [3, 1.5], [10, 1.5]], preset: 'tray100x60', start: { carrierId: tray.id } });
+      await t.cmd('mep.drawCarrier', { storeyId: storey, points: [[8, 7.6], [11.5, 7.6]], preset: 'trunking60x40', elevation: 1.1 });
+      // Three cables laid in the tray.
+      const sys = await t.cmd('mep.createSystem', { service: 'electrical' });
+      const ids = [];
+      for (const dy of [-0.05, 0, 0.05]) ids.push((await t.cmd('mep.drawRun', { systemId: sys.id, storeyId: storey, points: [[1, 4 + dy], [6, 4 + dy]], size: 0.012, elevation: 2.4 })).id);
+      await t.cmd('mep.setCableCarrier', { ids, carrierId: tray.id });
+      await t.ui({ selection: null, selected: [] });
+      await t.fit();
+      await t.wait(1200);
+      await t.shot('mep-carriers-plan', { of: '[data-testid=plan]', pad: 0 });
+      await select(t, tray.id);
+      await t.wait(1000);
+      t.expect(await t.page.locator('[data-testid=carrier-fill]').filter({ hasText: '%' }).count() === 1, 'the tray shows its fill');
+      await t.shot('mep-carriers-properties', { of: 'aside.props', pad: 0, maxHeight: 560 });
+      await t.ui({ selection: null, selected: [], keyPlan: true });
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 2.3, pitch: -0.5, distance: 9, target: { x: 5, y: 4, z: 2.3 } }, false));
+      await t.wait(1500);
+      await t.shot('mep-carriers-3d', { of: 'canvas', pad: 0 });
     },
   },
   {
@@ -4716,6 +4829,62 @@ export const scenes = [
       const coarse = await cuts();
       t.expect(coarse < fine, `a plan at LOD 100 draws no line between the walls' layers (${coarse} cut segments, ${fine} at LOD 350)`);
       await t.shot('detail-coarse', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
+    // Forum topic 68: a plan cropped to a rectangle (its frame shown), a dimension outside the annotation crop left out.
+    id: 'views-crop',
+    touches: ['core', 'architecture', 'drafting'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      for (const [x1, y1, x2, y2] of [[0, 0, 12, 0], [12, 0, 12, 8], [12, 8, 0, 8], [0, 8, 0, 0], [7, 0, 7, 8]]) await t.cmd('architecture.addWall', { storeyId: s, x1, y1, x2, y2 });
+      const plan = (await t.cmd('view.create', { kind: 'plan', storeyId: s, name: 'West wing 1:50', scale: 50 })).id;
+      await t.cmd('drafting.addDimension', { viewId: plan, a: [0, 0], b: [7, 0], at: [0, -1.2] });
+      await t.cmd('drafting.addDimension', { viewId: plan, a: [7, 8], b: [12, 8], at: [7, 9.2] });
+      await t.cmd('view.setCrop', { id: plan, on: true, min: [-1, -2], max: [7.6, 9], annotation: true, offset: 12 });
+      await t.ui({ view: 'plan', planViewId: plan, keyPlan: false, planDrawing: true });
+      await t.wait(1500);
+      await t.fit();
+      const d = await t.call('doc.query', { name: 'view.drawing', args: { id: plan } });
+      const xs = d.pens.filter((p) => p.layer === 'CUT').flatMap((p) => (p.segments ?? []).filter((_, k) => k % 2 === 0));
+      t.expect(xs.length > 0 && Math.max(...xs) <= 7.6 + 1e-6, 'the cropped plan draws nothing east of its crop region');
+      t.expect(d.pens.some((p) => p.layer === 'CROP'), 'the crop region\'s frame is drawn');
+      const texts = d.pens.flatMap((p) => (p.texts ?? []).map((x) => x.text));
+      t.expect(texts.some((x) => x.includes('7000')) && !texts.some((x) => x.includes('5000')), 'the dimension outside the annotation crop is left out, the one inside kept');
+      await t.shot('view-crop', { of: '[data-testid=plan]', pad: 0 });
+      await t.ui({ dialog: 'viewSettings' });
+      await t.until(async () => (await t.page.locator('[data-testid=view-crop]').count()) > 0, 'Crop view in View settings');
+      await t.page.locator('[data-testid=view-crop]').first().scrollIntoViewIfNeeded();
+      await t.wait(400);
+      await t.shot('view-crop-settings', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+    },
+  },
+  {
+    // Forum topic 73: Quick select by type in the whole project, the count found shown before selecting.
+    id: 'interface-quick-select',
+    touches: ['core', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const brick = (await t.cmd('architecture.createWallType', { name: 'Brick 250', layers: [{ material: 'Brick', thickness: 0.25, core: true }] })).id;
+      const board = (await t.cmd('architecture.createWallType', { name: 'Plasterboard 100', layers: [{ material: 'Plasterboard', thickness: 0.1, core: true }] })).id;
+      for (const [x1, y1, x2, y2] of [[0, 0, 10, 0], [10, 0, 10, 8], [10, 8, 0, 8], [0, 8, 0, 0]]) await t.cmd('architecture.addWall', { storeyId: s, x1, y1, x2, y2, typeId: brick });
+      for (const [x1, y1, x2, y2] of [[5, 0, 5, 8], [0, 4, 5, 4]]) await t.cmd('architecture.addWall', { storeyId: s, x1, y1, x2, y2, typeId: board });
+      await t.ui({ view: 'plan', keyPlan: false, planDrawing: true });
+      await t.wait(1200);
+      await t.fit();
+      await t.ui({ dialog: 'quickSelect' });
+      await t.until(async () => (await t.page.locator('[data-testid=qs-value]').count()) > 0, 'the Quick select dialog');
+      await t.page.locator('[data-testid=qs-scope]').selectOption('project');
+      await t.page.locator('[data-testid=qs-value]').first().fill('Plasterboard 100');
+      await t.until(async () => (await t.page.locator('[data-testid=qs-count]').innerText()).startsWith('2'), 'Quick select finds the two plasterboard walls');
+      await t.shot('quick-select', { of: '.dialog', pad: 0 });
+      await t.page.locator('[data-testid=qs-select]').click();
+      await t.wait(500);
+      const n = await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().selected.length);
+      t.expect(n === 2, `Select takes the two walls found (${n})`);
     },
   },
   {
@@ -9757,6 +9926,29 @@ export const scenes = [
       // The storey's code changed: the room's index follows, nothing stored on the room.
       await t.cmd('element.setParam', { ids: [storey], name: 'code', value: 'K2' });
       await t.until(async () => (await result()).includes('K2.A.3.1'), 'the index follows the storey\'s code');
+    },
+  },
+  {
+    // The Parameters inspector (forum topic 84): every field a room's tags and formulas can read, its own and its storey's and
+    // the project's, each with its value, opened from Properties → Parameters.
+    id: 'fields-inspector',
+    touches: ['core', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      await t.cmd('element.setParam', { ids: [storey], name: 'code', kind: 'text', value: 'K1' });
+      const room = (await t.cmd('architecture.addRoom', { storeyId: storey, x: 3, y: 4, name: 'Living', function: 'Living', number: '1' })).id;
+      await t.cmd('element.setParam', { ids: [room], name: 'Flat', kind: 'number', value: 3 });
+      await select(t, room);
+      await t.wait(700);
+      const open = t.page.locator('[data-action=fields-inspector]');
+      if (await open.count() === 0) { await t.page.locator('[data-group=params] .sect-head').click(); await t.wait(300); }
+      await open.first().click();
+      const dialog = t.page.locator('.fields-inspector-dialog');
+      await t.until(async () => (await dialog.locator('[data-field-token="storey.code"]').count()) > 0, 'the inspector lists the storey\'s code');
+      t.expect((await dialog.locator('[data-field-token="storey.code"]').innerText()).includes('K1'), 'with its value');
+      await t.shot('fields-inspector', { of: dialog, pad: 0 });
+      await t.page.keyboard.press('Escape');
     },
   },
   {

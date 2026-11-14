@@ -49,6 +49,8 @@ public sealed class MepModule : ILapinModule
         r.Service<IScheduleSource>(new GasSchedule());
         r.Service<IScheduleSource>(new FireSchedule());
         GasSupply.Register(r);
+        // Cable trays, ladders, trunking and conduit (report #147): carriers drawn as runs are, cables laid in them.
+        CableCarriers.Register(r);
         // Exhaust fans and ventilators (report #55): their own elements and types, a wall fan's provision, a duct to an outlet.
         Fans.ExhaustFans.Register(r);
         // On the plan the schematic is drawn from symbols, not from the bodies' cut.
