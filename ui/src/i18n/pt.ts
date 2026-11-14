@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const PT: Record<string, string> = {
+  // Layer extents (forum topic 89)
+  "Layer extents": "Extensões de camadas", "Add a layer extent": "Adicionar uma extensão de camada", "How far the layer goes past this edge (positive) or stops short of it (negative)": "Quanto a camada passa desta borda (positivo) ou para antes dela (negativo)", "Whether the layer past the edge cuts the walls and floors it meets; off, it overlaps them": "Se a camada além da borda corta as paredes e lajes que encontra; senão, sobrepõe-se a elas", "Every layer ends at the element's edges.": "Cada camada termina nas bordas do elemento.", "Take the extent away": "Remover a extensão", "Which edge of the outline, numbered from its first corner": "Qual borda do contorno, numerada a partir do seu primeiro canto", "Cuts others": "Corta outros", "Layer extent": "Extensão de camada", "Clear layer extents": "Limpar extensões de camadas",
   // The finish painter (forum topic 83)
   "Paint with it": "Pintar com ele",
   // The finish painter (forum topic 83)

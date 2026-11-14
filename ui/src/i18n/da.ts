@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  // Layer extents (forum topic 89)
+  "Layer extents": "Lagforlængelser", "Add a layer extent": "Tilføj en lagforlængelse", "How far the layer goes past this edge (positive) or stops short of it (negative)": "Hvor langt laget går ud over denne kant (positiv) eller stopper før den (negativ)", "Whether the layer past the edge cuts the walls and floors it meets; off, it overlaps them": "Om laget ud over kanten skærer de vægge og dæk, det møder; ellers overlapper det dem", "Every layer ends at the element's edges.": "Hvert lag slutter ved elementets kanter.", "Take the extent away": "Fjern forlængelsen", "Which edge of the outline, numbered from its first corner": "Hvilken kant af omridset, nummereret fra dets første hjørne", "Cuts others": "Skærer andre", "Layer extent": "Lagforlængelse", "Clear layer extents": "Ryd lagforlængelser",
   // The finish painter (forum topic 83)
   "Paint with it": "Mal med det",
   // The finish painter (forum topic 83)

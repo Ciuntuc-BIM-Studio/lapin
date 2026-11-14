@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const DE: Record<string, string> = {
+  // Layer extents (forum topic 89)
+  "Layer extents": "Schichtverlängerungen", "Add a layer extent": "Schichtverlängerung hinzufügen", "How far the layer goes past this edge (positive) or stops short of it (negative)": "Wie weit die Schicht über diese Kante hinausgeht (positiv) oder vor ihr endet (negativ)", "Whether the layer past the edge cuts the walls and floors it meets; off, it overlaps them": "Ob die Schicht jenseits der Kante die Wände und Decken schneidet, auf die sie trifft; sonst überlappt sie sie", "Every layer ends at the element's edges.": "Jede Schicht endet an den Kanten des Elements.", "Take the extent away": "Verlängerung entfernen", "Which edge of the outline, numbered from its first corner": "Welche Kante des Umrisses, ab seiner ersten Ecke nummeriert", "Cuts others": "Schneidet andere", "Layer extent": "Schichtverlängerung", "Clear layer extents": "Schichtverlängerungen entfernen",
   // The finish painter (forum topic 83)
   "Paint with it": "Damit malen",
   // The finish painter (forum topic 83)

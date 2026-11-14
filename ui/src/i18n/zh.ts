@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // Layer extents (forum topic 89)
+  "Layer extents": "图层延伸", "Add a layer extent": "添加图层延伸", "How far the layer goes past this edge (positive) or stops short of it (negative)": "图层超出此边缘的距离（正值）或在其前停止的距离（负值）", "Whether the layer past the edge cuts the walls and floors it meets; off, it overlaps them": "超出边缘的图层是否剪切其遇到的墙和楼板；否则与之重叠", "Every layer ends at the element's edges.": "每个图层都止于构件的边缘。", "Take the extent away": "移除延伸", "Which edge of the outline, numbered from its first corner": "轮廓的哪条边，从其第一个角点起编号", "Cuts others": "剪切其他", "Layer extent": "图层延伸", "Clear layer extents": "清除图层延伸",
   // The finish painter (forum topic 83)
   "Paint with it": "用它绘制",
   // The finish painter (forum topic 83)

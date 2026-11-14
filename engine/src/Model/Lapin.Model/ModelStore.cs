@@ -105,7 +105,8 @@ public sealed class ModelStore : IModelView
             if (_relatedIn.TryGetValue(id, out var related)) foreach (var r in related) { var v = VersionOf(_relations[r]) + (1UL << 62); a += Mix(v); b += Mix2(v); n++; }
             return (a, b + n);
         }
-        if (key.StartsWith("class:", StringComparison.Ordinal) || key.StartsWith("cut:", StringComparison.Ordinal))
+        // An element's own cut priority, its layers' extents (forum topic 89): told by its class's stamp, as the class's listing.
+        if (key.StartsWith("class:", StringComparison.Ordinal) || key.StartsWith("cut:", StringComparison.Ordinal) || key.StartsWith("extents:", StringComparison.Ordinal))
             return key == "class:*" ? null : _classStamp.GetValueOrDefault(key[(key.IndexOf(':') + 1)..]);
         // The elements along an axis lying in a cell (PlaceCells), kept under the cell's own key.
         if (PlaceCells.IsKey(key)) return _classStamp.GetValueOrDefault(key);
