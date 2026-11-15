@@ -152,12 +152,19 @@ public sealed class Recovery : IRecoveryJournal, IDisposable
         IReadOnlyList<Entity> entities;
         IReadOnlyList<Relation> relations;
         IReadOnlyDictionary<string, string>? classes;
+        RestoredFrom = null;
         if (path != null)
         {
-            var now = _store.ProjectHash(path) ?? throw new CommandException($"The project the work was done on is gone: {path}.");
-            if ((string?)start["sha256"] is { } sha && now != sha) throw new CommandException($"{System.IO.Path.GetFileName(path)} changed since: the unsaved work no longer fits it.");
-            var content = _store.ReadProject(path);
+            var started = (string?)start["sha256"];
+            var now = _store.ProjectHash(path);
+            // The file renamed, moved or deleted since: the copy kept of it while it was open (audit 15.11.2026, G1). The work comes
+            // back on its old path, which a save writes anew.
+            var copy = now == null && started != null ? _store.Base(started) : null;
+            if (now == null && copy == null) throw new CommandException($"The project the work was done on is gone: {path}.");
+            if (now != null && started != null && now != started) throw new CommandException($"{System.IO.Path.GetFileName(path)} changed since: the unsaved work no longer fits it.");
+            var content = _store.ReadProject(copy ?? path);
             (entities, relations, classes) = (content.Entities, content.Relations, content.Classes);
+            RestoredFrom = copy;
         }
         else
         {
@@ -176,6 +183,9 @@ public sealed class Recovery : IRecoveryJournal, IDisposable
         _edits = edits.Count;
         return diff;
     }
+
+    /// <summary>The copy of the project's file the last restore read from, the file itself gone; null: the file, or a new project.</summary>
+    public string? RestoredFrom { get; private set; }
 
     public void Discard(string file)
     {

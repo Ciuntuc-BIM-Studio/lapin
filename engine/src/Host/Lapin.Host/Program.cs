@@ -24,6 +24,10 @@ var userDir = Arg("--user-dir", Path.Combine(Environment.GetFolderPath(Environme
 Views.UseProduct(product);
 // Point clouds' indexes (docs/point-clouds.md) in the user's folder too, never in a project.
 PointCloudLinks.CacheDir ??= Path.Combine(userDir, "PointClouds");
+// The copies of the open projects' files (what a save carries over and a journal starts from, audit 15.11.2026 G1) beside the journals;
+// those of Lapins that ended, which no journal starts from, go (before this session's first is taken).
+Lapin.Package.PackageBases.Folder ??= Path.Combine(userDir, "recovery", "bases");
+Lapin.Package.PackageBases.Sweep(new FileJournalStore(Path.Combine(userDir, "recovery")).Starts());
 var session = new Session(ModuleCatalog.Create(modules), product);
 using var recovery = new Recovery(userDir, session);
 

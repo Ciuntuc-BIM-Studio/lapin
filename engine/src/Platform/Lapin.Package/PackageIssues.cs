@@ -30,6 +30,12 @@ public sealed class PackageIssues
         _pending = pending;
     }
 
+    /// <summary>
+    /// Why the file's issued files could not be listed (null: they were). They are not lost: a save looks for every file a
+    /// record keeps in the package they came from, and saving over a file it cannot read is refused (audit 15.11.2026, P6).
+    /// </summary>
+    public string? Unreadable { get; private init; }
+
     /// <summary>A store with nothing in it (a new project).</summary>
     public static PackageIssues Empty() => new(null, [], []);
 
@@ -50,9 +56,9 @@ public sealed class PackageIssues
                 if (e.FullName.StartsWith(Prefix, StringComparison.Ordinal) && e.FullName.Length > Prefix.Length) held[e.FullName[Prefix.Length..]] = e.Length;
             return new PackageIssues(held.Count > 0 ? open : null, held, []);
         }
-        catch (Exception ex) when (ex is InvalidDataException or IOException)
+        catch (Exception ex) when (ex is InvalidDataException or IOException or UnauthorizedAccessException)
         {
-            return Empty();
+            return new PackageIssues(open, [], []) { Unreadable = ex.Message };
         }
     }
 
@@ -83,38 +89,73 @@ public sealed class PackageIssues
 
     /// <summary>
     /// The bytes of the hashes asked for that are here, each handed to <paramref name="write"/> as a stream (the package being written):
-    /// from memory, or copied entry by entry from the package they were read from, opened once.
+    /// from memory, or copied entry by entry from the package they were read from, opened once, each checked against its hash first
+    /// (audit 15.11.2026, P22). Gives back what was written (hash → size); what could not be is said in <paramref name="report"/>,
+    /// and when the store could not be read (<see cref="Unreadable"/>) nor its package opened now, a save over a file is refused.
     /// </summary>
-    internal void CopyTo(IReadOnlyCollection<string> hashes, Action<string, Stream> write)
+    internal IReadOnlyDictionary<string, long> CopyTo(IReadOnlyCollection<string> hashes, Action<string, Stream> write, PackageWriteReport report)
     {
+        var written = new Dictionary<string, long>();
         var fromSource = new List<string>();
         foreach (var sha in hashes)
         {
-            if (_pending.TryGetValue(sha, out var b)) { using var ms = new MemoryStream(b, writable: false); write(sha, ms); }
-            else if (_inSource.ContainsKey(sha)) fromSource.Add(sha);
+            if (_pending.TryGetValue(sha, out var b)) { using var ms = new MemoryStream(b, writable: false); write(sha, ms); written[sha] = b.LongLength; }
+            else if (_inSource.ContainsKey(sha) || Unreadable != null) fromSource.Add(sha);
         }
-        if (fromSource.Count == 0 || _source == null) return;
-        using var input = _source();
-        using var zip = new ZipArchive(input, ZipArchiveMode.Read, leaveOpen: true);
-        foreach (var sha in fromSource)
+        if (fromSource.Count == 0) return written;
+        var lost = new List<string>();
+        // A failure of the package being written is the save's (thrown on); only one of the package read from is caught here.
+        var writing = false;
+        try
         {
-            if (zip.GetEntry(Prefix + sha) is not { } entry) continue;
-            using var s = entry.Open();
-            write(sha, s);
+            if (_source == null) throw new FileNotFoundException("The file they were in is gone.");
+            using var input = _source();
+            using var zip = new ZipArchive(input, ZipArchiveMode.Read, leaveOpen: true);
+            foreach (var sha in fromSource)
+            {
+                if (zip.GetEntry(Prefix + sha) is not { } entry) { lost.Add($"{sha[..12]}… is not in the file"); continue; }
+                string hash;
+                using (var check = entry.Open()) hash = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(check));
+                if (hash != sha) { lost.Add($"{sha[..12]}… is damaged"); continue; }
+                using var s = entry.Open();
+                writing = true;
+                write(sha, s);
+                writing = false;
+                written[sha] = entry.Length;
+            }
         }
+        catch (Exception ex) when (!writing && ex is InvalidDataException or IOException or UnauthorizedAccessException)
+        {
+            var why = Unreadable ?? ex.Message;
+            if (Unreadable != null) report.Refuse ??= $"The project's issued files could not be read ({why}): saving over its file would lose them. Save it under another name.";
+            report.Warnings.Add($"{fromSource.Count(s => !written.ContainsKey(s))} issued file(s) could not be carried over ({why}): the issues keep their records without them.");
+            return written;
+        }
+        if (lost.Count > 0) report.Warnings.Add($"{lost.Count} issued file(s) could not be carried over ({string.Join(", ", lost)}): the issues keep their records without them.");
+        return written;
     }
 
     /// <summary>
     /// The store after a save: the bytes written are found in the new package from now on; those made since the last save that were not
     /// written (an issue undone, which a redo may bring back) stay in memory; those the old package held and the new one does not are gone.
     /// </summary>
-    public PackageIssues From(string path, IReadOnlyCollection<string> written) => After(() => File.OpenRead(path), written);
-    public PackageIssues From(byte[] bytes, IReadOnlyCollection<string> written) => After(() => new MemoryStream(bytes, writable: false), written);
+    public PackageIssues From(string path, IReadOnlyCollection<string> written) => After(() => File.OpenRead(path), Sizes(written));
+    public PackageIssues From(byte[] bytes, IReadOnlyCollection<string> written) => After(() => new MemoryStream(bytes, writable: false), Sizes(written));
 
-    PackageIssues After(Func<Stream> source, IReadOnlyCollection<string> written)
+    /// <summary>The store after a save, with what the save wrote of it (<see cref="PackageWriteReport.Issues"/>): only those are held from now on.</summary>
+    public PackageIssues From(string path, IReadOnlyDictionary<string, long> written) => After(() => File.OpenRead(path), written);
+    public PackageIssues From(byte[] bytes, IReadOnlyDictionary<string, long> written) => After(() => new MemoryStream(bytes, writable: false), written);
+
+    Dictionary<string, long> Sizes(IReadOnlyCollection<string> written)
     {
-        var held = new Dictionary<string, long>();
-        foreach (var sha in written) if (SizeOf(sha) is { } n) held[sha] = n;
+        var o = new Dictionary<string, long>();
+        foreach (var sha in written) if (SizeOf(sha) is { } n) o[sha] = n;
+        return o;
+    }
+
+    PackageIssues After(Func<Stream> source, IReadOnlyDictionary<string, long> written)
+    {
+        var held = new Dictionary<string, long>(written);
         var pending = _pending.Where(kv => !held.ContainsKey(kv.Key)).ToDictionary(kv => kv.Key, kv => kv.Value);
         return new PackageIssues(held.Count > 0 ? source : null, held, pending);
     }
@@ -124,5 +165,5 @@ public sealed class PackageIssues
 public sealed record IssueFiles(PackageIssues Store, IReadOnlyCollection<string> Keep, byte[]? Index)
 {
     /// <summary>The hashes that will be written: kept by a record and held by the store.</summary>
-    public IReadOnlyCollection<string> Written => Keep.Where(Store.Has).Distinct().ToList();
+    public IReadOnlyCollection<string> Written => Keep.Where(h => Store.Has(h) || Store.Unreadable != null).Distinct().ToList();
 }
