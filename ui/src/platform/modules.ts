@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import loaded, { product } from 'virtual:lapin-modules';
 import type { ComponentType } from 'react';
-import type { PlacementRequest, Vec2, Grip, GripView, LapinModule, ModuleViewDef, Overlay3DProps, PlanOverlayProps, DrawingOverlayProps, RefLine, RibbonTabDef, ToolDef } from './module';
+import type { PlacementRequest, Vec2, Grip, Grip3D, GripView, LapinModule, ModuleViewDef, Overlay3DProps, PlanOverlayProps, DrawingOverlayProps, RefLine, RibbonTabDef, ToolDef } from './module';
 import type { NodeDto } from '../engine/protocol';
 import { addModuleViews, toggleTool, useUi } from '../app/store';
 import { mergeTabs } from './ribbon';
@@ -72,6 +72,8 @@ export const moduleView = (kind: string): ModuleViewDef | null =>
 
 // A pinned element shows no grips: it stays where it is (decision 449).
 export const gripsOf = (node: NodeDto, view?: GripView): Grip[] => node.props.pinned === true ? [] : modules.flatMap((m) => m.grips?.[node.type]?.(node, view) ?? []).map((g) => ({ owner: node.id, ...g }));
+/** A selected element's grips in 3D only (Grip3D: heights and faces), none for one pinned. */
+export const grips3dOf = (node: NodeDto): Grip3D[] => node.props.pinned === true ? [] : modules.flatMap((m) => m.grips3d?.[node.type]?.(node) ?? []).map((g) => ({ owner: node.id, ...g }));
 export const referencesOf = (node: NodeDto): RefLine[] => modules.flatMap((m) => m.references?.[node.type]?.(node) ?? []);
 export const similarOf = (cls: string) => modules.map((m) => m.similar?.[cls]).find(Boolean) ?? null;
 export const setTypeOf = (cls: string) => modules.map((m) => m.setType?.[cls]).find(Boolean) ?? null;

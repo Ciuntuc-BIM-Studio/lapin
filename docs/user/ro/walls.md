@@ -32,6 +32,8 @@ Unde se întâlnesc doi pereți, Lapin îi îmbină singur. Straturile lor intr�
 
 Dă clic pe un perete ca să-l selectezi. Apar mânerele lui. Trage de capete ca să-l lungești sau să-l scurtezi, sau de crucea din mijloc ca să-l muți.
 
+În vederea 3D, un perete selectat are încă trei mânere: unul pe vârf, ca să-i tragi înălțimea (sau decalajul vârfului, când vârful merge la un nivel), și câte unul pe fiecare față, ca să-l muți lateral (raza, la un perete curb). Vezi [Mânere și componente în 3D](views.md#manere-si-componente-in-3d).
+
 ![Un perete selectat, cu mânerele lui](shots/wall-selected.webp)
 
 Panoul de proprietăți arată peretele selectat. Sus sunt tipul și straturile lui. Dedesubt sunt lungimea, înălțimea, decalajul la bază, nivelul și faza. Schimbi orice valoare, și modelul o urmează. Valorile fiecărui perete sunt ale lui. **Grosimea** (Thickness) vine din straturile tipului său: scrie una nouă și pereții selectați primesc tipul cu aceeași alcătuire și acea grosime, miezul redimensionat și finisajele păstrate. Lapin folosește tipul proiectului dacă unul are exact acea alcătuire, altfel face unul numit după al lor (*Partition wall 130mm* devine *Partition wall 150mm*). Ceilalți pereți ai tipului vechi rămân cum sunt, iar <kbd>Ctrl</kbd> <kbd>Z</kbd> anulează totul într-un pas.

@@ -216,6 +216,17 @@ Türen und Fenster kommen dorthin, wo Sie in 3D auf die Fläche einer Wand klick
 
 Die Griffe eines ausgewählten Elements (die Enden einer Wand, die Ecken einer Decke) werden in 3D wie im Grundriss gezogen und rasten wie bei Move ein: zuerst eine Ecke, dann eine Mitte, dann eine Kante in Reichweite, dann die rote und grüne Achse durch den Ausgangspunkt des Griffs, dann eine Fläche. Der Punkt wird am Cursor markiert und benannt und in der Höhe des Griffs genommen. Geben Sie beim Ziehen eine Länge oder einen Winkel ein, wie im Grundriss; Enter setzt den Griff dorthin.
 
+Manche Griffe gibt es nur in 3D, jeder mit einem kleinen Doppelpfeil, der die Bewegungsrichtung zeigt:
+
+- die **Oberkante** einer ausgewählten Wand (in der Mitte ihrer oberen Kante): nach oben oder unten ziehen. Bei einer Wand, deren Oberkante bis zu einem Geschoss reicht, ändert sich der **Versatz oben**; bei einer nicht verbundenen Wand ändert sich die Höhe.
+- die beiden **Flächen** einer ausgewählten Wand (auf halber Höhe jeder Seite): quer zur Wand ziehen, um sie seitlich zu verschieben; die mit ihr verbundenen Wände folgen. Bei einer gekrümmten Wand ändert der Flächengriff den Radius und behält den Mittelpunkt.
+- die **Oberseite** einer ausgewählten Decke: nach oben oder unten ziehen, um ihren Versatz zum Geschoss zu ändern (ihre Dicke ergibt sich aus ihrem Typ).
+- die **Traufe** eines ausgewählten Dachs: nach oben oder unten ziehen, um seine Fußpfette über der Geschossoberkante zu ändern.
+
+Diese Griffe rasten an den Ecken, Mitten und Kanten anderer Elemente ein, die Flächengriffe auch an deren Flächen, sodass die Oberkante einer Wand auf die Höhe eines anderen Elements gebracht oder ihre Fläche mit einer anderen Fläche ausgerichtet werden kann. Geben Sie beim Ziehen einen Abstand ein und drücken Sie <kbd>Enter</kbd>; das Loslassen ist ein Schritt zum Rückgängigmachen. Ziehen Sie mit Shift die Mitte einer Umrisskante, um den ganzen Umriss zu versetzen (siehe [Decken und Dächer](floors-roofs.md)).
+
+![Die Oberkante einer Wand, in 3D gezogen, mit den Flächengriffen auf beiden Seiten](shots/grips-3d-wall.webp)
+
 Ziehen Sie eine Karte aus dem **Catalog** oder ein Werkzeug aus dem Menüband auf die 3D-Ansicht: Sein Werkzeug startet mit diesem Typ. Ein Werkzeug, das mit einem Klick platziert (eine Stütze, ein Einzelfundament, Möbel, ein Aufzug, eine Pflanze), wird sofort dort abgesetzt, wo Sie es loslassen, am Modell eingerastet. Auf eine Decke eines anderen Geschosses gezogen oder geklickt, kommt das Element auf dieses Geschoss: Ein Tisch auf der Decke des Obergeschosses gehört zum Obergeschoss, welche Ebene auch aktiv ist.
 
 ## Was eine Ansicht zeigt

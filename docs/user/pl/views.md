@@ -216,6 +216,17 @@ Drzwi i okna trafiają tam, gdzie klikniesz ścianę ściany w 3D, w klikniętym
 
 Uchwyty zaznaczonego elementu (końce ściany, narożniki stropu) przeciąga się w 3D jak w rzucie i przyciągają się jak przy Move: najpierw narożnik, potem środek, potem krawędź w zasięgu, potem osie czerwona i zielona przez punkt startu uchwytu, potem ściana bryły. Punkt jest zaznaczony i nazwany przy kursorze i brany na wysokości uchwytu. Wpisz długość lub kąt podczas przeciągania, jak w rzucie; Enter stawia tam uchwyt.
 
+Niektóre uchwyty istnieją tylko w 3D, każdy z małą podwójną strzałką pokazującą kierunek ruchu:
+
+- **góra** zaznaczonej ściany (pośrodku jej górnej krawędzi): przeciągnij ją w górę lub w dół. Ściana, której góra sięga do kondygnacji, zmienia swoje **Odsunięcie góry**; ściana niepołączona zmienia wysokość.
+- dwa **lica** zaznaczonej ściany (w połowie wysokości po każdej stronie): przeciągnij w poprzek ściany, aby przesunąć ją w bok; połączone z nią ściany podążają za nią. W ścianie łukowej uchwyt lica zmienia promień i zachowuje środek.
+- **góra** zaznaczonego stropu: przeciągnij ją w górę lub w dół, aby zmienić jej odsunięcie od kondygnacji (grubość wynika z typu).
+- **okap** zaznaczonego dachu: przeciągnij go w górę lub w dół, aby zmienić jego murłatę nad górą kondygnacji.
+
+Te uchwyty przyciągają się do narożników, środków i krawędzi innych elementów, a uchwyty lic także do ich lic, więc górę ściany można sprowadzić na wysokość innego elementu albo jej lico wyrównać z innym licem. Podczas przeciągania wpisz odległość i naciśnij <kbd>Enter</kbd>; puszczenie to jeden krok cofania. Przeciągnij z Shift środek krawędzi obrysu, aby odsunąć cały obrys (zob. [Stropy i dachy](floors-roofs.md)).
+
+![Góra ściany przeciągnięta w 3D, z uchwytami lic po obu stronach](shots/grips-3d-wall.webp)
+
 Przeciągnij kartę z **Catalog** lub narzędzie ze wstążki na widok 3D: jego narzędzie startuje z tym typem. Narzędzie, które umieszcza jednym kliknięciem (słup, stopa fundamentowa, mebel, winda, roślina), umieszcza element od razu tam, gdzie go upuścisz, przyciągnięty do modelu. Upuszczony lub kliknięty na stropie innej kondygnacji, element trafia na tę kondygnację: stół postawiony na stropie piętra należy do piętra, niezależnie od aktywnego poziomu.
 
 ## Co pokazuje widok

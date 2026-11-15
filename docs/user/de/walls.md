@@ -31,6 +31,8 @@ Wo zwei Wände aufeinandertreffen, verbindet Lapin sie selbst. Ihre Schichten la
 
 Klicken Sie auf eine Wand, um sie auszuwählen. Ihre Griffe erscheinen. Ziehen Sie die Enden, um sie zu verlängern oder zu verkürzen, oder ziehen Sie das Kreuz in der Mitte, um sie zu verschieben.
 
+In der 3D-Ansicht hat eine ausgewählte Wand drei weitere Griffe: einen an der Oberkante, um ihre Höhe zu ziehen (oder den Versatz der Oberkante, wenn sie bis zu einem Geschoss reicht), und einen an jeder Fläche, um sie seitlich zu verschieben (bei einer gekrümmten Wand den Radius). Siehe [Griffe und Bauteile in 3D](views.md#griffe-und-bauteile-in-3d).
+
 ![Eine ausgewählte Wand mit ihren Griffen](shots/wall-selected.webp)
 
 Der Eigenschaftenbereich zeigt die ausgewählte Wand. Oben im Bereich stehen ihr Typ und ihre Schichten. Darunter folgen Länge, Höhe, Versatz unten, Geschoss und Bauphase. Ändern Sie einen beliebigen Wert, und das Modell folgt. Die Werte jeder Wand sind ihre eigenen. Ihre **Dicke** (Thickness) ergibt sich aus den Schichten ihres Typs: Geben Sie eine neue ein, und die gewählten Wände erhalten den Typ mit demselben Aufbau und dieser Dicke, der Kern angepasst und die Bekleidungen beibehalten. Lapin nimmt den Typ des Projekts, wenn einer genau diesen Aufbau hat, sonst legt es einen an, nach ihrem benannt (*Partition wall 130mm* wird *Partition wall 150mm*). Die anderen Wände des alten Typs bleiben, wie sie sind, und <kbd>Ctrl</kbd> <kbd>Z</kbd> macht es in einem Schritt rückgängig.

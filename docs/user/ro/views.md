@@ -220,6 +220,17 @@ Ușile și ferestrele se pun unde dai clic pe fața unui perete în 3D, în locu
 
 Mânerele unui element selectat (capetele unui perete, colțurile unei plăci) se trag în 3D ca în plan și se prind ca la Move: întâi un colț, apoi un mijloc, apoi o muchie la îndemână, apoi axele roșie și verde prin punctul de unde pleacă mânerul, apoi o față. Punctul e marcat și numit lângă cursor și luat la înălțimea mânerului. Scrie o lungime sau un unghi în timp ce tragi, ca în plan; Enter pune mânerul acolo.
 
+Unele mânere există doar în 3D, fiecare cu o săgeată dublă mică ce arată încotro se mișcă:
+
+- **vârful** unui perete selectat (la mijlocul muchiei de sus): trage-l în sus sau în jos. Un perete al cărui vârf merge la un nivel își schimbă **Decalajul vârfului**; un perete neconectat își schimbă înălțimea.
+- cele două **fețe** ale unui perete selectat (la jumătatea înălțimii, pe fiecare parte): trage transversal ca să muți peretele lateral; pereții îmbinați cu el îl urmează. La un perete curb, mânerul feței schimbă raza și păstrează centrul.
+- **fața de sus** a unei plăci selectate: trage în sus sau în jos ca să-i schimbi decalajul față de nivel (grosimea vine din tipul ei).
+- **streașina** unui acoperiș selectat: trage în sus sau în jos ca să schimbi cosoroaba deasupra vârfului nivelului.
+
+Mânerele acestea se prind de colțurile, mijloacele și muchiile altor elemente, iar cele ale fețelor și de fețele lor, așa că vârful unui perete poate fi dus la înălțimea altui element, iar fața lui aliniată cu altă față. În timp ce tragi, scrie o distanță și apasă <kbd>Enter</kbd>; când dai drumul, e un singur pas de anulare. Trage cu Shift de mijlocul unei laturi de contur ca să decalezi tot conturul (vezi [Plăci](floors-roofs.md)).
+
+![Vârful unui perete tras în 3D, cu mânerele fețelor de o parte și de alta](shots/grips-3d-wall.webp)
+
 Trage o carte din **Catalog** sau o unealtă din ribbon pe vederea 3D: unealta pornește cu acel tip. O unealtă pusă printr-un clic (un stâlp, o fundație izolată, mobilier, un lift, o plantă) e pusă imediat unde o lași, prinsă de model. Lăsată, sau pusă cu un clic, pe placa altui nivel, elementul merge pe acel nivel: o masă pusă pe placa etajului ține de etaj, oricare ar fi nivelul activ.
 
 ## Rotirea unui plan

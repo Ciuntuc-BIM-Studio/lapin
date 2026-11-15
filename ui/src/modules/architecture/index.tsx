@@ -4,6 +4,7 @@ import { Armchair, ArrowLeftRight, CornerDownRight, CornerUpRight, Layers3, Link
 import { AttachRoofIcon, CurtainWallIcon, CurvedWallIcon, DetachRoofIcon, DoorIcon, DormerIcon, RoofIcon, RampIcon, RoofWindowIcon, SlabIcon, SlabOpeningIcon, StairIcon, WallIcon, WallTypesIcon, WindowIcon } from '../../icons';
 import type { Grip, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { flipAcross, frameAt, outlineGrips, outlineRef, pathGrips, pathRef, toPairs } from '../../viewport/gripKit';
+import { architectureGrips3d } from './grips3d';
 import { arcOf, project, type Arc } from '../../viewport/arc';
 import { arcsOf, fromPairs } from '../../viewport/contour';
 import { FloorShapeBar, PlainShapeBar, toggleOutlineArcs } from '../../viewport/outlineShape';
@@ -607,6 +608,7 @@ const architecture: LapinModule = {
   planOverlays: [OpeningDims, LayerEditPlan],
   overlays: [FinishPainterPanel],
   drawingOverlays: [OpeningDimsInView, LayerEditDrawing],
+  grips3d: architectureGrips3d,
   references: { IfcWall: wallRefs, IfcCurtainWall: pathRefs, IfcSlab: contourRefs, IfcOpeningElement: contourRefs, IfcRoof: (n) => [...contourRefs(n), ...roofOpeningRefs(n)], IfcSpace: roomRefs, LapinRailing: railingRefs },
   similar: {
     IfcWall: (n) => { useUi.setState({ wallTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(wall); },

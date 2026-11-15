@@ -1,7 +1,7 @@
 /**
  * What a right-click on a plan, a drawing or the 3D view offers for the selection: group it, or let a group go, open
  * it, take members out (a tester's report, #98: an imported DXF's lines put together to move them as one); and copy
- * it to other storeys, or move it to another (their dialogs).
+ * it to other storeys, or move it to another (their dialogs); offset an outline's every edge (Offset outline…, decision 600).
  */
 
 import { useUi } from '../app/store';
@@ -18,6 +18,7 @@ import { criteriaOf, defaultKeys, similarIds, type SimilarKey } from './similar'
 import { hideSelection, isolateSelection, resetTemporary, temporaryOn, useTemporary } from '../viewport/temporary';
 import { useScope } from '../platform/scope';
 import type { MenuItem } from './ContextMenu';
+import { offsetMenuItems } from '../viewport/outlineOffset';
 
 /** Group, Ungroup, Edit group, Remove from group: those that apply to the selection. */
 export function groupItems(): MenuItem[] {
@@ -115,7 +116,7 @@ export function selectionItems(): MenuItem[] {
     { label: 'Move to storey…', onSelect: () => useUi.setState({ dialog: 'moveToStorey' }) },
   ] : [];
   const shop: MenuItem[] = drawableElement(selected, useSession.getState().nodes) ? [{ label: 'Make drawing…', onSelect: () => useUi.setState({ dialog: 'shopDrawing' }) }] : [];
-  return [...groupItems(), ...storeys, ...shop, ...similarItems(), ...editTypeItems(), ...editSketchItems(), ...historyItems()];
+  return [...offsetMenuItems(), ...groupItems(), ...storeys, ...shop, ...similarItems(), ...editTypeItems(), ...editSketchItems(), ...historyItems()];
 }
 
 /** The 3D view's temporary Hide and Isolate (HH, HI) for the selection, and Show all (HR) while something is hidden. */

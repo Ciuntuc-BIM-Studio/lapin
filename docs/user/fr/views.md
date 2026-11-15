@@ -216,6 +216,17 @@ Les portes et fenêtres se posent là où vous cliquez la face d'un mur en 3D, �
 
 Les poignées d'un élément sélectionné (les extrémités d'un mur, les coins d'une dalle) se tirent en 3D comme en plan et s'accrochent comme avec Move : d'abord un coin, puis un milieu, puis une arête à portée, puis les axes rouge et vert par le point de départ de la poignée, puis une face. Le point est marqué et nommé au curseur et pris à la hauteur de la poignée. Tapez une longueur ou un angle pendant le glisser, comme en plan ; Entrée y pose la poignée.
 
+Certaines poignées n'existent qu'en 3D, chacune avec une petite double flèche qui montre le sens de son mouvement :
+
+- le **haut** d'un mur sélectionné (au milieu de son arête supérieure) : faites-le glisser vers le haut ou le bas. Un mur dont le haut va jusqu'à un niveau change son **Décalage supérieur** ; un mur non connecté change sa hauteur.
+- les deux **faces** d'un mur sélectionné (à mi-hauteur de chaque côté) : faites glisser en travers du mur pour le déplacer latéralement ; les murs qui lui sont joints le suivent. Sur un mur courbe, la poignée de face change le rayon et garde le centre.
+- le **dessus** d'une dalle sélectionnée : faites-le glisser vers le haut ou le bas pour changer son décalage par rapport au niveau (son épaisseur vient de son type).
+- l'**avant-toit** d'un toit sélectionné : faites-le glisser vers le haut ou le bas pour changer sa sablière au-dessus du haut du niveau.
+
+Ces poignées s'accrochent aux coins, milieux et arêtes des autres éléments, et celles des faces aussi à leurs faces, si bien que le haut d'un mur peut être amené à la hauteur d'un autre élément, ou sa face alignée avec une autre face. Pendant le glisser, tapez une distance et appuyez sur <kbd>Entrée</kbd> ; relâcher est une seule étape d'annulation. Faites glisser avec Shift le milieu d'une arête de contour pour décaler tout le contour (voir [Dalles et toits](floors-roofs.md)).
+
+![Le haut d'un mur tiré en 3D, avec les poignées de face de chaque côté](shots/grips-3d-wall.webp)
+
 Faites glisser une carte du **Catalog** ou un outil du ruban sur la vue 3D : son outil démarre avec ce type. Un outil qui pose d'un clic (un poteau, une semelle isolée, un meuble, un ascenseur, une plante) est posé aussitôt là où vous le lâchez, accroché au modèle. Lâché, ou cliqué, sur la dalle d'un autre niveau, l'élément va sur ce niveau : une table posée sur la dalle du premier étage appartient au premier étage, quel que soit le niveau actif.
 
 ## Ce que montre une vue

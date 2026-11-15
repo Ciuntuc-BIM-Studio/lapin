@@ -161,6 +161,9 @@ async function open3d(t) {
   await t.wait(2500);
 }
 
+/** A wall's top as the engine works it out (architecture.wallTop). */
+const wallTopOf = (t, id) => t.page.evaluate(async (id) => (await import('/src/engine/session.ts')).query('architecture.wallTop', { id }), id);
+
 /** Selects an element, as a click on it does. */
 const select = (t, id) => t.ui({ selection: id, selected: [id] });
 
@@ -9666,6 +9669,114 @@ export const scenes = [
       const column = (await t.nodes()).find((n) => n.type === 'IfcColumn');
       t.expect(!!column && column.storeyId === first, `a column dropped on the first floor's slab goes on the first floor (${column?.storeyId} vs ${first})`);
       await t.keys('Escape');
+    },
+  },
+  {
+    // Offset outline (decision 600): a floor with a curved edge, Shift-dragged by an edge's middle in the plan (every edge offset,
+    // the engine's offset previewed), then "Offset outline…" typed inward; and the 3D-only grips (decision 601): a wall's top and
+    // faces, a floor's top, each dragged with its distance typed, one undo step each.
+    id: 'grips-3d-offset',
+    touches: ['architecture'],
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      await t.ui({ keyPlan: false });
+      const storey = await t.storey();
+      // A 6 × 4 floor whose top edge bulges out by 1 m.
+      const floor = (await t.cmd('architecture.addSlab', { storeyId: storey, points: [[0, 0], [6, 0], [6, 4], [0, 4]], arcs: [0, 0, -1, 0] })).id;
+      const frame = (await t.cmd('architecture.addSlab', { storeyId: storey, points: [[-1.5, -1.5], [7.5, -1.5], [7.5, 6.5], [-1.5, 6.5]] })).id;
+      await t.fit();
+      await t.cmd('element.delete', { id: frame });
+      await select(t, floor);
+      await t.wait(800);
+      const grip = async (key) => { const r = await page.locator(`[data-testid=plan] [data-grip="${key}"]`).first().boundingBox(); return r ? [r.x + r.width / 2, r.y + r.height / 2] : null; };
+      const [ex, ey] = (await grip('e0')) ?? [0, 0];
+      t.expect(ex > 0, 'the floor shows the grip in the middle of its bottom edge');
+      const [, ty] = await t.planPoint(3, -0.6);
+      await page.keyboard.down('Shift');
+      await page.mouse.move(ex, ey);
+      await page.mouse.down();
+      await page.mouse.move(ex + 6, ty, { steps: 10 });
+      await t.wait(900);
+      await page.keyboard.up('Shift');
+      t.expect(await page.locator('[data-testid=offset-preview] path').count() === 1, 'Shift-dragging an edge\'s middle previews the whole outline offset');
+      t.expect(((await page.locator('[data-testid=offset-hint]').textContent()) ?? '').includes('+'), 'the offset is shown at the cursor, outward');
+      await t.shot('floor-offset-outline', { of: '.plan-svg', pad: 0 });
+      await page.mouse.up();
+      await t.wait(1200);
+      const grown = (await t.nodes()).find((n) => n.id === floor);
+      // The two corners where the arc meets the sides are rounded: six corners.
+      t.expect(grown.props.contour.length === 6, `every edge offset, the arc's corners rounded (${grown.props.contour.length} corners)`);
+      t.expect(Math.abs(grown.props.contour[0][1] + 0.6) < 0.05, `the bottom edge went to the cursor (${JSON.stringify(grown.props.contour[0])})`);
+      // Offset outline… from the right-click menu, typed inward.
+      const [mx, my] = await t.planPoint(3, 2);
+      await page.mouse.click(mx, my, { button: 'right' });
+      await t.wait(300);
+      t.expect(await page.locator('.context-menu .context-item', { hasText: 'Offset outline' }).count() === 1, 'the selection\'s menu offers Offset outline…');
+      await page.locator('.context-menu .context-item', { hasText: 'Offset outline' }).click();
+      await t.wait(400);
+      await page.keyboard.press('ControlOrMeta+a');
+      await page.keyboard.type('-200');
+      await page.keyboard.press('Enter');
+      await t.wait(1200);
+      const shrunk = (await t.nodes()).find((n) => n.id === floor);
+      t.expect(Math.abs(shrunk.props.contour[0][1] + 0.4) < 0.05, `typed −200, every edge 200 mm in (${JSON.stringify(shrunk.props.contour[0])})`);
+
+      // The 3D-only grips: a wall on the floor, its top dragged with 300 typed, then a face 500 out.
+      const wall = (await t.cmd('architecture.addWall', { storeyId: storey, x1: 0.5, y1: 1, x2: 5.5, y2: 1 })).id;
+      await t.ui({ view: '3d', selection: wall, selected: [wall] });
+      await page.waitForSelector('[data-testid=view3d] canvas', { timeout: 20_000 });
+      await t.wait(1500);
+      await page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ target: { x: 3, y: 1.5, z: 1.2 }, azimuth: -Math.PI * 0.62, pitch: -0.45, distance: 11 }, false));
+      await t.wait(900);
+      const g3 = async (key) => { const r = await page.locator(`[data-grip3d="${key}"][data-owner="${wall}"] circle, [data-grip3d="${key}"] circle`).first().boundingBox(); return r ? [r.x + r.width / 2, r.y + r.height / 2] : null; };
+      const top0 = await wallTopOf(t, wall);
+      const [tx, tyy] = (await g3('top')) ?? [0, 0];
+      t.expect(tx > 0 && (await page.locator('[data-grip3d^="face:"]').count()) === 1, 'a selected wall shows its top\'s grip and its face\'s turned to the camera in 3D');
+      await page.mouse.move(tx, tyy);
+      await page.mouse.down();
+      await page.mouse.move(tx, tyy - 40, { steps: 8 });
+      await t.wait(500);
+      t.expect(await page.locator('[data-testid=grip3d-drag]').count() === 1, 'dragging the top shows how far it goes');
+      await t.shot('grips-3d-wall', { of: '[data-testid=view3d]', pad: 0 });
+      await page.evaluate(() => document.activeElement?.blur?.());
+      await page.keyboard.type('300');
+      await page.keyboard.press('Enter');
+      await page.mouse.up();
+      await t.wait(1200);
+      const top1 = await wallTopOf(t, wall);
+      t.expect(Math.abs(top1.level - top0.level - 0.3) < 1e-6 && Math.abs(top1.topOffset - 0.3) < 1e-6, `300 typed: the top 300 mm higher, as its offset from the storey above (${top0.level} → ${top1.level}, offset ${top1.topOffset})`);
+      // Only the face turned to the camera shows its grip; dragged out from it, 500 typed.
+      t.expect(await page.locator('[data-grip3d^="face:"]').count() === 1, 'only the face turned to the camera shows its grip');
+      const face = await page.locator('[data-grip3d^="face:"]').first().getAttribute('data-grip3d');
+      const side = face === 'face:left' ? 1 : -1;
+      const [fx, fy] = (await g3(face)) ?? [0, 0];
+      await page.mouse.move(fx, fy);
+      await page.mouse.down();
+      const far = await page.evaluate(async (y) => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.screenOf?.({ x: 3, y, z: 2.2 }) ?? null, 1 + side * 1.2);
+      await page.mouse.move(far.x, far.y, { steps: 8 });
+      await t.wait(400);
+      await page.keyboard.type('500');
+      await page.keyboard.press('Enter');
+      await page.mouse.up();
+      await t.wait(1200);
+      const moved = (await t.nodes()).find((n) => n.id === wall);
+      t.expect(Math.abs(moved.props.start[1] - 1 - side * 0.5) < 1e-6 && Math.abs(moved.props.end[1] - 1 - side * 0.5) < 1e-6, `its face dragged 500 out: the wall moved sideways (${face}: ${JSON.stringify(moved.props.start)})`);
+      // The floor's top: its offset from the storey.
+      await t.ui({ selection: floor, selected: [floor] });
+      await t.wait(800);
+      const fr = await page.locator('[data-grip3d="top"] circle').first().boundingBox();
+      t.expect(!!fr, 'a selected floor shows its top\'s grip in 3D');
+      await page.mouse.move(fr.x + fr.width / 2, fr.y + fr.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(fr.x + fr.width / 2, fr.y + 30, { steps: 6 });
+      await t.wait(300);
+      await page.keyboard.type('150');
+      await page.keyboard.press('Enter');
+      await page.mouse.up();
+      await t.wait(1200);
+      const lowered = (await t.nodes()).find((n) => n.id === floor);
+      t.expect(Math.abs(lowered.props.offset + 0.15) < 1e-6, `150 typed downward: the floor 150 mm under its storey's level (${lowered.props.offset})`);
     },
   },
   {

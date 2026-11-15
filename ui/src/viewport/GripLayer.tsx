@@ -8,6 +8,8 @@
  *   a shared grip, picks which one that is (each, then all), named in the hint.
  * - Ctrl/⌘-click on an edge's middle inserts a vertex; on a vertex, removes it.
  * - A grip of a thing of its own (a roof window on its roof): a right-click offers to remove it, and Delete over it does.
+ * - Shift-drag on an outline's edge middle offsets the whole outline, every edge, live (decision 600; outlineOffset.ts):
+ *   the distance out along the edge's normal, typed too; the engine's offset drawn as it would be, or why it cannot be.
  *
  * Plans show the grips of elements on their storey and of shapes drafted on
  * them; sections and elevations show the grips of shapes drafted on them, and
@@ -18,7 +20,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useUi } from '../app/store';
 import { execute, useSession } from '../engine/session';
-import type { Grip, GripView, RefLine, Vec2 } from '../platform/module';
+import type { Grip, GripView, OutlineOffsetGrip, RefLine, Vec2 } from '../platform/module';
+import { offsetAll, offsetDistance, offsetOutline } from './outlineOffset';
+import { outlinePoints } from './contour';
 import { gripsOf, gripSnapped, referencesOf } from '../platform/modules';
 import { throughInset, viaOf } from './insetMap';
 import { dropGrips, groupGrips, movers, runSteps, setHotRemove, useGripRev, type GripGroup } from './grips';
@@ -29,7 +33,7 @@ import { formatAngle, formatLength, liveBegin, liveCursor, liveEnd, livePoint, u
 import { traceBegin, traceEnd } from './moveTrace';
 import { frameArg, useCad } from './cad/session';
 import type { Shape } from './cad/shapes';
-import { useLang } from '../i18n';
+import { t, useLang } from '../i18n';
 import { faceLetters } from './faceMarks';
 import { setGripDrag } from './gripDrag';
 import { endPreview, previewDrag, viewHasConstraints } from './cad/sketchStore';
@@ -81,8 +85,14 @@ export interface GripEditorOptions {
   svg: React.RefObject<SVGSVGElement | null>;
 }
 
-/** A grip being dragged; `copy`: a move grip dragged with Ctrl/⌘, which leaves the element and drops a copy. */
-interface Drag { group: GripGroup; members: Grip[]; at: Vec2; moved: boolean; copy?: boolean; insert?: boolean }
+/**
+ * A grip being dragged; `copy`: a move grip dragged with Ctrl/⌘, which leaves the element and drops a copy; `offset`: an
+ * edge middle Shift-dragged, the whole outlines of its members offset (decision 600).
+ */
+interface Drag { group: GripGroup; members: Grip[]; at: Vec2; moved: boolean; copy?: boolean; insert?: boolean; offset?: OutlineOffsetGrip[] }
+
+/** An offset drag's preview: each outline as the engine would offset it (by its owner, for its height in 3D), or why it cannot be. */
+interface OffsetPreview { distance: number; outlines: { owner?: string; pts: Vec2[] }[]; problem: string | null }
 
 export function useGripEditor(o: GripEditorOptions) {
   const selected = useUi((s) => s.selected);
@@ -91,6 +101,8 @@ export function useGripEditor(o: GripEditorOptions) {
   const [hover, setHover] = useState<GripGroup | null>(null);
   const [pick, setPick] = useState<Record<string, number>>({});
   const [drag, setDrag] = useState<Drag | null>(null);
+  const [offsetShown, setOffsetShown] = useState<OffsetPreview | null>(null);
+  const offsetAsk = useRef(0);
   const alt = useRef(false);
   const gripRev = useGripRev((s) => s.rev);
   const views = o.viewIds.filter(Boolean) as string[];
@@ -206,6 +218,15 @@ export function useGripEditor(o: GripEditorOptions) {
     if (who[0].kind === 'flip') { void runSteps([who[0].click?.()]); return true; }
     const copy = (e.ctrlKey || e.metaKey) && who[0].kind === 'move';
     const first = who[0];
+    // Shift on an edge's middle: the whole outline offset, every edge (decision 600).
+    if (e.shiftKey && !e.ctrlKey && !e.metaKey && first.offsetAll) {
+      const members = who.filter((m) => m.offsetAll);
+      const grips = members.map((m) => m.offsetAll!);
+      (e.target as Element).setPointerCapture?.(e.pointerId);
+      setDrag({ group: g, members, at: g.at, moved: false, offset: grips });
+      liveBegin('grip', g.at, (p) => { void finishOffset(grips, offsetDistance(g.at, first.offsetAll!.normal, p)); setDrag(null); liveEnd('grip'); }, { delta: true });
+      return true;
+    }
     // Ctrl/⌘ on a grip with an insert-by-drag (a dimension's segment middle): a click inserts halfway, a drag where it is dropped.
     const insert = (e.ctrlKey || e.metaKey) && !copy && !!first.insertAt && !!first.insert;
     // Alt-click on a grip that takes its point out (a dimension's), alone in its group: it is taken out.
@@ -284,9 +305,36 @@ export function useGripEditor(o: GripEditorOptions) {
     if (at.straighten) items.push({ label: 'Make straight', onSelect: run(at.straighten) });
     return items;
   };
+  /** The outlines offset by `distance` as the engine would make them, shown while dragging (the last asked wins). */
+  const previewOffset = (members: Grip[], distance: number) => {
+    const ask = ++offsetAsk.current;
+    void Promise.all(members.map((m) => offsetOutline(m.offsetAll!.outline, distance).then((r) => ({ owner: m.owner, r })))).then((rs) => {
+      if (ask !== offsetAsk.current) return;
+      const bad = rs.find((x) => 'problem' in x.r);
+      setOffsetShown({ distance, problem: bad && 'problem' in bad.r ? bad.r.problem : null, outlines: rs.flatMap((x) => ('outline' in x.r ? [{ owner: x.owner, pts: outlinePoints(x.r.outline) }] : [])) });
+    });
+  };
+  const finishOffset = async (grips: OutlineOffsetGrip[], distance: number) => {
+    offsetAsk.current++;
+    setOffsetShown(null);
+    if (Math.abs(distance) > 1e-6) await offsetAll(grips, distance);
+  };
   /** True while dragging a grip. */
   const onPointerMove = (e: React.PointerEvent): boolean => {
     if (!drag) { setHover(hit(e)); return false; }
+    if (drag.offset) {
+      // Out along the edge's normal from its middle: the distance every edge goes (typed too).
+      const n = drag.offset[0].normal, from = drag.group.at;
+      const along = offsetDistance(from, n, o.aim(e.clientX, e.clientY, from, zOf(drag.group)));
+      const cursor = { x: from.x + n.x * along, y: from.y + n.y * along };
+      liveCursor(cursor);
+      const distance = offsetDistance(from, n, livePoint({ ...useLive.getState(), cursor }) ?? cursor);
+      const at = { x: from.x + n.x * distance, y: from.y + n.y * distance };
+      const moved = drag.moved || Math.abs(distance) > 1e-6;
+      setDrag({ ...drag, at, moved });
+      if (moved && (!offsetShown || Math.abs(distance - offsetShown.distance) > 1e-9)) previewOffset(drag.members, distance);
+      return true;
+    }
     const aimed = o.aim(e.clientX, e.clientY, drag.group.at, zOf(drag.group));
     liveCursor(aimed);
     const members = movers(drag.group, pickOf(drag.group), e.altKey);
@@ -305,7 +353,10 @@ export function useGripEditor(o: GripEditorOptions) {
   };
   const onPointerUp = (): boolean => {
     if (!drag) return false;
-    if (drag.insert) {
+    if (drag.offset) {
+      if (drag.moved) void finishOffset(drag.offset, offsetDistance(drag.group.at, drag.offset[0].normal, drag.at));
+      else { offsetAsk.current++; setOffsetShown(null); }
+    } else if (drag.insert) {
       const m = drag.members[0];
       void runSteps([drag.moved ? m.insertAt?.(drag.at) : m.insert?.()]);
     } else if (drag.moved && drag.copy) {
@@ -373,7 +424,21 @@ export function useGripEditor(o: GripEditorOptions) {
         );
       })}
       {groups.map(shape)}
-      {drag?.moved && o.zOf && (() => {
+      {drag?.offset && offsetShown && (() => {
+        const q = o.toScreen(drag.at, zOf(drag.group));
+        return (
+          <g className="plan-preview" data-testid="offset-preview">
+            {offsetShown.outlines.map((x, i) => {
+              const ps = x.pts.map((p) => o.toScreen(p, o.zOf?.(x.owner)));
+              return <path key={i} d={`M${ps.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join('L')}Z`} className="ref-line outline offset-preview" />;
+            })}
+            <text x={q.x + 14} y={q.y - 14} className={`grip-hint${offsetShown.problem ? ' offset-problem' : ''}`} data-testid="offset-hint">
+              {offsetShown.problem ?? `${t('Offset')} ${offsetShown.distance > 0 ? '+' : ''}${formatLength(offsetShown.distance)}`}
+            </text>
+          </g>
+        );
+      })()}
+      {drag?.moved && o.zOf && !drag.offset && (() => {
         const a = o.toScreen(drag.group.at, zOf(drag.group)), b = o.toScreen(drag.at, zOf(drag.group));
         const dx = drag.at.x - drag.group.at.x, dy = drag.at.y - drag.group.at.y;
         const ang = ((Math.atan2(dy, dx) * 180) / Math.PI + 360) % 360;

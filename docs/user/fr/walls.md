@@ -31,6 +31,8 @@ Là où deux murs se rencontrent, Lapin les joint de lui-même. Leurs couches se
 
 Cliquez sur un mur pour le sélectionner. Ses poignées apparaissent. Faites glisser les extrémités pour l’allonger ou le raccourcir, ou faites glisser la croix au milieu pour le déplacer.
 
+Dans la vue 3D, un mur sélectionné a trois poignées de plus : une sur son haut, pour tirer sa hauteur (ou le décalage du haut, quand il va jusqu'à un niveau), et une sur chaque face, pour le déplacer latéralement (le rayon, pour un mur courbe). Voir [Poignées et composants en 3D](views.md#poignees-et-composants-en-3d).
+
 ![Un mur sélectionné avec ses poignées](shots/wall-selected.webp)
 
 Le panneau des propriétés affiche le mur sélectionné. Le haut du panneau contient son type et ses couches. En dessous se trouvent sa longueur, sa hauteur, son décalage de base, son niveau et sa phase. Changez une valeur et le modèle suit. Les valeurs de chaque mur sont les siennes. Son **épaisseur** (Thickness) vient des couches de son type : saisissez-en une nouvelle et les murs sélectionnés prennent le type de même composition et de cette épaisseur, le noyau redimensionné et les finitions conservées. Lapin prend le type du projet s’il en a un avec exactement cette composition, sinon il en crée un nommé d’après le leur (*Partition wall 130mm* devient *Partition wall 150mm*). Les autres murs de l’ancien type restent tels quels, et <kbd>Ctrl</kbd> <kbd>Z</kbd> annule le tout en une étape.

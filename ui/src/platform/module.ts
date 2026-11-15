@@ -208,6 +208,45 @@ export interface Grip {
   removeLabel?: string;
   /** More a right-click on the grip offers (a wall's end: "Don't join at this end", decision 546), each one engine command. */
   menu?: { label: string; run: () => GripStep | null }[];
+  /**
+   * An outline's edge middle: the whole outline offset at once, every edge (Archicad's "Offset all edges"; decision 600).
+   * Shift-drag on the grip offsets it live by the distance the cursor is out along `normal` (outward, unit), typed too;
+   * "Offset outline…" in the selection's right-click menu asks the distance (+ outward, − inward). The engine works the
+   * offset out (`outline.offset`) and `save` writes it as the element's own update, one undo step.
+   */
+  offsetAll?: OutlineOffsetGrip;
+}
+
+/** What an outline's edge grip lends to "Offset outline": the outline as it is, its outward normal at that edge, and its update. */
+export interface OutlineOffsetGrip {
+  outline: { pts: Vec2[]; arcs?: number[]; edges?: unknown[] };
+  normal: Vec2;
+  save: (next: { pts: Vec2[]; arcs?: number[]; edges?: unknown[] }) => GripStep | null;
+}
+
+/** A point in the model (m), z up. */
+export interface Vec3 { x: number; y: number; z: number }
+
+/**
+ * A handle shown on a selected element in 3D only, dragged along a line through it (decision 601): a wall's top up and down
+ * (its height, or its top's offset when the top goes to a storey), a wall's face across it (the wall moved sideways, a
+ * curved wall's radius about its centre), a floor's top (its offset from the storey), a roof's eave (its wall plate). A
+ * vertical one is dragged on a plane through it facing the camera; the other elements' corners, edges and faces give the
+ * point it goes to (their height, or their place across), and the distance can be typed.
+ */
+export interface Grip3D {
+  /** Unique within its element. */
+  key: string;
+  at: Vec3;
+  /** The line it moves along, a unit vector: up (0, 0, 1) for a height. */
+  dir: Vec3;
+  kind: 'height' | 'face';
+  /** What dragging it, and its title. */
+  title?: string;
+  /** The element it belongs to (grips3dOf fills it in). */
+  owner?: string;
+  /** What moving it `by` metres along `dir` does, as one engine command; null: nothing (refused before asking). */
+  step: (by: number) => GripStep | null;
 }
 
 /** A mark the engine drew: an annotation's points as drawn now, and what it tells of itself in `data`. */
@@ -350,6 +389,8 @@ export interface LapinModule {
   background?: ComponentType;
   /** The grips of a selected entity, by IFC class (with what the view drew of it, when it draws it itself). */
   grips?: Record<string, (node: NodeDto, view?: GripView) => Grip[]>;
+  /** The grips of a selected entity in 3D only (heights, faces; Grip3D), by IFC class. */
+  grips3d?: Record<string, (node: NodeDto) => Grip3D[]>;
   /** The lines drawn over a selected entity (its axis, its outline), by IFC class. */
   references?: Record<string, (node: NodeDto) => RefLine[]>;
   /** Create Similar (CS): the tool that builds this class, set up like the element (its type, its style). */

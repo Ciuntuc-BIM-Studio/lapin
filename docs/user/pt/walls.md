@@ -31,6 +31,8 @@ Onde duas paredes se encontram, o Lapin faz a junção sozinho. As camadas delas
 
 Clique em uma parede para selecioná-la. As alças dela aparecem. Arraste as pontas para alongá-la ou encurtá-la, ou arraste a cruz no meio para movê-la.
 
+Na vista 3D, uma parede selecionada tem mais três alças: uma no topo, para arrastar a sua altura (ou o deslocamento do topo, quando ele vai até um pavimento), e uma em cada face, para movê-la para o lado (o raio, numa parede curva). Ver [Pegas e componentes em 3D](views.md#pegas-e-componentes-em-3d).
+
 ![Uma parede selecionada com as suas alças](shots/wall-selected.webp)
 
 O painel Propriedades mostra a parede selecionada. O alto do painel traz o tipo e as camadas. Abaixo ficam o comprimento, a altura, o deslocamento da base, o pavimento e a fase. Mude qualquer valor e o modelo acompanha. Os valores de cada parede são dela. A sua **espessura** (Thickness) vem das camadas do seu tipo: digite uma nova e as paredes selecionadas recebem o tipo com a mesma composição e essa espessura, com o núcleo redimensionado e os acabamentos mantidos. O Lapin usa o tipo do projeto se algum tiver exatamente essa composição; senão, cria um com o nome do delas (*Partition wall 130mm* passa a *Partition wall 150mm*). As outras paredes do tipo antigo ficam como estão, e <kbd>Ctrl</kbd> <kbd>Z</kbd> desfaz tudo num só passo.

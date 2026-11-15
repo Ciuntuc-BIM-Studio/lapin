@@ -31,6 +31,8 @@ Dove due muri si incontrano, Lapin li unisce da solo. I loro strati si compenetr
 
 Fai clic su un muro per selezionarlo. Compaiono le sue maniglie. Trascina le estremità per allungarlo o accorciarlo, oppure trascina la croce al centro per spostarlo.
 
+Nella vista 3D un muro selezionato ha altre tre maniglie: una sulla sommità, per trascinarne l'altezza (o lo sfalsamento della sommità, quando arriva a un piano), e una su ogni faccia, per spostarlo di lato (il raggio, in un muro curvo). Vedi [Maniglie e componenti in 3D](views.md#maniglie-e-componenti-in-3d).
+
 ![Un muro selezionato con le sue maniglie](shots/wall-selected.webp)
 
 Il pannello Proprietà mostra il muro selezionato. La parte superiore del pannello contiene il suo tipo e i suoi strati. Sotto ci sono la lunghezza, l’altezza, l’offset di base, il piano e la fase. Modifica un valore qualsiasi e il modello si aggiorna. I valori di ogni muro sono suoi. Il suo **spessore** (Thickness) viene dagli strati del suo tipo: scrivine uno nuovo e i muri selezionati prendono il tipo con la stessa stratigrafia e quello spessore, il nucleo ridimensionato e le finiture mantenute. Lapin usa il tipo del progetto se uno ha esattamente quella stratigrafia, altrimenti ne crea uno con il nome del loro (*Partition wall 130mm* diventa *Partition wall 150mm*). Gli altri muri del vecchio tipo restano come sono, e <kbd>Ctrl</kbd> <kbd>Z</kbd> annulla tutto in un passo.

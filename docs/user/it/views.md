@@ -216,6 +216,17 @@ Porte e finestre vanno dove fai clic sulla faccia di un muro in 3D, nel punto de
 
 Le maniglie di un elemento selezionato (gli estremi di un muro, gli angoli di un solaio) si trascinano in 3D come in pianta e si agganciano come con Move: prima un angolo, poi un punto medio, poi uno spigolo a portata, poi gli assi rosso e verde per il punto di partenza della maniglia, poi una faccia. Il punto è segnato e nominato accanto al cursore e preso all'altezza della maniglia. Scrivi una lunghezza o un angolo mentre trascini, come in pianta; Invio porta lì la maniglia.
 
+Alcune maniglie esistono solo in 3D, ognuna con una piccola doppia freccia che mostra in che direzione si muove:
+
+- la **sommità** di un muro selezionato (a metà del suo bordo superiore): trascinala su o giù. Un muro la cui sommità arriva a un piano cambia il suo **Offset superiore**; un muro non collegato cambia la sua altezza.
+- le due **facce** di un muro selezionato (a metà altezza su ogni lato): trascina di traverso al muro per spostarlo di lato; i muri uniti a esso lo seguono. Su un muro curvo, la maniglia della faccia cambia il raggio e mantiene il centro.
+- la **faccia superiore** di un solaio selezionato: trascinala su o giù per cambiare il suo sfalsamento dal piano (lo spessore è quello del suo tipo).
+- la **gronda** di un tetto selezionato: trascinala su o giù per cambiare la sua banchina sopra la sommità del piano.
+
+Queste maniglie si agganciano agli angoli, ai punti medi e agli spigoli di altri elementi, e quelle delle facce anche alle loro facce, così la sommità di un muro può essere portata all'altezza di un altro elemento, o la sua faccia allineata con un'altra faccia. Mentre trascini, scrivi una distanza e premi <kbd>Invio</kbd>; rilasciare è un solo passo di annullamento. Trascina con Shift il centro di un lato del contorno per sfalsare tutto il contorno (vedi [Solai e tetti](floors-roofs.md)).
+
+![La sommità di un muro trascinata in 3D, con le maniglie delle facce su ciascun lato](shots/grips-3d-wall.webp)
+
 Trascina una scheda dal **Catalog** o uno strumento dalla barra multifunzione sulla vista 3D: il suo strumento parte con quel tipo. Uno strumento che posa con un clic (un pilastro, un plinto, un arredo, un ascensore, una pianta) viene posato subito dove lo rilasci, agganciato al modello. Rilasciato, o con un clic, sul solaio di un altro piano, l'elemento va su quel piano: un tavolo posato sul solaio del primo piano appartiene al primo piano, qualunque sia il livello attivo.
 
 ## Che cosa mostra una vista

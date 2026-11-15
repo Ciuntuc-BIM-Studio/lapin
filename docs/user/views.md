@@ -220,6 +220,17 @@ Doors and windows go where you click a wall's face in 3D, at the place along the
 
 A selected element's grips (a wall's ends, a floor's corners) are dragged in 3D as in a plan, and snap as Move does: a corner first, then a middle, then an edge within reach, then the red and green axes through the grip's start, then a face. The point is marked and named at the cursor and taken at the grip's own height. Type a length or an angle while dragging, as in a plan; Enter puts the grip there.
 
+Some grips are in 3D only, each with a small double arrow showing the way it moves:
+
+- a selected wall's **top** (in the middle of its top edge): drag it up or down. A wall whose top goes to a storey changes its **Top offset**; an unconnected wall changes its height.
+- a selected wall's two **faces** (half way up each side): drag across the wall to move it sideways; the walls joined to it follow. On a curved wall, the face grip changes the radius and keeps the centre.
+- a selected floor's **top**: drag it up or down to change its offset from the storey (its thickness comes from its type).
+- a selected roof's **eave**: drag it up or down to change its wall plate over the storey's top.
+
+These grips snap to the corners, middles and edges of other elements, and the face grips to their faces too, so a wall's top can be taken to another element's height, or its face lined up with another face. While dragging, type a distance and press <kbd>Enter</kbd>; letting go is one undo step. Shift-drag an outline's edge middle to offset the whole outline (see [Floors](floors-roofs.md)).
+
+![A wall's top dragged in 3D, its face grips on either side](shots/grips-3d-wall.webp)
+
 Drag a card from the **Catalog** or a tool from the ribbon onto the 3D view: its tool starts with that type. A tool placed by one click (a column, a pad footing, furniture, an elevator, a plant) is placed at once where you drop it, snapped to the model. Dropped, or clicked, on a floor of another storey, the element goes on that storey: a table set on the first floor's slab belongs to the first floor, whatever level is active.
 
 ## Rotating a plan

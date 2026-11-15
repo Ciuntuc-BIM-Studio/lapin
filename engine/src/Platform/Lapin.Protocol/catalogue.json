@@ -877,6 +877,7 @@
     {"name":"mep.network","module":"mep","args":[{"name":"systemId","type":"str"}]},
     {"name":"mep.openPorts","module":"mep","args":[{"name":"systemId","type":"str"}]},
     {"name":"mep.systems","module":"mep","args":[]},
+    {"name":"outline.offset","module":"core","args":[{"name":"distance","type":"float"},{"name":"points","type":"list"},{"name":"x1","type":"float"},{"name":"y1","type":"float"},{"name":"x2","type":"float"},{"name":"y2","type":"float"}]},
     {"name":"params.defs","module":"core","args":[]},
     {"name":"params.evaluate","module":"core","args":[{"name":"id","type":"str"}]},
     {"name":"params.exportDefs","module":"core","args":[]},

@@ -32,6 +32,8 @@ Where two walls meet, Lapin joins them by itself. Their layers run into each oth
 
 Click a wall to select it. Its grips appear. Drag the ends to lengthen or shorten it, or drag the cross in the middle to move it.
 
+In the 3D view a selected wall has three more grips: one on its top, to drag its height (or its top's offset, when its top goes to a storey), and one on each face, to move it sideways (a curved wall's radius). See [Grips and components in 3D](views.md#grips-and-components-in-3d).
+
 ![A selected wall with its grips](shots/wall-selected.webp)
 
 The properties panel shows the selected wall. The top of the panel holds its type and layers. Below that are its length, height, base offset, storey and phase. Change any value and the model follows. Each wall's values are its own. Its **Thickness** comes from its type's layers: type a new one and the selected walls take the type with the same build-up and that thickness, the core resized and the finishes kept. Lapin uses the project's type if one has exactly that build-up, else it makes one named after theirs (*Partition wall 130mm* becomes *Partition wall 150mm*). The other walls of the old type stay as they are, and <kbd>Ctrl</kbd> <kbd>Z</kbd> undoes it in one step.

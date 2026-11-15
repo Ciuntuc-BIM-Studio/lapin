@@ -212,6 +212,17 @@ Las puertas y ventanas van donde haces clic en la cara de un muro en 3D, en el l
 
 Los pinzamientos de un elemento seleccionado (los extremos de un muro, las esquinas de un forjado) se arrastran en 3D como en planta y se enganchan como con Move: primero una esquina, luego un punto medio, luego una arista al alcance, luego los ejes rojo y verde por el punto de partida del pinzamiento, luego una cara. El punto se marca y se nombra junto al cursor y se toma a la altura del pinzamiento. Escribe una longitud o un ángulo mientras arrastras, como en planta; Intro lo coloca allí.
 
+Algunos pinzamientos existen solo en 3D, cada uno con una pequeña doble flecha que indica hacia dónde se mueve:
+
+- la **coronación** de un muro seleccionado (en el centro de su borde superior): arrástrala hacia arriba o hacia abajo. Un muro cuya coronación llega a una planta cambia su **Desfase superior**; un muro no conectado cambia su altura.
+- las dos **caras** de un muro seleccionado (a media altura de cada lado): arrastra en transversal para mover el muro de lado; los muros unidos a él lo siguen. En un muro curvo, el pinzamiento de cara cambia el radio y conserva el centro.
+- la **cara superior** de una losa seleccionada: arrástrala hacia arriba o hacia abajo para cambiar su desfase respecto a la planta (su espesor es el de su tipo).
+- el **alero** de una cubierta seleccionada: arrástralo hacia arriba o hacia abajo para cambiar su solera sobre la parte superior de la planta.
+
+Estos pinzamientos se ajustan a las esquinas, los centros y los bordes de otros elementos, y los de cara también a sus caras, de modo que la coronación de un muro puede llevarse a la altura de otro elemento, o su cara alinearse con otra cara. Mientras arrastras, escribe una distancia y pulsa <kbd>Intro</kbd>; soltar es un solo paso de deshacer. Arrastra con Shift el centro de un borde del contorno para desfasar todo el contorno (véase [Losas y cubiertas](floors-roofs.md)).
+
+![La coronación de un muro arrastrada en 3D, con los pinzamientos de cara a ambos lados](shots/grips-3d-wall.webp)
+
 Arrastra una tarjeta del **Catalog** o una herramienta de la cinta a la vista 3D: su herramienta empieza con ese tipo. Una herramienta que coloca con un clic (un pilar, una zapata, mobiliario, un ascensor, una planta) se coloca enseguida donde la sueltas, ajustada al modelo. Soltada, o con clic, sobre un forjado de otra planta, el elemento va a esa planta: una mesa puesta sobre el forjado de la primera planta pertenece a la primera planta, sea cual sea el nivel activo.
 
 ## Qué muestra una vista

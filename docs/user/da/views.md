@@ -216,6 +216,17 @@ Døre og vinduer placeres, hvor du klikker på en vægs flade i 3D, på det sted
 
 Et markeret elements greb (en vægs ender, et dæks hjørner) trækkes i 3D som i en plan og fanger som med Move: først et hjørne, så et midtpunkt, så en kant inden for rækkevidde, så den røde og grønne akse gennem grebets udgangspunkt, så en flade. Punktet markeres og navngives ved markøren og tages i grebets egen højde. Skriv en længde eller en vinkel, mens du trækker, som i en plan; Enter sætter grebet der.
 
+Nogle greb findes kun i 3D, hver med en lille dobbeltpil, der viser, hvilken vej den bevæger sig:
+
+- **toppen** af en markeret væg (midt på dens øverste kant): træk den op eller ned. En væg, hvis top går op til en etage, ændrer sin **Topforskydning**; en uforbundet væg ændrer sin højde.
+- en markeret vægs to **flader** (halvvejs oppe på hver side): træk på tværs af væggen for at flytte den til siden; de vægge, der er samlet med den, følger med. På en buet væg ændrer fladegrebet radius og beholder centrum.
+- et markeret dæks **top**: træk den op eller ned for at ændre dets forskydning fra etagen (tykkelsen er dets types).
+- et markeret tags **udhæng**: træk det op eller ned for at ændre dets murrem over etagens top.
+
+Disse greb fanger hjørner, midtpunkter og kanter på andre elementer, og fladegrebene også deres flader, så en vægs top kan føres til et andet elements højde, eller dens flade rettes ind med en anden flade. Mens du trækker, kan du skrive en afstand og trykke på <kbd>Enter</kbd>; slippes grebet, er det ét trin at fortryde. Shift-træk i midten af en omridskant for at forskyde hele omridset (se [Dæk og tage](floors-roofs.md)).
+
+![En vægs top trukket i 3D, med fladegrebene på hver side](shots/grips-3d-wall.webp)
+
 Træk et kort fra **Catalog** eller et værktøj fra båndet hen på 3D-visningen: værktøjet starter med den type. Et værktøj, der placeres med ét klik (en søjle, et punktfundament, møbler, en elevator, en plante), placeres straks, hvor du slipper det, fanget af modellen. Sluppet, eller klikket, på et dæk på en anden etage, kommer elementet på den etage: et bord på første sals dæk hører til første sal, uanset hvilken etage der er aktiv.
 
 ## Hvad en visning viser

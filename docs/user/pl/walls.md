@@ -31,6 +31,8 @@ Tam, gdzie spotykają się dwie ściany, Lapin sam je łączy. Ich warstwy przec
 
 Kliknij ścianę, aby ją zaznaczyć. Pojawią się jej uchwyty. Przeciągnij końce, aby ją wydłużyć lub skrócić, albo przeciągnij krzyżyk pośrodku, aby ją przesunąć.
 
+W widoku 3D zaznaczona ściana ma jeszcze trzy uchwyty: jeden na górze, do przeciągania jej wysokości (albo odsunięcia góry, gdy sięga ona do kondygnacji), i po jednym na każdym licu, do przesuwania jej w bok (promień w ścianie łukowej). Zob. [Uchwyty i komponenty w 3D](views.md#uchwyty-i-komponenty-w-3d).
+
 ![Zaznaczona ściana z uchwytami](shots/wall-selected.webp)
 
 Panel Właściwości pokazuje zaznaczoną ścianę. U góry panelu są jej typ i warstwy. Poniżej znajdują się jej długość, wysokość, odsunięcie podstawy, kondygnacja i faza. Zmień dowolną wartość, a model podąży za nią. Wartości każdej ściany są jej własne. Jej **grubość** (Thickness) wynika z warstw jej typu: wpisz nową, a zaznaczone ściany otrzymają typ o tym samym układzie i tej grubości, z rdzeniem zmienionym i wykończeniami zachowanymi. Lapin użyje typu projektu, jeśli któryś ma dokładnie taki układ, a w przeciwnym razie utworzy nowy, nazwany od ich typu (*Partition wall 130mm* staje się *Partition wall 150mm*). Pozostałe ściany starego typu zostają bez zmian, a <kbd>Ctrl</kbd> <kbd>Z</kbd> cofa wszystko jednym krokiem.

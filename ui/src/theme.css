@@ -250,7 +250,7 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .viewport.picking { cursor: crosshair; }
 /* The selection's grips over the 3D scene: only the grips themselves take the pointer, the rest goes on to the scene. */
 .grip-overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; }
-.grip-overlay .plan-grip, .grip-overlay .plan-grip-hit { pointer-events: all; }
+.grip-overlay .plan-grip, .grip-overlay .plan-grip-hit, .grip-overlay .grip3d { pointer-events: all; }
 
 /* HUD over the view (Atrium) */
 .hud-card { position: absolute; left: 10px; top: 10px; display: grid; grid-template-columns: auto auto; gap: 1px 10px; padding: 5px 9px; background: var(--hud-glass); border: 1px solid var(--rule); border-radius: 3px; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; backdrop-filter: blur(3px); pointer-events: none; }
@@ -472,6 +472,15 @@ table.layer-edit:not(.zones):not(.material-params) > tbody > tr:not(.layer-parts
 .ref-face { fill: var(--accent); font: 700 11px var(--font); text-anchor: middle; dominant-baseline: central; pointer-events: none; paint-order: stroke; stroke: var(--bg, #fff); stroke-width: 3px; }
 .grip-hint { font-size: 11px; fill: var(--accent); font-weight: 600; pointer-events: none; }
 .plan-grip-drag { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 3; }
+/* An outline offset while Shift-dragging an edge's middle (decision 600): the engine's result, solid; why it cannot be, in red. */
+.ref-line.offset-preview { stroke-dasharray: none; stroke-width: 1.8; }
+.grip-hint.offset-problem { fill: var(--danger, #c0392b); }
+/* A 3D-only grip (decision 601): a wall's top or face, a floor's top, a roof's eave, dragged along its arrow. */
+.grip3d { fill: var(--panel); stroke: var(--accent); stroke-width: 1.6; cursor: ns-resize; }
+.grip3d.face { cursor: move; }
+.grip3d.hot, .grip3d.on { fill: var(--accent); }
+.grip3d-stem { stroke: var(--accent); stroke-width: 1.2; pointer-events: none; }
+.grip3d-guide { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 4 3; pointer-events: none; }
 /* A door's or window's temporary dimensions (decision 511): thin accent lines, the value clicked to type, its ends to cycle. */
 .temp-dim-line { fill: none; stroke: var(--accent); stroke-width: 1; }
 .temp-dim.row1 .temp-dim-line { stroke-dasharray: 4 2; }

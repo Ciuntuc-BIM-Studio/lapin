@@ -216,6 +216,17 @@ Portas e janelas ficam onde clica na face de uma parede em 3D, no sítio da pare
 
 As pegas de um elemento selecionado (as pontas de uma parede, os cantos de uma laje) arrastam-se em 3D como em planta e prendem-se como com Move: primeiro um canto, depois um ponto médio, depois uma aresta ao alcance, depois os eixos vermelho e verde pelo ponto de partida da pega, depois uma face. O ponto é marcado e nomeado junto ao cursor e tomado à altura da pega. Escreva um comprimento ou um ângulo enquanto arrasta, como em planta; Enter põe a pega lá.
 
+Algumas alças existem só em 3D, cada uma com uma pequena seta dupla que mostra para onde ela se move:
+
+- o **topo** de uma parede selecionada (no meio da sua aresta superior): arraste-o para cima ou para baixo. Uma parede cujo topo vai até um pavimento muda o seu **Deslocamento do topo**; uma parede não conectada muda a sua altura.
+- as duas **faces** de uma parede selecionada (a meia altura de cada lado): arraste de través para mover a parede para o lado; as paredes unidas a ela acompanham. Numa parede curva, a alça da face muda o raio e mantém o centro.
+- o **topo** de um piso selecionado: arraste-o para cima ou para baixo para mudar o seu deslocamento em relação ao pavimento (a espessura é a do seu tipo).
+- o **beiral** de um telhado selecionado: arraste-o para cima ou para baixo para mudar o seu frechal acima do topo do pavimento.
+
+Essas alças prendem-se aos cantos, meios e arestas de outros elementos, e as das faces também às faces deles, de modo que o topo de uma parede pode ser levado à altura de outro elemento, ou a sua face alinhada com outra face. Enquanto arrasta, digite uma distância e pressione <kbd>Enter</kbd>; soltar é um único passo de desfazer. Arraste com Shift o meio de uma aresta do contorno para deslocar todo o contorno (ver [Pisos e telhados](floors-roofs.md)).
+
+![O topo de uma parede arrastado em 3D, com as alças das faces de cada lado](shots/grips-3d-wall.webp)
+
 Arraste um cartão do **Catalog** ou uma ferramenta da faixa para a vista 3D: a ferramenta começa com esse tipo. Uma ferramenta que coloca com um clique (um pilar, uma sapata, mobiliário, um elevador, uma planta) é colocada logo onde a larga, ajustada ao modelo. Largada, ou clicada, sobre a laje de outro piso, o elemento vai para esse piso: uma mesa posta na laje do primeiro andar pertence ao primeiro andar, seja qual for o nível ativo.
 
 ## O que uma vista mostra

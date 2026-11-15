@@ -91,14 +91,18 @@ export function outlineGrips<E>(o: Outline<E>, save: (next: Outline<E>) => GripS
     remove: () => { const next = removeVertex(o, i); return next ? save(next) : null; },
     ...(curved ? { corner: { straight: straightAt(i) && straightAt((i - 1 + n) % n), fillet: (r: number) => curved.fillet(i, r), chamfer: (d: number) => curved.chamfer(i, d) } } : {}),
   }));
+  // Outward is to the right of the edges of an anticlockwise outline.
+  const out = anticlockwise(o.pts) ? 1 : -1;
   edgeMiddles(o.pts).forEach((m, i) => {
     const a = o.pts[i], b = o.pts[(i + 1) % n];
     const c = edgeArc(o, i);
     const bent = isArc(c);
+    const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
     grips.push({
       key: `e${i}`, kind: 'edgeMid', at: m,
-      title: 'Drag to move the edge · Ctrl/⌘-click: add a corner',
+      title: 'Drag to move the edge · Shift-drag: offset the whole outline · Ctrl/⌘-click: add a corner',
       step: (to: Vec2) => { const next = offsetEdge(o, i, to); return next ? save(next) : null; },
+      offsetAll: { outline: o as Outline<unknown>, normal: { x: (out * (b.y - a.y)) / len, y: (-out * (b.x - a.x)) / len }, save: (next) => save(next as Outline<E>) },
       insert: () => save(insertVertex(o, i)),
       edge: bent ? axisLine(c) : [a, b],
       addCornerAt: (to: Vec2) => save(insertVertex(o, i, bent ? to : nearestOnSegment(a, b, to).at)),

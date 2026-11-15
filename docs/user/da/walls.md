@@ -31,6 +31,8 @@ Hvor to vægge mødes, samler Lapin dem selv. Deres lag løber ind i hinanden, s
 
 Klik på en væg for at markere den. Dens greb vises. Træk i enderne for at forlænge eller afkorte den, eller træk i krydset i midten for at flytte den.
 
+I 3D-visningen har en markeret væg tre greb mere: ét på toppen, til at trække dens højde (eller toppens forskydning, når toppen går op til en etage), og ét på hver flade, til at flytte den til siden (en buet væg: radius). Se [Greb og komponenter i 3D](views.md#greb-og-komponenter-i-3d).
+
 ![En markeret væg med sine greb](shots/wall-selected.webp)
 
 Egenskabspanelet viser den markerede væg. Øverst i panelet står dens type og lag. Derunder kommer længde, højde, fodforskydning, etage og fase. Ret en hvilken som helst værdi, og modellen følger med. Hver vægs værdier er dens egne. Dens **tykkelse** (Thickness) kommer fra dens types lag: skriv en ny, og de valgte vægge får typen med samme opbygning og den tykkelse, kernen ændret og overfladerne bevaret. Lapin bruger projektets type, hvis en har præcis den opbygning, ellers laver den en, opkaldt efter deres (*Partition wall 130mm* bliver *Partition wall 150mm*). De andre vægge af den gamle type forbliver, som de er, og <kbd>Ctrl</kbd> <kbd>Z</kbd> fortryder det i ét trin.

@@ -238,6 +238,25 @@ public sealed class CoreModule : ILapinModule
             return null;
         });
 
+        // A closed outline with every edge offset (ArcOutline.Offset, Archicad's "Offset all edges"): {points, arcs?, distance (m, outward
+        // positive)} → {points, arcs (none when straight), from (each new edge's old one)}, or {problem} when it cannot be; nothing changes
+        // in the model: the element's own update command writes it (the grips' "Offset outline", live while dragged).
+        r.Query("outline.offset", (_, a) =>
+        {
+            try
+            {
+                var pts = Args.Points(a);
+                var (c, rises, from) = ArcOutline.Offset(pts, ArcOutline.Rises(a[ArcOutline.Key], pts.Count), Args.Number(a, "distance"));
+                return new JsonObject
+                {
+                    ["points"] = new JsonArray([.. c.Select(p => (JsonNode)new JsonArray(Math.Round(p.X, 9), Math.Round(p.Y, 9)))]),
+                    ["arcs"] = ArcOutline.ToJson(rises),
+                    ["from"] = new JsonArray([.. from.Select(i => (JsonNode)i)]),
+                };
+            }
+            catch (CommandException e) { return new JsonObject { ["problem"] = e.Message }; }
+        });
+
         // The standard property sets the user's parameters may go into, with their properties (StandardPsets).
         r.Query("params.standardSets", (_, _) => StandardPsets.ToJson());
 

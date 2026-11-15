@@ -204,6 +204,150 @@ public static class ArcOutline
         return (pts, [.. r]);
     }
 
+    /// <summary>
+    /// An edge offset: a straight one's ends moved across it; an arc's centre, its radius offset, its ends on that circle, the
+    /// way it turns (+1 anticlockwise) and how far.
+    /// </summary>
+    readonly record struct Shifted(bool Arc, Vec2 Start, Vec2 End, Vec2 Centre = default, double Radius = 0, int Sense = 0, double Sweep = 0);
+
+    /// <summary>
+    /// Every edge of the outline moved <paramref name="distance"/> outward (inward when negative), as Archicad's "Offset all
+    /// edges": a straight edge parallel to itself, an arc round its own centre (a concentric arc). Two straight edges meet
+    /// again at a mitre; where an arc meets an edge, the two offset edges meet where they cross (an outline shrinking), else a
+    /// round of the distance about the old corner joins them (an outline growing), as a true offset does: that corner becomes
+    /// two. The outline keeps its corners' order and its way round; <c>From</c> gives, for each edge of what comes out, the
+    /// edge it came from (a round: the edge before it), so data kept by edge (a roof's rules) follows. Refused when an edge
+    /// would vanish or turn back, an arc shrink to nothing, or the outline cross itself or turn inside out.
+    /// </summary>
+    public static (List<Vec2> Corners, double[]? Rises, List<int> From) Offset(IReadOnlyList<Vec2> corners, IReadOnlyList<double>? rises, double distance)
+    {
+        if (!double.IsFinite(distance)) throw new CommandException("An offset's distance must be a number.");
+        var n = corners.Count;
+        if (n < 3) throw new CommandException("An outline needs at least three corners.");
+        var all = Enumerable.Range(0, n).ToList();
+        if (Math.Abs(distance) < 1e-9) return ([.. corners], HasArcs(rises) ? [.. all.Select(k => At(rises, k))] : null, all);
+        var area = SignedArea(corners, rises);
+        if (Math.Abs(area) < 1e-9) throw new CommandException("The outline encloses nothing.");
+        // To the left of each edge by y: outward is to the right of an anticlockwise outline, to the left of a clockwise one.
+        var y = area > 0 ? -distance : distance;
+        var d = Math.Abs(distance);
+        var off = new Shifted[n];
+        for (var i = 0; i < n; i++)
+        {
+            var c = Edge(corners, rises, i);
+            if (c.Chord < 1e-9) throw new CommandException($"Edge {i + 1} has no length.");
+            if (!c.IsArc) { var nrm = (c.End - c.Start).Normalized().Perp * y; off[i] = new(false, c.Start + nrm, c.End + nrm); continue; }
+            var (centre, r) = (c.Centre, c.Radius);
+            // A rise to the left has its centre to the right: going left takes the arc away from its centre.
+            var r2 = r + y * Math.Sign(c.Rise);
+            if (r2 < 1e-6) throw new CommandException($"Offsetting by {distance:0.###} m shrinks the arc of edge {i + 1} to nothing (its radius is {r:0.###} m): a smaller distance.");
+            off[i] = new(true, centre + (c.Start - centre) * (r2 / r), centre + (c.End - centre) * (r2 / r), centre, r2, c.Rise > 0 ? -1 : 1, c.Sweep);
+        }
+        // Each corner's points: one where the offset edges meet, or two joined by a round.
+        var at = new List<Vec2>[n];
+        var round = new double[n];
+        for (var i = 0; i < n; i++)
+        {
+            var (a, b) = (off[(i - 1 + n) % n], off[i]);
+            var (q1, q2, p) = (a.End, b.Start, corners[i]);
+            if ((q1 - q2).Length < 1e-9) { at[i] = [q1]; continue; }
+            if (!a.Arc && !b.Arc)
+            {
+                var (u, v) = ((a.End - a.Start).Normalized(), (b.End - b.Start).Normalized());
+                var den = Vec2.Cross(u, v);
+                if (Math.Abs(den) < 1e-12)
+                {
+                    if (Vec2.Dot(u, v) < 0) throw new CommandException($"Corner {i + 1} turns back on itself: the outline cannot be offset there.");
+                    at[i] = [(q1 + q2) * 0.5];
+                    continue;
+                }
+                at[i] = [a.Start + u * (Vec2.Cross(b.Start - a.Start, v) / den)];
+                continue;
+            }
+            // Where the offset edges cross within both (the outline shrinks there), the crossing nearest the corner; else a round.
+            Vec2? best = null;
+            foreach (var x in Crossings(a, b))
+                if (Within(a, x) && Within(b, x) && (best == null || (x - p).Length < (best.Value - p).Length)) best = x;
+            if (best is { } hit) { at[i] = [hit]; continue; }
+            var m = (q1 + q2) * 0.5 - p;
+            if (m.Length < 1e-9) throw new CommandException($"Corner {i + 1} turns back on itself: the outline cannot be offset there.");
+            at[i] = [q1, q2];
+            round[i] = PathCurve.RiseThrough(q1, q2, p + m.Normalized() * d);
+        }
+        var pts = new List<Vec2>();
+        var rs = new List<double>();
+        var from = new List<int>();
+        for (var i = 0; i < n; i++)
+        {
+            if (at[i].Count == 2) { pts.Add(at[i][0]); rs.Add(round[i]); from.Add((i - 1 + n) % n); }
+            var (s, e) = (at[i][^1], at[(i + 1) % n][0]);
+            pts.Add(s);
+            from.Add(i);
+            var c = Edge(corners, rises, i);
+            var gone = $"Offsetting by {distance:0.###} m makes edge {i + 1} vanish: a smaller distance.";
+            if (!off[i].Arc)
+            {
+                var (now, was) = (e - s, c.End - c.Start);
+                if (now.Length < 1e-4 || Vec2.Dot(now, was) <= 0) throw new CommandException(gone);
+                rs.Add(0);
+                continue;
+            }
+            var turned = Turn(off[i], s, e);
+            if (turned < 1e-6 || turned > c.Sweep + (2 * Math.PI - c.Sweep) / 2 || (e - s).Length < 1e-4) throw new CommandException(gone);
+            rs.Add(Math.Sign(c.Rise) * off[i].Radius * (1 - Math.Cos(turned / 2)));
+        }
+        double[]? kept = rs.Any(x => Math.Abs(x) > 1e-6) ? [.. rs.Select(x => Math.Abs(x) > 1e-6 ? x : 0)] : null;
+        var after = SignedArea(pts, kept);
+        if (Math.Sign(after) != Math.Sign(area) || Math.Abs(after) < 1e-6) throw new CommandException($"Offsetting by {distance:0.###} m leaves nothing of the outline: a smaller distance.");
+        if (!Simple(Points(pts, kept))) throw new CommandException($"Offsetting by {distance:0.###} m makes the outline cross itself: a smaller distance.");
+        return (pts, kept, from);
+    }
+
+    static double Norm(double t) => t - 2 * Math.PI * Math.Floor(t / (2 * Math.PI));
+
+    /// <summary>How far an offset arc turns, its own way, from <paramref name="s"/> to <paramref name="e"/> on its circle, in [0, 2π).</summary>
+    static double Turn(Shifted a, Vec2 s, Vec2 e) =>
+        Norm(a.Sense * (Math.Atan2(e.Y - a.Centre.Y, e.X - a.Centre.X) - Math.Atan2(s.Y - a.Centre.Y, s.X - a.Centre.X)));
+
+    /// <summary>Whether a point of an offset edge's line or circle lies on the edge between its ends.</summary>
+    static bool Within(Shifted e, Vec2 x)
+    {
+        if (e.Arc) { var t = Turn(e, e.Start, x); return t <= e.Sweep + 1e-9 || t >= 2 * Math.PI - 1e-9; }
+        var v = e.End - e.Start;
+        var k = Vec2.Dot(x - e.Start, v) / Vec2.Dot(v, v);
+        return k >= -1e-9 && k <= 1 + 1e-9;
+    }
+
+    /// <summary>Where two offset edges' lines or circles cross.</summary>
+    static IEnumerable<Vec2> Crossings(Shifted a, Shifted b)
+    {
+        if (a.Arc && b.Arc) return CircleCircle(a.Centre, a.Radius, b.Centre, b.Radius);
+        var (line, circle) = a.Arc ? (b, a) : (a, b);
+        return LineCircle(line.Start, line.End, circle.Centre, circle.Radius);
+    }
+
+    static List<Vec2> LineCircle(Vec2 s, Vec2 e, Vec2 c, double r)
+    {
+        var u = (e - s).Normalized();
+        var foot = s + u * Vec2.Dot(c - s, u);
+        var h2 = r * r - Vec2.Dot(foot - c, foot - c);
+        if (h2 < -1e-12) return [];
+        var h = Math.Sqrt(Math.Max(0, h2));
+        return h > 1e-12 ? [foot + u * h, foot - u * h] : [foot];
+    }
+
+    static List<Vec2> CircleCircle(Vec2 c1, double r1, Vec2 c2, double r2)
+    {
+        var v = c2 - c1;
+        var dd = v.Length;
+        if (dd < 1e-12 || dd > r1 + r2 + 1e-12 || dd < Math.Abs(r1 - r2) - 1e-12) return [];
+        var a = (r1 * r1 - r2 * r2 + dd * dd) / (2 * dd);
+        var h = Math.Sqrt(Math.Max(0, r1 * r1 - a * a));
+        var u = v * (1 / dd);
+        var foot = c1 + u * a;
+        return h > 1e-12 ? [foot + u.Perp * h, foot - u.Perp * h] : [foot];
+    }
+
     /// <summary>A circle as an outline: four corners a quarter turn apart, each edge a quarter of it (counter-clockwise).</summary>
     public static (List<Vec2> Corners, double[] Rises) Circle(Vec2 centre, double radius)
     {
