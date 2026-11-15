@@ -6827,7 +6827,8 @@ export const scenes = [
         await lib.locator('[data-library-entry="Walnut desk"] [data-action=library-place]').click();
         await lib.waitFor({ state: 'detached', timeout: 10_000 });
         const tool = await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().tool);
-        t.expect(tool === 'furniture.casework', `Place starts the casework tool (${tool})`);
+        const kind = await t.page.evaluate(async () => (await import('/src/modules/furniture/placeKind.ts')).usePlaceKind.getState().kind);
+        t.expect(tool === 'furniture.place' && kind === 'casework', `Place starts the Place furniture tool set to casework (${tool}, ${kind})`);
         await t.page.keyboard.press('Escape');
       } finally {
         for (const id of kept) await t.call('furnitureLibrary.delete', { id }).catch(() => undefined);

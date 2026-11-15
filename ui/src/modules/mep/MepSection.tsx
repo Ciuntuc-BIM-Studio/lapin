@@ -1,5 +1,6 @@
 /** A node or a run in the inspector: its system, its role and ports (open or connected), a run's ends. */
 
+import { toolForRole } from './placeRole';
 import { useEffect, useState } from 'react';
 import { Plus, Settings2, SquarePen, Unlink } from 'lucide-react';
 import { setTool, useUi } from '../../app/store';
@@ -32,7 +33,7 @@ export function MepSection({ node }: { node: NodeDto }) {
   const service = system ? String(system.props.service) : null;
   const adds = service ? (templates().find((t) => t.service === service)?.endpoints ?? []) : [];
   // "+ Radiator": the system opens for editing and the tool places one, joined to the network where it is clicked.
-  const add = (roleId: string) => { if (!systemId) return; if (!editing) editSystem(systemId); setMep({ systemId }); setTool(`mep.node.${roleId}`); };
+  const add = (roleId: string) => { if (!systemId) return; if (!editing) editSystem(systemId); setMep({ systemId }); setTool(toolForRole(roleId)); };
   const role = run ? null : roleOf(node);
   const me = run ? net?.runs.find((r) => r.id === node.id) : null;
   const ports = run ? [] : net?.nodes.find((n) => n.id === node.id)?.ports ?? [];

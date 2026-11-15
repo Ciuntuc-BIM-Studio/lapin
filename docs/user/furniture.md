@@ -6,7 +6,7 @@ summary: Sofas, corner sofas, armchairs, chairs, beds, wardrobes, chests, bookca
 
 ## Placing furniture
 
-The **Interior** tab has, after the finishes, a tool for each kind of piece: **Sofa** (<kbd>SO</kbd>), **Corner sofa**, **Armchair** (<kbd>AC</kbd>), **Chair**, **Bed** (<kbd>BD</kbd>), **Bedside table**, **Wardrobe** (<kbd>WD</kbd>), **Chest of drawers**, **Bookcase**, **Sideboard**, **Table** (<kbd>TB</kbd>), **Coffee table** and **Desk**. Choose one and click in the plan.
+The **Interior** tab has, after the finishes, one tool, **Place furniture**, for every kind of piece: the kind is chosen in the command line's bar (grouped as seating, beds, storage, tables and models), and each kind keeps its own letters: **Sofa** (<kbd>SO</kbd>), **Corner sofa**, **Armchair** (<kbd>AC</kbd>), **Chair**, **Bed** (<kbd>BD</kbd>), **Bedside table**, **Wardrobe** (<kbd>WD</kbd>), **Chest of drawers**, **Bookcase**, **Sideboard**, **Table** (<kbd>TB</kbd>), **Coffee table** and **Desk**. Choose the kind and click in the plan.
 
 Click near a wall and the piece backs onto it. Its back sits on the face of the wall (on the plaster, not the core), its front faces the room, and it slides along the wall until it no longer runs into the wall across a corner. Click further from any wall and the piece stands where you clicked.
 

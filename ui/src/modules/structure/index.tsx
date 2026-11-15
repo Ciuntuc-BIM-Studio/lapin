@@ -15,6 +15,7 @@ import { sameKind } from '../../shell/params';
 import { lazyPart } from '../../platform/lazyPart';
 import { StripOption, stripArgs } from './stripOptions';
 import { withAutoJoinMenus } from '../core/autoJoin';
+import { arcAlias, chainTool } from '../core/chainTool';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const StructureTypesDialog = lazyPart(() => import('./StructureTypesDialog').then((m) => m.StructureTypesDialog), { title: 'Structure types' });
@@ -24,28 +25,20 @@ const column: ToolDef = {
   gesture: { kind: 'point' },
   complete: async ({ points: [p] }, ctx) => { await ctx.execute('structure.addColumn', { storeyId: ctx.storeyId, x: p.x, y: p.y }); },
 };
-const beam: ToolDef = {
+const beam: ToolDef = chainTool({
   id: 'structure.beam', label: 'Beam', icon: BeamIcon, shortcut: 'BM',
-  gesture: { kind: 'twoPoints', repeat: true },
-  complete: async ({ points: [a, b] }, ctx) => { await ctx.execute('structure.addBeam', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y }); },
-};
-/** A curved beam: its ends, then a point the arc passes through. */
-const curvedBeam: ToolDef = {
-  id: 'structure.curvedBeam', label: 'Curved beam', icon: CurvedBeamIcon, shortcut: 'BC',
-  gesture: { kind: 'threePoints', arc: true },
-  complete: async ({ points: [a, b, p] }, ctx) => { await ctx.execute('structure.addBeam', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, x3: p.x, y3: p.y }); },
-};
-const strip: ToolDef = {
-  id: 'structure.strip', label: 'Strip footing', icon: StripFootingIcon, shortcut: 'SF', options: StripOption,
-  gesture: { kind: 'twoPoints', repeat: true },
-  complete: async ({ points: [a, b] }, ctx) => { await ctx.execute('structure.addStripFooting', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, ...stripArgs(useSession.getState().nodes) }); },
-};
-/** A curved strip foundation: its ends, then a point the arc passes through. */
-const curvedStrip: ToolDef = {
-  id: 'structure.curvedStrip', label: 'Curved strip footing', icon: StripFootingIcon, shortcut: 'CF', options: StripOption,
-  gesture: { kind: 'threePoints', arc: true },
-  complete: async ({ points: [a, b, p] }, ctx) => { await ctx.execute('structure.addStripFooting', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, x3: p.x, y3: p.y, ...stripArgs(useSession.getState().nodes) }); },
-};
+  line: async (a, b, ctx) => { await ctx.execute('structure.addBeam', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y }); },
+  arc: async (a, b, p, ctx) => { await ctx.execute('structure.addBeam', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, x3: p.x, y3: p.y }); },
+});
+/** The old Curved beam: the Beam tool, in Arc. */
+const curvedBeam: ToolDef = arcAlias({ id: 'structure.curvedBeam', label: 'Curved beam', icon: CurvedBeamIcon, shortcut: 'BC' }, beam);
+const strip: ToolDef = chainTool({
+  id: 'structure.strip', label: 'Strip footing', icon: StripFootingIcon, shortcut: 'SF', more: StripOption,
+  line: async (a, b, ctx) => { await ctx.execute('structure.addStripFooting', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, ...stripArgs(useSession.getState().nodes) }); },
+  arc: async (a, b, p, ctx) => { await ctx.execute('structure.addStripFooting', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, x3: p.x, y3: p.y, ...stripArgs(useSession.getState().nodes) }); },
+});
+/** The old Curved strip footing: the Strip footing tool, in Arc. */
+const curvedStrip: ToolDef = arcAlias({ id: 'structure.curvedStrip', label: 'Curved strip footing', icon: StripFootingIcon, shortcut: 'CF' }, strip);
 /** A pad footing: under a column it rises to the column's base (decision 507); it snaps to the columns of the storey above too, so a foundation plan puts it right under one. */
 const pad: ToolDef = {
   id: 'structure.pad', label: 'Pad footing', icon: PadFootingIcon, shortcut: 'PF',
@@ -114,14 +107,14 @@ const structure: LapinModule = {
   name: 'Structure',
   summary: 'Columns, beams, strip and pad foundations, ring beams, lintels.',
   tabs: [{
-    id: 'structure', label: 'Structure', order: 30, include: ['modify'],
+    id: 'structure', label: 'Structure', order: 30, include: ['modify', 'joins'],
     groups: [
-      { label: 'Frame', tools: [column, beam], small: [curvedBeam, atGrid] },
-      { label: 'Foundation', tools: [strip, pad, padsUnderColumns], small: [curvedStrip] },
-      { label: 'Corners', tools: [mitre, butt, swap] },
+      { label: 'Frame', tools: [column, beam], small: [atGrid] },
+      { label: 'Foundation', tools: [strip, pad, padsUnderColumns] },
       { label: 'Types', tools: [types] },
     ],
   }],
+  legacyTools: [curvedBeam, curvedStrip, mitre, butt, swap],
   hotbar: [column, beam],
   propertySections: [{ id: 'structure', label: 'Structure', classes: ['IfcColumn', 'IfcBeam', 'IfcFooting'], component: StructureSection }],
   dialogs: { structureTypes: StructureTypesDialog },

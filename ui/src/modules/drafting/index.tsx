@@ -675,6 +675,8 @@ const drafting: LapinModule = {
   tabs: [
     {
       id: 'draft', label: 'Draft', order: 10,
+      // Core's Modify group is this tab's Modify: its Move, Copy… are drawn once, Scale, Array and Erase stay, and the rest of core's (Pin, Match properties, groups) join them.
+      include: ['modify'],
       groups: [
         { label: 'Draw', tools: [cad('line', 'Line', Slash, 'LINE'), cad('pline', 'Polyline', Spline, 'PLINE'), cad('rect', 'Rectangle', RectangleHorizontal, 'RECTANGLE'), cad('circle', 'Circle', Circle, 'CIRCLE'), cad('arc', 'Arc', Redo2, 'ARC')] },
         { label: 'Modify', tools: [cad('move', 'Move', Move, 'MOVE'), cad('copy', 'Copy', Copy, 'COPY'), cad('rotate', 'Rotate', RotateCw, 'ROTATEREF'), cad('mirror', 'Mirror', FlipHorizontal2, 'MIRROR')], small: [cad('scale', 'Scale', Scaling, 'SCALE'), cad('array', 'Array', Grid3x3, 'ARRAY'), cad('erase', 'Erase', Eraser, 'ERASE')] },

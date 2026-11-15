@@ -83,6 +83,8 @@ export interface ToolDef {
   icon: Icon;
   /** Two-letter shortcut, as in Revit (WA, DR…). */
   shortcut?: string;
+  /** Other names for what this tool does, so a tab that already has one of them in its own group of the same label does not show this one too (Delete: Erase). */
+  alsoCalled?: string[];
   /** What its button says when hovered, after its name (a script's tool: its header's or lapin.ui.tool's tooltip, shown as written). */
   tooltip?: string;
   /** A tool drawn in a view: its gesture and what it does at the end. */
@@ -96,6 +98,10 @@ export interface ToolDef {
    * should open the same list.
    */
   items?: readonly ToolDef[];
+  /** A button that works only for some selections (Create similar): false greys it out; asked as the selection changes. */
+  enabled?: () => boolean;
+  /** The mode the tool is in now (a chain tool's Line or Arc): its gesture follows it, so a change starts the gesture over. */
+  mode?: () => string;
   /** What Space does while the tool is on and nothing is typed (a door's other hand). */
   space?: () => void;
   /** What the tool lets one choose while it is on (the line a wall is drawn on), shown in the command line's bar. */
@@ -329,6 +335,12 @@ export interface LapinModule {
   tabs?: RibbonTabDef[];
   /** Groups other modules' tabs can include by id (core's "modify": move, copy, rotate…). */
   sharedGroups?: Record<string, RibbonGroupDef>;
+  /**
+   * Tools whose button went into another tool (audit 2026-11-15, stage 2: three Mitre buttons became one Joins group): off the ribbon,
+   * but still tools, so a quick slot, My tools, a user's shortcut or a saved interface naming the id keeps working, as do the tool's
+   * own default letters (found by findTool, listed with the commands under Other).
+   */
+  legacyTools?: ToolDef[];
   /** Tools for the viewport hotbar (1–9), in order. */
   hotbar?: ToolDef[];
   propertySections?: PropertySectionDef[];
