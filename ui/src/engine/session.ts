@@ -154,6 +154,8 @@ export async function ensureStorey(): Promise<string | null> {
 /** How long the engine may be unreachable before the window says so. */
 const LOST_NOTICE_MS = 10_000;
 const LOST_NOTICE = 'The engine stopped; restarting…';
+/** An edit past the usual wait: the engine still works on it, and its result shows when it lands. */
+export const STILL_WORKING = 'Still working on the last edit…';
 
 /** Connect to the engine and keep the session in step with it. */
 export async function connect(): Promise<void> {
@@ -162,6 +164,11 @@ export async function connect(): Promise<void> {
   engine.onEvent('share', (d) => useShare.setState({ status: d as ShareStatus }));
   engine.onEvent('ended', (d) => useShare.setState({ ended: String(d) }));
   setPresenceSender((p) => engine.notify('presence.update', p as Record<string, unknown>));
+  // An edit is waited for while the engine is connected (it finishes it whatever the window does): past the usual wait, said so.
+  engine.onSlow((_method, slow) => {
+    if (slow) notify(STILL_WORKING);
+    else if (useUi.getState().notice === STILL_WORKING) notify(null);
+  });
   let lost: ReturnType<typeof setTimeout> | undefined;
   engine.onStatus((connected) => {
     useSession.setState({ connected });

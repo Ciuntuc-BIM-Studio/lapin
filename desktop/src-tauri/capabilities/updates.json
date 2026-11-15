@@ -1,0 +1,12 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "updates",
+  "description": "The main window only: updates checked, downloaded and installed, then the app restarted. Detached view windows never check for updates (boot.tsx) and get neither.",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "updater:default",
+    "process:allow-restart"
+  ]
+}

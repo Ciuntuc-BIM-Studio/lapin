@@ -49,6 +49,12 @@ impl Engine {
         self.ready.notify_all();
     }
 
+    /// The port of the engine's address, while it has one.
+    fn port(&self) -> Option<u16> {
+        let url = self.url.lock().unwrap().clone()?.ok()?;
+        url.rsplit_once(':')?.1.split('/').next()?.parse().ok()
+    }
+
     /// The engine is gone: `engine_url` waits for the next one.
     fn unsettle(&self) {
         *self.url.lock().unwrap() = None;
@@ -107,10 +113,62 @@ async fn engine_url(engine: State<'_, Arc<Engine>>) -> Result<String, String> {
     .map_err(|e| e.to_string())?
 }
 
+/// The kinds of file another instance opens on its own (`open_separately`, LAPIN_OPEN): a Lapin
+/// project, an IFC or a DXF, as the interface's startup file takes them.
+const PROJECT_FILES: &[&str] = &["lapin", "ifc", "ifczip", "ifcxml", "dxf"];
+
+/// The documents the system may open with their own program (`open_path`): drawings, models,
+/// sheets, tables, pictures, text and archives; never a program, a script or an app bundle.
+const DOCUMENT_FILES: &[&str] = &[
+    "pdf", "lapin", "ifc", "ifczip", "ifcxml", "bcf", "bcfzip", "dxf", "dwg", "frag", "glb", "gltf", "obj", "stl", "step", "stp",
+    "e57", "las", "laz", "xlsx", "xls", "ods", "csv", "tsv", "docx", "doc", "odt", "pptx", "rtf", "png", "jpg", "jpeg", "gif",
+    "webp", "tif", "tiff", "bmp", "svg", "txt", "md", "json", "xml", "html", "htm", "zip", "mp4", "mov", "webm",
+];
+
+/// Folders that are programs or installers on some system (a macOS .app is a folder that `open` runs).
+const BUNDLE_FOLDERS: &[&str] = &[
+    "app", "bundle", "framework", "plugin", "kext", "pkg", "mpkg", "prefpane", "workflow", "action", "service", "xpc", "saver",
+    "appex", "qlgenerator", "mdimporter", "osax", "scptd",
+];
+
+fn extension_of(p: &std::path::Path) -> String {
+    p.extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase()
+}
+
+/// A file of one of the kinds given, by its name and by what it points to (a link named .pdf to a program is refused).
+fn file_of_kind(path: &str, kinds: &[&str], what: &str) -> Result<PathBuf, String> {
+    let p = PathBuf::from(path);
+    let real = std::fs::canonicalize(&p).map_err(|_| format!("There is nothing at {path}."))?;
+    if !real.is_file() {
+        return Err(format!("{path} is not a file."));
+    }
+    for q in [&p, &real] {
+        if !kinds.contains(&extension_of(q).as_str()) {
+            return Err(format!("Lapin only opens {what} this way, not {path}."));
+        }
+    }
+    Ok(real)
+}
+
+/// What `open_path` may hand to the system: a folder that is not a program, or a known document.
+fn openable(path: &str) -> Result<PathBuf, String> {
+    let p = PathBuf::from(path);
+    let real = std::fs::canonicalize(&p).map_err(|_| format!("There is nothing at {path}."))?;
+    if real.is_dir() {
+        if [&p, &real].iter().any(|q| BUNDLE_FOLDERS.contains(&extension_of(q).as_str())) {
+            return Err(format!("Lapin does not open programs: {path}."));
+        }
+        return Ok(real);
+    }
+    file_of_kind(path, DOCUMENT_FILES, "documents")
+}
+
 /// Another instance of the app, for a linked file opened on its own (Manage → Links): the new
 /// instance reads LAPIN_OPEN at start and imports that file into a new project, editable there.
+/// Only a project, an IFC or a DXF that exists.
 #[tauri::command]
 fn open_separately(path: String) -> Result<(), String> {
+    file_of_kind(&path, PROJECT_FILES, "projects, IFC and DXF files")?;
     let exe = std::env::current_exe().map_err(|e| e.to_string())?;
     Command::new(exe).env("LAPIN_OPEN", &path).spawn().map_err(|e| e.to_string())?;
     Ok(())
@@ -195,20 +253,18 @@ fn user_settings_write(
     write_atomic(&path, &text).map_err(|e| e.to_string())
 }
 
-/// The file this instance was started for (LAPIN_OPEN), if any.
+/// The file this instance was started for (LAPIN_OPEN), if any: a project, an IFC or a DXF that exists.
 #[tauri::command]
 fn startup_file() -> Option<String> {
-    std::env::var("LAPIN_OPEN").ok().filter(|p| !p.is_empty())
+    std::env::var("LAPIN_OPEN").ok().filter(|p| !p.is_empty() && file_of_kind(p, PROJECT_FILES, "projects").is_ok())
 }
 
-/// A folder (or file) shown in the system's file manager: the project folder an issue went into (Manage → Project folder).
-/// Only a path that exists on disk is handed to the system, never a URL or a command.
+/// A folder shown in the system's file manager (the project folder an issue went into: Manage → Project folder), or a
+/// document opened with its program (an issued file). Only a folder or a known document that exists on disk is handed
+/// to the system: never a URL, a command, a program, a script or an app bundle.
 #[tauri::command]
 fn open_path(path: String) -> Result<(), String> {
-    let p = PathBuf::from(&path);
-    if !p.exists() {
-        return Err(format!("There is nothing at {path}."));
-    }
+    let p = openable(&path)?;
     #[cfg(target_os = "macos")]
     let mut cmd = { let mut c = Command::new("open"); c.arg(&p); c };
     #[cfg(target_os = "windows")]
@@ -295,9 +351,36 @@ fn read_lines<R: BufRead>(mut r: R, chunked: bool, mut each: impl FnMut(String) 
     Ok(())
 }
 
+/// Ollama's own port.
+const OLLAMA_PORT: u16 = 11434;
+
+/// The port of the assistant's address the user set (the `lapin.assistant` setting, `{"url":"http://127.0.0.1:<port>"}`).
+fn configured_ollama_port(settings: &std::collections::BTreeMap<String, String>) -> Option<u16> {
+    let v: serde_json::Value = serde_json::from_str(settings.get("lapin.assistant")?).ok()?;
+    let url = v.get("url")?.as_str()?;
+    let rest = url.strip_prefix("http://")?;
+    let host_port = rest.split('/').next()?;
+    let (host, port) = host_port.rsplit_once(':')?;
+    if !["127.0.0.1", "localhost", "[::1]"].contains(&host) {
+        return None;
+    }
+    port.parse().ok()
+}
+
+/// Only Ollama is reached: its own port, or the one the user set for it; never the engine's.
+fn ollama_port_allowed(port: u16, configured: Option<u16>, engine: Option<u16>) -> bool {
+    if Some(port) == engine {
+        return false;
+    }
+    port == OLLAMA_PORT || (port >= 1024 && Some(port) == configured)
+}
+
 /// One request to Ollama on this computer; the answer's lines go to `on_line`, then a NUL "end" line. Ok(the HTTP status).
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 async fn ollama_request(
+    app: AppHandle,
+    engine: State<'_, Arc<Engine>>,
     port: u16,
     method: String,
     path: String,
@@ -309,6 +392,10 @@ async fn ollama_request(
     use std::io::Write;
     if !path.starts_with("/api/") || path.contains("..") || path.contains(char::is_whitespace) {
         return Err("Only Ollama's /api/ is reached.".to_string());
+    }
+    let configured = settings_path(&app).ok().and_then(|p| configured_ollama_port(&read_settings(&p)));
+    if !ollama_port_allowed(port, configured, engine.port()) {
+        return Err(format!("Only Ollama is reached: port {OLLAMA_PORT}, or the one set in the assistant's settings."));
     }
     let method = if method == "GET" { "GET" } else { "POST" };
     let calls = calls.inner().clone();
@@ -506,7 +593,57 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
-    use super::{merged_settings, read_lines, read_settings, ready_port, write_atomic};
+    use super::{
+        configured_ollama_port, file_of_kind, merged_settings, ollama_port_allowed, openable, read_lines, read_settings, ready_port,
+        write_atomic, Engine, PROJECT_FILES,
+    };
+
+    #[test]
+    fn opens_folders_and_documents_only_never_programs() {
+        let dir = std::env::temp_dir().join(format!("lapin-open-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("Project")).unwrap();
+        std::fs::create_dir_all(dir.join("Evil.app/Contents")).unwrap();
+        for name in ["sheet.pdf", "model.IFC", "run.sh", "tool.exe", "x.command", "noext"] {
+            std::fs::write(dir.join(name), b"x").unwrap();
+        }
+        let at = |n: &str| dir.join(n).to_string_lossy().to_string();
+        assert!(openable(&at("Project")).is_ok());
+        assert!(openable(&at("sheet.pdf")).is_ok());
+        assert!(openable(&at("model.IFC")).is_ok());
+        for bad in ["Evil.app", "run.sh", "tool.exe", "x.command", "noext", "missing.pdf"] {
+            assert!(openable(&at(bad)).is_err(), "{bad} should be refused");
+        }
+        #[cfg(unix)]
+        {
+            // A link named as a document that points to a program.
+            std::os::unix::fs::symlink(dir.join("run.sh"), dir.join("fake.pdf")).unwrap();
+            assert!(openable(&at("fake.pdf")).is_err());
+        }
+        // Another instance opens projects, IFC and DXF files only.
+        assert!(file_of_kind(&at("model.IFC"), PROJECT_FILES, "projects").is_ok());
+        assert!(file_of_kind(&at("sheet.pdf"), PROJECT_FILES, "projects").is_err());
+        assert!(file_of_kind(&at("Project"), PROJECT_FILES, "projects").is_err());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn reaches_only_ollamas_port_or_the_one_set_for_it() {
+        let mut settings = std::collections::BTreeMap::new();
+        assert_eq!(configured_ollama_port(&settings), None);
+        settings.insert("lapin.assistant".to_string(), r#"{"url":"http://127.0.0.1:11500","model":null}"#.to_string());
+        assert_eq!(configured_ollama_port(&settings), Some(11500));
+        settings.insert("lapin.assistant".to_string(), r#"{"url":"http://example.com:80"}"#.to_string());
+        assert_eq!(configured_ollama_port(&settings), None);
+        assert!(ollama_port_allowed(11434, None, Some(14912)));
+        assert!(ollama_port_allowed(11500, Some(11500), Some(14912)));
+        assert!(!ollama_port_allowed(14912, Some(14912), Some(14912)));
+        assert!(!ollama_port_allowed(22, Some(22), None));
+        assert!(!ollama_port_allowed(5432, Some(11500), None));
+        let engine = Engine::default();
+        engine.settle(Ok("ws://127.0.0.1:14912/ws".to_string()));
+        assert_eq!(engine.port(), Some(14912));
+    }
 
     #[test]
     fn keeps_the_users_settings_in_a_file_that_survives_and_merges_each_change() {

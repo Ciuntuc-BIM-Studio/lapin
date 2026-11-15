@@ -17,9 +17,11 @@ namespace Lapin.Host;
 /// <para>
 /// The relay only pairs and moves frames. Each guest's frames are encrypted
 /// end to end (AES-256-GCM) with a key drawn from the invitation's secret,
-/// which never reaches the relay, and a salt of the guest's connection, so no
-/// two connections share a key; every frame carries its direction and its
-/// count, so none can be replayed or turned round. A guest is an editor or a
+/// which never reaches the relay, and two fresh salts of the connection, one
+/// the guest's and one the host's, so no two connections share a key and a
+/// relay that recorded a guest's frames cannot play them to the host again
+/// under a new connection; every frame carries its direction and its count,
+/// so none can be replayed or turned round within its connection. A guest is an editor or a
 /// viewer, limited to what <see cref="EngineDispatcher.AllowedRemote"/> lets
 /// through: nothing on this computer's disk. While shared, a project with a
 /// file is saved every few minutes.
@@ -28,7 +30,7 @@ namespace Lapin.Host;
 public sealed class Sharing(EngineHub hub)
 {
     /// <summary>The protocol's version: a guest of another one is refused with a word to update.</summary>
-    public const int Protocol = 1;
+    public const int Protocol = 2;
     public const string DefaultRelay = "wss://lapin.ciuntucbimstudio.ro/relay";
     public const string DefaultJoinPage = "https://lapin.ciuntucbimstudio.ro/web/";
     static readonly string[] Colors = ["#d9480f", "#1971c2", "#2f9e44", "#ae3ec9", "#e8590c", "#0c8599", "#c2255c", "#5c940d", "#6741d9", "#f08c00"];
@@ -206,16 +208,44 @@ public sealed class Sharing(EngineHub hub)
         }
     }
 
-    /// <summary>One frame from a guest: first its connection's salt, then its hello, then its calls.</summary>
+    /// <summary>
+    /// One frame from a guest: first, in the clear, [0][protocol][its salt 16],
+    /// answered in the clear with [0][the host's salt 16] (or [1][protocol]
+    /// when the guest's is another); then, sealed with the key of both salts,
+    /// its hello, then its calls. A guest of protocol 1 ([0][salt 16], its key
+    /// from its salt alone) is only told to update.
+    /// </summary>
     async Task Receive(Guest g, ReadOnlyMemory<byte> payload)
     {
         if (g.Crypto == null)
         {
-            if (payload.Length != 17 || payload.Span[0] != 0) { await Close(g, null); return; }
-            g.Crypto = new ShareCrypto(_secret!, _room!, payload.Span[1..].ToArray(), host: true);
+            var span = payload.Span;
+            if (span.Length == 17 && span[0] == 0)
+            {
+                g.Crypto = ShareCrypto.Legacy(_secret!, _room!, span[1..].ToArray(), host: true);
+                g.Outdated = true;
+                return;
+            }
+            if (span.Length != 18 || span[0] != 0) { await Close(g, null); return; }
+            if (span[1] != Protocol)
+            {
+                await ToRelay(3, g.Id, new byte[] { 1, Protocol });
+                await Close(g, null);
+                return;
+            }
+            var hostSalt = RandomNumberGenerator.GetBytes(16);
+            g.Crypto = new ShareCrypto(_secret!, _room!, span[2..].ToArray(), hostSalt, host: true);
+            await ToRelay(3, g.Id, (byte[])[0, .. hostSalt]);
             return;
         }
         if (g.Crypto.Open(payload.Span) is not { } plain || plain.Length < 1 || plain[0] != 1) { await Close(g, null); return; }
+        if (g.Outdated)
+        {
+            // Sealed with the old key, which a recorded session would also open: nothing it says is taken, it is only told to update.
+            await g.SendText(new JsonObject { ["refused"] = Outdated }.ToJsonString());
+            await Close(g, null);
+            return;
+        }
         var text = Encoding.UTF8.GetString(plain, 1, plain.Length - 1);
         if (g.Participant == null) { await Hello(g, text); return; }
         if (await hub.Handle(text, g) is { } reply) g.Post(reply);
@@ -228,7 +258,7 @@ public sealed class Sharing(EngineHub hub)
         if (hello == null) { await Close(g, null); return; }
         if ((int?)hello["protocol"] != Protocol)
         {
-            await g.SendText(new JsonObject { ["refused"] = $"The host runs Lapin {Session.AppVersion}, another version: update Lapin (Help → Check for updates) and join again." }.ToJsonString());
+            await g.SendText(new JsonObject { ["refused"] = Outdated }.ToJsonString());
             await Close(g, null);
             return;
         }
@@ -261,6 +291,8 @@ public sealed class Sharing(EngineHub hub)
         await hub.BroadcastPresence();
         await hub.TellLocal("share", Status());
     }
+
+    static string Outdated => $"The host runs Lapin {Session.AppVersion}, another version: update Lapin (Help → Check for updates) and join again.";
 
     async Task Leave(Guest g, string? why)
     {
@@ -317,6 +349,8 @@ public sealed class Sharing(EngineHub hub)
     {
         public uint Id => id;
         public ShareCrypto? Crypto { get; set; }
+        /// <summary>A guest of the old protocol: its one frame is answered with a word to update, nothing else.</summary>
+        public bool Outdated { get; set; }
         public override Task SendBinary(byte[] frame) => Send(2, frame);
         public override Task SendText(string text) => Send(1, Encoding.UTF8.GetBytes(text));
         protected override void Drop() => _ = owner.Close(this, null);
@@ -327,7 +361,9 @@ public sealed class Sharing(EngineHub hub)
 
 /// <summary>
 /// One guest connection's encryption: AES-256-GCM, its key drawn (HKDF-SHA256)
-/// from the invitation's secret, with the room and the connection's salt.
+/// from the invitation's secret, salted with the room, the guest's salt and
+/// the host's salt (info "lapin-share-v2"): both sides' fresh randomness, so a
+/// connection's frames open under no other.
 /// A frame is [nonce 12: direction 4, count 8][ciphertext + tag 16]; its
 /// plaintext [kind 1][body], kind 1 JSON text, 2 an engine frame. A frame out
 /// of order, from the wrong side, or that does not open is refused.
@@ -341,9 +377,18 @@ public sealed class ShareCrypto
     ulong _received;
     readonly object _lock = new();
 
-    public ShareCrypto(byte[] secret, string room, byte[] salt, bool host)
+    public ShareCrypto(byte[] secret, string room, byte[] guestSalt, byte[] hostSalt, bool host)
+        : this(HKDF.DeriveKey(HashAlgorithmName.SHA256, secret, 32, [.. Encoding.UTF8.GetBytes(room), .. guestSalt, .. hostSalt], Encoding.UTF8.GetBytes("lapin-share-v2")), host)
     {
-        var key = HKDF.DeriveKey(HashAlgorithmName.SHA256, secret, 32, [.. Encoding.UTF8.GetBytes(room), .. salt], Encoding.UTF8.GetBytes("lapin-share-v1"));
+        if (guestSalt.Length != 16 || hostSalt.Length != 16) throw new ArgumentException("A salt is 16 bytes.");
+    }
+
+    /// <summary>Protocol 1's key, from the guest's salt alone: kept only to tell such a guest to update.</summary>
+    public static ShareCrypto Legacy(byte[] secret, string room, byte[] salt, bool host) =>
+        new(HKDF.DeriveKey(HashAlgorithmName.SHA256, secret, 32, [.. Encoding.UTF8.GetBytes(room), .. salt], Encoding.UTF8.GetBytes("lapin-share-v1")), host);
+
+    ShareCrypto(byte[] key, bool host)
+    {
         _aes = new AesGcm(key, 16);
         (_out, _in) = host ? (1u, 0u) : (0u, 1u);
     }
