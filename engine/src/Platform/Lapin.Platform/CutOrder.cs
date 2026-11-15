@@ -111,7 +111,7 @@ public static class CutOrder
             static double Priority(JsonNode v, string what)
             {
                 var n = Json.Number(v) ?? throw new CommandException($"The priority of {what} is a number.");
-                if (n < 0 || n > 100) throw new CommandException("A priority runs from 0 to 100.");
+                if (!(n >= 0 && n <= 100)) throw new CommandException("A priority runs from 0 to 100.");
                 return Math.Round(n);
             }
             var table = existing?.Attrs["priorities"] is JsonObject t ? (JsonObject)t.DeepClone() : new JsonObject();

@@ -107,7 +107,7 @@ public static class KitchenUnits
             {
                 if (!sizes.Any(x => Math.Abs(x - w) < 1e-6)) throw new CommandException($"A {t.Label.ToLowerInvariant()} is {string.Join(", ", sizes.Take(sizes.Length - 1).Select(Mm))} or {Mm(sizes[^1])} mm wide.");
             }
-            else if (w < t.Min - 1e-9 || w > t.Max + 1e-9)
+            else if (!(w >= t.Min - 1e-9 && w <= t.Max + 1e-9))
                 throw new CommandException(t.Key is "base" or "sink" or "tall" or "wall" ? "A cabinet is 100 to 800 mm wide." : $"A {t.Label.ToLowerInvariant()} is {Mm(t.Min)} to {Mm(t.Max)} mm wide.");
             var clean = new JsonObject { ["type"] = t.Key, ["width"] = Math.Round(w, 4) };
             foreach (var (key, v) in u)

@@ -156,7 +156,9 @@ public static class BalconyBuilder
                 {
                     case "rounded":
                     {
-                        var r = Math.Clamp(l.Num("cornerRadius"), 0.05, Math.Min(w / 2, d) - 1e-3);
+                        // Under 5 cm of depth the corner is as round as the depth allows (the least radius would pass the greatest).
+                        var most = Math.Min(w / 2, d) - 1e-3;
+                        var r = Math.Clamp(l.Num("cornerRadius"), Math.Min(0.05, most), most);
                         ring.Add(-w / 2, 0, "wall"); ring.Add(w / 2, 0, "side");
                         ring.Add(w / 2, d - r, "front");
                         ring.Arc(new Vec2(w / 2 - r, d - r), r, 0, Math.PI / 2, "front");

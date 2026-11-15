@@ -53,7 +53,7 @@ public static class LayerSets
             int? priority = null;
             if (l["priority"] is JsonValue pv)
             {
-                if (Json.Number(pv) is not { } pn || pn < 0 || pn > 100) throw new CommandException("A layer's priority runs from 0 to 100.");
+                if (Json.Number(pv) is not { } pn || !(pn >= 0 && pn <= 100)) throw new CommandException("A layer's priority runs from 0 to 100.");
                 priority = (int)Math.Round(pn);
             }
             // How it is laid in this build-up (docs/plan-buildup-tags.md): free text, kept as given (its lines too), none when blank.

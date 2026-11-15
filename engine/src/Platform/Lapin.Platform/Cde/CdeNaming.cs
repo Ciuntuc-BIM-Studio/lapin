@@ -153,7 +153,7 @@ public sealed record CdeNaming(string Project = "PRJ", string Originator = "ORG"
         {
             if ((string?)a[key] is not { } raw) return current;
             var v = Regex.Replace(raw.Trim().ToUpperInvariant(), "[^A-Z0-9]", "");
-            if (v.Length < min || v.Length > max) throw new CommandException($"The {key} code is {min}–{max} upper-case letters and digits.");
+            if (!(v.Length >= min && v.Length <= max)) throw new CommandException($"The {key} code is {min}–{max} upper-case letters and digits.");
             return v;
         }
         return this with

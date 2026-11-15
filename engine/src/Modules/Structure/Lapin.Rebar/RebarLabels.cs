@@ -120,7 +120,7 @@ public sealed record LabelStyle(IReadOnlyList<string> Parts, bool Balloon, strin
                 case "offset":
                 {
                     var off = Json.Number(v) ?? throw new CommandException("The offset is in mm on paper.");
-                    if (off < 0 || off > 100) throw new CommandException("The offset is between 0 and 100 mm.");
+                    if (!(off >= 0 && off <= 100)) throw new CommandException("The offset is between 0 and 100 mm.");
                     o[k] = off;
                     break;
                 }
@@ -199,7 +199,7 @@ public sealed record LabelPlace(Vec2? At, Vec2? Elbow, double? Offset)
         {
             if (Json.Number(a["offset"]) is { } off)
             {
-                if (off < -100 || off > 100) throw new CommandException("The string stands within 100 mm of the bars.");
+                if (!(off >= -100 && off <= 100)) throw new CommandException("The string stands within 100 mm of the bars.");
                 into["offset"] = Math.Round(off, 2);
             }
             else into.Remove("offset");

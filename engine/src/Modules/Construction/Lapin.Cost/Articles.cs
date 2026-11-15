@@ -78,7 +78,7 @@ public sealed record ArticleRef(string Code, string Basis = "auto", string? Part
             var r = Read(x) ?? throw new CommandException("Each article needs a code.");
             if (!Bases.Contains(r.Basis) && !char.IsUpper(r.Basis[0])) throw new CommandException($"„{r.Basis}” is not a measure: auto, volume, area, length, count, weight, or a quantity's name.");
             if (r.Factor <= 0) throw new CommandException("An article's factor is positive.");
-            if (r.Waste < 0 || r.Waste > 100) throw new CommandException("The waste is a percentage between 0 and 100.");
+            if (!(r.Waste >= 0 && r.Waste <= 100)) throw new CommandException("The waste is a percentage between 0 and 100.");
             o.Add(r);
         }
         return o;

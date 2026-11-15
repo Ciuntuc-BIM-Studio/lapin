@@ -375,7 +375,7 @@ public sealed class ClashModule : ILapinModule
             var setB = a.ContainsKey("setB") ? (string?)a["setB"] is { Length: > 0 } sb ? sb : null : old?.SetB;
             if (setB != null && m.Get(setB) is not { Class: SearchSets.Class }) throw new CommandException("Set B is one of the search sets, or none to test set A against itself.");
             var tolerance = Json.Number(a["tolerance"]) ?? old?.Tolerance ?? (kind == ClashTests.Clearance ? ClashEngine.ClearanceDistance : ClashEngine.HardTolerance);
-            if (tolerance < 0 || tolerance > ClashEngine.MaxTolerance) throw new CommandException($"The tolerance is 0 to {ClashEngine.MaxTolerance * 1000:0} mm.");
+            if (!(tolerance >= 0 && tolerance <= ClashEngine.MaxTolerance)) throw new CommandException($"The tolerance is 0 to {ClashEngine.MaxTolerance * 1000:0} mm.");
             var enabled = a["enabled"] is JsonValue ev && ev.TryGetValue<bool>(out var en) ? en : old?.Enabled ?? true;
             var attrs = existing?.CloneAttrs() ?? new JsonObject();
             attrs["kind"] = kind; attrs["setA"] = setA; attrs["setB"] = setB; attrs["tolerance"] = tolerance; attrs["enabled"] = enabled;

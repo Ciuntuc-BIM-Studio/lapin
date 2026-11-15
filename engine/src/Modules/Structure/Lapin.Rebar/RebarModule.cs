@@ -93,7 +93,10 @@ public static class Rebars
     public const string PartitionKey = "partition";
     /// <summary>On a beam or column type, the partition of the bars it lays: its stirrups', its column bars'.</summary>
     public const string StirrupsPartitionKey = "stirrupsPartition", ColumnBarsPartitionKey = "columnBarsPartition";
-    public static int Count(Entity e) => (int)Math.Max(1, Math.Round(e.Num("count", 1)));
+    /// <summary>The most bars a mark or a distribution's position stands for, and the most copies of an array along each
+    /// direction and in all: a bar is drawn once per copy, so a mistyped count never asks for millions at every redraw.</summary>
+    public const int MaxCount = 10_000, MaxArray = 1_000, MaxArrayCopies = 10_000;
+    public static int Count(Entity e) => (int)Math.Clamp(Math.Round(e.Num("count", 1)), 1, MaxCount);
     /// <summary>Where the user put a bar's or a distribution's label (<c>label: {at, elbow, offset}</c>); null when nowhere.</summary>
     public static LabelPlace? LabelPlaceOf(Entity e) => e.Attrs[LabelStyle.Key] is JsonObject o && LabelPlace.From(o) is { IsEmpty: false } p ? p : null;
 
@@ -101,10 +104,12 @@ public static class Rebars
     public static (int Nx, double Dx, int Ny, double Dy) Array(Entity e)
     {
         if (e.Attrs["array"] is not JsonObject o) return (1, 0, 1, 0);
-        return ((int)Math.Max(1, Json.Number(o["nx"]) ?? 1), Json.Number(o["dx"]) ?? 0, (int)Math.Max(1, Json.Number(o["ny"]) ?? 1), Json.Number(o["dy"]) ?? 0);
+        var nx = (int)Math.Clamp(Json.Number(o["nx"]) ?? 1, 1, MaxArray);
+        var ny = (int)Math.Clamp(Json.Number(o["ny"]) ?? 1, 1, Math.Max(1, Math.Min(MaxArray, MaxArrayCopies / nx)));
+        return (nx, Json.Number(o["dx"]) ?? 0, ny, Json.Number(o["dy"]) ?? 0);
     }
 
-    public static int Pieces(Entity e) { var (nx, _, ny, _) = Array(e); return Count(e) * nx * ny * (Rebar3D.Across.Of(e)?.Count ?? 1); }
+    public static int Pieces(Entity e) { var (nx, _, ny, _) = Array(e); return (int)Math.Min(int.MaxValue, (long)Count(e) * nx * ny * (Rebar3D.Across.Of(e)?.Count ?? 1)); }
 
     public static IEnumerable<Entity> On(IModelView m, string viewId, string cls) => m.OfClass(cls).Where(e => e.Str("viewId") == viewId);
 
@@ -283,7 +288,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             var found = RebarLinework.Outline(ctx, view, (string?)a["hostId"], at) ?? throw new CommandException("The view does not cut an element there: draw the bar in a section through it.");
             var d = Json.Number(a["diameter"]) ?? 0.012;
             var cover = Json.Number(a["cover"]) ?? 0.03;
-            if (cover < 0 || cover > 0.5) throw new CommandException("The cover is 0 to 500 mm.");
+            if (!(cover >= 0 && cover <= 0.5)) throw new CommandException("The cover is 0 to 500 mm.");
             var edges = a["edges"] is JsonArray ea ? ea.Select(x => (int)(Json.Number(x) ?? -1)).ToList() : null;
             var args = RebarLinework.AlongOutline(found.Loop, edges, cover + d / 2);
             args["viewId"] = view.Id;
@@ -416,7 +421,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             var project = Spatial.Project(ctx.Model) ?? throw new CommandException("The model has no project.");
             var now = RebarSettings.Of(ctx.Model);
             bool B(string k, bool d) => a[k] is JsonValue v && v.TryGetValue<bool>(out var b) ? b : d;
-            double Nn(string k, double d, double lo, double hi) { var v = Json.Number(a[k]) ?? d; if (v < lo || v > hi) throw new CommandException($"{k} is between {lo} and {hi}."); return v; }
+            double Nn(string k, double d, double lo, double hi) { var v = Json.Number(a[k]) ?? d; if (!(v >= lo && v <= hi)) throw new CommandException($"{k} is between {lo} and {hi}."); return v; }
             var steel = (string?)a["steel"] ?? now.Steel;
             var labels = new Dictionary<string, JsonObject>(now.Labels);
             if (a["labels"] is JsonObject lo)
@@ -588,7 +593,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             {
                 var d = def.Params.FirstOrDefault(x => x.Key == k) ?? throw new CommandException($"„{k}” is not a parameter of a {def.Label.ToLowerInvariant()} ({string.Join(", ", def.Params.Select(x => x.Key))}).");
                 var val = Json.Number(v) ?? throw new CommandException($"{k} is a length.");
-                if (val < d.Min - 1e-9) throw new CommandException($"{d.Label} is {Math.Round(d.Min * 1000)} mm at least.");
+                if (!(val >= d.Min - 1e-9)) throw new CommandException($"{d.Label} is {Math.Round(d.Min * 1000)} mm at least.");
                 p[k] = Math.Round(val, 6);
             }
             attrs["params"] = p;
@@ -603,14 +608,15 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         if (a.ContainsKey("diameter"))
         {
             var d = Json.Number(a["diameter"]) ?? throw new CommandException("The diameter is a length.");
-            if (d < 0.004 || d > 0.05) throw new CommandException("A bar is between 4 and 50 mm thick.");
+            if (!(d >= 0.004 && d <= 0.05)) throw new CommandException("A bar is between 4 and 50 mm thick.");
             attrs["diameter"] = Math.Round(d, 6);
         }
         foreach (var k in new[] { "mark", "count" })
             if (a.ContainsKey(k))
             {
                 var n = Json.Number(a[k]) ?? throw new CommandException($"{k} is a number.");
-                if (n < 1) throw new CommandException($"{k} is 1 at least.");
+                if (!(n >= 1)) throw new CommandException($"{k} is 1 at least.");
+                if (k == "count" && n > Rebars.MaxCount) throw new CommandException($"A mark stands for {Rebars.MaxCount} bars at most.");
                 attrs[k] = Math.Round(n);
             }
         if (a.ContainsKey("steel")) { if ((string?)a["steel"] is { Length: > 0 } st) attrs["steel"] = st; else attrs.Remove("steel"); }
@@ -625,7 +631,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
                     if (ho[end] is JsonObject h)
                     {
                         var angle = Json.Number(h["angle"]) ?? 90;
-                        if (angle is < 10 or > 180) throw new CommandException("A hook turns between 10° and 180°.");
+                        if (angle is not (>= 10 and <= 180)) throw new CommandException("A hook turns between 10° and 180°.");
                         var length = Json.Number(h["length"]) ?? RebarShapes.HookLength(Json.Number(attrs["diameter"]) ?? def.DefaultDiameter, angle);
                         hooks[end] = new Hook(angle, Math.Max(0, length), h["flip"] is JsonValue fv && fv.TryGetValue<bool>(out var f) && f).ToJson();
                     }
@@ -660,8 +666,13 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             }
             if (a.ContainsKey("array"))
             {
-                if (a["array"] is JsonObject ao && (Json.Number(ao["nx"]) ?? 1) * (Json.Number(ao["ny"]) ?? 1) > 1)
-                    attrs["array"] = new JsonObject { ["nx"] = Math.Max(1, Math.Round(Json.Number(ao["nx"]) ?? 1)), ["dx"] = Json.Number(ao["dx"]) ?? 0, ["ny"] = Math.Max(1, Math.Round(Json.Number(ao["ny"]) ?? 1)), ["dy"] = Json.Number(ao["dy"]) ?? 0 };
+                if (a["array"] is JsonObject ao)
+                {
+                    var (nx, ny) = (Math.Max(1, Math.Round(Json.Number(ao["nx"]) ?? 1)), Math.Max(1, Math.Round(Json.Number(ao["ny"]) ?? 1)));
+                    if (nx > Rebars.MaxArray || ny > Rebars.MaxArray || nx * ny > Rebars.MaxArrayCopies) throw new CommandException($"An array has {Rebars.MaxArray} copies at most along each direction and {Rebars.MaxArrayCopies} in all.");
+                    if (nx * ny > 1) attrs["array"] = new JsonObject { ["nx"] = nx, ["dx"] = Json.Number(ao["dx"]) ?? 0, ["ny"] = ny, ["dy"] = Json.Number(ao["dy"]) ?? 0 };
+                    else attrs.Remove("array");
+                }
                 else attrs.Remove("array");
             }
             if (a.ContainsKey("bendRadius")) { if (Json.Number(a["bendRadius"]) is { } br && br >= 0) attrs["bendRadius"] = br; else attrs.Remove("bendRadius"); }
@@ -672,7 +683,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
                 else
                 {
                     var cv = Json.Number(a["cover"]) ?? throw new CommandException("The cover is a length.");
-                    if (cv < 0 || cv > 0.2) throw new CommandException("The cover is between 0 and 200 mm.");
+                    if (!(cv >= 0 && cv <= 0.2)) throw new CommandException("The cover is between 0 and 200 mm.");
                     attrs["cover"] = Math.Round(cv, 6);
                 }
             }
@@ -684,11 +695,11 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
                 if (a["across"] is JsonObject ao)
                 {
                     var n = (int)Math.Round(Json.Number(ao["count"]) ?? 1);
-                    if (n < 1 || n > 40) throw new CommandException("A bar is laid 1 to 40 times across the drawing.");
+                    if (!(n >= 1 && n <= 40)) throw new CommandException("A bar is laid 1 to 40 times across the drawing.");
                     var mode = (string?)ao["mode"] ?? "cover";
                     if (mode is not ("cover" or "step")) throw new CommandException("Bars across the drawing are laid by the cover or at a step.");
                     var step = Json.Number(ao["step"]) ?? 0.05;
-                    if (step < 0.005) throw new CommandException("The step across is 5 mm at least.");
+                    if (!(step >= 0.005)) throw new CommandException("The step across is 5 mm at least.");
                     attrs["across"] = new Rebar3D.Across(n, mode, step).ToJson();
                 }
                 else attrs.Remove("across");
@@ -703,11 +714,13 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             if (a.ContainsKey("step"))
             {
                 var st = Json.Number(a["step"]) ?? throw new CommandException("The step is a length.");
-                if (st < 0.01) throw new CommandException("The step is 10 mm at least.");
+                if (!(st >= Runs.MinStep)) throw new CommandException("The step is 10 mm at least.");
                 attrs["step"] = Math.Round(st, 6);
             }
             if (a.ContainsKey("zones"))
             {
+                if (a["zones"] is JsonArray za && za.OfType<JsonObject>().Any(z => Json.Number(z["step"]) is { } zs && zs < Runs.MinStep - 1e-9))
+                    throw new CommandException("A zone's step is 10 mm at least.");
                 var zones = (a["zones"] as JsonArray)?.Select(Runs.Zone.From).OfType<Runs.Zone>().ToList() ?? [];
                 if (zones.Count > 0) attrs["zones"] = new JsonArray(zones.Select(z => (JsonNode)z.ToJson()).ToArray()); else attrs.Remove("zones");
             }

@@ -179,9 +179,9 @@ public static class ColumnBars
         var perFace = (int)Math.Round(Json.Number(a["perFace"]) ?? now.PerFace);
         if (perFace is < 2 or > 20) throw new CommandException("A column has 2 to 20 bars on each face (its corners counted).");
         var d = Json.Number(a["diameter"]) ?? now.Diameter;
-        if (d < 0.006 || d > 0.04) throw new CommandException("A bar is between 6 and 40 mm thick.");
+        if (!(d >= 0.006 && d <= 0.04)) throw new CommandException("A bar is between 6 and 40 mm thick.");
         var lap = Json.Number(a["lap"]) ?? now.Lap;
-        if (lap < 0 || lap > 5) throw new CommandException("The starter bars run 0 to 5 m past the top.");
+        if (!(lap >= 0 && lap <= 5)) throw new CommandException("The starter bars run 0 to 5 m past the top.");
         // The partition its bars go in; a new one numbers them again, in it.
         var partition = a.ContainsKey("partition") ? ((string?)a["partition"])?.Trim() ?? "" : type.Str(Rebars.ColumnBarsPartitionKey)?.Trim() ?? "";
         var moved = partition != (type.Str(Rebars.ColumnBarsPartitionKey)?.Trim() ?? "");

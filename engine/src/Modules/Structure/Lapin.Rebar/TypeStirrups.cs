@@ -275,9 +275,9 @@ public static class TypeStirrups
         var moved = partition != (type.Str(Rebars.StirrupsPartitionKey)?.Trim() ?? "");
         var enabled = a["enabled"] is JsonValue ev && ev.TryGetValue<bool>(out var en) ? en : now.Enabled;
         var d = Json.Number(a["diameter"]) ?? now.Diameter;
-        if (d < 0.004 || d > 0.02) throw new CommandException("A stirrup is between 4 and 20 mm thick.");
+        if (!(d >= 0.004 && d <= 0.02)) throw new CommandException("A stirrup is between 4 and 20 mm thick.");
         var cover = Json.Number(a["cover"]) ?? now.Cover;
-        if (cover < 0 || cover > 0.2) throw new CommandException("The cover is between 0 and 200 mm.");
+        if (!(cover >= 0 && cover <= 0.2)) throw new CommandException("The cover is between 0 and 200 mm.");
         var mode = (string?)a["mode"] ?? now.Mode;
         if (!StirrupSpec.Modes.Contains(mode)) throw new CommandException("Stirrups are laid at one step (uniform) or in zones.");
         var step = Json.Number(a["step"]) ?? now.Step;

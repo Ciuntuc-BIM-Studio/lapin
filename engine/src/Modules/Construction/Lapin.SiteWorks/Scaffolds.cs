@@ -93,6 +93,7 @@ public static class Scaffolds
         var all = m.OfClass(IfcClass.Wall).Select(w => ElementFaces.Of(services, w, m)).Where(f => f.Count > 0).ToList();
         if (all.Count == 0) return null;
         var mids = all.SelectMany(f => f.Where(x => x.Role is "Face.Left" or "Face.Right")).Select(f => f.Centre.Xy).ToList();
+        if (mids.Count == 0) return null;
         var middle = new Vec2(mids.Average(p => p.X), mids.Average(p => p.Y));
         var lines = new List<List<Vec2>>();
         foreach (var w in walls)

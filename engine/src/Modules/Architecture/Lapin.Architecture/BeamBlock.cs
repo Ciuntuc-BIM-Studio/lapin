@@ -66,17 +66,17 @@ public sealed record BeamBlockSpec(string Preset, double JoistWidth, double Jois
 
     public string? Problem()
     {
-        if (JoistWidth < 0.06 || JoistWidth > 0.4) return "A joist is 60 to 400 mm wide.";
-        if (JoistHeight < 0.05 || JoistHeight > 0.5) return "A joist is 50 to 500 mm high.";
+        if (!(JoistWidth >= 0.06 && JoistWidth <= 0.4)) return "A joist is 60 to 400 mm wide.";
+        if (!(JoistHeight >= 0.05 && JoistHeight <= 0.5)) return "A joist is 50 to 500 mm high.";
         if (FlangeHeight <= 0 || FlangeHeight >= JoistHeight) return "A joist's foot is lower than the joist.";
         if (WebWidth <= 0 || WebWidth > JoistWidth) return "A joist's web is no wider than its foot.";
-        if (Spacing < 0.3 || Spacing > 1.2) return "Joists are 300 to 1200 mm apart, axis to axis.";
+        if (!(Spacing >= 0.3 && Spacing <= 1.2)) return "Joists are 300 to 1200 mm apart, axis to axis.";
         if (BlockWidth < 0.1) return "The joists are too close for a block between them: the spacing is at least the joist's width and 100 mm.";
-        if (BlockHeight < 0.05 || BlockHeight > 0.5) return "A block is 50 to 500 mm high.";
-        if (BlockLength < 0.1 || BlockLength > 1) return "A block is 100 to 1000 mm long along the joists.";
-        if (Topping < 0.02 || Topping > 0.2) return "The topping is 20 to 200 mm thick.";
+        if (!(BlockHeight >= 0.05 && BlockHeight <= 0.5)) return "A block is 50 to 500 mm high.";
+        if (!(BlockLength >= 0.1 && BlockLength <= 1)) return "A block is 100 to 1000 mm long along the joists.";
+        if (!(Topping >= 0.02 && Topping <= 0.2)) return "The topping is 20 to 200 mm thick.";
         if (JoistHeight >= Depth) return "The joist must stay under the top of the topping.";
-        if (Bearing < 0 || Bearing > 0.5) return "The bearing is 0 to 500 mm.";
+        if (!(Bearing >= 0 && Bearing <= 0.5)) return "The bearing is 0 to 500 mm.";
         if (string.IsNullOrWhiteSpace(JoistMaterial) || string.IsNullOrWhiteSpace(BlockMaterial) || string.IsNullOrWhiteSpace(ToppingMaterial)) return "The joists, the blocks and the topping each need a material.";
         return null;
     }

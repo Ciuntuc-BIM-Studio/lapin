@@ -21,6 +21,11 @@ public static class Terrains
 {
     public const string Predefined = "TERRAIN";
     public const string Color = "#7a9a5a";
+    /// <summary>The finest contour interval (m), as the configurator's field: a finer one asked is taken as this.</summary>
+    public const double MinInterval = 0.05;
+
+    /// <summary>A contour interval asked, brought up to <see cref="MinInterval"/>; null when none was asked.</summary>
+    public static double? Interval(double? asked) => asked is { } v ? Math.Max(MinInterval, v) : null;
 
     /// <summary>Whether an element is a terrain (not another geographic element).</summary>
     public static bool IsTerrain(Entity e) => e.Class == IfcClass.GeographicElement && e.PredefinedType == Predefined;

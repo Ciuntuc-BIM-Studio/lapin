@@ -110,6 +110,7 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
             if (spec.Problem() is { } problem) return new JsonObject { ["problem"] = problem };
             var length = Json.Number(a["length"]) ?? 12;
             var height = Json.Number(a["height"]) ?? 2.7;
+            if (SampleProblem(length, height) is { } far) return new JsonObject { ["problem"] = far };
             var ros = new List<(string Id, double L, double R, double B, double T)> { ("Window", 1.4 - spec.Gap, 2.6 + spec.Gap, 0.9 - spec.Gap, 2.2 + spec.Gap), ("Door", 7.05 - spec.Gap, 7.95 + spec.Gap, 0, 2.1 + spec.Gap), ("Window 2", 9.4 - spec.Gap, 11.2 + spec.Gap, 0.9 - spec.Gap, 2.2 + spec.Gap) };
             var (joints, warnings) = Clt.Joints(spec, 0, length, ros.Select(o => (o.Id, o.L, o.R)).ToList());
             return new JsonObject
@@ -173,6 +174,7 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
             if (spec.Problem() is { } problem) return new JsonObject { ["problem"] = problem };
             var length = Json.Number(a["length"]) ?? 6;
             var height = Json.Number(a["height"]) ?? 2.7;
+            if (SampleProblem(length, height) is { } far) return new JsonObject { ["problem"] = far };
             var holes = a["openings"] is JsonArray arr
                 ? arr.OfType<JsonObject>().Select((o, i) => new Framing.Hole($"Opening {i + 1}", Json.Number(o["along"]) ?? 1, Json.Number(o["sill"]) ?? 0.9, Json.Number(o["width"]) ?? 1.2, Json.Number(o["height"]) ?? 1.5, o["door"] is JsonValue dv && dv.TryGetValue<bool>(out var door) && door)).ToList()
                 : [new Framing.Hole("Window", 1.7, 0.9, 1.2, 1.3, false), new Framing.Hole("Door", 4.3, 0, 0.9, 2.1, true)];
@@ -220,6 +222,14 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
             };
         });
     }
+
+    /// <summary>The longest sample wall a configurator previews (m), and its tallest.</summary>
+    public const double PreviewMaxLength = 100, PreviewMaxHeight = 20;
+
+    /// <summary>Why a preview's sample wall is refused: not positive, or longer or taller than a preview draws.</summary>
+    static string? SampleProblem(double length, double height) =>
+        length > 0 && length <= PreviewMaxLength && height > 0 && height <= PreviewMaxHeight ? null
+            : $"A preview's wall is up to {PreviewMaxLength:0} m long and {PreviewMaxHeight:0} m high.";
 
     static Entity? OpeningOf(IModelView m, string? id) => m.Get(id ?? "") switch
     {

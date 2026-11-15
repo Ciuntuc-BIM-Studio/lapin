@@ -97,7 +97,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             var attrs = new JsonObject
             {
                 ["points"] = Terrains.PointsJson(pts), ["datum"] = Json.Number(a["datum"]) ?? 0,
-                ["interval"] = Json.Number(a["interval"]) ?? 0.5, ["majorEvery"] = Json.Number(a["majorEvery"]) ?? 5,
+                ["interval"] = Terrains.Interval(Json.Number(a["interval"])) ?? 0.5, ["majorEvery"] = Json.Number(a["majorEvery"]) ?? 5,
                 ["depth"] = Json.Number(a["depth"]) ?? 2, ["material"] = earth.Id,
             };
             var t = new Entity(ctx.NewId(), IfcClass.GeographicElement, name, attrs, Terrains.Predefined);
@@ -117,7 +117,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 attrs["points"] = Terrains.PointsJson(pts);
             }
             foreach (var k in new[] { "datum", "interval", "majorEvery", "depth" })
-                if (Json.Number(a[k]) is { } v) attrs[k] = v;
+                if (Json.Number(a[k]) is { } v) attrs[k] = k == "interval" ? Terrains.Interval(v) : v;
             if ((string?)a["analysis"] is { } analysis)
             {
                 if (!Analysis.Kinds.Contains(analysis)) throw new CommandException("An analysis shows slopes, cut and fill, or elevations; or none.");
