@@ -20,8 +20,7 @@ public readonly record struct FieldValue(double? Number, string? Text)
     public static FieldValue OfText(string? s) => string.IsNullOrEmpty(s) ? Missing : new(StrictNumber(s), s);
 
     /// <summary>A text read as a number only when it is one and nothing else (a dot or a comma for decimals).</summary>
-    public static double? StrictNumber(string? s) =>
-        s != null && double.TryParse(s.Trim().Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var n) && double.IsFinite(n) ? n : null;
+    public static double? StrictNumber(string? s) => Numbers.Parse(s, NumberMode.Strict);
 }
 
 /// <summary>

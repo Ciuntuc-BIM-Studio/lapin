@@ -203,11 +203,11 @@ public static class TypeExchange
             if (name.Length == 0) continue;
             var key = (KindOf(At(kind)), name);
             if (!found.TryGetValue(key, out var t)) { found[key] = t = (At(mark) is { Length: > 0 } mk ? mk : null, []); order.Add(key); }
-            var l = new JsonObject { ["material"] = At(material), ["thickness"] = Metres(At(thick), sep, name) };
+            var l = new JsonObject { ["material"] = At(material), ["thickness"] = Metres(At(thick), name) };
             if (At(core).ToLowerInvariant() is "yes" or "y" or "x" or "1" or "true" or "da" or "si" or "sì" or "tak" or "sim" or "core") l["core"] = true;
             if (layer >= 0 && At(layer) is { Length: > 0 } ln && !int.TryParse(ln, out _)) l["name"] = ln;
-            if (At(from).Length > 0) l["from"] = Metres(At(from), sep, name);
-            if (At(to).Length > 0) l["to"] = Metres(At(to), sep, name);
+            if (At(from).Length > 0) l["from"] = Metres(At(from), name);
+            if (At(to).Length > 0) l["to"] = Metres(At(to), name);
             if (At(note).Length > 0) l["note"] = At(note);
             t.Layers.Add(l);
         }
@@ -219,11 +219,8 @@ public static class TypeExchange
         }).ToList();
     }
 
-    static double Metres(string mm, char sep, string type)
-    {
-        var s = sep == ',' ? mm : mm.Replace(',', '.');
-        return double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v / 1000 : throw new CommandException($"„{mm}” is not a thickness in millimetres (type „{type}”).");
-    }
+    static double Metres(string mm, string type) =>
+        Numbers.Parse(mm, NumberMode.Strict) is { } v ? v / 1000 : throw new CommandException($"„{mm}” is not a thickness in millimetres (type „{type}”).");
 
     /// <summary>A CSV line's cells, quotes kept as spreadsheets write them.</summary>
     static List<string> Cells(string line, char sep)

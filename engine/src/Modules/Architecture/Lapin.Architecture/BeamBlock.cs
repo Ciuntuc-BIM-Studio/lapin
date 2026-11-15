@@ -411,8 +411,7 @@ public static class BeamBlock
             double Mm(string name, double def)
             {
                 if (Cell(name) is not { } s) return def;
-                if (sep != ',') s = s.Replace(',', '.');
-                return double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v / 1000 : throw new CommandException($"Line {li + 1}: „{s}” is not a number ({name}).");
+                return Numbers.Parse(s, NumberMode.Strict) is { } v ? v / 1000 : throw new CommandException($"Line {li + 1}: „{s}” is not a number ({name}).");
             }
             var name = Cell("Name") ?? throw new CommandException($"Line {li + 1}: no name.");
             var spec = new BeamBlockSpec(name, Mm("Joist width (mm)", d.JoistWidth), Mm("Joist height (mm)", d.JoistHeight), Mm("Foot height (mm)", d.FlangeHeight), Mm("Web width (mm)", d.WebWidth),

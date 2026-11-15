@@ -145,9 +145,9 @@ public static class TypeTables
     /// <summary>A number with its unit: „1250”, „1,25 m”, „71mm”; the factor of a unit written in the cell or in the row's unit column, else the column's.</summary>
     static double? Number(string cell, double factor, string? rowUnit)
     {
-        var m = System.Text.RegularExpressions.Regex.Match(cell.Trim(), @"^([-+]?\d+(?:[.,]\d+)?)\s*([a-zA-Z]*)");
-        if (!m.Success || !double.TryParse(m.Groups[1].Value.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var v)) return null;
-        var unit = m.Groups[2].Value.Length > 0 ? m.Groups[2].Value : rowUnit;
+        if (Numbers.ParseLeading(cell, out var rest) is not { } v) return null;
+        var written = System.Text.RegularExpressions.Regex.Match(rest, @"^\s*([a-zA-Z]*)").Groups[1].Value;
+        var unit = written.Length > 0 ? written : rowUnit;
         if (unit != null && ProfileTables.UnitOf(unit, "length") is { } u) factor = u.Factor;
         return v * factor;
     }
