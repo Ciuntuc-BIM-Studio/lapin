@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  // Shared sessions and long edits (audit 15.11.2026)
+  "The host runs another version of Lapin: update Lapin (Help → Check for updates) and join again.": "Værten bruger en anden version af Lapin: opdater Lapin (Hjælp → Søg efter opdateringer…) og deltag igen.", "A frame from the session could not be read; the session goes on.": "En besked fra sessionen kunne ikke læses; sessionen fortsætter.", "A call to the session could not be sent.": "Et kald til sessionen kunne ikke sendes.", "Still working on the last edit…": "Arbejder stadig på den seneste ændring…",
   // Layer extents (forum topic 89)
   "Layer extents": "Lagforlængelser", "Add a layer extent": "Tilføj en lagforlængelse", "How far the layer goes past this edge (positive) or stops short of it (negative)": "Hvor langt laget går ud over denne kant (positiv) eller stopper før den (negativ)", "Whether the layer past the edge cuts the walls and floors it meets; off, it overlaps them": "Om laget ud over kanten skærer de vægge og dæk, det møder; ellers overlapper det dem", "Every layer ends at the element's edges.": "Hvert lag slutter ved elementets kanter.", "Take the extent away": "Fjern forlængelsen", "Which edge of the outline, numbered from its first corner": "Hvilken kant af omridset, nummereret fra dets første hjørne", "Cuts others": "Skærer andre", "Layer extent": "Lagforlængelse", "Clear layer extents": "Ryd lagforlængelser",
   // Layer extents, stage 2: edit layers, type defaults, the cut order (forum topic 89)

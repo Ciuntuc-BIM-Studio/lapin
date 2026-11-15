@@ -67,16 +67,49 @@ describe('EngineClient', () => {
 
   it('gives up on a call the engine never answers, and says which', async () => {
     const { client, socket } = await connected();
-    const slow = client.call('doc.execute', {}, { timeoutMs: 5_000 });
+    const slow = client.call('model.compute', {}, { timeoutMs: 5_000 });
     const quick = client.call('doc.query');
     socket.reply({ id: socket.sent[1].id, result: 1 });
     await expect(quick).resolves.toBe(1);
-    const failed = expect(slow).rejects.toThrow(/did not answer doc\.execute within 5 s/);
+    const failed = expect(slow).rejects.toThrow(/did not answer model\.compute within 5 s/);
     vi.advanceTimersByTime(5_001);
     await failed;
     expect(client.waiting).toBe(0);
     // A late answer to a call given up on is dropped, not crashed on.
     socket.reply({ id: socket.sent[0].id, result: 'late' });
+  });
+
+  it('waits for an edit as long as the connection lives: said to be slow, its late result kept, never failed by the clock', async () => {
+    const { client, socket } = await connected();
+    const slow: [string, boolean][] = [];
+    client.onSlow((method, still) => slow.push([method, still]));
+    const edit = client.call<string>('doc.execute', { command: 'big' });
+    const ask = client.call('doc.query');
+    const askFailed = expect(ask).rejects.toThrow(/did not answer doc\.query within 30 s/);
+    vi.advanceTimersByTime(30_001);
+    await askFailed;
+    expect(slow).toEqual([['doc.execute', true]]);
+    vi.advanceTimersByTime(10 * 60_000);
+    expect(client.waiting).toBe(1);
+    socket.reply({ id: socket.sent[0].id, result: 'done' });
+    await expect(edit).resolves.toBe('done');
+    expect(slow).toEqual([['doc.execute', true], ['doc.execute', false]]);
+    // An edit given a long wait (an import) is said to be slow only after it, and still never failed by the clock.
+    const imported = client.call('doc.execute', { command: 'import' }, { timeoutMs: 5 * 60_000 });
+    vi.advanceTimersByTime(60_000);
+    expect(slow).toHaveLength(2);
+    vi.advanceTimersByTime(5 * 60_000);
+    expect(slow.at(-1)).toEqual(['doc.execute', true]);
+    socket.reply({ id: socket.sent[socket.sent.length - 1].id, result: 'in' });
+    await expect(imported).resolves.toBe('in');
+    // Undo and redo the same; a connection that drops fails them.
+    const undo = client.call('doc.undo');
+    vi.advanceTimersByTime(60_000);
+    const undoFailed = expect(undo).rejects.toThrow(/closed/);
+    socket.close();
+    await undoFailed;
+    expect(slow.at(-1)).toEqual(['doc.undo', false]);
+    client.stop();
   });
 
   it('refuses calls while disconnected, fails the pending ones when the socket closes, and reconnects', async () => {

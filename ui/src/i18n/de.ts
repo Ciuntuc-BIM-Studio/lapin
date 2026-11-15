@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const DE: Record<string, string> = {
+  // Shared sessions and long edits (audit 15.11.2026)
+  "The host runs another version of Lapin: update Lapin (Help → Check for updates) and join again.": "Der Gastgeber verwendet eine andere Lapin-Version: Aktualisiere Lapin (Hilfe → Nach Updates suchen…) und tritt erneut bei.", "A frame from the session could not be read; the session goes on.": "Eine Nachricht der Sitzung konnte nicht gelesen werden; die Sitzung läuft weiter.", "A call to the session could not be sent.": "Ein Aufruf an die Sitzung konnte nicht gesendet werden.", "Still working on the last edit…": "Die letzte Änderung wird noch bearbeitet…",
   // Layer extents (forum topic 89)
   "Layer extents": "Schichtverlängerungen", "Add a layer extent": "Schichtverlängerung hinzufügen", "How far the layer goes past this edge (positive) or stops short of it (negative)": "Wie weit die Schicht über diese Kante hinausgeht (positiv) oder vor ihr endet (negativ)", "Whether the layer past the edge cuts the walls and floors it meets; off, it overlaps them": "Ob die Schicht jenseits der Kante die Wände und Decken schneidet, auf die sie trifft; sonst überlappt sie sie", "Every layer ends at the element's edges.": "Jede Schicht endet an den Kanten des Elements.", "Take the extent away": "Verlängerung entfernen", "Which edge of the outline, numbered from its first corner": "Welche Kante des Umrisses, ab seiner ersten Ecke nummeriert", "Cuts others": "Schneidet andere", "Layer extent": "Schichtverlängerung", "Clear layer extents": "Schichtverlängerungen entfernen",
   // Layer extents, stage 2: edit layers, type defaults, the cut order (forum topic 89)

@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // Shared sessions and long edits (audit 15.11.2026)
+  "The host runs another version of Lapin: update Lapin (Help → Check for updates) and join again.": "主持人使用的是另一个版本的 Lapin：请更新 Lapin（帮助 → 检查更新…）后重新加入。", "A frame from the session could not be read; the session goes on.": "无法读取会话中的一条消息；会话继续进行。", "A call to the session could not be sent.": "无法向会话发送调用。", "Still working on the last edit…": "仍在处理上一次编辑…",
   // Layer extents (forum topic 89)
   "Layer extents": "图层延伸", "Add a layer extent": "添加图层延伸", "How far the layer goes past this edge (positive) or stops short of it (negative)": "图层超出此边缘的距离（正值）或在其前停止的距离（负值）", "Whether the layer past the edge cuts the walls and floors it meets; off, it overlaps them": "超出边缘的图层是否剪切其遇到的墙和楼板；否则与之重叠", "Every layer ends at the element's edges.": "每个图层都止于构件的边缘。", "Take the extent away": "移除延伸", "Which edge of the outline, numbered from its first corner": "轮廓的哪条边，从其第一个角点起编号", "Cuts others": "剪切其他", "Layer extent": "图层延伸", "Clear layer extents": "清除图层延伸",
   // Layer extents, stage 2: edit layers, type defaults, the cut order (forum topic 89)

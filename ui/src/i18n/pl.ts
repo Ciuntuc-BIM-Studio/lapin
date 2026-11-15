@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const PL: Record<string, string> = {
+  // Shared sessions and long edits (audit 15.11.2026)
+  "The host runs another version of Lapin: update Lapin (Help → Check for updates) and join again.": "Gospodarz używa innej wersji Lapin: zaktualizuj Lapin (Pomoc → Sprawdź aktualizacje…) i dołącz ponownie.", "A frame from the session could not be read; the session goes on.": "Nie udało się odczytać wiadomości z sesji; sesja trwa dalej.", "A call to the session could not be sent.": "Nie udało się wysłać wywołania do sesji.", "Still working on the last edit…": "Ostatnia zmiana jest wciąż wykonywana…",
   // Layer extents (forum topic 89)
   "Layer extents": "Przedłużenia warstw", "Add a layer extent": "Dodaj przedłużenie warstwy", "How far the layer goes past this edge (positive) or stops short of it (negative)": "Jak daleko warstwa wychodzi poza tę krawędź (dodatnio) lub kończy się przed nią (ujemnie)", "Whether the layer past the edge cuts the walls and floors it meets; off, it overlaps them": "Czy warstwa poza krawędzią przecina napotkane ściany i stropy; jeśli nie, nakłada się na nie", "Every layer ends at the element's edges.": "Każda warstwa kończy się na krawędziach elementu.", "Take the extent away": "Usuń przedłużenie", "Which edge of the outline, numbered from its first corner": "Która krawędź obrysu, numerowana od jego pierwszego narożnika", "Cuts others": "Tnie inne", "Layer extent": "Przedłużenie warstwy", "Clear layer extents": "Wyczyść przedłużenia warstw",
   // Layer extents, stage 2: edit layers, type defaults, the cut order (forum topic 89)

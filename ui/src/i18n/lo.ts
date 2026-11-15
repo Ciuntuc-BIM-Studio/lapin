@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // Shared sessions and long edits (audit 15.11.2026)
+  "The host runs another version of Lapin: update Lapin (Help → Check for updates) and join again.": "ເຈົ້າພາບໃຊ້ Lapin ລຸ້ນອື່ນ: ອັບເດດ Lapin (ຊ່ວຍເຫຼືອ → ກວດສອບອັບເດດ…) ແລ້ວເຂົ້າຮ່ວມອີກຄັ້ງ.", "A frame from the session could not be read; the session goes on.": "ອ່ານຂໍ້ຄວາມຈາກເຊດຊັນບໍ່ໄດ້; ເຊດຊັນດຳເນີນຕໍ່.", "A call to the session could not be sent.": "ສົ່ງຄຳສັ່ງໄປຫາເຊດຊັນບໍ່ໄດ້.", "Still working on the last edit…": "ຍັງເຮັດວຽກກັບການແກ້ໄຂຫຼ້າສຸດຢູ່…",
   // Layer extents (forum topic 89)
   "Layer extents": "ການຂະຫຍາຍຊັ້ນ", "Add a layer extent": "ເພີ່ມການຂະຫຍາຍຊັ້ນ", "How far the layer goes past this edge (positive) or stops short of it (negative)": "ຊັ້ນເລີຍຂອບນີ້ໄປເທົ່າໃດ (ບວກ) ຫຼື ຢຸດກ່ອນຮອດມັນ (ລົບ)", "Whether the layer past the edge cuts the walls and floors it meets; off, it overlaps them": "ຊັ້ນທີ່ເລີຍຂອບຕັດຝາ ແລະ ພື້ນທີ່ມັນພົບຫຼືບໍ່; ຖ້າບໍ່, ມັນຊ້ອນທັບກັນ", "Every layer ends at the element's edges.": "ທຸກຊັ້ນສິ້ນສຸດຢູ່ຂອບຂອງອົງປະກອບ.", "Take the extent away": "ເອົາການຂະຫຍາຍອອກ", "Which edge of the outline, numbered from its first corner": "ຂອບໃດຂອງເສັ້ນຂອບ, ນັບຈາກມຸມທຳອິດຂອງມັນ", "Cuts others": "ຕັດອື່ນໆ", "Layer extent": "ການຂະຫຍາຍຊັ້ນ", "Clear layer extents": "ລຶບການຂະຫຍາຍຊັ້ນ",
   // Layer extents, stage 2: edit layers, type defaults, the cut order (forum topic 89)

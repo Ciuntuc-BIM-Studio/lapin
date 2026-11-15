@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const FR: Record<string, string> = {
+  // Shared sessions and long edits (audit 15.11.2026)
+  "The host runs another version of Lapin: update Lapin (Help → Check for updates) and join again.": "L’hôte utilise une autre version de Lapin : mettez Lapin à jour (Aide → Rechercher des mises à jour…) et rejoignez à nouveau.", "A frame from the session could not be read; the session goes on.": "Un message de la session n’a pas pu être lu ; la session continue.", "A call to the session could not be sent.": "Un appel à la session n’a pas pu être envoyé.", "Still working on the last edit…": "La dernière modification est toujours en cours…",
   // Layer extents (forum topic 89)
   "Layer extents": "Prolongements des couches", "Add a layer extent": "Ajouter un prolongement de couche", "How far the layer goes past this edge (positive) or stops short of it (negative)": "Jusqu'où la couche dépasse ce bord (positif) ou s'arrête avant lui (négatif)", "Whether the layer past the edge cuts the walls and floors it meets; off, it overlaps them": "Si la couche au-delà du bord coupe les murs et dalles qu'elle rencontre ; sinon, elle les chevauche", "Every layer ends at the element's edges.": "Chaque couche s'arrête aux bords de l'élément.", "Take the extent away": "Retirer le prolongement", "Which edge of the outline, numbered from its first corner": "Quel côté du contour, numéroté depuis son premier angle", "Cuts others": "Coupe les autres", "Layer extent": "Prolongement de couche", "Clear layer extents": "Effacer les prolongements des couches",
   // Layer extents, stage 2: edit layers, type defaults, the cut order (forum topic 89)

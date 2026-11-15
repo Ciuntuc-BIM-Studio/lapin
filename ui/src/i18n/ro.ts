@@ -1,6 +1,8 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // Shared sessions and long edits (audit 15.11.2026)
+  "The host runs another version of Lapin: update Lapin (Help → Check for updates) and join again.": "Gazda folosește altă versiune de Lapin: actualizează Lapin (Ajutor → Caută actualizări…) și intră din nou.", "A frame from the session could not be read; the session goes on.": "Un cadru din sesiune nu a putut fi citit; sesiunea continuă.", "A call to the session could not be sent.": "O comandă către sesiune nu a putut fi trimisă.", "Still working on the last edit…": "Se lucrează încă la ultima modificare…",
   // Layer extents (forum topic 89)
   "Layer extents": "Prelungirile straturilor", "Add a layer extent": "Adaugă o prelungire de strat", "How far the layer goes past this edge (positive) or stops short of it (negative)": "Cât trece stratul de această margine (pozitiv) sau cât se oprește înaintea ei (negativ)", "Whether the layer past the edge cuts the walls and floors it meets; off, it overlaps them": "Dacă stratul trecut de margine taie pereții și plăcile pe care le întâlnește; altfel se suprapune cu ele", "Every layer ends at the element's edges.": "Fiecare strat se termină la marginile elementului.", "Take the extent away": "Scoate prelungirea", "Which edge of the outline, numbered from its first corner": "Care latură a conturului, numerotată de la primul lui colț", "Cuts others": "Taie celelalte", "Layer extent": "Prelungire de strat", "Clear layer extents": "Șterge prelungirile straturilor",
   // Layer extents, stage 2: edit layers, type defaults, the cut order (forum topic 89)
