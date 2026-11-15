@@ -17,12 +17,20 @@ namespace Lapin.Rebar;
 /// </summary>
 public static class Rebar3D
 {
-    /// <summary>How many times a bar is laid across its drawing's plane, and how: by the cover in its host, or at a step about the plane.</summary>
-    public sealed record Across(int Count, string Mode, double Step)
+    /// <summary>
+    /// How many times a bar is laid across its drawing's plane, and how: by the cover in its host, or at a step about the
+    /// plane, centred <see cref="Offset"/> off it (a bar whose host went keeps the places the cover gave it).
+    /// </summary>
+    public sealed record Across(int Count, string Mode, double Step, double Offset = 0)
     {
-        public JsonObject ToJson() => new() { ["count"] = Count, ["mode"] = Mode, ["step"] = Math.Round(Step, 6) };
+        public JsonObject ToJson()
+        {
+            var o = new JsonObject { ["count"] = Count, ["mode"] = Mode, ["step"] = Math.Round(Step, 6) };
+            if (Math.Abs(Offset) > 1e-9) o["offset"] = Math.Round(Offset, 6);
+            return o;
+        }
         public static Across? Of(Entity e) => e.Attrs["across"] is JsonObject o
-            ? new Across((int)Math.Max(1, Json.Number(o["count"]) ?? 1), (string?)o["mode"] is "step" ? "step" : "cover", Json.Number(o["step"]) ?? 0.05) : null;
+            ? new Across((int)Math.Max(1, Json.Number(o["count"]) ?? 1), (string?)o["mode"] is "step" ? "step" : "cover", Json.Number(o["step"]) ?? 0.05, Json.Number(o["offset"]) ?? 0) : null;
     }
 
     /// <summary>The even spread of <paramref name="n"/> places between <paramref name="lo"/> and <paramref name="hi"/> (the ends included); one in the middle; none for 0.</summary>
@@ -83,8 +91,8 @@ public static class Rebar3D
             var (lo, hi) = depths.Count == 0 ? (0.0, -1.0) : (depths.Min() + inset, depths.Max() - inset);
             if (hi >= lo) return Spread(across.Count, lo, hi);
         }
-        // At a step, centred on the plane.
-        return Enumerable.Range(0, across.Count).Select(k => (k - (across.Count - 1) / 2.0) * across.Step).ToList();
+        // At a step, centred on the plane (or its offset off it).
+        return Enumerable.Range(0, across.Count).Select(k => across.Offset + (k - (across.Count - 1) / 2.0) * across.Step).ToList();
     }
 
     /// <summary>

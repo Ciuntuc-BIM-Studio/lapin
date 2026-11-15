@@ -299,6 +299,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         r.Service<LineworkConverter>(RebarLinework.Bars);
         r.Service<IElementPlacement>(this);
         r.Service<IDeletion>(this);
+        r.Service<IDeletionFollowers>(new RebarHosts());
         r.Service<IScheduleSource>(new RebarSchedule());
 
         // A bar on a view: {viewId, shape, at: [x, y], params?: {key: m}, vertices?, diameter?, mark?, count?, rotation?, mirrorX?, mirrorY?, hooks?: {start?: {angle, length, flip}, end?}, view?, steel?, layer?, array?, excludeSchedule?}.
