@@ -99,7 +99,7 @@ public static class ElevationMarkers
     {
         if (c.Kind != "plan") yield break;
         var bounds = c.Drawing.Bounds;
-        foreach (var v in c.Model.OfClass(Views.Class).Where(v => v.Str("kind") == "elevation"))
+        foreach (var v in c.Model.OfClass(Views.Class).Where(v => v.Str("kind") == "elevation" && !Callouts.IsDetail(v)))
         {
             var (d, right) = Axes(v);
             var (size, textHeight) = SectionMarkers.Sizes(c.Book, v, text);

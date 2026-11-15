@@ -30,7 +30,7 @@ export function cropOf(props: Record<string, unknown>): ViewCrop | null {
 const rot = (p: Vec2, a: number): Vec2 => (a === 0 ? p : { x: p.x * Math.cos(a) - p.y * Math.sin(a), y: p.x * Math.sin(a) + p.y * Math.cos(a) });
 
 /** The turn (radians) a view shows its drawing with: a plan's orientation, nothing for a section or an elevation. */
-function turnOfView(node: NodeDto): number {
+export function turnOfView(node: NodeDto): number {
   if ((node.props.kind ?? 'plan') !== 'plan') return 0;
   return turnOf(orientationOf(node.props.orientation, ucsOf(useLocation.getState().loc)));
 }

@@ -105,7 +105,7 @@ export function MarkerSymbolsStandards() {
 export function slotsFor(node: NodeDto): string[] {
   if (node.type === 'IfcGrid') return ['gridBubble'];
   if (node.type === 'IfcBuildingStorey') return ['levelHead'];
-  if (node.type === 'LapinInset') return ['calloutHead'];
+  if (node.type === 'LapinInset' || node.type === 'LapinCallout') return ['calloutHead'];
   if (node.type === 'LapinView') {
     const kind = node.props.kind;
     if (kind === 'section') return ['sectionHead', 'viewTitle'];

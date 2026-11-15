@@ -38,6 +38,22 @@ The **Railing** has its **Design**: **Posts and a handrail**, **Balusters** (at 
 
 ![The spiral stair's type, its steps numbered](shots/stair-spiral.webp)
 
+### Railings, one by one
+
+Each railing of a stair can be selected on its own: click it in a plan or in 3D. The properties panel then shows that railing alone: its **Side** (left or right as one climbs), its **Kind** (a **Balustrade**, or a **Handrail on the wall**: the handrail on brackets, with no posts, for the side along a wall), its **Height**, its **Design** and its **Handrail**. Left blank, each is the stair type's. **Delete** (or **Delete railing**) takes that side's railing off the stair and leaves the other; **Put it back** brings it back. **Select the stair** goes back to the whole stair.
+
+The railing's height is measured upright from the treads' nosing line to the handrail's axis, and the handrail runs parallel to the pitch. At the foot it starts half a tread before the first nosing, still on the pitch, and drops there to its post on the floor; at the top it ends half a tread past the last nosing, level at its height over the floor. At a landing it runs level at its height over the landing, round the outside of the turn or straight across the well, and steps up onto the next flight half a tread before its first nosing: no gap, and never lower than its height. **Runs on past the ends** carries it on, level, beyond both ends.
+
+![A dog-leg stair: a click on its right railing selects that railing alone](shots/stair-railing-properties.webp)
+
+![The dog-leg in plan, the selected railing lit](shots/stair-dogleg-plan.webp)
+
+![The dog-leg in 3D: the railing selected on its own, a handrail on the wall on the other side](shots/stair-dogleg-3d.webp)
+
+### A dog-leg stair's slab
+
+A concrete stair is one slab: each flight's waist runs into the landing, so the flight's soffit meets the landing's soffit in one line, with no notch at the landing's edge, no step and no concrete counted twice. On the **Construction** tab, **Footing under the first flight** stands the first flight's foot on a footing of its own (its **Footing depth** under the floor and its **Footing width** under the first tread, flush with the first riser), exported to IFC as an IfcFooting. In IFC each railing is an IfcRailing of the stair (BALUSTRADE, or HANDRAIL on the wall) with its side, kind and height, and keeps its GlobalId when the stair changes.
+
 ### Numbered steps
 
 Under **In plan** on the **Shape** tab: **Number the steps** writes each step's number in a circle, from the first riser up; **Label** writes the risers, the riser and the tread, and the width by the foot; **"UP" at the foot of the arrow** marks where it starts. Plans and sheets show them. The numbers stand beside the walking line, never on it: on the right going up a straight stair, on the outer side of a turn, outwards on a spiral.

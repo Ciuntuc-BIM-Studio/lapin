@@ -26,7 +26,7 @@ import { everyLayerPatch, layers3dOf, layersChip, shownIn } from './layers3d';
 import { setTool, useUi } from '../app/store';
 import { useDisplay } from '../app/display';
 import { usePaneField } from '../app/pane';
-import { findTool, overlays3d } from '../platform/modules';
+import { findTool, overlays3d, subSelectionTag } from '../platform/modules';
 import type { FaceHit, Vec2 } from '../platform/module';
 import { completeTool } from './tools';
 import { boxUv, boxUvSized, imageOf, imageTexture, orthophotos, orthoTexture, orthoUv, pictureOf, pictureUv, reliefOf, sizeOf, splitByFace, textureFor, textureOf, tileOf, whenImagesLoad, withRelief, type Face, type TextureKind } from './textures';
@@ -73,7 +73,7 @@ import { preselectionColour, selectionColour, useHighlight } from '../app/highli
 import { pickByMods, pickRegion } from '../platform/assemblies';
 import { dragAction, modsOf, regionMode, regionSelection, wheelFactor, zoomsToCursor, type Mods } from '../app/navStyle';
 import { currentNavStyle } from '../app/navStyleStore';
-import { boxEdges, boxOf, projectSegments, takes, toggleRegion3d, useRegion3d, type Project } from './select3d';
+import { boxEdges, boxOf, partSelected, projectSegments, takes, toggleRegion3d, useRegion3d, type Project } from './select3d';
 import { clippedAway, seenHit } from './seen3d';
 import { clearShown, publishShown } from './cad/shown';
 import { usePaneActive } from '../app/pane';
@@ -627,7 +627,7 @@ export function Viewport3D() {
   const toolId = useUi((s) => s.tool);
   const tool = findTool(toolId);
   // What a click does, kept current for the listeners set up once.
-  const clickRef = useRef<(hit: { nodeId: string | null; ground: Vec2 | null; mods: Mods; face?: FaceHit }) => void>(() => undefined);
+  const clickRef = useRef<(hit: { nodeId: string | null; ground: Vec2 | null; mods: Mods; face?: FaceHit; part?: string }) => void>(() => undefined);
   /** The classes a face tool works on (null: no face tool on), for the hover that lights up the face under the cursor. */
   const faceTypes = useRef<string[] | null>(null);
   /** The query that names the face under the cursor for the face tool on. */
@@ -673,10 +673,16 @@ export function Viewport3D() {
   faceTypes.current = tool?.gesture?.kind === 'face' ? tool.gesture.types : null;
   faceQuery.current = tool?.gesture?.kind === 'face' ? tool.gesture.query ?? 'core.faceAt' : 'core.faceAt';
 
-  clickRef.current = ({ nodeId, ground, mods, face }) => {
+  clickRef.current = ({ nodeId, ground, mods, face, part }) => {
     const g = tool?.gesture;
     // A member of a group picks the group (docs/groups.md); drilling, a part its wholes first (platform/assemblies.ts).
-    if (!g) { pickByMods(nodeId && pickable(useSession.getState().nodes.get(nodeId)) ? nodeId : null, mods, currentNavStyle()); return; }
+    if (!g) {
+      const node = nodeId ? useSession.getState().nodes.get(nodeId) : undefined;
+      // A part its module selects on its own (a stair's railing, forum topic 102): owner#tag, as a grid's axis.
+      const tag = node && part ? subSelectionTag(node, part) : null;
+      pickByMods(node && pickable(node) ? (tag ? `${node.id}#${tag}` : node.id) : null, mods, currentNavStyle());
+      return;
+    }
     // In 3D a pick-then-point tool completes with its pick alone (the tool's default for the second point).
     if (g.kind === 'face' || g.kind === 'pick' || g.kind === 'pickThenPoint') {
       const node = nodeId ? useSession.getState().nodes.get(nodeId) : undefined;
@@ -1052,7 +1058,13 @@ export function Viewport3D() {
         ground: g ? { x: Math.round(g.x * 20) / 20, y: Math.round(g.y * 20) / 20 } : null,
         mods: modsOf(e),
         face: hit ? faceHit(hit) : undefined,
+        part: partOfHit(hit),
       });
+    };
+    /** The key of the element's part a hit is on (meshOf puts each keyed part in a group of its own). */
+    const partOfHit = (h: THREE.Intersection | undefined): string | undefined => {
+      for (let o: THREE.Object3D | null = h?.object ?? null; o; o = o.parent) if (typeof o.userData.part === 'string') return o.userData.part as string;
+      return undefined;
     };
     // A face tool: the face under the cursor, as the engine names it, lit up with its name beside the cursor.
     const faceGroup = new THREE.Group();
@@ -1753,6 +1765,14 @@ export function Viewport3D() {
       });
       // Drafted shapes (View → Drafts in 3D).
       if (!drafts3d && item.type === 'IfcAnnotation') object.visible = false;
+    }
+    // A part selected on its own (owner#tag: a stair's railing, its bars and glass): that part lit, not its owner.
+    for (const id of selected) {
+      const hash = id.indexOf('#');
+      const owner = hash > 0 ? live.get(id.slice(0, hash)) : undefined;
+      if (!owner) continue;
+      const tag = id.slice(hash + 1);
+      owner.object.traverse((c) => { if (typeof c.userData.part === 'string' && partSelected(c.userData.part as string, tag)) highlight(c, true); });
     }
     // The instances of shared meshes: added, moved, taken out; drawn as their looks and the selection say.
     const layer = instances.current;

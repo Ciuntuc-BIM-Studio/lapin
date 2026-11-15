@@ -332,6 +332,16 @@ export interface LapinModule {
   /** Tools for the viewport hotbar (1–9), in order. */
   hotbar?: ToolDef[];
   propertySections?: PropertySectionDef[];
+  /**
+   * The properties panel of a part of an element selected on its own (`owner#tag`, as a grid's axis is: a stair's railing,
+   * `stairId#railing:left`), by the owner's IFC class; null when it does not show that tag.
+   */
+  subSelectionPanels?: Record<string, ComponentType<{ owner: NodeDto; tag: string; id: string }>>;
+  /**
+   * The part of an element a click in 3D selects on its own, from the key of the part it met (a stair's `railing:left` → its
+   * tag `railing:left`, selected as `stairId#railing:left`), by the element's IFC class; null: the element.
+   */
+  subSelectionPick?: Record<string, (node: NodeDto, partKey: string) => string | null>;
   /** Kinds of view the module adds, by the pane's `view` (the Gantt): shown in a pane, a tab, a window of their own. */
   views?: Record<string, ModuleViewDef>;
   /** Dialogs the module opens (by the store's `dialog`). */

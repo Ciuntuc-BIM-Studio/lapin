@@ -3,6 +3,10 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // A stair's railings selected one by one, the dog-leg's footing (forum topics 102 and 104)
+  "Stair railing": "楼梯栏杆", "Left railing": "左侧栏杆", "Right railing": "右侧栏杆", "What is set here is this side's alone; blank, as the stair's type.": "此处设置的仅对这一侧有效；留空则按楼梯类型。", "The stair has no railing on this side.": "楼梯这一侧没有栏杆。", "Put it back": "放回去", "as one climbs": "上楼方向", "Balustrade": "栏杆", "Handrail on the wall": "靠墙扶手", "Over the nosings, to the handrail's axis; blank: the type's": "从踏步前缘起，到扶手轴线；留空：按类型", "Delete railing": "删除栏杆", "Select the stair": "选择楼梯", "Click a railing in a plan or in 3D to select it on its own: its height, its kind, or Delete.": "在平面图或三维中单击栏杆即可单独选择它：它的高度、种类，或删除。", "Footing under the first flight": "第一梯段下的基础", "Footing depth": "基础深度", "The first flight's foot on a footing of its own, a strip under its first tread, flush with the first riser (exported as an IfcFooting)": "第一梯段的底部落在自己的基础上：第一踏步下的一条，与第一踢面齐平（导出为 IfcFooting）",
+  // Detail callouts (forum topic 107)
+  "Detail callout": "详图索引", "Round callout": "圆形详图索引", "Sketched callout": "草绘详图索引", "A detail of an area of this view: a new view cropped to it at a larger scale, marked here with its number and sheet": "此视图中某一区域的详图：一个裁剪到该区域、比例更大的新视图，在此处以其编号和图纸标注", "The detail view's scale; auto: 1:20, or the project's next standard scale under this view's": "详图视图的比例；自动：1:20，或项目中低于此视图比例的下一个标准比例", "auto scale": "自动比例", "A view that is there already (a drafting view, another detail): the callout points at it and makes none": "已存在的视图（绘图视图、另一个详图）：索引指向它，不新建视图", "a new detail view": "新建详图视图", "The callout refers to the view chosen: double-click it to open that view.": "索引指向所选视图：双击它即可打开该视图。", "The detail view is made: double-click the callout to open it.": "详图视图已创建：双击索引即可打开它。", "Drag: move the callout": "拖动：移动索引", "Drag: its radius": "拖动：其半径", "Drag: move the head": "拖动：移动索引头", "Open view": "打开视图", "The view this callout calls is gone.": "此索引所指的视图已不存在。", "The detail view the callout made": "索引创建的详图视图", "The view the callout refers to": "索引所指的视图", "Detail view": "详图视图", "Refers to": "指向", "The detail view's scale": "详图视图的比例", "Point the callout at a view that is there instead (the detail view it made stays)": "改为让索引指向已存在的视图（它创建的详图视图保留）", "Refer to": "指向视图", "Its own detail view": "它自己的详图视图", "Delete callout": "删除索引", "Its detail view": "它的详图视图", "Keep it": "保留", "Delete it too": "也删除",
   // Layer extents (forum topic 89)
   "Layer extents": "图层延伸", "Add a layer extent": "添加图层延伸", "How far the layer goes past this edge (positive) or stops short of it (negative)": "图层超出此边缘的距离（正值）或在其前停止的距离（负值）", "Whether the layer past the edge cuts the walls and floors it meets; off, it overlaps them": "超出边缘的图层是否剪切其遇到的墙和楼板；否则与之重叠", "Every layer ends at the element's edges.": "每个图层都止于构件的边缘。", "Take the extent away": "移除延伸", "Which edge of the outline, numbered from its first corner": "轮廓的哪条边，从其第一个角点起编号", "Cuts others": "剪切其他", "Layer extent": "图层延伸", "Clear layer extents": "清除图层延伸",
   // Layer extents, stage 2: edit layers, type defaults, the cut order (forum topic 89)
@@ -3566,11 +3570,11 @@ export const ZH: Record<string, string> = {
   'Say which end: start, end or both.': '请说明哪一端：起点、终点或两端。',
   'Select walls, beams or strip footings.': '请选择墙、梁或条形基础。',
   'Place again at another scale': '以其他比例再次放置',
-  'Drag a rectangle on the view: the part to place beside it at the new scale (a click takes the view as cropped; Esc cancels).': '在视图上拖出一个矩形：以新比例放在其旁边的部分（单击则按当前裁剪的视图；Esc 取消）。',
+  'Drag a rectangle round the part to show, or click to keep the whole view (Esc cancels).': '在要显示的部分周围拖出一个矩形，或单击以保留整个视图（Esc 取消）。',
+  'Light the previous element under the pointer': '高亮指针下的上一个元素',
   'Give the scale.': '请给出比例。',
   'The view is on no sheet: place it on one first.': '该视图不在任何图纸上：请先将其放到一张图纸上。',
   'A schedule has no scale.': '明细表没有比例。',
-  'Draw the part to show on the view.': '请在视图上画出要显示的部分。',
   // Doors and windows in one object (forum topic 34).
   'Interior sill over the parapet': '护墙上的内窗台', 'Exterior sill over the parapet': '护墙上的外窗台', 'Lift & slide (HS), runs left': '提升推拉 (HS)，向左', 'Lift & slide (HS), runs right': '提升推拉 (HS)，向右', 'Tilt & slide (PSK), runs left': '平移内倒 (PSK)，向左', 'Tilt & slide (PSK), runs right': '平移内倒 (PSK)，向右', 'Door leaves': '门扇', 'Window sashes': '窗扇', 'Garage doors': '车库门', 'New balcony door + window': '新建阳台门 + 窗', 'New door with sidelights and transom': '新建带侧亮和亮子的门', 'New lift-and-slide (HS) portal': '新建提升推拉门 (HS)', 'New French window': '新建法式窗', 'Glazing build-up': '玻璃构造', 'Panes and cavities in mm, from outside in: 4-16-4 double, 4-12-4-12-4 triple, 33.1-16-4 laminated outside': '玻璃与空腔厚度 (mm)，由外向内：4-16-4 双层，4-12-4-12-4 三层，33.1-16-4 外侧夹胶', 'laminated': '夹胶', 'U-value, g-value and safety glass: the type\'s Data, below.': 'U 值、g 值和安全玻璃：见下方类型的数据。', 'How plans draw window sashes\' swings (French windows, balcony doors), for the whole project': '平面图如何绘制窗扇的开启线（法式窗、阳台门），适用于整个项目', 'Sash swings: dashed to the floor': '窗扇开启线：落地的为虚线', 'Sash swings: none': '窗扇开启线：无', 'Sash swings: all dashed': '窗扇开启线：全部虚线', 'Sash swings: all solid': '窗扇开启线：全部实线', 'A door leaf makes it a door, and a window type stays a window type: create a new type for it.': '有门扇即为门，而窗类型始终是窗类型：请为其新建一个类型。', 'With window sashes and no door leaf it is a window, and a door type stays a door type: create a new type for it.': '有窗扇而无门扇即为窗，而门类型始终是门类型：请为其新建一个类型。', 'Create as a new type': '新建为类型', 'A lift-and-slide leaf stands on the threshold: put it in the bottom row.': '提升推拉门扇立于门槛上：请将其放在最下一行。', 'The glazing is thicker than the sash and frame hold: a thinner build-up or a deeper profile.': '玻璃比窗扇和框所能容纳的更厚：请使用更薄的构造或更深的型材。',
   "Its storey": "所在楼层",
@@ -4190,6 +4194,7 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^(\d+) constraints dropped: (.+)$/, (m) => `已移除 ${m[1]} 个约束：${m[2]}`],
   [/^Constraint left out: (.+)$/, (m) => `已略去约束：${m[1]}`],
   [/^(\d+) constraints left out: (.+)$/, (m) => `已略去 ${m[1]} 个约束：${m[2]}`],
+  [/^(\d+) of (\d+): (.+)$/, (m) => `第 ${m[1]} 个，共 ${m[2]} 个：${m[3]}`],
   [/^Place again at 1:([\d.]+)…$/, (m) => `以 1:${m[1]} 再次放置…`],
   [/^(\d+) joists · (\d+) whole blocks · (\d+) cut$/, (m) => `${m[1]} 根小梁 · ${m[2]} 块整砌块 · ${m[3]} 块切割`],
   [/^Across edge (\d+) \((.+)\)$/, (m) => `垂直于边 ${m[1]}（${m[2]}）`],

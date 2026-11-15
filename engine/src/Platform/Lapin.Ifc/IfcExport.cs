@@ -1543,7 +1543,10 @@ public static partial class IfcExport
                 (IfcClass.Stair, "flight") => new(IfcClass.StairFlight, "STRAIGHT", null),
                 (IfcClass.Stair, "winders") => new(IfcClass.StairFlight, "WINDER", null),
                 (IfcClass.Stair, "landing") => new(IfcClass.Slab, "LANDING", null),
-                (IfcClass.Stair, "railing") => new("IfcRailing", "HANDRAIL", null),
+                // A stair's railing on each side (forum topic 102): a balustrade, or a handrail on the wall.
+                (IfcClass.Stair, "railing") => new("IfcRailing", p.Properties?.FirstOrDefault(x => x.Name == "Kind").Value == "balustrade" ? "BALUSTRADE" : "HANDRAIL", null),
+                (IfcClass.Stair, "railing-glass") => new("IfcPlate", "SHEET", null),
+                (IfcClass.Stair, "footing") => new(IfcClass.Footing, "STRIP_FOOTING", null),
                 (IfcClass.Stair, "finish") => new("IfcCovering", "FLOORING", null),
                 (IfcClass.Ramp, "flight") => new(IfcClass.RampFlight, "STRAIGHT", null),
                 (IfcClass.Ramp, "landing") => new(IfcClass.Slab, "LANDING", null),

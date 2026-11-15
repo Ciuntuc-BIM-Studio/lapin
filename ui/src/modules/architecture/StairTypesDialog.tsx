@@ -30,7 +30,7 @@ interface Spec {
   /** A U turned by winders (report #109): the second corner's winders (null: as the first's) and the straight treads between the corners. */
   windersEnd?: number | null; between?: number;
   rules: Rules;
-  construction: { kind: string; waist: number; landingThickness: number; concrete: string; landingBeamWidth?: number | null; landingBeamDepth?: number | null };
+  construction: { kind: string; waist: number; landingThickness: number; concrete: string; landingBeamWidth?: number | null; landingBeamDepth?: number | null; footingDepth?: number | null; footingWidth?: number };
   finish: { treadThickness: number; treadMaterial: string; nosing: number };
   railing: { sides: string; height: number; barSize: number; postSize: number; postSpacing: number; style?: string; profile?: string; balusterSpacing?: number; inset?: number; extension?: number; color?: string | null };
   slope: number;
@@ -318,6 +318,16 @@ export function StairTypesDialog() {
                 {spec.construction.kind !== 'solid' && <Mm label={ramp ? 'Slab thickness' : spec.construction.kind === 'treads' || spec.construction.kind === 'stringers' ? 'Tread thickness' : 'Waist'} value={spec.construction.waist} onChange={(v) => set({ construction: { ...spec.construction, waist: Math.max(0.05, v) } })} />}
                 <Mm label="Landing slab" value={spec.construction.landingThickness} onChange={(v) => set({ construction: { ...spec.construction, landingThickness: Math.max(0.05, v) } })} />
                 <label className="field-line"><span className="eyebrow">Concrete</span><MaterialPicker value={spec.construction.concrete} onChange={(concrete) => set({ construction: { ...spec.construction, concrete } })} /></label>
+                {!ramp && (spec.construction.kind === 'rc' || spec.construction.kind === 'treads' || spec.construction.kind === 'stringers') && <>
+                  <label className="row small" title="The first flight's foot on a footing of its own, a strip under its first tread, flush with the first riser (exported as an IfcFooting)">
+                    <input type="checkbox" data-field="stair-footing" checked={(spec.construction.footingDepth ?? 0) > 0} onChange={(e) => set({ construction: { ...spec.construction, footingDepth: e.target.checked ? 0.5 : null } })} />
+                    Footing under the first flight
+                  </label>
+                  {(spec.construction.footingDepth ?? 0) > 0 && <>
+                    <Mm label="Footing depth" value={spec.construction.footingDepth ?? 0.5} onChange={(v) => set({ construction: { ...spec.construction, footingDepth: Math.max(0.1, v) } })} />
+                    <Mm label="Footing width" value={spec.construction.footingWidth ?? 0.3} onChange={(v) => set({ construction: { ...spec.construction, footingWidth: Math.max(0.1, v) } })} />
+                  </>}
+                </>}
                 <p className="eyebrow">{ramp ? 'Finish' : 'Tread finish'}</p>
                 <Mm label="Thickness" value={spec.finish.treadThickness} onChange={(v) => set({ finish: { ...spec.finish, treadThickness: Math.max(0, v) } })} />
                 <label className="field-line"><span className="eyebrow">Material</span><MaterialPicker value={spec.finish.treadMaterial} onChange={(treadMaterial) => set({ finish: { ...spec.finish, treadMaterial } })} /></label>

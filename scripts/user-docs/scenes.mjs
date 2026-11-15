@@ -3178,6 +3178,55 @@ export const scenes = [
     },
   },
   {
+    // A dog-leg stair as an architect asked for it (forum topics 102 and 104): its handrail at the railing's height over the
+    // nosings, half a tread past the first and the last, turning at the landing; its slab continuous; each railing selected
+    // on its own, in plan and in 3D, with its own height and kind.
+    id: 'stair-dogleg-railings',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      const storey = (await t.nodes()).filter((n) => n.type === 'IfcBuildingStorey').find((n) => Math.abs(n.props.elevation ?? 0) < 1e-6) ?? (await t.nodes()).find((n) => n.type === 'IfcBuildingStorey');
+      const stair = await t.cmd('architecture.addStair', { storeyId: storey.id, library: 'dogleg', x: 0, y: 0, x2: 1, y2: 0 });
+      await t.cmd('architecture.updateStair', { id: stair.id, railingSides: 'both' });
+      const check = await t.page.evaluate(async (id) => (await import('/src/engine/session.ts')).query('architecture.stairCheck', { id }), stair.id);
+      t.expect(check.flights.length === 2 && check.shape === 'u', `a dog-leg: two flights and a half landing (${check.flights.join(' + ')})`);
+      await t.ui({ keyPlan: false });
+      await t.wait(800);
+      await t.fit();
+      await t.wait(600);
+      // A click on the right railing in plan (the outside of the turn, along the first flight) selects it on its own.
+      const side = check.width / 2 - 0.05;
+      { const [px, py] = await t.planPoint(check.tread * 3.3, -side); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(900); }
+      const selection = () => t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().selection);
+      let sel = await selection();
+      t.expect(sel === `${stair.id}#railing:right`, `a click on the railing in plan selects it on its own (${sel})`);
+      t.expect(await t.page.locator('[data-testid=stair-railing-panel]').count() > 0, 'the railing\'s own properties: its side, kind and height');
+      // Its own height: 1.10 m on this side.
+      await t.cmd('architecture.updateStairRailing', { id: `${stair.id}#railing:right`, height: 1.1 });
+      await t.wait(800);
+      await t.shot('stair-railing-properties', { of: 'aside.props', pad: 0, maxHeight: 640 });
+      await t.shot('stair-dogleg-plan', { of: '[data-testid=plan]', pad: 0 });
+      // The other side a handrail on the wall.
+      await t.cmd('architecture.updateStairRailing', { id: `${stair.id}#railing:left`, kind: 'handrail' });
+      await t.ui({ selection: null, selected: [] });
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 1.25, pitch: -0.18, distance: 7.5, target: { x: 1.4, y: 0.5, z: 1.4 } }, false));
+      await t.wait(1500);
+      // A click on the right railing's handrail in 3D selects it too, lit on its own.
+      const at = await t.page.evaluate(async (p) => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.screenOf?.(p) ?? null,
+        { x: check.tread * 3.5, y: -side, z: check.riserHeight * 4.5 + 1.1 });
+      t.expect(at, 'the railing is in the 3D view');
+      await t.page.mouse.move(at.x, at.y, { steps: 3 });
+      await t.page.mouse.click(at.x, at.y);
+      await t.wait(1200);
+      sel = await selection();
+      t.expect(sel === `${stair.id}#railing:right`, `a click on the railing in 3D selects it on its own (${sel})`);
+      await t.page.mouse.move(5, 5);
+      await t.wait(600);
+      await t.shot('stair-dogleg-3d', { of: 'canvas', pad: 0 });
+    },
+  },
+  {
     id: 'stair-shapes',
     async run(t) {
       await t.fresh();
@@ -5280,6 +5329,43 @@ export const scenes = [
     },
   },
   {
+    // Forum topic 107: View → Detail callout (CO) drawn round a corner of the plan, its detail view at 1:20 placed on a sheet, the head reading its number and sheet; the detail inset beside the plan to show it.
+    id: 'views-callout',
+    touches: ['core', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      for (const [x1, y1, x2, y2] of [[0, 0, 6, 0], [6, 0, 6, 4], [6, 4, 0, 4], [0, 4, 0, 0]]) await t.cmd('architecture.addWall', { storeyId: s, x1, y1, x2, y2 });
+      await t.ui({ view: 'plan', keyPlan: false, planDrawing: true, selection: null, selected: [] });
+      await t.wait(1500);
+      await t.fit();
+      // The tool, then a rectangle round the south-west corner: two opposite corners.
+      await t.tool('view.callout');
+      for (const [px, py] of [[-0.6, -0.6], [1.2, 1.0]]) {
+        const [x, y] = await t.planPoint(px, py);
+        await t.page.mouse.click(x, y);
+        await t.wait(300);
+      }
+      await t.until(async () => (await t.nodes()).some((n) => n.type === 'LapinCallout'), 'the callout is made');
+      const callout = (await t.nodes()).find((n) => n.type === 'LapinCallout');
+      const detail = (await t.nodes()).find((n) => n.id === callout.props.target);
+      t.expect(detail?.props.scale === 20 && detail?.props.calloutOf === `plan:${s}` && !!detail?.props.crop, 'the detail view is cropped to the callout at 1:20');
+      // Placed on a sheet: the head reads its number and the sheet's.
+      const sheet = (await t.cmd('sheet.create', { name: 'Details', number: 'A-501', paper: 'A3' })).id;
+      await t.cmd('sheet.addViewport', { id: sheet, viewId: detail.id, x: 150, y: 120 });
+      // The detail drawn beside the plan, so the picture shows both.
+      await t.cmd('view.inset', { viewId: `plan:${s}`, source: detail.id, at: [11, 2], frame: true });
+      await t.ui({ tool: null, selected: [callout.id], selection: callout.id });
+      await t.wait(1200);
+      await t.fit();
+      await t.wait(600);
+      const d = await t.call('doc.query', { name: 'view.drawing', args: { id: `plan:${s}` } });
+      const mark = d.marks.find((m) => m.id === callout.id);
+      t.expect(mark?.data?.label === '1 / A-501', 'the callout\'s head reads 1 / A-501');
+      await t.shot('callout', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
     // Forum topic 73: Quick select by type in the whole project, the count found shown before selecting.
     id: 'interface-quick-select',
     touches: ['core', 'architecture'],
@@ -7096,6 +7182,46 @@ export const scenes = [
         t.expect(again && (await t.nodes()).find((n) => n.id === sheet.id)?.props?.viewports?.some((v) => v.viewId === again.id), 'the section is placed again at 1:50 on its sheet');
         await t.fit();
         await t.shot('sheet-place-again', { clip: { x: 250, y: 120, width: 1190, height: 730 } }); }
+      // Delete on a sheet (forum topics 91 and 106): a symbol placed on the paper is picked, moved and deleted; a view clicked and
+      // Delete takes the view off the sheet and never the sheet itself.
+      { const symbolId = (await t.call('doc.query', { name: 'symbols.list', args: {} })).items.find((i) => i.category === 'north')?.id
+          ?? (await t.call('doc.query', { name: 'symbols.list', args: {} })).items[0].id;
+        const placedSym = await t.cmd('drafting.placeSymbol', { sheetId: sheet.id, symbolId, at: [350, 40] });
+        await t.wait(1200);
+        const symAt = async () => (await t.nodes()).find((n) => n.id === placedSym.id)?.props?.at;
+        const svg = await t.page.locator('[data-testid=sheet]').boundingBox();
+        const k = (await t.page.locator('[data-testid=sheet] .paper-sheet').boundingBox()).width / 420;
+        const paper = await t.page.locator('[data-testid=sheet] .paper-sheet').boundingBox();
+        const px = (mm) => ({ x: paper.x + mm[0] * k, y: paper.y + mm[1] * k });
+        const at0 = await symAt();
+        const from = px(at0);
+        await t.page.mouse.move(from.x, from.y);
+        await t.wait(300);
+        t.expect(await t.page.locator('[data-testid=sheet-symbol-box]').count() === 1, 'a symbol on the sheet lights under the pointer');
+        await t.page.mouse.down();
+        await t.page.mouse.move(from.x - 60, from.y + 40, { steps: 6 });
+        await t.page.mouse.up();
+        await t.wait(900);
+        const at1 = await symAt();
+        t.expect(at1 && Math.abs(at1[0] - at0[0]) > 5 && Math.abs(at1[1] - at0[1]) > 3, 'dragging a symbol on the sheet moves it');
+        t.expect(await t.page.locator('[data-testid=sheet-symbol-box].selected').count() === 1, 'the symbol is selected');
+        await t.shot('sheet-symbol-selected', { clip: { x: svg.x + svg.width * 0.55, y: svg.y, width: svg.width * 0.45, height: 260 } });
+        await t.page.keyboard.press('Delete');
+        await t.wait(900);
+        t.expect(!(await t.nodes()).some((n) => n.id === placedSym.id), 'Delete deletes the selected symbol');
+        // A view clicked on the sheet, Delete: the view comes off the sheet, the sheet stays.
+        const before = (await t.nodes()).find((n) => n.id === sheet.id).props.viewports.length;
+        const vb = await t.page.locator('[data-testid=sheet] .sheet-viewport > rect:first-child').first().boundingBox();
+        await t.page.mouse.click(vb.x + vb.width / 2, vb.y + vb.height / 2);
+        await t.wait(300);
+        await t.page.keyboard.press('Delete');
+        await t.wait(1000);
+        const sheetNow = (await t.nodes()).find((n) => n.id === sheet.id);
+        t.expect(sheetNow && sheetNow.props.viewports.length === before - 1, 'Delete on a view takes the view off the sheet, not the sheet');
+        await t.page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z');
+        await t.wait(900);
+        t.expect((await t.nodes()).find((n) => n.id === sheet.id)?.props?.viewports?.length === before, 'one undo puts the view back');
+      }
       await t.page.evaluate(() => { window.print = () => { window.__printed = true; }; });
       await t.page.locator('[data-testid=sheet-print]').click();
       await t.wait(600);
@@ -11260,6 +11386,46 @@ export const scenes = [
       await t.shot('preferences-colours', { of: '.prefs-dialog', pad: 0 });
       await t.page.evaluate(async () => { (await import('/src/app/highlight.ts')).setHighlight({ preselectColour: null, selectColour: null }); });
       await t.ui({ dialog: null });
+    },
+  },
+  {
+    // Forum topic 105: Tab over overlapping elements lights the next one under the pointer, a click takes it.
+    id: 'tab-cycle',
+    touches: ['core', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      await t.ui({ view: 'plan' });
+      await t.fit();
+      // The south wall lies over the floor's edge: two elements under the pointer.
+      const [px, py] = await t.planPoint(5.5, 0);
+      await t.page.mouse.move(px - 20, py + 20, { steps: 4 });
+      await t.page.mouse.move(px, py, { steps: 4 });
+      await t.wait(400);
+      const cycle = () => t.page.evaluate(async () => { const c = (await import('/src/viewport/pickCycle.ts')).usePickCycle.getState().cycle; return c ? { index: c.index, n: c.ids.length, id: c.ids[c.index] } : null; });
+      await t.page.keyboard.press('Tab');
+      await t.wait(400);
+      const first = await cycle();
+      t.expect(first && first.n >= 2 && first.index === 1, 'Tab over two elements lights the second');
+      t.expect(/^\d+ of \d+: /.test(await t.page.locator('.notice-status').textContent()), 'the status line says which of how many');
+      await t.shot('tab-cycle');
+      await t.page.keyboard.press('Shift+Tab');
+      await t.wait(300);
+      t.expect((await cycle())?.index === 0, 'Shift+Tab goes back');
+      await t.page.keyboard.press('Tab');
+      await t.wait(300);
+      await t.page.mouse.click(px, py);
+      await t.wait(500);
+      t.expect(await t.page.evaluate(async (id) => (await import('/src/app/store.ts')).useUi.getState().selected.includes(id), first.id), 'a click selects the lit element');
+      // Away from the overlap Tab still folds the panels.
+      await t.page.mouse.move(px, py + 200, { steps: 4 });
+      await t.wait(300);
+      const panels = () => t.page.evaluate(async () => { const u = (await import('/src/app/panels.ts')).usePanels.getState(); return `${u.browserOpen}|${u.propsOpen}`; });
+      const before = await panels();
+      await t.page.keyboard.press('Tab');
+      await t.wait(400);
+      t.expect(await panels() !== before, 'Tab with nothing to cycle keeps its meaning: it folds the panels');
+      await t.page.keyboard.press('Tab');
     },
   },
 ];

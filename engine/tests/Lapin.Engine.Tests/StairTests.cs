@@ -338,6 +338,9 @@ public class StairTests
                 var pts = shell.Select(v => s.Vertices[v]).ToList();
                 var (dx, dy) = (pts.Max(p => p.X) - pts.Min(p => p.X), pts.Max(p => p.Y) - pts.Min(p => p.Y));
                 if (dx > 0.06 || dy > 0.06) continue;   // a handrail or a bottom rail
+                // The handrail's upright step where it meets a landing's (forum topic 104), and a post on the floor at the foot,
+                // half a tread before the first riser: not on the stair.
+                if (pts.Max(p => p.Z) - pts.Min(p => p.Z) < 0.3 || Math.Abs(pts.Min(p => p.Z)) < 1e-6) continue;
                 posts.Add((new Vec2((pts.Max(p => p.X) + pts.Min(p => p.X)) / 2, (pts.Max(p => p.Y) + pts.Min(p => p.Y)) / 2), pts.Min(p => p.Z), pts.Max(p => p.Z)));
             }
         }
@@ -372,8 +375,9 @@ public class StairTests
         var r = StairSolver.Resolve(StairSpec.Default(), 3.0);
         var posts = Posts(g);
         Assert.True(posts.Count >= 10, $"{posts.Count} posts");
-        // The last post on each side stands at the top nosing, on the floor above (not one of the stair's parts).
-        Assert.Equal(2, posts.Count(p => Math.Abs(p.Bottom - 3.0) < 1e-6));
+        // The last two posts on each side stand on the floor above (not one of the stair's parts): at the top nosing, and where
+        // the handrail ends half a tread past it (forum topic 104).
+        Assert.Equal(4, posts.Count(p => Math.Abs(p.Bottom - 3.0) < 1e-6));
         foreach (var (at, bottom, top) in posts.Where(p => Math.Abs(p.Bottom - 3.0) >= 1e-6))
         {
             var under = StairTopUnder(g, at, rail.PostSize / 2);
@@ -401,7 +405,8 @@ public class StairTests
         var g = f.Session.Geometry(StairOf(f, spec))!;
         var posts = Posts(g);
         Assert.True(posts.Count >= 10, $"{posts.Count} posts");
-        Assert.InRange(posts.Count(p => Math.Abs(p.Bottom - 3.0) < 1e-6), 1, 2);   // the top ones, on the floor above
+        // The top ones, on the floor above, between the last nosing and half a tread past it (forum topic 104).
+        Assert.InRange(posts.Count(p => Math.Abs(p.Bottom - 3.0) < 1e-6), 2, 6);
         foreach (var (at, bottom, top) in posts.Where(p => Math.Abs(p.Bottom - 3.0) >= 1e-6))
         {
             var under = StairTopUnder(g, at, (style == "balusters" ? Math.Max(0.012, rail.PostSize * 0.6) : rail.PostSize) / 2);

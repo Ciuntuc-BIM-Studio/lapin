@@ -32,7 +32,9 @@ import { useGripEditor } from './GripLayer';
 import { LiveBar, LiveBox } from './LiveBox';
 import { liveBegin, liveCursor, liveEnd, livePoint, liveTaken, useLive } from './liveInput';
 import { useHighlight } from '../app/highlight';
-import { markSelected, nearestOf, pickAt, regionIds } from './planPick';
+import { markSelected, nearestOf, pickAllAt, pickAt, regionIds } from './planPick';
+import { clearCycle, cycledId, setCycleSource, usePickCycle, withFirst, type CycleSource } from './pickCycle';
+import { markOwner } from './planPick';
 import { boxOutcome, dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
 import { pickable, useScope } from '../platform/scope';
 import { pairs } from './snap';
@@ -112,6 +114,7 @@ export function PlanView() {
   const [hoverId, setHoverId] = useState<string | null>(null);
   /** Where the cursor is, unsnapped: what a pick reads, and the side of a wall a door opens to. */
   const rawHover = useRef<Vec2 | null>(null);
+  const cycleSource = useRef<CycleSource | null>(null);
   // Space while a tool is on changes what its ghost shows.
   useToolTick((s) => s.n);
   usePlacement((s) => s.verdict); // a module's answer to whether a door or window fits where the cursor is
@@ -332,8 +335,16 @@ export function PlanView() {
     publishShown(paneKey, (id) => hiddenInDrawing(id, drawing, (x) => render.has(x), shownWholeOf(relations, (x) => wholeOf(x, nodes, relations))));
   }, [active, drawing, render, nodes, relations, paneKey]);
   useEffect(() => () => clearShown(paneKey), [paneKey]);
-  const pick = useCallback((p: Vec2, types?: string[]): NodeDto | null =>
-    pickAt(p, 6 / view.scale, pickItems, nodes, scope ? undefined : drawing?.marks, types), [pickItems, nodes, view.scale, drawing, scope]);
+  // Tab over several elements lights the next one, and a click takes it (forum topic 105: pickCycle.ts).
+  const cycleKey = useRef(`plan-cycle:${Math.random().toString(36).slice(2)}`).current;
+  const pick = useCallback((p: Vec2, types?: string[]): NodeDto | null => {
+    if (!types) {
+      const id = cycledId(usePickCycle.getState().cycle, cycleKey, p, 3 / view.scale);
+      const hit = id ? markOwner(id, nodes) : null;
+      if (hit) return hit.pick === hit.owner.id ? hit.owner : { ...hit.owner, id: hit.pick, name: `Axis ${hit.pick.slice(hit.pick.indexOf('#') + 1)}` };
+    }
+    return pickAt(p, 6 / view.scale, pickItems, nodes, scope ? undefined : drawing?.marks, types);
+  }, [pickItems, nodes, view.scale, drawing, scope, cycleKey]);
 
   // ─── Gestures ────────────────────────────────────────────────────────────
 
@@ -535,6 +546,22 @@ export function PlanView() {
     raw: (cx, cy) => { const r = svgRef.current!.getBoundingClientRect(); return toWorld(cx - r.left, cy - r.top); },
     disabled: !!tool?.gesture || !!cadStep, svg: svgRef, marks: drawing?.marks,
   });
+  // What Tab cycles through here: every element under the pointer (nothing while a tool, a command or a drag is busy, so Tab keeps its meaning).
+  cycleSource.current = {
+    key: cycleKey,
+    at: () => rawHover.current,
+    ids: (at) => (tool?.gesture || cadStep || drag.current || editor.dragging ? [] : withFirst(pickAt(at, 6 / view.scale, pickItems, nodes, scope ? undefined : drawing?.marks)?.id, pickAllAt(at, 6 / view.scale, pickItems, nodes, scope ? undefined : drawing?.marks))),
+    tol: () => 3 / view.scale,
+  };
+  const cycle = usePickCycle((c) => c.cycle);
+  useEffect(() => {
+    // Tab lit another candidate: it takes the pre-highlight (the next move of the pointer gives it back to what is under it).
+    if (!cycle || cycle.key !== cycleKey) return;
+    const hit = pick(cycle.at);
+    const id = hit ? pickTarget(hit.id) ?? hit.id : null;
+    setHoverId((cur) => (cur === id ? cur : id));
+  }, [cycle, cycleKey, pick]);
+  useEffect(() => () => setCycleSource(null, cycleKey), [cycleKey]);
 
   const onPointerDown = (e: React.PointerEvent) => {
     (e.target as Element).setPointerCapture?.(e.pointerId);
@@ -586,6 +613,8 @@ export function PlanView() {
     }
     setHover(constrained(snapAt(e.clientX, e.clientY, pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined)));
     { const r = svgRef.current!.getBoundingClientRect(); rawHover.current = toWorld(e.clientX - r.left, e.clientY - r.top); }
+    setCycleSource(cycleSource.current);
+    { const c = usePickCycle.getState().cycle; if (c && !cycledId(c, cycleKey, rawHover.current!, 3 / view.scale)) clearCycle(); }
     if (tool?.gesture?.kind === 'pick' && tool.gesture.placing) {
       const g = tool.gesture, at = rawHover.current;
       const host = g.reach ? nearestOf(at, g.reach / view.scale, pickItems, nodes, g.types) : pick(at, g.types);
@@ -931,7 +960,7 @@ export function PlanView() {
       <KeyPlan mode="plan" frame={measured ? screenCorners(toWorld, size.w, size.h) : null} onLookAt={(p) => go({ ...view, cx: p.x, cy: p.y })} />
       <svg ref={svgRef} className={`plan-svg${tool?.gesture || cadStep?.want === 'point' ? ' tool' : tool || cadStep ? ' pick' : hoverId ? ' pick' : ''}`} data-testid="plan"
         onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
-        onPointerLeave={() => { setHover(null); setHoverId(null); trackTagHover(null, { pickElement: () => null, pickTag: () => null, anyTags, busy: true }); editor.onPointerLeave(); }} onWheel={onWheel} onContextMenu={(e) => e.preventDefault()}
+        onPointerLeave={() => { setCycleSource(null, cycleKey); setHover(null); setHoverId(null); trackTagHover(null, { pickElement: () => null, pickTag: () => null, anyTags, busy: true }); editor.onPointerLeave(); }} onWheel={onWheel} onContextMenu={(e) => e.preventDefault()}
         onDoubleClick={(e) => {
           if (tool?.gesture || useCad.getState().step) return;
           const rect = svgRef.current!.getBoundingClientRect();

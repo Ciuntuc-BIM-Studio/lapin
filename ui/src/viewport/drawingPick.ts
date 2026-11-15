@@ -53,3 +53,24 @@ export function pickDrawing(p: Vec2, tol: number, marks: MarkDto[] | undefined, 
   }
   return best?.pick ?? behind;
 }
+
+/** Every id a click at `p` could take, best first (Tab cycles through them: forum topic 105): the marks' lines by distance, then the loops holding the point, smallest first; each once. */
+export function pickDrawingAll(p: Vec2, tol: number, marks: MarkDto[] | undefined, nodes: Map<string, NodeDto>): string[] {
+  const lines: { pick: string; d: number; rank: number }[] = [];
+  const faces: { pick: string; area: number }[] = [];
+  for (const m of marks ?? []) {
+    const hit = markOwner(m.id, nodes);
+    if (!hit) continue;
+    const s = m.segments;
+    let d = Infinity;
+    for (let k = 0; k + 3 < s.length; k += 4) d = Math.min(d, distToSegment(p, { x: s[k], y: s[k + 1] }, { x: s[k + 2], y: s[k + 3] }));
+    if (d < tol) lines.push({ pick: hit.pick, d, rank: hit.owner.type === 'LapinInset' ? 2 : m.behind ? 3 : 0 });
+    for (const raw of (m.data as { loops?: number[][] } | undefined)?.loops ?? []) {
+      const poly = pairs(raw);
+      if (poly.length >= 3 && pointInPolygon(p, poly)) faces.push({ pick: hit.pick, area: area(poly) });
+    }
+  }
+  lines.sort((a, b) => a.rank - b.rank || a.d - b.d);
+  faces.sort((a, b) => a.area - b.area);
+  return [...new Set([...lines.map((l) => l.pick), ...faces.map((f) => f.pick)])];
+}

@@ -23,6 +23,8 @@ import { runFileAction } from '../shell/fileActions';
 import { COMMANDS, TOOL_WORDS, findCommand, setAliasHook, setCommandFallback, startCommand, useCad } from '../viewport/cad/session';
 import { zoomHost } from '../viewport/zoom';
 import { takeHotRemove } from '../viewport/grips';
+import { pickCycleTab } from '../viewport/pickCycle';
+import { takeSheetDelete } from '../viewport/sheetDelete';
 
 const dialog = (id: string) => () => useUi.setState({ dialog: id });
 const zoom = (f: (h: NonNullable<ReturnType<typeof zoomHost>>) => void) => () => { const h = zoomHost(); if (h) f(h); };
@@ -40,6 +42,8 @@ function appCommands(): CommandDef[] {
     { id: 'app.delete', label: 'Delete the selection', category: general, defaults: ['Delete', 'Backspace'], run: () => {
       // Over a roof window's grip on its selected roof: that window, not the roof (decision 280).
       if (takeHotRemove()) return;
+      // Viewports active on a sheet: those come off the sheet, never the sheet itself (forum topic 91).
+      if (takeSheetDelete()) return;
       // A view selected by its crop frame is not deleted by the key: views are deleted from the project browser (forum topic 68).
       const nodes = useSession.getState().nodes;
       const ids = useUi.getState().selected.filter((id) => nodes.get(id)?.type !== 'LapinView');
@@ -72,7 +76,13 @@ function appCommands(): CommandDef[] {
     { id: 'app.zoomPrevious', label: 'Zoom before', category: views, defaults: [], same: 'ZP', run: zoom((h) => h.previous()) },
     { id: 'app.toggleBrowser', label: 'Project browser: fold or unfold', category: panels, defaults: ['Ctrl+B'], run: () => togglePanel('browser') },
     { id: 'app.toggleProps', label: 'Properties: fold or unfold', category: panels, defaults: ['Ctrl+Shift+B'], run: () => togglePanel('props') },
-    { id: 'app.togglePanels', label: 'Both panels: fold or unfold', category: panels, defaults: ['Tab'], run: () => { for (const h of tabHandlers) if (h()) return; toggleBothPanels(); } },
+    { id: 'app.togglePanels', label: 'Both panels: fold or unfold', category: panels, defaults: ['Tab'], run: () => {
+      // Over several elements in a plan, section or elevation Tab lights the next one (forum topic 105); else the modules', else the panels fold.
+      if (pickCycleTab(false, useSession.getState().nodes)) return;
+      for (const h of tabHandlers) if (h()) return;
+      toggleBothPanels();
+    } },
+    { id: 'app.pickCycleBack', label: 'Light the previous element under the pointer', category: views, defaults: ['Shift+Tab'], run: () => void pickCycleTab(true, useSession.getState().nodes) },
     { id: 'app.propsOverlay', label: 'All properties (over the view)', category: panels, defaults: [], run: () => { if (usePanels.getState().propsOpen) return; showOverlay('props'); } },
     // The model assistant: the desktop's only (docs/plan-assistant.md); not in the web build at all.
     ...(import.meta.env.VITE_ENGINE !== 'worker' && assistantAvailable()

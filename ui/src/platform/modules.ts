@@ -54,6 +54,13 @@ export const askPlacement = (req: PlacementRequest): void => ask(req, modules.fl
 export const ribbonTabs = (): RibbonTabDef[] => mergeTabs(modules, product.tabs ?? undefined);
 /** The modules' own quick tools, in their order: a workspace's slots until the user sets them. */
 export const defaultHotbar = (): ToolDef[] => modules.flatMap((m) => m.hotbar ?? []);
+/** The panel of a part selected on its own (`owner#tag`) for its owner's class, from the first module that has one. */
+export const subSelectionPanel = (ifcClass: string) => modules.map((m) => m.subSelectionPanels?.[ifcClass]).find((x) => !!x) ?? null;
+/** The tag a 3D click on a part of an element selects on its own (null: the element), from the first module that answers. */
+export function subSelectionTag(node: NodeDto, partKey: string): string | null {
+  for (const m of modules) { const tag = m.subSelectionPick?.[node.type]?.(node, partKey); if (tag) return tag; }
+  return null;
+}
 export const propertySections = (ifcClass: string) => modules.flatMap((m) => m.propertySections ?? []).filter((s) => s.classes.includes(ifcClass) || s.classes.includes('*'));
 export const backgrounds = (): ComponentType[] => modules.map((m) => m.background).filter((b): b is ComponentType => Boolean(b));
 /** The dialog the store's `dialog` names: a module's, else the shell's (`shell`), as a module may replace it; null when none. */

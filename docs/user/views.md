@@ -273,6 +273,23 @@ Each change is one undo step. The engine draws the inset with the view, so sheet
 
 ![A plan with its wall's section inset at 1:20, cropped, a dimension drawn over it](shots/inset-view.webp)
 
+## Detail callouts
+
+A foundation, an eave, a window's head: some parts need drawing again larger, with all their dimensions and notes. **View → Detail callout** (or type **CO**) calls out an area of a plan, a section or an elevation, as Revit's and ArchiCAD's callouts do: draw a rectangle round it (two opposite corners). The tool's bar draws a **Circle** (its centre, then a point on it) or a **Polygon** (its corners, then Enter) instead.
+
+Lapin makes a **detail view** of it: a view of the same kind, with the settings of the view it was called from, cropped to the area, at a larger scale (1:20, or the project's next standard scale under the view's; choose another in the bar) and at the finest level of development. It is listed in the project browser under **Details**, named Detail 1, Detail 2 and so on (rename it as any view).
+
+- **It is a real view.** Dimensions, texts, tags, drafted lines and hatches drawn in it stay in it, and its Visibility / Graphics is its own. Its model stays live: change a wall and the detail shows it. When the view it was called from changes its cut, its range or its line (a section moved), the detail follows; its scale, crop and graphics stay its own.
+- **The callout mark.** The view you drew in shows the boundary, a leader and a head with the detail's number and its sheet: "3 / A-501" once the detail is placed on a sheet, "–" before. It changes by itself when the detail is placed, moved to another sheet or renumbered. Choose your own head in its **Marker symbol** (the Callout head slot, also for the whole project in Drafting standards); Lapin's Callout bubble writes the number over the sheet.
+- **Open the detail.** Double-click the callout, or select it and right-click → **Open view**, or **Open view** in its properties.
+- **Reshape it.** Select the callout: drag its corners, edges or middle (a circle's centre and radius, a polygon's corners) and the detail is cropped again; drag its head to move it off the boundary. Changing the detail's own crop in its View settings moves a rectangle callout with it.
+- **Refer to a view that is there.** Choose a view in the bar's **Refer to** list (a drafting view, another detail) before drawing, or in the callout's properties: the callout points at it and makes no view, as Revit's reference callouts. The head writes that view's number and sheet.
+- **Delete it.** Deleting a callout asks whether its detail view goes too, or stays. Deleting the detail view from the project browser takes its callouts with it.
+
+Each change is one undo step: drawing a callout makes it and its detail view in one. The engine draws the mark with the view, so sheets, PDF and DXF print it as the screen shows it; Visibility / Graphics shows or hides it with the **Callouts**. A circle or a polygon crops the detail to the rectangle round it.
+
+![A plan with a detail callout on a wall's corner, and the detail at 1:20 beside it](shots/callout.webp)
+
 ## What a view shows
 
 The **View** tab sets what the view in front shows and how it looks.

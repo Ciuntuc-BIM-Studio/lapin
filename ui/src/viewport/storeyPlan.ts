@@ -7,9 +7,9 @@
 
 import type { NodeDto } from '../engine/protocol';
 
-/** Whether a view is a level's floor plan: a plan on the storey, not a site or location plan, not a foundation plan. */
+/** Whether a view is a level's floor plan: a plan on the storey, not a site or location plan, not a foundation plan, not a callout's detail. */
 export const isFloorPlanOf = (n: NodeDto | undefined, storeyId: string): boolean =>
-  !!n && n.type === 'LapinView' && (n.props.kind ?? 'plan') === 'plan' && n.props.storeyId === storeyId && typeof n.props.site !== 'string' && !n.props.foundation;
+  !!n && n.type === 'LapinView' && (n.props.kind ?? 'plan') === 'plan' && n.props.storeyId === storeyId && typeof n.props.site !== 'string' && !n.props.foundation && !n.props.calloutOf;
 
 /** The level's own floor plan view, the first made; undefined while it has none. */
 export function storeyPlanView(nodes: ReadonlyMap<string, NodeDto>, storeyId: string): NodeDto | undefined {

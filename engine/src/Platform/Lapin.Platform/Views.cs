@@ -881,7 +881,7 @@ public static class Views
         // Annotations: the views' own marks, then each module's (grids, dimensions, texts), over the drawing.
         var ctx = new ViewContext(m, view, spec.Kind, spec.Frame, scale, DraftingResources.Book(m), drawing, q.Geometry) { Services = q.Services };
         // A 3D view's drawing has no annotations: its drawing's frame need not be the model's (a perspective).
-        var marks = flat ? Marks(ctx).Concat(Location.Marks(ctx)).Concat(SitePlans.Marks(ctx)).Concat(insets ? Insets.Marks(q, ctx, print) : []).ToList() : [];
+        var marks = flat ? Marks(ctx).Concat(Location.Marks(ctx)).Concat(SitePlans.Marks(ctx)).Concat(insets ? Insets.Marks(q, ctx, print) : []).Concat(Callouts.Marks(ctx)).ToList() : [];
         if (flat)
         {
             // The reference planes where they cut this view, on the screen only: never on a sheet.
@@ -1617,6 +1617,7 @@ public static class Views
         });
 
         Insets.Register(r);
+        Callouts.Register(r);
         ElementViews.Register(r);
         ShopDrawings.Register(r);
         ViewBoundaries.Register(r);

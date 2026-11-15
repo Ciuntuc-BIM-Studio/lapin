@@ -14,6 +14,12 @@ export const useRegion3d = create<{ on: boolean; drag: SelectDrag | null }>(() =
 
 export const toggleRegion3d = (): void => useRegion3d.setState((s) => ({ on: !s.on, drag: null }));
 
+/**
+ * Whether a part of an element (by its key) is the part selected on its own as `tag` (owner#tag, forum topic 102): itself,
+ * or its glass beside it (a stair's `railing-glass:left` with `railing:left`).
+ */
+export const partSelected = (key: string, tag: string): boolean => key === tag || key.replace(/^([a-z]+)-[a-z]+:/, '$1:') === tag;
+
 /** A point in the world to the screen (px), or null behind the eye. */
 export type Project = (x: number, y: number, z: number) => { x: number; y: number } | null;
 

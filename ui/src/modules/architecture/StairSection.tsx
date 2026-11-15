@@ -123,6 +123,7 @@ export function StairSection({ node }: { node: NodeDto }) {
           <option value="">As the type</option><option value="none">None</option><option value="left">Left</option><option value="right">Right</option><option value="both">Both sides</option>
         </select></dd>
       </dl>
+      {!ramp && <p className="muted small">Click a railing in a plan or in 3D to select it on its own: its height, its kind, or Delete.</p>}
       {n && <><p className="eyebrow">Checks</p><ChecksList checks={n.checks} /></>}
       <label className="row small">
         <input type="checkbox" checked={!node.props.noOpening} disabled={!topStorey} onChange={(e) => set({ noOpening: !e.target.checked })} />

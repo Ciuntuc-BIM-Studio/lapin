@@ -42,6 +42,8 @@ public static class SectionMarkers
 
     public static bool Shows(Entity view, Entity section)
     {
+        // A callout's detail of a section is marked by its callout, not by a line of its own (forum topic 107).
+        if (Callouts.IsDetail(section)) return false;
         var (hidden, layers) = Of(view);
         return !hidden.Contains(section.Id) && !layers.Contains(LayerOf(section));
     }
