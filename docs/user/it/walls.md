@@ -45,6 +45,14 @@ Un muro riconosciuto da un IFC importato la cui estremità il file taglia in obl
 
 **Allineamento del retino** stabilisce come sono retinati in pianta gli strati di questo muro. **material** segue l’impostazione di ogni materiale. **axis** posa il retino di ogni strato lungo l’asse del muro, a partire dall’inizio dell’asse: un muro di mattoni inclinato mostra i suoi corsi lungo di sé, continui da uno strato all’altro. **view** fa partire ogni retino dall’origine della vista, senza rotazione.
 
+### Raccordare o smussare un angolo
+
+**Architettura → Raccordo** (FILLET nella riga di comando, <kbd>F</kbd>) raccorda l'angolo tra due muri con un muro curvo: scrivi il raggio (Invio tiene l'ultimo), poi fai clic sul primo muro e sul secondo. Entrambi vengono accorciati fin dove l'arco li tocca, o prolungati fino a esso quando non arrivano ancora all'angolo, come fa il raccordo del CAD con due linee. Il muro curvo è di nuovo il primo muro (tipo, altezza, base, sommità e strati, dallo stesso lato) ed è unito a entrambi. Fai clic su ogni muro sulla parte da tenere: dove due muri si incrociano, le altre parti spariscono. Un raggio 0 fa uno spigolo vivo, i due muri prolungati fino a incontrarsi. **Architettura → Smusso** (CHAMFER) taglia l'angolo con un muro diritto, la distanza misurata lungo ogni muro dall'angolo. Clic destro sulla maniglia d'estremità di un muro selezionato, dove incontra un altro muro, per **Raccorda l'angolo…** e **Smussa l'angolo…**, con il raggio o la distanza scritti. Ognuno è un solo passo di annullamento.
+
+Il raggio è quello dell'asse dei muri, il centro del loro nucleo. Scrivi **I** (Inside) o **O** (Outside) prima di scegliere per dare il raggio della faccia interna o esterna della curva; **A** torna all'asse. I due muri tengono i loro id (i GlobalId in IFC), e le loro porte, finestre e aperture restano dove sono in pianta; una che cadrebbe nella parte tagliata impedisce il raccordo (un raggio minore, o spostala prima). Muri di tipo, altezza o base diversi si raccordano solo se rispondi **Yes** per prendere quelli del primo. I muri curvi e i muri con un profilo proprio non si raccordano.
+
+![Due muri raccordati: un muro curvo tra loro](shots/wall-fillet.webp)
+
 ### Un muro secondo il suo profilo
 
 **Profilo…** nelle proprietà di un muro ne disegna la sommità in prospetto, vista dall’inizio alla fine: un timpano, una pendenza, gradini, un muro che segue una scala. Trascina i punti (**Shift** mantiene l’altezza di un punto), fai clic sulla linea in alto per aggiungerne uno, clic destro su un punto per toglierlo, oppure scrivili nella tabella in millimetri. **Parti da** dà un **Timpano**, una **Pendenza** o dei **Gradoni** fino all’altezza che scrivi. Un gradino è fatto di due punti uno sopra l’altro. **Applica** dà la forma al muro; **Sommità piana** lo rende di nuovo piano.

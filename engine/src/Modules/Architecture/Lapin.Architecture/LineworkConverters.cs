@@ -53,15 +53,21 @@ public static class LineworkConverters
     [
         new("style", "Style", "choice", JsonValue.Create("balusters"), Lapin.Architecture.Stairs.StairSpec.RailingStyles),
         new("height", "Height", "length", JsonValue.Create(1.0)),
+        new("join", "One railing where they meet end to end", "bool", JsonValue.Create(true)),
     ],
     (q, view, s, o) =>
     {
         var storey = LineworkConversion.PlanStorey(q.Model, view);
-        List<Lapin.Geometry.Vec2> pts = s.Closed ? [.. s.Points, s.Points[0]] : [.. s.Points];
+        // An arc (a fillet's) stays one: its ends and its rise, built along the true arc.
+        var arc = s.Kind == "arc" && s.Mid is { } mid && s.Points.Count >= 2;
+        List<Lapin.Geometry.Vec2> pts = arc ? [s.Points[0], s.Points[^1]] : s.Closed ? [.. s.Points, s.Points[0]] : [.. s.Points];
         var args = new JsonObject { ["storeyId"] = storey.Id, ["points"] = LineworkConversion.Points(pts), ["style"] = (string?)o["style"] ?? "balusters" };
+        if (arc) args["arcs"] = new JsonArray(Math.Round(PathCurve.RiseThrough(pts[0], pts[1], s.Mid!.Value), 9));
         if (LineworkConversion.Num(o, "height") is { } h) args["height"] = h;
+        // Lines, arcs and polylines meeting end to end (a polyline filleted: line, arc, line) become one railing.
+        if ((o["join"] ?? JsonValue.Create(true)) is JsonValue jv && jv.TryGetValue<bool>(out var join) && join) args["join"] = true;
         return [new("architecture.addRailing", args, $"A railing along {pts.Count} points on {storey.Name}")];
-    }, "A railing along each line or polyline.");
+    }, "A railing along each line, arc or polyline; those meeting end to end make one.");
 
     public static void Register(IModuleRegistry r)
     {

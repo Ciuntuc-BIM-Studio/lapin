@@ -224,6 +224,18 @@ export function useGripEditor(o: GripEditorOptions) {
     if (!o.zOf) traceBegin('grip', g.at, ghostOf(who), who[0].kind === 'move');
     return true;
   };
+  /** "Fillet corner…" and "Chamfer corner…" on a corner that may be rounded or cut, the radius or distance typed (forum topic 97; a wall's joined end). */
+  const cornerMenu = (c: NonNullable<Grip['corner']>): MenuItem[] => {
+    const asked = (title: string, label: string, act: (v: number) => ReturnType<NonNullable<Grip['remove']>>) => async () => {
+      setHover(null);
+      const v = await askLength(title, label, 0.5);
+      if (v != null && v > 0) void runSteps([act(v)]);
+    };
+    return [
+      { label: 'Fillet corner…', disabled: !c.straight, onSelect: () => void asked('Fillet corner', 'Radius', c.fillet)() },
+      { label: 'Chamfer corner…', disabled: !c.straight, onSelect: () => void asked('Chamfer corner', 'Distance', c.chamfer)() },
+    ];
+  };
   /** A right-click on a grip of a thing of its own, or one with a menu of its own: the menu. True when it opened. */
   const onContextMenu = (e: { clientX: number; clientY: number }): boolean => {
     const g = hit(e);
@@ -232,6 +244,8 @@ export function useGripEditor(o: GripEditorOptions) {
         .map((m) => ({ label: m.removeLabel!, onSelect: () => { setHover(null); void runSteps([m.remove!()]); } })),
       ...(g?.members ?? []).flatMap((m) => m.menu ?? [])
         .map((x) => ({ label: x.label, onSelect: () => { setHover(null); void runSteps([x.run()]); } })),
+      // A corner that is not an outline's vertex (those are cornerItems'): a wall's end joined to another wall.
+      ...(g?.members ?? []).filter((m) => m.corner && !(m.kind === 'vertex' && m.remove && !m.removeLabel)).flatMap((m) => cornerMenu(m.corner!)),
     ];
     if (!items.length) return false;
     openContextMenu(e.clientX, e.clientY, items);
@@ -251,16 +265,7 @@ export function useGripEditor(o: GripEditorOptions) {
     const corner = g?.members.find((m) => m.kind === 'vertex' && m.remove && !m.removeLabel);
     if (corner) {
       const items: MenuItem[] = [{ label: 'Remove corner', disabled: !corner.remove!(), onSelect: run(corner.remove!) }];
-      const c = corner.corner;
-      if (c) {
-        const asked = (title: string, label: string, act: (v: number) => ReturnType<NonNullable<Grip['remove']>>) => async () => {
-          setHover(null);
-          const v = await askLength(title, label, 0.5);
-          if (v != null && v > 0) void runSteps([act(v)]);
-        };
-        items.push({ label: 'Fillet corner…', disabled: !c.straight, onSelect: () => void asked('Fillet corner', 'Radius', c.fillet)() });
-        items.push({ label: 'Chamfer corner…', disabled: !c.straight, onSelect: () => void asked('Chamfer corner', 'Distance', c.chamfer)() });
-      }
+      if (corner.corner) items.push(...cornerMenu(corner.corner));
       return items;
     }
     if (g) return [];

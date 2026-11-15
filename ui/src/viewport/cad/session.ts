@@ -70,6 +70,8 @@ export interface Step {
   trace?: Shape[];
   point?: (p: Vec2) => Next;
   pick?: (hit: { id: string; shape: Shape }, at: Vec2) => Next;
+  /** In a plan, an element clicked where no drafted shape is (FILLET's walls and railings): its id and the point clicked. */
+  pickElement?: (id: string, at: Vec2) => Next;
   /** A typed length, read in the project's unit unless it carries its own (2000 in a project in millimetres is 2 m); metres. */
   value?: (v: number) => Next;
   /** A typed plain number (an angle in degrees, a factor, a count, a pen), never converted by the project's unit. */
@@ -111,6 +113,8 @@ interface CadState {
   /** Remembered values: offset distance, fillet radius, chamfer distances, hatch pattern and scale. */
   offset: number;
   radius: number;
+  /** The line of a wall a fillet's radius is measured on: its axis, or the inside or outside face of the bend. */
+  filletLine: 'axis' | 'inside' | 'outside';
   chamfer: number;
   pattern: string;
   hatchScale: number;
@@ -121,7 +125,7 @@ interface CadState {
 export const useCad = create<CadState>(() => ({
   buffer: '', takeAll: false, history: [], command: null, step: null, last: null, cursor: null, aim: null, lastPoint: null,
   osnap: true, ortho: false, polar: true, layer: '0', role: '', host: null,
-  offset: 0.5, offsetThrough: false, radius: 0, chamfer: 0.1, pattern: 'LINES45', hatchScale: 1,
+  offset: 0.5, offsetThrough: false, radius: 0, filletLine: 'axis', chamfer: 0.1, pattern: 'LINES45', hatchScale: 1,
 }));
 
 const log = (line: string) => useCad.setState((s) => ({ history: [...s.history, line].slice(-50) }));
@@ -563,19 +567,64 @@ function trimOrExtend(kind: 'trim' | 'extend'): Step {
   return step();
 }
 
+/**
+ * FILLET (F) and CHAMFER: two drafted lines, as CAD has it; or two walls (a curved wall between them, or a straight one,
+ * both trimmed or carried on to it: architecture.filletWalls), or a railing's two segments or two railings (made one round
+ * the corner: architecture.filletRailings). A fillet's radius on walls is their axis's, or the inside or outside face's of
+ * the bend (Axis/Inside/Outside); walls or railings that differ are filleted with the first one's when Yes is answered.
+ */
 function corner(kind: 'fillet' | 'chamfer'): Step {
+  const fillet = kind === 'fillet';
+  const size = () => (fillet ? useCad.getState().radius : useCad.getState().chamfer);
+  const classOf = (id: string) => useSession.getState().nodes.get(id)?.type;
+  const lineWord = () => ({ axis: 'Axis', inside: 'Inside', outside: 'Outside' })[useCad.getState().filletLine];
+  const kinds: Record<string, 'Walls' | 'Railings'> = { IfcWall: 'Walls', LapinRailing: 'Railings' };
+  const elementCorner = (a: string, atA: Vec2 | null): Next => {
+    const what = kinds[classOf(a) ?? ''];
+    if (!what) { log('Fillet and chamfer take two lines, two walls or a railing.'); return first(); }
+    const send = async (b: string, atB: Vec2 | null, matchFirst = false): Promise<Step | null> => {
+      if (kinds[classOf(b) ?? ''] !== what) { log(what === 'Walls' ? 'Pick another wall.' : 'Pick the railing again on another segment, or another railing.'); return second; }
+      const args: Record<string, unknown> = { a, b, ...(atA ? { atA: xy(atA) } : {}), ...(atB ? { atB: xy(atB) } : {}), ...(fillet ? { radius: size() } : { distance: size() }) };
+      if (what === 'Walls' && fillet) args.line = useCad.getState().filletLine;
+      if (matchFirst) args.matchFirst = true;
+      const done = await execute(`architecture.${kind}${what}`, args);
+      const error = useSession.getState().error ?? '';
+      // Of other types or heights (designs): Yes takes the first one's.
+      if (done == null && !matchFirst && / differ /.test(error)) {
+        const yes = () => send(b, atB, true);
+        return { prompt: what === 'Walls' ? 'The walls differ: take the first wall\'s? [Yes/No]' : 'The railings differ: take the first railing\'s? [Yes/No]', want: 'none', keywords: { Y: yes, YES: yes, N: () => null, NO: () => null }, enter: yes };
+      }
+      return null;
+    };
+    const second: Step = {
+      prompt: what === 'Walls' ? 'Second wall' : 'The railing\'s other segment, or another railing', want: 'pick',
+      pick: () => { log(what === 'Walls' ? 'Pick another wall.' : 'Pick a railing.'); return second; },
+      pickElement: (b, atB) => send(b, atB),
+      element: (b) => send(b, null),
+    };
+    return second;
+  };
   const first = (): Step => ({
-    prompt: kind === 'fillet' ? `First line (radius ${len(useCad.getState().radius)}; type a value to change)` : `First line (distance ${len(useCad.getState().chamfer)}; type a value to change)`,
+    prompt: fillet
+      ? `First line, wall or railing (radius ${len(size())}; type a value to change) [Axis/Inside/Outside: ${lineWord()}]`
+      : `First line, wall or railing (distance ${len(size())}; type a value to change)`,
     want: 'pick',
-    value: (v) => { if (v >= 0) useCad.setState(kind === 'fillet' ? { radius: v } : { chamfer: v }); return first(); },
+    value: (v) => { if (v >= 0) useCad.setState(fillet ? { radius: v } : { chamfer: v }); return first(); },
+    keywords: fillet ? {
+      A: () => { useCad.setState({ filletLine: 'axis' }); return first(); }, AXIS: () => { useCad.setState({ filletLine: 'axis' }); return first(); },
+      I: () => { useCad.setState({ filletLine: 'inside' }); return first(); }, INSIDE: () => { useCad.setState({ filletLine: 'inside' }); return first(); },
+      O: () => { useCad.setState({ filletLine: 'outside' }); return first(); }, OUTSIDE: () => { useCad.setState({ filletLine: 'outside' }); return first(); },
+    } : undefined,
     pick: (a, atA) => ({
       prompt: 'Second line', want: 'pick',
       pick: async (b, atB) => {
         const s = useCad.getState();
-        await execute(`drafting.${kind}`, kind === 'fillet' ? { a: a.id, atA: xy(atA), b: b.id, atB: xy(atB), radius: s.radius } : { a: a.id, atA: xy(atA), b: b.id, atB: xy(atB), d1: s.chamfer, d2: s.chamfer });
+        await execute(`drafting.${kind}`, fillet ? { a: a.id, atA: xy(atA), b: b.id, atB: xy(atB), radius: s.radius } : { a: a.id, atA: xy(atA), b: b.id, atB: xy(atB), d1: s.chamfer, d2: s.chamfer });
         return null;
       },
     }),
+    pickElement: (id, at) => elementCorner(id, at),
+    element: (id) => elementCorner(id, null),
   });
   return first();
 }
@@ -722,7 +771,9 @@ const feed = serial(async (p: Vec2, typed: { length?: number; angle?: number } |
   useCad.setState({ lastPoint: p });
   if (s.step.want === 'pick' && s.host) {
     const hit = s.host.pickDraft(p);
-    if (!hit) { log('Nothing drafted there.'); return; }
+    const element = !hit && s.step.pickElement && s.host.isPlan?.() !== false ? s.host.pickAny(p) : null;
+    if (element) { await advance(s.step.pickElement!(element, p)); return; }
+    if (!hit) { log(s.step.pickElement ? 'Nothing to pick there.' : 'Nothing drafted there.'); return; }
     await advance(s.step.pick?.(hit, p));
     return;
   }

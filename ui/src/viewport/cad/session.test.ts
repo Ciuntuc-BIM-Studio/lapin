@@ -324,3 +324,40 @@ describe('constraints recorded while drawing (decision 520, C2)', () => {
     expect(engine.execute.mock.calls.map(([c]) => c)).toEqual(['studio.drawConstrained', 'drafting.draw']);
   });
 });
+
+describe('FILLET and CHAMFER on walls and railings', () => {
+  const nodes = new Map([['w1', { id: 'w1', type: 'IfcWall' }], ['w2', { id: 'w2', type: 'IfcWall' }], ['r1', { id: 'r1', type: 'LapinRailing' }]]);
+  const pickAt = (id: string) => (useCad.getState().host!.pickAny = () => id);
+  beforeEach(() => { engine.useSession.getState.mockImplementation(() => ({ nodes, error: null }) as never); });
+  afterEach(() => { engine.useSession.getState.mockImplementation(() => ({ nodes: new Map(), error: null })); });
+
+  it('two walls picked in a plan are filleted by the engine with the radius, the line and where each was picked', async () => {
+    await startCommand('FILLET');
+    await submit('800');
+    await submit('I');
+    pickAt('w1'); await feedPoint(P(1, 0));
+    pickAt('w2'); await feedPoint(P(5, 3));
+    expect(engine.execute).toHaveBeenCalledWith('architecture.filletWalls', { a: 'w1', b: 'w2', atA: [1, 0], atB: [5, 3], radius: 0.8, line: 'inside' });
+    expect(useCad.getState().command).toBeNull();
+  });
+
+  it('walls that differ: Yes takes the first one\'s', async () => {
+    engine.execute.mockImplementationOnce(() => Promise.resolve(null));
+    engine.useSession.getState.mockImplementation(() => ({ nodes, error: 'The walls differ (height): fillet them with the first wall\'s, or make them alike first.' }) as never);
+    await startCommand('CHAMFER');
+    pickAt('w1'); await feedPoint(P(1, 0));
+    pickAt('w2'); await feedPoint(P(5, 3));
+    expect(useCad.getState().step?.prompt).toMatch(/differ/);
+    await submit('Y');
+    expect(engine.execute).toHaveBeenLastCalledWith('architecture.chamferWalls', expect.objectContaining({ a: 'w1', b: 'w2', matchFirst: true }));
+  });
+
+  it('a railing picked twice rounds the corner between the segments picked; a wall after it is not taken', async () => {
+    await startCommand('FILLET');
+    pickAt('r1'); await feedPoint(P(1, 0));
+    pickAt('w1'); await feedPoint(P(3, 0));
+    expect(engine.execute).not.toHaveBeenCalled();
+    pickAt('r1'); await feedPoint(P(4, 2));
+    expect(engine.execute).toHaveBeenCalledWith('architecture.filletRailings', expect.objectContaining({ a: 'r1', b: 'r1', atA: [1, 0], atB: [4, 2] }));
+  });
+});

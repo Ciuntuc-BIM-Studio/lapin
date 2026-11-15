@@ -45,6 +45,14 @@ Uma parede reconhecida de um IFC importado cuja extremidade o ficheiro corta em 
 
 **Alinhamento da hachura** define como as camadas desta parede são hachuradas em planta. **material** segue a configuração de cada material. **axis** assenta a hachura de cada camada ao longo do eixo da parede, a partir do início do eixo, de modo que uma parede de tijolos inclinada mostra suas fiadas ao longo dela, contínuas de uma camada à outra. **view** começa cada hachura na origem da vista, sem rotação.
 
+### Arredondar ou chanfrar um canto
+
+**Arquitetura → Concordância** (FILLET na linha de comandos, <kbd>F</kbd>) arredonda o canto entre duas paredes com uma parede curva: escreva o raio (Enter mantém o último) e clique na primeira parede e na segunda. Ambas são encurtadas até onde o arco lhes toca, ou prolongadas até ele quando ainda não chegam ao canto, como faz a concordância do CAD com duas linhas. A parede curva é de novo a primeira parede (o seu tipo, altura, base, topo e camadas, do mesmo lado) e fica ligada às duas. Clique em cada parede na parte a manter: onde duas paredes se cruzam, as outras partes desaparecem. Um raio 0 faz um canto vivo, as duas paredes prolongadas até se encontrarem. **Arquitetura → Chanfro** (CHAMFER) corta o canto com uma parede reta, a distância medida ao longo de cada parede a partir do canto. Clique com o botão direito na pega da extremidade de uma parede selecionada, onde encontra outra parede, para **Arredondar canto…** e **Chanfrar canto…**, com o raio ou a distância escritos. Cada um é um só passo de anular.
+
+O raio é o do eixo das paredes, o meio do seu núcleo. Escreva **I** (Inside) ou **O** (Outside) antes de escolher para dar o raio da face interior ou exterior da curva; **A** volta ao eixo. As duas paredes mantêm os seus id (os seus GlobalId em IFC), e as suas portas, janelas e vãos ficam onde estão em planta; um que cairia na parte cortada impede a concordância (um raio menor, ou mova-o primeiro). Paredes de tipos, alturas ou bases diferentes só são concordadas se responder **Yes** para tomar as da primeira. As paredes curvas e as paredes com perfil próprio não são concordadas.
+
+![Duas paredes concordadas: uma parede curva entre elas](shots/wall-fillet.webp)
+
 ### Uma parede pelo seu perfil
 
 **Perfil…** nas propriedades de uma parede desenha o seu topo em elevação, visto do início ao fim: uma empena, uma inclinação, degraus, uma parede que acompanha uma escada. Arraste os pontos (**Shift** mantém a altura de um ponto), clique na linha de cima para acrescentar um, clique com o botão direito num ponto para tirá-lo, ou digite-os na tabela em milímetros. **Começar de** dá um **Empena**, uma **Inclinação** ou **Degraus** até a altura que você digitar. Um degrau são dois pontos um sobre o outro. **Aplicar** dá forma à parede; **Topo plano** a deixa plana de novo.

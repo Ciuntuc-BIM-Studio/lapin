@@ -45,6 +45,14 @@ Un muro reconocido de un IFC importado cuyo extremo el archivo corta en ángulo 
 
 **Alineación del sombreado** fija cómo se sombrean en planta las capas de este muro. **material** sigue el ajuste de cada material. **axis** coloca el sombreado de cada capa a lo largo del eje del muro, desde el inicio del eje, así un muro de ladrillo en ángulo muestra sus hiladas a lo largo de él, continuas de una capa a otra. **view** empieza cada sombreado en el origen de la vista, sin girar.
 
+### Redondear o achaflanar una esquina
+
+**Architecture → Empalme** (FILLET en la línea de comandos, <kbd>F</kbd>) redondea la esquina entre dos muros con un muro curvo: escribe el radio (Enter mantiene el último) y haz clic en el primer muro y en el segundo. Ambos se recortan hasta donde los toca el arco, o se prolongan hasta él cuando aún no llegan a la esquina, como hace el empalme del CAD con dos líneas. El muro curvo es de nuevo el primer muro (su tipo, altura, base, coronación y capas, del mismo lado) y queda unido a los dos. Haz clic en cada muro en la parte que se conserva: donde dos muros se cruzan, las otras partes desaparecen. Un radio 0 hace una esquina viva, los dos muros prolongados hasta encontrarse. **Architecture → Chaflán** (CHAMFER) corta la esquina con un muro recto, la distancia medida sobre cada muro desde la esquina. Clic derecho en el pinzamiento del extremo de un muro seleccionado, donde se encuentra con otro, para **Redondear esquina…** y **Achaflanar esquina…**, con el radio o la distancia escritos. Cada uno es un solo paso de deshacer.
+
+El radio es el del eje de los muros, el centro de su núcleo. Escribe **I** (Inside) u **O** (Outside) antes de elegir para dar el radio de la cara interior o exterior de la curva; **A** vuelve al eje. Los dos muros conservan sus id (sus GlobalId en IFC), y sus puertas, ventanas y huecos se quedan donde están en planta; uno que caería en la parte recortada impide el empalme (un radio menor, o muévelo antes). Los muros de distinto tipo, altura o base solo se empalman si respondes **Yes** para tomar los del primero. Los muros curvos y los muros con perfil propio no se empalman.
+
+![Dos muros empalmados: un muro curvo entre ellos](shots/wall-fillet.webp)
+
 ### Un muro por su perfil
 
 **Perfil…** en las propiedades de un muro dibuja su coronación en alzado, vista de su inicio a su final: un hastial, una pendiente, escalones, un muro que sigue una escalera. Arrastra los puntos (**Mayús** mantiene la altura de un punto), haz clic en la línea superior para añadir uno, clic derecho en un punto para quitarlo, o escríbelos en la tabla en milímetros. **Empezar desde** da un **Hastial**, una **Pendiente** o **Escalones** hasta la altura que escribas. Un escalón son dos puntos uno sobre otro. **Aplicar** da la forma al muro; **Coronación plana** lo vuelve plano.

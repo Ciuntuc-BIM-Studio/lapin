@@ -851,6 +851,7 @@ public static partial class IfcExport
             else if (!grouped) reps.Add(BodyOf(parts.Select(p => at is { } jp2 ? Brep(p.Solid, StyleKey(p), v => Local(jp2, v)) : Brep(p.Solid, StyleKey(p), fr))));
             if (AxisOf(e) is { } ax) reps.Add(ax);
             if (ArcFootprint(e) is { } fp) reps.Add(fp);
+            else if (ArcAxis(e) is { } aa) reps.Add(aa);
             reps.AddRange(Plan2dOf(e));
             var shape = reps.Count > 0 ? f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(reps)) : Null;
             var (height, width) = Overall(e, type);
@@ -899,6 +900,29 @@ public static partial class IfcExport
             var list = f.Add("IFCCARTESIANPOINTLIST2D", L(pts.Select(p => L(new[] { R(p.X), R(p.Y) }))), Null);
             if (footprint == "") footprint = f.Add("IFCGEOMETRICREPRESENTATIONSUBCONTEXT", S("FootPrint"), S("Model"), Derived, Derived, Derived, Derived, model, Null, E("PLAN_VIEW"), Null);
             return f.Add("IFCSHAPEREPRESENTATION", footprint, S("FootPrint"), S("Curve2D"), L(new[] { f.Add("IFCINDEXEDPOLYCURVE", list, L(segments), False) }));
+        }
+
+        /// <summary>
+        /// An open line with curved segments (a railing's, a user's request: <c>points</c> and each segment's rise in <c>arcs</c>)
+        /// as its Axis beside the body's facets: an IfcIndexedPolyCurve of its points (storey-local) and each arc's middle, its
+        /// straight segments IfcLineIndex and its arcs IfcArcIndex, the true curve the body was laid in chords from.
+        /// </summary>
+        string? ArcAxis(Entity e)
+        {
+            if (e.Attrs[ArcOutline.Key] is not JsonArray || e.Attrs["contour"] != null || e.Attrs["points"] is not JsonArray || s.Catalog.IsPath(e.Class)) return null;
+            var corners = Args.StoredPoints(e.Attrs["points"]);
+            if (corners.Count < 2 || ArcOutline.Rises(e.Attrs[ArcOutline.Key], corners.Count - 1) is not { } rises) return null;
+            var pts = new List<Vec2>(corners);
+            var segments = new List<string>();
+            for (var i = 0; i + 1 < corners.Count; i++)
+            {
+                var c = new PathCurve(corners[i], corners[i + 1], rises[i]);
+                if (!c.IsArc) { segments.Add(Typed("IFCLINEINDEX", L(new[] { i + 1, i + 2 }))); continue; }
+                pts.Add(c.PointAt(c.Length / 2));
+                segments.Add(Typed("IFCARCINDEX", L(new[] { i + 1, pts.Count, i + 2 })));
+            }
+            var list = f.Add("IFCCARTESIANPOINTLIST2D", L(pts.Select(p => L(new[] { R(p.X), R(p.Y) }))), Null);
+            return f.Add("IFCSHAPEREPRESENTATION", axis, S("Axis"), S("Curve2D"), L(new[] { f.Add("IFCINDEXEDPOLYCURVE", list, L(segments), False) }));
         }
 
         /// <summary>

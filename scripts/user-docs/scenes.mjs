@@ -1694,6 +1694,65 @@ export const scenes = [
     },
   },
   {
+    // Fillet and chamfer on walls and railings (a user's request): Architecture → Fillet takes two walls (a curved wall between
+    // them, both trimmed to it); a railing's corner rounded from its grip's right-click, its arc built along the true curve.
+    id: 'walls-fillet',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      await t.ui({ keyPlan: false });
+      const storey = await t.storey();
+      const a = await t.cmd('architecture.addWall', { storeyId: storey, x1: 0, y1: 0, x2: 6, y2: 0 });
+      const b = await t.cmd('architecture.addWall', { storeyId: storey, x1: 6, y1: 0, x2: 6, y2: 4 });
+      const r = await t.cmd('architecture.addRailing', { storeyId: storey, points: [[9, 0], [13, 0], [13, 4]], style: 'balusters' });
+      await t.fit();
+      await t.wait(600);
+      // Architecture → Fillet: the radius typed (in millimetres), then the two walls clicked on the parts to keep.
+      await t.tool('architecture.fillet');
+      await t.page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
+      await t.keys('1', '5', '0', '0', 'Enter');
+      const asks = await t.page.locator('[data-testid=command-line]').innerText();
+      t.expect(/wall or railing/.test(asks) && /1500 mm/.test(asks), `FILLET asks for a wall, the radius shown (it says: ${asks.replace(/\s+/g, ' ').slice(0, 140)})`);
+      for (const [x, y] of [[2, 0], [6, 2.5]]) {
+        const [px, py] = await t.planPoint(x, y);
+        await t.page.mouse.move(px, py, { steps: 4 });
+        await t.page.mouse.click(px, py);
+        await t.wait(700);
+      }
+      await t.wait(800);
+      const walls = (await t.nodes()).filter((n) => n.type === 'IfcWall');
+      const curved = walls.find((n) => typeof n.props.arc === 'number' && Math.abs(n.props.arc) > 0.1);
+      t.expect(walls.length === 3 && curved, `the corner is a curved wall between the two (${walls.length} walls)`);
+      const first = walls.find((n) => n.id === a.id);
+      t.expect(first && Math.abs(first.props.end[0] - 4.5) < 1e-3, `the first wall is trimmed to the arc (its end at ${first?.props.end})`);
+      t.expect(walls.some((n) => n.id === b.id), 'the second wall keeps its id');
+      // The railing: a right-click on its corner's grip, Fillet corner…, the radius typed.
+      await select(t, r.id);
+      await t.wait(600);
+      const grip = async (key) => { const g = await t.page.locator(`[data-testid=plan] [data-grip="${key}"]`).first().boundingBox(); return g ? [g.x + g.width / 2, g.y + g.height / 2] : null; };
+      const [vx, vy] = (await grip('v1')) ?? [0, 0];
+      t.expect(vx > 0, 'the railing shows its corner grip');
+      await t.page.mouse.click(vx, vy, { button: 'right' });
+      await t.wait(300);
+      t.expect(await t.page.locator('.context-menu .context-item', { hasText: 'Fillet corner' }).count() === 1, 'a railing\'s corner offers Fillet corner');
+      await t.page.locator('.context-menu .context-item', { hasText: 'Fillet corner' }).click();
+      await t.wait(400);
+      await t.page.keyboard.type('1500');
+      await t.page.keyboard.press('Enter');
+      await t.wait(1200);
+      const rounded = (await t.nodes()).find((n) => n.id === r.id);
+      t.expect(Array.isArray(rounded.props.arcs) && rounded.props.points.length === 4, `the railing's corner is an arc (${JSON.stringify(rounded.props.arcs)})`);
+      await t.ui({ selection: null, selected: [] });
+      await t.wait(400);
+      await t.shot('wall-fillet', { of: '.plan-svg', pad: 0 });
+      // The railing selected: its arc's round grip, its corners' grips.
+      await select(t, r.id);
+      await t.wait(600);
+      await t.shot('railing-fillet', { of: '.plan-svg', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     // Edit sketch on a floor (forum topic 97, stage 3): its outline opened as a sketch on a plan of its own, a fillet and a
     // dimension added, Finish sketch writes it back; the sketch stays on the floor.
     id: 'floors-sketch',

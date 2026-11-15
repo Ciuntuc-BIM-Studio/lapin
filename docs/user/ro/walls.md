@@ -38,6 +38,14 @@ Panoul de proprietăți arată peretele selectat. Sus sunt tipul și straturile 
 
 ![Proprietățile unui perete](shots/wall-properties.webp)
 
+### Racordarea sau teșirea unui colț
+
+**Architecture → Fillet** (FILLET în linia de comandă, <kbd>F</kbd>) rotunjește colțul dintre doi pereți cu un perete curb: scrie raza (Enter o păstrează pe ultima), apoi dă clic pe primul perete și pe al doilea. Amândoi sunt scurtați până unde îi atinge arcul, sau prelungiți până la el când încă nu ajung la colț, cum face racordarea din CAD cu două linii. Peretele curb este din nou primul perete (tipul, înălțimea, baza, partea de sus și straturile lui, pe aceeași parte) și e îmbinat cu amândoi. Dă clic pe fiecare perete pe partea de păstrat: unde doi pereți se încrucișează, celelalte părți dispar. O rază 0 face un colț ascuțit, amândoi pereții prelungiți până se întâlnesc. **Architecture → Chamfer** (CHAMFER) taie colțul cu un perete drept, distanța măsurată pe fiecare perete de la colț. Clic dreapta pe mânerul de capăt al unui perete selectat, unde întâlnește alt perete, pentru **Racordează colțul…** și **Teșește colțul…**, cu raza sau distanța scrisă. Fiecare e un singur pas de anulare.
+
+Raza este a axei pereților, mijlocul miezului lor. Scrie **I** (Inside, interior) sau **O** (Outside, exterior) înainte de a alege pereții pentru raza feței interioare sau exterioare a curbei; **A** revine la axă. Cei doi pereți își păstrează id-urile (GlobalId-urile din IFC), iar ușile, ferestrele și golurile lor rămân unde sunt în plan; unul care ar cădea în partea tăiată refuză racordarea (o rază mai mică, sau mută-l întâi). Pereții de tipuri, înălțimi sau baze diferite sunt racordați numai dacă răspunzi **Yes** pentru a lua valorile primului perete. Pereții curbi și pereții cu profil propriu nu se racordează.
+
+![Doi pereți racordați: un perete curb între ei](shots/wall-fillet.webp)
+
 ### Partea de sus a peretelui
 
 Un perete urcă singur până la nivelul de deasupra. **Sus** (Top), în proprietățile lui, spune până unde:

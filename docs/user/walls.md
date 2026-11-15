@@ -38,6 +38,14 @@ The properties panel shows the selected wall. The top of the panel holds its typ
 
 ![A wall's properties](shots/wall-properties.webp)
 
+### Rounding or cutting a corner
+
+**Architecture → Fillet** (the command line's FILLET, <kbd>F</kbd>) rounds the corner between two walls with a curved wall: type the radius (Enter keeps the last one), then click the first wall and the second. Both are trimmed back to where the arc touches them, or carried on to it when they do not reach the corner yet, as CAD's fillet does with two lines. The curved wall is the first wall again (its type, height, base, top and layers, on the same side) and is joined to both. Click each wall on the part to keep: where two walls cross, the other parts go. A radius of 0 makes a sharp corner, both walls carried on to meet. **Architecture → Chamfer** (CHAMFER) cuts the corner with a straight wall instead, its distance measured along each wall from the corner. Right-click a selected wall's end grip where it meets another wall for **Fillet corner…** and **Chamfer corner…**, the radius or distance typed. Each is one step of undo.
+
+The radius is the walls' axis's, the middle of their core. Type **I** (Inside) or **O** (Outside) before picking to give the radius of the inside or the outside face of the bend; **A** goes back to the axis. The two walls keep their ids (their GlobalIds in IFC), and their doors, windows and openings stay where they are in plan; one that would fall in the part cut away refuses the fillet (a smaller radius, or move it first). Walls of different types, heights or bases are filleted only when you answer **Yes** to take the first wall's. Curved walls, and walls with a profile of their own, are not filleted.
+
+![Two walls filleted: a curved wall between them](shots/wall-fillet.webp)
+
 ### The wall's top
 
 A wall goes up to the level above by itself. Its **Top**, in its properties, says where it goes:

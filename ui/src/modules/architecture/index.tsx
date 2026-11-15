@@ -1,10 +1,10 @@
 /** Architecture: layered walls and their types, doors and windows, floors, roofs, rooms and their colours. */
 
-import { Armchair, ArrowLeftRight, CornerDownRight, Layers3, Link2, Settings2, Slash, Table2 } from 'lucide-react';
+import { Armchair, ArrowLeftRight, CornerDownRight, CornerUpRight, Layers3, Link2, Settings2, Slash, Spline, Table2 } from 'lucide-react';
 import { AttachRoofIcon, CurtainWallIcon, CurvedWallIcon, DetachRoofIcon, DoorIcon, DormerIcon, RoofIcon, RampIcon, RoofWindowIcon, SlabIcon, SlabOpeningIcon, StairIcon, WallIcon, WallTypesIcon, WindowIcon } from '../../icons';
 import type { Grip, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { flipAcross, frameAt, outlineGrips, outlineRef, pathGrips, pathRef, toPairs } from '../../viewport/gripKit';
-import { arcOf, project } from '../../viewport/arc';
+import { arcOf, project, type Arc } from '../../viewport/arc';
 import { arcsOf, fromPairs } from '../../viewport/contour';
 import { FloorShapeBar, PlainShapeBar, toggleOutlineArcs } from '../../viewport/outlineShape';
 import type { NodeDto } from '../../engine/protocol';
@@ -29,7 +29,7 @@ import { LayerEditDrawing, LayerEditPlan, LayerEditWatcher } from './LayerEditOv
 import { RoofSection } from './RoofSection';
 import { roofOpeningGrips, roofOpeningRefs } from './roofOpeningGrips';
 import { DownpipeSection, downpipe, downpipeGrips } from './Downpipe';
-import { railing, railingGrips } from './Railing';
+import { railing, railingGrips, railingRefs } from './Railing';
 import { BALCONY, BalconySection, balcony, balconyConfigurator, balconyGrips, balconyOutline, balconySchedule, galleryEdge, stackBalconies, styleOf } from './Balconies';
 import { StairSection, type StairNumbers } from './StairSection';
 import { UnderStairDialog, openUnderStair } from './UnderStairDialog';
@@ -146,6 +146,9 @@ const restyle = (label: string, id: string, icon: ToolDef['icon'], args: Record<
 const mitre = restyle('Mitre', 'architecture.mitre', Slash, { style: 'mitre' });
 const butt = restyle('Butt', 'architecture.butt', CornerDownRight, { style: 'butt' });
 const swap = restyle('Swap', 'architecture.swap', ArrowLeftRight, { swap: true });
+/** Fillet and chamfer on walls and railings (a user's request): the command line's FILLET and CHAMFER, which take two walls, a railing's corner or two railings as well as drafted lines. */
+const filletTool: ToolDef = { id: 'architecture.fillet', label: 'Fillet', icon: Spline, run: () => void startCommand('FILLET') };
+const chamferTool: ToolDef = { id: 'architecture.chamfer', label: 'Chamfer', icon: CornerUpRight, run: () => void startCommand('CHAMFER') };
 const mitreNew: ToolDef = {
   id: 'architecture.mitreNew', label: 'Mitre new corners', icon: Slash,
   run: () => {
@@ -171,9 +174,45 @@ function wallGrips(node: NodeDto): Grip[] {
   if (!c) return [];
   const flipped = usageOf(useSession.getState(), node.id)?.negative ?? false;
   return [
-    ...withAutoJoinMenus(node.id, node.props, pathGrips(c, (s, e, rise) => ({ command: 'architecture.updateWall', args: { id: node.id, x1: s.x, y1: s.y, x2: e.x, y2: e.y, arc: rise, detachJoinedEnds: true } }))),
+    ...withWallCorners(node, c, withAutoJoinMenus(node.id, node.props, pathGrips(c, (s, e, rise) => ({ command: 'architecture.updateWall', args: { id: node.id, x1: s.x, y1: s.y, x2: e.x, y2: e.y, arc: rise, detachJoinedEnds: true } })))),
     flipAcross(c, flipped ? 1 : -1, 'Flip: swap the wall\'s faces (its exterior goes to the other side)', () => ({ command: 'architecture.flipWall', args: { ids: sameKind(node) } })),
   ];
+}
+/**
+ * A wall's end joined to another wall at a corner (their ends there): its grip's right-click offers "Fillet corner…" and
+ * "Chamfer corner…", the two walls trimmed to a curved (or straight) wall between them (architecture.filletWalls, one undo
+ * step); offered disabled when either is curved.
+ */
+export function withWallCorners(node: NodeDto, c: Arc, grips: Grip[]): Grip[] {
+  const s = useSession.getState();
+  const joined: { id: string; a: Vec2; b: Vec2; curved: boolean }[] = [];
+  for (const r of s.relations.values()) {
+    if (r.class !== 'IfcRelConnectsPathElements' || (r.relating !== node.id && !r.related.includes(node.id))) continue;
+    const other = s.nodes.get(r.relating === node.id ? r.related[0] : r.relating);
+    const oc = other?.type === 'IfcWall' ? arcOf(other.props) : null;
+    if (other && oc) joined.push({ id: other.id, a: oc.a, b: oc.b, curved: Math.abs(oc.rise) > 1e-6 });
+  }
+  const at = (end: Vec2) => {
+    let best: { id: string; curved: boolean; d: number } | null = null;
+    for (const j of joined) {
+      const d = Math.min(Math.hypot(j.a.x - end.x, j.a.y - end.y), Math.hypot(j.b.x - end.x, j.b.y - end.y));
+      if (d < 1 && (!best || d < best.d)) best = { id: j.id, curved: j.curved, d };
+    }
+    return best;
+  };
+  return grips.map((g) => {
+    if (g.key !== 'start' && g.key !== 'end') return g;
+    const other = at(g.key === 'start' ? c.a : c.b);
+    if (!other) return g;
+    return {
+      ...g,
+      corner: {
+        straight: !other.curved && Math.abs(c.rise) <= 1e-6,
+        fillet: (radius: number) => ({ command: 'architecture.filletWalls', args: { a: node.id, b: other.id, radius } }),
+        chamfer: (distance: number) => ({ command: 'architecture.chamferWalls', args: { a: node.id, b: other.id, distance } }),
+      },
+    };
+  });
 }
 const pathRefs = (node: NodeDto): RefLine[] => { const c = arcOf(node.props); return c ? [pathRef(c)] : []; };
 /** A wall's axis with the way it was drawn and its faces, R and L, as the Wall types dialog's legend shows them (report #79). */
@@ -499,7 +538,7 @@ const architecture: LapinModule = {
       { label: 'Sunshades', tools: [sunshade], small: [sunshadeAlong, sunshadeSchedule] },
       // Profiles swept along a wall's face: added (a cornice, a band) or taken out (a reveal), decision 297.
       { label: 'Sweeps', tools: [wallSweep, wallReveal], small: [sweepSelected, revealSelected, wallSweepSchedule] },
-      { label: 'Joins', tools: [join, mitre, butt, swap, mitreNew], small: [attachRoof, detachRoof, editLayers] },
+      { label: 'Joins', tools: [join, mitre, butt, swap, mitreNew], small: [filletTool, chamferTool, attachRoof, detachRoof, editLayers] },
       { label: 'Room', tools: [room, roomColors], small: [roomOutline, roomDividers, updateRooms, roomTag] },
       { label: 'Circulation', tools: [stair, ramp, stairTypes], small: [entranceSteps, entranceRamp, underStair, underStairSchedule] },
       // Balconies (a tester's report, #96): by a wall's face in a style, by outline, a gallery's edge; the configurator, stacking, the schedule.
@@ -564,7 +603,7 @@ const architecture: LapinModule = {
   planOverlays: [OpeningDims, LayerEditPlan],
   overlays: [FinishPainterPanel],
   drawingOverlays: [OpeningDimsInView, LayerEditDrawing],
-  references: { IfcWall: wallRefs, IfcCurtainWall: pathRefs, IfcSlab: contourRefs, IfcOpeningElement: contourRefs, IfcRoof: (n) => [...contourRefs(n), ...roofOpeningRefs(n)], IfcSpace: roomRefs },
+  references: { IfcWall: wallRefs, IfcCurtainWall: pathRefs, IfcSlab: contourRefs, IfcOpeningElement: contourRefs, IfcRoof: (n) => [...contourRefs(n), ...roofOpeningRefs(n)], IfcSpace: roomRefs, LapinRailing: railingRefs },
   similar: {
     IfcWall: (n) => { useUi.setState({ wallTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(wall); },
     IfcSlab: (n) => { useUi.setState({ slabTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(slab); },
