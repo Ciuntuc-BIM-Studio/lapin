@@ -503,7 +503,8 @@ public static class Views
         Gather(q, view, null);
 
     /// <summary>As <see cref="Gather(IQueryContext, Entity)"/>, the silhouettes an elevation or a section draws added to <paramref name="silhouettes"/> (decision 341).</summary>
-    static (List<DrawPart> Parts, List<DrawSymbol> Symbols, List<DFill> Fills, List<DText> Texts) Gather(IQueryContext q, Entity view, List<DrawSilhouette>? silhouettes)
+    /// <param name="outlines">In a plan, what the symbols of kind <c>outline</c> are (a stair's whole outline, drawn by its marks): kept for the dimensions to hold on (forum 102).</param>
+    static (List<DrawPart> Parts, List<DrawSymbol> Symbols, List<DFill> Fills, List<DText> Texts) Gather(IQueryContext q, Entity view, List<DrawSilhouette>? silhouettes, List<DLine>? outlines = null)
     {
         var m = q.Model;
         var parts = new List<DrawPart>();
@@ -614,6 +615,13 @@ public static class Views
                 foreach (var item in symbolsHere)
                 {
                     if (!item.At(e.Class is IfcClass.Door or IfcClass.Window ? joinerySymbols : detail) || !item.In(entourage)) continue;
+                    if (item.Kind == "outline")
+                    {
+                        if (outlines != null)
+                            for (var i = 0; i + 1 < item.Points.Count + (item.Closed ? 1 : 0); i++)
+                                outlines.Add(new DLine(item.Points[i], item.Points[(i + 1) % item.Points.Count], "outline", e.Id, e.Class));
+                        continue;
+                    }
                     if (SymbolFill(item, e) is { } sf) { fills.Add(sf); continue; }
                     var role = item.Kind switch { "symbol" or "contour" or "terrainEdge" => LineRole.Projection, "contourMajor" => LineRole.Cut, "heavy" => LineRole.Cut, "dashed" or "reach" => LineRole.Hidden, "overhead" or "ridge" or "hip" or "valley" or "break" => LineRole.Overhead, _ => null };
                     if (role != null) symbols.Add(new DrawSymbol(item.Points, item.Closed, e.Id, e.Class, role, item.Mode != null ? item.Style ?? thin : item.Style));
@@ -693,7 +701,8 @@ public static class Views
     static (ViewDrawing? Drawing, ViewSpec? Spec, string? Problem, List<DrawPart> Parts, List<(ViewSpec Spec, double Station, ViewDrawing Drawing)>? Pieces) GenerateWith(IQueryContext q, Entity view)
     {
         var silhouettes = new List<DrawSilhouette>();
-        var (parts, symbols, fills, texts) = Gather(q, view, silhouettes);
+        var outlines = new List<DLine>();
+        var (parts, symbols, fills, texts) = Gather(q, view, silhouettes, outlines);
         ViewSpec? spec;
         string? problem = null;
         if (view.Str("kind") == "3d")
@@ -722,6 +731,7 @@ public static class Views
         }
         else drawing = Generator.Draw(parts, spec, symbols, Key, silhouettes);
         if (spec.Kind == "plan" && (fills.Count > 0 || texts.Count > 0)) drawing = drawing with { Fills = fills, Texts = texts };
+        if (spec.Kind == "plan" && outlines.Count > 0) drawing = drawing with { Outlines = outlines };
         return (drawing, spec, null, drawn, laid);
     }
 

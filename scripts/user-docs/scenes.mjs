@@ -9258,6 +9258,41 @@ export const scenes = [
     },
   },
   {
+    // Array on drafting (forum 90): a drafted rectangle arrayed in a row from the Draft tab's Modify panel, then one more copy in its Array section.
+    id: 'array-draft',
+    touches: ['drafting'],
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const storey = await t.storey();
+      const plan = 'plan:' + storey;
+      const rect = (await t.cmd('drafting.draw', { viewId: plan, shape: { type: 'polyline', pts: [[0, 0], [1.2, 0], [1.2, 0.8], [0, 0.8]], closed: true } })).ids[0];
+      await t.ui({ view: 'plan', keyPlan: false, selection: rect, selected: [rect] });
+      await t.wait(1000);
+      const drafts = async () => (await t.nodes()).filter((x) => x.type === 'IfcAnnotation' && x.props.predefinedType === 'DRAFT');
+      // Draft → Modify → Array, in a row: four, 2 m apart.
+      await t.tool('cad.array');
+      t.expect(await page.locator('.ask-box').count() === 1, 'Array asks how');
+      const inputs = page.locator('.ask-box input');
+      await inputs.nth(0).fill('4');
+      await inputs.nth(1).fill('2 m');
+      await page.locator('.ask-box button.primary').click();
+      await t.until(async () => (await drafts()).length === 4, 'four rectangles in a row');
+      // A copy shows its Array section: five copies instead of four.
+      const copy = (await drafts()).find((x) => x.id !== rect);
+      await t.ui({ selection: copy.id, selected: [copy.id] });
+      await t.wait(800);
+      t.expect(await page.locator('[data-testid=array-title]').count() === 1, 'a drafted copy shows its Array section');
+      await page.locator('aside.props dl.fields dt:text-is("Copies") + dd input').fill('5');
+      await page.keyboard.press('Enter');
+      await t.until(async () => (await drafts()).length === 5, 'five rectangles after a copy more');
+      await t.fit();
+      await t.ui({ selection: copy.id, selected: [copy.id] });
+      await t.wait(800);
+      await t.shot('array-draft', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
     // A shop drawing (docs/plan-shop-drawings.md, decision 581): the Make drawing dialog of one element, then its sheet.
     id: 'shop-drawings',
     touches: ['studio'],

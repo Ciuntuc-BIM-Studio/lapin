@@ -38,6 +38,8 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         r.Service<IDeletion>(new AxisDeletion());
         r.Service<IPartPlacement>(new AxisPlacement());
         r.Service<IProjectUpgrade>(new DimensionUpgrade());
+        // Ends held on a turned element by an older Lapin, in today's frame (forum 102).
+        r.Service<IProjectUpgrade>(new DimensionFrameUpgrade());
         // Tags follow their elements (report #93).
         r.Service<ITransformFollowers>(new TagFollowers());
         r.Service<IProjectUpgrade>(new TagHoldUpgrade());
@@ -501,6 +503,9 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
                 ["value"] = values[segment], ["values"] = new JsonArray(values.Select(v => (JsonNode)v).ToArray()), ["segment"] = segment, ["segments"] = values.Count,
                 ["orphan"] = orphan, ["driving"] = refs[segment] != null || refs[segment + 1] != null,
                 ["drives"] = new JsonArray(values.Select((_, i) => (JsonNode)(refs[i] != null || refs[i + 1] != null)).ToArray()),
+                // Its points where the view draws them now (each on what it holds on), and what each holds on (null: a free point).
+                ["points"] = new JsonArray(pts.Select(p => (JsonNode)J(p)).ToArray()),
+                ["holds"] = new JsonArray(refs.Select(r => (JsonNode?)(r == null ? null : JsonValue.Create(r.Kind))).ToArray()),
             };
         });
 

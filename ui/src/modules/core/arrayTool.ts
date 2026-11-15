@@ -1,15 +1,17 @@
 /**
  * Modify → Array (decision 448): copies of the selection in a row (a step along x, y and z), in a grid (columns × rows,
  * and levels; forum 90), round a centre (an angle filled) or along a path, any element alike: a wall, a column, a group,
- * an imported mesh's chair. A row's or a grid's step is typed, or clicked in a plan (ARRAYSTEP: two points, a typed
- * distance along the cursor's direction, the copies drawn live). One undo step (element.array).
+ * an imported mesh's chair, and drafting (forum 90): a drafted shape, a text or a symbol on a plan, a section, an elevation
+ * or a drafting view, in that view's own x and y. A row's or a grid's step is typed, or clicked in the view (ARRAYSTEP: two
+ * points, a typed distance along the cursor's direction, the copies drawn live). One undo step (element.array). ARRAY on
+ * the command line, and the Draft tab's Modify panel, start it too.
  */
 import { notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { ask, choiceField, lengthField, numberField } from '../../shell/AskBox';
 import { cadLog, moved, registerCommand, shapesOf, startCommand, useCad, type Step } from '../../viewport/cad/session';
 import type { Shape } from '../../viewport/cad/shapes';
-import { gridOffsets, itemCount, stepArgs, stepBetween, type StepJob, type V3 } from './arrayGrid';
+import { arraySkipNotes, arrayTargets, gridOffsets, itemCount, stepArgs, stepBetween, type ArrayPlace, type ArrayTargets, type StepJob, type V3 } from './arrayGrid';
 
 type Vec2 = { x: number; y: number };
 type PathRule = Record<string, unknown>;
@@ -132,18 +134,28 @@ function stepStep(): Step {
 }
 registerCommand({ names: ['ARRAYSTEP'], label: 'Array by a clicked step', start: stepStep });
 
-/** What an array copies: the selected elements and groups, not a drafted shape (its view's tools copy those). */
-export function arrayable(): string[] {
-  const nodes = useSession.getState().nodes;
-  return useUi.getState().selected.filter((id) => {
-    const n = nodes.get(id);
-    return !!n && (!!n.storeyId || n.type === 'IfcGroup') && n.props.predefinedType !== 'DRAFT';
-  });
+/** Where the array is made: the 3D view, a plan, or a section, an elevation or a drafting view (their own x and y). */
+function arrayPlace(): ArrayPlace {
+  if (useUi.getState().view === '3d') return '3d';
+  const host = useCad.getState().host;
+  return !host || host.isPlan?.() !== false ? 'plan' : 'view';
+}
+
+/**
+ * What an array copies (forum 90): the selected elements and groups, and the drafted shapes, texts and symbols, by
+ * element.array alike, so the copies of a drafted rectangle stay an arrangement to change in Properties as a wall's do.
+ * What it cannot take where it is made is left out and said.
+ */
+export function arrayable(): ArrayTargets {
+  return arrayTargets(useUi.getState().selected, useSession.getState().nodes, arrayPlace());
 }
 
 export async function arraySelection(): Promise<void> {
-  const ids = arrayable();
-  if (!ids.length) { notify('Select what to array first, then Array.'); return; }
+  const targets = arrayable();
+  const ids = targets.ids;
+  const notes = arraySkipNotes(targets);
+  if (!ids.length) { notify(notes[0] ?? 'Select what to array first, then Array.'); return; }
+  for (const n of notes) notify(n);
   const r = await ask('Array', [
     choiceField('kind', 'Kind', 'row', [{ value: 'row', label: 'In a row' }, { value: 'grid', label: 'In a grid (columns × rows)' }, { value: 'polar', label: 'Round a centre' }, { value: 'path', label: 'Along a path' }]),
     numberField('count', 'Copies (with the first; in a grid, the columns)', 3),
@@ -191,3 +203,6 @@ export async function arraySelection(): Promise<void> {
   if (r.kind === 'polar') await execute('element.array', { ids, kind: 'polar', count: Number(r.count), angle: Number(r.angle), center: [Number(r.cx), Number(r.cy)] });
   else await execute('element.array', { ids, count: Number(r.count), step: [Number(r.dx), Number(r.dy), Number(r.dz)] });
 }
+
+// The command line's (and the Draft tab's) Array: the dialog, on the selection.
+registerCommand({ names: ['ARRAY'], label: 'Array', start: () => { void arraySelection(); return null; } });
