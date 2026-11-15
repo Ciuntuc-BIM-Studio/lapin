@@ -169,9 +169,9 @@ public static class Skirtings
     }
 
     /// <summary>A room's outline kept on its skirting, which keeps it when the room is gone.</summary>
-    static void Snapshot(ICommandContext ctx, Entity room, JsonObject attrs)
+    internal static void Snapshot(ICommandContext ctx, Entity room, JsonObject attrs)
     {
-        if (Rooms.Of(room, ctx.Model, ctx.Query.Geometry) is not { } o) return;
+        if ((Rooms.Live(room, ctx.Model, ctx.Services) ?? Rooms.Of(room, ctx.Model, ctx.Query.Geometry)) is not { } o) return;
         attrs["points"] = SectionPaths.PointsJson(Polygon2.EnsureCcw(o.Outer));
         attrs["closed"] = true;
         attrs["side"] = "left";

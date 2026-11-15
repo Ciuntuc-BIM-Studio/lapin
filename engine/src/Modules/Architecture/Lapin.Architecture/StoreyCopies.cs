@@ -58,6 +58,13 @@ sealed class StoreyCopies : IStoreyCopy
                 continue;
             }
             if (copy.Class == IfcClass.Wall) { RemapTop(ctx, copy, o, step.Target); continue; }
+            // A roof's copy took its downpipes along: they stand on the storey the roof's copy went to.
+            if (copy.Class == IfcClass.Roof)
+            {
+                foreach (var pipe in m.OfClass(Roofs.Drainage.DownpipeClass).Where(p => p.Str("roofId") == copy.Id).ToList())
+                    if (Spatial.StoreyOf(m, pipe.Id)?.Id != step.Target.Id) Spatial.Contain(ctx, step.Target.Id, pipe.Id);
+                continue;
+            }
             if (copy.Class is not (IfcClass.Stair or IfcClass.Ramp)) continue;
             if (copy.Str("topStoreyId") is { } top && m.Get(o) is { } original && Spatial.StoreyOf(m, original.Id) is { } from)
             {

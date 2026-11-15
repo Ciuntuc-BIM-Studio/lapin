@@ -164,9 +164,14 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Service<IElementPlacement>(new Roofs.RoofPlacement());
         r.Service<IElementPlacement>(new WallPlacement());
         r.Service<IHostedPlacement>(new HostedOpenings());
+        r.Service<IHostedPlacement>(new Roofs.DownpipeHosting());
         r.Service<IDeletion>(new Roofs.RoofDeletion());
         // A storey deleted that walls' tops go to: they stand unconnected at the height they had (WallTop).
         r.Service<IDeletion>(new WallTopDeletion());
+        // Links between elements kept through copies and deletions (audit 15.11.2026): a room's finish, a stair's opening and space, a downpipe's roof.
+        var finishLinks = new RoomFinishLinks();
+        r.Service<ITransformFollowers>(finishLinks);
+        r.Service<IDeletionFollowers>(finishLinks);
         // A height typed on a wall with a top (the inspector's element.update): a height of its own, the wall unconnected.
         r.Service<IElementUpdate>(new WallTopDeletion());
         r.Geometry(IfcClass.Door, (fill, model, _) => Openings.FillGeometry(fill, model));
