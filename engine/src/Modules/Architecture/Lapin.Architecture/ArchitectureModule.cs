@@ -1005,6 +1005,11 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             return new JsonObject { ["kind"] = join.Kind.ToString(), ["style"] = join.Style == JoinStyle.Mitre ? "mitre" : "butt" };
         });
 
+        // Two walls' corner rounded by a curved wall or cut by a straight one, the walls trimmed or carried on to it, as CAD's
+        // FILLET and CHAMFER do to lines (WallFillets): {a, b, atA?, atB?, radius | distance, line? (axis, inside, outside), matchFirst?}.
+        r.Command("filletWalls", "Fillet walls", (ctx, a) => WallFillets.Apply(ctx, a, Paths(ctx), false));
+        r.Command("chamferWalls", "Chamfer walls", (ctx, a) => WallFillets.Apply(ctx, a, Paths(ctx), true));
+
         r.Command("restyleJoins", "Join style", (ctx, a) =>
         {
             var swap = a["swap"] is JsonValue v && v.TryGetValue<bool>(out var sw) && sw;

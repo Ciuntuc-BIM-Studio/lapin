@@ -39,6 +39,7 @@ import { hideHere, isolateHere, resetHere } from '../../viewport/viewTemporary';
 import { QuickSelectDialog } from './QuickSelectDialog';
 import { cropGrips } from './ViewCrop';
 import { InsetSection, insetGrips, insetTool } from './insets';
+import { CalloutSection, calloutCircleTool, calloutGrips, calloutPolygonTool, calloutTool } from './callouts';
 import { Storeys3DLooks } from './Storeys3D';
 import { setStoreys3d, showAllStoreys3d } from '../../viewport/storeys3dActions';
 import { ViewSettingsDialog, ViewSettingsSection, ViewStylesDialog } from './ViewSettings';
@@ -231,7 +232,9 @@ const core: LapinModule = {
         })() },
         // Another view drawn in this one, live, at its own scale (decision 576): for details, as rebar's sections across.
         insetTool,
-      ] },
+        // A detail of an area of the view, at a larger scale (forum topic 107): a view of its own, marked here with its number and sheet.
+        calloutTool,
+      ], small: [calloutCircleTool, calloutPolygonTool] },
       { label: 'Cut', tools: [
         { id: 'view.sectionBox', label: 'Section box', icon: BoxSelect, shortcut: 'BX', run: toggleSectionBox },
         { id: 'view.cutAtPlan', label: 'Cut at plan', icon: Scissors, run: () => void cutAtPlan() },
@@ -320,7 +323,7 @@ const core: LapinModule = {
     ],
   }],
   // An opening void's label is held by its opening (a roof window's by its roof) where a view draws the voids (decision 292).
-  grips: { LapinView: (n, v) => [...sectionGrips(n, v), ...cropGrips(n)], LapinInset: insetGrips, IfcOpeningElement: voidLabelGrips, IfcRoof: voidLabelGrips },
+  grips: { LapinView: (n, v) => [...sectionGrips(n, v), ...cropGrips(n)], LapinInset: insetGrips, LapinCallout: (n, v) => calloutGrips(n, v), IfcOpeningElement: voidLabelGrips, IfcRoof: voidLabelGrips },
   references: { LapinView: sectionRefs },
   dialogs: { insetPick: InsetPickDialog, components: ComponentsDialog, importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, copyToStoreys: CopyToStoreysDialog, shopDrawing: ShopDrawingDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, fieldAliases: FieldAliasesDialog, typePacks: TypePacksDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, exportHtml: ExportHtmlDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, documents: DocumentsDialog, documentTemplates: TemplatesDialog, titleBlocks: TitleBlocksDialog, symbols: SymbolsDialog, rules: RulesDialog, classifications: ClassificationsDialog, importTable: ImportTableDialog, saveSymbol: SaveSymbolDialog, projectInfo: ProjectInfoDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, sun: SunDialog, exportExchange: ExchangeExportDialog, exportJg: JgExportDialog, sections: SectionsDialog, coordination: CoordinationDialog, profiles: ProfilesDialog, profileLibraries: ProfileLibrariesDialog, quickSelect: QuickSelectDialog, fieldsInspector: FieldsInspectorDialog },
   background: CoreBackground,
@@ -333,8 +336,9 @@ const core: LapinModule = {
     { id: 'storeyLevels', label: 'Levels', classes: ['IfcBuildingStorey'], component: StoreySection, replacesFields: () => true },
     { id: 'viewSettings', label: 'View settings', classes: ['LapinView'], component: ViewSettingsSection, fieldKeys: viewFields },
     { id: 'inset', label: 'Inset view', classes: ['LapinInset'], component: InsetSection, replacesFields: () => true },
+    { id: 'callout', label: 'Detail callout', classes: ['LapinCallout'], component: CalloutSection, replacesFields: () => true },
     // The symbol a section, an elevation, a grid axis, a level, a callout or a view is marked with (docs/plan-user-extensibility.md §3.3).
-    { id: 'markerSymbol', label: 'Marker symbol', classes: ['LapinView', 'IfcGrid', 'IfcBuildingStorey', 'LapinInset'], shows: (n) => slotsFor(n).length > 0, component: MarkerSymbolSection },
+    { id: 'markerSymbol', label: 'Marker symbol', classes: ['LapinView', 'IfcGrid', 'IfcBuildingStorey', 'LapinInset', 'LapinCallout'], shows: (n) => slotsFor(n).length > 0, component: MarkerSymbolSection },
   ],
   hotbar: [
     { id: 'select', label: 'Select', icon: MousePointer2, shortcut: 'Esc', run: () => setTool(null) },

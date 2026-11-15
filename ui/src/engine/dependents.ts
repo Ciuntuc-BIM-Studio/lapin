@@ -8,6 +8,7 @@
 import { notify } from '../app/store';
 import { execute, query, useSession } from './session';
 import type { NodeDto } from './protocol';
+import { ask, choiceField } from '../shell/AskBox';
 
 /** At most this many names in the notice; the rest counted. */
 const NAMED = 5;
@@ -29,9 +30,23 @@ function afterDiff(version: number, ms = 2000): Promise<void> {
   });
 }
 
+/** The detail views the callouts being deleted made (forum topic 107), those not already going: asked whether they go too. */
+export function detailsOf(ids: string[], nodes: Map<string, NodeDto>): string[] {
+  const going = new Set(ids);
+  return [...new Set(ids.map((id) => nodes.get(id)).filter((n): n is NodeDto => n?.type === 'LapinCallout' && n.props.made === true)
+    .map((n) => String(n.props.target ?? '')).filter((t) => t && nodes.has(t) && !going.has(t)))];
+}
+
 /** Delete `ids` (one undo step), then name the elements that depended on them and are still there. */
 export async function deleteElements(ids: string[]): Promise<void> {
   if (ids.length === 0) return;
+  // A callout's detail view: kept, or deleted with it in the same step, as the user says.
+  const details = detailsOf(ids, useSession.getState().nodes);
+  if (details.length > 0) {
+    const r = await ask('Delete callout', [choiceField('views', 'Its detail view', 'keep', [{ value: 'keep', label: 'Keep it' }, { value: 'delete', label: 'Delete it too' }])]);
+    if (!r) return;
+    if (r.views === 'delete') ids = [...ids, ...details];
+  }
   const before = await query<{ dependents: string[] }>('core.dependents', { ids });
   const version = useSession.getState().version;
   await execute('element.delete', { ids });

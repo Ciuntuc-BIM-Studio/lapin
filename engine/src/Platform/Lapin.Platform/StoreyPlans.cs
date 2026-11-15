@@ -13,9 +13,9 @@ public static class StoreyPlans
 {
     public const string Prefix = "plan:";
 
-    /// <summary>Whether a view is a level's floor plan: a plan on it, not a site or location plan, not a foundation plan.</summary>
+    /// <summary>Whether a view is a level's floor plan: a plan on it, not a site or location plan, not a foundation plan, not a callout's detail.</summary>
     public static bool IsFloorPlan(Entity v, string storeyId) =>
-        v.Class == Views.Class && (v.Str("kind") ?? "plan") == "plan" && v.Str("storeyId") == storeyId && v.Str("site") == null && !v.Bool("foundation");
+        v.Class == Views.Class && (v.Str("kind") ?? "plan") == "plan" && v.Str("storeyId") == storeyId && v.Str("site") == null && !v.Bool("foundation") && !Callouts.IsDetail(v);
 
     /// <summary>The level's own floor plan view, the first made; null while it has none.</summary>
     public static Entity? Of(IModelView m, string storeyId) => m.OfClass(Views.Class).FirstOrDefault(v => IsFloorPlan(v, storeyId));

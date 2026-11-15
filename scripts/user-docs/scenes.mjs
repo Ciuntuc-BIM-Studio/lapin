@@ -1694,6 +1694,65 @@ export const scenes = [
     },
   },
   {
+    // Fillet and chamfer on walls and railings (a user's request): Architecture → Fillet takes two walls (a curved wall between
+    // them, both trimmed to it); a railing's corner rounded from its grip's right-click, its arc built along the true curve.
+    id: 'walls-fillet',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      await t.ui({ keyPlan: false });
+      const storey = await t.storey();
+      const a = await t.cmd('architecture.addWall', { storeyId: storey, x1: 0, y1: 0, x2: 6, y2: 0 });
+      const b = await t.cmd('architecture.addWall', { storeyId: storey, x1: 6, y1: 0, x2: 6, y2: 4 });
+      const r = await t.cmd('architecture.addRailing', { storeyId: storey, points: [[9, 0], [13, 0], [13, 4]], style: 'balusters' });
+      await t.fit();
+      await t.wait(600);
+      // Architecture → Fillet: the radius typed (in millimetres), then the two walls clicked on the parts to keep.
+      await t.tool('architecture.fillet');
+      await t.page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
+      await t.keys('1', '5', '0', '0', 'Enter');
+      const asks = await t.page.locator('[data-testid=command-line]').innerText();
+      t.expect(/wall or railing/.test(asks) && /1500 mm/.test(asks), `FILLET asks for a wall, the radius shown (it says: ${asks.replace(/\s+/g, ' ').slice(0, 140)})`);
+      for (const [x, y] of [[2, 0], [6, 2.5]]) {
+        const [px, py] = await t.planPoint(x, y);
+        await t.page.mouse.move(px, py, { steps: 4 });
+        await t.page.mouse.click(px, py);
+        await t.wait(700);
+      }
+      await t.wait(800);
+      const walls = (await t.nodes()).filter((n) => n.type === 'IfcWall');
+      const curved = walls.find((n) => typeof n.props.arc === 'number' && Math.abs(n.props.arc) > 0.1);
+      t.expect(walls.length === 3 && curved, `the corner is a curved wall between the two (${walls.length} walls)`);
+      const first = walls.find((n) => n.id === a.id);
+      t.expect(first && Math.abs(first.props.end[0] - 4.5) < 1e-3, `the first wall is trimmed to the arc (its end at ${first?.props.end})`);
+      t.expect(walls.some((n) => n.id === b.id), 'the second wall keeps its id');
+      // The railing: a right-click on its corner's grip, Fillet corner…, the radius typed.
+      await select(t, r.id);
+      await t.wait(600);
+      const grip = async (key) => { const g = await t.page.locator(`[data-testid=plan] [data-grip="${key}"]`).first().boundingBox(); return g ? [g.x + g.width / 2, g.y + g.height / 2] : null; };
+      const [vx, vy] = (await grip('v1')) ?? [0, 0];
+      t.expect(vx > 0, 'the railing shows its corner grip');
+      await t.page.mouse.click(vx, vy, { button: 'right' });
+      await t.wait(300);
+      t.expect(await t.page.locator('.context-menu .context-item', { hasText: 'Fillet corner' }).count() === 1, 'a railing\'s corner offers Fillet corner');
+      await t.page.locator('.context-menu .context-item', { hasText: 'Fillet corner' }).click();
+      await t.wait(400);
+      await t.page.keyboard.type('1500');
+      await t.page.keyboard.press('Enter');
+      await t.wait(1200);
+      const rounded = (await t.nodes()).find((n) => n.id === r.id);
+      t.expect(Array.isArray(rounded.props.arcs) && rounded.props.points.length === 4, `the railing's corner is an arc (${JSON.stringify(rounded.props.arcs)})`);
+      await t.ui({ selection: null, selected: [] });
+      await t.wait(400);
+      await t.shot('wall-fillet', { of: '.plan-svg', pad: 0 });
+      // The railing selected: its arc's round grip, its corners' grips.
+      await select(t, r.id);
+      await t.wait(600);
+      await t.shot('railing-fillet', { of: '.plan-svg', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     // Edit sketch on a floor (forum topic 97, stage 3): its outline opened as a sketch on a plan of its own, a fillet and a
     // dimension added, Finish sketch writes it back; the sketch stays on the floor.
     id: 'floors-sketch',
@@ -5267,6 +5326,43 @@ export const scenes = [
       t.expect(mark?.data?.factor === 5 && !!mark?.data?.crop, 'the inset is drawn at the section\'s 1:20 in the 1:100 plan, cropped');
       t.expect(d.marks.some((m) => m.data?.via?.source === section), 'the dimension drawn on the section shows through the inset');
       await t.shot('inset-view', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
+    // Forum topic 107: View → Detail callout (DC) drawn round a corner of the plan, its detail view at 1:20 placed on a sheet, the head reading its number and sheet; the detail inset beside the plan to show it.
+    id: 'views-callout',
+    touches: ['core', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      for (const [x1, y1, x2, y2] of [[0, 0, 6, 0], [6, 0, 6, 4], [6, 4, 0, 4], [0, 4, 0, 0]]) await t.cmd('architecture.addWall', { storeyId: s, x1, y1, x2, y2 });
+      await t.ui({ view: 'plan', keyPlan: false, planDrawing: true, selection: null, selected: [] });
+      await t.wait(1500);
+      await t.fit();
+      // The tool, then a rectangle round the south-west corner: two opposite corners.
+      await t.tool('view.callout');
+      for (const [px, py] of [[-0.6, -0.6], [1.2, 1.0]]) {
+        const [x, y] = await t.planPoint(px, py);
+        await t.page.mouse.click(x, y);
+        await t.wait(300);
+      }
+      await t.until(async () => (await t.nodes()).some((n) => n.type === 'LapinCallout'), 'the callout is made');
+      const callout = (await t.nodes()).find((n) => n.type === 'LapinCallout');
+      const detail = (await t.nodes()).find((n) => n.id === callout.props.target);
+      t.expect(detail?.props.scale === 20 && detail?.props.calloutOf === `plan:${s}` && !!detail?.props.crop, 'the detail view is cropped to the callout at 1:20');
+      // Placed on a sheet: the head reads its number and the sheet's.
+      const sheet = (await t.cmd('sheet.create', { name: 'Details', number: 'A-501', paper: 'A3' })).id;
+      await t.cmd('sheet.addViewport', { id: sheet, viewId: detail.id, x: 150, y: 120 });
+      // The detail drawn beside the plan, so the picture shows both.
+      await t.cmd('view.inset', { viewId: `plan:${s}`, source: detail.id, at: [11, 2], frame: true });
+      await t.ui({ tool: null, selected: [callout.id], selection: callout.id });
+      await t.wait(1200);
+      await t.fit();
+      await t.wait(600);
+      const d = await t.call('doc.query', { name: 'view.drawing', args: { id: `plan:${s}` } });
+      const mark = d.marks.find((m) => m.id === callout.id);
+      t.expect(mark?.data?.label === '1 / A-501', 'the callout\'s head reads 1 / A-501');
+      await t.shot('callout', { of: '[data-testid=plan]', pad: 0 });
     },
   },
   {
@@ -9159,6 +9255,41 @@ export const scenes = [
       await t.ui({ selection: copy.id, selected: [copy.id] });
       await t.wait(800);
       await t.shot('array-grid', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
+    // Array on drafting (forum 90): a drafted rectangle arrayed in a row from the Draft tab's Modify panel, then one more copy in its Array section.
+    id: 'array-draft',
+    touches: ['drafting'],
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const storey = await t.storey();
+      const plan = 'plan:' + storey;
+      const rect = (await t.cmd('drafting.draw', { viewId: plan, shape: { type: 'polyline', pts: [[0, 0], [1.2, 0], [1.2, 0.8], [0, 0.8]], closed: true } })).ids[0];
+      await t.ui({ view: 'plan', keyPlan: false, selection: rect, selected: [rect] });
+      await t.wait(1000);
+      const drafts = async () => (await t.nodes()).filter((x) => x.type === 'IfcAnnotation' && x.props.predefinedType === 'DRAFT');
+      // Draft → Modify → Array, in a row: four, 2 m apart.
+      await t.tool('cad.array');
+      t.expect(await page.locator('.ask-box').count() === 1, 'Array asks how');
+      const inputs = page.locator('.ask-box input');
+      await inputs.nth(0).fill('4');
+      await inputs.nth(1).fill('2 m');
+      await page.locator('.ask-box button.primary').click();
+      await t.until(async () => (await drafts()).length === 4, 'four rectangles in a row');
+      // A copy shows its Array section: five copies instead of four.
+      const copy = (await drafts()).find((x) => x.id !== rect);
+      await t.ui({ selection: copy.id, selected: [copy.id] });
+      await t.wait(800);
+      t.expect(await page.locator('[data-testid=array-title]').count() === 1, 'a drafted copy shows its Array section');
+      await page.locator('aside.props dl.fields dt:text-is("Copies") + dd input').fill('5');
+      await page.keyboard.press('Enter');
+      await t.until(async () => (await drafts()).length === 5, 'five rectangles after a copy more');
+      await t.fit();
+      await t.ui({ selection: copy.id, selected: [copy.id] });
+      await t.wait(800);
+      await t.shot('array-draft', { of: '[data-testid=plan]', pad: 0 });
     },
   },
   {

@@ -10,10 +10,12 @@ namespace Lapin.Drafting;
 /// <summary>
 /// Where a dimension's end holds on:
 /// <list type="bullet">
-/// <item>"edge": an edge an element's cut draws: the point and the edge's
-/// direction kept in the element's own frame (its axis, or its placement and
-/// rotation), so the end follows a move, a turn, a thicker wall; elements
-/// without a frame keep the point from their middle (the old way);</item>
+/// <item>"edge": an edge an element's cut draws, or (an element the plan does not cut: a stair, a beam overhead, a floor,
+/// a piece of furniture, a railing, a Studio solid seen below; forum 102) a line it draws or its outline: the point and the
+/// edge's direction kept in the element's own frame (its axis, its placement and rotation, its outline's first side, its
+/// path's first piece), so the end follows a move, a turn, a thicker wall, a wider stair; elements without a frame keep
+/// the point from their middle (the old way). <see cref="FrameRev"/> 2: the rotation read in degrees, as every element
+/// keeps it (older ends read it in radians, brought up to date as a project opens: <see cref="DimensionFrameUpgrade"/>);</item>
 /// <item>"grid": a grid axis (by its tag), how far along it;</item>
 /// <item>"axis": a wall's (or beam's) centre line, how far along it;</item>
 /// <item>"opening": a door's, window's or bare opening's place in its wall (forum topic 78): <c>local</c> from its
@@ -21,8 +23,11 @@ namespace Lapin.Drafting;
 /// taken onto the wall's jamb face as the plan cuts it (an opening made wider moves it).</item>
 /// </list>
 /// </summary>
-public sealed record DimEndRef(string Kind, string Element, Vec2 Offset, Vec2 Dir, Vec2? Local = null, Vec2? LocalDir = null, string? Tag = null, double S = 0, double? S2 = null, double? Len = null)
+public sealed record DimEndRef(string Kind, string Element, Vec2 Offset, Vec2 Dir, Vec2? Local = null, Vec2? LocalDir = null, string? Tag = null, double S = 0, double? S2 = null, double? Len = null, int FrameRev = 0)
 {
+    /// <summary>The frame an edge's local point is kept in now (<see cref="Dimensions.Frame(Entity?)"/>): the rotation in degrees, outlines and paths too.</summary>
+    public const int CurrentFrame = 2;
+
     static JsonArray J(Vec2 p) => new(p.X, p.Y);
     static Vec2? V(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : null;
 
@@ -39,7 +44,11 @@ public sealed record DimEndRef(string Kind, string Element, Vec2 Offset, Vec2 Di
                 break;
             default:
                 o["element"] = Element; o["offset"] = J(Offset); o["dir"] = J(Dir);
-                if (Local is { } l && LocalDir is { } ld) { o["local"] = J(l); o["localDir"] = J(ld); }
+                if (Local is { } l && LocalDir is { } ld)
+                {
+                    o["local"] = J(l); o["localDir"] = J(ld);
+                    if (FrameRev > 0) o["frame"] = FrameRev;
+                }
                 if (Len is { } len) o["len"] = len;
                 break;
         }
@@ -55,7 +64,7 @@ public sealed record DimEndRef(string Kind, string Element, Vec2 Offset, Vec2 Di
             case "axis" when (string?)o["element"] is { } e: return new("axis", e, default, default, S: Json.Number(o["s"]) ?? 0, S2: Json.Number(o["s2"]));
             case "opening" when (string?)o["element"] is { Length: > 0 } e && V(o["local"]) is { } l: return new("opening", e, default, default, l, V(o["localDir"]));
             case "edge" when (string?)o["element"] is { Length: > 0 } e && V(o["offset"]) is { } off && V(o["dir"]) is { } d:
-                return new("edge", e, off, d, V(o["local"]), V(o["localDir"]), Len: Json.Number(o["len"]));
+                return new("edge", e, off, d, V(o["local"]), V(o["localDir"]), Len: Json.Number(o["len"]), FrameRev: (int)(Json.Number(o["frame"]) ?? 0));
         }
         return null;
     }
@@ -78,15 +87,51 @@ public static class Dimensions
     /// <summary>Directions this close (sine of the angle) are the same.</summary>
     const double Parallel = 0.01;
 
-    static IEnumerable<(Vec2 A, Vec2 B)> Edges(ViewDrawing d, string element) =>
-        d.Cuts.Where(p => p.Element == element).SelectMany(p => p.Loops.SelectMany(l => l.Select((q, i) => (q, l[(i + 1) % l.Length]))));
-
-    /// <summary>The middle of what an element draws: its cut areas' box centre.</summary>
-    static Vec2? Middle(ViewDrawing d, string element)
+    /// <summary>
+    /// What a drawing gives each element to hold a dimension's point on: the edges of its cut areas, or, when the view does
+    /// not cut it, the lines it draws and its outline (a stair's, drawn by its marks; forum 102). Worked out once a drawing.
+    /// </summary>
+    sealed class Held
     {
-        var pts = d.Cuts.Where(p => p.Element == element).SelectMany(p => p.Loops.SelectMany(l => l)).ToList();
-        return pts.Count == 0 ? null : new Vec2((pts.Min(p => p.X) + pts.Max(p => p.X)) / 2, (pts.Min(p => p.Y) + pts.Max(p => p.Y)) / 2);
+        public readonly Dictionary<string, List<(Vec2 A, Vec2 B)>> Edges = [];
+        public readonly Dictionary<string, (Vec2 Min, Vec2 Max)> Boxes = [];
+        /// <summary>The elements held by their lines (none cut), each line once.</summary>
+        public readonly List<(string Element, Vec2 A, Vec2 B)> Lines = [];
+
+        public Held(ViewDrawing d)
+        {
+            foreach (var p in d.Cuts)
+                foreach (var l in p.Loops)
+                    for (var i = 0; i < l.Length; i++) Add(p.Element, l[i], l[(i + 1) % l.Length]);
+            var cut = Edges.Keys.ToHashSet();
+            foreach (var l in d.Lines.Concat(d.Outlines ?? []))
+            {
+                if (l.Element is not { Length: > 0 } el || cut.Contains(el) || (l.B - l.A).Length < 1e-6) continue;
+                Add(el, l.A, l.B);
+                Lines.Add((el, l.A, l.B));
+            }
+        }
+
+        void Add(string element, Vec2 a, Vec2 b)
+        {
+            if (!Edges.TryGetValue(element, out var list)) Edges[element] = list = [];
+            list.Add((a, b));
+            var box = Boxes.TryGetValue(element, out var bx) ? bx : (a, a);
+            Boxes[element] = (new Vec2(Math.Min(box.Item1.X, Math.Min(a.X, b.X)), Math.Min(box.Item1.Y, Math.Min(a.Y, b.Y))),
+                new Vec2(Math.Max(box.Item2.X, Math.Max(a.X, b.X)), Math.Max(box.Item2.Y, Math.Max(a.Y, b.Y))));
+        }
     }
+
+    static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ViewDrawing, Held> HeldBy = new();
+
+    static Held HeldOf(ViewDrawing d) => HeldBy.GetValue(d, x => new Held(x));
+
+    static IEnumerable<(Vec2 A, Vec2 B)> Edges(ViewDrawing d, string element) =>
+        HeldOf(d).Edges.TryGetValue(element, out var list) ? list : [];
+
+    /// <summary>The middle of what an element draws: its cut areas' box centre (not cut: its lines' and outline's).</summary>
+    static Vec2? Middle(ViewDrawing d, string element) =>
+        HeldOf(d).Boxes.TryGetValue(element, out var b) ? (b.Min + b.Max) * 0.5 : null;
 
     static (double Dist, Vec2 Foot) Foot(Vec2 p, Vec2 a, Vec2 b)
     {
@@ -98,8 +143,15 @@ public static class Dimensions
 
     static Vec2 P(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : default;
 
-    /// <summary>An element's frame in plan: its axis (start → end), or its placement and rotation; null when it has none.</summary>
-    public static (Vec2 O, Vec2 U)? Frame(Entity? e)
+    /// <summary>
+    /// An element's frame in plan: its axis (start → end), its placement and rotation (degrees, as every element keeps it), its
+    /// outline's first side (a floor, a ceiling) or its path's first piece (a railing); null when it has none. Each goes with
+    /// the element when it is moved or turned (<see cref="Placement.Carry"/>).
+    /// </summary>
+    public static (Vec2 O, Vec2 U)? Frame(Entity? e) => Frame(e, DimEndRef.CurrentFrame);
+
+    /// <summary>The frame as an end of <paramref name="rev"/> keeps its point in: before 2, the rotation read in radians and no outlines nor paths.</summary>
+    public static (Vec2 O, Vec2 U)? Frame(Entity? e, int rev)
     {
         if (e == null) return null;
         if (e.Attrs["start"] is JsonArray && e.Attrs["end"] is JsonArray)
@@ -109,9 +161,14 @@ public static class Dimensions
         }
         if (e.Attrs["at"] is JsonArray)
         {
-            var r = e.Num("rotation");
+            var r = rev >= DimEndRef.CurrentFrame ? e.Num("rotation") * Math.PI / 180 : e.Num("rotation");
             return (P(e.Attrs["at"]), new Vec2(Math.Cos(r), Math.Sin(r)));
         }
+        if (rev < DimEndRef.CurrentFrame) return null;
+        foreach (var key in new[] { "contour", "points" })
+            if (e.Attrs[key] is JsonArray pts && pts.OfType<JsonArray>().Select(P).ToList() is { Count: >= 2 } list)
+                for (var i = 1; i < list.Count; i++)
+                    if ((list[i] - list[0]).Length > 1e-6) return (list[0], (list[i] - list[0]).Normalized());
         return null;
     }
 
@@ -122,6 +179,17 @@ public static class Dimensions
     static Vec2 FromLocal((Vec2 O, Vec2 U) f, Vec2 l) => f.O + f.U * l.X + f.U.Perp * l.Y;
     static Vec2 DirToLocal((Vec2 O, Vec2 U) f, Vec2 d) => new(Vec2.Dot(d, f.U), Vec2.Dot(d, f.U.Perp));
     static Vec2 DirFromLocal((Vec2 O, Vec2 U) f, Vec2 l) => f.U * l.X + f.U.Perp * l.Y;
+
+    /// <summary>
+    /// An edge's end kept in an older frame (the rotation read in radians) kept in today's instead, the point and direction
+    /// where they are now: the same end, so it turns with its element from now on (forum 102). Any other end as it was.
+    /// </summary>
+    public static DimEndRef InCurrentFrame(Entity? element, DimEndRef r)
+    {
+        if (r.Kind != "edge" || r.FrameRev >= DimEndRef.CurrentFrame || r.Local is not { } l || r.LocalDir is not { } ld) return r;
+        if (Frame(element, r.FrameRev) is not { } was || Frame(element) is not { } now) return r with { FrameRev = DimEndRef.CurrentFrame };
+        return r with { Local = ToLocal(now, FromLocal(was, l)), LocalDir = DirToLocal(now, DirFromLocal(was, ld)), FrameRev = DimEndRef.CurrentFrame };
+    }
 
     /// <summary>
     /// What an end placed at <paramref name="p"/> holds on: a cut edge within
@@ -148,15 +216,24 @@ public static class Dimensions
         if (best is { } hit && Middle(d, hit.Poly.Element) is { } mid)
         {
             var dir = (hit.B - hit.A).Normalized();
-            if (viewKind == "plan" && Frame(m.Get(hit.Poly.Element)) is { } f)
-                return new DimEndRef("edge", hit.Poly.Element, p - mid, dir, ToLocal(f, p), DirToLocal(f, dir), Len: LengthOf(m.Get(hit.Poly.Element)));
-            return new DimEndRef("edge", hit.Poly.Element, p - mid, dir);
+            return HoldOn(m, viewKind, d, hit.Poly.Element, p, hit.B - hit.A);
         }
         if (viewKind != "plan") return null;
         foreach (var grid in m.OfClass(IfcClass.Grid))
             foreach (var ax in Grids.Axes(grid))
                 if (Foot(p, ax.A, ax.B).Dist <= tolerance)
                     return new DimEndRef("grid", grid.Id, default, default, Tag: ax.Tag, S: Vec2.Dot(p - ax.A, ax.Dir), S2: Vec2.Dot(ax.B - p, ax.Dir));
+        // An element the plan does not cut (a stair, a beam overhead, a floor, furniture, a railing, a solid seen below; forum 102):
+        // a line it draws, or its outline, held as a cut edge is.
+        (string Element, Vec2 A, Vec2 B, double Dist, double Across)? line = null;
+        foreach (var (el, a, b) in HeldOf(d).Lines)
+        {
+            var (dist, _) = Foot(p, a, b);
+            if (dist > tolerance || m.Get(el) is not { } owner || owner.Class is IfcClass.Annotation or IfcClass.Grid) continue;
+            var across = along is { } u ? Math.Abs(Vec2.Cross((b - a).Normalized(), u)) : 0;
+            if (line == null || dist < line.Value.Dist - 1e-6 || (dist <= line.Value.Dist + 1e-6 && across > line.Value.Across + 1e-9)) line = (el, a, b, dist, across);
+        }
+        if (line is { } seen) return HoldOn(m, viewKind, d, seen.Element, p, seen.B - seen.A);
         foreach (var e in m.Entities.Where(e => e.Class is IfcClass.Wall or IfcClass.Beam && e.Attrs["start"] is JsonArray))
             if (Frame(e) is { } f && Foot(p, P(e.Attrs["start"]), P(e.Attrs["end"])).Dist <= tolerance)
                 return new DimEndRef("axis", e.Id, default, default, S: Vec2.Dot(p - f.O, f.U), S2: Vec2.Dot(P(e.Attrs["end"]) - p, f.U));
@@ -179,7 +256,7 @@ public static class Dimensions
                 return OnOpening(m, d, r);
         }
         Vec2 q, dir;
-        if (viewKind == "plan" && r.Local is { } local && r.LocalDir is { } ld && Frame(m.Get(r.Element)) is { } frame && Middle(d, r.Element) != null)
+        if (viewKind == "plan" && r.Local is { } local && r.LocalDir is { } ld && Frame(m.Get(r.Element), r.FrameRev) is { } frame && Middle(d, r.Element) != null)
         {
             (q, dir) = (FromLocal(frame, local), DirFromLocal(frame, ld).Normalized());
             // A face along an element made longer or shorter (an end dragged along it): the point stays where it was measured (report #126).
@@ -251,7 +328,7 @@ public static class Dimensions
         if (Middle(d, element) is not { } mid) return null;
         dir = dir.Normalized();
         if (viewKind == "plan" && Frame(m.Get(element)) is { } f)
-            return new DimEndRef("edge", element, p - mid, dir, ToLocal(f, p), DirToLocal(f, dir), Len: LengthOf(m.Get(element)));
+            return new DimEndRef("edge", element, p - mid, dir, ToLocal(f, p), DirToLocal(f, dir), Len: LengthOf(m.Get(element)), FrameRev: DimEndRef.CurrentFrame);
         return new DimEndRef("edge", element, p - mid, dir);
     }
 

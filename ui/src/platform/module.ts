@@ -194,6 +194,7 @@ export interface Grip {
   /**
    * An outline's corner that may be rounded or cut (forum topic 97): a right-click on it offers "Fillet corner…" and "Chamfer
    * corner…", the radius or distance typed; `straight` says whether both its edges are straight (else they are offered disabled).
+   * A railing's corner offers them too, and a wall's end joined to another wall (its grip's right-click): the two walls filleted.
    */
   corner?: { straight: boolean; fillet: (radius: number) => GripStep | null; chamfer: (distance: number) => GripStep | null };
   /** Alt-click (a click, not a drag) does `remove` as well, as Ctrl/⌘-click does (a dimension's point, forum topic 74); a drag with Alt still moves it alone. */

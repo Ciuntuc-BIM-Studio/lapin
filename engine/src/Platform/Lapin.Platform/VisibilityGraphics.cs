@@ -198,7 +198,7 @@ public sealed class VisibilityGraphics
         IfcClass.BuildingStorey => "levels",
         IfcClass.Space => mk is { Under: false, Pick: false } ? "roomTags" : null,
         Views.Class => e.Str("kind") switch { "section" => "sections", "elevation" => "elevations", "plane" => "refPlanes", _ => null },
-        "LapinInset" => "callouts",
+        "LapinInset" or Callouts.Class => "callouts",
         ViewBoundaries.Class => "viewBoundaries",
         _ => null,
     };

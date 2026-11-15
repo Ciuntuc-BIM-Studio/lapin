@@ -45,6 +45,14 @@ Un mur reconnu depuis un IFC importé dont le fichier coupe l’extrémité en b
 
 **Alignement des hachures** règle la façon dont les couches de ce mur sont hachurées en plan. **material** suit le réglage de chaque matériau. **axis** pose la hachure de chaque couche le long de l’axe du mur, depuis le début de l’axe : un mur de briques en biais montre ses assises dans son sens, et elles se suivent d’une couche à l’autre. **view** part de l’origine de la vue pour chaque hachure, sans rotation.
 
+### Arrondir ou chanfreiner un angle
+
+**Architecture → Raccord** (FILLET dans la ligne de commande, <kbd>F</kbd>) arrondit l'angle entre deux murs par un mur courbe : tapez le rayon (Entrée garde le dernier), puis cliquez le premier mur et le second. Les deux sont raccourcis jusqu'où l'arc les touche, ou prolongés jusqu'à lui s'ils n'atteignent pas encore l'angle, comme le raccord de la CAO avec deux lignes. Le mur courbe est de nouveau le premier mur (son type, sa hauteur, sa base, son sommet et ses couches, du même côté) et il est joint aux deux. Cliquez chaque mur sur la partie à garder : là où deux murs se croisent, les autres parties disparaissent. Un rayon de 0 fait un angle vif, les deux murs prolongés jusqu'à se rencontrer. **Architecture → Chanfrein** (CHAMFER) coupe l'angle par un mur droit, la distance mesurée le long de chaque mur depuis l'angle. Un clic droit sur la poignée d'extrémité d'un mur sélectionné, là où il rencontre un autre mur, offre **Arrondir le coin…** et **Chanfreiner le coin…**, le rayon ou la distance tapés. Chacun est un seul pas d'annulation.
+
+Le rayon est celui de l'axe des murs, le milieu de leur noyau. Tapez **I** (Inside) ou **O** (Outside) avant de choisir pour donner le rayon de la face intérieure ou extérieure de la courbe ; **A** revient à l'axe. Les deux murs gardent leurs id (leurs GlobalId en IFC), et leurs portes, fenêtres et baies restent où elles sont en plan ; une qui tomberait dans la partie coupée empêche le raccord (un rayon plus petit, ou déplacez-la d'abord). Des murs de types, hauteurs ou bases différents ne sont raccordés que si vous répondez **Yes** pour prendre ceux du premier. Les murs courbes et les murs à profil propre ne sont pas raccordés.
+
+![Deux murs raccordés : un mur courbe entre eux](shots/wall-fillet.webp)
+
 ### Un mur selon son profil
 
 **Profil…** dans les propriétés d’un mur dessine son sommet en élévation, vu de son début à sa fin : un pignon, une pente, des redans, un mur qui suit un escalier. Faites glisser les points (**Maj** garde la hauteur d’un point), cliquez sur la ligne du haut pour en ajouter un, faites un clic droit sur un point pour l’enlever, ou tapez-les dans le tableau en millimètres. **Partir de** donne un **Pignon**, une **Pente** ou des **Gradins** jusqu’à la hauteur que vous tapez. Un redan, c’est deux points l’un au-dessus de l’autre. **Appliquer** donne sa forme au mur ; **Sommet plat** le rend de nouveau plat.

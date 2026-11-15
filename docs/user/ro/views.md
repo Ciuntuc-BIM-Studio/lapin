@@ -273,6 +273,23 @@ Fiecare schimbare e un singur pas de anulare. Motorul desenează inserarea împr
 
 ![Un plan cu secțiunea peretelui inserată la 1:20, decupată, cu o cotă desenată peste ea](shots/inset-view.webp)
 
+## Chemări de detaliu
+
+O fundație, o streașină, buiandrugul unei ferestre: unele părți trebuie desenate din nou mai mare, cu toate cotele și notele lor. **Vedere → Chemare de detaliu** (sau tastezi **DC**) cheamă o zonă dintr-un plan, o secțiune sau o fațadă, cum fac chemările din Revit și ArchiCAD: desenezi un dreptunghi în jurul ei (două colțuri opuse). Bara uneltei desenează în loc un **Cerc** (centrul, apoi un punct pe el) sau un **Poligon** (colțurile, apoi Enter).
+
+Lapin face din ea o **vedere de detaliu**: o vedere de același fel, cu setările vederii din care a fost chemată, decupată la zonă, la o scară mai mare (1:20 sau următoarea scară standard a proiectului sub a vederii; alegi alta în bară) și la cel mai fin nivel de dezvoltare. Apare în browserul proiectului la **Detalii**, cu numele Detail 1, Detail 2 și așa mai departe (o redenumești ca pe orice vedere).
+
+- **E o vedere adevărată.** Cotele, textele, etichetele, liniile desenate și hașurile din ea rămân în ea, iar Vizibilitate / Grafică e a ei. Modelul din ea rămâne viu: schimbi un perete și detaliul îl arată. Când vederea din care a fost chemată își schimbă tăietura, domeniul sau linia (o secțiune mutată), detaliul o urmează; scara, decuparea și grafica rămân ale lui.
+- **Marcajul chemării.** Vederea în care ai desenat arată conturul, o linie de indicație și un capăt cu numărul detaliului și planșa lui: „3 / A-501” după ce detaliul e pus pe o planșă, „–” înainte. Se schimbă singur când detaliul e pus, mutat pe altă planșă sau renumerotat. Îți alegi propriul capăt la **Simbolul marcajului** (locul Capăt de detaliu, și pentru tot proiectul în Standardele de desenare); Bula de detaliu a lui Lapin scrie numărul deasupra planșei.
+- **Deschizi detaliul.** Dublu clic pe chemare, sau o selectezi și clic dreapta → **Deschide vederea**, sau **Deschide vederea** în proprietățile ei.
+- **Îi schimbi forma.** Selectezi chemarea: îi tragi colțurile, laturile sau mijlocul (centrul și raza unui cerc, colțurile unui poligon), iar detaliul se decupează din nou; îi tragi capătul ca să-l muți de pe contur. Dacă schimbi decuparea detaliului în Setările vederii lui, o chemare dreptunghiulară se mută odată cu ea.
+- **Trimiți la o vedere care există.** Alegi o vedere din lista **Trimite la** a barei (o vedere de desen, alt detaliu) înainte să desenezi, sau în proprietățile chemării: chemarea trimite la ea și nu face nicio vedere, ca chemările de referință din Revit. Capătul scrie numărul și planșa acelei vederi.
+- **O ștergi.** Când ștergi o chemare, ești întrebat dacă vederea ei de detaliu se șterge și ea sau rămâne. Dacă ștergi vederea de detaliu din browserul proiectului, chemările ei pleacă odată cu ea.
+
+Fiecare schimbare e un singur pas de anulare: desenarea unei chemări face chemarea și vederea ei de detaliu într-unul singur. Motorul desenează marcajul împreună cu vederea, așa că planșele, PDF-ul și DXF-ul îl tipăresc cum îl arată ecranul; Vizibilitate / Grafică îl arată sau îl ascunde împreună cu **Detaliile**. Un cerc sau un poligon decupează detaliul la dreptunghiul din jurul lui.
+
+![Un plan cu o chemare de detaliu pe colțul unui perete și detaliul la 1:20 lângă el](shots/callout.webp)
+
 ## Ce arată o vedere
 
 Tabul **Vedere** setează ce arată vederea din față și cum arată.

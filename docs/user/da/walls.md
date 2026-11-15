@@ -45,6 +45,14 @@ En væg genkendt fra en importeret IFC, hvis ende filen skærer skråt, beholder
 
 **Skraveringsretning** bestemmer, hvordan denne vægs lag skraveres i plan. **material** følger hvert materiales egen indstilling. **axis** lægger hvert lags skravering langs væggens akse fra aksens start, så en skrå murstensvæg viser sine skifter langs væggen, og de fortsætter fra lag til lag. **view** starter hver skravering i visningens origo, uden drejning.
 
+### At runde eller skære et hjørne af
+
+**Architecture → Afrunding** (kommandolinjens FILLET, <kbd>F</kbd>) runder hjørnet mellem to vægge med en buet væg: skriv radius (Enter beholder den sidste), og klik så på den første væg og den anden. Begge kortes af til hvor buen rører dem, eller føres videre til den, når de endnu ikke når hjørnet, som CAD's afrunding gør med to linjer. Den buede væg er den første væg igen (dens type, højde, fod, top og lag, på samme side) og er samlet med begge. Klik på hver væg på den del, der skal blive: hvor to vægge krydser, forsvinder de andre dele. Radius 0 giver et skarpt hjørne, hvor begge vægge føres videre til de mødes. **Architecture → Affasning** (CHAMFER) skærer hjørnet af med en lige væg i stedet, afstanden målt langs hver væg fra hjørnet. Højreklik på en valgt vægs endegreb, hvor den møder en anden væg, for **Afrund hjørne…** og **Affas hjørne…**, med radius eller afstand skrevet. Hver er ét fortrydelsestrin.
+
+Radius er væggenes akses, midten af deres kerne. Skriv **I** (Inside) eller **O** (Outside), før du vælger, for radius på bøjningens indvendige eller udvendige flade; **A** går tilbage til aksen. De to vægge beholder deres id'er (deres GlobalId'er i IFC), og deres døre, vinduer og åbninger bliver, hvor de er i plan; en, der ville falde i den bortskårne del, afviser afrundingen (en mindre radius, eller flyt den først). Vægge af forskellig type, højde eller fod afrundes kun, når du svarer **Yes** til at tage den første vægs. Buede vægge og vægge med egen profil afrundes ikke.
+
+![To vægge afrundet: en buet væg imellem dem](shots/wall-fillet.webp)
+
 ### En væg efter sin profil
 
 **Profil…** i en vægs egenskaber tegner dens top i opstalt, set fra dens start til dens slutning: en gavl, en skråning, trin, en væg der følger en trappe. Træk punkterne (**Shift** beholder et punkts højde), klik på toplinjen for at tilføje et, højreklik på et punkt for at fjerne det, eller skriv dem i tabellen i millimeter. **Start fra** giver et **Gavl**, en **Hældning** eller **Trin** op til den højde, du skriver. Et trin er to punkter over hinanden. **Anvend** former væggen; **Plan top** gør den plan igen.

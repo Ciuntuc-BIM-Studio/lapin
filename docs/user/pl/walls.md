@@ -45,6 +45,14 @@ Niżej sekcja **Zależności** pokazuje, co jest zbudowane ze ściany i z czego 
 
 **Wyrównanie kreskowania** określa, jak warstwy tej ściany są kreskowane na rzucie. **material** przyjmuje ustawienie każdego materiału. **axis** układa kreskowanie każdej warstwy wzdłuż osi ściany, od początku osi, więc ukośny mur z cegły pokazuje warstwy cegieł wzdłuż siebie, ciągnące się z warstwy na warstwę. **view** zaczyna każde kreskowanie od początku układu widoku, bez obrotu.
 
+### Zaokrąglenie lub sfazowanie narożnika
+
+**Architektura → Zaokrąglij** (FILLET w wierszu poleceń, <kbd>F</kbd>) zaokrągla narożnik między dwiema ścianami ścianą łukową: wpisz promień (Enter zostawia ostatni), potem kliknij pierwszą ścianę i drugą. Obie są skracane do miejsca, w którym dotyka ich łuk, albo przedłużane do niego, gdy jeszcze nie sięgają narożnika, tak jak zaokrąglenie w CAD robi to z dwiema liniami. Ściana łukowa jest znów pierwszą ścianą (jej typ, wysokość, podstawa, góra i warstwy, po tej samej stronie) i jest połączona z obiema. Kliknij każdą ścianę na części do zachowania: tam, gdzie dwie ściany się krzyżują, pozostałe części znikają. Promień 0 daje ostry narożnik, obie ściany przedłużone aż się spotkają. **Architektura → Fazuj** (CHAMFER) ścina narożnik prostą ścianą, odległość mierzona wzdłuż każdej ściany od narożnika. Kliknięcie prawym przyciskiem uchwytu końca zaznaczonej ściany, tam gdzie spotyka inną ścianę, daje **Zaokrąglij narożnik…** i **Sfazuj narożnik…**, z wpisanym promieniem lub odległością. Każde to jeden krok cofania.
+
+Promień jest promieniem osi ścian, środka ich rdzenia. Wpisz **I** (Inside) lub **O** (Outside) przed wybraniem, aby podać promień wewnętrznej lub zewnętrznej powierzchni łuku; **A** wraca do osi. Obie ściany zachowują swoje id (GlobalId w IFC), a ich drzwi, okna i otwory zostają tam, gdzie są w rzucie; taki, który wpadłby w odciętą część, wstrzymuje zaokrąglenie (mniejszy promień albo najpierw go przesuń). Ściany różnych typów, wysokości lub podstaw są zaokrąglane tylko po odpowiedzi **Yes**, która bierze wartości pierwszej ściany. Ściany łukowe i ściany z własnym profilem nie są zaokrąglane.
+
+![Dwie ściany zaokrąglone: ściana łukowa między nimi](shots/wall-fillet.webp)
+
 ### Ściana według profilu
 
 **Profil…** we właściwościach ściany rysuje jej górę w widoku elewacji, widzianą od początku do końca: szczyt, spadek, uskoki, ścianę idącą za schodami. Przeciągaj punkty (**Shift** zachowuje wysokość punktu), kliknij górną linię, aby dodać punkt, kliknij punkt prawym przyciskiem, aby go usunąć, albo wpisz je w tabeli w milimetrach. **Zacznij od** daje **Szczyt**, **Nachylenie** lub **Schodki** do wysokości, którą wpiszesz. Uskok to dwa punkty jeden nad drugim. **Zastosuj** nadaje ścianie kształt; **Płaska góra** znów czyni ją płaską.

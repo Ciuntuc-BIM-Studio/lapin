@@ -53,8 +53,12 @@ public sealed record DText(Vec2 At, string Text, double? Height, double Angle, s
 /// <summary>What a cut takes out of one part: closed loops, even-odd, with the part's material.</summary>
 public sealed record DPolygon(IReadOnlyList<Vec2[]> Loops, string Element, string Class, string? Key, string? Material);
 
-/// <summary>A view's drawing in its own coordinates (metres): the cut areas and the lines; the fills and texts of elements' own 2D.</summary>
-public sealed record ViewDrawing(List<DPolygon> Cuts, List<DLine> Lines, List<DFill>? Fills = null, List<DText>? Texts = null)
+/// <summary>
+/// A view's drawing in its own coordinates (metres): the cut areas and the lines; the fills and texts of elements' own 2D;
+/// and in a plan the outlines of what its module draws as marks instead (a stair's whole outline, forum 102), never drawn
+/// from here, which a dimension's points hold on as they do on the lines.
+/// </summary>
+public sealed record ViewDrawing(List<DPolygon> Cuts, List<DLine> Lines, List<DFill>? Fills = null, List<DText>? Texts = null, List<DLine>? Outlines = null)
 {
     /// <summary>The drawing moved <paramref name="dx"/> along x (a piece of a developed section laid at its station).</summary>
     public ViewDrawing Shifted(double dx)
