@@ -71,7 +71,9 @@ public static class Triangulator
         // The ring's points beside its ids, removed with them: read without a lookup.
         var pos = new List<Vec2>(ring.Count);
         foreach (var id in ring) pos.Add(at(id));
-        int guard = ring.Count * ring.Count + 16;
+        // Every pass takes one corner away (an ear, or the most convex corner forced): the ring's count bounds them. Its
+        // square in an int overflowed above 46 340 vertices and left such a face with no triangle (audit P18).
+        int guard = ring.Count + 16;
         var reflex = new List<int>();
         var start = 0;
 
