@@ -359,6 +359,8 @@ public sealed class CoreModule : ILapinModule
             var deleting = ids.ToHashSet();
             foreach (var id in deleting)
                 if (ctx.Model.Get(id) is { } x) foreach (var d in ctx.Services.All<IDeletion>()) d.Check(ctx.Model, x, deleting);
+            // What names the elements going (a room's finish, a bar's host) is put right while they are all still there.
+            foreach (var f in ctx.Services.All<IDeletionFollowers>()) f.Deleting(ctx, deleting);
             var bodies = new HashSet<string>();
             foreach (var id in ids.Distinct())
             {
@@ -444,7 +446,8 @@ public static class ElementTransform
             catch (CommandException) { }
     }
 
-    public static Result Run(ICommandContext ctx, JsonObject a, Placement2D? given = null)
+    /// <param name="keepLinks">The attributes a copy leaves naming the originals (Copy to storeys without relations: a wall's roofs).</param>
+    public static Result Run(ICommandContext ctx, JsonObject a, Placement2D? given = null, IReadOnlySet<string>? keepLinks = null)
     {
         static Lapin.Geometry.Vec2 V(JsonNode? n, string what) => Args.Point(n, what);
         // A group selected is its members (docs/groups.md).
@@ -548,6 +551,8 @@ public static class ElementTransform
         foreach (var own in ctx.Services.All<IHostedPlacement>())
             if (hosted.Where(e => own.Handles(ctx.Model, e)).ToList() is { Count: > 0 } mine)
                 foreach (var c in own.Transform(ctx, mine, inHost, copy)) made.Add((JsonNode)c);
+        // Copied together, a copy names the copies of what its original named (a finish its room, a wall its roof; audit 15.11.2026).
+        if (copy) CopyLinks.Remap(ctx, copies, keepLinks);
         foreach (var (f, state) in followers) f.After(ctx, state, t, inHost, moving, selected, copies);
         // Elements copied together keep their joins: a corner or a T between two of them joins their copies the same way.
         if (copy)
