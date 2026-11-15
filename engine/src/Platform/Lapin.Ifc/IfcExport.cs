@@ -727,7 +727,8 @@ public static partial class IfcExport
         void WriteElements()
         {
             var voids = s.Catalog.Get<IVoidShapes>();
-            var elements = m.Entities.Where(e => IsElement(e) && InPhase(e) && o.Exclude?.Contains(e.Id) != true).ToList();
+            // Solids kept hidden behind the layered wall made of them (forum topic 101) are not written: the wall is.
+            var elements = m.Entities.Where(e => IsElement(e) && InPhase(e) && o.Exclude?.Contains(e.Id) != true && !Superseded.Hidden(m, e)).ToList();
             // Bodies to merge or simplify are prepared a batch at a time on every core, then written in order.
             var prepare = o.Tolerance > 0 || o.FaceSet;
             const int batch = 1000;

@@ -9169,6 +9169,49 @@ export const scenes = [
     },
   },
   {
+    // Make a layered wall from solids (forum topic 101): a timber-frame wall drawn in SketchUp as five parallel solids with a
+    // window's hole through them, imported as references, made one wall of five layers with its window; the dialog first.
+    id: 'wall-from-solids',
+    touches: ['architecture', 'studio'],
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const storey = await t.storey();
+      let obj = '';
+      let n = 0;
+      const box = (x0, y0, z0, x1, y1, z1) => {
+        for (const [x, y, z] of [[x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0], [x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]]) obj += `v ${x} ${y} ${z}\n`;
+        for (const f of [[1, 4, 3, 2], [5, 6, 7, 8], [1, 2, 6, 5], [3, 4, 8, 7], [1, 5, 8, 4], [2, 3, 7, 6]]) obj += `f ${f.map((i) => i + n).join(' ')}\n`;
+        n += 8;
+      };
+      // Outside to inside: cladding 22, wind board 9, insulation 145, OSB 12, gypsum 13; a window 1.2 × 1.2 m through them.
+      const layers = [['Träpanel', 0, 0.022], ['Vindskydd', 0.022, 0.031], ['Mineralull', 0.031, 0.176], ['OSB', 0.176, 0.188], ['Gips', 0.188, 0.201]];
+      for (const [name, y0, y1] of layers) {
+        obj += `o ${name}\n`;
+        box(0, y0, 0, 1.0, y1, 2.7); box(2.2, y0, 0, 4, y1, 2.7); box(1.0, y0, 0, 2.2, y1, 0.9); box(1.0, y0, 2.1, 2.2, y1, 2.7);
+      }
+      obj += 'o Window 1\n';
+      box(1.01, 0.06, 0.91, 2.19, 0.14, 2.09);
+      await page.evaluate(async ([obj, storeyId]) => (await import('/src/engine/session.ts')).engine.call('project.importMesh',
+        { name: 'wall.obj', data: btoa(unescape(encodeURIComponent(obj))), up: 'z', storeyId }), [obj, storey]);
+      await t.wait(800);
+      const solids = (await t.nodes()).filter((x) => x.type === 'IfcBuildingElementProxy');
+      t.expect(solids.length === 6, 'six solids came in');
+      await t.ui({ view: '3d', selected: solids.map((x) => x.id), selection: solids[0].id });
+      await page.waitForSelector('[data-testid=view3d] canvas', { timeout: 20_000 });
+      await t.wait(800);
+      await t.tool('architecture.wallFromSolids');
+      await page.waitForSelector('[data-testid=wall-from-solids] [data-testid=wfs-wall]', { timeout: 20_000 });
+      await t.until(async () => (await page.locator('[data-testid=wfs-layer]').count()) === 5, 'five layers found');
+      await t.shot('wall-from-solids', { of: '[data-testid=wall-from-solids]', pad: 0 });
+      await page.locator('[data-testid=wfs-make]').click();
+      await t.until(async () => (await t.nodes()).some((x) => x.type === 'IfcWall'), 'the wall is made');
+      const nodes = await t.nodes();
+      t.expect(nodes.some((x) => x.type === 'IfcWindow'), 'its window too');
+      t.expect(nodes.filter((x) => x.props.supersededBy).length === 6, 'the solids kept hidden behind it');
+    },
+  },
+  {
     // An array that keeps its arrangement (decision 481): columns along a drafted arc, then their count changed in the Array section.
     id: 'array-path',
     touches: ['structure', 'drafting'],
