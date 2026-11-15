@@ -17,6 +17,8 @@ public interface IRecoveryJournal
     IReadOnlyList<RecoverableWork> List();
     Diff Restore(string file);
     void Discard(string file);
+    /// <summary>The copy of the project's file the last restore read the project from, the file itself gone (<see cref="PackageBases"/>); null: the file, or none.</summary>
+    string? RestoredFrom => null;
 }
 
 /// <summary>What only a host can do for the help menu: send a report, read and answer its replies, open one of its links.</summary>
@@ -52,6 +54,79 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
     PackageForeign _foreign = PackageForeign.None;
     /// <summary>The session path the foreign entries were read from.</summary>
     string? _foreignOf;
+    /// <summary>A writer that says what it could not carry over (<see cref="Reporting"/>); else <c>write</c>, which says nothing.</summary>
+    Func<Session, string, PackageVersions, IssueFiles?, PackageForeign, PackageWriteReport>? _writer;
+    /// <summary>The open project's file, and the private copy of it (<see cref="PackageBases"/>) a save reads what it carries over from.</summary>
+    string? _basePath, _baseCopy;
+
+    /// <summary>Files written by a writer that says what a save could not carry over (the desktop's: <see cref="ProjectPackage.Write(Session, string, PackageVersions?, IssueFiles?, PackageForeign?)"/>).</summary>
+    public static ProjectFiles Reporting(Func<Session, string, Diff> open, Func<Session, string, PackageVersions, IssueFiles?, PackageForeign, PackageWriteReport> write)
+    {
+        var files = new ProjectFiles(open, (s, p, v, i, f) => write(s, p, v, i, f));
+        files._writer = write;
+        return files;
+    }
+
+    /// <summary>What the last save could not carry over from the file the project was read from (a version's part, an issued file), for the interface to tell.</summary>
+    public List<string> LastWarnings { get; private set; } = [];
+
+    /// <summary>The last save's warnings, once: the reply to the call that saved carries them.</summary>
+    public IReadOnlyList<string> TakeWarnings()
+    {
+        var o = LastWarnings;
+        LastWarnings = [];
+        return o;
+    }
+
+    /// <summary>
+    /// The file at <paramref name="path"/> taken as the open project's: a private copy of it made (<see cref="PackageBases"/>), so its
+    /// versions and issued files are still there when the file is renamed, moved or deleted while it is open (audit 15.11.2026, G1).
+    /// Gives back where to read them from: the copy, else the file itself (too big to copy, or gone).
+    /// </summary>
+    string Take(string path)
+    {
+        var b = File.Exists(path) ? PackageBases.Keep(path) : null;
+        Adopt(path, b?.Copy);
+        return b?.Copy ?? path;
+    }
+
+    void Adopt(string? path, string? copy)
+    {
+        if (copy != null) PackageBases.Hold(copy);
+        if (_baseCopy != null) PackageBases.Release(_baseCopy);
+        (_basePath, _baseCopy) = (path, copy);
+    }
+
+    /// <summary>Where the open project's file is read from: the copy taken of it, else the file (taken now).</summary>
+    string Source(string path) => _basePath == path && _baseCopy != null && File.Exists(_baseCopy) ? _baseCopy : Take(path);
+
+    /// <summary>
+    /// Work brought back from the recovery journal: no page's versions carried over, and when the journal started from a copy of the
+    /// project's file (the file itself gone), what that file held beside the model read from the copy.
+    /// </summary>
+    public void Recovered(Session session, string? copy)
+    {
+        ForgetPage();
+        if (session.Path is { } path && copy != null && File.Exists(copy)) Adopt(path, copy);
+    }
+
+    /// <summary>The package written: by the reporting writer, else by <c>write</c> (nothing to say then, every issued file held taken as written).</summary>
+    PackageWriteReport? Write(Session session, string target, PackageVersions versions, IssueFiles issues, PackageForeign foreign)
+    {
+        if (_writer != null) return _writer(session, target, versions, issues, foreign);
+        write(session, target, versions, issues, foreign);
+        return null;
+    }
+
+    /// <summary>What a save leaves: the versions, issued files and other tools' entries found in the package just written from now on.</summary>
+    void After(string name, Func<PackageVersions> reread, PackageVersions versions, PackageIssues issues, IReadOnlyDictionary<string, long> written, PackageForeign foreign, PackageWriteReport? report)
+    {
+        KeepForeign(name, foreign.Unreadable != null ? PackageForeign.None : foreign);
+        Keep(name, versions.Unreadable != null ? reread() : versions);
+        KeepIssues(name, issues);
+        LastWarnings = report?.Warnings ?? [];
+        foreach (var w in LastWarnings) Console.Error.WriteLine($"[engine] save: {w}");
+    }
 
     /// <summary>
     /// A project from its bytes; <paramref name="name"/> is the file's name, its
@@ -69,10 +144,12 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
         {
             var imported = LegacyImport.Run(session, Lapin.Package.LegacyPackage.Read(input));
             LastNotes = imported.Notes;
+            Adopt(null, null);
             return imported.Diff;
         }
         var content = LapinPackage.Read(input);
         var diff = session.Load(content.Entities, content.Relations, name, content.Classes);
+        Adopt(null, null);
         Keep(name, PackageVersions.Of(bytes));
         KeepIssues(name, PackageIssues.Of(bytes));
         KeepForeign(name, PackageForeign.Of(bytes));
@@ -82,17 +159,18 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
     /// <summary>The project as a package's bytes; the session counts as saved.</summary>
     public (byte[] Bytes, Diff Diff) SaveBytes(Session session, string name)
     {
+        // A script's step open: nothing goes to a file half way through it (audit 15.11.2026, P1).
+        session.RefuseDuringStep(ownerToo: true);
         var versions = Versions(session);
         var issues = IssueFilesOf(session);
-        var foreign = Foreign(session);
+        var foreign = Foreign(session, again: true);
         using var ms = new MemoryStream();
-        ProjectPackage.Write(session, ms, versions, issues, foreign);
+        var report = ProjectPackage.Write(session, ms, versions, issues, foreign);
         var bytes = ms.ToArray();
         _page = null;
         var diff = session.Saved(name);
-        KeepForeign(name, foreign);
-        Keep(name, versions.From(bytes));
-        KeepIssues(name, issues.Store.From(bytes, issues.Written));
+        Adopt(null, null);
+        After(name, () => PackageVersions.Of(bytes), versions.From(bytes), issues.Store.From(bytes, report.Issues), report.Issues, foreign, report);
         return (bytes, diff);
     }
 
@@ -118,6 +196,7 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
         catch (InvalidDataException e) { throw new CommandException(e.Message); }
         var content = LapinPackage.Read(new MemoryStream(bytes, writable: false));
         var diff = session.Load(content.Entities, content.Relations, null, content.Classes);
+        Adopt(null, null);
         _page = (PackageVersions.Of(bytes), PackageForeign.Of(bytes));
         KeepIssues(null, PackageIssues.Of(bytes));
         LastPage = Path.GetFileName(name);
@@ -137,26 +216,35 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
             return OpenPage(session, path, File.ReadAllBytes(path));
         }
         var diff = open(session, path);
-        Keep(path, PackageVersions.Of(path));
-        KeepIssues(path, PackageIssues.Of(path));
-        KeepForeign(path, PackageForeign.Of(path));
+        // The project's own file (an old project opens unsaved, without one): read from a copy of it from now on.
+        var source = session.Path == path ? Take(path) : path;
+        if (session.Path != path) Adopt(null, null);
+        Keep(path, PackageVersions.Of(source));
+        KeepIssues(path, PackageIssues.Of(source));
+        KeepForeign(path, PackageForeign.Of(source));
         return diff;
     }
 
     public Diff Save(Session session, string? path)
     {
+        // A script's step open: nothing goes to a file half way through it (audit 15.11.2026, P1).
+        session.RefuseDuringStep(ownerToo: true);
         var target = path ?? session.Path ?? throw new CommandException("Where to save: the project has no file yet.");
         var versions = Versions(session);
         var issues = IssueFilesOf(session);
-        var foreign = Foreign(session);
-        write(session, target, versions, issues, foreign);
+        var foreign = Foreign(session, again: true);
+        var report = Write(session, target, versions, issues, foreign);
         _page = null;
         var diff = session.Saved(target);
-        KeepForeign(session.Path ?? target, foreign);
-        Keep(session.Path ?? target, versions.From(session.Path ?? target));
-        KeepIssues(session.Path ?? target, issues.Store.From(session.Path ?? target, issues.Written));
+        var saved = session.Path ?? target;
+        var source = Take(saved);
+        var written = report?.Issues ?? Written(issues);
+        After(saved, () => PackageVersions.Of(source), versions.From(source), issues.Store.From(source, written), written, foreign, report);
         return diff;
     }
+
+    static Dictionary<string, long> Written(IssueFiles issues) =>
+        issues.Written.Where(h => issues.Store.SizeOf(h) != null).ToDictionary(h => h, h => issues.Store.SizeOf(h)!.Value);
 
     /// <summary>A new project: no issue files of the last one carried over.</summary>
     public void Reset()
@@ -166,13 +254,17 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
         _issuesOf = null;
         _foreign = PackageForeign.None;
         _foreignOf = null;
+        Adopt(null, null);
     }
 
     /// <summary>The entries other tools put in the open project's file: those read with it, else read from its file (a project recovered); none for a new project.</summary>
-    public PackageForeign Foreign(Session session)
+    public PackageForeign Foreign(Session session) => Foreign(session, again: false);
+
+    /// <summary><paramref name="again"/>: entries that could not be read are read once more (a save is about to write them).</summary>
+    PackageForeign Foreign(Session session, bool again)
     {
         if (session.Path is not { } path) return _page?.Foreign ?? PackageForeign.None;
-        if (_foreignOf != path) KeepForeign(path, PackageForeign.Of(path));
+        if (_foreignOf != path || again && _foreign.Unreadable != null) KeepForeign(path, PackageForeign.Of(Source(path)));
         return _foreign;
     }
 
@@ -190,7 +282,7 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
     /// </summary>
     public PackageIssues Issues(Session session)
     {
-        if (session.Path is { } path) { if (_issuesOf != path) KeepIssues(path, PackageIssues.Of(path)); }
+        if (session.Path is { } path) { if (_issuesOf != path) KeepIssues(path, PackageIssues.Of(Source(path))); }
         else if (_issuesOf != null) Reset();
         return _issues;
     }
@@ -218,7 +310,7 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
     public PackageVersions Versions(Session session)
     {
         if (session.Path is not { } path) return _page?.Versions ?? PackageVersions.None;
-        if (_versionsOf != path) Keep(path, PackageVersions.Of(path));
+        if (_versionsOf != path) Keep(path, PackageVersions.Of(Source(path)));
         return _versions;
     }
 
@@ -240,6 +332,7 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
     /// <summary>The project as it is now, saved as a new version of its file.</summary>
     public (JsonObject Result, Diff Diff) SaveVersion(Session session, string? name, string? note, bool asBytes)
     {
+        session.RefuseDuringStep(ownerToo: true);
         var build = ProjectPackage.Build(session);
         var versions = Versions(session).Add(build.Manifest, session.Model.Entities.Count(), name, note, out var version);
         return Commit(session, build, versions, asBytes, ToJson(version));
@@ -248,42 +341,55 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
     /// <summary>A version renamed or annotated; <paramref name="replace"/>: the project as it is now takes its place, what it held kept as a revision.</summary>
     public (JsonObject Result, Diff Diff) UpdateVersion(Session session, int number, string? name, string? note, bool replace, bool asBytes)
     {
+        session.RefuseDuringStep(ownerToo: true);
         var build = ProjectPackage.Build(session);
         var versions = Versions(session).Update(number, name, note, replace ? (build.Manifest, session.Model.Entities.Count()) : null, out var version);
         return Commit(session, build, versions, asBytes, ToJson(version));
     }
 
-    public (JsonObject Result, Diff Diff) DeleteVersion(Session session, int number, bool asBytes) =>
-        Commit(session, ProjectPackage.Build(session), Versions(session).Remove(number), asBytes, new JsonObject { ["removed"] = number });
+    public (JsonObject Result, Diff Diff) DeleteVersion(Session session, int number, bool asBytes)
+    {
+        session.RefuseDuringStep(ownerToo: true);
+        return Commit(session, ProjectPackage.Build(session), Versions(session).Remove(number), asBytes, new JsonObject { ["removed"] = number });
+    }
 
-    /// <summary>The file written with the project as it is and the versions given; as bytes for a host without files (the browser).</summary>
+    /// <summary>
+    /// The file written with the project as it is and the versions given; as bytes for a host without files (the browser).
+    /// Never during a script's open step, even the owner's (audit 15.11.2026, P1): the step's rollback would leave the file ahead of the model.
+    /// </summary>
     (JsonObject Result, Diff Diff) Commit(Session session, PackageBuild build, PackageVersions versions, bool asBytes, JsonObject result)
     {
+        session.RefuseDuringStep(ownerToo: true);
         var issues = IssueFilesOf(session);
-        var foreign = Foreign(session);
+        var foreign = Foreign(session, again: true);
         if (asBytes)
         {
             var name = session.Path ?? "project.lapin";
             using var ms = new MemoryStream();
-            LapinPackage.Write(ms, build, versions, issues, foreign);
+            var r = LapinPackage.Write(ms, build, versions, issues, foreign);
             var bytes = ms.ToArray();
             _page = null;
             var diff = session.Saved(name);
-            KeepForeign(name, foreign);
-            Keep(name, versions.From(bytes));
-            KeepIssues(name, issues.Store.From(bytes, issues.Written));
+            Adopt(null, null);
+            After(name, () => PackageVersions.Of(bytes), versions.From(bytes), issues.Store.From(bytes, r.Issues), r.Issues, foreign, r);
+            Warn(result);
             result["name"] = name;
             result["data"] = Convert.ToBase64String(bytes);
             return (result, diff);
         }
         var path = session.Path ?? throw new CommandException("Save the project first: its versions live in its file.");
-        LapinPackage.Write(path, build, versions, issues, foreign);
+        var report = LapinPackage.Write(path, build, versions, issues, foreign);
         var saved = session.Saved(path);
-        KeepForeign(path, foreign);
-        Keep(path, versions.From(path));
-        KeepIssues(path, issues.Store.From(path, issues.Written));
+        var source = Take(path);
+        After(path, () => PackageVersions.Of(source), versions.From(source), issues.Store.From(source, report.Issues), report.Issues, foreign, report);
+        Warn(result);
         result["path"] = path;
         return (result, saved);
+    }
+
+    void Warn(JsonObject result)
+    {
+        if (LastWarnings.Count > 0) result["warnings"] = new JsonArray([.. LastWarnings.Select(w => (JsonNode)w)]);
     }
 
     static PackageManifest ManifestOf(PackageVersion version, int? revision) =>
@@ -321,7 +427,9 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
             {
                 var version = versions.Require(number);
                 var content = versions.Content(version.Manifest);
-                return (content.Entities, content.Relations, version.Manifest, version.Name);
+                // Brought up to date as a restore brings it (audit 15.11.2026, P17): what an upgrade alone changes is not a change.
+                var (entities, relations) = session.Upgraded(content.Entities, content.Relations);
+                return (entities, relations, version.Manifest, version.Name);
             }
             var build = ProjectPackage.Build(session);
             return (session.Model.Entities.ToList(), session.Model.Relations.ToList(), build.Manifest, "current");
@@ -397,8 +505,8 @@ public sealed record Caller(string Author, string Role)
     public object? Connection { get; init; }
 }
 
-/// <summary>A reply to one call: its id, and its result or why it failed.</summary>
-public sealed record Reply(JsonNode? Id, object? Result, string? Error = null);
+/// <summary>A reply to one call: its id, and its result or why it failed; Warnings: what went wrong beside a call that went through (a save that could not carry everything over, the recovery journal not written).</summary>
+public sealed record Reply(JsonNode? Id, object? Result, string? Error = null, IReadOnlyList<string>? Warnings = null);
 
 /// <summary>What the engine pushes after anything that changed the document.</summary>
 public sealed record DiffEvent(string Event, Diff Data);
@@ -567,7 +675,8 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                     // The last part, carried by the reply: with the caller's own undo and redo, as the parts before it.
                     result = caller.Remote ? snapshot with { State = session.StateFor(caller.Author) } : snapshot;
                 }
-                return (BinaryFrame.Encode(new Reply(id, result), ContractsOnly), diff);
+                List<string> warnings = [.. files.TakeWarnings(), .. session.TakeWarnings()];
+                return (BinaryFrame.Encode(new Reply(id, result, Warnings: warnings.Count > 0 ? warnings : null), ContractsOnly), diff);
             }
             finally { session.Author = History.Me; session.Connection = null; session.Progress = null; session.Cancellation = default; _long = null; HostFiles.GuestCall = false; }
         }
@@ -680,6 +789,31 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             default:
                 return false;
         }
+    }
+
+    /// <summary>
+    /// A path an export may write to: never a file the project reads (audit 15.11.2026, P14), its own file, a file it links or
+    /// hot-links, or an IFC an import came from (the group it made keeps it), since an existing IFC is never written to.
+    /// Compared as full paths, without case where the disk ignores it (macOS, Windows).
+    /// </summary>
+    string RefuseOverRead(string path)
+    {
+        var comparison = OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+        static string Full(string p) => Path.TrimEndingDirectorySeparator(Path.GetFullPath(p));
+        var target = Full(path);
+        var read = session.Model.OfClass(Links.Class).Select(l => l.Str("path"))
+            .Concat(session.Model.OfClass(Lapin.Platform.Groups.Class).Select(g => g.Str("source")))
+            .Append(session.Path)
+            .OfType<string>().Where(x => x.Length > 0);
+        foreach (var file in read)
+        {
+            string full;
+            try { full = Full(file); }
+            catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException) { continue; }
+            if (string.Equals(full, target, comparison))
+                throw new CommandException($"{Path.GetFileName(path)} is a file this project reads (a link, or the file it was imported from): an export never writes over it. Choose another name.");
+        }
+        return path;
     }
 
     (object? Result, Diff? Diff) Dispatch(string method, JsonObject p)
@@ -1001,7 +1135,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                     p["bonsaiStyles"] is JsonValue bv && bv.TryGetValue<bool>(out var bonsai) && bonsai,
                     // `structural`: IFC's structural analysis view (the analytical model, the load cases, actions and combinations; docs/plan-fem.md §8.7).
                     p["structural"] is JsonValue sv && sv.TryGetValue<bool>(out var structural) && structural);
-                if ((string?)p["path"] is { Length: > 0 } ifcPath) return (IfcExport.Write(session, ifcPath, options).ToJson(), null);
+                if ((string?)p["path"] is { Length: > 0 } ifcPath) return (IfcExport.Write(session, RefuseOverRead(HostFiles.Check(ifcPath)), options).ToJson(), null);
                 using var ms = new MemoryStream();
                 IfcExport.Write(session, ms, "project.ifc", options);
                 return (Deliver(ms.ToArray(), "project.ifc"), null);
@@ -1295,7 +1429,15 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 (support ?? throw new CommandException("Nothing to open here.")).Open((string?)p["link"], p);
                 return (null, null);
             case "recovery.list": return (recovery?.List() ?? [], null);
-            case "recovery.restore": files.ForgetPage(); return (null, (recovery ?? throw new CommandException("No recovery here.")).Restore(PathParam()));
+            case "recovery.restore":
+            {
+                files.ForgetPage();
+                var journal = recovery ?? throw new CommandException("No recovery here.");
+                var diff = journal.Restore(PathParam());
+                // The project's file gone: what it held beside the model (versions, issued files) read from the copy the journal started from.
+                files.Recovered(session, journal.RestoredFrom);
+                return (null, diff);
+            }
             case "recovery.discard":
                 (recovery ?? throw new CommandException("No recovery here.")).Discard(PathParam());
                 return (null, null);
