@@ -995,6 +995,7 @@ export const PL: Record<string, string> = {
   'the level below': 'poziom poniżej', 'unlimited': 'bez ograniczeń', 'At': 'Na', 'Back to the default': 'Wróć do domyślnych',
   'Drafting layers': 'Warstwy rysunkowe', 'Current': 'Bieżąca', 'Colour': 'Kolor', 'Pen (mm)': 'Pisak (mm)', 'Locked': 'Zablokowana', 'Add': 'Dodaj', 'New layer\'s name': 'Nazwa nowej warstwy',
   'Base point': 'Punkt bazowy', 'Survey point': 'Punkt pomiarowy', 'Show the base and survey points in plans': 'Pokaż punkt bazowy i pomiarowy na rzutach',
+  'Latitude': 'Szerokość geograficzna', 'Longitude': 'Długość geograficzna', 'WGS 84, in degrees; empty when unknown': 'WGS 84, w stopniach; puste, gdy nieznane', 'The latitude and longitude tie the project to the map at the base point': 'Szerokość i długość geograficzna wiążą projekt z mapą w punkcie bazowym',
   'Add a survey point': 'Dodaj punkt pomiarowy', 'Remove the survey point': 'Usuń punkt pomiarowy', 'True north': 'Północ geograficzna', 'Easting': 'Współrzędna E', 'Northing': 'Współrzędna N',
   'Wall type': 'Typ ściany', 'New type': 'Nowy typ', 'Save type': 'Zapisz typ', 'Create type': 'Utwórz typ', 'Delete type': 'Usuń typ', 'Draw with it': 'Rysuj tym typem',
   'Place with it': 'Umieść tym typem', 'Layer': 'Warstwa', 'Material': 'Materiał', 'Core': 'Rdzeń', 'Zone': 'Strefa', 'New door': 'Nowe drzwi', 'New window': 'Nowe okno',

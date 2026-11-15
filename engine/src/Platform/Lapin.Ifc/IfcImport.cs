@@ -232,6 +232,7 @@ public static partial class IfcImport
                 if (f.Get(r[4]) is { Type: "IFCBUILDINGSTOREY" } storey)
                     foreach (var p in Refs(r[5])) if (f.Entities.GetValueOrDefault(p) is { Type: "IFCSPACE" }) containedIn[p] = storey.Id;
             Project(edit);
+            Georeference(edit);
             Storeys(edit);
             if (!o.ReferenceOnly)
             {
@@ -571,6 +572,7 @@ public static partial class IfcImport
             if (project == null) { Spatial.EnsureBuilding(edit); project = Spatial.Project(edit.Model)!; }
             var attrs = project.CloneAttrs();
             foreach (var (k, v) in intent.Attrs) attrs[k] = v?.DeepClone();
+            locationFromIntent = intent.Attrs.ContainsKey("location");
             ProjectInformation(p.Id, attrs);
             edit.Replace(project.With(name: Str(p[2]) ?? project.Name, attrs: attrs));
         }

@@ -995,6 +995,7 @@ export const ZH: Record<string, string> = {
   'the level below': '下一标高', 'unlimited': '无限制', 'At': '位于', 'Back to the default': '恢复默认',
   'Drafting layers': '绘图图层', 'Current': '当前', 'Colour': '颜色', 'Pen (mm)': '笔（mm）', 'Locked': '已锁定', 'Add': '添加', 'New layer\'s name': '新图层名称',
   'Base point': '基点', 'Survey point': '测量点', 'Show the base and survey points in plans': '在平面图中显示基点和测量点',
+  'Latitude': '纬度', 'Longitude': '经度', 'WGS 84, in degrees; empty when unknown': 'WGS 84，单位为度；未知时留空', 'The latitude and longitude tie the project to the map at the base point': '纬度和经度在基点处将项目与地图关联',
   'Add a survey point': '添加测量点', 'Remove the survey point': '移除测量点', 'True north': '正北', 'Easting': '东坐标', 'Northing': '北坐标',
   'Wall type': '墙类型', 'New type': '新建类型', 'Save type': '保存类型', 'Create type': '创建类型', 'Delete type': '删除类型', 'Draw with it': '用它绘制',
   'Place with it': '用它放置', 'Layer': '层', 'Material': '材料', 'Core': '核心层', 'Zone': '分区', 'New door': '新建门', 'New window': '新建窗',

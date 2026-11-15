@@ -991,6 +991,7 @@ export const RO: Record<string, string> = {
   'the level below': 'nivelul de dedesubt', 'unlimited': 'nelimitat', 'At': 'La', 'Back to the default': 'Înapoi la implicit',
   'Drafting layers': 'Layere de desen', 'Current': 'Curent', 'Colour': 'Culoare', 'Pen (mm)': 'Peniță (mm)', 'Locked': 'Blocat', 'Add': 'Adaugă', "New layer's name": 'Numele noului layer',
   'Base point': 'Punct de bază', 'Survey point': 'Punct topografic', 'Show the base and survey points in plans': 'Arată punctul de bază și punctul topografic în planuri',
+  'Latitude': 'Latitudine', 'Longitude': 'Longitudine', 'WGS 84, in degrees; empty when unknown': 'WGS 84, în grade; gol când nu e cunoscută', 'The latitude and longitude tie the project to the map at the base point': 'Latitudinea și longitudinea leagă proiectul de hartă în punctul de bază',
   'Add a survey point': 'Adaugă un punct topografic', 'Remove the survey point': 'Șterge punctul topografic', 'True north': 'Nordul geografic', 'Easting': 'Est', 'Northing': 'Nord',
   'Wall type': 'Tip de perete', 'New type': 'Tip nou', 'Save type': 'Salvează tipul', 'Create type': 'Creează tipul', 'Delete type': 'Șterge tipul', 'Draw with it': 'Desenează cu el',
   'Place with it': 'Pune cu el', 'Layer': 'Strat', 'Material': 'Material', 'Core': 'Miez', 'Zone': 'Zonă', 'New door': 'Ușă nouă', 'New window': 'Fereastră nouă',

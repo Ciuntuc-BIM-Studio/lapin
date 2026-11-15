@@ -997,6 +997,7 @@ export const FR: Record<string, string> = {
   'the level below': 'le niveau inférieur', 'unlimited': 'illimité', 'At': 'À', 'Back to the default': 'Revenir à la valeur par défaut',
   'Drafting layers': 'Calques de dessin', 'Current': 'Courant', 'Colour': 'Couleur', 'Pen (mm)': 'Plume (mm)', 'Locked': 'Verrouillé', 'Add': 'Ajouter', 'New layer\'s name': 'Nom du nouveau calque',
   'Base point': 'Point de base', 'Survey point': 'Point topographique', 'Show the base and survey points in plans': 'Afficher le point de base et le point topographique dans les plans',
+  'Latitude': 'Latitude', 'Longitude': 'Longitude', 'WGS 84, in degrees; empty when unknown': 'WGS 84, en degrés ; vide si inconnue', 'The latitude and longitude tie the project to the map at the base point': 'La latitude et la longitude lient le projet à la carte au point de base',
   'Add a survey point': 'Ajouter un point topographique', 'Remove the survey point': 'Supprimer le point topographique', 'True north': 'Nord géographique', 'Easting': 'Abscisse E', 'Northing': 'Ordonnée N',
   'Wall type': 'Type de mur', 'New type': 'Nouveau type', 'Save type': 'Enregistrer le type', 'Create type': 'Créer le type', 'Delete type': 'Supprimer le type', 'Draw with it': 'Dessiner avec',
   'Place with it': 'Placer avec', 'Layer': 'Couche', 'Material': 'Matériau', 'Core': 'Noyau', 'Zone': 'Zone', 'New door': 'Nouvelle porte', 'New window': 'Nouvelle fenêtre',

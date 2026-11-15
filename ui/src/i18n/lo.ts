@@ -992,6 +992,7 @@ export const LO: Record<string, string> = {
   'the level below': 'ລະດັບຂ້າງລຸ່ມ', 'unlimited': 'ບໍ່ຈຳກັດ', 'At': 'ທີ່', 'Back to the default': 'ກັບຄືນສູ່ຄ່າເລີ່ມຕົ້ນ',
   'Drafting layers': 'ເລເຢີການແຕ້ມແບບ', 'Current': 'ປັດຈຸບັນ', 'Colour': 'ສີ', 'Pen (mm)': 'ເບີປາກກາ (ມມ)', 'Locked': 'ລັອກ', 'Add': 'ເພີ່ມ', 'New layer\'s name': 'ຊື່ເລເຢີໃໝ່',
   'Base point': 'ຈຸດຫຼັກຖານໂຄງການ (Base point)', 'Survey point': 'ຈຸດສຳຫຼວດພິກັດ (Survey point)', 'Show the base and survey points in plans': 'ສະແດງຈຸດຫຼັກຖານແລະຈຸດສຳຫຼວດໃນແຜນຜັງ',
+  'Latitude': 'ເສັ້ນຂະໜານ', 'Longitude': 'ເສັ້ນແວງ', 'WGS 84, in degrees; empty when unknown': 'WGS 84, ເປັນອົງສາ; ວ່າງເມື່ອບໍ່ຮູ້', 'The latitude and longitude tie the project to the map at the base point': 'ເສັ້ນຂະໜານ ແລະ ເສັ້ນແວງ ຜູກໂຄງການກັບແຜນທີ່ຢູ່ຈຸດຖານ',
   'Add a survey point': 'ເພີ່ມຈຸດສຳຫຼວດ', 'Remove the survey point': 'ລຶບຈຸດສຳຫຼວດອອກ', 'True north': 'ທິດເໜືອແທ້', 'Easting': 'ຄ່າພິກັດຕາເວັນອອກ (E)', 'Northing': 'ຄ່າພິກັດເໜືອ (N)',
   'Wall type': 'ປະເພດຝາ', 'New type': 'ປະເພດໃໝ່', 'Save type': 'ບັນທຶກປະເພດ', 'Create type': 'ສ້າງປະເພດ', 'Delete type': 'ລຶບປະເພດ', 'Draw with it': 'ແຕ້ມດ້ວຍປະເພດນີ້',
   'Place with it': 'ວາງດ້ວຍປະເພດນີ້', 'Layer': 'ຊັ້ນວັດສະດຸ', 'Material': 'ວັດສະດຸ', 'Core': 'ແກນຫຼັກໂຄງສ້າງ', 'Zone': 'ເຂດ (Zone)', 'New door': 'ປະຕູໃໝ່', 'New window': 'ປ່ອງຢ້ຽມໃໝ່',

@@ -997,6 +997,7 @@ export const DA: Record<string, string> = {
   'the level below': 'niveauet nedenunder', 'unlimited': 'ubegrænset', 'At': 'Ved', 'Back to the default': 'Tilbage til standard',
   'Drafting layers': 'Tegningslag', 'Current': 'Aktuelt', 'Colour': 'Farve', 'Pen (mm)': 'Pen (mm)', 'Locked': 'Låst', 'Add': 'Tilføj', 'New layer\'s name': 'Det nye lags navn',
   'Base point': 'Basispunkt', 'Survey point': 'Opmålingspunkt', 'Show the base and survey points in plans': 'Vis basis- og opmålingspunkterne i planer',
+  'Latitude': 'Breddegrad', 'Longitude': 'Længdegrad', 'WGS 84, in degrees; empty when unknown': 'WGS 84, i grader; tom når ukendt', 'The latitude and longitude tie the project to the map at the base point': 'Bredde- og længdegraden binder projektet til kortet i basispunktet',
   'Add a survey point': 'Tilføj et opmålingspunkt', 'Remove the survey point': 'Fjern opmålingspunktet', 'True north': 'Geografisk nord', 'Easting': 'Østkoordinat', 'Northing': 'Nordkoordinat',
   'Wall type': 'Vægtype', 'New type': 'Ny type', 'Save type': 'Gem type', 'Create type': 'Opret type', 'Delete type': 'Slet type', 'Draw with it': 'Tegn med den',
   'Place with it': 'Placér med den', 'Layer': 'Lag', 'Material': 'Materiale', 'Core': 'Kerne', 'Zone': 'Zone', 'New door': 'Ny dør', 'New window': 'Nyt vindue',

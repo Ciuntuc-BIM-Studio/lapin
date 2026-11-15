@@ -995,6 +995,7 @@ export const PT: Record<string, string> = {
   'the level below': 'o nível abaixo', 'unlimited': 'ilimitado', 'At': 'Em', 'Back to the default': 'Voltar ao padrão',
   'Drafting layers': 'Layers de desenho', 'Current': 'Atual', 'Colour': 'Cor', 'Pen (mm)': 'Pena (mm)', 'Locked': 'Bloqueado', 'Add': 'Adicionar', 'New layer\'s name': 'Nome do novo layer',
   'Base point': 'Ponto base', 'Survey point': 'Ponto de levantamento', 'Show the base and survey points in plans': 'Mostrar o ponto base e o ponto de levantamento nas plantas',
+  'Latitude': 'Latitude', 'Longitude': 'Longitude', 'WGS 84, in degrees; empty when unknown': 'WGS 84, em graus; vazio quando desconhecida', 'The latitude and longitude tie the project to the map at the base point': 'A latitude e a longitude ligam o projeto ao mapa no ponto base',
   'Add a survey point': 'Adicionar um ponto de levantamento', 'Remove the survey point': 'Remover o ponto de levantamento', 'True north': 'Norte verdadeiro', 'Easting': 'Leste', 'Northing': 'Norte',
   'Wall type': 'Tipo de parede', 'New type': 'Novo tipo', 'Save type': 'Salvar tipo', 'Create type': 'Criar tipo', 'Delete type': 'Excluir tipo', 'Draw with it': 'Desenhar com ele',
   'Place with it': 'Posicionar com ele', 'Layer': 'Camada', 'Material': 'Material', 'Core': 'Núcleo', 'Zone': 'Zona', 'New door': 'Nova porta', 'New window': 'Nova janela',

@@ -997,6 +997,7 @@ export const DE: Record<string, string> = {
   'the level below': 'die Ebene darunter', 'unlimited': 'unbegrenzt', 'At': 'Bei', 'Back to the default': 'Zurück zum Standard',
   'Drafting layers': 'Zeichnungslayer', 'Current': 'Aktuell', 'Colour': 'Farbe', 'Pen (mm)': 'Stift (mm)', 'Locked': 'Gesperrt', 'Add': 'Hinzufügen', 'New layer\'s name': 'Name des neuen Layers',
   'Base point': 'Projektbasispunkt', 'Survey point': 'Vermessungspunkt', 'Show the base and survey points in plans': 'Projektbasis- und Vermessungspunkt in Grundrissen anzeigen',
+  'Latitude': 'Breite', 'Longitude': 'Länge', 'WGS 84, in degrees; empty when unknown': 'WGS 84, in Grad; leer, wenn unbekannt', 'The latitude and longitude tie the project to the map at the base point': 'Breite und Länge verbinden das Projekt am Basispunkt mit der Karte',
   'Add a survey point': 'Vermessungspunkt hinzufügen', 'Remove the survey point': 'Vermessungspunkt entfernen', 'True north': 'Geografisch Nord', 'Easting': 'Rechtswert', 'Northing': 'Hochwert',
   'Wall type': 'Wandtyp', 'New type': 'Neuer Typ', 'Save type': 'Typ speichern', 'Create type': 'Typ erstellen', 'Delete type': 'Typ löschen', 'Draw with it': 'Damit zeichnen',
   'Place with it': 'Damit platzieren', 'Layer': 'Schicht', 'Material': 'Material', 'Core': 'Kern', 'Zone': 'Zone', 'New door': 'Neue Tür', 'New window': 'Neues Fenster',

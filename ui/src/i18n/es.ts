@@ -997,6 +997,7 @@ export const ES: Record<string, string> = {
   'the level below': 'el nivel inferior', 'unlimited': 'ilimitado', 'At': 'En', 'Back to the default': 'Volver al predeterminado',
   'Drafting layers': 'Capas de dibujo', 'Current': 'Actual', 'Colour': 'Color', 'Pen (mm)': 'Plumilla (mm)', 'Locked': 'Bloqueada', 'Add': 'Añadir', 'New layer\'s name': 'Nombre de la capa nueva',
   'Base point': 'Punto base', 'Survey point': 'Punto de reconocimiento', 'Show the base and survey points in plans': 'Mostrar el punto base y el punto de reconocimiento en las plantas',
+  'Latitude': 'Latitud', 'Longitude': 'Longitud', 'WGS 84, in degrees; empty when unknown': 'WGS 84, en grados; vacío si se desconoce', 'The latitude and longitude tie the project to the map at the base point': 'La latitud y la longitud vinculan el proyecto al mapa en el punto base',
   'Add a survey point': 'Añadir un punto de reconocimiento', 'Remove the survey point': 'Quitar el punto de reconocimiento', 'True north': 'Norte real', 'Easting': 'Este', 'Northing': 'Norte',
   'Wall type': 'Tipo de muro', 'New type': 'Tipo nuevo', 'Save type': 'Guardar tipo', 'Create type': 'Crear tipo', 'Delete type': 'Eliminar tipo', 'Draw with it': 'Dibujar con él',
   'Place with it': 'Colocar con él', 'Layer': 'Capa', 'Material': 'Material', 'Core': 'Núcleo', 'Zone': 'Zona', 'New door': 'Puerta nueva', 'New window': 'Ventana nueva',
