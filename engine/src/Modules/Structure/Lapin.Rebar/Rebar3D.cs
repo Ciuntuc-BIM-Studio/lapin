@@ -20,9 +20,11 @@ public static class Rebar3D
     /// <summary>How many times a bar is laid across its drawing's plane, and how: by the cover in its host, or at a step about the plane.</summary>
     public sealed record Across(int Count, string Mode, double Step)
     {
+        /// <summary>The most times a bar is laid across the drawing, as rebar.update allows.</summary>
+        public const int MaxCount = 40;
         public JsonObject ToJson() => new() { ["count"] = Count, ["mode"] = Mode, ["step"] = Math.Round(Step, 6) };
         public static Across? Of(Entity e) => e.Attrs["across"] is JsonObject o
-            ? new Across((int)Math.Max(1, Json.Number(o["count"]) ?? 1), (string?)o["mode"] is "step" ? "step" : "cover", Json.Number(o["step"]) ?? 0.05) : null;
+            ? new Across((int)Math.Clamp(Json.Number(o["count"]) ?? 1, 1, MaxCount), (string?)o["mode"] is "step" ? "step" : "cover", Json.Number(o["step"]) ?? 0.05) : null;
     }
 
     /// <summary>The even spread of <paramref name="n"/> places between <paramref name="lo"/> and <paramref name="hi"/> (the ends included); one in the middle; none for 0.</summary>
