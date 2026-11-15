@@ -3921,6 +3921,8 @@ export const scenes = [
       }
       await t.ui({ keyPlan: false });
       await t.tool('manage.openingsMep');
+      // One window, Clash detection, with the openings check as its second tab (S2).
+      await t.page.waitForSelector('[data-testid=clash-dialog] [data-clash-mode=openings].active', { timeout: 30_000 });
       t.expect(await t.page.locator('[data-testid=coordination-dialog]').count() === 1, 'Clash check opens');
       await t.wait(400);
       t.expect(await t.page.locator('[data-testid=clash-none]').count() === 1, 'nothing has run the check: no report yet');
