@@ -53,6 +53,8 @@ public static class Ceilings
 {
     public const string Class = "LapinCeiling";
     public const string TypeClass = "LapinCeilingType";
+    /// <summary>The grid's own turn (degrees) on top of its type's rotation: a ceiling turned turns its grid with it (audit 15.11.2026, M4).</summary>
+    public const string TurnKey = "gridRotation";
     public static readonly string[] FixtureKinds = ["light", "diffuser"];
 
     public static void Register(IModuleRegistry r)
@@ -64,6 +66,7 @@ public static class Ceilings
         ], "#ece9df"));
         r.Geometry(Class, (e, m, _) => Geometry(e, m));
         r.Quantities(Class, Quantities);
+        r.Service<IElementPlacement>(new CeilingPlacement());
         r.Catalog("ceilings", new JsonObject
         {
             ["spec"] = CeilingSpec.Default().ToJson(),
@@ -124,6 +127,8 @@ public static class Ceilings
             }
             if (Json.Number(a["height"]) is { } h) attrs["height"] = Math.Clamp(h, 1.5, 20);
             if (a.ContainsKey("origin")) { if (a["origin"] is JsonArray o && o.Count == 2) attrs["origin"] = o.DeepClone(); else attrs.Remove("origin"); }
+            // The grid's own turn (degrees) on top of the type's rotation; null: the type's alone.
+            if (a.ContainsKey(TurnKey)) { if (Json.Number(a[TurnKey]) is { } turn && Math.Abs(turn) > 1e-9) attrs[TurnKey] = turn; else attrs.Remove(TurnKey); }
             if ((string?)a["typeId"] is { } tid) ctx.Relate(IfcClass.RelDefinesByType, Spatial.Require(ctx.Model, tid, TypeClass).Id, c.Id);
             ctx.Replace(c.With(attrs: attrs));
             return null;
@@ -217,11 +222,11 @@ public static class Ceilings
         readonly IReadOnlyList<Vec2> _local;
         public readonly int I0, I1, J0, J1;
 
-        public Grid(IReadOnlyList<Vec2> outline, CeilingSpec spec, Vec2? origin)
+        public Grid(IReadOnlyList<Vec2> outline, CeilingSpec spec, Vec2? origin, double turn = 0)
         {
             Outline = outline;
             (W, L) = (spec.TileWidth, spec.TileLength);
-            var a = spec.Rotation * Math.PI / 180;
+            var a = (spec.Rotation + turn) * Math.PI / 180;
             U = new Vec2(Math.Cos(a), Math.Sin(a));
             V = U.Perp;
             var mid = new Vec2(outline.Average(p => p.X), outline.Average(p => p.Y));
@@ -287,8 +292,11 @@ public static class Ceilings
         }
     }
 
-    public static Grid GridOf(IModelView m, Entity c) =>
-        new(Slabs.Contour(c), SpecOf(m, c), c.Attrs["origin"] is JsonArray o && o.Count == 2 && Json.Number(o[0]) is { } ox && Json.Number(o[1]) is { } oy ? new Vec2(ox, oy) : null);
+    public static Grid GridOf(IModelView m, Entity c) => new(Slabs.Contour(c), SpecOf(m, c), OriginOf(c), c.Num(TurnKey));
+
+    /// <summary>The instance's own grid origin, if it has one.</summary>
+    public static Vec2? OriginOf(Entity c) =>
+        c.Attrs["origin"] is JsonArray o && o.Count == 2 && Json.Number(o[0]) is { } ox && Json.Number(o[1]) is { } oy ? new Vec2(ox, oy) : null;
 
     public static ElementGeometry? Geometry(Entity c, IModelView m)
     {
@@ -308,7 +316,7 @@ public static class Ceilings
             if (Prism.ExtrudeFootprint(ccw, z, spec.Thickness, "board") is { } board)
                 parts.Add(new GeometryPart("Board", spec.TileColor, board, tileMat, "tiles"));
         }
-        var grid = new Grid(ccw, spec, c.Attrs["origin"] is JsonArray o && o.Count == 2 && Json.Number(o[0]) is { } ox && Json.Number(o[1]) is { } oy ? new Vec2(ox, oy) : null);
+        var grid = new Grid(ccw, spec, OriginOf(c), c.Num(TurnKey));
         var fixtures = Fixtures(c).Where(f => grid.Whole(f.I, f.J)).GroupBy(f => (f.I, f.J)).Select(g => g.Last()).ToList();
         var taken = fixtures.Select(f => (f.I, f.J)).ToHashSet();
         if (spec.System == "grid")
