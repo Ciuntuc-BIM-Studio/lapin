@@ -113,7 +113,7 @@ public static class Formwork
     public static (string Code, string Text) ArticleOf(IModelView m, Entity e) =>
         TypeOf(m, e)?.Attrs["spec"] is JsonObject spec ? (Lay.Str(spec, "article", ""), Lay.Str(spec, "articleText", "")) : ("", "");
 
-    public static Entity? TypeOf(IModelView m, Entity e) => m.RelatingOf(e.Id, IfcClass.RelDefinesByType);
+    public static Entity? TypeOf(IModelView m, Entity e) => Lapin.Platform.Types.Of(m, e, TypeClass);
 
     /// <summary>
     /// The working days a formwork stays after its host is cast (docs/plan-4d5d.md, stage 3): its type's <c>stripAfter</c>,

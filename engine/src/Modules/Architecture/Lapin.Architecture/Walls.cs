@@ -36,8 +36,7 @@ public static class Walls
     /// <summary>The wall's height, worked out on every ask: to its top (<see cref="WallTop"/>), else its own.</summary>
     public static double HeightOf(IModelView m, Entity wall) => WallTop.Height(m, wall);
 
-    public static Entity? TypeOf(IModelView m, string wallId) =>
-        m.RelatingOf(wallId, IfcClass.RelDefinesByType) is { Class: IfcClass.WallType } t ? t : null;
+    public static Entity? TypeOf(IModelView m, string wallId) => Lapin.Platform.Types.Of(m, wallId, IfcClass.WallType);
 
     /// <summary>The wall's own layer set usage, if it has one.</summary>
     public static Entity? UsageOf(IModelView m, string wallId) => LayerSets.UsageOf(m, wallId);

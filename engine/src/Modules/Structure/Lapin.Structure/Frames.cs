@@ -386,7 +386,7 @@ static class Place
 
     public static Vec2 P(JsonObject a, string x, string y) => Args.Point(a, x, y);
 
-    public static Entity? TypeOf(IModelView m, string id) => m.RelatingOf(id, IfcClass.RelDefinesByType);
+    public static Entity? TypeOf(IModelView m, string id) => Lapin.Platform.Types.Of(m, id);
 
     /// <summary>The type named in the args, of the class; else the project's first of the class, else <paramref name="make"/>'s.</summary>
     public static Entity TypeFor(ICommandContext ctx, JsonObject a, string typeClass, Func<Entity> make, Func<Entity, bool>? fits = null)
