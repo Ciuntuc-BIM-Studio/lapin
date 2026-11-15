@@ -71,7 +71,8 @@ Per DXF import (and per linked DXF), by its file's name: shown, halftone, and ea
 Rule-based, the project's (`viewFilters`), each a name, *all* or *any* of its rules, and rules `{field, op, value}`:
 
 - fields: *IFC class*, *category*, *type* (the type's name), *name*, *material* (any of the element's materials), *storey*, *group*, *link* (its name; *none* for the host's), *phase created*, *predefined type*, a **parameter** (the user's or a property set's, `params`), or any stored attribute by name;
-- operators: equals, does not equal, contains, does not contain, begins with, greater, less, has a value, has no value; numbers compared as numbers.
+- operators: equals, does not equal, contains, does not contain, begins with, greater, less, at least, at most, between, one of, none of, has a value, has no value; numbers compared as numbers.
+- since the audit's stage 2 (D3), a rule is a condition of Lapin's one element filter (`ElementFilter`, the field schedules' and the task rules'): the facets above as they are read everywhere (a door off every storey is on its wall's storey, a reference's type is its file's type, an element's materials are its own, its type's and its layers'), and a `field` rule reads any field as a schedule does (`name` its token, numbers in SI). The resolver has no geometry (`ModelQuery`), so a view filter reads no quantity and no part's material: what is out of reach is out of reach rather than drawing slower. Quick select has the geometry and reads them.
 
 A view lists the filters it uses in order (`graphics.filters`); for each the same columns as a category (shown, colour, halftone, transparency, lines). An element a filter hides is hidden; where several filters match, the first in the list gives each field (Revit's rule). Manage → View filters edits them, the Filters tab adds, removes and orders them for the view.
 

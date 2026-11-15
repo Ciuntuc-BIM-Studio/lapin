@@ -79,233 +79,6 @@ public sealed class ElementFields(IQueryContext q, Entity e, string units)
     }
 }
 
-/// <summary>A condition on a field (<c>{field, op, value}</c>): numbers compared as numbers, texts case aside.</summary>
-public sealed record FieldCondition(string Field, string Op, string? Value)
-{
-    public static readonly string[] Ops = ["=", "≠", "contains", "starts with", "<", "≤", ">", "≥", "exists", "missing"];
-
-    /// <summary>An operator as it may be written (<c>!=</c>, <c>&lt;=</c>, <c>startsWith</c>…) by its name; null when it is none.</summary>
-    public static string? Normal(string? op) => op?.Trim().ToLowerInvariant() switch
-    {
-        "=" or "==" or "is" or "equals" => "=",
-        "≠" or "!=" or "<>" or "is not" or "not" => "≠",
-        "contains" or "has text" => "contains",
-        "starts with" or "startswith" or "starts" or "begins with" => "starts with",
-        "<" => "<", "≤" or "<=" => "≤", ">" => ">", "≥" or ">=" => "≥",
-        "exists" or "has" or "has value" => "exists",
-        "missing" or "empty" or "not exists" or "is empty" => "missing",
-        _ => null,
-    };
-
-    static readonly CompareInfo Compare = CultureInfo.InvariantCulture.CompareInfo;
-
-    public bool Holds(FieldValue v)
-    {
-        switch (Op)
-        {
-            case "exists": return v.Exists;
-            case "missing": return !v.Exists;
-        }
-        var want = Value ?? "";
-        if (!v.Exists) return Op == "≠" && want.Length > 0;
-        var shown = v.Shown;
-        switch (Op)
-        {
-            case "contains": return Compare.IndexOf(shown, want, CompareOptions.IgnoreCase) >= 0;
-            case "starts with": return Compare.IsPrefix(shown, want, CompareOptions.IgnoreCase);
-        }
-        int c;
-        if (v.Number is { } n && FieldValue.StrictNumber(want) is { } w)
-            c = Math.Abs(n - w) <= 1e-9 * Math.Max(1, Math.Max(Math.Abs(n), Math.Abs(w))) ? 0 : n.CompareTo(w);
-        else
-            c = Op is "=" or "≠" ? (string.Equals(shown.Trim(), want.Trim(), StringComparison.OrdinalIgnoreCase) ? 0 : 1)
-                : string.Compare(shown, want, CultureInfo.InvariantCulture, CompareOptions.IgnoreCase | CompareOptions.NumericOrdering);
-        return Op switch { "=" => c == 0, "≠" => c != 0, "<" => c < 0, "≤" => c <= 0, ">" => c > 0, "≥" => c >= 0, _ => false };
-    }
-
-    public JsonObject ToJson()
-    {
-        var o = new JsonObject { ["field"] = Field, ["op"] = Op };
-        if (Value != null && Op is not ("exists" or "missing")) o["value"] = Value;
-        return o;
-    }
-
-    /// <summary>The condition in words, as a task's rule or a schedule's filter is described („Pset_Firma.Etapa = E2”, „Sector exists”).</summary>
-    public override string ToString() => Op is "exists" or "missing" ? $"{Field} {Op}" : $"{Field} {Op} {Value}";
-
-    /// <summary>Conditions as stored (<c>[{field, op, value}]</c>); those that do not read are left out.</summary>
-    public static List<FieldCondition> ReadAll(JsonNode? n) => (n as JsonArray ?? []).OfType<JsonObject>()
-        .Select(c => ((string?)c["field"])?.Trim() is { Length: > 0 } f && Normal((string?)c["op"]) is { } op ? new FieldCondition(f, op, ValueText(c["value"])) : null)
-        .OfType<FieldCondition>().ToList();
-
-    /// <summary>A condition's value as a text: a number written with a point, yes or no for a yes/no.</summary>
-    public static string? ValueText(JsonNode? v) => v switch
-    {
-        null => null,
-        JsonValue s when s.TryGetValue<string>(out var t) => t,
-        JsonValue b when b.TryGetValue<bool>(out var x) => x ? "yes" : "no",
-        _ => Json.Number(v) is { } n ? n.ToString("R", CultureInfo.InvariantCulture) : v.ToJsonString(),
-    };
-
-    /// <summary>Conditions as a command gives them, checked: each with a field, an operator Lapin knows and a value when it needs one; at most <paramref name="max"/>.</summary>
-    public static List<FieldCondition> CheckAll(JsonNode? n, int max = ElementFilter.MaxConditions)
-    {
-        if (n is null) return [];
-        if (n is not JsonArray conditions) throw new CommandException("Conditions are a list: [{field, op, value}].");
-        if (conditions.Count > max) throw new CommandException($"At most {max} conditions.");
-        foreach (var c in conditions)
-        {
-            if (c is not JsonObject co || ((string?)co["field"])?.Trim() is not { Length: > 0 } field) throw new CommandException("A condition names a field: {field, op, value}.");
-            if (Normal((string?)co["op"]) is not { } op) throw new CommandException($"„{field}”: a condition's operator is one of {string.Join(", ", Ops)}.");
-            if (op is not ("exists" or "missing") && co["value"] is null) throw new CommandException($"„{field} {op}”: which value?");
-            if (ElementFields.FormulaOf(field) is { } f) ParamFormulas.Check(f);
-        }
-        return ReadAll(n);
-    }
-}
-
-/// <summary>
-/// Which elements a schedule lists (docs/plan-user-extensibility.md, „Extrase și câmpuri configurabile”): the dimensions a
-/// work task's rule has (the IFC classes — a supertype takes its kinds —, the types, the storeys, the materials, an element
-/// with any of them, the groups and the phases created in; each by its id or its name, so a template brought into another
-/// project finds its own), then conditions on any field. Every condition given must hold; one left empty lets everything through.
-/// </summary>
-public sealed record ElementFilter(IReadOnlyList<string> Classes, IReadOnlyList<string> Types, IReadOnlyList<string> Storeys,
-    IReadOnlyList<string> Materials, IReadOnlyList<string> Groups, IReadOnlyList<string> Phases, IReadOnlyList<FieldCondition> Conditions)
-{
-    public static readonly string[] Keys = ["classes", "types", "storeys", "materials", "groups", "phases"];
-    public static readonly ElementFilter All = new([], [], [], [], [], [], []);
-    public const int MaxConditions = 32;
-
-    /// <summary>What is never a schedule's row: openings, drawings over the model, grids, shared bodies, the file's type records.</summary>
-    static readonly HashSet<string> NotListed =
-    [
-        IfcClass.OpeningElement, IfcClass.Annotation, IfcClass.Grid, "IfcVirtualElement", StoredBodies.SharedClass, IfcSource.RecordClass,
-    ];
-
-    static List<string> Strings(JsonNode? n) => n is JsonArray a ? a.Select(x => ((string?)x)?.Trim()).OfType<string>().Where(s => s.Length > 0).Distinct().ToList() : [];
-
-    IEnumerable<(string Key, IReadOnlyList<string> Values)> Lists() =>
-        [("classes", Classes), ("types", Types), ("storeys", Storeys), ("materials", Materials), ("groups", Groups), ("phases", Phases)];
-
-    public bool IsEmpty => Lists().All(l => l.Values.Count == 0) && Conditions.Count == 0;
-
-    /// <summary>A filter as stored; conditions that do not read are left out. Null node: none.</summary>
-    public static ElementFilter? Read(JsonNode? n)
-    {
-        if (n is not JsonObject o) return null;
-        return new(Strings(o["classes"]), Strings(o["types"]), Strings(o["storeys"]), Strings(o["materials"]), Strings(o["groups"]), Strings(o["phases"]), FieldCondition.ReadAll(o["conditions"]));
-    }
-
-    /// <summary>A filter as a command gives it, checked: each condition with a field and an operator Lapin knows.</summary>
-    public static ElementFilter? Check(JsonNode? n)
-    {
-        if (n is null) return null;
-        if (n is not JsonObject o) throw new CommandException("A filter is an object: {classes, types, storeys, materials, groups, phases, conditions}.");
-        if (o["conditions"] is JsonArray { Count: > MaxConditions }) throw new CommandException($"A filter has at most {MaxConditions} conditions.");
-        FieldCondition.CheckAll(o["conditions"]);
-        return Read(o);
-    }
-
-    public JsonObject ToJson()
-    {
-        var o = new JsonObject();
-        foreach (var (k, v) in Lists()) if (v.Count > 0) o[k] = new JsonArray([.. v.Select(x => (JsonNode)x)]);
-        if (Conditions.Count > 0) o["conditions"] = new JsonArray([.. Conditions.Select(c => (JsonNode)c.ToJson())]);
-        return o;
-    }
-
-    /// <summary>Whether an entity is one a schedule may list: an element of the model (one of a file's too), not an opening, a drawing, a grid or a record.</summary>
-    public static bool IsListed(IQueryContext q, Entity e)
-    {
-        if (NotListed.Contains(e.Class)) return false;
-        return q.Describe(e.Class) is { } d ? d.Kind == "element" : StoredBodies.Has(e);
-    }
-
-    /// <summary>The elements the filter takes, in the model's order (null filter: every element listed).</summary>
-    public static List<Entity> Elements(IQueryContext q, ElementFilter? filter, string? units = null)
-    {
-        units ??= DraftingResources.Book(q.Model).Units;
-        var ctx = filter != null ? new Context(q) : null;
-        var o = new List<Entity>();
-        foreach (var e in q.Model.Entities)
-        {
-            if (!IsListed(q, e)) continue;
-            if (filter != null && !filter.Matches(ctx!, e, new ElementFields(q, e, units))) continue;
-            o.Add(e);
-        }
-        return o;
-    }
-
-    /// <summary>What matching reads of the model once: the phases' names and the default one.</summary>
-    public sealed class Context(IQueryContext q)
-    {
-        public IQueryContext Query => q;
-        List<(string Id, string Name, string Kind)>? _phases;
-        public List<(string Id, string Name, string Kind)> Phases => _phases ??= ((Spatial.Project(q.Model)?.Attrs["phases"] as JsonObject)?["phases"] as JsonArray ?? [])
-            .OfType<JsonObject>().Select(p => ((string?)p["id"] ?? "", (string?)p["name"] ?? "", (string?)p["kind"] ?? "")).Where(p => p.Item1.Length > 0).ToList();
-        /// <summary>The phase an unphased element counts as created in: the first construction phase, else the first (the phases module's default list: new construction).</summary>
-        public string DefaultPhase => Phases.FirstOrDefault(p => p.Kind == "construction").Id ?? Phases.FirstOrDefault().Id ?? "new-construction";
-    }
-
-    static bool Named(IReadOnlyList<string> wanted, Entity? x, string? name = null) =>
-        x != null && wanted.Any(w => w == x.Id || string.Equals(w, name ?? x.Name, StringComparison.OrdinalIgnoreCase));
-
-    public bool TakesClass(string cls) => Classes.Any(c =>
-        c == cls || "Ifc" + c == cls || string.Equals(c, cls, StringComparison.OrdinalIgnoreCase) || IfcSchema.Parent(cls) != null && IfcSchema.IsA(cls, c));
-
-    public bool Matches(Context ctx, Entity e, ElementFields fields)
-    {
-        var q = ctx.Query;
-        var m = q.Model;
-        if (Classes.Count > 0 && !TakesClass(e.Class)) return false;
-        if (Types.Count > 0 && (ReferenceTypes.TypeOf(m, e) is not { } type ? !Types.Any(t => string.Equals(t, ReferenceTypes.NameOf(m, e), StringComparison.OrdinalIgnoreCase))
-            : !Named(Types, type, ReferenceTypes.Name(type)))) return false;
-        if (Storeys.Count > 0 && !Named(Storeys, StoreyOf(m, e))) return false;
-        if (Groups.Count > 0 && !Named(Groups, Lapin.Platform.Groups.Of(m, e.Id))) return false;
-        if (Phases.Count > 0)
-        {
-            var phase = e.Str("phaseCreated") ?? ctx.DefaultPhase;
-            var name = ctx.Phases.FirstOrDefault(p => p.Id == phase).Name;
-            if (!Phases.Any(p => p == phase || name != null && string.Equals(p, name, StringComparison.OrdinalIgnoreCase))) return false;
-        }
-        if (Materials.Count > 0)
-        {
-            var mats = MaterialsOf(q, e);
-            if (!Materials.Any(w => mats.Contains(w) || mats.Any(id => string.Equals(m.Get(id)?.Name, w, StringComparison.OrdinalIgnoreCase)))) return false;
-        }
-        foreach (var c in Conditions)
-            if (!c.Holds(fields.Value(c.Field))) return false;
-        return true;
-    }
-
-    /// <summary>An element's storey: its own, else (a door, a window) its host's.</summary>
-    public static Entity? StoreyOf(IModelView m, Entity e)
-    {
-        if (Spatial.StoreyOf(m, e.Id) is { } s) return s;
-        return m.RelatingOf(e.Id, IfcClass.RelFillsElement) is { } opening && m.RelatingOf(opening.Id, IfcClass.RelVoidsElement) is { } host ? Spatial.StoreyOf(m, host.Id) : null;
-    }
-
-    /// <summary>Every material in an element: its own and its type's, its layers' and its built parts'.</summary>
-    public static HashSet<string> MaterialsOf(IQueryContext q, Entity e)
-    {
-        var m = q.Model;
-        var o = new HashSet<string>(StringComparer.Ordinal);
-        void Take(string? id) { if (id != null && m.Get(id) is { Class: IfcClass.Material }) o.Add(id); }
-        var type = m.RelatingOf(e.Id, IfcClass.RelDefinesByType);
-        foreach (var x in new[] { e, type })
-        {
-            if (x == null) continue;
-            Take(x.Str("material"));
-            Take(m.RelatingOf(x.Id, IfcClass.RelAssociatesMaterial)?.Id);
-        }
-        foreach (var b in LayerSets.BandsOf(m, e.Id) ?? []) { Take(b.Material); foreach (var p in b.Parts ?? []) Take(p.Material); }
-        if (type != null) foreach (var l in LayerSets.LayersOf(m, type.Id)) { Take(l.Material); foreach (var p in l.Parts ?? []) Take(p.Material); }
-        foreach (var p in q.Geometry(e.Id)?.Parts ?? []) Take(p.Material);
-        return o;
-    }
-}
-
 /// <summary>The fields across the model (for a schedule's or a filter's pickers) and one field's values.</summary>
 public static partial class FieldCatalog
 {
@@ -502,8 +275,20 @@ public static partial class FieldCatalog
         var elements = ElementFilter.Elements(q, filter, units);
         var counts = new Dictionary<string, (int Count, double? Number)>(StringComparer.OrdinalIgnoreCase);
         int with = 0, missing = 0;
+        // A facet (@type, @material…, @text:<field>): each of its texts, a number when it starts with one.
+        var facets = ElementFacets.Is(field) && ElementFacets.Known(field) ? new ElementFilter.Context(q, units: units) : null;
         foreach (var e in elements.Take(max))
         {
+            if (facets != null)
+            {
+                var texts = ElementFacets.Values(facets, e, field);
+                if (texts.Count == 0) { missing++; continue; }
+                with++;
+                // A class by its IFC name, a phase by its name: one entry each, not its other spellings.
+                foreach (var t in field == "@class" ? texts.Take(1) : field is "@phase" or "@demolished" ? texts.TakeLast(1) : texts)
+                    counts[t] = counts.TryGetValue(t, out var tc) ? (tc.Count + 1, tc.Number) : (1, FieldValue.StrictNumber(t));
+                continue;
+            }
             var v = new ElementFields(q, e, units).Value(field);
             if (!v.Exists) { missing++; continue; }
             with++;

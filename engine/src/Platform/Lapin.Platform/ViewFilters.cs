@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Text.Json.Nodes;
-using Lapin.Drawing;
 using Lapin.Model;
 
 namespace Lapin.Platform;
@@ -9,25 +8,32 @@ namespace Lapin.Platform;
 /// Rule-based view filters as in Revit (docs/plan-visibility-graphics.md, Filters): the project's
 /// (<c>viewFilters</c>), each a name, <c>all</c> or <c>any</c> of its rules, and rules
 /// <c>{field, op, value}</c>. A view lists the filters it uses in order in its graphics
-/// (<c>filters: [{id, hidden, …}]</c>); <see cref="VisibilityGraphics"/> applies them.
+/// (<c>filters: [{id, hidden, …}]</c>); <see cref="VisibilityGraphics"/> applies them. Quick select reads the same rules.
+/// A rule is a condition of Lapin's one filter (<see cref="ElementFilter"/>, audit D3), kept in its own words: its field one
+/// of the element's facets (<see cref="ElementFacets"/>: class, type, storey…), <c>param</c> a field read as a tag writes it
+/// (in the project's units, as rules have always read it; <c>name</c> names it), or <c>field</c> any field read as a
+/// schedule reads it (numbers in SI, quantities where the caller has the geometry; <c>name</c> its token).
 /// </summary>
 public static class ViewFilters
 {
     public const string Key = "viewFilters";
 
-    /// <summary>What a rule reads of an element; <c>param</c> names a parameter (the user's, a property set's) or any stored attribute in <c>name</c>.</summary>
-    public static readonly string[] Fields = ["class", "category", "type", "name", "material", "storey", "group", "link", "phase", "predefinedType", "param"];
-    public static readonly string[] Ops = ["equals", "notEquals", "contains", "notContains", "beginsWith", "greater", "less", "between", "hasValue", "hasNoValue"];
+    /// <summary>What a rule reads of an element; <c>param</c> and <c>field</c> name a field in <c>name</c>.</summary>
+    public static readonly string[] Fields = ["class", "category", "type", "name", "material", "storey", "group", "link", "phase", "demolished", "predefinedType", "param", "field"];
+    public static readonly string[] Ops = ["equals", "notEquals", "contains", "notContains", "beginsWith", "greater", "less", "atLeast", "atMost", "between", "oneOf", "noneOf", "hasValue", "hasNoValue"];
 
-    public sealed record Rule(string Field, string Op, string? Value, string? Name);
+    /// <summary>A rule: a field, an operator, its value (a range "min..max"), or its list (<c>oneOf</c>, <c>noneOf</c>), and the field's name for <c>param</c> and <c>field</c>.</summary>
+    public sealed record Rule(string Field, string Op, string? Value, string? Name, IReadOnlyList<string>? Values = null);
     public sealed record Filter(string Id, string Name, bool Any, IReadOnlyList<Rule> Rules);
 
     public static IReadOnlyList<Filter> All(IModelView m) =>
         (Spatial.Project(m)?.Attrs[Key] as JsonArray)?.OfType<JsonObject>().Select(Read).Where(f => f.Id.Length > 0).ToList() ?? [];
 
+    static IReadOnlyList<string>? ValuesOf(JsonNode? n) => n is JsonArray a ? a.Select(ValueText).Select(x => x ?? "").ToList() : null;
+
     static Filter Read(JsonObject o) => new(
         (string?)o["id"] ?? "", (string?)o["name"] ?? "Filter", (string?)o["match"] == "any",
-        (o["rules"] as JsonArray)?.OfType<JsonObject>().Select(r => new Rule((string?)r["field"] ?? "class", (string?)r["op"] ?? "equals", ValueText(r["value"]), (string?)r["name"])).ToList() ?? []);
+        (o["rules"] as JsonArray)?.OfType<JsonObject>().Select(r => new Rule((string?)r["field"] ?? "class", (string?)r["op"] ?? "equals", ValueText(r["value"]), (string?)r["name"], ValuesOf(r["values"]))).ToList() ?? []);
 
     static string? ValueText(JsonNode? n) => n switch
     {
@@ -37,16 +43,19 @@ public static class ViewFilters
         _ => n.ToJsonString(),
     };
 
+    public static JsonObject Write(Rule r)
+    {
+        var o = new JsonObject { ["field"] = r.Field, ["op"] = r.Op };
+        if (r.Value != null) o["value"] = r.Value;
+        if (r.Values != null) o["values"] = new JsonArray([.. r.Values.Select(v => (JsonNode)v)]);
+        if (r.Name != null) o["name"] = r.Name;
+        return o;
+    }
+
     static JsonObject Write(Filter f) => new()
     {
         ["id"] = f.Id, ["name"] = f.Name, ["match"] = f.Any ? "any" : "all",
-        ["rules"] = new JsonArray(f.Rules.Select(r =>
-        {
-            var o = new JsonObject { ["field"] = r.Field, ["op"] = r.Op };
-            if (r.Value != null) o["value"] = r.Value;
-            if (r.Name != null) o["name"] = r.Name;
-            return (JsonNode)o;
-        }).ToArray()),
+        ["rules"] = new JsonArray(f.Rules.Select(r => (JsonNode)Write(r)).ToArray()),
     };
 
     /// <summary>Rules as a command gives them, checked: a field it reads, an operator, a parameter rule's name.</summary>
@@ -61,81 +70,50 @@ public static class ViewFilters
             if (!Fields.Contains(field)) throw new CommandException($"„{field}” is not a field a filter reads.");
             if (!Ops.Contains(op)) throw new CommandException($"„{op}” is not an operator.");
             var name = ((string?)r["name"])?.Trim();
-            if (field == "param" && string.IsNullOrEmpty(name)) throw new CommandException("A parameter rule names its parameter.");
-            list.Add(new Rule(field, op, ValueText(r["value"]), field == "param" ? name : null));
+            var named = field is "param" or "field";
+            if (named && string.IsNullOrEmpty(name)) throw new CommandException(field == "param" ? "A parameter rule names its parameter." : "A field rule names its field.");
+            if (field == "field" && ElementFields.FormulaOf(name!) is { } formula) ParamFormulas.Check(formula);
+            var values = op is "oneOf" or "noneOf" ? ValuesOf(r["values"]) ?? (ValueText(r["value"]) is { } v ? v.Split(',').Select(x => x.Trim()).Where(x => x.Length > 0).ToList() : []) : null;
+            list.Add(new Rule(field, op, values != null ? null : ValueText(r["value"]), named ? name : null, values));
         }
         return list;
     }
 
-    /// <summary>The values an element has for a field (several for its materials).</summary>
-    public static IEnumerable<string> Values(IModelView m, Entity e, Rule r)
+    /// <summary>A rule as a condition of Lapin's one filter: a facet <c>@field</c>, <c>param</c> a field read as text (<c>@text:</c>), <c>field</c> the field itself.</summary>
+    public static FieldCondition Condition(Rule r) => new(
+        r.Field switch { "param" => ElementFacets.TextPrefix + r.Name, "field" => r.Name ?? "", _ => "@" + r.Field },
+        FieldCondition.Normal(r.Op) ?? "=", r.Value, r.Values);
+
+    /// <summary>Rules as Lapin's one filter: all of them, or any.</summary>
+    public static ElementFilter ToFilter(IReadOnlyList<Rule> rules, bool any) => ElementFilter.All with { Conditions = [.. rules.Select(Condition)], Any = any };
+
+    /// <summary>
+    /// Matching on one model, what it reads read once: <paramref name="q"/> with the geometry (Quick select) lets <c>field</c>
+    /// rules read quantities and the materials of an element's parts; a <see cref="ModelQuery"/> (a view's graphics) does not.
+    /// </summary>
+    public sealed class Matcher(IQueryContext q)
     {
-        switch (r.Field)
+        readonly ElementFilter.Context ctx = new(q);
+        readonly Dictionary<Filter, ElementFilter> filters = new(ReferenceEqualityComparer.Instance);
+
+        public bool Matches(Entity e, ElementFilter f) => f.Matches(ctx, e, new ElementFields(q, e, ctx.Units));
+
+        /// <summary>Whether an element passes a filter: all its rules (or any); a filter without rules takes nothing.</summary>
+        public bool Matches(Entity e, Filter f)
         {
-            case "class": yield return e.Class; break;
-            case "category": if (LineStyles.CategoryOf(e.Class) is { } c) yield return c; break;
-            case "type": if (m.RelatingOf(e.Id, IfcClass.RelDefinesByType) is { } t) yield return t.Name; break;
-            case "name": yield return e.Name; break;
-            case "storey": if (Spatial.StoreyOf(m, e.Id) is { } s) yield return s.Name; break;
-            case "group": if (Groups.Of(m, e.Id) is { } g) yield return g.Name; break;
-            case "link": if (Links.Of(m, e) is { } l) yield return l.Name; break;
-            case "phase": if (e.Str("phaseCreated") is { } ph) yield return m.Get(ph)?.Name ?? ph; break;
-            case "predefinedType": if (e.PredefinedType is { Length: > 0 } pt) yield return pt; break;
-            case "material":
-                if (LayerSets.BandsOf(m, e.Id) is { } bands)
-                    foreach (var b in bands) if (m.Get(b.Material) is { } bm) yield return bm.Name;
-                if (m.RelatingOf(e.Id, IfcClass.RelAssociatesMaterial) is { Class: IfcClass.Material } mat) yield return mat.Name;
-                break;
-            case "param":
-                if (TagText.Value(m, e, r.Name ?? "") is { Length: > 0 } v) yield return v;
-                break;
+            if (f.Rules.Count == 0) return false;
+            if (!filters.TryGetValue(f, out var u)) filters[f] = u = ToFilter(f.Rules, f.Any);
+            return Matches(e, u);
         }
     }
 
-    static double? Number(string s)
-    {
-        var t = s.TrimStart();
-        var n = 0;
-        while (n < t.Length && (char.IsDigit(t[n]) || t[n] is '.' or '-' or '+' or ',')) n++;
-        return n > 0 && double.TryParse(t[..n].Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? d : null;
-    }
-
-    /// <summary>A range written "min..max" (either end empty: open); null ends both when it is not one.</summary>
-    static (double? Lo, double? Hi) Range(string s)
-    {
-        var k = s.IndexOf("..", StringComparison.Ordinal);
-        if (k < 0) return (Number(s), Number(s));
-        var (a, b) = (s[..k].Trim(), s[(k + 2)..].Trim());
-        return (a.Length > 0 ? Number(a) : null, b.Length > 0 ? Number(b) : null);
-    }
-
-    public static bool Matches(IModelView m, Entity e, Rule r)
-    {
-        var values = Values(m, e, r).ToList();
-        var want = r.Value ?? "";
-        bool Eq(string v) => string.Equals(v.Trim(), want.Trim(), StringComparison.OrdinalIgnoreCase)
-            || (Number(v) is { } a && Number(want) is { } b && Math.Abs(a - b) < 1e-9);
-        bool Has(string v) => v.Contains(want, StringComparison.OrdinalIgnoreCase);
-        return r.Op switch
-        {
-            "equals" => values.Any(Eq),
-            "notEquals" => !values.Any(Eq),
-            "contains" => values.Any(Has),
-            "notContains" => !values.Any(Has),
-            "beginsWith" => values.Any(v => v.StartsWith(want, StringComparison.OrdinalIgnoreCase)),
-            "greater" => values.Any(v => Number(v) is { } a && Number(want) is { } b && a > b),
-            "less" => values.Any(v => Number(v) is { } a && Number(want) is { } b && a < b),
-            // A range, both ends in it: "min..max", either end left empty for none (Quick select, forum topic 73).
-            "between" => Range(want) is var (lo, hi) && values.Any(v => Number(v) is { } a && (lo is not { } l || a >= l - 1e-9) && (hi is not { } h || a <= h + 1e-9)),
-            "hasValue" => values.Any(v => v.Length > 0),
-            "hasNoValue" => !values.Any(v => v.Length > 0),
-            _ => false,
-        };
-    }
+    public static bool Matches(IModelView m, Entity e, Rule r) => new Matcher(new ModelQuery(m)).Matches(e, ToFilter([r], false));
 
     /// <summary>Whether an element passes a filter: all its rules (or any); a filter without rules takes nothing.</summary>
-    public static bool Matches(IModelView m, Entity e, Filter f) =>
-        f.Rules.Count > 0 && (f.Any ? f.Rules.Any(r => Matches(m, e, r)) : f.Rules.All(r => Matches(m, e, r)));
+    public static bool Matches(IModelView m, Entity e, Filter f) => new Matcher(new ModelQuery(m)).Matches(e, f);
+
+    /// <summary>The elements a filter or Quick select looks at: those on a storey (a door or a window on its wall's), not the openings.</summary>
+    public static bool OnStorey(IModelView m, Entity e) => e.Class != IfcClass.OpeningElement && Spatial.StoreyOf(m, e, followHost: true) != null;
 
     static void Save(ICommandContext ctx, IEnumerable<Filter> all)
     {
@@ -153,7 +131,9 @@ public static class ViewFilters
         r.Query("viewFilter.count", (q, a) =>
         {
             var f = All(q.Model).FirstOrDefault(x => x.Id == (string?)a["id"]) ?? throw new CommandException("There is no such filter.");
-            return q.Model.Entities.Count(e => Spatial.StoreyOf(q.Model, e.Id) != null && Matches(q.Model, e, f));
+            // Read as a view reads it (no geometry), so the count is what the views show.
+            var matcher = new Matcher(new ModelQuery(q.Model));
+            return q.Model.Entities.Count(e => OnStorey(q.Model, e) && matcher.Matches(e, f));
         });
 
         r.Command("viewFilter.create", "New view filter", (ctx, a) =>

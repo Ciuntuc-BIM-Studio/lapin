@@ -244,7 +244,7 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
             }).ToList();
             var type = m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.Name;
             var element = new MeshElement(e.Id, e.Name, ExportClass(e), type, meshParts, Shift([.. edges], ox, oy, oz));
-            var storey = Spatial.StoreyOf(m, e.Id) ?? HostStorey(m, e);
+            var storey = Spatial.StoreyOf(m, e, followHost: true);
             var group = storey != null && groups.TryGetValue(storey.Id, out var gr) ? gr : siteGroup;
             group.Elements.Add(element);
             elementOf[e.Id] = (group, element);
@@ -357,10 +357,6 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
         (s.Catalog.Geometry(e.Class) != null || StoredBodies.Has(e))
         && e.Class is not (IfcClass.OpeningElement or IfcClass.Grid or IfcClass.Annotation)
         && (s.Catalog.Class(e.Class)?.Kind ?? "element") == "element";
-
-    /// <summary>A door or window stands on its wall's storey.</summary>
-    static Entity? HostStorey(IModelView m, Entity e) =>
-        m.RelatingOf(e.Id, IfcClass.RelFillsElement) is { } opening && m.RelatingOf(opening.Id, IfcClass.RelVoidsElement) is { } host ? Spatial.StoreyOf(m, host.Id) : null;
 
     /// <summary>Whether the element exists at the end of the phase asked for (as the IFC export and the phases module see it).</summary>
     static bool InPhase(Entity? project, Entity e, string? phase)

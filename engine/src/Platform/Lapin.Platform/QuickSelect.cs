@@ -5,8 +5,9 @@ namespace Lapin.Platform;
 
 /// <summary>
 /// Quick select (forum topic 73, AutoCAD's QSELECT, Revit's Select by filter): the elements matching rules, read as a view
-/// filter's are (<see cref="ViewFilters"/>: class, type, storey, material, a parameter equal to, containing, or in a range of
-/// values), all of them or any; in the whole project, or only those a view shows. Derived on every ask, never kept.
+/// filter's are (<see cref="ViewFilters"/>: class, type, storey, material, a parameter or any field equal to, containing, or
+/// in a range of values), all of them or any; in the whole project, or only those a view shows; the elements on a storey (a
+/// door or a window on its wall's). Derived on every ask, never kept.
 /// </summary>
 public static class QuickSelect
 {
@@ -19,7 +20,7 @@ public static class QuickSelect
             var vg = VisibilityGraphics.Of(q.Model, view);
             var hidden = ViewHiding.Hidden(view);
             foreach (var e in q.Model.Entities)
-                if (Spatial.StoreyOf(q.Model, e.Id) != null && !hidden.Contains(e.Id) && !vg.Hides(e)) shown.Add(e.Id);
+                if (ViewFilters.OnStorey(q.Model, e) && !hidden.Contains(e.Id) && !vg.Hides(e)) shown.Add(e.Id);
             return shown;
         }
         foreach (var mk in Views.Render(q, view).Marks)
@@ -45,9 +46,12 @@ public static class QuickSelect
             inView = ShownIn(q, ViewHiding.Temporary(q.Model, view, a));
         }
         var m = q.Model;
+        // Lapin's one filter, with the geometry at hand: a field rule may read a quantity, a material an element's part's.
+        var matcher = new ViewFilters.Matcher(q);
+        var filter = ViewFilters.ToFilter(rules, any);
         return [.. m.Entities
-            .Where(e => Spatial.StoreyOf(m, e.Id) != null && (inView == null || inView.Contains(e.Id)))
-            .Where(e => any ? rules.Any(r => ViewFilters.Matches(m, e, r)) : rules.All(r => ViewFilters.Matches(m, e, r)))
+            .Where(e => ViewFilters.OnStorey(m, e) && (inView == null || inView.Contains(e.Id)))
+            .Where(e => matcher.Matches(e, filter))
             .Select(e => e.Id)];
     }
 

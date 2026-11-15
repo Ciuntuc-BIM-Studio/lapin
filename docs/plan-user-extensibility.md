@@ -493,7 +493,7 @@ Un câmp e al elementelor sarcinii (al unui rezumat: ale sarcinilor de sub el) s
 
 ### 12.5 Filtrele de vizibilitate
 
-Filtrele de vizibilitate și Quick select (`ViewFilters`) sunt alt filtru decât `ElementFilter`, dar regula lor `param` citește deja câmpul prin `TagText.Value`: aliasurile, proprietățile fișierelor, parametrii, domeniile și formulele `=…`. Nu citesc cantitățile (n-au geometria la îndemână, `VisibilityGraphics` lucrează pe model); nu s-a schimbat nimic.
+Din etapa a doua a auditului (D3/D4/S10), filtrele de vizibilitate, Quick select și seturile de coliziuni sunt filtre ale aceluiași motor, `ElementFilter` + `FieldCondition` (Platform/ElementFilter.cs), cu regulile păstrate în cuvintele lor (adaptoare: `ViewFilters.ToFilter`, `SearchSets.ToFilter`, `TaskRule.ToFilter`). O regulă poate citi acum, pe lângă fațetele de până acum (clasă, tip, etaj, material…, scrise `@type`, `@storey`… ca o condiție), și orice câmp ca un extras (`field`, cu `name` jetonul: aliasuri, seturile fișierelor, formule, numerele în SI). Regula `param` rămâne citirea ca text a etichetei (unitățile proiectului), cum a fost. Cantitățile și materialele pieselor construite se citesc doar unde apelantul are geometria (Quick select, extrasele, sarcinile, coliziunile); `VisibilityGraphics` lucrează pe model (`ModelQuery`), fără geometrie, ca desenul să nu încetinească, deci o regulă pe o cantitate nu ia nimic într-o vedere și numărul din editor (`viewFilter.count`) e cel al vederii.
 
 ### 12.6 De făcut în interfață
 

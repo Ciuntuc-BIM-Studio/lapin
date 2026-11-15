@@ -535,7 +535,7 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
             var attrs = e.CloneAttrs();
             attrs["rule"] = rule.ToJson();
             var task = Plan.ReadTask(e);
-            WriteIds(attrs, "add", task.Add.Where(id => links.Facts(id) is not { } f || !rule.Matches(f, PhasesModule.Settings(ctx.Model).DefaultCreated?.Id ?? "")).ToList());
+            WriteIds(attrs, "add", task.Add.Where(id => links.Facts(id) is not { } f || !rule.Matches(links.FilterContext, f.Element)).ToList());
             if (e.Str("gen") != null) attrs["own"] = true;
             ctx.Replace(e.With(attrs: attrs));
             return null;

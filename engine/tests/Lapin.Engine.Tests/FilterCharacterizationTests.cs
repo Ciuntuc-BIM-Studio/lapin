@@ -185,19 +185,26 @@ public class FilterCharacterizationTests : IDisposable
         ("predefined has value", Rule("predefinedType", "hasValue")),
     ];
 
+    // Changed on purpose by the one engine (audit D3), from what view filters took before:
+    // - type: a reference's file type counts (RW1 is of WT-EXT, so it has a type);
+    // - storey: a door left off every storey is on its wall's (DB on Ground; nothing is on none);
+    // - class: the name without Ifc and the label are the class too (Door takes the doors);
+    // - numbers in a text are read as people write them, „1,200” is 1200 (audit D2), not 1.2;
+    // - phase: an element left unphased is created in the default phase, by its id or name. A saved rule asking whether the
+    //   phase has a value is turned into one on the stored attribute by ViewFilterUpgrade, so it keeps taking what it took.
     const string ViewFiltersToday = """
         type = Brick 300 => A
-        type = WT-EXT => 
+        type = WT-EXT => RW1
         type ≠ Brick 300 => B Block C DA DB RD RW1 RW2
-        type has none => Block C RD RW1 RW2
-        storey = Ground => A B Block C DA RD RW1 RW2
-        storey has none => DB
+        type has none => Block C RD RW2
+        storey = Ground => A B Block C DA DB RD RW1 RW2
+        storey has none => 
         material = Brick => A C
         material = Plaster => A C
         material = Concrete => 
         material has none => Block DA DB RD RW1 RW2
         class = IfcDoor => DA DB RD
-        class = Door => 
+        class = Door => DA DB RD
         class contains Wall => A B C RW1 RW2
         category = walls => A B C RW1 RW2
         name contains W => RW1 RW2
@@ -206,14 +213,14 @@ public class FilterCharacterizationTests : IDisposable
         FireRating = REI 90 => RW1
         height > 3 => B
         height 3..3.5 => A B
-        Code = 1200 => 
-        Code = 1.2 => A
-        Code > 1000 => 
-        Code < 1000 => A C
+        Code = 1200 => A
+        Code = 1.2 => 
+        Code > 1000 => A
+        Code < 1000 => C
         phase = existing => B
-        phase = new-construction => 
-        phase = New construction => 
-        phase has none => A Block C DA DB RD RW1 RW2
+        phase = new-construction => A Block C DA DB RD RW1 RW2
+        phase = New construction => A Block C DA DB RD RW1 RW2
+        phase has none => 
         group has value => 
         link has none => A B Block C DA DB RD RW1 RW2
         predefined has value => A B C DA DB
@@ -228,12 +235,14 @@ public class FilterCharacterizationTests : IDisposable
         Pinned(ViewFiltersToday, Table(rows), "view-filters");
     }
 
+    // Changed on purpose: Quick select looks at the elements on a storey following the host (DB, a door off every storey,
+    // now found); with the geometry at hand a material is an element's part's too (DA's plaster reveal).
     const string QuickSelectToday = """
         type = Brick 300 => A
         storey has none => 
-        class = IfcDoor => DA RD
-        material has none => Block DA RD RW1 RW2
-        any: class = IfcDoor, material = Brick => A C DA RD
+        class = IfcDoor => DA DB RD
+        material has none => Block RD RW1 RW2
+        any: class = IfcDoor, material = Brick => A C DA DB RD
         """;
 
     [Fact]
@@ -261,7 +270,8 @@ public class FilterCharacterizationTests : IDisposable
         Assert.False(ViewFilters.Matches(md.F.Model, md.F.Model.Get(md.Ids["A"])!, ViewFilters.All(md.F.Model).Single(x => x.Id == empty)));
     }
 
-    const int DoorsCountToday = 2;
+    // DB, off every storey, is on its wall's now (DA, DB, RD).
+    const int DoorsCountToday = 3;
 
     // ---- A field schedule's filter (ElementFilter) ----
 
@@ -269,6 +279,7 @@ public class FilterCharacterizationTests : IDisposable
     static JsonObject Conditions(params JsonObject[] c) => new() { ["conditions"] = new JsonArray([.. c]) };
     static JsonObject Cond(string field, string op, JsonNode? value = null) => new() { ["field"] = field, ["op"] = op, ["value"] = value };
 
+    // Unchanged: the field schedules' filter is the engine the others now use.
     const string ElementFilterToday = """
         empty => A B Block C DA DB RD RW1 RW2
         types Brick 300 => A
@@ -321,16 +332,18 @@ public class FilterCharacterizationTests : IDisposable
 
     // ---- A task's rule (TaskRule) ----
 
+    // Changed on purpose: a task's rule names its types, storeys, materials and classes by id as before, and now by name too
+    // (and a class without Ifc), as a schedule's filter does; a rule saved by the interface names ids, so it takes the same.
     const string TaskRuleToday = """
         empty => A B Block C DA DB RD RW1 RW2
         types <id> => A
-        types Brick 300 => 
+        types Brick 300 => A
         storeys <id> => A B Block C DA DB RD RW1 RW2
-        storeys Ground => 
+        storeys Ground => A B Block C DA DB RD RW1 RW2
         materials <brick> => A C
-        materials Brick => 
+        materials Brick => A C
         classes IfcDoor => DA DB RD
-        classes Door => 
+        classes Door => DA DB RD
         phases new-construction => A Block C DA DB RD RW1 RW2
         Fire rating starts with REI => A RW1
         """;
@@ -376,25 +389,28 @@ public class FilterCharacterizationTests : IDisposable
     static JsonObject Set(bool all, JsonObject[] rules, params JsonObject[] groups) =>
         new() { ["matchAll"] = all, ["rules"] = new JsonArray([.. rules]), ["groups"] = new JsonArray([.. groups]) };
 
+    // Changed on purpose: a reference's file type counts; a door off every storey is on its wall's; an element's materials
+    // are its layers' (C's own) and, with the geometry, its parts' (DA's plaster); a parameter is read as a tag writes it
+    // (the user's parameters, the files' property sets) besides the attribute as stored, so Fire rating and Code are found.
     const string SearchSetToday = """
         empty => A B Block C DA DB RD RW1 RW2
         incomplete => A B Block C DA DB RD RW1 RW2
         type is Brick 300 => A
-        type is WT-EXT => 
-        storey is Ground => A B Block C DA RD RW1 RW2
-        material is Brick => A
+        type is WT-EXT => RW1
+        storey is Ground => A B Block C DA DB RD RW1 RW2
+        material is Brick => A C
         material contains Concrete => 
-        material is Plaster => A
+        material is Plaster => A C DA
         class is Door => DA DB RD
         class one of IfcWall => A B C RW1 RW2
-        Fire rating contains REI => 
+        Fire rating contains REI => A RW1
         height at least 3 => A B
-        Code at least 1000 => 
-        Code at most 1000 => 
-        Code between 1000 1300 => 
+        Code at least 1000 => A
+        Code at most 1000 => C
+        Code between 1000 1300 => A
         link is own => A B Block C DA DB RD RW1 RW2
         not type Brick 300 => B Block C DA DB RD RW1 RW2
-        any: door, all(brick, ground) => A DA DB RD
+        any: door, all(brick, ground) => A C DA DB RD
         """;
 
     [Fact]
@@ -444,5 +460,67 @@ public class FilterCharacterizationTests : IDisposable
         Assert.False(byMaterial.Matches(m, null));
         Assert.True(finishes.Matches(m, plaster));
         Assert.False(finishes.Matches(m, brick));
+    }
+
+    // ---- The one engine itself ----
+
+    [Fact]
+    public void A_saved_phase_rule_keeps_what_it_took_after_the_upgrade()
+    {
+        var md = Varied();
+        var m = md.F.Model;
+        var project = Spatial.Project(m)!;
+        var attrs = project.CloneAttrs();
+        attrs.Remove(ViewFilterUpgrade.RevKey);
+        attrs[ViewFilters.Key] = new JsonArray(new JsonObject { ["id"] = "f1", ["name"] = "Unphased", ["match"] = "all", ["rules"] = new JsonArray(Rule("phase", "hasNoValue")) });
+        var (entities, _) = new ViewFilterUpgrade().Upgrade([.. m.Entities.Select(e => e.Id == project.Id ? project.With(attrs: attrs) : e)], []);
+        var upgraded = entities.Single(e => e.Class == IfcClass.Project);
+        Assert.Equal(ViewFilterUpgrade.Rev, (int)upgraded.Attrs[ViewFilterUpgrade.RevKey]!);
+        var rule = upgraded.Attrs[ViewFilters.Key]![0]!["rules"]![0]!;
+        Assert.Equal("param", (string)rule["field"]!);
+        Assert.Equal("phaseCreated", (string)rule["name"]!);
+        // Read as the rule now says: the elements whose phase was never set, B (existing) left out, as before.
+        var r = ViewFilters.Rules(new JsonArray(rule.DeepClone()))[0];
+        Assert.Equal("A Block C DA DB RD RW1 RW2", Names(md, Ours(md).Where(e => ViewFilters.Matches(m, e, r)).Select(e => e.Id)));
+        // Upgraded once.
+        var (again, _) = new ViewFilterUpgrade().Upgrade(entities, []);
+        Assert.Same(upgraded, again.Single(e => e.Class == IfcClass.Project));
+    }
+
+    [Fact]
+    public void Every_filter_reads_facets_fields_lists_ranges_and_groups_the_same_way()
+    {
+        var md = Varied();
+        var q = md.F.Session.Reader;
+        string Takes(JsonObject filter) => Names(md, ElementFilter.Elements(q, ElementFilter.Check(filter)).Select(e => e.Id));
+        // Facets as conditions: a reference's file type, a door's storey through its wall, a list, a negative on several materials.
+        Assert.Equal("RW1", Takes(Conditions(Cond("@type", "=", "wt-ext"))));
+        Assert.Equal("DA DB RD", Takes(new JsonObject { ["classes"] = new JsonArray("IfcDoor"), ["conditions"] = new JsonArray(Cond("@storey", "=", "Ground")) }));
+        Assert.Equal("B RW1 RW2", Takes(new JsonObject { ["classes"] = new JsonArray("Wall"), ["conditions"] = new JsonArray(Cond("@material", "≠", "Brick")) }));
+        Assert.Equal("A C", Takes(Conditions(new JsonObject { ["field"] = "@text:Code", ["op"] = "between", ["values"] = new JsonArray("800", "1300") })));
+        // Any of a group: walls of Partition 100, or anything with a fire rating starting REI.
+        Assert.Equal("A B RW1", Takes(new JsonObject
+        {
+            ["classes"] = new JsonArray("IfcWall"),
+            ["match"] = "any",
+            ["conditions"] = new JsonArray(Cond("@type", "=", "Partition 100")),
+            ["nested"] = new JsonArray(new JsonObject { ["match"] = "all", ["conditions"] = new JsonArray(Cond("Fire rating", "starts with", "REI")) }),
+        }));
+        Assert.Throws<CommandException>(() => ElementFilter.Check(Conditions(Cond("@colour", "=", "red"))));
+        // A view filter and Quick select by any field, the schedules' way (numbers in SI): the walls higher than 3.2 m.
+        var high = (string)md.F.Run("viewFilter.create", new JsonObject { ["name"] = "High", ["rules"] = new JsonArray(Rule("field", "greater", "3.2", "height")) })!["id"]!;
+        Assert.Equal(1, (int)md.F.Session.Query("viewFilter.count", new JsonObject { ["id"] = high })!);
+        var oneOf = Rule("field", "oneOf", null, "Fire rating");
+        oneOf["values"] = new JsonArray("EI 60", "REI 90");
+        var ids = ((JsonObject)md.F.Session.Query("select.query", new JsonObject { ["rules"] = new JsonArray(oneOf) })!)["ids"]!.AsArray().Select(x => (string)x!);
+        Assert.Equal("B RW1", Names(md, ids));
+        // The facets' values for the pickers.
+        var values = (JsonObject)md.F.Session.Query("fields.values", new JsonObject { ["field"] = "@type" })!;
+        Assert.Contains(values["values"]!.AsArray(), v => (string)v!["value"]! == "WT-EXT");
+        // One storey rule (D4): an opening on the storey of what it voids, a door on its wall's.
+        var opening = q.Model.RelatingOf(md.Ids["DB"], IfcClass.RelFillsElement)!;
+        Assert.Equal(md.F.Storey, Spatial.StoreyOf(q.Model, opening, followHost: true)!.Id);
+        Assert.Equal(md.F.Storey, Spatial.StoreyOf(q.Model, q.Model.Get(md.Ids["DB"])!, followHost: true)!.Id);
+        Assert.Null(Spatial.StoreyOf(q.Model, md.Ids["DB"]));
     }
 }
