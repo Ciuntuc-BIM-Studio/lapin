@@ -211,7 +211,15 @@ public sealed class EngineHub
                     ms.Write(buffer, 0, r.Count);
                 } while (!r.EndOfMessage);
 
-                if (await Handle(Encoding.UTF8.GetString(ms.ToArray()), client) is { } reply) client.Post(reply);
+                // One call that fails past its own answer never drops the connection (audit 15.11.2026, P20): logged, and the next call is read.
+                byte[]? reply;
+                try { reply = await Handle(Encoding.UTF8.GetString(ms.ToArray()), client); }
+                catch (Exception ex) when (ex is not OperationCanceledException and not WebSocketException)
+                {
+                    Console.Error.WriteLine($"[engine] {ex}");
+                    reply = null;
+                }
+                if (reply is { } frame) client.Post(frame);
             }
         }
         catch (OperationCanceledException) { }
@@ -319,7 +327,8 @@ public sealed class EngineHub
             && !text.Contains("\"engine.hello\"", StringComparison.Ordinal)) return null;
         try
         {
-            return JsonNode.Parse(text) is JsonObject o && (string?)o["method"] is { } m
+            // A method that is not a string is not one of these: the dispatcher answers it.
+            return JsonNode.Parse(text) is JsonObject o && o["method"] is JsonValue mv && mv.TryGetValue<string>(out var m)
                 && (m.StartsWith("share.", StringComparison.Ordinal) || m.StartsWith("presence.", StringComparison.Ordinal) || m.StartsWith("cancel.", StringComparison.Ordinal)
                     || m.StartsWith("extensions.", StringComparison.Ordinal) || m.StartsWith("script.", StringComparison.Ordinal) || m.StartsWith("measure.", StringComparison.Ordinal)
                     || m == "engine.hello") ? o : null;
@@ -443,9 +452,17 @@ public sealed class EngineHub
             // A call without an id (the window's selection told as it changes) asks no answer.
             return id == null ? null : BinaryFrame.Encode(new Reply(id, result is JsonNode n ? n : result));
         }
-        catch (Exception ex) when (ex is CommandException or ModelException or WebSocketException or InvalidOperationException or HttpRequestException or IOException)
+        // A refusal the user reads: a script saved on a file it may not write, a bad argument (audit 15.11.2026, P20).
+        catch (Exception ex) when (ex is CommandException or ModelException or WebSocketException or InvalidOperationException or HttpRequestException or IOException
+                                   or UnauthorizedAccessException or ArgumentException or System.Text.Json.JsonException or FormatException or InvalidDataException)
         {
             return id == null ? null : BinaryFrame.Encode(new Reply(id, null, ex.Message));
+        }
+        // Anything else is an engine bug: answered all the same (the window must not lose its connection), and logged.
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            Console.Error.WriteLine($"[engine] {ex}");
+            return id == null ? null : BinaryFrame.Encode(new Reply(id, null, $"Internal engine error: {ex.Message}"));
         }
     }
 
