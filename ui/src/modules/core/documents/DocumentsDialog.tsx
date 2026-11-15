@@ -9,6 +9,8 @@
  * settings of the block selected over To complete; Preview shows the pages again.
  */
 
+import { confirmAction, promptText } from '../../../shell/prompts';
+import { backdropClose } from '../../../shell/Dialog';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Copy, Eye, FileDown, FilePlus2, FileText, Pencil, RefreshCw, RotateCcw, SquarePen, Trash2, X } from 'lucide-react';
 import { useUi } from '../../../app/store';
@@ -150,15 +152,15 @@ export function DocumentsDialog() {
   };
   const rename = () => {
     if (!current) return;
-    const name = window.prompt(t('The document\'s name'), current.name)?.trim();
+    const name = promptText(t('The document\'s name'), current.name)?.trim();
     if (name && name !== current.name) void updateDocument(current.id, { name });
   };
   const remove = () => {
-    if (!current || !window.confirm(t('Delete this document? Undo brings it back.'))) return;
+    if (!current || !confirmAction(t('Delete this document? Undo brings it back.'))) return;
     void deleteDocument(current.id).then(() => choose(null));
   };
   const refresh = () => {
-    if (!current || !window.confirm(t('Take the template\'s text and layout again? Your inputs are kept.'))) return;
+    if (!current || !confirmAction(t('Take the template\'s text and layout again? Your inputs are kept.'))) return;
     void refreshDocument(current.id);
   };
   const duplicate = async () => {
@@ -184,7 +186,7 @@ export function DocumentsDialog() {
 
   if (!docs) return <PendingDialog title="Documents" />;
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog documents" role="dialog" aria-label="Documents" data-dialog="documents" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Documents</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body doc-body">

@@ -37,6 +37,8 @@ export interface KeyPress {
   inField: boolean;
   /** The target sits inside an element with role="dialog". */
   inDialog: boolean;
+  /** An input method is composing text: its Escape is the method's. */
+  composing?: boolean;
 }
 
 /** What `keyIntent` needs to know about the interface. */
@@ -115,6 +117,9 @@ const IN_DIALOG = new Set(['app.save', 'app.saveAs']);
 
 /** What a key press means, given the interface's state; null when it means nothing here. */
 export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
+  // Escape closes a dialog from inside one of its fields too, unless the field took it first (a cell putting its text back
+  // prevents the default) or an input method is composing.
+  if (e.inField && e.key === 'Escape' && s.dialog && s.screen === 'workspace' && !e.composing) return { kind: 'closeDialog' };
   if (e.inField || s.screen !== 'workspace') return null;
   const chord = chordOf(e);
   if (!chord) return null;
@@ -253,6 +258,7 @@ export function handleKeydown(e: KeyEventLike, snap: () => KeySnapshot = snapsho
     key: e.key, code: e.code, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey, altKey: e.altKey,
     inField: !!target?.closest?.('input, select, textarea'),
     inDialog: !!target?.closest?.('[role="dialog"]'),
+    composing: !!(e as { isComposing?: boolean }).isComposing,
   };
   const intent = keyIntent(press, snap());
   if (!intent) return;

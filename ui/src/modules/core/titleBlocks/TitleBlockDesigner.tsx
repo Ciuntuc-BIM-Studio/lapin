@@ -7,6 +7,7 @@
  * duplicate, Esc. Save writes the template as one undo step.
  */
 
+import { confirmAction } from '../../../shell/prompts';
 import { ColourField } from '../../../shell/ColourField';
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from 'react';
 import {
@@ -245,7 +246,7 @@ export function TitleBlockDesigner({ id, onClose }: { id: string; onClose: () =>
     setDirty(false);
     notify('Title block saved.');
   };
-  const close = () => { if (!dirty || window.confirm(tr('Close the designer without saving your changes?'))) onClose(); };
+  const close = () => { if (!dirty || confirmAction(tr('Close the designer without saving your changes?'))) onClose(); };
 
   /** A field clicked: into the selected text, else a new text placed by the next click. */
   const pickField = (key: string) => {

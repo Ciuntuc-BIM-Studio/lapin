@@ -12,6 +12,7 @@
  * 10 cm. The right and middle buttons still turn and move the view.
  */
 
+import { keyIsForField } from './overlayKeys';
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { Check, X } from 'lucide-react';
@@ -102,7 +103,7 @@ export function AxisDrag3D({ camera, canvas }: { camera: React.RefObject<THREE.C
     // Keys typed while the value is not focused (after a click on the chip): a value's characters go to it, Enter applies, Esc drops.
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
-      if (el === input.current || (el?.closest?.('input, textarea, select, [contenteditable]') && !el.closest('.axis-drag-chip'))) return;
+      if (el === input.current || keyIsForField(e, '.axis-drag-chip')) return;
       if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); void commitAxisDrag(typed()); }
       else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); cancelAxisDrag(); }
       // A value's characters go to the value this overlay owns, through keys.ts (decision 378).

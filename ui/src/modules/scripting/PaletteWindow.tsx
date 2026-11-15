@@ -7,6 +7,7 @@
  * button) with the palette's values, checked first; the buttons wait while a script runs.
  */
 
+import { setCapped } from '../../shell/keptStorage';
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 import { PanelsTopLeft, X } from 'lucide-react';
 import { collect, initialState, type FieldState } from '../../shell/askFields';
@@ -23,7 +24,7 @@ function readKept(id: string): unknown {
   try { const raw = localStorage.getItem(memoryKey(id)); return raw ? JSON.parse(raw) : null; } catch { return null; }
 }
 function keep(id: string, m: PaletteMemory): void {
-  try { localStorage.setItem(memoryKey(id), JSON.stringify(m)); } catch { /* this session only */ }
+  try { setCapped('lapin.scriptPalette', memoryKey(id), JSON.stringify(m), 100); } catch { /* this session only */ }
 }
 
 const win = () => ({ w: window.innerWidth, h: window.innerHeight });

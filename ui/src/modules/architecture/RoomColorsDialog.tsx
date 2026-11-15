@@ -7,6 +7,8 @@
  * scheme chosen for it; a colour legend lists what it uses.
  */
 
+import { confirmAction } from '../../shell/prompts';
+import { backdropClose } from '../../shell/Dialog';
 import { ColourField } from '../../shell/ColourField';
 import { useEffect, useMemo, useState } from 'react';
 import { Copy, Paintbrush, Plus, Trash2, X } from 'lucide-react';
@@ -64,7 +66,7 @@ export function RoomColorsDialog() {
   };
 
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide room-colors" role="dialog" aria-label="Room colours" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head">
           <span className="panel-title">Room colours</span>
@@ -79,7 +81,7 @@ export function RoomColorsDialog() {
             <button type="button" className="btn" title="A new scheme, its values filled from the rooms" onClick={() => void create()}><Plus size={13} />New</button>
             {scheme && <button type="button" className="btn" title="A copy of this scheme" onClick={() => void create(scheme.id)}><Copy size={13} />Duplicate</button>}
             {scheme && <button type="button" className="btn" title="Delete the scheme: the views that show it fill no rooms"
-              onClick={() => { if (window.confirm(`Delete the colour scheme ${scheme.name}?`)) { void execute('architecture.deleteColorScheme', { id: scheme.id }); setPicked(null); } }}><Trash2 size={13} />Delete</button>}
+              onClick={() => { if (confirmAction('Delete the colour scheme {name}?', { name: scheme.name })) { void execute('architecture.deleteColorScheme', { id: scheme.id }); setPicked(null); } }}><Trash2 size={13} />Delete</button>}
           </div>
           {scheme && (
             <div className="room-colors-head">

@@ -8,6 +8,7 @@
  * and steel members of the storeys and kinds chosen, their connections' plates, the grids, for steel detailing programs.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
@@ -79,7 +80,7 @@ export function ExchangeExportDialog() {
     close();
   };
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog import-ifc" role="dialog" aria-label="Export IFC, Fragments or BOS" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head">
           <span className="panel-title">Export IFC, Fragments or BOS</span>

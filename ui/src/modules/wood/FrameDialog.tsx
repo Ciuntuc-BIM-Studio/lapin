@@ -5,6 +5,7 @@
  * (a window and a door, every member). Two presets: the Nordic practice and the Romanian. Saving is one command.
  */
 
+import { NumberField } from '../../shell/cells';
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
@@ -123,7 +124,7 @@ function Mm({ label, value, onChange, title }: { label: string; value: number; o
 function Count({ label, value, onChange, min = 0, max = 4 }: { label: string; value: number; onChange: (n: number) => void; min?: number; max?: number }) {
   return (
     <label className="field-line wood-field"><span className="eyebrow">{label}</span>
-      <input className="num" type="number" min={min} max={max} value={value} onChange={(e) => onChange(Math.max(min, Math.min(max, Math.round(Number(e.target.value) || 0))))} />
+      <NumberField min={min} max={max} integer value={value} onCommit={(v) => { if (v != null) onChange(v); }} />
     </label>
   );
 }
@@ -173,7 +174,7 @@ export function FrameDialog() {
   useEffect(() => setPliesText(clt.plies.join(' ')), [clt.plies]);
   const [preview, setPreview] = useState<Framed | null>(null);
   const [layers, setLayers] = useState<{ index: number; name: string; thickness: number; core: boolean }[]>([]);
-  useEffect(() => { if (editing) void query<typeof layers>('wood.layers', { id: editing }).then((l) => setLayers(l ?? [])); }, [editing, nodes]);
+  useEffect(() => { let live = true; if (editing) void query<typeof layers>('wood.layers', { id: editing }).then((l) => { if (live) setLayers(l ?? []); }); return () => { live = false; }; }, [editing, nodes]);
   // Loaded when the type picked changes, not on every diff (that would throw away what is being typed).
   useEffect(() => {
     const n = editing ? useSession.getState().nodes.get(editing) : undefined;
@@ -364,12 +365,12 @@ export function FrameDialog() {
                           <tr key={i}>
                             <td><input className="num" defaultValue={r.maxWidth >= 98 ? '' : Math.round(r.maxWidth * 1000)} key={`w${i}${r.maxWidth}`} placeholder="any"
                               onBlur={(e) => setRule(i, { maxWidth: e.target.value.trim() === '' ? 99 : Number(e.target.value) / 1000 })} /></td>
-                            <td><input className="num" type="number" min={0} max={4} value={r.kings} onChange={(e) => setRule(i, { kings: Number(e.target.value) })} /></td>
-                            <td><input className="num" type="number" min={0} max={4} value={r.jacks} onChange={(e) => setRule(i, { jacks: Number(e.target.value) })} /></td>
+                            <td><NumberField min={0} max={4} integer value={r.kings} onCommit={(v) => { if (v != null) setRule(i, { kings: v }); }} /></td>
+                            <td><NumberField min={0} max={4} integer value={r.jacks} onCommit={(v) => { if (v != null) setRule(i, { jacks: v }); }} /></td>
                             <td><select value={r.header.kind} onChange={(e) => setHeader(i, { kind: e.target.value })}>{HEADERS.map((h) => <option key={h}>{h}</option>)}</select></td>
                             <td><select value={r.header.section} onChange={(e) => setHeader(i, { section: e.target.value })}>{[...new Set([...SECTIONS, r.header.section])].map((s) => <option key={s}>{s}</option>)}</select></td>
-                            <td><input className="num" type="number" min={1} max={4} value={r.header.plies} onChange={(e) => setHeader(i, { plies: Number(e.target.value) })} /></td>
-                            <td><input className="num" type="number" min={0} max={3} value={r.sill} onChange={(e) => setRule(i, { sill: Number(e.target.value) })} /></td>
+                            <td><NumberField min={1} max={4} integer value={r.header.plies} onCommit={(v) => { if (v != null) setHeader(i, { plies: v }); }} /></td>
+                            <td><NumberField min={0} max={3} integer value={r.sill} onCommit={(v) => { if (v != null) setRule(i, { sill: v }); }} /></td>
                             <td>{spec.openings.length > 1 && <button type="button" className="icon mini" title="Remove the band" onClick={() => set({ openings: spec.openings.filter((_, k) => k !== i) })}><Trash2 size={11} /></button>}</td>
                           </tr>
                         ))}

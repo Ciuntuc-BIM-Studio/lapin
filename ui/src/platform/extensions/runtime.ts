@@ -14,6 +14,7 @@
  * never wrongly signed. A package of Lapin's own catalogue must then be signed too (install.ts, signature.ts).
  */
 
+import { confirmAction } from '../../shell/prompts';
 import { create } from 'zustand';
 import { engine, engineInBrowser, useSession } from '../../engine/session';
 import { deleteTemplate, importTemplate, indexedRows } from '../../engine/templates';
@@ -152,7 +153,7 @@ export async function install(m: Manifest): Promise<InstalledExtension> {
   try {
     const base = useExtensions.getState().from ?? undefined;
     const signature = { keys: STORE_KEYS, required: base === DEFAULT_INDEX && STORE_KEYS.length > 0 };
-    return await installExtension(m, { app: appFacts(), fetchBytes, installers, store: installedStore, confirm: (q) => window.confirm(q), base, signature });
+    return await installExtension(m, { app: appFacts(), fetchBytes, installers, store: installedStore, confirm: (q) => confirmAction(q), base, signature });
   } finally { useExtensions.setState({ busy: null }); }
 }
 

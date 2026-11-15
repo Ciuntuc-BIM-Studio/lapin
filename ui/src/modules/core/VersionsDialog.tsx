@@ -9,7 +9,9 @@
  * save does.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { confirmAction } from '../../shell/prompts';
+import { backdropClose } from '../../shell/Dialog';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Download, ExternalLink, GitCompareArrows, RefreshCw, RotateCcw, Trash2, X } from 'lucide-react';
 import { notify, select, useUi } from '../../app/store';
 import { engine, useSession } from '../../engine/session';
@@ -50,8 +52,14 @@ export function VersionsDialog() {
   const [comparison, setComparison] = useState<Comparison | null>(null);
   const close = () => useUi.setState({ dialog: null });
 
+  // Only the newest listing is shown, and none after the dialog is gone.
+  const gen = useRef(0);
+  const gone = useRef(false);
+  useEffect(() => () => { gone.current = true; }, []);
   const refresh = useCallback(async () => {
+    const mine = ++gen.current;
     const list = await listVersions();
+    if (gone.current || gen.current !== mine) return;
     setVersions(list);
     // A side whose version went (deleted, or another project opened) falls back to the latest one; the other side to the project as it is.
     const known = (side: string) => side === CURRENT || list.some((v) => String(v.number) === side);
@@ -87,7 +95,7 @@ export function VersionsDialog() {
   const label = (v: string) => (v === CURRENT ? 'Current project' : `${v}. ${versions?.find((x) => String(x.number) === v)?.name ?? ''}`);
 
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide" role="dialog" aria-label="Versions" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Versions · {projectTitle(path)}</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">
@@ -106,12 +114,12 @@ export function VersionsDialog() {
                   <VersionRows key={v.number} v={v} busy={busy} path={path} title={projectTitle(path)} nodesKnown={nodes.size > 0}
                     onRename={(n) => run(() => writeVersions('project.updateVersion', { number: v.number, name: n }))}
                     onNote={(n) => run(() => writeVersions('project.updateVersion', { number: v.number, note: n }))}
-                    onRestore={(rev) => { if (window.confirm(`Bring the project back to ${rev == null ? `version ${v.number}` : `an earlier state of version ${v.number}`}? What differs changes in one step (undo brings it back).`)) void run(() => engine.call('project.restoreVersion', { number: v.number, ...(rev == null ? {} : { revision: rev }) }, { timeoutMs: LONG_TIMEOUT_MS }), `Back at version ${v.number}.`); }}
+                    onRestore={(rev) => { if (confirmAction(rev == null ? 'Bring the project back to version {number}? What differs changes in one step (undo brings it back).' : 'Bring the project back to an earlier state of version {number}? What differs changes in one step (undo brings it back).', { number: v.number })) void run(() => engine.call('project.restoreVersion', { number: v.number, ...(rev == null ? {} : { revision: rev }) }, { timeoutMs: LONG_TIMEOUT_MS }), `Back at version ${v.number}.`); }}
                     onCompare={() => { setSides({ a: String(v.number), b: CURRENT }); setComparison(null); void run(async () => setComparison(await engine.call<Comparison>('project.compareVersions', { a: v.number, b: CURRENT }, { timeoutMs: LONG_TIMEOUT_MS }))); }}
-                    onUpdate={() => { if (window.confirm(`Make version ${v.number} the project as it is now? What it holds stays as an earlier revision of it.`)) void run(() => writeVersions('project.updateVersion', { number: v.number, replace: true }), `Version ${v.number} brought to the project as it is now.`); }}
+                    onUpdate={() => { if (confirmAction('Make version {number} the project as it is now? What it holds stays as an earlier revision of it.', { number: v.number })) void run(() => writeVersions('project.updateVersion', { number: v.number, replace: true }), `Version ${v.number} brought to the project as it is now.`); }}
                     onExport={(rev) => void exportVersion(v.number, rev, `${projectTitle(path)} v${v.number}${rev == null ? '' : `.${rev + 1}`}.lapin`)}
                     onOpen={(rev) => void run(() => openVersionSeparately(v.number, rev))}
-                    onDelete={() => { if (window.confirm(`Delete version ${v.number}? The parts only it kept go from the file.`)) void run(() => writeVersions('project.deleteVersion', { number: v.number }), `Version ${v.number} deleted.`); }}
+                    onDelete={() => { if (confirmAction('Delete version {number}? The parts only it kept go from the file.', { number: v.number })) void run(() => writeVersions('project.deleteVersion', { number: v.number }), `Version ${v.number} deleted.`); }}
                   />
                 ))}
               </tbody>

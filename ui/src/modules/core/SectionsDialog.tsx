@@ -6,6 +6,8 @@
  * says in how many views each is hidden.
  */
 
+import { promptText } from '../../shell/prompts';
+import { backdropClose } from '../../shell/Dialog';
 import { Fragment, useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
@@ -44,7 +46,7 @@ export function SectionsDialog() {
   const setLayer = (s: SectionMarker, value: string) => {
     let layer: string | null = value;
     if (value === NEW_LAYER) {
-      const name = window.prompt("New layer's name");
+      const name = promptText("New layer's name");
       if (!name?.trim()) return;
       layer = name.trim();
     }
@@ -52,7 +54,7 @@ export function SectionsDialog() {
   };
 
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog" role="dialog" aria-label="Section markers" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head">
           <span className="panel-title">Section markers · <span data-no-i18n>{view?.name ?? 'View'}</span></span>

@@ -9,7 +9,7 @@ import { FileDown, FileUp } from 'lucide-react';
 import { notify } from '../../app/store';
 import { pickFile, saveFile } from '../../engine/files';
 import { execute, query } from '../../engine/session';
-import { LengthField } from '../../shell/cells';
+import { LengthField, NumberField } from '../../shell/cells';
 import { lengthText } from '../../engine/unitsStore';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { beamBlockDepth, beamBlockOf, editBeamBlock, svgPoints, type BeamBlockSpec } from './beamBlock';
@@ -119,7 +119,7 @@ export function BeamBlockFields({ spec, onChange, onImported }: { spec: BeamBloc
           </label>
           {spec.direction === 'angle' && (
             <label className="field-line"><span className="eyebrow">Angle (°)</span>
-              <input className="num" type="number" value={spec.angle} onChange={(e) => { const v = Number(e.target.value); if (Number.isFinite(v)) set({ angle: v }); }} /></label>
+              <NumberField value={spec.angle} onCommit={(v) => { if (v != null) set({ angle: v }); }} /></label>
           )}
           <Size label="Bearing" value={spec.bearing} onChange={(v) => set({ bearing: v })} title="How far the joists go into the supports past the floor's edge" />
           <p className="small"><span className="eyebrow">Depth</span> <strong data-testid="beam-block-depth">{lengthText(beamBlockDepth(spec))}</strong> <span className="muted">(block and topping: the core)</span></p>

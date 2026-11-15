@@ -1,5 +1,6 @@
 /** Floor types: the project's IfcSlabTypes and their layers, top to bottom. Saving is one engine command; every floor of the type follows. */
 
+import { confirmAction } from '../../shell/prompts';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, ArrowUpDown, Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
@@ -62,7 +63,7 @@ export function SlabTypesDialog() {
   const set = (i: number, patch: Partial<Row>) => setRows(rows.map((r, k) => (k === i ? { ...r, ...patch } : patch.core ? { ...r, core: false } : r)));
   const move = (i: number, d: number) => setRows(moveLayer(rows, i, d));
   const reverse = () => {
-    if (window.confirm(t('Reverse the order of the layers? Once the type is saved, the floors of this type turn over: the top layer goes to the underside.'))) setRows(reverseLayers(rows));
+    if (confirmAction(t('Reverse the order of the layers? Once the type is saved, the floors of this type turn over: the top layer goes to the underside.'))) setRows(reverseLayers(rows));
   };
   // Its priority and category kept when saved (a floor's layers were saved without the priority before).
   const shown = beamBlock ? withCoreDepth(rows, beamBlockDepth(beamBlock)) : rows;

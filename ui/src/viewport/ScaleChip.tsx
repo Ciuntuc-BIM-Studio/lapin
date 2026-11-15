@@ -4,6 +4,7 @@
  * and how big it shows against paper, which a click brings to paper size (ZA).
  */
 
+import { promptText } from '../shell/prompts';
 import { useEffect, useState } from 'react';
 import { notify } from '../app/store';
 import { execute, query, useSession } from '../engine/session';
@@ -70,7 +71,7 @@ export function ScalePicker({ viewId, scale }: { viewId: string | null; scale: n
   const pick = (value: string) => {
     if (value === DEFAULTS) { openStandards('project'); return; }
     if (value === CUSTOM) {
-      const typed = window.prompt(t('Scale 1:'), String(scale));
+      const typed = promptText(t('Scale 1:'), String(scale));
       if (typed == null) return;
       const n = parseScale(typed);
       if (n == null) { notify('A scale is 1:1 to 1:10000.'); return; }

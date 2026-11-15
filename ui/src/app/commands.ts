@@ -25,6 +25,20 @@ import { zoomHost } from '../viewport/zoom';
 import { takeHotRemove } from '../viewport/grips';
 import { pickCycleTab } from '../viewport/pickCycle';
 import { takeSheetDelete } from '../viewport/sheetDelete';
+import { carrying } from '../viewport/moveTrace';
+import { useMove3d } from '../viewport/moveIn3d';
+import { cancel as cancelStep } from '../viewport/cad/session';
+import { notify } from './store';
+
+/**
+ * Undo and redo while a gesture is under way (audit U11): a CAD step is cancelled first; a body drag or a 3D move is not
+ * the key's to cancel, so the key says so and does nothing.
+ */
+export function gestureFree(): boolean {
+  if (carrying() || useMove3d.getState().ids.length) { notify('Finish or cancel (Esc) what you are doing first, then undo or redo.'); return false; }
+  if (useCad.getState().step) cancelStep(true);
+  return true;
+}
 
 const dialog = (id: string) => () => useUi.setState({ dialog: id });
 const zoom = (f: (h: NonNullable<ReturnType<typeof zoomHost>>) => void) => () => { const h = zoomHost(); if (h) f(h); };
@@ -33,8 +47,8 @@ const zoom = (f: (h: NonNullable<ReturnType<typeof zoomHost>>) => void) => () =>
 function appCommands(): CommandDef[] {
   const general = 'General', views = 'Views', panels = 'Panels', draw = 'Drawing aids';
   return [
-    { id: 'app.undo', label: 'Undo', category: general, defaults: ['Ctrl+Z'], run: () => void undo() },
-    { id: 'app.redo', label: 'Redo', category: general, defaults: ['Ctrl+Y', 'Ctrl+Shift+Z'], run: () => void redo() },
+    { id: 'app.undo', label: 'Undo', category: general, defaults: ['Ctrl+Z'], run: () => { if (gestureFree()) void undo(); } },
+    { id: 'app.redo', label: 'Redo', category: general, defaults: ['Ctrl+Y', 'Ctrl+Shift+Z'], run: () => { if (gestureFree()) void redo(); } },
     { id: 'app.new', label: 'New project', category: general, defaults: ['Ctrl+N'], run: () => void runFileAction('file.new') },
     { id: 'app.open', label: 'Open…', category: general, defaults: ['Ctrl+O'], run: () => void runFileAction('file.open') },
     { id: 'app.save', label: 'Save', category: general, defaults: ['Ctrl+S'], run: () => void runFileAction('file.save') },

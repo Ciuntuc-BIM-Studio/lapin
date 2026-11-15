@@ -959,7 +959,7 @@ export function PlanView() {
       </div>
       <KeyPlan mode="plan" frame={measured ? screenCorners(toWorld, size.w, size.h) : null} onLookAt={(p) => go({ ...view, cx: p.x, cy: p.y })} />
       <svg ref={svgRef} className={`plan-svg${tool?.gesture || cadStep?.want === 'point' ? ' tool' : tool || cadStep ? ' pick' : hoverId ? ' pick' : ''}`} data-testid="plan"
-        onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
+        onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={() => { drag.current = null; setBox(null); if (carrying()) carryEnd(); }}
         onPointerLeave={() => { setCycleSource(null, cycleKey); setHover(null); setHoverId(null); trackTagHover(null, { pickElement: () => null, pickTag: () => null, anyTags, busy: true }); editor.onPointerLeave(); }} onWheel={onWheel} onContextMenu={(e) => e.preventDefault()}
         onDoubleClick={(e) => {
           if (tool?.gesture || useCad.getState().step) return;

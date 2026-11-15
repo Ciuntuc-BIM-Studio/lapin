@@ -4,6 +4,7 @@
  * slid or played through the day.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { Pause, Play, X } from 'lucide-react';
 import { useUi } from '../../app/store';
@@ -55,7 +56,7 @@ export function SunFields() {
 export function SunDialog() {
   const close = () => useUi.setState({ dialog: null });
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog" role="dialog" aria-label="Sun and shadows" style={{ width: 'min(620px, 94vw)' }} onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Sun and shadows</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

@@ -8,6 +8,7 @@
  * and move the view.
  */
 
+import { keyIsForField } from './overlayKeys';
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { X } from 'lucide-react';
@@ -88,7 +89,7 @@ export function FaceSketch3D({ camera, canvas }: { camera: React.RefObject<THREE
     const onUp = (e: PointerEvent) => { if (inside(e) && e.button === 0) e.stopPropagation(); };
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
-      if (el === input.current || el?.closest?.('input, textarea, select, [contenteditable]')) return;
+      if (el === input.current || keyIsForField(e)) return;
       if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); enter(); }
       else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); endFaceSketch(); }
       else if (e.key === 'Backspace') { e.preventDefault(); e.stopPropagation(); back(); }

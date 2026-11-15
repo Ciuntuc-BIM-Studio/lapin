@@ -8,6 +8,7 @@
  * LOFT are also command-line commands.
  */
 
+import { confirmAction } from '../../shell/prompts';
 import {
   Boxes, PackagePlus, PencilRuler, ArrowUpDown, ArrowUpToLine, ArrowRightToLine, Eraser, Keyboard, Rainbow, Ruler, Spline, CopyPlus, CornerUpRight, Slash, Redo2, ScanEye, SquarePen, CircleCheckBig, Circle, Hexagon, RectangleHorizontal, Blocks, Box, BrickWall, CircleDot, Cone, Container, Cylinder, Eye, FlipHorizontal2, Frame, Grid3x3, Layers2, Move3d, Octagon, PackageOpen, PenTool, Pyramid,
   RefreshCcw, Rotate3d, RotateCw, Scissors, Slice, SquareMinus, SquarePlus, SquareRoundCorner, SquareSplitHorizontal, SquareSquare, SquareStack, Torus, TriangleRight, Unlink, Waypoints,
@@ -723,7 +724,7 @@ const makeSolid: ToolDef = {
     const nodes = useSession.getState().nodes;
     const ids = useUi.getState().selected.filter((id) => { const n = nodes.get(id); return n && n.storeyId && n.props.predefinedType !== 'DRAFT' && !isSolid(n); });
     if (!ids.length) { notify('Select the elements to make into Studio solids (a reference from IFC, an imported mesh, a wall…).'); return; }
-    if (!window.confirm(`Make ${ids.length} element(s) into Studio solids? Each takes the element's place, name and IFC class, its body as it is now; what made it (a wall's type and layers, a reference's file) is not kept.`)) return;
+    if (!confirmAction('Make {length} element(s) into Studio solids? Each takes the element\'s place, name and IFC class, its body as it is now; what made it (a wall\'s type and layers, a reference\'s file) is not kept.', { length: ids.length })) return;
     void execute('studio.fromElement', { ids }).then((r) => { const made = (r as { ids?: string[] } | null)?.ids; if (made?.length) { useUi.setState({ selected: made, selection: made[0] }); notify(`${made.length} Studio solid(s): push/pull, fillet, shell and the rest work on them now.`); } });
   },
 };

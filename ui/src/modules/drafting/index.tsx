@@ -1,5 +1,7 @@
 /** Drafting: CAD drawing on views (lines, polylines, circles, arcs, hatches on layers, and their edits), dimensions that follow the elements, texts, grid axes. */
 
+import { promptText } from '../../shell/prompts';
+import { ask, textField } from '../../shell/AskBox';
 import { ArrowRightToLine, Crosshair, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Unlink2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags, Grid3x3, Settings2, SlidersHorizontal, SquareDashed, Image as ImageIcon, Ruler, Replace, Shapes, Shapes as SymbolsIcon, FolderPlus, ListOrdered, FileImage } from 'lucide-react';
 import { AngleIcon, ArcLengthIcon, DiameterIcon, DimensionIcon, GridAxisIcon, LevelIcon, OrdinateIcon, RadiusIcon, SlopeIcon } from '../../icons';
 import type { Grip, GripStep, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
@@ -48,7 +50,7 @@ const text: ToolDef = {
   id: 'drafting.text', label: 'Text', icon: Type, shortcut: 'TX',
   gesture: { kind: 'point' },
   complete: async ({ points: [p] }, ctx) => {
-    const body = window.prompt('Text');
+    const body = promptText('Text');
     if (body?.trim()) await ctx.execute('drafting.addText', { viewId: ctx.viewId, at: [p.x, p.y], text: body.trim() });
   },
 };
@@ -634,13 +636,13 @@ const gridRefs = (node: NodeDto): RefLine[] => ((node.props.axes as { tag: strin
 /** Tag a parameter (report #64): TAG showing one the user names (Fire rating, Pset_WallCommon.FireRating); the bar under the view changes it. */
 const tagParameter: ToolDef = {
   id: 'drafting.tagParameter', label: 'Tag a parameter', icon: Tag,
-  run: () => {
-    const f = window.prompt('The parameter to show: its name (Fire rating) or a standard one (Pset_WallCommon.FireRating)', useTagPrefs.getState().field === 'mark' ? 'FireRating' : useTagPrefs.getState().field);
-    const field = f?.trim().replace(/^\{|\}$/g, '').trim();
+  run: () => void (async () => {
+    const r = await ask('Tag a parameter', [textField('field', 'The parameter to show: its name (Fire rating) or a standard one (Pset_WallCommon.FireRating)', useTagPrefs.getState().field === 'mark' ? 'FireRating' : useTagPrefs.getState().field)]);
+    const field = String(r?.field ?? '').trim().replace(/^\{|\}$/g, '').trim();
     if (!field) return;
     useTagPrefs.setState({ field, tagType: '' });
     void startCommand('TAG');
-  },
+  })(),
 };
 
 /** The draw order of the selected drafting (report #44, decision 339): to the front and back as tools, a step either way and behind the model small. */
@@ -658,7 +660,7 @@ const scaleImage: ToolDef = {
     const nodes = useSession.getState().nodes;
     const id = useUi.getState().selected.find((x) => nodes.get(x)?.type === 'LapinViewImage');
     if (!id) { notify('Select the image to scale first.'); return; }
-    const answer = window.prompt('Their true distance apart (m)', (Math.hypot(b.x - a.x, b.y - a.y)).toFixed(3));
+    const answer = promptText('Their true distance apart (m)', (Math.hypot(b.x - a.x, b.y - a.y)).toFixed(3));
     const length = Number((answer ?? '').replace(',', '.'));
     if (!(length > 0)) return;
     await ctx.execute('drafting.calibrateImage', { id, a: [a.x, a.y], b: [b.x, b.y], length });

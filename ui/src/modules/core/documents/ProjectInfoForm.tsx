@@ -6,6 +6,7 @@
  * each. Manage → Project information… shows it alone; the Documents dialog shows it in its second tab.
  */
 
+import { backdropClose } from '../../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../../app/store';
@@ -134,7 +135,7 @@ export function ProjectInfoDialog() {
   const close = () => useUi.setState({ dialog: null });
   if (!info) return <PendingDialog title="Project information" />;
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog project-info" role="dialog" aria-label="Project information" data-dialog="project-info" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Project information</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body"><ProjectInfoForm info={info} /></div>

@@ -4,6 +4,7 @@
  * Atrium's HUD, the properties panel, the status bar.
  */
 
+import { useDialogLayer } from './shell/Dialog';
 import { Fragment, lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { AppWindow, Bot, Box, Columns2, Ruler, FolderTree, Layers, ListTree, PanelLeftOpen, PanelRightOpen, Rows2, SlidersHorizontal, X } from 'lucide-react';
 import { closeOverlay, columns, panelsOn, setPanelWidth, setStackRatio, type PanelId, type Side, showOverlay, showPropsTab, togglePanel, usePanels, type PanelTab } from './app/panels';
@@ -271,9 +272,10 @@ function Panes() {
       const t = split === 'row' ? (ev.clientX - r.left) / r.width : (ev.clientY - r.top) / r.height;
       setRatio(Math.max(0.15, Math.min(0.85, t)));
     };
-    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
   };
   return (
     <div ref={host} className={`panes split-${split}`}>
@@ -293,9 +295,10 @@ function SideSep({ side }: { side: Side }) {
     const first = panelsOn(st, side).find((p) => (p === 'browser' ? st.browserOpen : st.propsOpen)) ?? 'browser';
     const width = first === 'browser' ? st.browserWidth : st.propsWidth;
     const move = (ev: PointerEvent) => setPanelWidth(first, width + (side === 'left' ? ev.clientX - start : start - ev.clientX));
-    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
   };
   const fold = () => { const st = usePanels.getState(); const first = panelsOn(st, side).find((p) => (p === 'browser' ? st.browserOpen : st.propsOpen)); if (first) togglePanel(first); };
   return <div className="side-sep" role="separator" aria-orientation="vertical" onPointerDown={onDown} onDoubleClick={fold} title="Drag to resize; double-click to fold or unfold" />;
@@ -309,9 +312,10 @@ function StackSep({ host }: { host: React.RefObject<HTMLDivElement | null> }) {
       const r = host.current!.getBoundingClientRect();
       setStackRatio((ev.clientY - r.top) / r.height);
     };
-    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
   };
   return <div className="stack-sep" role="separator" aria-orientation="horizontal" onPointerDown={onDown} onDoubleClick={() => setStackRatio(0.5)} title="Drag to share the height; double-click to halve" />;
 }
@@ -470,6 +474,7 @@ export function App() {
   const screen = useUi((s) => s.screen);
   const theme = useUi((s) => s.theme);
   useShortcuts();
+  useDialogLayer();
   useEffect(() => { watchLocation(); }, []);
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
   // The theme chosen is kept for the next start (a tester's report: dark came back light every time); a system choice follows the system.

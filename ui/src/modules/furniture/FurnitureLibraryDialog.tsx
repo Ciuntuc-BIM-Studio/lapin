@@ -6,6 +6,7 @@
  * library file. See library.ts for where it is kept.
  */
 
+import { confirmAction, promptText } from '../../shell/prompts';
 import { useEffect, useMemo, useState } from 'react';
 import { Copy, Download, FileUp, LayoutTemplate, MousePointerClick, Pencil, Plus, Tags, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
@@ -43,15 +44,15 @@ async function exportTo(ids: string[] | null, name: string) {
 function Card({ e, templates }: { e: LibraryEntry; templates: { id: string; name: string }[] }) {
   const [template, setTemplate] = useState('');
   const rename = async () => {
-    const name = window.prompt('The furniture’s new name:', e.name)?.trim();
+    const name = promptText('The furniture’s new name:', e.name)?.trim();
     if (name && name !== e.name) await updateEntry(e.id, { name }).catch((err) => notify(message(err)));
   };
   const retag = async () => {
-    const text = window.prompt('Its tags, separated by commas:', e.tags.join(', '));
+    const text = promptText('Its tags, separated by commas:', e.tags.join(', '));
     if (text != null) await updateEntry(e.id, { tags: parseTags(text) }).catch((err) => notify(message(err)));
   };
   const remove = async () => {
-    if (window.confirm(`Delete „${e.name}” from your library? Projects that have it keep it.`)) await deleteEntry(e.id).catch((err) => notify(message(err)));
+    if (confirmAction('Delete „{name}” from your library? Projects that have it keep it.', { name: e.name })) await deleteEntry(e.id).catch((err) => notify(message(err)));
   };
   const toTemplate = async () => {
     if (!template) return;

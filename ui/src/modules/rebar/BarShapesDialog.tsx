@@ -5,6 +5,8 @@
  * definition and follows its changes. A definition the engine cannot read is refused with the reason, shown. .lapinbarshapes files in and out.
  */
 
+import { confirmAction } from '../../shell/prompts';
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useRef, useState } from 'react';
 import { FileDown, FileUp, Plus, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
@@ -45,7 +47,7 @@ export function BarShapesDialog() {
   };
 
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide templates bar-shapes-dialog" role="dialog" aria-label="Bar shapes" data-dialog="barShapes" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Bar shapes</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body tpl-body">
@@ -103,7 +105,7 @@ function ShapeEditor({ shape, onSaved, onGone }: { shape: UserShape | null; onSa
   };
   const remove = async () => {
     if (!shape) return;
-    if (shape.uses > 0 && !window.confirm(`${shape.uses} bars are of this shape: they keep their own copy of it.`)) return;
+    if (shape.uses > 0 && !confirmAction('{uses} bars are of this shape: they keep their own copy of it.', { uses: shape.uses })) return;
     await deleteShape(shape.id);
     onGone();
   };

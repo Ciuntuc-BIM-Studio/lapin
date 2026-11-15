@@ -6,6 +6,7 @@
  * Create makes the drawing in one undo step (made again, it updates the same one) and opens its sheet.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
@@ -68,7 +69,7 @@ export function ShopDrawingDialog() {
 
   if (!element) {
     return (
-      <div className="dialog-backdrop" onClick={close}>
+      <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
         <div className="dialog" role="dialog" aria-label="Make drawing" onClick={(e) => e.stopPropagation()}>
           <header className="dialog-head"><span className="panel-title">Make drawing</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
           <div className="dialog-body"><p className="muted">Select one element of the model to make its drawing.</p></div>
@@ -91,7 +92,7 @@ export function ShopDrawingDialog() {
   };
 
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide shop-drawing" data-i18n-ctx="shop" role="dialog" aria-label="Make drawing" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Make drawing</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body shop-body">

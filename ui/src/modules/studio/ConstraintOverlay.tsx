@@ -9,6 +9,7 @@
  * `studio.sketchStatus`).
  */
 
+import { keyIsForField } from '../../viewport/overlayKeys';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Vec2 } from '../../platform/module';
 import { execute, useSession } from '../../engine/session';
@@ -117,7 +118,7 @@ export function ConstraintOverlay({ local, toScreen, toWorld, scale, view }: Pro
   useEffect(() => {
     if (!selected.length) return;
     const key = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement | null)?.closest?.('input, textarea, select')) return;
+      if (keyIsForField(e)) return;
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault(); e.stopImmediatePropagation();
         const ids = useSketch.getState().selected;

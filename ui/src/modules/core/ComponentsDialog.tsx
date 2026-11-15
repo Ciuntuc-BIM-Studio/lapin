@@ -1,5 +1,6 @@
 /** Manage → Components (docs/components.md): the project's components, how many instances each has, renamed, their instances selected. */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { select, useUi } from '../../app/store';
@@ -13,7 +14,7 @@ export function ComponentsDialog() {
   useEffect(() => { void query<Row[]>('component.list').then((r) => setRows(r ?? [])); }, [version]);
   const close = () => useUi.setState({ dialog: null });
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog" role="dialog" aria-label="Components" data-testid="components" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Components</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

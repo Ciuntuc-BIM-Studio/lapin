@@ -1,5 +1,6 @@
 /** Double-click on a dimension: the value typed for the segment under the cursor drives what it measures (and, in a string, what follows). */
 
+import { promptText } from '../shell/prompts';
 import type { Vec2 } from '../platform/module';
 import { execute, query, useSession } from '../engine/session';
 import { formatLength, parseLength, unitName } from '../engine/unitsStore';
@@ -27,7 +28,7 @@ export async function editDimension(id: string, at?: Vec2): Promise<boolean> {
   if (d.orphan) { useSession.setState({ error: 'The dimension lost its element: free it in its properties first.' }); return true; }
   if (!d.driving) { useSession.setState({ error: 'Neither end of this segment holds on an element: there is nothing to move.' }); return true; }
   const which = (d.segments ?? 1) > 1 ? ` (segment ${(d.segment ?? 0) + 1} of ${d.segments})` : '';
-  const answer = window.prompt(`Dimension value (${unitName()})${which}: the element moves to match`, formatLength(d.value));
+  const answer = promptText('Dimension value ({unit}){which}: the element moves to match', formatLength(d.value), { unit: unitName(), which });
   const v = answer == null ? null : parseLength(answer);
   if (v != null && v > 0) await execute('drafting.setDimensionValue', { id, value: v, ...(d.segment != null ? { segment: d.segment } : {}) });
   return true;

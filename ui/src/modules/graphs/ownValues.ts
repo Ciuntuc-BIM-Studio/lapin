@@ -15,6 +15,7 @@
  * offered, a number out of its least and most, a storey or type gone) is left out: the field falls back to the graph's.
  */
 
+import { removeCapped, setCapped } from '../../shell/keptStorage';
 import type { AskField } from '../../shell/askFields';
 import type { GraphJson } from './graph';
 import type { GraphTool, Palette } from './palette';
@@ -84,7 +85,7 @@ export function readOwn(projectId: string, graphId: string): Record<string, unkn
 /** The user's values of a graph kept (none: forgotten). */
 export function keepOwn(projectId: string, graphId: string, values: Record<string, unknown>): void {
   try {
-    if (Object.keys(values).length === 0) localStorage.removeItem(ownKey(projectId, graphId));
-    else localStorage.setItem(ownKey(projectId, graphId), JSON.stringify(values));
+    if (Object.keys(values).length === 0) removeCapped('lapin.graphValues', ownKey(projectId, graphId));
+    else setCapped('lapin.graphValues', ownKey(projectId, graphId), JSON.stringify(values), 300);
   } catch { /* this session only */ }
 }

@@ -6,6 +6,7 @@
  * Visibility / Graphics and an element's own override them.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { ColourField } from '../../shell/ColourField';
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
@@ -46,7 +47,7 @@ export function ObjectStylesDialog() {
     void execute('view.objectStyle', { category, role, spec: Object.keys(next).length ? next : null });
   };
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide" role="dialog" aria-label="Object styles" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Object styles</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

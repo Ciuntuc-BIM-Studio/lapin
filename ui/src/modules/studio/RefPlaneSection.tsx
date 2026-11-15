@@ -1,5 +1,6 @@
 /** A reference plane in the inspector: open it to draw on, move it along its normal, turn it about the vertical. Its place and angles are the fields above. */
 
+import { promptText } from '../../shell/prompts';
 import { FolderOpen, MoveVertical, RotateCw } from 'lucide-react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute } from '../../engine/session';
@@ -8,7 +9,7 @@ import { t } from '../../i18n';
 import { parseLength, unitName } from '../../engine/unitsStore';
 
 const ask = (what: string, length = false): number | null => {
-  const v = window.prompt(length ? `${t(what)} [${unitName()}]` : t(what))?.trim();
+  const v = promptText(length ? `${t(what)} [${unitName()}]` : t(what))?.trim();
   if (!v) return null;
   const n = length ? parseLength(v) : Number(v.replace(',', '.'));
   return n != null && Number.isFinite(n) && n !== 0 ? n : null;

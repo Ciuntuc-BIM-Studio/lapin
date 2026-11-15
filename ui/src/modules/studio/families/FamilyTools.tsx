@@ -4,6 +4,7 @@
  * own value, Edit family…), and Make family from sketch… (closed outlines drafted on a view, by the ribbon or a right-click).
  */
 
+import { backdropClose } from '../../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { Component, FlipHorizontal2, Pencil, RotateCw, X } from 'lucide-react';
 import type { NodeDto } from '../../../engine/protocol';
@@ -168,7 +169,7 @@ export function FamilyFromSketchDialog() {
     editFamily(r.id);
   };
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog tpl-save" role="dialog" aria-label="Make family from sketch" data-dialog="family-from-sketch" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Make family from sketch</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

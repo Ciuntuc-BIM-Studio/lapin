@@ -6,6 +6,7 @@
  * Every value is indicative and the user's to check against the norm in force.
  */
 
+import { backdropClose } from '../../../shell/Dialog';
 import { useCallback, useEffect, useState } from 'react';
 import { Check, Copy, FileDown, FileUp, ListChecks, Plus, Stamp, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../../app/store';
@@ -82,7 +83,7 @@ export function RulesDialog() {
   const remove = async () => { if (item.builtin) return; if (await run('rules.delete', { id: item.id }) !== null) setSelected(null); };
 
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide templates rules-dialog" role="dialog" aria-label="Rules" data-dialog="rules" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Rules</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body tpl-body">

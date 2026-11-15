@@ -10,6 +10,7 @@
  * closed, reopened or deleted.
  */
 
+import { backdropClose } from '../../../../shell/Dialog';
 import { useState } from 'react';
 import { FileSearch, FolderSearch, X } from 'lucide-react';
 import { notify, useUi } from '../../../../app/store';
@@ -60,7 +61,7 @@ export function RemarksDialog() {
   };
 
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide" role="dialog" aria-label="Remarks" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Remarks on sheets</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body cde remarks-dialog">

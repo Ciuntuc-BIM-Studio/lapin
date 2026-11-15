@@ -6,6 +6,8 @@
  * Delete; New and Import… on top.
  */
 
+import { confirmAction } from '../../../shell/prompts';
+import { backdropClose } from '../../../shell/Dialog';
 import { useEffect, useMemo, useState } from 'react';
 import { BookMarked, Copy, FileDown, FileUp, FolderInput, Pencil, Plus, Star, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../../app/store';
@@ -97,10 +99,10 @@ export function TitleBlocksDialog() {
 
   const remove = async (t: TbSummary) => {
     if (t.origin === 'project') {
-      if (!window.confirm(tr('Delete this title block from the project? Its sheets take the project\'s default; Undo brings it back.'))) return;
+      if (!confirmAction(tr('Delete this title block from the project? Its sheets take the project\'s default; Undo brings it back.'))) return;
       await deleteTitleBlock(t.id);
     } else if (t.origin === 'library') {
-      if (!window.confirm(tr('Delete this title block from this computer\'s library?'))) return;
+      if (!confirmAction(tr('Delete this title block from this computer\'s library?'))) return;
       forgetBlock(t.id);
       reload();
     }
@@ -143,7 +145,7 @@ export function TitleBlocksDialog() {
   if (editing) return <TitleBlockDesigner id={editing} onClose={() => setEditing(null)} />;
 
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide templates title-blocks" role="dialog" aria-label="Title blocks" data-dialog="title-blocks" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Title blocks</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body tpl-body">

@@ -5,6 +5,8 @@
  * objects of it stand in the project.
  */
 
+import { confirmAction } from '../../../shell/prompts';
+import { backdropClose } from '../../../shell/Dialog';
 import { useEffect, useMemo, useState } from 'react';
 import { Component, FileDown, FileUp, HardDriveDownload, MapPin, Plus, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../../app/store';
@@ -67,7 +69,7 @@ export function FamiliesDialog() {
 
   const remove = async () => {
     if (!current) return;
-    if (!window.confirm(tr('Delete this family from the project? Undo brings it back.'))) return;
+    if (!confirmAction(tr('Delete this family from the project? Undo brings it back.'))) return;
     await deleteFamily(current.id);
     if (!problem()) setSelected(null);
   };
@@ -104,7 +106,7 @@ export function FamiliesDialog() {
   };
 
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide templates families-dialog" role="dialog" aria-label="Families" data-dialog="families" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Families</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body tpl-body">

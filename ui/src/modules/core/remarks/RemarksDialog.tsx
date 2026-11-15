@@ -9,6 +9,8 @@
  * import and export use.
  */
 
+import { confirmAction } from '../../../shell/prompts';
+import { backdropClose } from '../../../shell/Dialog';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Camera, Download, Eye, MessageSquare, Plus, Trash2, Upload, X } from 'lucide-react';
 import { notify, useUi } from '../../../app/store';
@@ -96,7 +98,7 @@ export function RemarksDialog() {
 
   const send = () => remark && comment.trim() && run(() => commentRemark(remark.id, comment.trim(), commentWithView && view === '3d' && hasCamera), () => { setComment(''); setCommentWithView(false); });
 
-  const remove = () => remark && window.confirm(`Delete the remark “${remark.title}”?`) && run(() => deleteRemarks([remark.id]), () => setCurrent(null));
+  const remove = () => remark && confirmAction('Delete the remark “{title}”?', { title: remark.title }) && run(() => deleteRemarks([remark.id]), () => setCurrent(null));
 
   const show = () => { if (viewpoint) void openViewpoint(viewpoint).catch((e) => notify(e instanceof Error ? e.message : String(e))); };
 
@@ -105,7 +107,7 @@ export function RemarksDialog() {
   if (!data) return <PendingDialog title="Remarks" />;
   const inThreeD = view === '3d' && hasCamera;
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide remarks" role="dialog" aria-label="Remarks" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Remarks</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="remarks-bar">

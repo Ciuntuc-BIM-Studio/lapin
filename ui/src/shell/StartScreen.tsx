@@ -1,5 +1,6 @@
 /** The start screen, Atrium's way: the actions on the left; unsaved work to bring back, the templates to start from (decision 261) and the recent projects on the right. */
 
+import { confirmAction } from './prompts';
 import { useEffect, useState } from 'react';
 import { Feather, FilePlus2, FolderOpen, History, LayoutTemplate, Trash2, Users } from 'lucide-react';
 import { JoinDialog } from './Sharing';
@@ -33,7 +34,7 @@ export function StartScreen() {
   const fromTemplate = defaultTemplateOf(usePrefs((p) => p.defaultTemplate), saved);
   const choosing = useUi((s) => s.dialog === 'projectTemplates');
   const fromSaved = async (id: string) => {
-    if (doc?.dirty && !window.confirm('The project has unsaved changes. Start a new one anyway?')) return;
+    if (doc?.dirty && !confirmAction('The project has unsaved changes. Start a new one anyway?')) return;
     try { await startFromTemplate(id); enter(); } catch (e) { notify(e instanceof Error ? e.message : String(e)); }
   };
   const back = () => useUi.setState({ screen: 'workspace' });

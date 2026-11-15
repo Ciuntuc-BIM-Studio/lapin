@@ -1,5 +1,6 @@
 /** The project's location: the base point (its elevation, the angle to true north), the survey point (its site coordinates) and the coordinate system they are in, shown in plans or not. */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
@@ -34,7 +35,7 @@ export function LocationDialog() {
     );
   };
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog" role="dialog" aria-label="Location" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Location</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body loc">

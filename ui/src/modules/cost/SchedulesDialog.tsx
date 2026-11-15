@@ -3,6 +3,7 @@
  * opening it; the quantity takeoff first (decision 287, the tester's report #75).
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { FileUp, X } from 'lucide-react';
 import { openImportTable } from '../core/tables/tables';
@@ -18,7 +19,7 @@ export function SchedulesDialog() {
   const made = [...nodes.values()].filter((n) => n.type === 'LapinSchedule');
   const ordered = [...kinds.filter((k) => k.kind === 'quantities'), ...kinds.filter((k) => k.kind !== 'quantities')];
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog" role="dialog" aria-label="Schedules" data-testid="schedules-dialog" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Schedules</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

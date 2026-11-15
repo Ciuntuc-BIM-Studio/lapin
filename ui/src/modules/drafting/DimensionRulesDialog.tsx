@@ -5,6 +5,7 @@
  * one undo step) and carried in the drafting standards.
  */
 
+import { NumberField } from '../../shell/cells';
 import { useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
@@ -54,7 +55,6 @@ function StringList<K extends string>({ items, labels, onChange }: { items: { ki
   );
 }
 
-const num = (v: string, fallback: number) => { const n = Number(v.replace(',', '.')); return Number.isFinite(n) && n >= 0 ? n : fallback; };
 
 export function DimensionRulesDialog() {
   const [tab, setTab] = useState<'exterior' | 'rooms'>('exterior');
@@ -78,9 +78,9 @@ export function DimensionRulesDialog() {
 
   const common = <T extends ExteriorRules | RoomRules>(v: T, set: (v: T) => void) => (<>
     <dt title="Millimetres on paper, from the wall's face to the first string">Offset (mm on paper)</dt>
-    <dd><input className="cell" data-dim-offset type="number" min={0} step={0.5} value={v.offset} onChange={(e) => set({ ...v, offset: num(e.target.value, v.offset) })} /></dd>
+    <dd><NumberField min={0} value={v.offset} testId="dim-offset" onCommit={(n) => { if (n != null) set({ ...v, offset: n }); }} /></dd>
     <dt title="Millimetres on paper between one string and the next">Spacing (mm on paper)</dt>
-    <dd><input className="cell" data-dim-spacing type="number" min={0} step={0.5} value={v.spacing} onChange={(e) => set({ ...v, spacing: num(e.target.value, v.spacing) })} /></dd>
+    <dd><NumberField min={0} value={v.spacing} testId="dim-spacing" onCommit={(n) => { if (n != null) set({ ...v, spacing: n }); }} /></dd>
     <dt title="A dimension style of the drafting standards">Dimension style</dt>
     <dd><select data-dim-style value={v.dimStyle ?? ''} onChange={(e) => set({ ...v, dimStyle: e.target.value || null })}>
       <option value="">Default style</option>
@@ -89,7 +89,7 @@ export function DimensionRulesDialog() {
   </>);
   const minOpening = <T extends ExteriorRules | RoomRules>(v: T, set: (v: T) => void) => (<>
     <dt title="Openings narrower than this get no points; 0 keeps them all">Skip openings narrower than (m)</dt>
-    <dd><input className="cell" data-dim-min-opening type="number" min={0} step={0.05} value={v.minOpening} onChange={(e) => set({ ...v, minOpening: num(e.target.value, v.minOpening) })} /></dd>
+    <dd><NumberField min={0} value={v.minOpening} testId="dim-min-opening" onCommit={(n) => { if (n != null) set({ ...v, minOpening: n }); }} /></dd>
   </>);
 
   return (

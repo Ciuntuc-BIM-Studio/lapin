@@ -5,6 +5,7 @@
  * the type gets a copy it may change, and the type's IFC sets leave it out; elements made before get it when asked.
  */
 
+import { promptText } from './prompts';
 import { useEffect, useState } from 'react';
 import { Braces, CopyCheck, Plus, X } from 'lucide-react';
 import { Cell, LengthCell } from './cells';
@@ -72,7 +73,7 @@ export function ParamsSection({ node, ids: who, shadowed, isType = node.type.end
         value: def.kind === 'bool' ? false : def.kind === 'text' || def.kind === 'choice' ? (def.options?.[0] ?? '') : 0 }).then(() => setName(''));
       return;
     }
-    const options = kind === 'choice' ? (window.prompt('The choices, separated by commas') ?? '').split(',').map((x) => x.trim()).filter(Boolean) : undefined;
+    const options = kind === 'choice' ? (promptText('The choices, separated by commas') ?? '').split(',').map((x) => x.trim()).filter(Boolean) : undefined;
     void execute('element.setParam', { ids: ids(), name: n, kind, value: kind === 'bool' ? false : kind === 'text' || kind === 'choice' ? (options?.[0] ?? '') : 0, ...(options ? { options } : {}) }).then(() => setName(''));
   };
   const standard = useStandardProps(node.type).filter(([set, n]) => !params.some((p) => p.pset === set && p.name === n));

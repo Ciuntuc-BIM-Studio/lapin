@@ -8,6 +8,9 @@
  * every view that takes it, or its view style's set; a 2D view's hidden lines.
  */
 
+import { NumberField } from '../../shell/cells';
+import { confirmAction, promptText } from '../../shell/prompts';
+import { backdropClose } from '../../shell/Dialog';
 import { ColourField } from '../../shell/ColourField';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useLineTypes } from './lineTypes/lineTypes';
@@ -196,7 +199,7 @@ export function VisibilityDialog() {
                     <td><ColourField value={r.fillColor ?? '#ffffff'} onChange={(v) => setCategory(c, { fillColor: v })} />{r.fillColor && <button type="button" className="icon mini" title="No fill of its own" onClick={() => setCategory(c, { fillColor: '' })}><X size={10} /></button>}</td>
                     <td><select value={r.cutHatch ?? ''} onChange={(e) => setCategory(c, { cutHatch: e.target.value })}><option value="">the materials'</option>{hatches.map((h) => <option key={h} value={h}>{h}</option>)}</select></td>
                     <td><input type="checkbox" aria-label="Halftone" checked={!!r.halftone} onChange={(e) => setCategory(c, { halftone: e.target.checked })} /></td>
-                    <td><input type="number" className="vv-number" aria-label="Transparency" min={0} max={95} step={5} value={r.transparency ?? 0} onChange={(e) => setCategory(c, { transparency: Math.max(0, Math.min(95, Number(e.target.value) || 0)) })} /></td>
+                    <td><NumberField className="vv-number" title="Transparency" min={0} max={95} value={r.transparency ?? 0} onCommit={(v) => { if (v != null) setCategory(c, { transparency: v }); }} /></td>
                   </>
                 )}
               </tr>
@@ -234,7 +237,7 @@ export function VisibilityDialog() {
   const custom = links.find((l) => l.id === linkOpen && v.graphics?.links?.[l.id]?.display === 'custom');
 
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide" role="dialog" aria-label="Visibility / Graphics" data-testid="vv-dialog" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head">
           <span className="panel-title">Visibility / Graphics · {target === '3d' ? '3D' : view?.name ?? 'View'}</span>
@@ -247,7 +250,7 @@ export function VisibilityDialog() {
               <option value="">{v.fromStyle ? "the style's set" : "this view's own"}</option>
               {v.sets.map((s) => <option key={s.id} value={s.id}>set: {s.name}</option>)}
             </select>
-            <button type="button" className="btn" onClick={() => { const name = window.prompt('The new set\'s name'); if (name?.trim()) void execute('view.saveGraphicsSet', { id: target, name: name.trim() }); }}>Save as a set…</button>
+            <button type="button" className="btn" onClick={() => { const name = promptText('The new set\'s name'); if (name?.trim()) void execute('view.saveGraphicsSet', { id: target, name: name.trim() }); }}>Save as a set…</button>
             {v.graphicsSet && !v.fromStyle && <button type="button" className="btn" title="Its views keep its settings as their own" onClick={() => void execute('view.removeGraphicsSet', { setId: v.graphicsSet })}><Trash2 size={13} />Remove the set</button>}
             {v.fromStyle && <button type="button" className="btn" title="Graphics of this view's own, starting from the style's set" onClick={() => void execute('view.useGraphicsSet', { id: target, setId: null })}>Make them this view's own</button>}
             {setName && <span className="muted small">Changes here change „{setName}” in every view that takes it.</span>}
@@ -411,7 +414,7 @@ function FiltersTab({ target, categories, rows, defs, counts, editing, setEditin
                   <td><ColourField aria-label="Colour" value={r.color ?? '#000000'} onChange={(v) => put(r.id, { color: v })} />{r.color && <button type="button" className="icon mini" title="Its own colour" onClick={() => put(r.id, { color: undefined })}><X size={10} /></button>}</td>
                   <td><select aria-label="Pattern" value={r.pattern ?? ''} onChange={(e) => put(r.id, { pattern: e.target.value || undefined })}>{patternChoices(PATTERNS, ownLines).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></td>
                   <td><input type="checkbox" aria-label="Halftone" checked={!!r.halftone} onChange={(e) => put(r.id, { halftone: e.target.checked || undefined })} /></td>
-                  <td><input type="number" className="vv-number" aria-label="Transparency" min={0} max={95} step={5} value={r.transparency ?? 0} onChange={(e) => put(r.id, { transparency: Math.max(0, Math.min(95, Number(e.target.value) || 0)) || undefined })} /></td>
+                  <td><NumberField className="vv-number" title="Transparency" min={0} max={95} value={r.transparency ?? 0} onCommit={(v) => { if (v != null) put(r.id, { transparency: v || undefined }); }} /></td>
                   <td className="row-tools">
                     <button type="button" className="icon mini" title="Up: before the others" disabled={i === 0} onClick={() => save(moveRow(used, i, -1))}><ArrowUp size={12} /></button>
                     <button type="button" className="icon mini" title="Down" disabled={i === used.length - 1} onClick={() => save(moveRow(used, i, 1))}><ArrowDown size={12} /></button>
@@ -442,7 +445,7 @@ function FiltersTab({ target, categories, rows, defs, counts, editing, setEditin
             </select>
             <span className="muted small">{counts[edited.id] ?? '…'} elements</span>
             <span className="grow" />
-            <button type="button" className="btn" title="Delete: the views that use it forget it" onClick={() => { if (window.confirm(`Delete the filter ${edited.name}?`)) { void execute('viewFilter.delete', { id: edited.id }); setEditing(null); } }}><Trash2 size={13} />Delete</button>
+            <button type="button" className="btn" title="Delete: the views that use it forget it" onClick={() => { if (confirmAction('Delete the filter {name}?', { name: edited.name })) { void execute('viewFilter.delete', { id: edited.id }); setEditing(null); } }}><Trash2 size={13} />Delete</button>
           </div>
           <table className="layer-table vv-rules">
             <thead><tr><th>Field</th><th>Parameter</th><th>Operator</th><th>Value</th><th /></tr></thead>
@@ -523,7 +526,7 @@ function PointCloudsTab({ target, clouds, rows, in3d }: { target: string; clouds
                     {CLOUD_COLORS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                   </select>
                 </td>
-                {!in3d && <td><input type="number" className="num" min={1} max={10000} step={1} style={{ width: 64 }} value={Math.round((r.slice ?? 0.1) * 100)} onChange={(e) => { const cm = Number(e.target.value); if (cm > 0) put(c.id, { slice: cm === 10 ? undefined : cm / 100 }); }} /></td>}
+                {!in3d && <td><NumberField min={1} max={10000} style={{ width: 64 }} value={Math.round((r.slice ?? 0.1) * 100)} onCommit={(cm) => { if (cm != null && cm > 0) put(c.id, { slice: cm === 10 ? undefined : cm / 100 }); }} /></td>}
                 <td>{c.classes.length > 1 && <button type="button" className="btn small" data-cloud-classes={c.name} onClick={() => setOpen(open === c.id ? null : c.id)}>{open === c.id ? 'Close' : 'Classes…'}</button>}</td>
               </tr>
             );

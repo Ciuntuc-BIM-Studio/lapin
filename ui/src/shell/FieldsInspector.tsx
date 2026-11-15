@@ -6,6 +6,7 @@
  * edited (`onPick`), else copies `{token}` to the clipboard. The engine lists them (`fields.available`) as the model is now.
  */
 
+import { backdropClose } from './Dialog';
 import { useEffect, useMemo, useState } from 'react';
 import { Braces, Copy, Search, X } from 'lucide-react';
 import { create } from 'zustand';
@@ -93,7 +94,7 @@ export function FieldsInspectorDialog() {
   const name = useSession((s) => (id ? s.nodes.get(id)?.name : undefined));
   const close = () => { useInspectorTarget.setState({ id: null }); useUi.setState({ dialog: null }); };
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog fields-inspector-dialog" role="dialog" aria-label="Parameters inspector" onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => { if (e.key === 'Escape') close(); }}>
         <header className="dialog-head"><span className="panel-title">Parameters inspector{name ? <span className="muted small" data-no-i18n> · {name}</span> : null}</span><button type="button" className="icon" title="Close" onClick={close}><X size={15} /></button></header>

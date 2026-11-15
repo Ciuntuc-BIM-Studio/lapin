@@ -4,6 +4,8 @@
  * whichever file the element comes from. Apply replaces the table in one step; the table travels as a .lapinaliases file.
  */
 
+import { promptText } from '../../shell/prompts';
+import { backdropClose } from '../../shell/Dialog';
 import { useCallback, useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, FileDown, FileUp, HardDriveDownload, Plus, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
@@ -47,11 +49,11 @@ export function FieldAliasesDialog() {
   const keep = async () => {
     const r = await exported();
     if (!r) return;
-    const name = window.prompt('Name of this set of field names', 'Field names');
+    const name = promptText('Name of this set of field names', 'Field names');
     if (name?.trim()) { await keepAliasesFile(name.trim(), r.text); notify('Kept in this computer\'s library.'); }
   };
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide field-aliases-dialog" role="dialog" aria-label="Field names" data-testid="field-aliases-dialog" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Field names</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

@@ -5,6 +5,7 @@
  * true afterwards with Scale image (two points and the distance between them).
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
@@ -74,7 +75,7 @@ export function ImportTraceDialog() {
   };
   const size = pages?.[page - 1];
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog" role="dialog" aria-label="Import PDF or image" data-testid="import-trace" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">{isPdf ? 'Import PDF' : 'Import image'} · <span data-no-i18n>{file.name}</span></span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

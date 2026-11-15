@@ -5,6 +5,7 @@
  * on the project, so in the file.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
@@ -74,7 +75,7 @@ export function BrowserSetsDialog() {
   };
 
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide" role="dialog" aria-label="Organize the browser" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head">
           <span className="panel-title">Organize the browser</span>

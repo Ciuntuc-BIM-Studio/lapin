@@ -10,6 +10,7 @@
  * element in the same place is skipped and said.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
@@ -76,7 +77,7 @@ export function CopyToStoreysDialog() {
     close();
   };
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog copy-storeys" role="dialog" aria-label="Copy to storeys" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Copy to storeys</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">
