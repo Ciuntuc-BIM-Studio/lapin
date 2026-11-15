@@ -3935,6 +3935,7 @@ export const ZH: Record<string, string> = {
   "Path of the .{ext} file to open:": "要打开的 .{ext} 文件路径：",
   "Save as (full path, .{ext}):": "另存为（完整路径，.{ext}）：",
   "Don't save": "不保存",
+  "Finish or cancel (Esc) what you are doing first, then undo or redo.": "请先完成或取消（Esc）当前操作，然后再撤销或重做。",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

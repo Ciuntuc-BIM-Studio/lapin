@@ -3943,6 +3943,7 @@ export const ES: Record<string, string> = {
   "Path of the .{ext} file to open:": "Ruta del archivo .{ext} que abrir:",
   "Save as (full path, .{ext}):": "Guardar como (ruta completa, .{ext}):",
   "Don't save": "No guardar",
+  "Finish or cancel (Esc) what you are doing first, then undo or redo.": "Termina o cancela (Esc) lo que estás haciendo y luego deshaz o rehaz.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

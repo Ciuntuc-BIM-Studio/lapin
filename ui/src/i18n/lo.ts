@@ -3997,6 +3997,7 @@ export const LO: Record<string, string> = {
   "Path of the .{ext} file to open:": "ເສັ້ນທາງຂອງໄຟລ໌ .{ext} ທີ່ຈະເປີດ:",
   "Save as (full path, .{ext}):": "ບັນທຶກເປັນ (ເສັ້ນທາງເຕັມ, .{ext}):",
   "Don't save": "ບໍ່ບັນທຶກ",
+  "Finish or cancel (Esc) what you are doing first, then undo or redo.": "ກະລຸນາສຳເລັດ ຫຼື ຍົກເລີກ (Esc) ສິ່ງທີ່ກຳລັງເຮັດກ່ອນ ແລ້ວຈຶ່ງຍົກເລີກ ຫຼື ເຮັດຄືນໃໝ່.",
 };
 
 /** Phrases with a number or a name in them. */

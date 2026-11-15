@@ -3938,6 +3938,7 @@ export const DA: Record<string, string> = {
   "Path of the .{ext} file to open:": "Sti til .{ext}-filen, der skal åbnes:",
   "Save as (full path, .{ext}):": "Gem som (fuld sti, .{ext}):",
   "Don't save": "Gem ikke",
+  "Finish or cancel (Esc) what you are doing first, then undo or redo.": "Afslut eller annuller (Esc) det, du er i gang med, og fortryd eller gentag så.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

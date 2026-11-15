@@ -3944,6 +3944,7 @@ export const PL: Record<string, string> = {
   "Path of the .{ext} file to open:": "Ścieżka pliku .{ext} do otwarcia:",
   "Save as (full path, .{ext}):": "Zapisz jako (pełna ścieżka, .{ext}):",
   "Don't save": "Nie zapisuj",
+  "Finish or cancel (Esc) what you are doing first, then undo or redo.": "Dokończ lub anuluj (Esc) bieżącą czynność, a potem cofnij lub ponów.",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {
