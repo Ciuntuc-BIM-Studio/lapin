@@ -547,18 +547,27 @@ public static class BalconyBuilder
     public static IEnumerable<QuantitySet> Quantities(Entity e, IModelView m)
     {
         if (Build(m, e) is not { } l || l.Outline.Count < 3) yield break;
+        // Every set a part of the balcony (audit M2: the supports' count as the only whole set hid the slab and the railing
+        // from a takeoff and the estimate), the slab and the parapet with their material's id.
+        string? MaterialOf(string key) => l.Parts.FirstOrDefault(p => p.Key == key).Material is { } name ? Materials.Find(m, name)?.Id : null;
         var slab = l.HasSlab ? l.Parts.FirstOrDefault(p => p.Key == "balcony-slab").Solid : null;
         if (slab != null)
             yield return new QuantitySet("Qto_SlabBaseQuantities",
             [
                 new("Width", l.Num("width"), "LENGTH"), new("Length", l.Num("depth"), "LENGTH"), new("Depth", l.Num("thickness"), "LENGTH"),
                 new("GrossArea", l.Area, "AREA", "Balcony slab"), new("NetVolume", Measure.Volume(slab), "VOLUME", "Balcony slab"),
-            ], "balcony-slab", "Slab");
+            ], "balcony-slab", "Slab", MaterialOf("balcony-slab"));
         if (l.RailLength > 0)
-            yield return new QuantitySet("Qto_RailingBaseQuantities", [new("Length", l.RailLength, "LENGTH", $"Railing, {l.Str("railStyle")}")],
-                l.Str("railStyle") == "parapet" ? "balcony-parapet" : "balcony-railing", "Railing");
+        {
+            var rail = l.Str("railStyle") == "parapet" ? "balcony-parapet" : "balcony-railing";
+            yield return new QuantitySet("Qto_RailingBaseQuantities", [new("Length", l.RailLength, "LENGTH", $"Railing, {l.Str("railStyle")}")], rail, "Railing", MaterialOf(rail));
+        }
         if (l.SupportCount > 0)
-            yield return new QuantitySet("Lapin_BalconySupports", [new("Count", l.SupportCount, "COUNT", l.Posts.Count > 0 ? "Posts" : l.Brackets.Count > 0 ? "Brackets" : "Tie rods")]);
+        {
+            var support = l.Posts.Count > 0 ? "balcony-posts" : l.Brackets.Count > 0 ? "balcony-brackets" : "balcony-hangers";
+            yield return new QuantitySet("Lapin_BalconySupports", [new("Count", l.SupportCount, "COUNT", l.Posts.Count > 0 ? "Posts" : l.Brackets.Count > 0 ? "Brackets" : "Tie rods")],
+                support, "Supports");
+        }
     }
 
     // ------------------------------------------------------------ the configurator's drawings

@@ -83,7 +83,14 @@ public static class Clt
     {
         var joints = new List<double>();
         var warnings = new List<string>();
-        var zones = openings.Select(o => (o.Id, L: o.L - spec.MinEdge, R: o.R + spec.MinEdge)).OrderBy(z => z.L).ToList();
+        // The openings' zones (each with its edge distance), those that overlap merged first as Framing.Panelize does: a joint
+        // moved back before one zone could land in the one before it (audit M3).
+        var zones = new List<(string Id, double L, double R)>();
+        foreach (var z in openings.Select(o => (o.Id, L: o.L - spec.MinEdge, R: o.R + spec.MinEdge)).OrderBy(z => z.L))
+        {
+            if (zones.Count > 0 && z.L < zones[^1].R) zones[^1] = (zones[^1].Id + " + " + z.Id, zones[^1].L, Math.Max(zones[^1].R, z.R));
+            else zones.Add(z);
+        }
         foreach (var z in zones) if (z.R - z.L > spec.MaxLength) warnings.Add($"{z.Id}: wider than a panel, with its edges, can be.");
         var at = u0;
         while (u1 - at > spec.MaxLength + 1e-9)

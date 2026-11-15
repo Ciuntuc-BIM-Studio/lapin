@@ -96,10 +96,28 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
     static void CheckLink(Plan p, PlanLink l)
     {
         if (l.From == l.To) throw new CommandException("A task cannot follow itself.");
-        if (p.Ancestors(l.To).Contains(l.From) || p.Ancestors(l.From).Contains(l.To)) throw new CommandException("A summary task and a task under it cannot be linked.");
+        if (Plan.Nested(p, l)) throw new CommandException("A summary task and a task under it cannot be linked.");
         var others = p.Links.Where(x => x.Id != l.Id && !(x.From == l.From && x.To == l.To)).ToList();
         if (Cpm.HasLoop(p.WithLinks(others), l)) throw new CommandException($"„{p.ById[l.From].Name}” → „{p.ById[l.To].Name}” would make a loop: a task would wait for itself.");
     }
+
+    /// <summary>
+    /// The links a move left between a summary and a task under it (a task and a subtask of its new parent, after an indent
+    /// or an outdent): <see cref="CheckLink"/> would refuse them, so they go, their ids added to <paramref name="dropped"/>.
+    /// </summary>
+    static void DropNestedLinks(ICommandContext ctx, List<string> dropped)
+    {
+        var p = Plan.Read(ctx.Model);
+        foreach (var l in p.Links.Where(l => Plan.Nested(p, l)).ToList())
+        {
+            ctx.RemoveRelation(l.Id);
+            dropped.Add(l.Id);
+        }
+    }
+
+    /// <summary>What an indent or an outdent reports: the links it took away, when any.</summary>
+    static JsonObject? Dropped(List<string> dropped) =>
+        dropped.Count == 0 ? null : new JsonObject { ["removedLinks"] = new JsonArray(dropped.Select(x => (JsonNode)x).ToArray()) };
 
     static void PutLink(ICommandContext ctx, PlanLink l)
     {
@@ -303,6 +321,7 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
             var ids = Args.Ids(a);
             var p = Plan.Read(ctx.Model);
             var done = 0;
+            var dropped = new List<string>();
             foreach (var id in ids.Where(p.ById.ContainsKey).OrderBy(id => p.RowOf[id]))
             {
                 p = Plan.Read(ctx.Model);
@@ -317,10 +336,11 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
                 // A link between the task and its new parent cannot stay: it goes.
                 foreach (var l in p.Links.Where(l => (l.From == id && l.To == into) || (l.From == into && l.To == id))) ctx.RemoveRelation(l.Id);
                 Set(ctx, ctx.Model.Get(id)!, at => { at["parent"] = into; at["order"] = under.Count + 1; });
+                DropNestedLinks(ctx, dropped);
                 done++;
             }
             if (done == 0) throw new CommandException("A task is indented under the task above it at its level: the first has none.");
-            return null;
+            return Dropped(dropped);
         });
 
         // Outdented: each task goes up a level, right after its parent; the tasks after it under that parent become its own (the rows keep their order).
@@ -329,6 +349,7 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
             var ids = Args.Ids(a);
             var p0 = Plan.Read(ctx.Model);
             var done = 0;
+            var dropped = new List<string>();
             foreach (var id in ids.Where(p0.ById.ContainsKey).OrderByDescending(id => p0.RowOf[id]))
             {
                 var p = Plan.Read(ctx.Model);
@@ -348,10 +369,11 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
                 up.Insert(up.IndexOf(parent) + 1, id);
                 Set(ctx, ctx.Model.Get(id)!, at => { if (grand == null) at.Remove("parent"); else at["parent"] = grand; });
                 Renumber(ctx, up);
+                DropNestedLinks(ctx, dropped);
                 done++;
             }
             if (done == 0) throw new CommandException("Only a task under a summary can be outdented.");
-            return null;
+            return Dropped(dropped);
         });
 
         // A link from a predecessor to a successor; one between the same two tasks already is changed instead.
@@ -690,11 +712,11 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
     public static (CpmResult Result, string? Problem) Solve(Plan p, bool levelled = true)
     {
         try { return (Cpm.Solve(p, levelled), null); }
-        catch (CommandException ex)
+        catch (Exception ex) when (ex is not OutOfMemoryException)
         {
             var start = p.Calendar.NextWorking(p.Start);
             var times = p.Rows.ToDictionary(t => t.Id, t => new TaskTimes(start, start, start, start, 0, 0, false, 0));
-            return (new CpmResult(times, start, new HashSet<string>()), ex.Message);
+            return (new CpmResult(times, start, new HashSet<string>()), ex is CommandException ? ex.Message : $"The schedule could not be worked out: {ex.Message}");
         }
     }
 

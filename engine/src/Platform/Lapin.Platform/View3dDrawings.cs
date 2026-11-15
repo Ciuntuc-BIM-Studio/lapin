@@ -112,7 +112,7 @@ public static class View3dDrawings
 
     /// <summary>
     /// The parts inside a box given in axes of its own (<paramref name="toAxes"/>, back by <paramref name="toWorld"/>): one wholly
-    /// inside as it is, one wholly outside left out, one across cut by the box (without the boolean library kept whole, or left out with <paramref name="mustCut"/>).
+    /// inside as it is, one wholly outside left out, one across cut by the box (without the boolean library, or one it cannot take, kept whole, or left out with <paramref name="mustCut"/>).
     /// </summary>
     static List<DrawPart> Keep(List<DrawPart> parts, Func<Vec3, Vec3> toAxes, Vec3 min, Vec3 max, Func<Vec3, Vec3> toWorld, ISolidBooleans? booleans, bool mustCut = false)
     {
@@ -134,7 +134,16 @@ public static class View3dDrawings
             if (booleans == null) { if (!mustCut) o.Add(p); continue; }
             cutter ??= Prism.Box((min + max) * 0.5, max.X - min.X, max.Y - min.Y, max.Z - min.Z) is { } b ? SolidBuilder.Transform(b, toWorld) : null;
             if (cutter == null) continue;
-            if (booleans.Intersection(p.Solid, cutter) is { Vertices.Length: > 0 } inside) o.Add(p with { Solid = inside });
+            // A body the boolean library cannot take (an open mesh, from an IFC reference): kept whole as without the library,
+            // or left out where it must be cut; one such part never fails the view, its sheets or its PDF (audit P3).
+            Solid? kept;
+            try { kept = booleans.Intersection(p.Solid, cutter); }
+            catch (Exception ex) when (ex is not OutOfMemoryException)
+            {
+                if (!mustCut) o.Add(p);
+                continue;
+            }
+            if (kept is { Vertices.Length: > 0 } inside) o.Add(p with { Solid = inside });
         }
         return o;
     }

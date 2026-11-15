@@ -22,7 +22,7 @@ public static class BcfReader
         catch (InvalidDataException) { throw new CommandException("This is not a BCF file (a zip with bcf.version and a folder per topic)."); }
         using (zip)
         {
-            var files = zip.Entries.Where(e => !e.FullName.EndsWith('/')).ToDictionary(e => e.FullName.Replace('\\', '/'), e => e, StringComparer.OrdinalIgnoreCase);
+            var files = new Files(zip.Entries.Where(e => !e.FullName.EndsWith('/')));
             var version = Bcf.Version21;
             if (files.TryGetValue("bcf.version", out var ve))
             {
@@ -30,7 +30,7 @@ public static class BcfReader
                 if (v != null) version = v.StartsWith('3') ? Bcf.Version30 : Bcf.Version21;
             }
             var topics = new List<BcfTopic>();
-            foreach (var (name, entry) in files.OrderBy(kv => kv.Key, StringComparer.Ordinal))
+            foreach (var (name, entry) in files.Exact.OrderBy(kv => kv.Key, StringComparer.Ordinal))
             {
                 if (!name.EndsWith("/markup.bcf", StringComparison.OrdinalIgnoreCase)) continue;
                 var folder = name[..(name.Length - "markup.bcf".Length)];
@@ -58,7 +58,30 @@ public static class BcfReader
     static string? Text(XElement e, string name) => Child(e, name)?.Value is { } v && v.Trim() is { Length: > 0 } t ? t : null;
     static string? Attr(XElement e, string name) => e.Attributes().FirstOrDefault(a => a.Name.LocalName == name)?.Value?.Trim() is { Length: > 0 } v ? v : null;
 
-    static BcfTopic Topic(XElement markup, XElement t, string folder, Dictionary<string, ZipArchiveEntry> files)
+    /// <summary>
+    /// The zip's files by name: as written first, else ignoring case (a tool may write a reference in another case). Two
+    /// names that differ only by case (or one written twice) are both kept, never an error (audit P21): the first of each wins.
+    /// </summary>
+    sealed class Files
+    {
+        public readonly Dictionary<string, ZipArchiveEntry> Exact = new(StringComparer.Ordinal);
+        readonly Dictionary<string, ZipArchiveEntry> anyCase = new(StringComparer.OrdinalIgnoreCase);
+
+        public Files(IEnumerable<ZipArchiveEntry> entries)
+        {
+            foreach (var e in entries)
+            {
+                var name = e.FullName.Replace('\\', '/');
+                Exact.TryAdd(name, e);
+                anyCase.TryAdd(name, e);
+            }
+        }
+
+        public bool TryGetValue(string name, out ZipArchiveEntry entry) =>
+            Exact.TryGetValue(name, out entry!) || anyCase.TryGetValue(name, out entry!);
+    }
+
+    static BcfTopic Topic(XElement markup, XElement t, string folder, Files files)
     {
         var guid = Bcf.ParseGuid(Attr(t, "Guid")) ?? Guid.NewGuid();
         // Labels: bare <Labels> elements (2.1) or <Labels><Label/></Labels> (3.0).

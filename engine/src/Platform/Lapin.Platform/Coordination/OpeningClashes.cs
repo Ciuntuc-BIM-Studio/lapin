@@ -50,6 +50,8 @@ public sealed record OpeningClash(string Status, string? MepId, string HostId, O
 public static class OpeningClashes
 {
     public const string Ok = "ok", Missing = "missing", TooSmall = "tooSmall", Empty = "empty";
+    /// <summary>A pair the boolean library could not take (an open mesh, from an IFC reference): reported, never a clash, and the check goes on.</summary>
+    public const string Unchecked = "unchecked";
 
     /// <summary>The MEP classes checked: segments (Lapin's runs are pipe, duct and cable segments) and the MEP side's own openings, provisions for voids.</summary>
     public static readonly string[] MepClasses = ["IfcPipeSegment", "IfcDuctSegment", "IfcCableSegment", "IfcCableCarrierSegment", "IfcFlowSegment"];
@@ -113,55 +115,68 @@ public static class OpeningClashes
             foreach (var host in hosts)
             {
                 if (!Overlap(mep.Box, host.Box)) continue;
-                // What of the element runs through the host's material: the host as built, its openings cut out of it.
-                var pieces = new List<Solid>();
-                foreach (var a in mep.Solids)
-                    foreach (var b in host.Solids)
-                        if (Measure.Bounds(a) is { } ba && Measure.Bounds(b) is { } bb && Overlap(ba, bb) && booleans.Intersection(a, b) is { } x && Measure.Volume(x) > VolumeEps) pieces.Add(x);
-                // The voids it goes through, and with a clearance what of it lies in the ring the clearance keeps clear.
-                var through = new List<OpeningVoid>();
-                var insideOf = new Dictionary<string, List<Solid>>();
-                foreach (var (v, box) in voidsOf.GetValueOrDefault(host.Entity.Id) ?? [])
+                // One pair the boolean library cannot take (an open mesh) is said and skipped; it never stops the check (audit P4).
+                try { Pair(mep, host); }
+                catch (Exception ex) when (ex is not OutOfMemoryException)
                 {
-                    if (!Overlap(mep.Box, box)) continue;
-                    var inside = new List<Solid>();
-                    foreach (var a in mep.Solids)
-                        if (booleans.Intersection(a, v.Solid) is { } x && Measure.Volume(x) > VolumeEps) inside.Add(x);
-                    if (inside.Count == 0) continue;
-                    insideOf[v.Key] = inside;
-                    through.Add(v);
-                    used.Add(v.Key);
-                    if (o.Clearance > 0 && shrunk.TryGetValue(v.Key, out var inner))
-                        foreach (var x in inside)
-                            if (booleans.Difference(x, [inner.Solid]) is { } ring && Measure.Volume(ring) > VolumeEps) pieces.Add(ring);
+                    var c = new Vec3((Math.Max(mep.Box.Min.X, host.Box.Min.X) + Math.Min(mep.Box.Max.X, host.Box.Max.X)) / 2, (Math.Max(mep.Box.Min.Y, host.Box.Min.Y) + Math.Min(mep.Box.Max.Y, host.Box.Max.Y)) / 2, (Math.Max(mep.Box.Min.Z, host.Box.Min.Z) + Math.Min(mep.Box.Max.Z, host.Box.Max.Z)) / 2);
+                    results.Add(new OpeningClash(Unchecked, e.Id, host.Entity.Id, null, 0, c, $"{Label(e)} through {Label(host.Entity)} could not be checked: the geometry of one of them is not a closed solid."));
                 }
-                if (pieces.Count == 0 && through.Count == 0) continue;
-                var centre = Centre(pieces.Count > 0 ? pieces : through.Select(v => v.Solid).ToList());
-                if (pieces.Count == 0)
-                {
-                    var ok = through[0];
-                    results.Add(new OpeningClash(Ok, e.Id, host.Entity.Id, ok, 0, centre, $"{Label(e)} goes through {ok.Mark} in {Label(host.Entity)}.") { Fit = SizeIn(ok, insideOf[ok.Key]) });
-                    continue;
-                }
-                if (through.Count == 0)
-                {
-                    var why = held.GetValueOrDefault((e.Id, host.Entity.Id));
-                    var note = why == ProvisionOpening.Structural ? " It bears load: not cut automatically." : why == ProvisionOpening.Order ? " It ranks over the run in the cut order: not cut automatically." : "";
-                    results.Add(new OpeningClash(Missing, e.Id, host.Entity.Id, null, 0, centre, $"No opening: {Label(e)} goes through {Label(host.Entity)} where it has none.{note}") { Held = why });
-                    continue;
-                }
-                // How far out of the void (shrunk by the clearance) the element reaches: what the opening lacks on its worst side.
-                var target = through.Select(v => shrunk.GetValueOrDefault(v.Key) ?? v).ToList();
-                var by = pieces.SelectMany(p => p.Vertices).Max(p => target.Min(v => DistanceTo(v.Solid, p)));
-                if (by < DistanceEps)
-                {
-                    results.Add(new OpeningClash(Ok, e.Id, host.Entity.Id, through[0], 0, centre, $"{Label(e)} goes through {through[0].Mark} in {Label(host.Entity)}.") { Fit = SizeIn(through[0], insideOf[through[0].Key]) });
-                    continue;
-                }
-                var mm = Math.Ceiling(by * 1000 - 0.05);
-                results.Add(new OpeningClash(TooSmall, e.Id, host.Entity.Id, through[0], by, centre,
-                    $"Opening too small: {Label(e)} stands {mm:0} mm out of {through[0].Mark} in {Label(host.Entity)}{(o.Clearance > 0 ? $" (keeping {o.Clearance * 1000:0} mm clear)" : "")}."));
             }
+        }
+
+        // One MEP element against one host it may cross.
+        void Pair(Body mep, Body host)
+        {
+            var e = mep.Entity;
+            // What of the element runs through the host's material: the host as built, its openings cut out of it.
+            var pieces = new List<Solid>();
+            foreach (var a in mep.Solids)
+                foreach (var b in host.Solids)
+                    if (Measure.Bounds(a) is { } ba && Measure.Bounds(b) is { } bb && Overlap(ba, bb) && booleans.Intersection(a, b) is { } x && Measure.Volume(x) > VolumeEps) pieces.Add(x);
+            // The voids it goes through, and with a clearance what of it lies in the ring the clearance keeps clear.
+            var through = new List<OpeningVoid>();
+            var insideOf = new Dictionary<string, List<Solid>>();
+            foreach (var (v, box) in voidsOf.GetValueOrDefault(host.Entity.Id) ?? [])
+            {
+                if (!Overlap(mep.Box, box)) continue;
+                var inside = new List<Solid>();
+                foreach (var a in mep.Solids)
+                    if (booleans.Intersection(a, v.Solid) is { } x && Measure.Volume(x) > VolumeEps) inside.Add(x);
+                if (inside.Count == 0) continue;
+                insideOf[v.Key] = inside;
+                through.Add(v);
+                used.Add(v.Key);
+                if (o.Clearance > 0 && shrunk.TryGetValue(v.Key, out var inner))
+                    foreach (var x in inside)
+                        if (booleans.Difference(x, [inner.Solid]) is { } ring && Measure.Volume(ring) > VolumeEps) pieces.Add(ring);
+            }
+            if (pieces.Count == 0 && through.Count == 0) return;
+            var centre = Centre(pieces.Count > 0 ? pieces : through.Select(v => v.Solid).ToList());
+            if (pieces.Count == 0)
+            {
+                var ok = through[0];
+                results.Add(new OpeningClash(Ok, e.Id, host.Entity.Id, ok, 0, centre, $"{Label(e)} goes through {ok.Mark} in {Label(host.Entity)}.") { Fit = SizeIn(ok, insideOf[ok.Key]) });
+                return;
+            }
+            if (through.Count == 0)
+            {
+                var why = held.GetValueOrDefault((e.Id, host.Entity.Id));
+                var note = why == ProvisionOpening.Structural ? " It bears load: not cut automatically." : why == ProvisionOpening.Order ? " It ranks over the run in the cut order: not cut automatically." : "";
+                results.Add(new OpeningClash(Missing, e.Id, host.Entity.Id, null, 0, centre, $"No opening: {Label(e)} goes through {Label(host.Entity)} where it has none.{note}") { Held = why });
+                return;
+            }
+            // How far out of the void (shrunk by the clearance) the element reaches: what the opening lacks on its worst side.
+            var target = through.Select(v => shrunk.GetValueOrDefault(v.Key) ?? v).ToList();
+            var by = pieces.SelectMany(p => p.Vertices).Max(p => target.Min(v => DistanceTo(v.Solid, p)));
+            if (by < DistanceEps)
+            {
+                results.Add(new OpeningClash(Ok, e.Id, host.Entity.Id, through[0], 0, centre, $"{Label(e)} goes through {through[0].Mark} in {Label(host.Entity)}.") { Fit = SizeIn(through[0], insideOf[through[0].Key]) });
+                return;
+            }
+            var mm = Math.Ceiling(by * 1000 - 0.05);
+            results.Add(new OpeningClash(TooSmall, e.Id, host.Entity.Id, through[0], by, centre,
+                $"Opening too small: {Label(e)} stands {mm:0} mm out of {through[0].Mark} in {Label(host.Entity)}{(o.Clearance > 0 ? $" (keeping {o.Clearance * 1000:0} mm clear)" : "")}."));
         }
         if (o.ReportEmpty)
             foreach (var v in exact.Where(v => !used.Contains(v.Key) && v.Kind is OpeningVoids.Wall or OpeningVoids.Slab && !IsStairwell(m, v)))

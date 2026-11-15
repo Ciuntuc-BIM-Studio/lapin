@@ -265,25 +265,37 @@ public static class RampBuilder
     {
         if (g == null || Resolve(m, ramp) is not var (r, _, spec)) yield break;
         double Vol(string key) => g.Parts.Where(p => p.Key == key).Sum(p => Measure.Volume(p.Solid));
+        // A part's material as the geometry has it (an id, what material rules and the estimate read; audit M2).
+        string? MaterialOf(string key) => g.Parts.FirstOrDefault(p => p.Key == key)?.Material ?? Materials.Find(m, spec.Construction.Concrete)?.Id;
+        var parts = new List<QuantitySet>();
         for (var i = 0; i < r.Flights.Count; i++)
         {
             var fl = r.Flights[i];
-            yield return new QuantitySet("Qto_RampFlightBaseQuantities",
+            parts.Add(new QuantitySet("Qto_RampFlightBaseQuantities",
             [
-                new("Length", fl.Length, "LENGTH"), new("Width", fl.Width, "LENGTH"), new("GrossVolume", Vol($"flight:{i}"), "VOLUME"),
-            ], $"flight:{i}", $"Flight {i + 1}", spec.Construction.Concrete);
+                new("Length", fl.Length, "LENGTH"), new("Width", fl.Width, "LENGTH"),
+                new("GrossVolume", Vol($"flight:{i}"), "VOLUME"), new("NetVolume", Vol($"flight:{i}"), "VOLUME"),
+            ], $"flight:{i}", $"Flight {i + 1}", MaterialOf($"flight:{i}")));
+        }
+        foreach (var part in g.Parts.Where(p => p.Key != null && p.Key.StartsWith("landing:", StringComparison.Ordinal)).GroupBy(p => p.Key!))
+        {
+            var v = part.Sum(p => Measure.Volume(p.Solid));
+            parts.Add(new QuantitySet("Lapin_RampLandingQuantities", [new("GrossVolume", v, "VOLUME"), new("NetVolume", v, "VOLUME")], part.Key, part.First().Name, MaterialOf(part.Key)));
         }
         var surface = r.Flights.Sum(fl => fl.Length * Math.Sqrt(1 + fl.Slope * fl.Slope) * fl.Width) + r.Landings.Sum(l => Math.Abs(Polygon2.SignedArea(l.Outline)));
         var concrete = g.Parts.Where(p => p.Key != null && (p.Key.StartsWith("flight:", StringComparison.Ordinal) || p.Key.StartsWith("landing:", StringComparison.Ordinal))).Sum(p => Measure.Volume(p.Solid));
         var rail = StairBuilder.RailingOf(ramp, spec);
         var sides = rail.Sides == "both" ? 2 : rail.Sides == "none" ? 0 : 1;
+        // The whole ramp first (what a takeoff and the estimate read for the element), its concrete as its volume too.
         yield return new QuantitySet("Lapin_RampQuantities",
         [
             new("Width", r.Width, "LENGTH"), new("Height", r.Height, "LENGTH"), new("Slope", r.Slope * 100, "RATIO", "Slope (%)"),
             new("Length", r.Run, "LENGTH", "Run in plan"), new("NumberOfFlights", r.Flights.Count, "COUNT", "Flights"),
-            new("ConcreteVolume", concrete, "VOLUME", "Concrete"), new("FinishArea", surface, "AREA", "Finish"),
+            new("ConcreteVolume", concrete, "VOLUME", "Concrete"), new("GrossVolume", concrete, "VOLUME"), new("NetVolume", concrete, "VOLUME"),
+            new("FinishArea", surface, "AREA", "Finish"),
             new("RailingLength", r.Flights.Sum(fl => fl.Length * Math.Sqrt(1 + fl.Slope * fl.Slope)) * sides, "LENGTH", "Railing"),
         ]);
+        foreach (var x in parts) yield return x;
     }
 
     /// <summary>What the ramp asks of the floor above: the box of what comes within the headroom of its underside.</summary>
