@@ -228,7 +228,8 @@ public sealed partial class IfcModel
         if (u.Type == "IFCSIUNIT")
             return (u[2] as StepEnum)?.Value switch
             {
-                "KILO" => 1e3, "HECTO" => 1e2, "DECA" => 10, "DECI" => 0.1, "CENTI" => 1e-2, "MILLI" => 1e-3, "MICRO" => 1e-6, "NANO" => 1e-9, _ => 1,
+                "EXA" => 1e18, "PETA" => 1e15, "TERA" => 1e12, "GIGA" => 1e9, "MEGA" => 1e6, "KILO" => 1e3, "HECTO" => 1e2, "DECA" => 10,
+                "DECI" => 0.1, "CENTI" => 1e-2, "MILLI" => 1e-3, "MICRO" => 1e-6, "NANO" => 1e-9, "PICO" => 1e-12, "FEMTO" => 1e-15, "ATTO" => 1e-18, _ => 1,
             };
         if (!u.Type.StartsWith("IFCCONVERSIONBASEDUNIT", StringComparison.Ordinal)) return 1;
         if (depth < 4 && f.Get(u[3]) is { } measure && Num(measure[0]) is var v && v > 0)
@@ -338,8 +339,14 @@ public sealed partial class IfcModel
 
     readonly Dictionary<string, double> _projectUnits = [];
 
+    /// <summary>
+    /// The size in SI of a value's unit: its own (a property's Unit) when it names one, else the project's of
+    /// <paramref name="unitType"/> (an area in square metres or millimetres, as the project assigns it; SI when it assigns none).
+    /// </summary>
+    internal double UnitOf(object? own, string unitType) => File.Get(own) is { } unit ? UnitSize(unit, 0) : ProjectUnit(unitType);
+
     /// <summary>The size in SI of the project's unit of a type (LENGTHUNIT, AREAUNIT…): 1 when it assigns none.</summary>
-    double ProjectUnit(string unitType)
+    internal double ProjectUnit(string unitType)
     {
         lock (_projectUnits)
         {

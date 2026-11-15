@@ -682,6 +682,15 @@ public static partial class IfcImport
             }
         }
 
+        /// <summary>The measures of a material's properties a project may give a unit of its own (IfcUnitEnum, IfcDerivedUnitEnum): read in SI.</summary>
+        static readonly Dictionary<string, string> MeasureUnits = new()
+        {
+            ["IFCVOLUMEMEASURE"] = "VOLUMEUNIT", ["IFCMASSMEASURE"] = "MASSUNIT", ["IFCMASSDENSITYMEASURE"] = "MASSDENSITYUNIT",
+            ["IFCTHERMALCONDUCTIVITYMEASURE"] = "THERMALCONDUCTANCEUNIT", ["IFCSPECIFICHEATCAPACITYMEASURE"] = "SPECIFICHEATCAPACITYUNIT",
+            ["IFCMODULUSOFELASTICITYMEASURE"] = "MODULUSOFELASTICITYUNIT", ["IFCPRESSUREMEASURE"] = "PRESSUREUNIT",
+            ["IFCTHERMALEXPANSIONCOEFFICIENTMEASURE"] = "THERMALEXPANSIONCOEFFICIENTUNIT", ["IFCTHERMALTRANSMITTANCEMEASURE"] = "THERMALTRANSMITTANCEUNIT",
+        };
+
         /// <summary>
         /// A foreign material's IfcMaterial.Description and IfcMaterialProperties read into the project's material: the description
         /// when it has none, each property it lacks as a parameter (a standard set's by its own names, Lapin_Material's as the user's
@@ -702,11 +711,15 @@ public static partial class IfcImport
                 {
                     if (p.Type != "IFCPROPERTYSINGLEVALUE" || Str(p[0]) is not { Length: > 0 } pname) continue;
                     if (list.OfType<JsonObject>().Any(x => Params.Same(x, pset, pname))) continue;
+                    // A measure in SI: by the property's own unit, else the project's of its kind (an area in square metres
+                    // in a project in millimetres, as Revit writes it, is not the length unit squared).
+                    double Si(StepTyped t, string unitType) => Math.Round(Num(t.Value) * model.UnitOf(p[3], unitType), 9);
                     var (kind, value) = p[2] switch
                     {
-                        StepTyped { Type: "IFCLENGTHMEASURE" or "IFCPOSITIVELENGTHMEASURE" } t => ("length", (JsonNode?)Length(t.Value)),
-                        StepTyped { Type: "IFCAREAMEASURE" } t => ("area", (JsonNode?)(Num(t.Value) * model.Scale * model.Scale)),
+                        StepTyped { Type: "IFCLENGTHMEASURE" or "IFCPOSITIVELENGTHMEASURE" } t => ("length", (JsonNode?)Si(t, "LENGTHUNIT")),
+                        StepTyped { Type: "IFCAREAMEASURE" } t => ("area", (JsonNode?)Si(t, "AREAUNIT")),
                         StepTyped { Type: "IFCBOOLEAN" or "IFCLOGICAL", Value: StepEnum e } => ("bool", (JsonNode?)(e.Value == "T")),
+                        StepTyped { Value: double or long } t when MeasureUnits.TryGetValue(t.Type, out var unitType) => ("number", (JsonNode?)Si(t, unitType)),
                         StepTyped { Value: double or long } t => ("number", (JsonNode?)Num(t.Value)),
                         StepTyped { Value: string text } => ("text", (JsonNode?)text),
                         _ => ("", null),
