@@ -432,8 +432,11 @@ public static class StairBuilder
     {
         if (g == null || Resolve(m, stair) is not var (r, _, spec)) yield break;
         double Vol(string key) => g.Parts.Where(p => p.Key == key).Sum(p => Measure.Volume(p.Solid));
+        // A part's material as the geometry has it (an id, what material rules and the estimate read; audit M2).
+        string? MaterialOf(string key) => g.Parts.FirstOrDefault(p => p.Key == key)?.Material ?? Materials.Find(m, spec.Construction.Concrete)?.Id;
         var w = r.Width;
         var run = 0.0; var soffit = 0.0; var treads = 0.0;
+        var flights = new List<QuantitySet>();
         for (var i = 0; i < r.Flights.Count; i++)
         {
             var fl = r.Flights[i];
@@ -443,11 +446,19 @@ public static class StairBuilder
             var fw = r.WidthOf(fl);
             soffit += spec.Construction.Kind == "solid" ? 2 * length * fl.Risers * r.RiserHeight / 2 : fw * length * Math.Sqrt(1 + r.RiserHeight * r.RiserHeight / (r.Tread * r.Tread));
             treads += (fl.Risers - 1) * r.Tread * fw;
-            yield return new QuantitySet("Qto_StairFlightBaseQuantities",
+            flights.Add(new QuantitySet("Qto_StairFlightBaseQuantities",
             [
                 new("Length", length, "LENGTH"), new("NumberOfRiser", fl.Risers, "COUNT"), new("NumberOfTreads", fl.Risers - 1, "COUNT"),
-                new("RiserHeight", r.RiserHeight, "LENGTH"), new("TreadLength", r.Tread, "LENGTH"), new("GrossVolume", Vol($"flight:{i}"), "VOLUME"),
-            ], $"flight:{i}", $"Flight {i + 1}", spec.Construction.Concrete);
+                new("RiserHeight", r.RiserHeight, "LENGTH"), new("TreadLength", r.Tread, "LENGTH"),
+                new("GrossVolume", Vol($"flight:{i}"), "VOLUME"), new("NetVolume", Vol($"flight:{i}"), "VOLUME"),
+            ], $"flight:{i}", $"Flight {i + 1}", MaterialOf($"flight:{i}")));
+        }
+        // The landings and the winders, parts of the concrete as the flights are.
+        foreach (var part in g.Parts.Where(p => p.Key != null && (p.Key == "winders" || p.Key.StartsWith("landing:", StringComparison.Ordinal))).GroupBy(p => p.Key!))
+        {
+            var v = part.Sum(p => Measure.Volume(p.Solid));
+            flights.Add(new QuantitySet(part.Key == "winders" ? "Lapin_StairWinderQuantities" : "Lapin_StairLandingQuantities",
+                [new("GrossVolume", v, "VOLUME"), new("NetVolume", v, "VOLUME")], part.Key, part.First().Name, MaterialOf(part.Key)));
         }
         var landingArea = r.Landings.Sum(l => Math.Abs(Polygon2.SignedArea(l.Outline)));
         var winderArea = r.Winders.Sum(x => Math.Abs(Polygon2.SignedArea(x.Outline)));
@@ -457,15 +468,17 @@ public static class StairBuilder
         if (r.Arc is { } arc) { run += arc.Steps * r.Tread; railing += arc.Steps * Math.Sqrt(r.Tread * r.Tread + r.RiserHeight * r.RiserHeight); }
         var rail = RailingOf(stair, spec);
         var sides = rail.Sides == "both" ? 2 : rail.Sides == "none" ? 0 : 1;
+        // The whole stair first (what a takeoff and the estimate read for the element), its concrete as its volume too.
         yield return new QuantitySet("Lapin_StairQuantities",
         [
             new("NumberOfRiser", r.Risers, "COUNT", "Risers"), new("RiserHeight", r.RiserHeight, "LENGTH", "Riser"), new("TreadLength", r.Tread, "LENGTH", "Tread"),
             new("Width", w, "LENGTH"), new("Height", r.Height, "LENGTH"), new("Length", run, "LENGTH", "Run in plan"),
-            new("ConcreteVolume", concrete, "VOLUME", "Concrete"),
+            new("ConcreteVolume", concrete, "VOLUME", "Concrete"), new("GrossVolume", concrete, "VOLUME"), new("NetVolume", concrete, "VOLUME"),
             new("FormworkArea", soffit + r.Risers * r.RiserHeight * w + landingArea + winderArea, "AREA", "Formwork"),
             new("FinishArea", treads + landingArea + winderArea, "AREA", "Tread finish"),
             new("RailingLength", railing * sides, "LENGTH", "Railing"),
         ]);
+        foreach (var x in flights) yield return x;
     }
 
     // ─── The opening in the floor above ─────────────────────────────────────
