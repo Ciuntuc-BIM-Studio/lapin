@@ -10,6 +10,7 @@
  * connections; Delete hall takes them all away.
  */
 
+import { projectOf } from '../../shell/nodeIndex';
 import { confirmAction, promptText } from '../../shell/prompts';
 import { useEffect, useState } from 'react';
 import { create } from 'zustand';
@@ -109,7 +110,7 @@ export function HallDialog() {
   const node = useSession((s) => (hallId ? s.nodes.get(hallId) : undefined));
   const info = useSession((s) => s.info);
   const error = useSession((s) => s.error);
-  const project = useSession((s) => [...s.nodes.values()].find((n) => n.type === 'IfcProject'));
+  const project = useSession((s) => projectOf(s.nodes));
   const styles = (info?.catalogs['steel.hallStyles'] as unknown as Style[] | undefined) ?? [];
   const own = (project?.props.hallStyles as Style[] | undefined) ?? [];
   const catalogue = (info?.catalogs['steel.profiles'] as unknown as SectionDto[] | undefined) ?? [];

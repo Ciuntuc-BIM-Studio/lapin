@@ -18,6 +18,7 @@
  * point, its internal origin or the survey point's coordinates.
  */
 
+import { nodesOfType } from '../../shell/nodeIndex';
 import { backdropClose } from '../../shell/Dialog';
 import { useState } from 'react';
 import { isCloudLink } from '../../viewport/pointClouds';
@@ -63,7 +64,7 @@ export function ExportMeshDialog() {
   const [origin, setOrigin] = useState('base');
   const [voids, setVoids] = useState(false);
   // The point clouds linked go out only when ticked, and only in GLB and glTF (decision 396).
-  const hasClouds = useSession((s) => [...s.nodes.values()].some(isCloudLink));
+  const hasClouds = useSession((s) => nodesOfType(s.nodes, 'LapinLink').some(isCloudLink));
   const [clouds, setClouds] = useState(false);
   const [busy, setBusy] = useState(false);
   const close = () => useUi.setState({ dialog: null });

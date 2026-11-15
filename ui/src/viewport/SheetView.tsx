@@ -374,6 +374,7 @@ export function SheetView() {
             setWidened({ id: g.vp.id, w: Math.max(60, (g.vp.x1 - g.vp.x0) + 2 * dx) });
           }
         }}
+        onPointerCancel={() => { drag.current = null; setSymMoved(null); setMoved(null); setWidened(null); setCropped(null); setSlid(null); }}
         onPointerUp={() => {
           const g = drag.current;
           drag.current = null;

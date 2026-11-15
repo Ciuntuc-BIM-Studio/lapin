@@ -6,6 +6,7 @@
  * (Lapin's, or the project's own, saved here) sets them all at once.
  */
 
+import { projectOf } from '../../shell/nodeIndex';
 import { confirmAction, promptText } from '../../shell/prompts';
 import { Pencil, Save, Trash2 } from 'lucide-react';
 import { notify } from '../../app/store';
@@ -62,7 +63,7 @@ function asFaces(spec: BaySpec): Pick<BaySpec, 'columns' | 'panels'> {
 
 export function BayFields({ spec, onChange, onGrid }: { spec: BaySpec; onChange: (patch: Partial<BaySpec>) => void; onGrid: (columns: number[]) => void }) {
   const catalog = (useSession((s) => s.info?.catalogs['architecture.bayStyles']) as unknown as Style[] | undefined) ?? [];
-  const project = useSession((s) => [...s.nodes.values()].find((n) => n.type === 'IfcProject'));
+  const project = useSession((s) => projectOf(s.nodes));
   const own = (project?.props.bayStyles as OwnStyle[] | undefined) ?? [];
   const bay = spec.bay ?? null;
   const set = (patch: Partial<Bay>) => onChange({ bay: { ...(bay ?? BAY), ...patch } });

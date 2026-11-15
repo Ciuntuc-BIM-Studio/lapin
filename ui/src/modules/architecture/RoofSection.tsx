@@ -4,6 +4,7 @@
  * as the roof). The roof's other fields are in the class's own list below.
  */
 
+import { projectOf } from '../../shell/nodeIndex';
 import { Settings2 } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
@@ -21,7 +22,7 @@ export function RoofSection({ node }: { node: NodeDto }) {
   useLang((s) => s.lang); // a style's option names its shape in the language chosen
   const styles = (info?.catalogs['architecture.roofStyles'] as unknown as Style[] | undefined) ?? [];
   // The project's own styles (decision 233) first.
-  const project = useSession((s) => [...s.nodes.values()].find((n) => n.type === 'IfcProject'));
+  const project = useSession((s) => projectOf(s.nodes));
   const own = (project?.props.roofStyles as { id: string; label: string; shape: string; pitch: number }[] | undefined) ?? [];
   const contour = (node.props.contour as number[][] | undefined) ?? [];
   const edges = (node.props.edges as Edge[] | undefined) ?? [];

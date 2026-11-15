@@ -4,7 +4,7 @@
  * in 3D, then Keep or Put back), and the published parameters in Properties in model mode. The logic is in partParamModel.ts.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, MoreHorizontal, PencilRuler, Plus, Trash2, X } from 'lucide-react';
 import { create } from 'zustand';
@@ -292,6 +292,10 @@ export function PublishedParamsSection({ node }: { node: NodeDto }) {
   const version = useSession((s) => s.version);
   const [values, setValues] = useState<ValueDto[]>([]);
   const [error, setError] = useState('');
+  // A reply that comes after another part was selected (or the section went) is not this part's.
+  const current = useRef(node.id);
+  current.current = node.id;
+  useEffect(() => () => { current.current = ''; }, []);
   useEffect(() => {
     let live = true;
     void query<{ values: ValueDto[] }>('studio.partValues', { id: node.id }).then((r) => { if (live) setValues(r?.values ?? []); });
@@ -307,10 +311,12 @@ export function PublishedParamsSection({ node }: { node: NodeDto }) {
     setError('');
     // Shown at once (a checkbox would spring back until the engine answers), put right by the refetch if refused.
     if (value != null) setValues((vs) => (vs.some((v) => v.key === key) ? vs.map((v) => (v.key === key ? { ...v, value } : v)) : [...vs, { key, value } as ValueDto]));
+    const asked = node.id;
     const r = await execute('studio.setPartValues', { ids: ids(), values: { [key]: value } });
+    if (current.current !== asked) return;
     if (r === null) {
       setError(useSession.getState().error ?? '');
-      void query<{ values: ValueDto[] }>('studio.partValues', { id: node.id }).then((q) => setValues(q?.values ?? []));
+      void query<{ values: ValueDto[] }>('studio.partValues', { id: node.id }).then((q) => { if (current.current === asked) setValues(q?.values ?? []); });
     }
   };
   return (

@@ -11,7 +11,7 @@
 
 import { confirmAction } from '../../shell/prompts';
 import { backdropClose } from '../../shell/Dialog';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Download, ExternalLink, GitCompareArrows, RefreshCw, RotateCcw, Trash2, X } from 'lucide-react';
 import { notify, select, useUi } from '../../app/store';
 import { engine, useSession } from '../../engine/session';
@@ -52,8 +52,14 @@ export function VersionsDialog() {
   const [comparison, setComparison] = useState<Comparison | null>(null);
   const close = () => useUi.setState({ dialog: null });
 
+  // Only the newest listing is shown, and none after the dialog is gone.
+  const gen = useRef(0);
+  const gone = useRef(false);
+  useEffect(() => () => { gone.current = true; }, []);
   const refresh = useCallback(async () => {
+    const mine = ++gen.current;
     const list = await listVersions();
+    if (gone.current || gen.current !== mine) return;
     setVersions(list);
     // A side whose version went (deleted, or another project opened) falls back to the latest one; the other side to the project as it is.
     const known = (side: string) => side === CURRENT || list.some((v) => String(v.number) === side);
