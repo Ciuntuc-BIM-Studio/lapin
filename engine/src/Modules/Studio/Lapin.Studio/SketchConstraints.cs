@@ -116,7 +116,7 @@ public static partial class SketchConstraints
         (Arc a, "end") => a.At(a.End),
         (Arc a, "center") => a.C,
         (Circle c, "center") => c.C,
-        (Polyline p, _) when part.StartsWith("vertex:", StringComparison.Ordinal) && int.TryParse(part[7..], out var i) && i < p.Pts.Count => p.Pts[i],
+        (Polyline p, _) when part.StartsWith("vertex:", StringComparison.Ordinal) && int.TryParse(part[7..], out var i) && i >= 0 && i < p.Pts.Count => p.Pts[i],
         _ => null,
     };
 
@@ -124,7 +124,7 @@ public static partial class SketchConstraints
     public static (Vec2 A, Vec2 B)? SegmentOf(Shape s, string part) => (s, part) switch
     {
         (Line l, "whole") => (l.A, l.B),
-        (Polyline p, _) when part.StartsWith("edge:", StringComparison.Ordinal) && int.TryParse(part[5..], out var i) && i < (p.Closed ? p.Pts.Count : p.Pts.Count - 1)
+        (Polyline p, _) when part.StartsWith("edge:", StringComparison.Ordinal) && int.TryParse(part[5..], out var i) && i >= 0 && i < (p.Closed ? p.Pts.Count : p.Pts.Count - 1)
             => (p.Pts[i], p.Pts[(i + 1) % p.Pts.Count]),
         _ => null,
     };

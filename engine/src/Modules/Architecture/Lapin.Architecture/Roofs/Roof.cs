@@ -35,7 +35,9 @@ public static class Roof
         var m = System.Text.RegularExpressions.Regex.Match(text ?? "", @"^(\d+)x(\d+)( mm)?$");
         if (!m.Success) return fallback;
         var unit = m.Groups[3].Success ? 0.001 : 0.01;
-        return (int.Parse(m.Groups[1].Value) * unit, int.Parse(m.Groups[2].Value) * unit);
+        // Digits past an int's range ("99999999999x16") read as a number too large for a section: the fallback.
+        if (!long.TryParse(m.Groups[1].Value, out var w) || !long.TryParse(m.Groups[2].Value, out var d) || w > 100_000 || d > 100_000) return fallback;
+        return (w * unit, d * unit);
     }
 
     /// <summary>
