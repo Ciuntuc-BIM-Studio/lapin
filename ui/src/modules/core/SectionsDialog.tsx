@@ -6,6 +6,7 @@
  * says in how many views each is hidden.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { Fragment, useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
@@ -52,7 +53,7 @@ export function SectionsDialog() {
   };
 
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog" role="dialog" aria-label="Section markers" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head">
           <span className="panel-title">Section markers · <span data-no-i18n>{view?.name ?? 'View'}</span></span>

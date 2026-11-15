@@ -4,6 +4,7 @@
  * Atrium's HUD, the properties panel, the status bar.
  */
 
+import { useDialogLayer } from './shell/Dialog';
 import { Fragment, lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { AppWindow, Bot, Box, Columns2, Ruler, FolderTree, Layers, ListTree, PanelLeftOpen, PanelRightOpen, Rows2, SlidersHorizontal, X } from 'lucide-react';
 import { closeOverlay, columns, panelsOn, setPanelWidth, setStackRatio, type PanelId, type Side, showOverlay, showPropsTab, togglePanel, usePanels, type PanelTab } from './app/panels';
@@ -470,6 +471,7 @@ export function App() {
   const screen = useUi((s) => s.screen);
   const theme = useUi((s) => s.theme);
   useShortcuts();
+  useDialogLayer();
   useEffect(() => { watchLocation(); }, []);
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
   // The theme chosen is kept for the next start (a tester's report: dark came back light every time); a system choice follows the system.

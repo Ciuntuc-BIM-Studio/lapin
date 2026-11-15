@@ -6,6 +6,7 @@
  * another. A project or library template's Style (font, PDF font, size, headings' colour, logo) is set here too.
  */
 
+import { backdropClose } from '../../../shell/Dialog';
 import { useEffect, useMemo, useState } from 'react';
 import { BookMarked, Copy, FileDown, FileUp, FolderInput, Pencil, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../../app/store';
@@ -149,7 +150,7 @@ export function TemplatesDialog() {
   };
 
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide templates" role="dialog" aria-label="Document templates" data-dialog="document-templates" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Document templates</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body tpl-body">

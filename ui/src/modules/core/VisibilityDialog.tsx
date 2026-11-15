@@ -8,6 +8,7 @@
  * every view that takes it, or its view style's set; a 2D view's hidden lines.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { ColourField } from '../../shell/ColourField';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useLineTypes } from './lineTypes/lineTypes';
@@ -234,7 +235,7 @@ export function VisibilityDialog() {
   const custom = links.find((l) => l.id === linkOpen && v.graphics?.links?.[l.id]?.display === 'custom');
 
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide" role="dialog" aria-label="Visibility / Graphics" data-testid="vv-dialog" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head">
           <span className="panel-title">Visibility / Graphics · {target === '3d' ? '3D' : view?.name ?? 'View'}</span>

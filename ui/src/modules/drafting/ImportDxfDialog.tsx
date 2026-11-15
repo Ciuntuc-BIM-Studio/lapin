@@ -8,6 +8,7 @@
  * them, through the project's survey point (Manage → Location).
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
@@ -112,7 +113,7 @@ export function ImportDxfDialog() {
     }
   };
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog" role="dialog" aria-label="Import DXF" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Import DXF · {file.name}</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

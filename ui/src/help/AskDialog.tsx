@@ -6,6 +6,7 @@
  * interface's translator, in every language; the FAQ's are marked to be left.
  */
 
+import { backdropClose } from '../shell/Dialog';
 import { useEffect, useRef, useState } from 'react';
 import { Send, X } from 'lucide-react';
 import { BunnyIcon } from '../icons';
@@ -55,7 +56,7 @@ export function AskDialog({ onClose, onReport }: { onClose: () => void; onReport
   };
 
   return (
-    <div className="dialog-backdrop" onClick={onClose}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(onClose)}>
       <div className="dialog ask-dialog" role="dialog" aria-label="Ask Lapin" tabIndex={-1} ref={focus} onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head">
           <span className="panel-title"><BunnyIcon size={16} /> Ask Lapin</span>

@@ -5,6 +5,7 @@
  * back. Lapin ships no prices: its template has a few rows of its own rough values, marked indicative.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { BookMarked, Download, FileDown, FileUp, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
@@ -107,7 +108,7 @@ export function PriceListsDialog() {
   };
   const inProject = new Set(lists.map((l) => l.name));
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide" role="dialog" aria-label="Price lists" data-testid="price-lists-dialog" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Price lists</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

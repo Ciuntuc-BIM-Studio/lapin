@@ -8,6 +8,7 @@
  * lost in silence; what the import did is counted.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useMemo, useState } from 'react';
 import { FileDown, FileUp, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
@@ -81,7 +82,7 @@ export function TypePacksDialog() {
   };
 
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide" role="dialog" aria-label="Type packs" data-dialog="type-packs" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Type packs</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

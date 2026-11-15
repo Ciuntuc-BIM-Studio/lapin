@@ -5,6 +5,7 @@
  * updated from its library, every member made of it follows, in this wall and in any other.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
@@ -98,7 +99,7 @@ export function CurtainMembersDialog() {
   const own = pieces.filter((p) => p.own).length;
   const colorOf = (p: Member) => (selected.has(p.key) ? 'var(--accent)' : p.own ? '#2f7f7a' : '#5b6b7c');
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide" role="dialog" aria-label="Curtain wall members" data-testid="curtain-members" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Curtain wall members · <span data-no-i18n>{wall.name}</span></span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

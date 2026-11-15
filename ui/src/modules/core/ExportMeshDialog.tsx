@@ -18,6 +18,7 @@
  * point, its internal origin or the survey point's coordinates.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useState } from 'react';
 import { isCloudLink } from '../../viewport/pointClouds';
 import { X } from 'lucide-react';
@@ -74,7 +75,7 @@ export function ExportMeshDialog() {
     close();
   };
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog" role="dialog" aria-label="Export 3D" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Export 3D</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

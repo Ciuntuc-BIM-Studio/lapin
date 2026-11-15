@@ -27,7 +27,7 @@ export function Cell({ value, onCommit, suffix, placeholder, className, readOnly
         onChange={(e) => setText(e.target.value)}
         onBlur={() => { if (text !== value && onCommit(text) === false) setText(value); }}
         // Enter blurs (which commits); not prevented, so the properties panel's keys still move down.
-        onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); else if (e.key === 'Escape') { setText(value); e.preventDefault(); } }} />
+        onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); else if (e.key === 'Escape' && text !== value) { setText(value); e.preventDefault(); } }} />
       {suffix && <span className="cell-unit">{suffix}</span>}
     </span>
   );

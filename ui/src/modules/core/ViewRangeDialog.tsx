@@ -5,6 +5,7 @@
  * the depth, faint ("beyond"). The range's problems are shown as it is set.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
@@ -55,7 +56,7 @@ export function ViewRangeDialog() {
     </tr>
   );
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog" role="dialog" aria-label="View range" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">View range · {nodes.get(id)?.name ?? 'Plan'}</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

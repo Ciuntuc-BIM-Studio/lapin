@@ -5,6 +5,7 @@
  * definition and follows its changes. A definition the engine cannot read is refused with the reason, shown. .lapinbarshapes files in and out.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useRef, useState } from 'react';
 import { FileDown, FileUp, Plus, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
@@ -45,7 +46,7 @@ export function BarShapesDialog() {
   };
 
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide templates bar-shapes-dialog" role="dialog" aria-label="Bar shapes" data-dialog="barShapes" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Bar shapes</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body tpl-body">

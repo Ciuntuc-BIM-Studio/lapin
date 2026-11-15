@@ -5,6 +5,7 @@
  * written; a copy already there is overwritten only when the user says so.
  */
 
+import { backdropClose } from './Dialog';
 import { useEffect, useState } from 'react';
 import { FilePlus2, FolderOpen, ExternalLink, X } from 'lucide-react';
 import { notify, useUi } from '../app/store';
@@ -111,7 +112,7 @@ export function OptimizeIfcDialog() {
   };
   const example = items[0]?.source.name ?? 'model.ifc';
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide optimize-ifc" role="dialog" aria-label="Optimize IFC" data-dialog="optimize-ifc" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head">
           <span className="panel-title">Optimize IFC</span>

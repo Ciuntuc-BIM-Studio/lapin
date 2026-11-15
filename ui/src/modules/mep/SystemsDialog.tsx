@@ -5,6 +5,7 @@
  * paired or single, in a plane, over the system's defaults.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
@@ -37,7 +38,7 @@ export function SystemsDialog() {
   // The material's laying rule in a few words, when the product knows the rules (mep-pro).
   const rule = current && d ? mepHooks.ruleText(current.service, materialOf(current.service, d.material)?.id ?? null) : null;
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide" role="dialog" aria-label="Systems" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Systems</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

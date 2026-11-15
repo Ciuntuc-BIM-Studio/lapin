@@ -5,6 +5,7 @@
  * own priority in its properties.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { RotateCcw, X } from 'lucide-react';
 import { useUi } from '../../app/store';
@@ -37,7 +38,7 @@ export function CutOrderDialog() {
   const sorted = [...rows].sort((a, b) => b.priority - a.priority || a.label.localeCompare(b.label));
   const set = (cls: string, value: number | null) => void execute('cutOrder.set', { priorities: { [cls]: value } });
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog" role="dialog" aria-label="Cut order" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Cut order</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

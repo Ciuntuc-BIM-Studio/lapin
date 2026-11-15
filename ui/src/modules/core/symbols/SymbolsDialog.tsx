@@ -6,6 +6,7 @@
  * Import… of a .lapinsymbols file, whose symbols the project already has under the same name ask what to do.
  */
 
+import { backdropClose } from '../../../shell/Dialog';
 import { useEffect, useMemo, useState } from 'react';
 import { BookMarked, Copy, FileDown, FileUp, FolderInput, MapPin, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../../app/store';
@@ -215,7 +216,7 @@ export function SymbolsDialog() {
   };
 
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide templates symbols-dialog" role="dialog" aria-label="Symbols" data-dialog="symbols" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Symbols</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body tpl-body">

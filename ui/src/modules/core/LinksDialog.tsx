@@ -7,6 +7,7 @@
  * drawn, a halftone link's are faded.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { ExternalLink, Feather, FolderOpen, MapPin, Move, RefreshCw, Trash2, Unlink, Wand2, X } from 'lucide-react';
 import { fileName, openOptimize } from '../../engine/ifcOptimize';
@@ -121,7 +122,7 @@ export function LinksDialog() {
     notify('Opening the file in another Lapin window, on its own, to edit there.');
   };
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide" role="dialog" aria-label="Links" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Links</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

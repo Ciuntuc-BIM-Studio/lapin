@@ -8,6 +8,7 @@
  * listed under their headings, and the standards the project's pickers offer.
  */
 
+import { backdropClose } from '../../../shell/Dialog';
 import { useEffect, useMemo, useState } from 'react';
 import { BookMarked, Download, FileUp, FolderPlus, Library, PenLine, RefreshCw, Save, Search, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../../app/store';
@@ -216,7 +217,7 @@ export function ProfileLibrariesDialog() {
 
   const groups = ['builtin', 'computer', 'folder', 'project'].map((o) => ({ origin: o, items: all.filter((e) => e.origin === o) }));
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide profile-libraries" role="dialog" aria-label="Profile libraries" data-dialog="profile-libraries" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title"><Library size={14} /> Profile libraries</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

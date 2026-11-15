@@ -8,6 +8,7 @@
  * tab lists the openings' voids; Settings holds which openings are voids, their offset, the clearance, empty voids.
  */
 
+import { backdropClose } from '../../../shell/Dialog';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Cloud, Download, Eye, FileText, Hammer, MessageSquareText, Play, X } from 'lucide-react';
 import { notify, useUi } from '../../../app/store';
@@ -122,7 +123,7 @@ export function CoordinationDialog() {
   const open = report?.counts.open ?? 0;
   const pickedList = [...picked];
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide coordination" role="dialog" aria-label="Clash check" data-testid="coordination-dialog" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Clash check</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body cde">

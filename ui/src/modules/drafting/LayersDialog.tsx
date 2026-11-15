@@ -1,5 +1,6 @@
 /** Drafting layers: their colour, pen width, line type, whether they show and can be edited; a new one, renaming, removing (its shapes go to layer 0). */
 
+import { backdropClose } from '../../shell/Dialog';
 import { ColourField } from '../../shell/ColourField';
 import { useState } from 'react';
 import { X } from 'lucide-react';
@@ -20,7 +21,7 @@ export function LayersDialog() {
   const close = () => useUi.setState({ dialog: null });
   const set = (name: string, patch: Partial<Layer> & { newName?: string }) => void execute('drafting.setLayer', { name, ...patch });
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide" role="dialog" aria-label="Drafting layers" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Drafting layers</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

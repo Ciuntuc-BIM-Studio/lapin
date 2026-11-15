@@ -4,6 +4,7 @@
  * a window of a type, where it is, its GlobalId kept (fitted: a type of its size and head).
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { select, useUi } from '../../app/store';
@@ -112,7 +113,7 @@ export function OpeningDialog() {
     if (r?.id) { select(r.id); close(); }
   };
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog" role="dialog" aria-label="Wall opening" data-dialog="wall-opening" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Wall opening</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body row" style={{ alignItems: 'flex-start', gap: 16 }}>

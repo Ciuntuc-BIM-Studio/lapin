@@ -5,6 +5,7 @@
  * project's shared parameters (name, kind, property set, choices), which a parameter in Properties is made from.
  */
 
+import { backdropClose } from '../../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { FileDown, Plus, Table2, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../../app/store';
@@ -54,7 +55,7 @@ export function ClassificationsDialog() {
   };
 
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide templates classifications-dialog" role="dialog" aria-label="Classifications" data-dialog="classifications" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Classifications</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

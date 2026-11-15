@@ -6,6 +6,7 @@
  * as one step and are remembered for the next projects.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
@@ -80,7 +81,7 @@ export function MapArticlesDialog() {
     </span>
   );
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide map-articles" role="dialog" aria-label="Map articles" data-testid="map-articles" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Map articles</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

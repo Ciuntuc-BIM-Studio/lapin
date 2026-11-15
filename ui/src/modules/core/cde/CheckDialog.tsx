@@ -5,6 +5,7 @@
  * shows in Manage → Issue… before an issue goes.
  */
 
+import { backdropClose } from '../../../shell/Dialog';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertTriangle, OctagonAlert, RefreshCw, X } from 'lucide-react';
 import { useUi } from '../../../app/store';
@@ -27,7 +28,7 @@ export function CheckDialog() {
   }, []);
   useEffect(() => { void run(); }, [run, nodes]);
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide" role="dialog" aria-label="Check" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Check</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body cde">

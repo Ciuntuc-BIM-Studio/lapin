@@ -6,6 +6,7 @@
  * thickness, layers, joins, doors and windows as they were.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
@@ -89,7 +90,7 @@ export function WallProfileDialog() {
     setPts([...pts.slice(0, i), [u, v], ...pts.slice(i)]);
   };
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide" role="dialog" aria-label={curtain ? 'Curtain wall boundary' : 'Wall profile'} data-testid="wall-profile" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">{curtain ? 'Curtain wall boundary' : 'Wall profile'} · <span data-no-i18n>{wall.name}</span></span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

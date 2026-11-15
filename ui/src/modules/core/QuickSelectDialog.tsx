@@ -5,6 +5,7 @@
  * hide and isolate count as its drawing has them. From the right-click menu of a view and View → Select.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import { useUi } from '../../app/store';
@@ -62,7 +63,7 @@ export function QuickSelectDialog() {
     close();
   };
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog" role="dialog" aria-label="Quick select" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Quick select</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

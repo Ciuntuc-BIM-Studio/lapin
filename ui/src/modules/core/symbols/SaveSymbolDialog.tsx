@@ -1,5 +1,6 @@
 /** Save as symbol… (docs/plan-user-extensibility.md §3): the name, category and scale of the symbol made from the drafting chosen. */
 
+import { backdropClose } from '../../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { notify, select, useUi } from '../../../app/store';
@@ -35,7 +36,7 @@ export function SaveSymbolDialog() {
   };
 
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog tpl-save" role="dialog" aria-label="Save as symbol" data-dialog="save-symbol" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Save as symbol</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

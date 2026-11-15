@@ -9,6 +9,7 @@
  * import and export use.
  */
 
+import { backdropClose } from '../../../shell/Dialog';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Camera, Download, Eye, MessageSquare, Plus, Trash2, Upload, X } from 'lucide-react';
 import { notify, useUi } from '../../../app/store';
@@ -105,7 +106,7 @@ export function RemarksDialog() {
   if (!data) return <PendingDialog title="Remarks" />;
   const inThreeD = view === '3d' && hasCamera;
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide remarks" role="dialog" aria-label="Remarks" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Remarks</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="remarks-bar">

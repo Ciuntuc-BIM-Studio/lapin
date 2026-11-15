@@ -8,6 +8,7 @@
  * folder is optional: the project file holds the issues.
  */
 
+import { backdropClose } from '../../../shell/Dialog';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Archive, ArchiveX, Download, FolderOpen, FolderOutput, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../../app/store';
@@ -62,7 +63,7 @@ export function ProjectFolderDialog() {
 
   if (!s) return <PendingDialog title="Project folder" />;
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide" role="dialog" aria-label="Project folder" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Project folder</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body cde">

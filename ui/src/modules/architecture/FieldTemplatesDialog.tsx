@@ -3,6 +3,7 @@
  * A template names the types, storeys, materials, groups and phases of its filter, so it works in another project.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { FileUp, HardDriveDownload, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
@@ -31,7 +32,7 @@ export function FieldTemplatesDialog() {
     if (f && !(await make(new TextDecoder().decode(f.bytes)))) notify('That file is not a schedule template.');
   };
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog" role="dialog" aria-label="New schedule from a template" data-testid="field-templates-dialog" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">New schedule from a template</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

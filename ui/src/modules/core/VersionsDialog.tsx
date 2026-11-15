@@ -9,6 +9,7 @@
  * save does.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useCallback, useEffect, useState } from 'react';
 import { Download, ExternalLink, GitCompareArrows, RefreshCw, RotateCcw, Trash2, X } from 'lucide-react';
 import { notify, select, useUi } from '../../app/store';
@@ -87,7 +88,7 @@ export function VersionsDialog() {
   const label = (v: string) => (v === CURRENT ? 'Current project' : `${v}. ${versions?.find((x) => String(x.number) === v)?.name ?? ''}`);
 
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide" role="dialog" aria-label="Versions" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Versions · {projectTitle(path)}</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

@@ -9,6 +9,7 @@
  * settings of the block selected over To complete; Preview shows the pages again.
  */
 
+import { backdropClose } from '../../../shell/Dialog';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Copy, Eye, FileDown, FilePlus2, FileText, Pencil, RefreshCw, RotateCcw, SquarePen, Trash2, X } from 'lucide-react';
 import { useUi } from '../../../app/store';
@@ -184,7 +185,7 @@ export function DocumentsDialog() {
 
   if (!docs) return <PendingDialog title="Documents" />;
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog documents" role="dialog" aria-label="Documents" data-dialog="documents" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Documents</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body doc-body">

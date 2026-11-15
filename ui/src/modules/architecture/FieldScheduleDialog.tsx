@@ -4,6 +4,7 @@
  * Apply is one `architecture.updateSchedule`: one undo step. It edits the schedule in front.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, Plus, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
@@ -61,7 +62,7 @@ export function FieldScheduleDialog() {
     if (r !== null) close(); else notify('The schedule was not changed: see the message at the bottom.');
   };
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide field-schedule-dialog" role="dialog" aria-label="Field schedule" data-testid="field-schedule-dialog" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title" data-no-i18n>{node.name}</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">
