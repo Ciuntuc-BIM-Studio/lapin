@@ -228,10 +228,10 @@ public class WallsFromSolidsTests
         Assert.NotNull(Joins.Between(f.Model, walls[0], walls[1]));
     }
 
-    [Fact]
-    public void Studio_solids_take_their_materials_and_the_concrete_is_the_core()
+    /// <summary>Three Studio solids 5 m long, 3 m high, side by side: insulation 100, concrete 200, plaster 15, each of its material.</summary>
+    static (Fixture F, string[] Ids) StudioWall()
     {
-        var f = new Fixture(new ArchitectureModule(), new Lapin.Drafting.DraftingModule(), new Lapin.Studio.StudioModule());
+        var f = new Fixture(new ArchitectureModule(), new Lapin.Drafting.DraftingModule(), new Lapin.Studio.StudioModule(), new Lapin.Clash.ClashModule());
         var plan = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey })!["id"]!;
         string Solid(double y0, double y1, string material)
         {
@@ -242,11 +242,53 @@ public class WallsFromSolidsTests
             f.Run("element.update", new JsonObject { ["id"] = id, ["attrs"] = new JsonObject { ["material"] = mat } });
             return id;
         }
-        var ids = new[] { Solid(0, 0.1, "Insulation"), Solid(0.1, 0.3, "Concrete"), Solid(0.3, 0.315, "Plaster") };
+        return (f, [Solid(0, 0.1, "Insulation"), Solid(0.1, 0.3, "Concrete"), Solid(0.3, 0.315, "Plaster")]);
+    }
+
+    [Fact]
+    public void Studio_solids_take_their_materials_and_the_concrete_is_the_core()
+    {
+        var (f, ids) = StudioWall();
         var r = Make(f, ids);
         var wall = (string)r["made"]![0]!["id"]!;
         Assert.Equal([("Insulation", 0.1, false), ("Concrete", 0.2, true), ("Plaster", 0.015, false)], TypeLayers(f, wall));
         Assert.Equal(3, Walls.HeightOf(f.Model, f.Model.Get(wall)!), 4);
+    }
+
+    /// <summary>The volume the model measures: each element's first volume, as the takeoff adds them up.</summary>
+    static double Volume(Fixture f) => f.Model.Entities.Sum(e =>
+        f.Session.Quantities(e.Id).Where(s => s.Part == null).SelectMany(s => s.Quantities)
+            .FirstOrDefault(q => q.Name is "NetVolume" or "GrossVolume" or "Volume")?.Value ?? 0);
+
+    [Fact]
+    public void The_wall_and_its_hidden_solids_count_each_volume_once()
+    {
+        var (f, ids) = StudioWall();
+        const double volume = 5 * 3 * 0.315;
+        Assert.Equal(volume, Volume(f), 4);
+        var schedule = (string)f.Run("architecture.createSchedule", new JsonObject
+        {
+            ["kind"] = "fields", ["name"] = "Everything",
+            ["fields"] = new JsonObject { ["groupBy"] = new JsonArray("class") },
+        })!["id"]!;
+        var wall = (string)Make(f, ids)["made"]![0]!["id"]!;
+        // Measured once: the wall, not the solids behind it.
+        Assert.Equal(volume, Volume(f), 4);
+        Assert.All(ids, id => Assert.Empty(f.Session.Quantities(id)));
+        var takeoff = Lapin.Architecture.Schedules.QuantityTakeoff.Classes(f.Session.Reader);
+        Assert.Equal(1, takeoff.Single(c => c.Class == IfcClass.Wall).Count);
+        Assert.DoesNotContain(takeoff, c => c.Class != IfcClass.Wall);
+        // A schedule lists the wall alone; nor do clash detection, a planning task or the analytical model take the solids.
+        var g = new Lapin.Architecture.Schedules.FieldSchedule().Grid(f.Session.Reader, f.Model.Get(schedule)!);
+        var row = Assert.Single(g.Rows, r => r[0] != "Total");
+        Assert.Equal("1", row[g.Columns.ToList().IndexOf("Count")]);
+        Assert.Equal(["Wall"], ElementFilter.Elements(f.Session.Reader, null).Select(e => e.Class == IfcClass.Wall ? "Wall" : e.Class).Distinct());
+        Assert.All(ids, id => Assert.False(Lapin.Clash.ClashModule.IsElement(f.Session.Reader, f.Model.Get(id)!)));
+        Assert.True(Lapin.Clash.ClashModule.IsElement(f.Session.Reader, f.Model.Get(wall)!));
+        // Shown again, they are elements again (the user's choice to keep both; where the wall stands they give way to it, as any proxy).
+        f.Run("architecture.showOriginalSolids", new JsonObject { ["id"] = wall });
+        Assert.All(ids, id => Assert.Contains(ElementFilter.Elements(f.Session.Reader, null), e => e.Id == id));
+        Assert.All(ids, id => Assert.True(Lapin.Clash.ClashModule.IsElement(f.Session.Reader, f.Model.Get(id)!)));
     }
 
     [Fact]
