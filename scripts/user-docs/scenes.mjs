@@ -5329,7 +5329,7 @@ export const scenes = [
     },
   },
   {
-    // Forum topic 107: View → Detail callout (CO) drawn round a corner of the plan, its detail view at 1:20 placed on a sheet, the head reading its number and sheet; the detail inset beside the plan to show it.
+    // Forum topic 107: View → Detail callout (DC) drawn round a corner of the plan, its detail view at 1:20 placed on a sheet, the head reading its number and sheet; the detail inset beside the plan to show it.
     id: 'views-callout',
     touches: ['core', 'architecture'],
     async run(t) {

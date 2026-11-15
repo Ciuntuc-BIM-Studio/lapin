@@ -7,8 +7,8 @@ const node = (id: string, type: string, props: Record<string, unknown> = {}, nam
 const close = (a: number[] | undefined, b: number[]) => { expect(a).toHaveLength(b.length); a!.forEach((x, i) => expect(x).toBeCloseTo(b[i], 9)); };
 
 describe('the Detail callout tool (forum topic 107)', () => {
-  it('draws a rectangle by default (CO), a circle or a polygon from its bar', () => {
-    expect(calloutTool.shortcut).toBe('CO');
+  it('draws a rectangle by default (DC), a circle or a polygon from its bar', () => {
+    expect(calloutTool.shortcut).toBe('DC');
     expect(calloutTool.gesture).toEqual({ kind: 'rectangle' });
     expect(calloutCircleTool.gesture).toEqual({ kind: 'twoPoints' });
     expect(calloutPolygonTool.gesture).toEqual({ kind: 'polygon' });

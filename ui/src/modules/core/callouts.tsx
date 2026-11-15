@@ -1,5 +1,5 @@
 /**
- * Detail callouts (forum topic 107, as Revit's and ArchiCAD's): View → Detail callout (CO) in a plan, a section or an
+ * Detail callouts (forum topic 107, as Revit's and ArchiCAD's): View → Detail callout (DC) in a plan, a section or an
  * elevation draws a rectangle (or, from the tool's bar, a circle or a sketched polygon) round an area; the engine makes a
  * detail view of the same kind cropped to it, at a larger scale and the finest level (`view.callout`, Callouts.cs), and the
  * parent draws the boundary, a leader and a head with the detail's number and sheet ("3 / A-501", "–" before it is placed),
@@ -69,9 +69,9 @@ async function complete(shape: CalloutShape, points: Vec2[], ctx: ToolContext): 
 
 const tooltip = 'A detail of an area of this view: a new view cropped to it at a larger scale, marked here with its number and sheet';
 
-/** View → Detail callout (CO): a rectangle round the area. */
+/** View → Detail callout (DC): a rectangle round the area. */
 export const calloutTool: ToolDef = {
-  id: TOOL_IDS.rect, label: 'Detail callout', icon: ScanSearch, shortcut: 'CO', tooltip,
+  id: TOOL_IDS.rect, label: 'Detail callout', icon: ScanSearch, shortcut: 'DC', tooltip,
   gesture: { kind: 'rectangle' },
   complete: ({ points }, ctx) => complete('rect', points, ctx),
   options: CalloutOptions,

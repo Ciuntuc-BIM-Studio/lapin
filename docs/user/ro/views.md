@@ -275,7 +275,7 @@ Fiecare schimbare e un singur pas de anulare. Motorul desenează inserarea împr
 
 ## Chemări de detaliu
 
-O fundație, o streașină, buiandrugul unei ferestre: unele părți trebuie desenate din nou mai mare, cu toate cotele și notele lor. **Vedere → Chemare de detaliu** (sau tastezi **CO**) cheamă o zonă dintr-un plan, o secțiune sau o fațadă, cum fac chemările din Revit și ArchiCAD: desenezi un dreptunghi în jurul ei (două colțuri opuse). Bara uneltei desenează în loc un **Cerc** (centrul, apoi un punct pe el) sau un **Poligon** (colțurile, apoi Enter).
+O fundație, o streașină, buiandrugul unei ferestre: unele părți trebuie desenate din nou mai mare, cu toate cotele și notele lor. **Vedere → Chemare de detaliu** (sau tastezi **DC**) cheamă o zonă dintr-un plan, o secțiune sau o fațadă, cum fac chemările din Revit și ArchiCAD: desenezi un dreptunghi în jurul ei (două colțuri opuse). Bara uneltei desenează în loc un **Cerc** (centrul, apoi un punct pe el) sau un **Poligon** (colțurile, apoi Enter).
 
 Lapin face din ea o **vedere de detaliu**: o vedere de același fel, cu setările vederii din care a fost chemată, decupată la zonă, la o scară mai mare (1:20 sau următoarea scară standard a proiectului sub a vederii; alegi alta în bară) și la cel mai fin nivel de dezvoltare. Apare în browserul proiectului la **Detalii**, cu numele Detail 1, Detail 2 și așa mai departe (o redenumești ca pe orice vedere).
 

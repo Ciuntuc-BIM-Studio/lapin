@@ -275,7 +275,7 @@ Each change is one undo step. The engine draws the inset with the view, so sheet
 
 ## Detail callouts
 
-A foundation, an eave, a window's head: some parts need drawing again larger, with all their dimensions and notes. **View → Detail callout** (or type **CO**) calls out an area of a plan, a section or an elevation, as Revit's and ArchiCAD's callouts do: draw a rectangle round it (two opposite corners). The tool's bar draws a **Circle** (its centre, then a point on it) or a **Polygon** (its corners, then Enter) instead.
+A foundation, an eave, a window's head: some parts need drawing again larger, with all their dimensions and notes. **View → Detail callout** (or type **DC**) calls out an area of a plan, a section or an elevation, as Revit's and ArchiCAD's callouts do: draw a rectangle round it (two opposite corners). The tool's bar draws a **Circle** (its centre, then a point on it) or a **Polygon** (its corners, then Enter) instead.
 
 Lapin makes a **detail view** of it: a view of the same kind, with the settings of the view it was called from, cropped to the area, at a larger scale (1:20, or the project's next standard scale under the view's; choose another in the bar) and at the finest level of development. It is listed in the project browser under **Details**, named Detail 1, Detail 2 and so on (rename it as any view).
 
