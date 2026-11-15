@@ -300,9 +300,13 @@ public sealed class Terrain
     /// <summary>The contour levels from the lowest to the highest point, every <paramref name="interval"/>.</summary>
     public IEnumerable<double> Levels(double interval)
     {
-        if (interval <= 0 || Tin.Triangles.Count == 0) yield break;
+        if (!(interval > 0) || Tin.Triangles.Count == 0) yield break;
+        // An interval too fine to move z at this height (z + interval == z) would loop for ever: stop there.
         for (var z = Math.Ceiling(Bounds.Min.Z / interval - 1e-9) * interval; z <= Bounds.Max.Z + 1e-9; z += interval)
+        {
             yield return Math.Round(z / interval) * interval;
+            if (z + interval == z) yield break;
+        }
     }
 
     /// <summary>The TIN's boundary edges (each in one triangle only), directed counter-clockwise around it.</summary>

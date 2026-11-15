@@ -90,6 +90,14 @@ public static class Plantings
 
     public static bool IsZone(Entity e) => e.Attrs["contour"] is JsonArray;
 
+    /// <summary>A zone's density (plants per 100 m², as the class's field) and the most plants one zone grows.</summary>
+    public const double MinDensity = 0.1, MaxDensity = 500;
+    public const int MaxPlants = 5_000;
+
+    /// <summary>A density asked of a command, refused outside <see cref="MinDensity"/>–<see cref="MaxDensity"/>.</summary>
+    public static double Density(double d) => d is >= MinDensity and <= MaxDensity ? d
+        : throw new CommandException($"A planting has {MinDensity.ToString(System.Globalization.CultureInfo.InvariantCulture)} to {MaxDensity:0} plants per 100 m².");
+
     /// <summary>A plant: its species, where it stands and how big against the species', and the seed its symbol is drawn from.</summary>
     public sealed record Plant(Species Species, Vec2 At, double Z, double Scale, int Seed = 1);
 
@@ -121,9 +129,23 @@ public static class Plantings
         var contour = Terrains.Contour(e);
         if (contour.Count < 3) return o;
         var area = Math.Abs(Polygon2.SignedArea(contour));
-        var count = (int)Math.Round(e.Num("density", 3) * area / 100);
+        var count = (int)Math.Clamp(Math.Round(Math.Clamp(e.Num("density", 3), 0, MaxDensity) * area / 100), 0, MaxPlants);
         var total = species.Sum(s => s.Share);
         double x0 = contour.Min(p => p.X), x1 = contour.Max(p => p.X), y0 = contour.Min(p => p.Y), y1 = contour.Max(p => p.Y);
+        // The spacing check looks only at the plants in the cells around (a cell as wide as the farthest two plants
+        // keep apart), so a big zone is not quadratic; the same plants are kept as a check against them all.
+        var cell = Math.Max(1e-3, species.Where(s => s.Type != "grass").Select(s => s.Crown * 0.4).DefaultIfEmpty(1).Max());
+        var grid = new Dictionary<(long, long), List<Plant>>();
+        (long, long) Cell(Vec2 p) => ((long)Math.Floor((p.X - x0) / cell), (long)Math.Floor((p.Y - y0) / cell));
+        bool Crowded(Vec2 p, Species s)
+        {
+            if (s.Type == "grass") return false;
+            var (cx, cy) = Cell(p);
+            for (var i = cx - 1; i <= cx + 1; i++)
+                for (var j = cy - 1; j <= cy + 1; j++)
+                    if (grid.TryGetValue((i, j), out var near) && near.Any(q => q.Species.Type != "grass" && (q.At - p).Length < Math.Min(q.Species.Crown, s.Crown) * 0.4)) return true;
+            return false;
+        }
         var tries = 0;
         while (o.Count < count && tries++ < count * 50 + 100)
         {
@@ -132,8 +154,12 @@ public static class Plantings
             var pick = rng.Next() * total;
             var s = species[^1];
             foreach (var sp in species) { pick -= sp.Share; if (pick <= 0) { s = sp; break; } }
-            if (o.Any(q => q.Species.Type != "grass" && s.Type != "grass" && (q.At - p).Length < Math.Min(q.Species.Crown, s.Crown) * 0.4)) continue;
-            o.Add(new Plant(s, p, Ground(p), 0.8 + rng.Next() * 0.4, SeedOf(seed, o.Count)));
+            if (Crowded(p, s)) continue;
+            var plant = new Plant(s, p, Ground(p), 0.8 + rng.Next() * 0.4, SeedOf(seed, o.Count));
+            o.Add(plant);
+            var key = Cell(p);
+            if (!grid.TryGetValue(key, out var list)) grid[key] = list = [];
+            list.Add(plant);
         }
         return o;
     }
