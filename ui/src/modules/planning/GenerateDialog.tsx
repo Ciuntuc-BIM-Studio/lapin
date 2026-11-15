@@ -8,6 +8,7 @@
  * stays. The norms are the user's (CSV or XLSX), or Lapin's few indicative values, marked as such.
  */
 
+import { NumberField } from '../../shell/cells';
 import { confirmAction, promptText } from '../../shell/prompts';
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp, CalendarDays, FileDown, FileUp, ListPlus, MousePointer2, Pencil, Plus, RotateCcw, Save, Trash2, TriangleAlert, X } from 'lucide-react';
@@ -144,7 +145,7 @@ export function GenerateDialog() {
           <select value={s.link} title="How it follows the step before it on the same storey" onChange={(e) => set({ link: e.target.value as GenStep['link'] })}>
             <option value="FS">FS</option><option value="SS">SS</option>
           </select>
-          <input type="number" className="num gen-lag" value={s.lag} step={1} title="Lag in working days (negative: an overlap)" onChange={(e) => set({ lag: Math.round(Number(e.target.value) || 0) })} />
+          <NumberField className="gen-lag" integer value={s.lag} title="Lag in working days (negative: an overlap)" onCommit={(v) => { if (v != null) set({ lag: v }); }} />
           {!demolition && <button type="button" className="icon mini" title="What it builds" onClick={() => setOpen(open === s.key ? null : s.key)}><Pencil size={11} /></button>}
         </div>
         <div className="muted small gen-what">
@@ -283,8 +284,8 @@ export function GenerateDialog() {
                             {s.norm && !norms?.rows.some((n) => n.code.toLowerCase() === s.norm!.toLowerCase()) && <option value={s.norm} data-no-i18n>{`${s.norm} ?`}</option>}
                             {(norms?.rows ?? []).map((n) => <option key={n.code} value={n.code} data-no-i18n>{normLabel(n)}</option>)}
                           </select></td>
-                          <td><input type="number" className="num" min={0} step={1} value={s.crew} onChange={(e) => change(withStep(spec, s.key, { crew: Math.max(0, Math.round(Number(e.target.value) || 0)) }))} /></td>
-                          <td><input type="number" className="num" min={1} step={1} value={s.days} onChange={(e) => change(withStep(spec, s.key, { days: Math.max(1, Math.round(Number(e.target.value) || 1)) }))} /></td>
+                          <td><NumberField min={0} integer value={s.crew} onCommit={(v) => { if (v != null) change(withStep(spec, s.key, { crew: v })); }} /></td>
+                          <td><NumberField min={1} integer value={s.days} onCommit={(v) => { if (v != null) change(withStep(spec, s.key, { days: v })); }} /></td>
                         </tr>
                       ))}
                     </tbody>

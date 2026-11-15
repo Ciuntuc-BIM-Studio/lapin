@@ -6,6 +6,7 @@
  * thickness, layers, joins, doors and windows as they were.
  */
 
+import { NumberField } from '../../shell/cells';
 import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { X } from 'lucide-react';
@@ -126,8 +127,8 @@ export function WallProfileDialog() {
               {pts.map(([u, v], i) => (
                 <tr key={`${i}:${u}:${v}`}>
                   <td data-no-i18n>{i + 1}</td>
-                  <td><input className="num mini" defaultValue={mm(u)} onBlur={(e) => setPoint(i, [Number(e.target.value) / 1000 || 0, v])} /></td>
-                  <td><input className="num mini" defaultValue={mm(v)} onBlur={(e) => setPoint(i, [u, Number(e.target.value) / 1000 || v])} /></td>
+                  <td><NumberField className="mini" value={mm(u)} onCommit={(x) => { if (x != null) setPoint(i, [x / 1000, v]); }} /></td>
+                  <td><NumberField className="mini" value={mm(v)} onCommit={(x) => { if (x != null) setPoint(i, [u, x / 1000]); }} /></td>
                 </tr>
               ))}
             </tbody>

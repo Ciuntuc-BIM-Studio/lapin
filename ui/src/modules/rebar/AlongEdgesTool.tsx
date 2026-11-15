@@ -1,5 +1,6 @@
 /** "Bars along edges": a bar (or a stirrup, all round) laid along the sides of the cut an element has in a section (rebar.alongOutline). */
 
+import { NumberField } from '../../shell/cells';
 import { create } from 'zustand';
 import { notify } from '../../app/store';
 import { query, useSession } from '../../engine/session';
@@ -24,9 +25,8 @@ export function AlongEdgesOptions() {
     <>
       <span className="cad-layer on">
         <span className="small muted">Cover</span>
-        <input type="number" className="cell" min={0} max={500} step={5} value={Math.round(s.cover * 1000)} data-field="rebar-along-cover" style={{ width: 64 }}
-          onChange={(e) => { const v = Number(e.target.value); if (Number.isFinite(v) && v >= 0) set({ cover: v / 1000 }); }}
-          onKeyDown={(e) => e.stopPropagation()} />
+        <NumberField min={0} max={500} integer value={Math.round(s.cover * 1000)} testId="rebar-along-cover" style={{ width: 64 }}
+          onCommit={(v) => { if (v != null) set({ cover: v / 1000 }); }} />
         <span className="small muted" style={{ whiteSpace: 'nowrap' }}>mm</span>
       </span>
       <span className="cad-layer on">

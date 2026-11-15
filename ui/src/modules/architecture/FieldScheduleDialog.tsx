@@ -4,6 +4,7 @@
  * Apply is one `architecture.updateSchedule`: one undo step. It edits the schedule in front.
  */
 
+import { NumberField } from '../../shell/cells';
 import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, Plus, Trash2, X } from 'lucide-react';
@@ -103,7 +104,7 @@ export function FieldScheduleDialog() {
                     <option value="">Automatic</option>{AGGREGATES.map((a) => <option key={a} value={a}>{AGGREGATE_LABELS[a]}</option>)}
                   </select>
                   <input list="fs-units" className="fs-unit" value={c.unit ?? ''} placeholder="Unit" aria-label="Unit" onChange={(e) => setColumn(i, { unit: e.target.value })} />
-                  <input type="number" min={0} max={9} className="fs-decimals" value={c.decimals ?? ''} placeholder="Dec." title="Decimals" aria-label="Decimals" onChange={(e) => setColumn(i, { decimals: e.target.value === '' ? undefined : Number(e.target.value) })} />
+                  <NumberField min={0} max={9} integer blank className="fs-decimals" value={c.decimals} placeholder="Dec." title="Decimals" onCommit={(v) => setColumn(i, { decimals: v ?? undefined })} />
                   <Order i={i} n={columns.length} on={(by) => setO({ ...o, columns: moved(columns, i, by) })} />
                   <button type="button" className="icon mini" title="Remove" onClick={() => setO({ ...o, columns: columns.filter((_, j) => j !== i) })}><Trash2 size={12} /></button>
                 </div>

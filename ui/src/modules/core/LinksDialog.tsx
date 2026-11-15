@@ -17,7 +17,7 @@ import { engine, execute, useSession } from '../../engine/session';
 import { isDesktop, pickFile, toBase64 } from '../../engine/files';
 import { setLooks } from '../../platform/looks';
 import type { NodeDto } from '../../engine/protocol';
-import { Cell } from '../../shell/cells';
+import { Cell, NumberField } from '../../shell/cells';
 import { CLOUD_MODES, CLOUD_UNITS } from '../../engine/files';
 import { query } from '../../engine/session';
 import { isCloudLink, setCloudStatus, statusText, usePointClouds } from '../../viewport/pointClouds';
@@ -148,7 +148,7 @@ export function LinksDialog() {
                             <select aria-label="Colours" title="What colours its points" value={String(l.props.colorMode ?? 'rgb')} onChange={(e) => void execute('pointcloud.update', { id: l.id, colorMode: e.target.value })}>
                               {COLOR_MODES.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
                             </select>
-                            <label className="small" title="Point size (px)" style={{ marginLeft: 8 }}>Size <input type="number" min={1} max={12} step={1} style={{ width: 44 }} value={Number(l.props.pointSize ?? 2)} onChange={(e) => void execute('pointcloud.update', { id: l.id, pointSize: Number(e.target.value) })} /></label>
+                            <label className="small" title="Point size (px)" style={{ marginLeft: 8 }}>Size <NumberField min={1} max={12} integer style={{ width: 44 }} value={Number(l.props.pointSize ?? 2)} onCommit={(v) => { if (v != null) void execute('pointcloud.update', { id: l.id, pointSize: v }); }} /></label>
                           </div>
                         )}
                       </td>

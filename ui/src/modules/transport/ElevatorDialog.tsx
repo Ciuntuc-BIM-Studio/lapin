@@ -11,7 +11,7 @@ import { confirmAction, promptText } from '../../shell/prompts';
 import { ColourField } from '../../shell/ColourField';
 import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Pencil, RotateCcw, Save, Scale, Trash2, X } from 'lucide-react';
-import { LengthField, NumberField } from '../../shell/cells';
+import { DescriptorField } from '../../shell/cells';
 import { PendingDialog } from '../core/PendingDialog';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
@@ -45,10 +45,7 @@ function FieldInput({ f, value, onChange }: { f: FieldDescriptor; value: unknown
   }
   if (f.kind === 'bool') return <input type="checkbox" checked={value === true} onChange={(e) => onChange(e.target.checked)} />;
   if (f.kind === 'color') return <ColourField value={typeof value === 'string' ? value : '#2b2f33'} onChange={(v) => onChange(v)} />;
-  const n = typeof value === 'number' ? value : null;
-  return f.kind === 'length'
-    ? <LengthField metres={n} min={f.min ?? undefined} max={f.max ?? undefined} onCommit={(m) => { if (m != null) onChange(m); }} />
-    : <NumberField value={n} suffix={f.kind === 'angle' ? '°' : undefined} onCommit={(v) => { if (v != null) onChange(v); }} />;
+  return <DescriptorField f={f} value={value} onChange={onChange} />;
 }
 
 /** The plan at the lowest stop: the shaft's walls with the landing door's opening, the car with its cross, the counterweight, the doors. */

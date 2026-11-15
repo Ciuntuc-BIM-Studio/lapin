@@ -5,11 +5,12 @@
  * A style picked fills every field in; any field may then be changed by hand. Apply is one engine command, one undo step.
  */
 
+import { projectOf } from '../../shell/nodeIndex';
 import { confirmAction, promptText } from '../../shell/prompts';
 import { ColourField } from '../../shell/ColourField';
 import { useEffect, useMemo, useState } from 'react';
 import { lengthText } from '../../engine/unitsStore';
-import { LengthField, NumberField } from '../../shell/cells';
+import { DescriptorField, LengthField, NumberField } from '../../shell/cells';
 import { PendingDialog } from '../core/PendingDialog';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { mergeEdge, type Edge } from './roofEdges';
@@ -83,10 +84,7 @@ function FieldInput({ f, value, onChange }: { f: FieldDescriptor; value: unknown
   }
   if (f.kind === 'material') return <MaterialPicker value={typeof value === 'string' ? value : ''} placeholder="none" allowEmpty onChange={(name) => onChange(name)} />;
   if (f.kind === 'bool') return <input type="checkbox" checked={value === true} onChange={(e) => onChange(e.target.checked)} />;
-  const n = typeof value === 'number' ? value : null;
-  return f.kind === 'length'
-    ? <LengthField metres={n} onCommit={(m) => { if (m != null) onChange(m); }} />
-    : <NumberField value={n} suffix={f.kind === 'angle' ? '°' : undefined} onCommit={(v) => { if (v != null) onChange(v); }} />;
+  return <DescriptorField f={f} value={value} onChange={onChange} />;
 }
 
 /** The plan: the wall line with its edges (thick: eave, dashed: gable; click to go auto → eave → gable), the eaves, ridges, hips and valleys. */
@@ -155,7 +153,7 @@ export function RoofDialog() {
   const info = useSession((s) => s.info);
   const error = useSession((s) => s.error);
   const styles = (info?.catalogs['architecture.roofStyles'] as unknown as Style[] | undefined) ?? [];
-  const project = useSession((s) => [...s.nodes.values()].find((n) => n.type === 'IfcProject'));
+  const project = useSession((s) => projectOf(s.nodes));
   const own = (project?.props.roofStyles as OwnStyle[] | undefined) ?? [];
   const coverings = (info?.catalogs['architecture.roofCoverings'] as unknown as Covering[] | undefined) ?? [];
   const fields = useMemo(() => new Map((info?.nodeTypes.find((c) => c.type === 'IfcRoof')?.fields ?? []).map((f) => [f.key, f])), [info]);

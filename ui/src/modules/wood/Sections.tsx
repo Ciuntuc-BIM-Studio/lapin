@@ -3,6 +3,7 @@
  * rough opening, the rule it takes by its width band, what it gets) and its own rule, set here for that opening alone.
  */
 
+import { NumberField } from '../../shell/cells';
 import { useEffect, useState } from 'react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
@@ -63,9 +64,9 @@ export function RoofWoodSection({ node }: { node: NodeDto }) {
             <dt>Grade</dt>
             <dd><select className="cell" value={s.grade} disabled={!node.editable} onChange={(e) => set({ grade: e.target.value })}>{[...GRADES, 'T14', 'T22'].map((g) => <option key={g}>{g}</option>)}</select></dd>
             <dt>Widest panel</dt>
-            <dd><input className="cell num" type="number" step={100} min={1000} max={4000} value={Math.round(s.maxWidth * 1000)} disabled={!node.editable} onChange={(e) => set({ maxWidth: Number(e.target.value) / 1000 })} /></dd>
+            <dd><NumberField min={1000} max={4000} integer value={Math.round(s.maxWidth * 1000)} readOnly={!node.editable} onCommit={(v) => { if (v != null) set({ maxWidth: v / 1000 }); }} /></dd>
             <dt>Longest panel</dt>
-            <dd><input className="cell num" type="number" step={500} min={2000} max={30000} value={Math.round(s.maxLength * 1000)} disabled={!node.editable} onChange={(e) => set({ maxLength: Number(e.target.value) / 1000 })} /></dd>
+            <dd><NumberField min={2000} max={30000} integer value={Math.round(s.maxLength * 1000)} readOnly={!node.editable} onCommit={(v) => { if (v != null) set({ maxLength: v / 1000 }); }} /></dd>
             <dt>Joint</dt>
             <dd><select className="cell" value={s.joint} disabled={!node.editable} onChange={(e) => set({ joint: e.target.value })}><option value="butt">butt</option><option value="halfLap">half lap</option><option value="spline">spline</option></select></dd>
           </>
@@ -90,14 +91,14 @@ export function OpeningWoodSection({ node }: { node: NodeDto }) {
         <dt title="This opening's own rule instead of its band's">Own rule</dt>
         <dd><input type="checkbox" checked={Boolean(info.own)} disabled={!node.editable} data-testid="wood-own"
           onChange={(e) => void execute('wood.setOpeningFrame', { id: node.id, rule: e.target.checked ? r : null })} /></dd>
-        <dt>King studs</dt><dd><input className="cell num" type="number" min={0} max={4} value={r.kings} disabled={disabled} onChange={(e) => send({ kings: Number(e.target.value) })} /></dd>
-        <dt>Jack studs</dt><dd><input className="cell num" type="number" min={0} max={4} value={r.jacks} disabled={disabled} onChange={(e) => send({ jacks: Number(e.target.value) })} /></dd>
+        <dt>King studs</dt><dd><NumberField min={0} max={4} integer value={r.kings} readOnly={disabled} onCommit={(v) => { if (v != null) send({ kings: v }); }} /></dd>
+        <dt>Jack studs</dt><dd><NumberField min={0} max={4} integer value={r.jacks} readOnly={disabled} onCommit={(v) => { if (v != null) send({ jacks: v }); }} /></dd>
         <dt>Header</dt>
         <dd><select className="cell" value={r.header.kind} disabled={disabled} onChange={(e) => send({ header: { ...r.header, kind: e.target.value } })}>{HEADERS.map((h) => <option key={h}>{h}</option>)}</select></dd>
         <dt>Section</dt>
         <dd><select className="cell" value={r.header.section} disabled={disabled} onChange={(e) => send({ header: { ...r.header, section: e.target.value } })}>{[...new Set([...SECTIONS, r.header.section])].map((s) => <option key={s}>{s}</option>)}</select></dd>
-        <dt>Plies</dt><dd><input className="cell num" type="number" min={1} max={4} value={r.header.plies} disabled={disabled} onChange={(e) => send({ header: { ...r.header, plies: Number(e.target.value) } })} /></dd>
-        <dt>Sill plies</dt><dd><input className="cell num" type="number" min={0} max={3} value={r.sill} disabled={disabled} onChange={(e) => send({ sill: Number(e.target.value) })} /></dd>
+        <dt>Plies</dt><dd><NumberField min={1} max={4} integer value={r.header.plies} readOnly={disabled} onCommit={(v) => { if (v != null) send({ header: { ...r.header, plies: v } }); }} /></dd>
+        <dt>Sill plies</dt><dd><NumberField min={0} max={3} integer value={r.sill} readOnly={disabled} onCommit={(v) => { if (v != null) send({ sill: v }); }} /></dd>
       </dl>
       <p className="muted small pad">{(info.members ?? []).map((m) => `${m.count} ${m.role} ${m.section}`).join(' · ')}</p>
       {(info.warnings ?? []).map((w, i) => <p key={i} className="error-text small">{w}</p>)}

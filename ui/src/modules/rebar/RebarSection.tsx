@@ -138,7 +138,6 @@ function SplitBlock({ node, d }: { node: NodeDto; d: Described }) {
     const r = await execute('rebar.split', { id: node.id, from: z.from, to: z.to }) as { first?: string; second?: string } | null;
     if (r?.first && r.second) useUi.setState({ selected: [r.first, r.second] });
   };
-  const num = (e: React.ChangeEvent<HTMLInputElement>) => Math.max(0, Number(e.target.value) || 0);
   const stock = d.stockLength ?? 12;
   const over = d.overStock || overStock(length, stock);
   const atStock = stockLap(stock, lap / 1000);
@@ -153,13 +152,13 @@ function SplitBlock({ node, d }: { node: NodeDto; d: Described }) {
       )}
       <div className="row small">
         <label className="field-line"><span className="eyebrow">Lap from</span>
-          <input className="num" type="number" step={10} min={0} max={Math.round(length * 1000)} value={from} data-field="rebar-split-from" onChange={(e) => setZone({ from: num(e), to })} />
+          <NumberField min={0} max={Math.round(length * 1000)} value={from} testId="rebar-split-from" onCommit={(v) => { if (v != null) setZone({ from: Math.max(0, v), to }); }} />
         </label>
         <label className="field-line"><span className="eyebrow">to</span>
-          <input className="num" type="number" step={10} min={0} max={Math.round(length * 1000)} value={to} data-field="rebar-split-to" onChange={(e) => setZone({ from, to: num(e) })} /><span className="muted small"> mm</span>
+          <NumberField min={0} max={Math.round(length * 1000)} value={to} testId="rebar-split-to" onCommit={(v) => { if (v != null) setZone({ from, to: Math.max(0, v) }); }} /><span className="muted small"> mm</span>
         </label>
         <label className="field-line"><span className="eyebrow">Lap</span>
-          <input className="num" type="number" step={10} min={10} style={{ width: 64 }} value={lap} data-field="rebar-split-lap" onChange={(e) => setZone({ from: to - num(e), to })} /><span className="muted small"> mm</span>
+          <NumberField min={10} style={{ width: 64 }} value={lap} testId="rebar-split-lap" onCommit={(v) => { if (v != null) setZone({ from: to - Math.max(0, v), to }); }} /><span className="muted small"> mm</span>
         </label>
       </div>
       <p className="muted small">From the bar's start. The first bar ends at 'to', the second starts at 'from'.</p>
