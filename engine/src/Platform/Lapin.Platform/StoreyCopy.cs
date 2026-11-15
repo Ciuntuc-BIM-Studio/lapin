@@ -119,7 +119,7 @@ public static class StoreyCopy
                 if (use.Count > 0)
                 {
                     var copyIds = new JsonArray(use.Select(e => (JsonNode)e.Id).ToArray());
-                    var result = ElementTransform.Run(ctx, new JsonObject { ["ids"] = copyIds, ["op"] = "copy", ["by"] = new JsonArray(0.0, 0.0) });
+                    var result = ElementTransform.Run(ctx, new JsonObject { ["ids"] = copyIds, ["op"] = "copy", ["by"] = new JsonArray(0.0, 0.0) }, keepLinks: relations ? null : relationKeys);
                     foreach (var (o, c) in result.Copies) if (c != o && m.Get(c) != null) map[o] = c;
                 }
                 var tops = map.ToList();
@@ -221,7 +221,7 @@ public static class StoreyCopy
     }
 
     /// <summary>What a copy hosts matched with what its original hosts (openings, then their doors and windows), in order.</summary>
-    static void MapHosted(IModelView m, string original, string copy, Dictionary<string, string> map)
+    internal static void MapHosted(IModelView m, string original, string copy, Dictionary<string, string> map)
     {
         foreach (var rel in new[] { IfcClass.RelVoidsElement, IfcClass.RelFillsElement })
         {

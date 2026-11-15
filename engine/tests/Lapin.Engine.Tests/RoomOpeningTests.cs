@@ -157,9 +157,12 @@ public class RoomOpeningTests
         var copied = f.Run("element.transform", new JsonObject { ["ids"] = ids, ["op"] = "copy", ["by"] = new JsonArray(20, 0) })!;
         var twin = copied["ids"]!.AsArray().Select(x => (string)x!).First(x => f.Model.Get(x)!.Class == Rooms.Class);
         Assert.Equal(2, f.Model.OfClass(IfcClass.Door).Count());
-        // The copy's entry names the first room's door: it is not this room's, and the point has moved with the room.
+        // The copy's entry names the copied door, which is the copy's (copied together, links name the copies: audit 15.11.2026);
+        // the first room keeps its own.
         var read = Read(f, twin)["items"]!.AsArray().Single()!;
-        Assert.Null((string?)read["fill"]);
+        var door = (string?)read["fill"];
+        Assert.NotNull(door);
+        Assert.Equal(twin, f.Model.Get(door)!.Str(RoomOpenings.FillTag));
         Assert.Equal(room, f.Model.OfClass(IfcClass.Door).First().Str(RoomOpenings.FillTag));
         f.Run("architecture.setRoomOpenings", new JsonObject { ["id"] = twin, ["on"] = true });
         Assert.Equal(2, f.Model.OfClass(IfcClass.Door).Count());

@@ -145,6 +145,19 @@ public static class SteelNodes
     public static IEnumerable<Entity> Of(IModelView m, string memberId) =>
         m.OfClass(Class).Where(n => MembersOf(n).Any(j => j.Id == memberId));
 
+    /// <summary>
+    /// The connections of a member that goes, taken away with it, each giving the other members' ends back the setbacks it
+    /// wrote (audit 15.11.2026: a hall deleted or rebuilt left those it did not make naming its members); <paramref name="keep"/>: connections left.
+    /// </summary>
+    public static void DropWith(IEdit edit, string memberId, IReadOnlySet<string>? keep = null)
+    {
+        foreach (var n in Of(edit.Model, memberId).Where(n => keep?.Contains(n.Id) != true).ToList())
+        {
+            Release(edit, n);
+            edit.Remove(n.Id);
+        }
+    }
+
     // ------------------------------------------------------------ topology
 
     /// <summary>

@@ -238,40 +238,95 @@ public static class RoomFinishes
         foreach (var e in Laid(ctx.Model, room.Id).ToList()) ctx.Remove(e.Id);
     }
 
-    /// <summary>The room finished with the type: what it had laid before goes, each part the type has is laid, its skirting and slab made.</summary>
+    /// <summary>
+    /// The room finished with the type: each part the type has is laid, its skirting and slab made; what it had laid before
+    /// and the type still has keeps its GlobalId (matched by its part: the floor's, the skirting, the slab; audit 15.11.2026,
+    /// M6), what the type no longer has goes.
+    /// </summary>
     public static void Apply(ICommandContext ctx, Entity room, Entity type)
     {
         var spec = SpecOf(ctx.Model, type) ?? throw new CommandException("The room finish cannot be read.");
-        Clear(ctx, room);
         var storeyId = Spatial.StoreyOf(ctx.Model, room.Id)?.Id ?? throw new CommandException("The room is on no storey.");
+        var laid = Laid(ctx.Model, room.Id).ToList();
+        var kept = new HashSet<string>();
+        Entity? Take(Func<Entity, bool> match)
+        {
+            var was = laid.FirstOrDefault(x => !kept.Contains(x.Id) && match(x));
+            if (was != null) kept.Add(was.Id);
+            return was;
+        }
+        void Home(string id)
+        {
+            if (Spatial.StoreyOf(ctx.Model, id)?.Id != storeyId) Spatial.Contain(ctx, storeyId, id);
+        }
         var label = string.Join(" ", new[] { room.Str("number"), room.Name }.Where(x => !string.IsNullOrWhiteSpace(x)));
         foreach (var (part, layers, predefined) in new[] { ("floor", spec.Floor, "FLOORING"), ("walls", spec.Walls, "CLADDING"), ("ceiling", spec.Ceiling, "CEILING") })
         {
             if (layers is not { Count: > 0 }) continue;
-            var e = new Entity(ctx.NewId(), Class, $"{label} · {part}", new JsonObject { ["roomId"] = room.Id, ["part"] = part, ["exportAs"] = "IfcCovering" }, predefined);
+            var attrs = new JsonObject { ["roomId"] = room.Id, ["part"] = part, ["exportAs"] = "IfcCovering" };
+            if (Take(x => x.Class == Class && x.Str("part") == part) is { } was)
+            {
+                var keep = was.CloneAttrs();
+                foreach (var (k, v) in attrs) keep[k] = v?.DeepClone();
+                ctx.Replace(new Entity(was.Id, Class, $"{label} · {part}", keep, predefined));
+                Home(was.Id);
+                ctx.Relate(IfcClass.RelDefinesByType, type.Id, was.Id);
+                continue;
+            }
+            var e = new Entity(ctx.NewId(), Class, $"{label} · {part}", attrs, predefined);
             ctx.Add(e);
             Spatial.Contain(ctx, storeyId, e.Id);
             ctx.Relate(IfcClass.RelDefinesByType, type.Id, e.Id);
         }
         if (spec.Skirting is { } sk && Skirtings.TypeNamed(ctx, sk) is { } skType)
         {
-            var s = Skirtings.Add(ctx, new JsonObject { ["roomId"] = room.Id, ["typeId"] = skType.Id, ["storeyId"] = storeyId });
-            var sa = s.CloneAttrs();
-            sa["finishOf"] = room.Id;
-            ctx.Replace(s.With(attrs: sa));
+            if (Take(x => x.Class == Skirtings.Class) is { } was)
+            {
+                var sa = was.CloneAttrs();
+                sa["roomId"] = room.Id;
+                sa["finishOf"] = room.Id;
+                Skirtings.Snapshot(ctx, room, sa);
+                ctx.Replace(was.With(attrs: sa));
+                Home(was.Id);
+                ctx.Relate(IfcClass.RelDefinesByType, skType.Id, was.Id);
+            }
+            else
+            {
+                var s = Skirtings.Add(ctx, new JsonObject { ["roomId"] = room.Id, ["typeId"] = skType.Id, ["storeyId"] = storeyId });
+                var sa = s.CloneAttrs();
+                sa["finishOf"] = room.Id;
+                ctx.Replace(s.With(attrs: sa));
+            }
         }
-        if (spec.Slab is { } slab && Rooms.Of(room, ctx.Model, ctx.Query.Geometry) is { } o)
+        // The outline as the room is now (moved in this step: its geometry asked of the query would be the one before).
+        if (spec.Slab is { } slab && (Rooms.Live(room, ctx.Model, ctx.Services) ?? Rooms.Of(room, ctx.Model, ctx.Query.Geometry)) is { } o)
         {
             var contour = slab.Extend > 0 ? Polygon2.Offset(Polygon2.EnsureCcw(o.Outer), [slab.Extend]) : Polygon2.EnsureCcw(o.Outer);
             var thickness = Math.Round(slab.Thickness * 1000);
             var slabType = ctx.Model.OfClass(IfcClass.SlabType).FirstOrDefault(t => LayerSets.LayersOf(ctx.Model, t.Id) is [var only]
                     && Math.Abs(only.Thickness - slab.Thickness) < 1e-6 && string.Equals(ctx.Model.Get(only.Material)?.Name, slab.Material, StringComparison.OrdinalIgnoreCase))
                 ?? Slabs.CreateType(ctx, $"{slab.Material} {thickness}", [new LayerSpec(slab.Material, slab.Thickness, Core: true)]);
-            var made = Slabs.Add(ctx, storeyId, contour, room.Num("baseOffset") - Thickness(spec.Floor), slabType);
-            var attrs = made.CloneAttrs();
-            attrs["finishOf"] = room.Id;
-            ctx.Replace(made.With(name: $"{label} · slab", attrs: attrs));
+            var offset = room.Num("baseOffset") - Thickness(spec.Floor);
+            if (Take(x => x.Class == IfcClass.Slab) is { } was)
+            {
+                var attrs = was.CloneAttrs();
+                attrs["offset"] = offset;
+                Slabs.SetOutline(attrs, contour, null);
+                attrs["finishOf"] = room.Id;
+                var next = was.With(name: $"{label} · slab", attrs: attrs);
+                ctx.Replace(next);
+                Home(was.Id);
+                if (ctx.Model.RelatingOf(was.Id, IfcClass.RelDefinesByType)?.Id != slabType.Id) Slabs.SetType(ctx, next, slabType);
+            }
+            else
+            {
+                var made = Slabs.Add(ctx, storeyId, contour, offset, slabType);
+                var attrs = made.CloneAttrs();
+                attrs["finishOf"] = room.Id;
+                ctx.Replace(made.With(name: $"{label} · slab", attrs: attrs));
+            }
         }
+        foreach (var gone in laid.Where(x => !kept.Contains(x.Id))) if (ctx.Model.Get(gone.Id) != null) ctx.Remove(gone.Id);
         var ra = ctx.Model.Get(room.Id)!.CloneAttrs();
         ra["finishType"] = type.Id;
         ctx.Replace(ctx.Model.Get(room.Id)!.With(attrs: ra));

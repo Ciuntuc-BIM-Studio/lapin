@@ -56,6 +56,7 @@ public static class StairsModule
         r.Geometry(IfcClass.Ramp, (e, m, _) => RampBuilder.Geometry(e, m));
         r.Quantities(IfcClass.Ramp, RampBuilder.Quantities);
         r.Service<IDeletion>(new StairDeletion());
+        r.Service<ITransformFollowers>(new StairLinks());
 
         var web = new JsonSerializerOptions(JsonSerializerDefaults.Web);
         r.Catalog("stairDefaults", new JsonObject
@@ -429,7 +430,8 @@ sealed class StairDeletion : IDeletion
             return true;
         }
         if (ctx.Model.Get(id) is not { Class: IfcClass.Stair or IfcClass.Ramp }) return false;
-        if (StairBuilder.OpeningOf(ctx.Model, id) is { } opening) ctx.Remove(opening.Id);
+        // Every opening it asked for (a floor copied without it once took a second).
+        foreach (var opening in ctx.Model.OfClass(IfcClass.OpeningElement).Where(o => o.Str("stairId") == id).ToList()) ctx.Remove(opening.Id);
         // The space furnished under it goes with it (a tester's report, #71).
         foreach (var nook in UnderStairs.Of(ctx.Model, id).ToList()) ctx.Remove(nook.Id);
         ctx.Remove(id);
