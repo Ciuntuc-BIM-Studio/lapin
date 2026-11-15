@@ -137,17 +137,21 @@ async function connect() {
     const p = pending.get(msg.id);
     if (!p) return;
     pending.delete(msg.id);
-    if (msg.error) p.reject(new Error(msg.error)); else p.resolve(msg.result);
+    if (msg.error) p.reject(new Error(msg.error));
+    // A reply's warnings (a save that could not carry something over from the file it was read from, the recovery journal
+    // not written) to whoever asked for them; the result alone otherwise.
+    else p.resolve(p.full ? { result: msg.result, warnings: msg.warnings ?? [] } : msg.result);
   };
   ws.onclose = () => { ws = null; catalogue = null; for (const p of pending.values()) p.reject(new Error('The engine closed.')); pending.clear(); };
   return ws;
 }
 
-async function call(method, params = {}) {
+/** One call; with `full`, its result and the reply's warnings: {result, warnings}. */
+async function call(method, params = {}, full = false) {
   const sock = await connect();
   const id = next++;
   return new Promise((resolve, reject) => {
-    pending.set(id, { resolve, reject });
+    pending.set(id, { resolve, reject, full });
     sock.send(JSON.stringify({ id, method, params }));
   });
 }
@@ -328,9 +332,12 @@ const TOOLS = [
   },
   {
     name: 'lapin_save',
-    description: 'Save the project (to its own file, or to a .lapin path given).',
+    description: 'Save the project (to its own file, or to a .lapin path given). Says what the save could not carry over (a damaged version part or issued file left out), when anything.',
     inputSchema: { type: 'object', properties: { path: { type: 'string' } } },
-    run: async ({ path }) => { await call('project.save', path ? { path } : {}); return 'saved'; },
+    run: async ({ path }) => {
+      const { warnings } = await call('project.save', path ? { path } : {}, true);
+      return warnings.length ? `saved, with warnings:\n${warnings.map((w) => `- ${w}`).join('\n')}` : 'saved';
+    },
   },
 ];
 

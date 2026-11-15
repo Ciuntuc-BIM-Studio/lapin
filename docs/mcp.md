@@ -37,7 +37,13 @@ The engine listens only on 127.0.0.1.
 | `lapin_document_export` | A document written as DOCX, ODT or PDF to an absolute path on this computer (see Documents). |
 | `lapin_export_jg` | The analytical model written as JG Structures' exchange JSON to an absolute path on this computer, with the report of its checks (docs/jg-structures.md). |
 | `lapin_undo`, `lapin_redo` | One step back or forward. |
-| `lapin_save` | Save the project. |
+| `lapin_save` | Save the project; the reply lists what the save could not carry over from the file the project was read from (a damaged version part or issued file left out, with a warning), when anything. |
+
+## Replies
+
+Every call is answered `{id, result}` or `{id, error}`; a reply may carry `warnings` beside its result, what went wrong though the call went through: a save (`project.save`, `project.saveBytes`, the version calls) that could not carry something over from the file the project was read from, the recovery journal not written. `lapin_save` lists them. Some results worth knowing in full:
+
+- `coordination.runCheck {kinds?, offset?, clearance?, empty?}` → the clash report `{id, date, hash, stale, clearance, counts, items, unchecked}`: `counts` by kind (`missing`, `held`, `tooSmall`, `empty`, `ok`) and by state (`open`, `fixed`, `ignored`); `items` the numbered clashes; `unchecked` the pairs the run could not check (one of the two has a mesh that is not a closed solid: an element passing through a wall or floor, each `{key, status: "unchecked", mepId, mep, hostId, host, message, …}`), never counted as clear. `coordination.report` gives the stored report, without `unchecked` (a run's own).
 
 ## The command catalogue
 

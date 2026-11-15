@@ -13,6 +13,7 @@ import queue
 import sys
 import threading
 import traceback
+import warnings
 from typing import TYPE_CHECKING, Any, Callable
 
 from . import _discovery as discovery
@@ -31,6 +32,10 @@ if TYPE_CHECKING:
 # does not inherit it.
 _KERNEL_TOKEN = os.environ.pop("LAPIN_SCRIPT_TOKEN", None)
 _KERNEL_PORT = os.environ.get("LAPIN_PORT") if _KERNEL_TOKEN else None
+
+
+class LapinWarning(UserWarning):
+    """What the engine told beside a call that went through: a save that left a damaged part out, the journal not written."""
 
 
 class LapinError(Exception):
@@ -328,6 +333,10 @@ class Lapin:
             msg = slot.msg
             if msg.get("error"):
                 raise LapinError(msg["error"], method, (params or {}).get("command") or (params or {}).get("name"))
+            # What went wrong beside a call that still went through (a save that could not carry a damaged version part
+            # over, the recovery journal not written): a Python warning each.
+            for w in msg.get("warnings") or []:
+                warnings.warn(f"{method}: {w}", LapinWarning, stacklevel=3)
             return msg.get("result")
 
     # ------------------------------------------------------------------ layer 1: the raw calls
