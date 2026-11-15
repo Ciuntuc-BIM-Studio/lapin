@@ -8,6 +8,7 @@
  * middle buttons still turn and move the view.
  */
 
+import { keyIsForField } from './overlayKeys';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import * as THREE from 'three';
@@ -207,7 +208,7 @@ export function Draft3D({ camera, canvas, scene }: { camera: React.RefObject<THR
   useEffect(() => {
     if (!sketch || command || dragging) return;
     const onKey = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement | null)?.closest?.('input, textarea, select, [contenteditable]')) return;
+      if (keyIsForField(e)) return;
       if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); void finish(); }
       else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); clearWorkPlane(); }
     };
