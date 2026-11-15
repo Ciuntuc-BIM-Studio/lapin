@@ -5270,6 +5270,43 @@ export const scenes = [
     },
   },
   {
+    // Forum topic 107: View → Detail callout (CO) drawn round a corner of the plan, its detail view at 1:20 placed on a sheet, the head reading its number and sheet; the detail inset beside the plan to show it.
+    id: 'views-callout',
+    touches: ['core', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      for (const [x1, y1, x2, y2] of [[0, 0, 6, 0], [6, 0, 6, 4], [6, 4, 0, 4], [0, 4, 0, 0]]) await t.cmd('architecture.addWall', { storeyId: s, x1, y1, x2, y2 });
+      await t.ui({ view: 'plan', keyPlan: false, planDrawing: true, selection: null, selected: [] });
+      await t.wait(1500);
+      await t.fit();
+      // The tool, then a rectangle round the south-west corner: two opposite corners.
+      await t.tool('view.callout');
+      for (const [px, py] of [[-0.6, -0.6], [1.2, 1.0]]) {
+        const [x, y] = await t.planPoint(px, py);
+        await t.page.mouse.click(x, y);
+        await t.wait(300);
+      }
+      await t.until(async () => (await t.nodes()).some((n) => n.type === 'LapinCallout'), 'the callout is made');
+      const callout = (await t.nodes()).find((n) => n.type === 'LapinCallout');
+      const detail = (await t.nodes()).find((n) => n.id === callout.props.target);
+      t.expect(detail?.props.scale === 20 && detail?.props.calloutOf === `plan:${s}` && !!detail?.props.crop, 'the detail view is cropped to the callout at 1:20');
+      // Placed on a sheet: the head reads its number and the sheet's.
+      const sheet = (await t.cmd('sheet.create', { name: 'Details', number: 'A-501', paper: 'A3' })).id;
+      await t.cmd('sheet.addViewport', { id: sheet, viewId: detail.id, x: 150, y: 120 });
+      // The detail drawn beside the plan, so the picture shows both.
+      await t.cmd('view.inset', { viewId: `plan:${s}`, source: detail.id, at: [11, 2], frame: true });
+      await t.ui({ tool: null, selected: [callout.id], selection: callout.id });
+      await t.wait(1200);
+      await t.fit();
+      await t.wait(600);
+      const d = await t.call('doc.query', { name: 'view.drawing', args: { id: `plan:${s}` } });
+      const mark = d.marks.find((m) => m.id === callout.id);
+      t.expect(mark?.data?.label === '1 / A-501', 'the callout\'s head reads 1 / A-501');
+      await t.shot('callout', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
     // Forum topic 73: Quick select by type in the whole project, the count found shown before selecting.
     id: 'interface-quick-select',
     touches: ['core', 'architecture'],

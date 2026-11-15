@@ -9,7 +9,7 @@
 
 import { hasModule } from '../platform/brand';
 import { useState, type DragEvent } from 'react';
-import { Box, Camera, ChevronDown, ChevronRight, Copy, CopyPlus, FileText, Frame, Layers, Map as MapIcon, Plus, Scissors, Settings2, Square, SquareStack, Table2, Trash2 } from 'lucide-react';
+import { Box, Camera, ChevronDown, ChevronRight, Copy, CopyPlus, FileText, Frame, Layers, Map as MapIcon, Plus, ScanSearch, Scissors, Settings2, Square, SquareStack, Table2, Trash2 } from 'lucide-react';
 import { notify, useUi } from '../app/store';
 import { execute, activeStorey, useSession } from '../engine/session';
 import { newSchedule } from '../modules/cost/schedules';
@@ -192,7 +192,10 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
     const id = set?.id ?? 'other';
     const closed = collapsed.has('set:' + id);
     const discipline = disciplineOf(set);
-    const of = (kind: BrowserItem['kind']) => list.filter((i) => i.kind === kind);
+    // A callout's detail views (forum topic 107) are listed under Details, not with the plans or sections they are cut from.
+    const isDetail = (i: BrowserItem) => !!i.node?.props.calloutOf;
+    const of = (kind: BrowserItem['kind']) => list.filter((i) => i.kind === kind && !isDetail(i));
+    const details = list.filter(isDetail);
     return (
       <div className={`tree-set${closed ? ' closed' : ''}`}>
         <div className="tree-label set">
@@ -212,6 +215,13 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
             plus={set && of('elevation').length === 0 && <button type="button" className="icon mini" title="The four elevations" onClick={() => void addElevations(discipline)}><Plus size={12} /></button>}>
             {(item) => <Row item={item} on={view === 'drawing' && ui.drawingViewId === item.id} open={() => showDrawing(item.id)}><Dup item={item} /></Row>}
           </Kind>
+          {details.length > 0 && (
+            <Kind id={`${id}:details`} icon={<ScanSearch size={13} />} label="Details" list={details}>
+              {(item) => item.kind === 'plan'
+                ? <Row item={item} on={isPlanOn(item)} open={() => showPlan(item.storeyId ?? '', item.id)}><Dup item={item} /></Row>
+                : <Row item={item} on={view === 'drawing' && ui.drawingViewId === item.id} open={() => showDrawing(item.id)}><Dup item={item} /></Row>}
+            </Kind>
+          )}
           {of('plane').length > 0 && (
             <Kind id={`${id}:planes`} icon={<Frame size={13} />} label="Reference planes" list={of('plane')}>
               {(item) => <Row item={item} on={view === 'drawing' && ui.drawingViewId === item.id} open={() => showDrawing(item.id)} />}
