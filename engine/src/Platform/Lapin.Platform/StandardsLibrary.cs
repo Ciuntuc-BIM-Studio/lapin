@@ -39,7 +39,7 @@ public static class StandardsLibrary
 
     static double[] CheckDashes(JsonNode? n)
     {
-        if (n is not JsonArray a || a.Count < 2 || a.Count > 24) throw new CommandException("A line type is dashes and gaps (mm), two to 24 of them.");
+        if (n is not JsonArray a || !(a.Count >= 2 && a.Count <= 24)) throw new CommandException("A line type is dashes and gaps (mm), two to 24 of them.");
         var d = a.Select(x => Json.Number(x) ?? double.NaN).ToArray();
         if (d.Any(x => !(x > 0 && x < 100))) throw new CommandException("Each dash and gap is above 0 and under 100 mm.");
         return d;

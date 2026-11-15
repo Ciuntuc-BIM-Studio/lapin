@@ -482,7 +482,7 @@ public static class Views
         if (mode == "some" && ids.Count == 0) throw new CommandException("Tick at least one storey.");
         var unplaced = a["unplaced"] is JsonValue uv && uv.TryGetValue<bool>(out var u) ? u : old.Unplaced;
         var cut = a.ContainsKey("cut") ? Json.Number(a["cut"]) : old.Cut;
-        if (cut is { } c && (c < -5 || c > 50)) throw new CommandException("The cut is between −5 and 50 m above the storey's level.");
+        if (cut is { } c && (!(c >= -5 && c <= 50))) throw new CommandException("The cut is between −5 and 50 m above the storey's level.");
         var next = new Storeys3d(mode, ids, unplaced, cut);
         var attrs = view.CloneAttrs();
         if (next.IsDefault) attrs.Remove("storeys"); else attrs["storeys"] = next.ToJson();
@@ -1838,7 +1838,7 @@ public static class Views
                 var pen = (int)(Json.Number(a["pen"]) ?? 0);
                 var i = t.Scales.ToList().IndexOf((int)(Json.Number(a["scale"]) ?? 0));
                 var w = Json.Number(a["width"]) ?? 0;
-                if (pen < 1 || pen > LineStyles.PenCount) throw new CommandException("A pen is 1 to 16.");
+                if (!(pen >= 1 && pen <= LineStyles.PenCount)) throw new CommandException("A pen is 1 to 16.");
                 if (i < 0) throw new CommandException($"The pen table has scales {string.Join(", ", t.Scales.Select(x => "1:" + x))}.");
                 if (!(w > 0 && w <= 10)) throw new CommandException("A pen's width is more than 0 and at most 10 mm.");
                 var widths = t.Widths.Select(r => r.ToList()).ToList();
@@ -1879,7 +1879,7 @@ public static class Views
                 if (a["spec"] is JsonObject spec)
                 {
                     if ((string?)spec["pattern"] is { } pat && !LineStyles.Patterns.Contains(pat) && !Standards.LineTypeNames(DraftingResources.Book(ctx.Model)).Contains(pat, StringComparer.OrdinalIgnoreCase)) throw new CommandException($"„{pat}” is not a line pattern.");
-                    if (Json.Number(spec["pen"]) is { } pen && (pen < 1 || pen > LineStyles.PenCount)) throw new CommandException("A pen is 1 to 16.");
+                    if (Json.Number(spec["pen"]) is { } pen && (!(pen >= 1 && pen <= LineStyles.PenCount))) throw new CommandException("A pen is 1 to 16.");
                     c[role] = spec.DeepClone();
                 }
                 else c.Remove(role);
@@ -1892,7 +1892,7 @@ public static class Views
                 var style = (string?)lm["style"] ?? LevelMark(project).Style;
                 if (!LevelMarkStyles.Contains(style)) throw new CommandException("A level marker is an open, half or filled triangle, or a tick.");
                 var size = Json.Number(lm["size"]) ?? LevelMark(project).Size;
-                if (size < 1 || size > 20) throw new CommandException("A level marker is 1 to 20 mm on paper.");
+                if (!(size >= 1 && size <= 20)) throw new CommandException("A level marker is 1 to 20 mm on paper.");
                 var defaults = attrs["viewDefaults"] as JsonObject ?? new JsonObject();
                 defaults["levelMark"] = new JsonObject { ["style"] = style, ["size"] = size };
                 attrs["viewDefaults"] = defaults;

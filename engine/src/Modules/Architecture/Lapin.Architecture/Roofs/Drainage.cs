@@ -331,8 +331,8 @@ public static class Drainage
     {
         var legs = rt.OfType<JsonObject>().Select(o => new Leg(Json.Number(o["length"]), Json.Number(o["angle"]) ?? 0)).ToList();
         if (legs.Count == 0 || legs.Count > 12) throw new CommandException("A downpipe's route has 1 to 12 segments.");
-        if (legs.Any(l => l.Angle < -90 || l.Angle > 90)) throw new CommandException("A segment's angle from the vertical is between -90° and 90°.");
-        if (legs.Any(l => l.Length is { } len && (len < 0.01 || len > 100))) throw new CommandException("A segment is 1 cm to 100 m long.");
+        if (legs.Any(l => !(l.Angle >= -90 && l.Angle <= 90))) throw new CommandException("A segment's angle from the vertical is between -90° and 90°.");
+        if (legs.Any(l => l.Length is { } len && (!(len >= 0.01 && len <= 100)))) throw new CommandException("A segment is 1 cm to 100 m long.");
         return legs;
     }
 

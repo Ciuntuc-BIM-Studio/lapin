@@ -25,7 +25,7 @@ public sealed class CostModule : ILapinModule
 
     static double Rate(JsonNode? n, string what, double max = 100)
     {
-        if (Json.Number(n) is not { } v || !double.IsFinite(v) || v < 0 || v > max) throw new CommandException($"The {what} is a percentage between 0 and {max}.");
+        if (Json.Number(n) is not { } v || !double.IsFinite(v) || !(v >= 0 && v <= max)) throw new CommandException($"The {what} is a percentage between 0 and {max}.");
         return v;
     }
 

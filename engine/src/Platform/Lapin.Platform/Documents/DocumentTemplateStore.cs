@@ -259,7 +259,7 @@ public static class DocumentStyles
         if (page?["style"] is not { } node) return;
         if (node is not JsonObject o) throw new CommandException("A style is a JSON object.");
         if (o["font"] is { } f && ((string?)f)?.Trim() is not { Length: > 0 and <= 64 }) throw new CommandException("A style's font is a family name.");
-        if (o["size"] is { } s && (Json.Number(s) is not { } size || size < MinSize || size > MaxSize)) throw new CommandException($"A style's text size is between {MinSize} and {MaxSize} pt.");
+        if (o["size"] is { } s && (Json.Number(s) is not { } size || !(size >= MinSize && size <= MaxSize))) throw new CommandException($"A style's text size is between {MinSize} and {MaxSize} pt.");
         if (o["headingColor"] is { } c && ((string?)c is not { } hex || !Hex.IsMatch(hex))) throw new CommandException("A style's heading colour is written #rrggbb.");
         if (o["pdfFont"] is { } p && ((string?)p is not { } pf || !PdfFonts.Contains(pf.Trim().ToLowerInvariant()))) throw new CommandException("The PDF's font is helvetica or times.");
         if (o["logo"] is { } l)

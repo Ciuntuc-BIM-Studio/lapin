@@ -127,7 +127,7 @@ public static class AcrossSections
         if (a.ContainsKey("margin"))
         {
             var margin = Json.Number(a["margin"]) ?? DefaultMargin;
-            if (margin < 0 || margin > 20) throw new CommandException("The margin is between 0 and 20 m.");
+            if (!(margin >= 0 && margin <= 20)) throw new CommandException("The margin is between 0 and 20 m.");
             attrs["margin"] = margin;
         }
         foreach (var side in new[] { "marginA", "marginB" })
@@ -135,7 +135,7 @@ public static class AcrossSections
             if (!a.ContainsKey(side)) continue;
             if (Json.Number(a[side]) is { } mg)
             {
-                if (mg < 0 || mg > 20) throw new CommandException("The margin is between 0 and 20 m.");
+                if (!(mg >= 0 && mg <= 20)) throw new CommandException("The margin is between 0 and 20 m.");
                 attrs[side] = Math.Round(mg, 4);
             }
             else attrs.Remove(side);

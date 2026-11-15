@@ -142,15 +142,15 @@ public sealed record FrameSpec(
     /// <summary>Refused when it cannot build: the spacing, the counts, the gaps, the sections.</summary>
     public string? Problem()
     {
-        if (Spacing < 0.2 || Spacing > 1.5) return "The studs are 200 to 1500 mm apart.";
+        if (!(Spacing >= 0.2 && Spacing <= 1.5)) return "The studs are 200 to 1500 mm apart.";
         if (BottomPlates is < 1 or > 3 || TopPlates is < 1 or > 3) return "A wall has 1 to 3 bottom plates and 1 to 3 top plates.";
         if (EndStuds is < 1 or > 3) return "A wall ends in 1 to 3 studs.";
         if (Size(StudSection, (0, 0)).W <= 0) return $"„{StudSection}” is not a section (write it as 45x145 mm).";
-        if (new[] { GapSide, GapTop, GapBottom }.Any(g => g < 0 || g > 0.1)) return "A fitting gap is 0 to 100 mm.";
-        if (PanelMax != 0 && (PanelMax < 1.2 || PanelMax > 16)) return "A prefabricated panel is 1.2 to 16 m long.";
-        if (PanelMin < 0.3 || (PanelMax > 0 && PanelMin > PanelMax / 2)) return "The shortest panel is 300 mm and at most half the longest.";
+        if (new[] { GapSide, GapTop, GapBottom }.Any(g => !(g >= 0 && g <= 0.1))) return "A fitting gap is 0 to 100 mm.";
+        if (PanelMax != 0 && (!(PanelMax >= 1.2 && PanelMax <= 16))) return "A prefabricated panel is 1.2 to 16 m long.";
+        if (!(PanelMin >= 0.3) || (PanelMax > 0 && PanelMin > PanelMax / 2)) return "The shortest panel is 300 mm and at most half the longest.";
         foreach (var b in Boards ?? [])
-            if (b.Width < 0.3 || b.Width > 3.5 || b.Height < 0.3 || b.Height > 6) return "A sheet is 300 to 3500 mm wide and 300 to 6000 mm high.";
+            if (!(b.Width >= 0.3 && b.Width <= 3.5) || !(b.Height >= 0.3 && b.Height <= 6)) return "A sheet is 300 to 3500 mm wide and 300 to 6000 mm high.";
         foreach (var r in Openings)
         {
             if (r.Kings is < 0 or > 4 || r.Jacks is < 0 or > 4 || r.Sill is < 0 or > 3) return "An opening has 0 to 4 king and jack studs and 0 to 3 sill plies.";

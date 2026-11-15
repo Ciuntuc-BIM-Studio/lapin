@@ -59,12 +59,12 @@ public sealed record CltSpec(double[] Plies, string Grade, double MaxLength, dou
     public string? Problem()
     {
         if (Plies.Length is < 3 or > 9 || Plies.Length % 2 == 0) return "A CLT panel has 3, 5, 7 or 9 plies.";
-        if (Plies.Any(p => p < 10 || p > 60)) return "A ply is 10 to 60 mm thick.";
-        if (MaxLength < 2 || MaxLength > 30 || MaxWidth < 1 || MaxWidth > 4) return "A panel is at most 2 to 30 m long and 1 to 4 m wide.";
-        if (MinEdge < 0 || MinEdge > 1 || Gap < 0 || Gap > 0.05) return "An opening keeps 0 to 1000 mm from a panel's edge; its fitting gap is 0 to 50 mm.";
-        if (CornerRadius < 0.003 || CornerRadius > 0.1) return "The router's radius is 3 to 100 mm.";
-        if (LapWidth < 0.02 || LapWidth > 0.3) return "A half-lap overlaps 20 to 300 mm.";
-        if (SplineWidth < 0.04 || SplineWidth > 0.3 || SplineDepth < 0.009 || SplineDepth > Thickness / 2) return "A spline is 40 to 300 mm wide and 9 mm to half the panel deep.";
+        if (Plies.Any(p => !(p >= 10 && p <= 60))) return "A ply is 10 to 60 mm thick.";
+        if (!(MaxLength >= 2 && MaxLength <= 30) || !(MaxWidth >= 1 && MaxWidth <= 4)) return "A panel is at most 2 to 30 m long and 1 to 4 m wide.";
+        if (!(MinEdge >= 0 && MinEdge <= 1) || !(Gap >= 0 && Gap <= 0.05)) return "An opening keeps 0 to 1000 mm from a panel's edge; its fitting gap is 0 to 50 mm.";
+        if (!(CornerRadius >= 0.003 && CornerRadius <= 0.1)) return "The router's radius is 3 to 100 mm.";
+        if (!(LapWidth >= 0.02 && LapWidth <= 0.3)) return "A half-lap overlaps 20 to 300 mm.";
+        if (!(SplineWidth >= 0.04 && SplineWidth <= 0.3) || !(SplineDepth >= 0.009 && SplineDepth <= Thickness / 2)) return "A spline is 40 to 300 mm wide and 9 mm to half the panel deep.";
         return null;
     }
 

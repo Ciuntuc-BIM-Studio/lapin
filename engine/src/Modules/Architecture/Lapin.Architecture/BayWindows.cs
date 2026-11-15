@@ -215,12 +215,12 @@ public static class BayWindows
         if (!(s.Width > 0.6) || !(s.Height > 0.3)) return "A projecting window is 600 mm wide and 300 mm high at least.";
         if (!(s.Frame.Depth > 0) || !(s.Frame.Width > 0)) return "The frame needs a positive depth and width.";
         if (JoineryShapes.Shaped(s)) return "A projecting window is rectangular: its faces carry the shape.";
-        if (s.Columns.Length < 3 || s.Columns.Length > 12) return "A bay, bow or box window needs 3 to 12 columns: its faces (a bay's and box's first and last columns are its sides).";
+        if (!(s.Columns.Length >= 3 && s.Columns.Length <= 12)) return "A bay, bow or box window needs 3 to 12 columns: its faces (a bay's and box's first and last columns are its sides).";
         if (s.Rows.Length is < 1 or > 12 || !s.Columns.Concat(s.Rows).All(v => double.IsFinite(v) && v > 0)) return "Column widths and row heights must be positive.";
         if (!(b.Projection >= s.Frame.Depth + 0.05) || b.Projection > 3) return "The projection runs from the frame's depth (and 50 mm) to 3 m.";
-        if (b.Kind == "bay" && (b.Angle < 15 || b.Angle > 90)) return "A bay's sides stand at 15° to 90° to the wall.";
+        if (b.Kind == "bay" && (!(b.Angle >= 15 && b.Angle <= 90))) return "A bay's sides stand at 15° to 90° to the wall.";
         if (b.Kind == "bow" && Pc(s) > Half(s) - 0.01) return "A bow projects at most half its width (a half circle).";
-        if (b.Head is { Kind: "hipped" or "lean-to" } h && (h.Pitch < 5 || h.Pitch > 60)) return "The roof over a bay is pitched at 5° to 60°.";
+        if (b.Head is { Kind: "hipped" or "lean-to" } h && (!(h.Pitch >= 5 && h.Pitch <= 60))) return "The roof over a bay is pitched at 5° to 60°.";
         if (b.Head is { } hk && !HeadKinds.Contains(hk.Kind)) return $"The head over a bay is one of {string.Join(", ", HeadKinds)}.";
         if (b.Base is { } bk && !BaseKinds.Contains(bk.Kind)) return $"The base of a bay is one of {string.Join(", ", BaseKinds)}.";
         var faces = Faces(s, 0);

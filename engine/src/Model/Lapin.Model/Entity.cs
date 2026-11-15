@@ -67,8 +67,15 @@ public static class Json
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
     };
 
-    /// <summary>Any JSON number (however it was written) or numeric string, as a double.</summary>
+    /// <summary>Any JSON number (however it was written) or numeric string, as a double; null for anything that is
+    /// not a finite number ("NaN", "Infinity", 1e400), so a range check written either way refuses it.</summary>
     public static double? Number(JsonNode? n)
+    {
+        var d = Raw(n);
+        return d is { } x && double.IsFinite(x) ? x : null;
+    }
+
+    private static double? Raw(JsonNode? n)
     {
         if (n is not JsonValue v) return null;
         if (v.TryGetValue<double>(out var d)) return d;

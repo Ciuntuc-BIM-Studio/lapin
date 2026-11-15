@@ -506,7 +506,7 @@ public sealed class ScheduleEntity : ISheetContent, Lapin.Platform.Documents.IDo
             var category = ((string?)o["category"])?.Trim() is { Length: > 0 } c ? c : throw new CommandException("A chart needs the column its categories come from.");
             var value = ((string?)o["value"])?.Trim() is { Length: > 0 } v ? v : null;
             if (value == null && aggregate != "count") throw new CommandException("A chart needs the column it adds up, or counts the rows.");
-            if (Json.Number(o["top"]) is { } top && (top < 2 || top > 50)) throw new CommandException("A chart keeps between 2 and 50 categories.");
+            if (Json.Number(o["top"]) is { } top && (!(top >= 2 && top <= 50))) throw new CommandException("A chart keeps between 2 and 50 categories.");
             var id = (string?)o["id"] is { Length: > 0 } cid ? cid : ctx.NewId()[..8];
             var chart = new JsonObject { ["id"] = id, ["kind"] = kind, ["category"] = category, ["aggregate"] = aggregate };
             if (value != null) chart["value"] = value;
