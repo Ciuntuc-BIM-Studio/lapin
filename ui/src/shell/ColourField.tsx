@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type InputHTMLAttributes } from 'react';
+import { colourDraft } from './colourDraft';
 import { createPortal } from 'react-dom';
 import { ArrowLeft, ArrowRight, ChevronDown, Plus, Trash2, X } from 'lucide-react';
 import { addColour, addColours, coloursOfMaterials, createPalette, deletePalette, moveColour, movePalette, normalise, removeColour, renamePalette, rememberColour, setPalettes, splitAlpha, useColours, cleanColours } from '../app/colours';
@@ -35,22 +36,44 @@ type FieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'value' |
 export function ColourField({ value, onChange, onCommit, disabled, ...rest }: FieldProps) {
   const { rgb, alpha } = splitAlpha(value);
   const [open, setOpen] = useState(false);
+  const [, bump] = useState(0);
   const button = useRef<HTMLButtonElement>(null);
+  const input = useRef<HTMLInputElement>(null);
   const later = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // The picker fires on every move of the mouse: the colour is remembered when it has rested.
-  const apply = (c: string, now = false) => {
-    onChange(`${c}${alpha}`);
-    if (now) onCommit?.(`${c}${alpha}`);
+  // A field with no onCommit keeps the colour in itself while the picker is open and sends it once, when the pick is settled;
+  // one with onCommit (a table's cell) is told of every move and of the settled colour.
+  const live = useRef({ value, alpha, onChange, onCommit });
+  live.current = { value, alpha, onChange, onCommit };
+  const draft = useMemo(() => colourDraft(() => normalise(splitAlpha(live.current.value).rgb) ?? '#000000', (c) => live.current.onChange(`${c}${live.current.alpha}`)), []);
+  const remember = (c: string, now = false) => {
     if (later.current) clearTimeout(later.current);
     if (now) rememberColour(c); else later.current = setTimeout(() => rememberColour(c), 700);
   };
+  const settle = () => { const was = draft.pending(); draft.settle(); if (was) bump((n) => n + 1); };
+  const move = (c: string) => {
+    remember(c);
+    if (live.current.onCommit) live.current.onChange(`${c}${live.current.alpha}`);
+    else { draft.move(c); bump((n) => n + 1); }
+  };
+  const pick = (c: string) => { draft.move(c); settle(); remember(c, true); live.current.onCommit?.(`${c}${live.current.alpha}`); };
   useEffect(() => () => { if (later.current) clearTimeout(later.current); }, []);
+  // The picker's own `change` event is the end of a pick (React has no event for it).
+  useEffect(() => {
+    const el = input.current;
+    if (!el) return;
+    const done = () => { if (live.current.onCommit) live.current.onCommit(`${el.value}${live.current.alpha}`); else settle(); };
+    el.addEventListener('change', done);
+    return () => el.removeEventListener('change', done);
+  }, []);
+  // Leaving the field while a pick is open settles it too.
+  useEffect(() => () => draft.settle(), [draft]);
   return (
     <span className="colour-field">
-      <input {...rest} type="color" disabled={disabled} value={normalise(rgb) ?? '#000000'} onChange={(e) => apply(e.target.value)} onBlur={(e) => { rest.onBlur?.(e); onCommit?.(value); }} />
+      <input {...rest} ref={input} type="color" disabled={disabled} value={draft.shown(normalise(rgb) ?? '#000000')} onChange={(e) => move(e.target.value)}
+        onBlur={(e) => { rest.onBlur?.(e); if (onCommit) onCommit(value); else settle(); }} />
       <button type="button" className="colour-more" ref={button} disabled={disabled} aria-haspopup="dialog" aria-expanded={open}
         title="Swatches: recent colours and palettes" onClick={() => setOpen((o) => !o)}><ChevronDown size={10} /></button>
-      {open && <ColourPopover anchor={button} current={normalise(rgb) ?? '#000000'} onPick={(c) => apply(c, true)} onClose={() => setOpen(false)} />}
+      {open && <ColourPopover anchor={button} current={normalise(rgb) ?? '#000000'} onPick={pick} onClose={() => setOpen(false)} />}
     </span>
   );
 }
