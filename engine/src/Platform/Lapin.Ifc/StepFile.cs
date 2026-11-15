@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text;
+using Lapin.Model;
 
 namespace Lapin.Ifc;
 
@@ -41,6 +42,12 @@ public sealed class StepFile
     /// a stack overflow, which would end the engine.
     /// </summary>
     public const int MaxDepth = 64;
+
+    /// <summary>The type a complex instance (several partial records, <c>#5=(IFCA(…)IFCB(…));</c>) is read as: none Lapin knows.</summary>
+    public const string Complex = "";
+
+    /// <summary>How many complex instances the file holds: each read as an entity of no type, its records skipped.</summary>
+    public int ComplexCount => _index.ByType.TryGetValue(Complex, out var l) ? l.Count : 0;
 
     public string Schema { get; private set; } = "";
 
@@ -364,11 +371,29 @@ public sealed class StepFile
                     Skip(); Expect('='); Skip();
                     var parsedType = Keyword();
                     Skip();
+                    // A complex instance (#5=(IFCA(…)IFCB(…));, an entity of several partial records): read past, as an entity
+                    // of no type (Complex) with no attributes, so what refers to it finds nothing it knows and the rest reads on.
+                    if (parsedType.Length == 0 && At() == '(') { Partials(); Skip(); Expect(';'); return new StepEntity(id, Complex, []); }
                     if (Value(0) is not List<object?> args) throw new FormatException("its attributes are not a list.");
                     Skip(); Expect(';');
                     return new StepEntity(id, type ?? parsedType, args);
                 }
                 catch (FormatException ex) { throw new FormatException($"STEP #{id}: {ex.Message}", ex); }
+            }
+        }
+
+        /// <summary>A complex instance's partial records, each a keyword and its attributes: checked and passed over.</summary>
+        void Partials()
+        {
+            Expect('(');
+            while (true)
+            {
+                Skip();
+                if (At() == ')') { _i++; return; }
+                if (!Letter(At())) throw new FormatException($"a partial record expected at byte {_i}.");
+                Keyword();
+                Skip();
+                if (Value(1) is not List<object?>) throw new FormatException("a partial record's attributes are not a list.");
             }
         }
 
@@ -448,6 +473,9 @@ public sealed class StepFile
                         var type = Keyword();
                         Skip();
                         Expect('(');
+                        Skip();
+                        // A typed value with nothing in it (IFCLABEL()): no value, as $ would be.
+                        if (At() == ')') { _i++; return null; }
                         var v = Value(depth + 1);
                         Skip();
                         Expect(')');
@@ -491,44 +519,6 @@ public sealed class StepFile
         }
     }
 
-    /// <summary>A STEP string's escapes: \X2\…\X0\ (UTF-16), \X4\…\X0\, \X\hh (Latin-1), \S\c (high half), \\ (a backslash).</summary>
-    public static string Decode(string s)
-    {
-        if (!s.Contains('\\')) return s;
-        var o = new StringBuilder();
-        for (var i = 0; i < s.Length; i++)
-        {
-            if (s[i] != '\\') { o.Append(s[i]); continue; }
-            if (s.AsSpan(i).StartsWith("\\X2\\") || s.AsSpan(i).StartsWith("\\X4\\"))
-            {
-                // \X2\ holds UTF-16 units (a character beyond the BMP as its two surrogates), \X4\ code points of 8 digits.
-                var width = s[i + 2] == '2' ? 4 : 8;
-                var end = s.IndexOf("\\X0\\", i + 4, StringComparison.Ordinal);
-                if (end < 0 || (end - i - 4) % width != 0) { o.Append(s[i]); continue; }
-                var run = new StringBuilder();
-                var ok = true;
-                for (var k = i + 4; k < end; k += width)
-                {
-                    if (!int.TryParse(s.AsSpan(k, width), NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out var code)) { ok = false; break; }
-                    if (width == 4) run.Append((char)code);
-                    else if (Rune.IsValid(code)) run.Append(char.ConvertFromUtf32(code));
-                    else run.Append('�');
-                }
-                if (!ok) { o.Append(s[i]); continue; } // malformed: kept as written
-                o.Append(run);
-                i = end + 3;
-            }
-            else if (s.AsSpan(i).StartsWith("\\X\\") && i + 5 <= s.Length
-                && int.TryParse(s.AsSpan(i + 3, 2), NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out var latin))
-            {
-                o.Append((char)latin);
-                i += 4;
-            }
-            else if (s.AsSpan(i).StartsWith("\\S\\") && i + 3 < s.Length) { o.Append((char)(s[i + 3] + 128)); i += 3; }
-            else if (i + 1 < s.Length && s[i + 1] == '\\') { o.Append('\\'); i++; }
-            else if (s.AsSpan(i).StartsWith("\\P") && i + 3 < s.Length && s[i + 3] == '\\') i += 3; // code page switch
-            else o.Append('\\');
-        }
-        return o.ToString();
-    }
+    /// <summary>A STEP string's escapes decoded (<see cref="StepText.Decode"/>).</summary>
+    public static string Decode(string s) => StepText.Decode(s);
 }

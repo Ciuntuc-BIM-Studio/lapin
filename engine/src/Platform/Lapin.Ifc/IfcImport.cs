@@ -250,6 +250,7 @@ public static partial class IfcImport
             Classified(edit);
             var left = edit.Model.Entities.Count(e => s.Catalog.Geometry(e.Class) != null && !seen.Contains(e.Id) && e.Class is not (IfcClass.OpeningElement or IfcClass.Annotation or IfcClass.Grid));
             if (left > 0 && elements + updated > 0) notes.Add($"{left} element(s) of the project are not in the file; they stay as they are.");
+            if (f.ComplexCount is var complex && complex > 0) notes.Add($"{complex} complex STEP instance(s) (several partial records in one) skipped: Lapin does not read them.");
         }
 
         /// <summary>
