@@ -7037,6 +7037,46 @@ export const scenes = [
         t.expect(again && (await t.nodes()).find((n) => n.id === sheet.id)?.props?.viewports?.some((v) => v.viewId === again.id), 'the section is placed again at 1:50 on its sheet');
         await t.fit();
         await t.shot('sheet-place-again', { clip: { x: 250, y: 120, width: 1190, height: 730 } }); }
+      // Delete on a sheet (forum topics 91 and 106): a symbol placed on the paper is picked, moved and deleted; a view clicked and
+      // Delete takes the view off the sheet and never the sheet itself.
+      { const symbolId = (await t.call('doc.query', { name: 'symbols.list', args: {} })).items.find((i) => i.category === 'north')?.id
+          ?? (await t.call('doc.query', { name: 'symbols.list', args: {} })).items[0].id;
+        const placedSym = await t.cmd('drafting.placeSymbol', { sheetId: sheet.id, symbolId, at: [350, 40] });
+        await t.wait(1200);
+        const symAt = async () => (await t.nodes()).find((n) => n.id === placedSym.id)?.props?.at;
+        const svg = await t.page.locator('[data-testid=sheet]').boundingBox();
+        const k = (await t.page.locator('[data-testid=sheet] .paper-sheet').boundingBox()).width / 420;
+        const paper = await t.page.locator('[data-testid=sheet] .paper-sheet').boundingBox();
+        const px = (mm) => ({ x: paper.x + mm[0] * k, y: paper.y + mm[1] * k });
+        const at0 = await symAt();
+        const from = px(at0);
+        await t.page.mouse.move(from.x, from.y);
+        await t.wait(300);
+        t.expect(await t.page.locator('[data-testid=sheet-symbol-box]').count() === 1, 'a symbol on the sheet lights under the pointer');
+        await t.page.mouse.down();
+        await t.page.mouse.move(from.x - 60, from.y + 40, { steps: 6 });
+        await t.page.mouse.up();
+        await t.wait(900);
+        const at1 = await symAt();
+        t.expect(at1 && Math.abs(at1[0] - at0[0]) > 5 && Math.abs(at1[1] - at0[1]) > 3, 'dragging a symbol on the sheet moves it');
+        t.expect(await t.page.locator('[data-testid=sheet-symbol-box].selected').count() === 1, 'the symbol is selected');
+        await t.shot('sheet-symbol-selected', { clip: { x: svg.x + svg.width * 0.55, y: svg.y, width: svg.width * 0.45, height: 260 } });
+        await t.page.keyboard.press('Delete');
+        await t.wait(900);
+        t.expect(!(await t.nodes()).some((n) => n.id === placedSym.id), 'Delete deletes the selected symbol');
+        // A view clicked on the sheet, Delete: the view comes off the sheet, the sheet stays.
+        const before = (await t.nodes()).find((n) => n.id === sheet.id).props.viewports.length;
+        const vb = await t.page.locator('[data-testid=sheet] .sheet-viewport > rect:first-child').first().boundingBox();
+        await t.page.mouse.click(vb.x + vb.width / 2, vb.y + vb.height / 2);
+        await t.wait(300);
+        await t.page.keyboard.press('Delete');
+        await t.wait(1000);
+        const sheetNow = (await t.nodes()).find((n) => n.id === sheet.id);
+        t.expect(sheetNow && sheetNow.props.viewports.length === before - 1, 'Delete on a view takes the view off the sheet, not the sheet');
+        await t.page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z');
+        await t.wait(900);
+        t.expect((await t.nodes()).find((n) => n.id === sheet.id)?.props?.viewports?.length === before, 'one undo puts the view back');
+      }
       await t.page.evaluate(() => { window.print = () => { window.__printed = true; }; });
       await t.page.locator('[data-testid=sheet-print]').click();
       await t.wait(600);
@@ -11201,6 +11241,46 @@ export const scenes = [
       await t.shot('preferences-colours', { of: '.prefs-dialog', pad: 0 });
       await t.page.evaluate(async () => { (await import('/src/app/highlight.ts')).setHighlight({ preselectColour: null, selectColour: null }); });
       await t.ui({ dialog: null });
+    },
+  },
+  {
+    // Forum topic 105: Tab over overlapping elements lights the next one under the pointer, a click takes it.
+    id: 'tab-cycle',
+    touches: ['core', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      await t.ui({ view: 'plan' });
+      await t.fit();
+      // The south wall lies over the floor's edge: two elements under the pointer.
+      const [px, py] = await t.planPoint(5.5, 0);
+      await t.page.mouse.move(px - 20, py + 20, { steps: 4 });
+      await t.page.mouse.move(px, py, { steps: 4 });
+      await t.wait(400);
+      const cycle = () => t.page.evaluate(async () => { const c = (await import('/src/viewport/pickCycle.ts')).usePickCycle.getState().cycle; return c ? { index: c.index, n: c.ids.length, id: c.ids[c.index] } : null; });
+      await t.page.keyboard.press('Tab');
+      await t.wait(400);
+      const first = await cycle();
+      t.expect(first && first.n >= 2 && first.index === 1, 'Tab over two elements lights the second');
+      t.expect(/^\d+ of \d+: /.test(await t.page.locator('.notice-status').textContent()), 'the status line says which of how many');
+      await t.shot('tab-cycle');
+      await t.page.keyboard.press('Shift+Tab');
+      await t.wait(300);
+      t.expect((await cycle())?.index === 0, 'Shift+Tab goes back');
+      await t.page.keyboard.press('Tab');
+      await t.wait(300);
+      await t.page.mouse.click(px, py);
+      await t.wait(500);
+      t.expect(await t.page.evaluate(async (id) => (await import('/src/app/store.ts')).useUi.getState().selected.includes(id), first.id), 'a click selects the lit element');
+      // Away from the overlap Tab still folds the panels.
+      await t.page.mouse.move(px, py + 200, { steps: 4 });
+      await t.wait(300);
+      const panels = () => t.page.evaluate(async () => { const u = (await import('/src/app/panels.ts')).usePanels.getState(); return `${u.browserOpen}|${u.propsOpen}`; });
+      const before = await panels();
+      await t.page.keyboard.press('Tab');
+      await t.wait(400);
+      t.expect(await panels() !== before, 'Tab with nothing to cycle keeps its meaning: it folds the panels');
+      await t.page.keyboard.press('Tab');
     },
   },
 ];

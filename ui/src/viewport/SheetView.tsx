@@ -32,7 +32,9 @@ import { openContextMenu } from '../shell/ContextMenu';
 import { useStandards } from '../engine/unitsStore';
 import { otherScales, partOf, placeAgainLabel } from './placeAtScale';
 import { openPlaced } from './sheetOpen';
-import { listSymbols, placeSymbol, rememberSymbol, type SymList } from '../modules/core/symbols/symbols';
+import { listSymbols, placeSymbol, previewSymbol, rememberSymbol, type SymList } from '../modules/core/symbols/symbols';
+import { boxOnPaper, pickSymbol, previewArgs, previewKey, symbolsOn, type SheetSymbol } from './sheetSymbols';
+import { deleteTakesViewports, removeSteps, setSheetDelete } from './sheetDelete';
 import { byCategory } from '../modules/core/symbols/symbolModel';
 import { currentNavStyle } from '../app/navStyleStore';
 import { modsOf, pansIn2d, wheelFactor } from '../app/navStyle';
@@ -52,7 +54,9 @@ type Drag =
   /** Shift-drag inside a view: what it shows slides in its box. */
   | { kind: 'slide'; x: number; y: number; vp: Vp }
   /** The part of a view to place again at another scale, dragged on it (paper mm from where it started). */
-  | { kind: 'part'; x: number; y: number; vp: Vp; from: { x: number; y: number } };
+  | { kind: 'part'; x: number; y: number; vp: Vp; from: { x: number; y: number } }
+  /** A placed symbol dragged: it moves as one undo step when let go (forum topic 106). */
+  | { kind: 'sym'; x: number; y: number; sym: SheetSymbol };
 
 /** The crop handles: the corners and the edges' middles. */
 const CROP: [-1 | 0 | 1, -1 | 0 | 1][] = [[-1, -1], [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0]];
@@ -78,6 +82,14 @@ export function SheetView() {
   const [cropped, setCropped] = useState<{ id: string; x0: number; y0: number; x1: number; y1: number } | null>(null);
   const [slid, setSlid] = useState<{ id: string; dx: number; dy: number } | null>(null);
   const [active, setActive] = useState<string | null>(null);
+  // Views added to the active one with Ctrl or Cmd: Delete takes them all off the sheet, in one undo step (forum topic 91).
+  const [also, setAlso] = useState<string[]>([]);
+  // The symbols placed on this sheet: their boxes from their previews, picked, moved and deleted like the views (forum topic 106).
+  const previews = useRef(new Map<string, [number, number, number, number]>());
+  const [previewTick, setPreviewTick] = useState(0);
+  const [hoverSym, setHoverSym] = useState<string | null>(null);
+  const [symMoved, setSymMoved] = useState<{ id: string; dx: number; dy: number } | null>(null);
+  const selected = useUi((x) => x.selected);
   // A view to place again at another scale (decision 547): the next drag on the paper is the part it shows; a click, its crop as it is.
   const [placing, setPlacing] = useState<{ vp: Vp; scale: number } | null>(null);
   const [part, setPart] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
@@ -100,7 +112,7 @@ export function SheetView() {
     const t = setTimeout(() => { void query<SheetDrawing>('sheet.drawing', { id }).then((r) => { if (live && r) setD(r); }); }, 100);
     return () => { live = false; clearTimeout(t); };
   }, [id, nodes]);
-  useEffect(() => { setZ(recall<Zoom>(id ?? 'sheet:none') ?? null); setD(null); setActive(null); }, [id]);
+  useEffect(() => { setZ(recall<Zoom>(id ?? 'sheet:none') ?? null); setD(null); setActive(null); setAlso([]); }, [id]);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -121,6 +133,35 @@ export function SheetView() {
     if (!sheet) return;
     void execute('sheet.updateViewport', { id: sheet.id, viewportId: vp.id, x: (vp.x0 + vp.x1) / 2 + dx, y: (vp.y0 + vp.y1) / 2 + dy }).then(() => notify(null));
   }, [sheet]);
+
+  const placedSymbols = id ? symbolsOn(nodes, id) : [];
+  const symbolKeys = placedSymbols.map(previewKey).join('|');
+  useEffect(() => {
+    for (const n of placedSymbols) {
+      const k = previewKey(n);
+      if (previews.current.has(k)) continue;
+      previews.current.set(k, [0, 0, 0, 0]);
+      void previewSymbol({ id: String(n.props.symbolId) }, previewArgs(n)).then((r) => { if (r) { previews.current.set(k, r.box); setPreviewTick((t) => t + 1); } });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [symbolKeys]);
+  void previewTick;
+  const symbolBoxes: SheetSymbol[] = placedSymbols.flatMap((n) => { const b = previews.current.get(previewKey(n)); return b ? [boxOnPaper(n, b)] : []; });
+
+  // Delete with views active takes those off the sheet (one undo step), never the sheet itself: it is deleted from the project browser (forum topic 91).
+  useEffect(() => {
+    if (!paneActive || !sheet) return;
+    setSheetDelete(() => {
+      const ids = [...(active ? [active] : []), ...also];
+      if (!deleteTakesViewports(ids, useUi.getState().selected, sheet.id)) return false;
+      const steps = removeSteps(sheet.id, ids);
+      void (steps.length === 1 ? execute(steps[0].command, steps[0].args) : execute('edit.batch', { steps })).then(() => notify(null));
+      setActive(null);
+      setAlso([]);
+      return true;
+    });
+    return () => setSheetDelete(null);
+  }, [paneActive, sheet, active, also]);
 
   // The arrows nudge the active view: 1 mm, 10 mm with Shift; only in the active pane, and never under a dialog or a menu.
   useEffect(() => {
@@ -276,7 +317,7 @@ export function SheetView() {
               setActive(vp.id);
               setPlacing({ vp, scale });
               ref.current?.focus();
-              notify('Drag a rectangle on the view: the part to place beside it at the new scale (a click takes the view as cropped; Esc cancels).');
+              notify('Drag a rectangle round the part to show, or click to keep the whole view (Esc cancels).');
             },
           })));
         }}
@@ -290,20 +331,36 @@ export function SheetView() {
         onPointerDown={(e) => {
           if (middleTwice.current(e)) { fit(); return; }
           const p = paperAt(e);
-          if (placingSymbol && e.button === 0) { void placeSymbol({ sheetId: sheet.id, symbolId: placingSymbol.id, at: [Math.round(p.x * 100) / 100, Math.round(p.y * 100) / 100] }).then((r) => { if (r?.id) select(r.id); }); return; }
+          if (placingSymbol && e.button === 0) { void placeSymbol({ sheetId: sheet.id, symbolId: placingSymbol.id, at: [Math.round(p.x * 100) / 100, Math.round(p.y * 100) / 100] }).then((r) => { if (r?.id) { setActive(null); setAlso([]); select(r.id); } }); return; }
           if (placing && e.button === 0) { drag.current = { kind: 'part', x: e.clientX, y: e.clientY, vp: placing.vp, from: p }; (e.target as Element).setPointerCapture?.(e.pointerId); return; }
+          // A placed symbol lies over the views: a click selects it, a drag moves it (one undo step), Delete deletes it (forum topic 106).
+          const sym = e.button === 0 ? pickSymbol(symbolBoxes, p) : null;
+          if (sym) {
+            drag.current = { kind: 'sym', x: e.clientX, y: e.clientY, sym };
+            setActive(null);
+            setAlso([]);
+            select(sym.id);
+            (e.target as Element).setPointerCapture?.(e.pointerId);
+            return;
+          }
           const vp = pick(p);
           // A pinned view is picked, not moved: the drag pans the paper.
           if (vp && e.button === 0 && e.shiftKey && !vp.pinned && !vp.content) { drag.current = { kind: 'slide', x: e.clientX, y: e.clientY, vp }; setActive(vp.id); }
-          else if (vp && e.button === 0 && !vp.pinned) { drag.current = { kind: 'vp', x: e.clientX, y: e.clientY, vp }; setActive(vp.id); select(sheet.id); }
+          else if (vp && e.button === 0 && (e.ctrlKey || e.metaKey) && active && active !== vp.id) { setAlso((a) => (a.includes(vp.id) ? a.filter((x) => x !== vp.id) : [...a, vp.id])); select(sheet.id); }
+          else if (vp && e.button === 0 && !vp.pinned) { drag.current = { kind: 'vp', x: e.clientX, y: e.clientY, vp }; setActive(vp.id); setAlso([]); select(sheet.id); }
           // The paper pans with the left button (as it always did) and with the style's pan buttons; its other buttons do nothing.
-          else if (e.button === 0 || pansIn2d(currentNavStyle(), e.button, modsOf(e))) { drag.current = { kind: 'pan', x: e.clientX, y: e.clientY, start: v }; if (e.button === 0) setActive(vp?.id ?? null); }
+          else if (e.button === 0 || pansIn2d(currentNavStyle(), e.button, modsOf(e))) { drag.current = { kind: 'pan', x: e.clientX, y: e.clientY, start: v }; if (e.button === 0) { setActive(vp?.id ?? null); setAlso([]); if (!vp && selected.some((x) => x !== sheet.id)) select(sheet.id); } }
           (e.target as Element).setPointerCapture?.(e.pointerId);
         }}
         onPointerMove={(e) => {
           const g = drag.current;
-          if (!g) return;
-          if (g.kind === 'pan') setZ({ ...g.start, ox: g.start.ox + e.clientX - g.x, oy: g.start.oy + e.clientY - g.y });
+          if (!g) {
+            const h = pickSymbol(symbolBoxes, paperAt(e))?.id ?? null;
+            setHoverSym((cur) => (cur === h ? cur : h));
+            return;
+          }
+          if (g.kind === 'sym') setSymMoved({ id: g.sym.id, dx: (e.clientX - g.x) / v.k, dy: (e.clientY - g.y) / v.k });
+          else if (g.kind === 'pan') setZ({ ...g.start, ox: g.start.ox + e.clientX - g.x, oy: g.start.oy + e.clientY - g.y });
           else if (g.kind === 'vp') { const s = snapMove(g.vp, (e.clientX - g.x) / v.k, (e.clientY - g.y) / v.k); setMoved({ id: g.vp.id, ...s }); }
           else if (g.kind === 'crop') {
             const dx = (e.clientX - g.x) / v.k, dy = (e.clientY - g.y) / v.k;
@@ -321,6 +378,9 @@ export function SheetView() {
           const g = drag.current;
           drag.current = null;
           if (g?.kind === 'vp' && moved && Math.hypot(moved.dx, moved.dy) > 0.5) moveTo(g.vp, moved.dx, moved.dy);
+          if (g?.kind === 'sym' && symMoved && Math.hypot(symMoved.dx, symMoved.dy) > 0.3) {
+            void execute('drafting.setSymbol', { ids: [g.sym.id], at: [Math.round((g.sym.at[0] + symMoved.dx) * 100) / 100, Math.round((g.sym.at[1] + symMoved.dy) * 100) / 100] });
+          }
           if (g?.kind === 'width' && widened) void execute('sheet.updateViewport', { id: sheet.id, viewportId: g.vp.id, width: Math.round(widened.w) });
           if (g?.kind === 'crop' && cropped) void execute('sheet.cropViewport', { id: sheet.id, viewportId: g.vp.id, x0: cropped.x0, y0: cropped.y0, x1: cropped.x1, y1: cropped.y1 }).then(() => notify(null));
           if (g?.kind === 'slide' && slid && Math.hypot(slid.dx, slid.dy) > 0.5) void execute('sheet.panViewport', { id: sheet.id, viewportId: g.vp.id, dx: slid.dx, dy: slid.dy });
@@ -332,11 +392,13 @@ export function SheetView() {
             setPlacing(null);
             setPart(null);
           }
+          setSymMoved(null);
           setMoved(null);
           setWidened(null);
           setCropped(null);
           setSlid(null);
         }}
+        onPointerLeave={() => setHoverSym(null)}
         onDoubleClick={(e) => {
           const vp = pick(paperAt(e));
           if (vp) open(vp);
@@ -375,7 +437,7 @@ export function SheetView() {
               const h = (box.y1 - box.y0) * v.k;
               const bounds = b.content ? [] : boundariesOf(b.viewId);
               return (
-                <g key={b.id} className={`sheet-viewport${b.warnings.length ? ' warn' : ''}${active === b.id ? ' active' : ''}${b.pinned ? ' pinned' : ''}`}>
+                <g key={b.id} className={`sheet-viewport${b.warnings.length ? ' warn' : ''}${active === b.id || also.includes(b.id) ? ' active' : ''}${b.pinned ? ' pinned' : ''}`}>
                   <rect x={x + dx} y={a.y + dy} width={w} height={h} />
                   {/* The crop handles: the corners and the edges' middles; what the view shows stays where it is on the paper. */}
                   {!b.content && !b.pinned && active === b.id && !moved && CROP.map(([ex, ey]) => (
@@ -407,6 +469,14 @@ export function SheetView() {
                   </foreignObject>
                 </g>
               );
+            })}
+            {symbolBoxes.map((b) => {
+              const lit = selected.includes(b.id), over = hoverSym === b.id;
+              if (!lit && !over && symMoved?.id !== b.id) return null;
+              const o = symMoved?.id === b.id ? symMoved : { dx: 0, dy: 0 };
+              const a = toScreen({ x: b.box[0] + o.dx, y: b.box[1] + o.dy });
+              return <rect key={`sym:${b.id}`} className={`sheet-symbol${lit ? ' selected' : ''}`} data-testid="sheet-symbol-box" x={a.x - 2} y={a.y - 2} width={(b.box[2] - b.box[0]) * v.k + 4} height={(b.box[3] - b.box[1]) * v.k + 4}
+                fill="none" stroke="var(--accent, #2b7de9)" strokeWidth={lit ? 1.5 : 1} strokeDasharray={lit ? undefined : '4 3'} pointerEvents="none" />;
             })}
             {part && (() => { const a = toScreen({ x: part.x0, y: part.y0 }); return <rect className="sheet-part" data-testid="sheet-place-part" x={a.x} y={a.y} width={(part.x1 - part.x0) * v.k} height={(part.y1 - part.y0) * v.k} fill="none" stroke="var(--accent, #2b7de9)" strokeDasharray="6 3" />; })()}
             {moved?.guides.map((g, i) => { const p = toScreen({ x: g[0], y: g[1] }), q = toScreen({ x: g[2], y: g[3] }); return <line key={i} className="sheet-guide" x1={p.x} y1={p.y} x2={q.x} y2={q.y} />; })}

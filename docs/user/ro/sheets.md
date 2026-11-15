@@ -24,8 +24,13 @@ O vedere de pe planșă arată exact ce alegi, fără s-o tragi pe ghicite:
 - **Desenează-i limita în vedere.** **Annotate → View boundary** (<kbd>VB</kbd>): desenezi un dreptunghi pe un plan, o secțiune sau o fațadă și îi dai un nume, unic în proiect. În **Place view…** vederea apare apoi cu fiecare limită a ei („Ground floor plan › Aripa est”), iar o vedere pusă așa arată exact dreptunghiul acela și îl urmează când îl muți sau îl redimensionezi în vedere. Aceeași vedere poate sta pe mai multe planșe, câte o limită pe fiecare. O vedere pusă trece de la o limită la alta, sau la decupare liberă, din lista de pe chenarul ei. Limitele se văd doar pe ecran, niciodată pe hârtie.
 - **Fixeaz-o.** Pioneza de pe chenarul vederii o ține pe loc: se selectează, dar nu se mută, nu se împinge și nu se decupează din greșeală.
 - **Pune-o din nou la altă scară.** Clic dreapta pe o vedere de pe planșă și alegi **Plasează din nou la 1:25…** (sunt oferite celelalte scări standard ale proiectului), apoi tragi un dreptunghi pe vedere în jurul părții de arătat, sau doar dai clic ca să iei vederea așa cum e decupată. Lapin duplică vederea cu adnotările ei, dă copiei scara aceea, o decupează la parte și o pune pe aceeași planșă lângă original, la dreapta dacă e loc (altfel la stânga, dedesubt sau deasupra), într-un singur pas de anulare: un plan la 1:100 și colțul lui la 1:25 pe aceeași planșă. Copia poartă numele vederii și scara („Parter 1:25”). În browserul proiectului, clic dreapta pe o vedere care e pe o planșă face la fel, cu vederea așa cum e decupată; planșa ei se deschide.
+- **Scoate o vedere de pe planșă.** Dă clic pe o vedere și apasă <kbd>Delete</kbd> (sau <kbd>Backspace</kbd>): vederea iese de pe planșă, doar ea; modelul, vederea însăși și planșa rămân. Cu <kbd>Ctrl</kbd>-clic (<kbd>⌘</kbd>-clic pe Mac) pe alte vederi le scoți pe mai multe odată, într-un singur pas de anulare. × de pe caseta unei vederi face același lucru pentru ea. Planșa se șterge din browserul de proiect: butonul ei cu coș, lângă numele planșei.
 
 ![O secțiune pusă din nou la 1:50 lângă ea pe planșă](shots/sheet-place-again.webp)
+
+Un simbol pus cu **Așază simbol…** (vezi Desenare) se alege ca o vedere: se luminează sub cursor, un clic îl selectează și îi arată proprietățile, tragerea îl mută (un singur pas de anulare), iar <kbd>Delete</kbd> îl șterge.
+
+![O săgeată a nordului pusă pe planșă, selectată, cu chenarul ei](shots/sheet-symbol-selected.webp)
 
 Chenarul planșei și cartușul sunt ale hârtiei. Nu se selectează și nu se mută, iar un clic alege cea mai mică vedere de sub cursor, așa că o vedere pusă peste cartuș se poate selecta oricând.
 

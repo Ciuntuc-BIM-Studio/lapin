@@ -22,7 +22,7 @@ import { DrawingLayer } from './DrawingLayer';
 import { drawsOnDark, useDrawing } from './drawing';
 import { editDimension } from './dimensionEdit';
 import { openPickedView } from './openView';
-import { pickDrawing } from './drawingPick';
+import { pickDrawing, pickDrawingAll } from './drawingPick';
 import { openContextMenu } from '../shell/ContextMenu';
 import { useHighlight } from '../app/highlight';
 import { groupItems } from '../shell/selectionMenu';
@@ -42,7 +42,8 @@ import { feedPoint, finishStep, frameArg, useCad } from './cad/session';
 import type { Shape } from './cad/shapes';
 import { carryBegin, carryBy, carryEnd, carrying, useTrace } from './moveTrace';
 import { clearLiveRise, inModel, setLiveRise, viewFrameAt } from './viewFrame';
-import { markIds, markSelected } from './planPick';
+import { markIds, markOwner, markSelected } from './planPick';
+import { cycledId, clearCycle, setCycleSource, usePickCycle, withFirst, type CycleSource } from './pickCycle';
 import { boxOutcome, dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
 import { useGripEditor } from './GripLayer';
 import { DrawingOverlays } from './DrawingOverlays';
@@ -144,7 +145,14 @@ export function DrawingView() {
   const toWorld = useCallback((x: number, y: number): Vec2 => ({ x: (x - size.w / 2) / v.scale + v.cx, y: (size.h / 2 - y) / v.scale + v.cy }), [v.cx, v.cy, v.scale, size]);
 
   /** The annotation, drafted shape or element under a point: by a line, else inside its cut (decision 223). */
-  const pickAny = useCallback((p: Vec2): string | null => pickDrawing(p, 6 / v.scale, drawing?.marks, nodes), [drawing, nodes, v.scale]);
+  // Tab over several elements lights the next one, and a click takes it (forum topic 105: pickCycle.ts).
+  const cycleKey = useRef(`drawing-cycle:${Math.random().toString(36).slice(2)}`).current;
+  const rawHover = useRef<Vec2 | null>(null);
+  const cycleSource = useRef<CycleSource | null>(null);
+  const pickAny = useCallback((p: Vec2): string | null => {
+    const lit = cycledId(usePickCycle.getState().cycle, cycleKey, p, 3 / v.scale);
+    return lit && markOwner(lit, nodes) ? lit : pickDrawing(p, 6 / v.scale, drawing?.marks, nodes);
+  }, [drawing, nodes, v.scale, cycleKey]);
 
   /** The annotations and drafted shapes a box takes, added to the selection with shift (or while a command asks for a selection). */
   const selectBox = (b: SelectDrag, e: React.PointerEvent): 'click' | 'done' => {
@@ -290,6 +298,21 @@ export function DrawingView() {
     setLiveRise(Math.abs(dz) > 1e-9 ? ids : [], dz);
   }, [drawing]);
 
+  cycleSource.current = {
+    key: cycleKey,
+    at: () => rawHover.current,
+    ids: (p) => (tool?.gesture || cadStep || drag.current || editor.dragging ? [] : withFirst(pickDrawing(p, 6 / v.scale, drawing?.marks, nodes), pickDrawingAll(p, 6 / v.scale, drawing?.marks, nodes))),
+    tol: () => 3 / v.scale,
+  };
+  const cycle = usePickCycle((c) => c.cycle);
+  useEffect(() => {
+    if (!cycle || cycle.key !== cycleKey) return;
+    const lit = pickAny(cycle.at);
+    const target = lit ? pickTarget(lit) ?? lit : null;
+    setHoverId((cur) => (cur === target ? cur : target));
+  }, [cycle, cycleKey, pickAny]);
+  useEffect(() => () => setCycleSource(null, cycleKey), [cycleKey]);
+
   const at = (e: React.PointerEvent): { raw: Vec2; aimed: Aimed } => {
     const r = ref.current!.getBoundingClientRect();
     const raw = toWorld(e.clientX - r.left, e.clientY - r.top);
@@ -391,6 +414,9 @@ export function DrawingView() {
             if (d.moved && d.pan) { setView({ ...d.view, cx: d.view.cx - (e.clientX - d.x) / d.view.scale, cy: d.view.cy + (e.clientY - d.y) / d.view.scale }); return; }
           }
           const here = at(e);
+          rawHover.current = here.raw;
+          setCycleSource(cycleSource.current);
+          { const c = usePickCycle.getState().cycle; if (c && !cycledId(c, cycleKey, here.raw, 3 / v.scale)) clearCycle(); }
           setHover(here.aimed);
           {
             const step = useCad.getState().step;
@@ -442,7 +468,7 @@ export function DrawingView() {
           if (gestureClick(where, raw, taken?.typed)) return;
           pickByMods(pickAny(raw), modsOf(e), currentNavStyle());
         }}
-        onPointerLeave={() => { setHover(null); setHoverId(null); trackTagHover(null, { pickElement: () => null, pickTag: () => null, anyTags, busy: true }); editor.onPointerLeave(); }}
+        onPointerLeave={() => { setCycleSource(null, cycleKey); setHover(null); setHoverId(null); trackTagHover(null, { pickElement: () => null, pickTag: () => null, anyTags, busy: true }); editor.onPointerLeave(); }}
         onContextMenu={(e) => e.preventDefault()}
         onDoubleClick={(e) => {
           if (useCad.getState().step) return;

@@ -170,3 +170,55 @@ export function markIds(takes: RegionTest, nodes: Map<string, NodeDto>, marks: M
   }
   return ids;
 }
+
+/**
+ * Everything a click at `p` could take, best first (Tab cycles through them: forum topic 105): annotations, then solid hatches,
+ * then the elements by their lines' kind (a later line before an earlier one on a tie, as the click takes it), then pattern
+ * hatches, then the drawing's pick lines of what draws nothing of its own. An element once; a grid's axis as `grid#tag`.
+ */
+export function pickAllAt(p: Vec2, tol: number, items: readonly RenderItem[], nodes: Map<string, NodeDto>, marks: Mark[] | undefined): string[] {
+  const found = new Map<string, { rank: number; seq: number }>();
+  let seq = 0;
+  const add = (id: string, rank: number) => {
+    const cur = found.get(id);
+    seq++;
+    if (!cur || rank < cur.rank || (rank === cur.rank && seq > cur.seq)) found.set(id, { rank, seq });
+  };
+  let best = Infinity;
+  for (const r of items) {
+    const e = nodes.get(r.nodeId);
+    if (!e) continue;
+    for (const it of r.plan) {
+      if (it.kind === 'label' || it.kind === 'grid' || it.kind === 'reach') continue;
+      const poly = pairs(it.points);
+      let hit = it.closed && pointInPolygon(p, poly);
+      const n = it.closed ? poly.length : poly.length - 1;
+      for (let i = 0; i < n && !hit; i++) if (distToSegment(p, poly[i], poly[(i + 1) % poly.length]) < tol) hit = true;
+      if (!hit) continue;
+      const prio = PICK_PRIORITY[it.kind] ?? 9;
+      best = Math.min(best, prio);
+      add(e.id, prio);
+    }
+  }
+  if (marks) {
+    const under = best >= PICK_PRIORITY.room;
+    const drawn = new Set(items.filter(drawsInPlan).map((r) => r.nodeId));
+    for (const m of marks) {
+      const hit = markOwner(m.id, nodes);
+      if (!hit) continue;
+      if (m.pick) {
+        if (near(p, m.segments, tol) && !drawn.has(hit.owner.id)) add(hit.owner.id, PICK_MARK_PRIORITY);
+        continue;
+      }
+      if ((!m.behind || under) && (near(p, m.segments, tol) || hitsLabel(p, m.data, tol))) {
+        if (typeof m.data?.of === 'string' && found.has(m.data.of)) continue;
+        add(hit.pick, -3);
+      }
+      if (m.hit) {
+        const area = insideHit(p, m.hit);
+        if (area != null && nodes.get(m.id)) add(m.id, m.hit.solid ? -2 : 9.5);
+      }
+    }
+  }
+  return [...found.entries()].sort((a, b) => a[1].rank - b[1].rank || b[1].seq - a[1].seq).map(([id]) => id);
+}
