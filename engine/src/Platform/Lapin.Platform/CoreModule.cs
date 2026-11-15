@@ -21,6 +21,12 @@ public sealed class CoreModule : ILapinModule
     /// </summary>
     public const double MaxStoreyHeight = 100;
 
+    /// <summary>A storey's number as a command gives it: none when left out or not a number, refused when non-finite ("NaN", "Infinity").</summary>
+    static double? Given(double? number, JsonNode? given, string key) =>
+        number is { } v ? v
+            : given is JsonValue jv && jv.TryGetValue<string>(out var s) && double.TryParse(s, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var d) && !double.IsFinite(d)
+                ? throw new CommandException($"The storey's {key} is a number of metres.") : null;
+
     /// <summary>A storey's base level: a number, within ±10 km of ±0.00.</summary>
     static double CheckLevel(double z) =>
         double.IsFinite(z) && Math.Abs(z) <= 10_000 ? z : throw new CommandException($"A storey's level must be within ±10 km of ±0.00 (asked {z:0.##} m).");
@@ -141,12 +147,12 @@ public sealed class CoreModule : ILapinModule
             var building = Spatial.EnsureBuilding(ctx);
             var storeys = Spatial.Storeys(ctx.Model).ToList();
             var top = storeys.LastOrDefault();
-            var elevation = CheckLevel(Json.Number(a["elevation"]) ?? (top == null ? 0 : top.Num("elevation") + top.Num("height", 3)));
+            var elevation = CheckLevel(Given(Json.Number(a["elevation"]), a["elevation"], "elevation") ?? (top == null ? 0 : top.Num("elevation") + top.Num("height", 3)));
             var name = (string?)a["name"] ?? (storeys.Count == 0 ? "Ground floor" : $"Level {storeys.Count}");
             var storey = new Entity(ctx.NewId(), IfcClass.BuildingStorey, name, new JsonObject
             {
                 ["elevation"] = elevation,
-                ["height"] = Json.Number(a["top"]) is { } t ? TopToHeight(elevation, t) : CheckHeight(Json.Number(a["height"]) ?? 3.0),
+                ["height"] = Given(Json.Number(a["top"]), a["top"], "top") is { } t ? TopToHeight(elevation, t) : CheckHeight(Given(Json.Number(a["height"]), a["height"], "height") ?? 3.0),
             });
             ctx.Add(storey);
             ctx.Relate(IfcClass.RelAggregates, building.Id, storey.Id);
@@ -160,10 +166,10 @@ public sealed class CoreModule : ILapinModule
             // A storey lies between its base level (elevation) and its top level; its height is what lies between. Either may be below ±0.00.
             var (oldBase, oldTop) = (s.Num("elevation"), s.Num("elevation") + s.Num("height", 3));
             var keepTop = a["keepTop"] is JsonValue kt && kt.TryGetValue<bool>(out var k) && k;
-            var @base = CheckLevel(Json.Number(a["elevation"]) ?? oldBase);
+            var @base = CheckLevel(Given(Json.Number(a["elevation"]), a["elevation"], "elevation") ?? oldBase);
             attrs["elevation"] = @base;
-            if (Json.Number(a["top"]) is { } top) attrs["height"] = TopToHeight(@base, top);
-            else if (Json.Number(a["height"]) is { } h) attrs["height"] = CheckHeight(h);
+            if (Given(Json.Number(a["top"]), a["top"], "top") is { } top) attrs["height"] = TopToHeight(@base, top);
+            else if (Given(Json.Number(a["height"]), a["height"], "height") is { } h) attrs["height"] = CheckHeight(h);
             else if (keepTop) attrs["height"] = TopToHeight(@base, oldTop);
             ctx.Replace(s.With(name: (string?)a["name"], attrs: attrs));
             return null;
