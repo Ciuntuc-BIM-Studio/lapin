@@ -16,7 +16,8 @@ import { useSectionBox } from '../../viewport/sectionBox';
 import { isolateIds, resetTemporary } from '../../viewport/temporary';
 import { Cell } from '../../shell/cells';
 import { author, exportBcf } from '../core/remarks/remarks';
-import { toggleClashMarks } from '../core/coordination/coordination';
+import { toggleClashMarks, useClashMode } from '../core/coordination/coordination';
+import { CoordinationPanel } from '../core/coordination/CoordinationDialog';
 import {
   clashCsv, clashHtml, clashRemarks, deleteSet, deleteTest, FIELD_LABELS, framing, GROUP_LABELS, isList, loadClashes, loadMembers, loadResults, OP_LABELS, reportFile, runClashes, saveSet, saveTest,
   seedClashes, setStatus, STATUS_LABELS, STATUSES, valuesOf, valuesText,
@@ -60,6 +61,7 @@ export function ClashDialog() {
   const [busy, setBusy] = useState(false);
   const [groupBy, setGroupBy] = useState<GroupBy>('none');
   const [progress, setProgress] = useState<string | null>(null);
+  const mode = useClashMode((s) => s.mode);
   const close = () => useUi.setState({ dialog: null });
 
   // The tests and sets, read again as the model changes; a project with none gets the starting ones (one undo step).
@@ -142,6 +144,13 @@ export function ClashDialog() {
     <div className="dialog-backdrop clash-backdrop">
       <div className="dialog clash-dialog" role="dialog" aria-label="Clash detection" data-testid="clash-dialog" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Clash detection</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
+        {/* One window for both checks (S2): the tests, and the openings for MEP with their fixes (the check of Manage → Clash check…). */}
+        <div className="row tabs-row clash-modes" role="tablist" aria-label="Kind of check">
+          <button type="button" role="tab" aria-selected={mode === 'tests'} className={`btn${mode === 'tests' ? ' active' : ''}`} data-clash-mode="tests" onClick={() => useClashMode.setState({ mode: 'tests' })}>Tests</button>
+          <button type="button" role="tab" aria-selected={mode === 'openings'} className={`btn${mode === 'openings' ? ' active' : ''}`} data-clash-mode="openings" onClick={() => useClashMode.setState({ mode: 'openings' })}>Openings for MEP</button>
+        </div>
+        {mode === 'openings' && <div className="coordination" data-testid="coordination-dialog"><CoordinationPanel /></div>}
+        {mode === 'tests' && <>
         <div className="dialog-body clash-body">
           <section className="clash-main">
             <div className="row clash-test-row" data-testid="clash-tests">
@@ -197,6 +206,7 @@ export function ClashDialog() {
           <span className="grow" />
           <button type="button" className="btn" onClick={close}>Done</button>
         </footer>
+        </>}
       </div>
     </div>
   );
@@ -276,8 +286,8 @@ function TestForm({ test, sets, onDelete }: { test: ClashTest; sets: SearchSet[]
       </select></dd>
       {test.kind === 'openings' ? <>
         <dt />
-        <dd><p className="muted small">The check of Manage → Clash check…: each MEP run through a wall, floor or roof must lie inside an opening, with its clearance. Its depth is how far it is short. Openings are made there.</p>
-          <button type="button" className="link" onClick={() => useUi.setState({ dialog: 'coordination' })}>Clash check…</button></dd>
+        <dd><p className="muted small">The check of the Openings for MEP tab: each MEP run through a wall, floor or roof must lie inside an opening, with its clearance. Its depth is how far it is short. Openings are made there.</p>
+          <button type="button" className="link" onClick={() => useClashMode.setState({ mode: 'openings' })}>Openings for MEP</button></dd>
       </> : <>
       <dt title={test.kind === 'hard' ? 'A crossing this deep or less is not a clash' : 'Elements closer than this clash'}>{test.kind === 'hard' ? 'Tolerance (mm)' : 'Distance (mm)'}</dt>
       <dd><input inputMode="decimal" value={tolerance} onChange={(e) => setTolerance(e.target.value)} onBlur={keepTolerance} /></dd>

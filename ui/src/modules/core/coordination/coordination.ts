@@ -7,8 +7,12 @@
  * here are the settings, the list's order and filters, and how a row reads.
  */
 
+import { create } from 'zustand';
 import { execute, query, useSession } from '../../../engine/session';
 import { frontView } from '../../../viewport/frontView';
+
+/** Which half of the Clash detection window shows: the tests (search sets, hard and clearance) or the openings for MEP (the check, its fixes). */
+export const useClashMode = create<{ mode: 'tests' | 'openings' }>(() => ({ mode: 'tests' }));
 
 export type VoidKind = 'wall' | 'door' | 'window' | 'slab' | 'roof';
 export type ClashStatus = 'missing' | 'tooSmall' | 'ok' | 'empty';
