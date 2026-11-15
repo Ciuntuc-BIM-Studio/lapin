@@ -87,10 +87,15 @@ public sealed class EstimateLine(string key, string chapter, string code)
 /// <summary>An element's share of a line: the part of it measured (null: the whole) and the quantity it gives.</summary>
 public sealed record LineShare(string Element, string? Part, double Quantity);
 
-/// <summary>Money as estimates write it: two decimals, half away from zero.</summary>
+/// <summary>
+/// Money as estimates write it: two decimals, half away from zero, of the number as written (its decimal of 15 digits):
+/// on the double, 1.005 (1.00499… there) came out a ban short (audit P19). What a decimal cannot hold (not finite, beyond
+/// 10¹⁵) is rounded on the double.
+/// </summary>
 public static class Money
 {
-    public static double Round(double v) => Math.Round(v, 2, MidpointRounding.AwayFromZero);
+    public static double Round(double v) =>
+        double.IsFinite(v) && Math.Abs(v) < 1e15 ? (double)Math.Round((decimal)v, 2, MidpointRounding.AwayFromZero) : Math.Round(v, 2, MidpointRounding.AwayFromZero);
 }
 
 /// <summary>A chapter's or the whole estimate's sums by kind of cost.</summary>
