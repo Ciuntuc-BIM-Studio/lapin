@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // A stair's railings selected one by one, the dog-leg's footing (forum topics 102 and 104)
+  "Stair railing": "楼梯栏杆", "Left railing": "左侧栏杆", "Right railing": "右侧栏杆", "What is set here is this side's alone; blank, as the stair's type.": "此处设置的仅对这一侧有效；留空则按楼梯类型。", "The stair has no railing on this side.": "楼梯这一侧没有栏杆。", "Put it back": "放回去", "as one climbs": "上楼方向", "Balustrade": "栏杆", "Handrail on the wall": "靠墙扶手", "Over the nosings, to the handrail's axis; blank: the type's": "从踏步前缘起，到扶手轴线；留空：按类型", "Delete railing": "删除栏杆", "Select the stair": "选择楼梯", "Click a railing in a plan or in 3D to select it on its own: its height, its kind, or Delete.": "在平面图或三维中单击栏杆即可单独选择它：它的高度、种类，或删除。", "Footing under the first flight": "第一梯段下的基础", "Footing depth": "基础深度", "The first flight's foot on a footing of its own, a strip under its first tread, flush with the first riser (exported as an IfcFooting)": "第一梯段的底部落在自己的基础上：第一踏步下的一条，与第一踢面齐平（导出为 IfcFooting）",
   // Layer extents (forum topic 89)
   "Layer extents": "图层延伸", "Add a layer extent": "添加图层延伸", "How far the layer goes past this edge (positive) or stops short of it (negative)": "图层超出此边缘的距离（正值）或在其前停止的距离（负值）", "Whether the layer past the edge cuts the walls and floors it meets; off, it overlaps them": "超出边缘的图层是否剪切其遇到的墙和楼板；否则与之重叠", "Every layer ends at the element's edges.": "每个图层都止于构件的边缘。", "Take the extent away": "移除延伸", "Which edge of the outline, numbered from its first corner": "轮廓的哪条边，从其第一个角点起编号", "Cuts others": "剪切其他", "Layer extent": "图层延伸", "Clear layer extents": "清除图层延伸",
   // Layer extents, stage 2: edit layers, type defaults, the cut order (forum topic 89)

@@ -41,6 +41,33 @@ public static class StairBuilder
     public static StairRailing RailingOf(Entity stair, StairSpec spec) =>
         stair.Str("railingSides") is { } sides && StairSpec.Sides.Contains(sides) ? spec.Railing with { Sides = sides } : spec.Railing;
 
+    /// <summary>What a stair's railing on one side is: a balustrade (posts, balusters, glass… as its design says) or a handrail fixed to a wall.</summary>
+    public static readonly string[] RailingKinds = ["balustrade", "handrail"];
+
+    /// <summary>
+    /// A stair's railing on one side (forum topic 102: "sometimes we need both sides of the railings, and sometimes not; would be
+    /// good to select them one by one"), selected on its own as <c>stairId#railing:left</c> or <c>…#railing:right</c>: the type's
+    /// railing with what the stair says of that side in <c>railings.left</c> / <c>railings.right</c> (its kind, height, design,
+    /// handrail); null when the stair has no railing on that side.
+    /// </summary>
+    public static (StairRailing Rail, string Kind)? RailingOn(Entity stair, StairSpec spec, string side)
+    {
+        var rail = RailingOf(stair, spec);
+        if (rail.Sides != side && rail.Sides != "both") return null;
+        var own = (stair.Attrs["railings"] as JsonObject)?[side] as JsonObject;
+        var kind = (string?)own?["kind"] == "handrail" ? "handrail" : "balustrade";
+        if (Json.Number(own?["height"]) is { } height) rail = rail with { Height = Math.Clamp(height, 0.3, 2.5) };
+        if ((string?)own?["style"] is { } style && StairSpec.RailingStyles.Contains(style)) rail = rail with { Style = style };
+        if ((string?)own?["profile"] is "round" or "square") rail = rail with { Profile = (string)own!["profile"]! };
+        return (rail, kind);
+    }
+
+    /// <summary>A stair's railing's selection id (<c>stairId#railing:side</c>) read back: the stair and the side; null when it is not one.</summary>
+    public static (string Stair, string Side)? ParseRailingId(string id) =>
+        id.IndexOf('#') is var i and > 0 && id[(i + 1)..] is "railing:left" or "railing:right" ? (id[..i], id[(i + 9)..]) : null;
+
+    public static string RailingId(string stairId, string side) => $"{stairId}#railing:{side}";
+
     /// <summary>
     /// The rise of its own the stair climbs, whatever the storeys: the
     /// instance's <c>rise</c>, else its type's (entrance steps); null when it
@@ -141,7 +168,7 @@ public static class StairBuilder
                         if (Stringer(r, fl, place, sgn, f) is { } st) treadSolids.Add(st);
                 if (treadSolids.Count > 0) parts.Add(new GeometryPart($"Flight {i + 1}", concreteColor, Openings.Combine(treadSolids, "flight"), concrete, $"flight:{i}"));
             }
-            else if (FlightSolid(r, fl, place, f, waist, solidKind) is { } solid) parts.Add(new GeometryPart($"Flight {i + 1}", concreteColor, solid, concrete, $"flight:{i}"));
+            else if (FlightSolid(r, fl, place, f, waist, solidKind, LandingAbove(r, fl, spec), LandingBelow(r, fl, spec)) is { } solid) parts.Add(new GeometryPart($"Flight {i + 1}", concreteColor, solid, concrete, $"flight:{i}"));
             else problems.Add($"Flight {i + 1} could not be built.");
             if (f > 0)
                 for (var j = 1; j < fl.Risers; j++)
@@ -150,6 +177,15 @@ public static class StairBuilder
                     Vec2[] tread = [place.World(fl.Start + fl.Dir * ((j - 1) * r.Tread) - l), place.World(fl.Start + fl.Dir * (j * r.Tread) - l), place.World(fl.Start + fl.Dir * (j * r.Tread) + l), place.World(fl.Start + fl.Dir * ((j - 1) * r.Tread) + l)];
                     if (Prism.ExtrudeFootprint(tread, place.Z0 + fl.Z0 + j * r.RiserHeight - f, f, "finish") is { } s) finish.Add(s);
                 }
+        }
+        // The first flight's foot on a footing of its own: a strip across the flight under its first tread, flush with the first riser.
+        if (spec.Construction.FootingDepth is { } fd && fd > 0 && r.Flights.Count > 0 && r.Flights[0].Risers >= 2 && !solidKind)
+        {
+            var fl = r.Flights[0];
+            var l = fl.Left * (r.WidthOf(fl) / 2);
+            var fw = Math.Clamp(spec.Construction.FootingWidth, 0.1, Math.Max(0.1, (fl.Risers - 1) * r.Tread));
+            Vec2[] pad = [place.World(fl.Start - l), place.World(fl.Start + fl.Dir * fw - l), place.World(fl.Start + fl.Dir * fw + l), place.World(fl.Start + l)];
+            if (Prism.ExtrudeFootprint(pad, place.Z0 + fl.Z0 - f - fd, fd, "footing") is { } footing) parts.Add(new GeometryPart("Footing", concreteColor, footing, concrete, "footing"));
         }
         var winders = new List<Solid>();
         foreach (var wd in r.Winders)
@@ -179,12 +215,13 @@ public static class StairBuilder
         }
         if (finish.Count > 0) parts.Add(new GeometryPart("Tread finish", finishColor, Openings.Combine(finish, "finish"), finishMat, "finish"));
         var treads = r.Flights.Sum(x => x.Risers - 1) + r.Winders.Count;
-        var rail = RailingOf(stair, spec);
         foreach (var side in new[] { "left", "right" })
-            if (treads > 0 && (rail.Sides == side || rail.Sides == "both"))
+            if (treads > 0 && RailingOn(stair, spec, side) is var (rail, kind))
             {
-                var (solids, glass) = RailingSolids(r, place, rail, side == "left");
-                if (solids.Count > 0) parts.Add(new GeometryPart($"Railing ({side})", rail.Color ?? "#4a4a4a", Openings.Combine(solids, "railing"), null, $"railing:{side}"));
+                var (solids, glass) = RailingSolids(r, place, rail, side == "left", kind == "handrail");
+                // Its side, kind and height go with it to IFC (an IfcRailing in the stair, BALUSTRADE or HANDRAIL).
+                List<(string, string)> props = [("Side", side), ("Kind", kind), ("Height", rail.Height.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture))];
+                if (solids.Count > 0) parts.Add(new GeometryPart($"Railing ({side})", rail.Color ?? "#4a4a4a", Openings.Combine(solids, "railing"), null, $"railing:{side}") { Properties = props, PropertySet = "Lapin_StairRailing" });
                 if (glass.Count > 0) parts.Add(new GeometryPart($"Railing glass ({side})", "#9cc8e8", Openings.Combine(glass, "glass"), null, $"railing-glass:{side}"));
             }
 
@@ -205,12 +242,37 @@ public static class StairBuilder
     /// finished surfaces. Solid, the steps are filled down to the flight's
     /// base instead (steps cast on the ground). The profile in the flight's
     /// plane, extruded across.
+    /// <para>
+    /// A flight that runs into a landing or leaves one (<paramref name="above"/>, <paramref name="below"/>: that landing's slab
+    /// thickness and how far it reaches past the flight's end) is one slab with it (forum topic 104, a dog-leg stair: "the slab
+    /// must be continuous"): its soffit runs on until it meets the landing's, so the two undersides join in one line, with no
+    /// notch, no step and no overlap. Into a landing, the flight takes the wedge under the landing's slab from the landing's edge
+    /// to that line; out of one, the strip under its first steps down to the landing's soffit, against the landing's edge.
+    /// </para>
     /// </summary>
-    public static Solid? FlightSolid(Resolved r, Flight fl, StairPlacement place, double finish, double waist, bool solid = false)
+    public static Solid? FlightSolid(Resolved r, Flight fl, StairPlacement place, double finish, double waist, bool solid = false,
+        (double Thickness, double Reach)? above = null, double? below = null)
+    {
+        if (FlightProfile(r, fl, finish, waist, solid, above, below) is not { } profile) return null;
+        var right = fl.Start - fl.Left * (r.WidthOf(fl) / 2);
+        var ring = profile.Select(p => place.World(right + fl.Dir * p.U, fl.Z0 + p.Z)).ToList();
+        var across = place.World(fl.Left * r.WidthOf(fl), 0) - place.World(new Vec2(0, 0), 0);
+        return Oriented(ring, across, "flight");
+    }
+
+    /// <summary>
+    /// A flight's profile in its own plane: u along it from its first riser, z up from the floor it starts from (finished);
+    /// see <see cref="FlightSolid"/>.
+    /// </summary>
+    public static List<(double U, double Z)>? FlightProfile(Resolved r, Flight fl, double finish, double waist, bool solid = false,
+        (double Thickness, double Reach)? above = null, double? below = null)
     {
         var (k, h, b) = (fl.Risers, r.RiserHeight, r.Tread);
         if (k < 2) return null;
+        // The waist measured upright, and the soffit: a waist under the steps' inner corners (z = u·h/b).
         var wv = waist * Math.Sqrt(h * h + b * b) / b;
+        double Soffit(double u) => u * h / b - wv - finish;
+        double SoffitAt(double z) => (z + wv + finish) * b / h;
         var profile = new List<(double U, double Z)> { (0, -finish) };
         for (var i = 1; i <= k; i++)
         {
@@ -218,16 +280,53 @@ public static class StairBuilder
             if (i < k) profile.Add((i * b, i * h - finish));
         }
         var uEnd = (k - 1) * b;
-        if (solid) profile.Add((uEnd, -finish));
-        else
+        if (solid) { profile.Add((uEnd, -finish)); return profile; }
+        // The top: down the landing's edge to its soffit, then under it to where the flight's soffit meets it.
+        if (above is var (t, reach) && t > 0)
         {
-            profile.Add((uEnd, (k - 1) * h - wv - finish));
-            profile.Add((Math.Min(wv * b / h, Math.Max(uEnd - 0.01, 0)), -finish));
+            var under = k * h - finish - t;
+            var meet = Math.Clamp(SoffitAt(under), Math.Max(wv * b / h, 0) + 0.01, uEnd + Math.Max(reach, 0));
+            profile.Add((uEnd, under));
+            if (Math.Abs(meet - uEnd) > 1e-9) profile.Add((meet, under));
+            // A landing too short for the soffit to reach its underside: the flight ends square under its far edge.
+            if (Soffit(meet) < under - 1e-9) profile.Add((meet, Soffit(meet)));
         }
-        var right = fl.Start - fl.Left * (r.WidthOf(fl) / 2);
-        var ring = profile.Select(p => place.World(right + fl.Dir * p.U, fl.Z0 + p.Z)).ToList();
-        var across = place.World(fl.Left * r.WidthOf(fl), 0) - place.World(new Vec2(0, 0), 0);
-        return Oriented(ring, across, "flight");
+        else profile.Add((uEnd, Soffit(uEnd)));
+        // The foot: on the floor; out of a landing, down to the landing's soffit against its edge.
+        if (below is { } t0 && t0 > 0 && SoffitAt(-finish - t0) is var from && from > 1e-9)
+        {
+            profile.Add((Math.Min(from, uEnd - 0.01), -finish - t0));
+            profile.Add((0, -finish - t0));
+        }
+        else if (below is { } t1 && t1 > 0) profile.Add((0, Soffit(0)));
+        else profile.Add((Math.Min(wv * b / h, Math.Max(uEnd - 0.01, 0)), -finish));
+        return profile;
+    }
+
+    /// <summary>
+    /// The landing a flight runs into (its slab's thickness, and how far it reaches on past the flight's last riser), or null:
+    /// a landing at the flight's top, under the point just past its last riser.
+    /// </summary>
+    public static (double Thickness, double Reach)? LandingAbove(Resolved r, Flight fl, StairSpec spec)
+    {
+        var t = spec.Construction.LandingThickness;
+        if (t <= 0) return null;
+        var end = fl.Start + fl.Dir * ((fl.Risers - 1) * r.Tread);
+        var z = fl.Z0 + fl.Risers * r.RiserHeight;
+        foreach (var ld in r.Landings)
+            if (Math.Abs(ld.Z - z) < 1e-6 && Polygon2.Contains(ld.Outline, end + fl.Dir * 0.01))
+                return (t, ld.Outline.Max(p => Vec2.Dot(p - end, fl.Dir)));
+        return null;
+    }
+
+    /// <summary>The thickness of the landing a flight leaves from (one at its foot's level, under the point just behind its first riser), or null.</summary>
+    public static double? LandingBelow(Resolved r, Flight fl, StairSpec spec)
+    {
+        var t = spec.Construction.LandingThickness;
+        if (t <= 0) return null;
+        foreach (var ld in r.Landings)
+            if (Math.Abs(ld.Z - fl.Z0) < 1e-6 && Polygon2.Contains(ld.Outline, fl.Start - fl.Dir * 0.01)) return t;
+        return null;
     }
 
     /// <summary>A stringer along one side of a flight (<paramref name="sign"/> −1 right, +1 left): a plate 40 mm thick, 250 mm deep, under the treads' nosing line.</summary>
@@ -286,18 +385,31 @@ public static class StairBuilder
                 return new List<(Vec2, double)> { (fl.Start + side, fl.Z0 + r.RiserHeight), (fl.Start + fl.Dir * run + side, fl.Z0 + fl.Risers * r.RiserHeight) };
             }).Where(x => (x[1].Item1 - x[0].Item1).Length > 1e-6).ToList();
         var w = r.Width;
+        var (b, h) = (r.Tread, r.RiserHeight);
         var path = new List<(Vec2 P, double Surface)>();
-        // A point on the path, once (a U's corners with no tread between them meet on one riser line).
-        void Add(Vec2 p, double surface) { if (path.Count == 0 || (path[^1].P - p).Length > 1e-6) path.Add((p, surface)); }
+        // A point on the path, once (a U's corners with no tread between them meet on one riser line); an upright step (same
+        // point, another height) only where asked, at a landing.
+        void Add(Vec2 p, double surface, bool upright = false)
+        {
+            if (path.Count == 0 || (path[^1].P - p).Length > 1e-6) path.Add((p, surface));
+            else if (upright && Math.Abs(path[^1].Surface - surface) > 1e-9) path.Add((p, surface));
+        }
         // A U turning at two corners of its own (report #109) turns twice as an L does, the short side's treads between.
         var quarter = r.Spec.Shape == "l" || (r.Spec.Shape == "u" && r.Flights.Count == 3);
+        // Forum topic 104 (a dog-leg stair): the handrail runs parallel to the pitch line, the railing's height over the nosings;
+        // it starts half a tread before the first nosing (still on the pitch) and drops there to its post on the floor, and ends
+        // half a tread past the last nosing, level at its height over the floor above. At a landing it runs level at its height
+        // over the landing from the first flight's last nosing to half a tread before the next flight's first, and steps up there
+        // onto the next flight's pitch line: never under its height, with no gap.
+        var half = b / 2;
         for (var i = 0; i < r.Flights.Count; i++)
         {
             var fl = r.Flights[i];
             var side = fl.Left * (sign * (w / 2 - inset));
-            var run = (fl.Risers - 1) * r.Tread;
-            var zTop = fl.Z0 + fl.Risers * r.RiserHeight;
-            Add(fl.Start + side, fl.Z0 + r.RiserHeight);
+            var run = (fl.Risers - 1) * b;
+            var zTop = fl.Z0 + fl.Risers * h;
+            if (i == 0 && fl.Risers >= 2) Add(fl.Start + side - fl.Dir * half, fl.Z0 + h / 2);
+            Add(fl.Start + side, fl.Z0 + h);
             var end = fl.Start + fl.Dir * run + side;
             Add(end, zTop);
             if (i + 1 < r.Flights.Count)
@@ -305,24 +417,65 @@ public static class StairBuilder
                 var next = r.Flights[i + 1];
                 var start2 = next.Start + next.Left * (sign * (w / 2 - inset));
                 var zTurn = next.Z0;
+                var outer = r.Spec.Turns_ && left != place.TurnLeft;
+                if (Math.Abs(zTurn - zTop) < 1e-9 && r.Landings.Any(l => Math.Abs(l.Z - zTop) < 1e-6 && Polygon2.Contains(l.Outline, fl.Start + fl.Dir * (run + 0.01))))
+                {
+                    LandingTurn(fl, next, end, start2, zTop, outer);
+                    continue;
+                }
                 // The turn's depth along the first flight: a landing's length, or the width when it turns in a square (winders too).
                 var depth = !quarter && (r.Spec.Shape == "straight-landing" || (r.Spec.Shape == "u" && r.Winders.Count == 0)) ? r.LandingLength : w;
-                var outer = r.Spec.Turns_ && left != place.TurnLeft;
                 if (quarter && outer) Add(end + fl.Dir * (depth - inset), (zTop + zTurn) / 2);
                 else if (r.Spec.Shape == "u" && outer)
                 {
                     Add(end + fl.Dir * (depth - inset), zTop + (zTurn - zTop) / 3);
                     Add(start2 + fl.Dir * (depth - inset), zTop + (zTurn - zTop) * 2 / 3);
                 }
-                Add(start2, zTurn + r.RiserHeight);
+                Add(start2, zTurn + h);
             }
+            else if (fl.Risers >= 2) Add(end + fl.Dir * half, zTop);
         }
-        // The handrail runs on level past the first and the last step when asked.
+
+        // Round a landing from the end of one flight (e, its last nosing) to the start of the next (s, its first): level over the
+        // landing (z), along its edge round the outside of a turn, straight across the well inside a U, to the point half a tread
+        // (at most) before the next flight's first nosing; up there to that flight's pitch line, and on up it.
+        void LandingTurn(Flight fl, Flight next, Vec2 e, Vec2 s, double z, bool outer)
+        {
+            var d = half;
+            var along = Vec2.Dot(fl.Dir, next.Dir);
+            if (along > 0.5) d = Math.Clamp(Vec2.Dot(s - e, fl.Dir), 0, d);   // straight on
+            else if (along < -0.5)                                             // a half turn (a U, a dog-leg)
+            {
+                if (outer)
+                {
+                    var reach = Math.Max(0, r.LandingLength - inset);
+                    Add(e + fl.Dir * reach, z);
+                    Add(s + fl.Dir * reach, z);
+                    d = Math.Min(d, reach);
+                }
+                else Add(e + fl.Dir * d, z);
+            }
+            else                                                               // a quarter turn (an L)
+            {
+                // Where the two sides' lines cross: the landing's outer corner, or its inner one by the turn.
+                var x = e + fl.Dir * Vec2.Dot(s - e, fl.Dir);
+                Add(x, z);
+                d = Math.Min(d, (s - x).Length);
+            }
+            var j = s - next.Dir * d;
+            Add(j, z);
+            Add(j, z + h - d * h / b, true);
+            Add(s, z + h);
+        }
+        // The handrail runs on level past the first and the last step when asked: from the foot's post down to its height over
+        // the floor, then on.
         if (rail.Extension > 0 && path.Count >= 2)
         {
             var d0 = (path[0].P - path[1].P).Normalized();
             var d1 = (path[^1].P - path[^2].P).Normalized();
-            path.Insert(0, (path[0].P + d0 * rail.Extension, path[0].Surface - r.RiserHeight));
+            var floor = r.Flights[0].Z0;
+            if (path[0].Surface > floor + 1e-9) path.Insert(0, (path[0].P, floor));
+            path.Insert(0, (path[0].P + d0 * rail.Extension, floor));
             path.Add((path[^1].P + d1 * rail.Extension, path[^1].Surface));
         }
         return [path];
@@ -398,18 +551,29 @@ public static class StairBuilder
     /// posts at their spacing (the bar style, glass and cables between them), balusters at most their
     /// spacing apart, or a solid panel; glass apart, to be drawn as glass.
     /// </summary>
-    static (List<Solid> Metal, List<Solid> Glass) RailingSolids(Resolved r, StairPlacement place, StairRailing rail, bool left)
+    static (List<Solid> Metal, List<Solid> Glass) RailingSolids(Resolved r, StairPlacement place, StairRailing rail, bool left, bool wallHandrail = false)
     {
         var metal = new List<Solid>();
         var glass = new List<Solid>();
         // Each path along its surface, built as any railing is (Railings, shared with the balconies').
         foreach (var path in RailingPaths(r, place, rail, left))
         {
-            var (m, g) = Railings.Solids(path.Select(p => place.World(p.P, p.Surface)).ToList(), rail, (at, half) => GroundUnder(r, place, at, half, at.Z + Math.Max(0.3, rail.Height)));
+            var world = path.Select(p => place.World(p.P, p.Surface)).ToList();
+            // A handrail on the wall: the bar on brackets out to the stair's side (left as one climbs, or right).
+            if (wallHandrail) { metal.AddRange(Railings.WallHandrail(world, rail, left ? 1 : -1)); continue; }
+            var (m, g) = Railings.Solids(world, rail, (at, half) => GroundUnder(r, place, at, half, at.Z + Math.Max(0.3, rail.Height)));
             metal.AddRange(m);
             glass.AddRange(g);
         }
         return (metal, glass);
+    }
+
+    /// <summary>A railing's line on one side in plan (world) with the height of the surface under it (the nosing line, world), one list per run; empty when the stair has none there.</summary>
+    public static List<List<(Vec2 P, double Z)>> RailingLines(IModelView m, Entity stair, string side)
+    {
+        if (Resolve(m, stair) is not var (r, place, spec) || RailingOn(stair, spec, side) is not var (rail, _)) return [];
+        if (r.Flights.Sum(x => x.Risers - 1) + r.Winders.Count == 0) return [];
+        return RailingPaths(r, place, rail, side == "left").Select(path => path.Select(p => (place.World(p.P), place.Z0 + p.Surface)).ToList()).ToList();
     }
 
     // ─── Plan ───────────────────────────────────────────────────────────────
@@ -451,7 +615,7 @@ public static class StairBuilder
         }
         var landingArea = r.Landings.Sum(l => Math.Abs(Polygon2.SignedArea(l.Outline)));
         var winderArea = r.Winders.Sum(x => Math.Abs(Polygon2.SignedArea(x.Outline)));
-        var concrete = g.Parts.Where(p => p.Key != null && (p.Key.StartsWith("flight:", StringComparison.Ordinal) || p.Key == "winders" || p.Key.StartsWith("landing:", StringComparison.Ordinal))).Sum(p => Measure.Volume(p.Solid));
+        var concrete = g.Parts.Where(p => p.Key != null && (p.Key.StartsWith("flight:", StringComparison.Ordinal) || p.Key == "winders" || p.Key == "footing" || p.Key.StartsWith("landing:", StringComparison.Ordinal))).Sum(p => Measure.Volume(p.Solid));
         var railing = 0.0;
         foreach (var fl in r.Flights) railing += (fl.Risers - 1) * Math.Sqrt(r.Tread * r.Tread + r.RiserHeight * r.RiserHeight);
         if (r.Arc is { } arc) { run += arc.Steps * r.Tread; railing += arc.Steps * Math.Sqrt(r.Tread * r.Tread + r.RiserHeight * r.RiserHeight); }
@@ -602,6 +766,39 @@ public static class StairMarks
                 var at = V(foot.At - foot.Left * (foot.Width / 2 + 0.25) - foot.Dir * 0.2);
                 for (var i = 0; i < lines.Length; i++)
                     mark.Text(new PenText(at + new Vec2(0, -h * c.Mm * 1.5 * i), $"{keys[i]} {lines[i]}", h, 0, "end", "middle", i == 0, style.Font), color);
+            }
+            // Each railing a mark of its own (forum topic 102): its handrail's line in plan, which a click selects on its own
+            // (stairId#railing:side); seen up to the cut, over it as the stair's lines are. Before the stair's own lines, so a
+            // click on the railing takes the railing.
+            foreach (var side in site ? [] : new[] { "left", "right" })
+            {
+                var rail = new ViewMark(StairBuilder.RailingId(stair.Id, side));
+                var seen = pens.Of(stair, LineRole.Projection, filtered?.Color);
+                var over = pens.Of(stair, LineRole.Overhead, filtered?.Color);
+                foreach (var line in StairBuilder.RailingLines(m, stair, side))
+                    for (var i = 0; i + 1 < line.Count; i++)
+                    {
+                        var (a, b) = (line[i], line[i + 1]);
+                        if ((b.P - a.P).Length < 1e-6) continue;
+                        // Split where the nosing line under it passes the cut.
+                        var pieces = new List<(Vec2 A, Vec2 B, bool Above)>();
+                        if (cut is { } cz && (a.Z - cz) * (b.Z - cz) < 0)
+                        {
+                            var t = (cz - a.Z) / (b.Z - a.Z);
+                            var x = a.P + (b.P - a.P) * t;
+                            pieces.Add((a.P, x, a.Z > cz));
+                            pieces.Add((x, b.P, b.Z > cz));
+                        }
+                        else pieces.Add((a.P, b.P, cut is { } cz2 && Math.Max(a.Z, b.Z) > cz2 + 1e-9));
+                        foreach (var (pa, pb, above) in pieces)
+                        {
+                            if (above && symbols.AboveCut == "hidden") continue;
+                            var overhead = above && symbols.AboveCut != "whole";
+                            var (w, ink, dash) = overhead ? over : seen;
+                            rail.Line(c.Map(pa, place.Z0), c.Map(pb, place.Z0), overhead ? "STAIR-OVERHEAD" : "STAIR", w, ink, dash);
+                        }
+                    }
+                if (rail.Lines.Count > 0) yield return rail;
             }
             if (mark.Texts.Count > 0 || mark.Lines.Count > 0) yield return mark;
         }

@@ -3119,6 +3119,55 @@ export const scenes = [
     },
   },
   {
+    // A dog-leg stair as an architect asked for it (forum topics 102 and 104): its handrail at the railing's height over the
+    // nosings, half a tread past the first and the last, turning at the landing; its slab continuous; each railing selected
+    // on its own, in plan and in 3D, with its own height and kind.
+    id: 'stair-dogleg-railings',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      const storey = (await t.nodes()).filter((n) => n.type === 'IfcBuildingStorey').find((n) => Math.abs(n.props.elevation ?? 0) < 1e-6) ?? (await t.nodes()).find((n) => n.type === 'IfcBuildingStorey');
+      const stair = await t.cmd('architecture.addStair', { storeyId: storey.id, library: 'dogleg', x: 0, y: 0, x2: 1, y2: 0 });
+      await t.cmd('architecture.updateStair', { id: stair.id, railingSides: 'both' });
+      const check = await t.page.evaluate(async (id) => (await import('/src/engine/session.ts')).query('architecture.stairCheck', { id }), stair.id);
+      t.expect(check.flights.length === 2 && check.shape === 'u', `a dog-leg: two flights and a half landing (${check.flights.join(' + ')})`);
+      await t.ui({ keyPlan: false });
+      await t.wait(800);
+      await t.fit();
+      await t.wait(600);
+      // A click on the right railing in plan (the outside of the turn, along the first flight) selects it on its own.
+      const side = check.width / 2 - 0.05;
+      { const [px, py] = await t.planPoint(check.tread * 3.3, -side); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(900); }
+      const selection = () => t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().selection);
+      let sel = await selection();
+      t.expect(sel === `${stair.id}#railing:right`, `a click on the railing in plan selects it on its own (${sel})`);
+      t.expect(await t.page.locator('[data-testid=stair-railing-panel]').count() > 0, 'the railing\'s own properties: its side, kind and height');
+      // Its own height: 1.10 m on this side.
+      await t.cmd('architecture.updateStairRailing', { id: `${stair.id}#railing:right`, height: 1.1 });
+      await t.wait(800);
+      await t.shot('stair-railing-properties', { of: 'aside.props', pad: 0, maxHeight: 640 });
+      await t.shot('stair-dogleg-plan', { of: '[data-testid=plan]', pad: 0 });
+      // The other side a handrail on the wall.
+      await t.cmd('architecture.updateStairRailing', { id: `${stair.id}#railing:left`, kind: 'handrail' });
+      await t.ui({ selection: null, selected: [] });
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 1.25, pitch: -0.18, distance: 7.5, target: { x: 1.4, y: 0.5, z: 1.4 } }, false));
+      await t.wait(1500);
+      // A click on the right railing's handrail in 3D selects it too, lit on its own.
+      const at = await t.page.evaluate(async (p) => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.screenOf?.(p) ?? null,
+        { x: check.tread * 3.5, y: -side, z: check.riserHeight * 4.5 + 1.1 });
+      t.expect(at, 'the railing is in the 3D view');
+      await t.page.mouse.move(at.x, at.y, { steps: 3 });
+      await t.page.mouse.click(at.x, at.y);
+      await t.wait(1200);
+      sel = await selection();
+      t.expect(sel === `${stair.id}#railing:right`, `a click on the railing in 3D selects it on its own (${sel})`);
+      await t.page.mouse.move(5, 5);
+      await t.wait(600);
+      await t.shot('stair-dogleg-3d', { of: 'canvas', pad: 0 });
+    },
+  },
+  {
     id: 'stair-shapes',
     async run(t) {
       await t.fresh();

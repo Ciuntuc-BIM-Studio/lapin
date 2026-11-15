@@ -38,6 +38,22 @@ Biblioteca adaugă în proiect tipuri gata făcute: scară în U fără gol, sca
 
 ![Tipul scării în spirală, cu treptele numerotate](shots/stair-spiral.webp)
 
+### Balustradele, una câte una
+
+Fiecare balustradă a unei scări poate fi selectată singură: dă clic pe ea într-un plan sau în 3D. Panoul de proprietăți arată atunci doar acea balustradă: **Partea** (stânga sau dreapta la urcare), **Felul** (o **Balustradă**, sau o **Mână curentă pe perete**: mâna curentă pe console, fără montanți, pentru partea de lângă un perete), **Înălțimea**, **Modelul** și **Mâna curentă**. Lăsate goale, fiecare e a tipului scării. **Delete** (sau **Șterge balustrada**) scoate balustrada de pe acea parte și o lasă pe cealaltă; **Pune-o la loc** o aduce înapoi. **Selectează scara** te întoarce la scara întreagă.
+
+Înălțimea balustradei se măsoară pe verticală de la linia nasurilor treptelor până la axa mâinii curente, iar mâna curentă merge paralel cu panta. La picior începe cu o jumătate de treaptă înaintea primului nas, tot pe pantă, și coboară acolo la montantul ei de pe pardoseală; sus se termină cu o jumătate de treaptă după ultimul nas, orizontal, la înălțimea ei peste pardoseală. La podest merge orizontal la înălțimea ei peste podest, pe exteriorul întoarcerii sau drept peste gol, și urcă pe rampa următoare cu o jumătate de treaptă înaintea primului ei nas: fără întreruperi și niciodată mai jos decât înălțimea ei. **Continuă dincolo de capete** o duce mai departe, orizontal, la ambele capete.
+
+![O scară în U fără gol: un clic pe balustrada din dreapta selectează doar acea balustradă](shots/stair-railing-properties.webp)
+
+![Scara în plan, cu balustrada selectată evidențiată](shots/stair-dogleg-plan.webp)
+
+![Scara în 3D: balustrada selectată singură, pe cealaltă parte o mână curentă pe perete](shots/stair-dogleg-3d.webp)
+
+### Placa unei scări în U fără gol
+
+O scară de beton e o singură placă: placa fiecărei rampe intră în podest, astfel că intradosul rampei întâlnește intradosul podestului într-o singură linie, fără crestătură la marginea podestului, fără treaptă și fără beton numărat de două ori. În fila **Construcție**, **Fundație sub prima rampă** pune piciorul primei rampe pe o fundație proprie (cu **Adâncimea fundației** sub pardoseală și **Lățimea tălpii** sub prima treaptă, la fața primei contratrepte), exportată în IFC ca IfcFooting. În IFC fiecare balustradă e un IfcRailing al scării (BALUSTRADE, sau HANDRAIL pe perete) cu partea, felul și înălțimea ei, și își păstrează GlobalId-ul când scara se schimbă.
+
 ### Treptele numerotate
 
 La **În plan**, în fila **Formă**: **Numerotează treptele** scrie numărul fiecărei trepte într-un cerc, de la prima contratreaptă în sus; **Etichetă** scrie contratreptele, înălțimea și lățimea treptei și lățimea scării lângă picior; **„UP” la piciorul săgeții** arată de unde pornește. Planurile și planșele le arată. Numerele stau lângă linia de pas, niciodată pe ea: în dreapta ei la urcare pe o scară dreaptă, pe partea exterioară a unei întoarceri, spre exterior pe o scară în spirală.

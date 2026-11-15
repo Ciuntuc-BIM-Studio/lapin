@@ -27,8 +27,12 @@ public sealed record StairRules(
 /// <c>rc</c> (a waist slab under the steps, slabs for the landings) or
 /// <c>solid</c> (the steps filled down to the stair's base, as entrance steps
 /// cast on the ground are).
+/// <para><see cref="FootingDepth"/>: the first flight's foot stands on a footing of its own (forum topic 104, "foundation can be
+/// made apart"), a strip <see cref="FootingWidth"/> wide under the first tread, its face flush with the first riser, this deep under
+/// the floor; null or 0, none.</para>
 /// </summary>
-public sealed record StairConstruction(string Kind, double Waist, double LandingThickness, string Concrete, double? LandingBeamWidth = null, double? LandingBeamDepth = null);
+public sealed record StairConstruction(string Kind, double Waist, double LandingThickness, string Concrete, double? LandingBeamWidth = null, double? LandingBeamDepth = null,
+    double? FootingDepth = null, double FootingWidth = 0.3);
 
 /// <summary>What the architect sees: the finish on the treads (the riser is measured on the finished surfaces, what people walk on) and the nosing.</summary>
 public sealed record StairFinish(double TreadThickness, string TreadMaterial, double Nosing);

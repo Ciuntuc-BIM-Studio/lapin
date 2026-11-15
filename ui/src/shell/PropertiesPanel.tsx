@@ -21,7 +21,7 @@ import { elevationOf, offsetFor, raisedBy } from '../engine/elevation';
 import { useLiveRise } from '../viewport/viewFrame';
 import { fieldShown, type FieldDescriptor, type NodeDto } from '../engine/protocol';
 import type { PropertySectionDef } from '../platform/module';
-import { findTool, propertySections, typeFieldsOf } from '../platform/modules';
+import { findTool, propertySections, subSelectionPanel, typeFieldsOf } from '../platform/modules';
 import { ClassificationSection } from '../modules/core/classifications/ClassificationSection';
 import { QuantitiesSection } from './QuantitiesSection';
 import { DependenciesSection } from './DependenciesSection';
@@ -224,6 +224,10 @@ function SelectionPanel({ selection }: { selection: string | null }) {
       </aside>
     );
   }
+  // A part of an element selected on its own (owner#tag: a stair's railing), shown by its owner's module.
+  const owner = !node && !axis && selection?.includes('#') ? nodes.get(selection.slice(0, selection.indexOf('#'))) : undefined;
+  const Sub = owner ? subSelectionPanel(owner.type) : null;
+  if (owner && Sub && selection) return <Sub owner={owner} tag={selection.slice(selection.indexOf('#') + 1)} id={selection} />;
   if (!node) return <FrontViewPanel />;
   return <ElementPanel node={node} />;
 }

@@ -54,6 +54,7 @@ import { sameKind } from '../../shell/params';
 import { withAutoJoinMenus } from '../core/autoJoin';
 import { SHADE, SunshadeSection, SunshadeTypesDialog, sunshade, sunshadeAlong, sunshadeGrips, sunshadeSchedule, sunshadeTypes } from './Sunshades';
 import { lazyPart } from '../../platform/lazyPart';
+import { StairRailingPanel, railingPick } from './StairRailingPanel';
 const FieldScheduleDialog = lazyPart(() => import('./FieldScheduleDialog').then((m) => m.FieldScheduleDialog), { title: 'Field schedule' });
 const FieldTemplatesDialog = lazyPart(() => import('./FieldTemplatesDialog').then((m) => m.FieldTemplatesDialog), { title: 'New schedule from a template' });
 
@@ -551,6 +552,9 @@ const architecture: LapinModule = {
     { id: 'roomColors', label: 'Room colours', classes: ['LapinView'], component: RoomViewSection },
     { id: 'gate', label: 'Gate', classes: [GATE_CLASS], component: GateSection },
   ],
+  // A stair's railing selected on its own (forum topic 102): stairId#railing:left, by a click on it in a plan or in 3D.
+  subSelectionPanels: { IfcStair: StairRailingPanel },
+  subSelectionPick: { IfcStair: railingPick },
   dialogs: { wallOpening: OpeningDialog, wallProfile: WallProfileDialog, curtainMembers: CurtainMembersDialog, curtainCells: CurtainCellsDialog, roof: RoofDialog, wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog, ceilingTypes: CeilingTypesDialog, skirtingTypes: SkirtingTypesDialog, roomFinishes: RoomFinishesDialog, curtainWalls: CurtainWallDialog, roomColors: RoomColorsDialog, roomTag: RoomTagDialog, underStair: UnderStairDialog, sunshades: SunshadeTypesDialog, balcony: BalconyDialog, gateTypes: GateTypesDialog, fieldSchedule: FieldScheduleDialog, fieldTemplates: FieldTemplatesDialog },
   // In "Edit layers" (forum topic 89) a wall's or floor's grips are its layers' edges.
   grips: { IfcWall: withLayers(wallGrips), IfcDoor: joineryGrips, IfcWindow: joineryGrips, IfcCurtainWall: curtainGrips, IfcSlab: withLayers(contourGrips('architecture.updateSlab')), LapinCeiling: contourGrips('architecture.updateCeiling'), IfcOpeningElement: openingGrips, IfcRoof: roofGrips, IfcSpace: roomGrips, LapinDownpipe: downpipeGrips, LapinRailing: railingGrips, LapinSkirting: skirtingGrips, [SHADE]: sunshadeGrips, [BALCONY]: balconyGrips,

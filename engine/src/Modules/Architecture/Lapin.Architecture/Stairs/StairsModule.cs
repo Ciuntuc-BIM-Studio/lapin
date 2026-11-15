@@ -185,6 +185,29 @@ public static class StairsModule
             return null;
         });
 
+        // One railing of a stair (forum topic 102), selected on its own as stairId#railing:left or …#railing:right:
+        // {id (the railing's, or the stair's with side), side?, on?, kind?, height?, style?, profile?}; null frees a setting (the type's).
+        // on: true puts the railing on that side back (railingSides), false takes it off; Delete on the railing does the same.
+        r.Command("updateStairRailing", "Change stair railing", (ctx, a) =>
+        {
+            var id = (string?)a["id"] ?? throw new CommandException("Which stair's railing?");
+            var (stairId, side) = StairBuilder.ParseRailingId(id) ?? (id, (string?)a["side"] ?? "");
+            if (side is not ("left" or "right")) throw new CommandException("A stair's railing is on its left or its right.");
+            var stair = ctx.Model.Get(stairId) is { Class: IfcClass.Stair } st ? st : throw new CommandException($"No stair „{stairId}”.");
+            var attrs = stair.CloneAttrs();
+            var all = attrs["railings"]?.DeepClone() as JsonObject ?? [];
+            var own = all[side]?.DeepClone() as JsonObject ?? [];
+            if (a.ContainsKey("kind")) { if ((string?)a["kind"] is { } kind && StairBuilder.RailingKinds.Contains(kind)) own["kind"] = kind; else own.Remove("kind"); }
+            if (a.ContainsKey("height")) { if (Json.Number(a["height"]) is { } height) own["height"] = Math.Clamp(height, 0.3, 2.5); else own.Remove("height"); }
+            if (a.ContainsKey("style")) { if ((string?)a["style"] is { } style && StairSpec.RailingStyles.Contains(style)) own["style"] = style; else own.Remove("style"); }
+            if (a.ContainsKey("profile")) { if ((string?)a["profile"] is "round" or "square") own["profile"] = (string)a["profile"]!; else own.Remove("profile"); }
+            if (own.Count > 0) all[side] = own; else all.Remove(side);
+            if (all.Count > 0) attrs["railings"] = all; else attrs.Remove("railings");
+            if (a["on"] is JsonValue onValue && onValue.TryGetValue<bool>(out var on)) attrs["railingSides"] = WithSide(StairBuilder.RailingOf(stair, StairBuilder.SpecOf(ctx.Model, stair)).Sides, side, on);
+            ctx.Replace(stair.With(attrs: attrs));
+            return null;
+        });
+
         // The configurator's preview: a spec as it is being edited, the height and width to try it at.
         r.Query("stairPreview", (q, a) =>
         {
@@ -332,6 +355,14 @@ public static class StairsModule
         };
     }
 
+    /// <summary>The railing's sides with one side put on or taken off: both less one is the other, one less itself is none.</summary>
+    public static string WithSide(string sides, string side, bool on)
+    {
+        var (l, r) = (sides is "left" or "both", sides is "right" or "both");
+        if (side == "left") l = on; else r = on;
+        return l && r ? "both" : l ? "left" : r ? "right" : "none";
+    }
+
     static string Name(IModelView m, StairSpec spec) => spec.IsRamp ? $"Ramp {Numbering.Next(m.OfClass(IfcClass.Ramp))}" : $"Stair {Numbering.Next(m.OfClass(IfcClass.Stair))}";
 
     /// <summary>The project's stair and ramp types.</summary>
@@ -379,11 +410,24 @@ public static class StairsModule
     }
 }
 
-/// <summary>A stair deleted takes the opening it asked of the floor above and the spaces furnished under it with it.</summary>
+/// <summary>
+/// A stair deleted takes the opening it asked of the floor above and the spaces furnished under it with it. One of its railings
+/// deleted (selected on its own as stairId#railing:side, forum topic 102) leaves the stair without a railing on that side, and
+/// without that side's own settings.
+/// </summary>
 sealed class StairDeletion : IDeletion
 {
     public bool Delete(ICommandContext ctx, string id)
     {
+        if (StairBuilder.ParseRailingId(id) is var (stairId, side))
+        {
+            if (ctx.Model.Get(stairId) is not { Class: IfcClass.Stair } stair) return false;
+            var attrs = stair.CloneAttrs();
+            attrs["railingSides"] = StairsModule.WithSide(StairBuilder.RailingOf(stair, StairBuilder.SpecOf(ctx.Model, stair)).Sides, side, false);
+            if (attrs["railings"]?.DeepClone() is JsonObject all && all.Remove(side)) { if (all.Count > 0) attrs["railings"] = all; else attrs.Remove("railings"); }
+            ctx.Replace(stair.With(attrs: attrs));
+            return true;
+        }
         if (ctx.Model.Get(id) is not { Class: IfcClass.Stair or IfcClass.Ramp }) return false;
         if (StairBuilder.OpeningOf(ctx.Model, id) is { } opening) ctx.Remove(opening.Id);
         // The space furnished under it goes with it (a tester's report, #71).

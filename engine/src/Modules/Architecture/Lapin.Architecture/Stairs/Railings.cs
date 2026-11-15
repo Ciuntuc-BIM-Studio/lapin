@@ -27,7 +27,7 @@ public static class Railings
     /// </summary>
     public static (List<Solid> Metal, List<Solid> Glass) Solids(IReadOnlyList<Vec3> path, StairRailing rail, Func<Vec3, double, double?>? ground = null)
     {
-        var metal = new List<Solid>();
+        var metal = Bars(path, rail);
         var glass = new List<Solid>();
         var height = Math.Max(0.3, rail.Height);
         Vec3 Up(Vec3 p, double up) => new(p.X, p.Y, p.Z + up);
@@ -35,9 +35,8 @@ public static class Railings
         {
             var (a, b) = (path[i], path[i + 1]);
             var len = (b.Xy - a.Xy).Length;
+            // An upright step of the handrail (where a flight's rail meets a landing's, forum topic 104): the bar only.
             if (len < 1e-6) continue;
-            var bar = rail.Profile == "round" ? StairBuilder.RoundBar(Up(a, height), Up(b, height), rail.BarSize, "rail") : Prism.SweepBox(Up(a, height), Up(b, height), rail.BarSize, rail.BarSize, "rail");
-            if (bar != null) metal.Add(bar);
             var across = b - a;
             var flat = new Vec3(-across.Y, across.X, 0);
             flat = flat * (1 / Math.Max(flat.Length, 1e-9));
@@ -84,6 +83,67 @@ public static class Railings
             }
         }
         return (metal, glass);
+    }
+
+    /// <summary>
+    /// The handrail along a railing's line, at its height over it: a bar (square or round) along each piece, upright ones too
+    /// (a flight's rail stepping down to a landing's, forum topic 104); each runs on half its size past a joint, so the
+    /// handrail turns with no gap at its kinks and corners.
+    /// </summary>
+    public static List<Solid> Bars(IReadOnlyList<Vec3> path, StairRailing rail)
+    {
+        var bars = new List<Solid>();
+        var height = Math.Max(0.3, rail.Height);
+        Vec3 Up(Vec3 p, double up) => new(p.X, p.Y, p.Z + up);
+        for (var i = 0; i + 1 < path.Count; i++)
+        {
+            var (a, b) = (Up(path[i], height), Up(path[i + 1], height));
+            var axis = b - a;
+            if (axis.Length < 1e-6) continue;
+            var dir = axis * (1 / axis.Length);
+            var lap = rail.BarSize / 2;
+            if (i > 0) a -= dir * lap;
+            if (i + 2 < path.Count) b += dir * lap;
+            var bar = rail.Profile == "round" ? StairBuilder.RoundBar(a, b, rail.BarSize, "rail") : Prism.SweepBox(a, b, rail.BarSize, rail.BarSize, "rail");
+            if (bar != null) bars.Add(bar);
+        }
+        return bars;
+    }
+
+    /// <summary>
+    /// A handrail fixed to a wall (forum topic 102: a wall handrail on the wall side instead of a balustrade): the bar along the
+    /// line at its height, held off the wall by brackets at most the post spacing apart, each an arm out to the side
+    /// (<paramref name="outward"/>: +1 to the left of the way the line runs, -1 to its right) and a plate on the wall.
+    /// </summary>
+    public static List<Solid> WallHandrail(IReadOnlyList<Vec3> path, StairRailing rail, double outward)
+    {
+        var metal = Bars(path, rail);
+        var height = Math.Max(0.3, rail.Height);
+        var reach = Math.Max(0.04, rail.Inset) + rail.BarSize / 2;
+        for (var i = 0; i + 1 < path.Count; i++)
+        {
+            var (a, b) = (path[i], path[i + 1]);
+            var len = (b.Xy - a.Xy).Length;
+            if (len < 1e-6) continue;
+            var side = (b.Xy - a.Xy).Normalized().Perp * outward;
+            var count = Math.Max(1, (int)Math.Ceiling(len / Math.Max(rail.PostSpacing, 0.3)));
+            for (var j = 0; j <= count; j++)
+            {
+                if (j == count && i + 2 < path.Count) continue;
+                // Brackets stand a little in from the ends of each piece.
+                var t = Math.Clamp((double)j / count, 0.08, 0.92);
+                var on = a + (b - a) * t;
+                var under = on.Z + height - rail.BarSize / 2;
+                var elbow = new Vec3(on.X, on.Y, under - 0.05);
+                var arm = new Vec3(side.X * reach, side.Y * reach, 0);
+                if (Prism.SweepBox(new Vec3(on.X, on.Y, under), elbow, 0.012, 0.012, "bracket") is { } stem) metal.Add(stem);
+                if (Prism.SweepBox(elbow, elbow + arm, 0.012, 0.012, "bracket") is { } reachOut) metal.Add(reachOut);
+                var wall = elbow + arm;
+                var flatX = Math.Abs(side.X) > Math.Abs(side.Y);
+                if (Prism.Box(new Vec3(wall.X + side.X * 0.004, wall.Y + side.Y * 0.004, wall.Z), flatX ? 0.008 : 0.07, flatX ? 0.07 : 0.008, 0.07, "bracket") is { } plate) metal.Add(plate);
+            }
+        }
+        return metal;
     }
 
     // ------------------------------------------------------------ the railing of its own

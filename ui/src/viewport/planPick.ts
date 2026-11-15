@@ -109,8 +109,9 @@ export function pickAt(p: Vec2, tol: number, items: readonly RenderItem[], nodes
       if (!hit) continue;
       if (typeof m.data?.of === 'string' && m.data.of === best?.e.id) continue;
       if (hit.pick === hit.owner.id) return hit.owner;
-      // One axis of a grid (grid#tag): selected on its own.
-      return { ...hit.owner, id: m.id, name: `Axis ${m.id.slice(m.id.indexOf('#') + 1)}` };
+      // One axis of a grid (grid#tag), one railing of a stair (stair#railing:left): selected on its own.
+      const tag = m.id.slice(m.id.indexOf('#') + 1);
+      return { ...hit.owner, id: m.id, name: tag.startsWith('railing:') ? `${hit.owner.name}, ${tag.slice(8)} railing` : `Axis ${tag}` };
     }
   }
   // A click inside a hatch takes it, after every line and outline (report #122): the smallest area first; a solid one lies over the model,
