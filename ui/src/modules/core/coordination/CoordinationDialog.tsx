@@ -161,6 +161,21 @@ export function CoordinationDialog() {
                     <button type="button" className="btn small" data-testid="clash-ignore-picked" disabled={busy || pickedList.length === 0} onClick={() => ignore(pickedList, 'ignored')}>Ignore</button>
                     <button type="button" className="btn small" disabled={busy || pickedList.length === 0} onClick={() => ignore(pickedList, 'open')}>Reopen</button>
                   </div>
+                  {(report.unchecked?.length ?? 0) > 0 && (
+                    <div data-testid="clash-unchecked">
+                      <p className="eyebrow">Could not be checked · {report.unchecked!.length}</p>
+                      <table className="schedule-table coordination-table">
+                        <thead><tr><th>MEP element</th><th>Host</th><th>Reason</th></tr></thead>
+                        <tbody>
+                          {report.unchecked!.map((u) => (
+                            <tr key={u.key} onClick={() => { const ids = [u.mepId, u.hostId].filter((x): x is string => !!x); if (ids.length) useUi.setState({ view: '3d', selected: ids, selection: ids[0] }); }}>
+                              <td>{u.mep ?? ''}</td><td>{u.host ?? ''}</td><td>{u.message}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                   {groups.length === 0 ? <p className="cde-ok">Nothing to fix.</p> : (
                     <div className="coordination-results">
                       {groups.map((g) => (

@@ -4006,6 +4006,8 @@ export const LO: Record<string, string> = {
   "Save as (full path, .{ext}):": "ບັນທຶກເປັນ (ເສັ້ນທາງເຕັມ, .{ext}):",
   "Don't save": "ບໍ່ບັນທຶກ",
   "Finish or cancel (Esc) what you are doing first, then undo or redo.": "ກະລຸນາສຳເລັດ ຫຼື ຍົກເລີກ (Esc) ສິ່ງທີ່ກຳລັງເຮັດກ່ອນ ແລ້ວຈຶ່ງຍົກເລີກ ຫຼື ເຮັດຄືນໃໝ່.",
+  'Could not be checked': 'ບໍ່ສາມາດກວດສອບໄດ້',
+  'Reason': 'ເຫດຜົນ',
 };
 
 /** Phrases with a number or a name in them. */

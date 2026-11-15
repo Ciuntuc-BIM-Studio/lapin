@@ -3953,6 +3953,8 @@ export const PL: Record<string, string> = {
   "Save as (full path, .{ext}):": "Zapisz jako (pełna ścieżka, .{ext}):",
   "Don't save": "Nie zapisuj",
   "Finish or cancel (Esc) what you are doing first, then undo or redo.": "Dokończ lub anuluj (Esc) bieżącą czynność, a potem cofnij lub ponów.",
+  'Could not be checked': 'Nie udało się sprawdzić',
+  'Reason': 'Powód',
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

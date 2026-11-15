@@ -3950,6 +3950,8 @@ export const PT: Record<string, string> = {
   "Save as (full path, .{ext}):": "Guardar como (caminho completo, .{ext}):",
   "Don't save": "Não guardar",
   "Finish or cancel (Esc) what you are doing first, then undo or redo.": "Termina ou cancela (Esc) o que estás a fazer e depois desfaz ou refaz.",
+  'Could not be checked': 'Não foi possível verificar',
+  'Reason': 'Motivo',
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

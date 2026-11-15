@@ -3944,6 +3944,8 @@ export const ZH: Record<string, string> = {
   "Save as (full path, .{ext}):": "另存为（完整路径，.{ext}）：",
   "Don't save": "不保存",
   "Finish or cancel (Esc) what you are doing first, then undo or redo.": "请先完成或取消（Esc）当前操作，然后再撤销或重做。",
+  'Could not be checked': '无法检查',
+  'Reason': '原因',
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [
