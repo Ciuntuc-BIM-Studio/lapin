@@ -21,8 +21,13 @@ public static partial class IfcImport
         return m.Groups[1].Success ? -days : days;
     }
 
-    static DateTime? IfcWhen(object? v) =>
-        IfcModel.Str(v) is { } s && DateTime.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out var d) ? d : null;
+    /// <summary>
+    /// An IfcDateTime or IfcDate as written: its date and clock time, an offset or a Z after it kept out (read as local
+    /// time, a date late in the day at UTC−5 would fall on the next day east of it).
+    /// </summary>
+    internal static DateTime? IfcWhen(object? v) =>
+        IfcModel.Str(v) is { } s && DateTimeOffset.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces | DateTimeStyles.AssumeUniversal, out var d)
+            ? DateTime.SpecifyKind(d.DateTime, DateTimeKind.Unspecified) : null;
 
     static TimeOnly? IfcClock(object? v) =>
         IfcModel.Str(v) is { } s && TimeOnly.TryParse(s, CultureInfo.InvariantCulture, out var t) ? t : null;
