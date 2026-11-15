@@ -139,41 +139,88 @@ public static class IfcCarry
     /// <summary>IFC2X3's entities IFC4 has no more: what was one of them is written as Lapin would write it.</summary>
     static readonly HashSet<string> Ifc4Lacks = ["IFCELECTRICALELEMENT", "IFCEQUIPMENTELEMENT", "IFCELECTRICDISTRIBUTIONPOINT", "IFCELECTRICHEATERTYPE", "IFCGASTERMINALTYPE", "IFCELECTRICALBASEPROPERTIES"];
 
-    /// <summary>What a reference is followed into: what describes the element, never its placement or geometry.</summary>
+    /// <summary>
+    /// What a reference is followed into: what describes the element, never its placement or geometry; and, for a profile
+    /// (of a material's profile set, a type's), the curves and the operator it is drawn with.
+    /// </summary>
     static bool Follows(string type) =>
         type.StartsWith("IFCPROPERTY", StringComparison.Ordinal) || type.StartsWith("IFCQUANTITY", StringComparison.Ordinal)
         || type is "IFCCOMPLEXPROPERTY" or "IFCPHYSICALCOMPLEXQUANTITY" or "IFCELEMENTQUANTITY"
         || type.EndsWith("UNIT", StringComparison.Ordinal) || type is "IFCDERIVEDUNITELEMENT" or "IFCDIMENSIONALEXPONENTS" or "IFCMEASUREWITHUNIT"
         || type.StartsWith("IFCMATERIAL", StringComparison.Ordinal)
-        || type.EndsWith("PROFILEDEF", StringComparison.Ordinal) || type is "IFCCARTESIANPOINT" or "IFCDIRECTION" or "IFCAXIS2PLACEMENT2D" or "IFCPOLYLINE";
+        || type.EndsWith("PROFILEDEF", StringComparison.Ordinal) || type is "IFCCARTESIANPOINT" or "IFCDIRECTION" or "IFCAXIS2PLACEMENT2D"
+        || ProfileGeometry.Contains(type);
 
-    /// <summary>An entity as the file wrote it; null when it is not there (or, not the root, not something to follow).</summary>
+    /// <summary>The curves a profile is drawn with, and its operator: followed so a carried profile is whole.</summary>
+    static readonly HashSet<string> ProfileGeometry =
+    [
+        "IFCPOLYLINE", "IFCCOMPOSITECURVE", "IFCCOMPOSITECURVESEGMENT", "IFCINDEXEDPOLYCURVE", "IFCCARTESIANPOINTLIST2D", "IFCTRIMMEDCURVE",
+        "IFCCIRCLE", "IFCELLIPSE", "IFCLINE", "IFCVECTOR", "IFCBSPLINECURVEWITHKNOTS", "IFCRATIONALBSPLINECURVEWITHKNOTS",
+        "IFCCARTESIANTRANSFORMATIONOPERATOR2D", "IFCCARTESIANTRANSFORMATIONOPERATOR2DNONUNIFORM",
+    ];
+
+    /// <summary>A geometric entity of a profile: every reference it makes is required, so one not followed leaves it out.</summary>
+    static bool Geometric(string type) => type.EndsWith("PROFILEDEF", StringComparison.Ordinal) || ProfileGeometry.Contains(type);
+
+    /// <summary>The deepest a snapshot follows references.</summary>
+    const int MaxDepth = 16;
+
+    /// <summary>
+    /// An entity as the file wrote it; null when it is not there (or, not the root, not something to follow), or when it
+    /// cannot be carried whole: a reference it holds to something that should be followed but could not be (missing, too
+    /// deep, not whole itself) would be written <c>$</c> where IFC requires a value, so the entity is left out and the
+    /// export writes what Lapin has of it instead.
+    /// </summary>
     public static JsonObject? Snapshot(StepFile f, int id, bool root = false, int depth = 0, bool numbers = false)
     {
-        if (depth > 16 || f.Entities.GetValueOrDefault(id) is not { } e || !root && !Follows(e.Type) || Ifc4Lacks.Contains(e.Type)) return null;
+        if (depth > MaxDepth || f.Entities.GetValueOrDefault(id) is not { } e || !root && !Follows(e.Type) || Ifc4Lacks.Contains(e.Type)) return null;
+        var strict = Geometric(e.Type);
         var a = new JsonArray();
         for (var i = 0; i < e.Args.Count; i++)
-            a.Add(e.Type == "IFCSIUNIT" && i == 0 ? (JsonNode)"*"
-                : numbers && i == 2 && e.Type == "IFCPROPERTYSINGLEVALUE" && e.Args[i] is StepTyped { Value: string txt } && IfcValueText.Parse(txt) is { } n ? (JsonNode)n.Step
-                : Arg(f, e.Args[i], depth, numbers));
+        {
+            if (e.Type == "IFCSIUNIT" && i == 0) { a.Add((JsonNode)"*"); continue; }
+            if (numbers && i == 2 && e.Type == "IFCPROPERTYSINGLEVALUE" && e.Args[i] is StepTyped { Value: string txt } && IfcValueText.Parse(txt) is { } n) { a.Add((JsonNode)n.Step); continue; }
+            if (Arg(f, e.Args[i], depth, numbers, strict) is not { } arg) return null;
+            a.Add(arg);
+        }
         if (f.Schema.StartsWith("IFC2X3", StringComparison.OrdinalIgnoreCase))
         {
             // An element IFC4 gave a PredefinedType (a door and a window three attributes more), and what IFC4 describes more fully.
-            var n = Ifc4Counts.TryGetValue(e.Type, out var c) ? c
+            var count = Ifc4Counts.TryGetValue(e.Type, out var c) ? c
                 : root && e.Type is "IFCDOOR" or "IFCWINDOW" && a.Count == 10 ? 13
                 : root && a.Count == 8 && IfcExport.HasPredefined(e.Type) ? 9 : 0;
-            while (a.Count < n) a.Add((JsonNode)"$");
+            while (a.Count < count) a.Add((JsonNode)"$");
         }
         return new JsonObject { ["t"] = e.Type, ["a"] = a };
     }
 
-    static JsonNode Arg(StepFile f, object? v, int depth, bool numbers = false)
+    /// <summary>
+    /// A reference not followed by design (a placement, an owner history, a representation map: optional, written <c>$</c>
+    /// as before), not one that should have been and was not (too deep, or to an entity that is not whole). In a
+    /// <paramref name="strict"/> entity (a profile, a curve) every reference must be followed.
+    /// </summary>
+    static bool Unfollowed(StepFile f, StepRef r, bool strict) =>
+        !strict && (f.Entities.GetValueOrDefault(r.Id) is not { } target || !Follows(target.Type) || Ifc4Lacks.Contains(target.Type));
+
+    /// <summary>An attribute's snapshot: its text, the entity (or entities) it refers to, <c>$</c> for a reference not followed; null when it breaks its entity.</summary>
+    static JsonNode? Arg(StepFile f, object? v, int depth, bool numbers, bool strict)
     {
-        if (v is StepRef r) return (JsonNode?)Snapshot(f, r.Id, depth: depth + 1, numbers: numbers) ?? "$";
+        if (v is StepRef r)
+            return Snapshot(f, r.Id, depth: depth + 1, numbers: numbers) is { } snap ? snap : Unfollowed(f, r, strict) ? "$" : null;
         if (v is List<object?> l && l.Any(x => x is StepRef))
         {
-            var items = l.Select(x => x is StepRef xr ? Snapshot(f, xr.Id, depth: depth + 1, numbers: numbers) : null).ToList();
-            return items.All(x => x != null) ? new JsonArray([.. items]) : "$";
+            var items = new List<JsonNode?>();
+            var skipped = 0;
+            foreach (var x in l)
+            {
+                // A value beside the references (a trim's parameter beside its point): as it was written.
+                if (x is not StepRef xr) { items.Add(Text(x)); continue; }
+                if (Snapshot(f, xr.Id, depth: depth + 1, numbers: numbers) is { } snap) items.Add(snap);
+                else if (Unfollowed(f, xr, strict)) skipped++;
+                else return null;
+            }
+            // A list holding what is not followed (a type's representation maps): left out as a whole, as it was.
+            return skipped == 0 ? new JsonArray([.. items]) : "$";
         }
         return Text(v);
     }
@@ -242,7 +289,7 @@ public static class IfcCarry
         string ArgText(JsonNode? n, string owner) => n switch
         {
             JsonObject o => Emit(o, owner),
-            JsonArray l => Step.L(l.OfType<JsonObject>().Select(x => Emit(x, owner))),
+            JsonArray l => Step.L(l.Select(x => x is JsonObject o ? Emit(o, owner) : (string?)x ?? Step.Null)),
             _ => (string?)n ?? Step.Null,
         };
 

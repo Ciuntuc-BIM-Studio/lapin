@@ -214,6 +214,9 @@ public static partial class IfcExport
         "IfcMember", "IfcPlate", "IfcCovering", "IfcRailing", "IfcStair", "IfcRamp", "IfcChimney", IfcClass.BuildingElementProxy, "IfcTransportElement",
     ];
 
+    /// <summary>A number of working days as an IfcDuration, its part of a day in hours of a day of <paramref name="hoursPerDay"/> (the writer's).</summary>
+    internal static string IfcDuration(double days, double hoursPerDay = 8) => Writer.IfcDuration(days, hoursPerDay);
+
     sealed partial class Writer(Session s, IfcExportOptions o)
     {
         // The application that wrote it: the product (Lapin, or an edition under its own name).
@@ -2355,7 +2358,8 @@ public static partial class IfcExport
                 foreach (var (rel, host, v) in pendingVoids)
                     if (m.Get(v)?.Class == IfcClass.EarthworksCut && written.TryGetValue(host, out var h) && written.TryGetValue(v, out var cut))
                         f.Add("IFCRELVOIDSELEMENT", Gid(rel.Id), Null, Null, Null, h, cut);
-            foreach (var (spatial, list) in contained)
+            // A spatial element whose every element went elsewhere (into an assembly, a part): no relationship, IFC wants one or more.
+            foreach (var (spatial, list) in contained.Where(c => c.Value.Count > 0))
                 f.Add("IFCRELCONTAINEDINSPATIALSTRUCTURE", SpatialGid(refIdOf[spatial], IfcClass.RelContainedInSpatialStructure, null, refIdOf[spatial], "contains"), Null, Null, Null, L(list), spatial);
             // Rooms are parts of their storey: aggregated, as IFC has spaces.
             foreach (var (spatial, list) in spaces)
@@ -2368,13 +2372,19 @@ public static partial class IfcExport
         static string IfcDate(DateOnly d) => S(d.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
         static string IfcTime(TimeOnly t) => S(t.ToString("HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture));
 
-        /// <summary>A number of working days as an IfcDuration (ISO 8601: P5D, P0D; a negative float -P2D; a part of a day in hours).</summary>
-        internal static string IfcDuration(double days)
+        /// <summary>
+        /// A number of working days as an IfcDuration (ISO 8601: P5D, P0D; a negative float -P2D; a part of a day in the
+        /// working hours of a day of <paramref name="hoursPerDay"/>, the calendar's, as the import reads it back).
+        /// </summary>
+        internal static string IfcDuration(double days, double hoursPerDay = 8)
         {
+            if (!(hoursPerDay > 0) || !double.IsFinite(hoursPerDay)) hoursPerDay = 8;
+            if (!double.IsFinite(days)) days = 0;
             var sign = days < 0 ? "-" : "";
             days = Math.Abs(days);
             var whole = Math.Floor(days);
-            var hours = Math.Round((days - whole) * 24, 3);
+            var hours = Math.Round((days - whole) * hoursPerDay, 3);
+            if (hours >= hoursPerDay) { whole++; hours = 0; }
             var text = hours > 0 ? $"P{whole:0}DT{hours.ToString(System.Globalization.CultureInfo.InvariantCulture)}H" : $"P{whole:0}D";
             return S(sign + text);
         }
@@ -2407,13 +2417,15 @@ public static partial class IfcExport
                     }
                     f.Add("IFCRELDECLARES", Gid(ws.Id, "declares"), Null, Null, Null, projectRef, L(declared));
                     var taskRef = new Dictionary<string, string>();
+                    // A day's working hours, the calendar's (8 without one): the import reads a duration's hours by them.
+                    var hoursPerDay = ws.Calendar is { } wc && (wc.DayEnd - wc.DayStart).TotalHours is var dh && dh > 0 ? dh : 8;
                     foreach (var t in ws.Tasks)
                     {
                         string time = Null;
                         if (t.Time is { } tt)
                         {
                             string Dt(DateTime? d) => d is { } x ? IfcDateTime(x) : Null;
-                            string Dur(double? d) => d is { } x ? IfcDuration(x) : Null;
+                            string Dur(double? d) => d is { } x ? IfcDuration(x, hoursPerDay) : Null;
                             time = f.Add("IFCTASKTIME", Null, Null, Null, E("WORKTIME"), Dur(tt.DurationDays), Dt(tt.ScheduleStart), Dt(tt.ScheduleFinish),
                                 Dt(tt.ScheduleStart), Dt(tt.ScheduleFinish), Dt(tt.LateStart), Dt(tt.LateFinish), Dur(tt.FreeFloatDays), Dur(tt.TotalFloatDays),
                                 tt.IsCritical is { } crit ? (crit ? Step.True : Step.False) : Null, Dt(tt.StatusTime), Null, Dt(tt.ActualStart), Dt(tt.ActualFinish),
@@ -2436,7 +2448,7 @@ public static partial class IfcExport
                     foreach (var q in ws.Sequences)
                     {
                         if (!taskRef.TryGetValue(q.Relating, out var a) || !taskRef.TryGetValue(q.Related, out var b)) continue;
-                        var lag = f.Add("IFCLAGTIME", Null, Null, Null, Typed("IFCDURATION", IfcDuration(q.LagDays)), E("WORKTIME"));
+                        var lag = f.Add("IFCLAGTIME", Null, Null, Null, Typed("IFCDURATION", IfcDuration(q.LagDays, hoursPerDay)), E("WORKTIME"));
                         f.Add("IFCRELSEQUENCE", Gid(q.Id), Null, Null, Null, a, b, lag, E(q.Type), Null);
                     }
                     // The elements: what a task builds is its output (one IfcRelAssignsToProduct an element, every task building it
