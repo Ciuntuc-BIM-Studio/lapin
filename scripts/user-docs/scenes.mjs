@@ -10137,6 +10137,69 @@ export const scenes = [
     },
   },
   {
+    // Automatic text placement (forum topic 78): the south facade's exterior dimensions with a 15 cm pier between a window
+    // and a narrow opening; the values that do not fit between their witness lines stand outside them or a row up, clear of
+    // the next string, and the setting in Dimension rules….
+    id: 'dimension-text-placement',
+    touches: ['drafting'],
+    async run(t) {
+      await t.fresh();
+      const { storey, walls } = await house(t, { roof: false });
+      // The window's jambs at 8.90 and 10.10; an opening 0.40 wide from 10.25: a 150 pier and a 400 opening side by side.
+      await t.cmd('architecture.addWallOpening', { wallId: walls[0], along: 10.45, width: 0.4, height: 1.5, sill: 0.9 });
+      const view = `plan:${storey}`;
+      await t.cmd('drafting.exteriorDimensions', { viewId: view, wallIds: [walls[0]] });
+      await t.ui({ selection: null, selected: [], keyPlan: false });
+      await t.page.evaluate(async () => (await import('/src/viewport/zoom.ts')).zoomHost()?.zoomWindow({ x: 5.5, y: -4.2 }, { x: 13.2, y: 1 }));
+      await t.wait(900);
+      const drawing = await t.call('doc.query', { name: 'view.drawing', args: { id: view } });
+      const placed = (drawing.marks ?? []).filter((m) => Array.isArray(m.data?.textAuto));
+      t.expect(placed.length > 0, 'the exterior strings have values moved clear of their neighbours');
+      const plan = t.page.locator('[data-testid=plan]');
+      t.expect(await plan.locator('text', { hasText: /^150$/ }).count() >= 1, 'the pier\'s value is drawn');
+      const [x0, y0] = await t.planPoint(5.5, 1);
+      const [x1, y1] = await t.planPoint(13.2, -4.2);
+      await t.shot('dimension-text-placement', { clip: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 } });
+      // The setting, under the rules' tabs.
+      await t.tool('drafting.dimensionRules');
+      await t.wait(500);
+      t.expect(await t.page.locator('[data-dim-auto-text]').isChecked(), 'automatic text placement is on');
+      t.expect(await t.page.locator('[data-field=dim-text-leader]').inputValue() === '5', 'a leader past 5 mm on paper');
+      await t.page.locator('[data-dimension-rules] button', { hasText: 'Cancel' }).click();
+    },
+  },
+  {
+    // A grid axis's temporary dimensions (forum topic 78): axis 2 selected shows its distances to axes 1 and 3; 5000 typed
+    // to axis 1 moves it, and the axes beyond with it.
+    id: 'grid-temp-dimensions',
+    touches: ['drafting'],
+    async run(t) {
+      await t.fresh();
+      const { gridId } = await t.cmd('drafting.makeGrid', { x: [6, 6, 4.5], y: [5, 5] });
+      await t.ui({ keyPlan: false });
+      await t.page.evaluate(async () => (await import('/src/viewport/zoom.ts')).zoomHost()?.zoomWindow({ x: -2.5, y: -2.5 }, { x: 19, y: 12.5 }));
+      await t.wait(800);
+      await t.ui({ selection: `${gridId}#2`, selected: [`${gridId}#2`] });
+      await t.wait(800);
+      const dims = t.page.locator('[data-testid=grid-dims]');
+      t.expect(await dims.count() === 1, 'a selected axis shows its temporary dimensions');
+      const dim = (key) => dims.locator(`[data-dim="${key}"]`);
+      t.expect(Math.abs(Number(await dim('g:1').getAttribute('data-value')) - 6) < 1e-6 && Math.abs(Number(await dim('g:3').getAttribute('data-value')) - 6) < 1e-6, 'to axes 1 and 3, 6000 each');
+      t.expect(await t.page.locator('[data-field=grid-dims-beyond]').isChecked(), 'the axes beyond move too, as in its properties');
+      const [x0, y0] = await t.planPoint(-2.5, 12.5);
+      const [x1, y1] = await t.planPoint(19, -2.5);
+      await t.shot('grid-temp-dimensions', { clip: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 } });
+      await dim('g:1').locator('[data-value-hit]').click();
+      await t.page.locator('[data-field=temp-dim]').fill('5000');
+      await t.page.locator('[data-field=temp-dim]').press('Enter');
+      await t.wait(900);
+      const grid = (await t.nodes()).find((n) => n.id === gridId);
+      const x = (tag) => grid.props.axes.find((a) => a.tag === tag).a[0];
+      t.expect(Math.abs(x('2') - 5) < 1e-6 && Math.abs(x('3') - 11) < 1e-6 && Math.abs(x('1')) < 1e-6, `axis 2 at 5000, axis 3 with it (${x('2')}, ${x('3')})`);
+      await t.ui({ selection: null, selected: [] });
+    },
+  },
+  {
     // Draw order (report #44, decision 339): a text over a grey fill, the fill selected and right-clicked, Bring to front
     // from the menu: the fill now covers the text, in the view and on paper.
     id: 'draw-order',
