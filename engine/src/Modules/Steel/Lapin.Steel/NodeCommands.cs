@@ -89,16 +89,17 @@ sealed class SteelDeletion : IDeletion
                 return true;
             case Halls.Class:
                 foreach (var n in Halls.Nodes(ctx.Model, id).Values.ToList()) ctx.Remove(n.Id);
-                foreach (var mem in Halls.Members(ctx.Model, id).Values.ToList()) ctx.Remove(mem.Id);
+                foreach (var mem in Halls.Members(ctx.Model, id).Values.ToList())
+                {
+                    // A connection made on its own to a hall's member (with a beam of the user's) goes with the member.
+                    SteelNodes.DropWith(ctx, mem.Id);
+                    ctx.Remove(mem.Id);
+                }
                 if (e.Str("gridId") is { } grid && ctx.Model.Get(grid) != null) ctx.Remove(grid);
                 ctx.Remove(id);
                 return true;
             case SteelModule.Member or IfcClass.Column or IfcClass.Beam:
-                foreach (var n in SteelNodes.Of(ctx.Model, id).ToList())
-                {
-                    SteelNodes.Release(ctx, n);
-                    ctx.Remove(n.Id);
-                }
+                SteelNodes.DropWith(ctx, id);
                 return false;
         }
         return false;
