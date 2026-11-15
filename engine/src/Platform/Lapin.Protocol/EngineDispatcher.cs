@@ -159,6 +159,8 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
     /// <summary>The project as a package's bytes; the session counts as saved.</summary>
     public (byte[] Bytes, Diff Diff) SaveBytes(Session session, string name)
     {
+        // A script's step open: nothing goes to a file half way through it (audit 15.11.2026, P1).
+        session.RefuseDuringStep(ownerToo: true);
         var versions = Versions(session);
         var issues = IssueFilesOf(session);
         var foreign = Foreign(session, again: true);
@@ -225,6 +227,8 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
 
     public Diff Save(Session session, string? path)
     {
+        // A script's step open: nothing goes to a file half way through it (audit 15.11.2026, P1).
+        session.RefuseDuringStep(ownerToo: true);
         var target = path ?? session.Path ?? throw new CommandException("Where to save: the project has no file yet.");
         var versions = Versions(session);
         var issues = IssueFilesOf(session);
@@ -328,6 +332,7 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
     /// <summary>The project as it is now, saved as a new version of its file.</summary>
     public (JsonObject Result, Diff Diff) SaveVersion(Session session, string? name, string? note, bool asBytes)
     {
+        session.RefuseDuringStep(ownerToo: true);
         var build = ProjectPackage.Build(session);
         var versions = Versions(session).Add(build.Manifest, session.Model.Entities.Count(), name, note, out var version);
         return Commit(session, build, versions, asBytes, ToJson(version));
@@ -336,19 +341,25 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
     /// <summary>A version renamed or annotated; <paramref name="replace"/>: the project as it is now takes its place, what it held kept as a revision.</summary>
     public (JsonObject Result, Diff Diff) UpdateVersion(Session session, int number, string? name, string? note, bool replace, bool asBytes)
     {
+        session.RefuseDuringStep(ownerToo: true);
         var build = ProjectPackage.Build(session);
         var versions = Versions(session).Update(number, name, note, replace ? (build.Manifest, session.Model.Entities.Count()) : null, out var version);
         return Commit(session, build, versions, asBytes, ToJson(version));
     }
 
-    public (JsonObject Result, Diff Diff) DeleteVersion(Session session, int number, bool asBytes) =>
-        Commit(session, ProjectPackage.Build(session), Versions(session).Remove(number), asBytes, new JsonObject { ["removed"] = number });
+    public (JsonObject Result, Diff Diff) DeleteVersion(Session session, int number, bool asBytes)
+    {
+        session.RefuseDuringStep(ownerToo: true);
+        return Commit(session, ProjectPackage.Build(session), Versions(session).Remove(number), asBytes, new JsonObject { ["removed"] = number });
+    }
 
     /// <summary>
     /// The file written with the project as it is and the versions given; as bytes for a host without files (the browser).
+    /// Never during a script's open step, even the owner's (audit 15.11.2026, P1): the step's rollback would leave the file ahead of the model.
     /// </summary>
     (JsonObject Result, Diff Diff) Commit(Session session, PackageBuild build, PackageVersions versions, bool asBytes, JsonObject result)
     {
+        session.RefuseDuringStep(ownerToo: true);
         var issues = IssueFilesOf(session);
         var foreign = Foreign(session, again: true);
         if (asBytes)
@@ -416,7 +427,9 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
             {
                 var version = versions.Require(number);
                 var content = versions.Content(version.Manifest);
-                return (content.Entities, content.Relations, version.Manifest, version.Name);
+                // Brought up to date as a restore brings it (audit 15.11.2026, P17): what an upgrade alone changes is not a change.
+                var (entities, relations) = session.Upgraded(content.Entities, content.Relations);
+                return (entities, relations, version.Manifest, version.Name);
             }
             var build = ProjectPackage.Build(session);
             return (session.Model.Entities.ToList(), session.Model.Relations.ToList(), build.Manifest, "current");
@@ -492,7 +505,7 @@ public sealed record Caller(string Author, string Role)
     public object? Connection { get; init; }
 }
 
-/// <summary>A reply to one call: its id, and its result or why it failed; Warnings: what went wrong beside a call that went through (a save that could not carry everything over).</summary>
+/// <summary>A reply to one call: its id, and its result or why it failed; Warnings: what went wrong beside a call that went through (a save that could not carry everything over, the recovery journal not written).</summary>
 public sealed record Reply(JsonNode? Id, object? Result, string? Error = null, IReadOnlyList<string>? Warnings = null);
 
 /// <summary>What the engine pushes after anything that changed the document.</summary>
@@ -662,7 +675,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                     // The last part, carried by the reply: with the caller's own undo and redo, as the parts before it.
                     result = caller.Remote ? snapshot with { State = session.StateFor(caller.Author) } : snapshot;
                 }
-                List<string> warnings = [.. files.TakeWarnings()];
+                List<string> warnings = [.. files.TakeWarnings(), .. session.TakeWarnings()];
                 return (BinaryFrame.Encode(new Reply(id, result, Warnings: warnings.Count > 0 ? warnings : null), ContractsOnly), diff);
             }
             finally { session.Author = History.Me; session.Connection = null; session.Progress = null; session.Cancellation = default; _long = null; HostFiles.GuestCall = false; }
@@ -776,6 +789,31 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             default:
                 return false;
         }
+    }
+
+    /// <summary>
+    /// A path an export may write to: never a file the project reads (audit 15.11.2026, P14), its own file, a file it links or
+    /// hot-links, or an IFC an import came from (the group it made keeps it), since an existing IFC is never written to.
+    /// Compared as full paths, without case where the disk ignores it (macOS, Windows).
+    /// </summary>
+    string RefuseOverRead(string path)
+    {
+        var comparison = OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+        static string Full(string p) => Path.TrimEndingDirectorySeparator(Path.GetFullPath(p));
+        var target = Full(path);
+        var read = session.Model.OfClass(Links.Class).Select(l => l.Str("path"))
+            .Concat(session.Model.OfClass(Lapin.Platform.Groups.Class).Select(g => g.Str("source")))
+            .Append(session.Path)
+            .OfType<string>().Where(x => x.Length > 0);
+        foreach (var file in read)
+        {
+            string full;
+            try { full = Full(file); }
+            catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException) { continue; }
+            if (string.Equals(full, target, comparison))
+                throw new CommandException($"{Path.GetFileName(path)} is a file this project reads (a link, or the file it was imported from): an export never writes over it. Choose another name.");
+        }
+        return path;
     }
 
     (object? Result, Diff? Diff) Dispatch(string method, JsonObject p)
@@ -1097,7 +1135,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                     p["bonsaiStyles"] is JsonValue bv && bv.TryGetValue<bool>(out var bonsai) && bonsai,
                     // `structural`: IFC's structural analysis view (the analytical model, the load cases, actions and combinations; docs/plan-fem.md §8.7).
                     p["structural"] is JsonValue sv && sv.TryGetValue<bool>(out var structural) && structural);
-                if ((string?)p["path"] is { Length: > 0 } ifcPath) return (IfcExport.Write(session, ifcPath, options).ToJson(), null);
+                if ((string?)p["path"] is { Length: > 0 } ifcPath) return (IfcExport.Write(session, RefuseOverRead(HostFiles.Check(ifcPath)), options).ToJson(), null);
                 using var ms = new MemoryStream();
                 IfcExport.Write(session, ms, "project.ifc", options);
                 return (Deliver(ms.ToArray(), "project.ifc"), null);
