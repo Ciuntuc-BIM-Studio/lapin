@@ -8,6 +8,7 @@
  * folder is optional: the project file holds the issues.
  */
 
+import { confirmAction, promptText } from '../../../shell/prompts';
 import { backdropClose } from '../../../shell/Dialog';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Archive, ArchiveX, Download, FolderOpen, FolderOutput, Trash2, X } from 'lucide-react';
@@ -118,7 +119,7 @@ function IssueRows({ issue, size, missing, projectFolder, open, onToggle }: { is
   const folder = issue.folder ? `${issue.folder}/${issue.container}` : null;
   const kept = issue.files.filter((f) => f.stored && !missing.has(f.sha256));
   const publishTo = async () => {
-    const picked = isDesktop() ? await pickFolder(null) : window.prompt('Folder to publish into (full path):')?.trim() || null;
+    const picked = isDesktop() ? await pickFolder(null) : promptText('Folder to publish into (full path):')?.trim() || null;
     if (picked) await publishIssue(issue, picked);
   };
   return (
@@ -136,8 +137,8 @@ function IssueRows({ issue, size, missing, projectFolder, open, onToggle }: { is
           {kept.length > 0 && <button type="button" className="icon mini" title="Download as zip" onClick={() => void downloadIssueZip(issue)}><Archive size={12} /></button>}
           {kept.length > 0 && canUseFolder() && <button type="button" className="icon mini" title="Publish to folder…: the project folder's container, or a folder you pick" onClick={() => void (projectFolder ? publishIssue(issue) : publishTo())}><FolderOutput size={12} /></button>}
           {folder && isDesktop() && <button type="button" className="icon mini" title="Open folder" onClick={() => void openFolder(folder)}><FolderOpen size={12} /></button>}
-          {kept.length > 0 && <button type="button" className="icon mini" title="Delete stored files: the files leave the project file at the next save; the record, the names and the hashes stay" onClick={() => { if (window.confirm(`Delete the files issue ${issue.number} keeps in the project file? Its record, the file names and their hashes stay.`)) void dropIssueFiles(issue.id); }}><ArchiveX size={12} /></button>}
-          <button type="button" className="icon mini" title="Delete this issue's record (the files sent stay where they went)" onClick={() => { if (window.confirm(`Forget issue ${issue.number} (${issue.name})? The files sent stay where they went; those kept only in the project file go with it.`)) void execute('cde.deleteIssue', { id: issue.id }); }}><Trash2 size={12} /></button>
+          {kept.length > 0 && <button type="button" className="icon mini" title="Delete stored files: the files leave the project file at the next save; the record, the names and the hashes stay" onClick={() => { if (confirmAction('Delete the files issue {number} keeps in the project file? Its record, the file names and their hashes stay.', { number: issue.number })) void dropIssueFiles(issue.id); }}><ArchiveX size={12} /></button>}
+          <button type="button" className="icon mini" title="Delete this issue's record (the files sent stay where they went)" onClick={() => { if (confirmAction('Forget issue {number} ({name})? The files sent stay where they went; those kept only in the project file go with it.', { number: issue.number, name: issue.name })) void execute('cde.deleteIssue', { id: issue.id }); }}><Trash2 size={12} /></button>
         </td>
       </tr>
       {open && kept.length > 0 && canUseFolder() && (

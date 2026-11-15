@@ -5,6 +5,7 @@
  * objects of it stand in the project.
  */
 
+import { confirmAction } from '../../../shell/prompts';
 import { backdropClose } from '../../../shell/Dialog';
 import { useEffect, useMemo, useState } from 'react';
 import { Component, FileDown, FileUp, HardDriveDownload, MapPin, Plus, Trash2, X } from 'lucide-react';
@@ -68,7 +69,7 @@ export function FamiliesDialog() {
 
   const remove = async () => {
     if (!current) return;
-    if (!window.confirm(tr('Delete this family from the project? Undo brings it back.'))) return;
+    if (!confirmAction(tr('Delete this family from the project? Undo brings it back.'))) return;
     await deleteFamily(current.id);
     if (!problem()) setSelected(null);
   };

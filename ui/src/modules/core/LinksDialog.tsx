@@ -7,6 +7,7 @@
  * drawn, a halftone link's are faded.
  */
 
+import { confirmAction } from '../../shell/prompts';
 import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { ExternalLink, Feather, FolderOpen, MapPin, Move, RefreshCw, Trash2, Unlink, Wand2, X } from 'lucide-react';
@@ -166,7 +167,7 @@ export function LinksDialog() {
                         {path && isDesktop() && l.props.kind === 'ifc' && <button type="button" className="icon mini" data-link="optimize" title="Optimize the source file…" disabled={busy != null} onClick={() => openOptimize([{ name: fileName(path), path }])}><Feather size={12} /></button>}
                         {path && isDesktop() && !cloud && <button type="button" className="icon mini" title="Open on its own in another Lapin window, to edit there" disabled={busy != null} onClick={() => void run(l.id, () => openSeparately(path))}><ExternalLink size={12} /></button>}
                         <button type="button" className="icon mini" title="Unlink: the link and everything it brought go" disabled={busy != null}
-                          onClick={() => { if (window.confirm(`Unlink ${l.name}? Everything it brought in goes (undo brings it back).`)) void run(l.id, () => execute('link.unlink', { id: l.id })); }}><Unlink size={12} /></button>
+                          onClick={() => { if (confirmAction('Unlink {name}? Everything it brought in goes (undo brings it back).', { name: l.name })) void run(l.id, () => execute('link.unlink', { id: l.id })); }}><Unlink size={12} /></button>
                       </td>
                     </tr>
                   );

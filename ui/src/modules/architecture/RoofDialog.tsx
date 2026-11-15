@@ -5,6 +5,7 @@
  * A style picked fills every field in; any field may then be changed by hand. Apply is one engine command, one undo step.
  */
 
+import { confirmAction, promptText } from '../../shell/prompts';
 import { ColourField } from '../../shell/ColourField';
 import { useEffect, useMemo, useState } from 'react';
 import { lengthText } from '../../engine/unitsStore';
@@ -191,7 +192,7 @@ export function RoofDialog() {
   const draftArgs = () => ({ id: node.id, ...(draft.style ? { style: draft.style } : {}), attrs: draft.attrs, ...(draft.edges ? { edges: draft.edges } : {}) });
   // Saved as the project's own style: a new one under a name, or the one it has saved again (its roofs follow).
   const saveAs = async () => {
-    const name = window.prompt(t('Name of the roof style'), node.props.style && own.some((s) => s.id === node.props.style) ? '' : `${node.name}`);
+    const name = promptText(t('Name of the roof style'), node.props.style && own.some((s) => s.id === node.props.style) ? '' : `${node.name}`);
     if (!name?.trim()) return;
     await execute('architecture.saveRoofStyle', { ...draftArgs(), name });
     if (!useSession.getState().error) setDraft({ attrs: {} });
@@ -221,7 +222,7 @@ export function RoofDialog() {
       <div className="dialog wide roof-dialog">
         <header className="dialog-head">
           <span className="panel-title">Roof configurator <span className="muted small">· {node.name}</span></span>
-          <button type="button" className="icon" onClick={() => { if (!dirty || window.confirm('Close without applying the changes?')) close(); }} title="Close"><X size={15} /></button>
+          <button type="button" className="icon" onClick={() => { if (!dirty || confirmAction('Close without applying the changes?')) close(); }} title="Close"><X size={15} /></button>
         </header>
         <div className="dialog-body split">
           <div className="type-list roof-styles">
@@ -234,8 +235,8 @@ export function RoofDialog() {
                   <span className="grow">{s.label}</span>
                   <span className="muted small">{t(s.shape)}{s.shape === 'barrel' ? '' : ` ${s.pitch}°`}{s.structure && s.structure !== 'rafters' ? ` · ${s.structure}` : ''}</span>
                 </button>
-                <button type="button" className="icon mini" title="Rename" onClick={() => { const n = window.prompt(t('Name of the roof style'), s.label); if (n?.trim()) void execute('architecture.renameRoofStyle', { styleId: s.id, name: n }); }}><Pencil size={12} /></button>
-                <button type="button" className="icon mini" title="Delete the style (its roofs keep how they look)" onClick={() => { if (window.confirm(t('Delete this roof style? Its roofs keep how they look.'))) void execute('architecture.deleteRoofStyle', { styleId: s.id }); }}><Trash2 size={12} /></button>
+                <button type="button" className="icon mini" title="Rename" onClick={() => { const n = promptText(t('Name of the roof style'), s.label); if (n?.trim()) void execute('architecture.renameRoofStyle', { styleId: s.id, name: n }); }}><Pencil size={12} /></button>
+                <button type="button" className="icon mini" title="Delete the style (its roofs keep how they look)" onClick={() => { if (confirmAction(t('Delete this roof style? Its roofs keep how they look.'))) void execute('architecture.deleteRoofStyle', { styleId: s.id }); }}><Trash2 size={12} /></button>
               </div>
             ))}
             {families.map((fam) => (

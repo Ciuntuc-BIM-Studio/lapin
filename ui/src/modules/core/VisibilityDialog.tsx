@@ -8,6 +8,7 @@
  * every view that takes it, or its view style's set; a 2D view's hidden lines.
  */
 
+import { confirmAction, promptText } from '../../shell/prompts';
 import { backdropClose } from '../../shell/Dialog';
 import { ColourField } from '../../shell/ColourField';
 import { Fragment, useEffect, useMemo, useState } from 'react';
@@ -248,7 +249,7 @@ export function VisibilityDialog() {
               <option value="">{v.fromStyle ? "the style's set" : "this view's own"}</option>
               {v.sets.map((s) => <option key={s.id} value={s.id}>set: {s.name}</option>)}
             </select>
-            <button type="button" className="btn" onClick={() => { const name = window.prompt('The new set\'s name'); if (name?.trim()) void execute('view.saveGraphicsSet', { id: target, name: name.trim() }); }}>Save as a set…</button>
+            <button type="button" className="btn" onClick={() => { const name = promptText('The new set\'s name'); if (name?.trim()) void execute('view.saveGraphicsSet', { id: target, name: name.trim() }); }}>Save as a set…</button>
             {v.graphicsSet && !v.fromStyle && <button type="button" className="btn" title="Its views keep its settings as their own" onClick={() => void execute('view.removeGraphicsSet', { setId: v.graphicsSet })}><Trash2 size={13} />Remove the set</button>}
             {v.fromStyle && <button type="button" className="btn" title="Graphics of this view's own, starting from the style's set" onClick={() => void execute('view.useGraphicsSet', { id: target, setId: null })}>Make them this view's own</button>}
             {setName && <span className="muted small">Changes here change „{setName}” in every view that takes it.</span>}
@@ -443,7 +444,7 @@ function FiltersTab({ target, categories, rows, defs, counts, editing, setEditin
             </select>
             <span className="muted small">{counts[edited.id] ?? '…'} elements</span>
             <span className="grow" />
-            <button type="button" className="btn" title="Delete: the views that use it forget it" onClick={() => { if (window.confirm(`Delete the filter ${edited.name}?`)) { void execute('viewFilter.delete', { id: edited.id }); setEditing(null); } }}><Trash2 size={13} />Delete</button>
+            <button type="button" className="btn" title="Delete: the views that use it forget it" onClick={() => { if (confirmAction('Delete the filter {name}?', { name: edited.name })) { void execute('viewFilter.delete', { id: edited.id }); setEditing(null); } }}><Trash2 size={13} />Delete</button>
           </div>
           <table className="layer-table vv-rules">
             <thead><tr><th>Field</th><th>Parameter</th><th>Operator</th><th>Value</th><th /></tr></thead>

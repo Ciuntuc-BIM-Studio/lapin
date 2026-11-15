@@ -10,6 +10,7 @@
  */
 
 import { notify } from './store';
+import { phrase } from '../shell/prompts';
 import { useSession } from '../engine/session';
 import { isDesktop, saveProject } from '../engine/files';
 
@@ -27,8 +28,8 @@ export async function checkForUpdates(manual = false): Promise<void> {
     const dialog = await import('@tauri-apps/plugin-dialog');
     const notes = update.body?.trim();
     const install = await dialog.ask(
-      `Lapin ${update.version} is available (this is ${update.currentVersion}).${notes ? `\n\n${notes}` : ''}\n\nInstall it now? Lapin restarts when it is done.`,
-      { title: 'Lapin update', kind: 'info', okLabel: 'Install and restart', cancelLabel: 'Later' },
+      `${phrase('Lapin {version} is available (this is {current}).', { version: update.version, current: update.currentVersion })}${notes ? `\n\n${notes}` : ''}\n\n${phrase('Install it now? Lapin restarts when it is done.')}`,
+      { title: phrase('Lapin update'), kind: 'info', okLabel: phrase('Install and restart'), cancelLabel: phrase('Later') },
     );
     if (!install || !(await letWorkGo(dialog))) return;
     let total = 0;
@@ -50,7 +51,7 @@ export async function checkForUpdates(manual = false): Promise<void> {
       await update.install();
     } catch (e) {
       // The engine is stopped: start afresh, on the version still installed.
-      await dialog.message(`The update could not be installed: ${e instanceof Error ? e.message : String(e)}\n\nLapin restarts as it was.`, { title: 'Lapin update', kind: 'error' });
+      await dialog.message(`${phrase('The update could not be installed:')} ${e instanceof Error ? e.message : String(e)}\n\n${phrase('Lapin restarts as it was.')}`, { title: phrase('Lapin update'), kind: 'error' });
     }
     await relaunch();
   } catch (e) {
@@ -63,7 +64,7 @@ export async function checkForUpdates(manual = false): Promise<void> {
 /** Unsaved work before the restart: saved, or let go when the user says so. */
 async function letWorkGo(dialog: typeof import('@tauri-apps/plugin-dialog')): Promise<boolean> {
   if (!useSession.getState().doc?.dirty) return true;
-  const save = await dialog.ask('Save the changes to the project before updating?', { title: 'Lapin update', kind: 'warning', okLabel: 'Save', cancelLabel: "Don't save" });
+  const save = await dialog.ask(phrase('Save the changes to the project before updating?'), { title: phrase('Lapin update'), kind: 'warning', okLabel: phrase('Save'), cancelLabel: phrase("Don't save") });
   if (save) return saveProject();
-  return dialog.confirm('Update without saving? The changes will be lost.', { title: 'Lapin update', kind: 'warning', okLabel: 'Update', cancelLabel: 'Cancel' });
+  return dialog.confirm(phrase('Update without saving? The changes will be lost.'), { title: phrase('Lapin update'), kind: 'warning', okLabel: phrase('Update'), cancelLabel: phrase('Cancel') });
 }

@@ -8,6 +8,7 @@
  * stays. The norms are the user's (CSV or XLSX), or Lapin's few indicative values, marked as such.
  */
 
+import { confirmAction, promptText } from '../../shell/prompts';
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp, CalendarDays, FileDown, FileUp, ListPlus, MousePointer2, Pencil, Plus, RotateCcw, Save, Trash2, TriangleAlert, X } from 'lucide-react';
 import { focusPane, notify, useUi } from '../../app/store';
@@ -89,7 +90,7 @@ export function GenerateDialog() {
   };
   const saveAs = async () => {
     if (!spec) return;
-    const name = window.prompt(t('Name of the schedule style'), '');
+    const name = promptText(t('Name of the schedule style'), '');
     if (!name?.trim()) return;
     const r = await execute('planning.saveScheduleStyle', { spec: cleanSpec(spec), name }) as { styleId?: string } | null;
     if (r?.styleId) setStyle(r.styleId);
@@ -199,7 +200,7 @@ export function GenerateDialog() {
       <div className="dialog wide roof-dialog gen-dialog" data-dialog="planning-generate" data-i18n-ctx="schedule">
         <header className="dialog-head">
           <span className="panel-title">Generate schedule</span>
-          <button type="button" className="icon" onClick={() => { if (!dirty || window.confirm(t('Close without applying the changes?'))) close(); }} title="Close"><X size={15} /></button>
+          <button type="button" className="icon" onClick={() => { if (!dirty || confirmAction(t('Close without applying the changes?'))) close(); }} title="Close"><X size={15} /></button>
         </header>
         <div className="dialog-body split">
           <div className="type-list roof-styles">
@@ -210,8 +211,8 @@ export function GenerateDialog() {
             {own.map((s) => (
               <div key={s.id} className="row roof-own">
                 <button type="button" className={`tree-item grow${style === s.id ? ' on' : ''}`} onClick={() => pick(s.id, s.spec)}><span className="grow" data-no-i18n>{s.label}</span></button>
-                <button type="button" className="icon mini" title="Rename" onClick={() => { const n = window.prompt(t('Name of the schedule style'), s.label); if (n?.trim()) void execute('planning.renameScheduleStyle', { styleId: s.id, name: n }); }}><Pencil size={12} /></button>
-                <button type="button" className="icon mini" title="Delete the style" onClick={() => { if (window.confirm(t('Delete this schedule style?'))) void execute('planning.deleteScheduleStyle', { styleId: s.id }); }}><Trash2 size={12} /></button>
+                <button type="button" className="icon mini" title="Rename" onClick={() => { const n = promptText(t('Name of the schedule style'), s.label); if (n?.trim()) void execute('planning.renameScheduleStyle', { styleId: s.id, name: n }); }}><Pencil size={12} /></button>
+                <button type="button" className="icon mini" title="Delete the style" onClick={() => { if (confirmAction(t('Delete this schedule style?'))) void execute('planning.deleteScheduleStyle', { styleId: s.id }); }}><Trash2 size={12} /></button>
               </div>
             ))}
             <p className="eyebrow">Templates</p>

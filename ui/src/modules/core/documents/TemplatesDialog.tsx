@@ -6,6 +6,7 @@
  * another. A project or library template's Style (font, PDF font, size, headings' colour, logo) is set here too.
  */
 
+import { confirmAction } from '../../../shell/prompts';
 import { backdropClose } from '../../../shell/Dialog';
 import { useEffect, useMemo, useState } from 'react';
 import { BookMarked, Copy, FileDown, FileUp, FolderInput, Pencil, Trash2, X } from 'lucide-react';
@@ -70,7 +71,7 @@ export function TemplatesDialog() {
     const copy = title ? { ...json, id: freeId(title, taken()), title } : json;
     let r = keepTemplate(copy);
     if (r === 'exists') {
-      if (!window.confirm(tr('This computer\'s library has a template with this id. Replace it?'))) return;
+      if (!confirmAction(tr('This computer\'s library has a template with this id. Replace it?'))) return;
       r = keepTemplate(copy, true);
     }
     if (r === 'full') { notify("This computer's library is full: the template was not kept there."); return; }
@@ -83,17 +84,17 @@ export function TemplatesDialog() {
     const json = await whole(t);
     if (!json) return;
     const exists = !title && engine.some((x) => x.origin === 'project' && x.id === json.id);
-    const overwrite = exists && window.confirm(tr('The project has a template with this id. Replace it? (Cancel keeps both.)'));
+    const overwrite = exists && confirmAction(tr('The project has a template with this id. Replace it? (Cancel keeps both.)'));
     const r = await importTemplate(json, { overwrite, ...(title ? { title } : {}) });
     if (r?.templateId) { setSelected(keyOf({ origin: 'project', id: r.templateId })); notify('Template added to the project.'); }
   };
 
   const remove = async (t: DocTemplate) => {
     if (t.origin === 'project') {
-      if (!window.confirm(tr('Delete this template from the project? Undo brings it back; documents made from it keep their text.'))) return;
+      if (!confirmAction(tr('Delete this template from the project? Undo brings it back; documents made from it keep their text.'))) return;
       await deleteTemplate(t.id);
     } else if (t.origin === 'library') {
-      if (!window.confirm(tr('Delete this template from this computer\'s library?'))) return;
+      if (!confirmAction(tr('Delete this template from this computer\'s library?'))) return;
       forgetTemplate(t.id);
       reload();
     }
@@ -125,7 +126,7 @@ export function TemplatesDialog() {
       let kept: TemplateJson = json;
       let r = keepTemplate(kept);
       if (r === 'exists') {
-        if (window.confirm(tr('This computer\'s library has a template with this id. Replace it?'))) r = keepTemplate(kept, true);
+        if (confirmAction(tr('This computer\'s library has a template with this id. Replace it?'))) r = keepTemplate(kept, true);
         else { kept = { ...json, id: freeId(json.title || json.id, taken()) }; r = keepTemplate(kept); }
       }
       if (r === 'full') { notify("This computer's library is full: the template was not kept there."); return; }
@@ -134,7 +135,7 @@ export function TemplatesDialog() {
       notify('Template imported.');
     } else {
       const exists = engine.some((x) => x.origin === 'project' && x.id === json.id);
-      const overwrite = exists && window.confirm(tr('The project has a template with this id. Replace it? (Cancel keeps both.)'));
+      const overwrite = exists && confirmAction(tr('The project has a template with this id. Replace it? (Cancel keeps both.)'));
       const r = await importTemplate(json, { overwrite });
       if (r?.templateId) { setSelected(keyOf({ origin: 'project', id: r.templateId })); notify('Template imported.'); }
     }

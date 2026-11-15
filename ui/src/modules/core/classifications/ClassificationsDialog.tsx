@@ -5,6 +5,7 @@
  * project's shared parameters (name, kind, property set, choices), which a parameter in Properties is made from.
  */
 
+import { confirmAction } from '../../../shell/prompts';
 import { backdropClose } from '../../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { FileDown, Plus, Table2, Trash2, X } from 'lucide-react';
@@ -49,8 +50,7 @@ export function ClassificationsDialog() {
   };
   const remove = async () => {
     if (!current) return;
-    const uses = current.uses > 0 ? ` Its codes are taken off ${current.uses} elements and types.` : '';
-    if (!window.confirm(`${tr('Delete this classification?')}${uses}`)) return;
+    if (!confirmAction(current.uses > 0 ? 'Delete this classification? Its codes are taken off {n} elements and types.' : 'Delete this classification?', { n: current.uses })) return;
     await deleteSystem(current.id);
   };
 

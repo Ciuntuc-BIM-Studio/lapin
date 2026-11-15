@@ -9,6 +9,7 @@
  * import and export use.
  */
 
+import { confirmAction } from '../../../shell/prompts';
 import { backdropClose } from '../../../shell/Dialog';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Camera, Download, Eye, MessageSquare, Plus, Trash2, Upload, X } from 'lucide-react';
@@ -97,7 +98,7 @@ export function RemarksDialog() {
 
   const send = () => remark && comment.trim() && run(() => commentRemark(remark.id, comment.trim(), commentWithView && view === '3d' && hasCamera), () => { setComment(''); setCommentWithView(false); });
 
-  const remove = () => remark && window.confirm(`Delete the remark “${remark.title}”?`) && run(() => deleteRemarks([remark.id]), () => setCurrent(null));
+  const remove = () => remark && confirmAction('Delete the remark “{title}”?', { title: remark.title }) && run(() => deleteRemarks([remark.id]), () => setCurrent(null));
 
   const show = () => { if (viewpoint) void openViewpoint(viewpoint).catch((e) => notify(e instanceof Error ? e.message : String(e))); };
 

@@ -6,6 +6,7 @@
  * says in how many views each is hidden.
  */
 
+import { promptText } from '../../shell/prompts';
 import { backdropClose } from '../../shell/Dialog';
 import { Fragment, useEffect, useState } from 'react';
 import { X } from 'lucide-react';
@@ -45,7 +46,7 @@ export function SectionsDialog() {
   const setLayer = (s: SectionMarker, value: string) => {
     let layer: string | null = value;
     if (value === NEW_LAYER) {
-      const name = window.prompt("New layer's name");
+      const name = promptText("New layer's name");
       if (!name?.trim()) return;
       layer = name.trim();
     }

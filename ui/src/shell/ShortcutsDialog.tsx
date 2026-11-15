@@ -7,6 +7,7 @@
  * Lapin classic), take the shortcuts to a file and back.
  */
 
+import { confirmAction } from './prompts';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Download, Pencil, Plus, RotateCcw, Search, Upload, X } from 'lucide-react';
 import { useUi, notify } from '../app/store';
@@ -148,7 +149,7 @@ export function ShortcutsDialog() {
   const name = (id: string) => findCommandDef(id)?.label ?? id;
 
   const choosePreset = (p: PresetId) => {
-    if (Object.keys(state.overrides).length && !window.confirm('Your own changes to the shortcuts go, and the preset’s come. Go on?')) return;
+    if (Object.keys(state.overrides).length && !confirmAction('Your own changes to the shortcuts go, and the preset’s come. Go on?')) return;
     setKeymap(withPreset(p, state));
   };
   const exportFile = () => { void saveFile(new TextEncoder().encode(exportKeymap(state)), 'lapin-shortcuts.json', 'application/json'); };

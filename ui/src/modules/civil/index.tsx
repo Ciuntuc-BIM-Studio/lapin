@@ -5,6 +5,7 @@
  * plantings that stand on it (docs/spec-site.md).
  */
 
+import { promptText } from '../../shell/prompts';
 import { BrickWall, PenLine, Building2, Crosshair, FileDown, FileUp, Fence, Image as ImageIcon, ImagePlus, Map as MapIcon, MapPin, Mountain, MoveVertical, Paintbrush, Route, Shovel, Spline, Sprout, TreeDeciduous, Waves } from 'lucide-react';
 import { PlatformIcon, TerrainIcon } from '../../icons';
 import type { Grip, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
@@ -47,7 +48,7 @@ const terrainFromFile: ToolDef = {
     if (!file) return;
     const low = lowest(file.text);
     if (low == null) { notify('No points found: one per line, x y z or number northing easting elevation.'); return; }
-    const answer = window.prompt(`The surveyed elevation of the project's ±0.00 (${unitName(levelUnit())}):`, formatLength(low, levelUnit()));
+    const answer = promptText('The surveyed elevation of the project\'s ±0.00 ({unit}):', formatLength(low, levelUnit()), { unit: unitName(levelUnit()) });
     if (answer == null) return;
     const datum = answer.trim() === '' ? low : parseLevel(answer) ?? NaN;
     const storeyId = useUi.getState().storeyId;
@@ -61,7 +62,7 @@ const terrainFromLandXml: ToolDef = {
   id: 'civil.landxml', label: 'Terrain from LandXML', icon: FileUp,
   run: () => void pickText('.xml,.landxml').then(async (file) => {
     if (!file) return;
-    const answer = window.prompt(`The surveyed elevation of the project's ±0.00 (${unitName(levelUnit())}):`, '0');
+    const answer = promptText('The surveyed elevation of the project\'s ±0.00 ({unit}):', '0', { unit: unitName(levelUnit()) });
     if (answer == null) return;
     const storeyId = useUi.getState().storeyId;
     const r = await execute('civil.importLandXml', { text: file.text, datum: parseLevel(answer) ?? 0, ...(storeyId ? { storeyId } : {}) }) as { ids: string[] } | null;
@@ -82,7 +83,7 @@ const terrainFromDxf: ToolDef = {
     if (!layers) { notify('The drawing could not be read as DXF.'); return; }
     let chosen: string[] | undefined;
     if (layers && layers.length > 1) {
-      const answer = window.prompt(`Layers with surveyed points: ${layers.map((l) => `${l.layer} (${l.points})`).join(', ')}.\nWhich to take (comma separated; empty: all)?`, '');
+      const answer = promptText('Layers with surveyed points: {layers}.\nWhich to take (comma separated; empty: all)?', '', { layers: layers.map((l) => `${l.layer} (${l.points})`).join(', ') });
       if (answer == null) return;
       chosen = answer.split(',').map((x) => x.trim()).filter(Boolean);
     }
@@ -144,7 +145,7 @@ const flatTerrain: ToolDef = {
   id: 'civil.flatTerrain', label: 'Flat terrain', icon: Mountain, shortcut: 'TF',
   gesture: { kind: 'rectangle' },
   complete: async ({ points: [a, b] }, ctx) => {
-    const answer = window.prompt(`The ground's elevation (${unitName(levelUnit())}, ±0.00 = 0):`, '0');
+    const answer = promptText('The ground\'s elevation ({unit}, ±0.00 = 0):', '0', { unit: unitName(levelUnit()) });
     if (answer == null) return;
     await ctx.execute('civil.addFlatTerrain', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, elevation: parseLevel(answer) ?? 0 });
   },

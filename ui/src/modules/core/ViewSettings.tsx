@@ -14,6 +14,7 @@
  * front. Manage → View styles edits the styles themselves.
  */
 
+import { confirmAction } from '../../shell/prompts';
 import { backdropClose } from '../../shell/Dialog';
 import { setDisplay, useDisplay } from '../../app/display';
 import { Fragment, useEffect, useState } from 'react';
@@ -284,7 +285,7 @@ export function ViewStylesDialog() {
                   <td className="row-tools">
                     <button type="button" className="icon mini" title="Duplicate" onClick={() => void execute('viewStyle.create', { from: s.id })}><Copy size={12} /></button>
                     <button type="button" className="icon mini" title="Delete: its views take their discipline's style" disabled={styles.length < 2}
-                      onClick={() => { if (window.confirm(`Delete the view style ${s.name}? Its views take their discipline's style.`)) void execute('viewStyle.delete', { id: s.id }); }}><Trash2 size={12} /></button>
+                      onClick={() => { if (confirmAction('Delete the view style {name}? Its views take their discipline\'s style.', { name: s.name })) void execute('viewStyle.delete', { id: s.id }); }}><Trash2 size={12} /></button>
                   </td>
                 </tr>
               ))}

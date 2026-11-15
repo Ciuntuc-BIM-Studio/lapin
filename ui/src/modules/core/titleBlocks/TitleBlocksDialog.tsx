@@ -6,6 +6,7 @@
  * Delete; New and Import… on top.
  */
 
+import { confirmAction } from '../../../shell/prompts';
 import { backdropClose } from '../../../shell/Dialog';
 import { useEffect, useMemo, useState } from 'react';
 import { BookMarked, Copy, FileDown, FileUp, FolderInput, Pencil, Plus, Star, Trash2, X } from 'lucide-react';
@@ -98,10 +99,10 @@ export function TitleBlocksDialog() {
 
   const remove = async (t: TbSummary) => {
     if (t.origin === 'project') {
-      if (!window.confirm(tr('Delete this title block from the project? Its sheets take the project\'s default; Undo brings it back.'))) return;
+      if (!confirmAction(tr('Delete this title block from the project? Its sheets take the project\'s default; Undo brings it back.'))) return;
       await deleteTitleBlock(t.id);
     } else if (t.origin === 'library') {
-      if (!window.confirm(tr('Delete this title block from this computer\'s library?'))) return;
+      if (!confirmAction(tr('Delete this title block from this computer\'s library?'))) return;
       forgetBlock(t.id);
       reload();
     }

@@ -8,6 +8,7 @@
  * listed under their headings, and the standards the project's pickers offer.
  */
 
+import { promptText } from '../../../shell/prompts';
 import { backdropClose } from '../../../shell/Dialog';
 import { useEffect, useMemo, useState } from 'react';
 import { BookMarked, Download, FileUp, FolderPlus, Library, PenLine, RefreshCw, Save, Search, Trash2, X } from 'lucide-react';
@@ -171,7 +172,7 @@ export function ProfileLibrariesDialog() {
     setOutline(null);
   };
   const addFolder = async () => {
-    const path = isDesktop() ? await pickFolder(null) : window.prompt('The folder (full path):')?.trim() || null;
+    const path = isDesktop() ? await pickFolder(null) : promptText('The folder (full path):')?.trim() || null;
     if (path && !folders.some((f) => f.path === path)) setSharedFolders([...folders, { path, writable: false }]);
   };
   const saveToFolder = async (path: string) => {

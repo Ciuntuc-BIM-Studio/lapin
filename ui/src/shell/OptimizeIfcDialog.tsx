@@ -5,6 +5,7 @@
  * written; a copy already there is overwritten only when the user says so.
  */
 
+import { confirmAction } from './prompts';
 import { backdropClose } from './Dialog';
 import { useEffect, useState } from 'react';
 import { FilePlus2, FolderOpen, ExternalLink, X } from 'lucide-react';
@@ -46,7 +47,7 @@ async function confirmOverwrite(target: string): Promise<boolean> {
     const dialog = await import('@tauri-apps/plugin-dialog');
     return dialog.ask(question, { title: t('Optimize IFC'), kind: 'warning' });
   }
-  return window.confirm(question);
+  return confirmAction(question);
 }
 
 const PRESETS: [OptimizePreset, string][] = [['fast', 'Fast (5 mm)'], ['balanced', 'Balanced (1 mm)'], ['precise', 'Precise (0.1 mm)'], ['custom', 'Custom tolerance']];

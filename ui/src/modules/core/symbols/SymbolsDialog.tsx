@@ -6,6 +6,7 @@
  * Import… of a .lapinsymbols file, whose symbols the project already has under the same name ask what to do.
  */
 
+import { confirmAction } from '../../../shell/prompts';
 import { backdropClose } from '../../../shell/Dialog';
 import { useEffect, useMemo, useState } from 'react';
 import { BookMarked, Copy, FileDown, FileUp, FolderInput, MapPin, Pencil, Plus, Trash2, X } from 'lucide-react';
@@ -121,16 +122,16 @@ export function SymbolsDialog() {
 
   const remove = async (r: Row) => {
     if (r.origin === 'library') {
-      if (!window.confirm(tr('Delete this symbol from this computer\'s library?'))) return;
+      if (!confirmAction(tr('Delete this symbol from this computer\'s library?'))) return;
       forgetSymbol(r.id); reload(); setSelected(null);
       return;
     }
     if (r.origin !== 'project') return;
     if (r.uses > 0) {
-      if (!window.confirm(`${tr('This symbol is placed')} ${r.uses} ${r.uses === 1 ? tr('time') : tr('times')}. ${tr('Delete the symbol and its placed copies too? Undo brings them back.')}`)) return;
+      if (!confirmAction(r.uses === 1 ? 'This symbol is placed once. Delete the symbol and its placed copy too? Undo brings it back.' : 'This symbol is placed {uses} times. Delete the symbol and its placed copies too? Undo brings them back.', { uses: r.uses })) return;
       await deleteSymbol(r.id, true);
     } else {
-      if (!window.confirm(tr('Delete this symbol from the project? Undo brings it back.'))) return;
+      if (!confirmAction(tr('Delete this symbol from the project? Undo brings it back.'))) return;
       await deleteSymbol(r.id);
     }
     setSelected(null);
