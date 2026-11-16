@@ -137,15 +137,9 @@ public static class ArcOutline
     public static bool Simple(IReadOnlyList<Vec2> p)
     {
         var n = p.Count;
-        static double O(Vec2 a, Vec2 b, Vec2 c) => Vec2.Cross(b - a, c - a);
         for (var i = 0; i < n; i++)
             for (var j = i + 2; j < n; j++)
-            {
-                if (i == 0 && j == n - 1) continue;
-                var (a, b, c, d) = (p[i], p[(i + 1) % n], p[j], p[(j + 1) % n]);
-                var (d1, d2, d3, d4) = (O(c, d, a), O(c, d, b), O(a, b, c), O(a, b, d));
-                if (((d1 > 1e-12 && d2 < -1e-12) || (d1 < -1e-12 && d2 > 1e-12)) && ((d3 > 1e-12 && d4 < -1e-12) || (d3 < -1e-12 && d4 > 1e-12))) return false;
-            }
+                if (!(i == 0 && j == n - 1) && Polyline2.Crosses(p[i], p[(i + 1) % n], p[j], p[(j + 1) % n])) return false;
         return true;
     }
 
