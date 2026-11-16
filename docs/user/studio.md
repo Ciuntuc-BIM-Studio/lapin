@@ -163,9 +163,9 @@ A polyline's properties list its sides. Type a side's length, and its end moves 
 
 **Subtract**, **Union** and **Intersect** combine any elements, with the first one selected as the target. The tools stay editable, and the result follows them. **Show operands** shows the hidden tools of a union for editing. **Remove operation** separates the elements again.
 
-## Families
+## Parts and families
 
-A **family** is a solid of your own with parameters, placed as many times as you need. See the Families page. Families are parts now: select one and press Tab to edit it in place (the Parts page).
+A **part** (what used to be a **family**) is a solid of your own with parameters, placed as many times as you need, from **Studio → Parts…**. See the Families page for the manager and the Parts page: select an object of one and press Tab to edit it in place.
 
 ## Parts
 
