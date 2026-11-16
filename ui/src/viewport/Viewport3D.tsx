@@ -1622,6 +1622,7 @@ export function Viewport3D() {
   // The grid's axes, on the lowest storey: dash-dot lines with their labels at both ends.
   // Keyed on the grids and the lowest storey only, not on every diff.
   const grids = useSession(useShallow((st) => gridsOf(st.nodes)));
+  const gridHidden = useLooks(useShallow((st) => grids.map((g) => !!st.looks[g.id]?.hidden)));
   const base = useSession((st) => gridBase(st.nodes));
   useEffect(() => {
     const s = scene.current;
@@ -1630,7 +1631,9 @@ export function Viewport3D() {
     if (old) { s.remove(old); dispose(old); }
     const group = new THREE.Group();
     group.name = 'grid-axes';
-    for (const g of grids) {
+    for (let i = 0; i < grids.length; i++) {
+      if (gridHidden[i]) continue;
+      const g = grids[i];
       for (const ax of (g.props.axes as { tag: string; a: number[]; b: number[] }[] | undefined) ?? []) {
         const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(ax.a[0], ax.a[1], base + 0.01), new THREE.Vector3(ax.b[0], ax.b[1], base + 0.01)]);
         const line = new THREE.Line(geo, new THREE.LineDashedMaterial({ color: 0x8a5a44, dashSize: 0.6, gapSize: 0.25 }));
@@ -1651,7 +1654,7 @@ export function Viewport3D() {
     }
     s.add(group);
     invalidate.current();
-  }, [grids, base]);
+  }, [grids, gridHidden, base]);
 
   // Keep the scene in step with the engine's render items (rebuild only what changed).
   const render = useSession((st) => st.render);

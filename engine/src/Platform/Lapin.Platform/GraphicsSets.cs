@@ -389,6 +389,11 @@ public static class GraphicsSets
         var o = new JsonObject();
         foreach (var e in m.Entities)
         {
+            if (e.Class == IfcClass.Grid)
+            {
+                if (vg.Hides(e) || vg.HidesAnnotation("grids")) o[e.Id] = new JsonObject { ["hidden"] = true };
+                continue;
+            }
             if (Spatial.StoreyOf(m, e.Id) == null) continue;
             if (vg.Hides(e) || lod < PlanDetail.Lod350 && ReferenceLayers.CategoryOf(e) == "steelConnections") { o[e.Id] = new JsonObject { ["hidden"] = true }; continue; }
             JsonObject? look = null;
