@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { PenDto } from '../../../viewport/drawing';
 import {
-  attributeKey, byCategory, defBounds, defaultValues, ghostFactor, ghostShapes, missingAttributes, normaliseDef, packText, parsePack, previewImage, shiftPens, symBounds,
+  attributeKey, byCategory, camFit, camZoomAt, defBounds, defaultValues, evalLayerOpacity, evalLayerVisible, ghostFactor, ghostShapes, missingAttributes, normaliseDef, packText, parsePack, previewImage, shiftPens, symBounds,
   symDragHandle, symHandles, symItemAt, symMove, symSnap, symKeyPoints, sweepDeg, toggled, turned, type SymDef, type SymItem,
 } from './symbolModel';
 
@@ -119,5 +119,31 @@ describe('symbol libraries', () => {
   it('groups by category in the engine\'s order, then by name', () => {
     const items = [{ name: 'B', category: 'fire' }, { name: 'A', category: 'north' }, { name: 'A', category: 'fire' }, { name: 'Z', category: 'mine' }];
     expect(byCategory(items, ['north', 'fire']).map(([c, l]) => [c, l.map((i) => i.name)])).toEqual([['north', ['A']], ['fire', ['A', 'B']], ['mine', ['Z']]]);
+  });
+});
+
+describe('symbol editor camera & layers (forum #120)', () => {
+  it('fits items into camera and zooms around the cursor point without auto-zoom', () => {
+    const cam = camFit([circle]);
+    expect(cam.cx).toBe(10);
+    expect(cam.cy).toBe(0);
+    expect(cam.span).toBe(36);
+    const zoomed = camZoomAt(cam, [15, 5], 0.5);
+    expect(zoomed.span).toBe(18);
+    expect(zoomed.cx).toBe(12.5);
+    expect(zoomed.cy).toBe(2.5);
+  });
+
+  it('evaluates layer opacity and visibility from numbers, booleans, attributes and formulas', () => {
+    const vals = { op: '40', show: '0', k: '25' };
+    expect(evalLayerOpacity({ id: 'l1', name: 'L1', opacity: 150 }, vals)).toBe(100);
+    expect(evalLayerOpacity({ id: 'l1', name: 'L1', opacity: '{attr.op}' }, vals)).toBe(40);
+    expect(evalLayerOpacity({ id: 'l1', name: 'L1', opacity: '{= attr.k * 2 }' }, vals)).toBe(50);
+    expect(evalLayerVisible({ id: 'l1', name: 'L1', visible: false }, vals)).toBe(false);
+    expect(evalLayerVisible({ id: 'l1', name: 'L1', visible: '{attr.show}' }, vals)).toBe(false);
+    expect(evalLayerVisible({ id: 'l1', name: 'L1', visible: '{= attr.op - 10 }' }, vals)).toBe(true);
+    const def = normaliseDef({ items: [{ ...circle, layer: 'l1' }], layers: [{ id: 'l1', name: 'L1', visible: true, opacity: 80 }] });
+    expect(def.layers).toHaveLength(1);
+    expect(def.items[0].layer).toBe('l1');
   });
 });
