@@ -66,6 +66,8 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         r.Geometry(RetainingWalls.Class, (e, m, _) => RetainingWalls.Geometry(e, m));
         r.Quantities(RetainingWalls.Class, RetainingWalls.Quantities);
         LineworkElements.Register(r);
+        // What drafted linework becomes on the site, in Convert to… (audit S12).
+        LineworkConverters.Register(r);
         r.Geometry(Plantings.Class, (e, m, _) => Plantings.Geometry(e, m));
         r.Quantities(Plantings.Class, Plantings.Quantities);
         r.Geometry(Entourage.Class, (e, m, _) => Entourage.Geometry(e, m));

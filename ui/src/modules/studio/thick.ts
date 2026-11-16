@@ -1,6 +1,6 @@
 /**
  * Studio's thick solids (docs/plan-studio-thick.md): RING, BOX and TWALL give a drafted shape a thickness and a height.
- * On a plan they make native walls of the current wall type by default (architecture.wallsAlong), or a Studio solid;
+ * On a plan they make native walls of the current wall type by default (Convert to…'s walls, architecture.wallsAlong), or a Studio solid;
  * on a section, an elevation or a reference plane, a Studio solid classed IfcWall (studio.ring, studio.box, studio.wall).
  * What the commands decide, apart from the command line, so it can be tested.
  */
@@ -61,6 +61,17 @@ export function nativeArgs(shape: unknown, storeyId: string | null, typeId: stri
   if (typeId) a.typeId = typeId;
   if (c.op === 'box') Object.assign(a, { bottom: c.bottom, top: c.top });
   return a;
+}
+
+/**
+ * The arguments of drafting.convert for a shape on a plan (audit S12: Convert to…'s walls are the one way drafting becomes walls):
+ * the walls of the wall type, the bottom and top as floors, the drafting kept, as architecture.wallsAlong made them.
+ */
+export function convertArgs(viewId: string, shapeId: string, typeId: string | null, c: ThickChoice): Record<string, unknown> {
+  const options: Record<string, unknown> = { height: c.height, justify: c.justify };
+  if (typeId) options.typeId = typeId;
+  if (c.op === 'box') Object.assign(options, { bottom: c.bottom, top: c.top });
+  return { viewId, ids: [shapeId], converter: 'walls', options, keep: true };
 }
 
 /** The fields a Studio solid shows in the properties panel, by what it is. */

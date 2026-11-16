@@ -33,7 +33,7 @@ import { ConstraintOverlay } from './ConstraintOverlay';
 import { SketchChip } from './SketchChip';
 import { constraintTool, DIMENSIONS, GEOMETRIC } from './constraintTools';
 import { OutlineSketchBar } from './outlineSketch';
-import { COMMAND, DEFAULT_JUSTIFY, JUSTIFY, frontViewId, makesNative, nativeArgs, shapeFits, solidArgs, threePoints, viewOf, type ThickChoice, type ThickOp } from './thick';
+import { COMMAND, DEFAULT_JUSTIFY, JUSTIFY, frontViewId, makesNative, nativeArgs, convertArgs, shapeFits, solidArgs, threePoints, viewOf, type ThickChoice, type ThickOp } from './thick';
 import { cadLog, registerCommand, startCommand, type Step } from '../../viewport/cad/session';
 import { useCamera, type Vec3 } from '../../viewport/camera';
 import { XYZ, beginAxisDrag, middleOf } from '../../viewport/axisDrag';
@@ -90,6 +90,9 @@ function thick(op: ThickOp): Step {
       const view = viewOf(typeof draft?.props.viewId === 'string' ? draft.props.viewId : undefined, nodes);
       if (makesNative(view.kind, solid)) {
         const typeId = useUi.getState().wallTypeId;
+        // Through Draft → Convert to…'s walls (audit S12), the drafting kept as these commands always kept it; one undo step.
+        const viewId = typeof draft?.props.viewId === 'string' ? draft.props.viewId : null;
+        if (viewId) return heightStep((h) => run('drafting.convert', convertArgs(viewId, hit.id, typeId, choice(last.thickness, h)), 'Walls laid along the shape, joined at its corners.'), `Wall height (${unitName()})`);
         return heightStep((h) => run('architecture.wallsAlong', nativeArgs(shape, view.storeyId ?? activeStorey()?.id ?? null, typeId, choice(last.thickness, h)), 'Walls laid along the shape, joined at its corners.'), `Wall height (${unitName()})`);
       }
       return {

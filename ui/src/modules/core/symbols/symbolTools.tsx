@@ -18,6 +18,7 @@ import { explodeSymbol, flipSymbol, getSymbol, lastSymbol, listSymbols, placeSym
 import { byCategory, defaultValues, ghostFactor, ghostShapes, toggled, turned, type SymAttr, type SymScale } from './symbolModel';
 import type { PenDto } from '../../../viewport/drawing';
 import { draftMenuItems } from '../../../viewport/draftMenu';
+import { registerConvertHandoff } from '../convertHandoffs';
 
 // ------------------------------------------------------------ the place tool
 
@@ -176,6 +177,10 @@ function saveAsSymbol(): ReturnType<typeof withSelection> {
   });
 }
 registerCommand({ names: ['SAVESYMBOL', 'SYMBOLSAVE', 'SYMSAVE'], label: 'Save as symbol', start: saveAsSymbol });
+// In Convert to… too (audit S12): the drafting chosen saved as a symbol, its insertion point and direction asked next.
+registerConvertHandoff({ id: 'symbol', label: 'Symbol…', description: 'The drafting chosen saved as a symbol of the project: its insertion point and direction are asked next, then its name.', run: () => void startCommand('SAVESYMBOL') });
+// A closed outline as a profile of the project (Manage → Profiles → From drafting).
+registerConvertHandoff({ id: 'profile', label: 'Profile…', description: 'A closed outline chosen made a profile of the project, for beams, columns, members and sweeps: in the Profiles dialog that opens, choose From a drafted outline.', run: () => useUi.setState({ dialog: 'profiles' }) });
 
 // ------------------------------------------------------------ menus
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NodeDto } from '../../engine/protocol';
-import { frontViewId, makesNative, nativeArgs, shapeFits, solidArgs, solidFieldKeys, threePoints, viewOf } from './thick';
+import { convertArgs, frontViewId, makesNative, nativeArgs, shapeFits, solidArgs, solidFieldKeys, threePoints, viewOf } from './thick';
 import { viewShowsField } from '../core/planeFields';
 
 const node = (id: string, type: string, props: Record<string, unknown>): NodeDto => ({ id, type, name: id, props } as unknown as NodeDto);
@@ -36,6 +36,9 @@ describe("Studio's thick solids", () => {
     const shape = { type: 'polyline', pts: [[0, 0], [4, 0], [4, 3]], closed: true };
     expect(nativeArgs(shape, 'st1', 'wt1', c)).toEqual({ shape, height: 2, justify: 'outside', storeyId: 'st1', typeId: 'wt1', bottom: true, top: false });
     expect(nativeArgs(shape, null, null, { ...c, op: 'ring' })).toEqual({ shape, height: 2, justify: 'outside' });
+    // Through Convert to…'s walls (audit S12): the same options, the drafting kept.
+    expect(convertArgs('v1', 'd1', 'wt1', c)).toEqual({ viewId: 'v1', ids: ['d1'], converter: 'walls', options: { height: 2, justify: 'outside', typeId: 'wt1', bottom: true, top: false }, keep: true });
+    expect(convertArgs('v1', 'd1', null, { ...c, op: 'wall', justify: 'left' })).toEqual({ viewId: 'v1', ids: ['d1'], converter: 'walls', options: { height: 2, justify: 'left' }, keep: true });
   });
 
   it('show the fields of what they are', () => {
