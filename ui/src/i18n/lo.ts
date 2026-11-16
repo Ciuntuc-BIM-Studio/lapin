@@ -4011,6 +4011,17 @@ export const LO: Record<string, string> = {
   "Save as (full path, .{ext}):": "ບັນທຶກເປັນ (ເສັ້ນທາງເຕັມ, .{ext}):",
   "Don't save": "ບໍ່ບັນທຶກ",
   "Finish or cancel (Esc) what you are doing first, then undo or redo.": "ກະລຸນາສຳເລັດ ຫຼື ຍົກເລີກ (Esc) ສິ່ງທີ່ກຳລັງເຮັດກ່ອນ ແລ້ວຈຶ່ງຍົກເລີກ ຫຼື ເຮັດຄືນໃໝ່.",
+  'Could not be checked': 'ບໍ່ສາມາດກວດສອບໄດ້',
+  'Place furniture': 'ວາງເຟີນີເຈີ',
+  'Select the walls, beams or strip footings whose corners to change.': 'ເລືອກຝາ, ຄານ ຫຼື ຖານຮາກແບບຕໍ່ເນື່ອງ ທີ່ຈະປ່ຽນມຸມ.',
+  'Straight pieces, each starting where the last ended, or an arc: its start, its end, then a point it passes through': 'ຕອນຊື່ ແຕ່ລະຕອນເລີ່ມຈາກບ່ອນທີ່ຕອນກ່ອນສິ້ນສຸດ ຫຼື ເສັ້ນໂຄ້ງ: ຈຸດເລີ່ມ, ຈຸດສິ້ນສຸດ, ແລ້ວຈຸດທີ່ມັນຜ່ານ',
+  'A path, 1,5 m wide, or a road: two 3 m lanes on a 2,5 % crown, kerbs and 1,5 m sidewalks': 'ທາງຍ່າງກວ້າງ 1,5 ມ ຫຼື ຖະໜົນ: ສອງເລນ 3 ມ ຄວາມໂຄ້ງ 2,5 %, ຂອບທາງ ແລະ ທາງຍ່າງ 1,5 ມ',
+  'What it places: seating, beds, storage, tables, models': 'ສິ່ງທີ່ວາງ: ບ່ອນນັ່ງ, ຕຽງ, ບ່ອນເກັບ, ໂຕະ, ແບບຈຳລອງ',
+  'What it places: a heating, plumbing, electrical, air, gas, fuel oil or fire protection fixture, or a fitting': 'ສິ່ງທີ່ວາງ: ອຸປະກອນຄວາມຮ້ອນ, ທໍ່ນ້ຳ, ໄຟຟ້າ, ອາກາດ, ແກັສ, ນ້ຳມັນເຊື້ອໄຟ ຫຼື ປ້ອງກັນໄຟ ຫຼື ຂໍ້ຕໍ່',
+  'Tests': 'ການທົດສອບ',
+  'Openings for MEP': 'ຮູເປີດສຳລັບລະບົບ MEP',
+  'Kind of check': 'ປະເພດການກວດສອບ',
+  'Place node': 'ວາງໂນດ',
 };
 
 /** Phrases with a number or a name in them. */

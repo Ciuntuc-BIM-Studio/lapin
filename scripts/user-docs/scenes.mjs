@@ -3921,6 +3921,8 @@ export const scenes = [
       }
       await t.ui({ keyPlan: false });
       await t.tool('manage.openingsMep');
+      // One window, Clash detection, with the openings check as its second tab (S2).
+      await t.page.waitForSelector('[data-testid=clash-dialog] [data-clash-mode=openings].active', { timeout: 30_000 });
       t.expect(await t.page.locator('[data-testid=coordination-dialog]').count() === 1, 'Clash check opens');
       await t.wait(400);
       t.expect(await t.page.locator('[data-testid=clash-none]').count() === 1, 'nothing has run the check: no report yet');
@@ -6827,7 +6829,8 @@ export const scenes = [
         await lib.locator('[data-library-entry="Walnut desk"] [data-action=library-place]').click();
         await lib.waitFor({ state: 'detached', timeout: 10_000 });
         const tool = await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().tool);
-        t.expect(tool === 'furniture.casework', `Place starts the casework tool (${tool})`);
+        const kind = await t.page.evaluate(async () => (await import('/src/modules/furniture/placeKind.ts')).usePlaceKind.getState().kind);
+        t.expect(tool === 'furniture.place' && kind === 'casework', `Place starts the Place furniture tool set to casework (${tool}, ${kind})`);
         await t.page.keyboard.press('Escape');
       } finally {
         for (const id of kept) await t.call('furnitureLibrary.delete', { id }).catch(() => undefined);

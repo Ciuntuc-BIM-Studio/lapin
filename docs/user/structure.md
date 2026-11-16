@@ -11,19 +11,19 @@ The **Structure** tab holds the frame and the foundations.
 ## Frame
 
 - **Column** (<kbd>CL</kbd>): click where it stands. A column runs from its level to the level above.
-- **Beam** (<kbd>BM</kbd>): click its two ends. **Curved beam** (<kbd>BC</kbd>) follows an arc.
+- **Beam** (<kbd>BM</kbd>): click its two ends; with **Arc** in the command line's bar (**Line** / **Arc**), click its two ends, then a point the arc passes through. **Curved beam** (<kbd>BC</kbd>) starts the Beam tool already set to **Arc**.
 - **Columns at grid** places a column at every crossing of the grid axes. To draw the axes, use **Annotate → Grid axis** (<kbd>GR</kbd>).
 
 ## Foundations
 
 - **Strip footing** (<kbd>SF</kbd>) runs under walls. Its outer layers are mitred at the corners.
-- **Curved strip footing** (<kbd>CF</kbd>) follows an arc.
+  Like the beam, it has **Line** / **Arc** in the bar; **Curved strip footing** (<kbd>CF</kbd>) starts it set to **Arc**.
 - **Pad footing** (<kbd>PF</kbd>): click under a column. While the tool is on, it snaps to the centres of the columns of the plan's level and of the level above.
 - **Pad footings under columns** puts a pad footing under each selected column that has none, at its centre and turned with it. With no column selected, it takes the columns of the plan's level (in a foundation plan, those of the level above).
 
 Draw foundations on the **Foundations** level, or give them a plan of their own.
 
-**A strip footing is the concrete alone** unless you ask for the wall. While **Strip footing** or **Curved strip footing** is on, the command line's bar offers **Footing alone** (the default: a 600 × 400 mm concrete footing, a profile type made the first time) or **With wall** (the stem of a strip type on it, with its layers), and which strip type with a wall to use. The choice is kept. A footing already drawn changes with its type in **Structure types**.
+**A strip footing is the concrete alone** unless you ask for the wall. While **Strip footing** is on, the command line's bar offers **Footing alone** (the default: a 600 × 400 mm concrete footing, a profile type made the first time) or **With wall** (the stem of a strip type on it, with its layers), and which strip type with a wall to use. The choice is kept. A footing already drawn changes with its type in **Structure types**.
 
 ![The strip footing tool's option in the command line: footing alone or with a wall](shots/structure-strip-option.webp)
 
@@ -45,7 +45,7 @@ In **Properties** a pad footing shows its **Top** and **Bottom** as elevations a
 
 **Duplicate** beside the name copies the type as „Name (2)”, and **↑** **↓** move it up and down the lists of its types, as in [Wall types](walls.md#wall-types).
 
-Beams and footings join by themselves where they meet, a corner as a mitre. A beam drawn from column axis to column axis stops at the columns' faces; its length, volume and stirrups count the clear span between them. **Mitre**, **Butt** and **Swap** change how two beams or two footings meet. **Match properties** (<kbd>MA</kbd>) copies one element's type and settings to others, and **Create similar** (<kbd>CS</kbd>) starts drawing another element of the same type.
+Beams and footings join by themselves where they meet, a corner as a mitre. A beam drawn from column axis to column axis stops at the columns' faces; its length, volume and stirrups count the clear span between them. **Mitre**, **Butt** and **Swap** (the **Joins** group, the same one that serves walls) change how two beams or two footings meet. **Match properties** (<kbd>MA</kbd>) copies one element's type and settings to others, and **Create similar** (<kbd>CS</kbd>) starts drawing another element of the same type.
 
 Any other profile comes from the libraries: **From a profile library…** searches them all (see [Profile libraries](profiles.md)).
 

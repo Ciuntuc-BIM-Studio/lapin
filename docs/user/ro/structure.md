@@ -11,19 +11,19 @@ Tabul **Structură** are cadrele și fundațiile.
 ## Cadre
 
 - **Stâlp** (<kbd>CL</kbd>): un clic unde stă. Un stâlp merge de la nivelul lui la nivelul de deasupra.
-- **Grindă** (<kbd>BM</kbd>): un clic la fiecare capăt. **Grindă curbă** (<kbd>BC</kbd>) urmează un arc.
+- **Grindă** (<kbd>BM</kbd>): un clic la fiecare capăt; cu **Arc** în bara liniei de comandă (**Linie** / **Arc**), dai clic pe cele două capete, apoi pe un punct prin care trece arcul. **Grindă curbă** (<kbd>BC</kbd>) pornește unealta Grindă deja pe **Arc**.
 - **Stâlpi pe axe** pune câte un stâlp la fiecare intersecție a axelor. Axele le desenezi cu **Adnotări → Axă** (<kbd>GR</kbd>).
 
 ## Fundații
 
 - **Fundație continuă** (<kbd>SF</kbd>) merge sub pereți. Straturile ei exterioare se îmbină la 45° în colțuri.
-- **Fundație continuă curbă** (<kbd>CF</kbd>) urmează un arc.
+  Ca grinda, are **Linie** / **Arc** în bară; **Fundație continuă curbă** (<kbd>CF</kbd>) o pornește pe **Arc**.
 - **Fundație izolată** (<kbd>PF</kbd>): dă clic sub un stâlp. Cât timp unealta e pornită, se agață de centrele stâlpilor nivelului planului și ai nivelului de deasupra.
 - **Fundații izolate sub stâlpi** pune o fundație izolată sub fiecare stâlp selectat care nu are una, în centrul lui și rotită ca el. Fără stâlpi selectați, ia stâlpii nivelului planului (într-un plan de fundații, pe cei ai nivelului de deasupra).
 
 Desenează fundațiile pe nivelul **Foundations** sau dă-le un plan propriu.
 
-**O fundație continuă e doar betonul**, dacă nu ceri peretele. Cât timp **Fundație continuă** sau **Fundație continuă curbă** e pornită, bara liniei de comandă oferă **Doar fundația** (implicit: o talpă de beton de 600 × 400 mm, un tip cu profil făcut prima dată) sau **Cu perete** (soclul unui tip de fundație continuă deasupra, cu straturile lui) și tipul cu perete de folosit. Alegerea se ține minte. O fundație deja desenată se schimbă cu tipul ei în **Tipuri structurale**.
+**O fundație continuă e doar betonul**, dacă nu ceri peretele. Cât timp **Fundație continuă** e pornită, bara liniei de comandă oferă **Doar fundația** (implicit: o talpă de beton de 600 × 400 mm, un tip cu profil făcut prima dată) sau **Cu perete** (soclul unui tip de fundație continuă deasupra, cu straturile lui) și tipul cu perete de folosit. Alegerea se ține minte. O fundație deja desenată se schimbă cu tipul ei în **Tipuri structurale**.
 
 ![Opțiunea uneltei fundație continuă în linia de comandă: doar fundația sau cu perete](shots/structure-strip-option.webp)
 
@@ -45,7 +45,7 @@ Desenează fundațiile pe nivelul **Foundations** sau dă-le un plan propriu.
 
 **Duplică** de lângă nume copiază tipul ca „Nume (2)”, iar **↑** **↓** îl mută în sus și în jos în listele tipurilor lui, ca la [Tipurile de pereți](walls.md#tipurile-de-pereți).
 
-Grinzile și fundațiile se îmbină singure unde se întâlnesc, un colț la 45°. O grindă trasată din axul unui stâlp în axul altuia se oprește la fețele stâlpilor; lungimea, volumul și etrierii ei numără deschiderea liberă dintre ele. **La 45°**, **Cap la cap** și **Inversează** schimbă cum se întâlnesc două grinzi sau două fundații. **Preia proprietățile** (<kbd>MA</kbd>) copiază tipul și setările unui element pe altele, iar **Creează similar** (<kbd>CS</kbd>) începe desenarea unui alt element de același tip.
+Grinzile și fundațiile se îmbină singure unde se întâlnesc, un colț la 45°. O grindă trasată din axul unui stâlp în axul altuia se oprește la fețele stâlpilor; lungimea, volumul și etrierii ei numără deschiderea liberă dintre ele. **La 45°**, **Cap la cap** și **Inversează** (grupul **Îmbinări**, același care servește și pereții) schimbă cum se întâlnesc două grinzi sau două fundații. **Preia proprietățile** (<kbd>MA</kbd>) copiază tipul și setările unui element pe altele, iar **Creează similar** (<kbd>CS</kbd>) începe desenarea unui alt element de același tip.
 
 Orice alt profil vine din biblioteci: **Dintr-o bibliotecă de profile…** caută în toate (vezi [Biblioteci de profile](profiles.md)).
 

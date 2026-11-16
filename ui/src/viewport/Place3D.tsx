@@ -18,7 +18,7 @@ import { setTool, useUi } from '../app/store';
 import { claimValue } from '../app/valueOwner';
 import { activeStorey, useSession } from '../engine/session';
 import { num, storeys } from '../engine/model';
-import { findTool } from '../platform/modules';
+import { findTool, useToolTick } from '../platform/modules';
 import type { Vec2 } from '../platform/module';
 import { useCamera, type Vec3 } from './camera';
 import { useCad } from './cad/session';
@@ -65,7 +65,9 @@ export function Place3D({ camera, canvas, scene }: ViewRefs) {
   const level = () => num(activeStorey() ?? undefined, 'elevation');
 
   // A new tool, a new gesture.
-  useEffect(() => { setPts([]); setText(''); setLock(null); setAt(null); }, [toolId]);
+  useToolTick((s) => s.n);
+  const toolMode = tool?.mode?.();
+  useEffect(() => { setPts([]); setText(''); setLock(null); setAt(null); }, [toolId, toolMode]);
 
   const cursor2 = (s: Snapped3 | null): Vec2 | null => (s ? { x: s.point.x, y: s.point.y } : null);
   const placeAt = (p: Vec2, typed?: number, hit?: Snapped3 | null) => {

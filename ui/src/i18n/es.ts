@@ -3957,6 +3957,17 @@ export const ES: Record<string, string> = {
   "Save as (full path, .{ext}):": "Guardar como (ruta completa, .{ext}):",
   "Don't save": "No guardar",
   "Finish or cancel (Esc) what you are doing first, then undo or redo.": "Termina o cancela (Esc) lo que estás haciendo y luego deshaz o rehaz.",
+  'Could not be checked': 'No se pudieron comprobar',
+  'Place furniture': 'Colocar mobiliario',
+  'Select the walls, beams or strip footings whose corners to change.': 'Selecciona los muros, vigas o cimientos corridos cuyas esquinas cambiar.',
+  'Straight pieces, each starting where the last ended, or an arc: its start, its end, then a point it passes through': 'Tramos rectos, cada uno empieza donde acabó el anterior, o un arco: su inicio, su final y un punto por el que pasa',
+  'A path, 1,5 m wide, or a road: two 3 m lanes on a 2,5 % crown, kerbs and 1,5 m sidewalks': 'Un camino de 1,5 m de ancho o una carretera: dos carriles de 3 m con bombeo del 2,5 %, bordillos y aceras de 1,5 m',
+  'What it places: seating, beds, storage, tables, models': 'Qué coloca: asientos, camas, almacenaje, mesas, modelos',
+  'What it places: a heating, plumbing, electrical, air, gas, fuel oil or fire protection fixture, or a fitting': 'Qué coloca: un elemento de calefacción, fontanería, electricidad, aire, gas, gasóleo o protección contra incendios, o un accesorio',
+  'Tests': 'Pruebas',
+  'Openings for MEP': 'Aberturas para instalaciones',
+  'Kind of check': 'Tipo de comprobación',
+  'Place node': 'Colocar nodo',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

@@ -3958,6 +3958,17 @@ export const PL: Record<string, string> = {
   "Save as (full path, .{ext}):": "Zapisz jako (pełna ścieżka, .{ext}):",
   "Don't save": "Nie zapisuj",
   "Finish or cancel (Esc) what you are doing first, then undo or redo.": "Dokończ lub anuluj (Esc) bieżącą czynność, a potem cofnij lub ponów.",
+  'Could not be checked': 'Nie udało się sprawdzić',
+  'Place furniture': 'Umieść meble',
+  'Select the walls, beams or strip footings whose corners to change.': 'Zaznacz ściany, belki lub ławy fundamentowe, których narożniki zmienić.',
+  'Straight pieces, each starting where the last ended, or an arc: its start, its end, then a point it passes through': 'Odcinki proste, każdy zaczyna się tam, gdzie skończył poprzedni, albo łuk: początek, koniec i punkt, przez który przechodzi',
+  'A path, 1,5 m wide, or a road: two 3 m lanes on a 2,5 % crown, kerbs and 1,5 m sidewalks': 'Ścieżka o szerokości 1,5 m lub droga: dwa pasy po 3 m ze spadkiem daszkowym 2,5 %, krawężniki i chodniki 1,5 m',
+  'What it places: seating, beds, storage, tables, models': 'Co umieszcza: siedziska, łóżka, szafy i regały, stoły, modele',
+  'What it places: a heating, plumbing, electrical, air, gas, fuel oil or fire protection fixture, or a fitting': 'Co umieszcza: urządzenie grzewcze, wodno-kanalizacyjne, elektryczne, powietrza, gazu, oleju opałowego lub przeciwpożarowe albo kształtkę',
+  'Tests': 'Testy',
+  'Openings for MEP': 'Otwory dla instalacji',
+  'Kind of check': 'Rodzaj kontroli',
+  'Place node': 'Umieść węzeł',
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

@@ -7,6 +7,7 @@ import { notify, useUi } from '../../app/store';
 import { activeStorey, execute } from '../../engine/session';
 import { frontView } from '../../viewport/frontView';
 import { openPulldown } from '../../shell/pulldown';
+import { arcAlias, chainTool } from '../core/chainTool';
 import type { ToolContext, Vec2 } from '../../platform/module';
 
 /**
@@ -78,12 +79,12 @@ export const colorLegend: ToolDef = {
 const divider = (ctx: ToolContext, kind: 'line' | 'polyline' | 'rectangle' | 'arc' | 'circle', points: Vec2[], closed = false) =>
   ctx.execute('architecture.addRoomDivider', { storeyId: ctx.storeyId, kind, points: points.map((p) => [p.x, p.y]), ...(closed ? { closed: true } : {}) });
 
-/** A straight room separation line (chained): it bounds rooms as a wall would, with no body (an open-plan kitchen and living room). */
-export const roomDivider: ToolDef = {
+/** A room separation line (chained), straight or, set to Arc, an arc through three points: it bounds rooms as a wall would, with no body (an open-plan kitchen and living room). */
+export const roomDivider: ToolDef = chainTool({
   id: 'architecture.roomDivider', label: 'Room separation line', icon: Minus, shortcut: 'RS',
-  gesture: { kind: 'twoPoints', repeat: true },
-  complete: async ({ points: [a, b] }, ctx) => { await divider(ctx, 'line', [a, b]); },
-};
+  line: async (a, b, ctx) => { await divider(ctx, 'line', [a, b]); },
+  arc: async (a, b, p, ctx) => { await divider(ctx, 'arc', [a, b, p]); },
+});
 /** A room separation polyline: its corners, then Enter (or a double click). */
 export const roomDividerPolyline: ToolDef = {
   id: 'architecture.roomDividerPolyline', label: 'Room separation polyline', icon: Waypoints,
@@ -96,12 +97,8 @@ export const roomDividerRectangle: ToolDef = {
   gesture: { kind: 'rectangle' },
   complete: async ({ points: [a, b] }, ctx) => { await divider(ctx, 'rectangle', [a, b]); },
 };
-/** A room separation arc: its start, its end, then a point it passes through. */
-export const roomDividerArc: ToolDef = {
-  id: 'architecture.roomDividerArc', label: 'Room separation arc', icon: Spline,
-  gesture: { kind: 'threePoints', arc: true },
-  complete: async ({ points: [a, b, p] }, ctx) => { await divider(ctx, 'arc', [a, b, p]); },
-};
+/** The old Room separation arc: the Room separation line, in Arc. */
+export const roomDividerArc: ToolDef = arcAlias({ id: 'architecture.roomDividerArc', label: 'Room separation arc', icon: Spline }, roomDivider);
 /** A room separation circle: its centre, then a point on it. */
 export const roomDividerCircle: ToolDef = {
   id: 'architecture.roomDividerCircle', label: 'Room separation circle', icon: Circle,
@@ -112,6 +109,6 @@ export const roomDividerCircle: ToolDef = {
 export const roomDividers: ToolDef = {
   id: 'architecture.roomDividers', label: 'Room separation', icon: SquareSplitHorizontal,
   tooltip: 'Lines that bound rooms as walls would, with no body: each zone a room of its own, with its own area',
-  items: [roomDivider, roomDividerPolyline, roomDividerRectangle, roomDividerArc, roomDividerCircle],
+  items: [roomDivider, roomDividerPolyline, roomDividerRectangle, roomDividerCircle],
   run: () => openPulldown(roomDividers),
 };

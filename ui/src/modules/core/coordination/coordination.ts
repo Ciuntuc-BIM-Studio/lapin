@@ -7,8 +7,12 @@
  * here are the settings, the list's order and filters, and how a row reads.
  */
 
+import { create } from 'zustand';
 import { execute, query, useSession } from '../../../engine/session';
 import { frontView } from '../../../viewport/frontView';
+
+/** Which half of the Clash detection window shows: the tests (search sets, hard and clearance) or the openings for MEP (the check, its fixes). */
+export const useClashMode = create<{ mode: 'tests' | 'openings' }>(() => ({ mode: 'tests' }));
 
 export type VoidKind = 'wall' | 'door' | 'window' | 'slab' | 'roof';
 export type ClashStatus = 'missing' | 'tooSmall' | 'ok' | 'empty';
@@ -122,7 +126,9 @@ export interface ClashItem {
   mep?: string | null; mepClass?: string | null; host?: string | null; hostClass?: string | null;
 }
 
-export interface ClashReport { id: string; date: string; hash: string; stale: boolean; clearance: number; counts: Record<string, number>; items: ClashItem[] }
+/** A pair the check could not take (an open mesh from an IFC reference…): never a clash, listed with the reason (`message`). */
+export type UncheckedPair = Pick<ClashResult, 'key' | 'mepId' | 'mep' | 'mepClass' | 'hostId' | 'host' | 'hostClass' | 'message'>;
+export interface ClashReport { unchecked?: UncheckedPair[]; id: string; date: string; hash: string; stale: boolean; clearance: number; counts: Record<string, number>; items: ClashItem[] }
 
 export const ITEM_KINDS: ItemKind[] = ['missing', 'held', 'tooSmall', 'empty'];
 export const ITEM_KIND_LABELS: Record<ItemKind, string> = { missing: 'No opening', held: 'Not cut: load-bearing or cut order', tooSmall: 'Opening too small', empty: 'Empty void' };
