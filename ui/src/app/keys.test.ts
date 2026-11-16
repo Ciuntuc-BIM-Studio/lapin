@@ -294,3 +294,23 @@ describe('the command line, letters off, and the user\'s aliases (decision 473)'
     expect(resolveKeymap(COMMANDS, bindings, [], { CO: 'cad:LINE' }).waits.CO).toBe(true);
   });
 });
+
+describe('Tab in the workspace (forum #125)', () => {
+  it('runs the Tab command even while a tool step is waiting, unless something is typed', () => {
+    const map = resolveKeymap([cmd('app.togglePanels', ['Tab'])], { 'app.togglePanels': ['Tab'] });
+    expect(keyIntent(press('Tab'), state({ keymap: map, step: { want: 'point' } }))).toEqual({ kind: 'command', id: 'app.togglePanels' });
+    expect(keyIntent(press('Tab'), state({ keymap: map, buffer: 'L', step: { want: 'point' } }))).toBeNull();
+  });
+
+  it('prevents browser UI focus navigation on Tab in the workspace when unbound, but leaves fields and dialogs alone', () => {
+    const emptyMap = resolveKeymap([], {});
+    const send = (target: HTMLElement | null, s: KeySnapshot) => {
+      let prevented = false;
+      handleKeydown({ key: 'Tab', code: 'Tab', ctrlKey: false, metaKey: false, shiftKey: false, altKey: false, defaultPrevented: false, target, preventDefault: () => { prevented = true; } }, () => s, () => undefined);
+      return prevented;
+    };
+    expect(send(null, state({ keymap: emptyMap }))).toBe(true);
+    expect(send(null, state({ keymap: emptyMap, dialog: 'shortcuts' }))).toBe(false);
+    expect(send({ closest: () => ({}) } as unknown as HTMLElement, state({ keymap: emptyMap }))).toBe(false);
+  });
+});
