@@ -285,12 +285,7 @@ public sealed class FurnitureModule : ILapinModule
         return o;
     }
 
-    static string Shade(string hex, double k)
-    {
-        if (hex.Length != 7 || hex[0] != '#') return hex;
-        int C(int i) => (int)Math.Round(Math.Clamp(int.Parse(hex.AsSpan(i, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture) * k, 0, 255));
-        return $"#{C(1):x2}{C(3):x2}{C(5):x2}";
-    }
+    static string Shade(string hex, double k) => HexColor.Scale(hex, k);
 
     // ---- The model ----
 

@@ -268,9 +268,7 @@ public sealed partial class IfcModel
     public Dictionary<string, string> StyleNames { get; } = [];
 
     /// <summary>A colour as the model reads it split into <c>#rrggbb</c> and its opacity (1 for a colour without one).</summary>
-    public static (string Colour, double Opacity) Opacity(string colour) =>
-        colour.Length == 9 && colour[0] == '#' && int.TryParse(colour.AsSpan(7), System.Globalization.NumberStyles.AllowHexSpecifier, null, out var a)
-            ? (colour[..7], a / 255.0) : (colour, 1);
+    public static (string Colour, double Opacity) Opacity(string colour) => HexColor.SplitAlpha(colour);
 
     // ─── Properties ──────────────────────────────────────────────────────────
 

@@ -828,7 +828,7 @@ public static class Fields
             case "color":
             {
                 var c = (string?)value;
-                return c is { Length: 7 } && c[0] == '#' && c[1..].All(Uri.IsHexDigit) ? c : throw new CommandException($"{f.Label} is a colour like #a8a8a8.");
+                return HexColor.IsColour(c) ? c! : throw new CommandException($"{f.Label} is a colour like #a8a8a8.");
             }
             default:
                 return (string?)value ?? throw new CommandException($"{f.Label} must be text.");

@@ -72,7 +72,7 @@ public static class ColorSchemes
     static SchemeEntry? ReadEntry(JsonNode? n)
     {
         if (n is not JsonObject o || ((string?)o["value"])?.Trim() is not { } value) return null;
-        static string? Colour(JsonNode? c) => (string?)c is { Length: 7 } s && s[0] == '#' && s[1..].All(Uri.IsHexDigit) ? s.ToLowerInvariant() : null;
+        static string? Colour(JsonNode? c) => HexColor.Read(c, null)?.ToLowerInvariant();
         return new SchemeEntry(value, Colour(o["color"]), ((string?)o["hatch"])?.Trim() is { Length: > 0 } h ? h : null,
             Json.Number(o["hatchScale"]) is { } sc && sc > 0 ? sc : 1, Colour(o["hatchColor"]), Opacity(o["opacity"]));
     }

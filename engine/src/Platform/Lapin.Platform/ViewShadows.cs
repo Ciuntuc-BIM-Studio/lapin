@@ -76,7 +76,7 @@ public static class ViewShadows
             if (areas.Count == 0) continue;
             var window = SurfaceHatches.WindowOf(piece.Spec);
             var shift = new Vec2(piece.Station, 0);
-            pen ??= new Pen(Layer, null, 0, view.Str("shadowColor") is { Length: 7 } c && c[0] == '#' ? c : DefaultColor, null);
+            pen ??= new Pen(Layer, null, 0, HexColor.Read(view.Attrs["shadowColor"], DefaultColor), null);
             foreach (var a in areas)
             {
                 var loop = window is { } w ? SurfaceHatches.ClipBox(a.Outline, w.X, w.Y) : a.Outline;

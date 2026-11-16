@@ -150,7 +150,7 @@ public sealed record CurtainSpec(CurtainGrid U, CurtainGrid V, CurtainSection Mu
             if (s["profile"] is JsonObject p && Json.Number(p["width"]) is { } pw && Json.Number(p["depth"]) is { } pd) return quarter ? new(pd, pw, p, place) : new(pw, pd, p, place);
             return new(Json.Number(s["width"]) ?? f.Width, Json.Number(s["depth"]) ?? f.Depth, null, place);
         }
-        static string Colour(JsonNode? x, string f) => (string?)x is { Length: 7 } c && c[0] == '#' ? c : f;
+        static string Colour(JsonNode? x, string f) => HexColor.Read(x, f);
         static string? Named(JsonNode? x) => x is JsonValue v && v.TryGetValue<string>(out var t) && t.Trim().Length > 0 ? t.Trim() : null;
         var panel = o["panel"] as JsonObject;
         return new CurtainSpec(CurtainGrid.From(o["u"], d.U), CurtainGrid.From(o["v"], d.V), Sec(o["mullion"], d.Mullion), Sec(o["transom"], d.Transom),

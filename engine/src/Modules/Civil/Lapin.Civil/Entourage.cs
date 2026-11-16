@@ -102,7 +102,7 @@ public static class Entourage
         var f = FrameOf(m, e);
         if (PictureOf(m, e) is { } picture) return PictureGeometry(e, m, picture, f);
         var kind = KindOf(e);
-        var color = e.Str("color") is { Length: 7 } c && c[0] == '#' ? c : kind.Color;
+        var color = HexColor.Read(e.Attrs["color"], kind.Color);
         var parts = new Dictionary<string, (string Color, List<Solid> Solids)>();
         void Add(string part, string col, Solid? s)
         {

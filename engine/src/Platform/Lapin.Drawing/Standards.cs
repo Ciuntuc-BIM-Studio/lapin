@@ -196,7 +196,7 @@ public static class Standards
     static double Num(JsonNode? v, double fallback) => Lapin.Model.Json.Number(v) is { } d && double.IsFinite(d) && d >= 0 ? d : fallback;
     static bool True(JsonNode? v) => v is JsonValue j && j.TryGetValue<bool>(out var b) && b;
     static string OneOf(JsonNode? v, string[] values, string fallback) => v is JsonValue j && j.TryGetValue<string>(out var s) && values.Contains(s) ? s : fallback;
-    static string? Color(JsonNode? v) => v is JsonValue j && j.TryGetValue<string>(out var s) && Regex.IsMatch(s, "^#[0-9a-fA-F]{6}$") ? s : null;
+    static string? Color(JsonNode? v) => Lapin.Geometry.HexColor.Read(v, null);
     static double Positive(JsonNode? v, double fallback) => Num(v, fallback) is var n && n > 0 ? n : fallback;
 
     static TextStyle ReadText(JsonObject v)

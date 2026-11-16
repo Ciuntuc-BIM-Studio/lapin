@@ -205,12 +205,7 @@ public static class Pens
         IReadOnlyDictionary<string, string>? ElementColors = null, LineStyles.PenTable? Table = null, IReadOnlyList<LineTypeDef>? LineTypes = null);
 
     /// <summary>A colour washed out towards white (a cut filled with a phase's colour stays readable under its hatch).</summary>
-    static string Pale(string css)
-    {
-        if (css is not { Length: 7 } || !int.TryParse(css[1..], System.Globalization.NumberStyles.HexNumber, null, out var n)) return css;
-        int Mix(int c) => (int)Math.Round(c + (255 - c) * 0.6);
-        return $"#{Mix((n >> 16) & 255):x2}{Mix((n >> 8) & 255):x2}{Mix(n & 255):x2}";
-    }
+    static string Pale(string css) => HexColor.Mix(css, 0.6);
 
     public static List<Pen> Of(ViewDrawing d, MaterialDrawingResult? m, Options o)
     {
