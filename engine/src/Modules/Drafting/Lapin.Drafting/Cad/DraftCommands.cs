@@ -173,7 +173,8 @@ public static class DraftCommands
                         "mirror" => Placement2D.Mirror(P(a["a"]), P(a["b"])),
                         _ => new Placement2D(point, turn, false),
                     };
-                    SymbolInstances.Carry(attrs, place);
+                    // A sheet's own symbol (paper mm, y down), moved on its paper's view, takes the move across.
+                    SymbolInstances.Carry(attrs, AnnotationPlacement.OnPaper(ctx.Model, attrs, place));
                     if (op == "scale" && Json.Number(a["factor"]) is { } k)
                     {
                         attrs["scale"] = Math.Round((Json.Number(attrs["scale"]) is > 0 and var s0 ? s0 : 1) * Math.Abs(k), 9);

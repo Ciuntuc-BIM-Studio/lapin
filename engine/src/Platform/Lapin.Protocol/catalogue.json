@@ -320,6 +320,7 @@
     {"name":"drafting.moveDimension","module":"drafting","label":"Move dimension","args":[{"name":"id","type":"str"},{"name":"at"}]},
     {"name":"drafting.moveDimensionPoint","module":"drafting","label":"Move dimension point","args":[{"name":"point"},{"name":"id","type":"str"},{"name":"index","type":"float"}]},
     {"name":"drafting.moveDimensionText","module":"drafting","label":"Move dimension text","args":[{"name":"segment","type":"float"},{"name":"reset","type":"bool"},{"name":"by"},{"name":"id","type":"str"}]},
+    {"name":"drafting.moveLeaderPoint","module":"drafting","label":"Move leader","args":[{"name":"id","type":"str"},{"name":"index","type":"float"},{"name":"at"}]},
     {"name":"drafting.offset","module":"drafting","label":"Offset","args":[{"name":"id","type":"str"},{"name":"side"},{"name":"through","type":"bool"},{"name":"distance","type":"float"}]},
     {"name":"drafting.placeImage","module":"drafting","label":"Import image","args":[{"name":"viewId","type":"str"},{"name":"at","type":"list"},{"name":"width","type":"float"},{"name":"rotation","type":"float"},{"name":"opacity","type":"float"},{"name":"data","type":"str"},{"name":"name","type":"str"},{"name":"path","type":"str"}]},
     {"name":"drafting.placeSymbol","module":"drafting","label":"Place symbol","args":[{"name":"symbolId","type":"str"},{"name":"viewId","type":"str"},{"name":"sheetId","type":"str"}]},

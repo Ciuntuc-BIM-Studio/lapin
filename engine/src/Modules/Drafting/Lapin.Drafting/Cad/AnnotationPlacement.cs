@@ -26,6 +26,17 @@ public sealed class AnnotationPlacement : IElementPlacement
     };
 
     static Vec2 P(JsonNode? n) => Args.PointOf(n);
+
+    /// <summary>
+    /// A transformation of the paper's view (m, y up) as a sheet's own symbol takes it (audit §16 leftovers): its point is kept in
+    /// paper mm, y down, so the move is taken across (turns and mirrors the other way round); any other symbol's as it is.
+    /// </summary>
+    public static Placement2D OnPaper(IModelView m, JsonObject attrs, Placement2D t)
+    {
+        if ((string?)attrs["sheetId"] is not { } sheetId || m.Get(sheetId) is not { Class: Sheets.Class } sheet) return t;
+        var h = Sheets.PaperOf(sheet).H;
+        return new Placement2D(p => PaperViews.ToPaper(t.Point(PaperViews.ToView(p, h)), h), -t.Turn, t.Mirrored, -t.Axis, t.Rise);
+    }
     static JsonArray J(Vec2 p) => new(p.X, p.Y);
 
     public static JsonObject Carry(IModelView m, Entity e, Placement2D t, IReadOnlySet<string> moving)
@@ -52,7 +63,7 @@ public sealed class AnnotationPlacement : IElementPlacement
                     attrs["end"] = J(t.Point(P(attrs["end"])));
                 break;
             case SymbolInstances.Predefined:
-                SymbolInstances.Carry(attrs, t);
+                SymbolInstances.Carry(attrs, OnPaper(m, attrs, t));
                 break;
             case "TEXT":
                 attrs["at"] = J(t.Point(P(attrs["at"])));

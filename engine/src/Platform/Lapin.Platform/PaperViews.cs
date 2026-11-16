@@ -129,6 +129,8 @@ public static class PaperViews
             try { o.AddRange(source.Marks(c).Where(Mine)); }
             catch (Exception) { /* a module that cannot draw on paper draws nothing there */ }
         o.AddRange(DrawingKeys.Marks(c));
+        // The sheet's own symbols (placed with Place symbol…, in paper mm): picked here too, drawn by the sheet under the paper.
+        if (SheetOf(m, c.View) is { } sheet) o.AddRange(Symbols.PaperPickMarks(q, sheet));
         return o;
     }
 

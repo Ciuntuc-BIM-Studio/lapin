@@ -855,7 +855,25 @@ function dimensionGrips(node: NodeDto, view?: GripView): Grip[] {
 }
 
 /** An annotation's grips: a drafted shape's, a dimension string's, a tag's. */
-const annotationGrips = (node: NodeDto, view?: GripView): Grip[] => [...draftGrips(node), ...dimensionGrips(node, view), ...tagGrips(node, view)];
+/**
+ * A note's leader (audit §16 leftovers): a grip on its arrow's tip and on each bend, drawn in the note's view (a sheet's paper
+ * too); dragged, the point goes there (`drafting.moveLeaderPoint`, one undo step) and the note stays where it is.
+ */
+function leaderGrips(node: NodeDto): Grip[] {
+  if (node.props.predefinedType !== 'TEXT' || !Array.isArray(node.props.leader)) return [];
+  const view = typeof node.props.viewId === 'string' ? node.props.viewId : undefined;
+  return (node.props.leader as unknown[]).flatMap((p, index) => {
+    if (!Array.isArray(p) || typeof p[0] !== 'number' || typeof p[1] !== 'number') return [];
+    const grip: Grip = {
+      key: `leader${index}`, kind: index === 0 ? 'end' : 'vertex', at: { x: p[0], y: p[1] }, view,
+      title: index === 0 ? "Drag to move the leader's arrow" : 'Drag to move the bend',
+      step: (to: Vec2) => ({ command: 'drafting.moveLeaderPoint', args: { id: node.id, index, at: [to.x, to.y] } }),
+    };
+    return [grip];
+  });
+}
+
+const annotationGrips = (node: NodeDto, view?: GripView): Grip[] => [...draftGrips(node), ...leaderGrips(node), ...dimensionGrips(node, view), ...tagGrips(node, view)];
 
 /** A grid's axes: each axis's ends and middle (keys "<tag>:start"…), shown when that axis is selected (grid#tag). */
 function gridGrips(node: NodeDto): Grip[] {

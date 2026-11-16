@@ -425,12 +425,21 @@ public static class Sheets
     /// A hash of what the sheet's views draw on the paper (their pens as
     /// placed, with their titles): the same while the drawing is the same,
     /// whatever the date or the title block say. An issue keeps it, so a later
-    /// check tells a sheet changed since it went out (docs/plan-cde.md).
+    /// check tells a sheet changed since it went out (docs/plan-cde.md). What is
+    /// drawn on the sheet's paper and its own symbols count too (audit §16
+    /// leftovers), by what they are (their attributes, a symbol's definition
+    /// with it), not by their live texts, so a date filled in changes nothing;
+    /// a sheet with none hashes as it always did.
     /// </summary>
     public static string DrawingHash(IQueryContext q, Entity sheet)
     {
         var sb = new System.Text.StringBuilder();
         foreach (var pen in Compose(q, sheet).Pens.Where(p => p.Viewport != null)) sb.Append(pen.ToJson().ToJsonString()).Append('\n');
+        foreach (var e in PaperViews.Owned(q.Model, sheet.Id).OrderBy(x => x.Id, StringComparer.Ordinal))
+        {
+            sb.Append("paper ").Append(e.Class).Append(' ').Append(e.PredefinedType).Append(' ').Append(e.Id).Append(' ').Append(e.Attrs.ToJsonString()).Append('\n');
+            if (e.PredefinedType == Symbols.Predefined && q.Model.Get(e.Str("symbolId") ?? "") is { } def) sb.Append("symbol ").Append(def.Attrs.ToJsonString()).Append('\n');
+        }
         return Cde.CdeTransmittal.Sha256(sb.ToString());
     }
 

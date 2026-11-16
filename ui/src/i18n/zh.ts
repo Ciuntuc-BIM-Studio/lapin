@@ -3916,6 +3916,8 @@ export const ZH: Record<string, string> = {
   "Its centre, the end of one semi-axis, then the other semi-axis": "中心、一条半轴的端点，然后是另一条半轴", "End of one semi-axis": "一条半轴的端点", "Other semi-axis (a point or a value) · Arc (A)": "另一条半轴（点或数值）· 弧 (A)", "Other semi-axis (a point or a value)": "另一条半轴（点或数值）", "Start of the arc": "弧的起点", "End of the arc (anticlockwise)": "弧的终点（逆时针）", "Elliptical arc": "椭圆弧",
   "From drawn shape": "取自绘制图形", "From room": "取自房间", "Click inside a closed drafted shape: a polyline, a rectangle, a circle": "在闭合的绘制图形内单击：多段线、矩形、圆", "Click inside a room: its outline": "在房间内单击：取其轮廓", "No walls close round that point.": "没有墙围合该点。", "Click inside a closed drafted shape (a closed polyline, a rectangle or a circle).": "请在闭合的绘制图形（闭合多段线、矩形或圆）内单击。", "Click inside a room.": "请在房间内单击。",
   "Hole in the outline": "轮廓中的孔", "Hole in outline": "轮廓中的孔", "Hole in platform": "平台中的孔", "Drag to move the hole": "拖动以移动孔", "Remove hole": "删除孔",
+  "The language of its own words: its heading, the lines' roles and types": "其自身文字的语言：标题、线条的角色和类型",
+  "Drag to move the leader's arrow": "拖动以移动引线的箭头", "Drag to move the bend": "拖动以移动折点", "Move leader": "移动引线",
   // Fillet and chamfer on walls and railings, railings with arcs (a user's request)
   "A railing along each line, arc or polyline; those meeting end to end make one.": "沿每条直线、圆弧或多段线生成一道栏杆；首尾相接的合为一道。", "One railing where they meet end to end": "首尾相接处合为一道栏杆", "Drag to bend the segment through the point": "拖动使该段弯曲通过该点",
   // Edit sketch on outlines (forum topic 97, stage 3)
