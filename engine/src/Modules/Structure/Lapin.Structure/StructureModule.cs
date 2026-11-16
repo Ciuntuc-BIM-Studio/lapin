@@ -32,6 +32,7 @@ public sealed class StructureModule : ILapinModule
         r.Service<IElementFaces>(new StructureFaces());
         r.Service<IIfcSweptBodies>(new FootingIfcBodies());
         r.Service<IIfcSweptBodies>(new FrameIfcBodies());
+        r.Service<IProjectUpgrade>(new CatalogueSectionUpgrade());
         r.Geometry(IfcClass.Column, Columns.Geometry);
         r.Geometry(IfcClass.Beam, Beams.Geometry);
         r.Geometry(IfcClass.Footing, (f, m, s) => IsPad(m, f) ? PadFootings.Geometry(f, m, s) : StripFootings.Geometry(f, m, s));

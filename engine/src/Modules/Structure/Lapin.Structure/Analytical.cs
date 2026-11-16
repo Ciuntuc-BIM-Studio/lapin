@@ -62,7 +62,7 @@ public sealed class StructureAnalytical : IAnalyticalElements
     /// <summary>The section as the analytical model reads it; a catalogue designation only when the dimensions are exactly the catalogue's.</summary>
     public static SectionShape Shape(Section s)
     {
-        var designation = s.Name != null && Section.Catalogue.TryGetValue(s.Name, out var c)
+        var designation = s.Name != null && Section.Named(s.Name) is { } c
             && Math.Abs(c.Width - s.Width) < 1e-9 && Math.Abs(c.Depth - s.Depth) < 1e-9 && Math.Abs(c.Web - s.Web) < 1e-9 && Math.Abs(c.Flange - s.Flange) < 1e-9 && c.Kind == s.Kind
             ? c.Name : null;
         // A profile library's (docs/plan-profile-libraries.md): its name, standard and radii as the library says them.
