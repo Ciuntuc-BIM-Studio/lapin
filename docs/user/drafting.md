@@ -82,6 +82,8 @@ A grid axis moves, copies, rotates and mirrors on its own, or together with othe
 
 Pin what must not move by mistake: an imported model, the grid, a survey drawing. Select it and choose **Modify → Pin**, or tick **Pinned** under **Placement** in its properties. A pinned element is not moved, rotated, mirrored, raised, sent to another storey or deleted, and it shows no grips. Its other fields still change: its type, height or material. It can still be copied, and the copy is not pinned. A wall joined to it that moves keeps the pinned wall's ends where they are. Pinning a group pins its members; a group with a pinned member does not move. **Modify → Unpin** (<kbd>UP</kbd>) lets it go again. Any element can be pinned: a wall, a reference from an imported file, a drafted line.
 
+**Elements.** TRIM and EXTEND also take a wall clicked in a plan: trimmed at the walls that cross it, or carried on to the first wall ahead. OFFSET takes elements too: a wall, a beam or a strip footing (a parallel copy, by its axis or between its faces). Two command-line words work on elements: **TRIMEXTEND** (**TE**, Modify → Trim/Extend elements), which trims or extends walls, beams, strip footings, floors and ceilings against a boundary you pick first, and **SPLITELEMENT** (**SPLIT**, Modify → Split element), which cuts one of them in two where you click. See [Trimming, extending, splitting and offsetting walls](walls.md).
+
 ## Drafting
 
 The **Draft** tab draws lines, polylines, rectangles, circles and arcs. It edits them with offset, trim, extend, fillet, chamfer and join, fills areas with hatches, and organises them on **Layers**. **Import DXF** brings a CAD drawing in as lines you can snap to and edit.

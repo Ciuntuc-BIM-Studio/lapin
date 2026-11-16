@@ -39,6 +39,8 @@ Em **Propriedades** uma sapata isolada mostra o seu **Superior** e **Inferior** 
 
 ![Pilares, vigas e sapatas isoladas em 3D](shots/structure-3d.webp)
 
+As vigas e as sapatas corridas cortam-se e deslocam-se com as mesmas ferramentas das paredes (ver [Aparar, estender, dividir e deslocar paredes](walls.md)): **Modificar → Dividir elemento** divide uma em duas onde clicar, **Modificar → Aparar/estender elementos** apara-a até um limite ou prolonga-a até ele (uma sapata corrida curva continua pelo seu círculo; levada ao eixo de outra viga, as duas são unidas), e **Modificar → Deslocar elemento** copia-a em paralelo, a partir do eixo ou entre as faces.
+
 ## Tipos e cantos
 
 **Tipos estruturais** define as seções de pilares, vigas e sapatas: seções de concreto e perfis de aço. A seção de um pilar é um **Retângulo**, um **Círculo** ou um **Polígono**, regular, dado pelos seus **Lados** e pelo seu **Diâmetro** entre vértices (um poste octogonal, como um IFC importado pode tê-lo). Clique num tipo da lista para mudar o seu tamanho ou o seu nome e depois em **Salvar tipo**: todos os elementos desse tipo acompanham; **Novo tipo** volta a criar um.

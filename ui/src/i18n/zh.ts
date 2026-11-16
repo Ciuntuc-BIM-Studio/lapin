@@ -921,6 +921,7 @@ export const ZH: Record<string, string> = {
   'Structure types': '结构类型', 'Columns at grid': '轴网处布柱', 'Line': '直线', 'Polyline': '多段线', 'Rectangle': '矩形', 'Circle': '圆', 'Arc': '圆弧',
   'Move': '移动', 'Copy': '复制', 'Rotate': '旋转', 'Mirror': '镜像', 'Scale': '缩放', 'Erase': '删除', 'Delete': '删除', 'Offset': '偏移',
   'Trim': '修剪', 'Extend': '延伸', 'Fillet': '圆角', 'Chamfer': '倒角', 'Hatch': '填充图案', 'Reset': '重置',
+  'Trim/Extend elements': '修剪/延伸构件', 'Split element': '拆分构件', 'Offset element': '偏移构件',
   'Aligned': '对齐', 'Linear': '线性', 'Grid axis': '轴网轴线', 'Level': '标高', 'Sheet': '图纸', 'Extrude': '拉伸', 'Sweep': '扫掠', 'Revolve': '旋转成形',
   'Edit sketch': '编辑草图', 'Subtract': '差集', 'Union': '并集', 'Intersect': '交集', 'Show operands': '显示操作对象', 'Remove operation': '移除运算',
   'Terrain from points': '由点生成地形', 'Platform': '平台', 'Created here': '在此新建', 'Demolish': '拆除', 'Temporary': '临时',

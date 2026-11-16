@@ -918,6 +918,7 @@ export const LO: Record<string, string> = {
   'Structure types': 'ປະເພດໂຄງສ້າງ', 'Columns at grid': 'ເສົາຕາມຕາໜ່າງແກນ', 'Line': 'ເສັ້ນຊື່', 'Polyline': 'ເສັ້ນຕໍ່ເນື່ອງ (Polyline)', 'Rectangle': 'ຮູບສີ່ແຈສາກ', 'Circle': 'ຮູບວົງມົນ', 'Arc': 'ເສັ້ນໂຄ້ງ',
   'Move': 'ຍ້າຍ', 'Copy': 'ສຳເນົາ', 'Rotate': 'ໝຸນ', 'Mirror': 'ພິກກະຈົກ', 'Scale': 'ຍໍ່-ຂະຫຍາຍ', 'Erase': 'ລຶບ', 'Delete': 'ລຶບ', 'Offset': 'ໄລຍະຂະໜານ (Offset)',
   'Trim': 'ຕັດເສັ້ນ (Trim)', 'Extend': 'ຕໍ່ເສັ້ນ (Extend)', 'Fillet': 'ມົນມຸມ', 'Chamfer': 'ລົບຫຼ່ຽມ', 'Hatch': 'ແຮງເງົາ', 'Reset': 'ຕັ້ງຄ່າໃໝ່',
+  'Trim/Extend elements': 'ຕັດ/ຕໍ່ອົງປະກອບ (Trim/Extend)', 'Split element': 'ແບ່ງອົງປະກອບ', 'Offset element': 'ໄລຍະຂະໜານຂອງອົງປະກອບ (Offset)',
   'Aligned': 'ຕາມແນວເສັ້ນ', 'Linear': 'ຕາມແກນກົງ', 'Grid axis': 'ແກນຕາໜ່າງ', 'Level': 'ລະດັບ', 'Sheet': 'ແຜ່ນແບບ', 'Extrude': 'ດຶງຢືດຂຶ້ນຮູບ (Extrude)', 'Sweep': 'ແລ່ນຕາມເສັ້ນທາງ (Sweep)', 'Revolve': 'ໝຸນຮອບແກນ (Revolve)',
   'Edit sketch': 'ແກ້ໄຂຮູບສະເກັດ', 'Subtract': 'ຕັດລົບອອກ', 'Union': 'ຮວມກັນ', 'Intersect': 'ຕັດກັນ', 'Show operands': 'ສະແດງຊິ້ນສ່ວນປະກອບ', 'Remove operation': 'ລຶບຄຳສັ່ງດຳເນີນການອອກ',
   'Terrain from points': 'ສ້າງພື້ນດິນຈາກຈຸດພິກັດ', 'Platform': 'ລານພື້ນປັບລະດັບ', 'Created here': 'ສ້າງຂຶ້ນຢູ່ນີ້', 'Demolish': 'ທຸບຮື້', 'Temporary': 'ຊົ່ວຄາວ',

@@ -42,6 +42,10 @@ Un solaio disegnato fuori dai muri, davanti a una porta, è un portico. Per i gr
 
 Uno strato di un solaio può anche andare oltre il suo contorno, o fermarsi prima, tutto intorno o a un bordo, digitato nelle sue proprietà o trascinato in pianta o in sezione con **Modifica strati**, e un tipo di solaio può dare ai suoi solai i loro prolungamenti: vedete [Prolungamenti degli strati](walls.md#prolungamenti-degli-strati). I tetti non hanno ancora una stratigrafia (manto, soletta e orditura sono parti proprie), quindi non hanno prolungamenti degli strati.
 
+**Modifica → Dividi elemento** su un solaio o un controsoffitto chiede due punti di una linea di divisione: la linea prosegue oltre di essi e deve incrociare il contorno esattamente due volte. Il solaio diventa due solai; la parte cliccata mantiene l’id (GlobalId in IFC), gli archi sui bordi restano archi (un arco tagliato resta un arco) e un’apertura del solaio va con la parte in cui si trova. Un’apertura che la linea attraversa viene rifiutata. **Modifica → Taglia/estendi elementi** accetta un limite retto (un muro, una trave o una linea disegnata) e taglia lì il solaio o il controsoffitto, mantenendo il lato cliccato.
+
+![Un solaio con un bordo curvo diviso da una linea: la parte a destra selezionata](shots/floor-split.webp)
+
 ## Tetti
 
 Scegli **Architettura → Tetto** (<kbd>RF</kbd>) e fai clic sul contorno dei muri sottostanti. Lapin costruisce il tetto su quel contorno, alla sommità del suo livello.

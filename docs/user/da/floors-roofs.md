@@ -42,6 +42,10 @@ Et dæk tegnet uden for væggene, foran en dør, er en trappeafsats. Om trinene 
 
 Et lag i et dæk kan også gå forbi dets omrids eller stoppe før det, hele vejen rundt eller ved én kant, skrevet i dets egenskaber eller trukket i plan eller snit med **Rediger lag**, og en dæktype kan give sine dæk deres forlængelser: se [Lagforlængelser](walls.md#lagforl-ngelser). Tage har endnu ingen lagopbygning (deres tagdækning, plade og konstruktion er egne dele), så de har ingen lagforlængelser.
 
+**Redigér → Opdel element** på et dæk eller et loft beder om to punkter på en delelinje: den fortsætter forbi dem og skal skære konturen præcis to gange. Dækket bliver til to dæk; den del, du klikkede på, beholder id'et (GlobalId i IFC), buer på kanterne forbliver buer (en skåret bue forbliver en bue), og en åbning i dækket følger den del, den ligger i. En åbning, som linjen skærer, afvises. **Redigér → Trim/forlæng elementer** tager en ret grænse (en væg, en bjælke eller en tegnet linje) og skærer dækket eller loftet dér og beholder den side, du klikker på.
+
+![Et dæk med en buet kant delt langs en linje: delen til højre er valgt](shots/floor-split.webp)
+
 ## Tage
 
 Vælg **Arkitektur → Tag** (<kbd>RF</kbd>), og klik på omridset af væggene under det. Lapin bygger taget over det omrids, øverst på dets niveau.

@@ -923,6 +923,7 @@ export const DA: Record<string, string> = {
   'Structure types': 'Konstruktionstyper', 'Columns at grid': 'Søjler ved modullinjer', 'Line': 'Linje', 'Polyline': 'Polylinje', 'Rectangle': 'Rektangel', 'Circle': 'Cirkel', 'Arc': 'Bue',
   'Move': 'Flyt', 'Copy': 'Kopiér', 'Rotate': 'Rotér', 'Mirror': 'Spejl', 'Scale': 'Skalér', 'Erase': 'Slet', 'Delete': 'Slet', 'Offset': 'Forskyd',
   'Trim': 'Trim', 'Extend': 'Forlæng', 'Fillet': 'Afrunding', 'Chamfer': 'Affasning', 'Hatch': 'Skravering', 'Reset': 'Nulstil',
+  'Trim/Extend elements': 'Trim/forlæng elementer', 'Split element': 'Opdel element', 'Offset element': 'Forskyd element',
   'Aligned': 'Justeret', 'Linear': 'Lineær', 'Grid axis': 'Modullinje', 'Level': 'Niveau', 'Sheet': 'Tegningsark', 'Extrude': 'Ekstrudér', 'Sweep': 'Sweep', 'Revolve': 'Drej',
   'Edit sketch': 'Redigér skitse', 'Subtract': 'Fratræk', 'Union': 'Forén', 'Intersect': 'Skær', 'Show operands': 'Vis operander', 'Remove operation': 'Fjern operation',
   'Terrain from points': 'Terræn fra punkter', 'Platform': 'Plateau', 'Created here': 'Oprettet her', 'Demolish': 'Nedriv', 'Temporary': 'Midlertidig',

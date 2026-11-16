@@ -42,6 +42,10 @@ Une dalle dessinée hors des murs, devant une porte, est un perron. Pour les mar
 
 Une couche d'une dalle peut aussi aller au-delà de son contour, ou s'arrêter avant, tout le tour ou à un bord, saisie dans ses propriétés ou tirée en plan ou en coupe avec **Modifier les couches**, et un type de dalle peut donner leurs prolongements à ses dalles : voir [Prolongements des couches](walls.md#prolongements-des-couches). Les toits n'ont pas encore de composition de couches (leur couverture, leur dalle et leur charpente sont des parties à part), donc pas de prolongements de couches.
 
+**Modifier → Scinder l’élément** sur une dalle ou un plafond demande deux points d’une ligne de coupe : elle se prolonge au-delà et doit croiser le contour exactement deux fois. La dalle devient deux dalles ; la partie cliquée garde l’id (GlobalId en IFC), les arcs des bords restent des arcs (un arc coupé reste un arc) et une trémie va avec la partie où elle se trouve. Une trémie que la ligne traverse est refusée. **Modifier → Ajuster/prolonger les éléments** accepte une limite droite (un mur, une poutre ou une ligne dessinée) et coupe la dalle ou le plafond là, en gardant le côté cliqué.
+
+![Une dalle à bord courbe scindée le long d’une ligne : la partie de droite sélectionnée](shots/floor-split.webp)
+
 ## Toits
 
 Choisissez **Architecture → Toit** (<kbd>RF</kbd>) et cliquez le contour des murs qu’il couvre. Lapin construit le toit sur ce contour, en haut de son niveau.

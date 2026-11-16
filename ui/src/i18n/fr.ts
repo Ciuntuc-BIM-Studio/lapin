@@ -923,6 +923,7 @@ export const FR: Record<string, string> = {
   'Structure types': 'Types structurels', 'Columns at grid': 'Poteaux sur quadrillage', 'Line': 'Ligne', 'Polyline': 'Polyligne', 'Rectangle': 'Rectangle', 'Circle': 'Cercle', 'Arc': 'Arc',
   'Move': 'Déplacer', 'Copy': 'Copier', 'Rotate': 'Faire pivoter', 'Mirror': 'Symétrie', 'Scale': 'Échelle', 'Erase': 'Effacer', 'Delete': 'Supprimer', 'Offset': 'Décaler',
   'Trim': 'Ajuster', 'Extend': 'Prolonger', 'Fillet': 'Raccord', 'Chamfer': 'Chanfrein', 'Hatch': 'Hachure', 'Reset': 'Réinitialiser',
+  'Trim/Extend elements': 'Ajuster/prolonger les éléments', 'Split element': 'Scinder l’élément', 'Offset element': 'Décaler l’élément',
   'Aligned': 'Alignée', 'Linear': 'Linéaire', 'Grid axis': 'Axe de quadrillage', 'Level': 'Niveau', 'Sheet': 'Feuille', 'Extrude': 'Extrusion', 'Sweep': 'Balayage', 'Revolve': 'Révolution',
   'Edit sketch': 'Modifier l’esquisse', 'Subtract': 'Soustraire', 'Union': 'Union', 'Intersect': 'Intersection', 'Show operands': 'Afficher les opérandes', 'Remove operation': 'Supprimer l’opération',
   'Terrain from points': 'Terrain à partir de points', 'Platform': 'Plateforme', 'Created here': 'Créé ici', 'Demolish': 'Démolir', 'Temporary': 'Temporaire',

@@ -47,7 +47,7 @@ export function revisionCloud(): Step {
   };
 }
 
-registerCommand({ names: ['REVCLOUD', 'RC'], label: 'Revision cloud', start: revisionCloud });
+registerCommand({ names: ['REVCLOUD'], label: 'Revision cloud', start: revisionCloud });
 
 /** A leader note: the arrow's point, then where the text goes, then its words. */
 export const leaderNote: ToolDef = {
