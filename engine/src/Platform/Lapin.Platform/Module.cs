@@ -526,7 +526,7 @@ public interface IScheduleSource
 }
 
 /// <summary>
-/// The parts of an element a field schedule lists as its rows when it is set to (audit S1, decision 612): a plant of a planting,
+/// The parts of an element a field schedule lists as its rows when it is set to (audit S1, decision 613): a plant of a planting,
 /// a timber member of a framed roof or wall. <paramref name="Key"/> tells the part apart within its element (the row's key is
 /// the element's id, <c>#</c>, it); <paramref name="Fields"/> are the part's own values, read before the element's own (any
 /// field a part does not have, <c>storey.name</c>, <c>name</c>, is its element's). Worked out on every ask, never stored.
@@ -567,7 +567,7 @@ public interface IPartSource
 }
 
 /// <summary>
-/// A field schedule a module ships (audit S1, decision 612): a template as a <c>.lapinschedule</c> holds it (its name, its
+/// A field schedule a module ships (audit S1, decision 613): a template as a <c>.lapinschedule</c> holds it (its name, its
 /// <c>fields</c> options, its columns of its own), offered beside the user's own. <paramref name="Kind"/>: the fixed schedule
 /// it stands for, whose ribbon button now makes it (the id stays an alias: scripts and saved schedules of that kind still work).
 /// </summary>

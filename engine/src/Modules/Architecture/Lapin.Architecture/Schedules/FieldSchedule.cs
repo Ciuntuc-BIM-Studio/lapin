@@ -41,7 +41,7 @@ public sealed record FieldSort(string Field, bool Desc = false)
 /// <summary>
 /// A field schedule's options (<c>fields</c> on the schedule): its filter, the fields its rows are grouped by (none: a row per
 /// element), its columns, its totals line and count column. What the shipped templates need to give the fixed schedules' tables
-/// (audit S1, decision 612): <paramref name="Source"/>, the parts it lists instead of elements (<see cref="IPartSource"/>);
+/// (audit S1, decision 613): <paramref name="Source"/>, the parts it lists instead of elements (<see cref="IPartSource"/>);
 /// <paramref name="GroupColumns"/>, whether the grouping fields are shown first (false: only the columns, a group's value in a
 /// column with <c>first</c>); <paramref name="Sort"/>, the fields the rows are put in order by (none: by their cells, left to
 /// right), equal ones in the model's order; <paramref name="Subtotals"/>, a totals line per value of these fields after the

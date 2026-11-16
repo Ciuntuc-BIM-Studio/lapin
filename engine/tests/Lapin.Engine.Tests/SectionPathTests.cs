@@ -203,7 +203,8 @@ public sealed class SectionPathTests
         var v = f.Model.Get(s)!;
         var (path, _, _) = SectionPaths.Resolve(f.Model, f.Session.Reader.Services, v);
         Assert.NotNull(path);
-        Assert.Equal(25, path!.Count);
+        // Laid by the one rule for curves (Chords): as many pieces as the arc of radius 5 asks for, each within a millimetre of it.
+        Assert.Equal(Chords.Count(5, Math.PI) + 1, path!.Count);
         Assert.Equal(Math.PI * 5, SectionPaths.Length(path), 0.05);
         Assert.All(path, p => Assert.Equal(5, (p - new Vec2(5, 0)).Length, 6));
         // The wall at x = 5 is cut where the arc crosses it, at the top of the arc: a quarter of the way round, x ≈ π·5/2.
