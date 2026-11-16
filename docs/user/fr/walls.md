@@ -109,6 +109,16 @@ Sous un toit, les couches d'un mur montent jusqu'au toit ; un prolongement **Hau
 
 ![Modifier les couches en coupe : les poignées des couches de la dalle là où la coupe traverse leurs bords](shots/layer-edit-section.webp)
 
+### Ajuster, prolonger, scinder et décaler des murs
+
+**Modifier → Ajuster/prolonger les éléments** (TRIMEXTEND, ou TE, dans la ligne de commande) fonctionne comme dans Revit. Choisissez d’abord la limite : un mur, une poutre ou une semelle filante (son axe ou sa face : répondez **N** pour la face proche ou **F** pour la face éloignée, **A** revient à l’axe), ou une ligne dessinée, un segment de polyligne, un arc ou un cercle. Cliquez ensuite sur les murs l’un après l’autre, chacun sur la partie à garder : l’extrémité au-delà de la limite est coupée, et pour un mur trop court, l’extrémité la plus proche est prolongée jusqu’à la limite. Un mur courbe continue sur son cercle. Un mur amené sur l’axe d’un autre y est joint à lui. Les portes, fenêtres et ouvertures gardent leur place en plan ; celle qui tomberait dans la partie coupée est refusée. <kbd>Entrée</kbd> termine, <kbd>Échap</kbd> annule. Chaque mur est une étape d’annulation. TRIM et EXTEND de la ligne de commande acceptent aussi un mur cliqué dans un plan.
+
+**Modifier → Scinder l’élément** (SPLITELEMENT, ou SPLIT) coupe un mur là où vous cliquez : deux murs. Le premier garde l’id (son GlobalId en IFC) et la partie depuis le début du mur ; le second en est une copie (type, niveau, couches, propriétés, groupes) et reprend les jonctions de l’extrémité éloignée. Les deux se rejoignent par une jonction dans le prolongement. Les portes, fenêtres et ouvertures vont à la partie où elles se trouvent ; une ouverture à cheval sur la coupe est refusée (*lies across the cut*). Tapez **I** (Intersection) pour choisir le mur puis ce qui le croise, un autre élément ou une ligne ou un arc dessiné, et couper là ; **P** revient à Point.
+
+**Modifier → Décaler l’élément** (OFFSET de la ligne de commande, qui accepte désormais les éléments) : tapez la distance dans l’unité du projet, cliquez sur un mur dans un plan, puis sur le côté où va la copie. La copie est parallèle au mur, concentrique pour un mur courbe, avec le même type, les mêmes couches et ouvertures. **A** (Axe, par défaut) mesure depuis l’axe, **F** (Faces) depuis la face du mur, si bien que la face de la copie se trouve à cette distance de la sienne ; **T** (Par) prend un point par où passe la copie.
+
+![Deux murs ajustés à une limite et un mur avec une porte scindé en deux](shots/wall-split-trim.webp)
+
 ## Types de murs
 
 Un type de mur est un ensemble de couches, de la face à droite du sens dans lequel le mur est tracé (l’extérieur, si vous tracez autour d’un bâtiment dans le sens inverse des aiguilles d’une montre) à la face à sa gauche. Chaque couche a un matériau et une épaisseur, et une couche est le **noyau**. La ligne du mur suit le noyau. Pour modifier les types, choisissez **Architecture → Types de murs**. Une couche autre que l’âme peut avoir sa propre hauteur : **De** et **Jusqu’à** règlent jusqu’où elle monte au-dessus du pied du mur (une faïence jusqu’à 1500, un bardage à partir de 300) ; vide, elle court sur toute la hauteur.

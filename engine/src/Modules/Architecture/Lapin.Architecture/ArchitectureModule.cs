@@ -342,6 +342,9 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         Ceilings.Register(r);
         Skirtings.Register(r);
         WallSweeps.Register(r);
+        // A wall's part in split, trim and extend (PathEdits), and floors and ceilings split or trimmed by a line (audit 2026-11-15, §6).
+        r.Service<IPathPieces>(new WallPieces());
+        OutlineEdits.Register(r);
         RoomFinishes.Register(r);
         FinishZones.Register(r);
         RoomOpenings.Register(r);
@@ -422,6 +425,14 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             }
             else (pts, arcs) = Slabs.OutlineArg(a["arcs"], Points(a));
             var slab = Slabs.Add(ctx, storeyId, pts, Json.Number(a["offset"]) ?? 0, type, arcs);
+            // Its elliptical edges (audit S4, {ellipses: [{c, m, ratio, ccw} | null…]}) and its holes ({holes: [[[x, y]…]…], holeArcs?}).
+            if (a[OutlineHoles.Key] != null || a[EllipseEdge.Key] != null)
+            {
+                var withHoles = slab.CloneAttrs();
+                Slabs.SetEllipses(withHoles, a, null);
+                OutlineHoles.Apply(withHoles, a);
+                ctx.Replace(slab.With(attrs: withHoles));
+            }
             return new JsonObject { ["id"] = slab.Id };
         });
 
@@ -432,14 +443,14 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         {
             var (e, corners, rises) = OutlineOf(ctx, a);
             var (c, r2) = ArcOutline.Fillet(corners, rises, Index(a, corners.Count), Json.Number(a["radius"]) ?? throw new CommandException("What radius? A length in metres."));
-            ReplaceOutline(ctx, e, corners, c, r2);
+            ReplaceOutline(ctx, e, corners, c, r2, OutlineHoles.Index(a, e));
             return null;
         });
         r.Command("chamferCorner", "Chamfer corner", (ctx, a) =>
         {
             var (e, corners, rises) = OutlineOf(ctx, a);
             var (c, r2) = ArcOutline.Chamfer(corners, rises, Index(a, corners.Count), Json.Number(a["distance"]) ?? throw new CommandException("What distance? A length in metres."));
-            ReplaceOutline(ctx, e, corners, c, r2);
+            ReplaceOutline(ctx, e, corners, c, r2, OutlineHoles.Index(a, e));
             return null;
         });
         r.Command("setEdgeArc", "Edge arc", (ctx, a) =>
@@ -448,7 +459,39 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var i = Index(a, corners.Count);
             var next = rises?.ToArray() ?? new double[corners.Count];
             next[i] = Json.Number(a["rise"]) ?? 0;
-            ReplaceOutline(ctx, e, corners, corners, next);
+            ReplaceOutline(ctx, e, corners, corners, next, OutlineHoles.Index(a, e));
+            return null;
+        });
+
+        // The outline the walls close round a point (audit S4, the outline tools' "Inside walls"): {storeyId?, x, y} → {points}, the
+        // region a room would find there, up to the walls' faces; refused, saying why, when nothing closes round it.
+        r.Query("outlineInside", (q, a) =>
+        {
+            var storeyId = (string?)a["storeyId"] ?? Spatial.Storeys(q.Model).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
+            var (region, problem) = RoomBounds.At(q.Model, q.Services, storeyId, Args.Point(a, "x", "y"));
+            if (region == null) throw new CommandException(problem ?? "No walls close round that point.");
+            return new JsonObject { ["points"] = Slabs.ContourJson(region.Outer) };
+        });
+
+        // A hole in a floor's or a ceiling's own outline (audit S4): {id? (the floor or ceiling; else the floor, then the ceiling, of
+        // the storey that holds the loop), storeyId?, points, arcs?} → {id}; {id, hole} takes one away. One undo step each.
+        r.Command("addOutlineHole", "Hole in outline", (ctx, a) =>
+        {
+            var pts = Points(a);
+            var e = (string?)a["id"] is { } id ? ctx.Model.Get(id) ?? throw new CommandException("The element is not in the project.")
+                : ctx.Model.OfClass(IfcClass.Slab).Concat(ctx.Model.OfClass(Ceilings.Class))
+                    .FirstOrDefault(x => ((string?)a["storeyId"] == null || Spatial.StoreyOf(ctx.Model, x.Id)?.Id == (string?)a["storeyId"]) && !StoredBodies.Has(x) && OutlineHoles.Holds(x, pts))
+                  ?? throw new CommandException("Draw the hole inside a floor or a ceiling.");
+            if (!(e.Class == IfcClass.Slab || e.Class == Ceilings.Class)) throw new CommandException("Only a floor or a ceiling has holes of its own here.");
+            if (StoredBodies.Has(e) || e.Attrs["reference"] != null) throw new CommandException("An element kept as it came from its file is not edited by its outline.");
+            ctx.Replace(e.With(attrs: OutlineHoles.Added(e, a)));
+            return new JsonObject { ["id"] = e.Id };
+        });
+        r.Command("removeOutlineHole", "Remove hole", (ctx, a) =>
+        {
+            var e = ctx.Model.Get((string?)a["id"] ?? "") ?? throw new CommandException("The element is not in the project.");
+            var k = OutlineHoles.Index(a, e) ?? throw new CommandException("Which hole? Its index, from 0.");
+            ctx.Replace(e.With(attrs: OutlineHoles.Removed(e, k)));
             return null;
         });
 
@@ -460,8 +503,11 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             {
                 var (contour, arcs) = Slabs.OutlineArg(a["arcs"], Points(a), slab);
                 Slabs.SetOutline(attrs, contour, arcs);
+                Slabs.SetEllipses(attrs, a, slab);
                 RemapExtents(slab, attrs, contour);
             }
+            // Its holes given, or kept and checked against the outline as it now is (audit S4).
+            if (a[OutlineHoles.Key] != null || a["points"] != null || a["x1"] != null) OutlineHoles.Apply(attrs, a);
             if (Json.Number(a["offset"]) is { } offset) attrs["offset"] = offset;
             ctx.Replace(slab.With(attrs: attrs));
             return null;
@@ -532,7 +578,14 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var slab = (string?)a["slabId"] is { } sid ? Spatial.Require(ctx.Model, sid, IfcClass.Slab)
                 : ctx.Model.OfClass(IfcClass.Slab).FirstOrDefault(s => ((string?)a["storeyId"] == null || Spatial.StoreyOf(ctx.Model, s.Id)?.Id == (string?)a["storeyId"]) && Polygon2.Contains(Slabs.Contour(s), mid))
                   ?? throw new CommandException("Draw the opening inside a floor.");
-            return new JsonObject { ["id"] = Slabs.AddOpening(ctx, slab, pts, Slabs.OutlineArg(a["arcs"], pts, null, "An opening").Rises).Id };
+            var opening = Slabs.AddOpening(ctx, slab, pts, Slabs.OutlineArg(a["arcs"], pts, null, "An opening").Rises);
+            if (a[EllipseEdge.Key] != null)
+            {
+                var oa = opening.CloneAttrs();
+                Slabs.SetEllipses(oa, a, null);
+                ctx.Replace(opening.With(attrs: oa));
+            }
+            return new JsonObject { ["id"] = opening.Id };
         });
 
         r.Command("updateSlabOpening", "Change floor opening", (ctx, a) =>
@@ -542,6 +595,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var attrs = o.CloneAttrs();
             var (contour, arcs) = Slabs.OutlineArg(a["arcs"], Points(a), o, "An opening");
             Slabs.SetOutline(attrs, contour, arcs);
+            Slabs.SetEllipses(attrs, a, o);
             ctx.Replace(o.With(attrs: attrs));
             return null;
         });
@@ -791,9 +845,17 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
 
         // An opening alone in a wall, nothing filling it (decision 247): {wallId, x, y | along, width?, height?, sill?, shape?, rise?};
         // its head (decision 253) "rect", "segmental", "elliptical", "round" (a semicircle) or "radiused" (rise: the corner radius).
+        // Of its own outline (audit S4): {wallId, profile: [[along, up]…] (along the wall from its start, up from its base, as an
+        // elevation reads it), arcs?}: its bounds its place and size, the outline cut through the wall.
         r.Command("addWallOpening", "Opening", (ctx, a) =>
         {
             var wall = Spatial.Require(ctx.Model, (string?)a["wallId"], IfcClass.Wall);
+            if (a["profile"] is JsonArray profile)
+            {
+                if (PathCurve.Of(wall).IsArc) throw new CommandException("An opening of its own outline goes in a straight wall.");
+                var pts = Args.StoredPoints(profile);
+                return new JsonObject { ["id"] = Openings.AddOutlined(ctx, wall, pts, ArcOutline.RisesArg(a["arcs"], pts.Count)).Id };
+            }
             var along = Json.Number(a["along"]) ?? Openings.AlongOf(wall, new Vec2(Json.Number(a["x"]) ?? 0, Json.Number(a["y"]) ?? 0));
             var opening = Openings.AddBare(ctx, wall, along, Json.Number(a["sill"]) ?? 0, Json.Number(a["width"]) ?? 0.9, Json.Number(a["height"]) ?? 2.1, (string?)a["shape"], Json.Number(a["rise"]));
             return new JsonObject { ["id"] = opening.Id };
@@ -1409,11 +1471,19 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
     static (Entity E, IReadOnlyList<Vec2> Corners, double[]? Rises) OutlineOf(ICommandContext ctx, JsonObject a)
     {
         var e = ctx.Model.Get((string?)a["id"] ?? "") ?? throw new CommandException("The element is not in the project.");
-        if (!(e.Class is IfcClass.Slab || e.Class == Ceilings.Class || (e.Class == IfcClass.OpeningElement && e.Attrs["contour"] != null && e.Str("stairId") == null)))
-            throw new CommandException("Only a floor, a floor opening or a ceiling has its outline's edges bent and its corners rounded here.");
+        // A drawn room and a drawn balcony too (decision 589): a room found from its walls follows them, a styled balcony its fields.
+        if (!(e.Class is IfcClass.Slab || e.Class == Ceilings.Class || (e.Class == IfcClass.OpeningElement && e.Attrs["contour"] != null && e.Str("stairId") == null)
+            || (e.Class == Rooms.Class && !e.Bool("auto")) || (e.Class == Balconies.BalconyModule.Class && e.Attrs["contour"] != null)))
+            throw new CommandException("Only a floor, a floor opening, a ceiling, a drawn room or a drawn balcony has its outline's edges bent and its corners rounded here.");
         if (StoredBodies.Has(e) || e.Attrs["reference"] != null) throw new CommandException("An element kept as it came from its file is not edited by its outline.");
         var corners = Slabs.Corners(e);
         if (corners.Count < 3) throw new CommandException("The element has no outline.");
+        // One of its own holes (audit S4): {hole: its index}.
+        if (OutlineHoles.Index(a, e) is { } k) { var h = OutlineHoles.Of(e)[k]; return (e, h.Corners, h.Rises); }
+        // A corner beside an elliptical edge is not rounded or cut, and that edge is no arc (audit S4).
+        if (Slabs.Ellipses(e) is { } el && Json.Number(a["index"]) is { } ix && ix >= 0 && ix < corners.Count
+            && (el[(int)ix] != null || (a["rise"] == null && el[((int)ix - 1 + corners.Count) % corners.Count] != null)))
+            throw new CommandException("That edge runs along an ellipse: only a corner between two straight edges is rounded or cut, and an elliptical edge is not bent.");
         return (e, corners, Slabs.Rises(e));
     }
 
@@ -1421,12 +1491,21 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         Json.Number(a["index"]) is { } ix && ix >= 0 && ix < n && ix == Math.Floor(ix) ? (int)ix : throw new CommandException($"Which corner? The outline has {n}, from 0.");
 
     /// <summary>An outline edit written: checked, its arcs with it, a floor's layer extents following its edges.</summary>
-    static void ReplaceOutline(ICommandContext ctx, Entity e, IReadOnlyList<Vec2> was, IReadOnlyList<Vec2> corners, IReadOnlyList<double>? rises)
+    static void ReplaceOutline(ICommandContext ctx, Entity e, IReadOnlyList<Vec2> was, IReadOnlyList<Vec2> corners, IReadOnlyList<double>? rises, int? hole = null)
     {
-        var (c, r) = ArcOutline.Check(corners, rises, e.Class == IfcClass.Slab ? "A floor" : e.Class == Ceilings.Class ? "A ceiling" : "An opening");
+        if (hole is { } k) { ctx.Replace(e.With(attrs: OutlineHoles.Replaced(e, k, corners, rises))); return; }
+        if (e.Class == Balconies.BalconyModule.Class)
+        {
+            // A balcony keeps the order it was drawn in: its first edge lies against the building.
+            Balconies.BalconyModule.Update(ctx, new JsonObject { ["id"] = e.Id, ["contour"] = Slabs.ContourJson(corners), ["arcs"] = ArcOutline.ToJson(rises) ?? new JsonArray([.. corners.Select(_ => (JsonNode)0)]) });
+            return;
+        }
+        var (c, r) = ArcOutline.Check(corners, rises, e.Class == IfcClass.Slab ? "A floor" : e.Class == Ceilings.Class ? "A ceiling" : e.Class == Rooms.Class ? "A room" : "An opening");
         var attrs = e.CloneAttrs();
         Slabs.SetOutline(attrs, c, r);
+        Slabs.SetEllipses(attrs, new JsonObject(), e);
         if (e.Class == IfcClass.Slab) RemapExtents(e, attrs, c);
+        OutlineHoles.Apply(attrs, new JsonObject());
         ctx.Replace(e.With(attrs: attrs));
     }
 

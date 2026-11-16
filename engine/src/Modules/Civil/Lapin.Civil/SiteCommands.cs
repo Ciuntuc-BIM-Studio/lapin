@@ -92,12 +92,16 @@ public static class SiteCommands
         // The parcel (the property's boundary) on a terrain: a closed outline, or none.
         r.Command("setParcel", "Parcel", (ctx, a) =>
         {
-            var attrsPts = a["points"] != null ? Terrains.CheckOutline(Args.Points(a)) : null;
-            var t = attrsPts != null ? TerrainAt(ctx.Model, a, attrsPts[0]) : Terrain(ctx.Model, (string?)a["terrainId"] ?? (string?)a["id"]);
+            // Its edges may be arcs (decision 589): {points, arcs?}; the arcs it had stay when only its corners are given, as many.
+            var given = a["points"] != null;
+            var first = given ? Args.Points(a) : null;
+            var t = first is { Count: > 0 } ? TerrainAt(ctx.Model, a, first[0]) : Terrain(ctx.Model, (string?)a["terrainId"] ?? (string?)a["id"]);
+            var (attrsPts, arcs) = given ? Terrains.OutlineArg(a, ArcOutline.RisesOf(t, "parcel", Terrains.ParcelArcs), "A parcel") : (null, null);
             var attrs = t.CloneAttrs();
             if (attrsPts != null) attrs["parcel"] = Terrains.ContourJson(attrsPts); else attrs.Remove("parcel");
+            ArcOutline.Write(attrs, arcs, Terrains.ParcelArcs);
             ctx.Replace(t.With(attrs: attrs));
-            return new JsonObject { ["id"] = t.Id, ["area"] = attrsPts == null ? 0 : Math.Round(Math.Abs(Polygon2.SignedArea(attrsPts)), 2) };
+            return new JsonObject { ["id"] = t.Id, ["area"] = attrsPts == null ? 0 : Math.Round(Math.Abs(ArcOutline.SignedArea(attrsPts, arcs)), 2) };
         });
 
         // What the colours mean, and how much ground each band covers.

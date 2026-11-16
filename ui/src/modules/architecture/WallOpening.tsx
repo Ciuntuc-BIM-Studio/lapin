@@ -26,13 +26,15 @@ export const defaultRise = (kind: OpeningHead, width: number): number | null =>
   kind === 'segmental' ? width / 6 : kind === 'elliptical' ? width / 4 : kind === 'radiused' ? 0.15 : null;
 
 /** The head's kind and, when it has one, its rise (a radiused head's corner radius); an empty rise is the kind's own. */
-function HeadFields({ kind, rise, width, onChange }: { kind: OpeningHead; rise: number | null; width: number; onChange: (patch: { shape?: OpeningHead; rise: number | null }) => void }) {
-  const fallback = defaultRise(kind, width);
+function HeadFields({ kind, rise, width, onChange }: { kind: OpeningHead | 'outline'; rise: number | null; width: number; onChange: (patch: { shape?: OpeningHead; rise: number | null }) => void }) {
+  const fallback = kind === 'outline' ? null : defaultRise(kind, width);
   return (
     <>
       <dt>Head</dt>
       <dd><select data-field="opening-head" value={kind} onChange={(e) => onChange({ shape: e.target.value as OpeningHead, rise: null })}>
         {HEADS.map((h) => <option key={h.kind} value={h.kind}>{h.label}</option>)}
+        {/* An opening of its own outline (audit S4), made from a shape drafted on an elevation or a section (Convert to…). */}
+        {kind === 'outline' && <option value="outline" disabled>Its own outline</option>}
       </select></dd>
       {fallback != null && <>
         <dt>{kind === 'radiused' ? 'Corner radius' : 'Rise of the head'}</dt>
@@ -74,8 +76,9 @@ export const isWallOpening = (n: NodeDto): boolean => {
 
 const num = (n: NodeDto, k: string, d: number) => (typeof n.props[k] === 'number' ? (n.props[k] as number) : d);
 
-const headOf = (n: NodeDto): OpeningHead => {
+const headOf = (n: NodeDto): OpeningHead | 'outline' => {
   const k = n.props.shape;
+  if (k === 'outline') return 'outline';
   return k === 'segmental' || k === 'elliptical' || k === 'round' || k === 'radiused' || k === 'circle' ? k : 'rect';
 };
 
