@@ -32,6 +32,7 @@ public sealed class SiteWorksModule : ILapinModule
         r.Quantities(Formwork.Class, Formwork.Quantities);
         r.Service<IScheduleSource>(new FormworkSchedule());
         r.Service<IScheduleSource>(new ScaffoldSchedule());
+        ScaffoldSchedule.RegisterTemplate(r);
         r.Service<ITaskLife>(new TemporaryLives());
         r.Catalog("scaffoldDefault", Scaffolds.DefaultSpec());
         r.Catalog("slabFormworkDefault", Formwork.DefaultSpec("slab"));
@@ -329,6 +330,29 @@ public sealed class ScaffoldSchedule : IScheduleSource
 {
     public string Kind => "scaffold";
     public string Label => "Scaffold schedule";
+
+    static readonly (string Quantity, string Heading)[] Measures =
+        [("Length", "Length (m)"), ("Height", "Height (m)"), ("Area", "Area (m²)"), ("Bays", "Bays"), ("Lifts", "Lifts"), ("DeckBoards", "Deck boards"), ("Anchors", "Anchors")];
+
+    /// <summary>
+    /// A scaffold's measures as fields (its own <c>height</c> attribute is the one asked for, not the one built: these are as
+    /// built), and the field schedule that gives this table (audit S1): a row per scaffold, by name, the area added up.
+    /// </summary>
+    public static void RegisterTemplate(IModuleRegistry r)
+    {
+        foreach (var (quantity, heading) in Measures)
+            DerivedFields.AddQueried(Scaffolds.Class, new QueriedField("scaffold" + quantity, "Scaffold: " + heading.ToLowerInvariant() + ", as built",
+                (q, e) => Scaffolds.Quantities(e, q.Geometry(e.Id), q.Model).SelectMany(x => x.Quantities).FirstOrDefault(x => x.Name == quantity) is { } v ? DerivedFields.Number(v.Value) : null));
+        var columns = new JsonArray(
+            new JsonObject { ["field"] = "name", ["heading"] = "Scaffold", ["aggregate"] = "first" },
+            new JsonObject { ["field"] = "type.name", ["heading"] = "Type", ["aggregate"] = "first" });
+        foreach (var (quantity, heading) in Measures)
+            columns.Add((JsonNode)new JsonObject { ["field"] = "scaffold" + quantity, ["heading"] = heading, ["aggregate"] = quantity == "Area" ? "sum" : "first", ["format"] = "0.##" });
+        r.Service(ShippedScheduleTemplate.Of("scaffold", "Scaffold schedule", "scaffold", new JsonObject
+        {
+            ["filter"] = new JsonObject { ["classes"] = new JsonArray(Scaffolds.Class) }, ["sort"] = new JsonArray("name"), ["totals"] = "always", ["columns"] = columns,
+        }.ToJsonString()));
+    }
 
     public ScheduleGrid Grid(IQueryContext q)
     {

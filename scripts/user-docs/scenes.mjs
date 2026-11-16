@@ -1378,6 +1378,35 @@ export const scenes = [
     },
   },
   {
+    // The fixed schedules as shipped field-schedule templates (audit S1): the ribbon's Sunshade schedule makes a field schedule
+    // with the fixed one's columns and totals; From template… lists the shipped ones beside the user's own.
+    id: 'shipped-schedules',
+    touches: ['architecture', 'core'],
+    async run(t) {
+      await t.fresh();
+      const { walls } = await house(t, { roof: false });
+      const windows = (await t.nodes()).filter((n) => n.type === 'IfcWindow');
+      await t.cmd('architecture.addSunshade', { style: 'concrete-canopy', hostId: windows[0].id });
+      await t.cmd('architecture.addSunshade', { style: 'concrete-canopy', hostId: windows[1].id });
+      await t.cmd('architecture.addSunshade', { style: 'brise-soleil', hostId: windows[2].id });
+      await t.cmd('architecture.addSunshade', { style: 'vertical-fins', wallId: walls[2], x1: 7.4, y1: 8, x2: 11.6, y2: 8 });
+      await t.tool('architecture.sunshadeSchedule');
+      await t.wait(1200);
+      const schedule = (await t.nodes()).find((n) => n.type === 'LapinSchedule' && n.name === 'Sunshade schedule');
+      t.expect(schedule && schedule.props.kind === 'fields', 'the ribbon button makes a field schedule from the shipped template');
+      await t.ui({ view: 'schedule', scheduleId: schedule.id, keyPlan: false });
+      await t.wait(1500);
+      t.expect(await t.page.locator('[data-testid=schedule-configure]').count() === 1, 'it has its Configure button, as any field schedule');
+      t.expect(await t.page.locator('[data-testid=schedule] text', { hasText: 'Projection (mm)' }).count() >= 1, 'with the fixed schedule\'s columns');
+      await t.shot('shipped-sunshade-schedule', { of: '.schedule-pane', pad: 0 });
+      await t.ui({ dialog: 'fieldTemplates' });
+      await t.wait(1000);
+      t.expect(await t.page.locator('[data-testid=shipped-templates] [data-shipped]').count() >= 4, 'From template… lists the shipped templates');
+      await t.shot('shipped-templates', { of: '[data-testid=field-templates-dialog]', pad: 8 });
+      await t.ui({ dialog: null, keyPlan: true });
+    },
+  },
+  {
     // Sunshades (report #56): a concrete canopy put on a window with the Sunshade tool, louvres, fins, an awning, a pergola and
     // an external blind; the noon helper on the canopy; the types dialog; in plan (overhead dashed) and in 3D.
     id: 'sunshades',

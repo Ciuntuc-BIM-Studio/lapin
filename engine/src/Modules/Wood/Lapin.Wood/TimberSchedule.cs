@@ -15,6 +15,40 @@ public sealed class TimberSchedule : IScheduleSource
     public string Kind => "timber";
     public string Label => "Timber";
 
+    /// <summary>Every member of timber as a part (audit S1), and the field schedule that gives this cutting list.</summary>
+    public static void RegisterTemplate(IModuleRegistry r)
+    {
+        r.Service<IPartSource>(new Parts());
+        r.Service(ShippedScheduleTemplate.Of("timber", "Timber", "timber", RoofTimberSchedule.TemplateFields("timber", "Element", null)));
+    }
+
+    /// <summary>
+    /// The timber (<c>timber</c>): a timber-frame wall's members, a joisted floor's, a framed roof's (a CLT roof's wall plates
+    /// only: its rafters are its panels), each a part.
+    /// </summary>
+    sealed class Parts : IPartSource
+    {
+        public string Source => "timber";
+        public string Label => "Timber members";
+        public IReadOnlyList<(string Key, string Label)> Fields => RoofTimberSchedule.PartFields;
+
+        public IEnumerable<ElementPart> PartsOf(IQueryContext q, Entity e)
+        {
+            var i = 0;
+            string Key() => (i++).ToString(CultureInfo.InvariantCulture);
+            if (e.Class == IfcClass.Wall && WoodModule.Of(q.Model, e, q.Geometry(e.Id), q.Services) is { } wall)
+                return [.. wall.Result.Members.Select(m => RoofTimberSchedule.Part(Key(), WoodModule.Label(m.Role), Array.IndexOf(Framing.Roles, m.Role), WoodModule.Section(m.Section), wall.Spec.Grade, m.Length, m.Volume, 0))];
+            if (e.Class == IfcClass.Slab && Joists.Of(q.Model, e) is { } floor)
+                return [.. floor.Result.Members.Select(m => RoofTimberSchedule.Part(Key(), Joists.Label(m.Role), m.Role, WoodModule.Section(m.Section), floor.Spec.Grade, m.Length, m.Volume, 1))];
+            if (e.Class == IfcClass.Roof)
+            {
+                var clt = CltSpec.OfRoof(e) != null;
+                return RoofTimberSchedule.MemberParts(q.Model, e).Where(p => !clt || p.Fields["memberRole"].Text == "Wall plate");
+            }
+            return [];
+        }
+    }
+
     public static List<RoofTimberSchedule.Row> Rows(IQueryContext q)
     {
         var o = new List<RoofTimberSchedule.Row>();

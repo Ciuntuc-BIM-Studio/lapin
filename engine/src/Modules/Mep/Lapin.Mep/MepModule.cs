@@ -45,6 +45,7 @@ public sealed class MepModule : ILapinModule
         foreach (var cls in Runs.Classes) r.Cutter(cls, 70, null);
         r.Service<Lapin.Platform.Coordination.IProvisionOpenings>(new MepProvisions());
         r.Service<IScheduleSource>(new MepEquipmentSchedule());
+        MepEquipmentSchedule.RegisterTemplate(r);
         r.Service<IScheduleSource>(new MepRunSchedule());
         r.Service<IScheduleSource>(new GasSchedule());
         r.Service<IScheduleSource>(new FireSchedule());

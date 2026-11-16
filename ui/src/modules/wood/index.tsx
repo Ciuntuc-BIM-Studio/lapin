@@ -11,6 +11,7 @@ import { notify, useUi } from '../../app/store';
 import { execute } from '../../engine/session';
 import { OpeningWoodSection, RoofWoodSection, WallWoodSection } from './Sections';
 import { lazyPart } from '../../platform/lazyPart';
+import { createScheduleOf } from '../../shell/fieldSchedule';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const FrameDialog = lazyPart(() => import('./FrameDialog').then((m) => m.FrameDialog), { title: 'Timber frame' });
@@ -30,7 +31,7 @@ const panels: ToolDef = {
 };
 const schedule: ToolDef = {
   id: 'wood.schedule', label: 'Timber schedule', icon: Table2,
-  run: () => void execute('architecture.createSchedule', { kind: 'timber' }).then((r) => { if (r) notify('Timber schedule made: it is in the project browser, under Schedules.'); }),
+  run: () => void createScheduleOf('timber').then((r) => { if (r) notify('Timber schedule made: it is in the project browser, under Schedules.'); }),
 };
 
 export const woodModule: LapinModule = {

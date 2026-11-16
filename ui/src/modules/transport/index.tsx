@@ -16,6 +16,7 @@ import { activate } from '../../platform/modules';
 import { ElevatorSection } from './ElevatorSection';
 import { openConfigurator } from './openConfigurator';
 import { lazyPart } from '../../platform/lazyPart';
+import { createScheduleOf } from '../../shell/fieldSchedule';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const ElevatorDialog = lazyPart(() => import('./ElevatorDialog').then((m) => m.ElevatorDialog), { title: 'Elevator' });
@@ -87,7 +88,7 @@ const elevator: ToolDef = {
 
 const schedule: ToolDef = {
   id: 'transport.schedule', label: 'Elevator schedule', icon: ListOrdered,
-  run: () => void execute('architecture.createSchedule', { kind: 'elevators' }).then((r) => { if (r) notify('Elevator schedule made: it is in the project browser, under Schedules.'); }),
+  run: () => void createScheduleOf('elevators').then((r) => { if (r) notify('Elevator schedule made: it is in the project browser, under Schedules.'); }),
 };
 
 const openings: ToolDef = {

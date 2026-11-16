@@ -6,6 +6,7 @@
 import { notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { saveFile, safeFileName } from '../../engine/files';
+import { createScheduleOf } from '../../shell/fieldSchedule';
 
 export interface ScheduleKind { kind: string; label: string }
 
@@ -32,7 +33,8 @@ export const openSchedule = (id: string) => useUi.setState({ view: 'schedule', s
 
 /** A new schedule of this kind, opened. */
 export async function newSchedule(kind: string, extra: Record<string, unknown> = {}): Promise<string | null> {
-  const r = await execute('architecture.createSchedule', { kind }) as { id?: string } | null;
+  // A kind a module ships a field-schedule template for (audit S1) makes that field schedule.
+  const r = kind === 'fields' || kind === 'quantities' ? await execute('architecture.createSchedule', { kind }) as { id?: string } | null : await createScheduleOf(kind);
   if (!r?.id) return null;
   if (Object.keys(extra).length) await execute('architecture.updateSchedule', { id: r.id, ...extra });
   openSchedule(r.id);

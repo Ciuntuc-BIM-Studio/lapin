@@ -104,10 +104,13 @@ The **Wall sweeps** schedule (**Architecture → Wall sweeps schedule**, or **Co
 
 A **Field schedule** lists any field of the elements: the model's own (name, type, storey, length, area…), the quantities and properties a file brings (a `Pset_` property of an imported IFC, Fragments or BOS file) and your own parameters. Click **+** beside **Schedules** in the project browser and pick **Field schedule** (or **Construction → Schedules…**); its editor opens. **Configure…** in the schedule's toolbar opens it again.
 
+- **Rows.** One row for each element, or for each part of the elements: the plants of the plantings, the timber members of framed roofs, timber-frame walls and joisted floors (with the Wood module). A part has fields of its own (a plant's species, a member's section, grade and length) and reads every other field from its element (its name, its storey).
 - **Which elements.** Narrow by kind, type, storey, material, group or phase (type a value or pick one of the project's), then **Add a rule**, in the editor Quick select and the view filters use (see [Quick select](interface.md#quick-select)): a field (one of the project's, or an element's type, storey, material and the others), an operator (is, contains, starts with, is greater than, is between, is one of, has a value…) and a value; all the rules or any of them, and **Add a group** for rules of their own inside. The field picker is searchable and shows, for each field, how many elements have it and a few of its values, grouped as the model has them: Lapin's own, the type's, quantities, parameters, each property set of the files, and your field names.
-- **Group by.** One or more fields, in order: one row for each different value (each storey, each stage). With none, a row for each element.
-- **Columns.** A field or a formula (**=**, for instance `NetSideArea * 1.1`), with a heading of its own, an aggregate (sum, average, smallest, largest, count, count of different, first, list of values; the default is sum for numbers and the list for texts), a unit (m, cm, mm, m², m³, l, kg, t… converted for you) and the decimals. Move columns up and down, remove them.
-- **Total row** and **Count column** can be turned off.
+- **Group by.** One or more fields, in order: one row for each different value (each storey, each stage). With none, a row for each element. Untick **Show the grouping fields as the first columns** to show only the columns, a group's value in a column added up as *first*.
+- **Columns.** A field or a formula (**=**, for instance `NetSideArea * 1.1`), with a heading of its own, an aggregate (sum, average, smallest, largest, count, count of different, first, list of values, number of items; the default is sum for numbers and the list for texts), a unit (m, cm, mm, m², m³, l, kg, t… converted for you) and the decimals, or a **Format** in their place (`0.##`: at most two decimals; `0.00`: always two). Move columns up and down, remove them.
+- **Sort by.** The fields the rows are put in order by, each ascending or descending; rows equal on them stay in the model's order. With none, the rows go by their cells, left to right.
+- **Subtotals by.** A totals line for each value of these fields after the rows (each section and grade of timber, for instance).
+- **Total row** and **Count column** can be turned off; **Total row under a single row too** keeps it when there is only one row.
 
 **Apply** changes the schedule in one step (one undo). The schedule follows the model, like any other: charts, a place on a sheet, CSV and XLSX all work.
 
@@ -120,6 +123,12 @@ To total an imported IFC by one of its properties, make a field schedule, add th
 The **quantity takeoff** can group by any field as well: in its toolbar, the grouping list ends with **Other field…**.
 
 **Templates.** **Template…** in a field schedule's toolbar saves its setup (filter, grouping, columns) as a `.lapinschedule` file, or keeps it in this computer's library. **From template…** in the **+** list (or in **Construction → Schedules…**) makes a schedule from one kept on this computer, from a file or from the firm's folders (see [The interface](interface.md)). A template names types, storeys, materials, groups and phases, not ids, so it works in another project.
+
+**Shipped templates.** The schedules of the modules that list one row per element or per part are field schedules made from templates Lapin ships: sunshades, gates, balconies, skirtings, elevators, furniture, MEP equipment, scaffolds, plantings, roof timber and timber. Their ribbon buttons (**Sunshade schedule**, **Gate schedule**, **Timber schedule**…) and the **+** list make the field schedule, with the same columns, order and totals as before; **Configure…** then changes it like any other, and **Template…** keeps your version as a template of your own. **From template…** lists them under **Shipped with Lapin**. Schedules made by an earlier version keep opening as they were. The joinery cards, the bar bending schedule, the formwork and the cost estimate forms stay as they are.
+
+![The sunshade schedule, a field schedule made from its shipped template](shots/shipped-sunshade-schedule.webp)
+
+![From template…: the templates shipped with Lapin, then those on this computer](shots/shipped-templates.webp)
 
 ## Field names of your office
 

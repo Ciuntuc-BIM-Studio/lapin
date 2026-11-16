@@ -51,6 +51,7 @@ public static class Gates
         r.Service<IGeometryFilter>(new GateCuts());
         r.Service<IElementPlacement>(new GatePlacement());
         r.Service<IScheduleSource>(new GateSchedule());
+        GateSchedule.RegisterTemplate(r);
 
         // A type of a kind or from a built-in style: {kind | style, name?, spec?} → {id}.
         r.Command("createGateType", "New gate type", (ctx, a) =>
@@ -652,17 +653,54 @@ public sealed class GateSchedule : IScheduleSource
         "swing" or "pedestrian" => "1", "doubleSwing" => "2", "swingWicket" => "2 + 1", "folding" => $"{2 * s.Panels} panels", _ => "1 sliding",
     };
 
+    static string Mm(double v) => Lapin.Model.Numbers.Mm(v);
+    static string Size(GateSpec s) => s.Kind.Key == "swingWicket" ? $"{Mm(s.Width)} + {Mm(s.WicketWidth)} × {Mm(s.Height)}" : $"{Mm(s.Width)} × {Mm(s.Height)}";
+    static string Piers(GateSpec s) => s.Piers == "none" ? "none" : $"{s.Piers} {Mm(s.PierSize)}";
+
+    /// <summary>
+    /// What the schedule shows of a gate (its type's), as fields, and the field schedule that gives the same table (audit S1): a
+    /// row per type, in the kinds' order, the count and its total.
+    /// </summary>
+    public static void RegisterTemplate(IModuleRegistry r)
+    {
+        static GateSpec Spec(IModelView m, Entity e) => new(Gates.TypeOf(m, e)?.Attrs["spec"] as JsonObject);
+        DerivedFields.Add(Gates.Class, new("gateKindLabel", "Gate: kind", (m, e) => Spec(m, e).Kind.Label));
+        DerivedFields.Add(Gates.Class, new("gateKindOrder", "Gate: kind's place in the list", (m, e) => GateKinds.All.ToList().IndexOf(Spec(m, e).Kind).ToString(CultureInfo.InvariantCulture)));
+        DerivedFields.Add(Gates.Class, new("gateSize", "Gate: clear size (mm)", (m, e) => Size(Spec(m, e))));
+        DerivedFields.Add(Gates.Class, new("gateLeaves", "Gate: leaves", (m, e) => Leaves(Spec(m, e))));
+        DerivedFields.Add(Gates.Class, new("gateInfill", "Gate: infill", (m, e) => Spec(m, e).Infill));
+        DerivedFields.Add(Gates.Class, new("gateTop", "Gate: top", (m, e) => Spec(m, e).Top));
+        DerivedFields.Add(Gates.Class, new("gatePiers", "Gate: piers", (m, e) => Piers(Spec(m, e))));
+        DerivedFields.Add(Gates.Class, new("gateMotor", "Gate: motor", (m, e) => Spec(m, e).Motor ? "yes" : "no"));
+        r.Service(ShippedScheduleTemplate.Of("gates", "Gate schedule", "gates", """
+            {
+              "filter": { "classes": ["LapinGate"] },
+              "groupBy": ["type"], "groupColumns": false, "count": false, "totals": "always",
+              "sort": ["gateKindOrder", "type"],
+              "columns": [
+                { "field": "type", "heading": "Type", "aggregate": "first" },
+                { "field": "gateKindLabel", "heading": "Kind", "aggregate": "first" },
+                { "field": "gateSize", "heading": "Clear size (mm)", "aggregate": "first" },
+                { "field": "gateLeaves", "heading": "Leaves", "aggregate": "first" },
+                { "field": "gateInfill", "heading": "Infill", "aggregate": "first" },
+                { "field": "gateTop", "heading": "Top", "aggregate": "first" },
+                { "field": "gatePiers", "heading": "Piers", "aggregate": "first" },
+                { "field": "gateMotor", "heading": "Motor", "aggregate": "first" },
+                { "field": "class", "heading": "Count", "aggregate": "rows" }
+              ]
+            }
+            """));
+    }
+
     public ScheduleGrid Grid(IQueryContext q)
     {
         var m = q.Model;
-        static string Mm(double v) => Lapin.Model.Numbers.Mm(v);
         var groups = m.OfClass(Gates.Class).Select(e => (E: e, T: Gates.TypeOf(m, e))).GroupBy(x => x.T?.Id ?? x.E.Id)
             .Select(g =>
             {
                 var s = new GateSpec(g.First().T?.Attrs["spec"] as JsonObject);
-                var size = s.Kind.Key == "swingWicket" ? $"{Mm(s.Width)} + {Mm(s.WicketWidth)} × {Mm(s.Height)}" : $"{Mm(s.Width)} × {Mm(s.Height)}";
                 return (Order: GateKinds.All.ToList().IndexOf(s.Kind), Key: g.First().T?.Id, Row: (IReadOnlyList<string>)
-                    [g.First().T?.Name ?? g.First().E.Name, s.Kind.Label, size, Leaves(s), s.Infill, s.Top, s.Piers == "none" ? "none" : $"{s.Piers} {Mm(s.PierSize)}", s.Motor ? "yes" : "no", g.Count().ToString(CultureInfo.InvariantCulture)]);
+                    [g.First().T?.Name ?? g.First().E.Name, s.Kind.Label, Size(s), Leaves(s), s.Infill, s.Top, Piers(s), s.Motor ? "yes" : "no", g.Count().ToString(CultureInfo.InvariantCulture)]);
             })
             .OrderBy(x => x.Order).ThenBy(x => x.Row[0], StringComparer.Ordinal).ToList();
         var rows = groups.Select(x => x.Row).ToList();

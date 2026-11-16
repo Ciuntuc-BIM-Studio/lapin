@@ -14,14 +14,37 @@ namespace Lapin.Platform;
 /// </summary>
 public sealed record DerivedField(string Key, string Label, Func<IModelView, Entity, string?> Value);
 
-/// <summary>The fields modules work out, by class (<see cref="DerivedField"/>).</summary>
+/// <summary>
+/// A field a module works out from the model and its geometry (the room a piece of furniture stands in, by the rooms' outlines as
+/// built): read where a query is at hand — schedules, filters, the fields' pickers — not by tags, which read the model alone.
+/// </summary>
+public sealed record QueriedField(string Key, string Label, Func<IQueryContext, Entity, string?> Value);
+
+/// <summary>The fields modules work out, by class (<see cref="DerivedField"/>, <see cref="QueriedField"/>).</summary>
 public static class DerivedFields
 {
     static readonly ConcurrentDictionary<string, DerivedField[]> ByClass = new(StringComparer.Ordinal);
+    static readonly ConcurrentDictionary<string, QueriedField[]> Queried = new(StringComparer.Ordinal);
+
+    /// <summary>A field of a class's worked out with the geometry at hand; one of the same key again replaces it.</summary>
+    public static void AddQueried(string cls, QueriedField field) =>
+        Queried.AddOrUpdate(cls, [field], (_, old) => [.. old.Where(f => !string.Equals(f.Key, field.Key, StringComparison.OrdinalIgnoreCase)), field]);
+
+    public static IReadOnlyList<QueriedField> QueriedOf(string cls) => Queried.TryGetValue(cls, out var l) ? l : [];
+
+    /// <summary>Its value on <paramref name="e"/>, when its class has such a field and the element no attribute of that key; null else.</summary>
+    public static string? Value(IQueryContext q, Entity e, string key)
+    {
+        var k = TagText.Squash(key);
+        return QueriedOf(e.Class).FirstOrDefault(f => TagText.Squash(f.Key) == k) is { } f && e.Attrs[f.Key] is null ? f.Value(q, e) : null;
+    }
 
     /// <summary>A field of a class's; one of the same key again replaces it.</summary>
     public static void Add(string cls, DerivedField field) =>
         ByClass.AddOrUpdate(cls, [field], (_, old) => [.. old.Where(f => !string.Equals(f.Key, field.Key, StringComparison.OrdinalIgnoreCase)), field]);
+
+    /// <summary>A measure as a worked-out field gives it: to six decimals, so sums of it round as the measure's own would.</summary>
+    public static string Number(double v) => Math.Round(v, 6).ToString("0.######", CultureInfo.InvariantCulture);
 
     public static IReadOnlyList<DerivedField> Of(string cls) => ByClass.TryGetValue(cls, out var l) ? l : [];
 
@@ -119,6 +142,7 @@ public static partial class FieldCatalog
 
         var derived = new Group("derived", "Worked out", null, e);
         foreach (var d in DerivedFields.Of(e.Class)) Add(derived, d.Key, d.Label, "Worked out on every ask, never stored");
+        foreach (var d in DerivedFields.QueriedOf(e.Class)) Add(derived, d.Key, d.Label, "Worked out on every ask, never stored (schedules and filters read it)", value: DerivedFields.Value(q, e, d.Key) ?? "");
         groups.Add(derived);
 
         var measured = new Group("quantities", "Its quantities", null, e);
