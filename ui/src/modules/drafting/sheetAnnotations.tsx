@@ -15,6 +15,7 @@ import { NumberField } from '../../shell/cells';
 import { cadHost, cadLog, registerCommand, startCommand, useCad, type Step } from '../../viewport/cad/session';
 import { toJson, type Shape } from '../../viewport/cad/shapes';
 import { isPaperView, openPaper } from '../../viewport/paperView';
+import { LANGUAGES, useLang } from '../../i18n';
 import { Cloud, PenLine as PenLineIcon, MessageSquareText, PencilRuler, TableProperties } from 'lucide-react';
 
 /** A revision cloud's scallop on paper (mm), as CAD draws one by default. */
@@ -67,7 +68,8 @@ export const legendTool: ToolDef = {
   gesture: { kind: 'point' },
   complete: async ({ points: [p] }, ctx) => {
     if (!isPaperView(ctx.viewId)) { notify('A legend goes on a sheet: open the sheet and click Annotate.'); return; }
-    await ctx.execute('sheet.addLegend', { viewId: ctx.viewId, at: [p.x, p.y], kind: 'materials' });
+    // Its own words (heading, line roles and types) in the interface's language, kept with it.
+    await ctx.execute('sheet.addLegend', { viewId: ctx.viewId, at: [p.x, p.y], kind: 'materials', lang: useLang.getState().lang });
   },
 };
 
@@ -109,6 +111,10 @@ export function KeyFields({ node }: { node: NodeDto }) {
         </select></dd>
         <dt title="Its heading; {…} tokens as in a title block. Empty: LEGEND">Title</dt>
         <dd><input value={title} placeholder="LEGEND" onChange={(e) => setTitle(e.target.value)} onBlur={() => set({ title: title.trim() || null })} /></dd>
+        <dt title="The language of its own words: its heading, the lines' roles and types">Language</dt>
+        <dd><select data-testid="legend-lang" value={typeof node.props.lang === 'string' ? node.props.lang : 'en'} onChange={(e) => set({ lang: e.target.value === 'en' ? null : e.target.value })}>
+          {LANGUAGES.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+        </select></dd>
       </dl>
     );
   }

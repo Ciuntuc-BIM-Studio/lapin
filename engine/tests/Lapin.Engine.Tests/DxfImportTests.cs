@@ -546,13 +546,13 @@ public class DxfImportTests
         var bytes = Views.Dxf(f.Session.Reader, f.Model.Get(plan)!);
         var other = Plan(f);
         f.Run("drafting.importDxf", Args(other, Encoding.UTF8.GetString(bytes)));
-        // The export writes every shape as lines; joined, the polygon and the circle come back as closed polylines.
+        // The export writes straight shapes as lines and the circle as a CIRCLE (audit §18 leftover); joined, the polygon comes back closed, the circle as a circle.
         var imported = Drafted(f, other).Select(e => e.Id).ToList();
         f.Run("drafting.join", new JsonObject { ["ids"] = new JsonArray(imported.Select(x => (JsonNode)x).ToArray()) });
         var shapes = Drafted(f, other).Select(e => (E: e, S: Drafts.ShapeOf(e)!)).ToList();
         Assert.Contains(shapes, x => x.S is Line l && (l.A - new Vec2(0, 0)).Length < 1e-6 && (l.B - new Vec2(5, 2)).Length < 1e-6);
         Assert.Contains(shapes, x => x.S is Polyline { Closed: true } p && p.Pts.Count == 3 && p.Pts.Any(q => (q - new Vec2(3, 3)).Length < 1e-6));
-        Assert.Contains(shapes, x => x.S is Polyline { Closed: true } p && p.Pts.Count > 20);
+        Assert.Contains(shapes, x => x.S is Circle c && Math.Abs(c.R - 0.5) < 1e-6 && (c.C - new Vec2(1, 1)).Length < 1e-6);
         var layer = Drafts.Layers(f.Model).Single(l => l.Name == "A-DETAIL");
         Assert.Equal("dashed", layer.LineType);
         Assert.Equal(0.35, layer.Weight);

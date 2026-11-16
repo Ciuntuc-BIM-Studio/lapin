@@ -173,7 +173,8 @@ public static class DraftCommands
                         "mirror" => Placement2D.Mirror(P(a["a"]), P(a["b"])),
                         _ => new Placement2D(point, turn, false),
                     };
-                    SymbolInstances.Carry(attrs, place);
+                    // A sheet's own symbol (paper mm, y down), moved on its paper's view, takes the move across.
+                    SymbolInstances.Carry(attrs, AnnotationPlacement.OnPaper(ctx.Model, attrs, place));
                     if (op == "scale" && Json.Number(a["factor"]) is { } k)
                     {
                         attrs["scale"] = Math.Round((Json.Number(attrs["scale"]) is > 0 and var s0 ? s0 : 1) * Math.Abs(k), 9);
@@ -432,8 +433,19 @@ public static class DraftCommands
     static JsonNode? Corner(ICommandContext ctx, JsonObject a, bool chamfer)
     {
         var (ea, eb) = (Drafts.Require(ctx.Model, (string?)a["a"]), Drafts.Require(ctx.Model, (string?)a["b"]));
-        if (Drafts.ShapeOf(ea) is not Line la || Drafts.ShapeOf(eb) is not Line lb) throw new CommandException("Fillet and chamfer join two lines.");
         var (pa, pb) = (P(a["atA"], "first pick"), P(a["atB"], "second pick"));
+        // A line and an ellipse (either first): filleted on the ellipse's own curve.
+        if (!chamfer && (Drafts.ShapeOf(ea), Drafts.ShapeOf(eb)) is (Line, Ellipse) or (Ellipse, Line))
+        {
+            var lineFirst = Drafts.ShapeOf(ea) is Line;
+            var (le, ee) = lineFirst ? (ea, eb) : (eb, ea);
+            var (lp, ep) = lineFirst ? (pa, pb) : (pb, pa);
+            var fe = Ops.Fillet((Line)Drafts.ShapeOf(le)!, lp, (Ellipse)Drafts.ShapeOf(ee)!, ep, Json.Number(a["radius"]) ?? 0)
+                ?? throw new CommandException("No circle of that radius touches the line and the ellipse on the sides picked.");
+            Drafts.Set(ctx, le, fe.Line); Drafts.Set(ctx, ee, fe.Ellipse);
+            return fe.Arc is { } ea2 ? new JsonObject { ["id"] = Drafts.Add(ctx, le.Str("viewId")!, le.Str("layer"), ea2).Id } : null;
+        }
+        if (Drafts.ShapeOf(ea) is not Line la || Drafts.ShapeOf(eb) is not Line lb) throw new CommandException(chamfer ? "Chamfer joins two lines." : "Fillet joins two lines, or a line and an ellipse.");
         if (chamfer)
         {
             var c = Ops.Chamfer(la, pa, lb, pb, Json.Number(a["d1"]) ?? 0, Json.Number(a["d2"]) ?? Json.Number(a["d1"]) ?? 0)

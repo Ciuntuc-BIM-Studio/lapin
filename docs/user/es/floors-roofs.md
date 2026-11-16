@@ -26,7 +26,7 @@ La misma barra sirve a todas las herramientas de contorno (forjado, hueco de for
 
 ![La barra de las herramientas de contorno, con From drawn shape elegido](shots/outline-sources.webp)
 
-Para forjado, hueco de forjado, techo y habitación por contorno, la barra ofrece también **Ellipse**: su centro, el extremo de un semieje y luego el otro. Los bordes del contorno siguen la elipse verdadera (cuatro cuartos), medidos exactamente; una esquina movida fuera de la elipse vuelve rectos sus dos bordes, y una esquina junto a un borde elíptico no se redondea. IFC la lleva como IfcEllipse. **From drawn shape** toma igual una elipse dibujada.
+Para forjado, hueco de forjado, techo y habitación por contorno, la barra ofrece también **Ellipse**: su centro, el extremo de un semieje y luego el otro. Los bordes del contorno siguen la elipse verdadera (cuatro cuartos), medidos exactamente; una esquina movida fuera de la elipse vuelve rectos sus dos bordes, y una esquina junto a un borde elíptico no se redondea. IFC la lleva como IfcEllipse. **From drawn shape** toma igual una elipse dibujada. Un hueco propio de un forjado o un techo (**Hole in the outline**) también admite una elipse. Un contorno con un borde elíptico no se desfasa entero (Mayús-arrastrar, **Offset outline…**): la curva a una distancia de una elipse no es una elipse.
 
 ![Un forjado elíptico dibujándose junto a una elipse dibujada](shots/ellipse-floor.webp)
 

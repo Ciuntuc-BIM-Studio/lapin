@@ -30,7 +30,7 @@ Aceeași bară servește toate uneltele cu contur (placă, gol în placă, tavan
 
 ![Bara uneltelor cu contur, cu From drawn shape ales](shots/outline-sources.webp)
 
-Pentru placă, gol în placă, tavan și încăpere după contur, bara oferă și **Ellipse**: centrul, capătul unei semiaxe, apoi cealaltă. Laturile conturului merg pe elipsa adevărată (patru sferturi), măsurate exact; un colț mutat de pe elipsă îi face cele două laturi drepte, iar un colț lângă o latură eliptică nu se racordează. IFC o duce ca IfcEllipse. **From drawn shape** ia la fel o elipsă desenată.
+Pentru placă, gol în placă, tavan și încăpere după contur, bara oferă și **Ellipse**: centrul, capătul unei semiaxe, apoi cealaltă. Laturile conturului merg pe elipsa adevărată (patru sferturi), măsurate exact; un colț mutat de pe elipsă îi face cele două laturi drepte, iar un colț lângă o latură eliptică nu se racordează. IFC o duce ca IfcEllipse. **From drawn shape** ia la fel o elipsă desenată. Un gol propriu al plăcii sau al tavanului (**Hole in the outline**) ia și el o elipsă. Un contur cu o latură eliptică nu se decalează întreg (Shift-tragere, **Offset outline…**): curba aflată la o distanță de o elipsă nu e o elipsă.
 
 ![O placă eliptică desenată lângă o elipsă din Desen](shots/ellipse-floor.webp)
 

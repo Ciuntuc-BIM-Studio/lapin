@@ -26,7 +26,7 @@ Den samme bjælke gælder for alle omridsværktøjer (dæk, dækåbning, loft, h
 
 ![Omridsværktøjernes bjælke med From drawn shape valgt](shots/outline-sources.webp)
 
-For dæk, dækåbning, loft og rum efter omrids giver bjælken også **Ellipse**: centrum, enden af en halvakse, så den anden. Omridsets kanter følger den sande ellipse (fire kvarte kanter), målt nøjagtigt; et hjørne flyttet bort fra ellipsen gør dets to kanter lige, og et hjørne ved en elliptisk kant afrundes ikke. IFC bærer den som IfcEllipse. **From drawn shape** tager en tegnet ellipse på samme måde.
+For dæk, dækåbning, loft og rum efter omrids giver bjælken også **Ellipse**: centrum, enden af en halvakse, så den anden. Omridsets kanter følger den sande ellipse (fire kvarte kanter), målt nøjagtigt; et hjørne flyttet bort fra ellipsen gør dets to kanter lige, og et hjørne ved en elliptisk kant afrundes ikke. IFC bærer den som IfcEllipse. **From drawn shape** tager en tegnet ellipse på samme måde. Et dæks eller lofts eget hul (**Hole in the outline**) tager også en ellipse. Et omrids med en elliptisk kant forskydes ikke som helhed (Shift-træk, **Offset outline…**): kurven i en afstand fra en ellipse er ingen ellipse.
 
 ![Et elliptisk dæk tegnes ved siden af en tegnet ellipse](shots/ellipse-floor.webp)
 

@@ -26,7 +26,7 @@ La même barre sert à tous les outils de contour (plancher, trémie, plafond, t
 
 ![La barre des outils de contour, From drawn shape choisi](shots/outline-sources.webp)
 
-Pour un plancher, une trémie, un plafond et une pièce par contour, la barre propose aussi **Ellipse** : son centre, l’extrémité d’un demi-axe, puis l’autre. Les bords du contour suivent la vraie ellipse (quatre quarts), mesurés exactement ; un angle sorti de l’ellipse rend ses deux bords droits, et un angle près d’un bord elliptique n’est pas arrondi. L’IFC la porte en IfcEllipse. **From drawn shape** prend de même une ellipse dessinée.
+Pour un plancher, une trémie, un plafond et une pièce par contour, la barre propose aussi **Ellipse** : son centre, l’extrémité d’un demi-axe, puis l’autre. Les bords du contour suivent la vraie ellipse (quatre quarts), mesurés exactement ; un angle sorti de l’ellipse rend ses deux bords droits, et un angle près d’un bord elliptique n’est pas arrondi. L’IFC la porte en IfcEllipse. **From drawn shape** prend de même une ellipse dessinée. Un trou propre d’un plancher ou d’un plafond (**Hole in the outline**) prend aussi une ellipse. Un contour avec un bord elliptique n’est pas décalé en entier (Maj-glisser, **Offset outline…**) : la courbe à une distance d’une ellipse n’est pas une ellipse.
 
 ![Un plancher elliptique en cours de dessin à côté d’une ellipse dessinée](shots/ellipse-floor.webp)
 

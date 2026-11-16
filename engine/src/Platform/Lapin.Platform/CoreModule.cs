@@ -266,7 +266,7 @@ public sealed class CoreModule : ILapinModule
             return null;
         });
 
-        // A closed outline with every edge offset (ArcOutline.Offset, Archicad's "Offset all edges"): {points, arcs?, distance (m, outward
+        // A closed outline with every edge offset (ArcOutline.Offset, Archicad's "Offset all edges"): {points, arcs?, ellipses? (refused), distance (m, outward
         // positive)} → {points, arcs (none when straight), from (each new edge's old one)}, or {problem} when it cannot be; nothing changes
         // in the model: the element's own update command writes it (the grips' "Offset outline", live while dragged).
         r.Query("outline.offset", (_, a) =>
@@ -274,6 +274,9 @@ public sealed class CoreModule : ILapinModule
             try
             {
                 var pts = Args.Points(a);
+                // An elliptical edge is not offset (audit §18 leftovers): the curve at a distance from an ellipse is no ellipse.
+                if (EllipseEdge.Read(a[EllipseEdge.Key], pts.Count) != null)
+                    throw new CommandException("An outline with an elliptical edge is not offset: the curve at a distance from an ellipse is no ellipse. Draw the ellipse again at its new size.");
                 var (c, rises, from) = ArcOutline.Offset(pts, ArcOutline.Rises(a[ArcOutline.Key], pts.Count), Args.Number(a, "distance"));
                 return new JsonObject
                 {

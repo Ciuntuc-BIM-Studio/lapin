@@ -554,6 +554,20 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             ctx.Add(t);
             return new JsonObject { ["id"] = t.Id };
         });
+
+        // A note's leader point moved by its grip (audit §16 leftovers): {id, index (0: the arrow's tip, then its bends), at} → null, one undo step.
+        r.Command("moveLeaderPoint", "Move leader", (ctx, a) =>
+        {
+            var t = ctx.Model.Get((string?)a["id"] ?? "") is { Class: IfcClass.Annotation, PredefinedType: "TEXT" } x ? x : throw new CommandException("Not a text.");
+            var leader = Texts.Leader(t);
+            if (leader.Count == 0) throw new CommandException("The text has no leader.");
+            var k = Json.Number(a["index"]) is { } n && n >= 0 && n < leader.Count && n == Math.Floor(n) ? (int)n : throw new CommandException($"Which point of the leader? It has {leader.Count}, from 0 (its arrow's tip).");
+            leader[k] = P(a["at"]);
+            var attrs = t.CloneAttrs();
+            attrs["leader"] = new JsonArray([.. leader.Select(p => (JsonNode)J(p))]);
+            ctx.Replace(t.With(attrs: attrs));
+            return null;
+        });
     }
 
     public IEnumerable<ViewMark> Marks(ViewContext c) => Cad.ViewImages.Marks(c).Concat(Cad.Drafts.Marks(c)).Concat(Grids.Marks(c)).Concat(Dimensions.Marks(c)).Concat(PartDimensions.Marks(c)).Concat(DimensionKinds.Marks(c)).Concat(Texts.Marks(c)).Concat(Cad.SymbolInstances.Marks(c)).Concat(Tags.Marks(c));

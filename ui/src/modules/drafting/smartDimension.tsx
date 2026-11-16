@@ -2,7 +2,7 @@
  * One Dimension tool (audit 2026-11-15, S9): DIMENSION picks the kind from what is clicked and offers the rest in its bar.
  * **Smart**: two points make an aligned (or linear) dimension; a drafted line clicked away from its snaps is measured end to
  * end, and a second line clicked then makes the angle between them; a circle or an arc its radius (or diameter, or arc length,
- * as the bar says); Enter after the first point writes that point's level. The bar also chooses a kind outright (aligned,
+ * as the bar says); a level's line clicked in a section or an elevation, or Enter after the first point, writes that point's level. The bar also chooses a kind outright (aligned,
  * linear, angle, radius, diameter, arc length, ordinate, slope, level, spot coordinate), how a string goes on (single, chain or
  * baseline) and holds the generated dimensions (rooms, exterior) and a string's points. Each kind is the command it was, with the
  * same engine command; the old tools are aliases that start this one set to their kind.

@@ -30,7 +30,7 @@ The same bar serves every outline tool (floor, floor opening, ceiling, hole, roo
 
 ![The outline tools' bar, From drawn shape chosen](shots/outline-sources.webp)
 
-For a floor, a floor opening, a ceiling and a room by outline the bar also offers **Ellipse**: its centre, the end of one semi-axis, then the other. The outline's edges run along the true ellipse (four quarter edges), measured exactly; a corner moved off the ellipse turns its two edges straight, and a corner beside an elliptical edge is not filleted. IFC carries it as an IfcEllipse. **From drawn shape** takes a drafted ellipse the same way.
+For a floor, a floor opening, a ceiling and a room by outline the bar also offers **Ellipse**: its centre, the end of one semi-axis, then the other. The outline's edges run along the true ellipse (four quarter edges), measured exactly; a corner moved off the ellipse turns its two edges straight, and a corner beside an elliptical edge is not filleted. IFC carries it as an IfcEllipse. **From drawn shape** takes a drafted ellipse the same way. A floor's or a ceiling's own hole (**Hole in the outline**) takes an ellipse too. An outline with an elliptical edge is not offset as a whole (Shift-drag, **Offset outline…**): the curve at a distance from an ellipse is no ellipse.
 
 ![An elliptical floor being drawn beside a drafted ellipse](shots/ellipse-floor.webp)
 

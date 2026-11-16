@@ -12,7 +12,7 @@ namespace Lapin.Engine.Tests;
 
 /// <summary>
 /// A true ellipse in Draft (audit S4): stored as an ellipse (centre, major semi-axis, ratio, optional start and end parameters),
-/// laid by the one rule for curves, snapped at its centre and its axes' ends, trimmed by its own parameter (an offset refused),
+/// laid by the one rule for curves, snapped at its centre and its axes' ends, trimmed by its own parameter (offset as a polyline),
 /// kept as an ellipse from a DXF ELLIPSE, made into an elliptical floor by Convert to… and by Edit sketch.
 /// </summary>
 public sealed class DraftEllipseTests
@@ -58,7 +58,7 @@ public sealed class DraftEllipseTests
     }
 
     [Fact]
-    public void An_ellipse_is_trimmed_into_elliptical_arcs_and_not_offset()
+    public void An_ellipse_is_trimmed_into_elliptical_arcs_and_offset_as_a_polyline()
     {
         var e = new Ellipse(new Vec2(0, 0), new Vec2(3, 0), 0.5, 0, 0);
         var cutter = new Line(new Vec2(0, -5), new Vec2(0, 5));
@@ -67,7 +67,8 @@ public sealed class DraftEllipseTests
         // Trim takes away the piece picked: the left half stays.
         Assert.False(arc.Whole);
         Assert.True(arc.At(arc.Start + arc.Sweep / 2).X < 0);
-        Assert.Throws<CommandException>(() => Ops.Offset(e, 0.2, new Vec2(5, 0)));
+        // Offset: no ellipse, a polyline (audit §18 leftovers; DraftEllipseEditTests).
+        Assert.IsType<Polyline>(Ops.Offset(e, 0.2, new Vec2(5, 0)));
     }
 
     [Fact]
