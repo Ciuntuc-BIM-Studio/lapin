@@ -189,18 +189,18 @@ The light families of decision 515 (`LapinFamily` / `LapinFamilyInstance`, `Lapi
 - Tests `PartTypeIfcTests` (7): 50 placed parts in 2 sets build 2 bodies and send 2 meshes; a type parameter rebuilds all, an instance value overrides; undo, redo and the `.lapin` package keep values and keys; the IFC type, map, mapped items, set and measures, GlobalIds the same twice; export → import gives the same parts, values, volumes and bounds, the gate measuring all; a moved map leaves its placed parts references; without `Lapin_Intent` the file comes as references sharing a body.
 - Left: part meshes are kept by the session until another project opens (they are not removed when no element uses a key any more); the interface's edit mode on an instanced part was not checked in the app.
 
-## 10. Families replaced by parts; a part holds native elements (audit S6, decisions 628 and 629, 16.11.2026)
+## 10. Families replaced by parts; a part holds native elements (audit S6, decisions 632 and 633, 16.11.2026)
 
 The audit (`docs/audit-2026-11-15.md`, S6) found two editors for one idea (the Families dialog, editing formula corners, and the part's edit mode) and that a part holds only bodies. Both are settled here.
 
-### 10.1 One editor (628)
+### 10.1 One editor (632)
 
 - The interface has no Families dialog any more: **Studio → Parts…** (`studio.parts`, the Place catalogue's *Parts* source and its *Parts…* manager) lists the project's parts (new, import, export as `.lapinpart`, keep on this computer, the firm's folders, rename, IFC class, delete, place) and **Edit part** enters the part's edit mode (§3.2) on a placed part, placing one at the origin when none stands. Parameters, sketches, bodies and conditions are edited there only.
 - `studio.family`, `studio.families` and `studio.familyFromSketch` stay as aliases of `studio.part`, `studio.parts` and `studio.partFromSketch` (off the ribbon, `legacyTools`); the engine's family commands stay as they were (§9).
 - **Saved parts are drawn from sketches** when they open (`PartSketchUpgrade`, after `FamilyPartUpgrade`): every body of formula corners becomes a sketch of the part's own whose corners carry driving distanceX/distanceY with their formulas (`PartSketches.Constrain`, unchanged): the same ids, parameters, values, placed parts, bodies and volumes. A part whose defaults do not build is left as it was. The shared bodies' keys hash the definition, so they change once (the same at every opening afterwards).
 - What the interface makes is sketched at once: `createPart` and `partFromSketch` take `constrain: true`; the one library import (`.lapinpart`, `.lapinfamily`, through `LibraryMerge`) brings a part in sketched. `studio.importFamily {text}` without choices, and the commands without `constrain`, keep making corners, as before.
 
-### 10.2 Native elements in a part (629)
+### 10.2 Native elements in a part (633)
 
 **Design.** A part's definition may hold `members`: native elements (walls with their doors and windows, floors, furniture, MEP equipment, anything of the project's own standing on a storey). The choices, against the alternatives:
 
