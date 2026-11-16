@@ -9,7 +9,7 @@ import { useSession } from '../engine/session';
 import { copyable } from '../modules/core/CopyToStoreysDialog';
 import { drawableElement } from '../modules/core/shopDrawing';
 import { editSelectedGroup, groupSelection, removeFromGroup, ungroupSelection } from '../modules/core/groupTools';
-import { GROUP, groupOf } from '../platform/groups';
+import { GROUP, groupOf, membersOf } from '../platform/groups';
 import { allTools } from '../platform/modules';
 import { typeOf } from '../engine/model';
 import { hiddenHere, useShownHere } from '../viewport/cad/shown';
@@ -87,6 +87,15 @@ export function editSketchItems(): MenuItem[] {
   return tool?.run ? [{ label: 'Edit sketch', onSelect: () => tool.run!() }] : [];
 }
 
+/** Make a layered wall from solids (forum topic 101): offered for two or more solids or references, none a Lapin wall, when architecture is there. */
+export function wallFromSolidsItems(): MenuItem[] {
+  const nodes = useSession.getState().nodes;
+  const ids = [...new Set(useUi.getState().selected.flatMap((id) => (nodes.get(id)?.type === GROUP ? membersOf(id) : [id])))];
+  if (ids.length < 2 || !ids.every((id) => { const n = nodes.get(id); return !!n?.storeyId && (n.type !== 'IfcWall' || !!n.props.reference); })) return [];
+  const tool = allTools().find((t) => t.id === 'architecture.wallFromSolids');
+  return tool?.run ? [{ label: 'Make a layered wall…', onSelect: () => tool.run!() }] : [];
+}
+
 export function editTypeItems(): MenuItem[] {
   const { selected } = useUi.getState();
   if (selected.length !== 1) return [];
@@ -115,7 +124,7 @@ export function selectionItems(): MenuItem[] {
     { label: 'Move to storey…', onSelect: () => useUi.setState({ dialog: 'moveToStorey' }) },
   ] : [];
   const shop: MenuItem[] = drawableElement(selected, useSession.getState().nodes) ? [{ label: 'Make drawing…', onSelect: () => useUi.setState({ dialog: 'shopDrawing' }) }] : [];
-  return [...groupItems(), ...storeys, ...shop, ...similarItems(), ...editTypeItems(), ...editSketchItems(), ...historyItems()];
+  return [...groupItems(), ...storeys, ...shop, ...wallFromSolidsItems(), ...similarItems(), ...editTypeItems(), ...editSketchItems(), ...historyItems()];
 }
 
 /** The 3D view's temporary Hide and Isolate (HH, HI) for the selection, and Show all (HR) while something is hidden. */

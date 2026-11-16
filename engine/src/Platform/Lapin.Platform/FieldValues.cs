@@ -219,6 +219,8 @@ public sealed record ElementFilter(IReadOnlyList<string> Classes, IReadOnlyList<
     public static bool IsListed(IQueryContext q, Entity e)
     {
         if (NotListed.Contains(e.Class)) return false;
+        // Solids kept hidden behind the layered wall made of them (forum topic 101): the wall is listed, not they.
+        if (!Superseded.Counts(q.Model, e)) return false;
         return q.Describe(e.Class) is { } d ? d.Kind == "element" : StoredBodies.Has(e);
     }
 

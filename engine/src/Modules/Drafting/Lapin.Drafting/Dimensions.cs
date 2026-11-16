@@ -496,11 +496,116 @@ public static class Dimensions
     {
         // The walls' openings, read once a drawing when a dimension asks for their heights.
         List<WallOpening>? openings = null;
+        // Every string as drawn now; what stays where its style puts it goes into the view's room first, so the values
+        // that must move keep clear of every dimension of the view, those drawn after them too (forum topic 78).
+        var strings = new List<(Entity Dim, List<Vec2> Pts, bool Orphan, Layout Lay)>();
         foreach (var dim in c.Model.OfClass(IfcClass.Annotation).Where(x => x.PredefinedType == "DIMENSION" && x.Str("viewId") == c.View.Id && !DimensionKinds.IsKind(x)))
         {
             var (pts, orphan) = Points(c.Model, c.Kind, dim, c.Drawing);
             if (pts.Count < 2 || Lay(dim, pts) is not { } lay) continue;
-            if (Draw(c, dim.Id, pts, lay, ParamsOf(dim), TextsOf(dim.Attrs, pts.Count - 1), OffsetsOf(dim.Attrs, pts.Count - 1), orphan, ref openings) is { } mk) yield return mk;
+            strings.Add((dim, pts, orphan, lay));
+        }
+        var room = new TextRoom();
+        foreach (var s in strings)
+            Obstacles(c, s.Dim.Id, s.Pts, s.Lay, ParamsOf(s.Dim), TextsOf(s.Dim.Attrs, s.Pts.Count - 1), OffsetsOf(s.Dim.Attrs, s.Pts.Count - 1), room, ref openings);
+        foreach (var s in strings)
+            if (Draw(c, s.Dim.Id, s.Pts, s.Lay, ParamsOf(s.Dim), TextsOf(s.Dim.Attrs, s.Pts.Count - 1), OffsetsOf(s.Dim.Attrs, s.Pts.Count - 1), s.Orphan, ref openings, room) is { } mk) yield return mk;
+    }
+
+    /// <summary>One segment's value as its style places it: the text, its angle, its place and baseline, its opening's height rows.</summary>
+    sealed record SegValue(string Text, double Readable, Vec2 Up, Vec2 Su, Vec2 Mid, Vec2 At, string Baseline, List<string>? Rows, double RowsTop);
+
+    /// <summary>Each segment's value (null: a segment of no length) as the style puts it, before anything is moved.</summary>
+    static List<SegValue?> SegValues(ViewContext c, IReadOnlyList<Vec2> pts, Layout lay, DimStyle style, TextStyle text, IReadOnlyList<string?> texts, ref List<WallOpening>? openings)
+    {
+        var (u, line) = (lay.U, lay.Line);
+        var mm = c.Mm;
+        var o = new List<SegValue?>();
+        for (var i = 0; i + 1 < pts.Count; i++)
+        {
+            if (Math.Abs(Vec2.Dot(line[i + 1] - line[i], u)) < 1e-6) { o.Add(null); continue; }
+            var (qa, qb) = (line[i], line[i + 1]);
+            var su = Vec2.Dot(qb - qa, u) >= 0 ? u : -u;
+            var value = texts[i] ?? Standards.FormatDimension(Math.Abs(Vec2.Dot(qb - qa, u)), style.Unit, style.Precision, style.SuppressesZeros);
+            var angle = Math.Atan2(su.Y, su.X) * 180 / Math.PI;
+            var readable = -Standards.ReadableDeg(-angle);
+            var up = new Vec2(-Math.Sin(readable * Math.PI / 180), Math.Cos(readable * Math.PI / 180));
+            var mid = (qa + qb) * 0.5;
+            var (tat, baseline) = style.Placement switch
+            {
+                "centered" => (mid, "middle"),
+                "below" => (mid - up * (style.TextGap * mm + text.Height * mm), "bottom"),
+                _ => (mid + up * (style.TextGap * mm), "bottom"),
+            };
+            List<string>? rows = null;
+            double top = 0;
+            // A segment across a door, a window or a bare opening: its height under the line (decision 338).
+            if (style.OpeningHeight != "off" && texts[i] == null && OpeningHeights.Spanned(c, openings ??= OpeningHeights.Of(c), pts[i], pts[i + 1], u) is { } opening)
+            {
+                var h = text.Height * mm;
+                top = style.Placement switch { "centered" => h * 0.5 + style.TextGap * mm, "below" => style.TextGap * mm + h * OpeningHeights.Pitch, _ => style.TextGap * mm };
+                rows = OpeningHeights.Rows(style.OpeningHeight, opening, style.Unit, style.Precision, style.SuppressesZeros);
+            }
+            o.Add(new SegValue(value, readable, up, su, mid, tat, baseline, rows, top));
+        }
+        return o;
+    }
+
+    /// <summary>The segments' values as the placement reads them: where each stands, how wide, whether it fits, whether the user moved it.</summary>
+    static List<DimensionTextPlacement.Seg> Segs(IReadOnlyList<SegValue?> values, Layout lay, TextStyle text, IReadOnlyList<Vec2?> moved, double mm)
+    {
+        var h = text.Height * mm;
+        var o = new List<DimensionTextPlacement.Seg>();
+        for (var i = 0; i < values.Count; i++)
+        {
+            if (values[i] is not { } v) continue;
+            var r = new Vec2(v.Up.Y, -v.Up.X);
+            var w = BuildupText.Measure(v.Text, text.Height, text.Bold) * mm;
+            var length = (lay.Line[i + 1] - lay.Line[i]).Length;
+            var centre = v.Baseline == "middle" ? v.At : v.At + v.Up * (h / 2);
+            o.Add(new(i, v.Mid, length, r, v.Up, centre, w, h, DimensionTextPlacement.Fits(w, length, mm), moved[i] != null));
+        }
+        return o;
+    }
+
+    /// <summary>A string's opening-height rows' rectangles (each row as wide as its text), under the value moved by <paramref name="by"/>.</summary>
+    static IEnumerable<TextRoom.Box> RowBoxes(string owner, SegValue v, TextStyle text, double mm, Vec2 by)
+    {
+        if (v.Rows == null) yield break;
+        var h = text.Height * mm;
+        var r = new Vec2(v.Up.Y, -v.Up.X);
+        for (var k = 0; k < v.Rows.Count; k++)
+        {
+            var at = v.Mid - v.Up * (v.RowsTop + h + k * h * OpeningHeights.Pitch) + by;
+            yield return new TextRoom.Box(owner, TextRoom.Kind.Text, at + v.Up * (h / 2), r, v.Up, BuildupText.Measure(v.Rows[k], text.Height, text.Bold) * mm / 2, h / 2);
+        }
+    }
+
+    /// <summary>
+    /// What a string puts in the view's <paramref name="room"/> before any value moves: its dimension line, its extension
+    /// lines, the values that stay where they are (they fit, or were moved by hand) and its opening heights.
+    /// </summary>
+    public static void Obstacles(ViewContext c, string owner, IReadOnlyList<Vec2> pts, Layout lay, JsonObject styleParams, IReadOnlyList<string?>? texts, IReadOnlyList<Vec2?>? moved, TextRoom room, ref List<WallOpening>? openings)
+    {
+        var (u, n, line, offs) = (lay.U, lay.N, lay.Line, lay.Off);
+        texts ??= Enumerable.Repeat<string?>(null, pts.Count - 1).ToList();
+        moved ??= Enumerable.Repeat<Vec2?>(null, pts.Count - 1).ToList();
+        var style = Standards.ResolveDim(c.Book, styleParams);
+        var text = Standards.ResolveText(c.Book, styleParams);
+        var mm = c.Mm;
+        var ts = line.Select(q => Vec2.Dot(q - line[0], u)).ToList();
+        room.Boxes.Add(TextRoom.Box.Segment(owner, TextRoom.Kind.Line, line[0] + u * ts.Min(), line[0] + u * ts.Max()));
+        for (var i = 0; i < pts.Count; i++)
+        {
+            var side = offs[i] >= 0 ? 1 : -1;
+            if (Math.Abs(offs[i]) > style.ExtGap * mm)
+                room.Boxes.Add(TextRoom.Box.Segment(owner, TextRoom.Kind.Extension, pts[i] + n * (side * style.ExtGap * mm), line[i] + n * (side * style.ExtOver * mm)));
+        }
+        var values = SegValues(c, pts, lay, style, text, texts, ref openings);
+        foreach (var s in Segs(values, lay, text, moved, mm))
+        {
+            if (s.Fits || s.Moved || !style.PlacesTexts) room.Boxes.Add(DimensionTextPlacement.Box(owner, s, moved[s.Index] ?? default));
+            room.Boxes.AddRange(RowBoxes(owner, values[s.Index]!, text, mm, moved[s.Index] ?? default));
         }
     }
 
@@ -508,9 +613,10 @@ public static class Dimensions
     /// A string of dimensions drawn: its line through <paramref name="lay"/>'s points, the extension lines, ticks (or dots, arrows)
     /// and values in the style <paramref name="styleParams"/> names (the drafting standards' otherwise), each value the user's
     /// text when given and moved by its offset; null when every segment has no length. What a dimension of the user's draws, and
-    /// what a part's derived dimensions draw (decision 581), so both look alike.
+    /// what a part's derived dimensions draw (decision 581), so both look alike. Values that do not fit move clear of
+    /// <paramref name="room"/> (the view's, filled by <see cref="Obstacles"/> for every string first), else of the string's own.
     /// </summary>
-    public static ViewMark? Draw(ViewContext c, string owner, IReadOnlyList<Vec2> pts, Layout lay, JsonObject styleParams, IReadOnlyList<string?>? texts, IReadOnlyList<Vec2?>? moved, bool orphan, ref List<WallOpening>? openings)
+    public static ViewMark? Draw(ViewContext c, string owner, IReadOnlyList<Vec2> pts, Layout lay, JsonObject styleParams, IReadOnlyList<string?>? texts, IReadOnlyList<Vec2?>? moved, bool orphan, ref List<WallOpening>? openings, TextRoom? room = null)
     {
         var (u, n, line, offs) = (lay.U, lay.N, lay.Line, lay.Off);
         var values = Enumerable.Range(0, pts.Count - 1).Select(i => Math.Abs(Vec2.Dot(line[i + 1] - line[i], u))).ToList();
@@ -539,27 +645,28 @@ public static class Dimensions
                 case "dot": mk.Polyline(ViewMark.Circle(q, s / 4, 12), true, "DIMENSION", Pens.Default.Seen, color); break;
             }
         }
+        // The values as the style places them (in the style's unit, or the text written over it, reading left to right or
+        // bottom to top, above, on or below the line), then those that do not fit moved clear (forum topic 78): of the
+        // view's other dimensions when the view's room is given, else of this string's own.
+        var vals = SegValues(c, pts, lay, style, text, texts, ref openings);
+        var auto = new Dictionary<int, Vec2>();
+        var segs = style.PlacesTexts ? Segs(vals, lay, text, moved, mm) : [];
+        if (segs.Any(x => !x.Fits && !x.Moved))
+        {
+            if (room == null) { room = new TextRoom(); Obstacles(c, owner, pts, lay, styleParams, texts, moved, room, ref openings); }
+            auto = DimensionTextPlacement.Place(owner, segs, room, style.Placement, style.TextGap * mm, mm);
+        }
+        var autoAt = new JsonArray();
         for (var i = 0; i + 1 < pts.Count; i++)
         {
-            if (values[i] < 1e-6) { textAt.Add((JsonNode?)null); continue; }
+            if (values[i] < 1e-6 || vals[i] is not { } v) { textAt.Add((JsonNode?)null); autoAt.Add((JsonNode?)null); continue; }
             var (qa, qb) = (line[i], line[i + 1]);
-            var su = Vec2.Dot(qb - qa, u) >= 0 ? u : -u;
+            var su = v.Su;
             // Arrows: each segment's, at both its ends, pointing in.
             if (style.Arrow == "arrow")
                 foreach (var (q, inward) in new[] { (qa, su), (qb, -su) })
                     mk.Line(q, q + inward * s + n * (s * 0.3), "DIMENSION", Pens.Default.Hatch, color).Line(q, q + inward * s - n * (s * 0.3), "DIMENSION", Pens.Default.Hatch, color);
-            // The value: in the style's unit (or the text written over it), reading left to right (bottom to top), above, on or below the line.
-            var value = texts[i] ?? Standards.FormatDimension(values[i], style.Unit, style.Precision, style.SuppressesZeros);
-            var angle = Math.Atan2(su.Y, su.X) * 180 / Math.PI;
-            var readable = -Standards.ReadableDeg(-angle);
-            var up = new Vec2(-Math.Sin(readable * Math.PI / 180), Math.Cos(readable * Math.PI / 180));
-            var mid = (qa + qb) * 0.5;
-            var (tat, baseline) = style.Placement switch
-            {
-                "centered" => (mid, "middle"),
-                "below" => (mid - up * (style.TextGap * mm + text.Height * mm), "bottom"),
-                _ => (mid + up * (style.TextGap * mm), "bottom"),
-            };
+            var (value, readable, up, mid, tat, baseline) = (v.Text, v.Readable, v.Up, v.Mid, v.At, v.Baseline);
             // Moved by hand (close values kept clear of one another): a leader back to its segment once it stands off it.
             if (moved[i] is { } by)
             {
@@ -573,16 +680,26 @@ public static class Dimensions
                     mk.Line(mid, foot, "DIMENSION", Pens.Default.Hatch, color);
                 }
             }
+            // Moved by the placement: a leader from its segment's middle to the value's nearest point once it stands further than the style's distance.
+            else if (auto.TryGetValue(i, out var placed))
+            {
+                tat += placed;
+                if (placed.Length > (style.TextLeader ?? Standards.DefaultTextLeader) * mm + 1e-9)
+                {
+                    var seg = segs.First(x => x.Index == i);
+                    mk.Line(mid, DimensionTextPlacement.Box(owner, seg, placed).Nearest(mid), "DIMENSION", Pens.Default.Hatch, color);
+                }
+            }
             mk.Text(new PenText(tat, value, text.Height, readable, "middle", baseline, text.Bold, text.Font, text.Italic), color);
             textAt.Add((JsonNode)J(tat));
-            // A segment across a door, a window or a bare opening: its height under the line (decision 338), moved with the value.
-            if (style.OpeningHeight != "off" && texts[i] == null && OpeningHeights.Spanned(c, openings ??= OpeningHeights.Of(c), pts[i], pts[i + 1], u) is { } opening)
+            autoAt.Add(auto.TryGetValue(i, out var a) ? (JsonNode)J(a) : null);
+            // A segment across a door, a window or a bare opening: its height under the line (decision 338), moved with the value
+            // by hand; a value moved by the placement leaves it where it is.
+            if (v.Rows is { } rows)
             {
                 var h = text.Height * mm;
-                var top = style.Placement switch { "centered" => h * 0.5 + style.TextGap * mm, "below" => style.TextGap * mm + h * OpeningHeights.Pitch, _ => style.TextGap * mm };
-                var rows = OpeningHeights.Rows(style.OpeningHeight, opening, style.Unit, style.Precision, style.SuppressesZeros);
                 for (var k = 0; k < rows.Count; k++)
-                    mk.Text(new PenText(mid - up * (top + h + k * h * OpeningHeights.Pitch) + (moved[i] ?? default), rows[k], text.Height, readable, "middle", "bottom", text.Bold, text.Font, text.Italic), color);
+                    mk.Text(new PenText(mid - up * (v.RowsTop + h + k * h * OpeningHeights.Pitch) + (moved[i] ?? default), rows[k], text.Height, readable, "middle", "bottom", text.Bold, text.Font, text.Italic), color);
             }
         }
         mk.Snaps.AddRange(line);
@@ -594,6 +711,8 @@ public static class Dimensions
             // Where each segment's value stands (null: a segment of no length draws none), for its grip.
             ["texts"] = textAt,
         };
+        // How far the placement moved each value (null: not moved), so a value's grip dragged moves it from where it is shown.
+        if (auto.Count > 0) mk.Data["textAuto"] = autoAt;
         return mk;
     }
 

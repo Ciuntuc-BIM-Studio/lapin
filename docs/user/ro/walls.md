@@ -28,6 +28,22 @@ Unde se întâlnesc doi pereți, Lapin îi îmbină singur. Straturile lor intr�
 
 **Linia pe care desenezi.** Cât timp unealta Wall e activă, lista din bara liniei de comandă alege linia pe care dai clic: **Axul miezului** (axa, ca până acum), **Miez, fața exterioară**, **Miez, fața interioară**, **Fața exterioară** sau **Fața interioară**. Exteriorul e dreapta peretelui în sensul desenării (desenează în jurul clădirii în sens invers acelor de ceasornic ca să fie în afară). Axa peretelui rămâne pe miez, decalată față de linie, iar pereții desenați unul după altul pe aceeași față se întâlnesc în colțul acelei fețe.
 
+### Un perete stratificat din solide
+
+Un perete pe care alt program l-a modelat ca solide separate, câte unul pe strat (un perete pe cadre din lemn desenat în SketchUp ca placaj, șipci, plăci, izolație cu montanții ei și gips-carton), devine un singur perete Lapin cu **Arhitectură → Perete din solide** (<kbd>WFS</kbd>), sau cu **Fă un perete stratificat…** la clic dreapta pe solidele selectate. Selectează-le întâi: referințe aduse de un import IFC, SKP, OBJ, glTF sau DAE, solide Studio, sau un grup care le conține. Lapin le citește din triunghiuri: solidele orientate la fel, care se suprapun pe lungime și pe înălțime, alăturate pe grosime cu cel mult 10 cm între ele, sunt un perete, iar fiecare alt set e alt perete. Pe grosimea fiecărui perete, solidele care ocupă aceeași fâșie din grosime sunt un strat, în ordinea în care stau.
+
+Înainte să se facă ceva, dialogul arată fiecare perete găsit: lungimea, înălțimea și grosimea, straturile cu materialele și grosimile lor (rotunjite la milimetru), golurile, și ce diferă de solide cu mai mult de 1 mm sau 0,5 % din volumul unui strat, cum măsoară un import; un clic pe un nume selectează acel solid. Alegi:
+
+- **Golurile dintre straturi**: **Un strat de aer** cât golul, sau **În vecinul mai gros**.
+- **Materialul** fiecărui strat: materialul solidului, altfel numele lui (*Gips 2* se citește *Gips*); un strat marcat cu portocaliu nu numește niciunul, așa că scrie unul.
+- **Miezul**, pe care merge axa peretelui și care se îmbină: stratul de rezistență după nume (beton, cărămidă, cadru din lemn…), stratul cu montanți, altfel cel mai gros.
+- **Strat cu cadru din lemn** (cu modulul lemn): montanții găsiți într-un strat (*7 × Regel* în el) îl fac miez și cadru din lemn cu secțiunea și interaxul lor (*45x145 mm* la 600); fără el, stratul e din materialul izolației, iar montanții sunt doar raportați.
+- **Solidele**: **Păstrează-le ascunse** (nicio vedere nu le desenează și niciun export nu le scrie cât timp peretele există; proprietățile peretelui oferă **Arată solidele originale**, iar ștergerea peretelui le aduce înapoi), **Șterge-le** sau **Păstrează-le**.
+
+**Fă** face un tip de perete cu acele straturi (fără buiandrugi: ce au solidele, nimic în plus) și peretele pe axa lui, cât de lung și de înalt sunt solidele miezului, pe etajul și în grupul lor. Un gol găsit în fiecare strat care trece pe lângă el devine golul peretelui, cât cel mai mic dintre ele; solidul unei uși sau ferestre care stă în el (un IfcDoor sau IfcWindow, sau unul numit așa) devine ușă sau fereastră de acea mărime. Un gol doar în unele straturi e listat, iar peretele rămâne plin acolo. Pereții făcuți împreună se îmbină unde se întâlnesc. Totul e un singur pas de anulare. Nimic nu se face singur la import: fișierul intră cum e, iar peretele se face doar când ceri.
+
+![Fă un perete stratificat din solide: straturile găsite, miezul, golurile](shots/wall-from-solids.webp)
+
 ## Modificarea unui perete
 
 Dă clic pe un perete ca să-l selectezi. Apar mânerele lui. Trage de capete ca să-l lungești sau să-l scurtezi, sau de crucea din mijloc ca să-l muți.

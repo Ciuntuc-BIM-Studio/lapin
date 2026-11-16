@@ -12,7 +12,7 @@ import type { Frame } from './frame';
 export * from './frame';
 
 type P = Record<string, number>;
-export interface LocationDto { base?: P; survey?: P; show?: boolean; crs?: string; ucs?: { x: number; y: number; angle: number } }
+export interface LocationDto { base?: P; survey?: P; tie?: P; show?: boolean; crs?: string; ucs?: { x: number; y: number; angle: number } }
 
 export const useLocation = create<{ loc: LocationDto }>(() => ({ loc: {} }));
 
@@ -49,8 +49,11 @@ export const ucsOf = (loc: LocationDto): Frame | null => {
 /** The base point in the plan, with its angle to true north (degrees). */
 export const basePoint = (loc: LocationDto) => ({ x: loc.base?.x ?? 0, y: loc.base?.y ?? 0, elevation: loc.base?.elevation ?? 0, northAngle: loc.base?.northAngle ?? 0 });
 
-/** The survey point, or null when the project is not tied to the map. */
-export const surveyPoint = (loc: LocationDto) => (loc.survey ? { x: loc.survey.x ?? 0, y: loc.survey.y ?? 0, easting: loc.survey.easting ?? 0, northing: loc.survey.northing ?? 0, elevation: loc.survey.elevation ?? 0 } : null);
+/** The survey point, or null when the project is not tied to the map: the one set, or the tie the base point's latitude and longitude make in the project's system (the engine's `tie`). */
+export const surveyPoint = (loc: LocationDto) => {
+  const s = loc.survey ?? loc.tie;
+  return s ? { x: s.x ?? 0, y: s.y ?? 0, easting: s.easting ?? 0, northing: s.northing ?? 0, elevation: s.elevation ?? 0 } : null;
+};
 
 /** A plan point in map coordinates, as the engine's GeoRef.ToMap: through the survey point, turned by the angle to true north. */
 export function toMap(loc: LocationDto, p: Vec2): { e: number; n: number } {

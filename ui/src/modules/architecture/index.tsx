@@ -75,6 +75,33 @@ const RoomColorsDialog = lazyPart(() => import('./RoomColorsDialog').then((m) =>
 const OpeningDialog = lazyPart(() => import('./OpeningDialog').then((m) => m.OpeningDialog), { title: 'Wall opening' });
 const RoomFinishesDialog = lazyPart(() => import('./RoomFinishes').then((m) => m.RoomFinishesDialog), { title: 'Room finishes' });
 const RoomTagDialog = lazyPart(() => import('./RoomTagDialog').then((m) => m.RoomTagDialog), { title: 'Room tag' });
+const WallFromSolidsDialog = lazyPart(() => import('./WallFromSolidsDialog').then((m) => m.WallFromSolidsDialog), { title: 'Make a layered wall from solids' });
+
+/**
+ * Make a layered wall from solids (forum topic 101): the selected solids, one per layer, made one wall of a type with
+ * those layers (architecture.wallFromSolids, its preview first). WFS on the command line; the right-click offers it too.
+ */
+const wallFromSolids: ToolDef = {
+  id: 'architecture.wallFromSolids', label: 'Wall from solids', icon: Layers3, shortcut: 'WFS',
+  run: () => {
+    if (!useUi.getState().selected.length) { notify('Select the solids that make the wall (its layers), then Wall from solids.'); return; }
+    useUi.setState({ dialog: 'wallFromSolids' });
+  },
+};
+
+/** A wall made of solids it keeps hidden (forum topic 101): how many, and Show the original solids. */
+function OriginalSolidsSection({ node }: { node: NodeDto }) {
+  const nodes = useSession((s) => s.nodes);
+  const count = [...nodes.values()].filter((n) => n.props.supersededBy === node.id).length;
+  if (!count) return null;
+  return (
+    <div className="field-line">
+      <span className="muted small"><span>{count}</span> <span>solid(s) it was made of, kept hidden</span></span>
+      <button type="button" className="btn small" onClick={() => void execute('architecture.showOriginalSolids', { id: node.id })}>Show the original solids</button>
+    </div>
+  );
+}
+const hidesSolids = (node: NodeDto) => [...useSession.getState().nodes.values()].some((n) => n.props.supersededBy === node.id);
 
 const wall: ToolDef = chainTool({
   id: 'architecture.wall', label: 'Wall', icon: WallIcon, shortcut: 'WA', properties: newElement('IfcWallType', 'wallTypeId', 'wallTypes'), typed: typedBy('IfcWallType', 'wallTypeId', 'wallTypes', WallThumb),
@@ -531,7 +558,7 @@ const architecture: LapinModule = {
   tabs: [{
     id: 'architecture', label: 'Architecture', order: 20, include: ['modify', 'joins'],
     groups: [
-      { label: 'Build', tools: [wall, door, window_, slab, roof], small: [curtainWall, bayWindow, wallOpening, slabOpening, roofOpening('window'), roofOpening('dormer'), roofConfigurator, downpipe, railing] },
+      { label: 'Build', tools: [wall, door, window_, slab, roof], small: [wallFromSolids, curtainWall, bayWindow, wallOpening, slabOpening, roofOpening('window'), roofOpening('dormer'), roofConfigurator, downpipe, railing] },
       { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes], small: [curtainTypes, sunshadeTypes] },
       // Sunshades (report #56): on a window, along a facade; their schedule.
       { label: 'Sunshades', tools: [sunshade], small: [sunshadeAlong, sunshadeSchedule] },
@@ -571,6 +598,7 @@ const architecture: LapinModule = {
   hotbar: [wall, door, window_, slab, roof],
   propertySections: [
     { id: 'wall', label: 'Wall', classes: ['IfcWall'], component: WallLayers },
+    { id: 'originalSolids', label: 'Made from solids', classes: ['IfcWall'], shows: hidesSolids, component: OriginalSolidsSection },
     { id: 'wallSweeps', label: 'Sweeps and reveals', classes: ['IfcWall'], shows: hasSweeps, component: WallSweepsOnWall },
     { id: 'wallSweep', label: 'Wall sweep', classes: ['LapinWallSweep'], component: WallSweepSection },
     { id: 'joinery', label: 'Door or window', classes: ['IfcDoor', 'IfcWindow'], component: JoinerySection },
@@ -593,7 +621,7 @@ const architecture: LapinModule = {
   // A stair's railing selected on its own (forum topic 102): stairId#railing:left, by a click on it in a plan or in 3D.
   subSelectionPanels: { IfcStair: StairRailingPanel },
   subSelectionPick: { IfcStair: railingPick },
-  dialogs: { wallOpening: OpeningDialog, wallProfile: WallProfileDialog, curtainMembers: CurtainMembersDialog, curtainCells: CurtainCellsDialog, roof: RoofDialog, wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog, ceilingTypes: CeilingTypesDialog, skirtingTypes: SkirtingTypesDialog, roomFinishes: RoomFinishesDialog, curtainWalls: CurtainWallDialog, roomColors: RoomColorsDialog, roomTag: RoomTagDialog, underStair: UnderStairDialog, sunshades: SunshadeTypesDialog, balcony: BalconyDialog, gateTypes: GateTypesDialog, fieldSchedule: FieldScheduleDialog, fieldTemplates: FieldTemplatesDialog },
+  dialogs: { wallOpening: OpeningDialog, wallProfile: WallProfileDialog, curtainMembers: CurtainMembersDialog, curtainCells: CurtainCellsDialog, roof: RoofDialog, wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog, ceilingTypes: CeilingTypesDialog, skirtingTypes: SkirtingTypesDialog, roomFinishes: RoomFinishesDialog, curtainWalls: CurtainWallDialog, roomColors: RoomColorsDialog, roomTag: RoomTagDialog, underStair: UnderStairDialog, sunshades: SunshadeTypesDialog, balcony: BalconyDialog, gateTypes: GateTypesDialog, fieldSchedule: FieldScheduleDialog, fieldTemplates: FieldTemplatesDialog, wallFromSolids: WallFromSolidsDialog },
   // In "Edit layers" (forum topic 89) a wall's or floor's grips are its layers' edges.
   grips: { IfcWall: withLayers(wallGrips), IfcDoor: joineryGrips, IfcWindow: joineryGrips, IfcCurtainWall: curtainGrips, IfcSlab: withLayers(contourGrips('architecture.updateSlab')), LapinCeiling: contourGrips('architecture.updateCeiling'), IfcOpeningElement: openingGrips, IfcRoof: roofGrips, IfcSpace: roomGrips, LapinDownpipe: downpipeGrips, LapinRailing: railingGrips, LapinSkirting: skirtingGrips, [SHADE]: sunshadeGrips, [BALCONY]: balconyGrips,
     [GATE_CLASS]: (n: NodeDto) => {

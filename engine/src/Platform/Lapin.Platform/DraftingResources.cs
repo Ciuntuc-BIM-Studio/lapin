@@ -475,7 +475,7 @@ public static class DraftingResources
             return null;
         });
 
-        // The project's options: the unit the interface shows lengths in (mm, cm, m, ft-in, in), the step areas are shown to (areaRounding), how lines end on screen and paper (round, square), whether dimensions drop their trailing zeros (suppressZeros), the decimals and trailing zeros levels are written with (levelDecimals 0–4, levelZeros project, keep or suppress), the section and elevation markers' sizes (sectionMarkSize, sectionMarkText, elevationMarkSize, elevationMarkText; markSize and markText both).
+        // The project's options: the unit the interface shows lengths in (mm, cm, m, ft-in, in), the step areas are shown to (areaRounding), how lines end on screen and paper (round, square), whether dimensions drop their trailing zeros (suppressZeros), whether values that do not fit are moved clear of their neighbours (dimAutoText) and past how many paper mm they take a leader (dimTextLeader), the decimals and trailing zeros levels are written with (levelDecimals 0–4, levelZeros project, keep or suppress), the section and elevation markers' sizes (sectionMarkSize, sectionMarkText, elevationMarkSize, elevationMarkText; markSize and markText both).
         r.Command("standards.options", "Change drafting standards", (ctx, a) =>
         {
             var raw = Standards.ToJson(Book(ctx.Model));
@@ -489,6 +489,17 @@ public static class DraftingResources
             if (a.ContainsKey("lineCap")) raw["lineCap"] = (string?)a["lineCap"] is { } c && Standards.LineCaps.Contains(c) ? c : throw new CommandException("Lines end round or square.");
             // Dimensions drop their trailing zeros (2.5, not 2.500), unless their style keeps them (forum #81).
             if (a.ContainsKey("suppressZeros")) raw["suppressZeros"] = a["suppressZeros"] is JsonValue zv && zv.TryGetValue<bool>(out var z) ? z : throw new CommandException("Trailing zeros are suppressed or not (true or false).");
+            // Dimension values that do not fit moved clear of their neighbours, with a leader past dimTextLeader paper mm (forum #78); null: the defaults (on, 5 mm).
+            if (a.ContainsKey("dimAutoText"))
+            {
+                if (a["dimAutoText"] is null) raw.Remove("dimAutoText");
+                else raw["dimAutoText"] = a["dimAutoText"] is JsonValue av && av.TryGetValue<bool>(out var auto) ? auto : throw new CommandException("Automatic text placement is on or off (true or false).");
+            }
+            if (a.ContainsKey("dimTextLeader"))
+            {
+                if (a["dimTextLeader"] is null) raw.Remove("dimTextLeader");
+                else raw["dimTextLeader"] = Standards.TextLeaderOf(a["dimTextLeader"]) ?? throw new CommandException($"A moved value takes a leader beyond 0 to {Standards.MaxTextLeader} mm on paper.");
+            }
             // Levels (+3.00): their decimals and trailing zeros, wherever a drawing writes one (follow-up to forum #81); null: the defaults.
             if (a.ContainsKey("levelDecimals"))
             {
