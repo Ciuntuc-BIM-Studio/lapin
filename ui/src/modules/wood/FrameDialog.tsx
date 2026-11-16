@@ -296,8 +296,9 @@ export function FrameDialog() {
                       <button type="button" className="btn compact" onClick={() => setSpec(structuredClone(NORDIC))}>Nordic 45×145 / 600</button>
                       <button type="button" className="btn compact" onClick={() => setSpec(structuredClone(ROMANIAN))}>Romanian 50×150 / 625</button>
                     </div>
-                    <label className="field-line wood-field"><span className="eyebrow">Studs</span>
-                      <select value={spec.studSection} onChange={(e) => set({ studSection: e.target.value })}>{SECTIONS.map((s) => <option key={s}>{s}</option>)}</select>
+                    <label className="field-line wood-field" title="Pick a preset or type any W×D mm section (e.g. 38x139 mm)"><span className="eyebrow">Studs</span>
+                      <input list="wood-stud-sections" value={spec.studSection} onChange={(e) => set({ studSection: e.target.value })} placeholder="45x145 mm" />
+                      <datalist id="wood-stud-sections">{SECTIONS.map((s) => <option key={s} value={s} />)}</datalist>
                     </label>
                     <Mm label="Spacing" value={spec.spacing} onChange={(v) => set({ spacing: v })} />
                     <label className="field-line wood-field"><span className="eyebrow">Grade</span>

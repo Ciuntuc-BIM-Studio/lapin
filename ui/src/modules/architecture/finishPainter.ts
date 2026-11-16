@@ -29,6 +29,19 @@ export interface PaintFinish { name: string; typeId?: string; part?: string; lay
 /** A palette entry as the engine lists it (architecture.finishPalette). */
 export interface PaletteEntry { key: string; name: string; kind: 'surface' | 'room'; typeId?: string; part?: string; use: string; library?: boolean; layers: { material: string; thickness: number }[] }
 
+export type PainterUseFilter = 'all' | 'walls' | 'floors' | 'ceilings';
+
+/** Filter Finish Painter palette entries by surface use and search words (forum #124). */
+export function filterPalette(entries: readonly PaletteEntry[], search: string, use: PainterUseFilter): PaletteEntry[] {
+  const words = search.toLowerCase().split(/\s+/).filter(Boolean);
+  return entries.filter((e) => {
+    if (use !== 'all' && e.use !== 'any' && e.use !== use) return false;
+    if (words.length === 0) return true;
+    const hay = `${e.name} ${e.use} ${e.layers.map((l) => l.material).join(' ')}`.toLowerCase();
+    return words.every((w) => hay.includes(w));
+  });
+}
+
 export const usePainter = create<{ finish: PaintFinish | null; whole: boolean }>(() => ({ finish: null, whole: false }));
 
 export const painterOn = (): boolean => useScope.getState().scope?.kind === PAINTER;

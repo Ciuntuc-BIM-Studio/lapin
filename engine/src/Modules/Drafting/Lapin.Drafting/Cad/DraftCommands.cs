@@ -249,6 +249,7 @@ public static class DraftCommands
                 {
                     case Line l: pieces.Add((e, [l.A, l.B])); break;
                     case Polyline { Closed: false } p: pieces.Add((e, p.Pts)); break;
+                    case Arc arc: pieces.Add((e, Chords.Arc(arc.C, arc.R, arc.Start, arc.Sweep))); break;
                 }
             }
             if (pieces.Count == 0) throw new CommandException("Join welds lines and open polylines.");

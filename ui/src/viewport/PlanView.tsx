@@ -22,7 +22,7 @@ import { num } from '../engine/model';
 import { useWalk, walkInto } from './walk';
 import { notify, select, setTool, useUi } from '../app/store';
 import { usePaneActive, usePaneField } from '../app/pane';
-import { activeStorey, execute, useSession } from '../engine/session';
+import { activeStorey, execute, query, useSession } from '../engine/session';
 import { ownPlanOf } from './storeyPlan';
 import type { NodeDto, RenderItem } from '../engine/protocol';
 import type { FaceHit, Vec2 } from '../platform/module';
@@ -113,6 +113,8 @@ export function PlanView() {
   const [hover, setHover] = useState<Aimed | null>(null);
   /** What a click would select under the cursor now (the outline lit; null while a tool or a step takes the point). */
   const [hoverId, setHoverId] = useState<string | null>(null);
+  const [faceHover, setFaceHover] = useState<{ at: Vec2; label: string; outline: Vec2[] } | null>(null);
+  const faceReq = useRef(0);
   /** Where the cursor is, unsnapped: what a pick reads, and the side of a wall a door opens to. */
   const rawHover = useRef<Vec2 | null>(null);
   const cycleSource = useRef<CycleSource | null>(null);
@@ -139,6 +141,7 @@ export function PlanView() {
   const peers = participants.length > 1 ? others(participants, welcome) : [];
   const toolId = useUi((s) => s.tool);
   const tool = findTool(toolId);
+  useEffect(() => { if (tool?.gesture?.kind !== 'face') setFaceHover(null); }, [tool]);
   // The generated drawing of this storey's plan (its own view, else the storey's), the modelling lines over it only where selected.
   const planViewId = usePaneField('planViewId');
   const active = usePaneActive();
@@ -636,6 +639,23 @@ export function PlanView() {
       const id = hit ? pickTarget(hit.id) ?? hit.id : null;
       setHoverId((cur) => (cur === id ? cur : id));
     }
+    if (tool?.gesture?.kind === 'face') {
+      const g = tool.gesture, at = rawHover.current!;
+      const hit = pick(at, g.types);
+      const req = ++faceReq.current;
+      if (!hit) { if (faceHover) setFaceHover(null); }
+      else {
+        void query<{ label?: string; finish?: string; bare?: boolean; outline?: number[][] } | null>(g.query ?? 'core.faceAt', { id: hit.id, point: [at.x, at.y] })
+          .then((r) => {
+            if (faceReq.current !== req) return;
+            if (!r) { setFaceHover(null); return; }
+            const what = r.bare ? 'bare' : r.finish;
+            const label = what ? `${r.label ?? ''} · ${what}` : (r.label ?? '');
+            const outline = (r.outline ?? []).filter((p) => p.length >= 2).map((p) => ({ x: p[0], y: p[1] }));
+            setFaceHover({ at, label, outline });
+          });
+      }
+    }
     trackTagHover(rawHover.current, { pickElement: (q) => pick(q)?.id ?? null, pickTag: (q) => pick(q, ['IfcAnnotation'])?.id ?? null, anyTags, busy: !!tool?.gesture || !!d });
   };
   const onPointerUp = (e: React.PointerEvent) => {
@@ -787,6 +807,17 @@ export function PlanView() {
     if (!tool?.gesture || !hover) return null;
     const cur = (live.owner === 'tool' && (live.len || live.ang) ? livePoint({ ...live, cursor: hover.point }) : null) ?? hover.point;
     const g = tool.gesture.kind;
+    if (g === 'face' && faceHover) {
+      const col = tool.id === 'architecture.paintClear' ? '#dc2626' : '#ea580c';
+      const s = toScreen(faceHover.at);
+      const pts2 = faceHover.outline.map(toScreen);
+      return (
+        <g className="plan-preview" data-testid="face-hover-preview">
+          {pts2.length >= 2 && <polygon fill={col} fillOpacity={0.14} stroke={col} strokeWidth={2.5} points={pts2.map((p) => `${p.x},${p.y}`).join(' ')} />}
+          {faceHover.label && <text x={s.x + 10} y={s.y - 8} fill={col}>{faceHover.label}</text>}
+        </g>
+      );
+    }
     // What a pick would put down (a door, on the side of the wall the cursor is on).
     if (tool.gesture.kind === 'pick' && tool.gesture.ghost && rawHover.current) {
       const at = rawHover.current;
