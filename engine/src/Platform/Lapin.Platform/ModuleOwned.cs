@@ -60,6 +60,7 @@ public sealed class AbsentModules(IReadOnlySet<string> loaded) : IDrivenElements
             case "element.rename":
             case "element.setParam":
             case "element.removeParam":
+            case "element.removePset":
                 if (owned.Count > 0) throw new CommandException($"{Absent(owned[0])}.");
                 return;
             // Nothing goes into it or out of it, and it is not let go.

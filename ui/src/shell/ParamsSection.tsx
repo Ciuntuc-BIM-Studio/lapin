@@ -7,7 +7,7 @@
 
 import { promptText } from './prompts';
 import { useEffect, useState } from 'react';
-import { Braces, CopyCheck, Plus, X } from 'lucide-react';
+import { Braces, CopyCheck, Plus, Trash2, X } from 'lucide-react';
 import { Cell, LengthCell } from './cells';
 import { parseNumber } from './cellKeys';
 import { execute, query, useSession } from '../engine/session';
@@ -84,6 +84,7 @@ export function ParamsSection({ node, ids: who, shadowed, isType = node.type.end
     const [set, n, k] = hit;
     void execute('element.setParam', { ids: ids(), pset: set, name: n, value: k === 'bool' ? false : k === 'text' ? '' : 0 });
   };
+  const psets = [...new Set(params.map((p) => p.pset).filter((s): s is string => !!s))];
   return (
     <>
       {params.length > 0 && (
@@ -109,6 +110,16 @@ export function ParamsSection({ node, ids: who, shadowed, isType = node.type.end
             </span>
           ))}
         </dl>
+      )}
+      {psets.length > 0 && (
+        <div className="param-add" style={{ flexWrap: 'wrap', gap: 4 }}>
+          {psets.map((pset) => (
+            <button key={pset} type="button" className="btn small" data-remove-pset={pset} title={`Remove all parameters in ${pset}`}
+              onClick={() => void execute('element.removePset', { ids: ids(), pset })}>
+              <Trash2 size={12} /> <span data-no-i18n>{pset}</span>
+            </button>
+          ))}
+        </div>
       )}
       {isType && params.some((p) => p.instance) && (
         <div className="param-add">

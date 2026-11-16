@@ -246,6 +246,20 @@ public sealed class CoreModule : ILapinModule
             }
             return null;
         });
+        r.Command("element.removePset", "Remove property set", (ctx, a) =>
+        {
+            var pset = (string?)a["pset"] is { Length: > 0 } ps && ps != StandardPsets.Own ? ps : null;
+            foreach (var id in Driven.Rest(Args.Ids(a), Driven.Before(ctx, new DrivenEdit("element.removePset", Args.Ids(a), a))))
+            {
+                var e = ctx.Model.Get(id) ?? throw new CommandException("Which element?");
+                if (e.Attrs["params"] is not JsonArray old) continue;
+                var list = new JsonArray(old.OfType<JsonObject>().Where(p => !string.Equals(Params.SetOf(p), pset, StringComparison.OrdinalIgnoreCase)).Select(p => (JsonNode)p.DeepClone()).ToArray());
+                var attrs = e.CloneAttrs();
+                if (list.Count == 0) attrs.Remove("params"); else attrs["params"] = list;
+                ctx.Replace(e.With(attrs: attrs));
+            }
+            return null;
+        });
 
         // A closed outline with every edge offset (ArcOutline.Offset, Archicad's "Offset all edges"): {points, arcs?, distance (m, outward
         // positive)} → {points, arcs (none when straight), from (each new edge's old one)}, or {problem} when it cannot be; nothing changes
