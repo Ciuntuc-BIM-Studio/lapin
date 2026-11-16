@@ -43,6 +43,8 @@ public sealed class EngineHub
         Scripts = new ScriptHost(session.Product.Modules.Contains("scripting"), userDir, o => TellLocal("script.output", o));
         // External programs' measures and watches, the selection told with what it is (docs/plan-external-geometry.md, L2–L3).
         Live = new LiveLinks(session);
+        // Web apps on other sites (docs/plan-web-connect.md): the sites the user let in for good, in the user's folder.
+        Web = new WebConnect(this, new ConnectedSites(userDir));
         session.History.AuthorName = id => Participant(id)?.Name;
         // A module's background result (docs/overrides.md) waits for the calls' queue like a call, then goes out as a diff.
         session.DeliveryWaiting += () => _ = Deliveries();
@@ -72,6 +74,7 @@ public sealed class EngineHub
     public Sharing Sharing { get; }
     public ScriptHost Scripts { get; }
     public LiveLinks Live { get; }
+    public WebConnect Web { get; }
 
     /// <summary>
     /// One connected interface: who it is, and how a frame reaches it. What the hub sends it waits in its own queue,
@@ -102,6 +105,11 @@ public sealed class EngineHub
         public object StepKey { get => _stepKey ?? this; set => _stepKey = value; }
         /// <summary>The participant it shows (null: a local window that has not said who it is, a detached view).</summary>
         public Participant? Participant { get; set; }
+        /// <summary>A connection from a page of another site (docs/plan-web-connect.md): what the user let it do. Null: this computer's own.</summary>
+        public WebAccess? Web { get; internal set; }
+
+        /// <summary>The connection ended by the engine, saying why (a revoked site); a client without one is let go.</summary>
+        public virtual Task Close(WebSocketCloseStatus status, string reason) { Drop(); return Task.CompletedTask; }
         public abstract Task SendBinary(byte[] frame);
         public abstract Task SendText(string text);
 
@@ -162,6 +170,26 @@ public sealed class EngineHub
         public override Task SendText(string text) => Send(Encoding.UTF8.GetBytes(text), WebSocketMessageType.Text);
         protected override void Drop() => socket.Abort();
 
+        /// <summary>The close frame sent (after what is being sent), then the socket let go, whether or not the peer answers.</summary>
+        public override async Task Close(WebSocketCloseStatus status, string reason)
+        {
+            await CloseOutput(status, reason);
+            socket.Abort();
+        }
+
+        /// <summary>The close frame sent with its status, waiting at most a second for a send under way.</summary>
+        public async Task CloseOutput(WebSocketCloseStatus status, string reason)
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(1));
+            try
+            {
+                await _sending.WaitAsync(cts.Token);
+                try { if (socket.State is WebSocketState.Open or WebSocketState.CloseReceived) await socket.CloseOutputAsync(status, reason, cts.Token); }
+                finally { _sending.Release(); }
+            }
+            catch (Exception ex) when (ex is WebSocketException or OperationCanceledException or ObjectDisposedException or IOException) { }
+        }
+
         async Task Send(byte[] bytes, WebSocketMessageType type)
         {
             await _sending.WaitAsync();
@@ -170,13 +198,40 @@ public sealed class EngineHub
         }
     }
 
-    public static bool AllowedOrigin(string origin) =>
-        origin.StartsWith("http://localhost:", StringComparison.Ordinal)
-        || origin.StartsWith("http://127.0.0.1:", StringComparison.Ordinal)
-        || origin is "tauri://localhost" or "http://tauri.localhost" or "https://tauri.localhost";
+    /// <summary>Whether a page of this origin is the app's own (a page on this computer's loopback, the desktop shell's): compared exactly, never by prefix.</summary>
+    public static bool AllowedOrigin(string origin) => WebOrigins.Own(origin);
 
     /// <summary>Whether a request's Host names this computer's loopback (what /health answers to).</summary>
     public static bool LoopbackHost(string host) => host is "127.0.0.1" or "localhost" or "[::1]" or "::1";
+
+    /// <summary>
+    /// Whether a request's Host header is this engine's: a loopback name and the port it listens on. A page whose own name
+    /// was pointed at 127.0.0.1 (DNS rebinding) sends its name, and is refused.
+    /// </summary>
+    public static bool AllowedHost(string host, int? port, int listening) => LoopbackHost(host) && port == listening;
+
+    /// <summary>Who opens a connection, by its Origin header: this computer's own (no Origin: a program; or the app's page), a site that may ask to connect, or refused.</summary>
+    public enum OriginKind { Own, Site, Refused }
+
+    /// <summary>What a connection with this Origin header is (<see cref="OriginKind"/>); a site's origin as compared, in <paramref name="site"/>.</summary>
+    public static OriginKind Classify(string? origin, out string? site)
+    {
+        site = null;
+        if (string.IsNullOrEmpty(origin) || WebOrigins.Own(origin)) return OriginKind.Own;
+        if (WebOrigins.Normalize(origin) is { } o && WebOrigins.Pairable(o)) { site = o; return OriginKind.Site; }
+        return OriginKind.Refused;
+    }
+
+    /// <summary>
+    /// The largest message the engine reads from a connection (docs/plan-web-connect.md): the app's own windows, a site the
+    /// user let in (its models up to 100 MB), a site not let in yet (it may only say hello and ask). Over it: closed with 1009.
+    /// </summary>
+    public const long MaxOwnMessage = 512L << 20;
+    public const long MaxSiteMessage = 100L << 20;
+    public const long MaxUnpairedMessage = 64L << 10;
+
+    /// <summary>The largest message <paramref name="c"/> may send now.</summary>
+    public static long MaxMessage(Client c) => c.Web is null ? MaxOwnMessage : c.Web.Paired ? MaxSiteMessage : MaxUnpairedMessage;
 
     /// <summary>The port the engine listens on (0 before it does).</summary>
     public int Port { get; set; }
@@ -193,10 +248,17 @@ public sealed class EngineHub
         ["project"] = _session.Path, ["modules"] = new JsonArray(_session.Product.Modules.Select(m => (JsonNode?)JsonValue.Create(m)).ToArray()),
     };
 
-    public async Task Serve(WebSocket ws, CancellationToken ct)
+    /// <param name="site">The origin of a page of another site (<see cref="Classify"/>): the connection is let in, but paired with nothing until the user lets it (docs/plan-web-connect.md). Null: this computer's own.</param>
+    public async Task Serve(WebSocket ws, CancellationToken ct, string? site = null)
     {
         var client = new SocketClient(ws);
-        Add(client);
+        if (site == null) Add(client);
+        else
+        {
+            client.Web = new WebAccess(site);
+            client.Caller = WebConnect.Unpaired;
+            Web.Track(client);
+        }
         try
         {
             var buffer = new byte[1 << 16];
@@ -204,10 +266,18 @@ public sealed class EngineHub
             {
                 using var ms = new MemoryStream();
                 WebSocketReceiveResult r;
+                var limit = MaxMessage(client);
                 do
                 {
                     r = await ws.ReceiveAsync(buffer, ct);
                     if (r.MessageType == WebSocketMessageType.Close) return;
+                    // Never read past the limit: the connection is closed with 1009 and the engine goes on.
+                    if (ms.Length + r.Count > limit)
+                    {
+                        Console.Error.WriteLine($"[engine] A message over {limit >> 20} MB (from {client.Web?.Origin ?? "this computer"}) was refused; the connection was closed.");
+                        await client.CloseOutput(WebSocketCloseStatus.MessageTooBig, $"A message may be {limit} bytes at most.");
+                        return;
+                    }
                     ms.Write(buffer, 0, r.Count);
                 } while (!r.EndOfMessage);
 
@@ -232,11 +302,25 @@ public sealed class EngineHub
 
     public void Add(Client c) { lock (_clients) _clients.Add(c); }
 
+    /// <summary>A site's connection let in: among the clients that get the diffs and presence (once).</summary>
+    internal void Admit(Client c) { lock (_clients) if (!_clients.Contains(c)) _clients.Add(c); }
+
+    /// <summary>A connection ended by the engine (a revoked site): out of the clients at once, then closed with why.</summary>
+    internal async Task Disconnect(Client c, WebSocketCloseStatus status, string reason)
+    {
+        bool had;
+        lock (_clients) had = _clients.Remove(c);
+        if (had && c.Participant != null) await BroadcastPresence();
+        await c.Close(status, reason);
+    }
+
     public async Task Remove(Client c)
     {
         bool had;
         lock (_clients) had = _clients.Remove(c);
         c.Complete();
+        // A site's connection: off the list, out of the request it waits on.
+        if (c.Web != null) await Web.Forget(c);
         // The questions it asked (lapin.ui.ask) taken away: the windows close their dialogs.
         Scripts.Forget(c);
         // Its measures and watches with it.
@@ -293,6 +377,8 @@ public sealed class EngineHub
         var caller = client?.Caller ?? Caller.Local;
         // The connection is who a script's open step belongs to (Session.Step.cs): the client, or the Python it is one of.
         if (client != null) caller = caller with { Connection = client.StepKey };
+        // A site not let in yet (docs/plan-web-connect.md) may say hello and ask, nothing else (its messages are small: parsed here).
+        if (client?.Web is { Paired: false } && Unpaired(text) is { } refused) return refused;
         if (Own(text) is { } own) return await HandleOwn(own, client, caller);
         await _gate.WaitAsync();
         try
@@ -318,20 +404,35 @@ public sealed class EngineHub
         }
     }
 
-    /// <summary>A share.*, presence.*, cancel.*, extensions.*, script.*, measure.* or engine.hello call, parsed; null for any other. They are answered at once, past the queue of calls (a cancel stops the one running).</summary>
+    /// <summary>The refusal of a call a site not let in may not make (null: it may: hello, or asking to connect).</summary>
+    static byte[]? Unpaired(string text)
+    {
+        JsonNode? id = null;
+        try
+        {
+            if (JsonNode.Parse(text) is JsonObject o)
+            {
+                id = o["id"]?.DeepClone();
+                if (o["method"] is JsonValue mv && mv.TryGetValue<string>(out var m) && WebConnect.UnpairedMethods.Contains(m)) return null;
+            }
+        }
+        catch (System.Text.Json.JsonException) { }
+        return BinaryFrame.Encode(new Reply(id, null, "This site is not connected to Lapin: ask the user with pair.request first."));
+    }
+
+    /// <summary>The families of the host's own calls, answered at once, past the queue of calls (a cancel stops the one running).</summary>
+    static readonly string[] OwnPrefixes = ["share.", "presence.", "cancel.", "extensions.", "script.", "measure.", "pair.", "sites."];
+
+    /// <summary>A share.*, presence.*, cancel.*, extensions.*, script.*, measure.*, pair.*, sites.* or engine.hello call, parsed; null for any other.</summary>
     static JsonObject? Own(string text)
     {
         // Cheap test first: every other call goes on untouched.
-        if (!text.Contains("\"share.", StringComparison.Ordinal) && !text.Contains("\"presence.", StringComparison.Ordinal) && !text.Contains("\"cancel.", StringComparison.Ordinal)
-            && !text.Contains("\"extensions.", StringComparison.Ordinal) && !text.Contains("\"script.", StringComparison.Ordinal) && !text.Contains("\"measure.", StringComparison.Ordinal)
-            && !text.Contains("\"engine.hello\"", StringComparison.Ordinal)) return null;
+        if (!OwnPrefixes.Any(x => text.Contains("\"" + x, StringComparison.Ordinal)) && !text.Contains("\"engine.hello\"", StringComparison.Ordinal)) return null;
         try
         {
             // A method that is not a string is not one of these: the dispatcher answers it.
             return JsonNode.Parse(text) is JsonObject o && o["method"] is JsonValue mv && mv.TryGetValue<string>(out var m)
-                && (m.StartsWith("share.", StringComparison.Ordinal) || m.StartsWith("presence.", StringComparison.Ordinal) || m.StartsWith("cancel.", StringComparison.Ordinal)
-                    || m.StartsWith("extensions.", StringComparison.Ordinal) || m.StartsWith("script.", StringComparison.Ordinal) || m.StartsWith("measure.", StringComparison.Ordinal)
-                    || m == "engine.hello") ? o : null;
+                && (OwnPrefixes.Any(x => m.StartsWith(x, StringComparison.Ordinal)) || m == "engine.hello") ? o : null;
         }
         catch (System.Text.Json.JsonException) { return null; }
     }
@@ -343,14 +444,37 @@ public sealed class EngineHub
         var p = msg["params"] as JsonObject ?? [];
         try
         {
+            // A site (docs/plan-web-connect.md) reaches none of the host's own calls but hello, asking, and its presence: never
+            // scripts, extensions, sharing, measures, the list of sites, nor anything of this computer's.
+            if (client?.Web != null && !WebConnect.PairedOwnMethods.Contains(method)) throw new CommandException("A site cannot do that.");
             object? result;
             switch (method)
             {
                 // Who this is (docs/python.md, How a program finds Lapin): answered at once, past the queue of calls, so a
-                // program looking for Lapin is not held up by a long call. This computer's own clients only (the project's path).
+                // program looking for Lapin is not held up by a long call. This computer's own clients only (the project's path);
+                // a site gets the redacted answer.
                 case "engine.hello":
+                    if (client?.Web is { } site) { result = Web.Hello(site); break; }
                     if (caller.Remote) throw new CommandException("Only the host can do that.");
                     result = Hello();
+                    break;
+                // A site asks the user to connect: answered now (the list has it, or it was refused a moment ago) or when the user answers.
+                case "pair.request":
+                    if (client == null) throw new CommandException("A site asks over its connection.");
+                    var granted = await Web.Request(client, id, p);
+                    if (granted == null) return null;
+                    result = granted;
+                    break;
+                // The user's answer, and the list of sites (Preferences): this computer's own windows only.
+                case "pair.answer" or "sites.list" or "sites.set" or "sites.revoke":
+                    if (caller.Remote) throw new CommandException("Only the host can do that.");
+                    result = method switch
+                    {
+                        "pair.answer" => await Web.Answer(p),
+                        "sites.list" => Web.List(),
+                        "sites.set" => await Web.Set(p),
+                        _ => await Web.Revoke(p),
+                    };
                     break;
                 case "presence.update":
                     if (client?.Participant is { } me) { me.Presence = (JsonObject)p.DeepClone(); await BroadcastPresence(); }
