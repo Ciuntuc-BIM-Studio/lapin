@@ -92,7 +92,7 @@ export function OpeningDims({ toScreen, scale, view }: PlanOverlayProps) {
   const placing = usePlacing((s) => s.req);
   const nodes = useSession((s) => s.nodes);
   const drag = useGripDrag((s) => s.now);
-  const place = tool && placing && tool === `architecture.${placing.kind}` && placing.host.type === 'IfcWall' && placing.host.storeyId === view.storeyId ? placing : null;
+  const place = tool && placing && (tool === `architecture.${placing.kind}` || tool === 'architecture.opening') && placing.host.type === 'IfcWall' && placing.host.storeyId === view.storeyId ? placing : null;
   const sel = selectedOpening && (!view.storeyId || !selectedOpening.storeyId || selectedOpening.storeyId === view.storeyId) ? selectedOpening : null;
   const refs = useRefs(place ? { wallId: place.host.id } : sel ? { id: sel.id } : null);
   const [picks, pick] = usePicks(sel?.id ?? '');

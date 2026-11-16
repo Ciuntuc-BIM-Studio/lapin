@@ -8668,14 +8668,14 @@ export const scenes = [
       await t.page.locator('.context-menu .context-item', { hasText: 'Add to My tools' }).first().click();
       await t.wait(200);
       // A second one in a group of its own, a third dragged onto the tab's header.
-      await t.page.locator('.band .tool', { hasText: 'Door' }).first().click({ button: 'right' });
+      await t.page.locator('.band .tool', { hasText: 'Opening' }).first().click({ button: 'right' });
       await t.page.locator('.context-menu .context-item', { hasText: 'Add to a new group in My tools' }).click();
       await t.wait(200);
-      await t.page.locator('.band .tool', { hasText: 'Window' }).first().dragTo(t.page.locator('[data-tab=my-tools]'));
+      await t.page.locator('.band .tool', { hasText: 'Roof' }).first().dragTo(t.page.locator('[data-tab=my-tools]'));
       await t.wait(300);
       let groups = await store();
       t.expect(groups.length === 2 && groups[0].tools.length === 1 && groups[1].tools.length === 2, 'right-click and dragging onto the tab header fill My tools: ' + JSON.stringify(groups));
-      // Reordered in the ribbon itself: the window dragged in front of the door.
+      // Reordered in the ribbon itself: the roof dragged in front of the opening.
       await t.page.locator('[data-tab=my-tools]').click();
       await t.wait(400);
       const mine = t.page.locator('.my-band');
