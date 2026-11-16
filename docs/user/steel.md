@@ -32,9 +32,11 @@ A mitre and a fit name the other member: move it, and the end follows; delete it
 
 ## From a sketch to a member
 
-Draw the member's outline as a closed polyline or a rectangle (**Draft**), then **Steel → Convert to member** with one or more outlines selected. In one step each outline is read and replaced by a member:
+Draw the member's outline as a closed polyline or a rectangle (**Draft**), then **Steel → Convert to member** with one or more outlines selected. It opens **Draft → Convert to…** on *Steel members from outlines* ([Converting drafting to elements](drafting.md#converting-drafting-to-elements)), which shows what each outline makes, or why it is not a band, before you press **Convert**; there you can also pick a member type to try first, or keep the drafting. In one step each outline is read and replaced by a member:
 
 ![Two outlines sketched on the plan](shots/steel-sketch.webp)
+
+![Convert to member opens Convert to… on the outlines](shots/steel-convert-dialog.webp)
 
 - its **two long parallel edges** (within half a degree) give the axis, their midline from end to end, and the **width** between them;
 - the **edge across each end** gives that end's cut: square, or a plane at the edge's slant.

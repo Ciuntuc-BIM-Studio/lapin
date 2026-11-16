@@ -1,3 +1,4 @@
+using Lapin.Architecture.Roofs;
 using Lapin.Geometry;
 using Lapin.Model;
 using Lapin.Platform;
@@ -64,11 +65,32 @@ public sealed class ArchitectureFaces : IElementFaces
         }
         var dir = (f.End - f.Start).Normalized();
         var left = dir.Perp;
+        var roofTop = WallTops.Profile(wall, new RoofTop.WallAxis(f.Start, dir, (f.End - f.Start).Length, z0, z1 - z0, f.YMax - f.YMin), m, null);
         Vec2 P(Vec2 at, double y) => at + left * y;
         // The openings through it, as holes in both faces.
         var holes = Openings.PlacedOn(m, wall.Id).Select(o => (A: f.Start + dir * (o.Along - o.Width / 2), B: f.Start + dir * (o.Along + o.Width / 2), Z0: z0 + o.Sill, Z1: z0 + o.Sill + o.Height)).ToList();
         ElementFace Face(string role, string label, double y, Vec2 outward)
         {
+            if (roofTop is { Count: >= 2 })
+            {
+                var n = new Vec3(outward.X, outward.Y, 0).Normalized();
+                var ccw = Vec3.Dot(Vec3.Cross(new Vec3(dir.X, dir.Y, 0), Vec3.UnitZ), n) > 0;
+                var pts = new List<Vec3>(roofTop.Count + 2);
+                if (ccw)
+                {
+                    pts.Add(P(f.Start, y).At(z0));
+                    pts.Add(P(f.End, y).At(z0));
+                    for (var i = roofTop.Count - 1; i >= 0; i--) pts.Add(P(f.Start + dir * roofTop[i].U, y).At(z0 + roofTop[i].V));
+                }
+                else
+                {
+                    pts.Add(P(f.End, y).At(z0));
+                    pts.Add(P(f.Start, y).At(z0));
+                    for (var i = 0; i < roofTop.Count; i++) pts.Add(P(f.Start + dir * roofTop[i].U, y).At(z0 + roofTop[i].V));
+                }
+                var h = holes.Count == 0 ? null : holes.Select(o => (IReadOnlyList<Vec3>)[P(o.A, y).At(o.Z0), P(o.B, y).At(o.Z0), P(o.B, y).At(o.Z1), P(o.A, y).At(o.Z1)]).ToList();
+                return new(role, label, pts, n, h);
+            }
             var face = ElementFaces.Upright(role, label, P(f.Start, y), P(f.End, y), z0, z1, outward);
             return holes.Count == 0 ? face : face with { Holes = holes.Select(h => (IReadOnlyList<Vec3>)[P(h.A, y).At(h.Z0), P(h.B, y).At(h.Z0), P(h.B, y).At(h.Z1), P(h.A, y).At(h.Z1)]).ToList() };
         }

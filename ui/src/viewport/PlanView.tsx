@@ -219,7 +219,9 @@ export function PlanView() {
   // of them over modelling lines; a part of a whole drawn as one keeps its own lines (drilling into assemblies).
   const snapItems = useMemo(() => shownItems(items, drawing, shownWholeOf(relations, (id) => wholeOf(id, nodes, relations))), [items, drawing, nodes, relations]);
   const snapPoints = useMemo(() => snapItems.flatMap((r) => pairs(r.snaps ?? [])), [snapItems]);
-  const markSnaps = useMemo(() => (drawing?.marks ?? []).flatMap((m) => pairs(m.snaps ?? [])), [drawing]);
+  // Marks with exact shapes or line segments are already parsed by snapShapes() with their endpoint/midpoint/centre kinds;
+  // turning their flat snaps list into zero-length lines would label midpoints as endpoints (forum #111).
+  const markSnaps = useMemo(() => (drawing?.marks ?? []).filter((m) => !(m as { shapes?: unknown[] }).shapes?.length && !m.segments?.length).flatMap((m) => pairs(m.snaps ?? [])), [drawing]);
   // What the tool on snaps to besides (the Pad footing tool: the columns of the storey above, decision 507).
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const toolSnaps = useMemo(() => tool?.snapPoints?.(storey?.id ?? null) ?? [], [tool, storey?.id, nodes, relations]);

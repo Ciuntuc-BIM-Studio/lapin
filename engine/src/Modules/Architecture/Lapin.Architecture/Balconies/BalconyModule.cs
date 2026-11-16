@@ -34,6 +34,7 @@ public static class BalconyModule
         r.Service<IStoreyCopy>(new BalconyCopies());
         r.Service<INodeProps>(new BalconyFrames());
         r.Service<IScheduleSource>(new BalconySchedule());
+        BalconySchedule.RegisterTemplate(r);
         r.Catalog("balconyStyles", new JsonArray([.. BalconySpec.Styles.Select(s => (JsonNode)new JsonObject
         {
             ["id"] = s.Id, ["label"] = s.Label, ["description"] = s.Description, ["kind"] = (string?)s.Fields()["kind"], ["attrs"] = s.Fields(),
@@ -567,6 +568,45 @@ public sealed class BalconySchedule : IScheduleSource
 {
     public string Kind => "balconies";
     public string Label => "Balconies";
+
+    /// <summary>
+    /// What the schedule shows of a balcony, as fields, and the field schedule that gives the same table (audit S1): a row per
+    /// balcony that builds, by its storey's height and its name, the count, area and railing added up under them.
+    /// </summary>
+    public static void RegisterTemplate(IModuleRegistry r)
+    {
+        static string N(double v) => v.ToString("0.00", CultureInfo.InvariantCulture);
+        void Add(string key, string label, Func<IModelView, Entity, BalconyLayout, string?> value) =>
+            DerivedFields.Add(BalconyModule.Class, new(key, "Balcony: " + label, (m, e) => BalconyBuilder.Build(m, e) is { } l ? value(m, e, l) : null));
+        Add("balconyKind", "kind", (_, _, l) => l.Kind);
+        Add("balconyWidth", "width (m)", (_, _, l) => N(l.Num("width")));
+        Add("balconyDepth", "depth (m)", (_, _, l) => N(l.Num("depth")));
+        Add("balconyArea", "area (m²)", (_, _, l) => DerivedFields.Number(l.Area));
+        Add("balconyRailing", "railing (m)", (_, _, l) => DerivedFields.Number(l.RailLength));
+        Add("balconyRailDesign", "railing design", (_, _, l) => l.Str("railStyle"));
+        Add("balconySupport", "carried by", (_, _, l) => l.Kind is "loggia" or "mezzanine" ? "none" : l.Str("support"));
+        Add("balconyThermalBreak", "thermal break", (_, _, l) => l.Bool("thermalBreak") && l.Kind is not ("loggia" or "mezzanine") ? "yes" : "no");
+        DerivedFields.Add(BalconyModule.Class, new("balconyLevel", "Balcony: its level (m)", (m, e) => DerivedFields.Number(Spatial.Elevation(m, e))));
+        r.Service(ShippedScheduleTemplate.Of("balconies", "Balconies", "balconies", """
+            {
+              "filter": { "classes": ["LapinBalcony"], "conditions": [{ "field": "balconyKind", "op": "exists" }] },
+              "sort": ["balconyLevel", "name"], "totals": "always",
+              "columns": [
+                { "field": "storey.name", "heading": "Storey", "aggregate": "first" },
+                { "field": "name", "heading": "Balcony", "aggregate": "rows" },
+                { "field": "type.name", "heading": "Style", "aggregate": "first" },
+                { "field": "balconyKind", "heading": "Kind", "aggregate": "first" },
+                { "field": "balconyWidth", "heading": "Width (m)", "aggregate": "first", "decimals": 2 },
+                { "field": "balconyDepth", "heading": "Depth (m)", "aggregate": "first", "decimals": 2 },
+                { "field": "balconyArea", "heading": "Area (m²)", "aggregate": "sum", "decimals": 2 },
+                { "field": "balconyRailing", "heading": "Railing (m)", "aggregate": "sum", "decimals": 2 },
+                { "field": "balconyRailDesign", "heading": "Railing design", "aggregate": "first" },
+                { "field": "balconySupport", "heading": "Carried by", "aggregate": "first" },
+                { "field": "balconyThermalBreak", "heading": "Thermal break", "aggregate": "first" }
+              ]
+            }
+            """));
+    }
 
     public ScheduleGrid Grid(IQueryContext q)
     {

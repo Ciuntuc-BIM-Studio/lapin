@@ -18,10 +18,12 @@ public static class LineworkConvert
     {
         if (e.PredefinedType != Drafts.Predefined || e.Attrs["hatch"] != null || e.Str("role") == "draft") return null;
         var layer = e.Str("layer");
+        // The heights a DXF brought, one per point (decision 268's civil linework reads them too).
+        IReadOnlyList<double>? Heights(int n) => e.Attrs["heights"] is JsonArray za && za.Count == n ? [.. za.Select(z => Json.Number(z) ?? double.NaN)] : null;
         switch (Drafts.ShapeOf(e))
         {
-            case Line l: return new(e.Id, "line", l.ToJson(), [l.A, l.B], false, layer);
-            case Polyline p: return new(e.Id, "polyline", p.ToJson(), p.Pts, p.Closed && p.Pts.Count >= 3, layer);
+            case Line l: return new(e.Id, "line", l.ToJson(), [l.A, l.B], false, layer, Heights: Heights(2));
+            case Polyline p: return new(e.Id, "polyline", p.ToJson(), p.Pts, p.Closed && p.Pts.Count >= 3, layer, Heights: Heights(p.Pts.Count));
             case Circle c:
             {
                 var loop = Drafts.Flatten(c)[0];
@@ -39,8 +41,12 @@ public static class LineworkConvert
         var all = Drafts.On(m, view.Id);
         if (a["ids"] is JsonArray ids)
         {
+            // The shapes chosen on this view; on a plan, those drawn on the level's default plan (plan:<storey>) or on another plan
+            // view of its level too, as the interface may name either (audit S12).
             var set = ids.Select(x => (string?)x).OfType<string>().ToHashSet();
-            return all.Where(e => set.Contains(e.Id));
+            var storey = view.Str("kind") == "plan" ? view.Str("storeyId") : null;
+            bool Same(string? v) => v == view.Id || (storey != null && v != null && Views.Find(m, v) is { } o && o.Str("kind") == "plan" && o.Str("storeyId") == storey);
+            return set.Select(m.Get).OfType<Entity>().Where(e => e.Class == IfcClass.Annotation && e.PredefinedType == Drafts.Predefined && Same(e.Str("viewId")));
         }
         if (a["layers"] is JsonArray layers)
         {
@@ -72,19 +78,53 @@ public static class LineworkConvert
         return jobs;
     }
 
-    /// <summary>Each shape's steps, or why it is left: (shape id, converter, steps, error).</summary>
-    static List<(string Id, LineworkConverter Converter, IReadOnlyList<TableStep> Steps, string? Error)> Plan(IQueryContext q, Entity view, JsonObject a)
+    /// <summary>
+    /// Each shape's steps, or why it is left: (shape id, converter, steps, error, joined). A converter that makes one element of
+    /// several shapes gives its steps to the group's first shape; the others name it (<c>Joined</c>) and carry none.
+    /// </summary>
+    static List<(string Id, LineworkConverter Converter, IReadOnlyList<TableStep> Steps, string? Error, string? Joined)> Plan(IQueryContext q, Entity view, JsonObject a)
     {
-        var o = new List<(string, LineworkConverter, IReadOnlyList<TableStep>, string?)>();
+        var o = new List<(string, LineworkConverter, IReadOnlyList<TableStep>, string?, string?)>();
         foreach (var (conv, options, shapes) in Jobs(q, view, a))
+        {
+            var passed = new List<LineworkShape>();
+            var at = o.Count;
             foreach (var e in shapes)
             {
                 var s = Of(q.Model, e);
-                if (s == null) { o.Add((e.Id, conv, [], "A hatch or a construction line is not converted.")); continue; }
-                if (!conv.Accepts(s)) { o.Add((e.Id, conv, [], conv.Takes == "closed" ? $"{conv.Label} need a closed outline." : $"{conv.Label} need lines.")); continue; }
-                try { o.Add((e.Id, conv, conv.Steps(q, view, s, options), null)); }
-                catch (CommandException ex) { o.Add((e.Id, conv, [], ex.Message)); }
+                if (s == null) { o.Add((e.Id, conv, [], "A hatch or a construction line is not converted.", null)); continue; }
+                if (!conv.Accepts(s)) { o.Add((e.Id, conv, [], conv.Takes == "closed" ? $"{conv.Label} need a closed outline." : $"{conv.Label} need lines.", null)); continue; }
+                try
+                {
+                    var steps = conv.Steps(q, view, s, options);
+                    o.Add((e.Id, conv, conv.Together == null ? steps : [], null, null));
+                    passed.Add(s);
+                }
+                catch (CommandException ex) { o.Add((e.Id, conv, [], ex.Message, null)); }
             }
+            if (conv.Together == null || passed.Count == 0) continue;
+            IReadOnlyList<LineworkGroup> groups;
+            try { groups = conv.Together(q, view, passed, options); }
+            catch (CommandException ex)
+            {
+                for (var i = at; i < o.Count; i++) if (o[i].Item4 == null) o[i] = (o[i].Item1, conv, [], ex.Message, null);
+                continue;
+            }
+            var row = new Dictionary<string, int>();
+            for (var i = at; i < o.Count; i++) row.TryAdd(o[i].Item1, i);
+            var grouped = new HashSet<string>();
+            foreach (var g in groups)
+            {
+                if (g.Ids.Count == 0) continue;
+                for (var k = 0; k < g.Ids.Count; k++)
+                {
+                    if (!row.TryGetValue(g.Ids[k], out var i) || !grouped.Add(g.Ids[k])) continue;
+                    o[i] = k == 0 ? (g.Ids[0], conv, g.Steps, null, null) : (g.Ids[k], conv, [], null, g.Ids[0]);
+                }
+            }
+            // A shape no group took is left, with why.
+            foreach (var s in passed) if (!grouped.Contains(s.Id)) o[row[s.Id]] = (s.Id, conv, [], $"{conv.Label}: nothing is made of this shape.", null);
+        }
         return o;
     }
 
@@ -113,6 +153,7 @@ public static class LineworkConvert
                 ["shapes"] = new JsonArray(plan.Select(p => (JsonNode)new JsonObject
                 {
                     ["id"] = p.Id, ["converter"] = p.Converter.Id, ["error"] = p.Error, ["steps"] = new JsonArray(p.Steps.Select(s => (JsonNode)s.Describe).ToArray()),
+                    ["joined"] = p.Joined,
                 }).ToArray()),
                 ["ok"] = plan.Count(p => p.Error == null), ["left"] = plan.Count(p => p.Error != null), ["steps"] = plan.Sum(p => p.Steps.Count),
             };
@@ -129,15 +170,17 @@ public static class LineworkConvert
             var catalog = ctx.Services as ModuleCatalog ?? throw new CommandException("No commands to convert through here.");
             var keep = a["keep"] is JsonValue kv && kv.TryGetValue<bool>(out var k) ? k : a["ids"] == null;
             var made = new JsonArray();
-            foreach (var (id, _, steps, error) in plan)
+            foreach (var (id, _, steps, error, _) in plan)
             {
                 if (error != null) continue;
                 foreach (var step in steps)
                 {
                     var entry = catalog.Command(step.Command) ?? throw new CommandException($"This edition has no „{step.Command}”.");
                     var result = entry.Handler(ctx, step.Args);
-                    if ((string?)result?["id"] is { } nid) made.Add((JsonNode)nid);
+                    if ((string?)result?["id"] is { } nid) { if (!made.Any(x => (string?)x == nid)) made.Add((JsonNode)nid); }
                     else if (result?["ids"] is JsonArray nids) foreach (var x in nids) made.Add(x?.DeepClone());
+                    // What a command makes beside (walls along a shape's bottom and top floors).
+                    if (result?["slabs"] is JsonArray more) foreach (var x in more) made.Add(x?.DeepClone());
                 }
                 if (!keep && ctx.Model.Get(id) != null) ctx.Remove(id);
             }

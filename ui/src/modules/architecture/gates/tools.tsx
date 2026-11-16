@@ -8,9 +8,10 @@ import { DoorOpen, Fence, Layers3, ListOrdered, MoveHorizontal, PanelsLeftRight,
 import type { Icon } from '../../../icons';
 import type { RibbonGroupDef, ToolDef } from '../../../platform/module';
 import { notify } from '../../../app/store';
-import { execute, useSession } from '../../../engine/session';
+import { useSession } from '../../../engine/session';
 import { chooseGateType, gateTypeArgs, useGatePrefs, TYPE_CLASS, kindOf } from './gates';
 import { editGateType, useGateCatalogs } from './GateTypesDialog';
+import { createScheduleOf } from '../../../shell/fieldSchedule';
 
 /** The bar of a kind's tool: the type it puts down (the project's styles or Lapin's), and whether a click finds a line. */
 function kindOptions(kind: string) {
@@ -64,7 +65,7 @@ export const foldingGate = gateTool('folding', 'Folding gate', FoldHorizontal);
 export const gateTypes: ToolDef = { id: 'architecture.gateTypes', label: 'Gate types', icon: Layers3, run: () => editGateType(undefined) };
 export const gateSchedule: ToolDef = {
   id: 'architecture.gateSchedule', label: 'Gate schedule', icon: ListOrdered,
-  run: () => void execute('architecture.createSchedule', { kind: 'gates' }).then((r) => { if (r) notify('Gate schedule made: it is in the project browser, under Schedules.'); }),
+  run: () => void createScheduleOf('gates').then((r) => { if (r) notify('Gate schedule made: it is in the project browser, under Schedules.'); }),
 };
 
 /** Into the Site tab, after the landscape. */

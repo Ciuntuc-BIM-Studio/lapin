@@ -43,6 +43,8 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
     {
         // The bolts' grades in the project's rule pack (docs/plan-user-extensibility.md §5.4).
         BoltRuleSection.Register(r);
+        // What drafted linework becomes in steel, in Convert to… (audit S12).
+        LineworkConverters.Register(r);
         r.Class(new(Member, "Member",
         [
             new("rotation", "Rotation", "angle"),
@@ -96,7 +98,8 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
             var s = new Vec3(Args.Number(a, "x1"), Args.Number(a, "y1"), Json.Number(a["z1"]) ?? top);
             var e = new Vec3(Args.Number(a, "x2"), Args.Number(a, "y2"), Json.Number(a["z2"]) ?? Json.Number(a["z1"]) ?? top);
             if ((e - s).Length < 1e-3) throw new CommandException("A member needs two different points.");
-            var type = TypeFor(ctx, (string?)a["typeId"]);
+            // {section: a catalogue name} without a type: the project's member type of that section, else a new one.
+            var type = a["typeId"] == null && (string?)a["section"] is { Length: > 0 } sectionName ? TypeOfSection(ctx, sectionName) : TypeFor(ctx, (string?)a["typeId"]);
             var insertion = (string?)a["insertion"] ?? (planned ? "top" : "center");
             var id = Add(ctx, storey, type, s, e, Json.Number(a["rotation"]) ?? 0, insertion, (string?)a["predefinedType"]);
             return new JsonObject { ["id"] = id };
@@ -251,6 +254,13 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
     {
         if (typeId != null) return edit.Model.Get(typeId) is { Class: MemberType } t ? t : throw new CommandException("There is no such member type.");
         return edit.Model.OfClass(MemberType).FirstOrDefault() ?? CreateType(edit, null, Section.Catalogue["IPE 200"]);
+    }
+
+    /// <summary>The project's member type of a catalogue section (by its name), else a new one named after it.</summary>
+    public static Entity TypeOfSection(IEdit edit, string sectionName)
+    {
+        var section = Section.Parse(JsonValue.Create(sectionName));
+        return edit.Model.OfClass(MemberType).FirstOrDefault(t => Section.From(t.Attrs["section"]) is { } x && x.Equals(section)) ?? CreateType(edit, null, section);
     }
 
     /// <summary>A member on a storey from world points (kept relative to its level).</summary>

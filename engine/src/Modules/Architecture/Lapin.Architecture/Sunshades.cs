@@ -756,6 +756,7 @@ public static class Sunshades
         r.Catalog("sunshadeKinds", Catalog());
         r.Catalog("sunshadeStyles", StylesCatalog());
         r.Service<IScheduleSource>(new SunshadeSchedule());
+        SunshadeSchedule.RegisterTemplate(r);
         // Where it stands, for its grips: the facade's start, the way along and out, its length and projection.
         r.Service<INodeProps>(new SunshadeFrames());
 
@@ -1043,6 +1044,38 @@ public sealed class SunshadeSchedule : IScheduleSource
 {
     public string Kind => "sunshades";
     public string Label => "Sunshade schedule";
+
+    /// <summary>
+    /// What the schedule shows of a sunshade, as fields (tags, live text, field schedules read them) and the field schedule that
+    /// gives the same table (audit S1): a row per type, length and projection, in the types' order, the total under them.
+    /// </summary>
+    public static void RegisterTemplate(IModuleRegistry r)
+    {
+        static double Q(IModelView m, Entity e, string n) => Sunshades.Quantities(e, null, m).SelectMany(x => x.Quantities).FirstOrDefault(x => x.Name == n)?.Value ?? 0;
+        DerivedFields.Add(Sunshades.Class, new("shadeKind", "Sunshade: kind", (m, e) => Sunshades.SpecOf(m, e).Kind.Label));
+        DerivedFields.Add(Sunshades.Class, new("shadeOn", "Sunshade: on (its window, wall or facade)", (m, e) => e.Str("host") is { } h ? m.Get(h)?.Name : e.Str("wall") != null ? "wall" : "facade"));
+        DerivedFields.Add(Sunshades.Class, new("shadeLength", "Sunshade: length (mm)", (m, e) => Mm(Q(m, e, "Length"))));
+        DerivedFields.Add(Sunshades.Class, new("shadeProjection", "Sunshade: projection (mm)", (m, e) => Mm(Q(m, e, "Width"))));
+        DerivedFields.Add(Sunshades.Class, new("shadeArea", "Sunshade: area it shades (m²)", (m, e) => DerivedFields.Number(Q(m, e, "Area"))));
+        DerivedFields.Add(Sunshades.Class, new("shadeMaterial", "Sunshade: material", (m, e) => Sunshades.SpecOf(m, e).Str("material")));
+        r.Service(ShippedScheduleTemplate.Of("sunshades", "Sunshade schedule", "sunshades", """
+            {
+              "filter": { "classes": ["IfcShadingDevice"] },
+              "groupBy": ["type", "shadeLength", "shadeProjection"], "groupColumns": false, "count": false, "totals": "always",
+              "sort": ["type", "shadeLength"],
+              "columns": [
+                { "field": "type", "heading": "Type", "aggregate": "first" },
+                { "field": "shadeKind", "heading": "Kind", "aggregate": "first" },
+                { "field": "shadeOn", "heading": "On", "aggregate": "list" },
+                { "field": "shadeLength", "heading": "Length (mm)", "aggregate": "first" },
+                { "field": "shadeProjection", "heading": "Projection (mm)", "aggregate": "first" },
+                { "field": "class", "heading": "Count", "aggregate": "rows" },
+                { "field": "shadeArea", "heading": "Area (m²)", "aggregate": "sum", "decimals": 2 },
+                { "field": "shadeMaterial", "heading": "Material", "aggregate": "first" }
+              ]
+            }
+            """));
+    }
 
     static string Mm(double v) => Lapin.Model.Numbers.Mm(v);
 

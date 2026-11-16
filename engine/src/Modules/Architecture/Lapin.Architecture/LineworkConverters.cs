@@ -6,8 +6,10 @@ namespace Lapin.Architecture;
 
 /// <summary>
 /// What a plan's drafted linework becomes in architecture (docs/plan-user-extensibility.md §7.4): walls along lines, polylines,
-/// arcs and circles (joined at their corners, as Studio's walls along a shape); floors and rooms from closed outlines; railings
-/// along lines. Each on the plan's storey, one undo step for all.
+/// arcs and circles (joined at their corners, as Studio's walls along a shape, a closed shape's bottom and top floors too);
+/// floors, ceilings and rooms from closed outlines (a circle round, by its arcs: decision 589); roofs and balconies from closed
+/// outlines with straight edges; railings and skirtings along lines. Each on the plan's storey, one undo step for all
+/// (audit S12: Convert to… is the one place that makes elements of drawn shapes).
 /// </summary>
 public static class LineworkConverters
 {
@@ -18,6 +20,8 @@ public static class LineworkConverters
         new("typeId", "Wall type", "type", TypeClass: IfcClass.WallType),
         new("height", "Height", "length", JsonValue.Create(Lapin.Architecture.Walls.DefaultHeight)),
         new("justify", "The line is the wall's", "choice", JsonValue.Create("centre"), ["centre", "left", "right", "inside", "outside"]),
+        new("bottom", "A floor at the bottom of a closed shape", "bool", JsonValue.Create(false)),
+        new("top", "A floor at the top of a closed shape", "bool", JsonValue.Create(false)),
     ],
     (q, view, s, o) =>
     {
@@ -25,6 +29,10 @@ public static class LineworkConverters
         var args = new JsonObject { ["shape"] = s.Shape.DeepClone(), ["storeyId"] = storey.Id, ["justify"] = (string?)o["justify"] ?? "centre" };
         if ((string?)o["typeId"] is { Length: > 0 } t) args["typeId"] = t;
         if (LineworkConversion.Num(o, "height") is { } h) args["height"] = h;
+        // Studio's BOX on a plan: the shape's bottom and top as floors (a closed shape only; an open one is still walls).
+        var closed = s.Closed || s.Kind == "circle";
+        if (closed && LineworkConversion.Flag(o, "bottom", false)) args["bottom"] = true;
+        if (closed && LineworkConversion.Flag(o, "top", false)) args["top"] = true;
         return [new("architecture.wallsAlong", args, $"Walls along the {s.Kind} on {storey.Name}")];
     }, "Walls along lines, polylines, arcs and circles, joined at their corners.");
 
@@ -36,11 +44,71 @@ public static class LineworkConverters
     (q, view, s, o) =>
     {
         var storey = LineworkConversion.PlanStorey(q.Model, view);
-        var args = new JsonObject { ["storeyId"] = storey.Id, ["points"] = LineworkConversion.Points(s.Points) };
+        var (corners, rises) = s.Outline();
+        var args = new JsonObject { ["storeyId"] = storey.Id, ["points"] = LineworkConversion.Points(corners) };
+        if (rises != null) args["arcs"] = new JsonArray([.. rises.Select(r => (JsonNode)Math.Round(r, 9))]);
         if ((string?)o["typeId"] is { Length: > 0 } t) args["typeId"] = t;
         if (LineworkConversion.Num(o, "offset") is { } off) args["offset"] = off;
-        return [new("architecture.addSlab", args, $"A floor of {s.Points.Count} corners on {storey.Name}")];
-    }, "A floor on each closed outline.");
+        return [new("architecture.addSlab", args, s.Kind == "circle" ? $"A round floor on {storey.Name}" : $"A floor of {corners.Count} corners on {storey.Name}")];
+    }, "A floor on each closed outline; a circle makes a round one.");
+
+    public static readonly LineworkConverter Ceilings = new("ceiling", "Ceiling", "architecture", "closed", Plan,
+    [
+        new("typeId", "Ceiling type", "type", TypeClass: Lapin.Architecture.Ceilings.TypeClass),
+        new("height", "Height above the level", "length", JsonValue.Create(2.7)),
+    ],
+    (q, view, s, o) =>
+    {
+        var storey = LineworkConversion.PlanStorey(q.Model, view);
+        var (corners, rises) = s.Outline();
+        var args = new JsonObject { ["storeyId"] = storey.Id, ["points"] = LineworkConversion.Points(corners) };
+        if (rises != null) args["arcs"] = new JsonArray([.. rises.Select(r => (JsonNode)Math.Round(r, 9))]);
+        if ((string?)o["typeId"] is { Length: > 0 } t) args["typeId"] = t;
+        if (LineworkConversion.Num(o, "height") is { } h) args["height"] = h;
+        return [new("architecture.addCeiling", args, s.Kind == "circle" ? $"A round ceiling on {storey.Name}" : $"A ceiling of {corners.Count} corners on {storey.Name}")];
+    }, "A ceiling on each closed outline; a circle makes a round one.");
+
+    /// <summary>The roof styles of the catalogue, by id, with their names.</summary>
+    static readonly string[] RoofStyleIds = [.. Roofs.RoofCatalog.Styles.Select(x => x.Id)];
+    static readonly string[] RoofStyleNames = [.. Roofs.RoofCatalog.Styles.Select(x => x.Label)];
+
+    public static readonly LineworkConverter RoofsFromOutlines = new("roof", "Roof", "architecture", "closed", Plan,
+        [new("style", "Roof style", "choice", JsonValue.Create(RoofStyleIds[0]), RoofStyleIds, ChoiceLabels: RoofStyleNames)],
+    (q, view, s, o) =>
+    {
+        var storey = LineworkConversion.PlanStorey(q.Model, view);
+        // A roof's eaves are straight: its outline has no arcs (decision 589 gave them to floors, floor openings and ceilings only).
+        LineworkConversion.Straight(s, "A roof's outline");
+        var args = new JsonObject { ["storeyId"] = storey.Id, ["points"] = LineworkConversion.Points(s.Points) };
+        if ((string?)o["style"] is { Length: > 0 } st) args["style"] = st;
+        return [new("architecture.addRoof", args, $"A roof of {s.Points.Count} eaves on {storey.Name}")];
+    }, "A roof in the style chosen on each closed outline, its eaves the outline's edges.");
+
+    public static readonly LineworkConverter Balconies = new("balcony", "Balcony", "architecture", "closed", Plan,
+        [new("typeId", "Balcony style", "type", TypeClass: Lapin.Architecture.Balconies.BalconyModule.TypeClass)],
+    (q, view, s, o) =>
+    {
+        var storey = LineworkConversion.PlanStorey(q.Model, view);
+        LineworkConversion.Straight(s, "A balcony's outline");
+        var args = new JsonObject { ["storeyId"] = storey.Id, ["contour"] = LineworkConversion.Points(s.Points) };
+        if ((string?)o["typeId"] is { Length: > 0 } t) args["typeId"] = t;
+        return [new("architecture.addBalcony", args, $"A balcony of {s.Points.Count} corners on {storey.Name}")];
+    }, "A balcony slab on each closed outline, with its railing and supports from the style.");
+
+    public static readonly LineworkConverter SkirtingsAlong = new("skirting", "Skirting", "architecture", "open", Plan,
+    [
+        new("typeId", "Skirting type", "type", TypeClass: Skirtings.TypeClass),
+        new("side", "The board lies on the line's", "choice", JsonValue.Create("auto"), ["auto", "left", "right"]),
+    ],
+    (q, view, s, o) =>
+    {
+        var storey = LineworkConversion.PlanStorey(q.Model, view);
+        LineworkConversion.Straight(s, "A skirting");
+        var args = new JsonObject { ["storeyId"] = storey.Id, ["points"] = LineworkConversion.Points(s.Points), ["closed"] = s.Closed };
+        if ((string?)o["typeId"] is { Length: > 0 } t) args["typeId"] = t;
+        if ((string?)o["side"] is "left" or "right") args["side"] = (string?)o["side"];
+        return [new("architecture.addSkirting", args, $"A skirting along {s.Points.Count} points on {storey.Name}")];
+    }, "A skirting along each line or polyline, the board on the side away from the wall it runs by.");
 
     public static readonly LineworkConverter Rooms = new("room", "Room", "architecture", "closed", Plan, [],
         (q, view, s, _) =>
@@ -71,6 +139,6 @@ public static class LineworkConverters
 
     public static void Register(IModuleRegistry r)
     {
-        foreach (var c in new[] { Walls, Floors, Rooms, Railings }) r.Service<LineworkConverter>(c);
+        foreach (var c in new[] { Walls, Floors, Ceilings, Rooms, RoofsFromOutlines, Balconies, Railings, SkirtingsAlong }) r.Service<LineworkConverter>(c);
     }
 }

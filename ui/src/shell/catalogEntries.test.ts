@@ -4,6 +4,7 @@ vi.mock('virtual:lapin-modules', () => ({ default: [], product: { id: 't', name:
 
 import { registerLibraryKind } from '../platform/libraries';
 import { countByKind, fileEntry, filterEntries, namesText, symbolEntries, typeEntries, type CatalogEntry } from './catalogEntries';
+import { BUILTIN_TYPE_PACK } from './builtinTypes';
 
 registerLibraryKind({ ext: 'lapinrules', label: 'Rule packs', names: (t) => { const o = JSON.parse(t); if (o.format !== 'lapin-rules') throw new Error('not a rule pack'); return [o.name]; }, bring: async () => 'ok' });
 
@@ -40,5 +41,12 @@ describe('the unified catalog', () => {
     expect(filterEntries(list, { search: 'office' }).map((x) => x.name)).toEqual(['Alpha']);
     expect(filterEntries(list, { kind: 'lin', source: 'firm' }).map((x) => x.name)).toEqual(['Beta']);
     expect(countByKind(list)).toEqual({ lin: 2, lapinrules: 1 });
+  });
+
+  it('provides built-in standard wall and slab types for Catalog → From the libraries (forum #116)', () => {
+    const built = typeEntries(BUILTIN_TYPE_PACK, { source: 'builtin', pack: 'Lapin Standard' }, async () => undefined);
+    expect(built.length).toBeGreaterThanOrEqual(8);
+    expect(built.some((x) => x.source === 'builtin' && x.detail?.startsWith('Wall'))).toBe(true);
+    expect(built.some((x) => x.source === 'builtin' && x.detail?.startsWith('Slab'))).toBe(true);
   });
 });

@@ -214,4 +214,43 @@ public class FinishZoneTests : IDisposable
         // Measured on the facade itself (the mitres are no area of it).
         Assert.Equal(2 * (W + D) * H, walls.Sum(w => Zones(f, w.Id).Sum(z => Net(f, z.Id))), 6);
     }
+
+    [Fact]
+    public void An_intersecting_wall_splits_the_face_it_meets()
+    {
+        var f = new Fixture();
+        var wall = f.Wall(0, 0, 6, 0, height: H);
+        // A cross wall meeting the left face at x = 2 (the default wall is 0.265 m thick, so 0..1.8675 is to the left of it).
+        f.Wall(2, 0, 2, 3, height: H);
+        var tiles = Library(f, "Wall tiles");
+        var leftZone = (string)f.Run("architecture.paintFinish", new JsonObject { ["hostId"] = wall, ["point"] = P(1, Left, 1), ["normal"] = P(0, 1, 0), ["finishType"] = tiles })!["id"]!;
+        // Only the region to the left of the cross wall is painted, not the whole 6 m face.
+        Assert.True(Net(f, leftZone) < 2 * H);
+        Assert.True(f.Bounds(leftZone).Max.X < 2.0);
+    }
+
+    [Fact]
+    public void A_wall_attached_to_a_roof_has_a_sloped_face_and_paints_up_to_the_roof()
+    {
+        var f = new Fixture();
+        var roof = (string)f.Run("architecture.addRoof", new JsonObject
+        {
+            ["storeyId"] = f.Storey,
+            ["points"] = new JsonArray(new JsonArray(0, -1), new JsonArray(6, -1), new JsonArray(6, 5), new JsonArray(0, 5)),
+            ["kind"] = "gable",
+            ["slope"] = 30.0,
+            ["eavesZ"] = H,
+        })!["id"]!;
+        var wall = f.Wall(0, 2, 6, 2, height: H);
+        f.Run("architecture.attachToRoof", new JsonObject { ["ids"] = new JsonArray(wall) });
+        var wallMaxZ = f.Bounds(wall).Max.Z;
+        Assert.True(wallMaxZ > H + 0.5);
+
+        // Pointing at the extended gable part above H picks the face and paints up to the roof.
+        var at = (JsonObject)f.Session.Query("architecture.finishFaceAt", new JsonObject { ["id"] = wall, ["point"] = P(3, 2 + Left, H + 0.4), ["normal"] = P(0, 1, 0) })!;
+        Assert.Equal("Face.Left", (string?)at["role"]);
+        var etics = Library(f, "ETICS EPS 100");
+        var zone = (string)f.Run("architecture.paintFinish", new JsonObject { ["hostId"] = wall, ["point"] = P(3, 2 + Left, H + 0.4), ["normal"] = P(0, 1, 0), ["finishType"] = etics })!["id"]!;
+        Assert.True(f.Bounds(zone).Max.Z > H + 0.5);
+    }
 }

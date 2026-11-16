@@ -129,6 +129,7 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
         // The frame elevation as an element view role (decision 579), of a timber-frame or CLT wall.
         r.Service<IElementViewRoles>(new WoodViewRoles());
         r.Service<IScheduleSource>(new TimberSchedule());
+        TimberSchedule.RegisterTemplate(r);
 
         // A wall type's frame: {id (the wall type), spec (null: not a timber frame)}.
         r.Command("setWallFrame", "Timber frame", (ctx, a) =>

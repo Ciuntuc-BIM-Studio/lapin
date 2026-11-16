@@ -21,6 +21,7 @@ import { createSymbol, listSymbols, previewSymbol } from '../modules/core/symbol
 import { Thumb } from '../modules/core/symbols/Thumb';
 import { t as tr } from '../i18n';
 import { countByKind, fileEntry, filterEntries, SOURCES, symbolEntries, typeEntries, type CatalogEntry, type CatalogSource } from './catalogEntries';
+import { BUILTIN_TYPE_PACK } from './builtinTypes';
 
 const needProject = () => { if (!useSession.getState().connected) { notify('Open a project first.'); return false; } return true; };
 
@@ -65,13 +66,14 @@ export async function gatherCatalog(): Promise<{ entries: CatalogEntry[]; proble
   }
   for (const f of myPatterns()) if (edition('pat')) keepEntries([fileEntry({ kind: 'pat', name: f.name, text: f.text, source: 'computer', file: f.name }, (t, file) => bringPatterns(t, file))]);
 
-  // Type packs on this computer: the user's, and those of types extensions.
+  // Type packs: Lapin's built-in standard types, this computer's, and installed extensions'.
   if (edition('lapintypes')) {
     const addType = (text: string) => async (ref: string) => {
       if (!needProject()) return;
       const r = await execute('types.importFrom', { text, refs: [ref] }) as { created: number; reused: number } | null;
       if (r) notify(`Types added to the project: ${r.created} new, ${r.reused} already in it.`);
     };
+    entries.push(...typeEntries(BUILTIN_TYPE_PACK, { source: 'builtin', pack: 'Lapin Standard' }, addType(BUILTIN_TYPE_PACK)));
     for (const row of await typePackRows.all()) {
       const x = isUserPack(row) ? undefined : extOf(row.id);
       entries.push(...typeEntries(row.text, { source: x ? 'extension' : 'computer', pack: row.name, ...(x ? { from: x.name, license: x.manifest.license } : {}) }, addType(row.text)));

@@ -44,16 +44,23 @@ WebApplication Build(int listenPort)
     var web = builder.Build();
     web.UseWebSockets();
     // Who answers here, for a program looking for Lapin on 14912… (docs/python.md): what engine.hello answers. Only
-    // asked by a loopback name, so a page of another site whose name was pointed at 127.0.0.1 does not read it.
-    web.MapGet("/health", (HttpContext ctx) => EngineHub.LoopbackHost(ctx.Request.Host.Host) ? Results.Json(hub.Hello()) : Results.StatusCode(403));
+    // asked by a loopback name and this port, so a page of another site whose name was pointed at 127.0.0.1 does not read
+    // it, and never for a page of another site (no CORS headers either: a browser keeps the answer from it).
+    web.MapGet("/health", (HttpContext ctx) =>
+        EngineHub.AllowedHost(ctx.Request.Host.Host, ctx.Request.Host.Port, listenPort)
+        && EngineHub.Classify(ctx.Request.Headers.Origin.ToString(), out _) == EngineHub.OriginKind.Own
+            ? Results.Json(hub.Hello()) : Results.StatusCode(403));
     web.Map("/ws", async ctx =>
     {
         if (!ctx.WebSockets.IsWebSocketRequest) { ctx.Response.StatusCode = 400; return; }
-        // Only the app's own pages may connect (a browser tab on another site must not drive the engine).
-        var origin = ctx.Request.Headers.Origin.ToString();
-        if (origin.Length > 0 && !EngineHub.AllowedOrigin(origin)) { ctx.Response.StatusCode = 403; return; }
+        // Asked by this engine's own address only (DNS rebinding: another site's name pointed at 127.0.0.1 is refused).
+        if (!EngineHub.AllowedHost(ctx.Request.Host.Host, ctx.Request.Host.Port, listenPort)) { ctx.Response.StatusCode = 403; return; }
+        // The app's own pages (and programs, which send no Origin) as ever; an https site is let in paired with nothing
+        // until the user lets it (docs/plan-web-connect.md); any other origin refused.
+        var kind = EngineHub.Classify(ctx.Request.Headers.Origin.ToString(), out var site);
+        if (kind == EngineHub.OriginKind.Refused) { ctx.Response.StatusCode = 403; return; }
         using var ws = await ctx.WebSockets.AcceptWebSocketAsync();
-        await hub.Serve(ws, ctx.RequestAborted);
+        await hub.Serve(ws, ctx.RequestAborted, site);
     });
     return web;
 }

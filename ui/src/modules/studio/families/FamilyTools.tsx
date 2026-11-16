@@ -15,6 +15,7 @@ import { activeStorey, execute, useSession } from '../../../engine/session';
 import { formatLength, parseLength } from '../../../engine/unitsStore';
 import { t as tr } from '../../../i18n';
 import { registerDraftMenu } from '../../../viewport/draftMenu';
+import { registerConvertHandoff } from '../../core/convertHandoffs';
 import { familiesDialog, listFamilies, previewFamily, useFamilies, useFromSketch, usePlaceFamily } from './familyApi';
 import { IFC_CLASSES, className, parseValue, placedEdges, planEdges, sketchSources, valuesOf, type FamilyDto } from './familyModel';
 
@@ -145,6 +146,8 @@ export function startFamilyFromSketch(): void {
 }
 
 registerDraftMenu((ids, nodes) => (sketchSources(ids, nodes) ? [{ label: 'Make family from sketch…', onSelect: startFamilyFromSketch }] : []));
+// In Convert to… too (audit S12).
+registerConvertHandoff({ id: 'family', label: 'Family…', description: 'The closed outlines chosen made a family of your own, its body drawn from them: its name, depth and class are asked next.', run: startFamilyFromSketch });
 
 export function FamilyFromSketchDialog() {
   const request = useFromSketch((s) => s.request);

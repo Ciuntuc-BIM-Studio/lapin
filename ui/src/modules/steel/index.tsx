@@ -60,19 +60,17 @@ const column: ToolDef = {
   },
 };
 
-/** The selected drafted closed outlines made members, in one step; what is not a band is left and said. */
+/**
+ * The selected drafted closed outlines made members (decision 268): a shortcut to Draft → Convert to…, opened on Steel members from
+ * outlines (audit S12), where what each outline makes, or why it is not a band, shows before converting; one step.
+ */
 const convert: ToolDef = {
   id: 'steel.convert', label: 'Convert to member', icon: WandSparkles,
   run: () => {
     const nodes = useSession.getState().nodes;
     const ids = useUi.getState().selected.filter((id) => { const n = nodes.get(id); const s = n?.props.shape as { type?: string; closed?: boolean } | undefined; return n?.type === 'IfcAnnotation' && s?.type === 'polyline' && s.closed; });
     if (!ids.length) { notify('Select the closed outlines to convert: drafted polylines or rectangles, on a plan, a section or an elevation.'); return; }
-    void execute('steel.convertSketch', { ids }).then((r) => {
-      const res = r as { ids?: string[]; skipped?: { id: string; problem: string }[] } | null;
-      if (!res?.ids) return;
-      useUi.setState({ selected: res.ids, selection: res.ids[0] ?? null });
-      if (res.skipped?.length) notify('Some outlines are not bands (two long parallel edges, an edge across each end) and were left as they are.');
-    });
+    void import('../drafting/convert/convert').then((m) => m.convertSelection('steelOutlines'));
   },
 };
 

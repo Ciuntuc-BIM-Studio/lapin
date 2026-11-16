@@ -20,6 +20,7 @@ import { PendingDialog } from '../core/PendingDialog';
 import { newElement, typedBy } from './NewElement';
 import { SkirtingThumb } from './Thumbs';
 import { PROFILES, profilePath, type SkirtingSpec } from './skirtingProfile';
+import { createScheduleOf } from '../../shell/fieldSchedule';
 
 const chosenType = () => (useUi.getState().skirtingTypeId ? { typeId: useUi.getState().skirtingTypeId } : {});
 
@@ -41,7 +42,7 @@ export const skirtingTypes: ToolDef = { id: 'architecture.skirtingTypes', label:
 
 export const skirtingSchedule: ToolDef = {
   id: 'architecture.skirtingSchedule', label: 'Skirting schedule', icon: Table2,
-  run: () => void execute('architecture.createSchedule', { kind: 'skirtings' }).then((r) => { if (r) notify('Skirting schedule made: it is in the project browser, under Schedules.'); }),
+  run: () => void createScheduleOf('skirtings').then((r) => { if (r) notify('Skirting schedule made: it is in the project browser, under Schedules.'); }),
 };
 
 /** A drawn skirting's points as grips (a room's follows its room, and has none). */

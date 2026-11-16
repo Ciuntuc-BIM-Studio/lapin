@@ -1,12 +1,13 @@
 /** What the MEP tools share with mep-pro's: the system a run goes in, a schedule tool. */
 
 import { notify, useUi } from '../../app/store';
-import { execute, useSession } from '../../engine/session';
+import { useSession } from '../../engine/session';
 import type { ToolDef } from '../../platform/module';
 import { Table2 } from 'lucide-react';
 import { editedSystem } from './edit';
 import { systemsOf } from './network';
 import { setMep, useMep } from './prefs';
+import { createScheduleOf } from '../../shell/fieldSchedule';
 
 /** The system a run goes in: the one being edited, else the current one, else the only one; none: the Systems dialog. */
 export async function runSystem(): Promise<string | null> {
@@ -25,5 +26,5 @@ export async function runSystem(): Promise<string | null> {
 /** A schedule the module offers (an IScheduleSource), made and opened. */
 export const schedule = (id: string, label: string, kind: string): ToolDef => ({
   id, label, icon: Table2,
-  run: () => void execute('architecture.createSchedule', { kind }).then((r) => { const made = r as { id: string } | null; if (made?.id) useUi.setState({ view: 'schedule', scheduleId: made.id, selection: made.id, selected: [made.id] }); }),
+  run: () => void createScheduleOf(kind).then((r) => { const made = r as { id: string } | null; if (made?.id) useUi.setState({ view: 'schedule', scheduleId: made.id, selection: made.id, selected: [made.id] }); }),
 });

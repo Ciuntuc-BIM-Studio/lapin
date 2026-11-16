@@ -227,7 +227,9 @@ const road: ToolDef = { id: 'civil.road', label: 'Road', icon: Route, shortcut: 
 /**
  * CAD linework (a line drafted, or a DXF's, with the heights it brought) made a civil element: the line picked is followed
  * through what meets it end to end on its layer; its heights give the profile or the breakline's levels. A dense line
- * (a surveyed axis) is read as a design alignment, a drawn one gives its vertices as PIs.
+ * (a surveyed axis) is read as a design alignment, a drawn one gives its vertices as PIs. A shortcut to Draft → Convert to…
+ * (audit S12), opened on the line picked and the target, where the chain it joins shows before converting; a kind a module
+ * adds of its own (a track) still goes straight to civil.fromLinework.
  */
 export function fromLinework(id: string, label: string, as: string, shortcut: string): ToolDef {
   return {
@@ -235,9 +237,14 @@ export function fromLinework(id: string, label: string, as: string, shortcut: st
     gesture: { kind: 'pick', types: ['IfcAnnotation'] },
     complete: async ({ entity }, ctx) => {
       if (!entity) return;
+      if (as === 'road' || as === 'breakline' || as === 'path') {
+        const { convertPicked } = await import('../drafting/convert/convert');
+        convertPicked(entity.id, as === 'path' ? 'civilPath' : as);
+        return;
+      }
       const r = await ctx.execute('civil.fromLinework', { id: entity.id, as, storeyId: ctx.storeyId }) as { kind: string; points: number; pieces: number; heights: boolean; curves?: number; deviation?: number; breaklines?: number } | null;
       if (!r) return;
-      const what = as === 'track' ? 'A track' : as === 'road' ? 'A road' : 'A breakline';
+      const what = as === 'track' ? 'A track' : 'A breakline';
       const design = r.curves != null ? `, read as a design: ${r.curves} curve${r.curves === 1 ? '' : 's'}, within ${Math.round((r.deviation ?? 0) * 1000)} mm` : '';
       notify(`${what} from ${r.pieces} line${r.pieces === 1 ? '' : 's'} joined (${r.points} points${r.heights ? ', with heights' : ''})${design}.`);
     },

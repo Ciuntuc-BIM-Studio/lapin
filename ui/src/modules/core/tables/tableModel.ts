@@ -115,7 +115,7 @@ export function parseMappingFile(text: string): MappingFile {
 
 // ------------------------------------------------------------ drafting layers → converters
 
-export interface ConvOption { key: string; label: string; kind: string; default?: unknown; choices?: string[]; typeClass?: string }
+export interface ConvOption { key: string; label: string; kind: string; default?: unknown; choices?: string[]; typeClass?: string; /** A choice's words, one per choice, when its values are ids. */ choiceLabels?: string[] }
 
 /** The options of a converter at their defaults (a type option left empty: the engine picks the project's first). */
 export function optionDefaults(options: ConvOption[]): Record<string, unknown> {
