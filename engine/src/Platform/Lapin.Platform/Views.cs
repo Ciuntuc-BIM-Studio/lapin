@@ -84,12 +84,7 @@ public static class Views
         return ViewRanges.Resolve(storey?.Num("elevation") ?? 0, view.NumOrNull("cutHeight") ?? DefaultCut, ViewRange.From(view.Attrs["viewRange"]), Levels(m));
     }
 
-    static (Vec3 Min, Vec3 Max)? Bounds(IEnumerable<DrawPart> parts)
-    {
-        var bs = parts.Select(p => Measure.Bounds(p.Solid)).OfType<(Vec3 Min, Vec3 Max)>().ToList();
-        if (bs.Count == 0) return null;
-        return (new Vec3(bs.Min(b => b.Min.X), bs.Min(b => b.Min.Y), bs.Min(b => b.Min.Z)), new Vec3(bs.Max(b => b.Max.X), bs.Max(b => b.Max.Y), bs.Max(b => b.Max.Z)));
-    }
+    static (Vec3 Min, Vec3 Max)? Bounds(IEnumerable<DrawPart> parts) => Measure.Bounds(parts.Select(p => p.Solid));
 
     /// <summary>The view's spec: where it looks from and how deep; null with a reason when it cannot be drawn.</summary>
     public static (ViewSpec? Spec, string? Problem) Spec(IModelView m, Entity view, IReadOnlyList<DrawPart> parts, IServices? services = null)

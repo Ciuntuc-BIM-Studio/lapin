@@ -204,29 +204,7 @@ public static class Sheets
         return true;
     }
 
-    internal static List<Vec2> ClipLoop(IReadOnlyList<Vec2> loop, double x0, double y0, double x1, double y1)
-    {
-        var pts = loop.ToList();
-        foreach (var (inside, cut) in new (Func<Vec2, bool>, Func<Vec2, Vec2, Vec2>)[]
-        {
-            (p => p.X >= x0, (a, b) => a + (b - a) * ((x0 - a.X) / (b.X - a.X))),
-            (p => p.X <= x1, (a, b) => a + (b - a) * ((x1 - a.X) / (b.X - a.X))),
-            (p => p.Y >= y0, (a, b) => a + (b - a) * ((y0 - a.Y) / (b.Y - a.Y))),
-            (p => p.Y <= y1, (a, b) => a + (b - a) * ((y1 - a.Y) / (b.Y - a.Y))),
-        })
-        {
-            if (pts.Count == 0) break;
-            var o = new List<Vec2>();
-            for (var i = 0; i < pts.Count; i++)
-            {
-                var (cur, prev) = (pts[i], pts[(i + pts.Count - 1) % pts.Count]);
-                if (inside(cur)) { if (!inside(prev)) o.Add(cut(prev, cur)); o.Add(cur); }
-                else if (inside(prev)) o.Add(cut(prev, cur));
-            }
-            pts = o;
-        }
-        return pts;
-    }
+    internal static List<Vec2> ClipLoop(IReadOnlyList<Vec2> loop, double x0, double y0, double x1, double y1) => Polygon2.ClipBox(loop, x0, y0, x1, y1);
 
     /// <summary>
     /// A view's pen on paper, cut to a box as a viewport shows it (segments and fills clipped, texts kept when their point is

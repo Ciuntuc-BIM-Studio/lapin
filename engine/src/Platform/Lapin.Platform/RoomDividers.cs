@@ -198,12 +198,7 @@ public static class RoomDividers
     }
 
     /// <summary>Where the line through <paramref name="a"/> along <paramref name="da"/> meets the one through <paramref name="b"/> along <paramref name="db"/>; null when they run side by side.</summary>
-    static Vec2? Meet(Vec2 a, Vec2 da, Vec2 b, Vec2 db)
-    {
-        var c = Vec2.Cross(da, db);
-        if (Math.Abs(c) < 1e-9) return null;
-        return a + da * (Vec2.Cross(b - a, db) / c);
-    }
+    static Vec2? Meet(Vec2 a, Vec2 da, Vec2 b, Vec2 db) => Polyline2.LineIntersection(a, da, b, db);
 
     /// <summary>A loop without corners repeated, nor the spikes going out and back to the same point.</summary>
     static List<Vec2> Clean(List<Vec2> pts)

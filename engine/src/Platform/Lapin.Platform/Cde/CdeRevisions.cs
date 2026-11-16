@@ -31,9 +31,6 @@ public static class CdeRevisions
     public static bool IsRevision(string? s) => s != null && Revision.IsMatch(s);
     public static bool IsStatus(string? s) => s != null && Status.IsMatch(s);
 
-    /// <summary>Whether a revision is preliminary (P) rather than contractual (C).</summary>
-    public static bool Preliminary(string revision) => revision.StartsWith('P');
-
     /// <summary>
     /// The revision after <paramref name="last"/>: P02 after P01, C02 after C01;
     /// the first contractual one is C01 whatever the preliminary count; without a

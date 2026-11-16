@@ -97,8 +97,10 @@ public sealed class ViewMark(string? owner)
 
     public ViewMark Text(PenText t, string color = "#000000") { Texts.Add((t, color)); return this; }
 
-    /// <summary>A circle as a polygon of <paramref name="n"/> sides.</summary>
-    public static Vec2[] Circle(Vec2 c, double r, int n = 32) => Enumerable.Range(0, n).Select(k => c + new Vec2(Math.Cos(2 * Math.PI * k / n), Math.Sin(2 * Math.PI * k / n)) * r).ToArray();
+    /// <summary>A circle as a polygon of <paramref name="n"/> sides (0: as <see cref="Chords"/> makes it).</summary>
+    public static Vec2[] Circle(Vec2 c, double r, int n = 0) => n <= 0
+        ? [.. Chords.Ring(c, r)]
+        : Enumerable.Range(0, n).Select(k => c + new Vec2(Math.Cos(2 * Math.PI * k / n), Math.Sin(2 * Math.PI * k / n)) * r).ToArray();
 }
 
 /// <summary>A module's annotations on views: grids, dimensions, texts…</summary>

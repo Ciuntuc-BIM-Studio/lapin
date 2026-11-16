@@ -348,11 +348,5 @@ public static class RecognitionFidelity
         return worst;
     }
 
-    static double SegmentDistance(Vec2 p, Vec2 a, Vec2 b)
-    {
-        var ab = b - a;
-        var l2 = ab.X * ab.X + ab.Y * ab.Y;
-        var t = l2 > 0 ? Math.Clamp(((p.X - a.X) * ab.X + (p.Y - a.Y) * ab.Y) / l2, 0, 1) : 0;
-        return (p - (a + ab * t)).Length;
-    }
+    static double SegmentDistance(Vec2 p, Vec2 a, Vec2 b) => Polyline2.SegmentDistance(p, a, b);
 }

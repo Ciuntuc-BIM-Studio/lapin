@@ -71,17 +71,8 @@ public static class BattHatch
         return o;
     }
 
-    static bool Inside(IReadOnlyList<IReadOnlyList<Vec2>> loops, Vec2 p)
-    {
-        var inside = false;
-        foreach (var loop in loops)
-            for (int i = 0, j = loop.Count - 1; i < loop.Count; j = i++)
-            {
-                var (a, b) = (loop[i], loop[j]);
-                if ((a.Y > p.Y) != (b.Y > p.Y) && p.X < (b.X - a.X) * (p.Y - a.Y) / (b.Y - a.Y) + a.X) inside = !inside;
-            }
-        return inside;
-    }
+    /// <summary>Even-odd over all the loops: inside an odd number of them.</summary>
+    static bool Inside(IReadOnlyList<IReadOnlyList<Vec2>> loops, Vec2 p) => loops.Count(l => Polygon2.Contains(l, p)) % 2 == 1;
 
     static List<Vec2> Clean(IReadOnlyList<Vec2> pts)
     {

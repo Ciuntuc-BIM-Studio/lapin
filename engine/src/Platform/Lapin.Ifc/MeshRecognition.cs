@@ -426,20 +426,7 @@ public static class MeshRecognition
     }
 
     /// <summary>Inside a polygon or on its edge (within <paramref name="tol"/>).</summary>
-    static bool InPolygon(IReadOnlyList<Vec2> poly, Vec2 p, double tol)
-    {
-        for (var i = 0; i < poly.Count; i++)
-        {
-            Vec2 a = poly[i], b = poly[(i + 1) % poly.Count];
-            var ab = b - a;
-            var t = Math.Clamp(Vec2.Dot(p - a, ab) / Math.Max(1e-12, Vec2.Dot(ab, ab)), 0, 1);
-            if ((a + ab * t - p).Length <= tol) return true;
-        }
-        var inside = false;
-        for (int i = 0, j = poly.Count - 1; i < poly.Count; j = i++)
-            if ((poly[i].Y > p.Y) != (poly[j].Y > p.Y) && p.X < (poly[j].X - poly[i].X) * (p.Y - poly[i].Y) / (poly[j].Y - poly[i].Y) + poly[i].X) inside = !inside;
-        return inside;
-    }
+    static bool InPolygon(IReadOnlyList<Vec2> poly, Vec2 p, double tol) => Polygon2.Contains(poly, p, tol);
 
     /// <summary>What an entity is related by (its storey, group, type…), to relate it again.</summary>
     static List<(string Class, string Relating)> Related(IModelView m, string id) =>

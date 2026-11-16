@@ -518,9 +518,6 @@ public static class Standards
         if (viewHides?.Contains(layer.Id) == true) return false;
         return viewportHides?.Contains(layer.Id) != true;
     }
-
-    public static bool LayerLocked(DraftLayer layer, IEnumerable<LayerGroup> groups) =>
-        layer.Locked || (layer.Group != null && groups.FirstOrDefault(g => g.Id == layer.Group)?.Locked == true);
 }
 
 /// <summary>The drafting standards' JSON contracts, generated at build time (web names, nulls left out), so a trimmed engine writes them as the desktop does.</summary>

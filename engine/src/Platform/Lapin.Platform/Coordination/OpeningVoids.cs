@@ -77,7 +77,11 @@ public static class OpeningVoids
     public static HashSet<string>? KindsOf(JsonNode? n) =>
         n is JsonArray a ? a.Select(x => (string?)x).OfType<string>().Where(Kinds.Contains).ToHashSet() : null;
 
-    /// <summary>A stable GlobalId derived from a seed and a key (MD5, as the IFC export derives its ids).</summary>
+    /// <summary>
+    /// A stable GlobalId derived from a seed and a key: MD5 of "seed/key" read as a GUID. Not the IFC export's derivation
+    /// (<c>Step.Guid</c> hashes "seed\nkey" and writes it otherwise), so the two give different ids for the same pair; kept
+    /// as it is, its ids being in the files written. New code takes <see cref="Model.GlobalId.Derive"/>.
+    /// </summary>
     public static string DerivedId(string seed, string key)
     {
         var hash = Md5.HashData(Encoding.UTF8.GetBytes($"{seed}/{key}"));

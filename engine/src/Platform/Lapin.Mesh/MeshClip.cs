@@ -73,16 +73,7 @@ public static class MeshClip
         foreach (var p in planes)
         {
             if (poly.Count < 3) break;
-            var next = new List<Vec3>(poly.Count + 1);
-            for (var i = 0; i < poly.Count; i++)
-            {
-                Vec3 a = poly[i], b = poly[(i + 1) % poly.Count];
-                double da = p.Distance(a), db = p.Distance(b);
-                bool ina = da >= -Eps, inb = db >= -Eps;
-                if (ina) next.Add(a);
-                if (ina != inb) next.Add(a + (b - a) * (da / (da - db)));
-            }
-            poly = next;
+            poly = Polygon2.ClipHalf(poly, p.Distance, Eps);
         }
         return poly;
     }
