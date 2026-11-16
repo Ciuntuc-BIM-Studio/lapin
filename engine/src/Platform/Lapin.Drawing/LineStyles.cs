@@ -80,7 +80,7 @@ public static class LineStyles
         "IFCSTAIR" or "IFCSTAIRFLIGHT" or "IFCRAMP" or "IFCRAMPFLIGHT" => "stairs",
         "IFCRAILING" => "railings",
         "IFCSPACE" => "spaces",
-        "IFCGEOGRAPHICELEMENT" or "IFCEARTHWORKSCUT" or "IFCEARTHWORKSFILL" => "topography",
+        "IFCGEOGRAPHICELEMENT" or "IFCEARTHWORKSCUT" or "IFCEARTHWORKSFILL" or "IFCPAVEMENT" or "IFCKERB" or "IFCROAD" or "LAPINSITEFEATURE" => "topography",
         "IFCFURNISHINGELEMENT" or "IFCFURNITURE" => "furniture",
         "IFCBUILDINGELEMENTPROXY" or "IFCPLATE" or "IFCFOOTING" => "other",
         // The categories Visibility / Graphics added (decision 391): what had none, hidden only by its IFC class before.

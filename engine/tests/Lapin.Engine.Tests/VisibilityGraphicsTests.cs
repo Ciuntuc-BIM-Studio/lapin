@@ -372,4 +372,30 @@ public class VisibilityGraphicsTests
         Assert.Null(VisibilityGraphics.Of(f.Model, f.Model.Get(plan)!).DetailLevel);
         Assert.Throws<CommandException>(() => G(f, new JsonObject { ["id"] = plan, ["detailLevel"] = "rough" }));
     }
+
+    [Fact]
+    public void Pavement_and_site_elements_hide_with_topography_category()
+    {
+        Assert.Equal("topography", LineStyles.CategoryOf(IfcClass.Pavement));
+        var f = F();
+        var path = new Entity("p1", IfcClass.Pavement, "Path 1", new JsonObject());
+        var g = new JsonObject { ["categories"] = new JsonObject { ["topography"] = new JsonObject { ["hidden"] = true } } };
+        Assert.True(VisibilityGraphics.From(f.Model, g, true).Hides(path));
+        Assert.False(VisibilityGraphics.From(f.Model, null, true).Hides(path));
+    }
+
+    [Fact]
+    public void Grids_hide_in_3d_looks_when_grids_annotation_is_hidden()
+    {
+        var f = F();
+        var grid = (string)f.Run("drafting.addAxis", new JsonObject
+        {
+            ["tag"] = "A", ["x1"] = 0, ["y1"] = 0, ["x2"] = 10, ["y2"] = 0
+        })!["gridId"]!;
+
+        Assert.Null(GraphicsSets.Looks3d(new Q(f), GraphicsSets.As3dView(f.Model))[grid]);
+
+        G(f, new JsonObject { ["id"] = "3d", ["annotation"] = "grids", ["value"] = new JsonObject { ["hidden"] = true } });
+        Assert.True((bool?)GraphicsSets.Looks3d(new Q(f), GraphicsSets.As3dView(f.Model))[grid]?["hidden"]);
+    }
 }
