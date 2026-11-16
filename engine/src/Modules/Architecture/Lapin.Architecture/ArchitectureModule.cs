@@ -459,6 +459,16 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             return null;
         });
 
+        // The outline the walls close round a point (audit S4, the outline tools' "Inside walls"): {storeyId?, x, y} → {points}, the
+        // region a room would find there, up to the walls' faces; refused, saying why, when nothing closes round it.
+        r.Query("outlineInside", (q, a) =>
+        {
+            var storeyId = (string?)a["storeyId"] ?? Spatial.Storeys(q.Model).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
+            var (region, problem) = RoomBounds.At(q.Model, q.Services, storeyId, Args.Point(a, "x", "y"));
+            if (region == null) throw new CommandException(problem ?? "No walls close round that point.");
+            return new JsonObject { ["points"] = Slabs.ContourJson(region.Outer) };
+        });
+
         // A hole in a floor's or a ceiling's own outline (audit S4): {id? (the floor or ceiling; else the floor, then the ceiling, of
         // the storey that holds the loop), storeyId?, points, arcs?} → {id}; {id, hole} takes one away. One undo step each.
         r.Command("addOutlineHole", "Hole in outline", (ctx, a) =>

@@ -22,6 +22,10 @@ Værktøjet **Dæk** har en bjælke i kommandolinjen, der tegner omridset som **
 
 ![Værktøjet Dæk tegner en cirkel ved siden af et dæk](shots/floor-shapes.webp)
 
+Den samme bjælke gælder for alle omridsværktøjer (dæk, dækåbning, loft, hul, rum og altan efter omrids, platform, matrikel), og tre af dens valg tager hele omridset med ét klik: **Inside walls** (væggene, der lukker sig om punktet), **From drawn shape** (den mindste lukkede tegnede form om punktet: en lukket polylinje, et rektangel eller en cirkel, der forbliver rund) og **From room** (rummet om punktet, med dets buede kanter).
+
+![Omridsværktøjernes bjælke med From drawn shape valgt](shots/outline-sources.webp)
+
 Enhver kant af et dæk, en dækåbning eller et loft kan være buet. Højreklik på det markerede dæk nær en kant og vælg **Gør til bue**: kanten buer ud med en ottendedel af sin længde, og et rundt greb vises midt på buen. Træk i det for at bøje buen gennem det ønskede punkt (romben, nu midt på korden, flytter stadig kanten). **Gør lige** gør den til en linje igen. Et hjørne mellem to lige kanter kan afrundes eller affases: højreklik på det og vælg **Afrund hjørne…** (skriv radius) eller **Affas hjørne…** (skriv hvor langt tilbage langs hver kant). Hjørnet bliver til to, hvor buen eller affasningen møder kanterne; en radius, der er for stor til kanterne, afvises. Hver er ét fortryd-trin.
 
 ![Et dæk med en buet kant og et afrundet hjørne](shots/floor-curved-edge.webp)

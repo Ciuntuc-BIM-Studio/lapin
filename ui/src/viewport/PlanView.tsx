@@ -71,7 +71,7 @@ import { ScaleChip, ScalePicker, StructurePicker } from './ScaleChip';
 import { DASHES, planDetail, shownAt } from './planDetail';
 import { useLineTypes } from '../modules/core/lineTypes/lineTypes';
 import { axisLine, riseThrough } from './arc';
-import { arrivingDir, circleOutline, rectangleOutline, tangentRise, useOutlineShape } from './outlineShape';
+import { PICKED, arrivingDir, circleOutline, pickOutline, rectangleOutline, tangentRise, useOutlineShape } from './outlineShape';
 import { useLang } from '../i18n';
 import { others, reportPresence, useShare } from '../engine/share';
 
@@ -490,7 +490,14 @@ export function PlanView() {
       case 'polygon': {
         // A shaped outline (forum topic 97): a rectangle, a circle, inside walls, or a polygon whose edges may be arcs.
         const shaped = g.shapes ? useOutlineShape.getState() : null;
-        if (shaped?.shape === 'inside') { void complete([p]); break; }
+        // Or taken whole with a click (audit S4): inside the walls, from a closed drafted shape, from a room.
+        if (shaped && PICKED.includes(shaped.shape)) {
+          void pickOutline(shaped.shape, p, storey?.id ?? null, useCad.getState().host?.viewId ?? ownPlan ?? null).then((o) => {
+            if (typeof o === 'string') notify(o);
+            else void complete(o.pts, undefined, undefined, undefined, o.arcs);
+          });
+          break;
+        }
         if (shaped?.shape === 'rectangle' || shaped?.shape === 'circle') {
           if (!pts.length) { setPts([p]); break; }
           if (shaped.shape === 'rectangle') void complete(rectangleOutline(pts[0], p));

@@ -22,9 +22,13 @@ To grow or shrink the whole outline at once, every edge by the same distance (Ar
 
 ### Curved edges, fillets and round floors
 
-The **Floor** tool's bar, in the command line, draws the outline as a **Polygon** (its corners clicked), a **Rectangle** (two opposite corners), a **Circle** (its centre, then a point on it) or **Inside walls** (a click inside the walls that close round it; the floor goes up to their faces). In a polygon, **Lines (Space)** turns into **Arcs (Space)**: the next edges are arcs, each going on tangent from the edge before, until you press <kbd>Space</kbd> again. **Floor opening** and **Ceiling** have the same bar, without **Inside walls**.
+The **Floor** tool's bar, in the command line, draws the outline as a **Polygon** (its corners clicked), a **Rectangle** (two opposite corners), a **Circle** (its centre, then a point on it) or **Inside walls** (a click inside the walls that close round it; the floor goes up to their faces). In a polygon, **Lines (Space)** turns into **Arcs (Space)**: the next edges are arcs, each going on tangent from the edge before, until you press <kbd>Space</kbd> again. **Floor opening** and **Ceiling** have the same bar.
 
 ![The Floor tool drawing a circle beside a floor](shots/floor-shapes.webp)
+
+The same bar serves every outline tool (floor, floor opening, ceiling, hole, room and balcony by outline, platform, parcel), and three of its choices take the whole outline with one click: **Inside walls** (the walls that close round the point), **From drawn shape** (the smallest closed drafted shape round the point: a closed polyline, a rectangle or a circle, a circle staying round) and **From room** (the room round the point, with its curved edges).
+
+![The outline tools' bar, From drawn shape chosen](shots/outline-sources.webp)
 
 An opening through a floor (a stairwell, a shaft) is **Architecture → Opening** set to **Floor opening** (<kbd>SH</kbd>): its outline drawn inside the floor, as a polygon whose edges may be arcs, a rectangle or a circle.
 

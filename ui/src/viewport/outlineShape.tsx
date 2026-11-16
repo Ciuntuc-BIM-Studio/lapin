@@ -1,16 +1,24 @@
 /**
- * How an outline tool draws (forum topic 97, stage 2): a floor, a floor opening, a ceiling. Its bar offers Polygon (corners
- * clicked; with Arcs on, or Space, the next edges are arcs going on tangent from the edge before), Rectangle (two corners),
- * Circle (its centre, then a point on it or its radius typed) and, for a floor, Inside walls (a click inside the walls that close
- * round it). The plan's polygon gesture with `shapes` reads it; the outline comes to the tool as its corners and, when an edge is
+ * How an outline tool draws (forum topic 97, stage 2; one gesture for every outline tool, audit S4): a floor, a floor opening, a
+ * ceiling, a drawn room or balcony, a platform, a parcel, a hole. Its bar offers Polygon (corners clicked; with Arcs on, or Space,
+ * the next edges are arcs going on tangent from the edge before), Rectangle (two corners), Circle (its centre, then a point on it
+ * or its radius typed), and three sources a click takes the whole outline from: Inside walls, From drawn shape, From room. The plan's polygon gesture with `shapes` reads it; the outline comes to the tool as its corners and, when an edge is
  * curved, their rises (`arcs`, as the engine keeps them).
  */
 
 import { create } from 'zustand';
 import type { Vec2 } from '../platform/module';
 import { tangentAt, arcLength, type Arc } from './arc';
+import { useSession, query } from '../engine/session';
+import { arcsOf, fromPairs, outlinePoints } from './contour';
 
-export type OutlineShape = 'polygon' | 'rectangle' | 'circle' | 'inside';
+/**
+ * The outline's source (audit S4, one gesture for every outline tool): drawn (a polygon whose edges may be arcs, a rectangle, a
+ * circle) or taken with a click: inside the walls that close round it, from a closed drafted shape, from a room.
+ */
+export type OutlineShape = 'polygon' | 'rectangle' | 'circle' | 'inside' | 'drawn' | 'room';
+/** The sources a click takes the whole outline from. */
+export const PICKED: readonly OutlineShape[] = ['inside', 'drawn', 'room'];
 
 export const useOutlineShape = create<{ shape: OutlineShape; arcs: boolean }>(() => ({ shape: 'polygon', arcs: false }));
 
@@ -56,14 +64,16 @@ export function arrivingDir(pts: Vec2[], rises: number[]): Vec2 | null {
   return tangentAt(arc, arcLength(arc));
 }
 
-/** The tool's bar: the shape it draws, and in a polygon whether the next edges are arcs (Space). */
-export function OutlineShapeBar({ inside = false }: { inside?: boolean }) {
+/** The tool's bar: the shape it draws, and in a polygon whether the next edges are arcs (Space); or where a click takes it from. */
+export function OutlineShapeBar() {
   const { shape, arcs } = useOutlineShape();
   const choices: [OutlineShape, string, string][] = [
     ['polygon', 'Polygon', 'Click the corners, then the first one again (or Enter)'],
     ['rectangle', 'Rectangle', 'Two opposite corners'],
     ['circle', 'Circle', 'Its centre, then a point on it (or its radius typed)'],
-    ...(inside ? [['inside', 'Inside walls', 'Click inside the walls that close round it'] as [OutlineShape, string, string]] : []),
+    ['inside', 'Inside walls', 'Click inside the walls that close round it'],
+    ['drawn', 'From drawn shape', 'Click inside a closed drafted shape: a polyline, a rectangle, a circle'],
+    ['room', 'From room', 'Click inside a room: its outline'],
   ];
   return (
     <span className="outline-shape" data-testid="outline-shape">
@@ -74,5 +84,58 @@ export function OutlineShapeBar({ inside = false }: { inside?: boolean }) {
     </span>
   );
 }
-export const FloorShapeBar = () => <OutlineShapeBar inside />;
-export const PlainShapeBar = () => <OutlineShapeBar />;
+export const FloorShapeBar = OutlineShapeBar;
+export const PlainShapeBar = OutlineShapeBar;
+
+/** Whether a point lies inside a closed loop (even-odd). */
+export function inLoop(loop: Vec2[], p: Vec2): boolean {
+  let inside = false;
+  for (let i = 0, j = loop.length - 1; i < loop.length; j = i++) {
+    const a = loop[i], b = loop[j];
+    if ((a.y > p.y) !== (b.y > p.y) && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) inside = !inside;
+  }
+  return inside;
+}
+const area = (loop: Vec2[]) => Math.abs(loop.reduce((s, a, i) => { const b = loop[(i + 1) % loop.length]; return s + a.x * b.y - b.x * a.y; }, 0) / 2);
+
+export interface PickedOutline { pts: Vec2[]; arcs?: number[] }
+
+/** A closed drafted shape as an outline: a closed polyline's corners; a circle as four quarter arcs. */
+export function outlineOfDraft(shape: unknown): PickedOutline | null {
+  const s = shape as { type?: string; pts?: unknown; closed?: boolean; c?: [number, number]; r?: number } | null;
+  if (!s) return null;
+  if (s.type === 'polyline' && s.closed) { const pts = fromPairs(s.pts); return pts.length >= 3 ? { pts } : null; }
+  if (s.type === 'circle' && Array.isArray(s.c) && typeof s.r === 'number') return circleOutline({ x: s.c[0], y: s.c[1] }, { x: s.c[0] + s.r, y: s.c[1] });
+  return null;
+}
+
+/**
+ * The outline a click takes (audit S4): inside the walls round it (the engine's), the smallest closed drafted shape of the plan
+ * round it (`viewId`: the plan's own drafting; any plan's when none), or the smallest room of the storey round it (a drawn room's
+ * corners and arcs; else the outline it found). A text saying why when there is none.
+ */
+export async function pickOutline(source: OutlineShape, p: Vec2, storeyId: string | null, viewId?: string | null): Promise<PickedOutline | string> {
+  if (source === 'inside') {
+    const r = await query<{ points?: unknown }>('architecture.outlineInside', { ...(storeyId ? { storeyId } : {}), x: p.x, y: p.y });
+    const pts = fromPairs(r?.points);
+    return pts.length >= 3 ? { pts } : 'No walls close round that point.';
+  }
+  const { nodes, render } = useSession.getState();
+  const found: PickedOutline[] = [];
+  for (const n of nodes.values()) {
+    if (source === 'drawn') {
+      if (n.props.predefinedType !== 'DRAFT' || (viewId && n.props.viewId !== viewId)) continue;
+      const o = outlineOfDraft(n.props.shape);
+      if (o) found.push(o);
+    } else if (source === 'room' && n.type === 'IfcSpace' && (!storeyId || n.storeyId === storeyId)) {
+      const corners = fromPairs(n.props.contour);
+      if (n.props.auto === false && corners.length >= 3) { found.push({ pts: corners, arcs: arcsOf(n.props.arcs, corners.length) }); continue; }
+      const item = render.get(n.id)?.plan.find((x) => x.kind === 'room');
+      const pts = item ? Array.from({ length: Math.floor(item.points.length / 2) }, (_, i) => ({ x: item.points[2 * i], y: item.points[2 * i + 1] })) : corners;
+      if (pts.length >= 3) found.push({ pts });
+    }
+  }
+  const hit = found.filter((o) => inLoop(outlinePoints(o), p)).sort((a, b) => area(outlinePoints(a)) - area(outlinePoints(b)))[0];
+  if (hit) return hit;
+  return source === 'drawn' ? 'Click inside a closed drafted shape (a closed polyline, a rectangle or a circle).' : 'Click inside a room.';
+}

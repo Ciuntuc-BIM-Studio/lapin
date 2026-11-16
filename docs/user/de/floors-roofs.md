@@ -22,6 +22,10 @@ Die Leiste des Werkzeugs **Decke** in der Befehlszeile zeichnet den Umriss als *
 
 ![Das Werkzeug Decke zeichnet einen Kreis neben einer Decke](shots/floor-shapes.webp)
 
+Dieselbe Leiste dient jedem Umrisswerkzeug (Decke, Deckenöffnung, Unterdecke, Loch, Raum und Balkon nach Umriss, Plattform, Grundstück), und drei ihrer Optionen übernehmen den ganzen Umriss mit einem Klick: **Inside walls** (die Wände, die sich um den Punkt schließen), **From drawn shape** (die kleinste geschlossene gezeichnete Form um den Punkt: eine geschlossene Polylinie, ein Rechteck oder ein Kreis, der rund bleibt) und **From room** (der Raum um den Punkt, mit seinen gebogenen Kanten).
+
+![Die Leiste der Umrisswerkzeuge, From drawn shape gewählt](shots/outline-sources.webp)
+
 Jede Kante einer Decke, einer Deckenöffnung oder einer abgehängten Decke kann gebogen sein. Klicken Sie mit der rechten Maustaste nahe einer Kante auf die ausgewählte Decke und wählen Sie **Zum Bogen machen**: Die Kante wölbt sich um ein Achtel ihrer Länge nach außen, und in der Mitte des Bogens erscheint ein runder Griff. Ziehen Sie ihn, um den Bogen durch den gewünschten Punkt zu biegen (die Raute, nun in der Mitte der Sehne, verschiebt weiterhin die Kante). **Gerade machen** macht sie wieder zur Linie. Eine Ecke zwischen zwei geraden Kanten kann abgerundet oder abgefast werden: Klicken Sie sie mit der rechten Maustaste an und wählen Sie **Ecke abrunden…** (Radius eingeben) oder **Ecke abfasen…** (wie weit entlang jeder Kante zurück). Aus der Ecke werden zwei, wo der Bogen oder die Fase auf die Kanten trifft; ein für die Kanten zu großer Radius wird abgelehnt. Jedes ist ein Rückgängig-Schritt.
 
 ![Eine Decke mit einer gebogenen Kante und einer abgerundeten Ecke](shots/floor-curved-edge.webp)

@@ -770,6 +770,7 @@
     {"name":"architecture.lintelTypes","module":"architecture","args":[]},
     {"name":"architecture.noonShade","module":"architecture","args":[{"name":"id","type":"str"}]},
     {"name":"architecture.openingReferences","module":"architecture","args":[{"name":"id","type":"str"},{"name":"wallId","type":"str"}]},
+    {"name":"architecture.outlineInside","module":"architecture","args":[{"name":"storeyId","type":"str"},{"name":"x","type":"float"},{"name":"y","type":"float"}]},
     {"name":"architecture.readTypes","module":"architecture","args":[{"name":"text","type":"str"}]},
     {"name":"architecture.roofPreview","module":"architecture","args":[{"name":"id","type":"str"}]},
     {"name":"architecture.roomOpenings","module":"architecture","args":[{"name":"id","type":"str"}]},

@@ -22,6 +22,10 @@ La barra de la herramienta **Losa**, en la línea de comandos, dibuja el contorn
 
 ![La herramienta Losa dibujando un círculo junto a una losa](shots/floor-shapes.webp)
 
+La misma barra sirve a todas las herramientas de contorno (forjado, hueco de forjado, techo, hueco en el contorno, habitación y balcón por contorno, plataforma, parcela), y tres de sus opciones toman el contorno entero con un clic: **Inside walls** (los muros que se cierran alrededor del punto), **From drawn shape** (la forma dibujada cerrada más pequeña alrededor del punto: una polilínea cerrada, un rectángulo o un círculo, que sigue redondo) y **From room** (la habitación alrededor del punto, con sus bordes curvos).
+
+![La barra de las herramientas de contorno, con From drawn shape elegido](shots/outline-sources.webp)
+
 Cualquier borde de una losa, de un hueco en losa o de un falso techo puede ser curvo. Haga clic derecho en la losa seleccionada cerca de un borde y elija **Convertir en arco**: el borde se curva hacia fuera un octavo de su longitud y aparece un pinzamiento redondo en el centro del arco. Arrástrelo para curvar el arco por el punto que quiera (el rombo, ahora en el centro de la cuerda, sigue moviendo el borde). **Convertir en recto** lo vuelve una línea. Una esquina entre dos bordes rectos se puede redondear o achaflanar: haga clic derecho en ella y elija **Redondear esquina…** (escriba el radio) o **Achaflanar esquina…** (escriba cuánto retrocede por cada borde). La esquina se convierte en dos, donde el arco o el chaflán encuentran los bordes; un radio demasiado grande para los bordes se rechaza. Cada uno es un paso de deshacer.
 
 ![Una losa con un borde curvo y una esquina redondeada](shots/floor-curved-edge.webp)

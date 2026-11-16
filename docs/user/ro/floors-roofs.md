@@ -26,6 +26,10 @@ Bara uneltei **Placă**, din linia de comandă, desenează conturul ca **Poligon
 
 ![Unealta Placă desenând un cerc lângă o placă](shots/floor-shapes.webp)
 
+Aceeași bară servește toate uneltele cu contur (placă, gol în placă, tavan, gol în contur, încăpere și balcon după contur, platformă, parcelă), iar trei dintre alegeri iau tot conturul dintr-un clic: **Inside walls** (pereții care se închid în jurul punctului), **From drawn shape** (cea mai mică formă desenată închisă din jurul punctului: o polilinie închisă, un dreptunghi sau un cerc, cercul rămânând rotund) și **From room** (încăperea din jurul punctului, cu laturile ei curbe).
+
+![Bara uneltelor cu contur, cu From drawn shape ales](shots/outline-sources.webp)
+
 Un gol prin placă (o casă a scării, un ghene) e **Arhitectură → Gol** cu **Gol în placă** (<kbd>SH</kbd>): conturul lui desenat în placă, ca un poligon cu laturi care pot fi arce, un dreptunghi sau un cerc.
 
 Orice latură a unei plăci, a unui gol în placă sau a unui tavan poate fi curbă. Dă clic dreapta pe placa selectată lângă o latură și alege **Fă arc**: latura se bombează în afară cu o optime din lungimea ei, iar la mijlocul arcului apare un mâner rotund. Trage de el ca să curbezi arcul prin punctul dorit (rombul, acum la mijlocul coardei, mută în continuare latura). **Fă dreaptă** o face din nou linie. Un colț între două laturi drepte poate fi rotunjit sau teșit: dă clic dreapta pe el și alege **Racordează colțul…** (tastezi raza) sau **Teșește colțul…** (tastezi cât se retrage pe fiecare latură). Colțul devine două, unde arcul sau teșitura întâlnește laturile; o rază prea mare pentru laturi e refuzată. Fiecare e un singur pas de anulare.

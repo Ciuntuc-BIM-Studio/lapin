@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { arrivingDir, circleOutline, rectangleOutline, tangentRise } from './outlineShape';
+import { arrivingDir, circleOutline, inLoop, outlineOfDraft, rectangleOutline, tangentRise } from './outlineShape';
 
 describe('outline tools\' shapes (forum topic 97, stage 2)', () => {
   it('draws a rectangle anticlockwise whichever corners are clicked', () => {
@@ -29,5 +29,20 @@ describe('outline tools\' shapes (forum topic 97, stage 2)', () => {
     const d = arrivingDir([{ x: 0, y: 0 }, { x: 2, y: 0 }], [-1])!;
     expect(d.x).toBeCloseTo(0);
     expect(d.y).toBeCloseTo(1);
+  });
+});
+
+describe('an outline taken from a source (audit S4)', () => {
+  it('takes a closed polyline and a circle as outlines, not an open line', () => {
+    expect(outlineOfDraft({ type: 'polyline', pts: [[0, 0], [2, 0], [2, 1]], closed: true })!.pts).toHaveLength(3);
+    expect(outlineOfDraft({ type: 'polyline', pts: [[0, 0], [2, 0], [2, 1]], closed: false })).toBeNull();
+    const c = outlineOfDraft({ type: 'circle', c: [1, 1], r: 2 })!;
+    expect(c.pts).toHaveLength(4);
+    expect(c.arcs).toHaveLength(4);
+  });
+  it('knows a point inside a loop', () => {
+    const sq = [{ x: 0, y: 0 }, { x: 2, y: 0 }, { x: 2, y: 2 }, { x: 0, y: 2 }];
+    expect(inLoop(sq, { x: 1, y: 1 })).toBe(true);
+    expect(inLoop(sq, { x: 3, y: 1 })).toBe(false);
   });
 });

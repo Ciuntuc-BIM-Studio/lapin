@@ -1761,7 +1761,7 @@ export const scenes = [
       await t.wait(500);
       // The Floor tool's bar: Polygon (with arcs), Rectangle, Circle, Inside walls; a circle from its centre and a point on it.
       await t.tool('architecture.slab');
-      await t.page.locator('[data-testid=outline-shape] [data-shape=circle]').click();
+      await t.page.locator('[data-testid=command-line] [data-testid=outline-shape] [data-shape=circle]').click();
       const [cx, cy] = await t.planPoint(10, 2), [ox, oy] = await t.planPoint(11.6, 2);
       await t.page.mouse.click(cx, cy);
       await t.page.mouse.move(ox, oy, { steps: 6 });
@@ -1773,7 +1773,7 @@ export const scenes = [
       await t.wait(1200);
       const round = (await t.nodes()).find((n) => n.type === 'IfcSlab' && Array.isArray(n.props.arcs));
       t.expect(round && round.props.contour.length === 4, 'the circle drawn is a floor of four quarter arcs');
-      await t.page.locator('[data-testid=outline-shape] [data-shape=polygon]').click();
+      await t.page.locator('[data-testid=command-line] [data-testid=outline-shape] [data-shape=polygon]').click();
       await t.keys('Escape');
       await t.ui({ tool: null });
       await t.wait(300);
@@ -1910,6 +1910,42 @@ export const scenes = [
       await t.page.mouse.move(hx + 200, hy + 200);
       await t.wait(400);
       await t.shot('floor-holes', { of: '.plan-svg', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
+    // One outline gesture with sources (audit S4): every outline tool's bar takes the outline whole with a click, inside the walls,
+    // from a closed drafted shape or from a room; here a floor from a drafted circle and a ceiling from a room.
+    id: 'outline-sources',
+    touches: ['architecture', 'drafting'],
+    async run(t) {
+      await t.fresh();
+      await t.ui({ keyPlan: false });
+      const storey = await t.storey();
+      await t.cmd('drafting.draw', { viewId: `plan:${storey}`, shape: { type: 'circle', c: [3, 3], r: 2 } });
+      await t.cmd('architecture.addRoom', { storeyId: storey, points: [[7, 0], [12, 0], [12, 6], [7, 6]], arcs: [0, -1, 0, 0], name: 'Hall' });
+      await t.ui({ view: 'plan', planViewId: null });
+      await t.wait(400);
+      await t.fit();
+      await t.wait(500);
+      await t.tool('architecture.slab');
+      await t.page.locator('[data-testid=command-line] [data-testid=outline-shape] [data-shape=drawn]').click();
+      t.expect(await t.page.locator('[data-testid=command-line] [data-testid=outline-shape] [data-shape=room]').count() === 1, 'the bar offers From drawn shape and From room');
+      await t.wait(300);
+      await t.shot('outline-sources', { of: '[data-testid=command-line]', pad: 4, maxHeight: 120 });
+      const [dx, dy] = await t.planPoint(3, 3.5);
+      await t.page.mouse.click(dx, dy);
+      await t.until(async () => (await t.nodes()).some((n) => n.type === 'IfcSlab' && Array.isArray(n.props.arcs) && n.props.contour.length === 4), 'a round floor from the drafted circle');
+      await t.keys('Escape');
+      await t.ui({ tool: null });
+      await t.tool('architecture.ceiling');
+      await t.page.locator('[data-testid=command-line] [data-testid=outline-shape] [data-shape=room]').click();
+      const [rx, ry] = await t.planPoint(9, 3);
+      await t.page.mouse.click(rx, ry);
+      await t.until(async () => (await t.nodes()).some((n) => n.type === 'LapinCeiling' && Array.isArray(n.props.arcs)), 'a ceiling from the room, its curved edge with it');
+      await t.page.locator('[data-testid=command-line] [data-testid=outline-shape] [data-shape=polygon]').click();
+      await t.keys('Escape');
+      await t.ui({ tool: null });
       await t.ui({ keyPlan: true });
     },
   },

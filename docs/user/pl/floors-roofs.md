@@ -22,6 +22,10 @@ Pasek narzędzia **Strop** w wierszu poleceń rysuje obrys jako **Wielokąt** (k
 
 ![Narzędzie Strop rysujące okrąg obok stropu](shots/floor-shapes.webp)
 
+Ten sam pasek służy wszystkim narzędziom obrysu (strop, otwór w stropie, sufit, otwór w obrysie, pomieszczenie i balkon z obrysu, platforma, działka), a trzy jego opcje biorą cały obrys jednym kliknięciem: **Inside walls** (ściany zamykające się wokół punktu), **From drawn shape** (najmniejszy zamknięty narysowany kształt wokół punktu: zamknięta polilinia, prostokąt lub okrąg, który zostaje okrągły) i **From room** (pomieszczenie wokół punktu, z jego łukowymi krawędziami).
+
+![Pasek narzędzi obrysu z wybranym From drawn shape](shots/outline-sources.webp)
+
 Każda krawędź stropu, otworu w stropie lub sufitu może być krzywa. Kliknij prawym przyciskiem zaznaczony strop przy krawędzi i wybierz **Zamień na łuk**: krawędź wygina się na zewnątrz o jedną ósmą swojej długości, a na środku łuku pojawia się okrągły uchwyt. Przeciągnij go, aby wygiąć łuk przez wybrany punkt (romb, teraz na środku cięciwy, nadal przesuwa krawędź). **Wyprostuj** zamienia ją z powrotem w linię. Narożnik między dwiema prostymi krawędziami można zaokrąglić lub sfazować: kliknij go prawym przyciskiem i wybierz **Zaokrąglij narożnik…** (wpisz promień) lub **Sfazuj narożnik…** (wpisz, jak daleko wstecz wzdłuż każdej krawędzi). Narożnik staje się dwoma, tam gdzie łuk lub faza spotyka krawędzie; zbyt duży promień jest odrzucany. Każde z nich to jeden krok cofania.
 
 ![Strop z krzywą krawędzią i zaokrąglonym narożnikiem](shots/floor-curved-edge.webp)

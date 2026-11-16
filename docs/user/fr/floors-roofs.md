@@ -22,6 +22,10 @@ La barre de l'outil **Dalle**, dans la ligne de commande, dessine le contour en 
 
 ![L'outil Dalle dessinant un cercle à côté d'une dalle](shots/floor-shapes.webp)
 
+La même barre sert à tous les outils de contour (plancher, trémie, plafond, trou, pièce et balcon par contour, plateforme, parcelle), et trois de ses choix prennent tout le contour d’un clic : **Inside walls** (les murs qui se ferment autour du point), **From drawn shape** (la plus petite forme dessinée fermée autour du point : une polyligne fermée, un rectangle ou un cercle, qui reste rond) et **From room** (la pièce autour du point, avec ses bords courbes).
+
+![La barre des outils de contour, From drawn shape choisi](shots/outline-sources.webp)
+
 Toute arête d'une dalle, d'une trémie ou d'un faux plafond peut être courbe. Faites un clic droit sur la dalle sélectionnée près d'une arête et choisissez **Faire un arc** : l'arête se bombe vers l'extérieur d'un huitième de sa longueur, et une poignée ronde apparaît au milieu de l'arc. Faites-la glisser pour courber l'arc par le point voulu (le losange, désormais au milieu de la corde, déplace toujours l'arête). **Rendre droite** la refait en ligne. Un coin entre deux arêtes droites peut être arrondi ou chanfreiné : faites un clic droit dessus et choisissez **Arrondir le coin…** (saisissez le rayon) ou **Chanfreiner le coin…** (saisissez le recul le long de chaque arête). Le coin devient deux, là où l'arc ou le chanfrein rencontre les arêtes ; un rayon trop grand pour les arêtes est refusé. Chacun est une seule étape d'annulation.
 
 ![Une dalle avec une arête courbe et un coin arrondi](shots/floor-curved-edge.webp)
