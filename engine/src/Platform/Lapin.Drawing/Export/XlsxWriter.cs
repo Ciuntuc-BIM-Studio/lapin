@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.IO.Compression;
-using System.Security;
 using System.Text;
 
 namespace Lapin.Drawing.Export;

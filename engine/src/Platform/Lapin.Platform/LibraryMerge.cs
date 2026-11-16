@@ -45,7 +45,11 @@ public static class LibraryMerge
         return o.Distinct().ToList();
     }
 
-    /// <summary>„Name (2)”, „Name (3)”…: the first that no entity of <paramref name="cls"/> has.</summary>
+    /// <summary>
+    /// „Name (2)”, „Name (3)”…: the first that no entity of <paramref name="cls"/> has. An import's copy kept beside the
+    /// project's own always takes its number in brackets (the import's previews and reports name it so), unlike the free names
+    /// of everything else (<see cref="Names.Free(Func{string, bool}, string)"/>, „Name 2”).
+    /// </summary>
     public static string FreeName(IModelView m, string cls, string name)
     {
         var n = 2;

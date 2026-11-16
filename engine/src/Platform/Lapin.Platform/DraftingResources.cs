@@ -162,8 +162,7 @@ public static class DraftingResources
     /// <summary>A name no material has: the one asked for, else with a number after it.</summary>
     static string FreeName(IModelView m, string name)
     {
-        if (Materials.Find(m, name) == null) return name;
-        for (var i = 2; ; i++) if (Materials.Find(m, $"{name} {i}") == null) return $"{name} {i}";
+        return Lapin.Model.Names.Free(n => Materials.Find(m, n) != null, name);
     }
 
     /// <summary>Whether a JSON key names a material (material, gutterMaterial, materials: {frame…}).</summary>

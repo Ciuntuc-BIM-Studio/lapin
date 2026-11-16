@@ -296,8 +296,7 @@ public static class CableCarriers
     static string Unique(IModelView m, string name)
     {
         var taken = m.OfClass(TypeClass).Select(t => t.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (!taken.Contains(name)) return name;
-        for (var i = 2; ; i++) if (!taken.Contains($"{name} {i}")) return $"{name} {i}";
+        return Lapin.Model.Names.Free(taken.Contains, name);
     }
 
     static JsonObject TypeAttrs(CarrierKind kind, JsonObject a)

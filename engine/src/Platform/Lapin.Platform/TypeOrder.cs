@@ -51,14 +51,11 @@ public static class TypeOrder
         ctx.Replace(project.With(attrs: attrs));
     }
 
-    /// <summary>„Name (2)”, or the next number no other type of the class has („Wall (2)” gives „Wall (3)”).</summary>
+    /// <summary>A copy's name, the first free by <see cref="Lapin.Model.Names.Free(Func{string, bool}, string)"/>: „Brick 25 (2)”, „Wall 2”; a copy of „Brick 25 (2)” is „Brick 25 (3)”.</summary>
     public static string CopyName(IModelView m, string cls, string name)
     {
         var taken = m.OfClass(cls).Select(e => e.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var match = Regex.Match(name, @"^(.*) \((\d+)\)$");
-        var (stem, n) = match.Success ? (match.Groups[1].Value, int.Parse(match.Groups[2].Value) + 1) : (name, 2);
-        while (taken.Contains($"{stem} ({n})")) n++;
-        return $"{stem} ({n})";
+        return Lapin.Model.Names.Free(taken.Contains, name);
     }
 
     /// <summary>The material sets a type owns: copied with it, where a material of the library is shared.</summary>

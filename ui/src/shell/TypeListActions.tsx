@@ -1,6 +1,6 @@
 /**
  * A type's Duplicate, Move up and Move down (forum #71), the same in every type dialog: the copy is the engine's
- * (types.duplicate: a type of its own, „Name (2)”, listed after the original), the order the project's for the type's
+ * (types.duplicate: a type of its own, „Name 2”, „Brick 25 (2)”, listed after the original), the order the project's for the type's
  * class (types.move), read back by every type list and picker (ofClass). Each is one undo step.
  */
 

@@ -39,8 +39,7 @@ public static class Symbols
     public static string FreeName(IModelView m, string name, string? except = null)
     {
         var taken = m.OfClass(Class).Where(e => e.Id != except).Select(e => e.Name).Concat(BuiltinSymbols.All.Select(b => b.Name)).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (!taken.Contains(name)) return name;
-        for (var n = 2; ; n++) if (!taken.Contains($"{name} {n}")) return $"{name} {n}";
+        return Lapin.Model.Names.Free(taken.Contains, name);
     }
 
     static Entity Require(IModelView m, string? id) =>
