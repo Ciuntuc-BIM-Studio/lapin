@@ -1,5 +1,6 @@
 /** Core: always there — selecting, measuring, the views and how they look, materials and drafting standards. */
 
+import { LibraryImportHost } from '../../platform/ImportPreview';
 import { StoreySection } from './StoreySection';
 import { toggleDrafts3d, toggleDragMove3d, toggleDxf3d, toggleDrillSelect, toggleGrid, toggleOrbitSelection, toggleThinLines, toggleZoomToCursor, useDisplay } from '../../app/display';
 import { measure } from './measure';
@@ -160,7 +161,7 @@ const butDiscipline = (cls: string) => () => (useSession.getState().info?.nodeTy
 const viewFields = (node: NodeDto) => butDiscipline('LapinView')().filter((k) => viewShowsField(node.props.kind, k));
 
 /** What the core keeps running while the workspace is open: the 3D's visibility and storeys shown, the links' looks. */
-function CoreBackground() { return <><Visibility3D /><Storeys3DLooks /><LinksLook /><LinkedProjectsWatch /></>; }
+function CoreBackground() { return <><Visibility3D /><Storeys3DLooks /><LinksLook /><LinkedProjectsWatch /><LibraryImportHost /></>; }
 
 /** Manage → Clash check…: the openings checked against MEP (a tab of Clash detection when the product has it, else a window of its own). */
 const openingsCheck: ToolDef = {

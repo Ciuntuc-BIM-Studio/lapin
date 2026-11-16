@@ -62,12 +62,14 @@ public static class TypePacks
             resources.Add((JsonNode)Item(e));
             foreach (var r in References(m, e.Attrs)) Need(r);
         }
-        var o = new JsonObject { ["format"] = Format, ["version"] = 1 };
+        var o = new JsonObject();
         if (name?.Trim() is { Length: > 0 } n) o["name"] = n;
         o["types"] = types;
         o["resources"] = resources;
-        return o;
+        return LibraryFile.Write(Spec, o, LibraryFile.SourceOf(m));
     }
+
+    public static LibraryFile.Spec Spec => LibraryFile.Of(Format);
 
     static JsonArray Strings(IEnumerable<string> list) => new(list.Select(x => (JsonNode)x).ToArray());
 
@@ -128,10 +130,7 @@ public static class TypePacks
     /// <summary>A pack read and checked; a bad one refused whole, with a sentence.</summary>
     public static Pack Read(string text, Func<string, ClassDescriptor?> describe)
     {
-        JsonNode? doc;
-        try { doc = JsonNode.Parse(text.TrimStart('﻿')); } catch (JsonException) { throw new CommandException("The file is not a Lapin type pack: it is not JSON."); }
-        if (doc is not JsonObject o || (string?)o["format"] != Format) throw new CommandException("The file is not a Lapin type pack (.lapintypes).");
-        if (Json.Number(o["version"]) is not { } version || version > 1) throw new CommandException("This type pack was written by a newer Lapin: update Lapin to read it.");
+        var o = LibraryFile.Read(text, Spec).Root;
         var refs = new HashSet<string>();
         PackItem ItemOf(JsonNode? n, bool type)
         {
@@ -436,6 +435,64 @@ public static class TypePacks
         return new Outcome(t.Ref, t.Class, existing.Name, existing.Id, "updated");
     }
 
+    // ------------------------------------------------------------ the one import (LibraryMerge)
+
+    /// <summary>
+    /// What an import would do (<see cref="LibraryMerge"/>): each type new, the same as the project's (reused) or of the same name
+    /// and made otherwise (keep both by default); each material the pack carries new, the same, or of the same name and defined
+    /// otherwise (the project's kept by default: „skip”).
+    /// </summary>
+    public static List<LibraryMerge.Row> Rows(IQueryContext q, Pack pack)
+    {
+        var (materials, conflicts) = Conflicts(q.Model, pack);
+        var rows = new List<LibraryMerge.Row>();
+        foreach (var t in pack.Types)
+        {
+            var exists = q.Model.OfClass(t.Class).Any(e => string.Equals(e.Name, t.Name, StringComparison.OrdinalIgnoreCase));
+            var c = conflicts.FirstOrDefault(x => x.Key == t.Ref);
+            rows.Add(new LibraryMerge.Row("type:" + t.Ref, q.Describe(t.Class)?.Label ?? t.Class, t.Name,
+                !exists ? LibraryMerge.Match.New : c is null ? LibraryMerge.Match.Same : LibraryMerge.Match.Name, c?.Differs));
+        }
+        foreach (var r in pack.Resources.Where(x => x.Class == IfcClass.Material).DistinctBy(x => x.Name, StringComparer.OrdinalIgnoreCase))
+        {
+            var c = materials.FirstOrDefault(x => string.Equals(x.Name, r.Name, StringComparison.OrdinalIgnoreCase));
+            rows.Add(new LibraryMerge.Row("material:" + r.Name, "Material", r.Name,
+                Materials.Find(q.Model, r.Name) is null ? LibraryMerge.Match.New : c is null ? LibraryMerge.Match.Same : LibraryMerge.Match.Name, c?.Differs, Default: LibraryMerge.Skip));
+        }
+        return rows;
+    }
+
+    /// <summary>The unified choices (<c>{"type:ref" | "material:name": both | update | skip}</c>, else <paramref name="all"/>) as the pack's own.</summary>
+    static Choices ChoicesOf(IReadOnlyList<LibraryMerge.Row> rows, JsonObject? given, string? all)
+    {
+        var materials = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var types = new Dictionary<string, string>();
+        foreach (var row in rows.Where(x => x.Conflict))
+        {
+            var c = LibraryMerge.Decide(row, given, all);
+            if (row.Key.StartsWith("material:", StringComparison.Ordinal)) materials[row.Key[9..]] = LibraryMerge.Word(c, LibraryMerge.MaterialChoices);
+            else types[row.Key[5..]] = c;
+        }
+        return new Choices(materials, types);
+    }
+
+    static JsonObject Result(List<Outcome> types, LibraryMerge.MaterialTally materials) => new()
+    {
+        ["types"] = new JsonArray(types.Select(t => (JsonNode)new JsonObject { ["ref"] = t.Ref, ["class"] = t.Class, ["name"] = t.Name, ["id"] = t.Id, ["status"] = t.Status }).ToArray()),
+        ["created"] = types.Count(t => t.Status is "created" or "renamed"),
+        ["reused"] = types.Count(t => t.Status == "reused"),
+        ["updated"] = types.Count(t => t.Status == "updated"),
+        ["skipped"] = types.Count(t => t.Status == "skipped"),
+        ["materials"] = materials.Made,
+        ["materialsUpdated"] = materials.Updated,
+        ["materialsKept"] = materials.Kept,
+        ["materialsRenamed"] = Strings(materials.Renamed),
+        // Counted as every library import counts (LibraryMerge.Tally): `updated` stays the types' (as it always was).
+        ["added"] = types.Count(t => t.Status is "created" or "renamed") + materials.Made,
+        ["kept"] = types.Count(t => t.Status == "reused") + materials.Kept,
+        ["renamed"] = Strings(types.Where(t => t.Status == "renamed").Select(t => t.Name).Concat(materials.Renamed)),
+    };
+
     // ------------------------------------------------------------ commands
 
     public static void Register(IModuleRegistry r)
@@ -491,18 +548,14 @@ public static class TypePacks
             var chosen = (a["refs"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet();
             var choices = new Choices(LibraryMerge.Choices(a["materials"], LibraryMerge.MaterialChoices), LibraryMerge.Choices(a["types"], LibraryMerge.TypeChoices));
             var (types, materials) = Import(ctx, pack, chosen, choices);
-            return new JsonObject
-            {
-                ["types"] = new JsonArray(types.Select(t => (JsonNode)new JsonObject { ["ref"] = t.Ref, ["class"] = t.Class, ["name"] = t.Name, ["id"] = t.Id, ["status"] = t.Status }).ToArray()),
-                ["created"] = types.Count(t => t.Status is "created" or "renamed"),
-                ["reused"] = types.Count(t => t.Status == "reused"),
-                ["updated"] = types.Count(t => t.Status == "updated"),
-                ["skipped"] = types.Count(t => t.Status == "skipped"),
-                ["materials"] = materials.Made,
-                ["materialsUpdated"] = materials.Updated,
-                ["materialsKept"] = materials.Kept,
-                ["materialsRenamed"] = Strings(materials.Renamed),
-            };
+            return Result(types, materials);
         });
+
+        r.Service<ILibraryFormat>(new LibraryFormat(Spec, (q, text) => Rows(q, Read(text, q.Describe)), (ctx, text, choices, all) =>
+        {
+            var pack = Read(text, ctx.Describe);
+            var (types, materials) = Import(ctx, pack, null, ChoicesOf(Rows(ctx.Query, pack), choices, all));
+            return Result(types, materials);
+        }));
     }
 }

@@ -109,7 +109,7 @@ public sealed class StandardsLibraryTests
         b.Run("standards.importFrom", new JsonObject { ["text"] = text, ["choices"] = new JsonObject { ["text:title"] = "both" }, ["options"] = true });
         var book = DraftingResources.Book(b.Model);
         Assert.Equal(3.5, book.TextStyles.Single(t => t.Id == "title").Height);
-        Assert.Equal(5, book.TextStyles.Single(t => t.Name == "Title 2").Height);
+        Assert.Equal(5, book.TextStyles.Single(t => t.Name == "Title (2)").Height);
         Assert.Contains(book.LineTypes!, l => l.Name == "Office border");
         Assert.Equal("Office border", book.Layers.Single(l => l.Id == "A-ANNO").LineType);
         Assert.Equal("cm", book.Units);

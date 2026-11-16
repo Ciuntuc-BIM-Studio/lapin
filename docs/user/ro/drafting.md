@@ -295,7 +295,7 @@ Un simbol așezat se selectează ca orice element. În **Proprietăți → Simbo
 
 ### Schimbul de simboluri
 
-**Exportă…** scrie simbolul ca fișier **.lapinsymbols**; **Importă…** citește unul, în proiect sau în biblioteca acestui calculator (caseta de lângă buton). Unde proiectul are deja un simbol cu același nume, o listă arată care sunt la fel și care diferă, cu o alegere pentru fiecare: **păstrează**, **actualizează** (copiile așezate îl urmează), **păstrează-le pe amândouă** sau **sari**.
+**Exportă…** scrie simbolul ca fișier **.lapinsymbols**; **Importă…** citește unul, în proiect sau în biblioteca acestui calculator (caseta de lângă buton). Unde proiectul are deja un simbol cu același nume, desenat altfel, previzualizarea importului îl arată cu o alegere: **Păstrează-le pe amândouă** (implicit: cel din fișier intră ca *Nume (2)*), **Înlocuiește** (copiile așezate îl urmează) sau **Sari peste**; vezi [Importul unui fișier de bibliotecă](interface.md#importul-unui-fisier-de-biblioteca-o-singura-previzualizare-aceleasi-alegeri).
 
 ### Marcajele vederilor
 
@@ -361,12 +361,12 @@ Tipurile de linie ale proiectului sunt oferite oriunde se alege un tip de linie:
 
 ![Standarde de desen, Tipuri de linie](shots/line-types.webp)
 
-**Importă .lin…** citește un fișier de tipuri de linie AutoCAD. Dialogul îi listează tipurile cu modelele lor, **Liniuțele din fișier sunt în** milimetri sau țoli, și o casetă pentru fiecare, ca să-l lași deoparte. Un tip al cărui nume îl are deja proiectul, cu alte liniuțe, întreabă: **Actualizează-l pe al proiectului**, **Păstrează-le pe amândouă** sau **Sari peste**, ori **Aplică la toate…**. Textul și formele dintr-un tip de linie complex sunt lăsate deoparte; liniuțele lui se păstrează. **Exportă .lin…** scrie tipurile proiectului pentru AutoCAD.
+**Importă .lin…** citește un fișier de tipuri de linie AutoCAD. Dialogul îi listează tipurile cu modelele lor, **Liniuțele din fișier sunt în** milimetri sau țoli, și o casetă pentru fiecare, ca să-l lași deoparte. Un tip al cărui nume îl are deja proiectul, cu alte liniuțe, întreabă, ca orice import de bibliotecă: **Înlocuiește** (implicit), **Păstrează-le pe amândouă** (ca *Nume (2)*) sau **Sari peste**, ori **Aplică la toate…**. Textul și formele dintr-un tip de linie complex sunt lăsate deoparte; liniuțele lui se păstrează. **Exportă .lin…** scrie tipurile proiectului pentru AutoCAD.
 
 ![Importă .lin…: tipurile din fișier, alese înainte să intre](shots/line-types-import.webp)
 
 ### Standardele ca bibliotecă
 
-**Exportă standardele…**, sus în dreapta în Standarde de desen, scrie stilurile, tipurile de etichete, layerele, tipurile de linie, hașurile și simbolurile proiectului într-un fișier **.lapinstandards**: standardele biroului, gata pentru alt proiect sau alt calculator. **Importă standarde…** citește unul. Ce lipsește proiectului se adaugă; ce are sub același nume dar făcut altfel e listat, intrare cu intrare, cu aceleași alegeri (**Actualizează-l pe al proiectului**, **Păstrează-le pe amândouă**, **Sari peste** și **Aplică la toate…**). **Opțiunile** fișierului (unități, scări, mărimi ale marcajelor, stiluri de obiecte, tabelul de penițe, simboluri de marcaj) vin numai dacă bifezi **Și opțiunile proiectului…**. Un mesaj numără ce s-a adăugat, actualizat, ce era la fel și ce s-a sărit, iar un pas de anulare le ia pe toate înapoi.
+**Exportă standardele…**, sus în dreapta în Standarde de desen, scrie stilurile, tipurile de etichete, layerele, tipurile de linie, hașurile și simbolurile proiectului într-un fișier **.lapinstandards**: standardele biroului, gata pentru alt proiect sau alt calculator. **Importă standarde…** citește unul. Ce lipsește proiectului se adaugă; ce are dar făcut altfel e listat în previzualizarea importului, intrare cu intrare, cu aceleași alegeri ca la orice import de bibliotecă (**Înlocuiește**, implicit, **Păstrează-le pe amândouă**, ca *Nume (2)*, **Sari peste** și **Aplică la toate…**). **Opțiunile** fișierului (unități, scări, mărimi ale marcajelor, stiluri de obiecte, tabelul de penițe, simboluri de marcaj) vin numai dacă bifezi **Și opțiunile proiectului…**. Un mesaj numără ce s-a adăugat, actualizat, ce era la fel și ce s-a sărit, iar un pas de anulare le ia pe toate înapoi.
 
 ![Importă standarde…: ce diferă, intrare cu intrare](shots/standards-import.webp)

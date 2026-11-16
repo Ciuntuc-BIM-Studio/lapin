@@ -1,0 +1,12 @@
+{
+  "format": "lapin-parameters",
+  "version": 1,
+  "parameters": [
+    {
+      "id": "3zgoiSZC93K9fM77Q5E1we",
+      "name": "FireRating",
+      "kind": "text",
+      "pset": "Office_Fire"
+    }
+  ]
+}

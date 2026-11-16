@@ -959,8 +959,27 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             case "furnitureLibrary.import":
             {
                 var bytes = (string?)p["path"] is { Length: > 0 } fp ? File.ReadAllBytes(HostFiles.Check(fp)) : Base64(p["data"]);
+                // With `choices` ({id: both | update | skip}) or `all`, as every library import (LibraryMerge); without, as always:
+                // an entry here the same skipped, one of its id made otherwise added under a new id.
+                if (p["choices"] is JsonObject || p["all"] is JsonValue)
+                {
+                    var r = FurnitureShelf().Import(bytes, p["choices"] as JsonObject, (string?)p["all"]);
+                    r["added"] = r["ids"]!.DeepClone();
+                    return (r, null);
+                }
                 var (added, skipped) = FurnitureShelf().Import(bytes);
                 return (new JsonObject { ["added"] = new JsonArray([.. added.Select(x => (JsonNode)x)]), ["skipped"] = skipped }, null);
+            }
+            case "furnitureLibrary.preview":
+            {
+                // What an import of the file would do (LibraryMerge): {rows, new, same, conflicts, header}.
+                var bytes = (string?)p["path"] is { Length: > 0 } fp ? File.ReadAllBytes(HostFiles.Check(fp)) : Base64(p["data"]);
+                var o = LibraryMerge.Preview(FurnitureShelf().Preview(bytes));
+                o["format"] = FurnitureLibrary.Format;
+                o["extension"] = "lapinlib";
+                o["what"] = FurnitureLibrary.Spec.What;
+                o["header"] = JsonNode.Parse(bytes) is JsonObject root ? LibraryFile.HeaderOf(root, FurnitureLibrary.Spec).ToJson() : null;
+                return (o, null);
             }
             case "furnitureLibrary.check": return (FurnitureLibrary.Check(p["entry"] as JsonObject ?? throw new CommandException("Which furniture?")), null);
             case "furnitureLibrary.pack":
@@ -1099,7 +1118,17 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                     {
                         try
                         {
-                            var lib = Lapin.Platform.ProfileLibraries.ProfileLibrary.From(JsonNode.Parse(File.ReadAllText(file))) ?? throw new InvalidDataException("not a profile library");
+                            // Through the one envelope: a file of a newer Lapin said, its header left out of the library.
+                            JsonNode? read;
+                            try
+                            {
+                                // One written by hand without its format is still a library (as it always was).
+                                var node = JsonNode.Parse(File.ReadAllText(file).TrimStart('\uFEFF'));
+                                if (node is JsonObject bare && bare["format"] is null) bare["format"] = Lapin.Platform.ProfileLibraries.ProfileLibrary.Format;
+                                read = LibraryFile.Read(node, LibraryFile.Of(Lapin.Platform.ProfileLibraries.ProfileLibrary.Format)).Root;
+                            }
+                            catch (CommandException e) { throw new InvalidDataException(e.Message); }
+                            var lib = Lapin.Platform.ProfileLibraries.ProfileLibrary.From(read) ?? throw new InvalidDataException("not a profile library");
                             libraries.Add((JsonNode)new JsonObject { ["file"] = file, ["modified"] = File.GetLastWriteTime(file).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture), ["library"] = lib.ToJson(summaries: true) });
                         }
                         catch (Exception e) when (e is InvalidDataException or IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
@@ -1120,7 +1149,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 try
                 {
                     var temp = target + ".tmp";
-                    File.WriteAllText(temp, lib.ToJson().ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
+                    File.WriteAllText(temp, LibraryFile.Text(LibraryFile.Write(LibraryFile.Of(Lapin.Platform.ProfileLibraries.ProfileLibrary.Format), lib.ToJson(), (string?)p["source"])));
                     File.Move(temp, target, true);
                 }
                 catch (Exception e) when (e is IOException or UnauthorizedAccessException) { throw new CommandException($"The library could not be written there: {e.Message}"); }

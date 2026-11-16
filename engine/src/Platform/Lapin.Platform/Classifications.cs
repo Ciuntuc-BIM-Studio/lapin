@@ -332,28 +332,62 @@ public static class ParamDefs
 
         r.Query("params.exportDefs", (q, _) =>
         {
-            var o = new JsonObject { ["format"] = FileFormat, ["version"] = 1, ["parameters"] = new JsonArray(All(q.Model).Select(d => (JsonNode)Json(d)).ToArray()) };
+            var o = LibraryFile.Write(Spec, new JsonObject { ["parameters"] = new JsonArray(All(q.Model).Select(d => (JsonNode)Json(d)).ToArray()) }, LibraryFile.SourceOf(q.Model));
             return new JsonObject { ["text"] = o.ToJsonString(new JsonSerializerOptions { WriteIndented = true }), ["file"] = "parameters.lapinparams" };
         });
 
-        // A .lapinparams file brought in: each definition by its id (else its name and set) made or, when it differs, changed (`keep`: left as the project has it).
+        // A .lapinparams file brought in: each definition by its id (else its name and set) made or, when it differs, changed (`keep`:
+        // left as the project has it); `choices` ({name: both | update | skip}) and `all` as every library import (LibraryMerge).
         r.Command("params.importDefs", "Import parameter definitions", (ctx, a) =>
         {
-            JsonNode? n;
-            try { n = JsonNode.Parse((string?)a["text"] ?? ""); } catch (JsonException) { throw new CommandException("That is not a parameters file (.lapinparams)."); }
-            if (n is not JsonObject o || (string?)o["format"] != FileFormat) throw new CommandException("That is not a parameters file (.lapinparams).");
             var keep = a["keep"] is JsonValue kv && kv.TryGetValue<bool>(out var k) && k;
-            var defs = All(ctx.Model);
-            int added = 0, updated = 0;
-            foreach (var x in (o["parameters"] as JsonArray ?? []).OfType<JsonObject>())
-            {
-                var def = Check(x, null);
-                var i = defs.FindIndex(d => d.Id == def.Id || (string.Equals(d.Name, def.Name, StringComparison.OrdinalIgnoreCase) && string.Equals(d.Pset, def.Pset, StringComparison.OrdinalIgnoreCase)));
-                if (i < 0) { defs.Add(def); added++; }
-                else if (!keep && !JsonNode.DeepEquals(Json(defs[i] with { Id = def.Id }), Json(def))) { defs[i] = def with { Id = defs[i].Id }; updated++; }
-            }
-            Write(ctx, defs);
-            return new JsonObject { ["added"] = added, ["updated"] = updated };
+            return Import(ctx, (string?)a["text"] ?? "", a["choices"] as JsonObject, (string?)a["all"] ?? (keep ? LibraryMerge.Skip : null));
         });
+
+        r.Service<ILibraryFormat>(new LibraryFormat(Spec, (q, text) => Rows(q.Model, ReadFile(text)), Import));
+    }
+
+    public static LibraryFile.Spec Spec => LibraryFile.Of(FileFormat);
+
+    static List<Def> ReadFile(string text) => [.. (LibraryFile.Read(text, Spec).Root["parameters"] as JsonArray ?? []).OfType<JsonObject>().Select(x => Check(x, null))];
+
+    static int IndexOf(List<Def> defs, Def def) =>
+        defs.FindIndex(d => d.Id == def.Id || (string.Equals(d.Name, def.Name, StringComparison.OrdinalIgnoreCase) && string.Equals(d.Pset, def.Pset, StringComparison.OrdinalIgnoreCase)));
+
+    /// <summary>The file's definitions as the import preview shows them: one is the project's of its id (else its name and set), updated by default.</summary>
+    static List<LibraryMerge.Row> Rows(IModelView m, List<Def> given)
+    {
+        var defs = All(m);
+        return [.. given.Select(def => IndexOf(defs, def) is var i and >= 0
+            ? new LibraryMerge.Row(def.Name, "parameter", def.Pset is { } ps ? $"{ps}.{def.Name}" : def.Name, JsonNode.DeepEquals(Json(defs[i] with { Id = def.Id }), Json(def)) ? LibraryMerge.Match.Same : LibraryMerge.Match.Id, ["definition"])
+            : new LibraryMerge.Row(def.Name, "parameter", def.Pset is { } ps2 ? $"{ps2}.{def.Name}" : def.Name, LibraryMerge.Match.New))];
+    }
+
+    static JsonObject Import(ICommandContext ctx, string text, JsonObject? choices, string? all)
+    {
+        var given = ReadFile(text);
+        var defs = All(ctx.Model);
+        var tally = new LibraryMerge.Tally();
+        foreach (var (def, row) in given.Zip(Rows(ctx.Model, given)))
+        {
+            var i = IndexOf(defs, def);
+            switch (LibraryMerge.Decide(row, choices, all))
+            {
+                case LibraryMerge.Add: defs.Add(def); tally.Added++; break;
+                case LibraryMerge.Update: defs[i] = def with { Id = defs[i].Id }; tally.Updated++; break;
+                case LibraryMerge.Both:
+                {
+                    var name = LibraryMerge.FreeName(n => defs.Any(d => string.Equals(d.Name, n, StringComparison.OrdinalIgnoreCase) && string.Equals(d.Pset, def.Pset, StringComparison.OrdinalIgnoreCase)), def.Name);
+                    defs.Add(def with { Id = GlobalId.New(), Name = name });
+                    tally.Added++;
+                    tally.Renamed.Add(name);
+                    break;
+                }
+                case LibraryMerge.Skip: tally.Skipped++; break;
+                default: tally.Kept++; break;
+            }
+        }
+        Write(ctx, defs);
+        return tally.ToJson();
     }
 }

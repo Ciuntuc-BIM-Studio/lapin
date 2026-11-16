@@ -5,6 +5,8 @@
  * columns in another order still finds its mapping.
  */
 
+import { withEnvelope } from '../../../platform/libraryFile';
+
 export interface MapItem { column: number; key: string | null; unit?: string | null }
 /** A mapping as kept: by the column's heading. */
 export interface MapEntry { header: string; key: string | null; unit?: string | null }
@@ -83,10 +85,10 @@ export type MappingFile =
   | { app: 'lapin'; kind: 'layers'; version: 1; layers: LayerEntry[] };
 
 export const tableMappingText = (target: string, headers: string[], mapping: MapItem[]): string =>
-  JSON.stringify({ app: 'lapin', kind: 'table', version: 1, target, mapping: entriesOf(headers, mapping) } satisfies MappingFile, null, 2);
+  JSON.stringify(withEnvelope('lapin-mapping', 1, { app: 'lapin', kind: 'table', version: 1, target, mapping: entriesOf(headers, mapping) } satisfies MappingFile, target), null, 2);
 
 export const layerMappingText = (layers: LayerEntry[]): string =>
-  JSON.stringify({ app: 'lapin', kind: 'layers', version: 1, layers } satisfies MappingFile, null, 2);
+  JSON.stringify(withEnvelope('lapin-mapping', 1, { app: 'lapin', kind: 'layers', version: 1, layers } satisfies MappingFile), null, 2);
 
 /** A .lapinmapping read; throws a sentence the user can read when it is not one. */
 export function parseMappingFile(text: string): MappingFile {

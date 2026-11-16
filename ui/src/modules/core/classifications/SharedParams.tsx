@@ -10,7 +10,8 @@ import { notify } from '../../../app/store';
 import { pickFile, safeFileName, saveFile } from '../../../engine/files';
 import { FirmFolderFiles } from '../FirmFolderFiles';
 import { PARAM_KINDS, parseOptions, type ParamDef } from './classModel';
-import { exportDefs, importDefs, removeDef, setDef, useParamDefs } from './classifications';
+import { exportDefs, removeDef, setDef, useParamDefs } from './classifications';
+import { importLibraryText } from '../../../platform/ImportPreview';
 
 export function SharedParams() {
   const defs = useParamDefs();
@@ -33,8 +34,8 @@ export function SharedParams() {
   const importFile = async (given?: { bytes: Uint8Array }) => {
     const f = given ?? await pickFile('Shared parameters (.lapinparams)', 'lapinparams');
     if (!f) return;
-    const r = await importDefs(new TextDecoder().decode(f.bytes));
-    if (r) notify(`${r.added} parameters added, ${r.updated} updated.`);
+    // Through the one import preview (audit D13): what differs is the user's to settle.
+    await importLibraryText(new TextDecoder().decode(f.bytes), 'name' in f && typeof f.name === 'string' ? f.name : 'parameters.lapinparams');
   };
 
   return (

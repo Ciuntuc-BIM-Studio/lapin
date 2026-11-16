@@ -121,9 +121,23 @@ The project browser's **Catalog** tab shows the project's types for each tool th
 
 ### Firm folders in the library dialogs
 
-Each library's dialog (**Symbols…**, **Type packs…**, **Line types** in Drafting standards, **Drafting standards**, **Rules…**, **Bar shapes…**, **Shared parameters**, **Materials** for `.pat` files, **Price lists…**, **Studio → Families…**, **Manage → Title blocks…** and **Interior → My furniture…**) has a **Firm folders** block that lists the files of its kind in your firm folders. A click reads the file through the dialog's own import, with the same choices as **Import…**. **Save to firm folder…** writes the library's own export into a writable folder, replacing a file of the same name. The small disk button keeps a copy of a file on this computer.
+Each library's dialog (**Symbols…**, **Type packs…**, **Line types** in Drafting standards, **Drafting standards**, **Rules…**, **Bar shapes…**, **Shared parameters**, **Materials** for `.pat` files, **Price lists…**, **Studio → Families…**, **Manage → Title blocks…** and **Interior → My furniture…**) has a **Firm folders** block that lists the files of its kind in your firm folders. A click reads the file through the one import preview, with the same choices as **Import…** (see below). **Save to firm folder…** writes the library's own export into a writable folder, replacing a file of the same name. The small disk button keeps a copy of a file on this computer.
 
 ![Symbols: the firm folder's file beside This project and This computer](shots/symbols-firm-folder.webp)
+
+### Importing a library file: one preview, the same choices
+
+Every library file comes in the same way, whichever dialog, firm folder or Catalog entry brings it: symbols, type packs, the wall and floor types' JSON, drafting standards, `.lin` line types, `.pat` hatches, rule packs, shared parameters, field names, title blocks, bar shapes, parts and families, and My furniture's `.lapinlib`. When all of it is new to the project, or already there the same, it comes straight in. When something is there already but made otherwise, the **Import preview** lists the file, item by item: **New**, **The same**, **Same name** (another item of that name) or **Same item, changed** (the same style, line type, parameter, bar shape or furniture entry, edited since), with what differs. For each one that differs, choose:
+
+- **Keep both**: the file's comes in beside the one there, with (2) after its name (*Bubble (2)*). The default for an item of the same name.
+- **Replace**: the one there takes the file's in place; what uses it follows (the symbols placed, the walls of a type, the sheets of a title block). The default for the same item changed.
+- **Skip**: the one there stays as it is.
+
+**Apply to all…** sets one choice for every item that offers it (a bar shape is named by its code, so it is replaced or skipped, never kept twice; a type pack's material keeps the project's by default). **Import** brings the file in, in one step to undo, and a notice counts what was added, updated, kept and skipped, and what was kept beside under a new name.
+
+![The import preview: a rule pack the project has under the same name, kept both by default](shots/library-import-preview.webp)
+
+A file written by this version says at the top who wrote it: *Written by Lapin 0.1.1300 on 2026-11-16, from Bloc P+4* (the project it came from). A file saved before this version has no such line (*Written by an earlier Lapin*) and reads as it always did. A file from a newer Lapin is refused with a sentence: update Lapin to read it.
 
 ### Save to library at a type configurator
 

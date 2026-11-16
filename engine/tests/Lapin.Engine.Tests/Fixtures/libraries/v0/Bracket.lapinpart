@@ -1,0 +1,67 @@
+{
+  "format": "lapinpart",
+  "version": 1,
+  "name": "Bracket",
+  "def": {
+    "ifcClass": "IfcFurnishingElement",
+    "params": [
+      {
+        "key": "W",
+        "label": "W",
+        "kind": "length",
+        "default": 0.4
+      },
+      {
+        "key": "H",
+        "label": "H",
+        "kind": "length",
+        "default": 0.3
+      },
+      {
+        "key": "T",
+        "label": "T",
+        "kind": "length",
+        "default": 0.02
+      },
+      {
+        "key": "L",
+        "label": "L",
+        "kind": "length",
+        "default": 0.1
+      }
+    ],
+    "bodies": [
+      {
+        "name": "Angle",
+        "plane": "xz",
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            "W",
+            0
+          ],
+          [
+            "W",
+            "T"
+          ],
+          [
+            "T",
+            "T"
+          ],
+          [
+            "T",
+            "H"
+          ],
+          [
+            0,
+            "H"
+          ]
+        ],
+        "depth": "L"
+      }
+    ]
+  }
+}

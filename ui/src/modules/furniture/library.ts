@@ -10,6 +10,8 @@
  * unpacking entries. Either way a library (or one entry) goes out as a .lapinlib file and comes back from one.
  */
 
+import { askImport } from '../../platform/ImportPreview';
+import { freeName, isConflict, type Choice, type LibraryPreview, type LibraryRow, type LibraryTally } from '../../platform/libraryFile';
 import { toolForKind } from './placeKind';
 import { create } from 'zustand';
 import { notify, setTool, useUi } from '../../app/store';
@@ -104,6 +106,46 @@ export function mergeImported(kept: LibraryEntry[], incoming: LibraryEntry[], ne
   return { add, skipped };
 }
 
+/**
+ * What an import of entries would do (the engine's FurnitureLibrary.Preview, for the browser): one of an id kept the same,
+ * one of an id kept made otherwise (replaced by default), another of a name kept (kept both by default), else new.
+ */
+export function previewRows(kept: LibraryEntry[], incoming: LibraryEntry[]): LibraryRow[] {
+  return incoming.map((e) => {
+    const there = kept.find((k) => k.id === e.id);
+    const status: LibraryRow['status'] = there ? (body(there) === body(e) ? 'same' : 'id')
+      : kept.some((k) => k.name.toLowerCase() === e.name.toLowerCase()) ? 'name' : 'new';
+    const choices: Choice[] = status === 'name' || status === 'id' ? ['both', 'update', 'skip'] : [];
+    return { key: e.id, kind: 'furniture', name: e.name, status, differs: [], choices, choice: status === 'id' ? 'update' : status === 'name' ? 'both' : null };
+  });
+}
+
+/** Entries taken in as chosen (LibraryMerge's words): what to keep, and the counts. */
+export function mergeChosen(kept: LibraryEntry[], incoming: LibraryEntry[], choices: Record<string, Choice>, makeId: () => string): { put: LibraryEntry[]; tally: LibraryTally & { ids: string[] } } {
+  const rows = previewRows(kept, incoming);
+  const names = new Set(kept.map((k) => k.name.toLowerCase()));
+  const put: LibraryEntry[] = [];
+  const tally = { added: 0, updated: 0, kept: 0, skipped: 0, renamed: [] as string[], ids: [] as string[] };
+  incoming.forEach((e, i) => {
+    const row = rows[i];
+    const c = row.status === 'new' ? 'add' : row.status === 'same' ? 'same' : (choices[row.key] ?? row.choice);
+    if (c === 'same') { tally.kept++; return; }
+    if (c === 'skip' || c === 'keep') { tally.skipped++; return; }
+    if (c === 'update') { const had = kept.find((k) => k.id === e.id); put.push({ ...e, ...(had ? { at: had.at } : {}) }); tally.updated++; return; }
+    if (c === 'both') {
+      const name = names.has(e.name.toLowerCase()) ? freeName((n) => names.has(n.toLowerCase()), e.name) : e.name;
+      if (name !== e.name) tally.renamed.push(name);
+      names.add(name.toLowerCase());
+      const entry = { ...e, id: makeId(), name };
+      put.push(entry); tally.ids.push(entry.id); tally.added++;
+      return;
+    }
+    names.add(e.name.toLowerCase());
+    put.push(e); tally.ids.push(e.id); tally.added++;
+  });
+  return { put, tally };
+}
+
 const newId = () => (globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(16)}${Math.random().toString(16).slice(2)}`).replace(/-/g, '');
 
 /** The browser's library over its rows: the same answers the desktop's engine gives (the engine checks each entry). */
@@ -138,6 +180,12 @@ export class BrowserFurniture {
   }
 
   remove(id: string): Promise<void> { return this.rows.remove(id); }
+
+  async importChosen(entries: LibraryEntry[], choices: Record<string, Choice>): Promise<LibraryTally> {
+    const { put, tally } = mergeChosen(await this.rows.all(), entries, choices, newId);
+    for (const e of put) await this.rows.put(await this.check(e));
+    return tally;
+  }
 
   async import(entries: LibraryEntry[]): Promise<{ added: string[]; skipped: number }> {
     const { add, skipped } = mergeImported(await this.rows.all(), entries, newId);
@@ -222,6 +270,27 @@ export async function importLibrary(file: { path?: string; data?: string }): Pro
   let r: { added: string[]; skipped: number };
   if (engineInBrowser) r = await inBrowser().import(await engine.call<LibraryEntry[]>('furnitureLibrary.unpack', { data: file.data }));
   else r = await engine.call<{ added: string[]; skipped: number }>('furnitureLibrary.import', file);
+  await refreshLibrary();
+  return r;
+}
+
+/**
+ * A .lapinlib file taken in through the one import preview (audit D13): straight in when everything is new or the same, else
+ * the preview with its choices first (an entry of its id made otherwise: replaced by default; another of its name: kept both).
+ */
+export async function importLibraryChosen(file: { path?: string; data?: string }, title: string): Promise<LibraryTally | null> {
+  let preview: LibraryPreview;
+  let run: (choices: Record<string, Choice>) => Promise<LibraryTally | null>;
+  if (engineInBrowser) {
+    const entries = await engine.call<LibraryEntry[]>('furnitureLibrary.unpack', { data: file.data });
+    const rows = previewRows(await inBrowser().list(), entries);
+    preview = { format: 'lapin-furniture-library', extension: 'lapinlib', what: 'a furniture library', header: null, rows, new: rows.filter((r) => r.status === 'new').length, same: rows.filter((r) => r.status === 'same').length, conflicts: rows.filter(isConflict).length };
+    run = (choices) => inBrowser().importChosen(entries, choices);
+  } else {
+    preview = await engine.call<LibraryPreview>('furnitureLibrary.preview', file);
+    run = (choices) => engine.call<LibraryTally>('furnitureLibrary.import', { ...file, choices });
+  }
+  const r = await askImport(title, preview, run);
   await refreshLibrary();
   return r;
 }

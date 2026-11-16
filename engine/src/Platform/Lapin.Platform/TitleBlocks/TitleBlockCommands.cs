@@ -54,7 +54,75 @@ public static partial class TitleBlocks
                 item["name"] = image.Name;
                 item.Remove("imageId");
             }
-        return new JsonObject { ["format"] = "lapin.titleBlock", ["version"] = 1, ["name"] = NameOf(m, id), ["template"] = json };
+        return LibraryFile.Write(Spec, new JsonObject { ["name"] = NameOf(m, id), ["template"] = json }, LibraryFile.SourceOf(m));
+    }
+
+    public static LibraryFile.Spec Spec => LibraryFile.Of("lapin.titleBlock");
+
+    /// <summary>A title block file (Export's JSON, as text or as the object): one written before it named its format (the interface's own store) read as one.</summary>
+    static JsonObject ReadFile(JsonNode? given)
+    {
+        if (given is JsonValue v && v.TryGetValue<string>(out var text))
+            try { given = JsonNode.Parse(text.TrimStart('\uFEFF')); } catch (System.Text.Json.JsonException) { throw new CommandException("That is not a title block file: it is not JSON."); }
+        if (given is JsonObject o && o["format"] is null && o["template"] is JsonObject) { o = (JsonObject)o.DeepClone(); o["format"] = Spec.Format; given = o; }
+        var root = LibraryFile.Read(given, Spec).Root;
+        if (root["template"] is not JsonObject) throw new CommandException("That is not a title block file.");
+        return root;
+    }
+
+    static string NameIn(JsonObject file, string? asked = null) => (asked ?? (string?)file["name"])?.Trim() is { Length: > 0 } n ? n : "Title block";
+
+    /// <summary>A file's title block as the import preview shows it: new, the same as the project's of its name, or of the same name (keep both by default).</summary>
+    static LibraryMerge.Row Row(IModelView m, JsonObject file, string? asked = null)
+    {
+        var name = NameIn(file, asked);
+        var mine = m.OfClass(Class).FirstOrDefault(e => string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase));
+        var match = mine is null ? LibraryMerge.Match.New
+            : JsonNode.DeepEquals(Export(m, mine.Id)["template"], TitleBlockTemplate.Parse((JsonObject)file["template"]!).ToJson()) ? LibraryMerge.Match.Same : LibraryMerge.Match.Name;
+        return new LibraryMerge.Row(name, "titleBlock", name, match, match == LibraryMerge.Match.Name ? ["template"] : null);
+    }
+
+    /// <summary>
+    /// A file's title block brought in, its images made the project's: without <paramref name="merge"/> always made (beside one of
+    /// its name as „Name (2)”), as the command always did; with it, as its row's choice says (<see cref="LibraryMerge"/>).
+    /// </summary>
+    static JsonObject Import(ICommandContext ctx, JsonObject file, string? asked, JsonObject? choices, string? all, bool merge)
+    {
+        var row = Row(ctx.Model, file, asked);
+        var mine = ctx.Model.OfClass(Class).FirstOrDefault(e => string.Equals(e.Name, row.Name, StringComparison.OrdinalIgnoreCase));
+        var tally = new LibraryMerge.Tally();
+        var taken = ctx.Model.OfClass(Class).Select(e => e.Name).Concat(BuiltinTitleBlocks.All.Select(b => b.Name)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var choice = !merge ? (taken.Contains(row.Name) ? LibraryMerge.Both : LibraryMerge.Add) : LibraryMerge.Decide(row, choices, all);
+        string id;
+        switch (choice)
+        {
+            case LibraryMerge.Same: tally.Kept++; id = mine!.Id; break;
+            case LibraryMerge.Skip: tally.Skipped++; id = mine!.Id; break;
+            case LibraryMerge.Update:
+            {
+                var attrs = mine!.CloneAttrs();
+                attrs["template"] = WithImages(ctx, TitleBlockTemplate.Parse((JsonObject)file["template"]!.DeepClone())).ToJson();
+                ctx.Replace(mine.With(attrs: attrs));
+                tally.Updated++;
+                id = mine.Id;
+                break;
+            }
+            default:
+            {
+                var t = WithImages(ctx, TitleBlockTemplate.Parse((JsonObject)file["template"]!.DeepClone()));
+                var name = taken.Contains(row.Name) ? LibraryMerge.FreeName(taken.Contains, row.Name) : row.Name;
+                var e = new Entity(ctx.NewId(), Class, name, new JsonObject { ["template"] = t.ToJson() });
+                ctx.Add(e);
+                tally.Added++;
+                if (name != row.Name) tally.Renamed.Add(name);
+                id = e.Id;
+                break;
+            }
+        }
+        var o = tally.ToJson();
+        o["id"] = id;
+        o["name"] = ctx.Model.Get(id)!.Name;
+        return o;
     }
 
     static JsonObject Summary(IModelView m, string id, string name, bool builtin, string? description = null)
@@ -135,16 +203,16 @@ public static partial class TitleBlocks
             return new JsonObject { ["id"] = e.Id, ["name"] = e.Name };
         });
 
-        // A title block file read in (Export's JSON): its name and template, its images made the project's.
+        // A title block file read in (Export's JSON, `json`, or its `text`): its name and template, its images made the project's;
+        // one of its name there: beside it as „Name (2)”. With `choices` ({name: both | update | skip}) or `all`, as every library
+        // import (LibraryMerge): one the same kept, one of the same name kept both, updated in place (its sheets follow) or skipped.
         r.Command("titleBlock.import", "Import title block", (ctx, a) =>
         {
-            var json = a["json"] as JsonObject ?? throw new CommandException("Which title block?");
-            if (json["template"] is not JsonObject tj) throw new CommandException("That is not a title block file.");
-            var t = WithImages(ctx, TitleBlockTemplate.Parse(tj));
-            var e = new Entity(ctx.NewId(), Class, FreeName(ctx.Model, ((string?)a["name"] ?? (string?)json["name"])?.Trim() is { Length: > 0 } n ? n : "Title block"), new JsonObject { ["template"] = t.ToJson() });
-            ctx.Add(e);
-            return new JsonObject { ["id"] = e.Id, ["name"] = e.Name };
+            var file = ReadFile(a["json"] ?? a["text"] ?? throw new CommandException("Which title block?"));
+            return Import(ctx, file, (string?)a["name"], a["choices"] as JsonObject, (string?)a["all"], a["choices"] is JsonObject || a["all"] is not null);
         });
+
+        r.Service<ILibraryFormat>(new LibraryFormat(Spec, (q, text) => [Row(q.Model, ReadFile(JsonValue.Create(text)))], (ctx, text, choices, all) => Import(ctx, ReadFile(JsonValue.Create(text)), null, choices, all, merge: true)));
 
         // A title block's name or template changed, one undo step.
         r.Command("titleBlock.update", "Edit title block", (ctx, a) =>

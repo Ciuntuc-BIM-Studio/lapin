@@ -15,9 +15,10 @@ import { pickFile, safeFileName, saveFile } from '../../engine/files';
 import { LengthField } from '../../shell/cells';
 import { FirmFolderFiles } from '../core/FirmFolderFiles';
 import { PendingDialog } from '../core/PendingDialog';
-import { createShape, deleteShape, exportShapes, importShapes, updateShape, useShapeLibrary } from './barShapes';
+import { createShape, deleteShape, exportShapes, updateShape, useShapeLibrary } from './barShapes';
 import { ShapePreview } from './ShapePreview';
 import { addLeg, addParam, cleanDef, newShape, removeLeg, removeParam, setLeg, setParam, shapeProblem, type ShapeDef, type UserShape } from './shapeModel';
+import { importLibraryText } from '../../platform/ImportPreview';
 
 /** The engine's drawing of a definition, or why it refuses it (asked quietly: this runs as the user types). */
 async function previewOf(def: ShapeDef): Promise<{ corners?: number[][]; error?: string }> {
@@ -42,8 +43,8 @@ export function BarShapesDialog() {
   const importFile = async (given?: { bytes: Uint8Array }) => {
     const f = given ?? await pickFile('Bar shapes (.lapinbarshapes)', 'lapinbarshapes');
     if (!f) return;
-    const r = await importShapes(new TextDecoder().decode(f.bytes), true);
-    if (r) notify(`${r.added} shapes added, ${r.updated} updated.`);
+    // Through the one import preview (audit D13): a shape of its code there replaced or skipped.
+    await importLibraryText(new TextDecoder().decode(f.bytes), 'name' in f && typeof f.name === 'string' ? f.name : 'shapes.lapinbarshapes');
   };
 
   return (

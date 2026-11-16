@@ -92,23 +92,14 @@ public sealed class FurnitureLibrary(string folder)
     /// <summary>Entries as a library file's bytes.</summary>
     public static byte[] Pack(IEnumerable<JsonObject> entries)
     {
-        var doc = new JsonObject
-        {
-            ["format"] = Format,
-            ["version"] = Version,
-            ["items"] = new JsonArray([.. entries.Select(e => (JsonNode)Check(e))]),
-        };
+        var doc = LibraryFile.Write(Spec, new JsonObject { ["items"] = new JsonArray([.. entries.Select(e => (JsonNode)Check(e))]) }, "My furniture");
         return Encoding.UTF8.GetBytes(doc.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
     }
 
     /// <summary>A library file's entries, each checked; a file that is not one is refused, and so is one from a newer Lapin.</summary>
     public static List<JsonObject> Unpack(byte[] bytes)
     {
-        JsonNode? doc;
-        try { doc = JsonNode.Parse(bytes); }
-        catch (JsonException e) { throw new CommandException($"This is not a Lapin furniture library ({e.Message})."); }
-        if (doc is not JsonObject o || (string?)(o["format"] as JsonValue) != Format) throw new CommandException("This is not a Lapin furniture library.");
-        if (Json.Number(o["version"]) is not { } v || v > Version) throw new CommandException("This furniture library was written by a newer Lapin: update Lapin to read it.");
+        var o = LibraryFile.Read(Encoding.UTF8.GetString(bytes), Spec).Root;
         if (o["items"] is not JsonArray items) throw new CommandException("The furniture library has no items.");
         return [.. items.OfType<JsonObject>().Select(Check)];
     }
@@ -215,6 +206,70 @@ public sealed class FurnitureLibrary(string folder)
             added.Add(Keep(e));
         }
         return (added, skipped);
+    }
+
+    public static LibraryFile.Spec Spec => LibraryFile.Of(Format);
+
+    /// <summary>
+    /// What an import of the file would do with each entry (<see cref="LibraryMerge"/>): new, the same as one here (by its id), the
+    /// same entry made otherwise (its id here: updated in place by default), or another entry of the same name (keep both by default).
+    /// </summary>
+    public List<LibraryMerge.Row> Preview(byte[] bytes)
+    {
+        var here = List();
+        return [.. Unpack(bytes).Select(e =>
+        {
+            var id = (string)e["id"]!;
+            var name = (string?)e["name"] ?? "";
+            var mine = here.FirstOrDefault(x => (string?)x["id"] == id);
+            if (mine != null) return new LibraryMerge.Row(id, "furniture", name, Same(mine, e) ? LibraryMerge.Match.Same : LibraryMerge.Match.Id, Differs(mine, e));
+            return here.Any(x => string.Equals((string?)x["name"], name, StringComparison.OrdinalIgnoreCase))
+                ? new LibraryMerge.Row(id, "furniture", name, LibraryMerge.Match.Name)
+                : new LibraryMerge.Row(id, "furniture", name, LibraryMerge.Match.New);
+        })];
+    }
+
+    static List<string> Differs(JsonObject a, JsonObject b)
+    {
+        static JsonObject Body(JsonObject e) { var c = (JsonObject)e.DeepClone(); c.Remove("at"); c.Remove("id"); return c; }
+        return LibraryMerge.Differs(Body(a), Body(b));
+    }
+
+    /// <summary>A library file taken in as the choices say (<c>{id: both | update | skip}</c>, else <paramref name="all"/>, else each row's default): the counts and the ids added.</summary>
+    public JsonObject Import(byte[] bytes, JsonObject? choices, string? all)
+    {
+        var tally = new LibraryMerge.Tally();
+        var added = new JsonArray();
+        var entries = Unpack(bytes);
+        foreach (var (e, row) in entries.Zip(Preview(bytes)))
+        {
+            switch (LibraryMerge.Decide(row, choices, all))
+            {
+                case LibraryMerge.Add: added.Add((JsonNode)Keep(e)); tally.Added++; break;
+                case LibraryMerge.Update:
+                {
+                    var had = Get(row.Key);
+                    e["at"] = had["at"]?.DeepClone();
+                    Keep(e);
+                    tally.Updated++;
+                    break;
+                }
+                case LibraryMerge.Both:
+                {
+                    var names = List().Select(x => (string?)x["name"] ?? "").ToHashSet(StringComparer.OrdinalIgnoreCase);
+                    e["id"] = NewId();
+                    if (names.Contains(row.Name)) { e["name"] = LibraryMerge.FreeName(names.Contains, row.Name); tally.Renamed.Add((string)e["name"]!); }
+                    added.Add((JsonNode)Keep(e));
+                    tally.Added++;
+                    break;
+                }
+                case LibraryMerge.Skip: tally.Skipped++; break;
+                default: tally.Kept++; break;
+            }
+        }
+        var o = tally.ToJson();
+        o["ids"] = added;
+        return o;
     }
 
     /// <summary>Two entries holding the same: their name, category, tags, article, price, thumbnail and type (not when they were kept).</summary>

@@ -1,0 +1,22 @@
+{
+  "format": "lapin-furniture-library",
+  "version": 1,
+  "items": [
+    {
+      "id": "chair-1",
+      "name": "Chair",
+      "category": "living",
+      "tags": [],
+      "at": "2026-11-16T00:00:00.0000000Z",
+      "type": {
+        "class": "IfcFurnitureType",
+        "spec": {
+          "kind": "chair",
+          "width": 0.45,
+          "depth": 0.5,
+          "height": 0.9
+        }
+      }
+    }
+  ]
+}

@@ -6,7 +6,8 @@ import { registerLibraryKind } from '../../platform/libraries';
 import { toBase64 } from '../../engine/files';
 import { readFurnitureLibrary } from '../../platform/extensions/packs';
 import { addContentInstaller } from '../../platform/extensions/runtime';
-import { deleteEntry, importLibrary } from './library';
+import { deleteEntry, importLibrary, importLibraryChosen } from './library';
+import { tallySentence } from '../../platform/ImportPreview';
 
 addContentInstaller({
   kind: 'furniture',
@@ -28,9 +29,8 @@ registerLibraryKind({
   names: (t) => readFurnitureLibrary(new TextEncoder().encode(t)).names,
   bring: async (text) => {
     if (!useSession.getState().connected) { notify('Open a project first.'); return null; }
-    const r = await importLibrary({ data: toBase64(new TextEncoder().encode(text)) });
-    const said = `Furniture added to My furniture: ${r.added.length} new, ${r.skipped} already there.`;
-    notify(said);
-    return said;
+    // Through the one import preview (audit D13), which says what it did.
+    const r = await importLibraryChosen({ data: toBase64(new TextEncoder().encode(text)) }, 'My furniture');
+    return r ? tallySentence(r) : null;
   },
 });

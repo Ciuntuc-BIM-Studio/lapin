@@ -245,20 +245,18 @@ public static class Symbols
             list.Add((JsonNode)new JsonObject { ["name"] = NameOf(m, id), ["def"] = def.ToJson() });
         }
         if (list.Count == 0) throw new CommandException("Which symbols?");
-        var o = new JsonObject { ["format"] = FileFormat, ["version"] = FileVersion };
+        var o = new JsonObject();
         if (name is { Length: > 0 }) o["name"] = name;
         o["symbols"] = list;
-        return o;
+        return LibraryFile.Write(Spec, o, LibraryFile.SourceOf(m));
     }
+
+    public static LibraryFile.Spec Spec => LibraryFile.Of(FileFormat);
 
     /// <summary>A library file read and checked: its symbols' names and definitions; a wrong file refused whole.</summary>
     public static List<(string Name, SymbolDef Def)> Read(string text)
     {
-        JsonNode? n;
-        try { n = JsonNode.Parse(text); }
-        catch (JsonException) { throw new CommandException("That is not a symbol library (.lapinsymbols): it is not JSON."); }
-        if (n is not JsonObject o || (string?)o["format"] != FileFormat) throw new CommandException("That is not a symbol library (.lapinsymbols).");
-        if ((Json.Number(o["version"]) ?? 0) > FileVersion) throw new CommandException("That symbol library was written by a newer Lapin: update Lapin to read it.");
+        var o = LibraryFile.Read(text, Spec).Root;
         var o2 = new List<(string, SymbolDef)>();
         var i = 0;
         foreach (var s in o["symbols"] as JsonArray ?? [])
@@ -291,6 +289,60 @@ public static class Symbols
             ["box"] = new JsonArray(Math.Round(x0, 3), Math.Round(y0, 3), Math.Round(x1, 3), Math.Round(y1, 3)),
             ["pens"] = new JsonArray(pens.Select(p => (JsonNode)p.ToJson()).ToArray()),
         };
+    }
+
+    static Entity? Mine(IModelView m, string name) => m.OfClass(Class).FirstOrDefault(e => e.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>What an import of the file would do with each symbol (<see cref="LibraryMerge"/>): new, the same, or the same name.</summary>
+    public static List<LibraryMerge.Row> Rows(IModelView m, IEnumerable<(string Name, SymbolDef Def)> read, string keyPrefix = "") =>
+    [
+        .. read.Select(s => Mine(m, s.Name) is { } mine
+            ? new LibraryMerge.Row(keyPrefix + s.Name, "symbol", s.Name, SymbolDef.From(mine.Attrs["def"]) is { } md && Same(md, s.Def) ? LibraryMerge.Match.Same : LibraryMerge.Match.Name, ["drawing"])
+            : new LibraryMerge.Row(keyPrefix + s.Name, "symbol", s.Name, LibraryMerge.Match.New)),
+    ];
+
+    /// <summary>A library file's symbols brought in (<see cref="LibraryMerge"/>): the counts, and the ids of the symbols they are now.</summary>
+    public static JsonObject Import(ICommandContext ctx, string text, JsonObject? choices, string? all, IReadOnlySet<string>? only)
+    {
+        var read = Read(text);
+        var tally = new LibraryMerge.Tally();
+        var ids = new JsonArray();
+        foreach (var (name, def) in read)
+        {
+            if (only != null && !only.Contains(name)) continue;
+            var mine = Mine(ctx.Model, name);
+            var row = Rows(ctx.Model, [(name, def)])[0];
+            switch (LibraryMerge.Decide(row, choices, all))
+            {
+                case LibraryMerge.Same: tally.Kept++; ids.Add((JsonNode)mine!.Id); break;
+                case LibraryMerge.Skip: tally.Skipped++; break;
+                case LibraryMerge.Update:
+                {
+                    var attrs = mine!.CloneAttrs();
+                    attrs["def"] = def.ToJson();
+                    ctx.Replace(mine.With(attrs: attrs));
+                    tally.Updated++;
+                    ids.Add((JsonNode)mine.Id);
+                    break;
+                }
+                case LibraryMerge.Both:
+                {
+                    var taken = ctx.Model.OfClass(Class).Select(e => e.Name).Concat(BuiltinSymbols.All.Select(b => b.Name)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                    var made = Create(ctx, LibraryMerge.FreeName(taken.Contains, name), def);
+                    tally.Added++;
+                    tally.Renamed.Add(made.Name);
+                    ids.Add((JsonNode)made.Id);
+                    break;
+                }
+                default:
+                    ids.Add((JsonNode)Create(ctx, name, def).Id);
+                    tally.Added++;
+                    break;
+            }
+        }
+        var o = tally.ToJson();
+        o["ids"] = ids;
+        return o;
     }
 
     public static void Register(IModuleRegistry r)
@@ -426,41 +478,14 @@ public static class Symbols
         });
 
         // A library file's symbols brought into the project, one undo step. One the project has of that name and the same is
-        // kept; one that differs takes the choice given for its name, else `all`, else keep both ("both": added as „Name 2");
+        // kept; one that differs takes the choice given for its name, else `all`, else keep both ("both": added as „Name (2)”);
         // "update" replaces the project's (its instances draw the new one, ids kept), "skip" leaves it out. `names`: only those.
         r.Command("symbols.importFrom", "Import symbols", (ctx, a) =>
         {
-            var read = Read((string?)a["text"] ?? "");
             var only = a["names"] is JsonArray na ? na.Select(x => (string?)x).OfType<string>().ToHashSet(StringComparer.OrdinalIgnoreCase) : null;
-            var choices = a["choices"] as JsonObject;
-            var all = (string?)a["all"];
-            int added = 0, updated = 0, kept = 0, skipped = 0;
-            var ids = new JsonArray();
-            foreach (var (name, def) in read)
-            {
-                if (only != null && !only.Contains(name)) continue;
-                var mine = ctx.Model.OfClass(Class).FirstOrDefault(e => e.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
-                if (mine != null && SymbolDef.From(mine.Attrs["def"]) is { } md && Same(md, def)) { kept++; ids.Add((JsonNode)mine.Id); continue; }
-                var choice = mine == null ? "both" : (string?)choices?[name] ?? all ?? "both";
-                switch (choice)
-                {
-                    case "skip": skipped++; continue;
-                    case "update" when mine != null:
-                    {
-                        var attrs = mine.CloneAttrs();
-                        attrs["def"] = def.ToJson();
-                        ctx.Replace(mine.With(attrs: attrs));
-                        updated++;
-                        ids.Add((JsonNode)mine.Id);
-                        break;
-                    }
-                    default:
-                        ids.Add((JsonNode)Create(ctx, name, def).Id);
-                        added++;
-                        break;
-                }
-            }
-            return new JsonObject { ["added"] = added, ["updated"] = updated, ["kept"] = kept, ["skipped"] = skipped, ["ids"] = ids };
+            return Import(ctx, (string?)a["text"] ?? "", a["choices"] as JsonObject, (string?)a["all"], only);
         });
+
+        r.Service<ILibraryFormat>(new LibraryFormat(Spec, (q, text) => Rows(q.Model, Read(text)), (ctx, text, choices, all) => Import(ctx, text, choices, all, null)));
     }
 }

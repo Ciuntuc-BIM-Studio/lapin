@@ -16,6 +16,7 @@ import { LengthField, NumberField } from '../../../shell/cells';
 import { ask, runOk as run } from '../LibraryChoices';
 import { FirmFolderFiles } from '../FirmFolderFiles';
 import { PendingDialog } from '../PendingDialog';
+import { importLibraryText } from '../../../platform/ImportPreview';
 import {
   BUILTIN_SETS, STAIR_FIELDS, addGrade, removeGrade, renameGrade, addStairSet, addStep, diametersText, findingsByModule, parseDiameters, removeStairSet, removeStep, removeSteel, addSteel,
   setPitch, setStairValue, setStep, stairProblem, stepsProblem, type Finding, type RulePack, type RulesList, type Section, type Step,
@@ -72,8 +73,9 @@ export function RulesDialog() {
   const importPack = async (given?: { bytes: Uint8Array }) => {
     const f = given ?? await pickFile('Rule pack (.lapinrules)', 'lapinrules');
     if (!f) return;
-    const r = await run<{ id: string }>('rules.import', { text: new TextDecoder().decode(f.bytes) });
-    if (r) setSelected(r.id);
+    // Through the one import preview (audit D13): a pack of its name there kept both, replaced or skipped.
+    const r = await importLibraryText(new TextDecoder().decode(f.bytes), 'name' in f && typeof f.name === 'string' ? f.name : 'rules.lapinrules') as { id?: string } | null;
+    if (r?.id) setSelected(r.id);
   };
   const check = async () => { const r = await ask<{ pack: string; findings: Finding[] }>('rules.check', {}); if (r) setFindings(r); };
   const applyStairs = async () => {

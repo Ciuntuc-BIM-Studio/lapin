@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.Json.Nodes;
 using Lapin.Geometry;
 using Lapin.Model;
@@ -358,8 +357,8 @@ public static class RebarShapes
 
     /// <summary>Millimetres as a label writes them ("2450").</summary>
     public static string Mm(double m) => Lapin.Model.Numbers.Mm(m);
-    /// <summary>A diameter as a label writes it ("Ø12").</summary>
-    public static string Dia(double d) => "Ø" + Math.Round(d * 1000).ToString(CultureInfo.InvariantCulture);
+    /// <summary>A diameter as a label writes it ("Ø12"): whole millimetres as every label writes them (<see cref="Lapin.Model.Numbers.Mm"/>; the same text for every diameter, audit §9).</summary>
+    public static string Dia(double d) => "Ø" + Lapin.Model.Numbers.Mm(d);
 }
 
 /// <summary>

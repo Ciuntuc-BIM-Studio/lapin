@@ -1,0 +1,28 @@
+{
+  "format": "lapin-symbols",
+  "version": 1,
+  "name": "Office",
+  "symbols": [
+    {
+      "name": "Arrow",
+      "def": {
+        "scale": "annotation",
+        "category": "annotation",
+        "items": [
+          {
+            "type": "line",
+            "a": [
+              0,
+              0
+            ],
+            "b": [
+              1,
+              0
+            ]
+          }
+        ],
+        "attributes": []
+      }
+    }
+  ]
+}

@@ -41,7 +41,7 @@ public sealed record FieldSort(string Field, bool Desc = false)
 /// <summary>
 /// A field schedule's options (<c>fields</c> on the schedule): its filter, the fields its rows are grouped by (none: a row per
 /// element), its columns, its totals line and count column. What the shipped templates need to give the fixed schedules' tables
-/// (audit S1, decision 613): <paramref name="Source"/>, the parts it lists instead of elements (<see cref="IPartSource"/>);
+/// (audit S1, decision 615): <paramref name="Source"/>, the parts it lists instead of elements (<see cref="IPartSource"/>);
 /// <paramref name="GroupColumns"/>, whether the grouping fields are shown first (false: only the columns, a group's value in a
 /// column with <c>first</c>); <paramref name="Sort"/>, the fields the rows are put in order by (none: by their cells, left to
 /// right), equal ones in the model's order; <paramref name="Subtotals"/>, a totals line per value of these fields after the
@@ -419,11 +419,13 @@ public sealed class FieldSchedule : IScheduleSource
                 },
             };
         }
-        var o = new JsonObject { ["format"] = FileFormat, ["version"] = 1, ["name"] = s.Name, [FieldScheduleOptions.Key] = options.ToJson() };
+        var o = new JsonObject { ["name"] = s.Name, [FieldScheduleOptions.Key] = options.ToJson() };
         if (s.Attrs["customColumns"] is JsonArray cc && cc.Count > 0) o["customColumns"] = cc.DeepClone();
         if (s.Attrs["charts"] is JsonArray ch && ch.Count > 0) o["charts"] = ch.DeepClone();
-        return o;
+        return LibraryFile.Write(Spec, o, LibraryFile.SourceOf(m));
     }
+
+    public static LibraryFile.Spec Spec => LibraryFile.Of(FileFormat);
 
     /// <summary>A template's text or object read and checked; refused when it is not one.</summary>
     public static JsonObject ReadTemplate(JsonNode? given)
@@ -431,7 +433,8 @@ public sealed class FieldSchedule : IScheduleSource
         var n = given;
         if (given is JsonValue v && v.TryGetValue<string>(out var text))
             try { n = JsonNode.Parse(text); } catch (JsonException) { throw new CommandException("That is not a schedule file (.lapinschedule)."); }
-        if (n is not JsonObject o || (string?)o["format"] != FileFormat) throw new CommandException("That is not a schedule file (.lapinschedule).");
+        if (n is not JsonObject given0 || (string?)given0["format"] != FileFormat) throw new CommandException("That is not a schedule file (.lapinschedule).");
+        var o = LibraryFile.Read(given0, Spec).Root;
         FieldScheduleOptions.Check(o[FieldScheduleOptions.Key]);
         return o;
     }

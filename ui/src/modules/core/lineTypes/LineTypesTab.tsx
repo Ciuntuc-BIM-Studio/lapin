@@ -10,7 +10,11 @@ import { Copy, FileDown, FileUp, Plus, Trash2, X } from 'lucide-react';
 import { notify } from '../../../app/store';
 import { pickFile, safeFileName, saveFile } from '../../../engine/files';
 import { t as tr } from '../../../i18n';
-import { TYPE_CHOICES } from '../LibraryChoices';
+import { ChoiceAll, ChoiceSelect, ChoicesNote, tallySentence } from '../../../platform/ImportPreview';
+import type { Choice } from '../../../platform/libraryFile';
+
+/** A line type is the same thing by its name: replace by default, or keep both, or skip (LibraryMerge). */
+const LIN_CHOICES: Choice[] = ['update', 'both', 'skip'];
 import { LineSample } from './LineSample';
 import { FirmFolderFiles } from '../FirmFolderFiles';
 import { exportLin, importLin, readLin, removeLineType, setLineType, useLineTypes } from './lineTypes';
@@ -66,7 +70,7 @@ export function LineTypesTab() {
     if (names.length === 0) { setReading(null); return; }
     const r = await importLin({ text: reading.text, units: reading.units, names, choices: reading.choices });
     setReading(null);
-    if (r) notify(`${r.added} line types added, ${r.updated} updated, ${r.skipped} skipped.`);
+    if (r) notify(tallySentence(r));
   };
 
   const exportAll = async () => {
@@ -93,10 +97,8 @@ export function LineTypesTab() {
         <table className="layer-table">
           <thead><tr><th /><th>Name</th><th>Pattern</th><th>In the project</th><th>
             {conflicts.length > 0 && (
-              <select value="" title="The same choice for every line type that differs" data-choice-all="lineTypes"
-                onChange={(e) => { const v = e.target.value; if (v) setReading({ ...reading, choices: Object.fromEntries(conflicts.map((c) => [c.name, v])) }); }}>
-                <option value="">Apply to all…</option>{TYPE_CHOICES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-              </select>
+              <ChoiceAll choices={LIN_CHOICES} title="The same choice for every line type that differs" data-choice-all="lineTypes"
+                onChoose={(v) => setReading({ ...reading, choices: Object.fromEntries(conflicts.map((c) => [c.name, v])) })} />
             )}
           </th></tr></thead>
           <tbody>
@@ -108,15 +110,14 @@ export function LineTypesTab() {
                 <td><LineSample dashes={l.dashes} /></td>
                 <td className="small">
                   {l.builtin ? <span className="muted">comes in beside Lapin's, named (file)</span> : !l.exists ? <span className="muted">new</span> : l.same ? <span className="muted">the same</span>
-                    : <select value={reading.choices[l.name] ?? 'update'} data-choice-lintype={l.name} onChange={(e) => setReading({ ...reading, choices: { ...reading.choices, [l.name]: e.target.value } })}>
-                      {TYPE_CHOICES.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
-                    </select>}
+                    : <ChoiceSelect choices={LIN_CHOICES} value={(reading.choices[l.name] ?? 'update') as Choice} data-choice-lintype={l.name} onChange={(c) => setReading({ ...reading, choices: { ...reading.choices, [l.name]: c } })} />}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
         {reading.skipped.length > 0 && <p className="muted small" data-no-i18n>{reading.skipped.join(' · ')}</p>}
+        <ChoicesNote />
         <div className="row">
           <button type="button" className="btn primary" data-field="lin-import-apply" onClick={() => void applyImport()}>Import</button>
           <button type="button" className="btn" onClick={() => setReading(null)}>Cancel</button>

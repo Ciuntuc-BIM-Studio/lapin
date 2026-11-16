@@ -8,7 +8,7 @@ export interface SymList { items: SymSummary[]; categories: string[] }
 export interface SymField { key: string; label: string; group: string }
 export interface SymFields { fields: SymField[]; functions: string[] }
 export interface PackSymbol { name: string; category: string; scale: string; exists: boolean; same: boolean; preview?: SymPreview }
-export interface ImportResult { added: number; updated: number; kept: number; skipped: number; ids: string[] }
+export interface ImportResult { added: number; updated: number; kept: number; skipped: number; ids: string[]; renamed?: string[] }
 
 export const listSymbols = (previews = true) => query<SymList>('symbols.list', { previews }).then((r) => r ?? { items: [], categories: [] });
 export const getSymbol = (id: string) => query<{ id: string; name: string; builtin: boolean; def: SymDef; uses: number }>('symbols.get', { id })

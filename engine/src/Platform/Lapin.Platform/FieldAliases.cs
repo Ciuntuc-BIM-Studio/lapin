@@ -123,13 +123,43 @@ public static class FieldAliases
             try { n = JsonNode.Parse(text); } catch (JsonException) { throw new CommandException("That is not an aliases file (.lapinaliases)."); }
         }
         if (n is JsonArray list) return [.. list.OfType<JsonObject>().Select(Check)];
-        if (n is not JsonObject o || (string?)o["format"] != FileFormat) throw new CommandException("That is not an aliases file (.lapinaliases).");
+        var o = LibraryFile.Read(n, Spec).Root;
         return [.. (o["aliases"] as JsonArray ?? []).OfType<JsonObject>().Select(Check)];
     }
 
     /// <summary>The aliases as a <c>.lapinaliases</c> file holds them.</summary>
-    public static JsonObject File(IEnumerable<Alias> aliases) =>
-        new() { ["format"] = FileFormat, ["version"] = 1, ["aliases"] = new JsonArray([.. aliases.Select(a => (JsonNode)Json(a))]) };
+    public static JsonObject File(IEnumerable<Alias> aliases, string? source = null) =>
+        LibraryFile.Write(Spec, new JsonObject { ["aliases"] = new JsonArray([.. aliases.Select(a => (JsonNode)Json(a))]) }, source);
+
+    public static LibraryFile.Spec Spec => LibraryFile.Of(FileFormat);
+
+    /// <summary>The file's aliases as the import preview shows them: an alias is the same thing as the project's of its name, updated by default (no „both”: tags name it).</summary>
+    static List<LibraryMerge.Row> Rows(IModelView m, IEnumerable<Alias> given)
+    {
+        var all = All(m);
+        return [.. given.Select(x => all.FirstOrDefault(y => TagText.Squash(y.Name) == TagText.Squash(x.Name)) is { } mine
+            ? new LibraryMerge.Row(x.Name, "alias", x.Name, JsonNode.DeepEquals(Json(mine), Json(x)) ? LibraryMerge.Match.Same : LibraryMerge.Match.Id, ["sources"], [LibraryMerge.Update, LibraryMerge.Skip])
+            : new LibraryMerge.Row(x.Name, "alias", x.Name, LibraryMerge.Match.New))];
+    }
+
+    static JsonObject Import(ICommandContext ctx, List<Alias> given, JsonObject? choices, string? all)
+    {
+        var mine = All(ctx.Model);
+        var tally = new LibraryMerge.Tally();
+        foreach (var (x, row) in given.Zip(Rows(ctx.Model, given)))
+        {
+            var i = mine.FindIndex(y => TagText.Squash(y.Name) == TagText.Squash(x.Name));
+            switch (LibraryMerge.Decide(row, choices, all))
+            {
+                case LibraryMerge.Add: mine.Add(x); tally.Added++; break;
+                case LibraryMerge.Update: mine[i] = x; tally.Updated++; break;
+                case LibraryMerge.Skip: tally.Skipped++; break;
+                default: tally.Kept++; break;
+            }
+        }
+        Write(ctx, mine);
+        return tally.ToJson();
+    }
 
     public static void Register(IModuleRegistry r)
     {
@@ -166,25 +196,19 @@ public static class FieldAliases
 
         r.Query("fields.exportAliases", (q, _) =>
         {
-            var o = File(All(q.Model));
+            var o = File(All(q.Model), LibraryFile.SourceOf(q.Model));
             return new JsonObject { ["text"] = o.ToJsonString(new JsonSerializerOptions { WriteIndented = true }), ["file"] = "aliases.lapinaliases", ["aliases"] = o["aliases"]!.DeepClone() };
         });
 
-        // A .lapinaliases file (`text`) or a library's list (`aliases`) brought in: each alias by its name made or, when it differs, changed (`keep`: left as the project has it).
+        // A .lapinaliases file (`text`) or a library's list (`aliases`) brought in: each alias by its name made or, when it differs,
+        // changed (`keep`: left as the project has it); `choices` ({name: update | skip}) and `all` as every library import (LibraryMerge).
         r.Command("fields.importAliases", "Import field aliases", (ctx, a) =>
         {
             var given = a["text"] is JsonValue ? FromFile(a["text"]) : a["aliases"] is JsonArray l ? FromFile(l) : throw new CommandException("Which aliases?");
             var keep = a["keep"] is JsonValue kv && kv.TryGetValue<bool>(out var k) && k;
-            var all = All(ctx.Model);
-            int added = 0, updated = 0;
-            foreach (var x in given)
-            {
-                var i = all.FindIndex(y => TagText.Squash(y.Name) == TagText.Squash(x.Name));
-                if (i < 0) { all.Add(x); added++; }
-                else if (!keep && !JsonNode.DeepEquals(Json(all[i]), Json(x))) { all[i] = x; updated++; }
-            }
-            Write(ctx, all);
-            return new JsonObject { ["added"] = added, ["updated"] = updated };
+            return Import(ctx, given, a["choices"] as JsonObject, (string?)a["all"] ?? (keep ? LibraryMerge.Skip : null));
         });
+
+        r.Service<ILibraryFormat>(new LibraryFormat(Spec, (q, text) => Rows(q.Model, FromFile(JsonValue.Create(text))), (ctx, text, choices, all) => Import(ctx, FromFile(JsonValue.Create(text)), choices, all)));
     }
 }
