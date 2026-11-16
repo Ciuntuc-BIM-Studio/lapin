@@ -894,7 +894,7 @@ export const COMMANDS: CommandDef[] = [
   { names: ['RECTANGLE', 'REC', 'RECT'], label: 'Rectangle', start: rectangle },
   { names: ['CIRCLE', 'C'], label: 'Circle', start: circle },
   { names: ['ARC', 'A'], label: 'Arc', start: arc },
-  { names: ['ELLIPSE', 'EL'], label: 'Ellipse', start: ellipse },
+  { names: ['ELLIPSE', 'ELL'], label: 'Ellipse', start: ellipse },
   { names: ['MOVE', 'M', 'MV'], label: 'Move', start: () => moveOrCopy(false) },
   { names: ['COPY', 'CO', 'CP'], label: 'Copy', start: () => moveOrCopy(true) },
   { names: ['ROTATE', 'RO'], label: 'Rotate', start: () => rotate() },
