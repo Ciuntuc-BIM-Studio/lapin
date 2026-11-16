@@ -106,6 +106,9 @@ export function PlanView() {
   const svgRef = useRef<SVGSVGElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [pts, setPts] = useState<Vec2[]>([]);
+  // Reference point before placing the first point (forum #126): Space switches distance/angle and X/Y offsets.
+  const [refPt, setRefPt] = useState<Vec2 | null>(null);
+  const [pickRef, setPickRef] = useState(false);
   // A shaped outline's edges as drawn (forum topic 97): edge i's rise, from pts[i] to pts[i + 1].
   const rises = useRef<number[]>([]);
   useEffect(() => { rises.current = pts.length < 2 ? [] : rises.current.slice(0, pts.length - 1); }, [pts]);
@@ -141,6 +144,9 @@ export function PlanView() {
   const toolId = useUi((s) => s.tool);
   const tool = findTool(toolId);
   useEffect(() => { if (tool?.gesture?.kind !== 'face') setFaceHover(null); }, [tool]);
+  useEffect(() => { setRefPt(null); setPickRef(false); }, [tool?.id]);
+  useEffect(() => { if (pts.length > 0) { setRefPt(null); setPickRef(false); } }, [pts.length]);
+  const canRef = pts.length === 0 && !!tool?.gesture && (tool.gesture.kind === 'point' || tool.gesture.kind === 'twoPoints' || tool.gesture.kind === 'polyline' || tool.gesture.kind === 'polygon' || tool.gesture.kind === 'rectangle' || tool.gesture.kind === 'threePoints');
   // The generated drawing of this storey's plan (its own view, else the storey's), the modelling lines over it only where selected.
   const planViewId = usePaneField('planViewId');
   const active = usePaneActive();
@@ -521,7 +527,11 @@ export function PlanView() {
         void complete([pts[0]], picked.current);
         return;
       }
-      if (e.key === 'Escape') { if (pts.length) setPts([]); else setTool(null); }
+      if (e.key === 'Escape') {
+        if (pickRef) { setPickRef(false); return; }
+        if (refPt) { setRefPt(null); return; }
+        if (pts.length) setPts([]); else setTool(null);
+      }
       if (e.key === 'Enter' && tool?.gesture?.kind === 'polygon' && pts.length >= 3) void complete(pts, undefined, undefined, undefined, polygonArcs(tool.gesture.shapes && useOutlineShape.getState().arcs ? nextRise(pts[0]) : 0));
       if (e.key === 'Enter' && tool?.gesture?.kind === 'polyline' && pts.length >= 2) void complete(pts);
     };
@@ -529,18 +539,21 @@ export function PlanView() {
     window.addEventListener('keydown', onKey);
     window.addEventListener('keyup', onUp);
     return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('keyup', onUp); };
-  }, [active, pts, tool, complete]);
+  }, [active, pts, tool, complete, refPt, pickRef]);
 
-  // A tool drawing from a point: its next segment's length and angle can be typed (Enter takes it).
+  // A tool drawing from a point (or from a reference point before the first point, forum #126): its length/angle or X/Y offsets can be typed.
   const live = useLive();
   const clickRef = useRef(click);
   clickRef.current = click;
   const last = pts[pts.length - 1];
   useEffect(() => {
     const k = tool?.gesture?.kind;
-    if (last && (k === 'twoPoints' || k === 'polyline' || k === 'polygon' || k === 'rectangle' || k === 'threePoints' || k === 'pickThenPoint')) liveBegin('tool', last, (p, typed) => clickRef.current(p, p, false, typed), k === 'rectangle' ? { rect: tool?.id ?? 'rectangle' } : {});
-    else liveEnd('tool');
-  }, [last, tool]);
+    const base = last ?? refPt;
+    if (base && (k === 'point' || k === 'twoPoints' || k === 'polyline' || k === 'polygon' || k === 'rectangle' || k === 'threePoints' || k === 'pickThenPoint')) {
+      liveBegin('tool', base, (p, typed) => { if (!last && refPt) setRefPt(null); clickRef.current(p, p, false, typed); },
+        k === 'rectangle' && last ? { rect: tool?.id ?? 'rectangle' } : !last && refPt ? { rect: `ref:${tool?.id ?? 'point'}`, delta: true } : {});
+    } else liveEnd('tool');
+  }, [last, refPt, tool]);
   useEffect(() => () => liveEnd('tool'), []);
   // A plan that goes while the selection is dragged takes the drag's trace with it.
   useEffect(() => () => { if (carrying()) carryEnd(); }, []);
@@ -695,10 +708,23 @@ export function PlanView() {
     }
     // A right-click while a command asks for points is its Enter: it finishes (a dimension string, a polyline).
     if (d && !d.moved && e.button === 2 && useCad.getState().step?.enter) { void finishStep(); return; }
+    if (d && !d.moved && e.button === 2 && canRef) {
+      const snapped = snapAt(e.clientX, e.clientY).point;
+      openContextMenu(e.clientX, e.clientY, [
+        { label: 'From this point (offset…)', onSelect: () => { setRefPt(snapped); setPickRef(false); } },
+        { label: 'Pick reference point…', onSelect: () => { setPickRef(true); } },
+        ...(refPt ? [{ label: 'Clear reference point', onSelect: () => { setRefPt(null); setPickRef(false); } }] : []),
+      ]);
+      return;
+    }
     if (d && !d.moved && e.button === 2 && !tool?.gesture && !useCad.getState().step) { if (!editor.onContextMenu(e)) roomMenu(e.clientX, e.clientY); return; }
     if (!d || d.moved || e.button !== 0) return;
     const rect = svgRef.current!.getBoundingClientRect();
-    click(constrained(snapAt(e.clientX, e.clientY, pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined)).point, toWorld(e.clientX - rect.left, e.clientY - rect.top), e.shiftKey, undefined, e.ctrlKey || e.metaKey, modsOf(e));
+    const snapped = snapAt(e.clientX, e.clientY, pts[pts.length - 1] ?? refPt ?? useCad.getState().step?.base ?? undefined);
+    if (canRef && (pickRef || e.altKey)) { setRefPt(snapped.point); setPickRef(false); return; }
+    const to = constrained(snapped).point;
+    if (!pts.length && refPt) setRefPt(null);
+    click(to, toWorld(e.clientX - rect.left, e.clientY - rect.top), e.shiftKey, undefined, e.ctrlKey || e.metaKey, modsOf(e));
   };
   /**
    * A right-click (not a drag): on drafting, its draw order (decision 339; what is under the cursor selected first when it
@@ -803,6 +829,16 @@ export function PlanView() {
   const preview = (() => {
     if (!tool?.gesture || !hover) return null;
     const cur = (live.owner === 'tool' && (live.len || live.ang) ? livePoint({ ...live, cursor: hover.point }) : null) ?? hover.point;
+    if (pts.length === 0 && refPt) {
+      const a = toScreen(refPt), b = toScreen(cur);
+      return (
+        <g className="plan-preview" data-testid="ref-point-preview">
+          <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} strokeDasharray="4 4" />
+          <circle cx={a.x} cy={a.y} r={4} fill="none" />
+          <path d={`M${a.x - 6},${a.y}H${a.x + 6}M${a.x},${a.y - 6}V${a.y + 6}`} />
+        </g>
+      );
+    }
     const g = tool.gesture.kind;
     if (g === 'face' && faceHover) {
       const col = tool.id === 'architecture.paintClear' ? '#dc2626' : '#ea580c';
