@@ -83,6 +83,8 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         r.Service<IArrayPaths>(new CivilArrayPaths());
         // Split, Trim/Extend and Offset on paths, roads, retaining walls and ditches (audit §15).
         r.Service<IPolylinePieces>(new CorridorPieces());
+        r.Service<IOutlinePieces>(new PlatformPieces());
+        r.Service<IOutlinePieces>(new ParcelPieces());
         r.Catalog("plants", Plantings.SpeciesJson(Plantings.Catalog));
         r.Catalog("entourage", new JsonArray([.. Entourage.Kinds.Select(k => (JsonNode)new JsonObject { ["key"] = k.Key, ["label"] = k.Label, ["category"] = k.Category, ["height"] = k.Height, ["color"] = k.Color })]));
         r.Catalog("sculptKinds", new JsonArray(SculptDab.Kinds.Select(k => (JsonNode)k).ToArray()));

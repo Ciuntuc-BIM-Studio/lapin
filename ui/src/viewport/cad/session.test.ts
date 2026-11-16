@@ -370,6 +370,7 @@ describe('edits on elements: TRIM/EXTEND on walls, TRIMEXTEND, SPLITELEMENT, OFF
     ['s1', { id: 's1', type: 'IfcSlab', props: {} }],
     ['r1', { id: 'r1', type: 'LapinRailing', props: { points: [[0, 0], [4, 0]] } }],
     ['p1', { id: 'p1', type: 'IfcPavement', props: { path: [[0, 0], [20, 0]] } }],
+    ['roof1', { id: 'roof1', type: 'IfcRoof', props: { contour: [[0, 0], [10, 0], [10, 6], [0, 6]] } }],
   ]);
   const pickAt = (id: string | null) => (useCad.getState().host!.pickAny = () => id);
   const draftAt = (shape: unknown) => (useCad.getState().host!.pickDraft = () => (shape ? { id: 'd1', shape: shape as never } : null));
@@ -428,6 +429,8 @@ describe('edits on elements: TRIM/EXTEND on walls, TRIMEXTEND, SPLITELEMENT, OFF
     draftAt(null);
     pickAt('p1'); await feedPoint(P(2, 0));
     expect(engine.execute).toHaveBeenCalledWith('element.trimExtend', { id: 'p1', at: [2, 0], line: [[5, -1], [5, 1]] });
+    pickAt('roof1'); await feedPoint(P(2, 2));
+    expect(engine.execute).toHaveBeenCalledWith('element.trimOutline', { id: 'roof1', a: [5, -1], b: [5, 1], keep: [2, 2] });
   });
 
   it('OFFSET copies an element parallel, by its axis or between its faces', async () => {

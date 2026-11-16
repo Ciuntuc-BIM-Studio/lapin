@@ -161,4 +161,67 @@ public sealed class HostedSplitTests
         Assert.Equal(beam, f.Model.Get(a)!.Str("host"));
         Assert.Equal(second, f.Model.Get(b)!.Str("host"));
     }
+
+    // ─── Roofs, rooms, platforms, parcels ─────────────────────────────────────
+
+    static double RoofArea(Fixture f, string id) =>
+        f.Session.Quantities(id).Single(q => q.Name == "Qto_RoofBaseQuantities").Quantities.Single(q => q.Name == "GrossArea").Value;
+
+    [Fact]
+    public void A_gable_roof_split_across_its_ridge_keeps_its_planes_and_area_and_a_cut_that_would_change_them_refuses()
+    {
+        var f = new Fixture();
+        var roof = (string)f.Run("architecture.addRoof", new JsonObject { ["storeyId"] = f.Storey, ["points"] = new JsonArray(P(0, 0), P(10, 0), P(10, 6), P(0, 6)) })!["id"]!;
+        f.Run("architecture.updateRoof", new JsonObject { ["id"] = roof, ["attrs"] = new JsonObject { ["shape"] = "gable", ["ridgeDirection"] = "x" } });
+        var area = RoofArea(f, roof);
+        var height = Lapin.Architecture.Roofs.RoofTop.ShapeOf(f.Model.Get(roof)!, f.Model)!.Height;
+        var e = Assert.Throws<CommandException>(() => f.Run("architecture.splitOutline", new JsonObject { ["id"] = roof, ["a"] = P(-1, 2), ["b"] = P(11, 2) }));
+        Assert.Contains("slopes", e.Message);
+        var ids = Ids(f.Run("element.splitOutline", new JsonObject { ["id"] = roof, ["a"] = P(5, -1), ["b"] = P(5, 7), ["keep"] = P(1, 1) }));
+        Assert.Equal(area, RoofArea(f, ids[0]) + RoofArea(f, ids[1]), 6);
+        foreach (var id in ids) Assert.Equal(height, Lapin.Architecture.Roofs.RoofTop.ShapeOf(f.Model.Get(id)!, f.Model)!.Height, 6);
+        f.Session.Undo();
+        Assert.Single(f.Model.OfClass(IfcClass.Roof));
+    }
+
+    [Fact]
+    public void A_drawn_room_split_gives_a_second_room_with_the_next_number_and_areas_that_add_up()
+    {
+        var f = new Fixture();
+        var room = (string)f.Run("architecture.addRoom", new JsonObject { ["storeyId"] = f.Storey, ["points"] = new JsonArray(P(0, 0), P(6, 0), P(6, 4), P(0, 4)), ["arcs"] = new JsonArray(0, 0, 1, 0) })!["id"]!;
+        var area = ArcOutline.AreaOf(f.Model.Get(room)!);
+        var ids = Ids(f.Run("element.splitOutline", new JsonObject { ["id"] = room, ["a"] = P(2, -1), ["b"] = P(2, 6), ["keep"] = P(1, 1) }));
+        Assert.Equal(area, ArcOutline.AreaOf(f.Model.Get(ids[0])!) + ArcOutline.AreaOf(f.Model.Get(ids[1])!), 6);
+        Assert.NotEqual(f.Model.Get(ids[0])!.Str("number"), f.Model.Get(ids[1])!.Str("number"));
+        // A room bounded by walls is not cut by a line.
+        foreach (var (x1, y1, x2, y2) in new[] { (10.0, 0.0, 14.0, 0.0), (14, 0, 14, 4), (14, 4, 10, 4), (10, 4, 10, 0) }) f.Wall(x1, y1, x2, y2);
+        var auto = (string)f.Run("architecture.addRoom", new JsonObject { ["storeyId"] = f.Storey, ["x"] = 12, ["y"] = 2 })!["id"]!;
+        Assert.Contains("separation", Assert.Throws<CommandException>(() => f.Run("element.splitOutline", new JsonObject { ["id"] = auto, ["a"] = P(12, -1), ["b"] = P(12, 5) })).Message);
+    }
+
+    [Fact]
+    public void A_platform_split_keeps_its_hole_on_its_part_and_cuts_the_terrain_with_both_and_a_parcel_is_only_trimmed()
+    {
+        var f = new Fixture(new Lapin.Civil.CivilModule());
+        var t = (string)f.Run("civil.addFlatTerrain", new JsonObject { ["x1"] = -20, ["y1"] = -20, ["x2"] = 60, ["y2"] = 60, ["elevation"] = 0 })!["id"]!;
+        var pad = (string)f.Run("civil.addPlatform", new JsonObject
+        {
+            ["terrainId"] = t, ["points"] = new JsonArray(P(0, 0), P(10, 0), P(10, 6), P(0, 6)), ["elevation"] = 0.5,
+            ["holes"] = new JsonArray(new JsonArray(P(7, 2), P(9, 2), P(9, 4), P(7, 4))),
+        })!["id"]!;
+        var area = ArcOutline.AreaOf(f.Model.Get(pad)!) - OutlineHoles.Area(f.Model.Get(pad)!);
+        Assert.Contains("crosses", Assert.Throws<CommandException>(() => f.Run("element.splitOutline", new JsonObject { ["id"] = pad, ["a"] = P(8, -1), ["b"] = P(8, 7) })).Message);
+        var ids = Ids(f.Run("element.splitOutline", new JsonObject { ["id"] = pad, ["a"] = P(4, -1), ["b"] = P(4, 7), ["keep"] = P(1, 1) }));
+        var (a, b) = (f.Model.Get(ids[0])!, f.Model.Get(ids[1])!);
+        Assert.Empty(OutlineHoles.Of(a));
+        Assert.Single(OutlineHoles.Of(b));
+        Assert.Equal(area, ArcOutline.AreaOf(a) - OutlineHoles.Area(a) + ArcOutline.AreaOf(b) - OutlineHoles.Area(b), 6);
+        Assert.Equal(t, Lapin.Civil.Terrains.TerrainOf(f.Model, ids[1])!.Id);
+        Assert.Equal(0.5, b.Num("elevation"), 9);
+
+        f.Run("civil.setParcel", new JsonObject { ["terrainId"] = t, ["points"] = new JsonArray(P(0, 0), P(20, 0), P(20, 15), P(0, 15)) });
+        Assert.Contains("one parcel", Assert.Throws<CommandException>(() => f.Run("element.splitOutline", new JsonObject { ["id"] = t, ["a"] = P(10, -1), ["b"] = P(10, 16) })).Message);
+        f.Run("element.trimOutline", new JsonObject { ["id"] = t, ["a"] = P(10, -1), ["b"] = P(10, 16), ["keep"] = P(1, 1) });
+        Assert.Equal(150, ArcOutline.AreaOf(f.Model.Get(t)!, "parcel", Lapin.Civil.Terrains.ParcelArcs), 6);
+    }
 }
