@@ -915,6 +915,7 @@ export const RO: Record<string, string> = {
   'Structure types': 'Tipuri structurale', 'Columns at grid': 'Stâlpi pe axe', 'Line': 'Linie', 'Polyline': 'Polilinie', 'Rectangle': 'Dreptunghi', 'Circle': 'Cerc', 'Arc': 'Arc',
   'Move': 'Mută', 'Copy': 'Copiază', 'Rotate': 'Rotește', 'Mirror': 'Oglindește', 'Scale': 'Scalează', 'Erase': 'Șterge', 'Delete': 'Șterge', 'Offset': 'Paralelă',
   'Trim': 'Taie', 'Extend': 'Prelungește', 'Fillet': 'Racordare', 'Chamfer': 'Teșire', 'Hatch': 'Hașură', 'Reset': 'Resetează',
+  'Trim/Extend elements': 'Taie/Prelungește elemente', 'Split element': 'Împarte elementul', 'Offset element': 'Paralelă din element',
   'Aligned': 'Aliniată', 'Linear': 'Liniară', 'Grid axis': 'Axă', 'Level': 'Nivel', 'Sheet': 'Planșă', 'Extrude': 'Extrudare', 'Sweep': 'Măturare', 'Revolve': 'Revoluție',
   'Edit sketch': 'Editează schița', 'Subtract': 'Scade', 'Union': 'Unește', 'Intersect': 'Intersectează', 'Show operands': 'Arată operanzii', 'Remove operation': 'Anulează operația',
   'Terrain from points': 'Teren din puncte', 'Platform': 'Platformă', 'Created here': 'Creat aici', 'Demolish': 'Demolează', 'Temporary': 'Temporar',

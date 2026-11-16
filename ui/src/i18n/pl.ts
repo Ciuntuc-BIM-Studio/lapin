@@ -919,6 +919,7 @@ export const PL: Record<string, string> = {
   'Structure types': 'Typy konstrukcyjne', 'Columns at grid': 'Słupy w siatce', 'Line': 'Linia', 'Polyline': 'Polilinia', 'Rectangle': 'Prostokąt', 'Circle': 'Okrąg', 'Arc': 'Łuk',
   'Move': 'Przesuń', 'Copy': 'Kopiuj', 'Rotate': 'Obróć', 'Mirror': 'Lustro', 'Scale': 'Skaluj', 'Erase': 'Wymaż', 'Delete': 'Usuń', 'Offset': 'Odsuń',
   'Trim': 'Utnij', 'Extend': 'Wydłuż', 'Fillet': 'Zaokrąglij', 'Chamfer': 'Fazuj', 'Hatch': 'Kreskowanie', 'Reset': 'Resetuj',
+  'Trim/Extend elements': 'Utnij/wydłuż elementy', 'Split element': 'Podziel element', 'Offset element': 'Odsuń element',
   'Aligned': 'Wyrównany', 'Linear': 'Liniowy', 'Grid axis': 'Oś siatki', 'Level': 'Poziom', 'Sheet': 'Arkusz', 'Extrude': 'Wyciągnij', 'Sweep': 'Przeciągnięcie', 'Revolve': 'Obrót',
   'Edit sketch': 'Edytuj szkic', 'Subtract': 'Odejmij', 'Union': 'Suma', 'Intersect': 'Część wspólna', 'Show operands': 'Pokaż operandy', 'Remove operation': 'Usuń operację',
   'Terrain from points': 'Teren z punktów', 'Platform': 'Platforma', 'Created here': 'Utworzone tutaj', 'Demolish': 'Wyburz', 'Temporary': 'Tymczasowe',

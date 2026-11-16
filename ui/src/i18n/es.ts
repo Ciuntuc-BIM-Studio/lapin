@@ -921,6 +921,7 @@ export const ES: Record<string, string> = {
   'Structure types': 'Tipos estructurales', 'Columns at grid': 'Pilares en la rejilla', 'Line': 'Línea', 'Polyline': 'Polilínea', 'Rectangle': 'Rectángulo', 'Circle': 'Círculo', 'Arc': 'Arco',
   'Move': 'Desplazar', 'Copy': 'Copiar', 'Rotate': 'Girar', 'Mirror': 'Simetría', 'Scale': 'Escala', 'Erase': 'Borrar', 'Delete': 'Eliminar', 'Offset': 'Desfase',
   'Trim': 'Recortar', 'Extend': 'Alargar', 'Fillet': 'Empalme', 'Chamfer': 'Chaflán', 'Hatch': 'Sombreado', 'Reset': 'Restablecer',
+  'Trim/Extend elements': 'Recortar/alargar elementos', 'Split element': 'Dividir elemento', 'Offset element': 'Desfasar elemento',
   'Aligned': 'Alineada', 'Linear': 'Lineal', 'Grid axis': 'Eje de rejilla', 'Level': 'Nivel', 'Sheet': 'Lámina', 'Extrude': 'Extrusión', 'Sweep': 'Barrido', 'Revolve': 'Revolución',
   'Edit sketch': 'Editar boceto', 'Subtract': 'Restar', 'Union': 'Unión', 'Intersect': 'Intersección', 'Show operands': 'Mostrar operandos', 'Remove operation': 'Quitar la operación',
   'Terrain from points': 'Terreno a partir de puntos', 'Platform': 'Plataforma', 'Created here': 'Creado aquí', 'Demolish': 'Demoler', 'Temporary': 'Temporal',

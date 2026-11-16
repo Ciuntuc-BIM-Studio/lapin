@@ -39,6 +39,8 @@ In **Proprietà** un plinto mostra **Superiore** e **Inferiore** come quote e il
 
 ![Pilastri, travi e plinti in 3D](shots/structure-3d.webp)
 
+Travi e fondazioni a nastro si tagliano e si spostano con gli stessi strumenti dei muri (vedi [Tagliare, estendere, dividere e tracciare parallele dei muri](walls.md)): **Modifica → Dividi elemento** ne divide una in due dove fai clic, **Modifica → Taglia/estendi elementi** la taglia fino a un limite o la prolunga fino ad esso (una fondazione a nastro curva continua sul suo cerchio; portata sull’asse di un’altra trave, le due vengono unite), e **Modifica → Offset elemento** la copia in parallelo, dall’asse o tra le facce.
+
 ## Tipi e angoli
 
 **Tipi strutturali** imposta le sezioni di pilastri, travi e fondazioni: sezioni in calcestruzzo e profili in acciaio. La sezione di un pilastro è un **Rettangolo**, un **Cerchio** o un **Poligono**, regolare, dato dai **Lati** e dal **Diametro** tra i vertici (un montante ottagonale, come può averlo un IFC importato). Fai clic su un tipo nell’elenco per cambiarne la dimensione o il nome, poi **Salva tipo**: tutti gli elementi di quel tipo si adeguano; **Nuovo tipo** torna alla creazione di un tipo.

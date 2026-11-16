@@ -39,6 +39,8 @@ I **Egenskaber** viser et punktfundament sin **Top** og **Bund** som koter og de
 
 ![Søjler, bjælker og punktfundamenter i 3D](shots/structure-3d.webp)
 
+Bjælker og stribefundamenter skæres og flyttes med de samme værktøjer som vægge (se [Trim, forlængelse, opdeling og forskydning af vægge](walls.md)): **Redigér → Opdel element** deler dem i to, hvor du klikker, **Redigér → Trim/forlæng elementer** trimmer dem til en grænse eller fører dem hen til den (et buet stribefundament fortsætter ad sin cirkel; føres det til en anden bjælkes akse, samles de to), og **Redigér → Forskyd element** kopierer dem parallelt, fra aksen eller mellem fladerne.
+
 ## Typer og hjørner
 
 **Konstruktionstyper** angiver tværsnittene for søjler, bjælker og fundamenter: betontværsnit og stålprofiler. En søjles tværsnit er et **Rektangel**, en **Cirkel** eller en **Polygon**, en regelmæssig givet ved sine **Sider** og sin **Diameter** over hjørnerne (en ottekantet stolpe, som en importeret IFC kan have den). Klik på en type i listen for at ændre dens størrelse eller navn, og derefter **Gem type**: alle elementer af den type følger med; **Ny type** går tilbage til at oprette en.

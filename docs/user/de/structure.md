@@ -39,6 +39,8 @@ In **Eigenschaften** zeigt ein Einzelfundament **Oben** und **Unten** als Höhen
 
 ![Stützen, Träger und Einzelfundamente in 3D](shots/structure-3d.webp)
 
+Träger und Streifenfundamente werden mit denselben Werkzeugen geschnitten und versetzt wie Wände (siehe [Wände stutzen, dehnen, teilen und versetzen](walls.md)): **Ändern → Element teilen** teilt sie dort in zwei, wo Sie klicken, **Ändern → Elemente stutzen/dehnen** stutzt sie bis zu einer Grenze oder verlängert sie bis dorthin (ein gekrümmtes Streifenfundament läuft auf seinem Kreis weiter; bis zur Achse eines anderen Trägers geführt, werden beide verbunden), und **Ändern → Element versetzen** kopiert sie parallel, von der Achse oder zwischen den Flächen.
+
 ## Typen und Ecken
 
 **Tragwerkstypen** legt die Querschnitte von Stützen, Trägern und Fundamenten fest: Betonquerschnitte und Stahlprofile. Der Querschnitt einer Stütze ist ein **Rechteck**, ein **Kreis** oder ein **Polygon**, ein regelmäßiges, gegeben durch seine **Seiten** und seinen **Durchmesser** über die Ecken (ein achteckiger Pfosten, wie ihn ein importiertes IFC haben kann). Klicken Sie auf einen Typ in der Liste, um seine Größe oder seinen Namen zu ändern, dann **Typ speichern**: alle Elemente dieses Typs folgen; **Neuer Typ** führt zurück zum Anlegen eines Typs.

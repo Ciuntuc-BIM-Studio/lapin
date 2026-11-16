@@ -23,7 +23,8 @@ import { mapShape } from '../insetMap';
 import { liveBegin, liveEnd } from '../liveInput';
 import { traceBegin, traceEnd } from '../moveTrace';
 import { lassoTest, type RegionTest } from '../selectBox';
-import { xy } from '../../platform/vec';
+import { pt, xy } from '../../platform/vec';
+import { isPathElement } from '../../modules/core/autoJoin';
 import { usePrefs } from '../../app/prefs';
 import type { Aimed } from './aim';
 import { drawConstrainedArgs, inferConstraints, newShapeId, newShapeIndex, sketchViews, type ConstraintSpec, type DrawHints, type Drawn, type PlacedPoint } from './recorded';
@@ -120,12 +121,16 @@ interface CadState {
   hatchScale: number;
   /** OFFSET through a point picked rather than by the distance. */
   offsetThrough: boolean;
+  /** An element's offset measured from its axis, or between its faces (a wall's copy standing the distance off its face). */
+  offsetFrom: 'axis' | 'face';
+  /** Where Trim/Extend elements brings an end on an element boundary: its axis, or its face nearer (or farther from) the part kept. */
+  trimFace: 'axis' | 'near' | 'far';
 }
 
 export const useCad = create<CadState>(() => ({
   buffer: '', takeAll: false, history: [], command: null, step: null, last: null, cursor: null, aim: null, lastPoint: null,
   osnap: true, ortho: false, polar: true, layer: '0', role: '', host: null,
-  offset: 0.5, offsetThrough: false, radius: 0, filletLine: 'axis', chamfer: 0.1, pattern: 'LINES45', hatchScale: 1,
+  offset: 0.5, offsetThrough: false, offsetFrom: 'axis', trimFace: 'axis', radius: 0, filletLine: 'axis', chamfer: 0.1, pattern: 'LINES45', hatchScale: 1,
 }));
 
 const log = (line: string) => useCad.setState((s) => ({ history: [...s.history, line].slice(-50) }));
@@ -535,17 +540,24 @@ function erase(): Step | null | void | Promise<Step | null | void> {
 
 /**
  * OFFSET (O): a distance typed (the project's unit) or Through a point; then, again and again until Enter or Escape,
- * the shape to offset and the side it goes (lines, polylines and rectangles with mitred corners, circles, arcs).
+ * the shape to offset and the side it goes (lines, polylines and rectangles with mitred corners, circles, arcs). A wall, a
+ * beam or a strip footing picked in a plan is copied parallel (a curved one concentric: element.offset), the distance from
+ * its axis, or between its faces (Axis/Face).
  */
 function offset(): Step {
   const through = () => useCad.getState().offsetThrough;
+  const fromWord = () => (useCad.getState().offsetFrom === 'face' ? 'Face' : 'Axis');
+  const setFrom = (from: 'axis' | 'face') => () => { useCad.setState({ offsetFrom: from }); return pickStep(); };
   const pickStep = (): Step => ({
     prompt: through()
-      ? 'Pick what to offset (through a point; type a distance to give one)'
-      : `Pick what to offset (distance ${len(useCad.getState().offset)}; type a distance to change) [Through]`,
+      ? `Pick a line or an element to offset (through a point; type a distance to give one) [Axis/Face: ${fromWord()}]`
+      : `Pick a line or an element to offset (distance ${len(useCad.getState().offset)}; type a distance to change) [Through/Axis/Face: ${fromWord()}]`,
     want: 'pick',
     value: (d) => { if (d > 0) useCad.setState({ offset: d, offsetThrough: false }); return pickStep(); },
-    keywords: { T: () => { useCad.setState({ offsetThrough: !through() }); return pickStep(); }, THROUGH: () => { useCad.setState({ offsetThrough: !through() }); return pickStep(); } },
+    keywords: {
+      T: () => { useCad.setState({ offsetThrough: !through() }); return pickStep(); }, THROUGH: () => { useCad.setState({ offsetThrough: !through() }); return pickStep(); },
+      A: setFrom('axis'), AXIS: setFrom('axis'), F: setFrom('face'), FACE: setFrom('face'),
+    },
     pick: (hit) => ({
       prompt: through() ? 'Through which point?' : 'Which side?', want: 'point',
       point: async (side) => {
@@ -553,22 +565,163 @@ function offset(): Step {
         return pickStep();
       },
     }),
+    pickElement: (id) => {
+      if (!isAxisElement(id)) { log('Offset takes drafted lines, and walls, beams and strip footings.'); return pickStep(); }
+      return {
+        prompt: through() ? 'Through which point?' : 'Which side?', want: 'point',
+        point: async (side) => {
+          const s = useCad.getState();
+          await execute('element.offset', { id, side: xy(side), ...(through() ? { through: true } : { distance: s.offset, from: s.offsetFrom }) });
+          return pickStep();
+        },
+      };
+    },
     enter: () => null,
   });
   return pickStep();
 }
 
+/**
+ * TRIM and EXTEND: drafted lines, cut at or carried on to the lines that cross them. A wall picked in a plan is trimmed at the
+ * walls that cross it, or carried on to the first ahead (architecture.trimWall, extendWall); other elements take Trim/Extend
+ * elements (TRIMEXTEND), which brings them to a boundary picked first.
+ */
 function trimOrExtend(kind: 'trim' | 'extend'): Step {
   const step = (): Step => ({
     prompt: kind === 'trim' ? 'Pick the piece to cut away (Enter to finish)' : 'Pick the end to extend (Enter to finish)', want: 'pick',
-    pick: async (hit, at) => {
-      const isWall = useSession.getState().nodes.get(hit.id)?.type === 'IfcWall';
-      await execute(isWall ? `architecture.${kind}Wall` : `drafting.${kind}`, { id: hit.id, at: xy(at) });
+    pick: async (hit, at) => { await execute(`drafting.${kind}`, { id: hit.id, at: xy(at) }); return step(); },
+    pickElement: async (id, at) => {
+      if (nodeOf(id)?.type === 'IfcWall') await execute(`architecture.${kind}Wall`, { id, at: xy(at) });
+      else log('Other elements are trimmed or extended to a boundary: Trim/Extend elements (TRIMEXTEND).');
       return step();
     },
     enter: () => null,
   });
   return step();
+}
+
+// ─── Edits on elements (audit 2026-11-15, §6) ──────────────────────────────
+
+const nodeOf = (id: string) => useSession.getState().nodes.get(id);
+/** The elements cut by a line in plan: floors and ceilings (architecture.splitOutline, trimOutline). */
+const OUTLINE_CLASSES = ['IfcSlab', 'LapinCeiling'];
+const isOutlineElement = (id: string) => OUTLINE_CLASSES.includes(nodeOf(id)?.type ?? '');
+/** Walls, beams, strip footings: elements along an axis (element.split, trimExtend, offset). */
+const isAxisElement = (id: string) => { const n = nodeOf(id); return !!n && isPathElement(n.props); };
+
+/** The straight axis of an element, as two points (none when it is curved). */
+function straightAxis(id: string): [Vec2, Vec2] | null {
+  const n = nodeOf(id);
+  const a = pt(n?.props.start), b = pt(n?.props.end);
+  return a && b && !Number(n?.props.arc) ? [a, b] : null;
+}
+
+export type DraftBoundary = { line: number[][] } | { arc: { c: number[]; r: number } };
+
+/** A drafted shape as the line or circle an element is brought to: a line, a polyline's segment nearest the pick, a circle or an arc's circle. */
+export function draftBoundary(shape: Shape, at: Vec2): DraftBoundary {
+  if (shape.type === 'line') return { line: [xy(shape.a), xy(shape.b)] };
+  if (shape.type === 'polyline') {
+    const n = shape.pts.length, count = shape.closed ? n : n - 1;
+    let best = 0, bestD = Infinity;
+    for (let i = 0; i < count; i++) {
+      const a = shape.pts[i], b = shape.pts[(i + 1) % n];
+      const dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy;
+      const t = l2 > 0 ? Math.max(0, Math.min(1, ((at.x - a.x) * dx + (at.y - a.y) * dy) / l2)) : 0;
+      const d = Math.hypot(a.x + dx * t - at.x, a.y + dy * t - at.y);
+      if (d < bestD) { bestD = d; best = i; }
+    }
+    return { line: [xy(shape.pts[best]), xy(shape.pts[(best + 1) % n])] };
+  }
+  return { arc: { c: xy(shape.c), r: shape.r } };
+}
+
+const faceWord = () => ({ axis: 'Axis', near: 'Near face', far: 'Far face' })[useCad.getState().trimFace];
+const faceKeys = (back: () => Step): Record<string, () => Next> => {
+  const set = (trimFace: 'axis' | 'near' | 'far') => () => { useCad.setState({ trimFace }); return back(); };
+  return { A: set('axis'), AXIS: set('axis'), N: set('near'), NEAR: set('near'), F: set('far'), FAR: set('far') };
+};
+
+/**
+ * TRIMEXTEND (TE; Modify → Trim/Extend elements), Revit's Trim/Extend: the boundary first (an element: its axis, or its face
+ * near or far from the part kept; or a drafted line or arc), then, again and again until Enter, the elements to bring to it,
+ * each clicked on the part to keep. A wall, beam or strip footing has the end on the other side (or the end nearer it) moved
+ * to the boundary, curved ones round their circle (element.trimExtend); a floor or ceiling is cut along a straight boundary,
+ * the side clicked kept (architecture.trimOutline).
+ */
+function trimExtendElements(): Step {
+  const target = (boundary: { boundary: string } | DraftBoundary, line: [Vec2, Vec2] | null): Step => ({
+    prompt: `Pick an element to trim or extend, on the part to keep [Axis/Near/Far: ${faceWord()}] (Enter to finish)`, want: 'pick',
+    keywords: faceKeys(() => target(boundary, line)),
+    pick: () => { log('Pick an element: a wall, a beam, a strip footing, a floor or a ceiling.'); return target(boundary, line); },
+    pickElement: async (id, at) => {
+      if (isOutlineElement(id)) {
+        if (line) await execute('architecture.trimOutline', { id, a: xy(line[0]), b: xy(line[1]), keep: xy(at) });
+        else log('A floor or a ceiling is trimmed by a straight boundary.');
+      } else if (isAxisElement(id)) {
+        await execute('element.trimExtend', { id, at: xy(at), ...boundary, ...('boundary' in boundary ? { face: useCad.getState().trimFace } : {}) });
+      } else log('Trim/Extend takes walls, beams, strip footings, floors and ceilings.');
+      return target(boundary, line);
+    },
+    element: () => { log('Pick it in a plan, on the part to keep.'); return target(boundary, line); },
+    enter: () => null,
+  });
+  const first = (): Step => ({
+    prompt: `Pick the boundary: an element, or a drafted line or arc [Axis/Near/Far: ${faceWord()}]`, want: 'pick',
+    keywords: faceKeys(first),
+    pick: (hit, at) => {
+      const b = draftBoundary(hit.shape, at);
+      return target(b, 'line' in b ? [pt(b.line[0])!, pt(b.line[1])!] : null);
+    },
+    pickElement: (id) => {
+      if (!isAxisElement(id)) { log('A boundary is a wall, a beam, a strip footing, or a drafted line or arc.'); return first(); }
+      return target({ boundary: id }, straightAxis(id));
+    },
+    enter: () => null,
+  });
+  return first();
+}
+
+/**
+ * SPLITELEMENT (SPLIT; Modify → Split element): a wall, a beam or a strip footing clicked where it is to be cut becomes two
+ * (element.split; the first keeps its GlobalId, the second is a copy of it, the openings on the part they fall on); with
+ * Intersection, where another element or a drafted line crosses it. A floor or a ceiling is cut along a line of two points
+ * (architecture.splitOutline; the part clicked keeps its GlobalId). Again and again until Enter.
+ */
+function splitElement(): Step {
+  let atCrossing = false;
+  const toggle = (on: boolean) => () => { atCrossing = on; return first(); };
+  const first = (): Step => ({
+    prompt: atCrossing
+      ? 'Pick the element to split where something crosses it [Point] (Enter to finish)'
+      : 'Click the element where to split it [Intersection] (Enter to finish)',
+    want: 'pick',
+    keywords: { I: toggle(true), INTERSECTION: toggle(true), P: toggle(false), POINT: toggle(false) },
+    pick: () => { log('Pick a wall, a beam, a strip footing, a floor or a ceiling.'); return first(); },
+    pickElement: async (id, at) => {
+      if (isOutlineElement(id)) return splitLine(id, at);
+      if (!isAxisElement(id)) { log('Split takes walls, beams, strip footings, floors and ceilings.'); return first(); }
+      if (atCrossing) return crossing(id, at);
+      await execute('element.split', { id, at: xy(at) });
+      return first();
+    },
+    enter: () => null,
+  });
+  const crossing = (id: string, at: Vec2): Step => ({
+    prompt: 'Pick what crosses it: an element, or a drafted line or arc', want: 'pick',
+    pick: async (hit, p) => { await execute('element.split', { id, at: xy(at), ...draftBoundary(hit.shape, p) }); return first(); },
+    pickElement: async (other) => { await execute('element.split', { id, at: xy(at), with: other }); return first(); },
+    enter: () => first(),
+  });
+  const splitLine = (id: string, keep: Vec2): Step => ({
+    prompt: 'First point of the split line', want: 'point',
+    point: (a) => ({
+      prompt: 'Second point', want: 'point', base: a,
+      preview: (c) => [{ type: 'line', a, b: c }],
+      point: async (b) => { await execute('architecture.splitOutline', { id, a: xy(a), b: xy(b), keep: xy(keep) }); return first(); },
+    }),
+  });
+  return first();
 }
 
 /**
@@ -697,6 +850,8 @@ export const COMMANDS: CommandDef[] = [
   { names: ['OFFSET', 'O', 'OF'], label: 'Offset', start: offset },
   { names: ['TRIM', 'TR'], label: 'Trim', start: () => trimOrExtend('trim') },
   { names: ['EXTEND', 'EX'], label: 'Extend', start: () => trimOrExtend('extend') },
+  { names: ['TRIMEXTEND', 'TE'], label: 'Trim/Extend elements', start: trimExtendElements },
+  { names: ['SPLITELEMENT', 'SPLIT'], label: 'Split element', start: splitElement },
   { names: ['FILLET', 'F'], label: 'Fillet', start: () => corner('fillet') },
   { names: ['CHAMFER', 'CHA'], label: 'Chamfer', start: () => corner('chamfer') },
   { names: ['HATCH', 'H', 'BHATCH'], label: 'Hatch', start: hatch },

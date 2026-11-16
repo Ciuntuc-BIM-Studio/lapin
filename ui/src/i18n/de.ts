@@ -921,6 +921,7 @@ export const DE: Record<string, string> = {
   'Structure types': 'Tragwerkstypen', 'Columns at grid': 'Stützen am Raster', 'Line': 'Linie', 'Polyline': 'Polylinie', 'Rectangle': 'Rechteck', 'Circle': 'Kreis', 'Arc': 'Bogen',
   'Move': 'Verschieben', 'Copy': 'Kopieren', 'Rotate': 'Drehen', 'Mirror': 'Spiegeln', 'Scale': 'Skalieren', 'Erase': 'Löschen', 'Delete': 'Löschen', 'Offset': 'Versatz',
   'Trim': 'Stutzen', 'Extend': 'Dehnen', 'Fillet': 'Abrunden', 'Chamfer': 'Fase', 'Hatch': 'Schraffur', 'Reset': 'Zurücksetzen',
+  'Trim/Extend elements': 'Elemente stutzen/dehnen', 'Split element': 'Element teilen', 'Offset element': 'Element versetzen',
   'Aligned': 'Ausgerichtet', 'Linear': 'Linear', 'Grid axis': 'Rasterachse', 'Level': 'Ebene', 'Sheet': 'Plan', 'Extrude': 'Extrusion', 'Sweep': 'Sweep', 'Revolve': 'Rotation',
   'Edit sketch': 'Skizze bearbeiten', 'Subtract': 'Abziehen', 'Union': 'Vereinigen', 'Intersect': 'Schneiden', 'Show operands': 'Operanden anzeigen', 'Remove operation': 'Operation entfernen',
   'Terrain from points': 'Gelände aus Punkten', 'Platform': 'Plateau', 'Created here': 'Hier erstellt', 'Demolish': 'Abbrechen', 'Temporary': 'Temporär',
