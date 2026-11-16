@@ -57,7 +57,7 @@ public static class Analysis
         foreach (var pad in Terrains.Pads(m, terrain.Id))
         {
             var o = ArcOutline.BuiltOf(pad);
-            if (o.Count >= 3 && Polygon2.Contains(o, p)) return pad.Num("elevation");
+            if (o.Count >= 3 && Polygon2.Contains(o, p) && !OutlineHoles.Built(pad).Any(h => Polygon2.Contains(h, p))) return pad.Num("elevation");
         }
         foreach (var d in Terrains.DitchesOf(m, terrain.Id))
         {

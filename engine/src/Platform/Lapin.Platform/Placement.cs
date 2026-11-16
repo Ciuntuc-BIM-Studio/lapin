@@ -185,6 +185,15 @@ public static class Placement
                 foreach (var k in new[] { "hand", "face" })
                     if (entry[k] is JsonArray { Count: >= 2 } d) entry[k] = J(t.Dir(Args.PointOf(d)));
             }
+        // An outline's own holes (audit S4), loops as its contour is, their curved edges as its are.
+        if (OutlineHoles.Of(e) is { Count: > 0 } holes)
+            OutlineHoles.Write(a, [.. holes.Select(h =>
+            {
+                var q = h.Corners.Select(t.Point).ToList();
+                if (!t.Mirrored) return new OutlineHoles.Hole(q, h.Rises);
+                q.Reverse();
+                return new OutlineHoles.Hole(q, ArcOutline.Reversed(h.Rises)?.Select(r => -r).ToArray());
+            })]);
         // A room's islands (the columns inside it), loops as its contour is.
         if (a["islands"] is JsonArray isl)
             a["islands"] = new JsonArray(isl.OfType<JsonArray>().Select(l =>

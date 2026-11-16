@@ -179,6 +179,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             var n = Terrains.Pads(ctx.Model, t.Id).Count() + 1;
             var attrs = new JsonObject { ["contour"] = Terrains.ContourJson(outline), ["elevation"] = Math.Round(z, 3) };
             ArcOutline.Write(attrs, arcs);
+            if (a[OutlineHoles.Key] != null) OutlineHoles.Apply(attrs, a);
             var pad = new Entity(ctx.NewId(), IfcClass.EarthworksCut, ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? nm : $"Platform {n}", attrs, "USERDEFINED");
             ctx.Add(pad);
             ctx.AddRelation(new Relation(ctx.NewId(), IfcClass.RelVoidsElement, t.Id, [pad.Id]));
@@ -195,8 +196,29 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 attrs["contour"] = Terrains.ContourJson(outline);
                 ArcOutline.Write(attrs, arcs);
             }
+            // Its own holes (audit S4): given, or kept and checked against the outline as it now is.
+            if (a[OutlineHoles.Key] != null || a["points"] != null || a["x1"] != null) OutlineHoles.Apply(attrs, a);
             if (Json.Number(a["elevation"]) is { } z) attrs["elevation"] = z;
             ctx.Replace(pad.With(attrs: attrs));
+            return null;
+        });
+
+        // A hole in a platform's outline (audit S4), its ground kept as it is: {id? (else the platform that holds the loop), points,
+        // arcs?} → {id}; {id, hole} takes one away.
+        r.Command("addOutlineHole", "Hole in platform", (ctx, a) =>
+        {
+            var pts = Args.Points(a);
+            var pad = (string?)a["id"] is { } id ? Spatial.Require(ctx.Model, id, IfcClass.EarthworksCut)
+                : ctx.Model.OfClass(IfcClass.EarthworksCut).FirstOrDefault(x => !Ditches.Is(x) && OutlineHoles.Holds(x, pts)) ?? throw new CommandException("Draw the hole inside a platform.");
+            if (Ditches.Is(pad)) throw new CommandException("A ditch has no holes.");
+            ctx.Replace(pad.With(attrs: OutlineHoles.Added(pad, a)));
+            return new JsonObject { ["id"] = pad.Id };
+        });
+        r.Command("removeOutlineHole", "Remove hole", (ctx, a) =>
+        {
+            var pad = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.EarthworksCut);
+            var k = OutlineHoles.Index(a, pad) ?? throw new CommandException("Which hole? Its index, from 0.");
+            ctx.Replace(pad.With(attrs: OutlineHoles.Removed(pad, k)));
             return null;
         });
 
@@ -253,6 +275,8 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             : throw new CommandException("Only a platform or a terrain's parcel has its outline's edges bent and its corners rounded here.");
         var corners = ArcOutline.CornersOf(e, key);
         if (corners.Count < 3) throw new CommandException(key == "parcel" ? "The terrain has no parcel." : "The platform has no outline.");
+        // One of a platform's own holes (audit S4): {hole: its index}.
+        if (key == "contour" && OutlineHoles.Index(a, e) is { } k) { var h = OutlineHoles.Of(e)[k]; return (e, "hole:" + k, arcsKey, [.. h.Corners], h.Rises); }
         return (e, key, arcsKey, corners, ArcOutline.RisesOf(e, key, arcsKey));
     }
 
@@ -261,10 +285,12 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
 
     static void ReplaceOutline(ICommandContext ctx, Entity e, string key, string arcsKey, IReadOnlyList<Vec2> corners, IReadOnlyList<double>? rises)
     {
+        if (key.StartsWith("hole:", StringComparison.Ordinal)) { ctx.Replace(e.With(attrs: OutlineHoles.Replaced(e, int.Parse(key[5..], System.Globalization.CultureInfo.InvariantCulture), corners, rises))); return; }
         var (c, r) = ArcOutline.Check(corners, rises, key == "parcel" ? "A parcel" : "A platform");
         var attrs = e.CloneAttrs();
         attrs[key] = Terrains.ContourJson(c);
         ArcOutline.Write(attrs, r, arcsKey);
+        if (key == "contour") OutlineHoles.Apply(attrs, new JsonObject());
         ctx.Replace(e.With(attrs: attrs));
     }
 

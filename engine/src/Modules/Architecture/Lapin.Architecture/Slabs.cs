@@ -166,12 +166,14 @@ public static class Slabs
         var top = Top(m, slab);
         var parts = new List<GeometryPart>();
         var problems = new List<string>();
+        // Its own holes (audit S4): islands of its outline, each layer built round them (no boolean needed).
+        var own = OutlineHoles.Built(slab);
         foreach (var (from, to, material, name, index) in Section(m, slab))
         {
             if (!(to - from > 1e-9)) continue;
-            var own = LayerExtents.SlabContour(contour, extents, index, Short);
-            if (own == null) problems.Add($"{name}: its edges moved as its extents say would leave no outline; built to the floor's.");
-            if (Prism.ExtrudeFootprint(own ?? contour, top + from, to - from, name) is { } solid)
+            var layer = LayerExtents.SlabContour(contour, extents, index, Short);
+            if (layer == null) problems.Add($"{name}: its edges moved as its extents say would leave no outline; built to the floor's.");
+            if (Prism.ExtrudeFootprint(layer ?? contour, own, top + from, to - from, name) is { } solid)
                 parts.Add(new GeometryPart(name, Materials.ColorOf(m, material), solid, material, $"layer:{index}"));
         }
         var holes = Holes(m, slab.Id).Select(h => h.Contour).ToList();
@@ -212,7 +214,7 @@ public static class Slabs
                 outlines.Add(c);
         if (outlines.Count == 0) outlines.Add(contour);
         var plan = outlines.Select(c => new PlanItem("outline", true, c)).ToList();
-        plan.AddRange(holes.Select(h => new PlanItem("outline", true, h)));
+        plan.AddRange(holes.Concat(own).Select(h => new PlanItem("outline", true, h)));
         var built = new ElementGeometry(parts, plan, contour, problems.Count > 0 ? problems : null);
         // A beam-and-block floor (report #134): its core as joists, blocks and cast concrete.
         return BeamBlock.Of(m, slab) is { } bb ? BeamBlock.Apply(slab, built, m, services, bb) : built;
@@ -315,7 +317,8 @@ public static class Slabs
         var section = Section(m, slab);
         var top = Top(m, slab);
         var bottom = section.Min(b => b.From);
-        return Prism.ExtrudeFootprint(contour, top + bottom, section.Max(b => b.To) - bottom, "slab");
+        // Its own holes are not floor (audit S4): what it cuts has them.
+        return Prism.ExtrudeFootprint(contour, OutlineHoles.Built(slab), top + bottom, section.Max(b => b.To) - bottom, "slab");
     }
 
     /// <summary>The area a layer of no thickness covers: the net area of the next layer with a thickness towards the core (the core always has one).</summary>
@@ -339,7 +342,8 @@ public static class Slabs
         if (g == null || g.Parts.Count == 0) yield break;
         // Exactly, its arcs as arcs (forum topic 97).
         var (corners, rises) = (Corners(slab), Rises(slab));
-        var area = Math.Abs(ArcOutline.SignedArea(corners, rises));
+        // Its own holes are not part of it (audit S4): the profile's area, as IFC measures an area with voids.
+        var area = Math.Abs(ArcOutline.SignedArea(corners, rises)) - OutlineHoles.Area(slab);
         var section = Section(m, slab);
         var width = section.Max(b => b.To) - section.Min(b => b.From);
         if (BeamBlock.Of(m, slab) is { } bb)

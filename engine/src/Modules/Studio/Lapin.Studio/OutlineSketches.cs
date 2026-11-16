@@ -41,8 +41,14 @@ public static class OutlineSketches
         IfcClass.Slab => "architecture.updateSlab",
         "LapinCeiling" => "architecture.updateCeiling",
         IfcClass.OpeningElement when e.Attrs["contour"] != null && e.Str("stairId") == null => "architecture.updateSlabOpening",
+        // A drawn room and a platform too (audit S4).
+        IfcClass.Space when e.Attrs["contour"] != null && !e.Bool("auto") => "architecture.updateRoom",
+        IfcClass.EarthworksCut when e.Attrs["contour"] != null && e.PredefinedType != "TRENCH" => "civil.updatePlatform",
         _ => null,
     };
+
+    /// <summary>Whether an element's outline may have holes of its own (audit S4): a floor, a ceiling, a platform.</summary>
+    static bool TakesHoles(Entity e) => e.Class is IfcClass.Slab or "LapinCeiling" or IfcClass.EarthworksCut;
 
         /// <summary>
     /// Whether an element's outline can be edited as a sketch: a floor, a floor opening or a ceiling built from its outline. A floor
@@ -147,11 +153,43 @@ public static class OutlineSketches
         return (corners, [.. rises]);
     }
 
+    /// <summary>
+    /// The shapes chained into closed outlines (audit S4): each set of shapes meeting end to end one loop (a circle alone one of
+    /// its own), the largest the outline, the others its holes. Refused, saying why, when a set is not one closed loop.
+    /// </summary>
+    public static (List<Vec2> Corners, double[] Rises, List<OutlineHoles.Hole> Holes) Loops(IReadOnlyList<Shape> shapes)
+    {
+        bool Same(Vec2 p, Vec2 q) => (p - q).Length <= Tol;
+        IEnumerable<Vec2> Ends(Shape s) => s switch
+        {
+            Line l => [l.A, l.B],
+            Polyline p => p.Closed ? p.Pts : [p.Pts[0], p.Pts[^1]],
+            Arc a => [a.At(a.Start), a.At(a.End)],
+            _ => [],
+        };
+        // Sets of shapes that meet end to end.
+        var group = Enumerable.Range(0, shapes.Count).ToArray();
+        int Root(int i) => group[i] == i ? i : group[i] = Root(group[i]);
+        for (var i = 0; i < shapes.Count; i++)
+            for (var j = 0; j < i; j++)
+                if (shapes[i] is not Circle && shapes[j] is not Circle && Ends(shapes[i]).Any(p => Ends(shapes[j]).Any(q => Same(p, q)))) group[Root(i)] = Root(j);
+        var loops = Enumerable.Range(0, shapes.Count).GroupBy(Root).Select(g => Loop([.. g.Select(i => shapes[i])])).ToList();
+        if (loops.Count == 0) throw new CommandException("The sketch has no closed outline: draw its edges end to end.");
+        var outer = loops.MaxBy(l => Math.Abs(ArcOutline.SignedArea(l.Corners, l.Rises)));
+        var holes = loops.Where(l => !ReferenceEquals(l.Corners, outer.Corners)).Select(l =>
+        {
+            var (c, r) = ArcOutline.Check(l.Corners, l.Rises, "A hole");
+            return new OutlineHoles.Hole(c, r);
+        }).ToList();
+        return (outer.Corners, outer.Rises, holes);
+    }
+
     /// <summary>The view an element's outline is edited in, when it is.</summary>
     public static Entity? ViewOf(IModelView m, string elementId) => m.OfClass(Views.Class).FirstOrDefault(v => v.Str(OfKey) == elementId);
 
     static bool SameOutline(JsonObject sketch, Entity e) =>
-        JsonNode.DeepEquals(sketch["contour"], e.Attrs["contour"]) && JsonNode.DeepEquals(sketch[ArcOutline.Key], e.Attrs[ArcOutline.Key]);
+        JsonNode.DeepEquals(sketch["contour"], e.Attrs["contour"]) && JsonNode.DeepEquals(sketch[ArcOutline.Key], e.Attrs[ArcOutline.Key])
+        && JsonNode.DeepEquals(sketch[OutlineHoles.Key], e.Attrs[OutlineHoles.Key]) && JsonNode.DeepEquals(sketch[OutlineHoles.ArcsKey], e.Attrs[OutlineHoles.ArcsKey]);
 
     public static void Register(IModuleRegistry r)
     {
@@ -159,13 +197,13 @@ public static class OutlineSketches
         r.Command("editOutline", "Edit sketch", (ctx, a) =>
         {
             var e = ctx.Model.Get((string?)a["id"] ?? "") ?? throw new CommandException("The element is not in the project.");
-            if (UpdateCommand(e) == null) throw new CommandException("Only a floor, a floor opening or a ceiling has its outline edited as a sketch.");
+            if (UpdateCommand(e) == null) throw new CommandException("Only a floor, a floor opening, a ceiling, a drawn room or a platform has its outline edited as a sketch.");
             if (!Editable(e)) throw new CommandException("An element kept as a reference from its file is not edited as a sketch.");
             if (ViewOf(ctx.Model, e.Id) is { } open) return new JsonObject { ["viewId"] = open.Id, ["ids"] = new JsonArray([.. Drafts.On(ctx.Model, open.Id).Select(d => (JsonNode)d.Id)]), ["constraints"] = 0, ["rebuilt"] = false };
             var corners = Corners(e);
             if (corners.Count < 3) throw new CommandException("The element has no outline.");
             var storey = Spatial.StoreyOf(ctx.Model, e.Id) ?? (e.Class == IfcClass.OpeningElement && ctx.Model.RelatingOf(e.Id, IfcClass.RelVoidsElement) is { } host ? Spatial.StoreyOf(ctx.Model, host.Id) : null)
-                ?? throw new CommandException("The element stands on no storey.");
+                ?? (e.Class == IfcClass.EarthworksCut ? Spatial.Storeys(ctx.Model).FirstOrDefault() : null) ?? throw new CommandException("The element stands on no storey.");
             var made = Command(ctx, "view.create").Handler(ctx, new JsonObject { ["kind"] = "plan", ["storeyId"] = storey.Id, ["name"] = $"Sketch: {e.Name}" }) as JsonObject;
             var view = ctx.Model.Get((string?)made?["id"] ?? "") ?? throw new CommandException("The sketch's view could not be made.");
             var vattrs = view.CloneAttrs();
@@ -207,19 +245,26 @@ public static class OutlineSketches
             else
             {
                 rebuilt = e.Attrs[Key] != null;
-                var shapes = ShapesOf(corners, ArcOutline.Rises(e.Attrs[ArcOutline.Key], corners.Count));
-                foreach (var s in shapes) ids.Add(Drafts.Add(ctx, view.Id, "0", s).Id);
-                // Its corners held: each edge's end on the next one's start, so a dimension moves the outline, never tears it.
                 var cs = new JsonArray();
-                for (var i = 0; i < shapes.Count; i++)
+                // The outline, then each of its own holes (audit S4), every loop drawn one line or arc per edge.
+                var loops = new List<(IReadOnlyList<Vec2> Corners, IReadOnlyList<double>? Rises)> { (corners, ArcOutline.Rises(e.Attrs[ArcOutline.Key], corners.Count)) };
+                loops.AddRange(OutlineHoles.Of(e).Select(h => (h.Corners, (IReadOnlyList<double>?)h.Rises)));
+                foreach (var (loopCorners, loopRises) in loops)
                 {
-                    var j = (i + 1) % shapes.Count;
-                    var corner = corners[j];
-                    cs.Add((JsonNode)new JsonObject
+                    var shapes = ShapesOf(loopCorners, loopRises);
+                    var loopIds = shapes.Select(s => Drafts.Add(ctx, view.Id, "0", s).Id).ToList();
+                    ids.AddRange(loopIds);
+                    // Its corners held: each edge's end on the next one's start, so a dimension moves the outline, never tears it.
+                    for (var i = 0; i < shapes.Count; i++)
                     {
-                        ["kind"] = "coincident", ["viewId"] = view.Id,
-                        ["refs"] = new JsonArray(Ref(ids[i], EndAt(shapes[i], corner)), Ref(ids[j], EndAt(shapes[j], corner))),
-                    });
+                        var j = (i + 1) % shapes.Count;
+                        var corner = loopCorners[j];
+                        cs.Add((JsonNode)new JsonObject
+                        {
+                            ["kind"] = "coincident", ["viewId"] = view.Id,
+                            ["refs"] = new JsonArray(Ref(loopIds[i], EndAt(shapes[i], corner)), Ref(loopIds[j], EndAt(shapes[j], corner))),
+                        });
+                    }
                 }
                 Command(ctx, "studio.addConstraint").Handler(ctx, new JsonObject { ["constraints"] = cs });
             }
@@ -234,13 +279,23 @@ public static class OutlineSketches
             if (e == null) throw new CommandException(view.Str(OfKey) == null ? "That view is not an outline's sketch." : "The element whose sketch this is is gone.");
             var drafts = Drafts.On(ctx.Model, view.Id).ToList();
             var outline = drafts.Where(d => d.Str("role") is null or "profile").Select(d => (d, Drafts.ShapeOf(d))).Where(x => x.Item2 != null).ToList();
-            var (corners, rises) = Loop([.. outline.Select(x => x.Item2!)]);
-            Command(ctx, UpdateCommand(e)!).Handler(ctx, new JsonObject
+            // Several closed loops (audit S4): the largest the outline, the others its holes, for an element that takes them.
+            var (corners, rises, holes) = Loops([.. outline.Select(x => x.Item2!)]);
+            if (holes.Count > 0 && !TakesHoles(e)) throw new CommandException("The sketch holds more than one outline: keep one, its edges end to end.");
+            var update = new JsonObject
             {
                 ["id"] = e.Id,
                 ["points"] = new JsonArray([.. corners.Select(p => (JsonNode)new JsonArray(p.X, p.Y))]),
                 [ArcOutline.Key] = new JsonArray([.. rises.Select(x => (JsonNode)x)]),
-            });
+            };
+            if (TakesHoles(e))
+            {
+                var held = new JsonObject();
+                OutlineHoles.Write(held, holes);
+                update[OutlineHoles.Key] = held[OutlineHoles.Key]?.DeepClone() ?? new JsonArray();
+                if (held[OutlineHoles.ArcsKey] is { } ha) update[OutlineHoles.ArcsKey] = ha.DeepClone();
+            }
+            Command(ctx, UpdateCommand(e)!).Handler(ctx, update);
             // The sketch kept on the element: its shapes, its constraints, and the outline they made (to know it again).
             var after = ctx.Model.Get(e.Id)!;
             var carrier = SketchConstraints.CarrierOf(ctx.Model, view.Id);
@@ -257,6 +312,8 @@ public static class OutlineSketches
                 ["contour"] = after.Attrs["contour"]?.DeepClone(),
             };
             if (after.Attrs[ArcOutline.Key] is { } arcs) sketch[ArcOutline.Key] = arcs.DeepClone();
+            foreach (var k in new[] { OutlineHoles.Key, OutlineHoles.ArcsKey })
+                if (after.Attrs[k] is { } held) sketch[k] = held.DeepClone();
             var attrs = after.CloneAttrs();
             attrs[Key] = sketch;
             ctx.Replace(after.With(attrs: attrs));

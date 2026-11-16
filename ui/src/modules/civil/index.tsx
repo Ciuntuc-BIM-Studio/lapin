@@ -12,7 +12,7 @@ import { BrickWall, PenLine, Building2, Crosshair, FileDown, FileUp, Fence, Imag
 import { PlatformIcon, TerrainIcon } from '../../icons';
 import type { Grip, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
-import { curvedOutlineGrips, outlineGrips, outlineRef, toPairs } from '../../viewport/gripKit';
+import { curvedOutlineGrips, holeGrips, outlineGrips, outlineRef, toPairs } from '../../viewport/gripKit';
 import { arcsOf, edgeMiddles, fromPairs, insertVertex, moveVertex, removeVertex } from '../../viewport/contour';
 import { PlainShapeBar, toggleOutlineArcs } from '../../viewport/outlineShape';
 import { notify, useUi } from '../../app/store';
@@ -188,6 +188,18 @@ const platform: ToolDef = {
   },
 };
 
+/** A hole in a platform (audit S4): its outline drawn inside it; the ground inside the hole keeps its own levels. */
+const platformHole: ToolDef = {
+  id: 'civil.platformHole', label: 'Hole in platform', icon: PlatformIcon,
+  gesture: { kind: 'polygon', shapes: true },
+  options: PlainShapeBar,
+  space: toggleOutlineArcs,
+  complete: async ({ points, arcs }, ctx) => {
+    if (points.length < 3) return;
+    await ctx.execute('civil.addOutlineHole', { points: points.map((p) => [p.x, p.y]), ...(arcs ? { arcs } : {}) });
+  },
+};
+
 /** A ditch along a polyline (Enter finishes), half a metre under the ground; its section is set in the inspector. */
 const ditch: ToolDef = {
   id: 'civil.ditch', label: 'Ditch', icon: Waves, shortcut: 'DH',
@@ -321,7 +333,7 @@ const civil: LapinModule = {
     groups: [
       { label: 'Terrain', tools: [terrainFromFile, flatTerrain, parcel], small: [terrainFromLandXml, landXmlOut, spot, breaklineFromLinework] },
       { label: 'Import', tools: [], small: [terrainFromDxf, geoJson, cityJson, orthophoto] },
-      { label: 'Earthworks', tools: [platform, ditch, sculpt('raise', 'Raise', MoveVertical, 'SU'), sculpt('lower', 'Lower', Shovel, 'SL')], small: [sculpt('flatten', 'Flatten', Mountain, 'FN'), sculpt('smooth', 'Smooth', Paintbrush, 'SS'), brush] },
+      { label: 'Earthworks', tools: [platform, ditch, sculpt('raise', 'Raise', MoveVertical, 'SU'), sculpt('lower', 'Lower', Shovel, 'SL')], small: [platformHole, sculpt('flatten', 'Flatten', Mountain, 'FN'), sculpt('smooth', 'Smooth', Paintbrush, 'SS'), brush] },
       { label: 'Landscape', tools: [path, retainingWall, plant, plantingZone], small: [corridor, roadFromLinework] },
       { label: 'Entourage', tools: [entourage], small: [entourageRow, entourageKinds] },
     ],
@@ -329,7 +341,11 @@ const civil: LapinModule = {
   grips: {
     IfcEarthworksCut: (n: NodeDto) => {
       if (isDitch(n)) return polylineGrips(pathOf(n), (pts) => ({ command: 'civil.updateDitch', args: { id: n.id, points: toPairs(pts) } }));
-      return curvedOutlineGrips(n.id, fromPairs(n.props.contour), n.props.arcs, (pts, arcs) => ({ command: 'civil.updatePlatform', args: { id: n.id, points: toPairs(pts), arcs } }), 'civil');
+      return [
+        ...curvedOutlineGrips(n.id, fromPairs(n.props.contour), n.props.arcs, (pts, arcs) => ({ command: 'civil.updatePlatform', args: { id: n.id, points: toPairs(pts), arcs } }), 'civil'),
+        // Its own holes (audit S4), their ground kept.
+        ...holeGrips(n.id, n.props.holes, n.props.holeArcs, (holes, holeArcs) => ({ command: 'civil.updatePlatform', args: { id: n.id, holes, holeArcs } }), 'civil'),
+      ];
     },
     // A terrain's parcel, by its corners; its edges may be arcs (audit S4).
     IfcGeographicElement: (n: NodeDto) =>

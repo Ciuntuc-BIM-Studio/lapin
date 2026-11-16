@@ -143,5 +143,42 @@ export function curvedOutlineGrips(id: string, pts: Vec2[], rawArcs: unknown, sa
   });
 }
 
+/** An element's own holes (audit S4): each a loop of corners, and its edges' rises (none when straight). */
+export function holesOf(raw: unknown, rawArcs: unknown): { pts: Vec2[]; arcs?: number[] }[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((loop, k) => {
+    const pts = Array.isArray(loop) ? loop.filter((p): p is [number, number] => Array.isArray(p) && typeof p[0] === 'number' && typeof p[1] === 'number').map(([x, y]) => ({ x, y })) : [];
+    return { pts, arcs: arcsOf(Array.isArray(rawArcs) ? rawArcs[k] : undefined, pts.length) };
+  }).filter((h) => h.pts.length >= 3);
+}
+
+/**
+ * An element's own holes' grips (audit S4): each hole's corners and edges as an outline's (keys `h<k>v…`), every edit `save`d
+ * with all the holes; its corners rounded or cut by the module's `roundCorner` / `chamferCorner` with `hole`; a grip in its middle
+ * drags the hole and offers "Remove hole".
+ */
+export function holeGrips(id: string, raw: unknown, rawArcs: unknown, save: (holes: number[][][], arcs: number[][]) => GripStep, module = 'architecture'): Grip[] {
+  const holes = holesOf(raw, rawArcs);
+  const write = (k: number, next: { pts: Vec2[]; arcs?: number[] }) => {
+    const all = holes.map((h, i) => (i === k ? next : h));
+    return save(all.map((h) => toPairs(h.pts)), all.map((h) => h.arcs ?? h.pts.map(() => 0)));
+  };
+  return holes.flatMap((h, k) => {
+    const c = h.pts.reduce((s, p) => ({ x: s.x + p.x / h.pts.length, y: s.y + p.y / h.pts.length }), { x: 0, y: 0 });
+    const grips = outlineGrips({ pts: h.pts, arcs: h.arcs }, (o) => write(k, { pts: o.pts, arcs: o.arcs }), {
+      fillet: (index, radius) => ({ command: `${module}.roundCorner`, args: { id, hole: k, index, radius } }),
+      chamfer: (index, distance) => ({ command: `${module}.chamferCorner`, args: { id, hole: k, index, distance } }),
+    }, `h${k}`);
+    grips.push({
+      key: `h${k}c`, kind: 'move', at: c, title: 'Drag to move the hole',
+      step: (to: Vec2) => write(k, { pts: h.pts.map((p) => ({ x: p.x + to.x - c.x, y: p.y + to.y - c.y })), arcs: h.arcs }),
+      remove: () => ({ command: `${module}.removeOutlineHole`, args: { id, hole: k } }), removeLabel: 'Remove hole',
+    });
+    return grips;
+  });
+}
+
+export const holeRefs = (raw: unknown, rawArcs: unknown): RefLine[] => holesOf(raw, rawArcs).map((h) => outlineRef(h.pts, h.arcs));
+
 export const outlineRef = (pts: Vec2[], arcs?: number[]): RefLine => ({ points: arcs ? outlinePoints({ pts, arcs }) : pts, closed: true, kind: 'outline' });
 export { toPairs };

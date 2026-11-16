@@ -907,11 +907,14 @@ public static partial class IfcExport
         /// </summary>
         string? ArcFootprint(Entity e)
         {
-            if (e.Attrs[ArcOutline.Key] is not JsonArray || e.Attrs["contour"] is not JsonArray) return null;
+            // Its own holes (audit S4) too: each a curve of the footprint after the outline's.
+            var holes = OutlineHoles.Of(e);
+            if ((e.Attrs[ArcOutline.Key] is not JsonArray && holes.Count == 0) || e.Attrs["contour"] is not JsonArray) return null;
             var corners = Args.StoredPoints(e.Attrs["contour"]);
-            if (corners.Count < 3 || ArcOutline.Rises(e.Attrs[ArcOutline.Key], corners.Count) is not { } rises) return null;
+            var rises = ArcOutline.Rises(e.Attrs[ArcOutline.Key], corners.Count);
+            if (corners.Count < 3 || (rises == null && holes.Count == 0)) return null;
             if (footprint == "") footprint = f.Add("IFCGEOMETRICREPRESENTATIONSUBCONTEXT", S("FootPrint"), S("Model"), Derived, Derived, Derived, Derived, model, Null, E("PLAN_VIEW"), Null);
-            return f.Add("IFCSHAPEREPRESENTATION", footprint, S("FootPrint"), S("Curve2D"), L(new[] { IndexedLoop(corners, rises) }));
+            return f.Add("IFCSHAPEREPRESENTATION", footprint, S("FootPrint"), S("Curve2D"), L(holes.Select(h => IndexedLoop(h.Corners, h.Rises)).Prepend(IndexedLoop(corners, rises))));
         }
 
         /// <summary>

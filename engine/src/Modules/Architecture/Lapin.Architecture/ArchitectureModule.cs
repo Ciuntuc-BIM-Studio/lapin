@@ -422,6 +422,13 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             }
             else (pts, arcs) = Slabs.OutlineArg(a["arcs"], Points(a));
             var slab = Slabs.Add(ctx, storeyId, pts, Json.Number(a["offset"]) ?? 0, type, arcs);
+            // Its holes (audit S4): islands cut out of its own outline, {holes: [[[x, y]…]…], holeArcs?}.
+            if (a[OutlineHoles.Key] != null)
+            {
+                var withHoles = slab.CloneAttrs();
+                OutlineHoles.Apply(withHoles, a);
+                ctx.Replace(slab.With(attrs: withHoles));
+            }
             return new JsonObject { ["id"] = slab.Id };
         });
 
@@ -432,14 +439,14 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         {
             var (e, corners, rises) = OutlineOf(ctx, a);
             var (c, r2) = ArcOutline.Fillet(corners, rises, Index(a, corners.Count), Json.Number(a["radius"]) ?? throw new CommandException("What radius? A length in metres."));
-            ReplaceOutline(ctx, e, corners, c, r2);
+            ReplaceOutline(ctx, e, corners, c, r2, OutlineHoles.Index(a, e));
             return null;
         });
         r.Command("chamferCorner", "Chamfer corner", (ctx, a) =>
         {
             var (e, corners, rises) = OutlineOf(ctx, a);
             var (c, r2) = ArcOutline.Chamfer(corners, rises, Index(a, corners.Count), Json.Number(a["distance"]) ?? throw new CommandException("What distance? A length in metres."));
-            ReplaceOutline(ctx, e, corners, c, r2);
+            ReplaceOutline(ctx, e, corners, c, r2, OutlineHoles.Index(a, e));
             return null;
         });
         r.Command("setEdgeArc", "Edge arc", (ctx, a) =>
@@ -448,7 +455,29 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var i = Index(a, corners.Count);
             var next = rises?.ToArray() ?? new double[corners.Count];
             next[i] = Json.Number(a["rise"]) ?? 0;
-            ReplaceOutline(ctx, e, corners, corners, next);
+            ReplaceOutline(ctx, e, corners, corners, next, OutlineHoles.Index(a, e));
+            return null;
+        });
+
+        // A hole in a floor's or a ceiling's own outline (audit S4): {id? (the floor or ceiling; else the floor, then the ceiling, of
+        // the storey that holds the loop), storeyId?, points, arcs?} → {id}; {id, hole} takes one away. One undo step each.
+        r.Command("addOutlineHole", "Hole in outline", (ctx, a) =>
+        {
+            var pts = Points(a);
+            var e = (string?)a["id"] is { } id ? ctx.Model.Get(id) ?? throw new CommandException("The element is not in the project.")
+                : ctx.Model.OfClass(IfcClass.Slab).Concat(ctx.Model.OfClass(Ceilings.Class))
+                    .FirstOrDefault(x => ((string?)a["storeyId"] == null || Spatial.StoreyOf(ctx.Model, x.Id)?.Id == (string?)a["storeyId"]) && !StoredBodies.Has(x) && OutlineHoles.Holds(x, pts))
+                  ?? throw new CommandException("Draw the hole inside a floor or a ceiling.");
+            if (!(e.Class == IfcClass.Slab || e.Class == Ceilings.Class)) throw new CommandException("Only a floor or a ceiling has holes of its own here.");
+            if (StoredBodies.Has(e) || e.Attrs["reference"] != null) throw new CommandException("An element kept as it came from its file is not edited by its outline.");
+            ctx.Replace(e.With(attrs: OutlineHoles.Added(e, a)));
+            return new JsonObject { ["id"] = e.Id };
+        });
+        r.Command("removeOutlineHole", "Remove hole", (ctx, a) =>
+        {
+            var e = ctx.Model.Get((string?)a["id"] ?? "") ?? throw new CommandException("The element is not in the project.");
+            var k = OutlineHoles.Index(a, e) ?? throw new CommandException("Which hole? Its index, from 0.");
+            ctx.Replace(e.With(attrs: OutlineHoles.Removed(e, k)));
             return null;
         });
 
@@ -462,6 +491,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 Slabs.SetOutline(attrs, contour, arcs);
                 RemapExtents(slab, attrs, contour);
             }
+            // Its holes given, or kept and checked against the outline as it now is (audit S4).
+            if (a[OutlineHoles.Key] != null || a["points"] != null || a["x1"] != null) OutlineHoles.Apply(attrs, a);
             if (Json.Number(a["offset"]) is { } offset) attrs["offset"] = offset;
             ctx.Replace(slab.With(attrs: attrs));
             return null;
@@ -1416,6 +1447,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         if (StoredBodies.Has(e) || e.Attrs["reference"] != null) throw new CommandException("An element kept as it came from its file is not edited by its outline.");
         var corners = Slabs.Corners(e);
         if (corners.Count < 3) throw new CommandException("The element has no outline.");
+        // One of its own holes (audit S4): {hole: its index}.
+        if (OutlineHoles.Index(a, e) is { } k) { var h = OutlineHoles.Of(e)[k]; return (e, h.Corners, h.Rises); }
         return (e, corners, Slabs.Rises(e));
     }
 
@@ -1423,8 +1456,9 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         Json.Number(a["index"]) is { } ix && ix >= 0 && ix < n && ix == Math.Floor(ix) ? (int)ix : throw new CommandException($"Which corner? The outline has {n}, from 0.");
 
     /// <summary>An outline edit written: checked, its arcs with it, a floor's layer extents following its edges.</summary>
-    static void ReplaceOutline(ICommandContext ctx, Entity e, IReadOnlyList<Vec2> was, IReadOnlyList<Vec2> corners, IReadOnlyList<double>? rises)
+    static void ReplaceOutline(ICommandContext ctx, Entity e, IReadOnlyList<Vec2> was, IReadOnlyList<Vec2> corners, IReadOnlyList<double>? rises, int? hole = null)
     {
+        if (hole is { } k) { ctx.Replace(e.With(attrs: OutlineHoles.Replaced(e, k, corners, rises))); return; }
         if (e.Class == Balconies.BalconyModule.Class)
         {
             // A balcony keeps the order it was drawn in: its first edge lies against the building.
@@ -1435,6 +1469,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         var attrs = e.CloneAttrs();
         Slabs.SetOutline(attrs, c, r);
         if (e.Class == IfcClass.Slab) RemapExtents(e, attrs, c);
+        OutlineHoles.Apply(attrs, new JsonObject());
         ctx.Replace(e.With(attrs: attrs));
     }
 

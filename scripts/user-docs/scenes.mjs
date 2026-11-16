@@ -1872,6 +1872,48 @@ export const scenes = [
     },
   },
   {
+    // Holes in outlines (audit S4): the Opening tool's "Hole in the outline" draws a round hole in a floor, part of the floor's own
+    // outline; the floor's grips edit it, its middle grip offers Remove hole; Edit sketch shows the outline and the hole as loops.
+    id: 'floors-holes',
+    touches: ['architecture', 'studio'],
+    async run(t) {
+      await t.fresh();
+      await t.ui({ keyPlan: false });
+      const storey = await t.storey();
+      const floor = await t.cmd('architecture.addSlab', { storeyId: storey, points: [[0, 0], [10, 0], [10, 6], [0, 6]], holes: [[[1.5, 1.5], [3.5, 1.5], [3.5, 4.5], [1.5, 4.5]]] });
+      await t.fit();
+      await t.wait(500);
+      await t.button('Architecture', { exact: true });
+      await t.tool('architecture.opening');
+      await t.page.evaluate(async () => (await import('/src/modules/architecture/openingTool.tsx')).setOpeningKind('outlineHole'));
+      const circle = t.page.locator('[data-testid=command-line] [data-testid=outline-shape] [data-shape=circle]');
+      await circle.waitFor({ timeout: 10_000 });
+      await circle.click();
+      const [cx, cy] = await t.planPoint(7, 3), [ox, oy] = await t.planPoint(8.2, 3);
+      await t.page.mouse.click(cx, cy);
+      await t.page.mouse.move(ox, oy, { steps: 6 });
+      await t.page.mouse.click(ox, oy);
+      await t.until(async () => (await t.nodes()).find((n) => n.id === floor.id)?.props.holes?.length === 2, 'a round hole is cut in the floor\'s own outline');
+      await t.page.locator('[data-testid=command-line] [data-testid=outline-shape] [data-shape=polygon]').click();
+      await t.keys('Escape');
+      await t.ui({ tool: null });
+      await t.wait(300);
+      await select(t, floor.id);
+      await t.wait(600);
+      const grip = async (key) => { const r = await t.page.locator(`[data-testid=plan] [data-grip="${key}"]`).first().boundingBox(); return r ? [r.x + r.width / 2, r.y + r.height / 2] : null; };
+      t.expect((await grip('h0v0')) != null && (await grip('h1a0')) != null, 'each hole has its corner and arc grips');
+      const [hx, hy] = (await grip('h0c')) ?? [0, 0];
+      await t.page.mouse.click(hx, hy, { button: 'right' });
+      await t.wait(300);
+      t.expect(await t.page.locator('.context-menu .context-item', { hasText: 'Remove hole' }).count() === 1, 'a hole\'s middle grip offers Remove hole');
+      await t.keys('Escape');
+      await t.page.mouse.move(hx + 200, hy + 200);
+      await t.wait(400);
+      await t.shot('floor-holes', { of: '.plan-svg', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     // Fillet and chamfer on walls and railings (a user's request): Architecture → Fillet takes two walls (a curved wall between
     // them, both trimmed to it); a railing's corner rounded from its grip's right-click, its arc built along the true curve.
     id: 'walls-fillet',
