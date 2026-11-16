@@ -559,6 +559,28 @@ public class DxfImportTests
     }
 
     [Fact]
+    public void Join_welds_a_line_and_an_arc_into_a_polyline()
+    {
+        var f = F();
+        var plan = Plan(f);
+        // Line (0, 0) -> (1, 0) meeting a quarter-circle arc centred at (1, 1), r = 1, from -pi/2 (1, 0) to 0 (2, 1).
+        var drawn = (JsonArray)f.Run("drafting.draw", new JsonObject
+        {
+            ["viewId"] = plan,
+            ["shapes"] = new JsonArray(
+                new JsonObject { ["type"] = "line", ["a"] = new JsonArray(0, 0), ["b"] = new JsonArray(1, 0) },
+                new JsonObject { ["type"] = "arc", ["c"] = new JsonArray(1, 1), ["r"] = 1, ["start"] = -Math.PI / 2, ["end"] = 0.0 })
+        })!["ids"]!;
+        var res = (JsonObject)f.Run("drafting.join", new JsonObject { ["ids"] = drawn.DeepClone() })!;
+        Assert.Equal(1, (int)res["joined"]!);
+        var joined = Assert.Single(Drafted(f, plan));
+        var poly = Assert.IsType<Polyline>(Drafts.ShapeOf(joined));
+        Assert.False(poly.Closed);
+        Assert.True((poly.Pts[0] - new Vec2(0, 0)).Length < 1e-6);
+        Assert.True((poly.Pts[^1] - new Vec2(2, 1)).Length < 1e-6);
+    }
+
+    [Fact]
     public void A_drawing_in_map_coordinates_lies_where_the_map_puts_it()
     {
         // A cadastral line in Stereo 70, in metres (the file says nothing of its units).
