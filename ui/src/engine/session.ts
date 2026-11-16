@@ -5,6 +5,7 @@
  * is an engine command (one undo step); nothing is modelled here.
  */
 
+import { setLibraryApp } from '../platform/libraryFile';
 import { create } from 'zustand';
 import { EngineClient, engineUrl, LONG_TIMEOUT_MS } from './client';
 import { ENGINE_PART_FAILED, workerTransport, type PartState } from './workerTransport';
@@ -205,6 +206,7 @@ async function resync(attempt = 0): Promise<void> {
     const info = await engine.call<SessionInfo>('session.info');
     const snapshot = await engine.call<Diff>('doc.snapshot', {}, { timeoutMs: LONG_TIMEOUT_MS });
     useSession.setState({ info });
+    setLibraryApp(info.engineVersion ?? null);
     applyDiff(snapshot);
   } catch (e) {
     if (!useSession.getState().connected) return;

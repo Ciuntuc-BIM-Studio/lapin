@@ -6,93 +6,71 @@
  * and, on request, brought into the project.
  */
 
-import { notify, useUi } from '../../app/store';
-import { execute, useSession } from '../../engine/session';
+import { useUi } from '../../app/store';
 import { readTitleBlock, readLineTypes, readMapping, readParameters, readPatterns, readRulePack, readStandards, readSymbolPack, readTypePack } from '../../platform/extensions/packs';
 import { fileKindInstaller } from '../../platform/extensions/fileKind';
 import { addContentInstaller } from '../../platform/extensions/runtime';
 import { computerFileId, computerFileRows, forgetComputerFile, keepComputerFile, registerLibraryKind } from '../../platform/libraries';
 import { forgetSymbol, keepSymbol, librarySymbols, parsePack } from './symbols/symbolModel';
-import { importSymbols } from './symbols/symbols';
-import { importLin, readLin } from './lineTypes/lineTypes';
-import { defaultLineChoices } from './lineTypes/lineTypeModel';
-import { importDefs } from './classifications/classifications';
-import { ask, runOk } from './LibraryChoices';
-import { defaultStandardsChoices, type StandardsPack } from './standardsLibraryModel';
+import { importLibraryText, tallySentence } from '../../platform/ImportPreview';
 import { forgetMappingReceipt, parseMappingFile, rememberMappingFile, type MappingReceipt } from './tables/tableModel';
 import { keepPatterns } from './myPatterns';
 import { forgetHatchPreviews } from './hatchCache';
-import { importTitleBlock } from './titleBlocks/titleBlocks';
-import type { TbFile } from './titleBlocks/titleBlockModel';
 
 const bytes = (text: string) => new TextEncoder().encode(text);
-const connected = () => useSession.getState().connected;
-const needProject = (): boolean => { if (!connected()) { notify('Open a project first.'); return false; } return true; };
 
 // ------------------------------------------------------------ bringing a file into the project
 
-export async function bringSymbols(text: string): Promise<string | null> {
-  if (!needProject()) return null;
-  const r = await importSymbols(text, {});
-  return r ? `Symbols imported: ${r.added} added, ${r.updated} updated.` : null;
+// Each through the one preview and import (audit D13, platform/ImportPreview.tsx): straight in when all of it is new or the
+// same, else the import preview with its choices (keep both, replace, skip) first; what it did is said there.
+
+export async function bringSymbols(text: string, file = 'symbols.lapinsymbols'): Promise<string | null> {
+  const r = await importLibraryText(text, file);
+  return r ? tallySentence(r) : null;
 }
 
-export async function bringLineTypes(text: string): Promise<string | null> {
-  if (!needProject()) return null;
-  const read = await readLin(text, 'mm');
-  if (!read || read.lineTypes.length === 0) return null;
-  const r = await importLin({ text, units: 'mm', names: read.lineTypes.map((l) => l.name), choices: defaultLineChoices(read.lineTypes) });
-  return r ? `${r.added} line types added, ${r.updated} updated, ${r.skipped} skipped.` : null;
+export async function bringLineTypes(text: string, file = 'line types.lin'): Promise<string | null> {
+  const r = await importLibraryText(text, file.toLowerCase().endsWith('.lin') ? file : `${file}.lin`);
+  return r ? tallySentence(r) : null;
 }
 
-export async function bringStandards(text: string): Promise<string | null> {
-  if (!needProject()) return null;
-  const pack = await ask<StandardsPack>('standards.readPack', { text });
-  if (!pack) return null;
-  const r = await runOk<{ added?: number; updated?: number; kept?: number; skipped?: number }>('standards.importFrom', { text, choices: defaultStandardsChoices(pack) });
-  return r ? `${r.added ?? 0} added, ${r.updated ?? 0} updated, ${r.kept ?? 0} the same, ${r.skipped ?? 0} skipped.` : null;
+export async function bringStandards(text: string, file = 'standards.lapinstandards'): Promise<string | null> {
+  const r = await importLibraryText(text, file);
+  return r ? tallySentence(r) : null;
 }
 
-export async function bringRules(text: string): Promise<string | null> {
-  if (!needProject()) return null;
-  const r = await runOk<{ id: string; name: string }>('rules.import', { text });
-  return r ? `Rule pack added to the project: ${r.name}.` : null;
+export async function bringRules(text: string, file = 'rules.lapinrules'): Promise<string | null> {
+  const r = await importLibraryText(text, file);
+  return r ? tallySentence(r) : null;
 }
 
-export async function bringParameters(text: string): Promise<string | null> {
-  if (!needProject()) return null;
-  const r = await importDefs(text);
-  return r ? `${r.added} parameters added, ${r.updated} updated.` : null;
+export async function bringParameters(text: string, file = 'parameters.lapinparams'): Promise<string | null> {
+  const r = await importLibraryText(text, file);
+  return r ? tallySentence(r) : null;
 }
 
-export async function bringTypes(text: string): Promise<string | null> {
-  if (!needProject()) return null;
-  const r = await execute('types.importFrom', { text }) as { created: number; reused: number } | null;
-  return r ? `Types added to the project: ${r.created} new, ${r.reused} already in it.` : null;
+export async function bringTypes(text: string, file = 'types.lapintypes'): Promise<string | null> {
+  const r = await importLibraryText(text, file);
+  return r ? tallySentence(r) : null;
 }
 
 export async function bringPatterns(text: string, file: string): Promise<string | null> {
-  if (!needProject()) return null;
-  const r = await execute('hatch.import', { text }) as { count: number } | null;
+  const r = await importLibraryText(text, file.toLowerCase().endsWith('.pat') ? file : `${file}.pat`);
   if (!r) return null;
   forgetHatchPreviews();
   keepPatterns(file, text);
-  return `${r.count} hatch pattern${r.count === 1 ? '' : 's'} added to the project.`;
+  return tallySentence(r);
 }
 
 /** A title block file (format lapin.titleBlock) added to the project's title blocks. */
-export async function bringTitleBlock(text: string): Promise<string | null> {
-  if (!needProject()) return null;
-  const file = readTitleBlock(bytes(text));
-  const id = await importTitleBlock(file as unknown as TbFile);
-  return id ? `Title block added to the project: ${file.name}.` : null;
+export async function bringTitleBlock(text: string, file = 'title block.lapintitleblock'): Promise<string | null> {
+  readTitleBlock(bytes(text));
+  const r = await importLibraryText(text, file);
+  return r ? tallySentence(r) : null;
 }
 
-const said = (f: (text: string, file: string) => Promise<string | null>) => async (text: string, file: string): Promise<string | null> => {
-  const r = await f(text, file);
-  if (r) notify(r);
-  return r;
-};
+/** What a bring did is said by the import itself (askImport). */
+const said = (f: (text: string, file: string) => Promise<string | null>) => (text: string, file: string): Promise<string | null> => f(text, file);
 
 const names = (read: (b: Uint8Array) => { names?: string[]; codes?: string[]; types?: { name: string }[] }) => (text: string): string[] => {
   const r = read(bytes(text));

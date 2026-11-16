@@ -309,10 +309,10 @@ public sealed class SymbolTests
         Assert.True((bool)read.Single(r => (string)r["name"]! == "Arrow")["same"]!);
         Assert.False((bool)read.Single(r => (string)r["name"]! == "Bubble")["same"]!);
 
-        // Keep both: the file's comes in beside the project's.
+        // Keep both: the file's comes in beside the project's, as „Bubble (2)” (LibraryMerge).
         var r1 = g.Run("symbols.importFrom", new JsonObject { ["text"] = text })!;
         Assert.Equal(1, (int)r1["kept"]!); Assert.Equal(1, (int)r1["added"]!);
-        Assert.Contains(g.Model.OfClass(Symbols.Class), e => e.Name == "Bubble 2");
+        Assert.Contains(g.Model.OfClass(Symbols.Class), e => e.Name == "Bubble (2)");
         g.Session.Undo();
         // Update: the project's takes the file's definition and keeps its id.
         g.Run("symbols.importFrom", new JsonObject { ["text"] = text, ["choices"] = new JsonObject { ["Bubble"] = "update" } });

@@ -280,6 +280,72 @@ public sealed class ScheduleEntity : ISheetContent, Lapin.Platform.Documents.IDo
 
     // ------------------------------------------------------------ commands
 
+    static string TemplateName(JsonObject t) => ((string?)t["name"])?.Trim() is { Length: > 0 } tn ? tn : FieldSchedule.Title;
+
+    static JsonObject TemplateAttrs(JsonObject t)
+    {
+        var attrs = new JsonObject { ["kind"] = FieldSchedule.KindId, ["scale"] = 50, [FieldScheduleOptions.Key] = FieldScheduleOptions.Check(t[FieldScheduleOptions.Key]).ToJson() };
+        if (t["customColumns"] is JsonArray cc) attrs["customColumns"] = new JsonArray([.. cc.OfType<JsonObject>().Where(c => (string?)c["id"] != null).Select(c => (JsonNode)new JsonObject { ["id"] = (string?)c["id"], ["label"] = (string?)c["label"] ?? "" })]);
+        if (t["charts"] is JsonArray ch) attrs["charts"] = ch.DeepClone();
+        return attrs;
+    }
+
+    static Entity? FieldScheduleNamed(IModelView m, string name) =>
+        m.OfClass(Class).FirstOrDefault(e => e.Str("kind") == FieldSchedule.KindId && string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>A template as the import preview shows it: new, the same as the field schedule of its name (its options, columns and charts), or of the same name (keep both by default).</summary>
+    static LibraryMerge.Row TemplateRow(IModelView m, JsonObject t)
+    {
+        var name = TemplateName(t);
+        var mine = FieldScheduleNamed(m, name);
+        if (mine is null) return new LibraryMerge.Row(name, "schedule", name, LibraryMerge.Match.New);
+        var theirs = TemplateAttrs(t);
+        var ours = new JsonObject();
+        foreach (var k in new[] { FieldScheduleOptions.Key, "customColumns", "charts" }) ours[k] = mine.Attrs[k]?.DeepClone();
+        foreach (var k in new[] { "kind", "scale" }) theirs.Remove(k);
+        var differs = LibraryMerge.Differs(ours, theirs);
+        return new LibraryMerge.Row(name, "schedule", name, differs.Count == 0 ? LibraryMerge.Match.Same : LibraryMerge.Match.Name, differs);
+    }
+
+    static JsonObject ImportTemplate(ICommandContext ctx, JsonObject t, JsonObject? choices, string? all)
+    {
+        var row = TemplateRow(ctx.Model, t);
+        var mine = FieldScheduleNamed(ctx.Model, row.Name);
+        var tally = new LibraryMerge.Tally();
+        string id;
+        switch (LibraryMerge.Decide(row, choices, all))
+        {
+            case LibraryMerge.Same: tally.Kept++; id = mine!.Id; break;
+            case LibraryMerge.Skip: tally.Skipped++; id = mine!.Id; break;
+            case LibraryMerge.Update:
+            {
+                var attrs = mine!.CloneAttrs();
+                foreach (var (k, v) in TemplateAttrs(t)) if (k is not ("kind" or "scale")) attrs[k] = v?.DeepClone();
+                if (t["customColumns"] is null) attrs.Remove("customColumns");
+                if (t["charts"] is null) attrs.Remove("charts");
+                ctx.Replace(mine.With(attrs: attrs));
+                tally.Updated++;
+                id = mine.Id;
+                break;
+            }
+            default:
+            {
+                var taken = ctx.Model.OfClass(Class).Select(e => e.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var name = taken.Contains(row.Name) ? LibraryMerge.FreeName(taken.Contains, row.Name) : row.Name;
+                var s = new Entity(ctx.NewId(), Class, name, TemplateAttrs(t));
+                ctx.Add(s);
+                tally.Added++;
+                if (name != row.Name) tally.Renamed.Add(name);
+                id = s.Id;
+                break;
+            }
+        }
+        var o = tally.ToJson();
+        o["id"] = id;
+        o["name"] = ctx.Model.Get(id)!.Name;
+        return o;
+    }
+
     static Entity Require(IModelView m, string? id) => m.Get(id ?? "") is { Class: Class } s ? s : throw new CommandException("There is no such schedule.");
 
     /// <summary>A column of the schedule's own by its key: where it is kept, its name's field, its id.</summary>
@@ -348,17 +414,20 @@ public sealed class ScheduleEntity : ISheetContent, Lapin.Platform.Documents.IDo
         });
 
         // A field schedule from a template (a .lapinschedule's `text`, or the library's `template` object): its options, columns of its own and charts.
+        // With `choices` ({name: both | update | skip}) or `all`, as every library import (LibraryMerge): a field schedule of the
+        // template's name the same kept, kept both (the new one „Name (2)”), updated (its options, columns and charts) or skipped.
         r.Command("importSchedule", "Schedule from template", (ctx, a) =>
         {
             var t = FieldSchedule.ReadTemplate(a["text"] ?? a["template"] ?? throw new CommandException("Which template?"));
-            var name = ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : ((string?)t["name"])?.Trim() is { Length: > 0 } tn ? tn : FieldSchedule.Title;
-            var attrs = new JsonObject { ["kind"] = FieldSchedule.KindId, ["scale"] = 50, [FieldScheduleOptions.Key] = FieldScheduleOptions.Check(t[FieldScheduleOptions.Key]).ToJson() };
-            if (t["customColumns"] is JsonArray cc) attrs["customColumns"] = new JsonArray([.. cc.OfType<JsonObject>().Where(c => (string?)c["id"] != null).Select(c => (JsonNode)new JsonObject { ["id"] = (string?)c["id"], ["label"] = (string?)c["label"] ?? "" })]);
-            if (t["charts"] is JsonArray ch) attrs["charts"] = ch.DeepClone();
-            var s = new Entity(ctx.NewId(), Class, name, attrs);
+            if (a["choices"] is JsonObject || a["all"] is not null) return ImportTemplate(ctx, t, a["choices"] as JsonObject, (string?)a["all"]);
+            var name = ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : TemplateName(t);
+            var s = new Entity(ctx.NewId(), Class, name, TemplateAttrs(t));
             ctx.Add(s);
             return new JsonObject { ["id"] = s.Id, ["name"] = s.Name };
         });
+
+        r.Service<ILibraryFormat>(new LibraryFormat(FieldSchedule.Spec, (q, text) => [TemplateRow(q.Model, FieldSchedule.ReadTemplate(JsonValue.Create(text)))],
+            (ctx, text, choices, all) => ImportTemplate(ctx, FieldSchedule.ReadTemplate(JsonValue.Create(text)), choices, all)));
 
         // A typed cell: a custom row's value, or a model value overridden on purpose (null: back to the model; "" on a model row too).
         r.Command("scheduleCell", "Schedule cell", (ctx, a) =>

@@ -8039,6 +8039,42 @@ export const scenes = [
     },
   },
   {
+    // The one import preview of every library file (audit D13): a rule pack of the project's name changed in the file asks
+    // before it comes in, the file's header said; Keep both (the default) brings it beside as „Name (2)”.
+    id: 'library-import-preview',
+    touches: ['core'],
+    async run(t) {
+      const page = t.page;
+      await t.fresh();
+      const listed = await t.call('doc.query', { name: 'rules.list', args: {} });
+      const builtin = listed.items.find((i) => i.builtin);
+      const mine = (await t.cmd('rules.create', { from: builtin.id, name: 'Office rules', description: 'Our riser and treads' })).id;
+      const { text } = await t.call('doc.query', { name: 'rules.export', args: { id: mine } });
+      const doc = JSON.parse(text);
+      t.expect(doc.lapin?.envelope === 1 && typeof doc.lapin?.app === 'string', 'the exported file carries the header');
+      doc.description = 'The branch office\'s riser';
+      doc.stairs.residential.riserMax = 0.18;
+      const dir = mkdtempSync(join(tmpdir(), 'lapin-guide-library-import-'));
+      const file = join(dir, 'Office rules.lapinrules');
+      writeFileSync(file, JSON.stringify(doc, null, 2));
+      await t.button('Manage', { exact: true });
+      await t.tool('manage.rules');
+      await page.waitForSelector('[data-dialog=rules]', { timeout: 10_000 });
+      await page.evaluate(() => { delete window.showOpenFilePicker; });
+      const chooser = page.waitForEvent('filechooser', { timeout: 10_000 });
+      await page.locator('[data-field=rules-import]').click();
+      await (await chooser).setFiles(file);
+      const dialog = page.locator('[data-dialog=libraryImport]');
+      await dialog.waitFor({ timeout: 10_000 });
+      t.expect(await dialog.locator('tr[data-status=name]').count() === 1, 'the pack of the same name is listed to choose for');
+      t.expect(await dialog.locator('[data-testid=library-header]').count() === 1, 'who wrote the file is said');
+      await t.wait(400);
+      await t.shot('library-import-preview', { of: '[data-dialog=libraryImport] .dialog', pad: 0 });
+      await dialog.locator('[data-testid=library-import-go]').click();
+      await t.until(async () => (await t.call('doc.query', { name: 'rules.list', args: {} })).items.some((i) => i.name === 'Office rules (2)'), 'kept both: the file\'s pack is „Office rules (2)”');
+    },
+  },
+  {
     // Types as an extension (docs/plan-extensions.md, §9.3): a wall type made in one project and chosen in Manage → Type
     // packs… (exported as its .lapintypes, the file the dialog's Export types… saves); in a new project, a catalogue on this
     // computer lists it as a types extension under a non-commercial licence (marked so); installed, its type comes into the

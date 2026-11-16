@@ -295,7 +295,7 @@ A placed symbol is selected like any element. In **Properties → Symbol** you c
 
 ### Sharing symbols
 
-**Export…** writes the symbol as a **.lapinsymbols** file; **Import…** reads one, into the project or into this computer's library (the box beside the button). Where the project already has a symbol of the same name, a list shows which are the same and which differ, with a choice for each: **keep**, **update** (the copies placed follow), **keep both** or **skip**.
+**Export…** writes the symbol as a **.lapinsymbols** file; **Import…** reads one, into the project or into this computer's library (the box beside the button). Where the project already has a symbol of the same name drawn otherwise, the import preview lists it with a choice: **Keep both** (the default: the file's comes in as *Name (2)*), **Replace** (the copies placed follow) or **Skip**; see [Importing a library file](interface.md#importing-a-library-file-one-preview-the-same-choices).
 
 ### Marks of the views
 
@@ -347,12 +347,12 @@ The project's line types are offered wherever a line type is chosen: drafting la
 
 ![Drafting standards, Line types](shots/line-types.webp)
 
-**Import .lin…** reads an AutoCAD line type file. The dialog lists its types with their patterns, **Dashes in the file are in** millimetres or inches, and a box for each to leave out. A type whose name the project already has with other dashes asks: **Update the project's**, **Keep both** or **Skip**, or **Apply to all…**. Text and shapes inside a complex line type are left out; its dashes are kept. **Export .lin…** writes the project's own types for AutoCAD.
+**Import .lin…** reads an AutoCAD line type file. The dialog lists its types with their patterns, **Dashes in the file are in** millimetres or inches, and a box for each to leave out. A type whose name the project already has with other dashes asks, as every library import: **Replace** (the default), **Keep both** (as *Name (2)*) or **Skip**, or **Apply to all…**. Text and shapes inside a complex line type are left out; its dashes are kept. **Export .lin…** writes the project's own types for AutoCAD.
 
 ![Import .lin…: the types in the file, chosen before they come in](shots/line-types-import.webp)
 
 ### The standards as a library
 
-**Export standards…**, at the top right of Drafting standards, writes the project's styles, tag types, layers, line types, hatches and symbols as a **.lapinstandards** file: the office's standards, ready for another project or another computer. **Import standards…** reads one. What the project lacks is added; what it has under the same name but made otherwise is listed, entry by entry, with the same choices (**Update the project's**, **Keep both**, **Skip**, and **Apply to all…**). The file's **options** (units, scales, marker sizes, object styles, the pen table, marker symbols) come only if you tick **Also the project's options…**. A notice counts what was added, updated, the same and skipped, and one step of undo takes it all back.
+**Export standards…**, at the top right of Drafting standards, writes the project's styles, tag types, layers, line types, hatches and symbols as a **.lapinstandards** file: the office's standards, ready for another project or another computer. **Import standards…** reads one. What the project lacks is added; what it has but made otherwise is listed in the import preview, entry by entry, with the same choices as every library import (**Replace**, the default, **Keep both**, as *Name (2)*, **Skip**, and **Apply to all…**). The file's **options** (units, scales, marker sizes, object styles, the pen table, marker symbols) come only if you tick **Also the project's options…**. A notice counts what was added, updated, the same and skipped, and one step of undo takes it all back.
 
 ![Import standards…: what differs, entry by entry](shots/standards-import.webp)

@@ -1,19 +1,16 @@
 /** Lapin Extensions (docs/plan-extensions.md): bar shapes (.lapinbarshapes) kept on this computer; Add to this project brings them into the open one. */
 
-import { notify, useUi } from '../../app/store';
+import { useUi } from '../../app/store';
 import { readBarShapes } from '../../platform/extensions/packs';
 import { fileKindInstaller } from '../../platform/extensions/fileKind';
 import { addContentInstaller } from '../../platform/extensions/runtime';
 import { computerFileId, computerFileRows, forgetComputerFile, keepComputerFile, registerLibraryKind } from '../../platform/libraries';
-import { useSession } from '../../engine/session';
-import { importShapes } from './barShapes';
+import { importLibraryText, tallySentence } from '../../platform/ImportPreview';
 
-async function bring(text: string): Promise<string | null> {
-  if (!useSession.getState().connected) { notify('Open a project first.'); return null; }
-  const r = await importShapes(text, true);
-  const said = r ? `${r.added} shapes added, ${r.updated} updated.` : null;
-  if (said) notify(said);
-  return said;
+/** Through the one import preview (audit D13), which says what it did. */
+async function bring(text: string, file = 'shapes.lapinbarshapes'): Promise<string | null> {
+  const r = await importLibraryText(text, file);
+  return r ? tallySentence(r) : null;
 }
 
 registerLibraryKind({ ext: 'lapinbarshapes', label: 'Bar shapes', module: 'rebar', names: (t) => readBarShapes(new TextEncoder().encode(t)).codes, bring });

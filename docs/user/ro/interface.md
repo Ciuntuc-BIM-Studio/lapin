@@ -104,9 +104,23 @@ Fila **Catalog** din browserul proiectului arată tipurile proiectului pentru fi
 
 ### Folderele firmei în dialogurile bibliotecilor
 
-Dialogul fiecărei biblioteci (**Simboluri…**, **Pachete de tipuri…**, **Tipuri de linie** din Standarde de desen, **Standarde de desen**, **Reguli…**, **Forme de bare…**, **Parametri comuni**, **Materiale** pentru fișierele `.pat`, **Liste de prețuri…**, **Studio → Familii…**, **Gestionare → Cartușe…** și **Interior → Mobilierul meu…**) are un bloc **Folderele firmei** cu fișierele de felul lui din folderele firmei. Un clic citește fișierul prin importul dialogului, cu aceleași alegeri ca la **Importă…**. **Salvează în folderul firmei…** scrie exportul propriu al bibliotecii într-un folder de scris, înlocuind un fișier cu același nume. Butonul mic cu disc păstrează o copie a fișierului pe acest calculator.
+Dialogul fiecărei biblioteci (**Simboluri…**, **Pachete de tipuri…**, **Tipuri de linie** din Standarde de desen, **Standarde de desen**, **Reguli…**, **Forme de bare…**, **Parametri comuni**, **Materiale** pentru fișierele `.pat`, **Liste de prețuri…**, **Studio → Familii…**, **Gestionare → Cartușe…** și **Interior → Mobilierul meu…**) are un bloc **Folderele firmei** cu fișierele de felul lui din folderele firmei. Un clic citește fișierul prin previzualizarea importului, cu aceleași alegeri ca la **Importă…** (vezi mai jos). **Salvează în folderul firmei…** scrie exportul propriu al bibliotecii într-un folder de scris, înlocuind un fișier cu același nume. Butonul mic cu disc păstrează o copie a fișierului pe acest calculator.
 
 ![Simboluri: fișierul din folderul firmei lângă Acest proiect și Acest calculator](shots/symbols-firm-folder.webp)
+
+### Importul unui fișier de bibliotecă: o singură previzualizare, aceleași alegeri
+
+Orice fișier de bibliotecă intră la fel, oricare ar fi dialogul, folderul firmei sau intrarea din Catalog care îl aduce: simboluri, pachete de tipuri, JSON-ul tipurilor de pereți și plăci, standarde de desen, tipuri de linie `.lin`, hașuri `.pat`, pachete de reguli, parametri comuni, nume de câmpuri, cartușe, forme de bare, piese și familii, și `.lapinlib` din Mobilierul meu. Când totul e nou pentru proiect, sau există deja la fel, intră direct. Când ceva există deja, dar făcut altfel, **Previzualizarea importului** arată fișierul element cu element: **Nou**, **La fel**, **Același nume** (alt element cu acel nume) sau **Același element, schimbat** (același stil, tip de linie, parametru, formă de bară sau intrare de mobilier, modificat între timp), cu ce diferă. Pentru fiecare care diferă alegi:
+
+- **Păstrează-le pe amândouă**: cel din fișier intră lângă cel existent, cu (2) după nume (*Bubble (2)*). Implicit pentru un element cu același nume.
+- **Înlocuiește**: cel existent ia pe loc forma celui din fișier; ce îl folosește îl urmează (simbolurile plasate, pereții unui tip, planșele unui cartuș). Implicit pentru același element schimbat.
+- **Sari peste**: cel existent rămâne cum e.
+
+**Aplică la toate…** pune aceeași alegere la fiecare element care o are (o formă de bară e numită după cod, deci e înlocuită sau sărită, niciodată păstrată de două ori; un material dintr-un pachet de tipuri îl păstrează implicit pe al proiectului). **Importă** aduce fișierul, într-un singur pas de anulat, iar o notă numără ce s-a adăugat, actualizat, păstrat și sărit, și ce a fost păstrat alături cu un nume nou.
+
+![Previzualizarea importului: un pachet de reguli cu același nume în proiect, implicit păstrate amândouă](shots/library-import-preview.webp)
+
+Un fișier scris de această versiune spune sus cine l-a scris: *Scris de Lapin 0.1.1300 pe 2026-11-16, din Bloc P+4* (proiectul din care vine). Un fișier salvat înainte de această versiune nu are rândul acesta (*Scris de o versiune mai veche de Lapin*) și se citește ca întotdeauna. Un fișier dintr-un Lapin mai nou e refuzat cu o propoziție: actualizează Lapin ca să-l citești.
 
 ### Salvează în bibliotecă la configuratorul unui tip
 

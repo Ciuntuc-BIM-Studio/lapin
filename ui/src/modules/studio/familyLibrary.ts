@@ -5,25 +5,22 @@
  * placing are in ./families.
  */
 
-import { notify } from '../../app/store';
-import { useSession } from '../../engine/session';
-import { exportFamily, importFamily } from './families/familyApi';
+import { exportFamily } from './families/familyApi';
 import { readFamily } from '../../platform/extensions/packs';
 import { fileKindInstaller } from '../../platform/extensions/fileKind';
 import { addContentInstaller } from '../../platform/extensions/runtime';
 import { computerFileId, computerFileRows, forgetComputerFile, keepComputerFile, registerLibraryKind } from '../../platform/libraries';
+import { importLibraryText, tallySentence } from '../../platform/ImportPreview';
 
 export type { FamilyDto } from './families/familyModel';
 
 /** A project family as a .lapinfamily file's text (the firm folders' and this computer's saving). */
 export const familyFileText = async (id: string): Promise<{ text: string; file: string } | null> => exportFamily(id);
 
-async function bring(text: string): Promise<string | null> {
-  if (!useSession.getState().connected) { notify('Open a project first.'); return null; }
-  const r = await importFamily(text);
-  const said = r ? `Family added to the project: ${readFamily(new TextEncoder().encode(text)).name}.` : null;
-  if (said) notify(said);
-  return said;
+/** Through the one import preview (audit D13): a part of its name there kept both, replaced or skipped. */
+async function bring(text: string, file = 'family.lapinfamily'): Promise<string | null> {
+  const r = await importLibraryText(text, file);
+  return r ? tallySentence(r) : null;
 }
 
 registerLibraryKind({ ext: 'lapinfamily', label: 'Families', module: 'studio', names: (t) => [readFamily(new TextEncoder().encode(t)).name], bring });

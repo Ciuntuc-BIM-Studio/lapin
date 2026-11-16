@@ -15,6 +15,7 @@ import { useLibraryFiles, type ComputerFile } from '../../platform/libraries';
 import { FieldPicker } from '../../shell/FieldPicker';
 import { aliases, forgetAliasesFile, keepAliasesFile, keptAliasesFiles, moved, ALIASES_EXT, type FieldAlias } from '../../shell/fieldSchedule';
 import { FirmFolderFiles } from './FirmFolderFiles';
+import { importLibraryText } from '../../platform/ImportPreview';
 
 /** A name the engine accepts: no dot, brace, bar or equals sign. */
 export const validAliasName = (n: string): boolean => n.trim() !== '' && !/[.{}|=]/.test(n);
@@ -35,9 +36,10 @@ export function FieldAliasesDialog() {
     const list = rows.map((r) => ({ name: r.name.trim(), sources: r.sources.filter((s) => s.trim()), ...(r.description?.trim() ? { description: r.description.trim() } : {}) }));
     if (await execute('fields.setAliases', { aliases: list }) !== null) close();
   };
+  // Through the one import preview (audit D13): an alias of its name there replaced or skipped.
   const bring = async (text: string) => {
-    const r = await execute('fields.importAliases', { text }) as { added: number; updated: number } | null;
-    if (r) { notify(r.added + r.updated > 0 ? 'Field names imported.' : 'Nothing new in those field names.'); load(); }
+    const r = await importLibraryText(text, 'aliases.lapinaliases');
+    if (r) load();
   };
   const exported = async () => (await query<{ text: string; file: string }>('fields.exportAliases'));
   const toFile = async () => {

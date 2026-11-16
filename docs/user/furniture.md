@@ -265,14 +265,14 @@ Its thumbnail is drawn from the type's preview. The type goes with everything it
 - **Insert** puts the type into the open project and chooses it for its tool. A material the project already has by that name is used as it is, and the others are made. If the project already has an identical type, that one is used and no copy is made. Each insert is one undo step.
 - **Place** inserts it and starts its tool, so the next click puts a piece down. A kitchen is drawn along a wall.
 - **Rename**, **Tags**, **Duplicate** and **Delete** change the library only. Projects that already have the type keep it.
-- **Export** writes the item as a `.lapinlib` file. **Export all…** writes the whole library, and **Import…** reads one back. Import skips an item that is already in the library unchanged. An item with the same id but changed content is added beside the one you have, so nothing is overwritten.
+- **Export** writes the item as a `.lapinlib` file. **Export all…** writes the whole library, and **Import…** reads one back. An item already in the library unchanged is left as it is. When the file has an item you have but changed since (the same id), or another item with the name of one of yours, the import preview asks first: **Replace** (the default for the same item), **Keep both** (the default for the same name: *Chair (2)*) or **Skip**; see [Importing a library file](interface.md#importing-a-library-file-one-preview-the-same-choices).
 - **Add to a template…** puts the type into one of your project templates, so every project started from it has the type.
 
 ![My furniture: the library's thumbnails, searched and filtered, each ready to insert or place](shots/furniture-library.webp)
 
 On the desktop the library is kept in your Lapin folder, one file per item. In the browser it is kept by the browser. To move it between the two, or to another computer, export it and import the file. A project template keeps the furniture types of the project it is saved from. **Save as template…** can also add every type in My furniture (**Add every type in My furniture**).
 
-In the desktop app, **My furniture** also has a **Firm folders** block: the `.lapinlib` files in your firm's folders, one click adding their items to your library (those it already has are skipped), and **Save to firm folder…** writing the whole library or one item into a writable folder.
+In the desktop app, **My furniture** also has a **Firm folders** block: the `.lapinlib` files in your firm's folders, one click adding their items to your library through the same import preview, and **Save to firm folder…** writing the whole library or one item into a writable folder.
 
 ![My furniture: the firm folder's file](shots/furniture-firm-folder.webp)
 

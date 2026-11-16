@@ -1,0 +1,205 @@
+{
+  "format": "lapin-standards",
+  "version": 1,
+  "name": "Office",
+  "drafting": {
+    "textStyles": [
+      {
+        "id": "standard",
+        "name": "Standard",
+        "height": 2.5,
+        "font": "sans",
+        "bold": false,
+        "italic": false
+      }
+    ],
+    "dimStyles": [
+      {
+        "id": "standard",
+        "name": "Standard",
+        "textStyle": "standard",
+        "arrow": "tick",
+        "arrowSize": 1.5,
+        "extGap": 1,
+        "extOver": 1.5,
+        "placement": "above",
+        "textGap": 0.8,
+        "precision": -1,
+        "unit": "project",
+        "openingHeight": "off",
+        "zeros": "project",
+        "autoText": "project"
+      }
+    ],
+    "axisStyles": [
+      {
+        "id": "standard",
+        "name": "Standard",
+        "textStyle": "standard",
+        "bubble": "circle",
+        "ends": "both",
+        "size": 10,
+        "lineType": "dashdot",
+        "firstLabel": "1"
+      }
+    ],
+    "defaultAxisStyle": "standard",
+    "tagTypes": [
+      {
+        "id": "door",
+        "name": "Door marker",
+        "template": "{mark}",
+        "classes": [
+          "IfcDoor"
+        ],
+        "shape": "opening",
+        "inner": "{width}/{height}",
+        "unit": "cm",
+        "reach": 6,
+        "textStyle": "standard",
+        "textOrientation": "across"
+      },
+      {
+        "id": "window",
+        "name": "Window marker",
+        "template": "{mark}",
+        "classes": [
+          "IfcWindow"
+        ],
+        "shape": "opening",
+        "inner": "{width}/{height}|sill {sill}",
+        "unit": "cm",
+        "reach": 6,
+        "textStyle": "standard",
+        "textOrientation": "across"
+      },
+      {
+        "id": "room",
+        "name": "Room stamp",
+        "template": "{name}|{number}|{area}",
+        "classes": [
+          "IfcSpace"
+        ],
+        "shape": "room",
+        "inner": "",
+        "unit": "cm",
+        "reach": 6,
+        "textStyle": "standard",
+        "textOrientation": "across"
+      },
+      {
+        "id": "fire",
+        "name": "Fire rating",
+        "template": "{FireRating}",
+        "classes": [],
+        "shape": "box",
+        "inner": "",
+        "unit": "cm",
+        "reach": 6,
+        "textStyle": "standard",
+        "textOrientation": "across"
+      },
+      {
+        "id": "acoustic",
+        "name": "Acoustic rating",
+        "template": "{AcousticRating}",
+        "classes": [],
+        "shape": "box",
+        "inner": "",
+        "unit": "cm",
+        "reach": 6,
+        "textStyle": "standard",
+        "textOrientation": "across"
+      },
+      {
+        "id": "thermal",
+        "name": "Thermal transmittance",
+        "template": "U = {ThermalTransmittance}",
+        "classes": [],
+        "shape": "box",
+        "inner": "",
+        "unit": "cm",
+        "reach": 6,
+        "textStyle": "standard",
+        "textOrientation": "across"
+      },
+      {
+        "id": "buildup",
+        "name": "Build-up (exterior \u2192 interior)",
+        "template": "{description}[, \u03BB = {\u03BB} W/mK]: {thickness} mm",
+        "classes": [
+          "IfcWall",
+          "IfcSlab",
+          "IfcRoof",
+          "IfcCovering",
+          "LapinRoomFinish"
+        ],
+        "shape": "buildup",
+        "inner": "",
+        "unit": "mm",
+        "reach": 6,
+        "textStyle": "standard",
+        "textOrientation": "across",
+        "header": "EXTERIOR",
+        "footer": "INTERIOR",
+        "order": "out-in",
+        "zeroLayers": true,
+        "leaders": "one",
+        "bullet": "bullet",
+        "width": 80
+      }
+    ],
+    "layers": [
+      {
+        "id": "0",
+        "name": "0",
+        "color": "#18181b",
+        "visible": true,
+        "locked": false
+      }
+    ],
+    "layerGroups": [],
+    "lineCap": "round",
+    "units": "mm",
+    "lineTypes": [
+      {
+        "id": "Fence",
+        "name": "Fence",
+        "dashes": [
+          6,
+          2,
+          1,
+          2
+        ]
+      }
+    ],
+    "suppressZeros": false,
+    "levelDecimals": 2,
+    "levelZeros": "project",
+    "dimAutoText": true,
+    "dimTextLeader": 5
+  },
+  "symbols": [
+    {
+      "name": "Arrow",
+      "def": {
+        "scale": "annotation",
+        "category": "annotation",
+        "items": [
+          {
+            "type": "line",
+            "a": [
+              0,
+              0
+            ],
+            "b": [
+              1,
+              0
+            ]
+          }
+        ],
+        "attributes": []
+      }
+    }
+  ]
+}

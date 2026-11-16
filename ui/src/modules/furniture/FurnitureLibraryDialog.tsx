@@ -17,7 +17,7 @@ import { specOf, TYPE_CLASS } from './furniture';
 import { FirmFolderFiles } from '../core/FirmFolderFiles';
 import { t as tr } from '../../i18n';
 import {
-  CATEGORIES, CATEGORY_LABELS, allTags, deleteEntry, duplicateEntry, exportEntries, filterEntries, importLibrary, parseTags, refreshLibrary,
+  CATEGORIES, CATEGORY_LABELS, allTags, deleteEntry, duplicateEntry, exportEntries, filterEntries, importLibraryChosen, parseTags, refreshLibrary,
   guessCategory, saveToLibrary, takeEntry, thumbnailOf, updateEntry, useFurnitureLibrary, useSaveToLibrary, type Category, type LibraryEntry,
 } from './library';
 
@@ -117,8 +117,8 @@ export function FurnitureLibraryDialog() {
         if (!path) return;
         file = { path };
       }
-      const r = await importLibrary(file);
-      notify(`${r.added.length} added, ${r.skipped} already in your library.`);
+      // Through the one import preview (audit D13), which says what it did.
+      await importLibraryChosen(file, 'My furniture');
     } catch (e) { notify(message(e)); }
   };
   return (
@@ -150,7 +150,7 @@ export function FurnitureLibraryDialog() {
           </div>
           {read && !entries.length && <p className="muted small">Your library is empty. In Furniture types, Save to my library… keeps a type here for every project.</p>}
           {read && !!entries.length && !shown.length && <p className="muted small">Nothing matches.</p>}
-          <FirmFolderFiles ext="lapinlib" onPick={async (f) => { try { const r = await importLibrary({ data: toBase64(f.bytes) }); notify(`${r.added.length} added, ${r.skipped} already in your library.`); } catch (e) { notify(message(e)); } }}
+          <FirmFolderFiles ext="lapinlib" onPick={async (f) => { try { await importLibraryChosen({ data: toBase64(f.bytes) }, f.name ?? 'My furniture'); } catch (e) { notify(message(e)); } }}
             save={{ disabled: !entries.length, choices: [tr('My furniture'), ...entries.map((e) => e.name)], get: async (choice) => {
               const one = choice && choice !== tr('My furniture') ? entries.find((e) => e.name === choice) : undefined;
               const r = await exportEntries(one ? [one.id] : null);

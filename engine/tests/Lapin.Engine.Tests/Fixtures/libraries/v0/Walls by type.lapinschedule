@@ -1,0 +1,22 @@
+{
+  "format": "lapin-schedule",
+  "version": 1,
+  "name": "Walls by type",
+  "fields": {
+    "filter": {
+      "classes": [
+        "IfcWall"
+      ]
+    },
+    "groupBy": [
+      "Type"
+    ],
+    "columns": [
+      {
+        "field": "Length",
+        "aggregate": "sum",
+        "decimals": 2
+      }
+    ]
+  }
+}

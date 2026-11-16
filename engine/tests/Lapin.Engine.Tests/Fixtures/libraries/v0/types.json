@@ -1,0 +1,37 @@
+{
+  "format": "lapin-types",
+  "version": 2,
+  "types": [
+    {
+      "kind": "wall",
+      "name": "WT1 Exterior",
+      "layers": [
+        {
+          "material": "Brick",
+          "thickness": 0.25,
+          "core": true,
+          "color": "#b5654a"
+        },
+        {
+          "material": "Plaster",
+          "thickness": 0.015,
+          "color": "#e8e2d6"
+        }
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "name": "Brick",
+      "attrs": {
+        "color": "#b5654a"
+      }
+    },
+    {
+      "name": "Plaster",
+      "attrs": {
+        "color": "#e8e2d6"
+      }
+    }
+  ]
+}

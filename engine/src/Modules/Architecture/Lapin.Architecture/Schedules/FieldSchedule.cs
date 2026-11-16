@@ -289,11 +289,13 @@ public sealed class FieldSchedule : IScheduleSource
                 },
             };
         }
-        var o = new JsonObject { ["format"] = FileFormat, ["version"] = 1, ["name"] = s.Name, [FieldScheduleOptions.Key] = options.ToJson() };
+        var o = new JsonObject { ["name"] = s.Name, [FieldScheduleOptions.Key] = options.ToJson() };
         if (s.Attrs["customColumns"] is JsonArray cc && cc.Count > 0) o["customColumns"] = cc.DeepClone();
         if (s.Attrs["charts"] is JsonArray ch && ch.Count > 0) o["charts"] = ch.DeepClone();
-        return o;
+        return LibraryFile.Write(Spec, o, LibraryFile.SourceOf(m));
     }
+
+    public static LibraryFile.Spec Spec => LibraryFile.Of(FileFormat);
 
     /// <summary>A template's text or object read and checked; refused when it is not one.</summary>
     public static JsonObject ReadTemplate(JsonNode? given)
@@ -301,7 +303,8 @@ public sealed class FieldSchedule : IScheduleSource
         var n = given;
         if (given is JsonValue v && v.TryGetValue<string>(out var text))
             try { n = JsonNode.Parse(text); } catch (JsonException) { throw new CommandException("That is not a schedule file (.lapinschedule)."); }
-        if (n is not JsonObject o || (string?)o["format"] != FileFormat) throw new CommandException("That is not a schedule file (.lapinschedule).");
+        if (n is not JsonObject given0 || (string?)given0["format"] != FileFormat) throw new CommandException("That is not a schedule file (.lapinschedule).");
+        var o = LibraryFile.Read(given0, Spec).Root;
         FieldScheduleOptions.Check(o[FieldScheduleOptions.Key]);
         return o;
     }

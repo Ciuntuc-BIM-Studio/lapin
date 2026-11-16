@@ -287,7 +287,7 @@ public sealed class TitleBlockTests : IDisposable
         // Out to a file and back in, as another computer would.
         var json = f.Session.Query("titleBlock.export", new JsonObject { ["id"] = cartus })!.AsObject();
         var again = (string)f.Run("titleBlock.import", new JsonObject { ["json"] = json.DeepClone() })!["id"]!;
-        Assert.Equal("Cartuș firmă 2", f.Model.Get(again)!.Name);
+        Assert.Equal("Cartuș firmă (2)", f.Model.Get(again)!.Name);
         f.Run("titleBlock.delete", new JsonObject { ["id"] = cartus });
         Assert.Equal(BuiltinTitleBlocks.Iso7200, TitleBlocks.AssignedId(f.Model, f.Model.Get(s)!));
         f.Run("titleBlock.setDefault", new JsonObject { ["id"] = again });

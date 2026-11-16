@@ -11,16 +11,17 @@ import { backdropClose } from '../../../shell/Dialog';
 import { useEffect, useMemo, useState } from 'react';
 import { BookMarked, Copy, FileDown, FileUp, FolderInput, MapPin, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../../app/store';
-import { useSession } from '../../../engine/session';
+import { query, useSession } from '../../../engine/session';
 import { pickFile, safeFileName, saveFile } from '../../../engine/files';
 import { t as tr } from '../../../i18n';
 import { pensToSvg } from '../documents/docModel';
-import { TYPE_CHOICES } from '../LibraryChoices';
+import { ImportPreview, tallySentence } from '../../../platform/ImportPreview';
+import { defaultChoices, type Choice, type LibraryPreview } from '../../../platform/libraryFile';
 import { freeName } from '../titleBlocks/titleBlockModel';
 import { SymbolEditor } from './SymbolEditor';
 import { FirmFolderFiles } from '../FirmFolderFiles';
 import { Thumb } from './Thumb';
-import { createSymbol, deleteSymbol, exportSymbols, getSymbol, importSymbols, listSymbols, previewSymbol, readPack, updateSymbol, type PackSymbol, type SymList } from './symbols';
+import { createSymbol, deleteSymbol, exportSymbols, getSymbol, importSymbols, listSymbols, previewSymbol, updateSymbol, type SymList } from './symbols';
 import {
   byCategory, forgetSymbol, symbolsDialog, keepSymbol, librarySymbols, normaliseDef, packText, parsePack, previewImage, renameSymbol, updateLibrarySymbol,
   type LibrarySymbol, type SymDef, type SymPreview, type SymSummary,
@@ -56,7 +57,7 @@ export function SymbolsDialog() {
   const [renaming, setRenaming] = useState<string | null>(null);
   const [into, setInto] = useState<'project' | 'library'>('project');
   const [search, setSearch] = useState('');
-  const [pack, setPack] = useState<{ text: string; symbols: PackSymbol[]; choices: Record<string, string> } | null>(null);
+  const [pack, setPack] = useState<{ text: string; preview: LibraryPreview; choices: Record<string, Choice> } | null>(null);
   useEffect(() => { void listSymbols(true).then(setList); }, [version]);
   useEffect(() => {
     // The editor, when another part of the interface asked for it (Properties → Edit symbol).
@@ -173,18 +174,18 @@ export function SymbolsDialog() {
       notify(kept === entries.length ? 'Symbols imported.' : "This computer's library is full: not every symbol was kept there.");
       return;
     }
-    const read = await readPack(text);
-    if (!read) { notify('That file is not a symbol library.'); return; }
-    const conflicts = read.symbols.filter((s) => s.exists && !s.same);
-    if (conflicts.length === 0) { const r = await importSymbols(text, {}); if (r) notify('Symbols imported.'); return; }
-    setPack({ text, symbols: read.symbols, choices: Object.fromEntries(conflicts.map((c) => [c.name, 'both'])) });
+    // The one import preview (audit D13): straight in when nothing differs, else its choices here.
+    const preview = await query<LibraryPreview>('library.preview', { text });
+    if (!preview) { notify('That file is not a symbol library.'); return; }
+    if (preview.conflicts === 0) { const r = await importSymbols(text, {}); if (r) notify(tallySentence(r)); return; }
+    setPack({ text, preview, choices: defaultChoices(preview.rows) });
   };
 
   const applyPack = async () => {
     if (!pack) return;
     const r = await importSymbols(pack.text, pack.choices);
     setPack(null);
-    if (r) notify('Symbols imported.');
+    if (r) notify(tallySentence(r));
   };
 
   /** The editor's save: the project's symbol updated, the library's entry replaced, a new one made. */
@@ -264,25 +265,7 @@ export function SymbolsDialog() {
             {pack ? (
               <>
                 <h3 className="tpl-title">Symbols the project already has, drawn otherwise</h3>
-                <table className="layer-table">
-                  <thead><tr><th>Symbol</th><th /><th>
-                    <select value="" title="The same choice for every symbol" onChange={(e) => { if (e.target.value) setPack({ ...pack, choices: Object.fromEntries(Object.keys(pack.choices).map((k) => [k, e.target.value])) }); }}>
-                      <option value="">Apply to all…</option>
-                      {TYPE_CHOICES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                    </select>
-                  </th></tr></thead>
-                  <tbody>
-                    {pack.symbols.filter((s) => s.exists && !s.same).map((s) => (
-                      <tr key={s.name}>
-                        <td data-no-i18n>{s.name}</td>
-                        <td><Thumb p={s.preview} /></td>
-                        <td><select value={pack.choices[s.name] ?? 'both'} data-choice-symbol={s.name} onChange={(e) => setPack({ ...pack, choices: { ...pack.choices, [s.name]: e.target.value } })}>
-                          {TYPE_CHOICES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                        </select></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <ImportPreview rows={pack.preview.rows} value={pack.choices} onChange={(choices) => setPack({ ...pack, choices })} header={pack.preview.header} />
                 <div className="row">
                   <button type="button" className="btn primary" onClick={() => void applyPack()} data-field="sy-import-apply">Import</button>
                   <button type="button" className="btn" onClick={() => setPack(null)}>Cancel</button>

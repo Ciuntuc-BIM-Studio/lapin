@@ -265,14 +265,14 @@ Miniatura e desenată din previzualizarea tipului. Tipul pleacă cu tot ce îi t
 - **Inserează** pune tipul în proiectul deschis și îl alege pentru unealta lui. Un material pe care proiectul îl are deja cu acel nume e folosit așa cum e, iar celelalte se creează. Dacă proiectul are deja un tip identic, se folosește acela și nu se face o copie. Fiecare inserare e un singur pas de anulare.
 - **Așază** îl inserează și pornește unealta lui, ca următorul clic să pună o piesă. O bucătărie se desenează de-a lungul unui perete.
 - **Redenumește**, **Etichete**, **Duplică** și **Șterge** schimbă doar biblioteca. Proiectele care au deja tipul îl păstrează.
-- **Exportă** scrie elementul ca fișier `.lapinlib`. **Exportă tot…** scrie toată biblioteca, iar **Importă…** citește un fișier înapoi. Importul sare peste un element care e deja în bibliotecă neschimbat. Un element cu același id, dar cu alt conținut, se adaugă lângă cel pe care îl ai, ca nimic să nu fie suprascris.
+- **Exportă** scrie elementul ca fișier `.lapinlib`. **Exportă tot…** scrie toată biblioteca, iar **Importă…** citește un fișier înapoi. Un element care e deja în bibliotecă neschimbat rămâne cum e. Când fișierul are un element pe care îl ai, dar schimbat între timp (același id), sau alt element cu numele unuia de-al tău, previzualizarea importului întreabă întâi: **Înlocuiește** (implicit pentru același element), **Păstrează-le pe amândouă** (implicit pentru același nume: *Scaun (2)*) sau **Sari peste**; vezi [Importul unui fișier de bibliotecă](interface.md#importul-unui-fisier-de-biblioteca-o-singura-previzualizare-aceleasi-alegeri).
 - **Adaugă într-un șablon…** pune tipul într-unul din șabloanele tale de proiect, ca orice proiect pornit din el să aibă tipul.
 
 ![Mobilierul meu: miniaturile bibliotecii, căutate și filtrate, fiecare gata de inserat sau de așezat](shots/furniture-library.webp)
 
 Pe desktop biblioteca e păstrată în dosarul tău Lapin, câte un fișier pentru fiecare element. În browser o păstrează browserul. Ca s-o muți între cele două sau pe alt calculator, o exporți și imporți fișierul. Un șablon de proiect păstrează tipurile de mobilier ale proiectului din care e salvat. **Salvează ca șablon…** poate adăuga și toate tipurile din Mobilierul meu (**Adaugă toate tipurile din Mobilierul meu**).
 
-În aplicația desktop, **Mobilierul meu** are și un bloc **Folderele firmei**: fișierele `.lapinlib` din folderele firmei, un clic adăugând piesele lor în bibliotecă (cele pe care le are deja sunt sărite), iar **Salvează în folderul firmei…** scriind toată biblioteca sau o piesă într-un folder care poate fi scris.
+În aplicația desktop, **Mobilierul meu** are și un bloc **Folderele firmei**: fișierele `.lapinlib` din folderele firmei, un clic adăugând piesele lor în bibliotecă prin aceeași previzualizare a importului, iar **Salvează în folderul firmei…** scriind toată biblioteca sau o piesă într-un folder care poate fi scris.
 
 ![Mobilierul meu: fișierul din folderul firmei](shots/furniture-firm-folder.webp)
 

@@ -22,6 +22,8 @@ import {
   type TbList,
 } from './titleBlocks';
 import { forgetBlock, freeName, isTitleBlockFile, keepBlock, libraryBlocks, normalise, renameBlock, type LibraryBlock, type TbFile, type TbSummary } from './titleBlockModel';
+import { importLibraryText } from '../../../platform/ImportPreview';
+import { HEADER_KEY, withEnvelope } from '../../../platform/libraryFile';
 
 const GROUPS: { origin: TbSummary['origin']; label: string; empty: string }[] = [
   { origin: 'builtin', label: 'Built-in', empty: '' },
@@ -117,10 +119,13 @@ export function TitleBlocksDialog() {
     else if (t.origin === 'library') { renameBlock(t.id, n); reload(); }
   };
 
+  /** A title block as its file's text, with the one envelope (one this computer keeps gets it as it is written). */
+  const fileText = (file: TbFile) => JSON.stringify(HEADER_KEY in file ? file : withEnvelope('lapin.titleBlock', 1, file as unknown as Record<string, unknown>), null, 2) + '\n';
+
   const exportOne = async (t: TbSummary) => {
     const file = await whole(t);
     if (!file) return;
-    const saved = await saveFile(new TextEncoder().encode(JSON.stringify(file, null, 2) + '\n'), `${safeFileName(t.name, 'title-block')}.json`, 'application/json');
+    const saved = await saveFile(new TextEncoder().encode(fileText(file)), `${safeFileName(t.name, 'title-block')}.json`, 'application/json');
     if (saved) notify(`Exported ${saved}.`);
   };
 
@@ -136,8 +141,10 @@ export function TitleBlocksDialog() {
       reload();
       setSelected(keyOf({ origin: 'library', id: kept.id }));
     } else {
-      const id = await importTitleBlock(json);
-      if (id) setSelected(keyOf({ origin: 'project', id }));
+      // Through the one import preview (audit D13): one of its name there kept both, replaced or skipped.
+      const r = await importLibraryText(JSON.stringify(json), 'title block.lapintitleblock') as { id?: string } | null;
+      if (r?.id) setSelected(keyOf({ origin: 'project', id: r.id }));
+      return;
     }
     notify('Title block imported.');
   };
@@ -180,7 +187,7 @@ export function TitleBlocksDialog() {
               );
             })}
             <FirmFolderFiles ext="lapintitleblock" onPick={(f) => importOne(f)}
-              save={{ disabled: !current, get: async () => { if (!current) { notify('Choose a title block to save.'); return null; } const file = await whole(current); return file ? { text: JSON.stringify(file, null, 2) + '\n', name: current.name } : null; } }} />
+              save={{ disabled: !current, get: async () => { if (!current) { notify('Choose a title block to save.'); return null; } const file = await whole(current); return file ? { text: fileText(file), name: current.name } : null; } }} />
           </aside>
           <main className="tpl-detail">
             {!current ? <p className="muted">Choose a title block: edit it, make it the project's default, duplicate or export it. A sheet chooses its own in its properties.</p> : (

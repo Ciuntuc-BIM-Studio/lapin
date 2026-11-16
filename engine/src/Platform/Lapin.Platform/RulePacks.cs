@@ -198,25 +198,23 @@ public static class RulePacks
             var id = (string?)a["id"] is { Length: > 0 } given ? given : ActiveId(q.Model);
             var def = Def(q.Model, q.Services, id) ?? throw new CommandException("There is no such rule pack.");
             var name = id == Builtin ? BuiltinName : q.Model.Get(id)!.Name;
-            var o = new JsonObject { ["format"] = FileFormat, ["version"] = FileVersion, ["name"] = name, ["indicative"] = true };
+            var o = new JsonObject { ["name"] = name, ["indicative"] = true };
             foreach (var (k, v) in Parse(q.Services, def)) o[k] = v?.DeepClone();
-            return new JsonObject { ["text"] = o.ToJsonString(new JsonSerializerOptions { WriteIndented = true }), ["file"] = name + ".lapinrules" };
+            return new JsonObject { ["text"] = LibraryFile.Write(Spec, o, LibraryFile.SourceOf(q.Model)).ToJsonString(new JsonSerializerOptions { WriteIndented = true }), ["file"] = name + ".lapinrules" };
         });
 
-        // A .lapinrules file brought in as a pack of the project's (its name free), used at once when asked.
+        // A .lapinrules file brought in as a pack of the project's (one of its name there: beside it as „Name (2)”), used at once when
+        // asked. With `choices` ({name: both | update | skip}) or `all`, as every library import (LibraryMerge): one the same kept,
+        // one of the same name kept both, updated in place (what uses it follows) or skipped.
         r.Command("rules.import", "Import rule pack", (ctx, a) =>
         {
-            JsonNode? n;
-            try { n = JsonNode.Parse((string?)a["text"] ?? ""); }
-            catch (JsonException) { throw new CommandException("That is not a rule pack (.lapinrules): it is not JSON."); }
-            if (n is not JsonObject o || (string?)o["format"] != FileFormat) throw new CommandException("That is not a rule pack (.lapinrules).");
-            if ((Json.Number(o["version"]) ?? 0) > FileVersion) throw new CommandException("That rule pack was written by a newer Lapin: update Lapin to read it.");
-            var e = new Entity(ctx.NewId(), Class, FreeName(ctx.Model, ((string?)o["name"])?.Trim() is { Length: > 0 } nm ? nm : "Rules"), new JsonObject { ["def"] = Parse(ctx.Services, o) });
-            if ((string?)o["description"] is { Length: > 0 } d) e.Attrs["description"] = d;
-            ctx.Add(e);
-            if (a["activate"] is JsonValue av && av.TryGetValue<bool>(out var act) && act) SetActive(ctx, e.Id);
-            return new JsonObject { ["id"] = e.Id, ["name"] = e.Name };
+            var merge = a["choices"] is JsonObject || a["all"] is not null;
+            var o = Import(ctx, (string?)a["text"] ?? "", a["choices"] as JsonObject, (string?)a["all"], merge);
+            if (a["activate"] is JsonValue av && av.TryGetValue<bool>(out var act) && act && (string?)o["id"] is { } made) SetActive(ctx, made);
+            return o;
         });
+
+        r.Service<ILibraryFormat>(new LibraryFormat(Spec, (q, text) => [Row(q.Model, q.Services, Read(text))], (ctx, text, choices, all) => Import(ctx, text, choices, all, merge: true)));
 
         // The project checked against its rules: each module's findings.
         r.Query("rules.check", (q, _) =>
@@ -230,6 +228,67 @@ public static class RulePacks
                 ["findings"] = new JsonArray(findings.Select(f => (JsonNode)new JsonObject { ["module"] = f.Module, ["element"] = f.ElementId, ["severity"] = f.Severity, ["message"] = f.Message }).ToArray()),
             };
         });
+    }
+
+    public static LibraryFile.Spec Spec => LibraryFile.Of(FileFormat);
+
+    static JsonObject Read(string text) => LibraryFile.Read(text, Spec).Root;
+
+    static string NameIn(JsonObject file) => ((string?)file["name"])?.Trim() is { Length: > 0 } nm ? nm : "Rules";
+
+    /// <summary>The pack of a file as the import preview shows it: new, the same as the project's of its name, or of the same name (keep both by default).</summary>
+    static LibraryMerge.Row Row(IModelView m, IServices s, JsonObject file)
+    {
+        var name = NameIn(file);
+        var mine = m.OfClass(Class).FirstOrDefault(e => string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase));
+        var match = mine is null ? LibraryMerge.Match.New
+            : JsonNode.DeepEquals(mine.Attrs["def"], Parse(s, file)) && mine.Str("description") == (string?)file["description"] ? LibraryMerge.Match.Same : LibraryMerge.Match.Name;
+        return new LibraryMerge.Row(name, "rulePack", name, match, match == LibraryMerge.Match.Name ? ["rules"] : null);
+    }
+
+    /// <summary>
+    /// A file's pack brought in: without <paramref name="merge"/>, always made (beside one of its name as „Name (2)”), as the
+    /// command always did; with it, as its row's choice says. The pack's id (the project's when kept or skipped) and the counts.
+    /// </summary>
+    static JsonObject Import(ICommandContext ctx, string text, JsonObject? choices, string? all, bool merge)
+    {
+        var file = Read(text);
+        var row = Row(ctx.Model, ctx.Services, file);
+        var mine = ctx.Model.OfClass(Class).FirstOrDefault(e => string.Equals(e.Name, row.Name, StringComparison.OrdinalIgnoreCase));
+        var tally = new LibraryMerge.Tally();
+        var choice = !merge ? (mine is null && row.Name != BuiltinName ? LibraryMerge.Add : LibraryMerge.Both) : LibraryMerge.Decide(row, choices, all);
+        string id;
+        switch (choice)
+        {
+            case LibraryMerge.Same: tally.Kept++; id = mine!.Id; break;
+            case LibraryMerge.Skip: tally.Skipped++; id = mine!.Id; break;
+            case LibraryMerge.Update:
+            {
+                var attrs = mine!.CloneAttrs();
+                attrs["def"] = Parse(ctx.Services, file);
+                if ((string?)file["description"] is { Length: > 0 } d) attrs["description"] = d; else attrs.Remove("description");
+                ctx.Replace(mine.With(attrs: attrs));
+                tally.Updated++;
+                id = mine.Id;
+                break;
+            }
+            default:
+            {
+                var taken = ctx.Model.OfClass(Class).Select(e => e.Name).Append(BuiltinName).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var name = taken.Contains(row.Name) ? LibraryMerge.FreeName(taken.Contains, row.Name) : row.Name;
+                var e = new Entity(ctx.NewId(), Class, name, new JsonObject { ["def"] = Parse(ctx.Services, file) });
+                if ((string?)file["description"] is { Length: > 0 } d) e.Attrs["description"] = d;
+                ctx.Add(e);
+                tally.Added++;
+                if (name != row.Name) tally.Renamed.Add(name);
+                id = e.Id;
+                break;
+            }
+        }
+        var o = tally.ToJson();
+        o["id"] = id;
+        o["name"] = ctx.Model.Get(id)!.Name;
+        return o;
     }
 
     static void SetActive(ICommandContext ctx, string id)

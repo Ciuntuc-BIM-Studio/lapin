@@ -8,6 +8,8 @@
 
 import { engine, execute, useSession } from '../../engine/session';
 import { notify } from '../../app/store';
+import { ChoiceAll, ChoicesNote, ChoiceSelect } from '../../platform/ImportPreview';
+import type { Choice } from '../../platform/libraryFile';
 
 export interface MaterialConflict { name: string; differs: string[] }
 export interface TypeConflict { key: string; name: string; label?: string; differs: string[] }
@@ -15,6 +17,11 @@ export interface LibraryChoiceState { materials: Record<string, string>; types: 
 
 export const MATERIAL_CHOICES: [string, string][] = [['keep', "Keep the project's"], ['update', 'Update from the library'], ['both', 'Keep both']];
 export const TYPE_CHOICES: [string, string][] = [['update', "Update the project's"], ['both', 'Keep both'], ['skip', 'Skip']];
+
+// The same choice components as every library import (platform/ImportPreview.tsx, audit D13); a material's words its own.
+const M: Choice[] = ['keep', 'update', 'both'];
+const M_LABELS: Partial<Record<Choice, string>> = { keep: "Keep the project's", update: 'Update from the library' };
+const T: Choice[] = ['update', 'both', 'skip'];
 
 /** Every conflict at its default: a material kept as the project's, a type as the import does by default (`typeDefault`). */
 export function defaultChoices(materials: MaterialConflict[], types: TypeConflict[], typeDefault: string): LibraryChoiceState {
@@ -57,19 +64,14 @@ export function LibraryChoices({ materials, types, value, onChange }: {
           <p className="eyebrow">Materials the project already has, defined otherwise</p>
           <table className="layer-table">
             <thead><tr><th>Material</th><th>What differs</th><th>
-              <select value="" title="The same choice for every material" data-choice-all="materials" onChange={(e) => all('materials', e.target.value)}>
-                <option value="">Apply to all…</option>
-                {MATERIAL_CHOICES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-              </select>
+              <ChoiceAll choices={M} labels={M_LABELS} title="The same choice for every material" data-choice-all="materials" onChoose={(c) => all('materials', c)} />
             </th></tr></thead>
             <tbody>
               {materials.map((m) => (
                 <tr key={m.name}>
                   <td data-no-i18n>{m.name}</td>
                   <td><Differs list={m.differs} /></td>
-                  <td><select value={value.materials[m.name] ?? 'keep'} data-choice-material={m.name} onChange={(e) => pick('materials', m.name, e.target.value)}>
-                    {MATERIAL_CHOICES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                  </select></td>
+                  <td><ChoiceSelect choices={M} labels={M_LABELS} value={(value.materials[m.name] ?? 'keep') as Choice} data-choice-material={m.name} onChange={(c) => pick('materials', m.name, c)} /></td>
                 </tr>
               ))}
             </tbody>
@@ -81,26 +83,21 @@ export function LibraryChoices({ materials, types, value, onChange }: {
           <p className="eyebrow">Types the project already has, made otherwise</p>
           <table className="layer-table">
             <thead><tr><th>Type</th><th>What differs</th><th>
-              <select value="" title="The same choice for every type" data-choice-all="types" onChange={(e) => all('types', e.target.value)}>
-                <option value="">Apply to all…</option>
-                {TYPE_CHOICES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-              </select>
+              <ChoiceAll choices={T} title="The same choice for every type" data-choice-all="types" onChoose={(c) => all('types', c)} />
             </th></tr></thead>
             <tbody>
               {types.map((t) => (
                 <tr key={t.key}>
                   <td>{t.label && <span className="muted small">{t.label} · </span>}<span data-no-i18n>{t.name}</span></td>
                   <td><Differs list={t.differs} /></td>
-                  <td><select value={value.types[t.key] ?? 'both'} data-choice-type={t.name} onChange={(e) => pick('types', t.key, e.target.value)}>
-                    {TYPE_CHOICES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                  </select></td>
+                  <td><ChoiceSelect choices={T} value={(value.types[t.key] ?? 'both') as Choice} data-choice-type={t.name} onChange={(c) => pick('types', t.key, c)} /></td>
                 </tr>
               ))}
             </tbody>
           </table>
         </>
       )}
-      <p className="muted small">Keep both makes the library's beside the project's, with (2) after its name. Updating changes the project's in place: what uses it follows. One step to undo.</p>
+      <ChoicesNote />
     </div>
   );
 }

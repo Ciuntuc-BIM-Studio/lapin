@@ -1,0 +1,128 @@
+{
+  "format": "lapin-rules",
+  "version": 1,
+  "name": "Office (DE)",
+  "indicative": true,
+  "stairs": {
+    "residential": {
+      "riserMin": 0.15,
+      "riserMax": 0.18,
+      "riserTarget": 0.17,
+      "treadMin": 0.26,
+      "treadMax": 0.32,
+      "treadTarget": 0.28,
+      "stepMin": 0.6,
+      "stepMax": 0.64,
+      "minWidth": 0.9,
+      "maxRisers": 18,
+      "headroom": 2,
+      "maxSlope": 0.08,
+      "minRisers": 3
+    },
+    "public": {
+      "riserMin": 0.13,
+      "riserMax": 0.16,
+      "riserTarget": 0.16,
+      "treadMin": 0.28,
+      "treadMax": 0.34,
+      "treadTarget": 0.3,
+      "stepMin": 0.6,
+      "stepMax": 0.64,
+      "minWidth": 1.2,
+      "maxRisers": 16,
+      "headroom": 2.1,
+      "maxSlope": 0.06,
+      "minRisers": 3
+    },
+    "entrance": {
+      "riserMin": 0.12,
+      "riserMax": 0.17,
+      "riserTarget": 0.15,
+      "treadMin": 0.3,
+      "treadMax": 0.4,
+      "treadTarget": 0.33,
+      "stepMin": 0.6,
+      "stepMax": 0.7,
+      "minWidth": 1.2,
+      "maxRisers": 10,
+      "headroom": 2.1,
+      "maxSlope": 0.06,
+      "minRisers": 1
+    },
+    "ramp": {
+      "riserMin": 0.13,
+      "riserMax": 0.16,
+      "riserTarget": 0.16,
+      "treadMin": 0.28,
+      "treadMax": 0.34,
+      "treadTarget": 0.3,
+      "stepMin": 0.6,
+      "stepMax": 0.64,
+      "minWidth": 1.2,
+      "maxRisers": 16,
+      "headroom": 2.1,
+      "maxSlope": 0.08,
+      "minRisers": 3
+    }
+  },
+  "roofs": {
+    "minPitch": {
+      "Clay tile": 22,
+      "Concrete tile": 22,
+      "Metal sheet": 8,
+      "Timber shingle": 30,
+      "Bitumen shingle": 15,
+      "Slate": 22,
+      "Thatch": 40,
+      "Green roof": 1,
+      "Bitumen membrane": 1
+    }
+  },
+  "rebar": {
+    "steels": [
+      "B500C",
+      "B500B",
+      "BST 500S",
+      "PC52",
+      "OB37"
+    ],
+    "defaultSteel": "B500C",
+    "diameters": [
+      6,
+      8,
+      10,
+      12,
+      14,
+      16,
+      18,
+      20,
+      22,
+      25,
+      28,
+      32
+    ],
+    "mandrel": [
+      {
+        "factor": 4,
+        "upTo": 16
+      },
+      {
+        "factor": 7
+      }
+    ],
+    "hooks": [
+      {
+        "factor": 12,
+        "upTo": 90
+      },
+      {
+        "factor": 10,
+        "upTo": 135
+      },
+      {
+        "factor": 5
+      }
+    ],
+    "minHook": 50
+  }
+}

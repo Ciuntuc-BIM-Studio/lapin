@@ -56,8 +56,10 @@ public static class TypeExchange
                 foreach (var k in Volatile) attrs.Remove(k);
                 materials.Add((JsonNode)new JsonObject { ["name"] = mat.Name, ["attrs"] = attrs });
             }
-        return new JsonObject { ["format"] = Format, ["version"] = 2, ["types"] = types, ["materials"] = materials };
+        return LibraryFile.Write(Spec, new JsonObject { ["types"] = types, ["materials"] = materials }, LibraryFile.SourceOf(m));
     }
+
+    public static LibraryFile.Spec Spec => LibraryFile.Of(Format);
 
     /// <summary>What a project writes of a material for itself: not carried, not compared.</summary>
     static readonly string[] Volatile = ["added", "imported"];
@@ -150,8 +152,58 @@ public static class TypeExchange
 
     static JsonNode? Doc(string json)
     {
-        try { return JsonNode.Parse(json); } catch (Exception e) { throw new CommandException($"The file is not JSON a type list reads: {e.Message}"); }
+        JsonNode? n;
+        try { n = JsonNode.Parse(json); } catch (Exception e) { throw new CommandException($"The file is not JSON a type list reads: {e.Message}"); }
+        // A file that says it is Lapin's (any other JSON with a list of types reads as it always did) through the one envelope: one from a newer Lapin refused.
+        return n is JsonObject o && (string?)(o["format"] as JsonValue) == Format ? LibraryFile.Read(o, Spec).Root : n;
     }
+
+    /// <summary>
+    /// What an import would do (<see cref="LibraryMerge"/>): each type new, the same as the project's of its kind and name, or of
+    /// the same name made otherwise (updated by default, as this import always did); each material new, the same, or of the same
+    /// name defined otherwise (the project's kept by default: „skip”).
+    /// </summary>
+    static List<LibraryMerge.Row> Rows(IModelView m, string text)
+    {
+        var preview = Preview(m, text);
+        var rows = new List<LibraryMerge.Row>();
+        foreach (var t in (preview["types"] as JsonArray ?? []).OfType<JsonObject>())
+        {
+            var differs = (t["differs"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToList();
+            var match = (bool?)t["exists"] != true ? LibraryMerge.Match.New : differs is { Count: > 0 } ? LibraryMerge.Match.Name : LibraryMerge.Match.Same;
+            rows.Add(new LibraryMerge.Row("type:" + (string?)t["name"], (string?)t["kind"] == "floor" ? "Floor type" : "Wall type", (string?)t["name"] ?? "", match, differs, Default: LibraryMerge.Update));
+        }
+        var conflicts = (preview["materials"] as JsonArray ?? []).OfType<JsonObject>().ToDictionary(x => (string?)x["name"] ?? "", x => (x["differs"] as JsonArray)?.Select(d => (string?)d).OfType<string>().ToList(), StringComparer.OrdinalIgnoreCase);
+        foreach (var (name, _) in ReadMaterials(text))
+        {
+            var d = conflicts.GetValueOrDefault(name);
+            rows.Add(new LibraryMerge.Row("material:" + name, "Material", name,
+                Materials.Find(m, name) is null ? LibraryMerge.Match.New : conflicts.ContainsKey(name) ? LibraryMerge.Match.Name : LibraryMerge.Match.Same, d, Default: LibraryMerge.Skip));
+        }
+        return rows;
+    }
+
+    static JsonObject ImportAll(ICommandContext ctx, string text, JsonObject? choices, string? all)
+    {
+        var materials = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var types = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var row in Rows(ctx.Model, text).Where(x => x.Conflict))
+        {
+            var c = LibraryMerge.Decide(row, choices, all);
+            if (row.Key.StartsWith("material:", StringComparison.Ordinal)) materials[row.Key[9..]] = LibraryMerge.Word(c, LibraryMerge.MaterialChoices);
+            else types[row.Key[5..]] = c;
+        }
+        var result = Import(ctx, text, materials, types);
+        return ResultJson(result);
+    }
+
+    static JsonObject ResultJson(Result result) => new()
+    {
+        ["created"] = result.Created, ["updated"] = result.Updated, ["skipped"] = result.Skipped,
+        ["renamed"] = new JsonArray(result.Renamed.Concat(result.Materials.Renamed).Select(n => (JsonNode)n).ToArray()),
+        ["materials"] = result.Materials.ToJson(),
+        ["added"] = result.Created + result.Materials.Made, ["kept"] = result.Materials.Kept,
+    };
 
     /// <summary>The materials a JSON file defines (version 2): each name and its attrs; none for CSV or an older file.</summary>
     public static List<(string Name, JsonObject Attrs)> ReadMaterials(string text)
@@ -371,13 +423,9 @@ public static class TypeExchange
         {
             var result = Import(ctx, (string?)a["text"] ?? throw new CommandException("Nothing to bring in."),
                 LibraryMerge.Choices(a["materials"], LibraryMerge.MaterialChoices), LibraryMerge.Choices(a["types"], LibraryMerge.TypeChoices));
-            return new JsonObject
-            {
-                ["created"] = result.Created, ["updated"] = result.Updated, ["skipped"] = result.Skipped,
-                ["renamed"] = new JsonArray(result.Renamed.Select(n => (JsonNode)n).ToArray()),
-                ["materials"] = result.Materials.ToJson(),
-            };
+            return ResultJson(result);
         });
+        r.Service<ILibraryFormat>(new LibraryFormat(Spec, (q, text) => Rows(q.Model, text), ImportAll));
         r.Service<IScheduleSource>(new TypeAssemblies());
     }
 }

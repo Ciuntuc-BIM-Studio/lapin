@@ -22,6 +22,17 @@ public static class DraftingResources
 
     public static StyleBook Book(IModelView m) => Standards.Read(Spatial.Project(m)?.Attrs["drafting"]);
 
+    /// <summary>A .pat file's patterns as the import preview shows them: new, the same as the project's of its name, or the same pattern drawn otherwise (updated by default).</summary>
+    static List<LibraryMerge.Row> PatternRows(IModelView m, string text)
+    {
+        var (incoming, errors) = Pat.Parse(text);
+        if (incoming.Count == 0) throw new CommandException(errors.FirstOrDefault() ?? "The file has no hatch pattern.");
+        var mine = Patterns(m);
+        return [.. incoming.Select(p => mine.FirstOrDefault(x => string.Equals(x.Name, p.Name, StringComparison.OrdinalIgnoreCase)) is { } have
+            ? new LibraryMerge.Row(p.Name, "pattern", p.Name, Pat.Serialize([have]) == Pat.Serialize([p]) ? LibraryMerge.Match.Same : LibraryMerge.Match.Id, ["lines"])
+            : new LibraryMerge.Row(p.Name, "pattern", p.Name, LibraryMerge.Match.New))];
+    }
+
     static Entity Project(ICommandContext ctx) => Spatial.Project(ctx.Model) ?? throw new CommandException("The model has no project.");
 
     static readonly HashSet<string> GraphicsFields = ["hatch", "hatchScale", "fill", "hatchPen", "hatchAngle", "hatchAlign"];
@@ -364,6 +375,41 @@ public static class DraftingResources
         }).ToArray()));
 
         // ------------------------------------------------------------ hatch patterns
+        // A .pat file as a kind of library file (LibraryMerge): a pattern of a name the project has is that pattern, updated by
+        // default (as hatch.import always replaced it), kept both as „NAME_2” (a pattern's name stays one word) or skipped.
+        r.Service<ILibraryFormat>(new LibraryFormat(LibraryFile.Of("autocad-pat"), (q, text) => PatternRows(q.Model, text), (ctx, text, choices, all) =>
+        {
+            var (incoming, _) = Pat.Parse(text);
+            if (incoming.Count == 0) throw new CommandException("The file has no hatch pattern.");
+            var mine = Patterns(ctx.Model).ToList();
+            var tally = new LibraryMerge.Tally();
+            foreach (var (p, row) in incoming.Zip(PatternRows(ctx.Model, text)))
+            {
+                var i = mine.FindIndex(x => string.Equals(x.Name, p.Name, StringComparison.OrdinalIgnoreCase));
+                switch (LibraryMerge.Decide(row, choices, all))
+                {
+                    case LibraryMerge.Add: mine.Add(p); tally.Added++; break;
+                    case LibraryMerge.Update: mine[i] = p; tally.Updated++; break;
+                    case LibraryMerge.Both:
+                        var n = 2;
+                        while (mine.Any(x => string.Equals(x.Name, $"{p.Name}_{n}", StringComparison.OrdinalIgnoreCase))) n++;
+                        mine.Add(p with { Name = $"{p.Name}_{n}" });
+                        tally.Added++;
+                        tally.Renamed.Add($"{p.Name}_{n}");
+                        break;
+                    case LibraryMerge.Skip: tally.Skipped++; break;
+                    default: tally.Kept++; break;
+                }
+            }
+            var project = Project(ctx);
+            var attrs = project.CloneAttrs();
+            attrs["hatchPatterns"] = Pat.Serialize(mine);
+            ctx.Replace(project.With(attrs: attrs));
+            var o = tally.ToJson();
+            o["count"] = incoming.Count;
+            return o;
+        }));
+
         r.Command("hatch.import", "Import hatch patterns", (ctx, a) =>
         {
             var (incoming, errors) = Pat.Parse((string?)a["text"] ?? "");

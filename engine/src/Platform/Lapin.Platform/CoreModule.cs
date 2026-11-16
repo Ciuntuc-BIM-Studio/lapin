@@ -112,6 +112,8 @@ public sealed class CoreModule : ILapinModule
         TitleBlocks.Register(r);
         // 2D symbols of the user's own (docs/plan-user-extensibility.md §3).
         Symbols.Register(r);
+        // The library files' one envelope, preview and import (audit D13).
+        LibraryImports.Register(r);
         SymbolSlots.Register(r);
         // The table import (docs/plan-user-extensibility.md §7.1) and its first target, property values.
         TableImport.Register(r);

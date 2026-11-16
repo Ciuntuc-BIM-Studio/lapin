@@ -1,0 +1,46 @@
+{
+  "format": "lapin-bar-shapes",
+  "version": 1,
+  "shapes": [
+    {
+      "code": "21",
+      "label": "U bar",
+      "params": [
+        {
+          "key": "A",
+          "label": "A",
+          "default": 0.3,
+          "min": 0.01
+        },
+        {
+          "key": "B",
+          "label": "B",
+          "default": 0.5,
+          "min": 0.01
+        },
+        {
+          "key": "C",
+          "label": "C",
+          "default": 0.3,
+          "min": 0.01
+        }
+      ],
+      "legs": [
+        {
+          "length": "A",
+          "turn": "-90"
+        },
+        {
+          "length": "B",
+          "turn": "-90"
+        },
+        {
+          "length": "C"
+        }
+      ],
+      "standard": "BS 8666",
+      "layer": "Bare_Longitudinale",
+      "diameter": 0.012
+    }
+  ]
+}

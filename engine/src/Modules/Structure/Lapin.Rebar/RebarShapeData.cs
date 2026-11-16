@@ -213,28 +213,52 @@ public static class RebarShapeData
             var ids = a["ids"] is JsonArray arr ? arr.Select(x => (string?)x).OfType<string>().ToHashSet() : null;
             var list = q.Model.OfClass(Class).Where(e => ids == null || ids.Contains(e.Id)).Select(e => (JsonNode?)e.Attrs["def"]?.DeepClone()).ToArray();
             if (list.Length == 0) throw new CommandException("The project has no bar shapes of its own to write.");
-            var o = new JsonObject { ["format"] = FileFormat, ["version"] = 1, ["shapes"] = new JsonArray(list) };
+            var o = LibraryFile.Write(Spec, new JsonObject { ["shapes"] = new JsonArray(list) }, LibraryFile.SourceOf(q.Model));
             return new JsonObject { ["text"] = o.ToJsonString(new JsonSerializerOptions { WriteIndented = true }), ["file"] = "shapes.lapinbarshapes" };
         });
 
-        // A .lapinbarshapes file brought in: each shape whose code the project lacks added; one it has with the same code changed when `update`, else left.
+        // A .lapinbarshapes file brought in: each shape whose code the project lacks added; one it has with the same code changed when
+        // `update`, else left. `choices` ({code: update | skip}) and `all` as every library import (LibraryMerge): a shape's code (and
+        // standard) is its identity, so there is no keeping both.
         r.Command("importShapes", "Import bar shapes", (ctx, a) =>
         {
-            JsonNode? n;
-            try { n = JsonNode.Parse((string?)a["text"] ?? ""); } catch (JsonException) { throw new CommandException("That is not a bar shapes file (.lapinbarshapes)."); }
-            if (n is not JsonObject o || (string?)o["format"] != FileFormat) throw new CommandException("That is not a bar shapes file (.lapinbarshapes).");
             var update = a["update"] is JsonValue uv && uv.TryGetValue<bool>(out var u) && u;
-            int added = 0, updated = 0;
-            foreach (var s in o["shapes"] as JsonArray ?? [])
-            {
-                var def = Check(s);
-                var name = $"{(string)def["code"]!} {(string)def["label"]!}".Trim();
-                var mine = ctx.Model.OfClass(Class).FirstOrDefault(e => string.Equals((string?)e.Attrs["def"]?["code"], (string?)def["code"], StringComparison.OrdinalIgnoreCase)
-                    && string.Equals((string?)e.Attrs["def"]?["standard"], (string?)def["standard"], StringComparison.OrdinalIgnoreCase));
-                if (mine == null) { ctx.Add(new Entity(ctx.NewId(), Class, name, new JsonObject { ["def"] = def })); added++; }
-                else if (update && !JsonNode.DeepEquals(mine.Attrs["def"], def)) { ctx.Replace(mine.With(name: name, attrs: new JsonObject { ["def"] = def })); updated++; }
-            }
-            return new JsonObject { ["added"] = added, ["updated"] = updated };
+            return Import(ctx, (string?)a["text"] ?? "", a["choices"] as JsonObject, (string?)a["all"] ?? (update ? LibraryMerge.Update : LibraryMerge.Skip));
         });
+
+        r.Service<ILibraryFormat>(new LibraryFormat(Spec, (q, text) => Rows(q.Model, ReadFile(text)), (ctx, text, choices, all) => Import(ctx, text, choices, all)));
+    }
+
+    public static LibraryFile.Spec Spec => LibraryFile.Of(FileFormat);
+
+    static List<JsonObject> ReadFile(string text) => [.. (LibraryFile.Read(text, Spec).Root["shapes"] as JsonArray ?? []).Select(Check)];
+
+    static Entity? Mine(IModelView m, JsonObject def) => m.OfClass(Class).FirstOrDefault(e => string.Equals((string?)e.Attrs["def"]?["code"], (string?)def["code"], StringComparison.OrdinalIgnoreCase)
+        && string.Equals((string?)e.Attrs["def"]?["standard"], (string?)def["standard"], StringComparison.OrdinalIgnoreCase));
+
+    static string NameOf(JsonObject def) => $"{(string)def["code"]!} {(string)def["label"]!}".Trim();
+
+    /// <summary>The file's shapes as the import preview shows them: one is the project's of its code and standard, updated by default.</summary>
+    static List<LibraryMerge.Row> Rows(IModelView m, List<JsonObject> shapes) =>
+    [
+        .. shapes.Select(def => Mine(m, def) is { } mine
+            ? new LibraryMerge.Row((string)def["code"]!, "barShape", NameOf(def), JsonNode.DeepEquals(mine.Attrs["def"], def) ? LibraryMerge.Match.Same : LibraryMerge.Match.Id,
+                LibraryMerge.Differs((JsonObject)mine.Attrs["def"]!, def), [LibraryMerge.Update, LibraryMerge.Skip])
+            : new LibraryMerge.Row((string)def["code"]!, "barShape", NameOf(def), LibraryMerge.Match.New)),
+    ];
+
+    static JsonObject Import(ICommandContext ctx, string text, JsonObject? choices, string? all)
+    {
+        var shapes = ReadFile(text);
+        var tally = new LibraryMerge.Tally();
+        foreach (var (def, row) in shapes.Zip(Rows(ctx.Model, shapes)))
+            switch (LibraryMerge.Decide(row, choices, all))
+            {
+                case LibraryMerge.Add: ctx.Add(new Entity(ctx.NewId(), Class, row.Name, new JsonObject { ["def"] = def })); tally.Added++; break;
+                case LibraryMerge.Update: ctx.Replace(Mine(ctx.Model, def)!.With(name: row.Name, attrs: new JsonObject { ["def"] = def })); tally.Updated++; break;
+                case LibraryMerge.Skip: tally.Skipped++; break;
+                default: tally.Kept++; break;
+            }
+        return tally.ToJson();
     }
 }

@@ -39,7 +39,7 @@ public static class Families
         r.Command("placeFamily", "Family object", (ctx, a) => Parts.Place(ctx, a, Parts.Require(ctx.Model, (string?)a["familyId"])));
         r.Command("setFamilyValues", "Family values", Parts.SetValues);
         r.Command("familyFromSketch", "Family from sketch", (ctx, a) => Parts.FromSketch(ctx, a, "Family"));
-        r.Query("exportFamily", (q, a) => Parts.FileText(Parts.Require(q.Model, (string?)a["id"]), FileFormat, 1, ".lapinfamily"));
+        r.Query("exportFamily", (q, a) => Parts.FileText(Parts.Require(q.Model, (string?)a["id"]), FileFormat, 1, ".lapinfamily", LibraryFile.SourceOf(q.Model)));
         r.Command("importFamily", "Import family", Parts.Import);
     }
 }

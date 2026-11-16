@@ -1,0 +1,12 @@
+{
+  "format": "lapin-field-aliases",
+  "version": 1,
+  "aliases": [
+    {
+      "name": "Stage",
+      "sources": [
+        "Pset_Firma.Etapa"
+      ]
+    }
+  ]
+}

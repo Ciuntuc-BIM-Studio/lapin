@@ -1,0 +1,29 @@
+{
+  "format": "lapin.titleBlock",
+  "version": 1,
+  "name": "Office block",
+  "template": {
+    "w": 100,
+    "h": 30,
+    "anchor": "bottomRight",
+    "frame": {
+      "show": true,
+      "left": 10,
+      "top": 10,
+      "right": 10,
+      "bottom": 10
+    },
+    "revisions": "above",
+    "items": [
+      {
+        "type": "text",
+        "at": [
+          2,
+          2
+        ],
+        "text": "{project.name}",
+        "h": 2.5
+      }
+    ]
+  }
+}

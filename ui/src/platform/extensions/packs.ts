@@ -5,6 +5,8 @@
  * nothing is kept. The catalogue's CI checks the same (lapin-extensions, tools/validate.mjs).
  */
 
+import { checkEnvelope, withEnvelope } from '../libraryFile';
+
 const utf8 = (bytes: Uint8Array): string => {
   try { return new TextDecoder('utf-8', { fatal: true }).decode(bytes).replace(/^﻿/, ''); } catch { throw new Error('The file is not UTF-8 text.'); }
 };
@@ -13,6 +15,8 @@ function json(bytes: Uint8Array, what: string): Record<string, unknown> {
   let v: unknown;
   try { v = JSON.parse(utf8(bytes)); } catch (e) { throw new Error(e instanceof Error && e.message.startsWith('The file') ? e.message : `The file is not ${what}: it is not JSON.`); }
   if (!v || typeof v !== 'object' || Array.isArray(v)) throw new Error(`The file is not ${what}.`);
+  // Every kind through the one envelope (audit D13, platform/libraryFile.ts): a header of a newer Lapin refused; none is a file of an earlier one.
+  checkEnvelope(v as Record<string, unknown>, what.replace(/^an? (Lapin )?/, ''));
   return v as Record<string, unknown>;
 }
 
@@ -98,7 +102,7 @@ export function readPriceList(bytes: Uint8Array): { name: string; currency: stri
 
 /** A price list written as a .lapinprices (Price lists → Export .lapinprices…): the file the extensions installer reads, always marked indicative. */
 export function writePriceList(list: { name: string; currency: string; rows: PriceRow[] }): string {
-  return JSON.stringify({ format: 'lapin-price-list', version: 1, name: list.name, currency: list.currency, indicative: true, rows: list.rows }, null, 1);
+  return JSON.stringify(withEnvelope('lapin-price-list', 1, { name: list.name, currency: list.currency, indicative: true, rows: list.rows }, list.name), null, 1);
 }
 
 export interface TypePackItem { ref: string; class: string; name: string }

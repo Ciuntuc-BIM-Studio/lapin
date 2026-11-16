@@ -1,0 +1,52 @@
+{
+  "format": "lapin-type-pack",
+  "version": 1,
+  "name": "Walls",
+  "types": [
+    {
+      "ref": "3MkOqoUpPF$vYMxnn$U$IE",
+      "class": "IfcWallType",
+      "name": "WT1 Exterior",
+      "predefinedType": "STANDARD",
+      "attrs": {},
+      "material": "3snGmmi7jDXhzfCFeaaHqQ"
+    }
+  ],
+  "resources": [
+    {
+      "ref": "3snGmmi7jDXhzfCFeaaHqQ",
+      "class": "IfcMaterialLayerSet",
+      "name": "WT1 Exterior",
+      "attrs": {
+        "layers": [
+          {
+            "material": "2rqG7ZjK58_9OQRh30LEVu",
+            "thickness": 0.25,
+            "core": true
+          },
+          {
+            "material": "3NbMGED$j0BOPVBnYbax0a",
+            "thickness": 0.015,
+            "core": false
+          }
+        ]
+      }
+    },
+    {
+      "ref": "2rqG7ZjK58_9OQRh30LEVu",
+      "class": "IfcMaterial",
+      "name": "Brick",
+      "attrs": {
+        "color": "#b5654a"
+      }
+    },
+    {
+      "ref": "3NbMGED$j0BOPVBnYbax0a",
+      "class": "IfcMaterial",
+      "name": "Plaster",
+      "attrs": {
+        "color": "#e8e2d6"
+      }
+    }
+  ]
+}

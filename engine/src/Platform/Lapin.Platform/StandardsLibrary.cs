@@ -65,7 +65,7 @@ public static class StandardsLibrary
     public static JsonObject Export(IModelView m, string? name)
     {
         var project = Project(m);
-        var o = new JsonObject { ["format"] = FileFormat, ["version"] = FileVersion };
+        var o = new JsonObject();
         if (name is { Length: > 0 }) o["name"] = name;
         o["drafting"] = Standards.ToJson(DraftingResources.Book(m));
         if (project.Str("hatchPatterns") is { Length: > 0 } pat) o["hatchPatterns"] = pat;
@@ -78,18 +78,34 @@ public static class StandardsLibrary
         if (project.Attrs["penTable"] is JsonObject pt) o["penTable"] = pt.DeepClone();
         // The rules of the dimensions made at once (exterior, rooms: forum topic 78).
         if (project.Attrs["dimensionRules"] is JsonObject dr) o["dimensionRules"] = dr.DeepClone();
-        return o;
+        return LibraryFile.Write(Spec, o, LibraryFile.SourceOf(m));
     }
 
-    static JsonObject ReadFile(string text)
+    public static LibraryFile.Spec Spec => LibraryFile.Of(FileFormat);
+
+    static JsonObject ReadFile(string text) => LibraryFile.Read(text, Spec).Root;
+
+    /// <summary>The file's entries as the import preview shows them: each the same thing as the project's of its id (a line type, a pattern, a symbol: its name), updated by default.</summary>
+    static List<LibraryMerge.Row> Rows(IModelView m, JsonObject file) =>
+        [.. Compare(m, file).Select(e => Row(e.Kind, e.Id, e.Name, e.Exists, e.Same))];
+
+    static LibraryMerge.Row Row(string kind, string id, string name, bool exists, bool same) =>
+        new($"{kind}:{id}", kind, name, !exists ? LibraryMerge.Match.New : same ? LibraryMerge.Match.Same : LibraryMerge.Match.Id);
+
+    /// <summary>A line type of a .lin file as the import preview shows it: a name the project has with other dashes is the same line type, updated by default.</summary>
+    static List<LibraryMerge.Row> LinRows(IModelView m, string text)
     {
-        JsonNode? n;
-        try { n = JsonNode.Parse(text); }
-        catch (JsonException) { throw new CommandException("That is not a standards file (.lapinstandards): it is not JSON."); }
-        if (n is not JsonObject o || (string?)o["format"] != FileFormat) throw new CommandException("That is not a standards file (.lapinstandards).");
-        if ((Json.Number(o["version"]) ?? 0) > FileVersion) throw new CommandException("That standards file was written by a newer Lapin: update Lapin to read it.");
-        return o;
+        var own = DraftingResources.Book(m).LineTypes ?? [];
+        return [.. LinFile.Parse(text, 1).Select(l =>
+        {
+            var name = OwnName(l.Name);
+            var have = own.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
+            return new LibraryMerge.Row(l.Name, "lineType", name, have is null ? LibraryMerge.Match.New : have.Dashes.SequenceEqual(l.Dashes) ? LibraryMerge.Match.Same : LibraryMerge.Match.Id, ["dashes"]);
+        })];
     }
+
+    /// <summary>Lapin's own line type names stay Lapin's: a file's comes in beside them.</summary>
+    static string OwnName(string name) => Standards.LineTypes.Contains(name, StringComparer.OrdinalIgnoreCase) || LineStyles.Patterns.Contains(name, StringComparer.OrdinalIgnoreCase) ? name + " (file)" : name;
 
     /// <summary>The lists the file and the project both hold, by kind: (kind, the list's key in the standards).</summary>
     static readonly (string Kind, string Key)[] Lists =
@@ -125,12 +141,12 @@ public static class StandardsLibrary
         return o;
     }
 
-    /// <summary>A free id and name in a list for a copy kept beside the project's: „Name 2”, id-2.</summary>
+    /// <summary>A free id and name in a list for a copy kept beside the project's (<see cref="LibraryMerge"/>): „Name (2)”, id-2.</summary>
     static (string Id, string Name) Free(JsonArray list, string id, string name)
     {
         var ids = list.OfType<JsonObject>().Select(x => (string?)x["id"] ?? "").ToHashSet(StringComparer.OrdinalIgnoreCase);
         var names = list.OfType<JsonObject>().Select(x => (string?)x["name"] ?? "").ToHashSet(StringComparer.OrdinalIgnoreCase);
-        for (var n = 2; ; n++) if (!ids.Contains($"{id}-{n}") && !names.Contains($"{name} {n}")) return ($"{id}-{n}", $"{name} {n}");
+        for (var n = 2; ; n++) if (!ids.Contains($"{id}-{n}") && !names.Contains($"{name} ({n})")) return ($"{id}-{n}", $"{name} ({n})");
     }
 
     public static void Register(IModuleRegistry r)
@@ -204,35 +220,8 @@ public static class StandardsLibrary
         // A .lin file's line types brought in ({text, units: mm | in, names?, choices?: {name: update | both | skip}, all?}): one the project has that differs takes its choice (default: update).
         r.Command("standards.importLin", "Import line types", (ctx, a) =>
         {
-            var read = LinFile.Parse((string?)a["text"] ?? "", Unit(a));
-            if (read.Count == 0) throw new CommandException("The file has no line types Lapin can read (a .lin file: *NAME, then A, dash, -gap, …).");
             var only = a["names"] is JsonArray na ? na.Select(x => (string?)x).OfType<string>().ToHashSet(StringComparer.OrdinalIgnoreCase) : null;
-            var raw = Standards.ToJson(DraftingResources.Book(ctx.Model));
-            var list = raw["lineTypes"] as JsonArray ?? [];
-            int added = 0, updated = 0, skipped = 0;
-            foreach (var l in read)
-            {
-                if (only != null && !only.Contains(l.Name)) continue;
-                // Lapin's own names stay Lapin's: the file's comes in beside them.
-                var name = Standards.LineTypes.Contains(l.Name, StringComparer.OrdinalIgnoreCase) || LineStyles.Patterns.Contains(l.Name, StringComparer.OrdinalIgnoreCase) ? l.Name + " (file)" : l.Name;
-                var at = list.OfType<JsonObject>().FirstOrDefault(x => string.Equals((string?)x["name"], name, StringComparison.OrdinalIgnoreCase));
-                var entry = LineTypeJson(new LineTypeDef(name, name, l.Dashes, l.Description));
-                if (at == null) { list.Add((JsonNode)entry); added++; continue; }
-                if (JsonNode.DeepEquals(at["dashes"], entry["dashes"])) continue;
-                switch ((string?)a["choices"]?[l.Name] ?? (string?)a["all"] ?? "update")
-                {
-                    case "skip": skipped++; break;
-                    case "both":
-                        var (_, free) = Free(list, name, name);
-                        list.Add((JsonNode)LineTypeJson(new LineTypeDef(free, free, l.Dashes, l.Description)));
-                        added++;
-                        break;
-                    default: list[list.IndexOf(at)] = entry; updated++; break;
-                }
-            }
-            raw["lineTypes"] = list;
-            WriteBook(ctx, raw);
-            return new JsonObject { ["added"] = added, ["updated"] = updated, ["skipped"] = skipped };
+            return ImportLin(ctx, (string?)a["text"] ?? "", Unit(a), a["choices"] as JsonObject, (string?)a["all"], only);
         });
 
         // The project's line types (all, or those named) as a .lin file in mm.
@@ -269,10 +258,58 @@ public static class StandardsLibrary
         r.Command("standards.importFrom", "Import drafting standards", (ctx, a) =>
         {
             var file = ReadFile((string?)a["text"] ?? "");
-            var choices = a["choices"] as JsonObject;
-            string Choice(string kind, string id) => (string?)choices?[$"{kind}:{id}"] ?? (string?)a["all"] ?? "update";
             var withOptions = a["options"] is JsonValue ov && ov.TryGetValue<bool>(out var opt) && opt;
+            return Import(ctx, file, a["choices"] as JsonObject, (string?)a["all"], withOptions);
+        });
+
+        r.Service<ILibraryFormat>(new LibraryFormat(Spec, (q, text) => Rows(q.Model, ReadFile(text)), (ctx, text, choices, all) => Import(ctx, ReadFile(text), choices, all, true)));
+        r.Service<ILibraryFormat>(new LibraryFormat(LibraryFile.Of("autocad-lin"), (q, text) => LinRows(q.Model, text), (ctx, text, choices, all) => ImportLin(ctx, text, 1, choices, all, null)));
+    }
+
+    /// <summary>A .lin file's line types brought in: each the project lacks added; one it has with other dashes as its choice says (update by default, „Name (2)” beside, skip).</summary>
+    static JsonObject ImportLin(ICommandContext ctx, string text, double unit, JsonObject? choices, string? all, IReadOnlySet<string>? only)
+    {
+        var read = LinFile.Parse(text, unit);
+        if (read.Count == 0) throw new CommandException("The file has no line types Lapin can read (a .lin file: *NAME, then A, dash, -gap, …).");
+        var raw = Standards.ToJson(DraftingResources.Book(ctx.Model));
+        var list = raw["lineTypes"] as JsonArray ?? [];
+        var tally = new LibraryMerge.Tally();
+        foreach (var l in read)
+        {
+            if (only != null && !only.Contains(l.Name)) continue;
+            var name = OwnName(l.Name);
+            var at = list.OfType<JsonObject>().FirstOrDefault(x => string.Equals((string?)x["name"], name, StringComparison.OrdinalIgnoreCase));
+            var entry = LineTypeJson(new LineTypeDef(name, name, l.Dashes, l.Description));
+            var row = new LibraryMerge.Row(l.Name, "lineType", name, at is null ? LibraryMerge.Match.New : JsonNode.DeepEquals(at["dashes"], entry["dashes"]) ? LibraryMerge.Match.Same : LibraryMerge.Match.Id);
+            switch (LibraryMerge.Decide(row, choices, all))
+            {
+                case LibraryMerge.Add: list.Add((JsonNode)entry); tally.Added++; break;
+                case LibraryMerge.Same: tally.Kept++; break;
+                case LibraryMerge.Skip: tally.Skipped++; break;
+                case LibraryMerge.Both:
+                    var (_, free) = Free(list, name, name);
+                    list.Add((JsonNode)LineTypeJson(new LineTypeDef(free, free, l.Dashes, l.Description)));
+                    tally.Added++;
+                    tally.Renamed.Add(free);
+                    break;
+                default: list[list.IndexOf(at!)] = entry; tally.Updated++; break;
+            }
+        }
+        raw["lineTypes"] = list;
+        WriteBook(ctx, raw);
+        return tally.ToJson();
+    }
+
+    /// <summary>
+    /// A standards file brought in, one undo step: each entry the project lacks added, one the same kept, one that differs taking
+    /// its choice (<see cref="LibraryMerge"/>: {"kind:id": update | both | skip}, else `all`, else update); `options`: the project's
+    /// units, scales, marker sizes, object styles, pen table, the marks' symbols and the dimension rules too.
+    /// </summary>
+    static JsonObject Import(ICommandContext ctx, JsonObject file, JsonObject? choices, string? all, bool withOptions)
+    {
+            string Choice(string kind, string id, bool exists = true, bool same = false) => LibraryMerge.Decide(Row(kind, id, id, exists, same), choices, all);
             int added = 0, updated = 0, kept = 0, skipped = 0;
+            var renamed = new List<string>();
 
             // The drafting standards' lists.
             var theirs = Standards.ToJson(Standards.Read(file["drafting"]));
@@ -288,8 +325,8 @@ public static class StandardsLibrary
                     if (JsonNode.DeepEquals(at, e)) { kept++; continue; }
                     switch (Choice(kind, id))
                     {
-                        case "skip": skipped++; break;
-                        case "both":
+                        case LibraryMerge.Skip: skipped++; break;
+                        case LibraryMerge.Both:
                         {
                             var copy = (JsonObject)e.DeepClone();
                             var (nid, nname) = Free(list, id, (string?)e["name"] ?? id);
@@ -297,6 +334,7 @@ public static class StandardsLibrary
                             copy["name"] = nname;
                             list.Add((JsonNode)copy);
                             added++;
+                            renamed.Add(nname);
                             break;
                         }
                         default: list[list.IndexOf(at)] = e.DeepClone(); updated++; break;
@@ -320,12 +358,14 @@ public static class StandardsLibrary
                     if (Pat.Serialize([mine[i]]) == Pat.Serialize([p])) { kept++; continue; }
                     switch (Choice("pattern", p.Name))
                     {
-                        case "skip": skipped++; break;
-                        case "both":
+                        case LibraryMerge.Skip: skipped++; break;
+                        case LibraryMerge.Both:
+                            // A pattern's name stays one word, as a .pat file writes it: „NAME_2”.
                             var n = 2;
                             while (mine.Any(x => string.Equals(x.Name, $"{p.Name}_{n}", StringComparison.OrdinalIgnoreCase))) n++;
                             mine.Add(p with { Name = $"{p.Name}_{n}" });
                             added++;
+                            renamed.Add($"{p.Name}_{n}");
                             break;
                         default: mine[i] = p; updated++; break;
                     }
@@ -339,12 +379,14 @@ public static class StandardsLibrary
             // Symbols, through the symbols' own import (its choices by name).
             if (file["symbols"] is JsonArray { Count: > 0 } syms)
             {
-                var catalog = ctx.Services as ModuleCatalog ?? throw new CommandException("No commands to import through here.");
                 var pack = new JsonObject { ["format"] = Symbols.FileFormat, ["version"] = Symbols.FileVersion, ["symbols"] = syms.DeepClone() };
+                var text = pack.ToJsonString();
+                // Each symbol the project has by name that differs as its choice in the standards says (update by default).
                 var symChoices = new JsonObject();
-                foreach (var s in syms.OfType<JsonObject>()) if ((string?)s["name"] is { } sn) symChoices[sn] = Choice("symbol", sn);
-                var result = catalog.Command("symbols.importFrom")!.Handler(ctx, new JsonObject { ["text"] = pack.ToJsonString(), ["choices"] = symChoices });
-                added += (int?)result?["added"] ?? 0; updated += (int?)result?["updated"] ?? 0; kept += (int?)result?["kept"] ?? 0; skipped += (int?)result?["skipped"] ?? 0;
+                foreach (var row in Symbols.Rows(ctx.Model, Symbols.Read(text)).Where(x => x.Conflict)) symChoices[row.Key] = Choice("symbol", row.Key);
+                var result = Symbols.Import(ctx, text, symChoices, null, null);
+                added += (int?)result["added"] ?? 0; updated += (int?)result["updated"] ?? 0; kept += (int?)result["kept"] ?? 0; skipped += (int?)result["skipped"] ?? 0;
+                renamed.AddRange((result["renamed"] as JsonArray ?? []).Select(x => (string?)x).OfType<string>());
             }
 
             if (withOptions)
@@ -368,7 +410,6 @@ public static class StandardsLibrary
                 }
                 ctx.Replace(project.With(attrs: attrs));
             }
-            return new JsonObject { ["added"] = added, ["updated"] = updated, ["kept"] = kept, ["skipped"] = skipped };
-        });
+            return new JsonObject { ["added"] = added, ["updated"] = updated, ["kept"] = kept, ["skipped"] = skipped, ["renamed"] = new JsonArray(renamed.Select(x => (JsonNode)x).ToArray()) };
     }
 }

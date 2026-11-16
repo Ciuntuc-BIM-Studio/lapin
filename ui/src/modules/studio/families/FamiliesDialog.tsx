@@ -17,9 +17,10 @@ import { keepComputerFile } from '../../../platform/libraries';
 import { FirmFolderFiles } from '../../core/FirmFolderFiles';
 import { FamilyEditor } from './FamilyEditor';
 import { editPartSketchIn } from '../PartSketchEdit';
-import { createFamily, deleteFamily, exportFamily, familiesDialog, importFamily, updateFamily, useFamilies, usePlaceFamily } from './familyApi';
+import { createFamily, deleteFamily, exportFamily, familiesDialog, updateFamily, useFamilies, usePlaceFamily } from './familyApi';
 import { blankFamily, normaliseFamily, quickProblem, sameDef, type FamilyDef } from './familyModel';
 import { freeName } from '../../core/titleBlocks/titleBlockModel';
+import { importLibraryText } from '../../../platform/ImportPreview';
 
 const close = () => useUi.setState({ dialog: null });
 const problem = () => { const e = useSession.getState().error; if (e) notify(e); return !!e; };
@@ -88,11 +89,11 @@ export function FamiliesDialog() {
     if (r) { await keepComputerFile('lapinfamily', current.name, r.text); notify(`Kept on this computer: ${current.name}.`); }
   };
 
+  // Through the one import preview (audit D13): a family of its name there kept both, replaced or skipped.
   const bring = async (text: string) => {
-    const r = await importFamily(text);
-    if (problem() || !r) return;
+    const r = await importLibraryText(text, 'family.lapinfamily') as { id?: string } | null;
+    if (problem() || !r?.id) return;
     setCreating(false); setSelected(r.id);
-    notify('Family added to the project.');
   };
   const importFile = async () => {
     const f = await pickFile('Family (.lapinfamily)', 'lapinfamily');

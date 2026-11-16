@@ -456,25 +456,74 @@ public static class Parts
         return new JsonObject { ["id"] = part.Id, ["def"] = def.DeepClone() };
     }
 
-    /// <summary>A part as a file's text: <c>{format, version, name, def}</c>, as a .lapinpart, or as a .lapinfamily for the families' export.</summary>
-    public static JsonObject FileText(Entity e, string format, int version, string extension)
+    /// <summary>A part as a file's text: <c>{format, version, lapin, name, def}</c> (<see cref="LibraryFile"/>), as a .lapinpart, or as a .lapinfamily for the families' export.</summary>
+    public static JsonObject FileText(Entity e, string format, int version, string extension, string? source = null)
     {
         var def = DefOf(e) ?? throw new CommandException($"„{e.Name}” is a solid drawn from a sketch: only a part of formula bodies goes to a file yet.");
-        var o = new JsonObject { ["format"] = format, ["version"] = version, ["name"] = e.Name, ["def"] = def.DeepClone() };
+        var o = LibraryFile.Write(LibraryFile.Of(format), new JsonObject { ["name"] = e.Name, ["def"] = def.DeepClone() }, source);
         return new JsonObject { ["text"] = o.ToJsonString(new JsonSerializerOptions { WriteIndented = true }), ["file"] = e.Name + extension };
     }
 
-    /// <summary>A .lapinpart's text (or a .lapinfamily's, which is read as a part) brought in as a part ({text}).</summary>
-    public static JsonNode? Import(ICommandContext ctx, JsonObject a)
+    static JsonObject ReadFile(string text) => LibraryFile.Read(text, LibraryFile.Of(FileFormat), Families.FileFormat).Root;
+
+    static string NameIn(JsonObject file) => ((string?)file["name"])?.Trim() is { Length: > 0 } nm ? nm : "Part";
+
+    /// <summary>A file's part as the import preview shows it: new, the same as the project's part of its name, or of the same name (keep both by default).</summary>
+    static LibraryMerge.Row Row(IModelView m, JsonObject file)
     {
-        const string Refused = "That is not a part file (.lapinpart or .lapinfamily).";
-        JsonNode? n;
-        try { n = JsonNode.Parse((string?)a["text"] ?? ""); } catch (JsonException) { throw new CommandException(Refused); }
-        if (n is not JsonObject o || (string?)o["format"] is not (FileFormat or Families.FileFormat)) throw new CommandException(Refused);
-        if ((string?)o["format"] == FileFormat && Json.Number(o["version"]) is { } v && v > FileVersion) throw new CommandException("That part file was written by a newer Lapin.");
-        var e = new Entity(ctx.NewId(), TypeClass, ((string?)o["name"])?.Trim() is { Length: > 0 } nm ? nm : "Part", new JsonObject { ["def"] = Check(o["def"]) });
-        ctx.Add(e);
-        return new JsonObject { ["id"] = e.Id };
+        var name = NameIn(file);
+        var def = Check(file["def"]);
+        var mine = m.OfClass(TypeClass).FirstOrDefault(e => DefOf(e) != null && string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase));
+        var match = mine is null ? LibraryMerge.Match.New : JsonNode.DeepEquals(DefOf(mine), def) ? LibraryMerge.Match.Same : LibraryMerge.Match.Name;
+        return new LibraryMerge.Row(name, "part", name, match, match == LibraryMerge.Match.Name ? LibraryMerge.Differs(DefOf(mine!)!, def) : null);
+    }
+
+    /// <summary>
+    /// A .lapinpart's text (or a .lapinfamily's, which is read as a part) brought in as a part ({text}): one of its name there, beside
+    /// it as „Name (2)”. With `choices` ({name: both | update | skip}) or `all`, as every library import (<see cref="LibraryMerge"/>):
+    /// the same kept, of the same name kept both, updated in place (its placed parts follow) or skipped.
+    /// </summary>
+    public static JsonNode? Import(ICommandContext ctx, JsonObject a) =>
+        Import(ctx, (string?)a["text"] ?? "", a["choices"] as JsonObject, (string?)a["all"], a["choices"] is JsonObject || a["all"] is not null);
+
+    public static JsonObject Import(ICommandContext ctx, string text, JsonObject? choices, string? all, bool merge)
+    {
+        JsonObject file;
+        try { file = ReadFile(text); }
+        catch (CommandException e) when (!e.Message.Contains("newer", StringComparison.Ordinal)) { throw new CommandException("That is not a part file (.lapinpart or .lapinfamily)."); }
+        var row = Row(ctx.Model, file);
+        var mine = ctx.Model.OfClass(TypeClass).FirstOrDefault(e => DefOf(e) != null && string.Equals(e.Name, row.Name, StringComparison.OrdinalIgnoreCase));
+        var taken = ctx.Model.OfClass(TypeClass).Select(e => e.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var choice = !merge ? (taken.Contains(row.Name) ? LibraryMerge.Both : LibraryMerge.Add) : LibraryMerge.Decide(row, choices, all);
+        var tally = new LibraryMerge.Tally();
+        string id;
+        switch (choice)
+        {
+            case LibraryMerge.Same: tally.Kept++; id = mine!.Id; break;
+            case LibraryMerge.Skip: tally.Skipped++; id = mine!.Id; break;
+            case LibraryMerge.Update: Update(ctx, new JsonObject { ["def"] = file["def"]!.DeepClone() }, mine!); tally.Updated++; id = mine!.Id; break;
+            default:
+            {
+                var name = taken.Contains(row.Name) ? LibraryMerge.FreeName(taken.Contains, row.Name) : row.Name;
+                var e = new Entity(ctx.NewId(), TypeClass, name, new JsonObject { ["def"] = Check(file["def"]) });
+                ctx.Add(e);
+                tally.Added++;
+                if (name != row.Name) tally.Renamed.Add(name);
+                id = e.Id;
+                break;
+            }
+        }
+        var o = tally.ToJson();
+        o["id"] = id;
+        o["name"] = ctx.Model.Get(id)!.Name;
+        return o;
+    }
+
+    /// <summary>The part and family files as kinds of library file (the one preview and import).</summary>
+    public static void RegisterFormats(IModuleRegistry r)
+    {
+        foreach (var format in new[] { FileFormat, Families.FileFormat })
+            r.Service<ILibraryFormat>(new LibraryFormat(LibraryFile.Of(format), (q, text) => [Row(q.Model, ReadFile(text))], (ctx, text, choices, all) => Import(ctx, text, choices, all, merge: true)));
     }
 
     /// <summary>
@@ -748,7 +797,8 @@ public static class Parts
         r.Command("placePart", "Place part", (ctx, a) => Place(ctx, a, Require(ctx.Model, (string?)a["typeId"])));
         r.Command("setPartValues", "Part values", SetValues);
         r.Command("partFromSketch", "Part from sketch", (ctx, a) => FromSketch(ctx, a, "Part"));
-        r.Query("exportPart", (q, a) => FileText(Require(q.Model, (string?)a["id"], withDef: false), FileFormat, FileVersion, FileExtension));
+        r.Query("exportPart", (q, a) => FileText(Require(q.Model, (string?)a["id"], withDef: false), FileFormat, FileVersion, FileExtension, LibraryFile.SourceOf(q.Model)));
+        RegisterFormats(r);
         r.Command("importPart", "Import part", Import);
         // A part's own sketches: the conversion of formula corners and their editing (§9 point 2).
         PartSketches.Register(r);

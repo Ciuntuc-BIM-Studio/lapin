@@ -1,0 +1,49 @@
+{
+  "format": "lapin-profiles",
+  "version": 1,
+  "name": "Office steel",
+  "description": "Standard dimensions of the common European steel profiles; every property worked out by Lapin.",
+  "material": "steel",
+  "standard": "EN",
+  "profiles": [
+    {
+      "name": "IPE 80",
+      "kind": "I",
+      "family": "IPE",
+      "standard": "EN 10365:2017",
+      "material": "steel",
+      "category": "hot-rolled",
+      "h": 0.08,
+      "b": 0.046,
+      "tw": 0.0038,
+      "tf": 0.0052,
+      "r1": 0.005
+    },
+    {
+      "name": "IPE 100",
+      "kind": "I",
+      "family": "IPE",
+      "standard": "EN 10365:2017",
+      "material": "steel",
+      "category": "hot-rolled",
+      "h": 0.1,
+      "b": 0.055,
+      "tw": 0.0041,
+      "tf": 0.0057,
+      "r1": 0.007
+    },
+    {
+      "name": "IPE 120",
+      "kind": "I",
+      "family": "IPE",
+      "standard": "EN 10365:2017",
+      "material": "steel",
+      "category": "hot-rolled",
+      "h": 0.12,
+      "b": 0.064,
+      "tw": 0.0044,
+      "tf": 0.0063,
+      "r1": 0.007
+    }
+  ]
+}
