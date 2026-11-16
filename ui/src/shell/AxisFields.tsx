@@ -6,18 +6,17 @@
  * types of the drafting standards (bubbles, size, line, first label).
  */
 
-import { useState } from 'react';
 import { Grid3x3, Settings2 } from 'lucide-react';
 import { LengthField, NumberField } from './cells';
 import { execute, useSession } from '../engine/session';
 import { useUi } from '../app/store';
 import { runSteps } from '../viewport/grips';
 import { openStandards } from '../modules/core/standardsTab';
-import { angleOf, axesOf, lengthOf, setSpacing, spacingOf } from './gridAxes';
+import { angleOf, axesOf, lengthOf, setSpacing, spacingOf, useAxesBeyond } from './gridAxes';
 
 export function AxisFields({ gridId, tag }: { gridId: string; tag: string }) {
   const grid = useSession((s) => s.nodes.get(gridId));
-  const [beyond, setBeyond] = useState(true);
+  const { beyond, set: setBeyond } = useAxesBeyond();
   const axes = axesOf(grid?.props.axes);
   const axis = axes.find((x) => x.tag === tag);
   if (!axis) return null;

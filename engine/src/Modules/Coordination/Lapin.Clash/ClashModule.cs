@@ -32,6 +32,8 @@ public sealed class ClashModule : ILapinModule
     public static bool IsElement(IQueryContext q, Entity e)
     {
         if (NotPhysical.Contains(e.Class)) return false;
+        // Solids kept hidden behind the layered wall made of them (forum topic 101): the wall clashes, not they.
+        if (!Superseded.Counts(q.Model, e)) return false;
         var kind = q.Describe(e.Class)?.Kind;
         if (kind != null) return kind == "element";
         // A class no module owns (an imported file's): an element when it stands somewhere.

@@ -234,6 +234,8 @@ public sealed class TaskElements
     bool IsCandidate(Entity e, IGeometryProducers? producers)
     {
         if (NotBuilt.Contains(e.Class)) return false;
+        // Solids kept hidden behind the layered wall made of them (forum topic 101): the wall is built, not they.
+        if (!Superseded.Counts(m, e)) return false;
         if (describe(e.Class) is { } d && d.Kind != "element") return false;
         if (!StoredBodies.Has(e) && producers?.Geometry(e.Class) == null) return false;
         // A linked file's element belongs to that file; formwork and scaffolding (created and struck in one phase) live by their hosts' tasks.

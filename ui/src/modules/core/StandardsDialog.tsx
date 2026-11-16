@@ -49,7 +49,10 @@ const TABS: Tab[] = [
     // Trailing zeros dropped (2.500 → 2.5, 3.000 → 3) or kept, or as the project's standards say (forum #81).
     { key: 'zeros', label: 'Trailing zeros', title: 'Whether a value drops its trailing zeros (2.500 → 2.5, 3.000 → 3) or keeps them; as the project: the Project tab says', kind: 'choice', choices: ['project', 'keep', 'suppress'] },
     // A segment across a door, a window or an opening writes its height under the line, and its sill in some forms (decision 338).
-    { key: 'openingHeight', label: 'Opening height', title: 'Under a dimension segment across a door, window or opening: its height (and its sill), read from the model', kind: 'choice', choices: ['off', 'number', 'h', 'hp', 'slash'] }] },
+    { key: 'openingHeight', label: 'Opening height', title: 'Under a dimension segment across a door, window or opening: its height (and its sill), read from the model', kind: 'choice', choices: ['off', 'number', 'h', 'hp', 'slash'] },
+    // Values that do not fit between their witness lines moved clear of their neighbours, with a leader past a distance (forum #78).
+    { key: 'autoText', label: 'Text placement', title: 'A value that does not fit between its witness lines moves just outside its segment, or above and below the line in turn, clear of the other values; as the project: Annotate → Dimension rules… says', kind: 'choice', choices: ['project', 'on', 'off'] },
+    { key: 'textLeader', label: 'Leader beyond mm', title: 'A value moved further than this (mm on paper) from its place gets a leader to its segment; empty: as the project', kind: 'mm' }] },
   { id: 'axis', label: 'Grid axes', list: 'axisStyles', fresh: { name: 'Axis' }, cols: [
     { key: 'name', label: 'Name', kind: 'text' }, { key: 'textStyle', label: 'Text', kind: 'style' }, { key: 'bubble', label: 'Bubble', kind: 'choice', choices: ['circle', 'square'] },
     { key: 'ends', label: 'Ends', kind: 'choice', choices: ['both', 'start', 'end', 'none'] }, { key: 'size', label: 'Size mm', kind: 'mm' },
@@ -146,6 +149,8 @@ export function StandardsDialog() {
           onBlur={(ev) => {
             const t = ev.target.value.trim();
             if (t === String(v ?? '')) return;
+            // A style's leader distance left empty: the project's (forum #78).
+            if (c.key === 'textLeader' && t === '') { put(null); return; }
             if (numeric) { const n = Number(t.replace(',', '.')); if (Number.isFinite(n) && n >= 0) put(n); }
             else if (t || c.key === 'inner' || c.key === 'classes') put(t);
           }} />;

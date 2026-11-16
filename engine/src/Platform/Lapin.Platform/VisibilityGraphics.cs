@@ -145,6 +145,8 @@ public sealed class VisibilityGraphics
     /// <summary>Whether the view hides an element: the link hidden in this view, its category or IFC class hidden (the link's own when custom).</summary>
     public bool Hides(Entity e)
     {
+        // Solids a layered wall was made of, kept hidden behind it (forum topic 101).
+        if (Superseded.Hidden(m, e)) return true;
         // Outside the view's subject (decision 579): hidden, unless the view shows the rest faded.
         if (!SubjectFaded && OutsideSubject(e)) return true;
         if (LinkRow(e.Str(Links.Key)) is { } row && True(row["hidden"])) return true;
