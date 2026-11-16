@@ -60,7 +60,7 @@ import { ucsOf, useLocation } from '../app/location';
 import { planePoint, refPlanesGroup, refPlanesKey, refPlanesOf } from './refPlanes';
 import { useRebar3d } from './rebar3d';
 import { useVoids3d, VOIDS_GROUP } from './voids3d';
-import { boxPlanes, modelBounds, planesKey, useSectionBox, type SectionBox } from './sectionBox';
+import { boxPlanes, modelBounds, planesKey, toggleSectionBoxHidden, useSectionBox, type SectionBox } from './sectionBox';
 import { alignSectionBox, commitBox, cutAtPlan, fitSectionBox } from './sectionBoxTools';
 import { useDrawing, type DrawingDto } from './drawing';
 import { CUT_LAYERS, cssColor, dashSegments, drawingPoint, penPixels, evenOddShapes, onCut, sectionPieces, sectionPlanes, sectionPose, textFont, textQuad, useClip3d, useSection3d, type ClipPlane, type DrawingText, type ViewFrameDto } from './section3d';
@@ -1880,6 +1880,7 @@ export function Viewport3D() {
   const sectionNotes = useSection3d((st) => st.annotations);
   const capStyle = useSection3d((st) => st.caps);
   const box = useSectionBox((st) => st.box);
+  const boxHidden = useSectionBox((st) => st.hidden);
   useEffect(() => { remember3d(keyRef.current, { box }); }, [box]);
   const shown = sectionId && sectionDrawing?.frame && sectionDrawing.kind === 'section' ? sectionDrawing : null;
   // What cuts the model: the section shown (its plane, and its depth) and the section box's faces.
@@ -2000,13 +2001,15 @@ export function Viewport3D() {
           {box && !walkStart && (
             <span className="mode-chip section">
               <span>Section box</span>
-              <span className="mode-hint">Drag a face's arrow to move it</span>
+              {!boxHidden && <span className="mode-hint">Drag a face's arrow to move it</span>}
               <button type="button" onClick={fitSectionBox} title="The box round the whole model">Fit</button>
               <button type="button" onClick={() => void cutAtPlan()} title="The box's top at the active storey's plan cut">Cut at plan</button>
               <button type="button" onClick={alignSectionBox} title="Turn the box the way the selected element runs (a wall's axis)">Align</button>
               <button type="button" className="mode-toggle" aria-pressed={capStyle === 'drawing'} title="Draw the box's cuts as a sheet does (each material's cut fill and hatch) instead of the materials"
                 onClick={() => useSection3d.setState({ caps: capStyle === 'drawing' ? 'material' : 'drawing' })}>Hatches</button>
-              <button type="button" className="mode-close" title="Section box off" aria-label="Section box off" onClick={() => { useSectionBox.setState({ box: null }); commitBox(); }}><X size={12} /></button>
+              <button type="button" className="mode-toggle" aria-pressed={boxHidden} title="Hide the section box frame and handles while keeping the cut active"
+                onClick={toggleSectionBoxHidden}>{boxHidden ? 'Show box' : 'Hide box'}</button>
+              <button type="button" className="mode-close" title="Section box off" aria-label="Section box off" onClick={() => { useSectionBox.setState({ box: null, hidden: false }); commitBox(); }}><X size={12} /></button>
             </span>
           )}
           {storeysChip && (

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RenderItem } from '../engine/protocol';
-import { alongAxis, boxCentre, boxEdges, boxPlanes, faceHandle, modelBounds, moveFace, MIN_SIZE, rotateBox, runOf, toBox, type SectionBox } from './sectionBox';
+import { alongAxis, boxCentre, boxEdges, boxPlanes, faceHandle, modelBounds, moveFace, MIN_SIZE, rotateBox, runOf, toBox, toggleSectionBoxHidden, useSectionBox, type SectionBox } from './sectionBox';
 
 const box: SectionBox = { min: [0, 0, 0], max: [10, 6, 3] };
 const keeps = (b: SectionBox, p: number[]) => boxPlanes(b).every((pl) => pl.normal[0] * p[0] + pl.normal[1] * p[1] + pl.normal[2] * p[2] + pl.constant >= -1e-9);
@@ -68,6 +68,21 @@ describe('the model\'s bounds with instances (docs/plan-instancing.md)', () => {
     const b = modelBounds([inst], 0, 0, new Map([['m', mesh]]))!;
     expect(b.min).toEqual([19.5, 3.5, 0]);
     expect(b.max).toEqual([20.5, 4.5, 1]);
+  });
+
+  it('toggles hiding the section box frame only when a box is active', () => {
+    useSectionBox.setState({ box: null, hidden: false });
+    toggleSectionBoxHidden();
+    expect(useSectionBox.getState().hidden).toBe(false);
+
+    useSectionBox.setState({ box, hidden: false });
+    toggleSectionBoxHidden();
+    expect(useSectionBox.getState().hidden).toBe(true);
+    expect(useSectionBox.getState().box).toEqual(box);
+
+    toggleSectionBoxHidden();
+    expect(useSectionBox.getState().hidden).toBe(false);
+    useSectionBox.setState({ box: null, hidden: false });
   });
 });
 

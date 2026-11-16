@@ -20,8 +20,13 @@ import type { ClipPlane } from './section3d';
 export type Triple = [number, number, number];
 export interface SectionBox { min: Triple; max: Triple; rot?: number }
 
-/** The box the 3D view is cut by (null: none). */
-export const useSectionBox = create<{ box: SectionBox | null }>(() => ({ box: null }));
+/** The box the 3D view is cut by (null: none), and whether its 3D frame and handles are hidden while keeping the cut. */
+export const useSectionBox = create<{ box: SectionBox | null; hidden: boolean }>(() => ({ box: null, hidden: false }));
+
+/** Toggle hiding the section box frame and handles without disabling the cut. */
+export function toggleSectionBoxHidden(): void {
+  useSectionBox.setState((s) => (s.box ? { hidden: !s.hidden } : s));
+}
 
 /** How thin the box may get along any axis, metres. */
 export const MIN_SIZE = 0.05;
