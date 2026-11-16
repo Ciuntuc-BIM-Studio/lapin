@@ -22,11 +22,23 @@ A barra da ferramenta **Piso**, na linha de comando, desenha o contorno como **P
 
 ![A ferramenta Piso desenhando um círculo ao lado de um piso](shots/floor-shapes.webp)
 
+A mesma barra serve todas as ferramentas de contorno (laje, abertura de laje, teto, furo, ambiente e varanda por contorno, plataforma, lote), e três das suas escolhas tomam o contorno inteiro com um clique: **Inside walls** (as paredes que se fecham à volta do ponto), **From drawn shape** (a menor forma desenhada fechada à volta do ponto: uma polilinha fechada, um retângulo ou um círculo, que fica redondo) e **From room** (o ambiente à volta do ponto, com as suas arestas curvas).
+
+![A barra das ferramentas de contorno, com From drawn shape escolhido](shots/outline-sources.webp)
+
+Para laje, abertura de laje, teto e ambiente por contorno a barra oferece também **Ellipse**: o centro, a ponta de um semieixo e depois o outro. As arestas do contorno seguem a elipse verdadeira (quatro quartos), medidas exatamente; um canto tirado da elipse torna retas as suas duas arestas, e um canto junto a uma aresta elíptica não é arredondado. O IFC leva-a como IfcEllipse. **From drawn shape** toma do mesmo modo uma elipse desenhada.
+
+![Uma laje elíptica a ser desenhada ao lado de uma elipse desenhada](shots/ellipse-floor.webp)
+
 Qualquer aresta de um piso, de uma abertura no piso ou de um forro pode ser curva. Clique com o botão direito no piso selecionado perto de uma aresta e escolha **Tornar arco**: a aresta curva-se para fora um oitavo do seu comprimento e aparece uma alça redonda no meio do arco. Arraste-a para curvar o arco pelo ponto desejado (o losango, agora no meio da corda, continua a mover a aresta). **Tornar reto** volta a fazê-la uma linha. Um canto entre duas arestas retas pode ser arredondado ou chanfrado: clique nele com o botão direito e escolha **Arredondar canto…** (digite o raio) ou **Chanfrar canto…** (digite quanto recua ao longo de cada aresta). O canto torna-se dois, onde o arco ou o chanfro encontra as arestas; um raio grande demais para as arestas é recusado. Cada um é um passo de desfazer.
 
 ![Um piso com uma aresta curva e um canto arredondado](shots/floor-curved-edge.webp)
 
 O piso é construído ao longo dos seus arcos, nenhuma corda a mais de 1 mm deles, em 3D, plantas e cortes; a sua área e o seu perímetro são medidos nos arcos verdadeiros. Uma camada que passa uma aresta curva (veja [Extensões de camada](walls.md#layer-extents)) segue o arco. Uma abertura também pode ter arestas curvas, e um piso curvo pode ter aberturas. Em IFC o piso leva o seu contorno com os arcos verdadeiros como pegada (uma IfcIndexedPolyCurve com segmentos de arco), ao lado do seu corpo. As coberturas mantêm arestas retas, porque as suas regras de aresta (beiral, empena) são definidas por aresta reta.
+
+Uma laje ou um teto falso pode ter **furos próprios**: ilhas recortadas do seu contorno, parte do elemento, não aberturas à parte. Escolha **Hole in the outline** na ferramenta **Opening** (em *In a floor*) e desenhe-o dentro da laje (ou da laje ou teto selecionado) com a mesma barra: um polígono cujas arestas podem ser arcos, um retângulo ou um círculo. Selecionada, a laje mostra os cantos e as arestas de cada furo como pegas, com o mesmo clique direito (**Make arc**, **Fillet corner…**, **Chamfer corner…**); a cruz no meio de um furo move-o, e o seu clique direito oferece **Remove hole**. A laje é construída em volta dos furos e a sua área deixa-os de fora, medidos nos arcos verdadeiros; um furo tem de ficar dentro do contorno e afastado dos outros, e um contorno alterado de modo a já não o conter é recusado. Em **Edit sketch** os furos também são laços do esboço: desenhe outro laço fechado lá dentro e **Finish sketch** torna-o um furo (o maior laço é o contorno). No IFC os furos são mais curvas da pegada da laje, lidos de volta como furos. Uma plataforma (**Site → Hole in platform**) aceita furos da mesma forma: o terreno dentro do furo mantém as suas cotas.
+
+![Uma laje com um furo retangular e um redondo no seu próprio contorno, selecionada](shots/floor-holes.webp)
 
 #### Editar esboço
 

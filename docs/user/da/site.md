@@ -36,6 +36,10 @@ En **vej** eller en **sti** følger sin akse. I **Korridor…** (CR) giver fanen
 
 CAD-linjer bliver til terrænelementer: **Vej fra CAD-linjer** (LR) og **Brudlinje fra CAD-linjer** (BL) tager en tegnet linje eller polylinje eller en fra en DXF, følger alle linjer på dens lag, der mødes ende mod ende, og laver en vej langs den eller en brudlinje i terrænet. Når linjerne har koter (en DXF's 3D-linjer), giver de vejens længdeprofil eller brudlinjens koter. Sådanne linjer beholder deres koter og kan vises i 3D (kategorien *linjer*).
 
+## Platforme og matriklen
+
+**Site → Platform** (<kbd>PD</kbd>) planerer terrænet inden for et omrids i én højde med afgravning og opfyldning; **Site → Parcel** (<kbd>PC</kbd>) tegner ejendommens skel, stiplet med dets areal. Begge tegner omridset med samme bjælke som et dæk: en **Polygon**, hvis kanter kan være buer (<kbd>Space</kbd>), en **Rectangle** eller en **Circle**. Valgt har deres hjørner og kanter greb (matriklens på dens terræn), og højreklik giver **Make arc**, **Make straight**, **Fillet corner…** og **Chamfer corner…**, hver ét fortrydelsestrin. Platformen planerer langs de sande buer; matriklens areal og omkreds måles på dem, og koordinatlisten viser dens hjørner.
+
 ## Situationsplaner og oversigtskort
 
 Projektbrowseren har en **Grund** under niveauerne: grundens egne tegninger, som ikke hører til nogen etage. Et nyt projekt starter med to:

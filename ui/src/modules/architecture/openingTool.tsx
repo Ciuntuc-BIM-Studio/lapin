@@ -11,7 +11,7 @@ import { activate, useToolTick } from '../../platform/modules';
 import type { ToolDef } from '../../platform/module';
 import { DoorIcon } from '../../icons';
 
-export type OpeningKind = 'door' | 'window' | 'bayWindow' | 'opening' | 'floor' | 'roofWindow' | 'dormer';
+export type OpeningKind = 'door' | 'window' | 'bayWindow' | 'opening' | 'floor' | 'outlineHole' | 'roofWindow' | 'dormer';
 export type OpeningHost = 'wall' | 'floor' | 'roof';
 
 /** The kinds, in the picker's order, each with its host. */
@@ -21,6 +21,8 @@ export const OPENING_KINDS: readonly { kind: OpeningKind; label: string; host: O
   { kind: 'bayWindow', label: 'Bay window', host: 'wall' },
   { kind: 'opening', label: 'Opening of a shape', host: 'wall' },
   { kind: 'floor', label: 'Floor opening', host: 'floor' },
+  // A hole in a floor's or a ceiling's own outline (audit S4), not an element of its own.
+  { kind: 'outlineHole', label: 'Hole in the outline', host: 'floor' },
   { kind: 'roofWindow', label: 'Roof window', host: 'roof' },
   { kind: 'dormer', label: 'Dormer', host: 'roof' },
 ];

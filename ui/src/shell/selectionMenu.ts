@@ -79,11 +79,14 @@ export function similarItems(): MenuItem[] {
  * "Edit sketch" on a floor, a floor opening or a ceiling (forum topic 97, stage 3): its outline opened as a sketch, when the
  * product has Studio's Edit sketch.
  */
+const isTrench = (n: { props: Record<string, unknown> }) => n.props.predefinedType === 'TRENCH';
+
 export function editSketchItems(): MenuItem[] {
   const { selected } = useUi.getState();
   if (selected.length !== 1) return [];
   const n = useSession.getState().nodes.get(selected[0]);
-  const outline = !!n && !n.props.reference && Array.isArray(n.props.contour) && (n.type === 'IfcSlab' || n.type === 'LapinCeiling' || (n.type === 'IfcOpeningElement' && !n.props.stairId));
+  const outline = !!n && !n.props.reference && Array.isArray(n.props.contour) && (n.type === 'IfcSlab' || n.type === 'LapinCeiling' || (n.type === 'IfcOpeningElement' && !n.props.stairId)
+    || (n.type === 'IfcSpace' && n.props.auto === false) || (n.type === 'IfcEarthworksCut' && !isTrench(n)));
   const tool = outline ? allTools().find((t) => t.id === 'studio.editSketch') : undefined;
   return tool?.run ? [{ label: 'Edit sketch', onSelect: () => tool.run!() }] : [];
 }

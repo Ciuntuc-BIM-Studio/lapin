@@ -75,6 +75,10 @@ Selectat, un gol are mânere ca o fereastră: trage de mijlocul lui ca să-l mu�
 
 ![Un gol în perete în configuratorul lui: cap semicircular, glafurile tencuite](shots/wall-opening-dialog.webp)
 
+Un gol poate avea și **conturul lui**, de orice formă: desenează-l închis pe o secțiune sau o fațadă care privește peretele din față (**Draft**: o polilinie, un dreptunghi, un cerc, arce), selectează-l și alege **Draft → Convert to… → Wall opening**. Golul intră în peretele drept din spatele formei: lățimea, înălțimea, locul pe perete și parapetul vin din marginile conturului, iar conturul însuși e tăiat prin perete (arcele pe curba adevărată). Redimensionat, se întinde cu cutia lui; alt cap ales în proprietăți înlocuiește conturul. În IFC e un IfcOpeningElement de acea formă și revine așa cum era.
+
+![Un gol de perete cu conturul lui, desenat pe o secțiune](shots/wall-opening-outline.webp)
+
 ### Goluri prin mai mulți pereți
 
 O ușă, o fereastră sau un gol taie fiecare perete prin care trece gaura, nu doar peretele în care se află: un perete așezat pe el (o ușă care pornește într-un perete de beton armat de 1 m și urcă prin zidăria de deasupra), un perete de sub el sau o căptușeală lipită de fața lui. Fiecare perete care stă de-a lungul peretelui golului — paralel cu el, atingându-l sau suprapus peste el — e tăiat acolo unde ajunge gaura în el, pe toată grosimea, în 3D, planuri, secțiuni, fațade și cantități, iar buiandrugul intră în peretele în care e capul golului. Nu se păstrează nimic pentru asta: muți golul sau pereții, iar tăietura urmează; un perete la care gaura nu mai ajunge e din nou întreg. Așa, o ușă poate ieși din peretele ei în pereții pe care îi taie, dar nu în gol.

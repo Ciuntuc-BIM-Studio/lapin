@@ -26,6 +26,14 @@ Bara uneltei **Placă**, din linia de comandă, desenează conturul ca **Poligon
 
 ![Unealta Placă desenând un cerc lângă o placă](shots/floor-shapes.webp)
 
+Aceeași bară servește toate uneltele cu contur (placă, gol în placă, tavan, gol în contur, încăpere și balcon după contur, platformă, parcelă), iar trei dintre alegeri iau tot conturul dintr-un clic: **Inside walls** (pereții care se închid în jurul punctului), **From drawn shape** (cea mai mică formă desenată închisă din jurul punctului: o polilinie închisă, un dreptunghi sau un cerc, cercul rămânând rotund) și **From room** (încăperea din jurul punctului, cu laturile ei curbe).
+
+![Bara uneltelor cu contur, cu From drawn shape ales](shots/outline-sources.webp)
+
+Pentru placă, gol în placă, tavan și încăpere după contur, bara oferă și **Ellipse**: centrul, capătul unei semiaxe, apoi cealaltă. Laturile conturului merg pe elipsa adevărată (patru sferturi), măsurate exact; un colț mutat de pe elipsă îi face cele două laturi drepte, iar un colț lângă o latură eliptică nu se racordează. IFC o duce ca IfcEllipse. **From drawn shape** ia la fel o elipsă desenată.
+
+![O placă eliptică desenată lângă o elipsă din Desen](shots/ellipse-floor.webp)
+
 Un gol prin placă (o casă a scării, un ghene) e **Arhitectură → Gol** cu **Gol în placă** (<kbd>SH</kbd>): conturul lui desenat în placă, ca un poligon cu laturi care pot fi arce, un dreptunghi sau un cerc.
 
 Orice latură a unei plăci, a unui gol în placă sau a unui tavan poate fi curbă. Dă clic dreapta pe placa selectată lângă o latură și alege **Fă arc**: latura se bombează în afară cu o optime din lungimea ei, iar la mijlocul arcului apare un mâner rotund. Trage de el ca să curbezi arcul prin punctul dorit (rombul, acum la mijlocul coardei, mută în continuare latura). **Fă dreaptă** o face din nou linie. Un colț între două laturi drepte poate fi rotunjit sau teșit: dă clic dreapta pe el și alege **Racordează colțul…** (tastezi raza) sau **Teșește colțul…** (tastezi cât se retrage pe fiecare latură). Colțul devine două, unde arcul sau teșitura întâlnește laturile; o rază prea mare pentru laturi e refuzată. Fiecare e un singur pas de anulare.
@@ -33,6 +41,10 @@ Orice latură a unei plăci, a unui gol în placă sau a unui tavan poate fi cur
 ![O placă cu o latură curbă și un colț rotunjit](shots/floor-curved-edge.webp)
 
 Placa e construită de-a lungul arcelor, nicio coardă mai departe de 1 mm de ele, în 3D, planuri și secțiuni; aria și perimetrul ei se măsoară pe arcele adevărate. Un strat care trece de o latură curbă (vezi [Prelungirile straturilor](walls.md#layer-extents)) urmează arcul. Și un gol poate avea laturi curbe, iar o placă curbă poate avea goluri. În IFC placa își poartă conturul cu arcele adevărate ca amprentă (un IfcIndexedPolyCurve cu segmente de arc), pe lângă corpul ei. Acoperișurile păstrează laturi drepte, pentru că regulile laturilor unui acoperiș (streașină, fronton) se dau pe fiecare latură dreaptă.
+
+O placă sau un tavan poate avea **goluri proprii**: insule tăiate din contur, parte a elementului, nu goluri separate. Alege **Hole in the outline** în unealta **Opening** (la *In a floor*) și desenează-l în interiorul plăcii (sau al plăcii ori tavanului selectat) cu aceeași bară: un poligon ale cărui laturi pot fi arce, un dreptunghi sau un cerc. Selectată, placa arată colțurile și laturile fiecărui gol ca mânere, cu același clic dreapta (**Make arc**, **Fillet corner…**, **Chamfer corner…**); crucea din mijlocul golului îl mută, iar clicul dreapta pe ea oferă **Remove hole**. Placa se construiește în jurul golurilor, iar aria le lasă afară, măsurate pe arcele adevărate; un gol trebuie să stea în interiorul conturului, separat de celelalte, iar un contur schimbat astfel încât nu-l mai cuprinde e refuzat. În **Edit sketch** golurile sunt și ele bucle ale schiței: desenează altă buclă închisă înăuntru și **Finish sketch** o face gol (bucla cea mai mare e conturul). În IFC golurile sunt curbe în plus ale amprentei plăcii, citite înapoi ca goluri. O platformă (**Site → Hole in platform**) primește goluri la fel: terenul din interiorul golului își păstrează cotele.
+
+![O placă cu un gol dreptunghiular și unul rotund ale ei, selectată](shots/floor-holes.webp)
 
 #### Editează schița
 

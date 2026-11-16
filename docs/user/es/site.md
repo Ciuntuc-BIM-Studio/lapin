@@ -36,6 +36,10 @@ Una **carretera** o un **camino** sigue su eje. En **Corredor…** (CR), la pest
 
 Los trazados CAD se convierten en elementos del sitio: **Carretera desde líneas CAD** (LR) y **Línea de quiebre desde líneas CAD** (BL) toman una línea o polilínea dibujada o traída de un DXF, siguen todas las líneas de su capa que se unen extremo con extremo y hacen una carretera a lo largo de ella o una línea de quiebre del terreno. Cuando las líneas llevan cotas (las líneas 3D de un DXF), dan el perfil de la carretera o las cotas de la línea de quiebre. Esas líneas conservan sus cotas y pueden mostrarse en 3D (la categoría *trazados*).
 
+## Plataformas y la parcela
+
+**Site → Platform** (<kbd>PD</kbd>) nivela el terreno dentro de un contorno a una cota, con desmonte y terraplén; **Site → Parcel** (<kbd>PC</kbd>) dibuja el lindero de la propiedad, en trazo y punto con su área. Ambas dibujan su contorno con la misma barra que un forjado: un **Polygon** cuyos bordes pueden ser arcos (<kbd>Space</kbd>), un **Rectangle** o un **Circle**. Seleccionadas, sus esquinas y bordes tienen pinzamientos (los de la parcela, en su terreno), y el clic derecho ofrece **Make arc**, **Make straight**, **Fillet corner…** y **Chamfer corner…**, cada uno un paso de deshacer. La plataforma nivela a lo largo de los arcos verdaderos; el área y el perímetro de la parcela se miden sobre ellos, y el inventario de coordenadas lista sus esquinas.
+
 ## Planos de situación y planos de emplazamiento
 
 El navegador del proyecto tiene un **Emplazamiento** bajo los niveles: los dibujos propios del emplazamiento, que no pertenecen a ninguna planta. Un proyecto nuevo empieza con dos:

@@ -36,6 +36,10 @@ Una **strada** o un **percorso** segue il suo asse. In **Corridoio stradale…**
 
 Le linee CAD diventano elementi del sito: **Strada da linee CAD** (LR) e **Linea di discontinuità da linee CAD** (BL) prendono una linea o una polilinea disegnata o portata da un DXF, seguono ogni linea del suo layer che la incontra estremo a estremo, e ne fanno una strada lungo di essa o una linea di discontinuità del terreno. Quando le linee portano delle quote (le linee 3D di un DXF), danno il profilo della strada o le quote della linea di discontinuità. Queste linee sono conservate con le loro quote e possono essere mostrate in 3D (la categoria *linework*).
 
+## Piattaforme e lotto
+
+**Site → Platform** (<kbd>PD</kbd>) livella il terreno dentro un contorno a una quota, con scavo e riporto; **Site → Parcel** (<kbd>PC</kbd>) disegna il confine della proprietà, a tratto e punto con la sua area. Entrambi disegnano il contorno con la stessa barra di un solaio: un **Polygon** i cui bordi possono essere archi (<kbd>Space</kbd>), un **Rectangle** o un **Circle**. Selezionati, angoli e bordi hanno maniglie (quelli del lotto, sul suo terreno), e il clic destro offre **Make arc**, **Make straight**, **Fillet corner…** e **Chamfer corner…**, ciascuno un passo di annullamento. La piattaforma livella lungo gli archi veri; area e perimetro del lotto sono misurati su di essi, e l’elenco delle coordinate ne riporta gli angoli.
+
 ## Planimetrie e inquadramenti territoriali
 
 Il browser di progetto ha un **Sito** sotto i livelli: i disegni propri del sito, che non appartengono a nessun piano. Un nuovo progetto inizia con due:

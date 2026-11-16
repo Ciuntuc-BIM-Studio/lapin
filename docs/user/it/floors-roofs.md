@@ -22,11 +22,23 @@ La barra dello strumento **Solaio**, nella riga di comando, disegna il contorno 
 
 ![Lo strumento Solaio che disegna un cerchio accanto a un solaio](shots/floor-shapes.webp)
 
+La stessa barra serve tutti gli strumenti di contorno (solaio, foro nel solaio, controsoffitto, foro nel contorno, locale e balcone per contorno, piattaforma, lotto), e tre delle sue scelte prendono l’intero contorno con un clic: **Inside walls** (i muri che si chiudono attorno al punto), **From drawn shape** (la più piccola forma disegnata chiusa attorno al punto: una polilinea chiusa, un rettangolo o un cerchio, che resta tondo) e **From room** (il locale attorno al punto, con i suoi bordi curvi).
+
+![La barra degli strumenti di contorno, con From drawn shape scelto](shots/outline-sources.webp)
+
+Per solaio, foro nel solaio, controsoffitto e locale per contorno la barra offre anche **Ellipse**: il centro, l’estremo di un semiasse, poi l’altro. I bordi del contorno seguono la vera ellisse (quattro quarti), misurati esattamente; un angolo spostato fuori dall’ellisse rende dritti i suoi due bordi, e un angolo vicino a un bordo ellittico non si raccorda. L’IFC la porta come IfcEllipse. **From drawn shape** prende allo stesso modo un’ellisse disegnata.
+
+![Un solaio ellittico disegnato accanto a un’ellisse disegnata](shots/ellipse-floor.webp)
+
 Qualsiasi lato di un solaio, di un foro nel solaio o di un controsoffitto può essere curvo. Fai clic destro sul solaio selezionato vicino a un lato e scegli **Rendi arco**: il lato si incurva verso l'esterno di un ottavo della sua lunghezza e al centro dell'arco compare una maniglia rotonda. Trascinala per curvare l'arco attraverso il punto voluto (il rombo, ora al centro della corda, sposta ancora il lato). **Rendi diritto** lo riporta a linea. Un angolo tra due lati diritti si può raccordare o smussare: fai clic destro su di esso e scegli **Raccorda l'angolo…** (digita il raggio) o **Smussa l'angolo…** (digita di quanto arretra lungo ogni lato). L'angolo diventa due, dove l'arco o lo smusso incontrano i lati; un raggio troppo grande per i lati viene rifiutato. Ognuno è un solo passo di annullamento.
 
 ![Un solaio con un lato curvo e un angolo raccordato](shots/floor-curved-edge.webp)
 
 Il solaio è costruito lungo i suoi archi, nessuna corda a più di 1 mm da essi, in 3D, piante e sezioni; area e perimetro sono misurati sugli archi veri. Uno strato che va oltre un lato curvo (vedi [Estensioni degli strati](walls.md#layer-extents)) segue l'arco. Anche un foro può avere lati curvi, e un solaio curvo può avere fori. In IFC il solaio porta il suo contorno con gli archi veri come impronta (una IfcIndexedPolyCurve con segmenti d'arco), accanto al suo corpo. Le coperture mantengono lati diritti, perché le loro regole dei lati (gronda, timpano) si impostano per lato diritto.
+
+Un solaio o un controsoffitto può avere **fori propri**: isole ritagliate dal suo contorno, parte dell’elemento, non aperture a sé. Scegli **Hole in the outline** nello strumento **Opening** (sotto *In a floor*) e disegnalo dentro il solaio (o il solaio o controsoffitto selezionato) con la stessa barra: un poligono i cui bordi possono essere archi, un rettangolo o un cerchio. Selezionato, il solaio mostra angoli e bordi di ogni foro come maniglie, con lo stesso clic destro (**Make arc**, **Fillet corner…**, **Chamfer corner…**); la croce al centro di un foro lo sposta, e il suo clic destro offre **Remove hole**. Il solaio è costruito attorno ai fori e la sua area li esclude, misurati sui veri archi; un foro deve stare dentro il contorno, separato dagli altri, e un contorno cambiato in modo da non contenerlo più è rifiutato. In **Edit sketch** i fori sono anch’essi anelli dello schizzo: disegna un altro anello chiuso all’interno e **Finish sketch** lo rende un foro (l’anello più grande è il contorno). In IFC i fori sono altre curve dell’impronta del solaio, riletti come fori. Una piattaforma (**Site → Hole in platform**) accetta fori allo stesso modo: il terreno nel foro mantiene le sue quote.
+
+![Un solaio con un foro rettangolare e uno tondo nel proprio contorno, selezionato](shots/floor-holes.webp)
 
 #### Modifica schizzo
 

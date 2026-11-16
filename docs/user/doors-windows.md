@@ -75,6 +75,10 @@ Selected, an opening has grips like a window: drag its middle to slide it along 
 
 ![A wall opening in its configurator: a semicircular head, the reveal plastered](shots/wall-opening-dialog.webp)
 
+An opening can also have **its own outline**, any shape: draw it closed on a section or an elevation that looks at the wall square on (**Draft**: a polyline, a rectangle, a circle, arcs), select it and choose **Draft → Convert to… → Wall opening**. The opening goes in the straight wall behind the shape, its width, height, place along the wall and sill taken from the outline's bounds, the outline itself cut through the wall (its arcs along the true curve). Resized, it stretches with its box; another head chosen in its properties replaces the outline. In IFC it is an IfcOpeningElement of that shape, and comes back as it was.
+
+![A wall opening of its own outline, drafted on a section](shots/wall-opening-outline.webp)
+
 ### Openings through several walls
 
 A door, a window or an opening cuts every wall its hole passes through, not only the wall it is in: a wall stacked on it (a door that starts in a 1 m reinforced concrete wall and goes on up through the masonry on it), a wall under it, or a lining against its face. Each wall that lies along the opening's wall — parallel to it, touching or overlapping it — is cut where the hole reaches into it, through its whole thickness, in 3D, plans, sections, elevations and quantities, and the lintel goes into the wall the head is in. Nothing is stored for it: move the opening, or move the walls, and the cut follows; a wall the hole no longer reaches is whole again. So a door may run out of its own wall into the walls it cuts, but not into nothing.
