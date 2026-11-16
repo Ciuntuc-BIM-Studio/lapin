@@ -22,11 +22,23 @@ Pasek narzędzia **Strop** w wierszu poleceń rysuje obrys jako **Wielokąt** (k
 
 ![Narzędzie Strop rysujące okrąg obok stropu](shots/floor-shapes.webp)
 
+Ten sam pasek służy wszystkim narzędziom obrysu (strop, otwór w stropie, sufit, otwór w obrysie, pomieszczenie i balkon z obrysu, platforma, działka), a trzy jego opcje biorą cały obrys jednym kliknięciem: **Inside walls** (ściany zamykające się wokół punktu), **From drawn shape** (najmniejszy zamknięty narysowany kształt wokół punktu: zamknięta polilinia, prostokąt lub okrąg, który zostaje okrągły) i **From room** (pomieszczenie wokół punktu, z jego łukowymi krawędziami).
+
+![Pasek narzędzi obrysu z wybranym From drawn shape](shots/outline-sources.webp)
+
+Dla stropu, otworu w stropie, sufitu i pomieszczenia z obrysu pasek oferuje też **Ellipse**: środek, koniec jednej półosi, potem drugą. Krawędzie obrysu biegną po prawdziwej elipsie (cztery ćwiartki), mierzone dokładnie; narożnik przesunięty z elipsy prostuje swoje dwie krawędzie, a narożnik przy krawędzi eliptycznej nie jest zaokrąglany. IFC zapisuje ją jako IfcEllipse. **From drawn shape** bierze tak samo narysowaną elipsę.
+
+![Eliptyczny strop rysowany obok narysowanej elipsy](shots/ellipse-floor.webp)
+
 Każda krawędź stropu, otworu w stropie lub sufitu może być krzywa. Kliknij prawym przyciskiem zaznaczony strop przy krawędzi i wybierz **Zamień na łuk**: krawędź wygina się na zewnątrz o jedną ósmą swojej długości, a na środku łuku pojawia się okrągły uchwyt. Przeciągnij go, aby wygiąć łuk przez wybrany punkt (romb, teraz na środku cięciwy, nadal przesuwa krawędź). **Wyprostuj** zamienia ją z powrotem w linię. Narożnik między dwiema prostymi krawędziami można zaokrąglić lub sfazować: kliknij go prawym przyciskiem i wybierz **Zaokrąglij narożnik…** (wpisz promień) lub **Sfazuj narożnik…** (wpisz, jak daleko wstecz wzdłuż każdej krawędzi). Narożnik staje się dwoma, tam gdzie łuk lub faza spotyka krawędzie; zbyt duży promień jest odrzucany. Każde z nich to jeden krok cofania.
 
 ![Strop z krzywą krawędzią i zaokrąglonym narożnikiem](shots/floor-curved-edge.webp)
 
 Strop jest budowany wzdłuż łuków, żadna cięciwa nie dalej niż 1 mm od nich, w 3D, rzutach i przekrojach; jego pole i obwód mierzone są na prawdziwych łukach. Warstwa wychodząca poza krzywą krawędź (zobacz [Wysunięcia warstw](walls.md#layer-extents)) biegnie wzdłuż łuku. Otwór także może mieć krzywe krawędzie, a krzywy strop może mieć otwory. W IFC strop niesie obrys z prawdziwymi łukami jako ślad (IfcIndexedPolyCurve z segmentami łuku) obok swojej bryły. Dachy zachowują proste krawędzie, bo reguły krawędzi dachu (okap, szczyt) ustala się dla każdej prostej krawędzi.
+
+Strop lub sufit podwieszany może mieć **własne otwory**: wyspy wycięte z obrysu, część elementu, a nie osobne otwory. Wybierz **Hole in the outline** w narzędziu **Opening** (w *In a floor*) i narysuj go wewnątrz stropu (lub zaznaczonego stropu albo sufitu) tym samym paskiem: wielokąt, którego krawędzie mogą być łukami, prostokąt lub okrąg. Po zaznaczeniu strop pokazuje narożniki i krawędzie każdego otworu jako uchwyty, z tym samym prawym klikiem (**Make arc**, **Fillet corner…**, **Chamfer corner…**); krzyżyk w środku otworu go przesuwa, a jego prawy klik oferuje **Remove hole**. Strop jest budowany wokół otworów, a jego powierzchnia je pomija, mierzona na prawdziwych łukach; otwór musi leżeć wewnątrz obrysu i z dala od innych, a obrys zmieniony tak, że go już nie obejmuje, jest odrzucany. W **Edit sketch** otwory są też pętlami szkicu: narysuj kolejną zamkniętą pętlę wewnątrz, a **Finish sketch** zrobi z niej otwór (największa pętla jest obrysem). W IFC otwory są kolejnymi krzywymi obrysu stropu i są wczytywane z powrotem jako otwory. Platforma (**Site → Hole in platform**) przyjmuje otwory tak samo: teren w otworze zachowuje swoje rzędne.
+
+![Zaznaczony strop z prostokątnym i okrągłym otworem we własnym obrysie](shots/floor-holes.webp)
 
 #### Edytuj szkic
 

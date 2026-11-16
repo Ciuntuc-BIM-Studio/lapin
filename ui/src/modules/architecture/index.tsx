@@ -3,11 +3,11 @@
 import { Armchair, ArrowLeftRight, ArrowRightToLine, CornerDownRight, CornerUpRight, Layers3, Link2, Scissors, Settings2, Slash, Spline, Table2 } from 'lucide-react';
 import { AttachRoofIcon, CurtainWallIcon, CurvedWallIcon, DetachRoofIcon, DoorIcon, DormerIcon, RoofIcon, RampIcon, RoofWindowIcon, SlabIcon, SlabOpeningIcon, StairIcon, WallIcon, WallTypesIcon, WindowIcon } from '../../icons';
 import type { Grip, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
-import { flipAcross, frameAt, outlineGrips, outlineRef, pathGrips, pathRef, toPairs } from '../../viewport/gripKit';
+import { flipAcross, frameAt, holeGrips, holeRefs, outlineGrips, outlineRef, pathGrips, pathRef, toPairs } from '../../viewport/gripKit';
 import { architectureGrips3d } from './grips3d';
 import { arcOf, project, type Arc } from '../../viewport/arc';
 import { arcsOf, fromPairs } from '../../viewport/contour';
-import { FloorShapeBar, PlainShapeBar, toggleOutlineArcs } from '../../viewport/outlineShape';
+import { FloorShapeBar, EllipseShapeBar, PlainShapeBar, loopOf, toggleOutlineArcs, type EllipseEdgeJson } from '../../viewport/outlineShape';
 import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
 import { activeStorey, execute, query, useSession } from '../../engine/session';
@@ -302,11 +302,13 @@ function contourGrips(command: string, withEdges = false) {
     const edges = withEdges && Array.isArray(node.props.edges) && node.props.edges.length === pts.length ? (node.props.edges as unknown[]) : undefined;
     const curved = !withEdges && !node.props.stairId;
     const arcs = curved ? arcsOf(node.props.arcs, pts.length) : undefined;
-    return outlineGrips({ pts, edges, arcs }, (o) => ({ command, args: { id: node.id, points: toPairs(o.pts), ...(o.edges ? { edges: o.edges } : {}), ...(curved ? { arcs: o.arcs ?? o.pts.map(() => 0) } : {}) } }),
+    const outline = outlineGrips({ pts, edges, arcs }, (o) => ({ command, args: { id: node.id, points: toPairs(o.pts), ...(o.edges ? { edges: o.edges } : {}), ...(curved ? { arcs: o.arcs ?? o.pts.map(() => 0) } : {}) } }),
       curved ? {
         fillet: (index, radius) => ({ command: 'architecture.roundCorner', args: { id: node.id, index, radius } }),
         chamfer: (index, distance) => ({ command: 'architecture.chamferCorner', args: { id: node.id, index, distance } }),
       } : undefined);
+    // A floor's or a ceiling's own holes (audit S4).
+    return [...outline, ...holeGrips(node.id, node.props.holes, node.props.holeArcs, (holes, holeArcs) => ({ command, args: { id: node.id, holes, holeArcs } }))];
   };
 }
 /**
@@ -315,7 +317,14 @@ function contourGrips(command: string, withEdges = false) {
  * over a grip or its right-click menu takes it out.
  */
 const roofGrips = (node: NodeDto): Grip[] => [...contourGrips('architecture.updateRoof', true)(node), ...roofOpeningGrips(node)];
-const contourRefs = (node: NodeDto): RefLine[] => { const pts = fromPairs(node.props.contour); return pts.length >= 3 ? [outlineRef(pts, arcsOf(node.props.arcs, pts.length))] : []; };
+const contourRefs = (node: NodeDto): RefLine[] => {
+  const pts = fromPairs(node.props.contour);
+  if (pts.length < 3) return [];
+  // Elliptical edges (audit S4) along their ellipses.
+  const ellipses = Array.isArray(node.props.ellipses) && node.props.ellipses.length === pts.length ? (node.props.ellipses as (EllipseEdgeJson | null)[]) : undefined;
+  const outer: RefLine = ellipses ? { points: loopOf({ pts, arcs: arcsOf(node.props.arcs, pts.length), ellipses }), closed: true, kind: 'outline' } : outlineRef(pts, arcsOf(node.props.arcs, pts.length));
+  return [outer, ...holeRefs(node.props.holes, node.props.holeArcs)];
+};
 
 /**
  * The selected walls rise to the underside of the element clicked, from any
@@ -424,9 +433,9 @@ const slab: ToolDef = {
   gesture: { kind: 'polygon', shapes: true },
   options: FloorShapeBar,
   space: toggleOutlineArcs,
-  complete: async ({ points, arcs }, ctx) => {
+  complete: async ({ points, arcs, ellipses }, ctx) => {
     const typeId = useUi.getState().slabTypeId;
-    const where = points.length === 1 ? { x: points[0].x, y: points[0].y } : { points: points.map((p) => [p.x, p.y]), ...(arcs ? { arcs } : {}) };
+    const where = points.length === 1 ? { x: points[0].x, y: points[0].y } : { points: points.map((p) => [p.x, p.y]), ...(arcs ? { arcs } : {}), ...(ellipses ? { ellipses } : {}) };
     await ctx.execute('architecture.addSlab', { storeyId: ctx.storeyId, ...where, ...(typeId ? { typeId } : {}) });
   },
 };
@@ -443,11 +452,28 @@ const roof: ToolDef = {
 const slabOpeningPart: ToolDef = {
   id: 'architecture.slabOpening', label: 'Floor opening', icon: SlabOpeningIcon, shortcut: 'SH',
   gesture: { kind: 'polygon', shapes: true },
+  options: EllipseShapeBar,
+  space: toggleOutlineArcs,
+  complete: async ({ points, arcs, ellipses }, ctx) => {
+    if (points.length < 3) return;
+    await ctx.execute('architecture.addSlabOpening', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]), ...(arcs ? { arcs } : {}), ...(ellipses ? { ellipses } : {}) });
+  },
+};
+/**
+ * A hole in a floor's or a ceiling's own outline (audit S4): its outline drawn inside it (the floor or ceiling selected, else the
+ * floor, then the ceiling, that holds it); part of the element, edited with its grips, not an opening of its own.
+ */
+const outlineHolePart: ToolDef = {
+  id: 'architecture.outlineHole', label: 'Hole in the outline', icon: SlabOpeningIcon,
+  gesture: { kind: 'polygon', shapes: true },
   options: PlainShapeBar,
   space: toggleOutlineArcs,
   complete: async ({ points, arcs }, ctx) => {
     if (points.length < 3) return;
-    await ctx.execute('architecture.addSlabOpening', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]), ...(arcs ? { arcs } : {}) });
+    const { selected } = useUi.getState();
+    const host = selected.length === 1 ? useSession.getState().nodes.get(selected[0]) : undefined;
+    const id = host && (host.type === 'IfcSlab' || host.type === 'LapinCeiling') ? host.id : undefined;
+    await ctx.execute('architecture.addOutlineHole', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]), ...(arcs ? { arcs } : {}), ...(id ? { id } : {}) });
   },
 };
 /** The roof configurator, on the roof selected (decision 231). */
@@ -472,7 +498,7 @@ const roofOpening = (kind: 'window' | 'dormer'): ToolDef => ({
  * a dormer. The kinds' old tools are its aliases (legacyTools); Create similar and the quick slots start them.
  */
 const { tool: opening, aliases: openingAliases } = openingTool({
-  door: doorPart, window: windowPart, bayWindow: bayWindowPart, opening: wallOpening, floor: slabOpeningPart,
+  door: doorPart, window: windowPart, bayWindow: bayWindowPart, opening: wallOpening, floor: slabOpeningPart, outlineHole: outlineHolePart,
   roofWindow: roofOpening('window'), dormer: roofOpening('dormer'),
 });
 const aliasOf = (id: string) => openingAliases.find((t) => t.id === id)!;

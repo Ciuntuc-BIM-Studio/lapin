@@ -22,11 +22,23 @@ Die Leiste des Werkzeugs **Decke** in der Befehlszeile zeichnet den Umriss als *
 
 ![Das Werkzeug Decke zeichnet einen Kreis neben einer Decke](shots/floor-shapes.webp)
 
+Dieselbe Leiste dient jedem Umrisswerkzeug (Decke, Deckenöffnung, Unterdecke, Loch, Raum und Balkon nach Umriss, Plattform, Grundstück), und drei ihrer Optionen übernehmen den ganzen Umriss mit einem Klick: **Inside walls** (die Wände, die sich um den Punkt schließen), **From drawn shape** (die kleinste geschlossene gezeichnete Form um den Punkt: eine geschlossene Polylinie, ein Rechteck oder ein Kreis, der rund bleibt) und **From room** (der Raum um den Punkt, mit seinen gebogenen Kanten).
+
+![Die Leiste der Umrisswerkzeuge, From drawn shape gewählt](shots/outline-sources.webp)
+
+Für Decke, Deckenöffnung, Unterdecke und Raum nach Umriss bietet die Leiste auch **Ellipse**: Mittelpunkt, Ende einer Halbachse, dann die andere. Die Kanten des Umrisses folgen der wahren Ellipse (vier Viertelkanten), genau gemessen; eine von der Ellipse weggezogene Ecke macht ihre zwei Kanten gerade, eine Ecke an einer elliptischen Kante wird nicht abgerundet. IFC trägt sie als IfcEllipse. **From drawn shape** übernimmt eine gezeichnete Ellipse ebenso.
+
+![Eine elliptische Decke neben einer gezeichneten Ellipse](shots/ellipse-floor.webp)
+
 Jede Kante einer Decke, einer Deckenöffnung oder einer abgehängten Decke kann gebogen sein. Klicken Sie mit der rechten Maustaste nahe einer Kante auf die ausgewählte Decke und wählen Sie **Zum Bogen machen**: Die Kante wölbt sich um ein Achtel ihrer Länge nach außen, und in der Mitte des Bogens erscheint ein runder Griff. Ziehen Sie ihn, um den Bogen durch den gewünschten Punkt zu biegen (die Raute, nun in der Mitte der Sehne, verschiebt weiterhin die Kante). **Gerade machen** macht sie wieder zur Linie. Eine Ecke zwischen zwei geraden Kanten kann abgerundet oder abgefast werden: Klicken Sie sie mit der rechten Maustaste an und wählen Sie **Ecke abrunden…** (Radius eingeben) oder **Ecke abfasen…** (wie weit entlang jeder Kante zurück). Aus der Ecke werden zwei, wo der Bogen oder die Fase auf die Kanten trifft; ein für die Kanten zu großer Radius wird abgelehnt. Jedes ist ein Rückgängig-Schritt.
 
 ![Eine Decke mit einer gebogenen Kante und einer abgerundeten Ecke](shots/floor-curved-edge.webp)
 
 Die Decke wird entlang ihrer Bögen gebaut, keine Sehne mehr als 1 mm davon entfernt, in 3D, Grundrissen und Schnitten; ihre Fläche und ihr Umfang werden an den wahren Bögen gemessen. Eine Schicht, die über eine gebogene Kante hinausgeht (siehe [Schichtausdehnungen](walls.md#layer-extents)), folgt dem Bogen. Auch eine Öffnung kann gebogene Kanten haben, und eine gebogene Decke kann Öffnungen haben. In IFC trägt die Decke ihren Umriss mit den wahren Bögen als Grundriss-Darstellung (eine IfcIndexedPolyCurve mit Bogensegmenten) neben ihrem Körper. Dächer behalten gerade Kanten, weil die Kantenregeln eines Dachs (Traufe, Giebel) je gerader Kante gesetzt werden.
+
+Eine Decke oder eine Unterdecke kann **eigene Löcher** haben: Inseln aus ihrem Umriss, Teil des Elements, keine eigenen Öffnungen. Wählen Sie **Hole in the outline** im Werkzeug **Opening** (unter *In a floor*) und zeichnen Sie es in der Decke (oder der gewählten Decke bzw. Unterdecke) mit derselben Leiste: ein Polygon, dessen Kanten Bögen sein können, ein Rechteck oder einen Kreis. Gewählt zeigt die Decke Ecken und Kanten jedes Lochs als Griffe, mit demselben Rechtsklick (**Make arc**, **Fillet corner…**, **Chamfer corner…**); das Kreuz in der Mitte eines Lochs verschiebt es, sein Rechtsklick bietet **Remove hole**. Die Decke wird um ihre Löcher gebaut, ihre Fläche lässt sie aus, an den wahren Bögen gemessen; ein Loch muss im Umriss und getrennt von den anderen liegen, und ein Umriss, der ein Loch nicht mehr fasst, wird abgelehnt. In **Edit sketch** sind die Löcher ebenfalls Schleifen der Skizze: zeichnen Sie eine weitere geschlossene Schleife hinein, und **Finish sketch** macht sie zum Loch (die größte Schleife ist der Umriss). In IFC sind die Löcher weitere Kurven des Fußabdrucks der Decke und werden als Löcher zurückgelesen. Eine Plattform (**Site → Hole in platform**) nimmt Löcher ebenso: das Gelände im Loch behält seine Höhen.
+
+![Eine gewählte Decke mit einem rechteckigen und einem runden Loch im eigenen Umriss](shots/floor-holes.webp)
 
 #### Skizze bearbeiten
 

@@ -22,11 +22,23 @@ La barre de l'outil **Dalle**, dans la ligne de commande, dessine le contour en 
 
 ![L'outil Dalle dessinant un cercle à côté d'une dalle](shots/floor-shapes.webp)
 
+La même barre sert à tous les outils de contour (plancher, trémie, plafond, trou, pièce et balcon par contour, plateforme, parcelle), et trois de ses choix prennent tout le contour d’un clic : **Inside walls** (les murs qui se ferment autour du point), **From drawn shape** (la plus petite forme dessinée fermée autour du point : une polyligne fermée, un rectangle ou un cercle, qui reste rond) et **From room** (la pièce autour du point, avec ses bords courbes).
+
+![La barre des outils de contour, From drawn shape choisi](shots/outline-sources.webp)
+
+Pour un plancher, une trémie, un plafond et une pièce par contour, la barre propose aussi **Ellipse** : son centre, l’extrémité d’un demi-axe, puis l’autre. Les bords du contour suivent la vraie ellipse (quatre quarts), mesurés exactement ; un angle sorti de l’ellipse rend ses deux bords droits, et un angle près d’un bord elliptique n’est pas arrondi. L’IFC la porte en IfcEllipse. **From drawn shape** prend de même une ellipse dessinée.
+
+![Un plancher elliptique en cours de dessin à côté d’une ellipse dessinée](shots/ellipse-floor.webp)
+
 Toute arête d'une dalle, d'une trémie ou d'un faux plafond peut être courbe. Faites un clic droit sur la dalle sélectionnée près d'une arête et choisissez **Faire un arc** : l'arête se bombe vers l'extérieur d'un huitième de sa longueur, et une poignée ronde apparaît au milieu de l'arc. Faites-la glisser pour courber l'arc par le point voulu (le losange, désormais au milieu de la corde, déplace toujours l'arête). **Rendre droite** la refait en ligne. Un coin entre deux arêtes droites peut être arrondi ou chanfreiné : faites un clic droit dessus et choisissez **Arrondir le coin…** (saisissez le rayon) ou **Chanfreiner le coin…** (saisissez le recul le long de chaque arête). Le coin devient deux, là où l'arc ou le chanfrein rencontre les arêtes ; un rayon trop grand pour les arêtes est refusé. Chacun est une seule étape d'annulation.
 
 ![Une dalle avec une arête courbe et un coin arrondi](shots/floor-curved-edge.webp)
 
 La dalle est construite le long de ses arcs, aucune corde à plus de 1 mm d'eux, en 3D, en plan et en coupe ; son aire et son périmètre sont mesurés sur les arcs vrais. Une couche qui dépasse une arête courbe (voir [Extensions de couche](walls.md#layer-extents)) suit l'arc. Une trémie peut aussi avoir des arêtes courbes, et une dalle courbe peut avoir des trémies. En IFC la dalle porte son contour avec les arcs vrais comme empreinte (une IfcIndexedPolyCurve à segments d'arc), à côté de son corps. Les toitures gardent des arêtes droites, car leurs règles d'arête (égout, pignon) se fixent par arête droite.
+
+Un plancher ou un faux plafond peut avoir des **trous à lui** : des îlots découpés dans son contour, partie de l’élément, pas des trémies à part. Choisissez **Hole in the outline** dans l’outil **Opening** (sous *In a floor*) et dessinez-le dans le plancher (ou le plancher ou plafond sélectionné) avec la même barre : un polygone dont les bords peuvent être des arcs, un rectangle ou un cercle. Sélectionné, le plancher montre les angles et bords de chaque trou comme poignées, avec le même clic droit (**Make arc**, **Fillet corner…**, **Chamfer corner…**) ; la croix au milieu d’un trou le déplace, et son clic droit propose **Remove hole**. Le plancher est construit autour de ses trous et son aire les exclut, mesurés sur leurs vrais arcs ; un trou doit se trouver dans le contour, à l’écart des autres, et un contour modifié qui ne le contient plus est refusé. Dans **Edit sketch**, les trous sont aussi des boucles de l’esquisse : dessinez une autre boucle fermée à l’intérieur et **Finish sketch** en fait un trou (la plus grande boucle est le contour). En IFC, les trous sont d’autres courbes de l’empreinte du plancher, relues comme trous. Une plateforme (**Site → Hole in platform**) prend des trous de la même façon : le terrain dans un trou garde ses cotes.
+
+![Un plancher avec un trou rectangulaire et un trou rond dans son propre contour, sélectionné](shots/floor-holes.webp)
 
 #### Modifier l’esquisse
 

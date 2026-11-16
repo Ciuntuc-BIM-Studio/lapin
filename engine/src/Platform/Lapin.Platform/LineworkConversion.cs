@@ -24,15 +24,27 @@ public sealed record LineworkShape(string Id, string Kind, JsonObject Shape, IRe
     /// <summary>The middle of what it covers: a circle's or an arc's centre, else the mean of its corners.</summary>
     public Vec2 Middle => Centre ?? (Points.Count == 0 ? default : new Vec2(Points.Average(p => p.X), Points.Average(p => p.Y)));
 
-    /// <summary>Whether it is curved: a circle or an arc (a drafted polyline's edges are straight).</summary>
-    public bool Curved => Kind is "circle" or "arc";
+    /// <summary>Whether it is curved: a circle, an arc or an ellipse (a drafted polyline's edges are straight).</summary>
+    public bool Curved => Kind is "circle" or "arc" or "ellipse";
 
     /// <summary>
     /// A closed shape as an outline with arcs (decision 589): a polyline's corners, straight; a circle as four quarter arcs
     /// (<see cref="ArcOutline.Circle"/>), so a floor or a ceiling made from it is round, not its chords.
     /// </summary>
     public (IReadOnlyList<Vec2> Corners, IReadOnlyList<double>? Rises) Outline() =>
-        Kind == "circle" && Centre is { } c && Radius is { } r ? ArcOutline.Circle(c, r) : (Points, null);
+        Kind == "circle" && Centre is { } c && Radius is { } r ? ArcOutline.Circle(c, r)
+        : WholeEllipse() is { } e ? (e.Corners, null)
+        : (Points, null);
+
+    /// <summary>A whole drafted ellipse (audit S4) as an outline's corners (its axes' ends) and elliptical edges; null for any other shape.</summary>
+    (List<Vec2> Corners, EllipseEdge?[] Edges)? WholeEllipse()
+    {
+        if (Kind != "ellipse" || !Closed || Shape["c"] is not JsonArray { Count: >= 2 } c || Shape["m"] is not JsonArray { Count: >= 2 } m || Json.Number(Shape["ratio"]) is not { } ratio) return null;
+        return EllipseEdge.Whole(new Vec2(Json.Number(c[0]) ?? 0, Json.Number(c[1]) ?? 0), new Vec2(Json.Number(m[0]) ?? 0, Json.Number(m[1]) ?? 0), ratio);
+    }
+
+    /// <summary>The outline's elliptical edges, as an <c>ellipses</c> argument (a whole drafted ellipse's four); null for any other shape.</summary>
+    public JsonArray? Ellipses() => WholeEllipse() is { } e ? new JsonArray([.. e.Edges.Select(x => (JsonNode?)x?.ToJson())]) : null;
 }
 
 /// <summary>

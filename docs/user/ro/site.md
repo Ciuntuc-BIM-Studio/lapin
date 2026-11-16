@@ -62,6 +62,10 @@ Liniatura CAD devine elemente de teren: **Drum din desen CAD** (LR) și **Linie 
 
 În 3D, **Vizibilitate / Grafică** ascunde potecile, drumurile, bordurile și pavajele unei vederi odată cu categoria **Topografie**, iar rețelele de axe se ascund și ele prin intrarea lor din Vizibilitate / Grafică; în planuri, în stilurile de obiecte și în seturile de grafică salvate, aceste elemente de amenajare urmează acum și ele categoria Topografie.
 
+## Platforme și parcela
+
+**Site → Platform** (<kbd>PD</kbd>) nivelează terenul în interiorul unui contur la o cotă, cu săpătură și umplutură; **Site → Parcel** (<kbd>PC</kbd>) desenează limita proprietății, linie-punct, cu aria ei. Amândouă își desenează conturul cu aceeași bară ca un planșeu: un **Polygon** ale cărui laturi pot fi arce (<kbd>Space</kbd>), un **Rectangle** sau un **Circle**. Selectate, colțurile și laturile lor au mânere (ale parcelei, pe terenul ei), iar clicul dreapta oferă **Make arc**, **Make straight**, **Fillet corner…** și **Chamfer corner…**, fiecare un pas de anulare. Platforma nivelează terenul după arcele adevărate; aria și perimetrul parcelei se măsoară pe ele, iar inventarul de coordonate îi listează colțurile.
+
 ## Planul de situație și planul de încadrare
 
 Browserul proiectului are, sub niveluri, **Terenul** (*Site*): desenele amplasamentului, care nu țin de niciun etaj. Un proiect nou pornește cu două:

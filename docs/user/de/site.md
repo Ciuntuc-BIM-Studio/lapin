@@ -36,6 +36,10 @@ Eine **Straße** oder ein **Weg** folgt ihrer Achse. In **Korridor…** (CR) gib
 
 CAD-Linien werden zu Geländeelementen: **Straße aus CAD-Linien** (LR) und **Bruchkante aus CAD-Linien** (BL) nehmen eine gezeichnete oder aus einer DXF gebrachte Linie oder Polylinie, folgen jeder Linie ihres Layers, die Ende an Ende anschließt, und machen eine Straße entlang ihr oder eine Bruchkante des Geländes. Tragen die Linien Höhen (die 3D-Linien einer DXF), geben sie das Längsprofil der Straße oder die Höhen der Bruchkante. Solche Linien bleiben mit ihren Höhen erhalten und lassen sich in 3D zeigen (Kategorie *Linienzüge*).
 
+## Plattformen und das Grundstück
+
+**Site → Platform** (<kbd>PD</kbd>) ebnet das Gelände innerhalb eines Umrisses auf eine Höhe ein, mit Abtrag und Auftrag; **Site → Parcel** (<kbd>PC</kbd>) zeichnet die Grundstücksgrenze, strichpunktiert mit ihrer Fläche. Beide zeichnen ihren Umriss mit derselben Leiste wie eine Decke: ein **Polygon**, dessen Kanten Bögen sein können (<kbd>Space</kbd>), ein **Rectangle** oder einen **Circle**. Gewählt haben Ecken und Kanten Griffe (die des Grundstücks an seinem Gelände), und ein Rechtsklick bietet **Make arc**, **Make straight**, **Fillet corner…** und **Chamfer corner…**, je ein Rückgängig-Schritt. Die Plattform ebnet entlang der wahren Bögen ein; Fläche und Umfang des Grundstücks werden an ihnen gemessen, und das Koordinatenverzeichnis listet seine Ecken.
+
 ## Lagepläne und Übersichtslagepläne
 
 Der Projektbrowser hat unter den Ebenen einen Eintrag **Gelände**: die eigenen Zeichnungen des Geländes, die zu keinem Geschoss gehören. Ein neues Projekt beginnt mit zweien:
