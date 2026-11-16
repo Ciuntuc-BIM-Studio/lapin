@@ -564,6 +564,12 @@ public interface IPartSource
     IReadOnlyList<(string Key, string Label)> Fields { get; }
     /// <summary>The parts of <paramref name="element"/>; none when it is not an element of this source's.</summary>
     IEnumerable<ElementPart> PartsOf(IQueryContext query, Entity element);
+    /// <summary>
+    /// Parts whose owner a schedule does not list as an element (a bar drawn on a view is an annotation of it): each with the
+    /// entity it is read through, listed after the elements' parts when the schedule's filter takes that entity (audit S1,
+    /// the rebar's bars). None by default.
+    /// </summary>
+    IEnumerable<(Entity Owner, ElementPart Part)> LooseParts(IQueryContext query) => [];
 }
 
 /// <summary>

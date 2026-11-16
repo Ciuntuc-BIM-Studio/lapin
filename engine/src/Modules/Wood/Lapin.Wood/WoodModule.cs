@@ -31,6 +31,7 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
         r.Service<IViewAnnotations>(this);
         r.Service<IScheduleSource>(new BoardSchedule());
         r.Service<IScheduleSource>(new CltSchedule());
+        CltSchedule.RegisterTemplate(r);
         r.Service<IScheduleSource>(new PanelSchedule());
 
         // A joisted floor type (decision 244): {id (a floor type), spec (null: built of its layers)}.

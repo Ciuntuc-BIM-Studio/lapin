@@ -157,14 +157,17 @@ public static class ColumnBars
     }
 
     /// <summary>The schedule's entries: each column's bars under its type's mark, one entry per length (a hook's tail is as long as its face lets it be).</summary>
-    public static IEnumerable<RebarSchedule.Entry> Entries(IModelView m)
+    public static IEnumerable<RebarSchedule.Entry> Entries(IModelView m) => Owned(m).Select(x => x.Entry);
+
+    /// <summary>The column bars' entries, each with the column it is laid in.</summary>
+    public static IEnumerable<(Entity Owner, RebarSchedule.Entry Entry)> Owned(IModelView m)
     {
         var bases = new Bases(m);
         foreach (var e in m.OfClass(IfcClass.Column))
             if (Of(m, e, bases) is { } laid)
                 foreach (var g in laid.Lengths.GroupBy(x => Math.Round(x, 4)))
-                    yield return new RebarSchedule.Entry(laid.Spec.Mark, laid.Spec.Diameter, laid.Hooked ? "L bar" : "Straight bar", g.Count(), g.First(), Derived: true,
-                        Partition: m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.Str(Rebars.ColumnBarsPartitionKey)?.Trim() ?? "");
+                    yield return (e, new RebarSchedule.Entry(laid.Spec.Mark, laid.Spec.Diameter, laid.Hooked ? "L bar" : "Straight bar", g.Count(), g.First(), Derived: true,
+                        Partition: m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.Str(Rebars.ColumnBarsPartitionKey)?.Trim() ?? ""));
     }
 
     public static int HighestMark(IModelView m, string partition = "") => m.OfClass(IfcClass.ColumnType)
