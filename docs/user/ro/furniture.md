@@ -260,7 +260,7 @@ Miniatura e desenată din previzualizarea tipului. Tipul pleacă cu tot ce îi t
 
 ![Salvează în biblioteca mea: numele, categoria, etichetele, codul de articol și prețul, lângă miniatură](shots/furniture-save-library.webp)
 
-**Interior → Mobilierul meu…** (sau **Mobilierul meu…** din Tipuri de mobilier) arată biblioteca în miniaturi. O cauți după nume, etichetă, articol sau fel și o filtrezi după categorie și după etichetă. Pentru fiecare element:
+**Interior → Mobilierul meu…** deschide [catalogul de pus](interface.md#catalogul-de-pus) pe mobilier (tipurile proiectului, biblioteca și felurile Lapin, căutate împreună); butonul lui **Mobilierul meu…**, sau **Mobilierul meu…** din Tipuri de mobilier, arată biblioteca în miniaturi. O cauți după nume, etichetă, articol sau fel și o filtrezi după categorie și după etichetă. Pentru fiecare element:
 
 - **Inserează** pune tipul în proiectul deschis și îl alege pentru unealta lui. Un material pe care proiectul îl are deja cu acel nume e folosit așa cum e, iar celelalte se creează. Dacă proiectul are deja un tip identic, se folosește acela și nu se face o copie. Fiecare inserare e un singur pas de anulare.
 - **Așază** îl inserează și pornește unealta lui, ca următorul clic să pună o piesă. O bucătărie se desenează de-a lungul unui perete.

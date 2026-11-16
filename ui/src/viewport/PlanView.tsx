@@ -27,6 +27,7 @@ import { ownPlanOf } from './storeyPlan';
 import type { NodeDto, RenderItem } from '../engine/protocol';
 import type { FaceHit, Vec2 } from '../platform/module';
 import { askPlacement, findTool, useToolTick } from '../platform/modules';
+import { gestureKey } from './gestureKeys';
 import { placedAt, reasonLines, requestFor, resetPlacement, setPlacing, usePlacement, verdictFor } from '../platform/placement';
 import { useGripEditor } from './GripLayer';
 import { LiveBar, LiveBox } from './LiveBox';
@@ -509,16 +510,18 @@ export function PlanView() {
       if (e.key === 'Escape' && carrying()) { drag.current = null; carryEnd(); return; }
       // What the key router took (a typed length committed or cleared, the command line) or a CAD step's: not the gesture's.
       if (e.defaultPrevented || useCad.getState().step) return;
-      // A pick-then-point gesture ended after its pick (Enter or Esc) completes with the pick alone; a typed length is the key router's (Enter takes it, Esc clears it).
-      if ((e.key === 'Escape' || e.key === 'Enter') && tool?.gesture?.kind === 'pickThenPoint' && pts.length === 1 && picked.current) {
+      // One rule (gestureKeys.ts): Enter finishes, Esc cancels the step in progress. A typed length is the key router's (Enter takes it, Esc clears it).
+      const act = gestureKey(e.key, tool?.gesture, pts.length, !!picked.current);
+      if (act === 'completePick') {
         const l = useLive.getState();
         if (l.owner === 'tool' && (l.len || l.ang)) return;
-        void complete([pts[0]], picked.current);
+        void complete([pts[0]], picked.current!);
         return;
       }
-      if (e.key === 'Escape') { if (pts.length) setPts([]); else setTool(null); }
-      if (e.key === 'Enter' && tool?.gesture?.kind === 'polygon' && pts.length >= 3) void complete(pts, undefined, undefined, undefined, polygonArcs(tool.gesture.shapes && useOutlineShape.getState().arcs ? nextRise(pts[0]) : 0));
-      if (e.key === 'Enter' && tool?.gesture?.kind === 'polyline' && pts.length >= 2) void complete(pts);
+      if (act === 'clear') { setPts([]); picked.current = undefined; }
+      else if (act === 'exit' || (e.key === 'Escape' && !tool?.gesture)) setTool(null);
+      else if (act === 'complete' && tool?.gesture?.kind === 'polygon') void complete(pts, undefined, undefined, undefined, polygonArcs(tool.gesture.shapes && useOutlineShape.getState().arcs ? nextRise(pts[0]) : 0));
+      else if (act === 'complete') void complete(pts);
     };
     const onUp = (e: KeyboardEvent) => { if (e.key === 'Shift') setOrtho(false); };
     window.addEventListener('keydown', onKey);

@@ -21,7 +21,7 @@ import { SURVEY, downloadLandXml, pickBinary, pickText, pickFiles } from './surv
 import { TerrainSection } from './TerrainSection';
 import { EarthworkSection, PathSection, PlantingSection, RetainingWallSection } from './SiteSections';
 import { isDitch, setBrush, useBrush, type BrushKind } from './prefs';
-import { EntourageSection, entourage, entourageRow } from './entourage';
+import { EntourageSection, entourage, entourageRow, useEntouragePrefs } from './entourage';
 import { lazyPart } from '../../platform/lazyPart';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
@@ -290,6 +290,14 @@ const civil: LapinModule = {
   summary: 'The terrain from survey points or flat, its contours, the brush that works it, platforms and ditches with their cut and fill, paths, retaining walls, plantings, people and cars.',
   // The old Road tool: the Path tool, set to Road.
   legacyTools: [road],
+  // Create similar: the tool that made the element, set as it was (a road's template, a zone or a single plant, the entourage's kind).
+  similar: {
+    IfcEarthworksCut: (n) => activate(n.props.contour ? platform : ditch),
+    IfcPavement: (n) => { usePathKind.setState({ kind: n.props.template === 'road' ? 'road' : 'path' }); if (useUi.getState().tool !== path.id) activate(path); },
+    LapinRetainingWall: () => activate(retainingWall),
+    LapinPlanting: (n) => activate(n.props.contour ? plantingZone : plant),
+    LapinEntourage: (n) => { if (typeof n.props.kind === 'string') useEntouragePrefs.setState({ kind: n.props.kind as never }); if (useUi.getState().tool !== entourage.id) activate(entourage); },
+  },
   tabs: [{
     id: 'site', label: 'Site', order: 40, include: ['modify'],
     groups: [

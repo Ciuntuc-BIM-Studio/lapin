@@ -4,6 +4,7 @@ import { promptText } from '../../shell/prompts';
 import { ask, textField } from '../../shell/AskBox';
 import { ArrowRightToLine, Crosshair, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Unlink2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags, Grid3x3, Settings2, SlidersHorizontal, SquareDashed, Image as ImageIcon, Ruler, Replace, Shapes, Shapes as SymbolsIcon, FolderPlus, ListOrdered, FileImage } from 'lucide-react';
 import { AngleIcon, ArcLengthIcon, DiameterIcon, DimensionIcon, GridAxisIcon, LevelIcon, OrdinateIcon, RadiusIcon, SlopeIcon } from '../../icons';
+import { openPlaceCatalog } from '../../shell/PlaceCatalog';
 import type { Grip, GripStep, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { axisGrips, axisRef, outlineGrips, pt } from '../../viewport/gripKit';
 import type { NodeDto } from '../../engine/protocol';
@@ -688,7 +689,7 @@ const drafting: LapinModule = {
         { label: 'Fill', tools: [cad('hatch', 'Hatch', Hash, 'HATCH')] },
         { label: 'Symbol', tools: [cad('saveSymbol', 'Save as symbol', FolderPlus, 'SAVESYMBOL')], small: [cad('symbol', 'Symbol', Shapes, 'SYMBOL')] },
         orderGroup,
-        { label: 'Linework', tools: [cad('linework', 'Linework', PenLine, 'LINEWORK')], small: [cad('lwJoin', 'Join', CornerUpRight, 'LWJOIN'), cad('lwTrim', 'Trim', Scissors, 'LWTRIM'), cad('lwExtend', 'Extend', ArrowRightToLine, 'LWEXTEND'), cad('lwReset', 'Reset', Eraser, 'LWRESET')] },
+        { label: 'Linework', tools: [cad('linework', 'Linework', PenLine, 'LINEWORK')], small: [cad('lwJoin', 'Join linework', CornerUpRight, 'LWJOIN'), cad('lwTrim', 'Trim linework', Scissors, 'LWTRIM'), cad('lwExtend', 'Extend linework', ArrowRightToLine, 'LWEXTEND'), cad('lwReset', 'Reset linework', Eraser, 'LWRESET')] },
         // Drafted lines and shapes made into elements by the modules' converters (docs/plan-user-extensibility.md §7.4–7.5).
         { label: 'Convert', tools: [{ id: 'drafting.convert', label: 'Convert to…', icon: Replace, run: () => void convertSelection() }], small: [{ id: 'drafting.convertLayers', label: 'Convert layers…', icon: Layers, run: () => void convertLayersInFront() }] },
         { label: 'Layers', tools: [{ id: 'drafting.layers', label: 'Layers', icon: Layers, run: () => useUi.setState({ dialog: 'draftLayers' }) }] },
@@ -718,7 +719,7 @@ const drafting: LapinModule = {
           { id: 'level', label: 'Level', icon: LevelIcon, shortcut: 'LL', run: () => void startCommand('DIMLEVEL') },
         ] },
         // Symbols of the user's own (docs/plan-user-extensibility.md §3): placed with a ghost (R/Space turns, X and Y flip), made from drafting, managed and edited in Manage → Symbols….
-        { label: 'Symbols', tools: [cad('symbol', 'Symbol', Shapes, 'SYMBOL'), cad('saveSymbol', 'Save as symbol', FolderPlus, 'SAVESYMBOL')], small: [{ id: 'drafting.symbols', label: 'Symbols…', icon: SymbolsIcon, run: () => useUi.setState({ dialog: 'symbols' }) }] },
+        { label: 'Symbols', tools: [cad('symbol', 'Symbol', Shapes, 'SYMBOL'), cad('saveSymbol', 'Save as symbol', FolderPlus, 'SAVESYMBOL')], small: [{ id: 'drafting.symbols', label: 'Symbols…', icon: SymbolsIcon, run: () => openPlaceCatalog('symbols') }] },
         orderGroup,
         // An element's own sheet (decision 581): its views from its own axes, chosen in a dialog with the engine's live preview.
         { label: 'Shop drawings', tools: [{

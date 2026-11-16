@@ -260,7 +260,7 @@ Its thumbnail is drawn from the type's preview. The type goes with everything it
 
 ![Save to my library: the name, category, tags, article code and price beside the thumbnail](shots/furniture-save-library.webp)
 
-**Interior → My furniture…** (or **My furniture…** in Furniture types) shows the library as thumbnails. Search it by name, tag, article or kind, and filter it by category and by tag. For each item:
+**Interior → My furniture…** opens the [Place catalogue](interface.md#the-place-catalogue) on the furniture (the project's types, the library and Lapin's kinds, searched together); its **My furniture…** button, or **My furniture…** in Furniture types, shows the library as thumbnails. Search it by name, tag, article or kind, and filter it by category and by tag. For each item:
 
 - **Insert** puts the type into the open project and chooses it for its tool. A material the project already has by that name is used as it is, and the others are made. If the project already has an identical type, that one is used and no copy is made. Each insert is one undo step.
 - **Place** inserts it and starts its tool, so the next click puts a piece down. A kitchen is drawn along a wall.

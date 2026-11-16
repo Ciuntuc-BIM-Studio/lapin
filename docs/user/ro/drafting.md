@@ -23,7 +23,7 @@ Fiecare unealtă își arată literele când ții mouse-ul peste ea; le poți sc
 | Model | | Desen | |
 |---|---|---|---|
 | Perete | <kbd>WA</kbd> | Linie | <kbd>L</kbd> |
-| Ușă, fereastră | <kbd>DR</kbd>, <kbd>WN</kbd> | Polilinie | <kbd>PL</kbd> |
+| Gol ca ușă, fereastră | <kbd>DR</kbd>, <kbd>WN</kbd> | Polilinie | <kbd>PL</kbd> |
 | Placă | <kbd>SB</kbd> | Dreptunghi, cerc, arc | <kbd>REC</kbd>, <kbd>C</kbd>, <kbd>A</kbd> |
 | Acoperiș | <kbd>RF</kbd> | Mută, copiază | <kbd>M</kbd>, <kbd>CO</kbd> |
 | Scară, încăpere | <kbd>ST</kbd>, <kbd>RM</kbd> | Rotește, oglindește, scalează | <kbd>RO</kbd>, <kbd>MI</kbd>, <kbd>SC</kbd> |
@@ -289,7 +289,7 @@ Un simbol așezat se selectează ca orice element. În **Proprietăți → Simbo
 
 ### Simbolurile Lapin și ale tale
 
-**Gestionare → Simboluri…** arată trei locuri, pe categorii. **Încorporate** sunt ale Lapin: săgețile de nord, capul de secțiune și marcajul de fațadă cu numerele lor, callout-ul, marcajul de revizie, linia de rupere, cota de nivel, marcajele de nivel (pe jumătate negru și deschis) și bulinele axelor. Nu pot fi schimbate, dar **Duplică** face o copie a unuia în proiectul tău, de schimbat. **Acest proiect** ține ce ai făcut sau importat; călătorește în fișierul proiectului. **Acest calculator** e biblioteca ta: **Salvează pe acest calculator** pune acolo o copie, iar orice proiect deschis pe acest calculator o poate folosi (**Adaugă în proiect** aduce unul). Alege un simbol ca să-l vezi mare și **Așază pe o vedere**, **Editează…**, **Redenumește**, **Duplică** sau **Șterge** (un simbol așezat întreabă ce se face cu copiile lui).
+**Gestionare → Simboluri…** deschide [catalogul de pus](interface.md#catalogul-de-pus) pe simboluri, ca să pui unul; butonul lui **Simboluri…** deschide administratorul simbolurilor, care arată trei locuri, pe categorii. **Încorporate** sunt ale Lapin: săgețile de nord, capul de secțiune și marcajul de fațadă cu numerele lor, callout-ul, marcajul de revizie, linia de rupere, cota de nivel, marcajele de nivel (pe jumătate negru și deschis) și bulinele axelor. Nu pot fi schimbate, dar **Duplică** face o copie a unuia în proiectul tău, de schimbat. **Acest proiect** ține ce ai făcut sau importat; călătorește în fișierul proiectului. **Acest calculator** e biblioteca ta: **Salvează pe acest calculator** pune acolo o copie, iar orice proiect deschis pe acest calculator o poate folosi (**Adaugă în proiect** aduce unul). Alege un simbol ca să-l vezi mare și **Așază pe o vedere**, **Editează…**, **Redenumește**, **Duplică** sau **Șterge** (un simbol așezat întreabă ce se face cu copiile lui).
 
 ![Gestionare → Simboluri](shots/symbols-dialog.webp)
 

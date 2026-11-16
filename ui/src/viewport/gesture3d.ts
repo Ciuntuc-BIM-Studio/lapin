@@ -45,6 +45,8 @@ export function clickStep(g: PointGesture, pts: readonly Vec2[], p: Vec2, tol: n
 export function enterStep(g: PointGesture, pts: readonly Vec2[]): Step3 | null {
   if (g.kind === 'polygon' && pts.length >= 3) return { pts: [], done: [...pts] };
   if (g.kind === 'polyline' && pts.length >= 2) return { pts: [], done: [...pts] };
+  // A chain (a wall): its pieces are made as they are drawn; Enter ends it (the one rule, gestureKeys.ts).
+  if (g.kind === 'twoPoints' && g.repeat && pts.length) return { pts: [], done: null };
   return null;
 }
 

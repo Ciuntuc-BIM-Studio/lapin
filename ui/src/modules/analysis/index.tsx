@@ -6,7 +6,9 @@ import { notify, useUi } from '../../app/store';
 import { lazyPart } from '../../platform/lazyPart';
 import { areaLoadArgs, lineLoadArgs, pointLoadArgs } from './loads';
 import { openImportTable } from '../core/tables/tables';
-import { currentLoad, LoadOption } from './prefs';
+import { currentLoad, LoadOption, useLoadPrefs } from './prefs';
+import { activate } from '../../platform/modules';
+import type { NodeDto } from '../../engine/protocol';
 import { OccupancySection } from './OccupancySection';
 import { BAR_CLASSES } from './results';
 import { runAnalysis } from './useResults';
@@ -53,6 +55,14 @@ const point: ToolDef = {
   complete: async ({ points: [p] }, ctx) => { const c = chosen('point'); if (c) await ctx.execute('analysis.addPointLoad', pointLoadArgs(ctx.storeyId, p, c.value, c.caseId)); },
 };
 
+/** Create similar on a load: its tool with its value and case (the value as the bar shows it). */
+const likeLoad = (kind: 'area' | 'line' | 'point', tool: ToolDef) => (n: NodeDto) => {
+  const p = useLoadPrefs.getState();
+  const value = typeof n.props.value === 'number' ? String(Math.abs(n.props.value)) : p.values[kind];
+  useLoadPrefs.setState({ values: { ...p.values, [kind]: value }, caseId: typeof n.props.caseId === 'string' ? n.props.caseId : p.caseId });
+  activate(tool);
+};
+
 const analysis: LapinModule = {
   id: 'analysis',
   name: 'Structural analysis',
@@ -63,6 +73,7 @@ const analysis: LapinModule = {
     groups: [{ label: 'Loads', tools: [cases, area, line, point, runTool], small: [importLoads, importCases] }],
   }],
   dialogs: { analysisLoads: LoadsDialog, analysisResults: ResultsDialog },
+  similar: { IfcStructuralPlanarAction: likeLoad('area', area), IfcStructuralCurveAction: likeLoad('line', line), IfcStructuralPointAction: likeLoad('point', point) },
   background: AnalysisWatch,
   overlays: [AnalysisCard],
   overlays3d: [Analysis3D, ShellContours3D],

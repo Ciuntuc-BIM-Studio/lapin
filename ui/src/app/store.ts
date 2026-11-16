@@ -29,7 +29,7 @@ export const addModuleViews = (kinds: Iterable<string>): void => { for (const k 
 export const isTableView = (v: ViewKind | undefined | null): boolean => v != null && moduleViews.has(v);
 export type Dialog = string | null;
 /** A bare wall opening's head (decision 253): 'round' is the semicircle. */
-export type OpeningHead = 'rect' | 'segmental' | 'elliptical' | 'round' | 'radiused';
+export type OpeningHead = 'rect' | 'segmental' | 'elliptical' | 'round' | 'radiused' | 'circle';
 
 /** What one pane shows. */
 export interface Pane {

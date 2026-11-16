@@ -18,7 +18,7 @@ import { draftOf, openOpeningDialog, revealMaterial, revealThickness, REVEALS } 
 
 const HEADS: { kind: OpeningHead; label: string }[] = [
   { kind: 'rect', label: 'Rectangle' }, { kind: 'segmental', label: 'Segmental arch' }, { kind: 'elliptical', label: 'Elliptical arch' },
-  { kind: 'round', label: 'Semicircle' }, { kind: 'radiused', label: 'Radiused corners' },
+  { kind: 'round', label: 'Semicircle' }, { kind: 'radiused', label: 'Radiused corners' }, { kind: 'circle', label: 'Circle' },
 ];
 
 /** The rise a head takes when none is asked (as the engine's JoineryShapes.Rise): a segment's sixth of the width, an ellipse's quarter, corners of 150 mm. */
@@ -76,7 +76,7 @@ const num = (n: NodeDto, k: string, d: number) => (typeof n.props[k] === 'number
 
 const headOf = (n: NodeDto): OpeningHead => {
   const k = n.props.shape;
-  return k === 'segmental' || k === 'elliptical' || k === 'round' || k === 'radiused' ? k : 'rect';
+  return k === 'segmental' || k === 'elliptical' || k === 'round' || k === 'radiused' || k === 'circle' ? k : 'rect';
 };
 
 /** The wall openings selected with this one (they change together, as doors and windows of a type do). */

@@ -6,7 +6,7 @@
  * The engine side of a module (C#) is loaded the same way, by id.
  */
 
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import type * as THREE from 'three';
 import type { NodeDto } from '../engine/protocol';
 import type { Icon } from '../icons';
@@ -45,8 +45,8 @@ export type Gesture =
   }
   /**
    * An element picked, then a point (a bar cut: one end of the lap on the bar, then the other): the first click's point and the
-   * element, then the second point; a length typed after the first click comes as `typed`. Enter or Escape after the first
-   * click completes with that click alone. In 3D the pick alone completes.
+   * element, then the second point; a length typed after the first click comes as `typed`. Enter after the first
+   * click completes with that click alone; Esc drops it (viewport/gestureKeys.ts). In 3D the pick alone completes.
    */
   | { kind: 'pickThenPoint'; /** IFC classes it can be used on. */ types: string[]; /** What the HUD says the tool asks for. */ hint?: string }
   /**
@@ -125,6 +125,34 @@ export interface TypedTool {
   thumb?: ComponentType<{ type: NodeDto }>;
   /** A type in a few words (its layers and thickness, a door's size). */
   about?: (type: NodeDto) => string | null;
+}
+
+/**
+ * A source of the Place catalogue (audit 2026-11-15, S15; docs/plan-user-extensibility.md §4.1): what a module lets one put in a
+ * view (symbols, components, parts, furniture, MEP equipment), shown with the other sources' in one dialog with one search.
+ */
+export interface PlaceSourceDef {
+  id: string;
+  label: string;
+  /** Its place among the sources (lower first). */
+  order?: number;
+  /** Its entries, read while the catalogue is open (a React hook: it may read stores and ask the engine). */
+  useEntries: () => PlaceEntry[];
+  /** The dialog its entries are made and edited in (Symbols…, Families…), opened from the catalogue. */
+  manage?: { label: string; run: () => void };
+}
+
+export interface PlaceEntry {
+  key: string;
+  name: string;
+  /** Where it is kept or what kind it is (Built-in, This project, This computer; Seating, Heating…), its heading in the list. */
+  group?: string;
+  /** A few words on it (its size, its uses). */
+  about?: string;
+  /** It drawn small. */
+  thumb?: ReactNode;
+  /** Starts placing it (the catalogue has closed). */
+  place: () => void | Promise<void>;
 }
 
 export interface RibbonGroupDef {
@@ -407,6 +435,13 @@ export interface LapinModule {
   references?: Record<string, (node: NodeDto) => RefLine[]>;
   /** Create Similar (CS): the tool that builds this class, set up like the element (its type, its style). */
   similar?: Record<string, (node: NodeDto) => void>;
+  /**
+   * Create Similar for elements a class alone does not tell apart (MEP nodes of many classes by their role, Studio's placed parts):
+   * what starts the tool like the element, or null when this module does not make it. Asked after `similar`.
+   */
+  similarFor?: (node: NodeDto) => (() => void) | null;
+  /** What this module offers the Place catalogue (S15). */
+  placeSources?: PlaceSourceDef[];
   /** Match Type (MA): elements of this class given another type. */
   setType?: Record<string, (ids: string[], typeId: string) => Promise<unknown>>;
   /** What a type's configurator sets, shown and edited under Type parameters on its elements, by the type's class. */

@@ -13,9 +13,11 @@ import {
   Boxes, PackagePlus, PencilRuler, ArrowUpDown, ArrowUpToLine, ArrowRightToLine, Eraser, Keyboard, Rainbow, Ruler, Spline, CopyPlus, CornerUpRight, Slash, Redo2, ScanEye, SquarePen, CircleCheckBig, Circle, Hexagon, RectangleHorizontal, Blocks, Box, BrickWall, CircleDot, Cone, Container, Cylinder, Eye, FlipHorizontal2, Frame, Grid3x3, Layers2, Move3d, Octagon, PackageOpen, PenTool, Pyramid,
   RefreshCcw, Rotate3d, RotateCw, Scissors, Slice, SquareMinus, SquarePlus, SquareRoundCorner, SquareSplitHorizontal, SquareSquare, SquareStack, Torus, TriangleRight, Unlink, Waypoints,
 } from 'lucide-react';
-import type { Grip, LapinModule, RefLine, ToolDef, ToolInput } from '../../platform/module';
+import type { Grip, LapinModule, PlaceEntry, RefLine, ToolDef, ToolInput } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
-import { gripsOf } from '../../platform/modules';
+import { activate, findTool, gripsOf } from '../../platform/modules';
+import { useFamilies, usePlaceFamily } from './families/familyApi';
+import { openPlaceCatalog } from '../../shell/PlaceCatalog';
 import { fromJson } from '../../viewport/cad/shapes';
 import { notify, useUi } from '../../app/store';
 import { activeStorey, execute, query, useSession } from '../../engine/session';
@@ -45,7 +47,7 @@ import { cancel as cancelCommand } from '../../viewport/cad/session';
 import { toggleSketchupKeys, useDisplay } from '../../app/display';
 import './familyLibrary';
 import { FamiliesDialog } from './families/FamiliesDialog';
-import { isPlacedPart, FamilyFromSketchDialog, FamilySection, placeFamilyTool, startFamilyFromSketch } from './families/FamilyTools';
+import { partOf, isPlacedPart, FamilyFromSketchDialog, FamilySection, placeFamilyTool, startFamilyFromSketch } from './families/FamilyTools';
 
 /** The thickness and height last used, the next command's defaults. */
 const last = { thickness: 0.2, height: 3 };
@@ -757,7 +759,17 @@ const primitive = (shape: string, label: string, icon: ToolDef['icon']): ToolDef
 });
 
 /** Families of the user's own (docs/plan-user-extensibility.md §5.6): the place tool, the dialog with the editor, and one made from drafted outlines. */
-const familiesDialogTool: ToolDef = { id: 'studio.families', label: 'Families…', icon: Boxes, run: () => useUi.setState({ dialog: 'families' }) };
+// The catalogue on the parts (S15); its Families… button opens the editor.
+const familiesDialogTool: ToolDef = { id: 'studio.families', label: 'Families…', icon: Boxes, run: () => openPlaceCatalog('parts') };
+
+/** The Place catalogue's parts (families, S15): the project's, each a click from the Family tool set to it. */
+function usePartEntries(): PlaceEntry[] {
+  const { families } = useFamilies();
+  return families.map((f): PlaceEntry => ({
+    key: `part:${f.id}`, name: f.name, group: 'This project', about: f.uses ? `${f.uses} placed` : undefined, thumb: <Boxes size={26} strokeWidth={1.3} />,
+    place: () => { usePlaceFamily.setState({ familyId: f.id, values: {}, rotation: 0, mirror: false }); if (useUi.getState().tool !== placeFamilyTool.id) activate(placeFamilyTool); },
+  }));
+}
 const familyFromSketch: ToolDef = { id: 'studio.familyFromSketch', label: 'Family from sketch…', icon: PackagePlus, run: startFamilyFromSketch };
 
 registerEditMode();
@@ -829,6 +841,21 @@ const studio: LapinModule = {
   planOverlays: [ConstraintOverlay],
   drawingOverlays: [ConstraintOverlay],
   overlays3d: [PartPlane3D, PartFlex3D, PartSketch3D],
+  // Create similar: a placed part's Family tool with its family, values, turn and hand; a primitive's tool of its shape.
+  placeSources: [{ id: 'parts', label: 'Families', order: 40, useEntries: usePartEntries, manage: { label: 'Families…', run: () => useUi.setState({ dialog: 'families' }) } }],
+  similarFor: (n) => {
+    if (isPlacedPart(n)) {
+      const familyId = partOf(n.id);
+      if (!familyId) return null;
+      const values = Object.fromEntries(Object.entries((n.props.values as Record<string, unknown> | undefined) ?? {}).map(([k, v]) => [k, String(v)]));
+      return () => {
+        usePlaceFamily.setState({ familyId, values, rotation: Number(n.props.rotation ?? 0) || 0, mirror: n.props.mirror === true });
+        if (useUi.getState().tool !== placeFamilyTool.id) activate(placeFamilyTool);
+      };
+    }
+    const tool = n.props.operation === 'primitive' && typeof n.props.shape === 'string' ? findTool(`studio.primitive.${n.props.shape}`) : null;
+    return tool ? () => activate(tool) : null;
+  },
   grips: Object.fromEntries(SOLID_CLASSES.map((c) => [c, solidGrips])),
   references: Object.fromEntries(SOLID_CLASSES.map((c) => [c, solidRefs])),
 };

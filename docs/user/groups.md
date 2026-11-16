@@ -48,7 +48,7 @@ An apartment type has a fixed size: it does not stretch to fit a wider or narrow
 
 ![An apartment type in two instances, the second mirrored](shots/units-plan.webp)
 
-**Manage → Components** lists the project's components, with how many instances each has. Rename them there, or select all the instances of one. The instances are ordinary elements in plans, sections, schedules, quantities and exports, each with its own GlobalId.
+**Manage → Components** opens the [Place catalogue](interface.md#the-place-catalogue) on the components: a card copies an instance from a base point. Its **Components…** button lists the project's components, with how many instances each has. Rename them there, or select all the instances of one. The instances are ordinary elements in plans, sections, schedules, quantities and exports, each with its own GlobalId.
 
 ![A component in four instances, one turned: the outline changed in one, followed by all](shots/components-3d.webp)
 

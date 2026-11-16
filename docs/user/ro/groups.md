@@ -48,7 +48,7 @@ Un tip de apartament are dimensiuni fixe: nu se întinde după un loc mai lat sa
 
 ![Un tip de apartament în două instanțe, a doua oglindită](shots/units-plan.webp)
 
-**Gestionare → Componente** listează componentele proiectului și câte instanțe are fiecare. Acolo le redenumești sau le selectezi instanțele. Instanțele sunt elemente obișnuite în planuri, secțiuni, liste, cantități și exporturi, fiecare cu GlobalId-ul ei.
+**Gestionare → Componente** deschide [catalogul de pus](interface.md#catalogul-de-pus) pe componente: o carte copiază o instanță de la un punct de bază. Butonul lui **Componente…** listează componentele proiectului și câte instanțe are fiecare. Acolo le redenumești sau le selectezi instanțele. Instanțele sunt elemente obișnuite în planuri, secțiuni, liste, cantități și exporturi, fiecare cu GlobalId-ul ei.
 
 ![O componentă în patru instanțe, una rotită: conturul schimbat într-una, urmat de toate](shots/components-3d.webp)
 

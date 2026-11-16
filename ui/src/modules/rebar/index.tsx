@@ -11,6 +11,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { axisGrips, pt } from '../../viewport/gripKit';
 import { notify, useUi } from '../../app/store';
 import { execute } from '../../engine/session';
+import { activate } from '../../platform/modules';
 import { RebarRunSection, RebarSection } from './RebarSection';
 import { BarDotIcon, LBarIcon, PolylineBarIcon, StirrupIcon, StirrupsIcon, TieIcon, UBarIcon } from './icons';
 import { structureHooks } from '../structure/hooks';
@@ -135,7 +136,7 @@ const settings: ToolDef = { id: 'rebar.settings', label: 'Rebar settings', icon:
  */
 const splitBar: ToolDef = {
   id: 'rebar.split', label: 'Split bar', icon: Slice, shortcut: 'RC',
-  gesture: { kind: 'pickThenPoint', types: ['LapinRebar'], hint: 'click the bar where the lap starts or ends, then its other end, or type the lap length · Enter or Esc ends the settings\' lap at the click' },
+  gesture: { kind: 'pickThenPoint', types: ['LapinRebar'], hint: 'click the bar where the lap starts or ends, then its other end, or type the lap length · Enter ends the settings\' lap at the click, Esc cancels' },
   complete: async ({ points: [p, q], entity, typed }, ctx) => {
     if (!entity) return;
     const args: Record<string, unknown> = { id: entity.id, point: [p.x, p.y] };
@@ -226,6 +227,15 @@ export const rebarModule: LapinModule = {
     ],
   }],
   hotbar: [straight, stirrup, run, sectionHere],
+  // Create similar: a bar's shape tool (a bar of a project shape: that shape), a run's tool.
+  similar: {
+    LapinRebar: (n) => {
+      if (typeof n.props.shapeId === 'string') { useShapePick.setState({ shapeId: n.props.shapeId }); activate(userShapeBar); return; }
+      const shape = typeof n.props.shape === 'string' ? n.props.shape : 'straight';
+      activate([straight, lBar, uBar, stirrup, tie, dot, polylineBar].find((t) => t.id === `rebar.${shape}`) ?? straight);
+    },
+    LapinRebarRun: () => activate(run),
+  },
   // A beam's and a column's grips here are their generated labels' (the stirrups', the column bars'), beside the structure module's own.
   grips: { LapinRebar: barGrips, LapinRebarRun: runGrips, IfcBeam: labelGrips, IfcColumn: labelGrips },
   propertySections: [

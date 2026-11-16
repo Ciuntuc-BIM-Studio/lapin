@@ -2778,3 +2778,11 @@ path.part-flex-ghost { fill: none; stroke: var(--accent); stroke-width: 1.6; str
 /* An outline sketched on its own plan (forum topic 97, stage 3): whose sketch it is, Finish and Cancel. */
 .outline-sketch-bar { position: absolute; top: 56px; left: 50%; transform: translateX(-50%); z-index: 6; display: inline-flex; align-items: center; gap: 10px; padding: 4px 6px 4px 12px; background: var(--hud); border: 1px solid var(--accent); border-radius: 6px; font-size: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); white-space: nowrap; }
 .outline-sketch-title { font-weight: 600; }
+/* The Place catalogue (S15): one search over every source, the cards in a grid. */
+.place-catalog { width: min(860px, calc(100vw - 32px)); }
+.place-catalog-bar { gap: 8px; align-items: center; margin-bottom: 8px; }
+.place-catalog-bar input[type=search] { flex: 1; min-width: 0; }
+.place-catalog-list { max-height: 60vh; overflow: auto; display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.place-catalog-list .catalog-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.place-catalog .place-group { margin: 6px 0 4px; }
+.place-catalog .place-source > h3 { margin: 4px 0; }

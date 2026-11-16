@@ -8,7 +8,10 @@ import { CopyToStoreysIcon, ElevationIcon, MoveToStoreyIcon, ProfileIcon, Sectio
 import { execute, useSession } from '../../engine/session';
 import { notify } from '../../app/store';
 import { nextVisualStyle, XRAY_NOTICE } from '../../app/visualStyle';
-import { similarOf } from '../../platform/modules';
+import { ribbonTabs, similarFor } from '../../platform/modules';
+import { openPulldown } from '../../shell/pulldown';
+import { PlaceCatalogDialog, openPlaceCatalog } from '../../shell/PlaceCatalog';
+import { corePlaceSources } from './placeSources';
 import { registerCommand, startCommand } from '../../viewport/cad/session';
 import type { LapinModule, ToolDef } from '../../platform/module';
 import { voidLabelGrips } from '../../platform/labelParts';
@@ -100,19 +103,32 @@ const ExchangeExportDialog = lazyPart(() => import('./ExchangeExportDialog').the
 const JgExportDialog = lazyPart(() => import('./JgExportDialog').then((m) => m.JgExportDialog), { title: 'Export JG Structures' });
 const PlanStoreysDialog = lazyPart(() => import('./PlanStoreys').then((m) => m.PlanStoreysDialog), { title: 'Storeys shown' });
 
+/**
+ * Every kind of type in one place (audit 2026-11-15: "Types" was on five tabs, each opening its own dialog): a list of the tools of
+ * every tab's Types group (Wall types, Floor types, Doors & windows, Structure types, Furniture types…); each tab keeps its own group.
+ */
+const allTypesTool: ToolDef = {
+  id: 'manage.types', label: 'All types', icon: Layers3,
+  get items() {
+    const seen = new Set<string>(['manage.types']);
+    return ribbonTabs().flatMap((t) => t.groups.filter((g) => g.label === 'Types').flatMap((g) => [...g.tools, ...(g.small ?? [])])).filter((t) => !seen.has(t.id) && !!seen.add(t.id));
+  },
+  run: () => openPulldown(allTypesTool),
+};
+
 /** Create Similar: the selected element's tool, set up like it. */
 /** Whether the selection is something Create similar can start from (an element of a class a module has a "similar" for). */
 function canCreateSimilar(): boolean {
   const id = useUi.getState().selection;
   const node = id ? useSession.getState().nodes.get(id) : undefined;
-  return !!node && !!similarOf(node.type);
+  return !!node && !!similarFor(node);
 }
 function createSimilar() {
   const id = useUi.getState().selection;
   const node = id ? useSession.getState().nodes.get(id) : undefined;
-  const f = node ? similarOf(node.type) : null;
-  if (!node || !f) { notify('Select a wall, floor, roof, door or window to make more like it.'); return; }
-  f(node);
+  const f = node ? similarFor(node) : null;
+  if (!node || !f) { notify('Select an element a tool places (a wall, a door, a column, a piece of furniture…) to make more like it.'); return; }
+  f();
 }
 
 // Match properties (decision 490; AutoCAD's MATCHPROP, Revit's Match Type): MATCHTYPE, the older name, too.
@@ -194,6 +210,7 @@ const core: LapinModule = {
     groups: [
       { label: 'Settings', tools: [
         { id: 'manage.materials', label: 'Materials', icon: Palette, run: () => useUi.setState({ dialog: 'materials' }) },
+        allTypesTool,
         { id: 'manage.standards', label: 'Drafting standards', icon: Hash, run: () => useUi.setState({ dialog: 'standards' }) },
         { id: 'manage.objectStyles', label: 'Object styles', icon: PenTool, run: () => useUi.setState({ dialog: 'objectStyles' }) },
         { id: 'manage.location', label: 'Location', icon: MapPin, run: () => useUi.setState({ dialog: 'location' }) },
@@ -207,7 +224,8 @@ const core: LapinModule = {
       ] },
       { label: 'Files', tools: [
         { id: 'manage.links', label: 'Links', icon: Link2, run: () => useUi.setState({ dialog: 'links' }) },
-        { id: 'manage.components', label: 'Components', icon: Boxes, run: () => useUi.setState({ dialog: 'components' }) },
+        // The catalogue on the components (S15); its Components… button opens the list that renames and selects them.
+        { id: 'manage.components', label: 'Components', icon: Boxes, run: () => openPlaceCatalog('components') },
         { id: 'manage.versions', label: 'Versions', icon: History, run: () => useUi.setState({ dialog: 'versions' }) },
         // The types imports made replaced by the project's own, the choice remembered (docs/spec-ifc.md, Î9).
         // The names the office gives to fields, read by schedules, tags and formulas (docs/plan-user-extensibility.md §11.4).
@@ -225,7 +243,9 @@ const core: LapinModule = {
         // The sheets' title blocks: Lapin's, the project's and this computer's, drawn in the designer with live fields (decision 340).
         { id: 'manage.titleBlocks', label: 'Title blocks…', icon: PanelBottomClose, run: () => useUi.setState({ dialog: 'titleBlocks' }) },
         // The symbols: Lapin's, the project's and this computer's, drawn in the symbol editor, placed on views (docs/plan-user-extensibility.md §3).
-        { id: 'manage.symbols', label: 'Symbols…', icon: Shapes, run: () => useUi.setState({ dialog: 'symbols' }) },
+        { id: 'manage.symbols', label: 'Symbols…', icon: Shapes, run: () => openPlaceCatalog('symbols') },
+        // Everything that can be placed, from every module, with one search (S15).
+        { id: 'manage.placeCatalog', label: 'Place from catalogue…', icon: LayoutGrid, run: () => openPlaceCatalog() },
         // The norms the configurators read as data: stair limits, reinforcement steels and diameters, the roofs' least pitches (§5.4); every value indicative.
         { id: 'manage.rules', label: 'Rules…', icon: Scale, run: () => useUi.setState({ dialog: 'rules' }) },
         // Classification systems the user brings (Uniclass, OmniClass, CCI, the office's), keynotes and shared parameters (§7.3).
@@ -359,7 +379,8 @@ const core: LapinModule = {
   // An opening void's label is held by its opening (a roof window's by its roof) where a view draws the voids (decision 292).
   grips: { LapinView: (n, v) => [...sectionGrips(n, v), ...cropGrips(n)], LapinInset: insetGrips, LapinCallout: (n, v) => calloutGrips(n, v), IfcOpeningElement: voidLabelGrips, IfcRoof: voidLabelGrips },
   references: { LapinView: sectionRefs },
-  dialogs: { insetPick: InsetPickDialog, components: ComponentsDialog, importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, copyToStoreys: CopyToStoreysDialog, shopDrawing: ShopDrawingDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, fieldAliases: FieldAliasesDialog, typePacks: TypePacksDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, exportHtml: ExportHtmlDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, documents: DocumentsDialog, documentTemplates: TemplatesDialog, titleBlocks: TitleBlocksDialog, symbols: SymbolsDialog, rules: RulesDialog, classifications: ClassificationsDialog, importTable: ImportTableDialog, saveSymbol: SaveSymbolDialog, projectInfo: ProjectInfoDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, sun: SunDialog, exportExchange: ExchangeExportDialog, exportJg: JgExportDialog, sections: SectionsDialog, coordination: CoordinationDialog, profiles: ProfilesDialog, profileLibraries: ProfileLibrariesDialog, quickSelect: QuickSelectDialog, fieldsInspector: FieldsInspectorDialog },
+  placeSources: corePlaceSources,
+  dialogs: { insetPick: InsetPickDialog, placeCatalog: PlaceCatalogDialog, components: ComponentsDialog, importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, copyToStoreys: CopyToStoreysDialog, shopDrawing: ShopDrawingDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, fieldAliases: FieldAliasesDialog, typePacks: TypePacksDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, exportHtml: ExportHtmlDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, documents: DocumentsDialog, documentTemplates: TemplatesDialog, titleBlocks: TitleBlocksDialog, symbols: SymbolsDialog, rules: RulesDialog, classifications: ClassificationsDialog, importTable: ImportTableDialog, saveSymbol: SaveSymbolDialog, projectInfo: ProjectInfoDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, sun: SunDialog, exportExchange: ExchangeExportDialog, exportJg: JgExportDialog, sections: SectionsDialog, coordination: CoordinationDialog, profiles: ProfilesDialog, profileLibraries: ProfileLibrariesDialog, quickSelect: QuickSelectDialog, fieldsInspector: FieldsInspectorDialog },
   background: CoreBackground,
   propertySections: [
     { id: 'group', label: 'Group', classes: ['IfcGroup'], component: GroupSection },

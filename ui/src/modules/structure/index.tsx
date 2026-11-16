@@ -6,16 +6,18 @@ import { columnSnapPoints, underColumnsArgs } from './padLevel';
 import type { Grip, LapinModule, RefLine, ToolDef } from '../../platform/module';
 import { flipAcross, pathGrips, pathRef, pt } from '../../viewport/gripKit';
 import { arcOf } from '../../viewport/arc';
-import { usageOf } from '../../engine/model';
+import { typeOf, usageOf } from '../../engine/model';
+import { activate } from '../../platform/modules';
+import { TypeOption, typeArg, useTypePick } from './typePick';
 import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
 import { ensureStorey, execute, useSession } from '../../engine/session';
 import { StructureSection } from './StructureSection';
 import { sameKind } from '../../shell/params';
 import { lazyPart } from '../../platform/lazyPart';
-import { StripOption, stripArgs } from './stripOptions';
+import { StripOption, stripArgs, useStripPrefs, wallTypes } from './stripOptions';
 import { withAutoJoinMenus } from '../core/autoJoin';
-import { arcAlias, chainTool } from '../core/chainTool';
+import { arcAlias, chainTool, setChainMode } from '../core/chainTool';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const StructureTypesDialog = lazyPart(() => import('./StructureTypesDialog').then((m) => m.StructureTypesDialog), { title: 'Structure types' });
@@ -23,12 +25,13 @@ const StructureTypesDialog = lazyPart(() => import('./StructureTypesDialog').the
 const column: ToolDef = {
   id: 'structure.column', label: 'Column', icon: ColumnIcon, shortcut: 'CL',
   gesture: { kind: 'point' },
-  complete: async ({ points: [p] }, ctx) => { await ctx.execute('structure.addColumn', { storeyId: ctx.storeyId, x: p.x, y: p.y }); },
+  options: () => <TypeOption kind="column" />,
+  complete: async ({ points: [p] }, ctx) => { await ctx.execute('structure.addColumn', { storeyId: ctx.storeyId, x: p.x, y: p.y, ...typeArg('column') }); },
 };
 const beam: ToolDef = chainTool({
-  id: 'structure.beam', label: 'Beam', icon: BeamIcon, shortcut: 'BM',
-  line: async (a, b, ctx) => { await ctx.execute('structure.addBeam', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y }); },
-  arc: async (a, b, p, ctx) => { await ctx.execute('structure.addBeam', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, x3: p.x, y3: p.y }); },
+  id: 'structure.beam', label: 'Beam', icon: BeamIcon, shortcut: 'BM', more: () => <TypeOption kind="beam" />,
+  line: async (a, b, ctx) => { await ctx.execute('structure.addBeam', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, ...typeArg('beam') }); },
+  arc: async (a, b, p, ctx) => { await ctx.execute('structure.addBeam', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, x3: p.x, y3: p.y, ...typeArg('beam') }); },
 });
 /** The old Curved beam: the Beam tool, in Arc. */
 const curvedBeam: ToolDef = arcAlias({ id: 'structure.curvedBeam', label: 'Curved beam', icon: CurvedBeamIcon, shortcut: 'BC' }, beam);
@@ -44,7 +47,8 @@ const pad: ToolDef = {
   id: 'structure.pad', label: 'Pad footing', icon: PadFootingIcon, shortcut: 'PF',
   gesture: { kind: 'point' },
   snapPoints: (storeyId) => columnSnapPoints(useSession.getState(), storeyId),
-  complete: async ({ points: [p] }, ctx) => { await ctx.execute('structure.addPadFooting', { storeyId: ctx.storeyId, x: p.x, y: p.y }); },
+  options: () => <TypeOption kind="pad" />,
+  complete: async ({ points: [p] }, ctx) => { await ctx.execute('structure.addPadFooting', { storeyId: ctx.storeyId, x: p.x, y: p.y, ...typeArg('pad') }); },
 };
 /** A pad footing under each selected column (else each of the plan's storey, or of the storey above it) that has none, in the infrastructure storey. */
 const padsUnderColumns: ToolDef = {
@@ -120,6 +124,19 @@ const structure: LapinModule = {
   dialogs: { structureTypes: StructureTypesDialog },
   grips: { IfcBeam: memberGrips, IfcFooting: (n) => (n.props.start ? memberGrips(n) : []), IfcColumn: pointGrip },
   references: { IfcBeam: pathRefs, IfcFooting: (n) => (n.props.start ? pathRefs(n) : []) },
+  // Create similar: the element's tool with its type (a beam's or a strip's arc too; a strip with its wall when its type has one).
+  similar: {
+    IfcColumn: (n) => { useTypePick.setState({ column: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(column); },
+    IfcBeam: (n) => { useTypePick.setState({ beam: typeOf(useSession.getState(), n.id)?.id ?? null }); setChainMode(beam.id, Math.abs(arcOf(n.props)?.rise ?? 0) > 1e-6 ? 'arc' : 'line'); activate(beam); },
+    IfcFooting: (n) => {
+      const type = typeOf(useSession.getState(), n.id);
+      if (!n.props.start) { useTypePick.setState({ pad: type?.id ?? null }); activate(pad); return; }
+      const withWall = !!type && wallTypes(useSession.getState().nodes).some((t) => t.id === type.id);
+      useStripPrefs.setState(withWall ? { wall: true, typeId: type!.id } : { wall: false, typeId: useStripPrefs.getState().typeId });
+      setChainMode(strip.id, Math.abs(arcOf(n.props)?.rise ?? 0) > 1e-6 ? 'arc' : 'line');
+      activate(strip);
+    },
+  },
   setType: {
     IfcColumn: (ids, typeId) => execute('structure.setType', { ids, typeId }),
     IfcBeam: (ids, typeId) => execute('structure.setType', { ids, typeId }),
