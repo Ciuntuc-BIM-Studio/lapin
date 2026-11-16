@@ -226,11 +226,4 @@ public static partial class SketchConstraints
         }
         return o;
     }
-
-    /// <summary>A part sketch's dimension's value worked out with some values (a formula's, or its number).</summary>
-    internal static double? LocalValue(JsonObject c, IReadOnlyDictionary<string, double> values)
-    {
-        if ((string?)c["formula"] == null && c["value"] == null) return null;
-        try { return Value(c, values); } catch (CommandException) { return null; }
-    }
 }

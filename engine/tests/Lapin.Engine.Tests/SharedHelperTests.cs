@@ -1,3 +1,4 @@
+using Lapin.Architecture.Roofs;
 using Lapin.Geometry;
 using Lapin.Model;
 
@@ -27,6 +28,19 @@ public class SharedHelperTests
         Assert.Equal(1, Polyline2.SegmentsDistance(new Vec2(0, 0), new Vec2(2, 0), new Vec2(1, 1), new Vec2(1, 3)), 12);
         Assert.Equal(0, Polyline2.SegmentsDistance(new Vec2(0, 0), new Vec2(2, 0), new Vec2(1, 0), new Vec2(1, 3)), 12);
         Assert.Equal(Math.Sqrt(2), Polyline2.SegmentsDistance(new Vec2(0, 0), new Vec2(1, 0), new Vec2(2, 1), new Vec2(3, 1)), 12);
+    }
+
+    [Fact]
+    public void The_roofs_edge_offset_is_the_polygons_and_takes_a_repeated_corner()
+    {
+        Vec2[] rect = [new(0, 0), new(10, 0), new(10, 6), new(0, 6)];
+        var o = RoofSolver.OffsetEdges(rect, [0.5, 0.5, 0.5, 0.5]);
+        Assert.Equal([new(-0.5, -0.5), new(10.5, -0.5), new(10.5, 6.5), new(-0.5, 6.5)], o);
+        // A corner given twice: both copies go to the mitre (the roof's own copy left one on the corner, unmoved).
+        Vec2[] twice = [new(0, 0), new(10, 0), new(10, 0), new(10, 6), new(0, 6)];
+        var t = RoofSolver.OffsetEdges(twice, [0.5, 0.5, 0.5, 0.5, 0.5]);
+        Assert.Equal(new Vec2(10.5, -0.5), t[1]);
+        Assert.Equal(new Vec2(10.5, -0.5), t[2]);
     }
 
     [Fact]

@@ -296,18 +296,8 @@ public static class Entourage
     // ---- Cars ----
 
     /// <summary>A profile's part below (<paramref name="below"/>) or above a level (Sutherland–Hodgman on one line).</summary>
-    static List<(double X, double Z)> Clip(IReadOnlyList<(double X, double Z)> poly, double level, bool below)
-    {
-        var o = new List<(double X, double Z)>();
-        bool In((double X, double Z) p) => below ? p.Z <= level : p.Z >= level;
-        for (var i = 0; i < poly.Count; i++)
-        {
-            var a = poly[i]; var b = poly[(i + 1) % poly.Count];
-            if (In(a)) o.Add(a);
-            if (In(a) != In(b)) { var t = (level - a.Z) / (b.Z - a.Z); o.Add((a.X + (b.X - a.X) * t, level)); }
-        }
-        return o;
-    }
+    static List<(double X, double Z)> Clip(IReadOnlyList<(double X, double Z)> poly, double level, bool below) =>
+        Polygon2.ClipHalf(poly, p => below ? level - p.Z : p.Z - level, (a, b, t) => (a.X + (b.X - a.X) * t, level));
 
     static Solid? Across(Frame f, IReadOnlyList<(double X, double Z)> profile, double width, string tag) =>
         profile.Count < 3 ? null : Prism.Extrude([.. profile.Select(p => f.P(p.X, -width / 2, p.Z))], null, f.D(0, width, 0), tag);

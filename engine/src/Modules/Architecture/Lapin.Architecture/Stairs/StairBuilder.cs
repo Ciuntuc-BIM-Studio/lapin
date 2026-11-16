@@ -345,13 +345,7 @@ public static class StairBuilder
     }
 
     /// <summary>A profile extruded so the solid comes out with positive volume, whichever way the ring runs.</summary>
-    internal static Solid? Oriented(List<Vec3> ring, Vec3 across, string tag)
-    {
-        var s = Prism.Extrude(ring, null, across, tag);
-        if (s == null || Measure.SignedVolume(s) >= 0) return s;
-        ring.Reverse();
-        return Prism.Extrude(ring, null, across, tag);
-    }
+    internal static Solid? Oriented(List<Vec3> ring, Vec3 across, string tag) => Prism.ExtrudeOriented(ring, across, tag);
 
     /// <summary>
     /// The railing's paths on one side: points along the nosing line with the surface under them, the

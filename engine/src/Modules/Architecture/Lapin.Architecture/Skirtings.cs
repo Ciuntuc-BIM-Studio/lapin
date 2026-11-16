@@ -530,21 +530,15 @@ public static class Skirtings
     /// <summary>A polyline offset to its left by <paramref name="d"/> (negative: right), mitred at its corners.</summary>
     static List<Vec2> Offset(IReadOnlyList<Vec2> line, bool closed, double d)
     {
-        var o = new List<Vec2>();
-        var count = line.Count;
-        for (var i = 0; i < count; i++)
-        {
-            Vec2 N(int a, int b) => (line[b] - line[a]).Normalized().Perp;
-            var hasIn = i > 0 || closed;
-            var hasOut = i < count - 1 || closed;
-            // A closed line repeats its first point last: its ends are one corner.
-            var inN = hasIn ? N(i > 0 ? i - 1 : count - 2, i > 0 ? i : count - 1) : N(0, 1);
-            var outN = hasOut ? N(i < count - 1 ? i : 0, i < count - 1 ? i + 1 : 1) : inN;
-            var dot = Vec2.Dot(inN, outN);
-            o.Add(line[i] + (dot < -0.95 ? inN : (inN + outN) * (1 / (1 + dot))) * d);
-        }
+        if (!closed || line.Count < 3) return Polyline2.Offset(line, d, maxMitre: MaxMitre);
+        // A closed line repeats its first point last: its ends are one corner.
+        var o = Polyline2.Offset(line.Take(line.Count - 1).ToList(), d, closed: true, maxMitre: MaxMitre);
+        o.Add(o[0]);
         return o;
     }
+
+    /// <summary>A corner sharper than about 162° goes no further out than this many thicknesses.</summary>
+    const double MaxMitre = 6.3;
 
     /// <summary>The skirting's length as built: its pieces' lines (the plan's "hit" items), the doors' gaps left out.</summary>
     public static double LengthOf(ElementGeometry? g) =>

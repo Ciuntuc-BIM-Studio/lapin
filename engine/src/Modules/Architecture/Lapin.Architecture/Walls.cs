@@ -892,8 +892,8 @@ public static class Walls
             var next = new List<IReadOnlyList<Vec2>>();
             foreach (var p in pieces)
             {
-                var before = ClipHalf(p, q => Side(first, q) * sa);
-                var after = ClipHalf(p, q => Side(second, q) * sb);
+                var before = Polygon2.ClipHalf(p, q => Side(first, q) * sa);
+                var after = Polygon2.ClipHalf(p, q => Side(second, q) * sb);
                 if (before.Count >= 3 && Math.Abs(Polygon2.SignedArea(before)) > 1e-8) next.Add(before);
                 if (after.Count >= 3 && Math.Abs(Polygon2.SignedArea(after)) > 1e-8) next.Add(after);
             }
@@ -1192,23 +1192,8 @@ public static class Walls
     static List<Vec2> ClipX(IReadOnlyList<Vec2> poly, Vec2 origin, Vec2 dir, double from, double to)
     {
         if (to - from <= 1e-9) return [];
-        var first = ClipHalf(poly, p => Vec2.Dot(p - origin, dir) - from);
-        return first.Count < 3 ? [] : ClipHalf(first, p => to - Vec2.Dot(p - origin, dir));
-    }
-
-    /// <summary>The part of a convex polygon where <paramref name="inside"/> is not negative (a half-plane), its edge cut straight.</summary>
-    static List<Vec2> ClipHalf(IReadOnlyList<Vec2> pts, Func<Vec2, double> inside)
-    {
-        var o = new List<Vec2>();
-        for (var i = 0; i < pts.Count; i++)
-        {
-            var a = pts[i];
-            var b = pts[(i + 1) % pts.Count];
-            double da = inside(a), db = inside(b);
-            if (da >= 0) o.Add(a);
-            if ((da >= 0) != (db >= 0)) o.Add(a + (b - a) * (da / (da - db)));
-        }
-        return o;
+        var first = Polygon2.ClipHalf(poly, p => Vec2.Dot(p - origin, dir) - from);
+        return first.Count < 3 ? [] : Polygon2.ClipHalf(first, p => to - Vec2.Dot(p - origin, dir));
     }
 
     /// <summary>

@@ -55,9 +55,6 @@ public static class Openings
         return OpeningOf(m, fillId) is { } opening && WallOf(m, opening.Id) is { } wall ? spec.Positioned(m, wall, own, fill?.Bool("flipSide") == true) : spec;
     }
 
-    /// <summary>The spec a type keeps, without any element's position worked in.</summary>
-    public static JoinerySpec? TypeSpecOf(Entity type) => JoinerySpec.From(type.Attrs["spec"]);
-
     /// <summary>
     /// A door's or window's opening of its own size (<c>holeWidth</c>, <c>holeHeight</c> on the opening, metres): the hole
     /// an imported file cuts round its fill, kept as the file has it where it differs from the fill's size (docs/spec-ifc.md,

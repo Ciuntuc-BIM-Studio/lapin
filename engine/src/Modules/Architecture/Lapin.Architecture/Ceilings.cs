@@ -259,20 +259,7 @@ public static class Ceilings
         public List<Vec2> Piece(int i, int j)
         {
             var c = Cell(i, j);
-            var poly = _local.ToList();
-            foreach (var (n, d) in new[] { (new Vec2(1, 0), c.X0), (new Vec2(-1, 0), -c.X1), (new Vec2(0, 1), c.Z0), (new Vec2(0, -1), -c.Z1) })
-            {
-                if (poly.Count == 0) break;
-                var o = new List<Vec2>();
-                for (var k = 0; k < poly.Count; k++)
-                {
-                    var (p, q) = (poly[k], poly[(k + 1) % poly.Count]);
-                    var (sp, sq) = (Vec2.Dot(n, p) - d, Vec2.Dot(n, q) - d);
-                    if (sp >= 0) o.Add(p);
-                    if ((sp >= 0) != (sq >= 0)) o.Add(p + (q - p) * (sp / (sp - sq)));
-                }
-                poly = o;
-            }
+            var poly = Polygon2.ClipBox(_local, c.X0, c.Z0, c.X1, c.Z1);
             return Polygon2.SignedArea(poly) is var area && Math.Abs(area) > 1e-6 ? poly.Select(World).ToList() : [];
         }
 

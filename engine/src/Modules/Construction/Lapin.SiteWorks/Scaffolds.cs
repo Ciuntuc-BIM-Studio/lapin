@@ -155,14 +155,7 @@ public static class Scaffolds
     }
 
     /// <summary>Where two lines meet (the second's start when they are parallel).</summary>
-    static Vec2 Meet((Vec2 A, Vec2 B) l1, (Vec2 A, Vec2 B) l2)
-    {
-        var (r, s) = (l1.B - l1.A, l2.B - l2.A);
-        var den = Vec2.Cross(r, s);
-        if (Math.Abs(den) < 1e-9 * r.Length * s.Length) return l2.A;
-        var t = Vec2.Cross(l2.A - l1.A, s) / den;
-        return l1.A + r * t;
-    }
+    static Vec2 Meet((Vec2 A, Vec2 B) l1, (Vec2 A, Vec2 B) l2) => Polyline2.LineIntersection(l1.A, l1.B - l1.A, l2.A, l2.B - l2.A) ?? l2.A;
 
     /// <summary>One straight run of the scaffold: along its inner line from A to B, the outside towards <see cref="Out"/>.</summary>
     public sealed record Run(Vec2 A, Vec2 B, Vec2 Dir, Vec2 Out, IReadOnlyList<double> Bays, double Base, int Lifts, double GuardTop, IReadOnlyList<double> Feet)

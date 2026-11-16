@@ -180,34 +180,9 @@ public static class OpeningReferences
     {
         if (Inside(poly, a) || Inside(poly, b)) return 0;
         var best = double.PositiveInfinity;
-        for (var i = 0; i < poly.Count; i++) best = Math.Min(best, SegSeg(poly[i], poly[(i + 1) % poly.Count], a, b));
+        for (var i = 0; i < poly.Count; i++) best = Math.Min(best, Polyline2.SegmentsDistance(poly[i], poly[(i + 1) % poly.Count], a, b));
         return best;
     }
 
-    static bool Inside(IReadOnlyList<Vec2> poly, Vec2 p)
-    {
-        var inside = false;
-        for (int i = 0, j = poly.Count - 1; i < poly.Count; j = i++)
-        {
-            var (pi, pj) = (poly[i], poly[j]);
-            if ((pi.Y > p.Y) != (pj.Y > p.Y) && p.X < (pj.X - pi.X) * (p.Y - pi.Y) / (pj.Y - pi.Y) + pi.X) inside = !inside;
-        }
-        return inside;
-    }
-
-    static double SegSeg(Vec2 a, Vec2 b, Vec2 c, Vec2 d)
-    {
-        double O(Vec2 p, Vec2 q, Vec2 r) => Vec2.Cross(q - p, r - p);
-        var (o1, o2, o3, o4) = (O(a, b, c), O(a, b, d), O(c, d, a), O(c, d, b));
-        if ((o1 > 0) != (o2 > 0) && (o3 > 0) != (o4 > 0) && o1 != 0 && o2 != 0 && o3 != 0 && o4 != 0) return 0;
-        return Math.Min(Math.Min(PointSeg(c, a, b), PointSeg(d, a, b)), Math.Min(PointSeg(a, c, d), PointSeg(b, c, d)));
-    }
-
-    static double PointSeg(Vec2 p, Vec2 a, Vec2 b)
-    {
-        var ab = b - a;
-        var l2 = Vec2.Dot(ab, ab);
-        var t = l2 < 1e-18 ? 0 : Math.Clamp(Vec2.Dot(p - a, ab) / l2, 0, 1);
-        return (p - (a + ab * t)).Length;
-    }
+    static bool Inside(IReadOnlyList<Vec2> poly, Vec2 p) => Polygon2.Contains(poly, p);
 }

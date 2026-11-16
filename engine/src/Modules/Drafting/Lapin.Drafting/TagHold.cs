@@ -106,17 +106,7 @@ public static class TagHold
     }
 
     /// <summary>An outline's area centroid (its corners' middle when it has no area).</summary>
-    static Vec2 Centroid(IReadOnlyList<Vec2> loop)
-    {
-        double a = 0, cx = 0, cy = 0;
-        for (var i = 0; i < loop.Count; i++)
-        {
-            var (p, q) = (loop[i], loop[(i + 1) % loop.Count]);
-            var cross = p.X * q.Y - q.X * p.Y;
-            a += cross; cx += (p.X + q.X) * cross; cy += (p.Y + q.Y) * cross;
-        }
-        return Math.Abs(a) < 1e-12 ? new Vec2(loop.Average(p => p.X), loop.Average(p => p.Y)) : new Vec2(cx / (3 * a), cy / (3 * a));
-    }
+    static Vec2 Centroid(IReadOnlyList<Vec2> loop) => Polygon2.Centroid(loop);
 
     /// <summary>The frame a tag's points were set by; null for a tag that has none (an older project's, its element gone).</summary>
     public static Frame? Held(Entity tag) =>

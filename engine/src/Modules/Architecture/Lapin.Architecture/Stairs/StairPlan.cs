@@ -139,7 +139,7 @@ public static class StairPlan
             }
         var anyBelow = lines.Any(l => !l.Above);
         if (r.Arc is { } arc0 && r.Spec.Shape == "spiral")
-            lines.Add(new(Circle(arc0.Centre, Math.Max(0.03, Math.Min(0.08, arc0.Inner * 0.8)), 16), true, false));
+            lines.Add(new([.. Chords.Ring(arc0.Centre, Math.Max(0.03, Math.Min(0.08, arc0.Inner * 0.8)))], true, false));
 
         // The walking lines: one up the stair, or a split stair's one up each flight.
         var paths = new List<List<WalkSeg>>();
@@ -275,6 +275,4 @@ public static class StairPlan
         var m = a + (b - a) * Math.Clamp(at, s / 2 / length + 1e-6, 1 - s / 2 / length - 1e-6);
         yield return [a, m - d * (s / 2), m - d * (s / 6) + n * (s / 3), m + d * (s / 6) - n * (s / 3), m + d * (s / 2), b];
     }
-
-    static Vec2[] Circle(Vec2 c, double r, int n) => Enumerable.Range(0, n).Select(k => c + new Vec2(Math.Cos(2 * Math.PI * k / n), Math.Sin(2 * Math.PI * k / n)) * r).ToArray();
 }
