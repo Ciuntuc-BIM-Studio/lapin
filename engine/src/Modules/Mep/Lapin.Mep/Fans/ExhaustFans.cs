@@ -713,9 +713,7 @@ sealed class FanProvisions : IProvisionOpenings
 
     static Solid? Round(Openings.WallFrame f, double u, double zc, double size, double y0, double y1)
     {
-        const int sides = 32;
-        var r = size / 2 / Math.Cos(Math.PI / sides);
-        var outline = Enumerable.Range(0, sides).Select(k => f.At(u + r * Math.Cos(2 * Math.PI * k / sides), y0, zc + r * Math.Sin(2 * Math.PI * k / sides))).ToList();
+        var outline = Chords.Ring(new Vec2(u, zc), size / 2, circumscribed: true).Select(p => f.At(p.X, y0, p.Y)).ToList();
         return Prism.Extrude(outline, null, f.At(0, y1, 0) - f.At(0, y0, 0), "provision");
     }
 }
