@@ -6,6 +6,7 @@
  * here; a sheet places it.
  */
 
+import { promptText } from '../shell/prompts';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, ChartColumn, ChevronDown, ChevronUp, FileDown, Maximize, Plus, Settings2 } from 'lucide-react';
 import { setScheduleEditor, useBars } from '../app/bars';
@@ -124,11 +125,11 @@ export function ScheduleView() {
   const buildUps = types && (d?.drawings ?? []).includes('buildup');
   const addRow = () => {
     if (!joinery) { void execute('architecture.addScheduleManualRow', { id: node.id }); return; }
-    const l = window.prompt('Row label');
+    const l = promptText('Row label');
     if (l?.trim()) void execute('architecture.addScheduleRow', { id: node.id, label: l.trim() });
   };
   const addColumn = () => {
-    const l = window.prompt(joinery ? 'Mark of the new column' : 'Column name');
+    const l = promptText(joinery ? 'Mark of the new column' : 'Column name');
     if (l?.trim()) void execute('architecture.addScheduleColumn', { id: node.id, label: l.trim() });
   };
   const sortBy = (key: string) => {

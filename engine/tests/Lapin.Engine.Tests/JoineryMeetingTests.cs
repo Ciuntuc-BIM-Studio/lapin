@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Lapin.Architecture;
+using Lapin.Geometry;
 using Lapin.Drafting;
 using Lapin.Ifc;
 using Lapin.Platform;
@@ -202,7 +203,7 @@ public class JoineryMeetingTests : IDisposable
         Assert.Equal(2, plan.Count(st => st.Pts.Count > 8 && !st.Closed));
         // The elevation with hardware: a lever's rose (a circle) on the active leaf only.
         var elevation = JoinerySymbols.Elevation(s, false, "handle", true);
-        var roses = elevation.Where(st => st.Pts.Count > 30 && st.Weight == "outline").ToList();
+        var roses = elevation.Where(st => st.Pts.Count > Chords.Circle(0.026) && st.Weight == "outline").ToList();
         Assert.NotEmpty(roses);
         Assert.All(roses, st => Assert.True(st.Pts.Min(q => q.X) > 0));
     }

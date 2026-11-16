@@ -34,6 +34,9 @@ public sealed class PackageForeign
 
     PackageForeign(IReadOnlyList<ForeignPart> parts, IReadOnlyList<ForeignPart>? moduleParts = null) { Parts = parts; ModuleParts = moduleParts ?? []; }
 
+    /// <summary>Why the file's entries of other tools could not be read (null: they were, or there are none); a save over that file is then refused (audit 15.11.2026, P6).</summary>
+    public string? Unreadable { get; private init; }
+
     /// <summary>A project with nothing of other tools.</summary>
     public static readonly PackageForeign None = new([]);
 
@@ -46,7 +49,7 @@ public sealed class PackageForeign
             using var file = File.OpenRead(path);
             return Of(file);
         }
-        catch (IOException) { return None; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return new PackageForeign([]) { Unreadable = ex.Message }; }
     }
 
     /// <summary>The foreign entries in a package's bytes (the browser's).</summary>
@@ -58,11 +61,19 @@ public sealed class PackageForeign
 
     static PackageForeign Of(Stream input)
     {
+        ZipArchive zip;
+        PackageManifest manifest;
         try
         {
-            using var zip = new ZipArchive(input, ZipArchiveMode.Read, leaveOpen: true);
+            zip = new ZipArchive(input, ZipArchiveMode.Read, leaveOpen: true);
             // Only a format 3 package: an old project's (format 2) entries are its model, read by LegacyPackage, not another tool's.
-            var manifest = LapinPackage.ReadManifest(zip);
+            manifest = LapinPackage.ReadManifest(zip);
+        }
+        catch (Exception ex) when (ex is InvalidDataException or System.Text.Json.JsonException) { return None; }
+        // A format 3 package whose entries cannot be read: never "none", which a save would then write (audit 15.11.2026, P6).
+        using var _ = zip;
+        try
+        {
             // Lapin's own entries are those its manifest lists (a text folder, scripts/, holds them beside other tools' files).
             var own = manifest.Parts.ToDictionary(p => p.Path, p => p.Module, StringComparer.Ordinal);
             var parts = new List<ForeignPart>();
@@ -82,7 +93,7 @@ public sealed class PackageForeign
             return parts.Count == 0 && moduleParts.Count == 0 ? None
                 : new PackageForeign(parts.OrderBy(p => p.Path, StringComparer.Ordinal).ToList(), moduleParts.OrderBy(p => p.Path, StringComparer.Ordinal).ToList());
         }
-        catch (Exception ex) when (ex is InvalidDataException or System.Text.Json.JsonException) { return None; }
+        catch (Exception ex) when (ex is InvalidDataException or IOException or System.Text.Json.JsonException) { return new PackageForeign([]) { Unreadable = ex.Message }; }
     }
 
     /// <summary>

@@ -31,7 +31,7 @@ public static class Nodes
     public static double Elevation(Entity e, Role role) => e.NumOrNull("elevation") ?? role.Elevation;
 
     /// <summary>The storey's elevation under the node (0 when it stands on none).</summary>
-    public static double StoreyZ(IModelView m, Entity e) => Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0;
+    public static double StoreyZ(IModelView m, Entity e) => Spatial.Elevation(m, e);
 
     /// <summary>A node's own point into project space: turned by its rotation about its origin, raised by its elevation over its storey.</summary>
     public static Vec3 ToWorld(IModelView m, Entity e, Role role, Vec3 local)
@@ -111,7 +111,8 @@ public static class Nodes
         double w = size.X / 2, d = size.Y / 2;
         Vec2[] box = [P(-w, -d), P(w, -d), P(w, d), P(-w, d)];
         o.Add(new PlanItem("hit", true, box));
-        List<Vec2> Circle(double r, int n = 24) => Enumerable.Range(0, n).Select(k => P(r * Math.Cos(2 * Math.PI * k / n), r * Math.Sin(2 * Math.PI * k / n))).ToList();
+        // Every ring as Chords makes it (at least 24 sides): the symbols are drawn round, whatever their size.
+        List<Vec2> Circle(double r) => [.. Chords.Ring(new Vec2(0, 0), r).Select(q => P(q.X, q.Y))];
         switch (role.Symbol)
         {
             case "rise":
@@ -119,7 +120,7 @@ public static class Nodes
                 // ISO 4067: a ring; a dot for a rise (the pipe comes up to the eye), a cross for a drop.
                 var up = RiseTop(m, e) > ToWorld(m, e, role, Vec3.Zero).Z;
                 o.Add(new PlanItem("symbol", true, Circle(0.06)));
-                if (up) o.Add(new PlanItem("heavy", true, Circle(0.015, 12)));
+                if (up) o.Add(new PlanItem("heavy", true, Circle(0.015)));
                 else { o.Add(new PlanItem("symbol", false, [P(-0.042, -0.042), P(0.042, 0.042)])); o.Add(new PlanItem("symbol", false, [P(-0.042, 0.042), P(0.042, -0.042)])); }
                 break;
             }
@@ -177,7 +178,7 @@ public static class Nodes
             case "regulator":
                 // A valve with the regulator's spring dome over it.
                 o.Add(new PlanItem("symbol", true, [P(-w, -d), P(w, d), P(w, -d), P(-w, d)]));
-                o.Add(new PlanItem("symbol", true, Circle(Math.Min(w, d) * 0.6, 12)));
+                o.Add(new PlanItem("symbol", true, Circle(Math.Min(w, d) * 0.6)));
                 break;
             case "gasMeter":
                 o.Add(new PlanItem("symbol", true, box));
@@ -200,14 +201,14 @@ public static class Nodes
             case "cooker":
                 o.Add(new PlanItem("symbol", true, box));
                 foreach (var (cx, cy) in new[] { (-0.5, -0.5), (0.5, -0.5), (-0.5, 0.5), (0.5, 0.5) })
-                    o.Add(new PlanItem("symbol", true, Enumerable.Range(0, 16).Select(k => P(cx * w + 0.08 * Math.Cos(2 * Math.PI * k / 16), cy * d + 0.08 * Math.Sin(2 * Math.PI * k / 16))).ToList()));
+                    o.Add(new PlanItem("symbol", true, [.. Chords.Ring(new Vec2(cx * w, cy * d), 0.08).Select(q => P(q.X, q.Y))]));
                 break;
             case "waterHeater":
                 o.Add(new PlanItem("symbol", true, box));
-                o.Add(new PlanItem("symbol", true, Circle(Math.Min(w, d) * 0.6, 16)));
+                o.Add(new PlanItem("symbol", true, Circle(Math.Min(w, d) * 0.6)));
                 break;
             case "tappingTee":
-                o.Add(new PlanItem("heavy", true, Circle(0.07, 16)));
+                o.Add(new PlanItem("heavy", true, Circle(0.07)));
                 o.Add(new PlanItem("symbol", false, [P(-w, 0), P(w, 0)]));
                 break;
             case "oilTank":
@@ -235,8 +236,8 @@ public static class Nodes
                 break;
             case "smokeDetector":
                 o.Add(new PlanItem("symbol", true, Circle(0.15)));
-                o.Add(new PlanItem("symbol", true, Circle(0.08, 16)));
-                o.Add(new PlanItem("heavy", true, Circle(0.025, 8)));
+                o.Add(new PlanItem("symbol", true, Circle(0.08)));
+                o.Add(new PlanItem("heavy", true, Circle(0.025)));
                 break;
             case "heatDetector":
                 o.Add(new PlanItem("symbol", true, Circle(0.15)));
@@ -246,7 +247,7 @@ public static class Nodes
             case "callPoint":
                 // A square with a dot: the manual call point.
                 o.Add(new PlanItem("symbol", true, [P(-0.1, -0.1), P(0.1, -0.1), P(0.1, 0.1), P(-0.1, 0.1)]));
-                o.Add(new PlanItem("heavy", true, Circle(0.035, 12)));
+                o.Add(new PlanItem("heavy", true, Circle(0.035)));
                 break;
             case "sounder":
             case "sounderBeacon":
@@ -281,7 +282,7 @@ public static class Nodes
                 o.Add(new PlanItem("heavy", false, [P(0, d * 0.2), P(0, d)]));
                 break;
             case "sprinkler":
-                o.Add(new PlanItem("symbol", true, Circle(0.06, 16)));
+                o.Add(new PlanItem("symbol", true, Circle(0.06)));
                 foreach (var a in new[] { 0.25, 0.75, 1.25, 1.75 })
                     o.Add(new PlanItem("symbol", false, [P(0.06 * Math.Cos(a * Math.PI), 0.06 * Math.Sin(a * Math.PI)), P(0.11 * Math.Cos(a * Math.PI), 0.11 * Math.Sin(a * Math.PI))]));
                 break;
@@ -290,7 +291,7 @@ public static class Nodes
                 break;
         }
         // What a detector or a hydrant covers, a dashed circle round it: a "reach", drawn and printed but never picked, boxed or framed.
-        if (Coverage(e, role) is > 0 and var reach) o.Add(new PlanItem("reach", true, Circle(reach, 72)));
+        if (Coverage(e, role) is > 0 and var reach) o.Add(new PlanItem("reach", true, Circle(reach)));
         // The ports, as short ticks, so a run finds them by eye.
         foreach (var p in Ports(m, e))
             if (Math.Abs(p.Dir.Z) < 0.9) o.Add(new PlanItem("symbol", false, [p.At.Xy, p.At.Xy + p.Dir.Xy * 0.06]));

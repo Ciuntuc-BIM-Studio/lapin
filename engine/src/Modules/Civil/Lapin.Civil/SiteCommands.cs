@@ -26,7 +26,7 @@ public static class SiteCommands
             foreach (var cx in new[] { x0, x1 }) foreach (var cy in new[] { y0, y1 }) pts.Add(new Vec3(cx, cy, z));
             var attrs = new JsonObject
             {
-                ["points"] = Terrains.PointsJson(pts), ["datum"] = 0.0, ["interval"] = Json.Number(a["interval"]) ?? 0.5, ["majorEvery"] = 5, ["depth"] = Json.Number(a["depth"]) ?? 2, ["material"] = earth.Id,
+                ["points"] = Terrains.PointsJson(pts), ["datum"] = 0.0, ["interval"] = Terrains.Interval(Json.Number(a["interval"])) ?? 0.5, ["majorEvery"] = 5, ["depth"] = Json.Number(a["depth"]) ?? 2, ["material"] = earth.Id,
             };
             var t = new Entity(ctx.NewId(), IfcClass.GeographicElement, ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : "Terrain", attrs, Terrains.Predefined);
             ctx.Add(t);
@@ -199,7 +199,7 @@ public static class SiteCommands
             {
                 var contour = Terrains.CheckOutline(Args.Points(a));
                 attrs["contour"] = Terrains.ContourJson(contour);
-                attrs["density"] = Json.Number(a["density"]) ?? 3;
+                attrs["density"] = Plantings.Density(Json.Number(a["density"]) ?? 3);
                 name = $"Planting {ctx.Model.OfClass(Plantings.Class).Count(x => Plantings.IsZone(x)) + 1}";
             }
             else
@@ -221,7 +221,7 @@ public static class SiteCommands
             var attrs = e.CloneAttrs();
             if (a["points"] != null) attrs["contour"] = Terrains.ContourJson(Terrains.CheckOutline(Args.Points(a)));
             if (a.ContainsKey("x") && a.ContainsKey("y")) { var at = Args.Point(a, "x", "y"); attrs["at"] = new JsonArray(at.X, at.Y); }
-            foreach (var k in new[] { "density", "seed" }) if (Json.Number(a[k]) is { } v) attrs[k] = v;
+            foreach (var k in new[] { "density", "seed" }) if (Json.Number(a[k]) is { } v) attrs[k] = k == "density" ? Plantings.Density(v) : v;
             if (a["species"] is JsonArray arr) attrs["species"] = Plantings.SpeciesJson(arr.Select(Plantings.Parse).OfType<Species>());
             ctx.Replace(e.With(attrs: attrs));
             return null;

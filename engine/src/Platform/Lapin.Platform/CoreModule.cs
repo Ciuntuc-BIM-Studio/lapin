@@ -21,6 +21,12 @@ public sealed class CoreModule : ILapinModule
     /// </summary>
     public const double MaxStoreyHeight = 100;
 
+    /// <summary>A storey's number as a command gives it: none when left out or not a number, refused when non-finite ("NaN", "Infinity").</summary>
+    static double? Given(double? number, JsonNode? given, string key) =>
+        number is { } v ? v
+            : given is JsonValue jv && jv.TryGetValue<string>(out var s) && double.TryParse(s, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var d) && !double.IsFinite(d)
+                ? throw new CommandException($"The storey's {key} is a number of metres.") : null;
+
     /// <summary>A storey's base level: a number, within ±10 km of ±0.00.</summary>
     static double CheckLevel(double z) =>
         double.IsFinite(z) && Math.Abs(z) <= 10_000 ? z : throw new CommandException($"A storey's level must be within ±10 km of ±0.00 (asked {z:0.##} m).");
@@ -69,6 +75,7 @@ public sealed class CoreModule : ILapinModule
         r.Service<IProjectUpgrade>(new StoreyPlans.DefaultPlanUpgrade());
         r.Service<IProjectUpgrade>(new ViewDetail.LevelUpgrade());
         r.Service<IProjectUpgrade>(new MaterialHatchUpgrade());
+        r.Service<IProjectUpgrade>(new ViewFilterUpgrade());
         r.Service<IProjectUpgrade>(new ViewStyles.StructureUpgrade());
         // References move, turn, mirror, copy and rise like any element (decision 448).
         var references = new ReferencePlacement();
@@ -141,12 +148,12 @@ public sealed class CoreModule : ILapinModule
             var building = Spatial.EnsureBuilding(ctx);
             var storeys = Spatial.Storeys(ctx.Model).ToList();
             var top = storeys.LastOrDefault();
-            var elevation = CheckLevel(Json.Number(a["elevation"]) ?? (top == null ? 0 : top.Num("elevation") + top.Num("height", 3)));
+            var elevation = CheckLevel(Given(Json.Number(a["elevation"]), a["elevation"], "elevation") ?? (top == null ? 0 : top.Num("elevation") + top.Num("height", 3)));
             var name = (string?)a["name"] ?? (storeys.Count == 0 ? "Ground floor" : $"Level {storeys.Count}");
             var storey = new Entity(ctx.NewId(), IfcClass.BuildingStorey, name, new JsonObject
             {
                 ["elevation"] = elevation,
-                ["height"] = Json.Number(a["top"]) is { } t ? TopToHeight(elevation, t) : CheckHeight(Json.Number(a["height"]) ?? 3.0),
+                ["height"] = Given(Json.Number(a["top"]), a["top"], "top") is { } t ? TopToHeight(elevation, t) : CheckHeight(Given(Json.Number(a["height"]), a["height"], "height") ?? 3.0),
             });
             ctx.Add(storey);
             ctx.Relate(IfcClass.RelAggregates, building.Id, storey.Id);
@@ -160,10 +167,10 @@ public sealed class CoreModule : ILapinModule
             // A storey lies between its base level (elevation) and its top level; its height is what lies between. Either may be below ±0.00.
             var (oldBase, oldTop) = (s.Num("elevation"), s.Num("elevation") + s.Num("height", 3));
             var keepTop = a["keepTop"] is JsonValue kt && kt.TryGetValue<bool>(out var k) && k;
-            var @base = CheckLevel(Json.Number(a["elevation"]) ?? oldBase);
+            var @base = CheckLevel(Given(Json.Number(a["elevation"]), a["elevation"], "elevation") ?? oldBase);
             attrs["elevation"] = @base;
-            if (Json.Number(a["top"]) is { } top) attrs["height"] = TopToHeight(@base, top);
-            else if (Json.Number(a["height"]) is { } h) attrs["height"] = CheckHeight(h);
+            if (Given(Json.Number(a["top"]), a["top"], "top") is { } top) attrs["height"] = TopToHeight(@base, top);
+            else if (Given(Json.Number(a["height"]), a["height"], "height") is { } h) attrs["height"] = CheckHeight(h);
             else if (keepTop) attrs["height"] = TopToHeight(@base, oldTop);
             ctx.Replace(s.With(name: (string?)a["name"], attrs: attrs));
             return null;
@@ -378,6 +385,8 @@ public sealed class CoreModule : ILapinModule
             var deleting = ids.ToHashSet();
             foreach (var id in deleting)
                 if (ctx.Model.Get(id) is { } x) foreach (var d in ctx.Services.All<IDeletion>()) d.Check(ctx.Model, x, deleting);
+            // What names the elements going (a room's finish, a bar's host) is put right while they are all still there.
+            foreach (var f in ctx.Services.All<IDeletionFollowers>()) f.Deleting(ctx, deleting);
             var bodies = new HashSet<string>();
             foreach (var id in ids.Distinct())
             {
@@ -463,7 +472,8 @@ public static class ElementTransform
             catch (CommandException) { }
     }
 
-    public static Result Run(ICommandContext ctx, JsonObject a, Placement2D? given = null)
+    /// <param name="keepLinks">The attributes a copy leaves naming the originals (Copy to storeys without relations: a wall's roofs).</param>
+    public static Result Run(ICommandContext ctx, JsonObject a, Placement2D? given = null, IReadOnlySet<string>? keepLinks = null)
     {
         static Lapin.Geometry.Vec2 V(JsonNode? n, string what) => Args.Point(n, what);
         // A group selected is its members (docs/groups.md).
@@ -567,6 +577,8 @@ public static class ElementTransform
         foreach (var own in ctx.Services.All<IHostedPlacement>())
             if (hosted.Where(e => own.Handles(ctx.Model, e)).ToList() is { Count: > 0 } mine)
                 foreach (var c in own.Transform(ctx, mine, inHost, copy)) made.Add((JsonNode)c);
+        // Copied together, a copy names the copies of what its original named (a finish its room, a wall its roof; audit 15.11.2026).
+        if (copy) CopyLinks.Remap(ctx, copies, keepLinks);
         foreach (var (f, state) in followers) f.After(ctx, state, t, inHost, moving, selected, copies);
         // Elements copied together keep their joins: a corner or a T between two of them joins their copies the same way.
         if (copy)
@@ -624,11 +636,26 @@ public static class Spatial
     public static Entity? StoreyOf(IModelView m, string elementId) => m.RelatingOf(elementId, IfcClass.RelContainedInSpatialStructure);
 
     /// <summary>
-    /// The storey an element is drawn on: its own, or for an opening (never contained itself, as IFC has it) the storey of
-    /// the element it voids, so a plan shows and picks a wall's bare opening on the wall's storey only (decision 312).
+    /// The storey an element stands on (audit D4, the one rule): its own; with <paramref name="followHost"/>, for one that is
+    /// not contained itself, its host's — an opening's (never contained, as IFC has it) the element it voids, a door's or a
+    /// window's the element its opening voids. So a door the file left off every storey is on its wall's.
     /// </summary>
-    public static Entity? ShownOn(IModelView m, Entity e) =>
-        StoreyOf(m, e.Id) ?? (e.Class == IfcClass.OpeningElement && m.RelatingOf(e.Id, IfcClass.RelVoidsElement) is { } host ? StoreyOf(m, host.Id) : null);
+    public static Entity? StoreyOf(IModelView m, Entity e, bool followHost) =>
+        StoreyOf(m, e.Id) ?? (followHost && HostOf(m, e) is { } host ? StoreyOf(m, host.Id) : null);
+
+    /// <summary>The element an opening voids, or the one a door's or window's opening voids; null for anything else.</summary>
+    public static Entity? HostOf(IModelView m, Entity e)
+    {
+        var opening = e.Class == IfcClass.OpeningElement ? e : m.RelatingOf(e.Id, IfcClass.RelFillsElement);
+        return opening != null ? m.RelatingOf(opening.Id, IfcClass.RelVoidsElement) : null;
+    }
+
+    /// <summary>
+    /// The storey an element is drawn on (<see cref="StoreyOf(IModelView, Entity, bool)"/> following its host): an opening on
+    /// the storey of the element it voids, so a plan shows and picks a wall's bare opening on the wall's storey only (decision
+    /// 312), and a door or window the file left off every storey on its wall's.
+    /// </summary>
+    public static Entity? ShownOn(IModelView m, Entity e) => StoreyOf(m, e, followHost: true);
 
     /// <summary>The spatial parent: an element's storey, a storey's building, a building's site.</summary>
     public static Entity? ParentOf(IModelView m, string id) =>
@@ -650,7 +677,7 @@ public static class Spatial
         var project = Project(edit.Model);
         if (project == null)
         {
-            project = new Entity(IdOf(edit, seed?.Project.Id), IfcClass.Project, seed?.Project.Name ?? "Project", new JsonObject { ["lengthUnit"] = "METRE", [ViewDetail.RevKey] = 1, [MaterialHatchUpgrade.RevKey] = MaterialHatchUpgrade.Rev, [ViewStyles.StructureRevKey] = ViewStyles.StructureRev });
+            project = new Entity(IdOf(edit, seed?.Project.Id), IfcClass.Project, seed?.Project.Name ?? "Project", new JsonObject { ["lengthUnit"] = "METRE", [ViewDetail.RevKey] = 1, [MaterialHatchUpgrade.RevKey] = MaterialHatchUpgrade.Rev, [ViewFilterUpgrade.RevKey] = ViewFilterUpgrade.Rev, [ViewStyles.StructureRevKey] = ViewStyles.StructureRev });
             edit.Add(project);
         }
         var site = edit.Model.OfClass(IfcClass.Site).FirstOrDefault();
@@ -722,6 +749,12 @@ public static class Spatial
         Require(edit.Model, storeyId, IfcClass.BuildingStorey);
         edit.Relate(IfcClass.RelContainedInSpatialStructure, storeyId, elementId);
     }
+
+    /// <summary>The elevation of the storey <paramref name="e"/> stands on (<see cref="StoreyOf"/>); 0 when it stands on none.</summary>
+    public static double Elevation(IModelView m, Entity e) => StoreyOf(m, e.Id)?.Num("elevation") ?? 0;
+
+    /// <summary>Where an element's base is: its storey's <see cref="Elevation"/> plus its own <c>baseOffset</c> (walls, columns, rooms…).</summary>
+    public static double Base(IModelView m, Entity e) => Elevation(m, e) + e.Num("baseOffset");
 }
 
 /// <summary>
@@ -752,6 +785,14 @@ public static class Materials
 
     /// <summary>The material categories the interface offers (IfcMaterial.Category; any other text is kept as given).</summary>
     public static readonly string[] Categories = ["Structure", "Finish", "Insulation", "Membrane", "Other"];
+
+    /// <summary>Whether a material is of a category (Finish, Insulation…): its own, else (for Finish) one by its name, as view styles tell finishes.</summary>
+    public static bool InCategory(IModelView m, string materialId, string category)
+    {
+        if (m.Get(materialId) is not { Class: IfcClass.Material } mat) return false;
+        if (mat.Str("category") is { Length: > 0 } c) return string.Equals(c.Trim(), category, StringComparison.OrdinalIgnoreCase);
+        return string.Equals(category, "Finish", StringComparison.OrdinalIgnoreCase) && IsFinish(mat);
+    }
 
     /// <summary>
     /// Whether a material is a finish, which a view style without finishes
@@ -830,7 +871,7 @@ public static class Fields
             case "color":
             {
                 var c = (string?)value;
-                return c is { Length: 7 } && c[0] == '#' && c[1..].All(Uri.IsHexDigit) ? c : throw new CommandException($"{f.Label} is a colour like #a8a8a8.");
+                return HexColor.IsColour(c) ? c! : throw new CommandException($"{f.Label} is a colour like #a8a8a8.");
             }
             default:
                 return (string?)value ?? throw new CommandException($"{f.Label} must be text.");

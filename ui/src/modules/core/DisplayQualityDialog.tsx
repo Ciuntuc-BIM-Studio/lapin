@@ -5,6 +5,7 @@
  * the project's, one undo step). Both change what the screen draws, never the model.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
@@ -28,7 +29,7 @@ export function DisplayQualityDialog() {
   const profile = useRenderProfile((s) => s.profile);
   const close = () => useUi.setState({ dialog: null });
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog quality-dialog" role="dialog" aria-label="Display quality" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Display quality</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

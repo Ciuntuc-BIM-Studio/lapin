@@ -1,5 +1,6 @@
 /** The terrain brush's settings: the radius of a stroke, how much it raises or lowers, the level it flattens to (blank: the ground where you click), how hard it smooths. */
 
+import { backdropClose } from '../../shell/Dialog';
 import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { setBrush, useBrush } from './prefs';
@@ -10,7 +11,7 @@ export function BrushDialog() {
   const close = () => useUi.setState({ dialog: null });
   const num = (t: string) => Number(t.replace(',', '.'));
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog" role="dialog" aria-label="Terrain brush" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Terrain brush</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

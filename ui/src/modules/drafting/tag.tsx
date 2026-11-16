@@ -6,6 +6,7 @@
  * leader on or off and its shape.
  */
 
+import { promptText } from '../../shell/prompts';
 import { useEffect, useState } from 'react';
 import { create } from 'zustand';
 import type { NodeDto } from '../../engine/protocol';
@@ -55,7 +56,7 @@ export function buildupTags(type: Pick<TagTypeDto, 'classes'>, cls: string | und
 
 /** Asks for a parameter's name; null when none is given. */
 function askField(): string | null {
-  const t = window.prompt('The parameter to show: its name (Fire rating) or a standard one (Pset_WallCommon.FireRating)');
+  const t = promptText('The parameter to show: its name (Fire rating) or a standard one (Pset_WallCommon.FireRating)');
   return t?.trim().replace(/^\{|\}$/g, '').trim() || null;
 }
 

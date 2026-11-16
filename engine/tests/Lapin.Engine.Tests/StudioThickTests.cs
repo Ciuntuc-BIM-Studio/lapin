@@ -32,15 +32,15 @@ public class StudioThickTests
     }
     static void Update(Fixture f, string id, JsonObject attrs) => f.Run("element.update", new JsonObject { ["id"] = id, ["attrs"] = attrs });
 
-    /// <summary>A circle as Thick builds it: a 64-sided polygon of that radius.</summary>
-    static double Disc(double r) => 32 * r * r * Math.Sin(2 * Math.PI / 64);
+    /// <summary>A circle as Thick builds it: the polygon of that radius with the sides <see cref="Chords"/> gives it.</summary>
+    static double Disc(double r) => Chords.Circle(r) is var n ? n / 2.0 * r * r * Math.Sin(2 * Math.PI / n) : 0;
 
     [Fact]
     public void A_ring_from_a_circle_and_an_arc_inside_outside_or_centred_on_a_plan()
     {
         var f = F();
         var plan = Plan(f);
-        // A circle of radius 2, a ring 0.2 thick inside it, 3 m high: the 64-gons of 2 and 1.8.
+        // A circle of radius 2, a ring 0.2 thick inside it, 3 m high: the polygons of 2 and 1.8, each with its own sides by Chords.
         var ring = Make(f, "ring", Draw(f, plan, Circle(0, 0, 2)), new() { ["thickness"] = 0.2, ["height"] = 3 });
         Assert.Equal((Disc(2) - Disc(1.8)) * 3, Vol(f, ring), 6);
         var e = f.Model.Get(ring)!;

@@ -21,6 +21,8 @@ import { PICKABLE, RUN_CLASSES, endSpec, isNode, isRun, nearerEnd, nearestRun, n
 import { runSystem, schedule } from './tools';
 import { mepHooks } from './hooks';
 import { setMep, useMep } from './prefs';
+import { usePlaceRole } from './placeRole';
+import { activate } from '../../platform/modules';
 import { MepSection } from './MepSection';
 import { editSystem, editedSystem, toggleEdit } from './edit';
 import { Background } from './Background';
@@ -40,6 +42,19 @@ const FanTypesDialog = lazyPart(() => import('./fans/FanTypesDialog').then((m) =
 
 /** A role as its tool places it: its id in the engine's catalogue, the services it takes ("*": any), whether it sits on a run. */
 interface RoleTool { id: string; label: string; icon: Icon; services: string[]; inline?: boolean; shortcut?: string }
+
+/** The categories the Place tool's picker groups the roles in, with the roles of each (what the ribbon's groups were). */
+const CATEGORIES: [string, string[]][] = [
+  ['Heating', ['boiler', 'radiator', 'manifold']],
+  ['Plumbing', ['basin', 'wc', 'sink', 'shower', 'bath', 'waterMeter', 'stack', 'cleanout']],
+  ['Electrical', ['panel', 'outlet', 'light', 'switch']],
+  ['Air', ['fan', 'diffuser', 'grille']],
+  ['Fittings', ['valve', 'rise', 'cap']],
+  ['Gas', ['meterBox', 'regulator', 'gasMeter', 'gasShutoff', 'gasTap', 'flexConnector', 'gasBoiler', 'cooker', 'waterHeater', 'tappingTee']],
+  ['Fuel oil', ['oilTank', 'fillPoint', 'ventCap', 'oilFilter', 'oilBoiler']],
+  ['Fire alarm', ['firePanel', 'smokeDetector', 'heatDetector', 'callPoint', 'sounder', 'sounderBeacon']],
+  ['Fire hydrants', ['fireTank', 'firePump', 'hydrant', 'externalHydrant', 'breechingInlet', 'sprinkler']],
+];
 
 const ROLES: RoleTool[] = [
   { id: 'boiler', label: 'Boiler', icon: Flame, services: ['heating'], shortcut: 'BO' },
@@ -96,23 +111,49 @@ const ROLES: RoleTool[] = [
 ];
 const role = (id: string) => ROLES.find((r) => r.id === id)!;
 
-/** A node placed at a click, in the system that takes its role; an inline fitting dropped on a run of that system splits it. */
+/** What a node's placing does at a click, in the system that takes its role; an inline fitting dropped on a run of that system splits it. */
+const placeNode = async (r: RoleTool, p: Vec2, storeyId: string, execute: (command: string, args?: Record<string, unknown>) => Promise<unknown>) => {
+  const systemId = await systemFor(r.services);
+  if (!systemId) return;
+  // An endpoint joins the system's network by a run of its own (an inline fitting sits on a run instead).
+  const args: Record<string, unknown> = { systemId, role: r.id, storeyId, x: p.x, y: p.y, connect: !r.inline };
+  if (r.inline) {
+    const net = (await networkQuery(systemId))?.[0];
+    const on = net ? nearestRun(net.runs, p, 0.3) : null;
+    if (on) args.onRunId = on.id;
+  }
+  await execute('mep.placeNode', args);
+};
+
+/** The category and role to place, in the command line's bar and in Properties while the tool is on. */
+function RolePicker() {
+  const current = usePlaceRole((s) => s.role);
+  return (
+    <span className="cad-layer on">
+      <select value={current} data-testid="mep-role" title="What it places: a heating, plumbing, electrical, air, gas, fuel oil or fire protection fixture, or a fitting" onChange={(e) => usePlaceRole.setState({ role: e.target.value })}>
+        {CATEGORIES.map(([c, ids]) => <optgroup key={c} label={c}>{ids.map((id) => <option key={id} value={id}>{role(id).label}</option>)}</optgroup>)}
+      </select>
+    </span>
+  );
+}
+function PlaceProperties() { return <div className="pad new-element"><label className="field-line"><span className="eyebrow">Place</span><RolePicker /></label></div>; }
+
+/** One tool places every node (S8, audit 2026-11-15; it was one button per role): the role is chosen in the bar, one node at a click. */
+const place: ToolDef = {
+  id: 'mep.place', label: 'Place node', icon: Thermometer,
+  gesture: { kind: 'point' },
+  options: RolePicker,
+  properties: PlaceProperties,
+  complete: async ({ points: [p] }, ctx) => { await placeNode(role(usePlaceRole.getState().role), p, ctx.storeyId, ctx.execute); },
+};
+
+/** A role's old tool: the Place tool, set to that role (the id and the letters stay). */
 const nodeTool = (r: RoleTool): ToolDef => ({
   id: `mep.node.${r.id}`, label: r.label, icon: r.icon, shortcut: r.shortcut,
-  gesture: { kind: 'point' },
-  complete: async ({ points: [p] }, ctx) => {
-    const systemId = await systemFor(r.services);
-    if (!systemId) return;
-    // An endpoint joins the system's network by a run of its own (an inline fitting sits on a run instead).
-    const args: Record<string, unknown> = { systemId, role: r.id, storeyId: ctx.storeyId, x: p.x, y: p.y, connect: !r.inline };
-    if (r.inline) {
-      const net = (await networkQuery(systemId))?.[0];
-      const on = net ? nearestRun(net.runs, p, 0.3) : null;
-      if (on) args.onRunId = on.id;
-    }
-    await ctx.execute('mep.placeNode', args);
-  },
+  run: () => { usePlaceRole.setState({ role: r.id }); if (useUi.getState().tool !== place.id) activate(place); },
 });
+const nodeTools = ROLES.map(nodeTool);
+const oldNode = (id: string) => nodeTools.find((t) => t.id === `mep.node.${id}`)!;
 
 /** A run along a polyline (Enter or a click on the last point finishes it); an end on an open port or on a run of the system connects there. */
 const run: ToolDef = {
@@ -419,28 +460,23 @@ const mep: LapinModule = {
   name: 'MEP',
   summary: 'Heating, water, drainage, ventilation, electrical, gas and fire protection systems drawn as schematics on the plan.',
   tabs: [{
-    id: 'mep', label: 'MEP', order: 45,
+    id: 'mep', label: 'MEP', order: 45, include: ['modify'],
     groups: [
       { label: 'New system', tools: [], small: newSystems },
       { label: 'System', tools: [edit], small: [systems, mepPlan, openPorts, equipmentSchedule, runSchedule, gasSchedule, fireSchedule] },
       { label: 'Runs', tools: [run], small: [connect, disconnect, addHandle, detour, redraw] },
       // Cable trays, ladders, trunking and conduit (report #147).
       carrierGroup,
-      { label: 'Heating', tools: [], small: [nodeTool(role('boiler')), nodeTool(role('radiator')), nodeTool(role('manifold'))] },
-      { label: 'Plumbing', tools: [], small: [nodeTool(role('basin')), nodeTool(role('wc')), nodeTool(role('sink')), nodeTool(role('shower')), nodeTool(role('bath')), nodeTool(role('waterMeter')), nodeTool(role('stack')), nodeTool(role('cleanout'))] },
-      { label: 'Electrical', tools: [], small: [nodeTool(role('panel')), nodeTool(role('outlet')), nodeTool(role('light')), nodeTool(role('switch'))] },
-      { label: 'Air', tools: [], small: [nodeTool(role('fan')), nodeTool(role('diffuser')), nodeTool(role('grille'))] },
+      { label: 'Nodes', tools: [place] },
       // Exhaust fans and ventilators (report #55): elements of their own, configured by type.
       fanGroup,
-      { label: 'Fittings', tools: [], small: [nodeTool(role('valve')), nodeTool(role('rise')), nodeTool(role('cap'))] },
-      { label: 'Gas', tools: [], small: [nodeTool(role('meterBox')), nodeTool(role('regulator')), nodeTool(role('gasMeter')), nodeTool(role('gasShutoff')), nodeTool(role('gasTap')), nodeTool(role('flexConnector')), nodeTool(role('gasBoiler')), nodeTool(role('cooker')), nodeTool(role('waterHeater'))] },
-      { label: 'Street', tools: [], small: [gasMain, gasMainDrawn, serviceConnection, nodeTool(role('tappingTee'))] },
-      { label: 'Fuel oil', tools: [], small: [nodeTool(role('oilTank')), nodeTool(role('fillPoint')), nodeTool(role('ventCap')), nodeTool(role('oilFilter')), nodeTool(role('oilBoiler'))] },
-      { label: 'Fire alarm', tools: [], small: [nodeTool(role('firePanel')), nodeTool(role('smokeDetector')), nodeTool(role('heatDetector')), nodeTool(role('callPoint')), nodeTool(role('sounder')), nodeTool(role('sounderBeacon')), closeLoop] },
-      { label: 'Fire hydrants', tools: [], small: [nodeTool(role('fireTank')), nodeTool(role('firePump')), nodeTool(role('hydrant')), nodeTool(role('externalHydrant')), nodeTool(role('breechingInlet')), nodeTool(role('sprinkler'))] },
+      { label: 'Street', tools: [], small: [gasMain, gasMainDrawn, serviceConnection] },
+      { label: 'Fire alarm', tools: [], small: [closeLoop] },
     ],
   }],
-  hotbar: [run, nodeTool(role('radiator')), nodeTool(role('valve'))],
+  // The old tool of each role (Radiator, Valve…): the Place tool set to it, off the ribbon; their ids and letters work as before.
+  legacyTools: nodeTools,
+  hotbar: [run, oldNode('radiator'), oldNode('valve')],
   propertySections: [
     { id: 'mep', label: 'MEP', classes: PICKABLE, component: MepSection, fieldKeys: (n) => (isRun(n) ? RUN_FIELDS : isNode(n) ? NODE_FIELDS : null) },
     { id: 'fan', label: 'Exhaust fan', classes: [FAN_CLASS], component: FanSection },

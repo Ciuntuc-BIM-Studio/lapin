@@ -1,5 +1,5 @@
 /**
- * Offset outline (decision 600; Archicad's "Offset all edges"): every edge of a selected floor's, floor opening's,
+ * Offset outline (decision 609; Archicad's "Offset all edges"): every edge of a selected floor's, floor opening's,
  * ceiling's, roof's, room's or balcony's outline moved at once, outward (+) or inward (−): straight edges parallel and
  * mitred, arcs concentric, a corner where an arc meets an edge rounded as it grows. The engine works it out
  * (`outline.offset`, ArcOutline.Offset) and refuses what would vanish or cross itself; the element's own update command

@@ -27,7 +27,7 @@ export function Cell({ value, onCommit, suffix, placeholder, className, readOnly
         onChange={(e) => setText(e.target.value)}
         onBlur={() => { if (text !== value && onCommit(text) === false) setText(value); }}
         // Enter blurs (which commits); not prevented, so the properties panel's keys still move down.
-        onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); else if (e.key === 'Escape') { setText(value); e.preventDefault(); } }} />
+        onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); else if (e.key === 'Escape' && text !== value) { setText(value); e.preventDefault(); } }} />
       {suffix && <span className="cell-unit">{suffix}</span>}
     </span>
   );
@@ -66,4 +66,23 @@ export function NumberField({ value, onCommit, suffix, placeholder, className, r
 /** A length cell of the properties panel: empty clears it (LengthField with `blank`). */
 export function LengthCell({ metres, onCommit, placeholder }: { metres: number | null | undefined; onCommit: (m: number | null) => void; placeholder?: string }) {
   return <LengthField metres={metres} onCommit={onCommit} placeholder={placeholder} blank />;
+}
+
+/** A number or length the engine describes (`min`/`max` honoured, angles in degrees): LengthField or NumberField by its kind. */
+export function DescriptorField({ f, value, onChange }: { f: { kind: string; min?: number | null; max?: number | null }; value: unknown; onChange: (v: number) => void }) {
+  const n = typeof value === 'number' ? value : null;
+  const min = f.min ?? undefined, max = f.max ?? undefined;
+  return f.kind === 'length'
+    ? <LengthField metres={n} min={min} max={max} onCommit={(m) => { if (m != null) onChange(m); }} />
+    : <NumberField value={n} min={min} max={max} suffix={f.kind === 'angle' ? '°' : undefined} onCommit={(v) => { if (v != null) onChange(v); }} />;
+}
+
+/** A label and a length field (metres), one commit on blur or Enter. */
+export function LabeledLength({ label, metres, onCommit, className, ...rules }: FieldProps & { label: string; metres: number | null | undefined; onCommit: (m: number) => void }) {
+  return <label className={`field-line${className ? ` ${className}` : ''}`}><span className="eyebrow">{label}</span><LengthField metres={metres} {...rules} onCommit={(m) => { if (m != null) onCommit(m); }} /></label>;
+}
+
+/** A label and a number field, one commit on blur or Enter. */
+export function LabeledNumber({ label, value, onCommit, className, suffix, ...rules }: FieldProps & { label: string; value: number | null | undefined; onCommit: (n: number) => void; suffix?: string }) {
+  return <label className={`field-line${className ? ` ${className}` : ''}`}><span className="eyebrow">{label}</span><NumberField value={value} suffix={suffix} {...rules} onCommit={(n) => { if (n != null) onCommit(n); }} /></label>;
 }

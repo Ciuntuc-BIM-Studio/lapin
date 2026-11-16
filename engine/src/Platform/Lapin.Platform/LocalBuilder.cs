@@ -100,10 +100,14 @@ public sealed class LocalBuilder(Vec2 at, double z, double rotationDeg, bool mir
     public void Line(string kind, params (double X, double Y)[] pts) => Plan.Add(new PlanItem(kind, false, [.. pts.Select(p => Q(p.X, p.Y))]));
     public void Loop(string kind, IEnumerable<(double X, double Y)> pts) => Plan.Add(new PlanItem(kind, true, [.. pts.Select(p => Q(p.X, p.Y))]));
     public void Rect(string kind, double x0, double x1, double y0, double y1) => Loop(kind, [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]);
-    public void Circle(string kind, double cx, double cy, double r, int sides = 24) => Loop(kind, Ring(cx, cy, r, sides));
-    /// <summary>An arc about (cx, cy) from a0 to a1 (degrees, local, anticlockwise from +x).</summary>
-    public void Arc(string kind, double cx, double cy, double r, double a0, double a1, int steps = 16) =>
-        Line(kind, [.. Enumerable.Range(0, steps + 1).Select(i => { var a = (a0 + (a1 - a0) * i / steps) * Math.PI / 180; return (cx + r * Math.Cos(a), cy + r * Math.Sin(a)); })]);
+    /// <summary>A circle in plan, of <paramref name="sides"/> sides (0: as <see cref="Chords"/> makes it).</summary>
+    public void Circle(string kind, double cx, double cy, double r, int sides = 0) =>
+        Loop(kind, sides > 0 ? Ring(cx, cy, r, sides) : Chords.Ring(new Vec2(cx, cy), r).Select(p => (p.X, p.Y)));
+    /// <summary>An arc about (cx, cy) from a0 to a1 (degrees, local, anticlockwise from +x), in <paramref name="steps"/> pieces (0: as <see cref="Chords"/> makes it).</summary>
+    public void Arc(string kind, double cx, double cy, double r, double a0, double a1, int steps = 0) =>
+        Line(kind, [.. (steps > 0
+            ? Enumerable.Range(0, steps + 1).Select(i => { var a = (a0 + (a1 - a0) * i / steps) * Math.PI / 180; return new Vec2(cx + r * Math.Cos(a), cy + r * Math.Sin(a)); })
+            : Chords.Arc(new Vec2(cx, cy), r, a0 * Math.PI / 180, (a1 - a0) * Math.PI / 180)).Select(p => (p.X, p.Y))]);
 
     /// <summary>The solids of a role as one solid (they are never merged: pieces side by side).</summary>
     public static Solid Combine(IReadOnlyList<Solid> solids, string tag)

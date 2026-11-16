@@ -159,7 +159,7 @@ public sealed class MepModule : ILapinModule
             var service = (string?)a["service"] ?? Services.Heating;
             var storey = (string?)a["storeyId"] is { } sid ? Spatial.Require(ctx.Model, sid, IfcClass.BuildingStorey) : Spatial.Storeys(ctx.Model).FirstOrDefault() ?? throw new CommandException("The project has no storey.");
             var at = new Vec2(Json.Number(a["x"]) ?? 0, Json.Number(a["y"]) ?? 0);
-            Vec2? to = a["to"] is JsonArray t && t.Count >= 2 ? new Vec2(Json.Number(t[0]) ?? 0, Json.Number(t[1]) ?? 0) : null;
+            Vec2? to = Args.TryPoint(a["to"]);
             var (system, source, endpoint, run) = Layout.PlaceSystem(ctx, service, storey.Id, at, (string?)a["name"], to);
             return new JsonObject { ["id"] = system.Id, ["sourceId"] = source.Id, ["endpointId"] = endpoint.Id, ["runId"] = run?.Id };
         });

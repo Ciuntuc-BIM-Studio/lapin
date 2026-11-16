@@ -217,11 +217,6 @@ public sealed class PiAlignment
         return Math.Min(wanted, room / Math.Tan(delta / 2));
     }
 
-    /// <summary>PIs from a drawn polyline, every inner vertex rounded with <paramref name="radius"/> where it fits (smaller where not).</summary>
-    public static List<AlignmentPi> FromPolyline(IReadOnlyList<Vec2> points, double radius) =>
-        points.Select((p, i) => new AlignmentPi(p.X, p.Y,
-            i > 0 && i < points.Count - 1 ? Math.Round(FitRadius(points[i - 1], p, points[i + 1], radius) * 100) / 100 : 0)).ToList();
-
     /// <summary>PIs from a path and the curve at each of its vertices (a missing or corner curve leaves the vertex sharp).</summary>
     public static List<AlignmentPi> Of(IReadOnlyList<Vec2> path, IReadOnlyList<PiCurve>? curves) =>
         path.Select((p, i) => { var c = curves != null && i < curves.Count ? curves[i] : PiCurve.None; return new AlignmentPi(p.X, p.Y, c.Radius, c.SpiralIn, c.SpiralOut); }).ToList();

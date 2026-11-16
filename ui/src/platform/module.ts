@@ -83,6 +83,8 @@ export interface ToolDef {
   icon: Icon;
   /** Two-letter shortcut, as in Revit (WA, DR…). */
   shortcut?: string;
+  /** Other names for what this tool does, so a tab that already has one of them in its own group of the same label does not show this one too (Delete: Erase). */
+  alsoCalled?: string[];
   /** What its button says when hovered, after its name (a script's tool: its header's or lapin.ui.tool's tooltip, shown as written). */
   tooltip?: string;
   /** A tool drawn in a view: its gesture and what it does at the end. */
@@ -96,6 +98,10 @@ export interface ToolDef {
    * should open the same list.
    */
   items?: readonly ToolDef[];
+  /** A button that works only for some selections (Create similar): false greys it out; asked as the selection changes. */
+  enabled?: () => boolean;
+  /** The mode the tool is in now (a chain tool's Line or Arc): its gesture follows it, so a change starts the gesture over. */
+  mode?: () => string;
   /** What Space does while the tool is on and nothing is typed (a door's other hand). */
   space?: () => void;
   /** What the tool lets one choose while it is on (the line a wall is drawn on), shown in the command line's bar. */
@@ -209,7 +215,7 @@ export interface Grip {
   /** More a right-click on the grip offers (a wall's end: "Don't join at this end", decision 546), each one engine command. */
   menu?: { label: string; run: () => GripStep | null }[];
   /**
-   * An outline's edge middle: the whole outline offset at once, every edge (Archicad's "Offset all edges"; decision 600).
+   * An outline's edge middle: the whole outline offset at once, every edge (Archicad's "Offset all edges"; decision 609).
    * Shift-drag on the grip offsets it live by the distance the cursor is out along `normal` (outward, unit), typed too;
    * "Offset outline…" in the selection's right-click menu asks the distance (+ outward, − inward). The engine works the
    * offset out (`outline.offset`) and `save` writes it as the element's own update, one undo step.
@@ -228,7 +234,7 @@ export interface OutlineOffsetGrip {
 export interface Vec3 { x: number; y: number; z: number }
 
 /**
- * A handle shown on a selected element in 3D only, dragged along a line through it (decision 601): a wall's top up and down
+ * A handle shown on a selected element in 3D only, dragged along a line through it (decision 610): a wall's top up and down
  * (its height, or its top's offset when the top goes to a storey), a wall's face across it (the wall moved sideways, a
  * curved wall's radius about its centre), a floor's top (its offset from the storey), a roof's eave (its wall plate). A
  * vertical one is dragged on a plane through it facing the camera; the other elements' corners, edges and faces give the
@@ -368,6 +374,12 @@ export interface LapinModule {
   tabs?: RibbonTabDef[];
   /** Groups other modules' tabs can include by id (core's "modify": move, copy, rotate…). */
   sharedGroups?: Record<string, RibbonGroupDef>;
+  /**
+   * Tools whose button went into another tool (audit 2026-11-15, stage 2: three Mitre buttons became one Joins group): off the ribbon,
+   * but still tools, so a quick slot, My tools, a user's shortcut or a saved interface naming the id keeps working, as do the tool's
+   * own default letters (found by findTool, listed with the commands under Other).
+   */
+  legacyTools?: ToolDef[];
   /** Tools for the viewport hotbar (1–9), in order. */
   hotbar?: ToolDef[];
   propertySections?: PropertySectionDef[];

@@ -357,7 +357,7 @@ public static class RebarShapes
     }
 
     /// <summary>Millimetres as a label writes them ("2450").</summary>
-    public static string Mm(double m) => Math.Round(m * 1000).ToString(CultureInfo.InvariantCulture);
+    public static string Mm(double m) => Lapin.Model.Numbers.Mm(m);
     /// <summary>A diameter as a label writes it ("Ø12").</summary>
     public static string Dia(double d) => "Ø" + Math.Round(d * 1000).ToString(CultureInfo.InvariantCulture);
 }
@@ -369,10 +369,17 @@ public static class RebarShapes
 /// </summary>
 public static class Runs
 {
+    /// <summary>The least step of a distribution or a zone (m), as the plain step's check asks.</summary>
+    public const double MinStep = 0.01;
+    /// <summary>The most positions a distribution lays: a longer path or a finer step is spread to this many, so a
+    /// mistyped value never asks for millions of bars at every redraw.</summary>
+    public const int MaxPositions = 100_000;
+
     public sealed record Zone(double Length, double Step)
     {
         public JsonObject ToJson() => new() { ["length"] = Math.Round(Length, 6), ["step"] = Math.Round(Step, 6) };
-        public static Zone? From(JsonNode? n) => n is JsonObject o && Json.Number(o["length"]) is { } l && Json.Number(o["step"]) is { } s && l > 0 && s > 0 ? new Zone(l, s) : null;
+        /// <summary>A zone read from the model or a command; null when its length is not positive or its step under <see cref="MinStep"/>.</summary>
+        public static Zone? From(JsonNode? n) => n is JsonObject o && Json.Number(o["length"]) is { } l && Json.Number(o["step"]) is { } s && l > 0 && s >= MinStep - 1e-9 ? new Zone(l, s) : null;
     }
 
     public static List<double> Positions(double length, double step, IReadOnlyList<Zone>? zones = null)
@@ -381,7 +388,7 @@ public static class Runs
         if (zones is not { Count: > 0 })
         {
             if (step <= 1e-9) return [0, length];
-            var n = Math.Max(2, (int)Math.Ceiling(length / step + 1 - 1e-9));
+            var n = (int)Math.Clamp(Math.Ceiling(length / step + 1 - 1e-9), 2, MaxPositions);
             return Enumerable.Range(0, n).Select(k => length * k / (n - 1)).ToList();
         }
         var o = new List<double>();
@@ -390,7 +397,7 @@ public static class Runs
         {
             var last = z == zones.Count - 1;
             var lz = last ? length - at : Math.Min(zones[z].Length, length - at);
-            var steps = Math.Max(1, (int)Math.Ceiling(lz / zones[z].Step - 1e-9));
+            var steps = (int)Math.Clamp(Math.Ceiling(lz / zones[z].Step - 1e-9), 1, Math.Max(1, MaxPositions - o.Count));
             for (var k = 0; k < steps; k++) o.Add(at + lz * k / steps);
             at += lz;
         }
@@ -408,7 +415,7 @@ public static class Runs
         {
             var last = z == zones.Count - 1;
             var lz = last ? length - at : Math.Min(zones[z].Length, length - at);
-            var n = Math.Max(1, (int)Math.Ceiling(lz / zones[z].Step - 1e-9));
+            var n = Math.Clamp(Math.Ceiling(lz / zones[z].Step - 1e-9), 1, MaxPositions);
             steps.Add(lz / n);
             at += lz;
         }

@@ -35,8 +35,8 @@ public static class SteelShop
             var d = Json.Number(a["diameter"]) ?? 0.022;
             var across = Json.Number(a["across"]) ?? 0;
             var face = (string?)a["face"] ?? "web";
-            if (count < 1 || count > 200) throw new CommandException("A run has 1 to 200 holes.");
-            if (d < 0.002 || d > 0.2) throw new CommandException("A hole is 2 to 200 mm across.");
+            if (!(count >= 1 && count <= 200)) throw new CommandException("A run has 1 to 200 holes.");
+            if (!(d >= 0.002 && d <= 0.2)) throw new CommandException("A hole is 2 to 200 mm across.");
             if (count > 1 && pitch < d) throw new CommandException("The pitch is at least a hole's diameter.");
             var last = station + (count - 1) * pitch;
             if (station < -1e-9 || last > ax.Length + 1e-9) throw new CommandException($"The holes are within the member's {ax.Length * 1000:0} mm.");

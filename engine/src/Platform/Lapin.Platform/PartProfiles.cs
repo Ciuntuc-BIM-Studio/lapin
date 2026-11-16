@@ -23,7 +23,7 @@ public sealed record PartProfile(IReadOnlyList<Vec2>? Top, IReadOnlyList<Vec2>? 
         if (Top is not { Count: >= 2 } top || Bottom is not { Count: >= 2 } bottom) return null;
         var length = top[^1].X - top[0].X;
         if (!(length > 1e-9)) return null;
-        var area = PartProfiles.Area(top) - PartProfiles.Area(bottom);
+        var area = PartProfiles.AreaUnder(top) - PartProfiles.AreaUnder(bottom);
         var faces = (Right.End - Right.Start + Left.End - Left.Start) / 2;
         return area * Thickness * faces / length;
     }
@@ -164,8 +164,8 @@ public static class PartProfiles
         return o;
     }
 
-    /// <summary>The area under an outline (u, z), down to z = 0.</summary>
-    public static double Area(IReadOnlyList<Vec2> p)
+    /// <summary>The area under an open outline (u, z), down to z = 0 (not a closed ring's: <see cref="Polygon2.SignedArea(IReadOnlyList{Vec2})"/>).</summary>
+    public static double AreaUnder(IReadOnlyList<Vec2> p)
     {
         double a = 0;
         for (var i = 0; i + 1 < p.Count; i++) a += (p[i + 1].X - p[i].X) * (p[i].Y + p[i + 1].Y) / 2;

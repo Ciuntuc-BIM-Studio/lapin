@@ -164,9 +164,14 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Service<IElementPlacement>(new Roofs.RoofPlacement());
         r.Service<IElementPlacement>(new WallPlacement());
         r.Service<IHostedPlacement>(new HostedOpenings());
+        r.Service<IHostedPlacement>(new Roofs.DownpipeHosting());
         r.Service<IDeletion>(new Roofs.RoofDeletion());
         // A storey deleted that walls' tops go to: they stand unconnected at the height they had (WallTop).
         r.Service<IDeletion>(new WallTopDeletion());
+        // Links between elements kept through copies and deletions (audit 15.11.2026): a room's finish, a stair's opening and space, a downpipe's roof.
+        var finishLinks = new RoomFinishLinks();
+        r.Service<ITransformFollowers>(finishLinks);
+        r.Service<IDeletionFollowers>(finishLinks);
         // A height typed on a wall with a top (the inspector's element.update): a height of its own, the wall unconnected.
         r.Service<IElementUpdate>(new WallTopDeletion());
         r.Geometry(IfcClass.Door, (fill, model, _) => Openings.FillGeometry(fill, model));
@@ -1002,6 +1007,12 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
 
         // Two walls' corner rounded by a curved wall or cut by a straight one, the walls trimmed or carried on to it, as CAD's
         // FILLET and CHAMFER do to lines (WallFillets): {a, b, atA?, atB?, radius | distance, line? (axis, inside, outside), matchFirst?}.
+        // A wall another program modelled as separate solids, one per layer, made one layered wall (forum topic 101, WallsFromSolids):
+        // {ids, gaps (air | absorb), frame, walls: [{core, materials, name}], originals (hide | delete | keep)}; the query shows what it would make.
+        r.Command("wallFromSolids", "Make a layered wall from solids", (ctx, a) => WallsFromSolids.Make(ctx, a, Paths(ctx)));
+        r.Query("wallFromSolids", (q, a) => WallsFromSolids.Preview(q.Model, q.Services, a));
+        // The solids a wall was made of and keeps hidden, shown again: {id (the wall)}.
+        r.Command("showOriginalSolids", "Show the original solids", (ctx, a) => WallsFromSolids.Show(ctx, a));
         r.Command("filletWalls", "Fillet walls", (ctx, a) => WallFillets.Apply(ctx, a, Paths(ctx), false));
         r.Command("chamferWalls", "Chamfer walls", (ctx, a) => WallFillets.Apply(ctx, a, Paths(ctx), true));
 

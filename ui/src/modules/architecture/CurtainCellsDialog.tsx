@@ -5,6 +5,7 @@
  * settings are kept by cell, so they stay where they are when the grid changes; the doors are doors (tags, schedules, IFC).
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useMemo, useState } from 'react';
 import { DoorOpen, Plus, Save, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
@@ -99,7 +100,7 @@ export function CurtainCellsDialog() {
   const typeName = (tid: string | null) => panelTypes.find((t) => t.id === tid)?.name;
   const first = chosen[0];
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide" role="dialog" aria-label="Curtain wall panels and doors" data-testid="curtain-cells" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Curtain wall panels and doors · <span data-no-i18n>{wall.name}</span></span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

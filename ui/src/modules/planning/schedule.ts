@@ -4,6 +4,7 @@
  * And what the Planning tab does: open the Gantt under the view, add, indent and link tasks, exchange files.
  */
 
+import { confirmAction } from '../../shell/prompts';
 import { useEffect } from 'react';
 import { create } from 'zustand';
 import { focusPane, notify, useUi } from '../../app/store';
@@ -107,7 +108,7 @@ export async function importMsp(): Promise<void> {
   const picked = await pickFile('MS Project XML', ['xml']);
   if (!picked) return;
   const tasks = usePlanning.getState().data?.tasks.length ?? 0;
-  if (tasks > 0 && !window.confirm(t("The project's schedule is replaced by the file's. Go on?"))) return;
+  if (tasks > 0 && !confirmAction(t("The project's schedule is replaced by the file's. Go on?"))) return;
   const r = await execute('planning.importMsp', { data: toBase64(picked.bytes), name: picked.name }) as { tasks: number; links: number; dropped: number; notes: string[] } | null;
   if (!r) return;
   notify(`Imported ${picked.name}: ${r.tasks} tasks, ${r.links} links.${r.notes.length ? ` ${r.notes.join(' ')}` : ''}`);
@@ -194,14 +195,14 @@ export async function markSelection(state: 'done' | 'started' | 'none', ids = se
 export async function saveBaseline(): Promise<void> {
   const data = usePlanning.getState().data;
   if (!data?.tasks.length) { notify('The schedule has no tasks to keep as a baseline.'); return; }
-  if (data.baseline && !window.confirm(t('The baseline is replaced by the dates as they are now. Go on?'))) return;
+  if (data.baseline && !confirmAction(t('The baseline is replaced by the dates as they are now. Go on?'))) return;
   const r = await execute('planning.saveBaseline', {}) as { tasks: number } | null;
   if (r) { notify(`Baseline saved: ${r.tasks} tasks.`); openGantt(); }
 }
 
 export async function clearBaseline(): Promise<void> {
   if (!usePlanning.getState().data?.baseline) { notify('The schedule has no baseline.'); return; }
-  if (!window.confirm(t('The baseline is taken off every task. Go on?'))) return;
+  if (!confirmAction(t('The baseline is taken off every task. Go on?'))) return;
   await execute('planning.clearBaseline', {});
 }
 

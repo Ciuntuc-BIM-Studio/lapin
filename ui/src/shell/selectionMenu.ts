@@ -1,7 +1,7 @@
 /**
  * What a right-click on a plan, a drawing or the 3D view offers for the selection: group it, or let a group go, open
  * it, take members out (a tester's report, #98: an imported DXF's lines put together to move them as one); and copy
- * it to other storeys, or move it to another (their dialogs); offset an outline's every edge (Offset outline…, decision 600).
+ * it to other storeys, or move it to another (their dialogs); offset an outline's every edge (Offset outline…, decision 609).
  */
 
 import { useUi } from '../app/store';
@@ -9,7 +9,7 @@ import { useSession } from '../engine/session';
 import { copyable } from '../modules/core/CopyToStoreysDialog';
 import { drawableElement } from '../modules/core/shopDrawing';
 import { editSelectedGroup, groupSelection, removeFromGroup, ungroupSelection } from '../modules/core/groupTools';
-import { GROUP, groupOf } from '../platform/groups';
+import { GROUP, groupOf, membersOf } from '../platform/groups';
 import { allTools } from '../platform/modules';
 import { typeOf } from '../engine/model';
 import { hiddenHere, useShownHere } from '../viewport/cad/shown';
@@ -88,6 +88,15 @@ export function editSketchItems(): MenuItem[] {
   return tool?.run ? [{ label: 'Edit sketch', onSelect: () => tool.run!() }] : [];
 }
 
+/** Make a layered wall from solids (forum topic 101): offered for two or more solids or references, none a Lapin wall, when architecture is there. */
+export function wallFromSolidsItems(): MenuItem[] {
+  const nodes = useSession.getState().nodes;
+  const ids = [...new Set(useUi.getState().selected.flatMap((id) => (nodes.get(id)?.type === GROUP ? membersOf(id) : [id])))];
+  if (ids.length < 2 || !ids.every((id) => { const n = nodes.get(id); return !!n?.storeyId && (n.type !== 'IfcWall' || !!n.props.reference); })) return [];
+  const tool = allTools().find((t) => t.id === 'architecture.wallFromSolids');
+  return tool?.run ? [{ label: 'Make a layered wall…', onSelect: () => tool.run!() }] : [];
+}
+
 export function editTypeItems(): MenuItem[] {
   const { selected } = useUi.getState();
   if (selected.length !== 1) return [];
@@ -116,7 +125,7 @@ export function selectionItems(): MenuItem[] {
     { label: 'Move to storey…', onSelect: () => useUi.setState({ dialog: 'moveToStorey' }) },
   ] : [];
   const shop: MenuItem[] = drawableElement(selected, useSession.getState().nodes) ? [{ label: 'Make drawing…', onSelect: () => useUi.setState({ dialog: 'shopDrawing' }) }] : [];
-  return [...offsetMenuItems(), ...groupItems(), ...storeys, ...shop, ...similarItems(), ...editTypeItems(), ...editSketchItems(), ...historyItems()];
+  return [...offsetMenuItems(), ...groupItems(), ...storeys, ...shop, ...wallFromSolidsItems(), ...similarItems(), ...editTypeItems(), ...editSketchItems(), ...historyItems()];
 }
 
 /** The 3D view's temporary Hide and Isolate (HH, HI) for the selection, and Show all (HR) while something is hidden. */

@@ -70,8 +70,7 @@ public static partial class WallThickness
         var mm = LayerSets.Millimetres(thickness);
         var name = Mm().IsMatch(from.Name) ? Mm().Replace(from.Name, m => mm + m.Groups[2].Value + "mm", 1) : $"{from.Name} {mm}mm";
         var taken = edit.Model.OfClass(IfcClass.WallType).Select(t => t.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var unique = name;
-        for (var i = 2; taken.Contains(unique); i++) unique = $"{name} ({i})";
+        var unique = Lapin.Model.Names.Free(taken.Contains, name);
         var specs = layers.Select(l => LayerSets.SpecOf(edit.Model, l)).ToList();
         var type = WallTypes.Create(edit, unique, specs);
         var attrs = from.CloneAttrs();

@@ -4,6 +4,7 @@
  * computer's library (any project here takes it), or both; a new one, or one of the same place replaced when chosen.
  */
 
+import { backdropClose } from '../../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { BookmarkPlus, X } from 'lucide-react';
 import { notify } from '../../../app/store';
@@ -61,7 +62,7 @@ function SaveTemplateForm({ documentId, onClose, onSaved }: { documentId: string
   };
 
   return (
-    <div className="dialog-backdrop" onClick={(e) => { e.stopPropagation(); onClose(); }}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(onClose)}>
       <div className="dialog tpl-save" role="dialog" aria-label="Save as template" data-dialog="save-template" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Save as template</span><button type="button" className="icon" onClick={onClose} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

@@ -39,7 +39,7 @@ public static class StandardsLibrary
 
     static double[] CheckDashes(JsonNode? n)
     {
-        if (n is not JsonArray a || a.Count < 2 || a.Count > 24) throw new CommandException("A line type is dashes and gaps (mm), two to 24 of them.");
+        if (n is not JsonArray a || !(a.Count >= 2 && a.Count <= 24)) throw new CommandException("A line type is dashes and gaps (mm), two to 24 of them.");
         var d = a.Select(x => Json.Number(x) ?? double.NaN).ToArray();
         if (d.Any(x => !(x > 0 && x < 100))) throw new CommandException("Each dash and gap is above 0 and under 100 mm.");
         return d;
@@ -305,7 +305,7 @@ public static class StandardsLibrary
                 raw[key] = list;
             }
             if (withOptions)
-                foreach (var k in new[] { "units", "lineCap", "areaRounding", "suppressZeros", "levelDecimals", "levelZeros", "sectionMarkSize", "sectionMarkText", "elevationMarkSize", "elevationMarkText", "scales", "planScale", "sectionScale", "elevationScale", "defaultAxisStyle" })
+                foreach (var k in new[] { "units", "lineCap", "areaRounding", "suppressZeros", "levelDecimals", "levelZeros", "dimAutoText", "dimTextLeader", "sectionMarkSize", "sectionMarkText", "elevationMarkSize", "elevationMarkText", "scales", "planScale", "sectionScale", "elevationScale", "defaultAxisStyle" })
                     if (theirs[k] != null) raw[k] = theirs[k]!.DeepClone();
             WriteBook(ctx, raw);
 

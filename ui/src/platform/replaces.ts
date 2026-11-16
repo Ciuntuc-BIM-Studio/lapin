@@ -51,6 +51,7 @@ export function withReplacedTools(modules: readonly LapinModule[]): readonly Lap
     ...(m.tabs ? { tabs: m.tabs.map((tab) => ({ ...tab, groups: tab.groups.map(group) })) } : {}),
     ...(m.sharedGroups ? { sharedGroups: Object.fromEntries(Object.entries(m.sharedGroups).map(([k, g]) => [k, group(g)])) } : {}),
     ...(m.hotbar ? { hotbar: m.hotbar.map(swap) } : {}),
+    ...(m.legacyTools ? { legacyTools: m.legacyTools.map(swap) } : {}),
   }));
   for (const id of ids)
     if (!done.has(id)) {

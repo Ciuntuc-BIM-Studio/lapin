@@ -6,6 +6,7 @@
  * stays the same size at any view scale), a model symbol real ones. Save writes the definition as one undo step.
  */
 
+import { confirmAction } from '../../../shell/prompts';
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from 'react';
 import { Braces, Circle as CircleIcon, FlipHorizontal2, FlipVertical2, Minus, MousePointer2, PenLine, Plus, Redo2, RotateCw, Save, Spline, Square, Trash2, Type, Undo2, X, ZoomIn, ZoomOut } from 'lucide-react';
 import { t as tr } from '../../../i18n';
@@ -228,7 +229,7 @@ export function SymbolEditor({ title, name: initialName, def: initialDef, catego
     if (missing.length) setD(def);
     setDirty(false);
   };
-  const close = () => { if (!dirty || window.confirm(tr('Close the editor without saving your changes?'))) onClose(); };
+  const close = () => { if (!dirty || confirmAction(tr('Close the editor without saving your changes?'))) onClose(); };
 
   const pickField = (key: string) => {
     if (sel != null && d.items[sel].type === 'text') {

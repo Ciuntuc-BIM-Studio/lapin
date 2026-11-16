@@ -472,10 +472,10 @@ table.layer-edit:not(.zones):not(.material-params) > tbody > tr:not(.layer-parts
 .ref-face { fill: var(--accent); font: 700 11px var(--font); text-anchor: middle; dominant-baseline: central; pointer-events: none; paint-order: stroke; stroke: var(--bg, #fff); stroke-width: 3px; }
 .grip-hint { font-size: 11px; fill: var(--accent); font-weight: 600; pointer-events: none; }
 .plan-grip-drag { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 3; }
-/* An outline offset while Shift-dragging an edge's middle (decision 600): the engine's result, solid; why it cannot be, in red. */
+/* An outline offset while Shift-dragging an edge's middle (decision 609): the engine's result, solid; why it cannot be, in red. */
 .ref-line.offset-preview { stroke-dasharray: none; stroke-width: 1.8; }
 .grip-hint.offset-problem { fill: var(--danger, #c0392b); }
-/* A 3D-only grip (decision 601): a wall's top or face, a floor's top, a roof's eave, dragged along its arrow. */
+/* A 3D-only grip (decision 610): a wall's top or face, a floor's top, a roof's eave, dragged along its arrow. */
 .grip3d { fill: var(--panel); stroke: var(--accent); stroke-width: 1.6; cursor: ns-resize; }
 .grip3d.face { cursor: move; }
 .grip3d.hot, .grip3d.on { fill: var(--accent); }
@@ -2715,6 +2715,12 @@ path.part-flex-ghost { fill: none; stroke: var(--accent); stroke-width: 1.6; str
 .fs-rows { display: grid; gap: 4px; margin: 4px 0 8px; justify-items: start; }
 .fs-chips .chip { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .fs-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+/* The one condition editor (view filters, Quick select, clash search sets). */
+.cg-group { display: grid; gap: 4px; margin: 4px 0 8px; justify-items: start; }
+.cg-nested { border-left: 2px solid var(--border, #8884); padding-left: 8px; margin-left: 4px; }
+.cg-group > .row { display: flex; gap: 4px; align-items: center; }
+.cg-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.cg-row input { width: auto; min-width: 90px; max-width: 200px; }
 .fs-column .fs-formula { width: 220px; }
 .fs-column .fs-heading { width: 110px; }
 .fs-column .fs-unit { width: 60px; }

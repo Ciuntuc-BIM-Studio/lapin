@@ -7,6 +7,7 @@
  * selected changed.
  */
 
+import { confirmAction, promptText } from '../../shell/prompts';
 import { useEffect, useState } from 'react';
 import { create } from 'zustand';
 import { Pencil, RotateCcw, Save, Trash2, X } from 'lucide-react';
@@ -101,7 +102,7 @@ export function UnderStairDialog() {
     if (!useSession.getState().error) setDraft(emptyDraft());
   };
   const save = async (styleId?: string, label?: string) => {
-    const name = label ?? window.prompt(t('Name of the under-stair style'), String(value('name') ?? ''));
+    const name = label ?? promptText(t('Name of the under-stair style'), String(value('name') ?? ''));
     if (!name?.trim() || !preview?.spec) return;
     await execute('architecture.saveUnderStairStyle', { ...(id ? { id } : {}), name, spec: preview.spec, ...(styleId ? { styleId } : {}) });
     if (!useSession.getState().error && id) setDraft(emptyDraft());
@@ -136,7 +137,7 @@ export function UnderStairDialog() {
       <div className="dialog wide roof-dialog under-stair-dialog">
         <header className="dialog-head">
           <span className="panel-title">Under-stair space <span className="muted small" data-no-i18n>· {node?.name ?? stair.name}</span></span>
-          <button type="button" className="icon" onClick={() => { if (!dirty || window.confirm(t('Close without applying the changes?'))) close(); }} title="Close"><X size={15} /></button>
+          <button type="button" className="icon" onClick={() => { if (!dirty || confirmAction(t('Close without applying the changes?'))) close(); }} title="Close"><X size={15} /></button>
         </header>
         <div className="dialog-body split">
           <div className="type-list roof-styles">
@@ -146,8 +147,8 @@ export function UnderStairDialog() {
             {own.map((s) => (
               <div key={s.id} className="row roof-own">
                 <button type="button" className={`tree-item grow${current === s.id ? ' on' : ''}`} data-style={s.id} onClick={() => pick(s.id)}><span className="grow" data-no-i18n>{s.label}</span></button>
-                <button type="button" className="icon mini" title="Rename" onClick={() => { const n = window.prompt(t('Name of the under-stair style'), s.label); if (n?.trim()) void execute('architecture.renameUnderStairStyle', { styleId: s.id, name: n }); }}><Pencil size={12} /></button>
-                <button type="button" className="icon mini" title="Delete the style (its spaces keep what fills them)" onClick={() => { if (window.confirm(t('Delete this under-stair style? Its spaces keep what fills them.'))) void execute('architecture.deleteUnderStairStyle', { styleId: s.id }); }}><Trash2 size={12} /></button>
+                <button type="button" className="icon mini" title="Rename" onClick={() => { const n = promptText(t('Name of the under-stair style'), s.label); if (n?.trim()) void execute('architecture.renameUnderStairStyle', { styleId: s.id, name: n }); }}><Pencil size={12} /></button>
+                <button type="button" className="icon mini" title="Delete the style (its spaces keep what fills them)" onClick={() => { if (confirmAction(t('Delete this under-stair style? Its spaces keep what fills them.'))) void execute('architecture.deleteUnderStairStyle', { styleId: s.id }); }}><Trash2 size={12} /></button>
               </div>
             ))}
             <p className="eyebrow">Catalogue</p>

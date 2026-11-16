@@ -43,7 +43,7 @@ public static class ThroughOpenings
         if (length < 1e-3) return null;
         var bands = Walls.Section(m, wall);
         if (bands.Count == 0) return null;
-        var z = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
+        var z = Spatial.Base(m, wall);
         return new Span(wall, a, (b - a) * (1 / length), length, z, Walls.HeightOf(m, wall), bands.Min(x => x.From), bands.Max(x => x.To));
     }
 

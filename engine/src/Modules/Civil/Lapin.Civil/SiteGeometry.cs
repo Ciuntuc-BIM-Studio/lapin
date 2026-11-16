@@ -24,7 +24,7 @@ public static class SiteGeometry
         }
         var s = new Solid([.. verts], [.. faces], tag);
         if (Measure.Volume(s) < 1e-12) return null;
-        return Measure.SignedVolume(s) < 0 ? Flip(s) : s;
+        return Measure.SignedVolume(s) < 0 ? SolidBuilder.Flip(s) : s;
     }
 
     /// <summary>
@@ -48,44 +48,13 @@ public static class SiteGeometry
             }
         var s = new Solid([.. verts], [.. faces], tag);
         if (Measure.Volume(s) < 1e-12) return null;
-        return Measure.SignedVolume(s) < 0 ? Flip(s) : s;
+        return Measure.SignedVolume(s) < 0 ? SolidBuilder.Flip(s) : s;
     }
 
     static Face Face(int[] ring, List<Vec3> verts)
     {
         var normal = VecMath.NewellNormal(ring.Select(i => verts[i]).ToList());
         return new Face(ring, [], normal.Length < 1e-15 ? Vec3.UnitZ : normal.Normalized());
-    }
-
-    static Solid Flip(Solid s) => new(s.Vertices, s.Faces.Select(f => f with { Outer = [.. f.Outer.Reverse()], Holes = f.Holes.Select(h => h.Reverse().ToArray()).ToArray(), Normal = -f.Normal }).ToArray(), s.Tag);
-
-    /// <summary>A profile extruded along a vector, its volume positive whichever way the ring was given.</summary>
-    public static Solid? Oriented(List<Vec3> ring, Vec3 along, string? tag = null)
-    {
-        var s = Prism.Extrude(ring, null, along, tag);
-        if (s == null || Measure.SignedVolume(s) >= 0) return s;
-        var reversed = new List<Vec3>(ring);
-        reversed.Reverse();
-        return Prism.Extrude(reversed, null, along, tag);
-    }
-
-    /// <summary>A polyline with points added so no segment is longer than <paramref name="step"/>; repeated points dropped.</summary>
-    public static List<Vec2> Densify(IReadOnlyList<Vec2> path, double step)
-    {
-        var o = new List<Vec2>();
-        for (var i = 0; i < path.Count; i++)
-        {
-            if (o.Count > 0 && (path[i] - o[^1]).Length < 1e-6) continue;
-            if (o.Count > 0 && step > 0)
-            {
-                var a = o[^1];
-                var len = (path[i] - a).Length;
-                var n = (int)Math.Ceiling(len / step);
-                for (var k = 1; k < n; k++) o.Add(a + (path[i] - a) * ((double)k / n));
-            }
-            o.Add(path[i]);
-        }
-        return o;
     }
 
     /// <summary>The direction of a path at each of its points: a segment's, or the mean of the two that meet there.</summary>

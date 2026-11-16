@@ -136,9 +136,7 @@ public static class ReferenceQuantities
 public static class ReferenceTypes
 {
     /// <summary>The element's type: its IfcRelDefinesByType's, else a reference's file type record.</summary>
-    public static Entity? TypeOf(IModelView m, Entity e) =>
-        m.RelatingOf(e.Id, IfcClass.RelDefinesByType)
-        ?? ((string?)e.Attrs[IfcSource.Key]?["type"]?["record"] is { Length: > 0 } rec && m.Get(rec) is { Class: IfcSource.RecordClass } record ? record : null);
+    public static Entity? TypeOf(IModelView m, Entity e) => Types.Of(m, e);
 
     /// <summary>The name of the element's type (null when it has none): its type's, else what a reference's file says of it.</summary>
     public static string? NameOf(IModelView m, Entity e)

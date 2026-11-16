@@ -19,7 +19,7 @@ import { deleteType } from '../core/deleteType';
 import { SaveTypeToLibrary } from '../core/SaveTypeToLibrary';
 import { useStandards } from '../../engine/unitsStore';
 import { formatSteps, parseSteps, type Step } from './steps';
-import { Cell, LengthField } from '../../shell/cells';
+import { Cell, LengthField, NumberField } from '../../shell/cells';
 import { ProfilePicker, ProfilePreview } from '../core/ProfilesDialog';
 import { ProfilePickerField } from '../core/profileLibraries/ProfilePickerField';
 import { useLibraryPick } from '../core/profileLibraries/useLibraryPick';
@@ -187,7 +187,7 @@ export function StructureTypesDialog() {
               </>}
               {shape !== 'library' && <Len label={shape === 'rectangle' ? 'Width' : 'Diameter'} value={w} min={0.01} onChange={setW} />}
               {shape === 'polygon' && <label className="field-line"><span className="eyebrow">Sides</span>
-                <input type="number" min={3} max={64} step={1} value={sides} onChange={(e) => setSides(Math.max(3, Math.min(64, Math.round(Number(e.target.value) || 3))))} /></label>}
+                <NumberField min={3} max={64} integer value={sides} onCommit={(v) => { if (v != null) setSides(v); }} /></label>}
               {shape === 'rectangle' && <Len label={kind === 'beam' ? 'Depth' : 'Length'} value={d} min={0.01} onChange={setD} />}
             </>}
             {edited && (kind === 'column' || kind === 'beam') && <label className="field-line"><span className="eyebrow">Mark</span><input data-field="type-mark" value={mark} onChange={(e) => setMark(e.target.value)} /></label>}

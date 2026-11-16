@@ -263,7 +263,7 @@ public static class Arrays
                 case "row":
                 {
                     r.Fit = V3(a["fit"]);
-                    if (r.Count < 2 || r.Count > Most) throw new CommandException($"An array has 2 to {Most} items, the first among them.");
+                    if (!(r.Count >= 2 && r.Count <= Most)) throw new CommandException($"An array has 2 to {Most} items, the first among them.");
                     r.Step = r.Fit is { } fit ? fit * (1.0 / (r.Count - 1)) : V3(a["step"]) ?? default;
                     if (!double.IsFinite(r.Step.X + r.Step.Y + r.Step.Z) || Math.Abs(r.Step.X) + Math.Abs(r.Step.Y) + Math.Abs(r.Step.Z) < 1e-9)
                         throw new CommandException("An array's step cannot be nothing.");
@@ -275,7 +275,7 @@ public static class Arrays
                     r.Levels = (int)Math.Round(Json.Number(a["levels"]) ?? 1);
                     if (r.Count < 1 || r.Rows < 1 || r.Levels < 1) throw new CommandException("A grid has at least one column, one row and one level.");
                     var total = (long)r.Count * r.Rows * r.Levels;
-                    if (total < 2 || total > Most) throw new CommandException($"An array has 2 to {Most} items, the first among them: {r.Count} × {r.Rows} × {r.Levels} is {total}.");
+                    if (!(total >= 2 && total <= Most)) throw new CommandException($"An array has 2 to {Most} items, the first among them: {r.Count} × {r.Rows} × {r.Levels} is {total}.");
                     r.Step = V3(a["step"]) ?? default;
                     r.RowStep = V3(a["rowStep"]) ?? default;
                     r.LevelStep = V3(a["levelStep"]) ?? default;
@@ -286,7 +286,7 @@ public static class Arrays
                     break;
                 }
                 case "polar":
-                    if (r.Count < 2 || r.Count > Most) throw new CommandException($"An array has 2 to {Most} items, the first among them.");
+                    if (!(r.Count >= 2 && r.Count <= Most)) throw new CommandException($"An array has 2 to {Most} items, the first among them.");
                     r.Angle = Json.Number(a["angle"]) ?? 360;
                     if (!double.IsFinite(r.Angle) || Math.Abs(r.Angle) < 1e-9 || Math.Abs(r.Angle) > 360) throw new CommandException("A polar array fills an angle of up to 360°.");
                     r.Center = Args.Point(a["center"], "centre");
@@ -297,8 +297,8 @@ public static class Arrays
                     if (r.Along == null && r.Points == null) throw new CommandException("An array along a path needs its path: an element to follow, or points.");
                     r.Spacing = Json.Number(a["spacing"]) is { } sp and > 0 ? sp : null;
                     if (a["spacing"] != null && r.Spacing == null) throw new CommandException("The spacing along a path must be more than nothing.");
-                    if (r.Spacing == null && (r.Count < 2 || r.Count > Most)) throw new CommandException($"An array has 2 to {Most} items, the first among them.");
-                    if (r.Spacing != null && r.Count != 0 && (r.Count < 2 || r.Count > Most)) throw new CommandException($"An array has 2 to {Most} items, the first among them.");
+                    if (r.Spacing == null && (!(r.Count >= 2 && r.Count <= Most))) throw new CommandException($"An array has 2 to {Most} items, the first among them.");
+                    if (r.Spacing != null && r.Count != 0 && (!(r.Count >= 2 && r.Count <= Most))) throw new CommandException($"An array has 2 to {Most} items, the first among them.");
                     r.Start = Math.Max(0, Json.Number(a["start"]) ?? 0);
                     r.End = Math.Max(0, Json.Number(a["end"]) ?? 0);
                     r.Offset = Json.Number(a["offset"]) ?? 0;

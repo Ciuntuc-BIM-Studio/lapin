@@ -4,6 +4,7 @@
  * dragged in the view; its name, unique in the project, is set here; the sheets it is on follow it.
  */
 
+import { promptText } from '../../shell/prompts';
 import { useEffect, useState } from 'react';
 import { SquareDashed } from 'lucide-react';
 import { execute, useSession } from '../../engine/session';
@@ -16,7 +17,7 @@ export const viewBoundary: ToolDef = {
   id: 'drafting.viewBoundary', label: 'View boundary', icon: SquareDashed, shortcut: 'VB',
   gesture: { kind: 'rectangle' },
   complete: async ({ points: [a, b] }, ctx) => {
-    const name = window.prompt('Name of the view boundary (unique in the project; empty: one is given)', '');
+    const name = promptText('Name of the view boundary (unique in the project; empty: one is given)', '');
     if (name === null) return;
     await ctx.execute('view.addBoundary', { viewId: ctx.viewId, a: [a.x, a.y], b: [b.x, b.y], ...(name.trim() ? { name: name.trim() } : {}) });
   },

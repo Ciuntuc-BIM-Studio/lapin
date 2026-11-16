@@ -1916,6 +1916,8 @@ export const scenes = [
       await t.page.locator('[data-testid=schedule-configure]').click();
       await t.wait(1200);
       t.expect(await t.page.locator('[data-testid=field-schedule-dialog]').count() === 1, 'Configure opens the editor');
+      t.expect(await t.page.locator('[data-testid=fs-conditions] [data-testid=fs-condition]').count() === 1 && await t.page.locator('[data-testid=fs-match]').count() === 1,
+        'the filter\'s condition in the one condition editor, all or any');
       await t.page.locator('[data-testid=fs-col-field-0]').click();
       await t.wait(800);
       await t.shot('field-schedule-editor', { of: '[data-testid=field-schedule-dialog]', pad: 8 });
@@ -2847,7 +2849,7 @@ export const scenes = [
       const task = leaves.find((x) => x.name.includes('Sector A')) ?? leaves[0];
       await t.ui({ selection: task.id, selected: [task.id] });
       await t.wait(1000);
-      t.expect(await t.page.locator('[data-testid=rule-conditions] .fs-row').count() >= 1, 'the rule holds its condition');
+      t.expect(await t.page.locator('[data-testid=rule-conditions] .cg-row').count() >= 1, 'the rule holds its condition, in the one condition editor');
       await t.page.locator('[data-testid=task-links]').scrollIntoViewIfNeeded();
       await t.wait(300);
       await t.shot('planning-rule-fields', { of: '[data-testid=task-links]', pad: 8 });
@@ -3924,6 +3926,8 @@ export const scenes = [
       }
       await t.ui({ keyPlan: false });
       await t.tool('manage.openingsMep');
+      // One window, Clash detection, with the openings check as its second tab (S2).
+      await t.page.waitForSelector('[data-testid=clash-dialog] [data-clash-mode=openings].active', { timeout: 30_000 });
       t.expect(await t.page.locator('[data-testid=coordination-dialog]').count() === 1, 'Clash check opens');
       await t.wait(400);
       t.expect(await t.page.locator('[data-testid=clash-none]').count() === 1, 'nothing has run the check: no report yet');
@@ -5197,6 +5201,7 @@ export const scenes = [
       await editor.locator('input[aria-label="Filter name"]').fill('Exterior walls');
       await editor.locator('input[aria-label="Filter name"]').press('Tab');
       await t.wait(800);
+      t.expect(await editor.locator('[data-testid=vv-rule-condition]').count() >= 1, 'the filter\'s rules in the one condition editor');
       let g = (await vis()).graphics;
       t.expect(g?.filters?.length === 1 && g.filters[0].hidden === true, 'the new filter used by the view, hiding what it takes');
       const after = await cut();
@@ -5332,7 +5337,7 @@ export const scenes = [
     },
   },
   {
-    // Forum topic 107: View → Detail callout (CO) drawn round a corner of the plan, its detail view at 1:20 placed on a sheet, the head reading its number and sheet; the detail inset beside the plan to show it.
+    // Forum topic 107: View → Detail callout (DC) drawn round a corner of the plan, its detail view at 1:20 placed on a sheet, the head reading its number and sheet; the detail inset beside the plan to show it.
     id: 'views-callout',
     touches: ['core', 'architecture'],
     async run(t) {
@@ -5676,6 +5681,7 @@ export const scenes = [
       await t.page.locator('[data-clash-tab=sets]').click();
       await t.wait(800);
       t.expect(await t.page.locator('[data-testid=clash-set-count]').count() === 1, 'a set and how many elements it takes');
+      t.expect(await t.page.locator('[data-testid=clash-rule-conditions] [data-testid=clash-rule-condition]').count() >= 1, 'its rules in the one condition editor');
       await t.shot('clash-sets', { of: '[data-testid=clash-dialog]', pad: 0 });
       // The clash as the dialog left it framed, without the dialog over it.
       await t.page.locator('[data-testid=clash-dialog] button[title="Close"]').click();
@@ -6830,7 +6836,8 @@ export const scenes = [
         await lib.locator('[data-library-entry="Walnut desk"] [data-action=library-place]').click();
         await lib.waitFor({ state: 'detached', timeout: 10_000 });
         const tool = await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().tool);
-        t.expect(tool === 'furniture.casework', `Place starts the casework tool (${tool})`);
+        const kind = await t.page.evaluate(async () => (await import('/src/modules/furniture/placeKind.ts')).usePlaceKind.getState().kind);
+        t.expect(tool === 'furniture.place' && kind === 'casework', `Place starts the Place furniture tool set to casework (${tool}, ${kind})`);
         await t.page.keyboard.press('Escape');
       } finally {
         for (const id of kept) await t.call('furnitureLibrary.delete', { id }).catch(() => undefined);
@@ -9172,6 +9179,49 @@ export const scenes = [
     },
   },
   {
+    // Make a layered wall from solids (forum topic 101): a timber-frame wall drawn in SketchUp as five parallel solids with a
+    // window's hole through them, imported as references, made one wall of five layers with its window; the dialog first.
+    id: 'wall-from-solids',
+    touches: ['architecture', 'studio'],
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const storey = await t.storey();
+      let obj = '';
+      let n = 0;
+      const box = (x0, y0, z0, x1, y1, z1) => {
+        for (const [x, y, z] of [[x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0], [x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]]) obj += `v ${x} ${y} ${z}\n`;
+        for (const f of [[1, 4, 3, 2], [5, 6, 7, 8], [1, 2, 6, 5], [3, 4, 8, 7], [1, 5, 8, 4], [2, 3, 7, 6]]) obj += `f ${f.map((i) => i + n).join(' ')}\n`;
+        n += 8;
+      };
+      // Outside to inside: cladding 22, wind board 9, insulation 145, OSB 12, gypsum 13; a window 1.2 × 1.2 m through them.
+      const layers = [['Träpanel', 0, 0.022], ['Vindskydd', 0.022, 0.031], ['Mineralull', 0.031, 0.176], ['OSB', 0.176, 0.188], ['Gips', 0.188, 0.201]];
+      for (const [name, y0, y1] of layers) {
+        obj += `o ${name}\n`;
+        box(0, y0, 0, 1.0, y1, 2.7); box(2.2, y0, 0, 4, y1, 2.7); box(1.0, y0, 0, 2.2, y1, 0.9); box(1.0, y0, 2.1, 2.2, y1, 2.7);
+      }
+      obj += 'o Window 1\n';
+      box(1.01, 0.06, 0.91, 2.19, 0.14, 2.09);
+      await page.evaluate(async ([obj, storeyId]) => (await import('/src/engine/session.ts')).engine.call('project.importMesh',
+        { name: 'wall.obj', data: btoa(unescape(encodeURIComponent(obj))), up: 'z', storeyId }), [obj, storey]);
+      await t.wait(800);
+      const solids = (await t.nodes()).filter((x) => x.type === 'IfcBuildingElementProxy');
+      t.expect(solids.length === 6, 'six solids came in');
+      await t.ui({ view: '3d', selected: solids.map((x) => x.id), selection: solids[0].id });
+      await page.waitForSelector('[data-testid=view3d] canvas', { timeout: 20_000 });
+      await t.wait(800);
+      await t.tool('architecture.wallFromSolids');
+      await page.waitForSelector('[data-testid=wall-from-solids] [data-testid=wfs-wall]', { timeout: 20_000 });
+      await t.until(async () => (await page.locator('[data-testid=wfs-layer]').count()) === 5, 'five layers found');
+      await t.shot('wall-from-solids', { of: '[data-testid=wall-from-solids]', pad: 0 });
+      await page.locator('[data-testid=wfs-make]').click();
+      await t.until(async () => (await t.nodes()).some((x) => x.type === 'IfcWall'), 'the wall is made');
+      const nodes = await t.nodes();
+      t.expect(nodes.some((x) => x.type === 'IfcWindow'), 'its window too');
+      t.expect(nodes.filter((x) => x.props.supersededBy).length === 6, 'the solids kept hidden behind it');
+    },
+  },
+  {
     // An array that keeps its arrangement (decision 481): columns along a drafted arc, then their count changed in the Array section.
     id: 'array-path',
     touches: ['structure', 'drafting'],
@@ -9258,6 +9308,41 @@ export const scenes = [
       await t.ui({ selection: copy.id, selected: [copy.id] });
       await t.wait(800);
       await t.shot('array-grid', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
+    // Array on drafting (forum 90): a drafted rectangle arrayed in a row from the Draft tab's Modify panel, then one more copy in its Array section.
+    id: 'array-draft',
+    touches: ['drafting'],
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const storey = await t.storey();
+      const plan = 'plan:' + storey;
+      const rect = (await t.cmd('drafting.draw', { viewId: plan, shape: { type: 'polyline', pts: [[0, 0], [1.2, 0], [1.2, 0.8], [0, 0.8]], closed: true } })).ids[0];
+      await t.ui({ view: 'plan', keyPlan: false, selection: rect, selected: [rect] });
+      await t.wait(1000);
+      const drafts = async () => (await t.nodes()).filter((x) => x.type === 'IfcAnnotation' && x.props.predefinedType === 'DRAFT');
+      // Draft → Modify → Array, in a row: four, 2 m apart.
+      await t.tool('cad.array');
+      t.expect(await page.locator('.ask-box').count() === 1, 'Array asks how');
+      const inputs = page.locator('.ask-box input');
+      await inputs.nth(0).fill('4');
+      await inputs.nth(1).fill('2 m');
+      await page.locator('.ask-box button.primary').click();
+      await t.until(async () => (await drafts()).length === 4, 'four rectangles in a row');
+      // A copy shows its Array section: five copies instead of four.
+      const copy = (await drafts()).find((x) => x.id !== rect);
+      await t.ui({ selection: copy.id, selected: [copy.id] });
+      await t.wait(800);
+      t.expect(await page.locator('[data-testid=array-title]').count() === 1, 'a drafted copy shows its Array section');
+      await page.locator('aside.props dl.fields dt:text-is("Copies") + dd input').fill('5');
+      await page.keyboard.press('Enter');
+      await t.until(async () => (await drafts()).length === 5, 'five rectangles after a copy more');
+      await t.fit();
+      await t.ui({ selection: copy.id, selected: [copy.id] });
+      await t.wait(800);
+      await t.shot('array-draft', { of: '[data-testid=plan]', pad: 0 });
     },
   },
   {
@@ -9672,8 +9757,8 @@ export const scenes = [
     },
   },
   {
-    // Offset outline (decision 600): a floor with a curved edge, Shift-dragged by an edge's middle in the plan (every edge offset,
-    // the engine's offset previewed), then "Offset outline…" typed inward; and the 3D-only grips (decision 601): a wall's top and
+    // Offset outline (decision 609): a floor with a curved edge, Shift-dragged by an edge's middle in the plan (every edge offset,
+    // the engine's offset previewed), then "Offset outline…" typed inward; and the 3D-only grips (decision 610): a wall's top and
     // faces, a floor's top, each dragged with its distance typed, one undo step each.
     id: 'grips-3d-offset',
     touches: ['architecture'],
@@ -10167,6 +10252,69 @@ export const scenes = [
       t.expect(await dialog.locator('select').filter({ has: t.page.locator('option[value=hp]') }).first().inputValue() === 'number', 'a new project writes the height alone');
       await t.shot('dimension-opening-height-style', { of: '.standards-table', pad: 6 });
       await t.keys('Escape');
+    },
+  },
+  {
+    // Automatic text placement (forum topic 78): the south facade's exterior dimensions with a 15 cm pier between a window
+    // and a narrow opening; the values that do not fit between their witness lines stand outside them or a row up, clear of
+    // the next string, and the setting in Dimension rules….
+    id: 'dimension-text-placement',
+    touches: ['drafting'],
+    async run(t) {
+      await t.fresh();
+      const { storey, walls } = await house(t, { roof: false });
+      // The window's jambs at 8.90 and 10.10; an opening 0.40 wide from 10.25: a 150 pier and a 400 opening side by side.
+      await t.cmd('architecture.addWallOpening', { wallId: walls[0], along: 10.45, width: 0.4, height: 1.5, sill: 0.9 });
+      const view = `plan:${storey}`;
+      await t.cmd('drafting.exteriorDimensions', { viewId: view, wallIds: [walls[0]] });
+      await t.ui({ selection: null, selected: [], keyPlan: false });
+      await t.page.evaluate(async () => (await import('/src/viewport/zoom.ts')).zoomHost()?.zoomWindow({ x: 5.5, y: -4.2 }, { x: 13.2, y: 1 }));
+      await t.wait(900);
+      const drawing = await t.call('doc.query', { name: 'view.drawing', args: { id: view } });
+      const placed = (drawing.marks ?? []).filter((m) => Array.isArray(m.data?.textAuto));
+      t.expect(placed.length > 0, 'the exterior strings have values moved clear of their neighbours');
+      const plan = t.page.locator('[data-testid=plan]');
+      t.expect(await plan.locator('text', { hasText: /^150$/ }).count() >= 1, 'the pier\'s value is drawn');
+      const [x0, y0] = await t.planPoint(5.5, 1);
+      const [x1, y1] = await t.planPoint(13.2, -4.2);
+      await t.shot('dimension-text-placement', { clip: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 } });
+      // The setting, under the rules' tabs.
+      await t.tool('drafting.dimensionRules');
+      await t.wait(500);
+      t.expect(await t.page.locator('[data-dim-auto-text]').isChecked(), 'automatic text placement is on');
+      t.expect(await t.page.locator('[data-field=dim-text-leader]').inputValue() === '5', 'a leader past 5 mm on paper');
+      await t.page.locator('[data-dimension-rules] button', { hasText: 'Cancel' }).click();
+    },
+  },
+  {
+    // A grid axis's temporary dimensions (forum topic 78): axis 2 selected shows its distances to axes 1 and 3; 5000 typed
+    // to axis 1 moves it, and the axes beyond with it.
+    id: 'grid-temp-dimensions',
+    touches: ['drafting'],
+    async run(t) {
+      await t.fresh();
+      const { gridId } = await t.cmd('drafting.makeGrid', { x: [6, 6, 4.5], y: [5, 5] });
+      await t.ui({ keyPlan: false });
+      await t.page.evaluate(async () => (await import('/src/viewport/zoom.ts')).zoomHost()?.zoomWindow({ x: -2.5, y: -2.5 }, { x: 19, y: 12.5 }));
+      await t.wait(800);
+      await t.ui({ selection: `${gridId}#2`, selected: [`${gridId}#2`] });
+      await t.wait(800);
+      const dims = t.page.locator('[data-testid=grid-dims]');
+      t.expect(await dims.count() === 1, 'a selected axis shows its temporary dimensions');
+      const dim = (key) => dims.locator(`[data-dim="${key}"]`);
+      t.expect(Math.abs(Number(await dim('g:1').getAttribute('data-value')) - 6) < 1e-6 && Math.abs(Number(await dim('g:3').getAttribute('data-value')) - 6) < 1e-6, 'to axes 1 and 3, 6000 each');
+      t.expect(await t.page.locator('[data-field=grid-dims-beyond]').isChecked(), 'the axes beyond move too, as in its properties');
+      const [x0, y0] = await t.planPoint(-2.5, 12.5);
+      const [x1, y1] = await t.planPoint(19, -2.5);
+      await t.shot('grid-temp-dimensions', { clip: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 } });
+      await dim('g:1').locator('[data-value-hit]').click();
+      await t.page.locator('[data-field=temp-dim]').fill('5000');
+      await t.page.locator('[data-field=temp-dim]').press('Enter');
+      await t.wait(900);
+      const grid = (await t.nodes()).find((n) => n.id === gridId);
+      const x = (tag) => grid.props.axes.find((a) => a.tag === tag).a[0];
+      t.expect(Math.abs(x('2') - 5) < 1e-6 && Math.abs(x('3') - 11) < 1e-6 && Math.abs(x('1')) < 1e-6, `axis 2 at 5000, axis 3 with it (${x('2')}, ${x('3')})`);
+      await t.ui({ selection: null, selected: [] });
     },
   },
   {

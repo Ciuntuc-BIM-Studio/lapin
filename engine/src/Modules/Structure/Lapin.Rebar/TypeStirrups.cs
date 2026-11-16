@@ -128,8 +128,8 @@ public static class TypeStirrups
             if (section.Kind != "rectangle" || height <= 1e-6) return null;
             var (a, b) = Inside(section.Width, section.Depth, spec);
             if (a <= 0 || b <= 0) return null;
-            var at = e.Attrs["at"] is JsonArray q && q.Count >= 2 ? new Vec2(Json.Number(q[0]) ?? 0, Json.Number(q[1]) ?? 0) : default;
-            var baseZ = (Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0) + e.Num("baseOffset");
+            var at = Args.PointOf(e.Attrs["at"]);
+            var baseZ = Spatial.Base(m, e);
             var rot = e.Num("rotation") * Math.PI / 180;
             var (ux, uy) = (new Vec2(Math.Cos(rot), Math.Sin(rot)), new Vec2(-Math.Sin(rot), Math.Cos(rot)));
             var stations = Runs.Positions(height, spec.Step, spec.RunZones(height));
@@ -275,9 +275,9 @@ public static class TypeStirrups
         var moved = partition != (type.Str(Rebars.StirrupsPartitionKey)?.Trim() ?? "");
         var enabled = a["enabled"] is JsonValue ev && ev.TryGetValue<bool>(out var en) ? en : now.Enabled;
         var d = Json.Number(a["diameter"]) ?? now.Diameter;
-        if (d < 0.004 || d > 0.02) throw new CommandException("A stirrup is between 4 and 20 mm thick.");
+        if (!(d >= 0.004 && d <= 0.02)) throw new CommandException("A stirrup is between 4 and 20 mm thick.");
         var cover = Json.Number(a["cover"]) ?? now.Cover;
-        if (cover < 0 || cover > 0.2) throw new CommandException("The cover is between 0 and 200 mm.");
+        if (!(cover >= 0 && cover <= 0.2)) throw new CommandException("The cover is between 0 and 200 mm.");
         var mode = (string?)a["mode"] ?? now.Mode;
         if (!StirrupSpec.Modes.Contains(mode)) throw new CommandException("Stirrups are laid at one step (uniform) or in zones.");
         var step = Json.Number(a["step"]) ?? now.Step;

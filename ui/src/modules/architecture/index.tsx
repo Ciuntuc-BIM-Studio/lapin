@@ -53,6 +53,7 @@ import { SkirtingSection, SkirtingTypesDialog, skirting, skirtingGrips, skirting
 import { colorLegend, room, roomColors, roomDivider, roomDividerArc, roomDividerCircle, roomDividerPolyline, roomDividerRectangle, roomDividers, roomOutline, roomTag, updateRooms } from './roomTools';
 import { sameKind } from '../../shell/params';
 import { withAutoJoinMenus } from '../core/autoJoin';
+import { arcAlias, chainTool, setChainMode } from '../core/chainTool';
 import { SHADE, SunshadeSection, SunshadeTypesDialog, sunshade, sunshadeAlong, sunshadeGrips, sunshadeSchedule, sunshadeTypes } from './Sunshades';
 import { lazyPart } from '../../platform/lazyPart';
 import { StairRailingPanel, railingPick } from './StairRailingPanel';
@@ -75,17 +76,48 @@ const RoomColorsDialog = lazyPart(() => import('./RoomColorsDialog').then((m) =>
 const OpeningDialog = lazyPart(() => import('./OpeningDialog').then((m) => m.OpeningDialog), { title: 'Wall opening' });
 const RoomFinishesDialog = lazyPart(() => import('./RoomFinishes').then((m) => m.RoomFinishesDialog), { title: 'Room finishes' });
 const RoomTagDialog = lazyPart(() => import('./RoomTagDialog').then((m) => m.RoomTagDialog), { title: 'Room tag' });
+const WallFromSolidsDialog = lazyPart(() => import('./WallFromSolidsDialog').then((m) => m.WallFromSolidsDialog), { title: 'Make a layered wall from solids' });
 
-const wall: ToolDef = {
+/**
+ * Make a layered wall from solids (forum topic 101): the selected solids, one per layer, made one wall of a type with
+ * those layers (architecture.wallFromSolids, its preview first). WFS on the command line; the right-click offers it too.
+ */
+const wallFromSolids: ToolDef = {
+  id: 'architecture.wallFromSolids', label: 'Wall from solids', icon: Layers3, shortcut: 'WFS',
+  run: () => {
+    if (!useUi.getState().selected.length) { notify('Select the solids that make the wall (its layers), then Wall from solids.'); return; }
+    useUi.setState({ dialog: 'wallFromSolids' });
+  },
+};
+
+/** A wall made of solids it keeps hidden (forum topic 101): how many, and Show the original solids. */
+function OriginalSolidsSection({ node }: { node: NodeDto }) {
+  const nodes = useSession((s) => s.nodes);
+  const count = [...nodes.values()].filter((n) => n.props.supersededBy === node.id).length;
+  if (!count) return null;
+  return (
+    <div className="field-line">
+      <span className="muted small"><span>{count}</span> <span>solid(s) it was made of, kept hidden</span></span>
+      <button type="button" className="btn small" onClick={() => void execute('architecture.showOriginalSolids', { id: node.id })}>Show the original solids</button>
+    </div>
+  );
+}
+const hidesSolids = (node: NodeDto) => [...useSession.getState().nodes.values()].some((n) => n.props.supersededBy === node.id);
+
+const wall: ToolDef = chainTool({
   id: 'architecture.wall', label: 'Wall', icon: WallIcon, shortcut: 'WA', properties: newElement('IfcWallType', 'wallTypeId', 'wallTypes'), typed: typedBy('IfcWallType', 'wallTypeId', 'wallTypes', WallThumb),
-  gesture: { kind: 'twoPoints', repeat: true },
-  complete: async ({ points: [a, b] }, ctx) => {
+  line: async (a, b, ctx) => {
     const typeId = useUi.getState().wallTypeId;
     const { joinStyle, line } = useWallPrefs.getState();
     await ctx.execute('architecture.addWall', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, joinStyle, ...(line !== 'core' ? { reference: line } : {}), ...(typeId ? { typeId } : {}), ...wallTopArgs() });
   },
-  options: () => <><WallLineOption /><WallTopOption /></>,
-};
+  // An arc is drawn on the core's centre (the wall's line is for straight pieces).
+  arc: async (a, b, p, ctx) => {
+    const typeId = useUi.getState().wallTypeId;
+    await ctx.execute('architecture.addWall', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, x3: p.x, y3: p.y, joinStyle: useWallPrefs.getState().joinStyle, ...(typeId ? { typeId } : {}), ...wallTopArgs() });
+  },
+  more: () => <><WallLineOption /><WallTopOption /></>,
+});
 
 /** The line a wall is drawn on, chosen in the command line's bar while the Wall tool is on (decision 237). */
 function WallLineOption() {
@@ -102,16 +134,8 @@ function WallLineOption() {
   );
 }
 
-/** A curved wall: its start, its end, then a point the arc passes through. */
-const curvedWall: ToolDef = {
-  id: 'architecture.curvedWall', label: 'Curved wall', icon: CurvedWallIcon, shortcut: 'WC', properties: newElement('IfcWallType', 'wallTypeId', 'wallTypes'), typed: typedBy('IfcWallType', 'wallTypeId', 'wallTypes', WallThumb),
-  gesture: { kind: 'threePoints', arc: true },
-  complete: async ({ points: [a, b, p] }, ctx) => {
-    const typeId = useUi.getState().wallTypeId;
-    await ctx.execute('architecture.addWall', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, x3: p.x, y3: p.y, joinStyle: useWallPrefs.getState().joinStyle, ...(typeId ? { typeId } : {}), ...wallTopArgs() });
-  },
-  options: WallTopOption,
-};
+/** The old Curved wall: the Wall tool, in Arc. */
+const curvedWall: ToolDef = arcAlias({ id: 'architecture.curvedWall', label: 'Curved wall', icon: CurvedWallIcon, shortcut: 'WC' }, wall);
 /** A curtain wall: two points (chained), of the type picked in the configurator, else the project's first. */
 const curtainWall: ToolDef = {
   id: 'architecture.curtainWall', label: 'Curtain wall', icon: CurtainWallIcon, shortcut: 'CW', properties: newElement('IfcCurtainWallType', 'curtainTypeId', 'curtainWalls'), typed: typedBy('IfcCurtainWallType', 'curtainTypeId', 'curtainWalls'),
@@ -145,6 +169,7 @@ const restyle = (label: string, id: string, icon: ToolDef['icon'], args: Record<
     void execute('architecture.restyleJoins', { ids, ...args });
   },
 });
+// Their buttons are core's Joins group now (core.mitre, butt, swap, on walls, beams and strip footings); the ids stay, off the ribbon.
 const mitre = restyle('Mitre', 'architecture.mitre', Slash, { style: 'mitre' });
 const butt = restyle('Butt', 'architecture.butt', CornerDownRight, { style: 'butt' });
 const swap = restyle('Swap', 'architecture.swap', ArrowLeftRight, { swap: true });
@@ -532,16 +557,16 @@ const architecture: LapinModule = {
   // The edges of the wall or floor edited in "Edit layers", kept in step with the model (forum topic 89).
   background: LayerEditWatcher,
   tabs: [{
-    id: 'architecture', label: 'Architecture', order: 20, include: ['modify'],
+    id: 'architecture', label: 'Architecture', order: 20, include: ['modify', 'joins'],
     groups: [
-      { label: 'Build', tools: [wall, door, window_, slab, roof], small: [curvedWall, curtainWall, bayWindow, wallOpening, slabOpening, roofOpening('window'), roofOpening('dormer'), roofConfigurator, downpipe, railing] },
+      { label: 'Build', tools: [wall, door, window_, slab, roof], small: [wallFromSolids, curtainWall, bayWindow, wallOpening, slabOpening, roofOpening('window'), roofOpening('dormer'), roofConfigurator, downpipe, railing] },
       { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes], small: [curtainTypes, sunshadeTypes] },
       // Sunshades (report #56): on a window, along a facade; their schedule.
       { label: 'Sunshades', tools: [sunshade], small: [sunshadeAlong, sunshadeSchedule] },
       // Profiles swept along a wall's face: added (a cornice, a band) or taken out (a reveal), decision 297.
       { label: 'Sweeps', tools: [wallSweep, wallReveal], small: [sweepSelected, revealSelected, wallSweepSchedule] },
-      { label: 'Joins', tools: [join, mitre, butt, swap, mitreNew], small: [filletTool, chamferTool, attachRoof, detachRoof, editLayers] },
-      { label: 'Room', tools: [room, roomColors], small: [roomOutline, roomDividers, updateRooms, roomTag] },
+      { label: 'Joins', tools: [join], small: [mitreNew, filletTool, chamferTool, attachRoof, detachRoof, editLayers] },
+      { label: 'Room', tools: [room], small: [roomOutline, roomDividers, updateRooms, roomTag] },
       { label: 'Circulation', tools: [stair, ramp, stairTypes], small: [entranceSteps, entranceRamp, underStair, underStairSchedule] },
       // Balconies (a tester's report, #96): by a wall's face in a style, by outline, a gallery's edge; the configurator, stacking, the schedule.
       { label: 'Balconies', tools: [balcony, balconyConfigurator], small: [balconyOutline, galleryEdge, stackBalconies, balconySchedule] },
@@ -568,11 +593,13 @@ const architecture: LapinModule = {
   }, {
     // Into Annotate: the colour legend of a plan's rooms.
     id: 'annotate', label: 'Annotate', order: 60,
-    groups: [{ label: 'Rooms', tools: [colorLegend], small: [roomColors] }],
+    groups: [{ label: 'Rooms', tools: [colorLegend] }],
   }],
+  legacyTools: [curvedWall, roomDividerArc, mitre, butt, swap],
   hotbar: [wall, door, window_, slab, roof],
   propertySections: [
     { id: 'wall', label: 'Wall', classes: ['IfcWall'], component: WallLayers },
+    { id: 'originalSolids', label: 'Made from solids', classes: ['IfcWall'], shows: hidesSolids, component: OriginalSolidsSection },
     { id: 'wallSweeps', label: 'Sweeps and reveals', classes: ['IfcWall'], shows: hasSweeps, component: WallSweepsOnWall },
     { id: 'wallSweep', label: 'Wall sweep', classes: ['LapinWallSweep'], component: WallSweepSection },
     { id: 'joinery', label: 'Door or window', classes: ['IfcDoor', 'IfcWindow'], component: JoinerySection },
@@ -595,7 +622,7 @@ const architecture: LapinModule = {
   // A stair's railing selected on its own (forum topic 102): stairId#railing:left, by a click on it in a plan or in 3D.
   subSelectionPanels: { IfcStair: StairRailingPanel },
   subSelectionPick: { IfcStair: railingPick },
-  dialogs: { wallOpening: OpeningDialog, wallProfile: WallProfileDialog, curtainMembers: CurtainMembersDialog, curtainCells: CurtainCellsDialog, roof: RoofDialog, wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog, ceilingTypes: CeilingTypesDialog, skirtingTypes: SkirtingTypesDialog, roomFinishes: RoomFinishesDialog, curtainWalls: CurtainWallDialog, roomColors: RoomColorsDialog, roomTag: RoomTagDialog, underStair: UnderStairDialog, sunshades: SunshadeTypesDialog, balcony: BalconyDialog, gateTypes: GateTypesDialog, fieldSchedule: FieldScheduleDialog, fieldTemplates: FieldTemplatesDialog },
+  dialogs: { wallOpening: OpeningDialog, wallProfile: WallProfileDialog, curtainMembers: CurtainMembersDialog, curtainCells: CurtainCellsDialog, roof: RoofDialog, wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog, ceilingTypes: CeilingTypesDialog, skirtingTypes: SkirtingTypesDialog, roomFinishes: RoomFinishesDialog, curtainWalls: CurtainWallDialog, roomColors: RoomColorsDialog, roomTag: RoomTagDialog, underStair: UnderStairDialog, sunshades: SunshadeTypesDialog, balcony: BalconyDialog, gateTypes: GateTypesDialog, fieldSchedule: FieldScheduleDialog, fieldTemplates: FieldTemplatesDialog, wallFromSolids: WallFromSolidsDialog },
   // In "Edit layers" (forum topic 89) a wall's or floor's grips are its layers' edges.
   grips: { IfcWall: withLayers(wallGrips), IfcDoor: joineryGrips, IfcWindow: joineryGrips, IfcCurtainWall: curtainGrips, IfcSlab: withLayers(contourGrips('architecture.updateSlab')), LapinCeiling: contourGrips('architecture.updateCeiling'), IfcOpeningElement: openingGrips, IfcRoof: roofGrips, IfcSpace: roomGrips, LapinDownpipe: downpipeGrips, LapinRailing: railingGrips, LapinSkirting: skirtingGrips, [SHADE]: sunshadeGrips, [BALCONY]: balconyGrips,
     [GATE_CLASS]: (n: NodeDto) => {
@@ -611,7 +638,7 @@ const architecture: LapinModule = {
   grips3d: architectureGrips3d,
   references: { IfcWall: wallRefs, IfcCurtainWall: pathRefs, IfcSlab: contourRefs, IfcOpeningElement: contourRefs, IfcRoof: (n) => [...contourRefs(n), ...roofOpeningRefs(n)], IfcSpace: roomRefs, LapinRailing: railingRefs },
   similar: {
-    IfcWall: (n) => { useUi.setState({ wallTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(wall); },
+    IfcWall: (n) => { useUi.setState({ wallTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); setChainMode(wall.id, Math.abs(arcOf(n.props)?.rise ?? 0) > 1e-6 ? 'arc' : 'line'); activate(wall); },
     IfcSlab: (n) => { useUi.setState({ slabTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(slab); },
     IfcDoor: (n) => { useUi.setState({ doorTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(door); },
     IfcWindow: (n) => { useUi.setState({ windowTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(window_); },

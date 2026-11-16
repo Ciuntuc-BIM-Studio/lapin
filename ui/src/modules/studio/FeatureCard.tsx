@@ -1,5 +1,6 @@
 /** A Studio solid in the inspector: what it is made by, its sketch, its steps. */
 
+import { promptText } from '../../shell/prompts';
 import { Fragment, useEffect, useState, type CSSProperties } from 'react';
 import { ArrowDown, ArrowUp, PenTool, Trash2 } from 'lucide-react';
 import type { NodeDto } from '../../engine/protocol';
@@ -182,7 +183,7 @@ export function FeatureCard({ node }: { node: NodeDto }) {
       <dt>Predefined type</dt>
       <dd><select className="cell" value={pre} onChange={(e) => {
         let v: string | null = e.target.value || null;
-        if (v === '__own') { v = window.prompt('The predefined type (capitals, e.g. SIDEWALK)')?.trim().toUpperCase() || null; if (!v) return; }
+        if (v === '__own') { v = promptText('The predefined type (capitals, e.g. SIDEWALK)')?.trim().toUpperCase() || null; if (!v) return; }
         void execute('studio.setClass', { ids: solidsSelected(node), predefinedType: v });
       }}>
         <option value="">—</option>
@@ -193,7 +194,7 @@ export function FeatureCard({ node }: { node: NodeDto }) {
       <dt>Type</dt>
       <dd><select className="cell" value={type?.id ?? ''} onChange={(e) => {
         const v = e.target.value;
-        if (v === '__new') { const name = window.prompt('The new type\'s name'); if (name?.trim()) void execute('studio.setType', { ids: solidsSelected(node), name: name.trim() }); return; }
+        if (v === '__new') { const name = promptText('The new type\'s name'); if (name?.trim()) void execute('studio.setType', { ids: solidsSelected(node), name: name.trim() }); return; }
         void execute('studio.setType', v ? { ids: solidsSelected(node), typeId: v } : { ids: solidsSelected(node) });
       }}>
         <option value="">none</option>

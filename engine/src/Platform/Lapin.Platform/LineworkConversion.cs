@@ -57,9 +57,6 @@ public sealed record LineworkConverter(string Id, string Label, string Module, s
         ["views"] = new JsonArray(Views.Select(v => (JsonNode)v).ToArray()),
         ["options"] = new JsonArray(Options.Select(o => (JsonNode)o.ToJson()).ToArray()),
     };
-
-    /// <summary>An option's value: given, else its default.</summary>
-    public static JsonNode? Option(JsonObject options, LineworkOption o) => options[o.Key] ?? o.Default;
 }
 
 public static class LineworkConversion

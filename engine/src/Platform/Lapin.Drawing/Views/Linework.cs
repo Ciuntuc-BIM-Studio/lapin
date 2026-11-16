@@ -134,13 +134,7 @@ public static class Linework
     }
 
     /// <summary>Where two edges' lines cross (null when parallel).</summary>
-    public static Vec2? Crossing(Vec2 a1, Vec2 a2, Vec2 b1, Vec2 b2)
-    {
-        var (d1, d2) = (a2 - a1, b2 - b1);
-        var den = Vec2.Cross(d1, d2);
-        if (Math.Abs(den) < 1e-12) return null;
-        return a1 + d1 * (Vec2.Cross(b1 - a1, d2) / den);
-    }
+    public static Vec2? Crossing(Vec2 a1, Vec2 a2, Vec2 b1, Vec2 b2) => Polyline2.LineIntersection(a1, a2 - a1, b1, b2 - b1);
 
     /// <summary>
     /// An edge brought to a corner: when the corner lies past it, the piece up

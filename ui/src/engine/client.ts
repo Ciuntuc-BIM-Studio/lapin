@@ -3,8 +3,11 @@
  * WebSocket, plus the diffs the engine pushes after every change. Calls go
  * out as JSON text; everything comes back as binary frames (frame.ts).
  * Reconnects by itself: the engine may still be starting when the window opens.
- * A call that gets no answer in time fails, so a stalled engine never leaves
- * the interface hanging on a promise.
+ * A question that gets no answer in time fails, so a stalled engine never
+ * leaves the interface hanging on a promise; an edit (doc.execute, undo,
+ * redo) is waited for as long as the connection lives, since the engine
+ * finishes it anyway and a retry would make it twice: past the usual wait it
+ * is said to be slow (onSlow), and a dropped connection fails it.
  */
 
 import { decodeFrame } from './frame';
@@ -13,8 +16,12 @@ import type { Diff } from './protocol';
 interface Message { id?: number; result?: unknown; error?: string | null; event?: string; data?: unknown }
 
 export interface CallOptions {
-  /** How long to wait for the answer, ms. Default 30 s; long work (opening, saving, exporting) passes more. */
-  timeoutMs?: number;
+  /**
+   * How long to wait for the answer, ms. Default 30 s; long work (opening, saving, exporting) passes more. null: as
+   * long as the connection lives, said to be slow (onSlow) past the default wait. An edit (EDIT_METHODS) is always
+   * waited for: its timeout only says when it is slow.
+   */
+  timeoutMs?: number | null;
 }
 
 /** The default wait for an answer; a stall beyond it is reported, not sat out. */
@@ -22,6 +29,8 @@ export interface CallOptions {
 export type CallListener = (method: string, params: Record<string, unknown>) => ((outcome: { result?: unknown; error?: Error }) => void) | void;
 
 export const DEFAULT_TIMEOUT_MS = 30_000;
+/** The calls that change the model: never given up on while the engine is connected (it finishes them whatever we do). */
+export const EDIT_METHODS: ReadonlySet<string> = new Set(['doc.execute', 'doc.undo', 'doc.redo']);
 /** Opening, saving, importing and exporting may legitimately take long. */
 export const LONG_TIMEOUT_MS = 10 * 60_000;
 
@@ -60,7 +69,8 @@ export function webSocketTransport(resolveUrl: () => Promise<string>): EngineTra
 export class EngineClient {
   private link: EngineLink | null = null;
   private seq = 0;
-  private pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout> }>();
+  private pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout>; done?: () => void }>();
+  private slowListeners = new Set<(method: string, slow: boolean) => void>();
   private diffListeners = new Set<(d: Diff) => void>();
   private eventListeners = new Map<string, Set<(data: unknown) => void>>();
   private statusListeners = new Set<(connected: boolean) => void>();
@@ -102,8 +112,9 @@ export class EngineClient {
   }
 
   private failAll(error: Error): void {
-    for (const p of this.pending.values()) { clearTimeout(p.timer); p.reject(error); }
+    const all = [...this.pending.values()];
     this.pending.clear();
+    for (const p of all) { clearTimeout(p.timer); p.done?.(); p.reject(error); }
   }
 
   private receive(msg: Message): void {
@@ -114,6 +125,7 @@ export class EngineClient {
     if (!p) return;
     this.pending.delete(msg.id);
     clearTimeout(p.timer);
+    p.done?.();
     if (msg.error) p.reject(new Error(this.transport.explain?.(msg.error) ?? msg.error)); else p.resolve(msg.result);
   }
 
@@ -137,16 +149,32 @@ export class EngineClient {
     const link = this.link;
     if (!link) return Promise.reject(new Error('The engine is not connected.'));
     const id = ++this.seq;
-    const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    const edit = EDIT_METHODS.has(method);
+    const timeoutMs = options.timeoutMs === undefined ? DEFAULT_TIMEOUT_MS : options.timeoutMs;
     return new Promise<T>((resolve, reject) => {
-      const timer = setTimeout(() => {
-        if (!this.pending.delete(id)) return;
-        reject(new Error(`The engine did not answer ${method} within ${Math.round(timeoutMs / 1000)} s.`));
-      }, timeoutMs);
-      this.pending.set(id, { resolve: resolve as (v: unknown) => void, reject, timer });
+      let done: (() => void) | undefined;
+      let timer: ReturnType<typeof setTimeout>;
+      if (edit || timeoutMs === null) {
+        // Waited for while connected; past the usual wait, said to be slow (and said again when it lands).
+        timer = setTimeout(() => {
+          if (!this.pending.has(id)) return;
+          done = () => this.slowListeners.forEach((l) => l(method, false));
+          this.pending.get(id)!.done = done;
+          this.slowListeners.forEach((l) => l(method, true));
+        }, timeoutMs ?? DEFAULT_TIMEOUT_MS);
+      } else {
+        timer = setTimeout(() => {
+          if (!this.pending.delete(id)) return;
+          reject(new Error(`The engine did not answer ${method} within ${Math.round(timeoutMs / 1000)} s.`));
+        }, timeoutMs);
+      }
+      this.pending.set(id, { resolve: resolve as (v: unknown) => void, reject, timer, done });
       link.send(JSON.stringify({ id, method, params }));
     });
   }
+
+  /** A call waited for without a limit (an edit) that passed the usual wait (slow true), then landed or failed (false). */
+  onSlow(l: (method: string, slow: boolean) => void): () => void { this.slowListeners.add(l); return () => this.slowListeners.delete(l); }
 
   /** A call that wants no answer (presence): sent if connected, else dropped. */
   notify(method: string, params: Record<string, unknown> = {}): void {

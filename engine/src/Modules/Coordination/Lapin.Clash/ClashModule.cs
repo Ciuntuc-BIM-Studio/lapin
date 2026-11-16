@@ -32,6 +32,8 @@ public sealed class ClashModule : ILapinModule
     public static bool IsElement(IQueryContext q, Entity e)
     {
         if (NotPhysical.Contains(e.Class)) return false;
+        // Solids kept hidden behind the layered wall made of them (forum topic 101): the wall clashes, not they.
+        if (!Superseded.Counts(q.Model, e)) return false;
         var kind = q.Describe(e.Class)?.Kind;
         if (kind != null) return kind == "element";
         // A class no module owns (an imported file's): an element when it stands somewhere.
@@ -42,11 +44,16 @@ public sealed class ClashModule : ILapinModule
     public sealed class Universe(IQueryContext q)
     {
         public readonly IQueryContext Query = q;
-        public readonly List<ElementFacts> Elements = q.Model.Entities.Where(e => IsElement(q, e)).Select(e => SearchSets.Facts(q, e)).ToList();
+        public readonly List<Entity> Elements = q.Model.Entities.Where(e => IsElement(q, e)).ToList();
+        public readonly SearchSets.Matcher Matcher = new(q);
         readonly Dictionary<string, ClashBody?> _bodies = [];
         readonly Dictionary<string, HashSet<string>> _partners = [];
 
-        public List<string> Members(SearchSets.Set set) => Elements.Where(f => SearchSets.Matches(set, f)).Select(f => f.Entity.Id).ToList();
+        public List<string> Members(SearchSets.Set set)
+        {
+            var filter = SearchSets.ToFilter(set);
+            return Elements.Where(e => Matcher.Matches(filter, e)).Select(e => e.Id).ToList();
+        }
 
         /// <summary>An element's body: its box from its geometry, its triangles in the world when the run asks (none: no geometry).</summary>
         public ClashBody? Body(string id)
@@ -175,13 +182,13 @@ public sealed class ClashModule : ILapinModule
         return o;
     }
 
-    static ElementFacts? FactsOf(IQueryContext q, string id) => q.Model.Get(id) is { } e ? SearchSets.Facts(q, e) : null;
+    static ClashFacts? FactsOf(IQueryContext q, string id) => q.Model.Get(id) is { } e ? SearchSets.Facts(q, e) : null;
 
     static Dictionary<int, string> Grouped(IQueryContext q, IReadOnlyList<ClashRecord> clashes, string? mode)
     {
         if (mode is null or ClashGroups.None) return [];
         if (!ClashGroups.Modes.Contains(mode)) throw new CommandException($"Clashes are grouped by {string.Join(", ", ClashGroups.Modes)}.");
-        var cache = new Dictionary<string, ElementFacts?>();
+        var cache = new Dictionary<string, ClashFacts?>();
         return ClashGroups.Of(clashes, mode, id => cache.TryGetValue(id, out var f) ? f : cache[id] = FactsOf(q, id));
     }
 
@@ -282,10 +289,11 @@ public sealed class ClashModule : ILapinModule
         {
             var field = (string?)a["field"] ?? SearchSets.ClassField;
             var counts = new Dictionary<string, int>(StringComparer.CurrentCultureIgnoreCase);
-            foreach (var f in new Universe(q).Elements)
+            var u = new Universe(q);
+            foreach (var e in u.Elements)
             {
-                var texts = field == SearchSets.ClassField ? [f.Entity.Class] : SearchSets.Texts(field, (string?)a["parameter"], f).ToList();
-                if (field == SearchSets.Link && f.Link == null) texts = [""];
+                var texts = field == SearchSets.ClassField ? [e.Class] : SearchSets.Texts(u.Matcher.Context, field, (string?)a["parameter"], e).ToList();
+                if (field == SearchSets.Link && texts.Count == 0) texts = [""];
                 foreach (var t in texts.Distinct()) counts[t] = counts.GetValueOrDefault(t) + 1;
             }
             return new JsonArray(counts.OrderBy(x => x.Key, StringComparer.CurrentCultureIgnoreCase).Select(x => (JsonNode)new JsonObject
@@ -375,7 +383,7 @@ public sealed class ClashModule : ILapinModule
             var setB = a.ContainsKey("setB") ? (string?)a["setB"] is { Length: > 0 } sb ? sb : null : old?.SetB;
             if (setB != null && m.Get(setB) is not { Class: SearchSets.Class }) throw new CommandException("Set B is one of the search sets, or none to test set A against itself.");
             var tolerance = Json.Number(a["tolerance"]) ?? old?.Tolerance ?? (kind == ClashTests.Clearance ? ClashEngine.ClearanceDistance : ClashEngine.HardTolerance);
-            if (tolerance < 0 || tolerance > ClashEngine.MaxTolerance) throw new CommandException($"The tolerance is 0 to {ClashEngine.MaxTolerance * 1000:0} mm.");
+            if (!(tolerance >= 0 && tolerance <= ClashEngine.MaxTolerance)) throw new CommandException($"The tolerance is 0 to {ClashEngine.MaxTolerance * 1000:0} mm.");
             var enabled = a["enabled"] is JsonValue ev && ev.TryGetValue<bool>(out var en) ? en : old?.Enabled ?? true;
             var attrs = existing?.CloneAttrs() ?? new JsonObject();
             attrs["kind"] = kind; attrs["setA"] = setA; attrs["setB"] = setB; attrs["tolerance"] = tolerance; attrs["enabled"] = enabled;

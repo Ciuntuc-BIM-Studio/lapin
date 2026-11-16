@@ -16,7 +16,7 @@ public static class WallReference
 {
     public static readonly string[] Lines = ["core", "coreExterior", "coreInterior", "exterior", "interior"];
 
-    static Vec2 P(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : default;
+    static Vec2 P(JsonNode? n) => Args.PointOf(n);
     static JsonArray J(Vec2 p) => new(Math.Round(p.X, 9), Math.Round(p.Y, 9));
 
     /// <summary>Whether a wall's end ("start" or "end") is joined to nothing yet: a joined end belongs to its corner and is not moved.</summary>

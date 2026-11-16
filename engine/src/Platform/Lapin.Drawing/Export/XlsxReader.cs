@@ -103,13 +103,6 @@ public static class XlsxReader
     }
 
     /// <summary>A number as a sheet or a CSV writes it: invariant, or with a decimal comma (1,5) and a space or dot grouping thousands.</summary>
-    public static double? Number(string? s)
-    {
-        if (string.IsNullOrWhiteSpace(s)) return null;
-        var t = s.Trim().Replace(" ", "").Replace(" ", "");
-        // The mark written last of a dot and a comma is the decimal one (1,234.5 and 1.234,5); a lone comma is too (1,5).
-        if (t.Contains(',') && t.LastIndexOf(',') > t.LastIndexOf('.')) t = t.Replace(".", "").Replace(',', '.');
-        else t = t.Replace(",", "");
-        return double.TryParse(t, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) && double.IsFinite(v) ? v : null;
-    }
+    /// <remarks>The mark written last of a dot and a comma is the decimal one (1,234.5 and 1.234,5); a lone mark is too (1,5); <see cref="Lapin.Model.Numbers"/>.</remarks>
+    public static double? Number(string? s) => Lapin.Model.Numbers.Parse(s, Lapin.Model.NumberMode.Grouped);
 }

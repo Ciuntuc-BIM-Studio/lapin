@@ -55,23 +55,18 @@ public sealed record TaskRule(IReadOnlyList<string> Classes, IReadOnlyList<strin
     /// <summary>The same rule with more conditions on fields (a step's split: one task a value).</summary>
     public TaskRule With(IEnumerable<FieldCondition> more) => this with { FieldConditions = [.. Conditions, .. more] };
 
-    /// <summary>
-    /// Whether the rule's classes take an element's class: by its name, or a building service by a supertype the rule names
-    /// (IfcDistributionElement takes a ventilation unit, IfcFlowTerminal an air terminal; <see cref="IfcSchema"/>).
-    /// </summary>
-    public bool TakesClass(string cls) =>
-        Classes.Contains(cls) || (IfcSchema.Parent(cls) != null && Classes.Any(c => IfcSchema.IsA(cls, c)));
+    /// <summary>The rule as Lapin's one element filter (<see cref="ElementFilter"/>, audit D3): the same dimensions and conditions.</summary>
+    public ElementFilter ToFilter() => new(Classes, Types, Storeys, Materials, Groups, Phases, Conditions) { Demolished = Demolished };
 
-    /// <summary>Whether it takes an element; its conditions on fields read by <paramref name="field"/> (none given: they do not hold).</summary>
-    public bool Matches(ElementFacts f, string defaultPhase, Func<string, FieldValue>? field = null) =>
-        (Classes.Count == 0 || TakesClass(f.Element.Class))
-        && (Types.Count == 0 || f.Type != null && Types.Contains(f.Type))
-        && (Storeys.Count == 0 || f.Storey != null && Storeys.Contains(f.Storey))
-        && (Materials.Count == 0 || Materials.Any(f.Materials.Contains))
-        && (Groups.Count == 0 || f.Group != null && Groups.Contains(f.Group))
-        && (Phases.Count == 0 || Phases.Contains(f.Phase ?? defaultPhase))
-        && (Demolished.Count == 0 || f.Demolished != null && Demolished.Contains(f.Demolished))
-        && (Conditions.Count == 0 || field != null && Conditions.All(c => c.Holds(field(c.Field))));
+    /// <summary>Whether the rule's classes take an element's class (a building service by a supertype the rule names, <see cref="IfcSchema"/>).</summary>
+    public bool TakesClass(string cls) => ToFilter().TakesClass(cls);
+
+    /// <summary>
+    /// Whether it takes an element, as <see cref="ElementFilter"/> does — each dimension by its id or its name, a door on its
+    /// wall's storey, every material in it —; its conditions on fields read by <paramref name="field"/> (none given: they do not hold).
+    /// </summary>
+    public bool Matches(ElementFilter.Context ctx, Entity e, Func<string, FieldValue>? field = null) =>
+        (Conditions.Count == 0 || field != null) && ToFilter().Matches(ctx, e, field ?? (_ => FieldValue.Missing));
 }
 
 /// <summary>
@@ -158,12 +153,7 @@ public static class TaskParts
     }
 
     /// <summary>Whether a material is of a category: its own, else (for Finish) one by its name, as view styles tell finishes.</summary>
-    public static bool InCategory(IModelView m, string materialId, string category)
-    {
-        if (m.Get(materialId) is not { Class: IfcClass.Material } mat) return false;
-        if (mat.Str("category") is { Length: > 0 } c) return string.Equals(c.Trim(), category, StringComparison.OrdinalIgnoreCase);
-        return string.Equals(category, "Finish", StringComparison.OrdinalIgnoreCase) && Platform.Materials.IsFinish(mat);
-    }
+    public static bool InCategory(IModelView m, string materialId, string category) => Platform.Materials.InCategory(m, materialId, category);
 }
 
 /// <summary>
@@ -190,6 +180,7 @@ public sealed class TaskElements
     readonly Dictionary<(string Id, string Field), FieldValue> values = [];
     readonly string defaultPhase;
     readonly PhaseSettings phases;
+    readonly ElementFilter.Context filterContext;
 
     /// <summary>Each task's elements with the layers it takes of each (a summary's own only: <see cref="Under"/> adds its tasks').</summary>
     public Dictionary<string, Dictionary<string, ulong>> ByTask { get; } = [];
@@ -210,7 +201,11 @@ public sealed class TaskElements
         units = DraftingResources.Book(m).Units;
         phases = PhasesModule.Settings(m);
         defaultPhase = phases.DefaultCreated?.Id ?? "";
+        filterContext = new ElementFilter.Context(this.query, defaultPhase, units);
     }
+
+    /// <summary>What a rule's matching reads of the model once (<see cref="TaskRule.Matches"/>).</summary>
+    public ElementFilter.Context FilterContext => filterContext;
 
     public static TaskElements Resolve(ICommandContext ctx, Plan? plan = null) => Resolve(ctx.Model, ctx.Services, ctx.Describe, plan, ctx.Query);
     public static TaskElements Resolve(IQueryContext q, Plan? plan = null) => Resolve(q.Model, q.Services, q.Describe, plan, q);
@@ -239,6 +234,8 @@ public sealed class TaskElements
     bool IsCandidate(Entity e, IGeometryProducers? producers)
     {
         if (NotBuilt.Contains(e.Class)) return false;
+        // Solids kept hidden behind the layered wall made of them (forum topic 101): the wall is built, not they.
+        if (!Superseded.Counts(m, e)) return false;
         if (describe(e.Class) is { } d && d.Kind != "element") return false;
         if (!StoredBodies.Has(e) && producers?.Geometry(e.Class) == null) return false;
         // A linked file's element belongs to that file; formwork and scaffolding (created and struck in one phase) live by their hosts' tasks.
@@ -264,9 +261,7 @@ public sealed class TaskElements
         if (e != null && !NotBuilt.Contains(e.Class) && (describe(e.Class) is not { } d || d.Kind == "element"))
         {
             var type = m.RelatingOf(e.Id, IfcClass.RelDefinesByType);
-            var storey = Spatial.StoreyOf(m, e.Id)?.Id;
-            if (storey == null && m.RelatingOf(e.Id, IfcClass.RelFillsElement) is { } opening && m.RelatingOf(opening.Id, IfcClass.RelVoidsElement) is { } host)
-                storey = Spatial.StoreyOf(m, host.Id)?.Id;
+            var storey = Spatial.StoreyOf(m, e, followHost: true)?.Id;
             var layers = LayersOf(e, type);
             f = new ElementFacts(e, type?.Id, storey, Groups.Of(m, e.Id)?.Id, e.Str("phaseCreated"), e.Str("phaseDemolished"), layers,
                 layers.SelectMany(l => l.Materials).ToHashSet());
@@ -316,7 +311,7 @@ public sealed class TaskElements
         return values[(elementId, field)] = reader.Value(field);
     }
 
-    bool Takes(TaskRule rule, ElementFacts f) => rule.Matches(f, defaultPhase, field => Field(f.Element.Id, field));
+    bool Takes(TaskRule rule, ElementFacts f) => rule.Matches(filterContext, f.Element, field => Field(f.Element.Id, field));
 
     /// <summary>A task's own elements: those its rule takes, with those added by hand, without those taken off, each with the layers its part takes (none of it: left out).</summary>
     public Dictionary<string, ulong> Of(PlanTask task)

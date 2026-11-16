@@ -75,7 +75,7 @@ public static class MemberAxes
     /// <summary>A member's end points relative to its storey's level: [x, y, z].</summary>
     public static Vec3 Point(Entity e, string key) => Args.TryPoint3(e.Attrs[key]) ?? default;
 
-    public static double Level(IModelView m, Entity e) => Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0;
+    public static double Level(IModelView m, Entity e) => Spatial.Elevation(m, e);
 
     /// <summary>A member's type's section: its member type's, else an IPE 200.</summary>
     public static Section SectionOf(IModelView m, Entity member) =>

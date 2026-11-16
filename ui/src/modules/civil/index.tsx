@@ -5,6 +5,9 @@
  * plantings that stand on it (docs/spec-site.md).
  */
 
+import { create } from 'zustand';
+import { activate } from '../../platform/modules';
+import { promptText } from '../../shell/prompts';
 import { BrickWall, PenLine, Building2, Crosshair, FileDown, FileUp, Fence, Image as ImageIcon, ImagePlus, Map as MapIcon, MapPin, Mountain, MoveVertical, Paintbrush, Route, Shovel, Spline, Sprout, TreeDeciduous, Waves } from 'lucide-react';
 import { PlatformIcon, TerrainIcon } from '../../icons';
 import type { Grip, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
@@ -47,7 +50,7 @@ const terrainFromFile: ToolDef = {
     if (!file) return;
     const low = lowest(file.text);
     if (low == null) { notify('No points found: one per line, x y z or number northing easting elevation.'); return; }
-    const answer = window.prompt(`The surveyed elevation of the project's ±0.00 (${unitName(levelUnit())}):`, formatLength(low, levelUnit()));
+    const answer = promptText('The surveyed elevation of the project\'s ±0.00 ({unit}):', formatLength(low, levelUnit()), { unit: unitName(levelUnit()) });
     if (answer == null) return;
     const datum = answer.trim() === '' ? low : parseLevel(answer) ?? NaN;
     const storeyId = useUi.getState().storeyId;
@@ -61,7 +64,7 @@ const terrainFromLandXml: ToolDef = {
   id: 'civil.landxml', label: 'Terrain from LandXML', icon: FileUp,
   run: () => void pickText('.xml,.landxml').then(async (file) => {
     if (!file) return;
-    const answer = window.prompt(`The surveyed elevation of the project's ±0.00 (${unitName(levelUnit())}):`, '0');
+    const answer = promptText('The surveyed elevation of the project\'s ±0.00 ({unit}):', '0', { unit: unitName(levelUnit()) });
     if (answer == null) return;
     const storeyId = useUi.getState().storeyId;
     const r = await execute('civil.importLandXml', { text: file.text, datum: parseLevel(answer) ?? 0, ...(storeyId ? { storeyId } : {}) }) as { ids: string[] } | null;
@@ -82,7 +85,7 @@ const terrainFromDxf: ToolDef = {
     if (!layers) { notify('The drawing could not be read as DXF.'); return; }
     let chosen: string[] | undefined;
     if (layers && layers.length > 1) {
-      const answer = window.prompt(`Layers with surveyed points: ${layers.map((l) => `${l.layer} (${l.points})`).join(', ')}.\nWhich to take (comma separated; empty: all)?`, '');
+      const answer = promptText('Layers with surveyed points: {layers}.\nWhich to take (comma separated; empty: all)?', '', { layers: layers.map((l) => `${l.layer} (${l.points})`).join(', ') });
       if (answer == null) return;
       chosen = answer.split(',').map((x) => x.trim()).filter(Boolean);
     }
@@ -144,7 +147,7 @@ const flatTerrain: ToolDef = {
   id: 'civil.flatTerrain', label: 'Flat terrain', icon: Mountain, shortcut: 'TF',
   gesture: { kind: 'rectangle' },
   complete: async ({ points: [a, b] }, ctx) => {
-    const answer = window.prompt(`The ground's elevation (${unitName(levelUnit())}, ±0.00 = 0):`, '0');
+    const answer = promptText('The ground\'s elevation ({unit}, ±0.00 = 0):', '0', { unit: unitName(levelUnit()) });
     if (answer == null) return;
     await ctx.execute('civil.addFlatTerrain', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, elevation: parseLevel(answer) ?? 0 });
   },
@@ -193,22 +196,32 @@ const sculpt = (kind: BrushKind, label: string, icon: ToolDef['icon'], shortcut:
 });
 const brush: ToolDef = { id: 'civil.brush', label: 'Brush…', icon: Paintbrush, run: () => useUi.setState({ dialog: 'brush' }) };
 
-/** A path along a polyline, 1,5 m wide, in the ground; its courses and kerbs are set in the inspector. */
+/** Which of the two the Path tool lays: a path (1,5 m wide) or a road (S3: Path and Road were one tool with two templates). */
+const usePathKind = create<{ kind: 'path' | 'road' }>(() => ({ kind: 'path' }));
+function PathKindOption() {
+  const kind = usePathKind((s) => s.kind);
+  return (
+    <select className={`cad-layer${kind === 'road' ? ' on' : ''}`} value={kind} data-testid="path-kind" title="A path, 1,5 m wide, or a road: two 3 m lanes on a 2,5 % crown, kerbs and 1,5 m sidewalks"
+      onChange={(e) => usePathKind.setState({ kind: e.target.value as 'path' | 'road' })}>
+      <option value="path">Path</option>
+      <option value="road">Road</option>
+    </select>
+  );
+}
+/** A path or a road along a polyline (the choice in the bar): a path is 1,5 m wide in the ground, its courses and kerbs set in the inspector; a road has two 3 m lanes on a 2,5 % crown, kerbs and 1,5 m sidewalks, the configurator sets the rest. */
 const path: ToolDef = {
   id: 'civil.path', label: 'Path', icon: Route, shortcut: 'PA',
   gesture: { kind: 'polyline' },
-  complete: async ({ points }, ctx) => { await ctx.execute('civil.addPath', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]) }); },
-};
-
-/** A road along a polyline: two 3 m lanes on a 2,5 % crown, kerbs and 1,5 m sidewalks; the configurator sets the rest. */
-const road: ToolDef = {
-  id: 'civil.road', label: 'Road', icon: Route, shortcut: 'RD',
-  gesture: { kind: 'polyline' },
+  options: PathKindOption,
   complete: async ({ points }, ctx) => {
+    const pts = points.map((p) => [p.x, p.y]);
+    if (usePathKind.getState().kind === 'path') { await ctx.execute('civil.addPath', { storeyId: ctx.storeyId, points: pts }); return; }
     const side = { kerb: true, sidewalk: true, kerbWidth: 0.15, kerbHeight: 0.12, sidewalkWidth: 1.5 };
-    await ctx.execute('civil.addPath', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]), name: 'Road', template: 'road', laneWidth: 3, crossfall: 2.5, fall: 'crown', surfaceThickness: 0.08, baseThickness: 0.3, left: side, right: side });
+    await ctx.execute('civil.addPath', { storeyId: ctx.storeyId, points: pts, name: 'Road', template: 'road', laneWidth: 3, crossfall: 2.5, fall: 'crown', surfaceThickness: 0.08, baseThickness: 0.3, left: side, right: side });
   },
 };
+/** The old Road tool: the Path tool, set to Road. */
+const road: ToolDef = { id: 'civil.road', label: 'Road', icon: Route, shortcut: 'RD', run: () => { usePathKind.setState({ kind: 'road' }); if (useUi.getState().tool !== path.id) activate(path); } };
 
 /** The corridor configurator of the path, road, retaining wall or ditch selected. */
 /**
@@ -275,13 +288,15 @@ const civil: LapinModule = {
   id: 'civil',
   name: 'Civil',
   summary: 'The terrain from survey points or flat, its contours, the brush that works it, platforms and ditches with their cut and fill, paths, retaining walls, plantings, people and cars.',
+  // The old Road tool: the Path tool, set to Road.
+  legacyTools: [road],
   tabs: [{
-    id: 'site', label: 'Site', order: 40,
+    id: 'site', label: 'Site', order: 40, include: ['modify'],
     groups: [
       { label: 'Terrain', tools: [terrainFromFile, flatTerrain, parcel], small: [terrainFromLandXml, landXmlOut, spot, breaklineFromLinework] },
       { label: 'Import', tools: [], small: [terrainFromDxf, geoJson, cityJson, orthophoto] },
       { label: 'Earthworks', tools: [platform, ditch, sculpt('raise', 'Raise', MoveVertical, 'SU'), sculpt('lower', 'Lower', Shovel, 'SL')], small: [sculpt('flatten', 'Flatten', Mountain, 'FN'), sculpt('smooth', 'Smooth', Paintbrush, 'SS'), brush] },
-      { label: 'Landscape', tools: [path, road, retainingWall, plant, plantingZone], small: [corridor, roadFromLinework] },
+      { label: 'Landscape', tools: [path, retainingWall, plant, plantingZone], small: [corridor, roadFromLinework] },
       { label: 'Entourage', tools: [entourage], small: [entourageRow, entourageKinds] },
     ],
   }],

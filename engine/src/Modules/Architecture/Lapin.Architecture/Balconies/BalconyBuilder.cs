@@ -62,7 +62,7 @@ public static class BalconyBuilder
     /// <summary>The balcony's frame: on its wall at <c>along</c> on its <c>side</c>; else at its <c>at</c> turned by <c>rotation</c>; a drawn one by its first edge.</summary>
     public static BalconyFrame? Frame(IModelView m, Entity e)
     {
-        var storey = Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0;
+        var storey = Spatial.Elevation(m, e);
         var top = storey + e.Num("baseOffset");
         if (m.Get(e.Str("wallId") ?? "") is { Class: IfcClass.Wall } wall && Walls.Section(m, wall).Count > 0)
         {
@@ -82,19 +82,18 @@ public static class BalconyBuilder
             if (Vec2.Dot(centre - a, v) < 0) (u, v) = (-u, -v);
             return new BalconyFrame((a + b) * 0.5, u, v, top, storey, null, 0, storey, Walls.DefaultHeight);
         }
-        if (e.Attrs["at"] is JsonArray { Count: >= 2 } atj)
+        if (Args.TryPoint(e.Attrs["at"]) is { } point)
         {
-            var at = new Vec2(Json.Number(atj[0]) ?? 0, Json.Number(atj[1]) ?? 0);
             var r = e.Num("rotation") * Math.PI / 180;
             var u = new Vec2(Math.Cos(r), Math.Sin(r));
             if (e.Bool("flip")) u = -u;
-            return new BalconyFrame(at, u, u.Perp, top, storey, null, 0, storey, Walls.DefaultHeight);
+            return new BalconyFrame(point, u, u.Perp, top, storey, null, 0, storey, Walls.DefaultHeight);
         }
         return null;
     }
 
     public static List<Vec2> Points(Entity e) =>
-        (e.Attrs["contour"] as JsonArray)?.OfType<JsonArray>().Where(p => p.Count >= 2).Select(p => new Vec2(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0)).ToList() ?? [];
+        Args.StoredPoints(e.Attrs["contour"]);
 
     // ------------------------------------------------------------ the outline
 
@@ -156,7 +155,9 @@ public static class BalconyBuilder
                 {
                     case "rounded":
                     {
-                        var r = Math.Clamp(l.Num("cornerRadius"), 0.05, Math.Min(w / 2, d) - 1e-3);
+                        // Under 5 cm of depth the corner is as round as the depth allows (the least radius would pass the greatest).
+                        var most = Math.Min(w / 2, d) - 1e-3;
+                        var r = Math.Clamp(l.Num("cornerRadius"), Math.Min(0.05, most), most);
                         ring.Add(-w / 2, 0, "wall"); ring.Add(w / 2, 0, "side");
                         ring.Add(w / 2, d - r, "front");
                         ring.Arc(new Vec2(w / 2 - r, d - r), r, 0, Math.PI / 2, "front");
@@ -547,18 +548,27 @@ public static class BalconyBuilder
     public static IEnumerable<QuantitySet> Quantities(Entity e, IModelView m)
     {
         if (Build(m, e) is not { } l || l.Outline.Count < 3) yield break;
+        // Every set a part of the balcony (audit M2: the supports' count as the only whole set hid the slab and the railing
+        // from a takeoff and the estimate), the slab and the parapet with their material's id.
+        string? MaterialOf(string key) => l.Parts.FirstOrDefault(p => p.Key == key).Material is { } name ? Materials.Find(m, name)?.Id : null;
         var slab = l.HasSlab ? l.Parts.FirstOrDefault(p => p.Key == "balcony-slab").Solid : null;
         if (slab != null)
             yield return new QuantitySet("Qto_SlabBaseQuantities",
             [
                 new("Width", l.Num("width"), "LENGTH"), new("Length", l.Num("depth"), "LENGTH"), new("Depth", l.Num("thickness"), "LENGTH"),
                 new("GrossArea", l.Area, "AREA", "Balcony slab"), new("NetVolume", Measure.Volume(slab), "VOLUME", "Balcony slab"),
-            ], "balcony-slab", "Slab");
+            ], "balcony-slab", "Slab", MaterialOf("balcony-slab"));
         if (l.RailLength > 0)
-            yield return new QuantitySet("Qto_RailingBaseQuantities", [new("Length", l.RailLength, "LENGTH", $"Railing, {l.Str("railStyle")}")],
-                l.Str("railStyle") == "parapet" ? "balcony-parapet" : "balcony-railing", "Railing");
+        {
+            var rail = l.Str("railStyle") == "parapet" ? "balcony-parapet" : "balcony-railing";
+            yield return new QuantitySet("Qto_RailingBaseQuantities", [new("Length", l.RailLength, "LENGTH", $"Railing, {l.Str("railStyle")}")], rail, "Railing", MaterialOf(rail));
+        }
         if (l.SupportCount > 0)
-            yield return new QuantitySet("Lapin_BalconySupports", [new("Count", l.SupportCount, "COUNT", l.Posts.Count > 0 ? "Posts" : l.Brackets.Count > 0 ? "Brackets" : "Tie rods")]);
+        {
+            var support = l.Posts.Count > 0 ? "balcony-posts" : l.Brackets.Count > 0 ? "balcony-brackets" : "balcony-hangers";
+            yield return new QuantitySet("Lapin_BalconySupports", [new("Count", l.SupportCount, "COUNT", l.Posts.Count > 0 ? "Posts" : l.Brackets.Count > 0 ? "Brackets" : "Tie rods")],
+                support, "Supports");
+        }
     }
 
     // ------------------------------------------------------------ the configurator's drawings

@@ -222,24 +222,6 @@ public static class SurfaceHatches
     }
 
     /// <summary>A convex cell clipped to a box of the view (a section across an element sees only its window).</summary>
-    public static Vec2[] ClipBox(Vec2[] poly, (double Min, double Max) xs, (double Min, double Max) ys)
-    {
-        IEnumerable<Vec2> pts = poly;
-        foreach (var (axis, bound, keepAbove) in new[] { (0, xs.Min, true), (0, xs.Max, false), (1, ys.Min, true), (1, ys.Max, false) })
-        {
-            if (double.IsInfinity(bound)) continue;
-            var src = pts.ToList();
-            var o = new List<Vec2>();
-            for (var i = 0; i < src.Count; i++)
-            {
-                Vec2 p = src[i], q = src[(i + 1) % src.Count];
-                double pv = axis == 0 ? p.X : p.Y, qv = axis == 0 ? q.X : q.Y;
-                bool pin = keepAbove ? pv >= bound : pv <= bound, qin = keepAbove ? qv >= bound : qv <= bound;
-                if (pin) o.Add(p);
-                if (pin != qin) o.Add(p + (q - p) * ((bound - pv) / (qv - pv)));
-            }
-            pts = o;
-        }
-        return pts.ToArray();
-    }
+    public static Vec2[] ClipBox(Vec2[] poly, (double Min, double Max) xs, (double Min, double Max) ys) =>
+        [.. Polygon2.ClipBox(poly, xs.Min, ys.Min, xs.Max, ys.Max)];
 }

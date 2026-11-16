@@ -269,38 +269,32 @@ public sealed record Section(string Kind, double Width, double Depth, double Web
 
     /// <summary>The rings a section's JSON gives (<c>rings: [[[x, y], …], …]</c>), metres; null when none.</summary>
     public static IReadOnlyList<IReadOnlyList<Vec2>>? RingsFrom(JsonNode? n) =>
-        n is JsonArray a && a.OfType<JsonArray>().Select(r => (IReadOnlyList<Vec2>)r.OfType<JsonArray>().Where(p => p.Count >= 2)
-            .Select(p => new Vec2(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0)).ToList()).Where(r => r.Count >= 3).ToList() is { Count: > 0 } l ? l : null;
+        n is JsonArray a && a.OfType<JsonArray>().Select(r => (IReadOnlyList<Vec2>)Args.StoredPoints(r)).Where(r => r.Count >= 3).ToList() is { Count: > 0 } l ? l : null;
 
-    /// <summary>The steel profiles a type can be made of by name (mm: depth, width, web, flange; a hollow or cold-formed section's thickness as both, a cold-formed one's lips).</summary>
-    public static readonly IReadOnlyDictionary<string, Section> Catalogue = new Dictionary<string, Section>(StringComparer.OrdinalIgnoreCase)
-    {
-        ["IPE 200"] = P("I", 200, 100, 5.6, 8.5, "IPE 200"), ["IPE 240"] = P("I", 240, 120, 6.2, 9.8, "IPE 240"), ["IPE 300"] = P("I", 300, 150, 7.1, 10.7, "IPE 300"),
-        ["IPE 330"] = P("I", 330, 160, 7.5, 11.5, "IPE 330"), ["IPE 360"] = P("I", 360, 170, 8, 12.7, "IPE 360"), ["IPE 400"] = P("I", 400, 180, 8.6, 13.5, "IPE 400"),
-        ["IPE 450"] = P("I", 450, 190, 9.4, 14.6, "IPE 450"), ["IPE 500"] = P("I", 500, 200, 10.2, 16, "IPE 500"), ["IPE 550"] = P("I", 550, 210, 11.1, 17.2, "IPE 550"),
-        ["IPE 600"] = P("I", 600, 220, 12, 19, "IPE 600"),
-        ["HEA 200"] = P("I", 190, 200, 6.5, 10, "HEA 200"), ["HEA 240"] = P("I", 230, 240, 7.5, 12, "HEA 240"), ["HEA 300"] = P("I", 290, 300, 8.5, 14, "HEA 300"),
-        ["HEA 400"] = P("I", 390, 300, 11, 19, "HEA 400"),
-        ["HEB 200"] = P("I", 200, 200, 9, 15, "HEB 200"), ["HEB 300"] = P("I", 300, 300, 11, 19, "HEB 300"),
-        ["UPN 200"] = P("U", 200, 75, 8.5, 11.5, "UPN 200"), ["UPN 300"] = P("U", 300, 100, 10, 16, "UPN 300"),
-        ["L 50×50×5"] = P("L", 50, 50, 5, 5, "L 50×50×5"), ["L 60×60×6"] = P("L", 60, 60, 6, 6, "L 60×60×6"), ["L 70×70×7"] = P("L", 70, 70, 7, 7, "L 70×70×7"),
-        ["L 80×80×8"] = P("L", 80, 80, 8, 8, "L 80×80×8"), ["L 100×100×10"] = P("L", 100, 100, 10, 10, "L 100×100×10"),
-        ["RHS 100×100×5"] = P("RHS", 100, 100, 5, 5, "RHS 100×100×5"), ["RHS 150×100×6"] = P("RHS", 150, 100, 6, 6, "RHS 150×100×6"), ["RHS 200×100×8"] = P("RHS", 200, 100, 8, 8, "RHS 200×100×8"),
-        ["CHS 60.3×3.2"] = P("CHS", 60.3, 60.3, 3.2, 3.2, "CHS 60.3×3.2"), ["CHS 88.9×4"] = P("CHS", 88.9, 88.9, 4, 4, "CHS 88.9×4"), ["CHS 114.3×5"] = P("CHS", 114.3, 114.3, 5, 5, "CHS 114.3×5"), ["CHS 168.3×6"] = P("CHS", 168.3, 168.3, 6, 6, "CHS 168.3×6"),
-        ["C 150×50×2"] = P("C", 150, 50, 2, 2, "C 150×50×2", 15), ["C 200×65×2"] = P("C", 200, 65, 2, 2, "C 200×65×2", 20),
-        ["Z 150×55×2"] = P("Z", 150, 110, 2, 2, "Z 150×55×2", 15), ["Z 200×65×2"] = P("Z", 200, 130, 2, 2, "Z 200×65×2", 20),
-        ["Σ 200×62×2"] = P("SIGMA", 200, 62, 2, 2, "Σ 200×62×2", 20),
-    };
+    /// <summary>
+    /// The steel profiles a type list offers by name: the built-in library's (<see cref="Lapin.Platform.ProfileLibraries.BuiltInProfiles"/>,
+    /// EN 10365 and its kin, root radii and sloping flanges included; Lapin's generic cold-formed C, Z and Σ), the names an
+    /// earlier catalogue had (audit 15.11.2026, D1: that catalogue kept only the four sizes, so „IPE 300” and „IPE300” differed).
+    /// Every other name of the library reads too (<see cref="Named"/>).
+    /// </summary>
+    public static readonly string[] CommonNames =
+    [
+        "IPE 200", "IPE 240", "IPE 300", "IPE 330", "IPE 360", "IPE 400", "IPE 450", "IPE 500", "IPE 550", "IPE 600",
+        "HEA 200", "HEA 240", "HEA 300", "HEA 400", "HEB 200", "HEB 300", "UPN 200", "UPN 300",
+        "L 50×50×5", "L 60×60×6", "L 70×70×7", "L 80×80×8", "L 100×100×10",
+        "RHS 100×100×5", "RHS 150×100×6", "RHS 200×100×8", "CHS 60.3×3.2", "CHS 88.9×4", "CHS 114.3×5", "CHS 168.3×6",
+        "C 150×50×2", "C 200×65×2", "Z 150×55×2", "Z 200×65×2", "Σ 200×62×2",
+    ];
 
-    static Section P(string kind, double depth, double width, double web, double flange, string name, double lip = 0) => new(kind, width / 1000, depth / 1000, web / 1000, flange / 1000, name, lip / 1000);
+    static readonly Lazy<IReadOnlyDictionary<string, Section>> _catalogue = new(() =>
+        CommonNames.ToDictionary(n => n, n => Named(n) ?? throw new InvalidOperationException($"The built-in library has no {n}."), StringComparer.OrdinalIgnoreCase));
 
-    /// <summary>A profile by its name: the catalogue's, else the built-in profile library's (EN steel); null when neither has it.</summary>
-    public static Section? Named(string name)
-    {
-        var key = name.Trim().Replace("x", "×");
-        if (Catalogue.TryGetValue(key, out var c)) return c;
-        return Lapin.Platform.ProfileLibraries.BuiltInProfiles.Find(name) is { } p ? From(p.SectionJson(null)) : null;
-    }
+    /// <summary>The <see cref="CommonNames"/> as sections, the library's.</summary>
+    public static IReadOnlyDictionary<string, Section> Catalogue => _catalogue.Value;
+
+    /// <summary>A profile by its name (spaces, × or x as typed): the built-in profile library's; null when it has none.</summary>
+    public static Section? Named(string name) =>
+        Lapin.Platform.ProfileLibraries.BuiltInProfiles.Find(name) is { } p ? From(p.SectionJson(null)) : null;
 
     public static Section? From(JsonNode? n)
     {
@@ -386,7 +380,7 @@ static class Place
 
     public static Vec2 P(JsonObject a, string x, string y) => Args.Point(a, x, y);
 
-    public static Entity? TypeOf(IModelView m, string id) => m.RelatingOf(id, IfcClass.RelDefinesByType);
+    public static Entity? TypeOf(IModelView m, string id) => Lapin.Platform.Types.Of(m, id);
 
     /// <summary>The type named in the args, of the class; else the project's first of the class, else <paramref name="make"/>'s.</summary>
     public static Entity TypeFor(ICommandContext ctx, JsonObject a, string typeClass, Func<Entity> make, Func<Entity, bool>? fits = null)

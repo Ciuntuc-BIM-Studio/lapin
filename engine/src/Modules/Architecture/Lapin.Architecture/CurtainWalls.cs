@@ -150,7 +150,7 @@ public sealed record CurtainSpec(CurtainGrid U, CurtainGrid V, CurtainSection Mu
             if (s["profile"] is JsonObject p && Json.Number(p["width"]) is { } pw && Json.Number(p["depth"]) is { } pd) return quarter ? new(pd, pw, p, place) : new(pw, pd, p, place);
             return new(Json.Number(s["width"]) ?? f.Width, Json.Number(s["depth"]) ?? f.Depth, null, place);
         }
-        static string Colour(JsonNode? x, string f) => (string?)x is { Length: 7 } c && c[0] == '#' ? c : f;
+        static string Colour(JsonNode? x, string f) => HexColor.Read(x, f);
         static string? Named(JsonNode? x) => x is JsonValue v && v.TryGetValue<string>(out var t) && t.Trim().Length > 0 ? t.Trim() : null;
         var panel = o["panel"] as JsonObject;
         return new CurtainSpec(CurtainGrid.From(o["u"], d.U), CurtainGrid.From(o["v"], d.V), Sec(o["mullion"], d.Mullion), Sec(o["transom"], d.Transom),
@@ -698,12 +698,7 @@ public static class CurtainWalls
     }
 
     /// <summary>The polygon's area (shoelace), in the wall's own plane.</summary>
-    static double Area(IReadOnlyList<Vec2> poly)
-    {
-        var s = 0.0;
-        for (var i = 0; i < poly.Count; i++) { var (a, b) = (poly[i], poly[(i + 1) % poly.Count]); s += a.X * b.Y - b.X * a.Y; }
-        return Math.Abs(s) / 2;
-    }
+    static double Area(IReadOnlyList<Vec2> poly) => Math.Abs(Polygon2.SignedArea(poly));
 
     /// <summary>
     /// A piece's footprint in plan: a mullion square to the axis at its line, a transom or panel (or a mullion round a door)
@@ -793,7 +788,7 @@ public static class CurtainWalls
         return (section, place);
     }
 
-    internal static double Base(IModelView m, Entity w) => (Spatial.StoreyOf(m, w.Id)?.Num("elevation") ?? 0) + w.Num("baseOffset");
+    internal static double Base(IModelView m, Entity w) => Spatial.Base(m, w);
 
     public static ElementGeometry Geometry(Entity w, IModelView m)
     {
@@ -915,8 +910,7 @@ public static class CurtainWalls
         foreach (var q in poly) if (p.Count == 0 || (q - p[^1]).Length > 1e-6) p.Add(q);
         if (p.Count > 2 && (p[0] - p[^1]).Length <= 1e-6) p.RemoveAt(p.Count - 1);
         if (p.Count < 3) return null;
-        double Signed(IReadOnlyList<Vec2> r) { var s = 0.0; for (var k = 0; k < r.Count; k++) { var (a, b) = (r[k], r[(k + 1) % r.Count]); s += a.X * b.Y - b.X * a.Y; } return s / 2; }
-        if (Signed(p) < 0) p.Reverse();
+        if (Polygon2.SignedArea(p) < 0) p.Reverse();
         var n = p.Count;
         // Each side moved in along its left normal (counter-clockwise: the inside).
         var lines = Enumerable.Range(0, n).Select(k =>
@@ -937,7 +931,7 @@ public static class CurtainWalls
             o.Add(l0.A + l0.Dir * t);
         }
         // Closed up: the inner outline turned over, or a side of it running backwards.
-        if (Signed(o) < 1e-4) return null;
+        if (Polygon2.SignedArea(o) < 1e-4) return null;
         for (var k = 0; k < n; k++)
             if (Vec2.Dot(o[(k + 1) % n] - o[k], lines[k].Dir) < -1e-9) return null;
         return o;

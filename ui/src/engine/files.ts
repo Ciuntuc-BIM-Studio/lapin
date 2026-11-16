@@ -6,6 +6,7 @@
  * and goes back to it (or to a download), as bytes.
  */
 
+import { confirmAction, phrase, promptText } from '../shell/prompts';
 import { forget3d } from '../viewport/viewState3d';
 import { brand } from '../platform/brand';
 import { activeStorey, engine, engineInBrowser, useSession } from './session';
@@ -184,18 +185,17 @@ export async function pickPath(mode: 'open' | 'save', defaultName?: string, filt
     return typeof r === 'string' ? r : null;
   }
   const ext = filters[0]?.extensions[0] ?? 'lapin';
-  const p = window.prompt(mode === 'open' ? `Path of the .${ext} file to open:` : `Save as (full path, .${ext}):`, defaultName ?? '');
+  const p = promptText(mode === 'open' ? 'Path of the .{ext} file to open:' : 'Save as (full path, .{ext}):', defaultName ?? '', { ext });
   return p?.trim() || null;
 }
 
-async function confirmDiscard(what: string): Promise<boolean> {
+async function confirmDiscard(question: string): Promise<boolean> {
   if (!useSession.getState().doc?.dirty) return true;
-  const question = `The project has unsaved changes. ${what} anyway?`;
   if (isDesktop()) {
     const dialog = await import('@tauri-apps/plugin-dialog');
-    return dialog.ask(question, { title: brand.name, kind: 'warning' });
+    return dialog.ask(phrase(question), { title: brand.name, kind: 'warning' });
   }
-  return window.confirm(question);
+  return confirmAction(question);
 }
 
 /** The project's name: its file's, without the folder and the extension. */
@@ -232,7 +232,7 @@ export interface NewStorey { name: string; elevation: number; height: number }
  * whatever was chosen). False when the user kept the open one.
  */
 export async function newProject(storeys?: NewStorey[], lapinDefault = false): Promise<boolean> {
-  if (!(await confirmDiscard('Start a new one'))) return false;
+  if (!(await confirmDiscard('The project has unsaved changes. Start a new one anyway?'))) return false;
   const chosen = storeys?.length || lapinDefault ? null : usePrefs.getState().defaultTemplate;
   if (chosen) {
     const { defaultTemplateOf, refreshTemplates, startFromTemplate } = await import('./templates');
@@ -270,7 +270,7 @@ function tellOld(notes: string[]): void {
 }
 
 export async function openProject(path?: string): Promise<void> {
-  if (!(await confirmDiscard('Open another'))) return;
+  if (!(await confirmDiscard('The project has unsaved changes. Open another anyway?'))) return;
   if (engineInBrowser) {
     const picked = await pickFile('Lapin project', ['lapin', 'html', 'htm']);
     if (!picked) return;
@@ -305,6 +305,13 @@ export async function openProject(path?: string): Promise<void> {
   }
 }
 
+/** What the engine says about a save or a version it made (`warnings`: a part it could not write whole, a value it kept as it was…): each shown as a notice, never silent. */
+export function reportWarnings(result: unknown): void {
+  const w = (result as { warnings?: unknown } | null)?.warnings;
+  if (!Array.isArray(w)) return;
+  for (const m of w) if (typeof m === 'string' && m.trim()) notify(m);
+}
+
 export async function saveProject(as = false): Promise<boolean> {
   const current = useSession.getState().doc?.path ?? null;
   if (engineInBrowser) {
@@ -312,10 +319,11 @@ export async function saveProject(as = false): Promise<boolean> {
       // The name is asked first (the engine then holds the project under it, so exports are named after it).
       const chosen = await chooseTarget(current ?? pageName ?? 'project.lapin', 'application/zip', as ? null : projectHandle);
       if (!chosen) return false;
-      const r = await engine.call<{ name: string; data: string }>('project.saveBytes', { name: chosen.name }, { timeoutMs: LONG_TIMEOUT_MS });
+      const r = await engine.call<{ name: string; data: string; warnings?: string[] }>('project.saveBytes', { name: chosen.name }, { timeoutMs: LONG_TIMEOUT_MS });
       await writeTarget(chosen, fromBase64(r.data), 'application/zip');
       projectHandle = chosen.handle;
       notify(`Saved ${projectTitle(r.name)}.`);
+      reportWarnings(r);
       return true;
     } catch (e) {
       notify(e instanceof Error ? e.message : String(e));
@@ -326,9 +334,10 @@ export async function saveProject(as = false): Promise<boolean> {
   if (!target) return false;
   const path = target.endsWith('.lapin') ? target : `${target}.lapin`;
   try {
-    await engine.call('project.save', { path }, { timeoutMs: LONG_TIMEOUT_MS });
+    const saved = await engine.call('project.save', { path }, { timeoutMs: LONG_TIMEOUT_MS });
     remember(path);
     notify(`Saved ${projectTitle(path)}.`);
+    reportWarnings(saved);
     return true;
   } catch (e) {
     notify(e instanceof Error ? e.message : String(e));
@@ -352,7 +361,8 @@ export const listVersions = () => engine.call<ProjectVersion[]>('project.version
  */
 export async function writeVersions(method: string, args: Record<string, unknown>): Promise<boolean> {
   if (engineInBrowser) {
-    const r = await engine.call<{ name: string; data: string }>(method, { ...args, bytes: true }, { timeoutMs: LONG_TIMEOUT_MS });
+    const r = await engine.call<{ name: string; data: string; warnings?: string[] }>(method, { ...args, bytes: true }, { timeoutMs: LONG_TIMEOUT_MS });
+    reportWarnings(r);
     const kept = await keep(fromBase64(r.data), r.name, projectHandle, false);
     if (!kept) return false;
     projectHandle = kept.handle;
@@ -362,7 +372,7 @@ export async function writeVersions(method: string, args: Record<string, unknown
     notify('Save the project first: its versions live in its file.');
     if (!await saveProject(true)) return false;
   }
-  await engine.call(method, args, { timeoutMs: LONG_TIMEOUT_MS });
+  reportWarnings(await engine.call(method, args, { timeoutMs: LONG_TIMEOUT_MS }));
   return true;
 }
 
@@ -418,12 +428,12 @@ export async function guardWindowClose(): Promise<void> {
     if (!useSession.getState().doc?.dirty) return;
     e.preventDefault();
     const dialog = await import('@tauri-apps/plugin-dialog');
-    const save = await dialog.ask('Save the changes to the project before closing?', { title: brand.name, kind: 'warning', okLabel: 'Save', cancelLabel: "Don't save" });
+    const save = await dialog.ask(phrase('Save the changes to the project before closing?'), { title: brand.name, kind: 'warning', okLabel: phrase('Save'), cancelLabel: phrase("Don't save") });
     // Saving cancelled in the file dialog: the window stays.
     if (save && !(await saveProject())) return;
     if (!save) {
       // A second thought is still possible; only a confirmed "close" lets the work go (and no recovery is offered next time).
-      if (!(await dialog.confirm('Close without saving? The changes will be lost.', { title: brand.name, kind: 'warning', okLabel: 'Close', cancelLabel: 'Cancel' }))) return;
+      if (!(await dialog.confirm(phrase('Close without saving? The changes will be lost.'), { title: brand.name, kind: 'warning', okLabel: phrase('Close'), cancelLabel: phrase('Cancel') }))) return;
       await engine.call('project.new').catch(() => undefined);
     }
     await win.destroy();

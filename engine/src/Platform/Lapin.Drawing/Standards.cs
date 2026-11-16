@@ -20,11 +20,20 @@ public sealed record TextStyle(string Id, string Name, double Height, string Fon
 /// <see cref="Zeros"/> (forum #81): whether a value's trailing zeros are written (2.500, "keep") or dropped (2.5, and 3 for
 /// 3.000, "suppress"), or as the project's standards say ("project", the default; <see cref="StyleBook.SuppressZeros"/>).
 /// </para>
+/// <para>
+/// <see cref="AutoText"/> (forum #78): a value that does not fit between its witness lines is moved clear of its neighbours by
+/// the engine (just outside its segment on the free side, else staggered above and below the line), with a leader once it
+/// stands further than <see cref="TextLeader"/> paper mm from its place: "on", "off", or as the project's standards say
+/// ("project", the default; <see cref="StyleBook.DimAutoText"/>; a null leader: <see cref="StyleBook.DimTextLeader"/>).
+/// </para>
 /// </summary>
-public sealed record DimStyle(string Id, string Name, string TextStyle, string Arrow, double ArrowSize, double ExtGap, double ExtOver, string Placement, double TextGap, int Precision, string Unit, string? Color = null, string OpeningHeight = "off", string Zeros = "project")
+public sealed record DimStyle(string Id, string Name, string TextStyle, string Arrow, double ArrowSize, double ExtGap, double ExtOver, string Placement, double TextGap, int Precision, string Unit, string? Color = null, string OpeningHeight = "off", string Zeros = "project",
+    string AutoText = "project", double? TextLeader = null)
 {
     /// <summary>Whether this (resolved) style drops its values' trailing zeros.</summary>
     [JsonIgnore] public bool SuppressesZeros => Zeros == "suppress";
+    /// <summary>Whether this (resolved) style moves the values that do not fit clear of their neighbours.</summary>
+    [JsonIgnore] public bool PlacesTexts => AutoText == "on";
 }
 
 /// <summary>An axis (grid line) type: its label's text style, bubble and which ends carry it, size (paper mm), line type, colour and the label new axes start from.</summary>
@@ -118,13 +127,17 @@ public sealed record DraftLayer(string Id, string Name, string Color, bool Visib
 /// <see cref="LevelDecimals"/> and <see cref="LevelZeros"/> (follow-up to forum #81): how levels are written wherever a drawing
 /// prints one (level marks on sections and elevations, spot levels, level dimensions, base and survey points, terrain levels):
 /// their decimals (0–4, metres; 2 by default) and their trailing zeros ("project": as <see cref="SuppressZeros"/>, "keep", "suppress").
+/// <see cref="DimAutoText"/> and <see cref="DimTextLeader"/> (forum #78): dimension values that do not fit between their witness
+/// lines are moved clear of their neighbours, with a leader once moved further than that many paper mm, unless a dimension style
+/// says otherwise; on by default (values that fit are drawn exactly as before).
 /// </summary>
 public sealed record StyleBook(
     IReadOnlyList<TextStyle> TextStyles, IReadOnlyList<DimStyle> DimStyles, IReadOnlyList<AxisStyle> AxisStyles,
     string DefaultAxisStyle, IReadOnlyList<TagType> TagTypes, IReadOnlyList<DraftLayer> Layers, IReadOnlyList<LayerGroup> LayerGroups,
     string LineCap = "round", string Units = "mm", double? SectionMarkSize = null, double? SectionMarkText = null, double? ElevationMarkSize = null, double? ElevationMarkText = null,
     double? AreaRounding = null, IReadOnlyList<double>? Scales = null, double? PlanScale = null, double? SectionScale = null, double? ElevationScale = null,
-    IReadOnlyList<LineTypeDef>? LineTypes = null, bool SuppressZeros = false, int LevelDecimals = Standards.DefaultLevelDecimals, string LevelZeros = "project")
+    IReadOnlyList<LineTypeDef>? LineTypes = null, bool SuppressZeros = false, int LevelDecimals = Standards.DefaultLevelDecimals, string LevelZeros = "project",
+    bool DimAutoText = true, double DimTextLeader = Standards.DefaultTextLeader)
 {
     public static StyleBook Default => Standards.Read(null);
 }
@@ -174,6 +187,12 @@ public static class Standards
     public static readonly string[] OpeningHeights = ["off", "number", "h", "hp", "slash"];
     /// <summary>A dimension style's trailing zeros (forum #81): as the project, kept, or dropped.</summary>
     public static readonly string[] ZeroChoices = ["project", "keep", "suppress"];
+    /// <summary>A dimension style's automatic text placement (forum #78): as the project, on, off.</summary>
+    public static readonly string[] AutoTextChoices = ["project", "on", "off"];
+    /// <summary>How far (paper mm) a value placed automatically may stand from its place before it takes a leader, by default; the most it may be set to.</summary>
+    public const double DefaultTextLeader = 5, MaxTextLeader = 100;
+    /// <summary>A leader distance (paper mm, 0 to <see cref="MaxTextLeader"/>), or null.</summary>
+    public static double? TextLeaderOf(JsonNode? v) => Lapin.Model.Json.Number(v) is { } d && double.IsFinite(d) && d >= 0 && d <= MaxTextLeader ? d : null;
     /// <summary>What a new project's Standard dimension style writes under a segment across an opening.</summary>
     public const string NewProjectOpeningHeight = "number";
     /// <summary>A dimension's unit: metric, or feet and inches / inches (fractions of an inch).</summary>
@@ -189,14 +208,14 @@ public static class Standards
 
     /// <summary>The fields an annotation may override, by kind (an axis overrides its line colour as lineColor).</summary>
     public static readonly string[] TextOverrides = ["height", "font", "bold", "italic", "color"];
-    public static readonly string[] DimOverrides = ["arrow", "arrowSize", "placement", "textGap", "precision", "unit", "color", "openingHeight", "zeros"];
+    public static readonly string[] DimOverrides = ["arrow", "arrowSize", "placement", "textGap", "precision", "unit", "color", "openingHeight", "zeros", "autoText", "textLeader"];
     public static readonly string[] AxisOverrides = ["bubble", "ends", "size", "lineType"];
 
     static string Str(JsonNode? v, string fallback) => v is JsonValue j && j.TryGetValue<string>(out var s) && s.Length > 0 ? s : fallback;
     static double Num(JsonNode? v, double fallback) => Lapin.Model.Json.Number(v) is { } d && double.IsFinite(d) && d >= 0 ? d : fallback;
     static bool True(JsonNode? v) => v is JsonValue j && j.TryGetValue<bool>(out var b) && b;
     static string OneOf(JsonNode? v, string[] values, string fallback) => v is JsonValue j && j.TryGetValue<string>(out var s) && values.Contains(s) ? s : fallback;
-    static string? Color(JsonNode? v) => v is JsonValue j && j.TryGetValue<string>(out var s) && Regex.IsMatch(s, "^#[0-9a-fA-F]{6}$") ? s : null;
+    static string? Color(JsonNode? v) => Lapin.Geometry.HexColor.Read(v, null);
     static double Positive(JsonNode? v, double fallback) => Num(v, fallback) is var n && n > 0 ? n : fallback;
 
     static TextStyle ReadText(JsonObject v)
@@ -211,7 +230,7 @@ public static class Standards
         return new(Str(v["id"], d.Id), Str(v["name"], d.Name), Str(v["textStyle"], d.TextStyle), OneOf(v["arrow"], Arrows, d.Arrow), Num(v["arrowSize"], d.ArrowSize),
             Num(v["extGap"], d.ExtGap), Num(v["extOver"], d.ExtOver), OneOf(v["placement"], Placements, d.Placement), Num(v["textGap"], d.TextGap),
             v["precision"] is JsonValue pv && Lapin.Model.Json.Number(pv) is { } pn && double.IsFinite(pn) ? Math.Max(-1, (int)Math.Round(pn)) : d.Precision, OneOf(v["unit"], Units, d.Unit), Color(v["color"]), OneOf(v["openingHeight"], OpeningHeights, d.OpeningHeight),
-            OneOf(v["zeros"], ZeroChoices, d.Zeros));
+            OneOf(v["zeros"], ZeroChoices, d.Zeros), OneOf(v["autoText"], AutoTextChoices, d.AutoText), TextLeaderOf(v["textLeader"]));
     }
 
     static AxisStyle ReadAxis(JsonObject v) => ReadAxis(v, LineTypes);
@@ -355,7 +374,8 @@ public static class Standards
             Lapin.Drawing.AreaRounding.Read(Lapin.Model.Json.Number(o["areaRounding"])),
             ViewScales(o["scales"]), ViewScale(o["planScale"]), ViewScale(o["sectionScale"]), ViewScale(o["elevationScale"]),
             own.Count > 0 ? own : null, True(o["suppressZeros"]),
-            LevelDecimalsOf(o["levelDecimals"]) ?? DefaultLevelDecimals, OneOf(o["levelZeros"], ZeroChoices, "project"));
+            LevelDecimalsOf(o["levelDecimals"]) ?? DefaultLevelDecimals, OneOf(o["levelZeros"], ZeroChoices, "project"),
+            o["dimAutoText"] is not JsonValue av || !av.TryGetValue<bool>(out var autoText) || autoText, TextLeaderOf(o["dimTextLeader"]) ?? DefaultTextLeader);
     }
 
     public static JsonObject ToJson(StyleBook b) => (JsonObject)JsonSerializer.SerializeToNode(b, DrawingJson.Default.StyleBook)!;
@@ -398,6 +418,8 @@ public static class Standards
         var s = Overridden(DimOf(b, (string?)p["dimStyle"]), DrawingJson.Default.DimStyle, p, DimOverrides);
         if (s.Unit == "project") s = s with { Unit = b.Units };
         if (s.Zeros is not ("keep" or "suppress")) s = s with { Zeros = b.SuppressZeros ? "suppress" : "keep" };
+        if (s.AutoText is not ("on" or "off")) s = s with { AutoText = b.DimAutoText ? "on" : "off" };
+        if (s.TextLeader is not { } leader || !(leader >= 0)) s = s with { TextLeader = b.DimTextLeader };
         return s;
     }
 
@@ -518,9 +540,6 @@ public static class Standards
         if (viewHides?.Contains(layer.Id) == true) return false;
         return viewportHides?.Contains(layer.Id) != true;
     }
-
-    public static bool LayerLocked(DraftLayer layer, IEnumerable<LayerGroup> groups) =>
-        layer.Locked || (layer.Group != null && groups.FirstOrDefault(g => g.Id == layer.Group)?.Locked == true);
 }
 
 /// <summary>The drafting standards' JSON contracts, generated at build time (web names, nulls left out), so a trimmed engine writes them as the desktop does.</summary>

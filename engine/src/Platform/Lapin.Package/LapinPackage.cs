@@ -29,6 +29,20 @@ public sealed record ModuleText(string Path, string Text, string Module);
 /// <summary>A project as read from a package.</summary>
 public sealed record PackageContent(IReadOnlyList<Entity> Entities, IReadOnlyList<Relation> Relations, IReadOnlyDictionary<string, string> Classes, JsonObject Document, PackageManifest Manifest);
 
+/// <summary>
+/// What a save could not carry over from the package the project was read from (a version's part or an issued file, gone or
+/// damaged), said to the user; what of the issues' files it wrote; and, when something the file holds could not be read at
+/// all, why writing over an existing file is refused (<see cref="Refuse"/>).
+/// </summary>
+public sealed class PackageWriteReport
+{
+    public List<string> Warnings { get; } = [];
+    /// <summary>The issued files written, by hash, with their size: those the new package holds.</summary>
+    public Dictionary<string, long> Issues { get; } = new(StringComparer.Ordinal);
+    /// <summary>Why the package must not replace an existing file (it would lose what could not be read); null: it may.</summary>
+    public string? Refuse { get; set; }
+}
+
 /// <summary>A project made into its parts, before it is written: the manifest and every part's bytes.</summary>
 public sealed record PackageBuild(PackageManifest Manifest, IReadOnlyList<(PackagePart Part, byte[] Bytes)> Parts);
 
@@ -68,13 +82,39 @@ public static class LapinPackage
         string app, string product, IReadOnlyList<PackageModule> modules, JsonObject? document = null, PackageVersions? versions = null)
     {
         // Written beside, then moved over the old file: a failed save leaves the project as it was.
+        Replace(path, file => Write(file, model, moduleOf, storeyOf, app, product, modules, document, versions));
+    }
+
+    /// <summary>
+    /// A file written beside <paramref name="path"/> (<c>.saving</c>), on the disk before it replaces the old one (audit
+    /// 15.11.2026, P23: a power cut right after a save never leaves an empty file), and taken away when the write fails.
+    /// A report that refuses (<see cref="PackageWriteReport.Refuse"/>) leaves an existing file as it was.
+    /// </summary>
+    static PackageWriteReport Replace(string path, Func<FileStream, PackageWriteReport> write)
+    {
         var temp = path + ".saving";
-        using (var file = File.Create(temp)) Write(file, model, moduleOf, storeyOf, app, product, modules, document, versions);
-        File.Move(temp, path, overwrite: true);
+        try
+        {
+            PackageWriteReport report;
+            using (var file = new FileStream(temp, FileMode.Create, FileAccess.ReadWrite, FileShare.None))
+            {
+                report = write(file);
+                file.Flush(flushToDisk: true);
+            }
+            if (report.Refuse is { } why && File.Exists(path)) throw new InvalidDataException(why);
+            File.Move(temp, path, overwrite: true);
+            return report;
+        }
+        catch
+        {
+            try { if (File.Exists(temp)) File.Delete(temp); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+            throw;
+        }
     }
 
     /// <summary>The package into a stream (a browser hands the bytes to the user to keep).</summary>
-    public static void Write(Stream output, IModelView model, Func<string, string> moduleOf, Func<string, string?> storeyOf,
+    public static PackageWriteReport Write(Stream output, IModelView model, Func<string, string> moduleOf, Func<string, string?> storeyOf,
         string app, string product, IReadOnlyList<PackageModule> modules, JsonObject? document = null, PackageVersions? versions = null) =>
         Write(output, Build(model, moduleOf, storeyOf, app, product, modules, document), versions);
 
@@ -127,12 +167,8 @@ public static class LapinPackage
     }
 
     /// <summary>A built project written to a file, beside first, then moved over the old one.</summary>
-    public static void Write(string path, PackageBuild build, PackageVersions? versions = null, IssueFiles? issues = null, PackageForeign? foreign = null)
-    {
-        var temp = path + ".saving";
-        using (var file = File.Create(temp)) Write(file, build, versions, issues, foreign);
-        File.Move(temp, path, overwrite: true);
-    }
+    public static PackageWriteReport Write(string path, PackageBuild build, PackageVersions? versions = null, IssueFiles? issues = null, PackageForeign? foreign = null) =>
+        Replace(path, file => Write(file, build, versions, issues, foreign));
 
     /// <summary>
     /// A built project written as a package, with its versions: each version's
@@ -142,8 +178,9 @@ public static class LapinPackage
     /// keep, under <c>issues/blobs/</c>, once each; and the entries of other
     /// tools, as they were read, listed in the manifest's <c>foreign</c>.
     /// </summary>
-    public static void Write(Stream output, PackageBuild build, PackageVersions? versions = null, IssueFiles? issues = null, PackageForeign? foreign = null)
+    public static PackageWriteReport Write(Stream output, PackageBuild build, PackageVersions? versions = null, IssueFiles? issues = null, PackageForeign? foreign = null)
     {
+        var report = new PackageWriteReport();
         using var zip = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true);
         void Entry(string name, byte[] bytes)
         {
@@ -160,22 +197,46 @@ public static class LapinPackage
         var manifest = build.Manifest with { Parts = allParts.Select(p => p.Part).ToList(), Foreign = kept.Count > 0 ? kept.Select(p => p.Part).ToList() : null };
         Entry(ManifestPath, JsonSerializer.SerializeToUtf8Bytes(manifest, PackageJson.Indented.PackageManifest));
         foreach (var (part, bytes) in allParts) Entry(part.Path, bytes);
-        if (versions is { Versions.Count: > 0 })
+        if (versions is { Unreadable: { } unreadable })
+        {
+            // Versions that could not be read are carried over as the file had them (audit 15.11.2026, P6), never dropped.
+            var live = build.Parts.Select(p => p.Part.Sha256).ToHashSet();
+            if (versions.CopyRawTo(live, Entry) is { } why)
+            {
+                report.Refuse ??= $"The project's versions could not be read ({unreadable}) nor carried over ({why}): saving over its file would lose them. Save it under another name.";
+                report.Warnings.Add($"The project's versions could not be read ({unreadable}) nor carried over ({why}): this file was written without them.");
+            }
+            else report.Warnings.Add($"The project's versions could not be read ({unreadable}): they were kept in the file as they were.");
+        }
+        else if (versions is { Versions.Count: > 0 })
         {
             Entry(VersionsPath, JsonSerializer.SerializeToUtf8Bytes(new PackageVersionIndex(versions.Versions), PackageJson.Indented.PackageVersionIndex));
             var live = build.Parts.Select(p => p.Part.Sha256).ToHashSet();
             var needed = versions.Hashes().Where(h => !live.Contains(h)).ToList();
-            foreach (var (sha, bytes) in versions.Blobs(needed)) Entry(BlobsPrefix + sha, bytes);
+            // A part that cannot be read, or is not what its hash says, is left out and said (audit 15.11.2026, G1 and P22): the save goes on.
+            var (found, missing) = versions.TryBlobs(needed);
+            foreach (var (sha, bytes) in found) Entry(BlobsPrefix + sha, bytes);
+            if (missing.Count > 0)
+            {
+                var hit = versions.Versions.Where(v => v.Manifest.Parts.Any(p => missing.ContainsKey(p.Sha256)) || v.Revisions.Any(r => r.Manifest.Parts.Any(p => missing.ContainsKey(p.Sha256)))).Select(v => v.Number);
+                report.Warnings.Add($"{missing.Count} part(s) of version {string.Join(", ", hit)} could not be carried over ({missing.Values.First()}): those versions can no longer be restored.");
+            }
         }
         if (issues is { Keep.Count: > 0 })
         {
             if (issues.Index is { } index) Entry(PackageIssues.IndexPath, index);
             // Compressed quickly: a PDF is compressed already, an IFC (text) shrinks well either way, and a save with many issues stays fast.
-            issues.Store.CopyTo(issues.Written, (sha, bytes) =>
+            var written = issues.Store.CopyTo(issues.Written, (sha, bytes) =>
             {
                 using var s = zip.CreateEntry(PackageIssues.Prefix + sha, CompressionLevel.Fastest).Open();
                 bytes.CopyTo(s);
-            });
+            }, report);
+            foreach (var (sha, size) in written) report.Issues[sha] = size;
+        }
+        if (foreign is { Unreadable: { } foreignWhy })
+        {
+            report.Refuse ??= $"Other tools' entries in the project's file could not be read ({foreignWhy}): saving over it would lose them. Save it under another name.";
+            report.Warnings.Add($"Other tools' entries in the project's file could not be read ({foreignWhy}): this file was written without them.");
         }
         // Last, after everything Lapin owns: none of these can shadow a name of Lapin's (PackageForeign.Keeps).
         foreach (var part in kept)
@@ -185,6 +246,7 @@ public static class LapinPackage
             using var s = entry.Open();
             s.Write(part.Bytes);
         }
+        return report;
     }
 
     public static PackageContent Read(string path)

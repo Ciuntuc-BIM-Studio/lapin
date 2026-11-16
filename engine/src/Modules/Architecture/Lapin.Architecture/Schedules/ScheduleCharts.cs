@@ -37,15 +37,7 @@ public sealed record ScheduleChart(string Id, string Kind, string Title, string 
 public static class ScheduleCharts
 {
     /// <summary>A number in a cell: decimal point or comma, a unit or a percent after it ("12,5 m²", "40 %"); none when it does not start with one.</summary>
-    public static double? Number(string text)
-    {
-        var t = text.Trim().Replace(" ", "").Replace(" ", "");
-        var end = 0;
-        while (end < t.Length && (char.IsDigit(t[end]) || t[end] is '.' or ',' || (end == 0 && t[end] is '-' or '+'))) end++;
-        var num = t[..end].Replace(',', '.').TrimEnd('.');
-        if (num.Length == 0 || !num.Any(char.IsDigit) || num.Count(c => c == '.') > 1) return null;
-        return double.TryParse(num, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) && double.IsFinite(v) ? v : null;
-    }
+    public static double? Number(string text) => Lapin.Model.Numbers.Parse(text, Lapin.Model.NumberMode.Leading);
 
     /// <summary>Whether a grid's row is its totals line, left out of the charts.</summary>
     public static bool IsTotal(IReadOnlyList<string> row) => row.Count > 0 && row[0].Trim().StartsWith("Total", StringComparison.OrdinalIgnoreCase);

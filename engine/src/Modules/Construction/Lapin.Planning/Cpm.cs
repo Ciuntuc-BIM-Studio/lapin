@@ -36,12 +36,15 @@ public sealed record CpmResult(IReadOnlyDictionary<string, TaskTimes> Times, Dat
 /// </summary>
 public static class Cpm
 {
-    /// <summary>The links as leaf-to-leaf edges: every leaf under the predecessor to every leaf under the successor.</summary>
+    /// <summary>
+    /// The links as leaf-to-leaf edges: every leaf under the predecessor to every leaf under the successor. A link between a
+    /// summary and a task under it (never made by a command, but a file or an old project may hold one) means nothing: left out.
+    /// </summary>
     static List<(PlanLink Link, string From, string To)> Edges(Plan p)
     {
         var o = new List<(PlanLink, string, string)>();
         foreach (var l in p.Links)
-            if (p.ById.ContainsKey(l.From) && p.ById.ContainsKey(l.To))
+            if (p.ById.ContainsKey(l.From) && p.ById.ContainsKey(l.To) && !Plan.Nested(p, l))
                 foreach (var a in p.LeavesOf(l.From))
                     foreach (var b in p.LeavesOf(l.To))
                         if (a != b) o.Add((l, a, b));

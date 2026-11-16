@@ -7,6 +7,7 @@
  * An overlay for the screen alone: the sheet prints without it.
  */
 
+import { confirmAction } from '../../../../shell/prompts';
 import { Check, RotateCcw, Trash2, X, XCircle } from 'lucide-react';
 import { notify } from '../../../../app/store';
 import { useSession } from '../../../../engine/session';
@@ -77,7 +78,7 @@ export function RemarkCard({ sheetId }: { sheetId: string }) {
 export function RemarkActions({ remark, onDeleted }: { remark: Remark; onDeleted?: () => void }) {
   const set = async (status: Remark['status']) => { try { await setRemarkStatus([remark.id], status); } catch (e) { notify(e instanceof Error ? e.message : String(e)); } };
   const del = async () => {
-    if (!window.confirm('Delete this remark? Reading the PDF again would bring it back.')) return;
+    if (!confirmAction('Delete this remark? Reading the PDF again would bring it back.')) return;
     try { await deleteRemarks([remark.id]); onDeleted?.(); } catch (e) { notify(e instanceof Error ? e.message : String(e)); }
   };
   return (

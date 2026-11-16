@@ -613,7 +613,7 @@ public static class Joinery
         if (!Positive(s.Frame.Depth) || !Positive(s.Frame.Width)) return "The frame needs a positive depth and width.";
         if (s.Columns.Length is < 1 or > 12 || s.Rows.Length is < 1 or > 12) return "Use 1 to 12 columns and rows.";
         if (!s.Columns.Concat(s.Rows).All(Positive)) return "Column widths and row heights must be positive.";
-        if ((s.Mullions ?? []).Concat(s.Transoms ?? []).Any(v => v is { } w && (!double.IsFinite(w) || w < 0 || w > 1)))
+        if ((s.Mullions ?? []).Concat(s.Transoms ?? []).Any(v => v is { } w && (!double.IsFinite(w) || !(w >= 0 && w <= 1))))
             return "Mullion and transom widths must be zero or positive (and under a metre).";
         if (s.Meeting is { } meet)
         {

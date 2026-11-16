@@ -42,9 +42,10 @@ export function MessageStrip({ log, onOpen }: { log: MessageLogApi; onOpen?: (m:
     e.preventDefault();
     const y0 = e.clientY, h0 = height;
     const move = (p: PointerEvent) => log.setStrip({ height: Math.max(MIN_STRIP, Math.min(MAX_STRIP, Math.round(h0 + (y0 - p.clientY)))) });
-    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
   };
   const copy = async () => {
     try { await navigator.clipboard.writeText(messagesText(shown)); } catch { notify('Copy failed.'); }

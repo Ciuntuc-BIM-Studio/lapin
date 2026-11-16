@@ -61,7 +61,33 @@ public sealed partial class Session
 
     void Emit(string kind, Transaction? t = null, string? author = null)
     {
-        if (!_quiet) HistoryChanged?.Invoke(new HistoryEvent(kind, t, author == History.Me ? null : author));
+        if (_quiet || HistoryChanged is not { } handlers) return;
+        var e = new HistoryEvent(kind, t, author == History.Me ? null : author);
+        foreach (var h in handlers.GetInvocationList().Cast<Action<HistoryEvent>>())
+        {
+            // A listener that fails (the recovery journal on a full disk) never undoes what was done: the edit stands, its diff goes
+            // out, and the user is told (audit 15.11.2026, P10).
+            try { h(e); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ObjectDisposedException or InvalidOperationException or NotSupportedException)
+            {
+                Console.Error.WriteLine($"[engine] the recovery journal: {ex}");
+                lock (_warnings) _warnings.Add($"The recovery journal could not be written ({ex.Message}): what is done since is not kept if Lapin stops unexpectedly. Save the project.");
+            }
+        }
+    }
+
+    readonly List<string> _warnings = [];
+
+    /// <summary>What went wrong beside a call that still went through (the recovery journal not written), for the reply to tell; emptied when taken.</summary>
+    public IReadOnlyList<string> TakeWarnings()
+    {
+        lock (_warnings)
+        {
+            if (_warnings.Count == 0) return [];
+            var o = _warnings.Distinct().ToList();
+            _warnings.Clear();
+            return o;
+        }
     }
 
     public Session(ModuleCatalog catalog, ProductManifest product)
@@ -638,6 +664,8 @@ public sealed partial class Session
     public IReadOnlyList<QuantitySet> Quantities(string id)
     {
         if (_store.Get(id) is not { } e) return [];
+        // Solids kept hidden behind the layered wall made of them (forum topic 101): the wall measures them, once.
+        if (!Superseded.Counts(_store, e)) return [];
         // A body an external program made measures as a body, whatever class it was given (docs/plan-external-geometry.md).
         if (ExternalBodies.IsOwned(e)) return ExternalBodies.Quantities(e, Geometry(id), _store);
         // A reference (its body from a file) measures by its file's quantities and its body, not by its class's native rules (ReferenceQuantities).

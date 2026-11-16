@@ -373,30 +373,11 @@ public static class UnderStairs
             return o;
         }
 
-        static double Area(List<(double S, double Z)> p)
-        {
-            var a = 0.0;
-            for (var i = 0; i < p.Count; i++) { var (x0, y0) = p[i]; var (x1, y1) = p[(i + 1) % p.Count]; a += x0 * y1 - x1 * y0; }
-            return a / 2;
-        }
+        static double Area(List<(double S, double Z)> p) => Polygon2.SignedArea([.. p.Select(q => new Vec2(q.S, q.Z))]);
 
         /// <summary>The part of a convex polygon where <paramref name="f"/> ≥ 0 (f linear).</summary>
-        static List<(double S, double Z)> Half(List<(double S, double Z)> poly, Func<(double S, double Z), double> f)
-        {
-            var o = new List<(double S, double Z)>();
-            for (var i = 0; i < poly.Count; i++)
-            {
-                var (p, q) = (poly[i], poly[(i + 1) % poly.Count]);
-                var (fp, fq) = (f(p), f(q));
-                if (fp >= -1e-12) o.Add(p);
-                if ((fp >= -1e-12) != (fq >= -1e-12) && Math.Abs(fp - fq) > 1e-15)
-                {
-                    var t = fp / (fp - fq);
-                    o.Add((p.S + (q.S - p.S) * t, p.Z + (q.Z - p.Z) * t));
-                }
-            }
-            return o;
-        }
+        static List<(double S, double Z)> Half(List<(double S, double Z)> poly, Func<(double S, double Z), double> f) =>
+            Polygon2.ClipHalf(poly, f, (p, q, t) => (p.S + (q.S - p.S) * t, p.Z + (q.Z - p.Z) * t), 1e-12);
     }
 
     /// <summary>
@@ -748,7 +729,7 @@ public sealed class UnderStairSchedule : IScheduleSource
         var keys = new List<string?>();
         var totals = new Dictionary<string, (int Count, double Volume)>(StringComparer.OrdinalIgnoreCase);
         static string N(double v) => v.ToString("0.000", CultureInfo.InvariantCulture);
-        foreach (var e in m.OfClass(UnderStairs.Class).OrderBy(x => Spatial.StoreyOf(m, x.Id)?.Num("elevation") ?? 0).ThenBy(x => x.Name, StringComparer.Create(CultureInfo.InvariantCulture, CompareOptions.NumericOrdering)))
+        foreach (var e in m.OfClass(UnderStairs.Class).OrderBy(x => Spatial.Elevation(m, x)).ThenBy(x => x.Name, StringComparer.Create(CultureInfo.InvariantCulture, CompareOptions.NumericOrdering)))
         {
             var storey = Spatial.StoreyOf(m, e.Id)?.Name ?? "";
             var stair = m.Get(e.Str("host") ?? "")?.Name ?? "";

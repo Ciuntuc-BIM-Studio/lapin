@@ -11,6 +11,7 @@
  * out, or brings two storeys without the 2D. What the file places comes in as one group unless told otherwise.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, X } from 'lucide-react';
 import { useUi } from '../../app/store';
@@ -168,7 +169,7 @@ export function ImportIfcDialog() {
   );
 
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog import-ifc" role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head">
           <span className="panel-title">{title} · <span data-no-i18n>{survey.name}</span></span>

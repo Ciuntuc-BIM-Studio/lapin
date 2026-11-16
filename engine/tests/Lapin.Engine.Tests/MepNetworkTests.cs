@@ -163,7 +163,7 @@ public class MepNetworkTests
         Assert.Equal(2.4, highLine[^1].Z, 6);
         // The symbol: a ring with a dot for a rise.
         var plan = f.Session.Geometry(rise)!.Plan!;
-        Assert.Contains(plan, i => i.Kind == "heavy" && i.Closed && i.Points.Count == 12);
+        Assert.Contains(plan, i => i.Kind == "heavy" && i.Closed && i.Points.Count == Chords.Circle(0.015));
         Assert.DoesNotContain(f.Open(s).OfType<JsonObject>(), o => (string?)o["id"] == rise);
     }
 

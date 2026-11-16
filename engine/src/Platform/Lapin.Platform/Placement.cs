@@ -193,12 +193,20 @@ public static class Placement
                 if (t.Mirrored) q.Reverse();
                 return (JsonNode)new JsonArray(q.Select(p => (JsonNode)J(p)).ToArray());
             }).ToArray());
-        if (a["points"] is JsonArray pts3 && pts3.OfType<JsonArray>().All(p => p.Count >= 3))
+        // Points in plan, each [x, y] or [x, y, z] (its height kept): survey points, a railing's or a skirting's line drawn in
+        // plan (audit 15.11.2026, G2: the 2D ones were left where they were). Not a drafted shape's (on its view), nor a
+        // split's on a host's face (it has a face: its points are in the face's own frame).
+        if (a["points"] is JsonArray pts3 && pts3.Count > 0 && e.Class != IfcClass.Annotation && a["face"] == null
+            && pts3.All(p => p is JsonArray { Count: >= 2 } q && Json.Number(q[0]) != null && Json.Number(q[1]) != null))
+        {
             a["points"] = new JsonArray(pts3.OfType<JsonArray>().Select(p =>
             {
                 var q = t.Point(Args.PointOf(p));
-                return (JsonNode)new JsonArray(q.X, q.Y, Json.Number(p[2]) ?? 0);
+                return (JsonNode)(p.Count >= 3 ? new JsonArray(q.X, q.Y, Json.Number(p[2]) ?? 0) : J(q));
             }).ToArray());
+            // A line with its board on one side (a skirting's): mirrored, on the other.
+            if (t.Mirrored && (string?)a["side"] is "left" or "right") a["side"] = (string?)a["side"] == "left" ? "right" : "left";
+        }
         if (a["ridgeDirection"] is JsonArray { Count: >= 2 } rd) a["ridgeDirection"] = J(t.Dir(Args.PointOf(rd)));
         // A mirrored arc bulges to the other side of its chord.
         if (t.Mirrored && Json.Number(a[PathCurve.Key]) is { } rise && e.Class != IfcClass.Annotation) a[PathCurve.Key] = -rise;

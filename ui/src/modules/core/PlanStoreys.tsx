@@ -7,6 +7,7 @@
  * for the plan in front.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
@@ -85,7 +86,7 @@ export function PlanStoreysDialog() {
   const view = id ? nodes.get(id) : undefined;
   const name = in3d ? (view?.name ?? '3D') : view?.name;
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog" role="dialog" aria-label="Storeys shown" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Storeys shown{name ? ` · ${name}` : ''}</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">{in3d && id ? <Storeys3DEditor viewId={id} /> : view ? <PlanStoreysEditor view={view} /> : <p className="muted">…</p>}</div>

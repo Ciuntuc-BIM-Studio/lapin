@@ -572,12 +572,11 @@ public static class Components
     /// <summary>The plan points an element's attributes place it by.</summary>
     static IEnumerable<Vec2> PointsOf(Entity e)
     {
-        if (e.Attrs["start"] is JsonArray { Count: >= 2 } s0) yield return new Vec2(Json.Number(s0[0]) ?? 0, Json.Number(s0[1]) ?? 0);
-        if (e.Attrs["end"] is JsonArray { Count: >= 2 } e0) yield return new Vec2(Json.Number(e0[0]) ?? 0, Json.Number(e0[1]) ?? 0);
+        if (Args.TryPoint(e.Attrs["start"]) is { } s0) yield return s0;
+        if (Args.TryPoint(e.Attrs["end"]) is { } e0) yield return e0;
         foreach (var key in new[] { "contour", "outline" })
-            if (e.Attrs[key] is JsonArray list)
-                foreach (var p in list.OfType<JsonArray>().Where(p => p.Count >= 2)) yield return new Vec2(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0);
-        if (e.Attrs["at"] is JsonArray { Count: >= 2 } at) yield return new Vec2(Json.Number(at[0]) ?? 0, Json.Number(at[1]) ?? 0);
+            foreach (var p in Args.StoredPoints(e.Attrs[key])) yield return p;
+        if (Args.TryPoint(e.Attrs["at"]) is { } at) yield return at;
     }
 
     static string NextName(IModelView m, bool unit)

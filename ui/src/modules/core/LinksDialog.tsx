@@ -7,6 +7,8 @@
  * drawn, a halftone link's are faded.
  */
 
+import { confirmAction } from '../../shell/prompts';
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { ExternalLink, Feather, FolderOpen, MapPin, Move, RefreshCw, Trash2, Unlink, Wand2, X } from 'lucide-react';
 import { fileName, openOptimize } from '../../engine/ifcOptimize';
@@ -15,7 +17,7 @@ import { engine, execute, useSession } from '../../engine/session';
 import { isDesktop, pickFile, toBase64 } from '../../engine/files';
 import { setLooks } from '../../platform/looks';
 import type { NodeDto } from '../../engine/protocol';
-import { Cell } from '../../shell/cells';
+import { Cell, NumberField } from '../../shell/cells';
 import { CLOUD_MODES, CLOUD_UNITS } from '../../engine/files';
 import { query } from '../../engine/session';
 import { isCloudLink, setCloudStatus, statusText, usePointClouds } from '../../viewport/pointClouds';
@@ -121,7 +123,7 @@ export function LinksDialog() {
     notify('Opening the file in another Lapin window, on its own, to edit there.');
   };
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide" role="dialog" aria-label="Links" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Links</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">
@@ -146,7 +148,7 @@ export function LinksDialog() {
                             <select aria-label="Colours" title="What colours its points" value={String(l.props.colorMode ?? 'rgb')} onChange={(e) => void execute('pointcloud.update', { id: l.id, colorMode: e.target.value })}>
                               {COLOR_MODES.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
                             </select>
-                            <label className="small" title="Point size (px)" style={{ marginLeft: 8 }}>Size <input type="number" min={1} max={12} step={1} style={{ width: 44 }} value={Number(l.props.pointSize ?? 2)} onChange={(e) => void execute('pointcloud.update', { id: l.id, pointSize: Number(e.target.value) })} /></label>
+                            <label className="small" title="Point size (px)" style={{ marginLeft: 8 }}>Size <NumberField min={1} max={12} integer style={{ width: 44 }} value={Number(l.props.pointSize ?? 2)} onCommit={(v) => { if (v != null) void execute('pointcloud.update', { id: l.id, pointSize: v }); }} /></label>
                           </div>
                         )}
                       </td>
@@ -165,7 +167,7 @@ export function LinksDialog() {
                         {path && isDesktop() && l.props.kind === 'ifc' && <button type="button" className="icon mini" data-link="optimize" title="Optimize the source file…" disabled={busy != null} onClick={() => openOptimize([{ name: fileName(path), path }])}><Feather size={12} /></button>}
                         {path && isDesktop() && !cloud && <button type="button" className="icon mini" title="Open on its own in another Lapin window, to edit there" disabled={busy != null} onClick={() => void run(l.id, () => openSeparately(path))}><ExternalLink size={12} /></button>}
                         <button type="button" className="icon mini" title="Unlink: the link and everything it brought go" disabled={busy != null}
-                          onClick={() => { if (window.confirm(`Unlink ${l.name}? Everything it brought in goes (undo brings it back).`)) void run(l.id, () => execute('link.unlink', { id: l.id })); }}><Unlink size={12} /></button>
+                          onClick={() => { if (confirmAction('Unlink {name}? Everything it brought in goes (undo brings it back).', { name: l.name })) void run(l.id, () => execute('link.unlink', { id: l.id })); }}><Unlink size={12} /></button>
                       </td>
                     </tr>
                   );

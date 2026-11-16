@@ -84,12 +84,7 @@ public static class Views
         return ViewRanges.Resolve(storey?.Num("elevation") ?? 0, view.NumOrNull("cutHeight") ?? DefaultCut, ViewRange.From(view.Attrs["viewRange"]), Levels(m));
     }
 
-    static (Vec3 Min, Vec3 Max)? Bounds(IEnumerable<DrawPart> parts)
-    {
-        var bs = parts.Select(p => Measure.Bounds(p.Solid)).OfType<(Vec3 Min, Vec3 Max)>().ToList();
-        if (bs.Count == 0) return null;
-        return (new Vec3(bs.Min(b => b.Min.X), bs.Min(b => b.Min.Y), bs.Min(b => b.Min.Z)), new Vec3(bs.Max(b => b.Max.X), bs.Max(b => b.Max.Y), bs.Max(b => b.Max.Z)));
-    }
+    static (Vec3 Min, Vec3 Max)? Bounds(IEnumerable<DrawPart> parts) => Measure.Bounds(parts.Select(p => p.Solid));
 
     /// <summary>The view's spec: where it looks from and how deep; null with a reason when it cannot be drawn.</summary>
     public static (ViewSpec? Spec, string? Problem) Spec(IModelView m, Entity view, IReadOnlyList<DrawPart> parts, IServices? services = null)
@@ -482,7 +477,7 @@ public static class Views
         if (mode == "some" && ids.Count == 0) throw new CommandException("Tick at least one storey.");
         var unplaced = a["unplaced"] is JsonValue uv && uv.TryGetValue<bool>(out var u) ? u : old.Unplaced;
         var cut = a.ContainsKey("cut") ? Json.Number(a["cut"]) : old.Cut;
-        if (cut is { } c && (c < -5 || c > 50)) throw new CommandException("The cut is between −5 and 50 m above the storey's level.");
+        if (cut is { } c && (!(c >= -5 && c <= 50))) throw new CommandException("The cut is between −5 and 50 m above the storey's level.");
         var next = new Storeys3d(mode, ids, unplaced, cut);
         var attrs = view.CloneAttrs();
         if (next.IsDefault) attrs.Remove("storeys"); else attrs["storeys"] = next.ToJson();
@@ -503,7 +498,8 @@ public static class Views
         Gather(q, view, null);
 
     /// <summary>As <see cref="Gather(IQueryContext, Entity)"/>, the silhouettes an elevation or a section draws added to <paramref name="silhouettes"/> (decision 341).</summary>
-    static (List<DrawPart> Parts, List<DrawSymbol> Symbols, List<DFill> Fills, List<DText> Texts) Gather(IQueryContext q, Entity view, List<DrawSilhouette>? silhouettes)
+    /// <param name="outlines">In a plan, what the symbols of kind <c>outline</c> are (a stair's whole outline, drawn by its marks): kept for the dimensions to hold on (forum 102).</param>
+    static (List<DrawPart> Parts, List<DrawSymbol> Symbols, List<DFill> Fills, List<DText> Texts) Gather(IQueryContext q, Entity view, List<DrawSilhouette>? silhouettes, List<DLine>? outlines = null)
     {
         var m = q.Model;
         var parts = new List<DrawPart>();
@@ -614,6 +610,13 @@ public static class Views
                 foreach (var item in symbolsHere)
                 {
                     if (!item.At(e.Class is IfcClass.Door or IfcClass.Window ? joinerySymbols : detail) || !item.In(entourage)) continue;
+                    if (item.Kind == "outline")
+                    {
+                        if (outlines != null)
+                            for (var i = 0; i + 1 < item.Points.Count + (item.Closed ? 1 : 0); i++)
+                                outlines.Add(new DLine(item.Points[i], item.Points[(i + 1) % item.Points.Count], "outline", e.Id, e.Class));
+                        continue;
+                    }
                     if (SymbolFill(item, e) is { } sf) { fills.Add(sf); continue; }
                     var role = item.Kind switch { "symbol" or "contour" or "terrainEdge" => LineRole.Projection, "contourMajor" => LineRole.Cut, "heavy" => LineRole.Cut, "dashed" or "reach" => LineRole.Hidden, "overhead" or "ridge" or "hip" or "valley" or "break" => LineRole.Overhead, _ => null };
                     if (role != null) symbols.Add(new DrawSymbol(item.Points, item.Closed, e.Id, e.Class, role, item.Mode != null ? item.Style ?? thin : item.Style));
@@ -693,7 +696,8 @@ public static class Views
     static (ViewDrawing? Drawing, ViewSpec? Spec, string? Problem, List<DrawPart> Parts, List<(ViewSpec Spec, double Station, ViewDrawing Drawing)>? Pieces) GenerateWith(IQueryContext q, Entity view)
     {
         var silhouettes = new List<DrawSilhouette>();
-        var (parts, symbols, fills, texts) = Gather(q, view, silhouettes);
+        var outlines = new List<DLine>();
+        var (parts, symbols, fills, texts) = Gather(q, view, silhouettes, outlines);
         ViewSpec? spec;
         string? problem = null;
         if (view.Str("kind") == "3d")
@@ -722,6 +726,7 @@ public static class Views
         }
         else drawing = Generator.Draw(parts, spec, symbols, Key, silhouettes);
         if (spec.Kind == "plan" && (fills.Count > 0 || texts.Count > 0)) drawing = drawing with { Fills = fills, Texts = texts };
+        if (spec.Kind == "plan" && outlines.Count > 0) drawing = drawing with { Outlines = outlines };
         return (drawing, spec, null, drawn, laid);
     }
 
@@ -1839,7 +1844,7 @@ public static class Views
                 var pen = (int)(Json.Number(a["pen"]) ?? 0);
                 var i = t.Scales.ToList().IndexOf((int)(Json.Number(a["scale"]) ?? 0));
                 var w = Json.Number(a["width"]) ?? 0;
-                if (pen < 1 || pen > LineStyles.PenCount) throw new CommandException("A pen is 1 to 16.");
+                if (!(pen >= 1 && pen <= LineStyles.PenCount)) throw new CommandException("A pen is 1 to 16.");
                 if (i < 0) throw new CommandException($"The pen table has scales {string.Join(", ", t.Scales.Select(x => "1:" + x))}.");
                 if (!(w > 0 && w <= 10)) throw new CommandException("A pen's width is more than 0 and at most 10 mm.");
                 var widths = t.Widths.Select(r => r.ToList()).ToList();
@@ -1880,7 +1885,7 @@ public static class Views
                 if (a["spec"] is JsonObject spec)
                 {
                     if ((string?)spec["pattern"] is { } pat && !LineStyles.Patterns.Contains(pat) && !Standards.LineTypeNames(DraftingResources.Book(ctx.Model)).Contains(pat, StringComparer.OrdinalIgnoreCase)) throw new CommandException($"„{pat}” is not a line pattern.");
-                    if (Json.Number(spec["pen"]) is { } pen && (pen < 1 || pen > LineStyles.PenCount)) throw new CommandException("A pen is 1 to 16.");
+                    if (Json.Number(spec["pen"]) is { } pen && (!(pen >= 1 && pen <= LineStyles.PenCount))) throw new CommandException("A pen is 1 to 16.");
                     c[role] = spec.DeepClone();
                 }
                 else c.Remove(role);
@@ -1893,7 +1898,7 @@ public static class Views
                 var style = (string?)lm["style"] ?? LevelMark(project).Style;
                 if (!LevelMarkStyles.Contains(style)) throw new CommandException("A level marker is an open, half or filled triangle, or a tick.");
                 var size = Json.Number(lm["size"]) ?? LevelMark(project).Size;
-                if (size < 1 || size > 20) throw new CommandException("A level marker is 1 to 20 mm on paper.");
+                if (!(size >= 1 && size <= 20)) throw new CommandException("A level marker is 1 to 20 mm on paper.");
                 var defaults = attrs["viewDefaults"] as JsonObject ?? new JsonObject();
                 defaults["levelMark"] = new JsonObject { ["style"] = style, ["size"] = size };
                 attrs["viewDefaults"] = defaults;

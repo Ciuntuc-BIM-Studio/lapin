@@ -13,12 +13,12 @@ public static class ProjectPackage
             session.Catalog.Modules.Select(m => new PackageModule(m.Id, m.SchemaVersion)).ToList(),
             texts: session.Catalog.All<IPackageTexts>().SelectMany(s => s.Texts(session.Model).Select(t => new ModuleText(t.Path, t.Text, s.Module))));
 
-    public static void Write(Session session, Stream output, PackageVersions? versions = null, IssueFiles? issues = null, PackageForeign? foreign = null) =>
+    public static PackageWriteReport Write(Session session, Stream output, PackageVersions? versions = null, IssueFiles? issues = null, PackageForeign? foreign = null) =>
         LapinPackage.Write(output, Build(session), versions, issues, foreign);
 
-    public static void Write(Session session, string path, PackageVersions? versions = null, IssueFiles? issues = null, PackageForeign? foreign = null)
+    public static PackageWriteReport Write(Session session, string path, PackageVersions? versions = null, IssueFiles? issues = null, PackageForeign? foreign = null)
     {
         if (!path.EndsWith(LapinPackage.Suffix, StringComparison.OrdinalIgnoreCase)) path += LapinPackage.Suffix;
-        LapinPackage.Write(path, Build(session), versions, issues, foreign);
+        return LapinPackage.Write(path, Build(session), versions, issues, foreign);
     }
 }

@@ -81,8 +81,7 @@ public static class AlignmentFit
             var before = r > 0 ? lines[r - 1] : TangentAt(pts, k, from, window, s, true);
             var after = r < runs.Count - 1 ? lines[r + 1] : TangentAt(pts, k, to, window, s, false);
             var cross = before.Dir.X * after.Dir.Y - before.Dir.Y * after.Dir.X;
-            if (Math.Abs(cross) < 1e-4) continue; // no turn worth a PI: the straights carry on
-            var pi = Intersect(before, after);
+            if (Math.Abs(cross) < 1e-4 || Polyline2.LineIntersection(before.P, before.Dir, after.P, after.Dir) is not { } pi) continue; // no turn worth a PI: the straights carry on
             // The plateau: the sharpest the curve gets, read as a median over its middle (the clothoids ramp either side).
             var abs = Enumerable.Range(from, to - from + 1).Select(i => Math.Abs(k[i])).ToList();
             var mid = abs.Skip(abs.Count / 4).Take(Math.Max(1, abs.Count / 2)).Order().ToList();
@@ -211,19 +210,5 @@ public static class AlignmentFit
 
     static Vec2 Project((Vec2 P, Vec2 Dir) line, Vec2 p) => line.P + line.Dir * Vec2.Dot(p - line.P, line.Dir);
 
-    static Vec2 Intersect((Vec2 P, Vec2 Dir) a, (Vec2 P, Vec2 Dir) b)
-    {
-        var cross = a.Dir.X * b.Dir.Y - a.Dir.Y * b.Dir.X;
-        var d = b.P - a.P;
-        var t = (d.X * b.Dir.Y - d.Y * b.Dir.X) / cross;
-        return a.P + a.Dir * t;
-    }
-
-    static double ToSegment(Vec2 p, Vec2 a, Vec2 b)
-    {
-        var ab = b - a;
-        var len2 = ab.X * ab.X + ab.Y * ab.Y;
-        var t = len2 > 0 ? Math.Clamp(Vec2.Dot(p - a, ab) / len2, 0, 1) : 0;
-        return (a + ab * t - p).Length;
-    }
+    static double ToSegment(Vec2 p, Vec2 a, Vec2 b) => Polyline2.SegmentDistance(p, a, b);
 }

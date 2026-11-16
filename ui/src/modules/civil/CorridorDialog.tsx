@@ -9,6 +9,7 @@
  * draws and edits.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { ChevronLeft, ChevronRight, Plus, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useUi } from '../../app/store';
@@ -325,7 +326,7 @@ export function CorridorDialog() {
 
   if (!valid || !node) {
     return (
-      <div className="dialog-backdrop" onClick={close}>
+      <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
         <div className="dialog" role="dialog" aria-label="Corridor" onClick={(e) => e.stopPropagation()}>
           <header className="dialog-head"><span className="panel-title">Corridor</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
           <div className="dialog-body"><p>Select a path, a retaining wall, a ditch or a track first.</p></div>
@@ -336,7 +337,7 @@ export function CorridorDialog() {
 
   const pvis = spec?.profile.pvis ?? [];
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide corridor-dialog" role="dialog" aria-label="Corridor" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head">
           <span className="panel-title">{node.name} <span className="muted small">· {data ? `${stationLabel(data.start)} → ${stationLabel(data.end)}, ${data.length.toFixed(2)} m${data.curved ? ', curved' : ''}` : '…'}</span>{data?.problem && <span className="chip warn" title={data.problem} onClick={() => setTab('curves')}>curves</span>}</span>

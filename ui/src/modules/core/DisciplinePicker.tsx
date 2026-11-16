@@ -4,6 +4,7 @@
  * takes its discipline's style. One of the known ones, or another typed in.
  */
 
+import { promptText } from '../../shell/prompts';
 import { execute, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
 import { knownDisciplines } from './disciplines';
@@ -21,7 +22,7 @@ export function DisciplinePicker({ node, onPick }: { node: NodeDto; onPick?: (di
   const set = (discipline: string) => onPick ? onPick(discipline) : void execute('element.update', { ids: sameKind(node), attrs: { discipline } });
   const pick = (v: string) => {
     if (v !== OTHER) { set(v); return; }
-    const typed = window.prompt('The discipline (the browser groups views and sheets by it)', current)?.trim();
+    const typed = promptText('The discipline (the browser groups views and sheets by it)', current)?.trim();
     if (typed) set(typed);
   };
   return (

@@ -11,6 +11,7 @@
  * its names, its files — until it is closed or a new issue is started.
  */
 
+import { backdropClose } from '../../../shell/Dialog';
 import { useEffect, useMemo, useReducer, useState } from 'react';
 import { FileText, FolderOpen, Plus, Send, X } from 'lucide-react';
 import { notify, useUi } from '../../../app/store';
@@ -136,7 +137,7 @@ export function IssueDialog() {
   if (!s) return <PendingDialog title="Issue" />;
   const summary = done ? issuedSummary(done) : null;
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide" role="dialog" aria-label="Issue" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Issue</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         {done && summary ? (

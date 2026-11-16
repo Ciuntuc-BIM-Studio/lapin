@@ -4,15 +4,18 @@
  * Apply is one `architecture.updateSchedule`: one undo step. It edits the schedule in front.
  */
 
+import { NumberField } from '../../shell/cells';
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, Plus, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
-import { ConditionsEditor } from '../../shell/ConditionsEditor';
+import { ConditionGroupEditor } from '../../shell/ConditionGroupEditor';
+import { fromNativeGroup, toNativeGroup, type UGroup } from '../../shell/conditionGroup';
 import { FieldPicker } from '../../shell/FieldPicker';
 import {
   AGGREGATES, AGGREGATE_LABELS, DIMENSIONS, UNITS, cleanOptions, fieldValues, moved, shortToken,
-  type FieldColumn, type FieldOptions,
+  type Condition, type FieldColumn, type FieldOptions,
 } from '../../shell/fieldSchedule';
 
 /** Chips and a box that adds what is typed (or picked from the project's values). */
@@ -43,6 +46,8 @@ export function FieldScheduleDialog() {
   const node = useSession((s) => (id ? s.nodes.get(id) : undefined));
   const [o, setO] = useState<FieldOptions>(() => ({ ...((node?.props.fields as FieldOptions | undefined) ?? {}) }));
   const [values, setValues] = useState<Record<string, string[]>>({});
+  // The filter's conditions in the one editor: all or any, and groups of them inside.
+  const [group, setGroup] = useState<UGroup>(() => { const f = (node?.props.fields as FieldOptions | undefined)?.filter; return fromNativeGroup({ match: f?.match, conditions: f?.conditions, nested: f?.nested }); });
   const close = () => useUi.setState({ dialog: null });
   useEffect(() => {
     let live = true;
@@ -51,7 +56,6 @@ export function FieldScheduleDialog() {
   }, []);
   if (!node) return null;
   const filter = o.filter ?? {};
-  const conditions = filter.conditions ?? [];
   const columns = o.columns ?? [];
   const groupBy = o.groupBy ?? [];
   const setFilter = (patch: Partial<typeof filter>) => setO({ ...o, filter: { ...filter, ...patch } });
@@ -61,7 +65,7 @@ export function FieldScheduleDialog() {
     if (r !== null) close(); else notify('The schedule was not changed: see the message at the bottom.');
   };
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide field-schedule-dialog" role="dialog" aria-label="Field schedule" data-testid="field-schedule-dialog" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title" data-no-i18n>{node.name}</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">
@@ -71,7 +75,8 @@ export function FieldScheduleDialog() {
           {DIMENSIONS.map((d) => (
             <Chips key={d.key} list={filter[d.key] ?? []} onChange={(l) => setFilter({ [d.key]: l })} suggest={values[d.key] ?? []} label={d.label} testId={`fs-${d.key}`} />
           ))}
-          <ConditionsEditor conditions={conditions} onChange={(c) => setFilter({ conditions: c })} testPrefix="fs" />
+          <ConditionGroupEditor testPrefix="fs" allowGroups group={group} newCondition={() => ({ field: '', op: '=', value: '' })}
+            onChange={(g) => { setGroup(g); const n = toNativeGroup(g); setFilter({ match: n.match, conditions: n.conditions as Condition[], nested: n.nested }); }} />
 
           <h4 className="eyebrow">Group by</h4>
           <p className="muted small">One row for each different value of these fields, in this order. Nothing here: one row for each element.</p>
@@ -102,7 +107,7 @@ export function FieldScheduleDialog() {
                     <option value="">Automatic</option>{AGGREGATES.map((a) => <option key={a} value={a}>{AGGREGATE_LABELS[a]}</option>)}
                   </select>
                   <input list="fs-units" className="fs-unit" value={c.unit ?? ''} placeholder="Unit" aria-label="Unit" onChange={(e) => setColumn(i, { unit: e.target.value })} />
-                  <input type="number" min={0} max={9} className="fs-decimals" value={c.decimals ?? ''} placeholder="Dec." title="Decimals" aria-label="Decimals" onChange={(e) => setColumn(i, { decimals: e.target.value === '' ? undefined : Number(e.target.value) })} />
+                  <NumberField min={0} max={9} integer blank className="fs-decimals" value={c.decimals} placeholder="Dec." title="Decimals" onCommit={(v) => setColumn(i, { decimals: v ?? undefined })} />
                   <Order i={i} n={columns.length} on={(by) => setO({ ...o, columns: moved(columns, i, by) })} />
                   <button type="button" className="icon mini" title="Remove" onClick={() => setO({ ...o, columns: columns.filter((_, j) => j !== i) })}><Trash2 size={12} /></button>
                 </div>

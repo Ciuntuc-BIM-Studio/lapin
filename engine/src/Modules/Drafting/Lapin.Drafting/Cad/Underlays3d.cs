@@ -138,14 +138,8 @@ public static class Underlays3d
     }
 
     /// <summary>A CSS colour (#rgb, #rrggbb) as bytes; grey when it is not one.</summary>
-    public static (byte R, byte G, byte B) Rgb(string? css)
-    {
-        var s = css?.Trim().TrimStart('#') ?? "";
-        if (s.Length == 3) s = string.Concat(s.Select(ch => $"{ch}{ch}"));
-        return s.Length >= 6 && int.TryParse(s[..6], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var v)
-            ? ((byte)(v >> 16), (byte)(v >> 8 & 0xff), (byte)(v & 0xff))
-            : ((byte)128, (byte)128, (byte)128);
-    }
+    public static (byte R, byte G, byte B) Rgb(string? css) =>
+        HexColor.TryParseCss(css, out var r, out var g, out var b) ? ((byte)r, (byte)g, (byte)b) : ((byte)128, (byte)128, (byte)128);
 
     /// <summary>Every DXF drawing shown in 3D, in batches (see the class); <paramref name="viewId"/> only that view's.</summary>
     public static JsonArray Batches(IModelView m, IServices services, string? viewId = null)
@@ -203,20 +197,9 @@ public static class Underlays3d
     static List<Vec2> Loop(JsonNode? n) =>
         n is JsonArray a ? a.Select(p => p is JsonArray { Count: >= 2 } q && Json.Number(q[0]) is { } x && Json.Number(q[1]) is { } y ? new Vec2(x, y) : (Vec2?)null).OfType<Vec2>().ToList() : [];
 
-    static double Area(IReadOnlyList<Vec2> l)
-    {
-        var s = 0.0;
-        for (var i = 0; i < l.Count; i++) { var (p, q) = (l[i], l[(i + 1) % l.Count]); s += p.X * q.Y - q.X * p.Y; }
-        return s / 2;
-    }
+    static double Area(IReadOnlyList<Vec2> l) => Polygon2.SignedArea(l);
 
-    static bool Inside(IReadOnlyList<Vec2> l, Vec2 p)
-    {
-        var inside = false;
-        for (int i = 0, j = l.Count - 1; i < l.Count; j = i++)
-            if ((l[i].Y > p.Y) != (l[j].Y > p.Y) && p.X < (l[j].X - l[i].X) * (p.Y - l[i].Y) / (l[j].Y - l[i].Y) + l[i].X) inside = !inside;
-        return inside;
-    }
+    static bool Inside(IReadOnlyList<Vec2> l, Vec2 p) => Polygon2.Contains(l, p);
 
     /// <summary>A hatch's loops as triangles on the plane: a loop inside an odd number of others is a hole of the smallest one round it.</summary>
     static void Fill(Batch batch, List<List<Vec2>> loops, (byte, byte, byte) color)

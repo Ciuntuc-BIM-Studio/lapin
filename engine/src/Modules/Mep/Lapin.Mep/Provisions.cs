@@ -31,7 +31,6 @@ sealed class MepProvisions : IProvisionOpenings
     const double Proud = 0.05;
     /// <summary>A crossing squarer than this (cos of the angle to the wall's normal) is square through: a round opening.</summary>
     const double Square = 0.985;
-    const int CircleSides = 32;
 
     public IEnumerable<ProvisionOpening> Of(IModelView m, IServices services, Entity? host, double offset = 0)
     {
@@ -236,8 +235,8 @@ sealed class MepProvisions : IProvisionOpenings
     {
         if (round)
         {
-            var r = w / 2 / Math.Cos(Math.PI / CircleSides);
-            var outline = Enumerable.Range(0, CircleSides).Select(k => f.At(u + r * Math.Cos(2 * Math.PI * k / CircleSides), y0, zc + r * Math.Sin(2 * Math.PI * k / CircleSides))).ToList();
+            // Its sides outside the circle, so the round run clears.
+            var outline = Chords.Ring(new Vec2(u, zc), w / 2, circumscribed: true).Select(p => f.At(p.X, y0, p.Y)).ToList();
             return Prism.Extrude(outline, null, f.At(0, y1, 0) - f.At(0, y0, 0), "provision");
         }
         double x0 = u - w / 2, x1 = u + w / 2;
@@ -276,7 +275,7 @@ sealed class MepProvisions : IProvisionOpenings
             if (isRound) l = wd = Math.Max(l, wd);
             if (l < 0.005 || wd < 0.005) continue;
             IReadOnlyList<Vec2> footprint = isRound
-                ? Enumerable.Range(0, CircleSides).Select(k => mid + new Vec2(Math.Cos(2 * Math.PI * k / CircleSides), Math.Sin(2 * Math.PI * k / CircleSides)) * (l / 2 / Math.Cos(Math.PI / CircleSides))).ToList()
+                ? Chords.Ring(mid, l / 2, circumscribed: true)
                 : [mid - along * (l / 2) - normal * (wd / 2), mid + along * (l / 2) - normal * (wd / 2), mid + along * (l / 2) + normal * (wd / 2), mid - along * (l / 2) + normal * (wd / 2)];
             if (Prism.ExtrudeFootprint(footprint, zb, zt - zb, "provision") is not { } exact || Prism.ExtrudeFootprint(footprint, zb - Proud, zt - zb + 2 * Proud, "provision") is not { } cutter) continue;
             yield return new ProvisionOpening($"{run.Id}#{slab.Id}#{name}#{i}", run.Id, slab.Id, OpeningVoids.Slab, isRound ? OpeningVoids.Round : OpeningVoids.Rectangle, l, wd, zt - zb, exact, cutter, storey);
@@ -356,7 +355,7 @@ sealed class MepProvisions : IProvisionOpenings
                 if (isRound) l = wd = Math.Max(l, wd);
                 if (l < 0.005 || wd < 0.005) continue;
                 IReadOnlyList<Vec2> footprint = isRound
-                    ? Enumerable.Range(0, CircleSides).Select(q => mid + new Vec2(Math.Cos(2 * Math.PI * q / CircleSides), Math.Sin(2 * Math.PI * q / CircleSides)) * (l / 2 / Math.Cos(Math.PI / CircleSides))).ToList()
+                    ? Chords.Ring(mid, l / 2, circumscribed: true)
                     : [mid - along * (l / 2) - normal * (wd / 2), mid + along * (l / 2) - normal * (wd / 2), mid + along * (l / 2) + normal * (wd / 2), mid - along * (l / 2) + normal * (wd / 2)];
                 // On the slope: the footprint lifted onto the underside, pushed up through the depth (past both faces for the cutter).
                 Vec3[] On(double lift) => [.. footprint.Select(q => q.At(band.Z(q) + lift))];

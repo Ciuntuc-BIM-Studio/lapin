@@ -78,7 +78,7 @@ public sealed record ArticleRef(string Code, string Basis = "auto", string? Part
             var r = Read(x) ?? throw new CommandException("Each article needs a code.");
             if (!Bases.Contains(r.Basis) && !char.IsUpper(r.Basis[0])) throw new CommandException($"„{r.Basis}” is not a measure: auto, volume, area, length, count, weight, or a quantity's name.");
             if (r.Factor <= 0) throw new CommandException("An article's factor is positive.");
-            if (r.Waste < 0 || r.Waste > 100) throw new CommandException("The waste is a percentage between 0 and 100.");
+            if (!(r.Waste >= 0 && r.Waste <= 100)) throw new CommandException("The waste is a percentage between 0 and 100.");
             o.Add(r);
         }
         return o;
@@ -138,12 +138,7 @@ public static class Parts
     }
 
     /// <summary>Whether a material is of a category: its own, else (for Finish) one by its name, as view styles tell finishes.</summary>
-    public static bool InCategory(IModelView m, string materialId, string category)
-    {
-        if (m.Get(materialId) is not { Class: IfcClass.Material } mat) return false;
-        if (mat.Str("category") is { Length: > 0 } c) return string.Equals(c.Trim(), category, StringComparison.OrdinalIgnoreCase);
-        return string.Equals(category, "Finish", StringComparison.OrdinalIgnoreCase) && Platform.Materials.IsFinish(mat);
-    }
+    public static bool InCategory(IModelView m, string materialId, string category) => Platform.Materials.InCategory(m, materialId, category);
 
     /// <summary>The index of the layer a part set is of ("layer:2", "layer:2:&lt;material&gt;"), null when it is not a layer's.</summary>
     public static int? LayerIndex(string? part)

@@ -326,37 +326,8 @@ public static class ReferenceLayers
         s = s.Trim();
         if (s.StartsWith("IFC", StringComparison.Ordinal) && s.IndexOf('(') is var p && p > 0 && s.EndsWith(')')) s = s[(p + 1)..^1];
         if (s.Length < 2 || s[0] != '\'' || s[^1] != '\'') return null;
-        var t = Unescape(s[1..^1].Replace("''", "'"));
+        var t = StepText.Decode(s[1..^1].Replace("''", "'"));
         return t.Length > 0 ? t : null;
-    }
-
-    /// <summary>STEP's escapes as the IFC writers use them: \X2\…\X0\ (UTF-16 in hex), \X\hh (Latin-1), \\.</summary>
-    static string Unescape(string s)
-    {
-        if (!s.Contains('\\')) return s;
-        var b = new System.Text.StringBuilder(s.Length);
-        for (var i = 0; i < s.Length; i++)
-        {
-            if (s[i] != '\\') { b.Append(s[i]); continue; }
-            if (string.CompareOrdinal(s, i, "\\X2\\", 0, 4) == 0)
-            {
-                var end = s.IndexOf("\\X0\\", i + 4, StringComparison.Ordinal);
-                if (end < 0) break;
-                for (var k = i + 4; k + 3 < end; k += 4)
-                    if (int.TryParse(s.AsSpan(k, 4), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var u)) b.Append((char)u);
-                i = end + 3;
-                continue;
-            }
-            if (string.CompareOrdinal(s, i, "\\X\\", 0, 3) == 0 && i + 4 < s.Length && int.TryParse(s.AsSpan(i + 3, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var l))
-            {
-                b.Append((char)l);
-                i += 4;
-                continue;
-            }
-            if (i + 1 < s.Length && s[i + 1] == '\\') { b.Append('\\'); i++; continue; }
-            b.Append(s[i]);
-        }
-        return b.ToString();
     }
 
     /// <summary>A STEP real (20., 2.E-2, IFCLENGTHMEASURE(0.02)) as a number.</summary>

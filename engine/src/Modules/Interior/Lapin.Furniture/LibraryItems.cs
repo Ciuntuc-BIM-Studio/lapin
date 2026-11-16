@@ -131,8 +131,7 @@ public static class LibraryItems
     static string FreeName(IModelView m, string name)
     {
         var taken = m.OfClass(FurnitureModule.TypeClass).Select(t => t.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (!taken.Contains(name)) return name;
-        for (var i = 2; ; i++) if (!taken.Contains($"{name} {i}")) return $"{name} {i}";
+        return Lapin.Model.Names.Free(taken.Contains, name);
     }
 
     /// <summary>A spec as one text whatever order its keys were written in and however its numbers were spelled: what "identical" compares.</summary>

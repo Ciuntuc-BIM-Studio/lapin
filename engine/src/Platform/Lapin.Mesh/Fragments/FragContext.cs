@@ -49,34 +49,29 @@ public sealed class FragContext
     }
 
     /// <summary>
-    /// The project's tie to the map, as the IFC export's IfcMapConversion has it (the survey point's eastings and
-    /// northings, the base point's angle to true north and elevation), moved to the export's origin: Fragments'
-    /// CRSData, with the system's name, datum and projection when Lapin knows it. Null without a survey point.
+    /// The project's tie to the map, as the IFC export's IfcMapConversion has it (<see cref="GeoRef.Tie"/>: the survey
+    /// point's eastings and northings, or the base point's latitude and longitude; the angle to true north and the
+    /// elevation), moved to the export's origin: Fragments' CRSData, with the system's name, datum, projection and zone
+    /// when Lapin knows it. Null when nothing ties the project to the map.
     /// </summary>
     public static JsonObject? CrsOf(IModelView m, (double X, double Y, double Z) origin)
     {
-        if (Location.Survey(m) is not { } sv) return null;
-        var basePoint = Location.Base(m);
-        var th = (basePoint.NorthAngle ?? 0) * Math.PI / 180;
-        var (c, sn) = (Math.Cos(th), -Math.Sin(th));
-        // map(p) = (E0, N0) + (c·x − sn·y, sn·x + c·y): the project's origin, then the export's.
-        var e0 = (sv.Easting ?? 0) - (c * sv.At.X - sn * sv.At.Y);
-        var n0 = (sv.Northing ?? 0) - (sn * sv.At.X + c * sv.At.Y);
+        if (GeoRef.Tie(m) is not { } tie) return null;
+        var (c, sn) = (tie.XAxisAbscissa, tie.XAxisOrdinate);
         var (ox, oy, oz) = origin;
-        var known = GeoRef.Get(Location.Crs(m));
         static double R(double v) => Math.Round(v, 6);
         return new JsonObject
         {
-            ["name"] = known?.Id ?? Location.Crs(m) ?? "Site grid",
-            ["description"] = known?.Name,
-            ["geodeticDatum"] = known?.Datum,
+            ["name"] = tie.Name,
+            ["description"] = tie.Known?.Name,
+            ["geodeticDatum"] = tie.Known?.Datum,
             ["verticalDatum"] = null,
-            ["mapProjection"] = known?.Projection,
-            ["mapZone"] = null,
+            ["mapProjection"] = tie.Known?.Projection,
+            ["mapZone"] = tie.Zone,
             ["mapUnit"] = "METRE",
             ["mapConversion"] = new JsonObject
             {
-                ["eastings"] = R(e0 + c * ox - sn * oy), ["northings"] = R(n0 + sn * ox + c * oy), ["orthogonalHeight"] = R(basePoint.Elevation + oz),
+                ["eastings"] = R(tie.Eastings + c * ox - sn * oy), ["northings"] = R(tie.Northings + sn * ox + c * oy), ["orthogonalHeight"] = R(tie.Height + oz),
                 ["xAxisAbscissa"] = R(c), ["xAxisOrdinate"] = R(sn), ["scale"] = 1.0,
             },
         };

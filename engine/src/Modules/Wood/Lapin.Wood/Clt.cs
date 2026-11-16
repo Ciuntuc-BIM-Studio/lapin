@@ -59,12 +59,12 @@ public sealed record CltSpec(double[] Plies, string Grade, double MaxLength, dou
     public string? Problem()
     {
         if (Plies.Length is < 3 or > 9 || Plies.Length % 2 == 0) return "A CLT panel has 3, 5, 7 or 9 plies.";
-        if (Plies.Any(p => p < 10 || p > 60)) return "A ply is 10 to 60 mm thick.";
-        if (MaxLength < 2 || MaxLength > 30 || MaxWidth < 1 || MaxWidth > 4) return "A panel is at most 2 to 30 m long and 1 to 4 m wide.";
-        if (MinEdge < 0 || MinEdge > 1 || Gap < 0 || Gap > 0.05) return "An opening keeps 0 to 1000 mm from a panel's edge; its fitting gap is 0 to 50 mm.";
-        if (CornerRadius < 0.003 || CornerRadius > 0.1) return "The router's radius is 3 to 100 mm.";
-        if (LapWidth < 0.02 || LapWidth > 0.3) return "A half-lap overlaps 20 to 300 mm.";
-        if (SplineWidth < 0.04 || SplineWidth > 0.3 || SplineDepth < 0.009 || SplineDepth > Thickness / 2) return "A spline is 40 to 300 mm wide and 9 mm to half the panel deep.";
+        if (Plies.Any(p => !(p >= 10 && p <= 60))) return "A ply is 10 to 60 mm thick.";
+        if (!(MaxLength >= 2 && MaxLength <= 30) || !(MaxWidth >= 1 && MaxWidth <= 4)) return "A panel is at most 2 to 30 m long and 1 to 4 m wide.";
+        if (!(MinEdge >= 0 && MinEdge <= 1) || !(Gap >= 0 && Gap <= 0.05)) return "An opening keeps 0 to 1000 mm from a panel's edge; its fitting gap is 0 to 50 mm.";
+        if (!(CornerRadius >= 0.003 && CornerRadius <= 0.1)) return "The router's radius is 3 to 100 mm.";
+        if (!(LapWidth >= 0.02 && LapWidth <= 0.3)) return "A half-lap overlaps 20 to 300 mm.";
+        if (!(SplineWidth >= 0.04 && SplineWidth <= 0.3) || !(SplineDepth >= 0.009 && SplineDepth <= Thickness / 2)) return "A spline is 40 to 300 mm wide and 9 mm to half the panel deep.";
         return null;
     }
 
@@ -83,7 +83,14 @@ public static class Clt
     {
         var joints = new List<double>();
         var warnings = new List<string>();
-        var zones = openings.Select(o => (o.Id, L: o.L - spec.MinEdge, R: o.R + spec.MinEdge)).OrderBy(z => z.L).ToList();
+        // The openings' zones (each with its edge distance), those that overlap merged first as Framing.Panelize does: a joint
+        // moved back before one zone could land in the one before it (audit M3).
+        var zones = new List<(string Id, double L, double R)>();
+        foreach (var z in openings.Select(o => (o.Id, L: o.L - spec.MinEdge, R: o.R + spec.MinEdge)).OrderBy(z => z.L))
+        {
+            if (zones.Count > 0 && z.L < zones[^1].R) zones[^1] = (zones[^1].Id + " + " + z.Id, zones[^1].L, Math.Max(zones[^1].R, z.R));
+            else zones.Add(z);
+        }
         foreach (var z in zones) if (z.R - z.L > spec.MaxLength) warnings.Add($"{z.Id}: wider than a panel, with its edges, can be.");
         var at = u0;
         while (u1 - at > spec.MaxLength + 1e-9)
@@ -273,7 +280,7 @@ public static class Clt
         var start = Walls.Start(wall);
         var dir = (Walls.End(wall) - start).Normalized();
         var left = dir.Perp;
-        var baseZ = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
+        var baseZ = Spatial.Base(m, wall);
         Vec3 At(double u, double z, double y) { var p = start + dir * u + left * y; return new Vec3(p.X, p.Y, baseZ + z); }
         var pts = corePart.Solid.Vertices.Select(v => (U: Vec2.Dot(v.Xy - start, dir), Z: v.Z - baseZ)).ToList();
         var (u0, u1, z0, z1) = (pts.Min(p => p.U), pts.Max(p => p.U), pts.Min(p => p.Z), pts.Max(p => p.Z));

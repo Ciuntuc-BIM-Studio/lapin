@@ -67,6 +67,8 @@ public sealed class SharingTests : IAsyncLifetime
         int _id;
         public List<JsonObject> Events { get; } = [];
         public JsonObject Welcome { get; private set; } = [];
+        /// <summary>What this guest sent, frame by frame, as the relay saw it (the clear salt first).</summary>
+        public List<byte[]> Sent { get; } = [];
         readonly Dictionary<int, TaskCompletionSource<JsonObject>> _pending = [];
         Task? _loop;
 
@@ -77,8 +79,13 @@ public sealed class SharingTests : IAsyncLifetime
             var secret = Convert.FromBase64String(parts[1].Replace('-', '+').Replace('_', '/') + new string('=', (4 - parts[1].Length % 4) % 4));
             await g._ws.ConnectAsync(new Uri($"{relay}/join?room={parts[0]}"), CancellationToken.None);
             var salt = RandomNumberGenerator.GetBytes(16);
-            await g._ws.SendAsync((byte[])[0, .. salt], WebSocketMessageType.Binary, true, CancellationToken.None);
-            g._crypto = new ShareCrypto(secret, parts[0], salt, host: false);
+            byte[] opening = [0, Sharing.Protocol, .. salt];
+            g.Sent.Add(opening);
+            await g._ws.SendAsync(opening, WebSocketMessageType.Binary, true, CancellationToken.None);
+            // The host's own salt comes back in the clear; the key is of both.
+            var hostSalt = await ReceiveRaw(g._ws) ?? throw new InvalidOperationException("The host closed the connection.");
+            if (hostSalt.Length != 17 || hostSalt[0] != 0) throw new InvalidOperationException("No salt from the host.");
+            g._crypto = new ShareCrypto(secret, parts[0], salt, hostSalt[1..], host: false);
             var welcome = new TaskCompletionSource<JsonObject>();
             g._loop = Task.Run(() => g.Loop(welcome));
             await g.SendText(hello ?? new JsonObject { ["hello"] = new JsonObject { ["name"] = name, ["protocol"] = Sharing.Protocol, ["token"] = token } }.ToJsonString());
@@ -88,7 +95,12 @@ public sealed class SharingTests : IAsyncLifetime
             return g;
         }
 
-        Task SendText(string text) => _ws.SendAsync(_crypto.Seal(1, Encoding.UTF8.GetBytes(text)), WebSocketMessageType.Binary, true, CancellationToken.None);
+        Task SendText(string text)
+        {
+            var frame = _crypto.Seal(1, Encoding.UTF8.GetBytes(text));
+            lock (Sent) Sent.Add(frame);
+            return _ws.SendAsync(frame, WebSocketMessageType.Binary, true, CancellationToken.None);
+        }
 
         public async Task<JsonObject> Call(string method, JsonObject? p = null)
         {
@@ -141,6 +153,22 @@ public sealed class SharingTests : IAsyncLifetime
             catch (Exception ex) when (ex is WebSocketException or OperationCanceledException) { }
             _ws.Dispose();
         }
+    }
+
+    /// <summary>One whole frame, or null when the socket closed.</summary>
+    static async Task<byte[]?> ReceiveRaw(ClientWebSocket ws, TimeSpan? within = null)
+    {
+        var buffer = new byte[1 << 16];
+        using var ms = new MemoryStream();
+        using var cts = new CancellationTokenSource(within ?? TimeSpan.FromSeconds(10));
+        WebSocketReceiveResult r;
+        try
+        {
+            do { r = await ws.ReceiveAsync(buffer, cts.Token); ms.Write(buffer, 0, r.Count); }
+            while (!r.EndOfMessage && r.MessageType != WebSocketMessageType.Close);
+        }
+        catch (Exception ex) when (ex is WebSocketException or OperationCanceledException) { return null; }
+        return r.MessageType == WebSocketMessageType.Close ? null : ms.ToArray();
     }
 
     static async Task Until(Func<bool> done, string what)
@@ -254,14 +282,88 @@ public sealed class SharingTests : IAsyncLifetime
     {
         var secret = RandomNumberGenerator.GetBytes(16);
         var salt = RandomNumberGenerator.GetBytes(16);
-        var host = new ShareCrypto(secret, "room0000", salt, host: true);
-        var guest = new ShareCrypto(secret, "room0000", salt, host: false);
+        var hostSalt = RandomNumberGenerator.GetBytes(16);
+        var host = new ShareCrypto(secret, "room0000", salt, hostSalt, host: true);
+        var guest = new ShareCrypto(secret, "room0000", salt, hostSalt, host: false);
         var frame = guest.Seal(1, "{\"id\":1}"u8.ToArray());
         Assert.Equal("{\"id\":1}", Encoding.UTF8.GetString(host.Open(frame)![1..]));
         Assert.Null(host.Open(frame));
         Assert.Null(guest.Open(frame));
         // Another connection's key opens nothing.
-        var other = new ShareCrypto(secret, "room0000", RandomNumberGenerator.GetBytes(16), host: true);
+        var other = new ShareCrypto(secret, "room0000", RandomNumberGenerator.GetBytes(16), hostSalt, host: true);
         Assert.Null(other.Open(guest.Seal(1, "x"u8.ToArray())));
+        // The guest's salt again, the host's new: the frames of the first connection open nothing either.
+        var again = new ShareCrypto(secret, "room0000", salt, RandomNumberGenerator.GetBytes(16), host: true);
+        Assert.Null(again.Open(frame));
+    }
+
+    [Fact]
+    public async Task ARecordedGuestSessionPlayedUnderANewConnectionIsRefused()
+    {
+        var f = new Fixture();
+        var hub = new EngineHub(f.Session, PackageFiles.Create());
+        var status = (JsonObject)(await hub.Sharing.Handle("share.start", new JsonObject { ["relay"] = _relayUrl }))!;
+        var code = (string)status["code"]!;
+        var room = code.Split('.')[0];
+        string wall;
+        List<byte[]> recorded;
+        await using (var ana = await TestGuest.Join(code, _relayUrl, "Ana"))
+        {
+            var reply = await ana.Call("doc.execute", new JsonObject { ["command"] = "architecture.addWall", ["args"] = new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 10, ["x2"] = 5, ["y2"] = 10 } });
+            wall = (string)reply["result"]!["id"]!;
+            lock (ana.Sent) recorded = [.. ana.Sent];
+        }
+        Assert.Equal(3, recorded.Count); // the salt, the hello, the wall
+        var entities = f.Model.Entities.Count();
+        await Until(() => hub.PresenceJson()["participants"]!.AsArray().Count == 0, "Ana gone");
+
+        // The relay plays what it recorded as a new guest's connection: the same salt, the same sealed frames.
+        using var replay = new ClientWebSocket();
+        await replay.ConnectAsync(new Uri($"{_relayUrl}/join?room={room}"), CancellationToken.None);
+        await replay.SendAsync(recorded[0], WebSocketMessageType.Binary, true, CancellationToken.None);
+        var salt = await ReceiveRaw(replay);
+        Assert.Equal(17, salt?.Length);
+        foreach (var frame in recorded.Skip(1))
+        {
+            try { await replay.SendAsync(frame, WebSocketMessageType.Binary, true, CancellationToken.None); }
+            catch (WebSocketException) { break; }
+        }
+        // Closed without a welcome, and nothing applied again.
+        Assert.Null(await ReceiveRaw(replay));
+        Assert.Equal(entities, f.Model.Entities.Count());
+        Assert.Single(f.Session.History.Done, t => t.Author == "p1");
+        Assert.NotNull(f.Model.Get(wall));
+        Assert.Empty(hub.PresenceJson()["participants"]!.AsArray());
+        await hub.Sharing.Stop("done");
+    }
+
+    [Fact]
+    public async Task AGuestOfAnotherProtocolIsToldToUpdate()
+    {
+        var f = new Fixture();
+        var hub = new EngineHub(f.Session, PackageFiles.Create());
+        var status = (JsonObject)(await hub.Sharing.Handle("share.start", new JsonObject { ["relay"] = _relayUrl }))!;
+        var parts = ((string)status["code"]!).Split('.');
+        var secret = Convert.FromBase64String(parts[1].Replace('-', '+').Replace('_', '/') + new string('=', (4 - parts[1].Length % 4) % 4));
+
+        // Protocol 1: [0][salt], the key from it alone, the hello at once.
+        using var old = new ClientWebSocket();
+        await old.ConnectAsync(new Uri($"{_relayUrl}/join?room={parts[0]}"), CancellationToken.None);
+        var salt = RandomNumberGenerator.GetBytes(16);
+        await old.SendAsync((byte[])[0, .. salt], WebSocketMessageType.Binary, true, CancellationToken.None);
+        var crypto = ShareCrypto.Legacy(secret, parts[0], salt, host: false);
+        var hello = new JsonObject { ["hello"] = new JsonObject { ["name"] = "Old", ["protocol"] = 1 } }.ToJsonString();
+        await old.SendAsync(crypto.Seal(1, Encoding.UTF8.GetBytes(hello)), WebSocketMessageType.Binary, true, CancellationToken.None);
+        var answer = crypto.Open(await ReceiveRaw(old) ?? throw new InvalidOperationException("No answer."));
+        Assert.NotNull(answer);
+        Assert.Contains("update Lapin", (string)JsonNode.Parse(Encoding.UTF8.GetString(answer![1..]))!["refused"]!);
+        Assert.Empty(hub.PresenceJson()["participants"]!.AsArray());
+
+        // A guest of a protocol to come is told in the clear.
+        using var next = new ClientWebSocket();
+        await next.ConnectAsync(new Uri($"{_relayUrl}/join?room={parts[0]}"), CancellationToken.None);
+        await next.SendAsync((byte[])[0, 9, .. salt], WebSocketMessageType.Binary, true, CancellationToken.None);
+        Assert.Equal([1, (byte)Sharing.Protocol], await ReceiveRaw(next));
+        await hub.Sharing.Stop("done");
     }
 }

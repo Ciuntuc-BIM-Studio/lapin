@@ -284,10 +284,9 @@ public static class TableImport
     /// <summary>A template: the target's headings and its example rows, as CSV with semicolons.</summary>
     public static string Template(TableTarget t)
     {
-        static string Cell(string s) => s.Contains(';') || s.Contains('"') ? "\"" + s.Replace("\"", "\"\"") + "\"" : s;
         var sb = new StringBuilder();
-        sb.AppendLine(string.Join(";", t.Columns.Select(c => Cell(TableUnits.Of(c.Kind) is { Count: > 0 } u ? $"{c.Label} ({u[0].Name})" : c.Label))));
-        foreach (var ex in t.Example ?? []) sb.AppendLine(string.Join(";", ex.Select(Cell)));
+        sb.AppendLine(CsvText.Line(t.Columns.Select(c => TableUnits.Of(c.Kind) is { Count: > 0 } u ? $"{c.Label} ({u[0].Name})" : c.Label)));
+        foreach (var ex in t.Example ?? []) sb.AppendLine(CsvText.Line(ex));
         return sb.ToString();
     }
 

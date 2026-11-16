@@ -8,6 +8,8 @@
  * stays. The norms are the user's (CSV or XLSX), or Lapin's few indicative values, marked as such.
  */
 
+import { NumberField } from '../../shell/cells';
+import { confirmAction, promptText } from '../../shell/prompts';
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp, CalendarDays, FileDown, FileUp, ListPlus, MousePointer2, Pencil, Plus, RotateCcw, Save, Trash2, TriangleAlert, X } from 'lucide-react';
 import { focusPane, notify, useUi } from '../../app/store';
@@ -89,7 +91,7 @@ export function GenerateDialog() {
   };
   const saveAs = async () => {
     if (!spec) return;
-    const name = window.prompt(t('Name of the schedule style'), '');
+    const name = promptText(t('Name of the schedule style'), '');
     if (!name?.trim()) return;
     const r = await execute('planning.saveScheduleStyle', { spec: cleanSpec(spec), name }) as { styleId?: string } | null;
     if (r?.styleId) setStyle(r.styleId);
@@ -143,7 +145,7 @@ export function GenerateDialog() {
           <select value={s.link} title="How it follows the step before it on the same storey" onChange={(e) => set({ link: e.target.value as GenStep['link'] })}>
             <option value="FS">FS</option><option value="SS">SS</option>
           </select>
-          <input type="number" className="num gen-lag" value={s.lag} step={1} title="Lag in working days (negative: an overlap)" onChange={(e) => set({ lag: Math.round(Number(e.target.value) || 0) })} />
+          <NumberField className="gen-lag" integer value={s.lag} title="Lag in working days (negative: an overlap)" onCommit={(v) => { if (v != null) set({ lag: v }); }} />
           {!demolition && <button type="button" className="icon mini" title="What it builds" onClick={() => setOpen(open === s.key ? null : s.key)}><Pencil size={11} /></button>}
         </div>
         <div className="muted small gen-what">
@@ -199,7 +201,7 @@ export function GenerateDialog() {
       <div className="dialog wide roof-dialog gen-dialog" data-dialog="planning-generate" data-i18n-ctx="schedule">
         <header className="dialog-head">
           <span className="panel-title">Generate schedule</span>
-          <button type="button" className="icon" onClick={() => { if (!dirty || window.confirm(t('Close without applying the changes?'))) close(); }} title="Close"><X size={15} /></button>
+          <button type="button" className="icon" onClick={() => { if (!dirty || confirmAction(t('Close without applying the changes?'))) close(); }} title="Close"><X size={15} /></button>
         </header>
         <div className="dialog-body split">
           <div className="type-list roof-styles">
@@ -210,8 +212,8 @@ export function GenerateDialog() {
             {own.map((s) => (
               <div key={s.id} className="row roof-own">
                 <button type="button" className={`tree-item grow${style === s.id ? ' on' : ''}`} onClick={() => pick(s.id, s.spec)}><span className="grow" data-no-i18n>{s.label}</span></button>
-                <button type="button" className="icon mini" title="Rename" onClick={() => { const n = window.prompt(t('Name of the schedule style'), s.label); if (n?.trim()) void execute('planning.renameScheduleStyle', { styleId: s.id, name: n }); }}><Pencil size={12} /></button>
-                <button type="button" className="icon mini" title="Delete the style" onClick={() => { if (window.confirm(t('Delete this schedule style?'))) void execute('planning.deleteScheduleStyle', { styleId: s.id }); }}><Trash2 size={12} /></button>
+                <button type="button" className="icon mini" title="Rename" onClick={() => { const n = promptText(t('Name of the schedule style'), s.label); if (n?.trim()) void execute('planning.renameScheduleStyle', { styleId: s.id, name: n }); }}><Pencil size={12} /></button>
+                <button type="button" className="icon mini" title="Delete the style" onClick={() => { if (confirmAction(t('Delete this schedule style?'))) void execute('planning.deleteScheduleStyle', { styleId: s.id }); }}><Trash2 size={12} /></button>
               </div>
             ))}
             <p className="eyebrow">Templates</p>
@@ -282,8 +284,8 @@ export function GenerateDialog() {
                             {s.norm && !norms?.rows.some((n) => n.code.toLowerCase() === s.norm!.toLowerCase()) && <option value={s.norm} data-no-i18n>{`${s.norm} ?`}</option>}
                             {(norms?.rows ?? []).map((n) => <option key={n.code} value={n.code} data-no-i18n>{normLabel(n)}</option>)}
                           </select></td>
-                          <td><input type="number" className="num" min={0} step={1} value={s.crew} onChange={(e) => change(withStep(spec, s.key, { crew: Math.max(0, Math.round(Number(e.target.value) || 0)) }))} /></td>
-                          <td><input type="number" className="num" min={1} step={1} value={s.days} onChange={(e) => change(withStep(spec, s.key, { days: Math.max(1, Math.round(Number(e.target.value) || 1)) }))} /></td>
+                          <td><NumberField min={0} integer value={s.crew} onCommit={(v) => { if (v != null) change(withStep(spec, s.key, { crew: v })); }} /></td>
+                          <td><NumberField min={1} integer value={s.days} onCommit={(v) => { if (v != null) change(withStep(spec, s.key, { days: v })); }} /></td>
                         </tr>
                       ))}
                     </tbody>

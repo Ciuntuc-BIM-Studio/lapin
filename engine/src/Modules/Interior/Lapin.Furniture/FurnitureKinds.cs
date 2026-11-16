@@ -288,7 +288,7 @@ public static class FurnitureKinds
             if (key is "width" or "depth" or "height")
             {
                 var d = Json.Number(v) ?? throw new CommandException($"The {key} is a length in metres.");
-                if (d < 0.1 || d > 12) throw new CommandException($"A piece of furniture's {key} is between 100 mm and 12 m.");
+                if (!(d >= 0.1 && d <= 12)) throw new CommandException($"A piece of furniture's {key} is between 100 mm and 12 m.");
                 spec[key] = d;
                 continue;
             }

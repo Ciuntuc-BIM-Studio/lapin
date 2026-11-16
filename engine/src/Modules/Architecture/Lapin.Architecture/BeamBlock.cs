@@ -66,17 +66,17 @@ public sealed record BeamBlockSpec(string Preset, double JoistWidth, double Jois
 
     public string? Problem()
     {
-        if (JoistWidth < 0.06 || JoistWidth > 0.4) return "A joist is 60 to 400 mm wide.";
-        if (JoistHeight < 0.05 || JoistHeight > 0.5) return "A joist is 50 to 500 mm high.";
+        if (!(JoistWidth >= 0.06 && JoistWidth <= 0.4)) return "A joist is 60 to 400 mm wide.";
+        if (!(JoistHeight >= 0.05 && JoistHeight <= 0.5)) return "A joist is 50 to 500 mm high.";
         if (FlangeHeight <= 0 || FlangeHeight >= JoistHeight) return "A joist's foot is lower than the joist.";
         if (WebWidth <= 0 || WebWidth > JoistWidth) return "A joist's web is no wider than its foot.";
-        if (Spacing < 0.3 || Spacing > 1.2) return "Joists are 300 to 1200 mm apart, axis to axis.";
+        if (!(Spacing >= 0.3 && Spacing <= 1.2)) return "Joists are 300 to 1200 mm apart, axis to axis.";
         if (BlockWidth < 0.1) return "The joists are too close for a block between them: the spacing is at least the joist's width and 100 mm.";
-        if (BlockHeight < 0.05 || BlockHeight > 0.5) return "A block is 50 to 500 mm high.";
-        if (BlockLength < 0.1 || BlockLength > 1) return "A block is 100 to 1000 mm long along the joists.";
-        if (Topping < 0.02 || Topping > 0.2) return "The topping is 20 to 200 mm thick.";
+        if (!(BlockHeight >= 0.05 && BlockHeight <= 0.5)) return "A block is 50 to 500 mm high.";
+        if (!(BlockLength >= 0.1 && BlockLength <= 1)) return "A block is 100 to 1000 mm long along the joists.";
+        if (!(Topping >= 0.02 && Topping <= 0.2)) return "The topping is 20 to 200 mm thick.";
         if (JoistHeight >= Depth) return "The joist must stay under the top of the topping.";
-        if (Bearing < 0 || Bearing > 0.5) return "The bearing is 0 to 500 mm.";
+        if (!(Bearing >= 0 && Bearing <= 0.5)) return "The bearing is 0 to 500 mm.";
         if (string.IsNullOrWhiteSpace(JoistMaterial) || string.IsNullOrWhiteSpace(BlockMaterial) || string.IsNullOrWhiteSpace(ToppingMaterial)) return "The joists, the blocks and the topping each need a material.";
         return null;
     }
@@ -322,8 +322,12 @@ public static class BeamBlock
 
     static string Num(double v) => Math.Round(v, 3).ToString(CultureInfo.InvariantCulture);
 
-    /// <summary>The floor's beam-and-block quantities: the joists (count, length), the blocks (whole, cut), the cast concrete, the area, the mesh.</summary>
-    public static IEnumerable<QuantitySet> Quantities(Floor f, ElementGeometry g, IModelView m)
+    /// <summary>
+    /// The floor's beam-and-block quantities: the joists (count, length), the blocks (whole, cut), the cast concrete, the area,
+    /// the mesh; the floor's whole volume (all it builds) and its gross volume (<paramref name="grossVolume"/>, its outline by its
+    /// depth), the set a takeoff and the estimate read for the element (audit 15.11.2026, M2).
+    /// </summary>
+    public static IEnumerable<QuantitySet> Quantities(Floor f, ElementGeometry g, IModelView m, double grossVolume)
     {
         var r = f.Result;
         var concrete = g.Parts.FirstOrDefault(p => p.Key == "bb-concrete") is { } c ? Measure.Volume(c.Solid) : 0;
@@ -336,6 +340,8 @@ public static class BeamBlock
             new("BlockCount", r.WholeBlocks, "COUNT", "Whole blocks"),
             new("CutBlockCount", r.CutBlocks, "COUNT", "Cut blocks"),
             new("ConcreteVolume", concrete, "VOLUME", "Cast concrete"),
+            new("GrossVolume", grossVolume, "VOLUME", "Gross volume"),
+            new("NetVolume", g.Parts.Sum(p => Measure.Volume(p.Solid)), "VOLUME", "Net volume"),
             new("Area", f.Area, "AREA", "Area"),
         };
         if (f.Spec.Mesh.Length > 0) qs.Add(new("MeshArea", f.Area, "AREA", "Mesh area"));
@@ -394,10 +400,9 @@ public static class BeamBlock
     /// </summary>
     public static List<BeamBlockSpec> ParseCsv(string text)
     {
-        var lines = text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n').Where(l => l.Trim().Length > 0).ToList();
+        var lines = CsvText.Read(text).Where(r => r.Any(c => c.Trim().Length > 0)).ToList();
         if (lines.Count < 2) throw new CommandException("The file has no rows under its header.");
-        var sep = lines[0].Contains(';') ? ';' : lines[0].Contains('\t') ? '\t' : ',';
-        string[] Cells(string l) => l.Split(sep).Select(c => c.Trim().Trim('"').Trim()).ToArray();
+        static string[] Cells(List<string> l) => [.. l.Select(c => c.Trim())];
         string Fold(string h) => new string(h.ToLowerInvariant().Where(char.IsLetter).ToArray());
         var header = Cells(lines[0]).Select(Fold).ToList();
         int Col(string name) { var k = Fold(name); var i = header.IndexOf(k); return i >= 0 ? i : header.FindIndex(h => h.Length > 0 && (h.StartsWith(k.Replace("mm", ""), StringComparison.Ordinal))); }
@@ -411,8 +416,7 @@ public static class BeamBlock
             double Mm(string name, double def)
             {
                 if (Cell(name) is not { } s) return def;
-                if (sep != ',') s = s.Replace(',', '.');
-                return double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v / 1000 : throw new CommandException($"Line {li + 1}: „{s}” is not a number ({name}).");
+                return Numbers.Parse(s, NumberMode.Strict) is { } v ? v / 1000 : throw new CommandException($"Line {li + 1}: „{s}” is not a number ({name}).");
             }
             var name = Cell("Name") ?? throw new CommandException($"Line {li + 1}: no name.");
             var spec = new BeamBlockSpec(name, Mm("Joist width (mm)", d.JoistWidth), Mm("Joist height (mm)", d.JoistHeight), Mm("Foot height (mm)", d.FlangeHeight), Mm("Web width (mm)", d.WebWidth),

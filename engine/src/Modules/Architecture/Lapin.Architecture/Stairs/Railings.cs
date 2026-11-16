@@ -16,7 +16,7 @@ public static class Railings
     /// <summary>Lapin's own class (Studio owns IfcRailing for its solids), exported as IfcRailing.</summary>
     public const string Class = "LapinRailing";
 
-    static Vec2 P(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : default;
+    static Vec2 P(JsonNode? n) => Args.PointOf(n);
 
     /// <summary>
     /// A railing's solids along a line (its foot, point by point; it may climb), in its style: the handrail (square or round)
@@ -375,6 +375,8 @@ public static class Railings
         ], "#4a4a4a"));
         r.Geometry(Class, (e, m, _) => Geometry(e, m));
         r.Quantities(Class, (e, _, m) => Quantities(e, m));
+        // Moved, turned, mirrored and copied by its line (its points in plan; forum 102: a railing did not move, nor its dimensions).
+        r.Service<IElementPlacement>(new Placed());
 
         // A railing along a line drawn in plan: {storeyId, points: [[x, y]…], arcs? (each segment's rise, left positive), style?,
         // height?, baseOffset?, join? (taken into a railing of the same design whose end it meets, as drafting converted is)}.
@@ -467,7 +469,7 @@ public static class Railings
         return into.Id;
     }
 
-    static double BaseZ(Entity e, IModelView m) => (Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0) + e.Num("baseOffset");
+    static double BaseZ(Entity e, IModelView m) => Spatial.Base(m, e);
 
     public static ElementGeometry? Geometry(Entity e, IModelView m)
     {
@@ -508,5 +510,29 @@ public static class Railings
         var pts = Points(e);
         if (pts.Count < 2) yield break;
         yield return new QuantitySet("Qto_RailingBaseQuantities", [new("Length", Length(pts, Rises(e, pts.Count)), "LENGTH", $"Railing, {Of(e).Style}")]);
+    }
+
+    /// <summary>A railing carried by its line: every point of it in plan.</summary>
+    sealed class Placed : IElementPlacement
+    {
+        public bool Handles(Entity e) => e.Class == Class;
+
+        static JsonObject Carried(Entity e, Placement2D t)
+        {
+            var attrs = Placement.Carry(e, t);
+            attrs["points"] = SectionPaths.PointsJson(Points(e).Select(t.Point).ToList());
+            // Mirrored, each arc bulges to the other side of its chord (the points keep their order).
+            if (t.Mirrored && e.Attrs[ArcOutline.Key] != null) ArcOutline.Write(attrs, Rises(e, Points(e).Count).Select(r => -r).ToList());
+            return attrs;
+        }
+
+        public void Transform(ICommandContext ctx, Entity e, Placement2D t, IReadOnlySet<string> moving) => ctx.Replace(e.With(attrs: Carried(e, t)));
+
+        public string? Copy(ICommandContext ctx, Entity e, Placement2D t)
+        {
+            var id = Placement.DeepCopy(ctx, e, t);
+            ctx.Replace(ctx.Model.Get(id)!.With(attrs: Carried(e, t)));
+            return id;
+        }
     }
 }

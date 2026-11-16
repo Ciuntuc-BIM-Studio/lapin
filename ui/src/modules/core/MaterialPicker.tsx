@@ -5,6 +5,7 @@
  * ones and a material made in the Materials dialog is there at once.
  */
 
+import { promptText } from '../../shell/prompts';
 import { execute, useSession } from '../../engine/session';
 import { ofClass } from '../../engine/model';
 
@@ -19,7 +20,7 @@ export function MaterialPicker({ value, onChange, placeholder, allowEmpty, byId 
   const known = options.some((o) => o.value === value);
   const pick = async (next: string) => {
     if (next !== NEW) { onChange(next); return; }
-    const name = window.prompt('The new material\'s name')?.trim();
+    const name = promptText('The new material\'s name')?.trim();
     if (!name) return;
     const existing = materials.find((m) => m.name === name);
     if (byId) {

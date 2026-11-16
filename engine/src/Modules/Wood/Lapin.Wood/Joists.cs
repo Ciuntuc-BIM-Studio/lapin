@@ -36,7 +36,7 @@ public sealed record JoistSpec(string Section, double Spacing, string Grade, str
 
     public string? Problem()
     {
-        if (Spacing < 0.2 || Spacing > 1.2) return "Joists are 200 to 1200 mm apart.";
+        if (!(Spacing >= 0.2 && Spacing <= 1.2)) return "Joists are 200 to 1200 mm apart.";
         if (FrameSpec.Size(Section, (0, 0)).W <= 0) return $"„{Section}” is not a section (write it as 45x220 mm).";
         if (BlockingRows is < 0 or > 5 || Trimmers is < 1 or > 4 || HeaderPlies is < 1 or > 4) return "A floor has 0 to 5 blocking rows, 1 to 4 trimmers and 1 to 4 header plies.";
         return null;

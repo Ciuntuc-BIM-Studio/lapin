@@ -46,6 +46,14 @@ describe('keyIntent', () => {
     expect(keyIntent(press('Escape', { inDialog: true }), state())).toBeNull();
   });
 
+  it('closes a dialog on Escape from inside one of its fields, unless an input method is composing', () => {
+    const open = state({ dialog: 'materials' });
+    expect(keyIntent(press('Escape', { inField: true, inDialog: true }), open)).toEqual({ kind: 'closeDialog' });
+    expect(keyIntent(press('Escape', { inField: true, inDialog: true, composing: true }), open)).toBeNull();
+    expect(keyIntent(press('Escape', { inField: true }), state())).toBeNull();
+    expect(keyIntent(press('a', { inField: true, inDialog: true }), open)).toBeNull();
+  });
+
   it('does not let a dialog id with nothing on the screen hold the keys', () => {
     expect(openDialog('materials', true)).toBe('materials');
     expect(openDialog('materials', false)).toBeNull();

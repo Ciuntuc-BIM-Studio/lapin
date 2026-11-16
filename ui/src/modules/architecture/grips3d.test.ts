@@ -14,7 +14,7 @@ function model(...ns: NodeDto[]) {
   useSession.setState({ nodes: new Map([storey('s0', 0), storey('s1', 3.2), ...ns].map((n) => [n.id, n])), relations: new Map() });
 }
 
-describe('a wall\'s 3D grips (decision 601)', () => {
+describe('a wall\'s 3D grips (decision 610)', () => {
   it('stands its top where the engine puts it: the storey above with its offset, else its own height', () => {
     const above = node('w', 'IfcWall', { start: [0, 0], end: [4, 0], height: 3, top: 'above', topOffset: -0.2, baseOffset: 0.1 });
     model(above);
@@ -91,7 +91,7 @@ describe('dragging along a 3D grip\'s line', () => {
   });
 });
 
-describe('offset outline (decision 600)', () => {
+describe('offset outline (decision 609)', () => {
   it('lends each edge\'s middle the outline, its outward normal and its update', () => {
     const square = [{ x: 0, y: 0 }, { x: 4, y: 0 }, { x: 4, y: 4 }, { x: 0, y: 4 }];
     const save = (o: { pts: { x: number; y: number }[] }) => ({ command: 'x.update', args: { points: o.pts.map((p) => [p.x, p.y]) } });

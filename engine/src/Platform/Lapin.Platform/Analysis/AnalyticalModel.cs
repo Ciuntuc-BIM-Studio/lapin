@@ -132,6 +132,13 @@ public sealed class AnalyticalModel
     {
         var all = new AnalyticalContribution { Services = services };
         foreach (var source in services.All<IAnalyticalElements>()) source.Contribute(m, all);
+        // Solids kept hidden behind the layered wall made of them (forum topic 101): the wall carries, not they.
+        all.Frames.RemoveAll(f => !Superseded.Counts(m, f.SourceId));
+        all.Shells.RemoveAll(s => !Superseded.Counts(m, s.SourceId));
+        all.Supports.RemoveAll(s => !Superseded.Counts(m, s.SourceId));
+        all.Roofs.RemoveAll(r => !Superseded.Counts(m, r.SourceId));
+        all.LeftOut.RemoveAll(l => !Superseded.Counts(m, l.SourceId));
+        all.Links.RemoveAll(l => !Superseded.Counts(m, l.HostId) || !Superseded.Counts(m, l.MemberId));
         var model = new AnalyticalModel();
         model.Storeys.AddRange(Spatial.Storeys(m));
         model.LeftOut.AddRange(all.LeftOut);
@@ -178,7 +185,7 @@ public sealed class AnalyticalModel
         return pts.Count == 1 ? (p - pts[0]).Length : best;
     }
 
-    static double DistToSegment(Vec2 p, Vec2 a, Vec2 b) => ShellPieces.DistToSegment(p, a, b);
+    static double DistToSegment(Vec2 p, Vec2 a, Vec2 b) => Polyline2.SegmentDistance(p, a, b);
 
     static double DistToPolygon(Vec2 p, IReadOnlyList<Vec2> poly) =>
         poly.Count >= 3 && Polygon2.Contains(poly, p) ? 0 : DistToPolyline(p, [.. poly, poly[0]]);

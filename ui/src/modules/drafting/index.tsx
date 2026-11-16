@@ -1,5 +1,7 @@
 /** Drafting: CAD drawing on views (lines, polylines, circles, arcs, hatches on layers, and their edits), dimensions that follow the elements, texts, grid axes. */
 
+import { promptText } from '../../shell/prompts';
+import { ask, textField } from '../../shell/AskBox';
 import { ArrowRightToLine, Crosshair, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Unlink2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags, Grid3x3, Settings2, SlidersHorizontal, SquareDashed, Image as ImageIcon, Ruler, Replace, Shapes, Shapes as SymbolsIcon, FolderPlus, ListOrdered, FileImage } from 'lucide-react';
 import { AngleIcon, ArcLengthIcon, DiameterIcon, DimensionIcon, GridAxisIcon, LevelIcon, OrdinateIcon, RadiusIcon, SlopeIcon } from '../../icons';
 import type { Grip, GripStep, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
@@ -27,6 +29,7 @@ import { formatLength, formatLevel } from '../../engine/unitsStore';
 import { TagOptions, tagCommand, tagGrips, useTagPrefs } from './tag';
 import { DRAW_ORDER, drawOrder } from '../../viewport/drawOrder';
 import { lazyPart } from '../../platform/lazyPart';
+import { GridAxisDims } from './GridAxisDims';
 import '../core/symbols/symbolTools';
 import { convertLayersInFront, convertSelection } from './convert/convert';
 import { SymbolSection } from '../core/symbols/SymbolSection';
@@ -48,7 +51,7 @@ const text: ToolDef = {
   id: 'drafting.text', label: 'Text', icon: Type, shortcut: 'TX',
   gesture: { kind: 'point' },
   complete: async ({ points: [p] }, ctx) => {
-    const body = window.prompt('Text');
+    const body = promptText('Text');
     if (body?.trim()) await ctx.execute('drafting.addText', { viewId: ctx.viewId, at: [p.x, p.y], text: body.trim() });
   },
 };
@@ -594,12 +597,15 @@ function dimensionGrips(node: NodeDto, view?: GripView): Grip[] {
   }
   // Each segment's value: dragged, it moves off its place (to stand clear of a neighbour's); Ctrl/⌘-click: back on its line.
   const texts = Array.isArray((data as { texts?: unknown[] } | undefined)?.texts) ? ((data as { texts: unknown[] }).texts) : [];
+  // A value the engine moved clear of its neighbours (forum #78): dragged, it goes where it is dropped, from where it is shown.
+  const autoBy = Array.isArray((data as { textAuto?: unknown[] } | undefined)?.textAuto) ? ((data as { textAuto: unknown[] }).textAuto) : [];
   texts.forEach((raw, i) => {
     const at = pt(raw);
     if (!at) return;
+    const auto = pt(autoBy[i]) ?? { x: 0, y: 0 };
     grips.push({
       key: `t${i}`, kind: 'move', at, title: 'Drag: move the value · Ctrl/⌘-click: back on its line',
-      step: (to: Vec2) => ({ command: 'drafting.moveDimensionText', args: { id, segment: i, by: [to.x - at.x, to.y - at.y] } }),
+      step: (to: Vec2) => ({ command: 'drafting.moveDimensionText', args: { id, segment: i, by: [to.x - at.x + auto.x, to.y - at.y + auto.y] } }),
       remove: () => ({ command: 'drafting.moveDimensionText', args: { id, segment: i, reset: true } }),
     });
   });
@@ -634,13 +640,13 @@ const gridRefs = (node: NodeDto): RefLine[] => ((node.props.axes as { tag: strin
 /** Tag a parameter (report #64): TAG showing one the user names (Fire rating, Pset_WallCommon.FireRating); the bar under the view changes it. */
 const tagParameter: ToolDef = {
   id: 'drafting.tagParameter', label: 'Tag a parameter', icon: Tag,
-  run: () => {
-    const f = window.prompt('The parameter to show: its name (Fire rating) or a standard one (Pset_WallCommon.FireRating)', useTagPrefs.getState().field === 'mark' ? 'FireRating' : useTagPrefs.getState().field);
-    const field = f?.trim().replace(/^\{|\}$/g, '').trim();
+  run: () => void (async () => {
+    const r = await ask('Tag a parameter', [textField('field', 'The parameter to show: its name (Fire rating) or a standard one (Pset_WallCommon.FireRating)', useTagPrefs.getState().field === 'mark' ? 'FireRating' : useTagPrefs.getState().field)]);
+    const field = String(r?.field ?? '').trim().replace(/^\{|\}$/g, '').trim();
     if (!field) return;
     useTagPrefs.setState({ field, tagType: '' });
     void startCommand('TAG');
-  },
+  })(),
 };
 
 /** The draw order of the selected drafting (report #44, decision 339): to the front and back as tools, a step either way and behind the model small. */
@@ -658,7 +664,7 @@ const scaleImage: ToolDef = {
     const nodes = useSession.getState().nodes;
     const id = useUi.getState().selected.find((x) => nodes.get(x)?.type === 'LapinViewImage');
     if (!id) { notify('Select the image to scale first.'); return; }
-    const answer = window.prompt('Their true distance apart (m)', (Math.hypot(b.x - a.x, b.y - a.y)).toFixed(3));
+    const answer = promptText('Their true distance apart (m)', (Math.hypot(b.x - a.x, b.y - a.y)).toFixed(3));
     const length = Number((answer ?? '').replace(',', '.'));
     if (!(length > 0)) return;
     await ctx.execute('drafting.calibrateImage', { id, a: [a.x, a.y], b: [b.x, b.y], length });
@@ -673,9 +679,11 @@ const drafting: LapinModule = {
   tabs: [
     {
       id: 'draft', label: 'Draft', order: 10,
+      // Core's Modify group is this tab's Modify: its Move, Copy… are drawn once, Scale, Array and Erase stay, and the rest of core's (Pin, Match properties, groups) join them.
+      include: ['modify'],
       groups: [
         { label: 'Draw', tools: [cad('line', 'Line', Slash, 'LINE'), cad('pline', 'Polyline', Spline, 'PLINE'), cad('rect', 'Rectangle', RectangleHorizontal, 'RECTANGLE'), cad('circle', 'Circle', Circle, 'CIRCLE'), cad('arc', 'Arc', Redo2, 'ARC')] },
-        { label: 'Modify', tools: [cad('move', 'Move', Move, 'MOVE'), cad('copy', 'Copy', Copy, 'COPY'), cad('rotate', 'Rotate', RotateCw, 'ROTATEREF'), cad('mirror', 'Mirror', FlipHorizontal2, 'MIRROR')], small: [cad('scale', 'Scale', Scaling, 'SCALE'), cad('erase', 'Erase', Eraser, 'ERASE')] },
+        { label: 'Modify', tools: [cad('move', 'Move', Move, 'MOVE'), cad('copy', 'Copy', Copy, 'COPY'), cad('rotate', 'Rotate', RotateCw, 'ROTATEREF'), cad('mirror', 'Mirror', FlipHorizontal2, 'MIRROR')], small: [cad('scale', 'Scale', Scaling, 'SCALE'), cad('array', 'Array', Grid3x3, 'ARRAY'), cad('erase', 'Erase', Eraser, 'ERASE')] },
         { label: 'Edit', tools: [cad('offset', 'Offset', CopyPlus, 'OFFSET'), cad('trim', 'Trim', Scissors, 'TRIM'), cad('extend', 'Extend', ArrowRightToLine, 'EXTEND'), cad('fillet', 'Fillet', CornerUpRight, 'FILLET')], small: [cad('chamfer', 'Chamfer', CornerUpRight, 'CHAMFER'), cad('join', 'Join', Link2, 'JOIN'), cad('explode', 'Explode', Unlink2, 'EXPLODE')] },
         { label: 'Fill', tools: [cad('hatch', 'Hatch', Hash, 'HATCH')] },
         { label: 'Symbol', tools: [cad('saveSymbol', 'Save as symbol', FolderPlus, 'SAVESYMBOL')], small: [cad('symbol', 'Symbol', Shapes, 'SYMBOL')] },
@@ -739,6 +747,8 @@ const drafting: LapinModule = {
     { id: 'grid', label: 'Axes', classes: ['IfcGrid'], component: GridSection },
   ],
   grips: { IfcAnnotation: annotationGrips, IfcGrid: gridGrips, LapinViewBoundary: boundaryGrips },
+  // A selected grid axis's temporary dimensions to its neighbours (forum #78).
+  planOverlays: [GridAxisDims],
   references: { IfcGrid: gridRefs },
 };
 

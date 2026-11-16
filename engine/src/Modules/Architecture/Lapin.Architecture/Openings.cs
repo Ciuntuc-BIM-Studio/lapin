@@ -55,9 +55,6 @@ public static class Openings
         return OpeningOf(m, fillId) is { } opening && WallOf(m, opening.Id) is { } wall ? spec.Positioned(m, wall, own, fill?.Bool("flipSide") == true) : spec;
     }
 
-    /// <summary>The spec a type keeps, without any element's position worked in.</summary>
-    public static JoinerySpec? TypeSpecOf(Entity type) => JoinerySpec.From(type.Attrs["spec"]);
-
     /// <summary>
     /// A door's or window's opening of its own size (<c>holeWidth</c>, <c>holeHeight</c> on the opening, metres): the hole
     /// an imported file cuts round its fill, kept as the file has it where it differs from the fill's size (docs/spec-ifc.md,
@@ -360,7 +357,7 @@ public static class Openings
             start = c.PointAt(along) - dir * along;
         }
         var bands = Walls.Section(m, wall);
-        var z = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
+        var z = Spatial.Base(m, wall);
         return new WallFrame(start, dir, dir.Perp, z, bands.Min(b => b.From), bands.Max(b => b.To));
     }
 
@@ -483,7 +480,7 @@ public static class Openings
         var contour = Slabs.HoleContour(m, opening);
         if (contour.Count >= 3)
         {
-            var z = host.Class == IfcClass.Slab ? Slabs.Top(m, host) : (Spatial.StoreyOf(m, host.Id)?.Num("elevation") ?? 0);
+            var z = host.Class == IfcClass.Slab ? Slabs.Top(m, host) : Spatial.Elevation(m, host);
             return new ElementGeometry([], [new PlanItem("hit", false, [.. contour, contour[0]])],
                 Lines: [[.. contour.Select(q => new Vec3(q.X, q.Y, z)), new Vec3(contour[0].X, contour[0].Y, z)]], LineColor: "#b5532d");
         }

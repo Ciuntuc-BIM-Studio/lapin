@@ -116,7 +116,7 @@ public static class RebarSplit
         if (a["station"] != null) station = Json.Number(a["station"]) ?? throw new CommandException("The station is a length from the bar's start.");
         else if (a["point"] != null) station = StationOf(pts, RebarShapes.Local(s, at, Args.Point(a["point"], "where to cut")));
         else throw new CommandException("Say where the lap goes: from and to along the bar, a station and a lap, or a point on it.");
-        if (station < -1e-9 || station > length + 1e-9) throw new CommandException("The cut is outside the bar.");
+        if (!(station >= -1e-9 && station <= length + 1e-9)) throw new CommandException("The cut is outside the bar.");
         var other = a["point2"] != null ? StationOf(pts, RebarShapes.Local(s, at, Args.Point(a["point2"], "the lap's other end"))) : (double?)null;
         var lap = Json.Number(a["lap"]);
         if (other != null && lap == null) return (Math.Min(station, other.Value), Math.Max(station, other.Value));

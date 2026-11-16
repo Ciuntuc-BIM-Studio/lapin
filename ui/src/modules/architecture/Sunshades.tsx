@@ -7,6 +7,7 @@
  * projection and the noon helper: the projection that shades its window at noon on 21 June at the project's place.
  */
 
+import { confirmAction, promptText } from '../../shell/prompts';
 import { useEffect, useMemo, useState } from 'react';
 import { Copy, Pencil, Plus, Save, Settings2, Sun, Table2, Trash2, Umbrella, X } from 'lucide-react';
 import { create } from 'zustand';
@@ -182,7 +183,7 @@ export function SunshadeTypesDialog() {
   };
   const saveStyle = async () => {
     if (!type) return;
-    const name = window.prompt(t('Name of the sunshade style'), type.name);
+    const name = promptText(t('Name of the sunshade style'), type.name);
     if (!name?.trim()) return;
     const r = await execute('architecture.saveSunshadeStyle', { typeId: type.id, name });
     if (r) notify(t('Saved as a style of the project.'));
@@ -219,8 +220,8 @@ export function SunshadeTypesDialog() {
                 {own.map((s) => (
                   <li key={s.id} className="row" style={{ gap: 4 }}>
                     <span className="grow small" data-no-i18n>{s.label}</span>
-                    <button type="button" className="icon mini" title="Rename" onClick={() => { const n = window.prompt(t('Name of the sunshade style'), s.label); if (n?.trim()) void execute('architecture.renameSunshadeStyle', { styleId: s.id, name: n }); }}><Pencil size={11} /></button>
-                    <button type="button" className="icon mini" title="Delete the style (the types made with it stay as they are)" onClick={() => { if (window.confirm(t('Delete this sunshade style?'))) void execute('architecture.deleteSunshadeStyle', { styleId: s.id }); }}><Trash2 size={11} /></button>
+                    <button type="button" className="icon mini" title="Rename" onClick={() => { const n = promptText(t('Name of the sunshade style'), s.label); if (n?.trim()) void execute('architecture.renameSunshadeStyle', { styleId: s.id, name: n }); }}><Pencil size={11} /></button>
+                    <button type="button" className="icon mini" title="Delete the style (the types made with it stay as they are)" onClick={() => { if (confirmAction(t('Delete this sunshade style?'))) void execute('architecture.deleteSunshadeStyle', { styleId: s.id }); }}><Trash2 size={11} /></button>
                   </li>
                 ))}
               </ul>

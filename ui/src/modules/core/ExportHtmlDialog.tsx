@@ -7,6 +7,7 @@
  * which writes the page; the model is not changed.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
@@ -75,7 +76,7 @@ export function ExportHtmlDialog() {
   };
 
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog" role="dialog" aria-label="Lapin for the browser" onClick={(e) => e.stopPropagation()} style={{ width: 'min(560px, 96vw)' }}>
         <header className="dialog-head"><span className="panel-title">Lapin for the browser</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

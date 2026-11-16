@@ -7,6 +7,7 @@
  * Extensions, or a catalogue of one's own left unsigned); the store's page of an extension is store.lapinbim.com.
  */
 
+import { confirmAction } from './prompts';
 import { useEffect, useMemo, useState } from 'react';
 import { Check, Download, ExternalLink, RefreshCw, Search, ShieldAlert, ShieldCheck, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../app/store';
@@ -139,7 +140,7 @@ function Installed() {
   const app = appFacts();
   const updates = new Set(updatesOf(installed, list, app).map((m) => m.id));
   const remove = async (x: InstalledExtension) => {
-    if (!window.confirm(`Uninstall ${x.name}? What it added to your libraries is taken away; what you made with it in your projects stays.`)) return;
+    if (!confirmAction('Uninstall {name}? What it added to your libraries is taken away; what you made with it in your projects stays.', { name: x.name })) return;
     try { await uninstall(x.id); notify(`${x.name} uninstalled.`); } catch (e) { notify(message(e)); }
   };
   if (!installed.length) return <p className="muted small">No extension is installed on this computer yet: Browse lists what the catalogue has.</p>;

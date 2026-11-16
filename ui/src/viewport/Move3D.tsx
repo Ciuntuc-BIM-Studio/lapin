@@ -11,6 +11,7 @@
  * drag that starts at once orbits, as everywhere.
  */
 
+import { keyIsForField } from './overlayKeys';
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { X } from 'lucide-react';
@@ -162,7 +163,7 @@ export function Move3D({ camera, canvas, scene, invalidate }: ViewRefs & { inval
       void applyRef.current(target());
     };
     const onKey = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement | null)?.closest?.('input, textarea, select, [contenteditable]') && !(e.target as HTMLElement).closest('[data-move3d]')) return;
+      if (keyIsForField(e, '[data-move3d]')) return;
       const s = useMove3d.getState();
       if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); if (s.text) useMove3d.setState({ text: '' }); else endMove3d(); return; }
       if (e.key === 'Shift' && !e.repeat && s.base && !s.lock && s.at?.color) { shiftLock.current = true; useMove3d.setState({ lock: { axis: s.at.color } }); return; }

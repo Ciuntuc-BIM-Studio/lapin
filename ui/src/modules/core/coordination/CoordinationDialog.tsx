@@ -8,6 +8,7 @@
  * tab lists the openings' voids; Settings holds which openings are voids, their offset, the clearance, empty voids.
  */
 
+import { backdropClose } from '../../../shell/Dialog';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Cloud, Download, Eye, FileText, Hammer, MessageSquareText, Play, X } from 'lucide-react';
 import { notify, useUi } from '../../../app/store';
@@ -37,7 +38,8 @@ async function showItem(i: ClashItem, alone: boolean) {
 
 const toBytes = (b64: string) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
 
-export function CoordinationDialog() {
+/** The openings check's body and buttons, without a window of its own: Clash check… alone, or a tab of Clash detection (S2, audit 2026-11-15). */
+export function CoordinationPanel() {
   const nodes = useSession((s) => s.nodes);
   const version = useSession((s) => s.version);
   const voidsOn = useUi((s) => s.openingVoids);
@@ -122,9 +124,7 @@ export function CoordinationDialog() {
   const open = report?.counts.open ?? 0;
   const pickedList = [...picked];
   return (
-    <div className="dialog-backdrop" onClick={close}>
-      <div className="dialog wide coordination" role="dialog" aria-label="Clash check" data-testid="coordination-dialog" onClick={(e) => e.stopPropagation()}>
-        <header className="dialog-head"><span className="panel-title">Clash check</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
+    <>
         <div className="dialog-body cde">
           <p className="muted small">Every pipe, duct or cable carrier that crosses a wall, floor or roof must lie wholly inside an opening, keeping the clearance on every side. The check runs only when asked; its report stays in the project until it runs again.</p>
           <div className="row tabs-row">
@@ -160,6 +160,21 @@ export function CoordinationDialog() {
                     <button type="button" className="btn small" data-testid="clash-ignore-picked" disabled={busy || pickedList.length === 0} onClick={() => ignore(pickedList, 'ignored')}>Ignore</button>
                     <button type="button" className="btn small" disabled={busy || pickedList.length === 0} onClick={() => ignore(pickedList, 'open')}>Reopen</button>
                   </div>
+                  {(report.unchecked?.length ?? 0) > 0 && (
+                    <div data-testid="clash-unchecked">
+                      <p className="eyebrow">Could not be checked · {report.unchecked!.length}</p>
+                      <table className="schedule-table coordination-table">
+                        <thead><tr><th>MEP element</th><th>Host</th><th>Reason</th></tr></thead>
+                        <tbody>
+                          {report.unchecked!.map((u) => (
+                            <tr key={u.key} onClick={() => { const ids = [u.mepId, u.hostId].filter((x): x is string => !!x); if (ids.length) useUi.setState({ view: '3d', selected: ids, selection: ids[0] }); }}>
+                              <td>{u.mep ?? ''}</td><td>{u.host ?? ''}</td><td>{u.message}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                   {groups.length === 0 ? <p className="cde-ok">Nothing to fix.</p> : (
                     <div className="coordination-results">
                       {groups.map((g) => (
@@ -245,6 +260,17 @@ export function CoordinationDialog() {
           <span className="grow" />
           <button type="button" className="btn" onClick={close}>Done</button>
         </footer>
+    </>
+  );
+}
+
+export function CoordinationDialog() {
+  const close = () => useUi.setState({ dialog: null });
+  return (
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
+      <div className="dialog wide coordination" role="dialog" aria-label="Clash check" data-testid="coordination-dialog" onClick={(e) => e.stopPropagation()}>
+        <header className="dialog-head"><span className="panel-title">Clash check</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
+        <CoordinationPanel />
       </div>
     </div>
   );

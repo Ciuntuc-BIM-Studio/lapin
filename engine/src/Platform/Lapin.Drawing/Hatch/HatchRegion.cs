@@ -18,33 +18,15 @@ public static class HatchRegion
     static Loop Info(IReadOnlyList<Vec2> pts) =>
         new(pts, LoopArea(pts), pts.Min(p => p.X), pts.Min(p => p.Y), pts.Max(p => p.X), pts.Max(p => p.Y));
 
-    static double DistSqToSeg(Vec2 p, Vec2 a, Vec2 b)
-    {
-        var (dx, dy) = (b.X - a.X, b.Y - a.Y);
-        var len2 = dx * dx + dy * dy;
-        var t = len2 > 0 ? Math.Clamp(((p.X - a.X) * dx + (p.Y - a.Y) * dy) / len2, 0, 1) : 0;
-        var (ex, ey) = (a.X + t * dx - p.X, a.Y + t * dy - p.Y);
-        return ex * ex + ey * ey;
-    }
-
     static bool OnBoundary(Vec2 p, Loop l, double tol)
     {
         for (int i = 0, j = l.Pts.Count - 1; i < l.Pts.Count; j = i++)
-            if (DistSqToSeg(p, l.Pts[j], l.Pts[i]) <= tol * tol) return true;
+            if (Polyline2.SegmentDistance(p, l.Pts[j], l.Pts[i]) <= tol) return true;
         return false;
     }
 
     /// <summary>Even-odd point in polygon (ray casting).</summary>
-    public static bool Contains(IReadOnlyList<Vec2> poly, Vec2 p)
-    {
-        var inside = false;
-        for (int i = 0, j = poly.Count - 1; i < poly.Count; j = i++)
-        {
-            var (a, b) = (poly[i], poly[j]);
-            if ((a.Y > p.Y) != (b.Y > p.Y) && p.X < (b.X - a.X) * (p.Y - a.Y) / (b.Y - a.Y) + a.X) inside = !inside;
-        }
-        return inside;
-    }
+    public static bool Contains(IReadOnlyList<Vec2> poly, Vec2 p) => Polygon2.Contains(poly, p);
 
     /// <summary>Whether inner lies in outer: no vertex strictly outside, one strictly inside (touching ones aside; all touching: the centroid decides).</summary>
     static bool Inside(Loop inner, Loop outer)

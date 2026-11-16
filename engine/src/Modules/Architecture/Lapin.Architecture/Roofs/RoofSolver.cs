@@ -130,24 +130,8 @@ public static class RoofSolver
         return (pts, rs);
     }
 
-    /// <summary>The outline with edge i pushed out (right of the counter-clockwise edge) by d[i], corners on the offset lines' intersections.</summary>
-    public static Vec2[] OffsetEdges(IReadOnlyList<Vec2> pts, IReadOnlyList<double> d)
-    {
-        int n = pts.Count;
-        var lines = pts.Select((a, i) =>
-        {
-            var dir = (pts[(i + 1) % n] - a).Normalized();
-            return (P: a + new Vec2(dir.Y, -dir.X) * d[i], Dir: dir);
-        }).ToArray();
-        return pts.Select((_, i) =>
-        {
-            var (l1, l2) = (lines[(i + n - 1) % n], lines[i]);
-            var den = Vec2.Cross(l1.Dir, l2.Dir);
-            if (Math.Abs(den) < 1e-12) return l2.P;
-            var t = Vec2.Cross(l2.P - l1.P, l2.Dir) / den;
-            return l1.P + l1.Dir * t;
-        }).ToArray();
-    }
+    /// <summary>The outline with edge i pushed out (right of the counter-clockwise edge) by d[i], corners on the offset lines' intersections (<see cref="Polygon2.Offset"/>).</summary>
+    public static Vec2[] OffsetEdges(IReadOnlyList<Vec2> pts, IReadOnlyList<double> d) => Polygon2.Offset(pts, d);
 
     /// <summary>
     /// A mansard: the steep roof up to the break height, and over the break
@@ -318,14 +302,7 @@ public static class RoofSolver
     /// <summary>Keep the part of a planar loop where inside(p) ≥ 0 (Sutherland–Hodgman, one half-plane).</summary>
     static List<Vec3> ClipHalf(IReadOnlyList<Vec3> loop, Func<Vec3, double> inside)
     {
-        var o = new List<Vec3>();
-        for (int i = 0; i < loop.Count; i++)
-        {
-            var (p, q) = (loop[i], loop[(i + 1) % loop.Count]);
-            double dp = inside(p), dq = inside(q);
-            if (dp >= -Eps) o.Add(p);
-            if ((dp >= -Eps) != (dq >= -Eps)) o.Add(p + (q - p) * (dp / (dp - dq)));
-        }
+        var o = Polygon2.ClipHalf(loop, inside, Eps);
         return o.Where((p, i) => (p - o[(i + o.Count - 1) % o.Count]).Length > 1e-9).ToList();
     }
 

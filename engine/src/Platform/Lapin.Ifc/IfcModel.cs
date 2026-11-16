@@ -223,12 +223,13 @@ public sealed partial class IfcModel
     }
 
     /// <summary>An IfcSIUnit's or IfcConversionBasedUnit's size in its SI unit (metres, radians).</summary>
-    static double UnitFactor(StepFile f, StepEntity u, int depth)
+    internal static double UnitFactor(StepFile f, StepEntity u, int depth)
     {
         if (u.Type == "IFCSIUNIT")
             return (u[2] as StepEnum)?.Value switch
             {
-                "KILO" => 1e3, "HECTO" => 1e2, "DECA" => 10, "DECI" => 0.1, "CENTI" => 1e-2, "MILLI" => 1e-3, "MICRO" => 1e-6, "NANO" => 1e-9, _ => 1,
+                "EXA" => 1e18, "PETA" => 1e15, "TERA" => 1e12, "GIGA" => 1e9, "MEGA" => 1e6, "KILO" => 1e3, "HECTO" => 1e2, "DECA" => 10,
+                "DECI" => 0.1, "CENTI" => 1e-2, "MILLI" => 1e-3, "MICRO" => 1e-6, "NANO" => 1e-9, "PICO" => 1e-12, "FEMTO" => 1e-15, "ATTO" => 1e-18, _ => 1,
             };
         if (!u.Type.StartsWith("IFCCONVERSIONBASEDUNIT", StringComparison.Ordinal)) return 1;
         if (depth < 4 && f.Get(u[3]) is { } measure && Num(measure[0]) is var v && v > 0)
@@ -267,9 +268,7 @@ public sealed partial class IfcModel
     public Dictionary<string, string> StyleNames { get; } = [];
 
     /// <summary>A colour as the model reads it split into <c>#rrggbb</c> and its opacity (1 for a colour without one).</summary>
-    public static (string Colour, double Opacity) Opacity(string colour) =>
-        colour.Length == 9 && colour[0] == '#' && int.TryParse(colour.AsSpan(7), System.Globalization.NumberStyles.AllowHexSpecifier, null, out var a)
-            ? (colour[..7], a / 255.0) : (colour, 1);
+    public static (string Colour, double Opacity) Opacity(string colour) => HexColor.SplitAlpha(colour);
 
     // ─── Properties ──────────────────────────────────────────────────────────
 
@@ -338,8 +337,14 @@ public sealed partial class IfcModel
 
     readonly Dictionary<string, double> _projectUnits = [];
 
+    /// <summary>
+    /// The size in SI of a value's unit: its own (a property's Unit) when it names one, else the project's of
+    /// <paramref name="unitType"/> (an area in square metres or millimetres, as the project assigns it; SI when it assigns none).
+    /// </summary>
+    internal double UnitOf(object? own, string unitType) => File.Get(own) is { } unit ? UnitSize(unit, 0) : ProjectUnit(unitType);
+
     /// <summary>The size in SI of the project's unit of a type (LENGTHUNIT, AREAUNIT…): 1 when it assigns none.</summary>
-    double ProjectUnit(string unitType)
+    internal double ProjectUnit(string unitType)
     {
         lock (_projectUnits)
         {
@@ -860,8 +865,11 @@ public sealed partial class IfcModel
         }
     }
 
-    /// <summary>A curve as points (arcs every 15°), without its closing repeat.</summary>
+    /// <summary>A curve as points (arcs by the chord rule), without its closing repeat.</summary>
     List<Vec3> Curve(StepEntity? c) => Curve(c, out _);
+
+    /// <summary>The file's curve of an id as points, in metres (for the tests).</summary>
+    internal List<Vec3> CurvePoints(int id) => Curve(File.Get(new StepRef(id)));
 
     /// <summary>A curve as points, without its closing repeat; <paramref name="closed"/>: it came back to its start (a circle, an ellipse, a loop).</summary>
     List<Vec3> Curve(StepEntity? c, out bool closed, int depth = 0)
@@ -905,25 +913,67 @@ public sealed partial class IfcModel
         return clean;
     }
 
+    /// <summary>
+    /// An IfcTrimmedCurve as points: a circle's or an ellipse's arc by the chord rule, a line's piece between its trims.
+    /// Each trim by its parameter (an angle in the project's unit on a conic, a multiple of the direction's vector on a
+    /// line) or its point, the one its MasterRepresentation prefers when it gives both; a trim not finite reads nothing.
+    /// </summary>
     IEnumerable<Vec3> Trimmed(StepEntity c)
     {
         var basis = File.Get(c[0]);
         var sense = (c[3] as StepEnum)?.Value != "F";
+        var master = (c[4] as StepEnum)?.Value;
         Vec3? Cart(object? trim) => trim is List<object?> l && l.OfType<StepRef>().FirstOrDefault() is { Id: > 0 } r ? Point(r) : null;
         double? Param(object? trim) => trim is List<object?> l && l.OfType<StepTyped>().FirstOrDefault(t => t.Type == "IFCPARAMETERVALUE") is { } t ? Num(t) : null;
-        if (basis?.Type is "IFCCIRCLE")
+        // Which of a trim's two forms is read: the master's when both are there, else the one there is.
+        bool ByParam(object? trim) => Param(trim) != null && (Cart(trim) == null || master != "CARTESIAN");
+        if (basis?.Type is "IFCCIRCLE" or "IFCELLIPSE")
         {
             var xf = Axis2(basis[0]);
-            var r = Num(basis[1]) * _len;
-            double Angle(object? trim) => Param(trim) is { } v ? v * _angle
-                : Cart(trim) is { } p ? Math.Atan2(Vec3.Dot(p - xf.O, xf.Y), Vec3.Dot(p - xf.O, xf.X)) : 0;
+            double a = Num(basis[1]) * _len, b = basis.Type == "IFCELLIPSE" ? Num(basis[2]) * _len : a;
+            if (!(a > 0) || !(b > 0) || !double.IsFinite(a) || !double.IsFinite(b)) return [];
+            // A point's parameter on the conic: its angle on the circle the ellipse is squashed from.
+            double Angle(object? trim) => ByParam(trim) ? Param(trim)!.Value * _angle
+                : Cart(trim) is { } p ? Math.Atan2(Vec3.Dot(p - xf.O, xf.Y) / b, Vec3.Dot(p - xf.O, xf.X) / a) : 0;
             double a1 = Angle(c[1]), a2 = Angle(c[2]);
-            if (sense) { while (a2 <= a1) a2 += 2 * Math.PI; } else { while (a2 >= a1) a2 -= 2 * Math.PI; }
-            var n = Chords.Count(r, a2 - a1, 2);
-            return Enumerable.Range(0, n + 1).Select(k => { var a = a1 + (a2 - a1) * k / n; return xf.Apply(new Vec3(r * Math.Cos(a), r * Math.Sin(a), 0)); });
+            if (!double.IsFinite(a1) || !double.IsFinite(a2)) return [];
+            var sweep = Sweep(a1, a2, sense);
+            if (sweep == 0) return [];
+            a1 = Math.IEEERemainder(a1, 2 * Math.PI);
+            var n = Chords.Count(Math.Max(a, b), sweep, 2);
+            return Enumerable.Range(0, n + 1).Select(k => { var t = a1 + sweep * k / n; return xf.Apply(new Vec3(a * Math.Cos(t), b * Math.Sin(t), 0)); });
+        }
+        if (basis?.Type is "IFCLINE")
+        {
+            var origin = Point(basis[0]);
+            var vector = File.Get(basis[1]);
+            var dir = (Direction(vector?[0]) ?? new Vec3(1, 0, 0)) * (Num(vector?[1]) * _len);
+            // From the first trim to the second, whichever way the line runs (its sense says only which that is).
+            Vec3? End(object? trim)
+            {
+                if (!ByParam(trim)) return Cart(trim);
+                var t = Param(trim)!.Value;
+                return double.IsFinite(t) ? origin + dir * t : null;
+            }
+            var line = new[] { End(c[1]), End(c[2]) }.OfType<Vec3>().Where(p => double.IsFinite(p.X) && double.IsFinite(p.Y) && double.IsFinite(p.Z)).ToList();
+            return line.Count == 2 ? line : [];
         }
         var ends = new[] { Cart(c[1]), Cart(c[2]) }.OfType<Vec3>().ToList();
         return sense ? ends : Enumerable.Reverse(ends);
+    }
+
+    /// <summary>
+    /// The angle from <paramref name="a1"/> to <paramref name="a2"/> along the curve's sense (positive with it, negative
+    /// against it), within one turn; the same angle twice a whole turn. Taken modulo a turn, so a huge parameter ends.
+    /// </summary>
+    internal static double Sweep(double a1, double a2, bool sense)
+    {
+        const double turn = 2 * Math.PI;
+        var d = Math.IEEERemainder(a2 - a1, turn);
+        if (!double.IsFinite(d)) return 0;
+        if (sense) { if (d <= 1e-12) d += turn; }
+        else { if (d >= -1e-12) d -= turn; }
+        return d;
     }
 
     /// <summary>The arc through three points, by the chord rule.</summary>

@@ -97,7 +97,7 @@ public sealed class ElevatorSpec
     double N(string k, double d) => Json.Number(a[k]) ?? d;
     string S(string k, string[] allowed, string d) => a[k] is JsonValue v && v.TryGetValue<string>(out var s) && allowed.Contains(s) ? s : d;
     bool B(string k) => a[k] is JsonValue v && v.TryGetValue<bool>(out var b) && b;
-    string C(string k, string d) => a[k] is JsonValue v && v.TryGetValue<string>(out var s) && s is { Length: 7 } && s[0] == '#' ? s : d;
+    string C(string k, string d) => Lapin.Geometry.HexColor.Read(a[k], d);
 
     public string Drive => S("drive", Drives, "mrl");
     /// <summary>A circular pneumatic vacuum lift (report #149): a transparent tube, no shaft, no pit, a head unit on top.</summary>

@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using Lapin.Package;
 
 namespace Lapin.Protocol;
@@ -32,6 +31,11 @@ public interface IJournalStore
     /// <summary>The SHA-256 of the project file a journal started from; null when there is no such file.</summary>
     string? ProjectHash(string path);
     PackageContent ReadProject(string path);
+    /// <summary>
+    /// A copy of the project file that hashed to <paramref name="sha"/>, kept while it was open (<see cref="PackageBases"/>): what a journal
+    /// is brought back from when its file was renamed, moved or deleted since (audit 15.11.2026, G1); null when there is none.
+    /// </summary>
+    string? Base(string sha) => null;
 }
 
 /// <summary>The journals as files in a folder (the desktop's user folder): each held with an exclusive share while written, flushed to disk on every line.</summary>
@@ -135,11 +139,25 @@ public sealed class FileJournalStore : IJournalStore
         if (File.Exists(name)) File.Delete(name);
     }
 
-    public string? ProjectHash(string path)
+    /// <summary>The file's hash, remembered while it stays as it is (an open and a save hash it once, for the journal and for its copy).</summary>
+    public string? ProjectHash(string path) => PackageBases.Hash(path);
+
+    public string? Base(string sha) => PackageBases.Find(sha);
+
+    /// <summary>The hashes the journals here start from: their files' copies are kept by <see cref="PackageBases.Sweep"/>.</summary>
+    public IReadOnlySet<string> Starts()
     {
-        if (!File.Exists(path)) return null;
-        using var s = File.OpenRead(path);
-        return Convert.ToHexStringLower(SHA256.HashData(s));
+        var o = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var file in Journals())
+        {
+            try
+            {
+                using var reader = new StreamReader(new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete));
+                if (reader.ReadLine() is { } line && System.Text.Json.Nodes.JsonNode.Parse(line)?["sha256"] is { } sha) o.Add((string)sha!);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or InvalidOperationException or FormatException) { }
+        }
+        return o;
     }
 
     public PackageContent ReadProject(string path) => LapinPackage.Read(path);

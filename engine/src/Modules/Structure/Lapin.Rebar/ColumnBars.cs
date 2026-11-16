@@ -70,8 +70,8 @@ public static class ColumnBars
     /// <summary>How near a column's base must be to another's top to stand on it.</summary>
     public const double Tolerance = 0.05;
 
-    static Vec2 AtOf(Entity e) => e.Attrs["at"] is JsonArray q && q.Count >= 2 ? new Vec2(Json.Number(q[0]) ?? 0, Json.Number(q[1]) ?? 0) : default;
-    static double BaseOf(IModelView m, Entity e) => (Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0) + e.Num("baseOffset");
+    static Vec2 AtOf(Entity e) => Args.PointOf(e.Attrs["at"]);
+    static double BaseOf(IModelView m, Entity e) => Spatial.Base(m, e);
 
     public static ColumnBarsSpec? SpecOf(IModelView m, Entity e) => m.RelatingOf(e.Id, IfcClass.RelDefinesByType) is { } type ? ColumnBarsSpec.Of(type) : null;
 
@@ -179,9 +179,9 @@ public static class ColumnBars
         var perFace = (int)Math.Round(Json.Number(a["perFace"]) ?? now.PerFace);
         if (perFace is < 2 or > 20) throw new CommandException("A column has 2 to 20 bars on each face (its corners counted).");
         var d = Json.Number(a["diameter"]) ?? now.Diameter;
-        if (d < 0.006 || d > 0.04) throw new CommandException("A bar is between 6 and 40 mm thick.");
+        if (!(d >= 0.006 && d <= 0.04)) throw new CommandException("A bar is between 6 and 40 mm thick.");
         var lap = Json.Number(a["lap"]) ?? now.Lap;
-        if (lap < 0 || lap > 5) throw new CommandException("The starter bars run 0 to 5 m past the top.");
+        if (!(lap >= 0 && lap <= 5)) throw new CommandException("The starter bars run 0 to 5 m past the top.");
         // The partition its bars go in; a new one numbers them again, in it.
         var partition = a.ContainsKey("partition") ? ((string?)a["partition"])?.Trim() ?? "" : type.Str(Rebars.ColumnBarsPartitionKey)?.Trim() ?? "";
         var moved = partition != (type.Str(Rebars.ColumnBarsPartitionKey)?.Trim() ?? "");

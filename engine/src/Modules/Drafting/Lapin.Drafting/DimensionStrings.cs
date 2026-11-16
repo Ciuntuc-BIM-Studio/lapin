@@ -130,7 +130,7 @@ public static class DimensionStrings
         return o;
     }
 
-    static Vec2 P(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : default;
+    static Vec2 P(JsonNode? n) => Args.PointOf(n);
 
     /// <summary>
     /// An older project's dimensions as this Lapin keeps them: every string of
@@ -210,4 +210,39 @@ public sealed class DimensionUpgrade : IProjectUpgrade
 {
     public (IReadOnlyList<Entity> Entities, IReadOnlyList<Relation> Relations) Upgrade(IReadOnlyList<Entity> entities, IReadOnlyList<Relation> relations) =>
         DimensionStrings.Upgrade(entities, relations);
+}
+
+/// <summary>
+/// Dimensions held on an element's placement and rotation by an older Lapin (which read the rotation in radians, so a
+/// turned stair, column or piece of furniture lost them; forum 102): each such end kept in today's frame where it is now.
+/// </summary>
+public sealed class DimensionFrameUpgrade : IProjectUpgrade
+{
+    public (IReadOnlyList<Entity> Entities, IReadOnlyList<Relation> Relations) Upgrade(IReadOnlyList<Entity> entities, IReadOnlyList<Relation> relations)
+    {
+        Dictionary<string, Entity>? byId = null;
+        List<Entity>? outList = null;
+        for (var i = 0; i < entities.Count; i++)
+        {
+            var e = entities[i];
+            if (e.Class != IfcClass.Annotation || e.PredefinedType != "DIMENSION") continue;
+            JsonObject? attrs = null;
+            foreach (var key in new[] { "refs", "refA", "refB" })
+            {
+                List<(JsonNode? N, int Ix)> nodes = e.Attrs[key] is JsonArray arr ? arr.Select((n, ix) => (n, ix)).ToList() : e.Attrs[key] is JsonObject one ? [(one, -1)] : [];
+                foreach (var (n, ix) in nodes)
+                {
+                    if (DimEndRef.From(n) is not { Kind: "edge", FrameRev: < DimEndRef.CurrentFrame, Local: not null } r) continue;
+                    byId ??= entities.GroupBy(x => x.Id).ToDictionary(g => g.Key, g => g.First());
+                    var now = Dimensions.InCurrentFrame(byId.GetValueOrDefault(r.Element), r).ToJson();
+                    attrs ??= e.CloneAttrs();
+                    if (ix < 0) attrs[key] = now; else ((JsonArray)attrs[key]!)[ix] = now;
+                }
+            }
+            if (attrs == null) continue;
+            outList ??= [.. entities];
+            outList[i] = e.With(attrs: attrs);
+        }
+        return outList == null ? (entities, relations) : (outList, relations);
+    }
 }

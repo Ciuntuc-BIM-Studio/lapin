@@ -10,14 +10,13 @@ namespace Lapin.Architecture;
 /// Openings made from the clash report (decision 293): round what of an MEP element passes through a wall or a floor,
 /// its sides the clearance away and its size rounded up to the cut order's step. In a wall a bare opening (round,
 /// "circle", for a pipe or a cable; rectangular for a duct or a tray) at the element's place along the wall and up it;
-/// in a floor an opening of its own outline (a circle of 32 sides, or the smallest rectangle round the element).
+/// in a floor an opening of its own outline (a circle, its sides by <see cref="Chords"/> and outside the circle so a round
+/// element clears, or the smallest rectangle round the element).
 /// Enlarging keeps what the opening had and takes in what passes: a bare wall opening grows to the box of both, a
 /// floor opening to a rectangle (or circle) round both. A door's or a window's opening is sized by its type: refused.
 /// </summary>
 sealed class OpeningMaker : IOpeningMaker
 {
-    const int CircleSides = 32;
-
     public string? Make(IEdit ctx, Entity host, IReadOnlyList<Solid> through, OpeningRequest r)
     {
         var m = ctx.Model;
@@ -55,7 +54,7 @@ sealed class OpeningMaker : IOpeningMaker
             var d = along is { } a && a.Length > 1e-9 ? a.Normalized() : new Vec2(1, 0);
             var n = d.Perp;
             IReadOnlyList<Vec2> contour = round
-                ? Enumerable.Range(0, CircleSides).Select(i => c + new Vec2(Math.Cos(2 * Math.PI * i / CircleSides), Math.Sin(2 * Math.PI * i / CircleSides)) * (width / 2 / Math.Cos(Math.PI / CircleSides))).ToList()
+                ? Chords.Ring(c, width / 2, circumscribed: true)
                 : [c - d * (width / 2) - n * (height / 2), c + d * (width / 2) - n * (height / 2), c + d * (width / 2) + n * (height / 2), c - d * (width / 2) + n * (height / 2)];
             return Slabs.AddOpening(edit, host, contour).Id;
         }
@@ -147,7 +146,7 @@ sealed class OpeningMaker : IOpeningMaker
             var c = new Vec2(hull.Average(p => p.X), hull.Average(p => p.Y));
             var radius = hull.Max(p => (p - c).Length);
             var d = r.Rule.Size(2 * radius, grow);
-            return Enumerable.Range(0, CircleSides).Select(i => c + new Vec2(Math.Cos(2 * Math.PI * i / CircleSides), Math.Sin(2 * Math.PI * i / CircleSides)) * (d / 2 / Math.Cos(Math.PI / CircleSides))).ToList();
+            return Chords.Ring(c, d / 2, circumscribed: true);
         }
         var (l, w) = (r.Rule.Size(len, grow) / 2, r.Rule.Size(wid, grow) / 2);
         return [centre - along * l - across * w, centre + along * l - across * w, centre + along * l + across * w, centre - along * l + across * w];

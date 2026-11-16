@@ -4,6 +4,8 @@
  * Where it stands (the flight, the open side, from and to, the depth) are its fields above.
  */
 
+import { useShallow } from 'zustand/react/shallow';
+import { nodesOfType } from '../../shell/nodeIndex';
 import { Armchair, Settings2 } from 'lucide-react';
 import type { NodeDto } from '../../engine/protocol';
 import { useSession } from '../../engine/session';
@@ -11,7 +13,7 @@ import { useUi } from '../../app/store';
 import { openUnderStair } from './UnderStairDialog';
 
 export function UnderStairLinks({ stairId }: { stairId: string }) {
-  const spaces = useSession((s) => [...s.nodes.values()].filter((n) => n.type === 'LapinUnderStair' && n.props.host === stairId));
+  const spaces = useSession(useShallow((s) => nodesOfType(s.nodes, 'LapinUnderStair').filter((n) => n.props.host === stairId)));
   return (
     <div className="pad under-stair-links">
       {spaces.map((n) => (

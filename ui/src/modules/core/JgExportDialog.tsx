@@ -7,6 +7,7 @@
  * counts what goes in and checks it against the contract's rules before it is written, and lists what analysis still needs.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
@@ -71,7 +72,7 @@ export function JgExportDialog() {
   };
   const empty = !report || (report.counts.frames ?? 0) + (report.counts.shells ?? 0) === 0;
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog import-ifc jg-export" role="dialog" aria-label="Export JG Structures" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head">
           <span className="panel-title">Export JG Structures</span>

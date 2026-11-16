@@ -433,7 +433,7 @@ public sealed partial class StructuralProblem
 
     /// <summary>The pieces under a plan point at a height (on their edges too, within the model's tolerance): within 1 m below it (0.3 m above), the highest first.</summary>
     IEnumerable<Piece> PiecesUnder(Vec2 at, double z) =>
-        _pieces.Where(pc => (Polygon2.Contains(pc.Plan, at) || Enumerable.Range(0, pc.Plan.Count).Any(i => ShellPieces.DistToSegment(at, pc.Plan[i], pc.Plan[(i + 1) % pc.Plan.Count]) <= AnalyticalModel.Tolerance)) && pc.ZAt(at) is var pz && pz <= z + AboveReach && pz >= z - DepthReach).OrderByDescending(pc => pc.ZAt(at));
+        _pieces.Where(pc => Polygon2.Contains(pc.Plan, at, AnalyticalModel.Tolerance) && pc.ZAt(at) is var pz && pz <= z + AboveReach && pz >= z - DepthReach).OrderByDescending(pc => pc.ZAt(at));
 
     void Planar(MappedCase mc, StructuralActionData a, string source)
     {
@@ -867,7 +867,7 @@ public sealed partial class StructuralProblem
                 var plan = Polygon2.EnsureCcw(pts.Select(x => x.Xy).ToList()).ToList();
                 if (Polygon2.SignedArea(plan) < 1e-9) continue;
                 double ZAt(Vec2 q) => pts[0].Z - (normal.X * (q.X - pts[0].X) + normal.Y * (q.Y - pts[0].Y)) / normal.Z;
-                bool Near(Vec2 q) => Polygon2.Contains(plan, q) || Enumerable.Range(0, plan.Count).Any(i => ShellPieces.DistToSegment(q, plan[i], plan[(i + 1) % plan.Count]) <= 0.02);
+                bool Near(Vec2 q) => Polygon2.Contains(plan, q, 0.02);
                 var mine = carriers.Where(c => (c.Pi + c.Pj) * 0.5 is var mid && Near(mid.Xy) && Math.Abs(mid.Z - ZAt(mid.Xy)) <= DepthReach)
                     .Select(c =>
                     {

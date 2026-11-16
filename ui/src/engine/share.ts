@@ -8,15 +8,18 @@
  * each looks, what each has selected — goes round beside the model.
  *
  * The crypto mirrors the engine's ShareCrypto: HKDF-SHA256 over the secret,
- * salted with the room and the connection's own salt, gives an AES-256-GCM
- * key; a frame is [direction 4][count 8][ciphertext + tag], its plaintext
- * [kind 1][body] (1: JSON text, 2: an engine frame).
+ * salted with the room, the guest's salt and the host's salt (each fresh for
+ * the connection, so a relay cannot play a recorded connection to the host
+ * again), gives an AES-256-GCM key; a frame is [direction 4][count 8]
+ * [ciphertext + tag], its plaintext [kind 1][body] (1: JSON text, 2: an
+ * engine frame).
  */
 
 import { create } from 'zustand';
 import type { EngineLink, EngineTransport } from './client';
+import { notify } from '../app/store';
 
-export const PROTOCOL = 1;
+export const PROTOCOL = 2;
 export const DEFAULT_RELAY = 'wss://lapin.ciuntucbimstudio.ro/relay';
 
 export interface Participant {
@@ -96,12 +99,12 @@ export function leave(): void {
 
 // ------------------------------------------------------------ the crypto
 
-async function connectionKey(inv: Invitation, salt: Uint8Array): Promise<CryptoKey> {
+async function connectionKey(inv: Invitation, guestSalt: Uint8Array, hostSalt: Uint8Array): Promise<CryptoKey> {
   const base = await crypto.subtle.importKey('raw', inv.secret as BufferSource, 'HKDF', false, ['deriveKey']);
   const room = new TextEncoder().encode(inv.room);
-  const s = new Uint8Array(room.length + salt.length);
-  s.set(room); s.set(salt, room.length);
-  return crypto.subtle.deriveKey({ name: 'HKDF', hash: 'SHA-256', salt: s, info: new TextEncoder().encode('lapin-share-v1') }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+  const s = new Uint8Array(room.length + guestSalt.length + hostSalt.length);
+  s.set(room); s.set(guestSalt, room.length); s.set(hostSalt, room.length + guestSalt.length);
+  return crypto.subtle.deriveKey({ name: 'HKDF', hash: 'SHA-256', salt: s, info: new TextEncoder().encode('lapin-share-v2') }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
 }
 
 /** One connection's sealing and opening, as a guest: out on direction 0, in on 1, counts rising. */
@@ -110,7 +113,10 @@ export class GuestCrypto {
   private received = 0n;
   constructor(private readonly key: CryptoKey) {}
 
-  static async create(inv: Invitation, salt: Uint8Array): Promise<GuestCrypto> { return new GuestCrypto(await connectionKey(inv, salt)); }
+  static async create(inv: Invitation, guestSalt: Uint8Array, hostSalt: Uint8Array): Promise<GuestCrypto> {
+    if (guestSalt.length !== 16 || hostSalt.length !== 16) throw new Error('A salt is 16 bytes.');
+    return new GuestCrypto(await connectionKey(inv, guestSalt, hostSalt));
+  }
 
   async seal(kind: number, body: Uint8Array): Promise<Uint8Array> {
     const nonce = new Uint8Array(12);
@@ -142,11 +148,15 @@ export class GuestCrypto {
 // ------------------------------------------------------------ the guest's transport
 
 /**
- * The host's engine through the relay, as a guest: the connection's salt
- * first, then hello (name, protocol, the token of an earlier connection so
- * one comes back as the same participant), the welcome, then the engine
- * protocol as with a local engine. Frames are opened in order (decryption is
- * asynchronous; a queue keeps them as they came).
+ * The host's engine through the relay, as a guest: in the clear, the
+ * protocol and this connection's salt ([0][protocol][salt 16]), answered with
+ * the host's salt ([0][salt 16]) or, from a host of another protocol,
+ * [1][its protocol]; then, sealed with the key of both salts, hello (name,
+ * protocol, the token of an earlier connection so one comes back as the same
+ * participant), the welcome, then the engine protocol as with a local engine.
+ * Frames are opened in order (decryption is asynchronous; a queue keeps them
+ * as they came), and sent in order on a chain of their own; a frame that
+ * fails on either is reported and the next goes on.
  */
 export function relayTransport(inv: Invitation, name: () => string): EngineTransport {
   let fatal = false;
@@ -161,7 +171,16 @@ export function relayTransport(inv: Invitation, name: () => string): EngineTrans
       const salt = crypto.getRandomValues(new Uint8Array(16));
       let box: GuestCrypto | null = null;
       let welcomed = false;
+      let hostSalted = false;
       let queue = Promise.resolve();
+      let sending = Promise.resolve();
+      /** Each step on a chain of its own catches its own failure: one bad frame never stops the frames after it. */
+      const step = (chain: Promise<void>, work: () => Promise<void>, what: string) => chain.then(work).catch((e: unknown) => {
+        const why = e instanceof Error ? e.message : String(e);
+        console.error(`[share] ${what}: ${why}`);
+        // Before the welcome the join itself failed: the connection let go (connect settles); after it, the user told.
+        if (!welcomed) fail(`${what} ${why}`); else notify(what);
+      });
       const tokenKey = `lapin.token.${inv.room}`;
       const fail = (why: string, final = false) => {
         if (final) { fatal = true; useShare.setState({ ended: why }); }
@@ -173,16 +192,27 @@ export function relayTransport(inv: Invitation, name: () => string): EngineTrans
         try { ws.close(); } catch { /* closed */ }
       };
       const sendText = async (text: string) => { if (box && ws.readyState === WebSocket.OPEN) ws.send(await box.seal(1, new TextEncoder().encode(text))); };
-      ws.onopen = async () => {
-        ws.send(new Uint8Array([0, ...salt]));
-        box = await GuestCrypto.create(inv, salt);
-        let token: string | null = null;
-        try { token = sessionStorage.getItem(tokenKey); } catch { /* new each time */ }
-        await sendText(JSON.stringify({ hello: { name: name() || 'Guest', protocol: PROTOCOL, token } }));
+      ws.onopen = () => {
+        try { ws.send(new Uint8Array([0, PROTOCOL, ...salt])); } catch (e) { fail(`The session could not be reached: ${e instanceof Error ? e.message : String(e)}`); }
+      };
+      /** The host's salt, in the clear: the key of both, then hello. */
+      const greet = async (data: Uint8Array) => {
+        if (data.length === 2 && data[0] === 1) { fail(`The host runs another version of Lapin: update Lapin (Help → Check for updates) and join again.`, true); return; }
+        if (data.length !== 17 || data[0] !== 0) { fail('The session answered something else: the link may be wrong.'); return; }
+        try {
+          box = await GuestCrypto.create(inv, salt, data.slice(1));
+          hostSalted = true;
+          let token: string | null = null;
+          try { token = sessionStorage.getItem(tokenKey); } catch { /* new each time */ }
+          await sendText(JSON.stringify({ hello: { name: name() || 'Guest', protocol: PROTOCOL, token } }));
+        } catch (e) {
+          fail(`The session could not be joined: ${e instanceof Error ? e.message : String(e)}`);
+        }
       };
       ws.onmessage = (ev) => {
         const data = new Uint8Array(ev.data as ArrayBuffer);
-        queue = queue.then(async () => {
+        queue = step(queue, async () => {
+          if (!hostSalted) { await greet(data); return; }
           const plain = box ? await box.open(data) : null;
           if (!plain) { fail('A frame from the session did not open: the link may be wrong.'); return; }
           if (plain[0] === 2) { onMessage(plain.slice(1).buffer); return; }
@@ -196,7 +226,7 @@ export function relayTransport(inv: Invitation, name: () => string): EngineTrans
             misses = 0;
             try { sessionStorage.setItem(tokenKey, msg.welcome.token); } catch { /* a new participant next time */ }
             useShare.setState({ welcome: msg.welcome, ended: null });
-            const link: EngineLink = { send: (t) => void (queue = queue.then(() => sendText(t))), close: () => ws.close() };
+            const link: EngineLink = { send: (t) => void (sending = step(sending, () => sendText(t), 'A call to the session could not be sent.')), close: () => ws.close() };
             onOpen(link);
             resolve();
             return;
@@ -204,11 +234,11 @@ export function relayTransport(inv: Invitation, name: () => string): EngineTrans
           const ended = text.startsWith('{"event":"ended"') ? (JSON.parse(text) as { data: string }).data : null;
           if (ended) { fatal = true; useShare.setState({ ended }); }
           onMessage(text);
-        });
+        }, 'A frame from the session could not be read; the session goes on.');
       };
       ws.onerror = () => { if (!welcomed) fail('The session could not be reached: the host may have stopped sharing.'); };
       ws.onclose = () => {
-        if (!welcomed) { fail('The session is not open: the host may have stopped sharing.'); return; }
+        if (!welcomed) { fail(hostSalted ? 'The session is not open: the host may have stopped sharing.' : 'The session is not open: the host may have stopped sharing, or runs another version of Lapin.'); return; }
         onClose();
       };
     }),

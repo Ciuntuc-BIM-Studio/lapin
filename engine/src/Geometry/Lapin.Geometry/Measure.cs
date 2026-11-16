@@ -17,16 +17,16 @@ public static class Measure
 
     public static double SurfaceArea(Solid s) => Enumerable.Range(0, s.Faces.Length).Sum(i => FaceArea(s, i));
 
-    /// <summary>Area of the faces carrying <paramref name="tag"/>.</summary>
-    public static double TaggedArea(Solid s, string tag) =>
-        Enumerable.Range(0, s.Faces.Length).Where(i => s.Faces[i].Tag == tag).Sum(i => FaceArea(s, i));
-
     /// <summary>Signed volume by the divergence theorem; negative means inward normals.</summary>
     public static double SignedVolume(Solid s)
     {
+        if (s.Vertices.Length == 0) return 0;
+        // The tetrahedra from the first vertex, not from the origin: at georeferenced coordinates (500 km out) the products
+        // about the origin would cancel to the last digits and lose the volume of a small body.
+        var o = s.Vertices[0];
         double v = 0;
         foreach (var (ia, ib, ic) in Triangles(s))
-            v += Vec3.Dot(s.Vertices[ia], Vec3.Cross(s.Vertices[ib], s.Vertices[ic]));
+            v += Vec3.Dot(s.Vertices[ia] - o, Vec3.Cross(s.Vertices[ib] - o, s.Vertices[ic] - o));
         return v / 6;
     }
 
@@ -38,6 +38,18 @@ public static class Measure
         var min = new Vec3(s.Vertices.Min(p => p.X), s.Vertices.Min(p => p.Y), s.Vertices.Min(p => p.Z));
         var max = new Vec3(s.Vertices.Max(p => p.X), s.Vertices.Max(p => p.Y), s.Vertices.Max(p => p.Z));
         return (min, max);
+    }
+
+    /// <summary>The box round several solids (those without vertices left out); null when none has any.</summary>
+    public static (Vec3 Min, Vec3 Max)? Bounds(IEnumerable<Solid> solids)
+    {
+        (Vec3 Min, Vec3 Max)? o = null;
+        foreach (var s in solids)
+            if (Bounds(s) is { } b)
+                o = o is { } a
+                    ? (new Vec3(Math.Min(a.Min.X, b.Min.X), Math.Min(a.Min.Y, b.Min.Y), Math.Min(a.Min.Z, b.Min.Z)), new Vec3(Math.Max(a.Max.X, b.Max.X), Math.Max(a.Max.Y, b.Max.Y), Math.Max(a.Max.Z, b.Max.Z)))
+                    : b;
+        return o;
     }
 
     /// <summary>Largest distance from a loop vertex to the face's own plane.</summary>

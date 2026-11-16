@@ -105,19 +105,8 @@ public sealed partial class IfcModel
     /// <summary>A loop clipped to one side of the line U = <paramref name="u"/> (Sutherland–Hodgman): the side above it, or below.</summary>
     static List<Flat> Clip(List<Flat> loop, double u, bool above)
     {
-        var o = new List<Flat>();
-        bool In(Flat f) => above ? f.U >= u : f.U <= u;
-        for (var i = 0; i < loop.Count; i++)
-        {
-            Flat a = loop[i], b = loop[(i + 1) % loop.Count];
-            if (In(a)) o.Add(a);
-            if (In(a) != In(b))
-            {
-                var t = (u - a.U) / (b.U - a.U);
-                o.Add(new Flat(u, a.V + (b.V - a.V) * t, a.R + (b.R - a.R) * t, null));
-            }
-        }
-        // A vertex on the line comes twice (kept, and met by its edge): once is enough.
+        var o = Polygon2.ClipHalf(loop, f => above ? f.U - u : u - f.U, (a, b, t) => new Flat(u, a.V + (b.V - a.V) * t, a.R + (b.R - a.R) * t, null));
+        // A vertex a hair off the line may still come twice (kept, and met by its edge): once is enough.
         static bool Same(Flat x, Flat y) => Math.Abs(x.U - y.U) < 1e-9 && Math.Abs(x.V - y.V) < 1e-9;
         var clean = new List<Flat>();
         foreach (var f in o) if (clean.Count == 0 || !Same(clean[^1], f)) clean.Add(f);

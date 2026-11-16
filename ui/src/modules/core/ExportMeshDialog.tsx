@@ -18,6 +18,8 @@
  * point, its internal origin or the survey point's coordinates.
  */
 
+import { nodesOfType } from '../../shell/nodeIndex';
+import { backdropClose } from '../../shell/Dialog';
 import { useState } from 'react';
 import { isCloudLink } from '../../viewport/pointClouds';
 import { X } from 'lucide-react';
@@ -62,7 +64,7 @@ export function ExportMeshDialog() {
   const [origin, setOrigin] = useState('base');
   const [voids, setVoids] = useState(false);
   // The point clouds linked go out only when ticked, and only in GLB and glTF (decision 396).
-  const hasClouds = useSession((s) => [...s.nodes.values()].some(isCloudLink));
+  const hasClouds = useSession((s) => nodesOfType(s.nodes, 'LapinLink').some(isCloudLink));
   const [clouds, setClouds] = useState(false);
   const [busy, setBusy] = useState(false);
   const close = () => useUi.setState({ dialog: null });
@@ -74,7 +76,7 @@ export function ExportMeshDialog() {
     close();
   };
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog" role="dialog" aria-label="Export 3D" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Export 3D</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

@@ -5,6 +5,7 @@
  * at once; the remembered choices are listed, each forgotten on its own.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
@@ -38,7 +39,7 @@ export function MapTypesDialog() {
   };
   if (!listing) return <PendingDialog title="Map imported types" />;
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide" role="dialog" aria-label="Map imported types" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Map imported types</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

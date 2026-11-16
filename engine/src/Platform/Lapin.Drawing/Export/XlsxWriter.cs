@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.IO.Compression;
-using System.Security;
 using System.Text;
 
 namespace Lapin.Drawing.Export;
@@ -42,7 +41,7 @@ public static class XlsxWriter
                 + "</Types>");
             Put("_rels/.rels", head + "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.xml\"/></Relationships>");
             Put("xl/workbook.xml", head + "<workbook xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\"><sheets>"
-                + string.Concat(names.Select((n, i) => $"<sheet name=\"{SecurityElement.Escape(n)}\" sheetId=\"{i + 1}\" r:id=\"rId{i + 1}\"/>")) + "</sheets></workbook>");
+                + string.Concat(names.Select((n, i) => $"<sheet name=\"{Documents.DocText.Xml(n)}\" sheetId=\"{i + 1}\" r:id=\"rId{i + 1}\"/>")) + "</sheets></workbook>");
             Put("xl/_rels/workbook.xml.rels", head + "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">"
                 + string.Concat(names.Select((_, i) => $"<Relationship Id=\"rId{i + 1}\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet{i + 1}.xml\"/>"))
                 + $"<Relationship Id=\"rId{names.Count + 1}\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\"/></Relationships>");
@@ -68,7 +67,7 @@ public static class XlsxWriter
                         if (r > 0 && IsNumber(v, out var d))
                             sb.Append($"<c r=\"{reference}\"{style}><v>{d.ToString(CultureInfo.InvariantCulture)}</v></c>");
                         else if (v.Length > 0)
-                            sb.Append($"<c r=\"{reference}\"{style} t=\"inlineStr\"><is><t xml:space=\"preserve\">{SecurityElement.Escape(v)}</t></is></c>");
+                            sb.Append($"<c r=\"{reference}\"{style} t=\"inlineStr\"><is><t xml:space=\"preserve\">{Documents.DocText.Xml(v)}</t></is></c>");
                     }
                     sb.Append("</row>");
                 }

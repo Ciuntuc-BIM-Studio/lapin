@@ -30,7 +30,7 @@ public static class WallTop
     public static string? Of(Entity wall) => wall.Str(Key) is { Length: > 0 } t ? t : null;
 
     /// <summary>The wall's base: its storey's level plus its base offset.</summary>
-    public static double Base(IModelView m, Entity wall) => (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
+    public static double Base(IModelView m, Entity wall) => Spatial.Base(m, wall);
 
     /// <summary>The storey above <paramref name="storey"/>: the first whose level is higher; null on the topmost.</summary>
     public static Entity? StoreyAbove(IModelView m, Entity storey) =>

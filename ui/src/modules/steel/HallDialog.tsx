@@ -10,6 +10,8 @@
  * connections; Delete hall takes them all away.
  */
 
+import { projectOf } from '../../shell/nodeIndex';
+import { confirmAction, promptText } from '../../shell/prompts';
 import { useEffect, useState } from 'react';
 import { create } from 'zustand';
 import { Pencil, RotateCcw, Save, Trash2, X } from 'lucide-react';
@@ -108,7 +110,7 @@ export function HallDialog() {
   const node = useSession((s) => (hallId ? s.nodes.get(hallId) : undefined));
   const info = useSession((s) => s.info);
   const error = useSession((s) => s.error);
-  const project = useSession((s) => [...s.nodes.values()].find((n) => n.type === 'IfcProject'));
+  const project = useSession((s) => projectOf(s.nodes));
   const styles = (info?.catalogs['steel.hallStyles'] as unknown as Style[] | undefined) ?? [];
   const own = (project?.props.hallStyles as Style[] | undefined) ?? [];
   const catalogue = (info?.catalogs['steel.profiles'] as unknown as SectionDto[] | undefined) ?? [];
@@ -145,7 +147,7 @@ export function HallDialog() {
     set('nodeParams', { ...nodeParams, [kind]: cur });
   };
   const remove = async () => {
-    if (!hallId || !window.confirm(t('Delete the hall with its members and connections?'))) return;
+    if (!hallId || !confirmAction(t('Delete the hall with its members and connections?'))) return;
     await execute('element.delete', { ids: [hallId] });
     if (!useSession.getState().error) { useUi.setState({ selection: null, selected: [] }); close(); }
   };
@@ -160,7 +162,7 @@ export function HallDialog() {
   const current = draft.style ?? (dirty ? undefined : (node?.props.style as string | undefined));
   const ownStyle = own.find((s) => s.id === current);
   const saveAs = async () => {
-    const name = window.prompt(t('Name of the hall style'), '');
+    const name = promptText(t('Name of the hall style'), '');
     if (!name?.trim()) return;
     const r = (await execute('steel.saveHallStyle', { ...args(), name })) as { styleId?: string } | null;
     if (!useSession.getState().error && r?.styleId) setDraft(hallId ? { attrs: {} } : { style: r.styleId, attrs: {} });
@@ -230,7 +232,7 @@ export function HallDialog() {
       <div className="dialog wide roof-dialog" data-dialog="steel-hall" data-i18n-ctx="hall">
         <header className="dialog-head">
           <span className="panel-title">Portal frame hall {node && <span className="muted small" data-no-i18n>· {node.name}</span>}</span>
-          <button type="button" className="icon" onClick={() => { if (!dirty || window.confirm(t('Close without applying the changes?'))) close(); }} title="Close"><X size={15} /></button>
+          <button type="button" className="icon" onClick={() => { if (!dirty || confirmAction(t('Close without applying the changes?'))) close(); }} title="Close"><X size={15} /></button>
         </header>
         <div className="dialog-body split">
           <div className="type-list roof-styles">
@@ -240,8 +242,8 @@ export function HallDialog() {
             {own.map((s) => (
               <div key={s.id} className="row roof-own">
                 <button type="button" className={`tree-item grow${current === s.id ? ' on' : ''}`} onClick={() => pickStyle(s.id)}><span className="grow" data-no-i18n>{s.label}</span></button>
-                <button type="button" className="icon mini" title="Rename" onClick={() => { const n = window.prompt(t('Name of the hall style'), s.label); if (n?.trim()) void execute('steel.renameHallStyle', { styleId: s.id, name: n }); }}><Pencil size={12} /></button>
-                <button type="button" className="icon mini" title="Delete the style (its halls keep how they are)" onClick={() => { if (window.confirm(t('Delete this hall style? Its halls keep how they are.'))) void execute('steel.deleteHallStyle', { styleId: s.id }); }}><Trash2 size={12} /></button>
+                <button type="button" className="icon mini" title="Rename" onClick={() => { const n = promptText(t('Name of the hall style'), s.label); if (n?.trim()) void execute('steel.renameHallStyle', { styleId: s.id, name: n }); }}><Pencil size={12} /></button>
+                <button type="button" className="icon mini" title="Delete the style (its halls keep how they are)" onClick={() => { if (confirmAction(t('Delete this hall style? Its halls keep how they are.'))) void execute('steel.deleteHallStyle', { styleId: s.id }); }}><Trash2 size={12} /></button>
               </div>
             ))}
             <p className="eyebrow">Catalogue</p>

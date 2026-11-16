@@ -5,6 +5,7 @@
  * opens on, the participants in the top bar, and a guest's bar with Leave.
  */
 
+import { backdropClose } from './Dialog';
 import { useEffect, useState } from 'react';
 import { Copy, LogOut, Users, X } from 'lucide-react';
 import { useUi, notify } from '../app/store';
@@ -36,7 +37,7 @@ export function ShareDialog() {
   const start = () => { saveName(name); void call('share.start', { name, role }); };
   const guests = participants.filter((p) => !p.host);
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog share-dialog" role="dialog" aria-label="Share session" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Share session</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">
@@ -98,7 +99,7 @@ export function JoinDialog() {
   const inv = parseInvitation(text);
   const close = () => useUi.setState({ dialog: null });
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog" role="dialog" aria-label="Join session" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Join session</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

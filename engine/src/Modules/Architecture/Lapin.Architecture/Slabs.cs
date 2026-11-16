@@ -305,7 +305,7 @@ public static class Slabs
         return opening;
     }
 
-    public static double Top(IModelView m, Entity slab) => (Spatial.StoreyOf(m, slab.Id)?.Num("elevation") ?? 0) + slab.Num("offset");
+    public static double Top(IModelView m, Entity slab) => Spatial.Elevation(m, slab) + slab.Num("offset");
 
     /// <summary>The floor's whole thickness over its outline: what it cuts lower priorities with.</summary>
     public static Solid? Envelope(Entity slab, IModelView m)
@@ -337,13 +337,13 @@ public static class Slabs
     public static IEnumerable<QuantitySet> Quantities(Entity slab, ElementGeometry? g, IModelView m)
     {
         if (g == null || g.Parts.Count == 0) yield break;
-        if (BeamBlock.Of(m, slab) is { } bb)
-            foreach (var q in BeamBlock.Quantities(bb, g, m)) yield return q;
         // Exactly, its arcs as arcs (forum topic 97).
         var (corners, rises) = (Corners(slab), Rises(slab));
         var area = Math.Abs(ArcOutline.SignedArea(corners, rises));
         var section = Section(m, slab);
         var width = section.Max(b => b.To) - section.Min(b => b.From);
+        if (BeamBlock.Of(m, slab) is { } bb)
+            foreach (var q in BeamBlock.Quantities(bb, g, m, area * width)) yield return q;
         var net = g.Parts.Sum(p => Measure.Volume(p.Solid));
         yield return new QuantitySet("Qto_SlabBaseQuantities",
         [

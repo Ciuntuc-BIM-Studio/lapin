@@ -70,7 +70,7 @@ public static class ShellPieces
             (Vec2 H, int Edge, double T)? best = null;
             foreach (var (a, b) in lines)
             {
-                if (DistToSegment(v, a, b) > 0.02 || (b - a).Length < Eps) continue;
+                if (Polyline2.SegmentDistance(v, a, b) > 0.02 || (b - a).Length < Eps) continue;
                 var d = (b - a).Normalized();
                 foreach (var dd in new[] { d, -d })
                     if (InWedge(dd) && Ray(p, iv, dd) is { } hit && (best == null || hit.T < best.Value.T)) best = hit;
@@ -112,13 +112,8 @@ public static class ShellPieces
         return best;
     }
 
-    public static double DistToSegment(Vec2 p, Vec2 a, Vec2 b)
-    {
-        var ab = b - a;
-        var l2 = Vec2.Dot(ab, ab);
-        var t = l2 > 0 ? Math.Clamp(Vec2.Dot(p - a, ab) / l2, 0, 1) : 0;
-        return (a + ab * t - p).Length;
-    }
+    /// <summary>How far a point lies from a segment (<see cref="Polyline2.SegmentDistance"/>).</summary>
+    public static double DistToSegment(Vec2 p, Vec2 a, Vec2 b) => Polyline2.SegmentDistance(p, a, b);
 
     /// <summary>
     /// A convex piece cut in two along the line a–b when the segment runs inside it (over more than twice the tolerance): along
@@ -147,18 +142,7 @@ public static class ShellPieces
     }
 
     /// <summary>A convex polygon clipped to the side of the line through a (normal n) where sign·(p − a)·n ≥ 0.</summary>
-    static List<Vec2> Clip(IReadOnlyList<Vec2> poly, Vec2 a, Vec2 n, int sign)
-    {
-        var o = new List<Vec2>();
-        for (var i = 0; i < poly.Count; i++)
-        {
-            var (p, q) = (poly[i], poly[(i + 1) % poly.Count]);
-            var (sp, sq) = (Vec2.Dot(p - a, n) * sign, Vec2.Dot(q - a, n) * sign);
-            if (sp >= 0) o.Add(p);
-            if ((sp >= 0) != (sq >= 0) && Math.Abs(sp - sq) > 1e-15) o.Add(p + (q - p) * (sp / (sp - sq)));
-        }
-        return o;
-    }
+    static List<Vec2> Clip(IReadOnlyList<Vec2> poly, Vec2 a, Vec2 n, int sign) => Polygon2.ClipHalf(poly, p => Vec2.Dot(p - a, n) * sign);
 
     /// <summary>
     /// A convex piece less a convex hole, as convex strips round it: what lies outside each of the hole's edges in turn, its
@@ -243,7 +227,7 @@ public static class ShellPieces
     public static double Boundary(IReadOnlyList<Vec2> p, Vec2 q)
     {
         var best = double.PositiveInfinity;
-        for (var i = 0; i < p.Count; i++) best = Math.Min(best, DistToSegment(q, p[i], p[(i + 1) % p.Count]));
+        for (var i = 0; i < p.Count; i++) best = Math.Min(best, Polyline2.SegmentDistance(q, p[i], p[(i + 1) % p.Count]));
         return best;
     }
 }

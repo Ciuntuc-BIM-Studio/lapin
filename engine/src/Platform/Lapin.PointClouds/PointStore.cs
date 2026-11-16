@@ -69,9 +69,6 @@ public sealed class PointStore : IDisposable
         return (x, y, z, e);
     }
 
-    /// <summary>The spacing a node's sample keeps (its cube's edge over the grid), in the file's units.</summary>
-    public double SpacingOf(string name) => CubeOf(name).Edge / Resolution;
-
     /// <summary>A node's points as stored.</summary>
     public NodePoints Read(string name)
     {

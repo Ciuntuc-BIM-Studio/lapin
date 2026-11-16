@@ -84,7 +84,7 @@ public sealed class SiteWorksModule : ILapinModule
             };
             if (line.Closed) attrs["closed"] = true;
             if (Json.Number(a["top"]) is { } top) attrs["top"] = top;
-            var e = Place(ctx, Scaffolds.Class, "Scaffold", attrs, "SCAFFOLD", storey?.Id ?? Spatial.Storeys(ctx.Model).First().Id, Type(ctx, Scaffolds.TypeClass, null, (string?)a["typeId"]));
+            var e = Place(ctx, Scaffolds.Class, "Scaffold", attrs, "SCAFFOLD", storey?.Id ?? AnyStorey(ctx), Type(ctx, Scaffolds.TypeClass, null, (string?)a["typeId"]));
             return new JsonObject { ["id"] = e.Id, ["closed"] = line.Closed };
         });
 
@@ -142,7 +142,7 @@ public sealed class SiteWorksModule : ILapinModule
                 }
                 var o = new JsonObject { ["host"] = h.Id, ["kind"] = kind, ["exportAs"] = "IfcElementAssembly", ["resource"] = "FORMWORK" };
                 if (faces is { Count: > 0 }) o["faces"] = new JsonArray(faces.Select(x => (JsonNode)x).ToArray());
-                var storey = (kind == "upright" ? null : StoreyUnder(ctx, h)) ?? Spatial.StoreyOf(ctx.Model, h.Id)?.Id ?? Spatial.Storeys(ctx.Model).First().Id;
+                var storey = (kind == "upright" ? null : StoreyUnder(ctx, h)) ?? Spatial.StoreyOf(ctx.Model, h.Id)?.Id ?? AnyStorey(ctx);
                 var e = Place(ctx, Formwork.Class, $"Formwork · {h.Name}", o, "FORMWORK", storey, Type(ctx, Formwork.TypeClass, kind, (string?)a["typeId"]));
                 ids.Add((JsonNode)e.Id);
             }
@@ -187,10 +187,23 @@ public sealed class SiteWorksModule : ILapinModule
         });
 
         // ------------------------------------------------------------ configurators
-        r.Query("sitework.scaffoldPreview", (q, a) => Scaffolds.Preview(a["spec"] as JsonObject, Json.Number(a["length"]) ?? 10, Json.Number(a["height"]) ?? 6));
+        // A preview's sample is a configurator's: its sizes up to PreviewMax, so a mistyped length never asks for gigabytes.
+        r.Query("sitework.scaffoldPreview", (q, a) => Scaffolds.Preview(a["spec"] as JsonObject, Sample(Json.Number(a["length"]), "length", 10), Sample(Json.Number(a["height"]), "height", 6)));
         r.Query("sitework.formworkPreview", (q, a) => Formwork.Preview((string?)a["kind"] is "beam" or "upright" ? (string)a["kind"]! : "slab", a["spec"] as JsonObject,
-            Json.Number(a["thickness"]) ?? 0.2, Json.Number(a["width"]) ?? 0.3, Json.Number(a["height"]) ?? 2.8, Json.Number(a["depth"]) ?? 0.5));
+            Sample(Json.Number(a["thickness"]), "thickness", 0.2), Sample(Json.Number(a["width"]), "width", 0.3), Sample(Json.Number(a["height"]), "height", 2.8), Sample(Json.Number(a["depth"]), "depth", 0.5)));
     }
+
+    /// <summary>The largest size (m) of a configurator preview's sample.</summary>
+    public const double PreviewMax = 200;
+
+    /// <summary>A preview's size: the default when none (or none finite) is given, refused when not positive or beyond <see cref="PreviewMax"/>.</summary>
+    static double Sample(double? asked, string key, double fallback)
+    {
+        var v = asked ?? fallback;
+        return v > 0 && v <= PreviewMax ? v : throw new CommandException($"A preview's {key} is more than 0 and at most {PreviewMax:0} m.");
+    }
+
+    static string AnyStorey(ICommandContext ctx) => Spatial.Storeys(ctx.Model).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
 
     /// <summary>The storey a formwork stands on: the highest whose level is under the host's lowest face (a floor's soffit, a beam's bottom), so the plan of the storey below draws its props.</summary>
     static string? StoreyUnder(ICommandContext ctx, Entity host)

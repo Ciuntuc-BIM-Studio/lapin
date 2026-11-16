@@ -142,7 +142,7 @@ public static class UserLoads
     }
 
     /// <summary>A load's storey level (m).</summary>
-    public static double Level(IModelView m, Entity e) => Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0;
+    public static double Level(IModelView m, Entity e) => Spatial.Elevation(m, e);
 
     /// <summary>A number as a load's label writes it: two decimals at most.</summary>
     public static string Format(double v) => Math.Round(v, 2).ToString("0.##", CultureInfo.InvariantCulture);

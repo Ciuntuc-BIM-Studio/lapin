@@ -5,6 +5,7 @@
  * to another computer or an office as it is, and any project's file can be imported (its model is left out).
  */
 
+import { confirmAction, promptText } from './prompts';
 import { useEffect, useState } from 'react';
 import { Download, FilePlus2, FileUp, Pencil, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../app/store';
@@ -25,7 +26,7 @@ const KEEPS = 'A template keeps the project’s set-up: its types, materials, un
 /** A new project, the open one's unsaved changes asked about first. */
 async function startWith(run: () => Promise<void>): Promise<void> {
   const doc = useSession.getState().doc;
-  if (doc?.dirty && !window.confirm('The project has unsaved changes. Start a new one anyway?')) return;
+  if (doc?.dirty && !confirmAction('The project has unsaved changes. Start a new one anyway?')) return;
   try {
     await run();
     close();
@@ -49,7 +50,7 @@ export function SaveTemplateDialog() {
       for (const a of additions) if (added[a.id]) Object.assign(extra, await a.params());
       let id = await saveAsTemplate(name, false, extra);
       if (id === 'exists') {
-        if (!window.confirm('A template has this name on this computer. Replace it?')) { setBusy(false); return; }
+        if (!confirmAction('A template has this name on this computer. Replace it?')) { setBusy(false); return; }
         id = await saveAsTemplate(name, true, extra);
       }
       if (asDefault && id !== 'exists') setPrefs({ defaultTemplate: id });
@@ -99,7 +100,7 @@ function Row({ t, isDefault }: { t: TemplateInfo; isDefault: boolean }) {
     } catch (e) { notify(message(e)); }
   };
   const rename = async () => {
-    const name = window.prompt('The template’s new name:', t.name)?.trim();
+    const name = promptText('The template’s new name:', t.name)?.trim();
     if (!name || name === t.name) return;
     try {
       const id = await renameTemplate(t.id, name);
@@ -107,7 +108,7 @@ function Row({ t, isDefault }: { t: TemplateInfo; isDefault: boolean }) {
     } catch (e) { notify(message(e)); }
   };
   const remove = async () => {
-    if (!window.confirm(`Delete the template „${t.name}” from this computer? Projects made from it keep everything.`)) return;
+    if (!confirmAction('Delete the template „{name}” from this computer? Projects made from it keep everything.', { name: t.name })) return;
     try {
       await deleteTemplate(t.id);
       if (isDefault) setPrefs({ defaultTemplate: null });
@@ -153,7 +154,7 @@ export function ProjectTemplatesDialog() {
       }
       r = await importTemplate(file, name);
       if (r === 'exists') {
-        if (!window.confirm('A template has this name on this computer. Replace it?')) return;
+        if (!confirmAction('A template has this name on this computer. Replace it?')) return;
         r = await importTemplate(file, name, true);
       }
       notify('Template imported.');

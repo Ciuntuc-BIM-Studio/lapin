@@ -1,5 +1,5 @@
 /**
- * The 3D-only grips of walls, floors and roofs (decision 601; viewport/Grips3D.tsx drags them):
+ * The 3D-only grips of walls, floors and roofs (decision 610; viewport/Grips3D.tsx drags them):
  *
  * - a wall's top, at its axis' middle: up and down changes its top's offset when the top goes to a storey (WallTop: the
  *   storey above, or one named), else its own height (architecture.setWallTop);

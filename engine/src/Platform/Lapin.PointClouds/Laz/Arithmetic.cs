@@ -186,15 +186,6 @@ sealed class ArithmeticDecoder
         }
     }
 
-    public uint ReadBit()
-    {
-        _length >>= 1;
-        var sym = _value / _length;
-        _value -= _length * sym;
-        if (_length < MinLength) Renorm();
-        return sym;
-    }
-
     public uint ReadBits(int bits)
     {
         if (bits > 19)

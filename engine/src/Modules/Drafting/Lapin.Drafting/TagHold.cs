@@ -38,7 +38,7 @@ public static class TagHold
     /// <summary>Where an element stands: a point, a plan direction (radians), and on a path element the spot of its axis.</summary>
     public readonly record struct Frame(Vec3 P, double A, Spot? On);
 
-    static Vec2 Pt(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : default;
+    static Vec2 Pt(JsonNode? n) => Args.PointOf(n);
     static JsonArray J(Vec2 p) => new(p.X, p.Y);
 
     static bool IsPath(Entity e) => e.Class != IfcClass.Annotation && e.Attrs["start"] is JsonArray && e.Attrs["end"] is JsonArray;
@@ -106,17 +106,7 @@ public static class TagHold
     }
 
     /// <summary>An outline's area centroid (its corners' middle when it has no area).</summary>
-    static Vec2 Centroid(IReadOnlyList<Vec2> loop)
-    {
-        double a = 0, cx = 0, cy = 0;
-        for (var i = 0; i < loop.Count; i++)
-        {
-            var (p, q) = (loop[i], loop[(i + 1) % loop.Count]);
-            var cross = p.X * q.Y - q.X * p.Y;
-            a += cross; cx += (p.X + q.X) * cross; cy += (p.Y + q.Y) * cross;
-        }
-        return Math.Abs(a) < 1e-12 ? new Vec2(loop.Average(p => p.X), loop.Average(p => p.Y)) : new Vec2(cx / (3 * a), cy / (3 * a));
-    }
+    static Vec2 Centroid(IReadOnlyList<Vec2> loop) => Polygon2.Centroid(loop);
 
     /// <summary>The frame a tag's points were set by; null for a tag that has none (an older project's, its element gone).</summary>
     public static Frame? Held(Entity tag) =>
@@ -216,7 +206,7 @@ public static class TagHold
 /// </summary>
 public sealed class TagFollowers : ITransformFollowers
 {
-    static Vec2 Pt(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : default;
+    static Vec2 Pt(JsonNode? n) => Args.PointOf(n);
     static JsonArray J(Vec2 p) => new(p.X, p.Y);
 
     public object? Before(ICommandContext ctx, IReadOnlySet<string> moving, IReadOnlySet<string> selected)

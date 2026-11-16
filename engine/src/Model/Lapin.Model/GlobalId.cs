@@ -10,6 +10,19 @@ public static class GlobalId
 
     public static string New() => FromGuid(Guid.NewGuid());
 
+    /// <summary>
+    /// A stable GlobalId derived from a seed (an element's own id, a project's) and a key (what of it): the first 128 bits of
+    /// SHA-256 of "seed\nkey" in UTF-8, so a part rebuilt or regenerated keeps its id. For new code; the derivations already
+    /// written (the IFC export's <c>Step.Guid</c>, the voids' <c>OpeningVoids.DerivedId</c>) stay as they are, their ids
+    /// being in files and projects.
+    /// </summary>
+    public static string Derive(string seed, string key)
+    {
+        Span<byte> hash = stackalloc byte[32];
+        System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(seed + "\n" + key), hash);
+        return FromGuid(new Guid(hash[..16], bigEndian: true));
+    }
+
     public static string FromGuid(Guid guid)
     {
         var bytes = guid.ToByteArray(bigEndian: true);

@@ -214,6 +214,9 @@ public static partial class IfcExport
         "IfcMember", "IfcPlate", "IfcCovering", "IfcRailing", "IfcStair", "IfcRamp", "IfcChimney", IfcClass.BuildingElementProxy, "IfcTransportElement",
     ];
 
+    /// <summary>A number of working days as an IfcDuration, its part of a day in hours of a day of <paramref name="hoursPerDay"/> (the writer's).</summary>
+    internal static string IfcDuration(double days, double hoursPerDay = 8) => Writer.IfcDuration(days, hoursPerDay);
+
     sealed partial class Writer(Session s, IfcExportOptions o)
     {
         // The application that wrote it: the product (Lapin, or an edition under its own name).
@@ -606,7 +609,10 @@ public static partial class IfcExport
             var basePoint = Location.Base(m);
             sitePlace = Place(null, 0);
             var siteId = site?.Id ?? project.Id;
-            siteRef = f.Add("IFCSITE", site != null ? Gid(site.Id) : Gid(project.Id, "site"), Null, S(site?.Name ?? "Site"), Null, Null, sitePlace, Null, Null, E("ELEMENT"), Null, Null, R(basePoint.Elevation), Null, Null);
+            // RefLatitude and RefLongitude: the base point's place, when the project knows it (its latitude and longitude, or its system and survey point).
+            var latLon = GeoRef.BasePlace(m);
+            siteRef = f.Add("IFCSITE", site != null ? Gid(site.Id) : Gid(project.Id, "site"), Null, S(site?.Name ?? "Site"), Null, Null, sitePlace, Null, Null, E("ELEMENT"),
+                latLon is { } pl ? CompoundAngle(pl.Lat) : Null, latLon is { } pl2 ? CompoundAngle(pl2.Lon) : Null, R(basePoint.Elevation), Null, Null);
             refIdOf[siteRef] = siteId;
             var buildingPlace = Place(sitePlace, 0);
             var buildingId = building?.Id ?? project.Id;
@@ -631,21 +637,37 @@ public static partial class IfcExport
             MapConversion();
         }
 
-        /// <summary>The survey point ties the project's origin to eastings and northings, the base point's angle to true north; the geometry stays where it is.</summary>
+        /// <summary>
+        /// The project's tie to the map (<see cref="GeoRef.Tie"/>: the survey point, or the base point's latitude and longitude)
+        /// as IfcMapConversion from the Model context to an IfcProjectedCRS, after buildingSMART's User Guide for
+        /// Geo-referencing in IFC: the map coordinates and height of the plan's origin, the plan's X axis on the map (the
+        /// base point's angle to true north), scale 1; the system by its EPSG name with its datum, projection, zone and
+        /// unit (the metre). The geometry stays where it is. Nothing when nothing ties the project to the map.
+        /// </summary>
         void MapConversion()
         {
-            if (Location.Survey(m) is not { } sv) return;
-            var th = (Location.Base(m).NorthAngle ?? 0) * Math.PI / 180;
-            // The project's X axis in map coordinates; map(p) = (E0, N0) + (c·x − sn·y, sn·x + c·y).
-            var (c, sn) = (Math.Cos(th), -Math.Sin(th));
-            var e0 = (sv.Easting ?? 0) - (c * sv.At.X - sn * sv.At.Y);
-            var n0 = (sv.Northing ?? 0) - (sn * sv.At.X + c * sv.At.Y);
-            // The system by its EPSG name, its datum and projection when Lapin knows it; else the site's own grid.
-            var known = GeoRef.Get(Location.Crs(m));
-            var crs = known != null
-                ? f.Add("IFCPROJECTEDCRS", S(known.Id), S(known.Name), S(known.Datum), Null, S(known.Projection), Null, metre)
-                : f.Add("IFCPROJECTEDCRS", S(Location.Crs(m) ?? "Site grid"), Null, Null, Null, Null, Null, metre);
-            f.Add("IFCMAPCONVERSION", model, crs, R(e0), R(n0), R(Location.Base(m).Elevation), R(c), R(sn), Null);
+            if (GeoRef.Tie(m) is not { } tie) return;
+            var known = tie.Known;
+            var crs = f.Add("IFCPROJECTEDCRS", S(tie.Name), known != null ? S(known.Name) : Null, known != null ? S(known.Datum) : Null, Null,
+                known != null ? S(known.Projection) : Null, tie.Zone != null ? S(tie.Zone) : Null, metre);
+            // IFC 4.3 adds ScaleY and ScaleZ (unset: the same as Scale).
+            var scales = o.Ifc43 ? new[] { R(1), Null, Null } : new[] { R(1) };
+            f.Add("IFCMAPCONVERSION", new[] { model, crs, R(tie.Eastings), R(tie.Northings), R(tie.Height), R(tie.XAxisAbscissa), R(tie.XAxisOrdinate) }.Concat(scales).ToArray());
+            if (tie.Utm) Notes.Add($"The project has a latitude and longitude but no projected coordinate system: the map conversion is in its UTM zone ({tie.Name}).");
+            else if (known is { Geographic: true }) Notes.Add($"The project's coordinate system {known.Id} is not a projected one: the map conversion needs eastings and northings (Manage → Location).");
+            else if (!tie.Derived && known != null && Math.Abs(tie.Eastings) < 1 && Math.Abs(tie.Northings) < 1)
+                Notes.Add("The survey point's eastings and northings are 0: the model is placed at the origin of the coordinate system (Manage → Location).");
+        }
+
+        /// <summary>An angle in degrees as IFC's IfcCompoundPlaneAngleMeasure: degrees, minutes, seconds and millionths of a second, all of the angle's sign.</summary>
+        static string CompoundAngle(double degrees)
+        {
+            var micro = (long)Math.Round(Math.Abs(degrees) * 3600e6);
+            var (d, rest) = Math.DivRem(micro, 3600L * 1000000);
+            var (mi, rest2) = Math.DivRem(rest, 60L * 1000000);
+            var (se, mu) = Math.DivRem(rest2, 1000000L);
+            var sign = degrees < 0 ? -1 : 1;
+            return L(new[] { d, mi, se, mu }.Select(v => (sign * v).ToString(System.Globalization.CultureInfo.InvariantCulture)));
         }
 
         /// <summary>The project's grid on the lowest storey: the axes that run up the plan as U, the others as V.</summary>
@@ -724,7 +746,8 @@ public static partial class IfcExport
         void WriteElements()
         {
             var voids = s.Catalog.Get<IVoidShapes>();
-            var elements = m.Entities.Where(e => IsElement(e) && InPhase(e) && o.Exclude?.Contains(e.Id) != true).ToList();
+            // Solids kept hidden behind the layered wall made of them (forum topic 101) are not written: the wall is.
+            var elements = m.Entities.Where(e => IsElement(e) && InPhase(e) && o.Exclude?.Contains(e.Id) != true && !Superseded.Hidden(m, e)).ToList();
             // Bodies to merge or simplify are prepared a batch at a time on every core, then written in order.
             var prepare = o.Tolerance > 0 || o.FaceSet;
             const int batch = 1000;
@@ -2379,7 +2402,8 @@ public static partial class IfcExport
                 foreach (var (rel, host, v) in pendingVoids)
                     if (m.Get(v)?.Class == IfcClass.EarthworksCut && written.TryGetValue(host, out var h) && written.TryGetValue(v, out var cut))
                         f.Add("IFCRELVOIDSELEMENT", Gid(rel.Id), Null, Null, Null, h, cut);
-            foreach (var (spatial, list) in contained)
+            // A spatial element whose every element went elsewhere (into an assembly, a part): no relationship, IFC wants one or more.
+            foreach (var (spatial, list) in contained.Where(c => c.Value.Count > 0))
                 f.Add("IFCRELCONTAINEDINSPATIALSTRUCTURE", SpatialGid(refIdOf[spatial], IfcClass.RelContainedInSpatialStructure, null, refIdOf[spatial], "contains"), Null, Null, Null, L(list), spatial);
             // Rooms are parts of their storey: aggregated, as IFC has spaces.
             foreach (var (spatial, list) in spaces)
@@ -2392,13 +2416,19 @@ public static partial class IfcExport
         static string IfcDate(DateOnly d) => S(d.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
         static string IfcTime(TimeOnly t) => S(t.ToString("HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture));
 
-        /// <summary>A number of working days as an IfcDuration (ISO 8601: P5D, P0D; a negative float -P2D; a part of a day in hours).</summary>
-        internal static string IfcDuration(double days)
+        /// <summary>
+        /// A number of working days as an IfcDuration (ISO 8601: P5D, P0D; a negative float -P2D; a part of a day in the
+        /// working hours of a day of <paramref name="hoursPerDay"/>, the calendar's, as the import reads it back).
+        /// </summary>
+        internal static string IfcDuration(double days, double hoursPerDay = 8)
         {
+            if (!(hoursPerDay > 0) || !double.IsFinite(hoursPerDay)) hoursPerDay = 8;
+            if (!double.IsFinite(days)) days = 0;
             var sign = days < 0 ? "-" : "";
             days = Math.Abs(days);
             var whole = Math.Floor(days);
-            var hours = Math.Round((days - whole) * 24, 3);
+            var hours = Math.Round((days - whole) * hoursPerDay, 3);
+            if (hours >= hoursPerDay) { whole++; hours = 0; }
             var text = hours > 0 ? $"P{whole:0}DT{hours.ToString(System.Globalization.CultureInfo.InvariantCulture)}H" : $"P{whole:0}D";
             return S(sign + text);
         }
@@ -2431,13 +2461,15 @@ public static partial class IfcExport
                     }
                     f.Add("IFCRELDECLARES", Gid(ws.Id, "declares"), Null, Null, Null, projectRef, L(declared));
                     var taskRef = new Dictionary<string, string>();
+                    // A day's working hours, the calendar's (8 without one): the import reads a duration's hours by them.
+                    var hoursPerDay = ws.Calendar is { } wc && (wc.DayEnd - wc.DayStart).TotalHours is var dh && dh > 0 ? dh : 8;
                     foreach (var t in ws.Tasks)
                     {
                         string time = Null;
                         if (t.Time is { } tt)
                         {
                             string Dt(DateTime? d) => d is { } x ? IfcDateTime(x) : Null;
-                            string Dur(double? d) => d is { } x ? IfcDuration(x) : Null;
+                            string Dur(double? d) => d is { } x ? IfcDuration(x, hoursPerDay) : Null;
                             time = f.Add("IFCTASKTIME", Null, Null, Null, E("WORKTIME"), Dur(tt.DurationDays), Dt(tt.ScheduleStart), Dt(tt.ScheduleFinish),
                                 Dt(tt.ScheduleStart), Dt(tt.ScheduleFinish), Dt(tt.LateStart), Dt(tt.LateFinish), Dur(tt.FreeFloatDays), Dur(tt.TotalFloatDays),
                                 tt.IsCritical is { } crit ? (crit ? Step.True : Step.False) : Null, Dt(tt.StatusTime), Null, Dt(tt.ActualStart), Dt(tt.ActualFinish),
@@ -2460,7 +2492,7 @@ public static partial class IfcExport
                     foreach (var q in ws.Sequences)
                     {
                         if (!taskRef.TryGetValue(q.Relating, out var a) || !taskRef.TryGetValue(q.Related, out var b)) continue;
-                        var lag = f.Add("IFCLAGTIME", Null, Null, Null, Typed("IFCDURATION", IfcDuration(q.LagDays)), E("WORKTIME"));
+                        var lag = f.Add("IFCLAGTIME", Null, Null, Null, Typed("IFCDURATION", IfcDuration(q.LagDays, hoursPerDay)), E("WORKTIME"));
                         f.Add("IFCRELSEQUENCE", Gid(q.Id), Null, Null, Null, a, b, lag, E(q.Type), Null);
                     }
                     // The elements: what a task builds is its output (one IfcRelAssignsToProduct an element, every task building it

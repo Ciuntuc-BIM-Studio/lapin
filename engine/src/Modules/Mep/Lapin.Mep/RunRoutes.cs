@@ -186,7 +186,7 @@ public static partial class Runs
         return IsRun(run) ? run : throw new CommandException("Not a run.");
     }
 
-    static Vec2 PointArg(JsonNode? n, string what) => n is JsonArray p && p.Count >= 2 ? new Vec2(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0) : throw new CommandException($"Where is the {what}? [x, y]");
+    static Vec2 PointArg(JsonNode? n, string what) => Args.TryPoint(n) ?? throw new CommandException($"Where is the {what}? [x, y]");
 
     static void RegisterRouteEdits(IModuleRegistry r)
     {

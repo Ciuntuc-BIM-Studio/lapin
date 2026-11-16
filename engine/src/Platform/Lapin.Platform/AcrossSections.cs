@@ -91,7 +91,7 @@ public static class AcrossSections
             return (spec with { Span = (x0 - mA, x1 + mB), Rise = (z0 - margin, z1 + margin) }, null);
         }
         // A standing element: a horizontal cut over its base, looked at from above, its x along its rotation.
-        var baseZ = (Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0) + e.Num("baseOffset");
+        var baseZ = Spatial.Base(m, e);
         var z = baseZ + Station(m, e, view);
         var rot = e.Num("rotation") * Math.PI / 180;
         var (cx, cy) = e.Attrs["at"] is JsonArray at && at.Count >= 2 ? (Json.Number(at[0]) ?? 0, Json.Number(at[1]) ?? 0)
@@ -127,7 +127,7 @@ public static class AcrossSections
         if (a.ContainsKey("margin"))
         {
             var margin = Json.Number(a["margin"]) ?? DefaultMargin;
-            if (margin < 0 || margin > 20) throw new CommandException("The margin is between 0 and 20 m.");
+            if (!(margin >= 0 && margin <= 20)) throw new CommandException("The margin is between 0 and 20 m.");
             attrs["margin"] = margin;
         }
         foreach (var side in new[] { "marginA", "marginB" })
@@ -135,7 +135,7 @@ public static class AcrossSections
             if (!a.ContainsKey(side)) continue;
             if (Json.Number(a[side]) is { } mg)
             {
-                if (mg < 0 || mg > 20) throw new CommandException("The margin is between 0 and 20 m.");
+                if (!(mg >= 0 && mg <= 20)) throw new CommandException("The margin is between 0 and 20 m.");
                 attrs[side] = Math.Round(mg, 4);
             }
             else attrs.Remove(side);

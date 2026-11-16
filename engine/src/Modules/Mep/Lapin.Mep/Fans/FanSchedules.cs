@@ -50,7 +50,7 @@ public sealed class FanSchedule : IScheduleSource
         var rows = new List<IReadOnlyList<string>>();
         var keys = new List<string?>();
         double total = 0;
-        foreach (var fan in m.OfClass(ExhaustFans.Class).OrderBy(f => Spatial.StoreyOf(m, f.Id)?.Num("elevation") ?? 0).ThenBy(f => f.Name, StringComparer.Ordinal))
+        foreach (var fan in m.OfClass(ExhaustFans.Class).OrderBy(f => Spatial.Elevation(m, f)).ThenBy(f => f.Name, StringComparer.Ordinal))
         {
             var s = ExhaustFans.SpecOf(m, fan);
             var size = s.Kind.Key == "louvrePanel" ? $"Ø{FanRooms.N(s.Diameter * 1000)}, panel {FanRooms.N(s.FaceSize.W * 1000)} × {FanRooms.N(s.FaceSize.H * 1000)}"

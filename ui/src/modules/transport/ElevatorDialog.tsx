@@ -7,10 +7,11 @@
  * shows its tube, cabin, frame and doors instead: tube presets, and each landing's door facing its own angle.
  */
 
+import { confirmAction, promptText } from '../../shell/prompts';
 import { ColourField } from '../../shell/ColourField';
 import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Pencil, RotateCcw, Save, Scale, Trash2, X } from 'lucide-react';
-import { LengthField, NumberField } from '../../shell/cells';
+import { DescriptorField } from '../../shell/cells';
 import { PendingDialog } from '../core/PendingDialog';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
@@ -44,10 +45,7 @@ function FieldInput({ f, value, onChange }: { f: FieldDescriptor; value: unknown
   }
   if (f.kind === 'bool') return <input type="checkbox" checked={value === true} onChange={(e) => onChange(e.target.checked)} />;
   if (f.kind === 'color') return <ColourField value={typeof value === 'string' ? value : '#2b2f33'} onChange={(v) => onChange(v)} />;
-  const n = typeof value === 'number' ? value : null;
-  return f.kind === 'length'
-    ? <LengthField metres={n} min={f.min ?? undefined} max={f.max ?? undefined} onCommit={(m) => { if (m != null) onChange(m); }} />
-    : <NumberField value={n} suffix={f.kind === 'angle' ? '°' : undefined} onCommit={(v) => { if (v != null) onChange(v); }} />;
+  return <DescriptorField f={f} value={value} onChange={onChange} />;
 }
 
 /** The plan at the lowest stop: the shaft's walls with the landing door's opening, the car with its cross, the counterweight, the doors. */
@@ -127,7 +125,7 @@ export function ElevatorDialog() {
   const current = draft.style ?? (dirty ? undefined : (node.props.style as string | undefined));
   const ownStyle = own.find((s) => s.id === (draft.style ?? node.props.style));
   const saveAs = async () => {
-    const name = window.prompt(t('Name of the elevator style'), '');
+    const name = promptText(t('Name of the elevator style'), '');
     if (!name?.trim()) return;
     await execute('transport.saveStyle', { ...args(), name });
     if (!useSession.getState().error) setDraft({ attrs: {} });
@@ -168,7 +166,7 @@ export function ElevatorDialog() {
       <div className="dialog wide roof-dialog elevator-dialog">
         <header className="dialog-head">
           <span className="panel-title">Elevator configurator <span className="muted small" data-no-i18n>· {node.name}</span></span>
-          <button type="button" className="icon" onClick={() => { if (!dirty || window.confirm(t('Close without applying the changes?'))) close(); }} title="Close"><X size={15} /></button>
+          <button type="button" className="icon" onClick={() => { if (!dirty || confirmAction(t('Close without applying the changes?'))) close(); }} title="Close"><X size={15} /></button>
         </header>
         <div className="dialog-body split">
           <div className="type-list roof-styles">
@@ -181,8 +179,8 @@ export function ElevatorDialog() {
                   <span className="grow" data-no-i18n>{s.label}</span>
                   <span className="muted small" data-no-i18n>{styleAbout(s.attrs)}</span>
                 </button>
-                <button type="button" className="icon mini" title="Rename" onClick={() => { const n = window.prompt(t('Name of the elevator style'), s.label); if (n?.trim()) void execute('transport.renameStyle', { styleId: s.id, name: n }); }}><Pencil size={12} /></button>
-                <button type="button" className="icon mini" title="Delete the style (its elevators keep how they are)" onClick={() => { if (window.confirm(t('Delete this elevator style? Its elevators keep how they are.'))) void execute('transport.deleteStyle', { styleId: s.id }); }}><Trash2 size={12} /></button>
+                <button type="button" className="icon mini" title="Rename" onClick={() => { const n = promptText(t('Name of the elevator style'), s.label); if (n?.trim()) void execute('transport.renameStyle', { styleId: s.id, name: n }); }}><Pencil size={12} /></button>
+                <button type="button" className="icon mini" title="Delete the style (its elevators keep how they are)" onClick={() => { if (confirmAction(t('Delete this elevator style? Its elevators keep how they are.'))) void execute('transport.deleteStyle', { styleId: s.id }); }}><Trash2 size={12} /></button>
               </div>
             ))}
             {groupStyles(styles).map(([group, list]) => (

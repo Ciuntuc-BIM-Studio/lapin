@@ -8,6 +8,7 @@
  * instead be a symbol of one's own whose texts read the same fields (decision 552).
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
@@ -86,7 +87,7 @@ export function RoomTagDialog() {
   const move = (i: number, d: number) => { const n = [...lines]; [n[i], n[i + d]] = [n[i + d]!, n[i]!]; save(n); };
   const unused = ROOM_FIELDS.find((f) => !lines.some((l) => fieldOf(l) === f.key));
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog" role="dialog" aria-label="Room tag" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Room tag</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">

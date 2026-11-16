@@ -116,13 +116,16 @@ public static class RetainingWalls
         var stem = Enumerable.Range(0, c.Segments).Sum(i => s.Thickness * Stem(i) * net(i));
         var footing = Enumerable.Range(0, c.Segments).Sum(i => s.FootingWidth * s.FootingThickness * net(i));
         var formwork = Enumerable.Range(0, c.Segments).Sum(i => 2 * Stem(i) * net(i) + 2 * s.FootingThickness * net(i));
+        // Its concrete as its volume too, with the material's id (what a takeoff and the estimate read; audit 15.11.2026, M2).
+        var concrete = g.Parts.Sum(p => Measure.Volume(p.Solid));
+        var material = e.Str("material") is { } mid && m.Get(mid) is { Class: IfcClass.Material } ? mid : null;
         yield return new QuantitySet("Lapin_RetainingWallQuantities",
         [
             new("Length", length, "LENGTH"), new("MaxHeight", Enumerable.Range(0, c.Segments).Max(i => Stem(i) + s.FootingThickness), "LENGTH", "Height, footing included"),
-            new("ConcreteVolume", g.Parts.Sum(p => Measure.Volume(p.Solid)), "VOLUME", "Concrete"),
+            new("ConcreteVolume", concrete, "VOLUME", "Concrete"), new("GrossVolume", concrete, "VOLUME"), new("NetVolume", concrete, "VOLUME"),
             new("StemVolume", stem, "VOLUME", "Stem"), new("FootingVolume", footing, "VOLUME", "Footing"),
             new("FormworkArea", formwork, "AREA", "Formwork"), new("Joints", joints, "COUNT", "Joints"),
-        ]);
+        ], Material: material);
     }
 
     public static JsonObject Attrs(IReadOnlyList<Vec2> path, Spec s, string? material)

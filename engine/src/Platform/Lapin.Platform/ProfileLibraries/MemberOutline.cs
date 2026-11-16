@@ -20,7 +20,7 @@ public sealed record MemberOutline(IReadOnlyList<Vec2> Outer, IReadOnlyList<IRea
         var shape = new SectionShape(kind, Json.Number(o["width"]) ?? 0, Json.Number(o["depth"]) ?? 0, Json.Number(o["web"]) ?? 0, Json.Number(o["flange"]) ?? 0, Json.Number(o["lip"]) ?? 0, (string?)o["name"])
         {
             Root = Json.Number(o["r1"]), Toe = Json.Number(o["r2"]), Slope = Json.Number(o["slope"]) ?? 0, Standard = (string?)o["standard"], Family = (string?)o["family"],
-            Rings = (o["rings"] as JsonArray)?.OfType<JsonArray>().Select(r => (IReadOnlyList<Vec2>)r.OfType<JsonArray>().Where(p => p.Count >= 2).Select(p => new Vec2(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0)).ToList()).Where(r => r.Count >= 3).ToList(),
+            Rings = (o["rings"] as JsonArray)?.OfType<JsonArray>().Select(r => (IReadOnlyList<Vec2>)Args.StoredPoints(r)).Where(r => r.Count >= 3).ToList(),
         };
         if (SectionProperties.RingsOf(shape, chords: true) is not { Count: > 0 } rings) return [];
         var outsides = rings.Where(r => Polygon2.SignedArea(r) > 0).ToList();

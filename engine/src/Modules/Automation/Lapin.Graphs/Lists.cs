@@ -37,8 +37,7 @@ public static class Lists
     }
 
     /// <summary>A typed item as a number: a decimal comma or point, finite; else null.</summary>
-    public static double? Number(string s) =>
-        double.TryParse(s.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var d) && double.IsFinite(d) ? d : null;
+    public static double? Number(string s) => Lapin.Model.Numbers.Parse(s, Lapin.Model.NumberMode.Strict);
 
     /// <summary>
     /// <paramref name="list"/> sorted by its own items, or by <paramref name="by"/>'s place for place (as many as the list).

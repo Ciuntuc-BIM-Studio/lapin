@@ -116,7 +116,14 @@ public static class Halls
             if (edit.Model.RelatingOf(id, IfcClass.RelDefinesByType)?.Id != type.Id) edit.Relate(IfcClass.RelDefinesByType, type.Id, id);
             if (edit.Model.RelatingOf(id, IfcClass.RelAggregates)?.Id != hall.Id) edit.Relate(IfcClass.RelAggregates, hall.Id, id);
         }
-        foreach (var (role, e) in existing) if (!ids.ContainsKey(role) || ids[role] != e.Id) edit.Remove(e.Id);
+        // A member the hall no longer plans goes with the connections made to it on their own; the hall's own are BuildNodes'.
+        var own = Nodes(edit.Model, hall.Id).Values.Select(n => n.Id).ToHashSet();
+        foreach (var (role, e) in existing)
+            if (!ids.ContainsKey(role) || ids[role] != e.Id)
+            {
+                SteelNodes.DropWith(edit, e.Id, own);
+                edit.Remove(e.Id);
+            }
         BuildNodes(edit, storey, hall, s, plan, ids);
         Grid(edit, hall, s);
     }

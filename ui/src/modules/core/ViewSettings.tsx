@@ -14,6 +14,8 @@
  * front. Manage → View styles edits the styles themselves.
  */
 
+import { confirmAction } from '../../shell/prompts';
+import { backdropClose } from '../../shell/Dialog';
 import { setDisplay, useDisplay } from '../../app/display';
 import { Fragment, useEffect, useState } from 'react';
 import { Copy, Plus, RotateCcw, Trash2, X } from 'lucide-react';
@@ -232,7 +234,7 @@ export function ViewSettingsDialog() {
   }, []);
   const view = id === '3d' ? view3dNode(nodes) : id ? nodes.get(id) : undefined;
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog" role="dialog" aria-label="View settings" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">View settings{view ? ` · ${view.name}` : ''}</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">{view ? <ViewSettingsEditor view={view} /> : <p className="muted">…</p>}</div>
@@ -253,7 +255,7 @@ export function ViewStylesDialog() {
   const close = () => useUi.setState({ dialog: null });
   const update = (id: string, patch: Partial<ViewStyle>) => void execute('viewStyle.update', { id, ...patch });
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide" role="dialog" aria-label="View styles" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">View styles</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">
@@ -283,7 +285,7 @@ export function ViewStylesDialog() {
                   <td className="row-tools">
                     <button type="button" className="icon mini" title="Duplicate" onClick={() => void execute('viewStyle.create', { from: s.id })}><Copy size={12} /></button>
                     <button type="button" className="icon mini" title="Delete: its views take their discipline's style" disabled={styles.length < 2}
-                      onClick={() => { if (window.confirm(`Delete the view style ${s.name}? Its views take their discipline's style.`)) void execute('viewStyle.delete', { id: s.id }); }}><Trash2 size={12} /></button>
+                      onClick={() => { if (confirmAction('Delete the view style {name}? Its views take their discipline\'s style.', { name: s.name })) void execute('viewStyle.delete', { id: s.id }); }}><Trash2 size={12} /></button>
                   </td>
                 </tr>
               ))}

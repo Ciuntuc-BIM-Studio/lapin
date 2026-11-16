@@ -6,6 +6,8 @@
  * (Lapin's, or the project's own, saved here) sets them all at once.
  */
 
+import { projectOf } from '../../shell/nodeIndex';
+import { confirmAction, promptText } from '../../shell/prompts';
 import { Pencil, Save, Trash2 } from 'lucide-react';
 import { notify } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
@@ -61,7 +63,7 @@ function asFaces(spec: BaySpec): Pick<BaySpec, 'columns' | 'panels'> {
 
 export function BayFields({ spec, onChange, onGrid }: { spec: BaySpec; onChange: (patch: Partial<BaySpec>) => void; onGrid: (columns: number[]) => void }) {
   const catalog = (useSession((s) => s.info?.catalogs['architecture.bayStyles']) as unknown as Style[] | undefined) ?? [];
-  const project = useSession((s) => [...s.nodes.values()].find((n) => n.type === 'IfcProject'));
+  const project = useSession((s) => projectOf(s.nodes));
   const own = (project?.props.bayStyles as OwnStyle[] | undefined) ?? [];
   const bay = spec.bay ?? null;
   const set = (patch: Partial<Bay>) => onChange({ bay: { ...(bay ?? BAY), ...patch } });
@@ -78,7 +80,7 @@ export function BayFields({ spec, onChange, onGrid }: { spec: BaySpec; onChange:
     onChange({ width: s.width, height: s.height, sillHeight: s.sillHeight, columns: s.columns, rows: s.rows, panels: s.panels, bay: s.bay ? { ...s.bay, style: id } : null });
   };
   const save = async () => {
-    const name = window.prompt(t('Name of the bay window style'), '');
+    const name = promptText(t('Name of the bay window style'), '');
     if (!name?.trim()) return;
     const r = await execute('architecture.saveBayStyle', { name, spec: { ...spec, bay: bay ? { ...bay, style: null } : bay } }) as { styleId?: string } | null;
     if (r) notify(t('Saved as a style of the project.'));
@@ -156,8 +158,8 @@ export function BayFields({ spec, onChange, onGrid }: { spec: BaySpec; onChange:
           {own.map((s) => (
             <li key={s.id} className="row" style={{ gap: 4 }}>
               <span className="grow small" data-no-i18n>{s.label}</span>
-              <button type="button" className="icon mini" title="Rename" onClick={() => { const n = window.prompt(t('Name of the bay window style'), s.label); if (n?.trim()) void execute('architecture.renameBayStyle', { styleId: s.id, name: n }); }}><Pencil size={11} /></button>
-              <button type="button" className="icon mini" title="Delete the style (the window types made with it stay as they are)" onClick={() => { if (window.confirm(t('Delete this bay window style?'))) void execute('architecture.deleteBayStyle', { styleId: s.id }); }}><Trash2 size={11} /></button>
+              <button type="button" className="icon mini" title="Rename" onClick={() => { const n = promptText(t('Name of the bay window style'), s.label); if (n?.trim()) void execute('architecture.renameBayStyle', { styleId: s.id, name: n }); }}><Pencil size={11} /></button>
+              <button type="button" className="icon mini" title="Delete the style (the window types made with it stay as they are)" onClick={() => { if (confirmAction(t('Delete this bay window style?'))) void execute('architecture.deleteBayStyle', { styleId: s.id }); }}><Trash2 size={11} /></button>
             </li>
           ))}
         </ul>

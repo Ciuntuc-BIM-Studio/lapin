@@ -7,6 +7,7 @@
  * one step to undo (structure.previewTypes, structure.importTypes, structure.typesCsv).
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useState } from 'react';
 import { FileDown, FileUp } from 'lucide-react';
 import { notify } from '../../app/store';
@@ -73,7 +74,7 @@ export function TypeTableFiles({ kind }: { kind: 'column' | 'beam' | 'strip' | '
       <button type="button" className="btn small" data-action="structure-types-export" title="The column and beam types as a CSV the import reads back" onClick={() => void out()}><FileDown size={13} /> Export CSV</button>
       {summary && <ImportSummary r={summary} />}
       {pending && (
-        <div className="dialog-backdrop" onClick={() => setPending(null)}>
+        <div className="dialog-backdrop" onMouseDown={backdropClose(() => setPending(null))}>
           <div className="dialog wide" role="dialog" aria-label="Import structure types" data-dialog="structure-types-import" onClick={(e) => e.stopPropagation()}>
             <header className="dialog-head"><span className="panel-title">Import structure types</span></header>
             <div className="dialog-body">

@@ -179,7 +179,9 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
             var made = new JsonArray();
             var skipped = new JsonArray();
             var keep = a["keep"] is JsonValue kv && kv.TryGetValue<bool>(out var k) && k;
-            foreach (var id in Args.Ids(a))
+            var ids = Args.Ids(a);
+            if (ids.Count == 0) throw new CommandException("Select the sketched outlines to convert into members.");
+            foreach (var id in ids)
             {
                 var (member, problem) = SketchMembers.Convert(ctx, id, (string?)a["typeId"]);
                 if (member == null) { skipped.Add((JsonNode)new JsonObject { ["id"] = id, ["problem"] = problem }); continue; }

@@ -3,10 +3,18 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // Make a layered wall from solids (forum topic 101)
+  "Make a layered wall from solids": "由实体生成多层墙", "The selected solids, side by side across a wall, one per layer, become one wall of a type with those layers, with the openings that go through all of them.": "所选实体沿墙厚并排，每层一个，生成一面具有这些层的墙类型的墙，并带有贯穿所有层的洞口。", "Gaps between layers": "层间间隙", "An air layer": "空气层", "Into the thicker neighbour": "并入较厚的相邻层", "The solids": "实体", "Keep them hidden": "保留并隐藏", "Delete them": "删除", "Keep them": "保留", "The layer with studs becomes the core, a timber frame of the wood module with their section and spacing": "带立柱的层成为核心层，即木材模块的木框架，采用其截面和间距", "Timber frame layer": "木框架层", "Select the solids that make the wall.": "请选择构成墙的实体。", "No wall found in the selection: select the solids of its layers.": "所选内容中未找到墙：请选择其各层的实体。", "Made of": "组成", "The core: the wall's axis on it, the layer that joins": "核心层：墙轴线位于其上，参与连接的层", "From the solid": "来自实体", "The solid names no material: rename it": "该实体未指定材质：请重命名", "Gap between solids": "实体之间的间隙", "Pieces with air between": "中间有空气的构件", "solid(s), with": "个实体，含", "solid(s)": "个实体", "Differences over 1 mm or 0.5 %": "超过 1 mm 或 0.5 % 的差异", "Left as they are": "保持原样", "Make": "生成", "The layered wall is made.": "多层墙已生成。", "The layered walls are made.": "多层墙均已生成。", "Wall from solids": "由实体生成墙", "Select the solids that make the wall (its layers), then Wall from solids.": "请选择构成墙的实体（其各层），然后使用“由实体生成墙”。", "solid(s) it was made of, kept hidden": "个生成它的实体，已隐藏", "Show the original solids": "显示原始实体", "Made from solids": "由实体生成", "Make a layered wall…": "生成多层墙…",
+  // Dimension values placed clear of one another, a grid axis's temporary dimensions (forum topic 78)
+  "Text placement": "文字放置", "A value that does not fit between its witness lines moves just outside its segment, or above and below the line in turn, clear of the other values; as the project: Annotate → Dimension rules… says": "放不进尺寸界线之间的数值会移到其分段外侧，或依次移到尺寸线的上方和下方，避开其他数值；同项目：按“注释 → 标注规则…”的设定", "Leader beyond mm": "引线超过 mm", "A value moved further than this (mm on paper) from its place gets a leader to its segment; empty: as the project": "数值离开原位超过此距离（图纸 mm）时，加一条引线指向其分段；留空：同项目", "on": "开", "Text placement, for every dimension whose style says as the project": "文字放置，适用于样式为“同项目”的每个尺寸标注", "A value that does not fit between its witness lines moves just outside its segment, or above and below the line in turn, clear of the other values of the view; a value you dragged keeps its place": "放不进尺寸界线之间的数值会移到其分段外侧，或依次移到尺寸线的上方和下方，避开视图中的其他数值；你拖动过的数值保持原处", "Automatic text placement": "自动放置文字", "A value moved further than this from its place gets a leader to its segment": "数值离开原位超过此距离时，加一条引线指向其分段", "Leader when moved beyond (mm on paper)": "移动超过此距离时加引线（图纸 mm）", "Click to type the distance: the axis moves to match": "单击输入距离：轴线随之移动", "Click to type the angle: the axis turns about the centre to match": "单击输入角度：轴线绕中心随之旋转", "With it, the axes past the selected one move with it, as the spacing in its properties does": "勾选后，选中轴线之后的轴线随之移动，与其属性中的间距一致", "move the axes beyond too": "其后的轴线也一起移动", "Type an angle of zero or more.": "请输入零或更大的角度。",
+  // The one condition editor (audit S10)
+  "is at most": "至多为", "is at least": "至少为", "is none of": "不属于其中任何一个", "Phase demolished": "拆除阶段", "Parameter (as text)": "参数（作为文本）", "Parameter (as text)…": "参数（作为文本）…", "this model": "本模型", "Remove the group": "移除分组", "Add a group": "添加分组",
   // A stair's railings selected one by one, the dog-leg's footing (forum topics 102 and 104)
   "Stair railing": "楼梯栏杆", "Left railing": "左侧栏杆", "Right railing": "右侧栏杆", "What is set here is this side's alone; blank, as the stair's type.": "此处设置的仅对这一侧有效；留空则按楼梯类型。", "The stair has no railing on this side.": "楼梯这一侧没有栏杆。", "Put it back": "放回去", "as one climbs": "上楼方向", "Balustrade": "栏杆", "Handrail on the wall": "靠墙扶手", "Over the nosings, to the handrail's axis; blank: the type's": "从踏步前缘起，到扶手轴线；留空：按类型", "Delete railing": "删除栏杆", "Select the stair": "选择楼梯", "Click a railing in a plan or in 3D to select it on its own: its height, its kind, or Delete.": "在平面图或三维中单击栏杆即可单独选择它：它的高度、种类，或删除。", "Footing under the first flight": "第一梯段下的基础", "Footing depth": "基础深度", "The first flight's foot on a footing of its own, a strip under its first tread, flush with the first riser (exported as an IfcFooting)": "第一梯段的底部落在自己的基础上：第一踏步下的一条，与第一踢面齐平（导出为 IfcFooting）",
   // Detail callouts (forum topic 107)
   "Detail callout": "详图索引", "Round callout": "圆形详图索引", "Sketched callout": "草绘详图索引", "A detail of an area of this view: a new view cropped to it at a larger scale, marked here with its number and sheet": "此视图中某一区域的详图：一个裁剪到该区域、比例更大的新视图，在此处以其编号和图纸标注", "The detail view's scale; auto: 1:20, or the project's next standard scale under this view's": "详图视图的比例；自动：1:20，或项目中低于此视图比例的下一个标准比例", "auto scale": "自动比例", "A view that is there already (a drafting view, another detail): the callout points at it and makes none": "已存在的视图（绘图视图、另一个详图）：索引指向它，不新建视图", "a new detail view": "新建详图视图", "The callout refers to the view chosen: double-click it to open that view.": "索引指向所选视图：双击它即可打开该视图。", "The detail view is made: double-click the callout to open it.": "详图视图已创建：双击索引即可打开它。", "Drag: move the callout": "拖动：移动索引", "Drag: its radius": "拖动：其半径", "Drag: move the head": "拖动：移动索引头", "Open view": "打开视图", "The view this callout calls is gone.": "此索引所指的视图已不存在。", "The detail view the callout made": "索引创建的详图视图", "The view the callout refers to": "索引所指的视图", "Detail view": "详图视图", "Refers to": "指向", "The detail view's scale": "详图视图的比例", "Point the callout at a view that is there instead (the detail view it made stays)": "改为让索引指向已存在的视图（它创建的详图视图保留）", "Refer to": "指向视图", "Its own detail view": "它自己的详图视图", "Delete callout": "删除索引", "Its detail view": "它的详图视图", "Keep it": "保留", "Delete it too": "也删除",
+  // Shared sessions and long edits (audit 15.11.2026)
+  "The host runs another version of Lapin: update Lapin (Help → Check for updates) and join again.": "主持人使用的是另一个版本的 Lapin：请更新 Lapin（帮助 → 检查更新…）后重新加入。", "A frame from the session could not be read; the session goes on.": "无法读取会话中的一条消息；会话继续进行。", "A call to the session could not be sent.": "无法向会话发送调用。", "Still working on the last edit…": "仍在处理上一次编辑…",
   // Layer extents (forum topic 89)
   "Layer extents": "图层延伸", "Add a layer extent": "添加图层延伸", "How far the layer goes past this edge (positive) or stops short of it (negative)": "图层超出此边缘的距离（正值）或在其前停止的距离（负值）", "Whether the layer past the edge cuts the walls and floors it meets; off, it overlaps them": "超出边缘的图层是否剪切其遇到的墙和楼板；否则与之重叠", "Every layer ends at the element's edges.": "每个图层都止于构件的边缘。", "Take the extent away": "移除延伸", "Which edge of the outline, numbered from its first corner": "轮廓的哪条边，从其第一个角点起编号", "Cuts others": "剪切其他", "Layer extent": "图层延伸", "Clear layer extents": "清除图层延伸",
   // Layer extents, stage 2: edit layers, type defaults, the cut order (forum topic 89)
@@ -989,6 +997,7 @@ export const ZH: Record<string, string> = {
   'the level below': '下一标高', 'unlimited': '无限制', 'At': '位于', 'Back to the default': '恢复默认',
   'Drafting layers': '绘图图层', 'Current': '当前', 'Colour': '颜色', 'Pen (mm)': '笔（mm）', 'Locked': '已锁定', 'Add': '添加', 'New layer\'s name': '新图层名称',
   'Base point': '基点', 'Survey point': '测量点', 'Show the base and survey points in plans': '在平面图中显示基点和测量点',
+  'Latitude': '纬度', 'Longitude': '经度', 'WGS 84, in degrees; empty when unknown': 'WGS 84，单位为度；未知时留空', 'The latitude and longitude tie the project to the map at the base point': '纬度和经度在基点处将项目与地图关联',
   'Add a survey point': '添加测量点', 'Remove the survey point': '移除测量点', 'True north': '正北', 'Easting': '东坐标', 'Northing': '北坐标',
   'Wall type': '墙类型', 'New type': '新建类型', 'Save type': '保存类型', 'Create type': '创建类型', 'Delete type': '删除类型', 'Draw with it': '用它绘制',
   'Place with it': '用它放置', 'Layer': '层', 'Material': '材料', 'Core': '核心层', 'Zone': '分区', 'New door': '新建门', 'New window': '新建窗',
@@ -1544,7 +1553,7 @@ export const ZH: Record<string, string> = {
   'The sheet of this remark is no longer in the project.': '此批注所属的图纸已不在项目中。',
   'Model remarks…': '模型批注…', 'Sheet remarks…': '图纸批注…',
   // Studio as a geometry editor (decisions 196–202)
-  'In a row': '成行', 'Round a centre': '绕中心', 'Select what to array first, then Array.': '请先选择要阵列的对象，然后使用阵列。', 'Select what to array first, then Polar array.': '请先选择要阵列的对象，然后使用环形阵列。', 'Select what to move first, then Move 3D.': '请先选择要移动的对象，然后使用三维移动。',
+  'In a row': '成行', 'Round a centre': '绕中心', 'Select what to array first, then Array.': '请先选择要阵列的对象，然后使用阵列。', 'Elements are arrayed in a plan or in 3D: here only the drafted shapes, texts and symbols were arrayed.': '构件在平面图或三维中阵列：此处只阵列了绘制的图形、文字和符号。', 'Drafted shapes are arrayed in their own view (a plan, a section, an elevation or a drafting view): only the elements were arrayed.': '绘制的图形在其自身视图（平面图、剖面图、立面图或绘图视图）中阵列：只阵列了构件。', 'Dimensions and tags measure or name their elements: they were left out of the array.': '尺寸标注和标记用于测量或命名其构件：它们未被纳入阵列。', 'Select what to array first, then Polar array.': '请先选择要阵列的对象，然后使用环形阵列。', 'Select what to move first, then Move 3D.': '请先选择要移动的对象，然后使用三维移动。',
   'Pin': '固定', 'Unpin': '取消固定', 'Pinned': '已固定', 'A pinned element stays where it is: it is not moved, turned, mirrored, sent to another storey nor deleted until it is unpinned. Its other fields still change': '已固定的元素保持原位：在取消固定之前，不会被移动、旋转、镜像、移到其他楼层或删除。其他字段仍可修改', 'Pinned: unpin it to delete it': '已固定：取消固定后才能删除', 'Select what to pin first.': '请先选择要固定的对象。', 'Select what to unpin first.': '请先选择要取消固定的对象。',
   // Moving in a section or an elevation (decision 453).
   'Elements turn in a plan or in 3D: in a section or an elevation a turn would tip them over (drafted shapes turn here).': '元素在平面图或三维中旋转：在剖面或立面中旋转会使其倾覆（绘制的图形可在此旋转）。', 'In a section or an elevation, elements mirror about a vertical line (across the plane through it, square to the view).': '在剖面或立面中，元素以竖直线为镜像线（沿穿过该线并垂直于视图的平面镜像）。',
@@ -3897,6 +3906,62 @@ export const ZH: Record<string, string> = {
   "A railing along each line, arc or polyline; those meeting end to end make one.": "沿每条直线、圆弧或多段线生成一道栏杆；首尾相接的合为一道。", "One railing where they meet end to end": "首尾相接处合为一道栏杆", "Drag to bend the segment through the point": "拖动使该段弯曲通过该点",
   // Edit sketch on outlines (forum topic 97, stage 3)
   "Sketch of": "草图：", "Draw with Draft, constrain with Studio → Constraints": "用绘图绘制，用 Studio → 约束 进行约束", "The outline was changed since its sketch was finished: the sketch starts again from the outline, without its constraints.": "草图完成后轮廓已被修改：草图从当前轮廓重新开始，不含其约束。", "Draw the outline with Draft (Line, Arc, Fillet, Trim, Offset) and constrain it with Studio → Constraints, then Finish sketch.": "用绘图（直线、圆弧、圆角、修剪、偏移）绘制轮廓，用 Studio → 约束 进行约束，然后完成草图。",
+  // Prompts and confirmations through t() (UI audit)
+  "Row label": "行标签",
+  "Dimension value ({unit}){which}: the element moves to match": "尺寸值（{unit}）{which}：元素将随之移动",
+  "Lapin {version} is available (this is {current}).": "Lapin {version} 可用（当前为 {current}）。",
+  "Install it now? Lapin restarts when it is done.": "现在安装吗？完成后 Lapin 将重新启动。",
+  "Lapin update": "Lapin 更新",
+  "Install and restart": "安装并重启",
+  "The update could not be installed:": "无法安装更新：",
+  "Lapin restarts as it was.": "Lapin 将保持原样重新启动。",
+  "Save the changes to the project before updating?": "更新前要将更改保存到项目吗？",
+  "Update without saving? The changes will be lost.": "不保存就更新吗？更改将丢失。",
+  "The project has unsaved changes. Start a new one anyway?": "项目有未保存的更改。仍要新建项目吗？",
+  "A template has this name on this computer. Replace it?": "此计算机上已有同名模板。要替换吗？",
+  "The template’s new name:": "模板的新名称：",
+  "Delete the template „{name}” from this computer? Projects made from it keep everything.": "要从此计算机删除模板„{name}”吗？由它创建的项目会保留全部内容。",
+  "Uninstall {name}? What it added to your libraries is taken away; what you made with it in your projects stays.": "卸载 {name}？它添加到库中的内容将被移除；你在项目中用它创建的内容保留。",
+  "Make {length} element(s) into Studio solids? Each takes the element's place, name and IFC class, its body as it is now; what made it (a wall's type and layers, a reference's file) is not kept.": "将 {length} 个元素转换为 Studio 实体吗？每个实体取代原元素的位置、名称和 IFC 类，形体保持当前状态；其来源（墙的类型和层、引用的文件）不会保留。",
+  "Delete the files issue {number} keeps in the project file? Its record, the file names and their hashes stay.": "要删除问题 {number} 保存在项目文件中的文件吗？其记录、文件名及哈希值会保留。",
+  "Forget issue {number} ({name})? The files sent stay where they went; those kept only in the project file go with it.": "要忽略问题 {number}（{name}）吗？已发送的文件保留在原处；仅保存在项目文件中的文件将随之移除。",
+  "Delete the filter {name}?": "要删除过滤器 {name} 吗？",
+  "Delete the remark “{title}”?": "要删除备注“{title}”吗？",
+  "The folder (full path):": "文件夹（完整路径）：",
+  "Delete the view style {name}? Its views take their discipline's style.": "要删除视图样式 {name} 吗？其视图将采用所属专业的样式。",
+  "Unlink {name}? Everything it brought in goes (undo brings it back).": "取消链接 {name}？它带入的所有内容都会移除（撤销可恢复）。",
+  "Delete this classification? Its codes are taken off {n} elements and types.": "要删除此分类吗？其代码将从 {n} 个元素和类型上移除。",
+  "This symbol is placed once. Delete the symbol and its placed copy too? Undo brings it back.": "此符号放置了一次。要连同其放置的副本一起删除符号吗？撤销可恢复。",
+  "This symbol is placed {uses} times. Delete the symbol and its placed copies too? Undo brings them back.": "此符号放置了 {uses} 次。要连同其放置的副本一起删除符号吗？撤销可恢复。",
+  "Make version {number} the project as it is now? What it holds stays as an earlier revision of it.": "将版本 {number} 设为项目的当前状态吗？它所含的内容将作为其早期修订保留。",
+  "Delete version {number}? The parts only it kept go from the file.": "要删除版本 {number} 吗？仅由它保存的部分将从文件中移除。",
+  "Bring the project back to version {number}? What differs changes in one step (undo brings it back).": "要将项目恢复到版本 {number} 吗？差异部分将一步更改（撤销可恢复）。",
+  "Bring the project back to an earlier state of version {number}? What differs changes in one step (undo brings it back).": "要将项目恢复到版本 {number} 的早期状态吗？差异部分将一步更改（撤销可恢复）。",
+  "The surveyed elevation of the project's ±0.00 ({unit}):": "项目 ±0.00 的实测标高（{unit}）：",
+  "Layers with surveyed points: {layers}.\nWhich to take (comma separated; empty: all)?": "含实测点的图层：{layers}。\n要选取哪些（以逗号分隔；留空：全部）？",
+  "The ground's elevation ({unit}, ±0.00 = 0):": "地面标高（{unit}，±0.00 = 0）：",
+  "{uses} bars are of this shape: they keep their own copy of it.": "有 {uses} 根钢筋采用此形状：它们保留各自的副本。",
+  "The furniture’s new name:": "家具的新名称：",
+  "Its tags, separated by commas:": "其标签，以逗号分隔：",
+  "Delete „{name}” from your library? Projects that have it keep it.": "要从你的库中删除„{name}”吗？已使用它的项目会保留它。",
+  "Delete the colour scheme {name}?": "要删除配色方案 {name} 吗？",
+  "Save the changes to the project before closing?": "关闭前要将更改保存到项目吗？",
+  "Close without saving? The changes will be lost.": "不保存就关闭吗？更改将丢失。",
+  "Path of the .{ext} file to open:": "要打开的 .{ext} 文件路径：",
+  "Save as (full path, .{ext}):": "另存为（完整路径，.{ext}）：",
+  "Don't save": "不保存",
+  "Finish or cancel (Esc) what you are doing first, then undo or redo.": "请先完成或取消（Esc）当前操作，然后再撤销或重做。",
+  'Could not be checked': '无法检查',
+  'Place furniture': '放置家具',
+  'Select the walls, beams or strip footings whose corners to change.': '请选择要更改转角的墙、梁或条形基础。',
+  'Straight pieces, each starting where the last ended, or an arc: its start, its end, then a point it passes through': '直线段，每段从上一段结束处开始；或圆弧：起点、终点，再指定圆弧经过的一点',
+  'A path, 1,5 m wide, or a road: two 3 m lanes on a 2,5 % crown, kerbs and 1,5 m sidewalks': '宽 1.5 米的小路，或道路：两条 3 米车道、2.5% 路拱、路缘石和 1.5 米人行道',
+  'What it places: seating, beds, storage, tables, models': '放置内容：座椅、床、储物、桌子、模型',
+  'What it places: a heating, plumbing, electrical, air, gas, fuel oil or fire protection fixture, or a fitting': '放置内容：供暖、给排水、电气、空气、燃气、燃油或消防设备，或管件',
+  'Tests': '测试',
+  'Openings for MEP': '机电开洞',
+  'Kind of check': '检查类型',
+  'Place node': '放置节点',
   "Drag to move the edge · Shift-drag: offset the whole outline · Ctrl/⌘-click: add a corner": "拖动以移动边 · Shift-拖动：偏移整个轮廓 · Ctrl/⌘-单击：添加角点", "Offset outline…": "偏移轮廓…", "Offset outline (+ outward, − inward)": "偏移轮廓（+ 向外，− 向内）", "The outline could not be offset.": "无法偏移该轮廓。", "Drag across: the curved wall's radius about its centre": "横向拖动：弧形墙绕其圆心的半径", "Drag across: move the wall sideways (its joined walls follow)": "横向拖动：侧向移动墙体（相连的墙体随之移动）", "Drag up or down: the top's offset from the storey it goes to": "上下拖动：顶部相对其所到楼层的偏移", "Drag up or down: the wall's height": "上下拖动：墙体高度", "Drag up or down: the floor's offset from its storey (its thickness is its type's)": "上下拖动：楼板相对其楼层的偏移（厚度由其类型决定）", "Drag up or down: the roof's wall plate over the storey's top": "上下拖动：屋顶檐口垫木高于楼层顶部的高度",
 };
 

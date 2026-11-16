@@ -1,5 +1,6 @@
 /** The project's location: the base point (its elevation, the angle to true north), the survey point (its site coordinates) and the coordinate system they are in, shown in plans or not. */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
@@ -8,7 +9,7 @@ import { LengthField, NumberField } from '../../shell/cells';
 import { PendingDialog } from './PendingDialog';
 
 type P = Record<string, number>;
-interface Loc { base?: P; survey?: P; show?: boolean; crs?: string }
+interface Loc { base?: P; survey?: P; tie?: P; show?: boolean; crs?: string }
 interface CrsInfo { id: string; name: string }
 
 export function LocationDialog() {
@@ -33,8 +34,14 @@ export function LocationDialog() {
       </label>
     );
   };
+  // The base point's latitude and longitude (WGS 84, degrees): empty when unknown; with a coordinate system and no survey point they tie the project to the map.
+  const place = (key: 'latitude' | 'longitude', label: string) => (
+    <label key={key} className="row"><span className="muted small loc-label">{label}</span>
+      <NumberField value={l.base?.[key] ?? null} suffix="°" blank title="WGS 84, in degrees; empty when unknown" onCommit={(v) => void execute('project.location', { base: { [key]: v } })} />
+    </label>
+  );
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog" role="dialog" aria-label="Location" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Location</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body loc">
@@ -48,6 +55,8 @@ export function LocationDialog() {
           </label>
           <h4>Base point</h4>
           {field('base', 'x', 'x')}{field('base', 'y', 'y')}{field('base', 'elevation', '±0.00 at')}{field('base', 'northAngle', 'True north', 'angle')}
+          {place('latitude', 'Latitude')}{place('longitude', 'Longitude')}
+          {!l.survey && l.tie && <p className="muted small"><span>The latitude and longitude tie the project to the map at the base point</span> {`E ${(l.tie.easting ?? 0).toFixed(3)} N ${(l.tie.northing ?? 0).toFixed(3)}`}</p>}
           <h4>Survey point</h4>
           {l.survey ? <>
             {field('survey', 'x', 'x')}{field('survey', 'y', 'y')}{field('survey', 'easting', 'Easting', 'map')}{field('survey', 'northing', 'Northing', 'map')}{field('survey', 'elevation', 'Elevation')}

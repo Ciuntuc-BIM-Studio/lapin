@@ -438,7 +438,7 @@ public sealed partial class StudioModule
             case "array":
             {
                 var count = Json.Number(f["count"]) ?? 0;
-                if (count < 2 || count > 500) throw new CommandException("An array has 2 to 500 copies.");
+                if (!(count >= 2 && count <= 500)) throw new CommandException("An array has 2 to 500 copies.");
                 f["count"] = Math.Round(count);
                 if ((string?)f["kind"] == "polar")
                 {

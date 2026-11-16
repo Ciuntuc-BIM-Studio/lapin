@@ -5,6 +5,7 @@
  * beyond it).
  */
 
+import { create } from 'zustand';
 import type { GripStep, Vec2 } from '../platform/module';
 
 export interface GridAxis { tag: string; a: Vec2; b: Vec2 }
@@ -58,3 +59,9 @@ export function setSpacing(gridId: string, axes: GridAxis[], tag: string, spacin
     args: { gridId, tag: x.tag, x1: x.a.x + n.x * by, y1: x.a.y + n.y * by, x2: x.b.x + n.x * by, y2: x.b.y + n.y * by },
   }));
 }
+
+/**
+ * Whether the axes beyond move with one whose spacing is typed: shared by the Properties panel's spacing field and a
+ * selected axis's temporary dimensions in plan (forum #78), so both say and do the same; on until unticked.
+ */
+export const useAxesBeyond = create<{ beyond: boolean; set: (beyond: boolean) => void }>((setState) => ({ beyond: true, set: (beyond) => setState({ beyond }) }));

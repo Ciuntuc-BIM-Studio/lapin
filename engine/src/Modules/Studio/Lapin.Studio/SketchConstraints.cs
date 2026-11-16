@@ -116,7 +116,7 @@ public static partial class SketchConstraints
         (Arc a, "end") => a.At(a.End),
         (Arc a, "center") => a.C,
         (Circle c, "center") => c.C,
-        (Polyline p, _) when part.StartsWith("vertex:", StringComparison.Ordinal) && int.TryParse(part[7..], out var i) && i < p.Pts.Count => p.Pts[i],
+        (Polyline p, _) when part.StartsWith("vertex:", StringComparison.Ordinal) && int.TryParse(part[7..], out var i) && i >= 0 && i < p.Pts.Count => p.Pts[i],
         _ => null,
     };
 
@@ -124,7 +124,7 @@ public static partial class SketchConstraints
     public static (Vec2 A, Vec2 B)? SegmentOf(Shape s, string part) => (s, part) switch
     {
         (Line l, "whole") => (l.A, l.B),
-        (Polyline p, _) when part.StartsWith("edge:", StringComparison.Ordinal) && int.TryParse(part[5..], out var i) && i < (p.Closed ? p.Pts.Count : p.Pts.Count - 1)
+        (Polyline p, _) when part.StartsWith("edge:", StringComparison.Ordinal) && int.TryParse(part[5..], out var i) && i >= 0 && i < (p.Closed ? p.Pts.Count : p.Pts.Count - 1)
             => (p.Pts[i], p.Pts[(i + 1) % p.Pts.Count]),
         _ => null,
     };
@@ -479,6 +479,12 @@ public static partial class SketchConstraints
         public Dictionary<string, string> Solved { get; } = [];
         /// <summary>A sketch a delete left unsolvable: how it stands, told in the result.</summary>
         public JsonObject? Sketch { get; set; }
+        /// <summary>
+        /// How much of the above a result has told already: the steps of an edit.batch share its context, so each step tells
+        /// only what came since the last one (audit M5); what was solved stays the whole command's.
+        /// </summary>
+        public int DroppedTold, AddedTold, CopiedTold;
+        public JsonObject? SketchTold;
     }
 
     static readonly ConditionalWeakTable<ICommandContext, Outcome> Outcomes = new();
@@ -486,19 +492,35 @@ public static partial class SketchConstraints
     internal static Outcome Report(ICommandContext ctx) => Outcomes.GetValue(ctx, _ => new Outcome());
 
     /// <summary>The command's result with what happened to constraints: <c>dropped: [{id, kind, reason}]</c>, <c>constraintsCopied</c>, <c>constraintsAdded</c>.</summary>
+    /// <remarks>
+    /// Only what was not told yet: in an edit.batch each step tells its own, and the follow-up after the batch (whose result
+    /// is the list of the steps' results) tells what is left on the last step's result (audit M5).
+    /// </remarks>
     internal static JsonNode? Attach(ICommandContext ctx, JsonNode? result)
     {
-        if (!Outcomes.TryGetValue(ctx, out var o) || o.Dropped.Count == 0 && o.Added.Count == 0 && o.Copied == 0 && o.Sketch == null) return result;
-        if (result is not JsonObject r)
+        if (!Outcomes.TryGetValue(ctx, out var o)) return result;
+        var dropped = o.Dropped.Skip(Math.Min(o.DroppedTold, o.Dropped.Count)).ToList();
+        var added = o.Added.Skip(Math.Min(o.AddedTold, o.Added.Count)).ToList();
+        var copied = Math.Max(0, o.Copied - o.CopiedTold);
+        var sketch = o.Sketch != null && !ReferenceEquals(o.Sketch, o.SketchTold) ? o.Sketch : null;
+        if (dropped.Count == 0 && added.Count == 0 && copied == 0 && sketch == null) return result;
+        JsonObject r;
+        if (result is JsonObject one) r = one;
+        else if (result == null) r = new JsonObject();
+        else if (result is JsonArray steps && steps.Count > 0 && steps[^1] is null or JsonObject)
         {
-            if (result != null) return result;
-            r = new JsonObject();
+            if (steps[^1] is not JsonObject last) steps[^1] = last = new JsonObject();
+            r = last;
         }
-        if (o.Dropped.Count > 0) r["dropped"] = new JsonArray(o.Dropped.Select(d => (JsonNode)d.DeepClone()).ToArray());
-        if (o.Copied > 0) r["constraintsCopied"] = o.Copied;
-        if (o.Added.Count > 0) r["constraintsAdded"] = new JsonArray(o.Added.Select(x => (JsonNode)x).ToArray());
-        if (o.Sketch != null) r["sketch"] = o.Sketch.DeepClone();
-        return r;
+        else return result;
+        // Added to what the same result told already (a command's own report, then its follow-up's).
+        JsonArray Into(string key) => r[key] as JsonArray ?? (JsonArray)(r[key] = new JsonArray());
+        if (dropped.Count > 0) { var into = Into("dropped"); foreach (var d in dropped) into.Add((JsonNode)d.DeepClone()); }
+        if (copied > 0) r["constraintsCopied"] = (Json.Number(r["constraintsCopied"]) is { } before ? (int)before : 0) + copied;
+        if (added.Count > 0) { var into = Into("constraintsAdded"); foreach (var x in added) into.Add((JsonNode)x); }
+        if (sketch != null) r["sketch"] = sketch.DeepClone();
+        (o.DroppedTold, o.AddedTold, o.CopiedTold, o.SketchTold) = (o.Dropped.Count, o.Added.Count, o.Copied, o.Sketch);
+        return result is JsonArray ? result : r;
     }
 
     // ------------------------------------------------------------ commands and queries

@@ -5,10 +5,12 @@
  * A style picked fills every field in; any field may then be changed by hand. Apply is one engine command, one undo step.
  */
 
+import { projectOf } from '../../shell/nodeIndex';
+import { confirmAction, promptText } from '../../shell/prompts';
 import { ColourField } from '../../shell/ColourField';
 import { useEffect, useMemo, useState } from 'react';
 import { lengthText } from '../../engine/unitsStore';
-import { LengthField, NumberField } from '../../shell/cells';
+import { DescriptorField, LengthField, NumberField } from '../../shell/cells';
 import { PendingDialog } from '../core/PendingDialog';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { mergeEdge, type Edge } from './roofEdges';
@@ -82,10 +84,7 @@ function FieldInput({ f, value, onChange }: { f: FieldDescriptor; value: unknown
   }
   if (f.kind === 'material') return <MaterialPicker value={typeof value === 'string' ? value : ''} placeholder="none" allowEmpty onChange={(name) => onChange(name)} />;
   if (f.kind === 'bool') return <input type="checkbox" checked={value === true} onChange={(e) => onChange(e.target.checked)} />;
-  const n = typeof value === 'number' ? value : null;
-  return f.kind === 'length'
-    ? <LengthField metres={n} onCommit={(m) => { if (m != null) onChange(m); }} />
-    : <NumberField value={n} suffix={f.kind === 'angle' ? '°' : undefined} onCommit={(v) => { if (v != null) onChange(v); }} />;
+  return <DescriptorField f={f} value={value} onChange={onChange} />;
 }
 
 /** The plan: the wall line with its edges (thick: eave, dashed: gable; click to go auto → eave → gable), the eaves, ridges, hips and valleys. */
@@ -154,7 +153,7 @@ export function RoofDialog() {
   const info = useSession((s) => s.info);
   const error = useSession((s) => s.error);
   const styles = (info?.catalogs['architecture.roofStyles'] as unknown as Style[] | undefined) ?? [];
-  const project = useSession((s) => [...s.nodes.values()].find((n) => n.type === 'IfcProject'));
+  const project = useSession((s) => projectOf(s.nodes));
   const own = (project?.props.roofStyles as OwnStyle[] | undefined) ?? [];
   const coverings = (info?.catalogs['architecture.roofCoverings'] as unknown as Covering[] | undefined) ?? [];
   const fields = useMemo(() => new Map((info?.nodeTypes.find((c) => c.type === 'IfcRoof')?.fields ?? []).map((f) => [f.key, f])), [info]);
@@ -191,7 +190,7 @@ export function RoofDialog() {
   const draftArgs = () => ({ id: node.id, ...(draft.style ? { style: draft.style } : {}), attrs: draft.attrs, ...(draft.edges ? { edges: draft.edges } : {}) });
   // Saved as the project's own style: a new one under a name, or the one it has saved again (its roofs follow).
   const saveAs = async () => {
-    const name = window.prompt(t('Name of the roof style'), node.props.style && own.some((s) => s.id === node.props.style) ? '' : `${node.name}`);
+    const name = promptText(t('Name of the roof style'), node.props.style && own.some((s) => s.id === node.props.style) ? '' : `${node.name}`);
     if (!name?.trim()) return;
     await execute('architecture.saveRoofStyle', { ...draftArgs(), name });
     if (!useSession.getState().error) setDraft({ attrs: {} });
@@ -221,7 +220,7 @@ export function RoofDialog() {
       <div className="dialog wide roof-dialog">
         <header className="dialog-head">
           <span className="panel-title">Roof configurator <span className="muted small">· {node.name}</span></span>
-          <button type="button" className="icon" onClick={() => { if (!dirty || window.confirm('Close without applying the changes?')) close(); }} title="Close"><X size={15} /></button>
+          <button type="button" className="icon" onClick={() => { if (!dirty || confirmAction('Close without applying the changes?')) close(); }} title="Close"><X size={15} /></button>
         </header>
         <div className="dialog-body split">
           <div className="type-list roof-styles">
@@ -234,8 +233,8 @@ export function RoofDialog() {
                   <span className="grow">{s.label}</span>
                   <span className="muted small">{t(s.shape)}{s.shape === 'barrel' ? '' : ` ${s.pitch}°`}{s.structure && s.structure !== 'rafters' ? ` · ${s.structure}` : ''}</span>
                 </button>
-                <button type="button" className="icon mini" title="Rename" onClick={() => { const n = window.prompt(t('Name of the roof style'), s.label); if (n?.trim()) void execute('architecture.renameRoofStyle', { styleId: s.id, name: n }); }}><Pencil size={12} /></button>
-                <button type="button" className="icon mini" title="Delete the style (its roofs keep how they look)" onClick={() => { if (window.confirm(t('Delete this roof style? Its roofs keep how they look.'))) void execute('architecture.deleteRoofStyle', { styleId: s.id }); }}><Trash2 size={12} /></button>
+                <button type="button" className="icon mini" title="Rename" onClick={() => { const n = promptText(t('Name of the roof style'), s.label); if (n?.trim()) void execute('architecture.renameRoofStyle', { styleId: s.id, name: n }); }}><Pencil size={12} /></button>
+                <button type="button" className="icon mini" title="Delete the style (its roofs keep how they look)" onClick={() => { if (confirmAction(t('Delete this roof style? Its roofs keep how they look.'))) void execute('architecture.deleteRoofStyle', { styleId: s.id }); }}><Trash2 size={12} /></button>
               </div>
             ))}
             {families.map((fam) => (

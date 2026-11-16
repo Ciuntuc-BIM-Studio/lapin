@@ -14,6 +14,7 @@
  * values writes them (graphs.set, one undo step).
  */
 
+import { setCapped } from '../../shell/keptStorage';
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 import { Flame, PencilRuler, RotateCcw, Save, Workflow, X } from 'lucide-react';
 import { activeStorey, execute, query, useSession } from '../../engine/session';
@@ -36,7 +37,7 @@ function readAt(id: string): { x?: number; y?: number } {
   try { const v = JSON.parse(localStorage.getItem(memoryKey(id)) ?? 'null'); return v && typeof v === 'object' ? v : {}; } catch { return {}; }
 }
 function keepAt(id: string, at: { x: number; y: number }): void {
-  try { localStorage.setItem(memoryKey(id), JSON.stringify(at)); } catch { /* this session only */ }
+  try { setCapped('lapin.graphPalette', memoryKey(id), JSON.stringify(at), 100); } catch { /* this session only */ }
 }
 
 const win = () => ({ w: window.innerWidth, h: window.innerHeight });

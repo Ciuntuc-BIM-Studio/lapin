@@ -70,6 +70,8 @@ A door, a window or a wall opening moves and copies along its wall: only the par
 
 A grid axis moves, copies, rotates and mirrors on its own, or together with other elements. A copy is a new axis of the same grid, named after the last axis that runs its way: with axes 1, 2 and 3, a copy of any of them is 4.
 
+**Array** (**Draft → Modify → Array**, or `ARRAY`) copies drafted shapes, texts and symbols in a row, in a grid, round a centre or along a path, and keeps them an arrangement you change in their properties: see [Arrays of drafting](groups.md#arrays-of-drafting).
+
 ### In sections and elevations
 
 **Move** (<kbd>M</kbd>), **Copy** (<kbd>CO</kbd>) and dragging a selected element work in a section or an elevation too, in the view's plane. Along the view, the element moves in plan along the section's line; up or down, it rises or drops by its offset from its level (a wall's or column's base offset, a beam's top offset, a floor's offset). While you drag, its **Offset from level** in the properties follows. A door or a window still slides along its wall, and lines drafted on the view move in the view. **Mirror** there takes a vertical line and mirrors the elements across the plane through it, square to the view. Elements do not **Rotate** in a section or an elevation, as that would tip them over: turn them in a plan or in 3D. Drafted lines rotate and mirror any way. A pinned element stays where it is.
@@ -141,6 +143,8 @@ Annotations on a plan (dimensions, texts, drafted lines, tags) can go to another
 
 **Dimensions on a line.** A dimension point clicked on a grid axis or on a wall's centre line holds on the line, not on a point of it. Drag the axis's end along itself to make its head fit the view, or make the wall longer or shorter: the dimension keeps measuring where you put it and its line does not turn. If the axis or the wall moves across, the point goes with it, at the same place along. A dimension on a wall's face likewise stays where it measured when the wall is stretched along itself. Dimensions made before attach to a grid axis the same way; one on a wall's centre line is attached anew by clicking its point again.
 
+**What a dimension follows.** A dimension's point clicked on an element holds on it, and follows it when the element is moved, turned or edited: a wall's face or centre line, a door's, window's or opening's jamb, a grid axis, a column, and what the plan does not cut: a stair's outline (its sides, its flights' and its landing's edges), a beam seen overhead, a floor's or a ceiling's edge, a piece of furniture, a railing, a Studio solid seen below. The point is kept in the element's own frame, so a stair moved or turned takes the dimensions on its corners with it, and made wider, the dimension on its side follows the side. A point on nothing, or on a drafted line, stays where it was clicked. Dimensions made before on a turned stair, column or piece of furniture follow it from the moment the project opens.
+
 ### Exterior dimensions and dimension rules
 
 **Annotate → Exterior dimensions** (<kbd>ED</kbd>, or type **EXTDIM**) dimensions the outside of the building on a plan at once. Each straight exterior facade gets parallel dimension strings outside it, one beside the other, in the order set by the dimension rules, starting at the wall. The points hold on the walls, like any dimension's.
@@ -166,6 +170,10 @@ Room dimensions have only **Details** (the side, with the openings' jambs) and *
 - **Measure to** (exterior only) says what corners and partitions are measured to: the walls' faces, their core's faces or their axes.
 - **Skip openings narrower than** leaves out the openings under that width, in metres.
 - **Reset to defaults** brings the dialog back to the built-in rules; nothing changes until **OK**, which is one undo step.
+
+**Automatic text placement.** Where segments are short, a 10 cm reveal next to a 2.40 m window, the value does not fit between its witness lines. Lapin moves it for you: just outside its segment on the free side (the end of the string, or a neighbour wide enough to keep its own value), and where both sides are taken, a row above the line or under it, in turn, so close values are staggered. A value never goes over another value or across another dimension line of the view, so the strings of an exterior dimension, or of a room's, keep clear of one another. Moved further than a set distance, it gets a thin leader back to its segment. Values that fit stay exactly where they always were, and a value you dragged by its grip keeps its own place (**Texts back on the line** hands it back to the automatic placement). The setting is under **Text placement** at the bottom of **Annotate → Dimension rules…**: **Automatic text placement** (on in every project, new or old) and **Leader when moved beyond**, in millimetres on the paper (5 by default). Each dimension style can choose for itself in **Manage → Drafting standards → Dimensions**: **Text placement** *as the project*, *on* or *off*, and **Leader beyond mm** (empty: as the project). The engine places the values, so the screen, sheets, the PDF and the DXF show them alike; they count in paper millimetres, so the same string at 1:50 needs fewer moves than at 1:100.
+
+![An exterior dimension whose short segments' values stand outside them and staggered](shots/dimension-text-placement.webp)
 
 ### Tags
 
@@ -225,7 +233,13 @@ Like any tag, a build-up tag follows its element, and sheets and PDFs print it a
 
 ![The Axis grid dialog](shots/grid-dialog.webp)
 
-Click an axis to select it. Its properties show its **Start** and **End**, **Length**, **Angle**, and its spacing from the parallel axis before it (↔). Type a new spacing and the axis moves; the axes beyond it move too, unless you untick **the axes beyond move too**. **Bubbles** chooses which ends carry a bubble. **Axis styles…** opens **Drafting standards → Grid axes**, where the bubble, its size, the line type and the first label are set. Select the whole grid to list its axes and their spacings. **Line up the axes** makes the parallel axes start and end on the same lines, taking the axis selected as the reference: with several axes selected, only those line up with it; with one, all the grid's axes that run parallel to it.
+Click an axis to select it. Its properties show its **Start** and **End**, **Length**, **Angle**, and its spacing from the parallel axis before it (↔). Type a new spacing and the axis moves; the axes beyond it move too, unless you untick **the axes beyond move too**. **Bubbles** chooses which ends carry a bubble. **Axis styles…** opens **Drafting standards → Grid axes**, where the bubble, its size, the line type and the first label are set. Select the whole grid to list its axes and their spacings.
+
+**Temporary dimensions.** A selected axis shows, in the plan, its distances to the parallel axes on either side, as a door's or a window's temporary dimensions do. Click a value and type a new distance (in the project's units; sums like `3000+150` too), then **Enter**: the selected axis moves so the dimension reads it, the other axis stays, and dimensions held on the axes follow, in one undo step; **Esc** leaves it as it was. With **move the axes beyond too** ticked, beside the dimensions (the same tick as in its properties), the axes past it, on the far side from the axis you measured to, move with it, so their spacings stay. The padlock makes the distance a dimension of the plan, held on both axes. An axis of a radial grid, whose axes start from one centre, shows the angles to its neighbours instead; type an angle in degrees and the axis turns about the centre.
+
+![A selected axis's temporary dimensions to its neighbours](shots/grid-temp-dimensions.webp)
+
+**Line up the axes** makes the parallel axes start and end on the same lines, taking the axis selected as the reference: with several axes selected, only those line up with it; with one, all the grid's axes that run parallel to it.
 
 **Renumber axes…** (in **Annotate**, beside **Axis grid…**, in an axis's or the grid's properties, or **RENUMBER…** in the axis tool's bar) labels the axes again in order across them, however they were drawn: the axes running up the plan from left to right, or those running across it from bottom to top, or only the axes selected (Ctrl/⌘-click several). Choose **numbers** or **letters** (**leave out I and O** is ticked, so H is followed by J), the **Start** (1, 01, 101, A…) and an optional **Prefix** (S1, S2…). An axis whose new label another axis keeps is refused, so start after it or give a prefix. Dimensions on the axes keep measuring them, under their new labels, and so does an axis renamed by hand in its properties. It is one undo step.
 

@@ -53,9 +53,6 @@ public static class FieldAliases
         return t.TryGetValue(k, out var a) && _busy?.Contains(k) != true ? a : null;
     }
 
-    /// <summary>Whether <paramref name="key"/> names an alias of the project's.</summary>
-    public static bool IsAlias(IModelView m, string key) => Table(m).ContainsKey(TagText.Squash(key));
-
     /// <summary>
     /// The alias's value: the first of its sources <paramref name="read"/> gives and <paramref name="has"/> takes; false when
     /// <paramref name="key"/> is no alias (or the one being read), <paramref name="value"/> then the default.

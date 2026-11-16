@@ -52,7 +52,7 @@ public class MemberProfileShapeTests
         Assert.Equal(0.05, layout.Pieces.First(p => p.Role == "mullion").A0 + layout.Pieces.First(p => p.Role == "mullion").A1, 9);
         // An interior mullion on its grid line: its area × its height, its chamber open up it.
         var mullion = Part(f, id, "mullion:1").Solid;
-        Assert.Equal(AreaOf(Alu()) * 3, Measure.Volume(mullion), 6);
+        Assert.Equal(AreaOf(Alu()) * 3, Measure.Volume(mullion), 1e-12);
         var (a, b) = Measure.Bounds(mullion)!.Value;
         Assert.Equal(0.05, b.X - a.X, 6);
         Assert.Equal(0.1, b.Y - a.Y, 6);
@@ -64,7 +64,7 @@ public class MemberProfileShapeTests
         // A transom between two mullions, its x up: its section across the bay, butted at their faces.
         var transom = f.Session.Geometry(id)!.Parts.First(p => p.Key!.StartsWith("transom:0:1", StringComparison.Ordinal)).Solid;
         var run = 1.5 - 0.05 - 0.025; // the edge mullion's whole width, the next's half
-        Assert.Equal(AreaOf(Alu()) * run, Measure.Volume(transom), 6);
+        Assert.Equal(AreaOf(Alu()) * run, Measure.Volume(transom), 1e-12);
         var (t0, t1) = Measure.Bounds(transom)!.Value;
         Assert.Equal(0.05, t1.Z - t0.Z, 6);
         Assert.Equal(0.1, t1.Y - t0.Y, 6);

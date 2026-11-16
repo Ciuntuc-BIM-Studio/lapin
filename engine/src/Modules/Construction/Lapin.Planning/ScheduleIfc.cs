@@ -26,9 +26,9 @@ public sealed class ScheduleIfc : IIfcProcesses
         if (p.Schedule == null) yield break;
         var links = p.Rows.Any(t => t.Links) ? TaskElements.Resolve(query, p) : null;
         if (links != null) PlanningModule.ApplyProgress(query.Model, query.Quantities, p, links);
-        CpmResult r;
-        try { r = Cpm.Solve(p); }
-        catch (CommandException) { r = new CpmResult(new Dictionary<string, TaskTimes>(), p.Start, new HashSet<string>()); }
+        // Links looping (from a file) or anything else the critical path cannot work out: the tasks go without their times.
+        var (solved, problem) = PlanningModule.Solve(p);
+        var r = problem == null ? solved : new CpmResult(new Dictionary<string, TaskTimes>(), p.Start, new HashSet<string>());
         DateTime? status = p.DataDate is { } sdd ? sdd.ToDateTime(TimeOnly.ParseExact(p.Calendar.DayStart, "HH:mm", CultureInfo.InvariantCulture)).AddHours(p.Calendar.Hours) : null;
         var cal = p.Calendar;
         var dayStart = TimeOnly.ParseExact(cal.DayStart, "HH:mm", CultureInfo.InvariantCulture);

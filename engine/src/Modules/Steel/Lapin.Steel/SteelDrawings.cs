@@ -55,7 +55,7 @@ public static class SteelDrawings
         var hall = HallFor(ctx.Model, id);
         var s = Halls.SpecOf(hall);
         var i = frame ?? (id is { } mid && ctx.Model.Get(mid)?.Str(Halls.RoleKey) is { } role && Halls.FrameOf(role) is { } of ? of : s.Bays.Count >= 2 ? 1 : 0);
-        if (i < 0 || i > s.Bays.Count) throw new CommandException($"The hall has frames 1 to {s.Bays.Count + 1}.");
+        if (!(i >= 0 && i <= s.Bays.Count)) throw new CommandException($"The hall has frames 1 to {s.Bays.Count + 1}.");
         if (ctx.Model.OfClass(Views.Class).FirstOrDefault(v => v.Str(FrameKey) == hall.Id && (int)v.Num(FrameIndexKey) == i) is { } had) return had.Id;
         var y = s.Stations[i];
         // Its line a little before the frame, looking at it along the hall (a section looks to the left of its line).
@@ -126,7 +126,7 @@ public static class SteelDrawings
         return o;
     }
 
-    static string Mm(double m) => Math.Round(m * 1000).ToString(CultureInfo.InvariantCulture);
+    static string Mm(double m) => Lapin.Model.Numbers.Mm(m);
 
     /// <summary>
     /// An anchor plan's annotations: each anchor a circle with its cross; each base its mark and two short chains, across and

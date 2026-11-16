@@ -8,7 +8,7 @@
  *   a shared grip, picks which one that is (each, then all), named in the hint.
  * - Ctrl/⌘-click on an edge's middle inserts a vertex; on a vertex, removes it.
  * - A grip of a thing of its own (a roof window on its roof): a right-click offers to remove it, and Delete over it does.
- * - Shift-drag on an outline's edge middle offsets the whole outline, every edge, live (decision 600; outlineOffset.ts):
+ * - Shift-drag on an outline's edge middle offsets the whole outline, every edge, live (decision 609; outlineOffset.ts):
  *   the distance out along the edge's normal, typed too; the engine's offset drawn as it would be, or why it cannot be.
  *
  * Plans show the grips of elements on their storey and of shapes drafted on
@@ -87,7 +87,7 @@ export interface GripEditorOptions {
 
 /**
  * A grip being dragged; `copy`: a move grip dragged with Ctrl/⌘, which leaves the element and drops a copy; `offset`: an
- * edge middle Shift-dragged, the whole outlines of its members offset (decision 600).
+ * edge middle Shift-dragged, the whole outlines of its members offset (decision 609).
  */
 interface Drag { group: GripGroup; members: Grip[]; at: Vec2; moved: boolean; copy?: boolean; insert?: boolean; offset?: OutlineOffsetGrip[] }
 
@@ -218,7 +218,7 @@ export function useGripEditor(o: GripEditorOptions) {
     if (who[0].kind === 'flip') { void runSteps([who[0].click?.()]); return true; }
     const copy = (e.ctrlKey || e.metaKey) && who[0].kind === 'move';
     const first = who[0];
-    // Shift on an edge's middle: the whole outline offset, every edge (decision 600).
+    // Shift on an edge's middle: the whole outline offset, every edge (decision 609).
     if (e.shiftKey && !e.ctrlKey && !e.metaKey && first.offsetAll) {
       const members = who.filter((m) => m.offsetAll);
       const grips = members.map((m) => m.offsetAll!);

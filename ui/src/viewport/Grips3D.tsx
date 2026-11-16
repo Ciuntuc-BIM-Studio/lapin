@@ -9,7 +9,7 @@
  * grip's start, a face, else its plane; the inference is marked and named at the
  * cursor, and a length or an angle typed shows in the live box.
  *
- * Besides the plan's grips, the 3D-only ones the modules give (Grip3D, decision 601): a wall's top and faces, a floor's
+ * Besides the plan's grips, the 3D-only ones the modules give (Grip3D, decision 610): a wall's top and faces, a floor's
  * top, a roof's eave, each dragged along its own line (up, or across a wall), on a plane through it facing the camera.
  * The other elements' corners, middles and edges give the point it goes to (for a face, their faces too): their height,
  * or their place across; else the point of the line nearest the cursor, to the centimetre. The distance can be typed
@@ -69,7 +69,7 @@ export function Grips3D({ camera, canvas, scene }: { camera: React.RefObject<THR
   const plane = useRef(0);
   const liveOwner = useLive((s) => s.owner);
   const selected = useUi((s) => s.selected);
-  // The 3D-only grips (decision 601), the one dragged and how far, the one under the cursor.
+  // The 3D-only grips (decision 610), the one dragged and how far, the one under the cursor.
   const [drag3, setDrag3] = useState<{ grip: Grip3D; by: number } | null>(null);
   const [hot3, setHot3] = useState<string | null>(null);
   const key3 = (g: Grip3D) => `${g.owner}:${g.key}`;

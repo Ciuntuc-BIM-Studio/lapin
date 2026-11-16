@@ -16,7 +16,7 @@ import { usePaneActive, usePaneField } from '../app/pane';
 import { execute, useSession } from '../engine/session';
 import type { Vec2 } from '../platform/module';
 import type { NodeDto } from '../engine/protocol';
-import { findTool } from '../platform/modules';
+import { findTool, useToolTick } from '../platform/modules';
 import { completeTool } from './tools';
 import { DrawingLayer } from './DrawingLayer';
 import { drawsOnDark, useDrawing } from './drawing';
@@ -103,7 +103,9 @@ export function DrawingView() {
   const tool = findTool(toolId);
   /** The points of the gesture being drawn. */
   const [pts, setPts] = useState<Vec2[]>([]);
-  useEffect(() => { setPts([]); }, [toolId, id]);
+  useToolTick((s) => s.n);
+  const toolMode = tool?.mode?.();
+  useEffect(() => { setPts([]); }, [toolId, id, toolMode]);
 
   useEffect(() => {
     const el = ref.current;
@@ -240,7 +242,7 @@ export function DrawingView() {
   useEffect(() => {
     if (!active) return;
     const onKey = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement)?.closest('input, select, textarea') || useCad.getState().step) return;
+      if ((e.target as HTMLElement)?.closest('input, select, textarea, [role="dialog"]') || e.defaultPrevented || useCad.getState().step) return;
       // Esc while the selection is dragged by its body: nothing moves.
       if (e.key === 'Escape' && carrying()) { drag.current = null; carryEnd(); clearLiveRise(); return; }
       // A pick-then-point gesture ended after its pick (Enter or Esc) completes with the pick alone; a typed length is the key router's (Enter takes it, Esc clears it).
@@ -426,6 +428,7 @@ export function DrawingView() {
           }
           trackTagHover(here.raw, { pickElement: pickAny, pickTag: (q) => { const t = pickDrawing(q, 6 / v.scale, drawing?.marks, nodes, (n) => n.props.predefinedType === 'TAG'); return t ?? null; }, anyTags, busy: !!tool?.gesture || !!d });
         }}
+        onPointerCancel={() => { drag.current = null; setBox(null); if (carrying()) { carryEnd(); clearLiveRise(); } }}
         onPointerUp={(e) => {
           if (editor.onPointerUp()) return;
           const d = drag.current;

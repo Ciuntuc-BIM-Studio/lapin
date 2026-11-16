@@ -6,6 +6,7 @@
  * The models are listed beside Lapin's when a type of a model is made, and go with the project's furniture library.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { FileUp, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
@@ -41,7 +42,7 @@ export function UserModelsDialog() {
   };
 
   return (
-    <div className="dialog-backdrop" onClick={close}>
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide templates furniture-models-dialog" role="dialog" aria-label="Furniture models" data-dialog="furnitureModels" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Your furniture models</span><button type="button" className="icon" onClick={close} title="Back to the furniture types"><X size={15} /></button></header>
         <div className="dialog-body tpl-body">

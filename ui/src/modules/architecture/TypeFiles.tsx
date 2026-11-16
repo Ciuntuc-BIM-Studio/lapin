@@ -7,6 +7,7 @@
  * chooses (LibraryChoices). A whole library of any kind of type is a type pack: the button opens Type packs.
  */
 
+import { backdropClose } from '../../shell/Dialog';
 import { useState } from 'react';
 import { FileDown, FileUp, PackageOpen } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
@@ -64,7 +65,7 @@ export function TypeFiles({ kind, onImported }: { kind: 'wall' | 'floor'; onImpo
       <p className="muted small" title={NOTICE} data-testid="type-files-notice">{SHORT}</p>
       {summary && <ImportSummary r={summary} />}
       {pending && (
-        <div className="dialog-backdrop" onClick={() => setPending(null)}>
+        <div className="dialog-backdrop" onMouseDown={backdropClose(() => setPending(null))}>
           <div className="dialog wide" role="dialog" aria-label="Import types" data-dialog="type-conflicts" onClick={(e) => e.stopPropagation()}>
             <header className="dialog-head"><span className="panel-title">Import types</span></header>
             <div className="dialog-body">

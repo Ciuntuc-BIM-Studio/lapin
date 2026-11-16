@@ -5,7 +5,7 @@
  * its own (core's Modify tools on Architecture and Structure).
  */
 
-import type { LapinModule, RibbonGroupDef, RibbonTabDef } from './module';
+import type { LapinModule, RibbonGroupDef, RibbonTabDef, ToolDef } from './module';
 
 export function mergeTabs(modules: readonly LapinModule[], orders: Record<string, number> = {}): RibbonTabDef[] {
   const shared: Record<string, RibbonGroupDef> = {};
@@ -19,8 +19,26 @@ export function mergeTabs(modules: readonly LapinModule[], orders: Record<string
     for (const i of t.include ?? []) if (!had.include!.includes(i)) had.include!.push(i);
   }
   return [...byId.values()]
-    .map((t) => ({ ...t, order: orders[t.id] ?? t.order, groups: [...placed(t.groups), ...(t.include ?? []).map((i) => shared[i]).filter((g): g is RibbonGroupDef => !!g)] }))
+    .map((t) => ({ ...t, order: orders[t.id] ?? t.order, groups: withShared(placed(t.groups), (t.include ?? []).map((i) => shared[i]).filter((g): g is RibbonGroupDef => !!g)) }))
     .sort((a, b) => a.order - b.order);
+}
+
+/**
+ * The shared groups after a tab's own. A shared group with the label of one the tab has (Draft's own Modify; Architecture's own Joins)
+ * is one group with it: the tab's tools first, then the shared ones it does not already have (the same label, or one `alsoCalled`
+ * says), so a tab never shows two Move or two Copy buttons. The shared tools left out stay tools (their ids resolve).
+ */
+function withShared(own: RibbonGroupDef[], shared: RibbonGroupDef[]): RibbonGroupDef[] {
+  const out = [...own];
+  for (const s of shared) {
+    const at = out.findIndex((g) => g.label === s.label);
+    if (at < 0) { out.push(s); continue; }
+    const g = out[at];
+    const have = new Set([...g.tools, ...(g.small ?? [])].flatMap((t) => [t.label, ...(t.alsoCalled ?? [])]));
+    const fresh = (t: ToolDef) => !have.has(t.label) && !(t.alsoCalled ?? []).some((n) => have.has(n));
+    out[at] = { ...g, tools: [...g.tools, ...s.tools.filter(fresh)], small: [...(g.small ?? []), ...(s.small ?? []).filter(fresh)] };
+  }
+  return out;
 }
 
 /** The groups with each that says so (`after`) moved right after the group it names, when the tab has it. */

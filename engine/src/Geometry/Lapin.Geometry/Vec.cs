@@ -286,6 +286,88 @@ public static class Polygon2
         return ring[0];
     }
 
+    /// <summary>
+    /// The part of a ring where <paramref name="f"/> ≥ −<paramref name="eps"/> (f linear: a half-plane), Sutherland–Hodgman:
+    /// the vertices kept in their order and, on each edge that changes side, the point where f is 0. A crossing that falls on
+    /// a kept vertex is not added again, so a vertex on the line comes once. Exact for a convex ring; a concave one may come
+    /// back with edges along the line. Orientation kept.
+    /// </summary>
+    public static List<Vec2> ClipHalf(IReadOnlyList<Vec2> ring, Func<Vec2, double> f, double eps = 0) =>
+        ClipHalf(ring, f, static (p, q, t) => p + (q - p) * t, eps);
+
+    /// <summary><see cref="ClipHalf(IReadOnlyList{Vec2}, Func{Vec2, double}, double)"/> for a planar loop in space (f linear in space).</summary>
+    public static List<Vec3> ClipHalf(IReadOnlyList<Vec3> loop, Func<Vec3, double> f, double eps = 0) =>
+        ClipHalf(loop, f, static (p, q, t) => p + (q - p) * t, eps);
+
+    /// <summary><see cref="ClipHalf(IReadOnlyList{Vec2}, Func{Vec2, double}, double)"/> for any vertex (a 3D loop, a point carrying values to interpolate).</summary>
+    public static List<T> ClipHalf<T>(IReadOnlyList<T> ring, Func<T, double> f, Func<T, T, double, T> lerp, double eps = 0)
+    {
+        var n = ring.Count;
+        var o = new List<T>(n + 2);
+        if (n == 0) return o;
+        var fs = new double[n];
+        for (var i = 0; i < n; i++) fs[i] = f(ring[i]);
+        for (var i = 0; i < n; i++)
+        {
+            var j = (i + 1) % n;
+            double fp = fs[i], fq = fs[j];
+            bool pin = fp >= -eps, qin = fq >= -eps;
+            if (pin) o.Add(ring[i]);
+            if (pin == qin) continue;
+            // Where f is 0 along the edge. At (or, within eps, past) the end that is kept, that end stands for it; next to
+            // the end left out it is still added, however close: a ring whose next vertex is out by a hair keeps its corner.
+            var t = fp / (fp - fq);
+            if (pin ? t > 0 : t < 1) o.Add(lerp(ring[i], ring[j], Math.Clamp(t, 0, 1)));
+        }
+        return o;
+    }
+
+    /// <summary>A ring clipped to the box [x0, x1] × [y0, y1] (<see cref="ClipHalf(IReadOnlyList{Vec2}, Func{Vec2, double}, double)"/> by its four sides; an infinite bound cuts nothing).</summary>
+    public static List<Vec2> ClipBox(IReadOnlyList<Vec2> ring, double x0, double y0, double x1, double y1, double eps = 0)
+    {
+        List<Vec2> o = [.. ring];
+        if (!double.IsInfinity(x0) && o.Count > 0) o = ClipHalf(o, p => p.X - x0, eps);
+        if (!double.IsInfinity(x1) && o.Count > 0) o = ClipHalf(o, p => x1 - p.X, eps);
+        if (!double.IsInfinity(y0) && o.Count > 0) o = ClipHalf(o, p => p.Y - y0, eps);
+        if (!double.IsInfinity(y1) && o.Count > 0) o = ClipHalf(o, p => y1 - p.Y, eps);
+        return o;
+    }
+
+    /// <summary>
+    /// Inside the polygon (even-odd) or within <paramref name="tol"/> of its boundary: the test for a point that may lie on
+    /// an edge (a vertex of one outline on another's side), where the plain test is arbitrary.
+    /// </summary>
+    public static bool Contains(IReadOnlyList<Vec2> poly, Vec2 p, double tol)
+    {
+        for (var i = 0; i < poly.Count; i++)
+            if (Polyline2.SegmentDistance(p, poly[i], poly[(i + 1) % poly.Count]) <= tol) return true;
+        return Contains(poly, p);
+    }
+
+    /// <summary>The area centroid of a ring (either orientation); its vertices' average when it has no area.</summary>
+    public static Vec2 Centroid(IReadOnlyList<Vec2> ring)
+    {
+        var n = ring.Count;
+        if (n == 0) return new Vec2(0, 0);
+        // About the first vertex: far from the origin the products would lose the digits that matter.
+        var o = ring[0];
+        double a = 0, cx = 0, cy = 0;
+        for (var i = 0; i < n; i++)
+        {
+            Vec2 p = ring[i] - o, q = ring[(i + 1) % n] - o;
+            var k = p.X * q.Y - q.X * p.Y;
+            a += k; cx += (p.X + q.X) * k; cy += (p.Y + q.Y) * k;
+        }
+        var per = Perimeter(ring);
+        if (!(Math.Abs(a) > 1e-12 * per * per))
+        {
+            double sx = 0, sy = 0;
+            foreach (var p in ring) { sx += p.X; sy += p.Y; }
+            return new Vec2(sx / n, sy / n);
+        }
+        return o + new Vec2(cx / (3 * a), cy / (3 * a));
+    }
+
     /// <summary>Even-odd point-in-polygon.</summary>
     public static bool Contains(IReadOnlyList<Vec2> poly, Vec2 p)
     {

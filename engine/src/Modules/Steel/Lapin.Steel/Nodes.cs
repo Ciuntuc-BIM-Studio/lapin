@@ -145,6 +145,19 @@ public static class SteelNodes
     public static IEnumerable<Entity> Of(IModelView m, string memberId) =>
         m.OfClass(Class).Where(n => MembersOf(n).Any(j => j.Id == memberId));
 
+    /// <summary>
+    /// The connections of a member that goes, taken away with it, each giving the other members' ends back the setbacks it
+    /// wrote (audit 15.11.2026: a hall deleted or rebuilt left those it did not make naming its members); <paramref name="keep"/>: connections left.
+    /// </summary>
+    public static void DropWith(IEdit edit, string memberId, IReadOnlySet<string>? keep = null)
+    {
+        foreach (var n in Of(edit.Model, memberId).Where(n => keep?.Contains(n.Id) != true).ToList())
+        {
+            Release(edit, n);
+            edit.Remove(n.Id);
+        }
+    }
+
     // ------------------------------------------------------------ topology
 
     /// <summary>
@@ -217,7 +230,7 @@ public static class SteelNodes
     const string BoltColor = "#3c4550";
     static double Up5(double m) => Math.Ceiling(m * 1000 / 5 - 1e-9) * 5 / 1000;
     static double Up10(double m) => Math.Ceiling(m * 100 - 1e-9) / 100;
-    static string Mm(double m) => Math.Round(m * 1000).ToString(CultureInfo.InvariantCulture);
+    static string Mm(double m) => Lapin.Model.Numbers.Mm(m);
     static double Throat(double t) => Math.Max(0.003, Math.Round(0.5 * t * 1000) / 1000);
 
     sealed class Parts(string color, string? material, NodeSpec spec)

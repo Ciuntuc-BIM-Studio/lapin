@@ -9,6 +9,7 @@
  * reveals (decision 298: WallTypeSweeps). Saving is one engine command; every wall of the type follows.
  */
 
+import { confirmAction } from '../../shell/prompts';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, ArrowUpDown, Layers, Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
@@ -128,7 +129,7 @@ export function WallTypesDialog() {
   const set = (i: number, patch: Partial<Row>) => setRows(rows.map((r, k) => (k === i ? { ...r, ...patch } : patch.core ? { ...r, core: false } : r)));
   const move = (i: number, d: number) => setRows(moveLayer(rows, i, d));
   const reverse = () => {
-    if (window.confirm(t('Reverse the order of the layers? Once the type is saved, its walls swap faces: what is exterior becomes interior.'))) setRows(reverseLayers(rows));
+    if (confirmAction(t('Reverse the order of the layers? Once the type is saved, its walls swap faces: what is exterior becomes interior.'))) setRows(reverseLayers(rows));
   };
   // Opening a material in Manage → Materials keeps all of this for the way back.
   const hatchFrom = { kind: 'wallTypes', snapshot: (): Kept => ({ editing, name, rows, zones, lintels, sweeps }) };

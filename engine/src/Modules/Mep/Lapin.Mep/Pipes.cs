@@ -81,13 +81,7 @@ public static class Pipes
     public static List<Vec2> Offset(IReadOnlyList<Vec2> pts, double offset) => Polyline2.Offset(pts, offset, maxMitre: 5);
 
     /// <summary>Where the line through a along u meets the line through b along v (null when they run parallel).</summary>
-    public static Vec2? Intersect(Vec2 a, Vec2 u, Vec2 b, Vec2 v)
-    {
-        var den = u.X * v.Y - u.Y * v.X;
-        if (Math.Abs(den) < 1e-9 * Math.Max(1e-12, u.Length * v.Length)) return null;
-        var t = ((b.X - a.X) * v.Y - (b.Y - a.Y) * v.X) / den;
-        return a + u * t;
-    }
+    public static Vec2? Intersect(Vec2 a, Vec2 u, Vec2 b, Vec2 v) => Polyline2.LineIntersection(a, u, b, v);
 
     /// <summary>Length of a polyline.</summary>
     public static double Length(IReadOnlyList<Vec2> pts) => Polyline2.Length(pts);

@@ -129,7 +129,7 @@ public static class ElementFrames
     /// <summary>The core's own axes: a path element along its axis from its start, a standing one by its rotation from its base's centre.</summary>
     static ((Vec3 Origin, Vec3 X, Vec3 Z) Axes, string Source)? CoreAxes(IModelView m, IServices? services, Entity e)
     {
-        var level = (Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0) + e.Num("baseOffset");
+        var level = Spatial.Base(m, e);
         if (services?.Get<IPathElements>()?.IsPath(e.Class) == true && e.Attrs["start"] is JsonArray && e.Attrs["end"] is JsonArray)
         {
             var c = PathCurve.Of(e);

@@ -73,7 +73,7 @@ public sealed record PhaseSettings(IReadOnlyList<ProjectPhase> Phases, IReadOnly
     public string Presentation(string? filterId, string state) =>
         Filters.FirstOrDefault(f => f.Id == filterId) is { } f ? f.States.GetValueOrDefault(state, "show") : "show";
 
-    static bool Hex(string? s) => s != null && Regex.IsMatch(s, "^#[0-9a-fA-F]{6}$");
+    static bool Hex(string? s) => Lapin.Geometry.HexColor.IsColour(s);
 
     /// <summary>Settings read from the project, malformed parts falling back to the defaults; null when there are none.</summary>
     public static PhaseSettings? Read(JsonNode? raw)

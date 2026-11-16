@@ -90,7 +90,7 @@ public static class Entourage
     {
         var at = Args.Point(e.Attrs["at"], "the entourage");
         var terrain = Plantings.TerrainFor(m, e);
-        var ground = terrain?.ElevationAt(at.X, at.Y) ?? Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0;
+        var ground = terrain?.ElevationAt(at.X, at.Y) ?? Spatial.Elevation(m, e);
         var r = e.Num("rotation") * Math.PI / 180;
         return new Frame(at, ground + e.Num("offset"), Math.Cos(r), Math.Sin(r));
     }
@@ -102,7 +102,7 @@ public static class Entourage
         var f = FrameOf(m, e);
         if (PictureOf(m, e) is { } picture) return PictureGeometry(e, m, picture, f);
         var kind = KindOf(e);
-        var color = e.Str("color") is { Length: 7 } c && c[0] == '#' ? c : kind.Color;
+        var color = HexColor.Read(e.Attrs["color"], kind.Color);
         var parts = new Dictionary<string, (string Color, List<Solid> Solids)>();
         void Add(string part, string col, Solid? s)
         {
@@ -296,18 +296,8 @@ public static class Entourage
     // ---- Cars ----
 
     /// <summary>A profile's part below (<paramref name="below"/>) or above a level (Sutherland–Hodgman on one line).</summary>
-    static List<(double X, double Z)> Clip(IReadOnlyList<(double X, double Z)> poly, double level, bool below)
-    {
-        var o = new List<(double X, double Z)>();
-        bool In((double X, double Z) p) => below ? p.Z <= level : p.Z >= level;
-        for (var i = 0; i < poly.Count; i++)
-        {
-            var a = poly[i]; var b = poly[(i + 1) % poly.Count];
-            if (In(a)) o.Add(a);
-            if (In(a) != In(b)) { var t = (level - a.Z) / (b.Z - a.Z); o.Add((a.X + (b.X - a.X) * t, level)); }
-        }
-        return o;
-    }
+    static List<(double X, double Z)> Clip(IReadOnlyList<(double X, double Z)> poly, double level, bool below) =>
+        Polygon2.ClipHalf(poly, p => below ? level - p.Z : p.Z - level, (a, b, t) => (a.X + (b.X - a.X) * t, level));
 
     static Solid? Across(Frame f, IReadOnlyList<(double X, double Z)> profile, double width, string tag) =>
         profile.Count < 3 ? null : Prism.Extrude([.. profile.Select(p => f.P(p.X, -width / 2, p.Z))], null, f.D(0, width, 0), tag);

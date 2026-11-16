@@ -99,7 +99,7 @@ public static class Rooms
     {
         var o = Live(room, m, services);
         if (o == null) return new ElementGeometry([], Diagnostics: ["The room has no outline: place it inside walls, or draw it."]);
-        var z = (Spatial.StoreyOf(m, room.Id)?.Num("elevation") ?? 0) + room.Num("baseOffset");
+        var z = Spatial.Base(m, room);
         var h = HeightOf(room, m);
         var solid = Prism.Extrude(o.Outer.Select(p => p.At(z)).ToArray(), o.Islands.Select(i => (IReadOnlyList<Vec3>)i.Select(p => p.At(z)).ToArray()).ToList(), new Vec3(0, 0, h), "room");
         var plan = new List<PlanItem> { new("room", true, o.Outer) };
@@ -171,20 +171,7 @@ public static class Rooms
     public static Vec2 StampPoint(Entity room, Outline o)
     {
         if (StampAt(room) is { } at) return at;
-        var area = Polygon2.SignedArea(o.Outer);
-        Vec2 c;
-        if (Math.Abs(area) > 1e-12)
-        {
-            double cx = 0, cy = 0;
-            for (var i = 0; i < o.Outer.Count; i++)
-            {
-                var (p, q) = (o.Outer[i], o.Outer[(i + 1) % o.Outer.Count]);
-                var k = p.X * q.Y - q.X * p.Y;
-                cx += (p.X + q.X) * k; cy += (p.Y + q.Y) * k;
-            }
-            c = new Vec2(cx / (6 * area), cy / (6 * area));
-        }
-        else c = new Vec2(o.Outer.Average(p => p.X), o.Outer.Average(p => p.Y));
+        var c = Polygon2.Centroid(o.Outer);
         if (o.Holds(c)) return c;
         // The longest stretch of the room along the horizontal line through the centre.
         var rings = o.Loops.Select(l => l.ToArray()).ToList();

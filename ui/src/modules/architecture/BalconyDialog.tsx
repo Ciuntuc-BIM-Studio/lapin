@@ -7,6 +7,7 @@
  * on storeys above copies it onto every storey over its own.
  */
 
+import { confirmAction, promptText } from '../../shell/prompts';
 import { ColourField } from '../../shell/ColourField';
 import { useEffect, useMemo, useState } from 'react';
 import { Layers, Pencil, RotateCcw, Save, Trash2, X } from 'lucide-react';
@@ -14,7 +15,7 @@ import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { fieldShown, type FieldDescriptor } from '../../engine/protocol';
 import { t, useLang } from '../../i18n';
-import { LengthField, NumberField } from '../../shell/cells';
+import { DescriptorField } from '../../shell/cells';
 import { PendingDialog } from '../core/PendingDialog';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { BALCONY, styleOf, useBalconyStyles } from './Balconies';
@@ -65,10 +66,7 @@ function FieldInput({ f, value, onChange }: { f: FieldDescriptor; value: unknown
   if (f.kind === 'material') return <MaterialPicker value={typeof value === 'string' ? value : ''} placeholder="none" allowEmpty onChange={(name) => onChange(name)} />;
   if (f.kind === 'bool') return <input type="checkbox" checked={value === true} onChange={(e) => onChange(e.target.checked)} />;
   if (f.kind === 'color') return <ColourField value={typeof value === 'string' ? value : '#3a3d42'} onChange={(v) => onChange(v)} />;
-  const n = typeof value === 'number' ? value : null;
-  return f.kind === 'length'
-    ? <LengthField metres={n} onCommit={(m) => { if (m != null) onChange(m); }} />
-    : <NumberField value={n} onCommit={(v) => { if (v != null) onChange(v); }} />;
+  return <DescriptorField f={f} value={value} onChange={onChange} />;
 }
 
 const pairs = (a: number[] | undefined): [number, number][] => Array.from({ length: Math.floor((a?.length ?? 0) / 2) }, (_, i) => [a![2 * i], a![2 * i + 1]]);
@@ -158,7 +156,7 @@ export function BalconyDialog() {
   const done = () => { if (!useSession.getState().error) setDraft({ attrs: {} }); };
   const apply = async () => { await execute('architecture.updateBalcony', args()); done(); };
   const saveAs = async () => {
-    const name = window.prompt(t('Name of the balcony style'), node.name);
+    const name = promptText(t('Name of the balcony style'), node.name);
     if (!name?.trim()) return;
     await execute('architecture.saveBalconyStyle', { ...args(), name });
     done();
@@ -187,7 +185,7 @@ export function BalconyDialog() {
       <div className="dialog wide roof-dialog balcony-dialog" data-testid="balcony-dialog">
         <header className="dialog-head">
           <span className="panel-title">Balcony configurator <span className="muted small" data-no-i18n>· {node.name}</span></span>
-          <button type="button" className="icon" onClick={() => { if (!dirty || window.confirm(t('Close without applying the changes?'))) close(); }} title="Close"><X size={15} /></button>
+          <button type="button" className="icon" onClick={() => { if (!dirty || confirmAction(t('Close without applying the changes?'))) close(); }} title="Close"><X size={15} /></button>
         </header>
         <div className="dialog-body split">
           <div className="type-list roof-styles">
@@ -199,8 +197,8 @@ export function BalconyDialog() {
                 <button type="button" className={`tree-item grow${current === s.id ? ' on' : ''}`} data-balcony-style={s.id} onClick={() => setDraft({ style: s.id, attrs: {} })}>
                   <span className="grow" data-no-i18n>{s.name}</span><span className="muted small">{String(s.props.kind ?? '')}</span>
                 </button>
-                <button type="button" className="icon mini" title="Rename" onClick={() => { const n = window.prompt(t('Name of the balcony style'), s.name); if (n?.trim()) void execute('architecture.renameBalconyStyle', { styleId: s.id, name: n }); }}><Pencil size={12} /></button>
-                <button type="button" className="icon mini" title="Delete the style (its balconies keep how they are)" onClick={() => { if (window.confirm(t('Delete this balcony style? Its balconies keep how they are.'))) void execute('architecture.deleteBalconyStyle', { styleId: s.id }); }}><Trash2 size={12} /></button>
+                <button type="button" className="icon mini" title="Rename" onClick={() => { const n = promptText(t('Name of the balcony style'), s.name); if (n?.trim()) void execute('architecture.renameBalconyStyle', { styleId: s.id, name: n }); }}><Pencil size={12} /></button>
+                <button type="button" className="icon mini" title="Delete the style (its balconies keep how they are)" onClick={() => { if (confirmAction(t('Delete this balcony style? Its balconies keep how they are.'))) void execute('architecture.deleteBalconyStyle', { styleId: s.id }); }}><Trash2 size={12} /></button>
               </div>
             ))}
             <p className="eyebrow">Built-in</p>

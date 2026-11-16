@@ -86,7 +86,7 @@ public static class KitchenUnits
         D(("type", "base"), ("width", 0.6), ("front", "drawers"), ("drawers", 3)),
         D(("type", "hob"), ("width", 0.6), ("fuel", "induction"), ("oven", true)));
 
-    static string Mm(double v) => Math.Round(v * 1000).ToString(CultureInfo.InvariantCulture);
+    static string Mm(double v) => Lapin.Model.Numbers.Mm(v);
 
     /// <summary>
     /// A list of units checked and cleaned: each of a known type for its line, its width in its range (an appliance's
@@ -107,7 +107,7 @@ public static class KitchenUnits
             {
                 if (!sizes.Any(x => Math.Abs(x - w) < 1e-6)) throw new CommandException($"A {t.Label.ToLowerInvariant()} is {string.Join(", ", sizes.Take(sizes.Length - 1).Select(Mm))} or {Mm(sizes[^1])} mm wide.");
             }
-            else if (w < t.Min - 1e-9 || w > t.Max + 1e-9)
+            else if (!(w >= t.Min - 1e-9 && w <= t.Max + 1e-9))
                 throw new CommandException(t.Key is "base" or "sink" or "tall" or "wall" ? "A cabinet is 100 to 800 mm wide." : $"A {t.Label.ToLowerInvariant()} is {Mm(t.Min)} to {Mm(t.Max)} mm wide.");
             var clean = new JsonObject { ["type"] = t.Key, ["width"] = Math.Round(w, 4) };
             foreach (var (key, v) in u)

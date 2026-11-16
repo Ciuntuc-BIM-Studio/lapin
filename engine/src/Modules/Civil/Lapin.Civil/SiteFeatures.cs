@@ -108,8 +108,7 @@ public static class Orthophotos
     public const string Class = "LapinOrthophoto";
 
     /// <summary>The image's corners in plan: top left, top right, bottom right, bottom left.</summary>
-    public static List<Vec2> Corners(Entity e) => (e.Attrs["corners"] as JsonArray)?.OfType<JsonArray>().Where(p => p.Count >= 2)
-        .Select(p => new Vec2(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0)).ToList() ?? [];
+    public static List<Vec2> Corners(Entity e) => Args.StoredPoints(e.Attrs["corners"]);
 
     /// <summary>A world file's six numbers (A, D, B, E, C, F: pixel size in x, two rotations, pixel size in y, the upper-left pixel's centre).</summary>
     public static double[]? WorldFile(string text)

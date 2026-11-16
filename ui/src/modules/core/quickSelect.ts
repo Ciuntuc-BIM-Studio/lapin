@@ -1,43 +1,17 @@
 /**
- * Quick select's rules (forum topic 73): what the dialog edits, and the engine's `select.query` arguments made of them. A
- * rule reads a field of an element (class, type, storey, material, name, or a parameter by its name) and compares it: is,
- * contains, between two numbers (either end open)… as a view filter's rules do.
+ * Quick select's rules (forum topic 73): what the dialog edits is the one condition group (shell/conditionGroup), and
+ * the engine's `select.query` arguments are made of it. A condition reads a field of an element (a facet such as class,
+ * type, storey, material, name; a parameter as text; or any field of the project, quantities included) and compares it:
+ * is, contains, between two numbers (either end open), one of a list… as a view filter's rules do.
  */
 
-import { FILTER_FIELDS, FILTER_OPS } from './VisibilityDialog';
+import { queryArgs, type UCondition, type UGroup } from '../../shell/conditionGroup';
 
-export interface QsRule { field: string; op: string; value: string; name?: string; to?: string }
-
-/** The fields Quick select offers, the ones a selection asks most often first. */
-export const QS_FIELDS: [string, string][] = [
-  ...(['class', 'type', 'storey', 'material', 'param', 'name'] as const).map((k) => FILTER_FIELDS.find(([f]) => f === k)!),
-  ...FILTER_FIELDS.filter(([f]) => !['class', 'type', 'storey', 'material', 'param', 'name'].includes(f)),
-];
-
-/** The operators, a range among them. */
-export const QS_OPS: [string, string][] = [...FILTER_OPS.slice(0, 7), ['between', 'is between'], ...FILTER_OPS.slice(7)];
-
-/** Whether an operator compares with a value (and a range with two). */
-export const takesValue = (op: string) => op !== 'hasValue' && op !== 'hasNoValue';
+/** The first rule: a type that is… (the type most often asked for). */
+export const initialGroup = (): UGroup => ({ matchAll: true, conditions: [{ field: '@type', op: '=', value: '' } as UCondition], groups: [] });
 
 /** The rules as `select.query` reads them: a range as "min..max", a parameter by its name; a rule with nothing to compare left out. */
-export function queryRules(rules: QsRule[]): Record<string, string>[] {
-  const out: Record<string, string>[] = [];
-  for (const r of rules) {
-    if (r.field === 'param' && !r.name?.trim()) continue;
-    const o: Record<string, string> = { field: r.field, op: r.op };
-    if (r.field === 'param') o.name = r.name!.trim();
-    if (r.op === 'between') {
-      if (!r.value.trim() && !(r.to ?? '').trim()) continue;
-      o.value = `${r.value.trim()}..${(r.to ?? '').trim()}`;
-    } else if (takesValue(r.op)) {
-      if (!r.value.trim()) continue;
-      o.value = r.value.trim();
-    }
-    out.push(o);
-  }
-  return out;
-}
+export const queryRules = (g: UGroup) => queryArgs(g).rules;
 
 /** The selection a quick select makes: the ids found, added to what was selected when asked (each once). */
 export function nextSelection(found: string[], selected: string[], add: boolean): string[] {

@@ -50,7 +50,11 @@ public sealed record ClashItem(int Number, string Key, string Kind, string? MepI
 }
 
 /// <summary>A clash report as it was kept: when it ran, the model's state then, the clearance, its items.</summary>
-public sealed record ClashReport(string Id, string Date, string Hash, double Clearance, int Ok, IReadOnlyList<ClashItem> Items);
+public sealed record ClashReport(string Id, string Date, string Hash, double Clearance, int Ok, IReadOnlyList<ClashItem> Items)
+{
+    /// <summary>The pairs the run could not check (an open mesh the boolean library refuses, audit P4): said by the run, not kept.</summary>
+    public IReadOnlyList<OpeningClash> Unchecked { get; init; } = [];
+}
 
 /// <summary>
 /// The openings-vs-MEP check run on demand (decision 293, the user's direction: "the clash check only when asked: one
@@ -129,6 +133,7 @@ public static class ClashReports
         {
             ["id"] = r.Id, ["date"] = r.Date, ["hash"] = r.Hash, ["stale"] = ModelHash(m) != r.Hash, ["clearance"] = r.Clearance, ["counts"] = counts,
             ["items"] = new JsonArray(r.Items.OrderBy(i => i.Number).Select(i => (JsonNode)i.ToJson(m)).ToArray()),
+            ["unchecked"] = new JsonArray(r.Unchecked.Select(c => (JsonNode)c.ToJson(m)).ToArray()),
         };
     }
 
@@ -169,6 +174,10 @@ public static class ClashReports
             var state = prev?.State == Ignored ? Ignored : Open;
             items.Add(new ClashItem(prev?.Number ?? next++, c.PairKey, c.Status, c.MepId, c.HostId, c.Void?.Mark, c.Void?.OpeningId, c.Void?.Key, c.By, c.Centre, c.Message, state, prev?.Comment, c.Held));
         }
+        // A pair this run could not check keeps what the last run said of it (never resolved by not being looked at).
+        var notChecked = found.Where(c => c.Status == OpeningClashes.Unchecked).ToList();
+        foreach (var c in notChecked)
+            if (seen.Add(c.PairKey) && before.GetValueOrDefault(c.PairKey) is { } kept) items.Add(kept);
         // What the last run found and this one does not: resolved (an ignored one stays ignored), its message and sizes as they are now (decision 296):
         // the opening it goes through and the run's size in it, or that the pair no longer meets; the run it was first found resolved at kept.
         var fits = found.Where(c => c.Status == OpeningClashes.Ok).GroupBy(c => c.PairKey).ToDictionary(g => g.Key, g => g.First());
@@ -185,7 +194,7 @@ public static class ClashReports
         }
         var ok = found.Count(c => c.Status == OpeningClashes.Ok);
         Write(ctx, old, hash, o.Clearance, ok, items, date);
-        return Read(ctx.Model)!;
+        return Read(ctx.Model)! with { Unchecked = notChecked };
     }
 
     /// <summary>
@@ -277,7 +286,10 @@ public static class ClashReports
             var enlarge = action == "enlarge" || action == "auto" && item.Kind == OpeningClashes.TooSmall;
             try
             {
-                var through = Through(ctx.Query, mep, host);
+                List<Solid> through;
+                // An element or a host the boolean library cannot take (an open mesh): said for this item, the others fixed (audit P4).
+                try { through = Through(ctx.Query, mep, host); }
+                catch (Exception ex) when (ex is not (CommandException or OutOfMemoryException)) { Fail("The element or its host is not a closed solid: no opening can be worked out round it."); continue; }
                 if (through.Count == 0) { Fail("The element no longer goes through its host."); continue; }
                 var request = new OpeningRequest(clearance, RoundOf(mep), rule);
                 string? made = null;
@@ -324,7 +336,7 @@ public static class ClashReports
     /// <summary>The report as a CSV list (comma separated, quoted, UTF-8): one row per item.</summary>
     public static string Csv(IModelView m, ClashReport r)
     {
-        static string Q(string? s) => s == null ? "" : s.IndexOfAny([',', '"', '\n']) >= 0 ? $"\"{s.Replace("\"", "\"\"")}\"" : s;
+        static string Q(string? s) => CsvText.Field(s);
         var sb = new StringBuilder();
         sb.Append("No.,Kind,Status,MEP element,Host,Void,Short by (mm),X,Y,Z,Comment,Message\n");
         foreach (var i in r.Items.OrderBy(i => i.Number))

@@ -202,6 +202,9 @@ public sealed class Plan
         for (var p = ById.GetValueOrDefault(id)?.Parent; p != null && ById.ContainsKey(p); p = ById[p].Parent) yield return p;
     }
 
+    /// <summary>Whether a link runs between a summary task and a task under it (refused when made; a move can leave one).</summary>
+    public static bool Nested(Plan p, PlanLink l) => p.Ancestors(l.To).Contains(l.From) || p.Ancestors(l.From).Contains(l.To);
+
     /// <summary>The leaves under a task (itself when it has no children).</summary>
     public List<string> LeavesOf(string id)
     {
