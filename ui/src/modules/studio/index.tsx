@@ -17,7 +17,7 @@ import type { Grip, LapinModule, PlaceEntry, RefLine, ToolDef, ToolInput } from 
 import type { NodeDto } from '../../engine/protocol';
 import { activate, findTool, gripsOf } from '../../platform/modules';
 import { useFamilies, usePlaceFamily } from './families/familyApi';
-import { openPlaceCatalog } from '../../shell/PlaceCatalog';
+import { openPlaceCatalog } from '../../shell/placeCatalogStore';
 import { fromJson } from '../../viewport/cad/shapes';
 import { notify, useUi } from '../../app/store';
 import { activeStorey, execute, query, useSession } from '../../engine/session';

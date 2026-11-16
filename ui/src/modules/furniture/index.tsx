@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import type { Icon } from '../../icons';
 import type { LapinModule, PlaceEntry, ToolDef } from '../../platform/module';
-import { openPlaceCatalog } from '../../shell/PlaceCatalog';
+import { openPlaceCatalog } from '../../shell/placeCatalogStore';
 import { notify, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';

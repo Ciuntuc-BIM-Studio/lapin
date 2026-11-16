@@ -7,7 +7,6 @@
  */
 
 import { useMemo } from 'react';
-import { create } from 'zustand';
 import { Search } from 'lucide-react';
 import { useUi } from '../app/store';
 import { placeSources } from '../platform/modules';
@@ -15,14 +14,8 @@ import type { PlaceEntry, PlaceSourceDef } from '../platform/module';
 import { Dialog } from './Dialog';
 import { t } from '../i18n';
 
-/** The source shown ('all': every one) and the text searched, kept while the app runs. */
-export const usePlaceCatalog = create<{ source: string; query: string }>(() => ({ source: 'all', query: '' }));
-
-/** Opens the catalogue, on one source when asked (an old entry point's). */
-export function openPlaceCatalog(source = 'all'): void {
-  usePlaceCatalog.setState({ source });
-  useUi.setState({ dialog: 'placeCatalog' });
-}
+export { openPlaceCatalog, usePlaceCatalog } from './placeCatalogStore';
+import { usePlaceCatalog } from './placeCatalogStore';
 
 /** Whether an entry answers the search: every word of it in its name, its group or its few words, case aside. */
 export function matches(e: Pick<PlaceEntry, 'name' | 'group' | 'about'>, query: string): boolean {
