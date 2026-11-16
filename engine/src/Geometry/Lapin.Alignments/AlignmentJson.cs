@@ -24,10 +24,4 @@ public static class AlignmentJson
         ["type"] = SegmentTypes.Ifc(v.Type), ["start"] = v.StartDistAlong, ["length"] = v.HorizontalLength, ["height"] = v.StartHeight,
         ["startGradient"] = v.StartGradient, ["endGradient"] = v.EndGradient, ["radius"] = v.RadiusOfCurvature,
     }).ToArray());
-
-    public static List<VerticalSegment>? ReadVertical(JsonNode? n) => n is JsonArray a && a.Count > 0
-        ? a.OfType<JsonObject>().Select(o => new VerticalSegment(
-            SegmentTypes.Vertical((string?)o["type"]) ?? VerticalType.ConstantGradient,
-            Json.Number(o["start"]) ?? 0, Json.Number(o["length"]) ?? 0, Json.Number(o["height"]) ?? 0, Json.Number(o["startGradient"]) ?? 0, Json.Number(o["endGradient"]) ?? 0, Json.Number(o["radius"]))).ToList()
-        : null;
 }

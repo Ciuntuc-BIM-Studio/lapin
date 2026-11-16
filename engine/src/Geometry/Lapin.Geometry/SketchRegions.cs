@@ -11,7 +11,7 @@ public static class SketchRegions
 {
     /// <summary>The smallest region the segments bound round <paramref name="p"/> (counter-clockwise), or null when none holds it.</summary>
     public static List<Vec2>? RegionAt(IReadOnlyList<(Vec2 A, Vec2 B)> segments, Vec2 p, double tol = 1e-6) =>
-        Regions(segments, tol).Where(r => Inside(r, p)).OrderBy(r => Math.Abs(Polygon2.SignedArea(r))).FirstOrDefault();
+        Regions(segments, tol).Where(r => Polygon2.Contains(r, p)).OrderBy(r => Math.Abs(Polygon2.SignedArea(r))).FirstOrDefault();
 
     /// <summary>Every bounded region (counter-clockwise loops) of the planar graph the segments make.</summary>
     public static List<List<Vec2>> Regions(IReadOnlyList<(Vec2 A, Vec2 B)> segments, double tol = 1e-6)
@@ -93,16 +93,5 @@ public static class SketchRegions
                 if (Polygon2.SignedArea(pts) > 1e-12) o.Add(pts);
             }
         return o;
-    }
-
-    static bool Inside(IReadOnlyList<Vec2> poly, Vec2 p)
-    {
-        var inside = false;
-        for (int i = 0, j = poly.Count - 1; i < poly.Count; j = i++)
-        {
-            var (a, b) = (poly[i], poly[j]);
-            if ((a.Y > p.Y) != (b.Y > p.Y) && p.X < (b.X - a.X) * (p.Y - a.Y) / (b.Y - a.Y) + a.X) inside = !inside;
-        }
-        return inside;
     }
 }

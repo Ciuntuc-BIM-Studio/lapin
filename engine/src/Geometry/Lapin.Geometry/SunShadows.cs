@@ -81,7 +81,7 @@ public static class SunShadows
                     if (projected.Count == 0) continue;
                     var b = ViewFaces.Box2(projected.SelectMany(l => l));
                     if (b.Max.X <= rBox.Min.X || b.Min.X >= rBox.Max.X || b.Max.Y <= rBox.Min.Y || b.Min.Y >= rBox.Max.Y) continue;
-                    if (Math.Abs(Area2(projected[0])) < 1e-10) continue;
+                    if (Math.Abs(Polygon2.SignedArea(projected[0])) < 1e-10) continue;
                     shadows.Add(projected);
                 }
                 if (shadows.Count == 0) return [];
@@ -126,11 +126,4 @@ public static class SunShadows
 
     /// <summary>A loop kept where it lies on the positive side of a plane (Sutherland–Hodgman).</summary>
     public static Vec3[] ClipPlane(Vec3[] loop, Vec3 p0, Vec3 n) => ViewFaces.ClipPlane(loop, p0, n);
-
-    static double Area2(Vec2[] l)
-    {
-        var a = 0.0;
-        for (var i = 0; i < l.Length; i++) { var p = l[i]; var q = l[(i + 1) % l.Length]; a += p.X * q.Y - q.X * p.Y; }
-        return a / 2;
-    }
 }

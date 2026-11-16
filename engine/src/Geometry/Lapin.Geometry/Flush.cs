@@ -256,15 +256,7 @@ public static class Flush
         {
             var (e0, e1) = (c[i], c[(i + 1) % 3]);
             var e = e1 - e0;
-            var next = new List<Vec2>(poly.Count + 2);
-            for (var k = 0; k < poly.Count; k++)
-            {
-                var (p, q) = (poly[k], poly[(k + 1) % poly.Count]);
-                var (dp, dq) = (Vec2.Cross(e, p - e0), Vec2.Cross(e, q - e0));
-                if (dp >= 0) next.Add(p);
-                if ((dp >= 0) != (dq >= 0)) next.Add(p + (q - p) * (dp / (dp - dq)));
-            }
-            poly = next;
+            poly = Polygon2.ClipHalf(poly, p => Vec2.Cross(e, p - e0));
         }
         return poly.Count < 3 ? 0 : Math.Abs(Polygon2.SignedArea(poly));
     }
@@ -272,13 +264,7 @@ public static class Flush
     static bool Near(List<Vec2> ring, Vec2 p, double tol)
     {
         for (var i = 0; i < ring.Count; i++)
-        {
-            var (a, b) = (ring[i], ring[(i + 1) % ring.Count]);
-            var ab = b - a;
-            var len2 = ab.X * ab.X + ab.Y * ab.Y;
-            var t = len2 < 1e-24 ? 0 : Math.Clamp(((p.X - a.X) * ab.X + (p.Y - a.Y) * ab.Y) / len2, 0, 1);
-            if ((a + ab * t - p).Length <= tol) return true;
-        }
+            if (Polyline2.SegmentDistance(p, ring[i], ring[(i + 1) % ring.Count]) <= tol) return true;
         return false;
     }
 }
