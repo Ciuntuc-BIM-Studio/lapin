@@ -66,6 +66,8 @@ public class DimensionStringTests
         var before = Assert.Single(Marks(Draw(f, Plan(f)), id));
         var lines = before["segments"]?.AsArray().Count;
         var was = At(before, 0);
+        // Too wide for its 120 mm, the value was placed outside it (forum topic 78); a value moved by hand goes from its own place.
+        if (before["data"]!["textAuto"]?[0] is JsonArray auto) was -= new Vec2((double)auto[0]!, (double)auto[1]!);
         // The 120 mm segment's value dragged up and to the left, clear of its neighbour's.
         f.Run("drafting.moveDimensionText", new JsonObject { ["id"] = id, ["segment"] = 0, ["by"] = new JsonArray(-0.4, 0.5) });
         var after = Assert.Single(Marks(Draw(f, Plan(f)), id));

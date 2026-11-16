@@ -9169,6 +9169,49 @@ export const scenes = [
     },
   },
   {
+    // Make a layered wall from solids (forum topic 101): a timber-frame wall drawn in SketchUp as five parallel solids with a
+    // window's hole through them, imported as references, made one wall of five layers with its window; the dialog first.
+    id: 'wall-from-solids',
+    touches: ['architecture', 'studio'],
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const storey = await t.storey();
+      let obj = '';
+      let n = 0;
+      const box = (x0, y0, z0, x1, y1, z1) => {
+        for (const [x, y, z] of [[x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0], [x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]]) obj += `v ${x} ${y} ${z}\n`;
+        for (const f of [[1, 4, 3, 2], [5, 6, 7, 8], [1, 2, 6, 5], [3, 4, 8, 7], [1, 5, 8, 4], [2, 3, 7, 6]]) obj += `f ${f.map((i) => i + n).join(' ')}\n`;
+        n += 8;
+      };
+      // Outside to inside: cladding 22, wind board 9, insulation 145, OSB 12, gypsum 13; a window 1.2 × 1.2 m through them.
+      const layers = [['Träpanel', 0, 0.022], ['Vindskydd', 0.022, 0.031], ['Mineralull', 0.031, 0.176], ['OSB', 0.176, 0.188], ['Gips', 0.188, 0.201]];
+      for (const [name, y0, y1] of layers) {
+        obj += `o ${name}\n`;
+        box(0, y0, 0, 1.0, y1, 2.7); box(2.2, y0, 0, 4, y1, 2.7); box(1.0, y0, 0, 2.2, y1, 0.9); box(1.0, y0, 2.1, 2.2, y1, 2.7);
+      }
+      obj += 'o Window 1\n';
+      box(1.01, 0.06, 0.91, 2.19, 0.14, 2.09);
+      await page.evaluate(async ([obj, storeyId]) => (await import('/src/engine/session.ts')).engine.call('project.importMesh',
+        { name: 'wall.obj', data: btoa(unescape(encodeURIComponent(obj))), up: 'z', storeyId }), [obj, storey]);
+      await t.wait(800);
+      const solids = (await t.nodes()).filter((x) => x.type === 'IfcBuildingElementProxy');
+      t.expect(solids.length === 6, 'six solids came in');
+      await t.ui({ view: '3d', selected: solids.map((x) => x.id), selection: solids[0].id });
+      await page.waitForSelector('[data-testid=view3d] canvas', { timeout: 20_000 });
+      await t.wait(800);
+      await t.tool('architecture.wallFromSolids');
+      await page.waitForSelector('[data-testid=wall-from-solids] [data-testid=wfs-wall]', { timeout: 20_000 });
+      await t.until(async () => (await page.locator('[data-testid=wfs-layer]').count()) === 5, 'five layers found');
+      await t.shot('wall-from-solids', { of: '[data-testid=wall-from-solids]', pad: 0 });
+      await page.locator('[data-testid=wfs-make]').click();
+      await t.until(async () => (await t.nodes()).some((x) => x.type === 'IfcWall'), 'the wall is made');
+      const nodes = await t.nodes();
+      t.expect(nodes.some((x) => x.type === 'IfcWindow'), 'its window too');
+      t.expect(nodes.filter((x) => x.props.supersededBy).length === 6, 'the solids kept hidden behind it');
+    },
+  },
+  {
     // An array that keeps its arrangement (decision 481): columns along a drafted arc, then their count changed in the Array section.
     id: 'array-path',
     touches: ['structure', 'drafting'],
@@ -10091,6 +10134,69 @@ export const scenes = [
       t.expect(await dialog.locator('select').filter({ has: t.page.locator('option[value=hp]') }).first().inputValue() === 'number', 'a new project writes the height alone');
       await t.shot('dimension-opening-height-style', { of: '.standards-table', pad: 6 });
       await t.keys('Escape');
+    },
+  },
+  {
+    // Automatic text placement (forum topic 78): the south facade's exterior dimensions with a 15 cm pier between a window
+    // and a narrow opening; the values that do not fit between their witness lines stand outside them or a row up, clear of
+    // the next string, and the setting in Dimension rules….
+    id: 'dimension-text-placement',
+    touches: ['drafting'],
+    async run(t) {
+      await t.fresh();
+      const { storey, walls } = await house(t, { roof: false });
+      // The window's jambs at 8.90 and 10.10; an opening 0.40 wide from 10.25: a 150 pier and a 400 opening side by side.
+      await t.cmd('architecture.addWallOpening', { wallId: walls[0], along: 10.45, width: 0.4, height: 1.5, sill: 0.9 });
+      const view = `plan:${storey}`;
+      await t.cmd('drafting.exteriorDimensions', { viewId: view, wallIds: [walls[0]] });
+      await t.ui({ selection: null, selected: [], keyPlan: false });
+      await t.page.evaluate(async () => (await import('/src/viewport/zoom.ts')).zoomHost()?.zoomWindow({ x: 5.5, y: -4.2 }, { x: 13.2, y: 1 }));
+      await t.wait(900);
+      const drawing = await t.call('doc.query', { name: 'view.drawing', args: { id: view } });
+      const placed = (drawing.marks ?? []).filter((m) => Array.isArray(m.data?.textAuto));
+      t.expect(placed.length > 0, 'the exterior strings have values moved clear of their neighbours');
+      const plan = t.page.locator('[data-testid=plan]');
+      t.expect(await plan.locator('text', { hasText: /^150$/ }).count() >= 1, 'the pier\'s value is drawn');
+      const [x0, y0] = await t.planPoint(5.5, 1);
+      const [x1, y1] = await t.planPoint(13.2, -4.2);
+      await t.shot('dimension-text-placement', { clip: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 } });
+      // The setting, under the rules' tabs.
+      await t.tool('drafting.dimensionRules');
+      await t.wait(500);
+      t.expect(await t.page.locator('[data-dim-auto-text]').isChecked(), 'automatic text placement is on');
+      t.expect(await t.page.locator('[data-field=dim-text-leader]').inputValue() === '5', 'a leader past 5 mm on paper');
+      await t.page.locator('[data-dimension-rules] button', { hasText: 'Cancel' }).click();
+    },
+  },
+  {
+    // A grid axis's temporary dimensions (forum topic 78): axis 2 selected shows its distances to axes 1 and 3; 5000 typed
+    // to axis 1 moves it, and the axes beyond with it.
+    id: 'grid-temp-dimensions',
+    touches: ['drafting'],
+    async run(t) {
+      await t.fresh();
+      const { gridId } = await t.cmd('drafting.makeGrid', { x: [6, 6, 4.5], y: [5, 5] });
+      await t.ui({ keyPlan: false });
+      await t.page.evaluate(async () => (await import('/src/viewport/zoom.ts')).zoomHost()?.zoomWindow({ x: -2.5, y: -2.5 }, { x: 19, y: 12.5 }));
+      await t.wait(800);
+      await t.ui({ selection: `${gridId}#2`, selected: [`${gridId}#2`] });
+      await t.wait(800);
+      const dims = t.page.locator('[data-testid=grid-dims]');
+      t.expect(await dims.count() === 1, 'a selected axis shows its temporary dimensions');
+      const dim = (key) => dims.locator(`[data-dim="${key}"]`);
+      t.expect(Math.abs(Number(await dim('g:1').getAttribute('data-value')) - 6) < 1e-6 && Math.abs(Number(await dim('g:3').getAttribute('data-value')) - 6) < 1e-6, 'to axes 1 and 3, 6000 each');
+      t.expect(await t.page.locator('[data-field=grid-dims-beyond]').isChecked(), 'the axes beyond move too, as in its properties');
+      const [x0, y0] = await t.planPoint(-2.5, 12.5);
+      const [x1, y1] = await t.planPoint(19, -2.5);
+      await t.shot('grid-temp-dimensions', { clip: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 } });
+      await dim('g:1').locator('[data-value-hit]').click();
+      await t.page.locator('[data-field=temp-dim]').fill('5000');
+      await t.page.locator('[data-field=temp-dim]').press('Enter');
+      await t.wait(900);
+      const grid = (await t.nodes()).find((n) => n.id === gridId);
+      const x = (tag) => grid.props.axes.find((a) => a.tag === tag).a[0];
+      t.expect(Math.abs(x('2') - 5) < 1e-6 && Math.abs(x('3') - 11) < 1e-6 && Math.abs(x('1')) < 1e-6, `axis 2 at 5000, axis 3 with it (${x('2')}, ${x('3')})`);
+      await t.ui({ selection: null, selected: [] });
     },
   },
   {

@@ -95,9 +95,11 @@ public static class Sun
         return new Vec3(h.X * Math.Cos(alt), h.Y * Math.Cos(alt), Math.Sin(alt));
     }
 
-    /// <summary>The project's place (degrees), from its system and survey point; Bucharest when it has none.</summary>
+    /// <summary>The project's place (degrees), from its system and survey point, else the base point's latitude and longitude; Bucharest when it has none.</summary>
     public static (double Lon, double Lat, bool Known) Place(IModelView m) =>
-        GeoRef.LonLat(m, Location.Survey(m)?.At ?? default) is { } ll ? (ll.Lon, ll.Lat, true) : (26.1025, 44.4268, false);
+        GeoRef.LonLat(m, Location.Survey(m)?.At ?? default) is { } ll ? (ll.Lon, ll.Lat, true)
+        : Location.Base(m) is { Latitude: { } lat, Longitude: { } lon } ? (lon, lat, true)
+        : (26.1025, 44.4268, false);
 
     /// <summary>A place's hours from UTC when none is given: its longitude's zone (Romania's 26° E: UTC+2).</summary>
     public static double ZoneOf(double lon) => Math.Round(lon / 15);

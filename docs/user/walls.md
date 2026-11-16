@@ -28,6 +28,22 @@ Where two walls meet, Lapin joins them by itself. Their layers run into each oth
 
 **The line you draw on.** While the Wall tool is on, the list in the command line's bar chooses the line you click: **Core centre** (the axis, as before), **Core, exterior face**, **Core, interior face**, **Exterior face** or **Interior face**. The exterior is the wall's right as you draw (draw round a building anticlockwise to have it outside). The wall's axis stays on its core, set off from the line, and walls drawn one after the other on the same face meet at the corner of that face.
 
+### A layered wall from solids
+
+A wall another program modelled as separate solids, one per layer (a timber-frame wall drawn in SketchUp as its cladding, battens, boards, insulation with its studs and gypsum), becomes one Lapin wall with **Architecture → Wall from solids** (<kbd>WFS</kbd>), or **Make a layered wall…** when you right-click the selected solids. Select them first: references an IFC, SKP, OBJ, glTF or DAE import brought, Studio solids, or a group holding them. Lapin reads them from their triangles: the solids running the same way, overlapping along and up, side by side across with no more than 10 cm between them, are one wall, and each set of them another wall. Across each wall, the solids that share a stretch of its thickness are one layer, in the order they lie.
+
+Before anything is made, the dialog shows each wall it found: its length, height and thickness, its layers with their materials and thicknesses (rounded to a millimetre), its openings, and what differs from the solids by more than 1 mm or 0.5 % of a layer's volume, as an import measures it; click a name to select that solid. You choose:
+
+- **Gaps between layers**: **An air layer** of the gap's thickness, or **Into the thicker neighbour**.
+- Each layer's **Material**: the solid's material, else its name (*Gips 2* reads *Gips*); a layer marked in orange names none, so type one.
+- The **Core**, where the wall's axis runs and which joins: the structural layer by its name (concrete, brick, timber frame…), the layer with studs, else the thickest.
+- **Timber frame layer** (with the wood module): the studs found in a layer (*7 × Regel inside*) make it the core and a timber frame of their section and spacing (*45x145 mm* at 600); without it, the layer is of the insulation's material and the studs are only reported.
+- **The solids**: **Keep them hidden** (no view draws them and no export writes them while the wall is there; the wall's properties offer **Show the original solids**, and deleting the wall brings them back), **Delete them**, or **Keep them**.
+
+**Make** makes a wall type with those layers (no lintels: what the solids have, nothing more) and the wall on its axis, as long and as high as the core's solids, on their storey and in their group. An opening found in every layer that runs past it becomes the wall's opening, as large as the smallest of them; a door's or window's solid standing in it (an IfcDoor or IfcWindow, or one named so) becomes a door or a window of that size. An opening in some layers only is listed and the wall is left whole there. Walls made together are joined where they meet. All of it is one step to undo. Nothing is done on its own when a file is imported: the file comes in as it is, and the wall is made only when you ask.
+
+![Make a layered wall from solids: the layers found, the core, the openings](shots/wall-from-solids.webp)
+
 ## Changing a wall
 
 Click a wall to select it. Its grips appear. Drag the ends to lengthen or shorten it, or drag the cross in the middle to move it.
