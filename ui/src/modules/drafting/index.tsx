@@ -51,9 +51,22 @@ const dimension: ToolDef = { id: 'drafting.dimension', label: 'Aligned', icon: D
 const text: ToolDef = {
   id: 'drafting.text', label: 'Text', icon: Type, shortcut: 'TX',
   gesture: { kind: 'point' },
-  complete: async ({ points: [p] }, ctx) => {
+  complete: async ({ points: [p], rotation }, ctx) => {
     const body = promptText('Text');
-    if (body?.trim()) await ctx.execute('drafting.addText', { viewId: ctx.viewId, at: [p.x, p.y], text: body.trim() });
+    const angle = rotation ? -rotation : 0;
+    if (body?.trim()) await ctx.execute('drafting.addText', { viewId: ctx.viewId, at: [p.x, p.y], text: body.trim(), ...(angle ? { angle } : {}) });
+  },
+};
+const textBox: ToolDef = {
+  id: 'drafting.textBox', label: 'Text box', icon: Type,
+  gesture: { kind: 'rectangle' },
+  complete: async ({ points: [a, b], rotation }, ctx) => {
+    const width = Math.abs(b.x - a.x);
+    if (width < 1e-3) return;
+    const body = promptText('Text');
+    const angle = rotation ? -rotation : 0;
+    const at = [Math.min(a.x, b.x), Math.max(a.y, b.y)];
+    if (body?.trim()) await ctx.execute('drafting.addText', { viewId: ctx.viewId, at, width, text: body.trim(), ...(angle ? { angle } : {}) });
   },
 };
 /** A grid axis: its two ends; it takes the next label of its direction. Its bar: the whole grid's dialog and the axis types (report #68). */
@@ -703,7 +716,7 @@ const drafting: LapinModule = {
         { label: 'Dimension', tools: [dimension, cad('dimLinear', 'Linear', MoveHorizontal, 'DIMLINEAR'), cad('dimAngular', 'Angle', AngleIcon, 'DIMANGULAR'), roomDimensions, exteriorDimensions],
           // Points clicked into a selected string, as ArchiCAD's Insert dimension point.
           small: [dimensionRulesTool, cad('dimAdd', 'Add points', ListPlus, 'DIMADD'), cad('dimDel', 'Remove points', ListMinus, 'DIMDEL'), cad('dimRadius', 'Radius', RadiusIcon, 'DIMRADIUS'), cad('dimDiameter', 'Diameter', DiameterIcon, 'DIMDIAMETER'), cad('dimArc', 'Arc length', ArcLengthIcon, 'DIMARC'), cad('dimSlope', 'Slope', SlopeIcon, 'DIMSLOPE'), cad('dimOrdinate', 'Ordinate', OrdinateIcon, 'DIMORDINATE'), cad('dimCoord', 'Spot coordinate', Crosshair, 'DIMCOORD')] },
-        { label: 'Text', small: [tagParameter], tools: [text, cad('tag', 'Tag', Tag, 'TAG'), {
+        { label: 'Text', small: [textBox, tagParameter], tools: [text, cad('tag', 'Tag', Tag, 'TAG'), {
           id: 'tagOpenings', label: 'Door & window tags', icon: Tags,
           run: () => void (async () => {
             // Every door and window of the plan's storey not tagged yet: a marker across its wall (Drafting standards → Tags).

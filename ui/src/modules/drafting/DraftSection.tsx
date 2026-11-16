@@ -17,7 +17,7 @@ import { fromJson, toJson, type Shape } from '../../viewport/cad/shapes';
 import { ROLES, roleLabel } from '../../viewport/cad/session';
 import { sideLengths, withSideLength } from '../../viewport/cad/sides';
 import { formatLength, lengthText, unitLabel, useStandards } from '../../engine/unitsStore';
-import { Cell, LengthField, NumberField } from '../../shell/cells';
+import { Cell, LengthCell, LengthField, NumberField } from '../../shell/cells';
 import { useLayers, type DraftLayer } from '../../viewport/cad/layers';
 import { ptStrict } from '../../platform/vec';
 import { TagFields } from './tag';
@@ -195,6 +195,7 @@ function TextFields({ node }: { node: NodeDto }) {
       <dd><textarea rows={2} value={body} onChange={(e) => setBody(e.target.value)} onBlur={() => { if (body.trim() && body !== text) set({ text: body }); }} /></dd>
       <dt>Text style</dt><dd><Cell value={typeof node.props.textStyle === 'string' ? node.props.textStyle : ''} placeholder="default" onCommit={(t) => set({ textStyle: t.trim() || null })} /></dd>
       <dt>Angle</dt><dd><Num value={typeof node.props.angle === 'number' ? node.props.angle : 0} onCommit={(a) => set({ angle: a })} suffix="°" /></dd>
+      <dt title="Wrap lines at this width; empty: no wrapping">Width</dt><dd><LengthCell metres={typeof node.props.width === 'number' ? node.props.width : null} placeholder="auto" onCommit={(w) => set({ width: w && w > 0 ? w : null })} /></dd>
       {at && <Point label="Position" p={at} />}
     </dl>
   );

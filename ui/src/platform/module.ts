@@ -66,6 +66,8 @@ export interface ToolInput {
   arcs?: number[];
   /** In the 3D view, the height (m) of each point as clicked (a snap on a ridge, a corner above the level); a tool that measures in space reads it, the others work on the level. */
   heights?: number[];
+  /** Screen rotation of the active 2D view (degrees, counter-clockwise): text tools align to the screen X-axis (forum #110). */
+  rotation?: number;
 }
 
 /** What a tool's completion can use: the storey it draws on, and the engine. */
