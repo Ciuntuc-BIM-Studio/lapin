@@ -39,6 +39,22 @@ public static class Polyline2
         return (p - (a + d * t)).Length;
     }
 
+    /// <summary>How far apart the segments a–b and c–d lie: 0 where they cross or touch.</summary>
+    public static double SegmentsDistance(Vec2 a, Vec2 b, Vec2 c, Vec2 d) => Crosses(a, b, c, d)
+        ? 0
+        : Math.Min(Math.Min(SegmentDistance(c, a, b), SegmentDistance(d, a, b)), Math.Min(SegmentDistance(a, c, d), SegmentDistance(b, c, d)));
+
+    /// <summary>
+    /// Where the line through <paramref name="a"/> along <paramref name="u"/> meets the line through <paramref name="b"/> along
+    /// <paramref name="v"/>; null when they run parallel (the sine of the angle between them under 1e-9, whatever their lengths).
+    /// </summary>
+    public static Vec2? LineIntersection(Vec2 a, Vec2 u, Vec2 b, Vec2 v)
+    {
+        var den = Vec2.Cross(u, v);
+        if (!(Math.Abs(den) >= 1e-9 * Math.Max(1e-12, u.Length * v.Length))) return null;
+        return a + u * (Vec2.Cross(b - a, v) / den);
+    }
+
     /// <summary>
     /// Whether the segments a–b and c–d cross strictly inside both (a shared
     /// end, a touch or a parallel overlap is no crossing); <paramref name="t"/>

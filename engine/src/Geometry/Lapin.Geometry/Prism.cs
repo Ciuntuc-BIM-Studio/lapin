@@ -7,6 +7,17 @@ namespace Lapin.Geometry;
 public static class Prism
 {
     /// <summary>
+    /// A profile swept along <paramref name="d"/>, its volume positive whichever way the ring runs: swept again from the
+    /// ring reversed when the first comes out inside out (the caller's ring is left as it was).
+    /// </summary>
+    public static Solid? ExtrudeOriented(IReadOnlyList<Vec3> profile, Vec3 d, string? tag = null)
+    {
+        var s = Extrude(profile, null, d, tag);
+        if (s == null || Measure.SignedVolume(s) >= 0) return s;
+        return Extrude([.. profile.Reverse()], null, d, tag);
+    }
+
+    /// <summary>
     /// Sweep a planar polygon (optionally with holes) along <paramref name="d"/>.
     /// Caps are tagged "start" / "end", the outer sides "side", the hole sides
     /// "reveal". Null for a degenerate profile or a sweep inside its own plane.
