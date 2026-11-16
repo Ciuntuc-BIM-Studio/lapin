@@ -391,7 +391,7 @@ public static class ProfileTables
         var heads = new[] { "Name", "Family", "Kind", "Standard", "Material", "h (mm)", "b (mm)", "tw (mm)", "tf (mm)", "r1 (mm)", "r2 (mm)", "lip (mm)", "b2 (mm)", "tf2 (mm)", "slope (%)",
             "A (cm2)", "Iy (cm4)", "Iz (cm4)", "Wel.y (cm3)", "Wel.z (cm3)", "Wpl.y (cm3)", "Wpl.z (cm3)", "It (cm4)", "Iw (cm6)", "mass (kg/m)", "paint (m2/m)" };
         var sb = new StringBuilder();
-        static string Q(string? s) => s == null ? "" : s.Contains(';') || s.Contains('"') ? $"\"{s.Replace("\"", "\"\"")}\"" : s;
+        static string Q(string? s) => CsvText.Field(s);
         static string N(double v, double f) => v == 0 ? "" : Math.Round(v / f, 6).ToString(CultureInfo.InvariantCulture);
         sb.AppendLine(string.Join(';', heads));
         foreach (var p in profiles)

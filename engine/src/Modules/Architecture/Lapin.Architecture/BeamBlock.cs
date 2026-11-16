@@ -394,10 +394,9 @@ public static class BeamBlock
     /// </summary>
     public static List<BeamBlockSpec> ParseCsv(string text)
     {
-        var lines = text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n').Where(l => l.Trim().Length > 0).ToList();
+        var lines = CsvText.Read(text).Where(r => r.Any(c => c.Trim().Length > 0)).ToList();
         if (lines.Count < 2) throw new CommandException("The file has no rows under its header.");
-        var sep = lines[0].Contains(';') ? ';' : lines[0].Contains('\t') ? '\t' : ',';
-        string[] Cells(string l) => l.Split(sep).Select(c => c.Trim().Trim('"').Trim()).ToArray();
+        static string[] Cells(List<string> l) => [.. l.Select(c => c.Trim())];
         string Fold(string h) => new string(h.ToLowerInvariant().Where(char.IsLetter).ToArray());
         var header = Cells(lines[0]).Select(Fold).ToList();
         int Col(string name) { var k = Fold(name); var i = header.IndexOf(k); return i >= 0 ? i : header.FindIndex(h => h.Length > 0 && (h.StartsWith(k.Replace("mm", ""), StringComparison.Ordinal))); }

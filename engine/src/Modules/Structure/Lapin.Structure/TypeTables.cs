@@ -369,7 +369,7 @@ public static class TypeTables
     public static string Csv(IModelView m, string kind = "all")
     {
         var sb = new StringBuilder();
-        static string Q(string? s) => s == null ? "" : s.Contains(';') || s.Contains('"') || s.Contains('\n') ? $"\"{s.Replace("\"", "\"\"")}\"" : s;
+        static string Q(string? s) => CsvText.Field(s);
         static string Mm(double v) => Math.Round(v * 1000, 3).ToString(CultureInfo.InvariantCulture);
         sb.AppendLine(string.Join(';', CsvHeads));
         foreach (var t in m.OfClass(IfcClass.ColumnType).Concat(m.OfClass(IfcClass.BeamType)))

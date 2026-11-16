@@ -336,7 +336,7 @@ public static class ClashReports
     /// <summary>The report as a CSV list (comma separated, quoted, UTF-8): one row per item.</summary>
     public static string Csv(IModelView m, ClashReport r)
     {
-        static string Q(string? s) => s == null ? "" : s.IndexOfAny([',', '"', '\n']) >= 0 ? $"\"{s.Replace("\"", "\"\"")}\"" : s;
+        static string Q(string? s) => CsvText.Field(s);
         var sb = new StringBuilder();
         sb.Append("No.,Kind,Status,MEP element,Host,Void,Short by (mm),X,Y,Z,Comment,Message\n");
         foreach (var i in r.Items.OrderBy(i => i.Number))

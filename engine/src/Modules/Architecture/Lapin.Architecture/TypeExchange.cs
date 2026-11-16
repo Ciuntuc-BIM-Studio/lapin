@@ -117,7 +117,7 @@ public static class TypeExchange
     }
 
     static string Mm(JsonNode? metres) => Lapin.Model.Json.Number(metres) is { } v ? Math.Round(v * 1000, 3).ToString(CultureInfo.InvariantCulture) : "";
-    static string Cell(string s) => s.IndexOfAny([',', ';', '"', '\n', '\r']) >= 0 ? $"\"{s.Replace("\"", "\"\"")}\"" : s;
+    static string Cell(string s) => CsvText.Field(s);
 
     /// <summary>A type as a file gives it: its layers checked, its sweeps and parameters as written (null: the file says nothing of them), the file's own object for comparing.</summary>
     public sealed record FileType(string Kind, string Name, string? Mark, IReadOnlyList<LayerSpec> Layers, JsonArray? Sweeps, JsonArray? Params, JsonObject Source);
@@ -186,10 +186,9 @@ public static class TypeExchange
 
     static List<FileType> ReadCsv(string text)
     {
-        var lines = text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n').Where(l => l.Trim().Length > 0).ToList();
+        var lines = CsvText.Read(text).Where(r => r.Any(c => c.Trim().Length > 0)).ToList();
         if (lines.Count < 2) throw new CommandException("The CSV has no layers under its header.");
-        var sep = new[] { ';', '\t', ',' }.MaxBy(c => lines[0].Count(x => x == c));
-        var head = Cells(lines[0], sep).Select(h => h.Trim().ToLowerInvariant()).ToList();
+        var head = lines[0].Select(h => h.Trim().ToLowerInvariant()).ToList();
         int Col(params string[] names) => head.FindIndex(h => names.Any(n => h == n || h.StartsWith(n + " ")));
         int kind = Col("kind"), type = Col("type", "name"), mark = Col("mark"), layer = Col("layer"), material = Col("material"), thick = Col("thickness"), core = Col("core"), from = Col("from"), to = Col("to"), note = Col("note");
         if (type < 0 || material < 0 || thick < 0) throw new CommandException("The CSV needs at least the columns Type, Material and Thickness (mm).");
@@ -197,7 +196,7 @@ public static class TypeExchange
         var found = new Dictionary<(string, string), (string? Mark, List<JsonObject> Layers)>();
         foreach (var line in lines.Skip(1))
         {
-            var c = Cells(line, sep);
+            var c = line;
             string At(int i) => i >= 0 && i < c.Count ? c[i].Trim() : "";
             var name = At(type);
             if (name.Length == 0) continue;
@@ -221,29 +220,6 @@ public static class TypeExchange
 
     static double Metres(string mm, string type) =>
         Numbers.Parse(mm, NumberMode.Strict) is { } v ? v / 1000 : throw new CommandException($"„{mm}” is not a thickness in millimetres (type „{type}”).");
-
-    /// <summary>A CSV line's cells, quotes kept as spreadsheets write them.</summary>
-    static List<string> Cells(string line, char sep)
-    {
-        var o = new List<string>();
-        var sb = new StringBuilder();
-        var quoted = false;
-        for (var i = 0; i < line.Length; i++)
-        {
-            var ch = line[i];
-            if (quoted)
-            {
-                if (ch == '"' && i + 1 < line.Length && line[i + 1] == '"') { sb.Append('"'); i++; }
-                else if (ch == '"') quoted = false;
-                else sb.Append(ch);
-            }
-            else if (ch == '"' && sb.Length == 0) quoted = true;   // a quote opens a cell only at its start
-            else if (ch == sep) { o.Add(sb.ToString()); sb.Clear(); }
-            else sb.Append(ch);
-        }
-        o.Add(sb.ToString());
-        return o;
-    }
 
     /// <summary>What an import did: types made (some beside the project's, renamed), changed, skipped; the materials settled.</summary>
     public sealed record Result(int Created, int Updated, int Skipped, List<string> Renamed, LibraryMerge.MaterialTally Materials);
