@@ -22,6 +22,8 @@ public abstract record Shape
                 => new Polyline(l.Select(p => p!.Value).ToList(), o["closed"] is JsonValue cv && cv.TryGetValue<bool>(out var c) && c),
             "circle" when P(o["c"]) is { } c && Json.Number(o["r"]) is { } r && r > 0 => new Circle(c, r),
             "arc" when P(o["c"]) is { } c && Json.Number(o["r"]) is { } r && r > 0 => new Arc(c, r, Json.Number(o["start"]) ?? 0, Json.Number(o["end"]) ?? 0),
+            "ellipse" when P(o["c"]) is { } c && P(o["m"]) is { } m && m.Length > 1e-12 && Json.Number(o["ratio"]) is { } q && q > 1e-9 && q <= 1 + 1e-9
+                => new Ellipse(c, m, q, Json.Number(o["start"]) ?? 0, Json.Number(o["end"]) ?? 0),
             _ => null,
         };
     }
@@ -52,6 +54,30 @@ public sealed record Arc(Vec2 C, double R, double Start, double End) : Shape
     public override JsonObject ToJson() => new() { ["type"] = "arc", ["c"] = J(C), ["r"] = R, ["start"] = Start, ["end"] = End };
     public double Sweep => Geo.Sweep(Start, End);
     public Vec2 At(double angle) => C + new Vec2(Math.Cos(angle), Math.Sin(angle)) * R;
+}
+
+/// <summary>
+/// An ellipse (audit S4): its centre, its major semi-axis <c>M</c> (a vector from the centre to the major axis's end), the ratio of its
+/// minor semi-axis to it (0 &lt; ratio ≤ 1, the minor one a quarter turn anticlockwise from M), and, for an elliptical arc, the
+/// parameters it runs between anticlockwise (P(t) = C + M cos t + N sin t); start = end: the whole ellipse. As DXF's ELLIPSE.
+/// Laid by the one rule for curves (<see cref="Chords.EllipseArc"/>).
+/// </summary>
+public sealed record Ellipse(Vec2 C, Vec2 M, double Ratio, double Start, double End) : Shape
+{
+    public override JsonObject ToJson()
+    {
+        var o = new JsonObject { ["type"] = "ellipse", ["c"] = J(C), ["m"] = J(M), ["ratio"] = Math.Round(Ratio, 12) };
+        if (!Whole) { o["start"] = Start; o["end"] = End; }
+        return o;
+    }
+    public bool Whole => Math.Abs(Geo.NormAngle(End - Start)) < 1e-12;
+    public Vec2 N => new Vec2(-M.Y, M.X) * Ratio;
+    public double A => M.Length;
+    public double B => M.Length * Ratio;
+    public double Sweep => Whole ? 2 * Math.PI : Geo.Sweep(Start, End);
+    public Vec2 At(double t) => C + M * Math.Cos(t) + N * Math.Sin(t);
+    /// <summary>Its points by the one rule, both ends included (a whole one closed: its first point again at the end).</summary>
+    public List<Vec2> Points() => Chords.EllipseArc(C, M, Ratio, Whole ? 0 : Start, Sweep, Whole ? 4 : 2);
 }
 
 /// <summary>A piece of a shape: a segment, or an arc (a whole circle when <c>Full</c>).</summary>
@@ -100,6 +126,8 @@ public static class Geo
         Polyline p => Enumerable.Range(0, p.Closed ? p.Pts.Count : p.Pts.Count - 1).Select(i => (Prim)new SegP(p.Pts[i], p.Pts[(i + 1) % p.Pts.Count])).ToList(),
         Circle c => [new ArcP(c.C, c.R, 0, 0, true)],
         Arc a => [new ArcP(a.C, a.R, a.Start, a.End, false)],
+        // An ellipse as its chords (within a millimetre): what snaps, picks and intersections meet.
+        Ellipse e => e.Points() is var pts ? Enumerable.Range(0, pts.Count - 1).Select(i => (Prim)new SegP(pts[i], pts[i + 1])).ToList() : [],
         _ => [],
     };
 
@@ -115,6 +143,7 @@ public static class Geo
                 pts.AddRange([a.At(a.Start), a.At(a.End)]);
                 for (var k = 0; k < 4; k++) if (AngleInArc(k * Math.PI / 2, a.Start, a.End)) pts.Add(a.At(k * Math.PI / 2));
                 break;
+            case Ellipse e: pts.AddRange(e.Points()); break;
         }
         return (new Vec2(pts.Min(p => p.X), pts.Min(p => p.Y)), new Vec2(pts.Max(p => p.X), pts.Max(p => p.Y)));
     }
@@ -170,6 +199,12 @@ public static class Geo
                 k.Midpoints.Add(a.At(a.Start + a.Sweep / 2));
                 k.Centers.Add(a.C);
                 for (var i = 0; i < 4; i++) if (AngleInArc(i * Math.PI / 2, a.Start, a.End)) k.Quadrants.Add(a.At(i * Math.PI / 2));
+                break;
+            case Ellipse e:
+                // Its centre and its axes' four ends (those on an elliptical arc), and an arc's ends.
+                k.Centers.Add(e.C);
+                for (var i = 0; i < 4; i++) if (e.Whole || AngleInArc(i * Math.PI / 2, e.Start, e.End)) k.Quadrants.Add(e.At(i * Math.PI / 2));
+                if (!e.Whole) { k.Endpoints.AddRange([e.At(e.Start), e.At(e.End)]); k.Midpoints.Add(e.At(e.Start + e.Sweep / 2)); }
                 break;
         }
         return k;
@@ -285,6 +320,7 @@ public static class Geo
     {
         Circle c => c with { C = c.C + d },
         Arc a => a with { C = a.C + d },
+        Ellipse e => e with { C = e.C + d },
         _ => Map(s, p => p + d),
     };
 
@@ -292,6 +328,8 @@ public static class Geo
     {
         Circle ci => ci with { C = Rotate(ci.C, c, angle) },
         Arc a => new Arc(Rotate(a.C, c, angle), a.R, NormAngle(a.Start + angle), NormAngle(a.End + angle)),
+        // Its parameters are measured from its own major axis, which turns with it.
+        Ellipse e => e with { C = Rotate(e.C, c, angle), M = Rotate(e.M, new Vec2(0, 0), angle) },
         _ => Map(s, p => Rotate(p, c, angle)),
     };
 
@@ -299,6 +337,7 @@ public static class Geo
     {
         Circle ci => new Circle(c + (ci.C - c) * k, ci.R * Math.Abs(k)),
         Arc a => new Arc(c + (a.C - c) * k, a.R * Math.Abs(k), a.Start, a.End),
+        Ellipse e => e with { C = c + (e.C - c) * k, M = e.M * k },
         _ => Map(s, p => c + (p - c) * k),
     };
 
@@ -310,6 +349,10 @@ public static class Geo
         {
             Circle ci => ci with { C = Mirror(ci.C, a, b) },
             Arc ar => new Arc(Mirror(ar.C, a, b), ar.R, NormAngle(2 * th - ar.End), NormAngle(2 * th - ar.Start)),
+            // The major axis taken the other way round keeps the minor one a quarter turn anticlockwise: t goes to π − t, so the
+            // arc runs from π − end to π − start.
+            Ellipse e => new Ellipse(Mirror(e.C, a, b), (Mirror(e.C + e.M, a, b) - Mirror(e.C, a, b)) * -1, e.Ratio,
+                e.Whole ? 0 : NormAngle(Math.PI - e.End), e.Whole ? 0 : NormAngle(Math.PI - e.Start)),
             _ => Map(s, p => Mirror(p, a, b)),
         };
     }
@@ -322,14 +365,24 @@ public static class Geo
         Polyline p => Prims(p).Cast<SegP>().Sum(x => (x.B - x.A).Length),
         Circle c => 2 * Math.PI * c.R,
         Arc a => a.R * a.Sweep,
+        Ellipse e => EllipseLength(e),
         _ => 0,
     };
+
+    /// <summary>An ellipse's (or elliptical arc's) length, by Gauss–Legendre on |P'(t)|.</summary>
+    static double EllipseLength(Ellipse e)
+    {
+        var edge = new Lapin.Platform.EllipseEdge(e.C, e.M, e.Ratio, true);
+        if (e.Whole) return edge.Length(e.At(0), e.At(0));
+        return edge.Length(e.At(e.Start), e.At(e.End));
+    }
 
     /// <summary>The area a closed shape encloses (null for an open one).</summary>
     public static double? Area(Shape s) => s switch
     {
         Polyline { Closed: true } p => Math.Abs(Polygon2.SignedArea(p.Pts)),
         Circle c => Math.PI * c.R * c.R,
+        Ellipse { Whole: true } e => Math.PI * e.A * e.B,
         _ => null,
     };
 
@@ -353,6 +406,7 @@ public static class Geo
                 var n = maxAngle > 0 ? Math.Max(4, (int)Math.Ceiling(a.Sweep / maxAngle)) : Chords.Count(a.R, a.Sweep, 2);
                 return [Enumerable.Range(0, n + 1).Select(i => a.At(a.Start + a.Sweep * i / n)).ToList()];
             }
+            case Ellipse e: return [e.Points()];
         }
         return [];
     }

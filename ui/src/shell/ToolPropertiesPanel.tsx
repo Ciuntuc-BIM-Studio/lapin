@@ -1,7 +1,8 @@
 /**
  * Tool Properties tab (forum #122): opens automatically when a tool with settings is chosen
- * and restores the previous tab when the tool finishes. Shows the tool's type picker, options
- * (e.g. Wall reference line, height, line/arc mode), or custom properties panel.
+ * and restores the previous tab when the tool finishes. Shows what the new element will be: the tool's own
+ * properties panel (its type, its values), else its type picker. The tool's options (reference line, height,
+ * line/arc…) stay in the command line's bar only, never shown twice (the user's choice, 16.11.2026).
  */
 
 import { Settings2 } from 'lucide-react';
@@ -16,17 +17,20 @@ export function ToolPropertiesPanel() {
   const tool = findTool(toolId);
   if (!tool) {
     return (
-      <div className="panel-body" data-testid="tool-properties-panel">
-        <p className="muted small">Pick a tool to see its settings here.</p>
-      </div>
+      <aside className="panel props" aria-label="Tool Properties">
+        <div className="panel-body" data-testid="tool-properties-panel">
+          <p className="muted small">Pick a tool to see its settings here.</p>
+        </div>
+      </aside>
     );
   }
   const typed = tool.typed;
   const types = typed ? typesOf(tool) : [];
   const currentType = typed ? (typed.get() ?? types[0]?.id ?? '') : '';
-  const Options = tool.options;
   const Props = tool.properties;
+  // The same panel as Properties (aside.props), so the new element's fields look and are found the same way.
   return (
+    <aside className="panel props" aria-label="Tool Properties">
     <div className="panel-body tool-properties" data-testid="tool-properties-panel">
       <div className="row between" style={{ marginBottom: 8 }}>
         <span className="row" style={{ gap: 6 }}>
@@ -35,7 +39,7 @@ export function ToolPropertiesPanel() {
         </span>
         {tool.shortcut && <span className="muted small" data-no-i18n>{tool.shortcut}</span>}
       </div>
-      {typed && (
+      {Props ? <Props /> : typed && (
         <div className="part-section">
           <div className="part-title">Type</div>
           <div className="row" style={{ gap: 4 }}>
@@ -51,15 +55,7 @@ export function ToolPropertiesPanel() {
           </div>
         </div>
       )}
-      {Options && (
-        <div className="part-section">
-          <div className="part-title">Options</div>
-          <div className="row wrap" style={{ gap: 6 }}>
-            <Options />
-          </div>
-        </div>
-      )}
-      {!Options && Props && <Props />}
     </div>
+    </aside>
   );
 }

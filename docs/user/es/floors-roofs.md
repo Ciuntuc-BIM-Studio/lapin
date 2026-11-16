@@ -22,11 +22,23 @@ La barra de la herramienta **Losa**, en la línea de comandos, dibuja el contorn
 
 ![La herramienta Losa dibujando un círculo junto a una losa](shots/floor-shapes.webp)
 
+La misma barra sirve a todas las herramientas de contorno (forjado, hueco de forjado, techo, hueco en el contorno, habitación y balcón por contorno, plataforma, parcela), y tres de sus opciones toman el contorno entero con un clic: **Inside walls** (los muros que se cierran alrededor del punto), **From drawn shape** (la forma dibujada cerrada más pequeña alrededor del punto: una polilínea cerrada, un rectángulo o un círculo, que sigue redondo) y **From room** (la habitación alrededor del punto, con sus bordes curvos).
+
+![La barra de las herramientas de contorno, con From drawn shape elegido](shots/outline-sources.webp)
+
+Para forjado, hueco de forjado, techo y habitación por contorno, la barra ofrece también **Ellipse**: su centro, el extremo de un semieje y luego el otro. Los bordes del contorno siguen la elipse verdadera (cuatro cuartos), medidos exactamente; una esquina movida fuera de la elipse vuelve rectos sus dos bordes, y una esquina junto a un borde elíptico no se redondea. IFC la lleva como IfcEllipse. **From drawn shape** toma igual una elipse dibujada.
+
+![Un forjado elíptico dibujándose junto a una elipse dibujada](shots/ellipse-floor.webp)
+
 Cualquier borde de una losa, de un hueco en losa o de un falso techo puede ser curvo. Haga clic derecho en la losa seleccionada cerca de un borde y elija **Convertir en arco**: el borde se curva hacia fuera un octavo de su longitud y aparece un pinzamiento redondo en el centro del arco. Arrástrelo para curvar el arco por el punto que quiera (el rombo, ahora en el centro de la cuerda, sigue moviendo el borde). **Convertir en recto** lo vuelve una línea. Una esquina entre dos bordes rectos se puede redondear o achaflanar: haga clic derecho en ella y elija **Redondear esquina…** (escriba el radio) o **Achaflanar esquina…** (escriba cuánto retrocede por cada borde). La esquina se convierte en dos, donde el arco o el chaflán encuentran los bordes; un radio demasiado grande para los bordes se rechaza. Cada uno es un paso de deshacer.
 
 ![Una losa con un borde curvo y una esquina redondeada](shots/floor-curved-edge.webp)
 
 La losa se construye a lo largo de sus arcos, ninguna cuerda a más de 1 mm de ellos, en 3D, plantas y secciones; su área y su perímetro se miden sobre los arcos verdaderos. Una capa que pasa de un borde curvo (vea [Extensiones de capa](walls.md#layer-extents)) sigue el arco. Un hueco también puede tener bordes curvos, y una losa curva puede tener huecos. En IFC la losa lleva su contorno con los arcos verdaderos como huella (una IfcIndexedPolyCurve con segmentos de arco), junto a su cuerpo. Las cubiertas mantienen bordes rectos, porque sus reglas de borde (alero, piñón) se fijan por borde recto.
+
+Un forjado o un falso techo puede tener **huecos propios**: islas recortadas de su contorno, parte del elemento, no aberturas aparte. Elija **Hole in the outline** en la herramienta **Opening** (en *In a floor*) y dibújelo dentro del forjado (o del forjado o techo seleccionado) con la misma barra: un polígono cuyos bordes pueden ser arcos, un rectángulo o un círculo. Seleccionado, el forjado muestra las esquinas y bordes de cada hueco como pinzamientos, con el mismo clic derecho (**Make arc**, **Fillet corner…**, **Chamfer corner…**); la cruz en el centro de un hueco lo mueve, y su clic derecho ofrece **Remove hole**. El forjado se construye alrededor de sus huecos y su área los deja fuera, medidos sobre sus arcos verdaderos; un hueco debe quedar dentro del contorno y separado de los demás, y un contorno cambiado de modo que ya no lo contiene se rechaza. En **Edit sketch** los huecos también son bucles del boceto: dibuje otro bucle cerrado dentro y **Finish sketch** lo convierte en hueco (el bucle mayor es el contorno). En IFC los huecos son más curvas de la huella del forjado y se leen de vuelta como huecos. Una plataforma (**Site → Hole in platform**) admite huecos igual: el terreno dentro del hueco conserva sus cotas.
+
+![Un forjado con un hueco rectangular y otro redondo propios, seleccionado](shots/floor-holes.webp)
 
 #### Editar boceto
 
@@ -41,6 +53,10 @@ El boceto, con sus restricciones y cotas, queda en la losa (va a IFC con la inte
 Una losa dibujada fuera de los muros, delante de una puerta, es un porche. Para los peldaños que suben a él, consulte [Escaleras](stairs.md).
 
 Una capa de un forjado también puede ir más allá de su contorno, o detenerse antes, todo alrededor o en un borde, escrita en sus propiedades o arrastrada en planta o en sección con **Editar capas**, y un tipo de forjado puede dar a sus forjados sus extensiones: vea [Extensiones de capas](walls.md#extensiones-de-capas). Las cubiertas aún no tienen composición de capas (su cobertura, su losa y su estructura son partes propias), así que no tienen extensiones de capas.
+
+**Modificar → Dividir elemento** sobre una losa o un techo pide dos puntos de una línea de corte: la línea continúa más allá de ellos y debe cruzar el contorno exactamente dos veces. La losa pasa a ser dos losas; la parte pulsada conserva el id (GlobalId en IFC), los arcos de los bordes siguen siendo arcos (un arco cortado sigue siendo un arco) y un hueco de la losa pasa a la parte en que está. Un hueco que cruce la línea se rechaza. **Modificar → Recortar/alargar elementos** acepta un límite recto (un muro, una viga o una línea dibujada) y corta allí la losa o el techo, conservando el lado pulsado.
+
+![Una losa con un borde curvo dividida por una línea: la parte de la derecha seleccionada](shots/floor-split.webp)
 
 ## Cubiertas
 

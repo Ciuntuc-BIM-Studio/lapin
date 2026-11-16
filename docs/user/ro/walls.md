@@ -142,6 +142,16 @@ Sub un acoperiș straturile peretelui urcă până la acoperiș; o prelungire **
 
 ![Editarea straturilor într-o secțiune: mânerele straturilor plăcii unde tăietura le traversează marginile](shots/layer-edit-section.webp)
 
+### Tăierea, prelungirea, împărțirea și paralela pereților
+
+**Modifică → Taie/Prelungește elemente** (TRIMEXTEND sau TE în linia de comandă) funcționează ca în Revit. Alegi mai întâi limita: un perete, o grindă sau o fundație continuă (axa lor, sau fața: răspunde **N** pentru fața apropiată ori **F** pentru cea îndepărtată, **A** revine la axă), ori o linie desenată, un segment de polilinie, un arc sau un cerc. Apoi dai clic pe pereți unul după altul, fiecare pe partea de păstrat: capătul de dincolo de limită este tăiat, iar la un perete care nu ajunge, capătul mai apropiat este prelungit până la limită. Un perete curb continuă pe cercul lui. Un perete adus pe axa altui perete este îmbinat cu acesta acolo. Ușile, ferestrele și golurile rămân la locul lor în plan; cel care ar nimeri în partea tăiată refuză. <kbd>Enter</kbd> termină, <kbd>Esc</kbd> anulează. Fiecare perete este un pas de anulare. TRIM și EXTEND din linia de comandă primesc și un perete cu clic într-un plan.
+
+**Modifică → Împarte elementul** (SPLITELEMENT sau SPLIT) taie un perete unde dai clic: rezultă doi pereți. Primul păstrează id-ul (GlobalId-ul din IFC) și partea de la începutul peretelui; al doilea este o copie a lui (tip, nivel, straturi, proprietăți, grupuri) și preia îmbinările de la capătul îndepărtat. Cei doi se întâlnesc într-o îmbinare în prelungire. Ușile, ferestrele și golurile merg la partea în care se află; unul peste tăietură refuză (*lies across the cut*). Scrie **I** (Intersecție) ca să alegi peretele și apoi ce îl intersectează, un alt element sau o linie ori un arc desenat, și să tai acolo; **P** revine la Punct.
+
+**Modifică → Paralelă din element** (comanda OFFSET din linia de comandă, care acceptă acum elemente): scrie distanța în unitatea proiectului, dă clic pe un perete într-un plan, apoi pe partea unde vine copia. Copia este paralelă cu peretele, concentrică la un perete curb, cu același tip, aceleași straturi și goluri. **A** (Axă, implicit) măsoară de la axă, **F** (Fețe) de la fața peretelui, astfel încât fața copiei să fie la distanța dată de a lui; **T** (Prin) ia un punct prin care trece copia.
+
+![Doi pereți tăiați la o limită și un perete cu ușă împărțit în doi](shots/wall-split-trim.webp)
+
 ## Tipurile de pereți
 
 Un tip de perete e un set de straturi, de la fața din dreapta sensului în care e desenat peretele (exteriorul, când desenezi în jurul clădirii în sens trigonometric) la fața din stânga. Fiecare strat are un material și o grosime, iar unul dintre ele e **miezul**. Linia peretelui merge pe miez. Ca să editezi tipurile, alege **Arhitectură → Tipuri de pereți**. Un strat altul decât miezul poate avea înălțimea lui: **Strat de la** și **Strat până la** spun cât de sus merge stratul peste baza peretelui (nu e înălțimea peretelui: locul gol arată *sus perete*, adică până la capătul de sus al peretelui; un placaj de faianță până la 1500, un placaj de fațadă de la 300 în sus); gol, merge pe toată înălțimea.

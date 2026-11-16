@@ -39,6 +39,8 @@ Dans **Propriétés** une semelle isolée montre son **Haut** et son **Bas** en 
 
 ![Poteaux, poutres et semelles isolées en 3D](shots/structure-3d.webp)
 
+Les poutres et les semelles filantes se coupent et se décalent avec les mêmes outils que les murs (voir [Ajuster, prolonger, scinder et décaler des murs](walls.md)) : **Modifier → Scinder l’élément** en scinde une en deux là où vous cliquez, **Modifier → Ajuster/prolonger les éléments** l’ajuste jusqu’à une limite ou la prolonge jusqu’à elle (une semelle filante courbe continue sur son cercle ; amenée sur l’axe d’une autre poutre, les deux sont jointes), et **Modifier → Décaler l’élément** la copie en parallèle, depuis son axe ou entre ses faces.
+
 ## Types et angles
 
 **Types structurels** définit les sections des poteaux, des poutres et des semelles : sections en béton et profilés en acier. La section d’un poteau est un **Rectangle**, un **Cercle** ou un **Polygone**, régulier, donné par ses **Côtés** et son **Diamètre** entre les sommets (un poteau octogonal, comme peut en avoir un IFC importé). Cliquez sur un type dans la liste pour modifier sa taille ou son nom, puis **Enregistrer le type** : tous les éléments de ce type suivent ; **Nouveau type** revient à la création d’un type.

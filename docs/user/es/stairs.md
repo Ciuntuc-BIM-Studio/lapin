@@ -146,6 +146,8 @@ Los segmentos de una barandilla pueden ser arcos. Clic derecho junto a un segmen
 
 **Architecture → Balcony** (<kbd>BY</kbd>) cuelga un balcón de un muro: elija su estilo en la barra de la línea de comandos y haga clic fuera de la cara del muro, donde va; queda en ese lado del muro, a la cota del suelo de la planta. Un **balcón francés** (Juliet) colocado junto a una puerta o ventana se centra en ella, 200 mm más ancho. Donde no hay ningún muro cerca, el balcón queda donde se hace clic. **Balcony by outline** dibuja cualquier forma: haga clic en sus esquinas; el primer lado queda contra el edificio. **Gallery edge** dibuja el borde de una entreplanta sobre un espacio de doble altura con dos puntos (el vacío a la izquierda, la galería a la derecha).
 
+Los bordes de un balcón dibujado también pueden ser arcos: **Balcony by outline** tiene las mismas formas que la barra de la herramienta Floor, y las esquinas y los bordes del balcón seleccionado admiten **Fillet corner…**, **Chamfer corner…** y **Make arc** con el clic derecho; su losa se construye a lo largo de los arcos y su área se mide sobre ellos.
+
 Los estilos predefinidos cubren los tipos que se piden:
 
 - **Juliet balcony**: una barandilla de balaustres delante de una puerta balconera sobre una pequeña repisa de piedra con dos ménsulas.

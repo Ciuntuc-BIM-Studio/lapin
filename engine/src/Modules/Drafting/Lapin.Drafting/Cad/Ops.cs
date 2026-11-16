@@ -12,6 +12,9 @@ public static class Ops
     {
         switch (s)
         {
+            // An ellipse's offset is no ellipse (audit S4): not made, rather than a curve that only looks like one.
+            case Ellipse:
+                throw new Lapin.Platform.CommandException("An ellipse is not offset: the curve at a distance from it is no ellipse. Draw another ellipse, or explode it into a polyline first.");
             case Line l:
             {
                 var n = Geo.Norm(l.B - l.A).Perp;
@@ -115,6 +118,25 @@ public static class Ops
                 var pt = Rel(pick);
                 if (pt > sweep) pt = pt - sweep < 2 * Math.PI - pt ? sweep : 0;
                 return Pieces(ts, 0, sweep, pt).Select(x => (Shape)new Arc(a.C, a.R, Geo.NormAngle(a.Start + x.From), Geo.NormAngle(a.Start + x.To))).ToList();
+            }
+            // An ellipse (audit S4), as a circle or an arc is, by its own parameter: the pieces elliptical arcs.
+            case Ellipse e:
+            {
+                var edge = new Lapin.Platform.EllipseEdge(e.C, e.M, e.Ratio, true);
+                double Abs(Vec2 q) => Geo.NormAngle(edge.Param(q));
+                if (e.Whole)
+                {
+                    var ts = Params(others, target, Abs).Distinct(new Near()).OrderBy(t => t).ToList();
+                    if (ts.Count < 2) return null;
+                    return CyclicPieces(ts, 2 * Math.PI, Abs(pick)).Select(x => (Shape)(e with { Start = Geo.NormAngle(x.From), End = Geo.NormAngle(x.To) })).ToList();
+                }
+                double Rel(Vec2 q) => Geo.NormAngle(edge.Param(q) - e.Start);
+                var sweep = e.Sweep;
+                var cuts = Params(others, target, Rel).Where(t => t > 1e-9 && t < sweep - 1e-9).ToList();
+                if (cuts.Count == 0) return null;
+                var pt = Rel(pick);
+                if (pt > sweep) pt = pt - sweep < 2 * Math.PI - pt ? sweep : 0;
+                return Pieces(cuts, 0, sweep, pt).Select(x => (Shape)(e with { Start = Geo.NormAngle(e.Start + x.From), End = Geo.NormAngle(e.Start + x.To) })).ToList();
             }
         }
         return null;

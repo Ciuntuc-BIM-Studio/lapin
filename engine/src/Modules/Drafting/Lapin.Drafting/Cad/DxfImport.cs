@@ -296,14 +296,8 @@ public static class DxfImport
                 case DxfPolyline pl: foreach (var s in PolylineShapes(pl)) Add(Map(f, s), layer, p.Color); break;
                 case DxfCircle c: Add(Map(f, new Circle(c.C, c.R)), layer, p.Color); break;
                 case DxfArc a: Add(Map(f, new Arc(a.C, a.R, a.StartDeg * Math.PI / 180, a.EndDeg * Math.PI / 180)), layer, p.Color); break;
-                case DxfEllipse el:
-                {
-                    var pts = DxfCurves.Ellipse(el.C, el.Major, el.Ratio, el.Start, el.End);
-                    var closed = pts.Count > 2 && (pts[0] - pts[^1]).Length < 1e-9;
-                    if (closed) pts.RemoveAt(pts.Count - 1);
-                    Add(Map(f, new Polyline(pts, closed)), layer, p.Color);
-                    break;
-                }
+                // Kept an ellipse (audit S4), not its chords.
+                case DxfEllipse el: Add(Map(f, EllipseOf(el)), layer, p.Color); break;
                 case DxfSpline sp:
                 {
                     var pts = DxfCurves.Spline(sp.Degree, sp.Knots, sp.Controls, sp.Weights, sp.Fits);
@@ -588,13 +582,8 @@ public static class DxfImport
                     run.Add(Map(f, new Arc(a.C, a.R, a.StartDeg * Math.PI / 180, a.EndDeg * Math.PI / 180)), layer, p.Color);
                     break;
                 case DxfEllipse el:
-                {
-                    var pts = DxfCurves.Ellipse(el.C, el.Major, el.Ratio, el.Start, el.End);
-                    var closed = pts.Count > 2 && (pts[0] - pts[^1]).Length < 1e-9;
-                    if (closed) pts.RemoveAt(pts.Count - 1);
-                    run.Add(Map(f, new Polyline(pts, closed)), layer, p.Color);
+                    run.Add(Map(f, EllipseOf(el)), layer, p.Color);
                     break;
-                }
                 case DxfSpline sp:
                 {
                     var pts = DxfCurves.Spline(sp.Degree, sp.Knots, sp.Controls, sp.Weights, sp.Fits);
@@ -800,6 +789,14 @@ public static class DxfImport
         return o;
     }
 
+    /// <summary>A DXF ELLIPSE as an ellipse: its centre, major axis, ratio, and its start and end parameters (a whole one: none).</summary>
+    static Ellipse EllipseOf(DxfEllipse el)
+    {
+        var sweep = el.End - el.Start;
+        var whole = Math.Abs(sweep) < 1e-9 || Math.Abs(Math.Abs(sweep) - 2 * Math.PI) < 1e-9;
+        return new Ellipse(el.C, el.Major, el.Ratio, whole ? 0 : Geo.NormAngle(el.Start), whole ? 0 : Geo.NormAngle(el.End));
+    }
+
     static List<Vec2> Dedupe(List<Vec2> pts, bool closed) => Polyline2.Dedupe(pts, closed, 1e-12);
 
     /// <summary>A shape through a transform: circles and arcs stay round under a similarity (an arc's ends swap when it mirrors); otherwise they become polylines.</summary>
@@ -815,10 +812,19 @@ public static class DxfImport
                 var (s0, s1) = (Math.Atan2(p0.Y - c.Y, p0.X - c.X), Math.Atan2(p1.Y - c.Y, p1.X - c.X));
                 return f.Flips ? new Arc(c, a.R * f.Factor, Geo.NormAngle(s1), Geo.NormAngle(s0)) : new Arc(c, a.R * f.Factor, Geo.NormAngle(s0), Geo.NormAngle(s1));
             }
-            case Circle or Arc:
+            // An ellipse under a similarity stays one: its centre and major axis carried; mirrored, that axis taken the other way
+            // (t goes to π − t, so its ends swap).
+            case Ellipse e when f.Uniform:
+            {
+                var c = f.Apply(e.C);
+                var m = f.Apply(e.C + e.M) - c;
+                if (!f.Flips) return e with { C = c, M = m };
+                return new Ellipse(c, m * -1, e.Ratio, e.Whole ? 0 : Geo.NormAngle(Math.PI - e.End), e.Whole ? 0 : Geo.NormAngle(Math.PI - e.Start));
+            }
+            case Circle or Arc or Ellipse:
             {
                 var pts = Geo.Polylines(s)[0].Select(f.Apply).ToList();
-                var closed = s is Circle;
+                var closed = s is Circle || s is Ellipse { Whole: true };
                 if (closed) pts.RemoveAt(pts.Count - 1);
                 return new Polyline(pts, closed);
             }

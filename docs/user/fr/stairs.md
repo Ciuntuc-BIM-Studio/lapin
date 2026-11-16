@@ -146,6 +146,8 @@ Les segments d'un garde-corps peuvent être des arcs. Un clic droit près d'un s
 
 **Architecture → Balcony** (<kbd>BY</kbd>) accroche un balcon à un mur : choisissez son style dans la barre de la ligne de commande et cliquez hors de la face du mur, là où il va ; il se place de ce côté du mur, au niveau du sol de l’étage. Un **balconnet** (Juliet) cliqué près d’une porte ou d’une fenêtre se centre dessus, 200 mm plus large. Là où aucun mur n’est proche, le balcon se place où vous cliquez. **Balcony by outline** dessine n’importe quelle forme : cliquez ses angles, le premier côté est contre le bâtiment. **Gallery edge** dessine le bord d’une mezzanine au-dessus d’un double volume avec deux points (le vide à gauche, la galerie à droite).
 
+Les bords d’un balcon dessiné peuvent aussi être des arcs : **Balcony by outline** offre les mêmes formes que la barre de l’outil Floor, et les angles et bords du balcon sélectionné prennent **Fillet corner…**, **Chamfer corner…** et **Make arc** au clic droit ; sa dalle suit les arcs et son aire est mesurée sur eux.
+
 Les styles prédéfinis couvrent les genres demandés :
 
 - **Juliet balcony** : un garde-corps à balustres devant une porte-fenêtre, sur une petite tablette de pierre portée par deux consoles.

@@ -361,3 +361,67 @@ describe('FILLET and CHAMFER on walls and railings', () => {
     expect(engine.execute).toHaveBeenCalledWith('architecture.filletRailings', expect.objectContaining({ a: 'r1', b: 'r1', atA: [1, 0], atB: [4, 2] }));
   });
 });
+
+describe('edits on elements: TRIM/EXTEND on walls, TRIMEXTEND, SPLITELEMENT, OFFSET', () => {
+  const nodes = new Map<string, unknown>([
+    ['w1', { id: 'w1', type: 'IfcWall', props: { start: [0, 0], end: [6, 0] } }],
+    ['w2', { id: 'w2', type: 'IfcWall', props: { start: [4, -2], end: [4, 2] } }],
+    ['b1', { id: 'b1', type: 'IfcBeam', props: { start: [0, 5], end: [8, 5] } }],
+    ['s1', { id: 's1', type: 'IfcSlab', props: {} }],
+  ]);
+  const pickAt = (id: string | null) => (useCad.getState().host!.pickAny = () => id);
+  const draftAt = (shape: unknown) => (useCad.getState().host!.pickDraft = () => (shape ? { id: 'd1', shape: shape as never } : null));
+  beforeEach(() => { engine.useSession.getState.mockImplementation(() => ({ nodes, error: null }) as never); draftAt(null); });
+  afterEach(() => { engine.useSession.getState.mockImplementation(() => ({ nodes: new Map(), error: null })); });
+
+  it('TRIM takes a wall picked in a plan, which the old click never reached', async () => {
+    await startCommand('TRIM');
+    pickAt('w1'); await feedPoint(P(5, 0));
+    expect(engine.execute).toHaveBeenCalledWith('architecture.trimWall', { id: 'w1', at: [5, 0] });
+    expect(useCad.getState().command).toBe('TRIM');
+  });
+
+  it('TRIMEXTEND brings elements to a boundary element by the face asked, and floors to its straight axis', async () => {
+    await startCommand('TRIMEXTEND');
+    await submit('N');
+    pickAt('w2'); await feedPoint(P(4, 1));
+    pickAt('w1'); await feedPoint(P(1, 0));
+    expect(engine.execute).toHaveBeenCalledWith('element.trimExtend', { id: 'w1', at: [1, 0], boundary: 'w2', face: 'near' });
+    pickAt('s1'); await feedPoint(P(2, 1));
+    expect(engine.execute).toHaveBeenCalledWith('architecture.trimOutline', { id: 's1', a: [4, -2], b: [4, 2], keep: [2, 1] });
+    await submit('');
+    expect(useCad.getState().command).toBeNull();
+  });
+
+  it('TRIMEXTEND to a drafted polyline takes the segment nearest the pick', async () => {
+    await startCommand('TRIMEXTEND');
+    draftAt({ type: 'polyline', pts: [P(0, 0), P(10, 0), P(10, 10)], closed: false });
+    await feedPoint(P(10, 4));
+    draftAt(null);
+    pickAt('b1'); await feedPoint(P(2, 5));
+    expect(engine.execute).toHaveBeenCalledWith('element.trimExtend', { id: 'b1', at: [2, 5], line: [[10, 0], [10, 10]] });
+  });
+
+  it('SPLITELEMENT splits an axis element where clicked, at an intersection, and a floor along two points', async () => {
+    await startCommand('SPLITELEMENT');
+    pickAt('w1'); await feedPoint(P(3, 0));
+    expect(engine.execute).toHaveBeenCalledWith('element.split', { id: 'w1', at: [3, 0] });
+    await submit('I');
+    pickAt('w1'); await feedPoint(P(3, 0));
+    pickAt('w2'); await feedPoint(P(4, 1));
+    expect(engine.execute).toHaveBeenCalledWith('element.split', { id: 'w1', at: [3, 0], with: 'w2' });
+    pickAt('s1'); await feedPoint(P(1, 1));
+    await feedPoint(P(2, -1)); await feedPoint(P(2, 5));
+    expect(engine.execute).toHaveBeenCalledWith('architecture.splitOutline', { id: 's1', a: [2, -1], b: [2, 5], keep: [1, 1] });
+  });
+
+  it('OFFSET copies an element parallel, by its axis or between its faces', async () => {
+    await startCommand('OFFSET');
+    await submit('2000');
+    await submit('F');
+    pickAt('w1'); await feedPoint(P(3, 0));
+    await feedPoint(P(3, 1));
+    expect(engine.execute).toHaveBeenCalledWith('element.offset', { id: 'w1', side: [3, 1], distance: 2, from: 'face' });
+    useCad.setState({ offsetFrom: 'axis' });
+  });
+});

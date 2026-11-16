@@ -34,6 +34,10 @@ Ausgewählt hat eine Öffnung Griffe wie ein Fenster: ziehen Sie ihre Mitte, um 
 
 ![Eine Wandöffnung in ihrem Konfigurator: halbrunder Sturz, die Laibungen verputzt](shots/wall-opening-dialog.webp)
 
+Eine Öffnung kann auch **ihren eigenen Umriss** haben, jede Form: zeichnen Sie ihn geschlossen auf einen Schnitt oder eine Ansicht, die frontal auf die Wand blickt (**Draft**: Polylinie, Rechteck, Kreis, Bögen), wählen Sie ihn und dann **Draft → Convert to… → Wall opening**. Die Öffnung kommt in die gerade Wand hinter der Form; Breite, Höhe, Lage entlang der Wand und Brüstung ergeben sich aus den Grenzen des Umrisses, der Umriss selbst wird durch die Wand geschnitten (Bögen entlang der wahren Kurve). Größer oder kleiner gezogen, streckt sie sich mit ihrem Rahmen; ein anderer Kopf in den Eigenschaften ersetzt den Umriss. In IFC ist sie ein IfcOpeningElement dieser Form und kommt so zurück.
+
+![Eine Wandöffnung mit eigenem Umriss, auf einem Schnitt gezeichnet](shots/wall-opening-outline.webp)
+
 ## Der Konfigurator
 
 **Architektur → Türen und Fenster** öffnet den Konfigurator. Jeder Tür- und Fenstertyp des Projekts ist links aufgelistet. Sie können ändern:

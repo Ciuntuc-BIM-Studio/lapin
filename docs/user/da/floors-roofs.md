@@ -22,11 +22,23 @@ Værktøjet **Dæk** har en bjælke i kommandolinjen, der tegner omridset som **
 
 ![Værktøjet Dæk tegner en cirkel ved siden af et dæk](shots/floor-shapes.webp)
 
+Den samme bjælke gælder for alle omridsværktøjer (dæk, dækåbning, loft, hul, rum og altan efter omrids, platform, matrikel), og tre af dens valg tager hele omridset med ét klik: **Inside walls** (væggene, der lukker sig om punktet), **From drawn shape** (den mindste lukkede tegnede form om punktet: en lukket polylinje, et rektangel eller en cirkel, der forbliver rund) og **From room** (rummet om punktet, med dets buede kanter).
+
+![Omridsværktøjernes bjælke med From drawn shape valgt](shots/outline-sources.webp)
+
+For dæk, dækåbning, loft og rum efter omrids giver bjælken også **Ellipse**: centrum, enden af en halvakse, så den anden. Omridsets kanter følger den sande ellipse (fire kvarte kanter), målt nøjagtigt; et hjørne flyttet bort fra ellipsen gør dets to kanter lige, og et hjørne ved en elliptisk kant afrundes ikke. IFC bærer den som IfcEllipse. **From drawn shape** tager en tegnet ellipse på samme måde.
+
+![Et elliptisk dæk tegnes ved siden af en tegnet ellipse](shots/ellipse-floor.webp)
+
 Enhver kant af et dæk, en dækåbning eller et loft kan være buet. Højreklik på det markerede dæk nær en kant og vælg **Gør til bue**: kanten buer ud med en ottendedel af sin længde, og et rundt greb vises midt på buen. Træk i det for at bøje buen gennem det ønskede punkt (romben, nu midt på korden, flytter stadig kanten). **Gør lige** gør den til en linje igen. Et hjørne mellem to lige kanter kan afrundes eller affases: højreklik på det og vælg **Afrund hjørne…** (skriv radius) eller **Affas hjørne…** (skriv hvor langt tilbage langs hver kant). Hjørnet bliver til to, hvor buen eller affasningen møder kanterne; en radius, der er for stor til kanterne, afvises. Hver er ét fortryd-trin.
 
 ![Et dæk med en buet kant og et afrundet hjørne](shots/floor-curved-edge.webp)
 
 Dækket bygges langs sine buer, ingen korde mere end 1 mm fra dem, i 3D, planer og snit; dets areal og omkreds måles på de sande buer. Et lag, der går forbi en buet kant (se [Lagudstrækninger](walls.md#layer-extents)), følger buen. En åbning kan også have buede kanter, og et buet dæk kan have åbninger. I IFC bærer dækket sit omrids med de sande buer som fodaftryk (en IfcIndexedPolyCurve med buesegmenter) ved siden af sit legeme. Tage beholder lige kanter, fordi et tags kantregler (tagfod, gavl) sættes pr. lige kant.
+
+Et dæk eller et loft kan have **egne huller**: øer skåret ud af omridset, en del af elementet, ikke selvstændige åbninger. Vælg **Hole in the outline** i værktøjet **Opening** (under *In a floor*), og tegn det inden i dækket (eller det valgte dæk eller loft) med samme bjælke: en polygon, hvis kanter kan være buer, et rektangel eller en cirkel. Valgt viser dækket hvert huls hjørner og kanter som greb med samme højreklik (**Make arc**, **Fillet corner…**, **Chamfer corner…**); krydset midt i et hul flytter det, og dets højreklik giver **Remove hole**. Dækket bygges rundt om hullerne, og arealet udelader dem, målt på de sande buer; et hul skal ligge inden for omridset og adskilt fra de andre, og et omrids ændret, så det ikke længere rummer et hul, afvises. I **Edit sketch** er hullerne også løkker i skitsen: tegn endnu en lukket løkke indeni, og **Finish sketch** gør den til et hul (den største løkke er omridset). I IFC er hullerne flere kurver i dækkets fodaftryk og læses tilbage som huller. En platform (**Site → Hole in platform**) får huller på samme måde: terrænet i hullet beholder sine koter.
+
+![Et dæk med et rektangulært og et rundt hul i sit eget omrids, valgt](shots/floor-holes.webp)
 
 #### Redigér skitse
 
@@ -41,6 +53,10 @@ Skitsen med sine bindinger og mål bliver på dækket (den går til IFC med dæk
 Et dæk tegnet uden for væggene, foran en dør, er en trappeafsats. Om trinene op til den, se [Trapper](stairs.md).
 
 Et lag i et dæk kan også gå forbi dets omrids eller stoppe før det, hele vejen rundt eller ved én kant, skrevet i dets egenskaber eller trukket i plan eller snit med **Rediger lag**, og en dæktype kan give sine dæk deres forlængelser: se [Lagforlængelser](walls.md#lagforl-ngelser). Tage har endnu ingen lagopbygning (deres tagdækning, plade og konstruktion er egne dele), så de har ingen lagforlængelser.
+
+**Redigér → Opdel element** på et dæk eller et loft beder om to punkter på en delelinje: den fortsætter forbi dem og skal skære konturen præcis to gange. Dækket bliver til to dæk; den del, du klikkede på, beholder id'et (GlobalId i IFC), buer på kanterne forbliver buer (en skåret bue forbliver en bue), og en åbning i dækket følger den del, den ligger i. En åbning, som linjen skærer, afvises. **Redigér → Trim/forlæng elementer** tager en ret grænse (en væg, en bjælke eller en tegnet linje) og skærer dækket eller loftet dér og beholder den side, du klikker på.
+
+![Et dæk med en buet kant delt langs en linje: delen til højre er valgt](shots/floor-split.webp)
 
 ## Tage
 

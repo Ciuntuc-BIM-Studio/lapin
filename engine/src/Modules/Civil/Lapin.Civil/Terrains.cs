@@ -111,6 +111,21 @@ public static class Terrains
 
     public static JsonArray ContourJson(IEnumerable<Vec2> pts) => new(pts.Select(p => (JsonNode)new JsonArray(p.X, p.Y)).ToArray());
 
+    /// <summary>The attribute beside a terrain's <c>parcel</c> holding its edges' rises (<see cref="ArcOutline"/>).</summary>
+    public const string ParcelArcs = "parcelArcs";
+
+    /// <summary>
+    /// The outline a command gives a platform or a parcel: its <c>points</c> and, optional, each edge's rise (<c>arcs</c>,
+    /// <see cref="ArcOutline"/>); <paramref name="was"/>: the rises it had, kept when only its corners are given, as many.
+    /// </summary>
+    public static (IReadOnlyList<Vec2> Corners, double[]? Rises) OutlineArg(JsonObject a, double[]? was, string what = "A platform")
+    {
+        var pts = Args.Points(a);
+        if (ArcOutline.RisesArg(a["arcs"], pts.Count, was) is not { } rises) return (CheckOutline(pts), null);
+        var (c, r) = ArcOutline.Check(pts, rises, what);
+        return (c, r);
+    }
+
     /// <summary>A platform's outline: three distinct corners at least, made counter-clockwise.</summary>
     public static IReadOnlyList<Vec2> CheckOutline(IReadOnlyList<Vec2> pts)
     {
@@ -170,18 +185,19 @@ public static class Terrains
         if (Body(t, baseZ) is not { } body) return new ElementGeometry([], Diagnostics: ["The terrain's surface could not be closed into a solid."]);
         var problems = new List<string>();
         var works = new List<Earthwork>();
-        var pads = Pads(m, e.Id).Select(p => (Pad: p, Outline: Contour(p), Z: p.Num("elevation"))).Where(p => p.Outline.Count >= 3).ToList();
+        // A platform's own holes (audit S4) keep their ground as it is.
+        var pads = Pads(m, e.Id).Select(p => (Pad: p, Outline: ArcOutline.BuiltOf(p), Z: p.Num("elevation"), Holes: (IReadOnlyList<IReadOnlyList<Vec2>>)OutlineHoles.Built(p))).Where(p => p.Outline.Count >= 3).ToList();
         if (pads.Count > 0)
         {
             if (services?.Get<ISolidBooleans>() is { } booleans)
             {
                 var top = t.Bounds.Max.Z + 1;
-                foreach (var (pad, outline, z) in pads)
+                foreach (var (pad, outline, z, holes) in pads)
                 {
                     try
                     {
-                        var cut = z < top ? Prism.ExtrudeFootprint(outline, z, top - z, "cut") : null;
-                        var fill = z > baseZ ? Prism.ExtrudeFootprint(outline, baseZ, z - baseZ, "fill") : null;
+                        var cut = z < top ? Prism.ExtrudeFootprint(outline, holes, z, top - z, "cut") : null;
+                        var fill = z > baseZ ? Prism.ExtrudeFootprint(outline, holes, baseZ, z - baseZ, "fill") : null;
                         var cutVol = cut != null && booleans.Intersection(body, cut) is { } ci ? Measure.Volume(ci) : 0;
                         var fillVol = 0.0;
                         if (fill != null)
@@ -221,13 +237,13 @@ public static class Terrains
         var material = e.Str("material");
         var parts = new List<GeometryPart> { new("Ground", Materials.ColorOf(m, material) is "#c9ced6" ? Color : Materials.ColorOf(m, material), body, material, "ground") };
         if (e.Str("analysis") is { } kind && kind != "none" && Analysis.Of(m, e, kind) is { } analysis) parts.AddRange(Analysis.Overlay(analysis));
-        var g = new ElementGeometry(parts, Plan(e, t, pads.Select(p => (p.Outline, p.Z)).ToList(), DitchesOf(m, e.Id).ToList()), null, problems.Count > 0 ? problems : null);
+        var g = new ElementGeometry(parts, Plan(e, t, pads.Select(p => (p.Outline, p.Z, p.Holes)).ToList(), DitchesOf(m, e.Id).ToList()), null, problems.Count > 0 ? problems : null);
         Works.AddOrUpdate(g, works);
         return g;
     }
 
     /// <summary>The plan: contours (the major ones heavier) outside the platforms, the terrain's edge, the platforms' outlines.</summary>
-    static List<PlanItem> Plan(Entity e, Terrain t, List<(IReadOnlyList<Vec2> Outline, double Z)> pads, List<Entity> ditches)
+    static List<PlanItem> Plan(Entity e, Terrain t, List<(IReadOnlyList<Vec2> Outline, double Z, IReadOnlyList<IReadOnlyList<Vec2>> Holes)> pads, List<Entity> ditches)
     {
         var items = new List<PlanItem>();
         var interval = e.NumOrNull("interval") ?? 0.5;
@@ -236,12 +252,12 @@ public static class Terrains
             foreach (var z in t.Levels(interval))
             {
                 var kind = Math.Abs(z / interval / major - Math.Round(z / interval / major)) < 1e-6 ? "contourMajor" : "contour";
-                var pieces = t.Contour(z).SelectMany(s => Outside(s.A, s.B, pads.Select(x => x.Outline))).ToList();
+                var pieces = t.Contour(z).SelectMany(s => Outside(s.A, s.B, pads.Select(x => (x.Outline, x.Holes)))).ToList();
                 foreach (var line in Chain(pieces)) items.Add(new PlanItem(kind, false, line));
             }
         foreach (var (a, b) in t.Boundary())
             items.Add(new PlanItem("terrainEdge", false, [new Vec2(t.Tin.Points[a].X, t.Tin.Points[a].Y), new Vec2(t.Tin.Points[b].X, t.Tin.Points[b].Y)]));
-        foreach (var (outline, _) in pads) items.Add(new PlanItem("heavy", true, outline));
+        foreach (var (outline, _, holes) in pads) { items.Add(new PlanItem("heavy", true, outline)); items.AddRange(holes.Select(h => new PlanItem("heavy", true, h))); }
         foreach (var d in ditches) items.AddRange(Ditches.Plan(d));
         return items;
     }
@@ -278,9 +294,11 @@ public static class Terrains
     }
 
     /// <summary>The pieces of a segment outside every polygon.</summary>
-    static IEnumerable<(Vec2, Vec2)> Outside(Vec2 a, Vec2 b, IEnumerable<IReadOnlyList<Vec2>> polygons)
+    /// <summary>The pieces of a segment outside the platforms (in a platform's own hole counts as outside it).</summary>
+    static IEnumerable<(Vec2, Vec2)> Outside(Vec2 a, Vec2 b, IEnumerable<(IReadOnlyList<Vec2> Outer, IReadOnlyList<IReadOnlyList<Vec2>> Holes)> pads)
     {
-        var list = polygons.ToList();
+        var areas = pads.ToList();
+        var list = areas.SelectMany(x => x.Holes.Prepend(x.Outer)).ToList();
         if (list.Count == 0) { yield return (a, b); yield break; }
         var ts = new List<double> { 0, 1 };
         var d = b - a;
@@ -300,7 +318,7 @@ public static class Terrains
         {
             if (ts[k + 1] - ts[k] < 1e-12) continue;
             var mid = a + d * ((ts[k] + ts[k + 1]) / 2);
-            if (list.Any(poly => Polygon2.Contains(poly, mid))) continue;
+            if (areas.Any(x => Polygon2.Contains(x.Outer, mid) && !x.Holes.Any(h => Polygon2.Contains(h, mid)))) continue;
             yield return (a + d * ts[k], a + d * ts[k + 1]);
         }
     }
@@ -326,7 +344,8 @@ public static class Terrains
             new("MaxElevation", t.Bounds.Max.Z, "LENGTH", "Highest point"),
             new("CutVolume", works.Sum(w => w.Cut), "VOLUME", "Cut"),
             new("FillVolume", works.Sum(w => w.Fill), "VOLUME", "Fill"),
-            .. Contour(e, "parcel") is { Count: >= 3 } parcel ? new Quantity[] { new("ParcelArea", Math.Abs(Polygon2.SignedArea(parcel)), "AREA", "Parcel"), new("ParcelPerimeter", Polygon2.Perimeter(parcel), "LENGTH", "Parcel boundary") } : [],
+            // Exactly, its arcs as arcs (decision 589).
+            .. Contour(e, "parcel") is { Count: >= 3 } ? new Quantity[] { new("ParcelArea", ArcOutline.AreaOf(e, "parcel", ParcelArcs), "AREA", "Parcel"), new("ParcelPerimeter", ArcOutline.PerimeterOf(e, "parcel", ParcelArcs), "LENGTH", "Parcel boundary") } : [],
         ]);
         foreach (var w in works)
             yield return new QuantitySet("Lapin_EarthworkQuantities",

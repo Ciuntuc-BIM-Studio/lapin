@@ -84,6 +84,7 @@ function shapeIn(s: Shape, L: (p: Vec2) => Vec2, angle: number): Shape {
     case 'polyline': return { type: 'polyline', pts: s.pts.map(L), closed: s.closed };
     case 'circle': return { type: 'circle', c: L(s.c), r: s.r };
     case 'arc': return { type: 'arc', c: L(s.c), r: s.r, start: s.start - a, end: s.end - a };
+    case 'ellipse': { const o = L({ x: 0, y: 0 }), mm = L(s.m); return { ...s, c: L(s.c), m: { x: mm.x - o.x, y: mm.y - o.y } }; }
   }
 }
 
@@ -100,8 +101,8 @@ function onGrid(shape: Shape, raw: Vec2, near: Vec2, g: number): Vec2 | null {
   return best;
 }
 
-/** The drawing's lines a cursor can snap to (no hatches, fills or texts). */
-const SNAP_LAYERS = new Set(['CUT', 'SEEN', 'HIDDEN', 'OVERHEAD', 'BEYOND', 'MEMBRANE']);
+/** The drawing's lines a cursor can snap to (no hatches, fills or texts); on a sheet's paper, its frame, title block, views' boxes and edge too (decision 620). */
+const SNAP_LAYERS = new Set(['CUT', 'SEEN', 'HIDDEN', 'OVERHEAD', 'BEYOND', 'MEMBRANE', 'FRAME', 'TITLE', 'VIEWPORT', 'PAPER']);
 
 export function snapShapes(drawing: DrawingDto | null, extra: Shape[] = []): { shapes: Shape[]; drafts: Map<string, Shape[]>; owners: (string | null)[] } {
   const shapes: Shape[] = [...extra];

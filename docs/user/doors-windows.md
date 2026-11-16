@@ -39,7 +39,7 @@ Select one door, window or wall opening in a plan and Lapin draws **temporary di
 - **Click a value** to type it, in the project's unit (sums such as `1200+300` work), and press **Enter**: the opening slides along its wall until the dimension reads it, the other end staying where it is. One undo step. **Escape** leaves it as it was. If the opening would no longer fit (past the wall's end, or over another opening), nothing moves and the notice says why.
 - **Click the dot on the opening's end** to measure from its centre instead of its edge.
 - **Click the dot on the other end** to measure to the next thing there: a wall's near face, its far face, its core's faces (a layered wall), its axis; another opening's near edge, its centre, its far edge.
-- **Click the padlock** beside a value to keep it as a permanent dimension of the plan, held on what its ends lie on, like one drawn with **Annotate → Aligned**. It does not lock the distance: the opening can still be moved.
+- **Click the padlock** beside a value to keep it as a permanent dimension of the plan, held on what its ends lie on, like one drawn with **Annotate → Dimension**. It does not lock the distance: the opening can still be moved.
 
 So "this window's corner 1500 from that wall's face" is: select the window, click the value towards the wall, type `1500`, Enter. "This window's axis 2500 from the other window's axis" is: click the dot on the window's end and the dot on the other window's end until both measure centres, then type `2500`.
 
@@ -74,6 +74,10 @@ Selected, an opening has grips like a window: drag its middle to slide it along 
 **Edit the opening…** opens its configurator: the same fields over a picture of the opening in its wall, applied together. **Change to door…** and **Change to window…** fill it with a door or window of a type you choose, where it is: its place, its sill and its GlobalId stay, and **Fit the type to the opening** gives it a type of its size and head (the project's of that size, else one made from the type chosen and named by its size). The other way, a selected door's or window's **Change to opening** takes it out and leaves its hole as an opening of the same size and head. Each is one undo step.
 
 ![A wall opening in its configurator: a semicircular head, the reveal plastered](shots/wall-opening-dialog.webp)
+
+An opening can also have **its own outline**, any shape: draw it closed on a section or an elevation that looks at the wall square on (**Draft**: a polyline, a rectangle, a circle, arcs), select it and choose **Draft → Convert to… → Wall opening**. The opening goes in the straight wall behind the shape, its width, height, place along the wall and sill taken from the outline's bounds, the outline itself cut through the wall (its arcs along the true curve). Resized, it stretches with its box; another head chosen in its properties replaces the outline. In IFC it is an IfcOpeningElement of that shape, and comes back as it was.
+
+![A wall opening of its own outline, drafted on a section](shots/wall-opening-outline.webp)
 
 ### Openings through several walls
 

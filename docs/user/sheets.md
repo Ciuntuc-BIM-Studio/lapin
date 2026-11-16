@@ -57,6 +57,23 @@ In the desktop app, **Title blocks** also has a **Firm folders** block: the `.la
 
 ![Title blocks: the firm folder's file](shots/title-blocks-firm-folder.webp)
 
+## Drawing on the sheet
+
+Notes, marks and keys that belong to the sheet rather than to one of its views are drawn on the sheet itself. Click **Annotate** in the sheet's bar, or double-click the paper outside the views (**Annotate → Annotate sheet** does the same). The sheet opens in the drawing pane as its paper, at 1:1, with the views, the frame and the title block under it, and the bar says *drawing on the sheet*. Every **Draft** and **Annotate** tool works there as on a view, in paper millimetres: type 50 and a line is 50 mm long on paper, and a text's height is its height on paper. Points snap to the frame, the title block, the views' boxes (dashed blue) and what the views draw. **Sheet** in the bar goes back to arranging the views.
+
+- **Texts** may hold live fields, as a title block's do: `Sheet {sheet.number} of {sheet.count}`, `{project.name}`, `{sheet.date}`. On a view, a text reads as typed.
+- **Leader note** (Annotate → Text): click where the arrow points, then where the text goes, and type it. Moved, the note takes its arrow with it; **Leader → remove** in its properties takes the arrow off.
+- **Lines, polylines, rectangles, circles, arcs, hatches, symbols and pictures** are the Draft tools' own, with their grips, layers and Modify tools. A north arrow is one of Lapin's symbols (**Annotate → Symbol**).
+- **Revision cloud** (Draft → Fill, Annotate → Sheets, or REVCLOUD in the command line): two corners, or **P** for a polygon closed with Enter. **Revision cloud** in the properties of any closed polyline or circle turns it into a cloud or back, and sets its scallop on paper.
+- **Legend** (Annotate → Sheets): a live list of what the sheet's views draw: the materials their cuts are hatched and filled with or, with **Lists** in its properties, their lines by role, type and width. It changes as the views and the model do, and its title takes fields too.
+- **Scale bar** (Annotate → Sheets): at the scale of the sheet's first view, or of the scale its properties give, a round length about 80 mm long or one you set. On a plan, section or elevation a scale bar takes the view's scale.
+
+What is drawn on the sheet prints on it, over the views, exactly as shown: in its PDF, in Print and in its DXF. It belongs to the sheet: **Duplicate the sheet** (its button in the project browser) copies it, with the symbols placed on the sheet, and deleting the sheet deletes it. Each drawing is one undo step. Sheets made before have nothing drawn on them and print as they did.
+
+![Drawing on a sheet: a leader note, a revision cloud, a live text, a legend of the plan's materials and a scale bar](shots/sheet-annotations.webp)
+
+![The same sheet, as it prints](shots/sheet-annotated.webp)
+
 ## Printing
 
 The **PDF** and **DXF** buttons in the sheet's bar export the sheet. A PDF is ready to print or send. A DXF opens in AutoCAD and other CAD programs with its layers, lines and hatches. **Print** sends the sheet to a printer or plotter at its own paper size, at 1:1, as vector lines: choose the plotter and the paper in the print dialog. On a smaller printer, choose fit to page.

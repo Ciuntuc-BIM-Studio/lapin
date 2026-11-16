@@ -50,7 +50,9 @@ public sealed class BalconyLayout
     public bool Bool(string k) => Fields[k] is JsonValue v && v.TryGetValue<bool>(out var b) && b;
     /// <summary>The walking surface's height at a point: its floor at the back, falling to the front.</summary>
     public Func<Vec2, double> Walk { get; set; } = _ => 0;
-    public double Area => Math.Abs(Polygon2.SignedArea(Outline));
+    /// <summary>A drawn outline with curved edges (decision 589): its area worked out exactly, its arcs as arcs.</summary>
+    public double? ExactArea { get; set; }
+    public double Area => ExactArea ?? Math.Abs(Polygon2.SignedArea(Outline));
     public double RailLength => Rails.Sum(r => r.Zip(r.Skip(1), (a, b) => (b - a).Length).Sum());
     public int SupportCount => Posts.Count + Brackets.Count + Hangers.Count;
 }
@@ -143,11 +145,18 @@ public static class BalconyBuilder
             {
                 if (Points(e) is { Count: >= 3 } pts)
                 {
-                    var local = pts.Select(f.Local).ToList();
-                    var ccw = Polygon2.SignedArea(local) > 0;
-                    if (!ccw) local.Reverse();
-                    // The first edge drawn lies against the building; reversed, it is the one that ends at the first point.
-                    for (var i = 0; i < local.Count; i++) ring.Add(local[i].X, local[i].Y, ccw ? (i == 0 ? "wall" : "front") : (i == local.Count - 2 ? "wall" : "front"));
+                    // Its edges may be arcs (decision 589): each laid in chords by the one rule, every chord its edge's role.
+                    var edgeOf = new List<int>();
+                    var rises = ArcOutline.RisesOf(e);
+                    var laid = rises != null ? ArcOutline.Points(pts, rises, edgeOf) : pts;
+                    if (rises == null) edgeOf.AddRange(Enumerable.Range(0, pts.Count));
+                    var local = laid.Select(f.Local).ToList();
+                    var roles = edgeOf.Select(k => k == 0 ? "wall" : "front").ToList();
+                    if (rises != null) l.ExactArea = Math.Abs(ArcOutline.SignedArea(pts, rises));
+                    if (Polygon2.SignedArea(local) > 0) { for (var i = 0; i < local.Count; i++) ring.Add(local[i].X, local[i].Y, roles[i]); break; }
+                    // Reversed: point j is the old n-1-j, and the edge from it the old edge n-2-j run back (the wall edge ends at the first point).
+                    var n = local.Count;
+                    for (var j = 0; j < n; j++) ring.Add(local[n - 1 - j].X, local[n - 1 - j].Y, roles[((n - 2 - j) % n + n) % n]);
                     break;
                 }
                 d = Math.Max(0.05, d);

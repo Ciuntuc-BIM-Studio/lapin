@@ -11,7 +11,27 @@ export type Shape =
   | { type: 'line'; a: Vec2; b: Vec2 }
   | { type: 'polyline'; pts: Vec2[]; closed: boolean }
   | { type: 'circle'; c: Vec2; r: number }
-  | { type: 'arc'; c: Vec2; r: number; start: number; end: number };
+  | { type: 'arc'; c: Vec2; r: number; start: number; end: number }
+  /**
+   * An ellipse (audit S4): its centre, its major semi-axis `m` (a vector), its minor one `ratio` of it a quarter turn anticlockwise;
+   * an elliptical arc runs anticlockwise between the parameters `start` and `end` (equal: the whole ellipse). P(t) = c + m cos t + n sin t.
+   */
+  | { type: 'ellipse'; c: Vec2; m: Vec2; ratio: number; start: number; end: number };
+
+/** A point of an ellipse at parameter t. */
+export function ellipseAt(s: { c: Vec2; m: Vec2; ratio: number }, t: number): Vec2 {
+  const n = { x: -s.m.y * s.ratio, y: s.m.x * s.ratio };
+  return { x: s.c.x + s.m.x * Math.cos(t) + n.x * Math.sin(t), y: s.c.y + s.m.y * Math.cos(t) + n.y * Math.sin(t) };
+}
+/** Whether an ellipse is whole (no arc of it). */
+export const ellipseWhole = (s: { start: number; end: number }) => Math.abs(normAngle(s.end - s.start)) < 1e-12;
+const ellipseSweep = (s: { start: number; end: number }) => (ellipseWhole(s) ? Math.PI * 2 : sweepOf(s.start, s.end));
+/** An ellipse's points, every 1/64 of a turn of its parameter (the screen's; the engine lays it by the chord rule). */
+export function ellipsePoints(s: { c: Vec2; m: Vec2; ratio: number; start: number; end: number }): Vec2[] {
+  const sw = ellipseSweep(s), n = Math.max(8, Math.ceil((64 * sw) / (Math.PI * 2)));
+  const t0 = ellipseWhole(s) ? 0 : s.start;
+  return Array.from({ length: n + 1 }, (_, i) => ellipseAt(s, t0 + (sw * i) / n));
+}
 
 const TWO_PI = Math.PI * 2;
 export const P = (x: number, y: number): Vec2 => ({ x, y });
@@ -36,6 +56,10 @@ export function fromJson(o: Json): Shape | null {
     }
     case 'circle': { const c = ptStrict(o.c); return c && typeof o.r === 'number' ? { type: 'circle', c, r: o.r } : null; }
     case 'arc': { const c = ptStrict(o.c); return c && typeof o.r === 'number' ? { type: 'arc', c, r: o.r, start: Number(o.start) || 0, end: Number(o.end) || 0 } : null; }
+    case 'ellipse': {
+      const c = ptStrict(o.c), m = ptStrict(o.m);
+      return c && m && typeof o.ratio === 'number' && o.ratio > 0 ? { type: 'ellipse', c, m, ratio: o.ratio, start: Number(o.start) || 0, end: Number(o.end) || 0 } : null;
+    }
   }
   return null;
 }
@@ -47,6 +71,7 @@ export function toJson(s: Shape): Json {
     case 'polyline': return { type: 'polyline', pts: s.pts.map(arr), closed: s.closed };
     case 'circle': return { type: 'circle', c: arr(s.c), r: s.r };
     case 'arc': return { type: 'arc', c: arr(s.c), r: s.r, start: s.start, end: s.end };
+    case 'ellipse': return { type: 'ellipse', c: arr(s.c), m: arr(s.m), ratio: s.ratio, ...(ellipseWhole(s) ? {} : { start: s.start, end: s.end }) };
   }
 }
 
@@ -61,6 +86,7 @@ export function prims(s: Shape): Prim[] {
     }
     case 'circle': return [{ kind: 'arc', c: s.c, r: s.r, start: 0, end: 0, full: true }];
     case 'arc': return [{ kind: 'arc', c: s.c, r: s.r, start: s.start, end: s.end, full: false }];
+    case 'ellipse': { const pts = ellipsePoints(s); return pts.slice(1).map((b, i) => ({ kind: 'seg' as const, a: pts[i], b })); }
   }
 }
 
@@ -74,6 +100,7 @@ export function bounds(s: Shape): { min: Vec2; max: Vec2 } {
       pts = [at(s.c, s.r, s.start), at(s.c, s.r, s.end)];
       for (let k = 0; k < 4; k++) if (angleInArc((k * Math.PI) / 2, s.start, s.end)) pts.push(at(s.c, s.r, (k * Math.PI) / 2));
       break;
+    case 'ellipse': pts = ellipsePoints(s); break;
   }
   return {
     min: P(Math.min(...pts.map((p) => p.x)), Math.min(...pts.map((p) => p.y))),
@@ -121,6 +148,14 @@ export function keyPoints(s: Shape): KeyPoints {
       k.midpoints.push(at(s.c, s.r, s.start + sweepOf(s.start, s.end) / 2));
       k.centers.push(s.c);
       for (let i = 0; i < 4; i++) if (angleInArc((i * Math.PI) / 2, s.start, s.end)) k.quadrants.push(at(s.c, s.r, (i * Math.PI) / 2));
+      break;
+    }
+    case 'ellipse': {
+      // Its centre and its axes' ends (those on an arc of it), an arc's ends and middle.
+      const whole = ellipseWhole(s);
+      k.centers.push(s.c);
+      for (let i = 0; i < 4; i++) if (whole || angleInArc((i * Math.PI) / 2, s.start, s.end)) k.quadrants.push(ellipseAt(s, (i * Math.PI) / 2));
+      if (!whole) { k.endpoints.push(ellipseAt(s, s.start), ellipseAt(s, s.end)); k.midpoints.push(ellipseAt(s, s.start + ellipseSweep(s) / 2)); }
       break;
     }
   }
@@ -198,7 +233,20 @@ export function polylines(s: Shape): Vec2[][] {
       const sw = sweepOf(s.start, s.end), n = Math.max(4, Math.ceil(sw / (Math.PI / 36)));
       return [Array.from({ length: n + 1 }, (_, i) => at(s.c, s.r, s.start + (sw * i) / n))];
     }
+    case 'ellipse': return [ellipsePoints(s)];
   }
+}
+
+/**
+ * The ellipse with centre `c`, its first semi-axis to `a` and its other semi-axis `b` long (ELLIPSE's three clicks): the longer
+ * one is kept as the major axis, as DXF does.
+ */
+export function ellipseOf(c: Vec2, a: Vec2, b: number): Shape | null {
+  const m = { x: a.x - c.x, y: a.y - c.y }, la = Math.hypot(m.x, m.y);
+  if (!(la > 1e-6) || !(b > 1e-6)) return null;
+  if (b <= la) return { type: 'ellipse', c, m, ratio: b / la, start: 0, end: 0 };
+  // The other axis is the major one: a quarter turn anticlockwise from the first.
+  return { type: 'ellipse', c, m: { x: (-m.y * b) / la, y: (m.x * b) / la }, ratio: la / b, start: 0, end: 0 };
 }
 
 /**
