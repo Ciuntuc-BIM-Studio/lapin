@@ -18,6 +18,15 @@ public static class DraftCommands
     static List<string> Ids(JsonObject a) =>
         a["ids"] is JsonArray arr ? arr.Select(x => (string?)x).OfType<string>().ToList() : (string?)a["id"] is { } one ? [one] : [];
 
+    /// <summary>A revision cloud's scallop (paper mm, 1–100); null for none.</summary>
+    static double? Cloud(JsonNode? n) => n switch
+    {
+        null => null,
+        JsonValue v when v.TryGetValue<bool>(out var on) => on ? 8 : null,
+        _ when Json.Number(n) is { } arc => arc >= 1 && arc <= 100 ? arc : throw new CommandException("A cloud's scallop is 1 to 100 mm."),
+        _ => null,
+    };
+
     static Shape ShapeArg(JsonNode? n) => Shape.From(n) ?? throw new CommandException("A shape is a line {a, b}, a polyline {pts, closed}, a circle {c, r} or an arc {c, r, start, end}.");
 
     public static void Register(IModuleRegistry r)
@@ -31,7 +40,18 @@ public static class DraftCommands
             if (Drafts.LayerOf(ctx.Model, layer).Locked) throw new CommandException($"The layer „{layer}” is locked.");
             var shapes = a["shapes"] is JsonArray arr ? arr.Select(ShapeArg).ToList() : [ShapeArg(a["shape"])];
             var role = Drafts.CheckRole(a["role"]);
-            var ids = shapes.Select(s => Drafts.Add(ctx, view.Id, layer, s, role).Id).ToList();
+            var cloud = Cloud(a["cloud"]);
+            var ids = shapes.Select(s =>
+            {
+                var e = Drafts.Add(ctx, view.Id, layer, s, role);
+                if (cloud is { } arc && s is Polyline { Closed: true } or Circle)
+                {
+                    var attrs = e.CloneAttrs();
+                    attrs["cloud"] = arc;
+                    ctx.Replace(e.With(name: Drafts.UniqueName(ctx.Model, view.Id, "Cloud"), attrs: attrs));
+                }
+                return e.Id;
+            }).ToList();
             return new JsonObject { ["ids"] = new JsonArray(ids.Select(x => (JsonNode)x).ToArray()) };
         });
 
@@ -71,6 +91,8 @@ public static class DraftCommands
                     }
                 }
                 if (a.ContainsKey("role")) { if (Drafts.CheckRole(a["role"]) is { } role) attrs["role"] = role; else attrs.Remove("role"); }
+                // A revision cloud's scallop (paper mm), or none: a closed shape drawn plain again.
+                if (a.ContainsKey("cloud")) { if (Cloud(a["cloud"]) is { } arc) attrs["cloud"] = arc; else attrs.Remove("cloud"); }
                 ctx.Replace(e.With(attrs: attrs));
             }
             return null;
@@ -164,6 +186,14 @@ public static class DraftCommands
                     var q = point(new Vec2(Json.Number(at[0]) ?? 0, Json.Number(at[1]) ?? 0));
                     attrs["at"] = new JsonArray(q.X, q.Y);
                     attrs["angle"] = (Json.Number(attrs["angle"]) ?? 0) + turn * 180 / Math.PI;
+                    // Its leader's arrow and bends go with it (decision 620).
+                    if (Texts.Leader(e) is { Count: > 0 } leader) attrs["leader"] = new JsonArray([.. leader.Select(p => (JsonNode)new JsonArray(point(p).X, point(p).Y))]);
+                }
+                else if (e.PredefinedType is DrawingKeys.Legend or DrawingKeys.ScaleBar && attrs["at"] is JsonArray kat)
+                {
+                    // A legend or a scale bar: its corner moves; it stays upright.
+                    var q = point(P(kat, "at"));
+                    attrs["at"] = new JsonArray(q.X, q.Y);
                 }
                 else if (Dimensions.IsLinear(e))
                 {

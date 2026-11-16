@@ -34,6 +34,10 @@ Selezionata, un’apertura ha maniglie come una finestra: trascina il suo centro
 
 ![Un’apertura nel muro nel suo configuratore: arco a tutto sesto, mazzette intonacate](shots/wall-opening-dialog.webp)
 
+Un’apertura può avere anche **il proprio contorno**, di qualsiasi forma: disegnalo chiuso su una sezione o un prospetto che guarda il muro di fronte (**Draft**: una polilinea, un rettangolo, un cerchio, archi), selezionalo e scegli **Draft → Convert to… → Wall opening**. L’apertura va nel muro dritto dietro la forma; larghezza, altezza, posizione lungo il muro e davanzale vengono dai limiti del contorno, e il contorno stesso è tagliato nel muro (gli archi lungo la curva vera). Ridimensionata, si allunga con il suo riquadro; un’altra testa scelta nelle proprietà sostituisce il contorno. In IFC è un IfcOpeningElement di quella forma e torna com’era.
+
+![Un’apertura nel muro col proprio contorno, disegnata su una sezione](shots/wall-opening-outline.webp)
+
 ## Il configuratore
 
 **Architettura → Porte e finestre** apre il configuratore. Tutti i tipi di porta e finestra del progetto sono elencati a sinistra. Puoi modificare:

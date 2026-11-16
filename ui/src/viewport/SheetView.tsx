@@ -13,10 +13,12 @@
  * a view may be bound to one of its named boundaries (Annotate → View
  * boundary), which then gives its box; a pinned view stays where it is.
  * A right-click on a view places it again at another scale beside itself, cropped to the part dragged on it (decision 547).
+ * Annotate (or a double-click on the paper outside the views) draws on the sheet itself: its paper in the drawing pane,
+ * where the Draft and Annotate tools work in paper millimetres (decision 620).
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FileDown, Maximize, MessageSquare, Pin, PinOff, Printer } from 'lucide-react';
+import { FileDown, Maximize, MessageSquare, PenLine, Pin, PinOff, Printer } from 'lucide-react';
 import { notify, select, useUi } from '../app/store';
 import { usePaneActive, usePaneField } from '../app/pane';
 import { execute, query, useSession } from '../engine/session';
@@ -32,6 +34,7 @@ import { openContextMenu } from '../shell/ContextMenu';
 import { useStandards } from '../engine/unitsStore';
 import { otherScales, partOf, placeAgainLabel } from './placeAtScale';
 import { openPlaced } from './sheetOpen';
+import { openPaper } from './paperView';
 import { listSymbols, placeSymbol, previewSymbol, rememberSymbol, type SymList } from '../modules/core/symbols/symbols';
 import { boxOnPaper, pickSymbol, previewArgs, previewKey, symbolsOn, type SheetSymbol } from './sheetSymbols';
 import { deleteTakesViewports, removeSteps, setSheetDelete } from './sheetDelete';
@@ -267,6 +270,8 @@ export function SheetView() {
           {byCategory(symbols.items, symbols.categories).map(([cat, items]) => <optgroup key={cat} label={cat}>{items.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}</optgroup>)}
         </select>
         {placingSymbol && <span className="chip" data-no-i18n>{placingSymbol.name} <button type="button" className="link" onClick={() => setPlacingSymbol(null)}>×</button></span>}
+        <button type="button" className="icon" data-testid="sheet-annotate" title="Draw on the sheet itself: texts, leader notes, lines, clouds, hatches, symbols, a legend, a scale bar (in paper mm)"
+          onClick={() => useUi.setState(openPaper(sheet.id))}><PenLine size={14} /><span className="small">Annotate</span></button>
         <button type="button" className="icon" title="Export PDF" onClick={() => void exportAs('pdf')}><FileDown size={14} /><span className="small">PDF</span></button>
         <button type="button" className="icon" title="Export DXF" onClick={() => void exportAs('dxf')}><FileDown size={14} /><span className="small">DXF</span></button>
         <button type="button" className="icon" title="Print the sheet (a plotter at its paper size, 1:1)" data-testid="sheet-print" disabled={!d}
@@ -403,6 +408,8 @@ export function SheetView() {
         onDoubleClick={(e) => {
           const vp = pick(paperAt(e));
           if (vp) open(vp);
+          // Outside the views: drawing on the sheet itself (decision 620).
+          else if (!pickSymbol(symbolBoxes, paperAt(e))) useUi.setState(openPaper(sheet.id));
         }}>
         {d && (
           <>

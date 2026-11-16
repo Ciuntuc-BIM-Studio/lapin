@@ -109,6 +109,16 @@ Bajo una cubierta las capas de un muro suben hasta la cubierta; una extensión *
 
 ![Editar capas en sección: los pinzamientos de las capas del forjado donde el corte cruza sus bordes](shots/layer-edit-section.webp)
 
+### Recortar, alargar, dividir y desfasar muros
+
+**Modificar → Recortar/alargar elementos** (TRIMEXTEND o TE en la línea de comandos) funciona como en Revit. Primero elija el límite: un muro, una viga o una zapata corrida (su eje o su cara: responda **N** para la cara cercana o **F** para la lejana, **A** vuelve al eje), o una línea dibujada, un segmento de polilínea, un arco o un círculo. Después haga clic en los muros uno tras otro, cada uno en la parte que se conserva: el extremo que queda más allá del límite se recorta y, en un muro que no llega, el extremo más próximo se prolonga hasta el límite. Un muro curvo continúa por su círculo. Un muro llevado hasta el eje de otro se une a él allí. Las puertas, ventanas y huecos conservan su lugar en planta; el que caería en la parte cortada se rechaza. <kbd>Enter</kbd> termina, <kbd>Esc</kbd> cancela. Cada muro es un paso de deshacer. TRIM y EXTEND de la línea de comandos también aceptan un muro pulsado en una planta.
+
+**Modificar → Dividir elemento** (SPLITELEMENT o SPLIT) corta un muro donde haga clic: dos muros. El primero conserva el id (su GlobalId en IFC) y la parte desde el inicio del muro; el segundo es una copia suya (tipo, planta, capas, propiedades, grupos) y recibe las uniones del extremo lejano. Los dos se encuentran en una unión en línea. Las puertas, ventanas y huecos pasan a la parte en que están; uno que cruce el corte se rechaza (*lies across the cut*). Escriba **I** (Intersección) para elegir el muro y después lo que lo cruza, otro elemento o una línea o un arco dibujado, y cortar allí; **P** vuelve a Punto.
+
+**Modificar → Desfasar elemento** (OFFSET de la línea de comandos, que ahora acepta elementos): escriba la distancia en la unidad del proyecto, haga clic en un muro en una planta y después en el lado donde irá la copia. La copia es paralela al muro, concéntrica si es un muro curvo, con el mismo tipo, capas y huecos. **A** (Eje, por defecto) mide desde el eje, **F** (Caras) desde la cara del muro, de modo que la cara de la copia queda a esa distancia de la suya; **T** (Por) toma un punto por el que pasa la copia.
+
+![Dos muros recortados a un límite y un muro con una puerta dividido en dos](shots/wall-split-trim.webp)
+
 ## Tipos de muro
 
 Un tipo de muro es un conjunto de capas, desde la cara a la derecha del sentido en que se dibuja el muro (el exterior, si dibuja alrededor del edificio en sentido antihorario) hasta la cara de su izquierda. Cada capa tiene un material y un espesor, y una capa es el **núcleo**. La línea del muro va por el núcleo. Para editar los tipos, elija **Arquitectura → Tipos de muro**. Una capa que no sea el núcleo puede tener su propia altura: **Desde** y **Hasta** fijan hasta dónde llega sobre la base del muro (un alicatado hasta 1500, un aplacado desde 300); vacío, ocupa toda la altura.

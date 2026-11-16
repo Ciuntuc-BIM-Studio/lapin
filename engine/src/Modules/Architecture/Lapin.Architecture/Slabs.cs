@@ -37,8 +37,19 @@ public static class Slabs
     public static IReadOnlyList<Vec2> Contour(Entity slab)
     {
         var c = Corners(slab);
+        // Its elliptical edges too (audit S4).
+        if (Ellipses(slab) is { } el) return ArcOutline.Points(c, Rises(slab), null, el);
         return slab.Attrs[ArcOutline.Key] is JsonArray && ArcOutline.Rises(slab.Attrs[ArcOutline.Key], c.Count) is { } r ? ArcOutline.Points(c, r) : c;
     }
+
+    /// <summary>The outline's edges that run along an ellipse (audit S4, <see cref="EllipseEdge"/>); null when none does.</summary>
+    public static EllipseEdge?[]? Ellipses(Entity e) => e.Attrs[EllipseEdge.Key] is JsonArray ? EllipseEdge.Of(e) : null;
+
+    /// <summary>The area the outline encloses, exactly: its arcs as arcs, its elliptical edges as the ellipse (unsigned).</summary>
+    public static double Area(Entity e) => Math.Abs(ArcOutline.SignedArea(Corners(e), Rises(e), Ellipses(e)));
+
+    /// <summary>The length round the outline, its arcs and elliptical edges at their own length.</summary>
+    public static double Perimeter(Entity e) => ArcOutline.Perimeter(Corners(e), Rises(e), Ellipses(e));
 
     /// <summary>
     /// The outline as built and the layer extents on it: an extent at a curved edge goes on each chord of its arc, so the layer's
@@ -47,13 +58,14 @@ public static class Slabs
     public static (IReadOnlyList<Vec2> Contour, IReadOnlyList<LayerExtents.Extent> Extents) Built(Entity slab, IReadOnlyList<LayerExtents.Extent> extents, List<int>? edgeOf = null)
     {
         var c = Corners(slab);
-        if (Rises(slab) is not { } r)
+        var (r, el) = (Rises(slab), Ellipses(slab));
+        if (r == null && el == null)
         {
             edgeOf?.AddRange(Enumerable.Range(0, c.Count));
             return (c, extents);
         }
         var of = edgeOf ?? [];
-        var pts = ArcOutline.Points(c, r, of);
+        var pts = ArcOutline.Points(c, r, of, el);
         var o = new List<LayerExtents.Extent>();
         foreach (var x in extents)
             if (x.Edge == LayerExtents.Edge && x.Index is { } i) { for (var k = 0; k < of.Count; k++) if (of[k] == i) o.Add(x with { Index = k }); }
@@ -68,6 +80,20 @@ public static class Slabs
     {
         attrs["contour"] = ContourJson(corners);
         ArcOutline.Write(attrs, rises);
+    }
+
+    /// <summary>
+    /// An outline's elliptical edges (audit S4) written after its corners were: the command's <c>ellipses</c> (each edge's ends on its
+    /// ellipse), else those <paramref name="was"/> had whose ends its corners still lie on; none, the attribute taken away.
+    /// </summary>
+    public static void SetEllipses(JsonObject attrs, JsonObject a, Entity? was)
+    {
+        var corners = Args.StoredPoints(attrs["contour"]);
+        var el = EllipseEdge.Arg(a, corners, was);
+        EllipseEdge.Write(attrs, el);
+        // An edge along an ellipse is no arc.
+        if (el != null && ArcOutline.Rises(attrs[ArcOutline.Key], corners.Count) is { } r)
+            ArcOutline.Write(attrs, r.Select((x, i) => el[i] != null ? 0 : x).ToList());
     }
 
     /// <summary>
@@ -166,12 +192,14 @@ public static class Slabs
         var top = Top(m, slab);
         var parts = new List<GeometryPart>();
         var problems = new List<string>();
+        // Its own holes (audit S4): islands of its outline, each layer built round them (no boolean needed).
+        var own = OutlineHoles.Built(slab);
         foreach (var (from, to, material, name, index) in Section(m, slab))
         {
             if (!(to - from > 1e-9)) continue;
-            var own = LayerExtents.SlabContour(contour, extents, index, Short);
-            if (own == null) problems.Add($"{name}: its edges moved as its extents say would leave no outline; built to the floor's.");
-            if (Prism.ExtrudeFootprint(own ?? contour, top + from, to - from, name) is { } solid)
+            var layer = LayerExtents.SlabContour(contour, extents, index, Short);
+            if (layer == null) problems.Add($"{name}: its edges moved as its extents say would leave no outline; built to the floor's.");
+            if (Prism.ExtrudeFootprint(layer ?? contour, own, top + from, to - from, name) is { } solid)
                 parts.Add(new GeometryPart(name, Materials.ColorOf(m, material), solid, material, $"layer:{index}"));
         }
         var holes = Holes(m, slab.Id).Select(h => h.Contour).ToList();
@@ -212,7 +240,7 @@ public static class Slabs
                 outlines.Add(c);
         if (outlines.Count == 0) outlines.Add(contour);
         var plan = outlines.Select(c => new PlanItem("outline", true, c)).ToList();
-        plan.AddRange(holes.Select(h => new PlanItem("outline", true, h)));
+        plan.AddRange(holes.Concat(own).Select(h => new PlanItem("outline", true, h)));
         var built = new ElementGeometry(parts, plan, contour, problems.Count > 0 ? problems : null);
         // A beam-and-block floor (report #134): its core as joists, blocks and cast concrete.
         return BeamBlock.Of(m, slab) is { } bb ? BeamBlock.Apply(slab, built, m, services, bb) : built;
@@ -315,7 +343,8 @@ public static class Slabs
         var section = Section(m, slab);
         var top = Top(m, slab);
         var bottom = section.Min(b => b.From);
-        return Prism.ExtrudeFootprint(contour, top + bottom, section.Max(b => b.To) - bottom, "slab");
+        // Its own holes are not floor (audit S4): what it cuts has them.
+        return Prism.ExtrudeFootprint(contour, OutlineHoles.Built(slab), top + bottom, section.Max(b => b.To) - bottom, "slab");
     }
 
     /// <summary>The area a layer of no thickness covers: the net area of the next layer with a thickness towards the core (the core always has one).</summary>
@@ -338,8 +367,8 @@ public static class Slabs
     {
         if (g == null || g.Parts.Count == 0) yield break;
         // Exactly, its arcs as arcs (forum topic 97).
-        var (corners, rises) = (Corners(slab), Rises(slab));
-        var area = Math.Abs(ArcOutline.SignedArea(corners, rises));
+        // Its own holes are not part of it (audit S4): the profile's area, as IFC measures an area with voids.
+        var area = Area(slab) - OutlineHoles.Area(slab);
         var section = Section(m, slab);
         var width = section.Max(b => b.To) - section.Min(b => b.From);
         if (BeamBlock.Of(m, slab) is { } bb)
@@ -348,7 +377,7 @@ public static class Slabs
         yield return new QuantitySet("Qto_SlabBaseQuantities",
         [
             new("Width", width, "LENGTH"),
-            new("Perimeter", ArcOutline.Perimeter(corners, rises), "LENGTH"),
+            new("Perimeter", Perimeter(slab), "LENGTH"),
             new("GrossArea", area, "AREA", "Gross area"),
             new("NetArea", width > 0 ? net / width : 0, "AREA", "Net area"),
             new("GrossVolume", area * width, "VOLUME", "Gross volume"),

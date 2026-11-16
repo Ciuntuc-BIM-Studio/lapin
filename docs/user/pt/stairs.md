@@ -146,6 +146,8 @@ Os segmentos de um guarda-corpo podem ser arcos. Clique com o botão direito jun
 
 **Architecture → Balcony** (<kbd>BY</kbd>) prende uma varanda a uma parede: escolha o estilo na barra da linha de comandos e clique fora da face da parede, onde ela vai; fica desse lado da parede, à cota do piso do pavimento. Uma **varanda francesa** (Juliet) clicada junto a uma porta ou janela centra-se nela, 200 mm mais larga. Onde não há parede perto, a varanda fica onde clicar. **Balcony by outline** desenha qualquer forma: clique nos cantos, o primeiro lado fica encostado ao edifício. **Gallery edge** desenha a borda de um mezanino sobre um espaço de pé-direito duplo com dois pontos (o vazio à esquerda, a galeria à direita).
 
+As arestas de uma varanda desenhada também podem ser arcos: **Balcony by outline** tem as mesmas formas que a barra da ferramenta Floor, e os cantos e as arestas da varanda selecionada aceitam **Fillet corner…**, **Chamfer corner…** e **Make arc** no clique direito; a sua laje segue os arcos e a sua área é medida neles.
+
 Os estilos predefinidos cobrem os tipos pedidos:
 
 - **Juliet balcony**: uma guarda de balaústres em frente a uma porta-janela sobre uma pequena laje de pedra com duas consolas.

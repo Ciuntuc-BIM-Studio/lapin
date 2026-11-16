@@ -36,6 +36,10 @@ Uma **via** ou um **caminho** segue o seu eixo. Em **Corredor viário…** (CR),
 
 As linhas de CAD viram elementos do terreno: **Via a partir de linhas CAD** (LR) e **Linha de quebra a partir de linhas CAD** (BL) pegam uma linha ou polilinha desenhada ou trazida por um DXF, seguem toda linha do seu layer que se liga a ela ponta a ponta, e fazem uma via ao longo dela ou uma linha de quebra do terreno. Quando as linhas trazem cotas (as linhas 3D de um DXF), elas dão o perfil da via ou os níveis da linha de quebra. Essas linhas são guardadas com as suas cotas e podem ser mostradas em 3D (a categoria *linhas*).
 
+## Plataformas e o lote
+
+**Site → Platform** (<kbd>PD</kbd>) nivela o terreno dentro de um contorno a uma cota, com escavação e aterro; **Site → Parcel** (<kbd>PC</kbd>) desenha o limite da propriedade, a traço-ponto com a sua área. Ambas desenham o contorno com a mesma barra que uma laje: um **Polygon** cujas arestas podem ser arcos (<kbd>Space</kbd>), um **Rectangle** ou um **Circle**. Selecionadas, os seus cantos e arestas têm pegas (as do lote, no seu terreno), e o clique direito oferece **Make arc**, **Make straight**, **Fillet corner…** e **Chamfer corner…**, cada um um passo de anular. A plataforma nivela ao longo dos arcos verdadeiros; a área e o perímetro do lote são medidos neles, e o inventário de coordenadas lista os seus cantos.
+
 ## Plantas de situação e de localização
 
 O navegador do projeto tem um **Implantação** abaixo dos níveis: os desenhos próprios do terreno, que não pertencem a nenhum pavimento. Um projeto novo começa com dois:
