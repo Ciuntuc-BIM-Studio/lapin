@@ -33,6 +33,8 @@ import { TypeFiles } from './TypeFiles';
 import { deleteType } from '../core/deleteType';
 import { SaveTypeToLibrary } from '../core/SaveTypeToLibrary';
 import { WallLayersLegend } from './WallLayersLegend';
+import { ParamsSection, useStandardProps } from '../../shell/ParamsSection';
+import { paramKey, type Param } from '../../shell/params';
 import { TypePreview } from '../core/TypePreview';
 import { WallTypeSweeps, sweepJson, sweepRows, type TypeSweepRow } from './WallTypeSweeps';
 import { TypeListActions, endsOf } from '../../shell/TypeListActions';
@@ -95,6 +97,9 @@ export function WallTypesDialog() {
   const [zones, setZones] = useState<ZoneRow[]>(k0?.zones ?? []);
   const [lintels, setLintels] = useState<Rule>(k0?.lintels ?? DEFAULT_RULE);
   const [sweeps, setSweeps] = useState<TypeSweepRow[]>(k0?.sweeps ?? []);
+  const [draftParams, setDraftParams] = useState<Param[]>([]);
+  const [draftName, setDraftName] = useState('');
+  const [draftKind, setDraftKind] = useState('text');
   // The layer whose row the mouse is over: lit in the preview's plan, section and 3D.
   const [hover, setHover] = useState<number | null>(null);
   const restoredFor = useRef<string | null | undefined>(k0 ? k0.editing : undefined);
@@ -112,7 +117,8 @@ export function WallTypesDialog() {
     restoredFor.current = undefined;
     const model = modelRef.current;
     const t = editing ? model.nodes.get(editing) : undefined;
-    if (!t) { setName(''); setRows(blank()); setZones([]); setLintels(DEFAULT_RULE); setSweeps([]); return; }
+    if (!t) { setName(''); setRows(blank()); setZones([]); setLintels(DEFAULT_RULE); setSweeps([]); setDraftParams([]); return; }
+    setDraftParams([]);
     setSweeps(sweepRows(t.props.sweeps, (id) => materialName(model, id)));
     setLintels((t.props.lintels as unknown as Rule | undefined) ?? DEFAULT_RULE);
     setName(t.name);
@@ -158,13 +164,37 @@ export function WallTypesDialog() {
     if (editing) await execute('architecture.updateWallType', { id: editing, name, layers, zones: zoneJson, lintels, sweeps: sweepList });
     else {
       const r = await execute('architecture.createWallType', { name, layers, zones: zoneJson, lintels, sweeps: sweepList }) as { id?: string } | null;
-      if (r?.id) { setEditing(r.id); useUi.setState({ wallTypeId: r.id }); }
+      if (r?.id) {
+        for (const p of draftParams) {
+          await execute('element.setParam', {
+            ids: [r.id], name: p.name, kind: p.kind, value: p.value,
+            ...(p.pset ? { pset: p.pset } : {}), ...(p.instance ? { instance: true } : {}),
+          });
+        }
+        setDraftParams([]);
+        setEditing(r.id);
+        useUi.setState({ wallTypeId: r.id });
+      }
     }
     // The sweeps as saved, with the keys the engine gave the new ones: saved again, the walls keep the same sweeps.
     const saved = editing ? useSession.getState().nodes.get(editing) : undefined;
     if (saved) setSweeps(sweepRows(saved.props.sweeps, (id) => materialName({ nodes: useSession.getState().nodes, relations: useSession.getState().relations }, id)));
   };
   const use = (id: string) => { useUi.setState({ wallTypeId: id }); };
+  const editedNode = editing ? nodes.get(editing) : undefined;
+  const standardProps = useStandardProps('IfcWallType').filter(([set, n]) => !draftParams.some((p) => p.pset === set && p.name === n));
+  const addDraftStandard = (key: string) => {
+    const hit = standardProps.find(([set, n]) => `${set}.${n}` === key);
+    if (!hit) return;
+    const [pset, pname, k] = hit;
+    setDraftParams([...draftParams, { pset, name: pname, kind: k, value: k === 'bool' ? false : k === 'text' ? '' : 0 }]);
+  };
+  const addDraftCustom = () => {
+    const n = draftName.trim();
+    if (!n) return;
+    setDraftParams([...draftParams, { name: n, kind: draftKind, value: draftKind === 'bool' ? false : draftKind === 'text' ? '' : 0 }]);
+    setDraftName('');
+  };
 
   return (
     <div className="dialog-backdrop" role="dialog" aria-label="Wall types">
@@ -275,6 +305,50 @@ export function WallTypesDialog() {
             )}
             <LintelRuleEditor rule={lintels} onChange={(r) => setLintels(r ?? DEFAULT_RULE)} />
             {editing && <WallTypeTop typeId={editing} />}
+            <details className="type-params" data-testid="wall-type-params">
+              <summary className="eyebrow">Type parameters</summary>
+              {editedNode ? (
+                <ParamsSection node={editedNode} ids={() => [editedNode.id]} isType />
+              ) : (
+                <>
+                  {draftParams.length > 0 && (
+                    <dl className="fields">
+                      {draftParams.map((p, idx) => (
+                        <span key={paramKey(p)} className="qrow">
+                          <dt>{p.pset && <span className="muted small" data-no-i18n>{p.pset} · </span>}<span data-no-i18n>{p.name}</span>
+                            <button type="button" className="icon mini row-x" title="Remove the parameter" onClick={() => setDraftParams(draftParams.filter((_, i) => i !== idx))}><X size={10} /></button>
+                          </dt>
+                          <dd>
+                            {p.kind === 'bool' ? (
+                              <input type="checkbox" checked={p.value === true} onChange={(e) => setDraftParams(draftParams.map((x, i) => (i === idx ? { ...x, value: e.target.checked } : x)))} />
+                            ) : p.kind === 'text' ? (
+                              <Cell value={String(p.value ?? '')} onCommit={(v) => setDraftParams(draftParams.map((x, i) => (i === idx ? { ...x, value: v } : x)))} />
+                            ) : (
+                              <NumberField value={typeof p.value === 'number' ? p.value : 0} onCommit={(v) => { if (v != null) setDraftParams(draftParams.map((x, i) => (i === idx ? { ...x, value: v } : x))); }} />
+                            )}
+                          </dd>
+                        </span>
+                      ))}
+                    </dl>
+                  )}
+                  <div className="param-add">
+                    <input placeholder="New parameter" value={draftName} onChange={(e) => setDraftName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') addDraftCustom(); }} />
+                    <select value={draftKind} onChange={(e) => setDraftKind(e.target.value)} title="Kind">
+                      {['text', 'number', 'length', 'area', 'angle', 'bool'].map((k) => <option key={k} value={k}>{k}</option>)}
+                    </select>
+                    <button type="button" className="icon" title="Add the parameter" onClick={addDraftCustom} disabled={!draftName.trim()}><Plus size={14} /></button>
+                  </div>
+                  {standardProps.length > 0 && (
+                    <div className="param-add">
+                      <select value="" data-param-standard onChange={(e) => addDraftStandard(e.target.value)}>
+                        <option value="">Add a standard property…</option>
+                        {standardProps.map(([set, n]) => <option key={`${set}.${n}`} value={`${set}.${n}`} data-no-i18n>{`${set} · ${n}`}</option>)}
+                      </select>
+                    </div>
+                  )}
+                </>
+              )}
+            </details>
             {zones.length > 0 && <button type="button" className="btn" onClick={() => setZones([...zones, { key: '', name: 'Zone', role: 'masonry', height: 0.25, rest: false, material: 'Brick', block: null, rebar: null }])}><Plus size={14} />Zone</button>}
             <div className="row">
               <button type="button" className="btn" onClick={() => setRows([...rows, layer('Plaster', 0.015)])}><Plus size={14} />Layer</button>
