@@ -1894,6 +1894,10 @@ export const scenes = [
       await t.page.mouse.move(ox, oy, { steps: 6 });
       await t.page.mouse.click(ox, oy);
       await t.until(async () => (await t.nodes()).find((n) => n.id === floor.id)?.props.holes?.length === 2, 'a round hole is cut in the floor\'s own outline');
+      // An elliptical one (audit §18 leftovers): the bar's Ellipse, its centre, one semi-axis's end, then the other.
+      await t.page.locator('[data-testid=command-line] [data-testid=outline-shape] [data-shape=ellipse]').click();
+      for (const [x, y] of [[5.2, 4.7], [6.1, 4.7], [5.2, 5.15]]) { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 4 }); await t.page.mouse.click(px, py); }
+      await t.until(async () => { const f = (await t.nodes()).find((n) => n.id === floor.id); return f?.props.holes?.length === 3 && Array.isArray(f.props.holeEllipses); }, 'an elliptical hole is cut too, its edges kept on the ellipse');
       await t.page.locator('[data-testid=command-line] [data-testid=outline-shape] [data-shape=polygon]').click();
       await t.keys('Escape');
       await t.ui({ tool: null });
@@ -7704,7 +7708,8 @@ export const scenes = [
       t.expect((await on()).some((n) => typeof n.props.cloud === 'number'), 'the revision cloud is drawn on the sheet\'s paper');
       // A live text, a legend of the plan's materials and a scale bar at the plan's scale.
       await t.cmd('drafting.addText', { viewId: paper, at: [0.02, 0.262], text: 'Sheet {sheet.number} of {sheet.count} · {project.name}' });
-      await t.cmd('sheet.addLegend', { viewId: paper, at: [0.3, 0.27] });
+      // The legend's own words in the guide's language, as the Legend tool writes them (audit §16 leftovers).
+      await t.cmd('sheet.addLegend', { viewId: paper, at: [0.3, 0.27], lang: t.lang });
       await t.cmd('sheet.addScaleBar', { viewId: paper, at: [0.09, 0.085], viewportId: placed.viewportId });
       await t.wait(1200);
       await t.fit();
@@ -7716,7 +7721,8 @@ export const scenes = [
       const drawn = await t.call('doc.query', { name: 'sheet.drawing', args: { id: sheet.id } });
       const texts = drawn.pens.flatMap((p) => p.texts ?? []).map((x) => x.text);
       t.expect(texts.includes('Sheet A-101 of 1 · Casa Popescu'), 'a text on the sheet reads its tokens: the sheet\'s number and the project\'s name');
-      t.expect(texts.includes('Check this wall on site') && texts.includes('LEGEND') && texts.includes('1:100'), 'the sheet itself draws the note, the legend and the scale bar');
+      const legendWord = { en: 'LEGEND', ro: 'LEGENDĂ', es: 'LEYENDA', de: 'LEGENDE', fr: 'LÉGENDE', da: 'SIGNATURFORKLARING', it: 'LEGENDA', pl: 'LEGENDA', pt: 'LEGENDA' }[t.lang] ?? 'LEGEND';
+      t.expect(texts.includes('Check this wall on site') && texts.includes(legendWord) && texts.includes('1:100'), 'the sheet itself draws the note, the legend (its heading in the guide\'s language) and the scale bar');
       await t.fit();
       await t.shot('sheet-annotated', { of: '[data-testid=sheet]', pad: 0 });
     },

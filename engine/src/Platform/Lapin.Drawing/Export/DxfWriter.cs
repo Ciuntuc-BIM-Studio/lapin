@@ -234,12 +234,19 @@ public sealed class DxfWriter(double patternScale)
         var runs = new List<(PenCurve, double, double)>();
         if (curves.Count == 0) return (runs, [.. segments]);
         var used = new bool[segments.Count];
+        // The segments by their left end, so each curve looks only at those within its reach (a big plan has many of both).
+        var order = Enumerable.Range(0, segments.Count).OrderBy(i => Math.Min(segments[i].A.X, segments[i].B.X)).ToArray();
+        var left = order.Select(i => Math.Min(segments[i].A.X, segments[i].B.X)).ToArray();
         foreach (var k in curves.Distinct())
         {
             var spans = new List<(double A, double B)>();
             var reach = (k.M.Length + k.N.Length) * 1.000001;
-            for (var i = 0; i < segments.Count; i++)
+            var first = Array.BinarySearch(left, k.C.X - reach);
+            if (first < 0) first = ~first;
+            while (first > 0 && left[first - 1] >= k.C.X - reach) first--;
+            for (var o = first; o < order.Length && left[o] <= k.C.X + reach; o++)
             {
+                var i = order[o];
                 if (used[i]) continue;
                 var (da, db) = (segments[i].A - k.C, segments[i].B - k.C);
                 if (Math.Abs(da.X) > reach || Math.Abs(da.Y) > reach || Math.Abs(db.X) > reach || Math.Abs(db.Y) > reach) continue;
