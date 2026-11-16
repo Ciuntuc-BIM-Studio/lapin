@@ -94,7 +94,35 @@ public static class SunShadows
                 zone = (new Vec2(Math.Max(rBox.Min.X, sb.Min.X), Math.Max(rBox.Min.Y, sb.Min.Y)), new Vec2(Math.Min(rBox.Max.X, sb.Max.X), Math.Min(rBox.Max.Y, sb.Max.Y)));
                 if (zone.Min.X >= zone.Max.X || zone.Min.Y >= zone.Max.Y) return [];
             }
-            return scene.Visible(rs, shade ? null : shadows, zone);
+            // Each place once: two flush faces that overlap (two walls, a wall and a slab's edge) would give the same shadow twice,
+            // and the drawing fills its shadows even-odd, so the overlap would cancel out. The faces that face the same way are put
+            // in one strict order, the nearer first (depths in steps of 1e-7, past rounding), then the drawing's order: each is
+            // hidden by the ones before it, so every overlap keeps exactly one owner, the face the view sees. (A rule that hid by
+            // order between near neighbours and by depth between far ones is not an order: three faces 0.09 mm apart each lost
+            // the overlap to another.) The surface hatches, which share ViewFaces, are left as they were.
+            var flush = new List<(ViewFaces.Seen Face, int Order)>();
+            var mine = -1;
+            for (var i = 0; i < scene.SeenFaces.Count; i++)
+            {
+                var h = scene.SeenFaces[i];
+                if (ReferenceEquals(h, rs)) mine = i;
+                else if (h.Face.Owner >= 0 && Vec3.Dot(h.Face.Normal, n) > 1 - 1e-9
+                    && !(h.Box.Max.X <= zone.Min.X || h.Box.Min.X >= zone.Max.X || h.Box.Max.Y <= zone.Min.Y || h.Box.Min.Y >= zone.Max.Y)) flush.Add((h, i));
+            }
+            if (flush.Count == 0) return scene.Visible(rs, shade ? null : shadows, zone);
+            var over = scene.Over(rs, zone).Where(h => !flush.Any(f => ReferenceEquals(f.Face, h))).ToList();
+            var others = over.Count;
+            over.AddRange(flush.Select(f => f.Face));
+            return ViewFaces.Cells(rs.View, shade ? null : shadows, over.Select(h => h.View).ToList(), (k, at) =>
+            {
+                var dh = scene.DepthOn(over[k].Face.Normal, over[k].P0, at);
+                var dr = scene.DepthOn(n, p0, at);
+                if (k < others) return dh < dr - 1e-4;
+                if (double.IsInfinity(dh) || double.IsInfinity(dr)) return false;
+                var bh = Math.Floor(dh / 1e-7);
+                var br = Math.Floor(dr / 1e-7);
+                return bh < br || bh == br && flush[k - others].Order < mine;
+            }, zone).ToList();
         }
 
         // Whether a caster's box, carried along the rays onto a plane, may reach a face's box in the view.
