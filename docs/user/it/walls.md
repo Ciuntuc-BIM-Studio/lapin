@@ -109,6 +109,16 @@ Sotto un tetto gli strati di un muro salgono fino al tetto; un prolungamento **S
 
 ![Modifica strati in sezione: le maniglie degli strati del solaio dove il taglio attraversa i loro bordi](shots/layer-edit-section.webp)
 
+### Tagliare, estendere, dividere e tracciare parallele dei muri
+
+**Modifica → Taglia/estendi elementi** (TRIMEXTEND, o TE, nella riga di comando) funziona come in Revit. Scegli prima il limite: un muro, una trave o una fondazione a nastro (il suo asse o la sua faccia: rispondi **N** per la faccia vicina o **F** per quella lontana, **A** torna all’asse), oppure una linea disegnata, un segmento di polilinea, un arco o un cerchio. Poi fai clic sui muri uno dopo l’altro, ciascuno sulla parte da mantenere: l’estremità oltre il limite viene tagliata e, in un muro che non arriva, l’estremità più vicina viene prolungata fino al limite. Un muro curvo continua sul suo cerchio. Un muro portato sull’asse di un altro vi viene unito. Porte, finestre e aperture restano al loro posto in pianta; quella che cadrebbe nella parte tagliata viene rifiutata. <kbd>Invio</kbd> termina, <kbd>Esc</kbd> annulla. Ogni muro è un passo di annullamento. TRIM ed EXTEND della riga di comando accettano anche un muro cliccato in una pianta.
+
+**Modifica → Dividi elemento** (SPLITELEMENT, o SPLIT) taglia un muro dove fai clic: due muri. Il primo mantiene l’id (il suo GlobalId in IFC) e la parte dall’inizio del muro; il secondo ne è una copia (tipo, piano, strati, proprietà, gruppi) e prende le unioni dell’estremità lontana. I due si incontrano in un’unione in linea. Porte, finestre e aperture vanno alla parte in cui si trovano; una a cavallo del taglio viene rifiutata (*lies across the cut*). Scrivi **I** (Intersezione) per scegliere il muro e poi ciò che lo incrocia, un altro elemento o una linea o un arco disegnato, e tagliare lì; **P** torna a Punto.
+
+**Modifica → Offset elemento** (OFFSET della riga di comando, che ora accetta elementi): scrivi la distanza nell’unità del progetto, fai clic su un muro in una pianta e poi sul lato dove va la copia. La copia è parallela al muro, concentrica per un muro curvo, con lo stesso tipo, gli stessi strati e le stesse aperture. **A** (Asse, predefinito) misura dall’asse, **F** (Facce) dalla faccia del muro, così la faccia della copia sta a quella distanza dalla sua; **T** (Per) prende un punto per cui passa la copia.
+
+![Due muri tagliati a un limite e un muro con una porta diviso in due](shots/wall-split-trim.webp)
+
 ## Tipi di muro
 
 Un tipo di muro è un insieme di strati, dalla faccia a destra del verso in cui il muro è disegnato (l’esterno, se disegni intorno all’edificio in senso antiorario) alla faccia alla sua sinistra. Ogni strato ha un materiale e uno spessore, e uno strato è il **nucleo**. La linea del muro corre lungo il nucleo. Per modificare i tipi, scegli **Architettura → Tipi di muro**. Uno strato diverso dal nucleo può avere un’altezza propria: **Da** e **Fino a** stabiliscono fin dove arriva sopra la base del muro (uno zoccolo piastrellato fino a 1500, un rivestimento da 300 in su); se vuoti, lo strato corre per tutta l’altezza.

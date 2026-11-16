@@ -1878,6 +1878,91 @@ export const scenes = [
     },
   },
   {
+    // Modify → Trim/Extend elements and Split element on walls (audit 2026-11-15 §6).
+    id: 'walls-split-trim',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      await t.ui({ keyPlan: false });
+      const storey = await t.storey();
+      const click = async (x, y) => {
+        const [px, py] = await t.planPoint(x, y);
+        await t.page.mouse.move(px, py, { steps: 4 });
+        await t.page.mouse.click(px, py);
+        await t.wait(700);
+      };
+      const boundary = await t.cmd('architecture.addWall', { storeyId: storey, x1: 0, y1: 0, x2: 8, y2: 0 });
+      const over = await t.cmd('architecture.addWall', { storeyId: storey, x1: 2, y1: -3, x2: 2, y2: 2 });
+      const short = await t.cmd('architecture.addWall', { storeyId: storey, x1: 6, y1: -3, x2: 6, y2: -1 });
+      const long = await t.cmd('architecture.addWall', { storeyId: storey, x1: 10, y1: -3, x2: 18, y2: -3 });
+      await t.cmd('architecture.addDoor', { wallId: long.id, x: 11.5, y: -3 });
+      await t.fit();
+      await t.wait(600);
+      // Trim/Extend elements: the boundary first, then each wall on the part to keep.
+      await t.tool('modify.trimExtend');
+      await t.page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
+      await click(4, 0);
+      await click(2, -1.5);
+      await click(6, -2);
+      await t.page.keyboard.press('Enter');
+      await t.wait(800);
+      const walls = async () => (await t.nodes()).filter((n) => n.type === 'IfcWall');
+      const byId = async (id) => (await walls()).find((n) => n.id === id);
+      const o = await byId(over.id);
+      const ys = [o.props.start[1], o.props.end[1]];
+      t.expect(Math.max(...ys) < 0.3, `the wall that crossed the boundary is trimmed back to it (ends at ${ys})`);
+      const sh = await byId(short.id);
+      const sy = [sh.props.start[1], sh.props.end[1]];
+      t.expect(Math.max(...sy) > -0.3, `the wall that fell short is carried on to the boundary (ends at ${sy})`);
+      // Split element: click the long wall, with a door in it, where it is to be cut.
+      await t.tool('modify.split');
+      await t.page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
+      await click(15, -3);
+      await t.page.keyboard.press('Escape');
+      await t.wait(800);
+      const all = await walls();
+      t.expect(all.length === 5, `the long wall is two walls (${all.length} walls)`);
+      const doors = (await t.nodes()).filter((n) => n.type === 'IfcDoor');
+      t.expect(doors.length === 1, `the door stays (${doors.length} doors)`);
+      await t.ui({ selection: null, selected: [] });
+      await t.wait(400);
+      await t.shot('wall-split-trim', { of: '.plan-svg', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
+    // Modify → Split element on a floor with a curved edge: two points of the line.
+    id: 'floors-split',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      await t.ui({ keyPlan: false });
+      const storey = await t.storey();
+      const floor = await t.cmd('architecture.addSlab', { storeyId: storey, points: [[0, 0], [8, 0], [8, 5], [0, 5]], arcs: [0, 0, 1.2, 0] });
+      await t.fit();
+      await t.wait(600);
+      await t.tool('modify.split');
+      await t.page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
+      for (const [x, y] of [[2, 2.5], [4.5, 0.8], [4.5, 2.4]]) {
+        const [px, py] = await t.planPoint(x, y);
+        await t.page.mouse.move(px, py, { steps: 4 });
+        await t.page.mouse.click(px, py);
+        await t.wait(700);
+      }
+      await t.page.keyboard.press('Escape');
+      await t.wait(800);
+      const floors = (await t.nodes()).filter((n) => n.type === 'IfcSlab');
+      t.expect(floors.length === 2, `the floor is two floors (${floors.length})`);
+      t.expect(floors.some((n) => n.id === floor.id), 'the part clicked keeps the floor\'s id');
+      t.expect(floors.some((n) => Array.isArray(n.props.arcs) && n.props.arcs.some((a) => Math.abs(a) > 0.1)), 'the curved edge stays an arc');
+      // The part that took the other id selected, so that the cut shows.
+      await select(t, floors.find((n) => n.id !== floor.id).id);
+      await t.wait(600);
+      await t.shot('floor-split', { of: '.plan-svg', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     // Edit sketch on a floor (forum topic 97, stage 3): its outline opened as a sketch on a plan of its own, a fillet and a
     // dimension added, Finish sketch writes it back; the sketch stays on the floor.
     id: 'floors-sketch',

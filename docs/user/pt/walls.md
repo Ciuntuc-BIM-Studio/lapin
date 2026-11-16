@@ -109,6 +109,16 @@ Sob um telhado as camadas de uma parede sobem até ao telhado; uma extensão **S
 
 ![Editar camadas em corte: as pegas das camadas da laje onde o corte atravessa as suas arestas](shots/layer-edit-section.webp)
 
+### Aparar, estender, dividir e deslocar paredes
+
+**Modificar → Aparar/estender elementos** (TRIMEXTEND, ou TE, na linha de comandos) funciona como no Revit. Escolha primeiro o limite: uma parede, uma viga ou uma sapata corrida (o seu eixo ou a sua face: responda **N** para a face próxima ou **F** para a afastada, **A** volta ao eixo), ou uma linha desenhada, um segmento de polilinha, um arco ou um círculo. Depois clique nas paredes uma a uma, cada uma na parte a manter: a extremidade para lá do limite é aparada e, numa parede que não chega, a extremidade mais próxima é prolongada até ao limite. Uma parede curva continua pelo seu círculo. Uma parede levada ao eixo de outra é unida a ela aí. Portas, janelas e vãos mantêm o seu lugar em planta; o que cairia na parte cortada é recusado. <kbd>Enter</kbd> termina, <kbd>Esc</kbd> cancela. Cada parede é um passo de desfazer. TRIM e EXTEND da linha de comandos também aceitam uma parede clicada numa planta.
+
+**Modificar → Dividir elemento** (SPLITELEMENT, ou SPLIT) corta uma parede onde clicar: duas paredes. A primeira mantém o id (o seu GlobalId em IFC) e a parte desde o início da parede; a segunda é uma cópia dela (tipo, piso, camadas, propriedades, grupos) e fica com as uniões da extremidade afastada. As duas encontram-se numa união em linha. Portas, janelas e vãos vão para a parte em que estão; um que atravesse o corte é recusado (*lies across the cut*). Escreva **I** (Interseção) para escolher a parede e depois o que a cruza, outro elemento ou uma linha ou arco desenhado, e cortar aí; **P** volta a Ponto.
+
+**Modificar → Deslocar elemento** (OFFSET da linha de comandos, que agora aceita elementos): escreva a distância na unidade do projeto, clique numa parede numa planta e depois no lado onde vai a cópia. A cópia é paralela à parede, concêntrica numa parede curva, com o mesmo tipo, camadas e vãos. **A** (Eixo, por omissão) mede a partir do eixo, **F** (Faces) a partir da face da parede, de modo que a face da cópia fica a essa distância da sua; **T** (Por) toma um ponto por onde passa a cópia.
+
+![Duas paredes aparadas a um limite e uma parede com uma porta dividida em duas](shots/wall-split-trim.webp)
+
 ## Tipos de parede
 
 Um tipo de parede é um conjunto de camadas, da face à direita do sentido em que a parede é desenhada (a externa, quando você desenha ao redor de um edifício no sentido anti-horário) à face à sua esquerda. Cada camada tem um material e uma espessura, e uma camada é o **núcleo**. A linha da parede corre ao longo do núcleo. Para editar os tipos, escolha **Arquitetura → Tipos de parede**. Uma camada que não é o núcleo pode ter uma altura própria: **De** e **Até** definem até onde ela sobe acima da base da parede (um barrado de azulejos até 1500, um revestimento de 300 para cima); vazios, ela ocupa a altura toda.

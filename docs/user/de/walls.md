@@ -109,6 +109,16 @@ Unter einem Dach reichen die Schichten einer Wand bis zum Dach; eine Verlängeru
 
 ![Schichten bearbeiten im Schnitt: die Griffe der Deckenschichten, wo der Schnitt ihre Kanten kreuzt](shots/layer-edit-section.webp)
 
+### Wände stutzen, dehnen, teilen und versetzen
+
+**Ändern → Elemente stutzen/dehnen** (TRIMEXTEND oder TE in der Befehlszeile) arbeitet wie in Revit. Wählen Sie zuerst die Grenze: eine Wand, einen Träger oder ein Streifenfundament (seine Achse oder seine Fläche: antworten Sie **N** für die nahe oder **F** für die ferne Fläche, **A** geht zurück zur Achse) oder eine gezeichnete Linie, ein Polylinien-Segment, einen Bogen oder einen Kreis. Klicken Sie dann die Wände nacheinander an, jede auf dem Teil, der bleiben soll: Das Ende jenseits der Grenze wird zurückgeschnitten, und bei einer Wand, die zu kurz ist, wird das nähere Ende bis zur Grenze verlängert. Eine gekrümmte Wand läuft auf ihrem Kreis weiter. Eine Wand, die bis zur Achse einer anderen Wand geführt wird, wird dort mit ihr verbunden. Türen, Fenster und Öffnungen behalten ihren Platz im Grundriss; eine, die in den weggeschnittenen Teil fiele, wird abgelehnt. <kbd>Enter</kbd> beendet, <kbd>Esc</kbd> bricht ab. Jede Wand ist ein Rückgängig-Schritt. TRIM und EXTEND der Befehlszeile nehmen auch eine im Grundriss angeklickte Wand.
+
+**Ändern → Element teilen** (SPLITELEMENT oder SPLIT) schneidet eine Wand dort durch, wo Sie klicken: zwei Wände. Die erste behält die ID (ihre GlobalId in IFC) und den Teil ab dem Wandanfang; die zweite ist eine Kopie davon (Typ, Geschoss, Schichten, Eigenschaften, Gruppen) und übernimmt die Verbindungen am fernen Ende. Beide treffen sich in einer geraden Verbindung. Türen, Fenster und Öffnungen gehen an den Teil, in dem sie liegen; eine über dem Schnitt wird abgelehnt (*lies across the cut*). Geben Sie **I** (Schnittpunkt) ein, um die Wand und dann das, was sie kreuzt, zu wählen, ein anderes Element oder eine gezeichnete Linie oder einen Bogen, und dort zu schneiden; **P** geht zurück zum Punkt.
+
+**Ändern → Element versetzen** (OFFSET der Befehlszeile, das jetzt Elemente nimmt): Geben Sie den Abstand in der Einheit des Projekts ein, klicken Sie eine Wand im Grundriss an und dann die Seite, auf die die Kopie kommt. Die Kopie liegt parallel zur Wand, bei einer gekrümmten Wand konzentrisch, mit demselben Typ, denselben Schichten und Öffnungen. **A** (Achse, Standard) misst von der Achse, **F** (Flächen) von der Wandfläche, sodass die Fläche der Kopie den Abstand von ihr hat; **T** (Durch) nimmt einen Punkt, durch den die Kopie geht.
+
+![Zwei Wände an eine Grenze gestutzt und eine Wand mit Tür in zwei geteilt](shots/wall-split-trim.webp)
+
 ## Wandtypen
 
 Ein Wandtyp ist eine Folge von Schichten, von der Seite rechts der Richtung, in der die Wand gezeichnet wird (die Außenseite, wenn Sie gegen den Uhrzeigersinn um ein Gebäude zeichnen), zur Seite links davon. Jede Schicht hat ein Material und eine Dicke, und eine Schicht ist der **Kern**. Die Achse der Wand verläuft entlang des Kerns. Um die Typen zu bearbeiten, wählen Sie **Architektur → Wandtypen**. Eine Schicht außer dem Kern kann eine eigene Höhe haben: **Von** und **Bis** legen fest, wie hoch sie über dem Wandfuß reicht (ein Fliesensockel bis 1500, eine Bekleidung ab 300); leer läuft sie über die ganze Höhe.

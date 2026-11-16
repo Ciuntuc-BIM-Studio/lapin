@@ -42,6 +42,10 @@ Una losa dibujada fuera de los muros, delante de una puerta, es un porche. Para 
 
 Una capa de un forjado también puede ir más allá de su contorno, o detenerse antes, todo alrededor o en un borde, escrita en sus propiedades o arrastrada en planta o en sección con **Editar capas**, y un tipo de forjado puede dar a sus forjados sus extensiones: vea [Extensiones de capas](walls.md#extensiones-de-capas). Las cubiertas aún no tienen composición de capas (su cobertura, su losa y su estructura son partes propias), así que no tienen extensiones de capas.
 
+**Modificar → Dividir elemento** sobre una losa o un techo pide dos puntos de una línea de corte: la línea continúa más allá de ellos y debe cruzar el contorno exactamente dos veces. La losa pasa a ser dos losas; la parte pulsada conserva el id (GlobalId en IFC), los arcos de los bordes siguen siendo arcos (un arco cortado sigue siendo un arco) y un hueco de la losa pasa a la parte en que está. Un hueco que cruce la línea se rechaza. **Modificar → Recortar/alargar elementos** acepta un límite recto (un muro, una viga o una línea dibujada) y corta allí la losa o el techo, conservando el lado pulsado.
+
+![Una losa con un borde curvo dividida por una línea: la parte de la derecha seleccionada](shots/floor-split.webp)
+
 ## Cubiertas
 
 Elija **Arquitectura → Cubierta** (<kbd>RF</kbd>) y haga clic en el contorno de los muros que quedan debajo. Lapin construye la cubierta sobre ese contorno, en la parte superior de su nivel.
