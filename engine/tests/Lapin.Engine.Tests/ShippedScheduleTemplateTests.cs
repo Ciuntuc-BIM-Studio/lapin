@@ -9,7 +9,7 @@ using Lapin.Host;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// The fixed schedules as shipped field-schedule templates (audit S1, decision 611): on a varied model of each kind, the
+/// The fixed schedules as shipped field-schedule templates (audit S1, decision 612): on a varied model of each kind, the
 /// fixed schedule's table as it is today is the characterization, and the field schedule made from the template that stands
 /// for it gives the same headings, rows, order and totals. Differences, where a template cannot give the same, are asserted
 /// and written beside the test.

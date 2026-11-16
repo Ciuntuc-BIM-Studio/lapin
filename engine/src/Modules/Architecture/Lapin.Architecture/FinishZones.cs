@@ -185,7 +185,52 @@ public static class FinishZones
             for (var i = 0; i + 1 < pts.Count; i++) segs.Add((pts[i], pts[i + 1]));
             if (s.Bool("closed") && pts.Count >= 3) segs.Add((pts[^1], pts[0]));
         }
+        // Implicit splits on a wall's side faces where another wall abuts or crosses it (forum #123).
+        if (role is "Face.Left" or "Face.Right" && m.Get(hostId)?.Class == IfcClass.Wall && f.Face.Outline.Count >= 2 && f.Upright)
+            AddIntersectingWallSplits(m, f, hostId, segs);
         return segs;
+    }
+
+    static void AddIntersectingWallSplits(IModelView m, Frame f, string hostId, List<(Vec2 A, Vec2 B)> segs)
+    {
+        var p0 = f.Face.Outline[0];
+        var p1 = f.Face.Outline[1];
+        var a2 = new Vec2(p0.X, p0.Y);
+        var b2 = new Vec2(p1.X, p1.Y);
+        var faceLen = (b2 - a2).Length;
+        if (faceLen < 1e-6) return;
+        var faceDir = (b2 - a2).Normalized();
+        var faceOut = new Vec2(f.Face.Normal.X, f.Face.Normal.Y);
+        var z0 = p0.Z;
+        var z1 = z0 + (f.V1 - f.V0);
+
+        foreach (var other in m.OfClass(IfcClass.Wall))
+        {
+            if (other.Id == hostId || PathCurve.Of(other).IsArc || Walls.Frame(other, m) is not { } of) continue;
+            var oz0 = Spatial.Base(m, other);
+            var oz1 = oz0 + Walls.HeightOf(m, other);
+            if (oz1 <= z0 + 1e-3 || oz0 >= z1 - 1e-3) continue;
+            var odir = (of.End - of.Start).Normalized();
+            if (Math.Abs(Vec2.Dot(odir, faceDir)) > 0.999) continue;
+            if (Math.Max(Vec2.Dot(of.Start - a2, faceOut), Vec2.Dot(of.End - a2, faceOut)) <= 0.01) continue;
+            var oleft = odir.Perp;
+            foreach (var y in new[] { of.YMin, of.YMax })
+            {
+                var s0 = of.Start + oleft * y - odir * 0.02;
+                var s1 = of.End + oleft * y + odir * 0.02;
+                var denom = faceDir.X * (s1.Y - s0.Y) - faceDir.Y * (s1.X - s0.X);
+                if (Math.Abs(denom) < 1e-9) continue;
+                var dx = s0.X - a2.X;
+                var dy = s0.Y - a2.Y;
+                var u = (dx * (s1.Y - s0.Y) - dy * (s1.X - s0.X)) / denom;
+                var t = (dx * faceDir.Y - dy * faceDir.X) / denom;
+                if (u > 0.01 && u < faceLen - 0.01 && t >= 0 && t <= 1)
+                {
+                    var fu = f.Map((a2 + faceDir * u).At(z0)).X;
+                    segs.Add((new Vec2(fu, f.V0 - 1), new Vec2(fu, f.V1 + 1)));
+                }
+            }
+        }
     }
 
     /// <summary>The regions the face's splits divide it into (the face itself when it has none).</summary>

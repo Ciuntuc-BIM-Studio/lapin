@@ -715,6 +715,8 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
     {
         // Anywhere in the call (a query's args, a batch's steps, an attribute set): a file or folder named by its path.
         if (NamesHostFile(p)) return HostFiles.Refused;
+        // A connection from another site not yet let in by the user (docs/plan-web-connect.md): nothing at all.
+        if (role is not ("editor" or "owner" or "viewer" or ReaderRole)) return "This connection has not been let in.";
         var editor = role is "editor" or "owner";
         // A project's graphs are the host's (docs/plan-visual-graphs.md §7, the user's answer of 13.11.2026): a guest neither evaluates one.
         if (method == "doc.query" && (string?)p["name"] is { } q && HostOnlyQueries.Any(x => q.StartsWith(x, StringComparison.Ordinal))) return "Only the host can do that.";
@@ -728,7 +730,8 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 // A project's scripts are the host's (docs/plan-python-scripting.md §7): a guest never puts one in, alone or in a batch.
                 if (HostOnly(p)) return "Only the host can do that.";
                 // Marking progress on site (docs/plan-4d5d.md, stage 5) is open to every guest, one who joined to look too.
-                if (!editor && (string?)p["command"] is { } command && SiteCommands.Contains(command)) return null;
+                // Not a reader's: a site let in to read (docs/plan-web-connect.md) changes nothing.
+                if (!editor && role != ReaderRole && (string?)p["command"] is { } command && SiteCommands.Contains(command)) return null;
                 return editor ? null : "You joined to look: ask the host to let you edit.";
             case "doc.undo" or "doc.redo" or "project.convertToNative":
                 return editor ? null : "You joined to look: ask the host to let you edit.";
@@ -765,6 +768,15 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
         if (Is((string?)p["command"])) return true;
         return (string?)p["command"] == "edit.batch" && p["args"]?["steps"] is JsonArray steps && steps.Any(s => s is JsonObject o && Is((string?)o["command"]));
     }
+
+    /// <summary>
+    /// The role of a web app on another site the user let in to read (docs/plan-web-connect.md): a viewer that does not
+    /// even mark progress on site; reads, snapshots, queries and exports as bytes only.
+    /// </summary>
+    public const string ReaderRole = "reader";
+
+    /// <summary>The role of a connection from another site the user has not let in: refused everything.</summary>
+    public const string NoRole = "none";
 
     public static readonly HashSet<string> SiteCommands =["planning.markDone", "planning.markStarted", "planning.unmark", "planning.setProgress", "planning-pro.addPhoto", "planning-pro.addReport"];
 
