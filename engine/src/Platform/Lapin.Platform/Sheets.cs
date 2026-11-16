@@ -220,6 +220,8 @@ public static class Sheets
             var (pa, pb) = (toPaper(a), toPaper(b));
             if (ClipSegment(ref pa, ref pb, x0, y0, x1, y1)) o.Segments.Add((pa, pb));
         }
+        // The exact curves go along: DXF writes only the chords the box kept as them, a cut one's piece as a line.
+        if (o.Segments.Count > 0) o.Curves.AddRange(pen.Curves.Select(c => c.Map(toPaper)));
         foreach (var loop in pen.Loops)
             if (ClipLoop(loop.Select(toPaper).ToList(), x0, y0, x1, y1) is { Count: >= 3 } c) o.Loops.Add(c);
         foreach (var t0 in pen.Texts)

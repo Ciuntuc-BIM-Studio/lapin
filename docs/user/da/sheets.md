@@ -61,4 +61,4 @@ Det, der er tegnet på arket, udskrives på det, oven på visningerne, præcis s
 
 ## Udskrivning
 
-Knapperne **PDF** og **DXF** i arkets bjælke eksporterer arket. En PDF er klar til at blive udskrevet eller sendt. En DXF åbner i AutoCAD og andre CAD-programmer med sine lag, linjer og skraveringer. **Udskriv** sender arket til en printer eller plotter i dets egen papirstørrelse, 1:1, som vektorlinjer: vælg plotter og papir i udskriftsdialogen. På en mindre printer vælger du tilpas til siden.
+Knapperne **PDF** og **DXF** i arkets bjælke eksporterer arket. En PDF er klar til at blive udskrevet eller sendt. En DXF åbner i AutoCAD og andre CAD-programmer med sine lag, linjer og skraveringer; cirkler, buer og ellipser (tegnede, eller de buede kanter på dæk og andre omrids på en plan) skrives som rigtige CIRCLE-, ARC- og ELLIPSE-elementer, ikke korte linjer, og kommer tilbage som kurver, når DXF'en importeres igen. **Udskriv** sender arket til en printer eller plotter i dets egen papirstørrelse, 1:1, som vektorlinjer: vælg plotter og papir i udskriftsdialogen. På en mindre printer vælger du tilpas til siden.

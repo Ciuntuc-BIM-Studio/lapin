@@ -49,6 +49,7 @@ public static class PaperViews
     {
         var o = new Pen(pen.Layer, pen.Stroke, pen.Width, pen.Fill, pen.Dash) { Viewport = pen.Viewport, Block = pen.Block, Clip = clip };
         o.Segments.AddRange(pen.Segments.Select(s => (f(s.A), f(s.B))));
+        o.Curves.AddRange(pen.Curves.Select(c => c.Map(f)));
         o.Loops.AddRange(pen.Loops.Select(l => (IReadOnlyList<Vec2>)l.Select(f).ToList()));
         o.Texts.AddRange(pen.Texts.Select(t => t with { At = f(t.At) }));
         o.Images.AddRange(pen.Images.Select(i => i with { Corners = [.. i.Corners.Select(f)] }));

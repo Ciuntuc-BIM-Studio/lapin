@@ -76,4 +76,4 @@ Ce e desenat pe planșă se tipărește pe ea, peste vederi, exact cum se vede: 
 
 ## Tipărirea
 
-Butoanele **PDF** și **DXF** din bara planșei o exportă. Un PDF e gata de tipărit sau de trimis. Un DXF se deschide în AutoCAD și în alte programe CAD cu layerele, liniile și hașurile lui. **Tipărește** trimite planșa la imprimantă sau plotter la formatul ei, la 1:1, în linii vectoriale: alegi plotterul și hârtia în fereastra de tipărire. Pe o imprimantă mai mică, alegi încadrarea în pagină.
+Butoanele **PDF** și **DXF** din bara planșei o exportă. Un PDF e gata de tipărit sau de trimis. Un DXF se deschide în AutoCAD și în alte programe CAD cu layerele, liniile și hașurile lui; cercurile, arcele și elipsele (desenate, sau laturile curbe ale planșeelor și ale altor contururi pe un plan) sunt scrise ca CIRCLE, ARC și ELLIPSE adevărate, nu ca linii scurte, și revin ca curbe când DXF-ul e importat din nou. **Tipărește** trimite planșa la imprimantă sau plotter la formatul ei, la 1:1, în linii vectoriale: alegi plotterul și hârtia în fereastra de tipărire. Pe o imprimantă mai mică, alegi încadrarea în pagină.

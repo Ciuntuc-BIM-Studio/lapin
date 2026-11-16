@@ -76,4 +76,4 @@ What is drawn on the sheet prints on it, over the views, exactly as shown: in it
 
 ## Printing
 
-The **PDF** and **DXF** buttons in the sheet's bar export the sheet. A PDF is ready to print or send. A DXF opens in AutoCAD and other CAD programs with its layers, lines and hatches. **Print** sends the sheet to a printer or plotter at its own paper size, at 1:1, as vector lines: choose the plotter and the paper in the print dialog. On a smaller printer, choose fit to page.
+The **PDF** and **DXF** buttons in the sheet's bar export the sheet. A PDF is ready to print or send. A DXF opens in AutoCAD and other CAD programs with its layers, lines and hatches; circles, arcs and ellipses (drafted, or the curved edges of floors and other outlines on a plan) are written as real CIRCLE, ARC and ELLIPSE entities, not short lines, and come back as curves when the DXF is imported again. **Print** sends the sheet to a printer or plotter at its own paper size, at 1:1, as vector lines: choose the plotter and the paper in the print dialog. On a smaller printer, choose fit to page.

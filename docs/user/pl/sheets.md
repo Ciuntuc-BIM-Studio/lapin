@@ -61,4 +61,4 @@ To, co narysowano na arkuszu, drukuje się na nim, nad widokami, dokładnie tak,
 
 ## Drukowanie
 
-Przyciski **PDF** i **DXF** na pasku arkusza eksportują arkusz. PDF jest gotowy do druku lub wysłania. DXF otwiera się w AutoCAD i innych programach CAD z warstwami, liniami i kreskowaniami. **Drukuj** wysyła arkusz do drukarki lub plotera w jego własnym rozmiarze papieru, w skali 1:1, jako linie wektorowe: wybierz ploter i papier w oknie drukowania. Na mniejszej drukarce wybierz dopasowanie do strony.
+Przyciski **PDF** i **DXF** na pasku arkusza eksportują arkusz. PDF jest gotowy do druku lub wysłania. DXF otwiera się w AutoCAD i innych programach CAD z warstwami, liniami i kreskowaniami; okręgi, łuki i elipsy (narysowane albo zakrzywione krawędzie stropów i innych obrysów na rzucie) są zapisywane jako prawdziwe obiekty CIRCLE, ARC i ELLIPSE, nie krótkie odcinki, i wracają jako krzywe po ponownym imporcie DXF. **Drukuj** wysyła arkusz do drukarki lub plotera w jego własnym rozmiarze papieru, w skali 1:1, jako linie wektorowe: wybierz ploter i papier w oknie drukowania. Na mniejszej drukarce wybierz dopasowanie do strony.
