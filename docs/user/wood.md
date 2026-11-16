@@ -29,6 +29,10 @@ Select a door or window: its **Wood** section shows its rough opening, the rule 
 - **Boards**: tick a layer of the build-up (OSB, fibreboard, plasterboard) and give its sheet size: the layer is laid as upright sheets, their joints on the studs' module, cut at the rough openings and along the top. **Wood → Boards schedule** counts the sheets each wall takes, their net area and what is cut off.
 - **Frame elevation**: in a framed wall's **Wood** section, the button makes a section along the wall through the middle of its core, at 1:20, every member cut, with a chain of dimensions through the rough openings, the studs' module under it and each rough opening's size. Place it on a sheet like any view.
 
+**Studs of one wall.** The frame is its type's rule, worked out again whenever the wall changes; one wall may still differ from it. Select the wall in its frame elevation: each stud has a grip. Drag one along the wall to move it, Ctrl/⌘-click it to take it out; each opening's outer king stud and outer jack stud have a grip too, dragged out or in for more or fewer (the opening then keeps its own rule, as in its **Wood** section). A stud that would stand on another member is refused. **Reset studs** in the wall's **Wood** section puts its studs back on the type's module. A wall split in two keeps its own studs on its parts.
+
+![A frame elevation with the wall selected: a grip on each stud, a stud moved off the module](shots/wood-frame-grips.webp)
+
 ## Prefabricated panels
 
 Tick **Prefabricated panels** to make the frame in the shop: give the **longest panel** (as long as the shop's table and the truck allow) and the **shortest**. Each wall is cut into panels at the longest joint within that length, on the studs' module where it can be, never through an opening's king studs, jacks, header or sill, nor through a T junction's backing. Each panel is framed on its own, with its own end studs and plates at the joints. A panel that cannot be kept within the length (an opening too wide for it) stays whole and the wall says so.

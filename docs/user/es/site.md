@@ -33,12 +33,16 @@ Todo lo importado se guarda en el archivo del proyecto. Un elemento toma su nomb
 ## Carreteras, curvas y trazados CAD
 
 Una **carretera** o un **camino** sigue su eje. En **Corredor…** (CR), la pestaña **Curvas** da a cada vértice del eje un radio con clotoide de entrada y de salida, como un proyectista de carreteras traza una curva; un vértice dejado en 0 sigue siendo una esquina, y las curvas que no caben entre sus vecinas se rechazan, con el motivo. El estacionamiento, el perfil longitudinal y las secciones transversales siguen el eje curvo, y IFC 4.3 lo escribe como alineación.
+Un camino o una carretera, un muro de contención o una zanja se dividen, recortan, alargan y desfasan con las herramientas de los muros (**Modificar → Dividir elemento**, **Modificar → Recortar/alargar elementos**, **Desfasar**). Sus estaciones continúan: la segunda parte empieza en la estación donde cayó el corte, de modo que el perfil proyectado, las secciones transversales y las juntas pedidas en estaciones quedan donde estaban. Un corte debe caer en un tramo recto del eje, no en una curva, y cada vértice conserva su curva. Un eje importado como segmentos de alineación IFC 4.3 no se corta aquí.
+
 
 Los trazados CAD se convierten en elementos del sitio: **Carretera desde líneas CAD** (LR) y **Línea de quiebre desde líneas CAD** (BL) toman una línea o polilínea dibujada o traída de un DXF, siguen todas las líneas de su capa que se unen extremo con extremo y hacen una carretera a lo largo de ella o una línea de quiebre del terreno. Cuando las líneas llevan cotas (las líneas 3D de un DXF), dan el perfil de la carretera o las cotas de la línea de quiebre. Esas líneas conservan sus cotas y pueden mostrarse en 3D (la categoría *trazados*).
 
 ## Plataformas y la parcela
 
 **Site → Platform** (<kbd>PD</kbd>) nivela el terreno dentro de un contorno a una cota, con desmonte y terraplén; **Site → Parcel** (<kbd>PC</kbd>) dibuja el lindero de la propiedad, en trazo y punto con su área. Ambas dibujan su contorno con la misma barra que un forjado: un **Polygon** cuyos bordes pueden ser arcos (<kbd>Space</kbd>), un **Rectangle** o un **Circle**. Seleccionadas, sus esquinas y bordes tienen pinzamientos (los de la parcela, en su terreno), y el clic derecho ofrece **Make arc**, **Make straight**, **Fillet corner…** y **Chamfer corner…**, cada uno un paso de deshacer. La plataforma nivela a lo largo de los arcos verdaderos; el área y el perímetro de la parcela se miden sobre ellos, y el inventario de coordenadas lista sus esquinas.
+**Modificar → Dividir elemento** corta una plataforma en dos a lo largo de una línea de dos puntos (cada parte nivelada a la misma altura, sus huecos en la parte en que caen; un hueco que cruza la línea se rechaza), y **Modificar → Recortar/alargar elementos** recorta una plataforma o la parcela con un límite recto, conservando el lado en el que haga clic. Un terreno conserva una parcela: se recorta, no se divide.
+
 
 ## Planos de situación y planos de emplazamiento
 

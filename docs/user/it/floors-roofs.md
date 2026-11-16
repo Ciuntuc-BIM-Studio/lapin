@@ -58,6 +58,12 @@ Uno strato di un solaio può anche andare oltre il suo contorno, o fermarsi prim
 
 ![Un solaio con un bordo curvo diviso da una linea: la parte a destra selezionata](shots/floor-split.webp)
 
+I fori propri di un solaio vanno alla parte in cui cadono; uno strato che supera un bordo curvo continua a farlo su entrambe le parti; la griglia di un controsoffitto resta dov’era, ogni apparecchio o diffusore nella parte in cui cade la sua cella. Un solaio con un bordo ellittico non viene tagliato da una linea.
+
+Una **copertura** si divide e si taglia allo stesso modo. Ogni parte mantiene le regole dei suoi bordi (gronda o timpano, pendenza, sporgenza), e il taglio è un timpano senza sporgenza; il taglio è consentito solo dove lascia la copertura com’era, con le falde di ogni parte dove stavano quelle della copertura, come attraverso il colmo di una copertura a due falde o lungo di esso. Altrove viene rifiutato (*would change its slopes*): le falde di una parte salirebbero a nuovi colmi. Finestre da tetto, abbaini e pluviali vanno alla loro parte. Una copertura a botte non viene tagliata.
+
+![Una copertura a due falde divisa attraverso il colmo: due coperture, le stesse falde](shots/roof-split.webp)
+
 ## Tetti
 
 Scegli **Architettura → Tetto** (<kbd>RF</kbd>) e fai clic sul contorno dei muri sottostanti. Lapin costruisce il tetto su quel contorno, alla sommità del suo livello.

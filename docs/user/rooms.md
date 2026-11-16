@@ -16,6 +16,8 @@ For a space without walls all round, such as a terrace or one end of an open-pla
 
 A drawn room's edges can be curved, as a floor's: the **Room by outline** bar draws a **Polygon** whose edges may be arcs (**Arcs (Space)**), a **Rectangle** or a **Circle**, and the selected room's right-click offers **Make arc**, **Make straight**, **Fillet corner…** and **Chamfer corner…**. Its area and perimeter are measured on the true arcs, and in IFC its space's profile is the true curve. A room found from its walls follows them, so its outline is not edited this way.
 
+**Modify → Split element** cuts a drawn room in two along a line of two points: the part you click keeps the room, the other is a new room with the storey's next number, and their areas add up. **Modify → Trim/Extend elements** trims it by a straight boundary. A room found from its walls is divided by a room separation line instead.
+
 ![A drawn room with a curved edge and a rounded corner, a round room and a balcony with a curved front](shots/rooms-curved.webp)
 
 ## Room separation lines

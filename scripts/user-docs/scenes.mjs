@@ -2618,6 +2618,88 @@ export const scenes = [
     },
   },
   {
+    // Split element on a railing (audit §15): clicked on its arc, two railings, the arc cut into two arcs of its circle.
+    id: 'railing-split',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      await t.ui({ keyPlan: false });
+      const storey = await t.storey();
+      const r = await t.cmd('architecture.addRailing', { storeyId: storey, points: [[0, 0], [4, 0], [4, 4]], arcs: [0, -1.5], style: 'balusters' });
+      await t.fit();
+      await t.wait(600);
+      await t.tool('modify.split');
+      await t.page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
+      const [px, py] = await t.planPoint(5.5, 2);
+      await t.page.mouse.move(px, py, { steps: 4 });
+      await t.page.mouse.click(px, py);
+      await t.wait(900);
+      await t.page.keyboard.press('Escape');
+      await t.wait(600);
+      const rails = (await t.nodes()).filter((n) => n.type === 'LapinRailing');
+      t.expect(rails.length === 2, `the railing is two railings (${rails.length})`);
+      t.expect(rails.some((n) => n.id === r.id), 'the first part keeps the railing\'s id');
+      t.expect(rails.every((n) => Array.isArray(n.props.arcs) && n.props.arcs.some((a) => Math.abs(a) > 0.1)), 'each part keeps a piece of the arc');
+      await select(t, rails.find((n) => n.id !== r.id).id);
+      await t.wait(600);
+      await t.shot('railing-split', { of: '.plan-svg', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
+    // A gable roof split across its ridge (audit §15): two roofs whose slopes stand where the roof's stood.
+    id: 'roof-split',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      await t.ui({ keyPlan: false });
+      const storey = await t.storey();
+      const roof = await t.cmd('architecture.addRoof', { storeyId: storey, points: [[0, 0], [10, 0], [10, 6], [0, 6]] });
+      await t.cmd('architecture.updateRoof', { id: roof.id, attrs: { shape: 'gable', ridgeDirection: 'x' } });
+      const refused = await t.cmd('element.splitOutline', { id: roof.id, a: [-1, 2], b: [11, 2] });
+      t.expect(!refused?.ids, 'a cut along the eaves, which would change the slopes, refuses');
+      const r = await t.cmd('element.splitOutline', { id: roof.id, a: [5, -1], b: [5, 7], keep: [1, 1] });
+      t.expect(Array.isArray(r?.ids) && r.ids.length === 2, 'the roof is two roofs');
+      await open3d(t);
+      // The second roof selected, so that the cut across the ridge shows.
+      await select(t, r.ids[1]);
+      await t.wait(1500);
+      await t.shot('roof-split', { of: '[data-testid=view3d]', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
+    // A timber-frame wall's studs edited in its frame elevation (audit §14): the wall selected, a grip on each stud, one moved.
+    id: 'wood-frame-grips',
+    touches: ['wood', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const { walls } = await house(t, { roof: false });
+      await t.tool('wood.frame');
+      const dialog = t.page.locator('[aria-label="Timber frame"]');
+      await dialog.locator('[data-testid=wood-on]').check();
+      await t.wait(900);
+      await dialog.locator('.btn.primary').click();
+      await t.wait(1200);
+      await t.ui({ dialog: null });
+      const view = await t.cmd('wood.frameView', { id: walls[0] });
+      const drawing = await t.call('doc.query', { name: 'view.drawing', args: { id: view.id } });
+      const grips = drawing?.marks?.find((m) => m.id === walls[0] && m.data?.frameGrips)?.data?.frameGrips ?? [];
+      const studs = grips.filter((g) => g.key.startsWith('stud:'));
+      t.expect(studs.length > 2, `the frame elevation offers a grip on each stud (${studs.length})`);
+      const from = Number(studs[1].key.slice(5));
+      await t.cmd('wood.editStuds', { id: walls[0], move: { from, to: from + 0.2 } });
+      await t.ui({ view: 'drawing', drawingViewId: view.id, keyPlan: false });
+      await select(t, walls[0]);
+      await t.wait(2000);
+      await t.fit();
+      await t.wait(800);
+      t.expect(await t.page.locator('[data-testid=drawing] [data-grip^="frame:stud"]').count() > 2, 'the selected wall shows its stud grips');
+      await t.shot('wood-frame-grips', { of: '[data-testid=drawing]', pad: 0 });
+      await t.ui({ keyPlan: true, view: 'plan', selection: null, selected: [] });
+    },
+  },
+  {
     // Steel, stage 1 (docs/plan-steel.md, decision 268): two outlines sketched on the plan, slanted at their ends, converted to
     // members; a column of the structure, a member fitted to its flange and coped; the members' ends in Properties; the types.
     id: 'steel',
