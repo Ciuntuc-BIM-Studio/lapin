@@ -915,7 +915,7 @@ public static partial class IfcExport
             var ellipses = EllipseEdge.Read(e.Attrs[EllipseEdge.Key], corners.Count);
             if (corners.Count < 3 || (rises == null && ellipses == null && holes.Count == 0)) return null;
             if (footprint == "") footprint = f.Add("IFCGEOMETRICREPRESENTATIONSUBCONTEXT", S("FootPrint"), S("Model"), Derived, Derived, Derived, Derived, model, Null, E("PLAN_VIEW"), Null);
-            return f.Add("IFCSHAPEREPRESENTATION", footprint, S("FootPrint"), S("Curve2D"), L(holes.Select(h => IndexedLoop(h.Corners, h.Rises)).Prepend(OutlineLoop(corners, rises, ellipses))));
+            return f.Add("IFCSHAPEREPRESENTATION", footprint, S("FootPrint"), S("Curve2D"), L(holes.Select(h => OutlineLoop(h.Corners, h.Rises, h.Ellipses)).Prepend(OutlineLoop(corners, rises, ellipses))));
         }
 
         /// <summary>

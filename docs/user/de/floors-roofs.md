@@ -26,7 +26,7 @@ Dieselbe Leiste dient jedem Umrisswerkzeug (Decke, Deckenöffnung, Unterdecke, L
 
 ![Die Leiste der Umrisswerkzeuge, From drawn shape gewählt](shots/outline-sources.webp)
 
-Für Decke, Deckenöffnung, Unterdecke und Raum nach Umriss bietet die Leiste auch **Ellipse**: Mittelpunkt, Ende einer Halbachse, dann die andere. Die Kanten des Umrisses folgen der wahren Ellipse (vier Viertelkanten), genau gemessen; eine von der Ellipse weggezogene Ecke macht ihre zwei Kanten gerade, eine Ecke an einer elliptischen Kante wird nicht abgerundet. IFC trägt sie als IfcEllipse. **From drawn shape** übernimmt eine gezeichnete Ellipse ebenso.
+Für Decke, Deckenöffnung, Unterdecke und Raum nach Umriss bietet die Leiste auch **Ellipse**: Mittelpunkt, Ende einer Halbachse, dann die andere. Die Kanten des Umrisses folgen der wahren Ellipse (vier Viertelkanten), genau gemessen; eine von der Ellipse weggezogene Ecke macht ihre zwei Kanten gerade, eine Ecke an einer elliptischen Kante wird nicht abgerundet. IFC trägt sie als IfcEllipse. **From drawn shape** übernimmt eine gezeichnete Ellipse ebenso. Ein eigenes Loch einer Decke oder Unterdecke (**Hole in the outline**) nimmt ebenfalls eine Ellipse. Ein Umriss mit einer elliptischen Kante wird nicht als Ganzes versetzt (Shift-Ziehen, **Offset outline…**): die Kurve im Abstand zu einer Ellipse ist keine Ellipse.
 
 ![Eine elliptische Decke neben einer gezeichneten Ellipse](shots/ellipse-floor.webp)
 

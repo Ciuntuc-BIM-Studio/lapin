@@ -206,15 +206,44 @@ public static class Symbols
         var m = q.Model;
         var pens = new List<Pen>();
         var sheetTokens = TitleBlocks.Resolver(q, sheet, placements);
-        foreach (var e in Instances(m).Where(e => e.Str("sheetId") == sheet.Id))
-        {
-            if (DefOf(m, e.Str("symbolId")) is not { } def) continue;
-            var (at, angle, scale, fx, fy) = Pose(e);
-            var sd = SymbolRender.Render(m, def, Resolver(m, def, e, null, at, sheetTokens), 0.001 * scale);
-            var own = SymbolRender.ToPens(sd, at, angle * Math.PI / 180, scale, fx, fy, e.Str("color") ?? "#000000", DraftingResources.Patterns(m));
-            pens.AddRange(own);
-        }
+        foreach (var e in Instances(m).Where(e => e.Str("sheetId") == sheet.Id)) pens.AddRange(SheetPensOf(q, e, sheetTokens));
         return pens;
+    }
+
+    /// <summary>One of a sheet's own symbols as its pens (paper mm, y down); none when its definition is gone.</summary>
+    public static List<Pen> SheetPensOf(IQueryContext q, Entity e, Func<string, (bool Known, string? Value)>? sheetTokens = null)
+    {
+        var m = q.Model;
+        if (DefOf(m, e.Str("symbolId")) is not { } def) return [];
+        var (at, angle, scale, fx, fy) = Pose(e);
+        var sd = SymbolRender.Render(m, def, Resolver(m, def, e, null, at, sheetTokens), 0.001 * scale);
+        return SymbolRender.ToPens(sd, at, angle * Math.PI / 180, scale, fx, fy, e.Str("color") ?? "#000000", DraftingResources.Patterns(m));
+    }
+
+    /// <summary>
+    /// A sheet's own symbols on its paper's view (audit §16 leftovers): what a click there takes, never drawn (the sheet under the
+    /// paper draws them). Each is picked by its lines and inside its box, its insertion point a snap; in the paper's view (m, y up).
+    /// </summary>
+    public static IEnumerable<ViewMark> PaperPickMarks(IQueryContext q, Entity sheet)
+    {
+        var (_, h) = Sheets.PaperOf(sheet);
+        Vec2 F(Vec2 p) => PaperViews.ToView(p, h);
+        foreach (var e in Instances(q.Model).Where(e => e.Str("sheetId") == sheet.Id))
+        {
+            var pens = SheetPensOf(q, e);
+            var pts = pens.SelectMany(p => p.Segments.SelectMany(s => new[] { s.A, s.B }).Concat(p.Loops.SelectMany(l => l))).ToList();
+            foreach (var t in pens.SelectMany(p => p.Texts)) { var w = t.Text.Length * t.Height * 0.6; pts.AddRange([t.At - new Vec2(w, t.Height), t.At + new Vec2(w, t.Height)]); }
+            var (at, _, _, _, _) = Pose(e);
+            pts.Add(at);
+            var (x0, y0, x1, y1) = (pts.Min(p => p.X), pts.Min(p => p.Y), pts.Max(p => p.X), pts.Max(p => p.Y));
+            var mk = new ViewMark(e.Id) { Pick = true };
+            foreach (var s in pens.SelectMany(p => p.Segments)) mk.Lines.Add((F(s.A), F(s.B), "PICK", 0, "none", null));
+            IReadOnlyList<Vec2> box = [F(new Vec2(x0, y0)), F(new Vec2(x1, y0)), F(new Vec2(x1, y1)), F(new Vec2(x0, y1))];
+            for (var i = 0; i < 4; i++) mk.Edges.Add((box[i], box[(i + 1) % 4]));
+            mk.Hit = ([box], true);
+            mk.Snaps.Add(F(at));
+            yield return mk;
+        }
     }
 
     /// <summary>A symbol alone, as the library and the editor show it: its box (mm) and its pens, y down, its insertion point at (0, 0).</summary>

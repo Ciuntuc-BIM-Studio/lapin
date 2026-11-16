@@ -42,6 +42,8 @@ export interface CadHost {
   pickDraft(p: Vec2): { id: string; shape: Shape } | null;
   /** Every drafted shape within a click's reach of a point, nearest first (a corner two shapes share has both). */
   pickDrafts?(p: Vec2): { id: string; shape: Shape; d: number }[];
+  /** A level's line under a point in a section or an elevation (a storey's): the storey and the line's height in the view. */
+  pickLevel?(p: Vec2): { id: string; y: number } | null;
   /** Anything selectable under a point (a drafted shape, an annotation, an element). */
   pickAny(p: Vec2): string | null;
   /** A drafted shape's geometry, for previews. */

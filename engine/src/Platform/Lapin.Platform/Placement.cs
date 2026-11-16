@@ -198,9 +198,12 @@ public static class Placement
             OutlineHoles.Write(a, [.. holes.Select(h =>
             {
                 var q = h.Corners.Select(t.Point).ToList();
-                if (!t.Mirrored) return new OutlineHoles.Hole(q, h.Rises);
+                // Its elliptical edges as the contour's are (above).
+                var moved = h.Ellipses?.Select(x => x == null ? null : t.Mirrored ? new EllipseEdge(t.Point(x.C), t.Dir(x.M) * -1, x.Ratio, x.Ccw) : x with { C = t.Point(x.C), M = t.Dir(x.M) }).ToArray();
+                if (!t.Mirrored) return new OutlineHoles.Hole(q, h.Rises, moved);
                 q.Reverse();
-                return new OutlineHoles.Hole(q, ArcOutline.Reversed(h.Rises)?.Select(r => -r).ToArray());
+                var n = q.Count;
+                return new OutlineHoles.Hole(q, ArcOutline.Reversed(h.Rises)?.Select(r => -r).ToArray(), moved == null ? null : [.. Enumerable.Range(0, n).Select(j => moved[((n - 2 - j) % n + n) % n])]);
             })]);
         // A room's islands (the columns inside it), loops as its contour is.
         if (a["islands"] is JsonArray isl)
