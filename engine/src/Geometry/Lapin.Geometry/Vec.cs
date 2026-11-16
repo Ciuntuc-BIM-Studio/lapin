@@ -314,9 +314,10 @@ public static class Polygon2
             bool pin = fp >= -eps, qin = fq >= -eps;
             if (pin) o.Add(ring[i]);
             if (pin == qin) continue;
-            // Where f is 0 along the edge; at (or, within eps, past) an end the end itself stands for it.
+            // Where f is 0 along the edge. At (or, within eps, past) the end that is kept, that end stands for it; next to
+            // the end left out it is still added, however close: a ring whose next vertex is out by a hair keeps its corner.
             var t = fp / (fp - fq);
-            if (t > 0 && t < 1) o.Add(lerp(ring[i], ring[j], t));
+            if (pin ? t > 0 : t < 1) o.Add(lerp(ring[i], ring[j], Math.Clamp(t, 0, 1)));
         }
         return o;
     }

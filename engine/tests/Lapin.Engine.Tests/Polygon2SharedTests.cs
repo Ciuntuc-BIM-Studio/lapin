@@ -70,6 +70,12 @@ public class Polygon2SharedTests
         Vec2[] near = [new(0, -1e-10), new(2, -1e-10), new(2, 2), new(0, 2)];
         Assert.Equal(4, Polygon2.ClipHalf(near, p => p.Y, 1e-9).Count);
         Assert.Equal(4, Polygon2.ClipHalf(near, p => p.Y).Count);
+        // A vertex out by so little the crossing's fraction rounds to the end: the crossing still comes (a structural
+        // piece lost its corner, and its load half its area, when it did not).
+        Vec2[] unit = [new(0, 0), new(1, 0), new(1, 1), new(0, 1)];
+        var hair = Polygon2.ClipHalf(unit, p => p.Y == 0 ? 1 : -1e-17);
+        Assert.Equal(4, hair.Count);
+        Assert.Equal(1, Polygon2.SignedArea(hair), 12);
     }
 
     [Fact]
