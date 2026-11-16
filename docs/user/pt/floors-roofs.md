@@ -58,6 +58,12 @@ Uma camada de uma laje também pode ir além do seu contorno, ou parar antes, à
 
 ![Uma laje com um bordo curvo dividida por uma linha: a parte da direita selecionada](shots/floor-split.webp)
 
+Os furos próprios de uma laje vão para a parte em que caem; uma camada que ultrapassa um bordo curvo continua a fazê-lo nas duas partes; a malha de um teto falso fica onde estava, cada luminária ou difusor na parte em que cai a sua célula. Uma laje com bordo elíptico não é cortada por uma linha.
+
+Um **telhado** é dividido e aparado do mesmo modo. Cada parte mantém as regras dos seus bordos (beiral ou empena, inclinação, beiral saliente), e o corte é uma empena sem beiral; o corte só é permitido onde deixa o telhado como estava, com as águas de cada parte onde estavam as do telhado, como através da cumeeira de um telhado de duas águas ou ao longo dela. Noutros casos é recusado (*would change its slopes*): as águas de uma parte subiriam a novas cumeeiras. Janelas de telhado, trapeiras e tubos de queda vão para a sua parte. Um telhado em abóbada de berço não é cortado.
+
+![Um telhado de duas águas dividido através da cumeeira: dois telhados, as mesmas águas](shots/roof-split.webp)
+
 ## Telhados
 
 Escolha **Arquitetura → Telhado** (<kbd>RF</kbd>) e clique no contorno das paredes sob ele. O Lapin constrói o telhado sobre esse contorno, no topo do seu nível.

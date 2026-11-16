@@ -140,6 +140,10 @@ In IFC una rampa è un IfcRamp (STRAIGHT_RUN_RAMP, TWO_STRAIGHT_RUN_RAMP, QUARTE
 
 I segmenti di un parapetto possono essere archi. Clic destro vicino a un segmento di un parapetto selezionato per **Rendi arco** (o **Rendi diritto**), poi trascina la maniglia rotonda al centro dell'arco per curvarlo passando per un punto; clic destro sulla maniglia di un angolo per **Raccorda l'angolo…** o **Smussa l'angolo…**. **Raccordo** e **Smusso** (FILLET, CHAMFER) prendono anche i parapetti: fai clic su un parapetto sui due segmenti ai lati di un angolo, o su due parapetti le cui estremità si incontrano, o si incontrerebbero prolungate: diventano un solo parapetto, il primo, attorno all'arco. Corrimano, traversi e vetro seguono l'arco in brevi tratti diritti a non più di un millimetro da esso, montanti e balaustri sono distanziati lungo l'arco come lungo un segmento diritto, e la sua lunghezza è quella dell'arco. **Draft → Convert → Railing** tiene l'arco di un raccordo: linee, archi e polilinee che si incontrano testa a testa diventano un solo parapetto (togli la spunta a **Un solo parapetto dove si incontrano testa a testa** per uno ciascuno). In IFC la curva vera è il suo asse. I parapetti di scale e balconi seguono la loro scala o il loro balcone.
 
+Un parapetto si divide, si taglia, si estende e si sposta in parallelo con gli strumenti dei muri: **Modifica → Dividi elemento** lo taglia in due dove fai clic (un arco in due archi dello stesso cerchio; il primo mantiene l’id), **Modifica → Taglia/estendi elementi** riporta a un limite l’estremità che lo supera oppure prolunga l’estremità più vicina lungo il suo segmento finale (un arco lungo il suo cerchio), e **Offset** lo copia in parallelo, gli archi concentrici, con gli spigoli dove si incontrano i segmenti spostati. Le loro lunghezze sommate danno quella del parapetto.
+
+![Un parapetto con un arco diviso in due sul suo arco](shots/railing-split.webp)
+
 ![Un parapetto con un angolo arrotondato](shots/railing-fillet.webp)
 
 ## Balconi

@@ -84,6 +84,12 @@ Catalogul tău vine dintr-o foaie de calcul: **Importă catalogul…** citește 
 
 ![O placă cu o margine curbă împărțită de o linie: partea din dreapta selectată](shots/floor-split.webp)
 
+Golurile proprii ale unui planșeu merg la partea în care sunt; un strat care trece de o latură curbă continuă așa pe ambele părți; grila unui tavan fals rămâne unde era, fiecare corp de iluminat sau difuzor în partea în care îi cade celula. Un planșeu cu o latură eliptică nu se taie după o linie.
+
+Un **acoperiș** se împarte și se taie la fel. Fiecare parte păstrează regulile laturilor ei (streașină sau fronton, pantă, consolă), iar tăietura devine un fronton fără consolă; tăietura e permisă doar unde lasă acoperișul cum era, cu pantele fiecărei părți unde erau ale acoperișului, ca peste coama unui acoperiș în două ape sau de-a lungul ei. În rest e refuzată (*would change its slopes*): pantele unei părți ar urca spre coame noi. Ferestrele de acoperiș, lucarnele și burlanele merg la partea lor. Un acoperiș în boltă nu se taie.
+
+![Un acoperiș în două ape împărțit peste coamă: două acoperișuri, aceleași pante](shots/roof-split.webp)
+
 ## Acoperișuri
 
 Alege **Arhitectură → Acoperiș** (<kbd>RF</kbd>) și dă clic pe conturul pereților de dedesubt. Lapin construiește acoperișul peste acel contur, la partea de sus a nivelului.

@@ -58,6 +58,12 @@ Et lag i et dæk kan også gå forbi dets omrids eller stoppe før det, hele vej
 
 ![Et dæk med en buet kant delt langs en linje: delen til højre er valgt](shots/floor-split.webp)
 
+Et dæks egne huller følger den del, de ligger i; et lag, der går forbi en buet kant, gør det fortsat på begge dele; et nedhængt lofts net bliver, hvor det var, hver lampe eller diffusor i den del, dens felt ligger i. Et dæk med elliptisk kant deles ikke af en linje.
+
+Et **tag** deles og trimmes på samme måde. Hver del beholder reglerne for sine kanter (udhæng eller gavl, hældning, udhæng), og snittet er en gavl uden udhæng; snittet er kun tilladt, hvor det efterlader taget, som det var, hver dels flader stående, hvor tagets stod, som på tværs af et sadeltags kip eller langs det. Andre steder afvises det (*would change its slopes*): en dels flader ville rejse sig til nye kipper. Ovenlysvinduer, kviste og nedløbsrør følger deres del. Et tøndetag deles ikke.
+
+![Et sadeltag delt på tværs af kippen: to tage, de samme flader](shots/roof-split.webp)
+
 ## Tage
 
 Vælg **Arkitektur → Tag** (<kbd>RF</kbd>), og klik på omridset af væggene under det. Lapin bygger taget over det omrids, øverst på dets niveau.

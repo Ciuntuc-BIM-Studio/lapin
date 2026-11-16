@@ -621,7 +621,7 @@ function offset(): Step {
       },
     }),
     pickElement: (id) => {
-      if (!isAxisElement(id)) { log('Offset takes drafted lines, and walls, beams and strip footings.'); return pickStep(); }
+      if (!isEditableLine(id)) { log('Offset takes drafted lines, walls, beams, strip footings, railings, MEP runs, paths and roads.'); return pickStep(); }
       return {
         prompt: through() ? 'Through which point?' : 'Which side?', want: 'point',
         point: async (side) => {
@@ -660,9 +660,27 @@ function trimOrExtend(kind: 'trim' | 'extend'): Step {
 const nodeOf = (id: string) => useSession.getState().nodes.get(id);
 /** The elements cut by a line in plan: floors and ceilings (architecture.splitOutline, trimOutline). */
 const OUTLINE_CLASSES = ['IfcSlab', 'LapinCeiling'];
-const isOutlineElement = (id: string) => OUTLINE_CLASSES.includes(nodeOf(id)?.type ?? '');
+/** Roofs, drawn rooms, platforms and a terrain's parcel: cut by a line too (element.splitOutline, trimOutline; audit §15). */
+const isOtherOutline = (id: string) => {
+  const n = nodeOf(id);
+  if (!n) return false;
+  const has = (k: string) => Array.isArray(n.props[k]);
+  return (['IfcRoof', 'IfcSpace', 'IfcEarthworksCut'].includes(n.type) && has('contour') && !has('path')) || (n.type === 'IfcGeographicElement' && has('parcel'));
+};
+const isOutlineElement = (id: string) => OUTLINE_CLASSES.includes(nodeOf(id)?.type ?? '') || isOtherOutline(id);
+/** The command that cuts an outline element by a line: architecture's for floors and ceilings, the platform's for the rest. */
+const outlineCommand = (id: string, kind: 'split' | 'trim') => (OUTLINE_CLASSES.includes(nodeOf(id)?.type ?? '') ? `architecture.${kind}Outline` : `element.${kind}Outline`);
 /** Walls, beams, strip footings: elements along an axis (element.split, trimExtend, offset). */
 const isAxisElement = (id: string) => { const n = nodeOf(id); return !!n && isPathElement(n.props); };
+/** Railings, MEP runs, paths and roads, retaining walls and ditches: elements along a polyline (element.split, trimExtend, offset; audit §15). */
+const LINE_CLASSES = ['LapinRailing', 'IfcPipeSegment', 'IfcDuctSegment', 'IfcCableSegment'];
+const isLineElement = (id: string) => {
+  const n = nodeOf(id);
+  if (!n) return false;
+  return (LINE_CLASSES.includes(n.type) && Array.isArray(n.props.points)) || Array.isArray(n.props.path);
+};
+/** What Split, Trim/Extend and Offset take by its line: an axis or a polyline. */
+const isEditableLine = (id: string) => isAxisElement(id) || isLineElement(id);
 
 /** The straight axis of an element, as two points (none when it is curved). */
 function straightAxis(id: string): [Vec2, Vec2] | null {
@@ -713,11 +731,11 @@ function trimExtendElements(): Step {
     pick: () => { log('Pick an element: a wall, a beam, a strip footing, a floor or a ceiling.'); return target(boundary, line); },
     pickElement: async (id, at) => {
       if (isOutlineElement(id)) {
-        if (line) await execute('architecture.trimOutline', { id, a: xy(line[0]), b: xy(line[1]), keep: xy(at) });
-        else log('A floor or a ceiling is trimmed by a straight boundary.');
-      } else if (isAxisElement(id)) {
+        if (line) await execute(outlineCommand(id, 'trim'), { id, a: xy(line[0]), b: xy(line[1]), keep: xy(at) });
+        else log('An outline (a floor, a ceiling, a roof, a room, a platform, a parcel) is trimmed by a straight boundary.');
+      } else if (isEditableLine(id)) {
         await execute('element.trimExtend', { id, at: xy(at), ...boundary, ...('boundary' in boundary ? { face: useCad.getState().trimFace } : {}) });
-      } else log('Trim/Extend takes walls, beams, strip footings, floors and ceilings.');
+      } else log('Trim/Extend takes walls, beams, strip footings, railings, MEP runs, paths, roads, floors, ceilings, roofs, rooms, platforms and parcels.');
       return target(boundary, line);
     },
     element: () => { log('Pick it in a plan, on the part to keep.'); return target(boundary, line); },
@@ -757,7 +775,7 @@ function splitElement(): Step {
     pick: () => { log('Pick a wall, a beam, a strip footing, a floor or a ceiling.'); return first(); },
     pickElement: async (id, at) => {
       if (isOutlineElement(id)) return splitLine(id, at);
-      if (!isAxisElement(id)) { log('Split takes walls, beams, strip footings, floors and ceilings.'); return first(); }
+      if (!isEditableLine(id)) { log('Split takes walls, beams, strip footings, railings, MEP runs, paths, roads, floors, ceilings, roofs, rooms and platforms.'); return first(); }
       if (atCrossing) return crossing(id, at);
       await execute('element.split', { id, at: xy(at) });
       return first();
@@ -775,7 +793,7 @@ function splitElement(): Step {
     point: (a) => ({
       prompt: 'Second point', want: 'point', base: a,
       preview: (c) => [{ type: 'line', a, b: c }],
-      point: async (b) => { await execute('architecture.splitOutline', { id, a: xy(a), b: xy(b), keep: xy(keep) }); return first(); },
+      point: async (b) => { await execute(outlineCommand(id, 'split'), { id, a: xy(a), b: xy(b), keep: xy(keep) }); return first(); },
     }),
   });
   return first();

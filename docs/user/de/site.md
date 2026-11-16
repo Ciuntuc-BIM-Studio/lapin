@@ -33,12 +33,16 @@ Alles Importierte wird in der Projektdatei gespeichert. Ein Objekt erhält seine
 ## Straßen, Kurven und Linienzüge
 
 Eine **Straße** oder ein **Weg** folgt ihrer Achse. In **Korridor…** (CR) gibt der Reiter **Bögen** jedem Scheitel der Achse einen Radius mit Klothoide am Anfang und Ende, wie ein Straßenplaner eine Kurve trassiert; ein Scheitel mit 0 bleibt eine Ecke, und Kurven, die nicht zwischen ihre Nachbarn passen, werden mit Begründung abgelehnt. Stationierung, Längsschnitt und Querprofile folgen der gekrümmten Achse, und IFC 4.3 schreibt sie als Alignment.
+Ein Weg oder eine Straße, eine Stützmauer oder ein Graben wird mit den Werkzeugen der Wände geteilt, gestutzt, gedehnt und versetzt (**Ändern → Element teilen**, **Ändern → Elemente stutzen/dehnen**, **Versetzen**). Seine Stationen laufen weiter: Der zweite Teil beginnt bei der Station, an der der Schnitt lag, sodass das entworfene Profil, die Querschnitte und die an Stationen verlangten Anschlüsse bleiben, wo sie waren. Ein Schnitt muss auf einem geraden Stück der Achse liegen, nicht in einer Kurve, und jeder Knick behält seine Kurve. Eine als IFC-4.3-Alignment-Segmente importierte Achse wird hier nicht geteilt.
+
 
 CAD-Linien werden zu Geländeelementen: **Straße aus CAD-Linien** (LR) und **Bruchkante aus CAD-Linien** (BL) nehmen eine gezeichnete oder aus einer DXF gebrachte Linie oder Polylinie, folgen jeder Linie ihres Layers, die Ende an Ende anschließt, und machen eine Straße entlang ihr oder eine Bruchkante des Geländes. Tragen die Linien Höhen (die 3D-Linien einer DXF), geben sie das Längsprofil der Straße oder die Höhen der Bruchkante. Solche Linien bleiben mit ihren Höhen erhalten und lassen sich in 3D zeigen (Kategorie *Linienzüge*).
 
 ## Plattformen und das Grundstück
 
 **Site → Platform** (<kbd>PD</kbd>) ebnet das Gelände innerhalb eines Umrisses auf eine Höhe ein, mit Abtrag und Auftrag; **Site → Parcel** (<kbd>PC</kbd>) zeichnet die Grundstücksgrenze, strichpunktiert mit ihrer Fläche. Beide zeichnen ihren Umriss mit derselben Leiste wie eine Decke: ein **Polygon**, dessen Kanten Bögen sein können (<kbd>Space</kbd>), ein **Rectangle** oder einen **Circle**. Gewählt haben Ecken und Kanten Griffe (die des Grundstücks an seinem Gelände), und ein Rechtsklick bietet **Make arc**, **Make straight**, **Fillet corner…** und **Chamfer corner…**, je ein Rückgängig-Schritt. Die Plattform ebnet entlang der wahren Bögen ein; Fläche und Umfang des Grundstücks werden an ihnen gemessen, und das Koordinatenverzeichnis listet seine Ecken.
+**Ändern → Element teilen** schneidet eine Plattform entlang einer Linie aus zwei Punkten in zwei (jeder Teil auf dieselbe Höhe eingeebnet, seine Löcher auf dem Teil, auf dem sie liegen; ein Loch, das die Linie kreuzt, wird abgelehnt), und **Ändern → Elemente stutzen/dehnen** stutzt eine Plattform oder das Grundstück an einer geraden Grenze und behält die Seite, auf die Sie klicken. Ein Gelände behält ein Grundstück: Es wird gestutzt, nicht geteilt.
+
 
 ## Lagepläne und Übersichtslagepläne
 

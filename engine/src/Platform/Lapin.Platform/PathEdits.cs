@@ -35,6 +35,17 @@ public interface IPathPieces
 }
 
 /// <summary>
+/// What another module keeps right when an element is split, trimmed or carried on (audit 2026-11-15 §15): what it hangs on
+/// that element without the element's module knowing it (a bar's host, a formwork's, a finish painted on a face). Called once
+/// the parts are written: <paramref name="was"/> the element as it was, <paramref name="pieces"/> its parts (the first keeps
+/// its id; for an outline cut by a line, each part's stretch is 0 to 0).
+/// </summary>
+public interface ISplitFollower
+{
+    void Parts(ICommandContext ctx, Entity was, IReadOnlyList<PathPiece> pieces);
+}
+
+/// <summary>
 /// CAD's edits on elements along an axis (audit 2026-11-15, §6: offset, trim, extend and split existed only for drafted lines):
 /// walls, beams and strip footings, straight or curved. Each is one command, one undo step.
 /// <list type="bullet">
@@ -63,7 +74,8 @@ public static class PathEdits
     public static void Register(IModuleRegistry r)
     {
         // {id, at: [x, y] (a point on the element, or near it) | with: id (an element crossing it) | line: [[x, y], [x, y]] (a line
-        // crossing it) | arc: {c, r}; at? beside with/line/arc picks the crossing nearest it} → {ids: [first, second], at}.
+        // crossing it) | arc: {c, r}; at? beside with/line/arc picks the crossing nearest it; coupling?: false (an MEP run: open ends
+        // at the cut, no coupling)} → {ids: [first, second], at}. Railings, MEP runs, paths and roads too, along their polylines (IPolylinePieces).
         r.Command("element.split", "Split element", (ctx, a) => Split(ctx, a));
         // {id, at (on the part to keep), boundary: id | line: [[x, y], [x, y]] | arc: {c: [x, y], r}, face?: axis | near | far} → {id}.
         r.Command("element.trimExtend", "Trim or extend element", (ctx, a) => TrimExtend(ctx, a));
@@ -178,6 +190,12 @@ public static class PathEdits
         return e;
     }
 
+    /// <summary>The modules' followers told of the parts (<see cref="ISplitFollower"/>).</summary>
+    public static void Follow(ICommandContext ctx, Entity was, IReadOnlyList<PathPiece> pieces)
+    {
+        foreach (var f in ctx.Services.All<ISplitFollower>()) f.Parts(ctx, was, pieces);
+    }
+
     static IEnumerable<IPathPieces> Hooks(ICommandContext ctx, Entity e) => ctx.Services.All<IPathPieces>().Where(h => h.Handles(e));
 
     static JsonArray J(Vec2 p) => new(Math.Round(p.X, 9), Math.Round(p.Y, 9));
@@ -262,8 +280,13 @@ public static class PathEdits
 
     // ─── Split ────────────────────────────────────────────────────────────────
 
+    /// <summary>The element named by <c>id</c> when it lies along a polyline (<see cref="IPolylinePieces"/>), with its module's hook.</summary>
+    static (Entity, IPolylinePieces)? Polyline(ICommandContext ctx, JsonObject a) =>
+        ctx.Model.Get((string?)a["id"] ?? "") is { } e && ctx.Services.Get<IPathElements>()?.IsPath(e.Class) != true && PolylineEdits.Hook(ctx, e) is { } h ? (e, h) : null;
+
     public static JsonObject Split(ICommandContext ctx, JsonObject a)
     {
+        if (Polyline(ctx, a) is { } poly) return PolylineEdits.Split(ctx, a, poly.Item1, poly.Item2);
         var m = ctx.Model;
         var e = Editable(ctx, (string?)a["id"]);
         var c = PathCurve.Of(e);
@@ -297,6 +320,7 @@ public static class PathEdits
             if (ctx.Model.GetRelation(r.Id) is { } now)
                 ctx.ReplaceRelation(now with { Relating = now.Relating == e.Id ? second.Id : now.Relating, Related = [.. now.Related.Select(x => x == e.Id ? second.Id : x)] });
         foreach (var h in Hooks(ctx, e)) h.Rehost(ctx, e, [new PathPiece(e.Id, 0, s), new PathPiece(second.Id, s, length)]);
+        Follow(ctx, e, [new PathPiece(e.Id, 0, s), new PathPiece(second.Id, s, length)]);
 
         if (ctx.Services.Get<IPathElements>() is { } paths)
         {
@@ -313,6 +337,8 @@ public static class PathEdits
     /// The line or circle named by <c>{key}</c> (an element's id: its axis, or a face of it) or by <c>line</c> or <c>arc</c>.
     /// <paramref name="keep"/>: the point on the element kept, which says which face is near.
     /// </summary>
+    public static Curve BoundaryOf(ICommandContext ctx, JsonObject a, Entity e, string key, Vec2 keep) => Boundary(ctx, a, e, key, keep);
+
     static Curve Boundary(ICommandContext ctx, JsonObject a, Entity e, string key, Vec2? keep)
     {
         if (a["line"] is JsonArray { Count: >= 2 } line)
@@ -345,6 +371,7 @@ public static class PathEdits
 
     public static JsonObject TrimExtend(ICommandContext ctx, JsonObject a)
     {
+        if (Polyline(ctx, a) is { } poly) return PolylineEdits.TrimExtend(ctx, a, poly.Item1, poly.Item2);
         var m = ctx.Model;
         var e = Editable(ctx, (string?)a["id"]);
         var c = PathCurve.Of(e);
@@ -378,6 +405,7 @@ public static class PathEdits
         }
         ctx.Replace(e.With(attrs: PieceAttrs(ctx, e, s0, s1, false, false)));
         foreach (var h in Hooks(ctx, e)) h.Rehost(ctx, e, [new PathPiece(e.Id, s0, s1)]);
+        Follow(ctx, e, [new PathPiece(e.Id, s0, s1)]);
         if (ctx.Services.Get<IPathElements>() is { } paths)
         {
             Joins.Refresh(ctx, paths, [e.Id]);
@@ -392,6 +420,7 @@ public static class PathEdits
 
     public static JsonObject Offset(ICommandContext ctx, JsonObject a)
     {
+        if (Polyline(ctx, a) is { } poly) return PolylineEdits.Offset(ctx, a, poly.Item1, poly.Item2);
         var m = ctx.Model;
         var e = m.Get((string?)a["id"] ?? "") ?? throw new CommandException("The element is not in the project.");
         if (ctx.Services.Get<IPathElements>()?.IsPath(e.Class) != true || e.Attrs["start"] is not JsonArray || e.Attrs["end"] is not JsonArray)

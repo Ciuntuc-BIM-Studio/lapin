@@ -33,6 +33,7 @@ Markér en strækning: dens greb sidder på linjen, som den er tegnet, også eft
 - **Ctrl-klik** på et greb for at fjerne det, eller på midten af et ben for at tilføje et; **Tilføj greb** sætter et, hvor du klikker.
 - **Omvej** (<kbd>DU</kbd>) fører en strækning uden om noget, der er i vejen: klik på strækningen, hvor omvejen starter, klik, hvor den slutter på samme ben, flyt derefter til den side, den skal gå, og klik (eller skriv afstanden). Strækningen går ud, langs og tilbage, med fire nye hjørner; den beholder sine forbindelser.
 - **Tegn stien igen** (<kbd>RP</kbd>) giver en strækning en ny føring: markér den (eller start på den), og tegn stien punkt for punkt, <kbd>Enter</kbd> for at afslutte. Strækningen beholder sit system, sin størrelse og sine forbindelser, og dens ender går tilbage på deres porte.
+- **Redigér → Opdel element** deler en strækning i to, hvor du klikker: en **muffe** (en inline-fitting, IfcPipeFitting CONNECTOR) forbinder de to dele ved snittet, deres ender i dens midte, så deres længder summer til strækningens. Den anden del overtager det, strækningens ende sad på, og hver afgrening bliver på den del, den forbinder til. En parret strækning (frem og retur) står tilbage med to åbne ender dér. **Redigér → Trim/forlæng elementer** fører en stræknings ende til en grænse (enden slipper den port, den sad på), og **Forskyd** kopierer en strækning parallelt. En afgrening på den del, et trim skærer væk, afvises.
 
 ![En radiatorstrækning ført uden om en forhindring med Omvej: ud, langs og tilbage](shots/mep-detour.webp)
 

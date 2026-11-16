@@ -33,6 +33,7 @@ Select a run: its handles sit on the line as it is drawn, even after you move th
 - **Ctrl-click** a handle to take it out, or the middle of a leg to add one; **Add handle** puts one where you click.
 - **Detour** (<kbd>DU</kbd>) takes a run round something in the way: click the run where the detour starts, click where it ends on the same leg, then move to the side it goes and click (or type the distance). The run goes out, along and back, with four new corners; it keeps its connections.
 - **Redraw path** (<kbd>RP</kbd>) gives a run a new route: select it (or start on it) and draw the path point by point, <kbd>Enter</kbd> to finish. The run keeps its system, its size and its connections, and its ends go back onto their ports.
+- **Modify → Split element** cuts a run in two where you click: a **coupling** (an inline fitting, IfcPipeFitting CONNECTOR) joins the two parts at the cut, their ends at its middle, so their lengths add up to the run's. The second part takes what the run's end was on, and each branch stays on the part it joins. A paired run (supply and return) is left with two open ends there. **Modify → Trim/Extend elements** brings a run's end to a boundary (the end lets go of the port it was on), and **Offset** copies a run parallel. A branch on the part a trim cuts away refuses.
 
 ![A radiator run taken round an obstacle with Detour: out, along and back](shots/mep-detour.webp)
 

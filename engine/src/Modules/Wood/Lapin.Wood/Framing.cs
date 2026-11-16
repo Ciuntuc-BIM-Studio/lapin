@@ -1,3 +1,7 @@
+using System.Text.Json.Nodes;
+using Lapin.Model;
+using Lapin.Platform;
+
 namespace Lapin.Wood;
 
 /// <summary>
@@ -32,6 +36,37 @@ public static class Framing
     /// </summary>
     public sealed record Junction(double U0, double U1, bool Corner, int Inward, bool Left);
 
+    /// <summary>
+    /// A wall's own exceptions to its type's frame (audit 2026-11-15 §14): the studs on the module taken out (by their centre
+    /// along the wall, within half a stud) and studs added where it says (their centres). Kept on the wall as
+    /// <see cref="Key"/> {add: [u], remove: [u]}; a wall without it is framed as its type says.
+    /// </summary>
+    public sealed record StudEdits(IReadOnlyList<double> Add, IReadOnlyList<double> Remove)
+    {
+        public const string Key = "frameStuds";
+        public bool Empty => Add.Count == 0 && Remove.Count == 0;
+
+        public static StudEdits? Of(Entity wall) => From(wall.Attrs[Key]);
+
+        public static StudEdits? From(JsonNode? n)
+        {
+            if (n is not JsonObject o) return null;
+            static List<double> L(JsonNode? x) => (x as JsonArray)?.Select(Json.Number).OfType<double>().Where(double.IsFinite).ToList() ?? [];
+            var e = new StudEdits(L(o["add"]), L(o["remove"]));
+            return e.Empty ? null : e;
+        }
+
+        public JsonObject ToJson() => new()
+        {
+            ["add"] = new JsonArray([.. Add.Order().Select(u => (JsonNode)Math.Round(u, 4))]),
+            ["remove"] = new JsonArray([.. Remove.Order().Select(u => (JsonNode)Math.Round(u, 4))]),
+        };
+
+        /// <summary>The same exceptions on a wall's part from <paramref name="s0"/> to <paramref name="s1"/> along it, measured from the part's start.</summary>
+        public StudEdits? Slice(double s0, double s1) =>
+            new StudEdits([.. Add.Where(u => u > s0 && u < s1).Select(u => u - s0)], [.. Remove.Where(u => u > s0 && u < s1).Select(u => u - s0)]) is { Empty: false } x ? x : null;
+    }
+
     /// <summary>A rectangle of the stud zone filled with insulation (its top may slant).</summary>
     public sealed record Cavity(double U0, double U1, double Z0, double Z1Left, double Z1Right);
 
@@ -45,9 +80,9 @@ public static class Framing
     /// module where it can, at such a zone's edge where it cannot; each panel is framed on its own (its end studs and plates
     /// at the joints, the module kept from the wall's origin) and its members carry its number.
     /// </summary>
-    public static Result Panelize(FrameSpec spec, double u0, double u1, Func<double, double> top, IReadOnlyList<double> bends, double y0, double y1, IReadOnlyList<Hole> holes, double origin, IReadOnlyList<Junction>? junctions = null)
+    public static Result Panelize(FrameSpec spec, double u0, double u1, Func<double, double> top, IReadOnlyList<double> bends, double y0, double y1, IReadOnlyList<Hole> holes, double origin, IReadOnlyList<Junction>? junctions = null, StudEdits? edits = null)
     {
-        var whole = Layout(spec, u0, u1, top, bends, y0, y1, holes, origin, junctions);
+        var whole = Layout(spec, u0, u1, top, bends, y0, y1, holes, origin, junctions, edits);
         if (spec.PanelMax <= 0 || u1 - u0 <= spec.PanelMax + 1e-6) return spec.PanelMax > 0 ? whole with { Members = [.. whole.Members.Select(m => m with { Panel = 1 })], Panels = [(u0, u1)] } : whole;
         var t = spec.Stud.W;
         var margin = spec.EndStuds * t + spec.MinGap;
@@ -87,7 +122,7 @@ public static class Framing
             var (a, b) = (cuts[i], cuts[i + 1]);
             var mine = holes.Where(h => h.Along > a && h.Along < b).ToList();
             var joins = (junctions ?? []).Where(j => j.U1 > a && j.U0 < b).ToList();
-            var r = Layout(spec, a, b, top, bends, y0, y1, mine, origin, joins);
+            var r = Layout(spec, a, b, top, bends, y0, y1, mine, origin, joins, edits);
             members.AddRange(r.Members.Select(m => m with { Panel = i + 1 }));
             insulation.AddRange(r.Insulation);
             warnings.AddRange(r.Warnings);
@@ -113,7 +148,7 @@ public static class Framing
     /// (<paramref name="y0"/> to <paramref name="y1"/>); the core's top over its base at any u, with the u where it bends; its
     /// openings; the u the studs' module starts from.
     /// </summary>
-    public static Result Layout(FrameSpec spec, double u0, double u1, Func<double, double> top, IReadOnlyList<double> bends, double y0, double y1, IReadOnlyList<Hole> holes, double origin, IReadOnlyList<Junction>? junctions = null)
+    public static Result Layout(FrameSpec spec, double u0, double u1, Func<double, double> top, IReadOnlyList<double> bends, double y0, double y1, IReadOnlyList<Hole> holes, double origin, IReadOnlyList<Junction>? junctions = null, StudEdits? edits = null)
     {
         var members = new List<Member>();
         var warnings = new List<string>();
@@ -287,14 +322,28 @@ public static class Framing
             blocked.Add((span0 - kingsL * t - spec.MinGap, span1 + kingsR * t + spec.MinGap));
         }
 
-        // The studs on the module, where nothing else stands.
+        // The studs on the module, where nothing else stands (and the wall has not taken them out).
         foreach (var g in grid)
         {
             var (a, b) = (g - t / 2, g + t / 2);
             if (a < u0 + endZone + spec.MinGap || b > u1 - endZone - spec.MinGap) continue;
             if (blocked.Any(x => b > x.L && a < x.R)) continue;
             if (backing.Any(x => b > x.L - spec.MinGap && a < x.R + spec.MinGap)) continue;
+            if (edits != null && edits.Remove.Any(r => Math.Abs(r - g) < t / 2)) continue;
             Add("stud", Rect(a, b, zA, ZB(g)), stud);
+        }
+        // The wall's own studs: where it puts them, clear of the ends, the openings and every other upright.
+        foreach (var u in edits?.Add ?? [])
+        {
+            var (a, b) = (u - t / 2, u + t / 2);
+            if (u < u0 || u > u1) continue;
+            if (a < u0 + endZone - 1e-9 || b > u1 - endZone + 1e-9 || blocked.Any(x => b > x.L + spec.MinGap && a < x.R - spec.MinGap)
+                || members.Any(m => m.Upright && b > m.U0 + 1e-6 && a < m.U1 - 1e-6))
+            {
+                warnings.Add($"The stud added at {Math.Round(u * 1000)} mm stands on another member or an opening's framing: left out.");
+                continue;
+            }
+            Add("stud", Rect(a, b, zA, ZB(u)), stud);
         }
 
         // Noggin rows: between the uprights standing at their height, not across an opening or its header and sill.

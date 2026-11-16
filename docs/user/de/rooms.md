@@ -16,6 +16,8 @@ Für einen Bereich ohne umlaufende Wände, etwa eine Terrasse oder ein Ende eine
 
 Die Kanten eines gezeichneten Raums können gebogen sein, wie die einer Decke: die Leiste von **Room by outline** zeichnet ein **Polygon**, dessen Kanten Bögen sein können (**Arcs (Space)**), ein **Rectangle** oder einen **Circle**, und ein Rechtsklick auf den gewählten Raum bietet **Make arc**, **Make straight**, **Fillet corner…** und **Chamfer corner…**. Fläche und Umfang werden an den wahren Bögen gemessen, und in IFC ist das Profil des Raums die wahre Kurve. Ein aus seinen Wänden gefundener Raum folgt ihnen, sein Umriss wird also nicht so bearbeitet.
 
+**Ändern → Element teilen** schneidet einen gezeichneten Raum entlang einer Linie aus zwei Punkten in zwei: Der Teil, auf den Sie klicken, behält den Raum, der andere ist ein neuer Raum mit der nächsten Nummer des Geschosses, und ihre Flächen ergeben zusammen die alte. **Ändern → Elemente stutzen/dehnen** stutzt ihn an einer geraden Grenze. Ein aus seinen Wänden gefundener Raum wird stattdessen durch eine Raumtrennlinie geteilt.
+
 ![Ein gezeichneter Raum mit gebogener Kante und gerundeter Ecke, ein runder Raum und ein Balkon mit gebogener Front](shots/rooms-curved.webp)
 
 ## Die Eigenschaften eines Raums

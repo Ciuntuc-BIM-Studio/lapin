@@ -371,6 +371,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         r.Service<IElementPlacement>(this);
         r.Service<IDeletion>(this);
         r.Service<IDeletionFollowers>(new RebarHosts());
+        r.Service<ISplitFollower>(new RebarParts());
         r.Service<IScheduleSource>(new RebarSchedule());
         RebarSchedule.RegisterTemplate(r);
 

@@ -58,6 +58,12 @@ Une couche d'une dalle peut aussi aller au-delà de son contour, ou s'arrêter a
 
 ![Une dalle à bord courbe scindée le long d’une ligne : la partie de droite sélectionnée](shots/floor-split.webp)
 
+Les trous propres d’une dalle vont à la partie où ils tombent ; une couche qui dépasse un bord courbe continue de le faire sur les deux parties ; la trame d’un faux plafond reste où elle était, chaque luminaire ou diffuseur dans la partie où tombe sa cellule. Une dalle à bord elliptique n’est pas coupée par une ligne.
+
+Un **toit** se scinde et s’ajuste de la même façon. Chaque partie garde les règles de ses bords (égout ou pignon, pente, débord), et la coupe est un pignon sans débord ; la coupe n’est permise que là où elle laisse le toit tel qu’il était, les pans de chaque partie restant là où étaient ceux du toit, comme en travers du faîtage d’un toit à deux pans ou le long de celui-ci. Ailleurs elle est refusée (*would change its slopes*) : les pans d’une partie monteraient jusqu’à de nouveaux faîtages. Les fenêtres de toit, lucarnes et descentes vont à leur partie. Un toit en berceau n’est pas coupé.
+
+![Un toit à deux pans scindé en travers du faîtage : deux toits, les mêmes pans](shots/roof-split.webp)
+
 ## Toits
 
 Choisissez **Architecture → Toit** (<kbd>RF</kbd>) et cliquez le contour des murs qu’il couvre. Lapin construit le toit sur ce contour, en haut de son niveau.

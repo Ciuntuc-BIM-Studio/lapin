@@ -33,6 +33,7 @@ Selectează un traseu: punctele lui stau pe linie așa cum e desenată, chiar ș
 - **Ctrl-clic** pe un punct îl scoate, pe mijlocul unui tronson adaugă unul; **Adaugă punct** pune unul unde dai clic.
 - **Ocolire** (<kbd>DU</kbd>) duce un traseu pe lângă ceva care îi stă în cale: dă clic pe traseu unde începe ocolirea, apoi unde se termină, pe același tronson, apoi mergi în partea în care iese și dă clic (sau scrie distanța). Traseul iese, merge paralel și revine, cu patru colțuri noi; conexiunile rămân.
 - **Redesenează traseul** (<kbd>RP</kbd>) dă unui traseu un drum nou: selectează-l (sau începe pe el) și desenează drumul punct cu punct, <kbd>Enter</kbd> ca să termini. Traseul își păstrează sistemul, dimensiunea și conexiunile, iar capetele revin pe porturi.
+- **Modifică → Împarte elementul** taie un traseu în două unde dai clic: o **mufă** (un fiting pe traseu, IfcPipeFitting CONNECTOR) leagă cele două părți la tăietură, cu capetele în mijlocul ei, ca lungimile lor să facă cât traseul. A doua parte preia ce era la capătul traseului, iar fiecare ramificație rămâne pe partea în care se leagă. Un traseu pereche (tur și retur) rămâne acolo cu două capete libere. **Modifică → Taie/Prelungește elemente** aduce capătul unui traseu la o limită (capătul se desprinde de racordul pe care era), iar **Paralelă** copiază un traseu paralel. O ramificație pe partea pe care o taie un trim refuză.
 
 ![Traseul unui radiator dus pe lângă un obstacol cu Ocolire: iese, merge paralel și revine](shots/mep-detour.webp)
 

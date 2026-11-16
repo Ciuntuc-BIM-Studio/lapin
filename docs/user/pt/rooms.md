@@ -16,6 +16,8 @@ Para um espaço sem paredes em toda a volta, como um terraço ou uma ponta de um
 
 As arestas de um ambiente desenhado podem ser curvas, como as de uma laje: a barra de **Room by outline** desenha um **Polygon** cujas arestas podem ser arcos (**Arcs (Space)**), um **Rectangle** ou um **Circle**, e o clique direito no ambiente selecionado oferece **Make arc**, **Make straight**, **Fillet corner…** e **Chamfer corner…**. A área e o perímetro são medidos nos arcos verdadeiros, e no IFC o perfil do espaço é a curva verdadeira. Um ambiente encontrado pelas suas paredes segue-as, por isso o seu contorno não se edita assim.
 
+**Modificar → Dividir elemento** corta um espaço desenhado em dois ao longo de uma linha de dois pontos: a parte em que clicar mantém o espaço, a outra é um espaço novo com o número seguinte do pavimento, e as suas áreas somam a anterior. **Modificar → Aparar/estender elementos** apara-o por um limite reto. Um espaço encontrado a partir das suas paredes é dividido, em vez disso, por uma linha de separação de espaços.
+
 ![Um ambiente desenhado com uma aresta curva e um canto arredondado, um ambiente redondo e uma varanda com frente curva](shots/rooms-curved.webp)
 
 ## As propriedades de um ambiente
