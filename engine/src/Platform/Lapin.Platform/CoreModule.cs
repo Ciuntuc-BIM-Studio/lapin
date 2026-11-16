@@ -345,6 +345,30 @@ public sealed class CoreModule : ILapinModule
             return new JsonObject { ["changed"] = Pins.Set(ctx, ids, pinned) };
         });
 
+        // Link a locked element to a grid axis or reference plane (issue #37): {ids, target: {kind: "axis", gridId, tag} | {kind: "plane", id} | null}.
+        r.Command("element.lockTo", "Lock to axis or reference plane", (ctx, a) =>
+        {
+            var ids = Args.Ids(a).ToList();
+            if (ids.Count == 0) throw new CommandException("Select what to link.");
+            var target = a["target"] as JsonObject;
+            if (target != null)
+            {
+                var kind = (string?)target["kind"];
+                if (kind == "axis")
+                {
+                    if ((string?)target["gridId"] is not { Length: > 0 } gid || (string?)target["tag"] is not { Length: > 0 } || ctx.Model.Get(gid)?.Class != IfcClass.Grid)
+                        throw new CommandException("There is no such grid axis.");
+                }
+                else if (kind == "plane")
+                {
+                    if ((string?)target["id"] is not { Length: > 0 } pid || ctx.Model.Get(pid) is not { Class: Views.Class } pv || pv.Str("kind") != "plane")
+                        throw new CommandException("There is no such reference plane.");
+                }
+                else throw new CommandException("Target kind must be axis or plane.");
+            }
+            return new JsonObject { ["changed"] = Pins.LockTo(ctx, ids, target) };
+        });
+
         // Each end of walls, beams and strip footings joining automatically or not (the forum's topic #50, decision 546):
         // {ids, start?, end?} (what is not given stays). An end turned off keeps the joins it has; one turned on joins what it meets now.
         r.Command("element.setAutoJoin", "Join automatically", (ctx, a) =>
@@ -593,7 +617,12 @@ public static class ElementTransform
         {
             if (ctx.Model.Get(e.Id) is not { } now) continue;
             if (copy) { var c = Placement.Copy(ctx, now, Of(now)); made.Add((JsonNode)c); copies[e.Id] = c; }
-            else Placement.Transform(ctx, now, Of(now), moving);
+            else
+            {
+                var tr = Of(now);
+                Placement.Transform(ctx, now, tr, moving);
+                if (now.Class == Views.Class && now.Str("kind") == "plane") Pins.FollowPlane(ctx, now.Id, tr, moving);
+            }
         }
         foreach (var own in ctx.Services.All<IHostedPlacement>())
             if (hosted.Where(e => own.Handles(ctx.Model, e)).ToList() is { Count: > 0 } mine)

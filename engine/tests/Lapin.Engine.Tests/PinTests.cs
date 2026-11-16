@@ -111,4 +111,30 @@ public class PinTests
         var copy = (string)f.Run("drafting.transform", new JsonObject { ["ids"] = Ids(line), ["op"] = "copy", ["by"] = new JsonArray(0, 1) })!["ids"]![0]!;
         Assert.False(Pins.Is(f.Model.Get(copy)));
     }
+
+    [Fact]
+    public void A_locked_element_follows_its_linked_grid_axis_or_reference_plane()
+    {
+        var f = F();
+        var gridId = (string)f.Run("drafting.addAxis", new JsonObject { ["tag"] = "A", ["x1"] = 0, ["y1"] = 0, ["x2"] = 0, ["y2"] = 10 })!["gridId"]!;
+        var w1 = f.Wall(0, 0, 0, 5);
+        f.Run("element.lockTo", new JsonObject { ["ids"] = Ids(w1), ["target"] = new JsonObject { ["kind"] = "axis", ["gridId"] = gridId, ["tag"] = "A" } });
+        Assert.True(Pins.Is(f.Model.Get(w1)));
+        // Moving the grid axis moves the locked wall with it.
+        f.Run("drafting.updateAxis", new JsonObject { ["gridId"] = gridId, ["tag"] = "A", ["x1"] = 2, ["y1"] = 0, ["x2"] = 2, ["y2"] = 10 });
+        Assert.Equal(2.0, Args.PointOf(f.Model.Get(w1)!.Attrs["start"]).X, 9);
+        Assert.Equal(2.0, Args.PointOf(f.Model.Get(w1)!.Attrs["end"]).X, 9);
+
+        // Reference plane link + transform.
+        var plane = (string)f.Run("view.create", new JsonObject { ["kind"] = "plane", ["name"] = "RP1", ["point"] = new JsonArray(0, 3, 0), ["normal"] = new JsonArray(0, 1, 0) })!["id"]!;
+        var w2 = f.Wall(1, 3, 5, 3);
+        f.Run("element.lockTo", new JsonObject { ["ids"] = Ids(w2), ["target"] = new JsonObject { ["kind"] = "plane", ["id"] = plane } });
+        f.Run("element.transform", new JsonObject { ["ids"] = Ids(plane), ["op"] = "move", ["by"] = new JsonArray(0, 1.5) });
+        Assert.Equal(4.5, Args.PointOf(f.Model.Get(w2)!.Attrs["start"]).Y, 9);
+        Assert.Equal(4.5, Args.PointOf(f.Model.Get(w2)!.Attrs["end"]).Y, 9);
+
+        // Unpinning clears lockedTo.
+        Pin(f, false, w2);
+        Assert.Null(f.Model.Get(w2)!.Attrs[Pins.LockedToKey]);
+    }
 }
