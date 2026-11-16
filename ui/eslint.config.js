@@ -20,6 +20,8 @@ export default tseslint.config(
     plugins: { 'react-hooks': reactHooks },
     rules: {
       'react-hooks/rules-of-hooks': 'error',
+      // A leading underscore marks a value deliberately unused (omitted keys, ignored arguments).
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', destructuredArrayIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_', ignoreRestSiblings: true }],
       'react-hooks/exhaustive-deps': 'warn',
       // Module index files export the module definition next to its
       // components; that only costs fast-refresh granularity, so a warning.
