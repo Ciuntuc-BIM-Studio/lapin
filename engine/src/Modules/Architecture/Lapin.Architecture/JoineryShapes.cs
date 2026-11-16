@@ -26,7 +26,9 @@ namespace Lapin.Architecture;
 /// head, its panes (a casement, a fixed light, a door leaf) following the arch all round (an arched casement opening
 /// side-hung, no bar under the arch); null or true, the transom and a fixed fanlight over it, as before.
 /// </summary>
-public sealed record JoineryShape(string Kind = "rect", double? Rise = null, string Bars = "none", int Spokes = 5, bool? Transom = null);
+/// <see cref="Profile"/> (audit S4): a bare wall opening of its own outline (<see cref="Kind"/> "outline"), its loop laid out and
+/// taken to the unit box (x across from −½ to ½ of the width, y up from 0 to 1 of the height), so a resize stretches it.
+public sealed record JoineryShape(string Kind = "rect", double? Rise = null, string Bars = "none", int Spokes = 5, bool? Transom = null, IReadOnlyList<Vec2>? Profile = null);
 
 /// <summary>
 /// Glazing bars dividing every rectangular pane: <see cref="Pattern"/> "none", "grid" (colonial:
@@ -41,7 +43,7 @@ public static class JoineryShapes
     public static readonly string[] HeadBars = ["none", "sunburst", "mullions", "cross"];
     public static readonly string[] MuntinPatterns = ["none", "grid", "prairie", "diamond"];
 
-    public static string KindOf(JoinerySpec s) => s.Shape?.Kind is { } k && Kinds.Contains(k) ? k : "rect";
+    public static string KindOf(JoinerySpec s) => s.Shape is { Kind: "outline", Profile.Count: >= 3 } ? "outline" : s.Shape?.Kind is { } k && Kinds.Contains(k) ? k : "rect";
     public static bool Headed(JoinerySpec s) => KindOf(s) is "round" or "segmental" or "elliptical" or "radiused" or "pointed" or "gable";
     public static bool Round(JoinerySpec s) => KindOf(s) == "circle";
     public static bool Shaped(JoinerySpec s) => KindOf(s) != "rect";
@@ -240,6 +242,13 @@ public static class JoineryShapes
     public static List<Vec2> Outline(JoinerySpec s, double inset = 0, double? bottom = null)
     {
         if (Round(s)) return Ellipse(s, inset);
+        // An opening of its own outline (audit S4): its profile stretched to the width and height, taken in by the inset.
+        if (KindOf(s) == "outline")
+        {
+            var pts = s.Shape!.Profile!.Select(p => new Vec2(p.X * s.Width, p.Y * s.Height)).ToList();
+            if (Polygon2.SignedArea(pts) < 0) pts.Reverse();
+            return Math.Abs(inset) < 1e-12 ? pts : [.. Polygon2.Offset(pts, [.. Enumerable.Repeat(-inset, pts.Count)])];
+        }
         var half = s.Width / 2 - inset;
         var z0 = bottom ?? inset;
         if (!Headed(s)) return [new(half, z0), new(half, s.Height - inset), new(-half, s.Height - inset), new(-half, z0)];

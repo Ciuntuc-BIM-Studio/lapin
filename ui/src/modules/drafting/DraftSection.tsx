@@ -170,7 +170,7 @@ function Drafted({ node }: { node: NodeDto }) {
   const own = typeof node.props.color === 'string' ? node.props.color : null;
   const shape = node.props.shape && typeof node.props.shape === 'object' ? fromJson(node.props.shape as Record<string, unknown>) : null;
   const hatch = node.props.hatch && typeof node.props.hatch === 'object' ? (node.props.hatch as Record<string, unknown>) : null;
-  const kind = hatch ? 'Hatch' : shape ? { line: 'Line', polyline: 'Polyline', circle: 'Circle', arc: 'Arc' }[shape.type] : 'Shape';
+  const kind = hatch ? 'Hatch' : shape ? { line: 'Line', polyline: 'Polyline', circle: 'Circle', arc: 'Arc', ellipse: 'Ellipse' }[shape.type] : 'Shape';
   return (
     <dl className="fields">
       <Row label="Kind" value={kind} />

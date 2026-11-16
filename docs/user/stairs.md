@@ -168,6 +168,8 @@ A railing's segments may be arcs. Right-click near a segment of a selected raili
 
 **Architecture → Balcony** (<kbd>BY</kbd>) hangs a balcony on a wall: choose its style in the command line's bar and click outside the wall's face, where it goes; it stands on that side of the wall at the storey's floor level. A **Juliet balcony** clicked by a door or window centres on it, 200 mm wider. Where no wall is near, the balcony stands where you click. **Balcony by outline** draws any shape: click its corners, the first edge lies against the building. **Gallery edge** draws a mezzanine's edge over a double-height space with two points (the void on the left, the gallery on the right).
 
+A drawn balcony's edges can be arcs too: **Balcony by outline** has the same shapes as the Floor tool's bar, and the selected balcony's corners and edges take **Fillet corner…**, **Chamfer corner…** and **Make arc** from the right-click; its slab is built along the arcs and its area measured on them.
+
 The built-in styles cover the kinds people ask for:
 
 - **Juliet balcony**: a railing of balusters in front of a French door over a small stone ledge on two brackets.

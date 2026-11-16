@@ -14,6 +14,10 @@ Para un espacio sin muros alrededor, como una terraza o un extremo de una zona d
 
 ![Una planta con dos habitaciones coloreadas por uso y una leyenda de colores](shots/rooms-plan.webp)
 
+Los bordes de una habitación dibujada pueden ser curvos, como los de un forjado: la barra de **Room by outline** dibuja un **Polygon** cuyos bordes pueden ser arcos (**Arcs (Space)**), un **Rectangle** o un **Circle**, y el clic derecho sobre la habitación seleccionada ofrece **Make arc**, **Make straight**, **Fillet corner…** y **Chamfer corner…**. Su área y su perímetro se miden sobre los arcos verdaderos, y en IFC el perfil del espacio es la curva verdadera. Una habitación hallada a partir de sus muros los sigue, así que su contorno no se edita de este modo.
+
+![Una habitación dibujada con un borde curvo y una esquina redondeada, una habitación redonda y un balcón con el frente curvo](shots/rooms-curved.webp)
+
 ## Las propiedades de una habitación
 
 Seleccione una habitación haciendo clic en su sello o en cualquier punto de su interior. En el panel de propiedades:

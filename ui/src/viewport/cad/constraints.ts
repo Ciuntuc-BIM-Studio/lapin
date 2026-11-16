@@ -104,6 +104,8 @@ export function classify(s: Shape, part: string): { kind: RefKind; part: string 
     }
     case 'circle': return part === 'center' ? { kind: 'point', part } : part === 'whole' ? { kind: 'curve', part } : null;
     case 'arc': return part === 'start' || part === 'end' || part === 'center' ? { kind: 'point', part } : part === 'whole' ? { kind: 'curve', part } : null;
+    // The sketch solver knows no ellipse (audit S4).
+    case 'ellipse': return null;
   }
 }
 
@@ -112,6 +114,7 @@ export function pointOf(s: Shape, part: string): Vec2 | null {
   if (s.type === 'line') return part === 'start' ? s.a : part === 'end' ? s.b : null;
   if (s.type === 'polyline') { const m = /^vertex:(\d+)$/.exec(part); return m && Number(m[1]) < s.pts.length ? s.pts[Number(m[1])] : null; }
   if (s.type === 'circle') return part === 'center' ? s.c : null;
+  if (s.type === 'ellipse') return null;
   return part === 'start' ? arcAt(s.c, s.r, s.start) : part === 'end' ? arcAt(s.c, s.r, s.end) : part === 'center' ? s.c : null;
 }
 /** A straight edge part's ends. */
@@ -150,7 +153,7 @@ export function candidatesAt(s: Shape, p: Vec2, tol: number): Candidate[] {
     });
     if (best) out.push(best);
     if (s.type === 'polyline') out.push({ part: 'whole', kind: 'shape', d: 0 });
-  } else {
+  } else if (s.type !== 'ellipse') {
     const d = Math.abs(dist(p, s.c) - s.r);
     const onArc = s.type === 'circle' || angleInArc(Math.atan2(p.y - s.c.y, p.x - s.c.x), s.start, s.end);
     if (onArc && d <= tol) out.push({ part: 'whole', kind: 'curve', d });
@@ -174,6 +177,7 @@ export function sketchPartOf(s: Shape, gripKey: string): string | null {
     case 'polyline': { const m = /^[vp](\d+)$/.exec(gripKey); return m && Number(m[1]) < s.pts.length ? `vertex:${m[1]}` : null; }
     case 'circle': return gripKey === 'c' ? 'center' : null;
     case 'arc': return gripKey === 'c' ? 'center' : gripKey === 's' ? 'start' : gripKey === 'e' ? 'end' : null;
+    case 'ellipse': return null;
   }
 }
 

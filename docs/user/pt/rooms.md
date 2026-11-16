@@ -14,6 +14,10 @@ Para um espaço sem paredes em toda a volta, como um terraço ou uma ponta de um
 
 ![Uma planta com dois ambientes coloridos por função e uma legenda de cores](shots/rooms-plan.webp)
 
+As arestas de um ambiente desenhado podem ser curvas, como as de uma laje: a barra de **Room by outline** desenha um **Polygon** cujas arestas podem ser arcos (**Arcs (Space)**), um **Rectangle** ou um **Circle**, e o clique direito no ambiente selecionado oferece **Make arc**, **Make straight**, **Fillet corner…** e **Chamfer corner…**. A área e o perímetro são medidos nos arcos verdadeiros, e no IFC o perfil do espaço é a curva verdadeira. Um ambiente encontrado pelas suas paredes segue-as, por isso o seu contorno não se edita assim.
+
+![Um ambiente desenhado com uma aresta curva e um canto arredondado, um ambiente redondo e uma varanda com frente curva](shots/rooms-curved.webp)
+
 ## As propriedades de um ambiente
 
 Selecione um ambiente clicando no carimbo dele ou em qualquer lugar dentro dele. No painel Propriedades:

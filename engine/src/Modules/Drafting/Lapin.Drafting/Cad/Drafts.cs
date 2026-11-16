@@ -103,14 +103,14 @@ public static class Drafts
     public static IReadOnlyList<DraftedRun>? Runs(Entity e, IModelView m, IServices services)
     {
         if (e.Class != IfcClass.Annotation || e.PredefinedType != Predefined || ShapeOf(e) is not { } shape) return null;
-        var closed = shape is Circle || shape is Polyline { Closed: true };
+        var closed = shape is Circle || shape is Polyline { Closed: true } || shape is Ellipse { Whole: true };
         static List<T> Open<T>(List<T> run, bool closed) => closed && run.Count > 2 ? run[..^1] : run;
         if (e.Attrs["heights"] is JsonArray && Geometry3d(e, m, services) is { Lines: { Count: > 0 } lines })
             return [.. lines.Select(l => new DraftedRun(Open(l.ToList(), closed), closed))];
         if (Views.Find(m, e.Str("viewId") ?? "") is not { } view || view.Str("kind") is "3d") return null;
         var (lo, hi) = Geo.Bounds(shape);
         if (Views.PlaneOf(m, services, view, (lo.X + hi.X) / 2) is not { } plane) return null;
-        Vec3? centre = shape switch { Circle c => plane.World(c.C), Arc a => plane.World(a.C), _ => null };
+        Vec3? centre = shape switch { Circle c => plane.World(c.C), Arc a => plane.World(a.C), Ellipse el => plane.World(el.C), _ => null };
         return [.. Flatten(shape).Select(run => new DraftedRun(Open(run.Select(plane.World).ToList(), closed), closed, centre))];
     }
 
@@ -128,6 +128,8 @@ public static class Drafts
             Polyline { Pts.Count: >= 2 } p => [[.. p.Pts, .. p.Closed ? new[] { p.Pts[0] } : []]],
             Circle c when c.R > 1e-9 => [Round(c.C, c.R, 0, 2 * Math.PI)],
             Arc a when a.R > 1e-9 => [Round(a.C, a.R, a.Start, a.Sweep)],
+            // An ellipse by the one rule for curves (audit S4).
+            Ellipse el => [el.Points()],
             _ => [],
         };
     }
@@ -170,7 +172,7 @@ public static class Drafts
         ctx.Replace(e.With(attrs: attrs));
     }
 
-    static string Name(Shape s) => s switch { Line => "Line", Polyline { Closed: true } => "Polygon", Polyline => "Polyline", Circle => "Circle", Arc => "Arc", _ => "Shape" };
+    static string Name(Shape s) => s switch { Line => "Line", Polyline { Closed: true } => "Polygon", Polyline => "Polyline", Circle => "Circle", Arc => "Arc", Ellipse { Whole: true } => "Ellipse", Ellipse => "Elliptical arc", _ => "Shape" };
     static string Title(string role) => role switch { "endProfile" => "End profile", _ => char.ToUpperInvariant(role[0]) + role[1..] };
 
     /// <summary>A name no other drafted shape on the view has: the word and the next number (Line 12, Profile 3).</summary>
@@ -203,6 +205,7 @@ public static class Drafts
             {
                 case Polyline { Closed: true } p when p.Pts.Count >= 3: loops.Add(p.Pts); break;
                 case Circle c: loops.Add(Geo.Polylines(c)[0].SkipLast(1).ToList()); break;
+                case Ellipse { Whole: true } el: loops.Add(el.Points().SkipLast(1).ToList()); break;
             }
         if (Views.Generate(ctx.Query, view).Drawing is { } d) loops.AddRange(d.Cuts.SelectMany(c => c.Loops).Select(l => (IReadOnlyList<Vec2>)l));
         return loops;

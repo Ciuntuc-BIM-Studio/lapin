@@ -13,7 +13,8 @@ import { notify, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { fromPairs } from '../../viewport/contour';
 import { typeOf } from '../../engine/model';
-import { outlineGrips, toPairs } from '../../viewport/gripKit';
+import { curvedOutlineGrips, toPairs } from '../../viewport/gripKit';
+import { PlainShapeBar, toggleOutlineArcs } from '../../viewport/outlineShape';
 import { t, useLang } from '../../i18n';
 import { createScheduleOf } from '../../shell/fieldSchedule';
 
@@ -79,14 +80,19 @@ export const balcony: ToolDef = {
   },
 };
 
-/** A balcony drawn by its outline: its first edge lies against the building. */
+/** The style and, beside it, the outline's shape (a polygon whose edges may be arcs, a rectangle, a circle; audit S4). */
+const BalconyOutlineOptions = () => <><BalconyStyleOption /><PlainShapeBar /></>;
+
+/** A balcony drawn by its outline: its first edge lies against the building; its edges may be arcs (Space). */
 export const balconyOutline: ToolDef = {
   id: 'architecture.balconyOutline', label: 'Balcony by outline', icon: BalconyIcon,
-  gesture: { kind: 'polygon' },
-  options: BalconyStyleOption,
-  complete: async ({ points }, ctx) => {
+  gesture: { kind: 'polygon', shapes: true },
+  options: BalconyOutlineOptions,
+  space: toggleOutlineArcs,
+  complete: async ({ points, arcs }, ctx) => {
+    if (points.length < 3) return;
     const style = useUi.getState().balconyStyle ?? 'cantilever';
-    placed(await ctx.execute('architecture.addBalcony', { storeyId: ctx.storeyId, style: style === 'mezzanine' || style === 'loggia' || style === 'corner' ? 'cantilever' : style, contour: points.map((q) => [q.x, q.y]) }));
+    placed(await ctx.execute('architecture.addBalcony', { storeyId: ctx.storeyId, style: style === 'mezzanine' || style === 'loggia' || style === 'corner' ? 'cantilever' : style, contour: points.map((q) => [q.x, q.y]), ...(arcs ? { arcs } : {}) }));
   },
 };
 
@@ -165,7 +171,7 @@ type Frame = { at: [number, number]; u: [number, number]; v: [number, number]; h
  */
 export function balconyGrips(node: NodeDto): Grip[] {
   const pts = fromPairs(node.props.contour);
-  if (pts.length >= 3) return outlineGrips({ pts }, (o) => ({ command: 'architecture.updateBalcony', args: { id: node.id, contour: toPairs(o.pts) } }));
+  if (pts.length >= 3) return curvedOutlineGrips(node.id, pts, node.props.arcs, (q, arcs) => ({ command: 'architecture.updateBalcony', args: { id: node.id, contour: toPairs(q), arcs } }));
   const f = node.props.balconyFrame as Frame | undefined;
   if (!f) return [];
   const at = { x: f.at[0], y: f.at[1] };

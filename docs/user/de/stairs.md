@@ -146,6 +146,8 @@ Die Segmente eines Geländers dürfen Bögen sein. Rechtsklick nahe einem Segmen
 
 **Architecture → Balcony** (<kbd>BY</kbd>) hängt einen Balkon an eine Wand: den Stil in der Leiste der Befehlszeile wählen und außerhalb der Wandfläche klicken, wo er hinkommt; er steht auf dieser Seite der Wand auf der Fußbodenhöhe des Geschosses. Ein **Französischer Balkon** (Juliet), neben eine Tür oder ein Fenster geklickt, wird darauf zentriert, 200 mm breiter. Wo keine Wand in der Nähe ist, steht der Balkon, wo geklickt wird. **Balcony by outline** zeichnet jede Form: die Ecken klicken, die erste Kante liegt am Gebäude. **Gallery edge** zeichnet die Kante einer Galerie über einem zweigeschossigen Raum mit zwei Punkten (der Luftraum links, die Galerie rechts).
 
+Auch die Kanten eines gezeichneten Balkons können Bögen sein: **Balcony by outline** hat dieselben Formen wie die Leiste des Floor-Werkzeugs, und Ecken und Kanten des gewählten Balkons erhalten per Rechtsklick **Fillet corner…**, **Chamfer corner…** und **Make arc**; seine Platte folgt den Bögen, seine Fläche wird an ihnen gemessen.
+
 Die mitgelieferten Stile decken die gefragten Arten ab:
 
 - **Juliet balcony**: ein Stabgeländer vor einer Fenstertür über einer kleinen Steinplatte auf zwei Konsolen.
