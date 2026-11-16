@@ -42,6 +42,23 @@ Los planos, su PDF, Imprimir y la emisión lo dibujan con los valores de cada pl
 
 ![El plano con su propio cajetín](shots/sheet-title-block.webp)
 
+## Dibujar en la lámina
+
+Las notas, marcas y leyendas que pertenecen a la lámina y no a una de sus vistas se dibujan en la propia lámina. Pulsa **Anotar** en la barra de la lámina o haz doble clic en el papel fuera de las vistas (**Anotar → Anotar lámina** hace lo mismo). La lámina se abre en el panel de dibujo como su papel, a 1:1, con las vistas, el marco y el cajetín debajo, y la barra dice *dibujo en la lámina*. Todas las herramientas de **Dibujo** y **Anotar** funcionan allí como en una vista, en milímetros de papel: escribe 50 y una línea mide 50 mm en el papel, y la altura de un texto es su altura en el papel. Los puntos se ajustan al marco, al cajetín, a los recuadros de las vistas (azul discontinuo) y a lo que dibujan las vistas. **Lámina** en la barra vuelve a la disposición de las vistas.
+
+- Los **textos** pueden llevar campos vivos, como los de un cajetín: `Lámina {sheet.number} de {sheet.count}`, `{project.name}`, `{sheet.date}`. En una vista, un texto se lee tal como se escribió.
+- **Nota con directriz** (Anotar → Texto): haz clic donde apunta la flecha, luego donde va el texto, y escríbelo. Al moverla, la nota se lleva su flecha; **Línea de referencia → quitar** en sus propiedades quita la flecha.
+- **Líneas, polilíneas, rectángulos, círculos, arcos, sombreados, símbolos e imágenes** son los de las herramientas de Dibujo, con sus pinzamientos, capas y herramientas de modificación. Una flecha de norte es uno de los símbolos de Lapin (**Anotar → Símbolo**).
+- **Nube de revisión** (Dibujo → Relleno, Anotar → Láminas o REVCLOUD en la línea de comandos): dos esquinas, o **P** para un polígono que se cierra con Intro. **Nube de revisión** en las propiedades de cualquier polilínea cerrada o círculo la convierte en nube o la devuelve a su forma, y fija su arco en el papel.
+- **Leyenda** (Anotar → Láminas): una lista viva de lo que dibujan las vistas de la lámina: los materiales con que se sombrean y rellenan sus cortes o, con **Listas** en sus propiedades, sus líneas por función, tipo y grosor. Cambia con las vistas y con el modelo, y su título también admite campos.
+- **Escala gráfica** (Anotar → Láminas): a la escala de la primera vista de la lámina o a la que indiquen sus propiedades, con una longitud redonda de unos 80 mm o la que elijas. En una planta, sección o alzado, la escala gráfica toma la escala de la vista.
+
+Lo dibujado en la lámina se imprime en ella, sobre las vistas, tal como se ve: en su PDF, al imprimir y en su DXF. Pertenece a la lámina: **Duplicar la lámina** (su botón en el explorador del proyecto) lo copia, junto con los símbolos colocados en la lámina, y borrar la lámina lo borra. Cada dibujo es un paso de deshacer. Las láminas hechas antes no tienen nada dibujado y se imprimen como antes.
+
+![Dibujo en una lámina: una nota con directriz, una nube de revisión, un texto vivo, una leyenda de los materiales de la planta y una escala gráfica](shots/sheet-annotations.webp)
+
+![La misma lámina, tal como se imprime](shots/sheet-annotated.webp)
+
 ## Imprimir
 
 Los botones **PDF** y **DXF** de la barra de la lámina exportan la lámina. Un PDF está listo para imprimir o enviar. Un DXF se abre en AutoCAD y en otros programas de CAD con sus capas, líneas y sombreados. **Imprimir** envía la lámina a una impresora o plóter a su propio tamaño de papel, a 1:1, en líneas vectoriales: elige el plóter y el papel en el diálogo de impresión. En una impresora más pequeña, elige ajustar a la página.
