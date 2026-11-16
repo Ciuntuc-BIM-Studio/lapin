@@ -145,21 +145,6 @@ public static class SvgWriter
 
     static string Color(string css) => Escape(css);
 
-    /// <summary>Text and attribute values as XML takes them.</summary>
-    public static string Escape(string s)
-    {
-        var b = new StringBuilder(s.Length);
-        foreach (var ch in s)
-            switch (ch)
-            {
-                case '<': b.Append("&lt;"); break;
-                case '>': b.Append("&gt;"); break;
-                case '&': b.Append("&amp;"); break;
-                case '"': b.Append("&quot;"); break;
-                // XML 1.0 has no other control characters.
-                case < ' ' when ch is not ('\t' or '\n' or '\r'): break;
-                default: b.Append(ch); break;
-            }
-        return b.ToString();
-    }
+    /// <summary>Text and attribute values as XML takes them (<see cref="Documents.DocText.Xml"/>: the characters XML 1.0 cannot carry left out).</summary>
+    public static string Escape(string s) => Documents.DocText.Xml(s);
 }
