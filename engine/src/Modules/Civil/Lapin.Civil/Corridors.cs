@@ -317,7 +317,7 @@ public static class Corridors
         return p => t.ElevationAt(p.X, p.Y);
     }
 
-    public static double Fallback(IModelView m, Entity e) => Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0;
+    public static double Fallback(IModelView m, Entity e) => Spatial.Elevation(m, e);
 
     /// <summary>
     /// The red line along the axis: the PVIs' profile when designed, else the

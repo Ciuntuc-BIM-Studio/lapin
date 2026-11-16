@@ -86,7 +86,7 @@ public static class KitchenUnits
         D(("type", "base"), ("width", 0.6), ("front", "drawers"), ("drawers", 3)),
         D(("type", "hob"), ("width", 0.6), ("fuel", "induction"), ("oven", true)));
 
-    static string Mm(double v) => Math.Round(v * 1000).ToString(CultureInfo.InvariantCulture);
+    static string Mm(double v) => Lapin.Model.Numbers.Mm(v);
 
     /// <summary>
     /// A list of units checked and cleaned: each of a known type for its line, its width in its range (an appliance's

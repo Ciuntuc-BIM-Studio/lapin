@@ -223,7 +223,7 @@ public static class Sunshades
         for (var i = 2; ; i++) if (!taken.Contains($"{name} {i}")) return $"{name} {i}";
     }
 
-    static string Mm(double v) => Math.Round(v * 1000).ToString(CultureInfo.InvariantCulture);
+    static string Mm(double v) => Lapin.Model.Numbers.Mm(v);
 
     /// <summary>The materials a spec names, made when the project has none.</summary>
     static void EnsureMaterials(IEdit edit, JsonObject spec)
@@ -296,7 +296,7 @@ public static class Sunshades
             var head = sill + p.Height;
             var z = over ? head + s.Num("gap") : sill - s.Num("below");
             var height = over ? 0 : p.Height + s.Num("below") + s.Num("above");
-            var floor = Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0;
+            var floor = Spatial.Elevation(m, wall);
             return len > 0.05 ? new ShadeFrame(f.Start + f.Dir * x0 + f.Left * face, f.Dir, n, z, len, height, floor, sill) : null;
         }
         if (e.Str("wall") is { } wallId)
@@ -307,7 +307,7 @@ public static class Sunshades
             if (a1 - a0 < 0.05) return null;
             var f = Openings.FrameOf(m, wall, (a0 + a1) / 2);
             var (face, n) = flip ? (f.YMax, f.Left) : (f.YMin, -f.Left);
-            var floor = Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0;
+            var floor = Spatial.Elevation(m, wall);
             var z = f.Base + (e.NumOrNull("z") ?? (over ? 2.4 : 0.9));
             return new ShadeFrame(f.Start + f.Dir * a0 + f.Left * face, f.Dir, n, z, a1 - a0, over ? 0 : s.Num("height"), floor, z);
         }
@@ -315,7 +315,7 @@ public static class Sunshades
         {
             var u = (b - a).Normalized();
             var n = flip ? u.Perp : -u.Perp;
-            var floor = Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0;
+            var floor = Spatial.Elevation(m, e);
             var z = floor + (e.NumOrNull("z") ?? (over ? 2.4 : 0.9));
             return new ShadeFrame(a, u, n, z, (b - a).Length, over ? 0 : s.Num("height"), floor, z);
         }
@@ -1045,7 +1045,7 @@ public sealed class SunshadeSchedule : IScheduleSource
     public string Kind => "sunshades";
     public string Label => "Sunshade schedule";
 
-    static string Mm(double v) => Math.Round(v * 1000).ToString(CultureInfo.InvariantCulture);
+    static string Mm(double v) => Lapin.Model.Numbers.Mm(v);
 
     public ScheduleGrid Grid(IQueryContext q)
     {

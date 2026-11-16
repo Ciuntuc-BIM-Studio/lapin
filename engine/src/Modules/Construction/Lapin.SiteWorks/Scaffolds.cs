@@ -242,7 +242,7 @@ public static class Scaffolds
     {
         if (FacadeOf(e, m, services) is not { } facade) return null;
         var spec = SpecOf(m, e);
-        var z0 = (Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0) + e.Num("baseOffset");
+        var z0 = Spatial.Base(m, e);
         var support = new Support(m, services);
         Func<Vec2, double> foot = e.Bool("onStorey") ? _ => z0 : p => support.Ground(p, z0);
         var walls = WallsOf(m, e);

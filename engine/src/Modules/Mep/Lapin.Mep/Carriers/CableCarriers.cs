@@ -26,7 +26,7 @@ public sealed record CarrierSpec(CarrierKind Kind, double Width, double Height, 
         : Math.Max(0, Width - 2 * Thickness) * Math.Max(0, Height - (Kind.Key == "trunking" ? 2 : 1) * Thickness);
 
     public string SizeLabel => Kind.Round ? $"Ø{Mm(Diameter)}" : $"{Mm(Width)}×{Mm(Height)}";
-    internal static string Mm(double v) => Math.Round(v * 1000).ToString(CultureInfo.InvariantCulture);
+    internal static string Mm(double v) => Lapin.Model.Numbers.Mm(v);
 }
 
 /// <summary>A built-in carrier type: indicative, as everything Lapin ships (the user's own types are theirs).</summary>

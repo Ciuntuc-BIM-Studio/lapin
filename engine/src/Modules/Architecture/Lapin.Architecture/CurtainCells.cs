@@ -357,7 +357,7 @@ public static class CurtainCells
         var off = door.Num("offset");
         var x0 = fit ? cx0 : door.Str("align") switch { "left" => cx0 + off, "right" => cx1 - width - off, _ => (cx0 + cx1 - width) / 2 + off };
         var (x1, z1) = (x0 + width, z0 + height);
-        static string Mm(double v) => (v * 1000).ToString("0", CultureInfo.InvariantCulture);
+        static string Mm(double v) => Lapin.Model.Numbers.Mm(v);
         if (width < 0.4 - 1e-9 || height < 1.0 - 1e-9) return Fail($"A door needs at least 400 mm of width and 1000 mm of height: {Mm(width)} × {Mm(height)} mm is too small for one.", cell);
         if (x0 < cx0 - 1e-6 || x1 > cx1 + 1e-6) return Fail($"The door, {Mm(width)} mm wide, does not fit in its cell ({Mm(cx1 - cx0)} mm) there.", cell);
         var (side, top) = (spec.Mullion.Width + 0.05, tw + 0.05);
@@ -547,7 +547,7 @@ public static class CurtainCells
             (_, 2) => ["swing-left", "swing-right"],
             _ => ["swing-left"],
         };
-        static string Mm(double v) => (v * 1000).ToString("0", CultureInfo.InvariantCulture);
+        static string Mm(double v) => Lapin.Model.Numbers.Mm(v);
         var name = ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : $"Curtain wall door {Mm(width)}×{Mm(height)}";
         var section = a["frameSection"] as JsonObject;
         var spec = JoinerySpec.DefaultDoor(name) with

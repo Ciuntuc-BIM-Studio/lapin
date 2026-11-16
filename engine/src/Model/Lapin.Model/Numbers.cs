@@ -144,4 +144,14 @@ public static class Numbers
         }
         return double.TryParse(sb.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var v) && double.IsFinite(v) ? v : null;
     }
+
+    /// <summary>
+    /// A length in metres as whole millimetres, the one way names and labels write it („1250”): rounded half to even as
+    /// most of the copies it replaces did (12.5 mm → 12), never „-0”.
+    /// </summary>
+    public static string Mm(double metres)
+    {
+        var mm = Math.Round(metres * 1000);
+        return (mm == 0 ? 0 : mm).ToString("0", CultureInfo.InvariantCulture);
+    }
 }

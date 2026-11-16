@@ -714,6 +714,12 @@ public static class Spatial
         Require(edit.Model, storeyId, IfcClass.BuildingStorey);
         edit.Relate(IfcClass.RelContainedInSpatialStructure, storeyId, elementId);
     }
+
+    /// <summary>The elevation of the storey <paramref name="e"/> stands on (<see cref="StoreyOf"/>); 0 when it stands on none.</summary>
+    public static double Elevation(IModelView m, Entity e) => StoreyOf(m, e.Id)?.Num("elevation") ?? 0;
+
+    /// <summary>Where an element's base is: its storey's <see cref="Elevation"/> plus its own <c>baseOffset</c> (walls, columns, rooms…).</summary>
+    public static double Base(IModelView m, Entity e) => Elevation(m, e) + e.Num("baseOffset");
 }
 
 /// <summary>

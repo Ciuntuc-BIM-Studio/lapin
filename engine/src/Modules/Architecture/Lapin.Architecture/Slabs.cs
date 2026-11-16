@@ -305,7 +305,7 @@ public static class Slabs
         return opening;
     }
 
-    public static double Top(IModelView m, Entity slab) => (Spatial.StoreyOf(m, slab.Id)?.Num("elevation") ?? 0) + slab.Num("offset");
+    public static double Top(IModelView m, Entity slab) => Spatial.Elevation(m, slab) + slab.Num("offset");
 
     /// <summary>The floor's whole thickness over its outline: what it cuts lower priorities with.</summary>
     public static Solid? Envelope(Entity slab, IModelView m)

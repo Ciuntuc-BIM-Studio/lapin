@@ -748,7 +748,7 @@ public sealed class UnderStairSchedule : IScheduleSource
         var keys = new List<string?>();
         var totals = new Dictionary<string, (int Count, double Volume)>(StringComparer.OrdinalIgnoreCase);
         static string N(double v) => v.ToString("0.000", CultureInfo.InvariantCulture);
-        foreach (var e in m.OfClass(UnderStairs.Class).OrderBy(x => Spatial.StoreyOf(m, x.Id)?.Num("elevation") ?? 0).ThenBy(x => x.Name, StringComparer.Create(CultureInfo.InvariantCulture, CompareOptions.NumericOrdering)))
+        foreach (var e in m.OfClass(UnderStairs.Class).OrderBy(x => Spatial.Elevation(m, x)).ThenBy(x => x.Name, StringComparer.Create(CultureInfo.InvariantCulture, CompareOptions.NumericOrdering)))
         {
             var storey = Spatial.StoreyOf(m, e.Id)?.Name ?? "";
             var stair = m.Get(e.Str("host") ?? "")?.Name ?? "";

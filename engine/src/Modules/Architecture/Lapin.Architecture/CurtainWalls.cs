@@ -793,7 +793,7 @@ public static class CurtainWalls
         return (section, place);
     }
 
-    internal static double Base(IModelView m, Entity w) => (Spatial.StoreyOf(m, w.Id)?.Num("elevation") ?? 0) + w.Num("baseOffset");
+    internal static double Base(IModelView m, Entity w) => Spatial.Base(m, w);
 
     public static ElementGeometry Geometry(Entity w, IModelView m)
     {

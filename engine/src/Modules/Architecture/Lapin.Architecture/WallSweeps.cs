@@ -246,7 +246,7 @@ public static class WallSweeps
 
     internal static int Side(Entity s) => s.Str("side") == "right" ? -1 : 1;
 
-    internal static double Base(IModelView m, Entity wall) => (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
+    internal static double Base(IModelView m, Entity wall) => Spatial.Base(m, wall);
 
     /// <summary>The face a point is on the side of: the wall's left or right, seen along it.</summary>
     internal static string SideOf(Entity wall, Vec2 p)

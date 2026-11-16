@@ -305,7 +305,7 @@ public sealed class FurnitureModule : ILapinModule
         for (var i = 2; ; i++) if (!taken.Contains($"{name} {i}")) return $"{name} {i}";
     }
 
-    static string Mm(double v) => Math.Round(v * 1000).ToString(CultureInfo.InvariantCulture);
+    static string Mm(double v) => Lapin.Model.Numbers.Mm(v);
 
     /// <summary>A type's name from its kind and size: Sofa 2200 × 950, Bed 1600 × 2050.</summary>
     static string DefaultName(Spec s) => s.Kind.Key == FurnitureModels.Key ? $"{FurnitureModels.Of(s).Name} {Mm(FurnitureModels.SizeOf(s, FurnitureModels.Of(s)).W)} × {Mm(FurnitureModels.SizeOf(s, FurnitureModels.Of(s)).D)}" : s.Kind.Key == Casework.Key ? $"{Casework.Label(s)} {Mm(s.W)} × {Mm(s.D)}" : s.Kind.Key == "kitchen" ? KitchenLayouts.Of(s) is var l && l != "one-wall" ? $"{s.Kind.Label} {KitchenLayouts.Label(l)}, depth {Mm(s.D)}" : $"{s.Kind.Label}, depth {Mm(s.D)}" : $"{s.Kind.Label} {Mm(s.W)} × {Mm(s.D)}";
@@ -381,7 +381,7 @@ public sealed class FurnitureModule : ILapinModule
     {
         if (Args.TryPoint(e.Attrs["at"]) is not { } at) return null;
         var spec = new Spec(TypeOf(m, e)?.Attrs["spec"] as JsonObject);
-        var z = (Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0) + e.Num("offset");
+        var z = Spatial.Elevation(m, e) + e.Num("offset");
         UserModels.Ensure(m, spec.Str(FurnitureModels.Key));
         var b = new Builder(at, z, e.Num("rotation"), e.Bool("mirror") ^ FurnitureBodies.Handed(spec));
         var length = e.NumOrNull("length");

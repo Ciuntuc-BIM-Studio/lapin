@@ -360,7 +360,7 @@ public static class Openings
             start = c.PointAt(along) - dir * along;
         }
         var bands = Walls.Section(m, wall);
-        var z = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
+        var z = Spatial.Base(m, wall);
         return new WallFrame(start, dir, dir.Perp, z, bands.Min(b => b.From), bands.Max(b => b.To));
     }
 
@@ -483,7 +483,7 @@ public static class Openings
         var contour = Slabs.HoleContour(m, opening);
         if (contour.Count >= 3)
         {
-            var z = host.Class == IfcClass.Slab ? Slabs.Top(m, host) : (Spatial.StoreyOf(m, host.Id)?.Num("elevation") ?? 0);
+            var z = host.Class == IfcClass.Slab ? Slabs.Top(m, host) : Spatial.Elevation(m, host);
             return new ElementGeometry([], [new PlanItem("hit", false, [.. contour, contour[0]])],
                 Lines: [[.. contour.Select(q => new Vec3(q.X, q.Y, z)), new Vec3(contour[0].X, contour[0].Y, z)]], LineColor: "#b5532d");
         }

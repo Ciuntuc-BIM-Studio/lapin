@@ -114,7 +114,7 @@ public static class Plantings
     {
         var species = SpeciesOf(e);
         var terrain = TerrainFor(m, e);
-        var fallback = Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0;
+        var fallback = Spatial.Elevation(m, e);
         double Ground(Vec2 p) => terrain?.ElevationAt(p.X, p.Y) ?? fallback;
         var seed = (int)Math.Round(e.Num("seed", 1));
         var rng = new SiteGeometry.Random(seed);

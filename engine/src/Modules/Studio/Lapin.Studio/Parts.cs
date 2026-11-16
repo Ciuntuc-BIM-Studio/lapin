@@ -217,7 +217,7 @@ public static class Parts
     static (Func<Vec3, Vec3> Place, Func<Vec3, Vec3> Dir, bool Mirror) Placing(Entity e, IModelView m)
     {
         var (at, rotation, mirror) = Pose(e);
-        var z = (Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0) + e.Num("z");
+        var z = Spatial.Elevation(m, e) + e.Num("z");
         var (c, s) = (Math.Cos(rotation * Math.PI / 180), Math.Sin(rotation * Math.PI / 180));
         Vec3 Dir(Vec3 d)
         {
@@ -259,7 +259,7 @@ public static class Parts
         var (over, fallback) = (StudioModule.OwnMaterial(m, e), StudioModule.OwnMaterial(m, type));
         var local = set.Local(m, mirror, over, fallback);
         if (local.Count == 0) return ([], [], null);
-        var z = (Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0) + e.Num("z");
+        var z = Spatial.Elevation(m, e) + e.Num("z");
         var xf = Xf(at, z, rotation);
         var parts = local.Select(p => p with { Solid = StoredBodies.Place(p.Solid, xf) }).ToList();
         return (parts, [], new SharedInstance(set.KeyOf(mirror, over, fallback), xf) { Local = local });
@@ -858,7 +858,7 @@ sealed class PartFrames : IElementFrames
     {
         if (!Parts.IsInstance(e) || !StudioModule.Classes.Contains(e.Class) && e.Str("exportAs") == null) return null;
         var at = Args.TryPoint(e.Attrs["at"]) ?? default;
-        var z = (Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0) + e.Num("z");
+        var z = Spatial.Elevation(m, e) + e.Num("z");
         var r = e.Num("rotation") * Math.PI / 180;
         var x = new Vec3(Math.Cos(r), Math.Sin(r), 0);
         return (new Vec3(at.X, at.Y, z), e.Bool("mirror") ? -x : x, Vec3.UnitZ);

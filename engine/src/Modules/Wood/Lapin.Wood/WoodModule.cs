@@ -298,7 +298,7 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
         var axis = Walls.End(wall) - start;
         if (axis.Length < 1e-6) return null;
         var dir = axis.Normalized();
-        var baseZ = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
+        var baseZ = Spatial.Base(m, wall);
         var height = Walls.HeightOf(m, wall);
         // The core's run, from its part's bottom: at each end the inner one of the end face's corners (a mitre's or a butt's).
         var corePart = g.Parts.FirstOrDefault(p => p.Key == $"layer:{core.Index}");
@@ -528,7 +528,7 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
         var start = Walls.Start(wall);
         var dir = (Walls.End(wall) - start).Normalized();
         var core = Walls.Section(c.Model, wall).First(b => b.Core);
-        var baseZ = (Spatial.StoreyOf(c.Model, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
+        var baseZ = Spatial.Base(c.Model, wall);
         var y = (core.From + core.To) / 2;
         Vec2 P(double u, double z) { var q = start + dir * u + dir.Perp * y; return c.Map(new Vec3(q.X, q.Y, baseZ + z)); }
         var k = c.Scale / 1000;

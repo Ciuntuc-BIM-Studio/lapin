@@ -190,7 +190,7 @@ public static class Gates
         for (var i = 2; ; i++) if (!taken.Contains($"{name} {i}")) return $"{name} {i}";
     }
 
-    static string Mm(double v) => Math.Round(v * 1000).ToString(CultureInfo.InvariantCulture);
+    static string Mm(double v) => Lapin.Model.Numbers.Mm(v);
 
     /// <summary>A type's name from its kind and size: Sliding gate 4000 × 1600.</summary>
     static string DefaultName(GateSpec s) => $"{s.Kind.Label} {Mm(s.Width + s.WicketWidth)} × {Mm(s.Height)}";
@@ -334,7 +334,7 @@ public static class Gates
     {
         if (Args.TryPoint(e.Attrs["at"]) is not { } at) return null;
         var s = SpecOf(m, e);
-        var z = (Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0) + e.Num("offset");
+        var z = Spatial.Elevation(m, e) + e.Num("offset");
         var hand = e.Str("hand") ?? "right";
         // The left hand is the right one mirrored along the gate.
         var b = new LocalBuilder(at, z, e.Num("rotation"), hand == "left");
@@ -589,7 +589,7 @@ sealed class GateCuts : IGeometryFilter
         if (gates.Count == 0) return null;
         if (services.Get<ISolidBooleans>() is not { } booleans) return geometry with { Diagnostics = [.. geometry.Diagnostics ?? [], "A gate's cut needs the boolean library (manifold), missing here."] };
         var bands = Walls.Section(model, entity);
-        var z = (Spatial.StoreyOf(model, entity.Id)?.Num("elevation") ?? 0) + entity.Num("baseOffset");
+        var z = Spatial.Base(model, entity);
         var top = z + Walls.HeightOf(model, entity);
         var (a, b) = (Walls.Start(entity), Walls.End(entity));
         var u = (b - a).Normalized();
@@ -656,7 +656,7 @@ public sealed class GateSchedule : IScheduleSource
     public ScheduleGrid Grid(IQueryContext q)
     {
         var m = q.Model;
-        static string Mm(double v) => Math.Round(v * 1000).ToString(CultureInfo.InvariantCulture);
+        static string Mm(double v) => Lapin.Model.Numbers.Mm(v);
         var groups = m.OfClass(Gates.Class).Select(e => (E: e, T: Gates.TypeOf(m, e))).GroupBy(x => x.T?.Id ?? x.E.Id)
             .Select(g =>
             {

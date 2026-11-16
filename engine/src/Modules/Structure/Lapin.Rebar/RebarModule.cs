@@ -467,7 +467,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             }
             double? station = null;
             if (e.Attrs["start"] is JsonArray && e.Attrs["end"] is JsonArray) station = PathCurve.Of(e).Project(xy);
-            else if (z is { } zz) station = zz - (Spatial.StoreyOf(ctx.Model, e.Id)?.Num("elevation") ?? 0) - e.Num("baseOffset");
+            else if (z is { } zz) station = zz - Spatial.Elevation(ctx.Model, e) - e.Num("baseOffset");
             var flip = a["flip"] is JsonValue fv && fv.TryGetValue<bool>(out var f) && f;
             var across = AcrossSections.Create(ctx, e.Id, station, Json.Number(a["margin"]), flip, host.Str("discipline"));
             if (a["inset"] is JsonValue iv && iv.TryGetValue<bool>(out var withInset) && !withInset) return new JsonObject { ["viewId"] = across.Id };

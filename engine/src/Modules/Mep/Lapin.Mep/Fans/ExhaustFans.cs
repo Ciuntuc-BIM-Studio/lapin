@@ -195,7 +195,7 @@ public static class ExhaustFans
         for (var i = 2; ; i++) if (!taken.Contains($"{name} {i}")) return $"{name} {i}";
     }
 
-    static string Mm(double v) => Math.Round(v * 1000).ToString(CultureInfo.InvariantCulture);
+    static string Mm(double v) => Lapin.Model.Numbers.Mm(v);
 
     /// <summary>A type's name from its kind, size and airflow: Wall fan (axial) Ø100, 95 m³/h.</summary>
     static string DefaultName(FanSpec s) => $"{s.Kind.Label} Ø{Mm(s.Diameter)}, {s.Airflow.ToString("0.#", CultureInfo.InvariantCulture)} m³/h";
@@ -337,7 +337,7 @@ public static class ExhaustFans
     public static (Vec3 At, Vec2 Dir, double Level) Spigot(IModelView m, Entity fan, FanSpec s)
     {
         var at = Args.PointOf(fan.Attrs["at"]);
-        var b = new LocalBuilder(at, Spatial.StoreyOf(m, fan.Id)?.Num("elevation") ?? 0, fan.Num("rotation"));
+        var b = new LocalBuilder(at, Spatial.Elevation(m, fan), fan.Num("rotation"));
         var (x, level) = SpigotLocal(s, fan.Num("height"));
         var p = b.W(x, 0, level);
         var dir = (b.Q(1, 0) - b.Q(0, 0)).Normalized();
@@ -356,7 +356,7 @@ public static class ExhaustFans
     {
         if (Args.TryPoint(e.Attrs["at"]) is not { } at) return null;
         var s = SpecOf(m, e);
-        var storeyZ = Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0;
+        var storeyZ = Spatial.Elevation(m, e);
         var b = new LocalBuilder(at, storeyZ, e.Num("rotation"));
         var host = s.Upright ? HostOf(m, e) : null;
         var thickness = host is { } w ? w.Hi - w.Lo : 0;

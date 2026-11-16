@@ -62,7 +62,7 @@ public static class BalconyBuilder
     /// <summary>The balcony's frame: on its wall at <c>along</c> on its <c>side</c>; else at its <c>at</c> turned by <c>rotation</c>; a drawn one by its first edge.</summary>
     public static BalconyFrame? Frame(IModelView m, Entity e)
     {
-        var storey = Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0;
+        var storey = Spatial.Elevation(m, e);
         var top = storey + e.Num("baseOffset");
         if (m.Get(e.Str("wallId") ?? "") is { Class: IfcClass.Wall } wall && Walls.Section(m, wall).Count > 0)
         {

@@ -31,7 +31,7 @@ public static class Nodes
     public static double Elevation(Entity e, Role role) => e.NumOrNull("elevation") ?? role.Elevation;
 
     /// <summary>The storey's elevation under the node (0 when it stands on none).</summary>
-    public static double StoreyZ(IModelView m, Entity e) => Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0;
+    public static double StoreyZ(IModelView m, Entity e) => Spatial.Elevation(m, e);
 
     /// <summary>A node's own point into project space: turned by its rotation about its origin, raised by its elevation over its storey.</summary>
     public static Vec3 ToWorld(IModelView m, Entity e, Role role, Vec3 local)

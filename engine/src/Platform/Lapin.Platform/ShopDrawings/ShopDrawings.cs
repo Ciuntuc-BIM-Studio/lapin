@@ -321,7 +321,7 @@ public static class ShopDrawings
         _ => "",
     };
 
-    static string Mm(double m) => Math.Round(m * 1000).ToString("0", CultureInfo.InvariantCulture);
+    static string Mm(double m) => Lapin.Model.Numbers.Mm(m);
 
     /// <summary>A text with its {tokens} filled for the element.</summary>
     public static string Fill(IQueryContext q, Entity e, ElementFrame? f, string text) =>

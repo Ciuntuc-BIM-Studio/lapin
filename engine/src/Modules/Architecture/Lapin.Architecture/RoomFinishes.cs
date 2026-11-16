@@ -336,7 +336,7 @@ public static class RoomFinishes
 
     // ------------------------------------------------------------ where things are
 
-    static double Level(IModelView m, Entity room) => (Spatial.StoreyOf(m, room.Id)?.Num("elevation") ?? 0) + room.Num("baseOffset");
+    static double Level(IModelView m, Entity room) => Spatial.Base(m, room);
 
     static Vec2 Centre(IReadOnlyList<Vec2> pts) => new(pts.Average(p => p.X), pts.Average(p => p.Y));
 
@@ -793,7 +793,7 @@ public sealed class RoomFinishSchedule : IScheduleSource
         var m = q.Model;
         var o = new List<Row>();
         foreach (var room in m.OfClass(Rooms.Class).Where(r => r.Str("finishType") != null)
-                     .OrderBy(r => Spatial.StoreyOf(m, r.Id)?.Num("elevation") ?? 0).ThenBy(r => r.Str("number") ?? "", StringComparer.Create(CultureInfo.InvariantCulture, CompareOptions.NumericOrdering)))
+                     .OrderBy(r => Spatial.Elevation(m, r)).ThenBy(r => r.Str("number") ?? "", StringComparer.Create(CultureInfo.InvariantCulture, CompareOptions.NumericOrdering)))
         {
             var storey = Spatial.StoreyOf(m, room.Id)?.Name ?? "";
             var label = string.Join(" ", new[] { room.Str("number"), room.Name }.Where(x => !string.IsNullOrWhiteSpace(x)));

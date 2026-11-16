@@ -60,7 +60,7 @@ public static class PartDimensions
         return mk;
     }
 
-    static string Mm(double m) => Math.Round(m * 1000).ToString("0", CultureInfo.InvariantCulture);
+    static string Mm(double m) => Lapin.Model.Numbers.Mm(m);
 
     /// <summary>
     /// Ordinates from <paramref name="zero"/> along the drawing's x: a base line at <paramref name="y"/>, a tick and an extension line

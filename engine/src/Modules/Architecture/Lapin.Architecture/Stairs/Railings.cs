@@ -469,7 +469,7 @@ public static class Railings
         return into.Id;
     }
 
-    static double BaseZ(Entity e, IModelView m) => (Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0) + e.Num("baseOffset");
+    static double BaseZ(Entity e, IModelView m) => Spatial.Base(m, e);
 
     public static ElementGeometry? Geometry(Entity e, IModelView m)
     {

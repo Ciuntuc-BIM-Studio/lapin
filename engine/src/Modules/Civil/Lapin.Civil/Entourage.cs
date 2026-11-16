@@ -90,7 +90,7 @@ public static class Entourage
     {
         var at = Args.Point(e.Attrs["at"], "the entourage");
         var terrain = Plantings.TerrainFor(m, e);
-        var ground = terrain?.ElevationAt(at.X, at.Y) ?? Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0;
+        var ground = terrain?.ElevationAt(at.X, at.Y) ?? Spatial.Elevation(m, e);
         var r = e.Num("rotation") * Math.PI / 180;
         return new Frame(at, ground + e.Num("offset"), Math.Cos(r), Math.Sin(r));
     }

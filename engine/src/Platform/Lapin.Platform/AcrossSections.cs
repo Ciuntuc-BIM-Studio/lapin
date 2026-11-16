@@ -91,7 +91,7 @@ public static class AcrossSections
             return (spec with { Span = (x0 - mA, x1 + mB), Rise = (z0 - margin, z1 + margin) }, null);
         }
         // A standing element: a horizontal cut over its base, looked at from above, its x along its rotation.
-        var baseZ = (Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0) + e.Num("baseOffset");
+        var baseZ = Spatial.Base(m, e);
         var z = baseZ + Station(m, e, view);
         var rot = e.Num("rotation") * Math.PI / 180;
         var (cx, cy) = e.Attrs["at"] is JsonArray at && at.Count >= 2 ? (Json.Number(at[0]) ?? 0, Json.Number(at[1]) ?? 0)

@@ -49,7 +49,7 @@ public sealed class ArchitectureFaces : IElementFaces
     static List<ElementFace> Wall(Entity wall, IModelView m)
     {
         if (Walls.Frame(wall, m) is not { } f) return [];
-        var z0 = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
+        var z0 = Spatial.Base(m, wall);
         var z1 = z0 + Walls.HeightOf(m, wall);
         if (PathCurve.Of(wall) is { IsArc: true } c)
         {

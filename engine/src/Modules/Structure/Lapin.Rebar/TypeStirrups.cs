@@ -129,7 +129,7 @@ public static class TypeStirrups
             var (a, b) = Inside(section.Width, section.Depth, spec);
             if (a <= 0 || b <= 0) return null;
             var at = e.Attrs["at"] is JsonArray q && q.Count >= 2 ? new Vec2(Json.Number(q[0]) ?? 0, Json.Number(q[1]) ?? 0) : default;
-            var baseZ = (Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0) + e.Num("baseOffset");
+            var baseZ = Spatial.Base(m, e);
             var rot = e.Num("rotation") * Math.PI / 180;
             var (ux, uy) = (new Vec2(Math.Cos(rot), Math.Sin(rot)), new Vec2(-Math.Sin(rot), Math.Cos(rot)));
             var stations = Runs.Positions(height, spec.Step, spec.RunZones(height));
