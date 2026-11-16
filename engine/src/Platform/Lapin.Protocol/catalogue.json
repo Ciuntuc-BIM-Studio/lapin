@@ -965,6 +965,7 @@
     {"name":"schedule.partSources","module":"architecture","args":[]},
     {"name":"schedule.shippedTemplates","module":"architecture","args":[]},
     {"name":"schedule.takeoffClasses","module":"architecture","args":[]},
+    {"name":"schedule.templatePreview","module":"architecture","args":[{"name":"builtin","type":"str"},{"name":"text","type":"str"}]},
     {"name":"schedule.xlsx","module":"architecture","args":[{"name":"id","type":"str"}]},
     {"name":"scripting.get","module":"scripting","args":[{"name":"id","type":"str"},{"name":"name","type":"str"}]},
     {"name":"scripting.list","module":"scripting","args":[]},

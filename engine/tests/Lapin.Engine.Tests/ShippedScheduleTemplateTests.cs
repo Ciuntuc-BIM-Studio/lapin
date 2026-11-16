@@ -295,6 +295,35 @@ public class ShippedScheduleTemplateTests
     }
 
     [Fact]
+    public void A_template_is_previewed_as_every_library_import_and_made_as_chosen()
+    {
+        var f = new Fixture();
+        JsonObject Preview() => (JsonObject)f.Session.Query("schedule.templatePreview", new JsonObject { ["builtin"] = "sunshades" })!;
+        string Status(JsonObject p) => (string)((JsonArray)p["rows"]!)[0]!["status"]!;
+        Assert.Equal("new", Status(Preview()));
+        var first = (string)f.Run("architecture.importSchedule", new JsonObject { ["builtin"] = "sunshades", ["choices"] = new JsonObject() })!["id"]!;
+        // Made again unchanged: the same, kept (no second schedule).
+        Assert.Equal("same", Status(Preview()));
+        Assert.Equal(first, (string)f.Run("architecture.importSchedule", new JsonObject { ["builtin"] = "sunshades", ["choices"] = new JsonObject() })!["id"]!);
+        // Changed here: the same name, to keep both (the default), update or skip.
+        f.Run("architecture.updateSchedule", new JsonObject { ["id"] = first, ["fields"] = new JsonObject { ["columns"] = new JsonArray("name") } });
+        var p = Preview();
+        Assert.Equal("name", Status(p));
+        Assert.Equal(1, (int)p["conflicts"]!);
+        var key = (string)((JsonArray)p["rows"]!)[0]!["key"]!;
+        var both = f.Run("architecture.importSchedule", new JsonObject { ["builtin"] = "sunshades", ["choices"] = new JsonObject { [key] = "both" } })!;
+        Assert.NotEqual(first, (string)both["id"]!);
+        Assert.EndsWith("(2)", (string)both["name"]!);
+        f.Run("architecture.importSchedule", new JsonObject { ["builtin"] = "sunshades", ["choices"] = new JsonObject { [key] = "update" } });
+        Assert.Equal("same", Status(Preview()));
+        // A file's text is previewed the same way, its header read.
+        var text = (string)f.Session.Query("schedule.exportTemplate", new JsonObject { ["id"] = first })!["text"]!;
+        var fromFile = (JsonObject)f.Session.Query("schedule.templatePreview", new JsonObject { ["text"] = text })!;
+        Assert.Equal("same", Status(fromFile));
+        Assert.NotNull(fromFile["header"]);
+    }
+
+    [Fact]
     public void A_fixed_schedule_saved_by_this_build_opens_and_shows_the_same()
     {
         // No upgrade turns saved fixed schedules into field schedules: their kind stays, so they open as they were, with what
