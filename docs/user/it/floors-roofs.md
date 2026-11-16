@@ -26,6 +26,10 @@ La stessa barra serve tutti gli strumenti di contorno (solaio, foro nel solaio, 
 
 ![La barra degli strumenti di contorno, con From drawn shape scelto](shots/outline-sources.webp)
 
+Per solaio, foro nel solaio, controsoffitto e locale per contorno la barra offre anche **Ellipse**: il centro, l’estremo di un semiasse, poi l’altro. I bordi del contorno seguono la vera ellisse (quattro quarti), misurati esattamente; un angolo spostato fuori dall’ellisse rende dritti i suoi due bordi, e un angolo vicino a un bordo ellittico non si raccorda. L’IFC la porta come IfcEllipse. **From drawn shape** prende allo stesso modo un’ellisse disegnata.
+
+![Un solaio ellittico disegnato accanto a un’ellisse disegnata](shots/ellipse-floor.webp)
+
 Qualsiasi lato di un solaio, di un foro nel solaio o di un controsoffitto può essere curvo. Fai clic destro sul solaio selezionato vicino a un lato e scegli **Rendi arco**: il lato si incurva verso l'esterno di un ottavo della sua lunghezza e al centro dell'arco compare una maniglia rotonda. Trascinala per curvare l'arco attraverso il punto voluto (il rombo, ora al centro della corda, sposta ancora il lato). **Rendi diritto** lo riporta a linea. Un angolo tra due lati diritti si può raccordare o smussare: fai clic destro su di esso e scegli **Raccorda l'angolo…** (digita il raggio) o **Smussa l'angolo…** (digita di quanto arretra lungo ogni lato). L'angolo diventa due, dove l'arco o lo smusso incontrano i lati; un raggio troppo grande per i lati viene rifiutato. Ognuno è un solo passo di annullamento.
 
 ![Un solaio con un lato curvo e un angolo raccordato](shots/floor-curved-edge.webp)

@@ -422,10 +422,11 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             }
             else (pts, arcs) = Slabs.OutlineArg(a["arcs"], Points(a));
             var slab = Slabs.Add(ctx, storeyId, pts, Json.Number(a["offset"]) ?? 0, type, arcs);
-            // Its holes (audit S4): islands cut out of its own outline, {holes: [[[x, y]…]…], holeArcs?}.
-            if (a[OutlineHoles.Key] != null)
+            // Its elliptical edges (audit S4, {ellipses: [{c, m, ratio, ccw} | null…]}) and its holes ({holes: [[[x, y]…]…], holeArcs?}).
+            if (a[OutlineHoles.Key] != null || a[EllipseEdge.Key] != null)
             {
                 var withHoles = slab.CloneAttrs();
+                Slabs.SetEllipses(withHoles, a, null);
                 OutlineHoles.Apply(withHoles, a);
                 ctx.Replace(slab.With(attrs: withHoles));
             }
@@ -499,6 +500,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             {
                 var (contour, arcs) = Slabs.OutlineArg(a["arcs"], Points(a), slab);
                 Slabs.SetOutline(attrs, contour, arcs);
+                Slabs.SetEllipses(attrs, a, slab);
                 RemapExtents(slab, attrs, contour);
             }
             // Its holes given, or kept and checked against the outline as it now is (audit S4).
@@ -573,7 +575,14 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var slab = (string?)a["slabId"] is { } sid ? Spatial.Require(ctx.Model, sid, IfcClass.Slab)
                 : ctx.Model.OfClass(IfcClass.Slab).FirstOrDefault(s => ((string?)a["storeyId"] == null || Spatial.StoreyOf(ctx.Model, s.Id)?.Id == (string?)a["storeyId"]) && Polygon2.Contains(Slabs.Contour(s), mid))
                   ?? throw new CommandException("Draw the opening inside a floor.");
-            return new JsonObject { ["id"] = Slabs.AddOpening(ctx, slab, pts, Slabs.OutlineArg(a["arcs"], pts, null, "An opening").Rises).Id };
+            var opening = Slabs.AddOpening(ctx, slab, pts, Slabs.OutlineArg(a["arcs"], pts, null, "An opening").Rises);
+            if (a[EllipseEdge.Key] != null)
+            {
+                var oa = opening.CloneAttrs();
+                Slabs.SetEllipses(oa, a, null);
+                ctx.Replace(opening.With(attrs: oa));
+            }
+            return new JsonObject { ["id"] = opening.Id };
         });
 
         r.Command("updateSlabOpening", "Change floor opening", (ctx, a) =>
@@ -583,6 +592,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var attrs = o.CloneAttrs();
             var (contour, arcs) = Slabs.OutlineArg(a["arcs"], Points(a), o, "An opening");
             Slabs.SetOutline(attrs, contour, arcs);
+            Slabs.SetEllipses(attrs, a, o);
             ctx.Replace(o.With(attrs: attrs));
             return null;
         });
@@ -1459,6 +1469,10 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         if (corners.Count < 3) throw new CommandException("The element has no outline.");
         // One of its own holes (audit S4): {hole: its index}.
         if (OutlineHoles.Index(a, e) is { } k) { var h = OutlineHoles.Of(e)[k]; return (e, h.Corners, h.Rises); }
+        // A corner beside an elliptical edge is not rounded or cut, and that edge is no arc (audit S4).
+        if (Slabs.Ellipses(e) is { } el && Json.Number(a["index"]) is { } ix && ix >= 0 && ix < corners.Count
+            && (el[(int)ix] != null || (a["rise"] == null && el[((int)ix - 1 + corners.Count) % corners.Count] != null)))
+            throw new CommandException("That edge runs along an ellipse: only a corner between two straight edges is rounded or cut, and an elliptical edge is not bent.");
         return (e, corners, Slabs.Rises(e));
     }
 
@@ -1478,6 +1492,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         var (c, r) = ArcOutline.Check(corners, rises, e.Class == IfcClass.Slab ? "A floor" : e.Class == Ceilings.Class ? "A ceiling" : e.Class == Rooms.Class ? "A room" : "An opening");
         var attrs = e.CloneAttrs();
         Slabs.SetOutline(attrs, c, r);
+        Slabs.SetEllipses(attrs, new JsonObject(), e);
         if (e.Class == IfcClass.Slab) RemapExtents(e, attrs, c);
         OutlineHoles.Apply(attrs, new JsonObject());
         ctx.Replace(e.With(attrs: attrs));

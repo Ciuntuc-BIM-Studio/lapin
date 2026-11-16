@@ -109,6 +109,7 @@ public static class Ceilings
             var type = (string?)a["typeId"] is { } tid ? Spatial.Require(ctx.Model, tid, TypeClass) : DefaultType(ctx);
             var attrs = new JsonObject { ["contour"] = Slabs.ContourJson(outline), ["height"] = Json.Number(a["height"]) ?? 2.7, ["exportAs"] = "IfcCovering", ["fixtures"] = new JsonArray() };
             ArcOutline.Write(attrs, arcs);
+            if (a[EllipseEdge.Key] != null) Slabs.SetEllipses(attrs, a, null);
             if (a[OutlineHoles.Key] != null) OutlineHoles.Apply(attrs, a);
             var ceiling = new Entity(ctx.NewId(), Class, $"Ceiling {Numbering.Next(ctx.Model.OfClass(Class))}", attrs, "CEILING");
             ctx.Add(ceiling);
@@ -125,6 +126,7 @@ public static class Ceilings
             {
                 var (outline, arcs) = Slabs.OutlineArg(a["arcs"], Points(a["points"]), c, "A ceiling");
                 Slabs.SetOutline(attrs, outline, arcs);
+                Slabs.SetEllipses(attrs, a, c);
             }
             if (a[OutlineHoles.Key] != null || a["points"] is JsonArray) OutlineHoles.Apply(attrs, a);
             if (Json.Number(a["height"]) is { } h) attrs["height"] = Math.Clamp(h, 1.5, 20);
@@ -389,8 +391,8 @@ public static class Ceilings
         var spec = SpecOf(m, c);
         // Exactly, its arcs as arcs (forum topic 97).
         var (corners, rises) = (Slabs.Corners(c), Slabs.Rises(c));
-        var area = Math.Abs(ArcOutline.SignedArea(corners, rises)) - OutlineHoles.Area(c);
-        var perimeter = ArcOutline.Perimeter(corners, rises);
+        var area = Slabs.Area(c) - OutlineHoles.Area(c);
+        var perimeter = Slabs.Perimeter(c);
         yield return new QuantitySet("Qto_CoveringBaseQuantities", [new("Width", spec.Thickness, "LENGTH"), new("GrossArea", area, "AREA"), new("NetArea", area, "AREA")]);
         yield return new QuantitySet("Lapin_CeilingQuantities",
         [

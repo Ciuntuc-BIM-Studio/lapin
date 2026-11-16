@@ -84,6 +84,7 @@ function shapeIn(s: Shape, L: (p: Vec2) => Vec2, angle: number): Shape {
     case 'polyline': return { type: 'polyline', pts: s.pts.map(L), closed: s.closed };
     case 'circle': return { type: 'circle', c: L(s.c), r: s.r };
     case 'arc': return { type: 'arc', c: L(s.c), r: s.r, start: s.start - a, end: s.end - a };
+    case 'ellipse': { const o = L({ x: 0, y: 0 }), mm = L(s.m); return { ...s, c: L(s.c), m: { x: mm.x - o.x, y: mm.y - o.y } }; }
   }
 }
 

@@ -909,12 +909,52 @@ public static partial class IfcExport
         {
             // Its own holes (audit S4) too: each a curve of the footprint after the outline's.
             var holes = OutlineHoles.Of(e);
-            if ((e.Attrs[ArcOutline.Key] is not JsonArray && holes.Count == 0) || e.Attrs["contour"] is not JsonArray) return null;
+            if ((e.Attrs[ArcOutline.Key] is not JsonArray && e.Attrs[EllipseEdge.Key] is not JsonArray && holes.Count == 0) || e.Attrs["contour"] is not JsonArray) return null;
             var corners = Args.StoredPoints(e.Attrs["contour"]);
             var rises = ArcOutline.Rises(e.Attrs[ArcOutline.Key], corners.Count);
-            if (corners.Count < 3 || (rises == null && holes.Count == 0)) return null;
+            var ellipses = EllipseEdge.Read(e.Attrs[EllipseEdge.Key], corners.Count);
+            if (corners.Count < 3 || (rises == null && ellipses == null && holes.Count == 0)) return null;
             if (footprint == "") footprint = f.Add("IFCGEOMETRICREPRESENTATIONSUBCONTEXT", S("FootPrint"), S("Model"), Derived, Derived, Derived, Derived, model, Null, E("PLAN_VIEW"), Null);
-            return f.Add("IFCSHAPEREPRESENTATION", footprint, S("FootPrint"), S("Curve2D"), L(holes.Select(h => IndexedLoop(h.Corners, h.Rises)).Prepend(IndexedLoop(corners, rises))));
+            return f.Add("IFCSHAPEREPRESENTATION", footprint, S("FootPrint"), S("Curve2D"), L(holes.Select(h => IndexedLoop(h.Corners, h.Rises)).Prepend(OutlineLoop(corners, rises, ellipses))));
+        }
+
+        /// <summary>
+        /// A closed outline as its true curve: an IfcIndexedPolyCurve when its edges are lines and arcs; with an edge along an ellipse
+        /// (audit S4), an IfcCompositeCurve of its edges, each a polyline, or an IfcTrimmedCurve on an IfcCircle or an IfcEllipse
+        /// trimmed by parameter (radians), run its own way.
+        /// </summary>
+        string OutlineLoop(IReadOnlyList<Vec2> corners, IReadOnlyList<double>? rises, IReadOnlyList<EllipseEdge?>? ellipses)
+        {
+            if (ellipses == null || ellipses.All(x => x == null)) return IndexedLoop(corners, rises);
+            var segments = new List<string>();
+            var n = corners.Count;
+            for (var i = 0; i < n; i++)
+            {
+                var (a, b) = (corners[i], corners[(i + 1) % n]);
+                string parent;
+                if (i < ellipses.Count && ellipses[i] is { } el)
+                {
+                    var (t0, sweep) = el.Span(a, b);
+                    var dir = el.M * (1 / el.A);
+                    var place = f.Add("IFCAXIS2PLACEMENT2D", P2(el.C), f.Add("IFCDIRECTION", L(new[] { R(dir.X), R(dir.Y) })));
+                    var basis = f.Add("IFCELLIPSE", place, R(el.A), R(el.B));
+                    parent = f.Add("IFCTRIMMEDCURVE", basis, L(new[] { Typed("IFCPARAMETERVALUE", R(t0)) }), L(new[] { Typed("IFCPARAMETERVALUE", R(t0 + sweep)) }), sweep > 0 ? Step.True : False, E("PARAMETER"));
+                }
+                else
+                {
+                    var c = ArcOutline.Edge(corners, rises, i);
+                    if (c.IsArc)
+                    {
+                        var (sa, ea) = (Math.Atan2(a.Y - c.Centre.Y, a.X - c.Centre.X), Math.Atan2(b.Y - c.Centre.Y, b.X - c.Centre.X));
+                        var basis = f.Add("IFCCIRCLE", f.Add("IFCAXIS2PLACEMENT2D", P2(c.Centre), Null), R(c.Radius));
+                        // A rise to the right turns anticlockwise.
+                        parent = f.Add("IFCTRIMMEDCURVE", basis, L(new[] { Typed("IFCPARAMETERVALUE", R(sa)) }), L(new[] { Typed("IFCPARAMETERVALUE", R(ea)) }), c.Rise < 0 ? Step.True : False, E("PARAMETER"));
+                    }
+                    else parent = f.Add("IFCPOLYLINE", L(new[] { P2(a), P2(b) }));
+                }
+                segments.Add(f.Add("IFCCOMPOSITECURVESEGMENT", E("CONTINUOUS"), Step.True, parent));
+            }
+            return f.Add("IFCCOMPOSITECURVE", L(segments), False);
         }
 
         /// <summary>
@@ -1133,8 +1173,9 @@ public static partial class IfcExport
             var height = geo!.Parts.Select(p => Measure.Bounds(p.Solid)).OfType<(Vec3 Min, Vec3 Max)>().Select(b => b.Max.Z - b.Min.Z).DefaultIfEmpty(storey?.NumOrNull("height") ?? 3).Max();
             string Curve(IReadOnlyList<Vec2> loop) => f.Add("IFCPOLYLINE", L(loop.Append(loop[0]).Select(P2)));
             // A drawn room with curved edges (audit S4): its profile the true curve, an IfcIndexedPolyCurve with its arcs (kept counter-clockwise).
-            var drawnArcs = !e.Bool("auto") && ArcOutline.RisesOf(e) is { } rr ? rr : null;
-            var outerCurve = drawnArcs != null ? IndexedLoop(ArcOutline.CornersOf(e), drawnArcs) : Curve(Polygon2.EnsureCcw(outer));
+            var drawnArcs = !e.Bool("auto") ? ArcOutline.RisesOf(e) : null;
+            var drawnEllipses = !e.Bool("auto") ? EllipseEdge.Of(e) : null;
+            var outerCurve = drawnArcs != null || drawnEllipses != null ? OutlineLoop(ArcOutline.CornersOf(e), drawnArcs, drawnEllipses) : Curve(Polygon2.EnsureCcw(outer));
             var profile = islands.Count == 0
                 ? f.Add("IFCARBITRARYCLOSEDPROFILEDEF", E("AREA"), Null, outerCurve)
                 : f.Add("IFCARBITRARYPROFILEDEFWITHVOIDS", E("AREA"), Null, outerCurve, L(islands.Select(i => Curve(Polygon2.EnsureCcw(i).Reverse().ToList()))));

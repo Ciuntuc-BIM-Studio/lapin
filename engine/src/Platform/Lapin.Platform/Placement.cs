@@ -176,6 +176,14 @@ public static class Placement
             a["contour"] = new JsonArray(pts.Select(p => (JsonNode)J(p)).ToArray());
             // Its curved edges (forum topic 97): mirrored, each bulges to the other side, and run back with the corners, back again.
             if (t.Mirrored && ArcOutline.Rises(a[ArcOutline.Key], pts.Count) is { } rises) ArcOutline.Write(a, ArcOutline.Reversed(rises)!.Select(r => -r).ToList());
+            // Its elliptical edges (audit S4): moved and turned with it; mirrored, the major axis taken the other way (the same
+            // ellipse, its minor axis still a quarter turn anticlockwise), in the corners' new order: mirrored and run back, each still turns its own way.
+            if (EllipseEdge.Read(a[EllipseEdge.Key], pts.Count) is { } el)
+            {
+                var moved = el.Select(x => x == null ? null : t.Mirrored ? new EllipseEdge(t.Point(x.C), t.Dir(x.M) * -1, x.Ratio, x.Ccw) : x with { C = t.Point(x.C), M = t.Dir(x.M) }).ToArray();
+                var n = moved.Length;
+                EllipseEdge.Write(a, t.Mirrored ? [.. Enumerable.Range(0, n).Select(j => moved[((n - 2 - j) % n + n) % n])] : moved);
+            }
         }
         // The points a room's doors and windows are found again by (docs/rooms.md).
         if ((a["roomOpenings"] as JsonObject)?["items"] is JsonArray entries)

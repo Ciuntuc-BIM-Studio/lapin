@@ -18,7 +18,7 @@ import { ucsOf, useLocation } from '../../app/location';
 import { directionFrom, directionOf, normalizeTurn, rotatedShape, rotationFromReference } from './rotate';
 import { applyOrtho, parseCoordinateInput, parseScalar, pointAlong } from './input';
 import { lengthText, parseLength } from '../../engine/unitsStore';
-import { arcThrough, arcTangent, bounds, dist, fromJson, toJson, type Shape } from './shapes';
+import { arcThrough, arcTangent, bounds, dist, ellipseAt, ellipseOf, fromJson, normAngle, toJson, type Shape } from './shapes';
 import { mapShape } from '../insetMap';
 import { liveBegin, liveEnd } from '../liveInput';
 import { traceBegin, traceEnd } from '../moveTrace';
@@ -315,6 +315,59 @@ function circle(): Step {
       preview: (p) => [{ type: 'circle', c, r: Math.max(dist(c, p), 1e-6) }],
       point: async (p) => { if (dist(c, p) > 1e-9) await draw([{ type: 'circle', c, r: dist(c, p) }], { radius: typedAt(p)?.length }); return null; },
       value: async (r) => { if (r > 0) await draw([{ type: 'circle', c, r }], { radius: r }); return null; },
+    }),
+  };
+}
+
+/**
+ * ELLIPSE (audit S4): its centre, the end of one semi-axis, then the other semi-axis's length (a point, or a value typed); the longer
+ * one becomes the major axis. Arc (A) at the last step draws an elliptical arc: then its start and its end, anticlockwise.
+ */
+function ellipse(): Step {
+  return {
+    prompt: 'Centre', want: 'point',
+    point: (c) => ({
+      prompt: 'End of one semi-axis', want: 'point', base: c,
+      preview: (p) => [{ type: 'line', a: c, b: p }],
+      point: (a) => {
+        const la = dist(c, a);
+        if (!(la > 1e-6)) return null;
+        const n = { x: -(a.y - c.y) / la, y: (a.x - c.x) / la };
+        const other = (p: Vec2) => Math.abs((p.x - c.x) * n.x + (p.y - c.y) * n.y);
+        const whole = (b: number) => ellipseOf(c, a, b);
+        const arcFrom = (e: Extract<Shape, { type: 'ellipse' }>): Step => {
+          const param = (p: Vec2) => {
+            const m = e.m, nn = { x: -m.y * e.ratio, y: m.x * e.ratio };
+            const d = { x: p.x - e.c.x, y: p.y - e.c.y };
+            return normAngle(Math.atan2((d.x * nn.x + d.y * nn.y) / (nn.x * nn.x + nn.y * nn.y), (d.x * m.x + d.y * m.y) / (m.x * m.x + m.y * m.y)));
+          };
+          return {
+            prompt: 'Start of the arc', want: 'point', base: e.c, preview: () => [e],
+            point: (p0) => {
+              const start = param(p0);
+              return {
+                prompt: 'End of the arc (anticlockwise)', want: 'point', base: e.c,
+                preview: (q) => [{ ...e, start, end: param(q) }, { type: 'line', a: e.c, b: ellipseAt(e, start) }],
+                point: async (q) => { const end = param(q); if (Math.abs(normAngle(end - start)) > 1e-9) await draw([{ ...e, start, end }]); return null; },
+              };
+            },
+          };
+        };
+        return {
+          prompt: 'Other semi-axis (a point or a value) · Arc (A)', want: 'point', base: c,
+          preview: (p) => { const e = whole(Math.max(other(p), 1e-6)); return e ? [e] : []; },
+          point: async (p) => { const e = whole(other(p)); if (e) await draw([e]); return null; },
+          value: async (b) => { const e = whole(b); if (e) await draw([e]); return null; },
+          keywords: {
+            A: () => ({
+              prompt: 'Other semi-axis (a point or a value)', want: 'point', base: c,
+              preview: (p) => { const e = whole(Math.max(other(p), 1e-6)); return e ? [e] : []; },
+              point: (p) => { const e = whole(other(p)); return e && e.type === 'ellipse' ? arcFrom(e) : null; },
+              value: (b) => { const e = whole(b); return e && e.type === 'ellipse' ? arcFrom(e) : null; },
+            }),
+          },
+        };
+      },
     }),
   };
 }
@@ -686,6 +739,7 @@ export const COMMANDS: CommandDef[] = [
   { names: ['RECTANGLE', 'REC', 'RECT'], label: 'Rectangle', start: rectangle },
   { names: ['CIRCLE', 'C'], label: 'Circle', start: circle },
   { names: ['ARC', 'A'], label: 'Arc', start: arc },
+  { names: ['ELLIPSE', 'EL'], label: 'Ellipse', start: ellipse },
   { names: ['MOVE', 'M', 'MV'], label: 'Move', start: () => moveOrCopy(false) },
   { names: ['COPY', 'CO', 'CP'], label: 'Copy', start: () => moveOrCopy(true) },
   { names: ['ROTATE', 'RO'], label: 'Rotate', start: () => rotate() },

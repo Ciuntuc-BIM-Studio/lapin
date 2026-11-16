@@ -47,9 +47,10 @@ public static class LineworkConverters
         var (corners, rises) = s.Outline();
         var args = new JsonObject { ["storeyId"] = storey.Id, ["points"] = LineworkConversion.Points(corners) };
         if (rises != null) args["arcs"] = new JsonArray([.. rises.Select(r => (JsonNode)Math.Round(r, 9))]);
+        if (s.Ellipses() is { } ellipses) args["ellipses"] = ellipses;
         if ((string?)o["typeId"] is { Length: > 0 } t) args["typeId"] = t;
         if (LineworkConversion.Num(o, "offset") is { } off) args["offset"] = off;
-        return [new("architecture.addSlab", args, s.Kind == "circle" ? $"A round floor on {storey.Name}" : $"A floor of {corners.Count} corners on {storey.Name}")];
+        return [new("architecture.addSlab", args, s.Kind is "circle" or "ellipse" ? $"A round floor on {storey.Name}" : $"A floor of {corners.Count} corners on {storey.Name}")];
     }, "A floor on each closed outline; a circle makes a round one.");
 
     public static readonly LineworkConverter Ceilings = new("ceiling", "Ceiling", "architecture", "closed", Plan,
@@ -63,9 +64,10 @@ public static class LineworkConverters
         var (corners, rises) = s.Outline();
         var args = new JsonObject { ["storeyId"] = storey.Id, ["points"] = LineworkConversion.Points(corners) };
         if (rises != null) args["arcs"] = new JsonArray([.. rises.Select(r => (JsonNode)Math.Round(r, 9))]);
+        if (s.Ellipses() is { } ellipses) args["ellipses"] = ellipses;
         if ((string?)o["typeId"] is { Length: > 0 } t) args["typeId"] = t;
         if (LineworkConversion.Num(o, "height") is { } h) args["height"] = h;
-        return [new("architecture.addCeiling", args, s.Kind == "circle" ? $"A round ceiling on {storey.Name}" : $"A ceiling of {corners.Count} corners on {storey.Name}")];
+        return [new("architecture.addCeiling", args, s.Kind is "circle" or "ellipse" ? $"A round ceiling on {storey.Name}" : $"A ceiling of {corners.Count} corners on {storey.Name}")];
     }, "A ceiling on each closed outline; a circle makes a round one.");
 
     /// <summary>The roof styles of the catalogue, by id, with their names.</summary>

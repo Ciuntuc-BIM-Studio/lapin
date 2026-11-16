@@ -30,6 +30,10 @@ The same bar serves every outline tool (floor, floor opening, ceiling, hole, roo
 
 ![The outline tools' bar, From drawn shape chosen](shots/outline-sources.webp)
 
+For a floor, a floor opening, a ceiling and a room by outline the bar also offers **Ellipse**: its centre, the end of one semi-axis, then the other. The outline's edges run along the true ellipse (four quarter edges), measured exactly; a corner moved off the ellipse turns its two edges straight, and a corner beside an elliptical edge is not filleted. IFC carries it as an IfcEllipse. **From drawn shape** takes a drafted ellipse the same way.
+
+![An elliptical floor being drawn beside a drafted ellipse](shots/ellipse-floor.webp)
+
 An opening through a floor (a stairwell, a shaft) is **Architecture → Opening** set to **Floor opening** (<kbd>SH</kbd>): its outline drawn inside the floor, as a polygon whose edges may be arcs, a rectangle or a circle.
 
 Any edge of a floor, a floor opening or a ceiling can be curved. Right-click the selected floor near an edge and choose **Make arc**: the edge bulges out by an eighth of its length, and a round grip appears at the middle of its arc. Drag that grip to bend the arc through the point you want (the diamond, now in the middle of the chord, still moves the edge). **Make straight** turns it back into a line. A corner between two straight edges can be rounded or cut: right-click it and choose **Fillet corner…** (type the radius) or **Chamfer corner…** (type how far back along each edge). The corner becomes two, where the arc or the cut meets its edges; a radius too large for the edges is refused. Each is one undo step.

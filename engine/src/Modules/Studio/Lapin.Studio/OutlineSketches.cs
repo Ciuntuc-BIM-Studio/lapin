@@ -62,11 +62,19 @@ public static class OutlineSketches
         (ctx.Services as ModuleCatalog)?.Command(name) ?? throw new CommandException($"Editing an outline as a sketch needs {name}, not in this product.");
 
     /// <summary>One line or arc per edge of an outline (an arc runs anticlockwise: from the edge's end when the edge turns clockwise).</summary>
-    public static List<Shape> ShapesOf(IReadOnlyList<Vec2> corners, IReadOnlyList<double>? rises)
+    public static List<Shape> ShapesOf(IReadOnlyList<Vec2> corners, IReadOnlyList<double>? rises, IReadOnlyList<EllipseEdge?>? ellipses = null)
     {
         var o = new List<Shape>();
         for (var i = 0; i < corners.Count; i++)
         {
+            // An elliptical edge (audit S4): an elliptical arc running anticlockwise, from its end when the edge turns clockwise.
+            if (ellipses != null && i < ellipses.Count && ellipses[i] is { } el)
+            {
+                var (t0, sweep) = el.Span(corners[i], corners[(i + 1) % corners.Count]);
+                var (from, to) = sweep > 0 ? (t0, t0 + sweep) : (t0 + sweep, t0);
+                o.Add(new Ellipse(el.C, el.M, el.Ratio, Geo.NormAngle(from), Geo.NormAngle(to)));
+                continue;
+            }
             var c = ArcOutline.Edge(corners, rises, i);
             if (!c.IsArc) { o.Add(new Line(c.Start, c.End)); continue; }
             var (a, b) = (c.Start - c.Centre, c.End - c.Centre);
@@ -84,13 +92,14 @@ public static class OutlineSketches
     {
         Line l => (l.A - p).Length <= (l.B - p).Length ? "start" : "end",
         Arc a => (a.At(a.Start) - p).Length <= (a.At(a.End) - p).Length ? "start" : "end",
+        Ellipse e => (e.At(e.Start) - p).Length <= (e.At(e.End) - p).Length ? "start" : "end",
         _ => "start",
     };
 
     /// <summary>A piece of the outline: from A to B, rising off its chord (left positive).</summary>
-    readonly record struct Piece(Vec2 A, Vec2 B, double Rise)
+    readonly record struct Piece(Vec2 A, Vec2 B, double Rise, EllipseEdge? El = null)
     {
-        public Piece Reversed => new(B, A, -Rise);
+        public Piece Reversed => new(B, A, -Rise, El?.Reversed);
     }
 
     /// <summary>
@@ -99,10 +108,22 @@ public static class OutlineSketches
     /// </summary>
     public static (List<Vec2> Corners, double[] Rises) Loop(IReadOnlyList<Shape> shapes)
     {
+        var (c, r, _) = Trace(shapes);
+        return (c, r);
+    }
+
+    /// <summary>As <see cref="Loop"/>, with the loop's elliptical edges (audit S4; null when none): a whole ellipse alone is one loop of four.</summary>
+    public static (List<Vec2> Corners, double[] Rises, EllipseEdge?[]? Ellipses) Trace(IReadOnlyList<Shape> shapes)
+    {
         if (shapes.Count == 1 && shapes[0] is Circle circle)
         {
             var (c, r) = ArcOutline.Circle(circle.C, circle.R);
-            return (c, r);
+            return (c, r, null);
+        }
+        if (shapes.Count == 1 && shapes[0] is Ellipse { Whole: true } whole)
+        {
+            var (c, el) = EllipseEdge.Whole(whole.C, whole.M, whole.Ratio);
+            return (c, new double[4], el);
         }
         var pieces = new List<Piece>();
         foreach (var s in shapes)
@@ -120,6 +141,12 @@ public static class OutlineSketches
                     break;
                 case Circle:
                     throw new CommandException("A circle is an outline only alone: trim it into arcs to join it to other lines.");
+                case Ellipse { Whole: true }:
+                    throw new CommandException("An ellipse is an outline only alone: trim it into elliptical arcs to join it to other lines.");
+                case Ellipse e:
+                    // Anticlockwise from its start.
+                    pieces.Add(new Piece(e.At(e.Start), e.At(e.End), 0, new EllipseEdge(e.C, e.M, e.Ratio, true)));
+                    break;
             }
         if (pieces.Count < 2) throw new CommandException("The sketch has no closed outline: draw its edges end to end.");
         bool Same(Vec2 p, Vec2 q) => (p - q).Length <= Tol;
@@ -143,21 +170,22 @@ public static class OutlineSketches
         // Straight pieces in line are one edge: a corner where nothing turns is not kept.
         var corners = chain.Select(p => p.A).ToList();
         var rises = chain.Select(p => p.Rise).ToList();
+        var ellipses = chain.Select(p => p.El).ToList();
         for (var i = corners.Count - 1; i >= 0 && corners.Count > 3; i--)
         {
             var prev = (i - 1 + corners.Count) % corners.Count;
-            if (rises[i] != 0 || rises[prev] != 0) continue;
+            if (rises[i] != 0 || rises[prev] != 0 || ellipses[i] != null || ellipses[prev] != null) continue;
             var (p, c, q) = (corners[prev], corners[i], corners[(i + 1) % corners.Count]);
-            if (Math.Abs(Vec2.Cross((c - p).Normalized(), (q - c).Normalized())) < 1e-9 && Vec2.Dot(c - p, q - c) > 0) { corners.RemoveAt(i); rises.RemoveAt(i); }
+            if (Math.Abs(Vec2.Cross((c - p).Normalized(), (q - c).Normalized())) < 1e-9 && Vec2.Dot(c - p, q - c) > 0) { corners.RemoveAt(i); rises.RemoveAt(i); ellipses.RemoveAt(i); }
         }
-        return (corners, [.. rises]);
+        return (corners, [.. rises], ellipses.Any(x => x != null) ? [.. ellipses] : null);
     }
 
     /// <summary>
     /// The shapes chained into closed outlines (audit S4): each set of shapes meeting end to end one loop (a circle alone one of
     /// its own), the largest the outline, the others its holes. Refused, saying why, when a set is not one closed loop.
     /// </summary>
-    public static (List<Vec2> Corners, double[] Rises, List<OutlineHoles.Hole> Holes) Loops(IReadOnlyList<Shape> shapes)
+    public static (List<Vec2> Corners, double[] Rises, EllipseEdge?[]? Ellipses, List<OutlineHoles.Hole> Holes) Loops(IReadOnlyList<Shape> shapes)
     {
         bool Same(Vec2 p, Vec2 q) => (p - q).Length <= Tol;
         IEnumerable<Vec2> Ends(Shape s) => s switch
@@ -165,6 +193,7 @@ public static class OutlineSketches
             Line l => [l.A, l.B],
             Polyline p => p.Closed ? p.Pts : [p.Pts[0], p.Pts[^1]],
             Arc a => [a.At(a.Start), a.At(a.End)],
+            Ellipse { Whole: false } e => [e.At(e.Start), e.At(e.End)],
             _ => [],
         };
         // Sets of shapes that meet end to end.
@@ -172,16 +201,17 @@ public static class OutlineSketches
         int Root(int i) => group[i] == i ? i : group[i] = Root(group[i]);
         for (var i = 0; i < shapes.Count; i++)
             for (var j = 0; j < i; j++)
-                if (shapes[i] is not Circle && shapes[j] is not Circle && Ends(shapes[i]).Any(p => Ends(shapes[j]).Any(q => Same(p, q)))) group[Root(i)] = Root(j);
-        var loops = Enumerable.Range(0, shapes.Count).GroupBy(Root).Select(g => Loop([.. g.Select(i => shapes[i])])).ToList();
+                if (shapes[i] is not (Circle or Ellipse { Whole: true }) && shapes[j] is not (Circle or Ellipse { Whole: true }) && Ends(shapes[i]).Any(p => Ends(shapes[j]).Any(q => Same(p, q)))) group[Root(i)] = Root(j);
+        var loops = Enumerable.Range(0, shapes.Count).GroupBy(Root).Select(g => Trace([.. g.Select(i => shapes[i])])).ToList();
         if (loops.Count == 0) throw new CommandException("The sketch has no closed outline: draw its edges end to end.");
-        var outer = loops.MaxBy(l => Math.Abs(ArcOutline.SignedArea(l.Corners, l.Rises)));
+        var outer = loops.MaxBy(l => Math.Abs(ArcOutline.SignedArea(l.Corners, l.Rises, l.Ellipses)));
         var holes = loops.Where(l => !ReferenceEquals(l.Corners, outer.Corners)).Select(l =>
         {
+            if (l.Ellipses != null) throw new CommandException("A hole's edges are lines and arcs: an elliptical one is not kept in a hole yet.");
             var (c, r) = ArcOutline.Check(l.Corners, l.Rises, "A hole");
             return new OutlineHoles.Hole(c, r);
         }).ToList();
-        return (outer.Corners, outer.Rises, holes);
+        return (outer.Corners, outer.Rises, outer.Ellipses, holes);
     }
 
     /// <summary>The view an element's outline is edited in, when it is.</summary>
@@ -189,7 +219,7 @@ public static class OutlineSketches
 
     static bool SameOutline(JsonObject sketch, Entity e) =>
         JsonNode.DeepEquals(sketch["contour"], e.Attrs["contour"]) && JsonNode.DeepEquals(sketch[ArcOutline.Key], e.Attrs[ArcOutline.Key])
-        && JsonNode.DeepEquals(sketch[OutlineHoles.Key], e.Attrs[OutlineHoles.Key]) && JsonNode.DeepEquals(sketch[OutlineHoles.ArcsKey], e.Attrs[OutlineHoles.ArcsKey]);
+        && JsonNode.DeepEquals(sketch[OutlineHoles.Key], e.Attrs[OutlineHoles.Key]) && JsonNode.DeepEquals(sketch[EllipseEdge.Key], e.Attrs[EllipseEdge.Key]) && JsonNode.DeepEquals(sketch[OutlineHoles.ArcsKey], e.Attrs[OutlineHoles.ArcsKey]);
 
     public static void Register(IModuleRegistry r)
     {
@@ -247,17 +277,19 @@ public static class OutlineSketches
                 rebuilt = e.Attrs[Key] != null;
                 var cs = new JsonArray();
                 // The outline, then each of its own holes (audit S4), every loop drawn one line or arc per edge.
-                var loops = new List<(IReadOnlyList<Vec2> Corners, IReadOnlyList<double>? Rises)> { (corners, ArcOutline.Rises(e.Attrs[ArcOutline.Key], corners.Count)) };
-                loops.AddRange(OutlineHoles.Of(e).Select(h => (h.Corners, (IReadOnlyList<double>?)h.Rises)));
-                foreach (var (loopCorners, loopRises) in loops)
+                var loops = new List<(IReadOnlyList<Vec2> Corners, IReadOnlyList<double>? Rises, IReadOnlyList<EllipseEdge?>? Ellipses)> { (corners, ArcOutline.Rises(e.Attrs[ArcOutline.Key], corners.Count), EllipseEdge.Of(e)) };
+                loops.AddRange(OutlineHoles.Of(e).Select(h => (h.Corners, (IReadOnlyList<double>?)h.Rises, (IReadOnlyList<EllipseEdge?>?)null)));
+                foreach (var (loopCorners, loopRises, loopEllipses) in loops)
                 {
-                    var shapes = ShapesOf(loopCorners, loopRises);
+                    var shapes = ShapesOf(loopCorners, loopRises, loopEllipses);
                     var loopIds = shapes.Select(s => Drafts.Add(ctx, view.Id, "0", s).Id).ToList();
                     ids.AddRange(loopIds);
                     // Its corners held: each edge's end on the next one's start, so a dimension moves the outline, never tears it.
                     for (var i = 0; i < shapes.Count; i++)
                     {
                         var j = (i + 1) % shapes.Count;
+                        // The sketch solver knows no ellipse (audit S4): an elliptical arc's ends are not held, its corners stay as drawn.
+                        if (shapes[i] is Ellipse || shapes[j] is Ellipse) continue;
                         var corner = loopCorners[j];
                         cs.Add((JsonNode)new JsonObject
                         {
@@ -266,7 +298,7 @@ public static class OutlineSketches
                         });
                     }
                 }
-                Command(ctx, "studio.addConstraint").Handler(ctx, new JsonObject { ["constraints"] = cs });
+                if (cs.Count > 0) Command(ctx, "studio.addConstraint").Handler(ctx, new JsonObject { ["constraints"] = cs });
             }
             return new JsonObject { ["viewId"] = view.Id, ["ids"] = new JsonArray([.. ids.Select(x => (JsonNode)x)]), ["constraints"] = restored, ["rebuilt"] = rebuilt };
         });
@@ -280,13 +312,15 @@ public static class OutlineSketches
             var drafts = Drafts.On(ctx.Model, view.Id).ToList();
             var outline = drafts.Where(d => d.Str("role") is null or "profile").Select(d => (d, Drafts.ShapeOf(d))).Where(x => x.Item2 != null).ToList();
             // Several closed loops (audit S4): the largest the outline, the others its holes, for an element that takes them.
-            var (corners, rises, holes) = Loops([.. outline.Select(x => x.Item2!)]);
+            var (corners, rises, ellipses, holes) = Loops([.. outline.Select(x => x.Item2!)]);
             if (holes.Count > 0 && !TakesHoles(e)) throw new CommandException("The sketch holds more than one outline: keep one, its edges end to end.");
             var update = new JsonObject
             {
                 ["id"] = e.Id,
                 ["points"] = new JsonArray([.. corners.Select(p => (JsonNode)new JsonArray(p.X, p.Y))]),
                 [ArcOutline.Key] = new JsonArray([.. rises.Select(x => (JsonNode)x)]),
+                // Its elliptical edges (audit S4); an empty list takes them away.
+                [EllipseEdge.Key] = new JsonArray([.. (ellipses ?? new EllipseEdge?[corners.Count]).Select(x => (JsonNode?)x?.ToJson())]),
             };
             if (TakesHoles(e))
             {
@@ -312,7 +346,7 @@ public static class OutlineSketches
                 ["contour"] = after.Attrs["contour"]?.DeepClone(),
             };
             if (after.Attrs[ArcOutline.Key] is { } arcs) sketch[ArcOutline.Key] = arcs.DeepClone();
-            foreach (var k in new[] { OutlineHoles.Key, OutlineHoles.ArcsKey })
+            foreach (var k in new[] { OutlineHoles.Key, OutlineHoles.ArcsKey, EllipseEdge.Key })
                 if (after.Attrs[k] is { } held) sketch[k] = held.DeepClone();
             var attrs = after.CloneAttrs();
             attrs[Key] = sketch;

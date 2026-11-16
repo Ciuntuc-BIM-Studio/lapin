@@ -1950,6 +1950,45 @@ export const scenes = [
     },
   },
   {
+    // A true ellipse (audit S4): Draft → Ellipse (centre, one semi-axis's end, the other semi-axis) kept as an ellipse; the Floor
+    // tool's bar draws an elliptical floor, measured on the ellipse.
+    id: 'drafting-ellipse',
+    touches: ['drafting', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      await t.ui({ keyPlan: false });
+      const storey = await t.storey();
+      const frame = await t.cmd('architecture.addSlab', { storeyId: storey, points: [[0, -1], [14, -1], [14, 5], [0, 5]] });
+      await t.ui({ view: 'plan', planViewId: null });
+      await t.fit();
+      await t.cmd('element.delete', { id: frame.id });
+      await t.wait(500);
+      await t.tool('cad.ellipse');
+      const [cx, cy] = await t.planPoint(3, 2), [ax, ay] = await t.planPoint(6, 2), [bx, by] = await t.planPoint(4, 3.5);
+      await t.page.mouse.click(cx, cy);
+      await t.page.mouse.click(ax, ay);
+      await t.page.mouse.move(bx, by, { steps: 6 });
+      await t.page.mouse.click(bx, by);
+      await t.until(async () => (await t.nodes()).some((n) => n.props.predefinedType === 'DRAFT' && n.props.shape?.type === 'ellipse'), 'the drafted ellipse is kept as an ellipse');
+      await t.keys('Escape');
+      await t.ui({ tool: null });
+      await t.tool('architecture.slab');
+      await t.page.locator('[data-testid=command-line] [data-testid=outline-shape] [data-shape=ellipse]').click();
+      const [fx, fy] = await t.planPoint(10, 2), [gx, gy] = await t.planPoint(10, 4), [hx, hy] = await t.planPoint(12.5, 2);
+      await t.page.mouse.click(fx, fy);
+      await t.page.mouse.click(gx, gy);
+      await t.page.mouse.move(hx, hy, { steps: 6 });
+      await t.wait(300);
+      await t.shot('ellipse-floor', { of: '.plan-svg', pad: 0 });
+      await t.page.mouse.click(hx, hy);
+      await t.until(async () => (await t.nodes()).some((n) => n.type === 'IfcSlab' && Array.isArray(n.props.ellipses)), 'an elliptical floor from the bar');
+      await t.page.locator('[data-testid=command-line] [data-testid=outline-shape] [data-shape=polygon]').click();
+      await t.keys('Escape');
+      await t.ui({ tool: null });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     // Fillet and chamfer on walls and railings (a user's request): Architecture → Fillet takes two walls (a curved wall between
     // them, both trimmed to it); a railing's corner rounded from its grip's right-click, its arc built along the true curve.
     id: 'walls-fillet',

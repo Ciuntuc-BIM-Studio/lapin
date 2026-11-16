@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { arrivingDir, circleOutline, inLoop, outlineOfDraft, rectangleOutline, tangentRise } from './outlineShape';
+import { arrivingDir, circleOutline, ellipseOutline, inLoop, loopOf, outlineOfDraft, rectangleOutline, tangentRise } from './outlineShape';
 
 describe('outline tools\' shapes (forum topic 97, stage 2)', () => {
   it('draws a rectangle anticlockwise whichever corners are clicked', () => {
@@ -44,5 +44,20 @@ describe('an outline taken from a source (audit S4)', () => {
     const sq = [{ x: 0, y: 0 }, { x: 2, y: 0 }, { x: 2, y: 2 }, { x: 0, y: 2 }];
     expect(inLoop(sq, { x: 1, y: 1 })).toBe(true);
     expect(inLoop(sq, { x: 3, y: 1 })).toBe(false);
+  });
+});
+
+describe('an elliptical outline (audit S4)', () => {
+  it('keeps the longer semi-axis as the major one, its four corners on the ellipse', () => {
+    const e = ellipseOutline({ x: 0, y: 0 }, { x: 0, y: 1 }, { x: 3, y: 0 })!;
+    expect(e.pts).toHaveLength(4);
+    expect(Math.hypot(...e.ellipses[0].m)).toBeCloseTo(3, 9);
+    expect(e.ellipses[0].ratio).toBeCloseTo(1 / 3, 9);
+    for (const p of e.pts) expect((p.x / 3) ** 2 + p.y ** 2).toBeCloseTo(1, 9);
+    expect(outlineOfDraft({ type: 'ellipse', c: [0, 0], m: [2, 0], ratio: 0.5 })!.ellipses).toHaveLength(4);
+    expect(outlineOfDraft({ type: 'ellipse', c: [0, 0], m: [2, 0], ratio: 0.5, start: 0, end: 1 })).toBeNull();
+    // Its loop for the screen goes round the ellipse.
+    expect(inLoop(loopOf(e), { x: 2.5, y: 0.1 })).toBe(true);
+    expect(inLoop(loopOf(e), { x: 2.5, y: 0.9 })).toBe(false);
   });
 });

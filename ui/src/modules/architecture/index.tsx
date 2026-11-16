@@ -7,7 +7,7 @@ import { flipAcross, frameAt, holeGrips, holeRefs, outlineGrips, outlineRef, pat
 import { architectureGrips3d } from './grips3d';
 import { arcOf, project, type Arc } from '../../viewport/arc';
 import { arcsOf, fromPairs } from '../../viewport/contour';
-import { FloorShapeBar, PlainShapeBar, toggleOutlineArcs } from '../../viewport/outlineShape';
+import { FloorShapeBar, EllipseShapeBar, PlainShapeBar, loopOf, toggleOutlineArcs, type EllipseEdgeJson } from '../../viewport/outlineShape';
 import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
 import { activeStorey, execute, query, useSession } from '../../engine/session';
@@ -316,7 +316,14 @@ function contourGrips(command: string, withEdges = false) {
  * over a grip or its right-click menu takes it out.
  */
 const roofGrips = (node: NodeDto): Grip[] => [...contourGrips('architecture.updateRoof', true)(node), ...roofOpeningGrips(node)];
-const contourRefs = (node: NodeDto): RefLine[] => { const pts = fromPairs(node.props.contour); return pts.length >= 3 ? [outlineRef(pts, arcsOf(node.props.arcs, pts.length)), ...holeRefs(node.props.holes, node.props.holeArcs)] : []; };
+const contourRefs = (node: NodeDto): RefLine[] => {
+  const pts = fromPairs(node.props.contour);
+  if (pts.length < 3) return [];
+  // Elliptical edges (audit S4) along their ellipses.
+  const ellipses = Array.isArray(node.props.ellipses) && node.props.ellipses.length === pts.length ? (node.props.ellipses as (EllipseEdgeJson | null)[]) : undefined;
+  const outer: RefLine = ellipses ? { points: loopOf({ pts, arcs: arcsOf(node.props.arcs, pts.length), ellipses }), closed: true, kind: 'outline' } : outlineRef(pts, arcsOf(node.props.arcs, pts.length));
+  return [outer, ...holeRefs(node.props.holes, node.props.holeArcs)];
+};
 
 /**
  * The selected walls rise to the underside of the element clicked, from any
@@ -425,9 +432,9 @@ const slab: ToolDef = {
   gesture: { kind: 'polygon', shapes: true },
   options: FloorShapeBar,
   space: toggleOutlineArcs,
-  complete: async ({ points, arcs }, ctx) => {
+  complete: async ({ points, arcs, ellipses }, ctx) => {
     const typeId = useUi.getState().slabTypeId;
-    const where = points.length === 1 ? { x: points[0].x, y: points[0].y } : { points: points.map((p) => [p.x, p.y]), ...(arcs ? { arcs } : {}) };
+    const where = points.length === 1 ? { x: points[0].x, y: points[0].y } : { points: points.map((p) => [p.x, p.y]), ...(arcs ? { arcs } : {}), ...(ellipses ? { ellipses } : {}) };
     await ctx.execute('architecture.addSlab', { storeyId: ctx.storeyId, ...where, ...(typeId ? { typeId } : {}) });
   },
 };
@@ -444,11 +451,11 @@ const roof: ToolDef = {
 const slabOpeningPart: ToolDef = {
   id: 'architecture.slabOpening', label: 'Floor opening', icon: SlabOpeningIcon, shortcut: 'SH',
   gesture: { kind: 'polygon', shapes: true },
-  options: PlainShapeBar,
+  options: EllipseShapeBar,
   space: toggleOutlineArcs,
-  complete: async ({ points, arcs }, ctx) => {
+  complete: async ({ points, arcs, ellipses }, ctx) => {
     if (points.length < 3) return;
-    await ctx.execute('architecture.addSlabOpening', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]), ...(arcs ? { arcs } : {}) });
+    await ctx.execute('architecture.addSlabOpening', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]), ...(arcs ? { arcs } : {}), ...(ellipses ? { ellipses } : {}) });
   },
 };
 /**

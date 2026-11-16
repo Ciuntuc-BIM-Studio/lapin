@@ -45,5 +45,7 @@ export function rotatedShape(s: Shape, c: Vec2, deg: number): Shape {
     case 'polyline': return { ...s, pts: s.pts.map((p) => turned(p, c, deg)) };
     case 'circle': return { ...s, c: turned(s.c, c, deg) };
     case 'arc': return { ...s, c: turned(s.c, c, deg), start: s.start + a, end: s.end + a };
+    // Its parameters run from its own major axis, which turns with it.
+    case 'ellipse': return { ...s, c: turned(s.c, c, deg), m: { x: s.m.x * Math.cos(a) - s.m.y * Math.sin(a), y: s.m.x * Math.sin(a) + s.m.y * Math.cos(a) } };
   }
 }

@@ -26,6 +26,10 @@ Den samme bjælke gælder for alle omridsværktøjer (dæk, dækåbning, loft, h
 
 ![Omridsværktøjernes bjælke med From drawn shape valgt](shots/outline-sources.webp)
 
+For dæk, dækåbning, loft og rum efter omrids giver bjælken også **Ellipse**: centrum, enden af en halvakse, så den anden. Omridsets kanter følger den sande ellipse (fire kvarte kanter), målt nøjagtigt; et hjørne flyttet bort fra ellipsen gør dets to kanter lige, og et hjørne ved en elliptisk kant afrundes ikke. IFC bærer den som IfcEllipse. **From drawn shape** tager en tegnet ellipse på samme måde.
+
+![Et elliptisk dæk tegnes ved siden af en tegnet ellipse](shots/ellipse-floor.webp)
+
 Enhver kant af et dæk, en dækåbning eller et loft kan være buet. Højreklik på det markerede dæk nær en kant og vælg **Gør til bue**: kanten buer ud med en ottendedel af sin længde, og et rundt greb vises midt på buen. Træk i det for at bøje buen gennem det ønskede punkt (romben, nu midt på korden, flytter stadig kanten). **Gør lige** gør den til en linje igen. Et hjørne mellem to lige kanter kan afrundes eller affases: højreklik på det og vælg **Afrund hjørne…** (skriv radius) eller **Affas hjørne…** (skriv hvor langt tilbage langs hver kant). Hjørnet bliver til to, hvor buen eller affasningen møder kanterne; en radius, der er for stor til kanterne, afvises. Hver er ét fortryd-trin.
 
 ![Et dæk med en buet kant og et afrundet hjørne](shots/floor-curved-edge.webp)

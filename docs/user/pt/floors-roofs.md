@@ -26,6 +26,10 @@ A mesma barra serve todas as ferramentas de contorno (laje, abertura de laje, te
 
 ![A barra das ferramentas de contorno, com From drawn shape escolhido](shots/outline-sources.webp)
 
+Para laje, abertura de laje, teto e ambiente por contorno a barra oferece também **Ellipse**: o centro, a ponta de um semieixo e depois o outro. As arestas do contorno seguem a elipse verdadeira (quatro quartos), medidas exatamente; um canto tirado da elipse torna retas as suas duas arestas, e um canto junto a uma aresta elíptica não é arredondado. O IFC leva-a como IfcEllipse. **From drawn shape** toma do mesmo modo uma elipse desenhada.
+
+![Uma laje elíptica a ser desenhada ao lado de uma elipse desenhada](shots/ellipse-floor.webp)
+
 Qualquer aresta de um piso, de uma abertura no piso ou de um forro pode ser curva. Clique com o botão direito no piso selecionado perto de uma aresta e escolha **Tornar arco**: a aresta curva-se para fora um oitavo do seu comprimento e aparece uma alça redonda no meio do arco. Arraste-a para curvar o arco pelo ponto desejado (o losango, agora no meio da corda, continua a mover a aresta). **Tornar reto** volta a fazê-la uma linha. Um canto entre duas arestas retas pode ser arredondado ou chanfrado: clique nele com o botão direito e escolha **Arredondar canto…** (digite o raio) ou **Chanfrar canto…** (digite quanto recua ao longo de cada aresta). O canto torna-se dois, onde o arco ou o chanfro encontra as arestas; um raio grande demais para as arestas é recusado. Cada um é um passo de desfazer.
 
 ![Um piso com uma aresta curva e um canto arredondado](shots/floor-curved-edge.webp)

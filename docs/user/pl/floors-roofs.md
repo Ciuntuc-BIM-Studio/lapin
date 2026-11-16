@@ -26,6 +26,10 @@ Ten sam pasek służy wszystkim narzędziom obrysu (strop, otwór w stropie, suf
 
 ![Pasek narzędzi obrysu z wybranym From drawn shape](shots/outline-sources.webp)
 
+Dla stropu, otworu w stropie, sufitu i pomieszczenia z obrysu pasek oferuje też **Ellipse**: środek, koniec jednej półosi, potem drugą. Krawędzie obrysu biegną po prawdziwej elipsie (cztery ćwiartki), mierzone dokładnie; narożnik przesunięty z elipsy prostuje swoje dwie krawędzie, a narożnik przy krawędzi eliptycznej nie jest zaokrąglany. IFC zapisuje ją jako IfcEllipse. **From drawn shape** bierze tak samo narysowaną elipsę.
+
+![Eliptyczny strop rysowany obok narysowanej elipsy](shots/ellipse-floor.webp)
+
 Każda krawędź stropu, otworu w stropie lub sufitu może być krzywa. Kliknij prawym przyciskiem zaznaczony strop przy krawędzi i wybierz **Zamień na łuk**: krawędź wygina się na zewnątrz o jedną ósmą swojej długości, a na środku łuku pojawia się okrągły uchwyt. Przeciągnij go, aby wygiąć łuk przez wybrany punkt (romb, teraz na środku cięciwy, nadal przesuwa krawędź). **Wyprostuj** zamienia ją z powrotem w linię. Narożnik między dwiema prostymi krawędziami można zaokrąglić lub sfazować: kliknij go prawym przyciskiem i wybierz **Zaokrąglij narożnik…** (wpisz promień) lub **Sfazuj narożnik…** (wpisz, jak daleko wstecz wzdłuż każdej krawędzi). Narożnik staje się dwoma, tam gdzie łuk lub faza spotyka krawędzie; zbyt duży promień jest odrzucany. Każde z nich to jeden krok cofania.
 
 ![Strop z krzywą krawędzią i zaokrąglonym narożnikiem](shots/floor-curved-edge.webp)

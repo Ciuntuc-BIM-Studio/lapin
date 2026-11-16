@@ -30,6 +30,10 @@ Aceeași bară servește toate uneltele cu contur (placă, gol în placă, tavan
 
 ![Bara uneltelor cu contur, cu From drawn shape ales](shots/outline-sources.webp)
 
+Pentru placă, gol în placă, tavan și încăpere după contur, bara oferă și **Ellipse**: centrul, capătul unei semiaxe, apoi cealaltă. Laturile conturului merg pe elipsa adevărată (patru sferturi), măsurate exact; un colț mutat de pe elipsă îi face cele două laturi drepte, iar un colț lângă o latură eliptică nu se racordează. IFC o duce ca IfcEllipse. **From drawn shape** ia la fel o elipsă desenată.
+
+![O placă eliptică desenată lângă o elipsă din Desen](shots/ellipse-floor.webp)
+
 Un gol prin placă (o casă a scării, un ghene) e **Arhitectură → Gol** cu **Gol în placă** (<kbd>SH</kbd>): conturul lui desenat în placă, ca un poligon cu laturi care pot fi arce, un dreptunghi sau un cerc.
 
 Orice latură a unei plăci, a unui gol în placă sau a unui tavan poate fi curbă. Dă clic dreapta pe placa selectată lângă o latură și alege **Fă arc**: latura se bombează în afară cu o optime din lungimea ei, iar la mijlocul arcului apare un mâner rotund. Trage de el ca să curbezi arcul prin punctul dorit (rombul, acum la mijlocul coardei, mută în continuare latura). **Fă dreaptă** o face din nou linie. Un colț între două laturi drepte poate fi rotunjit sau teșit: dă clic dreapta pe el și alege **Racordează colțul…** (tastezi raza) sau **Teșește colțul…** (tastezi cât se retrage pe fiecare latură). Colțul devine două, unde arcul sau teșitura întâlnește laturile; o rază prea mare pentru laturi e refuzată. Fiecare e un singur pas de anulare.

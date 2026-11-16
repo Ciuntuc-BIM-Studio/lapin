@@ -26,6 +26,10 @@ La misma barra sirve a todas las herramientas de contorno (forjado, hueco de for
 
 ![La barra de las herramientas de contorno, con From drawn shape elegido](shots/outline-sources.webp)
 
+Para forjado, hueco de forjado, techo y habitación por contorno, la barra ofrece también **Ellipse**: su centro, el extremo de un semieje y luego el otro. Los bordes del contorno siguen la elipse verdadera (cuatro cuartos), medidos exactamente; una esquina movida fuera de la elipse vuelve rectos sus dos bordes, y una esquina junto a un borde elíptico no se redondea. IFC la lleva como IfcEllipse. **From drawn shape** toma igual una elipse dibujada.
+
+![Un forjado elíptico dibujándose junto a una elipse dibujada](shots/ellipse-floor.webp)
+
 Cualquier borde de una losa, de un hueco en losa o de un falso techo puede ser curvo. Haga clic derecho en la losa seleccionada cerca de un borde y elija **Convertir en arco**: el borde se curva hacia fuera un octavo de su longitud y aparece un pinzamiento redondo en el centro del arco. Arrástrelo para curvar el arco por el punto que quiera (el rombo, ahora en el centro de la cuerda, sigue moviendo el borde). **Convertir en recto** lo vuelve una línea. Una esquina entre dos bordes rectos se puede redondear o achaflanar: haga clic derecho en ella y elija **Redondear esquina…** (escriba el radio) o **Achaflanar esquina…** (escriba cuánto retrocede por cada borde). La esquina se convierte en dos, donde el arco o el chaflán encuentran los bordes; un radio demasiado grande para los bordes se rechaza. Cada uno es un paso de deshacer.
 
 ![Una losa con un borde curvo y una esquina redondeada](shots/floor-curved-edge.webp)

@@ -26,6 +26,10 @@ La même barre sert à tous les outils de contour (plancher, trémie, plafond, t
 
 ![La barre des outils de contour, From drawn shape choisi](shots/outline-sources.webp)
 
+Pour un plancher, une trémie, un plafond et une pièce par contour, la barre propose aussi **Ellipse** : son centre, l’extrémité d’un demi-axe, puis l’autre. Les bords du contour suivent la vraie ellipse (quatre quarts), mesurés exactement ; un angle sorti de l’ellipse rend ses deux bords droits, et un angle près d’un bord elliptique n’est pas arrondi. L’IFC la porte en IfcEllipse. **From drawn shape** prend de même une ellipse dessinée.
+
+![Un plancher elliptique en cours de dessin à côté d’une ellipse dessinée](shots/ellipse-floor.webp)
+
 Toute arête d'une dalle, d'une trémie ou d'un faux plafond peut être courbe. Faites un clic droit sur la dalle sélectionnée près d'une arête et choisissez **Faire un arc** : l'arête se bombe vers l'extérieur d'un huitième de sa longueur, et une poignée ronde apparaît au milieu de l'arc. Faites-la glisser pour courber l'arc par le point voulu (le losange, désormais au milieu de la corde, déplace toujours l'arête). **Rendre droite** la refait en ligne. Un coin entre deux arêtes droites peut être arrondi ou chanfreiné : faites un clic droit dessus et choisissez **Arrondir le coin…** (saisissez le rayon) ou **Chanfreiner le coin…** (saisissez le recul le long de chaque arête). Le coin devient deux, là où l'arc ou le chanfrein rencontre les arêtes ; un rayon trop grand pour les arêtes est refusé. Chacun est une seule étape d'annulation.
 
 ![Une dalle avec une arête courbe et un coin arrondi](shots/floor-curved-edge.webp)
