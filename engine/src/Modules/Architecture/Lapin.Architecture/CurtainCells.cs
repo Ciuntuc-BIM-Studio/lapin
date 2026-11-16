@@ -430,12 +430,7 @@ public static class CurtainCells
         return dedup.Count >= 3 && Area(dedup) > 1e-6 ? dedup : null;
     }
 
-    static double Area(IReadOnlyList<Vec2> p)
-    {
-        var s = 0.0;
-        for (var k = 0; k < p.Count; k++) { var (a, b) = (p[k], p[(k + 1) % p.Count]); s += a.X * b.Y - b.X * a.Y; }
-        return Math.Abs(s) / 2;
-    }
+    static double Area(IReadOnlyList<Vec2> p) => Math.Abs(Polygon2.SignedArea(p));
 
     /// <summary>A gap under a millimetre is none: the door meets the cell's edge.</summary>
     const double Gap = 1e-3;
