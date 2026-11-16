@@ -10,7 +10,7 @@ Fila **Studio** face solide pe care nu le construiește nicio altă filă: o ban
 
 ![Fila Studio](shots/ribbon-studio.webp)
 
-Uneltele ei stau în șase grupuri: **Schiță** (linii, dreptunghiuri, cercuri, **Arce** ▾, decalare și, sub ele, schițarea pe o față sau pe un plan, **Editări de schiță** ▾, **Planuri de lucru** ▾ și **Pe față** ▾), **Constrângeri** (listele **Geometrice** ▾ și **Dimensiuni** ▾), **Solide** (extrudare, baleiere, revoluție, loft, editare schiță, **Cu grosime** ▾ și **Primitive** ▾), **Familii** (plasarea și editarea pieselor), **Modifică** (împinge/trage, rotunjire, șanfren, coajă, divizare, **Multiplicări** ▾ și **Mută, rotește, oglindește** ▾) și **Booleene**. Un buton cu ▾ deschide lista lui; fiecare unealtă își păstrează literele, iar **Comenzi…** și **Uneltele mele** o găsesc ca până acum.
+Uneltele ei stau în șase grupuri: **Schiță** (linii, dreptunghiuri, cercuri, **Arce** ▾, decalare și, sub ele, schițarea pe o față sau pe un plan, **Editări de schiță** ▾, **Planuri de lucru** ▾ și **Pe față** ▾), **Constrângeri** (listele **Geometrice** ▾ și **Dimensiuni** ▾), **Solide** (extrudare, baleiere, revoluție, loft, editare schiță, **Cu grosime** ▾ și **Primitive** ▾), **Părți** (plasarea și editarea pieselor), **Modifică** (împinge/trage, rotunjire, șanfren, coajă, divizare, **Multiplicări** ▾ și **Mută, rotește, oglindește** ▾) și **Booleene**. Un buton cu ▾ deschide lista lui; fiecare unealtă își păstrează literele, iar **Comenzi…** și **Uneltele mele** o găsesc ca până acum.
 
 Un solid Studio are o clasă IFC, ca orice element. O alegi în proprietățile lui: element de structură, placă, finisaj, balustradă, placă de planșeu sau oricare alta. Cantitățile și exportul lui urmează clasa aleasă.
 
@@ -165,10 +165,10 @@ Proprietățile unei polilinii îi arată laturile. Scrie lungimea unei laturi, 
 
 **Scade**, **Unește** și **Intersectează** combină orice elemente, primul selectat fiind ținta. Uneltele rămân editabile, iar rezultatul le urmează. **Arată operanzii** arată uneltele ascunse ale unei uniri, ca să le editezi. **Anulează operația** separă din nou elementele.
 
-## Familii
+## Piese și familii
 
-O **familie** este un solid propriu cu parametri, așezat de câte ori ai nevoie. Vezi pagina Familii. Familiile sunt acum piese: selectează una și apasă Tab ca s-o editezi pe loc (pagina Piese).
+O **piesă** (ceea ce se numea **familie**) este un solid propriu cu parametri, așezat de câte ori ai nevoie, din **Studio → Piese…**. Vezi pagina Familii pentru manager și pagina Piese: selectează un obiect al ei și apasă Tab ca s-o editezi pe loc.
 
 ## Piese
 
-Selectează în 3D un solid sau o piesă plasată și apasă **Tab**, dă dublu clic pe ea sau folosește **Studio → Familii → Editează piesa**: restul modelului se estompează, iar arborele piesei arată originea, schițele, pașii și parametrii. Vezi pagina Piese.
+Selectează în 3D un solid sau o piesă plasată și apasă **Tab**, dă dublu clic pe ea sau folosește **Studio → Părți → Editează piesa**: restul modelului se estompează, iar arborele piesei arată originea, schițele, pașii și parametrii. Vezi pagina Piese.

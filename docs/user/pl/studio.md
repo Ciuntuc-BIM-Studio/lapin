@@ -10,7 +10,7 @@ Karta **Studio** tworzy bryły, których nie buduje żadna inna karta: ławkę, 
 
 ![Karta Studio](shots/ribbon-studio.webp)
 
-Jej narzędzia stoją w sześciu grupach: **Szkic** (linie, prostokąty, okręgi, **Łuki** ▾, odsunięcie, a pod nimi szkicowanie na ścianie lub płaszczyźnie, **Edycja szkicu** ▾, **Płaszczyzny robocze** ▾ i **Na ścianie** ▾), **Więzy** (listy **Geometryczne** ▾ i **Wymiary** ▾), **Bryły** (wyciągnięcie, przeciągnięcie, obrót, loft, edycja szkicu, **Z grubością** ▾ i **Prymitywy** ▾), **Rodziny** (wstawianie i edycja części), **Modyfikuj** (wypychanie/wciąganie, zaokrąglenie, fazowanie, powłoka, podział, **Szyki** ▾ i **Przesuń, obróć, odbij** ▾) oraz **Boolowskie**. Przycisk z ▾ otwiera swoją listę; każde narzędzie zachowuje swoje litery, a **Polecenia…** i **Moje narzędzia** znajdują je jak dotąd.
+Jej narzędzia stoją w sześciu grupach: **Szkic** (linie, prostokąty, okręgi, **Łuki** ▾, odsunięcie, a pod nimi szkicowanie na ścianie lub płaszczyźnie, **Edycja szkicu** ▾, **Płaszczyzny robocze** ▾ i **Na ścianie** ▾), **Więzy** (listy **Geometryczne** ▾ i **Wymiary** ▾), **Bryły** (wyciągnięcie, przeciągnięcie, obrót, loft, edycja szkicu, **Z grubością** ▾ i **Prymitywy** ▾), **Części** (wstawianie i edycja części), **Modyfikuj** (wypychanie/wciąganie, zaokrąglenie, fazowanie, powłoka, podział, **Szyki** ▾ i **Przesuń, obróć, odbij** ▾) oraz **Boolowskie**. Przycisk z ▾ otwiera swoją listę; każde narzędzie zachowuje swoje litery, a **Polecenia…** i **Moje narzędzia** znajdują je jak dotąd.
 
 Bryła Studio ma klasę IFC, jak każdy element. Wybierz ją w jej właściwościach: element prętowy, płyta, okładzina, balustrada, płyta stropowa lub dowolna inna. Jej ilości i eksport podążają za tą klasą.
 

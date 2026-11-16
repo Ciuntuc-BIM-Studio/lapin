@@ -10,7 +10,7 @@ La ficha **Studio** crea sólidos que ninguna otra ficha construye: un banco, un
 
 ![La ficha Studio](shots/ribbon-studio.webp)
 
-Sus herramientas están en seis grupos: **Boceto** (líneas, rectángulos, círculos, los **Arcos** ▾, desfase y, debajo, el croquizado sobre una cara o un plano, **Ediciones de boceto** ▾, **Planos de trabajo** ▾ y **En cara** ▾), **Restricciones** (las listas **Geométricas** ▾ y **Dimensiones** ▾), **Sólidos** (extruir, barrer, revolución, solevación, editar boceto, **Con espesor** ▾ y **Primitivas** ▾), **Familias** (colocar y editar piezas), **Modificar** (empujar/tirar, empalme, chaflán, vaciado, dividir, **Matrices** ▾ y **Mover, girar, simetría** ▾) y **Booleanas**. Un botón con ▾ abre su lista; cada herramienta conserva sus letras, y **Comandos…** y **Mis herramientas** la encuentran como antes.
+Sus herramientas están en seis grupos: **Boceto** (líneas, rectángulos, círculos, los **Arcos** ▾, desfase y, debajo, el croquizado sobre una cara o un plano, **Ediciones de boceto** ▾, **Planos de trabajo** ▾ y **En cara** ▾), **Restricciones** (las listas **Geométricas** ▾ y **Dimensiones** ▾), **Sólidos** (extruir, barrer, revolución, solevación, editar boceto, **Con espesor** ▾ y **Primitivas** ▾), **Partes** (colocar y editar piezas), **Modificar** (empujar/tirar, empalme, chaflán, vaciado, dividir, **Matrices** ▾ y **Mover, girar, simetría** ▾) y **Booleanas**. Un botón con ▾ abre su lista; cada herramienta conserva sus letras, y **Comandos…** y **Mis herramientas** la encuentran como antes.
 
 Un sólido Studio tiene una clase IFC, como cualquier elemento. Elíjala en sus propiedades: una barra, una placa, un revestimiento, una barandilla, una losa u otra. Sus cantidades y su exportación siguen esa clase.
 

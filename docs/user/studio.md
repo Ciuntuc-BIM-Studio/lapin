@@ -10,7 +10,7 @@ The **Studio** tab makes solids that no other tab builds: a bench, a canopy, a h
 
 ![The Studio tab](shots/ribbon-studio.webp)
 
-Its tools stand in six groups: **Sketch** (lines, rectangles, circles, the **Arcs** ▾, offset, and under it sketching on a face or a plane, the **Sketch edits** ▾, the **Work planes** ▾ and the **On face** ▾), **Constraints** (the **Geometric** ▾ and **Dimensions** ▾ lists), **Solids** (extrude, sweep, revolve, loft, edit sketch, the **Thick** ▾ and **Primitives** ▾), **Families** (placing and editing parts), **Modify** (push/pull, fillet, chamfer, shell, split, the **Arrays** ▾ and **Move, rotate, mirror** ▾) and **Boolean**. A button with ▾ opens its list; each tool keeps its letters, and **Commands…** and **My tools** find it as before.
+Its tools stand in six groups: **Sketch** (lines, rectangles, circles, the **Arcs** ▾, offset, and under it sketching on a face or a plane, the **Sketch edits** ▾, the **Work planes** ▾ and the **On face** ▾), **Constraints** (the **Geometric** ▾ and **Dimensions** ▾ lists), **Solids** (extrude, sweep, revolve, loft, edit sketch, the **Thick** ▾ and **Primitives** ▾), **Parts** (placing and editing parts), **Modify** (push/pull, fillet, chamfer, shell, split, the **Arrays** ▾ and **Move, rotate, mirror** ▾) and **Boolean**. A button with ▾ opens its list; each tool keeps its letters, and **Commands…** and **My tools** find it as before.
 
 A Studio solid has an IFC class, like any element. Choose it in its properties: a member, a plate, a covering, a railing, a slab or any other. Its quantities and its export follow that class.
 
@@ -165,10 +165,10 @@ A polyline's properties list its sides. Type a side's length, and its end moves 
 
 **Subtract**, **Union** and **Intersect** combine any elements, with the first one selected as the target. The tools stay editable, and the result follows them. **Show operands** shows the hidden tools of a union for editing. **Remove operation** separates the elements again.
 
-## Families
+## Parts and families
 
-A **family** is a solid of your own with parameters, placed as many times as you need. See the Families page. Families are parts now: select one and press Tab to edit it in place (the Parts page).
+A **part** (what used to be a **family**) is a solid of your own with parameters, placed as many times as you need, from **Studio → Parts…**. See the Families page for the manager and the Parts page: select an object of one and press Tab to edit it in place.
 
 ## Parts
 
-Select a solid or a placed part in 3D and press **Tab**, double-click it, or use **Studio → Families → Edit part**: the rest of the model fades and the part's tree lists its origin, sketches, steps and parameters. See the Parts page.
+Select a solid or a placed part in 3D and press **Tab**, double-click it, or use **Studio → Parts → Edit part**: the rest of the model fades and the part's tree lists its origin, sketches, steps and parameters. See the Parts page.

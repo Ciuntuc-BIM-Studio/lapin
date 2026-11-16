@@ -10,7 +10,7 @@ Fanen **Studio** laver legemer, som ingen anden fane bygger: en bænk, et halvta
 
 ![Fanen Studio](shots/ribbon-studio.webp)
 
-Fanens værktøjer står i seks grupper: **Skitse** (linjer, rektangler, cirkler, **Buer** ▾, forskydning og, under dem, skitsering på en flade eller et plan, **Skitseredigering** ▾, **Arbejdsplaner** ▾ og **På flade** ▾), **Geometriske bånd** (listerne **Geometriske** ▾ og **Mål** ▾), **Legemer** (ekstrudér, fej, drej, loft, redigér skitse, **Med tykkelse** ▾ og **Grundformer** ▾), **Familier** (placering og redigering af dele), **Redigér** (skub/træk, afrunding, affasning, skal, deling, **Rækker** ▾ og **Flyt, drej, spejl** ▾) og **Boolesk**. En knap med ▾ åbner sin liste; hvert værktøj beholder sine bogstaver, og **Kommandoer…** og **Mine værktøjer** finder det som før.
+Fanens værktøjer står i seks grupper: **Skitse** (linjer, rektangler, cirkler, **Buer** ▾, forskydning og, under dem, skitsering på en flade eller et plan, **Skitseredigering** ▾, **Arbejdsplaner** ▾ og **På flade** ▾), **Geometriske bånd** (listerne **Geometriske** ▾ og **Mål** ▾), **Legemer** (ekstrudér, fej, drej, loft, redigér skitse, **Med tykkelse** ▾ og **Grundformer** ▾), **Dele** (placering og redigering af dele), **Redigér** (skub/træk, afrunding, affasning, skal, deling, **Rækker** ▾ og **Flyt, drej, spejl** ▾) og **Boolesk**. En knap med ▾ åbner sin liste; hvert værktøj beholder sine bogstaver, og **Kommandoer…** og **Mine værktøjer** finder det som før.
 
 Et Studio-legeme har en IFC-klasse som ethvert element. Vælg den i dets egenskaber: en stang, en plade, en beklædning, et rækværk, et dæk eller en anden. Dets mængder og dets eksport følger klassen.
 

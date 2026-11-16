@@ -74,7 +74,7 @@ O insignă în josul vederii spune ce a găsit rezolvitorul, cât timp vederea a
 
 ![Complet constrâns: simbolurile, cele două cote și insigna](shots/sketch-constraints-fixed.webp)
 
-În arborele piesei (**Studio → Familii → Editează piesa**), fiecare schiță arată numărul ei de constrângeri și aceleași cuvinte.
+În arborele piesei (**Studio → Părți → Editează piesa**), fiecare schiță arată numărul ei de constrângeri și aceleași cuvinte.
 
 ## O cotă conduce solidul
 

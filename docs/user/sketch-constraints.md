@@ -74,7 +74,7 @@ A chip at the bottom of the view says what the solver found, while the view has 
 
 ![Fully constrained: the glyphs, the two dimensions and the chip](shots/sketch-constraints-fixed.webp)
 
-In the part's tree (**Studio → Families → Edit part**), each sketch shows its number of constraints and the same words.
+In the part's tree (**Studio → Parts → Edit part**), each sketch shows its number of constraints and the same words.
 
 ## A dimension drives the solid
 

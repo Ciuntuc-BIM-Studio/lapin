@@ -360,7 +360,7 @@ Liniile desenate într-un plan, un desen adus din DXF sau calchiat dintr-un PDF 
 - **Structură** și **Armare**: **Grinzi**, **Fundații continue**, **Fundații izolate** și **Stâlpi** (un cerc sau un contur, rotit după latura cea mai lungă) și **Bare de armare** (o formă dreaptă, în L, în U sau un etrier recunoscută, altfel o bară polilinie).
 - **Oțel**: **Bare metalice** (fiecare bucată dreaptă, din profilul ales, pe partea de sus a nivelului), **Stâlpi metalici** (unde stă fiecare cerc sau contur, din profilul ales) și **Bare metalice din contururi** (un contur închis desenat ca bandă, cum îl citește [Convertește în bară](steel.md)).
 - **Teren**: **Teren** (un singur teren prin toate formele alese: curbele de nivel ale unui DXF își aduc cotele, iar pentru formele desenate fără ele dai tu una), **Platformă** (un contur închis, nivelat în teren), **Parcelă** (un contur închis, limita terenului de sub el, în locul parcelei pe care o avea; cu arcele păstrate, un cerc rotund) și **Drum**, **Traseu** și **Linie de rupere** (de-a lungul liniilor care se unesc cap la cap, cum le urmează [Drum din desen CAD](site.md)).
-- **O definiție, în fereastra ei**: **Simbol…**, **Familie…** și **Profil…** dau selecția mai departe ferestrelor Salvează ca simbol, Fă familie din schiță și Profile.
+- **O definiție, în fereastra ei**: **Simbol…**, **Piesă…** și **Profil…** dau selecția mai departe ferestrelor Salvează ca simbol, Fă piesă din schiță și Profile.
 
 ![Convertește în… pe o polilinie: o scară de tipul ales, cu piciorul în primul punct, urcând spre al doilea și cotind cum cotește polilinia](shots/convert-stair.webp)
 

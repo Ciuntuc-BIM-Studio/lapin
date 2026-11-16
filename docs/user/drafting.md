@@ -360,7 +360,7 @@ Lines drawn in a plan, a drawing imported from DXF or traced from a PDF can beco
 - **Structure** and **Reinforcement**: **Beams**, **Strip foundations**, **Pad footings** and **Columns** (a circle or an outline, turned along its longest side), and **Reinforcement bars** (a straight, L, U or stirrup shape recognised, else a polyline bar).
 - **Steel**: **Steel members** (each straight piece, of the profile you choose, on the storey's top), **Steel columns** (where each circle or outline stands, of the profile you choose) and **Steel members from outlines** (a closed outline drawn as a band, as [Convert to member](steel.md#from-a-sketch-to-a-member) reads it).
 - **Site**: **Terrain** (one terrain through all the shapes chosen: a DXF's contours bring their heights, and you give one for shapes drawn without), **Platform** (a closed outline, levelled into the terrain), **Parcel** (a closed outline, the boundary of the terrain under it, in place of the parcel it had; its arcs kept, a circle round), and **Road**, **Path** and **Breakline** (along lines that meet end to end, as [Road from linework](site.md) follows them).
-- **A definition, in its own dialog**: **Symbol…**, **Family…** and **Profile…** hand the selection to Save as symbol, Make family from sketch and the Profiles dialog.
+- **A definition, in its own dialog**: **Symbol…**, **Part…** and **Profile…** hand the selection to Save as symbol, Make part from sketch and the Profiles dialog.
 
 ![Convert to… on a polyline: a stair of the type chosen, its foot at the first point, climbing towards the second and turning as the polyline turns](shots/convert-stair.webp)
 
