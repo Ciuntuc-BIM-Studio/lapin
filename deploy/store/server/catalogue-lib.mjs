@@ -10,6 +10,14 @@ export const KINDS = {
   hatches: { ext: ['pat'], code: false },
   titleBlock: { ext: ['json'], code: false },
   priceList: { ext: ['lapinprices'], code: false },
+  symbols: { ext: ['lapinsymbols'], code: false },
+  lineTypes: { ext: ['lin'], code: false },
+  standards: { ext: ['lapinstandards'], code: false },
+  rules: { ext: ['lapinrules'], code: false },
+  barShapes: { ext: ['lapinbarshapes'], code: false },
+  parameters: { ext: ['lapinparams'], code: false },
+  mapping: { ext: ['lapinmapping'], code: false },
+  families: { ext: ['lapinfamily'], code: false },
   script: { ext: ['py'], code: true },
 };
 export const PERMISSIONS = ['model.read', 'model.write', 'files.read', 'files.write', 'network', 'process'];
@@ -136,6 +144,7 @@ export function validateManifest(o, { local = false } = {}) {
   }
   if (o.screenshots !== undefined && (!Array.isArray(o.screenshots) || o.screenshots.length > MAX_SCREENSHOTS || o.screenshots.some((x) => !isScreenshot(x)))) e.push(`screenshots must be at most ${MAX_SCREENSHOTS} https addresses or files of its folder (screenshot.webp, screenshot-2.png).`);
   for (const k of ['homepage', 'forum']) if (o[k] !== undefined && (!str(o[k]) || !https(o[k]))) e.push(`${k} must be an https address.`);
+  if (o.kind === 'rules' && o.indicative !== true) e.push('A rule pack says its values are indicative: indicative must be true.');
   if (o.kind === 'priceList' && o.indicative !== true) e.push('A price list says its prices are indicative: indicative must be true.');
   if (o.indicative !== undefined && typeof o.indicative !== 'boolean') e.push('indicative must be true or false.');
   return e;
@@ -155,6 +164,14 @@ export const keyIdOf = (rawPublicKey) => sha256(rawPublicKey).slice(0, 16);
 
 const utf8 = (b) => { try { return new TextDecoder('utf-8', { fatal: true }).decode(b).replace(/^﻿/, ''); } catch { throw new Error('the file is not UTF-8 text'); } };
 const json = (b) => { try { return JSON.parse(utf8(b)); } catch (x) { throw new Error(x.message.startsWith('the file') ? x.message : 'the file is not JSON'); } };
+
+/** A pack file as its library's Export writes it: its format name and a version Lapin can read. */
+function packJson(bytes, format, what) {
+  const o = json(bytes);
+  if (!o || typeof o !== 'object' || Array.isArray(o) || o.format !== format) throw new Error(`not a Lapin ${what}`);
+  if (typeof o.version !== 'number' || o.version > 1) throw new Error(`the ${what} was written by a newer Lapin`);
+  return o;
+}
 
 /** Checks a package's file for its kind; throws a sentence when it is not what Lapin takes. Returns what it holds. */
 export function checkPackage(kind, bytes) {
@@ -228,6 +245,73 @@ export function checkPackage(kind, bytes) {
         for (const k of ['m', 'l', 'e', 't', 'h', 'q']) if (r[k] !== undefined && !(typeof r[k] === 'number' && Number.isFinite(r[k]) && r[k] >= 0)) throw new Error(`the row ${r.c} has a price that is not a number`);
       }
       return [`${o.rows.length} rows`];
+    }
+    case 'symbols': {
+      const o = packJson(bytes, 'lapin-symbols', 'symbol library');
+      if (!Array.isArray(o.symbols) || !o.symbols.length) throw new Error('the symbol library has no symbol');
+      for (const s of o.symbols) if (!str(s?.name) || !Array.isArray(s?.def?.items) || !s.def.items.length) throw new Error('a symbol has no name or draws nothing');
+      return o.symbols.map((s) => s.name);
+    }
+    case 'lineTypes': {
+      const names = [];
+      let pattern = 0;
+      for (const raw of utf8(bytes).split(/\r?\n/)) {
+        const line = raw.replace(/;.*$/, '').trim();
+        if (!line) continue;
+        if (line.startsWith('*')) {
+          if (names.length && !pattern) throw new Error(`the line type ${names.at(-1)} has no pattern`);
+          const name = line.slice(1).split(',')[0].trim();
+          if (!name) throw new Error('a line type has no name');
+          names.push(name); pattern = 0;
+        } else {
+          if (!names.length) throw new Error('not a .lin file: it does not start with a *NAME line');
+          if (!/^[Aa]\s*,/.test(line)) throw new Error(`a line of ${names.at(-1)} does not start with A,`);
+          pattern++;
+        }
+      }
+      if (!names.length || !pattern) throw new Error('the file has no complete line type');
+      return names;
+    }
+    case 'standards': {
+      const o = packJson(bytes, 'lapin-standards', 'standards file');
+      if (!o.drafting || typeof o.drafting !== 'object' || Array.isArray(o.drafting)) throw new Error('the standards file has no drafting standards');
+      return [str(o.name) ? o.name : 'standards'];
+    }
+    case 'rules': {
+      const o = packJson(bytes, 'lapin-rules', 'rule pack');
+      if (!str(o.name)) throw new Error('the rule pack has no name');
+      if (o.indicative === false) throw new Error('a rule pack from an extension says its values are indicative');
+      if (!Object.keys(o).some((k) => !['format', 'version', 'name', 'description', 'indicative'].includes(k))) throw new Error('the rule pack has no rules');
+      return [o.name];
+    }
+    case 'barShapes': {
+      const o = packJson(bytes, 'lapin-bar-shapes', 'bar shapes file');
+      if (!Array.isArray(o.shapes) || !o.shapes.length) throw new Error('the bar shapes file has no shape');
+      for (const s of o.shapes) if (!str(s?.code) || typeof s?.label !== 'string') throw new Error('a shape has no code or label');
+      return o.shapes.map((s) => `${s.code} ${s.label}`.trim());
+    }
+    case 'parameters': {
+      const o = packJson(bytes, 'lapin-parameters', 'parameters file');
+      if (!Array.isArray(o.parameters) || !o.parameters.length) throw new Error('the parameters file has no parameter');
+      for (const p of o.parameters) if (!str(p?.name) || !str(p?.kind)) throw new Error('a parameter has no name or kind');
+      return o.parameters.map((p) => p.name);
+    }
+    case 'mapping': {
+      const o = json(bytes);
+      if (o.app !== 'lapin' || (o.kind !== 'table' && o.kind !== 'layers')) throw new Error('not a Lapin mapping file');
+      if (typeof o.version === 'number' && o.version > 1) throw new Error('written by a newer Lapin');
+      if (o.kind === 'table') {
+        if (!str(o.target) || !Array.isArray(o.mapping) || !o.mapping.length || o.mapping.some((e) => typeof e?.header !== 'string')) throw new Error('the table mapping has no target or a column without heading');
+        return [o.target];
+      }
+      if (!Array.isArray(o.layers) || !o.layers.length || o.layers.some((e) => typeof e?.layer !== 'string')) throw new Error('the layer map has no layer or a layer without name');
+      return o.layers.map((l) => l.layer);
+    }
+    case 'families': {
+      const o = packJson(bytes, 'lapin-family', 'family');
+      if (!str(o.name)) throw new Error('the family has no name');
+      if (!o.def || typeof o.def !== 'object' || Array.isArray(o.def)) throw new Error('the family has no definition');
+      return [o.name];
     }
     case 'script': {
       const text = utf8(bytes);
