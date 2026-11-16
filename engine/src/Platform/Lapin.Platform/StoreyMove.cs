@@ -75,7 +75,7 @@ public static class StoreyMove
 
         // A copy of a storey, right above it, with its height; the storeys above move up by that height (their
         // elements follow: heights are relative). With contents, every element on it is copied (with what it hosts)
-        // and put on the new storey, and the joins between the copies are made again from the originals'.
+        // and put on the new storey as Copy to storeys puts it, its links and joins made again among the copies.
         r.Command("storey.duplicate", "Duplicate storey", (ctx, a) =>
         {
             var src = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.BuildingStorey);
@@ -97,23 +97,22 @@ public static class StoreyMove
             var copied = new JsonArray();
             if (withContents)
             {
-                var map = new Dictionary<string, string>();
-                // What a wall hosts goes with its copy; a reference from an IFC file stays where the file put it.
+                // What a wall hosts goes with its copy, a part with its assembly; a reference from an IFC file stays where the file put it.
+                var on = ctx.Model.RelatedOf(src.Id, IfcClass.RelContainedInSpatialStructure).Select(e => e.Id).ToHashSet();
                 var originals = ctx.Model.RelatedOf(src.Id, IfcClass.RelContainedInSpatialStructure)
-                    .Where(e => Host(ctx.Model, e) == null && !StoredBodies.Has(e) && ctx.Model.RelatingOf(e.Id, IfcClass.RelVoidsElement) == null).ToList();
+                    .Where(e => Host(ctx.Model, e) == null && !StoredBodies.Has(e) && ctx.Model.RelatingOf(e.Id, IfcClass.RelVoidsElement) == null
+                        && !(StoreyCopy.AssemblyOf(ctx.Model, e) is { } whole && on.Contains(whole.Id))).ToList();
                 // What a module drives it copies there in its own terms (its groups among them), or refuses (docs/overrides.md, Driven elements).
                 var ownGroups = originals.Select(e => Groups.Of(ctx.Model, e.Id)?.Id).OfType<string>().Distinct();
                 var driven = Driven.Before(ctx, new DrivenEdit("storey.duplicate", [.. ownGroups, .. originals.Select(e => e.Id)], a) { Storeys = [storey.Id] });
                 originals = originals.Where(e => !driven.Handled.Contains(e.Id)).ToList();
-                foreach (var e in originals)
-                {
-                    var id = Placement.Copy(ctx, e, Placement2D.Move(default));
-                    map[e.Id] = id;
-                    copied.Add((JsonNode)id);
-                }
-                Move(ctx, map.Values.Select(id => ctx.Model.Get(id)).OfType<Entity>().ToList(), storey, "storey");
-                foreach (var rel in ctx.Model.Relations.Where(x => x.Class == Joins.Class && map.ContainsKey(x.Relating) && x.Related.All(map.ContainsKey)).ToList())
-                    ctx.AddRelation(new Relation(ctx.NewId(), rel.Class, map[rel.Relating], rel.Related.Select(i => map[i]).ToList(), rel.Attrs?.DeepClone() as JsonObject));
+                // Copied as Copy to storeys copies (audit 15.11.2026): a copy names the copies of what its original named (a wall
+                // its roof, a finish its room), what hangs on a host goes with its host once (a roof's downpipes), the joins among
+                // the copies are made again, and the modules put right what climbs to the storey above (a stair's opening).
+                var hooks = ctx.Services.All<IStoreyCopy>().ToList();
+                var (tops, _, _) = StoreyCopy.CopyOnto(ctx, originals, [], storey, "storey", hosted: true, relations: true, groups: [], hooks,
+                    hooks.SelectMany(h => h.RelationKeys).ToHashSet(), inserted: true);
+                foreach (var id in tops) if (ctx.Model.Get(id) != null) copied.Add((JsonNode)id);
             }
             return new JsonObject { ["id"] = storey.Id, ["copied"] = copied };
         });

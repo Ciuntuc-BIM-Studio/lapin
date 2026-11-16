@@ -772,7 +772,7 @@ const studio: LapinModule = {
     // Beside Save as symbol: closed drafting made a family.
     { id: 'draft', label: 'Draft', order: 10, groups: [{ label: 'Family', tools: [familyFromSketch] }] },
     {
-    id: 'studio', label: 'Studio', order: 50,
+    id: 'studio', label: 'Studio', order: 50, include: ['modify'],
     groups: [
       { label: 'Solids', tools: [cmd('extrude', 'Extrude', Box, 'EXTRUDE'), cmd('sweep', 'Sweep', Waypoints, 'SWEEP'), cmd('revolve', 'Revolve', RefreshCcw, 'REVOLVE'), cmd('loft', 'Loft', Layers2, 'LOFT'), { id: 'studio.editSketch', label: 'Edit sketch', icon: PenTool, run: () => void editSketch() }] },
       { label: 'Thick', tools: [cmd('ring', 'Ring', Cylinder, 'RING'), cmd('box', 'Box', Container, 'BOX'), cmd('wallStrip', 'Wall strip', BrickWall, 'TWALL')] },

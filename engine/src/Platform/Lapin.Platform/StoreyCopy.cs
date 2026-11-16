@@ -22,7 +22,11 @@ public interface IStoreyCopy
 }
 
 /// <summary>One storey's copies: each original's copy (the hosted openings, doors, windows and assembly parts too), the options.</summary>
-public sealed record StoreyCopyStep(Entity Target, IReadOnlyDictionary<string, string> Map, string Keep, bool Hosted, bool Relations);
+public sealed record StoreyCopyStep(Entity Target, IReadOnlyDictionary<string, string> Map, string Keep, bool Hosted, bool Relations)
+{
+    /// <summary>The target was put in by storey.duplicate right above the originals' storey, the storeys above moved up by its height.</summary>
+    public bool Inserted { get; init; }
+}
 
 /// <summary>
 /// Copy to storeys (ArchiCAD's copy to stories, Revit's paste aligned to selected levels): the selection copied onto
@@ -113,74 +117,9 @@ public static class StoreyCopy
                 }
                 var notesHere = notes.Where(n => PlanStorey(m, n) is { } s && s != target.Id).ToList();
                 if (use.Count == 0 && notesHere.Count == 0) continue;
-                var notesBefore = m.OfClass(IfcClass.Annotation).Select(x => x.Id).ToHashSet();
-                var map = new Dictionary<string, string>();
-                var twins = new Dictionary<string, string>();
-                if (use.Count > 0)
-                {
-                    var copyIds = new JsonArray(use.Select(e => (JsonNode)e.Id).ToArray());
-                    var result = ElementTransform.Run(ctx, new JsonObject { ["ids"] = copyIds, ["op"] = "copy", ["by"] = new JsonArray(0.0, 0.0) }, keepLinks: relations ? null : relationKeys);
-                    foreach (var (o, c) in result.Copies) if (c != o && m.Get(c) != null) map[o] = c;
-                }
-                var tops = map.ToList();
-                // An assembly goes whole: its parts copied with it, unless its module made them for its copy.
-                foreach (var (o, c) in tops) CopyParts(ctx, o, c, map);
-                foreach (var (o, c) in map.ToList()) MapHosted(m, o, c, map);
-                var placed = tops.Select(p => m.Get(p.Value)).OfType<Entity>().ToList();
-                StoreyMove.Move(ctx, placed, target, keep);
-                // What hosts nothing new: the doors, windows and openings left behind.
-                if (!hosted)
-                {
-                    foreach (var (_, c) in tops)
-                        foreach (var o in m.RelatedOf(c, IfcClass.RelVoidsElement).Where(o => o.Str("stairId") == null).ToList()) ctx.Remove(o.Id);
-                    foreach (var k in map.Where(p => m.Get(p.Value) == null).Select(p => p.Key).ToList()) map.Remove(k);
-                }
-                // A group copied whole makes a group of its copies, when relations are rebuilt.
-                if (relations)
-                    foreach (var g in groups)
-                        if (m.Get(g) is { } group && Groups.Make(ctx, group.Name, Groups.MembersOf(m, g).Where(map.ContainsKey).Select(x => map[x]).ToList()) is { } twin)
-                        {
-                            twins[g] = twin.Id;
-                            // Kept in place, it stands over its new storey by what the levels differ: its members' height, found again after an edit.
-                            var up = keep == "world" && Groups.MembersOf(m, g).Select(x => Spatial.StoreyOf(m, x)).FirstOrDefault(x => x != null) is { } home ? home.Num("elevation") - target.Num("elevation") : 0;
-                            Components.CopiedInstance(ctx, group, twin, Placement2D.Move(new Lapin.Geometry.Vec2(0, 0)), up);
-                        }
-                if (!relations)
-                {
-                    var copied = map.Values.ToHashSet();
-                    foreach (var rel in copied.SelectMany(id => m.RelationsOf(id, Joins.Class)).DistinctBy(x => x.Id).ToList()) ctx.RemoveRelation(rel.Id);
-                }
-                // A copy names its fellow copies: a door's opening, a finish's room, a stair's opening (relations: a wall's roof).
-                var names = new Dictionary<string, string>(map);
-                foreach (var (g, t) in twins) names[g] = t;
-                foreach (var id in map.Values.ToList())
-                    if (m.Get(id) is { } c && Remap(c.Attrs, names, relations ? null : relationKeys) is { } attrs) ctx.Replace(c.With(attrs: attrs));
-                // The tags and dimensions of the copied elements on their storey's plan, and what was selected on a plan, go to the new storey's plan.
-                var fresh = m.OfClass(IfcClass.Annotation).Where(x => !notesBefore.Contains(x.Id)).ToList();
-                foreach (var n in fresh)
-                    if (PlanStorey(m, n) is { } s && s != target.Id && PlanOn(m, n.Str("viewId")!, target) is { } view)
-                    {
-                        var na = Remap(n.Attrs, names, null) ?? n.CloneAttrs();
-                        na["viewId"] = view;
-                        ctx.Replace(n.With(attrs: na));
-                    }
-                var copiedNotes = new List<string>();
-                var originals = map.Keys.ToHashSet();
-                var withNotes = hosted ? m.OfClass(IfcClass.Annotation).Where(n => notesBefore.Contains(n.Id) && Follows(m, n, originals)).ToList() : [];
-                foreach (var n in notesHere.Concat(withNotes).DistinctBy(n => n.Id).ToList())
-                {
-                    if (PlanStorey(m, n) is not { } s || s == target.Id || PlanOn(m, n.Str("viewId")!, target) is not { } view) continue;
-                    var na = Remap(n.Attrs, names, null) ?? n.CloneAttrs();
-                    na["viewId"] = view;
-                    var twin = new Entity(ctx.NewId(), n.Class, n.Name, na, n.PredefinedType);
-                    ctx.Add(twin);
-                    foreach (var rel in m.RelationsOf(n.Id).Where(x => x.Related.Contains(n.Id) && x.Class != Groups.Rel).ToList()) ctx.Relate(rel.Class, rel.Relating, twin.Id);
-                    copiedNotes.Add(twin.Id);
-                }
-                var step = new StoreyCopyStep(target, map, keep, hosted, relations);
-                foreach (var h in hooks) h.Copied(ctx, step);
+                var (tops, twins, copiedNotes) = CopyOnto(ctx, use, notesHere, target, keep, hosted, relations, groups, hooks, relationKeys);
                 var here = new JsonArray();
-                foreach (var (_, c) in tops) if (m.Get(c) != null) here.Add((JsonNode)c);
+                foreach (var c in tops) if (m.Get(c) != null) here.Add((JsonNode)c);
                 foreach (var t in twins.Values) if (m.Get(t) != null) here.Add((JsonNode)t);
                 foreach (var n in copiedNotes) here.Add((JsonNode)n);
                 foreach (var id in here) made.Add((JsonNode)(string)id!);
@@ -191,8 +130,88 @@ public static class StoreyCopy
         });
     }
 
+    /// <summary>
+    /// <paramref name="use"/> (and <paramref name="notesHere"/>, drawn on another storey's plan) copied onto <paramref name="target"/>
+    /// in place through element.transform's copy, placed there as Move to storey places, each copy naming its fellow copies, and
+    /// the modules told (<see cref="IStoreyCopy.Copied"/>): Copy to storeys' work for one storey, storey.duplicate's for its new one
+    /// (<paramref name="inserted"/>: the storey was put in under the ones above, which moved up). The copies of
+    /// <paramref name="use"/>, the groups' twins, the notes copied.
+    /// </summary>
+    internal static (List<string> Tops, Dictionary<string, string> Twins, List<string> Notes) CopyOnto(ICommandContext ctx, IReadOnlyList<Entity> use, IReadOnlyList<Entity> notesHere,
+        Entity target, string keep, bool hosted, bool relations, IReadOnlyCollection<string> groups, IReadOnlyList<IStoreyCopy> hooks, IReadOnlySet<string> relationKeys, bool inserted = false)
+    {
+        var m = ctx.Model;
+        var notesBefore = m.OfClass(IfcClass.Annotation).Select(x => x.Id).ToHashSet();
+        var map = new Dictionary<string, string>();
+        var twins = new Dictionary<string, string>();
+        if (use.Count > 0)
+        {
+            var copyIds = new JsonArray(use.Select(e => (JsonNode)e.Id).ToArray());
+            var result = ElementTransform.Run(ctx, new JsonObject { ["ids"] = copyIds, ["op"] = "copy", ["by"] = new JsonArray(0.0, 0.0) }, keepLinks: relations ? null : relationKeys);
+            foreach (var (o, c) in result.Copies) if (c != o && m.Get(c) != null) map[o] = c;
+        }
+        var tops = map.ToList();
+        // An assembly goes whole: its parts copied with it, unless its module made them for its copy.
+        foreach (var (o, c) in tops) CopyParts(ctx, o, c, map);
+        foreach (var (o, c) in map.ToList()) MapHosted(m, o, c, map);
+        var placed = tops.Select(p => m.Get(p.Value)).OfType<Entity>().ToList();
+        StoreyMove.Move(ctx, placed, target, keep);
+        // What hosts nothing new: the doors, windows and openings left behind.
+        if (!hosted)
+        {
+            foreach (var (_, c) in tops)
+                foreach (var o in m.RelatedOf(c, IfcClass.RelVoidsElement).Where(o => o.Str("stairId") == null).ToList()) ctx.Remove(o.Id);
+            foreach (var k in map.Where(p => m.Get(p.Value) == null).Select(p => p.Key).ToList()) map.Remove(k);
+        }
+        // A group copied whole makes a group of its copies, when relations are rebuilt.
+        if (relations)
+            foreach (var g in groups)
+                if (m.Get(g) is { } group && Groups.Make(ctx, group.Name, Groups.MembersOf(m, g).Where(map.ContainsKey).Select(x => map[x]).ToList()) is { } twin)
+                {
+                    twins[g] = twin.Id;
+                    // Kept in place, it stands over its new storey by what the levels differ: its members' height, found again after an edit.
+                    var up = keep == "world" && Groups.MembersOf(m, g).Select(x => Spatial.StoreyOf(m, x)).FirstOrDefault(x => x != null) is { } home ? home.Num("elevation") - target.Num("elevation") : 0;
+                    Components.CopiedInstance(ctx, group, twin, Placement2D.Move(new Lapin.Geometry.Vec2(0, 0)), up);
+                }
+        if (!relations)
+        {
+            var copied = map.Values.ToHashSet();
+            foreach (var rel in copied.SelectMany(id => m.RelationsOf(id, Joins.Class)).DistinctBy(x => x.Id).ToList()) ctx.RemoveRelation(rel.Id);
+        }
+        // A copy names its fellow copies: a door's opening, a finish's room, a stair's opening (relations: a wall's roof).
+        var names = new Dictionary<string, string>(map);
+        foreach (var (g, t) in twins) names[g] = t;
+        foreach (var id in map.Values.ToList())
+            if (m.Get(id) is { } c && Remap(c.Attrs, names, relations ? null : relationKeys) is { } attrs) ctx.Replace(c.With(attrs: attrs));
+        // The tags and dimensions of the copied elements on their storey's plan, and what was selected on a plan, go to the new storey's plan.
+        var fresh = m.OfClass(IfcClass.Annotation).Where(x => !notesBefore.Contains(x.Id)).ToList();
+        foreach (var n in fresh)
+            if (PlanStorey(m, n) is { } s && s != target.Id && PlanOn(m, n.Str("viewId")!, target) is { } view)
+            {
+                var na = Remap(n.Attrs, names, null) ?? n.CloneAttrs();
+                na["viewId"] = view;
+                ctx.Replace(n.With(attrs: na));
+            }
+        var copiedNotes = new List<string>();
+        var originals = map.Keys.ToHashSet();
+        var withNotes = hosted ? m.OfClass(IfcClass.Annotation).Where(n => notesBefore.Contains(n.Id) && Follows(m, n, originals)).ToList() : [];
+        foreach (var n in notesHere.Concat(withNotes).DistinctBy(n => n.Id).ToList())
+        {
+            if (PlanStorey(m, n) is not { } s || s == target.Id || PlanOn(m, n.Str("viewId")!, target) is not { } view) continue;
+            var na = Remap(n.Attrs, names, null) ?? n.CloneAttrs();
+            na["viewId"] = view;
+            var twin = new Entity(ctx.NewId(), n.Class, n.Name, na, n.PredefinedType);
+            ctx.Add(twin);
+            foreach (var rel in m.RelationsOf(n.Id).Where(x => x.Related.Contains(n.Id) && x.Class != Groups.Rel).ToList()) ctx.Relate(rel.Class, rel.Relating, twin.Id);
+            copiedNotes.Add(twin.Id);
+        }
+        var step = new StoreyCopyStep(target, map, keep, hosted, relations) { Inserted = inserted };
+        foreach (var h in hooks) h.Copied(ctx, step);
+        return (tops.Select(p => p.Value).ToList(), twins, copiedNotes);
+    }
+
     /// <summary>The assembly an element is a part of (an element aggregating it, not the spatial structure).</summary>
-    static Entity? AssemblyOf(IModelView m, Entity e) =>
+    internal static Entity? AssemblyOf(IModelView m, Entity e) =>
         m.RelatingOf(e.Id, IfcClass.RelAggregates) is { } whole && whole.Class is not (IfcClass.Project or IfcClass.Site or IfcClass.Building or IfcClass.BuildingStorey) ? whole : null;
 
     /// <summary>An assembly's parts copied for its copy (each with its own parts), when its module did not make them.</summary>

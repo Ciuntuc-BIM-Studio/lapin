@@ -3954,6 +3954,17 @@ export const DA: Record<string, string> = {
   "Save as (full path, .{ext}):": "Gem som (fuld sti, .{ext}):",
   "Don't save": "Gem ikke",
   "Finish or cancel (Esc) what you are doing first, then undo or redo.": "Afslut eller annuller (Esc) det, du er i gang med, og fortryd eller gentag så.",
+  'Could not be checked': 'Kunne ikke kontrolleres',
+  'Place furniture': 'Placér møbler',
+  'Select the walls, beams or strip footings whose corners to change.': 'Vælg de vægge, bjælker eller stribefundamenter, hvis hjørner skal ændres.',
+  'Straight pieces, each starting where the last ended, or an arc: its start, its end, then a point it passes through': 'Rette stykker, hvert starter hvor det forrige sluttede, eller en bue: start, slut og et punkt, den går igennem',
+  'A path, 1,5 m wide, or a road: two 3 m lanes on a 2,5 % crown, kerbs and 1,5 m sidewalks': 'En sti, 1,5 m bred, eller en vej: to 3 m brede kørebaner med 2,5 % tværfald, kantsten og 1,5 m fortove',
+  'What it places: seating, beds, storage, tables, models': 'Hvad den placerer: siddemøbler, senge, opbevaring, borde, modeller',
+  'What it places: a heating, plumbing, electrical, air, gas, fuel oil or fire protection fixture, or a fitting': 'Hvad den placerer: et varme-, vvs-, el-, luft-, gas-, fyringsolie- eller brandsikringselement eller en fitting',
+  'Tests': 'Tests',
+  'Openings for MEP': 'Åbninger til installationer',
+  'Kind of check': 'Type af kontrol',
+  'Place node': 'Placér knude',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

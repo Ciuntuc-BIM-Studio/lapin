@@ -71,7 +71,7 @@ so another program listening on 14913 is never taken for Lapin (`project` is nul
 | `lapin.model` | The model's entities (below). |
 | `lapin.call(method, params)` | Any protocol call (`doc.execute`, `project.new`, …). |
 
-A refused command raises `lapinbim.LapinError` with the engine's own message (the one the user reads in the window); `e.name` is the command.
+A refused command raises `lapinbim.LapinError` with the engine's own message (the one the user reads in the window); `e.name` is the command. What went wrong beside a call that still went through comes with its reply as `warnings` and is raised as a Python warning of the class `lapinbim.LapinWarning` (`warnings.simplefilter("error", lapinbim.LapinWarning)` makes it an error): a save that could not carry a damaged version part or issued file over from the file the project was read from, the recovery journal not written.
 
 ### Names, arguments and units
 

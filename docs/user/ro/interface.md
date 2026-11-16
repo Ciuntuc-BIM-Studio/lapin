@@ -240,6 +240,14 @@ Bara de stare, jos, arată stilul de navigare cu mouse-ul în uz (la început *L
 
 În planuri, secțiuni, fațade și planșe, stilul alege ce buton deplasează și ce taste adaugă la selecție sau scot din ea; tragerea cu stânga desenează în continuare o fereastră sau un crossing, iar butonul din mijloc apăsat de două ori potrivește în continuare vederea (și în 3D, în Revit-like și AutoCAD-like). Celelalte stiluri presupun un mouse cu trei butoane: pe un trackpad, fără buton din mijloc, rămâi la Lapin. Se împrumută doar comenzile: numele sunt simple etichete și nimic altceva din acele programe nu e imitat.
 
+## Modifică și Îmbinări pe fiecare tab
+
+Grupul **Modifică** (Mută, Copiază, Rotește, Oglindește, Repetare, Șterge, Fixează, **Creează similar**, Preia proprietățile, uneltele de grupuri) e același pe Desen, Arhitectură, Interior, Structură, Oțel, Lemn, Studio, Amplasament și Instalații. Pe Desen și Studio se unește cu grupul acelor taburi care se numea deja Modifică, așa că fiecare buton apare o singură dată (Desen păstrează Scalează, Repetare și Șterge; Studio păstrează Mută 3D, Rotește 3D, Oglindește 3D și propria Repetare, care face repetarea parametrică a solidului). **Creează similar** e gri până când selecția e ceva de la care poate porni (un perete, o placă, un acoperiș, o ușă, o fereastră, un perete cortină, o încăpere…).
+
+Grupul **Îmbinări** (**La 45°**, **Cap la cap**, **Inversează**) e același pe Arhitectură și Structură și lucrează pe ce e selectat: colțurile pereților, grinzilor și fundațiilor continue selectate. **La 45°** și **Încadrează** ale Oțelului îmbină două elemente și rămân pe tabul Oțel.
+
+O unealtă care erau mai multe butoane e acum una cu o alegere în bara liniei de comandă: **Perete**, **Grindă**, **Fundație continuă** și **linia de separare a încăperilor** au **Linie** / **Arc**; **Traseu** are **Traseu** / **Drum**; **Plasează mobilier** (Interior) și **Plasează nod** (Instalații) aleg felul piesei sau al nodului. Numele vechi (Perete curb, Drum, Sofa, Radiator…) merg în continuare ca locuri rapide, intrări în Uneltele mele, scurtături și în interfețele salvate: pornesc aceeași unealtă deja setată pe acea alegere.
+
 ## Preia proprietățile
 
 **Modifică → Preia proprietățile** (<kbd>MA</kbd>, sau `MATCHPROP` în linia de comandă, ca în AutoCAD; în Revit se numește Match Type) dă altor elemente ce are un element. Selectează elementul de la care copiezi, sau pornește comanda și dă clic întâi pe el; apoi dă clic pe fiecare element care trebuie să-i primească proprietățile. Elementul de sub cursor se luminează înainte de clic, în planuri, secțiuni și 3D. Fiecare clic e un pas pe care **Anulează** îl desface. **Aplică selecției** le dă deodată tuturor celorlalte elemente selectate. Apasă <kbd>Enter</kbd> sau <kbd>Esc</kbd> când ai terminat.

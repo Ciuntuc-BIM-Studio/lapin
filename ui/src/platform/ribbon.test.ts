@@ -25,6 +25,16 @@ describe('the ribbon tabs', () => {
     expect(tabs[0].groups[1].small?.[0].id).toBe('move');
   });
 
+  it('makes a shared group and a tab\'s own group of the same label one, with no tool twice', () => {
+    const tabs = mergeTabs([
+      mod({ sharedGroups: { modify: { label: 'Modify', tools: [], small: [tool('modify.move'), tool('modify.copy'), { ...tool('modify.delete'), label: 'Delete', alsoCalled: ['Erase'] }, tool('modify.pin')] } } }),
+      mod({ tabs: [{ id: 'draft', label: 'Draft', order: 10, include: ['modify'], groups: [{ label: 'Modify', tools: [{ ...tool('cad.move'), label: 'modify.move' }], small: [{ ...tool('cad.erase'), label: 'Erase' }, { ...tool('cad.copy'), label: 'modify.copy' }] }] }] }),
+    ]);
+    expect(tabs[0].groups.map((g) => g.label)).toEqual(['Modify']);
+    expect(tabs[0].groups[0].tools.map((t) => t.id)).toEqual(['cad.move']);
+    expect(tabs[0].groups[0].small?.map((t) => t.id)).toEqual(['cad.erase', 'cad.copy', 'modify.pin']);
+  });
+
   it('places the tabs as the product says, its own work first', () => {
     const modules = [
       mod({ tabs: [{ id: 'draft', label: 'Draft', order: 10, groups: [] }, { id: 'architecture', label: 'Architecture', order: 20, groups: [] }] }),

@@ -10,6 +10,7 @@
  * unpacking entries. Either way a library (or one entry) goes out as a .lapinlib file and comes back from one.
  */
 
+import { toolForKind } from './placeKind';
 import { create } from 'zustand';
 import { notify, setTool, useUi } from '../../app/store';
 import { engine, engineInBrowser, query } from '../../engine/session';
@@ -236,9 +237,6 @@ export function guessCategory(kind: string, preset = ''): Category {
   return 'other';
 }
 
-/** The tool that places a type of the kind (a kitchen is drawn along a wall, the others put down at a click). */
-export const toolOfKind = (kind: string) => `furniture.${kind}`;
-
 /** An entry's type in the open project; `place`: the tool that puts it down starts with it. */
 export async function takeEntry(e: LibraryEntry, place: boolean): Promise<void> {
   try {
@@ -247,7 +245,7 @@ export async function takeEntry(e: LibraryEntry, place: boolean): Promise<void> 
     chooseType(kind, r.id);
     if (place) {
       useUi.setState({ dialog: null });
-      setTool(toolOfKind(kind));
+      setTool(toolForKind(kind));
       notify(kind === 'kitchen' ? 'Draw the kitchen along a wall: two points.' : 'Click where it stands.');
     } else notify(r.reused ? 'The project already has this type: it is chosen for its tool.' : 'Inserted: it is in Furniture types and chosen for its tool.');
   } catch (err) { notify(err instanceof Error ? err.message : String(err)); }

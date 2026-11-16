@@ -3951,6 +3951,17 @@ export const ZH: Record<string, string> = {
   "Save as (full path, .{ext}):": "另存为（完整路径，.{ext}）：",
   "Don't save": "不保存",
   "Finish or cancel (Esc) what you are doing first, then undo or redo.": "请先完成或取消（Esc）当前操作，然后再撤销或重做。",
+  'Could not be checked': '无法检查',
+  'Place furniture': '放置家具',
+  'Select the walls, beams or strip footings whose corners to change.': '请选择要更改转角的墙、梁或条形基础。',
+  'Straight pieces, each starting where the last ended, or an arc: its start, its end, then a point it passes through': '直线段，每段从上一段结束处开始；或圆弧：起点、终点，再指定圆弧经过的一点',
+  'A path, 1,5 m wide, or a road: two 3 m lanes on a 2,5 % crown, kerbs and 1,5 m sidewalks': '宽 1.5 米的小路，或道路：两条 3 米车道、2.5% 路拱、路缘石和 1.5 米人行道',
+  'What it places: seating, beds, storage, tables, models': '放置内容：座椅、床、储物、桌子、模型',
+  'What it places: a heating, plumbing, electrical, air, gas, fuel oil or fire protection fixture, or a fitting': '放置内容：供暖、给排水、电气、空气、燃气、燃油或消防设备，或管件',
+  'Tests': '测试',
+  'Openings for MEP': '机电开洞',
+  'Kind of check': '检查类型',
+  'Place node': '放置节点',
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

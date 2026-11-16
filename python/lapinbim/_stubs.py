@@ -17,7 +17,7 @@ HEAD = '''\
 from builtins import bool as _bool, dict as _dict, float as _float, int as _int, list as _list, str as _str
 from typing import Any, Callable
 
-from ._client import Batch as Batch, Deferred as Deferred, Lapin as _Lapin, LapinError as LapinError, Step as Step
+from ._client import Batch as Batch, Deferred as Deferred, Lapin as _Lapin, LapinError as LapinError, LapinWarning as LapinWarning, Step as Step
 from ._frame import Obj as Obj
 from ._model import Element as Element, Model as _Model
 from ._ui import UI as UI

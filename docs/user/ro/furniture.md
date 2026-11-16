@@ -6,7 +6,7 @@ summary: Canapele, canapele de colț, fotolii, scaune, paturi, dulapuri, comode,
 
 ## Așezarea mobilierului
 
-Tabul **Interior** are, după finisaje, câte o unealtă pentru fiecare fel de piesă: **Sofa** (canapea, <kbd>SO</kbd>), **Corner sofa** (canapea de colț), **Armchair** (fotoliu, <kbd>AC</kbd>), **Chair** (scaun), **Bed** (pat, <kbd>BD</kbd>), **Bedside table** (noptieră), **Wardrobe** (dulap, <kbd>WD</kbd>), **Chest of drawers** (comodă), **Bookcase** (bibliotecă), **Sideboard** (bufet), **Table** (masă, <kbd>TB</kbd>), **Coffee table** (măsuță de cafea) și **Desk** (birou). Alegi una și dai clic în plan.
+Tabul **Interior** are, după finisaje, o singură unealtă, **Plasează mobilier**, pentru orice fel de piesă: felul se alege în bara liniei de comandă (grupat în scaune și canapele, paturi, depozitare, mese și modele), iar fiecare fel își păstrează literele: **Sofa** (canapea, <kbd>SO</kbd>), **Corner sofa** (canapea de colț), **Armchair** (fotoliu, <kbd>AC</kbd>), **Chair** (scaun), **Bed** (pat, <kbd>BD</kbd>), **Bedside table** (noptieră), **Wardrobe** (dulap, <kbd>WD</kbd>), **Chest of drawers** (comodă), **Bookcase** (bibliotecă), **Sideboard** (bufet), **Table** (masă, <kbd>TB</kbd>), **Coffee table** (măsuță de cafea) și **Desk** (birou). Alegi felul și dai clic în plan.
 
 Un clic lângă un perete lipește piesa de el. Spatele ei stă pe fața peretelui (pe tencuială, nu pe miez), fața ei privește spre încăpere și alunecă de-a lungul peretelui până nu mai intră în peretele din colț. Un clic mai departe de pereți pune piesa exact unde ai dat clic.
 
