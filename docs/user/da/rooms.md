@@ -14,6 +14,10 @@ Til et område uden vægge hele vejen rundt, som en terrasse eller den ene ende 
 
 ![En plan med to rum farvelagt efter funktion og en farveforklaring](shots/rooms-plan.webp)
 
+Et tegnet rums kanter kan være buede, som et dæks: bjælken til **Room by outline** tegner en **Polygon**, hvis kanter kan være buer (**Arcs (Space)**), en **Rectangle** eller en **Circle**, og højreklik på det valgte rum giver **Make arc**, **Make straight**, **Fillet corner…** og **Chamfer corner…**. Arealet og omkredsen måles på de sande buer, og i IFC er rummets profil den sande kurve. Et rum fundet fra sine vægge følger dem, så dets omrids redigeres ikke på denne måde.
+
+![Et tegnet rum med en buet kant og et afrundet hjørne, et rundt rum og en altan med buet front](shots/rooms-curved.webp)
+
 ## Et rums egenskaber
 
 Markér et rum ved at klikke på dets stempel eller et vilkårligt sted inde i det. I egenskabspanelet:

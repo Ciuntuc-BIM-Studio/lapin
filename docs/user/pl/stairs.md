@@ -146,6 +146,8 @@ Odcinki balustrady mogą być łukami. Kliknij prawym przyciskiem przy odcinku z
 
 **Architecture → Balcony** (<kbd>BY</kbd>) wiesza balkon na ścianie: wybierz styl na pasku wiersza poleceń i kliknij poza licem ściany, tam gdzie ma być; staje po tej stronie ściany na poziomie podłogi kondygnacji. **Balkon francuski** (Juliet) kliknięty przy drzwiach lub oknie centruje się na nich, 200 mm szerszy. Gdzie w pobliżu nie ma ściany, balkon staje tam, gdzie klikniesz. **Balcony by outline** rysuje dowolny kształt: kliknij narożniki, pierwsza krawędź przylega do budynku. **Gallery edge** rysuje krawędź antresoli nad przestrzenią o podwójnej wysokości dwoma punktami (pustka po lewej, antresola po prawej).
 
+Krawędzie narysowanego balkonu też mogą być łukami: **Balcony by outline** ma te same kształty co pasek narzędzia Floor, a narożniki i krawędzie zaznaczonego balkonu przyjmują z prawego kliku **Fillet corner…**, **Chamfer corner…** i **Make arc**; jego płyta biegnie wzdłuż łuków, a powierzchnia jest mierzona na nich.
+
 Wbudowane style obejmują rodzaje, o które się pyta:
 
 - **Juliet balcony**: balustrada z tralek przed drzwiami balkonowymi nad małą kamienną półką na dwóch wspornikach.

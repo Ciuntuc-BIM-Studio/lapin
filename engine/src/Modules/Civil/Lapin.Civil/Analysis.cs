@@ -56,7 +56,7 @@ public static class Analysis
         if (t.ElevationAt(p.X, p.Y) is not { } z) return null;
         foreach (var pad in Terrains.Pads(m, terrain.Id))
         {
-            var o = Terrains.Contour(pad);
+            var o = ArcOutline.BuiltOf(pad);
             if (o.Count >= 3 && Polygon2.Contains(o, p)) return pad.Num("elevation");
         }
         foreach (var d in Terrains.DitchesOf(m, terrain.Id))

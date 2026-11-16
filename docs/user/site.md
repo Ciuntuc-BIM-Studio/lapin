@@ -62,6 +62,10 @@ CAD linework becomes site elements: **Road from linework** (LR) and **Breakline 
 
 In 3D, **Visibility / Graphics** hides a view's paths, roads, kerbs and pavements with the **Topography** category, and the axis grids hide with their Visibility / Graphics entry too; in plans, object styles and saved graphics sets, those site elements now follow the Topography category too.
 
+## Platforms and the parcel
+
+**Site → Platform** (<kbd>PD</kbd>) levels the ground inside an outline at one height, cutting and filling the terrain; **Site → Parcel** (<kbd>PC</kbd>) draws the property's boundary, dash-dotted with its area. Both draw their outline with the same bar as a floor: a **Polygon** whose edges may be arcs (<kbd>Space</kbd>), a **Rectangle** or a **Circle**. Selected, their corners and edges have grips (a parcel's on its terrain), and the right-click offers **Make arc**, **Make straight**, **Fillet corner…** and **Chamfer corner…**, each one undo step. The platform levels the ground along its true arcs; the parcel's area and perimeter are measured on them, and the coordinate inventory lists its corners.
+
 ## Site plans and location plans
 
 The project browser has a **Site** under the levels: the site's own drawings, which belong to no storey. A new project starts with two:

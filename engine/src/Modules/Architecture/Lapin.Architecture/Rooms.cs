@@ -31,9 +31,12 @@ public static class Rooms
     /// <summary>A room's outline as built: the outer loop, its islands, and whether it is the stored one because nothing closes round its point.</summary>
     public sealed record Outline(IReadOnlyList<Vec2> Outer, IReadOnlyList<IReadOnlyList<Vec2>> Islands, bool Lost)
     {
-        public double GrossArea => Math.Abs(Polygon2.SignedArea(Outer));
+        /// <summary>A drawn outline with curved edges (decision 589): its area and perimeter worked out exactly, its arcs as arcs; <see cref="Outer"/> is laid in chords.</summary>
+        public double? ExactArea { get; init; }
+        public double? ExactPerimeter { get; init; }
+        public double GrossArea => ExactArea ?? Math.Abs(Polygon2.SignedArea(Outer));
         public double NetArea => GrossArea - Islands.Sum(i => Math.Abs(Polygon2.SignedArea(i)));
-        public double Perimeter => Polygon2.Perimeter(Outer);
+        public double Perimeter => ExactPerimeter ?? Polygon2.Perimeter(Outer);
         public double NetPerimeter => Perimeter + Islands.Sum(Polygon2.Perimeter);
         public IReadOnlyList<IReadOnlyList<Vec2>> Loops => [Outer, .. Islands];
 
@@ -56,8 +59,14 @@ public static class Rooms
         var outer = Loop(room.Attrs["contour"]);
         if (outer.Count < 3) return null;
         var islands = room.Attrs["islands"] is JsonArray isl ? isl.Select(Loop).Where(l => l.Count >= 3).ToList() : [];
+        // A drawn room's edges may be arcs (decision 589): laid in chords by the one rule, measured exactly.
+        if (Curved(room) is { } rises)
+            return new Outline(ArcOutline.Points(outer, rises), islands, false) { ExactArea = Math.Abs(ArcOutline.SignedArea(outer, rises)), ExactPerimeter = ArcOutline.Perimeter(outer, rises) };
         return new Outline(outer, islands, false);
     }
+
+    /// <summary>The rises of a drawn room's edges (decision 589); null when every edge is straight or the room follows its walls.</summary>
+    public static double[]? Curved(Entity room) => room.Bool("auto") ? null : ArcOutline.RisesOf(room);
 
     /// <summary>
     /// The room's outline now: found round its point from the walls (a room
@@ -81,7 +90,8 @@ public static class Rooms
     }
 
     /// <summary>The room's outline as its geometry has it (the cache the views use), else as it stores it.</summary>
-    public static Outline? Of(Entity room, IModelView m, Func<string, ElementGeometry?>? geometry) => OfGeometry(geometry?.Invoke(room.Id)) ?? Stored(room);
+    public static Outline? Of(Entity room, IModelView m, Func<string, ElementGeometry?>? geometry) =>
+        Curved(room) != null ? Stored(room) : OfGeometry(geometry?.Invoke(room.Id)) ?? Stored(room);
 
     /// <summary>The room's height: its own, else its storey's, else 3 m.</summary>
     public static double HeightOf(Entity room, IModelView m)
@@ -146,7 +156,7 @@ public static class Rooms
     /// </summary>
     public static IEnumerable<QuantitySet> Quantities(Entity room, ElementGeometry? g, IModelView m)
     {
-        if ((OfGeometry(g) ?? Stored(room)) is not { } o) yield break;
+        if ((Curved(room) != null ? Stored(room) : OfGeometry(g) ?? Stored(room)) is not { } o) yield break;
         var x = MeasuresOf(room, o, m);
         var q = new List<Quantity>
         {
@@ -187,6 +197,24 @@ public static class Rooms
     }
 
     // ─── Making them ─────────────────────────────────────────────────────
+
+    /// <summary>
+    /// A drawn outline written into a room's attributes: its corners and, when the command gives them (or the room had them and
+    /// only its corners moved), its edges' rises (decision 589, <see cref="ArcOutline"/>).
+    /// </summary>
+    static void SetDrawn(JsonObject attrs, JsonObject a, double[]? was)
+    {
+        var pts = Args.Points(a);
+        if (ArcOutline.RisesArg(a["arcs"], pts.Count, was) is { } rises)
+        {
+            var (c, r) = ArcOutline.Check(pts, rises, "A room");
+            attrs["contour"] = SectionPaths.PointsJson(c);
+            ArcOutline.Write(attrs, r);
+            return;
+        }
+        attrs["contour"] = SectionPaths.PointsJson(CheckOutline(pts));
+        attrs.Remove(ArcOutline.Key);
+    }
 
     /// <summary>A drawn outline: three distinct corners or more, counter-clockwise; refused when it encloses nothing.</summary>
     public static IReadOnlyList<Vec2> CheckOutline(IReadOnlyList<Vec2> pts)
@@ -233,7 +261,7 @@ public static class Rooms
         var attrs = new JsonObject();
         if (a["points"] != null || a["x1"] != null)
         {
-            attrs["contour"] = SectionPaths.PointsJson(CheckOutline(Args.Points(a)));
+            SetDrawn(attrs, a, null);
             attrs["auto"] = false;
         }
         else
@@ -314,7 +342,7 @@ public static class Rooms
         var storeyId = Spatial.StoreyOf(ctx.Model, room.Id)?.Id ?? throw new CommandException("The room stands on no storey.");
         if (a["points"] != null || a["x1"] != null)
         {
-            attrs["contour"] = SectionPaths.PointsJson(CheckOutline(Args.Points(a)));
+            SetDrawn(attrs, a, Curved(room));
             attrs["auto"] = false;
             attrs.Remove("seed");
             attrs.Remove("islands");
@@ -325,6 +353,7 @@ public static class Rooms
             var region = Region(ctx, storeyId, p, room.Id);
             attrs["auto"] = true;
             attrs["seed"] = new JsonArray(p.X, p.Y);
+            attrs.Remove(ArcOutline.Key);
             attrs["contour"] = SectionPaths.PointsJson(region.Outer);
             if (region.Islands.Count > 0) attrs["islands"] = LoopsJson(region.Islands); else attrs.Remove("islands");
         }

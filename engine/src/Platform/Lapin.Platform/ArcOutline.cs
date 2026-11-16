@@ -37,12 +37,46 @@ public static class ArcOutline
         rises == null || rises.All(r => Math.Abs(r) <= 1e-6) ? null : new JsonArray([.. rises.Select(r => (JsonNode)Math.Round(Math.Abs(r) <= 1e-6 ? 0 : r, 9))]);
 
     /// <summary>Writes the rises into the attributes, or takes them away when every edge is straight.</summary>
-    public static void Write(JsonObject attrs, IReadOnlyList<double>? rises)
+    public static void Write(JsonObject attrs, IReadOnlyList<double>? rises, string arcsKey = Key)
     {
-        if (ToJson(rises) is { } j) attrs[Key] = j; else attrs.Remove(Key);
+        if (ToJson(rises) is { } j) attrs[arcsKey] = j; else attrs.Remove(arcsKey);
     }
 
     public static bool HasArcs(IReadOnlyList<double>? rises) => rises != null && rises.Any(r => Math.Abs(r) > 1e-6);
+
+    /// <summary>
+    /// The corners an element keeps under <paramref name="key"/> (a floor's, a room's, a platform's <c>contour</c>; a terrain's
+    /// <c>parcel</c>), whatever its edges.
+    /// </summary>
+    public static List<Vec2> CornersOf(Entity e, string key = "contour") => Args.StoredPoints(e.Attrs[key]);
+
+    /// <summary>The rises an element keeps under <paramref name="arcsKey"/> beside its corners under <paramref name="key"/>; null when every edge is straight.</summary>
+    public static double[]? RisesOf(Entity e, string key = "contour", string arcsKey = Key) =>
+        e.Attrs[arcsKey] is JsonArray ? Rises(e.Attrs[arcsKey], CornersOf(e, key).Count) : null;
+
+    /// <summary>The outline an element keeps, as built: its corners, each arc laid in chords by the one rule (the corners alone when every edge is straight).</summary>
+    public static IReadOnlyList<Vec2> BuiltOf(Entity e, string key = "contour", string arcsKey = Key)
+    {
+        var c = CornersOf(e, key);
+        return c.Count >= 3 && RisesOf(e, key, arcsKey) is { } r ? Points(c, r) : c;
+    }
+
+    /// <summary>
+    /// The rises a command gives (<paramref name="arcs"/>: one per corner given), else, when only the corners are given, the ones the
+    /// element had (<paramref name="was"/>) while it has as many corners; null when every edge is straight (the element's own
+    /// straight-outline check then applies, unchanged).
+    /// </summary>
+    public static double[]? RisesArg(JsonNode? arcs, int corners, double[]? was = null)
+    {
+        double[]? r = arcs is JsonArray arr ? [.. arr.Select(x => Json.Number(x) ?? 0)] : was != null && was.Length == corners ? was : null;
+        return r != null && HasArcs(r) ? r : null;
+    }
+
+    /// <summary>The area an element's kept outline encloses, exactly (its arcs as arcs), unsigned.</summary>
+    public static double AreaOf(Entity e, string key = "contour", string arcsKey = Key) => Math.Abs(SignedArea(CornersOf(e, key), RisesOf(e, key, arcsKey)));
+
+    /// <summary>The length round an element's kept outline, its arcs at their own length.</summary>
+    public static double PerimeterOf(Entity e, string key = "contour", string arcsKey = Key) => Perimeter(CornersOf(e, key), RisesOf(e, key, arcsKey));
 
     static double At(IReadOnlyList<double>? rises, int i) => rises != null && i < rises.Count ? rises[i] : 0;
 

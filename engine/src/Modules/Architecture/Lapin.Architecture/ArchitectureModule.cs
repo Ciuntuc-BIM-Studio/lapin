@@ -1409,8 +1409,10 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
     static (Entity E, IReadOnlyList<Vec2> Corners, double[]? Rises) OutlineOf(ICommandContext ctx, JsonObject a)
     {
         var e = ctx.Model.Get((string?)a["id"] ?? "") ?? throw new CommandException("The element is not in the project.");
-        if (!(e.Class is IfcClass.Slab || e.Class == Ceilings.Class || (e.Class == IfcClass.OpeningElement && e.Attrs["contour"] != null && e.Str("stairId") == null)))
-            throw new CommandException("Only a floor, a floor opening or a ceiling has its outline's edges bent and its corners rounded here.");
+        // A drawn room and a drawn balcony too (decision 589): a room found from its walls follows them, a styled balcony its fields.
+        if (!(e.Class is IfcClass.Slab || e.Class == Ceilings.Class || (e.Class == IfcClass.OpeningElement && e.Attrs["contour"] != null && e.Str("stairId") == null)
+            || (e.Class == Rooms.Class && !e.Bool("auto")) || (e.Class == Balconies.BalconyModule.Class && e.Attrs["contour"] != null)))
+            throw new CommandException("Only a floor, a floor opening, a ceiling, a drawn room or a drawn balcony has its outline's edges bent and its corners rounded here.");
         if (StoredBodies.Has(e) || e.Attrs["reference"] != null) throw new CommandException("An element kept as it came from its file is not edited by its outline.");
         var corners = Slabs.Corners(e);
         if (corners.Count < 3) throw new CommandException("The element has no outline.");
@@ -1423,7 +1425,13 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
     /// <summary>An outline edit written: checked, its arcs with it, a floor's layer extents following its edges.</summary>
     static void ReplaceOutline(ICommandContext ctx, Entity e, IReadOnlyList<Vec2> was, IReadOnlyList<Vec2> corners, IReadOnlyList<double>? rises)
     {
-        var (c, r) = ArcOutline.Check(corners, rises, e.Class == IfcClass.Slab ? "A floor" : e.Class == Ceilings.Class ? "A ceiling" : "An opening");
+        if (e.Class == Balconies.BalconyModule.Class)
+        {
+            // A balcony keeps the order it was drawn in: its first edge lies against the building.
+            Balconies.BalconyModule.Update(ctx, new JsonObject { ["id"] = e.Id, ["contour"] = Slabs.ContourJson(corners), ["arcs"] = ArcOutline.ToJson(rises) ?? new JsonArray([.. corners.Select(_ => (JsonNode)0)]) });
+            return;
+        }
+        var (c, r) = ArcOutline.Check(corners, rises, e.Class == IfcClass.Slab ? "A floor" : e.Class == Ceilings.Class ? "A ceiling" : e.Class == Rooms.Class ? "A room" : "An opening");
         var attrs = e.CloneAttrs();
         Slabs.SetOutline(attrs, c, r);
         if (e.Class == IfcClass.Slab) RemapExtents(e, attrs, c);

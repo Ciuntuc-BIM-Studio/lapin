@@ -146,6 +146,8 @@ Et rækværks segmenter kan være buer. Højreklik ved et segment af et valgt r�
 
 **Architecture → Balcony** (<kbd>BY</kbd>) hænger en altan på en væg: vælg stilen i kommandolinjens bjælke, og klik uden for vægfladen, hvor den skal være; den står på den side af væggen i etagens gulvhøjde. En **fransk altan** (Juliet), klikket ved en dør eller et vindue, centreres på den, 200 mm bredere. Hvor ingen væg er nær, står altanen, hvor du klikker. **Balcony by outline** tegner enhver form: klik hjørnerne, den første kant ligger mod bygningen. **Gallery edge** tegner kanten af en hems over et rum i dobbelt højde med to punkter (hulrummet til venstre, galleriet til højre).
 
+En tegnet altans kanter kan også være buer: **Balcony by outline** har de samme former som Floor-værktøjets bjælke, og den valgte altans hjørner og kanter får **Fillet corner…**, **Chamfer corner…** og **Make arc** fra højreklik; dens plade bygges langs buerne, og arealet måles på dem.
+
 De indbyggede stilarter dækker de efterspurgte typer:
 
 - **Juliet balcony**: et rækværk med balustre foran en fransk dør over en lille stenhylde på to konsoller.

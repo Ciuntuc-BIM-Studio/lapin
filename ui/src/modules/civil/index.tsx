@@ -12,8 +12,9 @@ import { BrickWall, PenLine, Building2, Crosshair, FileDown, FileUp, Fence, Imag
 import { PlatformIcon, TerrainIcon } from '../../icons';
 import type { Grip, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
-import { outlineGrips, outlineRef, toPairs } from '../../viewport/gripKit';
-import { edgeMiddles, fromPairs, insertVertex, moveVertex, removeVertex } from '../../viewport/contour';
+import { curvedOutlineGrips, outlineGrips, outlineRef, toPairs } from '../../viewport/gripKit';
+import { arcsOf, edgeMiddles, fromPairs, insertVertex, moveVertex, removeVertex } from '../../viewport/contour';
+import { PlainShapeBar, toggleOutlineArcs } from '../../viewport/outlineShape';
 import { notify, useUi } from '../../app/store';
 import { execute, query } from '../../engine/session';
 import { formatLength, levelUnit, parseLevel, unitName } from '../../engine/unitsStore';
@@ -160,11 +161,16 @@ const spot: ToolDef = {
   complete: async ({ points: [p] }, ctx) => { await ctx.execute('civil.addSpot', { x: p.x, y: p.y }); },
 };
 
-/** The parcel: the property's boundary on the terrain, drawn dash-dotted with its area. */
+/** The parcel: the property's boundary on the terrain, drawn dash-dotted with its area; its edges may be arcs (audit S4). */
 const parcel: ToolDef = {
   id: 'civil.parcel', label: 'Parcel', icon: Fence, shortcut: 'PC',
-  gesture: { kind: 'polygon' },
-  complete: async ({ points }, ctx) => { await ctx.execute('civil.setParcel', { points: points.map((p) => [p.x, p.y]) }); },
+  gesture: { kind: 'polygon', shapes: true },
+  options: PlainShapeBar,
+  space: toggleOutlineArcs,
+  complete: async ({ points, arcs }, ctx) => {
+    if (points.length < 3) return;
+    await ctx.execute('civil.setParcel', { points: points.map((p) => [p.x, p.y]), ...(arcs ? { arcs } : {}) });
+  },
 };
 
 /** Every terrain of the project as one LandXML file. */
@@ -173,8 +179,13 @@ const landXmlOut: ToolDef = { id: 'civil.landxmlExport', label: 'Export LandXML'
 /** A platform: its outline in plan (Enter or the first corner closes it); it is levelled at the ground's height in its middle, changed in the inspector. */
 const platform: ToolDef = {
   id: 'civil.platform', label: 'Platform', icon: PlatformIcon, shortcut: 'PD',
-  gesture: { kind: 'polygon' },
-  complete: async ({ points }, ctx) => { await ctx.execute('civil.addPlatform', { points: points.map((p) => [p.x, p.y]) }); },
+  gesture: { kind: 'polygon', shapes: true },
+  options: PlainShapeBar,
+  space: toggleOutlineArcs,
+  complete: async ({ points, arcs }, ctx) => {
+    if (points.length < 3) return;
+    await ctx.execute('civil.addPlatform', { points: points.map((p) => [p.x, p.y]), ...(arcs ? { arcs } : {}) });
+  },
 };
 
 /** A ditch along a polyline (Enter finishes), half a metre under the ground; its section is set in the inspector. */
@@ -318,15 +329,17 @@ const civil: LapinModule = {
   grips: {
     IfcEarthworksCut: (n: NodeDto) => {
       if (isDitch(n)) return polylineGrips(pathOf(n), (pts) => ({ command: 'civil.updateDitch', args: { id: n.id, points: toPairs(pts) } }));
-      const pts = fromPairs(n.props.contour);
-      return pts.length >= 3 ? outlineGrips({ pts }, (o) => ({ command: 'civil.updatePlatform', args: { id: n.id, points: toPairs(o.pts) } })) : [];
+      return curvedOutlineGrips(n.id, fromPairs(n.props.contour), n.props.arcs, (pts, arcs) => ({ command: 'civil.updatePlatform', args: { id: n.id, points: toPairs(pts), arcs } }), 'civil');
     },
+    // A terrain's parcel, by its corners; its edges may be arcs (audit S4).
+    IfcGeographicElement: (n: NodeDto) =>
+      curvedOutlineGrips(n.id, fromPairs(n.props.parcel), n.props.parcelArcs, (pts, arcs) => ({ command: 'civil.setParcel', args: { terrainId: n.id, points: toPairs(pts), arcs } }), 'civil'),
     IfcPavement: (n: NodeDto) => polylineGrips(pathOf(n), (pts) => ({ command: 'civil.updatePath', args: { id: n.id, points: toPairs(pts) } })),
     LapinRetainingWall: (n: NodeDto) => polylineGrips(pathOf(n), (pts) => ({ command: 'civil.updateRetainingWall', args: { id: n.id, points: toPairs(pts) } })),
     LapinPlanting: (n: NodeDto) => { const pts = fromPairs(n.props.contour); return pts.length >= 3 ? outlineGrips({ pts }, (o) => ({ command: 'civil.updatePlanting', args: { id: n.id, points: toPairs(o.pts) } })) : []; },
   },
   references: {
-    IfcEarthworksCut: (n: NodeDto) => { if (isDitch(n)) return pathRefs(n); const pts = fromPairs(n.props.contour); return pts.length >= 3 ? [outlineRef(pts)] : []; },
+    IfcEarthworksCut: (n: NodeDto) => { if (isDitch(n)) return pathRefs(n); const pts = fromPairs(n.props.contour); return pts.length >= 3 ? [outlineRef(pts, arcsOf(n.props.arcs, pts.length))] : []; },
     IfcPavement: pathRefs,
     LapinRetainingWall: pathRefs,
     LapinPlanting: (n: NodeDto) => { const pts = fromPairs(n.props.contour); return pts.length >= 3 ? [outlineRef(pts)] : []; },

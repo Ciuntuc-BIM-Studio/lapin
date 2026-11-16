@@ -174,11 +174,12 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         r.Command("addPlatform", "Platform", (ctx, a) =>
         {
             var t = Terrain(ctx.Model, (string?)a["terrainId"] ?? ctx.Model.OfClass(IfcClass.GeographicElement).FirstOrDefault()?.Id);
-            var outline = Terrains.CheckOutline(Outline(a));
+            var (outline, arcs) = Terrains.OutlineArg(a, null);
             var z = Json.Number(a["elevation"]) ?? Terrains.Of(t).ElevationAt(outline.Average(p => p.X), outline.Average(p => p.Y)) ?? 0;
             var n = Terrains.Pads(ctx.Model, t.Id).Count() + 1;
-            var pad = new Entity(ctx.NewId(), IfcClass.EarthworksCut, ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? nm : $"Platform {n}",
-                new JsonObject { ["contour"] = Terrains.ContourJson(outline), ["elevation"] = Math.Round(z, 3) }, "USERDEFINED");
+            var attrs = new JsonObject { ["contour"] = Terrains.ContourJson(outline), ["elevation"] = Math.Round(z, 3) };
+            ArcOutline.Write(attrs, arcs);
+            var pad = new Entity(ctx.NewId(), IfcClass.EarthworksCut, ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? nm : $"Platform {n}", attrs, "USERDEFINED");
             ctx.Add(pad);
             ctx.AddRelation(new Relation(ctx.NewId(), IfcClass.RelVoidsElement, t.Id, [pad.Id]));
             return new JsonObject { ["id"] = pad.Id, ["elevation"] = Math.Round(z, 3) };
@@ -188,9 +189,40 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         {
             var pad = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.EarthworksCut);
             var attrs = pad.CloneAttrs();
-            if (a["points"] != null || a["x1"] != null) attrs["contour"] = Terrains.ContourJson(Terrains.CheckOutline(Outline(a)));
+            if (a["points"] != null || a["x1"] != null)
+            {
+                var (outline, arcs) = Terrains.OutlineArg(a, ArcOutline.RisesOf(pad));
+                attrs["contour"] = Terrains.ContourJson(outline);
+                ArcOutline.Write(attrs, arcs);
+            }
             if (Json.Number(a["elevation"]) is { } z) attrs["elevation"] = z;
             ctx.Replace(pad.With(attrs: attrs));
+            return null;
+        });
+
+        // A platform's or a parcel's corner rounded (a fillet tangent to its two straight edges) or cut straight across, or an edge
+        // bent into an arc or made straight (decision 589, as a floor's): {id (the platform, or the terrain for its parcel), index
+        // (the corner; the edge from it), radius | distance | rise}.
+        r.Command("roundCorner", "Fillet corner", (ctx, a) =>
+        {
+            var (e, key, arcsKey, corners, rises) = OutlineOf(ctx, a);
+            var (c, r2) = ArcOutline.Fillet(corners, rises, CornerIndex(a, corners.Count), Json.Number(a["radius"]) ?? throw new CommandException("What radius? A length in metres."));
+            ReplaceOutline(ctx, e, key, arcsKey, c, r2);
+            return null;
+        });
+        r.Command("chamferCorner", "Chamfer corner", (ctx, a) =>
+        {
+            var (e, key, arcsKey, corners, rises) = OutlineOf(ctx, a);
+            var (c, r2) = ArcOutline.Chamfer(corners, rises, CornerIndex(a, corners.Count), Json.Number(a["distance"]) ?? throw new CommandException("What distance? A length in metres."));
+            ReplaceOutline(ctx, e, key, arcsKey, c, r2);
+            return null;
+        });
+        r.Command("setEdgeArc", "Edge arc", (ctx, a) =>
+        {
+            var (e, key, arcsKey, corners, rises) = OutlineOf(ctx, a);
+            var next = rises?.ToArray() ?? new double[corners.Count];
+            next[CornerIndex(a, corners.Count)] = Json.Number(a["rise"]) ?? 0;
+            ReplaceOutline(ctx, e, key, arcsKey, corners, next);
             return null;
         });
 
@@ -212,7 +244,29 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         throw new CommandException("A terrain needs points: [[x, y, z], …] or a survey file's text.");
     }
 
-    static IReadOnlyList<Vec2> Outline(JsonObject a) => Args.Points(a);
+    /// <summary>The outline an edit names: a platform's (<c>contour</c>, <c>arcs</c>) or, a terrain named, its parcel's (<c>parcel</c>, <c>parcelArcs</c>).</summary>
+    static (Entity E, string Key, string ArcsKey, List<Vec2> Corners, double[]? Rises) OutlineOf(ICommandContext ctx, JsonObject a)
+    {
+        var e = ctx.Model.Get((string?)a["id"] ?? "") ?? throw new CommandException("The element is not in the project.");
+        var (key, arcsKey) = e.Class == IfcClass.EarthworksCut && !Ditches.Is(e) ? ("contour", ArcOutline.Key)
+            : Terrains.IsTerrain(e) ? ("parcel", Terrains.ParcelArcs)
+            : throw new CommandException("Only a platform or a terrain's parcel has its outline's edges bent and its corners rounded here.");
+        var corners = ArcOutline.CornersOf(e, key);
+        if (corners.Count < 3) throw new CommandException(key == "parcel" ? "The terrain has no parcel." : "The platform has no outline.");
+        return (e, key, arcsKey, corners, ArcOutline.RisesOf(e, key, arcsKey));
+    }
+
+    static int CornerIndex(JsonObject a, int n) =>
+        Json.Number(a["index"]) is { } ix && ix >= 0 && ix < n && ix == Math.Floor(ix) ? (int)ix : throw new CommandException($"Which corner? The outline has {n}, from 0.");
+
+    static void ReplaceOutline(ICommandContext ctx, Entity e, string key, string arcsKey, IReadOnlyList<Vec2> corners, IReadOnlyList<double>? rises)
+    {
+        var (c, r) = ArcOutline.Check(corners, rises, key == "parcel" ? "A parcel" : "A platform");
+        var attrs = e.CloneAttrs();
+        attrs[key] = Terrains.ContourJson(c);
+        ArcOutline.Write(attrs, r, arcsKey);
+        ctx.Replace(e.With(attrs: attrs));
+    }
 
     /// <summary>In plans, the orthophotos; the major contours' elevations (relative to ±0.00), along them; the platforms' elevations inside them.</summary>
     public IEnumerable<ViewMark> Marks(ViewContext c)
@@ -250,7 +304,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             }
             foreach (var pad in Terrains.Pads(c.Model, e.Id))
             {
-                var o = Terrains.Contour(pad);
+                var o = ArcOutline.BuiltOf(pad);
                 if (o.Count < 3) continue;
                 var mid = new Vec2(o.Average(p => p.X), o.Average(p => p.Y));
                 mk.Text(new PenText(mid, $"{pad.Name} {Standards.FormatLevel(pad.Num("elevation"), c.Book)}", text.Height, 0, "middle", "middle", true, text.Font), "#000000");
@@ -266,21 +320,24 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 mk.Snaps.Add(p);
             }
             // The parcel: its boundary, dash-dotted, and its area.
-            if (Terrains.Contour(e, "parcel") is { Count: >= 3 } parcel)
+            if (ArcOutline.BuiltOf(e, "parcel", Terrains.ParcelArcs) is { Count: >= 3 } parcel)
             {
                 // A site view that highlights the project draws the parcel in its colour, heavier.
                 if (site != null && SitePlans.Highlight(c.View)) mk.Polyline(parcel, true, "PARCEL", Pens.Default.Cut * 2, SitePlans.ProjectColor, [6, 2, 1, 2]);
                 else mk.Polyline(parcel, true, "PARCEL", Pens.Default.Cut, "#6b4e2e", [6, 2, 1, 2]);
                 var centre = new Vec2(parcel.Average(p => p.X), parcel.Average(p => p.Y));
-                mk.Text(new PenText(centre, $"S = {Math.Abs(Polygon2.SignedArea(parcel)):0.0} m²", text.Height, 0, "middle", "middle", true, text.Font), "#6b4e2e");
+                mk.Text(new PenText(centre, $"S = {ArcOutline.AreaOf(e, "parcel", Terrains.ParcelArcs):0.0} m²", text.Height, 0, "middle", "middle", true, text.Font), "#6b4e2e");
                 // On a site plan its corners are numbered, as the coordinate inventory lists them (ParcelCoordinates).
                 if (site == SitePlans.Situation)
-                    for (var k = 0; k < parcel.Count; k++)
+                {
+                    var corners = ArcOutline.CornersOf(e, "parcel");
+                    for (var k = 0; k < corners.Count; k++)
                     {
-                        var away = parcel[k] - centre;
-                        var at = parcel[k] + (away.Length > 1e-9 ? away.Normalized() : new Vec2(1, 0)) * (2.5 * c.Mm);
+                        var away = corners[k] - centre;
+                        var at = corners[k] + (away.Length > 1e-9 ? away.Normalized() : new Vec2(1, 0)) * (2.5 * c.Mm);
                         mk.Text(new PenText(at, (k + 1).ToString(System.Globalization.CultureInfo.InvariantCulture), text.Height * 0.8, 0, "middle", "middle", false, text.Font), "#6b4e2e");
                     }
+                }
             }
             // The analysis, as fills under the lines.
             if (e.Str("analysis") is { } kind && kind != "none" && Analysis.Of(c.Model, e, kind) is { } analysis)

@@ -910,6 +910,16 @@ public static partial class IfcExport
             if (e.Attrs[ArcOutline.Key] is not JsonArray || e.Attrs["contour"] is not JsonArray) return null;
             var corners = Args.StoredPoints(e.Attrs["contour"]);
             if (corners.Count < 3 || ArcOutline.Rises(e.Attrs[ArcOutline.Key], corners.Count) is not { } rises) return null;
+            if (footprint == "") footprint = f.Add("IFCGEOMETRICREPRESENTATIONSUBCONTEXT", S("FootPrint"), S("Model"), Derived, Derived, Derived, Derived, model, Null, E("PLAN_VIEW"), Null);
+            return f.Add("IFCSHAPEREPRESENTATION", footprint, S("FootPrint"), S("Curve2D"), L(new[] { IndexedLoop(corners, rises) }));
+        }
+
+        /// <summary>
+        /// A closed outline whose edges may be arcs as an IfcIndexedPolyCurve: its corners and each arc's middle, its straight edges
+        /// IfcLineIndex and its arcs IfcArcIndex (start, a point on the arc, end).
+        /// </summary>
+        string IndexedLoop(IReadOnlyList<Vec2> corners, IReadOnlyList<double>? rises)
+        {
             var pts = new List<Vec2>(corners);
             var segments = new List<string>();
             for (var i = 0; i < corners.Count; i++)
@@ -921,8 +931,7 @@ public static partial class IfcExport
                 segments.Add(Typed("IFCARCINDEX", L(new[] { a, pts.Count, b })));
             }
             var list = f.Add("IFCCARTESIANPOINTLIST2D", L(pts.Select(p => L(new[] { R(p.X), R(p.Y) }))), Null);
-            if (footprint == "") footprint = f.Add("IFCGEOMETRICREPRESENTATIONSUBCONTEXT", S("FootPrint"), S("Model"), Derived, Derived, Derived, Derived, model, Null, E("PLAN_VIEW"), Null);
-            return f.Add("IFCSHAPEREPRESENTATION", footprint, S("FootPrint"), S("Curve2D"), L(new[] { f.Add("IFCINDEXEDPOLYCURVE", list, L(segments), False) }));
+            return f.Add("IFCINDEXEDPOLYCURVE", list, L(segments), False);
         }
 
         /// <summary>
@@ -1120,9 +1129,12 @@ public static partial class IfcExport
             var (spatial, relTo, z0) = storey != null && storeyRef.TryGetValue(storey.Id, out var sr) ? (sr, storeyPlace[storey.Id], storeyZ[storey.Id]) : (buildingRef, sitePlace, 0.0);
             var height = geo!.Parts.Select(p => Measure.Bounds(p.Solid)).OfType<(Vec3 Min, Vec3 Max)>().Select(b => b.Max.Z - b.Min.Z).DefaultIfEmpty(storey?.NumOrNull("height") ?? 3).Max();
             string Curve(IReadOnlyList<Vec2> loop) => f.Add("IFCPOLYLINE", L(loop.Append(loop[0]).Select(P2)));
+            // A drawn room with curved edges (audit S4): its profile the true curve, an IfcIndexedPolyCurve with its arcs (kept counter-clockwise).
+            var drawnArcs = !e.Bool("auto") && ArcOutline.RisesOf(e) is { } rr ? rr : null;
+            var outerCurve = drawnArcs != null ? IndexedLoop(ArcOutline.CornersOf(e), drawnArcs) : Curve(Polygon2.EnsureCcw(outer));
             var profile = islands.Count == 0
-                ? f.Add("IFCARBITRARYCLOSEDPROFILEDEF", E("AREA"), Null, Curve(Polygon2.EnsureCcw(outer)))
-                : f.Add("IFCARBITRARYPROFILEDEFWITHVOIDS", E("AREA"), Null, Curve(Polygon2.EnsureCcw(outer)), L(islands.Select(i => Curve(Polygon2.EnsureCcw(i).Reverse().ToList()))));
+                ? f.Add("IFCARBITRARYCLOSEDPROFILEDEF", E("AREA"), Null, outerCurve)
+                : f.Add("IFCARBITRARYPROFILEDEFWITHVOIDS", E("AREA"), Null, outerCurve, L(islands.Select(i => Curve(Polygon2.EnsureCcw(i).Reverse().ToList()))));
             var origin = f.Add("IFCAXIS2PLACEMENT3D", f.Add("IFCCARTESIANPOINT", "(0.,0.,0.)"), Null, Null);
             var solid = f.Add("IFCEXTRUDEDAREASOLID", profile, origin, f.Add("IFCDIRECTION", "(0.,0.,1.)"), R(height));
             f.Add("IFCSTYLEDITEM", solid, L(new[] { Style(geo.Parts.FirstOrDefault()?.Color ?? "#9ec5e8") }), Null);

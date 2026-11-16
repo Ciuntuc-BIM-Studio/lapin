@@ -9,6 +9,7 @@ import { frontView } from '../../viewport/frontView';
 import { openPulldown } from '../../shell/pulldown';
 import { arcAlias, chainTool } from '../core/chainTool';
 import type { ToolContext, Vec2 } from '../../platform/module';
+import { PlainShapeBar, toggleOutlineArcs } from '../../viewport/outlineShape';
 
 /**
  * A room the next Room or Room by outline gives its outline to instead of
@@ -33,14 +34,21 @@ export const room: ToolDef = {
   },
 };
 
-/** A room drawn: its corners, then the first one again (or Enter); it keeps the outline drawn (a terrace, an open-plan area). */
+/**
+ * A room drawn: its corners, then the first one again (or Enter); it keeps the outline drawn (a terrace, an open-plan area).
+ * Its bar draws it as a polygon whose edges may be arcs (Space), a rectangle or a circle (audit S4, as a floor).
+ */
 export const roomOutline: ToolDef = {
   id: 'architecture.roomOutline', label: 'Room by outline', icon: SquareDashed,
-  gesture: { kind: 'polygon' },
-  complete: async ({ points }, ctx) => {
+  gesture: { kind: 'polygon', shapes: true },
+  options: PlainShapeBar,
+  space: toggleOutlineArcs,
+  complete: async ({ points, arcs }, ctx) => {
+    if (points.length < 3) return;
     const id = target();
-    if (id) await ctx.execute('architecture.updateRoom', { id, points: points.map((p) => [p.x, p.y]) });
-    else await ctx.execute('architecture.addRoom', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]) });
+    const outline = { points: points.map((p) => [p.x, p.y]), ...(arcs ? { arcs } : {}) };
+    if (id) await ctx.execute('architecture.updateRoom', { id, ...outline });
+    else await ctx.execute('architecture.addRoom', { storeyId: ctx.storeyId, ...outline });
   },
 };
 

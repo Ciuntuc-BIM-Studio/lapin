@@ -14,6 +14,10 @@ Dla przestrzeni bez ścian dookoła, takiej jak taras lub jeden koniec otwartej 
 
 ![Rzut z dwoma pomieszczeniami pokolorowanymi według funkcji i legendą kolorów](shots/rooms-plan.webp)
 
+Krawędzie narysowanego pomieszczenia mogą być łukami, jak krawędzie stropu: pasek **Room by outline** rysuje **Polygon**, którego krawędzie mogą być łukami (**Arcs (Space)**), **Rectangle** albo **Circle**, a prawy klik na zaznaczonym pomieszczeniu oferuje **Make arc**, **Make straight**, **Fillet corner…** i **Chamfer corner…**. Jego powierzchnia i obwód są mierzone na prawdziwych łukach, a w IFC profil przestrzeni jest prawdziwą krzywą. Pomieszczenie znalezione ze ścian podąża za nimi, więc jego obrysu nie edytuje się w ten sposób.
+
+![Narysowane pomieszczenie z łukową krawędzią i zaokrąglonym narożnikiem, okrągłe pomieszczenie i balkon z łukowym frontem](shots/rooms-curved.webp)
+
 ## Właściwości pomieszczenia
 
 Zaznacz pomieszczenie, klikając jego pieczątkę lub dowolne miejsce w jego wnętrzu. W panelu Właściwości:

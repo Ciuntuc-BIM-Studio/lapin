@@ -6,7 +6,7 @@
  */
 
 import type { Grip, GripStep, RefLine, Vec2 } from '../platform/module';
-import { anticlockwise, edgeArc, edgeMiddles, insertVertex, moveVertex, offsetEdge, outlinePoints, removeVertex, setArc, toPairs, type Outline } from './contour';
+import { anticlockwise, arcsOf, edgeArc, edgeMiddles, insertVertex, moveVertex, offsetEdge, outlinePoints, removeVertex, setArc, toPairs, type Outline } from './contour';
 import { arcLength, axisLine, isArc, middle, pointAt, riseThrough, tangentAt, type Arc } from './arc';
 export { pt } from '../platform/vec';
 
@@ -81,11 +81,11 @@ export interface CurvedOutline {
  * dragged to bend it through the point, and its diamond at its chord's middle moves it; a right-click offers "Make arc",
  * "Make straight", "Fillet corner…" and "Chamfer corner…".
  */
-export function outlineGrips<E>(o: Outline<E>, save: (next: Outline<E>) => GripStep, curved?: CurvedOutline): Grip[] {
+export function outlineGrips<E>(o: Outline<E>, save: (next: Outline<E>) => GripStep, curved?: CurvedOutline, prefix = ''): Grip[] {
   const n = o.pts.length;
   const straightAt = (i: number) => Math.abs(o.arcs?.[i] ?? 0) <= 1e-6;
   const grips: Grip[] = o.pts.map((p, i) => ({
-    key: `v${i}`, kind: 'vertex' as const, at: p,
+    key: `${prefix}v${i}`, kind: 'vertex' as const, at: p,
     title: o.pts.length > 3 ? 'Drag to move the corner · Ctrl/⌘-click: remove this corner' : 'Drag to move the corner (an outline keeps three corners at least)',
     step: (to: Vec2) => save(moveVertex(o, i, to)),
     remove: () => { const next = removeVertex(o, i); return next ? save(next) : null; },
@@ -99,7 +99,7 @@ export function outlineGrips<E>(o: Outline<E>, save: (next: Outline<E>) => GripS
     const bent = isArc(c);
     const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
     grips.push({
-      key: `e${i}`, kind: 'edgeMid', at: m,
+      key: `${prefix}e${i}`, kind: 'edgeMid', at: m,
       title: 'Drag to move the edge · Shift-drag: offset the whole outline · Ctrl/⌘-click: add a corner',
       step: (to: Vec2) => { const next = offsetEdge(o, i, to); return next ? save(next) : null; },
       offsetAll: { outline: o as Outline<unknown>, normal: { x: (out * (b.y - a.y)) / len, y: (-out * (b.x - a.x)) / len }, save: (next) => save(next as Outline<E>) },
@@ -111,7 +111,7 @@ export function outlineGrips<E>(o: Outline<E>, save: (next: Outline<E>) => GripS
         // Bulging out of the outline by an eighth of its length.
         : { bend: () => save(setArc(o, i, (anticlockwise(o.pts) ? -1 : 1) * Math.hypot(b.x - a.x, b.y - a.y) / 8)) } : {}),
     });
-    if (curved && bent) grips.push({ key: `a${i}`, kind: 'radius', at: middle(c), title: 'Drag to bend the edge through the point', step: (to: Vec2) => save(setArc(o, i, riseThrough(a, b, to))) });
+    if (curved && bent) grips.push({ key: `${prefix}a${i}`, kind: 'radius', at: middle(c), title: 'Drag to bend the edge through the point', step: (to: Vec2) => save(setArc(o, i, riseThrough(a, b, to))) });
   });
   return grips;
 }
@@ -128,6 +128,19 @@ export function nearestOnLine(pts: Vec2[], p: Vec2): { at: Vec2; dist: number; t
     before += lens[i];
   }
   return best;
+}
+
+/**
+ * An element's outline whose edges may be arcs (decision 589 and audit S4: a floor's, a drawn room's, a drawn balcony's, a
+ * platform's, a parcel's): its grips, each edit `save`d with the corners and every edge's rise; a corner rounded or cut by the
+ * module's `roundCorner` / `chamferCorner` (one engine command, one undo step).
+ */
+export function curvedOutlineGrips(id: string, pts: Vec2[], rawArcs: unknown, save: (pts: Vec2[], arcs: number[]) => GripStep, module = 'architecture'): Grip[] {
+  if (pts.length < 3) return [];
+  return outlineGrips({ pts, arcs: arcsOf(rawArcs, pts.length) }, (o) => save(o.pts, o.arcs ?? o.pts.map(() => 0)), {
+    fillet: (index, radius) => ({ command: `${module}.roundCorner`, args: { id, index, radius } }),
+    chamfer: (index, distance) => ({ command: `${module}.chamferCorner`, args: { id, index, distance } }),
+  });
 }
 
 export const outlineRef = (pts: Vec2[], arcs?: number[]): RefLine => ({ points: arcs ? outlinePoints({ pts, arcs }) : pts, closed: true, kind: 'outline' });

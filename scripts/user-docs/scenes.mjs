@@ -1819,6 +1819,59 @@ export const scenes = [
     },
   },
   {
+    // Curved edges on the other outlines (audit S4): a room drawn as a circle with the Room by outline tool's bar, a balcony
+    // drawn with a curved front, a drawn room's corner offering Fillet corner and Make arc as a floor's does.
+    id: 'rooms-curved',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      await t.ui({ keyPlan: false });
+      const storey = await t.storey();
+      const room = await t.cmd('architecture.addRoom', { storeyId: storey, points: [[0, 0], [6, 0], [6, 4], [0, 4]], arcs: [0, 0, -1, 0], name: 'Living' });
+      await t.cmd('architecture.addBalcony', { storeyId: storey, contour: [[6, 0.5], [6, 3.5], [7.4, 3.5], [7.4, 0.5]], arcs: [0, 0, 0.5, 0] });
+      const frame = await t.cmd('architecture.addRoom', { storeyId: storey, points: [[9, 0], [12, 0], [12, 4], [9, 4]] });
+      await t.fit();
+      await t.cmd('element.delete', { id: frame.id });
+      await t.wait(500);
+      // Room by outline: its bar's Circle, a centre and a point on it.
+      await t.tool('architecture.roomOutline');
+      await t.page.locator('[data-testid=command-line] [data-testid=outline-shape] [data-shape=circle]').click();
+      const [cx, cy] = await t.planPoint(10.5, 2), [ox, oy] = await t.planPoint(12, 2);
+      await t.page.mouse.click(cx, cy);
+      await t.page.mouse.move(ox, oy, { steps: 6 });
+      await t.wait(300);
+      t.expect(await t.page.locator('.cad-prompt [data-testid=outline-shape]').count() === 1, 'the Room by outline tool shows the outline shapes');
+      await t.page.mouse.click(ox, oy);
+      await t.wait(1200);
+      const round = (await t.nodes()).find((n) => n.type === 'IfcSpace' && n.id !== room.id && Array.isArray(n.props.arcs));
+      t.expect(round && round.props.contour.length === 4, 'the circle drawn is a room of four quarter arcs');
+      await t.page.locator('[data-testid=command-line] [data-testid=outline-shape] [data-shape=polygon]').click();
+      await t.keys('Escape');
+      await t.ui({ tool: null });
+      await t.wait(300);
+      // The first room selected: a right-click on a corner offers the fillet, near a straight edge Make arc.
+      await select(t, room.id);
+      await t.wait(600);
+      const grip = async (key) => { const r = await t.page.locator(`[data-testid=plan] [data-grip="${key}"]`).first().boundingBox(); return r ? [r.x + r.width / 2, r.y + r.height / 2] : null; };
+      t.expect((await grip('a2')) != null, 'the drawn room\'s curved edge shows its arc grip');
+      const [vx, vy] = (await grip('v0')) ?? [0, 0];
+      await t.page.mouse.click(vx, vy, { button: 'right' });
+      await t.wait(300);
+      t.expect(await t.page.locator('.context-menu .context-item', { hasText: 'Fillet corner' }).count() === 1, 'a drawn room\'s corner offers Fillet corner');
+      await t.page.locator('.context-menu .context-item', { hasText: 'Fillet corner' }).click();
+      await t.wait(400);
+      await t.page.keyboard.type('800');
+      await t.page.keyboard.press('Enter');
+      await t.wait(1200);
+      const filleted = (await t.nodes()).find((n) => n.id === room.id);
+      t.expect(filleted.props.contour.length === 5, `the room's corner is rounded (${filleted.props.contour.length} corners)`);
+      await t.page.mouse.move(vx - 60, vy + 60);
+      await t.wait(400);
+      await t.shot('rooms-curved', { of: '.plan-svg', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     // Fillet and chamfer on walls and railings (a user's request): Architecture → Fillet takes two walls (a curved wall between
     // them, both trimmed to it); a railing's corner rounded from its grip's right-click, its arc built along the true curve.
     id: 'walls-fillet',

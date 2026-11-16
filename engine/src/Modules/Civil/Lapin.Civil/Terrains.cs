@@ -111,6 +111,21 @@ public static class Terrains
 
     public static JsonArray ContourJson(IEnumerable<Vec2> pts) => new(pts.Select(p => (JsonNode)new JsonArray(p.X, p.Y)).ToArray());
 
+    /// <summary>The attribute beside a terrain's <c>parcel</c> holding its edges' rises (<see cref="ArcOutline"/>).</summary>
+    public const string ParcelArcs = "parcelArcs";
+
+    /// <summary>
+    /// The outline a command gives a platform or a parcel: its <c>points</c> and, optional, each edge's rise (<c>arcs</c>,
+    /// <see cref="ArcOutline"/>); <paramref name="was"/>: the rises it had, kept when only its corners are given, as many.
+    /// </summary>
+    public static (IReadOnlyList<Vec2> Corners, double[]? Rises) OutlineArg(JsonObject a, double[]? was, string what = "A platform")
+    {
+        var pts = Args.Points(a);
+        if (ArcOutline.RisesArg(a["arcs"], pts.Count, was) is not { } rises) return (CheckOutline(pts), null);
+        var (c, r) = ArcOutline.Check(pts, rises, what);
+        return (c, r);
+    }
+
     /// <summary>A platform's outline: three distinct corners at least, made counter-clockwise.</summary>
     public static IReadOnlyList<Vec2> CheckOutline(IReadOnlyList<Vec2> pts)
     {
@@ -170,7 +185,7 @@ public static class Terrains
         if (Body(t, baseZ) is not { } body) return new ElementGeometry([], Diagnostics: ["The terrain's surface could not be closed into a solid."]);
         var problems = new List<string>();
         var works = new List<Earthwork>();
-        var pads = Pads(m, e.Id).Select(p => (Pad: p, Outline: Contour(p), Z: p.Num("elevation"))).Where(p => p.Outline.Count >= 3).ToList();
+        var pads = Pads(m, e.Id).Select(p => (Pad: p, Outline: ArcOutline.BuiltOf(p), Z: p.Num("elevation"))).Where(p => p.Outline.Count >= 3).ToList();
         if (pads.Count > 0)
         {
             if (services?.Get<ISolidBooleans>() is { } booleans)
@@ -326,7 +341,8 @@ public static class Terrains
             new("MaxElevation", t.Bounds.Max.Z, "LENGTH", "Highest point"),
             new("CutVolume", works.Sum(w => w.Cut), "VOLUME", "Cut"),
             new("FillVolume", works.Sum(w => w.Fill), "VOLUME", "Fill"),
-            .. Contour(e, "parcel") is { Count: >= 3 } parcel ? new Quantity[] { new("ParcelArea", Math.Abs(Polygon2.SignedArea(parcel)), "AREA", "Parcel"), new("ParcelPerimeter", Polygon2.Perimeter(parcel), "LENGTH", "Parcel boundary") } : [],
+            // Exactly, its arcs as arcs (decision 589).
+            .. Contour(e, "parcel") is { Count: >= 3 } ? new Quantity[] { new("ParcelArea", ArcOutline.AreaOf(e, "parcel", ParcelArcs), "AREA", "Parcel"), new("ParcelPerimeter", ArcOutline.PerimeterOf(e, "parcel", ParcelArcs), "LENGTH", "Parcel boundary") } : [],
         ]);
         foreach (var w in works)
             yield return new QuantitySet("Lapin_EarthworkQuantities",
