@@ -1989,6 +1989,31 @@ export const scenes = [
     },
   },
   {
+    // A wall opening of its own outline (audit S4): an arch drafted on an elevation, Convert to… → Wall opening cuts that outline
+    // through the wall the elevation looks at.
+    id: 'wall-opening-outline',
+    touches: ['architecture', 'drafting'],
+    async run(t) {
+      await t.fresh();
+      await t.ui({ keyPlan: false });
+      const storey = await t.storey();
+      const wall = await t.cmd('architecture.addWall', { storeyId: storey, x1: 0, y1: 0, x2: 8, y2: 0, height: 3 });
+      const section = await t.cmd('view.create', { kind: 'section', start: [-1, -2], end: [9, -2], name: 'Section A' });
+      // An opening with a gable head: two straight jambs, two slopes meeting at the top.
+      const shape = await t.cmd('drafting.draw', { viewId: section.id, shape: { type: 'polyline', pts: [[4, 0.6], [5.2, 0.6], [5.2, 1.6], [4.6, 2.4], [4, 1.6]], closed: true } });
+      await t.cmd('drafting.convert', { viewId: section.id, ids: shape.ids, converter: 'wallOpening', options: {} });
+      const opening = (await t.nodes()).find((n) => n.type === 'IfcOpeningElement' && n.props.shape === 'outline');
+      t.expect(!!opening, 'the drafted outline became a wall opening of its own outline');
+      t.expect(Math.abs((opening?.props.width ?? 0) - 1.2) < 1e-6, `its width is the outline's (${opening?.props.width})`);
+      await t.ui({ view: 'drawing', drawingViewId: section.id, selection: null, selected: [] });
+      await t.wait(2000);
+      await t.fit();
+      await t.shot('wall-opening-outline', { of: '[data-testid=drawing]', pad: 0 });
+      t.expect(!!wall.id, 'the wall stands');
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     // Fillet and chamfer on walls and railings (a user's request): Architecture → Fillet takes two walls (a curved wall between
     // them, both trimmed to it); a railing's corner rounded from its grip's right-click, its arc built along the true curve.
     id: 'walls-fillet',

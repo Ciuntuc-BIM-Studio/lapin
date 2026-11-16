@@ -34,6 +34,10 @@ Zaznaczony otwór ma uchwyty jak okno: przeciągnij jego środek, aby przesuną�
 
 ![Otwór w ścianie w swoim konfiguratorze: półkoliste zwieńczenie, otynkowane ościeża](shots/wall-opening-dialog.webp)
 
+Otwór może mieć też **własny obrys**, dowolnego kształtu: narysuj go zamknięty na przekroju lub elewacji patrzącej na ścianę na wprost (**Draft**: polilinia, prostokąt, okrąg, łuki), zaznacz go i wybierz **Draft → Convert to… → Wall opening**. Otwór trafia do prostej ściany za kształtem; jego szerokość, wysokość, miejsce wzdłuż ściany i parapet wynikają z granic obrysu, a sam obrys jest wycinany w ścianie (łuki po prawdziwej krzywej). Po zmianie rozmiaru rozciąga się razem ze swoim prostokątem; inna głowica wybrana we właściwościach zastępuje obrys. W IFC jest to IfcOpeningElement tego kształtu i wraca taki, jaki był.
+
+![Otwór w ścianie o własnym obrysie, narysowany na przekroju](shots/wall-opening-outline.webp)
+
 ## Konfigurator
 
 **Architektura → Drzwi i okna** otwiera konfigurator. Po lewej wymienione są wszystkie typy drzwi i okien projektu. Możesz zmienić:

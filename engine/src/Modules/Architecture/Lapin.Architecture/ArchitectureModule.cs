@@ -842,9 +842,17 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
 
         // An opening alone in a wall, nothing filling it (decision 247): {wallId, x, y | along, width?, height?, sill?, shape?, rise?};
         // its head (decision 253) "rect", "segmental", "elliptical", "round" (a semicircle) or "radiused" (rise: the corner radius).
+        // Of its own outline (audit S4): {wallId, profile: [[along, up]…] (along the wall from its start, up from its base, as an
+        // elevation reads it), arcs?}: its bounds its place and size, the outline cut through the wall.
         r.Command("addWallOpening", "Opening", (ctx, a) =>
         {
             var wall = Spatial.Require(ctx.Model, (string?)a["wallId"], IfcClass.Wall);
+            if (a["profile"] is JsonArray profile)
+            {
+                if (PathCurve.Of(wall).IsArc) throw new CommandException("An opening of its own outline goes in a straight wall.");
+                var pts = Args.StoredPoints(profile);
+                return new JsonObject { ["id"] = Openings.AddOutlined(ctx, wall, pts, ArcOutline.RisesArg(a["arcs"], pts.Count)).Id };
+            }
             var along = Json.Number(a["along"]) ?? Openings.AlongOf(wall, new Vec2(Json.Number(a["x"]) ?? 0, Json.Number(a["y"]) ?? 0));
             var opening = Openings.AddBare(ctx, wall, along, Json.Number(a["sill"]) ?? 0, Json.Number(a["width"]) ?? 0.9, Json.Number(a["height"]) ?? 2.1, (string?)a["shape"], Json.Number(a["rise"]));
             return new JsonObject { ["id"] = opening.Id };

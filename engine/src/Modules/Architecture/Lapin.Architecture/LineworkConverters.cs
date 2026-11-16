@@ -1,3 +1,4 @@
+using Lapin.Geometry;
 using System.Text.Json.Nodes;
 using Lapin.Model;
 using Lapin.Platform;
@@ -97,6 +98,42 @@ public static class LineworkConverters
         return [new("architecture.addBalcony", args, $"A balcony of {s.Points.Count} corners on {storey.Name}")];
     }, "A balcony slab on each closed outline, with its railing and supports from the style.");
 
+    /// <summary>
+    /// A closed shape drafted on an elevation or a section, made a wall opening of its own outline (audit S4): the straight wall the
+    /// view looks at, parallel to it, nearest the view's plane, whose length holds the shape; the shape's corners and arcs read on the
+    /// wall's face (along from its start, up from its base). A circle stays round (its four quarter arcs).
+    /// </summary>
+    public static readonly LineworkConverter WallOpenings = new("wallOpening", "Wall opening", "architecture", "closed", ["elevation", "section"], [],
+    (q, view, s, o) =>
+    {
+        var (corners, rises) = s.Outline();
+        if (Views.PlaneOf(q.Model, q.Services, view, s.Middle.X) is not { } plane) throw new CommandException("The view has no plane to read the shape on.");
+        var world = corners.Select(plane.World).ToList();
+        var mid = new Vec3(world.Average(p => p.X), world.Average(p => p.Y), world.Average(p => p.Z));
+        var right = new Vec2(plane.Right.X, plane.Right.Y);
+        Entity? best = null;
+        var bestD = double.PositiveInfinity;
+        foreach (var w in q.Model.OfClass(IfcClass.Wall))
+        {
+            if (PathCurve.Of(w).IsArc || StoredBodies.Has(w)) continue;
+            var (a, b) = (Lapin.Architecture.Walls.Start(w), Lapin.Architecture.Walls.End(w));
+            var dir = (b - a).Normalized();
+            if (Math.Abs(Vec2.Cross(dir, right.Normalized())) > 1e-3) continue;
+            var along = Vec2.Dot(new Vec2(mid.X, mid.Y) - a, dir);
+            if (along < 0 || along > (b - a).Length) continue;
+            var d = Math.Abs(Vec2.Cross(dir, new Vec2(mid.X, mid.Y) - a));
+            if (d < bestD) (best, bestD) = (w, d);
+        }
+        if (best == null) throw new CommandException("No straight wall faces the view behind the shape: draw it over a wall seen square on.");
+        var f = Openings.FrameOf(q.Model, best);
+        var pts = world.Select(p => new Vec2(Vec2.Dot(new Vec2(p.X, p.Y) - f.Start, f.Dir), p.Z - f.Base)).ToList();
+        // Seen from the wall's back the shape is mirrored on its face: each arc bulges the other way.
+        var flip = Vec2.Dot(f.Dir, right.Normalized()) < 0;
+        var args = new JsonObject { ["wallId"] = best.Id, ["profile"] = LineworkConversion.Points(pts) };
+        if (rises != null) args["arcs"] = new JsonArray([.. rises.Select(r => (JsonNode)Math.Round(flip ? -r : r, 9))]);
+        return [new("architecture.addWallOpening", args, $"An opening of its own outline in {best.Name}")];
+    }, "A wall opening of the shape's outline, in the wall the view looks at.");
+
     public static readonly LineworkConverter SkirtingsAlong = new("skirting", "Skirting", "architecture", "open", Plan,
     [
         new("typeId", "Skirting type", "type", TypeClass: Skirtings.TypeClass),
@@ -141,6 +178,6 @@ public static class LineworkConverters
 
     public static void Register(IModuleRegistry r)
     {
-        foreach (var c in new[] { Walls, Floors, Ceilings, Rooms, RoofsFromOutlines, Balconies, Railings, SkirtingsAlong }) r.Service<LineworkConverter>(c);
+        foreach (var c in new[] { Walls, Floors, Ceilings, Rooms, RoofsFromOutlines, Balconies, Railings, SkirtingsAlong, WallOpenings }) r.Service<LineworkConverter>(c);
     }
 }

@@ -34,6 +34,10 @@ Sélectionnée, une baie a des poignées comme une fenêtre : faites glisser son
 
 ![Une baie dans son configurateur : couvrement en plein cintre, embrasures enduites](shots/wall-opening-dialog.webp)
 
+Une ouverture peut aussi avoir **son propre contour**, de toute forme : dessinez-le fermé sur une coupe ou une élévation qui regarde le mur de face (**Draft** : une polyligne, un rectangle, un cercle, des arcs), sélectionnez-le et choisissez **Draft → Convert to… → Wall opening**. L’ouverture va dans le mur droit derrière la forme ; sa largeur, sa hauteur, sa place le long du mur et son allège viennent des limites du contour, et le contour lui-même est découpé dans le mur (ses arcs sur la vraie courbe). Redimensionnée, elle s’étire avec sa boîte ; une autre tête choisie dans ses propriétés remplace le contour. En IFC c’est un IfcOpeningElement de cette forme, relu tel quel.
+
+![Une ouverture de mur à son propre contour, dessinée sur une coupe](shots/wall-opening-outline.webp)
+
 ## Le configurateur
 
 **Architecture → Portes et fenêtres** ouvre le configurateur. Chaque type de porte et de fenêtre du projet est listé à gauche. Vous pouvez modifier :
