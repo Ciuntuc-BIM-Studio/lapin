@@ -35,6 +35,17 @@ public interface IPathPieces
 }
 
 /// <summary>
+/// What another module keeps right when an element is split, trimmed or carried on (audit 2026-11-15 §15): what it hangs on
+/// that element without the element's module knowing it (a bar's host, a formwork's, a finish painted on a face). Called once
+/// the parts are written: <paramref name="was"/> the element as it was, <paramref name="pieces"/> its parts (the first keeps
+/// its id; for an outline cut by a line, each part's stretch is 0 to 0).
+/// </summary>
+public interface ISplitFollower
+{
+    void Parts(ICommandContext ctx, Entity was, IReadOnlyList<PathPiece> pieces);
+}
+
+/// <summary>
 /// CAD's edits on elements along an axis (audit 2026-11-15, §6: offset, trim, extend and split existed only for drafted lines):
 /// walls, beams and strip footings, straight or curved. Each is one command, one undo step.
 /// <list type="bullet">
@@ -179,6 +190,12 @@ public static class PathEdits
         return e;
     }
 
+    /// <summary>The modules' followers told of the parts (<see cref="ISplitFollower"/>).</summary>
+    public static void Follow(ICommandContext ctx, Entity was, IReadOnlyList<PathPiece> pieces)
+    {
+        foreach (var f in ctx.Services.All<ISplitFollower>()) f.Parts(ctx, was, pieces);
+    }
+
     static IEnumerable<IPathPieces> Hooks(ICommandContext ctx, Entity e) => ctx.Services.All<IPathPieces>().Where(h => h.Handles(e));
 
     static JsonArray J(Vec2 p) => new(Math.Round(p.X, 9), Math.Round(p.Y, 9));
@@ -303,6 +320,7 @@ public static class PathEdits
             if (ctx.Model.GetRelation(r.Id) is { } now)
                 ctx.ReplaceRelation(now with { Relating = now.Relating == e.Id ? second.Id : now.Relating, Related = [.. now.Related.Select(x => x == e.Id ? second.Id : x)] });
         foreach (var h in Hooks(ctx, e)) h.Rehost(ctx, e, [new PathPiece(e.Id, 0, s), new PathPiece(second.Id, s, length)]);
+        Follow(ctx, e, [new PathPiece(e.Id, 0, s), new PathPiece(second.Id, s, length)]);
 
         if (ctx.Services.Get<IPathElements>() is { } paths)
         {
@@ -387,6 +405,7 @@ public static class PathEdits
         }
         ctx.Replace(e.With(attrs: PieceAttrs(ctx, e, s0, s1, false, false)));
         foreach (var h in Hooks(ctx, e)) h.Rehost(ctx, e, [new PathPiece(e.Id, s0, s1)]);
+        Follow(ctx, e, [new PathPiece(e.Id, s0, s1)]);
         if (ctx.Services.Get<IPathElements>() is { } paths)
         {
             Joins.Refresh(ctx, paths, [e.Id]);

@@ -155,6 +155,7 @@ public static class OutlineEdits
         Pins.Refuse([e]);
         var corners = Slabs.Corners(e);
         if (corners.Count < 3) throw new CommandException($"„{e.Name}” has no outline.");
+        if (EllipseEdge.Of(e) is { } el && el.Any(x => x != null)) throw new CommandException($"„{e.Name}” has an elliptical edge: it is not cut by a line yet.");
         var (p, q) = (Args.TryPoint(a["a"]) ?? throw new CommandException("The line's first point?"), Args.TryPoint(a["b"]) ?? throw new CommandException("The line's second point?"));
         var keep = Args.TryPoint(a["keep"]);
         if (!split && keep == null) throw new CommandException("Which side to keep? A point on it.");
@@ -183,15 +184,28 @@ public static class OutlineEdits
 
         var attrs = e.CloneAttrs();
         Slabs.SetOutline(attrs, mc, mr);
-        Remap(e, attrs, mc);
+        Remap(e, attrs, mc, mr);
+        // A ceiling's grid stays where it was on each part (its origin pinned), its fixtures in the part their cell lies in.
+        Ceilings.Grid? grid = e.Class == Ceilings.Class ? Ceilings.GridOf(m, e) : null;
+        void Fixtures(JsonObject x, bool left)
+        {
+            if (grid == null) return;
+            if (Ceilings.OriginOf(e) == null) x["origin"] = new JsonArray(Math.Round(grid.Origin.X, 9), Math.Round(grid.Origin.Y, 9));
+            if (x["fixtures"] is not JsonArray) return;
+            x["fixtures"] = new JsonArray([.. Ceilings.Fixtures(e).Where(f => LeftOf(grid.World(new Vec2((f.I + 0.5) * grid.W, (f.J + 0.5) * grid.L))) == left)
+                .Select(f => (JsonNode)new JsonObject { ["kind"] = f.Kind, ["i"] = f.I, ["j"] = f.J })]);
+        }
+        Fixtures(attrs, keepLeft);
         if (!split)
         {
             ctx.Replace(e.With(attrs: attrs));
+            PathEdits.Follow(ctx, e, [new PathPiece(e.Id, 0, 0)]);
             return new JsonObject { ["id"] = e.Id };
         }
         var otherAttrs = e.CloneAttrs();
         Slabs.SetOutline(otherAttrs, oc, otherRises);
-        Remap(e, otherAttrs, oc);
+        Remap(e, otherAttrs, oc, otherRises);
+        Fixtures(otherAttrs, !keepLeft);
         ctx.Replace(e.With(attrs: attrs));
         var second = PathEdits.AddLike(ctx, e, otherAttrs);
         foreach (var o in toOther)
@@ -204,14 +218,15 @@ public static class OutlineEdits
                     ctx.AddRelation(new Relation(ctx.NewId(), IfcClass.RelVoidsElement, second.Id, [o.Id]));
                 }
             }
+        PathEdits.Follow(ctx, e, [new PathPiece(e.Id, 0, 0), new PathPiece(second.Id, 0, 0)]);
         return new JsonObject { ["ids"] = new JsonArray(e.Id, second.Id) };
     }
 
     /// <summary>A floor's layer extents on the edges it keeps (along the old ones); a ceiling has none.</summary>
-    static void Remap(Entity e, JsonObject attrs, IReadOnlyList<Vec2> corners)
+    static void Remap(Entity e, JsonObject attrs, IReadOnlyList<Vec2> corners, IReadOnlyList<double>? rises)
     {
         if (e.Class != IfcClass.Slab || LayerExtents.Of(e) is not { Count: > 0 } extents) return;
-        if (LayerExtents.ToJson(LayerExtents.RemapEdges(extents, Slabs.Corners(e), corners)) is { } kept) attrs[LayerExtents.Key] = kept;
+        if (LayerExtents.ToJson(LayerExtents.RemapEdges(extents, Slabs.Corners(e), corners, Slabs.Rises(e), rises)) is { } kept) attrs[LayerExtents.Key] = kept;
         else attrs.Remove(LayerExtents.Key);
     }
 }

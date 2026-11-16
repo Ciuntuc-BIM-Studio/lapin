@@ -219,6 +219,7 @@ public static class PolylineEdits
         ctx.Replace(e.With(attrs: first));
         var second = PathEdits.AddLike(ctx, e, secondAttrs);
         h.Rehost(ctx, e, [new PathPiece(e.Id, 0, s), new PathPiece(second.Id, s, length)], a);
+        PathEdits.Follow(ctx, e, [new PathPiece(e.Id, 0, s), new PathPiece(second.Id, s, length)]);
         var p = line.At(s);
         return new JsonObject { ["ids"] = new JsonArray(e.Id, second.Id), ["at"] = new JsonArray(Math.Round(p.X, 9), Math.Round(p.Y, 9)) };
     }
@@ -243,6 +244,7 @@ public static class PolylineEdits
         h.Piece(ctx.Model, e, attrs, line.Slice(s0, s1), false, false);
         ctx.Replace(e.With(attrs: attrs));
         h.Rehost(ctx, e, [new PathPiece(e.Id, s0, s1)], a);
+        PathEdits.Follow(ctx, e, [new PathPiece(e.Id, s0, s1)]);
         return new JsonObject { ["id"] = e.Id };
     }
 
