@@ -34,6 +34,10 @@ Seleccionado, un hueco tiene pinzamientos como una ventana: arrastra su centro p
 
 ![Un hueco en el muro en su configurador: remate semicircular, las mochetas enlucidas](shots/wall-opening-dialog.webp)
 
+Un hueco puede tener también **su propio contorno**, de cualquier forma: dibújelo cerrado en una sección o un alzado que mire el muro de frente (**Draft**: una polilínea, un rectángulo, un círculo, arcos), selecciónelo y elija **Draft → Convert to… → Wall opening**. El hueco va en el muro recto detrás de la forma; su anchura, altura, posición a lo largo del muro y antepecho salen de los límites del contorno, y el contorno mismo se corta a través del muro (sus arcos sobre la curva verdadera). Redimensionado, se estira con su caja; otra cabeza elegida en sus propiedades sustituye el contorno. En IFC es un IfcOpeningElement de esa forma y vuelve tal como era.
+
+![Un hueco de muro con su propio contorno, dibujado en una sección](shots/wall-opening-outline.webp)
+
 ## El configurador
 
 **Arquitectura → Puertas y ventanas** abre el configurador. Todos los tipos de puerta y ventana del proyecto aparecen a la izquierda. Puede cambiar:

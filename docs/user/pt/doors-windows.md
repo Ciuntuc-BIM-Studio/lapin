@@ -34,6 +34,10 @@ Selecionada, uma abertura tem alças como uma janela: arraste o meio para desliz
 
 ![Um vão na parede no seu configurador: topo semicircular, requadros rebocados](shots/wall-opening-dialog.webp)
 
+Uma abertura pode ter também **o seu próprio contorno**, de qualquer forma: desenhe-o fechado num corte ou alçado que olhe a parede de frente (**Draft**: uma polilinha, um retângulo, um círculo, arcos), selecione-o e escolha **Draft → Convert to… → Wall opening**. A abertura vai na parede reta atrás da forma; a largura, a altura, o lugar ao longo da parede e o peitoril vêm dos limites do contorno, e o próprio contorno é cortado na parede (os arcos sobre a curva verdadeira). Redimensionada, estica com a sua caixa; outra cabeça escolhida nas propriedades substitui o contorno. No IFC é um IfcOpeningElement dessa forma e volta como era.
+
+![Uma abertura de parede com o seu próprio contorno, desenhada num corte](shots/wall-opening-outline.webp)
+
 ## O configurador
 
 **Arquitetura → Portas e janelas** abre o configurador. Todos os tipos de porta e de janela do projeto estão listados à esquerda. Você pode mudar:

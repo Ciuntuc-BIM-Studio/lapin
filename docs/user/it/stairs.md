@@ -146,6 +146,8 @@ I segmenti di un parapetto possono essere archi. Clic destro vicino a un segment
 
 **Architecture → Balcony** (<kbd>BY</kbd>) appende un balcone a un muro: scegli lo stile nella barra della riga di comando e fai clic fuori dalla faccia del muro, dove va; si posa su quel lato del muro alla quota del pavimento del piano. Un **balcone alla francese** (Juliet) posato vicino a una porta o a una finestra si centra su di essa, 200 mm più largo. Dove non c’è un muro vicino, il balcone sta dove fai clic. **Balcony by outline** disegna qualsiasi forma: fai clic sugli angoli, il primo lato sta contro l’edificio. **Gallery edge** disegna il bordo di un soppalco su uno spazio a doppia altezza con due punti (il vuoto a sinistra, il soppalco a destra).
 
+Anche i bordi di un balcone disegnato possono essere archi: **Balcony by outline** ha le stesse forme della barra dello strumento Floor, e angoli e bordi del balcone selezionato accettano **Fillet corner…**, **Chamfer corner…** e **Make arc** dal clic destro; la sua soletta segue gli archi e la sua area è misurata su di essi.
+
 Gli stili predefiniti coprono i tipi richiesti:
 
 - **Juliet balcony**: un parapetto a balaustri davanti a una portafinestra su una piccola lastra di pietra con due mensole.

@@ -14,6 +14,10 @@ Pour un espace qui n’est pas entouré de murs, comme une terrasse ou l’extr�
 
 ![Un plan avec deux pièces colorées selon leur fonction et une légende de couleurs](shots/rooms-plan.webp)
 
+Les bords d’une pièce dessinée peuvent être courbes, comme ceux d’un plancher : la barre de **Room by outline** dessine un **Polygon** dont les bords peuvent être des arcs (**Arcs (Space)**), un **Rectangle** ou un **Circle**, et le clic droit sur la pièce sélectionnée propose **Make arc**, **Make straight**, **Fillet corner…** et **Chamfer corner…**. Son aire et son périmètre sont mesurés sur les vrais arcs, et en IFC le profil de l’espace est la vraie courbe. Une pièce trouvée d’après ses murs les suit : son contour ne s’édite donc pas ainsi.
+
+![Une pièce dessinée avec un bord courbe et un angle arrondi, une pièce ronde et un balcon à l’avant courbe](shots/rooms-curved.webp)
+
 ## Les propriétés d’une pièce
 
 Sélectionnez une pièce en cliquant son étiquette ou n’importe où à l’intérieur. Dans le panneau des propriétés :

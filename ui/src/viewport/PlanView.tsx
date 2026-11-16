@@ -71,7 +71,7 @@ import { ScaleChip, ScalePicker, StructurePicker } from './ScaleChip';
 import { DASHES, planDetail, shownAt } from './planDetail';
 import { useLineTypes } from '../modules/core/lineTypes/lineTypes';
 import { axisLine, riseThrough } from './arc';
-import { arrivingDir, circleOutline, rectangleOutline, tangentRise, useOutlineShape } from './outlineShape';
+import { PICKED, arrivingDir, circleOutline, ellipseOutline, loopOf, pickOutline, rectangleOutline, tangentRise, useOutlineShape } from './outlineShape';
 import { useLang } from '../i18n';
 import { others, reportPresence, useShare } from '../engine/share';
 
@@ -417,13 +417,13 @@ export function PlanView() {
   const picked = useRef<NodeDto | undefined>(undefined);
   useEffect(() => { picked.current = undefined; }, [toolId]);
 
-  const complete = useCallback(async (points: Vec2[], entity?: NodeDto, face?: FaceHit, typed?: number, arcs?: number[]) => {
+  const complete = useCallback(async (points: Vec2[], entity?: NodeDto, face?: FaceHit, typed?: number, arcs?: number[], ellipses?: unknown[]) => {
     if (!tool) return;
     picked.current = undefined;
     // An annotation drawn over an inset view goes on its source, in its own coordinates (decision 576); the model's tools stay on the plan.
     const inset = drawsThroughInsets(tool.id) ? insetUnder(drawing?.marks, points) : null;
     if (inset) await completeTool(tool, { points: points.map(inset.map), entity, typed, ...(rot ? { rotation: rot } : {}) }, inset.source);
-    else await completeTool(tool, { points, entity, face, typed, ...(rot ? { rotation: rot } : {}), ...(arcs?.some((r) => Math.abs(r) > 1e-6) ? { arcs } : {}) });
+    else await completeTool(tool, { points, entity, face, typed, ...(rot ? { rotation: rot } : {}), ...(arcs?.some((r) => Math.abs(r) > 1e-6) ? { arcs } : {}), ...(ellipses?.some(Boolean) ? { ellipses } : {}) });
     if (tool.gesture?.kind === 'twoPoints' && tool.gesture.repeat) setPts([points[points.length - 1]]);
     else setPts([]);
   }, [tool, drawing, rot]);
@@ -490,7 +490,21 @@ export function PlanView() {
       case 'polygon': {
         // A shaped outline (forum topic 97): a rectangle, a circle, inside walls, or a polygon whose edges may be arcs.
         const shaped = g.shapes ? useOutlineShape.getState() : null;
-        if (shaped?.shape === 'inside') { void complete([p]); break; }
+        // Or taken whole with a click (audit S4): inside the walls, from a closed drafted shape, from a room.
+        if (shaped && PICKED.includes(shaped.shape)) {
+          void pickOutline(shaped.shape, p, storey?.id ?? null, useCad.getState().host?.viewId ?? ownPlan ?? null).then((o) => {
+            if (typeof o === 'string') notify(o);
+            else void complete(o.pts, undefined, undefined, undefined, o.arcs, o.ellipses);
+          });
+          break;
+        }
+        // An ellipse (audit S4): its centre, the end of one semi-axis, then the other semi-axis.
+        if (shaped?.shape === 'ellipse') {
+          if (pts.length < 2) { setPts([...pts, p]); break; }
+          const e = ellipseOutline(pts[0], pts[1], p);
+          if (e) void complete(e.pts, undefined, undefined, undefined, undefined, e.ellipses);
+          break;
+        }
         if (shaped?.shape === 'rectangle' || shaped?.shape === 'circle') {
           if (!pts.length) { setPts([p]); break; }
           if (shaped.shape === 'rectangle') void complete(rectangleOutline(pts[0], p));
@@ -935,6 +949,12 @@ export function PlanView() {
         const seg = axisLine({ a, b: ps[(i + 1) % ps.length], rise: rs[i] ?? 0 });
         return seg.slice(0, -1);
       });
+      if (shape === 'ellipse') {
+        const e = pts.length >= 2 ? ellipseOutline(pts[0], pts[1], cur) : null;
+        const ps = (e ? loopOf(e) : [pts[0], cur]).map(toScreen);
+        if (e) ps.push(ps[0]);
+        return <g className="plan-preview" data-testid="outline-preview"><polyline points={ps.map((p) => `${p.x},${p.y}`).join(' ')} /></g>;
+      }
       if (outline) {
         const ps = line(outline.pts, outline.arcs ?? [], true).map(toScreen);
         ps.push(ps[0]);

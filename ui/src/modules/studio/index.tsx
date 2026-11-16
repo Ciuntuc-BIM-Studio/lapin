@@ -18,7 +18,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { activate, findTool, gripsOf } from '../../platform/modules';
 import { useFamilies, usePlaceFamily } from './families/familyApi';
 import { openPlaceCatalog } from '../../shell/placeCatalogStore';
-import { fromJson } from '../../viewport/cad/shapes';
+import { ellipseWhole, fromJson, polylines } from '../../viewport/cad/shapes';
 import { notify, useUi } from '../../app/store';
 import { activeStorey, execute, query, useSession } from '../../engine/session';
 import { ask, choiceField, lengthField, numberField } from '../../shell/AskBox';
@@ -329,6 +329,7 @@ const solidRefs = (n: NodeDto): RefLine[] => (n.props.operation ? sources(n).fla
   if (!sh) return [];
   if (sh.type === 'line') return [{ points: [sh.a, sh.b], closed: false, kind: 'sketch' as const, view }];
   if (sh.type === 'polyline') return [{ points: sh.pts, closed: sh.closed, kind: 'sketch' as const, view }];
+  if (sh.type === 'ellipse') return [{ points: polylines(sh)[0], closed: ellipseWhole(sh), kind: 'sketch' as const, view }];
   if (sh.type === 'circle') return [{ points: Array.from({ length: 48 }, (_, i) => ({ x: sh.c.x + Math.cos((i * Math.PI) / 24) * sh.r, y: sh.c.y + Math.sin((i * Math.PI) / 24) * sh.r })), closed: true, kind: 'sketch' as const, view }];
   const sweepAngle = (((sh.end - sh.start) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) || 2 * Math.PI;
   return [{ points: Array.from({ length: 25 }, (_, i) => ({ x: sh.c.x + Math.cos(sh.start + (sweepAngle * i) / 24) * sh.r, y: sh.c.y + Math.sin(sh.start + (sweepAngle * i) / 24) * sh.r })), closed: false, kind: 'sketch' as const, view }];
