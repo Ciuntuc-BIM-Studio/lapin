@@ -18,6 +18,8 @@ import { create } from 'zustand';
 export type PanelId = 'browser' | 'props';
 export type Side = 'left' | 'right';
 
+export type PropsTab = 'properties' | 'tool' | 'assistant';
+
 export interface PanelsState {
   browserSide: Side;
   propsSide: Side;
@@ -31,8 +33,10 @@ export interface PanelsState {
   overlay?: { side: 'browser' | 'props'; tab?: PanelTab } | null;
   /** Folded panels show no rail (Focus): Tab or the shortcuts bring them back. */
   railsHidden?: boolean;
-  /** What the right panel shows: the properties, or the assistant (desktop only, docs/plan-assistant.md). */
-  propsTab?: 'properties' | 'assistant';
+  /** What the right panel shows: the properties, the active tool's properties, or the assistant (desktop only, docs/plan-assistant.md). */
+  propsTab?: PropsTab;
+  /** The user's last non-tool tab so ending a tool returns to it. */
+  prevPropsTab?: 'properties' | 'assistant';
 }
 
 /** A panel's tab: the browser's project, levels and IFC tree; the right panel's assistant. */
@@ -127,10 +131,33 @@ export function showOverlay(side: 'browser' | 'props', tab?: PanelTab): void {
   usePanels.setState({ overlay: cur && cur.side === side && cur.tab === tab ? null : { side, tab } });
 }
 
-/** The right panel on the assistant (unfolded if it was folded), or back on the properties. */
-export function showPropsTab(tab: 'properties' | 'assistant'): void {
+/** The right panel on the assistant, tool properties, or back on properties. */
+export function showPropsTab(tab: PropsTab): void {
   usePanels.setState({ propsTab: tab, propsOpen: true, overlay: null });
   save();
+}
+
+/** Pure transition for the Tool Properties tab when a tool starts or finishes (forum #122). */
+export function nextPropsTabForTool(
+  curTab: PropsTab,
+  prevTab: 'properties' | 'assistant' | undefined,
+  hasTool: boolean,
+): { propsTab: PropsTab; prevPropsTab?: 'properties' | 'assistant' } {
+  if (hasTool) {
+    if (curTab === 'tool') return { propsTab: 'tool', prevPropsTab: prevTab ?? 'properties' };
+    return { propsTab: 'tool', prevPropsTab: curTab === 'assistant' ? 'assistant' : 'properties' };
+  }
+  if (curTab === 'tool') return { propsTab: prevTab ?? 'properties', prevPropsTab: undefined };
+  return { propsTab: curTab, prevPropsTab: undefined };
+}
+
+/** Switch to Tool Properties when a tool with settings starts, and return to the previous tab when it ends. */
+export function syncToolPropsTab(hasTool: boolean): void {
+  const s = usePanels.getState();
+  const next = nextPropsTabForTool(s.propsTab ?? 'properties', s.prevPropsTab, hasTool);
+  if (next.propsTab !== (s.propsTab ?? 'properties') || next.prevPropsTab !== s.prevPropsTab) {
+    usePanels.setState(next);
+  }
 }
 export const closeOverlay = () => { if (usePanels.getState().overlay) usePanels.setState({ overlay: null }); };
 
