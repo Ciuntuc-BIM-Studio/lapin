@@ -1182,6 +1182,7 @@ export const ZH: Record<string, string> = {
   'Extract grille': '排风格栅',
   'Rise / drop': '上升 / 下降',
   'Cap': '管帽',
+  'Coupling': '管箍',
   'Service': '服务',
   'Ports': '端口',
   'open': '未连接',

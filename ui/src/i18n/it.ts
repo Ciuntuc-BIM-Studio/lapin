@@ -1184,6 +1184,7 @@ export const IT: Record<string, string> = {
   'Extract grille': 'Griglia di estrazione',
   'Rise / drop': 'Salita / discesa',
   'Cap': 'Tappo',
+  'Coupling': 'Manicotto',
   'Service': 'Servizio',
   'Ports': 'Attacchi',
   'open': 'libero',

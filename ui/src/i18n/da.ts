@@ -1184,6 +1184,7 @@ export const DA: Record<string, string> = {
   'Extract grille': 'Udsugningsrist',
   'Rise / drop': 'Stigning / fald',
   'Cap': 'Prop',
+  'Coupling': 'Muffe',
   'Service': 'Forsyning',
   'Ports': 'Porte',
   'open': 'åben',

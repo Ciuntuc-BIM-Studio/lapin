@@ -1184,6 +1184,7 @@ export const DE: Record<string, string> = {
   'Extract grille': 'Abluftgitter',
   'Rise / drop': 'Steigung / Fall',
   'Cap': 'Kappe',
+  'Coupling': 'Muffe',
   'Service': 'Gewerk',
   'Ports': 'Anschlüsse',
   'open': 'offen',

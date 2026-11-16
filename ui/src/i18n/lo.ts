@@ -1168,6 +1168,7 @@ export const LO: Record<string, string> = {
   'Extract grille': 'ຕະແກງດູດອາກາດ',
   'Rise / drop': 'ຍົກຂຶ້ນ / ຫຼຸດລົງ',
   'Cap': 'ຝາອັດ',
+  'Coupling': 'ຂໍ້ຕໍ່',
   'Service': 'ປະເພດງານລະບົບ',
   'Ports': 'ຊ່ອງຕໍ່',
   'open': 'ເປີດວ່າງ',

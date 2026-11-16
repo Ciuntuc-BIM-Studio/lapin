@@ -52,7 +52,7 @@ const CATEGORIES: [string, string[]][] = [
   ['Plumbing', ['basin', 'wc', 'sink', 'shower', 'bath', 'waterMeter', 'stack', 'cleanout']],
   ['Electrical', ['panel', 'outlet', 'light', 'switch']],
   ['Air', ['fan', 'diffuser', 'grille']],
-  ['Fittings', ['valve', 'rise', 'cap']],
+  ['Fittings', ['valve', 'rise', 'cap', 'coupling']],
   ['Gas', ['meterBox', 'regulator', 'gasMeter', 'gasShutoff', 'gasTap', 'flexConnector', 'gasBoiler', 'cooker', 'waterHeater', 'tappingTee']],
   ['Fuel oil', ['oilTank', 'fillPoint', 'ventCap', 'oilFilter', 'oilBoiler']],
   ['Fire alarm', ['firePanel', 'smokeDetector', 'heatDetector', 'callPoint', 'sounder', 'sounderBeacon']],
@@ -81,6 +81,8 @@ const ROLES: RoleTool[] = [
   { id: 'valve', label: 'Valve', icon: CircleDot, services: ['*'], inline: true },
   { id: 'rise', label: 'Rise / drop', icon: MoveVertical, services: ['*'] },
   { id: 'cap', label: 'Cap', icon: Ban, services: ['*'] },
+  // Put by Split element where a run is cut in two (audit §15), or placed on a run by hand.
+  { id: 'coupling', label: 'Coupling', icon: GitMerge, services: ['*'], inline: true },
   // Gas: a residence's installation, from the meter box to the appliances; the street's tapping tee.
   { id: 'meterBox', label: 'Meter box', icon: Box, services: ['gas'] },
   { id: 'regulator', label: 'Gas regulator', icon: Gauge, services: ['gas'], inline: true },

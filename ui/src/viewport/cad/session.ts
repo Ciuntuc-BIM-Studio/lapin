@@ -619,7 +619,7 @@ function offset(): Step {
       },
     }),
     pickElement: (id) => {
-      if (!isAxisElement(id)) { log('Offset takes drafted lines, and walls, beams and strip footings.'); return pickStep(); }
+      if (!isEditableLine(id)) { log('Offset takes drafted lines, walls, beams, strip footings, railings, MEP runs, paths and roads.'); return pickStep(); }
       return {
         prompt: through() ? 'Through which point?' : 'Which side?', want: 'point',
         point: async (side) => {
@@ -661,6 +661,15 @@ const OUTLINE_CLASSES = ['IfcSlab', 'LapinCeiling'];
 const isOutlineElement = (id: string) => OUTLINE_CLASSES.includes(nodeOf(id)?.type ?? '');
 /** Walls, beams, strip footings: elements along an axis (element.split, trimExtend, offset). */
 const isAxisElement = (id: string) => { const n = nodeOf(id); return !!n && isPathElement(n.props); };
+/** Railings, MEP runs, paths and roads, retaining walls and ditches: elements along a polyline (element.split, trimExtend, offset; audit §15). */
+const LINE_CLASSES = ['LapinRailing', 'IfcPipeSegment', 'IfcDuctSegment', 'IfcCableSegment'];
+const isLineElement = (id: string) => {
+  const n = nodeOf(id);
+  if (!n) return false;
+  return (LINE_CLASSES.includes(n.type) && Array.isArray(n.props.points)) || Array.isArray(n.props.path);
+};
+/** What Split, Trim/Extend and Offset take by its line: an axis or a polyline. */
+const isEditableLine = (id: string) => isAxisElement(id) || isLineElement(id);
 
 /** The straight axis of an element, as two points (none when it is curved). */
 function straightAxis(id: string): [Vec2, Vec2] | null {
@@ -713,9 +722,9 @@ function trimExtendElements(): Step {
       if (isOutlineElement(id)) {
         if (line) await execute('architecture.trimOutline', { id, a: xy(line[0]), b: xy(line[1]), keep: xy(at) });
         else log('A floor or a ceiling is trimmed by a straight boundary.');
-      } else if (isAxisElement(id)) {
+      } else if (isEditableLine(id)) {
         await execute('element.trimExtend', { id, at: xy(at), ...boundary, ...('boundary' in boundary ? { face: useCad.getState().trimFace } : {}) });
-      } else log('Trim/Extend takes walls, beams, strip footings, floors and ceilings.');
+      } else log('Trim/Extend takes walls, beams, strip footings, railings, MEP runs, paths, roads, floors and ceilings.');
       return target(boundary, line);
     },
     element: () => { log('Pick it in a plan, on the part to keep.'); return target(boundary, line); },
@@ -755,7 +764,7 @@ function splitElement(): Step {
     pick: () => { log('Pick a wall, a beam, a strip footing, a floor or a ceiling.'); return first(); },
     pickElement: async (id, at) => {
       if (isOutlineElement(id)) return splitLine(id, at);
-      if (!isAxisElement(id)) { log('Split takes walls, beams, strip footings, floors and ceilings.'); return first(); }
+      if (!isEditableLine(id)) { log('Split takes walls, beams, strip footings, railings, MEP runs, paths, roads, floors and ceilings.'); return first(); }
       if (atCrossing) return crossing(id, at);
       await execute('element.split', { id, at: xy(at) });
       return first();

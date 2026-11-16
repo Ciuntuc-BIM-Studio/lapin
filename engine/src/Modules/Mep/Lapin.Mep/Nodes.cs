@@ -170,6 +170,11 @@ public static class Nodes
             case "cap":
                 o.Add(new PlanItem("heavy", false, [P(0, -0.04), P(0, 0.04)]));
                 break;
+            case "coupling":
+                // Two strokes across the run, either side of the joint.
+                o.Add(new PlanItem("symbol", false, [P(-w, -d), P(-w, d)]));
+                o.Add(new PlanItem("symbol", false, [P(w, -d), P(w, d)]));
+                break;
             case "meterBox":
                 // The box on the facade, its door's diagonal, the service coming up into it.
                 o.Add(new PlanItem("heavy", true, box));

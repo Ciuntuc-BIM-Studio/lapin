@@ -1190,6 +1190,7 @@ export const RO: Record<string, string> = {
   'Extract grille': 'Grilă de evacuare',
   'Rise / drop': 'Urcare / coborâre',
   'Cap': 'Capac',
+  'Coupling': 'Mufă',
   'Service': 'Serviciu',
   'Ports': 'Porturi',
   'open': 'liber',

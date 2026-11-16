@@ -1182,6 +1182,7 @@ export const PL: Record<string, string> = {
   'Extract grille': 'Kratka wywiewna',
   'Rise / drop': 'Pion w górę / w dół',
   'Cap': 'Zaślepka',
+  'Coupling': 'Złączka',
   'Service': 'Medium',
   'Ports': 'Przyłącza',
   'open': 'wolne',

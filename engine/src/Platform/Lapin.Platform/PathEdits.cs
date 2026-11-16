@@ -63,7 +63,8 @@ public static class PathEdits
     public static void Register(IModuleRegistry r)
     {
         // {id, at: [x, y] (a point on the element, or near it) | with: id (an element crossing it) | line: [[x, y], [x, y]] (a line
-        // crossing it) | arc: {c, r}; at? beside with/line/arc picks the crossing nearest it} → {ids: [first, second], at}.
+        // crossing it) | arc: {c, r}; at? beside with/line/arc picks the crossing nearest it; coupling?: false (an MEP run: open ends
+        // at the cut, no coupling)} → {ids: [first, second], at}. Railings, MEP runs, paths and roads too, along their polylines (IPolylinePieces).
         r.Command("element.split", "Split element", (ctx, a) => Split(ctx, a));
         // {id, at (on the part to keep), boundary: id | line: [[x, y], [x, y]] | arc: {c: [x, y], r}, face?: axis | near | far} → {id}.
         r.Command("element.trimExtend", "Trim or extend element", (ctx, a) => TrimExtend(ctx, a));
@@ -262,8 +263,13 @@ public static class PathEdits
 
     // ─── Split ────────────────────────────────────────────────────────────────
 
+    /// <summary>The element named by <c>id</c> when it lies along a polyline (<see cref="IPolylinePieces"/>), with its module's hook.</summary>
+    static (Entity, IPolylinePieces)? Polyline(ICommandContext ctx, JsonObject a) =>
+        ctx.Model.Get((string?)a["id"] ?? "") is { } e && ctx.Services.Get<IPathElements>()?.IsPath(e.Class) != true && PolylineEdits.Hook(ctx, e) is { } h ? (e, h) : null;
+
     public static JsonObject Split(ICommandContext ctx, JsonObject a)
     {
+        if (Polyline(ctx, a) is { } poly) return PolylineEdits.Split(ctx, a, poly.Item1, poly.Item2);
         var m = ctx.Model;
         var e = Editable(ctx, (string?)a["id"]);
         var c = PathCurve.Of(e);
@@ -313,6 +319,8 @@ public static class PathEdits
     /// The line or circle named by <c>{key}</c> (an element's id: its axis, or a face of it) or by <c>line</c> or <c>arc</c>.
     /// <paramref name="keep"/>: the point on the element kept, which says which face is near.
     /// </summary>
+    public static Curve BoundaryOf(ICommandContext ctx, JsonObject a, Entity e, string key, Vec2 keep) => Boundary(ctx, a, e, key, keep);
+
     static Curve Boundary(ICommandContext ctx, JsonObject a, Entity e, string key, Vec2? keep)
     {
         if (a["line"] is JsonArray { Count: >= 2 } line)
@@ -345,6 +353,7 @@ public static class PathEdits
 
     public static JsonObject TrimExtend(ICommandContext ctx, JsonObject a)
     {
+        if (Polyline(ctx, a) is { } poly) return PolylineEdits.TrimExtend(ctx, a, poly.Item1, poly.Item2);
         var m = ctx.Model;
         var e = Editable(ctx, (string?)a["id"]);
         var c = PathCurve.Of(e);
@@ -392,6 +401,7 @@ public static class PathEdits
 
     public static JsonObject Offset(ICommandContext ctx, JsonObject a)
     {
+        if (Polyline(ctx, a) is { } poly) return PolylineEdits.Offset(ctx, a, poly.Item1, poly.Item2);
         var m = ctx.Model;
         var e = m.Get((string?)a["id"] ?? "") ?? throw new CommandException("The element is not in the project.");
         if (ctx.Services.Get<IPathElements>()?.IsPath(e.Class) != true || e.Attrs["start"] is not JsonArray || e.Attrs["end"] is not JsonArray)
