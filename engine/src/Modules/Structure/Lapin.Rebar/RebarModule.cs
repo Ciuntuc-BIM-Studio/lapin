@@ -220,7 +220,7 @@ public sealed class RebarSchedule : IScheduleSource
 
     /// <summary>
     /// The bars by mark as a field schedule, offered beside the bar bending schedule (whose button stays): the same rows, a
-    /// totals line per diameter and one for all. What it cannot give as the fixed one does (decision 634): the per-diameter
+    /// totals line per diameter and one for all. What it cannot give as the fixed one does (decision 638): the per-diameter
     /// totals' „Total” stands in the Mark column, not the Shape's, and they and the last line add up the bars' numbers and
     /// lengths too; no note on a mark whose bars differ; no partition column of its own (marks of each partition stay apart).
     /// </summary>
