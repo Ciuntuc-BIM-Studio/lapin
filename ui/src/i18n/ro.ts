@@ -938,6 +938,7 @@ export const RO: Record<string, string> = {
   "Draw the box's cuts as a sheet does (each material's cut fill and hatch) instead of the materials": 'Desenează tăieturile cutiei ca pe planșă (umplutura și hașura de secțiune a fiecărui material) în locul materialelor',
   'Select a wall, a beam or another element to turn the box the way it runs.': 'Selectează un perete, o grindă sau alt element ca să rotești cutia pe direcția lui.', 'Cut at plan': 'Taie la plan', "Drag a face's arrow to move it": 'Trage de săgeata unei fețe ca s-o muți',
   'The box round the whole model': 'Cutia în jurul întregului model', "The box's top at the active storey's plan cut": 'Capacul cutiei la tăietura planului nivelului activ', 'Section box off': 'Oprește cutia de secțiune',
+  'Hide box': 'Ascunde cutia', 'Show box': 'Arată cutia', 'Hide the section box frame and handles while keeping the cut active': 'Ascunde cadrul și mânerele cutiei de secțiune, păstrând tăietura activă',
   'Annotations': 'Adnotări', "Show the section's dimensions, levels, tags and texts on the cut": 'Arată pe tăietură cotele, nivelurile, etichetele și textele secțiunii',
   'A foundation plan of this level': 'Un plan de fundații al acestui nivel', 'Draw a section line in the plan': 'Desenează linia secțiunii în plan',
   'The four elevations': 'Cele patru fațade', 'New sheet': 'Planșă nouă', 'New schedule': 'Extras nou', 'Delete the view': 'Șterge vederea', 'Delete the sheet': 'Șterge planșa',
@@ -4264,4 +4265,5 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^(\d+) dimension strings on (\d+) facades\.$/, (m) => `${m[1]} lanțuri de cote pe ${m[2]} fațade.`],
   [/^Drawing made: (.+), 1:(\d+)\.$/, (m) => `Desen făcut: ${m[1]}, 1:${m[2]}.`],
   [/^Drawing made: (.+), 1:(\d+), but it does not fit; choose a larger paper or a smaller scale\.$/, (m) => `Desen făcut: ${m[1]}, 1:${m[2]}, dar nu încape; alege un format mai mare sau o scară mai mică.`],
+  [/^Remove all parameters in (.+)$/, (m) => `Elimină toți parametrii din ${m[1]}`],
 ];

@@ -939,6 +939,7 @@ export const LO: Record<string, string> = {
   'Draw the box\'s cuts as a sheet does (each material\'s cut fill and hatch) instead of the materials': 'ແຕ້ມໜ້າຕັດຂອງກ່ອງຕັດຄືກັບທີ່ສະແດງໃນແຜ່ນແບບ (ສີຖົມແລະລາຍແຮງເງົາຂອງແຕ່ລະວັດສະດຸ) ແທນການສະແດງເນື້ອວັດສະດຸ',
   'Select a wall, a beam or another element to turn the box the way it runs.': 'ເລືອກຝາ, ຄານ ຫຼື ອົງປະກອບອື່ນ ເພື່ອໝຸນກ່ອງຕັດໃຫ້ຕາມແນວຂອງມັນ.', 'Cut at plan': 'ຕັດຕາມແຜນຜັງ', 'Drag a face\'s arrow to move it': 'ລາກລູກສອນຢູ່ໜ້າຜິວເພື່ອຍ້າຍ',
   'The box round the whole model': 'ກ່ອງຕັດກວມເອົາແບບຈຳລອງທັງໝົດ', 'The box\'s top at the active storey\'s plan cut': 'ດ້ານເທິງຂອງກ່ອງຕັດຢູ່ລະດັບຕັດແຜນຜັງຂອງຊັ້ນທີ່ໃຊ້ງານ', 'Section box off': 'ປິດກ່ອງຕັດມຸມມອງ',
+  'Hide box': 'ເຊື່ອງກ່ອງ', 'Show box': 'ສະແດງກ່ອງ', 'Hide the section box frame and handles while keeping the cut active': 'ເຊື່ອງກອບ ແລະ ຈຸດຈັບຂອງກ່ອງຕັດ ໂດຍຍັງຮັກສາການຕັດໄວ້',
   'Annotations': 'ຄຳອະທິບາຍປະກອບ', 'Show the section\'s dimensions, levels, tags and texts on the cut': 'ສະແດງເສັ້ນບອກຂະໜາດ, ລະດັບ, ປ້າຍກຳກັບ ແລະ ຂໍ້ຄວາມຂອງຮູບຕັດເທິງໜ້າຕັດ',
   'A foundation plan of this level': 'ແຜນຜັງຖານຮາກຂອງລະດັບນີ້', 'Draw a section line in the plan': 'ແຕ້ມເສັ້ນຕັດໃນແຜນຜັງ',
   'The four elevations': 'ຮູບດ້ານທັງສີ່', 'New sheet': 'ແຜ່ນແບບໃໝ່', 'New schedule': 'ຕາຕະລາງລາຍການໃໝ່', 'Delete the view': 'ລຶບມຸມມອງ', 'Delete the sheet': 'ລຶບແຜ່ນແບບ',
@@ -4364,4 +4365,5 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^(\d+) dimension strings on (\d+) facades\.$/, (m) => `${m[1]} ແຖວຂະໜາດ ໃນ ${m[2]} ດ້ານໜ້າ.`],
   [/^Drawing made: (.+), 1:(\d+)\.$/, (m) => `ສ້າງແບບແຕ້ມແລ້ວ: ${m[1]}, 1:${m[2]}.`],
   [/^Drawing made: (.+), 1:(\d+), but it does not fit; choose a larger paper or a smaller scale\.$/, (m) => `ສ້າງແບບແຕ້ມແລ້ວ: ${m[1]}, 1:${m[2]}, ແຕ່ບໍ່ພໍດີ; ເລືອກເຈ້ຍໃຫຍ່ຂຶ້ນ ຫຼື ມາດຕາສ່ວນນ້ອຍລົງ.`],
+  [/^Remove all parameters in (.+)$/, (m) => `ລຶບພາລາມິເຕີທັງໝົດໃນ ${m[1]}`],
 ];

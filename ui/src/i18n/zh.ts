@@ -942,6 +942,7 @@ export const ZH: Record<string, string> = {
   'Draw the box\'s cuts as a sheet does (each material\'s cut fill and hatch) instead of the materials': '按图纸的方式绘制剖面框的剖切面（各材料的剖切填充和填充图案），而不使用材料',
   'Select a wall, a beam or another element to turn the box the way it runs.': '选择墙、梁或其他构件，使剖面框转向其走向。', 'Cut at plan': '按平面剖切', 'Drag a face\'s arrow to move it': '拖动面的箭头以移动该面',
   'The box round the whole model': '包围整个模型的剖面框', 'The box\'s top at the active storey\'s plan cut': '剖面框顶部位于当前楼层平面图的剖切位置', 'Section box off': '关闭剖面框',
+  'Hide box': '隐藏框', 'Show box': '显示框', 'Hide the section box frame and handles while keeping the cut active': '隐藏剖面框的边框和控制柄，同时保持剖切有效',
   'Annotations': '注释', 'Show the section\'s dimensions, levels, tags and texts on the cut': '在剖切面上显示剖面的尺寸标注、标高、标记和文字',
   'A foundation plan of this level': '此标高的基础平面图', 'Draw a section line in the plan': '在平面图中绘制剖切线',
   'The four elevations': '四个立面', 'New sheet': '新建图纸', 'New schedule': '新建明细表', 'Delete the view': '删除视图', 'Delete the sheet': '删除图纸',
@@ -4301,4 +4302,5 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^(\d+) dimension strings on (\d+) facades\.$/, (m) => `${m[2]} 个立面上共 ${m[1]} 道尺寸链.`],
   [/^Drawing made: (.+), 1:(\d+)\.$/, (m) => `图纸已生成：${m[1]}，1:${m[2]}。`],
   [/^Drawing made: (.+), 1:(\d+), but it does not fit; choose a larger paper or a smaller scale\.$/, (m) => `图纸已生成：${m[1]}，1:${m[2]}，但放不下；请选择更大的图纸或更小的比例。`],
+  [/^Remove all parameters in (.+)$/, (m) => `移除 ${m[1]} 中的所有参数`],
 ];

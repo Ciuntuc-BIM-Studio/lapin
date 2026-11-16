@@ -944,6 +944,7 @@ export const IT: Record<string, string> = {
   'Draw the box\'s cuts as a sheet does (each material\'s cut fill and hatch) instead of the materials': 'Disegna i tagli del box come fa una tavola (il riempimento e il retino di taglio di ogni materiale) invece dei materiali',
   'Select a wall, a beam or another element to turn the box the way it runs.': 'Seleziona un muro, una trave o un altro elemento per ruotare il box nella sua direzione.', 'Cut at plan': 'Taglia alla pianta', 'Drag a face\'s arrow to move it': 'Trascina la freccia di una faccia per spostarla',
   'The box round the whole model': 'Il box attorno a tutto il modello', 'The box\'s top at the active storey\'s plan cut': 'La sommità del box al piano di taglio della pianta del piano attivo', 'Section box off': 'Disattiva il box di sezione',
+  'Hide box': 'Nascondi il box', 'Show box': 'Mostra il box', 'Hide the section box frame and handles while keeping the cut active': 'Nasconde il riquadro e le maniglie del box di sezione mantenendo attivo il taglio',
   'Annotations': 'Annotazioni', 'Show the section\'s dimensions, levels, tags and texts on the cut': 'Mostra quote, livelli, etichette e testi della sezione sul taglio',
   'A foundation plan of this level': 'Una pianta delle fondazioni di questo livello', 'Draw a section line in the plan': 'Disegna una linea di sezione nella pianta',
   'The four elevations': 'I quattro prospetti', 'New sheet': 'Nuova tavola', 'New schedule': 'Nuovo abaco', 'Delete the view': 'Elimina la vista', 'Delete the sheet': 'Elimina la tavola',
@@ -4272,4 +4273,5 @@ export const IT_PATTERNS: Language['patterns'] = [
   [/^(\d+) dimension strings on (\d+) facades\.$/, (m) => `${m[1]} catene di quote su ${m[2]} facciate.`],
   [/^Drawing made: (.+), 1:(\d+)\.$/, (m) => `Disegno creato: ${m[1]}, 1:${m[2]}.`],
   [/^Drawing made: (.+), 1:(\d+), but it does not fit; choose a larger paper or a smaller scale\.$/, (m) => `Disegno creato: ${m[1]}, 1:${m[2]}, ma non entra; scegliere un foglio più grande o una scala minore.`],
+  [/^Remove all parameters in (.+)$/, (m) => `Rimuovi tutti i parametri in ${m[1]}`],
 ];

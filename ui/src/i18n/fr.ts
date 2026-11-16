@@ -944,6 +944,7 @@ export const FR: Record<string, string> = {
   'Draw the box\'s cuts as a sheet does (each material\'s cut fill and hatch) instead of the materials': 'Dessiner les coupes de la zone comme le fait une feuille (le remplissage et la hachure de coupe de chaque matériau) au lieu des matériaux',
   'Select a wall, a beam or another element to turn the box the way it runs.': 'Sélectionnez un mur, une poutre ou un autre élément pour orienter la zone selon sa direction.', 'Cut at plan': 'Couper au plan', 'Drag a face\'s arrow to move it': 'Faites glisser la flèche d’une face pour la déplacer',
   'The box round the whole model': 'La zone autour de tout le modèle', 'The box\'s top at the active storey\'s plan cut': 'Le haut de la zone au plan de coupe du niveau actif', 'Section box off': 'Désactiver la zone de coupe',
+  'Hide box': 'Masquer la boîte', 'Show box': 'Afficher la boîte', 'Hide the section box frame and handles while keeping the cut active': 'Masquer le cadre et les poignées de la boîte de coupe tout en gardant la coupe active',
   'Annotations': 'Annotations', 'Show the section\'s dimensions, levels, tags and texts on the cut': 'Afficher les cotes, niveaux, étiquettes et textes de la coupe sur le plan de coupe',
   'A foundation plan of this level': 'Un plan de fondations de ce niveau', 'Draw a section line in the plan': 'Dessiner une ligne de coupe dans le plan',
   'The four elevations': 'Les quatre élévations', 'New sheet': 'Nouvelle feuille', 'New schedule': 'Nouvelle nomenclature', 'Delete the view': 'Supprimer la vue', 'Delete the sheet': 'Supprimer la feuille',
@@ -4274,4 +4275,5 @@ export const FR_PATTERNS: Language['patterns'] = [
   [/^(\d+) dimension strings on (\d+) facades\.$/, (m) => `${m[1]} chaînes de cotes sur ${m[2]} façades.`],
   [/^Drawing made: (.+), 1:(\d+)\.$/, (m) => `Plan créé : ${m[1]}, 1:${m[2]}.`],
   [/^Drawing made: (.+), 1:(\d+), but it does not fit; choose a larger paper or a smaller scale\.$/, (m) => `Plan créé : ${m[1]}, 1:${m[2]}, mais il ne tient pas ; choisissez un papier plus grand ou une échelle plus petite.`],
+  [/^Remove all parameters in (.+)$/, (m) => `Supprimer tous les paramètres de ${m[1]}`],
 ];

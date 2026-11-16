@@ -287,6 +287,8 @@ Rotița din bara liniei de comandă arată ce se preia, iar Lapin ține minte al
 
 ![Preia proprietățile în plan: peretele de la care se copiază, peretele de sub cursor luminat și ce se preia](shots/match-properties.webp)
 
+Ca să scoți un set de proprietăți întreg de pe un element sau de pe un tip, folosește butonul cu numele setului, sub parametri, în **Proprietăți → Parametri** (numele setului lângă un coș): toți parametrii din set pleacă într-un singur pas de anulare.
+
 ## Parametri calculați prin formule
 
 Un parametru al tău care e număr, lungime, arie, unghi, da/nu sau text (nu alegere) poate fi calculat în loc să fie scris. În **Proprietăți → Parametri**, apasă butonul **Σ** dinaintea valorii lui: valoarea devine un câmp de **formulă**. Scrie formula și apasă <kbd>Enter</kbd> (sau părăsește câmpul) ca s-o păstrezi. Sub câmp, Lapin arată ce dă formula, *= 21*, sau de ce nu se citește; o formulă care nu se citește nu se păstrează. Apasă **Σ** din nou ca să te întorci la o valoare: ultimul rezultat rămâne valoare.

@@ -942,6 +942,7 @@ export const PT: Record<string, string> = {
   'Draw the box\'s cuts as a sheet does (each material\'s cut fill and hatch) instead of the materials': 'Desenhar os cortes da caixa como uma prancha faz (o preenchimento e a hachura de corte de cada material) em vez dos materiais',
   'Select a wall, a beam or another element to turn the box the way it runs.': 'Selecione uma parede, uma viga ou outro elemento para girar a caixa na sua direção.', 'Cut at plan': 'Cortar na planta', 'Drag a face\'s arrow to move it': 'Arraste a seta de uma face para movê-la',
   'The box round the whole model': 'A caixa em volta do modelo inteiro', 'The box\'s top at the active storey\'s plan cut': 'O topo da caixa no plano de corte da planta do pavimento ativo', 'Section box off': 'Desligar a caixa de corte',
+  'Hide box': 'Ocultar caixa', 'Show box': 'Mostrar caixa', 'Hide the section box frame and handles while keeping the cut active': 'Oculta a moldura e as alças da caixa de seção mantendo o corte ativo',
   'Annotations': 'Anotações', 'Show the section\'s dimensions, levels, tags and texts on the cut': 'Mostrar as cotas, níveis, identificadores e textos do corte sobre o corte',
   'A foundation plan of this level': 'Uma planta de fundações deste nível', 'Draw a section line in the plan': 'Desenhar uma linha de corte na planta',
   'The four elevations': 'As quatro elevações', 'New sheet': 'Nova prancha', 'New schedule': 'Nova tabela', 'Delete the view': 'Excluir a vista', 'Delete the sheet': 'Excluir a prancha',
@@ -4309,4 +4310,5 @@ export const PT_PATTERNS: Language['patterns'] = [
   [/^(\d+) dimension strings on (\d+) facades\.$/, (m) => `${m[1]} cadeias de cotas em ${m[2]} fachadas.`],
   [/^Drawing made: (.+), 1:(\d+)\.$/, (m) => `Desenho criado: ${m[1]}, 1:${m[2]}.`],
   [/^Drawing made: (.+), 1:(\d+), but it does not fit; choose a larger paper or a smaller scale\.$/, (m) => `Desenho criado: ${m[1]}, 1:${m[2]}, mas não cabe; escolha um papel maior ou uma escala menor.`],
+  [/^Remove all parameters in (.+)$/, (m) => `Remover todos os parâmetros em ${m[1]}`],
 ];

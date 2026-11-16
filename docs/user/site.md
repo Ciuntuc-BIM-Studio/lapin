@@ -60,6 +60,8 @@ A **road** or a **path** follows its axis. In **Corridor…** (CR), the **Curves
 
 CAD linework becomes site elements: **Road from linework** (LR) and **Breakline from linework** (BL) take a line or polyline drafted or brought in by a DXF, follow every line on its layer that meets it end to end, and make a road along it or a breakline of the terrain. Each opens **Draft → Convert to…** on its target with the line picked ([Converting drafting to elements](drafting.md#converting-drafting-to-elements)), where you see the chain before converting; there the site's other targets are too: a **Terrain** through contours, a **Platform** on a closed outline, a **Path**. When the lines carry heights (a DXF's 3D lines), they give the road's profile or the breakline's levels. Such lines are kept with their heights and can be shown in 3D (the *linework* category).
 
+In 3D, **Visibility / Graphics** hides a view's paths, roads, kerbs and pavements with the **Topography** category, and the axis grids hide with their Visibility / Graphics entry too; in plans, object styles and saved graphics sets, those site elements now follow the Topography category too.
+
 ## Site plans and location plans
 
 The project browser has a **Site** under the levels: the site's own drawings, which belong to no storey. A new project starts with two:

@@ -60,6 +60,8 @@ Un **drum** sau o **alee** își urmează axa. În **Coridor…** (CR), fila **C
 
 Liniatura CAD devine elemente de teren: **Drum din desen CAD** (LR) și **Linie de rupere din desen CAD** (BL) iau o linie sau o polilinie desenată sau adusă dintr-un DXF, urmează toate liniile de pe stratul ei care se leagă cap la cap și fac un drum de-a lungul ei sau o linie de rupere a terenului. Fiecare deschide **Desen → Convertește în…** pe ținta ei, cu linia aleasă ([Conversia desenului în elemente](drafting.md#conversia-desenului-în-elemente)), unde vezi lanțul înainte de conversie; acolo sunt și celelalte ținte ale terenului: un **Teren** prin curbe de nivel, o **Platformă** pe un contur închis, un **Traseu**. Când liniile au cote (liniile 3D ale unui DXF), ele dau profilul drumului sau cotele liniei de rupere. Asemenea linii se păstrează cu cotele lor și se pot arăta în 3D (categoria *liniatură*).
 
+În 3D, **Vizibilitate / Grafică** ascunde potecile, drumurile, bordurile și pavajele unei vederi odată cu categoria **Topografie**, iar rețelele de axe se ascund și ele prin intrarea lor din Vizibilitate / Grafică; în planuri, în stilurile de obiecte și în seturile de grafică salvate, aceste elemente de amenajare urmează acum și ele categoria Topografie.
+
 ## Planul de situație și planul de încadrare
 
 Browserul proiectului are, sub niveluri, **Terenul** (*Site*): desenele amplasamentului, care nu țin de niciun etaj. Un proiect nou pornește cu două:

@@ -944,6 +944,7 @@ export const DE: Record<string, string> = {
   'Draw the box\'s cuts as a sheet does (each material\'s cut fill and hatch) instead of the materials': 'Die Schnitte des Bereichs wie auf einem Plan zeichnen (Schnittfüllung und Schraffur jedes Materials) statt mit den Materialien',
   'Select a wall, a beam or another element to turn the box the way it runs.': 'Wählen Sie eine Wand, einen Träger oder ein anderes Element, um den Bereich in dessen Richtung zu drehen.', 'Cut at plan': 'Am Grundriss schneiden', 'Drag a face\'s arrow to move it': 'Ziehen Sie den Pfeil einer Fläche, um sie zu verschieben',
   'The box round the whole model': 'Der Bereich um das ganze Modell', 'The box\'s top at the active storey\'s plan cut': 'Die Oberseite des Bereichs am Grundrissschnitt des aktiven Geschosses', 'Section box off': 'Schnittbereich aus',
+  'Hide box': 'Box ausblenden', 'Show box': 'Box einblenden', 'Hide the section box frame and handles while keeping the cut active': 'Rahmen und Griffe der Schnittbox ausblenden, der Schnitt bleibt aktiv',
   'Annotations': 'Beschriftungen', 'Show the section\'s dimensions, levels, tags and texts on the cut': 'Bemaßungen, Höhenkoten, Beschriftungen und Texte des Schnitts auf dem Schnitt anzeigen',
   'A foundation plan of this level': 'Ein Fundamentplan dieser Ebene', 'Draw a section line in the plan': 'Eine Schnittlinie im Grundriss zeichnen',
   'The four elevations': 'Die vier Ansichten', 'New sheet': 'Neuer Plan', 'New schedule': 'Neue Bauteilliste', 'Delete the view': 'Ansicht löschen', 'Delete the sheet': 'Plan löschen',
@@ -4270,4 +4271,5 @@ export const DE_PATTERNS: Language['patterns'] = [
   [/^(\d+) dimension strings on (\d+) facades\.$/, (m) => `${m[1]} Maßketten an ${m[2]} Fassaden.`],
   [/^Drawing made: (.+), 1:(\d+)\.$/, (m) => `Zeichnung erstellt: ${m[1]}, 1:${m[2]}.`],
   [/^Drawing made: (.+), 1:(\d+), but it does not fit; choose a larger paper or a smaller scale\.$/, (m) => `Zeichnung erstellt: ${m[1]}, 1:${m[2]}, aber sie passt nicht; wählen Sie ein größeres Papier oder einen kleineren Maßstab.`],
+  [/^Remove all parameters in (.+)$/, (m) => `Alle Parameter in ${m[1]} entfernen`],
 ];

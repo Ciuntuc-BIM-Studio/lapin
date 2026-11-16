@@ -942,6 +942,7 @@ export const PL: Record<string, string> = {
   'Draw the box\'s cuts as a sheet does (each material\'s cut fill and hatch) instead of the materials': 'Rysuj cięcia skrzynki tak jak arkusz (wypełnienie i kreskowanie cięcia każdego materiału) zamiast materiałów',
   'Select a wall, a beam or another element to turn the box the way it runs.': 'Zaznacz ścianę, belkę lub inny element, aby obrócić skrzynkę zgodnie z jego kierunkiem.', 'Cut at plan': 'Przetnij na rzucie', 'Drag a face\'s arrow to move it': 'Przeciągnij strzałkę lica, aby je przesunąć',
   'The box round the whole model': 'Skrzynka wokół całego modelu', 'The box\'s top at the active storey\'s plan cut': 'Góra skrzynki na wysokości cięcia rzutu aktywnej kondygnacji', 'Section box off': 'Wyłącz skrzynkę przekroju',
+  'Hide box': 'Ukryj skrzynkę', 'Show box': 'Pokaż skrzynkę', 'Hide the section box frame and handles while keeping the cut active': 'Ukryj ramkę i uchwyty skrzynki przekroju, zachowując aktywne cięcie',
   'Annotations': 'Opisy', 'Show the section\'s dimensions, levels, tags and texts on the cut': 'Pokaż wymiary, poziomy, etykiety i teksty przekroju na cięciu',
   'A foundation plan of this level': 'Rzut fundamentów tego poziomu', 'Draw a section line in the plan': 'Narysuj linię przekroju na rzucie',
   'The four elevations': 'Cztery elewacje', 'New sheet': 'Nowy arkusz', 'New schedule': 'Nowe zestawienie', 'Delete the view': 'Usuń widok', 'Delete the sheet': 'Usuń arkusz',
@@ -4318,4 +4319,5 @@ export const PL_PATTERNS: Language['patterns'] = [
   [/^(\d+) dimension strings on (\d+) facades\.$/, (m) => `${m[1]} łańcuchów wymiarów na ${m[2]} elewacjach.`],
   [/^Drawing made: (.+), 1:(\d+)\.$/, (m) => `Rysunek utworzony: ${m[1]}, 1:${m[2]}.`],
   [/^Drawing made: (.+), 1:(\d+), but it does not fit; choose a larger paper or a smaller scale\.$/, (m) => `Rysunek utworzony: ${m[1]}, 1:${m[2]}, ale się nie mieści; wybierz większy papier lub mniejszą skalę.`],
+  [/^Remove all parameters in (.+)$/, (m) => `Usuń wszystkie parametry w ${m[1]}`],
 ];

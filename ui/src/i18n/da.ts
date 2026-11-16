@@ -944,6 +944,7 @@ export const DA: Record<string, string> = {
   'Draw the box\'s cuts as a sheet does (each material\'s cut fill and hatch) instead of the materials': 'Tegn boksens snit, som et tegningsark gør (hvert materiales snitudfyldning og skravering) i stedet for materialerne',
   'Select a wall, a beam or another element to turn the box the way it runs.': 'Vælg en væg, en bjælke eller et andet element for at dreje boksen, som det forløber.', 'Cut at plan': 'Snit ved plan', 'Drag a face\'s arrow to move it': 'Træk i en flades pil for at flytte den',
   'The box round the whole model': 'Boksen om hele modellen', 'The box\'s top at the active storey\'s plan cut': 'Boksens top ved den aktive etages plansnit', 'Section box off': 'Snitboks fra',
+  'Hide box': 'Skjul boks', 'Show box': 'Vis boks', 'Hide the section box frame and handles while keeping the cut active': 'Skjul sektionsboksens ramme og håndtag, mens snittet forbliver aktivt',
   'Annotations': 'Annoteringer', 'Show the section\'s dimensions, levels, tags and texts on the cut': 'Vis snittets mål, koter, mærker og tekster på snittet',
   'A foundation plan of this level': 'En fundamentsplan for dette niveau', 'Draw a section line in the plan': 'Tegn en snitlinje i planen',
   'The four elevations': 'De fire facader', 'New sheet': 'Nyt tegningsark', 'New schedule': 'Nyt skema', 'Delete the view': 'Slet visningen', 'Delete the sheet': 'Slet tegningsarket',
@@ -4307,4 +4308,5 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^(\d+) dimension strings on (\d+) facades\.$/, (m) => `${m[1]} målekæder på ${m[2]} facader.`],
   [/^Drawing made: (.+), 1:(\d+)\.$/, (m) => `Tegning lavet: ${m[1]}, 1:${m[2]}.`],
   [/^Drawing made: (.+), 1:(\d+), but it does not fit; choose a larger paper or a smaller scale\.$/, (m) => `Tegning lavet: ${m[1]}, 1:${m[2]}, men den kan ikke være der; vælg et større papir eller en mindre målestok.`],
+  [/^Remove all parameters in (.+)$/, (m) => `Fjern alle parametre i ${m[1]}`],
 ];
