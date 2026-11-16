@@ -169,11 +169,11 @@ public static class ClimateLoads
             var top = double.NegativeInfinity;
             foreach (var s in surfaces)
                 foreach (var pl in s.Planes)
-                    if (Polygon2.Contains(pl.Plan, q) || Enumerable.Range(0, pl.Plan.Count).Any(i => ShellPieces.DistToSegment(q, pl.Plan[i], pl.Plan[(i + 1) % pl.Plan.Count]) <= 0.1))
+                    if (Polygon2.Contains(pl.Plan, q, 0.1))
                         top = Math.Max(top, pl.ZAt(q));
             foreach (var w in walls)
                 for (var i = 0; i + 1 < w.Line!.Count; i++)
-                    if (ShellPieces.DistToSegment(q, w.Line[i], w.Line[i + 1]) <= w.Thickness / 2 + 0.3)
+                    if (Polyline2.SegmentDistance(q, w.Line[i], w.Line[i + 1]) <= w.Thickness / 2 + 0.3)
                     {
                         var zt = w.Z1;
                         if (w.Top is { Count: >= 2 } t)

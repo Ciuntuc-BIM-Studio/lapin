@@ -350,12 +350,7 @@ public static class ShellMesher
         return faces.Select(f => f.Select(v => index[v]).ToArray()).ToList();
     }
 
-    static double Area(List<Vec2> p)
-    {
-        var a = 0.0;
-        for (var i = 0; i < p.Count; i++) a += Vec2.Cross(p[i], p[(i + 1) % p.Count]);
-        return a / 2;
-    }
+    static double Area(List<Vec2> p) => Polygon2.SignedArea(p);
 
     /// <summary>Whether a point lies inside the convex boundary (its first nb points, counter-clockwise), at least <paramref name="margin"/> from each side.</summary>
     static bool Inside(List<Vec2> p, int nb, Vec2 q, double margin)

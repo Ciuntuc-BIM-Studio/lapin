@@ -167,11 +167,4 @@ public static class Stations
         if (xs.Count == 0 || xs[0] > 1e-12) xs.Insert(0, 0);
         for (var i = 0; i + 1 < xs.Count; i++) if (xs[i + 1] - xs[i] > 1e-12) yield return (xs[i], xs[i + 1]);
     }
-
-    /// <summary>The displaced point at x of the bar's axis, world metres (the displacement scaled).</summary>
-    public static Vec3 Displaced(FrameElement e, ElementResult r, double x, double scale)
-    {
-        var (u, v, w) = Deflection(e, r, x);
-        return e.Pi + e.Ex * x + (e.Ex * u + e.Ey * v + e.Ez * w) * scale;
-    }
 }

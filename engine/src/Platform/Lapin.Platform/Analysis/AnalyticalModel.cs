@@ -178,7 +178,7 @@ public sealed class AnalyticalModel
         return pts.Count == 1 ? (p - pts[0]).Length : best;
     }
 
-    static double DistToSegment(Vec2 p, Vec2 a, Vec2 b) => ShellPieces.DistToSegment(p, a, b);
+    static double DistToSegment(Vec2 p, Vec2 a, Vec2 b) => Polyline2.SegmentDistance(p, a, b);
 
     static double DistToPolygon(Vec2 p, IReadOnlyList<Vec2> poly) =>
         poly.Count >= 3 && Polygon2.Contains(poly, p) ? 0 : DistToPolyline(p, [.. poly, poly[0]]);

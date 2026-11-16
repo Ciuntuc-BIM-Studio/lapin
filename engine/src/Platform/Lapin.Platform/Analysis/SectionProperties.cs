@@ -520,23 +520,7 @@ public static class SectionProperties
     }
 
     /// <summary>A ring clipped to where the coordinate is at most <paramref name="c"/> (Sutherland–Hodgman; its orientation kept).</summary>
-    static List<Vec2> Clip(IReadOnlyList<Vec2> ring, Func<Vec2, double> coord, double c)
-    {
-        var o = new List<Vec2>();
-        for (var i = 0; i < ring.Count; i++)
-        {
-            var (p, q) = (ring[i], ring[(i + 1) % ring.Count]);
-            var (up, uq) = (coord(p), coord(q));
-            var (pin, qin) = (up <= c, uq <= c);
-            if (pin) o.Add(p);
-            if (pin != qin)
-            {
-                var t = (c - up) / (uq - up);
-                o.Add(new Vec2(p.X + (q.X - p.X) * t, p.Y + (q.Y - p.Y) * t));
-            }
-        }
-        return o;
-    }
+    static List<Vec2> Clip(IReadOnlyList<Vec2> ring, Func<Vec2, double> coord, double c) => Polygon2.ClipHalf(ring, p => c - coord(p));
 
     /// <summary>The torsion constant and how it was found.</summary>
     static (double J, string Method) Torsion(SectionShape s, double r)

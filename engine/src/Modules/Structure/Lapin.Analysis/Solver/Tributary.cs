@@ -28,18 +28,7 @@ public readonly record struct Trapezoid(double S0, double S1, double W0, double 
 public static class Tributary
 {
     /// <summary>Keeps the part of a ring where n·p ≤ c (Sutherland–Hodgman; its orientation kept).</summary>
-    public static List<Vec2> Clip(IReadOnlyList<Vec2> ring, Vec2 n, double c)
-    {
-        var o = new List<Vec2>(ring.Count + 2);
-        for (var i = 0; i < ring.Count; i++)
-        {
-            var (p, q) = (ring[i], ring[(i + 1) % ring.Count]);
-            var (dp, dq) = (Vec2.Dot(n, p) - c, Vec2.Dot(n, q) - c);
-            if (dp <= 0) o.Add(p);
-            if ((dp < 0 && dq > 0) || (dp > 0 && dq < 0)) o.Add(p + (q - p) * (dp / (dp - dq)));
-        }
-        return o;
-    }
+    public static List<Vec2> Clip(IReadOnlyList<Vec2> ring, Vec2 n, double c) => Polygon2.ClipHalf(ring, p => c - Vec2.Dot(n, p));
 
     /// <summary>A ring cut to a convex anticlockwise polygon.</summary>
     public static List<Vec2> ClipTo(IReadOnlyList<Vec2> ring, IReadOnlyList<Vec2> convex)
