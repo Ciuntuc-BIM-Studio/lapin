@@ -239,6 +239,8 @@ public static class Drafts
                 var loops = HatchLoops(e);
                 if (loops.Count == 0) continue;
                 var pattern = HatchLibrary.Find((string?)h["pattern"] ?? "LINES45", patterns);
+                var bg = HexColor.IsColour((string?)h["background"]) ? ((string)h["background"]!).Trim() : null;
+                if (bg != null && pattern is { Solid: false }) mk.Fills.Add((loops, bg));
                 if (pattern == null || pattern.Solid) mk.Fills.Add((loops, color));
                 else if (BattHatch.Is(pattern))
                 {
@@ -254,7 +256,7 @@ public static class Drafts
                 foreach (var l in loops) mk.Shapes.Add(new Polyline(l, true).ToJson().Also(j => j["hatch"] = true));
                 // A hatch is taken by its outline and by a click inside it: a solid one has no lines to click (report #122, decision 429).
                 foreach (var l in loops) for (var i = 0; i < l.Count; i++) mk.Edges.Add((l[i], l[(i + 1) % l.Count]));
-                mk.Hit = (loops, pattern == null || pattern.Solid);
+                mk.Hit = (loops, pattern == null || pattern.Solid || bg != null);
                 mk.Snaps.AddRange(loops.SelectMany(l => l));
                 yield return mk;
                 continue;

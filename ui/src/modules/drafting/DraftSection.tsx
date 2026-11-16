@@ -9,6 +9,7 @@
 
 import { ColourField } from '../../shell/ColourField';
 import { Fragment, useEffect, useState } from 'react';
+import { X } from 'lucide-react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, query, useSession } from '../../engine/session';
 import { useUi } from '../../app/store';
@@ -132,12 +133,24 @@ function HatchFields({ node, hatch }: { node: NodeDto; hatch: Record<string, unk
   const set = (patch: Record<string, unknown>) => void execute('drafting.updateDraft', { ids: patch.origin !== undefined ? [node.id] : hatches(node), hatch: patch });
   const pattern = String(hatch.pattern ?? 'SOLID');
   const origin = ptStrict(hatch.origin);
+  const bg = typeof hatch.background === 'string' ? hatch.background : null;
   return (
     <>
       <dt>Pattern</dt>
       <dd><select value={pattern} onChange={(e) => set({ pattern: e.target.value })}>{(patterns.includes(pattern) ? patterns : [pattern, ...patterns]).map((p) => <option key={p} value={p}>{p}</option>)}</select></dd>
       <dt>Scale</dt><dd><Num value={Number(hatch.scale ?? 1)} onCommit={(s) => { if (s > 0) set({ scale: s }); }} /></dd>
       <dt>Angle</dt><dd><Num value={Number(hatch.angle ?? 0)} onCommit={(a) => set({ angle: a })} suffix="°" /></dd>
+      <dt title="Opaque background fill behind the hatch lines (transparent when off)">Background</dt>
+      <dd className="row">
+        {bg ? (
+          <>
+            <ColourField value={bg} onChange={(v) => set({ background: v })} />
+            <button type="button" className="icon mini" title="Transparent background" onClick={() => set({ background: null })}><X size={10} /></button>
+          </>
+        ) : (
+          <button type="button" className="btn small" onClick={() => set({ background: '#ffffff' })}>Mask</button>
+        )}
+      </dd>
       <dt title="Where the pattern starts; empty: the view's origin">Origin</dt>
       <dd className="pair">
         <Len noUnit value={origin?.x ?? null} onCommit={(x) => set({ origin: [x, origin?.y ?? 0] })} />

@@ -60,6 +60,15 @@ public static class DraftCommands
                     if (hp.ContainsKey("scale")) had["scale"] = Json.Number(hp["scale"]) is { } hs && hs > 0 ? hs : throw new CommandException("The hatch scale must be positive.");
                     if (hp.ContainsKey("angle")) had["angle"] = Json.Number(hp["angle"]) ?? 0;
                     if (hp.ContainsKey("origin")) { if (hp["origin"] is JsonArray ho && ho.Count >= 2) had["origin"] = new JsonArray(Json.Number(ho[0]) ?? 0, Json.Number(ho[1]) ?? 0); else had.Remove("origin"); }
+                    if (hp.ContainsKey("background"))
+                    {
+                        if ((string?)hp["background"] is { } bg)
+                        {
+                            if (!HexColor.IsColour(bg)) throw new CommandException("The hatch background must be a colour (#rrggbb).");
+                            had["background"] = bg.Trim();
+                        }
+                        else had.Remove("background");
+                    }
                 }
                 if (a.ContainsKey("role")) { if (Drafts.CheckRole(a["role"]) is { } role) attrs["role"] = role; else attrs.Remove("role"); }
                 ctx.Replace(e.With(attrs: attrs));
