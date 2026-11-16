@@ -22,6 +22,7 @@ import { deleteType } from '../core/deleteType';
 import { t } from '../../i18n';
 import { Strokes, type Drawing } from './JoineryDialog';
 import { sameKind } from '../../shell/params';
+import { createScheduleOf } from '../../shell/fieldSchedule';
 
 export const SHADE = 'IfcShadingDevice';
 export const SHADE_TYPE = 'IfcShadingDeviceType';
@@ -111,7 +112,7 @@ export const sunshadeAlong: ToolDef = {
 export const sunshadeTypes: ToolDef = { id: 'architecture.sunshadeTypes', label: 'Sunshade types', icon: Settings2, run: () => editShadeType(useShadePrefs.getState().typeId) };
 export const sunshadeSchedule: ToolDef = {
   id: 'architecture.sunshadeSchedule', label: 'Sunshade schedule', icon: Table2,
-  run: () => void execute('architecture.createSchedule', { kind: 'sunshades' }).then((r) => { if (r) notify('Sunshade schedule made: it is in the project browser, under Schedules.'); }),
+  run: () => void createScheduleOf('sunshades').then((r) => { if (r) notify('Sunshade schedule made: it is in the project browser, under Schedules.'); }),
 };
 
 export function editShadeType(id: string | null | undefined) {

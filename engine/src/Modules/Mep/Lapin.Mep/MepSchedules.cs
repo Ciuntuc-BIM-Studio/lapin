@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json.Nodes;
 using Lapin.Model;
 using Lapin.Platform;
 
@@ -9,6 +10,43 @@ public sealed class MepEquipmentSchedule : IScheduleSource
 {
     public string Kind => "mep-equipment";
     public string Label => "MEP equipment schedule";
+
+    static double Duty(Entity n) => n.NumOrNull("duty") ?? Nodes.RoleOf(n)?.Duty ?? 0;
+
+    /// <summary>
+    /// What the schedule shows of a node, as fields, and the field schedule that gives the same table (audit S1): a row per node
+    /// of a system, by system and name, the count under the duties. The fixed one's „pcs” under the units is not repeated.
+    /// </summary>
+    public static void RegisterTemplate(IModuleRegistry r)
+    {
+        static Entity? System(IModelView m, Entity n) => Nodes.IsNode(n) && m.Get(n.Str("systemId") ?? "") is { Class: Systems.Class } s ? s : null;
+        foreach (var cls in Nodes.Classes)
+        {
+            DerivedFields.Add(cls, new("mepRole", "MEP: role", (m, n) => System(m, n) != null ? Nodes.RoleOf(n)?.Label ?? n.Str("role") : null));
+            DerivedFields.Add(cls, new("mepSystem", "MEP: system", (m, n) => System(m, n)?.Name));
+            DerivedFields.Add(cls, new("mepDuty", "MEP: duty", (m, n) => System(m, n) != null && Duty(n) > 0 ? Duty(n).ToString("0.##", CultureInfo.InvariantCulture) : null));
+            DerivedFields.Add(cls, new("mepDutyUnit", "MEP: duty's unit", (m, n) => System(m, n) != null && Duty(n) > 0 ? Nodes.RoleOf(n)?.DutyUnit : null));
+        }
+        r.Service(ShippedScheduleTemplate.Of("mep-equipment", "MEP equipment schedule", "mep-equipment", new JsonObject
+        {
+            ["filter"] = new JsonObject
+            {
+                ["classes"] = new JsonArray([.. Nodes.Classes.Select(c => (JsonNode)c)]),
+                ["conditions"] = new JsonArray(new JsonObject { ["field"] = "mepSystem", ["op"] = "exists" }),
+            },
+            ["sort"] = new JsonArray("mepSystem", "name"), ["totals"] = "always",
+            ["columns"] = JsonNode.Parse("""
+                [
+                  { "field": "name", "heading": "Name", "aggregate": "first" },
+                  { "field": "mepRole", "heading": "Role", "aggregate": "first" },
+                  { "field": "mepSystem", "heading": "System", "aggregate": "first" },
+                  { "field": "storey.name", "heading": "Storey", "aggregate": "first" },
+                  { "field": "mepDuty", "heading": "Duty", "aggregate": "rows" },
+                  { "field": "mepDutyUnit", "heading": "Unit", "aggregate": "first" }
+                ]
+                """),
+        }.ToJsonString()));
+    }
 
     public ScheduleGrid Grid(IQueryContext q)
     {

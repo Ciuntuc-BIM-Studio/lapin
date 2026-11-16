@@ -29,6 +29,7 @@ import { countOpen } from '../modules/core/cde/pdfRemarks/remarks';
 import { formatLevel, useStandards } from '../engine/unitsStore';
 import { openDocuments, useDocumentsDialog } from '../modules/core/documents/documents';
 import { otherScales, placeAgainLabel, sheetOfView } from '../viewport/placeAtScale';
+import { createScheduleOf } from './fieldSchedule';
 
 const TAB_KEY = 'lapin.browser.tab';
 
@@ -246,7 +247,7 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
           {/* Schedules are the Architecture module's views (a product without it has none). */}
           {hasModule('architecture') && <Kind id={`${id}:schedules`} icon={<Table2 size={13} />} label="Schedules" list={of('schedule')}
             plus={set && (
-              <select className="mini-select" value="" title="New schedule" onChange={(e) => { const kind = e.target.value; if (kind === 'fields') { void newSchedule('fields'); return; } if (kind === 'template') { useUi.setState({ dialog: 'fieldTemplates' }); return; } if (kind) void execute('architecture.createSchedule', { kind }).then((r) => { const n = made(r); if (n) showSchedule(n); }); }}>
+              <select className="mini-select" value="" title="New schedule" onChange={(e) => { const kind = e.target.value; if (kind === 'fields') { void newSchedule('fields'); return; } if (kind === 'template') { useUi.setState({ dialog: 'fieldTemplates' }); return; } if (kind) void createScheduleOf(kind).then((r) => { const n = made(r); if (n) showSchedule(n); }); }}>
                 <option value="">+</option><option value="quantities">Quantity takeoff</option><option value="all">Joinery</option><option value="parcel">Parcel coordinates</option><option value="door">Doors</option><option value="window">Windows</option><option value="lintel">Lintels</option><option value="rooms">Rooms</option><option value="skirtings">Skirtings</option><option value="types">Type assemblies</option><option value="planting">Planting</option><option value="fields">Field schedule</option><option value="template">From template…</option>
               </select>
             )}>

@@ -15,6 +15,7 @@ import { fromPairs } from '../../viewport/contour';
 import { typeOf } from '../../engine/model';
 import { outlineGrips, toPairs } from '../../viewport/gripKit';
 import { t, useLang } from '../../i18n';
+import { createScheduleOf } from '../../shell/fieldSchedule';
 
 /** A built-in style as the engine's catalogue gives it. */
 export type BalconyStyle = { id: string; label: string; description: string; kind: string; attrs: Record<string, unknown> };
@@ -130,7 +131,7 @@ export const stackBalconies: ToolDef = {
 
 export const balconySchedule: ToolDef = {
   id: 'architecture.balconySchedule', label: 'Balcony schedule', icon: Table2,
-  run: () => void execute('architecture.createSchedule', { kind: 'balconies' }).then((r) => { if (r) notify('Balcony schedule made: it is in the project browser, under Schedules.'); }),
+  run: () => void createScheduleOf('balconies').then((r) => { if (r) notify('Balcony schedule made: it is in the project browser, under Schedules.'); }),
 };
 
 /** A balcony in the inspector: its style (the fields below are its own), the configurator and stacking. */

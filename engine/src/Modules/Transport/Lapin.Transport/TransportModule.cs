@@ -108,6 +108,7 @@ public sealed class TransportModule : ILapinModule
         r.Service<IStoreySpans>(new ElevatorSpans());
         r.Service<IIfcElementSets>(new ElevatorSets());
         r.Service<IScheduleSource>(new ElevatorSchedule());
+        ElevatorSchedule.RegisterTemplate(r);
 
         // A lift at a point: {storeyId, x, y, rotation?, style? (a catalogue's or the project's), topStoreyId? (the highest storey), attrs?} → {id}.
         r.Command("place", "Elevator", (ctx, a) =>
@@ -805,6 +806,51 @@ public sealed class ElevatorSchedule : IScheduleSource
     static string Mm(double v) => Lapin.Model.Numbers.Mm(v);
     static string N(double v, string f = "0.##") => v.ToString(f, CultureInfo.InvariantCulture);
 
+    /// <summary>An elevator's cells, after the name: kind, drive, load, persons, car, doors, stops, storeys, travel, speed, shaft.</summary>
+    static string[] Cells(IModelView m, Entity e, ElevatorLayout l)
+    {
+        var s = l.Spec;
+        return [
+            TransportModule.KindLabel(m, e), s.Drive, N(s.Load), s.Persons.ToString(CultureInfo.InvariantCulture),
+            s.Vacuum ? $"Ø {Mm(s.CabinDiameter)} × {Mm(s.CabinHeight)}" : $"{Mm(s.CabinWidth)} × {Mm(s.CabinDepth)} × {Mm(s.CabinHeight)}",
+            s.Vacuum ? $"{Mm(l.Dx1 - l.Dx0)} × {Mm(l.DoorH)} {s.DoorKind}" : $"{Mm(s.DoorWidth)} × {Mm(s.DoorHeight)} {s.DoorOpening}",
+            $"{l.Stops.Count(x => x.Served)}/{l.Stops.Count}", $"{l.Stops[0].Storey.Name} – {l.Stops[^1].Storey.Name}", N(l.Travel, "0.00"), N(s.Speed),
+            s.Vacuum ? $"Ø {Mm(s.TubeDiameter)}" : $"{Mm(l.Wi)} × {Mm(l.Di)}",
+        ];
+    }
+
+    static readonly (string Key, string Label, string Heading)[] Fields =
+    [
+        ("liftKind", "Kind", "Kind"), ("liftDrive", "Drive", "Drive"), ("liftLoad", "Rated load (kg)", "Rated load (kg)"), ("liftPersons", "Persons", "Persons"),
+        ("liftCar", "Car (mm)", "Car (mm)"), ("liftDoors", "Doors (mm)", "Doors (mm)"), ("liftStops", "Stops served / stops", "Stops"),
+        ("liftStoreys", "Storeys served", "Storeys"), ("liftTravel", "Travel (m)", "Travel (m)"), ("liftSpeed", "Speed (m/s)", "Speed (m/s)"),
+        ("liftShaft", "Shaft, clear (mm)", "Shaft, clear (mm)"),
+    ];
+
+    /// <summary>
+    /// What the schedule shows of an elevator, as fields, and the field schedule that gives the same table (audit S1): a row per
+    /// elevator that lays out, by name, the total count under the kinds.
+    /// </summary>
+    public static void RegisterTemplate(IModuleRegistry r)
+    {
+        for (var i = 0; i < Fields.Length; i++)
+        {
+            var at = i;
+            DerivedFields.Add(TransportModule.Class, new(Fields[i].Key, "Elevator: " + Fields[i].Label.ToLowerInvariant(),
+                (m, e) => ElevatorLayout.Resolve(m, e, out _) is { } l ? Cells(m, e, l)[at] : null));
+        }
+        var columns = new JsonArray([
+            (JsonNode)new JsonObject { ["field"] = "name", ["heading"] = "Elevator" },
+            .. Fields.Select((f, i) => (JsonNode)new JsonObject { ["field"] = f.Key, ["heading"] = f.Heading, ["aggregate"] = i == 0 ? "rows" : "first", ["decimals"] = f.Key == "liftTravel" ? 2 : null }),
+        ]);
+        foreach (var c in columns) if (c!["decimals"] is null) c.AsObject().Remove("decimals");
+        r.Service(ShippedScheduleTemplate.Of("elevators", "Elevator schedule", "elevators", new JsonObject
+        {
+            ["filter"] = new JsonObject { ["classes"] = new JsonArray("IfcTransportElement"), ["conditions"] = new JsonArray(new JsonObject { ["field"] = "liftKind", ["op"] = "exists" }) },
+            ["sort"] = new JsonArray("name"), ["totals"] = "always", ["columns"] = columns,
+        }.ToJsonString()));
+    }
+
     public ScheduleGrid Grid(IQueryContext q)
     {
         var m = q.Model;
@@ -813,14 +859,7 @@ public sealed class ElevatorSchedule : IScheduleSource
         foreach (var e in m.OfClass(TransportModule.Class).OrderBy(x => x.Name, StringComparer.Ordinal))
         {
             if (ElevatorLayout.Resolve(m, e, out _) is not { } l) continue;
-            var s = l.Spec;
-            rows.Add([
-                e.Name, TransportModule.KindLabel(m, e), s.Drive, N(s.Load), s.Persons.ToString(CultureInfo.InvariantCulture),
-                s.Vacuum ? $"Ø {Mm(s.CabinDiameter)} × {Mm(s.CabinHeight)}" : $"{Mm(s.CabinWidth)} × {Mm(s.CabinDepth)} × {Mm(s.CabinHeight)}",
-                s.Vacuum ? $"{Mm(l.Dx1 - l.Dx0)} × {Mm(l.DoorH)} {s.DoorKind}" : $"{Mm(s.DoorWidth)} × {Mm(s.DoorHeight)} {s.DoorOpening}",
-                $"{l.Stops.Count(x => x.Served)}/{l.Stops.Count}", $"{l.Stops[0].Storey.Name} – {l.Stops[^1].Storey.Name}", N(l.Travel, "0.00"), N(s.Speed),
-                s.Vacuum ? $"Ø {Mm(s.TubeDiameter)}" : $"{Mm(l.Wi)} × {Mm(l.Di)}",
-            ]);
+            rows.Add([e.Name, .. Cells(m, e, l)]);
             keys.Add(e.Id);
         }
         if (rows.Count > 0) { rows.Add(["Total", rows.Count.ToString(CultureInfo.InvariantCulture), "", "", "", "", "", "", "", "", "", ""]); keys.Add(null); }

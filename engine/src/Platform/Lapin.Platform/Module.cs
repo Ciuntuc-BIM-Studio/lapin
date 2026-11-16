@@ -526,6 +526,61 @@ public interface IScheduleSource
 }
 
 /// <summary>
+/// The parts of an element a field schedule lists as its rows when it is set to (audit S1, decision 613): a plant of a planting,
+/// a timber member of a framed roof or wall. <paramref name="Key"/> tells the part apart within its element (the row's key is
+/// the element's id, <c>#</c>, it); <paramref name="Fields"/> are the part's own values, read before the element's own (any
+/// field a part does not have, <c>storey.name</c>, <c>name</c>, is its element's). Worked out on every ask, never stored.
+/// </summary>
+public sealed record ElementPart(string Key, IReadOnlyDictionary<string, FieldValue> Fields)
+{
+    /// <summary>A part of its values, by their keys (case aside): a text, a number (shown as given), or a number and the text it is shown as.</summary>
+    public static ElementPart Of(string key, params (string Field, object? Value)[] values)
+    {
+        var d = new Dictionary<string, FieldValue>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (f, v) in values)
+            d[f] = v switch
+            {
+                FieldValue fv => fv,
+                string s => FieldValue.OfText(s),
+                double n => new FieldValue(n, null),
+                int i => new FieldValue(i, null),
+                bool b => new FieldValue(b ? 1 : 0, b ? "yes" : "no"),
+                _ => FieldValue.Missing,
+            };
+        return new ElementPart(key, d);
+    }
+}
+
+/// <summary>
+/// A kind of parts field schedules can list (<see cref="ElementPart"/>): its id (a schedule's <c>source</c>), its name, the
+/// fields its parts have (for the pickers) and each element's parts. Several modules may give parts of the same id (the
+/// timber of roofs, of timber-frame walls); a schedule lists them all.
+/// </summary>
+public interface IPartSource
+{
+    string Source { get; }
+    string Label { get; }
+    /// <summary>The fields its parts have: each key and a few words.</summary>
+    IReadOnlyList<(string Key, string Label)> Fields { get; }
+    /// <summary>The parts of <paramref name="element"/>; none when it is not an element of this source's.</summary>
+    IEnumerable<ElementPart> PartsOf(IQueryContext query, Entity element);
+}
+
+/// <summary>
+/// A field schedule a module ships (audit S1, decision 613): a template as a <c>.lapinschedule</c> holds it (its name, its
+/// <c>fields</c> options, its columns of its own), offered beside the user's own. <paramref name="Kind"/>: the fixed schedule
+/// it stands for, whose ribbon button now makes it (the id stays an alias: scripts and saved schedules of that kind still work).
+/// </summary>
+public sealed record ShippedScheduleTemplate(string Id, string Label, string? Kind, Func<JsonObject> Template)
+{
+    /// <summary>A template from its <c>fields</c> options written as JSON: named <paramref name="label"/>, as a <c>.lapinschedule</c> holds it.</summary>
+    public static ShippedScheduleTemplate Of(string id, string label, string? kind, string fields) => new(id, label, kind, () => new JsonObject
+    {
+        ["format"] = "lapin-schedule", ["version"] = 1, ["name"] = label, ["fields"] = JsonNode.Parse(fields),
+    });
+}
+
+/// <summary>
 /// What a module draws as a single line at LOD 100 instead of its body (decision 405): a steel member's axis, from its start
 /// to its end, world metres; null when the element is none of its.
 /// </summary>

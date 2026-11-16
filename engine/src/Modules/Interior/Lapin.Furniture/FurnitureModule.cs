@@ -41,6 +41,7 @@ public sealed class FurnitureModule : ILapinModule
         r.Catalog("models", FurnitureModels.Catalog());
         r.Service<IElementPlacement>(new FurniturePlacement());
         r.Service<IScheduleSource>(new FurnitureSchedule());
+        FurnitureSchedule.RegisterTemplate(r);
         r.Service<IScheduleSource>(new FurnitureByRoom());
         r.Service<IScheduleSource>(new KitchenUnitsSchedule());
         r.Service<IScheduleSource>(new CutListSchedule());

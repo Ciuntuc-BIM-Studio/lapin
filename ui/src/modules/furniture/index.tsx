@@ -27,6 +27,7 @@ import { activate } from '../../platform/modules';
 import { usePlaceKind } from './placeKind';
 // Lapin Extensions: the content packs this module's libraries take (docs/plan-extensions.md).
 import './extensionKind';
+import { createScheduleOf } from '../../shell/fieldSchedule';
 
 /** The bar of a kind's tool: its type, its turn when it stands free, and whether it backs onto walls. */
 function kindOptions(kind: string, placing = true) {
@@ -196,7 +197,7 @@ const types: ToolDef = { id: 'furniture.types', label: 'Furniture types', icon: 
 
 const schedule = (id: string, label: string, kind: string, icon: Icon): ToolDef => ({
   id, label, icon,
-  run: () => void execute('architecture.createSchedule', { kind }).then((r) => { if (r) notify(`${label} made: it is in the project browser, under Schedules.`); }),
+  run: () => void createScheduleOf(kind).then((r) => { if (r) notify(`${label} made: it is in the project browser, under Schedules.`); }),
 });
 const byType = schedule('furniture.schedule', 'Furniture schedule', 'furniture', ListOrdered);
 const byRoom = schedule('furniture.byRoom', 'Furniture by room', 'furnitureRooms', Table2);

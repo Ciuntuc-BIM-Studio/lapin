@@ -2725,6 +2725,7 @@ path.part-flex-ghost { fill: none; stroke: var(--accent); stroke-width: 1.6; str
 .fs-column .fs-heading { width: 110px; }
 .fs-column .fs-unit { width: 60px; }
 .fs-column .fs-decimals { width: 48px; }
+.fs-column .fs-format { width: 56px; }
 .alias-row { width: 100%; display: grid; grid-template-columns: 140px 1fr 200px auto; gap: 8px; align-items: start; padding: 4px 0; border-bottom: 1px solid var(--rule); }
 .alias-row.bad .alias-name { outline: 1px solid var(--danger, #c0392b); }
 .alias-sources { display: grid; gap: 3px; justify-items: start; }

@@ -77,6 +77,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         r.Service<IViewAnnotations>(this);
         r.Service<IGround>(new Ground());
         r.Service<IScheduleSource>(new PlantingSchedule());
+        PlantingSchedule.RegisterTemplate(r);
         r.Service<IScheduleSource>(new ParcelCoordinates());
         r.Service<ISectionPaths>(new CivilSectionPaths());
         r.Service<IArrayPaths>(new CivilArrayPaths());
