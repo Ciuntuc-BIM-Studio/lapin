@@ -722,7 +722,10 @@ public static class StairMarks
         var site = SitePlans.Of(c.View) != null;
         double? cut = site ? null : Views.Range(m, c.View).Cut;
         var filters = c.Services?.All<IViewElementFilter>() ?? [];
-        var stairs = m.OfClass(IfcClass.Stair).Where(s => !hidden.Contains(s.Id) && !graphics.Hides(s) && Spatial.StoreyOf(m, s.Id)?.Id == storeyId).ToList();
+        var storeyZ = (storeyId != null ? m.Get(storeyId) : null)?.Num("elevation");
+        var stairs = m.OfClass(IfcClass.Stair).Where(s => !hidden.Contains(s.Id) && !graphics.Hides(s) && (
+            Spatial.StoreyOf(m, s.Id)?.Id == storeyId
+            || (!site && storeyZ is { } sz && StairBuilder.Resolve(m, s) is var (sr, sp, _) && sp.Z0 < sz - 1e-3 && sp.Z0 + sr.Height >= sz - 1e-3))).ToList();
         if (stairs.Count == 0) yield break;
         var pens = new StairPens(c, graphics, stairs);
         foreach (var stair in stairs)
@@ -731,6 +734,7 @@ public static class StairMarks
             var filtered = filters.Select(f => f.For(m, c.View, stair)).FirstOrDefault(x => x != null);
             if (filtered is { Hide: true }) continue;
             if (StairBuilder.Resolve(m, stair) is not var (r, place, spec)) continue;
+            bool upper = !site && storeyZ is { } uz && place.Z0 < uz - 1e-3;
             var symbols = spec.Symbols ?? new StairPlanSymbols();
             var mark = new ViewMark(stair.Id);
             Vec2 V(Vec2 local) => c.Map(place.World(local), place.Z0);
@@ -764,8 +768,17 @@ public static class StairMarks
             }
             var foot = r.Foot;
             if (symbols.Up)
-                mark.Text(new PenText(V(foot.At - foot.Dir * (r.Tread * 0.8)), "UP", h, 0, "middle", "middle", true, style.Font), color);
-            if (symbols.Label)
+            {
+                if (upper && r.Flights.Count > 0)
+                {
+                    var topFl = r.Flights[^1];
+                    var topAt = topFl.Start + topFl.Dir * ((topFl.Risers - 1) * r.Tread + r.Tread * 0.8);
+                    mark.Text(new PenText(V(topAt), "DN", h, 0, "middle", "middle", true, style.Font), color);
+                }
+                else if (!upper)
+                    mark.Text(new PenText(V(foot.At - foot.Dir * (r.Tread * 0.8)), "UP", h, 0, "middle", "middle", true, style.Font), color);
+            }
+            if (symbols.Label && !upper)
             {
                 var Mm = Schedules.ScheduleLayout.Mm;
                 string[] lines = [$"{r.Risers} × {Mm(r.RiserHeight)}", $"{Mm(r.Tread)}", $"{Mm(r.Width)}"];
