@@ -23,6 +23,7 @@ import { useLayers, type DraftLayer } from '../../viewport/cad/layers';
 import { ptStrict } from '../../platform/vec';
 import { TagFields } from './tag';
 import { selectionWith } from '../../shell/params';
+import { CloudFields, KeyFields } from './sheetAnnotations';
 
 /**
  * Who a style change goes to (a forum user's report, topic #29: a change with several selected reached only one): every
@@ -169,7 +170,7 @@ function Drafted({ node }: { node: NodeDto }) {
   const own = typeof node.props.color === 'string' ? node.props.color : null;
   const shape = node.props.shape && typeof node.props.shape === 'object' ? fromJson(node.props.shape as Record<string, unknown>) : null;
   const hatch = node.props.hatch && typeof node.props.hatch === 'object' ? (node.props.hatch as Record<string, unknown>) : null;
-  const kind = hatch ? 'Hatch' : shape ? { line: 'Line', polyline: 'Polyline', circle: 'Circle', arc: 'Arc' }[shape.type] : 'Shape';
+  const kind = hatch ? 'Hatch' : shape ? { line: 'Line', polyline: 'Polyline', circle: 'Circle', arc: 'Arc', ellipse: 'Ellipse' }[shape.type] : 'Shape';
   return (
     <dl className="fields">
       <Row label="Kind" value={kind} />
@@ -191,6 +192,8 @@ function Drafted({ node }: { node: NodeDto }) {
       </select></dd>
       {layer && <Row label="Line type" value={layer.lineType} />}
       {layer && <Row label="Pen" value={`${layer.weight} mm`} />}
+      {/* A closed shape may be drawn as a revision cloud (decision 620). */}
+      {!hatch && shape && (shape.type === 'circle' || (shape.type === 'polyline' && shape.closed)) && <CloudFields node={node} ids={drafted(node)} />}
       {hatch ? <HatchFields node={node} hatch={hatch} /> : shape ? <ShapeFields node={node} shape={shape} /> : null}
     </dl>
   );
@@ -210,6 +213,10 @@ function TextFields({ node }: { node: NodeDto }) {
       <dt>Angle</dt><dd><Num value={typeof node.props.angle === 'number' ? node.props.angle : 0} onCommit={(a) => set({ angle: a })} suffix="°" /></dd>
       <dt title="Wrap lines at this width; empty: no wrapping">Width</dt><dd><LengthCell metres={typeof node.props.width === 'number' ? node.props.width : null} placeholder="auto" onCommit={(w) => set({ width: w && w > 0 ? w : null })} /></dd>
       {at && <Point label="Position" p={at} />}
+      {/* A leader note's arrow (decision 620): taken off, the text stays. */}
+      {Array.isArray(node.props.leader) && node.props.leader.length > 0 && (
+        <><dt>Leader</dt><dd><button type="button" className="link" data-testid="text-leader-remove" onClick={() => void execute('element.update', { ids: [node.id], attrs: { leader: null } })}>remove</button></dd></>
+      )}
     </dl>
   );
 }
@@ -298,6 +305,7 @@ function Fields({ node }: { node: NodeDto }) {
     case 'TEXT': return <TextFields node={node} />;
     case 'DIMENSION': return <DimensionFields node={node} />;
     case 'TAG': return <TagFields node={node} />;
+    case 'SHEETLEGEND': case 'SCALEBAR': return <KeyFields node={node} />;
     default: return null;
   }
 }

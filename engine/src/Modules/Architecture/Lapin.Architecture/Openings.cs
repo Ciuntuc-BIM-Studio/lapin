@@ -78,7 +78,47 @@ public static class Openings
 
     /// <summary>A bare opening's own outline (its <c>shape</c> and <c>rise</c>); null for a rectangle.</summary>
     public static JoineryShape? BareShape(Entity opening) =>
-        opening.Str("shape") is { } k && k != "rect" && BareKinds.Contains(k) ? new JoineryShape(k, opening.NumOrNull("rise")) : null;
+        opening.Str("shape") == OutlineKind ? ProfileShape(opening)
+        : opening.Str("shape") is { } k && k != "rect" && BareKinds.Contains(k) ? new JoineryShape(k, opening.NumOrNull("rise")) : null;
+
+    /// <summary>A bare opening of its own outline (audit S4): <c>shape</c> "outline", its loop in <c>profile</c> and <c>profileArcs</c>.</summary>
+    public const string OutlineKind = "outline";
+
+    /// <summary>
+    /// A bare opening's own outline: its <c>profile</c> (corners in metres, x across from its middle, y up from its sill) and its
+    /// edges' rises (<c>profileArcs</c>), laid by the one rule and taken to the unit box its width and height stretch.
+    /// </summary>
+    static JoineryShape? ProfileShape(Entity opening)
+    {
+        var corners = Args.StoredPoints(opening.Attrs["profile"]);
+        if (corners.Count < 3) return null;
+        var laid = ArcOutline.Points(corners, ArcOutline.Rises(opening.Attrs["profileArcs"], corners.Count));
+        var (x0, x1, y0, y1) = (laid.Min(p => p.X), laid.Max(p => p.X), laid.Min(p => p.Y), laid.Max(p => p.Y));
+        if (x1 - x0 < 1e-6 || y1 - y0 < 1e-6) return null;
+        var mid = (x0 + x1) / 2;
+        return new JoineryShape(OutlineKind, Profile: [.. laid.Select(p => new Vec2((p.X - mid) / (x1 - x0), (p.Y - y0) / (y1 - y0)))]);
+    }
+
+    /// <summary>
+    /// A bare opening of its own outline in a wall (audit S4): <paramref name="pts"/> its corners on the wall's face (x along the wall
+    /// from its start, y up from its base, as an elevation reads it), <paramref name="rises"/> its edges' arcs. Its place, sill, width
+    /// and height are the outline's bounds; the outline kept relative to them.
+    /// </summary>
+    public static Entity AddOutlined(IEdit edit, Entity wall, IReadOnlyList<Vec2> pts, IReadOnlyList<double>? rises)
+    {
+        var (c, r) = ArcOutline.Check(pts, rises, "An opening");
+        var laid = ArcOutline.Points(c, r);
+        var (x0, x1, y0, y1) = (laid.Min(p => p.X), laid.Max(p => p.X), laid.Min(p => p.Y), laid.Max(p => p.Y));
+        var (along, sill) = ((x0 + x1) / 2, y0);
+        var opening = AddBare(edit, wall, along, sill, x1 - x0, y1 - y0);
+        var attrs = opening.CloneAttrs();
+        attrs["shape"] = OutlineKind;
+        attrs["profile"] = new JsonArray([.. c.Select(p => (JsonNode)new JsonArray(Math.Round(p.X - along, 9), Math.Round(p.Y - sill, 9)))]);
+        if (ArcOutline.ToJson(r) is { } arcs) attrs["profileArcs"] = arcs;
+        var o = opening.With(attrs: attrs);
+        edit.Replace(o);
+        return o;
+    }
 
     /// <summary>A bare opening's outline as the joinery's outline code takes it.</summary>
     static readonly JoinerySpec BareSpec = JoinerySpec.DefaultWindow("Opening");
@@ -286,6 +326,9 @@ public static class Openings
         if (rise is { } r && !(r > 0)) throw new CommandException("The head's rise must be more than zero.");
         attrs.Remove("shape");
         attrs.Remove("rise");
+        // Another head given: its own outline goes (audit S4).
+        attrs.Remove("profile");
+        attrs.Remove("profileArcs");
         if (kind == "rect") return;
         attrs["shape"] = kind;
         if (rise is { } v && kind != "round") attrs["rise"] = v;

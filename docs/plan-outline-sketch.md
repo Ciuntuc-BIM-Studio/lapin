@@ -26,7 +26,9 @@ outline tools' shapes (decision 589); stage 3, **Edit sketch** (decision 590). T
    Wanted: the drafting fillet in a constrained sketch adds coincident and tangent constraints at the arc's ends (as FreeCAD does).
 2. **Edit sketch in 3D**, in place over the element (as `PartSketchEdit` does for a part's sketch), not on a plan of its own.
 3. **Parameters.** A dimension of the outline sketch driven by a formula of the element's own parameters (as a part's are).
-4. **Other outlines.** Drawn rooms, balconies and site platforms have outline code of their own: no arcs (stage 2) and no Edit
-   sketch yet. Roofs keep straight edges by design (their edge rules are per straight edge).
+4. **Other outlines.** Done in audit S4 (decisions 623–627): drawn rooms, balconies, platforms and parcels take arcs; drawn rooms
+   and platforms are edited as sketches; a sketch of several closed loops gives an outline and its holes; elliptical edges.
+   Roofs keep straight edges by design (their edge rules are per straight edge); balconies have no Edit sketch (their first edge's
+   order matters).
 5. **Grip edits after a sketch.** An outline moved by its grips since its sketch was finished opens again from the outline, without
    its constraints; the sketch could instead be re-solved with the moved corners fixed.

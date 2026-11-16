@@ -39,6 +39,8 @@ Desenează fundațiile pe nivelul **Foundations** sau dă-le un plan propriu.
 
 ![Stâlpi, grinzi și fundații izolate în 3D](shots/structure-3d.webp)
 
+Grinzile și fundațiile continue se taie și se mută cu aceleași unelte ca pereții (vezi [Tăierea, prelungirea, împărțirea și paralela pereților](walls.md)): **Modifică → Împarte elementul** taie una în două unde dai clic, **Modifică → Taie/Prelungește elemente** o taie până la o limită sau o prelungește până la ea (o fundație continuă curbă continuă pe cercul ei; adusă pe axa altei grinzi, cele două se îmbină), iar **Modifică → Paralelă din element** o copiază paralel, de la axă sau între fețe.
+
 ## Tipuri și colțuri
 
 **Tipuri structurale** setează secțiunile stâlpilor, grinzilor și fundațiilor: secțiuni de beton și profile metalice. **Secțiunea** unui stâlp e un **Dreptunghi**, un **Cerc** sau un **Poligon**, unul regulat, dat de **Laturi** și **Diametru** (prin colțuri) (un stâlpișor octogonal, cum îl poate avea un IFC importat). Dă clic pe un tip din listă ca să-i schimbi dimensiunea sau numele, apoi **Salvează tipul**: toate elementele de acel tip îl urmează; **Tip nou** te întoarce la crearea unui tip.

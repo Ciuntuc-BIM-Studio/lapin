@@ -42,6 +42,23 @@ Les feuilles, leur PDF, l’impression et l’émission le dessinent avec les va
 
 ![La feuille avec son propre cartouche](shots/sheet-title-block.webp)
 
+## Dessiner sur la feuille
+
+Les notes, repères et légendes qui appartiennent à la feuille plutôt qu'à l'une de ses vues se dessinent sur la feuille elle-même. Cliquez sur **Annoter** dans la barre de la feuille, ou double-cliquez sur le papier en dehors des vues (**Annoter → Annoter la feuille** fait de même). La feuille s'ouvre dans le panneau de dessin comme son papier, à 1:1, avec les vues, le cadre et le cartouche en dessous, et la barre indique *dessin sur la feuille*. Chaque outil de **Dessin** et d'**Annoter** y fonctionne comme sur une vue, en millimètres papier : tapez 50 et une ligne mesure 50 mm sur le papier, et la hauteur d'un texte est sa hauteur sur le papier. Les points s'accrochent au cadre, au cartouche, aux cadres des vues (bleu en pointillé) et à ce que dessinent les vues. **Feuille** dans la barre revient à la disposition des vues.
+
+- Les **textes** peuvent contenir des champs dynamiques, comme ceux d'un cartouche : `Feuille {sheet.number} sur {sheet.count}`, `{project.name}`, `{sheet.date}`. Sur une vue, un texte se lit tel qu'il a été tapé.
+- **Note avec repère** (Annoter → Texte) : cliquez où pointe la flèche, puis où va le texte, et tapez-le. Déplacée, la note emporte sa flèche ; **Ligne de rappel → supprimer** dans ses propriétés retire la flèche.
+- **Lignes, polylignes, rectangles, cercles, arcs, hachures, symboles et images** sont ceux des outils de Dessin, avec leurs poignées, calques et outils de modification. Une flèche du nord est l'un des symboles de Lapin (**Annoter → Symbole**).
+- **Nuage de révision** (Dessin → Remplissage, Annoter → Feuilles, ou REVCLOUD dans la ligne de commande) : deux coins, ou **P** pour un polygone fermé avec Entrée. **Nuage de révision** dans les propriétés de toute polyligne fermée ou de tout cercle en fait un nuage ou le remet en forme simple, et règle son arc sur le papier.
+- **Légende** (Annoter → Feuilles) : une liste vivante de ce que dessinent les vues de la feuille : les matériaux dont leurs coupes sont hachurées et remplies ou, avec **Listes** dans ses propriétés, leurs lignes par rôle, type et épaisseur. Elle change avec les vues et le modèle, et son titre accepte aussi des champs.
+- **Échelle graphique** (Annoter → Feuilles) : à l'échelle de la première vue de la feuille ou à celle donnée dans ses propriétés, une longueur ronde d'environ 80 mm ou celle que vous fixez. Sur un plan, une coupe ou une élévation, l'échelle graphique prend l'échelle de la vue.
+
+Ce qui est dessiné sur la feuille s'imprime dessus, par-dessus les vues, exactement comme affiché : dans son PDF, à l'impression et dans son DXF. Cela appartient à la feuille : **Dupliquer la feuille** (son bouton dans le navigateur de projet) le copie, avec les symboles placés sur la feuille, et supprimer la feuille le supprime. Chaque dessin est une étape d'annulation. Les feuilles faites auparavant n'ont rien de dessiné et s'impriment comme avant.
+
+![Dessin sur une feuille : une note avec repère, un nuage de révision, un texte dynamique, une légende des matériaux du plan et une échelle graphique](shots/sheet-annotations.webp)
+
+![La même feuille, telle qu'elle s'imprime](shots/sheet-annotated.webp)
+
 ## Imprimer
 
 Les boutons **PDF** et **DXF** de la barre de la feuille exportent la feuille. Un PDF est prêt à imprimer ou à envoyer. Un DXF s’ouvre dans AutoCAD et dans les autres logiciels de DAO, avec ses calques, ses lignes et ses hachures. **Imprimer** envoie la feuille à une imprimante ou un traceur à son propre format, à 1:1, en traits vectoriels : choisissez le traceur et le papier dans la boîte d’impression. Sur une imprimante plus petite, choisissez l’ajustement à la page.

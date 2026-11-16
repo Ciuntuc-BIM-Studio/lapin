@@ -32,6 +32,13 @@ public static class LineworkConvert
             }
             case Arc a:
                 return new(e.Id, "arc", a.ToJson(), Drafts.Flatten(a)[0], false, layer, a.C, a.R, a.At(a.Start + a.Sweep / 2));
+            // An ellipse (audit S4): a whole one closed, made into outlines with its elliptical edges; an elliptical arc open.
+            case Ellipse el:
+            {
+                var pts = el.Points();
+                if (el.Whole) pts.RemoveAt(pts.Count - 1);
+                return new(e.Id, "ellipse", el.ToJson(), pts, el.Whole, layer, el.C);
+            }
             default: return null;
         }
     }

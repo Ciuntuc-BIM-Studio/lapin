@@ -14,6 +14,10 @@ Per uno spazio non chiuso da muri su tutti i lati, come una terrazza o un’estr
 
 ![Una pianta con due locali colorati per destinazione d’uso e una legenda dei colori](shots/rooms-plan.webp)
 
+I bordi di un locale disegnato possono essere curvi, come quelli di un solaio: la barra di **Room by outline** disegna un **Polygon** i cui bordi possono essere archi (**Arcs (Space)**), un **Rectangle** o un **Circle**, e il clic destro sul locale selezionato offre **Make arc**, **Make straight**, **Fillet corner…** e **Chamfer corner…**. Area e perimetro sono misurati sugli archi veri, e in IFC il profilo dello spazio è la curva vera. Un locale trovato dai suoi muri li segue, quindi il suo contorno non si modifica così.
+
+![Un locale disegnato con un bordo curvo e un angolo raccordato, un locale tondo e un balcone con il fronte curvo](shots/rooms-curved.webp)
+
 ## Le proprietà di un locale
 
 Seleziona un locale facendo clic sulla sua etichetta o in qualsiasi punto al suo interno. Nel pannello Proprietà:

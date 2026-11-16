@@ -39,6 +39,8 @@ We **Właściwościach** stopa pokazuje **Górę** i **Dół** jako rzędne oraz
 
 ![Słupy, belki i stopy fundamentowe w 3D](shots/structure-3d.webp)
 
+Belki i ławy fundamentowe tnie się i przesuwa tymi samymi narzędziami co ściany (zob. [Przycinanie, wydłużanie, dzielenie i odsuwanie ścian](walls.md)): **Modyfikuj → Podziel element** dzieli je na dwie tam, gdzie klikniesz, **Modyfikuj → Utnij/wydłuż elementy** przycina je do granicy albo wydłuża do niej (łukowa ława biegnie dalej po swoim okręgu; doprowadzona do osi innej belki, obie zostają połączone), a **Modyfikuj → Odsuń element** kopiuje je równolegle, od osi lub między licami.
+
 ## Typy i narożniki
 
 **Typy konstrukcyjne** ustala przekroje słupów, belek i fundamentów: przekroje betonowe i profile stalowe. Przekrój słupa to **Prostokąt**, **Okrąg** lub **Wielokąt** foremny, określony przez **Strony** i **Średnicę** po narożach (ośmiokątny słupek, jaki może mieć zaimportowany IFC). Kliknij typ na liście, aby zmienić jego wymiary lub nazwę, a następnie **Zapisz typ**: każdy element tego typu się dostosuje; **Nowy typ** wraca do tworzenia nowego.

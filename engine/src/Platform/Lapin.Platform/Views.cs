@@ -45,6 +45,8 @@ public static class Views
     {
         if (m.Get(id) is { Class: Class } v) return v;
         if (id == GraphicsSets.View3d) return GraphicsSets.As3dView(m);
+        // A sheet's paper (decision 620): what is drawn on the sheet itself, in paper coordinates.
+        if (id.StartsWith(PaperViews.Prefix, StringComparison.Ordinal)) return PaperViews.Find(m, id);
         if (id.StartsWith("plan:", StringComparison.Ordinal) && m.Get(id[5..]) is { Class: IfcClass.BuildingStorey } storey)
             return new Entity(id, Class, storey.Name, new JsonObject { ["kind"] = "plan", ["storeyId"] = storey.Id, ["cutHeight"] = DefaultCut, ["scale"] = DefaultPlanScale(m) });
         return null;
@@ -695,6 +697,8 @@ public static class Views
     /// <summary>As <see cref="Generate"/>, with the parts it drew and, laid in pieces (a developed section), each piece's spec, station and own drawing (before it was laid).</summary>
     static (ViewDrawing? Drawing, ViewSpec? Spec, string? Problem, List<DrawPart> Parts, List<(ViewSpec Spec, double Station, ViewDrawing Drawing)>? Pieces) GenerateWith(IQueryContext q, Entity view)
     {
+        // A sheet's paper draws nothing of the model: only what is drawn on it (PaperViews).
+        if (PaperViews.Is(view)) return (new ViewDrawing([], []), PaperSpec, null, [], null);
         var silhouettes = new List<DrawSilhouette>();
         var outlines = new List<DLine>();
         var (parts, symbols, fills, texts) = Gather(q, view, silhouettes, outlines);
@@ -729,6 +733,9 @@ public static class Views
         if (spec.Kind == "plan" && outlines.Count > 0) drawing = drawing with { Outlines = outlines };
         return (drawing, spec, null, drawn, laid);
     }
+
+    /// <summary>A sheet's paper: a plan's frame at 0, y up, cutting nothing.</summary>
+    static readonly ViewSpec PaperSpec = new(PaperViews.Kind, new ViewFrame(new Vec3(0, 0, 0), new Vec3(1, 0, 0), new Vec3(0, 1, 0), -Vec3.UnitZ), false, 0, Hidden: false);
 
     /// <summary>A developed section's pieces: each straight piece's spec (seeing only between its ends) and the station it is laid at; a projected jogged section's cuts (<see cref="SectionPaths.Cuts"/>); one piece (or none) for a plain section.</summary>
     public static List<(ViewSpec Spec, double Station)> Pieces(IQueryContext q, Entity view)
@@ -778,6 +785,9 @@ public static class Views
     public static Rendered Render(IQueryContext q, Entity view, bool print = false, bool insets = true, bool withMarks = true)
     {
         var m = q.Model;
+        // A sheet's paper on the screen: its views placed once, for the sheet under it and for its legends (decision 620).
+        if (PaperViews.Is(view) && !print && PaperViews.SheetOf(m, view) is { } paperSheet && !PaperViews.Placing(paperSheet))
+            return PaperViews.With(paperSheet, Sheets.Place(q, paperSheet), () => Render(q, view, print, insets, withMarks));
         var scale = view.NumOrNull("scale") ?? 100;
         var (generated, spec, problem, drawnParts, laid) = GenerateWith(q, view);
         if (generated == null || spec == null) return new Rendered([], [], null, scale, view.Str("kind") ?? "plan", problem, []);
@@ -884,11 +894,15 @@ public static class Views
         if (crop != null) pens = [.. pens.Select(p => crop.Clip(p, crop.Model)).OfType<Pen>()];
 
         // Annotations: the views' own marks, then each module's (grids, dimensions, texts), over the drawing.
-        var ctx = new ViewContext(m, view, spec.Kind, spec.Frame, scale, DraftingResources.Book(m), drawing, q.Geometry) { Services = q.Services };
+        var ctx = new ViewContext(m, view, spec.Kind, spec.Frame, scale, DraftingResources.Book(m), drawing, q.Geometry) { Services = q.Services, Query = q };
+        // A sheet's paper (decision 620): only what is drawn on it, none of the views' own marks.
+        var paper = spec.Kind == PaperViews.Kind;
         // A 3D view's drawing has no annotations: its drawing's frame need not be the model's (a perspective).
-        var marks = flat ? Marks(ctx).Concat(Location.Marks(ctx)).Concat(SitePlans.Marks(ctx)).Concat(insets ? Insets.Marks(q, ctx, print) : []).Concat(Callouts.Marks(ctx)).ToList() : [];
-        if (flat)
+        var marks = paper ? PaperViews.Marks(q, ctx) : flat ? Marks(ctx).Concat(Location.Marks(ctx)).Concat(SitePlans.Marks(ctx)).Concat(insets ? Insets.Marks(q, ctx, print) : []).Concat(Callouts.Marks(ctx)).ToList() : [];
+        if (flat && !paper)
         {
+            // Legends and scale bars (decision 620).
+            marks.AddRange(DrawingKeys.Marks(ctx));
             // The reference planes where they cut this view, on the screen only: never on a sheet.
             if (!print) marks.AddRange(RefPlaneMarks(ctx));
             // The view's named boundaries (decision 236), on the screen only.
@@ -909,11 +923,11 @@ public static class Views
         // mark on the PICK layer (never drawn, only hit and highlighted). Hidden and overhead lines pick nothing.
         marks.AddRange(PickMarks(drawing, spec.Hidden));
         // A bare opening draws nothing of its own (its host's lines draw the hole): its outline where the view cuts or sees it (forum topic 72).
-        if (flat && spec.Kind != "plan") marks.AddRange(OpeningPickMarks(q, view, laid?.Select(p => (p.Spec, p.Station, p.Drawing)).ToList() ?? [(spec, 0.0, generated)], vg));
+        if (flat && !paper && spec.Kind != "plan") marks.AddRange(OpeningPickMarks(q, view, laid?.Select(p => (p.Spec, p.Station, p.Drawing)).ToList() ?? [(spec, 0.0, generated)], vg));
         // What the view's Visibility / Graphics hides goes with its marks (decision 391): a hidden category's tags and bars, a link hidden here.
         marks.RemoveAll(vg.HidesMark);
         // The point clouds the view's cut takes, as dots under the drawing (decision 396; the view's Point clouds tab hides them, not its categories): a plan's or a section's slice, an elevation's front.
-        if (laid == null && flat)
+        if (laid == null && flat && !paper)
             try { marks.AddRange(PointCloudSlices.Marks(ctx, spec, vg)); }
             catch (CommandException) { }
         // An annotation category's colour or halftone (decision 394).
@@ -1001,6 +1015,8 @@ public static class Views
         }
         pens.AddRange(overPens);
         pens.AddRange(markPens.Values.OrderBy(p => p.Fill != null ? 0 : 1));
+        // On the screen, a sheet's paper shows the sheet under what is drawn on it (never printed: the sheet prints itself).
+        if (paper && !print) pens.InsertRange(0, PaperViews.Underlay(q, view));
         // What a click takes first: what is on top (the unnumbered marks, then the numbered ones from the top down, those behind the model last).
         marks = [.. free, .. Enumerable.Reverse(ordered).Select(x => x.Mark)];
         // What the view shows: the drawing and its annotations (a text counted by its anchor and height).
@@ -1017,10 +1033,11 @@ public static class Views
             foreach (var img in mk.Images) if (img.ImageId.StartsWith("pointcloud:", StringComparison.Ordinal)) pts.AddRange(img.Corners);
         }
         (Vec2, Vec2)? bounds = pts.Count > 0 ? (new Vec2(pts.Min(p => p.X), pts.Min(p => p.Y)), new Vec2(pts.Max(p => p.X), pts.Max(p => p.Y))) : null;
+        if (paper) bounds = PaperViews.Bounds(m, view);
         double? depth = spec.Kind == "section" && spec.Below < ViewRanges.Unlimited ? spec.Below : null;
         // A developed section: where each piece lies in the model, and the stations (developed x) it covers.
         var frames = spec.Kind == "section" && Pieces(q, view) is { Count: > 1 } ps ? ps.Select(p => (p.Spec.Frame, p.Station, p.Station + p.Spec.Span!.Value.Max)).ToList() : null;
-        return new Rendered(pens, marks, bounds, scale, spec.Kind, null, spec.Kind == "plan" ? ViewRanges.Problems(Range(m, view)) : [], lineworkOrphans, spec.Frame, depth, frames)
+        return new Rendered(pens, marks, bounds, scale, spec.Kind, null, spec.Kind == "plan" ? ViewRanges.Problems(Range(m, view)) : [], lineworkOrphans, paper ? null : spec.Frame, depth, frames)
         {
             Window = spec.Span is { } sp && spec.Rise is { } rs ? (new Vec2(sp.Min, rs.Min), new Vec2(sp.Max, rs.Max)) : null,
             Generated = drawing,

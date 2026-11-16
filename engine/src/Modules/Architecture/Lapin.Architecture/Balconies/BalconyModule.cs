@@ -226,7 +226,7 @@ public static class BalconyModule
         {
             if (kind is "loggia" or "corner" or "mezzanine") attrs["kind"] = kind = "cantilever";
             attrs["outline"] = "polygon";
-            attrs["contour"] = new JsonArray([.. contour.Select(p => (JsonNode)new JsonArray(p.X, p.Y))]);
+            SetContour(attrs, a, contour, null);
         }
         else if (a["x1"] != null && a["x2"] != null)
         {
@@ -281,7 +281,7 @@ public static class BalconyModule
         return Settle(ctx, e);
     }
 
-    static Entity Update(ICommandContext ctx, JsonObject a)
+    public static Entity Update(ICommandContext ctx, JsonObject a)
     {
         var m = ctx.Model;
         var b = m.Get((string?)a["id"] ?? "") is { Class: Class } x ? x : throw new CommandException("Not a balcony.");
@@ -296,9 +296,26 @@ public static class BalconyModule
             else attrs["at"] = new JsonArray(p.X, p.Y);
         }
         if (Json.Number(a["along"]) is { } al) attrs["along"] = al;
-        if (Args.StoredPoints(a["contour"]) is { Count: >= 3 } contour) attrs["contour"] = new JsonArray([.. contour.Select(p => (JsonNode)new JsonArray(p.X, p.Y))]);
+        if (Args.StoredPoints(a["contour"]) is { Count: >= 3 } contour) SetContour(attrs, a, contour, ArcOutline.RisesOf(b));
         BalconySpec.EnsureMaterials(ctx, attrs);
         return Settle(ctx, b.With(attrs: attrs));
+    }
+
+    /// <summary>
+    /// A drawn balcony's outline written: its corners as drawn (its first edge against the building) and, when given (or kept, its
+    /// corners only moved), its edges' rises (decision 589, <see cref="ArcOutline"/>), checked as a floor's.
+    /// </summary>
+    static void SetContour(JsonObject attrs, JsonObject a, IReadOnlyList<Vec2> contour, double[]? was)
+    {
+        var rises = ArcOutline.RisesArg(a["arcs"], contour.Count, was);
+        if (rises != null)
+        {
+            // Checked (no crossing, no arc past its chord) but kept as drawn: its first edge is the one against the building.
+            ArcOutline.Check(contour, rises, "A balcony");
+            for (var i = 0; i < rises.Length; i++) rises[i] = PathCurve.CheckRise(rises[i], (contour[(i + 1) % contour.Count] - contour[i]).Length);
+        }
+        attrs["contour"] = new JsonArray([.. contour.Select(p => (JsonNode)new JsonArray(p.X, p.Y))]);
+        ArcOutline.Write(attrs, rises?.Length == contour.Count ? rises : null);
     }
 
     /// <summary>

@@ -548,6 +548,8 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             var attrs = new JsonObject { ["viewId"] = viewId, ["at"] = J(P(a["at"])), ["text"] = body, ["angle"] = Json.Number(a["angle"]) ?? 0 };
             if (Json.Number(a["width"]) is { } w && w > 0) attrs["width"] = w;
             if ((string?)a["textStyle"] is { } ts) attrs["textStyle"] = ts;
+            // A leader note (decision 620): the arrow's point, then any bends, to the text.
+            if (a["leader"] is JsonArray la && la.Count > 0) attrs["leader"] = new JsonArray([.. la.Select(x => (JsonNode)J(P(x)))]);
             var t = new Entity(ctx.NewId(), IfcClass.Annotation, body.Length > 24 ? body[..24] + "…" : body, attrs, "TEXT");
             ctx.Add(t);
             return new JsonObject { ["id"] = t.Id };

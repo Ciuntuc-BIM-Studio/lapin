@@ -64,6 +64,8 @@ export interface ToolInput {
   typed?: number;
   /** An outline drawn with curved edges (forum topic 97): each edge's rise off its chord, edge i from point i to the next (the last back to the first), left of it positive. */
   arcs?: number[];
+  /** An outline with edges along an ellipse (audit S4): each edge's ellipse or null, as the engine's `ellipses` takes them. */
+  ellipses?: unknown[];
   /** In the 3D view, the height (m) of each point as clicked (a snap on a ridge, a corner above the level); a tool that measures in space reads it, the others work on the level. */
   heights?: number[];
   /** Screen rotation of the active 2D view (degrees, counter-clockwise): text tools align to the screen X-axis (forum #110). */

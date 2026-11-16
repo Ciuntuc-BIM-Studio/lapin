@@ -34,6 +34,10 @@ Valgt har en åbning greb som et vindue: træk i midten for at skubbe den langs 
 
 ![En vægåbning i dens konfigurator: halvcirkelformet top, lysningerne pudset](shots/wall-opening-dialog.webp)
 
+En åbning kan også have **sit eget omrids**, enhver form: tegn det lukket på et snit eller en facade, der ser lige på væggen (**Draft**: en polylinje, et rektangel, en cirkel, buer), vælg det og vælg **Draft → Convert to… → Wall opening**. Åbningen sættes i den lige væg bag formen; bredde, højde, plads langs væggen og brystning tages fra omridsets grænser, og selve omridset skæres gennem væggen (buerne langs den sande kurve). Ændres størrelsen, strækkes den med sin boks; et andet hoved valgt i egenskaberne erstatter omridset. I IFC er den et IfcOpeningElement med den form og kommer tilbage som den var.
+
+![En vægåbning med sit eget omrids, tegnet på et snit](shots/wall-opening-outline.webp)
+
 ## Konfiguratoren
 
 **Arkitektur → Døre og vinduer** åbner konfiguratoren. Alle projektets dør- og vinduestyper står til venstre. Du kan ændre:

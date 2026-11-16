@@ -36,6 +36,10 @@ Wszystko, co zaimportowane, jest przechowywane w pliku projektu. Obiekt bierze n
 
 Linie CAD stają się elementami terenu: **Droga z linii CAD** (LR) i **Linia nieciągłości z linii CAD** (BL) biorą linię lub polilinię narysowaną albo wczytaną z DXF, podążają za każdą linią na jej warstwie, która styka się z nią końcami, i tworzą wzdłuż niej drogę lub linię nieciągłości terenu. Gdy linie mają wysokości (linie 3D z DXF), dają one niweletę drogi lub rzędne linii nieciągłości. Takie linie są zachowywane z wysokościami i mogą być pokazane w 3D (kategoria *linie*).
 
+## Platformy i działka
+
+**Site → Platform** (<kbd>PD</kbd>) niweluje teren wewnątrz obrysu do jednej rzędnej, z wykopem i nasypem; **Site → Parcel** (<kbd>PC</kbd>) rysuje granicę działki, linią punktową z jej powierzchnią. Oba rysują obrys tym samym paskiem co strop: **Polygon**, którego krawędzie mogą być łukami (<kbd>Space</kbd>), **Rectangle** albo **Circle**. Po zaznaczeniu ich narożniki i krawędzie mają uchwyty (działki — na jej terenie), a prawy klik oferuje **Make arc**, **Make straight**, **Fillet corner…** i **Chamfer corner…**, każde jako jeden krok cofania. Platforma niweluje wzdłuż prawdziwych łuków; powierzchnia i obwód działki są mierzone na nich, a wykaz współrzędnych podaje jej narożniki.
+
 ## Plany zagospodarowania i plany orientacyjne
 
 Przeglądarka projektu ma pod poziomami gałąź **Zagospodarowanie**: własne rysunki terenu, które nie należą do żadnej kondygnacji. Nowy projekt zaczyna się od dwóch:
