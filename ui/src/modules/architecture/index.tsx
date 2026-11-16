@@ -48,6 +48,7 @@ import { CeilingSection, CeilingTypesDialog, ceiling, ceilingDiffuser, ceilingIn
 import { finishRoom, roomFinishSchedule, roomFinishes } from './roomFinishTools';
 import { finishPainter, paintBrush, paintClear, paintEyedropper, splitLine, splitRect, surfaceFinishSchedule } from './finishPainter';
 import { FinishPainterPanel } from './FinishPainterPanel';
+import { hasPaintedFinishes, PaintedFinishesSection } from './PaintedFinishesSection';
 import { WallSweepSection, WallSweepsOnWall, hasSweeps, revealSelected, sweepSelected, wallReveal, wallSweep, wallSweepSchedule } from './WallSweeps';
 import { SkirtingSection, SkirtingTypesDialog, skirting, skirtingGrips, skirtingInRoom, skirtingSchedule, skirtingTypes } from './Skirtings';
 import { colorLegend, room, roomColors, roomDivider, roomDividerArc, roomDividerCircle, roomDividerPolyline, roomDividerRectangle, roomDividers, roomOutline, roomTag, updateRooms } from './roomTools';
@@ -606,6 +607,7 @@ const architecture: LapinModule = {
     { id: 'wallOpening', label: 'Opening', classes: ['IfcOpeningElement'], shows: isWallOpening, component: WallOpeningSection },
     { id: 'slab', label: 'Floor', classes: ['IfcSlab'], component: SlabSection },
     { id: 'layerExtents', label: 'Layer extents', classes: ['IfcWall', 'IfcSlab', 'IfcWallType', 'IfcSlabType'], shows: hasLayerExtents, component: LayerExtentsSection },
+    { id: 'paintedFinishes', label: 'Painted finishes', classes: ['IfcWall', 'IfcSlab', 'IfcColumn', 'IfcBeam'], shows: hasPaintedFinishes, component: PaintedFinishesSection },
     { id: 'downpipe', label: 'Downpipe', classes: ['LapinDownpipe'], component: DownpipeSection },
     { id: 'roof', label: 'Roof', classes: ['IfcRoof'], component: RoofSection },
     { id: 'stair', label: 'Stair', classes: ['IfcStair', 'IfcRamp'], component: StairSection },

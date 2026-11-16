@@ -5,13 +5,13 @@
  */
 
 import { useEffect, useState } from 'react';
-import { CircleCheckBig } from 'lucide-react';
+import { ChevronDown, ChevronRight, CircleCheckBig } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { useSession } from '../../engine/session';
 import { ofClass } from '../../engine/model';
 import { useScope } from '../../platform/scope';
 import { activate } from '../../platform/modules';
-import { leavePainter, paintBrush, paintClear, paintEyedropper, paletteQuery, PAINTER, splitLine, splitRect, usePainter, type PaletteEntry, type PaintFinish } from './finishPainter';
+import { filterPalette, leavePainter, paintBrush, paintClear, paintEyedropper, paletteQuery, PAINTER, splitLine, splitRect, usePainter, type PainterUseFilter, type PaletteEntry, type PaintFinish } from './finishPainter';
 
 const mm = (layers: { thickness: number }[]) => `${Math.round(layers.reduce((s, l) => s + l.thickness, 0) * 1000 * 10) / 10} mm`;
 
@@ -27,6 +27,9 @@ export function FinishPainterPanel() {
   const [palette, setPalette] = useState<PaletteEntry[] | null>(null);
   const [material, setMaterial] = useState('Paint');
   const [thickness, setThickness] = useState('1');
+  const [search, setSearch] = useState('');
+  const [useFilter, setUseFilter] = useState<PainterUseFilter>('all');
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   useEffect(() => {
     if (!on) return;
     let live = true;
@@ -35,11 +38,13 @@ export function FinishPainterPanel() {
   }, [on, nodes]);
   if (!on) return null;
   const materials = ofClass(useSession.getState(), 'IfcMaterial').map((n) => n.name).sort();
+  const shown = filterPalette(palette ?? [], search, useFilter);
   const groups: [string, PaletteEntry[]][] = [
-    ['Surface finishes', (palette ?? []).filter((e) => e.kind === 'surface' && !e.library)],
-    ['Room finishes', (palette ?? []).filter((e) => e.kind === 'room')],
-    ['Library', (palette ?? []).filter((e) => e.library)],
+    ['Surface finishes', shown.filter((e) => e.kind === 'surface' && !e.library)],
+    ['Room finishes', shown.filter((e) => e.kind === 'room')],
+    ['Library', shown.filter((e) => e.library)],
   ];
+  const toggleGroup = (title: string) => setCollapsed((c) => ({ ...c, [title]: !c[title] }));
   const own = () => {
     const t = Number(thickness.replace(',', '.'));
     if (!material.trim() || !Number.isFinite(t) || t < 0) return;
@@ -67,23 +72,38 @@ export function FinishPainterPanel() {
         <input type="checkbox" checked={whole} onChange={(e) => usePainter.setState({ whole: e.target.checked })} />Whole face
       </label>
       <p className="muted small">{finish ? <>Painting with <b data-no-i18n>{finish.name}</b></> : 'Choose a finish, then click a face'}</p>
+      <input className="input small" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Filter finishes…" aria-label="Filter finishes" data-testid="finish-painter-search" />
+      <div className="catalog-kinds" role="tablist" aria-label="Finish use">
+        {([['all', 'All'], ['walls', 'Walls'], ['floors', 'Floors'], ['ceilings', 'Ceilings']] as const).map(([id, label]) => (
+          <button key={id} type="button" role="tab" aria-selected={useFilter === id} className={`kind-chip${useFilter === id ? ' on' : ''}`} onClick={() => setUseFilter(id)}>{label}</button>
+        ))}
+      </div>
       {!palette && <p className="muted small">Reading the palette…</p>}
-      {groups.filter(([, list]) => list.length > 0).map(([title, list]) => (
-        <div key={title} className="part-section">
-          <div className="part-title">{title}</div>
-          <ul className="part-list">
-            {list.map((e) => (
-              <li key={e.key} className={sameFinish(finish, e) ? 'on' : ''}>
-                <button type="button" className="link" data-palette={e.name}
-                  onClick={() => { usePainter.setState({ finish: { name: e.name, typeId: e.typeId, part: e.part, library: e.library } }); if (tool !== paintBrush.id) activate(paintBrush); }}>
-                  <span data-no-i18n>{e.name}</span>
-                </button>
-                <span className="muted small" title={e.layers.map((l) => `${l.material} ${Math.round(l.thickness * 10000) / 10} mm`).join(' + ')}>{mm(e.layers)}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
+      {palette && groups.every(([, list]) => list.length === 0) && <p className="muted small">No matching finishes.</p>}
+      {groups.filter(([, list]) => list.length > 0).map(([title, list]) => {
+        const isCollapsed = !!collapsed[title];
+        return (
+          <div key={title} className="part-section">
+            <button type="button" className="part-title row between" style={{ width: '100%', background: 'none', border: 0, padding: 0, cursor: 'pointer' }} onClick={() => toggleGroup(title)}>
+              <span className="row" style={{ gap: 4 }}>{isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}{title}</span>
+              <span className="muted small" data-no-i18n>{list.length}</span>
+            </button>
+            {!isCollapsed && (
+              <ul className="part-list">
+                {list.map((e) => (
+                  <li key={e.key} className={sameFinish(finish, e) ? 'on' : ''}>
+                    <button type="button" className="link" data-palette={e.name}
+                      onClick={() => { usePainter.setState({ finish: { name: e.name, typeId: e.typeId, part: e.part, library: e.library } }); if (tool !== paintBrush.id) activate(paintBrush); }}>
+                      <span data-no-i18n>{e.name}</span>
+                    </button>
+                    <span className="muted small" title={e.layers.map((l) => `${l.material} ${Math.round(l.thickness * 10000) / 10} mm`).join(' + ')}>{mm(e.layers)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        );
+      })}
       <div className="part-section">
         <div className="part-title">A material</div>
         <div className="row finish-painter-own">
