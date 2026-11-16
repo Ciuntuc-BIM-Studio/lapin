@@ -10180,6 +10180,94 @@ export const scenes = [
     },
   },
   {
+    // One Dimension tool (S9, audit 2026-11-15): smart, it takes the kind from what is clicked: a drafted line measured end to end,
+    // two lines their angle, a circle its radius, two points an aligned dimension; its bar holds the kinds, the string's mode and
+    // the generated dimensions. The old kinds' tools start it at their kind.
+    id: 'dimension-tool',
+    touches: ['drafting'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const plan = `plan:${s}`;
+      await t.cmd('drafting.draw', { viewId: plan, shape: { type: 'line', a: [0, 0], b: [6, 0] } });
+      await t.cmd('drafting.draw', { viewId: plan, shape: { type: 'line', a: [0, 0], b: [4, 3] } });
+      const circle = (await t.cmd('drafting.draw', { viewId: plan, shape: { type: 'circle', c: [10, 1.5], r: 1.2 } })).ids[0];
+      await t.ui({ keyPlan: false });
+      await t.page.evaluate(async () => (await import('/src/viewport/zoom.ts')).zoomHost()?.zoomWindow({ x: -2, y: -5.5 }, { x: 14, y: 5 }));
+      await t.wait(600);
+      await t.button('Annotate', { exact: true });
+      await t.tool('drafting.dimension');
+      const state = () => t.page.evaluate(async () => ({ command: (await import('/src/viewport/cad/session.ts')).useCad.getState().command, kind: (await import('/src/modules/drafting/smartDimension.tsx')).useSmartDim.getState().kind }));
+      t.expect((await state()).command === 'DIMENSION' && (await state()).kind === 'smart', 'Dimension starts the smart tool');
+      t.expect(await t.page.locator('[data-dim-kind]').count() === 1 && await t.page.locator('[data-dim-mode]').count() === 1, 'its bar has the kind and the string\'s mode');
+      const click = async (x, y) => { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 3 }); await t.wait(150); await t.page.mouse.click(px, py); await t.wait(450); };
+      // A line clicked away from its snaps, then where the dimension line goes.
+      await click(1.9, 0);
+      await click(3.3, -1.4);
+      // The same line, then the other: their angle, then where its arc goes.
+      await click(4.6, 0);
+      await click(2.6, 1.95);
+      await click(2.9, 0.95);
+      // The circle: its radius.
+      await click(10 + 1.2 * Math.SQRT1_2, 1.5 + 1.2 * Math.SQRT1_2);
+      await click(12.4, 3.6);
+      // Two points on nothing: an aligned dimension.
+      await click(0, -2.6);
+      await click(4.5, -3.1);
+      await click(2.5, -4.2);
+      const dims = (await t.nodes()).filter((n) => n.type === 'IfcAnnotation' && n.props.predefinedType === 'DIMENSION');
+      const kinds = dims.map((d) => d.props.dimKind ?? 'string');
+      t.expect(kinds.filter((k) => k === 'string').length === 2, `a line and two points make two aligned dimensions (${kinds.join(', ')})`);
+      t.expect(kinds.includes('angular'), `two lines make an angle (${kinds.join(', ')})`);
+      t.expect(dims.some((d) => d.props.dimKind === 'radial' && d.props.shape === circle), 'a circle gets its radius');
+      await t.page.locator('[data-dim-mode]').selectOption('chain');
+      await t.wait(300);
+      await t.shot('dimension-tool-bar', { of: '[data-testid=command-line]', pad: 0 });
+      await t.page.locator('[data-dim-mode]').selectOption('single');
+      await t.keys('Escape', 'Escape');
+      await t.ui({ selection: null, selected: [] });
+      await t.wait(500);
+      const [cx, cy] = await t.planPoint(6.5, -0.4);
+      await t.shot('dimension-smart', { clip: { x: cx - 440, y: cy - 260, width: 880, height: 500 } });
+      // An old kind's tool: the same tool, at its kind.
+      await t.tool('cad.dimRadius');
+      t.expect((await state()).command === 'DIMENSION' && (await state()).kind === 'radial', 'Radius starts the Dimension tool at its kind');
+      t.expect(await t.page.locator('[data-dim-kind]').inputValue() === 'radial', 'the bar says Radius');
+      await t.keys('Escape', 'Escape');
+    },
+  },
+  {
+    // One Tag tool (S9): its first choice is what it tags; a room's area tagged by clicking inside the room, a keynote's code.
+    id: 'tag-sources',
+    touches: ['drafting', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const room = (await t.cmd('architecture.addRoom', { storeyId: storey, points: [[0, 0], [7, 0], [7, 8], [0, 8]], name: 'Living' })).id;
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      await t.button('Annotate', { exact: true });
+      await t.tool('cad.tag');
+      const source = t.page.locator('[data-tag-source]');
+      t.expect(await source.count() === 1 && await source.inputValue() === 'element', 'the Tag tool starts at the element source');
+      await source.selectOption('room');
+      await t.page.locator('[data-tag-room]').selectOption('area');
+      await t.wait(300);
+      for (const [x, y] of [[2, 5.5], [2.6, 6.4]]) { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(500); }
+      await t.shot('tag-sources', { of: '[data-testid=command-line]', pad: 0 });
+      await t.keys('Escape', 'Escape');
+      const tags = (await t.nodes()).filter((n) => n.type === 'IfcAnnotation' && n.props.predefinedType === 'TAG');
+      t.expect(tags.some((x) => x.props.element === room && x.props.field === 'area'), `a room tag of its area (${tags.map((x) => `${x.props.element}:${x.props.field}`).join(', ')})`);
+      // Tag a parameter: the same tool at the parameter source, the name typed in its bar.
+      await t.tool('drafting.tagParameter');
+      t.expect(await source.inputValue() === 'parameter', 'Tag a parameter starts the Tag tool at the parameter source');
+      t.expect(await t.page.locator('[data-tag-parameter]').count() === 1, 'the parameter\'s name is typed in the bar');
+      await source.selectOption('keynote');
+      t.expect(await t.page.locator('[data-tag-keynote]').count() === 1, 'a keynote shows its classification\'s code or title');
+      await t.keys('Escape', 'Escape');
+    },
+  },
+  {
     // A tag turned and aligned (report #129, decision 429) and what it tags lit (#130): a tag on the east wall aligned to it, one
     // typed to 30°; the aligned tag's rotation grip; the element it tags highlighted while it is selected.
     id: 'tag-rotate',

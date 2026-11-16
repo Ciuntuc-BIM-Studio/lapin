@@ -1,7 +1,6 @@
 /** Drafting: CAD drawing on views (lines, polylines, circles, arcs, hatches on layers, and their edits), dimensions that follow the elements, texts, grid axes. */
 
 import { promptText } from '../../shell/prompts';
-import { ask, textField } from '../../shell/AskBox';
 import { ArrowRightToLine, Crosshair, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Unlink2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags, Grid3x3, Settings2, SlidersHorizontal, SquareDashed, Image as ImageIcon, Ruler, Replace, Shapes, Shapes as SymbolsIcon, FolderPlus, ListOrdered, FileImage } from 'lucide-react';
 import { AngleIcon, ArcLengthIcon, DiameterIcon, DimensionIcon, GridAxisIcon, LevelIcon, OrdinateIcon, RadiusIcon, SlopeIcon } from '../../icons';
 import { openPlaceCatalog } from '../../shell/placeCatalogStore';
@@ -10,10 +9,11 @@ import { axisGrips, axisRef, outlineGrips, pt } from '../../viewport/gripKit';
 import type { NodeDto } from '../../engine/protocol';
 import { notify, select, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
-import { cadHost, cadLog, registerCommand, startCommand, withSelection, type Step } from '../../viewport/cad/session';
+import { cadHost, cadLog, registerCommand, startCommand, useCad, withSelection, type Step } from '../../viewport/cad/session';
 import { importDxf, importTrace } from '../../engine/files';
 import { DimensionSection } from './DimensionSection';
-import { DimensionOptions, isSamePoint, pickDirection, segmentLabels, setContinuous, useDimTool } from './dimensionTool';
+import { DimensionOptions, isSamePoint, pickDirection, segmentLabels, setStringMode, stringMode, useDimTool, type StringMode } from './dimensionTool';
+import { DIM_KINDS, SmartDimensionOptions, setDimensionExtras, startDimension, useSmartDim, type DimKind } from './smartDimension';
 import { DraftSection } from './DraftSection';
 import { fromJson, keyPoints, toJson, type Shape } from '../../viewport/cad/shapes';
 import { sketchPartOf } from '../../viewport/cad/constraints';
@@ -27,7 +27,7 @@ import { DimensionRulesDialog } from './DimensionRulesDialog';
 import { drawableElement } from '../core/shopDrawing';
 import { openStandards } from '../core/standardsTab';
 import { formatLength, formatLevel } from '../../engine/unitsStore';
-import { TagOptions, tagCommand, tagGrips, useTagPrefs } from './tag';
+import { TagOptions, setTagSource, tagCommand, tagGrips, tagOpenings } from './tag';
 import { DRAW_ORDER, drawOrder } from '../../viewport/drawOrder';
 import { lazyPart } from '../../platform/lazyPart';
 import { GridAxisDims } from './GridAxisDims';
@@ -47,7 +47,11 @@ const LayersDialog = lazyPart(() => import('./LayersDialog').then((m) => m.Layer
 const DRAFTED = new Set(['DRAFT', 'TEXT', 'DIMENSION', 'TAG', 'SYMBOL']);
 const draftsFields = (node: NodeDto) => DRAFTED.has(String(node.props.predefinedType));
 
-const dimension: ToolDef = { id: 'drafting.dimension', label: 'Aligned', icon: DimensionIcon, shortcut: 'DI', run: () => void startCommand('DIMALIGNED') };
+/**
+ * The one Dimension tool (S9): smart (the kind from what is clicked), with every kind, a string's mode and the generated
+ * dimensions in its bar. It was Aligned; DIMALIGNED stays a typed command.
+ */
+const dimension: ToolDef = { id: 'drafting.dimension', label: 'Dimension', icon: DimensionIcon, shortcut: 'DI', run: () => startDimension('smart') };
 const text: ToolDef = {
   id: 'drafting.text', label: 'Text', icon: Type, shortcut: 'TX',
   gesture: { kind: 'point' },
@@ -102,69 +106,124 @@ function AxisOptions() {
  * lines follow them.
  */
 function dimCommand(linear: boolean): Step {
-  const tool = useDimTool;
-  const dirOf = (a: Vec2, b: Vec2, at: Vec2): Vec2 | null => {
-    if (!linear) return null;
-    const s = tool.getState();
-    const o = pickDirection(a, b, at, s.orient, s.forced);
-    // Drawn from a preview, so the bar hears of a change after the draw.
-    if (o !== s.orient) queueMicrotask(() => tool.setState({ orient: o }));
-    return o === 'h' ? { x: 1, y: 0 } : { x: 0, y: 1 };
-  };
-  const tol = () => 6 / (cadHost()?.pxPerMetre?.() || 1e6);
   const first = (): Step => {
-    tool.setState({ orient: null, forced: false, count: 0 });
+    useDimTool.setState({ orient: null, forced: false, count: 0 });
     return {
-      prompt: `First point [${tool.getState().continuous ? 'Single' : 'Continuous'}]`, want: 'point',
-      keywords: {
-        C: () => { setContinuous(!tool.getState().continuous); return first(); },
-        S: () => { setContinuous(false); return first(); },
-        CONTINUOUS: () => { setContinuous(true); return first(); },
-        SINGLE: () => { setContinuous(false); return first(); },
-      },
-      point: (a) => ({
-        prompt: 'Second point', want: 'point', base: a, preview: (c) => [{ type: 'line', a, b: c }],
-        labels: (c) => [{ at: { x: (a.x + c.x) / 2, y: (a.y + c.y) / 2 }, text: formatLength(Math.hypot(c.x - a.x, c.y - a.y)) }],
-        point: (b) => ({
-          prompt: 'Where the dimension line goes', want: 'point', base: b,
-          preview: (c) => stringPreview([a, b], c, dirOf(a, b, c) ?? unit(a, b)),
-          labels: (c) => segmentLabels([a, b], c, dirOf(a, b, c) ?? unit(a, b)),
-          point: async (at) => {
-            const dir = dirOf(a, b, at);
-            tool.setState({ orient: dir ? (dir.x ? 'h' : 'v') : null, forced: true });
-            if (!tool.getState().continuous) { await addString([a, b], at, dir); return first(); }
-            const pts = [a, b];
-            tool.setState({ count: 2 });
-            // An aligned string measures along its first segment.
-            const along = dir ?? unit(a, b);
-            const make = () => addString(pts, at, dir ?? (collinear(pts) ? null : along));
-            const finish = async () => { tool.setState({ count: 0 }); await make(); return null; };
-            const next = (): Step => ({
-              prompt: 'Next point [Undo] (Enter or right-click to finish)', want: 'point', base: pts[pts.length - 1],
-              preview: (c) => stringPreview([...pts, c], at, along),
-              labels: (c) => segmentLabels([...pts, c], at, along),
-              point: (p) => {
-                if (isSamePoint(p, pts[pts.length - 1], tol())) return finish();
-                pts.push(p);
-                tool.setState({ count: pts.length });
-                return next();
-              },
-              keywords: { U: () => { if (pts.length > 2) pts.pop(); tool.setState({ count: pts.length }); return next(); } },
-              enter: finish,
-              // Esc (or another tool, or another command) keeps what is drawn, and says so.
-              escape: async () => {
-                tool.setState({ count: 0 });
-                await make();
-                notify(`Dimension string kept (${pts.length} points) · Undo removes it`);
-              },
-            });
-            return next();
-          },
-        }),
-      }),
+      prompt: `First point [Chain/Baseline/Single: ${stringMode()}]`, want: 'point',
+      keywords: modeWords(first),
+      point: (a) => dimFrom(a, linear, first),
     };
   };
   return first();
+}
+
+/** The string modes typed at a dimension's first point: C a chain (again: single), B a baseline, S single. */
+const modeWords = (again: () => Step): Record<string, () => Step> => {
+  const to = (m: StringMode) => () => { setStringMode(m); return again(); };
+  return {
+    C: () => { setStringMode(stringMode() === 'chain' ? 'single' : 'chain'); return again(); },
+    CONTINUOUS: to('chain'), CHAIN: to('chain'), B: to('baseline'), BASELINE: to('baseline'), S: to('single'), SINGLE: to('single'),
+  };
+};
+
+/** A linear dimension's direction from where its line is (null: aligned), told to the bar after the draw. */
+function dirOf(linear: boolean, a: Vec2, b: Vec2, at: Vec2): Vec2 | null {
+  if (!linear) return null;
+  const s = useDimTool.getState();
+  const o = pickDirection(a, b, at, s.orient, s.forced);
+  // Drawn from a preview, so the bar hears of a change after the draw.
+  if (o !== s.orient) queueMicrotask(() => useDimTool.setState({ orient: o }));
+  return o === 'h' ? { x: 1, y: 0 } : { x: 0, y: 1 };
+}
+const clickTol = () => 6 / (cadHost()?.pxPerMetre?.() || 1e6);
+
+/** After a dimension's first point: its second, then its line (`enter`: what Enter does there, the smart tool's level). */
+function dimFrom(a: Vec2, linear: boolean, again: () => Step, enter?: () => Step): Step {
+  return {
+    prompt: enter ? 'Second point (Enter: the level of the first)' : 'Second point', want: 'point', base: a, preview: (c) => [{ type: 'line', a, b: c }],
+    labels: (c) => [{ at: { x: (a.x + c.x) / 2, y: (a.y + c.y) / 2 }, text: formatLength(Math.hypot(c.x - a.x, c.y - a.y)) }],
+    point: (b) => dimLine(a, b, linear, again),
+    ...(enter ? { enter } : {}),
+  };
+}
+
+/**
+ * A dimension's two points chosen: where its line goes. Single, it is made and the command asks for the next one; as a chain
+ * (Continuous) each next point goes on the same line, measured from the last, until Enter makes the string one dimension; as a
+ * baseline each next point is measured from the first, a dimension of its own on a line one step further out.
+ */
+function dimLine(a: Vec2, b: Vec2, linear: boolean, again: () => Step): Step {
+  const tool = useDimTool;
+  return {
+    prompt: 'Where the dimension line goes', want: 'point', base: b,
+    preview: (c) => stringPreview([a, b], c, dirOf(linear, a, b, c) ?? unit(a, b)),
+    labels: (c) => segmentLabels([a, b], c, dirOf(linear, a, b, c) ?? unit(a, b)),
+    point: async (at) => {
+      const dir = dirOf(linear, a, b, at);
+      tool.setState({ orient: dir ? (dir.x ? 'h' : 'v') : null, forced: true });
+      if (tool.getState().baseline) { await addString([a, b], at, dir); return baselineNext(a, b, at, dir ?? unit(a, b), again); }
+      if (!tool.getState().continuous) { await addString([a, b], at, dir); return again(); }
+      const pts = [a, b];
+      tool.setState({ count: 2 });
+      // An aligned string measures along its first segment.
+      const along = dir ?? unit(a, b);
+      const make = () => addString(pts, at, dir ?? (collinear(pts) ? null : along));
+      const finish = async () => { tool.setState({ count: 0 }); await make(); return null; };
+      const next = (): Step => ({
+        prompt: 'Next point [Undo] (Enter or right-click to finish)', want: 'point', base: pts[pts.length - 1],
+        preview: (c) => stringPreview([...pts, c], at, along),
+        labels: (c) => segmentLabels([...pts, c], at, along),
+        point: (p) => {
+          if (isSamePoint(p, pts[pts.length - 1], clickTol())) return finish();
+          pts.push(p);
+          tool.setState({ count: pts.length });
+          return next();
+        },
+        keywords: { U: () => { if (pts.length > 2) pts.pop(); tool.setState({ count: pts.length }); return next(); } },
+        enter: finish,
+        // Esc (or another tool, or another command) keeps what is drawn, and says so.
+        escape: async () => {
+          tool.setState({ count: 0 });
+          await make();
+          notify(`Dimension string kept (${pts.length} points) · Undo removes it`);
+        },
+      });
+      return next();
+    },
+  };
+}
+
+/** A baseline's step: 7 mm on the paper at the view's scale. */
+function baselineGap(): number {
+  const h = cadHost();
+  const scale = Number(h ? useSession.getState().nodes.get(h.viewId)?.props.scale : NaN);
+  return 0.007 * (scale > 0 ? scale : 100);
+}
+
+/**
+ * A baseline (S9): after its first dimension, each point clicked is measured from the first point, a dimension of its own
+ * (one undo step each) along the same direction, its line a step further out than the last; Enter or Esc ends it.
+ */
+function baselineNext(a: Vec2, b: Vec2, at: Vec2, u: Vec2, again: () => Step): Step {
+  // Out: from the points towards the first dimension's line.
+  const n0 = { x: -u.y, y: u.x };
+  const side = Math.sign((at.x - a.x) * n0.x + (at.y - a.y) * n0.y) || 1;
+  const out = { x: n0.x * side, y: n0.y * side };
+  let k = 0;
+  const lineAt = (i: number): Vec2 => ({ x: at.x + out.x * baselineGap() * i, y: at.y + out.y * baselineGap() * i });
+  const next = (): Step => ({
+    prompt: 'Next point, measured from the first (Enter to finish)', want: 'point', base: a,
+    preview: (c) => stringPreview([a, c], lineAt(k + 1), u),
+    labels: (c) => segmentLabels([a, c], lineAt(k + 1), u),
+    point: async (p) => {
+      if (isSamePoint(p, a, clickTol()) || isSamePoint(p, b, clickTol())) return next();
+      k++;
+      await addString([a, p], lineAt(k), u);
+      return next();
+    },
+    enter: () => again(),
+  });
+  return next();
 }
 
 const unit = (a: Vec2, b: Vec2): Vec2 => { const l = Math.hypot(b.x - a.x, b.y - a.y) || 1; return { x: (b.x - a.x) / l, y: (b.y - a.y) / l }; };
@@ -293,45 +352,59 @@ const exteriorDimensions: ToolDef = {
 };
 registerCommand({ names: ['EXTDIM', 'DEX'], label: 'Exterior dimensions', start: () => { void exteriorDimensions.run?.(); } });
 const dimensionRulesTool: ToolDef = { id: 'drafting.dimensionRules', label: 'Dimension rules…', icon: SlidersHorizontal, run: () => useUi.setState({ dialog: 'dimensionRules' }) };
-registerCommand({ names: ['DIMALIGNED', 'DAL', 'DIM'], label: 'Aligned dimension', start: () => dimCommand(false), options: DimensionOptions });
+registerCommand({ names: ['DIMALIGNED', 'DAL'], label: 'Aligned dimension', start: () => dimCommand(false), options: DimensionOptions });
 registerCommand({ names: ['DIMLINEAR', 'DLI'], label: 'Linear dimension', start: () => dimCommand(true), options: DimensionOptions });
 
 // ─── The other dimensions: angle, radius, diameter, arc length, slope, level, ordinate ───
 
 const pair = (p: Vec2) => [p.x, p.y];
-async function addKind(kind: string, args: Record<string, unknown>): Promise<null> {
+/** One dimension of a kind made (one undo step); then `again` (the one Dimension tool asks for the next) or the command ends. */
+async function addKind(kind: string, args: Record<string, unknown>, again?: () => Step | null): Promise<Step | null> {
   const h = cadHost();
   if (!h) return null;
   await execute('drafting.addDimension', { viewId: h.viewId, dimKind: kind, ...args });
-  return null;
+  return again?.() ?? null;
 }
+type Again = (() => Step | null) | undefined;
 /** DIMANGULAR: the vertex, a point on each side, then where the arc goes (the side it lies on picks the angle or its reflex). */
-function angularCommand(): Step {
+function angularCommand(again?: Again): Step {
   return {
     prompt: 'The angle\'s vertex', want: 'point',
-    point: (c) => ({
+    point: (c) => angleFrom(c, again),
+  };
+}
+/** An angle's vertex given: a point on each side, then the arc. */
+function angleFrom(c: Vec2, again?: Again): Step {
+  return ({
       prompt: 'A point on the first side', want: 'point', base: c, preview: (q) => [{ type: 'line', a: c, b: q }],
       point: (a) => ({
         prompt: 'A point on the second side', want: 'point', base: c, preview: (q) => [{ type: 'line', a: c, b: a }, { type: 'line', a: c, b: q }],
-        point: (b) => ({
-          prompt: 'Where the arc goes', want: 'point', base: c,
-          preview: (q) => [{ type: 'line', a: c, b: a }, { type: 'line', a: c, b }, { type: 'circle', c, r: Math.max(1e-3, Math.hypot(q.x - c.x, q.y - c.y)) }],
-          point: (at) => addKind('angular', { c: pair(c), a: pair(a), b: pair(b), at: pair(at) }),
-        }),
+        point: (b) => angleArc(c, a, b, again),
       }),
-    }),
+  });
+}
+/** An angle's vertex and a point on each side given: where its arc goes (the side it lies on picks the angle or its reflex). */
+function angleArc(c: Vec2, a: Vec2, b: Vec2, again?: Again): Step {
+  return {
+    prompt: 'Where the arc goes', want: 'point', base: c,
+    preview: (q) => [{ type: 'line', a: c, b: a }, { type: 'line', a: c, b }, { type: 'circle', c, r: Math.max(1e-3, Math.hypot(q.x - c.x, q.y - c.y)) }],
+    point: (at) => addKind('angular', { c: pair(c), a: pair(a), b: pair(b), at: pair(at) }, again),
   };
 }
 /** DIMRADIUS / DIMDIAMETER: a drafted circle or arc (it follows and drives it), or its centre and a point on it [Points]; then where the text goes. */
-function roundCommand(kind: 'radial' | 'diameter'): Step {
-  const place = (args: Record<string, unknown>, centre: Vec2): Step => ({
+/** A radius's or a diameter's circle given (a drafted one, or its centre and a point): where the text goes. */
+function roundPlace(kind: 'radial' | 'diameter', args: Record<string, unknown>, centre: Vec2, again?: Again): Step {
+  return {
     prompt: 'Where the text goes', want: 'point', base: centre,
     preview: (q) => [{ type: 'line', a: centre, b: q }],
-    point: (at) => addKind(kind, { ...args, at: pair(at) }),
-  });
+    point: (at) => addKind(kind, { ...args, at: pair(at) }, again),
+  };
+}
+function roundCommand(kind: 'radial' | 'diameter', again?: Again): Step {
+  const place = (args: Record<string, unknown>, centre: Vec2): Step => roundPlace(kind, args, centre, again);
   return {
     prompt: `Pick a drafted circle or arc [Points]`, want: 'pick',
-    pick: (hit) => (hit.shape.type === 'circle' || hit.shape.type === 'arc' ? place({ shape: hit.id }, hit.shape.c) : (cadLog('Pick a circle or an arc.'), roundCommand(kind))),
+    pick: (hit) => (hit.shape.type === 'circle' || hit.shape.type === 'arc' ? place({ shape: hit.id }, hit.shape.c) : (cadLog('Pick a circle or an arc.'), roundCommand(kind, again))),
     keywords: {
       P: () => ({
         prompt: 'The centre', want: 'point',
@@ -341,67 +414,68 @@ function roundCommand(kind: 'radial' | 'diameter'): Step {
   };
 }
 /** DIMARC: a drafted arc, then where the dimension arc goes. */
-function arcLengthCommand(): Step {
+function arcLengthCommand(again?: Again): Step {
   return {
     prompt: 'Pick a drafted arc', want: 'pick',
-    pick: (hit) => (hit.shape.type === 'arc'
-      ? { prompt: 'Where the dimension goes', want: 'point', base: hit.shape.c, point: (at: Vec2) => addKind('arc', { shape: hit.id, at: pair(at) }) }
-      : (cadLog('Pick an arc.'), arcLengthCommand())),
+    pick: (hit) => (hit.shape.type === 'arc' ? arcLengthPlace(hit.id, hit.shape.c, again) : (cadLog('Pick an arc.'), arcLengthCommand(again))),
   };
 }
+/** An arc's length: where the dimension arc goes. */
+function arcLengthPlace(id: string, centre: Vec2, again?: Again): Step {
+  return { prompt: 'Where the dimension goes', want: 'point', base: centre, point: (at: Vec2) => addKind('arc', { shape: id, at: pair(at) }, again) };
+}
 /** DIMSLOPE: two points on the sloped line [Percent/Degrees/Ratio/Auto], then a point beside it. */
-function slopeCommand(): Step {
+function slopeCommand(again?: Again): Step {
   let format = 'auto';
   const kw = (next: () => Step) => ({ P: () => { format = '%'; return next(); }, D: () => { format = 'deg'; return next(); }, R: () => { format = 'ratio'; return next(); }, A: () => { format = 'auto'; return next(); } });
   const first = (): Step => ({
     prompt: `First point on the slope [Percent/Degrees/Ratio/Auto: ${format}]`, want: 'point', keywords: kw(() => first()),
     point: (a) => ({
       prompt: 'Second point on it', want: 'point', base: a, preview: (q) => [{ type: 'line', a, b: q }],
-      point: (b) => addKind('slope', { a: pair(a), b: pair(b), at: pair({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }), format }),
+      point: (b) => addKind('slope', { a: pair(a), b: pair(b), at: pair({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }), format }, again),
     }),
   });
   return first();
 }
 /** DIMLEVEL: the point, then the side the text goes; a typed value is the level itself (in a plan: else the storey's). */
-function levelCommand(): Step {
-  return {
-    prompt: 'The point whose level is written', want: 'point',
-    point: (a) => {
-      let z: number | null = null;
-      const side = (): Step => ({
-        prompt: `Which side the text goes${z != null ? ` (level ${formatLevel(z)})` : ' (type a level to write it)'}`, want: 'point', base: a,
-        value: (v) => { z = v; return side(); },
-        point: (at) => addKind('level', { a: pair(a), at: pair(at), ...(z != null ? { z } : {}) }),
-      });
-      return side();
-    },
-  };
+function levelCommand(again?: Again): Step {
+  return { prompt: 'The point whose level is written', want: 'point', point: (a) => levelFrom(a, again) };
+}
+/** A level's point given: which side its text goes (a typed value is the level itself). */
+function levelFrom(a: Vec2, again?: Again): Step {
+  let z: number | null = null;
+  const side = (): Step => ({
+    prompt: `Which side the text goes${z != null ? ` (level ${formatLevel(z)})` : ' (type a level to write it)'}`, want: 'point', base: a,
+    value: (v) => { z = v; return side(); },
+    point: (at) => addKind('level', { a: pair(a), at: pair(at), ...(z != null ? { z } : {}) }, again),
+  });
+  return side();
 }
 /** DIMORDINATE: the point, then where its leader ends [X/Y: which coordinate; Origin: set it]. */
 const ordinate = { origin: { x: 0, y: 0 } as Vec2 };
-function ordinateCommand(): Step {
+function ordinateCommand(again?: Again): Step {
   let axis: 'x' | 'y' = 'x';
   const step = (): Step => ({
     prompt: `The point [X/Y: ${axis}; Origin at ${formatLength(ordinate.origin.x)}, ${formatLength(ordinate.origin.y)}]`, want: 'point',
     keywords: { X: () => { axis = 'x'; return step(); }, Y: () => { axis = 'y'; return step(); }, O: () => ({ prompt: 'The origin', want: 'point', point: (o) => { ordinate.origin = o; return step(); } }) },
-    point: (a) => ({ prompt: 'Where the leader ends', want: 'point', base: a, preview: (q) => [{ type: 'line', a, b: q }], point: (at) => addKind('ordinate', { a: pair(a), at: pair(at), axis, o: pair(ordinate.origin) }) }),
+    point: (a) => ({ prompt: 'Where the leader ends', want: 'point', base: a, preview: (q) => [{ type: 'line', a, b: q }], point: (at) => addKind('ordinate', { a: pair(a), at: pair(at), axis, o: pair(ordinate.origin) }, again) }),
   });
   return step();
 }
-registerCommand({ names: ['DIMANGULAR', 'DAN'], label: 'Angular dimension', start: angularCommand });
+registerCommand({ names: ['DIMANGULAR', 'DAN'], label: 'Angular dimension', start: () => angularCommand() });
 registerCommand({ names: ['DIMRADIUS', 'DRA'], label: 'Radius', start: () => roundCommand('radial') });
 registerCommand({ names: ['DIMDIAMETER', 'DDI'], label: 'Diameter', start: () => roundCommand('diameter') });
-registerCommand({ names: ['DIMARC', 'DAR'], label: 'Arc length', start: arcLengthCommand });
-registerCommand({ names: ['DIMSLOPE', 'DSL'], label: 'Slope', start: slopeCommand });
-registerCommand({ names: ['DIMLEVEL', 'DLV'], label: 'Level', start: levelCommand });
-registerCommand({ names: ['DIMORDINATE', 'DOR'], label: 'Ordinate', start: ordinateCommand });
+registerCommand({ names: ['DIMARC', 'DAR'], label: 'Arc length', start: () => arcLengthCommand() });
+registerCommand({ names: ['DIMSLOPE', 'DSL'], label: 'Slope', start: () => slopeCommand() });
+registerCommand({ names: ['DIMLEVEL', 'DLV'], label: 'Level', start: () => levelCommand() });
+registerCommand({ names: ['DIMORDINATE', 'DOR'], label: 'Ordinate', start: () => ordinateCommand() });
 
 /**
  * DIMCOORD (decision 447): a spot coordinate on a plan, the point then where its leader ends [Map/Project/Internal:
  * what it reads]. Map by default when the project is tied to the map (eastings and northings through the survey
  * point, turned to true north), else the project base point's X and Y; worked out again whenever the points move.
  */
-function coordinateCommand(): Step | null {
+function coordinateCommand(again?: Again): Step | null {
   let system: 'map' | 'project' | 'internal' = surveyPoint(useLocation.getState().loc) ? 'map' : 'project';
   const names = { map: 'map E, N', project: 'base point X, Y', internal: 'plan origin X, Y' };
   const step = (): Step => ({
@@ -411,12 +485,137 @@ function coordinateCommand(): Step | null {
       P: () => { system = 'project'; return step(); },
       I: () => { system = 'internal'; return step(); },
     },
-    point: (a) => ({ prompt: 'Where the leader ends', want: 'point', base: a, preview: (q) => [{ type: 'line', a, b: q }], point: (at) => addKind('coordinate', { a: pair(a), at: pair(at), system }) }),
+    point: (a) => ({ prompt: 'Where the leader ends', want: 'point', base: a, preview: (q) => [{ type: 'line', a, b: q }], point: (at) => addKind('coordinate', { a: pair(a), at: pair(at), system }, again) }),
   });
   if (useUi.getState().view !== 'plan') { cadLog('A spot coordinate is written on a plan: open one.'); return null; }
   return step();
 }
-registerCommand({ names: ['DIMCOORD', 'DCO'], label: 'Spot coordinate', start: coordinateCommand });
+registerCommand({ names: ['DIMCOORD', 'DCO'], label: 'Spot coordinate', start: () => coordinateCommand() });
+
+// ─── The one Dimension tool (S9): the kind from what is clicked, the rest in its bar ───
+
+/** A drafted shape's straight piece under a point: a line, or a polyline's side nearest it. */
+export function segmentAt(shape: Shape, p: Vec2): { a: Vec2; b: Vec2 } | null {
+  if (shape.type === 'line') return { a: shape.a, b: shape.b };
+  if (shape.type !== 'polyline' || shape.pts.length < 2) return null;
+  const n = shape.pts.length, sides = shape.closed ? n : n - 1;
+  let best: { a: Vec2; b: Vec2 } | null = null, bd = Infinity;
+  for (let i = 0; i < sides; i++) {
+    const a = shape.pts[i], b = shape.pts[(i + 1) % n];
+    const dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy || 1;
+    const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2));
+    const d = Math.hypot(a.x + dx * t - p.x, a.y + dy * t - p.y);
+    if (d < bd) { bd = d; best = { a, b }; }
+  }
+  return best;
+}
+
+/** Where two lines (each through two points) cross; null when they are parallel. */
+export function crossing(a1: Vec2, b1: Vec2, a2: Vec2, b2: Vec2): Vec2 | null {
+  const d1 = { x: b1.x - a1.x, y: b1.y - a1.y }, d2 = { x: b2.x - a2.x, y: b2.y - a2.y };
+  const den = d1.x * d2.y - d1.y * d2.x;
+  if (Math.abs(den) < 1e-9 * (Math.hypot(d1.x, d1.y) * Math.hypot(d2.x, d2.y) || 1)) return null;
+  const t = ((a2.x - a1.x) * d2.y - (a2.y - a1.y) * d2.x) / den;
+  return { x: a1.x + d1.x * t, y: a1.y + d1.y * t };
+}
+
+/** A point on a side of an angle at `c`: the one clicked on it, or, clicked on the vertex, the side's end farther from it. */
+export function sidePoint(c: Vec2, seg: { a: Vec2; b: Vec2 }, clicked: Vec2, tol: number): Vec2 {
+  if (Math.hypot(clicked.x - c.x, clicked.y - c.y) > tol) return clicked;
+  return Math.hypot(seg.a.x - c.x, seg.a.y - c.y) >= Math.hypot(seg.b.x - c.x, seg.b.y - c.y) ? seg.a : seg.b;
+}
+
+/** Whether the point clicked came from an object snap (an end, a middle, a centre, a crossing…), not from a bare place on a shape. */
+const snappedClick = (): boolean => { const aim = useCad.getState().aim; return aim?.kind === 'point' && !!aim.mode && aim.mode !== 'nearest'; };
+
+/**
+ * A circle or an arc the click snapped to (its centre, a quadrant, a point on it): the smart tool takes the curve itself, as a
+ * hover over a circle does in CAD (a dimension from a centre is the Aligned kind's).
+ */
+function roundSnapped(): { id: string; shape: Shape } | null {
+  const aim = useCad.getState().aim;
+  if (!aim?.shapeId || aim.kind !== 'point' || !aim.mode || !['center', 'quadrant', 'nearest', 'perpendicular'].includes(aim.mode)) return null;
+  const shape = cadHost()?.shapeOf(aim.shapeId);
+  return shape && (shape.type === 'circle' || shape.type === 'arc') ? { id: aim.shapeId, shape } : null;
+}
+
+/**
+ * DIMENSION, smart: a point (snapped, or on nothing drafted) starts an aligned or linear dimension, as the bar says; a drafted line
+ * (or a polyline's side) clicked away from its snaps is measured end to end, and a second line clicked next makes the angle
+ * between them instead; a circle or an arc its radius, diameter or arc length, as the bar says; Enter after the first point
+ * writes that point's level. Each dimension made, it asks for the next one.
+ */
+function smartFirst(): Step {
+  useDimTool.setState({ orient: null, forced: false, count: 0 });
+  const linear = () => useSmartDim.getState().linear;
+  return {
+    prompt: `A point, a drafted line, circle or arc [Chain/Baseline/Single: ${stringMode()}]`, want: 'point',
+    keywords: { ...modeWords(smartFirst), ...kindWords() },
+    point: (p) => {
+      const hit = roundSnapped() ?? (snappedClick() ? null : cadHost()?.pickDraft(p) ?? null);
+      if (hit && (hit.shape.type === 'circle' || hit.shape.type === 'arc')) {
+        const as = useSmartDim.getState().roundAs;
+        if (as === 'arc' && hit.shape.type === 'arc') return arcLengthPlace(hit.id, hit.shape.c, smartFirst);
+        return roundPlace(as === 'diameter' ? 'diameter' : 'radial', { shape: hit.id }, hit.shape.c, smartFirst);
+      }
+      const seg = hit ? segmentAt(hit.shape, p) : null;
+      if (seg) return smartLine(seg, p, linear());
+      return dimFrom(p, linear(), smartFirst, () => levelFrom(p, smartFirst));
+    },
+  };
+}
+
+/** A line picked: where its dimension line goes, or a second line for the angle between them. */
+function smartLine(seg: { a: Vec2; b: Vec2 }, clicked: Vec2, linear: boolean): Step {
+  const plain = dimLine(seg.a, seg.b, linear, smartFirst);
+  return {
+    ...plain,
+    prompt: 'Where the dimension line goes, or a second line for the angle',
+    point: (q) => {
+      const hit = snappedClick() ? null : cadHost()?.pickDraft(q) ?? null;
+      const other = hit ? segmentAt(hit.shape, q) : null;
+      const c = other && !(isSamePoint(other.a, seg.a, 1e-9) && isSamePoint(other.b, seg.b, 1e-9)) ? crossing(seg.a, seg.b, other.a, other.b) : null;
+      if (other && c) return angleArc(c, sidePoint(c, seg, clicked, clickTol()), sidePoint(c, other, q, clickTol()), smartFirst);
+      return plain.point!(q);
+    },
+  };
+}
+
+/** The kinds typed at the first point: the tool goes on in that kind. */
+function kindWords(): Record<string, () => Step | null> {
+  const words: Record<string, DimKind> = {
+    AL: 'aligned', ALIGNED: 'aligned', LI: 'linear', LINEAR: 'linear', AN: 'angular', ANGLE: 'angular', RA: 'radial', RADIUS: 'radial',
+    DI: 'diameter', DIAMETER: 'diameter', AR: 'arc', ARC: 'arc', OR: 'ordinate', ORDINATE: 'ordinate', SL: 'slope', SLOPE: 'slope',
+    LE: 'level', LEVEL: 'level', CO: 'coordinate', COORDINATE: 'coordinate', SM: 'smart', SMART: 'smart',
+  };
+  return Object.fromEntries(Object.entries(words).map(([w, k]) => [w, () => { useSmartDim.setState({ kind: k }); return dimensionStart(); }]));
+}
+
+/** DIMENSION at the bar's kind: smart, or one kind's own steps, each asking for the next once made. */
+function dimensionStart(): Step | null {
+  const kind = useSmartDim.getState().kind;
+  const again = () => dimensionStart();
+  const words = { ...kindWords() };
+  const withWords = (st: Step | null): Step | null => (st ? { ...st, keywords: { ...words, ...(st.keywords ?? {}) } } : st);
+  switch (kind) {
+    case 'smart': return smartFirst();
+    case 'aligned': case 'linear': {
+      const first = (): Step => {
+        useDimTool.setState({ orient: null, forced: false, count: 0 });
+        return { prompt: `First point [Chain/Baseline/Single: ${stringMode()}]`, want: 'point', keywords: { ...words, ...modeWords(first) }, point: (a) => dimFrom(a, kind === 'linear', first) };
+      };
+      return first();
+    }
+    case 'angular': return withWords(angularCommand(again));
+    case 'radial': case 'diameter': return withWords(roundCommand(kind, again));
+    case 'arc': return withWords(arcLengthCommand(again));
+    case 'slope': return withWords(slopeCommand(again));
+    case 'level': return withWords(levelCommand(again));
+    case 'ordinate': return withWords(ordinateCommand(again));
+    case 'coordinate': return withWords(coordinateCommand(again));
+  }
+}
+registerCommand({ names: ['DIMENSION', 'DIM'], label: 'Dimension', start: dimensionStart, options: SmartDimensionOptions });
 
 // ─── Linework (LW…): the view's generated lines hidden, shown or restyled, joined at corners ───
 
@@ -651,17 +850,14 @@ function gridGrips(node: NodeDto): Grip[] {
 const gridRefs = (node: NodeDto): RefLine[] => ((node.props.axes as { tag: string; a: number[]; b: number[] }[] | undefined) ?? [])
   .flatMap((ax) => { const a = pt(ax.a), b = pt(ax.b); return a && b ? [{ ...axisRef(a, b), tag: ax.tag }] : []; });
 
-/** Tag a parameter (report #64): TAG showing one the user names (Fire rating, Pset_WallCommon.FireRating); the bar under the view changes it. */
-const tagParameter: ToolDef = {
-  id: 'drafting.tagParameter', label: 'Tag a parameter', icon: Tag,
-  run: () => void (async () => {
-    const r = await ask('Tag a parameter', [textField('field', 'The parameter to show: its name (Fire rating) or a standard one (Pset_WallCommon.FireRating)', useTagPrefs.getState().field === 'mark' ? 'FireRating' : useTagPrefs.getState().field)]);
-    const field = String(r?.field ?? '').trim().replace(/^\{|\}$/g, '').trim();
-    if (!field) return;
-    useTagPrefs.setState({ field, tagType: '' });
-    void startCommand('TAG');
-  })(),
-};
+/**
+ * The one Tag tool (S9): TAG with its source first in its bar (an element, a room, a parameter, a material or layers, a keynote).
+ * Tag a parameter (report #64) is its alias set to the parameter source; Door & window tags stays a button (all of a plan at once).
+ */
+const tagTool = cad('tag', 'Tag', Tag, 'TAG');
+const tagParameter: ToolDef = { id: 'drafting.tagParameter', label: 'Tag a parameter', icon: Tag, run: () => { setTagSource('parameter'); void startCommand('TAG'); } };
+const tagAliases: ToolDef[] = [tagParameter];
+const tagOpeningsTool: ToolDef = { id: 'tagOpenings', label: 'Door & window tags', icon: Tags, run: () => void tagOpenings() };
 
 /** The draw order of the selected drafting (report #44, decision 339): to the front and back as tools, a step either way and behind the model small. */
 const orderTools: ToolDef[] = DRAW_ORDER.map((d) => ({ id: `drafting.order.${d.move}`, label: d.label, icon: d.icon, shortcut: d.shortcut, run: () => void drawOrder(d.move) }));
@@ -685,6 +881,28 @@ const scaleImage: ToolDef = {
     useUi.setState({ tool: null });
   },
 };
+
+/** The Dimension tool's kinds as the tools they were (S9): each starts it at its kind; ids, letters, quick slots and My tools keep working. */
+const KIND_ICONS: Partial<Record<DimKind, ToolDef['icon']>> = {
+  linear: MoveHorizontal, angular: AngleIcon, radial: RadiusIcon, diameter: DiameterIcon, arc: ArcLengthIcon, slope: SlopeIcon, ordinate: OrdinateIcon, coordinate: Crosshair, level: LevelIcon,
+};
+const kindTool = (kind: DimKind): ToolDef => {
+  const k = DIM_KINDS.find((x) => x.kind === kind)!;
+  return { id: k.tool!, label: k.label, icon: KIND_ICONS[kind] ?? DimensionIcon, ...(kind === 'level' ? { shortcut: 'LL' } : {}), run: () => startDimension(kind) };
+};
+/** A level mark (Datum → Level): the Dimension tool at its Level kind. */
+const levelTool = kindTool('level');
+const dimensionAliases: ToolDef[] = DIM_KINDS.filter((k) => k.tool && k.kind !== 'level').map((k) => kindTool(k.kind));
+const dimAddTool = cad('dimAdd', 'Add points', ListPlus, 'DIMADD');
+const dimDelTool = cad('dimDel', 'Remove points', ListMinus, 'DIMDEL');
+// The Dimension tool's bar: the generated strings and a string's points, beside the kinds.
+setDimensionExtras([
+  { testId: 'rooms', label: 'Rooms', title: 'Room dimensions: strings inside the selected rooms, or every room of the plan (ID)', run: () => void roomDimensions.run?.() },
+  { testId: 'exterior', label: 'Exterior', title: 'Exterior dimensions: strings outside the selected walls, or every facade of the plan (ED)', run: () => void exteriorDimensions.run?.() },
+  { testId: 'add', label: 'Add points', title: 'Points clicked into a dimension string (DIMADD)', run: () => void startCommand('DIMADD') },
+  { testId: 'remove', label: 'Remove points', title: 'Points taken out of a dimension string (DIMDEL)', run: () => void startCommand('DIMDEL') },
+  { testId: 'rules', label: 'Rules…', title: 'Dimension rules: the strings of exterior and room dimensions', run: () => useUi.setState({ dialog: 'dimensionRules' }) },
+]);
 
 const drafting: LapinModule = {
   id: 'drafting',
@@ -713,23 +931,14 @@ const drafting: LapinModule = {
     {
       id: 'annotate', label: 'Annotate', order: 60,
       groups: [
-        { label: 'Dimension', tools: [dimension, cad('dimLinear', 'Linear', MoveHorizontal, 'DIMLINEAR'), cad('dimAngular', 'Angle', AngleIcon, 'DIMANGULAR'), roomDimensions, exteriorDimensions],
+        // One Dimension tool (S9): the kinds are in its bar, the old buttons its aliases (legacyTools); the generated strings stay beside it.
+        { label: 'Dimension', tools: [dimension, roomDimensions, exteriorDimensions],
           // Points clicked into a selected string, as ArchiCAD's Insert dimension point.
-          small: [dimensionRulesTool, cad('dimAdd', 'Add points', ListPlus, 'DIMADD'), cad('dimDel', 'Remove points', ListMinus, 'DIMDEL'), cad('dimRadius', 'Radius', RadiusIcon, 'DIMRADIUS'), cad('dimDiameter', 'Diameter', DiameterIcon, 'DIMDIAMETER'), cad('dimArc', 'Arc length', ArcLengthIcon, 'DIMARC'), cad('dimSlope', 'Slope', SlopeIcon, 'DIMSLOPE'), cad('dimOrdinate', 'Ordinate', OrdinateIcon, 'DIMORDINATE'), cad('dimCoord', 'Spot coordinate', Crosshair, 'DIMCOORD')] },
-        { label: 'Text', small: [textBox, tagParameter], tools: [text, cad('tag', 'Tag', Tag, 'TAG'), {
-          id: 'tagOpenings', label: 'Door & window tags', icon: Tags,
-          run: () => void (async () => {
-            // Every door and window of the plan's storey not tagged yet: a marker across its wall (Drafting standards → Tags).
-            if (useUi.getState().view !== 'plan') { notify('Doors and windows are tagged on a plan: open one.'); return; }
-            const viewId = await frontView();
-            if (!viewId) return;
-            const r = await execute('architecture.tagOpenings', { viewId }) as { tagged?: number } | null;
-            if (r) notify(r.tagged ? `${r.tagged} doors and windows tagged.` : 'Every door and window here has its tag already.');
-          })(),
-        }] },
+          small: [dimensionRulesTool, dimAddTool, dimDelTool] },
+        { label: 'Text', small: [textBox, tagOpeningsTool], tools: [text, tagTool] },
         { label: 'Datum', small: [gridTool, renumberAxesTool, axisStylesTool], tools: [
           axis,
-          { id: 'level', label: 'Level', icon: LevelIcon, shortcut: 'LL', run: () => void startCommand('DIMLEVEL') },
+          levelTool,
         ] },
         // Symbols of the user's own (docs/plan-user-extensibility.md §3): placed with a ghost (R/Space turns, X and Y flip), made from drafting, managed and edited in Manage → Symbols….
         { label: 'Symbols', tools: [cad('symbol', 'Symbol', Shapes, 'SYMBOL'), cad('saveSymbol', 'Save as symbol', FolderPlus, 'SAVESYMBOL')], small: [{ id: 'drafting.symbols', label: 'Symbols…', icon: SymbolsIcon, run: () => openPlaceCatalog('symbols') }] },
@@ -751,6 +960,7 @@ const drafting: LapinModule = {
     },
   ],
   hotbar: [dimension],
+  legacyTools: [...dimensionAliases, ...tagAliases],
   dialogs: { convertDrafting: ConvertDialog, convertLayers: ConvertLayersDialog, draftLayers: LayersDialog, importDxf: ImportDxfDialog, importTrace: ImportTraceDialog, grid: GridDialog, renumberAxes: RenumberAxesDialog, dimensionRules: DimensionRulesDialog },
   propertySections: [
     // The drafted kinds show their own fields (a line its ends, a circle its radius), so the class's generic ones stay out.

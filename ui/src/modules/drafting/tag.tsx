@@ -12,17 +12,50 @@ import { create } from 'zustand';
 import type { NodeDto } from '../../engine/protocol';
 import type { Grip, GripView, Vec2 } from '../../platform/module';
 import { execute, query, useSession } from '../../engine/session';
-import { cadHost, type Step } from '../../viewport/cad/session';
+import { cadHost, cadLog, type Step } from '../../viewport/cad/session';
+import { frontView } from '../../viewport/frontView';
+import { openStandards } from '../core/standardsTab';
 import { Cell } from '../../shell/cells';
 import { pt } from '../../viewport/gripKit';
-import { useUi } from '../../app/store';
+import { notify, useUi } from '../../app/store';
 import { isPart, partGrips } from '../../platform/labelParts';
 import { formatLength, unitLabel } from '../../engine/unitsStore';
 import { leaderShapeOf, rotationFor, snapKnee, snapTurn, tagLeaderShape, turnAngle } from './tagLeader';
 
-/** What the TAG command puts down: the field it shows (a parameter's name too), a tag type (its template wins), a leader or none. */
-interface TagPrefs { field: string; tagType: string; leader: boolean }
-export const useTagPrefs = create<TagPrefs>(() => ({ field: 'mark', tagType: '', leader: true }));
+/**
+ * The one Tag tool's first choice (audit 2026-11-15, S9): what it tags and reads. An element (a field, any parameter, a tag type),
+ * a room (one of its fields), a parameter by its name, a material or layer (a build-up tag type), a keynote (its classification's
+ * code or title). Each is the same TAG command and the same engine command (`drafting.addTag`).
+ */
+export type TagSource = 'element' | 'room' | 'parameter' | 'material' | 'keynote';
+export const TAG_SOURCES: readonly { source: TagSource; label: string }[] = [
+  { source: 'element', label: 'Element' }, { source: 'room', label: 'Room' }, { source: 'parameter', label: 'Parameter' },
+  { source: 'material', label: 'Material / layers' }, { source: 'keynote', label: 'Keynote' },
+];
+
+/**
+ * What the TAG command puts down: its source; for an element the field it shows (a parameter's name too) or a tag type (its
+ * template wins); a room's field; a parameter's name; a build-up tag type; a keynote's code or title; a leader or none.
+ */
+interface TagPrefs { source: TagSource; field: string; tagType: string; leader: boolean; roomField: string; parameter: string; buildup: string; keynote: 'code' | 'title' }
+export const useTagPrefs = create<TagPrefs>(() => ({ source: 'element', field: 'mark', tagType: '', leader: true, roomField: 'name', parameter: 'FireRating', buildup: '', keynote: 'code' }));
+
+/** The room fields a room tag offers first (the room stamp's: Rooms.Values in the engine). */
+export const ROOM_TAG_FIELDS: [string, string][] = [['name', 'Name'], ['number', 'Number'], ['area', 'Area'], ['function', 'Function'], ['height', 'Height'], ['finish.floor', 'Finish: floor']];
+
+/** What a tag of the source shows: a field, or a tag type (the material source's build-up type). */
+export function tagContent(p: Pick<TagPrefs, 'source' | 'field' | 'tagType' | 'roomField' | 'parameter' | 'buildup' | 'keynote'>): { field: string } | { tagType: string } {
+  switch (p.source) {
+    case 'room': return { field: p.roomField || 'name' };
+    case 'parameter': return { field: p.parameter.trim().replace(/^\{|\}$/g, '').trim() || 'mark' };
+    case 'material': return p.buildup ? { tagType: p.buildup } : { field: 'mark' };
+    case 'keynote': return { field: `classification.${p.keynote}` };
+    default: return p.tagType ? { tagType: p.tagType } : { field: p.field };
+  }
+}
+
+/** The source the tool tags next (Tag a parameter: the parameter source). */
+export function setTagSource(source: TagSource): void { useTagPrefs.setState({ source }); }
 
 /** The fields offered first: every element's, then the parameters most tagged (each found in the user's own or a standard set). */
 export const QUICK_FIELDS: [string, string][] = [
@@ -60,10 +93,64 @@ function askField(): string | null {
   return t?.trim().replace(/^\{|\}$/g, '').trim() || null;
 }
 
-/** The TAG command's bar: what the tag shows, its type, its leader (data-tag-* for the guide's pictures). */
+/** Every door and window of the plan's storey not tagged yet: a marker across its wall (Drafting standards → Tags). */
+export async function tagOpenings(): Promise<void> {
+  if (useUi.getState().view !== 'plan') { notify('Doors and windows are tagged on a plan: open one.'); return; }
+  const viewId = await frontView();
+  if (!viewId) return;
+  const r = await execute('architecture.tagOpenings', { viewId }) as { tagged?: number } | null;
+  if (r) notify(r.tagged ? `${r.tagged} doors and windows tagged.` : 'Every door and window here has its tag already.');
+}
+
+/** The TAG command's bar: its source first, then what the tag shows for it, and its leader (data-tag-* for the guide's pictures). */
 export function TagOptions() {
-  const { field, tagType, leader } = useTagPrefs();
+  const p = useTagPrefs();
   const types = useTagTypes();
+  const buildups = types.filter((t) => t.shape === 'buildup');
+  return (
+    <>
+      <select className="cad-layer on" value={p.source} data-tag-source title="What it tags: an element, a room, a parameter by its name, a material or the layers (a build-up tag), a keynote (the classification's code)"
+          onChange={(e) => {
+            const source = e.target.value as TagSource;
+            // A material tag takes the first build-up type when none is chosen.
+            useTagPrefs.setState(source === 'material' && !p.buildup && buildups[0] ? { source, buildup: buildups[0].id } : { source });
+          }}>
+          {TAG_SOURCES.map((x) => <option key={x.source} value={x.source}>{x.label}</option>)}
+        </select>
+      {p.source === 'element' && <ElementShows types={types} />}
+      {p.source === 'room' && (
+        <>
+          <select className="cad-layer" value={p.roomField} data-tag-room title="What the room's tag shows" onChange={(e) => useTagPrefs.setState({ roomField: e.target.value })}>
+            {ROOM_TAG_FIELDS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+          </select>
+          <button type="button" className="cad-toggle" data-tag-stamps title="What every room's stamp shows on the plans, line by line" onClick={() => useUi.setState({ dialog: 'roomTag' })}>ROOM STAMPS…</button>
+        </>
+      )}
+      {p.source === 'parameter' && <ParameterField />}
+      {p.source === 'material' && (
+        <>
+          <select className={`cad-layer${p.buildup ? ' on' : ''}`} value={p.buildup} data-tag-buildup title="A build-up tag type: the element's layers, a line each (Drafting standards → Tags)" onChange={(e) => useTagPrefs.setState({ buildup: e.target.value })}>
+            <option value="">no build-up type</option>
+            {buildups.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
+          <button type="button" className="cad-toggle" data-tag-types title="The tag types: a build-up type's header, lines and leaders" onClick={() => openStandards('tag')}>TAG TYPES…</button>
+        </>
+      )}
+      {p.source === 'keynote' && (
+        <select className="cad-layer on" value={p.keynote} data-tag-keynote title="The element's classification (Manage → Classifications…): its code, or its title" onChange={(e) => useTagPrefs.setState({ keynote: e.target.value as 'code' | 'title' })}>
+          <option value="code">Code</option>
+          <option value="title">Title</option>
+        </select>
+      )}
+      <button type="button" className={`cad-toggle${p.leader ? ' on' : ''}`} data-tag-leader title="A leader from the tag to the element" onClick={() => useTagPrefs.setState({ leader: !p.leader })}>LEADER</button>
+      {p.source === 'element' && <button type="button" className="cad-toggle" data-tag-openings title="Every door and window of the plan not tagged yet: a marker across its wall" onClick={() => void tagOpenings()}>ALL DOORS & WINDOWS</button>}
+    </>
+  );
+}
+
+/** An element's tag: a field or any parameter, or a tag type of the standards (as the Tag tool always had). */
+function ElementShows({ types }: { types: TagTypeDto[] }) {
+  const { field, tagType } = useTagPrefs();
   const known = QUICK_FIELDS.some(([k]) => k === field);
   return (
     <>
@@ -81,7 +168,24 @@ export function TagOptions() {
         <option value="">no tag type</option>
         {types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
       </select>
-      <button type="button" className={`cad-toggle${leader ? ' on' : ''}`} data-tag-leader title="A leader from the tag to the element" onClick={() => useTagPrefs.setState({ leader: !leader })}>LEADER</button>
+    </>
+  );
+}
+
+/** A parameter's name typed in the bar (the parameters most tagged offered), kept as typed. */
+function ParameterField() {
+  const parameter = useTagPrefs((s) => s.parameter);
+  const [text, setText] = useState(parameter);
+  useEffect(() => setText(parameter), [parameter]);
+  const commit = () => { const t = text.trim().replace(/^\{|\}$/g, '').trim(); if (t && t !== parameter) useTagPrefs.setState({ parameter: t }); };
+  return (
+    <>
+      <input className="cad-layer on" data-tag-parameter list="lapin-tag-parameters" value={text} size={18}
+        title="The parameter to show: its name (Fire rating) or a standard one (Pset_WallCommon.FireRating)"
+        onChange={(e) => setText(e.target.value)} onBlur={commit} onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter') { commit(); (e.target as HTMLInputElement).blur(); } }} />
+      <datalist id="lapin-tag-parameters">
+        {QUICK_FIELDS.slice(4).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+      </datalist>
     </>
   );
 }
@@ -92,38 +196,44 @@ export function TagOptions() {
  */
 export function tagCommand(): Step {
   const words = (): Record<string, () => Step> => ({
-    ...Object.fromEntries(['MARK', 'NAME', 'CLASS', 'TYPE'].map((k) => [k, () => { useTagPrefs.setState({ field: k.toLowerCase(), tagType: '' }); return pick(); }])),
+    ...Object.fromEntries(['MARK', 'NAME', 'CLASS', 'TYPE'].map((k) => [k, () => { useTagPrefs.setState({ source: 'element', field: k.toLowerCase(), tagType: '' }); return pick(); }])),
     FIELD: () => ({
       prompt: 'The parameter to show (Fire rating, Pset_WallCommon.FireRating)', want: 'text',
-      text: (s: string) => { const f = s.trim().replace(/^\{|\}$/g, '').trim(); if (f) useTagPrefs.setState({ field: f, tagType: '' }); return pick(); },
+      text: (s: string) => { const f = s.trim().replace(/^\{|\}$/g, '').trim(); if (f) useTagPrefs.setState({ source: 'parameter', parameter: f }); return pick(); },
       enter: () => pick(),
     }),
     LEADER: () => { useTagPrefs.setState({ leader: !useTagPrefs.getState().leader }); return pick(); },
+    ...Object.fromEntries(TAG_SOURCES.map((x) => [x.source.toUpperCase(), () => { useTagPrefs.setState({ source: x.source }); return pick(); }])),
   });
-  const shows = () => { const p = useTagPrefs.getState(); return p.tagType ? `type ${p.tagType}` : p.field; };
+  const shows = () => { const c = tagContent(useTagPrefs.getState()); return 'tagType' in c ? `type ${c.tagType}` : c.field; };
   const put = async (id: string, at: Vec2, elbow?: Vec2) => {
     const h = cadHost();
     if (!h) return;
     const p = useTagPrefs.getState();
+    const c = tagContent(p);
+    const tagType = 'tagType' in c ? c.tagType : '';
     // A build-up tag type tags what has layers (its classes: walls, floors, roofs, ceilings); anything else gets the field.
-    const type = p.tagType ? (await tagTypeById(p.tagType)) : undefined;
+    const type = tagType ? (await tagTypeById(tagType)) : undefined;
     const cls = useSession.getState().nodes.get(id)?.type;
-    const typed = !!p.tagType && !(type?.shape === 'buildup' && !buildupTags(type, cls));
+    const typed = !!tagType && !(type?.shape === 'buildup' && !buildupTags(type, cls));
     await execute('drafting.addTag', {
       viewId: h.viewId, element: id, at: [at.x, at.y],
-      ...(typed ? { tagType: p.tagType } : { field: p.field }),
+      ...(typed ? { tagType } : { field: 'field' in c ? c.field : p.field }),
       ...(p.leader ? {} : { leader: false }),
       ...(elbow ? { elbow: [elbow.x, elbow.y] } : {}),
     });
   };
   const pick = (): Step => ({
-    prompt: `Click the element to tag [${shows()}: MARK/NAME/CLASS/TYPE/FIELD/LEADER ${useTagPrefs.getState().leader ? 'on' : 'off'}]`, want: 'select',
+    prompt: `Click the ${useTagPrefs.getState().source === 'room' ? 'room' : 'element'} to tag [${shows()}: ELEMENT/ROOM/PARAMETER/MATERIAL/KEYNOTE · MARK/NAME/CLASS/TYPE/FIELD/LEADER ${useTagPrefs.getState().leader ? 'on' : 'off'}]`, want: 'select',
     keywords: words(),
     point: async (p) => {
       const id = cadHost()?.pickAny(p);
       if (!id || id.includes('#')) return pick();
+      // A room tag tags rooms only: a click on a wall waits for the room.
+      if (useTagPrefs.getState().source === 'room' && useSession.getState().nodes.get(id)?.type !== 'IfcSpace') { cadLog('Click inside a room.'); return pick(); }
       // An elbow leader (decision 331): the click after the element is the knee, the text beside it.
-      const tagType = useTagPrefs.getState().tagType;
+      const content = tagContent(useTagPrefs.getState());
+      const tagType = 'tagType' in content ? content.tagType : '';
       if (useTagPrefs.getState().leader && leaderShapeOf(tagType ? await tagTypeById(tagType) : null) === 'elbow') {
         return {
           prompt: 'Where the leader bends (the text goes beside it)', want: 'point', base: p,
