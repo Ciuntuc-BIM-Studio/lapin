@@ -126,7 +126,14 @@ export function ExchangeExportDialog() {
                   <option value="IFC4X3">IFC4X3: terrain and infrastructure as IFC 4.3 names them</option>
                 </select></dd>
                 <dt title="A layered wall's layers, a window's frame and glass: parts under their element, or one body each">Parts</dt>
-                <dd><select value={detail} onChange={(e) => setDetail(e.target.value)}><option value="group">grouped under their element</option><option value="simple">one body each</option></select></dd>
+                <dd>
+                  <select value={detail} onChange={(e) => setDetail(e.target.value)}><option value="group">grouped under their element</option><option value="simple">one body each</option></select>
+                  {detail === 'group' && (
+                    <div className="muted small" style={{ marginTop: 4 }} data-testid="export-parts-warning">
+                      Walls with openings or lintels export their geometry in child parts (IfcBuildingElementPart); some readers (e.g. CYPECAD MEP) show empty parent walls unless set to “one body each”.
+                    </div>
+                  )}
+                </dd>
                 <dt>Geometry</dt>
                 <dd><select className="export-geometry" value={geometry} onChange={(e) => setGeometry(e.target.value)}>
                   <option value="brep">faceted B-rep: exact, a face entity per face</option>
