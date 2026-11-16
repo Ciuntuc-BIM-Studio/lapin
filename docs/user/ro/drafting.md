@@ -140,7 +140,7 @@ O **Notă cu indicator** (Adnotări → Text) e un text cu săgeată: dă clic u
 - **Două puncte** fac o cotă aliniată (sau una liniară, orizontală ori verticală, când a doua listă din bară spune **Liniară**), apoi clicul pentru locul liniei ei.
 - **O linie desenată**, cu clic departe de capete și de mijloc, e cotată de la un capăt la altul (și latura unei polilinii). Dă clic pe **a doua linie** în loc de locul liniei de cotă și primești **unghiul** dintre ele; clicul următor îi pune arcul.
 - **Un cerc sau un arc** primește raza, ori diametrul sau lungimea arcului când **Arce** din bară spune așa.
-- **Enter după primul punct** scrie cota de nivel a acelui punct.
+- **Linia unui nivel** pe care dai clic într-o secțiune sau o fațadă scrie acolo cota de nivel (fără Enter); **Enter după primul punct** scrie cota de nivel a oricărui punct.
 
 Bara de sub vedere (a liniei de comandă) le ține pe celelalte. Prima listă alege direct felul: Aliniată, Liniară, Unghi, Rază, Diametru, Lungime de arc, Ordonată, Pantă, Nivel sau Cotă de coordonate; fiecare își cere punctele în linia de comandă, iar unealta cere apoi următoarea cotă. Lista **Câte una / Lanț / Linie de bază (de la primul)** spune cum continuă o cotă după primele două puncte: câte una, ca lanț pe aceeași linie (vechiul **Continuu**, și **C**) sau ca **linie de bază**, unde fiecare punct următor e măsurat de la primul, ca o cotă a lui pe o linie cu un pas (7 mm pe hârtie) mai departe (**B**). **Încăperi** și **Exterior** fac cotele încăperilor și pe cele exterioare, **Adaugă puncte** și **Scoate puncte** editează un lanț, **Reguli…** deschide regulile de cotare. Primele litere ale unui fel scrise la primul punct (**AN** unghi, **RA** rază, **LE** nivel…) trec la el.
 

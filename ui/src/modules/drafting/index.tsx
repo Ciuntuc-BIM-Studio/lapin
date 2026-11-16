@@ -543,8 +543,9 @@ function roundSnapped(): { id: string; shape: Shape } | null {
 /**
  * DIMENSION, smart: a point (snapped, or on nothing drafted) starts an aligned or linear dimension, as the bar says; a drafted line
  * (or a polyline's side) clicked away from its snaps is measured end to end, and a second line clicked next makes the angle
- * between them instead; a circle or an arc its radius, diameter or arc length, as the bar says; Enter after the first point
- * writes that point's level. Each dimension made, it asks for the next one.
+ * between them instead; a circle or an arc its radius, diameter or arc length, as the bar says; a level's line clicked in a
+ * section or an elevation its spot elevation (audit §17 leftover), as Enter after the first point writes that point's level.
+ * Each dimension made, it asks for the next one.
  */
 function smartFirst(): Step {
   useDimTool.setState({ orient: null, forced: false, count: 0 });
@@ -561,6 +562,9 @@ function smartFirst(): Step {
       }
       const seg = hit ? segmentAt(hit.shape, p) : null;
       if (seg) return smartLine(seg, p, linear());
+      // A level's line clicked in a section or an elevation (no object snap, nothing drafted there): its spot elevation.
+      const level = !hit && !snappedClick() && cadHost()?.isPlan?.() === false ? cadHost()?.pickLevel?.(p) ?? null : null;
+      if (level) return levelFrom({ x: p.x, y: level.y }, smartFirst);
       return dimFrom(p, linear(), smartFirst, () => levelFrom(p, smartFirst));
     },
   };

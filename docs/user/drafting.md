@@ -140,7 +140,7 @@ A **Leader note** (Annotate → Text) is a text with an arrow: click where the a
 - **Two points** make an aligned dimension (or a linear one, horizontal or vertical, when the bar's second list says **Linear**), then the click for where its line goes.
 - **A drafted line** clicked away from its ends and middle is measured end to end (a polyline's side too). Click **a second line** instead of the dimension line's place and you get **the angle** between them; the next click places its arc.
 - **A circle or an arc** gets its radius, or its diameter or arc length when the bar's **Arcs** says so.
-- **Enter after the first point** writes that point's level.
+- **A level's line** clicked in a section or an elevation writes its spot elevation there (no Enter needed); **Enter after the first point** writes any point's level.
 
 The bar under the view (the command line's) holds the rest. Its first list chooses a kind outright: Aligned, Linear, Angle, Radius, Diameter, Arc length, Ordinate, Slope, Level or Spot coordinate; each asks for its points in the command line, and the tool asks for the next one. The **One by one / Chain / Baseline (from the first)** list says how a dimension goes on after its first two points: one at a time, as a chain on one line (the old **Continuous**, also **C**), or as a **baseline**, where each next point is measured from the first one, as a dimension of its own on a line one step (7 mm on the paper) further out (**B**). **Rooms** and **Exterior** make the room and exterior dimensions, **Add points** and **Remove points** edit a string, **Rules…** opens the dimension rules. Typing a kind's first letters at the first point (**AN** angle, **RA** radius, **LE** level…) switches to it.
 
