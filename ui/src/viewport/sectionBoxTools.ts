@@ -22,7 +22,7 @@ export function commitBox(): void {
   void execute('view.setSectionBox', { id, box });
 }
 
-const set = (box: SectionBox | null) => { useSectionBox.setState({ box }); commitBox(); };
+const set = (box: SectionBox | null) => { useSectionBox.setState(box ? { box } : { box: null, hidden: false }); commitBox(); };
 
 /** The box round everything drawn (turned as it is). */
 export function fitSectionBox(): void {

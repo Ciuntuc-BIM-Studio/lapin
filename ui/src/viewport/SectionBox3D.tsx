@@ -16,7 +16,7 @@ type Drag = { face: FaceKey } | { turn: true; start: number; from: SectionBox };
 
 export function SectionBox3D({ camera, canvas }: { camera: React.RefObject<THREE.Camera | null>; canvas: React.RefObject<HTMLElement | null> }) {
   useCamera();
-  const box = useSectionBox((s) => s.box);
+  const box = useSectionBox((s) => (s.hidden ? null : s.box));
   const drag = useRef<Drag | null>(null);
   const [active, setActive] = useState<string | null>(null);
   if (!box) return null;
