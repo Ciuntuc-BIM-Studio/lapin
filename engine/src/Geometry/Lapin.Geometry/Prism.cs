@@ -83,6 +83,21 @@ public static class Prism
         };
     }
 
+    /// <summary>
+    /// Extrude a plan footprint with holes (islands cut out of it) up from <paramref name="baseZ"/>; caps tagged "bottom" / "top",
+    /// the holes' sides "reveal". With no hole, the same as <see cref="ExtrudeFootprint(IReadOnlyList{Vec2}, double, double, string?)"/>.
+    /// </summary>
+    public static Solid? ExtrudeFootprint(IReadOnlyList<Vec2> footprint, IReadOnlyList<IReadOnlyList<Vec2>>? holes, double baseZ, double height, string? tag = null)
+    {
+        if (holes is not { Count: > 0 }) return ExtrudeFootprint(footprint, baseZ, height, tag);
+        if (footprint.Count < 3 || !(height > 0)) return null;
+        var s = Extrude(footprint.Select(p => p.At(baseZ)).ToArray(), holes.Select(h => (IReadOnlyList<Vec3>)h.Select(p => p.At(baseZ)).ToArray()).ToList(), new Vec3(0, 0, height), tag);
+        return s == null ? null : s with
+        {
+            Faces = s.Faces.Select(f => f.Tag switch { "start" => f with { Tag = "bottom" }, "end" => f with { Tag = "top" }, _ => f }).ToArray(),
+        };
+    }
+
     public static Solid? Box(Vec3 center, double sx, double sy, double sz, string? tag = null)
     {
         if (!(sx > 0) || !(sy > 0) || !(sz > 0)) return null;

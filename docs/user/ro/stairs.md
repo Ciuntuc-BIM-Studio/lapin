@@ -168,6 +168,8 @@ Segmentele unei balustrade pot fi arce. Clic dreapta lângă un segment al unei 
 
 **Architecture → Balcony** (<kbd>BY</kbd>) prinde un balcon de un perete: alegi stilul în bara liniei de comandă și dai clic în afara feței peretelui, acolo unde vine; balconul stă pe acea parte a peretelui, la cota pardoselii etajului. Un **balcon franțuzesc** (Juliet) pus lângă o ușă sau o fereastră se centrează pe ea, cu 200 mm mai lat. Unde nu e niciun perete aproape, balconul stă unde dai clic. **Balcony by outline** desenează orice formă: dai clic pe colțuri, prima latură e lipită de clădire. **Gallery edge** desenează marginea unui mezanin peste un spațiu cu înălțime dublă, din două puncte (golul la stânga, galeria la dreapta).
 
+Laturile unui balcon desenat pot fi și ele arce: **Balcony by outline** are aceleași forme ca bara instrumentului Floor, iar colțurile și laturile balconului selectat primesc **Fillet corner…**, **Chamfer corner…** și **Make arc** din clicul dreapta; placa lui se construiește după arce, iar aria se măsoară pe ele.
+
 Stilurile predefinite acoperă felurile de balcoane cerute:
 
 - **Juliet balcony**: o balustradă cu baluștri în fața unei uși-fereastră, peste o mică placă de piatră pe două console.

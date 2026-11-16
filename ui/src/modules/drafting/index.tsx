@@ -1,7 +1,7 @@
 /** Drafting: CAD drawing on views (lines, polylines, circles, arcs, hatches on layers, and their edits), dimensions that follow the elements, texts, grid axes. */
 
 import { promptText } from '../../shell/prompts';
-import { ArrowRightToLine, Crosshair, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Unlink2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags, Grid3x3, Settings2, SlidersHorizontal, SquareDashed, Image as ImageIcon, Ruler, Replace, Shapes, Shapes as SymbolsIcon, FolderPlus, ListOrdered, FileImage } from 'lucide-react';
+import { ArrowRightToLine, Crosshair, Egg, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Unlink2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags, Grid3x3, Settings2, SlidersHorizontal, SquareDashed, Image as ImageIcon, Ruler, Replace, Shapes, Shapes as SymbolsIcon, FolderPlus, ListOrdered, FileImage } from 'lucide-react';
 import { AngleIcon, ArcLengthIcon, DiameterIcon, DimensionIcon, GridAxisIcon, LevelIcon, OrdinateIcon, RadiusIcon, SlopeIcon } from '../../icons';
 import { openPlaceCatalog } from '../../shell/placeCatalogStore';
 import type { Grip, GripStep, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
@@ -15,7 +15,7 @@ import { DimensionSection } from './DimensionSection';
 import { DimensionOptions, isSamePoint, pickDirection, segmentLabels, setStringMode, stringMode, useDimTool, type StringMode } from './dimensionTool';
 import { DIM_KINDS, SmartDimensionOptions, setDimensionExtras, startDimension, useSmartDim, type DimKind } from './smartDimension';
 import { DraftSection } from './DraftSection';
-import { fromJson, keyPoints, toJson, type Shape } from '../../viewport/cad/shapes';
+import { ellipseAt, fromJson, keyPoints, toJson, type Shape } from '../../viewport/cad/shapes';
 import { sketchPartOf } from '../../viewport/cad/constraints';
 import { viewHasConstraints } from '../../viewport/cad/sketchStore';
 import { frontView } from '../../viewport/frontView';
@@ -749,6 +749,24 @@ function draftGrips(node: NodeDto): Grip[] {
           { key: 'm', kind: 'radius', at: on(s.r, mid), step: (p: Vec2) => save({ ...s, r: Math.max(1e-3, Math.hypot(p.x - s.c.x, p.y - s.c.y)) }) },
         ];
       }
+      case 'ellipse': {
+        // Its centre moves it; the major axis's ends turn and stretch it; the minor axis's ends set its other semi-axis (audit S4).
+        const a = Math.hypot(s.m.x, s.m.y);
+        const major = (p: Vec2, sign: number) => ({ ...s, m: { x: (p.x - s.c.x) * sign, y: (p.y - s.c.y) * sign }, ratio: Math.min(1, (s.ratio * a) / Math.max(1e-3, Math.hypot(p.x - s.c.x, p.y - s.c.y))) });
+        const minor = (p: Vec2) => {
+          const n = { x: -s.m.y / a, y: s.m.x / a };
+          const b = Math.abs((p.x - s.c.x) * n.x + (p.y - s.c.y) * n.y);
+          return b > a ? { ...s, m: { x: n.x * b, y: n.y * b }, ratio: a / b, start: 0, end: 0 } : { ...s, ratio: Math.max(1e-3, b / a) };
+        };
+        const q = [0, 1, 2, 3].map((k) => ellipseAt(s, (k * Math.PI) / 2));
+        return [
+          { key: 'c', kind: 'centre', at: s.c, step: (p: Vec2) => save({ ...s, c: p }) },
+          { key: 'q0', kind: 'radius', at: q[0], step: (p: Vec2) => save(major(p, 1)) },
+          { key: 'q2', kind: 'radius', at: q[2], step: (p: Vec2) => save(major(p, -1)) },
+          { key: 'q1', kind: 'radius', at: q[1], step: (p: Vec2) => save(minor(p)) },
+          { key: 'q3', kind: 'radius', at: q[3], step: (p: Vec2) => save(minor(p)) },
+        ];
+      }
     }
   })();
   return grips.map((g) => withSketch(g, node.id, view, s));
@@ -915,7 +933,7 @@ const drafting: LapinModule = {
       // Core's Modify group is this tab's Modify: its Move, Copy… are drawn once, Scale, Array and Erase stay, and the rest of core's (Pin, Match properties, groups) join them.
       include: ['modify'],
       groups: [
-        { label: 'Draw', tools: [cad('line', 'Line', Slash, 'LINE'), cad('pline', 'Polyline', Spline, 'PLINE'), cad('rect', 'Rectangle', RectangleHorizontal, 'RECTANGLE'), cad('circle', 'Circle', Circle, 'CIRCLE'), cad('arc', 'Arc', Redo2, 'ARC')] },
+        { label: 'Draw', tools: [cad('line', 'Line', Slash, 'LINE'), cad('pline', 'Polyline', Spline, 'PLINE'), cad('rect', 'Rectangle', RectangleHorizontal, 'RECTANGLE'), cad('circle', 'Circle', Circle, 'CIRCLE'), cad('arc', 'Arc', Redo2, 'ARC'), cad('ellipse', 'Ellipse', Egg, 'ELLIPSE')] },
         { label: 'Modify', tools: [cad('move', 'Move', Move, 'MOVE'), cad('copy', 'Copy', Copy, 'COPY'), cad('rotate', 'Rotate', RotateCw, 'ROTATEREF'), cad('mirror', 'Mirror', FlipHorizontal2, 'MIRROR')], small: [cad('scale', 'Scale', Scaling, 'SCALE'), cad('array', 'Array', Grid3x3, 'ARRAY'), cad('erase', 'Erase', Eraser, 'ERASE')] },
         { label: 'Edit', tools: [cad('offset', 'Offset', CopyPlus, 'OFFSET'), cad('trim', 'Trim', Scissors, 'TRIM'), cad('extend', 'Extend', ArrowRightToLine, 'EXTEND'), cad('fillet', 'Fillet', CornerUpRight, 'FILLET')], small: [cad('chamfer', 'Chamfer', CornerUpRight, 'CHAMFER'), cad('join', 'Join', Link2, 'JOIN'), cad('explode', 'Explode', Unlink2, 'EXPLODE')] },
         { label: 'Fill', tools: [cad('hatch', 'Hatch', Hash, 'HATCH')], small: [revisionCloudTool] },

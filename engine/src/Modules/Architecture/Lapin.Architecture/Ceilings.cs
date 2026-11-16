@@ -64,7 +64,7 @@ public static class Ceilings
         [
             new("height", "Height", "length", Min: 1.5, Max: 20),
         ], "#ece9df"));
-        r.Geometry(Class, (e, m, _) => Geometry(e, m));
+        r.Geometry(Class, (e, m, services) => Geometry(e, m, services));
         r.Quantities(Class, Quantities);
         r.Service<IElementPlacement>(new CeilingPlacement());
         r.Catalog("ceilings", new JsonObject
@@ -109,6 +109,8 @@ public static class Ceilings
             var type = (string?)a["typeId"] is { } tid ? Spatial.Require(ctx.Model, tid, TypeClass) : DefaultType(ctx);
             var attrs = new JsonObject { ["contour"] = Slabs.ContourJson(outline), ["height"] = Json.Number(a["height"]) ?? 2.7, ["exportAs"] = "IfcCovering", ["fixtures"] = new JsonArray() };
             ArcOutline.Write(attrs, arcs);
+            if (a[EllipseEdge.Key] != null) Slabs.SetEllipses(attrs, a, null);
+            if (a[OutlineHoles.Key] != null) OutlineHoles.Apply(attrs, a);
             var ceiling = new Entity(ctx.NewId(), Class, $"Ceiling {Numbering.Next(ctx.Model.OfClass(Class))}", attrs, "CEILING");
             ctx.Add(ceiling);
             Spatial.Contain(ctx, storeyId, ceiling.Id);
@@ -124,7 +126,9 @@ public static class Ceilings
             {
                 var (outline, arcs) = Slabs.OutlineArg(a["arcs"], Points(a["points"]), c, "A ceiling");
                 Slabs.SetOutline(attrs, outline, arcs);
+                Slabs.SetEllipses(attrs, a, c);
             }
+            if (a[OutlineHoles.Key] != null || a["points"] is JsonArray) OutlineHoles.Apply(attrs, a);
             if (Json.Number(a["height"]) is { } h) attrs["height"] = Math.Clamp(h, 1.5, 20);
             if (a.ContainsKey("origin")) { if (a["origin"] is JsonArray o && o.Count == 2) attrs["origin"] = o.DeepClone(); else attrs.Remove("origin"); }
             // The grid's own turn (degrees) on top of the type's rotation; null: the type's alone.
@@ -285,7 +289,7 @@ public static class Ceilings
     public static Vec2? OriginOf(Entity c) =>
         c.Attrs["origin"] is JsonArray o && o.Count == 2 && Json.Number(o[0]) is { } ox && Json.Number(o[1]) is { } oy ? new Vec2(ox, oy) : null;
 
-    public static ElementGeometry? Geometry(Entity c, IModelView m)
+    public static ElementGeometry? Geometry(Entity c, IModelView m, IServices? services = null)
     {
         var outline = Slabs.Contour(c);
         if (outline.Count < 3) return new ElementGeometry([], Diagnostics: ["The ceiling has no outline."]);
@@ -298,9 +302,12 @@ public static class Ceilings
         var parts = new List<GeometryPart>();
         var ccw = Polygon2.EnsureCcw(outline);
         var plan = new List<PlanItem> { new("overhead", true, ccw) };
+        // Its own holes (audit S4): islands of its outline; a plain board is built round them, the rest cut by them below.
+        var holes = OutlineHoles.Built(c);
+        plan.AddRange(holes.Select(h => new PlanItem("overhead", true, h)));
         if (spec.System == "plain")
         {
-            if (Prism.ExtrudeFootprint(ccw, z, spec.Thickness, "board") is { } board)
+            if (Prism.ExtrudeFootprint(ccw, holes, z, spec.Thickness, "board") is { } board)
                 parts.Add(new GeometryPart("Board", spec.TileColor, board, tileMat, "tiles"));
         }
         var grid = new Grid(ccw, spec, OriginOf(c), c.Num(TurnKey));
@@ -363,6 +370,15 @@ public static class Ceilings
         }
         if (lights.Count > 0) parts.Add(new GeometryPart("Light panels", spec.LightColor, Openings.Combine(lights, "lights"), null, "lights"));
         if (diffusers.Count > 0) parts.Add(new GeometryPart("Air diffusers", spec.DiffuserColor, Openings.Combine(diffusers, "diffusers"), null, "diffusers"));
+        if (holes.Count > 0 && spec.System != "plain")
+        {
+            if (services?.Get<ISolidBooleans>() is { } booleans)
+            {
+                var cutters = holes.Select(h => Prism.ExtrudeFootprint(h, z - 0.1, top - z + 0.2, "hole")).OfType<Solid>().ToList();
+                parts = parts.Select(p => booleans.Difference(p.Solid, cutters, p.Solid.Tag) is { } cut && Measure.Volume(cut) > 1e-12 ? p with { Solid = cut } : null).OfType<GeometryPart>().ToList();
+            }
+            else return new ElementGeometry(parts, plan, ccw, ["Holes in a grid ceiling need the boolean library (manifold), missing here."]);
+        }
         return new ElementGeometry(parts, plan, ccw);
     }
 
@@ -375,8 +391,8 @@ public static class Ceilings
         var spec = SpecOf(m, c);
         // Exactly, its arcs as arcs (forum topic 97).
         var (corners, rises) = (Slabs.Corners(c), Slabs.Rises(c));
-        var area = Math.Abs(ArcOutline.SignedArea(corners, rises));
-        var perimeter = ArcOutline.Perimeter(corners, rises);
+        var area = Slabs.Area(c) - OutlineHoles.Area(c);
+        var perimeter = Slabs.Perimeter(c);
         yield return new QuantitySet("Qto_CoveringBaseQuantities", [new("Width", spec.Thickness, "LENGTH"), new("GrossArea", area, "AREA"), new("NetArea", area, "AREA")]);
         yield return new QuantitySet("Lapin_CeilingQuantities",
         [

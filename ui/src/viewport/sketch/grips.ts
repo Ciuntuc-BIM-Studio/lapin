@@ -18,6 +18,8 @@ export function gripPoints(s: Shape): Vec2[] {
     case 'polyline': return [...s.pts];
     case 'circle': return [s.c, { x: s.c.x + s.r, y: s.c.y }];
     case 'arc': return [at(s.c, s.r, s.start), at(s.c, s.r, s.start + sweepOf(s.start, s.end) / 2), at(s.c, s.r, s.end)];
+    // An ellipse (audit S4): its centre moves it.
+    case 'ellipse': return [s.c];
   }
 }
 
@@ -36,5 +38,6 @@ export function moveGrip(s: Shape, i: number, p: Vec2): Shape | null {
       g[i] = p;
       return arcThrough(g[0], g[1], g[2]);
     }
+    case 'ellipse': return { ...s, c: p };
   }
 }

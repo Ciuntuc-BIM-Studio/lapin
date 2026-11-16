@@ -22,9 +22,17 @@ To grow or shrink the whole outline at once, every edge by the same distance (Ar
 
 ### Curved edges, fillets and round floors
 
-The **Floor** tool's bar, in the command line, draws the outline as a **Polygon** (its corners clicked), a **Rectangle** (two opposite corners), a **Circle** (its centre, then a point on it) or **Inside walls** (a click inside the walls that close round it; the floor goes up to their faces). In a polygon, **Lines (Space)** turns into **Arcs (Space)**: the next edges are arcs, each going on tangent from the edge before, until you press <kbd>Space</kbd> again. **Floor opening** and **Ceiling** have the same bar, without **Inside walls**.
+The **Floor** tool's bar, in the command line, draws the outline as a **Polygon** (its corners clicked), a **Rectangle** (two opposite corners), a **Circle** (its centre, then a point on it) or **Inside walls** (a click inside the walls that close round it; the floor goes up to their faces). In a polygon, **Lines (Space)** turns into **Arcs (Space)**: the next edges are arcs, each going on tangent from the edge before, until you press <kbd>Space</kbd> again. **Floor opening** and **Ceiling** have the same bar.
 
 ![The Floor tool drawing a circle beside a floor](shots/floor-shapes.webp)
+
+The same bar serves every outline tool (floor, floor opening, ceiling, hole, room and balcony by outline, platform, parcel), and three of its choices take the whole outline with one click: **Inside walls** (the walls that close round the point), **From drawn shape** (the smallest closed drafted shape round the point: a closed polyline, a rectangle or a circle, a circle staying round) and **From room** (the room round the point, with its curved edges).
+
+![The outline tools' bar, From drawn shape chosen](shots/outline-sources.webp)
+
+For a floor, a floor opening, a ceiling and a room by outline the bar also offers **Ellipse**: its centre, the end of one semi-axis, then the other. The outline's edges run along the true ellipse (four quarter edges), measured exactly; a corner moved off the ellipse turns its two edges straight, and a corner beside an elliptical edge is not filleted. IFC carries it as an IfcEllipse. **From drawn shape** takes a drafted ellipse the same way.
+
+![An elliptical floor being drawn beside a drafted ellipse](shots/ellipse-floor.webp)
 
 An opening through a floor (a stairwell, a shaft) is **Architecture → Opening** set to **Floor opening** (<kbd>SH</kbd>): its outline drawn inside the floor, as a polygon whose edges may be arcs, a rectangle or a circle.
 
@@ -33,6 +41,10 @@ Any edge of a floor, a floor opening or a ceiling can be curved. Right-click the
 ![A floor with a curved edge and a rounded corner](shots/floor-curved-edge.webp)
 
 The floor is built along its arcs, no chord more than 1 mm off them, in 3D, plans and sections; its area and perimeter are measured on the true arcs. A layer that goes past a curved edge (see [Layer extents](walls.md#layer-extents)) follows the arc. An opening can have curved edges too, and a curved floor can have openings. In IFC the floor carries its outline with its true arcs as its footprint (an IfcIndexedPolyCurve with arc segments), beside its body. Roofs keep straight edges, because a roof's edge rules (eave, gable) are set per straight edge.
+
+A floor or a ceiling can have **holes of its own**: islands cut out of its outline, part of the element, not openings of their own. Choose **Hole in the outline** in the **Opening** tool (under *In a floor*) and draw it inside the floor (or the floor or ceiling selected) with the same bar: a polygon whose edges may be arcs, a rectangle or a circle. Selected, the floor shows each hole's corners and edges as grips, with the same right-click (**Make arc**, **Fillet corner…**, **Chamfer corner…**); the cross in a hole's middle drags it, and its right-click offers **Remove hole**. The floor is built round its holes and its area leaves them out, measured on their true arcs; a hole must lie inside the outline, apart from the others, and an outline changed so that it no longer holds one is refused. In **Edit sketch** the holes are loops of the sketch too: draw another closed loop inside and **Finish sketch** makes it a hole (the largest loop is the outline). In IFC the holes are more curves of the floor's footprint, read back as holes. A platform (**Site → Hole in platform**) takes holes the same way: the ground inside a hole keeps its own levels.
+
+![A floor with a rectangular and a round hole of its own, selected](shots/floor-holes.webp)
 
 #### Edit sketch
 

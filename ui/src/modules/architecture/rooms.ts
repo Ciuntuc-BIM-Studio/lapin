@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { query, useSession } from '../../engine/session';
 import type { Grip, RefLine, Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
-import { outlineGrips, outlineRef, pt, toPairs } from '../../viewport/gripKit';
+import { curvedOutlineGrips, outlineRef, pt, toPairs } from '../../viewport/gripKit';
 import { fromPairs } from '../../viewport/contour';
 
 /** A scheme value's look; opacity: the fill colour's, 0–100 % (none: opaque, forum #79). */
@@ -59,12 +59,14 @@ function roomShape(node: NodeDto): { outline: Vec2[]; stamp: Vec2 | null } {
  * drawn room, its outline's corners and edges.
  */
 export function roomGrips(node: NodeDto): Grip[] {
-  const { outline, stamp } = roomShape(node);
+  const { stamp } = roomShape(node);
   const grips: Grip[] = [];
   if (stamp) grips.push({ key: 'stamp', kind: 'move', at: stamp, title: 'Move the stamp', step: (to) => ({ command: 'architecture.updateRoom', args: { id: node.id, stampX: to.x, stampY: to.y } }) });
   const seed = pt(node.props.seed);
   if (node.props.auto && seed) grips.push({ key: 'seed', kind: 'centre', at: seed, title: 'The room\'s point: its outline is found round it', step: (to) => ({ command: 'architecture.updateRoom', args: { id: node.id, x: to.x, y: to.y } }) });
-  if (!node.props.auto && outline.length >= 3) grips.push(...outlineGrips({ pts: outline }, (o) => ({ command: 'architecture.updateRoom', args: { id: node.id, points: toPairs(o.pts) } })));
+  // A drawn room by the corners it keeps, its edges may be arcs (audit S4): its plan's outline lays them in chords.
+  const corners = fromPairs(node.props.contour);
+  if (!node.props.auto && corners.length >= 3) grips.push(...curvedOutlineGrips(node.id, corners, node.props.arcs, (pts, arcs) => ({ command: 'architecture.updateRoom', args: { id: node.id, points: toPairs(pts), arcs } })));
   return grips;
 }
 

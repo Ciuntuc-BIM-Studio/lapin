@@ -13,6 +13,9 @@ import type { NodeDto } from '../../engine/protocol';
 export function isOutlineElement(n: NodeDto | undefined): boolean {
   if (!n || n.props.reference || !Array.isArray(n.props.contour)) return false;
   if (n.type === 'IfcSlab' || n.type === 'LapinCeiling') return true;
+  // A drawn room and a platform too (audit S4).
+  if (n.type === 'IfcSpace') return n.props.auto === false;
+  if (n.type === 'IfcEarthworksCut') return n.props.predefinedType !== 'TRENCH';
   return n.type === 'IfcOpeningElement' && !n.props.stairId;
 }
 

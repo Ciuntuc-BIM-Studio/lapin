@@ -14,6 +14,10 @@ Für einen Bereich ohne umlaufende Wände, etwa eine Terrasse oder ein Ende eine
 
 ![Ein Grundriss mit zwei nach Nutzung eingefärbten Räumen und einer Farblegende](shots/rooms-plan.webp)
 
+Die Kanten eines gezeichneten Raums können gebogen sein, wie die einer Decke: die Leiste von **Room by outline** zeichnet ein **Polygon**, dessen Kanten Bögen sein können (**Arcs (Space)**), ein **Rectangle** oder einen **Circle**, und ein Rechtsklick auf den gewählten Raum bietet **Make arc**, **Make straight**, **Fillet corner…** und **Chamfer corner…**. Fläche und Umfang werden an den wahren Bögen gemessen, und in IFC ist das Profil des Raums die wahre Kurve. Ein aus seinen Wänden gefundener Raum folgt ihnen, sein Umriss wird also nicht so bearbeitet.
+
+![Ein gezeichneter Raum mit gebogener Kante und gerundeter Ecke, ein runder Raum und ein Balkon mit gebogener Front](shots/rooms-curved.webp)
+
 ## Die Eigenschaften eines Raums
 
 Wählen Sie einen Raum aus, indem Sie auf seinen Raumstempel oder irgendwo in ihn klicken. Im Eigenschaftenbereich:

@@ -57,6 +57,31 @@ public static class Chords
     }
 
     /// <summary>
+    /// The pieces an ellipse of semi-axes <paramref name="a"/> ≥ <paramref name="b"/> is made of over <paramref name="sweep"/>
+    /// radians of its parameter: the step its major circle would take. An ellipse is that circle squeezed across its major axis, which
+    /// brings every point nearer its chord, so no chord strays more than <see cref="Tolerance"/> from it either.
+    /// </summary>
+    public static int Ellipse(double a, double b, double sweep, int min = 1) => Count(Math.Max(Math.Abs(a), Math.Abs(b)), sweep, min);
+
+    /// <summary>
+    /// The points of an ellipse about <paramref name="centre"/>, its major semi-axis <paramref name="major"/> (a vector), its minor
+    /// one <paramref name="ratio"/> of it a quarter turn anticlockwise, from parameter <paramref name="from"/> turning
+    /// <paramref name="sweep"/> (anticlockwise when positive): P(t) = centre + major·cos t + minor·sin t, both ends included.
+    /// </summary>
+    public static List<Vec2> EllipseArc(Vec2 centre, Vec2 major, double ratio, double from, double sweep, int min = 1)
+    {
+        var minor = new Vec2(-major.Y, major.X) * ratio;
+        var n = Ellipse(major.Length, minor.Length, sweep, min);
+        var o = new List<Vec2>(n + 1);
+        for (var k = 0; k <= n; k++)
+        {
+            var t = from + sweep * k / n;
+            o.Add(centre + major * Math.Cos(t) + minor * Math.Sin(t));
+        }
+        return o;
+    }
+
+    /// <summary>
     /// The points of an arc about <paramref name="centre"/> from angle <paramref name="from"/> turning <paramref name="sweep"/>
     /// (radians, anticlockwise when positive), both ends included, in <see cref="Count"/> pieces (at least <paramref name="min"/>).
     /// </summary>
