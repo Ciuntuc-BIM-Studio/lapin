@@ -2,14 +2,16 @@
  * Annotate → Dimension rules… (forum #78): the user's settings for Exterior dimensions and Room dimensions: which strings
  * are made and in what order, how far from the wall and from each other (millimetres on paper), the dimension style, what
  * the corners are measured to, and the narrowest opening worth a point. Stored on the project (`drafting.setDimensionRules`,
- * one undo step) and carried in the drafting standards.
+ * one undo step) and carried in the drafting standards. Below the tabs, the project's automatic placement of dimension
+ * values that do not fit (forum #78: `standards.options` dimAutoText, dimTextLeader), saved in the same undo step.
  */
 
 import { NumberField } from '../../shell/cells';
 import { useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
-import { execute, query } from '../../engine/session';
+import { query } from '../../engine/session';
+import { runSteps } from '../../viewport/grips';
 
 type ExteriorString = 'details' | 'openings' | 'axes' | 'rooms' | 'overall';
 type RoomString = 'details' | 'overall';
@@ -18,6 +20,9 @@ interface ExteriorRules { strings: { kind: ExteriorString; on: boolean }[]; offs
 interface RoomRules { strings: { kind: RoomString; on: boolean }[]; offset: number; spacing: number; dimStyle: string | null; minOpening: number }
 interface Rules { exterior: ExteriorRules; rooms: RoomRules; defaults: { exterior: ExteriorRules; rooms: RoomRules } }
 type StyleEntry = { id: string; name: string };
+/** The project's automatic text placement (forum #78): on or off, and past how many paper mm a moved value takes a leader. */
+interface Placement { dimAutoText: boolean; dimTextLeader: number }
+const PLACEMENT_DEFAULT: Placement = { dimAutoText: true, dimTextLeader: 5 };
 
 const EXTERIOR_LABEL: Record<ExteriorString, [string, string]> = {
   details: ['Details', 'Every feature on the facade: corners and the openings\' jambs'],
@@ -62,19 +67,31 @@ export function DimensionRulesDialog() {
   const [ext, setExt] = useState<ExteriorRules | null>(null);
   const [room, setRoom] = useState<RoomRules | null>(null);
   const [styles, setStyles] = useState<StyleEntry[]>([]);
+  const [placement, setPlacement] = useState<Placement | null>(null);
+  const [placementWas, setPlacementWas] = useState<Placement | null>(null);
   const close = () => useUi.setState({ dialog: null });
   useEffect(() => {
     let live = true;
     void query<Rules>('drafting.dimensionRules').then((r) => { if (live && r) { setRules(r); setExt(r.exterior); setRoom(r.rooms); } });
-    void query<{ dimStyles?: StyleEntry[] }>('standards.get').then((b) => { if (live && b?.dimStyles) setStyles(b.dimStyles); });
+    void query<{ dimStyles?: StyleEntry[]; dimAutoText?: boolean; dimTextLeader?: number }>('standards.get').then((b) => {
+      if (!live || !b) return;
+      if (b.dimStyles) setStyles(b.dimStyles);
+      const p = { dimAutoText: b.dimAutoText !== false, dimTextLeader: typeof b.dimTextLeader === 'number' ? b.dimTextLeader : PLACEMENT_DEFAULT.dimTextLeader };
+      setPlacement(p);
+      setPlacementWas(p);
+    });
     return () => { live = false; };
   }, []);
   const save = async () => {
     if (!ext || !room) return;
-    const r = await execute('drafting.setDimensionRules', { exterior: ext, rooms: room });
+    const changed = placement && placementWas && (placement.dimAutoText !== placementWas.dimAutoText || placement.dimTextLeader !== placementWas.dimTextLeader);
+    const r = await runSteps([
+      { command: 'drafting.setDimensionRules', args: { exterior: ext, rooms: room } },
+      changed ? { command: 'standards.options', args: { ...placement } } : null,
+    ]);
     if (r !== null) { notify('Dimension rules saved.'); close(); }
   };
-  const reset = () => { if (rules) { setExt(rules.defaults.exterior); setRoom(rules.defaults.rooms); } };
+  const reset = () => { if (rules) { setExt(rules.defaults.exterior); setRoom(rules.defaults.rooms); setPlacement(PLACEMENT_DEFAULT); } };
 
   const common = <T extends ExteriorRules | RoomRules>(v: T, set: (v: T) => void) => (<>
     <dt title="Millimetres on paper, from the wall's face to the first string">Offset (mm on paper)</dt>
@@ -124,6 +141,16 @@ export function DimensionRulesDialog() {
               <dl className="fields">
                 {common(room, setRoom)}
                 {minOpening(room, setRoom)}
+              </dl>
+            </>)}
+            {placement && (<>
+              <p className="muted small">Text placement, for every dimension whose style says as the project</p>
+              <dl className="fields" data-dim-placement>
+                <dt title="A value that does not fit between its witness lines moves just outside its segment, or above and below the line in turn, clear of the other values of the view; a value you dragged keeps its place">Automatic text placement</dt>
+                <dd><input type="checkbox" data-dim-auto-text checked={placement.dimAutoText} onChange={(e) => setPlacement({ ...placement, dimAutoText: e.target.checked })} /></dd>
+                <dt title="A value moved further than this from its place gets a leader to its segment">Leader when moved beyond (mm on paper)</dt>
+                <dd><NumberField min={0} max={100} value={placement.dimTextLeader} testId="dim-text-leader" readOnly={!placement.dimAutoText}
+                  onCommit={(n) => { if (n != null) setPlacement({ ...placement, dimTextLeader: n }); }} /></dd>
               </dl>
             </>)}
           </>)}

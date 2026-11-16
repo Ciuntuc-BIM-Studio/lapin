@@ -1007,6 +1007,12 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
 
         // Two walls' corner rounded by a curved wall or cut by a straight one, the walls trimmed or carried on to it, as CAD's
         // FILLET and CHAMFER do to lines (WallFillets): {a, b, atA?, atB?, radius | distance, line? (axis, inside, outside), matchFirst?}.
+        // A wall another program modelled as separate solids, one per layer, made one layered wall (forum topic 101, WallsFromSolids):
+        // {ids, gaps (air | absorb), frame, walls: [{core, materials, name}], originals (hide | delete | keep)}; the query shows what it would make.
+        r.Command("wallFromSolids", "Make a layered wall from solids", (ctx, a) => WallsFromSolids.Make(ctx, a, Paths(ctx)));
+        r.Query("wallFromSolids", (q, a) => WallsFromSolids.Preview(q.Model, q.Services, a));
+        // The solids a wall was made of and keeps hidden, shown again: {id (the wall)}.
+        r.Command("showOriginalSolids", "Show the original solids", (ctx, a) => WallsFromSolids.Show(ctx, a));
         r.Command("filletWalls", "Fillet walls", (ctx, a) => WallFillets.Apply(ctx, a, Paths(ctx), false));
         r.Command("chamferWalls", "Chamfer walls", (ctx, a) => WallFillets.Apply(ctx, a, Paths(ctx), true));
 

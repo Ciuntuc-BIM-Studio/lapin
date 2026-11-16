@@ -21,6 +21,14 @@ public sealed class HostSafetyTests : IDisposable
         Directory.Delete(_dir, recursive: true);
     }
 
+    /// <summary>Whether the system keeps this process out of a file it was denied (not as root, as in the Linux build's container).</summary>
+    static bool Enforced(string file)
+    {
+        try { using var _ = File.Open(file, FileMode.Open, FileAccess.ReadWrite); return false; }
+        catch (UnauthorizedAccessException) { return true; }
+        catch (IOException) { return true; }
+    }
+
     static JsonObject Reply(byte[]? reply) => (JsonObject)JsonNode.Parse(BinaryFrame.HeaderText(reply!))!;
 
     EngineHub Hub() => new(new Fixture(new ArchitectureModule(), new ScriptingModule()).Session, PackageFiles.Create(), userDir: _dir);
@@ -34,6 +42,7 @@ public sealed class HostSafetyTests : IDisposable
         var file = Path.Combine(scripts, "walls.py");
         File.WriteAllText(file, "print('kept')");
         File.SetAttributes(file, FileAttributes.ReadOnly);
+        if (!Enforced(file)) return; // root writes over a read-only file: nothing to test here
 
         var reply = Reply(await hub.Handle(new JsonObject { ["id"] = 1, ["method"] = "script.save", ["params"] = new JsonObject { ["name"] = "walls.py", ["code"] = "print('new')" } }.ToJsonString()));
         Assert.Contains("denied", (string?)reply["error"] ?? "no error", StringComparison.OrdinalIgnoreCase);
@@ -49,9 +58,12 @@ public sealed class HostSafetyTests : IDisposable
             var file = Path.Combine(_dir, "locked.lapinext");
             File.WriteAllText(file, "{}");
             File.SetUnixFileMode(file, UnixFileMode.None);
+            if (Enforced(file))
+            {
             var reply = Reply(await hub.Handle(new JsonObject { ["id"] = 1, ["method"] = "extensions.fetch", ["params"] = new JsonObject { ["url"] = file } }.ToJsonString()));
             Assert.Equal(1, (int)reply["id"]!);
             Assert.NotNull(reply["error"]);
+            }
         }
 
         // A method that is not a name, in a message that looks like one of the host's own.

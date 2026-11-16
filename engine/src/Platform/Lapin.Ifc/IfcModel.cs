@@ -223,7 +223,7 @@ public sealed partial class IfcModel
     }
 
     /// <summary>An IfcSIUnit's or IfcConversionBasedUnit's size in its SI unit (metres, radians).</summary>
-    static double UnitFactor(StepFile f, StepEntity u, int depth)
+    internal static double UnitFactor(StepFile f, StepEntity u, int depth)
     {
         if (u.Type == "IFCSIUNIT")
             return (u[2] as StepEnum)?.Value switch

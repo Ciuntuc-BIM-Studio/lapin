@@ -16,7 +16,7 @@ import { usePaneActive, usePaneField } from '../app/pane';
 import { execute, useSession } from '../engine/session';
 import type { Vec2 } from '../platform/module';
 import type { NodeDto } from '../engine/protocol';
-import { findTool } from '../platform/modules';
+import { findTool, useToolTick } from '../platform/modules';
 import { completeTool } from './tools';
 import { DrawingLayer } from './DrawingLayer';
 import { drawsOnDark, useDrawing } from './drawing';
@@ -103,7 +103,9 @@ export function DrawingView() {
   const tool = findTool(toolId);
   /** The points of the gesture being drawn. */
   const [pts, setPts] = useState<Vec2[]>([]);
-  useEffect(() => { setPts([]); }, [toolId, id]);
+  useToolTick((s) => s.n);
+  const toolMode = tool?.mode?.();
+  useEffect(() => { setPts([]); }, [toolId, id, toolMode]);
 
   useEffect(() => {
     const el = ref.current;

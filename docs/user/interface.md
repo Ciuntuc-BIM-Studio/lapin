@@ -240,6 +240,14 @@ The status bar, at the bottom, names the mouse navigation style in use (*Lapin* 
 
 In plans, sections, elevations and sheets the style chooses which button pans and which keys add to or remove from the selection; a left drag still draws a window or a crossing, and the middle button pressed twice still fits the view (in 3D too, in Revit-like and AutoCAD-like). The other styles assume a mouse with three buttons: on a trackpad, with no middle button, keep Lapin's. Only the controls are borrowed: the names are plain labels, and nothing else of those programs is imitated.
 
+## Modify and Joins on every tab
+
+The **Modify** group (Move, Copy, Rotate, Mirror, Array, Delete, Pin, **Create similar**, Match properties, the group tools) is the same on Draft, Architecture, Interior, Structure, Steel, Wood, Studio, Site and MEP. On Draft and Studio it joins the group of those tabs that was already called Modify, so each button appears once (Draft keeps Scale, Array and Erase; Studio keeps Move 3D, Rotate 3D, Mirror 3D and its own Array, which makes the solid's parametric array). **Create similar** is greyed out until the selection is something it can start from (a wall, floor, roof, door, window, curtain wall, room…).
+
+The **Joins** group (**Mitre**, **Butt**, **Swap**) is the same on Architecture and Structure and acts on what is selected: the corners of the selected walls, beams and strip footings. Steel's own **Mitre** and **Fit** join two members and stay on the Steel tab.
+
+A tool that was several buttons is one with a choice in the command line's bar: **Wall**, **Beam**, **Strip footing** and the room **separation line** have **Line** / **Arc**; **Path** has **Path** / **Road**; **Place furniture** (Interior) and **Place node** (MEP) choose the kind of piece or node. The old names (Curved wall, Road, Sofa, Radiator…) still work as quick slots, My tools entries, shortcuts and in saved interfaces: they start the same tool already set to that choice.
+
 ## Match properties
 
 **Modify → Match properties** (<kbd>MA</kbd>, or `MATCHPROP` on the command line as in AutoCAD; Revit calls it Match Type) gives other elements what one element has. Select the element to copy from, or start the command and click it first; then click each element that should take its properties. The element under the cursor lights up before you click, in plans, sections and 3D. Each click is one step that **Undo** takes back. **Apply to the selection** gives them to every other selected element at once. Press <kbd>Enter</kbd> or <kbd>Esc</kbd> when you are done.
