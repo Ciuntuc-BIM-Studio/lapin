@@ -129,6 +129,8 @@ Where drafted elements overlap, the one drawn later lies on top. To change it, s
 
 The **Annotate** tab has the dimensions, text, grid axes, levels and tags. A dimension reads the model, so it updates when a wall moves. How text, dimensions, axes and tags look is set in **Manage → Drafting standards**.
 
+A **Leader note** (Annotate → Text) is a text with an arrow: click where the arrow points, then where the text goes, and type it. A **Revision cloud** (Draft → Fill, or REVCLOUD) draws a rectangle or a polygon as scallops; **Revision cloud** in the properties of a closed polyline or circle turns it into one or back. A **Scale bar** (Annotate → Sheets) is drawn at the view's scale. They work on every view and on sheets, where a legend of the views and live fields in texts join them (see Sheets).
+
 ### The Dimension tool
 
 **Annotate → Dimension** (<kbd>DI</kbd>, or type **DIM**) is one tool for every kind of dimension. It starts *smart* and takes the kind from what you click:

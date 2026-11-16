@@ -111,6 +111,9 @@ public sealed class CoreModule : ILapinModule
         // Any type duplicated, and each class's types in an order of the user's (forum #71).
         TypeOrder.Register(r);
         Sheets.Register(r);
+        // What is drawn on a sheet itself, in paper coordinates: its paper as a view, legends and scale bars (decision 620).
+        PaperViews.Register(r);
+        DrawingKeys.Register(r);
         TitleBlocks.Register(r);
         // 2D symbols of the user's own (docs/plan-user-extensibility.md §3).
         Symbols.Register(r);

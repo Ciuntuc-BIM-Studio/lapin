@@ -7455,6 +7455,78 @@ export const scenes = [
     },
   },
   {
+    // Drawing on a sheet itself (audit §6, decision 620): Annotate opens its paper in the drawing pane, where the Draft and
+    // Annotate tools draw in paper mm; a leader note and a revision cloud drawn with the tools, a live text, a legend and a
+    // scale bar; back on the sheet they print with it.
+    id: 'sheet-annotations',
+    touches: ['drafting', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      await house(t);
+      const plan = await t.cmd('view.create', { kind: 'plan', storeyId: await t.storey(), name: 'Ground floor plan', scale: 100 });
+      const sheet = await t.cmd('sheet.create', { name: 'Plans', number: 'A-101', paper: 'A3' });
+      const placed = await t.cmd('sheet.addViewport', { id: sheet.id, viewId: plan.id, x: 150, y: 140 });
+      await t.cmd('project.setInfo', { name: 'Casa Popescu' });
+      await t.ui({ view: 'sheet', sheetId: sheet.id });
+      await t.page.waitForSelector('[data-testid=sheet-annotate]', { timeout: 10_000 });
+      await t.wait(800);
+      await t.page.locator('[data-testid=sheet-annotate]').click();
+      await t.page.waitForSelector('[data-testid=paper-back]', { timeout: 10_000 });
+      const paper = `paper:${sheet.id}`;
+      t.expect(await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().drawingViewId) === paper, 'Annotate opens the sheet\'s paper in the drawing pane');
+      await t.wait(1200);
+      await t.fit();
+      // A point of the paper (mm from its top-left, as the sheet's numbers go) on the screen.
+      const at = async (x, y) => {
+        const p = await t.page.evaluate(async ([id, x, y]) => {
+          const svg = document.querySelector('[data-testid=drawing]');
+          const view = (await import('/src/viewport/zoom.ts')).recall(id);
+          if (!svg || !view) return null;
+          const r = svg.getBoundingClientRect();
+          return [r.left + (x - view.cx) * view.scale + r.width / 2, r.top + r.height / 2 - (y - view.cy) * view.scale];
+        }, [paper, x / 1000, (297 - y) / 1000]);
+        if (!p) throw new Error('no paper on the screen');
+        return p;
+      };
+      const click = async (x, y) => { const [px, py] = await at(x, y); await t.page.mouse.click(px, py); await t.wait(250); };
+      const on = async () => (await t.nodes()).filter((n) => n.props?.viewId === paper);
+      // A leader note with its tool: the arrow on the east wall, then where the text goes, then its words.
+      const answers = t.page.listeners('dialog');
+      t.page.removeAllListeners('dialog');
+      t.page.once('dialog', (d) => void d.accept('Check this wall on site'));
+      await t.tool('drafting.leaderNote');
+      await click(210, 140);
+      await click(232, 122);
+      await t.wait(900);
+      for (const l of answers) t.page.on('dialog', l);
+      t.expect((await on()).some((n) => n.props.predefinedType === 'TEXT' && Array.isArray(n.props.leader)), 'the leader note is drawn on the sheet\'s paper with its arrow');
+      await t.keys('Escape');
+      // A revision cloud round the front window: REVCLOUD, two corners.
+      await t.tool('cad.revcloud');
+      await click(172, 168);
+      await click(198, 192);
+      await t.wait(900);
+      t.expect((await on()).some((n) => typeof n.props.cloud === 'number'), 'the revision cloud is drawn on the sheet\'s paper');
+      // A live text, a legend of the plan's materials and a scale bar at the plan's scale.
+      await t.cmd('drafting.addText', { viewId: paper, at: [0.02, 0.262], text: 'Sheet {sheet.number} of {sheet.count} · {project.name}' });
+      await t.cmd('sheet.addLegend', { viewId: paper, at: [0.3, 0.27] });
+      await t.cmd('sheet.addScaleBar', { viewId: paper, at: [0.09, 0.085], viewportId: placed.viewportId });
+      await t.wait(1200);
+      await t.fit();
+      await t.shot('sheet-annotations', { of: '.view-pane:has([data-testid=paper-back])', pad: 0 });
+      // Back on the sheet: they print with it.
+      await t.page.locator('[data-testid=paper-back]').click();
+      await t.page.waitForSelector('[data-testid=sheet] .paper-sheet', { timeout: 10_000 });
+      await t.wait(1200);
+      const drawn = await t.call('doc.query', { name: 'sheet.drawing', args: { id: sheet.id } });
+      const texts = drawn.pens.flatMap((p) => p.texts ?? []).map((x) => x.text);
+      t.expect(texts.includes('Sheet A-101 of 1 · Casa Popescu'), 'a text on the sheet reads its tokens: the sheet\'s number and the project\'s name');
+      t.expect(texts.includes('Check this wall on site') && texts.includes('LEGEND') && texts.includes('1:100'), 'the sheet itself draws the note, the legend and the scale bar');
+      await t.fit();
+      await t.shot('sheet-annotated', { of: '[data-testid=sheet]', pad: 0 });
+    },
+  },
+  {
     id: 'title-blocks',
     async run(t) {
       // A title block of one's own (decision 340, report #76): the project's data and a parameter of its own, a Finnish-style

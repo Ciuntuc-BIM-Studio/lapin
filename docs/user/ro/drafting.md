@@ -129,6 +129,8 @@ Unde elementele desenate se suprapun, cel desenat mai târziu stă deasupra. Ca 
 
 Tabul **Adnotări** are cotele, textele, axele, cotele de nivel și etichetele. O cotă citește modelul, așa că se actualizează când se mută un perete. Cum arată textele, cotele, axele și etichetele se setează în **Gestionare → Standarde de desen**.
 
+O **Notă cu indicator** (Adnotări → Text) e un text cu săgeată: dă clic unde arată săgeata, apoi unde stă textul, și scrie-l. Un **Nor de revizie** (Desen → Umplutură sau REVCLOUD) desenează un dreptunghi sau un poligon din arce; **Nor de revizie** din proprietățile unei polilinii închise sau ale unui cerc o face nor sau o readuce la loc. O **Scară grafică** (Adnotări → Planșe) se desenează la scara vederii. Merg pe orice vedere și pe planșe, unde li se adaugă o legendă a vederilor și câmpuri vii în texte (vezi Planșe).
+
 ### Unealta Cote
 
 **Adnotări → Cote** (<kbd>DI</kbd>, sau scrie **DIM**) e o singură unealtă pentru toate felurile de cote. Pornește *inteligentă* și ia felul cotei după ce dai clic:

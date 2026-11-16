@@ -34,6 +34,7 @@ import { GridAxisDims } from './GridAxisDims';
 import '../core/symbols/symbolTools';
 import { convertLayersInFront, convertSelection } from './convert/convert';
 import { SymbolSection } from '../core/symbols/SymbolSection';
+import { annotateSheetTool, leaderNote, legendTool, revisionCloudTool, scaleBarTool } from './sheetAnnotations';
 import { surveyPoint, useLocation } from '../../app/location';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
@@ -44,7 +45,7 @@ const ImportTraceDialog = lazyPart(() => import('./ImportTraceDialog').then((m) 
 const LayersDialog = lazyPart(() => import('./LayersDialog').then((m) => m.LayersDialog), { title: 'Drafting layers' });
 
 /** An aligned dimension: its two points, then where its line goes; then on as a string, one object. Points on an element's cut edge, a grid axis or a wall's centre line follow it. */
-const DRAFTED = new Set(['DRAFT', 'TEXT', 'DIMENSION', 'TAG', 'SYMBOL']);
+const DRAFTED = new Set(['DRAFT', 'TEXT', 'DIMENSION', 'TAG', 'SYMBOL', 'SHEETLEGEND', 'SCALEBAR']);
 const draftsFields = (node: NodeDto) => DRAFTED.has(String(node.props.predefinedType));
 
 /**
@@ -917,7 +918,7 @@ const drafting: LapinModule = {
         { label: 'Draw', tools: [cad('line', 'Line', Slash, 'LINE'), cad('pline', 'Polyline', Spline, 'PLINE'), cad('rect', 'Rectangle', RectangleHorizontal, 'RECTANGLE'), cad('circle', 'Circle', Circle, 'CIRCLE'), cad('arc', 'Arc', Redo2, 'ARC')] },
         { label: 'Modify', tools: [cad('move', 'Move', Move, 'MOVE'), cad('copy', 'Copy', Copy, 'COPY'), cad('rotate', 'Rotate', RotateCw, 'ROTATEREF'), cad('mirror', 'Mirror', FlipHorizontal2, 'MIRROR')], small: [cad('scale', 'Scale', Scaling, 'SCALE'), cad('array', 'Array', Grid3x3, 'ARRAY'), cad('erase', 'Erase', Eraser, 'ERASE')] },
         { label: 'Edit', tools: [cad('offset', 'Offset', CopyPlus, 'OFFSET'), cad('trim', 'Trim', Scissors, 'TRIM'), cad('extend', 'Extend', ArrowRightToLine, 'EXTEND'), cad('fillet', 'Fillet', CornerUpRight, 'FILLET')], small: [cad('chamfer', 'Chamfer', CornerUpRight, 'CHAMFER'), cad('join', 'Join', Link2, 'JOIN'), cad('explode', 'Explode', Unlink2, 'EXPLODE')] },
-        { label: 'Fill', tools: [cad('hatch', 'Hatch', Hash, 'HATCH')] },
+        { label: 'Fill', tools: [cad('hatch', 'Hatch', Hash, 'HATCH')], small: [revisionCloudTool] },
         { label: 'Symbol', tools: [cad('saveSymbol', 'Save as symbol', FolderPlus, 'SAVESYMBOL')], small: [cad('symbol', 'Symbol', Shapes, 'SYMBOL')] },
         orderGroup,
         { label: 'Linework', tools: [cad('linework', 'Linework', PenLine, 'LINEWORK')], small: [cad('lwJoin', 'Join linework', CornerUpRight, 'LWJOIN'), cad('lwTrim', 'Trim linework', Scissors, 'LWTRIM'), cad('lwExtend', 'Extend linework', ArrowRightToLine, 'LWEXTEND'), cad('lwReset', 'Reset linework', Eraser, 'LWRESET')] },
@@ -935,7 +936,7 @@ const drafting: LapinModule = {
         { label: 'Dimension', tools: [dimension, roomDimensions, exteriorDimensions],
           // Points clicked into a selected string, as ArchiCAD's Insert dimension point.
           small: [dimensionRulesTool, dimAddTool, dimDelTool] },
-        { label: 'Text', small: [textBox, tagOpeningsTool], tools: [text, tagTool] },
+        { label: 'Text', small: [textBox, leaderNote, tagOpeningsTool], tools: [text, tagTool] },
         { label: 'Datum', small: [gridTool, renumberAxesTool, axisStylesTool], tools: [
           axis,
           levelTool,
@@ -955,7 +956,8 @@ const drafting: LapinModule = {
           id: 'marks.number', label: 'Number parts', icon: ListOrdered,
           run: () => void execute('marks.number', {}).then(() => notify('The parts are numbered: identical parts share a mark.')),
         }] },
-        { label: 'Sheets', tools: [{ id: 'sheet', label: 'Sheet', icon: FileText, run: () => void execute('sheet.create', { name: 'Sheet', paper: 'A3' }).then((r) => { const id = (r as { id?: string } | null)?.id; if (id) useUi.setState({ view: 'sheet', sheetId: id, selection: id, selected: [id] }); }) }, viewBoundary] },
+        // Drawing on a sheet itself (decision 620): its paper, a legend of its views, a scale bar, a revision cloud.
+        { label: 'Sheets', small: [annotateSheetTool, legendTool, scaleBarTool, revisionCloudTool], tools: [{ id: 'sheet', label: 'Sheet', icon: FileText, run: () => void execute('sheet.create', { name: 'Sheet', paper: 'A3' }).then((r) => { const id = (r as { id?: string } | null)?.id; if (id) useUi.setState({ view: 'sheet', sheetId: id, selection: id, selected: [id] }); }) }, viewBoundary] },
       ],
     },
   ],
