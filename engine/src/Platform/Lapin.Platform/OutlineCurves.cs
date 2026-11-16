@@ -14,15 +14,23 @@ public static class OutlineCurves
     /// <summary>An outline's curved edges, in its own (plan) coordinates.</summary>
     public static IEnumerable<PenCurve> Of(Entity e)
     {
-        if (e.Attrs["contour"] == null || (e.Attrs[ArcOutline.Key] == null && e.Attrs[EllipseEdge.Key] == null)) yield break;
-        var corners = ArcOutline.CornersOf(e);
+        if (e.Attrs["contour"] == null) return [];
+        var loops = new List<PenCurve>();
+        if (e.Attrs[ArcOutline.Key] != null || e.Attrs[EllipseEdge.Key] != null) loops.AddRange(Of(ArcOutline.CornersOf(e), ArcOutline.RisesOf(e), EllipseEdge.Of(e)));
+        // Its own holes' curved edges too.
+        if (e.Attrs[OutlineHoles.ArcsKey] != null || e.Attrs[OutlineHoles.EllipsesKey] != null)
+            foreach (var h in OutlineHoles.Of(e)) loops.AddRange(Of(h.Corners, h.Rises, h.Ellipses));
+        return loops;
+    }
+
+    /// <summary>A loop's curved edges: its corners, their rises, its elliptical edges.</summary>
+    public static IEnumerable<PenCurve> Of(IReadOnlyList<Vec2> corners, IReadOnlyList<double>? rises, IReadOnlyList<EllipseEdge?>? ellipses)
+    {
         if (corners.Count < 3) yield break;
-        var rises = ArcOutline.RisesOf(e);
-        var ellipses = EllipseEdge.Of(e);
         for (var i = 0; i < corners.Count; i++)
         {
             var (a, b) = (corners[i], corners[(i + 1) % corners.Count]);
-            if (ellipses != null && i < ellipses.Length && ellipses[i] is { } el)
+            if (ellipses != null && i < ellipses.Count && ellipses[i] is { } el)
             {
                 var (t0, s) = el.Span(a, b);
                 yield return s >= 0 ? new PenCurve(el.C, el.M, el.N, t0, s) : new PenCurve(el.C, el.M, el.N, t0 + s, -s);

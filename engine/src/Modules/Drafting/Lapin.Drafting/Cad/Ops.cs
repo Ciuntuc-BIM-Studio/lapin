@@ -12,9 +12,8 @@ public static class Ops
     {
         switch (s)
         {
-            // An ellipse's offset is no ellipse (audit S4): not made, rather than a curve that only looks like one.
-            case Ellipse:
-                throw new Lapin.Platform.CommandException("An ellipse is not offset: the curve at a distance from it is no ellipse. Draw another ellipse, or explode it into a polyline first.");
+            // An ellipse's offset is no ellipse: a polyline within the one rule's tolerance of the true curve at that distance.
+            case Ellipse e: return OffsetEllipse(e, d, side);
             case Line l:
             {
                 var n = Geo.Norm(l.B - l.A).Perp;
@@ -54,6 +53,50 @@ public static class Ops
             }
         }
         return null;
+    }
+
+    /// <summary>
+    /// An ellipse (or an elliptical arc) offset by <paramref name="d"/> toward <paramref name="side"/> (inside or outside it): the curve
+    /// at that distance is no ellipse, so it is laid as a polyline whose chords stray no more than <see cref="Chords.Tolerance"/> from
+    /// it (each halved until its middle lies that close), closed for a whole ellipse. Null inwards by as much as its tightest
+    /// radius of curvature (b²/a) or more: the curve would fold on itself.
+    /// </summary>
+    public static Polyline? OffsetEllipse(Ellipse e, double d, Vec2 side)
+    {
+        var (a, b) = (e.A, Math.Abs(e.B));
+        if (!(a > 1e-12) || !(b > 1e-12)) return null;
+        var (u, v) = Geo.EllipseFrame(e, side);
+        var inward = u * u + v * v < 1;
+        if (inward && d >= Math.Min(a, b) * Math.Min(a, b) / Math.Max(a, b) - 1e-9) return null;
+        var orient = Math.Sign(Vec2.Cross(e.M, e.N));
+        var dist = inward ? -d : d;
+        Vec2 At(double t)
+        {
+            var tg = e.M * -Math.Sin(t) + e.N * Math.Cos(t);
+            return e.At(t) + Geo.Norm(new Vec2(tg.Y, -tg.X)) * (orient * dist);
+        }
+        var (t0, sweep) = (e.Whole ? 0 : e.Start, e.Sweep);
+        var n = Chords.Ellipse(a + Math.Max(0, dist), b + Math.Max(0, dist), sweep, e.Whole ? 8 : 2);
+        var pts = new List<Vec2> { At(t0) };
+        void Lay(double ta, double tb, Vec2 pa, Vec2 pb, int depth)
+        {
+            var tm = (ta + tb) / 2;
+            var pm = At(tm);
+            if (depth < 20 && Geo.NearestOnSegment(pm, pa, pb).Dist > Chords.Tolerance * 0.9)
+            {
+                Lay(ta, tm, pa, pm, depth + 1);
+                Lay(tm, tb, pm, pb, depth + 1);
+                return;
+            }
+            pts.Add(pb);
+        }
+        for (var k = 0; k < n; k++)
+        {
+            var (ta, tb) = (t0 + sweep * k / n, t0 + sweep * (k + 1) / n);
+            Lay(ta, tb, pts[^1], At(tb), 0);
+        }
+        if (e.Whole) pts.RemoveAt(pts.Count - 1);
+        return pts.All(q => double.IsFinite(q.X) && double.IsFinite(q.Y)) ? new Polyline(pts, e.Whole) : null;
     }
 
     /// <summary>
@@ -251,6 +294,20 @@ public static class Ops
                 }
                 return new Polyline(pts, false);
             }
+            // An elliptical arc carried on round its ellipse, as an arc round its circle.
+            case Ellipse e when !e.Whole:
+            {
+                var full = e with { Start = 0, End = 0 };
+                var ts = others.SelectMany(o => Geo.Intersect(full, o)).Select(q => { var (u, v) = Geo.EllipseFrame(full, q); return Math.Atan2(v, u); }).ToList();
+                var room = 2 * Math.PI - e.Sweep;
+                if ((pick - e.At(e.End)).Length <= (pick - e.At(e.Start)).Length)
+                {
+                    var deltas = ts.Select(t => Geo.NormAngle(t - e.End)).Where(x => x > 1e-9 && x < room - 1e-9).ToList();
+                    return deltas.Count == 0 ? null : e with { End = Geo.NormAngle(e.End + deltas.Min()) };
+                }
+                var back = ts.Select(t => Geo.NormAngle(e.Start - t)).Where(x => x > 1e-9 && x < room - 1e-9).ToList();
+                return back.Count == 0 ? null : e with { Start = Geo.NormAngle(e.Start - back.Min()) };
+            }
             case Arc a:
             {
                 var circle = new ArcP(a.C, a.R, 0, 0, true);
@@ -303,6 +360,78 @@ public static class Ops
         var (a1, a2) = (Math.Atan2(t1.Y - c.Y, t1.X - c.X), Math.Atan2(t2.Y - c.Y, t2.X - c.X));
         var arc = Geo.NormAngle(a2 - a1) <= Math.PI ? new Arc(c, r, Geo.NormAngle(a1), Geo.NormAngle(a2)) : new Arc(c, r, Geo.NormAngle(a2), Geo.NormAngle(a1));
         return (EndAt(l1, x, u1, t1), EndAt(l2, x, u2, t2), arc);
+    }
+
+    /// <summary>
+    /// A line and an ellipse filleted with radius <paramref name="r"/>: the circle touching both on the sides the picks keep (the
+    /// line's side the ellipse's pick is on; inside the ellipse when the line's pick is, else outside), found on the ellipse's
+    /// offset curve at r where it lies r from the line (sampled round the ellipse, then halved down); of several, the one nearest
+    /// the picks. The line is cut (or carried on) to its touching point; an elliptical arc to its own, keeping the side picked; a
+    /// whole ellipse stays whole. Radius 0: both brought to where they cross. Null when no such circle touches them.
+    /// </summary>
+    public static (Line Line, Ellipse Ellipse, Arc? Arc)? Fillet(Line l, Vec2 pl, Ellipse e, Vec2 pe, double r)
+    {
+        var len = (l.B - l.A).Length;
+        if (len < 1e-12 || !(e.A > 1e-12) || !(Math.Abs(e.B) > 1e-12)) return null;
+        var d = (l.B - l.A) * (1 / len);
+        double Along(Vec2 p) => Vec2.Dot(p - l.A, d);
+        Line Cut(Vec2 foot) => Along(pl) >= Along(foot) ? new Line(foot, Along(l.B) >= Along(foot) ? l.B : l.A) : new Line(Along(l.A) <= Along(foot) ? l.A : l.B, foot);
+        double ParamOf(Vec2 p) { var (u, v) = Geo.EllipseFrame(e, p); return Math.Atan2(v, u); }
+        Ellipse Keep(double tf)
+        {
+            if (e.Whole) return e;
+            var tp = ParamOf(Geo.Nearest(e, pe).Point);
+            if (!Geo.OnEllipse(e, tf))
+                return Geo.NormAngle(tf - e.End) <= Geo.NormAngle(e.Start - tf) ? e with { End = Geo.NormAngle(tf) } : e with { Start = Geo.NormAngle(tf) };
+            // The piece from the start to the touching point, or from it to the end: the one the pick is on.
+            return Geo.NormAngle(tp - e.Start) <= Geo.NormAngle(tf - e.Start) ? e with { End = Geo.NormAngle(tf) } : e with { Start = Geo.NormAngle(tf) };
+        }
+        if (r <= 1e-12)
+        {
+            var hits = Geo.LineEllipse(l.A, l.B, e);
+            if (hits.Count == 0) return null;
+            var x = hits.MinBy(h => (h.P - pe).Length + (h.P - pl).Length);
+            return (Cut(x.P), Keep(x.T), null);
+        }
+        var sideOfLine = Vec2.Cross(d, pe - l.A) >= 0 ? 1.0 : -1.0;
+        var (pu, pv) = Geo.EllipseFrame(e, pl);
+        var outward = pu * pu + pv * pv >= 1 ? 1.0 : -1.0;
+        var orient = Math.Sign(Vec2.Cross(e.M, e.N));
+        Vec2 Centre(double t)
+        {
+            var tg = e.M * -Math.Sin(t) + e.N * Math.Cos(t);
+            return e.At(t) + Geo.Norm(new Vec2(tg.Y, -tg.X)) * (orient * outward * r);
+        }
+        double F(double t) => Vec2.Cross(d, Centre(t) - l.A) * sideOfLine - r;
+        const int steps = 720;
+        var found = new List<double>();
+        var (tPrev, fPrev) = (0.0, F(0));
+        for (var k = 1; k <= steps; k++)
+        {
+            var t = 2 * Math.PI * k / steps;
+            var f = F(t);
+            if (fPrev == 0) found.Add(tPrev);
+            else if (Math.Sign(f) != Math.Sign(fPrev))
+            {
+                var (lo, hi, flo) = (tPrev, t, fPrev);
+                for (var i = 0; i < 80; i++)
+                {
+                    var mid = (lo + hi) / 2;
+                    var fm = F(mid);
+                    if (Math.Sign(fm) == Math.Sign(flo)) (lo, flo) = (mid, fm); else hi = mid;
+                }
+                found.Add((lo + hi) / 2);
+            }
+            (tPrev, fPrev) = (t, f);
+        }
+        var best = found.Select(t => (T: t, C: Centre(t), P: e.At(t)))
+            .Select(x => (x.T, x.C, x.P, Foot: l.A + d * Along(x.C)))
+            .Where(x => (x.P - x.C).Length > 1e-12 && Math.Abs((x.Foot - x.C).Length - r) < 1e-6 * Math.Max(1, r))
+            .OrderBy(x => (x.P - pe).Length + (x.Foot - pl).Length).Cast<(double T, Vec2 C, Vec2 P, Vec2 Foot)?>().FirstOrDefault();
+        if (best is not { } b) return null;
+        var (a1, a2) = (Math.Atan2(b.Foot.Y - b.C.Y, b.Foot.X - b.C.X), Math.Atan2(b.P.Y - b.C.Y, b.P.X - b.C.X));
+        var arc = Geo.NormAngle(a2 - a1) <= Math.PI ? new Arc(b.C, r, Geo.NormAngle(a1), Geo.NormAngle(a2)) : new Arc(b.C, r, Geo.NormAngle(a2), Geo.NormAngle(a1));
+        return (Cut(b.Foot), Keep(b.T), arc);
     }
 
     /// <summary>Two lines chamfered: <paramref name="d1"/> back along the first, <paramref name="d2"/> along the second, joined by a line.</summary>
