@@ -205,7 +205,7 @@ public static class Parts
     public static bool IsInstance(Entity e) => e.Str("operation") == Operation;
 
     /// <summary>An element's part type: the <c>LapinSolidType</c> it is typed by, if any.</summary>
-    public static Entity? TypeOf(IModelView m, Entity e) => m.RelatingOf(e.Id, IfcClass.RelDefinesByType) is { Class: TypeClass } t ? t : null;
+    public static Entity? TypeOf(IModelView m, Entity e) => Lapin.Platform.Types.Of(m, e, TypeClass);
 
     /// <summary>A part type's definition, when it has one (a type without is a plain solid type).</summary>
     public static JsonObject? DefOf(Entity? type) => type?.Attrs["def"] as JsonObject;

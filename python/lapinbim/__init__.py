@@ -21,14 +21,14 @@ from __future__ import annotations
 from typing import Any, Callable
 
 from ._version import __version__
-from ._client import Batch, Deferred, Lapin, LapinError, Step
+from ._client import Batch, Deferred, Lapin, LapinError, LapinWarning, Step
 from ._frame import Obj
 from ._ids import global_id
 from ._model import Element, Model
 from ._ui import UI
 
 __all__ = [
-    "__version__", "Lapin", "LapinError", "Batch", "Deferred", "Step", "Element", "Model", "Obj",
+    "__version__", "Lapin", "LapinError", "LapinWarning", "Batch", "Deferred", "Step", "Element", "Model", "Obj",
     "connect", "engines", "client", "close", "call", "execute", "query", "undo", "redo", "save", "info", "quantities",
     "snapshot", "state", "batch", "step", "selection", "on", "catalogue", "ns", "command", "ui", "UI",
     "create_body", "set_body", "global_id", "selected", "measure", "measure_value", "remove_measure", "watch", "unwatch",

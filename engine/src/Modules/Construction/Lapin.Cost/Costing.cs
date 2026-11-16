@@ -191,7 +191,7 @@ public static class Costing
     }
 
     /// <summary>The element's type, whose articles price it: its own, or the file's type of a reference (<see cref="ReferenceTypes"/>).</summary>
-    public static Entity? TypeOf(IModelView m, Entity e) => ReferenceTypes.TypeOf(m, e);
+    public static Entity? TypeOf(IModelView m, Entity e) => Types.Of(m, e);
 
     /// <summary>
     /// The project's phases' kinds by id (existing, construction, execution), as the phases module keeps them on the project
@@ -324,9 +324,7 @@ public static class Costing
             string? storey = null;
             if (s.Grouping == "storey")
             {
-                storey = Spatial.StoreyOf(m, e.Id)?.Id;
-                if (storey == null && m.RelatingOf(e.Id, IfcClass.RelFillsElement) is { } opening && m.RelatingOf(opening.Id, IfcClass.RelVoidsElement) is { } host)
-                    storey = Spatial.StoreyOf(m, host.Id)?.Id;
+                storey = Spatial.StoreyOf(m, e, followHost: true)?.Id;
                 chapter = $"{(storey != null ? m.Get(storey)?.Name : null) ?? "—"} · {chapter}";
             }
             var key = $"{chapter}\u001f{a.Code.ToUpperInvariant()}" + (thickness != null ? $"\u001f{thickness}" : "");

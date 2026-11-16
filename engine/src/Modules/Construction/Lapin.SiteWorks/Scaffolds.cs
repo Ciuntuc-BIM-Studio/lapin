@@ -53,7 +53,7 @@ public static class Scaffolds
             Math.Clamp(Lay.Num(s, "tube", 0.048), 0.02, 0.2));
     }
 
-    public static Entity? TypeOf(IModelView m, Entity e) => m.RelatingOf(e.Id, IfcClass.RelDefinesByType);
+    public static Entity? TypeOf(IModelView m, Entity e) => Lapin.Platform.Types.Of(m, e, TypeClass);
 
     public static Spec SpecOf(IModelView m, Entity e) => Read(TypeOf(m, e)?.Attrs["spec"] as JsonObject);
 

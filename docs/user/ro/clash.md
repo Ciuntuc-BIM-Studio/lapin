@@ -33,7 +33,7 @@ Clic pe o coliziune ca s-o vezi în 3D. Lapin selectează cele două elemente, p
 
 ## Seturi de căutare
 
-**Seturi de căutare** ține regulile care aleg elementele unui set. O regulă citește un câmp al elementului (clasa, tipul predefinit, tipul, nivelul, materialul, numele, fișierul legat sau orice parametru) cu un operator: este, este unul din, nu este, nu este niciunul din, conține, nu conține, cel puțin, cel mult, între. Numerele se citesc cum le scriu oamenii: „600 mm” e 600.
+**Seturi de căutare** ține regulile care aleg elementele unui set. Se scriu în editorul pe care îl folosesc Selecția rapidă și filtrele vederilor (vezi [Selecție rapidă](interface.md#selecția-rapidă)). O regulă citește un câmp al elementului (clasa, tipul predefinit, tipul, nivelul, materialul, numele, fișierul legat, categoria, grupul, fazele, orice parametru ca text sau orice câmp al proiectului) cu un operator: este, nu este, conține, nu conține, începe cu, este mai mic decât, este cel mult, este mai mare decât, este cel puțin, este între (oricare capăt poate rămâne gol), este unul din, nu este niciunul din, are o valoare, nu are valoare. Numerele se citesc cum le scriu oamenii: „600 mm” e 600. **Adaugă un grup** pune înăuntru reguli proprii, toate sau oricare dintre ele, ca încă o regulă.
 
 Un set ia elementele care îndeplinesc oricare regulă sau toate regulile. O regulă „nu” scoate întotdeauna elemente, iar un set fără nicio regulă care adaugă elemente le ia pe toate. Numărul de lângă set arată câte elemente iau regulile, pe măsură ce scrii.
 

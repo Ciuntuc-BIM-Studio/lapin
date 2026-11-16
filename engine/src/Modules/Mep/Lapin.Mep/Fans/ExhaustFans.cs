@@ -183,7 +183,7 @@ public static class ExhaustFans
 
     // ---- The model ----
 
-    public static Entity? TypeOf(IModelView m, Entity e) => m.RelatingOf(e.Id, IfcClass.RelDefinesByType) is { Class: TypeClass } t ? t : null;
+    public static Entity? TypeOf(IModelView m, Entity e) => Lapin.Platform.Types.Of(m, e, TypeClass);
     public static FanSpec SpecOf(IModelView m, Entity e) => new(TypeOf(m, e)?.Attrs["spec"] as JsonObject);
 
     static Entity RequireType(IModelView m, string? id) => m.Get(id ?? "") is { Class: TypeClass } t ? t : throw new CommandException("There is no such exhaust fan type.");

@@ -37,6 +37,7 @@ public sealed class VisibilityGraphics
     readonly Dictionary<string, IReadOnlyList<LayerBand>?> bands = [];
     readonly IReadOnlyDictionary<string, ViewFilters.Filter> filters;
     readonly Dictionary<(string, string), bool> matched = [];
+    ViewFilters.Matcher? matcher;
 
     /// <summary>The view's graphics as they rule it (null: none).</summary>
     public JsonObject? Graphics { get; }
@@ -107,7 +108,8 @@ public sealed class VisibilityGraphics
 
     bool Takes(ViewFilters.Filter f, Entity e)
     {
-        if (!matched.TryGetValue((f.Id, e.Id), out var hit)) matched[(f.Id, e.Id)] = hit = ViewFilters.Matches(m, e, f);
+        // On the model alone: a view's graphics never build an element (a filter reads no quantities here, docs/plan-visibility-graphics.md).
+        if (!matched.TryGetValue((f.Id, e.Id), out var hit)) matched[(f.Id, e.Id)] = hit = (matcher ??= new(new ModelQuery(m))).Matches(e, f);
         return hit;
     }
 

@@ -217,7 +217,7 @@ public sealed class TransportModule : ILapinModule
 
     static Entity Require(IModelView m, string? id) => m.Get(id ?? "") is { Class: Class } e ? e : throw new CommandException("Pick an elevator.");
 
-    public static Entity? TypeOf(IModelView m, Entity e) => m.RelatingOf(e.Id, IfcClass.RelDefinesByType) is { Class: TypeClass } t ? t : null;
+    public static Entity? TypeOf(IModelView m, Entity e) => Lapin.Platform.Types.Of(m, e, TypeClass);
 
     static void EnsureMaterials(IEdit edit, JsonObject? attrs = null)
     {

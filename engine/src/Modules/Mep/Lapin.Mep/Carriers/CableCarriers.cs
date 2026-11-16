@@ -87,7 +87,7 @@ public static class CableCarriers
     public static IEnumerable<Entity> All(IModelView m) => m.OfClass(Class).Where(IsCarrier);
     public static List<Vec2> Points(Entity e) => Args.StoredPoints(e.Attrs["points"]);
 
-    public static Entity? TypeOf(IModelView m, Entity e) => m.RelatingOf(e.Id, IfcClass.RelDefinesByType) is { Class: TypeClass } t ? t : null;
+    public static Entity? TypeOf(IModelView m, Entity e) => Lapin.Platform.Types.Of(m, e, TypeClass);
 
     /// <summary>The carrier's kind and size: its own values over its type's, the kind's defaults under both.</summary>
     public static CarrierSpec SpecOf(IModelView m, Entity e)

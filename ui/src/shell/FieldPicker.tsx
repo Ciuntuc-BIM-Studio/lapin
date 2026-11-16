@@ -8,7 +8,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { create } from 'zustand';
 import { ChevronDown } from 'lucide-react';
 import { useSession } from '../engine/session';
-import { fieldModel, searchGroups, type FieldModel } from './fieldSchedule';
+import { fieldModel, searchGroups, type FieldGroupDef, type FieldModel } from './fieldSchedule';
+import { FACETS, TEXT_FACET, fieldLabel } from './conditionGroup';
 
 /** The model, asked once per model version and shared by every picker open. */
 const useModel = create<{ version: number; model: FieldModel | null; load: (version: number) => void }>((set, get) => ({
@@ -27,7 +28,13 @@ export function useFieldModel(): FieldModel | null {
   return model;
 }
 
-export function FieldPicker({ value, onPick, placeholder = 'Pick a field…', testId }: { value: string; onPick: (token: string) => void; placeholder?: string; testId?: string }) {
+/** The facets of an element, listed before the project's fields when a picker asks for them (conditions on elements). */
+const FACET_GROUP: FieldGroupDef = {
+  id: 'facets', label: 'Element',
+  fields: [...FACETS, [TEXT_FACET, 'Parameter (as text)…']].map(([token, label]) => ({ token, label, kind: 'text' as const, count: 0, examples: [] })),
+};
+
+export function FieldPicker({ value, onPick, placeholder = 'Pick a field…', testId, facets = false }: { value: string; onPick: (token: string) => void; placeholder?: string; testId?: string; facets?: boolean }) {
   const model = useFieldModel();
   const [open, setOpen] = useState(false);
   const [typed, setTyped] = useState('');
@@ -48,13 +55,13 @@ export function FieldPicker({ value, onPick, placeholder = 'Pick a field…', te
     window.addEventListener('pointerdown', away);
     return () => window.removeEventListener('pointerdown', away);
   }, [open]);
-  const groups = useMemo(() => searchGroups(model?.groups ?? [], typed), [model, typed]);
+  const groups = useMemo(() => searchGroups(facets ? [FACET_GROUP, ...(model?.groups ?? [])] : model?.groups ?? [], typed), [model, typed, facets]);
   const pick = (token: string) => { onPick(token); setOpen(false); setTyped(''); };
   const total = groups.reduce((n, g) => n + g.fields.length, 0);
   return (
     <div className="field-picker" ref={box}>
       <button type="button" className="field-picker-button" onClick={toggle} data-testid={testId} aria-expanded={open}>
-        <span className={value ? '' : 'muted'} data-no-i18n={value ? true : undefined}>{value || placeholder}</span><ChevronDown size={12} />
+        <span className={value ? '' : 'muted'} data-no-i18n={value && !value.startsWith('@') ? true : undefined}>{value ? (facets ? fieldLabel(value) : value) : placeholder}</span><ChevronDown size={12} />
       </button>
       {open && (
         <div className="menu field-picker-menu" role="listbox" style={pos ? { ...pos, maxHeight: pos.maxH } : undefined}>
@@ -65,11 +72,13 @@ export function FieldPicker({ value, onPick, placeholder = 'Pick a field…', te
           <div className="field-picker-list">
             {groups.map((g) => (
               <section key={g.id}>
-                <h5 className="eyebrow" data-no-i18n>{g.label}</h5>
+                <h5 className="eyebrow" data-no-i18n={g.id === 'facets' ? undefined : true}>{g.label}</h5>
                 {g.fields.map((f) => (
                   <button type="button" key={f.token} role="option" className="field-picker-item" title={f.description ?? undefined} onClick={() => pick(f.token)} data-field-token={f.token}>
-                    <span data-no-i18n>{f.token}</span>
-                    <span className="muted small" data-no-i18n>{`${f.count}${f.examples?.length ? ` · ${f.examples.slice(0, 3).join(', ')}` : ''}`}</span>
+                    {g.id === 'facets' ? <span>{f.label}</span> : <>
+                      <span data-no-i18n>{f.token}</span>
+                      <span className="muted small" data-no-i18n>{`${f.count}${f.examples?.length ? ` · ${f.examples.slice(0, 3).join(', ')}` : ''}`}</span>
+                    </>}
                   </button>
                 ))}
               </section>

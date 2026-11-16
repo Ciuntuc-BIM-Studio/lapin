@@ -75,6 +75,7 @@ public sealed class CoreModule : ILapinModule
         r.Service<IProjectUpgrade>(new StoreyPlans.DefaultPlanUpgrade());
         r.Service<IProjectUpgrade>(new ViewDetail.LevelUpgrade());
         r.Service<IProjectUpgrade>(new MaterialHatchUpgrade());
+        r.Service<IProjectUpgrade>(new ViewFilterUpgrade());
         r.Service<IProjectUpgrade>(new ViewStyles.StructureUpgrade());
         // References move, turn, mirror, copy and rise like any element (decision 448).
         var references = new ReferencePlacement();
@@ -616,11 +617,26 @@ public static class Spatial
     public static Entity? StoreyOf(IModelView m, string elementId) => m.RelatingOf(elementId, IfcClass.RelContainedInSpatialStructure);
 
     /// <summary>
-    /// The storey an element is drawn on: its own, or for an opening (never contained itself, as IFC has it) the storey of
-    /// the element it voids, so a plan shows and picks a wall's bare opening on the wall's storey only (decision 312).
+    /// The storey an element stands on (audit D4, the one rule): its own; with <paramref name="followHost"/>, for one that is
+    /// not contained itself, its host's — an opening's (never contained, as IFC has it) the element it voids, a door's or a
+    /// window's the element its opening voids. So a door the file left off every storey is on its wall's.
     /// </summary>
-    public static Entity? ShownOn(IModelView m, Entity e) =>
-        StoreyOf(m, e.Id) ?? (e.Class == IfcClass.OpeningElement && m.RelatingOf(e.Id, IfcClass.RelVoidsElement) is { } host ? StoreyOf(m, host.Id) : null);
+    public static Entity? StoreyOf(IModelView m, Entity e, bool followHost) =>
+        StoreyOf(m, e.Id) ?? (followHost && HostOf(m, e) is { } host ? StoreyOf(m, host.Id) : null);
+
+    /// <summary>The element an opening voids, or the one a door's or window's opening voids; null for anything else.</summary>
+    public static Entity? HostOf(IModelView m, Entity e)
+    {
+        var opening = e.Class == IfcClass.OpeningElement ? e : m.RelatingOf(e.Id, IfcClass.RelFillsElement);
+        return opening != null ? m.RelatingOf(opening.Id, IfcClass.RelVoidsElement) : null;
+    }
+
+    /// <summary>
+    /// The storey an element is drawn on (<see cref="StoreyOf(IModelView, Entity, bool)"/> following its host): an opening on
+    /// the storey of the element it voids, so a plan shows and picks a wall's bare opening on the wall's storey only (decision
+    /// 312), and a door or window the file left off every storey on its wall's.
+    /// </summary>
+    public static Entity? ShownOn(IModelView m, Entity e) => StoreyOf(m, e, followHost: true);
 
     /// <summary>The spatial parent: an element's storey, a storey's building, a building's site.</summary>
     public static Entity? ParentOf(IModelView m, string id) =>
@@ -642,7 +658,7 @@ public static class Spatial
         var project = Project(edit.Model);
         if (project == null)
         {
-            project = new Entity(IdOf(edit, seed?.Project.Id), IfcClass.Project, seed?.Project.Name ?? "Project", new JsonObject { ["lengthUnit"] = "METRE", [ViewDetail.RevKey] = 1, [MaterialHatchUpgrade.RevKey] = MaterialHatchUpgrade.Rev, [ViewStyles.StructureRevKey] = ViewStyles.StructureRev });
+            project = new Entity(IdOf(edit, seed?.Project.Id), IfcClass.Project, seed?.Project.Name ?? "Project", new JsonObject { ["lengthUnit"] = "METRE", [ViewDetail.RevKey] = 1, [MaterialHatchUpgrade.RevKey] = MaterialHatchUpgrade.Rev, [ViewFilterUpgrade.RevKey] = ViewFilterUpgrade.Rev, [ViewStyles.StructureRevKey] = ViewStyles.StructureRev });
             edit.Add(project);
         }
         var site = edit.Model.OfClass(IfcClass.Site).FirstOrDefault();
@@ -750,6 +766,14 @@ public static class Materials
 
     /// <summary>The material categories the interface offers (IfcMaterial.Category; any other text is kept as given).</summary>
     public static readonly string[] Categories = ["Structure", "Finish", "Insulation", "Membrane", "Other"];
+
+    /// <summary>Whether a material is of a category (Finish, Insulation…): its own, else (for Finish) one by its name, as view styles tell finishes.</summary>
+    public static bool InCategory(IModelView m, string materialId, string category)
+    {
+        if (m.Get(materialId) is not { Class: IfcClass.Material } mat) return false;
+        if (mat.Str("category") is { Length: > 0 } c) return string.Equals(c.Trim(), category, StringComparison.OrdinalIgnoreCase);
+        return string.Equals(category, "Finish", StringComparison.OrdinalIgnoreCase) && IsFinish(mat);
+    }
 
     /// <summary>
     /// Whether a material is a finish, which a view style without finishes

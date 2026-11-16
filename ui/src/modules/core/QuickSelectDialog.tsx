@@ -7,12 +7,13 @@
 
 import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { query, useSession } from '../../engine/session';
-import { storeys } from '../../engine/model';
+import { ConditionGroupEditor } from '../../shell/ConditionGroupEditor';
+import { queryArgs, type UGroup } from '../../shell/conditionGroup';
 import { front2dView, tempArgs, tempOf } from '../../viewport/viewTemporary';
-import { nextSelection, QS_FIELDS, QS_OPS, queryRules, takesValue, type QsRule } from './quickSelect';
+import { initialGroup, nextSelection } from './quickSelect';
 
 /** The view a quick select looks in: the 2D view in front, else the 3D view in front; null on a sheet or a schedule. */
 function viewInFront(): string | null {
@@ -25,37 +26,24 @@ export function QuickSelectDialog() {
   const error = useSession((s) => s.error);
   const close = () => useUi.setState({ dialog: null });
   const [viewId] = useState(viewInFront);
-  const [rules, setRules] = useState<QsRule[]>([{ field: 'type', op: 'equals', value: '' }]);
-  const [any, setAny] = useState(false);
+  const [group, setGroup] = useState<UGroup>(initialGroup);
   const [inView, setInView] = useState(viewId !== null);
   const [add, setAdd] = useState(false);
   const [found, setFound] = useState<{ ids: string[]; problem?: string } | null>(null);
-  const args = useMemo(() => queryRules(rules), [rules]);
-
-  // What each field's values can be, from the model: its classes, types, storeys, materials.
-  const values = useMemo(() => {
-    const out: Record<string, Set<string>> = { class: new Set(), type: new Set(), material: new Set(), storey: new Set(storeys(useSession.getState()).map((s) => s.name)) };
-    for (const n of nodes.values()) {
-      if (n.storeyId) out.class.add(n.type);
-      if (n.type.endsWith('Type')) out.type.add(n.name);
-      if (n.type === 'IfcMaterial') out.material.add(n.name);
-    }
-    return Object.fromEntries(Object.entries(out).map(([k, v]) => [k, [...v].sort((a, b) => a.localeCompare(b))]));
-  }, [nodes]);
+  const args = useMemo(() => queryArgs(group), [group]);
 
   useEffect(() => {
-    if (!args.length) { setFound(null); return; }
+    if (!args.rules.length) { setFound(null); return; }
     let live = true;
     const t = setTimeout(() => {
       const scope = inView && viewId ? { viewId, ...tempArgs(tempOf(viewId)) } : {};
-      query<{ ids: string[] }>('select.query', { rules: args, match: any ? 'any' : 'all', ...scope })
+      query<{ ids: string[] }>('select.query', { ...args, ...scope })
         .then((r) => { if (live) setFound({ ids: r?.ids ?? [] }); })
         .catch((e: unknown) => { if (live) setFound({ ids: [], problem: e instanceof Error ? e.message : String(e) }); });
     }, 150);
     return () => { live = false; clearTimeout(t); };
-  }, [args, any, inView, viewId, nodes]);
+  }, [args, inView, viewId, nodes]);
 
-  const put = (i: number, patch: Partial<QsRule>) => setRules(rules.map((r, j) => (j === i ? { ...r, ...patch } : r)));
   const choose = () => {
     if (!found?.ids.length) return;
     const ids = nextSelection(found.ids, useUi.getState().selected, add);
@@ -75,36 +63,8 @@ export function QuickSelectDialog() {
                 <option value="project">the whole project</option>
               </select>
             </dd>
-            <dt>Matching</dt>
-            <dd>
-              <select value={any ? 'any' : 'all'} onChange={(e) => setAny(e.target.value === 'any')}>
-                <option value="all">all the rules</option><option value="any">any of the rules</option>
-              </select>
-            </dd>
           </dl>
-          <table className="layer-table vv-rules">
-            <thead><tr><th>Field</th><th>Parameter</th><th>Operator</th><th>Value</th><th /></tr></thead>
-            <tbody>
-              {rules.map((rule, i) => (
-                <tr key={i}>
-                  <td><select data-testid="qs-field" value={rule.field} onChange={(e) => put(i, { field: e.target.value, value: '', name: e.target.value === 'param' ? rule.name ?? '' : undefined })}>{QS_FIELDS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></td>
-                  <td>{rule.field === 'param' && <input aria-label="Parameter" value={rule.name ?? ''} placeholder="Fire rating, height, Pset_WallCommon.IsExternal…" onChange={(e) => put(i, { name: e.target.value })} />}</td>
-                  <td><select data-testid="qs-op" value={rule.op} onChange={(e) => put(i, { op: e.target.value })}>{QS_OPS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></td>
-                  <td>
-                    {takesValue(rule.op) && (
-                      <>
-                        <input aria-label="Value" data-testid="qs-value" list={values[rule.field] ? `qs-values-${rule.field}` : undefined} value={rule.value} placeholder={rule.op === 'between' ? 'from' : ''} onChange={(e) => put(i, { value: e.target.value })} />
-                        {rule.op === 'between' && <input aria-label="To" data-testid="qs-to" value={rule.to ?? ''} placeholder="to" onChange={(e) => put(i, { to: e.target.value })} />}
-                      </>
-                    )}
-                  </td>
-                  <td><button type="button" className="icon mini" title="Remove the rule" disabled={rules.length < 2} onClick={() => setRules(rules.filter((_, j) => j !== i))}><X size={12} /></button></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {Object.entries(values).map(([k, vs]) => <datalist key={k} id={`qs-values-${k}`}>{vs.map((v) => <option key={v} value={v} />)}</datalist>)}
-          <button type="button" className="btn small" onClick={() => setRules([...rules, { field: 'class', op: 'equals', value: '' }])}><Plus size={12} />Add a rule</button>
+          <ConditionGroupEditor testPrefix="qs" live group={group} onChange={setGroup} />
           <p className="muted small" data-testid="qs-count">
             {found?.problem ?? (found ? `${found.ids.length} elements` : 'Give a rule a value to look for.')}
           </p>

@@ -137,7 +137,7 @@ Birourile își numesc proprietățile în felul lor, iar programul le urmează.
 
 ![Regula unei sarcini cu condiții pe un câmp](shots/planning-rule-fields.webp)
 
-La **Elements** în Proprietăți, sub **Găsește-le după o regulă**, **Condiții** adaugă un câmp, un operator (`=`, `≠`, conține, începe cu, `<`, `≤`, `>`, `≥`, există, lipsește) și o valoare, sugerată din ce are modelul. Toate condițiile trebuie să țină, împreună cu felurile, nivelurile și celelalte. Se păstrează regula, nu elementele: un perete desenat mai târziu cu acel câmp intră singur în sarcină.
+La **Elements** în Proprietăți, sub **Găsește-le după o regulă**, **Condiții** adaugă reguli în editorul pe care îl folosesc Selecția rapidă și filtrele vederilor (vezi [Selecție rapidă](interface.md#selecția-rapidă)): un câmp, un operator (este, conține, începe cu, este mai mare decât, este între, este unul din, are o valoare…) și o valoare, sugerată din ce are modelul. Toate condițiile trebuie să țină, împreună cu felurile, nivelurile și celelalte. Se păstrează regula, nu elementele: un perete desenat mai târziu cu acel câmp intră singur în sarcină.
 
 ### Un pas generat, împărțit după un câmp
 

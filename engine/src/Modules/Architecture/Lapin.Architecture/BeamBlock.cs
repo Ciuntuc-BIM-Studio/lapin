@@ -322,8 +322,12 @@ public static class BeamBlock
 
     static string Num(double v) => Math.Round(v, 3).ToString(CultureInfo.InvariantCulture);
 
-    /// <summary>The floor's beam-and-block quantities: the joists (count, length), the blocks (whole, cut), the cast concrete, the area, the mesh.</summary>
-    public static IEnumerable<QuantitySet> Quantities(Floor f, ElementGeometry g, IModelView m)
+    /// <summary>
+    /// The floor's beam-and-block quantities: the joists (count, length), the blocks (whole, cut), the cast concrete, the area,
+    /// the mesh; the floor's whole volume (all it builds) and its gross volume (<paramref name="grossVolume"/>, its outline by its
+    /// depth), the set a takeoff and the estimate read for the element (audit 15.11.2026, M2).
+    /// </summary>
+    public static IEnumerable<QuantitySet> Quantities(Floor f, ElementGeometry g, IModelView m, double grossVolume)
     {
         var r = f.Result;
         var concrete = g.Parts.FirstOrDefault(p => p.Key == "bb-concrete") is { } c ? Measure.Volume(c.Solid) : 0;
@@ -336,6 +340,8 @@ public static class BeamBlock
             new("BlockCount", r.WholeBlocks, "COUNT", "Whole blocks"),
             new("CutBlockCount", r.CutBlocks, "COUNT", "Cut blocks"),
             new("ConcreteVolume", concrete, "VOLUME", "Cast concrete"),
+            new("GrossVolume", grossVolume, "VOLUME", "Gross volume"),
+            new("NetVolume", g.Parts.Sum(p => Measure.Volume(p.Solid)), "VOLUME", "Net volume"),
             new("Area", f.Area, "AREA", "Area"),
         };
         if (f.Spec.Mesh.Length > 0) qs.Add(new("MeshArea", f.Area, "AREA", "Mesh area"));

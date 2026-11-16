@@ -137,7 +137,7 @@ Offices name properties their own way, and the schedule follows them. Wherever a
 
 ![A task's rule with conditions on a field](shots/planning-rule-fields.webp)
 
-In **Elements** in Properties, under **Find them by a rule**, **Conditions** adds a field, an operator (`=`, `≠`, contains, starts with, `<`, `≤`, `>`, `≥`, exists, missing) and a value, suggested from what the model has. Every condition must hold, together with the kinds, storeys and the others. The rule is kept, not the elements: a wall drawn later with that field joins the task by itself.
+In **Elements** in Properties, under **Find them by a rule**, **Conditions** adds rules in the editor Quick select and the view filters use (see [Quick select](interface.md#quick-select)): a field, an operator (is, contains, starts with, is greater than, is between, is one of, has a value…) and a value, suggested from what the model has. Every condition must hold, together with the kinds, storeys and the others. The rule is kept, not the elements: a wall drawn later with that field joins the task by itself.
 
 ### Splitting a generated step by a field
 
