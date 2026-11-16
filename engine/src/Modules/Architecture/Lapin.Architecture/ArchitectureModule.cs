@@ -935,6 +935,24 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             return null;
         });
 
+        // Show doors and windows open or closed in plan and 3D (issue #40): mode "auto" (default), "open", or "closed".
+        r.Command("setJoineryOpen", "Show door or window open or closed", (ctx, a) =>
+        {
+            var mode = (string?)a["mode"] ?? "auto";
+            if (mode is not ("auto" or "open" or "closed")) throw new CommandException("Mode must be auto, open, or closed.");
+            var changed = 0;
+            foreach (var id in Ids(a))
+            {
+                if (ctx.Model.Get(id) is not { Class: IfcClass.Door or IfcClass.Window } fill) continue;
+                var attrs = fill.CloneAttrs();
+                if (mode == "auto") attrs.Remove("openMode"); else attrs["openMode"] = mode;
+                ctx.Replace(fill.With(attrs: attrs));
+                changed++;
+            }
+            if (changed == 0) throw new CommandException("Select doors or windows.");
+            return null;
+        });
+
         // A door or window type's data, or some elements' own (report #76): free text for U-value, g-value, safety glass, fire rating
         // and fittings (uValue, gValue, safetyGlass, fireRating, fittings; empty takes one off), and extras [{name, value}]: the
         // user's parameters in Lapin_Joinery. {typeId} for a type, else the elements (ids).

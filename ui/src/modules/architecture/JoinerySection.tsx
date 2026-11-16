@@ -42,6 +42,7 @@ export function JoinerySection({ node }: { node: NodeDto }) {
   const ownPosition = node.props.position as Position | null | undefined;
   const position = ownPosition ?? spec?.position ?? null;
   const setPosition = (p: Position | null) => void execute('architecture.setJoineryPosition', p ? { ids: sameKind(node, JOINERY), ...p } : { ids: sameKind(node, JOINERY), clear: true });
+  const openMode = typeof node.props.openMode === 'string' ? node.props.openMode : 'auto';
   return (
     <div className="layers">
       <label className="type-pick">
@@ -90,6 +91,16 @@ export function JoinerySection({ node }: { node: NodeDto }) {
             onChange={(e) => void execute('architecture.setCutThrough', { ids: sameKind(node, JOINERY), on: e.target.checked })} /></dd>
         </>}
         <dt>Of its type</dt><dd className="num">{type ? relatedOf(model, type.id, 'IfcRelDefinesByType').length : 0}</dd>
+        {node.editable && <>
+          <dt>State</dt><dd>
+            <select data-field="open-mode" title="Show the door or window open or closed in plan and 3D" value={openMode}
+              onChange={(e) => void execute('architecture.setJoineryOpen', { ids: sameKind(node, JOINERY), mode: e.target.value })}>
+              <option value="auto">Default (plan open, 3D closed)</option>
+              <option value="open">Open (plan &amp; 3D)</option>
+              <option value="closed">Closed (plan &amp; 3D)</option>
+            </select>
+          </dd>
+        </>}
       </dl>
       {node.editable && (
         <div className="row">

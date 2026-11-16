@@ -934,7 +934,7 @@ public static class Joinery
     /// at panels spanning across them, per panel a sash with its glass or a
     /// door leaf, a handle opposite the hinges, the window boards.
     /// </summary>
-    public static List<JoineryBox> Boxes(JoinerySpec s)
+    public static List<JoineryBox> Boxes(JoinerySpec s, bool open = false)
     {
         var f = s.Frame;
         double y0 = f.Offset - f.Depth / 2, y1 = f.Offset + f.Depth / 2;
@@ -993,35 +993,35 @@ public static class Joinery
             var solid = InfillOf(p) == "solid";
             double sy0 = f.Offset - sh.Depth / 2, sy1 = f.Offset + sh.Depth / 2;
             var infillT = solid ? Math.Max(sh.LeafThickness, sh.GlassThickness) : sh.GlassThickness;
+            var panel = new List<JoineryBox>();
             if (LiftSlides(p.Operation))
             {
                 // A lift-and-slide (HS) or tilt-and-slide (PSK) leaf (forum topic 34): a glazed leaf framed like a sash, flush with the
                 // frame's room face on its inner track; its long handle on the stile it is pulled by, inside.
                 double ty0 = y0, ty1 = y0 + track, tc = (ty0 + ty1) / 2;
-                boxes.AddRange(Ring(r, sh.Width, ty0, ty1, "leaf"));
+                panel.AddRange(Ring(r, sh.Width, ty0, ty1, "leaf"));
                 var hsT = Math.Min(infillT, track);
-                boxes.Add(new(solid ? "leaf" : "glass", new(r.X0 + sh.Width, tc - hsT / 2, r.Z0 + sh.Width), new(r.X1 - sh.Width, tc + hsT / 2, r.Z1 - sh.Width)));
-                boxes.AddRange(HandleBoxes(s, r, p.Operation, ty0, -1, true));
-                continue;
+                panel.Add(new(solid ? "leaf" : "glass", new(r.X0 + sh.Width, tc - hsT / 2, r.Z0 + sh.Width), new(r.X1 - sh.Width, tc + hsT / 2, r.Z1 - sh.Width)));
+                panel.AddRange(HandleBoxes(s, r, p.Operation, ty0, -1, true));
             }
-            if (IsDoorLeaf(p.Operation))
+            else if (IsDoorLeaf(p.Operation))
             {
                 var t = sh.LeafThickness;
                 double ly0 = f.Offset - t / 2, ly1 = f.Offset + t / 2;
                 if (!solid)
                 {
-                    boxes.AddRange(Band(0, sh.Width, ly0, ly1, "leaf"));
-                    boxes.Add(Sheet("glass", sh.Width, f.Offset, sh.GlassThickness));
-                    if (pr != null) boxes.AddRange(Band(sh.Width, sh.Width + pr.Bead, f.Offset - sh.GlassThickness / 2 - 0.018, f.Offset - sh.GlassThickness / 2, "leaf"));
+                    panel.AddRange(Band(0, sh.Width, ly0, ly1, "leaf"));
+                    panel.Add(Sheet("glass", sh.Width, f.Offset, sh.GlassThickness));
+                    if (pr != null) panel.AddRange(Band(sh.Width, sh.Width + pr.Bead, f.Offset - sh.GlassThickness / 2 - 0.018, f.Offset - sh.GlassThickness / 2, "leaf"));
                 }
-                else boxes.Add(Sheet("leaf", 0, f.Offset, t));
-                if (meeting != null) boxes.AddRange(meeting.Boxes(s, ly0, ly1));
+                else panel.Add(Sheet("leaf", 0, f.Offset, t));
+                if (meeting != null) panel.AddRange(meeting.Boxes(s, ly0, ly1));
                 // A door has its handle on both faces; of a pair with a meeting setting, only the active leaf.
                 if (meeting is not { HasHandle: false })
                 {
                     var hr = meeting?.HandleRect ?? r;
-                    boxes.AddRange(HandleBoxes(s, hr, p.Operation, ly0, -1, true));
-                    boxes.AddRange(HandleBoxes(s, hr, p.Operation, ly1, +1, true));
+                    panel.AddRange(HandleBoxes(s, hr, p.Operation, ly0, -1, true));
+                    panel.AddRange(HandleBoxes(s, hr, p.Operation, ly1, +1, true));
                 }
             }
             else if (p.Operation == "fixed")
@@ -1029,45 +1029,78 @@ public static class Joinery
                 // Glazed straight into the frame (a rebate holds it, beads inside), or an opaque panel; beside a lift-and-slide
                 // leaf, on the outer track (forum topic 34).
                 var yc = tracks && p.Row == 0 ? y1 - track / 2 : f.Offset;
-                if (solid) boxes.Add(Sheet("leaf", 0, yc, infillT));
+                if (solid) panel.Add(Sheet("leaf", 0, yc, infillT));
                 else
                 {
-                    boxes.Add(Sheet("glass", 0, yc, sh.GlassThickness));
-                    boxes.AddRange(Muntins(s, r, yc, sh.Depth, Out(0)));
+                    panel.Add(Sheet("glass", 0, yc, sh.GlassThickness));
+                    panel.AddRange(Muntins(s, r, yc, sh.Depth, Out(0)));
                 }
                 if (pr != null)
                 {
-                    if (frameStop && yc + infillT / 2 < y1) boxes.AddRange(Band(0, pr.Rebate, yc + infillT / 2, y1, "frame"));
-                    boxes.AddRange(Band(0, pr.Bead, yc - infillT / 2 - 0.018, yc - infillT / 2, "frame"));
+                    if (frameStop && yc + infillT / 2 < y1) panel.AddRange(Band(0, pr.Rebate, yc + infillT / 2, y1, "frame"));
+                    panel.AddRange(Band(0, pr.Bead, yc - infillT / 2 - 0.018, yc - infillT / 2, "frame"));
                 }
             }
             else
             {
-                if (s.SashSection != null && Out(0) == null) boxes.AddRange(SectionRing(r, sh.Width, sy0, sy1, "sash", s.SashSection));
-                else boxes.AddRange(Band(0, sh.Width, sy0, sy1, "sash"));
-                if (solid) boxes.Add(Sheet("leaf", sh.Width, f.Offset, infillT));
+                if (s.SashSection != null && Out(0) == null) panel.AddRange(SectionRing(r, sh.Width, sy0, sy1, "sash", s.SashSection));
+                else panel.AddRange(Band(0, sh.Width, sy0, sy1, "sash"));
+                if (solid) panel.Add(Sheet("leaf", sh.Width, f.Offset, infillT));
                 else
                 {
-                    boxes.Add(Sheet("glass", sh.Width, f.Offset, sh.GlassThickness));
-                    boxes.AddRange(Muntins(s, Inset(r, sh.Width), f.Offset, sh.Depth, Out(sh.Width)));
+                    panel.Add(Sheet("glass", sh.Width, f.Offset, sh.GlassThickness));
+                    panel.AddRange(Muntins(s, Inset(r, sh.Width), f.Offset, sh.Depth, Out(sh.Width)));
                 }
                 if (pr != null)
                 {
                     // The frame's stop on the exterior half, the sash's lip lapping over the frame inside, its beads, its drip.
-                    if (frameStop) boxes.AddRange(Band(0, pr.Rebate, sy1, y1, "frame"));
-                    if (sashLip && pr.Overlap > 0) boxes.AddRange(Band(-pr.Overlap, Math.Min(0.012, sh.Width / 3), sy0 - 0.006, sy0, "sash"));
-                    boxes.AddRange(Band(sh.Width, sh.Width + pr.Bead, f.Offset - infillT / 2 - 0.018, f.Offset - infillT / 2, "sash"));
+                    if (frameStop) panel.AddRange(Band(0, pr.Rebate, sy1, y1, "frame"));
+                    if (sashLip && pr.Overlap > 0) panel.AddRange(Band(-pr.Overlap, Math.Min(0.012, sh.Width / 3), sy0 - 0.006, sy0, "sash"));
+                    panel.AddRange(Band(sh.Width, sh.Width + pr.Bead, f.Offset - infillT / 2 - 0.018, f.Offset - infillT / 2, "sash"));
                     // A sash in a door stands on its rail or a transom (forum topic 34), so it drips as a window's does.
-                    if (sashLip && pr.Drip) boxes.Add(new("sash", new(r.X0 + sh.Width, sy1, r.Z0 + 0.005), new(r.X1 - sh.Width, sy1 + 0.012, r.Z0 + 0.02)));
+                    if (sashLip && pr.Drip) panel.Add(new("sash", new(r.X0 + sh.Width, sy1, r.Z0 + 0.005), new(r.X1 - sh.Width, sy1 + 0.012, r.Z0 + 0.02)));
                 }
-                boxes.AddRange(HandleBoxes(s, r, p.Operation, sy0 - (pr != null && sashLip && pr.Overlap > 0 ? 0.006 : 0), -1, false));
+                panel.AddRange(HandleBoxes(s, r, p.Operation, sy0 - (pr != null && sashLip && pr.Overlap > 0 ? 0.006 : 0), -1, false));
             }
+            boxes.AddRange(open ? OpenPanelBoxes(panel, p.Operation, r, y0) : panel);
         }
         // A drip on the frame's bottom member outside.
         if (frameStop && pr is { Drip: true } && !s.IsDoor && inner.Z0 > 1e-6) boxes.Add(new("frame", new(inner.X0, y1, inner.Z0 - 0.012), new(inner.X1, y1 + 0.015, inner.Z0)));
 
         boxes.AddRange(Boards(s, y0, y1, outer));
         return boxes.Where(b => b.Max.X - b.Min.X > 1e-6 && b.Max.Y - b.Min.Y > 1e-6 && b.Max.Z - b.Min.Z > 1e-6).ToList();
+    }
+
+    /// <summary>Transform a single panel's boxes to their open 3D position (90° swing to the interior or slid open along X).</summary>
+    static IEnumerable<JoineryBox> OpenPanelBoxes(IEnumerable<JoineryBox> panel, string op, CellRect r, double y0)
+    {
+        bool hinged = op is "swing-left" or "swing-right" or "double-acting-left" or "double-acting-right"
+            or "side-hung-left" or "side-hung-right" or "turn-tilt-left" or "turn-tilt-right";
+        bool slides = op is "sliding-left" or "sliding-right" or "door-sliding-left" or "door-sliding-right" || LiftSlides(op);
+        if (!hinged && !slides) return panel;
+        bool left = op.EndsWith("-left", StringComparison.Ordinal);
+        if (slides)
+        {
+            double dx = (r.X1 - r.X0) * 0.85 * (left ? -1 : 1);
+            return panel.Select(b => b.Role == "frame" ? b : b with
+            {
+                Min = new(b.Min.X + dx, b.Min.Y, b.Min.Z),
+                Max = new(b.Max.X + dx, b.Max.Y, b.Max.Z),
+            });
+        }
+        double hx = left ? r.X0 : r.X1, hy = y0;
+        Vec2 Rot(double x, double y) => left ? new(hx + (y - hy), hy - (x - hx)) : new(hx - (y - hy), hy + (x - hx));
+        return panel.Select(b =>
+        {
+            if (b.Role == "frame") return b;
+            var p0 = Rot(b.Min.X, b.Min.Y);
+            var p1 = Rot(b.Max.X, b.Max.Y);
+            return b with
+            {
+                Min = new(Math.Min(p0.X, p1.X), Math.Min(p0.Y, p1.Y), b.Min.Z),
+                Max = new(Math.Max(p0.X, p1.X), Math.Max(p0.Y, p1.Y), b.Max.Z),
+            };
+        });
     }
 
     /// <summary>

@@ -509,9 +509,10 @@ public static class Openings
         var bay = BayWindows.Projecting(spec);
         var dressing = PathCurve.Of(wall) is { IsArc: true } ? null : new Dressing(m, wall, f, p, spec, sx, sy, bay);
         if (bay) return BayGeometry(fill, m, spec, wall, f, p, sx, sy, dressing);
-        parts.AddRange(BodyParts(m, spec, Joinery.Boxes(spec).Where(b => dressing?.Replaces(b) != true), Map));
+        var openMode = fill.Str("openMode") ?? "auto";
+        parts.AddRange(BodyParts(m, spec, Joinery.Boxes(spec, open: openMode == "open").Where(b => dressing?.Replaces(b) != true), Map));
         if (dressing != null) parts.AddRange(dressing.Parts());
-        return new ElementGeometry(parts, Symbol(spec, f, p, sx, sy, dressing != null, Joinery.WindowSwing(m)), [f.At(p.Along, f.Centre, 0).Xy]);
+        return new ElementGeometry(parts, Symbol(spec, f, p, sx, sy, dressing != null, Joinery.WindowSwing(m), openMode), [f.At(p.Along, f.Centre, 0).Xy]);
     }
 
     /// <summary>The joinery's boxes as parts, one per role, each in its material (by name, report #76) or the type's colour for the part.</summary>
@@ -537,7 +538,8 @@ public static class Openings
         var sx = fill.Bool("flipHand") ? -1 : 1;
         var sy = fill.Bool("flipSide") ? -1 : 1;
         Vec3 Map(double x, double y, double z) => f.At(p.Along + sx * x, f.Centre - sy * y, p.FillSill + z);
-        return new ElementGeometry([.. BodyParts(m, spec, Joinery.Boxes(spec), Map)], Symbol(spec, f, p, sx, sy, false, Joinery.WindowSwing(m)), [f.At(p.Along, f.Centre, 0).Xy]);
+        var openMode = fill.Str("openMode") ?? "auto";
+        return new ElementGeometry([.. BodyParts(m, spec, Joinery.Boxes(spec, open: openMode == "open"), Map)], Symbol(spec, f, p, sx, sy, false, Joinery.WindowSwing(m), openMode), [f.At(p.Along, f.Centre, 0).Xy]);
     }
 
     /// <summary>The colour of a part of a door's or window's body by its role: its material's, else the type's for the part.</summary>
@@ -921,7 +923,7 @@ public static class Openings
     /// leaves open at 90° with their arcs), in the wall's frame, mirrored with
     /// the occurrence.
     /// </summary>
-    static List<PlanItem> Symbol(JoinerySpec spec, WallFrame f, Placed p, int sx, int sy, bool dressed, string windowSwing = "none")
+    static List<PlanItem> Symbol(JoinerySpec spec, WallFrame f, Placed p, int sx, int sy, bool dressed, string windowSwing = "none", string openMode = "auto")
     {
         var o = new List<PlanItem>();
         Vec2 P(double x, double y) => f.Start + f.Dir * (p.Along + sx * x) + f.Left * (f.Centre - sy * y);
@@ -934,7 +936,7 @@ public static class Openings
         // The symbol engine's plan (docs/simboluri-tamplarie.md): the frame cut, the glass, a door's leaves and their arcs; once
         // for each level a view may draw it at (decision 405: LOD 100 the opening and its swing, 200 simplified, 300 and up whole).
         foreach (var level in new[] { PlanDetail.Coarse, PlanDetail.Medium, PlanDetail.Fine })
-            foreach (var st in JoinerySymbols.Plan(spec, level: level, windowSwing: windowSwing, sill: p.FillSill))
+            foreach (var st in JoinerySymbols.Plan(spec, level: level, windowSwing: windowSwing, sill: p.FillSill, openMode: openMode))
                 o.Add(new PlanItem(st.Weight == "cut" ? "heavy" : st.Dashed ? "dashed" : "symbol", st.Closed, st.Pts.Select(q => P(q.X, q.Y)).ToList(), level, level));
         // The dressings seen in plan: what crosses the cut (shutters, a grille) cut, a window box below it seen, a canopy above it overhead.
         if (dressed)
