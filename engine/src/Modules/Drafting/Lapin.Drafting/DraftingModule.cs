@@ -546,6 +546,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             var body = ((string?)a["text"])?.Trim();
             if (string.IsNullOrEmpty(body)) throw new CommandException("A text cannot be empty.");
             var attrs = new JsonObject { ["viewId"] = viewId, ["at"] = J(P(a["at"])), ["text"] = body, ["angle"] = Json.Number(a["angle"]) ?? 0 };
+            if (Json.Number(a["width"]) is { } w && w > 0) attrs["width"] = w;
             if ((string?)a["textStyle"] is { } ts) attrs["textStyle"] = ts;
             var t = new Entity(ctx.NewId(), IfcClass.Annotation, body.Length > 24 ? body[..24] + "…" : body, attrs, "TEXT");
             ctx.Add(t);

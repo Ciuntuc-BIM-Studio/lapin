@@ -23,7 +23,7 @@ Every tool shows its letters in its tooltip; you can change them in **View → K
 | Model | | Draft | |
 |---|---|---|---|
 | Wall | <kbd>WA</kbd> | Line | <kbd>L</kbd> |
-| Door, window | <kbd>DR</kbd>, <kbd>WN</kbd> | Polyline | <kbd>PL</kbd> |
+| Opening as a door, a window | <kbd>DR</kbd>, <kbd>WN</kbd> | Polyline | <kbd>PL</kbd> |
 | Floor | <kbd>SB</kbd> | Rectangle, circle, arc | <kbd>REC</kbd>, <kbd>C</kbd>, <kbd>A</kbd> |
 | Roof | <kbd>RF</kbd> | Move, copy | <kbd>M</kbd>, <kbd>CO</kbd> |
 | Stair, room | <kbd>ST</kbd>, <kbd>RM</kbd> | Rotate, mirror, scale | <kbd>RO</kbd>, <kbd>MI</kbd>, <kbd>SC</kbd> |
@@ -289,7 +289,7 @@ A placed symbol is selected like any element. In **Properties → Symbol** you c
 
 ### Lapin's own symbols and yours
 
-**Manage → Symbols…** shows three places, by category. **Built-in** are Lapin's own: north arrows, the section head and the elevation mark with their numbers, the callout, the revision marker, the break line, the spot level, the level markers (half black and open) and grid bubbles. They cannot be changed, but **Duplicate** makes a copy of one in your project to change. **This project** holds what you made or imported; it travels in the project file. **This computer** is your library: **Save to this computer** puts a copy there, and every project you open on this computer can use it (**Add to the project** brings one in). Choose a symbol to see it large, and **Place on a view**, **Edit…**, **Rename**, **Duplicate** or **Delete** it (a symbol that is placed asks what to do with its copies).
+**Manage → Symbols…** opens the [Place catalogue](interface.md#the-place-catalogue) on the symbols, to place one; its **Symbols…** button opens the symbols' manager, which shows three places, by category. **Built-in** are Lapin's own: north arrows, the section head and the elevation mark with their numbers, the callout, the revision marker, the break line, the spot level, the level markers (half black and open) and grid bubbles. They cannot be changed, but **Duplicate** makes a copy of one in your project to change. **This project** holds what you made or imported; it travels in the project file. **This computer** is your library: **Save to this computer** puts a copy there, and every project you open on this computer can use it (**Add to the project** brings one in). Choose a symbol to see it large, and **Place on a view**, **Edit…**, **Rename**, **Duplicate** or **Delete** it (a symbol that is placed asks what to do with its copies).
 
 ![Manage → Symbols](shots/symbols-dialog.webp)
 

@@ -581,6 +581,29 @@ public class DxfImportTests
     }
 
     [Fact]
+    public void Drafted_hatch_with_background_fill_masks_underneath_and_is_hittable_inside()
+    {
+        var f = F();
+        var plan = Plan(f);
+        f.Run("drafting.draw", new JsonObject
+        {
+            ["viewId"] = plan,
+            ["shapes"] = new JsonArray(new JsonObject { ["type"] = "polyline", ["pts"] = new JsonArray(new JsonArray(0, 0), new JsonArray(4, 0), new JsonArray(4, 4), new JsonArray(0, 4)), ["closed"] = true }),
+        });
+        var id = (string)f.Run("drafting.hatch", new JsonObject { ["viewId"] = plan, ["at"] = new JsonArray(2, 2), ["pattern"] = "LINES45" })!["id"]!;
+        f.Run("drafting.updateDraft", new JsonObject { ["ids"] = new JsonArray(id), ["hatch"] = new JsonObject { ["background"] = "#ffffff" } });
+        var drawing = (JsonObject)f.Session.Query("view.drawing", new JsonObject { ["id"] = plan })!;
+        var mk = drawing["marks"]!.AsArray().OfType<JsonObject>().Single(m => (string?)m["id"] == id);
+        Assert.Contains(drawing["pens"]!.AsArray().OfType<JsonObject>(), p => (string?)p["fill"] == "#ffffff" && p["loops"] != null);
+        Assert.True((bool?)mk["hit"]!["solid"]);
+        f.Run("drafting.updateDraft", new JsonObject { ["ids"] = new JsonArray(id), ["hatch"] = new JsonObject { ["background"] = null } });
+        var clearedDrawing = (JsonObject)f.Session.Query("view.drawing", new JsonObject { ["id"] = plan })!;
+        var cleared = clearedDrawing["marks"]!.AsArray().OfType<JsonObject>().Single(m => (string?)m["id"] == id);
+        Assert.DoesNotContain(clearedDrawing["pens"]!.AsArray().OfType<JsonObject>(), p => (string?)p["fill"] == "#ffffff" && p["loops"] != null);
+        Assert.False((bool?)cleared["hit"]!["solid"]);
+    }
+
+    [Fact]
     public void A_drawing_in_map_coordinates_lies_where_the_map_puts_it()
     {
         // A cadastral line in Stereo 70, in metres (the file says nothing of its units).

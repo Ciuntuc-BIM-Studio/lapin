@@ -586,4 +586,22 @@ public class AnnotationTests
         Assert.Contains("?", Texts());
         Assert.Throws<CommandException>(() => f.Run("drafting.addTag", new JsonObject { ["viewId"] = view, ["element"] = "nope", ["at"] = new JsonArray(0, 0) }));
     }
+
+    [Fact]
+    public void Multiline_and_wrapped_text_splits_into_lines_and_keeps_its_angle()
+    {
+        var f = F();
+        var view = "plan:" + f.Storey;
+        // Explicit newline + angle (e.g. rotated view alignment).
+        f.Run("drafting.addText", new JsonObject { ["viewId"] = view, ["at"] = new JsonArray(1, 2), ["text"] = "Line one\nLine two", ["angle"] = -30 });
+        var drawing = Draw(f, view);
+        var texts = drawing["pens"]!.AsArray().OfType<JsonObject>().Where(p => p["texts"] != null).SelectMany(p => p["texts"]!.AsArray().OfType<JsonObject>()).ToList();
+        Assert.Contains(texts, t => (string?)t["text"] == "Line one" && Math.Abs((double)t["angle"]! - (-30)) < 1e-6);
+        Assert.Contains(texts, t => (string?)t["text"] == "Line two" && Math.Abs((double)t["angle"]! - (-30)) < 1e-6);
+
+        // Width wrapping into multiple lines.
+        var wrapped = Lapin.Drafting.Texts.WrapLines("One two three four", 0.15, 1.0);
+        Assert.True(wrapped.Count >= 3);
+        Assert.Equal("One two three four", string.Join(" ", wrapped));
+    }
 }

@@ -17,6 +17,7 @@ import { execute, useSession } from '../engine/session';
 import type { Vec2 } from '../platform/module';
 import type { NodeDto } from '../engine/protocol';
 import { findTool, useToolTick } from '../platform/modules';
+import { gestureKey } from './gestureKeys';
 import { completeTool } from './tools';
 import { DrawingLayer } from './DrawingLayer';
 import { drawsOnDark, useDrawing } from './drawing';
@@ -245,15 +246,17 @@ export function DrawingView() {
       if ((e.target as HTMLElement)?.closest('input, select, textarea, [role="dialog"]') || e.defaultPrevented || useCad.getState().step) return;
       // Esc while the selection is dragged by its body: nothing moves.
       if (e.key === 'Escape' && carrying()) { drag.current = null; carryEnd(); clearLiveRise(); return; }
-      // A pick-then-point gesture ended after its pick (Enter or Esc) completes with the pick alone; a typed length is the key router's (Enter takes it, Esc clears it).
-      if ((e.key === 'Escape' || e.key === 'Enter') && tool?.gesture?.kind === 'pickThenPoint' && pts.length === 1 && picked.current) {
+      // One rule (gestureKeys.ts): Enter finishes, Esc cancels the step in progress. A typed length is the key router's (Enter takes it, Esc clears it).
+      const act = gestureKey(e.key, tool?.gesture, pts.length, !!picked.current);
+      if (act === 'completePick') {
         const l = useLive.getState();
         if (e.defaultPrevented || (l.owner === 'tool' && (l.len || l.ang))) return;
-        void complete([pts[0]], picked.current);
+        void complete([pts[0]], picked.current!);
         return;
       }
-      if (e.key === 'Escape' && tool?.gesture) { if (pts.length) setPts([]); else setTool(null); }
-      if (e.key === 'Enter' && tool?.gesture?.kind === 'polyline' && pts.length >= 2) void complete(pts);
+      if (act === 'clear') { setPts([]); picked.current = undefined; }
+      else if (act === 'exit') setTool(null);
+      else if (act === 'complete') void complete(pts);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);

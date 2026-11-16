@@ -23,7 +23,7 @@ import { IFC_CLASSES, className, parseValue, placedEdges, planEdges, sketchSourc
 export const isPlacedPart = (n?: NodeDto | null): boolean => !!n && n.props.operation === 'part';
 
 /** The part (family) a placed part is typed by. */
-const partOf = (id: string): string | undefined => {
+export const partOf = (id: string): string | undefined => {
   for (const r of useSession.getState().relations.values()) if (r.class === 'IfcRelDefinesByType' && r.related.includes(id)) return r.relating;
   return undefined;
 };

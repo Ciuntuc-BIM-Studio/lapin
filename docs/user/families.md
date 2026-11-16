@@ -14,7 +14,7 @@ A family is lighter than a type configurator: it has no layers or catalogue size
 
 ## Studio → Families…
 
-**Studio → Families…** opens the families of the project, each with the number of objects that use it. **New** starts a box with the parameters W, H and D.
+**Studio → Families…** opens the [Place catalogue](interface.md#the-place-catalogue) on the families, to place one; its **Families…** button opens the families of the project, each with the number of objects that use it. **New** starts a box with the parameters W, H and D.
 
 ![The Families dialog: a table with its wireframe, the values to try and its parameters](shots/families-dialog.webp)
 

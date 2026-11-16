@@ -10,21 +10,22 @@ import {
   Archive, Armchair, BookHeart, Package, Ruler, BedDouble, BedSingle, Coffee, CookingPot, LampDesk, Layers3, Library, ListOrdered, PanelsTopLeft, Settings2, Shapes, Shirt, Sofa, Table2, Users, UtensilsCrossed,
 } from 'lucide-react';
 import type { Icon } from '../../icons';
-import type { LapinModule, ToolDef } from '../../platform/module';
+import type { LapinModule, PlaceEntry, ToolDef } from '../../platform/module';
+import { openPlaceCatalog } from '../../shell/placeCatalogStore';
 import { notify, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
 import { relatingOf } from '../../engine/model';
-import { CLASS, chooseType, chosenType, furnitureGrips, sizeOf, specOf, typesOfKind, useFurniturePrefs } from './furniture';
+import { CLASS, TYPE_CLASS, chooseType, chosenType, furnitureGrips, sizeOf, specOf, typesOfKind, useFurniturePrefs } from './furniture';
 import { FurnitureSection } from './FurnitureSection';
 import { FurnitureTypesDialog, editType, useKinds } from './FurnitureTypesDialog';
 import { UserModelsDialog } from './UserModelsDialog';
 import { FurnitureLibraryDialog, SaveToLibraryDialog } from './FurnitureLibraryDialog';
-import { refreshLibrary, useFurnitureLibrary } from './library';
+import { refreshLibrary, takeEntry, useFurnitureLibrary } from './library';
 import { addTemplateAddition } from '../../engine/templates';
 import { useEffect } from 'react';
-import { activate } from '../../platform/modules';
-import { usePlaceKind } from './placeKind';
+import { activate, findTool } from '../../platform/modules';
+import { toolForKind, usePlaceKind } from './placeKind';
 // Lapin Extensions: the content packs this module's libraries take (docs/plan-extensions.md).
 import './extensionKind';
 import { createScheduleOf } from '../../shell/fieldSchedule';
@@ -177,7 +178,8 @@ const chairsAround: ToolDef = {
 };
 
 /** My furniture library (decision 476): the user's own furniture types, for every project. */
-const library: ToolDef = { id: 'furniture.library', label: 'My furniture…', icon: BookHeart, run: () => useUi.setState({ dialog: 'furnitureLibrary' }) };
+// The catalogue on the furniture (S15); its My furniture… button opens the library's editor.
+const library: ToolDef = { id: 'furniture.library', label: 'My furniture…', icon: BookHeart, run: () => openPlaceCatalog('furniture') };
 
 // Save as template… may put the whole library into the template (decision 476).
 addTemplateAddition({
@@ -204,12 +206,33 @@ const byRoom = schedule('furniture.byRoom', 'Furniture by room', 'furnitureRooms
 const kitchenUnits = schedule('furniture.kitchenUnits', 'Kitchen units', 'kitchenUnits', CookingPot);
 const cutList = schedule('furniture.cutList', 'Cut list', 'cutList', Ruler);
 
+/**
+ * The Place catalogue's furniture (S15): the project's types, this computer's library (My furniture), and Lapin's kinds, each a
+ * click from the tool that puts it down; My furniture… stays the library's editor.
+ */
+function useFurnitureEntries(): PlaceEntry[] {
+  const nodes = useSession((s) => s.nodes);
+  const { entries, read } = useFurnitureLibrary();
+  useEffect(() => { if (!read) void refreshLibrary(); }, [read]);
+  const start = (kind: string) => { const id = toolForKind(kind); const t = findTool(id); if (t && useUi.getState().tool !== t.id) activate(t); };
+  const types = [...nodes.values()].filter((n) => n.type === TYPE_CLASS && specOf(n).kind);
+  return [
+    ...types.map((t): PlaceEntry => ({ key: `furnitureType:${t.id}`, name: t.name ?? '', group: 'This project', about: KINDS.find((k) => k.kind === specOf(t).kind)?.label ?? String(specOf(t).kind),
+      place: () => { const kind = String(specOf(t).kind); chooseType(kind, t.id); start(kind); } })),
+    ...entries.map((e): PlaceEntry => ({ key: `furnitureLib:${e.id}`, name: e.name, group: 'This computer', about: e.tags.join(', ') || undefined,
+      thumb: e.thumbnail ? <img src={e.thumbnail} alt="" /> : undefined, place: () => takeEntry(e, true) })),
+    ...KINDS.map((k): PlaceEntry => ({ key: `furnitureKind:${k.kind}`, name: k.label, group: k.category, thumb: <k.icon size={26} strokeWidth={1.3} />,
+      place: () => { usePlaceKind.setState({ kind: k.kind }); if (useUi.getState().tool !== place.id) activate(place); } })),
+  ];
+}
+
 const furniture: LapinModule = {
   id: 'furniture',
   name: 'Furniture',
   summary: 'Sofas, corner sofas, armchairs, chairs, beds, wardrobes, chests, bookcases, sideboards, tables, desks and kitchens in six layouts, parametric types placed against walls, with their plan symbols, schedules and IFC.',
   // The old tool of each kind (Sofa, Bed…): the Place tool set to it, off the ribbon; their ids and letters work as before.
   legacyTools: pieces,
+  placeSources: [{ id: 'furniture', label: 'Furniture', order: 50, useEntries: useFurnitureEntries, manage: { label: 'My furniture…', run: () => useUi.setState({ dialog: 'furnitureLibrary' }) } }],
   tabs: [{
     // On the Interior tab with the finishes (decision 367).
     id: 'interior', label: 'Interior', order: 25, include: ['modify'], i18nCtx: 'furniture',
@@ -230,6 +253,18 @@ const furniture: LapinModule = {
       const { nodes, relations } = useSession.getState();
       const spec = specOf(relatingOf({ nodes, relations }, node.id, 'IfcRelDefinesByType') ?? undefined);
       return furnitureGrips(node, Number(spec.depth ?? 0.8));
+    },
+  },
+  // Create similar: the Place tool set to the piece's kind and type (a kitchen: the Kitchen tool with its type).
+  similar: {
+    [CLASS]: (n) => {
+      const type = relatingOf(useSession.getState(), n.id, 'IfcRelDefinesByType') ?? undefined;
+      const kind = String(specOf(type).kind ?? '');
+      if (!kind) { notify('This piece has no kind of Lapin furniture to place again.'); return; }
+      if (type) chooseType(kind, type.id);
+      if (kind === 'kitchen') { activate(kitchen); return; }
+      usePlaceKind.setState({ kind });
+      if (useUi.getState().tool !== place.id) activate(place);
     },
   },
   setType: { [CLASS]: (ids, typeId) => execute('furniture.setType', { ids, typeId }) },

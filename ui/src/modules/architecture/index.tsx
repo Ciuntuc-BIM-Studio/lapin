@@ -1,6 +1,6 @@
 /** Architecture: layered walls and their types, doors and windows, floors, roofs, rooms and their colours. */
 
-import { Armchair, ArrowLeftRight, CornerDownRight, CornerUpRight, Layers3, Link2, Settings2, Slash, Spline, Table2 } from 'lucide-react';
+import { Armchair, ArrowLeftRight, ArrowRightToLine, CornerDownRight, CornerUpRight, Layers3, Link2, Scissors, Settings2, Slash, Spline, Table2 } from 'lucide-react';
 import { AttachRoofIcon, CurtainWallIcon, CurvedWallIcon, DetachRoofIcon, DoorIcon, DormerIcon, RoofIcon, RampIcon, RoofWindowIcon, SlabIcon, SlabOpeningIcon, StairIcon, WallIcon, WallTypesIcon, WindowIcon } from '../../icons';
 import type { Grip, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { flipAcross, frameAt, outlineGrips, outlineRef, pathGrips, pathRef, toPairs } from '../../viewport/gripKit';
@@ -42,6 +42,7 @@ import { roomGrips, roomRefs } from './rooms';
 import { newElement, typedBy } from './NewElement';
 import { WallThumb, SlabThumb, JoineryThumb } from './Thumbs';
 import { isWallOpening, wallOpening, WallOpeningSection } from './WallOpening';
+import { openingTool } from './openingTool';
 import { OpeningDims, OpeningDimsInView } from './TempDimensions';
 import { wallOpeningGrips } from './wallOpeningGrips';
 import { CeilingSection, CeilingTypesDialog, ceiling, ceilingDiffuser, ceilingInRoom, ceilingLight, ceilingTypes } from './Ceilings';
@@ -155,7 +156,7 @@ const selectedWalls = () => {
 };
 
 const join: ToolDef = {
-  id: 'architecture.join', label: 'Join', icon: Link2, shortcut: 'JW',
+  id: 'architecture.join', label: 'Join walls', icon: Link2, shortcut: 'JW',
   run: () => {
     const walls = selectedWalls();
     if (walls.length !== 2) { notify('Select the two walls to join (Shift-click the second).'); return; }
@@ -177,6 +178,8 @@ const swap = restyle('Swap', 'architecture.swap', ArrowLeftRight, { swap: true }
 /** Fillet and chamfer on walls and railings (a user's request): the command line's FILLET and CHAMFER, which take two walls, a railing's corner or two railings as well as drafted lines. */
 const filletTool: ToolDef = { id: 'architecture.fillet', label: 'Fillet', icon: Spline, run: () => void startCommand('FILLET') };
 const chamferTool: ToolDef = { id: 'architecture.chamfer', label: 'Chamfer', icon: CornerUpRight, run: () => void startCommand('CHAMFER') };
+const trimTool: ToolDef = { id: 'architecture.trim', label: 'Trim', icon: Scissors, run: () => void startCommand('TRIM') };
+const extendTool: ToolDef = { id: 'architecture.extend', label: 'Extend', icon: ArrowRightToLine, run: () => void startCommand('EXTEND') };
 const mitreNew: ToolDef = {
   id: 'architecture.mitreNew', label: 'Mitre new corners', icon: Slash,
   run: () => {
@@ -384,13 +387,13 @@ const fillTool = (kind: 'door' | 'window', label: string, icon: ToolDef['icon'],
     });
   },
 });
-const door = fillTool('door', 'Door', DoorIcon, 'DR');
-const window_ = fillTool('window', 'Window', WindowIcon, 'WN');
+const doorPart = fillTool('door', 'Door', DoorIcon, 'DR');
+const windowPart = fillTool('window', 'Window', WindowIcon, 'WN');
 /**
  * A bay, bow or box window (report #60): click a wall. The type picked in the configurator when it projects, else the
  * project's first that does, else one made from Lapin's first bay style (a 45° bay).
  */
-const bayWindow: ToolDef = {
+const bayWindowPart: ToolDef = {
   id: 'architecture.bayWindow', label: 'Bay window', icon: WindowIcon, shortcut: 'BW',
   gesture: { kind: 'pick', types: ['IfcWall'] },
   complete: async ({ points: [p], entity }, ctx) => {
@@ -436,7 +439,7 @@ const roof: ToolDef = {
   },
 };
 /** An opening through a floor (a stairwell, a shaft): its outline, inside the floor. */
-const slabOpening: ToolDef = {
+const slabOpeningPart: ToolDef = {
   id: 'architecture.slabOpening', label: 'Floor opening', icon: SlabOpeningIcon, shortcut: 'SH',
   gesture: { kind: 'polygon', shapes: true },
   options: PlainShapeBar,
@@ -463,6 +466,18 @@ const roofOpening = (kind: 'window' | 'dormer'): ToolDef => ({
   gesture: { kind: 'point' },
   complete: async ({ points: [p] }, ctx) => { await ctx.execute('architecture.addRoofOpening', { kind, x: p.x, y: p.y }); },
 });
+/**
+ * The one Opening tool (S14): door, window, bay window or an opening of a shape in a wall, an opening in a floor, a roof window or
+ * a dormer. The kinds' old tools are its aliases (legacyTools); Create similar and the quick slots start them.
+ */
+const { tool: opening, aliases: openingAliases } = openingTool({
+  door: doorPart, window: windowPart, bayWindow: bayWindowPart, opening: wallOpening, floor: slabOpeningPart,
+  roofWindow: roofOpening('window'), dormer: roofOpening('dormer'),
+});
+const aliasOf = (id: string) => openingAliases.find((t) => t.id === id)!;
+const door = aliasOf('architecture.door');
+const window_ = aliasOf('architecture.window');
+
 /**
  * STAIR: the foot (the centre of the first riser), the direction of the first
  * flight, and, for an L or a U, which way it turns; the type the configurator
@@ -560,13 +575,13 @@ const architecture: LapinModule = {
   tabs: [{
     id: 'architecture', label: 'Architecture', order: 20, include: ['modify', 'joins'],
     groups: [
-      { label: 'Build', tools: [wall, door, window_, slab, roof], small: [wallFromSolids, curtainWall, bayWindow, wallOpening, slabOpening, roofOpening('window'), roofOpening('dormer'), roofConfigurator, downpipe, railing] },
+      { label: 'Build', tools: [wall, opening, slab, roof], small: [wallFromSolids, curtainWall, roofConfigurator, downpipe, railing] },
       { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes], small: [curtainTypes, sunshadeTypes] },
       // Sunshades (report #56): on a window, along a facade; their schedule.
       { label: 'Sunshades', tools: [sunshade], small: [sunshadeAlong, sunshadeSchedule] },
       // Profiles swept along a wall's face: added (a cornice, a band) or taken out (a reveal), decision 297.
       { label: 'Sweeps', tools: [wallSweep, wallReveal], small: [sweepSelected, revealSelected, wallSweepSchedule] },
-      { label: 'Joins', tools: [join], small: [mitreNew, filletTool, chamferTool, attachRoof, detachRoof, editLayers] },
+      { label: 'Joins', tools: [join], small: [mitreNew, trimTool, extendTool, filletTool, chamferTool, attachRoof, detachRoof, editLayers] },
       { label: 'Room', tools: [room], small: [roomOutline, roomDividers, updateRooms, roomTag] },
       { label: 'Circulation', tools: [stair, ramp, stairTypes], small: [entranceSteps, entranceRamp, underStair, underStairSchedule] },
       // Balconies (a tester's report, #96): by a wall's face in a style, by outline, a gallery's edge; the configurator, stacking, the schedule.
@@ -596,7 +611,7 @@ const architecture: LapinModule = {
     id: 'annotate', label: 'Annotate', order: 60,
     groups: [{ label: 'Rooms', tools: [colorLegend] }],
   }],
-  legacyTools: [curvedWall, roomDividerArc, mitre, butt, swap],
+  legacyTools: [curvedWall, roomDividerArc, mitre, butt, swap, ...openingAliases],
   hotbar: [wall, door, window_, slab, roof],
   propertySections: [
     { id: 'wall', label: 'Wall', classes: ['IfcWall'], component: WallLayers },
@@ -644,6 +659,16 @@ const architecture: LapinModule = {
     IfcSlab: (n) => { useUi.setState({ slabTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(slab); },
     IfcDoor: (n) => { useUi.setState({ doorTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(door); },
     IfcWindow: (n) => { useUi.setState({ windowTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(window_); },
+    // An opening alone in a wall: the Opening tool set to an opening of its shape and size; a floor's: set to a floor opening.
+    IfcOpeningElement: (n) => {
+      if (isWallOpening(n)) {
+        const v = (k: string, d: number) => (typeof n.props[k] === 'number' ? (n.props[k] as number) : d);
+        const shape = (['segmental', 'elliptical', 'round', 'radiused', 'circle'] as const).find((k) => k === n.props.shape) ?? 'rect';
+        useUi.setState({ openingSize: { width: v('width', 1), height: v('height', 2), sill: v('sill', 0), shape, rise: typeof n.props.rise === 'number' ? n.props.rise : null } });
+        activate(aliasOf('architecture.wallOpening'));
+      } else if (relatingOf(useSession.getState(), n.id, 'IfcRelVoidsElement')?.type === 'IfcSlab') activate(aliasOf('architecture.slabOpening'));
+      else notify('A door\'s or window\'s opening: select the door or window to make more like it.');
+    },
     IfcRoof: (n) => { useUi.setState({ roofStyle: typeof n.props.style === 'string' ? n.props.style : null }); activate(roof); },
     IfcCurtainWall: (n) => { useUi.setState({ curtainTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(curtainWall); },
     IfcSpace: (n) => activate(n.props.auto === false ? roomOutline : room),

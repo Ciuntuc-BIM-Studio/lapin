@@ -8,7 +8,11 @@ summary: Pui uși și ferestre în pereți, le muți și le proiectezi tipurile 
 
 ## Cum pui o ușă sau o fereastră
 
-Alege **Arhitectură → Ușă** (<kbd>DR</kbd>) sau **Fereastră** (<kbd>WN</kbd>), apoi dă clic pe perete unde vrei golul. Lapin taie golul în toate straturile peretelui și adaugă buiandrugul cerut de tipul peretelui.
+Orice gol pornește dintr-o singură unealtă, **Arhitectură → Gol**. Prima ei alegere, în bara liniei de comandă și în capul panoului de proprietăți, e ce pui: într-un perete o **Ușă**, o **Fereastră**, un **Bovindou** sau un **Gol de o formă**, fără nimic în el; într-o placă un **Gol în placă**; într-un acoperiș o **Fereastră de acoperiș** sau o **Lucarnă**. Fiecare fel se pune cum arată această pagină și [Plăci și acoperișuri](floors-roofs.md). Literele vechilor unelte o pornesc deja aleasă: <kbd>DR</kbd> o ușă, <kbd>WN</kbd> o fereastră, <kbd>BW</kbd> un bovindou, <kbd>WO</kbd> un gol în perete, <kbd>SH</kbd> un gol în placă; locurile rapide și Uneltele mele care țin vechile unelte merg mai departe.
+
+![Unealta Gol: ce pune, ales după gazdă, și tipul de ușă pe care îl pune](shots/opening-tool.webp)
+
+Pentru o ușă sau o fereastră, alege la **Gol** **Ușă** (<kbd>DR</kbd>) sau **Fereastră** (<kbd>WN</kbd>), apoi dă clic pe perete unde vrei golul. Lapin taie golul în toate straturile peretelui și adaugă buiandrugul cerut de tipul peretelui.
 
 Cât timp Door sau Window e activă, panoul de proprietăți arată tipul pe care îl va pune, cu dimensiunile lui: alege altul acolo înainte să dai clic pe perete.
 
@@ -55,7 +59,7 @@ La un **perete curb** cotele merg pe arc, concentrice cu el, și arată lungimea
 
 ## Goluri fără ușă sau fereastră
 
-**Architecture → Wall opening** (<kbd>WO</kbd>) taie un gol simplu prin perete acolo unde dai clic: o trecere, un chepeng, un gol pentru o ușă care vine mai târziu. Lățimea, înălțimea și parapetul le pui în panoul de proprietăți înainte de clic. Selectat, i se schimbă acolo dimensiunile, locul de-a lungul peretelui și parapetul; ca o ușă, trebuie să încapă în perete și să nu atingă celelalte goluri ale lui. În IFC e un gol care taie peretele, fără nimic care să-l umple.
+**Arhitectură → Gol** cu **Gol de o formă** (<kbd>WO</kbd>) taie un gol simplu prin perete acolo unde dai clic: o trecere, un chepeng, un gol pentru o ușă care vine mai târziu. Lățimea, înălțimea și parapetul le pui în panoul de proprietăți înainte de clic. Selectat, i se schimbă acolo dimensiunile, locul de-a lungul peretelui și parapetul; ca o ușă, trebuie să încapă în perete și să nu atingă celelalte goluri ale lui. În IFC e un gol care taie peretele, fără nimic care să-l umple.
 
 Selectat, un gol are mânere ca o fereastră: trage de mijlocul lui ca să-l muți de-a lungul peretelui sau de o ambrasură ca să-l lărgești sau să-l îngustezi, cealaltă rămânând pe loc; lungimea de lângă mouse se poate scrie, ca la desen. Se alege cu un clic în spațiul lui din plan sau în gaura lui din vederea 3D, unde i se aprinde conturul. **Mutare** (<kbd>M</kbd>) îl mută de-a lungul peretelui cu o distanță scrisă, iar înălțimea și parapetul sunt în panoul de proprietăți.
 

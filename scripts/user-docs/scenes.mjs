@@ -760,6 +760,99 @@ export const scenes = [
     },
   },
   {
+    // One Opening tool (audit S14): its first choice is what to put, by host; the old tools (Door, Window…) start it set to their kind.
+    id: 'opening-tool',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const ids = [];
+      for (const [a, b] of [[[0, 0], [8, 0]], [[8, 0], [8, 5]], [[8, 5], [0, 5]], [[0, 5], [0, 0]]]) ids.push((await t.cmd('architecture.addWall', { storeyId: s, x1: a[0], y1: a[1], x2: b[0], y2: b[1] })).id);
+      // A door already in the north wall: the project has its type, shown under the choice.
+      await t.cmd('architecture.addDoor', { wallId: ids[2], x: 4, y: 5 });
+      await t.ui({ keyPlan: false });
+      await t.wait(600);
+      await t.fit();
+      await t.button('Architecture', { exact: true });
+      await t.tool('architecture.door');
+      t.expect(await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().tool) === 'architecture.opening', 'Door starts the Opening tool');
+      const kind = t.page.locator('aside.props [data-testid=opening-kind]');
+      await kind.waitFor({ timeout: 10_000 });
+      t.expect(await kind.inputValue() === 'door', 'set to a door');
+      await t.wait(400);
+      await t.shot('opening-tool', { of: 'aside.props', pad: 0, maxHeight: 420 });
+      // An opening of a shape: a round one, clicked into the south wall.
+      await kind.selectOption('opening');
+      await t.ui({ openingSize: { width: 0.6, height: 0.6, sill: 1.2, shape: 'circle', rise: null } });
+      await t.wait(300);
+      const [px, py] = await t.planPoint(4, 0);
+      await t.page.mouse.click(px, py);
+      await t.until(async () => (await t.nodes()).some((n) => n.type === 'IfcOpeningElement' && n.props.shape === 'circle'), 'a round opening is cut in the wall');
+      await t.keys('Escape');
+      await t.ui({ tool: null });
+    },
+  },
+  {
+    // Enter and Esc (audit 2026-11-15): Enter ends a chain of walls (what it drew stays), Esc cancels the piece in progress, then leaves the tool.
+    id: 'enter-esc',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      await t.storey();
+      await t.ui({ keyPlan: false });
+      await t.wait(500);
+      await t.tool('architecture.wall');
+      const click = async (x, y) => { const [px, py] = await t.planPoint(x, y); await t.page.mouse.click(px, py); await t.wait(350); };
+      await click(0, 0);
+      await click(6, 0);
+      const [mx, my] = await t.planPoint(6, 4);
+      await t.page.mouse.move(mx, my);
+      await t.wait(400);
+      t.expect((await t.page.locator('.hud-hint').textContent())?.includes('Enter ends the chain'), 'the hint says Enter ends the chain');
+      await t.keys('Enter');
+      await click(0, 3);
+      await click(6, 3);
+      await t.keys('Enter');
+      const walls = (await t.nodes()).filter((n) => n.type === 'IfcWall');
+      t.expect(walls.length === 2, `Enter ends the chain: two walls, not three (${walls.length})`);
+      t.expect(await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().tool) === 'architecture.wall', 'the tool stays on');
+      await click(0, 6);
+      await t.keys('Escape');
+      t.expect((await t.nodes()).filter((n) => n.type === 'IfcWall').length === 2, 'Esc drops the piece in progress');
+      await t.keys('Escape');
+      t.expect(await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().tool) === null, 'a second Esc leaves the tool');
+    },
+  },
+  {
+    // The Place catalogue (audit S15): every source in one window, one search; a card starts placing it.
+    id: 'place-catalogue',
+    touches: ['furniture', 'mep', 'studio', 'drafting'],
+    async run(t) {
+      await t.fresh();
+      await t.storey();
+      await t.wait(400);
+      await t.button('Manage', { exact: true });
+      await t.tool('manage.placeCatalog');
+      const dlg = t.page.locator('[data-dialog=placeCatalog]');
+      await dlg.waitFor({ timeout: 10_000 });
+      for (const id of ['symbols', 'furniture', 'mep']) await dlg.locator(`[data-place-source=${id}]`).waitFor({ timeout: 10_000 });
+      await dlg.locator('[data-field=place-search]').fill('chair');
+      await t.wait(800);
+      t.expect(await dlg.locator('[data-place]').count() > 0, 'the search finds something to place');
+      await t.shot('place-catalogue', { of: '[data-dialog=placeCatalog] .dialog', pad: 0, maxHeight: 640 });
+      // A card starts its tool: the MEP Place node tool set to a bath.
+      await dlg.locator('[data-field=place-search]').fill('bath');
+      await dlg.locator('[data-place="mep:bath"]').click();
+      await t.wait(400);
+      t.expect(await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().tool) === 'mep.place', 'the card starts the Place node tool');
+      await t.ui({ tool: null });
+      // Interior → My furniture… opens it on the furniture.
+      await t.tool('furniture.library');
+      await t.page.locator('[data-dialog=placeCatalog] [data-source=furniture][aria-selected=true]').waitFor({ timeout: 10_000 });
+      await t.ui({ dialog: null });
+    },
+  },
+  {
     // Placing a door or window as Revit does (a tester's wish): the cursor's side of the wall is the side it opens to, Space its other hand, shown before the click.
     id: 'fill-placing',
     async run(t) {
@@ -6858,8 +6951,9 @@ export const scenes = [
         await t.page.locator('.dialog button[title="Close"]').first().click();
         await t.wait(300);
 
-        // Interior → My furniture…: the thumbnails; the sideboard inserted (the project's identical one reused), the desk placed.
+        // Interior → My furniture…: the Place catalogue on the furniture, its My furniture… the library: the thumbnails; the sideboard inserted (the project's identical one reused), the desk placed.
         await t.tool('furniture.library');
+        await t.page.locator('[data-dialog=placeCatalog] [data-action=place-manage]').click();
         const lib = t.page.locator('[data-dialog=furniture-library]');
         await lib.waitFor({ timeout: 10_000 });
         await lib.locator('.furniture-card').nth(5).waitFor({ timeout: 10_000 });
@@ -7568,8 +7662,9 @@ export const scenes = [
       await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 1.1, pitch: -0.55, distance: 26, target: { x: 9.5, y: 1.2, z: 0.3 } }, false));
       await t.wait(1500);
       await t.shot('components-3d', { of: '[data-testid=view3d]', pad: 0 });
-      // Manage → Components.
+      // Manage → Components: the Place catalogue on the components, its Components… the list.
       await t.tool('manage.components');
+      await t.page.locator('[data-dialog=placeCatalog] [data-action=place-manage]').click();
       await t.page.locator('[data-testid=components] tbody tr').first().waitFor({ timeout: 5000 });
       t.expect((await t.page.locator('[data-testid=components] tbody tr td.num').first().textContent()) === '4', 'the list says four instances');
       await t.ui({ dialog: null });
@@ -8646,14 +8741,14 @@ export const scenes = [
       await t.page.locator('.context-menu .context-item', { hasText: 'Add to My tools' }).first().click();
       await t.wait(200);
       // A second one in a group of its own, a third dragged onto the tab's header.
-      await t.page.locator('.band .tool', { hasText: 'Door' }).first().click({ button: 'right' });
+      await t.page.locator('.band .tool', { hasText: 'Opening' }).first().click({ button: 'right' });
       await t.page.locator('.context-menu .context-item', { hasText: 'Add to a new group in My tools' }).click();
       await t.wait(200);
-      await t.page.locator('.band .tool', { hasText: 'Window' }).first().dragTo(t.page.locator('[data-tab=my-tools]'));
+      await t.page.locator('.band .tool', { hasText: 'Roof' }).first().dragTo(t.page.locator('[data-tab=my-tools]'));
       await t.wait(300);
       let groups = await store();
       t.expect(groups.length === 2 && groups[0].tools.length === 1 && groups[1].tools.length === 2, 'right-click and dragging onto the tab header fill My tools: ' + JSON.stringify(groups));
-      // Reordered in the ribbon itself: the window dragged in front of the door.
+      // Reordered in the ribbon itself: the roof dragged in front of the opening.
       await t.page.locator('[data-tab=my-tools]').click();
       await t.wait(400);
       const mine = t.page.locator('.my-band');
@@ -10017,9 +10112,10 @@ export const scenes = [
       await t.shot('symbol-placed', { clip: { x: qx - 330, y: qy - 150, width: 660, height: 300 } });
       await t.shot('symbol-properties', { of: 'aside.props', pad: 0, maxHeight: 560 });
       await t.ui({ selection: null, selected: [] });
-      // Manage → Symbols…
+      // Manage → Symbols…: the Place catalogue on the symbols, its Symbols… the manager.
       await t.button('Manage', { exact: true });
       await t.tool('manage.symbols');
+      await t.page.locator('[data-dialog=placeCatalog] [data-action=place-manage]').click();
       await page.waitForSelector('[data-dialog=symbols]', { timeout: 10_000 });
       await t.wait(800);
       t.expect(await page.locator(`[data-field="sy-item-${mine.id}"]`).count() === 1, 'Manage → Symbols… lists "Pile mark"');
@@ -10570,7 +10666,7 @@ export const scenes = [
         await t.wait(300);
         await opens('site', /Entourage kinds/, '[data-testid=entourage-kinds]');
         await close();
-        await opens('interior', /My furniture/, '[data-dialog=furniture-library]');
+        await opens('interior', /My furniture/, '[data-dialog=placeCatalog] [data-place-source=furniture]');
         await close();
         await opens('interior', /Furniture types/, '[data-dialog=furniture-types]');
         await t.page.locator('.dialog [data-furniture-type]').filter({ hasText: 'Oak sideboard' }).first().click();
@@ -10714,6 +10810,7 @@ export const scenes = [
       await t.shot('dxf-blocks', { clip: { x: Math.max(0, px - 260), y: Math.max(0, py - 120), width: 520, height: 240 } });
       await t.button('Manage', { exact: true });
       await t.tool('manage.symbols');
+      await page.locator('[data-dialog=placeCatalog] [data-action=place-manage]').click();
       await page.waitForSelector('[data-dialog=symbols]', { timeout: 10_000 });
       await t.wait(800);
       await page.locator('[data-field=sy-search]').fill('CHAIR');
@@ -11377,9 +11474,10 @@ export const scenes = [
       };
       const family = await t.cmd('studio.createFamily', { name: 'Table', def });
       t.expect(family?.id, 'the family is made');
-      // Studio → Families…: the family chosen, its wireframe built by the engine, a value tried.
+      // Studio → Families…: the Place catalogue on the parts, its Families… the editor: the family chosen, its wireframe built by the engine, a value tried.
       await t.button('Studio', { exact: true });
       await t.tool('studio.families');
+      await page.locator('[data-dialog=placeCatalog] [data-action=place-manage]').click();
       const dlg = page.locator('[data-dialog=families]');
       await dlg.waitFor({ timeout: 10_000 });
       await dlg.locator(`[data-field="fam-item-${family.id}"]`).click();

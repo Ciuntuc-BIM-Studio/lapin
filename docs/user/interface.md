@@ -86,6 +86,23 @@ Lapin keeps My tools on this computer, for you (the desktop app and the browser 
 
 ![View → Interface → Customize My tools…](shots/my-tools-dialog.webp)
 
+**Architecture → Opening** is every opening: its first choice is what to put, by host (a door, a window, a bay window or an opening of a shape in a wall; a floor opening; a roof window or a dormer), and the old tools (Door, Window, Bay window, Wall opening, Floor opening, Roof window, Dormer) start it set to their kind, with their letters. **Join walls** (<kbd>JW</kbd>) joins two walls; Draft's **Join**, **Trim** and **Extend** work on drafted lines, and the Linework group's **Join linework**, **Trim linework** and **Extend linework** on the lines a view draws of the model.
+
+**Manage → All types** lists the types dialogs of every tab (Wall types, Floor types, Doors & windows, Structure types, Furniture types…) in one place; each tab keeps its own Types group.
+
+### Enter and Esc
+
+One rule in every view, for every tool and command:
+
+- <kbd>Enter</kbd> **finishes**: it closes an outline (a floor, a room, a floor opening: three points or more), ends a polyline or a run, ends a chain (walls, beams: the pieces drawn stay), ends a tool that picks an element and then a point at the pick, and ends a drafting command.
+- <kbd>Esc</kbd> **cancels the step in progress**: the points of what is not made yet go, what a chain or a command already made stays. With nothing in progress, <kbd>Esc</kbd> leaves the tool; with no tool on, it lets the selection go.
+
+## The Place catalogue
+
+**Manage → Place from catalogue…** is one window for everything that can be put in a view, from every module of the edition: the project's **Types** (as the catalog below), the **Symbols** (Lapin's, the project's with the blocks a DXF file brought, this computer's), the **Components** and apartment types, the **Families** (Studio's parts), the **Furniture** (the project's types, My furniture, Lapin's kinds) and the **MEP equipment**. One search at the top looks through all of them (every word you type must be in the name, the group or the description); the chips under it show one source. A card starts placing it, with its tool. **Symbols…** (Manage and Annotate), **Components** (Manage), **Families…** (Studio) and **My furniture…** (Interior) open the catalogue on their source; its button at the top right (**Symbols…**, **Components…**, **Families…**, **My furniture…**) opens the dialog that makes and edits them.
+
+![The Place catalogue: one search over the symbols, the furniture and the MEP equipment](shots/place-catalogue.webp)
+
 ## The catalog
 
 The project browser's **Catalog** tab shows the project's types for each tool that places typed elements: walls, doors, windows, floors, curtain walls, stairs, ramps, ceilings and skirtings. Each type is drawn small (a wall's layers as its plan cut, a floor's as its section, a door's or window's elevation, a skirting's profile), with what it is in a few words.
@@ -256,7 +273,7 @@ In plans, sections, elevations and sheets the style chooses which button pans an
 
 ## Modify and Joins on every tab
 
-The **Modify** group (Move, Copy, Rotate, Mirror, Array, Delete, Pin, **Create similar**, Match properties, the group tools) is the same on Draft, Architecture, Interior, Structure, Steel, Wood, Studio, Site and MEP. On Draft and Studio it joins the group of those tabs that was already called Modify, so each button appears once (Draft keeps Scale, Array and Erase; Studio keeps Move 3D, Rotate 3D, Mirror 3D and its own Array, which makes the solid's parametric array). **Create similar** is greyed out until the selection is something it can start from (a wall, floor, roof, door, window, curtain wall, room…).
+The **Modify** group (Move, Copy, Rotate, Mirror, Array, Delete, Pin, **Create similar**, Match properties, the group tools) is the same on Draft, Architecture, Interior, Structure, Steel, Wood, Studio, Site and MEP. On Draft and Studio it joins the group of those tabs that was already called Modify, so each button appears once (Draft keeps Scale, Array and Erase; Studio keeps Move 3D, Rotate 3D, Mirror 3D and its own Array, which makes the solid's parametric array). **Create similar** works on anything a tool places: it starts that tool set up like the selected element (a wall's or a column's type, a beam's arc, a piece of furniture's kind and type, an MEP node's role, a run's system, a road's template, a bar's shape, a placed part's family and values, a load's value). It is greyed out until the selection is something it can start from.
 
 The **Joins** group (**Mitre**, **Butt**, **Swap**) is the same on Architecture and Structure and acts on what is selected: the corners of the selected walls, beams and strip footings. Steel's own **Mitre** and **Fit** join two members and stay on the Steel tab.
 

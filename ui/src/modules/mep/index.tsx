@@ -12,7 +12,7 @@ import { Box, Container, CookingPot, Cylinder, Filter, Fuel, GitBranchPlus, Heat
 import { AlarmSmoke, BellRing, CloudDrizzle, Cog, Droplet, FireExtinguisher, GitMerge, Hand, PanelTop, RefreshCw, Siren, ThermometerSun } from 'lucide-react';
 import { AirVent, ArrowDownToLine, Ban, Bath, CircleDot, Droplets, Fan, Flame, Gauge, GitFork, Lightbulb, Link2, Milestone, PencilLine, Route, SquarePen, Waves, MoveVertical, Plug, ScanSearch, ShowerHead, Spline, Thermometer, ToggleLeft, Toilet, Unlink, Utensils, Wind, Workflow, Wrench, Zap, Map as MapIcon } from 'lucide-react';
 import type { Icon } from '../../icons';
-import type { Grip, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
+import type { Grip, LapinModule, PlaceEntry, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
 import { activeStorey, ensureStorey, execute, useSession } from '../../engine/session';
@@ -29,10 +29,13 @@ import { Background } from './Background';
 import { mainArgs } from './gas';
 import { LengthField } from '../../shell/cells';
 import { fanGroup } from './fans/tools';
+import { chooseFanType, kindOf as fanKindOf } from './fans/fans';
+import { relatingOf } from '../../engine/model';
 import { FanSection } from './fans/FanSection';
 import { CLASS as FAN_CLASS, fanGrips } from './fans/fans';
 import { lazyPart } from '../../platform/lazyPart';
-import { carrierGroup } from './carriers/tools';
+import { cableTray, carrierGroup } from './carriers/tools';
+import { useCarrierPrefs } from './carriers/carriers';
 import { CarrierSection } from './carriers/CarrierSection';
 import { CLASS as CARRIER_CLASS, carrierPoints } from './carriers/carriers';
 
@@ -455,6 +458,14 @@ const grips = (n: NodeDto): Grip[] => (isRun(n) ? runGrips(n) : isNode(n) ? node
 const references = (n: NodeDto): RefLine[] => (isRun(n) ? [{ points: runPoints(n), closed: false, kind: 'axis' }] : []);
 const byClass = <T,>(f: (n: NodeDto) => T): Record<string, (n: NodeDto) => T> => Object.fromEntries(PICKABLE.map((c) => [c, f]));
 
+/** The Place catalogue's MEP equipment (S15): every role the Place node tool puts down, by its category. */
+function useMepEntries(): PlaceEntry[] {
+  return CATEGORIES.flatMap(([category, ids]) => ids.map((id) => ROLES.find((r) => r.id === id)).filter((r): r is RoleTool => !!r).map((r): PlaceEntry => ({
+    key: `mep:${r.id}`, name: r.label, group: category, thumb: <r.icon size={26} strokeWidth={1.3} />,
+    place: () => { usePlaceRole.setState({ role: r.id }); if (useUi.getState().tool !== place.id) activate(place); },
+  })));
+}
+
 const mep: LapinModule = {
   id: 'mep',
   name: 'MEP',
@@ -476,6 +487,7 @@ const mep: LapinModule = {
   }],
   // The old tool of each role (Radiator, Valve…): the Place tool set to it, off the ribbon; their ids and letters work as before.
   legacyTools: nodeTools,
+  placeSources: [{ id: 'mep', label: 'MEP equipment', order: 60, useEntries: useMepEntries }],
   hotbar: [run, oldNode('radiator'), oldNode('valve')],
   propertySections: [
     { id: 'mep', label: 'MEP', classes: PICKABLE, component: MepSection, fieldKeys: (n) => (isRun(n) ? RUN_FIELDS : isNode(n) ? NODE_FIELDS : null) },
@@ -485,6 +497,23 @@ const mep: LapinModule = {
   dialogs: { mepSystems: SystemsDialog, fanTypes: FanTypesDialog },
   background: Background,
   grips: { ...byClass(grips), [FAN_CLASS]: fanGrips, [CARRIER_CLASS]: carrierGrips },
+  // Create similar: a node by its role (its classes are many), a run on its system, a fan of its kind and type, a carrier of its type.
+  similarFor: (n) => {
+    if (n.type === FAN_CLASS) {
+      const type = relatingOf(useSession.getState(), n.id, 'IfcRelDefinesByType') ?? undefined;
+      const tool = fanGroup.tools.concat(fanGroup.small).find((t) => t.id === `mep.fan.${fanKindOf(type)}`);
+      if (!tool) return null;
+      return () => { if (type) chooseFanType(fanKindOf(type), type.id); activate(tool); };
+    }
+    if (n.type === CARRIER_CLASS) {
+      const type = relatingOf(useSession.getState(), n.id, 'IfcRelDefinesByType') ?? undefined;
+      return () => { if (type) useCarrierPrefs.setState({ type: type.id }); activate(cableTray); };
+    }
+    if (isRun(n)) return () => { setMep({ systemId: n.props.systemId as string }); if (useUi.getState().tool !== run.id) activate(run); };
+    const r = typeof n.props.role === 'string' ? ROLES.find((x) => x.id === n.props.role) : undefined;
+    if (!r) return null;
+    return () => { usePlaceRole.setState({ role: r.id }); if (useUi.getState().tool !== place.id) activate(place); };
+  },
   setType: { [FAN_CLASS]: (ids, typeId) => execute('mep.setFanType', { ids, typeId }) },
   references: { ...byClass(references), [CARRIER_CLASS]: (n: NodeDto): RefLine[] => [{ points: carrierPoints(n), closed: false, kind: 'axis' }] },
 };

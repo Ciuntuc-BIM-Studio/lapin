@@ -180,4 +180,31 @@ public sealed class WallFilletTests
         var b = (string)f.Run("architecture.addWall", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 5, ["y1"] = 0, ["x2"] = 5, ["y2"] = 4, ["arc"] = 0.5, ["height"] = 3 })!["id"]!;
         Assert.Contains("curved", Assert.Throws<CommandException>(() => f.Run("architecture.filletWalls", Args(a, b, 1))).Message);
     }
+
+    [Fact]
+    public void Trim_and_extend_work_on_straight_walls()
+    {
+        var f = new Fixture();
+        // Wall across (0, 0) -> (6, 0) crossed at x = 2 and x = 4.
+        var w = f.Wall(0, 0, 6, 0, height: 3);
+        f.Wall(2, -2, 2, 2, height: 3);
+        f.Wall(4, -2, 4, 2, height: 3);
+
+        // Trim the overhanging right end (5, 0) -> shortens end to x = 4.
+        f.Run("architecture.trimWall", new JsonObject { ["id"] = w, ["at"] = new JsonArray(5, 0) });
+        Assert.Equal(4, Walls.End(f.Model.Get(w)!).X, 6);
+
+        // Extend the right end back to a new wall at x = 6.
+        f.Wall(6, -2, 6, 2, height: 3);
+        f.Run("architecture.extendWall", new JsonObject { ["id"] = w, ["at"] = new JsonArray(3.5, 0) });
+        Assert.Equal(6, Walls.End(f.Model.Get(w)!).X, 6);
+
+        // Trim the middle segment between x = 2 and x = 4 -> splits into two walls (0..2 and 4..6).
+        var split = (JsonObject)f.Run("architecture.trimWall", new JsonObject { ["id"] = w, ["at"] = new JsonArray(3, 0) })!;
+        Assert.Equal(2, ((JsonArray)split["ids"]!).Count);
+        Assert.Equal(2, Walls.End(f.Model.Get(w)!).X, 6);
+        var second = f.Model.Get((string)((JsonArray)split["ids"]!)[1]!)!;
+        Assert.Equal(4, Walls.Start(second).X, 6);
+        Assert.Equal(6, Walls.End(second).X, 6);
+    }
 }

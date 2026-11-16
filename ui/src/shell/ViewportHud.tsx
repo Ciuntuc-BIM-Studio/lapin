@@ -31,8 +31,8 @@ export function toolHint(tool: string | null): string | null {
   const active = findTool(tool);
   const g = active?.gesture;
   if (!active || !g) return null;
-  if (g.kind === 'twoPoints') return `${active.label}: click its start, then its end · Shift squares it · Esc stops`;
-  if (g.kind === 'pickThenPoint') return `${active.label}: ${g.hint ?? 'click the element, then a point · Enter or Esc takes the first click alone'}`;
+  if (g.kind === 'twoPoints') return `${active.label}: click its start, then its end · Shift squares it · ${g.repeat ? 'Enter ends the chain, Esc cancels' : 'Esc cancels'}`;
+  if (g.kind === 'pickThenPoint') return `${active.label}: ${g.hint ?? 'click the element, then a point · Enter takes the first click alone, Esc cancels'}`;
   return null;
 }
 

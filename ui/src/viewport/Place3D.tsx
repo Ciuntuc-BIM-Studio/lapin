@@ -101,6 +101,7 @@ export function Place3D({ camera, canvas, scene }: ViewRefs) {
       return;
     }
     const step = enterStep(g, s.pts);
+    if (step && !step.done) { setPts(step.pts); return; }
     if (step) { setPts(step.pts); void completeTool(tool, { points: step.done!, heights: Array.from({ length: step.done!.length }, (_, i) => zs.current[i] ?? level()) }); zs.current = []; }
   };
   const enterRef = useRef(enter);

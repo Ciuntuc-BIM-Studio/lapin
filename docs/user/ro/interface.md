@@ -86,6 +86,23 @@ Lapin păstrează Uneltele mele pe acest calculator, pentru tine (aplicația des
 
 ![View → Interface → Personalizează Uneltele mele…](shots/my-tools-dialog.webp)
 
+**Arhitectură → Gol** e orice gol: prima alegere e ce pui, după gazdă (o ușă, o fereastră, un bovindou sau un gol de o formă într-un perete; un gol în placă; o fereastră de acoperiș sau o lucarnă), iar vechile unelte (Ușă, Fereastră, Bovindou, Gol în perete, Gol în placă, Fereastră de acoperiș, Lucarnă) o pornesc aleasă pe felul lor, cu literele lor. **Îmbină pereții** (<kbd>JW</kbd>) îmbină doi pereți; **Îmbină**, **Taie** și **Prelungește** de pe Desen lucrează pe liniile desenate, iar **Îmbină liniile**, **Taie liniile** și **Prelungește liniile** din grupul Linii pe liniile pe care o vedere le desenează din model.
+
+**Gestionare → Toate tipurile** arată într-un singur loc dialogurile de tipuri ale tuturor taburilor (Tipuri de pereți, Tipuri de plăci, Uși și ferestre, Tipuri de structură, Tipuri de mobilier…); fiecare tab își păstrează grupul Tipuri.
+
+### Enter și Esc
+
+O singură regulă în orice vedere, pentru orice unealtă și comandă:
+
+- <kbd>Enter</kbd> **termină**: închide un contur (o placă, o încăpere, un gol în placă: trei puncte sau mai multe), termină o polilinie sau un traseu, termină un lanț (pereți, grinzi: bucățile desenate rămân), termină la alegerea elementului o unealtă care alege un element și apoi un punct și termină o comandă de desen.
+- <kbd>Esc</kbd> **anulează pasul în curs**: punctele a ce nu e încă făcut pleacă, ce a făcut deja un lanț sau o comandă rămâne. Fără nimic în curs, <kbd>Esc</kbd> iese din unealtă; fără unealtă, lasă selecția.
+
+## Catalogul de pus
+
+**Gestionare → Pune din catalog…** e o singură fereastră pentru tot ce se poate pune într-o vedere, din toate modulele ediției: **Tipurile** proiectului (ca în catalogul de mai jos), **Simbolurile** (ale Lapin, ale proiectului, cu blocurile aduse de un fișier DXF, ale acestui calculator), **Componentele** și tipurile de apartament, **Familiile** (piesele din Studio), **Mobilierul** (tipurile proiectului, Mobilierul meu, felurile Lapin) și **Echipamentele de instalații**. O singură căutare, sus, le cercetează pe toate (fiecare cuvânt scris trebuie să fie în nume, în grup sau în descriere); butoanele de dedesubt arată o singură sursă. O carte pornește punerea, cu unealta ei. **Simboluri…** (Gestionare și Adnotări), **Componente** (Gestionare), **Familii…** (Studio) și **Mobilierul meu…** (Interior) deschid catalogul pe sursa lor; butonul din dreapta sus (**Simboluri…**, **Componente…**, **Familii…**, **Mobilierul meu…**) deschide dialogul care le face și le modifică.
+
+![Catalogul de pus: o singură căutare în simboluri, mobilier și echipamente de instalații](shots/place-catalogue.webp)
+
 ## Catalogul
 
 Fila **Catalog** din browserul proiectului arată tipurile proiectului pentru fiecare unealtă care pune elemente cu tip: pereți, uși, ferestre, plăci, pereți cortină, scări, rampe, tavane și plinte. Fiecare tip e desenat mic (straturile unui perete ca în secțiunea din plan, ale unei plăci în secțiune, vederea unei uși sau ferestre, profilul unei plinte), cu ce este în câteva cuvinte.
@@ -256,7 +273,7 @@ Bara de stare, jos, arată stilul de navigare cu mouse-ul în uz (la început *L
 
 ## Modifică și Îmbinări pe fiecare tab
 
-Grupul **Modifică** (Mută, Copiază, Rotește, Oglindește, Repetare, Șterge, Fixează, **Creează similar**, Preia proprietățile, uneltele de grupuri) e același pe Desen, Arhitectură, Interior, Structură, Oțel, Lemn, Studio, Amplasament și Instalații. Pe Desen și Studio se unește cu grupul acelor taburi care se numea deja Modifică, așa că fiecare buton apare o singură dată (Desen păstrează Scalează, Repetare și Șterge; Studio păstrează Mută 3D, Rotește 3D, Oglindește 3D și propria Repetare, care face repetarea parametrică a solidului). **Creează similar** e gri până când selecția e ceva de la care poate porni (un perete, o placă, un acoperiș, o ușă, o fereastră, un perete cortină, o încăpere…).
+Grupul **Modifică** (Mută, Copiază, Rotește, Oglindește, Repetare, Șterge, Fixează, **Creează similar**, Preia proprietățile, uneltele de grupuri) e același pe Desen, Arhitectură, Interior, Structură, Oțel, Lemn, Studio, Amplasament și Instalații. Pe Desen și Studio se unește cu grupul acelor taburi care se numea deja Modifică, așa că fiecare buton apare o singură dată (Desen păstrează Scalează, Repetare și Șterge; Studio păstrează Mută 3D, Rotește 3D, Oglindește 3D și propria Repetare, care face repetarea parametrică a solidului). **Creează similar** merge pe orice pune o unealtă: pornește acea unealtă pregătită ca elementul selectat (tipul unui perete sau al unui stâlp, arcul unei grinzi, felul și tipul unei piese de mobilier, rolul unui nod de instalații, sistemul unui traseu, șablonul unui drum, forma unei bare, familia și valorile unei piese, valoarea unei încărcări). E gri până când selecția e ceva de la care poate porni.
 
 Grupul **Îmbinări** (**La 45°**, **Cap la cap**, **Inversează**) e același pe Arhitectură și Structură și lucrează pe ce e selectat: colțurile pereților, grinzilor și fundațiilor continue selectate. **La 45°** și **Încadrează** ale Oțelului îmbină două elemente și rămân pe tabul Oțel.
 

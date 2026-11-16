@@ -4,6 +4,7 @@ import { promptText } from '../../shell/prompts';
 import { ask, textField } from '../../shell/AskBox';
 import { ArrowRightToLine, Crosshair, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Unlink2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags, Grid3x3, Settings2, SlidersHorizontal, SquareDashed, Image as ImageIcon, Ruler, Replace, Shapes, Shapes as SymbolsIcon, FolderPlus, ListOrdered, FileImage } from 'lucide-react';
 import { AngleIcon, ArcLengthIcon, DiameterIcon, DimensionIcon, GridAxisIcon, LevelIcon, OrdinateIcon, RadiusIcon, SlopeIcon } from '../../icons';
+import { openPlaceCatalog } from '../../shell/placeCatalogStore';
 import type { Grip, GripStep, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { axisGrips, axisRef, outlineGrips, pt } from '../../viewport/gripKit';
 import type { NodeDto } from '../../engine/protocol';
@@ -50,9 +51,22 @@ const dimension: ToolDef = { id: 'drafting.dimension', label: 'Aligned', icon: D
 const text: ToolDef = {
   id: 'drafting.text', label: 'Text', icon: Type, shortcut: 'TX',
   gesture: { kind: 'point' },
-  complete: async ({ points: [p] }, ctx) => {
+  complete: async ({ points: [p], rotation }, ctx) => {
     const body = promptText('Text');
-    if (body?.trim()) await ctx.execute('drafting.addText', { viewId: ctx.viewId, at: [p.x, p.y], text: body.trim() });
+    const angle = rotation ? -rotation : 0;
+    if (body?.trim()) await ctx.execute('drafting.addText', { viewId: ctx.viewId, at: [p.x, p.y], text: body.trim(), ...(angle ? { angle } : {}) });
+  },
+};
+const textBox: ToolDef = {
+  id: 'drafting.textBox', label: 'Text box', icon: Type,
+  gesture: { kind: 'rectangle' },
+  complete: async ({ points: [a, b], rotation }, ctx) => {
+    const width = Math.abs(b.x - a.x);
+    if (width < 1e-3) return;
+    const body = promptText('Text');
+    const angle = rotation ? -rotation : 0;
+    const at = [Math.min(a.x, b.x), Math.max(a.y, b.y)];
+    if (body?.trim()) await ctx.execute('drafting.addText', { viewId: ctx.viewId, at, width, text: body.trim(), ...(angle ? { angle } : {}) });
   },
 };
 /** A grid axis: its two ends; it takes the next label of its direction. Its bar: the whole grid's dialog and the axis types (report #68). */
@@ -688,7 +702,7 @@ const drafting: LapinModule = {
         { label: 'Fill', tools: [cad('hatch', 'Hatch', Hash, 'HATCH')] },
         { label: 'Symbol', tools: [cad('saveSymbol', 'Save as symbol', FolderPlus, 'SAVESYMBOL')], small: [cad('symbol', 'Symbol', Shapes, 'SYMBOL')] },
         orderGroup,
-        { label: 'Linework', tools: [cad('linework', 'Linework', PenLine, 'LINEWORK')], small: [cad('lwJoin', 'Join', CornerUpRight, 'LWJOIN'), cad('lwTrim', 'Trim', Scissors, 'LWTRIM'), cad('lwExtend', 'Extend', ArrowRightToLine, 'LWEXTEND'), cad('lwReset', 'Reset', Eraser, 'LWRESET')] },
+        { label: 'Linework', tools: [cad('linework', 'Linework', PenLine, 'LINEWORK')], small: [cad('lwJoin', 'Join linework', CornerUpRight, 'LWJOIN'), cad('lwTrim', 'Trim linework', Scissors, 'LWTRIM'), cad('lwExtend', 'Extend linework', ArrowRightToLine, 'LWEXTEND'), cad('lwReset', 'Reset linework', Eraser, 'LWRESET')] },
         // Drafted lines and shapes made into elements by the modules' converters (docs/plan-user-extensibility.md §7.4–7.5).
         { label: 'Convert', tools: [{ id: 'drafting.convert', label: 'Convert to…', icon: Replace, run: () => void convertSelection() }], small: [{ id: 'drafting.convertLayers', label: 'Convert layers…', icon: Layers, run: () => void convertLayersInFront() }] },
         { label: 'Layers', tools: [{ id: 'drafting.layers', label: 'Layers', icon: Layers, run: () => useUi.setState({ dialog: 'draftLayers' }) }] },
@@ -702,7 +716,7 @@ const drafting: LapinModule = {
         { label: 'Dimension', tools: [dimension, cad('dimLinear', 'Linear', MoveHorizontal, 'DIMLINEAR'), cad('dimAngular', 'Angle', AngleIcon, 'DIMANGULAR'), roomDimensions, exteriorDimensions],
           // Points clicked into a selected string, as ArchiCAD's Insert dimension point.
           small: [dimensionRulesTool, cad('dimAdd', 'Add points', ListPlus, 'DIMADD'), cad('dimDel', 'Remove points', ListMinus, 'DIMDEL'), cad('dimRadius', 'Radius', RadiusIcon, 'DIMRADIUS'), cad('dimDiameter', 'Diameter', DiameterIcon, 'DIMDIAMETER'), cad('dimArc', 'Arc length', ArcLengthIcon, 'DIMARC'), cad('dimSlope', 'Slope', SlopeIcon, 'DIMSLOPE'), cad('dimOrdinate', 'Ordinate', OrdinateIcon, 'DIMORDINATE'), cad('dimCoord', 'Spot coordinate', Crosshair, 'DIMCOORD')] },
-        { label: 'Text', small: [tagParameter], tools: [text, cad('tag', 'Tag', Tag, 'TAG'), {
+        { label: 'Text', small: [textBox, tagParameter], tools: [text, cad('tag', 'Tag', Tag, 'TAG'), {
           id: 'tagOpenings', label: 'Door & window tags', icon: Tags,
           run: () => void (async () => {
             // Every door and window of the plan's storey not tagged yet: a marker across its wall (Drafting standards → Tags).
@@ -718,7 +732,7 @@ const drafting: LapinModule = {
           { id: 'level', label: 'Level', icon: LevelIcon, shortcut: 'LL', run: () => void startCommand('DIMLEVEL') },
         ] },
         // Symbols of the user's own (docs/plan-user-extensibility.md §3): placed with a ghost (R/Space turns, X and Y flip), made from drafting, managed and edited in Manage → Symbols….
-        { label: 'Symbols', tools: [cad('symbol', 'Symbol', Shapes, 'SYMBOL'), cad('saveSymbol', 'Save as symbol', FolderPlus, 'SAVESYMBOL')], small: [{ id: 'drafting.symbols', label: 'Symbols…', icon: SymbolsIcon, run: () => useUi.setState({ dialog: 'symbols' }) }] },
+        { label: 'Symbols', tools: [cad('symbol', 'Symbol', Shapes, 'SYMBOL'), cad('saveSymbol', 'Save as symbol', FolderPlus, 'SAVESYMBOL')], small: [{ id: 'drafting.symbols', label: 'Symbols…', icon: SymbolsIcon, run: () => openPlaceCatalog('symbols') }] },
         orderGroup,
         // An element's own sheet (decision 581): its views from its own axes, chosen in a dialog with the engine's live preview.
         { label: 'Shop drawings', tools: [{

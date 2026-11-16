@@ -3,13 +3,14 @@
 import { create } from 'zustand';
 import loaded, { product } from 'virtual:lapin-modules';
 import type { ComponentType } from 'react';
-import type { PlacementRequest, Vec2, Grip, Grip3D, GripView, LapinModule, ModuleViewDef, Overlay3DProps, PlanOverlayProps, DrawingOverlayProps, RefLine, RibbonTabDef, ToolDef } from './module';
+import type { PlacementRequest, Vec2, Grip, Grip3D, GripView, LapinModule, ModuleViewDef, Overlay3DProps, PlaceSourceDef, PlanOverlayProps, DrawingOverlayProps, RefLine, RibbonTabDef, ToolDef } from './module';
 import type { NodeDto } from '../engine/protocol';
 import { addModuleViews, toggleTool, useUi } from '../app/store';
 import { mergeTabs } from './ribbon';
 import { cancel, useCad } from '../viewport/cad/session';
 import { parseSlot, setSlots, slotsOf, useHotbars, withSlot, withSlotType, withSwap, type Slots } from '../app/hotbar';
 import { useSession } from '../engine/session';
+import { typeOf } from '../engine/model';
 import { useInterface } from '../app/interface';
 import { addSelectionExpander } from './groups';
 import { snapGrip } from '../viewport/grips';
@@ -76,8 +77,25 @@ export const gripsOf = (node: NodeDto, view?: GripView): Grip[] => node.props.pi
 export const grips3dOf = (node: NodeDto): Grip3D[] => node.props.pinned === true ? [] : modules.flatMap((m) => m.grips3d?.[node.type]?.(node) ?? []).map((g) => ({ owner: node.id, ...g }));
 export const referencesOf = (node: NodeDto): RefLine[] => modules.flatMap((m) => m.references?.[node.type]?.(node) ?? []);
 export const similarOf = (cls: string) => modules.map((m) => m.similar?.[cls]).find(Boolean) ?? null;
+/**
+ * What Create similar does with this element: its class's `similar`, else a module's `similarFor`, else, for an element of a type,
+ * the tool placing that type's class (its `typed`) set to the type (audit 2026-11-15: Create similar for every class with a placing tool).
+ */
+export function similarFor(node: NodeDto): (() => void) | null {
+  const byClass = similarOf(node.type);
+  if (byClass) return () => byClass(node);
+  for (const m of modules) { const f = m.similarFor?.(node); if (f) return f; }
+  const type = typeOf(useSession.getState(), node.id);
+  if (!type) return null;
+  const tool = allTools().filter((t) => t.typed?.cls === type.type).sort((a, b) => a.label.length - b.label.length)[0];
+  if (!tool?.typed) return null;
+  return () => { tool.typed!.set(type.id); if (useUi.getState().tool !== tool.id) activate(tool); };
+}
 export const setTypeOf = (cls: string) => modules.map((m) => m.setType?.[cls]).find(Boolean) ?? null;
 export const typeFieldsOf = (cls: string) => modules.map((m) => m.typeFields?.[cls]).find(Boolean) ?? null;
+
+/** The Place catalogue's sources, every module's, in their order (S15). */
+export const placeSources = (): PlaceSourceDef[] => modules.flatMap((m) => m.placeSources ?? []).sort((a, b) => (a.order ?? 50) - (b.order ?? 50));
 
 /** Every tool of every module, once; then the tools added while the app runs (a script's: platform/extraTools.ts). */
 export const allTools = (): ToolDef[] => {

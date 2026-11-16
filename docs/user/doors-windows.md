@@ -8,7 +8,11 @@ summary: Place doors and windows in walls, move them, design their types in the 
 
 ## Placing a door or a window
 
-Choose **Architecture → Door** (<kbd>DR</kbd>) or **Window** (<kbd>WN</kbd>), then click a wall where you want the opening. Lapin cuts the opening in every layer of the wall and adds the lintel the wall type asks for.
+Every opening starts from one tool, **Architecture → Opening**. Its first choice, in the command line's bar and at the head of the properties panel, is what to put: in a wall a **Door**, a **Window**, a **Bay window** or an **Opening of a shape** with nothing in it; in a floor a **Floor opening**; in a roof a **Roof window** or a **Dormer**. Each kind is placed as this page and [Floors and roofs](floors-roofs.md) describe. The letters of the old tools start it already set: <kbd>DR</kbd> a door, <kbd>WN</kbd> a window, <kbd>BW</kbd> a bay window, <kbd>WO</kbd> an opening in a wall, <kbd>SH</kbd> an opening in a floor; quick slots and My tools holding the old tools keep working.
+
+![The Opening tool: what it puts, chosen by host, and the door type it places](shots/opening-tool.webp)
+
+For a door or a window, set **Opening** to **Door** (<kbd>DR</kbd>) or **Window** (<kbd>WN</kbd>), then click a wall where you want the opening. Lapin cuts the opening in every layer of the wall and adds the lintel the wall type asks for.
 
 While Door or Window is on, the properties panel shows the type it will place, with its size: choose another there before you click the wall.
 
@@ -55,7 +59,7 @@ In a **section or an elevation** that sees the opening's wall face-on (the wall 
 
 ## Openings without a door or window
 
-**Architecture → Wall opening** (<kbd>WO</kbd>) cuts an opening alone through a wall where you click it: a passage, a hatch, a hole for a door that comes later. Set its width, height and sill in the properties panel before the click. Selected, its size, its place along the wall and its sill are changed there; like a door, it must fit in the wall and stay clear of the wall's other openings. In IFC it is an opening voiding the wall, with nothing filling it.
+**Architecture → Opening** set to **Opening of a shape** (<kbd>WO</kbd>) cuts an opening alone through a wall where you click it: a passage, a hatch, a hole for a door that comes later. Set its width, height and sill in the properties panel before the click. Selected, its size, its place along the wall and its sill are changed there; like a door, it must fit in the wall and stay clear of the wall's other openings. In IFC it is an opening voiding the wall, with nothing filling it.
 
 Selected, an opening has grips like a window: drag its middle to slide it along the wall, or a jamb to make it wider or narrower while the other jamb stays put; the length beside the mouse can be typed, as when you draw. It is picked by a click in its gap in the plan, or in its hole in the 3D view, where its outline lights up. **Move** (<kbd>M</kbd>) slides it along the wall by a typed distance, and its height and sill are in the properties panel.
 
@@ -63,7 +67,7 @@ Selected, an opening has grips like a window: drag its middle to slide it along 
 
 ![A window's Along the wall in the properties: the distance, measured from and to](shots/along-field.webp)
 
-**Head** shapes its top: **Rectangle**, **Segmental arch** (a shallow arc), **Elliptical arch** (a half ellipse, a quarter of the width high unless you say), **Semicircle**, or **Radiused corners** (a flat head with its top corners rounded). **Rise of the head** sets how high a segmental or elliptical head rises, **Corner radius** how round the corners are (150 mm unless you say, never more than half the width); empty, the kind's own. The wall's opening follows the outline in 3D, in elevations and sections and in IFC; a plan shows its jambs as before.
+**Head** shapes its top: **Rectangle**, **Segmental arch** (a shallow arc), **Elliptical arch** (a half ellipse, a quarter of the width high unless you say), **Semicircle**, **Radiused corners** (a flat head with its top corners rounded), or **Circle** (a round hole, for a pipe or a porthole). **Rise of the head** sets how high a segmental or elliptical head rises, **Corner radius** how round the corners are (150 mm unless you say, never more than half the width); empty, the kind's own. The wall's opening follows the outline in 3D, in elevations and sections and in IFC; a plan shows its jambs as before.
 
 **Reveal finish** lines its jambs and head inside the hole: **Plaster** (15 mm unless you say) or a **Lining** (20 mm of timber), with its **Finish thickness** and **Finish material**; an opening above the floor is finished under it too. The finish is part of the wall's body, in 3D, elevations, sections and quantities, and the clear opening is what it leaves. **Lintel** is **The wall’s rule** (the lintel the wall type asks for, as over a door) or **None**. Several openings selected change together, in one undo step.
 
@@ -223,7 +227,7 @@ A garage door hangs behind its opening: its frame's inner face on the wall's int
 
 ### Bay, bow and box windows
 
-A window type can project from its wall. In the configurator, **Projects** makes it a **Bay** (a centre and two sides at an angle to the wall), a **Bow** (equal panels on an arc) or a **Box** (sides square to the wall), and **New bay window** starts a new type as a 45° bay. The window still fills one opening in the wall, as wide and high as the type: it is placed, moved, copied, flipped, numbered and scheduled like any window. **Architecture → Bay window** (<kbd>BW</kbd>) puts one in the wall you click: the type picked in the configurator when it projects, else the project's first bay, else a 45° bay.
+A window type can project from its wall. In the configurator, **Projects** makes it a **Bay** (a centre and two sides at an angle to the wall), a **Bow** (equal panels on an arc) or a **Box** (sides square to the wall), and **New bay window** starts a new type as a 45° bay. The window still fills one opening in the wall, as wide and high as the type: it is placed, moved, copied, flipped, numbered and scheduled like any window. **Architecture → Opening** set to **Bay window** (<kbd>BW</kbd>) puts one in the wall you click: the type picked in the configurator when it projects, else the project's first bay, else a 45° bay.
 
 The grid's columns are its faces. A bay's and a box's first and last columns are its sides and the columns between them its centre; a bow has one face per column, their widths sharing the arc. Each pane opens as its **Opens** says, so a bay can have its sides opening and its centre fixed. Then:
 

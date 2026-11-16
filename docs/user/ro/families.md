@@ -14,7 +14,7 @@ O familie e mai ușoară decât un configurator de tip: nu are straturi sau dime
 
 ## Studio → Familii…
 
-**Studio → Familii…** deschide familiile proiectului, fiecare cu numărul de obiecte care o folosesc. **Nou** pornește o cutie cu parametrii W, H și D.
+**Studio → Familii…** deschide [catalogul de pus](interface.md#catalogul-de-pus) pe familii, ca să pui una; butonul lui **Familii…** deschide familiile proiectului, fiecare cu numărul de obiecte care o folosesc. **Nou** pornește o cutie cu parametrii W, H și D.
 
 ![Dialogul Familii: o masă cu schița ei în fire, valorile de încercat și parametrii](shots/families-dialog.webp)
 
