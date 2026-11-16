@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // The one condition editor (audit S10)
+  "is at most": "ບໍ່ເກີນ", "is at least": "ຢ່າງໜ້ອຍ", "is none of": "ບໍ່ແມ່ນອັນໃດໃນ", "Phase demolished": "ໄລຍະທີ່ຮື້ຖອນ", "Parameter (as text)": "ພາລາມິເຕີ (ເປັນຂໍ້ຄວາມ)", "Parameter (as text)…": "ພາລາມິເຕີ (ເປັນຂໍ້ຄວາມ)…", "this model": "ແບບຈຳລອງນີ້", "Remove the group": "ເອົາກຸ່ມອອກ", "Add a group": "ເພີ່ມກຸ່ມ",
   // A stair's railings selected one by one, the dog-leg's footing (forum topics 102 and 104)
   "Stair railing": "ຮາວກັນຕົກຂອງຂັ້ນໄດ", "Left railing": "ຮາວກັນຕົກເບື້ອງຊ້າຍ", "Right railing": "ຮາວກັນຕົກເບື້ອງຂວາ", "What is set here is this side's alone; blank, as the stair's type.": "ສິ່ງທີ່ຕັ້ງຢູ່ນີ້ແມ່ນຂອງເບື້ອງນີ້ເທົ່ານັ້ນ; ຫວ່າງໄວ້, ຕາມປະເພດຂອງຂັ້ນໄດ.", "The stair has no railing on this side.": "ຂັ້ນໄດບໍ່ມີຮາວກັນຕົກຢູ່ເບື້ອງນີ້.", "Put it back": "ໃສ່ຄືນ", "as one climbs": "ເມື່ອຂຶ້ນ", "Balustrade": "ຮາວລູກກົງ", "Handrail on the wall": "ຮາວຈັບຕິດຝາ", "Over the nosings, to the handrail's axis; blank: the type's": "ເໜືອຂອບຂັ້ນໄດ, ຮອດແກນຂອງຮາວຈັບ; ຫວ່າງໄວ້: ຂອງປະເພດ", "Delete railing": "ລຶບຮາວກັນຕົກ", "Select the stair": "ເລືອກຂັ້ນໄດ", "Click a railing in a plan or in 3D to select it on its own: its height, its kind, or Delete.": "ຄລິກຮາວກັນຕົກໃນແຜນຜັງ ຫຼື ໃນ 3D ເພື່ອເລືອກມັນຢ່າງດຽວ: ຄວາມສູງ, ຊະນິດ, ຫຼື Delete.", "Footing under the first flight": "ຖານຮາກໃຕ້ຂັ້ນໄດທຳອິດ", "Footing depth": "ຄວາມເລິກຂອງຖານຮາກ", "The first flight's foot on a footing of its own, a strip under its first tread, flush with the first riser (exported as an IfcFooting)": "ຕີນຂອງຊ່ວງຂັ້ນໄດທຳອິດຢູ່ເທິງຖານຮາກຂອງມັນເອງ, ແຖບໃຕ້ຂັ້ນຢຽບທຳອິດ, ສະເໝີກັບໜ້າຕັ້ງທຳອິດ (ສົ່ງອອກເປັນ IfcFooting)",
   // Detail callouts (forum topic 107)

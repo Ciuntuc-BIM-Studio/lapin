@@ -1913,6 +1913,8 @@ export const scenes = [
       await t.page.locator('[data-testid=schedule-configure]').click();
       await t.wait(1200);
       t.expect(await t.page.locator('[data-testid=field-schedule-dialog]').count() === 1, 'Configure opens the editor');
+      t.expect(await t.page.locator('[data-testid=fs-conditions] [data-testid=fs-condition]').count() === 1 && await t.page.locator('[data-testid=fs-match]').count() === 1,
+        'the filter\'s condition in the one condition editor, all or any');
       await t.page.locator('[data-testid=fs-col-field-0]').click();
       await t.wait(800);
       await t.shot('field-schedule-editor', { of: '[data-testid=field-schedule-dialog]', pad: 8 });
@@ -2844,7 +2846,7 @@ export const scenes = [
       const task = leaves.find((x) => x.name.includes('Sector A')) ?? leaves[0];
       await t.ui({ selection: task.id, selected: [task.id] });
       await t.wait(1000);
-      t.expect(await t.page.locator('[data-testid=rule-conditions] .fs-row').count() >= 1, 'the rule holds its condition');
+      t.expect(await t.page.locator('[data-testid=rule-conditions] .cg-row').count() >= 1, 'the rule holds its condition, in the one condition editor');
       await t.page.locator('[data-testid=task-links]').scrollIntoViewIfNeeded();
       await t.wait(300);
       await t.shot('planning-rule-fields', { of: '[data-testid=task-links]', pad: 8 });
@@ -5194,6 +5196,7 @@ export const scenes = [
       await editor.locator('input[aria-label="Filter name"]').fill('Exterior walls');
       await editor.locator('input[aria-label="Filter name"]').press('Tab');
       await t.wait(800);
+      t.expect(await editor.locator('[data-testid=vv-rule-condition]').count() >= 1, 'the filter\'s rules in the one condition editor');
       let g = (await vis()).graphics;
       t.expect(g?.filters?.length === 1 && g.filters[0].hidden === true, 'the new filter used by the view, hiding what it takes');
       const after = await cut();
@@ -5673,6 +5676,7 @@ export const scenes = [
       await t.page.locator('[data-clash-tab=sets]').click();
       await t.wait(800);
       t.expect(await t.page.locator('[data-testid=clash-set-count]').count() === 1, 'a set and how many elements it takes');
+      t.expect(await t.page.locator('[data-testid=clash-rule-conditions] [data-testid=clash-rule-condition]').count() >= 1, 'its rules in the one condition editor');
       await t.shot('clash-sets', { of: '[data-testid=clash-dialog]', pad: 0 });
       // The clash as the dialog left it framed, without the dialog over it.
       await t.page.locator('[data-testid=clash-dialog] button[title="Close"]').click();

@@ -33,7 +33,7 @@ Click a clash to see it in 3D. Lapin selects the two elements, puts a section bo
 
 ## Search sets
 
-**Search sets** holds the rules that choose a set's elements. A rule reads a field of the element (its class, predefined type, type, storey, material, name, linked file or any parameter) with an operator: is, is one of, is not, is not any of, contains, does not contain, at least, at most, between. Numbers are read as people write them: "600 mm" is 600.
+**Search sets** holds the rules that choose a set's elements. They are written in the editor Quick select and the view filters use (see [Quick select](interface.md#quick-select)). A rule reads a field of the element (its class, predefined type, type, storey, material, name, linked file, category, group, phases, any parameter as text, or any field of the project) with an operator: is, is not, contains, does not contain, starts with, is less than, is at most, is greater than, is at least, is between (either end may stay empty), is one of, is none of, has a value, has no value. Numbers are read as people write them: "600 mm" is 600. **Add a group** nests rules of their own, all or any of them, as one more rule.
 
 A set takes the elements meeting any rule, or every rule. A "not" rule always takes elements out, and a set with no rule adding elements holds everything. The count next to the set shows how many elements the rules take as you type.
 

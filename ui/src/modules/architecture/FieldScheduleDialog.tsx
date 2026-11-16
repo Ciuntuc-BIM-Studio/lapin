@@ -10,11 +10,12 @@ import { useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, Plus, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
-import { ConditionsEditor } from '../../shell/ConditionsEditor';
+import { ConditionGroupEditor } from '../../shell/ConditionGroupEditor';
+import { fromNativeGroup, toNativeGroup, type UGroup } from '../../shell/conditionGroup';
 import { FieldPicker } from '../../shell/FieldPicker';
 import {
   AGGREGATES, AGGREGATE_LABELS, DIMENSIONS, UNITS, cleanOptions, fieldValues, moved, shortToken,
-  type FieldColumn, type FieldOptions,
+  type Condition, type FieldColumn, type FieldOptions,
 } from '../../shell/fieldSchedule';
 
 /** Chips and a box that adds what is typed (or picked from the project's values). */
@@ -45,6 +46,8 @@ export function FieldScheduleDialog() {
   const node = useSession((s) => (id ? s.nodes.get(id) : undefined));
   const [o, setO] = useState<FieldOptions>(() => ({ ...((node?.props.fields as FieldOptions | undefined) ?? {}) }));
   const [values, setValues] = useState<Record<string, string[]>>({});
+  // The filter's conditions in the one editor: all or any, and groups of them inside.
+  const [group, setGroup] = useState<UGroup>(() => { const f = (node?.props.fields as FieldOptions | undefined)?.filter; return fromNativeGroup({ match: f?.match, conditions: f?.conditions, nested: f?.nested }); });
   const close = () => useUi.setState({ dialog: null });
   useEffect(() => {
     let live = true;
@@ -53,7 +56,6 @@ export function FieldScheduleDialog() {
   }, []);
   if (!node) return null;
   const filter = o.filter ?? {};
-  const conditions = filter.conditions ?? [];
   const columns = o.columns ?? [];
   const groupBy = o.groupBy ?? [];
   const setFilter = (patch: Partial<typeof filter>) => setO({ ...o, filter: { ...filter, ...patch } });
@@ -73,7 +75,8 @@ export function FieldScheduleDialog() {
           {DIMENSIONS.map((d) => (
             <Chips key={d.key} list={filter[d.key] ?? []} onChange={(l) => setFilter({ [d.key]: l })} suggest={values[d.key] ?? []} label={d.label} testId={`fs-${d.key}`} />
           ))}
-          <ConditionsEditor conditions={conditions} onChange={(c) => setFilter({ conditions: c })} testPrefix="fs" />
+          <ConditionGroupEditor testPrefix="fs" allowGroups group={group} newCondition={() => ({ field: '', op: '=', value: '' })}
+            onChange={(g) => { setGroup(g); const n = toNativeGroup(g); setFilter({ match: n.match, conditions: n.conditions as Condition[], nested: n.nested }); }} />
 
           <h4 className="eyebrow">Group by</h4>
           <p className="muted small">One row for each different value of these fields, in this order. Nothing here: one row for each element.</p>
