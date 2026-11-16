@@ -26,7 +26,7 @@ public sealed record CarrierSpec(CarrierKind Kind, double Width, double Height, 
         : Math.Max(0, Width - 2 * Thickness) * Math.Max(0, Height - (Kind.Key == "trunking" ? 2 : 1) * Thickness);
 
     public string SizeLabel => Kind.Round ? $"Ø{Mm(Diameter)}" : $"{Mm(Width)}×{Mm(Height)}";
-    internal static string Mm(double v) => Math.Round(v * 1000).ToString(CultureInfo.InvariantCulture);
+    internal static string Mm(double v) => Lapin.Model.Numbers.Mm(v);
 }
 
 /// <summary>A built-in carrier type: indicative, as everything Lapin ships (the user's own types are theirs).</summary>
@@ -87,7 +87,7 @@ public static class CableCarriers
     public static IEnumerable<Entity> All(IModelView m) => m.OfClass(Class).Where(IsCarrier);
     public static List<Vec2> Points(Entity e) => Args.StoredPoints(e.Attrs["points"]);
 
-    public static Entity? TypeOf(IModelView m, Entity e) => m.RelatingOf(e.Id, IfcClass.RelDefinesByType) is { Class: TypeClass } t ? t : null;
+    public static Entity? TypeOf(IModelView m, Entity e) => Lapin.Platform.Types.Of(m, e, TypeClass);
 
     /// <summary>The carrier's kind and size: its own values over its type's, the kind's defaults under both.</summary>
     public static CarrierSpec SpecOf(IModelView m, Entity e)
@@ -296,8 +296,7 @@ public static class CableCarriers
     static string Unique(IModelView m, string name)
     {
         var taken = m.OfClass(TypeClass).Select(t => t.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (!taken.Contains(name)) return name;
-        for (var i = 2; ; i++) if (!taken.Contains($"{name} {i}")) return $"{name} {i}";
+        return Lapin.Model.Names.Free(taken.Contains, name);
     }
 
     static JsonObject TypeAttrs(CarrierKind kind, JsonObject a)

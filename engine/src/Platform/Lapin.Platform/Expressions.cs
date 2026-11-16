@@ -357,15 +357,8 @@ public static class LiveText
         return TitleBlocks.Fill(text, resolve, unknown);
     }
 
-    /// <summary>A value as a number: its text read with a dot or a comma, the first number in it (<c>+3.20</c>, <c>1:100</c> → 1, <c>12 m</c> → 12).</summary>
-    public static double? Number(string? v)
-    {
-        if (string.IsNullOrWhiteSpace(v)) return null;
-        var t = v.Trim().Replace('−', '-').Replace(',', '.');
-        if (double.TryParse(t, NumberStyles.Float, CultureInfo.InvariantCulture, out var n)) return n;
-        var m = System.Text.RegularExpressions.Regex.Match(t, @"[-+]?\d+(\.\d+)?");
-        return m.Success && double.TryParse(m.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out n) ? n : null;
-    }
+    /// <summary>A value as a number: the first number in its text (<c>+3.20</c>, <c>1:100</c> → 1, <c>12 m</c> → 12, <c>1 250</c>), as <see cref="Lapin.Model.Numbers"/> reads it.</summary>
+    public static double? Number(string? v) => Lapin.Model.Numbers.Parse(v, Lapin.Model.NumberMode.First);
 
     /// <summary>A formula's body split from its format: the bar after the last quote („{= a / 1000 | 0.00}”).</summary>
     public static (string Formula, string? Format) SplitFormat(string body)

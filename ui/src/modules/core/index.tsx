@@ -3,14 +3,14 @@
 import { StoreySection } from './StoreySection';
 import { toggleDrafts3d, toggleDragMove3d, toggleDxf3d, toggleDrillSelect, toggleGrid, toggleOrbitSelection, toggleThinLines, toggleZoomToCursor, useDisplay } from '../../app/display';
 import { measure } from './measure';
-import { Scale, Braces, Tags, Pin, PinOff, PackageOpen, AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, ScanEye, ListFilter, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, Shapes, SlidersHorizontal, Square, Table2, SquareDashed, Star, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn, Building2 } from 'lucide-react';
+import { ArrowLeftRight, CornerDownRight, Slash, Scale, Braces, Tags, Pin, PinOff, PackageOpen, AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, ScanEye, ListFilter, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, Shapes, SlidersHorizontal, Square, Table2, SquareDashed, Star, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn, Building2 } from 'lucide-react';
 import { CopyToStoreysIcon, ElevationIcon, MoveToStoreyIcon, ProfileIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { notify } from '../../app/store';
 import { nextVisualStyle, XRAY_NOTICE } from '../../app/visualStyle';
 import { similarOf } from '../../platform/modules';
 import { registerCommand, startCommand } from '../../viewport/cad/session';
-import type { LapinModule } from '../../platform/module';
+import type { LapinModule, ToolDef } from '../../platform/module';
 import { voidLabelGrips } from '../../platform/labelParts';
 import type { NodeDto } from '../../engine/protocol';
 import { viewShowsField } from './planeFields';
@@ -23,7 +23,8 @@ import { setLayout, showPropsTab } from '../../app/panels';
 import { SheetSection } from './SheetSection';
 import { Visibility3D, VisibilityDialog, openVisibility } from './VisibilityDialog';
 import { LinkedProjectsWatch, LinksDialog, LinksLook } from './LinksDialog';
-import { toggleClashMarks, toggleVoids2d } from './coordination/coordination';
+import { toggleClashMarks, toggleVoids2d, useClashMode } from './coordination/coordination';
+import { hasModule } from '../../platform/brand';
 import { openDocuments } from './documents/documents';
 import { convertToNative } from './convertTools';
 import { pinSelection } from './pinTools';
@@ -100,6 +101,12 @@ const JgExportDialog = lazyPart(() => import('./JgExportDialog').then((m) => m.J
 const PlanStoreysDialog = lazyPart(() => import('./PlanStoreys').then((m) => m.PlanStoreysDialog), { title: 'Storeys shown' });
 
 /** Create Similar: the selected element's tool, set up like it. */
+/** Whether the selection is something Create similar can start from (an element of a class a module has a "similar" for). */
+function canCreateSimilar(): boolean {
+  const id = useUi.getState().selection;
+  const node = id ? useSession.getState().nodes.get(id) : undefined;
+  return !!node && !!similarOf(node.type);
+}
 function createSimilar() {
   const id = useUi.getState().selection;
   const node = id ? useSession.getState().nodes.get(id) : undefined;
@@ -114,6 +121,24 @@ registerCommand({ names: ['MATCHPROP', 'MA', 'MATCHTYPE', 'PAINTER'], label: 'Ma
 registerCommand({ names: ['COPYSTOREY', 'COPYTOSTOREYS', 'COPYSTOREYS'], label: 'Copy to storeys', start: () => { useUi.setState({ dialog: 'copyToStoreys' }); } });
 registerCommand({ names: ['MOVESTOREY', 'MOVETOSTOREY'], label: 'Move to storey', start: () => { useUi.setState({ dialog: 'moveToStorey' }); } });
 
+/**
+ * Mitre, Butt and Swap on the corners of the selection, whatever it is (audit 2026-11-15, S13: one Joins group, not one per module): walls
+ * go to the architecture module's restyleJoins, beams and strip footings to the structure module's. Steel's own Mitre and Fit join two
+ * members into a cope or a fit, which is another thing, and stay in Steel.
+ */
+const JOIN_OWNERS: { command: string; classes: string[]; what: string }[] = [
+  { command: 'architecture.restyleJoins', classes: ['IfcWall'], what: 'walls' },
+  { command: 'structure.restyleJoins', classes: ['IfcFooting', 'IfcBeam'], what: 'strip footings or beams' },
+];
+function restyleJoins(args: Record<string, unknown>) {
+  const nodes = useSession.getState().nodes;
+  const selected = useUi.getState().selected;
+  const calls = JOIN_OWNERS.map((o) => ({ o, ids: selected.filter((id) => o.classes.includes(nodes.get(id)?.type ?? '')) })).filter((c) => c.ids.length);
+  if (!calls.length) { notify('Select the walls, beams or strip footings whose corners to change.'); return; }
+  for (const c of calls) void execute(c.o.command, { ids: c.ids, ...args });
+}
+const joinTool = (label: string, id: string, icon: ToolDef['icon'], args: Record<string, unknown>): ToolDef => ({ id, label, icon, run: () => restyleJoins(args) });
+
 /** The class's generic fields less the discipline, which the section shows as a choice of the known disciplines. */
 const butDiscipline = (cls: string) => () => (useSession.getState().info?.nodeTypes.find((t) => t.type === cls)?.fields ?? []).map((f) => f.key).filter((k) => k !== 'discipline');
 const viewFields = (node: NodeDto) => butDiscipline('LapinView')().filter((k) => viewShowsField(node.props.kind, k));
@@ -121,12 +146,22 @@ const viewFields = (node: NodeDto) => butDiscipline('LapinView')().filter((k) =>
 /** What the core keeps running while the workspace is open: the 3D's visibility and storeys shown, the links' looks. */
 function CoreBackground() { return <><Visibility3D /><Storeys3DLooks /><LinksLook /><LinkedProjectsWatch /></>; }
 
+/** Manage → Clash check…: the openings checked against MEP (a tab of Clash detection when the product has it, else a window of its own). */
+const openingsCheck: ToolDef = {
+  id: 'manage.openingsMep', label: 'Clash check…', icon: SquareDashed,
+  run: () => { if (hasModule('clash')) { useClashMode.setState({ mode: 'openings' }); useUi.setState({ dialog: 'clashes' }); } else useUi.setState({ dialog: 'coordination' }); },
+};
+
 const core: LapinModule = {
   id: 'core',
   name: 'Core',
   summary: 'Project, views, selection and measuring.',
   // The modify tools have no tab of their own: the modelling tabs include them (Architecture, Structure).
+  // The old Clash check… button, when Clash detection is the one window.
+  legacyTools: hasModule('clash') ? [openingsCheck] : [],
   sharedGroups: {
+    // The corners of walls, beams and strip footings (S13): the tab's own Joins group (a wall's Join, the new-corner style) goes with it.
+    joins: { label: 'Joins', tools: [joinTool('Mitre', 'core.mitre', Slash, { style: 'mitre' }), joinTool('Butt', 'core.butt', CornerDownRight, { style: 'butt' }), joinTool('Swap', 'core.swap', ArrowLeftRight, { swap: true })] },
     modify: { label: 'Modify', tools: [], small: [
       { id: 'modify.move', label: 'Move', icon: Move, run: () => void startCommand('MOVE') },
       { id: 'modify.copy', label: 'Copy', icon: Copy, run: () => void startCommand('COPY') },
@@ -134,11 +169,11 @@ const core: LapinModule = {
       { id: 'modify.mirror', label: 'Mirror', icon: FlipHorizontal2, run: () => void startCommand('MIRROR') },
       // Copies in a row or round a centre, any element alike (decision 448).
       { id: 'modify.array', label: 'Array', icon: Grid3x3, run: () => void arraySelection() },
-      { id: 'modify.delete', label: 'Delete', icon: Trash2, run: () => void startCommand('ERASE') },
+      { id: 'modify.delete', label: 'Delete', alsoCalled: ['Erase'], icon: Trash2, run: () => void startCommand('ERASE') },
       // Pinned where it is, as Revit pins (decision 449): not moved, turned, mirrored nor deleted until unpinned.
       { id: 'modify.pin', label: 'Pin', icon: Pin, run: () => void pinSelection(true) },
       { id: 'modify.unpin', label: 'Unpin', icon: PinOff, shortcut: 'UP', run: () => void pinSelection(false) },
-      { id: 'modify.similar', label: 'Create similar', icon: CopyCheck, shortcut: 'CS', run: createSimilar },
+      { id: 'modify.similar', label: 'Create similar', icon: CopyCheck, shortcut: 'CS', enabled: canCreateSimilar, run: createSimilar },
       { id: 'modify.match', label: 'Match properties', icon: Pipette, shortcut: 'MA', run: () => void startCommand('MATCHPROP') },
       { id: 'modify.moveToStorey', label: 'Move to storey', icon: MoveToStoreyIcon, run: () => useUi.setState({ dialog: 'moveToStorey' }) },
       // ArchiCAD's copy to stories (a tester's wish): the selection onto several storeys at once; COPYSTOREY on the command line.
@@ -210,9 +245,8 @@ const core: LapinModule = {
         { id: 'manage.sheetRemarks', label: 'Sheet remarks…', icon: MessageSquare, run: () => useUi.setState({ dialog: 'cdeRemarks' }) },
       ] },
       // Openings as solid voids and MEP checked against them (a tester's request, decision 289), run only when asked, as a report (decision 293).
-      { label: 'Coordination', tools: [
-        { id: 'manage.openingsMep', label: 'Clash check…', icon: SquareDashed, run: () => useUi.setState({ dialog: 'coordination' }) },
-      ] },
+      // With the clash module there is one window, Clash detection, whose Openings for MEP tab is this check (S2): its button is the module's.
+      { label: 'Coordination', tools: hasModule('clash') ? [] : [openingsCheck] },
     ],
   }, {
     id: 'view', label: 'View', order: 90,

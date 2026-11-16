@@ -26,9 +26,9 @@ public static class LintelProducts
             lineNo++;
             var line = raw.Trim().TrimEnd('\r');
             if (line.Length == 0 || line.StartsWith('#')) continue;
-            var sep = line.Contains(';') ? ';' : ',';
-            var f = line.Split(sep).Select(x => x.Trim().Trim('"')).ToArray();
-            static double? Mm(string s) => double.TryParse(s.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var v) && v > 0 ? v / 1000 : null;
+            // Each line its own separator (a file may mix them); its cells as CSV reads them, quotes honoured.
+            var f = CsvText.Read(line, line.Contains(';') ? ';' : ',')[0].Select(x => x.Trim()).ToArray();
+            static double? Mm(string s) => Numbers.Parse(s, NumberMode.Strict) is { } v && v > 0 ? v / 1000 : null;
             if (f.Length < 4 || Mm(f[1]) is not { } w || Mm(f[2]) is not { } h)
             {
                 if (lineNo > 1 || f.Length < 4) skipped.Add($"line {lineNo}");

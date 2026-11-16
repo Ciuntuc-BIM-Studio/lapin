@@ -16,19 +16,40 @@ namespace Lapin.Platform;
 /// </summary>
 public static class Location
 {
-    public sealed record Point(Vec2 At, double Elevation, double? Easting = null, double? Northing = null, double? NorthAngle = null);
+    /// <summary>A point of the project: in the plan, its elevation; the survey point's map coordinates; the base point's angle to true north and, when the project's place is known, its latitude and longitude (WGS 84, degrees).</summary>
+    public sealed record Point(Vec2 At, double Elevation, double? Easting = null, double? Northing = null, double? NorthAngle = null, double? Latitude = null, double? Longitude = null);
 
     static JsonObject Of(IModelView m) => Spatial.Project(m)?.Attrs["location"] as JsonObject ?? [];
 
     public static Point Base(IModelView m)
     {
         var b = Of(m)["base"] as JsonObject;
-        return new Point(new Vec2(Json.Number(b?["x"]) ?? 0, Json.Number(b?["y"]) ?? 0), Json.Number(b?["elevation"]) ?? 0, NorthAngle: Json.Number(b?["northAngle"]) ?? 0);
+        var (lat, lon) = (Json.Number(b?["latitude"]), Json.Number(b?["longitude"]));
+        var place = lat is { } la && lon is { } lo && double.IsFinite(la) && double.IsFinite(lo);
+        return new Point(new Vec2(Json.Number(b?["x"]) ?? 0, Json.Number(b?["y"]) ?? 0), Json.Number(b?["elevation"]) ?? 0, NorthAngle: Json.Number(b?["northAngle"]) ?? 0,
+            Latitude: place ? lat : null, Longitude: place ? lon : null);
     }
 
-    public static Point? Survey(IModelView m) => Of(m)["survey"] is JsonObject s
+    /// <summary>
+    /// The survey point, which ties the plan to the map: the one the user set (Manage → Location) or, without one, the base
+    /// point standing on the map coordinates of its latitude and longitude in the project's coordinate system (a projected
+    /// one Lapin knows), at its elevation; null when the project is not tied to the map (issue 27).
+    /// </summary>
+    public static Point? Survey(IModelView m) => SetSurvey(m) ?? FromPlace(m);
+
+    /// <summary>The survey point the user set, or null (<see cref="Survey"/> also ties a project by the base point's latitude and longitude).</summary>
+    public static Point? SetSurvey(IModelView m) => Of(m)["survey"] is JsonObject s
         ? new Point(new Vec2(Json.Number(s["x"]) ?? 0, Json.Number(s["y"]) ?? 0), Json.Number(s["elevation"]) ?? 0, Json.Number(s["easting"]) ?? 0, Json.Number(s["northing"]) ?? 0)
         : null;
+
+    /// <summary>The base point on the map from its latitude and longitude, when the project's system is a projected one Lapin knows.</summary>
+    static Point? FromPlace(IModelView m)
+    {
+        var b = Base(m);
+        if (b.Latitude is not { } lat || b.Longitude is not { } lon || Crs(m) is not { } crs || GeoRef.Get(crs) is not { Geographic: false }) return null;
+        var (e, n) = GeoRef.FromWgs84(crs, lon, lat);
+        return double.IsFinite(e) && double.IsFinite(n) ? new Point(b.At, b.Elevation, e, n) : null;
+    }
 
     /// <summary>The project's coordinate system ("EPSG:3844"…), or null.</summary>
     public static string? Crs(IModelView m) => (string?)Of(m)["crs"] is { Length: > 0 } c ? c : (string?)Spatial.Project(m)?.Attrs["crs"] is { Length: > 0 } old ? old : null;
@@ -62,7 +83,23 @@ public static class Location
             foreach (var k in new[] { "base", "survey" })
                 if (a.ContainsKey(k))
                 {
-                    if (a[k] is JsonObject o) { var cur = loc[k] as JsonObject ?? new JsonObject(); foreach (var (f, v) in o) if (Json.Number(v) is { } n) cur[f] = n; loc[k] = cur.DeepClone(); }
+                    if (a[k] is JsonObject o)
+                    {
+                        var cur = loc[k] as JsonObject ?? new JsonObject();
+                        foreach (var (f, v) in o)
+                        {
+                            // The base point's latitude and longitude (WGS 84, degrees): null clears them.
+                            if (k == "base" && f is "latitude" or "longitude")
+                            {
+                                if (v == null) { cur.Remove(f); continue; }
+                                if (Json.Number(v) is not { } d || !double.IsFinite(d) || Math.Abs(d) > (f == "latitude" ? 90 : 180))
+                                    throw new CommandException(f == "latitude" ? "A latitude is between -90° and 90°." : "A longitude is between -180° and 180°.");
+                                cur[f] = d;
+                            }
+                            else if (Json.Number(v) is { } n) cur[f] = n;
+                        }
+                        loc[k] = cur.DeepClone();
+                    }
                     else loc.Remove(k);
                 }
             if (a["show"] is JsonValue sv && sv.TryGetValue<bool>(out var show)) loc["show"] = show;
@@ -91,7 +128,14 @@ public static class Location
             return null;
         });
 
-        r.Query("project.location", (q, _) => Of(q.Model).DeepClone());
+        // The location as kept, and the tie the base point's latitude and longitude make without a survey point (<c>tie</c>: the survey point the plans and the exports use).
+        r.Query("project.location", (q, _) =>
+        {
+            var o = (JsonObject)Of(q.Model).DeepClone();
+            if (SetSurvey(q.Model) == null && Survey(q.Model) is { } t)
+                o["tie"] = new JsonObject { ["x"] = t.At.X, ["y"] = t.At.Y, ["easting"] = t.Easting, ["northing"] = t.Northing, ["elevation"] = t.Elevation };
+            return o;
+        });
         // A plan point in map coordinates and in longitude and latitude, or map coordinates in the plan ({x, y} or {e, n}).
         r.Query("project.geo", (q, a) =>
         {

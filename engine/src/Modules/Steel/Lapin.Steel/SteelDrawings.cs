@@ -126,7 +126,7 @@ public static class SteelDrawings
         return o;
     }
 
-    static string Mm(double m) => Math.Round(m * 1000).ToString(CultureInfo.InvariantCulture);
+    static string Mm(double m) => Lapin.Model.Numbers.Mm(m);
 
     /// <summary>
     /// An anchor plan's annotations: each anchor a circle with its cross; each base its mark and two short chains, across and

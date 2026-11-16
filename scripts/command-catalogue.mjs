@@ -7,7 +7,7 @@
  * where there is no source.
  *
  * What it reads, per handler (`r.Command("name", "Label", …)` / `r.Query("name", …)`, up to the next one or the end of
- * the registering method): every `a["key"]`, `P(a, "x", "y")`, `Number(a, "k")`, and the keys read by the helpers it hands
+ * the registering method): every `a["key"]` (or `a?["key"]`), `P(a, "x", "y")`, `Number(a, "k")`, and the keys read by the helpers it hands
  * its `a` to (`Args.Ids(a)`, `WallsAlong.Add(ctx, a, …)`: any static method of the engine taking a JsonObject, two levels
  * deep). A key's type is guessed from how it is read ((string?) → str, Json.Number → float, TryGetValue<bool> → bool,
  * `as JsonArray` → list, `as JsonObject` → dict), else left out. Keys read further away are not seen; the command's error
@@ -72,7 +72,7 @@ const TYPE_DECL = /^( *)(?:(?:public|internal|private|protected|static|sealed|ab
 /** The type a member at `at`, indented by `indent`, belongs to: the last declared before it less indented. */
 const ownerAt = (types, at, indent) => types.filter((c) => c.index < at && c[1].length < indent).at(-1)?.[2];
 
-const ARG = (name) => new RegExp(`\\b${name}\\["(\\w+)"\\]`, 'g');
+const ARG = (name) => new RegExp(`\\b${name}\\??\\["(\\w+)"\\]`, 'g');
 
 /** The type a key seems read as, from the text round one of its reads: str, float, int, bool, list, dict; null when unclear. */
 function typeHint(before, after) {
@@ -125,8 +125,8 @@ function keysWithHelpers(body, v, owner, index, depth = 2, seen = new Set()) {
   const keys = keysRead(body, v);
   if (depth <= 0) return keys;
   const merge = (more) => { for (const [k, t] of more) { if (!keys.has(k)) keys.set(k, new Set()); for (const x of t) keys.get(k).add(x); } };
-  // Qualified (Args.Ids(a), WallsAlong.Add(ctx, a, …)) and unqualified calls to a helper of the same class.
-  for (const m of body.matchAll(new RegExp(`(?:\\b(\\w+)\\.)?\\b(\\w+)\\((?:\\w+, )?${v}\\b\\s*[,)]`, 'g'))) {
+  // Qualified (Args.Ids(a), WallsAlong.Add(ctx, a, …), Options.From(ctx.Model, a)) and unqualified calls to a helper of the same class.
+  for (const m of body.matchAll(new RegExp(`(?:\\b(\\w+)\\.)?\\b(\\w+)\\((?:[\\w.]+, )?${v}\\b\\s*[,)]`, 'g'))) {
     const name = `${m[1] ?? owner}.${m[2]}`;
     if (seen.has(name) || !index.has(name)) continue;
     seen.add(name);

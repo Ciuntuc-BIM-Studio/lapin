@@ -15,12 +15,15 @@ import { useCamera } from '../../viewport/camera';
 import { useSectionBox } from '../../viewport/sectionBox';
 import { isolateIds, resetTemporary } from '../../viewport/temporary';
 import { Cell } from '../../shell/cells';
+import { DraftGroupEditor } from '../../shell/ConditionGroupEditor';
+import { fromClashGroup, toClashGroup, type UGroup } from '../../shell/conditionGroup';
 import { author, exportBcf } from '../core/remarks/remarks';
-import { toggleClashMarks } from '../core/coordination/coordination';
+import { toggleClashMarks, useClashMode } from '../core/coordination/coordination';
+import { CoordinationPanel } from '../core/coordination/CoordinationDialog';
 import {
-  clashCsv, clashHtml, clashRemarks, deleteSet, deleteTest, FIELD_LABELS, framing, GROUP_LABELS, isList, loadClashes, loadMembers, loadResults, OP_LABELS, reportFile, runClashes, saveSet, saveTest,
-  seedClashes, setStatus, STATUS_LABELS, STATUSES, valuesOf, valuesText,
-  type Clash, type ClashList, type ClashStatus, type ClashTest, type GroupBy, type RuleField, type RuleOp, type SearchSet, type SetRule,
+  clashCsv, clashHtml, clashRemarks, deleteSet, deleteTest, framing, GROUP_LABELS, loadClashes, loadMembers, loadResults, reportFile, runClashes, saveSet, saveTest,
+  seedClashes, setStatus, STATUS_LABELS, STATUSES,
+  type Clash, type ClashList, type ClashStatus, type ClashTest, type GroupBy, type RuleGroup, type SearchSet,
 } from './clash';
 
 /** A clash in the 3D view: the pair selected (alone when asked), a section box round where they meet, the camera looking at it. */
@@ -60,6 +63,7 @@ export function ClashDialog() {
   const [busy, setBusy] = useState(false);
   const [groupBy, setGroupBy] = useState<GroupBy>('none');
   const [progress, setProgress] = useState<string | null>(null);
+  const mode = useClashMode((s) => s.mode);
   const close = () => useUi.setState({ dialog: null });
 
   // The tests and sets, read again as the model changes; a project with none gets the starting ones (one undo step).
@@ -142,6 +146,13 @@ export function ClashDialog() {
     <div className="dialog-backdrop clash-backdrop">
       <div className="dialog clash-dialog" role="dialog" aria-label="Clash detection" data-testid="clash-dialog" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Clash detection</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
+        {/* One window for both checks (S2): the tests, and the openings for MEP with their fixes (the check of Manage → Clash check…). */}
+        <div className="row tabs-row clash-modes" role="tablist" aria-label="Kind of check">
+          <button type="button" role="tab" aria-selected={mode === 'tests'} className={`btn${mode === 'tests' ? ' active' : ''}`} data-clash-mode="tests" onClick={() => useClashMode.setState({ mode: 'tests' })}>Tests</button>
+          <button type="button" role="tab" aria-selected={mode === 'openings'} className={`btn${mode === 'openings' ? ' active' : ''}`} data-clash-mode="openings" onClick={() => useClashMode.setState({ mode: 'openings' })}>Openings for MEP</button>
+        </div>
+        {mode === 'openings' && <div className="coordination" data-testid="coordination-dialog"><CoordinationPanel /></div>}
+        {mode === 'tests' && <>
         <div className="dialog-body clash-body">
           <section className="clash-main">
             <div className="row clash-test-row" data-testid="clash-tests">
@@ -197,6 +208,7 @@ export function ClashDialog() {
           <span className="grow" />
           <button type="button" className="btn" onClick={close}>Done</button>
         </footer>
+        </>}
       </div>
     </div>
   );
@@ -276,8 +288,8 @@ function TestForm({ test, sets, onDelete }: { test: ClashTest; sets: SearchSet[]
       </select></dd>
       {test.kind === 'openings' ? <>
         <dt />
-        <dd><p className="muted small">The check of Manage → Clash check…: each MEP run through a wall, floor or roof must lie inside an opening, with its clearance. Its depth is how far it is short. Openings are made there.</p>
-          <button type="button" className="link" onClick={() => useUi.setState({ dialog: 'coordination' })}>Clash check…</button></dd>
+        <dd><p className="muted small">The check of the Openings for MEP tab: each MEP run through a wall, floor or roof must lie inside an opening, with its clearance. Its depth is how far it is short. Openings are made there.</p>
+          <button type="button" className="link" onClick={() => useClashMode.setState({ mode: 'openings' })}>Openings for MEP</button></dd>
       </> : <>
       <dt title={test.kind === 'hard' ? 'A crossing this deep or less is not a clash' : 'Elements closer than this clash'}>{test.kind === 'hard' ? 'Tolerance (mm)' : 'Distance (mm)'}</dt>
       <dd><input inputMode="decimal" value={tolerance} onChange={(e) => setTolerance(e.target.value)} onBlur={keepTolerance} /></dd>
@@ -290,9 +302,6 @@ function TestForm({ test, sets, onDelete }: { test: ClashTest; sets: SearchSet[]
     </dl>
   );
 }
-
-const FIELDS: RuleField[] = ['class', 'predefinedType', 'type', 'storey', 'material', 'name', 'link', 'parameter'];
-const OPS: RuleOp[] = ['is', 'isOneOf', 'isNot', 'isNotAnyOf', 'contains', 'notContains', 'atLeast', 'atMost', 'between'];
 
 function SetsEditor({ sets }: { sets: SearchSet[] }) {
   const [id, setId] = useState<string | null>(sets[0]?.id ?? null);
@@ -310,49 +319,29 @@ function SetsEditor({ sets }: { sets: SearchSet[] }) {
         <button type="button" className="btn small" data-testid="clash-new-set" onClick={() => void add()}><Plus size={12} /> New set</button>
         {set && <button type="button" className="btn small" onClick={() => void deleteSet(set.id)}><Trash2 size={12} /> Delete</button>}
       </div>
-      {set && <SetForm key={set.id + JSON.stringify(set.rules)} set={set} />}
+      {set && <SetForm key={set.id} set={set} />}
     </div>
   );
 }
 
 function SetForm({ set }: { set: SearchSet }) {
-  const [rules, setRules] = useState<SetRule[]>(set.rules);
-  const [texts, setTexts] = useState<string[]>(set.rules.map(valuesText));
+  const [group, setGroup] = useState<UGroup>(() => fromClashGroup(set));
   const [count, setCount] = useState<number | null>(set.count ?? null);
-  const draft = (r = rules, t = texts) => r.map((x, i) => ({ ...x, values: valuesOf(t[i] ?? '', x.op) }));
-  // How many elements the rules take as they are typed.
+  // How many elements the finished rules take as they are edited.
   useEffect(() => {
-    const t = setTimeout(() => void loadMembers({ matchAll: set.matchAll, rules: draft(), groups: set.groups }).then((m) => setCount(m?.count ?? null)), 300);
+    const t = setTimeout(() => void loadMembers(toClashGroup(group) as RuleGroup).then((m) => setCount(m?.count ?? null)), 300);
     return () => clearTimeout(t);
-  }, [rules, texts]); // eslint-disable-line react-hooks/exhaustive-deps
-  const save = (r = rules, t = texts, matchAll = set.matchAll) => void saveSet({ id: set.id, name: set.name, matchAll, rules: draft(r, t), groups: set.groups });
-  const patch = (i: number, p: Partial<SetRule>) => { const r = rules.map((x, k) => (k === i ? { ...x, ...p } : x)); setRules(r); save(r); };
+  }, [group]);
+  const change = (g: UGroup) => { setGroup(g); void saveSet({ id: set.id, name: set.name, ...(toClashGroup(g) as RuleGroup) }); };
   return (
     <div className="clash-set-form">
       <dl className="fields">
         <dt>Name</dt><dd><Cell value={set.name} onCommit={(t) => { if (t.trim() && t !== set.name) void saveSet({ ...set, name: t.trim() }); }} /></dd>
         <dt>Takes</dt>
-        <dd><select value={set.matchAll ? 'all' : 'any'} onChange={(e) => save(rules, texts, e.target.value === 'all')}>
-          <option value="any">elements meeting any rule</option>
-          <option value="all">elements meeting every rule</option>
-        </select> <span className="muted small" data-testid="clash-set-count">{count == null ? '…' : `${count} elements`}</span></dd>
+        <dd><span className="muted small" data-testid="clash-set-count">{count == null ? '…' : `${count} elements`}</span></dd>
       </dl>
-      <table className="schedule-table clash-rules">
-        <thead><tr><th>Field</th><th /><th>Operator</th><th>Value</th><th /></tr></thead>
-        <tbody>
-          {rules.map((r, i) => (
-            <tr key={i}>
-              <td><select value={r.field} onChange={(e) => patch(i, { field: e.target.value as RuleField })}>{FIELDS.map((f) => <option key={f} value={f}>{FIELD_LABELS[f]}</option>)}</select></td>
-              <td>{r.field === 'parameter' && <input placeholder="name" value={r.parameter ?? ''} onChange={(e) => setRules(rules.map((x, k) => (k === i ? { ...x, parameter: e.target.value } : x)))} onBlur={() => save()} />}</td>
-              <td><select value={r.op} onChange={(e) => patch(i, { op: e.target.value as RuleOp })}>{OPS.map((o) => <option key={o} value={o}>{OP_LABELS[o]}</option>)}</select></td>
-              <td><input value={texts[i] ?? ''} placeholder={isList(r.op) ? 'values, by commas' : 'value'} onChange={(e) => setTexts(texts.map((x, k) => (k === i ? e.target.value : x)))} onBlur={() => save()} /></td>
-              <td><button type="button" className="icon" title="Remove the rule" onClick={() => { const r2 = rules.filter((_, k) => k !== i), t2 = texts.filter((_, k) => k !== i); setRules(r2); setTexts(t2); save(r2, t2); }}><Trash2 size={12} /></button></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <button type="button" className="btn small" onClick={() => { setRules([...rules, { field: 'class', op: 'is', values: [''] }]); setTexts([...texts, '']); }}><Plus size={12} /> Rule</button>
-      {set.groups.length > 0 && <p className="muted small">{`${set.groups.length} group(s) of rules kept as they are.`}</p>}
+      <DraftGroupEditor testPrefix="clash-rule" allowGroups value={fromClashGroup(set)} encode={toClashGroup} onCommit={change}
+        newCondition={() => ({ field: '@class', op: '=', value: '' })} matchLabels={['elements meeting every rule', 'elements meeting any rule']} />
       <p className="muted small">A class is its IFC name (IfcWall) or its label (Wall). A "not" rule takes elements out. With no rule adding elements, the set holds everything.</p>
     </div>
   );

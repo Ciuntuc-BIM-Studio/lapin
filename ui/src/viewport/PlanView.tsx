@@ -174,7 +174,8 @@ export function PlanView() {
   }, []);
 
   // A new tool starts a new gesture.
-  useEffect(() => { setPts([]); }, [toolId]);
+  const toolMode = tool?.mode?.();
+  useEffect(() => { setPts([]); }, [toolId, toolMode]);
 
   // True north up (decision 447): the plan turned on screen by the angle to true north, chosen per plan; drawn,
   // snapped and picked through these two, so all of it turns together. Sheets and the PDF keep project north up.

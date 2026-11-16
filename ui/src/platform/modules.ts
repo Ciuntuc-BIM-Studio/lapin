@@ -84,6 +84,7 @@ export const allTools = (): ToolDef[] => {
     for (const t of m.hotbar ?? []) seen.set(t.id, t);
     for (const tab of m.tabs ?? []) for (const g of tab.groups) for (const t of [...g.tools, ...(g.small ?? [])]) seen.set(t.id, t);
     for (const g of Object.values(m.sharedGroups ?? {})) for (const t of [...g.tools, ...(g.small ?? [])]) seen.set(t.id, t);
+    for (const t of m.legacyTools ?? []) if (!seen.has(t.id)) seen.set(t.id, t);
   }
   for (const t of extraTools()) if (!seen.has(t.id)) seen.set(t.id, t);
   return [...seen.values()];

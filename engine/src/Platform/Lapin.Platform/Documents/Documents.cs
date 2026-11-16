@@ -24,8 +24,7 @@ public static class Documents
     static string Unique(IModelView m, string name, string? except = null)
     {
         var taken = All(m).Where(d => d.Id != except).Select(d => d.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (!taken.Contains(name)) return name;
-        for (var i = 2; ; i++) if (!taken.Contains($"{name} {i}")) return $"{name} {i}";
+        return Lapin.Model.Names.Free(taken.Contains, name);
     }
 
     /// <summary>A template's shape written onto a document's attributes (its page, blocks, declared inputs, type), the document's own left as they are.</summary>

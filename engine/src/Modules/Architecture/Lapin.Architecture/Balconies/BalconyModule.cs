@@ -103,7 +103,7 @@ public static class BalconyModule
             var storeys = a["storeyIds"] as JsonArray;
             if (storeys == null)
             {
-                var lowest = ids.Min(b => Spatial.StoreyOf(ctx.Model, b.Id)?.Num("elevation") ?? 0);
+                var lowest = ids.Min(b => Spatial.Elevation(ctx.Model, b));
                 storeys = new JsonArray([.. Spatial.Storeys(ctx.Model).Where(s => s.Num("elevation") > lowest + 1e-6).Select(s => (JsonNode)s.Id)]);
             }
             if (storeys.Count == 0) throw new CommandException("There is no storey above to stack the balcony on.");
@@ -576,7 +576,7 @@ public sealed class BalconySchedule : IScheduleSource
         var keys = new List<string?>();
         double area = 0, rail = 0;
         var count = 0;
-        foreach (var b in m.OfClass(BalconyModule.Class).OrderBy(x => Spatial.StoreyOf(m, x.Id)?.Num("elevation") ?? 0)
+        foreach (var b in m.OfClass(BalconyModule.Class).OrderBy(x => Spatial.Elevation(m, x))
                      .ThenBy(x => x.Name, StringComparer.Create(CultureInfo.InvariantCulture, CompareOptions.NumericOrdering)))
         {
             if (BalconyBuilder.Build(m, b) is not { } l) continue;

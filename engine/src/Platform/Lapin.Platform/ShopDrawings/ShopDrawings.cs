@@ -321,7 +321,7 @@ public static class ShopDrawings
         _ => "",
     };
 
-    static string Mm(double m) => Math.Round(m * 1000).ToString("0", CultureInfo.InvariantCulture);
+    static string Mm(double m) => Lapin.Model.Numbers.Mm(m);
 
     /// <summary>A text with its {tokens} filled for the element.</summary>
     public static string Fill(IQueryContext q, Entity e, ElementFrame? f, string text) =>
@@ -519,7 +519,7 @@ public static class ShopDrawings
             else
             {
                 var by = Args.TryPoint(a["by"]) ?? throw new CommandException("By how much (by: [dx, dy])?");
-                var had = moves[key] is JsonArray { Count: >= 2 } h ? new Vec2(Json.Number(h[0]) ?? 0, Json.Number(h[1]) ?? 0) : default;
+                var had = Args.PointOf(moves[key]);
                 moves[key] = new JsonArray(Math.Round(had.X + by.X, 6), Math.Round(had.Y + by.Y, 6));
             }
             if (moves.Count == 0) attrs.Remove("partDimMoves"); else attrs["partDimMoves"] = moves;

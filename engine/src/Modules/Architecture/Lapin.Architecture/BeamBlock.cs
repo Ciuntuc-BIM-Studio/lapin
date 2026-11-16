@@ -322,8 +322,12 @@ public static class BeamBlock
 
     static string Num(double v) => Math.Round(v, 3).ToString(CultureInfo.InvariantCulture);
 
-    /// <summary>The floor's beam-and-block quantities: the joists (count, length), the blocks (whole, cut), the cast concrete, the area, the mesh.</summary>
-    public static IEnumerable<QuantitySet> Quantities(Floor f, ElementGeometry g, IModelView m)
+    /// <summary>
+    /// The floor's beam-and-block quantities: the joists (count, length), the blocks (whole, cut), the cast concrete, the area,
+    /// the mesh; the floor's whole volume (all it builds) and its gross volume (<paramref name="grossVolume"/>, its outline by its
+    /// depth), the set a takeoff and the estimate read for the element (audit 15.11.2026, M2).
+    /// </summary>
+    public static IEnumerable<QuantitySet> Quantities(Floor f, ElementGeometry g, IModelView m, double grossVolume)
     {
         var r = f.Result;
         var concrete = g.Parts.FirstOrDefault(p => p.Key == "bb-concrete") is { } c ? Measure.Volume(c.Solid) : 0;
@@ -336,6 +340,8 @@ public static class BeamBlock
             new("BlockCount", r.WholeBlocks, "COUNT", "Whole blocks"),
             new("CutBlockCount", r.CutBlocks, "COUNT", "Cut blocks"),
             new("ConcreteVolume", concrete, "VOLUME", "Cast concrete"),
+            new("GrossVolume", grossVolume, "VOLUME", "Gross volume"),
+            new("NetVolume", g.Parts.Sum(p => Measure.Volume(p.Solid)), "VOLUME", "Net volume"),
             new("Area", f.Area, "AREA", "Area"),
         };
         if (f.Spec.Mesh.Length > 0) qs.Add(new("MeshArea", f.Area, "AREA", "Mesh area"));
@@ -394,10 +400,9 @@ public static class BeamBlock
     /// </summary>
     public static List<BeamBlockSpec> ParseCsv(string text)
     {
-        var lines = text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n').Where(l => l.Trim().Length > 0).ToList();
+        var lines = CsvText.Read(text).Where(r => r.Any(c => c.Trim().Length > 0)).ToList();
         if (lines.Count < 2) throw new CommandException("The file has no rows under its header.");
-        var sep = lines[0].Contains(';') ? ';' : lines[0].Contains('\t') ? '\t' : ',';
-        string[] Cells(string l) => l.Split(sep).Select(c => c.Trim().Trim('"').Trim()).ToArray();
+        static string[] Cells(List<string> l) => [.. l.Select(c => c.Trim())];
         string Fold(string h) => new string(h.ToLowerInvariant().Where(char.IsLetter).ToArray());
         var header = Cells(lines[0]).Select(Fold).ToList();
         int Col(string name) { var k = Fold(name); var i = header.IndexOf(k); return i >= 0 ? i : header.FindIndex(h => h.Length > 0 && (h.StartsWith(k.Replace("mm", ""), StringComparison.Ordinal))); }
@@ -411,8 +416,7 @@ public static class BeamBlock
             double Mm(string name, double def)
             {
                 if (Cell(name) is not { } s) return def;
-                if (sep != ',') s = s.Replace(',', '.');
-                return double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v / 1000 : throw new CommandException($"Line {li + 1}: „{s}” is not a number ({name}).");
+                return Numbers.Parse(s, NumberMode.Strict) is { } v ? v / 1000 : throw new CommandException($"Line {li + 1}: „{s}” is not a number ({name}).");
             }
             var name = Cell("Name") ?? throw new CommandException($"Line {li + 1}: no name.");
             var spec = new BeamBlockSpec(name, Mm("Joist width (mm)", d.JoistWidth), Mm("Joist height (mm)", d.JoistHeight), Mm("Foot height (mm)", d.FlangeHeight), Mm("Web width (mm)", d.WebWidth),

@@ -53,7 +53,7 @@ public static class Scaffolds
             Math.Clamp(Lay.Num(s, "tube", 0.048), 0.02, 0.2));
     }
 
-    public static Entity? TypeOf(IModelView m, Entity e) => m.RelatingOf(e.Id, IfcClass.RelDefinesByType);
+    public static Entity? TypeOf(IModelView m, Entity e) => Lapin.Platform.Types.Of(m, e, TypeClass);
 
     public static Spec SpecOf(IModelView m, Entity e) => Read(TypeOf(m, e)?.Attrs["spec"] as JsonObject);
 
@@ -235,7 +235,7 @@ public static class Scaffolds
     {
         if (FacadeOf(e, m, services) is not { } facade) return null;
         var spec = SpecOf(m, e);
-        var z0 = (Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0) + e.Num("baseOffset");
+        var z0 = Spatial.Base(m, e);
         var support = new Support(m, services);
         Func<Vec2, double> foot = e.Bool("onStorey") ? _ => z0 : p => support.Ground(p, z0);
         var walls = WallsOf(m, e);

@@ -3,6 +3,7 @@
 import { Merge } from 'lucide-react';
 import type { LapinModule } from '../../platform/module';
 import { useUi } from '../../app/store';
+import { useClashMode } from '../core/coordination/coordination';
 import { lazyPart } from '../../platform/lazyPart';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
@@ -15,7 +16,7 @@ const clash: LapinModule = {
   tabs: [{
     // No tab of its own: its group goes into Manage, beside the openings' clash check.
     id: 'manage', label: 'Manage', order: 80,
-    groups: [{ label: 'Clashes', tools: [{ id: 'clash.manage', label: 'Clash detection', icon: Merge, run: () => useUi.setState({ dialog: 'clashes' }) }] }],
+    groups: [{ label: 'Clashes', tools: [{ id: 'clash.manage', label: 'Clash detection', icon: Merge, run: () => { useClashMode.setState({ mode: 'tests' }); useUi.setState({ dialog: 'clashes' }); } }] }],
   }],
   dialogs: { clashes: ClashDialog },
 };

@@ -212,12 +212,12 @@ public sealed class TransportModule : ILapinModule
     }
 
     static double R(double v) => Math.Round(v, 5);
-    static string Mm(double v) => Math.Round(v * 1000).ToString(CultureInfo.InvariantCulture);
+    static string Mm(double v) => Lapin.Model.Numbers.Mm(v);
     static string M2(double v) => v.ToString("0.00", CultureInfo.InvariantCulture);
 
     static Entity Require(IModelView m, string? id) => m.Get(id ?? "") is { Class: Class } e ? e : throw new CommandException("Pick an elevator.");
 
-    public static Entity? TypeOf(IModelView m, Entity e) => m.RelatingOf(e.Id, IfcClass.RelDefinesByType) is { Class: TypeClass } t ? t : null;
+    public static Entity? TypeOf(IModelView m, Entity e) => Lapin.Platform.Types.Of(m, e, TypeClass);
 
     static void EnsureMaterials(IEdit edit, JsonObject? attrs = null)
     {
@@ -802,7 +802,7 @@ public sealed class ElevatorSchedule : IScheduleSource
     public string Kind => "elevators";
     public string Label => "Elevator schedule";
 
-    static string Mm(double v) => Math.Round(v * 1000).ToString(CultureInfo.InvariantCulture);
+    static string Mm(double v) => Lapin.Model.Numbers.Mm(v);
     static string N(double v, string f = "0.##") => v.ToString(f, CultureInfo.InvariantCulture);
 
     public ScheduleGrid Grid(IQueryContext q)

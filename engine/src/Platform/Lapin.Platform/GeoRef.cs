@@ -417,6 +417,52 @@ public static class GeoRef
         return (Math.Cos(th), -Math.Sin(th));
     }
 
+    /// <summary>
+    /// The project's tie to the map as the exports write it (IFC's IfcMapConversion and IfcProjectedCRS, Fragments' CRS):
+    /// the map coordinates of the plan's origin, its height and the plan's X axis on the map. From the survey point
+    /// (<see cref="Location.Survey"/>: the one set, or the base point's latitude and longitude in the project's system);
+    /// a project with a latitude and longitude and no projected system takes the WGS 84 UTM zone of its place
+    /// (<see cref="MapTie.Utm"/>). Null when nothing ties the project to the map.
+    /// </summary>
+    public static MapTie? Tie(IModelView m)
+    {
+        var b = Location.Base(m);
+        var crs = Location.Crs(m);
+        var sv = Location.Survey(m);
+        var utm = false;
+        if (sv == null && b is { Latitude: { } lat, Longitude: { } lon })
+        {
+            crs = $"EPSG:{UtmCode(lon, lat)}";
+            var (e, n) = FromWgs84(crs, lon, lat);
+            sv = new Location.Point(b.At, b.Elevation, e, n);
+            utm = true;
+        }
+        if (sv == null) return null;
+        var (c, sn) = Turn(m);
+        // map(p) = (E0, N0) + (c·x − sn·y, sn·x + c·y): the plan's origin on the map.
+        var e0 = (sv.Easting ?? 0) - (c * sv.At.X - sn * sv.At.Y);
+        var n0 = (sv.Northing ?? 0) - (sn * sv.At.X + c * sv.At.Y);
+        var known = Get(crs);
+        var code = crs != null ? Code(crs) : 0;
+        string? zone = code is >= 32601 and <= 32660 ? $"{code - 32600}N" : code is >= 32701 and <= 32760 ? $"{code - 32700}S" : null;
+        return new MapTie(known?.Id ?? crs ?? "Site grid", known, zone, e0, n0, b.Elevation, c, sn, Location.SetSurvey(m) == null, utm);
+    }
+
+    /// <summary>The EPSG code of the WGS 84 UTM zone a place is in (Norway's and Svalbard's exceptions left out).</summary>
+    public static int UtmCode(double lon, double lat)
+    {
+        var zone = Math.Clamp((int)Math.Floor((lon + 180) / 6) + 1, 1, 60);
+        return (lat < 0 ? 32700 : 32600) + zone;
+    }
+
+    /// <summary>The base point's latitude and longitude (degrees): as the project gives them, else from its system and survey point; null when unknown.</summary>
+    public static (double Lat, double Lon)? BasePlace(IModelView m)
+    {
+        var b = Location.Base(m);
+        if (b is { Latitude: { } lat, Longitude: { } lon }) return (lat, lon);
+        return LonLat(m, b.At) is { } ll ? (ll.Lat, ll.Lon) : null;
+    }
+
     /// <summary>A plan point's longitude and latitude (degrees), when the project has a system and a survey point.</summary>
     public static (double Lon, double Lat)? LonLat(IModelView m, Vec2 p)
     {
@@ -425,3 +471,11 @@ public static class GeoRef
         return ToWgs84(crs, e, n);
     }
 }
+
+/// <summary>
+/// The project's tie to the map as an export writes it: the system's name ("EPSG:3844"; "Site grid" when it has none) and
+/// what Lapin knows of it, its UTM zone ("35N"), the plan origin's eastings, northings and height, the plan's X axis on the
+/// map (cos, sin); <paramref name="Derived"/> when it comes from the base point's latitude and longitude, not a survey point
+/// set; <paramref name="Utm"/> when the system is the place's UTM zone, the project having no projected one.
+/// </summary>
+public sealed record MapTie(string Name, Crs? Known, string? Zone, double Eastings, double Northings, double Height, double XAxisAbscissa, double XAxisOrdinate, bool Derived, bool Utm);

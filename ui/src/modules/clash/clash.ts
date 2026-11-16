@@ -6,8 +6,9 @@
 
 import { execute, query } from '../../engine/session';
 
-export type RuleOp = 'is' | 'isOneOf' | 'isNot' | 'isNotAnyOf' | 'contains' | 'notContains' | 'atLeast' | 'atMost' | 'between';
-export type RuleField = 'class' | 'predefinedType' | 'type' | 'storey' | 'material' | 'name' | 'link' | 'parameter';
+/** A rule's operators and fields, as the engine keeps them (Lapin.Clash.SearchSets; edited in the one condition editor, shell/conditionGroup). */
+export type RuleOp = 'is' | 'isOneOf' | 'isNot' | 'isNotAnyOf' | 'contains' | 'notContains' | 'startsWith' | 'atLeast' | 'atMost' | 'greater' | 'less' | 'between' | 'exists' | 'missing';
+export type RuleField = 'class' | 'predefinedType' | 'type' | 'storey' | 'material' | 'name' | 'link' | 'parameter' | 'category' | 'group' | 'phase' | 'demolished' | 'field';
 export interface SetRule { field: RuleField; op: RuleOp; values: string[]; parameter?: string }
 export interface RuleGroup { matchAll: boolean; rules: SetRule[]; groups: RuleGroup[] }
 export interface SearchSet extends RuleGroup { id: string; name: string; count?: number }
@@ -31,12 +32,6 @@ export type GroupBy = 'none' | 'storey' | 'element' | 'classes' | 'status';
 export const GROUP_LABELS: Record<GroupBy, string> = { none: 'No groups', storey: 'By storey', element: 'By element', classes: 'By classes', status: 'By status' };
 export interface ClashList { sets: SearchSet[]; tests: ClashTest[]; fields: RuleField[]; ops: RuleOp[] }
 
-export const FIELD_LABELS: Record<RuleField, string> = {
-  class: 'Class', predefinedType: 'Predefined type', type: 'Type', storey: 'Storey', material: 'Material', name: 'Name', link: 'Linked file', parameter: 'Parameter',
-};
-export const OP_LABELS: Record<RuleOp, string> = {
-  is: 'is', isOneOf: 'is one of', isNot: 'is not', isNotAnyOf: 'is not any of', contains: 'contains', notContains: 'does not contain', atLeast: 'at least', atMost: 'at most', between: 'between',
-};
 /** Operators that take several values (one per line or comma). */
 export const isList = (op: RuleOp) => op === 'isOneOf' || op === 'isNotAnyOf' || op === 'between';
 

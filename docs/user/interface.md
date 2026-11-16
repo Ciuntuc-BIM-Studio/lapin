@@ -212,7 +212,7 @@ A right click in a plan, a section or an elevation, with something selected, off
 
 ## Quick select
 
-**Quick select…** (in the right-click menu of a view, or **View → Select → Quick select**, <kbd>QS</kbd>) selects elements by rules, as AutoCAD's QSELECT and Revit's filters do. Each rule reads one field of an element (its class, type, storey, material, name, or a parameter by its name, such as a height or a fire rating) and compares it: **equals**, **contains**, **is between** two numbers (either end may stay empty), **is greater than**, **has a value** and the others the view filters have. Elements must match **all the rules** or **any of the rules**. **Look in** chooses what the view in front shows (its crop, what it hides and what is hidden for now count) or the whole project. The count of elements found follows as you type; **Select** selects them, or adds them to the selection with **Add to the selection** ticked.
+**Quick select…** (in the right-click menu of a view, or **View → Select → Quick select**, <kbd>QS</kbd>) selects elements by rules, as AutoCAD's QSELECT and Revit's filters do. Its rules are written in the same editor as the view filters, the clash search sets, a field schedule's filter and a task's rule: each rule picks a field (an element's **IFC class**, **Type**, **Storey**, **Material**, **Name**, **Category**, **Group**, **Linked file**, **Phase created** or **Phase demolished**, **Predefined type**, a **Parameter (as text)** by its name, such as a fire rating, or any field of the project, its quantities among them) and compares it: is, is not, contains, does not contain, starts with, is less than, is at most, is greater than, is at least, is between (either end may stay empty), is one of, is none of, has a value, has no value. A list takes its values by commas. The value box suggests the values the model has. Elements must match **all the rules** or **any of the rules**. **Look in** chooses what the view in front shows (its crop, what it hides and what is hidden for now count) or the whole project. The count of elements found follows as you type; **Select** selects them, or adds them to the selection with **Add to the selection** ticked.
 
 ![Quick select: the walls of one type in the whole project](shots/quick-select.webp)
 
@@ -239,6 +239,14 @@ The status bar, at the bottom, names the mouse navigation style in use (*Lapin* 
 ![A crossing dragged over the house in 3D with the Revit-like style](shots/nav-3d-crossing.webp)
 
 In plans, sections, elevations and sheets the style chooses which button pans and which keys add to or remove from the selection; a left drag still draws a window or a crossing, and the middle button pressed twice still fits the view (in 3D too, in Revit-like and AutoCAD-like). The other styles assume a mouse with three buttons: on a trackpad, with no middle button, keep Lapin's. Only the controls are borrowed: the names are plain labels, and nothing else of those programs is imitated.
+
+## Modify and Joins on every tab
+
+The **Modify** group (Move, Copy, Rotate, Mirror, Array, Delete, Pin, **Create similar**, Match properties, the group tools) is the same on Draft, Architecture, Interior, Structure, Steel, Wood, Studio, Site and MEP. On Draft and Studio it joins the group of those tabs that was already called Modify, so each button appears once (Draft keeps Scale, Array and Erase; Studio keeps Move 3D, Rotate 3D, Mirror 3D and its own Array, which makes the solid's parametric array). **Create similar** is greyed out until the selection is something it can start from (a wall, floor, roof, door, window, curtain wall, room…).
+
+The **Joins** group (**Mitre**, **Butt**, **Swap**) is the same on Architecture and Structure and acts on what is selected: the corners of the selected walls, beams and strip footings. Steel's own **Mitre** and **Fit** join two members and stay on the Steel tab.
+
+A tool that was several buttons is one with a choice in the command line's bar: **Wall**, **Beam**, **Strip footing** and the room **separation line** have **Line** / **Arc**; **Path** has **Path** / **Road**; **Place furniture** (Interior) and **Place node** (MEP) choose the kind of piece or node. The old names (Curved wall, Road, Sofa, Radiator…) still work as quick slots, My tools entries, shortcuts and in saved interfaces: they start the same tool already set to that choice.
 
 ## Match properties
 

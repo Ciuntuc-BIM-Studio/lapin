@@ -230,7 +230,7 @@ public static class SteelNodes
     const string BoltColor = "#3c4550";
     static double Up5(double m) => Math.Ceiling(m * 1000 / 5 - 1e-9) * 5 / 1000;
     static double Up10(double m) => Math.Ceiling(m * 100 - 1e-9) / 100;
-    static string Mm(double m) => Math.Round(m * 1000).ToString(CultureInfo.InvariantCulture);
+    static string Mm(double m) => Lapin.Model.Numbers.Mm(m);
     static double Throat(double t) => Math.Max(0.003, Math.Round(0.5 * t * 1000) / 1000);
 
     sealed class Parts(string color, string? material, NodeSpec spec)

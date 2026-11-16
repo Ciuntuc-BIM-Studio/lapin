@@ -33,7 +33,7 @@ Clic pe o coliziune ca s-o vezi în 3D. Lapin selectează cele două elemente, p
 
 ## Seturi de căutare
 
-**Seturi de căutare** ține regulile care aleg elementele unui set. O regulă citește un câmp al elementului (clasa, tipul predefinit, tipul, nivelul, materialul, numele, fișierul legat sau orice parametru) cu un operator: este, este unul din, nu este, nu este niciunul din, conține, nu conține, cel puțin, cel mult, între. Numerele se citesc cum le scriu oamenii: „600 mm” e 600.
+**Seturi de căutare** ține regulile care aleg elementele unui set. Se scriu în editorul pe care îl folosesc Selecția rapidă și filtrele vederilor (vezi [Selecție rapidă](interface.md#selecția-rapidă)). O regulă citește un câmp al elementului (clasa, tipul predefinit, tipul, nivelul, materialul, numele, fișierul legat, categoria, grupul, fazele, orice parametru ca text sau orice câmp al proiectului) cu un operator: este, nu este, conține, nu conține, începe cu, este mai mic decât, este cel mult, este mai mare decât, este cel puțin, este între (oricare capăt poate rămâne gol), este unul din, nu este niciunul din, are o valoare, nu are valoare. Numerele se citesc cum le scriu oamenii: „600 mm” e 600. **Adaugă un grup** pune înăuntru reguli proprii, toate sau oricare dintre ele, ca încă o regulă.
 
 Un set ia elementele care îndeplinesc oricare regulă sau toate regulile. O regulă „nu” scoate întotdeauna elemente, iar un set fără nicio regulă care adaugă elemente le ia pe toate. Numărul de lângă set arată câte elemente iau regulile, pe măsură ce scrii.
 
@@ -52,10 +52,10 @@ Lista grupează coliziunile **pe niveluri**, **pe elemente** (elementul din cele
 
 ![Coliziuni ca nori într-un plan](shots/clash-marks.webp)
 
-Un proiect pornește și cu al patrulea test, **Openings for MEP**: verificarea din Gestionare → Verificare coliziuni… rulată ca test, ca problemele ei să fie numerotate și urmărite ca celelalte. Adâncimea e cât îi lipsește traseului din gol.
+Un proiect pornește și cu al patrulea test, **Openings for MEP**: verificarea din fila **Goluri pentru instalații** (aceeași fereastră: Gestionare → Detectarea coliziunilor) rulată ca test, ca problemele ei să fie numerotate și urmărite ca celelalte. Adâncimea e cât îi lipsește traseului din gol.
 
 Un test dur găsește și un element cuprins întreg în altul, unde nicio față nu se intersectează: o conductă uitată într-o placă. Adâncimea e cea mai mică lățime a elementului din interior.
 
-> Traseele de instalații Lapin își pot tăia singure golurile în pereți și planșee (Gestionare → Ordinea de tăiere). Atunci o conductă prin perete nu e o coliziune: peretele are golul lui. **Gestionare → Verificare coliziuni…** verifică acele goluri.
+> Traseele de instalații Lapin își pot tăia singure golurile în pereți și planșee (Gestionare → Ordinea de tăiere). Atunci o conductă prin perete nu e o coliziune: peretele are golul lui. Fila **Goluri pentru instalații** a acestei ferestre (Gestionare → Detectarea coliziunilor) verifică acele goluri.
 
 Detectarea coliziunilor urmează proiectarea, cifrele și testele lui [BimGo](https://github.com/aussieBIMguru/BimGo), de Aussie BIM Guru (MIT-0), rescrise în Lapin.

@@ -90,7 +90,7 @@ public static class Entourage
     {
         var at = Args.Point(e.Attrs["at"], "the entourage");
         var terrain = Plantings.TerrainFor(m, e);
-        var ground = terrain?.ElevationAt(at.X, at.Y) ?? Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0;
+        var ground = terrain?.ElevationAt(at.X, at.Y) ?? Spatial.Elevation(m, e);
         var r = e.Num("rotation") * Math.PI / 180;
         return new Frame(at, ground + e.Num("offset"), Math.Cos(r), Math.Sin(r));
     }
@@ -102,7 +102,7 @@ public static class Entourage
         var f = FrameOf(m, e);
         if (PictureOf(m, e) is { } picture) return PictureGeometry(e, m, picture, f);
         var kind = KindOf(e);
-        var color = e.Str("color") is { Length: 7 } c && c[0] == '#' ? c : kind.Color;
+        var color = HexColor.Read(e.Attrs["color"], kind.Color);
         var parts = new Dictionary<string, (string Color, List<Solid> Solids)>();
         void Add(string part, string col, Solid? s)
         {

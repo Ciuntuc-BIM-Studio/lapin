@@ -68,8 +68,7 @@ public sealed class CostModule : ILapinModule
     static Entity AddList(ICommandContext ctx, string name, IReadOnlyList<PriceRow> rows, string currency, string? source, bool indicative)
     {
         var taken = ctx.Model.OfClass(PriceLists.Class).Select(e => e.Name).ToHashSet(StringComparer.CurrentCultureIgnoreCase);
-        var unique = name;
-        for (var i = 2; taken.Contains(unique); i++) unique = $"{name} ({i})";
+        var unique = Lapin.Model.Names.Free(taken.Contains, name);
         var e = new Entity(ctx.NewId(), PriceLists.Class, unique, PriceLists.Attrs(rows, currency, source, indicative));
         ctx.Add(e);
         return e;

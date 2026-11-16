@@ -99,7 +99,7 @@ public static class Rooms
     {
         var o = Live(room, m, services);
         if (o == null) return new ElementGeometry([], Diagnostics: ["The room has no outline: place it inside walls, or draw it."]);
-        var z = (Spatial.StoreyOf(m, room.Id)?.Num("elevation") ?? 0) + room.Num("baseOffset");
+        var z = Spatial.Base(m, room);
         var h = HeightOf(room, m);
         var solid = Prism.Extrude(o.Outer.Select(p => p.At(z)).ToArray(), o.Islands.Select(i => (IReadOnlyList<Vec3>)i.Select(p => p.At(z)).ToArray()).ToList(), new Vec3(0, 0, h), "room");
         var plan = new List<PlanItem> { new("room", true, o.Outer) };

@@ -29,7 +29,7 @@ public sealed class ArchitectureAnalytical : IAnalyticalElements
             var curve = PathCurve.Of(w);
             var line = curve.IsArc ? curve.Line(0, curve.Length, mid)
                 : [start + (end - start).Normalized().Perp * mid, end + (end - start).Normalized().Perp * mid];
-            var z0 = (Spatial.StoreyOf(m, w.Id)?.Num("elevation") ?? 0) + w.Num("baseOffset");
+            var z0 = Spatial.Base(m, w);
             var type = Walls.TypeOf(m, w.Id);
             var thickness = core.To - core.From;
             var height = Walls.HeightOf(m, w);

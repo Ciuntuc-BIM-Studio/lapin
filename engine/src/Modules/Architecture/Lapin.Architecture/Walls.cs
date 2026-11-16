@@ -36,8 +36,7 @@ public static class Walls
     /// <summary>The wall's height, worked out on every ask: to its top (<see cref="WallTop"/>), else its own.</summary>
     public static double HeightOf(IModelView m, Entity wall) => WallTop.Height(m, wall);
 
-    public static Entity? TypeOf(IModelView m, string wallId) =>
-        m.RelatingOf(wallId, IfcClass.RelDefinesByType) is { Class: IfcClass.WallType } t ? t : null;
+    public static Entity? TypeOf(IModelView m, string wallId) => Lapin.Platform.Types.Of(m, wallId, IfcClass.WallType);
 
     /// <summary>The wall's own layer set usage, if it has one.</summary>
     public static Entity? UsageOf(IModelView m, string wallId) => LayerSets.UsageOf(m, wallId);
@@ -144,7 +143,7 @@ public static class Walls
         var length = along.Length;
         var dir = along.Normalized();
         var left = dir.Perp;
-        var z = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
+        var z = Spatial.Base(m, wall);
         var bands = Section(m, wall);
         var yMin = bands.Min(b => b.From);
         var yMax = bands.Max(b => b.To);
@@ -497,7 +496,7 @@ public static class Walls
             var bands = Section(m, wall);
             var (yMin, yMax) = (bands.Min(x => x.From), bands.Max(x => x.To));
             var (From, To) = c.Ends(ends[0], ends[1], yMin, yMax);
-            var z = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
+            var z = Spatial.Base(m, wall);
             var height = HeightOf(m, wall);
             var (steps, built) = ArcRoof(wall, c, m, services, From, To, yMin, yMax, z, height);
             List<(double S, double V)>? line = null;
@@ -949,7 +948,7 @@ public static class Walls
         var paths = services?.Get<IPathElements>();
         var ends = paths != null ? Joins.EndsOf(m, wall, paths, problems) : new (Vec2 Point, EndCut Cut)?[2];
         var length = c.Length;
-        var z = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
+        var z = Spatial.Base(m, wall);
         var height = HeightOf(m, wall);
         var bands = Section(m, wall);
         var (yMin, yMax) = (bands.Min(x => x.From), bands.Max(x => x.To));
@@ -1116,7 +1115,7 @@ public static class Walls
         var left = (end - start).Normalized().Perp;
         var bands = Section(m, wall);
         double y0 = bands.Min(b => b.From), y1 = bands.Max(b => b.To);
-        var z = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
+        var z = Spatial.Base(m, wall);
         var c = PathCurve.Of(wall);
         IReadOnlyList<Vec2> fp = c.IsArc ? c.Band(_ => 0, _ => c.Length, y0, y1) : [start + left * y0, end + left * y0, end + left * y1, start + left * y1];
         return Prism.ExtrudeFootprint(fp, z, HeightOf(m, wall), "wall");
@@ -1147,7 +1146,7 @@ public static class Walls
         if (!(core.To - core.From > 1e-9)) return [];
         var (yMin, yMax) = (bands.Min(b => b.From), bands.Max(b => b.To));
         double At(EndCut c, double y) => yMax - yMin < 1e-12 ? c.Right : c.Right + (c.Left - c.Right) * (y - yMin) / (yMax - yMin);
-        var z = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
+        var z = Spatial.Base(m, wall);
         var height = HeightOf(m, wall);
         var zones = TypeOf(m, wall.Id) is { } type ? WallZones.Bands(WallZones.Of(type), height) : [];
         var shift = Vec2.Dot(start - Start(wall), dir);

@@ -192,7 +192,7 @@ public static class BayWindows
         return s with { Width = Math.Round(cols.Sum(), 6), Columns = [.. cols], Panels = [.. panels], Bay = null, Mullions = s.Mullions == null ? null : [.. mullions] };
     }
 
-    static string Mm(double v) => Math.Round(v * 1000).ToString(CultureInfo.InvariantCulture);
+    static string Mm(double v) => Lapin.Model.Numbers.Mm(v);
 
     /// <summary>A bay in a few words, for the schedules and IFC: "Bay 45°, projection 600, 3 faces".</summary>
     public static string Describe(JoinerySpec s)

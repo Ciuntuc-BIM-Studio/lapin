@@ -32,7 +32,7 @@ public static class Grids
         ? arr.OfType<JsonObject>().Select(o => new Axis((string?)o["tag"] ?? "?", P(o["a"]), P(o["b"]), (string?)o["ends"] is "both" or "start" or "end" or "none" ? (string?)o["ends"] : null)).ToList()
         : [];
 
-    static Vec2 P(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : default;
+    static Vec2 P(JsonNode? n) => Args.PointOf(n);
 
     /// <summary>One axis as the interface selects it: the grid's id and the axis's tag.</summary>
     public static string AxisId(string gridId, string tag) => $"{gridId}#{tag}";

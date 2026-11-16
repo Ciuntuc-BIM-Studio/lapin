@@ -155,7 +155,7 @@ public static class Casework
     /// <summary>The words a type of the spec is named and listed by: its preset's.</summary>
     public static string Label(Spec s) => s.Str("form") == "bed" ? "Bed" : FindPreset(s.Str("preset"))?.Label ?? "Casework";
 
-    static string Mm(double v) => Math.Round(v * 1000).ToString(CultureInfo.InvariantCulture);
+    static string Mm(double v) => Lapin.Model.Numbers.Mm(v);
 
     // ---- Checking ----
 

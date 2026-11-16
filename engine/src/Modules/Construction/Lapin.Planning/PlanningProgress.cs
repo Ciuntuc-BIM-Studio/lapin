@@ -209,7 +209,7 @@ public sealed partial class PlanningModule
             try { table = XlsxReader.Read(bytes); }
             catch (Exception ex) when (ex is InvalidDataException or System.Xml.XmlException) { throw new CommandException("The workbook could not be read: " + ex.Message); }
         }
-        else table = Norms.Csv(Encoding.UTF8.GetString(bytes).TrimStart('﻿'));
+        else table = CsvText.Read(Encoding.UTF8.GetString(bytes).TrimStart('﻿'));
         static string Head(string s) => s.Trim().Trim('"').ToLowerInvariant();
         var at = table.FindIndex(r => r.Select(Head).Any(c => CompleteHeads.Contains(c) || ActualStartHeads.Contains(c) || ActualFinishHeads.Contains(c))
             && r.Select(Head).Any(c => IdHeads.Contains(c) || RowHeads.Contains(c) || WbsHeads.Contains(c)));

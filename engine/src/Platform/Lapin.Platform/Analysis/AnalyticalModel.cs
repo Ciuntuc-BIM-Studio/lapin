@@ -132,6 +132,13 @@ public sealed class AnalyticalModel
     {
         var all = new AnalyticalContribution { Services = services };
         foreach (var source in services.All<IAnalyticalElements>()) source.Contribute(m, all);
+        // Solids kept hidden behind the layered wall made of them (forum topic 101): the wall carries, not they.
+        all.Frames.RemoveAll(f => !Superseded.Counts(m, f.SourceId));
+        all.Shells.RemoveAll(s => !Superseded.Counts(m, s.SourceId));
+        all.Supports.RemoveAll(s => !Superseded.Counts(m, s.SourceId));
+        all.Roofs.RemoveAll(r => !Superseded.Counts(m, r.SourceId));
+        all.LeftOut.RemoveAll(l => !Superseded.Counts(m, l.SourceId));
+        all.Links.RemoveAll(l => !Superseded.Counts(m, l.HostId) || !Superseded.Counts(m, l.MemberId));
         var model = new AnalyticalModel();
         model.Storeys.AddRange(Spatial.Storeys(m));
         model.LeftOut.AddRange(all.LeftOut);

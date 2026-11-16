@@ -50,7 +50,7 @@ public sealed record SimulationLook(string Active, string Demolishing, string Te
 {
     public static readonly SimulationLook Default = new("#e8a33d", "#d64545", "#3d8fd6", "#b8c0c8", false, false, true);
 
-    static string Color(JsonNode? n, string fallback) => (string?)n is { } s && System.Text.RegularExpressions.Regex.IsMatch(s, "^#[0-9a-fA-F]{6}$") ? s.ToLowerInvariant() : fallback;
+    static string Color(JsonNode? n, string fallback) => Lapin.Geometry.HexColor.Read(n, null)?.ToLowerInvariant() ?? fallback;
 
     public static SimulationLook Read(JsonNode? n)
     {

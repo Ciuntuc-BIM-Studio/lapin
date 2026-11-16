@@ -10,7 +10,7 @@ namespace Lapin.Architecture;
 /// under it; a wall's roofs (<c>roofIds</c>) are a relation, made again among the copies only when relations are. Once
 /// placed, a stair copied climbs to the storey above its new one (one fixed to the storey above its old one is fixed
 /// to the one above its new one) with its own opening in the floor there; an opening a stair cut in a floor copied
-/// without that stair goes.
+/// without that stair goes. Over a storey duplicated, the originals' stairs climb to the new storey, through its floor.
 /// </summary>
 sealed class StoreyCopies : IStoreyCopy
 {
@@ -80,5 +80,9 @@ sealed class StoreyCopies : IStoreyCopy
             }
             StairBuilder.EnsureOpening(ctx, m.Get(c)!);
         }
+        // A storey put in over the originals' (storey.duplicate): their stairs now climb to it, through its floor.
+        if (step.Inserted)
+            foreach (var o in step.Map.Keys)
+                if (m.Get(o) is { Class: IfcClass.Stair or IfcClass.Ramp } stair) StairBuilder.EnsureOpening(ctx, stair);
     }
 }

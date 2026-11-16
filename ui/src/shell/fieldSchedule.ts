@@ -12,7 +12,8 @@ export interface FieldDef { token: string; label: string; kind: FieldKind; count
 export interface FieldGroupDef { id: string; label: string; set?: string | null; sampled?: boolean; fields: FieldDef[] }
 export interface FieldModel { elements: number; sample: number; groups: FieldGroupDef[] }
 
-export const OPERATORS = ['=', '≠', 'contains', 'starts with', '<', '≤', '>', '≥', 'exists', 'missing'] as const;
+/** The operators a condition takes (the engine's `FieldCondition.Ops`); the one editor offers them all (shell/conditionGroup). */
+export const OPERATORS = ['=', '≠', 'contains', 'not contains', 'starts with', '<', '≤', '>', '≥', 'between', 'one of', 'none of', 'exists', 'missing'] as const;
 export type Operator = typeof OPERATORS[number];
 /** Operators that take no value. */
 export const NO_VALUE: readonly string[] = ['exists', 'missing'];
@@ -23,12 +24,15 @@ export const AGGREGATE_LABELS: Record<Aggregate, string> = { sum: 'Sum', avg: 'A
 
 export const UNITS = ['m', 'cm', 'mm', 'km', 'm²', 'cm²', 'mm²', 'ha', 'm³', 'dm³', 'l', 'cm³', 'kg', 't'];
 
-export interface Condition { field: string; op: Operator; value?: string | number }
+/** A condition: a field (a field token, or a facet such as `@type`), an operator, a value, or a list (`one of`, `none of`, the two ends of `between`). */
+export interface Condition { field: string; op: Operator | (string & {}); value?: string | number; values?: string[] }
+/** A group of conditions inside a filter: all or any of them, and groups inside. */
+export interface ConditionGroupDef { match?: 'all' | 'any'; conditions?: Condition[]; nested?: ConditionGroupDef[] }
 export interface FieldColumn { field?: string; formula?: string; heading?: string; aggregate?: Aggregate; unit?: string; decimals?: number }
-export interface FieldFilter { classes?: string[]; types?: string[]; storeys?: string[]; materials?: string[]; groups?: string[]; phases?: string[]; conditions?: Condition[] }
+export interface FieldFilter { classes?: string[]; types?: string[]; storeys?: string[]; materials?: string[]; groups?: string[]; phases?: string[]; conditions?: Condition[]; match?: 'all' | 'any'; nested?: ConditionGroupDef[] }
 export interface FieldOptions { filter?: FieldFilter; groupBy?: string[]; columns?: FieldColumn[]; totals?: boolean; count?: boolean }
 
-export const DIMENSIONS: { key: Exclude<keyof FieldFilter, 'conditions'>; label: string; field: string }[] = [
+export const DIMENSIONS: { key: Exclude<keyof FieldFilter, 'conditions' | 'match' | 'nested'>; label: string; field: string }[] = [
   { key: 'classes', label: 'Kinds', field: 'class' },
   { key: 'types', label: 'Types', field: 'type' },
   { key: 'storeys', label: 'Storeys', field: 'storey.name' },
@@ -43,12 +47,29 @@ export function conditionValue(text: string): string | number {
   return t !== '' && Number.isFinite(Number(t)) ? Number(t) : text.trim();
 }
 
+/** Conditions as the engine takes them: a field named, a list or a value (none when the operator takes none). */
+function cleanConditions(list: Condition[] | undefined): Condition[] {
+  return (list ?? []).filter((c) => c.field.trim() && c.field.trim() !== '@text:').map((c): Condition => (NO_VALUE.includes(c.op) ? { field: c.field, op: c.op }
+    : c.values ? { field: c.field, op: c.op, values: c.values } : { field: c.field, op: c.op, value: c.value ?? '' }));
+}
+function cleanGroups(list: ConditionGroupDef[] | undefined): ConditionGroupDef[] {
+  return (list ?? []).map((g): ConditionGroupDef => {
+    const o: ConditionGroupDef = { match: g.match === 'any' ? 'any' : 'all', conditions: cleanConditions(g.conditions) };
+    const nested = cleanGroups(g.nested);
+    if (nested.length) o.nested = nested;
+    return o;
+  }).filter((g) => g.conditions!.length || g.nested?.length);
+}
+
 /** The options as the engine takes them: nothing empty, a condition without its value when the operator takes none. */
 export function cleanOptions(o: FieldOptions): FieldOptions {
   const filter: FieldFilter = {};
   for (const d of DIMENSIONS) { const v = o.filter?.[d.key]; if (v?.length) filter[d.key] = v; }
-  const conditions = (o.filter?.conditions ?? []).filter((c) => c.field.trim()).map((c): Condition => (NO_VALUE.includes(c.op) ? { field: c.field, op: c.op } : { field: c.field, op: c.op, value: c.value ?? '' }));
+  const conditions = cleanConditions(o.filter?.conditions);
   if (conditions.length) filter.conditions = conditions;
+  if (o.filter?.match === 'any') filter.match = 'any';
+  const nested = cleanGroups(o.filter?.nested);
+  if (nested.length) filter.nested = nested;
   const columns = (o.columns ?? []).filter((c) => (c.field ?? '').trim() || (c.formula ?? '').trim()).map((c) => {
     const k: FieldColumn = c.formula?.trim() ? { formula: c.formula.trim() } : { field: c.field };
     if (c.heading?.trim()) k.heading = c.heading.trim();

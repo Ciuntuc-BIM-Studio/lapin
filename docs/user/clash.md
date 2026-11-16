@@ -33,7 +33,7 @@ Click a clash to see it in 3D. Lapin selects the two elements, puts a section bo
 
 ## Search sets
 
-**Search sets** holds the rules that choose a set's elements. A rule reads a field of the element (its class, predefined type, type, storey, material, name, linked file or any parameter) with an operator: is, is one of, is not, is not any of, contains, does not contain, at least, at most, between. Numbers are read as people write them: "600 mm" is 600.
+**Search sets** holds the rules that choose a set's elements. They are written in the editor Quick select and the view filters use (see [Quick select](interface.md#quick-select)). A rule reads a field of the element (its class, predefined type, type, storey, material, name, linked file, category, group, phases, any parameter as text, or any field of the project) with an operator: is, is not, contains, does not contain, starts with, is less than, is at most, is greater than, is at least, is between (either end may stay empty), is one of, is none of, has a value, has no value. Numbers are read as people write them: "600 mm" is 600. **Add a group** nests rules of their own, all or any of them, as one more rule.
 
 A set takes the elements meeting any rule, or every rule. A "not" rule always takes elements out, and a set with no rule adding elements holds everything. The count next to the set shows how many elements the rules take as you type.
 
@@ -52,10 +52,10 @@ The list groups its clashes **by storey**, **by element** (the element in most c
 
 ![Clashes as clouds in a plan](shots/clash-marks.webp)
 
-A project also starts with a fourth test, **Openings for MEP**: the check of Manage → Clash check… run as a test, so its problems are numbered and followed like the others. Its depth is how far a run is short of its opening.
+A project also starts with a fourth test, **Openings for MEP**: the check of the **Openings for MEP** tab (the same window: Manage → Clash detection) run as a test, so its problems are numbered and followed like the others. Its depth is how far a run is short of its opening.
 
 A hard test also finds an element wholly inside another, where no faces cross: a pipe forgotten inside a slab. Its depth is the inner element's smallest width.
 
-> Lapin's own MEP runs can cut their openings in walls and floors by themselves (Manage → Cut order). Then a pipe through a wall is not a clash: the wall has its opening. **Manage → Clash check…** checks those openings.
+> Lapin's own MEP runs can cut their openings in walls and floors by themselves (Manage → Cut order). Then a pipe through a wall is not a clash: the wall has its opening. The **Openings for MEP** tab of this window (Manage → Clash detection) checks those openings.
 
 Clash detection follows the design, the numbers and the tests of [BimGo](https://github.com/aussieBIMguru/BimGo), by Aussie BIM Guru (MIT-0), rewritten in Lapin.

@@ -619,7 +619,7 @@ public static class GarageDoors
         _ => op,
     };
 
-    static string Mm(double m) => Math.Round(m * 1000).ToString(CultureInfo.InvariantCulture);
+    static string Mm(double m) => Lapin.Model.Numbers.Mm(m);
 
     /// <summary>The schedule's Hanging row for a garage door: its panels, finish, track or box, wicket, and the room it needs.</summary>
     public static string Describe(JoinerySpec s)

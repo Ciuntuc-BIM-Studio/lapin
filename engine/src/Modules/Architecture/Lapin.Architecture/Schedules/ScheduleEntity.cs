@@ -230,7 +230,7 @@ public sealed class ScheduleEntity : ISheetContent, Lapin.Platform.Documents.IDo
     }
 
     static string Csv(IEnumerable<IEnumerable<string>> lines) =>
-        string.Concat(lines.Select(l => string.Join(",", l.Select(f => System.Text.RegularExpressions.Regex.IsMatch(f, "[\",\n;]") ? $"\"{f.Replace("\"", "\"\"")}\"" : f)) + "\n"));
+        string.Concat(lines.Select(l => CsvText.Line(l, ',') + "\n"));
 
     /// <summary>
     /// The schedule as CSV. Joinery: a fixed set of columns (mark, name, size,

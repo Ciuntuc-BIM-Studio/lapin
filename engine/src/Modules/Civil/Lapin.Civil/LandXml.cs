@@ -51,7 +51,7 @@ public static class LandXml
 
     static string F(double v) => v.ToString("0.###", CultureInfo.InvariantCulture);
     static string F6(double v) => v.ToString("0.######", CultureInfo.InvariantCulture);
-    static string Esc(string s) => System.Security.SecurityElement.Escape(s) ?? "";
+    static string Esc(string s) => Lapin.Drawing.Documents.DocText.Xml(s);
     /// <summary>A plan point as LandXML writes it: northing, easting.</summary>
     static string NE(double x, double y) => $"{F(y)} {F(x)}";
 

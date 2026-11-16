@@ -434,7 +434,7 @@ public static partial class Runs
         {
             var trunk = ctx.Model.Get(rid) ?? throw new CommandException("There is no such run.");
             if (!IsRun(trunk)) throw new CommandException("Not a run.");
-            var station = Json.Number(o["station"]) ?? (o["at"] is JsonArray at && at.Count >= 2 ? Pipes.Nearest(Points(trunk), new Vec2(Json.Number(at[0]) ?? 0, Json.Number(at[1]) ?? 0)).Station : Pipes.Nearest(Points(trunk), Points(run)[end == "start" ? 0 : ^1]).Station);
+            var station = Json.Number(o["station"]) ?? (Args.TryPoint(o["at"]) is { } at ? Pipes.Nearest(Points(trunk), at).Station : Pipes.Nearest(Points(trunk), Points(run)[end == "start" ? 0 : ^1]).Station);
             ConnectToRun(ctx, run, end, trunk, station);
         }
     }

@@ -20,6 +20,8 @@ import { notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { frontView } from '../../viewport/frontView';
 import { PendingDialog } from './PendingDialog';
+import { DraftGroupEditor } from '../../shell/ConditionGroupEditor';
+import { fromViewFilter, toViewFilter, type ViewRule } from '../../shell/conditionGroup';
 import { LOD_HELP, LODS, lodLabel } from './viewStyles';
 import { CLASS_COLORS, CLASS_NAMES } from '../../viewport/pointClouds3d';
 
@@ -34,7 +36,7 @@ interface Graphics extends Rules {
 }
 interface ImportInfo { id: string; kind: 'dxf' | 'image'; name: string; layers: string[] }
 export interface ViewFilter { id: string; name: string; match: 'all' | 'any'; rules: FilterRule[] }
-export interface FilterRule { field: string; op: string; value?: string; name?: string }
+export type FilterRule = ViewRule;
 interface LinkInfo { id: string; name: string; kind: string; visible: boolean; halftone: boolean; classes: string[] }
 /** A point cloud as the tab lists it (decision 396): its link's own settings, what its points carry, the ASPRS classes they have. */
 interface CloudInfo { id: string; name: string; visible: boolean; halftone: boolean; colorMode: string; color: boolean; intensity: boolean; classification: boolean; classes: number[] }
@@ -76,10 +78,6 @@ export const CATEGORY_NAMES: Record<string, string> = {
   dimensions: 'Dimensions', texts: 'Texts', tags: 'Tags', roomTags: 'Room tags', grids: 'Grids', levels: 'Levels', sections: 'Section marks',
   elevations: 'Elevation marks', callouts: 'Callouts', refPlanes: 'Reference planes', viewBoundaries: 'View boundaries', legends: 'Legends', symbols: 'Symbols',
 };
-
-/** What a filter's rule can read, and how it compares, as the editor names them. */
-export const FILTER_FIELDS: [string, string][] = [['class', 'IFC class'], ['category', 'Category'], ['type', 'Type'], ['name', 'Name'], ['material', 'Material'], ['storey', 'Storey'], ['group', 'Group'], ['link', 'Link'], ['phase', 'Phase created'], ['predefinedType', 'Predefined type'], ['param', 'Parameter']];
-export const FILTER_OPS: [string, string][] = [['equals', 'equals'], ['notEquals', 'does not equal'], ['contains', 'contains'], ['notContains', 'does not contain'], ['beginsWith', 'begins with'], ['greater', 'is greater than'], ['less', 'is less than'], ['hasValue', 'has a value'], ['hasNoValue', 'has no value']];
 
 /** The tab the dialog opens on next (Manage → View filters opens it on Filters). */
 let nextTab: Tab | null = null;
@@ -346,7 +344,7 @@ export function VisibilityDialog() {
             )
           )}
           {tab === 'pointClouds' && <PointCloudsTab target={target} clouds={v.pointClouds ?? []} rows={v.graphics?.pointClouds ?? {}} in3d={!view} />}
-          {tab === 'filters' && <FiltersTab target={target} categories={v.categories} rows={v.graphics?.filters ?? []} defs={defs} counts={counts} editing={editing} setEditing={setEditing} />}
+          {tab === 'filters' && <FiltersTab target={target} rows={v.graphics?.filters ?? []} defs={defs} counts={counts} editing={editing} setEditing={setEditing} />}
           {tab === 'links' && (
             links.length === 0 ? <p className="muted small">The project has no links: File → Link IFC…, or Import DXF… as a link.</p> : (
               <>
@@ -390,14 +388,13 @@ export function VisibilityDialog() {
 }
 
 /** The Filters tab: the view's filters in order (shown or hidden), and the project's filters with their rules. */
-function FiltersTab({ target, categories, rows, defs, counts, editing, setEditing }: { target: string; categories: string[]; rows: FilterRow[]; defs: ViewFilter[]; counts: Record<string, number>; editing: string | null; setEditing: (id: string | null) => void }) {
+function FiltersTab({ target, rows, defs, counts, editing, setEditing }: { target: string; rows: FilterRow[]; defs: ViewFilter[]; counts: Record<string, number>; editing: string | null; setEditing: (id: string | null) => void }) {
   const ownLines = useLineTypes();
   const save = (next: FilterRow[]) => void execute('view.graphics', { id: target, filters: next.map((r) => Object.fromEntries(Object.entries(r).filter(([, x]) => x !== undefined))) });
   const used = rows.filter((r) => defs.some((d) => d.id === r.id));
   const put = (id: string, patch: Partial<FilterRow>) => save(used.map((x) => (x.id === id ? { ...x, ...patch } : x)));
   const unused = defs.filter((d) => !used.some((r) => r.id === d.id));
   const edited = defs.find((d) => d.id === editing);
-  const setRules = (f: ViewFilter, rules: FilterRule[]) => void execute('viewFilter.update', { id: f.id, rules });
   return (
     <div className="vv-filters">
       {used.length === 0 ? <p className="muted small">This view uses no filter. Add one of the project's below, or make a new one.</p> : (
@@ -440,33 +437,12 @@ function FiltersTab({ target, categories, rows, defs, counts, editing, setEditin
         <div className="vv-link-custom" data-testid="vv-filter-editor">
           <div className="row vv-set">
             <input aria-label="Filter name" key={edited.name} defaultValue={edited.name} onBlur={(e) => { const n = e.target.value.trim(); if (n && n !== edited.name) void execute('viewFilter.update', { id: edited.id, name: n }); }} />
-            <select aria-label="Match" value={edited.match} onChange={(e) => void execute('viewFilter.update', { id: edited.id, match: e.target.value })}>
-              <option value="all">all the rules</option><option value="any">any of the rules</option>
-            </select>
             <span className="muted small">{counts[edited.id] ?? '…'} elements</span>
             <span className="grow" />
             <button type="button" className="btn" title="Delete: the views that use it forget it" onClick={() => { if (confirmAction('Delete the filter {name}?', { name: edited.name })) { void execute('viewFilter.delete', { id: edited.id }); setEditing(null); } }}><Trash2 size={13} />Delete</button>
           </div>
-          <table className="layer-table vv-rules">
-            <thead><tr><th>Field</th><th>Parameter</th><th>Operator</th><th>Value</th><th /></tr></thead>
-            <tbody>
-              {edited.rules.map((rule, i) => {
-                const put = (patch: Partial<FilterRule>) => setRules(edited, edited.rules.map((x, j) => (j === i ? { ...x, ...patch } : x)));
-                return (
-                  <tr key={i}>
-                    <td><select value={rule.field} onChange={(e) => put({ field: e.target.value, ...(e.target.value === 'param' ? { name: rule.name ?? 'Mark' } : { name: undefined }) })}>{FILTER_FIELDS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></td>
-                    <td>{rule.field === 'param' && <input aria-label="Parameter" key={rule.name} defaultValue={rule.name ?? ''} placeholder="Fire rating, Pset_WallCommon.IsExternal…" onBlur={(e) => { const n = e.target.value.trim(); if (n && n !== rule.name) put({ name: n }); }} />}</td>
-                    <td><select value={rule.op} onChange={(e) => put({ op: e.target.value })}>{FILTER_OPS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></td>
-                    <td>{rule.op !== 'hasValue' && rule.op !== 'hasNoValue' && (rule.field === 'category'
-                      ? <select aria-label="Value" value={rule.value ?? ''} onChange={(e) => put({ value: e.target.value })}>{categories.map((c) => <option key={c} value={c}>{categoryName(c)}</option>)}</select>
-                      : <input aria-label="Value" key={rule.value} defaultValue={rule.value ?? ''} onBlur={(e) => { if (e.target.value !== (rule.value ?? '')) put({ value: e.target.value }); }} />)}</td>
-                    <td><button type="button" className="icon mini" title="Remove the rule" onClick={() => setRules(edited, edited.rules.filter((_, j) => j !== i))}><X size={12} /></button></td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          <button type="button" className="btn small" onClick={() => setRules(edited, [...edited.rules, { field: 'type', op: 'contains', value: '' }])}><Plus size={12} />Add a rule</button>
+          <DraftGroupEditor key={edited.id} testPrefix="vv-rule" value={fromViewFilter(edited.match, edited.rules)} encode={toViewFilter}
+            newCondition={() => ({ field: '@type', op: 'contains', value: '' })} onCommit={(g) => void execute('viewFilter.update', { id: edited.id, ...toViewFilter(g) })} />
         </div>
       )}
     </div>

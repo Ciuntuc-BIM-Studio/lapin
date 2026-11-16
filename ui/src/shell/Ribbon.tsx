@@ -98,6 +98,10 @@ const dragTool = (tl: ToolDef) => ({ ...toolDragProps(tl.id), onContextMenu: (e:
 /** The band of the tab: large tools with their names and keys, or icons only. */
 function Band({ tab: all, icons, onPicked, drop }: { tab: RibbonTabDef; icons: boolean; onPicked?: () => void; drop?: boolean }) {
   const tool = useUi((s) => s.tool);
+  // A tool that works for some selections only (`enabled`) is asked again as the selection or the model changes.
+  useUi((s) => s.selected);
+  useSession((s) => s.version);
+  const off = (tl: ToolDef) => (tl.enabled ? !tl.enabled() : false);
   useBindings();
   // A group shown only while something holds (`shown`): drawn again when the preferences change (Developer extras).
   usePrefs();
@@ -109,7 +113,7 @@ function Band({ tab: all, icons, onPicked, drop }: { tab: RibbonTabDef; icons: b
         <div className="group-inline" key={g.label} role="group" aria-label={g.label}>
           {gi > 0 && <span className="group-rule" aria-hidden />}
           {[...g.tools, ...(g.small ?? [])].map((tl) => (
-            <button type="button" key={tl.id} className={`tool icon-only${tool === tl.id ? ' on' : ''}`} onClick={(e) => press(tl, e.currentTarget)} {...dragTool(tl)} title={hint(tl.id, tl.label, g.label)} aria-label={tl.label}>
+            <button type="button" key={tl.id} className={`tool icon-only${tool === tl.id ? ' on' : ''}`} disabled={off(tl)} onClick={(e) => press(tl, e.currentTarget)} {...dragTool(tl)} title={hint(tl.id, tl.label, g.label)} aria-label={tl.label}>
               <tl.icon size={18} strokeWidth={1.5} />
             </button>
           ))}
@@ -125,7 +129,7 @@ function Band({ tab: all, icons, onPicked, drop }: { tab: RibbonTabDef; icons: b
             {g.tools.map((tl) => {
               const keys = bindingText(tl.id);
               return (
-                <button type="button" key={tl.id} className={`tool${tool === tl.id ? ' on' : ''}`} onClick={(e) => press(tl, e.currentTarget)} {...dragTool(tl)} title={hint(tl.id, tl.label)}>
+                <button type="button" key={tl.id} className={`tool${tool === tl.id ? ' on' : ''}`} disabled={off(tl)} onClick={(e) => press(tl, e.currentTarget)} {...dragTool(tl)} title={hint(tl.id, tl.label)}>
                   <tl.icon size={22} strokeWidth={1.5} />
                   <span>{tl.label}</span>
                   {keys && <kbd className="tool-key" data-no-i18n>{keys.split(', ')[0]}</kbd>}
@@ -135,7 +139,7 @@ function Band({ tab: all, icons, onPicked, drop }: { tab: RibbonTabDef; icons: b
             {g.small && g.small.length > 0 && (
               <div className="small-tools">
                 {g.small.map((tl) => (
-                  <button type="button" key={tl.id} className={`tool small${tool === tl.id ? ' on' : ''}`} onClick={(e) => press(tl, e.currentTarget)} {...dragTool(tl)} title={hint(tl.id, tl.label)}>
+                  <button type="button" key={tl.id} className={`tool small${tool === tl.id ? ' on' : ''}`} disabled={off(tl)} onClick={(e) => press(tl, e.currentTarget)} {...dragTool(tl)} title={hint(tl.id, tl.label)}>
                     <tl.icon size={14} strokeWidth={1.6} /><span>{tl.label}</span>
                   </button>
                 ))}

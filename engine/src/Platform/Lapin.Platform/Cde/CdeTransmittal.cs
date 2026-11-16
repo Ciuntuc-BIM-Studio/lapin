@@ -28,7 +28,7 @@ public static class CdeTransmittal
     /// <summary>A row of the transmittal: the file, what it is, the sheet number and title (empty for the model).</summary>
     public sealed record Row(IssuedFile File, string? SheetNumber, string? SheetTitle);
 
-    static string Csv(string s) => s.Contains(',') || s.Contains('"') || s.Contains('\n') ? $"\"{s.Replace("\"", "\"\"")}\"" : s;
+    static string Csv(string s) => CsvText.Field(s);
 
     /// <summary>The transmittal as CSV (UTF-8, a header row, one row per file).</summary>
     public static string Csv(Header h, IReadOnlyList<Row> rows)

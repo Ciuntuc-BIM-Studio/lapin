@@ -285,27 +285,21 @@ public sealed class FurnitureModule : ILapinModule
         return o;
     }
 
-    static string Shade(string hex, double k)
-    {
-        if (hex.Length != 7 || hex[0] != '#') return hex;
-        int C(int i) => (int)Math.Round(Math.Clamp(int.Parse(hex.AsSpan(i, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture) * k, 0, 255));
-        return $"#{C(1):x2}{C(3):x2}{C(5):x2}";
-    }
+    static string Shade(string hex, double k) => HexColor.Scale(hex, k);
 
     // ---- The model ----
 
-    public static Entity? TypeOf(IModelView m, Entity e) => m.RelatingOf(e.Id, IfcClass.RelDefinesByType) is { Class: TypeClass } t ? t : null;
+    public static Entity? TypeOf(IModelView m, Entity e) => Lapin.Platform.Types.Of(m, e, TypeClass);
 
     static Entity RequireType(IModelView m, string? id) => m.Get(id ?? "") is { Class: TypeClass } t ? t : throw new CommandException("There is no such furniture type.");
 
     static string Unique(IModelView m, string name)
     {
         var taken = m.OfClass(TypeClass).Select(t => t.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (!taken.Contains(name)) return name;
-        for (var i = 2; ; i++) if (!taken.Contains($"{name} {i}")) return $"{name} {i}";
+        return Lapin.Model.Names.Free(taken.Contains, name);
     }
 
-    static string Mm(double v) => Math.Round(v * 1000).ToString(CultureInfo.InvariantCulture);
+    static string Mm(double v) => Lapin.Model.Numbers.Mm(v);
 
     /// <summary>A type's name from its kind and size: Sofa 2200 × 950, Bed 1600 × 2050.</summary>
     static string DefaultName(Spec s) => s.Kind.Key == FurnitureModels.Key ? $"{FurnitureModels.Of(s).Name} {Mm(FurnitureModels.SizeOf(s, FurnitureModels.Of(s)).W)} × {Mm(FurnitureModels.SizeOf(s, FurnitureModels.Of(s)).D)}" : s.Kind.Key == Casework.Key ? $"{Casework.Label(s)} {Mm(s.W)} × {Mm(s.D)}" : s.Kind.Key == "kitchen" ? KitchenLayouts.Of(s) is var l && l != "one-wall" ? $"{s.Kind.Label} {KitchenLayouts.Label(l)}, depth {Mm(s.D)}" : $"{s.Kind.Label}, depth {Mm(s.D)}" : $"{s.Kind.Label} {Mm(s.W)} × {Mm(s.D)}";
@@ -381,7 +375,7 @@ public sealed class FurnitureModule : ILapinModule
     {
         if (Args.TryPoint(e.Attrs["at"]) is not { } at) return null;
         var spec = new Spec(TypeOf(m, e)?.Attrs["spec"] as JsonObject);
-        var z = (Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0) + e.Num("offset");
+        var z = Spatial.Elevation(m, e) + e.Num("offset");
         UserModels.Ensure(m, spec.Str(FurnitureModels.Key));
         var b = new Builder(at, z, e.Num("rotation"), e.Bool("mirror") ^ FurnitureBodies.Handed(spec));
         var length = e.NumOrNull("length");

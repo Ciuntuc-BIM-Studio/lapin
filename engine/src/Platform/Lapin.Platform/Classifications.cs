@@ -244,9 +244,8 @@ public static class Classifications
         r.Query("classification.export", (q, a) =>
         {
             var s = Require(q.Model, (string?)a["id"]);
-            static string Cell(string v) => v.Contains(';') || v.Contains('"') ? "\"" + v.Replace("\"", "\"\"") + "\"" : v;
             var sb = new StringBuilder("Code;Title;Parent\n");
-            foreach (var i in Items(s)) sb.Append(Cell(i.Code)).Append(';').Append(Cell(i.Title)).Append(';').Append(Cell(i.Parent ?? "")).Append('\n');
+            foreach (var i in Items(s)) sb.Append(CsvText.Line([i.Code, i.Title, i.Parent ?? ""])).Append('\n');
             return new JsonObject { ["text"] = sb.ToString(), ["file"] = s.Name + ".csv" };
         });
 

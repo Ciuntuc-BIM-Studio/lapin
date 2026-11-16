@@ -23,6 +23,8 @@ import { FurnitureLibraryDialog, SaveToLibraryDialog } from './FurnitureLibraryD
 import { refreshLibrary, useFurnitureLibrary } from './library';
 import { addTemplateAddition } from '../../engine/templates';
 import { useEffect } from 'react';
+import { activate } from '../../platform/modules';
+import { usePlaceKind } from './placeKind';
 // Lapin Extensions: the content packs this module's libraries take (docs/plan-extensions.md).
 import './extensionKind';
 
@@ -82,37 +84,68 @@ const typeArg = (kind: string) => {
   return id && useSession.getState().nodes.has(id) ? { typeId: id } : { kind };
 };
 
-/** A kind's tool: one piece at a click. */
-function piece(kind: string, label: string, icon: Icon, shortcut?: string): ToolDef {
-  return {
-    id: `furniture.${kind}`, label, icon, shortcut,
-    gesture: { kind: 'point' },
-    options: kindOptions(kind),
-    properties: kindProperties(kind),
-    complete: async ({ points: [p] }, ctx) => {
-      const { rotation, against } = useFurniturePrefs.getState();
-      await ctx.execute('furniture.place', { storeyId: ctx.storeyId, ...typeArg(kind), x: p.x, y: p.y, rotation, against });
-    },
-  };
+/** The kinds of piece the Place tool puts down, by category: the old per-kind tools (their ids and letters) are these, kept. */
+const KINDS: { category: string; kind: string; label: string; icon: Icon; shortcut?: string }[] = [
+  { category: 'Seating', kind: 'sofa', label: 'Sofa', icon: Sofa, shortcut: 'SO' },
+  { category: 'Seating', kind: 'cornerSofa', label: 'Corner sofa', icon: Sofa },
+  { category: 'Seating', kind: 'armchair', label: 'Armchair', icon: Armchair, shortcut: 'AC' },
+  { category: 'Seating', kind: 'chair', label: 'Chair', icon: Armchair },
+  { category: 'Beds', kind: 'bed', label: 'Bed', icon: BedDouble, shortcut: 'BD' },
+  { category: 'Beds', kind: 'bedside', label: 'Bedside table', icon: BedSingle },
+  // Casework of boards (decision 475): carcasses side by side, configured in Furniture types from a preset.
+  { category: 'Storage', kind: 'wardrobe', label: 'Wardrobe', icon: Shirt, shortcut: 'WD' },
+  { category: 'Storage', kind: 'casework', label: 'Casework', icon: Package },
+  { category: 'Storage', kind: 'chest', label: 'Chest of drawers', icon: Archive },
+  { category: 'Storage', kind: 'bookcase', label: 'Bookcase', icon: Library },
+  { category: 'Storage', kind: 'sideboard', label: 'Sideboard', icon: PanelsTopLeft },
+  { category: 'Tables', kind: 'table', label: 'Table', icon: UtensilsCrossed, shortcut: 'TB' },
+  { category: 'Tables', kind: 'coffeeTable', label: 'Coffee table', icon: Coffee },
+  { category: 'Tables', kind: 'desk', label: 'Desk', icon: LampDesk },
+  // Furniture from a CC0 model stretched by zones (decision 477): sofas, chairs, tables, lamps, plants, rugs; the model and its size in Furniture types.
+  { category: 'Models', kind: 'model', label: 'From a model', icon: Shapes },
+];
+const CATEGORIES = [...new Set(KINDS.map((k) => k.category))];
+
+/** The bar's and Properties' pieces for a kind, made once each (a component made again would start over). */
+const optionsOf = new Map<string, ReturnType<typeof kindOptions>>();
+const propertiesOf = new Map<string, ReturnType<typeof kindProperties>>();
+const forKind = <T,>(map: Map<string, T>, kind: string, make: (k: string) => T): T => { let c = map.get(kind); if (!c) map.set(kind, c = make(kind)); return c; };
+
+/** The category and kind to place, in the bar and in Properties while the tool is on. */
+function KindPicker() {
+  const kind = usePlaceKind((s) => s.kind);
+  return (
+    <span className="cad-layer on">
+      <select value={kind} data-testid="furniture-kind" title="What it places: seating, beds, storage, tables, models" onChange={(e) => usePlaceKind.setState({ kind: e.target.value })}>
+        {CATEGORIES.map((c) => <optgroup key={c} label={c}>{KINDS.filter((k) => k.category === c).map((k) => <option key={k.kind} value={k.kind}>{k.label}</option>)}</optgroup>)}
+      </select>
+    </span>
+  );
+}
+function PlaceOptions() { const Kind = forKind(optionsOf, usePlaceKind((s) => s.kind), kindOptions); return <><KindPicker /><Kind /></>; }
+function PlaceProperties() {
+  const Kind = forKind(propertiesOf, usePlaceKind((s) => s.kind), kindProperties);
+  return <><div className="pad new-element"><label className="field-line"><span className="eyebrow">Place</span><KindPicker /></label></div><Kind /></>;
 }
 
-const sofa = piece('sofa', 'Sofa', Sofa, 'SO');
-const cornerSofa = piece('cornerSofa', 'Corner sofa', Sofa);
-const armchair = piece('armchair', 'Armchair', Armchair, 'AC');
-const chair = piece('chair', 'Chair', Armchair);
-const bed = piece('bed', 'Bed', BedDouble, 'BD');
-const bedside = piece('bedside', 'Bedside table', BedSingle);
-const wardrobe = piece('wardrobe', 'Wardrobe', Shirt, 'WD');
-const chest = piece('chest', 'Chest of drawers', Archive);
-const bookcase = piece('bookcase', 'Bookcase', Library);
-const sideboard = piece('sideboard', 'Sideboard', PanelsTopLeft);
-const table = piece('table', 'Table', UtensilsCrossed, 'TB');
-const coffeeTable = piece('coffeeTable', 'Coffee table', Coffee);
-const desk = piece('desk', 'Desk', LampDesk);
-/** Casework of boards (decision 475): carcasses side by side, configured in Furniture types from a preset. */
-const casework = piece('casework', 'Casework', Package);
-/** Furniture from a CC0 model stretched by zones (decision 477): sofas, chairs, tables, lamps, plants, rugs; the model and its size in Furniture types. */
-const fromModel = piece('model', 'From a model', Shapes);
+/** One tool places every piece of furniture (S8, audit 2026-11-15): the kind is chosen in the bar, one piece at a click. */
+const place: ToolDef = {
+  id: 'furniture.place', label: 'Place furniture', icon: Sofa,
+  gesture: { kind: 'point' },
+  options: PlaceOptions,
+  properties: PlaceProperties,
+  complete: async ({ points: [p] }, ctx) => {
+    const { rotation, against } = useFurniturePrefs.getState();
+    await ctx.execute('furniture.place', { storeyId: ctx.storeyId, ...typeArg(usePlaceKind.getState().kind), x: p.x, y: p.y, rotation, against });
+  },
+};
+
+/** A kind's old tool: the Place tool, set to that kind (the id and the letters stay). */
+const piece = (k: (typeof KINDS)[number]): ToolDef => ({
+  id: `furniture.${k.kind}`, label: k.label, icon: k.icon, shortcut: k.shortcut,
+  run: () => { usePlaceKind.setState({ kind: k.kind }); if (useUi.getState().tool !== place.id) activate(place); },
+});
+const pieces = KINDS.map(piece);
 
 /** A kitchen of any layout: two points along a wall, its back on the wall's face, as long as the line (an L or a U tucked into the corner it is drawn near). */
 const kitchen: ToolDef = {
@@ -174,16 +207,14 @@ const furniture: LapinModule = {
   id: 'furniture',
   name: 'Furniture',
   summary: 'Sofas, corner sofas, armchairs, chairs, beds, wardrobes, chests, bookcases, sideboards, tables, desks and kitchens in six layouts, parametric types placed against walls, with their plan symbols, schedules and IFC.',
+  // The old tool of each kind (Sofa, Bed…): the Place tool set to it, off the ribbon; their ids and letters work as before.
+  legacyTools: pieces,
   tabs: [{
     // On the Interior tab with the finishes (decision 367).
     id: 'interior', label: 'Interior', order: 25, include: ['modify'], i18nCtx: 'furniture',
     groups: [
-      { label: 'Seating', tools: [sofa, armchair], small: [cornerSofa, chair] },
-      { label: 'Beds', tools: [bed], small: [bedside] },
-      { label: 'Storage', tools: [wardrobe, casework], small: [chest, bookcase, sideboard] },
-      { label: 'Tables', tools: [table], small: [coffeeTable, desk, chairsAround] },
+      { label: 'Furniture', tools: [place], small: [chairsAround] },
       { label: 'Kitchen', tools: [kitchen] },
-      { label: 'Models', tools: [fromModel] },
       { label: 'Schedules', tools: [byType], small: [byRoom, kitchenUnits, cutList] },
       { label: 'Types', tools: [types], small: [library] },
     ],

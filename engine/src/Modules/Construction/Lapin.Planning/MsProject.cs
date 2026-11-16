@@ -244,8 +244,13 @@ public static class MsProject
     static int Int(XElement? e, string name, int fallback = 0) => int.TryParse(Val(e, name), NumberStyles.Integer, CultureInfo.InvariantCulture, out var i) ? i : fallback;
     static double Num(XElement? e, string name, double fallback = 0) => double.TryParse(Val(e, name), NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? d : fallback;
 
+    /// <summary>
+    /// A date and time as written: a Z or an offset after it kept out, as the IFC import reads its dates (read as local time,
+    /// a task starting late in the day at UTC−5 fell on the next day east of it; audit 15.11.2026).
+    /// </summary>
     static DateTime? When(string? s) =>
-        s != null && DateTime.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out var d) ? d : null;
+        s != null && DateTimeOffset.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces | DateTimeStyles.AssumeUniversal, out var d)
+            ? DateTime.SpecifyKind(d.DateTime, DateTimeKind.Unspecified) : null;
 
     /// <summary>MSPDI's duration (PT40H0M0S, PT8H, P2DT4H…) in hours of work.</summary>
     public static double Hours(string? s)

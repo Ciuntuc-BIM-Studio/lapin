@@ -138,12 +138,7 @@ public static class Parts
     }
 
     /// <summary>Whether a material is of a category: its own, else (for Finish) one by its name, as view styles tell finishes.</summary>
-    public static bool InCategory(IModelView m, string materialId, string category)
-    {
-        if (m.Get(materialId) is not { Class: IfcClass.Material } mat) return false;
-        if (mat.Str("category") is { Length: > 0 } c) return string.Equals(c.Trim(), category, StringComparison.OrdinalIgnoreCase);
-        return string.Equals(category, "Finish", StringComparison.OrdinalIgnoreCase) && Platform.Materials.IsFinish(mat);
-    }
+    public static bool InCategory(IModelView m, string materialId, string category) => Platform.Materials.InCategory(m, materialId, category);
 
     /// <summary>The index of the layer a part set is of ("layer:2", "layer:2:&lt;material&gt;"), null when it is not a layer's.</summary>
     public static int? LayerIndex(string? part)

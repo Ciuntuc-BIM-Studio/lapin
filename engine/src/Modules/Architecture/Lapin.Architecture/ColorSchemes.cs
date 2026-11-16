@@ -72,7 +72,7 @@ public static class ColorSchemes
     static SchemeEntry? ReadEntry(JsonNode? n)
     {
         if (n is not JsonObject o || ((string?)o["value"])?.Trim() is not { } value) return null;
-        static string? Colour(JsonNode? c) => (string?)c is { Length: 7 } s && s[0] == '#' && s[1..].All(Uri.IsHexDigit) ? s.ToLowerInvariant() : null;
+        static string? Colour(JsonNode? c) => HexColor.Read(c, null)?.ToLowerInvariant();
         return new SchemeEntry(value, Colour(o["color"]), ((string?)o["hatch"])?.Trim() is { Length: > 0 } h ? h : null,
             Json.Number(o["hatchScale"]) is { } sc && sc > 0 ? sc : 1, Colour(o["hatchColor"]), Opacity(o["opacity"]));
     }
@@ -323,8 +323,7 @@ public static class ColorSchemes
         var style = Standards.TextOf(c.Book, null);
         foreach (var legend in legends)
         {
-            if (legend.Attrs["at"] is not JsonArray { Count: >= 2 } atj) continue;
-            var at = new Vec2(Json.Number(atj[0]) ?? 0, Json.Number(atj[1]) ?? 0);
+            if (Args.TryPoint(legend.Attrs["at"]) is not { } at) continue;
             var scheme = Find(m, legend.Str("scheme")) ?? OfView(m, c.View);
             var mark = new ViewMark(legend.Id);
             var h = style.Height * c.Mm;

@@ -129,7 +129,7 @@ public static class Frameless
     }
 
     static string Kg(double v) => Math.Round(v).ToString(System.Globalization.CultureInfo.InvariantCulture);
-    static string Mm(double v) => Math.Round(v * 1000).ToString(System.Globalization.CultureInfo.InvariantCulture);
+    static string Mm(double v) => Lapin.Model.Numbers.Mm(v);
 
     static string? SpringProblem(JoinerySpec s)
     {

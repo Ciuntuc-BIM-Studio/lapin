@@ -21,7 +21,7 @@ public static class ClashGroups
     public static readonly string[] Modes = [None, Storey, Element, Classes, Status];
 
     /// <summary>Each clash's group (its number → the group's name, in the order the groups come); empty for none.</summary>
-    public static Dictionary<int, string> Of(IReadOnlyList<ClashRecord> clashes, string mode, Func<string, ElementFacts?> facts)
+    public static Dictionary<int, string> Of(IReadOnlyList<ClashRecord> clashes, string mode, Func<string, ClashFacts?> facts)
     {
         var o = new Dictionary<int, string>();
         string Name(string id) => facts(id) is { } f ? f.Entity.Name is { Length: > 0 } n ? n : f.ClassLabel : id;

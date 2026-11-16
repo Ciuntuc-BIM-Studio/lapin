@@ -3,6 +3,12 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // Make a layered wall from solids (forum topic 101)
+  "Make a layered wall from solids": "由实体生成多层墙", "The selected solids, side by side across a wall, one per layer, become one wall of a type with those layers, with the openings that go through all of them.": "所选实体沿墙厚并排，每层一个，生成一面具有这些层的墙类型的墙，并带有贯穿所有层的洞口。", "Gaps between layers": "层间间隙", "An air layer": "空气层", "Into the thicker neighbour": "并入较厚的相邻层", "The solids": "实体", "Keep them hidden": "保留并隐藏", "Delete them": "删除", "Keep them": "保留", "The layer with studs becomes the core, a timber frame of the wood module with their section and spacing": "带立柱的层成为核心层，即木材模块的木框架，采用其截面和间距", "Timber frame layer": "木框架层", "Select the solids that make the wall.": "请选择构成墙的实体。", "No wall found in the selection: select the solids of its layers.": "所选内容中未找到墙：请选择其各层的实体。", "Made of": "组成", "The core: the wall's axis on it, the layer that joins": "核心层：墙轴线位于其上，参与连接的层", "From the solid": "来自实体", "The solid names no material: rename it": "该实体未指定材质：请重命名", "Gap between solids": "实体之间的间隙", "Pieces with air between": "中间有空气的构件", "solid(s), with": "个实体，含", "solid(s)": "个实体", "Differences over 1 mm or 0.5 %": "超过 1 mm 或 0.5 % 的差异", "Left as they are": "保持原样", "Make": "生成", "The layered wall is made.": "多层墙已生成。", "The layered walls are made.": "多层墙均已生成。", "Wall from solids": "由实体生成墙", "Select the solids that make the wall (its layers), then Wall from solids.": "请选择构成墙的实体（其各层），然后使用“由实体生成墙”。", "solid(s) it was made of, kept hidden": "个生成它的实体，已隐藏", "Show the original solids": "显示原始实体", "Made from solids": "由实体生成", "Make a layered wall…": "生成多层墙…",
+  // Dimension values placed clear of one another, a grid axis's temporary dimensions (forum topic 78)
+  "Text placement": "文字放置", "A value that does not fit between its witness lines moves just outside its segment, or above and below the line in turn, clear of the other values; as the project: Annotate → Dimension rules… says": "放不进尺寸界线之间的数值会移到其分段外侧，或依次移到尺寸线的上方和下方，避开其他数值；同项目：按“注释 → 标注规则…”的设定", "Leader beyond mm": "引线超过 mm", "A value moved further than this (mm on paper) from its place gets a leader to its segment; empty: as the project": "数值离开原位超过此距离（图纸 mm）时，加一条引线指向其分段；留空：同项目", "on": "开", "Text placement, for every dimension whose style says as the project": "文字放置，适用于样式为“同项目”的每个尺寸标注", "A value that does not fit between its witness lines moves just outside its segment, or above and below the line in turn, clear of the other values of the view; a value you dragged keeps its place": "放不进尺寸界线之间的数值会移到其分段外侧，或依次移到尺寸线的上方和下方，避开视图中的其他数值；你拖动过的数值保持原处", "Automatic text placement": "自动放置文字", "A value moved further than this from its place gets a leader to its segment": "数值离开原位超过此距离时，加一条引线指向其分段", "Leader when moved beyond (mm on paper)": "移动超过此距离时加引线（图纸 mm）", "Click to type the distance: the axis moves to match": "单击输入距离：轴线随之移动", "Click to type the angle: the axis turns about the centre to match": "单击输入角度：轴线绕中心随之旋转", "With it, the axes past the selected one move with it, as the spacing in its properties does": "勾选后，选中轴线之后的轴线随之移动，与其属性中的间距一致", "move the axes beyond too": "其后的轴线也一起移动", "Type an angle of zero or more.": "请输入零或更大的角度。",
+  // The one condition editor (audit S10)
+  "is at most": "至多为", "is at least": "至少为", "is none of": "不属于其中任何一个", "Phase demolished": "拆除阶段", "Parameter (as text)": "参数（作为文本）", "Parameter (as text)…": "参数（作为文本）…", "this model": "本模型", "Remove the group": "移除分组", "Add a group": "添加分组",
   // A stair's railings selected one by one, the dog-leg's footing (forum topics 102 and 104)
   "Stair railing": "楼梯栏杆", "Left railing": "左侧栏杆", "Right railing": "右侧栏杆", "What is set here is this side's alone; blank, as the stair's type.": "此处设置的仅对这一侧有效；留空则按楼梯类型。", "The stair has no railing on this side.": "楼梯这一侧没有栏杆。", "Put it back": "放回去", "as one climbs": "上楼方向", "Balustrade": "栏杆", "Handrail on the wall": "靠墙扶手", "Over the nosings, to the handrail's axis; blank: the type's": "从踏步前缘起，到扶手轴线；留空：按类型", "Delete railing": "删除栏杆", "Select the stair": "选择楼梯", "Click a railing in a plan or in 3D to select it on its own: its height, its kind, or Delete.": "在平面图或三维中单击栏杆即可单独选择它：它的高度、种类，或删除。", "Footing under the first flight": "第一梯段下的基础", "Footing depth": "基础深度", "The first flight's foot on a footing of its own, a strip under its first tread, flush with the first riser (exported as an IfcFooting)": "第一梯段的底部落在自己的基础上：第一踏步下的一条，与第一踢面齐平（导出为 IfcFooting）",
   // Detail callouts (forum topic 107)
@@ -991,6 +997,7 @@ export const ZH: Record<string, string> = {
   'the level below': '下一标高', 'unlimited': '无限制', 'At': '位于', 'Back to the default': '恢复默认',
   'Drafting layers': '绘图图层', 'Current': '当前', 'Colour': '颜色', 'Pen (mm)': '笔（mm）', 'Locked': '已锁定', 'Add': '添加', 'New layer\'s name': '新图层名称',
   'Base point': '基点', 'Survey point': '测量点', 'Show the base and survey points in plans': '在平面图中显示基点和测量点',
+  'Latitude': '纬度', 'Longitude': '经度', 'WGS 84, in degrees; empty when unknown': 'WGS 84，单位为度；未知时留空', 'The latitude and longitude tie the project to the map at the base point': '纬度和经度在基点处将项目与地图关联',
   'Add a survey point': '添加测量点', 'Remove the survey point': '移除测量点', 'True north': '正北', 'Easting': '东坐标', 'Northing': '北坐标',
   'Wall type': '墙类型', 'New type': '新建类型', 'Save type': '保存类型', 'Create type': '创建类型', 'Delete type': '删除类型', 'Draw with it': '用它绘制',
   'Place with it': '用它放置', 'Layer': '层', 'Material': '材料', 'Core': '核心层', 'Zone': '分区', 'New door': '新建门', 'New window': '新建窗',
@@ -3944,6 +3951,17 @@ export const ZH: Record<string, string> = {
   "Save as (full path, .{ext}):": "另存为（完整路径，.{ext}）：",
   "Don't save": "不保存",
   "Finish or cancel (Esc) what you are doing first, then undo or redo.": "请先完成或取消（Esc）当前操作，然后再撤销或重做。",
+  'Could not be checked': '无法检查',
+  'Place furniture': '放置家具',
+  'Select the walls, beams or strip footings whose corners to change.': '请选择要更改转角的墙、梁或条形基础。',
+  'Straight pieces, each starting where the last ended, or an arc: its start, its end, then a point it passes through': '直线段，每段从上一段结束处开始；或圆弧：起点、终点，再指定圆弧经过的一点',
+  'A path, 1,5 m wide, or a road: two 3 m lanes on a 2,5 % crown, kerbs and 1,5 m sidewalks': '宽 1.5 米的小路，或道路：两条 3 米车道、2.5% 路拱、路缘石和 1.5 米人行道',
+  'What it places: seating, beds, storage, tables, models': '放置内容：座椅、床、储物、桌子、模型',
+  'What it places: a heating, plumbing, electrical, air, gas, fuel oil or fire protection fixture, or a fitting': '放置内容：供暖、给排水、电气、空气、燃气、燃油或消防设备，或管件',
+  'Tests': '测试',
+  'Openings for MEP': '机电开洞',
+  'Kind of check': '检查类型',
+  'Place node': '放置节点',
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

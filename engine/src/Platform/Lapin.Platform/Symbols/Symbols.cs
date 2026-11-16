@@ -39,8 +39,7 @@ public static class Symbols
     public static string FreeName(IModelView m, string name, string? except = null)
     {
         var taken = m.OfClass(Class).Where(e => e.Id != except).Select(e => e.Name).Concat(BuiltinSymbols.All.Select(b => b.Name)).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (!taken.Contains(name)) return name;
-        for (var n = 2; ; n++) if (!taken.Contains($"{name} {n}")) return $"{name} {n}";
+        return Lapin.Model.Names.Free(taken.Contains, name);
     }
 
     static Entity Require(IModelView m, string? id) =>
@@ -165,7 +164,7 @@ public static class Symbols
     /// <summary>How an instance lies: its point, angle (°), scale and flips.</summary>
     public static (Vec2 At, double Angle, double Scale, bool FlipX, bool FlipY) Pose(Entity e)
     {
-        var at = e.Attrs["at"] is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : default;
+        var at = Args.PointOf(e.Attrs["at"]);
         var scale = e.NumOrNull("scale") is { } s && s > 0 ? s : 1;
         return (at, e.NumOrNull("angle") ?? 0, scale, e.Bool("flipX"), e.Bool("flipY"));
     }

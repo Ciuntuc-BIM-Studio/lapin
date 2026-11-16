@@ -504,7 +504,7 @@ public static class Skirtings
         return Measure.SignedVolume(solid) < 0 ? SolidBuilder.Flip(solid) : solid;
     }
 
-    static double BaseZ(Entity s, IModelView m) => (Spatial.StoreyOf(m, s.Id)?.Num("elevation") ?? 0) + s.Num("baseOffset");
+    static double BaseZ(Entity s, IModelView m) => Spatial.Base(m, s);
 
     public static ElementGeometry? Geometry(Entity s, IModelView m, IServices services)
     {

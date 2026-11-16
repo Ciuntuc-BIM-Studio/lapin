@@ -45,7 +45,7 @@ public static class OpeningReferences
 
         var o = new JsonObject { ["wallId"] = wall.Id };
         // Up the wall, for a section or an elevation: the storey's level and the wall's base (absolute heights).
-        var storeyZ = Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0;
+        var storeyZ = Spatial.Elevation(m, wall);
         var baseZ = storeyZ + wall.Num("baseOffset");
         o["levels"] = new JsonObject { ["storey"] = storeyZ, ["base"] = baseZ };
         if (opening != null)

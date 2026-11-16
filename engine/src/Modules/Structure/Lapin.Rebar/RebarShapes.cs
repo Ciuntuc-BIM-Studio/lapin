@@ -357,7 +357,7 @@ public static class RebarShapes
     }
 
     /// <summary>Millimetres as a label writes them ("2450").</summary>
-    public static string Mm(double m) => Math.Round(m * 1000).ToString(CultureInfo.InvariantCulture);
+    public static string Mm(double m) => Lapin.Model.Numbers.Mm(m);
     /// <summary>A diameter as a label writes it ("Ø12").</summary>
     public static string Dia(double d) => "Ø" + Math.Round(d * 1000).ToString(CultureInfo.InvariantCulture);
 }

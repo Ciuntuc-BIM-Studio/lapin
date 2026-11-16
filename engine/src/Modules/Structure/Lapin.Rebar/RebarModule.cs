@@ -63,7 +63,7 @@ public static class Rebars
     public static readonly string[] Views = ["front", "top", "side", "section"];
     public static readonly string[] Shows = ["all", "ends", "one"];
 
-    public static Vec2 P(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : default;
+    public static Vec2 P(JsonNode? n) => Args.PointOf(n);
     public static JsonArray J(Vec2 p) => new(Math.Round(p.X, 6), Math.Round(p.Y, 6));
 
     public static RebarSpec SpecOf(Entity e)
@@ -467,7 +467,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             }
             double? station = null;
             if (e.Attrs["start"] is JsonArray && e.Attrs["end"] is JsonArray) station = PathCurve.Of(e).Project(xy);
-            else if (z is { } zz) station = zz - (Spatial.StoreyOf(ctx.Model, e.Id)?.Num("elevation") ?? 0) - e.Num("baseOffset");
+            else if (z is { } zz) station = zz - Spatial.Elevation(ctx.Model, e) - e.Num("baseOffset");
             var flip = a["flip"] is JsonValue fv && fv.TryGetValue<bool>(out var f) && f;
             var across = AcrossSections.Create(ctx, e.Id, station, Json.Number(a["margin"]), flip, host.Str("discipline"));
             if (a["inset"] is JsonValue iv && iv.TryGetValue<bool>(out var withInset) && !withInset) return new JsonObject { ["viewId"] = across.Id };

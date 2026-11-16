@@ -44,28 +44,13 @@ public sealed record SectionProps(double Area, double I22, double I33, double S2
 public static class SectionProperties
 {
     /// <summary>
-    /// The catalogue's profiles: their product standard, family and root radius (mm; a hollow section's outer corner, its
-    /// inner being the wall's thickness, EN 10210-2). Lapin keeps only the nominal h, b, tw, tf; these are what is needed
-    /// besides them for the area and the inertias to the published values' precision.
+    /// The standard, family and root radius (metres; a hollow section's outer corner, its inner being the wall's thickness,
+    /// EN 10210-2) of a designation of the built-in library (<see cref="ProfileLibraries.BuiltInProfiles"/>) made to a
+    /// standard; null for anything else (Lapin's generic cold-formed sections, a name it does not know). What is needed besides
+    /// the nominal h, b, tw, tf for the area and the inertias to the published values' precision.
     /// </summary>
-    static readonly Dictionary<string, (string Standard, string Family, double R)> Catalogue = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["IPE 200"] = ("EN 10365:2017", "IPE", 12), ["IPE 240"] = ("EN 10365:2017", "IPE", 15), ["IPE 300"] = ("EN 10365:2017", "IPE", 15),
-        ["IPE 330"] = ("EN 10365:2017", "IPE", 18), ["IPE 360"] = ("EN 10365:2017", "IPE", 18), ["IPE 400"] = ("EN 10365:2017", "IPE", 21),
-        ["IPE 450"] = ("EN 10365:2017", "IPE", 21), ["IPE 500"] = ("EN 10365:2017", "IPE", 21), ["IPE 550"] = ("EN 10365:2017", "IPE", 24),
-        ["IPE 600"] = ("EN 10365:2017", "IPE", 24),
-        ["HEA 200"] = ("EN 10365:2017", "HEA", 18), ["HEA 240"] = ("EN 10365:2017", "HEA", 21), ["HEA 300"] = ("EN 10365:2017", "HEA", 27), ["HEA 400"] = ("EN 10365:2017", "HEA", 27),
-        ["HEB 200"] = ("EN 10365:2017", "HEB", 18), ["HEB 300"] = ("EN 10365:2017", "HEB", 27),
-        ["UPN 200"] = ("EN 10365:2017", "UPN", 11.5), ["UPN 300"] = ("EN 10365:2017", "UPN", 16),
-        ["L 50×50×5"] = ("EN 10056-1:2017", "L", 7), ["L 60×60×6"] = ("EN 10056-1:2017", "L", 8), ["L 70×70×7"] = ("EN 10056-1:2017", "L", 9),
-        ["L 80×80×8"] = ("EN 10056-1:2017", "L", 10), ["L 100×100×10"] = ("EN 10056-1:2017", "L", 12), ["L 120×80×10"] = ("EN 10056-1:2017", "L", 11),
-        ["RHS 100×100×5"] = ("EN 10210-2:2019", "RHS", 7.5), ["RHS 150×100×6"] = ("EN 10210-2:2019", "RHS", 9), ["RHS 200×100×8"] = ("EN 10210-2:2019", "RHS", 12),
-        ["CHS 60.3×3.2"] = ("EN 10210-2:2019", "CHS", 0), ["CHS 88.9×4"] = ("EN 10210-2:2019", "CHS", 0), ["CHS 114.3×5"] = ("EN 10210-2:2019", "CHS", 0), ["CHS 168.3×6"] = ("EN 10210-2:2019", "CHS", 0),
-    };
-
-    /// <summary>The standard, family and root radius (metres) of a catalogue designation; null for anything else.</summary>
     public static (string Standard, string Family, double Radius)? CatalogueOf(string? designation) =>
-        designation != null && Catalogue.TryGetValue(designation, out var c) ? (c.Standard, c.Family, c.R / 1000) : null;
+        ProfileLibraries.BuiltInProfiles.Find(designation) is { Standard: { } standard } p ? (standard, p.Family ?? p.Kind, p.R1) : null;
 
     /// <summary>The section's properties; null when its geometry cannot give them (no size, an unknown kind).</summary>
     public static SectionProps? Of(SectionShape s)

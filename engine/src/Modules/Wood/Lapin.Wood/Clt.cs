@@ -280,7 +280,7 @@ public static class Clt
         var start = Walls.Start(wall);
         var dir = (Walls.End(wall) - start).Normalized();
         var left = dir.Perp;
-        var baseZ = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
+        var baseZ = Spatial.Base(m, wall);
         Vec3 At(double u, double z, double y) { var p = start + dir * u + left * y; return new Vec3(p.X, p.Y, baseZ + z); }
         var pts = corePart.Solid.Vertices.Select(v => (U: Vec2.Dot(v.Xy - start, dir), Z: v.Z - baseZ)).ToList();
         var (u0, u1, z0, z1) = (pts.Min(p => p.U), pts.Max(p => p.U), pts.Min(p => p.Z), pts.Max(p => p.Z));

@@ -2706,6 +2706,12 @@ path.part-flex-ghost { fill: none; stroke: var(--accent); stroke-width: 1.6; str
 .fs-rows { display: grid; gap: 4px; margin: 4px 0 8px; justify-items: start; }
 .fs-chips .chip { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .fs-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+/* The one condition editor (view filters, Quick select, clash search sets). */
+.cg-group { display: grid; gap: 4px; margin: 4px 0 8px; justify-items: start; }
+.cg-nested { border-left: 2px solid var(--border, #8884); padding-left: 8px; margin-left: 4px; }
+.cg-group > .row { display: flex; gap: 4px; align-items: center; }
+.cg-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.cg-row input { width: auto; min-width: 90px; max-width: 200px; }
 .fs-column .fs-formula { width: 220px; }
 .fs-column .fs-heading { width: 110px; }
 .fs-column .fs-unit { width: 60px; }

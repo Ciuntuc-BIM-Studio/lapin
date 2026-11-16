@@ -125,7 +125,7 @@ public static class Norms
             try { table = XlsxReader.Read(bytes); }
             catch (Exception ex) when (ex is InvalidDataException or System.Xml.XmlException) { throw new CommandException("The workbook could not be read: " + ex.Message); }
         }
-        else table = Csv(Encoding.UTF8.GetString(bytes).TrimStart('﻿'));
+        else table = CsvText.Read(Encoding.UTF8.GetString(bytes).TrimStart('﻿'));
         var notes = new List<string>();
         var at = table.FindIndex(r => r.Any(c => CodeHeads.Contains(Head(c))) && r.Any(c => HoursHeads.Contains(Head(c)) || RateHeads.Contains(Head(c))));
         if (at < 0) throw new CommandException("The table has no headings Lapin knows: it needs a code column and an hours (or productivity) column, with a unit.");
@@ -152,37 +152,6 @@ public static class Norms
         return new(rows, skipped, notes);
     }
 
-    /// <summary>CSV split into rows and cells: the separator the heading row uses most (; , or a tab), quotes honoured.</summary>
-    public static List<List<string>> Csv(string text)
-    {
-        var first = text.Split('\n').FirstOrDefault() ?? "";
-        var sep = new[] { ';', '\t', ',' }.OrderByDescending(c => first.Count(x => x == c)).First();
-        var rows = new List<List<string>>();
-        var row = new List<string>();
-        var cell = new StringBuilder();
-        var quoted = false;
-        for (var i = 0; i < text.Length; i++)
-        {
-            var ch = text[i];
-            if (quoted)
-            {
-                if (ch == '"' && i + 1 < text.Length && text[i + 1] == '"') { cell.Append('"'); i++; }
-                else if (ch == '"') quoted = false;
-                else cell.Append(ch);
-            }
-            else if (ch == '"') quoted = true;
-            else if (ch == sep) { row.Add(cell.ToString()); cell.Clear(); }
-            else if (ch == '\n' || ch == '\r')
-            {
-                if (ch == '\r' && i + 1 < text.Length && text[i + 1] == '\n') i++;
-                row.Add(cell.ToString()); cell.Clear();
-                rows.Add(row); row = [];
-            }
-            else cell.Append(ch);
-        }
-        if (cell.Length > 0 || row.Count > 0) { row.Add(cell.ToString()); rows.Add(row); }
-        return rows;
-    }
 
     /// <summary>The template: its columns and Lapin's indicative rows, as CSV (semicolons), each row saying it is indicative.</summary>
     public static string TemplateCsv()

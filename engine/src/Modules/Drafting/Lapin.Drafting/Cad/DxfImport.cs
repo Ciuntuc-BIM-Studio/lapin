@@ -76,7 +76,7 @@ public static class DxfImport
             JsonValue v when v.TryGetValue<string>(out var s) && s != "auto" => DxfUnits.Factor(s) ?? throw new CommandException($"„{s}” is not a unit (mm, cm, m, in, ft)."),
             _ => null,
         };
-        var at = a["at"] is JsonArray p && p.Count >= 2 ? new Vec2(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0) : default;
+        var at = Args.PointOf(a["at"]);
         bool? flip = a["flip"] is JsonValue fv && fv.TryGetValue<bool>(out var fb) ? fb : null;
         var layers = a["layers"] is JsonArray la ? la.Select(x => (string?)x).OfType<string>().ToHashSet(StringComparer.OrdinalIgnoreCase) : null;
         static bool B(JsonNode? x, bool d) => x is JsonValue v && v.TryGetValue<bool>(out var b) ? b : d;
