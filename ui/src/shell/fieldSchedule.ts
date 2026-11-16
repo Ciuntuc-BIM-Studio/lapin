@@ -4,7 +4,7 @@
  * libraries of both (this computer's files; the firm folders are read by FirmFolderFiles).
  */
 
-import { query } from '../engine/session';
+import { execute, query } from '../engine/session';
 import { computerFiles, forgetComputerFile, computerFileId, keepComputerFile } from '../platform/libraries';
 
 export type FieldKind = 'number' | 'text' | 'bool';
@@ -18,9 +18,9 @@ export type Operator = typeof OPERATORS[number];
 /** Operators that take no value. */
 export const NO_VALUE: readonly string[] = ['exists', 'missing'];
 
-export const AGGREGATES = ['sum', 'avg', 'min', 'max', 'count', 'countDistinct', 'first', 'list'] as const;
+export const AGGREGATES = ['sum', 'avg', 'min', 'max', 'count', 'countDistinct', 'first', 'list', 'rows'] as const;
 export type Aggregate = typeof AGGREGATES[number];
-export const AGGREGATE_LABELS: Record<Aggregate, string> = { sum: 'Sum', avg: 'Average', min: 'Smallest', max: 'Largest', count: 'Count', countDistinct: 'Count of different', first: 'First', list: 'List of values' };
+export const AGGREGATE_LABELS: Record<Aggregate, string> = { sum: 'Sum', avg: 'Average', min: 'Smallest', max: 'Largest', count: 'Count', countDistinct: 'Count of different', first: 'First', list: 'List of values', rows: 'Number of items' };
 
 export const UNITS = ['m', 'cm', 'mm', 'km', 'm²', 'cm²', 'mm²', 'ha', 'm³', 'dm³', 'l', 'cm³', 'kg', 't'];
 
@@ -28,9 +28,25 @@ export const UNITS = ['m', 'cm', 'mm', 'km', 'm²', 'cm²', 'mm²', 'ha', 'm³',
 export interface Condition { field: string; op: Operator | (string & {}); value?: string | number; values?: string[] }
 /** A group of conditions inside a filter: all or any of them, and groups inside. */
 export interface ConditionGroupDef { match?: 'all' | 'any'; conditions?: Condition[]; nested?: ConditionGroupDef[] }
-export interface FieldColumn { field?: string; formula?: string; heading?: string; aggregate?: Aggregate; unit?: string; decimals?: number }
+export interface FieldColumn { field?: string; formula?: string; heading?: string; aggregate?: Aggregate; unit?: string; decimals?: number; format?: string }
 export interface FieldFilter { classes?: string[]; types?: string[]; storeys?: string[]; materials?: string[]; groups?: string[]; phases?: string[]; conditions?: Condition[]; match?: 'all' | 'any'; nested?: ConditionGroupDef[] }
-export interface FieldOptions { filter?: FieldFilter; groupBy?: string[]; columns?: FieldColumn[]; totals?: boolean; count?: boolean }
+/** A field the rows are put in order by. */
+export type FieldSort = string | { field: string; desc?: boolean };
+/**
+ * A field schedule's options. Besides the filter, grouping, columns and totals (audit S1): `source`, the parts it lists instead
+ * of elements (`schedule.partSources`); `groupColumns: false`, the grouping fields not shown first; `sort`, the fields the rows
+ * are put in order by; `subtotals`, a totals line per value of these fields; `totals: 'always'`, the totals under one row too.
+ */
+export interface FieldOptions {
+  filter?: FieldFilter; groupBy?: string[]; columns?: FieldColumn[]; totals?: boolean | 'always'; count?: boolean;
+  source?: string; groupColumns?: boolean; sort?: FieldSort[]; subtotals?: string[];
+}
+
+/** A sort's field and direction. */
+export const sortOf = (s: FieldSort): { field: string; desc: boolean } => (typeof s === 'string' ? { field: s, desc: false } : { field: s.field, desc: !!s.desc });
+
+/** A number format the engine takes (0, #, one point): `0.##`, `0.000`. */
+export const isFormat = (f: string): boolean => /^[0#.,]{1,24}$/.test(f) && f.includes('0') && (f.match(/\./g) ?? []).length <= 1;
 
 export const DIMENSIONS: { key: Exclude<keyof FieldFilter, 'conditions' | 'match' | 'nested'>; label: string; field: string }[] = [
   { key: 'classes', label: 'Kinds', field: 'class' },
@@ -76,9 +92,17 @@ export function cleanOptions(o: FieldOptions): FieldOptions {
     if (c.aggregate) k.aggregate = c.aggregate;
     if (c.unit?.trim()) k.unit = c.unit.trim();
     if (typeof c.decimals === 'number' && Number.isFinite(c.decimals)) k.decimals = Math.max(0, Math.min(9, Math.round(c.decimals)));
+    if (c.format?.trim() && isFormat(c.format.trim())) k.format = c.format.trim();
     return k;
   });
-  return { filter, groupBy: (o.groupBy ?? []).filter((g) => g.trim()), columns, totals: o.totals !== false, count: o.count !== false };
+  const out: FieldOptions = { filter, groupBy: (o.groupBy ?? []).filter((g) => g.trim()), columns, totals: o.totals === 'always' ? 'always' : o.totals !== false, count: o.count !== false };
+  if (o.source) out.source = o.source;
+  if (o.groupColumns === false) out.groupColumns = false;
+  const sort = (o.sort ?? []).map(sortOf).filter((x) => x.field.trim()).map((x) => (x.desc ? { field: x.field, desc: true } : x.field));
+  if (sort.length) out.sort = sort;
+  const subtotals = (o.subtotals ?? []).filter((g) => g.trim());
+  if (subtotals.length) out.subtotals = subtotals;
+  return out;
 }
 
 /** An item moved one place up (-1) or down (1); the list itself when it cannot. */
@@ -98,6 +122,37 @@ export function searchGroups(groups: FieldGroupDef[], typed: string): FieldGroup
     const hay = `${f.token} ${f.label} ${f.short ?? ''} ${f.description ?? ''} ${(f.examples ?? []).join(' ')} ${g.label}`.toLowerCase();
     return words.every((w) => hay.includes(w));
   }) })).filter((g) => g.fields.length > 0);
+}
+
+// ── Shipped templates and parts (audit S1) ───────────────────────────────────────────────────────────
+
+/** A field schedule a module ships: its id, name, the fixed schedule it stands for, the parts it lists. */
+export interface ShippedTemplate { id: string; label: string; kind?: string | null; source?: string | null }
+/** A kind of parts a field schedule can list, with its parts' fields. */
+export interface PartSource { source: string; label: string; fields: { key: string; label: string }[] }
+
+let shipped: Promise<ShippedTemplate[]> | null = null;
+/** The templates this edition ships (the edition does not change while it runs: asked once). */
+export function shippedTemplates(): Promise<ShippedTemplate[]> {
+  shipped ??= query<ShippedTemplate[]>('schedule.shippedTemplates').then((r) => { if (!r) shipped = null; return r ?? []; });
+  return shipped;
+}
+
+export async function partSources(): Promise<PartSource[]> {
+  return (await query<PartSource[]>('schedule.partSources')) ?? [];
+}
+
+/**
+ * A new schedule of a kind the ribbon or the browser offers: a field schedule from the template a module ships for it when
+ * there is one (audit S1: the fixed schedule's kind is the template's alias), else the module's own table. One undo step.
+ */
+export async function createScheduleOf(kind: string, name?: string): Promise<{ id: string } | null> {
+  const templates = await shippedTemplates();
+  const t = templates.find((x) => x.kind === kind);
+  const args: Record<string, unknown> = t ? { builtin: t.id } : { kind };
+  if (name) args.name = name;
+  const r = await execute(t ? 'architecture.importSchedule' : 'architecture.createSchedule', args) as { id?: string } | null;
+  return r?.id ? { id: r.id } : null;
 }
 
 export async function fieldModel(): Promise<FieldModel> {

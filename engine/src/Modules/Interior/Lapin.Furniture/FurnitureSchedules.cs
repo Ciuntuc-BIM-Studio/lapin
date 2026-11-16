@@ -24,6 +24,15 @@ static class FurnitureRooms
         return o;
     }
 
+    /// <summary>The room one piece stands in, as <see cref="Of"/> finds it.</summary>
+    public static Entity? Of(IQueryContext q, Entity e)
+    {
+        var m = q.Model;
+        var p = Args.PointOf(e.Attrs["at"]);
+        var storey = Spatial.StoreyOf(m, e.Id)?.Id;
+        return m.OfClass(Rooms.Class).Where(r => Spatial.StoreyOf(m, r.Id)?.Id == storey).FirstOrDefault(r => Rooms.Of(r, m, id => q.Geometry(id))?.Holds(p) == true);
+    }
+
     public static string Label(Entity? room) => room == null ? "" : room.Str("number") is { Length: > 0 } n ? $"{n} {room.Name}" : room.Name;
 
     /// <summary>A kind's label; a kitchen's with its layout when it is not the straight one.</summary>
@@ -42,6 +51,33 @@ public sealed class FurnitureSchedule : IScheduleSource
 {
     public string Kind => "furniture";
     public string Label => "Furniture schedule";
+
+    /// <summary>
+    /// What the schedule shows of a piece (its type's), as fields, and the field schedule that gives the same table (audit S1):
+    /// a row per type and size, in the kinds' order, how many and the rooms they stand in, the count under them.
+    /// </summary>
+    public static void RegisterTemplate(IModuleRegistry r)
+    {
+        static Spec SpecOf(IModelView m, Entity e) => new(FurnitureModule.TypeOf(m, e)?.Attrs["spec"] as JsonObject);
+        DerivedFields.Add(FurnitureModule.Class, new DerivedField("furnitureKind", "Furniture: kind", (m, e) => FurnitureRooms.KindLabel(SpecOf(m, e))));
+        DerivedFields.Add(FurnitureModule.Class, new DerivedField("furnitureKindOrder", "Furniture: kind's place in the list", (m, e) => FurnitureKinds.All.ToList().IndexOf(SpecOf(m, e).Kind).ToString(CultureInfo.InvariantCulture)));
+        DerivedFields.Add(FurnitureModule.Class, new DerivedField("furnitureSize", "Furniture: size (mm)", (m, e) => FurnitureRooms.Size(e, SpecOf(m, e))));
+        DerivedFields.AddQueried(FurnitureModule.Class, new QueriedField("furnitureRoom", "Furniture: the room it stands in (number and name)", (q, e) => FurnitureRooms.Label(FurnitureRooms.Of(q, e)) is { Length: > 0 } l ? l : null));
+        r.Service(ShippedScheduleTemplate.Of("furniture", "Furniture schedule", "furniture", """
+            {
+              "filter": { "classes": ["IfcFurniture"] },
+              "groupBy": ["type", "furnitureSize"], "groupColumns": false, "count": false, "totals": "always",
+              "sort": ["furnitureKindOrder", "type"],
+              "columns": [
+                { "field": "type", "heading": "Type", "aggregate": "first" },
+                { "field": "furnitureKind", "heading": "Kind", "aggregate": "first" },
+                { "field": "furnitureSize", "heading": "Size (mm)", "aggregate": "first" },
+                { "field": "class", "heading": "Count", "aggregate": "rows" },
+                { "field": "furnitureRoom", "heading": "Rooms", "aggregate": "list" }
+              ]
+            }
+            """));
+    }
 
     public ScheduleGrid Grid(IQueryContext q)
     {

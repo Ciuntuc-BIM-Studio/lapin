@@ -566,6 +566,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Service<IProjectUpgrade>(new RoofDeckUpgrade());
         r.Service<IElementBuildUps>(new RoofBuildUps());
         r.Service<IScheduleSource>(new Roofs.RoofTimberSchedule());
+        Roofs.RoofTimberSchedule.RegisterTemplate(r);
         // The architecture's fields and collections for documents (docs/plan-documents.md).
         r.Service<Lapin.Platform.Documents.IDocumentFields>(new DocumentFields());
 

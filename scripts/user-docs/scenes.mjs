@@ -1378,6 +1378,35 @@ export const scenes = [
     },
   },
   {
+    // The fixed schedules as shipped field-schedule templates (audit S1): the ribbon's Sunshade schedule makes a field schedule
+    // with the fixed one's columns and totals; From template… lists the shipped ones beside the user's own.
+    id: 'shipped-schedules',
+    touches: ['architecture', 'core'],
+    async run(t) {
+      await t.fresh();
+      const { walls } = await house(t, { roof: false });
+      const windows = (await t.nodes()).filter((n) => n.type === 'IfcWindow');
+      await t.cmd('architecture.addSunshade', { style: 'concrete-canopy', hostId: windows[0].id });
+      await t.cmd('architecture.addSunshade', { style: 'concrete-canopy', hostId: windows[1].id });
+      await t.cmd('architecture.addSunshade', { style: 'brise-soleil', hostId: windows[2].id });
+      await t.cmd('architecture.addSunshade', { style: 'vertical-fins', wallId: walls[2], x1: 7.4, y1: 8, x2: 11.6, y2: 8 });
+      await t.tool('architecture.sunshadeSchedule');
+      await t.wait(1200);
+      const schedule = (await t.nodes()).find((n) => n.type === 'LapinSchedule' && n.name === 'Sunshade schedule');
+      t.expect(schedule && schedule.props.kind === 'fields', 'the ribbon button makes a field schedule from the shipped template');
+      await t.ui({ view: 'schedule', scheduleId: schedule.id, keyPlan: false });
+      await t.wait(1500);
+      t.expect(await t.page.locator('[data-testid=schedule-configure]').count() === 1, 'it has its Configure button, as any field schedule');
+      t.expect(await t.page.locator('[data-testid=schedule] text', { hasText: 'Projection (mm)' }).count() >= 1, 'with the fixed schedule\'s columns');
+      await t.shot('shipped-sunshade-schedule', { of: '.schedule-pane', pad: 0 });
+      await t.ui({ dialog: 'fieldTemplates' });
+      await t.wait(1000);
+      t.expect(await t.page.locator('[data-testid=shipped-templates] [data-shipped]').count() >= 4, 'From template… lists the shipped templates');
+      await t.shot('shipped-templates', { of: '[data-testid=field-templates-dialog]', pad: 8 });
+      await t.ui({ dialog: null, keyPlan: true });
+    },
+  },
+  {
     // Sunshades (report #56): a concrete canopy put on a window with the Sunshade tool, louvres, fins, an awning, a pergola and
     // an external blind; the noon helper on the canopy; the types dialog; in plan (overhead dashed) and in 3D.
     id: 'sunshades',
@@ -2253,8 +2282,16 @@ export const scenes = [
       await t.wait(600);
       await t.fit();
       await t.shot('steel-sketch', { of: '[data-testid=plan]', pad: 0 });
+      // Convert to member opens Draft's Convert to… on Steel members from outlines (audit S12): what each outline makes, then Convert.
       await t.tool('steel.convert');
-      await t.wait(1200);
+      await t.page.waitForSelector('[data-dialog=convert]', { timeout: 10_000 });
+      t.expect(await t.page.locator('[data-field=convert-converter]').inputValue() === 'steelOutlines', 'Convert to member opens Convert to… on Steel members from outlines');
+      await t.until(async () => (await t.page.locator('[data-field=convert-ok]').innerText().catch(() => '')) === '2', 'both outlines can be converted');
+      await t.wait(400);
+      await t.shot('steel-convert-dialog', { of: '[data-dialog=convert]', pad: 8 });
+      await t.page.locator('[data-field=convert-run]').click();
+      await t.until(async () => (await t.nodes()).filter((n) => n.type === 'LapinSteelMember').length === 2, 'the outlines made members');
+      await t.wait(600);
       const members = (await t.nodes()).filter((n) => n.type === 'LapinSteelMember');
       t.expect(members.length === 2, `the two outlines are members (${members.length})`);
       t.expect(!(await t.nodes()).some((n) => n.id === a || n.id === b), 'the sketches were replaced');
@@ -10682,6 +10719,55 @@ export const scenes = [
       await page.locator('[data-field=sy-search]').fill('CHAIR');
       await t.wait(500);
       await t.shot('dxf-blocks-symbols', { of: '[data-dialog=symbols]', pad: 8 });
+    },
+  },
+  {
+    // Convert to… as the one place that makes something of drawn shapes (audit S12): the targets grouped by module, an outline made
+    // a roof in a style chosen, and a DXF's contours (3D polylines with their heights) made one terrain, the other contours joined
+    // to the first row's.
+    id: 'convert-targets',
+    touches: ['drafting', 'architecture', 'civil', 'steel', 'structure', 'core'],
+    async run(t) {
+      await t.fresh();
+      const { page } = t;
+      const s = await t.storey();
+      const view = `plan:${s}`;
+      const outline = (await t.cmd('drafting.draw', { viewId: view, shapes: [{ type: 'polyline', pts: [[0, 0], [10, 0], [10, 7], [0, 7]], closed: true }] })).ids;
+      await t.fit();
+      await t.button('Draft', { exact: true });
+      await t.ui({ selected: outline, selection: outline[0] });
+      await t.wait(600);
+      await t.tool('drafting.convert');
+      await page.waitForSelector('[data-dialog=convert]', { timeout: 10_000 });
+      const groups = await page.locator('[data-field=convert-converter] optgroup').evaluateAll((els) => els.map((e) => e.getAttribute('label')));
+      t.expect(groups.length >= 4, `the targets are grouped by module (${groups.join(', ')})`);
+      await page.locator('[data-field=convert-converter]').selectOption('roof');
+      await page.locator('[data-field=opt-style]').selectOption('traditional_maramures');
+      await page.locator('[data-testid=convert-preview]').waitFor({ timeout: 10_000 });
+      await t.wait(900);
+      await t.shot('convert-roof', { of: '[data-dialog=convert]', pad: 8 });
+      await page.locator('[data-field=convert-run]').click();
+      await t.until(async () => (await t.nodes()).some((n) => n.type === 'IfcRoof'), 'a roof made from the outline');
+      t.expect((await t.nodes()).find((n) => n.type === 'IfcRoof')?.props.style === 'traditional_maramures', 'the roof is in the style chosen');
+      await t.wait(600);
+      // A DXF's contours, 3D polylines at 100 to 103 m, made one terrain.
+      const V = (x, y, z) => `0\nVERTEX\n8\nTOPO\n10\n${x}\n20\n${y}\n30\n${z}\n70\n32\n`;
+      const contour = (y, z) => `0\nPOLYLINE\n8\nTOPO\n66\n1\n70\n8\n${[0, 5, 10, 15, 20, 25, 30].map((x) => V(x - 5, y + 2 * Math.sin(x / 6), z)).join('')}0\nSEQEND\n`;
+      const dxf = `0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1015\n9\n$INSUNITS\n70\n6\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n${[0, 1, 2, 3].map((k) => contour(12 + k * 4, 100 + k)).join('')}0\nENDSEC\n0\nEOF\n`;
+      await t.cmd('drafting.importDxf', { viewId: view, name: 'topo.dxf', data: Buffer.from(dxf).toString('base64') });
+      const topo = (await t.nodes()).filter((n) => n.type === 'IfcAnnotation' && n.props.layer === 'TOPO').map((n) => n.id);
+      t.expect(topo.length === 4, `the four contours drafted (${topo.length})`);
+      await t.fit();
+      await t.ui({ selected: topo, selection: topo[0] });
+      await t.wait(600);
+      await t.tool('drafting.convert');
+      await page.waitForSelector('[data-dialog=convert]', { timeout: 10_000 });
+      await page.locator('[data-field=convert-converter]').selectOption('terrain');
+      await t.until(async () => (await page.locator('[data-field=convert-ok]').innerText().catch(() => '')) === '4', 'the four contours can make the terrain');
+      await t.wait(600);
+      await t.shot('convert-terrain', { of: '[data-dialog=convert]', pad: 8 });
+      await page.locator('[data-field=convert-run]').click();
+      await t.until(async () => (await t.nodes()).filter((n) => n.type === 'IfcGeographicElement').length === 1, 'one terrain made of the four contours');
     },
   },
   {

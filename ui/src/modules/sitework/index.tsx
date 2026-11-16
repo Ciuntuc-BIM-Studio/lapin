@@ -21,6 +21,7 @@ import { activate } from '../../platform/modules';
 import { typeOf } from '../../engine/model';
 import { rememberedType } from './typeChoice';
 import { lazyPart } from '../../platform/lazyPart';
+import { createScheduleOf } from '../../shell/fieldSchedule';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const ScaffoldDialog = lazyPart(() => import('./ScaffoldDialog').then((m) => m.ScaffoldDialog), { title: 'Scaffolds' });
@@ -115,7 +116,7 @@ const formworkTypes: ToolDef = { id: 'sitework.formworkTypes', label: 'Formwork 
 
 const schedule = (kind: 'formwork' | 'scaffold', label: string): ToolDef => ({
   id: `sitework.schedule.${kind}`, label, icon: Table2,
-  run: () => void execute('architecture.createSchedule', { kind }).then((r) => { if (r) notify(`${label} made: it is in the project browser, under Schedules.`); }),
+  run: () => void createScheduleOf(kind).then((r) => { if (r) notify(`${label} made: it is in the project browser, under Schedules.`); }),
 });
 
 /** A drawn scaffold's line: its vertices dragged (Ctrl-click takes one out), its segments' middles (Ctrl-click inserts one). */

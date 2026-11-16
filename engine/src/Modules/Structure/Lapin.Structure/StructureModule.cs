@@ -62,7 +62,9 @@ public sealed class StructureModule : ILapinModule
         r.Command("addColumn", "Column", (ctx, a) =>
         {
             var storey = Place.Storey(ctx, a);
-            var type = Place.TypeFor(ctx, a, IfcClass.ColumnType, () => Columns.DefaultType(ctx));
+            // {section: a catalogue name} without a type: the project's column type of that section, else a new one (as Steel's column tool makes).
+            var type = a["typeId"] == null && (string?)a["section"] is { Length: > 0 } sectionName ? ColumnTypes.ColumnTypeOf(ctx, sectionName)
+                : Place.TypeFor(ctx, a, IfcClass.ColumnType, () => Columns.DefaultType(ctx));
             var c = new Entity(ctx.NewId(), IfcClass.Column, type.Name, new JsonObject { ["at"] = Place.Json2(Place.P(a, "x", "y")), ["rotation"] = Json.Number(a["rotation"]) ?? 0 }, "COLUMN");
             ctx.Add(c);
             Spatial.Contain(ctx, storey.Id, c.Id);
@@ -333,4 +335,16 @@ sealed class Levels : IStoreyLevels
         IfcClass.Beam => [("topOffset", true)],
         _ => [],
     };
+}
+
+/// <summary>Column types by their section (structure.addColumn with a section and no type).</summary>
+public static class ColumnTypes
+{
+    /// <summary>The project's column type of a catalogue section (by its name), else a new one named after it.</summary>
+    public static Entity ColumnTypeOf(ICommandContext ctx, string sectionName)
+    {
+        var section = Section.Parse(JsonValue.Create(sectionName));
+        return ctx.Model.OfClass(IfcClass.ColumnType).FirstOrDefault(t => Section.From(t.Attrs["section"]) is { } x && x.Name == section.Name && x.Equals(section))
+            ?? Columns.CreateType(ctx, $"Column {section.Name ?? sectionName}", section, null, section.IsProfile ? "Steel" : "Reinforced concrete");
+    }
 }

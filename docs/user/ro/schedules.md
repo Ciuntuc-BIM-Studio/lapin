@@ -104,10 +104,13 @@ Extrasul **Profile de perete** (**Arhitectură → Extras de profile de perete**
 
 Un **Extras de câmpuri** listează orice câmp al elementelor: pe cele ale modelului (nume, tip, nivel, lungime, arie…), cantitățile și proprietățile aduse de un fișier (o proprietate `Pset_` dintr-un IFC, Fragments sau BOS importat) și parametrii tăi. Apasă **+** lângă **Extrase** în browserul proiectului și alege **Extras de câmpuri** (sau **Execuție → Extrase…**); se deschide editorul lui. **Configurează…** din bara extrasului îl deschide din nou.
 
+- **Rânduri.** Un rând pentru fiecare element sau pentru fiecare piesă a elementelor: plantele plantărilor, elementele de lemn ale acoperișurilor pe structură, ale pereților pe cadre din lemn și ale planșeelor pe grinzi (cu modulul Lemn). O piesă are câmpurile ei (specia unei plante, secțiunea, clasa și lungimea unui element de lemn) și citește orice alt câmp din elementul ei (numele, nivelul).
 - **Care elemente.** Restrânge după fel, tip, nivel, material, grup sau fază (scrie o valoare sau alege una din cele ale proiectului), apoi **Adaugă o regulă**, în editorul pe care îl folosesc Selecția rapidă și filtrele vederilor (vezi [Selecție rapidă](interface.md#selecția-rapidă)): un câmp (unul al proiectului, sau tipul, nivelul, materialul elementului și celelalte), un operator (este, conține, începe cu, este mai mare decât, este între, este unul din, are o valoare…) și o valoare; toate regulile sau oricare dintre ele, și **Adaugă un grup** pentru reguli proprii înăuntru. Alegătorul de câmpuri se poate căuta și arată, la fiecare câmp, câte elemente îl au și câteva valori, în grupurile modelului: câmpurile Lapin, ale tipului, cantități, parametri, fiecare set de proprietăți al fișierelor și numele tale de câmpuri.
-- **Grupează după.** Unul sau mai multe câmpuri, în ordine: un rând pentru fiecare valoare diferită (fiecare nivel, fiecare etapă). Fără nimic, un rând pentru fiecare element.
-- **Coloane.** Un câmp sau o formulă (**=**, de pildă `NetSideArea * 1.1`), cu titlu propriu, o agregare (sumă, medie, minim, maxim, număr, număr de valori diferite, prima, lista valorilor; implicit suma pentru numere și lista pentru texte), o unitate (m, cm, mm, m², m³, l, kg, t… convertite pentru tine) și zecimalele. Coloanele se mută în sus și în jos și se șterg.
-- **Rândul de total** și **coloana de număr** se pot opri.
+- **Grupează după.** Unul sau mai multe câmpuri, în ordine: un rând pentru fiecare valoare diferită (fiecare nivel, fiecare etapă). Fără nimic, un rând pentru fiecare element. Debifează **Arată câmpurile de grupare ca primele coloane** ca să vezi doar coloanele, valoarea grupului într-o coloană adunată ca *prima*.
+- **Coloane.** Un câmp sau o formulă (**=**, de pildă `NetSideArea * 1.1`), cu titlu propriu, o agregare (sumă, medie, minim, maxim, număr, număr de valori diferite, prima, lista valorilor, număr de elemente; implicit suma pentru numere și lista pentru texte), o unitate (m, cm, mm, m², m³, l, kg, t… convertite pentru tine) și zecimalele, sau un **Format** în locul lor (`0.##`: cel mult două zecimale; `0.00`: mereu două). Coloanele se mută în sus și în jos și se șterg.
+- **Sortează după.** Câmpurile după care se ordonează rândurile, fiecare crescător sau descrescător; rândurile egale după ele rămân în ordinea modelului. Fără nimic, rândurile merg după celulele lor, de la stânga la dreapta.
+- **Subtotaluri după.** Un rând de totaluri pentru fiecare valoare a acestor câmpuri, după rânduri (fiecare secțiune și clasă de lemn, de pildă).
+- **Rândul de total** și **coloana de număr** se pot opri; **Rând de total și sub un singur rând** îl păstrează și când e un singur rând.
 
 **Aplică** schimbă extrasul dintr-un singur pas (o anulare). Extrasul urmărește modelul ca oricare altul: graficele, planșa, CSV și XLSX merg la fel.
 
@@ -120,6 +123,12 @@ Ca să aduni un IFC importat după una din proprietățile lui, fă un extras de
 **Antemăsurătoarea** poate grupa și ea după orice câmp: în bara ei, lista de grupări se încheie cu **Alt câmp…**.
 
 **Șabloane.** **Șablon…** din bara unui extras de câmpuri îi păstrează configurarea (filtrul, gruparea, coloanele) într-un fișier `.lapinschedule` sau în biblioteca acestui calculator. **Din șablon…** din lista **+** (sau din **Execuție → Extrase…**) face un extras dintr-unul păstrat pe acest calculator, dintr-un fișier sau din folderele firmei (vezi [Interfața](interface.md)). Un șablon numește tipurile, nivelurile, materialele, grupurile și fazele, nu id-urile, așa că merge în alt proiect.
+
+**Șabloane livrate.** Extrasele modulelor care listează un rând pe element sau pe piesă sunt extrase de câmpuri făcute din șabloane livrate cu Lapin: parasolare, porți, balcoane, plinte, lifturi, mobilier, echipamente MEP, schele, plantări, lemnul acoperișurilor și lemnul. Butoanele lor din panglică (**Extras de parasolare**, **Extras de porți**, **Extras de lemn**…) și lista **+** fac extrasul de câmpuri, cu aceleași coloane, ordine și totaluri ca înainte; **Configurează…** îl schimbă apoi ca pe oricare altul, iar **Șablon…** îți păstrează varianta ca șablon propriu. **Din șablon…** le arată la **Livrate cu Lapin**. Extrasele făcute de o versiune mai veche se deschid la fel ca înainte. Cartelele de tâmplărie, extrasul de armătură, cofrajele și formularele de deviz rămân cum sunt.
+
+![Extrasul de parasolare, un extras de câmpuri făcut din șablonul lui livrat](shots/shipped-sunshade-schedule.webp)
+
+![Din șablon…: șabloanele livrate cu Lapin, apoi cele de pe acest calculator](shots/shipped-templates.webp)
 
 ## Numele de câmpuri ale biroului
 

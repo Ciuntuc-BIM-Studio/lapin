@@ -74,6 +74,7 @@ public static class Skirtings
         r.Geometry(Class, Geometry);
         r.Quantities(Class, Quantities);
         r.Service<IScheduleSource>(new SkirtingSchedule());
+        SkirtingSchedule.RegisterTemplate(r);
         r.Catalog("skirtings", new JsonObject
         {
             ["spec"] = SkirtingSpec.Default().ToJson(),
@@ -566,6 +567,34 @@ public sealed class SkirtingSchedule : IScheduleSource
     public string Label => "Skirtings";
 
     public sealed record Row(string Type, string Profile, double Height, string Material, int Count, int Pieces, double Length);
+
+    /// <summary>
+    /// What the schedule shows of a skirting (its type's), as fields, and the field schedule that gives the same table (audit S1):
+    /// a row per type, by name, how many skirtings, their pieces and length (its quantities) added up under them.
+    /// </summary>
+    public static void RegisterTemplate(IModuleRegistry r)
+    {
+        DerivedFields.Add(Skirtings.Class, new("skirtingType", "Skirting: its type", (m, e) => Skirtings.SpecOf(m, e).Name));
+        DerivedFields.Add(Skirtings.Class, new("skirtingProfile", "Skirting: profile", (m, e) => Skirtings.SpecOf(m, e).Profile));
+        DerivedFields.Add(Skirtings.Class, new("skirtingHeight", "Skirting: height (mm)", (m, e) => (Skirtings.SpecOf(m, e).Height * 1000).ToString("0", CultureInfo.InvariantCulture)));
+        DerivedFields.Add(Skirtings.Class, new("skirtingMaterial", "Skirting: material", (m, e) => Skirtings.SpecOf(m, e).Material));
+        r.Service(ShippedScheduleTemplate.Of("skirtings", "Skirtings", "skirtings", """
+            {
+              "filter": { "classes": ["LapinSkirting"] },
+              "groupBy": ["skirtingType"], "groupColumns": false, "count": false, "totals": "always",
+              "sort": ["skirtingType"],
+              "columns": [
+                { "field": "skirtingType", "heading": "Type", "aggregate": "first" },
+                { "field": "skirtingProfile", "heading": "Profile", "aggregate": "first" },
+                { "field": "skirtingHeight", "heading": "Height (mm)", "aggregate": "first" },
+                { "field": "skirtingMaterial", "heading": "Material", "aggregate": "first" },
+                { "field": "class", "heading": "Skirtings", "aggregate": "rows" },
+                { "field": "Pieces", "heading": "Pieces", "aggregate": "sum" },
+                { "field": "Length", "heading": "Length (m)", "aggregate": "sum", "decimals": 2 }
+              ]
+            }
+            """));
+    }
 
     public static List<Row> Rows(IQueryContext q)
     {

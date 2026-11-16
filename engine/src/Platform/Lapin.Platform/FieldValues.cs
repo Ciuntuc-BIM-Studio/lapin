@@ -37,6 +37,12 @@ public sealed class ElementFields(IQueryContext q, Entity e, string units)
     Func<string, double?>? _quantities;
 
     public Entity Element => e;
+
+    /// <summary>A part's own values (<see cref="ElementPart"/>), read before the element's: a field schedule listing parts reads each part through its element.</summary>
+    public IReadOnlyDictionary<string, FieldValue>? Own { get; init; }
+
+    FieldValue? OwnValue(string name) =>
+        Own == null ? null : Own.TryGetValue(name, out var v) ? v : Own.FirstOrDefault(kv => string.Equals(kv.Key, name, StringComparison.OrdinalIgnoreCase)) is { Key: not null } kv2 ? kv2.Value : null;
     public Entity? Type { get { if (!_typed) { _type = q.Model.RelatingOf(e.Id, IfcClass.RelDefinesByType); _typed = true; } return _type; } }
     public Func<string, double?> Quantities => _quantities ??= ParamFormulas.Quantities(q, e.Id);
 
@@ -56,6 +62,8 @@ public sealed class ElementFields(IQueryContext q, Entity e, string units)
         var t = token.Trim();
         if (t.Length == 0) return FieldValue.Missing;
         if (FormulaOf(t) is { } formula) return Formula(formula);
+        if (OwnValue(t) is { } own) return own;
+        if (DerivedFields.Value(q, e, t) is { } queried) return FieldValue.OfText(queried);
         if (ParamFormulas.IsTemplate(t)) return FieldValue.OfText(TagText.Fill(t, m, e, null, units, Quantities));
         var x = ParamFormulas.Read(m, e, Type, Quantities, t);
         if (x is { Number: { } n } xv && (xv.Text == null || xv.IsNumericText)) return new(n, xv.Text);
@@ -71,7 +79,7 @@ public sealed class ElementFields(IQueryContext q, Entity e, string units)
         if (ParamFormulas.IsTemplate(body)) return FieldValue.OfText(TagText.Fill(body, q.Model, e, null, units, Quantities));
         var (formula, format) = LiveText.SplitFormat(body);
         if (formula.Trim().Length == 0) return FieldValue.Missing;
-        var (v, _) = Expr.TryEvalValue(formula, n => ParamFormulas.Read(q.Model, e, Type, Quantities, n));
+        var (v, _) = Expr.TryEvalValue(formula, n => OwnValue(n) is { Exists: true } own ? new XValue(own.Number, own.Text) : ParamFormulas.Read(q.Model, e, Type, Quantities, n));
         if (v is not { } value) return FieldValue.Missing;
         if (value.Number is { } n && (value.Text == null || value.IsNumericText)) return new(n, format != null ? Expr.Format(n, format) : value.Text);
         return FieldValue.OfText(value.AsText);
@@ -213,6 +221,8 @@ public static partial class FieldCatalog
                     Once("quantities", x.Name, x.Label ?? x.Name, x.Value.ToString("0.###", CultureInfo.InvariantCulture), 'n', s.Name, "A quantity (SI: m, m², m³, kg)");
             // What its module works out.
             foreach (var df in DerivedFields.Of(e.Class))
+                if (reader.Value(df.Key) is { Exists: true } dv) Once("lapin", df.Key, df.Label, dv.Shown, Read(dv).Kind, null, "Worked out on every ask, never stored");
+            foreach (var df in DerivedFields.QueriedOf(e.Class))
                 if (reader.Value(df.Key) is { Exists: true } dv) Once("lapin", df.Key, df.Label, dv.Shown, Read(dv).Kind, null, "Worked out on every ask, never stored");
             // The office's aliases.
             foreach (var a in aliases)

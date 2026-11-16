@@ -34,7 +34,7 @@ const FACET_GROUP: FieldGroupDef = {
   fields: [...FACETS, [TEXT_FACET, 'Parameter (as text)…']].map(([token, label]) => ({ token, label, kind: 'text' as const, count: 0, examples: [] })),
 };
 
-export function FieldPicker({ value, onPick, placeholder = 'Pick a field…', testId, facets = false }: { value: string; onPick: (token: string) => void; placeholder?: string; testId?: string; facets?: boolean }) {
+export function FieldPicker({ value, onPick, placeholder = 'Pick a field…', testId, facets = false, extra }: { value: string; onPick: (token: string) => void; placeholder?: string; testId?: string; facets?: boolean; extra?: FieldGroupDef[] }) {
   const model = useFieldModel();
   const [open, setOpen] = useState(false);
   const [typed, setTyped] = useState('');
@@ -55,7 +55,8 @@ export function FieldPicker({ value, onPick, placeholder = 'Pick a field…', te
     window.addEventListener('pointerdown', away);
     return () => window.removeEventListener('pointerdown', away);
   }, [open]);
-  const groups = useMemo(() => searchGroups(facets ? [FACET_GROUP, ...(model?.groups ?? [])] : model?.groups ?? [], typed), [model, typed, facets]);
+  // Groups the caller adds first (a parts schedule's parts' own fields).
+  const groups = useMemo(() => searchGroups([...(extra ?? []), ...(facets ? [FACET_GROUP] : []), ...(model?.groups ?? [])], typed), [model, typed, facets, extra]);
   const pick = (token: string) => { onPick(token); setOpen(false); setTyped(''); };
   const total = groups.reduce((n, g) => n + g.fields.length, 0);
   return (

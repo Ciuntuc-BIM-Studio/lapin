@@ -27,7 +27,7 @@ export function OptionFields({ options, values, onChange }: { options: ConvOptio
             case 'choice':
               return (
                 <select value={v == null ? '' : String(v)} data-field={`opt-${o.key}`} onChange={(e) => onChange(o.key, e.target.value)}>
-                  {(o.choices ?? []).map((c) => <option key={c} value={c}>{c}</option>)}
+                  {(o.choices ?? []).map((c, i) => <option key={c} value={c}>{o.choiceLabels?.[i] ?? c}</option>)}
                 </select>
               );
             case 'bool': return <input type="checkbox" data-field={`opt-${o.key}`} checked={v === true} onChange={(e) => onChange(o.key, e.target.checked)} />;
@@ -40,7 +40,13 @@ export function OptionFields({ options, values, onChange }: { options: ConvOptio
   );
 }
 
-export const PreviewList = ({ shapes, label }: { shapes: { id: string; error: string | null; steps: string[] }[]; label?: (id: string) => string }) => (
+/** A shape that is part of another's element (a terrain's contours, a road's lines end to end): which, by its row. */
+const joinedText = (shapes: { id: string }[], joined: string): string => {
+  const i = shapes.findIndex((s) => s.id === joined);
+  return i >= 0 ? `${tr('Made with row')} ${i + 1}` : tr('Made with another shape');
+};
+
+export const PreviewList = ({ shapes, label }: { shapes: { id: string; error: string | null; steps: string[]; joined?: string | null }[]; label?: (id: string) => string }) => (
   <div className="scroll-x" style={{ maxHeight: 180 }}>
     <table className="layer-table" data-testid="convert-shapes">
       <tbody>
@@ -48,7 +54,7 @@ export const PreviewList = ({ shapes, label }: { shapes: { id: string; error: st
           <tr key={s.id} className={s.error ? 'row-bad' : ''}>
             <td className="num">{i + 1}</td>
             {label && <td data-no-i18n>{label(s.id)}</td>}
-            <td data-no-i18n>{s.error ?? s.steps.join(' · ')}</td>
+            <td data-no-i18n>{s.error ?? (s.joined ? joinedText(shapes, s.joined) : s.steps.join(' · '))}</td>
           </tr>
         ))}
       </tbody>

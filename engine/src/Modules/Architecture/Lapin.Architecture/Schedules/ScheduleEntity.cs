@@ -282,9 +282,12 @@ public sealed class ScheduleEntity : ISheetContent, Lapin.Platform.Documents.IDo
 
     static string TemplateName(JsonObject t) => ((string?)t["name"])?.Trim() is { Length: > 0 } tn ? tn : FieldSchedule.Title;
 
-    static JsonObject TemplateAttrs(JsonObject t)
+    static JsonObject TemplateAttrs(JsonObject t, IServices? services = null)
     {
-        var attrs = new JsonObject { ["kind"] = FieldSchedule.KindId, ["scale"] = 50, [FieldScheduleOptions.Key] = FieldScheduleOptions.Check(t[FieldScheduleOptions.Key]).ToJson() };
+        var options = FieldScheduleOptions.Check(t[FieldScheduleOptions.Key]);
+        // A parts source (audit S1) checked against the modules there are, when the services are at hand.
+        if (services != null) options = options.CheckSource(services);
+        var attrs = new JsonObject { ["kind"] = FieldSchedule.KindId, ["scale"] = 50, [FieldScheduleOptions.Key] = options.ToJson() };
         if (t["customColumns"] is JsonArray cc) attrs["customColumns"] = new JsonArray([.. cc.OfType<JsonObject>().Where(c => (string?)c["id"] != null).Select(c => (JsonNode)new JsonObject { ["id"] = (string?)c["id"], ["label"] = (string?)c["label"] ?? "" })]);
         if (t["charts"] is JsonArray ch) attrs["charts"] = ch.DeepClone();
         return attrs;
@@ -320,7 +323,7 @@ public sealed class ScheduleEntity : ISheetContent, Lapin.Platform.Documents.IDo
             case LibraryMerge.Update:
             {
                 var attrs = mine!.CloneAttrs();
-                foreach (var (k, v) in TemplateAttrs(t)) if (k is not ("kind" or "scale")) attrs[k] = v?.DeepClone();
+                foreach (var (k, v) in TemplateAttrs(t, ctx.Services)) if (k is not ("kind" or "scale")) attrs[k] = v?.DeepClone();
                 if (t["customColumns"] is null) attrs.Remove("customColumns");
                 if (t["charts"] is null) attrs.Remove("charts");
                 ctx.Replace(mine.With(attrs: attrs));
@@ -332,7 +335,7 @@ public sealed class ScheduleEntity : ISheetContent, Lapin.Platform.Documents.IDo
             {
                 var taken = ctx.Model.OfClass(Class).Select(e => e.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
                 var name = taken.Contains(row.Name) ? LibraryMerge.FreeName(taken.Contains, row.Name) : row.Name;
-                var s = new Entity(ctx.NewId(), Class, name, TemplateAttrs(t));
+                var s = new Entity(ctx.NewId(), Class, name, TemplateAttrs(t, ctx.Services));
                 ctx.Add(s);
                 tally.Added++;
                 if (name != row.Name) tally.Renamed.Add(name);
@@ -364,6 +367,10 @@ public sealed class ScheduleEntity : ISheetContent, Lapin.Platform.Documents.IDo
     static List<string> DefaultRows(Entity s, ScheduleTable t) =>
         [.. (s.Str("kind") == "lintel" ? ScheduleLayout.LintelRows : ScheduleLayout.JoineryRows), .. t.CustomRows.Select(c => "custom:" + c.Id)];
 
+    /// <summary>The template a module ships by its id, else the one standing for a fixed schedule's kind; null when the edition has none.</summary>
+    public static ShippedScheduleTemplate? Shipped(IServices services, string idOrKind) =>
+        services.All<ShippedScheduleTemplate>().FirstOrDefault(t => t.Id == idOrKind) ?? services.All<ShippedScheduleTemplate>().FirstOrDefault(t => t.Kind == idOrKind);
+
     public void Register(IModuleRegistry r)
     {
         r.Class(new(Class, "Schedule",
@@ -387,7 +394,7 @@ public sealed class ScheduleEntity : ISheetContent, Lapin.Platform.Documents.IDo
             // A new type assemblies schedule draws the build-ups (reports #65–#67); one made before keeps its plain table until asked.
             if (source is TypeAssemblies) attrs["drawings"] = new JsonArray((JsonNode)TypeBuildUps.Drawing);
             // A field schedule's own options (docs/plan-user-extensibility.md): its filter, grouping and columns.
-            if (source is FieldSchedule) attrs[FieldScheduleOptions.Key] = FieldScheduleOptions.Check(a["fields"] as JsonObject).ToJson();
+            if (source is FieldSchedule) attrs[FieldScheduleOptions.Key] = FieldScheduleOptions.Check(a["fields"] as JsonObject).CheckSource(ctx.Services).ToJson();
             var s = new Entity(ctx.NewId(), Class, name, attrs);
             ctx.Add(s);
             return new JsonObject { ["id"] = s.Id };
@@ -406,22 +413,25 @@ public sealed class ScheduleEntity : ISheetContent, Lapin.Platform.Documents.IDo
             if (a.ContainsKey("fields"))
             {
                 if (s.Str("kind") != FieldSchedule.KindId) throw new CommandException("Only a field schedule takes fields to list.");
-                attrs[FieldScheduleOptions.Key] = FieldScheduleOptions.Check(a["fields"] as JsonObject).ToJson();
+                attrs[FieldScheduleOptions.Key] = FieldScheduleOptions.Check(a["fields"] as JsonObject).CheckSource(ctx.Services).ToJson();
             }
             if (Json.Number(a["scale"]) is { } sc) attrs["scale"] = sc > 0 ? sc : throw new CommandException("A scale is positive.");
             ctx.Replace(s.With(name: ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : null, attrs: attrs));
             return null;
         });
 
-        // A field schedule from a template (a .lapinschedule's `text`, or the library's `template` object): its options, columns of its own and charts.
+        // A field schedule from a template (a .lapinschedule's `text`, the library's `template` object, or one a module ships by its
+        // id or the fixed schedule's kind it stands for, `builtin`: audit S1): its options, columns of its own and charts.
         // With `choices` ({name: both | update | skip}) or `all`, as every library import (LibraryMerge): a field schedule of the
         // template's name the same kept, kept both (the new one „Name (2)”), updated (its options, columns and charts) or skipped.
         r.Command("importSchedule", "Schedule from template", (ctx, a) =>
         {
-            var t = FieldSchedule.ReadTemplate(a["text"] ?? a["template"] ?? throw new CommandException("Which template?"));
+            var t = (string?)a["builtin"] is { } builtin
+                ? FieldSchedule.ReadTemplate(Shipped(ctx.Services, builtin)?.Template() ?? throw new CommandException($"This edition ships no schedule template „{builtin}”."))
+                : FieldSchedule.ReadTemplate(a["text"] ?? a["template"] ?? throw new CommandException("Which template?"));
             if (a["choices"] is JsonObject || a["all"] is not null) return ImportTemplate(ctx, t, a["choices"] as JsonObject, (string?)a["all"]);
             var name = ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : TemplateName(t);
-            var s = new Entity(ctx.NewId(), Class, name, TemplateAttrs(t));
+            var s = new Entity(ctx.NewId(), Class, name, TemplateAttrs(t, ctx.Services));
             ctx.Add(s);
             return new JsonObject { ["id"] = s.Id, ["name"] = s.Name };
         });
@@ -677,6 +687,23 @@ public sealed class ScheduleEntity : ISheetContent, Lapin.Platform.Documents.IDo
             .. new[] { ("all", "Joinery schedule"), ("door", "Door schedule"), ("window", "Window schedule"), ("lintel", "Lintel schedule") }
                 .Select(k => (JsonNode)new JsonObject { ["kind"] = k.Item1, ["label"] = k.Item2 }),
             .. q.Services.All<IScheduleSource>().Select(x => (JsonNode)new JsonObject { ["kind"] = x.Kind, ["label"] = x.Label })]));
+
+        // The field schedules the modules ship (audit S1): {id, label, kind (the fixed schedule it stands for), source, template}.
+        r.Query("schedule.shippedTemplates", (q, _) => new JsonArray([.. q.Services.All<ShippedScheduleTemplate>().Select(t =>
+        {
+            var template = t.Template();
+            return (JsonNode)new JsonObject
+            {
+                ["id"] = t.Id, ["label"] = t.Label, ["kind"] = t.Kind, ["source"] = (string?)template[FieldScheduleOptions.Key]?["source"], ["template"] = template,
+            };
+        })]));
+
+        // The parts field schedules can list (audit S1): {source, label, fields: [{key, label}]}, one each (their modules' fields together).
+        r.Query("schedule.partSources", (q, _) => new JsonArray([.. q.Services.All<IPartSource>().GroupBy(p => p.Source).Select(g => (JsonNode)new JsonObject
+        {
+            ["source"] = g.Key, ["label"] = g.First().Label,
+            ["fields"] = new JsonArray([.. g.SelectMany(p => p.Fields).DistinctBy(f => f.Key, StringComparer.OrdinalIgnoreCase).Select(f => (JsonNode)new JsonObject { ["key"] = f.Key, ["label"] = f.Label })]),
+        })]));
 
         // What a quantity takeoff can list: the classes the model measures, with their names and counts.
         r.Query("schedule.takeoffClasses", (q, _) => new JsonArray([.. QuantityTakeoff.Classes(q).Select(c => (JsonNode)new JsonObject { ["class"] = c.Class, ["label"] = c.Label, ["count"] = c.Count })]));

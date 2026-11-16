@@ -31,9 +31,11 @@ Selectezi o bară, sau o grindă ori un stâlp drept dintr-un profil metalic: se
 
 ## Din schiță în bară
 
-Desenezi conturul barei ca o polilinie închisă sau un dreptunghi (**Desen**), apoi **Oțel → Convertește în bară** cu unul sau mai multe contururi selectate. Într-un singur pas fiecare contur e citit și înlocuit cu o bară:
+Desenezi conturul barei ca o polilinie închisă sau un dreptunghi (**Desen**), apoi **Oțel → Convertește în bară** cu unul sau mai multe contururi selectate. Se deschide **Desen → Convertește în…** pe *Bare metalice din contururi* ([Conversia desenului în elemente](drafting.md#conversia-desenului-în-elemente)), care arată ce face fiecare contur, sau de ce nu e o bandă, înainte să apeși **Convertește**; acolo poți alege și un tip de bară de încercat întâi, sau păstra desenul. Într-un singur pas fiecare contur e citit și înlocuit cu o bară:
 
 ![Două contururi schițate în plan](shots/steel-sketch.webp)
+
+![Convertește în bară deschide Convertește în… pe contururi](shots/steel-convert-dialog.webp)
 
 - cele **două laturi lungi paralele** (în limita unei jumătăți de grad) dau axa, linia lor de mijloc de la un capăt la altul, și **lățimea** dintre ele;
 - **latura de la fiecare capăt** dă tăierea capătului: dreaptă, sau după un plan cu înclinarea laturii.
