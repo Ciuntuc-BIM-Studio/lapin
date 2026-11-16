@@ -257,4 +257,20 @@ public class IfcExportTests : IDisposable
         Assert.Equal(5, parts.Count(p => p.Type == "IFCMEMBER" && Equals(p[8], new StepEnum("MULLION"))));
         Assert.Single(file.OfType("IFCCURTAINWALLTYPE"));
     }
+
+    [Fact]
+    public void Type_properties_can_also_be_written_on_each_occurrence()
+    {
+        var f = new Fixture(new ArchitectureModule());
+        var wall = f.Wall(0, 0, 4, 0);
+        var type = f.Model.RelatingOf(wall, IfcClass.RelDefinesByType)!.Id;
+        f.Run("element.setParam", new JsonObject { ["id"] = type, ["pset"] = "Pset_WallCommon", ["name"] = "IsExternal", ["kind"] = "bool", ["value"] = true });
+
+        var p = Path.Combine(_dir, "type-on-occ.ifc");
+        IfcExport.Write(f.Session, p, new IfcExportOptions(TypePropsOnOccurrences: true));
+        var file = StepFile.Read(p);
+        var common = SetsOf(file, One(file, "IFCWALL")).Single(x => (string?)x[2] == "Pset_WallCommon");
+        var propNames = Items(common[4]).Select(r => file.Get(r)![0] as string).ToList();
+        Assert.Contains("IsExternal", propNames);
+    }
 }

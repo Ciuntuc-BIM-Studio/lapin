@@ -23,7 +23,7 @@ namespace Lapin.Ifc;
 /// <summary><paramref name="Exclude"/>: elements left out (the kinds and storeys not chosen, what the 3D view hides: <see cref="ModelSurvey.Excluded"/>).</summary>
 /// <summary><paramref name="Voids"/>: the openings also as solid voids (IfcBuildingElementProxy PROVISIONFORVOID, decision 289), of the kinds asked, their sides moved by the offset; off by default.</summary>
 public sealed record IfcExportOptions(string Schema = "IFC4", string Detail = "group", string? Phase = null, string Geometry = "brep", double Tolerance = 0, IReadOnlySet<string>? Exclude = null,
-    bool Voids = false, IReadOnlySet<string>? VoidKinds = null, double VoidOffset = 0, bool BonsaiStyles = false, bool Structural = false)
+    bool Voids = false, IReadOnlySet<string>? VoidKinds = null, double VoidOffset = 0, bool BonsaiStyles = false, bool Structural = false, bool TypePropsOnOccurrences = false)
 {
     // Structural: IFC's structural analysis view beside the building (docs/plan-fem.md §8.7): the analytical model, the load cases, their actions and combinations.
     // BonsaiStyles: the project's drawing styles for Bonsai beside the file (<see cref="Ifc.BonsaiStyles"/>), named in BBIM_Documentation on IfcProject.
@@ -1855,7 +1855,20 @@ public static partial class IfcExport
         /// An entity's parameters as the file writes them: a formula's value worked out (decision 550: a number, or a text from its
         /// storey's, its project's… parameters), as the model's tags and schedules show it; the formula itself is the model's alone.
         /// </summary>
-        List<JsonObject> WorkedOut(Entity e) => ParamFormulas.Resolved(m, e, m.RelatingOf(e.Id, IfcClass.RelDefinesByType));
+        List<JsonObject> WorkedOut(Entity e)
+        {
+            var type = m.RelatingOf(e.Id, IfcClass.RelDefinesByType);
+            var own = ParamFormulas.Resolved(m, e, type);
+            if (!o.TypePropsOnOccurrences || type == null || e.Class.EndsWith("Type", StringComparison.Ordinal)) return own;
+            var merged = new List<JsonObject>(own);
+            foreach (var tp in ParamFormulas.Resolved(m, type, null))
+            {
+                if (Params.IsInstanceDefault(tp) || (string?)tp["name"] is not { } name) continue;
+                var set = Params.SetOf(tp);
+                if (!own.Any(p => Params.Same(p, set, name))) merged.Add(tp);
+            }
+            return merged;
+        }
 
         /// <summary>An entity's own parameters (those in no named set) as a typed property set; null when it has none.</summary>
         string? ParamsOf(Entity e, string gid)
