@@ -46,6 +46,7 @@ export function ExchangeExportDialog() {
   const [bonsai, setBonsai] = useState(false);
   // The analytical model and the loads as an IFC Structural Analysis View (docs/plan-fem.md §8.7).
   const [structural, setStructural] = useState(false);
+  const [spaceBrep, setSpaceBrep] = useState(false);
   const [busy, setBusy] = useState(false);
   const close = () => useUi.setState({ dialog: null });
   useEffect(() => {
@@ -74,7 +75,7 @@ export function ExchangeExportDialog() {
       } catch (e) {
         notify(e instanceof Error ? e.message : String(e));
       }
-    } else if (format === 'ifc') await exportFile('project.exportIfc', { ...common, entourage: true, schema, detail, geometry, ...(simplify ? { tolerance: mm / 1000 } : {}), ...(bonsai && isDesktop() ? { bonsaiStyles: true } : {}), ...(structural ? { structural: true } : {}) }, `${projectTitle(path)}.ifc`, 'ifc');
+    } else if (format === 'ifc') await exportFile('project.exportIfc', { ...common, entourage: true, schema, detail, geometry, ...(simplify ? { tolerance: mm / 1000 } : {}), ...(bonsai && isDesktop() ? { bonsaiStyles: true } : {}), ...(structural ? { structural: true } : {}), ...(spaceBrep ? { spaceBrep: true } : {}) }, `${projectTitle(path)}.ifc`, 'ifc');
     else await exportFile('project.exportMesh', { ...common, format, origin, ...(onlyShown ? { viewId: view3dId ?? '3d' } : {}) }, `${projectTitle(path)}.${format}`, format);
     setBusy(false);
     close();
@@ -140,6 +141,8 @@ export function ExchangeExportDialog() {
                 )}
                 <dt title="The analytical model (bearing walls, floors, columns and beams as structural members) with the load cases, the loads and the combinations, as an IFC Structural Analysis View">Structural analysis</dt>
                 <dd><label><input type="checkbox" data-testid="export-structural" style={{ width: 'auto', marginRight: 6 }} checked={structural} onChange={(e) => setStructural(e.target.checked)} /> Structural analysis view (analytical model and loads)</label></dd>
+                <dt title="Export IfcSpace geometry as faceted B-rep (or face set) instead of SweptSolid extrusions, for IFC readers such as CYPECAD MEP that fail on extruded space profiles">Spaces</dt>
+                <dd><label><input type="checkbox" data-testid="export-space-brep" style={{ width: 'auto', marginRight: 6 }} checked={spaceBrep} onChange={(e) => setSpaceBrep(e.target.checked)} /> export as faceted B-rep (instead of SweptSolid)</label></dd>
                 <dt>Simplify</dt>
                 <dd><label><input type="checkbox" className="export-simplify" style={{ width: 'auto', marginRight: 6 }} checked={simplify} onChange={(e) => setSimplify(e.target.checked)} /> fewer triangles where a body is meshed, never further from it than the tolerance</label></dd>
                 {simplify && (

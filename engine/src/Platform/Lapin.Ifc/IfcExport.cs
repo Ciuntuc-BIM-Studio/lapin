@@ -23,7 +23,7 @@ namespace Lapin.Ifc;
 /// <summary><paramref name="Exclude"/>: elements left out (the kinds and storeys not chosen, what the 3D view hides: <see cref="ModelSurvey.Excluded"/>).</summary>
 /// <summary><paramref name="Voids"/>: the openings also as solid voids (IfcBuildingElementProxy PROVISIONFORVOID, decision 289), of the kinds asked, their sides moved by the offset; off by default.</summary>
 public sealed record IfcExportOptions(string Schema = "IFC4", string Detail = "group", string? Phase = null, string Geometry = "brep", double Tolerance = 0, IReadOnlySet<string>? Exclude = null,
-    bool Voids = false, IReadOnlySet<string>? VoidKinds = null, double VoidOffset = 0, bool BonsaiStyles = false, bool Structural = false)
+    bool Voids = false, IReadOnlySet<string>? VoidKinds = null, double VoidOffset = 0, bool BonsaiStyles = false, bool Structural = false, bool SpaceBrep = false)
 {
     // Structural: IFC's structural analysis view beside the building (docs/plan-fem.md §8.7): the analytical model, the load cases, their actions and combinations.
     // BonsaiStyles: the project's drawing styles for Bonsai beside the file (<see cref="Ifc.BonsaiStyles"/>), named in BBIM_Documentation on IfcProject.
@@ -1119,14 +1119,23 @@ public static partial class IfcExport
             var storey = Spatial.StoreyOf(m, e.Id);
             var (spatial, relTo, z0) = storey != null && storeyRef.TryGetValue(storey.Id, out var sr) ? (sr, storeyPlace[storey.Id], storeyZ[storey.Id]) : (buildingRef, sitePlace, 0.0);
             var height = geo!.Parts.Select(p => Measure.Bounds(p.Solid)).OfType<(Vec3 Min, Vec3 Max)>().Select(b => b.Max.Z - b.Min.Z).DefaultIfEmpty(storey?.NumOrNull("height") ?? 3).Max();
-            string Curve(IReadOnlyList<Vec2> loop) => f.Add("IFCPOLYLINE", L(loop.Append(loop[0]).Select(P2)));
-            var profile = islands.Count == 0
-                ? f.Add("IFCARBITRARYCLOSEDPROFILEDEF", E("AREA"), Null, Curve(Polygon2.EnsureCcw(outer)))
-                : f.Add("IFCARBITRARYPROFILEDEFWITHVOIDS", E("AREA"), Null, Curve(Polygon2.EnsureCcw(outer)), L(islands.Select(i => Curve(Polygon2.EnsureCcw(i).Reverse().ToList()))));
-            var origin = f.Add("IFCAXIS2PLACEMENT3D", f.Add("IFCCARTESIANPOINT", "(0.,0.,0.)"), Null, Null);
-            var solid = f.Add("IFCEXTRUDEDAREASOLID", profile, origin, f.Add("IFCDIRECTION", "(0.,0.,1.)"), R(height));
-            f.Add("IFCSTYLEDITEM", solid, L(new[] { Style(geo.Parts.FirstOrDefault()?.Color ?? "#9ec5e8") }), Null);
-            var shape = f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { f.Add("IFCSHAPEREPRESENTATION", body, S("Body"), S("SweptSolid"), L(new[] { solid })) }));
+            string shape;
+            if (o.SpaceBrep && geo!.Parts.Count > 0)
+            {
+                var fr = Frame.AtZ(z0 + e.Num("baseOffset"));
+                shape = f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { BodyOf(geo.Parts.Select(p => Brep(p.Solid, StyleKey(p), fr))) }));
+            }
+            else
+            {
+                string Curve(IReadOnlyList<Vec2> loop) => f.Add("IFCPOLYLINE", L(loop.Append(loop[0]).Select(P2)));
+                var profile = islands.Count == 0
+                    ? f.Add("IFCARBITRARYCLOSEDPROFILEDEF", E("AREA"), Null, Curve(Polygon2.EnsureCcw(outer)))
+                    : f.Add("IFCARBITRARYPROFILEDEFWITHVOIDS", E("AREA"), Null, Curve(Polygon2.EnsureCcw(outer)), L(islands.Select(i => Curve(Polygon2.EnsureCcw(i).Reverse().ToList()))));
+                var origin = f.Add("IFCAXIS2PLACEMENT3D", f.Add("IFCCARTESIANPOINT", "(0.,0.,0.)"), Null, Null);
+                var solid = f.Add("IFCEXTRUDEDAREASOLID", profile, origin, f.Add("IFCDIRECTION", "(0.,0.,1.)"), R(height));
+                f.Add("IFCSTYLEDITEM", solid, L(new[] { Style(geo.Parts.FirstOrDefault()?.Color ?? "#9ec5e8") }), Null);
+                shape = f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { f.Add("IFCSHAPEREPRESENTATION", body, S("Body"), S("SweptSolid"), L(new[] { solid })) }));
+            }
             var place = Place(relTo, e.Num("baseOffset"));
             var number = e.Str("number") is { Length: > 0 } n ? n : null;
             var function = e.Str("function") is { Length: > 0 } fn ? fn : null;
