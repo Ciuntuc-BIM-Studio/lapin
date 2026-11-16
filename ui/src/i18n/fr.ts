@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const FR: Record<string, string> = {
+  // MEP and Studio tabs regrouped under pulldowns (audit S14)
+  "Arcs": "Arcs", "Sketch edits": "Modifications d’esquisse", "Geometric": "Géométriques", "Arrays": "Réseaux", "Move, rotate, mirror": "Déplacer, pivoter, symétrie", "Carriers and fans": "Chemins de câbles et ventilateurs",
   // Convert to…: stair, floor opening, parcel (audit S12)
   "Width (empty: the type's; an outline's first edge)": "Largeur (vide : celle du type ; le premier côté d’un contour)", "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.": "La parcelle (la limite de la propriété) du terrain sous chaque contour fermé, ses arcs conservés.", "An opening in the floor under each closed outline; a circle makes a round one.": "Une trémie dans la dalle sous chaque contour fermé ; un cercle en fait une ronde.", "A stair of the type chosen: its foot at the path's start, climbing along it; an outline's first edge is its foot and width.": "Un escalier du type choisi : son départ au début du tracé, montant le long de celui-ci ; le premier côté d’un contour est son départ et sa largeur.",
   // Parts of steel, CLT and rebar for field schedules (audit S1)

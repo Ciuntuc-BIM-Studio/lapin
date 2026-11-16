@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const IT: Record<string, string> = {
+  // MEP and Studio tabs regrouped under pulldowns (audit S14)
+  "Arcs": "Archi", "Sketch edits": "Modifiche dello schizzo", "Geometric": "Geometrici", "Arrays": "Serie", "Move, rotate, mirror": "Sposta, ruota, specchia", "Carriers and fans": "Passerelle e ventilatori",
   // Convert to…: stair, floor opening, parcel (audit S12)
   "Width (empty: the type's; an outline's first edge)": "Larghezza (vuota: quella del tipo; il primo lato di un contorno)", "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.": "Il lotto (il confine della proprietà) del terreno sotto ogni contorno chiuso, con i suoi archi.", "An opening in the floor under each closed outline; a circle makes a round one.": "Un'apertura nel solaio sotto ogni contorno chiuso; un cerchio ne fa una rotonda.", "A stair of the type chosen: its foot at the path's start, climbing along it; an outline's first edge is its foot and width.": "Una scala del tipo scelto: il piede all'inizio del percorso, salendo lungo di esso; il primo lato di un contorno è il suo piede e la sua larghezza.",
   // Parts of steel, CLT and rebar for field schedules (audit S1)

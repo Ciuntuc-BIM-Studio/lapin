@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // MEP and Studio tabs regrouped under pulldowns (audit S14)
+  "Arcs": "ເສັ້ນໂຄ້ງ", "Sketch edits": "ແກ້ໄຂແບບຮ່າງ", "Geometric": "ເລຂາຄະນິດ", "Arrays": "ການຈັດລຽນ", "Move, rotate, mirror": "ຍ້າຍ, ໝູນ, ສະທ້ອນ", "Carriers and fans": "ຮາງສາຍ ແລະ ພັດລົມ",
   // Convert to…: stair, floor opening, parcel (audit S12)
   "Width (empty: the type's; an outline's first edge)": "ຄວາມກວ້າງ (ຫວ່າງ: ຂອງປະເພດ; ຂອບທຳອິດຂອງເສັ້ນຂອບ)", "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.": "ຕອນດິນ (ຂອບເຂດຂອງຊັບສິນ) ຂອງພື້ນດິນໃຕ້ແຕ່ລະເສັ້ນຂອບປິດ, ຮັກສາເສັ້ນໂຄ້ງຂອງມັນໄວ້.", "An opening in the floor under each closed outline; a circle makes a round one.": "ຮູໃນພື້ນໃຕ້ແຕ່ລະເສັ້ນຂອບປິດ; ວົງມົນເຮັດໃຫ້ເປັນຮູມົນ.", "A stair of the type chosen: its foot at the path's start, climbing along it; an outline's first edge is its foot and width.": "ຂັ້ນໄດຂອງປະເພດທີ່ເລືອກ: ຕີນຂອງມັນຢູ່ຈຸດເລີ່ມຂອງເສັ້ນທາງ, ຂຶ້ນໄປຕາມມັນ; ຂອບທຳອິດຂອງເສັ້ນຂອບແມ່ນຕີນ ແລະ ຄວາມກວ້າງຂອງມັນ.",
   // Parts of steel, CLT and rebar for field schedules (audit S1)

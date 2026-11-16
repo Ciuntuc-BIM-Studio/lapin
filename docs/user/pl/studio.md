@@ -10,6 +10,8 @@ Karta **Studio** tworzy bryły, których nie buduje żadna inna karta: ławkę, 
 
 ![Karta Studio](shots/ribbon-studio.webp)
 
+Jej narzędzia stoją w sześciu grupach: **Szkic** (linie, prostokąty, okręgi, **Łuki** ▾, odsunięcie, a pod nimi szkicowanie na ścianie lub płaszczyźnie, **Edycja szkicu** ▾, **Płaszczyzny robocze** ▾ i **Na ścianie** ▾), **Więzy** (listy **Geometryczne** ▾ i **Wymiary** ▾), **Bryły** (wyciągnięcie, przeciągnięcie, obrót, loft, edycja szkicu, **Z grubością** ▾ i **Prymitywy** ▾), **Rodziny** (wstawianie i edycja części), **Modyfikuj** (wypychanie/wciąganie, zaokrąglenie, fazowanie, powłoka, podział, **Szyki** ▾ i **Przesuń, obróć, odbij** ▾) oraz **Boolowskie**. Przycisk z ▾ otwiera swoją listę; każde narzędzie zachowuje swoje litery, a **Polecenia…** i **Moje narzędzia** znajdują je jak dotąd.
+
 Bryła Studio ma klasę IFC, jak każdy element. Wybierz ją w jej właściwościach: element prętowy, płyta, okładzina, balustrada, płyta stropowa lub dowolna inna. Jej ilości i eksport podążają za tą klasą.
 
 ## Gdzie szkicujesz
@@ -98,7 +100,7 @@ Te narzędzia działają na ścianach i krawędziach bryły w jej obecnym kszta�
 
 ## Rysowanie na ścianie
 
-W widoku 3D możesz rysować bezpośrednio na ścianie bryły i wypchnąć lub wciągnąć to, co narysujesz. Grupa **Na ścianie** na karcie **Studio** zawiera **Prostokąt na ścianie** (FRE), **Okrąg na ścianie** (FCI) i **Wielokąt na ścianie** (FPL).
+W widoku 3D możesz rysować bezpośrednio na ścianie bryły i wypchnąć lub wciągnąć to, co narysujesz. **Studio → Szkic → Na ścianie** ▾ zawiera **Prostokąt na ścianie** (FRE), **Okrąg na ścianie** (FCI) i **Wielokąt na ścianie** (FPL).
 
 1. Kliknij ścianę dowolnego elementu: bryły Studio, ściany budynku, stropu lub słupa. Kliknięcie jest pierwszym punktem: narożnikiem prostokąta, środkiem okręgu lub pierwszym wierzchołkiem wielokąta. Podczas rysowania ściana jest obrysowana.
 2. Poruszaj myszą. Kształt podąża za nią po ścianie, a obok widać jego wymiar. Punkty przyciągają się do narożników ściany, środków jej krawędzi i jej środka; poza tym idą co centymetr, a z <kbd>Shift</kbd> co 10 cm. Kliknij przeciwległy narożnik lub punkt na okręgu. Możesz też wpisać wymiar: szerokość i wysokość prostokąta jako `1200, 600` albo promień okręgu. Wielokąt przyjmuje kliknięcie w każdym wierzchołku albo długość wpisaną w kierunku myszy. Kliknij jego pierwszy wierzchołek lub naciśnij <kbd>Enter</kbd>, aby go zamknąć; <kbd>Backspace</kbd> cofa ostatni wierzchołek.

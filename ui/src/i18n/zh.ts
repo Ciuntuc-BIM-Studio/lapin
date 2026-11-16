@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // MEP and Studio tabs regrouped under pulldowns (audit S14)
+  "Arcs": "圆弧", "Sketch edits": "草图编辑", "Geometric": "几何约束", "Arrays": "阵列", "Move, rotate, mirror": "移动、旋转、镜像", "Carriers and fans": "桥架和风机",
   // Convert to…: stair, floor opening, parcel (audit S12)
   "Width (empty: the type's; an outline's first edge)": "宽度（空：类型的；轮廓的第一条边）", "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.": "每个闭合轮廓下地形的地块（产权边界），保留其圆弧。", "An opening in the floor under each closed outline; a circle makes a round one.": "在每个闭合轮廓下的楼板中开洞；圆形生成圆洞。", "A stair of the type chosen: its foot at the path's start, climbing along it; an outline's first edge is its foot and width.": "所选类型的楼梯：起步在路径起点，沿路径上升；轮廓的第一条边即其起步和宽度。",
   // Parts of steel, CLT and rebar for field schedules (audit S1)

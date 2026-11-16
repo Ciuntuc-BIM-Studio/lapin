@@ -10,6 +10,8 @@ La scheda **Studio** crea solidi che nessun’altra scheda costruisce: una panch
 
 ![La scheda Studio](shots/ribbon-studio.webp)
 
+I suoi strumenti stanno in sei gruppi: **Schizzo** (linee, rettangoli, cerchi, gli **Archi** ▾, offset e, sotto, lo schizzo su una faccia o su un piano, **Modifiche dello schizzo** ▾, **Piani di lavoro** ▾ e **Su faccia** ▾), **Vincoli** (gli elenchi **Geometrici** ▾ e **Dimensioni** ▾), **Solidi** (estrusione, sweep, rivoluzione, loft, modifica schizzo, **Con spessore** ▾ e **Primitive** ▾), **Famiglie** (posizionare e modificare componenti), **Modifica** (spingi/tira, raccordo, smusso, guscio, dividi, **Serie** ▾ e **Sposta, ruota, specchia** ▾) e **Booleane**. Un pulsante con ▾ apre il suo elenco; ogni strumento mantiene le sue lettere, e **Comandi…** e **I miei strumenti** lo trovano come prima.
+
 Un solido Studio ha una classe IFC, come ogni elemento. Sceglila nelle sue proprietà: un elemento strutturale, una piastra, un rivestimento, un parapetto, una soletta o qualsiasi altra. Le sue quantità e la sua esportazione seguono quella classe.
 
 ## Dove schizzare
@@ -98,7 +100,7 @@ Questi strumenti lavorano sulle facce e sugli spigoli del corpo così com’è c
 
 ## Disegnare su una faccia
 
-Nella vista 3D puoi disegnare direttamente su una faccia e poi spingere o tirare ciò che hai disegnato. Il gruppo **Su faccia** della scheda **Studio** contiene **Rettangolo su faccia** (FRE), **Cerchio su faccia** (FCI) e **Poligono su faccia** (FPL).
+Nella vista 3D puoi disegnare direttamente su una faccia e poi spingere o tirare ciò che hai disegnato. **Studio → Schizzo → Su faccia** ▾ contiene **Rettangolo su faccia** (FRE), **Cerchio su faccia** (FCI) e **Poligono su faccia** (FPL).
 
 1. Fai clic su una faccia di qualsiasi elemento: un solido Studio, un muro, un solaio o un pilastro. Il clic è il primo punto: l’angolo di un rettangolo, il centro di un cerchio o il primo vertice di un poligono. La faccia resta evidenziata mentre disegni.
 2. Muovi il mouse. La forma lo segue sulla faccia, con la sua misura accanto. I punti si agganciano agli angoli della faccia, ai punti medi dei suoi spigoli e al suo centro; altrimenti procedono di centimetro in centimetro, o di 10 cm con <kbd>Shift</kbd>. Fai clic sull’angolo opposto o su un punto del cerchio. Puoi anche digitare la misura: larghezza e altezza di un rettangolo come `1200, 600`, o il raggio di un cerchio. Un poligono prende un clic su ogni vertice, o una lunghezza digitata nella direzione del mouse. Fai clic sul primo vertice o premi <kbd>Enter</kbd> per chiuderlo; <kbd>Backspace</kbd> toglie l’ultimo vertice.

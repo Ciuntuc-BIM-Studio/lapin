@@ -20,7 +20,7 @@ Laturile unei încăperi desenate pot fi curbe, ca ale unui planșeu: bara lui *
 
 ## Linii de separare a încăperilor
 
-O bucătărie deschisă spre living, cele două capete ale unui hol, palierul unei galerii: spații fără perete între ele care trebuie totuși să fie încăperi separate. **Arhitectură → Separare încăperi** (<kbd>RS</kbd> pentru o linie) desenează o linie care mărginește încăperile cum ar face-o un perete, fără corp: o **linie** (înlănțuită, fiecare clic e începutul următoarei; cu **Arc** în bara liniei de comandă e un arc: începutul, sfârșitul, un punct prin care trece), o **polilinie** (colțurile ei, apoi <kbd>Enter</kbd>), un **dreptunghi** (două colțuri opuse: zona din interior devine o încăpere a ei) sau un **cerc** (centrul, un punct pe el). Desenează-o de la perete la perete; un capăt care se oprește la un fir de fața peretelui se închide totuși pe ea.
+O bucătărie deschisă spre living, cele două capete ale unui hol, palierul unei galerii: spații fără perete între ele care trebuie totuși să fie încăperi separate. **Arhitectură → Separare încăperi** (<kbd>LS</kbd> pentru o linie) desenează o linie care mărginește încăperile cum ar face-o un perete, fără corp: o **linie** (înlănțuită, fiecare clic e începutul următoarei; cu **Arc** în bara liniei de comandă e un arc: începutul, sfârșitul, un punct prin care trece), o **polilinie** (colțurile ei, apoi <kbd>Enter</kbd>), un **dreptunghi** (două colțuri opuse: zona din interior devine o încăpere a ei) sau un **cerc** (centrul, un punct pe el). Desenează-o de la perete la perete; un capăt care se oprește la un fir de fața peretelui se închide totuși pe ea.
 
 ![O bucătărie deschisă spre living, despărțite de o linie de separare, fiecare încăpere cu aria ei](shots/room-dividers.webp)
 

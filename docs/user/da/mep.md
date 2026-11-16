@@ -10,6 +10,8 @@ Fanen **Installationer** tegner bygningens installationer, sådan som en ingeni�
 
 ## Et system med ét klik
 
+Fanen Installationer samler sine værktøjer i tre grupper: **System** (**Nyt system** ▾ med installationerne, **Redigér system**, **Systemer…**, **Installationsplan**, **Åbne porte** og **Skemaer** ▾), **Strækninger** (**Strækning**, **Placér knude**, strækningsredigeringerne, **Luk sløjfen** og **Gade** ▾) og **Kabelbakker og ventilatorer** (**Kabelbakke**, **Ventilatorer** ▾, **Læg i kabelføring**, **Kanal til udløb**, **Ventilatortyper**). En knap med ▾ åbner sin liste; hvert værktøj beholder sine bogstaver, og **Kommandoer…** og **Mine værktøjer** finder det som før.
+
 Under **Nyt system** vælger du installationen (**Varme**, **Vand**, **Varmt vand**, **Afløb**, **El**, **Ventilation**) og klikker i planen. Lapin placerer hele systemet: kilden, hvor du klikkede, et første endepunkt nogle meter væk og strækningen mellem dem. Systemet åbner til redigering.
 
 ![Et varmesystem på stueetagens plan: kedlen, to radiatorer under vinduerne og strækningerne mellem dem](shots/mep-plan.webp)
@@ -51,7 +53,7 @@ I egenskabspanelet viser en knude sit system, sin rolle og sine porte (åbne ell
 
 ## Planer, lister og IFC
 
-**Installationsplan** laver en plan med fagområdet installationer for niveauet, ordnet under sættet Installationer i browseren. **Udstyrsliste** og **Strækningsliste** under **System** er skemaer som alle andre: de sættes på ark og eksporteres med dem.
+**Installationsplan** laver en plan med fagområdet installationer for niveauet, ordnet under sættet Installationer i browseren. **Udstyrsliste** og **Strækningsliste** under **System → Skemaer** er skemaer som alle andre: de sættes på ark og eksporteres med dem.
 
 Ved eksport til IFC er hvert system et IfcDistributionSystem, hver knude og strækning har sine IfcDistributionPorts, og forbindelserne skrives mellem portene, så netværket ankommer til et andet program forbundet fra kilden til det sidste endepunkt.
 
@@ -69,7 +71,7 @@ Hvert apparat beholder sit **forbrug** (m³/h) og sin **apparattype** efter aftr
 
 ### Forsyningen i gaden
 
-Under **Gade** lægger **Gasledning langs…** (<kbd>GM</kbd>) en gasledning langs det du klikker — en vej, en linjeføring, en tegnet linje, en væg — med **afstand til linjen** og **dybde (jorddække)** fra kommandolinjens bjælke; under et terræn måles dybden fra jorden, ellers fra etagen. **Gasledning** tegner den punkt for punkt. Ledningen kommer i et mellemtryks-gassystem af PE-rør med sit **advarselsbånd**.
+Under **Strækninger → Gade** lægger **Gasledning langs…** (<kbd>GM</kbd>) en gasledning langs det du klikker — en vej, en linjeføring, en tegnet linje, en væg — med **afstand til linjen** og **dybde (jorddække)** fra kommandolinjens bjælke; under et terræn måles dybden fra jorden, ellers fra etagen. **Gasledning** tegner den punkt for punkt. Ledningen kommer i et mellemtryks-gassystem af PE-rør med sit **advarselsbånd**.
 
 **Stikledning** (<kbd>GS</kbd>): klik ledningen, så målerskabet. Lapin sætter en **anboringsbøjle** på ledningen, lægger stikledningen vinkelret fra den i dens jorddække hen til skabet og fører den op i skabet dér.
 
@@ -81,7 +83,7 @@ Under **Gade** lægger **Gasledning langs…** (<kbd>GM</kbd>) en gasledning lan
 
 ![Et gassystems standarder: dets gas og dets trykklasse](shots/mep-gas-systems.webp)
 
-**Mængdeliste for gas og olie** under **System** viser system for system rørene efter materiale og diameter med deres længde (og heraf stigrørene), bøjninger, T-stykker og foringsrør, advarselsbåndet, haner, målere og skabe og apparaterne med installeret forbrug og effekt. I IFC er et gassystem et IfcDistributionSystem af typen GAS og et oliesystem FUEL; målerskabet er et IfcDistributionChamberElement, måleren en IfcFlowMeter GASMETER, hanerne IfcValve, komfuret en IfcBurner, tanken en IfcTank.
+**Mængdeliste for gas og olie** under **System → Skemaer** viser system for system rørene efter materiale og diameter med deres længde (og heraf stigrørene), bøjninger, T-stykker og foringsrør, advarselsbåndet, haner, målere og skabe og apparaterne med installeret forbrug og effekt. I IFC er et gassystem et IfcDistributionSystem af typen GAS og et oliesystem FUEL; målerskabet er et IfcDistributionChamberElement, måleren en IfcFlowMeter GASMETER, hanerne IfcValve, komfuret en IfcBurner, tanken en IfcTank.
 
 ![Mængdelisten for gas og olie](shots/mep-gas-list.webp)
 
@@ -89,7 +91,7 @@ At dimensionere rørene ud fra apparaternes forbrug og eftervise tryktabet er in
 
 ## Brandsikring
 
-**Brandalarm** og **Brandhaner** er egne fag under **Nyt system**, med deres værktøjer i grupperne **Brandalarm** og **Brandhaner**.
+**Brandalarm** og **Brandhaner** er egne fag under **Nyt system**, deres enheder sættes med **Placér knude**, og sløjfen lukkes med **Luk sløjfen** i gruppen **Strækninger**.
 
 **Nyt system → Brandalarm** sætter **brandcentralen** hvor du klikker og en første **røgdetektor** ved siden af, forbundet af sløjfens kabel. Hver enhed du sætter derefter (**Røgdetektor** <kbd>SD</kbd>, **Varmedetektor** <kbd>HD</kbd>, **Brandtryk** <kbd>MC</kbd>, **Sirene**, **Sirene med blink**) forbindes med sløjfens åbne ende, enheden sat før den. Kablet løber fra én enhed til den næste i den rækkefølge, du sætter dem. **Luk sløjfen** fører kablet fra den sidste enhed tilbage til centralens retur, så sløjfen fødes fra begge ender. Kablet er et brandsikret kabel i loftet.
 
@@ -103,7 +105,7 @@ Hver detektor viser sin **dækning** som en stiplet cirkel. Som standard kommer 
 
 ![Brandalarmsløjfen og brandhanerne i 3D](shots/mep-fire-3d.webp)
 
-**Mængdeliste for brandsikring** under **System** viser system for system:
+**Mængdeliste for brandsikring** under **System → Skemaer** viser system for system:
 
 - centralerne, detektorerne, brandtrykkene og sirenerne;
 - sløjfens kabel med dets længde, og om hver sløjfe er lukket;
@@ -118,7 +120,7 @@ At placere detektorerne rum for rum ud fra projekteringstabellen og eftervise, a
 
 ## Udsugningsventilatorer
 
-Gruppen **Ventilatorer** på fanen Installationer sætter udsugningsventilatorer til bad og køkken som selvstændige elementer, hver af en type, du konfigurerer:
+**Ventilatorer** (i gruppen **Kabelbakker og ventilatorer** på fanen Installationer) sætter udsugningsventilatorer til bad og køkken som selvstændige elementer, hver af en type, du konfigurerer:
 
 - **Vægventilator** (<kbd>VF</kbd>): en aksialventilator på en væg, der blæser lige ud gennem den;
 - **Loftventilator**: en ventilator under loftet med en kanal ud af siden;

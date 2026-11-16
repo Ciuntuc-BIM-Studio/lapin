@@ -1,6 +1,8 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // MEP and Studio tabs regrouped under pulldowns (audit S14)
+  "Arcs": "Arce", "Sketch edits": "Editări de schiță", "Geometric": "Geometrice", "Arrays": "Multiplicări", "Move, rotate, mirror": "Mută, rotește, oglindește", "Carriers and fans": "Suporturi de cabluri și ventilatoare",
   // Convert to…: stair, floor opening, parcel (audit S12)
   "Width (empty: the type's; an outline's first edge)": "Lățime (goală: a tipului; prima latură a unui contur)", "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.": "Parcela (limita proprietății) terenului de sub fiecare contur închis, cu arcele lui păstrate.", "An opening in the floor under each closed outline; a circle makes a round one.": "Un gol în planșeul de sub fiecare contur închis; un cerc face unul rotund.", "A stair of the type chosen: its foot at the path's start, climbing along it; an outline's first edge is its foot and width.": "O scară de tipul ales: piciorul la începutul traseului, urcând de-a lungul lui; prima latură a unui contur îi este piciorul și lățimea.",
   // Parts of steel, CLT and rebar for field schedules (audit S1)

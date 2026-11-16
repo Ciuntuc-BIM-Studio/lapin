@@ -8,6 +8,7 @@
  * LOFT are also command-line commands.
  */
 
+import { pulldownTool } from '../../shell/pulldown';
 import { confirmAction } from '../../shell/prompts';
 import {
   Boxes, PackagePlus, PencilRuler, ArrowUpDown, ArrowUpToLine, ArrowRightToLine, Eraser, Keyboard, Rainbow, Ruler, Spline, CopyPlus, CornerUpRight, Slash, Redo2, ScanEye, SquarePen, CircleCheckBig, Circle, Hexagon, RectangleHorizontal, Blocks, Box, BrickWall, CircleDot, Cone, Container, Cylinder, Eye, FlipHorizontal2, Frame, Grid3x3, Layers2, Move3d, Octagon, PackageOpen, PenTool, Pyramid,
@@ -790,32 +791,43 @@ const studio: LapinModule = {
     {
     id: 'studio', label: 'Studio', order: 50, include: ['modify'],
     groups: [
-      { label: 'Solids', tools: [cmd('extrude', 'Extrude', Box, 'EXTRUDE'), cmd('sweep', 'Sweep', Waypoints, 'SWEEP'), cmd('revolve', 'Revolve', RefreshCcw, 'REVOLVE'), cmd('loft', 'Loft', Layers2, 'LOFT'), { id: 'studio.editSketch', label: 'Edit sketch', icon: PenTool, run: () => void editSketch() }] },
-      { label: 'Thick', tools: [cmd('ring', 'Ring', Cylinder, 'RING'), cmd('box', 'Box', Container, 'BOX'), cmd('wallStrip', 'Wall strip', BrickWall, 'TWALL')] },
-      { label: 'Constraints', tools: [constraintTool(GEOMETRIC[0]), constraintTool(GEOMETRIC[2]), constraintTool(GEOMETRIC[3]), constraintTool(DIMENSIONS[0])], small: [...GEOMETRIC.filter((t) => !['coincident', 'horizontal', 'vertical'].includes(t.kind)).map(constraintTool), ...DIMENSIONS.slice(1).map(constraintTool)] },
+      // Fewer groups than the tools (audit S14: about eighty on one tab): the tools used most stay buttons, the rest gathered under
+      // pulldowns; each keeps its id, letters and place in My tools.
       {
         label: 'Sketch',
         tools: [sketchTool('line', 'LINE', 'Line', Slash, 'KL'), sketchTool('rect', 'RECTANGLE', 'Rectangle', RectangleHorizontal, 'KR'), sketchTool('circle', 'CIRCLE', 'Circle', Circle, 'KC'),
           // Two arcs, each one thing whatever the work plane (decision 377): SketchUp's by its chord and bulge, CAD's ARC through three points.
-          directTool('arc', '2-point arc', Rainbow, 'KA'),
-          { id: 'studio.sketch.arc3', label: '3-point arc', icon: Redo2, run: () => { useUi.setState({ view: '3d', tool: null }); void startCommand('ARC'); } },
+          pulldownTool('studio.more.arcs', 'Arcs', Rainbow, [directTool('arc', '2-point arc', Rainbow, 'KA'),
+            { id: 'studio.sketch.arc3', label: '3-point arc', icon: Redo2, run: () => { useUi.setState({ view: '3d', tool: null }); void startCommand('ARC'); } }]),
           sketchTool('offset', 'OFFSET', 'Offset', CopyPlus, 'KO')],
-        small: [sketchOnFace, sketchOnPlane, finishSketchTool, lookAtPlaneTool, sketchCad('trim', 'TRIM', 'Trim', Scissors), sketchCad('extend', 'EXTEND', 'Extend', ArrowRightToLine), sketchCad('fillet', 'FILLET', 'Fillet', CornerUpRight),
-          directTool('tape', 'Tape measure', Ruler, 'KM'), eraseGuides, followMe, sketchupKeys],
+        small: [sketchOnFace, sketchOnPlane, finishSketchTool, lookAtPlaneTool,
+          pulldownTool('studio.more.sketchEdits', 'Sketch edits', Scissors, [sketchCad('trim', 'TRIM', 'Trim', Scissors), sketchCad('extend', 'EXTEND', 'Extend', ArrowRightToLine), sketchCad('fillet', 'FILLET', 'Fillet', CornerUpRight),
+            directTool('tape', 'Tape measure', Ruler, 'KM'), eraseGuides, followMe, sketchupKeys]),
+          pulldownTool('studio.more.workPlanes', 'Work planes', SquareStack, [cmd('refPlane', 'Plane from view', SquareStack, 'REFPLANE'), planeOnFace, planeBy3]),
+          pulldownTool('studio.more.onFace', 'On face', Hexagon, [onFace('rect', 'Rectangle on face', RectangleHorizontal, 'FRE'), onFace('circle', 'Circle on face', Circle, 'FCI'), onFace('polygon', 'Polygon on face', Hexagon, 'FPL')])],
       },
-      { label: 'On face', tools: [onFace('rect', 'Rectangle on face', RectangleHorizontal, 'FRE'), onFace('circle', 'Circle on face', Circle, 'FCI'), onFace('polygon', 'Polygon on face', Hexagon, 'FPL')] },
-      { label: 'Work planes', tools: [cmd('refPlane', 'Plane from view', SquareStack, 'REFPLANE'), planeOnFace, planeBy3] },
       {
-        label: 'Primitives',
-        tools: [primitive('box', 'Cuboid', Box), primitive('cylinder', 'Cylinder', Cylinder)],
-        small: [primitive('sphere', 'Sphere', CircleDot), primitive('cone', 'Cone', Cone), primitive('torus', 'Torus', Torus), primitive('wedge', 'Wedge', TriangleRight), primitive('pyramid', 'Pyramid', Pyramid)],
+        label: 'Constraints',
+        tools: [
+          pulldownTool('studio.more.geometric', 'Geometric', constraintTool(GEOMETRIC[0]).icon, GEOMETRIC.map(constraintTool)),
+          pulldownTool('studio.more.dimensions', 'Dimensions', constraintTool(DIMENSIONS[0]).icon, DIMENSIONS.map(constraintTool)),
+        ],
       },
-      { label: 'Part', tools: [editPartTool, finishPartTool] },
-      { label: 'Families', tools: [placeFamilyTool, familiesDialogTool], small: [familyFromSketch] },
+      {
+        label: 'Solids',
+        tools: [cmd('extrude', 'Extrude', Box, 'EXTRUDE'), cmd('sweep', 'Sweep', Waypoints, 'SWEEP'), cmd('revolve', 'Revolve', RefreshCcw, 'REVOLVE'), cmd('loft', 'Loft', Layers2, 'LOFT')],
+        small: [{ id: 'studio.editSketch', label: 'Edit sketch', icon: PenTool, run: () => void editSketch() },
+          pulldownTool('studio.more.thick', 'Thick', Container, [cmd('ring', 'Ring', Cylinder, 'RING'), cmd('box', 'Box', Container, 'BOX'), cmd('wallStrip', 'Wall strip', BrickWall, 'TWALL')]),
+          pulldownTool('studio.more.primitives', 'Primitives', Cone, [primitive('box', 'Cuboid', Box), primitive('cylinder', 'Cylinder', Cylinder), primitive('sphere', 'Sphere', CircleDot), primitive('cone', 'Cone', Cone),
+            primitive('torus', 'Torus', Torus), primitive('wedge', 'Wedge', TriangleRight), primitive('pyramid', 'Pyramid', Pyramid)])],
+      },
+      { label: 'Families', tools: [placeFamilyTool, familiesDialogTool, editPartTool, finishPartTool], small: [familyFromSketch] },
       {
         label: 'Modify',
         tools: [pushPull, roundTool('fillet'), roundTool('chamfer'), shell],
-        small: [upTo, splitTool('split'), splitTool('slice'), array, polarArray, rotate3d, mirror3d, move3d, makeSolid],
+        small: [upTo, splitTool('split'), splitTool('slice'), makeSolid,
+          pulldownTool('studio.more.arrays', 'Arrays', Grid3x3, [array, polarArray]),
+          pulldownTool('studio.more.transform', 'Move, rotate, mirror', Move3d, [move3d, rotate3d, mirror3d])],
       },
       {
         label: 'Boolean',

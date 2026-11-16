@@ -12,7 +12,7 @@ Constrângerile aparțin schiței și se salvează cu proiectul. Nu se scriu în
 
 ## Uneltele Constrângeri
 
-**Studio → Constrângeri** (al treilea grup din fila Studio, deci se vede întreg la 1440 px fără să derulezi panglica) are câte o unealtă pentru fiecare fel. Fiecare cere în vedere ce îi trebuie: clic pe un punct, o muchie, un cerc sau un arc. Partea de sub cursor se luminează și își spune numele (*vertex*, *start*, *end*, *centru*, *muchie*, *curbă*) și se prinde ca la desenare. Când alegerile sunt complete, constrângerea se face, iar unealta rămâne pornită pentru următoarea; **Esc** o oprește.
+**Studio → Constrângeri** (al doilea grup din fila Studio) are câte o unealtă pentru fiecare fel, în două liste: **Geometrice** ▾ și **Dimensiuni** ▾; literele lor (CNC, CNH…) le pornesc ca înainte. Fiecare cere în vedere ce îi trebuie: clic pe un punct, o muchie, un cerc sau un arc. Partea de sub cursor se luminează și își spune numele (*vertex*, *start*, *end*, *centru*, *muchie*, *curbă*) și se prinde ca la desenare. Când alegerile sunt complete, constrângerea se face, iar unealta rămâne pornită pentru următoarea; **Esc** o oprește.
 
 ![O unealtă luminează muchia de sub cursor și o numește](shots/sketch-constraints-pick.webp)
 
@@ -74,7 +74,7 @@ O insignă în josul vederii spune ce a găsit rezolvitorul, cât timp vederea a
 
 ![Complet constrâns: simbolurile, cele două cote și insigna](shots/sketch-constraints-fixed.webp)
 
-În arborele din **Studio → Piesă**, fiecare schiță arată numărul ei de constrângeri și aceleași cuvinte.
+În arborele piesei (**Studio → Familii → Editează piesa**), fiecare schiță arată numărul ei de constrângeri și aceleași cuvinte.
 
 ## O cotă conduce solidul
 

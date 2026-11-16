@@ -10,6 +10,8 @@ Karta **Instalacje** rysuje instalacje budynku tak, jak szkicuje je inżynier: s
 
 ## System jednym kliknięciem
 
+Karta Instalacje zbiera swoje narzędzia w trzech grupach: **System** (**Nowy system** ▾ z mediami, **Edytuj system**, **Systemy…**, **Rzut instalacji**, **Wolne przyłącza** i **Zestawienia** ▾), **Odcinki** (**Odcinek**, **Umieść węzeł**, edycje odcinka, **Zamknij pętlę** i **Ulica** ▾) oraz **Koryta i wentylatory** (**Korytko kablowe**, **Wentylatory** ▾, **Ułóż w trasie kablowej**, **Kanał do wylotu**, **Typy wentylatorów**). Przycisk z ▾ otwiera swoją listę; każde narzędzie zachowuje swoje litery, a **Polecenia…** i **Moje narzędzia** znajdują je jak dotąd.
+
 W sekcji **Nowy system** wybierz instalację (**Ogrzewanie**, **Woda**, **Ciepła woda**, **Kanalizacja**, **Elektryka**, **Wentylacja**) i kliknij na rzucie. Lapin umieszcza cały system: źródło w miejscu kliknięcia, pierwszy odbiornik kilka metrów dalej i przewód między nimi. System otwiera się do edycji.
 
 ![System grzewczy na rzucie parteru: kocioł, dwa grzejniki pod oknami i przewody między nimi](shots/mep-plan.webp)
@@ -51,7 +53,7 @@ W panelu Właściwości węzeł pokazuje swój system, rolę i porty (otwarte lu
 
 ## Rzuty, wykazy i IFC
 
-**Rzut instalacji** tworzy dla poziomu rzut branży instalacyjnej, umieszczony w przeglądarce w zbiorze Instalacje. **Lista urządzeń** i **Lista odcinków** w grupie **System** są zestawieniami jak każde inne: trafiają na arkusze i eksportują się razem z nimi.
+**Rzut instalacji** tworzy dla poziomu rzut branży instalacyjnej, umieszczony w przeglądarce w zbiorze Instalacje. **Lista urządzeń** i **Lista odcinków** w grupie **System → Zestawienia** są zestawieniami jak każde inne: trafiają na arkusze i eksportują się razem z nimi.
 
 W eksporcie IFC każdy system jest IfcDistributionSystem, każdy węzeł i przewód ma swoje IfcDistributionPorts, a połączenia są zapisywane między portami, więc sieć trafia do innego programu połączona od źródła do ostatniego odbiornika.
 
@@ -69,7 +71,7 @@ Każde urządzenie zachowuje swoje **zużycie** (m³/h) i **typ urządzenia** we
 
 ### Zasilanie w ulicy
 
-W **Ulica** narzędzie **Gazociąg wzdłuż…** (<kbd>GM</kbd>) układa gazociąg wzdłuż tego, co klikniesz — drogi, osi trasy, narysowanej linii, ściany — w **odległości od linii** i na **głębokości (przykryciu)** z paska linii poleceń; pod terenem głębokość liczy się od gruntu, inaczej od kondygnacji. **Gazociąg** rysuje go punkt po punkcie. Gazociąg trafia do systemu gazowego średniego ciśnienia z rur PE, z **taśmą ostrzegawczą**.
+W **Odcinki → Ulica** narzędzie **Gazociąg wzdłuż…** (<kbd>GM</kbd>) układa gazociąg wzdłuż tego, co klikniesz — drogi, osi trasy, narysowanej linii, ściany — w **odległości od linii** i na **głębokości (przykryciu)** z paska linii poleceń; pod terenem głębokość liczy się od gruntu, inaczej od kondygnacji. **Gazociąg** rysuje go punkt po punkcie. Gazociąg trafia do systemu gazowego średniego ciśnienia z rur PE, z **taśmą ostrzegawczą**.
 
 **Przyłącze** (<kbd>GS</kbd>): kliknij gazociąg, potem szafkę. Lapin stawia **trójnik siodłowy** na gazociągu, układa rurę przyłącza prostopadle od niego na jej przykryciu aż do szafki i tam wprowadza ją w górę do szafki.
 
@@ -81,7 +83,7 @@ W **Ulica** narzędzie **Gazociąg wzdłuż…** (<kbd>GM</kbd>) układa gazoci�
 
 ![Wartości domyślne systemu gazowego: jego gaz i klasa ciśnienia](shots/mep-gas-systems.webp)
 
-**Zestawienie materiałów gazu i oleju** w **System** wymienia, system po systemie, rury według materiału i średnicy z ich długością (a z niej piony), kolana, trójniki i tuleje, taśmę ostrzegawczą, zawory, gazomierze i szafki oraz urządzenia z zainstalowanym zużyciem i mocą. W IFC system gazowy to IfcDistributionSystem typu GAS, a olejowy FUEL; szafka to IfcDistributionChamberElement, gazomierz IfcFlowMeter GASMETER, zawory IfcValve, kuchenka IfcBurner, zbiornik IfcTank.
+**Zestawienie materiałów gazu i oleju** w **System → Zestawienia** wymienia, system po systemie, rury według materiału i średnicy z ich długością (a z niej piony), kolana, trójniki i tuleje, taśmę ostrzegawczą, zawory, gazomierze i szafki oraz urządzenia z zainstalowanym zużyciem i mocą. W IFC system gazowy to IfcDistributionSystem typu GAS, a olejowy FUEL; szafka to IfcDistributionChamberElement, gazomierz IfcFlowMeter GASMETER, zawory IfcValve, kuchenka IfcBurner, zbiornik IfcTank.
 
 ![Zestawienie materiałów gazu i oleju](shots/mep-gas-list.webp)
 
@@ -89,7 +91,7 @@ Dobór średnic rur ze zużycia urządzeń i sprawdzenie spadku ciśnienia to in
 
 ## Ochrona przeciwpożarowa
 
-**Sygnalizacja pożaru** i **Hydranty** to osobne media w **Nowy system**, z narzędziami w grupach **Sygnalizacja pożaru** i **Hydranty**.
+**Sygnalizacja pożaru** i **Hydranty** to osobne media w **Nowy system**, ich urządzenia umieszcza się narzędziem **Umieść węzeł**, a pętlę zamyka **Zamknij pętlę** w grupie **Odcinki**.
 
 **Nowy system → Sygnalizacja pożaru** stawia **centralę sygnalizacji pożarowej** tam, gdzie klikniesz, i pierwszą **czujkę dymu** obok, połączone kablem pętli. Każde urządzenie postawione potem (**Czujka dymu** <kbd>SD</kbd>, **Czujka ciepła** <kbd>HD</kbd>, **Ręczny ostrzegacz pożarowy** <kbd>MC</kbd>, **Sygnalizator akustyczny**, **Sygnalizator akustyczno-optyczny**) łączy się z otwartym końcem pętli, czyli z urządzeniem postawionym przed nim. Kabel biegnie od jednego urządzenia do następnego w kolejności, w jakiej je stawiasz. **Zamknij pętlę** prowadzi kabel od ostatniego urządzenia z powrotem do wejścia powrotnego centrali, tak że pętla jest zasilana z obu końców. Kabel to kabel ognioodporny na suficie.
 
@@ -103,7 +105,7 @@ Każda czujka pokazuje swój **zasięg** jako przerywany okrąg. Domyślnie prom
 
 ![Pętla sygnalizacji pożaru i hydranty w 3D](shots/mep-fire-3d.webp)
 
-**Zestawienie materiałów ochrony przeciwpożarowej** w **System** wymienia, system po systemie:
+**Zestawienie materiałów ochrony przeciwpożarowej** w **System → Zestawienia** wymienia, system po systemie:
 
 - centrale, czujki, ręczne ostrzegacze i sygnalizatory;
 - kabel pętli z jego długością i informacją, czy każda pętla jest zamknięta;
@@ -118,7 +120,7 @@ Rozmieszczenie czujek pomieszczenie po pomieszczeniu według tabeli projektowej 
 
 ## Wentylatory wyciągowe
 
-Grupa **Wentylatory** na karcie Instalacje wstawia wentylatory wyciągowe łazienek i kuchni jako osobne elementy, każdy według typu, który konfigurujesz:
+**Wentylatory** (w grupie **Koryta i wentylatory** na karcie Instalacje) wstawia wentylatory wyciągowe łazienek i kuchni jako osobne elementy, każdy według typu, który konfigurujesz:
 
 - **Wentylator ścienny** (<kbd>VF</kbd>): wentylator osiowy na ścianie, wydmuchujący prosto przez nią;
 - **Wentylator sufitowy**: wentylator pod sufitem z kanałem wychodzącym z boku;

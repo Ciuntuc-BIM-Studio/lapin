@@ -10,6 +10,8 @@ A guia **Instalações** desenha as instalações do edifício como um engenheir
 
 ## Um sistema em um clique
 
+A guia Instalações reúne as suas ferramentas em três grupos: **Sistema** (**Novo sistema** ▾ com os serviços, **Editar sistema**, **Sistemas…**, **Planta de instalações**, **Conectores livres** e **Tabelas** ▾), **Trechos** (**Trecho**, **Colocar nó**, as edições do trecho, **Fechar o laço** e **Rua** ▾) e **Caminhos de cabos e ventiladores** (**Eletrocalha**, **Exaustores** ▾, **Lançar no suporte**, **Conduta até à saída**, **Tipos de exaustores**). Um botão com ▾ abre a sua lista; cada ferramenta mantém as suas letras, e **Comandos…** e **Minhas ferramentas** a encontram como antes.
+
 Em **Novo sistema**, escolha a instalação (**Aquecimento**, **Água**, **Água quente**, **Esgoto**, **Elétrica**, **Ventilação**) e clique na planta. O Lapin coloca o sistema inteiro: a fonte onde você clicou, um primeiro ponto terminal a alguns metros e o trecho entre eles. O sistema abre para edição.
 
 ![Um sistema de aquecimento na planta do térreo: a caldeira, dois radiadores sob as janelas e os trechos entre eles](shots/mep-plan.webp)
@@ -51,7 +53,7 @@ No painel Propriedades, um nó mostra o sistema, a função e as portas (abertas
 
 ## Plantas, listas e IFC
 
-**Planta de instalações** cria uma planta da disciplina de instalações para o nível, arquivada no conjunto Instalações do navegador. A **Lista de equipamentos** e a **Lista de trechos** em **Sistema** são tabelas como as outras: vão para as pranchas e são exportadas com elas.
+**Planta de instalações** cria uma planta da disciplina de instalações para o nível, arquivada no conjunto Instalações do navegador. A **Lista de equipamentos** e a **Lista de trechos** em **Sistema → Tabelas** são tabelas como as outras: vão para as pranchas e são exportadas com elas.
 
 Em uma exportação IFC, cada sistema é um IfcDistributionSystem, cada nó e trecho tem as suas IfcDistributionPorts, e as conexões são gravadas entre as portas, assim a rede chega a outro programa conectada da fonte até o último ponto terminal.
 
@@ -69,7 +71,7 @@ Cada aparelho guarda seu **consumo** (m³/h) e seu **tipo de aparelho** pela exa
 
 ### O abastecimento na rua
 
-Em **Rua**, **Rede de gás ao longo de…** (<kbd>GM</kbd>) assenta uma rede de gás ao longo do que você clica — uma rua, um alinhamento, uma linha desenhada, uma parede — na **distância à linha** e na **profundidade (recobrimento)** da barra da linha de comando; sob um terreno a profundidade é medida a partir do solo, senão a partir do nível. **Rede de gás** a desenha ponto a ponto. A rede vai num sistema de gás de média pressão, em tubo de PE, com sua **fita de advertência**.
+Em **Trechos → Rua**, **Rede de gás ao longo de…** (<kbd>GM</kbd>) assenta uma rede de gás ao longo do que você clica — uma rua, um alinhamento, uma linha desenhada, uma parede — na **distância à linha** e na **profundidade (recobrimento)** da barra da linha de comando; sob um terreno a profundidade é medida a partir do solo, senão a partir do nível. **Rede de gás** a desenha ponto a ponto. A rede vai num sistema de gás de média pressão, em tubo de PE, com sua **fita de advertência**.
 
 **Ramal de ligação** (<kbd>GS</kbd>): clique na rede, depois na caixa. O Lapin coloca um **tê de derivação** na rede, assenta o tubo do ramal em esquadro a partir dela na sua profundidade até a caixa, e sobe ali para dentro da caixa.
 
@@ -81,7 +83,7 @@ Em **Rua**, **Rede de gás ao longo de…** (<kbd>GM</kbd>) assenta uma rede de 
 
 ![Os padrões de um sistema de gás: seu gás e sua classe de pressão](shots/mep-gas-systems.webp)
 
-**Quantitativo de gás e óleo** em **Sistema** lista, sistema por sistema, os tubos por material e diâmetro com seu comprimento (e dele as prumadas), as curvas, tês e luvas, a fita de advertência, os registros, medidores e caixas, e os aparelhos com consumo e potência instalados. Em IFC um sistema de gás é um IfcDistributionSystem do tipo GAS e um de óleo FUEL; a caixa é um IfcDistributionChamberElement, o medidor um IfcFlowMeter GASMETER, os registros IfcValve, o fogão um IfcBurner, o tanque um IfcTank.
+**Quantitativo de gás e óleo** em **Sistema → Tabelas** lista, sistema por sistema, os tubos por material e diâmetro com seu comprimento (e dele as prumadas), as curvas, tês e luvas, a fita de advertência, os registros, medidores e caixas, e os aparelhos com consumo e potência instalados. Em IFC um sistema de gás é um IfcDistributionSystem do tipo GAS e um de óleo FUEL; a caixa é um IfcDistributionChamberElement, o medidor um IfcFlowMeter GASMETER, os registros IfcValve, o fogão um IfcBurner, o tanque um IfcTank.
 
 ![O quantitativo de gás e óleo](shots/mep-gas-list.webp)
 
@@ -89,7 +91,7 @@ Dimensionar os tubos pelo consumo dos aparelhos e verificar a perda de carga é 
 
 ## Proteção contra incêndio
 
-**Alarme de incêndio** e **Hidrantes** são serviços próprios em **Novo sistema**, com suas ferramentas nos grupos **Alarme de incêndio** e **Hidrantes**.
+**Alarme de incêndio** e **Hidrantes** são serviços próprios em **Novo sistema**, seus dispositivos são colocados com **Colocar nó** e o laço é fechado com **Fechar o laço** no grupo **Trechos**.
 
 **Novo sistema → Alarme de incêndio** coloca a **central de alarme de incêndio** onde você clica e um primeiro **detector de fumaça** ao lado, ligados pelo cabo do laço. Cada dispositivo colocado depois (**Detector de fumaça** <kbd>SD</kbd>, **Detector de temperatura** <kbd>HD</kbd>, **Acionador manual** <kbd>MC</kbd>, **Sirene**, **Sirene com sinalizador visual**) se liga à ponta aberta do laço, o dispositivo colocado antes dele. O cabo vai de um dispositivo ao seguinte na ordem em que você os coloca. **Fechar o laço** leva o cabo do último dispositivo de volta ao retorno da central, de modo que o laço é alimentado pelas duas pontas. O cabo é um cabo resistente ao fogo, no teto.
 
@@ -103,7 +105,7 @@ Cada detector mostra sua **cobertura** como um círculo tracejado. Por padrão o
 
 ![O laço de alarme de incêndio e os hidrantes em 3D](shots/mep-fire-3d.webp)
 
-**Quantitativo de proteção contra incêndio** em **Sistema** lista, sistema por sistema:
+**Quantitativo de proteção contra incêndio** em **Sistema → Tabelas** lista, sistema por sistema:
 
 - as centrais, detectores, acionadores manuais e sirenes;
 - o cabo do laço com seu comprimento, e se cada laço está fechado;
@@ -118,7 +120,7 @@ Posicionar os detectores ambiente por ambiente pela tabela de projeto e verifica
 
 ## Exaustores
 
-O grupo **Ventiladores** na guia Instalações coloca exaustores de banheiro e cozinha como elementos próprios, cada um de um tipo que você configura:
+**Exaustores** (no grupo **Caminhos de cabos e ventiladores** da guia Instalações) coloca exaustores de banheiro e cozinha como elementos próprios, cada um de um tipo que você configura:
 
 - **Exaustor de parede** (<kbd>VF</kbd>): um ventilador axial numa parede, soprando direto através dela;
 - **Exaustor de teto**: um ventilador sob o teto com um duto saindo pela lateral;

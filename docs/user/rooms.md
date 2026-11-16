@@ -20,7 +20,7 @@ A drawn room's edges can be curved, as a floor's: the **Room by outline** bar dr
 
 ## Room separation lines
 
-An open-plan kitchen and living room, the two ends of a hall, a gallery's landing: spaces with no wall between them that should still be rooms of their own. **Architecture → Room separation** (<kbd>RS</kbd> for a line) draws a line that bounds rooms as a wall would, with no body: a **line** (chained, each click the start of the next; set to **Arc** in the command line's bar it is an arc: its start, its end, a point it passes through), a **polyline** (its corners, then <kbd>Enter</kbd>), a **rectangle** (two opposite corners: the zone inside it becomes a room of its own), or a **circle** (its centre, a point on it). Draw it from wall to wall; an end a hair short of a wall's face still closes on it.
+An open-plan kitchen and living room, the two ends of a hall, a gallery's landing: spaces with no wall between them that should still be rooms of their own. **Architecture → Room separation** (<kbd>LS</kbd> for a line) draws a line that bounds rooms as a wall would, with no body: a **line** (chained, each click the start of the next; set to **Arc** in the command line's bar it is an arc: its start, its end, a point it passes through), a **polyline** (its corners, then <kbd>Enter</kbd>), a **rectangle** (two opposite corners: the zone inside it becomes a room of its own), or a **circle** (its centre, a point on it). Draw it from wall to wall; an end a hair short of a wall's face still closes on it.
 
 ![An open-plan kitchen and living room parted by a room separation line, each room with its own area](shots/room-dividers.webp)
 

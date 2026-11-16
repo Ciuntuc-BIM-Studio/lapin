@@ -10,6 +10,8 @@ Fila **Instalații** desenează instalațiile clădirii așa cum le schițează 
 
 ## Un sistem dintr-un clic
 
+Fila Instalații își adună uneltele în trei grupuri: **Sistem** (**Sistem nou** ▾ cu serviciile, **Editează sistemul**, **Sisteme…**, **Plan instalații**, **Porturi libere** și **Extrase** ▾), **Trasee** (**Traseu**, **Plasează nod**, editările traseului, **Închide bucla** și **Stradă** ▾) și **Suporturi de cabluri și ventilatoare** (**Jgheab de cabluri**, **Ventilatoare** ▾, **Pozează în suportul de cabluri**, **Tub spre gura de evacuare**, **Tipuri de ventilatoare**). Un buton cu ▾ deschide lista lui; fiecare unealtă își păstrează literele, iar **Comenzi…** și **Uneltele mele** o găsesc ca până acum.
+
 Sub **Sistem nou**, alege serviciul (**Încălzire**, **Apă**, **Apă caldă**, **Canalizare**, **Electrice**, **Ventilație**) și dă clic în plan. Lapin plasează sistemul întreg: sursa unde ai dat clic, un prim consumator la câțiva metri și traseul dintre ei. Sistemul se deschide pentru editare.
 
 ![Un sistem de încălzire pe planul parterului: centrala, două radiatoare sub ferestre și traseele dintre ele](shots/mep-plan.webp)
@@ -51,7 +53,7 @@ Fiecare nod are un **rol**: centrală, radiator, distribuitor, apometru, lavoar,
 
 ## Planuri, liste și IFC
 
-**Plan instalații** face un plan al disciplinei MEP pentru nivel, pus în setul MEP din navigator. **Lista de echipamente** și **lista de trasee** de sub **Sistem** sunt tabele ca oricare altele: merg pe planșe și se exportă cu ele.
+**Plan instalații** face un plan al disciplinei MEP pentru nivel, pus în setul MEP din navigator. **Lista de echipamente** și **lista de trasee** de sub **Sistem → Extrase** sunt tabele ca oricare altele: merg pe planșe și se exportă cu ele.
 
 La exportul IFC fiecare sistem e un IfcDistributionSystem, fiecare nod și traseu își are porturile IfcDistributionPort, iar conexiunile se scriu între porturi, așa că rețeaua ajunge în alt program conectată de la sursă la ultimul consumator.
 
@@ -69,7 +71,7 @@ Fiecare aparat își păstrează **consumul** (m³/h) și **tipul aparatului** d
 
 ### Alimentarea din stradă
 
-Din **Stradă**, **Conductă de gaz de-a lungul…** (<kbd>GM</kbd>) pozează o conductă de gaz de-a lungul a ce alegi — un drum, un aliniament, o linie desenată, un perete — la **distanța față de linie** și **adâncimea (acoperirea)** din bara liniei de comandă; sub un teren adâncimea se ia de la sol, altfel de la nivel. **Conductă de gaz** o desenează punct cu punct. Conducta intră într-un sistem de gaz de presiune medie, din țeavă de PE, cu **banda de avertizare**.
+Din **Trasee → Stradă**, **Conductă de gaz de-a lungul…** (<kbd>GM</kbd>) pozează o conductă de gaz de-a lungul a ce alegi — un drum, un aliniament, o linie desenată, un perete — la **distanța față de linie** și **adâncimea (acoperirea)** din bara liniei de comandă; sub un teren adâncimea se ia de la sol, altfel de la nivel. **Conductă de gaz** o desenează punct cu punct. Conducta intră într-un sistem de gaz de presiune medie, din țeavă de PE, cu **banda de avertizare**.
 
 **Branșament** (<kbd>GS</kbd>): alege conducta, apoi firida. Lapin pune un **teu de branșament** pe conductă, pozează țeava de branșament perpendicular pe ea la adâncimea ei și mai departe până la firidă, și urcă în firidă acolo.
 
@@ -81,7 +83,7 @@ Din **Stradă**, **Conductă de gaz de-a lungul…** (<kbd>GM</kbd>) pozează o 
 
 ![Valorile implicite ale unui sistem de gaz: gazul și treapta de presiune](shots/mep-gas-systems.webp)
 
-**Antemăsurătoare gaze și motorină** din **Sistem** listează, sistem cu sistem, țevile pe material și diametru cu lungimea lor (și din ea coloanele), coturile, teurile și tuburile de protecție, banda de avertizare, robinetele, contoarele și firidele, și aparatele cu consumul și puterea instalate. În IFC un sistem de gaz este un IfcDistributionSystem de tip GAS, iar unul de motorină FUEL; firida este un IfcDistributionChamberElement, contorul un IfcFlowMeter GASMETER, robinetele IfcValve, aragazul un IfcBurner, rezervorul un IfcTank.
+**Antemăsurătoare gaze și motorină** din **Sistem → Extrase** listează, sistem cu sistem, țevile pe material și diametru cu lungimea lor (și din ea coloanele), coturile, teurile și tuburile de protecție, banda de avertizare, robinetele, contoarele și firidele, și aparatele cu consumul și puterea instalate. În IFC un sistem de gaz este un IfcDistributionSystem de tip GAS, iar unul de motorină FUEL; firida este un IfcDistributionChamberElement, contorul un IfcFlowMeter GASMETER, robinetele IfcValve, aragazul un IfcBurner, rezervorul un IfcTank.
 
 ![Antemăsurătoarea de gaze și motorină](shots/mep-gas-list.webp)
 
@@ -89,7 +91,7 @@ Dimensionarea țevilor după consumul aparatelor și verificarea căderii de pre
 
 ## Protecție la incendiu
 
-**Semnalizare incendiu** și **Hidranți** sunt servicii separate sub **Sistem nou**, cu uneltele lor în grupurile **Semnalizare incendiu** și **Hidranți**.
+**Semnalizare incendiu** și **Hidranți** sunt servicii separate sub **Sistem nou**, dispozitivele lor se pun cu **Plasează nod**, iar bucla se închide cu **Închide bucla** în grupul **Trasee**.
 
 **Sistem nou → Semnalizare incendiu** pune **centrala de detectare și semnalizare incendiu** unde dai clic și un prim **detector de fum** lângă ea, legate prin cablul buclei. Fiecare dispozitiv pus după aceea (**Detector de fum** <kbd>SD</kbd>, **Detector de temperatură** <kbd>HD</kbd>, **Declanșator manual de alarmă** <kbd>MC</kbd>, **Sirenă**, **Sirenă cu flash**) se leagă la capătul liber al buclei, adică la dispozitivul pus înaintea lui. Cablul merge de la un dispozitiv la următorul în ordinea în care le pui. **Închide bucla** aduce cablul de la ultimul dispozitiv înapoi la returul centralei, așa că bucla e alimentată de la ambele capete. Cablul este un cablu rezistent la foc, pe tavan.
 
@@ -103,7 +105,7 @@ Fiecare detector își arată **acoperirea** ca un cerc punctat. Implicit raza v
 
 ![Bucla de semnalizare incendiu și hidranții în 3D](shots/mep-fire-3d.webp)
 
-**Antemăsurătoare protecție la incendiu** din **Sistem** listează, sistem cu sistem:
+**Antemăsurătoare protecție la incendiu** din **Sistem → Extrase** listează, sistem cu sistem:
 
 - centralele, detectoarele, declanșatoarele manuale și sirenele;
 - cablul buclei cu lungimea lui și dacă fiecare buclă e închisă;
@@ -118,7 +120,7 @@ Amplasarea detectoarelor încăpere cu încăpere după tabelul de proiectare ș
 
 ## Ventilatoare de evacuare
 
-Grupul **Ventilatoare** din fila Instalații pune ventilatoare de baie și de bucătărie ca elemente ale lor, fiecare de un tip pe care îl configurezi:
+**Ventilatoare** (din grupul **Suporturi de cabluri și ventilatoare** al filei Instalații) pune ventilatoare de baie și de bucătărie ca elemente ale lor, fiecare de un tip pe care îl configurezi:
 
 - **Ventilator de perete** (<kbd>VF</kbd>): un ventilator axial pe perete, care suflă direct prin el;
 - **Ventilator de tavan**: un ventilator sub tavan, cu un tub care iese din lateral;
@@ -167,7 +169,7 @@ IFC scrie un ventilator ca **IfcFan** al unui **IfcFanType**, cu felul lui prede
 
 ## Jgheaburi de cabluri și canale
 
-Grupul **Suporturi de cabluri** din fila Instalații desenează ce poartă cablurile: **scări de cabluri**, **jgheaburi perforate** și **pline**, **canale de cablu** (o cutie închisă, cu capac) și **tuburi de protecție**.
+Grupul **Suporturi de cabluri și ventilatoare** din fila Instalații desenează ce poartă cablurile: **scări de cabluri**, **jgheaburi perforate** și **pline**, **canale de cablu** (o cutie închisă, cu capac) și **tuburi de protecție**.
 
 **Jgheab de cabluri** (<kbd>CT</kbd>) desenează un suport ca pe un traseu: clic pe punctele lui în plan, Enter (sau un clic pe ultimul punct) îl încheie. Tronsoanele se așază în pași de 45°, deci se întoarce la 45° sau 90°. Bara liniei de comandă alege tipul și **cota** (2,4 m peste nivel, implicit). Tipurile sunt cele ale proiectului și cele incluse în Lapin, grupate pe feluri: jgheaburi 100×60, 200×60, 300×60 și 400×100, un jgheab plin 200×60, scări 300×100 și 600×100, canale 40×40, 60×40 și 100×60, tuburi Ø20, Ø25 și Ø32. Dimensiunile și limitele incluse sunt orientative: verificați-le cu datele producătorului.
 
