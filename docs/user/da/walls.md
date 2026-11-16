@@ -109,6 +109,16 @@ Under et tag går en vægs lag op til taget; en **Top**-forlængelse flytter lag
 
 ![Rediger lag i snit: grebene for dækkets lag, hvor snittet krydser deres kanter](shots/layer-edit-section.webp)
 
+### Trim, forlængelse, opdeling og forskydning af vægge
+
+**Redigér → Trim/forlæng elementer** (TRIMEXTEND eller TE på kommandolinjen) virker som i Revit. Vælg først grænsen: en væg, en bjælke eller et stribefundament (dets akse eller dets flade: svar **N** for den nære flade eller **F** for den fjerne, **A** går tilbage til aksen), eller en tegnet linje, et polylinjesegment, en bue eller en cirkel. Klik derefter på væggene én ad gangen, hver på den del, der skal bevares: enden bag grænsen trimmes tilbage, og en væg, der ikke når frem, får sin nærmeste ende ført helt hen til grænsen. En buet væg fortsætter ad sin cirkel. En væg, der føres til en anden væg's akse, samles med den dér. Døre, vinduer og åbninger bliver, hvor de er i planen; en, der ville ramme den bortskårne del, afvises. <kbd>Enter</kbd> afslutter, <kbd>Esc</kbd> annullerer. Hver væg er ét trin at fortryde. Kommandolinjens TRIM og EXTEND tager også en væg, der er klikket på i en plan.
+
+**Redigér → Opdel element** (SPLITELEMENT eller SPLIT) skærer en væg over, hvor du klikker: to vægge. Den første beholder id'et (dens GlobalId i IFC) og delen fra væggens start; den anden er en kopi af den (type, etage, lag, egenskaber, grupper) og overtager samlingerne i den fjerne ende. De to mødes i en samling i forlængelse. Døre, vinduer og åbninger går til den del, de står i; en, der ligger hen over snittet, afvises (*lies across the cut*). Skriv **I** (Skæring) for at vælge væggen og derefter det, der skærer den, et andet element eller en tegnet linje eller bue, og skære dér; **P** går tilbage til Punkt.
+
+**Redigér → Forskyd element** (kommandolinjens OFFSET, som nu tager elementer): skriv afstanden i projektets enhed, klik på en væg i en plan og derefter på siden, hvor kopien skal ligge. Kopien er parallel med væggen, koncentrisk for en buet væg, med samme type, lag og åbninger. **A** (Akse, standard) måler fra aksen, **F** (Flader) fra væggens flade, så kopiens flade står afstanden fra den; **T** (Gennem) tager et punkt, kopien går gennem.
+
+![To vægge trimmet til en grænse, og en væg med en dør delt i to](shots/wall-split-trim.webp)
+
 ## Vægtyper
 
 En vægtype er et sæt lag, fra siden til højre for den retning, væggen tegnes i (ydersiden, når du tegner rundt om en bygning mod uret), til siden til venstre. Hvert lag har et materiale og en tykkelse, og ét lag er **Kerne**. Væggens linje løber langs kernen. Du redigerer typerne under **Arkitektur → Vægtyper**. Et andet lag end kernen kan have sin egen højde: **Fra** og **Op til** angiver, hvor højt det går over væggens fod (fliser op til 1500, en beklædning fra 300); tomt går det i hele højden.

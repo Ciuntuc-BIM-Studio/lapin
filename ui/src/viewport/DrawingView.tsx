@@ -10,7 +10,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Maximize } from 'lucide-react';
+import { FileText, Maximize } from 'lucide-react';
 import { select, setTool, useUi } from '../app/store';
 import { usePaneActive, usePaneField } from '../app/pane';
 import { execute, useSession } from '../engine/session';
@@ -53,16 +53,20 @@ import { liveBegin, liveCursor, liveEnd, livePoint, liveTaken, useLive } from '.
 import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelGesture, wheelZoom, type View2, type ZoomHost } from './zoom';
 import { ScaleChip, ScalePicker, StructurePicker } from './ScaleChip';
 import { KeyPlan } from './KeyPlan';
+import { isPaperView, openSheetOf, sheetOfPaper } from './paperView';
 import { insetUnder as insetUnderMarks, PLACES_INSETS } from './insetMap';
 import { tagTargets, trackTagHover, useTagHover, viewHasTags } from './tagTarget';
 
 type View = View2;
-const clampScale = (s: number) => Math.min(4000, Math.max(2, s));
+/** How far a view zooms in (px per metre): a sheet's paper, 1:1, much further (decision 620). */
+const maxScaleOf = (id: string | null | undefined) => (isPaperView(id) ? 400000 : 4000);
 
 export function DrawingView() {
   const id = usePaneField('drawingViewId');
   const active = usePaneActive();
   const node = useSession((s) => (id ? s.nodes.get(id) : undefined));
+  // A sheet's paper (decision 620): the sheet it is of.
+  const paperSheet = useSession((s) => { const sh = sheetOfPaper(id); return sh ? s.nodes.get(sh) : undefined; });
   const nodes = useSession((s) => s.nodes);
   const selected = useUi((s) => s.selected);
   const relations = useSession((s) => s.relations);
@@ -116,11 +120,13 @@ export function DrawingView() {
     return () => ro.disconnect();
   }, []);
 
+  const maxScale = maxScaleOf(id);
+  const clampScale = (s: number) => Math.min(maxScale, Math.max(2, s));
   const fit = useCallback(() => {
     const b = drawing?.bounds;
     if (!b || !size.w) return;
-    go(framing(b, size, 0.85, 2, 4000));
-  }, [drawing?.bounds, size, go]);
+    go(framing(b, size, 0.85, 2, maxScale));
+  }, [drawing?.bounds, size, go, maxScale]);
   useEffect(() => { setView(recall<View>(id ?? 'drawing:none') ?? null); }, [id]);
   useEffect(() => { if (!view && drawing?.bounds) fit(); }, [drawing, view, fit]);
 
@@ -132,10 +138,10 @@ export function DrawingView() {
       for (const m of drawing?.marks ?? []) if (markSelected(m.id, shown)) for (let k = 0; k + 1 < m.segments.length; k += 2) pts.push({ x: m.segments[k], y: m.segments[k + 1] });
       const b = boundsOf(pts);
       if (!b || !size.w) return false;
-      go(framing(b, size, 0.6, 2, 4000));
+      go(framing(b, size, 0.6, 2, maxScale));
       return true;
     },
-    zoomWindow: (a, b) => go(framing([Math.min(a.x, b.x), Math.min(a.y, b.y), Math.max(a.x, b.x), Math.max(a.y, b.y)], size, 0.95, 2, 4000)),
+    zoomWindow: (a, b) => go(framing([Math.min(a.x, b.x), Math.min(a.y, b.y), Math.max(a.x, b.x), Math.max(a.y, b.y)], size, 0.95, 2, maxScale)),
     actual: () => go({ ...v, scale: clampScale(actualScale(drawing?.scale ?? 100)) }),
     zoomBy: (f) => go({ ...v, scale: clampScale(v.scale * f) }),
     previous: () => { const p = popHistory<View>(key); if (!p) return false; setView(p); return true; },
@@ -344,18 +350,25 @@ export function DrawingView() {
   return (
     <div className="view-pane">
       <div className="view-toolbar">
-        <span className="view-title">{node?.name ?? 'View'} · 1:{drawing?.scale ?? 100}</span>
+        {paperSheet ? (
+          <>
+            {/* A sheet's paper (decision 620): what is drawn here prints on the sheet; its views are arranged on the sheet itself. */}
+            <span className="view-title">{String(paperSheet.props.number ?? '')} · {paperSheet.name} · <span className="muted">drawing on the sheet</span></span>
+            <button type="button" className="icon" data-testid="paper-back" title="Back to the sheet: place, move and crop its views there"
+              onClick={() => { const to = openSheetOf(id!); if (to) useUi.setState(to); }}><FileText size={14} /><span className="small">Sheet</span></button>
+          </>
+        ) : <span className="view-title">{node?.name ?? 'View'} · 1:{drawing?.scale ?? 100}</span>}
 {(drawing?.lineworkOrphans?.length ?? 0) > 0 && id && (
           <button type="button" className="chip warn" title="The edges they were on are gone: remove them" onClick={() => void execute('view.lineworkReset', { id: id, orphans: true })}>
             {drawing!.lineworkOrphans!.length} line edit(s) lost their edge · clean
           </button>
         )}
-        <ScalePicker viewId={id} scale={drawing?.scale ?? Number(node?.props.scale ?? 100)} />
-        {node?.props.kind !== 'plane' && <StructurePicker viewId={id} kind={typeof node?.props.kind === 'string' ? node.props.kind : null} />}
+        {!paperSheet && <ScalePicker viewId={id} scale={drawing?.scale ?? Number(node?.props.scale ?? 100)} />}
+        {!paperSheet && node?.props.kind !== 'plane' && <StructurePicker viewId={id} kind={typeof node?.props.kind === 'string' ? node.props.kind : null} />}
         <ScaleChip pxPerMetre={v.scale} scale={drawing?.scale ?? 100} onActual={host.actual} />
         <button type="button" className="icon" title="Fit (ZE)" onClick={fit}><Maximize size={14} /></button>
       </div>
-      <KeyPlan mode="drawing" viewId={id} />
+      {!paperSheet && <KeyPlan mode="drawing" viewId={id} />}
       <svg ref={ref} className={`plan-svg drawing-svg${tool?.gesture || cadStep?.want === 'point' ? ' tool' : tool || cadStep ? ' pick' : hoverId ? ' pick' : ''}`} data-testid="drawing"
         onWheel={(e) => {
           // A wheel, a pinch or two fingers up and down zoom; two fingers sideways or Shift pan; one or the other for a whole run.

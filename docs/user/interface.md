@@ -287,6 +287,8 @@ The gear in the command line's bar lists what is carried, and Lapin remembers yo
 
 ![Match properties in plan: the wall copied from, the wall under the cursor lit, and what is carried](shots/match-properties.webp)
 
+To remove a whole property set from an element or a type, use the button named after the set under its parameters in **Properties → Parameters** (the set's name beside a bin): every parameter in that set goes in one undo step.
+
 ## Parameters worked out by formulas
 
 A parameter of your own that is a number, a length, an area, an angle, a yes/no or a text (not a choice) can be worked out instead of typed. In **Properties → Parameters**, press the **Σ** button before its value: the value becomes a **formula** field. Type the formula and press <kbd>Enter</kbd> (or leave the field) to keep it. Under the field Lapin shows what the formula gives, *= 21*, or why it does not read; a formula that does not read is not kept. Press **Σ** again to go back to a value: the last result stays as the value.

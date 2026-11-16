@@ -240,7 +240,7 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
             plus={set && <button type="button" className="icon mini" title="New sheet" onClick={() => void execute('sheet.create', { name: 'Sheet', paper: 'A3', discipline }).then((r) => { const n = made(r); if (n) showSheet(n); })}><Plus size={12} /></button>}>
             {(item) => (
               <Row item={item} on={view === 'sheet' && ui.sheetId === item.id} open={() => showSheet(item.id)}>
-                <button type="button" className="icon mini" title="Duplicate the sheet (paper and title block, without its views)" onClick={() => duplicateSheet(item.id)}><Copy size={11} /></button>
+                <button type="button" className="icon mini" title="Duplicate the sheet (paper, title block and what is drawn on it, without its views)" onClick={() => duplicateSheet(item.id)}><Copy size={11} /></button>
               </Row>
             )}
           </Kind>

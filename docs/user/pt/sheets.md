@@ -42,6 +42,23 @@ As folhas, seu PDF, Imprimir e a emissão o desenham com os valores de cada folh
 
 ![A folha com seu próprio carimbo](shots/sheet-title-block.webp)
 
+## Desenhar na prancha
+
+Notas, marcas e legendas que pertencem à prancha e não a uma das suas vistas desenham-se na própria prancha. Clique em **Anotar** na barra da prancha, ou dê um duplo clique no papel fora das vistas (**Anotar → Anotar prancha** faz o mesmo). A prancha abre-se no painel de desenho como o seu papel, em 1:1, com as vistas, a moldura e o carimbo por baixo, e a barra diz *desenho na prancha*. Todas as ferramentas de **Desenho** e **Anotar** funcionam ali como numa vista, em milímetros de papel: digite 50 e uma linha mede 50 mm no papel, e a altura de um texto é a sua altura no papel. Os pontos encaixam na moldura, no carimbo, nas caixas das vistas (azul tracejado) e no que as vistas desenham. **Prancha** na barra volta à disposição das vistas.
+
+- Os **textos** podem ter campos dinâmicos, como os de um carimbo: `Prancha {sheet.number} de {sheet.count}`, `{project.name}`, `{sheet.date}`. Numa vista, um texto fica como foi digitado.
+- **Nota com chamada** (Anotar → Texto): clique onde a seta aponta, depois onde fica o texto, e digite-o. Movida, a nota leva a seta consigo; **Linha de chamada → remover** nas suas propriedades tira a seta.
+- **Linhas, polilinhas, retângulos, círculos, arcos, hachuras, símbolos e imagens** são os das ferramentas de Desenho, com as suas alças, camadas e ferramentas de modificação. Uma seta de norte é um dos símbolos do Lapin (**Anotar → Símbolo**).
+- **Nuvem de revisão** (Desenho → Preenchimento, Anotar → Pranchas ou REVCLOUD na linha de comando): dois cantos, ou **P** para um polígono fechado com Enter. **Nuvem de revisão** nas propriedades de qualquer polilinha fechada ou círculo transforma-a em nuvem ou de volta, e define o seu arco no papel.
+- **Legenda** (Anotar → Pranchas): uma lista dinâmica do que as vistas da prancha desenham: os materiais com que os seus cortes são hachurados e preenchidos ou, com **Listas** nas suas propriedades, as suas linhas por função, tipo e espessura. Muda com as vistas e com o modelo, e o seu título também aceita campos.
+- **Escala gráfica** (Anotar → Pranchas): na escala da primeira vista da prancha ou na escala dada nas suas propriedades, com um comprimento redondo de cerca de 80 mm ou um que escolher. Numa planta, corte ou elevação, a escala gráfica toma a escala da vista.
+
+O que é desenhado na prancha imprime-se nela, por cima das vistas, exatamente como aparece: no seu PDF, em Imprimir e no seu DXF. Pertence à prancha: **Duplicar a prancha** (o seu botão no navegador do projeto) copia-o, com os símbolos colocados na prancha, e apagar a prancha apaga-o. Cada desenho é um passo de desfazer. As pranchas feitas antes não têm nada desenhado e imprimem-se como antes.
+
+![Desenho numa prancha: uma nota com chamada, uma nuvem de revisão, um texto dinâmico, uma legenda dos materiais da planta e uma escala gráfica](shots/sheet-annotations.webp)
+
+![A mesma prancha, como se imprime](shots/sheet-annotated.webp)
+
 ## Imprimir
 
 Os botões **PDF** e **DXF** na barra da prancha exportam a prancha. Um PDF está pronto para imprimir ou enviar. Um DXF abre no AutoCAD e em outros programas CAD com as suas camadas, linhas e hachuras. **Imprimir** envia a prancha para uma impressora ou plotter no tamanho de papel dela, em 1:1, como linhas vetoriais: escolha o plotter e o papel na caixa de diálogo de impressão. Em uma impressora menor, escolha ajustar à página.

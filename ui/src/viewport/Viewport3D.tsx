@@ -60,7 +60,7 @@ import { ucsOf, useLocation } from '../app/location';
 import { planePoint, refPlanesGroup, refPlanesKey, refPlanesOf } from './refPlanes';
 import { useRebar3d } from './rebar3d';
 import { useVoids3d, VOIDS_GROUP } from './voids3d';
-import { boxPlanes, modelBounds, planesKey, useSectionBox, type SectionBox } from './sectionBox';
+import { boxPlanes, modelBounds, planesKey, toggleSectionBoxHidden, useSectionBox, type SectionBox } from './sectionBox';
 import { alignSectionBox, commitBox, cutAtPlan, fitSectionBox } from './sectionBoxTools';
 import { useDrawing, type DrawingDto } from './drawing';
 import { CUT_LAYERS, cssColor, dashSegments, drawingPoint, penPixels, evenOddShapes, onCut, sectionPieces, sectionPlanes, sectionPose, textFont, textQuad, useClip3d, useSection3d, type ClipPlane, type DrawingText, type ViewFrameDto } from './section3d';
@@ -1622,6 +1622,7 @@ export function Viewport3D() {
   // The grid's axes, on the lowest storey: dash-dot lines with their labels at both ends.
   // Keyed on the grids and the lowest storey only, not on every diff.
   const grids = useSession(useShallow((st) => gridsOf(st.nodes)));
+  const gridHidden = useLooks(useShallow((st) => grids.map((g) => !!st.looks[g.id]?.hidden)));
   const base = useSession((st) => gridBase(st.nodes));
   useEffect(() => {
     const s = scene.current;
@@ -1630,7 +1631,9 @@ export function Viewport3D() {
     if (old) { s.remove(old); dispose(old); }
     const group = new THREE.Group();
     group.name = 'grid-axes';
-    for (const g of grids) {
+    for (let i = 0; i < grids.length; i++) {
+      if (gridHidden[i]) continue;
+      const g = grids[i];
       for (const ax of (g.props.axes as { tag: string; a: number[]; b: number[] }[] | undefined) ?? []) {
         const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(ax.a[0], ax.a[1], base + 0.01), new THREE.Vector3(ax.b[0], ax.b[1], base + 0.01)]);
         const line = new THREE.Line(geo, new THREE.LineDashedMaterial({ color: 0x8a5a44, dashSize: 0.6, gapSize: 0.25 }));
@@ -1651,7 +1654,7 @@ export function Viewport3D() {
     }
     s.add(group);
     invalidate.current();
-  }, [grids, base]);
+  }, [grids, gridHidden, base]);
 
   // Keep the scene in step with the engine's render items (rebuild only what changed).
   const render = useSession((st) => st.render);
@@ -1877,6 +1880,7 @@ export function Viewport3D() {
   const sectionNotes = useSection3d((st) => st.annotations);
   const capStyle = useSection3d((st) => st.caps);
   const box = useSectionBox((st) => st.box);
+  const boxHidden = useSectionBox((st) => st.hidden);
   useEffect(() => { remember3d(keyRef.current, { box }); }, [box]);
   const shown = sectionId && sectionDrawing?.frame && sectionDrawing.kind === 'section' ? sectionDrawing : null;
   // What cuts the model: the section shown (its plane, and its depth) and the section box's faces.
@@ -1997,13 +2001,15 @@ export function Viewport3D() {
           {box && !walkStart && (
             <span className="mode-chip section">
               <span>Section box</span>
-              <span className="mode-hint">Drag a face's arrow to move it</span>
+              {!boxHidden && <span className="mode-hint">Drag a face's arrow to move it</span>}
               <button type="button" onClick={fitSectionBox} title="The box round the whole model">Fit</button>
               <button type="button" onClick={() => void cutAtPlan()} title="The box's top at the active storey's plan cut">Cut at plan</button>
               <button type="button" onClick={alignSectionBox} title="Turn the box the way the selected element runs (a wall's axis)">Align</button>
               <button type="button" className="mode-toggle" aria-pressed={capStyle === 'drawing'} title="Draw the box's cuts as a sheet does (each material's cut fill and hatch) instead of the materials"
                 onClick={() => useSection3d.setState({ caps: capStyle === 'drawing' ? 'material' : 'drawing' })}>Hatches</button>
-              <button type="button" className="mode-close" title="Section box off" aria-label="Section box off" onClick={() => { useSectionBox.setState({ box: null }); commitBox(); }}><X size={12} /></button>
+              <button type="button" className="mode-toggle" aria-pressed={boxHidden} title="Hide the section box frame and handles while keeping the cut active"
+                onClick={toggleSectionBoxHidden}>{boxHidden ? 'Show box' : 'Hide box'}</button>
+              <button type="button" className="mode-close" title="Section box off" aria-label="Section box off" onClick={() => { useSectionBox.setState({ box: null, hidden: false }); commitBox(); }}><X size={12} /></button>
             </span>
           )}
           {storeysChip && (

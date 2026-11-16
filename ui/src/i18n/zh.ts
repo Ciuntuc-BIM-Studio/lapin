@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // Annotations drawn on a sheet itself (decision 620)
+  "drawing on the sheet": "图纸上的绘图", "Back to the sheet: place, move and crop its views there": "返回图纸：在那里放置、移动和裁剪其视图", "Draw on the sheet itself: texts, leader notes, lines, clouds, hatches, symbols, a legend, a scale bar (in paper mm)": "在图纸本身上绘制：文字、引线注释、线条、云线、填充图案、符号、图例、比例尺（以图纸毫米计）", "Revision cloud": "修订云线", "Leader note": "引线注释", "Annotate sheet": "注释图纸", "A legend goes on a sheet: open the sheet and click Annotate.": "图例放在图纸上：打开图纸并点击注释。", "Open a sheet first: then draw on it here.": "请先打开一张图纸：然后在这里在其上绘制。", "Revision cloud drawn.": "已绘制修订云线。", "First corner [Polygon]": "第一个角点 [多边形]", "Next point (Enter closes the cloud)": "下一点（Enter 闭合云线）", "First point": "第一点", "materials (hatches and fills)": "材料（填充图案和填充）", "line styles": "线型", "Its heading; {…} tokens as in a title block. Empty: LEGEND": "其标题；{…} 标记与图框中相同。为空：LEGEND", "Its length in metres of the model; empty: a round length about 80 mm long on paper": "其长度，以模型米计；为空：图纸上约 80 mm 的整数长度", "Divisions": "分段", "On a sheet: its own scale when it follows no view; empty: the sheet's first view's": "在图纸上：不跟随任何视图时其自身的比例；为空：图纸第一个视图的比例", "by view": "按视图", "Drawn as a revision cloud: scallops about this long on paper": "绘制为修订云线：图纸上弧长约为此值", "Change legend": "修改图例", "A legend goes on a sheet: open the sheet and annotate it.": "图例放在图纸上：打开图纸并注释它。", "A sheet's paper is not a view to place.": "图纸的纸面不是可放置的视图。", "A cloud's scallop is 1 to 100 mm.": "云线的弧长为 1 到 100 mm。",
   // Fixed schedules as shipped field-schedule templates, parts as rows (audit S1)
   "Shipped with Lapin": "随 Lapin 提供", "The schedules the modules ship, as field schedules: make one, then change it as you like or keep it as your own template.": "各模块提供的明细表,以字段明细表的形式:新建一个,然后随意修改,或保存为您自己的模板。", "One row for each element, or for each part of the elements (a plant of a planting, a timber member): the fields of the part first, then its element's.": "每个构件一行,或每个构件的每个部分一行(种植中的一株植物、一根木构件):先列部分的字段,再列其构件的字段。", "Show the grouping fields as the first columns": "将分组字段显示为前几列", "A number format instead of the decimals: 0.## at most two, 0.00 always two": "用数字格式代替小数位数:0.## 最多两位,0.00 始终两位", "Sort by": "排序依据", "The rows in the order of these fields; equal ones as the model has them. Nothing here: by their cells, left to right.": "行按这些字段的顺序排列;相同的按模型中的顺序。此处为空:按其单元格从左到右。", "Subtotals by": "小计依据", "A totals line for each value of these fields, after the rows.": "在各行之后,为这些字段的每个值添加一行合计。", "Total row under a single row too": "单独一行下方也显示合计行", "Number of items": "项目数", "Worked out on every ask, never stored (schedules and filters read it)": "每次查询时计算,从不存储(明细表和过滤器会读取它)", "Sunshade: kind": "遮阳:类型", "Sunshade: on (its window, wall or facade)": "遮阳:所在位置(其窗、墙或立面)", "Sunshade: length (mm)": "遮阳:长度 (mm)", "Sunshade: projection (mm)": "遮阳:挑出 (mm)", "Sunshade: area it shades (m²)": "遮阳:遮蔽面积 (m²)", "Sunshade: material": "遮阳:材料", "Gate: kind": "大门:类型", "Gate: kind's place in the list": "大门:类型在列表中的位置", "Gate: clear size (mm)": "大门:净尺寸 (mm)", "Gate: leaves": "大门:门扇", "Gate: infill": "大门:填充", "Gate: top": "大门:顶部", "Gate: piers": "大门:门柱", "Gate: motor": "大门:电机", "Elevator: kind": "电梯:类型", "Elevator: drive": "电梯:驱动", "Elevator: rated load (kg)": "电梯:额定载重 (kg)", "Elevator: persons": "电梯:人数", "Elevator: car (mm)": "电梯:轿厢 (mm)", "Elevator: doors (mm)": "电梯:门 (mm)", "Elevator: stops served / stops": "电梯:服务停靠站 / 停靠站", "Elevator: storeys served": "电梯:服务楼层", "Elevator: travel (m)": "电梯:行程 (m)", "Elevator: speed (m/s)": "电梯:速度 (m/s)", "Elevator: shaft, clear (mm)": "电梯:井道,净尺寸 (mm)", "Balcony: kind": "阳台:类型", "Balcony: width (m)": "阳台:宽度 (m)", "Balcony: depth (m)": "阳台:进深 (m)", "Balcony: area (m²)": "阳台:面积 (m²)", "Balcony: railing (m)": "阳台:栏杆 (m)", "Balcony: railing design": "阳台:栏杆样式", "Balcony: carried by": "阳台:支承方式", "Balcony: thermal break": "阳台:断热桥", "Balcony: its level (m)": "阳台:其标高 (m)", "Skirting: its type": "踢脚线:其类型", "Skirting: profile": "踢脚线:轮廓", "Skirting: height (mm)": "踢脚线:高度 (mm)", "Skirting: material": "踢脚线:材料", "Furniture: kind": "家具:类型", "Furniture: kind's place in the list": "家具:类型在列表中的位置", "Furniture: size (mm)": "家具:尺寸 (mm)", "Furniture: the room it stands in (number and name)": "家具:所在房间(编号和名称)", "MEP: role": "MEP:角色", "MEP: system": "MEP:系统", "MEP: duty": "MEP:负荷", "MEP: duty's unit": "MEP:负荷单位", "Scaffold: length (m), as built": "脚手架:长度 (m),按已建", "Scaffold: height (m), as built": "脚手架:高度 (m),按已建", "Scaffold: area (m²), as built": "脚手架:面积 (m²),按已建", "Scaffold: bays, as built": "脚手架:跨数,按已建", "Scaffold: lifts, as built": "脚手架:步数,按已建", "Scaffold: deck boards, as built": "脚手架:脚手板,按已建", "Scaffold: anchors, as built": "脚手架:锚固件,按已建", "Timber members": "木构件", "Roof timber members": "屋顶木构件", "Kind (tree, bush, grass)": "类型(乔木、灌木、草)", "Kind's place: trees, bushes, grasses": "类型的位置:乔木、灌木、草", "Height (m)": "高度 (m)", "Crown (m)": "冠幅 (m)", "Member's place in the list": "构件在列表中的位置", "Length (m, to 10 mm)": "长度 (m,精确到 10 mm)", "Walls, floors, roofs: its element's place": "墙、楼板、屋顶:其构件的位置",
   // Convert to… as the one place that makes something of drawn shapes (audit S12)
@@ -919,6 +921,7 @@ export const ZH: Record<string, string> = {
   'Structure types': '结构类型', 'Columns at grid': '轴网处布柱', 'Line': '直线', 'Polyline': '多段线', 'Rectangle': '矩形', 'Circle': '圆', 'Arc': '圆弧',
   'Move': '移动', 'Copy': '复制', 'Rotate': '旋转', 'Mirror': '镜像', 'Scale': '缩放', 'Erase': '删除', 'Delete': '删除', 'Offset': '偏移',
   'Trim': '修剪', 'Extend': '延伸', 'Fillet': '圆角', 'Chamfer': '倒角', 'Hatch': '填充图案', 'Reset': '重置',
+  'Trim/Extend elements': '修剪/延伸构件', 'Split element': '拆分构件', 'Offset element': '偏移构件',
   'Aligned': '对齐', 'Linear': '线性', 'Grid axis': '轴网轴线', 'Level': '标高', 'Sheet': '图纸', 'Extrude': '拉伸', 'Sweep': '扫掠', 'Revolve': '旋转成形',
   'Edit sketch': '编辑草图', 'Subtract': '差集', 'Union': '并集', 'Intersect': '交集', 'Show operands': '显示操作对象', 'Remove operation': '移除运算',
   'Terrain from points': '由点生成地形', 'Platform': '平台', 'Created here': '在此新建', 'Demolish': '拆除', 'Temporary': '临时',
@@ -942,6 +945,7 @@ export const ZH: Record<string, string> = {
   'Draw the box\'s cuts as a sheet does (each material\'s cut fill and hatch) instead of the materials': '按图纸的方式绘制剖面框的剖切面（各材料的剖切填充和填充图案），而不使用材料',
   'Select a wall, a beam or another element to turn the box the way it runs.': '选择墙、梁或其他构件，使剖面框转向其走向。', 'Cut at plan': '按平面剖切', 'Drag a face\'s arrow to move it': '拖动面的箭头以移动该面',
   'The box round the whole model': '包围整个模型的剖面框', 'The box\'s top at the active storey\'s plan cut': '剖面框顶部位于当前楼层平面图的剖切位置', 'Section box off': '关闭剖面框',
+  'Hide box': '隐藏框', 'Show box': '显示框', 'Hide the section box frame and handles while keeping the cut active': '隐藏剖面框的边框和控制柄，同时保持剖切有效',
   'Annotations': '注释', 'Show the section\'s dimensions, levels, tags and texts on the cut': '在剖切面上显示剖面的尺寸标注、标高、标记和文字',
   'A foundation plan of this level': '此标高的基础平面图', 'Draw a section line in the plan': '在平面图中绘制剖切线',
   'The four elevations': '四个立面', 'New sheet': '新建图纸', 'New schedule': '新建明细表', 'Delete the view': '删除视图', 'Delete the sheet': '删除图纸',
@@ -949,7 +953,7 @@ export const ZH: Record<string, string> = {
   'Organize the browser (sets)': '组织浏览器（集）', 'Organize the browser': '组织浏览器', 'Expand': '展开', 'Collapse': '折叠',
   'Duplicate the view (its settings)': '复制视图（含其设置）',
   'Duplicate with detailing (dimensions, texts, line edits)': '带详图复制（尺寸标注、文字、线条编辑）',
-  'Duplicate the sheet (paper and title block, without its views)': '复制图纸（图幅和图框，不含其视图）',
+  'Duplicate the sheet (paper, title block and what is drawn on it, without its views)': '复制图纸（图幅、图框及其上所绘内容，不含其视图）',
   'Duplicate the level with everything on it (Alt: an empty level)': '连同其上所有内容复制标高（Alt：空标高）',
   'Save the camera as a 3D view': '将相机保存为三维视图', 'Keep the camera as it is now': '保持相机当前状态',
   'The view keeps the camera as it is now.': '视图将保持相机当前状态。',
@@ -3908,6 +3912,10 @@ export const ZH: Record<string, string> = {
   "Drag to move the corner · Ctrl/⌘-click: remove this corner": "拖动以移动角点 · Ctrl/⌘-单击：删除此角点", "Drag to move the corner (an outline keeps three corners at least)": "拖动以移动角点（轮廓至少保留三个角点）", "Drag to move the edge · Ctrl/⌘-click: add a corner": "拖动以移动边 · Ctrl/⌘-单击：添加角点", "Drag the edge · Ctrl/⌘-click: add a corner": "拖动边 · Ctrl/⌘-单击：添加角点", "Drag · Ctrl/⌘-click: remove this corner": "拖动 · Ctrl/⌘-单击：删除此角点", "Remove corner": "删除角点", "Add corner here": "在此添加角点", "Swatches: recent colours and palettes": "色板：最近使用的颜色和调色板", "None yet": "暂无", "Project palette": "项目调色板", "Add this colour": "添加此颜色", "Edit palettes…": "编辑调色板…", "Colour swatches": "色板", "Colour to add": "要添加的颜色", "Remove the colour": "删除该颜色", "Add the colours of the materials in use": "添加正在使用的材料的颜色", "Palette name": "调色板名称", "Move the palette up": "上移调色板", "Move the palette down": "下移调色板", "Delete the palette": "删除调色板", "New palette": "新建调色板", "Open a project to keep a palette in it.": "打开一个项目，才能在其中保存调色板.", "Kept in the project: everyone who opens it sees these swatches.": "保存在项目中：打开该项目的人都会看到这些色板.", "My palettes": "我的调色板", "What the colour fields' swatch button offers: the colours chosen lately (automatic), the project's palette and your own palettes.": "颜色字段的色板按钮提供：最近选用的颜色（自动）、项目调色板和您自己的调色板.", "Selection and preselection": "选择与预选", "Preselection highlight: light up what the cursor is over before a click, in plans, sections, sheets and 3D": "预选高亮：在单击前点亮光标所指的对象，适用于平面图、剖面、图纸和 3D", "Preselection colour": "预选颜色", "Selection colour": "选择颜色",
   // Curved edges, fillets and chamfers on outlines, outline tools' shapes (forum topic 97, stage 2)
   "Fillet corner…": "圆角…", "Chamfer corner…": "倒角…", "Fillet corner": "圆角", "Chamfer corner": "倒角", "Make arc": "改为弧线", "Make straight": "改为直线", "Drag to bend the edge through the point": "拖动使边弯曲通过该点", "Inside walls": "墙体内部", "Click the corners, then the first one again (or Enter)": "单击各角点，然后再次单击第一个（或按 Enter）", "Two opposite corners": "两个对角点", "Its centre, then a point on it (or its radius typed)": "圆心，然后圆上一点（或输入半径）", "Click inside the walls that close round it": "在围合它的墙体内部单击", "The next edges are arcs, each going on tangent from the edge before": "接下来的边为弧线，每条都与前一条边相切", "Arcs (Space)": "弧线（空格）", "Lines (Space)": "直线（空格）",
+  "Its own outline": "自身轮廓", "A wall opening of the shape's outline, in the wall the view looks at.": "按图形轮廓在视图所对的墙上开洞。",
+  "Its centre, the end of one semi-axis, then the other semi-axis": "中心、一条半轴的端点，然后是另一条半轴", "End of one semi-axis": "一条半轴的端点", "Other semi-axis (a point or a value) · Arc (A)": "另一条半轴（点或数值）· 弧 (A)", "Other semi-axis (a point or a value)": "另一条半轴（点或数值）", "Start of the arc": "弧的起点", "End of the arc (anticlockwise)": "弧的终点（逆时针）", "Elliptical arc": "椭圆弧",
+  "From drawn shape": "取自绘制图形", "From room": "取自房间", "Click inside a closed drafted shape: a polyline, a rectangle, a circle": "在闭合的绘制图形内单击：多段线、矩形、圆", "Click inside a room: its outline": "在房间内单击：取其轮廓", "No walls close round that point.": "没有墙围合该点。", "Click inside a closed drafted shape (a closed polyline, a rectangle or a circle).": "请在闭合的绘制图形（闭合多段线、矩形或圆）内单击。", "Click inside a room.": "请在房间内单击。",
+  "Hole in the outline": "轮廓中的孔", "Hole in outline": "轮廓中的孔", "Hole in platform": "平台中的孔", "Drag to move the hole": "拖动以移动孔", "Remove hole": "删除孔",
   // Fillet and chamfer on walls and railings, railings with arcs (a user's request)
   "A railing along each line, arc or polyline; those meeting end to end make one.": "沿每条直线、圆弧或多段线生成一道栏杆；首尾相接的合为一道。", "One railing where they meet end to end": "首尾相接处合为一道栏杆", "Drag to bend the segment through the point": "拖动使该段弯曲通过该点",
   // Edit sketch on outlines (forum topic 97, stage 3)
@@ -3995,6 +4003,36 @@ export const ZH: Record<string, string> = {
   "Select an element a tool places (a wall, a door, a column, a piece of furniture…) to make more like it.": "选择一个由工具放置的图元（墙、门、柱、家具…），以创建更多相同的图元。",
   "A door's or window's opening: select the door or window to make more like it.": "门或窗的洞口：选择该门或窗以创建更多相同的。",
   "Place catalogue": "放置目录",
+  // S9: one Dimension tool, one Tag tool.
+  'One by one': '逐个', 'Baseline (from the first)': '基线（从第一点）',
+  'Smart': '智能',
+  'What it dimensions. Smart: two points, a line (a second line: the angle), a circle or an arc; Enter after the first point: its level': '标注什么。智能：两点、一条线（第二条线：角度）、圆或圆弧；第一点后按 Enter：该点的标高',
+  'Two points, or a line, make an aligned dimension or a linear one (horizontal or vertical)': '两点或一条线生成对齐标注或线性标注（水平或垂直）',
+  'Arcs: radius': '圆弧：半径',
+  'Arcs: diameter': '圆弧：直径',
+  'Arcs: arc length': '圆弧：弧长',
+  'What a circle or an arc clicked is given': '点击的圆或圆弧标注为什么',
+  'Chain': '连续',
+  'Single: one dimension at a time. Chain: each next point measured from the last, one string (C). Baseline: each next point measured from the first, on a line of its own (B)': '单个：一次一个标注。连续：每个下一点从上一点量起，成一条尺寸链（C）。基线：每个下一点从第一点量起，各在自己的尺寸线上（B）',
+  'Exterior': '外部',
+  'Room dimensions: strings inside the selected rooms, or every room of the plan (ID)': '房间尺寸：所选房间内的尺寸链，或平面中每个房间的（ID）',
+  'Exterior dimensions: strings outside the selected walls, or every facade of the plan (ED)': '外部尺寸：所选墙外的尺寸链，或平面中每个立面的（ED）',
+  'Points clicked into a dimension string (DIMADD)': '点击加入尺寸链的点（DIMADD）',
+  'Points taken out of a dimension string (DIMDEL)': '从尺寸链中移除的点（DIMDEL）',
+  'Dimension rules: the strings of exterior and room dimensions': '标注规则：外部尺寸和房间尺寸的尺寸链',
+  'Material / layers': '材料 / 层',
+  'Keynote': '注释代码',
+  'What it tags: an element, a room, a parameter by its name, a material or the layers (a build-up tag), a keynote (the classification\'s code)': '标记什么：构件、房间、按名称的参数、材料或层（构造标记）、注释代码（分类的代码）',
+  'What the room\'s tag shows': '房间标记显示什么',
+  'ROOM STAMPS…': '房间标签…',
+  'What every room\'s stamp shows on the plans, line by line': '每个房间的标签在平面图上显示什么，逐行',
+  'no build-up type': '无构造类型',
+  'A build-up tag type: the element\'s layers, a line each (Drafting standards → Tags)': '构造标记类型：构件的各层，每层一行（制图标准 → 标记）',
+  'TAG TYPES…': '标记类型…',
+  'The tag types: a build-up type\'s header, lines and leaders': '标记类型：构造类型的标题、行和引线',
+  'The element\'s classification (Manage → Classifications…): its code, or its title': '构件的分类（管理 → 分类…）：其代码或标题',
+  'ALL DOORS & WINDOWS': '所有门窗',
+  'Every door and window of the plan not tagged yet: a marker across its wall': '平面中尚未标记的每扇门和窗：横跨其墙的标记',
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [
@@ -4301,4 +4339,5 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^(\d+) dimension strings on (\d+) facades\.$/, (m) => `${m[2]} 个立面上共 ${m[1]} 道尺寸链.`],
   [/^Drawing made: (.+), 1:(\d+)\.$/, (m) => `图纸已生成：${m[1]}，1:${m[2]}。`],
   [/^Drawing made: (.+), 1:(\d+), but it does not fit; choose a larger paper or a smaller scale\.$/, (m) => `图纸已生成：${m[1]}，1:${m[2]}，但放不下；请选择更大的图纸或更小的比例。`],
+  [/^Remove all parameters in (.+)$/, (m) => `移除 ${m[1]} 中的所有参数`],
 ];

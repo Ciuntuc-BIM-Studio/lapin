@@ -159,4 +159,27 @@ public sealed class ParamScopeTests : IDisposable
         Assert.Null(a["value"]);
         Assert.NotNull((string?)a["error"]);
     }
+
+    [Fact]
+    public void Removing_a_property_set_drops_all_its_parameters_on_type_and_element()
+    {
+        var f = F();
+        var wall = (string)f.Run("architecture.addWall", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 4, ["y2"] = 0 })!["id"]!;
+        var type = f.Model.RelatingOf(wall, IfcClass.RelDefinesByType)!.Id;
+        Set(f, type, "FireRating", new JsonObject { ["pset"] = "Pset_WallCommon", ["kind"] = "text", ["value"] = "EI60" });
+        Set(f, type, "IsExternal", new JsonObject { ["pset"] = "Pset_WallCommon", ["kind"] = "bool", ["value"] = true });
+        Set(f, type, "Phase", new JsonObject { ["pset"] = "Office_Wall", ["kind"] = "text", ["value"] = "E1" });
+        Set(f, wall, "Code", new JsonObject { ["pset"] = "Office_Custom", ["kind"] = "text", ["value"] = "W1" });
+        Set(f, wall, "Note", new JsonObject { ["kind"] = "text", ["value"] = "Keep" });
+
+        f.Run("element.removePset", new JsonObject { ["ids"] = new JsonArray(type), ["pset"] = "Pset_WallCommon" });
+        var typeParams = f.Model.Get(type)!.Attrs["params"]!.AsArray().OfType<JsonObject>().ToList();
+        Assert.Single(typeParams);
+        Assert.Equal("Office_Wall", (string?)typeParams[0]["pset"]);
+
+        f.Run("element.removePset", new JsonObject { ["ids"] = new JsonArray(wall), ["pset"] = "Office_Custom" });
+        var wallParams = f.Model.Get(wall)!.Attrs["params"]!.AsArray().OfType<JsonObject>().ToList();
+        Assert.Single(wallParams);
+        Assert.Equal("Note", (string?)wallParams[0]["name"]);
+    }
 }

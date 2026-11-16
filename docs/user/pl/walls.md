@@ -109,6 +109,16 @@ Pod dachem warstwy ściany sięgają do dachu; przedłużenie **Góra** przesuwa
 
 ![Edycja warstw w przekroju: uchwyty warstw stropu tam, gdzie cięcie przecina ich krawędzie](shots/layer-edit-section.webp)
 
+### Przycinanie, wydłużanie, dzielenie i odsuwanie ścian
+
+**Modyfikuj → Utnij/wydłuż elementy** (TRIMEXTEND lub TE w wierszu poleceń) działa jak w Revicie. Najpierw wskaż granicę: ścianę, belkę lub ławę fundamentową (jej oś lub jej lico: odpowiedz **N** dla lica bliższego albo **F** dla dalszego, **A** wraca do osi), albo narysowaną linię, odcinek polilinii, łuk lub okrąg. Potem klikaj ściany jedna po drugiej, każdą na części, która ma zostać: koniec za granicą jest przycinany, a w ścianie, która nie sięga, bliższy koniec jest wydłużany do granicy. Ściana łukowa biegnie dalej po swoim okręgu. Ściana doprowadzona do osi innej ściany zostaje z nią tam połączona. Drzwi, okna i otwory zachowują miejsce w rzucie; ten, który wypadłby w odciętej części, jest odrzucany. <kbd>Enter</kbd> kończy, <kbd>Esc</kbd> anuluje. Każda ściana to jeden krok cofania. TRIM i EXTEND w wierszu poleceń przyjmują też ścianę klikniętą w rzucie.
+
+**Modyfikuj → Podziel element** (SPLITELEMENT lub SPLIT) przecina ścianę tam, gdzie klikniesz: powstają dwie ściany. Pierwsza zachowuje id (jej GlobalId w IFC) i część od początku ściany; druga jest jej kopią (typ, kondygnacja, warstwy, właściwości, grupy) i przejmuje połączenia na dalszym końcu. Obie spotykają się w połączeniu w linii. Drzwi, okna i otwory trafiają do części, w której stoją; ten, który leży w poprzek cięcia, jest odrzucany (*lies across the cut*). Wpisz **I** (Przecięcie), aby wskazać ścianę, a potem to, co ją przecina, inny element albo narysowaną linię lub łuk, i przeciąć tam; **P** wraca do Punktu.
+
+**Modyfikuj → Odsuń element** (OFFSET z wiersza poleceń, który teraz przyjmuje elementy): wpisz odległość w jednostce projektu, kliknij ścianę w rzucie, a potem stronę, po której ma leżeć kopia. Kopia jest równoległa do ściany, współśrodkowa dla ściany łukowej, z tym samym typem, warstwami i otworami. **A** (Oś, domyślnie) mierzy od osi, **F** (Lica) od lica ściany, tak że lico kopii leży w tej odległości od jej lica; **T** (Przez) bierze punkt, przez który przechodzi kopia.
+
+![Dwie ściany przycięte do granicy i ściana z drzwiami podzielona na dwie](shots/wall-split-trim.webp)
+
 ## Typy ścian
 
 Typ ściany to zestaw warstw, od lica po prawej stronie kierunku, w którym rysowana jest ściana (zewnętrznego, gdy rysujesz wokół budynku przeciwnie do ruchu wskazówek zegara), do lica po jej lewej. Każda warstwa ma materiał i grubość, a jedna warstwa jest **rdzeniem**. Linia ściany biegnie wzdłuż rdzenia. Aby edytować typy, wybierz **Architektura → Typy ścian**. Warstwa inna niż rdzeń może mieć własną wysokość: **Od** i **Do** określają, jak wysoko sięga ponad podstawę ściany (lamperia z płytek do 1500, okładzina od 300 w górę); gdy są puste, warstwa biegnie przez całą wysokość.

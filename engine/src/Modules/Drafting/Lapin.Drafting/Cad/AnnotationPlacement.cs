@@ -18,6 +18,10 @@ public sealed class AnnotationPlacement : IElementPlacement
         Arc a => t.Mirrored
             ? new Arc(t.Point(a.C), a.R, Geo.NormAngle(t.Angle(a.End)), Geo.NormAngle(t.Angle(a.Start)))
             : new Arc(t.Point(a.C), a.R, Geo.NormAngle(t.Angle(a.Start)), Geo.NormAngle(t.Angle(a.End))),
+        // Its parameters run from its own major axis; mirrored, that axis is taken the other way and t goes to π − t.
+        Ellipse el => t.Mirrored
+            ? new Ellipse(t.Point(el.C), t.Dir(el.M) * -1, el.Ratio, el.Whole ? 0 : Geo.NormAngle(Math.PI - el.End), el.Whole ? 0 : Geo.NormAngle(Math.PI - el.Start))
+            : el with { C = t.Point(el.C), M = t.Dir(el.M) },
         _ => s,
     };
 

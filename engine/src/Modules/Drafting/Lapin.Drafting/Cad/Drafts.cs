@@ -103,14 +103,14 @@ public static class Drafts
     public static IReadOnlyList<DraftedRun>? Runs(Entity e, IModelView m, IServices services)
     {
         if (e.Class != IfcClass.Annotation || e.PredefinedType != Predefined || ShapeOf(e) is not { } shape) return null;
-        var closed = shape is Circle || shape is Polyline { Closed: true };
+        var closed = shape is Circle || shape is Polyline { Closed: true } || shape is Ellipse { Whole: true };
         static List<T> Open<T>(List<T> run, bool closed) => closed && run.Count > 2 ? run[..^1] : run;
         if (e.Attrs["heights"] is JsonArray && Geometry3d(e, m, services) is { Lines: { Count: > 0 } lines })
             return [.. lines.Select(l => new DraftedRun(Open(l.ToList(), closed), closed))];
         if (Views.Find(m, e.Str("viewId") ?? "") is not { } view || view.Str("kind") is "3d") return null;
         var (lo, hi) = Geo.Bounds(shape);
         if (Views.PlaneOf(m, services, view, (lo.X + hi.X) / 2) is not { } plane) return null;
-        Vec3? centre = shape switch { Circle c => plane.World(c.C), Arc a => plane.World(a.C), _ => null };
+        Vec3? centre = shape switch { Circle c => plane.World(c.C), Arc a => plane.World(a.C), Ellipse el => plane.World(el.C), _ => null };
         return [.. Flatten(shape).Select(run => new DraftedRun(Open(run.Select(plane.World).ToList(), closed), closed, centre))];
     }
 
@@ -128,6 +128,8 @@ public static class Drafts
             Polyline { Pts.Count: >= 2 } p => [[.. p.Pts, .. p.Closed ? new[] { p.Pts[0] } : []]],
             Circle c when c.R > 1e-9 => [Round(c.C, c.R, 0, 2 * Math.PI)],
             Arc a when a.R > 1e-9 => [Round(a.C, a.R, a.Start, a.Sweep)],
+            // An ellipse by the one rule for curves (audit S4).
+            Ellipse el => [el.Points()],
             _ => [],
         };
     }
@@ -170,7 +172,7 @@ public static class Drafts
         ctx.Replace(e.With(attrs: attrs));
     }
 
-    static string Name(Shape s) => s switch { Line => "Line", Polyline { Closed: true } => "Polygon", Polyline => "Polyline", Circle => "Circle", Arc => "Arc", _ => "Shape" };
+    static string Name(Shape s) => s switch { Line => "Line", Polyline { Closed: true } => "Polygon", Polyline => "Polyline", Circle => "Circle", Arc => "Arc", Ellipse { Whole: true } => "Ellipse", Ellipse => "Elliptical arc", _ => "Shape" };
     static string Title(string role) => role switch { "endProfile" => "End profile", _ => char.ToUpperInvariant(role[0]) + role[1..] };
 
     /// <summary>A name no other drafted shape on the view has: the word and the next number (Line 12, Profile 3).</summary>
@@ -203,6 +205,7 @@ public static class Drafts
             {
                 case Polyline { Closed: true } p when p.Pts.Count >= 3: loops.Add(p.Pts); break;
                 case Circle c: loops.Add(Geo.Polylines(c)[0].SkipLast(1).ToList()); break;
+                case Ellipse { Whole: true } el: loops.Add(el.Points().SkipLast(1).ToList()); break;
             }
         if (Views.Generate(ctx.Query, view).Drawing is { } d) loops.AddRange(d.Cuts.SelectMany(c => c.Loops).Select(l => (IReadOnlyList<Vec2>)l));
         return loops;
@@ -264,8 +267,11 @@ public static class Drafts
             if (ShapeOf(e) is not { } shape) continue;
             // Construction lines: thin, dashed, grey, on a layer of their own that sheets and exports leave out.
             var construction = e.Str("role") == "draft";
+            // A revision cloud (decision 620): a closed shape drawn as scallops about as long as its arc (paper mm), bulging outwards.
+            var cloud = e.NumOrNull("cloud") is double arc && arc > 0 && shape is Polyline { Closed: true } or Circle ? arc : 0;
             foreach (var line in Geo.Polylines(shape))
                 if (construction) mk.Polyline(line, false, ConstructionLayer, Pens.Default.Hatch, "#8f98a3", [2, 1.5]);
+                else if (cloud > 0) mk.Polyline(Cloud(line, cloud * c.Mm), false, layer.Name, layer.Weight, color, layer.DashIn(c.Book));
                 else mk.Polyline(line, false, layer.Name, layer.Weight, color, layer.DashIn(c.Book));
             var k = Geo.Keys(shape);
             mk.Snaps.AddRange([.. k.Endpoints, .. k.Midpoints, .. k.Centers, .. k.Quadrants]);
@@ -275,4 +281,42 @@ public static class Drafts
     }
 
     static JsonObject Also(this JsonObject o, Action<JsonObject> f) { f(o); return o; }
+
+    /// <summary>
+    /// A closed ring drawn as a revision cloud: each side cut into scallops about <paramref name="arc"/> long (view units), each
+    /// a half circle bulging outwards (away from the ring's inside), laid in chords.
+    /// </summary>
+    public static List<Vec2> Cloud(IReadOnlyList<Vec2> ring, double arc)
+    {
+        var pts = ring.Count > 1 && (ring[0] - ring[^1]).Length < 1e-12 ? ring.Take(ring.Count - 1).ToList() : ring.ToList();
+        if (pts.Count < 3 || arc <= 0) return [.. ring];
+        var area = 0.0;
+        for (var i = 0; i < pts.Count; i++) area += Vec2.Cross(pts[i], pts[(i + 1) % pts.Count]);
+        var outwards = area >= 0 ? -1.0 : 1.0; // anticlockwise: the outside is on each side's right
+        var o = new List<Vec2> { pts[0] };
+        for (var i = 0; i < pts.Count; i++)
+        {
+            var (a, b) = (pts[i], pts[(i + 1) % pts.Count]);
+            var side = b - a;
+            var len = side.Length;
+            if (len < 1e-12) continue;
+            var n = Math.Max(1, (int)Math.Round(len / arc));
+            var d = side * (1 / len);
+            var normal = new Vec2(-d.Y, d.X) * outwards;
+            for (var k = 0; k < n; k++)
+            {
+                var (p, q) = (a + side * ((double)k / n), a + side * ((double)(k + 1) / n));
+                var mid = (p + q) * 0.5;
+                var h = (q - p) * 0.5;
+                var r = h.Length;
+                const int steps = 8;
+                for (var j = 1; j <= steps; j++)
+                {
+                    var t = Math.PI * j / steps;
+                    o.Add(mid - h * Math.Cos(t) + normal * (r * Math.Sin(t)));
+                }
+            }
+        }
+        return o;
+    }
 }

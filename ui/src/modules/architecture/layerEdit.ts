@@ -92,7 +92,7 @@ export function placeEdge(g: LayerEdgeGrip, layer: LayerOutline | undefined, v: 
   const per = Math.hypot(dv.x, dv.y);
   if (per < 0.7) return null;
   const along = { x: dv.x / per, y: dv.y / per };
-  let p: number[] | null = null;
+  let p: number[] | null;
   if (v.kind === 'section') {
     p = crossing(f, g.line);
     // An edge lying along the cut (a wall's end, the section running along the wall): where the cut runs through its layer.

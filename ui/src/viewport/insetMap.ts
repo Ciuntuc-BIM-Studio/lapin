@@ -83,5 +83,6 @@ export function mapShape(s: Shape, map: (p: Vec2) => Vec2): Shape {
     case 'polyline': return { type: 'polyline', pts: s.pts.map(map), closed: s.closed };
     case 'circle': return { type: 'circle', c: map(s.c), r: s.r * k };
     case 'arc': return { type: 'arc', c: map(s.c), r: s.r * k, start: s.start, end: s.end };
+    case 'ellipse': { const mm = map({ x: s.c.x + s.m.x, y: s.c.y + s.m.y }), c = map(s.c); return { ...s, c, m: { x: mm.x - c.x, y: mm.y - c.y } }; }
   }
 }

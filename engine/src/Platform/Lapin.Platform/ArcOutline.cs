@@ -37,12 +37,47 @@ public static class ArcOutline
         rises == null || rises.All(r => Math.Abs(r) <= 1e-6) ? null : new JsonArray([.. rises.Select(r => (JsonNode)Math.Round(Math.Abs(r) <= 1e-6 ? 0 : r, 9))]);
 
     /// <summary>Writes the rises into the attributes, or takes them away when every edge is straight.</summary>
-    public static void Write(JsonObject attrs, IReadOnlyList<double>? rises)
+    public static void Write(JsonObject attrs, IReadOnlyList<double>? rises, string arcsKey = Key)
     {
-        if (ToJson(rises) is { } j) attrs[Key] = j; else attrs.Remove(Key);
+        if (ToJson(rises) is { } j) attrs[arcsKey] = j; else attrs.Remove(arcsKey);
     }
 
     public static bool HasArcs(IReadOnlyList<double>? rises) => rises != null && rises.Any(r => Math.Abs(r) > 1e-6);
+
+    /// <summary>
+    /// The corners an element keeps under <paramref name="key"/> (a floor's, a room's, a platform's <c>contour</c>; a terrain's
+    /// <c>parcel</c>), whatever its edges.
+    /// </summary>
+    public static List<Vec2> CornersOf(Entity e, string key = "contour") => Args.StoredPoints(e.Attrs[key]);
+
+    /// <summary>The rises an element keeps under <paramref name="arcsKey"/> beside its corners under <paramref name="key"/>; null when every edge is straight.</summary>
+    public static double[]? RisesOf(Entity e, string key = "contour", string arcsKey = Key) =>
+        e.Attrs[arcsKey] is JsonArray ? Rises(e.Attrs[arcsKey], CornersOf(e, key).Count) : null;
+
+    /// <summary>The outline an element keeps, as built: its corners, each arc laid in chords by the one rule (the corners alone when every edge is straight).</summary>
+    public static IReadOnlyList<Vec2> BuiltOf(Entity e, string key = "contour", string arcsKey = Key)
+    {
+        var c = CornersOf(e, key);
+        var el = key == "contour" ? EllipseEdge.Of(e) : null;
+        return c.Count >= 3 && (RisesOf(e, key, arcsKey) is { } || el != null) ? Points(c, RisesOf(e, key, arcsKey), null, el) : c;
+    }
+
+    /// <summary>
+    /// The rises a command gives (<paramref name="arcs"/>: one per corner given), else, when only the corners are given, the ones the
+    /// element had (<paramref name="was"/>) while it has as many corners; null when every edge is straight (the element's own
+    /// straight-outline check then applies, unchanged).
+    /// </summary>
+    public static double[]? RisesArg(JsonNode? arcs, int corners, double[]? was = null)
+    {
+        double[]? r = arcs is JsonArray arr ? [.. arr.Select(x => Json.Number(x) ?? 0)] : was != null && was.Length == corners ? was : null;
+        return r != null && HasArcs(r) ? r : null;
+    }
+
+    /// <summary>The area an element's kept outline encloses, exactly (its arcs as arcs), unsigned.</summary>
+    public static double AreaOf(Entity e, string key = "contour", string arcsKey = Key) => Math.Abs(SignedArea(CornersOf(e, key), RisesOf(e, key, arcsKey), key == "contour" ? EllipseEdge.Of(e) : null));
+
+    /// <summary>The length round an element's kept outline, its arcs at their own length.</summary>
+    public static double PerimeterOf(Entity e, string key = "contour", string arcsKey = Key) => Perimeter(CornersOf(e, key), RisesOf(e, key, arcsKey), key == "contour" ? EllipseEdge.Of(e) : null);
 
     static double At(IReadOnlyList<double>? rises, int i) => rises != null && i < rises.Count ? rises[i] : 0;
 
@@ -54,12 +89,19 @@ public static class ArcOutline
     /// The outline as points, each arc laid in chords no more than <see cref="Chords.Tolerance"/> off it; <paramref name="edgeOf"/>
     /// gets, for each edge of what comes out, the edge of the outline it lies on.
     /// </summary>
-    public static List<Vec2> Points(IReadOnlyList<Vec2> corners, IReadOnlyList<double>? rises, List<int>? edgeOf = null)
+    public static List<Vec2> Points(IReadOnlyList<Vec2> corners, IReadOnlyList<double>? rises, List<int>? edgeOf = null, IReadOnlyList<EllipseEdge?>? ellipses = null)
     {
         var o = new List<Vec2>();
         var n = corners.Count;
         for (var i = 0; i < n; i++)
         {
+            // An edge along an ellipse (audit S4), laid by the one rule too.
+            if (ellipses != null && i < ellipses.Count && ellipses[i] is { } el)
+            {
+                var along = el.Points(corners[i], corners[(i + 1) % n]);
+                for (var k = 0; k + 1 < along.Count; k++) { o.Add(along[k]); edgeOf?.Add(i); }
+                continue;
+            }
             var c = Edge(corners, rises, i);
             if (!c.IsArc) { o.Add(corners[i]); edgeOf?.Add(i); continue; }
             var stations = c.Stations(0, c.Length);
@@ -70,12 +112,21 @@ public static class ArcOutline
     }
 
     /// <summary>The area the outline encloses, positive counter-clockwise, exactly: its corners' polygon and, for each arc, the circular segment off its chord.</summary>
-    public static double SignedArea(IReadOnlyList<Vec2> corners, IReadOnlyList<double>? rises)
+    public static double SignedArea(IReadOnlyList<Vec2> corners, IReadOnlyList<double>? rises, IReadOnlyList<EllipseEdge?>? ellipses = null)
     {
         var a = Polygon2.SignedArea(corners);
+        // An elliptical edge (audit S4): its own term in place of its chord's, exactly.
+        if (ellipses != null)
+            for (var i = 0; i < corners.Count && i < ellipses.Count; i++)
+                if (ellipses[i] is { } el)
+                {
+                    var (p, q) = (corners[i], corners[(i + 1) % corners.Count]);
+                    a += el.AreaTerm(p, q) - Vec2.Cross(p, q) / 2;
+                }
         if (rises == null) return a;
         for (var i = 0; i < corners.Count; i++)
         {
+            if (ellipses != null && i < ellipses.Count && ellipses[i] != null) continue;
             var c = Edge(corners, rises, i);
             if (!c.IsArc) continue;
             var (r, t) = (c.Radius, c.Sweep);
@@ -86,10 +137,11 @@ public static class ArcOutline
     }
 
     /// <summary>The length round the outline, its arcs at their own length.</summary>
-    public static double Perimeter(IReadOnlyList<Vec2> corners, IReadOnlyList<double>? rises)
+    public static double Perimeter(IReadOnlyList<Vec2> corners, IReadOnlyList<double>? rises, IReadOnlyList<EllipseEdge?>? ellipses = null)
     {
         double p = 0;
-        for (var i = 0; i < corners.Count; i++) p += Edge(corners, rises, i).Length;
+        for (var i = 0; i < corners.Count; i++)
+            p += ellipses != null && i < ellipses.Count && ellipses[i] is { } el ? el.Length(corners[i], corners[(i + 1) % corners.Count]) : Edge(corners, rises, i).Length;
         return p;
     }
 

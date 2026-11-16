@@ -57,6 +57,23 @@ Planșele, PDF-ul lor, Tipărirea și emiterea îl desenează cu valorile fiecă
 
 ![Cartușe: fișierul din folderul firmei](shots/title-blocks-firm-folder.webp)
 
+## Desenul pe planșă
+
+Notele, semnele și cheile care țin de planșă, nu de una dintre vederile ei, se desenează pe planșa însăși. Apasă **Adnotări** în bara planșei sau dă dublu clic pe hârtie în afara vederilor (**Adnotări → Adnotează planșa** face la fel). Planșa se deschide în panoul de desen ca hârtia ei, la 1:1, cu vederile, chenarul și cartușul dedesubt, iar bara spune *desen pe planșă*. Fiecare unealtă din **Desen** și **Adnotări** merge acolo ca pe o vedere, în milimetri de hârtie: scrii 50 și linia are 50 mm pe hârtie, iar înălțimea unui text e înălțimea lui pe hârtie. Punctele se prind de chenar, de cartuș, de casetele vederilor (albastru întrerupt) și de ce desenează vederile. **Planșă** din bară te duce înapoi la aranjarea vederilor.
+
+- **Textele** pot avea câmpuri vii, ca ale unui cartuș: `Planșa {sheet.number} din {sheet.count}`, `{project.name}`, `{sheet.date}`. Pe o vedere, un text rămâne cum l-ai scris.
+- **Notă cu indicator** (Adnotări → Text): dă clic unde arată săgeata, apoi unde stă textul, și scrie-l. Mutată, nota își ia săgeata cu ea; **Linie de indicație → scoate** din proprietăți scoate săgeata.
+- **Liniile, poliliniile, dreptunghiurile, cercurile, arcele, hașurile, simbolurile și imaginile** sunt ale uneltelor din Desen, cu mânerele, straturile și uneltele lor de modificare. Săgeata nordului e unul dintre simbolurile lui Lapin (**Adnotări → Simbol**).
+- **Nor de revizie** (Desen → Umplutură, Adnotări → Planșe sau REVCLOUD în linia de comandă): două colțuri, sau **P** pentru un poligon închis cu Enter. **Nor de revizie** din proprietățile oricărei polilinii închise sau ale unui cerc o face nor sau o readuce la loc și îi stabilește arcul pe hârtie.
+- **Legendă** (Adnotări → Planșe): o listă vie a ce desenează vederile planșei: materialele cu care sunt hașurate și umplute tăieturile lor sau, cu **Liste** din proprietăți, liniile lor după rol, tip și grosime. Se schimbă odată cu vederile și cu modelul, iar titlul ei primește și el câmpuri.
+- **Scara grafică** (Adnotări → Planșe): la scara primei vederi a planșei sau la scara dată în proprietăți, o lungime rotundă de circa 80 mm sau una aleasă de tine. Pe un plan, o secțiune sau o fațadă, scara grafică ia scara vederii.
+
+Ce e desenat pe planșă se tipărește pe ea, peste vederi, exact cum se vede: în PDF, la Tipărire și în DXF. Ține de planșă: **Duplică planșa** (butonul ei din browserul de proiect) îl copiază, cu simbolurile puse pe planșă, iar ștergerea planșei îl șterge. Fiecare desen e un singur pas de anulare. Planșele făcute înainte nu au nimic desenat pe ele și se tipăresc ca până acum.
+
+![Desen pe o planșă: o notă cu indicator, un nor de revizie, un text viu, o legendă a materialelor planului și o scară grafică](shots/sheet-annotations.webp)
+
+![Aceeași planșă, cum se tipărește](shots/sheet-annotated.webp)
+
 ## Tipărirea
 
 Butoanele **PDF** și **DXF** din bara planșei o exportă. Un PDF e gata de tipărit sau de trimis. Un DXF se deschide în AutoCAD și în alte programe CAD cu layerele, liniile și hașurile lui. **Tipărește** trimite planșa la imprimantă sau plotter la formatul ei, la 1:1, în linii vectoriale: alegi plotterul și hârtia în fereastra de tipărire. Pe o imprimantă mai mică, alegi încadrarea în pagină.

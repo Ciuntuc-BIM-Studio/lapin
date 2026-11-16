@@ -15,6 +15,9 @@ public sealed record ViewContext(IModelView Model, Entity View, string Kind, Vie
     /// <summary>The modules' services (a section's line along an element is read through them); null when a caller has none.</summary>
     public IServices? Services { get; init; }
 
+    /// <summary>The query the view is drawn in (a text on a sheet's paper reads the sheet's tokens through it); null when a caller has none.</summary>
+    public IQueryContext? Query { get; init; }
+
     /// <summary>
     /// Whether something stands between the eye and <paramref name="point"/>: a face of
     /// another element, turned to the eye, nearer, with the point inside its outline.

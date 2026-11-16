@@ -39,6 +39,8 @@ In **Properties** a pad footing shows its **Top** and **Bottom** as elevations a
 
 ![Columns, beams and pad footings in 3D](shots/structure-3d.webp)
 
+Beams and strip footings are cut and moved with the same tools as walls (see [Trimming, extending, splitting and offsetting walls](walls.md)): **Modify → Split element** cuts one where you click it into two, **Modify → Trim/Extend elements** trims it back to a boundary or carries it on to one (a curved strip footing goes on round its circle; brought to another beam's axis, the two are joined), and **Modify → Offset element** copies it parallel, by its axis or between its faces.
+
 ## Types and corners
 
 **Structure types** sets the sections of columns, beams and footings: concrete sections and steel profiles. A column's **Section** is a **Rectangle**, a **Circle** or a **Polygon**, a regular one given by its **Sides** and its **Diameter** across the corners (an octagonal post, as an imported IFC may have it). Click a type in the list to change its size or its name, then **Save type**: every element of that type follows; **New type** goes back to making one.
