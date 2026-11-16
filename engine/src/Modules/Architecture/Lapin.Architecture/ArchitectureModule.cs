@@ -1016,6 +1016,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Command("showOriginalSolids", "Show the original solids", (ctx, a) => WallsFromSolids.Show(ctx, a));
         r.Command("filletWalls", "Fillet walls", (ctx, a) => WallFillets.Apply(ctx, a, Paths(ctx), false));
         r.Command("chamferWalls", "Chamfer walls", (ctx, a) => WallFillets.Apply(ctx, a, Paths(ctx), true));
+        r.Command("trimWall", "Trim wall", (ctx, a) => WallFillets.Trim(ctx, a, Paths(ctx)));
+        r.Command("extendWall", "Extend wall", (ctx, a) => WallFillets.Extend(ctx, a, Paths(ctx)));
 
         r.Command("restyleJoins", "Join style", (ctx, a) =>
         {

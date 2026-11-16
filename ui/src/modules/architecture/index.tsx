@@ -1,6 +1,6 @@
 /** Architecture: layered walls and their types, doors and windows, floors, roofs, rooms and their colours. */
 
-import { Armchair, ArrowLeftRight, CornerDownRight, CornerUpRight, Layers3, Link2, Settings2, Slash, Spline, Table2 } from 'lucide-react';
+import { Armchair, ArrowLeftRight, ArrowRightToLine, CornerDownRight, CornerUpRight, Layers3, Link2, Scissors, Settings2, Slash, Spline, Table2 } from 'lucide-react';
 import { AttachRoofIcon, CurtainWallIcon, CurvedWallIcon, DetachRoofIcon, DoorIcon, DormerIcon, RoofIcon, RampIcon, RoofWindowIcon, SlabIcon, SlabOpeningIcon, StairIcon, WallIcon, WallTypesIcon, WindowIcon } from '../../icons';
 import type { Grip, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { flipAcross, frameAt, outlineGrips, outlineRef, pathGrips, pathRef, toPairs } from '../../viewport/gripKit';
@@ -178,6 +178,8 @@ const swap = restyle('Swap', 'architecture.swap', ArrowLeftRight, { swap: true }
 /** Fillet and chamfer on walls and railings (a user's request): the command line's FILLET and CHAMFER, which take two walls, a railing's corner or two railings as well as drafted lines. */
 const filletTool: ToolDef = { id: 'architecture.fillet', label: 'Fillet', icon: Spline, run: () => void startCommand('FILLET') };
 const chamferTool: ToolDef = { id: 'architecture.chamfer', label: 'Chamfer', icon: CornerUpRight, run: () => void startCommand('CHAMFER') };
+const trimTool: ToolDef = { id: 'architecture.trim', label: 'Trim', icon: Scissors, run: () => void startCommand('TRIM') };
+const extendTool: ToolDef = { id: 'architecture.extend', label: 'Extend', icon: ArrowRightToLine, run: () => void startCommand('EXTEND') };
 const mitreNew: ToolDef = {
   id: 'architecture.mitreNew', label: 'Mitre new corners', icon: Slash,
   run: () => {
@@ -579,7 +581,7 @@ const architecture: LapinModule = {
       { label: 'Sunshades', tools: [sunshade], small: [sunshadeAlong, sunshadeSchedule] },
       // Profiles swept along a wall's face: added (a cornice, a band) or taken out (a reveal), decision 297.
       { label: 'Sweeps', tools: [wallSweep, wallReveal], small: [sweepSelected, revealSelected, wallSweepSchedule] },
-      { label: 'Joins', tools: [join], small: [mitreNew, filletTool, chamferTool, attachRoof, detachRoof, editLayers] },
+      { label: 'Joins', tools: [join], small: [mitreNew, trimTool, extendTool, filletTool, chamferTool, attachRoof, detachRoof, editLayers] },
       { label: 'Room', tools: [room], small: [roomOutline, roomDividers, updateRooms, roomTag] },
       { label: 'Circulation', tools: [stair, ramp, stairTypes], small: [entranceSteps, entranceRamp, underStair, underStairSchedule] },
       // Balconies (a tester's report, #96): by a wall's face in a style, by outline, a gallery's edge; the configurator, stacking, the schedule.

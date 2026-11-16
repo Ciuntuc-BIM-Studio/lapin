@@ -561,7 +561,11 @@ function offset(): Step {
 function trimOrExtend(kind: 'trim' | 'extend'): Step {
   const step = (): Step => ({
     prompt: kind === 'trim' ? 'Pick the piece to cut away (Enter to finish)' : 'Pick the end to extend (Enter to finish)', want: 'pick',
-    pick: async (hit, at) => { await execute(`drafting.${kind}`, { id: hit.id, at: xy(at) }); return step(); },
+    pick: async (hit, at) => {
+      const isWall = useSession.getState().nodes.get(hit.id)?.type === 'IfcWall';
+      await execute(isWall ? `architecture.${kind}Wall` : `drafting.${kind}`, { id: hit.id, at: xy(at) });
+      return step();
+    },
     enter: () => null,
   });
   return step();

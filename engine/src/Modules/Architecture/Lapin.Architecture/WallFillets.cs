@@ -215,4 +215,121 @@ public static class WallFillets
         WallSweepTypes.Rebuild(ctx, wall);
         return ctx.Model.Get(wall.Id)!;
     }
+
+    /// <summary>Trim a straight wall at the nearest crossing wall(s) to <c>at</c>, or cut out a middle segment (forum #109).</summary>
+    public static JsonObject Trim(ICommandContext ctx, JsonObject a, IPathElements paths)
+    {
+        var m = ctx.Model;
+        var wid = (string?)a["id"] ?? throw new CommandException("Which wall?");
+        if (m.Get(wid) is not { Class: IfcClass.Wall } w) throw new CommandException("There is no such wall.");
+        if (PathCurve.Of(w).IsArc) throw new CommandException("Only straight walls can be trimmed.");
+        var at = Args.PointOf(a["at"]);
+        var (s, e) = (Walls.Start(w), Walls.End(w));
+        var len = (e - s).Length;
+        if (len < MinLength) throw new CommandException("The wall is too short.");
+        var dir = (e - s).Normalized();
+        var storey = Spatial.StoreyOf(m, w.Id)?.Id;
+        var (z0, z1) = (Spatial.Base(m, w), Spatial.Base(m, w) + Walls.HeightOf(m, w));
+
+        var cuts = new List<double>();
+        foreach (var other in m.OfClass(IfcClass.Wall))
+        {
+            if (other.Id == w.Id || PathCurve.Of(other).IsArc) continue;
+            if (storey != null && Spatial.StoreyOf(m, other.Id)?.Id != storey) continue;
+            var (oz0, oz1) = (Spatial.Base(m, other), Spatial.Base(m, other) + Walls.HeightOf(m, other));
+            if (oz1 <= z0 + 1e-3 || oz0 >= z1 - 1e-3) continue;
+            var (os, oe) = (Walls.Start(other), Walls.End(other));
+            var denom = dir.X * (oe.Y - os.Y) - dir.Y * (oe.X - os.X);
+            if (Math.Abs(denom) < 1e-9) continue;
+            var dx = os.X - s.X;
+            var dy = os.Y - s.Y;
+            var dist = (dx * (oe.Y - os.Y) - dy * (oe.X - os.X)) / denom;
+            var t = (dx * dir.Y - dy * dir.X) / denom;
+            if (dist > 1e-4 && dist < len - 1e-4 && t >= -1e-4 && t <= 1 + 1e-4)
+                cuts.Add(dist);
+        }
+        cuts.Sort();
+        var unique = new List<double> { 0 };
+        foreach (var c in cuts) if (c - unique[^1] > 1e-4) unique.Add(c);
+        if (len - unique[^1] > 1e-4) unique.Add(len);
+        if (unique.Count < 3) throw new CommandException("Nothing crosses that wall.");
+
+        var u = Math.Clamp(Vec2.Dot(at - s, dir), 0, len);
+        var idx = 0;
+        for (var i = 0; i < unique.Count - 1; i++) if (u >= unique[i] - 1e-9 && u <= unique[i + 1] + 1e-9) { idx = i; break; }
+        var (lo, hi) = (unique[idx], unique[idx + 1]);
+
+        foreach (var r in Joins.Of(m, w.Id).ToList())
+        {
+            var mine = (string?)r.Attrs?[r.Relating == w.Id ? "relatingConnection" : "relatedConnection"];
+            if ((lo <= 1e-4 && mine == "ATSTART") || (hi >= len - 1e-4 && mine == "ATEND")) ctx.RemoveRelation(r.Id);
+        }
+
+        if (lo <= 1e-4)
+        {
+            if (len - hi < MinLength) throw new CommandException("The remaining wall would be too short.");
+            ctx.Replace(Trimmed(w, 0, s + dir * hi));
+            Joins.Refresh(ctx, paths, [w.Id]);
+            return new JsonObject { ["ids"] = new JsonArray(w.Id) };
+        }
+        if (hi >= len - 1e-4)
+        {
+            if (lo < MinLength) throw new CommandException("The remaining wall would be too short.");
+            ctx.Replace(Trimmed(w, 1, s + dir * lo));
+            Joins.Refresh(ctx, paths, [w.Id]);
+            return new JsonObject { ["ids"] = new JsonArray(w.Id) };
+        }
+        if (lo < MinLength || len - hi < MinLength) throw new CommandException("The remaining wall would be too short.");
+        ctx.Replace(Trimmed(w, 1, s + dir * lo));
+        var second = Twin(ctx, w, s + dir * hi, e, 0);
+        Joins.Refresh(ctx, paths, [w.Id, second.Id]);
+        return new JsonObject { ["ids"] = new JsonArray(w.Id, second.Id) };
+    }
+
+    /// <summary>Extend the end of a straight wall nearer <c>at</c> to the first wall ahead (forum #109).</summary>
+    public static JsonObject Extend(ICommandContext ctx, JsonObject a, IPathElements paths)
+    {
+        var m = ctx.Model;
+        var wid = (string?)a["id"] ?? throw new CommandException("Which wall?");
+        if (m.Get(wid) is not { Class: IfcClass.Wall } w) throw new CommandException("There is no such wall.");
+        if (PathCurve.Of(w).IsArc) throw new CommandException("Only straight walls can be extended.");
+        var at = Args.PointOf(a["at"]);
+        var (s, e) = (Walls.Start(w), Walls.End(w));
+        var len = (e - s).Length;
+        if (len < MinLength) throw new CommandException("The wall is too short.");
+        var dir = (e - s).Normalized();
+        var end = Vec2.Dot(at - s, dir) < len / 2 ? 0 : 1;
+        var origin = end == 0 ? s : e;
+        var rayDir = end == 0 ? -dir : dir;
+        var storey = Spatial.StoreyOf(m, w.Id)?.Id;
+        var (z0, z1) = (Spatial.Base(m, w), Spatial.Base(m, w) + Walls.HeightOf(m, w));
+
+        double? best = null;
+        foreach (var other in m.OfClass(IfcClass.Wall))
+        {
+            if (other.Id == w.Id || PathCurve.Of(other).IsArc) continue;
+            if (storey != null && Spatial.StoreyOf(m, other.Id)?.Id != storey) continue;
+            var (oz0, oz1) = (Spatial.Base(m, other), Spatial.Base(m, other) + Walls.HeightOf(m, other));
+            if (oz1 <= z0 + 1e-3 || oz0 >= z1 - 1e-3) continue;
+            var (os, oe) = (Walls.Start(other), Walls.End(other));
+            var denom = rayDir.X * (oe.Y - os.Y) - rayDir.Y * (oe.X - os.X);
+            if (Math.Abs(denom) < 1e-9) continue;
+            var dx = os.X - origin.X;
+            var dy = os.Y - origin.Y;
+            var dist = (dx * (oe.Y - os.Y) - dy * (oe.X - os.X)) / denom;
+            var t = (dx * rayDir.Y - dy * rayDir.X) / denom;
+            if (dist > 1e-4 && t >= -1e-4 && t <= 1 + 1e-4 && (best == null || dist < best))
+                best = dist;
+        }
+        if (best == null) throw new CommandException("No wall lies ahead to extend to.");
+
+        foreach (var r in Joins.Of(m, w.Id).ToList())
+        {
+            var mine = (string?)r.Attrs?[r.Relating == w.Id ? "relatingConnection" : "relatedConnection"];
+            if (mine == (end == 0 ? "ATSTART" : "ATEND")) ctx.RemoveRelation(r.Id);
+        }
+        ctx.Replace(Trimmed(w, end, origin + rayDir * best.Value));
+        Joins.Refresh(ctx, paths, [w.Id]);
+        return new JsonObject { ["id"] = w.Id };
+    }
 }
