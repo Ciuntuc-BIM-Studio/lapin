@@ -15,15 +15,18 @@ export type { Pt };
 type Hatch = { pattern: string; scale?: number; angle?: number; color?: string } | null;
 
 /** An item of a symbol, in mm from its insertion point, +x its direction, y up. */
-export type SymItem =
+export type SymItem = (
   | Extract<TbItem, { type: 'line' | 'rect' | 'polyline' | 'text' }>
   | { type: 'circle'; c: Pt; r: number; stroke?: number; color?: string; fill?: string | null; hatch?: Hatch; dash?: number[] }
-  | { type: 'arc'; c: Pt; r: number; start: number; end: number; w?: number; color?: string; dash?: number[] };
+  | { type: 'arc'; c: Pt; r: number; start: number; end: number; w?: number; color?: string; dash?: number[] }
+) & { layer?: string };
 
 export type SymType = SymItem['type'];
 export type SymScale = 'annotation' | 'model';
 export interface SymAttr { key: string; label: string; default: string }
-export interface SymDef { scale: SymScale; category: string; items: SymItem[]; attributes: SymAttr[]; description?: string }
+/** A layer in the Symbol Editor (forum #120): visibility and opacity accept a number (0–100), boolean, attribute or {= formula}. */
+export interface SymLayer { id: string; name: string; visible?: boolean | string; opacity?: number | string }
+export interface SymDef { scale: SymScale; category: string; items: SymItem[]; attributes: SymAttr[]; layers?: SymLayer[]; description?: string }
 
 /** A symbol as listed. */
 export interface SymSummary {
@@ -44,9 +47,73 @@ export function normaliseDef(d: Partial<SymDef> | null | undefined): SymDef {
     category: d?.category || 'other',
     items: Array.isArray(d?.items) ? d!.items.map((i) => ({ ...i })) as SymItem[] : [],
     attributes: Array.isArray(d?.attributes) ? d!.attributes.map((a) => ({ key: a.key, label: a.label ?? a.key, default: a.default ?? '' })) : [],
+    ...(Array.isArray(d?.layers) && d!.layers.length > 0 ? { layers: d!.layers.map((l) => ({ ...l })) } : {}),
     ...(d?.description ? { description: d.description } : {}),
   };
 }
+
+// ------------------------------------------------------------ editor camera & layers (forum #120)
+
+export interface SymCam { cx: number; cy: number; span: number }
+
+/** Fit all symbol items into the camera with a comfortable margin (no auto-zoom during edits). */
+export function camFit(items: SymItem[]): SymCam {
+  const [x0, y0, x1, y1] = defBounds(items);
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  const span = Math.max(36, Math.max(x1 - x0, y1 - y0) + 20);
+  return { cx, cy, span };
+}
+
+/** Zoom the camera by `factor` (< 1 zooms in, > 1 zooms out) while keeping world point `at` fixed under the cursor. */
+export function camZoomAt(cam: SymCam, at: Pt, factor: number): SymCam {
+  const next = Math.min(2000, Math.max(4, cam.span * factor));
+  const k = next / cam.span;
+  return { cx: at[0] + (cam.cx - at[0]) * k, cy: at[1] + (cam.cy - at[1]) * k, span: next };
+}
+
+/** Evaluate a layer numeric/boolean/formula input against symbol attribute values. */
+export function evalLayerExpr(raw: boolean | number | string | undefined, values: Record<string, string>, fallback: number): number {
+  if (raw === undefined || raw === '') return fallback;
+  if (typeof raw === 'boolean') return raw ? 100 : 0;
+  if (typeof raw === 'number') return Number.isFinite(raw) ? raw : fallback;
+  const s = raw.trim();
+  if (!s) return fallback;
+  if (/^(true|yes|on)$/i.test(s)) return 100;
+  if (/^(false|no|off)$/i.test(s)) return 0;
+  const num = Number(s);
+  if (Number.isFinite(num)) return num;
+  const attrOnly = /^\{(?:attr\.)?([A-Za-z_]\w*)\}$/.exec(s) ?? /^(?:attr\.)([A-Za-z_]\w*)$/.exec(s);
+  if (attrOnly) {
+    const v = values[attrOnly[1]];
+    if (v === undefined || v === '') return fallback;
+    if (/^(true|yes|on)$/i.test(v.trim())) return 100;
+    if (/^(false|no|off)$/i.test(v.trim())) return 0;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : fallback;
+  }
+  const formula = /^\{=\s*(.+?)\s*\}$/.exec(s)?.[1] ?? (s.startsWith('=') ? s.slice(1).trim() : null);
+  if (formula) {
+    const substituted = formula.replace(/\b(?:attr\.)?([A-Za-z_]\w*)\b/g, (m, k: string) => {
+      const v = values[k];
+      if (v === undefined || v === '') return m;
+      const n = Number(v);
+      return Number.isFinite(n) ? String(n) : m;
+    });
+    if (/^[0-9+\-*/().\s]+$/.test(substituted)) {
+      try {
+        const res = Function(`"use strict"; return (${substituted});`)() as unknown;
+        if (typeof res === 'number' && Number.isFinite(res)) return res;
+      } catch { /* ignore invalid expression */ }
+    }
+  }
+  return fallback;
+}
+
+export const evalLayerOpacity = (layer: SymLayer | undefined, values: Record<string, string>): number =>
+  Math.min(100, Math.max(0, evalLayerExpr(layer?.opacity, values, 100)));
+
+export const evalLayerVisible = (layer: SymLayer | undefined, values: Record<string, string>): boolean =>
+  evalLayerExpr(layer?.visible, values, 100) > 0;
 
 // ------------------------------------------------------------ geometry of the items
 

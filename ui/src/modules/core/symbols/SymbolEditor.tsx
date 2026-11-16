@@ -7,16 +7,16 @@
  */
 
 import { confirmAction } from '../../../shell/prompts';
-import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from 'react';
-import { Braces, Circle as CircleIcon, FlipHorizontal2, FlipVertical2, Minus, MousePointer2, PenLine, Plus, Redo2, RotateCw, Save, Spline, Square, Trash2, Type, Undo2, X, ZoomIn, ZoomOut } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent, type WheelEvent as RWheelEvent } from 'react';
+import { Braces, Circle as CircleIcon, Eye, EyeOff, FlipHorizontal2, FlipVertical2, Maximize2, Minus, MousePointer2, PenLine, Plus, Redo2, RotateCw, Save, Spline, Square, Trash2, Type, Undo2, X, ZoomIn, ZoomOut } from 'lucide-react';
 import { t as tr } from '../../../i18n';
 import { insertToken } from '../titleBlocks/titleBlockModel';
 import { Colour, Num } from '../titleBlocks/TitleBlockDesigner';
 import { pensToSvg } from '../documents/docModel';
 import { evaluateText, previewSymbol, symbolFields, type SymFields } from './symbols';
 import {
-  CATEGORY_FALLBACK, attributeKey, defBounds, defaultValues, missingAttributes, newSymItem, previewImage, round, sweepDeg, symBounds, symDragHandle, symHandles, symItemAt, symMove, symSnap, turned,
-  type Pt, type SymAttr, type SymDef, type SymItem, type SymPreview, type SymType,
+  CATEGORY_FALLBACK, attributeKey, camFit, camZoomAt, defaultValues, evalLayerOpacity, evalLayerVisible, missingAttributes, newSymItem, previewImage, round, sweepDeg, symBounds, symDragHandle, symHandles, symItemAt, symMove, symSnap, turned,
+  type Pt, type SymAttr, type SymCam, type SymDef, type SymItem, type SymLayer, type SymPreview, type SymType,
 } from './symbolModel';
 
 type Tool = 'select' | SymType;
@@ -64,7 +64,11 @@ export function SymbolEditor({ title, name: initialName, def: initialDef, catego
   const [sel, setSel] = useState<number | null>(null);
   const [grid, setGrid] = useState(1);
   const [objectSnap, setObjectSnap] = useState(true);
-  const [zoom, setZoom] = useState(1);
+  // Explicit 2D camera: never auto-zooms when items are added or dragged (forum #120).
+  const [cam, setCam] = useState<SymCam>(() => camFit(initialDef.items));
+  const [activeLayer, setActiveLayer] = useState<string>('default');
+  const pan = useRef<{ x: number; y: number; cx: number; cy: number } | null>(null);
+  const lastMmb = useRef(0);
   const [fields, setFields] = useState<SymFields | null>(null);
   const [filter, setFilter] = useState('');
   const [pendingText, setPendingText] = useState<string | null>(null);
@@ -105,17 +109,11 @@ export function SymbolEditor({ title, name: initialName, def: initialDef, catego
   const patch = (p: Record<string, unknown>) => { if (sel != null) setItem(sel, { ...d.items[sel], ...p } as SymItem); };
   const undo = () => { const prev = past.current.pop(); if (prev) { future.current.push(d); setD(prev); setSel(null); setDirty(true); } };
   const redo = () => { const next = future.current.pop(); if (next) { past.current.push(d); setD(next); setSel(null); setDirty(true); } };
-  const add = (item: SymItem) => { change({ ...d, items: [...d.items, item] }); setSel(d.items.length); };
+  const add = (item: SymItem) => { change({ ...d, items: [...d.items, activeLayer !== 'default' ? { ...item, layer: activeLayer } : item] }); setSel(d.items.length); };
   const remove = () => { if (sel == null) return; change({ ...d, items: d.items.filter((_, k) => k !== sel) }); setSel(null); };
 
-  // The canvas shows the symbol and some room round it, in steps so it does not jump at every drag.
-  const [bx0, by0, bx1, by1] = defBounds(d.items);
-  const ext = (() => {
-    const lo = (v: number, d0: number) => Math.floor((Math.min(v, d0) - 8) / 10) * 10;
-    const hi = (v: number, d0: number) => Math.ceil((Math.max(v, d0) + 8) / 10) * 10;
-    return { x0: lo(bx0, -15), y0: lo(by0, -15), x1: hi(bx1, 15), y1: hi(by1, 15) };
-  })();
-  const W = ext.x1 - ext.x0, H = ext.y1 - ext.y0;
+  const ext = { x0: cam.cx - cam.span / 2, y0: cam.cy - cam.span / 2, x1: cam.cx + cam.span / 2, y1: cam.cy + cam.span / 2 };
+  const W = cam.span, H = cam.span;
 
   const where = (e: { clientX: number; clientY: number }): { p: Pt; tol: number } | null => {
     const el = svg.current;
@@ -137,6 +135,15 @@ export function SymbolEditor({ title, name: initialName, def: initialDef, catego
   };
 
   const onDown = (e: RPointerEvent<SVGSVGElement>) => {
+    if (e.button === 1) {
+      e.preventDefault();
+      const now = Date.now();
+      if (now - lastMmb.current < 350) { setCam(camFit(d.items)); lastMmb.current = 0; return; }
+      lastMmb.current = now;
+      pan.current = { x: e.clientX, y: e.clientY, cx: cam.cx, cy: cam.cy };
+      svg.current?.setPointerCapture(e.pointerId);
+      return;
+    }
     if (e.button !== 0) return;
     const w = where(e);
     if (!w) return;
@@ -192,6 +199,11 @@ export function SymbolEditor({ title, name: initialName, def: initialDef, catego
   };
 
   const onMove = (e: RPointerEvent<SVGSVGElement>) => {
+    if (pan.current) {
+      const m = svg.current?.getScreenCTM();
+      if (m && m.a > 0) setCam((c) => ({ ...c, cx: pan.current!.cx - (e.clientX - pan.current!.x) / m.a, cy: pan.current!.cy + (e.clientY - pan.current!.y) / m.a }));
+      return;
+    }
     const w = where(e);
     if (!w) return;
     const dr = drag.current;
@@ -265,7 +277,28 @@ export function SymbolEditor({ title, name: initialName, def: initialDef, catego
     change({ ...d, attributes: [...d.attributes, { key: `attr${n}`, label: `Attribute ${n}`, default: '' }] });
   };
 
+  const onWheel = (e: RWheelEvent<SVGSVGElement>) => {
+    e.preventDefault();
+    const w = where(e);
+    if (!w) return;
+    setCam((c) => camZoomAt(c, w.p, e.deltaY > 0 ? 1.15 : 1 / 1.15));
+  };
   const item = sel != null ? d.items[sel] : null;
+  const attrValues = useMemo(() => defaultValues(d.attributes), [d.attributes]);
+  const layers = d.layers ?? [];
+  const layerOf = (it: SymItem) => (it.layer ? layers.find((l) => l.id === it.layer) : undefined);
+  const addLayer = () => {
+    const id = `layer${layers.length + 1}`;
+    const next: SymLayer = { id, name: `Layer ${layers.length + 1}`, visible: true, opacity: 100 };
+    change({ ...d, layers: [...layers, next] });
+    setActiveLayer(id);
+  };
+  const setLayer = (id: string, p: Partial<SymLayer>) =>
+    change({ ...d, layers: layers.map((l) => (l.id === id ? { ...l, ...p } : l)) });
+  const removeLayer = (id: string) => {
+    change({ ...d, layers: layers.filter((l) => l.id !== id), items: d.items.map((it) => (it.layer === id ? { ...it, layer: undefined } : it)) });
+    if (activeLayer === id) setActiveLayer('default');
+  };
   const textItem = item?.type === 'text' ? item : null;
   const Y = (y: number) => -y;
   const shownFields = (fields?.fields ?? []).filter((f) => !filter || `${f.label} ${f.key}`.toLowerCase().includes(filter.toLowerCase()));
@@ -274,25 +307,32 @@ export function SymbolEditor({ title, name: initialName, def: initialDef, catego
   const fillOf = (f: string | null | undefined, hatch: unknown) => (f === 'byInstance' ? '#7d8a99' : f ?? (hatch ? 'url(#sy-hatch)' : 'none'));
 
   const renderItem = (it: SymItem, i: number) => {
-    switch (it.type) {
-      case 'line': return (it.w ?? 0.25) > 0 ? <line key={i} x1={it.a[0]} y1={Y(it.a[1])} x2={it.b[0]} y2={Y(it.b[1])} stroke={it.color ?? '#000'} strokeWidth={stroke(it.w)} strokeDasharray={it.dash?.join(' ')} strokeLinecap="round" /> : null;
-      case 'rect': return <rect key={i} x={it.x} y={Y(it.y + it.h)} width={it.w} height={it.h} fill={fillOf(it.fill, it.hatch)} stroke={(it.stroke ?? 0.25) > 0 ? it.color ?? '#000' : 'none'} strokeWidth={stroke(it.stroke)} strokeDasharray={undefined} />;
-      case 'polyline': {
-        const pts = it.pts.map((p) => `${p[0]},${Y(p[1])}`).join(' ');
-        return it.closed ? <polygon key={i} points={pts} fill={fillOf(it.fill, it.hatch)} stroke={(it.stroke ?? 0.25) > 0 ? it.color ?? '#000' : 'none'} strokeWidth={stroke(it.stroke)} />
-          : <polyline key={i} points={pts} fill="none" stroke={it.color ?? '#000'} strokeWidth={stroke(it.stroke)} strokeLinejoin="round" />;
+    const lay = layerOf(it);
+    if (!evalLayerVisible(lay, attrValues)) return null;
+    const op = evalLayerOpacity(lay, attrValues) / 100;
+    const draw = () => {
+      switch (it.type) {
+        case 'line': return (it.w ?? 0.25) > 0 ? <line key={i} x1={it.a[0]} y1={Y(it.a[1])} x2={it.b[0]} y2={Y(it.b[1])} stroke={it.color ?? '#000'} strokeWidth={stroke(it.w)} strokeDasharray={it.dash?.join(' ')} strokeLinecap="round" /> : null;
+        case 'rect': return <rect key={i} x={it.x} y={Y(it.y + it.h)} width={it.w} height={it.h} fill={fillOf(it.fill, it.hatch)} stroke={(it.stroke ?? 0.25) > 0 ? it.color ?? '#000' : 'none'} strokeWidth={stroke(it.stroke)} strokeDasharray={undefined} />;
+        case 'polyline': {
+          const pts = it.pts.map((p) => `${p[0]},${Y(p[1])}`).join(' ');
+          return it.closed ? <polygon key={i} points={pts} fill={fillOf(it.fill, it.hatch)} stroke={(it.stroke ?? 0.25) > 0 ? it.color ?? '#000' : 'none'} strokeWidth={stroke(it.stroke)} />
+            : <polyline key={i} points={pts} fill="none" stroke={it.color ?? '#000'} strokeWidth={stroke(it.stroke)} strokeLinejoin="round" />;
+        }
+        case 'circle': return <circle key={i} cx={it.c[0]} cy={Y(it.c[1])} r={it.r} fill={fillOf(it.fill, it.hatch)} stroke={(it.stroke ?? 0.25) > 0 ? it.color ?? '#000' : 'none'} strokeWidth={stroke(it.stroke)} strokeDasharray={it.dash?.join(' ')} />;
+        case 'arc': return <path key={i} d={arcPath(it.c, it.r, it.start, it.end)} fill="none" stroke={it.color ?? '#000'} strokeWidth={stroke(it.w)} strokeDasharray={it.dash?.join(' ')} strokeLinecap="round" />;
+        case 'text': {
+          const h = it.h ?? 2.5;
+          return (
+            <text key={i} x={it.at[0]} y={Y(it.at[1])} fontSize={h} fontWeight={it.bold ? 700 : 400} fontStyle={it.italic ? 'italic' : undefined}
+              textAnchor={it.align ?? 'start'} dominantBaseline={it.valign === 'middle' ? 'central' : 'alphabetic'} fill={it.color ?? '#000'} fontFamily="Arial, Helvetica, sans-serif"
+              transform={it.angle ? `rotate(${-it.angle} ${it.at[0]} ${Y(it.at[1])})` : undefined} data-no-i18n>{it.text}</text>
+          );
+        }
       }
-      case 'circle': return <circle key={i} cx={it.c[0]} cy={Y(it.c[1])} r={it.r} fill={fillOf(it.fill, it.hatch)} stroke={(it.stroke ?? 0.25) > 0 ? it.color ?? '#000' : 'none'} strokeWidth={stroke(it.stroke)} strokeDasharray={it.dash?.join(' ')} />;
-      case 'arc': return <path key={i} d={arcPath(it.c, it.r, it.start, it.end)} fill="none" stroke={it.color ?? '#000'} strokeWidth={stroke(it.w)} strokeDasharray={it.dash?.join(' ')} strokeLinecap="round" />;
-      case 'text': {
-        const h = it.h ?? 2.5;
-        return (
-          <text key={i} x={it.at[0]} y={Y(it.at[1])} fontSize={h} fontWeight={it.bold ? 700 : 400} fontStyle={it.italic ? 'italic' : undefined}
-            textAnchor={it.align ?? 'start'} dominantBaseline={it.valign === 'middle' ? 'central' : 'alphabetic'} fill={it.color ?? '#000'} fontFamily="Arial, Helvetica, sans-serif"
-            transform={it.angle ? `rotate(${-it.angle} ${it.at[0]} ${Y(it.at[1])})` : undefined} data-no-i18n>{it.text}</text>
-        );
-      }
-    }
+    };
+    const el = draw();
+    return el && op < 1 ? <g key={i} opacity={op}>{el}</g> : el;
   };
 
   const gridLines = () => {
@@ -364,8 +404,9 @@ export function SymbolEditor({ title, name: initialName, def: initialDef, catego
             <button type="button" className="icon" title="Redo (Ctrl+Y)" onClick={redo} disabled={future.current.length === 0}><Redo2 size={15} /></button>
             <button type="button" className="icon" title="Delete the selected item (Delete)" onClick={remove} disabled={sel == null} data-field="sy-delete-item"><Trash2 size={15} /></button>
             <span className="tb-sep" />
-            <button type="button" className="icon" title="Zoom in" onClick={() => setZoom((z) => Math.min(6, z * 1.25))}><ZoomIn size={15} /></button>
-            <button type="button" className="icon" title="Zoom out" onClick={() => setZoom((z) => Math.max(0.5, z / 1.25))}><ZoomOut size={15} /></button>
+            <button type="button" className="icon" title="Zoom in" onClick={() => setCam((c) => camZoomAt(c, [c.cx, c.cy], 1 / 1.25))}><ZoomIn size={15} /></button>
+            <button type="button" className="icon" title="Zoom out" onClick={() => setCam((c) => camZoomAt(c, [c.cx, c.cy], 1.25))}><ZoomOut size={15} /></button>
+            <button type="button" className="icon" title="Fit to view (double-click MMB)" onClick={() => setCam(camFit(d.items))} data-field="sy-zoom-fit"><Maximize2 size={15} /></button>
           </nav>
           <section className="tb-canvas-wrap">
             <div className="tb-statusbar small">
@@ -380,8 +421,9 @@ export function SymbolEditor({ title, name: initialName, def: initialDef, catego
               {hover && <span className="muted" data-no-i18n>{`x ${hover.p[0].toFixed(2)}  y ${hover.p[1].toFixed(2)}`}</span>}
             </div>
             <div className="tb-canvas">
-              <svg ref={svg} data-testid="sy-canvas" viewBox={`${ext.x0} ${-ext.y1} ${W} ${H}`} style={{ width: `${zoom * 100}%` }} className={`tool-${tool}`}
-                onPointerDown={onDown} onPointerMove={onMove} onPointerUp={() => { drag.current = null; }} onPointerLeave={() => setHover(null)}
+              <svg ref={svg} data-testid="sy-canvas" viewBox={`${ext.x0} ${-ext.y1} ${W} ${H}`} className={`tool-${tool}`}
+                onPointerDown={onDown} onPointerMove={onMove} onPointerUp={() => { drag.current = null; pan.current = null; }} onPointerLeave={() => { setHover(null); pan.current = null; }}
+                onWheel={onWheel}
                 onDoubleClick={() => { if (tool === 'polyline' && draft) finishDraft(draft.pts.slice(0, -1).length >= 2 ? draft.pts.slice(0, -1) : draft.pts); }}>
                 <defs>
                   <pattern id="sy-hatch" width="2" height="2" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="2" stroke="#555" strokeWidth="0.15" /></pattern>
@@ -423,6 +465,14 @@ export function SymbolEditor({ title, name: initialName, def: initialDef, catego
             ) : (
               <div className="tb-props" data-field="sy-item-props">
                 <h4 className="eyebrow">{tr(TOOLS.find((x) => x.id === item.type)?.label ?? item.type)}</h4>
+                {layers.length > 0 && (
+                  <label className="tb-num"><span className="muted small">Layer</span>
+                    <select value={item.layer ?? 'default'} onChange={(e) => patch({ layer: e.target.value === 'default' ? undefined : e.target.value })} data-field="sy-item-layer">
+                      <option value="default">Default</option>
+                      {layers.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+                    </select>
+                  </label>
+                )}
                 {item.type === 'line' && (
                   <div className="tb-grid2">
                     <Num label="x1" value={item.a[0]} onCommit={(v) => patch({ a: [v, item.a[1]] })} /><Num label="y1" value={item.a[1]} onCommit={(v) => patch({ a: [item.a[0], v] })} />
@@ -494,6 +544,36 @@ export function SymbolEditor({ title, name: initialName, def: initialDef, catego
                 )}
               </div>
             )}
+
+            <div className="sy-layers" data-field="sy-layers">
+              <div className="row between">
+                <h4 className="eyebrow">Layers</h4>
+                <button type="button" className="btn small" onClick={addLayer} data-field="sy-layer-add"><Plus size={12} />Add layer</button>
+              </div>
+              <ul className="part-list">
+                <li className={activeLayer === 'default' ? 'on' : ''}>
+                  <button type="button" className="link" onClick={() => setActiveLayer('default')}>Default</button>
+                </li>
+                {layers.map((l) => {
+                  const vis = evalLayerVisible(l, attrValues);
+                  return (
+                    <li key={l.id} className={activeLayer === l.id ? 'on' : ''}>
+                      <div className="row between" style={{ gap: 4 }}>
+                        <button type="button" className="link" onClick={() => setActiveLayer(l.id)} data-no-i18n>{l.name}</button>
+                        <button type="button" className="icon mini" title="Toggle visibility" onClick={() => setLayer(l.id, { visible: !vis })}>{vis ? <Eye size={12} /> : <EyeOff size={12} />}</button>
+                        <button type="button" className="icon mini" title="Remove layer" onClick={() => removeLayer(l.id)}><Trash2 size={12} /></button>
+                      </div>
+                      <div className="row" style={{ gap: 4, marginTop: 2 }}>
+                        <input className="input small" value={String(l.opacity ?? 100)} title="Opacity (0–100, {attr.key} or {= formula})" placeholder="100"
+                          onChange={(e) => setLayer(l.id, { opacity: e.target.value })} style={{ width: 64 }} />
+                        <input className="input small" value={l.visible === undefined ? 'true' : String(l.visible)} title="Visibility (true/false, 0–100, {attr.key} or {= formula})" placeholder="true"
+                          onChange={(e) => setLayer(l.id, { visible: e.target.value })} style={{ width: 64 }} />
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
 
             <div className="sy-attrs" data-field="sy-attributes">
               <h4 className="eyebrow">Attributes</h4>
