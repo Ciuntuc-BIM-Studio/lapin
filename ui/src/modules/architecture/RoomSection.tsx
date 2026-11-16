@@ -88,7 +88,7 @@ export function RoomSection({ node }: { node: NodeDto }) {
         </dd>
         {/* The room's own opacity over its scheme entry's (forum #79): empty, its scheme's. */}
         <dt title="How much of the room's colour covers the plan under it, 0–100 %; empty: as its scheme says">Own opacity</dt>
-        <dd><NumberField className="narrow" testId="room-fill-opacity" min={0} max={100} suffix="%" placeholder="as its scheme" value={typeof node.props.fillOpacity === 'number' ? node.props.fillOpacity : null}
+        <dd><NumberField className="narrow" testId="room-fill-opacity" min={0} max={100} suffix="%" placeholder="as its scheme" blank value={typeof node.props.fillOpacity === 'number' ? node.props.fillOpacity : null}
           onCommit={(v) => update('fillOpacity', v)} /></dd>
         <dt title="The room's own hatch, over its colour scheme's">Own hatch</dt>
         <dd className="row">

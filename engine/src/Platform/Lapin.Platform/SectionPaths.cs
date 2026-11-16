@@ -180,16 +180,16 @@ public static class SectionPaths
     public static double Length(IReadOnlyList<Vec2> path) => Polyline2.Length(path);
 
     /// <summary>
-    /// The arc from <paramref name="a"/> through <paramref name="b"/> to <paramref name="c"/> as straight pieces, a step of at most 7.5° (at least 4,
-    /// at most 48 pieces); the three points themselves when they lie in a line.
+    /// The arc from <paramref name="a"/> through <paramref name="b"/> to <paramref name="c"/> as straight pieces by the one rule for curves
+    /// (<see cref="Chords"/>, through <see cref="PathCurve.Stations"/>: no piece more than a millimetre off the arc; the user's choice of 16.11.2026,
+    /// it was a step of 7.5°); the three points themselves when they lie in a line.
     /// </summary>
     public static List<Vec2> SampleArc(Vec2 a, Vec2 b, Vec2 c)
     {
         var rise = PathCurve.RiseThrough(a, c, b);
         var curve = new PathCurve(a, c, rise);
         if (!curve.IsArc) return Clean([a, b, c]);
-        var n = Math.Clamp((int)Math.Ceiling(curve.Sweep / (7.5 * Math.PI / 180)), 4, 48);
-        return Clean(Enumerable.Range(0, n + 1).Select(k => curve.PointAt(curve.Length * k / n)));
+        return Clean(curve.Stations(0, curve.Length).Select(curve.PointAt));
     }
 
     /// <summary>The section's line from a command's arguments: pts (two or more points), or start and end; with the curve and the element followed.</summary>

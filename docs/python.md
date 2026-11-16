@@ -36,7 +36,7 @@ The desktop app's engine listens on **14912** (L A P I N, the letters' places in
 2. the host files the engines write while they run: `<user-dir>/hosts/host-<pid>.json`, one per engine, and `<user-dir>/host.json`, the latest started (what older readers read), each `{"port", "pid", "product", "version", "started"}`, removed when the engine stops. A file whose process is gone (killed) is stale and skipped. The user folders: `~/Library/Application Support/ro.ciuntucbimstudio.lapin` on macOS, `~/.local/share/Lapin` on Linux, `%LOCALAPPDATA%\Lapin` on Windows (the repo's `.artifacts/user` under `pnpm dev`). `LAPIN_USER_DIR` names the one folder to read, and then nothing is probed;
 3. the ports 14912–15011 and 47810, probed: a fast connect and `GET /health` (half a second each, all at once).
 
-Every port found is confirmed by asking it who it is: `GET /health` (only by a loopback name: `127.0.0.1` or `localhost` in the `Host` header) and the WebSocket call `engine.hello` (answered at once, past the queue of calls) both answer
+Every port found is confirmed by asking it who it is: `GET /health` (only by a loopback name with the engine's port: `127.0.0.1:<port>` or `localhost:<port>` in the `Host` header; never for a page of another site, docs/plan-web-connect.md) and the WebSocket call `engine.hello` (answered at once, past the queue of calls) both answer
 
 ```json
 {"engine": "lapin", "ok": true, "product": "lapin", "productName": "Lapin", "version": "0.1.900", "pid": 4242,

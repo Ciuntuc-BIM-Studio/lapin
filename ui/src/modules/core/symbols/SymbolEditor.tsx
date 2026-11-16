@@ -35,6 +35,22 @@ const GRIDS = [0, 0.25, 0.5, 1, 2.5, 5];
 
 const CROSS = '#d63031';
 
+/** One row of the symbol's attributes table: keeps local drafts so deleting a middle row never leaves stale DOM values behind (forum #117). */
+function AttrRow({ attr, index, onChange, onRemove }: { attr: SymAttr; index: number; onChange: (p: Partial<SymAttr>) => void; onRemove: () => void }) {
+  const [key, setKey] = useState(attr.key);
+  const [label, setLabel] = useState(attr.label);
+  const [def, setDef] = useState(attr.default);
+  useEffect(() => { setKey(attr.key); setLabel(attr.label); setDef(attr.default); }, [attr.key, attr.label, attr.default]);
+  return (
+    <tr>
+      <td><input value={key} data-field={`sy-attr-key-${index}`} data-no-i18n onChange={(e) => setKey(e.target.value)} onBlur={() => { const k = attributeKey(key) || attr.key; setKey(k); if (k !== attr.key) onChange({ key: k }); }} /></td>
+      <td><input value={label} data-field={`sy-attr-label-${index}`} data-no-i18n onChange={(e) => setLabel(e.target.value)} onBlur={() => { if (label !== attr.label) onChange({ label }); }} /></td>
+      <td><input value={def} data-field={`sy-attr-default-${index}`} data-no-i18n onChange={(e) => setDef(e.target.value)} onBlur={() => { if (def !== attr.default) onChange({ default: def }); }} /></td>
+      <td><button type="button" className="icon" title="Remove the attribute" data-field={`sy-attr-remove-${index}`} onClick={onRemove}><Trash2 size={13} /></button></td>
+    </tr>
+  );
+}
+
 export function SymbolEditor({ title, name: initialName, def: initialDef, categories, onSave, onClose }: {
   title?: string; name: string; def: SymDef; categories: string[];
   onSave: (name: string, def: SymDef) => Promise<boolean | void>; onClose: () => void;
@@ -487,12 +503,7 @@ export function SymbolEditor({ title, name: initialName, def: initialDef, catego
                   <thead><tr><th>Key</th><th>Label</th><th>Default</th><th /></tr></thead>
                   <tbody>
                     {d.attributes.map((a, i) => (
-                      <tr key={i}>
-                        <td><input defaultValue={a.key} data-field={`sy-attr-key-${i}`} data-no-i18n onBlur={(e) => { const k = attributeKey(e.target.value) || a.key; if (k !== a.key) setAttr(i, { key: k }); else e.target.value = a.key; }} /></td>
-                        <td><input defaultValue={a.label} data-field={`sy-attr-label-${i}`} data-no-i18n onBlur={(e) => { if (e.target.value !== a.label) setAttr(i, { label: e.target.value }); }} /></td>
-                        <td><input defaultValue={a.default} data-field={`sy-attr-default-${i}`} data-no-i18n onBlur={(e) => { if (e.target.value !== a.default) setAttr(i, { default: e.target.value }); }} /></td>
-                        <td><button type="button" className="icon" title="Remove the attribute" onClick={() => change({ ...d, attributes: d.attributes.filter((_, k) => k !== i) })}><Trash2 size={13} /></button></td>
-                      </tr>
+                      <AttrRow key={i} attr={a} index={i} onChange={(p) => setAttr(i, p)} onRemove={() => change({ ...d, attributes: d.attributes.filter((_, k) => k !== i) })} />
                     ))}
                   </tbody>
                 </table>
