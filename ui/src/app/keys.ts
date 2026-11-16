@@ -168,8 +168,8 @@ export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
   if (all && e.key === 'Backspace') return null;
   // Delete (or Backspace with nothing typed): the selection, when there is one.
   if (bound === 'app.delete') return s.selected.length && !s.buffer ? { kind: 'command', id: bound } : null;
-  // Named keys (Tab, the arrows…) and the bare keys (1–9, +, −, Shift+Z): only while nothing is typed.
-  if (bound && !typing && (all ? e.key.length > 1 : isBareKey(chord) || e.key.length > 1)) {
+  // Named keys (Tab, the arrows…) and the bare keys (1–9, +, −, Shift+Z): only while nothing is typed (Tab still runs while a tool step is waiting, as long as nothing is typed).
+  if (bound && (!typing || (e.key === 'Tab' && !s.buffer)) && (all ? e.key.length > 1 : isBareKey(chord) || e.key.length > 1)) {
     const slot = /^hotbar\.(\d)$/.exec(bound);
     if (slot && Number(slot[1]) > s.hotbar) return null;
     return { kind: 'command', id: bound };
@@ -260,8 +260,13 @@ export function handleKeydown(e: KeyEventLike, snap: () => KeySnapshot = snapsho
     inDialog: !!target?.closest?.('[role="dialog"]'),
     composing: !!(e as { isComposing?: boolean }).isComposing,
   };
-  const intent = keyIntent(press, snap());
-  if (!intent) return;
+  const cur = snap();
+  const intent = keyIntent(press, cur);
+  if (!intent) {
+    // Outside fields and dialogs, Tab never wanders through the workspace UI buttons (forum #125).
+    if (e.key === 'Tab' && cur.screen === 'workspace' && !press.inField && !press.inDialog && !cur.dialog) e.preventDefault();
+    return;
+  }
   e.preventDefault();
   act(intent);
 }
