@@ -84,4 +84,20 @@ describe('live input', () => {
     expect(got[0].x).toBeCloseTo(2, 9); expect(got[0].y).toBeCloseTo(-1.5, 9);
     liveEnd('tool');
   });
+
+  it('places a first point from a reference point by distance/angle or X/Y offsets (forum #126)', () => {
+    const got: { x: number; y: number }[] = [];
+    liveBegin('tool', { x: 10, y: 5 }, (p) => got.push(p), { rect: 'ref:architecture.wall', delta: true });
+    // Distance and direction from the reference point: 3 m at 90°.
+    useLive.setState({ cursor: { x: 10, y: 8 }, len: '3000', ang: '90' });
+    expect(liveCommit()).toBe(true);
+    expect(got[0].x).toBeCloseTo(10, 9); expect(got[0].y).toBeCloseTo(8, 9);
+    // Switch with Space to X/Y offsets from the reference point: dx = 1500 mm, dy = -500 mm.
+    liveToggleMode();
+    expect(useLive.getState().mode).toBe('rect');
+    useLive.setState({ cursor: { x: 11, y: 4 }, len: '1500', ang: '-500' });
+    expect(liveCommit()).toBe(true);
+    expect(got[1].x).toBeCloseTo(11.5, 9); expect(got[1].y).toBeCloseTo(4.5, 9);
+    liveEnd('tool');
+  });
 });
