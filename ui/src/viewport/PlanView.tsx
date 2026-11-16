@@ -416,11 +416,11 @@ export function PlanView() {
     picked.current = undefined;
     // An annotation drawn over an inset view goes on its source, in its own coordinates (decision 576); the model's tools stay on the plan.
     const inset = drawsThroughInsets(tool.id) ? insetUnder(drawing?.marks, points) : null;
-    if (inset) await completeTool(tool, { points: points.map(inset.map), entity, typed }, inset.source);
-    else await completeTool(tool, { points, entity, face, typed, ...(arcs?.some((r) => Math.abs(r) > 1e-6) ? { arcs } : {}) });
+    if (inset) await completeTool(tool, { points: points.map(inset.map), entity, typed, ...(rot ? { rotation: rot } : {}) }, inset.source);
+    else await completeTool(tool, { points, entity, face, typed, ...(rot ? { rotation: rot } : {}), ...(arcs?.some((r) => Math.abs(r) > 1e-6) ? { arcs } : {}) });
     if (tool.gesture?.kind === 'twoPoints' && tool.gesture.repeat) setPts([points[points.length - 1]]);
     else setPts([]);
-  }, [tool, drawing]);
+  }, [tool, drawing, rot]);
 
   /** The rise of the edge from the last point to q: an arc going on tangent from the edge before (straight after the first point). */
   const nextRise = (q: Vec2): number => {
