@@ -39,7 +39,7 @@ Selectează în plan o ușă, o fereastră sau un gol din perete și Lapin desen
 - **Dă clic pe o valoare** ca s-o tastezi, în unitatea proiectului (merg și sume ca `1200+300`), și apasă **Enter**: golul alunecă pe perete până când cota arată valoarea, celălalt capăt rămânând pe loc. Un singur pas de anulare. **Escape** o lasă cum era. Dacă golul n-ar mai încăpea (dincolo de capătul peretelui sau peste alt gol), nu se mută nimic, iar mesajul spune de ce.
 - **Dă clic pe punctul de la capătul golului** ca să măsori de la mijlocul lui în loc de muchie.
 - **Dă clic pe punctul de la celălalt capăt** ca să măsori până la următorul lucru de acolo: fața apropiată a unui perete, fața depărtată, fețele miezului (la un perete în straturi), axul; muchia apropiată a altui gol, mijlocul lui, muchia depărtată.
-- **Dă clic pe lacăt**, lângă o valoare, ca s-o păstrezi ca o cotă permanentă a planului, legată de ce se află la capetele ei, ca una desenată cu **Adnotări → Aliniată**. Nu blochează distanța: golul se poate muta în continuare.
+- **Dă clic pe lacăt**, lângă o valoare, ca s-o păstrezi ca o cotă permanentă a planului, legată de ce se află la capetele ei, ca una desenată cu **Adnotări → Cote**. Nu blochează distanța: golul se poate muta în continuare.
 
 Așadar „colțul acestei ferestre la 1500 de fața acelui perete” înseamnă: selectează fereastra, dă clic pe valoarea spre perete, tastează `1500`, Enter. „Axul acestei ferestre la 2500 de axul celeilalte ferestre” înseamnă: dă clic pe punctul de la capătul ferestrei și pe cel de la capătul celeilalte ferestre până când amândouă măsoară mijloacele, apoi tastează `2500`.
 

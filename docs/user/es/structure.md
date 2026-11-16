@@ -39,6 +39,8 @@ En **Propiedades** una zapata aislada muestra su **Superior** e **Inferior** com
 
 ![Pilares, vigas y zapatas aisladas en 3D](shots/structure-3d.webp)
 
+Las vigas y las zapatas corridas se cortan y se desplazan con las mismas herramientas que los muros (véase [Recortar, alargar, dividir y desfasar muros](walls.md)): **Modificar → Dividir elemento** divide una en dos donde haga clic, **Modificar → Recortar/alargar elementos** la recorta hasta un límite o la prolonga hasta él (una zapata corrida curva continúa por su círculo; llevada al eje de otra viga, las dos se unen), y **Modificar → Desfasar elemento** la copia en paralelo, desde su eje o entre sus caras.
+
 ## Tipos y esquinas
 
 **Tipos estructurales** define las secciones de pilares, vigas y zapatas: secciones de hormigón y perfiles de acero. La sección de un pilar es un **Rectángulo**, un **Círculo** o un **Polígono**, uno regular dado por sus **Lados** y su **Diámetro** entre vértices (un poste octogonal, como puede tenerlo un IFC importado).

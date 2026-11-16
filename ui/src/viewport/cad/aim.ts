@@ -101,8 +101,8 @@ function onGrid(shape: Shape, raw: Vec2, near: Vec2, g: number): Vec2 | null {
   return best;
 }
 
-/** The drawing's lines a cursor can snap to (no hatches, fills or texts). */
-const SNAP_LAYERS = new Set(['CUT', 'SEEN', 'HIDDEN', 'OVERHEAD', 'BEYOND', 'MEMBRANE']);
+/** The drawing's lines a cursor can snap to (no hatches, fills or texts); on a sheet's paper, its frame, title block, views' boxes and edge too (decision 620). */
+const SNAP_LAYERS = new Set(['CUT', 'SEEN', 'HIDDEN', 'OVERHEAD', 'BEYOND', 'MEMBRANE', 'FRAME', 'TITLE', 'VIEWPORT', 'PAPER']);
 
 export function snapShapes(drawing: DrawingDto | null, extra: Shape[] = []): { shapes: Shape[]; drafts: Map<string, Shape[]>; owners: (string | null)[] } {
   const shapes: Shape[] = [...extra];

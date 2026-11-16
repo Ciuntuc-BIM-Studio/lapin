@@ -80,6 +80,10 @@ A floor of the type is built of its joists (each from edge to edge and into the 
 
 Your own catalogue comes in from a spreadsheet: **Import catalogue…** reads a CSV (one row a system, sizes in millimetres; **CSV template** gives the columns) and makes a floor type of each row, or changes the type of the same name, in one step to undo.
 
+**Modify → Split element** on a floor or a ceiling asks for two points of a split line: it runs on past them and must cross the outline exactly twice. The floor becomes two floors; the part you clicked keeps the id (its GlobalId in IFC), arcs on the edges stay arcs (a cut arc stays an arc), and a floor opening goes with the part it lies in. An opening the line crosses refuses. **Modify → Trim/Extend elements** takes a straight boundary (a wall, a beam or a drafted line) and cuts the floor or ceiling there, keeping the side you click.
+
+![A floor with a curved edge split along a line: the part on the right selected](shots/floor-split.webp)
+
 ## Roofs
 
 Choose **Architecture → Roof** (<kbd>RF</kbd>) and click the outline of the walls under it. Lapin builds the roof over that outline, at the top of its level.

@@ -54,6 +54,10 @@ Um piso desenhado fora das paredes, diante de uma porta, é uma varanda. Para os
 
 Uma camada de uma laje também pode ir além do seu contorno, ou parar antes, à volta toda ou numa aresta, escrita nas suas propriedades ou arrastada em planta ou em corte com **Editar camadas**, e um tipo de laje pode dar às suas lajes as suas extensões: veja [Extensões de camadas](walls.md#extensoes-de-camadas). Os telhados ainda não têm composição de camadas (a cobertura, a laje e a estrutura são partes próprias), por isso não têm extensões de camadas.
 
+**Modificar → Dividir elemento** numa laje ou num teto pede dois pontos de uma linha de corte: a linha continua para lá deles e tem de cruzar o contorno exatamente duas vezes. A laje passa a ser duas lajes; a parte clicada mantém o id (GlobalId em IFC), os arcos nos bordos continuam arcos (um arco cortado continua um arco) e um vão da laje vai com a parte em que está. Um vão que a linha atravesse é recusado. **Modificar → Aparar/estender elementos** aceita um limite reto (uma parede, uma viga ou uma linha desenhada) e corta aí a laje ou o teto, mantendo o lado clicado.
+
+![Uma laje com um bordo curvo dividida por uma linha: a parte da direita selecionada](shots/floor-split.webp)
+
 ## Telhados
 
 Escolha **Arquitetura → Telhado** (<kbd>RF</kbd>) e clique no contorno das paredes sob ele. O Lapin constrói o telhado sobre esse contorno, no topo do seu nível.

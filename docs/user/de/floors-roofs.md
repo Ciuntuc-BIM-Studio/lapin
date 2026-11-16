@@ -54,6 +54,10 @@ Eine außerhalb der Wände, vor einer Tür gezeichnete Decke ist ein Podest. Fü
 
 Eine Schicht einer Decke kann auch über ihren Umriss hinausgehen oder davor enden, rundum oder an einer Kante, in ihren Eigenschaften eingetippt oder im Grundriss oder Schnitt mit **Schichten bearbeiten** gezogen, und ein Deckentyp kann seinen Decken ihre Verlängerungen geben: siehe [Schichtverlängerungen](walls.md#schichtverlangerungen). Dächer haben noch keinen Schichtaufbau (Eindeckung, Platte und Tragwerk sind eigene Teile), daher keine Schichtverlängerungen.
 
+**Ändern → Element teilen** auf einer Decke fragt nach zwei Punkten einer Trennlinie: Sie läuft über sie hinaus und muss den Umriss genau zweimal schneiden. Die Decke wird zu zwei Decken; der angeklickte Teil behält die ID (GlobalId in IFC), Bögen an den Kanten bleiben Bögen (ein geschnittener Bogen bleibt ein Bogen), und eine Deckenöffnung geht an den Teil, in dem sie liegt. Eine Öffnung, die die Linie kreuzt, wird abgelehnt. **Ändern → Elemente stutzen/dehnen** nimmt eine gerade Grenze (eine Wand, einen Träger oder eine gezeichnete Linie) und schneidet die Decke dort, wobei die angeklickte Seite bleibt.
+
+![Eine Decke mit gekrümmter Kante, entlang einer Linie geteilt: der rechte Teil ist gewählt](shots/floor-split.webp)
+
 ## Dächer
 
 Wählen Sie **Architektur → Dach** (<kbd>RF</kbd>) und klicken Sie den Umriss der Wände darunter an. Lapin baut das Dach über diesem Umriss, oben auf seiner Ebene.

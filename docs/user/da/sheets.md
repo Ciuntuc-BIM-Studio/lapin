@@ -42,6 +42,23 @@ Tegningerne, deres PDF, Udskriv og udgivelsen tegner det med hver tegnings værd
 
 ![Tegningen med sit eget tegningshoved](shots/sheet-title-block.webp)
 
+## Tegning på arket
+
+Noter, markeringer og forklaringer, der hører til arket og ikke til en af dets visninger, tegnes på selve arket. Klik på **Annotér** i arkets bjælke, eller dobbeltklik på papiret uden for visningerne (**Annotér → Annotér ark** gør det samme). Arket åbnes i tegneruden som sit papir, i 1:1, med visningerne, rammen og tegningshovedet under, og bjælken siger *tegning på arket*. Alle værktøjer under **Tegn** og **Annotér** virker der som på en visning, i papir-millimeter: skriv 50, og en linje er 50 mm lang på papiret, og en teksts højde er dens højde på papiret. Punkter fanges på rammen, tegningshovedet, visningernes rammer (blå stiplet) og det, visningerne tegner. **Tegningsark** i bjælken går tilbage til at arrangere visningerne.
+
+- **Tekster** kan indeholde levende felter, som et tegningshoveds: `Ark {sheet.number} af {sheet.count}`, `{project.name}`, `{sheet.date}`. På en visning læses en tekst, som den er skrevet.
+- **Note med henvisningslinje** (Annotér → Tekst): klik, hvor pilen peger, derefter, hvor teksten skal stå, og skriv den. Flyttes noten, tager den pilen med; **Henvisningslinje → fjern** i dens egenskaber fjerner pilen.
+- **Linjer, polylinjer, rektangler, cirkler, buer, skraveringer, symboler og billeder** er tegneværktøjernes egne, med deres greb, lag og ændringsværktøjer. En nordpil er et af Lapins symboler (**Annotér → Symbol**).
+- **Revisionssky** (Tegn → Fyld, Annotér → Tegningsark eller REVCLOUD på kommandolinjen): to hjørner, eller **P** for en polygon, der lukkes med Enter. **Revisionssky** i egenskaberne for enhver lukket polylinje eller cirkel gør den til en sky eller tilbage igen og angiver dens bue på papiret.
+- **Signaturforklaring** (Annotér → Tegningsark): en levende liste over det, arkets visninger tegner: de materialer, deres snit er skraveret og udfyldt med, eller, med **Lister** i dens egenskaber, deres linjer efter rolle, type og tykkelse. Den ændrer sig med visningerne og modellen, og dens titel tager også felter.
+- **Målestokslinje** (Annotér → Tegningsark): i målestokken for arkets første visning eller den, dens egenskaber angiver, en rund længde på omkring 80 mm eller en, du vælger. På en plan, et snit eller en facade tager en målestokslinje visningens målestok.
+
+Det, der er tegnet på arket, udskrives på det, oven på visningerne, præcis som vist: i dets PDF, ved udskrivning og i dets DXF. Det hører til arket: **Duplikér tegningsarket** (dets knap i projektbrowseren) kopierer det sammen med de symboler, der er placeret på arket, og sletning af arket sletter det. Hver tegning er ét fortryd-trin. Ark lavet tidligere har intet tegnet på sig og udskrives som før.
+
+![Tegning på et ark: en note med henvisningslinje, en revisionssky, en levende tekst, en signaturforklaring over planens materialer og en målestokslinje](shots/sheet-annotations.webp)
+
+![Det samme ark, som det udskrives](shots/sheet-annotated.webp)
+
 ## Udskrivning
 
 Knapperne **PDF** og **DXF** i arkets bjælke eksporterer arket. En PDF er klar til at blive udskrevet eller sendt. En DXF åbner i AutoCAD og andre CAD-programmer med sine lag, linjer og skraveringer. **Udskriv** sender arket til en printer eller plotter i dets egen papirstørrelse, 1:1, som vektorlinjer: vælg plotter og papir i udskriftsdialogen. På en mindre printer vælger du tilpas til siden.

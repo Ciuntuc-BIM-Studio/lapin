@@ -178,8 +178,9 @@ const swap = restyle('Swap', 'architecture.swap', ArrowLeftRight, { swap: true }
 /** Fillet and chamfer on walls and railings (a user's request): the command line's FILLET and CHAMFER, which take two walls, a railing's corner or two railings as well as drafted lines. */
 const filletTool: ToolDef = { id: 'architecture.fillet', label: 'Fillet', icon: Spline, run: () => void startCommand('FILLET') };
 const chamferTool: ToolDef = { id: 'architecture.chamfer', label: 'Chamfer', icon: CornerUpRight, run: () => void startCommand('CHAMFER') };
-const trimTool: ToolDef = { id: 'architecture.trim', label: 'Trim', icon: Scissors, run: () => void startCommand('TRIM') };
-const extendTool: ToolDef = { id: 'architecture.extend', label: 'Extend', icon: ArrowRightToLine, run: () => void startCommand('EXTEND') };
+// The walls' Trim and Extend (forum #109) became Modify → Trim/Extend elements (audit 2026-11-15, §6): their ids stay, as aliases.
+const trimTool: ToolDef = { id: 'architecture.trim', label: 'Trim/Extend elements', icon: Scissors, run: () => void startCommand('TRIMEXTEND') };
+const extendTool: ToolDef = { id: 'architecture.extend', label: 'Trim/Extend elements', icon: ArrowRightToLine, run: () => void startCommand('TRIMEXTEND') };
 const mitreNew: ToolDef = {
   id: 'architecture.mitreNew', label: 'Mitre new corners', icon: Slash,
   run: () => {
@@ -607,7 +608,7 @@ const architecture: LapinModule = {
       { label: 'Sunshades', tools: [sunshade], small: [sunshadeAlong, sunshadeSchedule] },
       // Profiles swept along a wall's face: added (a cornice, a band) or taken out (a reveal), decision 297.
       { label: 'Sweeps', tools: [wallSweep, wallReveal], small: [sweepSelected, revealSelected, wallSweepSchedule] },
-      { label: 'Joins', tools: [join], small: [mitreNew, trimTool, extendTool, filletTool, chamferTool, attachRoof, detachRoof, editLayers] },
+      { label: 'Joins', tools: [join], small: [mitreNew, filletTool, chamferTool, attachRoof, detachRoof, editLayers] },
       { label: 'Room', tools: [room], small: [roomOutline, roomDividers, updateRooms, roomTag] },
       { label: 'Circulation', tools: [stair, ramp, stairTypes], small: [entranceSteps, entranceRamp, underStair, underStairSchedule] },
       // Balconies (a tester's report, #96): by a wall's face in a style, by outline, a gallery's edge; the configurator, stacking, the schedule.
@@ -637,7 +638,7 @@ const architecture: LapinModule = {
     id: 'annotate', label: 'Annotate', order: 60,
     groups: [{ label: 'Rooms', tools: [colorLegend] }],
   }],
-  legacyTools: [curvedWall, roomDividerArc, mitre, butt, swap, ...openingAliases],
+  legacyTools: [curvedWall, roomDividerArc, mitre, butt, swap, trimTool, extendTool, ...openingAliases],
   hotbar: [wall, door, window_, slab, roof],
   propertySections: [
     { id: 'wall', label: 'Wall', classes: ['IfcWall'], component: WallLayers },

@@ -241,9 +241,10 @@ public static class Sheets
 
     /// <summary>
     /// A sheet as paper pens: the views clipped to their boxes with their titles, the frame and the title block (its views placed here unless
-    /// given); with <paramref name="issuing"/>, as that issue prints it (its revision and status in the title block, its row in the table).
+    /// given); with <paramref name="issuing"/>, as that issue prints it (its revision and status in the title block, its row in the table);
+    /// what is drawn on the sheet's paper over all of it (decision 620), unless <paramref name="annotations"/> is false (the paper's own screen, under them).
     /// </summary>
-    public static PaperPage Compose(IQueryContext q, Entity sheet, List<Placement>? placed = null, Issuing? issuing = null)
+    public static PaperPage Compose(IQueryContext q, Entity sheet, List<Placement>? placed = null, Issuing? issuing = null, bool annotations = true)
     {
         if (issuing != null)
         {
@@ -304,6 +305,7 @@ public static class Sheets
         if (template != null)
         {
             TitleBlocks.Draw(q, sheet, template, TitleBlocks.Layout((W, H), template), placements, issuing, pens);
+            if (annotations) pens.AddRange(PaperViews.PrintPens(q, sheet, placements));
             return new PaperPage(W, H, pens, sheet.Name, DraftingResources.Book(q.Model).LineCap);
         }
         // The title block: project; sheet with its revision and status; then number, scale, date, drawn by and checked by.
@@ -347,6 +349,8 @@ public static class Sheets
         }
         RevisionTable(RevisionRows(q.Model, sheet, issuing), frame, rules, text, bx0, by0, bw);
         pens.AddRange([frame, rules, text]);
+        // What is drawn on the sheet itself (decision 620): over everything, as on the screen; none on a sheet from before.
+        if (annotations) pens.AddRange(PaperViews.PrintPens(q, sheet, placements));
         return new PaperPage(W, H, pens, sheet.Name, DraftingResources.Book(q.Model).LineCap);
     }
 
@@ -609,7 +613,8 @@ public static class Sheets
             return new JsonObject { ["id"] = sheet.Id };
         });
 
-        // A copy of a sheet: its paper, title block and discipline, the next number, no views (a view sits on one sheet).
+        // A copy of a sheet: its paper, title block and discipline, the next number, no views (a view sits on one sheet); what is
+        // drawn on its paper and its symbols copied onto the copy's (decision 620).
         r.Command("sheet.duplicate", "Duplicate sheet", (ctx, a) =>
         {
             var sheet = Require(ctx.Model, (string?)a["id"]);
@@ -618,6 +623,7 @@ public static class Sheets
             attrs["viewports"] = new JsonArray();
             var copy = new Entity(ctx.NewId(), Class, (string?)a["name"] is { Length: > 0 } nm ? nm : Views.CopyName(ctx.Model, sheet.Name, Class), attrs);
             ctx.Add(copy);
+            PaperViews.Copy(ctx, sheet.Id, copy.Id);
             return new JsonObject { ["id"] = copy.Id };
         });
 
@@ -642,6 +648,7 @@ public static class Sheets
             var page = (int)(Json.Number(a["page"]) ?? 1);
             var isContent = ctx.Model.Get(viewId) is { } ent && ctx.Services.All<ISheetContent>().Any(c => c.Handles(ent));
             if (Views.Find(ctx.Model, viewId) == null && !isContent) throw new CommandException("There is no such view.");
+            if (PaperViews.SheetIdOf(viewId) != null) throw new CommandException("A sheet's paper is not a view to place.");
             // A named boundary of the view (decision 236): the view may go on as many sheets as it has boundaries, once each.
             var boundary = (string?)a["boundaryId"] is { Length: > 0 } bid
                 ? ctx.Model.Get(bid) is { Class: ViewBoundaries.Class } be && be.Str("viewId") == viewId ? bid : throw new CommandException("The view has no such boundary.")

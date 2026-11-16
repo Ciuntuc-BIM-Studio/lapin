@@ -54,6 +54,10 @@ Strop narysowany poza ścianami, przed drzwiami, to ganek. Schody prowadzące na
 
 Warstwa stropu może też wychodzić poza jego obrys albo kończyć się przed nim, dookoła lub na jednej krawędzi, wpisana we właściwościach albo przeciągnięta w rzucie lub przekroju przez **Edytuj warstwy**, a typ stropu może dać swoim stropom ich przedłużenia: zobacz [Przedłużenia warstw](walls.md#przed-uzenia-warstw). Dachy nie mają jeszcze układu warstw (pokrycie, płyta i więźba to ich osobne części), więc nie mają przedłużeń warstw.
 
+**Modyfikuj → Podziel element** na stropie lub suficie prosi o dwa punkty linii podziału: linia biegnie dalej poza nie i musi przeciąć obrys dokładnie dwa razy. Strop staje się dwoma stropami; kliknięta część zachowuje id (GlobalId w IFC), łuki na krawędziach pozostają łukami (przecięty łuk nadal jest łukiem), a otwór w stropie idzie z częścią, w której leży. Otwór, który linia przecina, jest odrzucany. **Modyfikuj → Utnij/wydłuż elementy** przyjmuje prostą granicę (ścianę, belkę lub narysowaną linię) i tnie tam strop lub sufit, zachowując klikniętą stronę.
+
+![Strop z łukową krawędzią podzielony linią: prawa część zaznaczona](shots/floor-split.webp)
+
 ## Dachy
 
 Wybierz **Architektura → Dach** (<kbd>RF</kbd>) i kliknij obrys ścian pod nim. Lapin buduje dach nad tym obrysem, na wysokości szczytu jego poziomu.

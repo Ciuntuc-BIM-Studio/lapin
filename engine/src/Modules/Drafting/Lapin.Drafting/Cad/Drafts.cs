@@ -267,8 +267,11 @@ public static class Drafts
             if (ShapeOf(e) is not { } shape) continue;
             // Construction lines: thin, dashed, grey, on a layer of their own that sheets and exports leave out.
             var construction = e.Str("role") == "draft";
+            // A revision cloud (decision 620): a closed shape drawn as scallops about as long as its arc (paper mm), bulging outwards.
+            var cloud = e.NumOrNull("cloud") is double arc && arc > 0 && shape is Polyline { Closed: true } or Circle ? arc : 0;
             foreach (var line in Geo.Polylines(shape))
                 if (construction) mk.Polyline(line, false, ConstructionLayer, Pens.Default.Hatch, "#8f98a3", [2, 1.5]);
+                else if (cloud > 0) mk.Polyline(Cloud(line, cloud * c.Mm), false, layer.Name, layer.Weight, color, layer.DashIn(c.Book));
                 else mk.Polyline(line, false, layer.Name, layer.Weight, color, layer.DashIn(c.Book));
             var k = Geo.Keys(shape);
             mk.Snaps.AddRange([.. k.Endpoints, .. k.Midpoints, .. k.Centers, .. k.Quadrants]);
@@ -278,4 +281,42 @@ public static class Drafts
     }
 
     static JsonObject Also(this JsonObject o, Action<JsonObject> f) { f(o); return o; }
+
+    /// <summary>
+    /// A closed ring drawn as a revision cloud: each side cut into scallops about <paramref name="arc"/> long (view units), each
+    /// a half circle bulging outwards (away from the ring's inside), laid in chords.
+    /// </summary>
+    public static List<Vec2> Cloud(IReadOnlyList<Vec2> ring, double arc)
+    {
+        var pts = ring.Count > 1 && (ring[0] - ring[^1]).Length < 1e-12 ? ring.Take(ring.Count - 1).ToList() : ring.ToList();
+        if (pts.Count < 3 || arc <= 0) return [.. ring];
+        var area = 0.0;
+        for (var i = 0; i < pts.Count; i++) area += Vec2.Cross(pts[i], pts[(i + 1) % pts.Count]);
+        var outwards = area >= 0 ? -1.0 : 1.0; // anticlockwise: the outside is on each side's right
+        var o = new List<Vec2> { pts[0] };
+        for (var i = 0; i < pts.Count; i++)
+        {
+            var (a, b) = (pts[i], pts[(i + 1) % pts.Count]);
+            var side = b - a;
+            var len = side.Length;
+            if (len < 1e-12) continue;
+            var n = Math.Max(1, (int)Math.Round(len / arc));
+            var d = side * (1 / len);
+            var normal = new Vec2(-d.Y, d.X) * outwards;
+            for (var k = 0; k < n; k++)
+            {
+                var (p, q) = (a + side * ((double)k / n), a + side * ((double)(k + 1) / n));
+                var mid = (p + q) * 0.5;
+                var h = (q - p) * 0.5;
+                var r = h.Length;
+                const int steps = 8;
+                for (var j = 1; j <= steps; j++)
+                {
+                    var t = Math.PI * j / steps;
+                    o.Add(mid - h * Math.Cos(t) + normal * (r * Math.Sin(t)));
+                }
+            }
+        }
+        return o;
+    }
 }

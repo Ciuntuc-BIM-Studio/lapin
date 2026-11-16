@@ -80,6 +80,10 @@ O placă de acest tip e construită din grinzile ei (fiecare de la o margine la 
 
 Catalogul tău vine dintr-o foaie de calcul: **Importă catalogul…** citește un CSV (un rând un sistem, dimensiuni în milimetri; **Șablon CSV** dă coloanele) și face câte un tip de placă din fiecare rând, sau îl schimbă pe cel cu același nume, într-un singur pas de anulare.
 
+**Modifică → Împarte elementul** pe o placă sau pe un plafon cere două puncte ale unei linii de tăiere: linia continuă dincolo de ele și trebuie să taie conturul exact de două ori. Placa devine două plăci; partea pe care ai apăsat păstrează id-ul (GlobalId-ul din IFC), arcele de pe margini rămân arce (un arc tăiat rămâne arc), iar golul din placă merge la partea în care se află. Un gol pe care îl taie linia refuză. **Modifică → Taie/Prelungește elemente** primește o limită dreaptă (un perete, o grindă sau o linie desenată) și taie placa sau plafonul acolo, păstrând partea pe care ai apăsat.
+
+![O placă cu o margine curbă împărțită de o linie: partea din dreapta selectată](shots/floor-split.webp)
+
 ## Acoperișuri
 
 Alege **Arhitectură → Acoperiș** (<kbd>RF</kbd>) și dă clic pe conturul pereților de dedesubt. Lapin construiește acoperișul peste acel contur, la partea de sus a nivelului.
