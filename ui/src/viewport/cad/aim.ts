@@ -17,6 +17,7 @@ import { track, trackOnOrtho, type Guide } from './tracking';
 import { parallelHold, relatables, tangentHold, type CurveRef, type SideRef } from './relations';
 import type { Ref } from './constraints';
 import { useCad, type CadHost } from './session';
+import { useSession } from '../../engine/session';
 import type { RegionTest } from '../selectBox';
 import { viewFrameAt } from '../viewFrame';
 import { insetUnder } from '../insetMap';
@@ -140,6 +141,26 @@ export function draftThrough(drafts: ReadonlyMap<string, Shape[]>, p: Vec2, mode
   return null;
 }
 
+/**
+ * A level's line under a point (a section's or an elevation's storey line, its mark owned by the storey): the storey and the
+ * line's height; null when none is within `tol` (the nearest one when several are).
+ */
+export function levelLineAt(p: Vec2, tol: number, marks: DrawingDto['marks'] | undefined, nodes = useSession.getState().nodes): { id: string; y: number } | null {
+  let best: { id: string; y: number; d: number } | null = null;
+  for (const m of marks ?? []) {
+    if (nodes.get(m.id)?.type !== 'IfcBuildingStorey') continue;
+    const s = m.segments;
+    for (let k = 0; k + 3 < s.length; k += 4) {
+      const [x0, y0, x1, y1] = [s[k], s[k + 1], s[k + 2], s[k + 3]];
+      if (Math.abs(y1 - y0) > 1e-9 || Math.abs(x1 - x0) < 1e-9) continue;
+      if (p.x < Math.min(x0, x1) - tol || p.x > Math.max(x0, x1) + tol) continue;
+      const d = Math.abs(p.y - y0);
+      if (d <= tol && (!best || d < best.d)) best = { id: m.id, y: y0, d };
+    }
+  }
+  return best ? { id: best.id, y: best.y } : null;
+}
+
 export function useCadCanvas(o: {
   viewId: string | null;
   drawing: DrawingDto | null;
@@ -201,6 +222,7 @@ export function useCadCanvas(o: {
         return out.sort((a, b) => a.d - b.d);
       },
       pickAny: (p) => pickRef.current(p),
+      pickLevel: (p) => levelLineAt(p, 8 / scaleRef.current, marks),
       shapeOf: (id) => drafts.get(id)?.[0] ?? null,
       outlinesOf: (id) => {
         const exact = drafts.get(id);
