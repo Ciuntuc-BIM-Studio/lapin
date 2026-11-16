@@ -13,7 +13,7 @@ const utf8 = (bytes: Uint8Array): string => {
 
 function json(bytes: Uint8Array, what: string): Record<string, unknown> {
   let v: unknown;
-  try { v = JSON.parse(utf8(bytes)); } catch (e) { throw new Error(e instanceof Error && e.message.startsWith('The file') ? e.message : `The file is not ${what}: it is not JSON.`); }
+  try { v = JSON.parse(utf8(bytes)); } catch (e) { throw new Error(e instanceof Error && e.message.startsWith('The file') ? e.message : `The file is not ${what}: it is not JSON.`, { cause: e }); }
   if (!v || typeof v !== 'object' || Array.isArray(v)) throw new Error(`The file is not ${what}.`);
   // Every kind through the one envelope (audit D13, platform/libraryFile.ts): a header of a newer Lapin refused; none is a file of an earlier one.
   checkEnvelope(v as Record<string, unknown>, what.replace(/^an? (Lapin )?/, ''));

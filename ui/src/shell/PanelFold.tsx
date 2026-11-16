@@ -8,7 +8,8 @@ export function PanelFold({ side, at, overlay }: { side: 'browser' | 'props'; at
   useBindings();
   const name = side === 'browser' ? 'project browser' : 'properties';
   const keys = bindingText(side === 'browser' ? 'app.toggleBrowser' : 'app.toggleProps').split(', ')[0];
-  const where = at ?? (usePanels((p) => (side === 'browser' ? p.browserSide : p.propsSide)));
+  const panelSide = usePanels((p) => (side === 'browser' ? p.browserSide : p.propsSide));
+  const where = at ?? panelSide;
   const k = keys ? ` (${keys})` : '';
   if (overlay) return (
     <button type="button" className="icon mini panel-fold" title={`Keep the ${name} open${k}`}
