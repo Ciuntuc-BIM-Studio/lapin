@@ -1,6 +1,8 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // Convert to…: stair, floor opening, parcel (audit S12)
+  "Width (empty: the type's; an outline's first edge)": "Lățime (goală: a tipului; prima latură a unui contur)", "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.": "Parcela (limita proprietății) terenului de sub fiecare contur închis, cu arcele lui păstrate.", "An opening in the floor under each closed outline; a circle makes a round one.": "Un gol în planșeul de sub fiecare contur închis; un cerc face unul rotund.", "A stair of the type chosen: its foot at the path's start, climbing along it; an outline's first edge is its foot and width.": "O scară de tipul ales: piciorul la începutul traseului, urcând de-a lungul lui; prima latură a unui contur îi este piciorul și lățimea.",
   // Parts of steel, CLT and rebar for field schedules (audit S1)
   "Steel connection parts": "Piesele îmbinărilor metalice", "Reinforcing bars": "Bare de armătură", "Bars by mark": "Bare pe poziții", "Place in its element": "Locul în elementul lui", "Thickness (m)": "Grosime (m)", "Row of the members list": "Rândul din lista barelor", "Hall": "Hală", "kg/m": "kg/m", "Each (kg, the row's)": "Bucata (kg, a rândului)", "Row of the parts schedule": "Rândul din extrasul pieselor", "Weld length (m)": "Lungimea sudurii (m)", "Total length (m)": "Lungime totală (m)", "A type's bars of one mark: shape, Ø, length": "Barele unui tip cu aceeași poziție: forma, Ø, lungimea",
   // Annotations drawn on a sheet itself (decision 620)

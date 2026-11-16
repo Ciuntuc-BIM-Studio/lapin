@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const PL: Record<string, string> = {
+  // Convert to…: stair, floor opening, parcel (audit S12)
+  "Width (empty: the type's; an outline's first edge)": "Szerokość (puste: typu; pierwsza krawędź obrysu)", "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.": "Działka (granica nieruchomości) terenu pod każdym zamkniętym obrysem, z zachowanymi łukami.", "An opening in the floor under each closed outline; a circle makes a round one.": "Otwór w stropie pod każdym zamkniętym obrysem; okrąg daje okrągły.", "A stair of the type chosen: its foot at the path's start, climbing along it; an outline's first edge is its foot and width.": "Schody wybranego typu: ich początek na starcie ścieżki, wznoszące się wzdłuż niej; pierwsza krawędź obrysu to ich początek i szerokość.",
   // Parts of steel, CLT and rebar for field schedules (audit S1)
   "Steel connection parts": "Części połączeń stalowych", "Reinforcing bars": "Pręty zbrojeniowe", "Bars by mark": "Pręty według pozycji", "Place in its element": "Miejsce w jego elemencie", "Thickness (m)": "Grubość (m)", "Row of the members list": "Wiersz zestawienia prętów", "Hall": "Hala", "kg/m": "kg/m", "Each (kg, the row's)": "Sztuka (kg, wiersza)", "Row of the parts schedule": "Wiersz zestawienia części", "Weld length (m)": "Długość spoiny (m)", "Total length (m)": "Długość całkowita (m)", "A type's bars of one mark: shape, Ø, length": "Pręty typu o jednej pozycji: kształt, Ø, długość",
   // Annotations drawn on a sheet itself (decision 620)

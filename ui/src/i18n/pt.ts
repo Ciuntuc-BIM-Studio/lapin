@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const PT: Record<string, string> = {
+  // Convert to…: stair, floor opening, parcel (audit S12)
+  "Width (empty: the type's; an outline's first edge)": "Largura (vazia: a do tipo; o primeiro lado de um contorno)", "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.": "O lote (o limite da propriedade) do terreno sob cada contorno fechado, com os seus arcos.", "An opening in the floor under each closed outline; a circle makes a round one.": "Uma abertura na laje sob cada contorno fechado; um círculo faz uma redonda.", "A stair of the type chosen: its foot at the path's start, climbing along it; an outline's first edge is its foot and width.": "Uma escada do tipo escolhido: o seu arranque no início do percurso, subindo ao longo dele; o primeiro lado de um contorno é o seu arranque e a sua largura.",
   // Parts of steel, CLT and rebar for field schedules (audit S1)
   "Steel connection parts": "Peças das ligações de aço", "Reinforcing bars": "Varões de armadura", "Bars by mark": "Varões por marca", "Place in its element": "Lugar no seu elemento", "Thickness (m)": "Espessura (m)", "Row of the members list": "Linha da lista de perfis", "Hall": "Pavilhão", "kg/m": "kg/m", "Each (kg, the row's)": "Unidade (kg, da linha)", "Row of the parts schedule": "Linha do mapa de peças", "Weld length (m)": "Comprimento de soldadura (m)", "Total length (m)": "Comprimento total (m)", "A type's bars of one mark: shape, Ø, length": "Varões de um tipo com uma marca: forma, Ø, comprimento",
   // Annotations drawn on a sheet itself (decision 620)

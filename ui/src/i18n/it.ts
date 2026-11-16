@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const IT: Record<string, string> = {
+  // Convert to…: stair, floor opening, parcel (audit S12)
+  "Width (empty: the type's; an outline's first edge)": "Larghezza (vuota: quella del tipo; il primo lato di un contorno)", "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.": "Il lotto (il confine della proprietà) del terreno sotto ogni contorno chiuso, con i suoi archi.", "An opening in the floor under each closed outline; a circle makes a round one.": "Un'apertura nel solaio sotto ogni contorno chiuso; un cerchio ne fa una rotonda.", "A stair of the type chosen: its foot at the path's start, climbing along it; an outline's first edge is its foot and width.": "Una scala del tipo scelto: il piede all'inizio del percorso, salendo lungo di esso; il primo lato di un contorno è il suo piede e la sua larghezza.",
   // Parts of steel, CLT and rebar for field schedules (audit S1)
   "Steel connection parts": "Pezzi dei giunti in acciaio", "Reinforcing bars": "Barre d’armatura", "Bars by mark": "Barre per posizione", "Place in its element": "Posto nel suo elemento", "Thickness (m)": "Spessore (m)", "Row of the members list": "Riga della distinta delle aste", "Hall": "Capannone", "kg/m": "kg/m", "Each (kg, the row's)": "Cadauno (kg, della riga)", "Row of the parts schedule": "Riga della distinta dei pezzi", "Weld length (m)": "Lunghezza saldatura (m)", "Total length (m)": "Lunghezza totale (m)", "A type's bars of one mark: shape, Ø, length": "Barre di un tipo con una posizione: forma, Ø, lunghezza",
   // Annotations drawn on a sheet itself (decision 620)

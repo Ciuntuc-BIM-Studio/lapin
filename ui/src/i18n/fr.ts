@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const FR: Record<string, string> = {
+  // Convert to…: stair, floor opening, parcel (audit S12)
+  "Width (empty: the type's; an outline's first edge)": "Largeur (vide : celle du type ; le premier côté d’un contour)", "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.": "La parcelle (la limite de la propriété) du terrain sous chaque contour fermé, ses arcs conservés.", "An opening in the floor under each closed outline; a circle makes a round one.": "Une trémie dans la dalle sous chaque contour fermé ; un cercle en fait une ronde.", "A stair of the type chosen: its foot at the path's start, climbing along it; an outline's first edge is its foot and width.": "Un escalier du type choisi : son départ au début du tracé, montant le long de celui-ci ; le premier côté d’un contour est son départ et sa largeur.",
   // Parts of steel, CLT and rebar for field schedules (audit S1)
   "Steel connection parts": "Pièces des assemblages acier", "Reinforcing bars": "Barres d’armature", "Bars by mark": "Barres par repère", "Place in its element": "Place dans son élément", "Thickness (m)": "Épaisseur (m)", "Row of the members list": "Ligne de la liste des barres", "Hall": "Hall", "kg/m": "kg/m", "Each (kg, the row's)": "Unité (kg, celle de la ligne)", "Row of the parts schedule": "Ligne de la nomenclature des pièces", "Weld length (m)": "Longueur de soudure (m)", "Total length (m)": "Longueur totale (m)", "A type's bars of one mark: shape, Ø, length": "Barres d’un type de même repère : forme, Ø, longueur",
   // Annotations drawn on a sheet itself (decision 620)

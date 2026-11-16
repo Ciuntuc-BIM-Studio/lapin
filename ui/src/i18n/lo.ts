@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // Convert to…: stair, floor opening, parcel (audit S12)
+  "Width (empty: the type's; an outline's first edge)": "ຄວາມກວ້າງ (ຫວ່າງ: ຂອງປະເພດ; ຂອບທຳອິດຂອງເສັ້ນຂອບ)", "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.": "ຕອນດິນ (ຂອບເຂດຂອງຊັບສິນ) ຂອງພື້ນດິນໃຕ້ແຕ່ລະເສັ້ນຂອບປິດ, ຮັກສາເສັ້ນໂຄ້ງຂອງມັນໄວ້.", "An opening in the floor under each closed outline; a circle makes a round one.": "ຮູໃນພື້ນໃຕ້ແຕ່ລະເສັ້ນຂອບປິດ; ວົງມົນເຮັດໃຫ້ເປັນຮູມົນ.", "A stair of the type chosen: its foot at the path's start, climbing along it; an outline's first edge is its foot and width.": "ຂັ້ນໄດຂອງປະເພດທີ່ເລືອກ: ຕີນຂອງມັນຢູ່ຈຸດເລີ່ມຂອງເສັ້ນທາງ, ຂຶ້ນໄປຕາມມັນ; ຂອບທຳອິດຂອງເສັ້ນຂອບແມ່ນຕີນ ແລະ ຄວາມກວ້າງຂອງມັນ.",
   // Parts of steel, CLT and rebar for field schedules (audit S1)
   "Steel connection parts": "ຊິ້ນສ່ວນຂອງຂໍ້ຕໍ່ເຫຼັກ", "Reinforcing bars": "ເຫຼັກເສີມ", "Bars by mark": "ເຫຼັກຕາມເຄື່ອງໝາຍ", "Place in its element": "ບ່ອນໃນອົງປະກອບຂອງມັນ", "Thickness (m)": "ຄວາມໜາ (m)", "Row of the members list": "ແຖວຂອງລາຍການໂຄງເຫຼັກ", "Hall": "ໂຮງ", "kg/m": "kg/m", "Each (kg, the row's)": "ແຕ່ລະອັນ (kg, ຂອງແຖວ)", "Row of the parts schedule": "ແຖວຂອງຕາຕະລາງຊິ້ນສ່ວນ", "Weld length (m)": "ຄວາມຍາວການເຊື່ອມ (m)", "Total length (m)": "ຄວາມຍາວລວມ (m)", "A type's bars of one mark: shape, Ø, length": "ເຫຼັກຂອງປະເພດໜຶ່ງທີ່ມີເຄື່ອງໝາຍດຽວ: ຮູບຊົງ, Ø, ຄວາມຍາວ",
   // Annotations drawn on a sheet itself (decision 620)

@@ -11305,6 +11305,28 @@ export const scenes = [
       await t.shot('convert-terrain', { of: '[data-dialog=convert]', pad: 8 });
       await page.locator('[data-field=convert-run]').click();
       await t.until(async () => (await t.nodes()).filter((n) => n.type === 'IfcGeographicElement').length === 1, 'one terrain made of the four contours');
+      // A polyline made a stair along it (its foot, the way it climbs and turns), and a circle a round opening in the floor under it.
+      await t.cmd('architecture.addSlab', { storeyId: s, points: [[20, 0], [30, 0], [30, 8], [20, 8]] });
+      const path = (await t.cmd('drafting.draw', { viewId: view, shapes: [{ type: 'polyline', pts: [[22, 1], [22, 5], [25, 5]] }, { type: 'circle', c: [27.5, 2], r: 0.8 }] })).ids;
+      await t.fit();
+      await t.ui({ selected: [path[0]], selection: path[0] });
+      await t.wait(600);
+      await t.tool('drafting.convert');
+      await page.waitForSelector('[data-dialog=convert]', { timeout: 10_000 });
+      await page.locator('[data-field=convert-converter]').selectOption('stair');
+      await t.until(async () => (await page.locator('[data-field=convert-ok]').innerText().catch(() => '')) === '1', 'the path can make a stair');
+      await t.wait(600);
+      await t.shot('convert-stair', { of: '[data-dialog=convert]', pad: 8 });
+      await page.locator('[data-field=convert-run]').click();
+      await t.until(async () => (await t.nodes()).some((n) => n.type === 'IfcStair'), 'a stair made along the path');
+      await t.ui({ selected: [path[1]], selection: path[1] });
+      await t.wait(600);
+      await t.tool('drafting.convert');
+      await page.waitForSelector('[data-dialog=convert]', { timeout: 10_000 });
+      await page.locator('[data-field=convert-converter]').selectOption('floorOpening');
+      await t.until(async () => (await page.locator('[data-field=convert-ok]').innerText().catch(() => '')) === '1', 'the circle can make a floor opening');
+      await page.locator('[data-field=convert-run]').click();
+      await t.until(async () => (await t.nodes()).some((n) => n.type === 'IfcOpeningElement'), 'a round opening made in the floor');
     },
   },
   {

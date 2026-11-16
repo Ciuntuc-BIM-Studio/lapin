@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  // Convert to…: stair, floor opening, parcel (audit S12)
+  "Width (empty: the type's; an outline's first edge)": "Bredde (tom: typens; en omrids' første kant)", "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.": "Grunden (ejendommens grænse) for terrænet under hvert lukket omrids, med dets buer bevaret.", "An opening in the floor under each closed outline; a circle makes a round one.": "En åbning i dækket under hvert lukket omrids; en cirkel giver en rund.", "A stair of the type chosen: its foot at the path's start, climbing along it; an outline's first edge is its foot and width.": "En trappe af den valgte type: dens fod ved stiens start, stigende langs den; et omrids' første kant er dens fod og bredde.",
   // Parts of steel, CLT and rebar for field schedules (audit S1)
   "Steel connection parts": "Stålsamlingers dele", "Reinforcing bars": "Armeringsjern", "Bars by mark": "Jern efter position", "Place in its element": "Plads i dets element", "Thickness (m)": "Tykkelse (m)", "Row of the members list": "Række i listen over stålprofiler", "Hall": "Hal", "kg/m": "kg/m", "Each (kg, the row's)": "Stk. (kg, rækkens)", "Row of the parts schedule": "Række i listen over dele", "Weld length (m)": "Svejselængde (m)", "Total length (m)": "Samlet længde (m)", "A type's bars of one mark: shape, Ø, length": "En types jern med samme position: form, Ø, længde",
   // Annotations drawn on a sheet itself (decision 620)

@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const DE: Record<string, string> = {
+  // Convert to…: stair, floor opening, parcel (audit S12)
+  "Width (empty: the type's; an outline's first edge)": "Breite (leer: die des Typs; die erste Kante eines Umrisses)", "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.": "Das Grundstück (die Grenze des Grundbesitzes) des Geländes unter jedem geschlossenen Umriss, seine Bögen erhalten.", "An opening in the floor under each closed outline; a circle makes a round one.": "Eine Öffnung in der Decke unter jedem geschlossenen Umriss; ein Kreis ergibt eine runde.", "A stair of the type chosen: its foot at the path's start, climbing along it; an outline's first edge is its foot and width.": "Eine Treppe des gewählten Typs: ihr Fuß am Anfang des Pfads, entlang ihm steigend; die erste Kante eines Umrisses ist ihr Fuß und ihre Breite.",
   // Parts of steel, CLT and rebar for field schedules (audit S1)
   "Steel connection parts": "Teile der Stahlanschlüsse", "Reinforcing bars": "Bewehrungsstäbe", "Bars by mark": "Stäbe nach Position", "Place in its element": "Platz in seinem Element", "Thickness (m)": "Dicke (m)", "Row of the members list": "Zeile der Stabliste", "Hall": "Halle", "kg/m": "kg/m", "Each (kg, the row's)": "Stück (kg, der Zeile)", "Row of the parts schedule": "Zeile der Teileliste", "Weld length (m)": "Schweißnahtlänge (m)", "Total length (m)": "Gesamtlänge (m)", "A type's bars of one mark: shape, Ø, length": "Stäbe eines Typs mit einer Position: Form, Ø, Länge",
   // Annotations drawn on a sheet itself (decision 620)
