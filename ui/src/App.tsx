@@ -7,7 +7,7 @@
 import { useDialogLayer } from './shell/Dialog';
 import { Fragment, lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { AppWindow, Bot, Box, Columns2, Ruler, FolderTree, Layers, ListTree, PanelLeftOpen, PanelRightOpen, Rows2, SlidersHorizontal, X } from 'lucide-react';
-import { closeOverlay, columns, panelsOn, setPanelWidth, setStackRatio, type PanelId, type Side, showOverlay, showPropsTab, togglePanel, usePanels, type PanelTab } from './app/panels';
+import { closeOverlay, columns, panelsOn, setPanelWidth, setStackRatio, type PanelId, type Side, showOverlay, showPropsTab, syncToolPropsTab, togglePanel, usePanels, type PanelTab } from './app/panels';
 import { assistantAvailable } from './assistant/available';
 import { useInterface } from './app/interface';
 import './app/highlight';
@@ -32,6 +32,7 @@ import { isDesktop, projectTitle } from './engine/files';
 import { activate, backgrounds, dialog, findTool, moduleView, modules, overlays, productInfo } from './platform/modules';
 import { ProjectBrowser } from './shell/ProjectBrowser';
 import { PropertiesPanel } from './shell/PropertiesPanel';
+import { ToolPropertiesPanel } from './shell/ToolPropertiesPanel';
 import { Ribbon } from './shell/Ribbon';
 import { StartScreen } from './shell/StartScreen';
 import { useHudFacts, ViewportHud } from './shell/ViewportHud';
@@ -59,17 +60,23 @@ import { AskBox } from './shell/AskBox';
  */
 const AssistantPanel = import.meta.env.VITE_ENGINE !== 'worker' ? lazy(() => import('./assistant/AssistantPanel')) : null;
 
-/** The right side: the properties, and on the desktop a tab for the assistant beside them. */
+/** The right side: properties, Tool Properties (opens automatically when a tool is active), and on desktop the assistant. */
 function RightPanel() {
   const tab = usePanels((p) => p.propsTab ?? 'properties');
-  if (!AssistantPanel || !assistantAvailable()) return <PropertiesPanel />;
+  const toolId = useUi((s) => s.tool);
+  const tool = findTool(toolId);
+  const hasToolProps = !!(tool && (tool.typed || tool.options || tool.properties));
+  useEffect(() => { syncToolPropsTab(hasToolProps); }, [hasToolProps]);
+  const hasAssistant = !!(AssistantPanel && assistantAvailable());
+  if (!hasAssistant && !hasToolProps && tab !== 'tool') return <PropertiesPanel />;
   return (
     <div className="side-tabbed">
       <div className="side-tabs" role="tablist">
         <button type="button" role="tab" className={`browser-tab${tab === 'properties' ? ' on' : ''}`} aria-selected={tab === 'properties'} onClick={() => showPropsTab('properties')}>Properties</button>
-        <button type="button" role="tab" className={`browser-tab${tab === 'assistant' ? ' on' : ''}`} aria-selected={tab === 'assistant'} onClick={() => showPropsTab('assistant')}>Assistant</button>
+        {(hasToolProps || tab === 'tool') && <button type="button" role="tab" className={`browser-tab${tab === 'tool' ? ' on' : ''}`} aria-selected={tab === 'tool'} onClick={() => showPropsTab('tool')}>Tool Properties</button>}
+        {hasAssistant && <button type="button" role="tab" className={`browser-tab${tab === 'assistant' ? ' on' : ''}`} aria-selected={tab === 'assistant'} onClick={() => showPropsTab('assistant')}>Assistant</button>}
       </div>
-      {tab === 'assistant' ? <Suspense fallback={null}><AssistantPanel /></Suspense> : <PropertiesPanel />}
+      {tab === 'assistant' && AssistantPanel ? <Suspense fallback={null}><AssistantPanel /></Suspense> : tab === 'tool' ? <ToolPropertiesPanel /> : <PropertiesPanel />}
     </div>
   );
 }
