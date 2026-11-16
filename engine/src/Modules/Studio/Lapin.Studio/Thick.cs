@@ -47,10 +47,7 @@ public static class Thick
         public static Band Fail(string why) => new([], [], null, 0, why);
     }
 
-    const int CircleSides = 64;
-
-    static List<Vec2> CirclePts(Vec2 c, double r) =>
-        Enumerable.Range(0, CircleSides).Select(i => c + new Vec2(Math.Cos(2 * Math.PI * i / CircleSides), Math.Sin(2 * Math.PI * i / CircleSides)) * r).ToList();
+    static List<Vec2> CirclePts(Vec2 c, double r) => Chords.Ring(c, r);
 
     /// <summary>How far outward and inward of the line the band reaches (left counted as inward, for a counter-clockwise line).</summary>
     static (double Out, double In) Split(string justify, double t) => justify switch

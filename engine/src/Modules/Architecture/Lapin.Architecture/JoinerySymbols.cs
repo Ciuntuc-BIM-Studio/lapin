@@ -33,8 +33,7 @@ public static class JoinerySymbols
 
     static JStroke Arc(Vec2 c, double r, double from, double to, string w, bool dashed = false)
     {
-        var steps = Math.Max(8, (int)Math.Ceiling(Math.Abs(to - from) / (Math.PI / 32)));
-        return new(Enumerable.Range(0, steps + 1).Select(i => { var a = from + (to - from) * i / steps; return new Vec2(c.X + r * Math.Cos(a), c.Y + r * Math.Sin(a)); }).ToList(), w, false, dashed);
+        return new(Chords.Arc(c, r, from, to - from, 8), w, false, dashed);
     }
 
     static List<JStroke> Arrow(Vec2 a, Vec2 b, string w)
