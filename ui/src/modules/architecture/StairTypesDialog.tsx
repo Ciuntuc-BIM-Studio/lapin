@@ -42,6 +42,7 @@ interface Spec {
   innerRadius?: number; sweep?: number | null; sideWidth?: number | null;
   /** What a plan writes on it (report #46), and how it draws the part over the plan's cut and the break line (report #143). */
   symbols?: Symbols | null;
+  landingWidth?: number; landingRiser?: number | null;
 }
 interface Symbols { numbers: boolean; label: boolean; up: boolean; aboveCut?: 'dashed' | 'hidden' | 'whole'; break?: 'zigzag' | 'double' }
 const SYMBOLS: Symbols = { numbers: false, label: false, up: true, aboveCut: 'dashed', break: 'zigzag' };
@@ -226,6 +227,11 @@ export function StairTypesDialog() {
                   <p className="muted small">Empty: as the risers and the tread make it. Given: the tread follows from it.</p>
                 </>}
                 {spec.shape !== 'straight' && spec.shape !== 'spiral' && spec.shape !== 'curved' && <Mm label="Landing length" value={spec.landingLength} onChange={(v) => set({ landingLength: Math.max(0, v) })} />}
+                {spec.shape === 'l' && spec.turn !== 'winders' && <Mm label="Landing width" value={spec.landingWidth ?? 0} onChange={(v) => set({ landingWidth: Math.max(0, v) })} />}
+                {spec.shape !== 'straight' && spec.shape !== 'spiral' && spec.shape !== 'curved' && (
+                  <label className="field-line"><span className="eyebrow">Landing after step</span>
+                    <NumberField testId="landing-riser" placeholder="halfway" value={spec.landingRiser ?? null} blank integer min={1} max={60} onCommit={(n) => set({ landingRiser: n })} /></label>
+                )}
                 {spec.shape !== 'straight' && spec.shape !== 'spiral' && spec.shape !== 'curved' && spec.landingLength === 0 && <p className="muted small">Landing length 0: as the width.</p>}
                 <p className="eyebrow">In plan</p>
                 {(['numbers', 'label', 'up'] as const).map((k) => (

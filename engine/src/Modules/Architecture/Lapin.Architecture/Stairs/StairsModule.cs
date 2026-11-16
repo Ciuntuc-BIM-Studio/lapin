@@ -136,7 +136,7 @@ public static class StairsModule
                 ["at"] = new JsonArray(at.X, at.Y), ["rotation"] = rotation ?? 0, ["turn"] = (string?)a["turn"] == "right" ? "right" : "left",
                 ["baseOffset"] = 0.0, ["topOffset"] = 0.0,
             };
-            foreach (var k in new[] { "width", "risers", "riserHeight", "tread", "landing", "height", "rise", "topOffset", "sweep", "slope", "winders", "windersEnd", "treadsBetween" }) if (Json.Number(a[k]) is { } v) attrs[k] = v;
+            foreach (var k in new[] { "width", "risers", "riserHeight", "tread", "landing", "landingWidth", "landingRiser", "height", "rise", "topOffset", "sweep", "slope", "winders", "windersEnd", "treadsBetween" }) if (Json.Number(a[k]) is { } v) attrs[k] = v;
             if ((string?)a["topStoreyId"] is { } top) attrs["topStoreyId"] = Spatial.Require(ctx.Model, top, IfcClass.BuildingStorey).Id;
             var spec = StairSpec.From(type.Attrs["spec"]) ?? StairSpec.Default();
             var ownRise = Json.Number(a["rise"]) is { } ar && ar > 0 ? ar : spec.Rise;
@@ -156,7 +156,7 @@ public static class StairsModule
             var attrs = stair.CloneAttrs();
             var riseBefore = StairBuilder.OwnRise(ctx.Model, stair);
             var fromLevel = StairBuilder.SpecOf(ctx.Model, stair).RiseFrom == "level";
-            foreach (var k in new[] { "width", "baseOffset", "topOffset", "risers", "riserHeight", "tread", "landing", "height", "rotation", "rise", "sweep", "slope", "winders", "windersEnd", "treadsBetween" })
+            foreach (var k in new[] { "width", "baseOffset", "topOffset", "risers", "riserHeight", "tread", "landing", "landingWidth", "landingRiser", "height", "rotation", "rise", "sweep", "slope", "winders", "windersEnd", "treadsBetween" })
                 if (a.ContainsKey(k)) { if (Json.Number(a[k]) is { } v) attrs[k] = v; else attrs.Remove(k); }
             // The railing's sides for this stair alone (null: the type's).
             if (a.ContainsKey("railingSides")) { if ((string?)a["railingSides"] is { } rs && StairSpec.Sides.Contains(rs)) attrs["railingSides"] = rs; else attrs.Remove("railingSides"); }

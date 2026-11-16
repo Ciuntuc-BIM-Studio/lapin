@@ -103,7 +103,9 @@ public sealed record StairSpec(
     /// some (or a different count at each corner) each corner turns on its own, the well between the flights as wide as these
     /// treads; 0 with the same count at both, the winders fan round the whole half turn, as before.
     /// </summary>
-    int Between = 0)
+    int Between = 0,
+    double LandingWidth = 0,
+    int? LandingRiser = null)
 {
     public static readonly string[] Shapes = ["straight", "straight-landing", "l", "u", "spiral", "curved", "split"];
     /// <summary>The shapes a ramp takes: straight, straight with landings, an L, a switchback.</summary>
@@ -239,6 +241,8 @@ public sealed record StairSpec(
                 Width = Math.Clamp(s.Width, 0.5, 5),
                 Gap = Math.Clamp(s.Gap, 0, 2),
                 LandingLength = Math.Max(0, s.LandingLength),
+                LandingWidth = Math.Max(0, s.LandingWidth),
+                LandingRiser = s.LandingRiser is { } lr && lr > 0 ? Math.Clamp(lr, 1, 60) : null,
                 Rise = s.Rise is { } rise && rise > 0 ? Math.Clamp(rise, 0.05, 10) : null,
                 InnerRadius = Math.Clamp(s.InnerRadius, 0.03, 20),
                 Sweep = s.Sweep is { } sw && sw > 0 ? Math.Clamp(sw, 10, 1440) : null,

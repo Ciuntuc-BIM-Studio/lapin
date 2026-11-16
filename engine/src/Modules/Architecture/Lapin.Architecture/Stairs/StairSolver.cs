@@ -38,7 +38,7 @@ public sealed record Winder(Vec2[] Outline, double Z, int Riser);
 /// <para>A U or L turned by winders (report #109) may change its corners on the instance too: <see cref="Winders"/> at the first
 /// corner, <see cref="WindersEnd"/> at a U's second, <see cref="Between"/> straight treads between a U's corners.</para>
 public sealed record StairInputs(double? Width = null, int? Risers = null, double? RiserHeight = null, double? Tread = null, double? Landing = null, double? Sweep = null,
-    int? Winders = null, int? WindersEnd = null, int? Between = null);
+    int? Winders = null, int? WindersEnd = null, int? Between = null, double? LandingWidth = null, int? LandingRiser = null);
 
 /// <summary>
 /// A stair worked out: the risers n, the riser h and the tread b, the flights,
@@ -131,7 +131,14 @@ public static class StairSolver
         // The first flight's last riser lands on the first winder and the second flight leaves from the last: the winders add one
         // riser fewer than their count; turning at two corners, the straight treads between them add their own and one more.
         var inFlights = winders == 0 ? n : corners ? n - w1 - w2 - between + 1 : n - winders + 1;
-        var split = spec.Shape == "straight" ? [inFlights] : new[] { (int)Math.Ceiling(inFlights / 2.0), (int)Math.Floor(inFlights / 2.0) };
+        int[] split;
+        if (spec.Shape == "straight") split = [inFlights];
+        else if ((inputs.LandingRiser ?? spec.LandingRiser) is { } lr && inFlights > 1)
+        {
+            var first = Math.Clamp(lr, 1, inFlights - 1);
+            split = [first, inFlights - first];
+        }
+        else split = [(int)Math.Ceiling(inFlights / 2.0), (int)Math.Floor(inFlights / 2.0)];
         if (spec.Shape == "split" && split.Length == 2 && split[1] > 0) return ResolveSplit(spec, height, n, h, b, width, landing, split, turnLeft);
         if (split.Length == 2 && split[1] == 0) split = [inFlights];
 
@@ -159,15 +166,21 @@ public static class StairSolver
                     break;
                 case "l":
                 {
+                    var lWid = inputs.LandingWidth ?? (spec.LandingWidth > 0 ? spec.LandingWidth : w);
                     if (winders > 0)
                     {
                         var pivot = pos + left * (w / 2);
                         Vec2[] outer = [pos - left * (w / 2), pos + dir * w - left * (w / 2), pos + dir * w + left * (w / 2)];
                         winderSteps.AddRange(Fan(pivot, outer, winders, z, h, split[0]));
                         z += (winders - 1) * h;
+                        start2 = pos + dir * (w / 2) + left * (w / 2);
                     }
-                    else landings.Add(new Landing([pos - left * (w / 2), pos + dir * w - left * (w / 2), pos + dir * w + left * (w / 2), pos + left * (w / 2)], z));
-                    start2 = pos + dir * (w / 2) + left * (w / 2); dir2 = left;
+                    else
+                    {
+                        landings.Add(new Landing([pos - left * (w / 2), pos + dir * landing - left * (w / 2), pos + dir * landing + left * (lWid - w / 2), pos + left * (lWid - w / 2)], z));
+                        start2 = pos + dir * (landing - w / 2) + left * (lWid - w / 2);
+                    }
+                    dir2 = left;
                     break;
                 }
                 default: // u
