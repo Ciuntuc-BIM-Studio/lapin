@@ -29,7 +29,7 @@ public sealed record DimEndRef(string Kind, string Element, Vec2 Offset, Vec2 Di
     public const int CurrentFrame = 2;
 
     static JsonArray J(Vec2 p) => new(p.X, p.Y);
-    static Vec2? V(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : null;
+    static Vec2? V(JsonNode? n) => Args.TryPoint(n);
 
     public JsonObject ToJson()
     {
@@ -141,7 +141,7 @@ public static class Dimensions
         return ((p - f).Length, f);
     }
 
-    static Vec2 P(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : default;
+    static Vec2 P(JsonNode? n) => Args.PointOf(n);
 
     /// <summary>
     /// An element's frame in plan: its axis (start → end), its placement and rotation (degrees, as every element keeps it), its

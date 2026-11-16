@@ -14,7 +14,7 @@ public static class Texts
         foreach (var t in c.Model.OfClass(IfcClass.Annotation).Where(x => x.PredefinedType == "TEXT" && x.Str("viewId") == c.View.Id))
         {
             var style = Standards.ResolveText(c.Book, Dimensions.ParamsOf(t));
-            var at = t.Attrs["at"] is System.Text.Json.Nodes.JsonArray a ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : default;
+            var at = Args.PointOf(t.Attrs["at"]);
             var body = t.Str("text") ?? "";
             var angle = t.Num("angle");
             var mk = new ViewMark(t.Id).Text(new PenText(at, body, style.Height, angle, "start", "bottom", style.Bold, style.Font, style.Italic), style.Color ?? "#000000");

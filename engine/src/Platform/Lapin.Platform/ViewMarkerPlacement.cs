@@ -14,7 +14,7 @@ public static class SectionHeads
 
     /// <summary>How far the head at an end (a: the line's start, b: its end) stands from it.</summary>
     public static Vec2 Offset(Entity section, string end) =>
-        section.Attrs[Key(end)] is JsonArray { Count: >= 2 } o ? new Vec2(Json.Number(o[0]) ?? 0, Json.Number(o[1]) ?? 0) : default;
+        Args.PointOf(section.Attrs[Key(end)]);
 
     public static void Register(IModuleRegistry r)
     {

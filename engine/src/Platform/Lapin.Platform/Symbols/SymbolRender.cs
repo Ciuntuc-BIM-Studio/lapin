@@ -69,7 +69,7 @@ public static class SymbolRender
     {
         var o = new SymbolDrawing([], [], [], []);
         var book = DraftingResources.Book(m);
-        static Vec2 P(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : default;
+        static Vec2 P(JsonNode? n) => Args.PointOf(n);
         static double[]? Dash(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? [.. a.Select(x => Math.Max(0.05, Json.Number(x) ?? 1))] : null;
         List<Vec2> Round(Vec2 c, double r, double start, double sweep)
         {

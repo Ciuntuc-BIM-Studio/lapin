@@ -323,8 +323,7 @@ public static class ColorSchemes
         var style = Standards.TextOf(c.Book, null);
         foreach (var legend in legends)
         {
-            if (legend.Attrs["at"] is not JsonArray { Count: >= 2 } atj) continue;
-            var at = new Vec2(Json.Number(atj[0]) ?? 0, Json.Number(atj[1]) ?? 0);
+            if (Args.TryPoint(legend.Attrs["at"]) is not { } at) continue;
             var scheme = Find(m, legend.Str("scheme")) ?? OfView(m, c.View);
             var mark = new ViewMark(legend.Id);
             var h = style.Height * c.Mm;

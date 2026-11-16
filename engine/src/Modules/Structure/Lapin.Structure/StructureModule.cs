@@ -76,7 +76,7 @@ public sealed class StructureModule : ILapinModule
             var storey = Place.Storey(ctx, a);
             var type = Place.TypeFor(ctx, a, IfcClass.ColumnType, () => Columns.DefaultType(ctx));
             var only = (a["tags"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet();
-            static Vec2 P(JsonNode? n) => n is JsonArray p && p.Count >= 2 ? new Vec2(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0) : default;
+            static Vec2 P(JsonNode? n) => Args.PointOf(n);
             var axes = ctx.Model.OfClass(IfcClass.Grid).SelectMany(g => (g.Attrs["axes"] as JsonArray)?.OfType<JsonObject>() ?? [])
                 .Where(x => only == null || only.Contains((string?)x["tag"] ?? "")).Select(x => (A: P(x["a"]), B: P(x["b"]))).ToList();
             var existing = ctx.Model.RelatedOf(storey.Id, IfcClass.RelContainedInSpatialStructure).Where(e => e.Class == IfcClass.Column).Select(e => P(e.Attrs["at"])).ToList();

@@ -63,7 +63,7 @@ public static class Rebars
     public static readonly string[] Views = ["front", "top", "side", "section"];
     public static readonly string[] Shows = ["all", "ends", "one"];
 
-    public static Vec2 P(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : default;
+    public static Vec2 P(JsonNode? n) => Args.PointOf(n);
     public static JsonArray J(Vec2 p) => new(Math.Round(p.X, 6), Math.Round(p.Y, 6));
 
     public static RebarSpec SpecOf(Entity e)

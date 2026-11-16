@@ -70,7 +70,7 @@ public static class ColumnBars
     /// <summary>How near a column's base must be to another's top to stand on it.</summary>
     public const double Tolerance = 0.05;
 
-    static Vec2 AtOf(Entity e) => e.Attrs["at"] is JsonArray q && q.Count >= 2 ? new Vec2(Json.Number(q[0]) ?? 0, Json.Number(q[1]) ?? 0) : default;
+    static Vec2 AtOf(Entity e) => Args.PointOf(e.Attrs["at"]);
     static double BaseOf(IModelView m, Entity e) => Spatial.Base(m, e);
 
     public static ColumnBarsSpec? SpecOf(IModelView m, Entity e) => m.RelatingOf(e.Id, IfcClass.RelDefinesByType) is { } type ? ColumnBarsSpec.Of(type) : null;

@@ -82,19 +82,18 @@ public static class BalconyBuilder
             if (Vec2.Dot(centre - a, v) < 0) (u, v) = (-u, -v);
             return new BalconyFrame((a + b) * 0.5, u, v, top, storey, null, 0, storey, Walls.DefaultHeight);
         }
-        if (e.Attrs["at"] is JsonArray { Count: >= 2 } atj)
+        if (Args.TryPoint(e.Attrs["at"]) is { } point)
         {
-            var at = new Vec2(Json.Number(atj[0]) ?? 0, Json.Number(atj[1]) ?? 0);
             var r = e.Num("rotation") * Math.PI / 180;
             var u = new Vec2(Math.Cos(r), Math.Sin(r));
             if (e.Bool("flip")) u = -u;
-            return new BalconyFrame(at, u, u.Perp, top, storey, null, 0, storey, Walls.DefaultHeight);
+            return new BalconyFrame(point, u, u.Perp, top, storey, null, 0, storey, Walls.DefaultHeight);
         }
         return null;
     }
 
     public static List<Vec2> Points(Entity e) =>
-        (e.Attrs["contour"] as JsonArray)?.OfType<JsonArray>().Where(p => p.Count >= 2).Select(p => new Vec2(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0)).ToList() ?? [];
+        Args.StoredPoints(e.Attrs["contour"]);
 
     // ------------------------------------------------------------ the outline
 

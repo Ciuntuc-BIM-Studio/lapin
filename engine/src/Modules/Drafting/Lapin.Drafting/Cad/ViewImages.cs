@@ -20,7 +20,7 @@ public static class ViewImages
 
     public static IEnumerable<Entity> On(IModelView m, string viewId) => m.OfClass(Class).Where(e => e.Str("viewId") == viewId);
 
-    static Vec2 P(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : default;
+    static Vec2 P(JsonNode? n) => Args.PointOf(n);
 
     /// <summary>An image's four corners in the view: from its bottom-left corner, along its turn.</summary>
     public static Vec2[] Corners(Entity e)

@@ -143,7 +143,7 @@ public static class SymbolInstances
             {
                 var style = Standards.ResolveText(book, Dimensions.ParamsOf(e));
                 var text = e.Str("text") ?? "";
-                var at = e.Attrs["at"] is JsonArray aa ? new Vec2(Json.Number(aa[0]) ?? 0, Json.Number(aa[1]) ?? 0) : default;
+                var at = Args.PointOf(e.Attrs["at"]);
                 // A text's height is paper mm: a model symbol's mm are the building's.
                 var h = model ? style.Height * mm * 1000 : style.Height;
                 var o = new JsonObject
@@ -197,7 +197,7 @@ public static class SymbolInstances
             made.Add(d.Id);
             return d;
         }
-        static Vec2 Pnt(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : default;
+        static Vec2 Pnt(JsonNode? n) => Args.PointOf(n);
         // Circles and arcs stay circles and arcs; every other item as it draws.
         var rest = new JsonArray();
         foreach (var item in def.Items.OfType<JsonObject>())
@@ -359,7 +359,7 @@ public static class SymbolInstances
     /// <summary>A placed symbol carried by a move, a turn or a mirror: its point, its angle, and a mirror turns it over (its texts stay readable).</summary>
     public static void Carry(JsonObject attrs, Placement2D t)
     {
-        var at = attrs["at"] is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : default;
+        var at = Args.PointOf(attrs["at"]);
         attrs["at"] = J(t.Point(at));
         var angle = (Json.Number(attrs["angle"]) ?? 0) * Math.PI / 180;
         var turned = t.Angle(angle) * 180 / Math.PI;

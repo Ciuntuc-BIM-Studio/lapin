@@ -164,7 +164,7 @@ public static class Symbols
     /// <summary>How an instance lies: its point, angle (°), scale and flips.</summary>
     public static (Vec2 At, double Angle, double Scale, bool FlipX, bool FlipY) Pose(Entity e)
     {
-        var at = e.Attrs["at"] is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : default;
+        var at = Args.PointOf(e.Attrs["at"]);
         var scale = e.NumOrNull("scale") is { } s && s > 0 ? s : 1;
         return (at, e.NumOrNull("angle") ?? 0, scale, e.Bool("flipX"), e.Bool("flipY"));
     }

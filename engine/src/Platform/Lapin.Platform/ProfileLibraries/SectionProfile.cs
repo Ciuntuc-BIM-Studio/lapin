@@ -182,8 +182,7 @@ public sealed record SectionProfile
     }
 
     static IReadOnlyList<IReadOnlyList<Vec2>>? RingsFrom(JsonNode? n) =>
-        n is JsonArray a && a.OfType<JsonArray>().Select(r => (IReadOnlyList<Vec2>)r.OfType<JsonArray>().Where(q => q.Count >= 2)
-            .Select(q => new Vec2(Json.Number(q[0]) ?? 0, Json.Number(q[1]) ?? 0)).ToList()).Where(r => r.Count >= 3).ToList() is { Count: > 0 } l ? l : null;
+        n is JsonArray a && a.OfType<JsonArray>().Select(r => (IReadOnlyList<Vec2>)Args.StoredPoints(r)).Where(r => r.Count >= 3).ToList() is { Count: > 0 } l ? l : null;
 
     /// <summary>A kind as files write it (H → I, SHS → RHS, Σ → SIGMA, a case of its own), null when it is none.</summary>
     public static string? KindOf(string? s)

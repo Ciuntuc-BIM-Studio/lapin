@@ -269,8 +269,7 @@ public sealed record Section(string Kind, double Width, double Depth, double Web
 
     /// <summary>The rings a section's JSON gives (<c>rings: [[[x, y], …], …]</c>), metres; null when none.</summary>
     public static IReadOnlyList<IReadOnlyList<Vec2>>? RingsFrom(JsonNode? n) =>
-        n is JsonArray a && a.OfType<JsonArray>().Select(r => (IReadOnlyList<Vec2>)r.OfType<JsonArray>().Where(p => p.Count >= 2)
-            .Select(p => new Vec2(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0)).ToList()).Where(r => r.Count >= 3).ToList() is { Count: > 0 } l ? l : null;
+        n is JsonArray a && a.OfType<JsonArray>().Select(r => (IReadOnlyList<Vec2>)Args.StoredPoints(r)).Where(r => r.Count >= 3).ToList() is { Count: > 0 } l ? l : null;
 
     /// <summary>
     /// The steel profiles a type list offers by name: the built-in library's (<see cref="Lapin.Platform.ProfileLibraries.BuiltInProfiles"/>,
