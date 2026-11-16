@@ -802,15 +802,27 @@ public static partial class IfcExport
 
         /// <summary>
         /// A curtain wall's doors (report #133): elements of their own, written as such, are parts of their wall (IfcRelAggregates, as
-        /// IFC decomposes a curtain wall) and no longer contained in the storey themselves.
+        /// IFC decomposes a curtain wall) and no longer contained in the storey themselves. The same for a placed Studio part's native
+        /// members (audit S6: its walls, floors, furniture…): each written as its own class, parts of the placed part.
         /// </summary>
         void CurtainWallParts()
         {
-            foreach (var cw in m.OfClass("IfcCurtainWall"))
+            foreach (var cw in m.OfClass("IfcCurtainWall").Concat(m.OfClass(IfcClass.BuildingElementProxy).Where(e => e.Str("operation") == "part" && e.Attrs["memberIds"] is JsonObject)))
             {
-                if (!written.TryGetValue(cw.Id, out var whole)) continue;
                 var parts = m.RelatedOf(cw.Id, IfcClass.RelAggregates).Select(p => written.GetValueOrDefault(p.Id)).OfType<string>().ToList();
                 if (parts.Count == 0) continue;
+                if (!written.TryGetValue(cw.Id, out var whole))
+                {
+                    // A part of members only has no body of its own: an IfcElementAssembly over them, as a Studio box's.
+                    if (cw.Class == "IfcCurtainWall" || !InPhase(cw)) continue;
+                    var storey = Spatial.StoreyOf(m, cw.Id);
+                    var (spatial, relTo) = storey != null && storeyRef.TryGetValue(storey.Id, out var sr) ? (sr, storeyPlace[storey.Id]) : (siteRef, sitePlace);
+                    var kind = new Kind("IfcElementAssembly", "USERDEFINED", m.RelatingOf(cw.Id, IfcClass.RelDefinesByType)?.Name ?? cw.Name);
+                    whole = Product(kind, Gid(cw.Id), cw.Name, kind.ObjectType, Place(relTo, 0), Null, cw.Id);
+                    written[cw.Id] = whole;
+                    Contain(spatial, whole);
+                    Elements++;
+                }
                 foreach (var list in contained.Values) list.RemoveAll(parts.Contains);
                 f.Add("IFCRELAGGREGATES", Gid(cw.Id, "elements"), Null, Null, Null, whole, L(parts));
             }

@@ -46,8 +46,10 @@ import { frameOfView } from '../../viewport/workPlane';
 import { cancel as cancelCommand } from '../../viewport/cad/session';
 import { toggleSketchupKeys, useDisplay } from '../../app/display';
 import './familyLibrary';
-import { FamiliesDialog } from './families/FamiliesDialog';
-import { partOf, isPlacedPart, FamilyFromSketchDialog, FamilySection, placeFamilyTool, startFamilyFromSketch } from './families/FamilyTools';
+import { PartsDialog } from './parts/PartsDialog';
+import { PartMemberSection } from './PartMembersSection';
+import { addToPartRequest } from './partMembersModel';
+import { partOf, isPlacedPart, PartFromSketchDialog, PartSection, placeFamilyTool, startPartFromSketch } from './families/FamilyTools';
 
 /** The thickness and height last used, the next command's defaults. */
 const last = { thickness: 0.2, height: 3 };
@@ -762,11 +764,18 @@ const primitive = (shape: string, label: string, icon: ToolDef['icon']): ToolDef
   },
 });
 
-/** Families of the user's own (docs/plan-user-extensibility.md §5.6): the place tool, the dialog with the editor, and one made from drafted outlines. */
-// The catalogue on the parts (S15); its Families… button opens the editor.
-const familiesDialogTool: ToolDef = { id: 'studio.families', label: 'Families…', icon: Boxes, run: () => openPlaceCatalog('parts') };
+/** Parts of the user's own (docs/plan-user-extensibility.md §5.6, audit S6; families were parts): the place tool, the manager dialog, and one made from drafted outlines. */
+// The catalogue on the parts (S15); its Parts… button opens the manager.
+const partsDialogTool: ToolDef = { id: 'studio.parts', label: 'Parts…', icon: Boxes, run: () => openPlaceCatalog('parts') };
+const partFromSketch: ToolDef = { id: 'studio.partFromSketch', label: 'Part from sketch…', icon: PackagePlus, run: startPartFromSketch };
+// The old ids stay tools (not on the ribbon) so shortcuts, quick slots and saved interfaces that name them keep working.
+const legacyFamilyTools: ToolDef[] = [
+  { ...placeFamilyTool, id: 'studio.family', label: 'Part' },
+  { ...partsDialogTool, id: 'studio.families', label: 'Parts…' },
+  { ...partFromSketch, id: 'studio.familyFromSketch' },
+];
 
-/** The Place catalogue's parts (families, S15): the project's, each a click from the Family tool set to it. */
+/** The Place catalogue's parts (S15): the project's, each a click from the Part tool set to it. */
 function usePartEntries(): PlaceEntry[] {
   const { families } = useFamilies();
   return families.map((f): PlaceEntry => ({
@@ -774,7 +783,20 @@ function usePartEntries(): PlaceEntry[] {
     place: () => { usePlaceFamily.setState({ familyId: f.id, values: {}, rotation: 0, mirror: false }); if (useUi.getState().tool !== placeFamilyTool.id) activate(placeFamilyTool); },
   }));
 }
-const familyFromSketch: ToolDef = { id: 'studio.familyFromSketch', label: 'Family from sketch…', icon: PackagePlus, run: startFamilyFromSketch };
+
+/** Add to part: the placed part and the other elements selected, the elements become the part's own (in every object of it). */
+const addToPart: ToolDef = {
+  id: 'studio.addToPart', label: 'Add to part', icon: PackagePlus, run: () => {
+    const st = useSession.getState();
+    const req = addToPartRequest(useUi.getState().selected, st.nodes);
+    if ('notice' in req) { notify(req.notice); return; }
+    void execute('studio.addPartMembers', req).then((r) => {
+      const err = useSession.getState().error;
+      if (err) notify(err);
+      else if (r) notify('The elements are part of the part now: edit them in its edit mode (Tab).');
+    });
+  },
+};
 
 registerEditMode();
 const editPartTool: ToolDef = { id: 'studio.editPart', label: 'Edit part', icon: PencilRuler, run: () => { useUi.setState({ view: '3d' }); editPart(); } };
@@ -786,7 +808,7 @@ const studio: LapinModule = {
   summary: 'Free-form solids: sketches on any face, extrude, sweep, loft, revolve, primitives, push/pull, fillets, shells, arrays and live booleans.',
   tabs: [
     // Beside Save as symbol: closed drafting made a family.
-    { id: 'draft', label: 'Draft', order: 10, groups: [{ label: 'Family', tools: [familyFromSketch] }] },
+    { id: 'draft', label: 'Draft', order: 10, groups: [{ label: 'Part', tools: [partFromSketch] }] },
     {
     id: 'studio', label: 'Studio', order: 50, include: ['modify'],
     groups: [
@@ -811,7 +833,7 @@ const studio: LapinModule = {
         small: [primitive('sphere', 'Sphere', CircleDot), primitive('cone', 'Cone', Cone), primitive('torus', 'Torus', Torus), primitive('wedge', 'Wedge', TriangleRight), primitive('pyramid', 'Pyramid', Pyramid)],
       },
       { label: 'Part', tools: [editPartTool, finishPartTool] },
-      { label: 'Families', tools: [placeFamilyTool, familiesDialogTool], small: [familyFromSketch] },
+      { label: 'Parts', tools: [placeFamilyTool, partsDialogTool, addToPart], small: [partFromSketch] },
       {
         label: 'Modify',
         tools: [pushPull, roundTool('fillet'), roundTool('chamfer'), shell],
@@ -831,9 +853,11 @@ const studio: LapinModule = {
       },
     ],
   }],
-  dialogs: { families: FamiliesDialog, familyFromSketch: FamilyFromSketchDialog },
+  dialogs: { parts: PartsDialog, families: PartsDialog, partFromSketch: PartFromSketchDialog, familyFromSketch: PartFromSketchDialog },
+  legacyTools: legacyFamilyTools,
   propertySections: [
-    { id: 'studioFamily', label: 'Family', classes: SOLID_CLASSES, shows: isPlacedPart, component: FamilySection },
+    { id: 'studioFamily', label: 'Part', classes: SOLID_CLASSES, shows: isPlacedPart, component: PartSection },
+    { id: 'studioPartMember', label: 'Part', classes: ['*'], shows: (n) => typeof n.props.partKey === 'string', component: PartMemberSection },
     { id: 'studioParams', label: 'Parameters', classes: SOLID_CLASSES, shows: isPlacedPart, component: PublishedParamsSection },
     { id: 'studioEditPart', label: 'Part', classes: SOLID_CLASSES, shows: isEditable, component: EditPartSection },
     { id: 'studioFeature', label: 'Studio', classes: SOLID_CLASSES, component: FeatureCard, fieldKeys: featureFieldKeys },
@@ -845,8 +869,8 @@ const studio: LapinModule = {
   planOverlays: [ConstraintOverlay],
   drawingOverlays: [ConstraintOverlay],
   overlays3d: [PartPlane3D, PartFlex3D, PartSketch3D],
-  // Create similar: a placed part's Family tool with its family, values, turn and hand; a primitive's tool of its shape.
-  placeSources: [{ id: 'parts', label: 'Families', order: 40, useEntries: usePartEntries, manage: { label: 'Families…', run: () => useUi.setState({ dialog: 'families' }) } }],
+  // Create similar: a placed part's Part tool with its part, values, turn and hand; a primitive's tool of its shape.
+  placeSources: [{ id: 'parts', label: 'Parts', order: 40, useEntries: usePartEntries, manage: { label: 'Parts…', run: () => useUi.setState({ dialog: 'parts' }) } }],
   similarFor: (n) => {
     if (isPlacedPart(n)) {
       const familyId = partOf(n.id);
