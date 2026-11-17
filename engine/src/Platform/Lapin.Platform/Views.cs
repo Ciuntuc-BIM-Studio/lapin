@@ -1907,7 +1907,7 @@ public static class Views
             if ((string?)a["category"] is { } cat)
             {
                 var role = (string?)a["role"] ?? "";
-                if (!LineStyles.Categories.Contains(cat) || !LineStyles.Roles.Contains(role)) throw new CommandException("An object style is a category and a role (cut, projection, hidden, overhead, beyond).");
+                if (!LineStyles.Categories.Contains(cat) || !LineStyles.Roles.Contains(role)) throw new CommandException("An object style is a category and a role (cut, separation: the lines between layers, projection, hidden, overhead, beyond).");
                 var styles = attrs["objectStyles"] as JsonObject ?? new JsonObject();
                 var c = styles[cat] as JsonObject ?? new JsonObject();
                 if (a["spec"] is JsonObject spec)

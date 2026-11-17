@@ -4257,6 +4257,14 @@ export const ZH: Record<string, string> = {
   "A table": "表格",
   // Paid extensions (stage 2a, docs/plan-extensions.md §12)
   "Paid": "付费", "Sold by its author through their own shop; Lapin Extensions takes no commission": "由作者通过自己的店铺销售；Lapin Extensions 不收取佣金", "Price": "价格", "The price is the seller's, shown at the checkout": "价格以卖家为准，在结账时显示", "Sold by": "销售方", "Sold by its author through their own shop: the seller takes the payment, issues the invoice and handles refunds. Lapin Extensions takes no commission.": "由作者通过自己的店铺销售：卖家收款、开具发票并处理退款。Lapin Extensions 不收取佣金。", "Its licence is no longer valid (refunded or disabled by its seller): it gets no more updates. What is installed stays.": "其许可证已失效（已退款或被卖家停用）：不再获得更新。已安装的内容保留。", "Buy": "购买", "Seller's terms": "卖家条款", "Licence key": "许可证密钥", "The licence key you received from the seller": "您从卖家收到的许可证密钥", "Lapin sends the key to the store, which checks it with the seller's shop; the key stays on this computer.": "Lapin 将密钥发送到商店，由商店向卖家的店铺核验；密钥保留在这台电脑上。", "Forget licence key": "忘记许可证密钥", "Forget the licence key kept for {name}? What is installed stays; an update will ask for the key again.": "忘记为 {name} 保存的许可证密钥？已安装的内容保留；更新时会再次要求输入密钥。", "Enter the licence key you received from the seller.": "请输入您从卖家收到的许可证密钥。", "This is not a licence key of this extension: check the key in the seller's e-mail.": "这不是此扩展的许可证密钥：请在卖家的电子邮件中核对密钥。", "This licence key is no longer valid: its purchase was refunded, or its seller disabled it.": "此许可证密钥已失效：购买已退款，或卖家已将其停用。", "The store could not check the licence key just now: try again later.": "商店暂时无法核验许可证密钥：请稍后再试。", "The store does not have this file yet: try again later.": "商店还没有此文件：请稍后再试。",
+  // Layer lines: the lines between a cut element's layers (forum)
+  "Layer lines": "层间线",
+  "The lines between a cut element's layers (a wall's, a floor's): pen, line type, colour": "剖切构件各层之间的线（墙、楼板）：笔、线型、颜色",
+  "Layer lines: pen": "层间线：笔",
+  "Layer lines: line type": "层间线：线型",
+  "Layer lines: colour": "层间线：颜色",
+  "As the cut lines": "同剖切线",
+  "The lines between a cut element's layers (a wall's, a floor's); unset: as the cut lines": "剖切构件各层之间的线（墙、楼板）；未设置：同剖切线",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

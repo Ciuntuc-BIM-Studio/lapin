@@ -2,7 +2,7 @@
  * Visibility / Graphics (VV, VG) for the view in front, 2D or 3D, as Revit's
  * (docs/plan-visibility-graphics.md): Model categories with their
  * subcategories (a wall's core, finishes, insulation…: shown, line colour and
- * weight, fill, cut hatch), Links (each link by the host view or with its own
+ * weight, the lines between its layers, fill, cut hatch), Links (each link by the host view or with its own
  * categories and classes in this view, shown and halftone here) and IFC
  * classes; the view's own settings, a named set of the project's shared by
  * every view that takes it, or its view style's set; a 2D view's hidden lines.
@@ -25,7 +25,8 @@ import { fromViewFilter, toViewFilter, type ViewRule } from '../../shell/conditi
 import { LOD_HELP, LODS, lodLabel } from './viewStyles';
 import { CLASS_COLORS, CLASS_NAMES } from '../../viewport/pointClouds3d';
 
-export interface Row { hidden?: boolean; lineColor?: string; lineWeight?: string; fillColor?: string; cutHatch?: string; halftone?: boolean; transparency?: number; lines?: Record<string, { pattern?: string; pen?: number }>; sub?: Record<string, Row> }
+export interface LineSpec { pattern?: string; pen?: number; color?: string }
+export interface Row { hidden?: boolean; lineColor?: string; lineWeight?: string; fillColor?: string; cutHatch?: string; halftone?: boolean; transparency?: number; lines?: Record<string, LineSpec>; sub?: Record<string, Row> }
 interface Rules { categories?: Record<string, Row>; classes?: Record<string, Row> }
 export interface LinkRow extends Rules { display?: 'host' | 'custom'; hidden?: boolean; halftone?: boolean }
 export interface FilterRow { id: string; hidden?: boolean; color?: string; halftone?: boolean; transparency?: number; pattern?: string }
@@ -65,6 +66,18 @@ export function withPattern(lines: Row['lines'], pattern: string): Row['lines'] 
     if (pattern) spec.pattern = pattern; else delete spec.pattern;
     if (Object.keys(spec).length) next[role] = spec; else delete next[role];
   }
+  return next;
+}
+
+/**
+ * A category's layer lines (the role separation: the lines between a cut element's layers, a wall's or a floor's) with
+ * <i>patch</i> laid over them; a field set empty goes, and the role with it when nothing is left (drawn as the cut lines).
+ */
+export function withLayerLines(lines: Row['lines'], patch: LineSpec): Row['lines'] {
+  const next = { ...(lines ?? {}) };
+  const spec: LineSpec = { ...(next.separation ?? {}), ...patch };
+  for (const k of Object.keys(spec) as (keyof LineSpec)[]) if (spec[k] === '' || spec[k] == null || Number.isNaN(spec[k])) delete spec[k];
+  if (Object.keys(spec).length) next.separation = spec; else delete next.separation;
   return next;
 }
 
@@ -170,7 +183,7 @@ export function VisibilityDialog() {
   /** The categories, each unfolding into its subcategories; full columns for the view's own, Shown alone inside a link. */
   const categoryTable = (link?: string) => (
     <table className="layer-table vv-categories">
-      <thead><tr><th>Shown</th><th>Category</th>{!link && <><th>Line colour</th><th>Line weight</th><th>Pattern</th><th>Fill</th><th>Cut hatch</th><th>Halftone</th><th title="In 3D: 0 opaque, 100 clear">Transparency</th></>}</tr></thead>
+      <thead><tr><th>Shown</th><th>Category</th>{!link && <><th>Line colour</th><th>Line weight</th><th>Pattern</th><th title="The lines between a cut element's layers (a wall's, a floor's): pen, line type, colour">Layer lines</th><th>Fill</th><th>Cut hatch</th><th>Halftone</th><th title="In 3D: 0 opaque, 100 clear">Transparency</th></>}</tr></thead>
       <tbody>
         {v.categories.map((c) => {
           const r = rulesOf(link).categories?.[c] ?? {};
@@ -194,6 +207,14 @@ export function VisibilityDialog() {
                     <td><ColourField value={r.lineColor ?? '#000000'} onChange={(v) => setCategory(c, { lineColor: v })} />{r.lineColor && <button type="button" className="icon mini" title="As the object styles" onClick={() => setCategory(c, { lineColor: '' })}><X size={10} /></button>}</td>
                     <td><select value={r.lineWeight ?? ''} onChange={(e) => setCategory(c, { lineWeight: e.target.value })}>{(r.lineWeight && !WEIGHTS.includes(r.lineWeight) ? [...WEIGHTS, r.lineWeight] : WEIGHTS).map((w) => <option key={w} value={w}>{w === '' ? 'as styled' : LEGACY[w] ? `${w} (${LEGACY[w]} mm)` : `${w} mm`}</option>)}</select></td>
                     <td><select aria-label="Pattern" value={r.lines?.projection?.pattern ?? r.lines?.cut?.pattern ?? ''} onChange={(e) => setCategory(c, { lines: withPattern(r.lines, e.target.value) })}>{patternChoices(PATTERNS, ownLines).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></td>
+                    <td className="os-cell" data-layer-lines={c}>
+                      <select aria-label="Layer lines: pen" title="Layer lines: pen" value={r.lines?.separation?.pen ?? ''} onChange={(e) => setCategory(c, { lines: withLayerLines(r.lines, { pen: e.target.value ? Number(e.target.value) : undefined }) })}>
+                        <option value="">pen —</option>{Array.from({ length: 16 }, (_, i) => <option key={i + 1} value={i + 1}>pen {i + 1}</option>)}
+                      </select>
+                      <select aria-label="Layer lines: line type" title="Layer lines: line type" value={r.lines?.separation?.pattern ?? ''} onChange={(e) => setCategory(c, { lines: withLayerLines(r.lines, { pattern: e.target.value || undefined }) })}>{patternChoices(PATTERNS, ownLines).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
+                      <ColourField title="Layer lines: colour" value={r.lines?.separation?.color ?? '#000000'} onChange={(v) => setCategory(c, { lines: withLayerLines(r.lines, { color: v }) })} />
+                      {r.lines?.separation && <button type="button" className="icon mini" title="As the cut lines" onClick={() => setCategory(c, { lines: withLayerLines(r.lines, { pen: undefined, pattern: undefined, color: undefined }) })}><X size={10} /></button>}
+                    </td>
                     <td><ColourField value={r.fillColor ?? '#ffffff'} onChange={(v) => setCategory(c, { fillColor: v })} />{r.fillColor && <button type="button" className="icon mini" title="No fill of its own" onClick={() => setCategory(c, { fillColor: '' })}><X size={10} /></button>}</td>
                     <td><select value={r.cutHatch ?? ''} onChange={(e) => setCategory(c, { cutHatch: e.target.value })}><option value="">the materials'</option>{hatches.map((h) => <option key={h} value={h}>{h}</option>)}</select></td>
                     <td><input type="checkbox" aria-label="Halftone" checked={!!r.halftone} onChange={(e) => setCategory(c, { halftone: e.target.checked })} /></td>
@@ -207,7 +228,7 @@ export function VisibilityDialog() {
                   <tr key={s} className="vv-sub" data-sub={`${c}.${s}`}>
                     <td><input type="checkbox" aria-label={`${categoryName(c)} ▸ ${categoryName(s)}`} checked={shown && !sr.hidden} disabled={!shown} onChange={(e) => setCategory(c, { hidden: !e.target.checked }, link, s)} /></td>
                     <td className="vv-sub-name">{categoryName(s)}</td>
-                    {!link && <td colSpan={7} />}
+                    {!link && <td colSpan={8} />}
                   </tr>
                 );
               })}

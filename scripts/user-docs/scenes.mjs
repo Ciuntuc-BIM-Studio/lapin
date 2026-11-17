@@ -5599,6 +5599,10 @@ export const scenes = [
       await t.wait(800);
       const vis = () => t.call('doc.query', { name: 'view.visibility', args: { id: plan } });
       t.expect((await vis()).graphics?.categories?.walls?.sub?.finishes?.hidden === true, 'the walls\' finishes hidden as a subcategory');
+      // Layer lines: the lines between the walls' layers drawn with pen 1 in this view, the contour as it was.
+      await dialog.locator('td[data-layer-lines=walls] select').first().selectOption('1');
+      await t.wait(800);
+      t.expect((await vis()).graphics?.categories?.walls?.lines?.separation?.pen === 1, 'the walls\' layer lines given pen 1');
       await t.shot('vg-categories', { of: '[data-testid=vv-dialog]', pad: 0, maxHeight: 640 });
       // Links: the structure custom, its columns off here.
       await dialog.locator('[data-tab=links]').click();

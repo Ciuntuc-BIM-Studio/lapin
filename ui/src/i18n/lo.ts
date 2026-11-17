@@ -4319,6 +4319,14 @@ export const LO: Record<string, string> = {
   "A table": "ຕາຕະລາງ",
   // Paid extensions (stage 2a, docs/plan-extensions.md §12)
   "Paid": "ເສຍເງິນ", "Sold by its author through their own shop; Lapin Extensions takes no commission": "ຂາຍໂດຍຜູ້ສ້າງຜ່ານຮ້ານຂອງຕົນເອງ; Lapin Extensions ບໍ່ເອົາຄ່ານາຍໜ້າ", "Price": "ລາຄາ", "The price is the seller's, shown at the checkout": "ລາຄາເປັນຂອງຜູ້ຂາຍ, ສະແດງຕອນຈ່າຍເງິນ", "Sold by": "ຂາຍໂດຍ", "Sold by its author through their own shop: the seller takes the payment, issues the invoice and handles refunds. Lapin Extensions takes no commission.": "ຂາຍໂດຍຜູ້ສ້າງຜ່ານຮ້ານຂອງຕົນເອງ: ຜູ້ຂາຍຮັບເງິນ, ອອກໃບແຈ້ງໜີ້ ແລະ ຈັດການການຄືນເງິນ. Lapin Extensions ບໍ່ເອົາຄ່ານາຍໜ້າ.", "Its licence is no longer valid (refunded or disabled by its seller): it gets no more updates. What is installed stays.": "ໃບອະນຸຍາດຂອງມັນບໍ່ໃຊ້ໄດ້ອີກແລ້ວ (ຄືນເງິນ ຫຼື ຖືກປິດໂດຍຜູ້ຂາຍ): ມັນບໍ່ໄດ້ຮັບການອັບເດດອີກ. ສິ່ງທີ່ຕິດຕັ້ງແລ້ວຍັງຢູ່.", "Buy": "ຊື້", "Seller's terms": "ເງື່ອນໄຂຂອງຜູ້ຂາຍ", "Licence key": "ກະແຈໃບອະນຸຍາດ", "The licence key you received from the seller": "ກະແຈໃບອະນຸຍາດທີ່ທ່ານໄດ້ຮັບຈາກຜູ້ຂາຍ", "Lapin sends the key to the store, which checks it with the seller's shop; the key stays on this computer.": "Lapin ສົ່ງກະແຈໄປຫາຮ້ານ, ເຊິ່ງກວດມັນກັບຮ້ານຂອງຜູ້ຂາຍ; ກະແຈຍັງຢູ່ໃນຄອມພິວເຕີນີ້.", "Forget licence key": "ລືມກະແຈໃບອະນຸຍາດ", "Forget the licence key kept for {name}? What is installed stays; an update will ask for the key again.": "ລືມກະແຈໃບອະນຸຍາດທີ່ເກັບໄວ້ສຳລັບ {name}? ສິ່ງທີ່ຕິດຕັ້ງແລ້ວຍັງຢູ່; ການອັບເດດຈະຖາມຫາກະແຈອີກ.", "Enter the licence key you received from the seller.": "ໃສ່ກະແຈໃບອະນຸຍາດທີ່ທ່ານໄດ້ຮັບຈາກຜູ້ຂາຍ.", "This is not a licence key of this extension: check the key in the seller's e-mail.": "ນີ້ບໍ່ແມ່ນກະແຈໃບອະນຸຍາດຂອງສ່ວນຂະຫຍາຍນີ້: ກວດກະແຈໃນອີເມວຂອງຜູ້ຂາຍ.", "This licence key is no longer valid: its purchase was refunded, or its seller disabled it.": "ກະແຈໃບອະນຸຍາດນີ້ບໍ່ໃຊ້ໄດ້ອີກແລ້ວ: ການຊື້ຖືກຄືນເງິນ ຫຼື ຜູ້ຂາຍໄດ້ປິດມັນ.", "The store could not check the licence key just now: try again later.": "ຮ້ານບໍ່ສາມາດກວດກະແຈໃບອະນຸຍາດໄດ້ໃນຕອນນີ້: ລອງໃໝ່ພາຍຫຼັງ.", "The store does not have this file yet: try again later.": "ຮ້ານຍັງບໍ່ມີໄຟລ໌ນີ້: ລອງໃໝ່ພາຍຫຼັງ.",
+  // Layer lines: the lines between a cut element's layers (forum)
+  "Layer lines": "ເສັ້ນລະຫວ່າງຊັ້ນ",
+  "The lines between a cut element's layers (a wall's, a floor's): pen, line type, colour": "ເສັ້ນລະຫວ່າງຊັ້ນຂອງອົງປະກອບທີ່ຖືກຕັດ (ຂອງຝາ, ຂອງພື້ນ): ເບີປາກກາ, ປະເພດເສັ້ນ, ສີ",
+  "Layer lines: pen": "ເສັ້ນລະຫວ່າງຊັ້ນ: ເບີປາກກາ",
+  "Layer lines: line type": "ເສັ້ນລະຫວ່າງຊັ້ນ: ປະເພດເສັ້ນ",
+  "Layer lines: colour": "ເສັ້ນລະຫວ່າງຊັ້ນ: ສີ",
+  "As the cut lines": "ຄືກັບເສັ້ນໜ້າຕັດ",
+  "The lines between a cut element's layers (a wall's, a floor's); unset: as the cut lines": "ເສັ້ນລະຫວ່າງຊັ້ນຂອງອົງປະກອບທີ່ຖືກຕັດ (ຂອງຝາ, ຂອງພື້ນ); ບໍ່ໄດ້ກຳນົດ: ຄືກັບເສັ້ນໜ້າຕັດ",
 };
 
 /** Phrases with a number or a name in them. */

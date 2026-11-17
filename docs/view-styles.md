@@ -5,7 +5,7 @@
 Unde același material trece dintr-un element în altul, în secțiune nu se desenează nicio linie între ele: miezurile a doi pereți, două grinzi, fundațiile continue la colț. Elementele rămân separate în model; doar desenul le citește ca un singur material.
 
 - Regula era în `MaterialDrawing` (linia dintre benzile aceluiași material a două elemente dispare), dar o latură lungă acoperită doar în parte de vecin rămânea desenată întreagă. La un colț în butt, miezul care trece prin colț își desena fața până la capăt, peste capătul celuilalt. Acum `Generator.SplitAtCorners` taie liniile de secțiune în punctele unde se sprijină colțurile altor arii, iar porțiunea comună dispare.
-- Liniile dintre straturile elementelor de aceeași clasă îmbinate (miezul unei fundații lângă hidroizolația celeilalte, după colț) iau creionul de separare, subțire; conturul păstrează creionul de secțiune (`Pens.Separations`).
+- Liniile dintre straturile elementelor de aceeași clasă îmbinate (miezul unei fundații lângă hidroizolația celeilalte, după colț) iau creionul de separare, subțire; conturul păstrează creionul de secțiune (`Pens.Separations`). Rolul lor de linie e `separation` („Layer lines”): peniță, culoare și tip de linie se dau în Manage → Object styles (proiect), în Visibility / Graphics pe categorie (vedere) și pe element (`view.graphics` cu `element`, fără interfață încă); cel mai îngust câștigă, câmp cu câmp, iar ce rămâne nesetat vine de la liniile de secțiune ale elementului, ca înainte (implicit 0,25 mm; cu o grosime de categorie, cu două trepte ISO sub ea).
 - Se dezactivează:
   - pe material: Manage → Materials → Draw joints (rosturile acelui material se desenează mereu);
   - pe vedere sau pe stil: „Join materials” (fiecare element se unește doar cu el însuși).

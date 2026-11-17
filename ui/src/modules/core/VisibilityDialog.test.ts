@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { categoryName, clean, moveRow, withPattern } from './VisibilityDialog';
+import { categoryName, clean, moveRow, withLayerLines, withPattern } from './VisibilityDialog';
 
 describe('Visibility / Graphics rows', () => {
   it('drop what says nothing, keeping a shown that is not the default', () => {
@@ -21,6 +21,18 @@ describe('Visibility / Graphics rows', () => {
     expect(moveRow(['a', 'b', 'c'], 0, -1)).toEqual(['a', 'b', 'c']);
     expect(moveRow(['a', 'b', 'c'], 2, 1)).toEqual(['a', 'b', 'c']);
     expect(categoryName('roomTags')).toBe('Room tags');
+  });
+
+  it('give a category\'s layer lines (separation) a pen, a line type and a colour, apart from its cut and projection, and clear them', () => {
+    const one = withLayerLines({ cut: { pen: 7 } }, { pen: 2 });
+    expect(one).toEqual({ cut: { pen: 7 }, separation: { pen: 2 } });
+    const two = withLayerLines(one, { color: '#ff0000', pattern: 'dashed' });
+    expect(two).toEqual({ cut: { pen: 7 }, separation: { pen: 2, color: '#ff0000', pattern: 'dashed' } });
+    expect(withLayerLines(two, { pen: undefined, pattern: '' })).toEqual({ cut: { pen: 7 }, separation: { color: '#ff0000' } });
+    expect(withLayerLines(two, { pen: undefined, pattern: undefined, color: undefined })).toEqual({ cut: { pen: 7 } });
+    // A pattern for the category's cut and projection leaves the layer lines as they are.
+    expect(withPattern(two, 'hidden')?.separation).toEqual({ pen: 2, color: '#ff0000', pattern: 'dashed' });
+    expect(clean({ lines: withLayerLines(undefined, { pen: undefined }) }, false)).toEqual({});
   });
 
   it('draw a category\'s cut and projection lines in a pattern, and as styled again', () => {
