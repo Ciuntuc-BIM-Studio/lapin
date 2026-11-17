@@ -26,6 +26,7 @@ import { LintelRuleEditor } from './LintelRule';
 import type { Rule } from './lintels';
 import { BayFields, type Bay } from './BayFields';
 import { JoineryPreview3D } from './JoineryPreview3D';
+import { editJoineryOutline, outlineBoardAvailable } from './joineryBoard';
 import { barWidths, fitBars, kindOf, leafPairs, merge, neighbour, normalised, operationGroups, resized, shifted, split, withBar, type Bars, type GridSpec } from './joineryGrid';
 import { t } from '../../i18n';
 import { JoineryDataButton } from './JoineryData';
@@ -107,7 +108,8 @@ export interface Position { from: 'exterior' | 'core' | 'centre' | 'interior'; d
 interface Materials { frame?: string | null; sash?: string | null; glass?: string | null; leaf?: string | null; board?: string | null; hardware?: string | null }
 type MaterialPart = keyof Materials;
 /** `transom: false` (report #112): no transom at the spring line, the top row of panes following the arch. */
-interface Shape { kind: 'rect' | 'round' | 'segmental' | 'elliptical' | 'radiused' | 'pointed' | 'gable' | 'circle'; rise?: number | null; bars: 'none' | 'sunburst' | 'mullions' | 'cross'; spokes: number; transom?: boolean | null }
+/** `outline`: a window's outline of its own, drawn on its board (audit S11 stage 2), its loop in the unit box (`profile`), kept as it is. */
+interface Shape { kind: 'rect' | 'round' | 'segmental' | 'elliptical' | 'radiused' | 'pointed' | 'gable' | 'circle' | 'outline'; profile?: [number, number][]; rise?: number | null; bars: 'none' | 'sunburst' | 'mullions' | 'cross'; spokes: number; transom?: boolean | null }
 interface Muntins { pattern: 'none' | 'grid' | 'prairie' | 'diamond'; across: number; up: number; width: number; margin: number }
 interface Hardware { handle: 'auto' | 'lever' | 'knob' | 'pull' | 'window' | 'none'; height: number; color?: string | null }
 interface Keystone { on: boolean; width: number; height: number; projection: number; material?: string | null; color: string }
@@ -412,32 +414,38 @@ function OrnamentFields({ kind, details, onChange }: { kind: 'door' | 'window'; 
 }
 
 /** The outline, the head's bars and the glazing bars (decision 188). */
-function ShapeFields({ spec, onChange }: { spec: Spec; onChange: (patch: Partial<Spec>) => void }) {
+function ShapeFields({ spec, onChange, typeId }: { spec: Spec; onChange: (patch: Partial<Spec>) => void; typeId?: string | null }) {
   const sh = spec.shape ?? SHAPE, mu = spec.muntins ?? MUNTINS;
   const setShape = (p: Partial<Shape>) => onChange({ shape: { ...sh, ...p } });
   const setMuntins = (p: Partial<Muntins>) => onChange({ muntins: { ...mu, ...p } });
   return (
     <>
       <label className="field-line"><span className="eyebrow">Shape</span>
-        <select data-field="shape" value={sh.kind} onChange={(e) => setShape({ kind: e.target.value as Shape['kind'], rise: null })}>
+        <select data-field="shape" value={sh.kind} onChange={(e) => setShape({ kind: e.target.value as Shape['kind'], rise: null, profile: undefined })}>
           <option value="rect">Rectangle</option><option value="round">Round arch</option><option value="segmental">Segmental arch</option>
           <option value="elliptical">Elliptical arch</option><option value="radiused">Radiused corners</option>
           <option value="pointed">Pointed arch</option><option value="gable">Triangular head</option><option value="circle">Round or oval</option>
+          {sh.kind === 'outline' && <option value="outline">Drawn outline</option>}
         </select></label>
+      {spec.kind === 'window' && outlineBoardAvailable() && (
+        <button type="button" className="btn small" data-action="draw-outline" disabled={!typeId}
+          title={typeId ? 'Draw the outline of your own on a board of the type (an odd pane, a shape the list has not); one fixed light in a frame following it' : 'Save the type first, then draw its outline'}
+          onClick={() => { if (typeId) void editJoineryOutline(typeId); }}>Draw outline…</button>
+      )}
       {(sh.kind === 'segmental' || sh.kind === 'elliptical' || sh.kind === 'pointed' || sh.kind === 'gable') && <Mm label="Rise of the head" value={sh.rise ?? (sh.kind === 'segmental' ? spec.width / 6 : sh.kind === 'pointed' ? spec.width * 0.866 : spec.width / 4)} onChange={(v) => setShape({ rise: v })} />}
       {sh.kind === 'radiused' && <Mm label="Corner radius" value={sh.rise ?? 0.15} onChange={(v) => setShape({ rise: v })} />}
-      {sh.kind !== 'rect' && sh.kind !== 'circle' && <label className="field-line check"><input type="checkbox" data-field="shape-transom" checked={sh.transom !== false} onChange={(e) => setShape({ transom: e.target.checked ? null : false })} /><span>Transom at the springing</span></label>}
-      {sh.kind !== 'rect' && (sh.kind === 'circle' || sh.transom !== false) && <label className="field-line"><span className="eyebrow">{sh.kind === 'circle' ? 'Bars' : 'Bars in the head'}</span>
+      {sh.kind !== 'rect' && sh.kind !== 'circle' && sh.kind !== 'outline' && <label className="field-line check"><input type="checkbox" data-field="shape-transom" checked={sh.transom !== false} onChange={(e) => setShape({ transom: e.target.checked ? null : false })} /><span>Transom at the springing</span></label>}
+      {sh.kind !== 'rect' && sh.kind !== 'outline' && (sh.kind === 'circle' || sh.transom !== false) && <label className="field-line"><span className="eyebrow">{sh.kind === 'circle' ? 'Bars' : 'Bars in the head'}</span>
         <select data-field="shape-bars" value={sh.bars} onChange={(e) => setShape({ bars: e.target.value as Shape['bars'] })}>
           <option value="none">None</option><option value="sunburst">Sunburst</option><option value="mullions">{sh.kind === 'circle' ? 'Upright' : 'The mullions carried up'}</option><option value="cross">Cross</option>
         </select></label>}
       {sh.kind !== 'rect' && (sh.kind === 'circle' || sh.transom !== false) && sh.bars === 'sunburst' && <Num label="Spokes" value={sh.spokes} integer min={1} onChange={(v) => setShape({ spokes: v })} />}
-      {sh.kind !== 'circle' && <label className="field-line"><span className="eyebrow">Glazing bars</span>
+      {sh.kind !== 'circle' && sh.kind !== 'outline' && <label className="field-line"><span className="eyebrow">Glazing bars</span>
         <select data-field="muntins" value={mu.pattern} onChange={(e) => setMuntins({ pattern: e.target.value as Muntins['pattern'] })}>
           <option value="none">None</option><option value="grid">Grid (colonial)</option><option value="prairie">Prairie</option><option value="diamond">Diamond lattice</option>
         </select></label>}
-      {sh.kind !== 'circle' && (mu.pattern === 'grid' || mu.pattern === 'diamond') && <Num label="Lites across" value={mu.across} integer min={1} onChange={(v) => setMuntins({ across: v })} />}
-      {sh.kind !== 'circle' && mu.pattern === 'grid' && <Num label="Lites up" value={mu.up} integer min={1} onChange={(v) => setMuntins({ up: v })} />}
+      {sh.kind !== 'circle' && sh.kind !== 'outline' && (mu.pattern === 'grid' || mu.pattern === 'diamond') && <Num label="Lites across" value={mu.across} integer min={1} onChange={(v) => setMuntins({ across: v })} />}
+      {sh.kind !== 'circle' && sh.kind !== 'outline' && mu.pattern === 'grid' && <Num label="Lites up" value={mu.up} integer min={1} onChange={(v) => setMuntins({ up: v })} />}
       {sh.kind !== 'circle' && mu.pattern === 'prairie' && <Mm label="Margin" value={mu.margin} onChange={(v) => setMuntins({ margin: v })} />}
       {sh.kind !== 'circle' && mu.pattern !== 'none' && <Mm label="Bar width" value={mu.width} onChange={(v) => setMuntins({ width: v })} />}
     </>
@@ -1062,7 +1070,7 @@ export function JoineryDialog() {
                 if (patch.rows) setRows(patch.rows.join(' '));
               }} />
               {!spec.bay && !garageOf(spec) && <FramelessFields spec={spec} springs={catalog.floorSprings} onChange={set} />}
-              {!spec.bay && !spec.frameless && !garageOf(spec) && <ShapeFields spec={spec} onChange={set} />}
+              {!spec.bay && !spec.frameless && !garageOf(spec) && <ShapeFields spec={spec} onChange={set} typeId={editing} />}
               {spec.kind === 'window' && !spec.frameless && <BayFields spec={spec} onChange={(patch) => set(patch as Partial<Spec>)} onGrid={(c) => setCols(c.join(' '))} />}
               {!spec.frameless && <>
               <Mm label="Frame depth" value={spec.frame.depth} onChange={(v) => set({ frame: { ...spec.frame, depth: v }, frameSection: null })} />

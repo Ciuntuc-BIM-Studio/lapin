@@ -16,6 +16,7 @@ import { pickFile, safeFileName, saveFile } from '../../../engine/files';
 import { t as tr } from '../../../i18n';
 import { pensToSvg } from '../documents/docModel';
 import { TitleBlockDesigner } from './TitleBlockDesigner';
+import { editTitleBlockOnBoard } from '../boards';
 import { FirmFolderFiles } from '../FirmFolderFiles';
 import {
   createTitleBlock, deleteTitleBlock, exportTitleBlock, importTitleBlock, listTitleBlocks, previewTitleBlock, setDefaultTitleBlock, updateTitleBlock,
@@ -96,7 +97,7 @@ export function TitleBlocksDialog() {
 
   const newOne = async () => {
     const id = await createTitleBlock({ name: freeName(tr('Title block'), all.map((t) => t.name)) });
-    if (id) { setSelected(keyOf({ origin: 'project', id })); setEditing(id); }
+    if (id) { setSelected(keyOf({ origin: 'project', id })); void edit(id); }
   };
 
   const remove = async (t: TbSummary) => {
@@ -149,6 +150,9 @@ export function TitleBlocksDialog() {
     notify('Title block imported.');
   };
 
+  /** On the shared sketch canvas (audit S11 stage 2) when the edition has it; else the designer of its own. */
+  async function edit(id: string) { if (!(await editTitleBlockOnBoard(id))) setEditing(id); }
+
   if (editing) return <TitleBlockDesigner id={editing} onClose={() => setEditing(null)} />;
 
   return (
@@ -174,7 +178,7 @@ export function TitleBlocksDialog() {
                     <ul className="doc-templates">
                       {items.map((t) => (
                         <li key={keyOf(t)} className={keyOf(t) === selected ? 'active' : undefined}>
-                          <button type="button" data-field={`tb-item-${t.id}`} data-origin={t.origin} onClick={() => setSelected(keyOf(t))} onDoubleClick={() => t.origin === 'project' && setEditing(t.id)}>
+                          <button type="button" data-field={`tb-item-${t.id}`} data-origin={t.origin} onClick={() => setSelected(keyOf(t))} onDoubleClick={() => { if (t.origin === 'project') void edit(t.id); }}>
                             <strong data-no-i18n>{t.name}</strong>
                             {t.default && <span className="muted small"><Star size={10} /> Project default</span>}
                             {t.origin !== 'library' && (t.uses ?? 0) > 0 && <span className="muted small">{`${t.uses} ${t.uses === 1 ? tr('sheet') : tr('sheets')}`}</span>}
@@ -199,7 +203,7 @@ export function TitleBlocksDialog() {
                 <p className="muted small">{current.origin === 'builtin' ? 'Built-in' : current.origin === 'project' ? 'This project' : 'This computer'}</p>
                 {current.description && <p className="small">{current.description}</p>}
                 <div className="row wrap">
-                  {current.origin === 'project' && <button type="button" className="btn primary" onClick={() => setEditing(current.id)} data-field="tb-edit"><Pencil size={13} />Edit…</button>}
+                  {current.origin === 'project' && <button type="button" className="btn primary" onClick={() => void edit(current.id)} data-field="tb-edit"><Pencil size={13} />Edit…</button>}
                   {current.origin !== 'library' && !current.default && <button type="button" className="btn" onClick={() => void setDefaultTitleBlock(current.id)} data-field="tb-default" title="Sheets that do not choose their own use it"><Star size={13} />Set as project default</button>}
                   {current.origin !== 'builtin' && <button type="button" className="btn" onClick={() => setRenaming(current.name)} data-field="tb-rename"><Pencil size={13} />Rename</button>}
                   <button type="button" className="btn" onClick={() => void toProject(current, freeName(`${current.name} (${tr('copy')})`, all.map((t) => t.name)))} data-field="tb-duplicate" title="A copy in this project, to change"><Copy size={13} />Duplicate into the project</button>

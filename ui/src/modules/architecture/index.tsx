@@ -59,6 +59,7 @@ import { arcAlias, chainTool, setChainMode } from '../core/chainTool';
 import { SHADE, SunshadeSection, SunshadeTypesDialog, sunshade, sunshadeAlong, sunshadeGrips, sunshadeSchedule, sunshadeTypes } from './Sunshades';
 import { lazyPart } from '../../platform/lazyPart';
 import { StairRailingPanel, railingPick } from './StairRailingPanel';
+import './joineryBoard';
 const FieldScheduleDialog = lazyPart(() => import('./FieldScheduleDialog').then((m) => m.FieldScheduleDialog), { title: 'Field schedule' });
 const FieldTemplatesDialog = lazyPart(() => import('./FieldTemplatesDialog').then((m) => m.FieldTemplatesDialog), { title: 'New schedule from a template' });
 

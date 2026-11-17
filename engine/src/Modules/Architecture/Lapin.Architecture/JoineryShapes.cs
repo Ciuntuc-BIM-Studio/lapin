@@ -1,3 +1,4 @@
+using Lapin.Model;
 using Lapin.Geometry;
 
 namespace Lapin.Architecture;
@@ -28,7 +29,31 @@ namespace Lapin.Architecture;
 /// </summary>
 /// <see cref="Profile"/> (audit S4): a bare wall opening of its own outline (<see cref="Kind"/> "outline"), its loop laid out and
 /// taken to the unit box (x across from −½ to ½ of the width, y up from 0 to 1 of the height), so a resize stretches it.
-public sealed record JoineryShape(string Kind = "rect", double? Rise = null, string Bars = "none", int Spokes = 5, bool? Transom = null, IReadOnlyList<Vec2>? Profile = null);
+/// A type's own outline (drawn on its board, audit S11 stage 2) is kept as <c>profile</c>: [[x, y], …] in the unit box.
+public sealed record JoineryShape(string Kind = "rect", double? Rise = null, string Bars = "none", int Spokes = 5, bool? Transom = null,
+    [property: System.Text.Json.Serialization.JsonConverter(typeof(UnitLoopJson))] IReadOnlyList<Vec2>? Profile = null);
+
+/// <summary>A loop of points as JSON: [[x, y], …] (a <see cref="Vec2"/> alone would write its derived properties).</summary>
+public sealed class UnitLoopJson : System.Text.Json.Serialization.JsonConverter<IReadOnlyList<Vec2>?>
+{
+    public override IReadOnlyList<Vec2>? Read(ref System.Text.Json.Utf8JsonReader reader, Type typeToConvert, System.Text.Json.JsonSerializerOptions options)
+    {
+        if (reader.TokenType == System.Text.Json.JsonTokenType.Null) return null;
+        var o = new List<Vec2>();
+        if (System.Text.Json.Nodes.JsonNode.Parse(ref reader) is not System.Text.Json.Nodes.JsonArray a) return null;
+        foreach (var p in a)
+            if (p is System.Text.Json.Nodes.JsonArray { Count: >= 2 } q && Json.Number(q[0]) is { } x && Json.Number(q[1]) is { } y && double.IsFinite(x) && double.IsFinite(y)) o.Add(new Vec2(x, y));
+        return o;
+    }
+
+    public override void Write(System.Text.Json.Utf8JsonWriter writer, IReadOnlyList<Vec2>? value, System.Text.Json.JsonSerializerOptions options)
+    {
+        if (value == null) { writer.WriteNullValue(); return; }
+        writer.WriteStartArray();
+        foreach (var p in value) { writer.WriteStartArray(); writer.WriteNumberValue(Math.Round(p.X, 9)); writer.WriteNumberValue(Math.Round(p.Y, 9)); writer.WriteEndArray(); }
+        writer.WriteEndArray();
+    }
+}
 
 /// <summary>
 /// Glazing bars dividing every rectangular pane: <see cref="Pattern"/> "none", "grid" (colonial:
@@ -46,6 +71,13 @@ public static class JoineryShapes
     public static string KindOf(JoinerySpec s) => s.Shape is { Kind: "outline", Profile.Count: >= 3 } ? "outline" : s.Shape?.Kind is { } k && Kinds.Contains(k) ? k : "rect";
     public static bool Headed(JoinerySpec s) => KindOf(s) is "round" or "segmental" or "elliptical" or "radiused" or "pointed" or "gable";
     public static bool Round(JoinerySpec s) => KindOf(s) == "circle";
+
+    /// <summary>
+    /// A type of one fixed light in a frame following its outline all round: a round window, or a window of its own outline drawn
+    /// on its board (audit S11 stage 2: <see cref="JoineryShape.Kind"/> "outline", its <see cref="JoineryShape.Profile"/> the unit
+    /// box's loop, stretched to the width and height). No grid of panels: the frame is a ring, the glass the loop inside it.
+    /// </summary>
+    public static bool Ringed(JoinerySpec s) => Round(s) || KindOf(s) == "outline";
     public static bool Shaped(JoinerySpec s) => KindOf(s) != "rect";
 
     /// <summary>A headed type without the transom at the spring line (report #112): its top row of panes follows the head.</summary>
@@ -440,15 +472,16 @@ public static class JoineryShapes
     {
         var f = s.Frame;
         var o = new List<JoineryBox>();
-        var outer = Ellipse(s, 0);
-        var inner = Ellipse(s, f.Width);
+        var outer = Outline(s, 0);
+        var inner = Outline(s, f.Width);
         o.Add(Prism("frame", outer, y0, y1) with { Holes = [inner] });
         o.Add(Prism("glass", inner, f.Offset - s.Sash.GlassThickness / 2, f.Offset + s.Sash.GlassThickness / 2));
         var c = new Vec2(0, s.Height / 2);
         var w = Math.Max(0.015, f.Mullion * 0.5);
         var (by0, by1) = (f.Offset - (y1 - y0) * 0.3, f.Offset + (y1 - y0) * 0.3);
         var closed = inner.Append(inner[0]).ToList();
-        IEnumerable<double> Angles() => (s.Shape?.Bars ?? "none") switch
+        // An outline of its own has no centre its bars could start from.
+        IEnumerable<double> Angles() => !Round(s) ? [] : (s.Shape?.Bars ?? "none") switch
         {
             "cross" => [0, Math.PI / 2, Math.PI, 3 * Math.PI / 2],
             "sunburst" => Enumerable.Range(0, Math.Clamp(s.Shape?.Spokes ?? 8, 3, 24)).Select(i => 2 * Math.PI * i / Math.Clamp(s.Shape?.Spokes ?? 8, 3, 24)),

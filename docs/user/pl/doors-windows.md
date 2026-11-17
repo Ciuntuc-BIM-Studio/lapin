@@ -108,6 +108,12 @@ Każdy z nich przylega do rzeczywistych lic ściany w miejscu okna, wyznaczonych
 
 ![Okno rozwierne łukowe: jedno skrzydło rozwierne biegnące wzdłuż łuku odcinkowego, bez ślemienia pod nim](shots/joinery-arched-casement.webp)
 
+Dla zapisanego typu **okna** **Narysuj kontur…** (pod **Kształt** w konfiguratorze) otwiera elewację typu na planszy: widzianą z zewnątrz, z dołem na linii parapetu, obecnym konturem jako jedną zamkniętą polilinią i przerywaną wewnętrzną linią ościeżnicy. Narysuj jeden zamknięty kontur (polilinię, okrąg, elipsę albo linie i łuki łączące się końcami; linie pomocnicze mogą zostać) i wybierz **Zakończ szkic**. Typ przyjmuje ten kontur w jednym kroku do cofnięcia: jego szerokość i wysokość to granice konturu, ościeżnica biegnie wzdłuż niego dookoła, a w środku jest jedno stałe pole. Każde okno tego typu podąża za nim, a lista **Kształt** mówi wtedy **Narysowany kontur**. Narysowany prostokąt daje z powrotem prostokąt. Drzwi zachowują prostokąt i kształty zwieńczenia. Siatka formularza pozostaje domyślną drogą.
+
+![Plansza narysowanego konturu okna w konfiguratorze](shots/joinery-outline-board.webp)
+
+![Okna o tym konturze w 3D](shots/joinery-outline-3d.webp)
+
 ### Szkło bez ramy
 
 **Szkło bez ramy** robi drzwi lub okno z samego szkła hartowanego, bez ościeżnicy i ramy skrzydła; styl **Szkło bez ramy** ustawia to od razu, ze skrzydłem na zawiasach czopowych. W drzwiach **Mocowanie** mówi, co trzyma skrzydło: **Zawiasy czopowe i okucia narożne** (samozamykacz w posadzce i czop górny, okucie w każdym narożu po stronie zawiasów i zamek narożny na dole po przeciwnej) albo **Zawiasy do szkła** (dwa, trzy przy skrzydle wyższym niż 2,30 m, zaciśnięte na szkle i przykręcone do ściany lub sąsiedniej tafli). **Grubość szkła** to 6–25 mm (domyślnie 12 mm), **Szczelina wokół szkła** to luz do otworu i między taflami, **Szczelina pod skrzydłem** luz nad posadzką. Skrzydło jest rozwierane, wahadłowe lub przesuwne; tafla obok lub nad nim jest stała i stoi w profilu U na posadzce i pod nadprożem. Skrzydło przesuwne wisi na szynie na całą szerokość otworu, przed stałymi taflami od strony pomieszczenia, i zachodzi na nie 50 mm, jak w szklanej ściance działowej lub kabinie prysznicowej. Uchwyt to pochwyt po obu stronach, chyba że wybierzesz inny. Okno bez ramy to szklenie stałe. Rzuty rysują skrzydło otwarte jako jego szkło, widoki okucia i szynę; w IFC typ nie ma ościeżnicy (jego grubość to grubość szkła).

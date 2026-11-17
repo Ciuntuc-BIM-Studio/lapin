@@ -6,7 +6,7 @@
  */
 
 import type { ComponentType } from 'react';
-import { ArrowRightToLine, Check, Circle, CopyPlus, CornerUpRight, Egg, Eraser, Redo2, RectangleHorizontal, Scissors, Slash, Spline, Scan, X, Box } from 'lucide-react';
+import { ArrowRightToLine, Check, Circle, CopyPlus, CornerUpRight, Egg, Eraser, Grid3x3, Redo2, RectangleHorizontal, Scissors, Slash, Spline, Scan, Type, X, Box } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { useSession } from '../../engine/session';
 import { chipOf } from '../../viewport/cad/constraints';
@@ -24,6 +24,7 @@ export const DRAFT_TOOLS: Record<string, { label: string; icon: Icon }> = {
   CIRCLE: { label: 'Circle', icon: Circle }, ARC: { label: 'Arc', icon: Redo2 }, ELLIPSE: { label: 'Ellipse', icon: Egg },
   OFFSET: { label: 'Offset', icon: CopyPlus }, TRIM: { label: 'Trim', icon: Scissors }, EXTEND: { label: 'Extend', icon: ArrowRightToLine },
   FILLET: { label: 'Fillet', icon: CornerUpRight }, CHAMFER: { label: 'Chamfer', icon: CornerUpRight }, ERASE: { label: 'Erase', icon: Eraser },
+  TEXT: { label: 'Text', icon: Type }, HATCH: { label: 'Hatch', icon: Grid3x3 },
 };
 
 const EDITS = new Set(['OFFSET', 'TRIM', 'EXTEND', 'FILLET', 'CHAMFER', 'ERASE']);
@@ -90,5 +91,11 @@ export function SketchBar2D() {
   const id = view === 'plan' ? planViewId : view === 'drawing' ? drawingViewId : null;
   const board = boardOf(id, nodes);
   if (!board) return null;
-  return <SketchBar board={board} in3d={false} />;
+  const Panel = board.panel;
+  return (
+    <>
+      <SketchBar board={board} in3d={false} />
+      {Panel && <Panel board={board} />}
+    </>
+  );
 }

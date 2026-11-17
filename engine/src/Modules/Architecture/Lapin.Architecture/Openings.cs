@@ -759,7 +759,7 @@ public static class Openings
                 {
                     var shaped = new List<Solid>();
                     if (Openings.Box(SurroundOutline(_spec, w, YExt, YExt + dpt), _map) is { } arch) shaped.Add(arch);
-                    if (sur.Sill && !_spec.IsDoor && !JoineryShapes.Round(_spec) && Box(-W / 2 - w, W / 2 + w, YExt, YExt + dpt, -w, 0, "surround") is { } band) shaped.Add(band);
+                    if (sur.Sill && !_spec.IsDoor && !JoineryShapes.Ringed(_spec) && Box(-W / 2 - w, W / 2 + w, YExt, YExt + dpt, -w, 0, "surround") is { } band) shaped.Add(band);
                     if (shaped.Count > 0) yield return new GeometryPart("Surround", ColorOf(id, sur.Material, "#e0d8c8"), Combine(shaped, "surround"), id, "surround");
                 }
                 else
@@ -822,7 +822,7 @@ public static class Openings
     /// <summary>A shaped opening's surround on the facade: a band <paramref name="w"/> wide round its outline (the jambs and the head; a round window's whole ring), from y0 to y1.</summary>
     public static JoineryBox SurroundOutline(JoinerySpec s, double w, double y0, double y1)
     {
-        if (JoineryShapes.Round(s)) return JoineryShapes.Prism("surround", JoineryShapes.Ellipse(s, -w), y0, y1) with { Holes = [JoineryShapes.Ellipse(s, 0)] };
+        if (JoineryShapes.Ringed(s)) return JoineryShapes.Prism("surround", JoineryShapes.Outline(s, -w), y0, y1) with { Holes = [JoineryShapes.Outline(s, 0)] };
         var half = s.Width / 2;
         List<Vec2> pts = [new(half + w, 0), .. JoineryShapes.Outline(s, -w, 0).Skip(1).SkipLast(1), new(-half - w, 0), new(-half, 0), .. JoineryShapes.Outline(s, 0, 0).Skip(1).SkipLast(1).Reverse(), new(half, 0)];
         return JoineryShapes.Prism("surround", pts, y0, y1);

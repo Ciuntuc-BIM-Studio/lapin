@@ -19,6 +19,7 @@ import { ImportPreview, tallySentence } from '../../../platform/ImportPreview';
 import { defaultChoices, type Choice, type LibraryPreview } from '../../../platform/libraryFile';
 import { freeName } from '../titleBlocks/titleBlockModel';
 import { SymbolEditor } from './SymbolEditor';
+import { editSymbolOnBoard } from '../boards';
 import { FirmFolderFiles } from '../FirmFolderFiles';
 import { Thumb } from './Thumb';
 import { createSymbol, deleteSymbol, exportSymbols, getSymbol, importSymbols, listSymbols, previewSymbol, updateSymbol, type SymList } from './symbols';
@@ -112,13 +113,15 @@ export function SymbolsDialog() {
   const edit = async (r: Row) => {
     const def = await defOf(r);
     if (!def) return;
+    // On the shared sketch canvas (audit S11 stage 2) when the edition has it; else the editor of its own.
+    if (await editSymbolOnBoard(r.origin === 'library' ? { name: r.name, def, libraryId: r.id } : { symbolId: r.id })) return;
     setEditing({ kind: r.origin === 'library' ? 'library' : 'project', id: r.id, name: r.name, def });
   };
 
   const duplicate = async (r: Row) => {
     if (r.origin === 'library') { await toLibrary(r, `${r.name} (${tr('copy')})`); return; }
     const id = await toProject(r);
-    if (id && r.origin === 'builtin') { const g = await getSymbol(id); if (g) setEditing({ kind: 'project', id, name: g.name, def: g.def }); }
+    if (id && r.origin === 'builtin') { if (await editSymbolOnBoard({ symbolId: id })) return; const g = await getSymbol(id); if (g) setEditing({ kind: 'project', id, name: g.name, def: g.def }); }
   };
 
   const remove = async (r: Row) => {
@@ -224,7 +227,7 @@ export function SymbolsDialog() {
         <div className="dialog-body tpl-body">
           <aside className="tpl-list">
             <div className="row">
-              <button type="button" className="btn" onClick={() => setEditing({ kind: 'new', name: freeName(tr('Symbol'), taken), def: STARTER })} data-field="sy-new" title="A new symbol, opened in the editor"><Plus size={13} />New</button>
+              <button type="button" className="btn" onClick={() => void (async () => { const n = freeName(tr('Symbol'), taken); if (!(await editSymbolOnBoard({ name: n, def: STARTER }))) setEditing({ kind: 'new', name: n, def: STARTER }); })()} data-field="sy-new" title="A new symbol, opened in the editor"><Plus size={13} />New</button>
               <button type="button" className="btn" onClick={() => void importOne()} data-field="sy-import" title="A symbol library's .lapinsymbols file, exported from Lapin on this or another computer"><FileUp size={13} />Import…</button>
               <select value={into} onChange={(e) => setInto(e.target.value as 'project' | 'library')} data-field="sy-import-where" aria-label="Import into">
                 <option value="project">into this project</option>

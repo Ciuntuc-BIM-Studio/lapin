@@ -93,7 +93,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             if (!ElevationMarkers.Sees(c, W(0, spec.Height / 2)) || c.Occluded(W(0, spec.Height / 2), own)) continue;
             var mark = new ViewMark(fill.Id);
             // A round window is one fixed light: no opening symbol.
-            foreach (var panel in JoineryShapes.Round(spec) ? [] : Joinery.Normalised(spec))
+            foreach (var panel in JoineryShapes.Ringed(spec) ? [] : Joinery.Normalised(spec))
             {
                 var r = Joinery.PanelRect(spec, panel);
                 foreach (var st in JoinerySymbols.OpeningMarks(panel.Operation, r, true, convention, JoineryShapes.PaneTop(spec, r)))
@@ -113,6 +113,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Service<ILayerExtentCuts>(new LayerExtents.Cuts());
         // Drafted linework made walls, floors, rooms and railings (docs/plan-user-extensibility.md §7.4).
         LineworkConverters.Register(r);
+        JoineryOutlineBoard.Register(r);
         r.Service<IInstanceMembers>(new RoomInstanceMembers());
 
         // Door and window markers on a plan: one for each door and window of its storey not yet tagged there ({viewId, doorType?, windowType?}: tag types of the drafting standards).

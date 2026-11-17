@@ -305,7 +305,7 @@ public static class JoinerySymbols
     {
         yield return new(JoineryShapes.Outline(s, 0, 0), "outline", true);
         var fw = s.Frame.Width;
-        if (JoineryShapes.Round(s)) yield return new(JoineryShapes.Ellipse(s, fw), "outline", true);
+        if (JoineryShapes.Ringed(s)) yield return new(JoineryShapes.Outline(s, fw), "outline", true);
         // Without the transom the panes draw their own outlines under the arch (report #112).
         else if (JoineryShapes.Headed(s) && !JoineryShapes.ArchedPanes(s))
         {
@@ -323,7 +323,7 @@ public static class JoinerySymbols
     {
         var shaped = JoineryShapes.Shaped(s) || s.Muntins is { Pattern: not "none" };
         var o = shaped ? ShapeLines(s).ToList() : [Rect(-s.Width / 2, 0, s.Width / 2, s.Height, "outline")];
-        if (JoineryShapes.Round(s)) return exterior ? o.Select(x => x with { Pts = x.Pts.Select(q => new Vec2(-q.X, q.Y)).ToList() }).ToList() : o;
+        if (JoineryShapes.Ringed(s)) return exterior ? o.Select(x => x with { Pts = x.Pts.Select(q => new Vec2(-q.X, q.Y)).ToList() }).ToList() : o;
         var pairs = Joinery.Meetings(s);
         foreach (var p in Joinery.Normalised(s))
         {

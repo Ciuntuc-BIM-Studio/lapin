@@ -1277,6 +1277,42 @@ export const scenes = [
     },
   },
   {
+    // A window of its own outline (audit S11 stage 2): Draw outline… opens the type's elevation on a board of the shared sketch
+    // canvas, its outline one closed polyline; a gable drawn there, Finish sketch gives the type that outline, its frame following.
+    id: 'window-outline',
+    touches: ['architecture', 'drafting'],
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      await t.tool('architecture.joineryTypes');
+      const dialog = t.page.locator('.dialog');
+      await dialog.locator('.tree-item').filter({ hasText: /^Window/ }).first().click();
+      await t.wait(400);
+      const draw = dialog.locator('[data-action=draw-outline]');
+      await draw.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+      await draw.click();
+      await t.page.waitForSelector('[data-sketch-bar=joinery]', { timeout: 10_000 });
+      const board = await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().drawingViewId);
+      const on = (await t.nodes()).filter((n) => n.props.viewId === board && n.type === 'IfcAnnotation');
+      t.expect(on.length === 1, 'the board holds the outline as one closed polyline');
+      const type = (await t.nodes()).find((n) => n.type === 'IfcWindowType' && /^Window/.test(n.name ?? ''));
+      const w = type?.props?.spec?.width ?? 1.2, h = type?.props?.spec?.height ?? 1.4;
+      // The rectangle replaced by a gable as wide, half a metre higher at its apex.
+      await t.cmd('element.delete', { ids: on.map((n) => n.id) });
+      await t.cmd('drafting.draw', { viewId: board, shape: { type: 'polyline', closed: true, pts: [[-w / 2, 0], [w / 2, 0], [w / 2, h], [0, h + 0.5], [-w / 2, h]] } });
+      await t.fit();
+      await t.wait(800);
+      await t.shot('joinery-outline-board', { of: '[data-testid=drawing]', pad: 0 });
+      await t.page.locator('[data-action=finish-joinery]').click();
+      await t.until(async () => (await t.page.locator('[data-sketch-bar=joinery]').count()) === 0, 'Finish sketch leaves the board', 8000);
+      await t.until(async () => (await t.nodes()).some((n) => n.type === 'IfcWindowType' && n.props?.spec?.shape?.kind === 'outline'), 'the window type takes the drawn outline');
+      await t.page.waitForSelector('.dialog', { timeout: 10_000 });
+      await t.keys('Escape');
+      await open3d(t);
+      await t.shot('joinery-outline-3d', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
+  {
     // An arched casement (a tester's report #112): no transom at the spring line, one sash following the arch.
     id: 'window-arched-casement',
     async run(t) {
@@ -7848,25 +7884,21 @@ export const scenes = [
         .catch(() => { throw new Error('expected: the preview shows the project\'s name'); });
       await t.shot('title-blocks', { of: '[data-dialog=title-blocks]', pad: 0 });
 
-      // The designer: a field from the list placed as a new text, its value shown at once.
+      // Edit… opens it on its board (the shared sketch canvas, audit S11): its box in paper mm, dashed; every Draft tool; texts with
+      // their fields as typed; the box, its corner, the frame and the fields to copy beside.
       await t.page.locator('[data-field=tb-edit]').click();
-      await t.page.waitForSelector('[data-dialog=title-block-designer] [data-testid=tb-canvas]', { timeout: 10_000 });
-      await t.wait(500);
-      await t.page.locator('[data-field="tb-field-system.file"]').click();
-      const canvas = await t.page.locator('[data-testid=tb-canvas]').boundingBox();
-      // 122 mm across, 2 mm up the block (the canvas shows 8 mm round it): under the drawing's number.
-      const k = canvas.width / (180 + 16);
-      await t.page.mouse.click(canvas.x + (8 + 122) * k, canvas.y + (8 + 56 - 2) * k);
-      await t.wait(400);
-      t.expect(await t.page.locator('[data-field=tb-text]').inputValue() === '{system.file}', 'the field went in as a new text');
-      await t.page.locator('[data-dialog=title-block-designer] [data-field="tb-prop-height-mm-"]').fill('1.6');
-      await t.page.locator('[data-field=tb-text]').focus();
-      await t.wait(300);
-      t.expect((await t.page.locator('[data-testid=tb-canvas]').textContent()).includes('Arkkitehtitoimisto Lapin Oy'), 'the designer shows the fields\' values');
-      await t.shot('title-block-designer', { of: '[data-dialog=title-block-designer]', pad: 0 });
-      await t.page.locator('[data-field=tb-save]').click();
-      await t.wait(600);
-      await t.page.locator('[data-dialog=title-block-designer] .dialog-head button[title=Close]').click(); await t.wait(300);
+      await t.page.waitForSelector('[data-sketch-bar=titleBlock]', { timeout: 10_000 });
+      await t.page.waitForSelector('[data-board-panel=titleBlock] [data-field=tbb-fields] .chip', { timeout: 10_000 });
+      const tbBoard = await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().drawingViewId);
+      // The file's name as a new text (TEXT), 122 mm across and 2 mm up the block.
+      await t.cmd('drafting.addText', { viewId: tbBoard, at: [0.122, 0.002], text: '{system.file}' });
+      await t.fit();
+      await t.wait(800);
+      await t.shot('title-block-designer', { of: '[data-testid=drawing]', pad: 0 });
+      await t.page.locator('[data-action=finish-titleBlock]').click();
+      await t.until(async () => (await t.page.locator('[data-sketch-bar=titleBlock]').count()) === 0, 'Finish sketch leaves the board', 8000);
+      t.expect((await t.call('doc.query', { name: 'titleBlock.get', args: { id: tb.id } })).template.items.some((i) => i.text === '{system.file}'), 'the text written on the board is in the title block');
+      await t.page.waitForSelector('[data-dialog=title-blocks]', { timeout: 10_000 });
       await t.page.locator('[data-dialog=title-blocks] .dialog-head button[title=Close]').click(); await t.wait(300);
 
       // The sheet draws it, with its values; its properties say which title block it uses.
@@ -10565,19 +10597,24 @@ export const scenes = [
       await page.locator(`[data-field="sy-item-${mine.id}"]`).click();
       await t.wait(500);
       await t.shot('symbols-dialog', { of: '[data-dialog=symbols]', pad: 8 });
+      // Edit… opens the symbol on its board (the shared sketch canvas, audit S11): a paper view of its own in the symbol's mm round
+      // its insertion point (the red cross), every Draft tool on the sketch bar, its fields and its turned preview beside.
       await page.locator('[data-field=sy-edit]').click();
-      await page.waitForSelector('[data-dialog=symbol-editor]', { timeout: 10_000 });
+      await page.waitForSelector('[data-sketch-bar=symbol]', { timeout: 10_000 });
+      await page.waitForSelector('[data-board-panel=symbol]', { timeout: 10_000 });
+      const board = await page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().drawingViewId);
+      t.expect(await page.locator('[data-sketch-bar=symbol] [data-sketch-tool=TEXT]').count() === 1, 'the symbol\'s bar has Text and Hatch beside the drawing tools');
+      // A ring drawn round the mark (CIRCLE, here by its command), the preview flipped.
+      await t.cmd('drafting.draw', { viewId: board, shape: { type: 'circle', c: [0, 0.003], r: 0.0045 } });
+      await page.locator('[data-board-panel=symbol] button[title="Flip left ↔ right"]').click();
+      await t.fit();
       await t.wait(900);
-      // A live text with a formula, and the preview flipped.
-      const textTool = page.locator('[data-field=sy-tool-text]');
-      if (await textTool.count()) await textTool.click();
-      await page.locator('[data-field=sy-flip-x]').click();
-      await t.wait(700);
-      await t.shot('symbol-editor', { of: '[data-dialog=symbol-editor]', pad: 8 });
-      await page.locator('[data-field=sy-save]').click();
-      await t.wait(800);
-      await t.until(async () => (await page.locator('[data-dialog=symbol-editor]').count()) === 0 || (await page.locator('[data-dialog=symbol-editor] .btn', { hasText: 'Close' }).click().then(() => false, () => false)), 'the editor closed', 8000);
-      t.expect(await page.locator('[data-dialog=symbol-editor]').count() === 0, 'the editor closed');
+      await t.shot('symbol-editor', { of: '[data-testid=drawing]', pad: 0 });
+      await page.locator('[data-action=finish-symbol]').click();
+      await t.until(async () => (await page.locator('[data-sketch-bar=symbol]').count()) === 0, 'Finish sketch leaves the board', 8000);
+      t.expect((await t.call('doc.query', { name: 'symbols.get', args: { id: mine.id } })).def.items.some((i) => i.type === 'circle'), 'the ring drawn on the board is in the symbol');
+      await page.waitForSelector('[data-dialog=symbols]', { timeout: 10_000 });
+      await page.locator('[data-dialog=symbols] .dialog-head button[title=Close]').click(); await t.wait(300);
       await t.keys('Escape');
       // Exploding: back to drafting.
       await select(t, second.id);

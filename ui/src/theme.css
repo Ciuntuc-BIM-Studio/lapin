@@ -2756,6 +2756,15 @@ path.part-flex-ghost { fill: none; stroke: var(--accent); stroke-width: 1.6; str
 .outline-sketch-title { font-weight: 600; }
 /* The bar over every sketch board (audit S11, docs/plan-sketch-canvas.md): flat at the top of its view, over the 3D view at the bottom. */
 .sketch-bar { position: absolute; top: 56px; left: 50%; transform: translateX(-50%); z-index: 6; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 8px; max-width: calc(100% - 360px); padding: 4px 8px; background: var(--hud); border: 1px solid var(--accent); border-radius: 8px; font-size: 12px; backdrop-filter: blur(4px); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
+/* A board's fields beside its drawing (audit S11 stage 2: a symbol's, a title block's). */
+.board-panel { position: absolute; top: 104px; right: 12px; z-index: 6; width: 260px; max-height: calc(100% - 124px); overflow: auto; display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; background: var(--hud); border: 1px solid var(--line, #d0d4da); border-radius: 8px; font-size: 12px; backdrop-filter: blur(4px); }
+.board-panel .field { display: flex; flex-direction: column; gap: 2px; }
+.board-panel .row { display: flex; gap: 6px; }
+.board-panel .mini-table input { width: 100%; min-width: 0; }
+.board-fields { display: flex; flex-wrap: wrap; gap: 4px; }
+.board-fields .chip { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; padding: 1px 6px; border-radius: 10px; }
+.board-panel .tb-preview { min-height: 80px; max-height: 180px; overflow: hidden; display: flex; justify-content: center; }
+.board-panel .tb-preview svg { max-width: 100%; max-height: 176px; width: auto; height: auto; }
 .sketch-bar.in3d { top: auto; bottom: 64px; max-width: calc(100% - 120px); }
 .sketch-bar.in3d[data-sketch-bar=part] { left: calc(50% + 162px); max-width: calc(100% - 348px); }
 .sketch-bar-title { font-weight: 600; white-space: nowrap; }

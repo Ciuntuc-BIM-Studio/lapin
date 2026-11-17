@@ -1037,7 +1037,10 @@ public static class Views
             foreach (var img in mk.Images) if (img.ImageId.StartsWith("pointcloud:", StringComparison.Ordinal)) pts.AddRange(img.Corners);
         }
         (Vec2, Vec2)? bounds = pts.Count > 0 ? (new Vec2(pts.Min(p => p.X), pts.Min(p => p.Y)), new Vec2(pts.Max(p => p.X), pts.Max(p => p.Y))) : null;
-        if (paper) bounds = PaperViews.Bounds(m, view);
+        // A sheet's paper fits the paper; a board's (audit S11 stage 2) what is drawn on it and its guides.
+        if (paper) bounds = !PaperViews.IsBoard(m, view) ? PaperViews.Bounds(m, view)
+            : PaperViews.Bounds(m, view) is not var (g0, g1) ? bounds
+            : bounds is var (b0, b1) ? (new Vec2(Math.Min(b0.X, g0.X), Math.Min(b0.Y, g0.Y)), new Vec2(Math.Max(b1.X, g1.X), Math.Max(b1.Y, g1.Y))) : (g0, g1);
         // Drawn outlines' arcs and elliptical edges (floors, ceilings, rooms, balconies, platforms) beside their chords, for DXF: on a plan.
         if (spec.Kind == "plan" && !paper && laid == null) OutlineCurves.Attach(m, pens, p => spec.Frame.Map(new Vec3(p.X, p.Y, 0)));
         double? depth = spec.Kind == "section" && spec.Below < ViewRanges.Unlimited ? spec.Below : null;

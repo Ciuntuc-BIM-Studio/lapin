@@ -197,6 +197,12 @@ Fiecare se așază după fețele reale ale peretelui unde e fereastra, din strat
 
 ![O cercevea în arc: un singur canat batant care urmează un arc de segment, fără traversă sub el](shots/joinery-arched-casement.webp)
 
+Pentru un tip de **fereastră** salvat, **Desenează conturul…** (sub **Formă** în configurator) deschide fațada tipului pe o planșetă: văzută din exterior, cu partea de jos pe linia pragului, conturul de acum ca o polilinie închisă și linia interioară a tocului punctată. Desenează un singur contur închis (o polilinie, un cerc, o elipsă sau linii și arce care se întâlnesc cap la cap; liniile de construcție pot rămâne) și alege **Termină schița**. Tipul preia acel contur într-un singur pas de anulare: lățimea și înălțimea lui sunt limitele conturului, un toc îl urmează de jur împrejur și înăuntru stă un ochi fix. Toate ferestrele tipului îl urmează, iar lista **Formă** spune apoi **Contur desenat**. Dacă desenezi un dreptunghi, primești dreptunghiul înapoi. Ușile păstrează dreptunghiul și formele capului. Grila formularului rămâne calea implicită.
+
+![Planșeta unui contur de fereastră desenat în configurator](shots/joinery-outline-board.webp)
+
+![Ferestre cu acel contur în 3D](shots/joinery-outline-3d.webp)
+
 ### Sticlă fără toc
 
 **Sticlă fără toc** face o ușă sau o fereastră doar din sticlă securizată, fără toc și fără cercevea; stilul **Sticlă fără toc** o face dintr-odată, cu o foaie pe pivoți. La o ușă, **Prindere** spune ce ține foaia: **Pivoți și feronerie de colț** (un amortizor în pardoseală și un pivot sus, câte o piesă de colț pe partea balamalelor și o broască de colț jos, în partea opusă) sau **Balamale de sticlă** (două, trei la o foaie mai înaltă de 2,30 m, prinse de sticlă și fixate de perete sau de panoul de alături). **Grosimea sticlei** e între 6 și 25 mm (12 mm implicit), **Rostul în jurul sticlei** e jocul față de gol și dintre panouri, **Rostul sub foaie** cel deasupra pardoselii. O foaie se deschide batant, în ambele sensuri sau culisează; un panou de lângă ea sau de deasupra e fix, stând într-un profil U pe pardoseală și sub buiandrug. O foaie culisantă atârnă de o șină pe toată lățimea golului, în fața panourilor fixe, spre cameră, și trece cu 50 mm peste ele, ca la un perete despărțitor de sticlă sau la un paravan de duș. Mânerul e o bară pe ambele fețe, dacă nu alegi altul. O fereastră fără toc e un vitraj fix. Planurile desenează foaia deschisă ca sticla ei, elevațiile feroneria și șina; în IFC tipul nu are toc (grosimea lui e a sticlei).

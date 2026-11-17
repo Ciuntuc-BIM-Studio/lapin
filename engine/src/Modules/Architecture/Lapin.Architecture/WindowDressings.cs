@@ -125,7 +125,7 @@ public static class WindowDressings
     static double SurroundWidth(JoinerySpec s) => s.Details?.Surround is { On: true } sur ? Math.Max(0.01, sur.Width) : 0;
 
     /// <summary>The top of the opening's head at the middle, over its bottom: a rectangle's top, an arch's apex.</summary>
-    static double Apex(JoinerySpec s) => JoineryShapes.Shaped(s) ? (JoineryShapes.Round(s) ? s.Height : JoineryShapes.Top(s, 0, 0)) : s.Height;
+    static double Apex(JoinerySpec s) => JoineryShapes.Shaped(s) ? (JoineryShapes.Ringed(s) ? s.Height : JoineryShapes.Top(s, 0, 0)) : s.Height;
 
     static List<JoineryBox> Keystone(JoinerySpec s, JoineryKeystone k, Faces f)
     {

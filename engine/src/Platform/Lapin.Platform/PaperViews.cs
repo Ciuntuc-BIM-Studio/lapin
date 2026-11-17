@@ -23,6 +23,14 @@ public static class PaperViews
     /// <summary>The paper's edge, on the screen only.</summary>
     public const string PaperLayer = "PAPER";
 
+    /// <summary>
+    /// A board's paper (audit S11 stage 2, docs/plan-sketch-canvas.md §4): a view of kind <c>paper</c> of its own, of no sheet (a
+    /// symbol's, a title block's, a door or window type's outline), whose guides (the insertion point, the block's box, the type's
+    /// outline) are kept here as runs of points in its metres, each <c>{pts, closed?, color?, dash?}</c>: drawn under what is
+    /// drawn on it, on the screen only, and counted in what the screen fits.
+    /// </summary>
+    public const string UnderlayKey = "boardUnderlay";
+
     public static string IdOf(string sheetId) => Prefix + sheetId;
 
     public static string? SheetIdOf(string? viewId) =>
@@ -137,7 +145,7 @@ public static class PaperViews
     /// <summary>The sheet under what is drawn on its paper, on the screen: as it prints, the views' boxes and the paper's edge (m, y up).</summary>
     internal static List<Pen> Underlay(IQueryContext q, Entity view)
     {
-        if (SheetOf(q.Model, view) is not { } sheet) return [];
+        if (SheetOf(q.Model, view) is not { } sheet) return Guides(view);
         var (W, H) = Sheets.PaperOf(sheet);
         var placements = PaperViews.Placements(q, sheet).ToList();
         Vec2 F(Vec2 p) => ToView(p, H);
@@ -157,9 +165,41 @@ public static class PaperViews
         return pens;
     }
 
-    /// <summary>The paper's whole extent in its view (m): what the screen fits.</summary>
-    internal static (Vec2, Vec2)? Bounds(IModelView m, Entity view) =>
-        SheetOf(m, view) is { } sheet && Sheets.PaperOf(sheet) is var (W, H) ? (new Vec2(0, 0), new Vec2(W / 1000, H / 1000)) : null;
+    /// <summary>The paper's whole extent in its view (m): what the screen fits; a board's, its guides' (null without).</summary>
+    internal static (Vec2, Vec2)? Bounds(IModelView m, Entity view)
+    {
+        if (SheetOf(m, view) is { } sheet && Sheets.PaperOf(sheet) is var (W, H)) return (new Vec2(0, 0), new Vec2(W / 1000, H / 1000));
+        var pts = GuideRuns(view).SelectMany(r => r.Pts).ToList();
+        return pts.Count == 0 ? null : (new Vec2(pts.Min(p => p.X), pts.Min(p => p.Y)), new Vec2(pts.Max(p => p.X), pts.Max(p => p.Y)));
+    }
+
+    /// <summary>Whether a view is a board's paper (of no sheet).</summary>
+    public static bool IsBoard(IModelView m, Entity view) => Is(view) && SheetOf(m, view) == null;
+
+    static IEnumerable<(List<Vec2> Pts, bool Closed, string Color, double[]? Dash)> GuideRuns(Entity view)
+    {
+        foreach (var g in (view.Attrs[UnderlayKey] as JsonArray ?? []).OfType<JsonObject>())
+        {
+            var pts = Args.StoredPoints(g["pts"] as JsonArray ?? []).ToList();
+            if (pts.Count < 2) continue;
+            var dash = (g["dash"] as JsonArray)?.Select(x => Json.Number(x) ?? 1).ToArray();
+            yield return (pts, g["closed"] is JsonValue cv && cv.TryGetValue<bool>(out var c) && c, (string?)g["color"] ?? "#9aa3ad", dash);
+        }
+    }
+
+    /// <summary>A board's guides as pens (the paper layer: the screen's only).</summary>
+    static List<Pen> Guides(Entity view)
+    {
+        var o = new List<Pen>();
+        foreach (var (pts, closed, color, dash) in GuideRuns(view))
+        {
+            var pen = new Pen(PaperLayer, color, 0.13, null, dash);
+            for (var i = 0; i + 1 < pts.Count; i++) pen.Segments.Add((pts[i], pts[i + 1]));
+            if (closed && pts.Count > 2) pen.Segments.Add((pts[^1], pts[0]));
+            o.Add(pen);
+        }
+        return o;
+    }
 
     /// <summary>What a sheet prints of what is drawn on its paper, in paper mm (y down): none when nothing is (the sheet as it was).</summary>
     public static List<Pen> PrintPens(IQueryContext q, Entity sheet, IReadOnlyList<Sheets.Placement> placements)

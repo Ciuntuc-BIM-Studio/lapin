@@ -59,7 +59,7 @@ import { tagTargets, trackTagHover, useTagHover, viewHasTags } from './tagTarget
 
 type View = View2;
 /** How far a view zooms in (px per metre): a sheet's paper, 1:1, much further (decision 620). */
-const maxScaleOf = (id: string | null | undefined) => (isPaperView(id) ? 400000 : 4000);
+const maxScaleOf = (id: string | null | undefined, kind?: unknown) => (isPaperView(id) || kind === 'paper' ? 400000 : 4000);
 
 export function DrawingView() {
   const id = usePaneField('drawingViewId');
@@ -120,7 +120,7 @@ export function DrawingView() {
     return () => ro.disconnect();
   }, []);
 
-  const maxScale = maxScaleOf(id);
+  const maxScale = maxScaleOf(id, node?.props.kind);
   const clampScale = (s: number) => Math.min(maxScale, Math.max(2, s));
   const fit = useCallback(() => {
     const b = drawing?.bounds;
@@ -363,12 +363,12 @@ export function DrawingView() {
             {drawing!.lineworkOrphans!.length} line edit(s) lost their edge · clean
           </button>
         )}
-        {!paperSheet && <ScalePicker viewId={id} scale={drawing?.scale ?? Number(node?.props.scale ?? 100)} />}
-        {!paperSheet && node?.props.kind !== 'plane' && <StructurePicker viewId={id} kind={typeof node?.props.kind === 'string' ? node.props.kind : null} />}
+        {!paperSheet && node?.props.kind !== 'paper' && <ScalePicker viewId={id} scale={drawing?.scale ?? Number(node?.props.scale ?? 100)} />}
+        {!paperSheet && node?.props.kind !== 'plane' && node?.props.kind !== 'paper' && <StructurePicker viewId={id} kind={typeof node?.props.kind === 'string' ? node.props.kind : null} />}
         <ScaleChip pxPerMetre={v.scale} scale={drawing?.scale ?? 100} onActual={host.actual} />
         <button type="button" className="icon" title="Fit (ZE)" onClick={fit}><Maximize size={14} /></button>
       </div>
-      {!paperSheet && <KeyPlan mode="drawing" viewId={id} />}
+      {!paperSheet && node?.props.kind !== 'paper' && <KeyPlan mode="drawing" viewId={id} />}
       <svg ref={ref} className={`plan-svg drawing-svg${tool?.gesture || cadStep?.want === 'point' ? ' tool' : tool || cadStep ? ' pick' : hoverId ? ' pick' : ''}`} data-testid="drawing"
         onWheel={(e) => {
           // A wheel, a pinch or two fingers up and down zoom; two fingers sideways or Shift pan; one or the other for a whole run.

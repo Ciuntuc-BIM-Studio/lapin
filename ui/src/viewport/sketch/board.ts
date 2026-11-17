@@ -10,6 +10,7 @@
  * plan, a section or a sheet: the same canvas, with no bar.
  */
 
+import type { ComponentType } from 'react';
 import type { NodeDto } from '../../engine/protocol';
 
 /** A tool on the bar: a command-line command (LINE, TRIM…) or a constraint command (CNCOINCIDENT…). */
@@ -35,7 +36,15 @@ export interface Board {
   cancel(): Promise<void>;
   /** Esc with nothing in progress (no command, no selection) in 3D: leaves the board keeping its work; none in 2D. */
   leave?(): void;
+  /**
+   * The fields the board's payload keeps beside its drawing (a symbol's name, attributes and preview; a title block's box and
+   * fields): a panel shown beside the flat board (audit S11 stage 2: the editors' dialogs keep their non-drawing fields).
+   */
+  panel?: ComponentType<{ board: Board }>;
 }
+
+/** The Draft commands a board drawing texts and hatches too offers (a symbol's, a title block's). */
+export const ANNOTATE_TOOLS = ['TEXT', 'HATCH'] as const;
 
 /** The Draft commands every board offers, in the bar's order (the drafting tab's own names). */
 export const DRAW_TOOLS = ['LINE', 'PLINE', 'RECTANGLE', 'CIRCLE', 'ARC', 'ELLIPSE'] as const;

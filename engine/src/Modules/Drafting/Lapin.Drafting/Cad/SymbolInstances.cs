@@ -137,6 +137,12 @@ public static class SymbolInstances
                     case Polyline p: items.Add((JsonNode)Pen(new JsonObject { ["type"] = "polyline", ["pts"] = new JsonArray(p.Pts.Select(q => (JsonNode)Pt(q)).ToArray()), ["closed"] = p.Closed })); break;
                     case Circle ci: items.Add((JsonNode)Pen(new JsonObject { ["type"] = "circle", ["c"] = Pt(ci.C), ["r"] = N(ci.R / unit) })); break;
                     case Arc ar: items.Add((JsonNode)Pen(new JsonObject { ["type"] = "arc", ["c"] = Pt(ar.C), ["r"] = N(ar.R / unit), ["start"] = N(Deg(ar.Start)), ["end"] = N(Deg(ar.End)) }, "w")); break;
+                    // A symbol has no ellipses: one is its points by the one rule for curves (a whole one closed).
+                    case Ellipse el:
+                        var ep = el.Points();
+                        if (el.Whole && ep.Count > 1) ep.RemoveAt(ep.Count - 1);
+                        items.Add((JsonNode)Pen(new JsonObject { ["type"] = "polyline", ["pts"] = new JsonArray(ep.Select(q => (JsonNode)Pt(q)).ToArray()), ["closed"] = el.Whole }));
+                        break;
                 }
             }
             else if (e.PredefinedType == "TEXT")

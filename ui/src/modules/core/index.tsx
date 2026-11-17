@@ -55,6 +55,7 @@ import { lazyPart } from '../../platform/lazyPart';
 // Lapin Extensions: the content packs this module's libraries take (docs/plan-extensions.md).
 import './extensionKinds';
 import './libraryKinds';
+import './boards';
 import { MarkerSymbolSection, slotsFor } from './symbols/SlotPicker';
 import { openImportTable } from './tables/tables';
 import { FieldsInspectorDialog } from '../../shell/FieldsInspector';

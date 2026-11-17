@@ -197,6 +197,12 @@ Each one sits by the wall's real faces where the window is, from the wall's laye
 
 ![An arched casement: one side-hung sash following a segmental arch, no transom under it](shots/joinery-arched-casement.webp)
 
+For a saved **window** type, **Draw outline…** (under **Shape** in the configurator) opens the type's elevation on a board: seen from outside, its bottom on the sill line, the current outline as one closed polyline, the frame's inner line dashed. Draw one closed outline (a polyline, a circle, an ellipse, or lines and arcs meeting end to end; construction lines may stay) and choose **Finish sketch**. The type takes that outline in one undo step: its width and height are the outline's bounds, a frame follows it all round and one fixed light sits inside. Every window of the type follows, and the **Shape** list then says **Drawn outline**. Drawing a rectangle gives the rectangle back. Doors keep the rectangle and the head shapes. The grid of the form stays the default way.
+
+![The board of a window outline drawn in the configurator](shots/joinery-outline-board.webp)
+
+![Windows of that outline in 3D](shots/joinery-outline-3d.webp)
+
 ### Frameless glass
 
 **Frameless glass** makes a door or window of toughened glass alone, with no frame and no sash; the **Frameless glass** style sets it at once, with one leaf on pivots. For a door, **Fixing** says what holds a leaf: **Pivots and patch fittings** (a floor spring and a top pivot, a fitting at each corner on the hinge side and a lock patch at the bottom opposite) or **Glass hinges** (two, three on a leaf taller than 2.30 m, clamped to the glass and fixed to the jamb or the pane beside it). **Glass thickness** is 6 to 25 mm (12 mm by default), **Gap round the glass** is the clearance to the opening and between the panes, **Gap under the leaf** the one over the floor. A leaf swings, swings both ways or slides; a pane beside or over it is fixed, standing in a channel on the floor and under the head. A sliding leaf hangs from a track across the head, in front of the fixed panes towards the room, and runs 50 mm past them, as a glass partition's or a shower screen's. The handle is a pull bar on both faces unless you choose another. A frameless window is fixed glazing. Plans draw a leaf open as its glass, elevations the fittings and the track; in IFC the type has no lining (its thickness is the glass's).

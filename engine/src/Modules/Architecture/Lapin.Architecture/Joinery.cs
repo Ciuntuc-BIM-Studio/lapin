@@ -634,6 +634,13 @@ public static class Joinery
             return !s.IsDoor ? "A garage door's operation is a door's." : GarageDoors.Problem(s);
         if (JoineryShapes.Round(s))
             return s.Width < 2 * s.Frame.Width + 0.1 || s.Height < 2 * s.Frame.Width + 0.1 ? "A round window needs room inside its frame." : null;
+        if (JoineryShapes.Ringed(s))
+        {
+            if (s.IsDoor) return "A door's outline is a rectangle or one of the heads: an outline of its own is a window's (one fixed light).";
+            var inner = JoineryShapes.Outline(s, s.Frame.Width);
+            return s.Width < 2 * s.Frame.Width + 0.1 || s.Height < 2 * s.Frame.Width + 0.1 || inner.Count < 3 || Polygon2.SignedArea(inner) < 0.01
+                ? "The outline needs room inside its frame: draw it larger or slim the frame." : null;
+        }
         if (JoineryShapes.Headed(s) && !JoineryShapes.ArchedPanes(s) && JoineryShapes.Spring(s) - Math.Max(s.Frame.Transom, 0.02) - InnerRect(s).Z0 < 0.1)
             return "The head leaves no room for the panels under it: make it taller or lower the rise.";
         var (cols, rows) = Grid(s);
@@ -940,7 +947,7 @@ public static class Joinery
         double y0 = f.Offset - f.Depth / 2, y1 = f.Offset + f.Depth / 2;
         // Frameless glass (tester's question 7): the panes and their fittings, and the window boards under them.
         if (s.Frameless != null) return [.. Frameless.Boxes(s), .. Boards(s, y0, y1, new CellRect(-s.Width / 2, s.Width / 2, 0, s.Height))];
-        if (JoineryShapes.Round(s)) return JoineryShapes.RoundBoxes(s, y0, y1);
+        if (JoineryShapes.Ringed(s)) return JoineryShapes.RoundBoxes(s, y0, y1);
         // A garage door (topic #48): its frame, its curtain or panel, its tracks or roll box.
         if (GarageDoors.Of(s)) return GarageDoors.Boxes(s);
         var outer = new CellRect(-s.Width / 2, s.Width / 2, 0, s.Height);
