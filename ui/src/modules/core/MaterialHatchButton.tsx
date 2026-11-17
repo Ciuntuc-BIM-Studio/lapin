@@ -1,7 +1,6 @@
 /**
  * A layer's material hatch, where its material is chosen (forum #30, decision 493): Wall types and Floor types show
- * each layer's cut hatch as a swatch, and a click on it opens the material's 2D graphics beside it, its cut (section
- * and plan) and elevation hatches, fills and pens, the same as Manage → Materials (MaterialGraphicsTable, the same
+ * each layer's cut hatch as a swatch, and a click on it opens the material's 2D graphics beside it (the compact configurator: hatch, background and lines for the cut in a section and in a plan and for the elevation, with the engine's preview), the same as Manage → Materials (MaterialGraphicsEditor, the same
  * command, one undo step each change). It is the material's own: every type and element made of it changes too.
  */
 
@@ -11,6 +10,7 @@ import { X } from 'lucide-react';
 import { query, useSession } from '../../engine/session';
 import { HatchSwatch } from './HatchSwatch';
 import { MaterialGraphicsTable, type HatchPattern, type MaterialRow } from './MaterialGraphicsTable';
+import { swatchFill, swatchInk } from './materialGraphicsModel';
 import { materialNamed, materialsOf, placeBeside } from './materialHatch';
 import { openMaterialsFrom } from './dialogReturn';
 
@@ -33,7 +33,7 @@ export function MaterialHatchButton({ material, from }: { material: string; from
       <button type="button" ref={button} className={`hatch-pick${open ? ' on' : ''}`} data-testid="layer-hatch" disabled={!row}
         title={row ? 'Its material\'s hatches: cut and elevation (the material\'s own, as in Manage → Materials)' : 'A new material: save the type first, then set its hatches'}
         onClick={() => setOpen((v) => !v)}>
-        <HatchSwatch hatch={cut?.hatch ?? null} scale={cut?.hatchScale ?? 1} fill={cut?.fill ?? null} membrane={cut?.membrane ?? false} size={22} />
+        <HatchSwatch hatch={cut?.hatch ?? null} scale={cut?.hatchScale ?? 1} fill={cut ? swatchFill(cut, row?.color ?? '#888888') : null} ink={swatchInk(cut, '#000000').color} inkOpacity={swatchInk(cut, '#000000').opacity} membrane={cut?.membrane ?? false} size={22} />
       </button>
       {open && row && <MaterialHatchEditor m={row} anchor={button.current} from={from} onClose={() => setOpen(false)} />}
     </>
@@ -77,7 +77,7 @@ function MaterialHatchEditor({ m, anchor, from, onClose }: { m: MaterialRow; anc
         <span className="grow" />
         <button type="button" className="icon mini" title="Close" onClick={onClose}><X size={13} /></button>
       </header>
-      <MaterialGraphicsTable m={m} hatches={hatches} />
+      <MaterialGraphicsTable m={m} hatches={hatches} compact />
       {from && <button type="button" className="btn" data-testid="open-in-materials" onClick={() => openMaterialsFrom(from.kind, m.name, from.snapshot())}>Open in Materials…</button>}
       <p className="muted small">The material&apos;s own, as in Manage → Materials: every type and element made of it changes too.</p>
     </div>,

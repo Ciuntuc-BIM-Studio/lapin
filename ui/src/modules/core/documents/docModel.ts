@@ -4,7 +4,7 @@
  * to complete with its labels, the pages the preview lays the blocks on, and a picture's pens as an SVG file.
  */
 
-import type { PenDto } from '../../../viewport/drawing';
+import { splitAlpha, type PenDto } from '../../../viewport/drawing';
 
 /** A piece of text: bold, italic, a page field ("page", "pages") or a field the project leaves empty (its key as text). */
 export interface DocRun { text: string; bold?: boolean; italic?: boolean; field?: 'page' | 'pages'; missing?: boolean }
@@ -170,9 +170,11 @@ export function pensToSvg(img: { w: number; h: number; pens: PenDto[] }, image?:
     const s = p.segments ?? [];
     for (let k = 0; k + 3 < s.length; k += 4) d += `M${n(s[k])} ${n(s[k + 1])}L${n(s[k + 2])} ${n(s[k + 3])}`;
     if (!d) continue;
-    const stroke = p.stroke ? ` stroke="${esc(p.stroke)}" stroke-width="${n(Math.max(p.width, 0.05))}" stroke-linecap="round" stroke-linejoin="round"` : ' stroke="none"';
+    // A colour with an opacity (#rrggbbaa, decision 670) is written as the colour and its opacity: older SVG readers know only #rrggbb.
+    const ln = splitAlpha(p.stroke), fl = splitAlpha(p.fill);
+    const stroke = ln.color ? ` stroke="${esc(ln.color)}"${ln.opacity < 1 ? ` stroke-opacity="${ln.opacity}"` : ''} stroke-width="${n(Math.max(p.width, 0.05))}" stroke-linecap="round" stroke-linejoin="round"` : ' stroke="none"';
     const dash = p.stroke && p.dash?.length ? ` stroke-dasharray="${p.dash.map(n).join(' ')}"` : '';
-    out.push(`<path d="${d}" fill="${p.fill ? esc(p.fill) : 'none'}" fill-rule="evenodd"${stroke}${dash}/>`);
+    out.push(`<path d="${d}" fill="${fl.color ? esc(fl.color) : 'none'}"${fl.color && fl.opacity < 1 ? ` fill-opacity="${fl.opacity}"` : ''} fill-rule="evenodd"${stroke}${dash}/>`);
   }
   out.push('</svg>');
   return out.join('');

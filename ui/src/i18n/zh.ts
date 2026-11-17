@@ -4282,6 +4282,8 @@ export const ZH: Record<string, string> = {
   "Type properties": "类型属性",
   "Also write type properties on each occurrence": "同时将类型属性写到每个实例上",
   "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "该类型的每面墙都有这些参数（IsExternal、FireRating）；实例默认值是每面墙自己的副本",
+  // Material graphics configurator (decision 670, stage 0b)
+  'Lines': '线条', 'Weight, mm': '线宽，毫米', 'Fill opacity': '填充不透明度', 'Second pattern': '第二图案', 'Cut outline': '剖切轮廓', 'Separator lines': '分隔线', 'Strip': '条带', 'Clear selection': '清除选择', 'Copy graphics from…': '复制图形自…', 'from the pen': '来自笔', 'Opacity, per cent': '不透明度，百分比', 'Automatic: click to choose a colour': '自动：点击以选择颜色', 'Scale of the sample': '样例比例', 'Preview of the material graphics': '材料图形预览', 'A strip of the material between two lines': '两条线之间的材料条带', 'A band between two layers, with the lines that separate them': '两层之间的带状区域，带有分隔它们的线', 'Tick several materials to change their graphics together': '勾选多个材料以一起更改其图形', 'Select this material with others': '将此材料与其他材料一起选择', 'Its hatches, fills and lines for the cut in a section, in a plan and for the elevation: one undo step': '其剖面中的剖切、平面中的剖切和立面的填充图案、填充和线条：一个撤销步骤', 'Paper millimetres: 0.13 · 0.18 · 0.25 · 0.35 · 0.5 · 0.7 · 1.0, or any value from 0.05 to 5': '纸面毫米：0.13 · 0.18 · 0.25 · 0.35 · 0.5 · 0.7 · 1.0，或 0.05 到 5 之间的任意值', 'The weight of the hatch lines on paper: 0.13 · 0.18 · 0.25 · 0.35 · 0.5 · 0.7 · 1.0, or any value from 0.05 to 5; it wins over the pen': '纸面上填充图案线条的线宽：0.13 · 0.18 · 0.25 · 0.35 · 0.5 · 0.7 · 1.0，或 0.05 到 5 之间的任意值；优先于笔', 'The colour of the hatch; automatic: the category colour': '填充图案的颜色；自动：类别的颜色', 'A pen of the pen table (1 to 16), when no weight is set': '笔表中的一支笔（1 至 16），未设置线宽时使用', 'The hatch in a lighter tone, as a background': '填充图案用较浅的色调，作为背景', 'A second hatch under the first (a background and a foreground, as in Revit)': '第一个图案下的第二个图案（背景与前景，如 Revit）', 'A change below goes to all of them, in one undo step.': '下面的更改会应用于所有这些材料，仅一个撤销步骤。', 'What is not set comes from the name, the category or the Object styles; a field’s arrow takes it back there.': '未设置的内容来自名称、类别或对象样式；字段的箭头会将其恢复到那里。',
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [
@@ -4589,4 +4591,8 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^Drawing made: (.+), 1:(\d+)\.$/, (m) => `图纸已生成：${m[1]}，1:${m[2]}。`],
   [/^Drawing made: (.+), 1:(\d+), but it does not fit; choose a larger paper or a smaller scale\.$/, (m) => `图纸已生成：${m[1]}，1:${m[2]}，但放不下；请选择更大的图纸或更小的比例。`],
   [/^Remove all parameters in (.+)$/, (m) => `移除 ${m[1]} 中的所有参数`],
+  [/^Changes go to all (\d+) selected materials\.$/, (m) => `更改会应用于所选的全部 ${m[1]} 个材料。`],
+  [/^(\d+) materials selected$/, (m) => `已选择 ${m[1]} 个材料`],
+  [/^The values shown are those of (.+)\.$/, (m) => `显示的值来自 ${m[1]}。`],
+  [/^Graphics copied from (.+)\.$/, (m) => `已从 ${m[1]} 复制图形。`],
 ];

@@ -7,8 +7,9 @@
  * (drawn, or the user's image: OwnImage) with its size in metres and its turn,
  * roughness, metalness, transparency, glass (transmission and the index of
  * refraction) and a glow; what is not set comes from the name. 2D graphics:
- * how it draws where a section or plan cuts it and in elevation (hatch, scale,
- * fill and pen, or a membrane line), as before. Hatch patterns are imported
+ * how it draws where a section or plan cuts it and in elevation (the graphics configurator: hatch, background and lines, with the
+ * engine's preview; or a membrane line). Several materials ticked in the list take a change together (one undo step), or the
+ * graphics of another material (Copy graphics from…). Hatch patterns are imported
  * from .pat files and travel with the project. Every 3D export names its
  * materials after these, one each, with these values. Data (MaterialDataTab): its
  * description, parameters, measure and catalogue of thicknesses.
@@ -16,11 +17,12 @@
 
 import { ColourField } from '../../shell/ColourField';
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Copy, FileUp, Library, MousePointerClick, Plus, Replace, RotateCcw, Search, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Copy, ClipboardCopy, FileUp, Library, MousePointerClick, Plus, Replace, RotateCcw, Search, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
 import { MaterialGraphicsTable, type HatchPattern as Hatch, type MaterialRow as Material } from './MaterialGraphicsTable';
+import { copyArgs } from './materialGraphicsModel';
 import { OwnImage, ReliefMaps } from './OwnImage';
 import { MaterialPreview } from './MaterialPreview';
 import { forgetPatterns, keepPatterns, myPatterns } from './myPatterns';
@@ -61,6 +63,9 @@ export function MaterialsDialog() {
   const [tab, setTab] = useState<'appearance' | 'graphics' | 'data'>('appearance');
   const [library, setLibrary] = useState(false);
   const [replaceWith, setReplaceWith] = useState('');
+  /** The materials ticked in the list: a change to their graphics goes to all of them, in one step. */
+  const [picked, setPicked] = useState<string[]>([]);
+  const [copyFrom, setCopyFrom] = useState('');
   /** A slider being dragged: its value shows in the preview, and goes to the engine when let go. */
   const [draft, setDraft] = useState<Partial<Record<LookKey, number>>>({});
   // Every edit comes back as a diff: read the materials again.
@@ -68,7 +73,9 @@ export function MaterialsDialog() {
     void query<Material[]>('material.list').then((r) => { if (r) { setList(r); setSelected((cur) => cur ?? r[0]?.id ?? null); } });
     void query<Hatch[]>('hatch.list').then((r) => r && setHatches(r));
   }, [nodes]);
-  useEffect(() => { setDraft({}); setReplaceWith(''); }, [selected]);
+  useEffect(() => { setDraft({}); setReplaceWith(''); setCopyFrom(''); }, [selected]);
+  // A material deleted leaves the ticked ones.
+  useEffect(() => setPicked((p) => (p.every((id) => list.some((x) => x.id === id)) ? p : p.filter((id) => list.some((x) => x.id === id)))), [list]);
   // Opened from a type dialog's swatch (forum #45): on that material and its 2D graphics, once the list is in; its "Back" returns with the edits kept.
   const focus = useUi((s) => s.materialFocus);
   const returnTo = useUi((s) => s.returnTo);
@@ -79,7 +86,14 @@ export function MaterialsDialog() {
     useUi.setState({ materialFocus: null });
   }, [focus, list]);
   useEffect(() => dropStash, []);
-  const m = list.find((x) => x.id === selected) ?? null;
+  const multi = picked.length > 1 ? picked.map((id) => list.find((x) => x.id === id)).filter((x): x is Material => !!x) : [];
+  const m = multi.length > 1 ? multi[0] : list.find((x) => x.id === selected) ?? null;
+  const togglePick = (id: string) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...(p.length ? p : selected ? [selected] : []), id].filter((x, i, a) => a.indexOf(x) === i)));
+  const copyGraphics = (targets: Material[]) => {
+    const from = list.find((x) => x.id === copyFrom);
+    if (!from || !targets.length) return;
+    void execute('material.update', copyArgs(targets.map((x) => x.id), from)).then((r) => { if (r) notify(`Graphics copied from ${from.name}.`); });
+  };
   const node = m ? nodes.get(m.id) : undefined;
   const shown = list.filter((x) => matches(x.name, search) && (!category || (category === '-' ? !x.category : x.category === category)));
   const update = (args: Record<string, unknown>) => m && void execute('material.update', { id: m.id, ...args });
@@ -164,7 +178,9 @@ export function MaterialsDialog() {
             <ul className="type-list material-list">
               {shown.map((x) => (
                 <li key={x.id}>
-                  <button type="button" className={`tree-item material-item${selected === x.id && !library ? ' on' : ''}`} data-material={x.name} onClick={() => { setSelected(x.id); setLibrary(false); }}>
+                  <input type="checkbox" className="material-pick" data-testid="material-pick" aria-label="Select this material with others" title="Tick several materials to change their graphics together" checked={picked.includes(x.id)} onChange={() => togglePick(x.id)} />
+                  <button type="button" className={`tree-item material-item${(selected === x.id || picked.includes(x.id)) && !library ? ' on' : ''}`} data-material={x.name}
+                    onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) { togglePick(x.id); return; } setPicked([]); setSelected(x.id); setLibrary(false); }}>
                     <span className="swatch" style={{ background: x.color }} /><span data-no-i18n>{x.name}</span>{!x.inUse && <span className="muted small"> · unused</span>}
                   </button>
                 </li>
@@ -221,7 +237,21 @@ export function MaterialsDialog() {
               })}
             </div>
           )}
-          {m && !library && (
+          {multi.length > 1 && !library && (
+            <div className="type-edit" data-testid="material-multi">
+              <div className="row">
+                <span className="panel-title">{`${multi.length} materials selected`}</span>
+                <span className="grow" />
+                <button type="button" className="btn compact" onClick={() => setPicked([])}>Clear selection</button>
+              </div>
+              <p className="muted small">A change below goes to all of them, in one undo step.</p>
+              <p className="muted small">{`The values shown are those of ${multi[0].name}.`}</p>
+              <CopyGraphics list={list.filter((x) => !multi.some((t) => t.id === x.id))} from={copyFrom} onFrom={setCopyFrom} onCopy={() => copyGraphics(multi)} />
+              <MaterialGraphicsTable m={multi[0]} targets={multi} hatches={hatches} />
+              {error && <p className="error-text" role="alert">{error}</p>}
+            </div>
+          )}
+          {m && multi.length < 2 && !library && (
             <div className="type-edit">
               <div className="row">
                 <label className="field-line grow"><span className="eyebrow">Name</span>
@@ -318,8 +348,9 @@ export function MaterialsDialog() {
                     <label className="check" title="Off (the default): where this material goes on from one element into another (two walls' cores, footings round a corner) no line is drawn between them. On: the joint is drawn."><input type="checkbox" checked={m.section.drawJoints} onChange={(e) => update({ drawJoints: e.target.checked })} /> Draw joints</label>
                     <label className="check" title="On (the default): its elements join where they meet others (walls at a corner, a beam into a column, one hatch where one material goes on). Off: they keep their shape (steel, timber): not joined, not cut by the cut order nor cutting others, their own outline drawn."><input type="checkbox" checked={m.section.joins !== false} onChange={(e) => update({ joins: e.target.checked })} /> Joins with other elements</label>
                   </div>
+                  <CopyGraphics list={list.filter((x) => x.id !== m.id)} from={copyFrom} onFrom={setCopyFrom} onCopy={() => copyGraphics([m])} />
                   <MaterialGraphicsTable m={m} hatches={hatches} />
-                  <p className="muted small">Hatches are paper millimetres at 1:1; a scale enlarges them. A fill is off unless asked.</p>
+                  <p className="muted small">Hatches are paper millimetres at 1:1; a scale enlarges them. What is not set comes from the name, the category or the Object styles; a field’s arrow takes it back there.</p>
                   <div className="row">
                     <button type="button" className="btn" onClick={() => void execute('material.reset', { id: m.id })}><RotateCcw size={14} />From the name</button>
                   </div>
@@ -330,6 +361,20 @@ export function MaterialsDialog() {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/** "Copy graphics from…": another material's own graphics (section, plan and elevation) onto the material or the ticked ones, in one step. */
+function CopyGraphics({ list, from, onFrom, onCopy }: { list: Material[]; from: string; onFrom: (id: string) => void; onCopy: () => void }) {
+  return (
+    <div className="row material-copy-graphics" data-testid="material-copy-graphics">
+      <span className="small">Copy graphics from…</span>
+      <select data-field="material-copy-from" value={from} onChange={(e) => onFrom(e.target.value)}>
+        <option value="">—</option>
+        {list.map((x) => <option key={x.id} value={x.id} data-no-i18n>{x.name}</option>)}
+      </select>
+      <button type="button" className="btn compact" data-action="material-copy-graphics" disabled={!from} title="Its hatches, fills and lines for the cut in a section, in a plan and for the elevation: one undo step" onClick={onCopy}><ClipboardCopy size={13} />Copy</button>
     </div>
   );
 }

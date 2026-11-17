@@ -557,6 +557,32 @@ table.layer-edit:not(.zones):not(.material-params) > tbody > tr:not(.layer-parts
 .material-views { width: 100%; border-collapse: collapse; margin: 8px 0; }
 .material-views th, .material-views td { padding: 4px 6px; text-align: left; vertical-align: middle; border-bottom: 1px solid var(--rule); font-weight: normal; }
 .material-views input.num { width: 4.5em; }
+.material-list li { display: flex; align-items: center; gap: 4px; }
+.material-list li > .material-item { flex: 1; min-width: 0; }
+.material-pick { margin: 0; flex: none; opacity: 0.55; }
+.material-pick:checked, .material-list li:hover .material-pick { opacity: 1; }
+.material-copy-graphics { gap: 6px; margin: 4px 0; align-items: center; }
+.gfx-editor { display: flex; flex-direction: column; gap: 6px; min-width: 330px; margin: 4px 0; }
+.gfx-editor[data-compact] { width: 330px; max-height: 68vh; overflow: auto; }
+.gfx-kinds { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+.gfx-kind { display: inline-flex; align-items: center; gap: 5px; }
+.gfx-multi { margin: 0; padding: 3px 6px; background: var(--accent-soft, rgba(80, 120, 200, 0.12)); border-radius: 3px; }
+.material-gfx-preview { display: flex; flex-direction: column; gap: 4px; }
+.material-gfx-preview .row { gap: 6px; align-items: center; }
+.material-gfx-sample { border: 1px solid var(--rule); border-radius: 2px; max-width: 100%; }
+.gfx-section { border-top: 1px solid var(--rule); padding-top: 4px; }
+.gfx-section > summary { cursor: pointer; font-weight: 600; font-size: 12px; margin-bottom: 4px; }
+.gfx-section .eyebrow { display: block; margin: 6px 0 2px; }
+.gfx-row { display: grid; grid-template-columns: 92px 1fr 18px; gap: 6px; align-items: center; padding: 1px 0; }
+.gfx-row.own .gfx-label { font-weight: 600; }
+.gfx-control { display: flex; gap: 6px; align-items: center; min-width: 0; }
+.gfx-control select { max-width: 100%; }
+.gfx-control input.num { width: 5.5em; }
+.gfx-nobtn { width: 18px; }
+.gfx-opacity { display: inline-flex; align-items: center; gap: 4px; }
+.gfx-opacity input[type=range] { width: 96px; }
+.gfx-auto { display: inline-flex; align-items: center; gap: 6px; padding: 1px 6px; border: 1px dashed var(--rule-strong); border-radius: 3px; background: none; cursor: pointer; color: var(--ink-muted); }
+.gfx-auto .swatch { width: 12px; height: 12px; }
 .material-item .swatch { margin-right: 6px; }
 .tabs-inline { display: flex; gap: 4px; margin-bottom: 10px; }
 .tab-chip { border: 1px solid var(--rule); background: none; padding: 4px 10px; border-radius: 2px; cursor: pointer; color: var(--ink); }

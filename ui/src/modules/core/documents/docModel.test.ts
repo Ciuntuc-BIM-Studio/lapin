@@ -103,3 +103,12 @@ describe('a picture\'s pens as SVG', () => {
     expect(pixelsAt(0, 200)).toBe(1);
   });
 });
+
+describe('pens with an opacity (#rrggbbaa, material graphics)', () => {
+  it('writes the colour and its opacity, as older SVG readers know only #rrggbb', () => {
+    const svg = pensToSvg({ w: 10, h: 10, pens: [{ layer: 'cut', stroke: '#ff000080', width: 0.25, fill: '#00ff0040', loops: [[0, 0, 10, 0, 10, 10]] }] });
+    expect(svg).toContain('fill="#00ff00" fill-opacity="0.251"');
+    expect(svg).toContain('stroke="#ff0000" stroke-opacity="0.502"');
+    expect(svg).not.toContain('#ff000080');
+  });
+});
