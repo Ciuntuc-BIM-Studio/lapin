@@ -4275,6 +4275,10 @@ export const DA: Record<string, string> = {
   "Layer lines: colour": "Laglinjer: farve",
   "As the cut lines": "Som snitlinjerne",
   "The lines between a cut element's layers (a wall's, a floor's); unset: as the cut lines": "Linjerne mellem et snittet elements lag (en vægs, et dæks); ikke angivet: som snitlinjerne",
+  "A type's property sets (Pset_WallCommon.IsExternal on the wall type) also written on each element of the type, for programs that read only the element; an element's own value wins": "En types egenskabssæt (Pset_WallCommon.IsExternal på vægtypen) skrevet også på hvert element af typen, til programmer der kun læser elementet; elementets egen værdi vinder",
+  "Type properties": "Typeegenskaber",
+  "Also write type properties on each occurrence": "Skriv også typeegenskaber på hver forekomst",
+  "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "hver væg af typen har dem (IsExternal, FireRating); en forekomststandard er hver vægs egen kopi",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

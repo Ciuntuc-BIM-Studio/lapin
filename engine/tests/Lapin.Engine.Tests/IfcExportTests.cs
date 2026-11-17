@@ -84,10 +84,11 @@ public class IfcExportTests : IDisposable
 
         // The wall keeps its id and carries its axis. Its door and window give it lintels, so it is a group: the layers and
         // the lintels are elements of their own under it; the layers the lintels do not touch are prisms the openings have not cut.
+        // The wall keeps a body of its own too, its parts' (issue #29).
         var w = One(step, "IFCWALL");
         Assert.Equal(wall, (string?)w[0]);
         var reps = RepresentationsOf(step, w);
-        Assert.DoesNotContain(reps, r => (string?)r[1] == "Body");
+        Assert.Contains(reps, r => (string?)r[1] == "Body");
         Assert.Contains(reps, r => (string?)r[1] == "Axis");
         var parts = Items(step.OfType("IFCRELAGGREGATES").Single(r => Equals(r[4], Ref(w)))[5]).Select(p => step.Get(p)!).ToList();
         Assert.True(parts.Count >= 5, $"3 layers and the lintels: {parts.Count} parts; {_notes}");
@@ -133,7 +134,8 @@ public class IfcExportTests : IDisposable
 
         var grouped = StepFile.Read(Export(f, "grouped.ifc"));
         var w = One(grouped, "IFCWALL");
-        Assert.DoesNotContain(RepresentationsOf(grouped, w), r => (string?)r[1] == "Body");
+        // Its own body is its parts' (issue #29), for readers that look at the wall.
+        Assert.Contains(RepresentationsOf(grouped, w), r => (string?)r[1] == "Body");
         var parts = Items(grouped.OfType("IFCRELAGGREGATES").Single(r => Equals(r[4], Ref(w)))[5]);
         Assert.True(parts.Count == 3, $"{parts.Count} parts; {_notes}");
         Assert.Equal(2, grouped.OfType("IFCBUILDINGELEMENTPART").Count());

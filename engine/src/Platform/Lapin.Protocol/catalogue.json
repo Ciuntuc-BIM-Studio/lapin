@@ -67,7 +67,7 @@
     {"name":"architecture.createStairType","module":"architecture","label":"New stair type","args":[{"name":"spec"}]},
     {"name":"architecture.createSunshadeType","module":"architecture","label":"New sunshade type","args":[{"name":"style","type":"str"},{"name":"spec","type":"dict"},{"name":"name","type":"str"},{"name":"kind","type":"str"}]},
     {"name":"architecture.createSurfaceFinishType","module":"architecture","label":"New surface finish","args":[{"name":"spec"}]},
-    {"name":"architecture.createWallType","module":"architecture","label":"New wall type","args":[{"name":"name","type":"str"},{"name":"layers"},{"name":"mark","type":"str"},{"name":"zones"},{"name":"lintels"},{"name":"sweeps"}]},
+    {"name":"architecture.createWallType","module":"architecture","label":"New wall type","args":[{"name":"params"},{"name":"name","type":"str"},{"name":"layers"},{"name":"mark","type":"str"},{"name":"zones"},{"name":"lintels"},{"name":"sweeps"}]},
     {"name":"architecture.deleteBalconyStyle","module":"architecture","label":"Delete balcony style","args":[{"name":"styleId","type":"str"}]},
     {"name":"architecture.deleteBayStyle","module":"architecture","label":"Delete bay window style","args":[{"name":"styleId","type":"str"}]},
     {"name":"architecture.deleteColorScheme","module":"architecture","label":"Delete colour scheme","args":[{"name":"id","type":"str"}]},

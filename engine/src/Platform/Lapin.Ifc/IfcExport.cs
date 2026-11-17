@@ -23,8 +23,11 @@ namespace Lapin.Ifc;
 /// <summary><paramref name="Exclude"/>: elements left out (the kinds and storeys not chosen, what the 3D view hides: <see cref="ModelSurvey.Excluded"/>).</summary>
 /// <summary><paramref name="Voids"/>: the openings also as solid voids (IfcBuildingElementProxy PROVISIONFORVOID, decision 289), of the kinds asked, their sides moved by the offset; off by default.</summary>
 public sealed record IfcExportOptions(string Schema = "IFC4", string Detail = "group", string? Phase = null, string Geometry = "brep", double Tolerance = 0, IReadOnlySet<string>? Exclude = null,
-    bool Voids = false, IReadOnlySet<string>? VoidKinds = null, double VoidOffset = 0, bool BonsaiStyles = false, bool Structural = false)
+    bool Voids = false, IReadOnlySet<string>? VoidKinds = null, double VoidOffset = 0, bool BonsaiStyles = false, bool Structural = false, bool TypePropertiesOnOccurrences = false)
 {
+    // TypePropertiesOnOccurrences (issue #30, decision 667): the type's own properties (its property sets, not its instance defaults) also
+    // on each of its elements, in the sets of the same names, for readers that look at the occurrence only; the element's own value of a
+    // property wins over its type's. Off: the type's properties on the type only, as IFC has them (IfcRelDefinesByType).
     // Structural: IFC's structural analysis view beside the building (docs/plan-fem.md §8.7): the analytical model, the load cases, their actions and combinations.
     // BonsaiStyles: the project's drawing styles for Bonsai beside the file (<see cref="Ifc.BonsaiStyles"/>), named in BBIM_Documentation on IfcProject.
     public bool Ifc43 => Schema.StartsWith("IFC4X3", StringComparison.OrdinalIgnoreCase);
@@ -884,6 +887,15 @@ public static partial class IfcExport
             else if (!grouped && at == null && railPart == null && geo!.Instance is { } inst && (inst.Local == null || (typeMap != null && maps.GetValueOrDefault(inst.Body) == typeMap))
                 && Mapped(inst, z0) is { } mapped) reps.Add(mapped);
             else if (!grouped) reps.Add(BodyOf(parts.Select(p => at is { } jp2 ? Brep(p.Solid, StyleKey(p), v => Local(jp2, v)) : Brep(p.Solid, StyleKey(p), fr))));
+            // A wall over its parts (a layer, a lintel, a zone) keeps a body of its own too (issue #29): readers that colour or measure the
+            // wall find faces on it. Its items are its parts' own (each written once, the parts placed where the wall is), a part of many
+            // copies written whole here; Lapin's import takes the parts and leaves this body (IfcImport, a parent it wrote).
+            List<string?>? partItems = null;
+            if (grouped && kind.Class == IfcClass.Wall)
+            {
+                partItems = [.. parts.Select(p => p.Unit != null && p.Instances is { Count: > 0 } ? null : Brep(p.Solid, StyleKey(p), fr))];
+                reps.Add(BodyOf(parts.Select((p, i) => partItems[i] ?? Brep(p.Solid, StyleKey(p), fr))));
+            }
             if (AxisOf(e) is { } ax) reps.Add(ax);
             if (ArcFootprint(e) is { } fp) reps.Add(fp);
             else if (ArcAxis(e) is { } aa) reps.Add(aa);
@@ -902,7 +914,7 @@ public static partial class IfcExport
             Elements++;
             if (type != null) TypeOf(type, kind, entity, mirrored, terms);
             if (src?["material"] == null) MaterialsOf(e, entity, parts, grouped, type != null && types.TryGetValue(mirrored ? type.Id + MirrorKey : type.Id, out var written2) ? (type.Id + (mirrored ? MirrorKey : ""), written2.Ref) : null);
-            if (grouped) Parts(e, kind, parts, place, fr, entity);
+            if (grouped) Parts(e, kind, parts, place, fr, entity, partItems);
             if (fittings.Count > 0) Parts(e, kind, fittings, place, fr, entity);
             Openings(e, entity, place, z0, voids);
             KeptOpenings(e, entity, place, z0);
@@ -1496,7 +1508,8 @@ public static partial class IfcExport
 
         // ─── Parts, openings ────────────────────────────────────────────────
 
-        void Parts(Entity e, Kind kind, List<GeometryPart> parts, string place, Frame fr, string parent)
+        /// <summary>The element's parts, each an element of its own aggregated under it; <paramref name="items"/>: their bodies written already (the parent's body shares them), by index.</summary>
+        void Parts(Entity e, Kind kind, List<GeometryPart> parts, string place, Frame fr, string parent, IReadOnlyList<string?>? items = null)
         {
             var refs = new List<string>();
             // A roof's trusses: each an element assembly of its members (keys "truss:<n>:<role>:<i>"), under the roof.
@@ -1508,7 +1521,7 @@ public static partial class IfcExport
                 var p = parts[i];
                 var key = p.Key ?? $"part:{i}";
                 var pk = PartKind(kind.Class, key, p, zones);
-                var shape = f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { p.Unit != null && p.Instances is { Count: > 0 } copies ? Mapped(p.Unit, copies, StyleKey(p), fr) : BodyOf([Brep(p.Solid, StyleKey(p), fr)]) }));
+                var shape = f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { p.Unit != null && p.Instances is { Count: > 0 } copies ? Mapped(p.Unit, copies, StyleKey(p), fr) : BodyOf([items?[i] ?? Brep(p.Solid, StyleKey(p), fr)]) }));
                 var r = Product(pk, Gid(e.Id, key), p.Name, pk.ObjectType, Place(place, 0), shape, $"{e.Id}/{key}", flight: pk.Class == IfcClass.StairFlight ? FlightOf(e, key) : null);
                 if (p.Material != null) UseMaterial(p.Material, r);
                 // A part made of a type (a lintel of a beam type, report #135): typed by it, IfcBeamType LINTEL.
@@ -1859,7 +1872,7 @@ public static partial class IfcExport
             // Created and struck in one phase (formwork, a scaffold): temporary, as IFC's Status says it.
             if (e.Str("phaseCreated") is { } c0 && c0 == e.Str("phaseDemolished")) phase.Add(Single("Status", Typed("IFCLABEL", S("TEMPORARY"))));
             if (phase.Count > 0) Define(entity, f.Add("IFCPROPERTYSET", Gid(e.Id, PhaseKey), Null, S(PhaseSetName), Null, L(phase)), Gid(e.Id, "phase-rel"));
-            // The user's own parameters (those of its type are on the type, which IFC readers pass on to it).
+            // The user's own parameters (those of its type are on the type, which IFC readers pass on to it; also here when asked, WorkedOut).
             var own = ParamsOf(e, Gid(e.Id, ParamsKey));
             if (own != null) Define(entity, own, Gid(e.Id, "params-rel"));
             StandardSets(e, null, entity, e.Id);
@@ -1923,7 +1936,17 @@ public static partial class IfcExport
         /// An entity's parameters as the file writes them: a formula's value worked out (decision 550: a number, or a text from its
         /// storey's, its project's… parameters), as the model's tags and schedules show it; the formula itself is the model's alone.
         /// </summary>
-        List<JsonObject> WorkedOut(Entity e) => ParamFormulas.Resolved(m, e, m.RelatingOf(e.Id, IfcClass.RelDefinesByType));
+        List<JsonObject> WorkedOut(Entity e)
+        {
+            var type = m.RelatingOf(e.Id, IfcClass.RelDefinesByType);
+            var own = ParamFormulas.Resolved(m, e, type);
+            if (!o.TypePropertiesOnOccurrences || type == null) return own;
+            // Asked (issue #30): the type's own properties too, as the type writes them (its instance defaults are each element's
+            // already), after the element's; a property the element has of its own (the same set and name) is the element's.
+            var typeOwn = ParamFormulas.Resolved(m, type, m.RelatingOf(type.Id, IfcClass.RelDefinesByType))
+                .Where(p => !Params.IsInstanceDefault(p) && (string?)p["name"] is { } name && !own.Any(x => Params.Same(x, Params.SetOf(p), name)));
+            return [.. own, .. typeOwn];
+        }
 
         /// <summary>An entity's own parameters (those in no named set) as a typed property set; null when it has none.</summary>
         string? ParamsOf(Entity e, string gid)

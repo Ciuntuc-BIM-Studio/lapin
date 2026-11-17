@@ -888,6 +888,17 @@ public static partial class IfcImport
                 if (!o.ReferenceOnly && !parentOf.ContainsKey(e.Id) && Recognize(edit, e)) { native.Add(e.Id); continue; }
                 rest.Add(e);
             }
+            // A wall Lapin wrote over its parts also carries their bodies as its own (issue #29, for readers that colour the wall): read as
+            // references, its parts are taken, as before, and that body is left, so nothing comes twice.
+            var wholes = parentOf.Values.ToHashSet();
+            bool BodyOfItsParts(StepEntity e) => o.ReferenceOnly && e.Type is "IFCWALL" or "IFCWALLSTANDARDCASE" && wholes.Contains(e.Id) && IntentOf(e.Id) != null;
+            rest.RemoveAll(e =>
+            {
+                if (!BodyOfItsParts(e)) return false;
+                var cls = ClassName(e.Type);
+                bodiless[cls] = bodiless.GetValueOrDefault(cls) + 1;
+                return true;
+            });
             // The references to come, read from the file on every core before they are put in the model in order.
             PrepareAll([.. rest.Where(e => !(parentOf.TryGetValue(e.Id, out var parent) && (native.Contains(parent) || (!o.ReferenceOnly && IntentOf(parent) != null)))
                 && !recognizedFills.Contains(e.Id) && (o.ReferenceOnly || !parentOf.ContainsKey(e.Id) || fills.Contains(e.Id)))], booleans);

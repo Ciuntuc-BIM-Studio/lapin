@@ -4334,6 +4334,10 @@ export const LO: Record<string, string> = {
   "Layer lines: colour": "ເສັ້ນລະຫວ່າງຊັ້ນ: ສີ",
   "As the cut lines": "ຄືກັບເສັ້ນໜ້າຕັດ",
   "The lines between a cut element's layers (a wall's, a floor's); unset: as the cut lines": "ເສັ້ນລະຫວ່າງຊັ້ນຂອງອົງປະກອບທີ່ຖືກຕັດ (ຂອງຝາ, ຂອງພື້ນ); ບໍ່ໄດ້ກຳນົດ: ຄືກັບເສັ້ນໜ້າຕັດ",
+  "A type's property sets (Pset_WallCommon.IsExternal on the wall type) also written on each element of the type, for programs that read only the element; an element's own value wins": "ຊຸດຄຸນສົມບັດຂອງປະເພດ (Pset_WallCommon.IsExternal ໃນປະເພດຝາ) ຂຽນໃສ່ທຸກອົງປະກອບຂອງປະເພດນັ້ນນຳ, ສຳລັບໂປຣແກຣມທີ່ອ່ານແຕ່ອົງປະກອບ; ຄ່າຂອງອົງປະກອບເອງມີສິດກ່ອນ",
+  "Type properties": "ຄຸນສົມບັດຂອງປະເພດ",
+  "Also write type properties on each occurrence": "ຂຽນຄຸນສົມບັດຂອງປະເພດໃສ່ທຸກອິນສະແຕນນຳ",
+  "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "ທຸກຝາຂອງປະເພດມີພວກມັນ (IsExternal, FireRating); ຄ່າເລີ່ມຕົ້ນຂອງອິນສະແຕນແມ່ນສຳເນົາຂອງແຕ່ລະຝາເອງ",
 };
 
 /** Phrases with a number or a name in them. */
