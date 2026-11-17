@@ -26,7 +26,7 @@ Ten sam pasek służy wszystkim narzędziom obrysu (strop, otwór w stropie, suf
 
 ![Pasek narzędzi obrysu z wybranym From drawn shape](shots/outline-sources.webp)
 
-Dla stropu, otworu w stropie, sufitu i pomieszczenia z obrysu pasek oferuje też **Ellipse**: środek, koniec jednej półosi, potem drugą. Krawędzie obrysu biegną po prawdziwej elipsie (cztery ćwiartki), mierzone dokładnie; narożnik przesunięty z elipsy prostuje swoje dwie krawędzie, a narożnik przy krawędzi eliptycznej nie jest zaokrąglany. IFC zapisuje ją jako IfcEllipse. **From drawn shape** bierze tak samo narysowaną elipsę. Własny otwór stropu lub sufitu (**Hole in the outline**) też przyjmuje elipsę. Obrys z krawędzią eliptyczną nie jest odsuwany w całości (Shift-przeciągnij, **Offset outline…**): krzywa w odległości od elipsy nie jest elipsą.
+Dla stropu, otworu w stropie, sufitu i pomieszczenia z obrysu pasek oferuje też **Ellipse**: środek, koniec jednej półosi, potem drugą. Krawędzie obrysu biegną po prawdziwej elipsie (cztery ćwiartki), mierzone dokładnie; narożnik przesunięty z elipsy prostuje swoje dwie krawędzie, a narożnik przy krawędzi eliptycznej nie jest zaokrąglany. IFC zapisuje ją jako IfcEllipse. **From drawn shape** bierze tak samo narysowaną elipsę. Własny otwór stropu lub sufitu (**Hole in the outline**) też przyjmuje elipsę. Odsunięcie całego obrysu (Shift-przeciągnij, **Offset outline…**) zmienia krawędź eliptyczną w prawdziwą krzywą w tej odległości, złożoną z krótkich prostych krawędzi (krzywa w odległości od elipsy nie jest elipsą); do wewnątrz zatrzymuje się, zanim krzywa złoży się przy najciaśniejszym zakręcie elipsy.
 
 ![Eliptyczny strop rysowany obok narysowanej elipsy](shots/ellipse-floor.webp)
 

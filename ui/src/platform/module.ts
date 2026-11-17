@@ -255,9 +255,12 @@ export interface Grip {
   offsetAll?: OutlineOffsetGrip;
 }
 
-/** What an outline's edge grip lends to "Offset outline": the outline as it is, its outward normal at that edge, and its update. */
+/**
+ * What an outline's edge grip lends to "Offset outline": the outline as it is (with its elliptical edges, audit S4: the engine
+ * lays the curve at the distance from an ellipse in chords), its outward normal at that edge, and its update.
+ */
 export interface OutlineOffsetGrip {
-  outline: { pts: Vec2[]; arcs?: number[]; edges?: unknown[] };
+  outline: { pts: Vec2[]; arcs?: number[]; edges?: unknown[]; ellipses?: unknown[] };
   normal: Vec2;
   save: (next: { pts: Vec2[]; arcs?: number[]; edges?: unknown[] }) => GripStep | null;
 }

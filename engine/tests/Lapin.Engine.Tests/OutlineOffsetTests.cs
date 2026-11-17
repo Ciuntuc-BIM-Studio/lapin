@@ -161,4 +161,84 @@ public sealed class OutlineOffsetTests
         f.Session.Undo();
         Assert.Equal(4, ((JsonArray)f.Model.Get(id)!.Attrs["contour"]!).Count);
     }
+
+    /// <summary>How far a point is from the ellipse: sampled round it, then narrowed down about the nearest sample.</summary>
+    static double FromEllipse(EllipseEdge e, Vec2 p)
+    {
+        const int N = 2048;
+        var h = 2 * Math.PI / N;
+        var t = Enumerable.Range(0, N).Select(k => k * h).MinBy(x => (e.At(x) - p).Length);
+        var (lo, hi) = (t - h, t + h);
+        for (var k = 0; k < 100; k++)
+        {
+            var (m1, m2) = (lo + (hi - lo) / 3, hi - (hi - lo) / 3);
+            if ((e.At(m1) - p).Length < (e.At(m2) - p).Length) hi = m2; else lo = m1;
+        }
+        return (e.At((lo + hi) / 2) - p).Length;
+    }
+
+    [Fact]
+    public void An_ellipse_offsets_to_the_curve_at_that_distance_laid_by_the_one_rule()
+    {
+        // An ellipse (audit S4): a 3 × 1.5 m one, four quarter edges. The curve at a distance from it is no ellipse: its offset
+        // is laid in chords no more than the one rule's tolerance off it, its corners on it, every edge straight.
+        var (corners, edges) = EllipseEdge.Whole(new Vec2(1, 2), new Vec2(3, 0), 0.5);
+        var e = edges[0]!;
+        foreach (var d in new[] { 0.5, -0.4 })
+        {
+            var (c, r, from) = ArcOutline.Offset(corners, null, d, edges);
+            Assert.True(c.Count > 40);
+            Assert.Null(r);
+            Assert.Equal(c.Count, from.Count);
+            Assert.All(from, k => Assert.InRange(k, 0, 3));
+            Assert.All(c, p => Assert.Equal(Math.Abs(d), FromEllipse(e, p), 6));
+            for (var i = 0; i < c.Count; i++)
+                Assert.InRange(FromEllipse(e, (c[i] + c[(i + 1) % c.Count]) * 0.5) - Math.Abs(d), -Chords.Tolerance, Chords.Tolerance);
+            // A convex outline grown (or shrunk) by d gains (loses) its perimeter times d, and π d².
+            var want = ArcOutline.SignedArea(corners, null, edges) + ArcOutline.Perimeter(corners, null, edges) * d + Math.PI * d * d;
+            Assert.InRange(ArcOutline.SignedArea(c, null) - want, -0.02, 0.02);
+        }
+        // Inward as far as its tightest radius of curvature (b²/a = 0.75 m) it would fold on itself.
+        Assert.Throws<CommandException>(() => ArcOutline.Offset(corners, null, -0.8, edges));
+    }
+
+    [Fact]
+    public void A_half_ellipse_closed_by_a_straight_edge_offsets_both()
+    {
+        var (whole, edges) = EllipseEdge.Whole(new Vec2(0, 0), new Vec2(3, 0), 0.5);
+        List<Vec2> half = [whole[0], whole[1], whole[2]];
+        EllipseEdge?[] el = [edges[0], edges[1], null];
+        var (c, _, from) = ArcOutline.Offset(half, null, 0.25, el);
+        // The straight edge (from (−3, 0) to (3, 0)) moved down by 0.25, mitred with the curve's ends.
+        var k = from.IndexOf(2);
+        Assert.Equal(-0.25, c[k].Y, 9);
+        Assert.Equal(-0.25, c[(k + 1) % c.Count].Y, 9);
+        Assert.Equal(-3.25, c[k].X, 6);
+        Assert.Equal(3.25, c[(k + 1) % c.Count].X, 6);
+    }
+
+    [Fact]
+    public void An_elliptical_floor_is_offset_by_the_query_and_written_by_its_update_one_undo_step()
+    {
+        var f = new Fixture();
+        var (corners, edges) = EllipseEdge.Whole(new Vec2(0, 0), new Vec2(3, 0), 0.5);
+        var id = (string)f.Run("architecture.addSlab", new JsonObject
+        {
+            ["storeyId"] = f.Storey, ["points"] = new JsonArray([.. corners.Select(p => (JsonNode)new JsonArray(p.X, p.Y))]),
+            ["ellipses"] = new JsonArray([.. edges.Select(x => (JsonNode?)x!.ToJson())]),
+        })!["id"]!;
+        var slab = f.Model.Get(id)!;
+        var area = ArcOutline.AreaOf(slab);
+        var r = (JsonObject)f.Session.Query("outline.offset", new JsonObject
+        {
+            ["points"] = slab.Attrs["contour"]!.DeepClone(), ["ellipses"] = slab.Attrs["ellipses"]!.DeepClone(), ["distance"] = 0.5,
+        })!;
+        Assert.Null(r["problem"]);
+        f.Run("architecture.updateSlab", new JsonObject { ["id"] = id, ["points"] = r["points"]!.DeepClone(), ["arcs"] = r["arcs"]?.DeepClone() });
+        var grown = f.Model.Get(id)!;
+        Assert.Null(grown.Attrs["ellipses"]);
+        Assert.InRange(ArcOutline.AreaOf(grown) - (area + ArcOutline.PerimeterOf(slab) * 0.5 + Math.PI * 0.25), -0.02, 0.02);
+        f.Session.Undo();
+        Assert.NotNull(f.Model.Get(id)!.Attrs["ellipses"]);
+    }
 }

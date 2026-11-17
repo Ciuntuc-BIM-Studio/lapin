@@ -3,7 +3,7 @@
 import { Armchair, ArrowLeftRight, ArrowRightToLine, CornerDownRight, CornerUpRight, Layers3, Link2, Scissors, Settings2, Slash, Spline, Table2 } from 'lucide-react';
 import { AttachRoofIcon, CurtainWallIcon, CurvedWallIcon, DetachRoofIcon, DoorIcon, DormerIcon, RoofIcon, RampIcon, RoofWindowIcon, SlabIcon, SlabOpeningIcon, StairIcon, WallIcon, WallTypesIcon, WindowIcon } from '../../icons';
 import type { Grip, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
-import { flipAcross, frameAt, holeGrips, holeRefs, outlineGrips, outlineRef, pathGrips, pathRef, toPairs } from '../../viewport/gripKit';
+import { flipAcross, frameAt, holeGrips, holeRefs, outlineGrips, outlineRef, pathGrips, pathRef, toPairs, withEllipses } from '../../viewport/gripKit';
 import { architectureGrips3d } from './grips3d';
 import { arcOf, project, type Arc } from '../../viewport/arc';
 import { arcsOf, fromPairs } from '../../viewport/contour';
@@ -308,10 +308,9 @@ function contourGrips(command: string, withEdges = false) {
         fillet: (index, radius) => ({ command: 'architecture.roundCorner', args: { id: node.id, index, radius } }),
         chamfer: (index, distance) => ({ command: 'architecture.chamferCorner', args: { id: node.id, index, distance } }),
       } : undefined);
-    // An outline with an elliptical edge is not offset as a whole: the curve at a distance from an ellipse is no ellipse.
-    const elliptical = Array.isArray(node.props.ellipses) && node.props.ellipses.some(Boolean);
+    // Elliptical edges go to "Offset outline" (audit S4): the curve at the distance from an ellipse, laid in chords by the engine.
     // A floor's or a ceiling's own holes (audit S4).
-    return [...(elliptical ? outline.map((g) => (g.offsetAll ? { ...g, offsetAll: undefined } : g)) : outline),
+    return [...withEllipses(outline, node.props.ellipses, pts.length),
       ...holeGrips(node.id, node.props.holes, node.props.holeArcs, (holes, holeArcs) => ({ command, args: { id: node.id, holes, holeArcs } }), 'architecture', node.props.holeEllipses)];
   };
 }

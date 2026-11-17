@@ -107,14 +107,22 @@ public sealed class OutlineHoleEllipseTests : IDisposable
     }
 
     [Fact]
-    public void An_outline_with_an_elliptical_edge_is_not_offset_as_a_whole()
+    public void An_outline_with_an_elliptical_edge_is_offset_as_a_whole_along_the_curve_at_that_distance()
     {
+        // Once refused; a whole outline's offset now lays the curve at the distance from its ellipse in chords (OutlineOffsetTests).
         var f = F();
         var (pts, el) = EllipseEdge.Whole(new Vec2(0, 0), new Vec2(2, 0), 0.5);
         var r = (JsonObject)f.Session.Query("outline.offset", new JsonObject
         {
             ["points"] = Pts(pts), [EllipseEdge.Key] = new JsonArray([.. el.Select(x => (JsonNode?)x!.ToJson())]), ["distance"] = 0.1,
         })!;
-        Assert.Contains("elliptical", (string)r["problem"]!);
+        Assert.Null(r["problem"]);
+        Assert.True(((JsonArray)r["points"]!).Count > 4);
+        // Inward past its tightest curvature (b²/a = 0.5 m) it would fold on itself.
+        var folded = (JsonObject)f.Session.Query("outline.offset", new JsonObject
+        {
+            ["points"] = Pts(pts), [EllipseEdge.Key] = new JsonArray([.. el.Select(x => (JsonNode?)x!.ToJson())]), ["distance"] = -0.6,
+        })!;
+        Assert.NotNull(folded["problem"]);
     }
 }

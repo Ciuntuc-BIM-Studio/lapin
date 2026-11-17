@@ -3,7 +3,8 @@
  * ceiling's, roof's, room's or balcony's outline moved at once, outward (+) or inward (−): straight edges parallel and
  * mitred, arcs concentric, a corner where an arc meets an edge rounded as it grows. The engine works it out
  * (`outline.offset`, ArcOutline.Offset) and refuses what would vanish or cross itself; the element's own update command
- * writes it, one undo step for the whole selection. Shift-drag on an edge's middle grip does it live (GripLayer); the
+ * writes it, one undo step for the whole selection. An edge along an ellipse becomes the true curve at the distance laid in
+ * chords (no ellipse is one), as Draft offsets an ellipse. Shift-drag on an edge's middle grip does it live (GripLayer); the
  * selection's right-click menu asks the distance (plans and 3D).
  */
 
@@ -20,8 +21,10 @@ import type { MenuItem } from '../shell/ContextMenu';
 interface OffsetReply { points?: number[][]; arcs?: number[] | null; from?: number[]; problem?: string }
 
 /** The outline offset by `distance` (m, outward positive), its edges' data following the edges they came from; or why it cannot be. */
-export async function offsetOutline<E>(o: Outline<E>, distance: number): Promise<{ outline: Outline<E> } | { problem: string }> {
-  const r = await query<OffsetReply>('outline.offset', { points: toPairs(o.pts), ...(o.arcs ? { arcs: o.arcs } : {}), distance });
+export async function offsetOutline<E>(o: Outline<E> & { ellipses?: unknown[] }, distance: number): Promise<{ outline: Outline<E> } | { problem: string }> {
+  // Elliptical edges (audit S4) go too: the curve at the distance from an ellipse comes back laid in chords, straight edges.
+  const ellipses = o.ellipses?.some(Boolean) ? o.ellipses : undefined;
+  const r = await query<OffsetReply>('outline.offset', { points: toPairs(o.pts), ...(o.arcs ? { arcs: o.arcs } : {}), ...(ellipses ? { ellipses } : {}), distance });
   if (!r) return { problem: 'The outline could not be offset.' };
   if (r.problem) return { problem: r.problem };
   const pts = fromPairs(r.points);

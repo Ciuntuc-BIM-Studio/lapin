@@ -66,7 +66,7 @@ export function roomGrips(node: NodeDto): Grip[] {
   if (node.props.auto && seed) grips.push({ key: 'seed', kind: 'centre', at: seed, title: 'The room\'s point: its outline is found round it', step: (to) => ({ command: 'architecture.updateRoom', args: { id: node.id, x: to.x, y: to.y } }) });
   // A drawn room by the corners it keeps, its edges may be arcs (audit S4): its plan's outline lays them in chords.
   const corners = fromPairs(node.props.contour);
-  if (!node.props.auto && corners.length >= 3) grips.push(...curvedOutlineGrips(node.id, corners, node.props.arcs, (pts, arcs) => ({ command: 'architecture.updateRoom', args: { id: node.id, points: toPairs(pts), arcs } })));
+  if (!node.props.auto && corners.length >= 3) grips.push(...curvedOutlineGrips(node.id, corners, node.props.arcs, (pts, arcs) => ({ command: 'architecture.updateRoom', args: { id: node.id, points: toPairs(pts), arcs } }), 'architecture', node.props.ellipses));
   return grips;
 }
 

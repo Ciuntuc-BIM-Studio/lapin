@@ -116,6 +116,15 @@ export function outlineGrips<E>(o: Outline<E>, save: (next: Outline<E>) => GripS
   return grips;
 }
 
+/**
+ * An outline's grips with its elliptical edges (audit S4; one per corner, null where not one) lent to "Offset outline", which
+ * then lays the curve at the distance from an ellipse in chords; unchanged when it has none.
+ */
+export function withEllipses(grips: Grip[], ellipses: unknown, corners: number): Grip[] {
+  if (!Array.isArray(ellipses) || ellipses.length !== corners || !ellipses.some(Boolean)) return grips;
+  return grips.map((g) => (g.offsetAll ? { ...g, offsetAll: { ...g.offsetAll, outline: { ...g.offsetAll.outline, ellipses } } } : g));
+}
+
 /** The point of a line (a polyline: an arc in steps) nearest to p, how far p is from it and how far along it is (0 to 1). */
 export function nearestOnLine(pts: Vec2[], p: Vec2): { at: Vec2; dist: number; t: number } {
   if (pts.length === 2) return nearestOnSegment(pts[0], pts[1], p);
@@ -135,12 +144,12 @@ export function nearestOnLine(pts: Vec2[], p: Vec2): { at: Vec2; dist: number; t
  * platform's, a parcel's): its grips, each edit `save`d with the corners and every edge's rise; a corner rounded or cut by the
  * module's `roundCorner` / `chamferCorner` (one engine command, one undo step).
  */
-export function curvedOutlineGrips(id: string, pts: Vec2[], rawArcs: unknown, save: (pts: Vec2[], arcs: number[]) => GripStep, module = 'architecture'): Grip[] {
+export function curvedOutlineGrips(id: string, pts: Vec2[], rawArcs: unknown, save: (pts: Vec2[], arcs: number[]) => GripStep, module = 'architecture', rawEllipses?: unknown): Grip[] {
   if (pts.length < 3) return [];
-  return outlineGrips({ pts, arcs: arcsOf(rawArcs, pts.length) }, (o) => save(o.pts, o.arcs ?? o.pts.map(() => 0)), {
+  return withEllipses(outlineGrips({ pts, arcs: arcsOf(rawArcs, pts.length) }, (o) => save(o.pts, o.arcs ?? o.pts.map(() => 0)), {
     fillet: (index, radius) => ({ command: `${module}.roundCorner`, args: { id, index, radius } }),
     chamfer: (index, distance) => ({ command: `${module}.chamferCorner`, args: { id, index, distance } }),
-  });
+  }), rawEllipses, pts.length);
 }
 
 /** An element's own holes (audit S4): each a loop of corners, and its edges' rises (none when straight). */
@@ -159,18 +168,18 @@ export function holesOf(raw: unknown, rawArcs: unknown): { pts: Vec2[]; arcs?: n
  */
 export function holeGrips(id: string, raw: unknown, rawArcs: unknown, save: (holes: number[][][], arcs: number[][]) => GripStep, module = 'architecture', rawEllipses?: unknown): Grip[] {
   const holes = holesOf(raw, rawArcs);
-  // A hole with an elliptical edge is not offset as a whole (the curve at a distance from an ellipse is no ellipse).
-  const elliptical = (k: number) => Array.isArray(rawEllipses) && Array.isArray(rawEllipses[k]) && (rawEllipses[k] as unknown[]).some(Boolean);
+  // A hole's elliptical edges go to "Offset outline" (the curve at the distance from an ellipse, in chords).
+  const ellipsesOf = (k: number) => (Array.isArray(rawEllipses) ? rawEllipses[k] : undefined);
   const write = (k: number, next: { pts: Vec2[]; arcs?: number[] }) => {
     const all = holes.map((h, i) => (i === k ? next : h));
     return save(all.map((h) => toPairs(h.pts)), all.map((h) => h.arcs ?? h.pts.map(() => 0)));
   };
   return holes.flatMap((h, k) => {
     const c = h.pts.reduce((s, p) => ({ x: s.x + p.x / h.pts.length, y: s.y + p.y / h.pts.length }), { x: 0, y: 0 });
-    const grips = outlineGrips({ pts: h.pts, arcs: h.arcs }, (o) => write(k, { pts: o.pts, arcs: o.arcs }), {
+    const grips = withEllipses(outlineGrips({ pts: h.pts, arcs: h.arcs }, (o) => write(k, { pts: o.pts, arcs: o.arcs }), {
       fillet: (index, radius) => ({ command: `${module}.roundCorner`, args: { id, hole: k, index, radius } }),
       chamfer: (index, distance) => ({ command: `${module}.chamferCorner`, args: { id, hole: k, index, distance } }),
-    }, `h${k}`).map((g) => (g.offsetAll && elliptical(k) ? { ...g, offsetAll: undefined } : g));
+    }, `h${k}`), ellipsesOf(k), h.pts.length);
     grips.push({
       key: `h${k}c`, kind: 'move', at: c, title: 'Drag to move the hole',
       step: (to: Vec2) => write(k, { pts: h.pts.map((p) => ({ x: p.x + to.x - c.x, y: p.y + to.y - c.y })), arcs: h.arcs }),

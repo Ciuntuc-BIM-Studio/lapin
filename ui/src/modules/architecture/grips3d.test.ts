@@ -5,6 +5,8 @@ import { architectureGrips3d, insidePoint, wallAcross, wallFaces, wallHeights } 
 import { alongGrip, alongOf } from '../../viewport/Grips3D';
 import { offsetDistance } from '../../viewport/outlineOffset';
 import { outlineGrips } from '../../viewport/gripKit';
+import { gripsOf } from '../../platform/modules';
+import { wholeEllipse } from '../../viewport/outlineShape';
 
 const node = (id: string, type: string, props: NodeDto['props'], storeyId: string | null = 's0'): NodeDto =>
   ({ id, type, name: id, parentId: null, px: 0, py: 0, props, editable: true, module: null, storeyId });
@@ -102,5 +104,22 @@ describe('offset outline (decision 609)', () => {
     expect(cw.offsetAll!.normal.y).toBeCloseTo(1);
     expect(offsetDistance({ x: 2, y: 0 }, e0.offsetAll!.normal, { x: 3, y: -0.4 })).toBeCloseTo(0.4);
     expect(e0.offsetAll!.save({ pts: square })).toEqual(save({ pts: square }));
+  });
+
+  it('offers an elliptical floor\'s, ceiling\'s and room\'s outline with its ellipses (the engine lays the curve at the distance)', () => {
+    // Once withheld, so a Shift-drag moved the one edge and left a wedge with an arc (filming 0.1.1335).
+    const e = wholeEllipse({ x: 0, y: 0 }, { x: 3, y: 0 }, 0.5);
+    const props = { contour: e.pts.map((p) => [p.x, p.y]), ellipses: e.ellipses as unknown as NodeDto['props'][string], arcs: [0, 0, 0, 0] };
+    for (const type of ['IfcSlab', 'LapinCeiling', 'IfcSpace']) {
+      const n = node('f', type, props);
+      model(n);
+      const mids = gripsOf(n).filter((g) => g.kind === 'edgeMid');
+      expect(mids).toHaveLength(4);
+      for (const g of mids) expect(g.offsetAll?.outline.ellipses).toEqual(e.ellipses);
+    }
+    // A plain outline lends none.
+    const plain = node('p', 'IfcSlab', { contour: [[0, 0], [4, 0], [4, 4], [0, 4]] });
+    model(plain);
+    expect(gripsOf(plain).find((g) => g.kind === 'edgeMid')!.offsetAll!.outline.ellipses).toBeUndefined();
   });
 });

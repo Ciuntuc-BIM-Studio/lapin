@@ -264,9 +264,14 @@ public static class ArcOutline
     /// two. The outline keeps its corners' order and its way round; <c>From</c> gives, for each edge of what comes out, the
     /// edge it came from (a round: the edge before it), so data kept by edge (a roof's rules) follows. Refused when an edge
     /// would vanish or turn back, an arc shrink to nothing, or the outline cross itself or turn inside out.
+    /// An edge along an ellipse (<paramref name="ellipses"/>, audit S4) has no ellipse at a distance from it: it is laid in chords
+    /// within the one rule's tolerance of the curve at that distance (<see cref="Laid"/>), offset with the rest, and each corner
+    /// between two of its chords put on that curve (the ellipse's point moved along its normal), so the new edges are its chords,
+    /// straight, as Draft offsets an ellipse; inward past its tightest curvature (b²/a) its chords turn back, refused.
     /// </summary>
-    public static (List<Vec2> Corners, double[]? Rises, List<int> From) Offset(IReadOnlyList<Vec2> corners, IReadOnlyList<double>? rises, double distance)
+    public static (List<Vec2> Corners, double[]? Rises, List<int> From) Offset(IReadOnlyList<Vec2> corners, IReadOnlyList<double>? rises, double distance, IReadOnlyList<EllipseEdge?>? ellipses = null)
     {
+        if (ellipses != null && ellipses.Any(x => x != null)) return OffsetElliptical(corners, rises, distance, ellipses);
         if (!double.IsFinite(distance)) throw new CommandException("An offset's distance must be a number.");
         var n = corners.Count;
         if (n < 3) throw new CommandException("An outline needs at least three corners.");
@@ -347,6 +352,97 @@ public static class ArcOutline
         if (Math.Sign(after) != Math.Sign(area) || Math.Abs(after) < 1e-6) throw new CommandException($"Offsetting by {distance:0.###} m leaves nothing of the outline: a smaller distance.");
         if (!Simple(Points(pts, kept))) throw new CommandException($"Offsetting by {distance:0.###} m makes the outline cross itself: a smaller distance.");
         return (pts, kept, from);
+    }
+
+    /// <summary>
+    /// <see cref="Offset"/> of an outline with elliptical edges: those laid in chords and offset with the rest; then each corner
+    /// beside an elliptical edge put where the offset lines meet when the ellipse's own tangent stands for its chord there: on the
+    /// true curve at the distance between two of its chords (the ellipse's point moved along its normal), the true mitre where
+    /// it meets a straight edge. Beside an arc the corner stays as offset (a round about the old corner, or where they cross).
+    /// </summary>
+    static (List<Vec2> Corners, double[]? Rises, List<int> From) OffsetElliptical(IReadOnlyList<Vec2> corners, IReadOnlyList<double>? rises, double distance, IReadOnlyList<EllipseEdge?> ellipses)
+    {
+        if (!double.IsFinite(distance)) throw new CommandException("An offset's distance must be a number.");
+        var n = corners.Count;
+        // Left of the way it runs by y (as Offset): outward is to the right of an anticlockwise outline.
+        var y = SignedArea(corners, rises, ellipses) > 0 ? -distance : distance;
+        var pts = new List<Vec2>();
+        var rs = new List<double>();
+        var edgeOf = new List<int>();
+        // Each laid edge's ellipse (null for one that is not along an ellipse).
+        var along = new List<EllipseEdge?>();
+        for (var i = 0; i < n; i++)
+        {
+            if (i < ellipses.Count && ellipses[i] is { } el)
+            {
+                foreach (var q in Laid(el, corners[i], corners[(i + 1) % n], y)) { pts.Add(q); rs.Add(0); edgeOf.Add(i); along.Add(el); }
+                continue;
+            }
+            pts.Add(corners[i]); rs.Add(At(rises, i)); edgeOf.Add(i); along.Add(null);
+        }
+        var laidRises = HasArcs(rs) ? rs : null;
+        var (c, r, from) = Offset(pts, laidRises, distance);
+        var (m, l) = (c.Count, pts.Count);
+        // Laid edge j's offset line at corner p (one of its ends): through the point moved y to its left, along its way there.
+        (Vec2 At, Vec2 Dir)? Line(int j, Vec2 p)
+        {
+            Vec2 dir;
+            if (along[j] is { } e)
+            {
+                var t = e.Param(p);
+                dir = ((e.M * -Math.Sin(t) + e.N * Math.Cos(t)) * (e.Ccw ? 1 : -1)).Normalized();
+                return (e.At(t) + dir.Perp * y, dir);
+            }
+            if (Math.Abs(At(laidRises, j)) > 1e-6) return null;
+            dir = (pts[(j + 1) % l] - pts[j]).Normalized();
+            return (p + dir.Perp * y, dir);
+        }
+        for (var k = 0; k < m; k++)
+        {
+            var j = from[k];
+            var before = (j - 1 + l) % l;
+            // A round put in before it, or no ellipse beside it: as offset.
+            if (from[(k - 1 + m) % m] != before || (along[j] == null && along[before] == null)) continue;
+            if (Line(before, pts[j]) is not { } a || Line(j, pts[j]) is not { } b) continue;
+            var den = Vec2.Cross(a.Dir, b.Dir);
+            // Tangent there (along one ellipse, or an edge going on along its tangent): the point moved along the normal.
+            c[k] = Math.Abs(den) < 1e-9 ? b.At : a.At + a.Dir * (Vec2.Cross(b.At - a.At, b.Dir) / den);
+        }
+        if (!Simple(Points(c, r))) throw new CommandException($"Offsetting by {distance:0.###} m makes the outline cross itself: a smaller distance.");
+        return (c, r, [.. from.Select(k => edgeOf[k])]);
+    }
+
+    /// <summary>
+    /// An elliptical edge's points for its offset by <paramref name="y"/> to its left, its end left out (the next edge's start): the
+    /// one rule's chords (<see cref="Chords.Ellipse"/>), each halved until the offset curve's middle lies within the rule's
+    /// tolerance of the chord between its ends' offsets (as Draft lays an ellipse's offset), the curve at a distance bending
+    /// more tightly than the ellipse where it grows.
+    /// </summary>
+    static List<Vec2> Laid(EllipseEdge e, Vec2 a, Vec2 b, double y)
+    {
+        var (t0, sweep) = e.Span(a, b);
+        Vec2 Off(double t)
+        {
+            var dir = ((e.M * -Math.Sin(t) + e.N * Math.Cos(t)) * (e.Ccw ? 1 : -1)).Normalized();
+            return e.At(t) + dir.Perp * y;
+        }
+        var o = new List<Vec2> { a };
+        void Lay(double ta, double tb, int depth)
+        {
+            var tm = (ta + tb) / 2;
+            if (depth < 12 && Polyline2.SegmentDistance(Off(tm), Off(ta), Off(tb)) > Chords.Tolerance * 0.9)
+            {
+                Lay(ta, tm, depth + 1);
+                Lay(tm, tb, depth + 1);
+                return;
+            }
+            o.Add(e.At(tb));
+        }
+        var count = Chords.Ellipse(e.A, e.B, sweep, 2);
+        for (var k = 0; k < count; k++) Lay(t0 + sweep * k / count, t0 + sweep * (k + 1) / count, 0);
+        // Its end is the next edge's start.
+        o.RemoveAt(o.Count - 1);
+        return o;
     }
 
     static double Norm(double t) => t - 2 * Math.PI * Math.Floor(t / (2 * Math.PI));
