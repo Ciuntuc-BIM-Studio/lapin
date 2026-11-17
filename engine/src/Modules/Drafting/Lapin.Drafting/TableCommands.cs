@@ -28,7 +28,7 @@ public static class TableCommands
             var cols = Json.Number(a["cols"]) is double cn ? (int)cn : 3;
             var preset = (string?)a["preset"] ?? "header";
             var table = DraftingTables.New(rows, cols, Json.Number(a["colWidth"]) ?? 25, Json.Number(a["rowHeight"]) ?? 7, preset);
-            if (a["cells"] is JsonArray cells) table = TableEdits.Apply(table, [new JsonObject { ["op"] = "set", ["cell"] = "A1", ["values"] = cells.DeepClone() }]);
+            if (a["cells"] is JsonArray cells) table = TableEdits.Apply(table, new JsonArray(new JsonObject { ["op"] = "set", ["cell"] = "A1", ["values"] = cells.DeepClone() }));
             var attrs = new JsonObject { ["viewId"] = viewId, ["at"] = J(P(a["at"])), ["angle"] = Json.Number(a["angle"]) ?? 0, ["table"] = table };
             if ((string?)a["textStyle"] is { } ts) attrs["textStyle"] = ts;
             var e = new Entity(ctx.NewId(), IfcClass.Annotation, (string?)a["name"] is { Length: > 0 } name ? name : "Table", attrs, DraftingTables.Predefined);

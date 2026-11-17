@@ -34,13 +34,12 @@ public static class SymbolBoards
                 if (item[k] is JsonArray p && p.Count >= 2) reach = Math.Max(reach, Math.Max(Math.Abs(Json.Number(p[0]) ?? 0), Math.Abs(Json.Number(p[1]) ?? 0)) * 0.15);
         var s = Math.Min(reach, 500) * 0.001;
         const string red = "#d63031";
-        return
-        [
+        // new JsonArray(…), not a collection expression: that adds through JsonArray.Add<T>, which the browser build's trimming refuses.
+        return new JsonArray(
             ItemBoards.Guide([new Vec2(-s, 0), new Vec2(s, 0)], false, red),
             ItemBoards.Guide([new Vec2(0, -s), new Vec2(0, s)], false, red),
             ItemBoards.Guide([new Vec2(s, 0), new Vec2(s * 1.6, 0)], false, red),
-            ItemBoards.Guide([new Vec2(s * 1.35, s * 0.18), new Vec2(s * 1.6, 0), new Vec2(s * 1.35, -s * 0.18)], false, red),
-        ];
+            ItemBoards.Guide([new Vec2(s * 1.35, s * 0.18), new Vec2(s * 1.6, 0), new Vec2(s * 1.35, -s * 0.18)], false, red));
     }
 
     /// <summary>{symbolId} | {name, def, target: new | library} → {viewId, ids}: the board, one undo step.</summary>

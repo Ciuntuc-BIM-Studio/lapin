@@ -23,7 +23,7 @@ public static class TitleBlockBoards
 
     const string What = "a title block";
 
-    static JsonArray Guides(TitleBlockTemplate t) => [ItemBoards.Box(t.W, t.H, "#6b9bd1")];
+    static JsonArray Guides(TitleBlockTemplate t) => new(ItemBoards.Box(t.W, t.H, "#6b9bd1"));
 
     static CommandEntry Catalogued(ICommandContext ctx, string name) =>
         (ctx.Services as ModuleCatalog)?.Command(name) ?? throw new CommandException($"Editing a title block needs {name}, not in this product.");
