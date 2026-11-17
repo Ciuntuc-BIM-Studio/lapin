@@ -220,4 +220,64 @@ public class CivilTests
         Assert.Equal(1000 * 1200.0 / 3937, survey[2].Y, 9);
         Assert.Equal(1000, LandXml.Surfaces(Xml("<Metric linearUnit=\"meter\"/>")).Single().Points[1].X);
     }
+
+    [Fact]
+    public void Irregular_concave_boundary_clips_the_TIN_and_split_and_merge_roundtrip()
+    {
+        var f = F();
+        var t = Slope(f);
+        // L-shaped boundary: 40x40 minus the top-right 20x20 quadrant (area = 1600 - 400 = 1200 m²).
+        var lShape = new JsonArray(
+            new JsonArray(0, 0), new JsonArray(40, 0), new JsonArray(40, 20),
+            new JsonArray(20, 20), new JsonArray(20, 40), new JsonArray(0, 40));
+        f.Run("civil.setBoundary", new JsonObject { ["id"] = t, ["points"] = lShape });
+        var clipped = Terrains.Of(f.Model.Get(t)!);
+        Assert.NotNull(clipped.ElevationAt(10, 10));
+        Assert.Null(clipped.ElevationAt(30, 30)); // inside the concave notch
+        var geom = Terrains.Geometry(f.Model.Get(t)!, f.Model, null);
+        Assert.NotNull(geom);
+        Assert.Single(geom!.Parts);
+        var qty = Terrains.Quantities(f.Model.Get(t)!, geom, f.Model).First();
+        var area = qty.Quantities.First(i => i.Name == "PlanArea").Value;
+        Assert.Equal(1200, area, 1);
+
+        // Split along x = 15 into two terrains, then merge them back.
+        var split = (JsonObject)f.Run("civil.splitTerrain", new JsonObject { ["id"] = t, ["x1"] = 15, ["y1"] = -5, ["x2"] = 15, ["y2"] = 45 })!;
+        var ids = split["ids"]!.AsArray().Select(x => (string)x!).ToList();
+        Assert.Equal(2, ids.Count);
+        Assert.Null(f.Model.Get(t));
+        var merged = (JsonObject)f.Run("civil.mergeTerrains", new JsonObject { ["ids"] = new JsonArray(ids[0], ids[1]) })!;
+        var mergedId = (string)merged["id"]!;
+        Assert.NotNull(f.Model.Get(mergedId));
+        Assert.NotNull(Terrains.Of(f.Model.Get(mergedId)!).ElevationAt(10, 10));
+    }
+
+    [Fact]
+    public void Slope_tags_and_cut_fill_grid_draw_in_plan_and_sculpt_reports_graded_volumes()
+    {
+        var f = F();
+        var t = Slope(f);
+        // Two-point grade line along +x on z = 0.05 x -> 5.0 % (1:20.0), plus cut/fill grid and a raise sculpt.
+        f.Run("civil.addSlope", new JsonObject { ["id"] = t, ["x1"] = 5, ["y1"] = 5, ["x2"] = 25, ["y2"] = 5 });
+        f.Run("civil.sculpt", new JsonObject { ["id"] = t, ["kind"] = "raise", ["x"] = 20, ["y"] = 20, ["radius"] = 6, ["amount"] = 1.0 });
+        f.Run("civil.updateTerrain", new JsonObject { ["id"] = t, ["cutFillGrid"] = 10 });
+
+        var geom = Terrains.Geometry(f.Model.Get(t)!, f.Model, null);
+        var qty = Terrains.Quantities(f.Model.Get(t)!, geom, f.Model).First();
+        Assert.True(qty.Quantities.First(i => i.Name == "FillVolume").Value > 10);
+        Assert.True(qty.Quantities.First(i => i.Name == "SculptFill").Value > 10);
+
+        var plan = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey })!["id"]!;
+        var d = (JsonObject)f.Session.Query("view.drawing", new JsonObject { ["id"] = plan })!;
+        var texts = d["pens"]!.AsArray().OfType<JsonObject>().Where(p => p["texts"] != null)
+            .SelectMany(p => p["texts"]!.AsArray().OfType<JsonObject>()).Select(x => (string)x["text"]!).ToList();
+        Assert.Contains(texts, txt => txt.Contains("5.0 %"));
+        Assert.Contains(texts, txt => txt.StartsWith("+1.00") || txt.StartsWith("+0."));
+
+        // Snapshot existing makes the sculpted surface the new baseline (zero fill vs snapshot).
+        f.Run("civil.snapshotExisting", new JsonObject { ["id"] = t });
+        var geom2 = Terrains.Geometry(f.Model.Get(t)!, f.Model, null);
+        var qty2 = Terrains.Quantities(f.Model.Get(t)!, geom2, f.Model).First();
+        Assert.Equal(0, qty2.Quantities.First(i => i.Name == "FillVolume").Value, 2);
+    }
 }

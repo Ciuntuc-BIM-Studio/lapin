@@ -8,7 +8,7 @@
 import { create } from 'zustand';
 import { activate } from '../../platform/modules';
 import { promptText } from '../../shell/prompts';
-import { BrickWall, PenLine, Building2, Crosshair, FileDown, FileUp, Fence, Image as ImageIcon, ImagePlus, Map as MapIcon, MapPin, Mountain, MoveVertical, Paintbrush, Route, Shovel, Spline, Sprout, TreeDeciduous, Waves } from 'lucide-react';
+import { BrickWall, Crop, PenLine, Building2, Crosshair, FileDown, FileUp, Fence, Image as ImageIcon, ImagePlus, Map as MapIcon, MapPin, Mountain, MoveVertical, Paintbrush, Route, Shovel, Spline, Sprout, TreeDeciduous, TrendingDown, Waves } from 'lucide-react';
 import { PlatformIcon, TerrainIcon } from '../../icons';
 import type { Grip, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
@@ -173,6 +173,28 @@ const parcel: ToolDef = {
   },
 };
 
+/** An irregular boundary clipping the terrain's TIN (T1). */
+const terrainBoundary: ToolDef = {
+  id: 'civil.boundary', label: 'Terrain boundary', icon: Crop,
+  gesture: { kind: 'polygon', shapes: true },
+  options: PlainShapeBar,
+  space: toggleOutlineArcs,
+  complete: async ({ points, arcs }, ctx) => {
+    if (points.length < 3) return;
+    await ctx.execute('civil.setBoundary', { points: points.map((p) => [p.x, p.y]), ...(arcs ? { arcs } : {}) });
+  },
+};
+
+/** A slope tag between two points on the terrain (T2). */
+const slopeTag: ToolDef = {
+  id: 'civil.slopeTag', label: 'Slope tag', icon: TrendingDown,
+  gesture: { kind: 'twoPoints' },
+  complete: async ({ points }, ctx) => {
+    if (points.length < 2) return;
+    await ctx.execute('civil.addSlope', { x1: points[0].x, y1: points[0].y, x2: points[1].x, y2: points[1].y });
+  },
+};
+
 /** Every terrain of the project as one LandXML file. */
 const landXmlOut: ToolDef = { id: 'civil.landxmlExport', label: 'Export LandXML', icon: FileDown, run: () => void downloadLandXml().catch((e) => notify(e instanceof Error ? e.message : String(e))) };
 
@@ -331,7 +353,7 @@ const civil: LapinModule = {
   tabs: [{
     id: 'site', label: 'Site', order: 40, include: ['modify'],
     groups: [
-      { label: 'Terrain', tools: [terrainFromFile, flatTerrain, parcel], small: [terrainFromLandXml, landXmlOut, spot, breaklineFromLinework] },
+      { label: 'Terrain', tools: [terrainFromFile, flatTerrain, parcel], small: [terrainBoundary, slopeTag, terrainFromLandXml, landXmlOut, spot, breaklineFromLinework] },
       { label: 'Import', tools: [], small: [terrainFromDxf, geoJson, cityJson, orthophoto] },
       { label: 'Earthworks', tools: [platform, ditch, sculpt('raise', 'Raise', MoveVertical, 'SU'), sculpt('lower', 'Lower', Shovel, 'SL')], small: [platformHole, sculpt('flatten', 'Flatten', Mountain, 'FN'), sculpt('smooth', 'Smooth', Paintbrush, 'SS'), brush] },
       { label: 'Landscape', tools: [path, retainingWall, plant, plantingZone], small: [corridor, roadFromLinework] },
@@ -347,9 +369,11 @@ const civil: LapinModule = {
         ...holeGrips(n.id, n.props.holes, n.props.holeArcs, (holes, holeArcs) => ({ command: 'civil.updatePlatform', args: { id: n.id, holes, holeArcs } }), 'civil'),
       ];
     },
-    // A terrain's parcel, by its corners; its edges may be arcs (audit S4).
-    IfcGeographicElement: (n: NodeDto) =>
-      curvedOutlineGrips(n.id, fromPairs(n.props.parcel), n.props.parcelArcs, (pts, arcs) => ({ command: 'civil.setParcel', args: { terrainId: n.id, points: toPairs(pts), arcs } }), 'civil'),
+    // A terrain's parcel and irregular boundary, by their corners; edges may be arcs.
+    IfcGeographicElement: (n: NodeDto) => [
+      ...curvedOutlineGrips(n.id, fromPairs(n.props.parcel), n.props.parcelArcs, (pts, arcs) => ({ command: 'civil.setParcel', args: { terrainId: n.id, points: toPairs(pts), arcs } }), 'civil'),
+      ...curvedOutlineGrips(n.id, fromPairs(n.props.boundary), n.props.boundaryArcs, (pts, arcs) => ({ command: 'civil.setBoundary', args: { terrainId: n.id, points: toPairs(pts), arcs } }), 'civil'),
+    ],
     IfcPavement: (n: NodeDto) => polylineGrips(pathOf(n), (pts) => ({ command: 'civil.updatePath', args: { id: n.id, points: toPairs(pts) } })),
     LapinRetainingWall: (n: NodeDto) => polylineGrips(pathOf(n), (pts) => ({ command: 'civil.updateRetainingWall', args: { id: n.id, points: toPairs(pts) } })),
     LapinPlanting: (n: NodeDto) => { const pts = fromPairs(n.props.contour); return pts.length >= 3 ? outlineGrips({ pts }, (o) => ({ command: 'civil.updatePlanting', args: { id: n.id, points: toPairs(o.pts) } })) : []; },
