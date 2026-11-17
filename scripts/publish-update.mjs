@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 // Publish built packages of one product on the site: as the downloads the site
-// links to (fixed names, ciuntucbimstudio.ro/downloads/<product>/), and as an
-// update the installed apps find (ciuntucbimstudio.ro/downloads/<product>-update/).
+// links to (fixed names, <product>/), and as an update the installed apps find
+// (<product>-update/). Both folders are on the company server; the public editions are
+// served from lapinbim.com (/download/<product>/, /updates/<product>/) and the manifests
+// name that address; ciuntucbimstudio.ro/downloads/ serves the same folders for good (the
+// apps installed before the move look for their update there). Other editions keep
+// ciuntucbimstudio.ro. LAPIN_UPDATE_HOST=old forces the old address for every edition.
 //   node scripts/publish-update.mjs <product> <file or folder>… [--notes "what changed"] [--update-only]
 // e.g. node scripts/publish-update.mjs lapin build/lapin/bundle build/lapin-linux "windows builds"
 // What a folder holds is found by its names (Tauri's): <name>_<version>_….dmg and
@@ -35,6 +39,10 @@ if (!productId || inputs.length === 0) { console.error('Usage: node scripts/publ
 const product = JSON.parse(readFileSync(join(root, 'products', `${productId}.json`), 'utf8'));
 const site = resolve(process.env.LAPIN_SITE_DIR ?? join(root, '../ciuntucbimstudio-site'));
 const upload = join(site, 'deploy/upload-downloads.sh');
+// Where an edition's updates are found: lapinbim.com for the public editions (nginx there serves only these), else the old site.
+const PUBLIC_EDITIONS = ['lapin', 'lapin-architecture', 'lapin-architecture-structure'];
+const updateBase = PUBLIC_EDITIONS.includes(productId) && process.env.LAPIN_UPDATE_HOST !== 'old'
+  ? `https://lapinbim.com/updates/${productId}` : `https://ciuntucbimstudio.ro/downloads/${productId}-update`;
 if (!existsSync(upload)) { console.error(`No ${upload} (set LAPIN_SITE_DIR to the site's checkout).`); process.exit(1); }
 
 // The kinds of package: how a file is recognised, its download name, the updater's target.
@@ -69,7 +77,7 @@ const notesFor = async (version, target) => {
   if (notesArg) return notesArg;
   const at = commitOf(version);
   if (!at) return `${product.name ?? 'Lapin'} ${version}`;
-  const before = await fetch(`https://ciuntucbimstudio.ro/downloads/${productId}-update/${target}.json`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  const before = await fetch(`${updateBase}/${target}.json`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
   const since = before?.version ? commitOf(before.version) : null;
   const subjects = git(['log', '--format=%s', '--no-merges', since ? `${since}..${at}` : `${at}~10..${at}`]).split('\n')
     .filter((t) => /^(feat|fix)/.test(t)).slice(0, 15)
@@ -77,6 +85,12 @@ const notesFor = async (version, target) => {
     .map((t) => `• ${t.length > 100 ? `${t.slice(0, 99).replace(/\s+\S*$/, '')}…` : t}`);
   return subjects.length ? subjects.join('\n') : `${product.name ?? 'Lapin'} ${version}`;
 };
+
+// The manifests name lapinbim.com, so it must already serve this edition's updates (the server's first-time setup, lapinbim-site/deploy).
+if (updateBase.startsWith('https://lapinbim.com')) {
+  const probe = await fetch(`${updateBase}/darwin-aarch64-app.json`, { method: 'HEAD' }).catch(() => null);
+  if (!probe?.ok) { console.error(`${updateBase}/ does not answer yet: set up lapinbim.com first (lapinbim-site/deploy/README.md), or LAPIN_UPDATE_HOST=old.`); process.exit(1); }
+}
 
 const downloads = [];
 const updates = [];
@@ -95,7 +109,7 @@ for (const file of files) {
     version,
     notes: await notesFor(version, kind.target),
     pub_date: new Date().toISOString(),
-    url: `https://ciuntucbimstudio.ro/downloads/${productId}-update/${encodeURIComponent(published)}`,
+    url: `${updateBase}/${encodeURIComponent(published)}`,
     signature: readFileSync(`${file}.sig`, 'utf8').trim(),
   }, null, 2));
   updates.push(`${file}=${published}`, `${manifest}=${kind.target}.json`);

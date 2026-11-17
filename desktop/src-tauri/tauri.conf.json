@@ -67,6 +67,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDhCRDU1QzMyMkZDNDY0MTQKUldRVVpNUXZNbHpWaTI5aVIvSTlIem1jbHp1WjlTRU9jano5QWVTd3g1ZU1iamtCNGw3RnVkcVgK",
       "endpoints": [
+        "https://lapinbim.com/updates/lapin/{{target}}-{{arch}}-{{bundle_type}}.json",
         "https://ciuntucbimstudio.ro/downloads/lapin-update/{{target}}-{{arch}}-{{bundle_type}}.json"
       ],
       "requireSignedVersion": true,

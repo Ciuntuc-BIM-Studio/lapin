@@ -1,8 +1,8 @@
 /**
  * Updates of the desktop app (Tauri's updater): a newer build of this edition
  * is looked for at start and from the help menu, at
- * ciuntucbimstudio.ro/downloads/<product>-update/ (one manifest per platform
- * and kind of package). Each package is signed with Ciuntuc BIM Studio's
+ * lapinbim.com/updates/<product>/ and, second, ciuntucbimstudio.ro/downloads/<product>-update/
+ * (the same files; one manifest per platform and kind of package). Each package is signed with Ciuntuc BIM Studio's
  * update key and the signature carries its version; the app refuses anything
  * else. Asked first, with the build's notes; unsaved work is saved (or let go)
  * before; the package downloaded, the engine stopped, the update installed and
