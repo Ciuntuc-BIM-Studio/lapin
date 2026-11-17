@@ -9,7 +9,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react';
-import { AlignCenter, AlignLeft, AlignRight, Bold, Italic, TableCellsMerge, TableCellsSplit, X } from 'lucide-react';
+import { AlignCenter, AlignLeft, AlignRight, Bold, Italic, Sigma, TableCellsMerge, TableCellsSplit, X } from 'lucide-react';
 import { useUi } from '../../../app/store';
 import { execute, query, useSession } from '../../../engine/session';
 import { NumberField } from '../../../shell/cells';
@@ -20,10 +20,17 @@ import { useTableEditor, useTablePart, useTableStyles } from './tableStore';
 import { notify } from '../../../app/store';
 import { pickFile, saveFile, safeFileName, toBase64 } from '../../../engine/files';
 import { promptText, confirmAction } from '../../../shell/prompts';
+import { useSuggest } from '../../../shell/SuggestPopup';
+import type { SuggestResult } from '../../../shell/suggest';
+import { AUTO_FUNCTIONS, autoSumOp, cellErrors, flattenFields, isAutoSumKey, type FieldEntry } from './tableModel';
 
 const HELP = "Type in a cell, or double-click it. Formulas read the table's cells: {= B2 * C2}, {= sum(D2:D9)}, {= average(B2:B5) | 0.0}; on a sheet, its fields too: {sheet.number}.";
 const HELP_TABLES = 'Another table is read by its name: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.';
-const HELP_MODEL = 'The model: {el.name}, {= el.NetArea | 0.00} read the linked element; {= schedule.Doors.count}, {schedule.Rooms.total.Area}, {= filter.Walls.sum.Length} a schedule or a view filter, by its name.';
+const HELP_MODEL = 'The model: {el.name}, {= el.Area | 0.00} read the linked element (Area, Perimeter, Volume for any element); {= schedule.Doors.count}, {schedule.Rooms.total.Area}, {= filter.Walls.sum.Length} a schedule or a view filter, by its name.';
+const HELP_SUGGEST = 'After { or {= a list offers what fits where you type: ↑ ↓ to choose, Enter or Tab to take it, Esc to close it.';
+
+/** How long typing pauses before the cell being edited is tried (its errors shown). */
+const TRY_AFTER = 700;
 
 /** A number field in the editor's bars: a short one, beside its label. */
 const NUM = { width: 64 } as const;
@@ -44,7 +51,8 @@ export function TableEditor() {
   const [linking, setLinking] = useState(false);
   const selected = useUi((s) => s.selected);
   const nodes = useSession((s) => s.nodes);
-  const [fields, setFields] = useState<{ field: string; name: string; value?: string }[]>([]);
+  const [fields, setFields] = useState<FieldEntry[]>([]);
+  const [tried, setTried] = useState<{ cell: string; text: string; errors: string[] } | null>(null);
   const grid = useRef<HTMLDivElement>(null);
   const barCaret = useRef<{ from: number; to: number } | null>(null);
   const close = () => useUi.setState({ dialog: null });
@@ -64,10 +72,30 @@ export function TableEditor() {
   useEffect(() => {
     if (!linked) { setFields([]); return; }
     let live = true;
-    void query<{ field: string; name: string; value?: string }[]>('params.fields', { id: linked }).then((r) => { if (live) setFields(Array.isArray(r) ? r : []); });
+    // Every field the cell can read of it, its quantities and their common names (Area, Perimeter…) too: the one field dictionary.
+    void query<Parameters<typeof flattenFields>[0]>('fields.available', { id: linked }).then((r) => { if (live) setFields(flattenFields(r)); });
     return () => { live = false; };
   }, [linked]);
   useEffect(() => setBar(first?.t ?? ''), [first?.t, n.r0, n.c0]);
+
+  // Suggestions while typing (the cell's input and the bar): what the engine reads where the caret is.
+  const suggestAt = useCallback((cell: string) => (text: string, caret: number) =>
+    id ? query<SuggestResult>('drafting.tableSuggest', { id, cell, text, caret }) : Promise.resolve(null), [id]);
+  const cellSuggest = useSuggest(suggestAt(editing ? address(editing.r, editing.c) : 'A1'), (text) => setEditing((e) => (e ? { ...e, text } : e)));
+  const barSuggest = useSuggest(suggestAt(address(n.r0, n.c0)), setBar);
+
+  // The text being typed (in its cell or the bar) is tried once typing pauses: its errors then, not at every key.
+  const typing = editing ? { cell: address(editing.r, editing.c), text: editing.text }
+    : first && !first.covered && bar !== first.t ? { cell: address(n.r0, n.c0), text: bar } : null;
+  useEffect(() => {
+    if (!id || !typing) { setTried(null); return; }
+    let live = true;
+    const t = window.setTimeout(() => {
+      void query<{ errors: string[] }>('drafting.tableTry', { id, cell: typing.cell, text: typing.text }).then((r) => { if (live && r) setTried({ ...typing, errors: r.errors ?? [] }); });
+    }, TRY_AFTER);
+    return () => { live = false; window.clearTimeout(t); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, typing?.cell, typing?.text]);
 
   const edit = useCallback(async (...ops: TableOp[]) => {
     if (!id || ops.length === 0) return;
@@ -81,7 +109,8 @@ export function TableEditor() {
   const commitCell = async (r: number, c: number, text: string) => {
     setEditing(null);
     if ((info?.cells[r]?.[c]?.t ?? '') !== text) await edit({ op: 'set', cell: address(r, c), text });
-    grid.current?.focus();
+    // Not when another cell's input opened meanwhile (its focus kept); never scrolling the dialog under the pointer.
+    if (!grid.current?.querySelector('textarea')) grid.current?.focus({ preventScroll: true });
   };
   const select = (r: number, c: number, extend: boolean) => {
     if (!info) return;
@@ -95,6 +124,7 @@ export function TableEditor() {
   const onGridKey = (e: KeyboardEvent<HTMLDivElement>) => {
     if (editing || !info) return;
     const k = e.key;
+    if (isAutoSumKey(e)) { e.preventDefault(); void edit(autoSumOp(n)); return; }
     if (k === 'ArrowUp') { e.preventDefault(); move(-1, 0); }
     else if (k === 'ArrowDown') { e.preventDefault(); move(1, 0); }
     else if (k === 'ArrowLeft') { e.preventDefault(); move(0, -1); }
@@ -164,11 +194,13 @@ export function TableEditor() {
   const colW = info?.colW[n.c0] ?? null, rowH = info?.rowH[n.r0] ?? null;
   const fitCols = !!table?.cols?.[n.c0]?.fit, fitRows = !!table?.rows?.[n.r0]?.fit;
   const headerRows = !!table?.rows?.[n.r0]?.header;
+  // The cell being typed shows its errors once tried (typing paused) or kept, not the half-typed text's at every key.
+  const errors = cellErrors(info?.errors ?? [], typing?.cell ?? null, tried && typing && tried.cell === typing.cell && tried.text === typing.text ? tried.errors : null);
 
   if (linking) return (
     <div data-testid="table-link-bar" role="toolbar" aria-label="Link elements"
-      style={{ position: 'fixed', top: 72, left: '50%', transform: 'translateX(-50%)', zIndex: 60, background: 'var(--panel, #fff)', color: 'var(--text, #000)', border: '1px solid var(--line, #8884)', borderRadius: 6, padding: '6px 10px', display: 'flex', gap: 6, alignItems: 'center', boxShadow: '0 2px 10px #0003' }}>
-      <span>Select the elements the table reads, in any view</span>
+      style={{ position: 'fixed', top: 72, left: '50%', transform: 'translateX(-50%)', width: 'max-content', maxWidth: 'calc(100vw - 32px)', boxSizing: 'border-box', zIndex: 60, background: 'var(--panel, #fff)', color: 'var(--text, #000)', border: '1px solid var(--line, #8884)', borderRadius: 6, padding: '6px 10px', display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', boxShadow: '0 2px 10px #0003' }}>
+      <span style={{ whiteSpace: 'nowrap' }}>Select the elements the table reads, in any view</span>
       <span className="muted" data-no-i18n>{`(${els.length})`}</span>
       <button type="button" className="btn" data-testid="table-link-cells" disabled={!els.length} title="The selected cells read the first element selected" onClick={() => link('cells')}>To the selected cells</button>
       <button type="button" className="btn" data-testid="table-link-rows" disabled={!els.length} title="A row each from the first selected row, rows added as needed and the first row's texts copied down" onClick={() => link('rows')}>A row each</button>
@@ -195,6 +227,11 @@ export function TableEditor() {
             <button type="button" className="btn" data-testid="table-col-left" title="A column left of the selection" onClick={() => void edit(colsOp('left', n))}>Column left</button>
             <button type="button" className="btn" data-testid="table-col-right" title="A column right of the selection" onClick={() => void edit(colsOp('right', n))}>Column right</button>
             <button type="button" className="btn" data-testid="table-col-delete" title="The selected columns taken out" onClick={() => void edit(colsOp('delete', n))}>Delete columns</button>
+            <button type="button" className="icon" data-testid="table-autosum" title="AutoSum (Alt+=): the sum of the numbers above the selected cell, or left of it; with cells selected, a sum under each column" onClick={() => void edit(autoSumOp(n))}><Sigma size={15} /></button>
+            <select data-testid="table-autosum-fn" value="" title="AutoSum with another function" onChange={(e) => { if (e.target.value) void edit(autoSumOp(n, e.target.value)); }} style={{ width: 28 }}>
+              <option value="" data-no-i18n>▾</option>
+              {AUTO_FUNCTIONS.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}
+            </select>
             <button type="button" className="icon" data-testid="table-merge" title="Merge the selected cells: the first one's text stays" onClick={() => void edit({ op: 'merge', range })}><TableCellsMerge size={15} /></button>
             <button type="button" className="icon" data-testid="table-split" title="Split the merged cells selected" onClick={() => void edit({ op: 'split', range })}><TableCellsSplit size={15} /></button>
             <select data-testid="table-preset-edit" title="The table's preset: its lines and header row" value={table?.preset ?? 'header'} onChange={(e) => void edit({ op: 'preset', preset: e.target.value })}>
@@ -277,23 +314,27 @@ export function TableEditor() {
             <span className="muted" data-testid="table-address" data-no-i18n style={{ minWidth: 56 }}>{range}</span>
             <textarea data-testid="table-bar" rows={2} style={{ flex: 1, fontFamily: 'monospace' }} value={bar}
               placeholder="Text; {= A1 + B1} for a formula, {= sum(A1:A4) | 0.00} with a format"
-              onChange={(e) => setBar(e.target.value)}
+              onChange={(e) => { setBar(e.target.value); barSuggest.update(e.target); }}
               onSelect={(e) => { const t = e.target as HTMLTextAreaElement; barCaret.current = { from: t.selectionStart, to: t.selectionEnd }; }}
-              onBlur={() => { if (first && !first.covered && bar !== first.t) void edit({ op: 'set', cell: address(n.r0, n.c0), text: bar }); }}
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); (e.target as HTMLTextAreaElement).blur(); } }} />
+              onBlur={() => { barSuggest.close(); if (first && !first.covered && bar !== first.t) void edit({ op: 'set', cell: address(n.r0, n.c0), text: bar }); }}
+              onKeyDown={(e) => { if (barSuggest.onKeyDown(e)) return; if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); (e.target as HTMLTextAreaElement).blur(); } }} />
+            {barSuggest.popup}
           </div>
-          {first?.el && (
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }} data-testid="table-reads">
-              <span className="muted">{first.elFrom === 'row' ? 'Its row reads' : first.elFrom === 'table' ? 'The table reads' : 'It reads'}</span>
-              {first.elGone ? <span className="error-text">its element is gone</span> : <span data-no-i18n>{first.elName}</span>}
-              {fields.length > 0 && (
-                <select data-testid="table-field" value="" title="A field of that element put into the cell's text" onChange={(e) => { if (e.target.value) insertText((text, caret) => fieldInsert(text, caret, e.target.value)); }}>
-                  <option value="">Insert a field…</option>
-                  {fields.map((f) => <option key={f.field} value={f.field} data-no-i18n>{f.value ? `${f.field} = ${f.value}` : f.field}</option>)}
-                </select>
-              )}
-            </div>
-          )}
+          {/* Its line is kept (empty) when the cell reads no element, so selecting another cell never moves the grid under the pointer. */}
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6, minHeight: 26 }} data-testid={first?.el ? 'table-reads' : undefined}>
+            {first?.el && (
+              <>
+                <span className="muted">{first.elFrom === 'row' ? 'Its row reads' : first.elFrom === 'table' ? 'The table reads' : 'It reads'}</span>
+                {first.elGone ? <span className="error-text">its element is gone</span> : <span data-no-i18n>{first.elName}</span>}
+                {fields.length > 0 && (
+                  <select data-testid="table-field" value="" title="A field of that element put into the cell's text" onChange={(e) => { if (e.target.value) insertText((text, caret) => fieldInsert(text, caret, e.target.value)); }}>
+                    <option value="">Insert a field…</option>
+                    {fields.map((f) => <option key={f.field} value={f.field} data-no-i18n>{f.value ? `${f.field} = ${f.value}` : f.field}</option>)}
+                  </select>
+                )}
+              </>
+            )}
+          </div>
           <div ref={grid} tabIndex={0} data-testid="table-grid" onKeyDown={onGridKey} onPaste={onPaste}
             style={{ overflow: 'auto', maxHeight: '55vh', outline: 'none', border: '1px solid var(--line, #8884)' }}>
             {info && (
@@ -313,7 +354,7 @@ export function TableEditor() {
                         const on = inSel(n, r, c);
                         return (
                           <td key={c} rowSpan={cell.rs ?? 1} colSpan={cell.cs ?? 1} data-cell={address(r, c)} data-no-i18n
-                            onMouseDown={(e) => { if (!isEditing) { e.preventDefault(); grid.current?.focus(); select(r, c, e.shiftKey); } }}
+                            onMouseDown={(e) => { if (!isEditing) { e.preventDefault(); grid.current?.focus({ preventScroll: true }); select(r, c, e.shiftKey); } }}
                             onDoubleClick={() => setEditing({ r, c, text: cell.t })}
                             style={{
                               border: '1px solid #bbb', padding: '1px 3px', verticalAlign: (o('valign') as string) ?? 'middle', whiteSpace: 'pre-wrap', overflow: 'hidden',
@@ -326,10 +367,11 @@ export function TableEditor() {
                             {isEditing ? (
                               <textarea autoFocus data-testid="table-cell-input" value={editing.text} rows={Math.max(1, editing.text.split('\n').length)}
                                 style={{ width: '100%', boxSizing: 'border-box', font: 'inherit', resize: 'none' }}
-                                onChange={(e) => setEditing({ r, c, text: e.target.value })}
-                                onBlur={() => void commitCell(r, c, editing.text)}
+                                onChange={(e) => { setEditing({ r, c, text: e.target.value }); cellSuggest.update(e.target); }}
+                                onBlur={() => { cellSuggest.close(); void commitCell(r, c, editing.text); }}
                                 onKeyDown={(e) => {
-                                  if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setEditing(null); grid.current?.focus(); }
+                                  if (cellSuggest.onKeyDown(e)) return;
+                                  if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setEditing(null); grid.current?.focus({ preventScroll: true }); }
                                   else if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void commitCell(r, c, editing.text).then(() => move(1, 0)); }
                                   else if (e.key === 'Tab') { e.preventDefault(); void commitCell(r, c, editing.text).then(() => move(0, 1)); }
                                 }} />
@@ -343,15 +385,17 @@ export function TableEditor() {
               </table>
             )}
           </div>
-          {info && info.errors.length > 0 && (
+          {cellSuggest.popup}
+          {errors.length > 0 && (
             <ul className="muted" data-testid="table-errors" style={{ marginTop: 6, color: 'var(--danger, #c33)' }}>
-              {info.errors.map((e) => <li key={e} data-no-i18n>{e}</li>)}
+              {errors.map((e) => <li key={e} data-no-i18n>{e}</li>)}
             </ul>
           )}
           <TableRefPicker self={node.id} onInsert={insertRef} />
           <p className="muted" style={{ marginTop: 6 }}>{HELP}</p>
           <p className="muted">{HELP_TABLES}</p>
           <p className="muted">{HELP_MODEL}</p>
+          <p className="muted">{HELP_SUGGEST}</p>
         </div>
       </div>
     </div>

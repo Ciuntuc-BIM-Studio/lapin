@@ -157,6 +157,220 @@ public class DraftingTableModelTests
         Assert.Equal("4", Shown(g, t, 0, 0));
     }
 
+    // ------------------------------------------------------------ common names of quantities
+
+    static double Q(Fixture f, string id, string name) =>
+        f.Session.Quantities(id).SelectMany(s => s.Quantities).First(q => q.Name == name).Value;
+
+    static string F2(double v) => v.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+
+    [Fact]
+    public void A_room_reads_its_area_perimeter_and_volume_by_the_names_people_type()
+    {
+        var f = F();
+        var room = (string)f.Run("architecture.addRoom", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 4, ["y2"] = 5, ["name"] = "Living" })!["id"]!;
+        var t = Table(f, Rows(
+            ["{= el.NetArea | 0.00}", "{= el.area | 0.00}", "{= el.Area | 0.00}", "{= el.NetFloorArea | 0.00}", "{el.area}"],
+            ["{= el.Perimeter | 0.00}", "{= el.perimeter | 0.00}", "{= el.GrossArea | 0.00}", "{= el.Volume | 0.00}", "{= el.Height | 0.00}"]), 2, 5);
+        Edit(f, t, Op("link", ("on", "table"), ("el", room)));
+        Assert.Equal(["20.00", "20.00", "20.00", "20.00", "20"], Enumerable.Range(0, 5).Select(c => Shown(f, t, 0, c)));
+        Assert.Equal("18.00", Shown(f, t, 1, 0));
+        Assert.Equal("18.00", Shown(f, t, 1, 1));
+        Assert.Equal("20.00", Shown(f, t, 1, 2));
+        Assert.Equal(F2(Q(f, room, "NetVolume")), Shown(f, t, 1, 3));
+        Assert.Equal(F2(Q(f, room, "Height")), Shown(f, t, 1, 4));
+        Assert.Empty(Errors(f, t));
+        // A schedule column and a tag read the same names (the one field dictionary).
+        var reader = new ElementFields(f.Session.Reader, f.Model.Get(room)!);
+        Assert.Equal(20, reader.Value("Area").Number!.Value, 6);
+        Assert.Equal(18, reader.Value("perimeter").Number!.Value, 6);
+    }
+
+    [Fact]
+    public void A_wall_and_a_door_read_their_area_and_volume_by_the_same_names()
+    {
+        var f = F();
+        var w = f.Wall(0, 0, 5, 0);
+        var door = (string)f.Run("architecture.addDoor", new JsonObject { ["wallId"] = w, ["along"] = 2.0 })!["id"]!;
+        var t = Table(f, Rows(
+            ["{= el.Area | 0.00}", "{= el.NetArea | 0.00}", "{= el.GrossArea | 0.00}", "{= el.Volume | 0.00}", "{= el.Length | 0.00}"],
+            ["{= el.Area | 0.00}", "{= el.NetArea | 0.00}", "{= el.area | 0.00}", "{= el.Width | 0.00}", "{= el.Height | 0.00}"]), 2, 5);
+        Edit(f, t, Op("link", ("on", "rows"), ("range", "A1"), ("el", w)), Op("link", ("on", "rows"), ("range", "A2"), ("el", door)));
+        Assert.Equal(F2(Q(f, w, "NetSideArea")), Shown(f, t, 0, 0));
+        Assert.Equal(F2(Q(f, w, "NetSideArea")), Shown(f, t, 0, 1));
+        Assert.Equal(F2(Q(f, w, "GrossSideArea")), Shown(f, t, 0, 2));
+        Assert.Equal(F2(Q(f, w, "NetVolume")), Shown(f, t, 0, 3));
+        Assert.Equal("5.00", Shown(f, t, 0, 4));
+        Assert.NotEqual(Shown(f, t, 0, 0), Shown(f, t, 0, 2));
+        var area = F2(Q(f, door, "Area"));
+        Assert.Equal([area, area, area], Enumerable.Range(0, 3).Select(c => Shown(f, t, 1, c)));
+        Assert.Equal(F2(Q(f, door, "Width")), Shown(f, t, 1, 3));
+        Assert.Equal(F2(Q(f, door, "Height")), Shown(f, t, 1, 4));
+        Assert.Empty(Errors(f, t));
+    }
+
+    [Fact]
+    public void The_fields_of_a_room_offer_its_quantities_and_their_common_names()
+    {
+        var f = F();
+        var room = (string)f.Run("architecture.addRoom", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 4, ["y2"] = 5, ["name"] = "Living" })!["id"]!;
+        var all = f.Session.Query("fields.available", new JsonObject { ["id"] = room })!["groups"]!.AsArray()
+            .SelectMany(g => g!["fields"]!.AsArray()).Select(x => ((string)x!["token"]!, (string?)x["value"])).ToList();
+        Assert.Contains(all, x => x.Item1 == "NetFloorArea");
+        Assert.Contains(all, x => x.Item1 == "Area" && x.Item2!.StartsWith("20"));
+        Assert.Contains(all, x => x.Item1 == "Perimeter" && x.Item2!.StartsWith("18"));
+        Assert.Contains(all, x => x.Item1 == "Volume");
+    }
+
+    // ------------------------------------------------------------ suggestions while typing
+
+    static JsonObject Suggest(Fixture f, string id, string cell, string text, int? caret = null) =>
+        (JsonObject)f.Session.Query("drafting.tableSuggest", new JsonObject { ["id"] = id, ["cell"] = cell, ["text"] = text, ["caret"] = caret ?? text.Length })!;
+
+    static List<string> Inserts(JsonObject s) => [.. s["items"]!.AsArray().Select(x => (string)x!["insert"]!)];
+
+    [Fact]
+    public void Suggestions_offer_what_fits_where_the_caret_is_as_the_evaluator_reads_it()
+    {
+        var f = F();
+        var room = (string)f.Run("architecture.addRoom", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 4, ["y2"] = 5, ["name"] = "Living" })!["id"]!;
+        f.Wall(0, 0, 5, 0);
+        Schedule(f, "Wall schedule");
+        f.Run("viewFilter.create", new JsonObject { ["name"] = "Load bearing", ["rules"] = J(new JsonObject { ["field"] = "name", ["op"] = "beginsWith", ["value"] = "LB" }) });
+        Table(f, Rows(["1", "2"]), 1, 2, "Areas");
+        var t = Table(f, Rows(["", ""]), 1, 2);
+        Edit(f, t, Op("link", ("range", "A1"), ("el", room)));
+
+        // Outside braces: nothing.
+        Assert.Empty(Inserts(Suggest(f, t, "A1", "Area ")));
+        // After {= : functions and the roots.
+        var start = Suggest(f, t, "A1", "{= ");
+        Assert.Contains("sum(", Inserts(start));
+        Assert.Contains("el.", Inserts(start));
+        Assert.Contains("schedule.", Inserts(start));
+        Assert.Contains(start["items"]!.AsArray(), x => (string)x!["insert"]! == "round(" && ((string?)x["detail"])!.Contains("round("));
+        // Typing filters, and what is replaced is the word typed.
+        var su = Suggest(f, t, "A1", "{= su");
+        Assert.Equal(["sum("], Inserts(su));
+        Assert.Equal(3, (int)su["from"]!);
+        Assert.Equal(5, (int)su["to"]!);
+        // el. : the linked element's fields with their values now, its quantities and their common names too.
+        var el = Suggest(f, t, "A1", "{= el.");
+        Assert.Contains("el.NetFloorArea", Inserts(el));
+        Assert.Contains(el["items"]!.AsArray(), x => (string)x!["insert"]! == "el.Area" && ((string?)x["detail"])!.StartsWith("20"));
+        Assert.Contains("el.Perimeter", Inserts(Suggest(f, t, "A1", "{= el.per")));
+        // A cell reading no element is told so.
+        Assert.Empty(Inserts(Suggest(f, t, "B1", "{el.")));
+        Assert.NotNull(Suggest(f, t, "B1", "{el.")["note"]);
+        // schedule. : names, then what of it, then its columns.
+        Assert.Contains("schedule.WallSchedule.", Inserts(Suggest(f, t, "A1", "{= schedule.")));
+        Assert.Contains("schedule.WallSchedule.total.", Inserts(Suggest(f, t, "A1", "{= schedule.WallSchedule.")));
+        Assert.Contains("schedule.WallSchedule.count", Inserts(Suggest(f, t, "A1", "{schedule.WallSchedule.c")));
+        Assert.Contains("schedule.WallSchedule.total.Length", Inserts(Suggest(f, t, "A1", "{schedule.WallSchedule.total.")));
+        // filter. : names, count and sums of fields.
+        Assert.Contains("filter.LoadBearing.", Inserts(Suggest(f, t, "A1", "{= filter.")));
+        Assert.Contains("filter.LoadBearing.count", Inserts(Suggest(f, t, "A1", "{= filter.LoadBearing.")));
+        Assert.Contains("filter.LoadBearing.sum.Length", Inserts(Suggest(f, t, "A1", "{= filter.LoadBearing.sum.Le")));
+        // table. : the other tables by name, then their cells with what they read.
+        Assert.Contains("table.Areas.", Inserts(Suggest(f, t, "A1", "{= table.")));
+        var cells = Suggest(f, t, "A1", "{= table.Areas.");
+        Assert.Contains(cells["items"]!.AsArray(), x => (string)x!["insert"]! == "table.Areas.B1" && (string?)x["detail"] == "2");
+        // Inside a function's parentheses, after an operator: the same.
+        Assert.Equal(["el.NetFloorArea"], Inserts(Suggest(f, t, "A1", "{= round(el.NetFl")));
+        // In a token (no =): no functions.
+        Assert.DoesNotContain("sum(", Inserts(Suggest(f, t, "A1", "{")));
+        Assert.Contains("el.", Inserts(Suggest(f, t, "A1", "{")));
+        // The caret before the end: only the text before it counts.
+        Assert.Equal(["sum("], Inserts(Suggest(f, t, "A1", "{= su} m²", 5)));
+        // Every element field suggested reads (no error) when put in.
+        foreach (var token in Inserts(el).Take(40))
+        {
+            Edit(f, t, Op("set", ("cell", "A1"), ("text", "{" + token + "}")));
+            Assert.DoesNotContain(Errors(f, t), e => e.StartsWith("A1"));
+        }
+    }
+
+    [Fact]
+    public void A_cell_s_text_is_tried_without_being_kept_its_own_errors_alone()
+    {
+        var f = F();
+        var t = Table(f, Rows(["2", "{= nothing + 1}", ""]), 1, 3);
+        JsonObject Try(string text) => (JsonObject)f.Session.Query("drafting.tableTry", new JsonObject { ["id"] = t, ["cell"] = "C1", ["text"] = text })!;
+        var ok = Try("{= A1 * 3}");
+        Assert.Equal("6", (string)ok["shown"]!);
+        // B1's error is not C1's.
+        Assert.Empty(ok["errors"]!.AsArray());
+        Assert.NotEmpty(Try("{= el.Area}")["errors"]!.AsArray());
+        Assert.NotEmpty(Try("{= C1 + 1}")["errors"]!.AsArray());
+        // Nothing kept.
+        Assert.Equal("", Typed(f, t, 0, 2));
+    }
+
+    // ------------------------------------------------------------ AutoSum
+
+    [Fact]
+    public void AutoSum_in_a_cell_sums_the_numbers_above_it_else_those_left_of_it_as_a_spreadsheet_does()
+    {
+        var f = F();
+        var t = Table(f, Rows(["Room", "Area", "Cost"], ["A", "10", "{= B2 * 2}"], ["B", "20", "{= B3 * 2}"], ["Total", "", ""], ["", "", ""], ["1", "2", ""]), 6, 3);
+        Edit(f, t, Op("header", ("range", "A1:C1"), ("on", true)));
+        // Up to the header row: B2:B3; over formulas too.
+        Edit(f, t, Op("autoSum", ("range", "B4")));
+        Assert.Equal("{= sum(B2:B3)}", Typed(f, t, 3, 1));
+        Assert.Equal("30", Shown(f, t, 3, 1));
+        Edit(f, t, Op("autoSum", ("range", "C4"), ("fn", "max")));
+        Assert.Equal("{= max(C2:C3)}", Typed(f, t, 3, 2));
+        Assert.Equal("40", Shown(f, t, 3, 2));
+        // Nothing numeric above (an empty cell): the numbers left of it.
+        Edit(f, t, Op("autoSum", ("range", "C6")));
+        Assert.Equal("{= sum(A6:B6)}", Typed(f, t, 5, 2));
+        Assert.Equal("3", Shown(f, t, 5, 2));
+        // Nothing to sum (a text above, nothing left): refused, the table as it was.
+        Assert.Throws<CommandException>(() => Edit(f, t, Op("autoSum", ("range", "A5"))));
+        // One undo step each.
+        f.Session.Undo();
+        Assert.Equal("", Typed(f, t, 5, 2));
+    }
+
+    [Fact]
+    public void AutoSum_over_columns_puts_a_total_under_each_in_the_first_empty_row_adding_one_if_none()
+    {
+        var f = F();
+        var t = Table(f, Rows(["Area", "Cost"], ["10", "100"], ["20", "200"]), 3, 2);
+        Edit(f, t, Op("autoSum", ("range", "A1:B3"), ("fn", "average")));
+        Assert.Equal(4, (int)Info(f, t)["rows"]!);
+        Assert.Equal("{= average(A2:A3)}", Typed(f, t, 3, 0));
+        Assert.Equal("150", Shown(f, t, 3, 1));
+        // One undo step takes the row and the totals back.
+        f.Session.Undo();
+        Assert.Equal(3, (int)Info(f, t)["rows"]!);
+    }
+
+    [Fact]
+    public void A_total_follows_rows_put_in_above_it_and_elements_linked_a_row_each()
+    {
+        var f = F();
+        var walls = new[] { f.Wall(0, 0, 5, 0), f.Wall(0, 3, 4, 3), f.Wall(0, 6, 3, 6) };
+        var t = Table(f, Rows(["Wall", "Length"], ["{el.name}", "{= el.Length}"], ["Total", ""]), 3, 2);
+        Edit(f, t, Op("linkRows", ("at", "A2"), ("els", J(walls[0]))));
+        Edit(f, t, Op("autoSum", ("range", "B3")));
+        Assert.Equal("{= sum(B2:B2)}", Typed(f, t, 2, 1));
+        Assert.Equal("5", Shown(f, t, 2, 1));
+        // Linked a row each again: the rows go in above the total (not over it), and its sum takes them in.
+        Edit(f, t, Op("linkRows", ("at", "A2"), ("els", J([.. walls.Select(x => (JsonNode)x)]))));
+        Assert.Equal(5, (int)Info(f, t)["rows"]!);
+        Assert.Equal("Total", Typed(f, t, 4, 0));
+        Assert.Equal("{= el.Length}", Typed(f, t, 3, 1));
+        Assert.Equal("{= sum(B2:B4)}", Typed(f, t, 4, 1));
+        Assert.Equal("12", Shown(f, t, 4, 1));
+        // A row put in right above the total is taken in too; one taken out narrows it.
+        Edit(f, t, Op("insertRows", ("at", 4)));
+        Assert.Equal("{= sum(B2:B5)}", Typed(f, t, 5, 1));
+        Edit(f, t, Op("deleteRows", ("at", 1), ("count", 1)));
+        Assert.Equal("{= sum(B2:B4)}", Typed(f, t, 4, 1));
+        Assert.Equal("7", Shown(f, t, 4, 1));
+    }
+
     // ------------------------------------------------------------ schedules and filters
 
     static string Schedule(Fixture f, string name) =>

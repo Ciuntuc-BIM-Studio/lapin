@@ -44,7 +44,16 @@ public static class TableCommands
             var e = Require(ctx.Model, (string?)a["id"]);
             var ops = a["ops"] as JsonArray ?? (a["op"] != null ? [a.DeepClone()] : throw new CommandException("Which edits? ops: [{op, …}]."));
             var m = ctx.Model;
-            var (table, shifts) = TableEdits.ApplyTracked(e.Attrs["table"] as JsonObject, ops, DraftingResources.Book(m).TableStyles, id => m.Get(id) != null);
+            var styles = DraftingResources.Book(m).TableStyles;
+            // AutoSum worked out on the table as the edits before it leave it (its cells' values read).
+            ops = TableAutoSum.Expand(e.Attrs["table"] as JsonObject, ops, styles, id => m.Get(id) != null, json =>
+            {
+                var attrs0 = e.CloneAttrs();
+                attrs0["table"] = json;
+                var (g0, v0, _) = Evaluate(ctx.Query, e.With(attrs: attrs0), null);
+                return (g0, v0);
+            });
+            var (table, shifts) = TableEdits.ApplyTracked(e.Attrs["table"] as JsonObject, ops, styles, id => m.Get(id) != null);
             var attrs = e.CloneAttrs();
             attrs["table"] = table;
             ctx.Replace(e.With(attrs: attrs));

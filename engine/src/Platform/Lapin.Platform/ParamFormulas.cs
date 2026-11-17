@@ -135,7 +135,11 @@ public static class ParamFormulas
         finally { _busy.Remove(id); }
     }
 
-    /// <summary>The quantities a query can give an element, by name (case and spaces aside): the first of that name among its sets.</summary>
+    /// <summary>
+    /// The quantities a query can give an element, by name (case and spaces aside): the first of that name among its sets; else,
+    /// for a common name (<c>Area</c>, <c>NetArea</c>, <c>Perimeter</c>, <c>Volume</c>…), the quantity of its class that gives it
+    /// (<see cref="QuantityNames"/>: a room's NetFloorArea, a wall's NetSideArea).
+    /// </summary>
     public static Func<string, double?> Quantities(IQueryContext q, string id)
     {
         Dictionary<string, double>? map = null;
@@ -152,7 +156,8 @@ public static class ParamFormulas
                         map.TryAdd(TagText.Squash(set.Name + "." + x.Name), x.Value);
                     }
             }
-            return map.TryGetValue(TagText.Squash(name), out var v) ? v : null;
+            if (map.TryGetValue(TagText.Squash(name), out var v)) return v;
+            return QuantityNames.Resolve(name, k => map.TryGetValue(k, out var x) ? x : null)?.Value;
         };
     }
 

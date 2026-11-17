@@ -146,10 +146,14 @@ public static partial class FieldCatalog
         groups.Add(derived);
 
         var measured = new Group("quantities", "Its quantities", null, e);
-        foreach (var set in q.Quantities(e.Id))
-            foreach (var x in set.Quantities)
-                Add(measured, x.Name, x.Label ?? x.Name, "A quantity, read in formulas ({= NetArea * 1.1})", x.Kind.ToLowerInvariant(),
-                    x.Value.ToString("0.###", CultureInfo.InvariantCulture) + (x.Unit.Length > 0 ? " " + x.Unit : ""), formulaOnly: true);
+        static string Measure(Quantity x) => x.Value.ToString("0.###", CultureInfo.InvariantCulture) + (x.Unit.Length > 0 ? " " + x.Unit : "");
+        var all = q.Quantities(e.Id).SelectMany(s => s.Quantities).ToList();
+        foreach (var x in all)
+            Add(measured, x.Name, x.Label ?? x.Name, "A quantity, read in formulas ({= NetArea * 1.1})", x.Kind.ToLowerInvariant(), Measure(x), formulaOnly: true);
+        // The common names (Area, Perimeter, Volume…) its class's quantities answer to (QuantityNames): a room's Area is its NetFloorArea.
+        foreach (var common in QuantityNames.Offered)
+            if (QuantityNames.Resolve(common, k => all.FirstOrDefault(y => TagText.Squash(y.Name) == k)?.Value) is { } hit && all.First(y => y.Name == hit.Name) is var found)
+                Add(measured, common, common, $"Its {hit.Name}, by a common name", found.Kind.ToLowerInvariant(), Measure(found), formulaOnly: true);
         groups.Add(measured);
 
         var parameters = new Group("params", "Its parameters", null, e);
