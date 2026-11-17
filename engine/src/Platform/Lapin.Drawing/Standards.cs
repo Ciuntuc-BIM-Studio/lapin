@@ -190,6 +190,11 @@ public sealed record StyleBook(
     bool DimAutoText = true, double DimTextLeader = Standards.DefaultTextLeader, IReadOnlyList<TagRule>? TagRules = null)
 {
     public static StyleBook Default => Standards.Read(null);
+
+    /// <summary>How detail callouts' boundaries and inset views' frames are drawn by default (issue #73; null: as Lapin draws them).</summary>
+    public FrameLine? CalloutLine { get; init; }
+    /// <inheritdoc cref="CalloutLine"/>
+    public FrameLine? InsetFrame { get; init; }
 }
 
 public static class Standards
@@ -424,7 +429,9 @@ public static class Standards
         list.Any(s => id(s) == key) ? list : [standard, .. list];
 
     /// <summary>The standards from a project's JSON, tolerantly: a malformed field falls back to the Standard style's, an unreadable entry is dropped, the Standard entries are always there.</summary>
-    public static StyleBook Read(JsonNode? raw)
+    public static StyleBook Read(JsonNode? raw) => FrameLines.With(ReadBook(raw), raw as JsonObject);
+
+    static StyleBook ReadBook(JsonNode? raw)
     {
         var o = raw as JsonObject ?? [];
         IEnumerable<JsonObject> List(string key) => o[key] is JsonArray a ? a.OfType<JsonObject>() : [];

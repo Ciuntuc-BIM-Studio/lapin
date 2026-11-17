@@ -627,7 +627,7 @@ public static class DraftingResources
         _ => throw new CommandException("A standard is a text, dim, axis, tag, tagRule, layer or layerGroup."),
     };
 
-    static void Write(ICommandContext ctx, JsonObject raw)
+    internal static void Write(ICommandContext ctx, JsonObject raw)
     {
         var project = Project(ctx);
         var attrs = project.CloneAttrs();

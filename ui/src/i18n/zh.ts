@@ -4135,6 +4135,17 @@ export const ZH: Record<string, string> = {
   'Add layer': '添加图层', 'Remove layer': '删除图层', 'Toggle visibility': '显示或隐藏', 'Opacity (0–100, {attr.key} or {= formula})': '不透明度（0–100、{attr.key} 或 {= 公式}）', 'Visibility (true/false, 0–100, {attr.key} or {= formula})': '可见性（true/false、0–100、{attr.key} 或 {= 公式}）',
   // Tag rules and door and window markers drawn by a symbol (issue #72).
   "Tag rule": "标记规则条目", "Tag rules": "标记规则", "New rule": "新规则", "By the rules": "按规则", "Per class, the first rule whose condition holds gives the tag type, over the one a tag was made with; a tag whose type is chosen in its properties keeps it. A condition reads the element as {= …} does: width > 1.2 (metres), FireRating != \"\", IsExternal.": "每个类别中，条件成立的第一条规则决定标记类型，取代创建标记时的类型；在属性中选定了类型的标记保留其类型。条件按 {= …} 的方式读取元素：width > 1.2（米）、FireRating != \"\"、IsExternal.", "A formula over the element's fields; it holds when it is true (a number not 0, a text not empty)": "基于元素字段的公式；为真时成立（非 0 的数字、非空的文本）", "Move up: tried before the rule above": "上移：在上面的规则之前尝试", "Move down: tried after the rule below": "下移：在下面的规则之后尝试", "A symbol of your own drawn at the marker's exterior end instead of its outer text: its texts' {fields} read the door or window ({mark}, {width}, {height}, {sill}), as the template's do (Manage → Symbols… to draw one)": "您自己的符号，绘制在标记线的外端，代替其外侧文字：其文字中的 {字段} 读取门或窗（{mark}、{width}、{height}、{sill}），与模板相同（管理 → 符号… 以绘制）", "Off: printed nowhere (sheets, PDF, exports), drawn faintly on screen only, so it can be switched on again": "关闭：任何地方都不打印（图纸、PDF、导出），仅在屏幕上淡淡显示，以便重新打开", "A marker type of the drafting standards (Manage → Drafting standards → Tags); chosen here, the tag rules leave it so": "绘图标准中的标记类型（管理 → 绘图标准 → 标记）；在此选择后，标记规则不再改变它", "The tag rules of the drafting standards choose its type again (the first that holds, else this one)": "由绘图标准的标记规则重新选择其类型（第一条成立的规则，否则为此类型）",
+  // Callout boundaries and inset frames (issue #73).
+  "Pen weight": "笔宽",
+  "default": "默认",
+  "Detail callout boundary": "详图索引边界",
+  "Inset view frame": "嵌入视图边框",
+  "Empty fields: Lapin's own.": "空字段：使用 Lapin 自带的。",
+  "Its pen weight on paper (mm); default: the drafting standards', else Lapin's own": "纸面上的笔宽（mm）；默认：制图标准中的，否则为 Lapin 自带的",
+  "Its colour; default: the drafting standards', else Lapin's own": "颜色；默认：制图标准中的，否则为 Lapin 自带的",
+  "Its line type, Lapin's or one of the project's own (Drafting standards → Line types); default: the drafting standards', else Lapin's own": "线型，Lapin 的或项目自有的（制图标准 → 线型）；默认：制图标准中的，否则为 Lapin 自带的",
+  "How detail callouts' boundaries are drawn in views, sheets and PDF; a callout's own, in its properties, goes before": "详图索引边界在视图、图纸和 PDF 中的绘制方式；索引自身的设置（在其属性中）优先",
+  "How inset views' frames are drawn; an inset's own, in its properties, goes before": "嵌入视图边框的绘制方式；嵌入视图自身的设置（在其属性中）优先",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

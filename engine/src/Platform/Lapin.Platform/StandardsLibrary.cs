@@ -347,6 +347,10 @@ public static class StandardsLibrary
             if (withOptions)
                 foreach (var k in new[] { "units", "lineCap", "areaRounding", "suppressZeros", "levelDecimals", "levelZeros", "dimAutoText", "dimTextLeader", "sectionMarkSize", "sectionMarkText", "elevationMarkSize", "elevationMarkText", "scales", "planScale", "sectionScale", "elevationScale", "defaultAxisStyle" })
                     if (theirs[k] != null) raw[k] = theirs[k]!.DeepClone();
+            // How callouts' boundaries and insets' frames are drawn (issue #73).
+            if (withOptions)
+                foreach (var k in new[] { FrameLines.CalloutKey, FrameLines.InsetKey })
+                    if (theirs[k] != null) raw[k] = theirs[k]!.DeepClone();
             WriteBook(ctx, raw);
 
             // Hatch patterns by name.
