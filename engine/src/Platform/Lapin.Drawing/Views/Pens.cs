@@ -329,7 +329,10 @@ public static class Pens
             var separation = l.Role == LineRole.Cut && separations.Contains(i);
             if (g?.Hidden == true) continue;
             if (!o.HiddenLines && l.Role == LineRole.Hidden) continue;
-            var styled = separation ? o.LineStyle?.Invoke(LineRole.Separation, l.Class, l.Element) ?? o.LineStyle?.Invoke(l.Role, l.Class, l.Element) : o.LineStyle?.Invoke(l.Role, l.Class, l.Element);
+            var styled = o.LineStyle?.Invoke(l.Role, l.Class, l.Element);
+            // A layer line: its own style (Layer lines), field by field over the cut lines' (what it leaves unset is drawn as the cut).
+            if (separation && o.LineStyle?.Invoke(LineRole.Separation, l.Class, l.Element) is { } sep)
+                styled = new ResolvedLine(sep.WidthMm ?? styled?.WidthMm, sep.Color ?? styled?.Color, sep.Dash ?? styled?.Dash);
             // A line edit's style (Linework) wins over everything else.
             if (l.Style is { Empty: false } ls)
                 styled = new ResolvedLine(ls.Pen is { } lsPen ? LineStyles.PenWidth(o.Table ?? LineStyles.DefaultPenTable(), lsPen, o.Scale) : styled?.WidthMm, ls.Color ?? styled?.Color, ls.Pattern != null ? Dashes.Of(ls.Pattern, o.LineTypes) : styled?.Dash);

@@ -1,6 +1,6 @@
 /**
- * Object Styles (as in Revit): each category's cut, projection, hidden,
- * overhead and beyond lines (a pen 1–16, a colour, a pattern), for the whole
+ * Object Styles (as in Revit): each category's cut, layer (the lines between
+ * a cut element's layers), projection, hidden, overhead and beyond lines (a pen 1–16, a colour, a pattern), for the whole
  * project; the pen table (each pen's paper width at each scale); whether
  * plans, sections and elevations show hidden lines by default. A view's
  * Visibility / Graphics and an element's own override them.
@@ -27,6 +27,9 @@ interface Dto {
   categories: string[]; roles: string[]; patterns: string[];
 }
 
+/** A role's column as the dialog names it: separation is the lines between a cut element's layers. */
+const ROLE_NAMES: Record<string, string> = { separation: 'Layer lines' };
+const ROLE_TITLES: Record<string, string> = { separation: "The lines between a cut element's layers (a wall's, a floor's); unset: as the cut lines" };
 
 export function ObjectStylesDialog() {
   const ownLines = useLineTypes();
@@ -58,7 +61,7 @@ export function ObjectStylesDialog() {
           </div>
           {tab === 'styles' && (
             <table className="layer-table os-table">
-              <thead><tr><th>Category</th>{d.roles.map((r) => <th key={r}>{label(r)}</th>)}</tr></thead>
+              <thead><tr><th>Category</th>{d.roles.map((r) => <th key={r} title={ROLE_TITLES[r]}>{ROLE_NAMES[r] ?? label(r)}</th>)}</tr></thead>
               <tbody>
                 {d.categories.map((c) => (
                   <tr key={c}>
