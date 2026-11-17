@@ -26,7 +26,9 @@ import { RenumberAxesDialog } from './RenumberAxesDialog';
 import { DimensionRulesDialog } from './DimensionRulesDialog';
 import { drawableElement } from '../core/shopDrawing';
 import { openStandards } from '../core/standardsTab';
-import { formatLength, formatLevel } from '../../engine/unitsStore';
+import { formatLength, formatLevel, parseLength } from '../../engine/unitsStore';
+import { SCALE_IMAGE_TOOL, scaleTarget, trueDistance } from './scaleImage';
+import { ScaleImageSection, scaleImageShows } from './ScaleImageSection';
 import { TagOptions, setTagSource, tagCommand, tagGrips, tagOpenings } from './tag';
 import { DRAW_ORDER, drawOrder } from '../../viewport/drawOrder';
 import { lazyPart } from '../../platform/lazyPart';
@@ -907,19 +909,19 @@ const orderTools: ToolDef[] = DRAW_ORDER.map((d) => ({ id: `drafting.order.${d.m
 const orderGroup = { label: 'Order', tools: [orderTools[0], orderTools[3]], small: [orderTools[1], orderTools[2], orderTools[4]] };
 
 /**
- * An image to trace scaled true (decision 371): with it selected, two points on it, then the distance they really are apart;
- * it grows or shrinks about the first point.
+ * An image to trace, or an imported PDF's group, scaled true (decision 371; forum 143): with it selected, two points on it,
+ * the distance between them shown as the second is picked and their true distance typed there (or asked for after a click);
+ * it grows or shrinks about the first point (scaleImage.ts).
  */
 const scaleImage: ToolDef = {
-  id: 'drafting.scaleImage', label: 'Scale image', icon: Ruler,
-  gesture: { kind: 'twoPoints' },
-  complete: async ({ points: [a, b] }, ctx) => {
-    const nodes = useSession.getState().nodes;
-    const id = useUi.getState().selected.find((x) => nodes.get(x)?.type === 'LapinViewImage');
+  id: SCALE_IMAGE_TOOL, label: 'Scale image', icon: Ruler,
+  gesture: { kind: 'twoPoints', measure: true },
+  complete: async ({ points: [a, b], typed }, ctx) => {
+    const { nodes, relations } = useSession.getState();
+    const id = scaleTarget(useUi.getState().selected, nodes, relations);
     if (!id) { notify('Select the image to scale first.'); return; }
-    const answer = promptText('Their true distance apart (m)', (Math.hypot(b.x - a.x, b.y - a.y)).toFixed(3));
-    const length = Number((answer ?? '').replace(',', '.'));
-    if (!(length > 0)) return;
+    const length = trueDistance(typed, () => promptText('Their true distance apart (m)', (Math.hypot(b.x - a.x, b.y - a.y)).toFixed(3)), (s) => parseLength(s, 'm'));
+    if (length == null) return;
     await ctx.execute('drafting.calibrateImage', { id, a: [a.x, a.y], b: [b.x, b.y], length });
     useUi.setState({ tool: null });
   },
@@ -1015,6 +1017,8 @@ const drafting: LapinModule = {
     { id: 'table', label: 'Table', classes: ['IfcAnnotation'], component: TableSection },
     { id: 'viewBoundary', label: 'View boundary', classes: ['LapinViewBoundary'], component: BoundarySection },
     { id: 'grid', label: 'Axes', classes: ['IfcGrid'], component: GridSection },
+    // An image or an imported PDF's group: scaled to a known distance from its properties too (forum 143).
+    { id: 'scaleImage', label: 'Scale', classes: ['LapinViewImage', 'IfcGroup'], shows: scaleImageShows, component: ScaleImageSection },
   ],
   grips: { IfcAnnotation: annotationGrips, IfcGrid: gridGrips, LapinViewBoundary: boundaryGrips },
   // A selected grid axis's temporary dimensions to its neighbours (forum #78).

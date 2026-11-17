@@ -52,25 +52,31 @@ interface LiveState {
   mode: LiveMode;
   /** Set when the tool draws a rectangle (its key, to remember the mode by): Space switches the mode. */
   rect: string | null;
+  /**
+   * A measuring gesture (Scale image, forum 143): the cursor's point is taken as it is, and the length typed is what the two
+   * points really measure (handed to the tool as `typed`), not where the second one goes.
+   */
+  measure: boolean;
 }
 
 /** The mode each rectangle tool was last left in (the box by the cursor opens as it was). */
 const modes = new Map<string, LiveMode>();
 
-export const useLive = create<LiveState>(() => ({ owner: null, base: null, cursor: null, len: '', ang: '', focus: 'len', commit: null, delta: false, mode: 'polar', rect: null }));
+export const useLive = create<LiveState>(() => ({ owner: null, base: null, cursor: null, len: '', ang: '', focus: 'len', commit: null, delta: false, mode: 'polar', rect: null, measure: false }));
 
 /** A segment starts at `base`: its length and angle can now be typed. */
-export function liveBegin(owner: string, base: Vec2, commit: (p: Vec2, typed?: number, typedAngle?: number) => void, o: { delta?: boolean; rect?: string } = {}): void {
+export function liveBegin(owner: string, base: Vec2, commit: (p: Vec2, typed?: number, typedAngle?: number) => void, o: { delta?: boolean; rect?: string; measure?: boolean } = {}): void {
   const s = useLive.getState();
   const delta = !!o.delta;
   const rect = o.rect ?? null;
-  if (s.owner === owner && s.base && Math.hypot(s.base.x - base.x, s.base.y - base.y) < 1e-12) { useLive.setState({ commit, delta }); return; }
-  useLive.setState({ owner, base, commit, delta, len: '', ang: '', focus: 'len', rect, mode: rect ? modes.get(rect) ?? 'polar' : 'polar' });
+  const measure = !!o.measure;
+  if (s.owner === owner && s.base && Math.hypot(s.base.x - base.x, s.base.y - base.y) < 1e-12) { useLive.setState({ commit, delta, measure }); return; }
+  useLive.setState({ owner, base, commit, delta, measure, len: '', ang: '', focus: 'len', rect, mode: rect ? modes.get(rect) ?? 'polar' : 'polar' });
 }
 export const liveCursor = (p: Vec2 | null) => useLive.setState({ cursor: p });
 export function liveEnd(owner?: string): void {
   if (owner && useLive.getState().owner !== owner) return;
-  useLive.setState({ owner: null, base: null, commit: null, len: '', ang: '', delta: false, rect: null, mode: 'polar' });
+  useLive.setState({ owner: null, base: null, commit: null, len: '', ang: '', delta: false, rect: null, mode: 'polar', measure: false });
 }
 
 /** Space (or the button): length and angle become width and height, or back; what was typed is cleared, the first field is focused, the mode is remembered for the tool. */
@@ -83,9 +89,11 @@ export function liveToggleMode(): void {
 }
 
 /** Where the segment ends: the typed length and angle, else the cursor's. */
-export function livePoint(s: Pick<LiveState, 'base' | 'cursor' | 'len' | 'ang'> & { mode?: LiveMode } = useLive.getState()): Vec2 | null {
+export function livePoint(s: Pick<LiveState, 'base' | 'cursor' | 'len' | 'ang'> & { mode?: LiveMode; measure?: boolean } = useLive.getState()): Vec2 | null {
   if (!s.base) return null;
   const c = s.cursor ?? { x: s.base.x + 1, y: s.base.y };
+  // Measuring: the point is the cursor's; what is typed is the true distance, not where the point goes.
+  if (s.measure) return c;
   const dx = c.x - s.base.x, dy = c.y - s.base.y;
   if (s.mode === 'rect') {
     // Width and height, signed as on the command line (@2000,-1500): a field left empty follows the cursor.
@@ -106,7 +114,7 @@ export function livePoint(s: Pick<LiveState, 'base' | 'cursor' | 'len' | 'ang'> 
 }
 
 /** The segment as shown: its length (m) and angle (degrees from +X). */
-export function liveMeasure(s: Pick<LiveState, 'base' | 'cursor' | 'len' | 'ang'> & { mode?: LiveMode } = useLive.getState()): { len: number; ang: number; dx: number; dy: number; end: Vec2 } | null {
+export function liveMeasure(s: Pick<LiveState, 'base' | 'cursor' | 'len' | 'ang'> & { mode?: LiveMode; measure?: boolean } =useLive.getState()): { len: number; ang: number; dx: number; dy: number; end: Vec2 } | null {
   const end = livePoint(s);
   if (!s.base || !end) return null;
   const dx = end.x - s.base.x, dy = end.y - s.base.y;

@@ -103,7 +103,13 @@ Every length the command line asks for is in the project's unit, and the prompt 
 **File → Import PDF or image…**, or **Draft → PDF or image**, brings a drawing in to trace over: a scanned plan, a photo of a facade, a PDF from another office. It goes into the plan, section or elevation in front, under its drawing.
 
 - **A PDF**: choose the **Page** and the scale its drawing was made to (**Drawn at 1:**). A paper millimetre then measures that many millimetres here, so a 1:100 plan comes in at its true size. The page's lines come in as drafting you can snap to, edit and trace, and its pictures (a scan inside the PDF) as images under them. Either can be left out. The page comes in as one group named after the file, so **Move**, **Rotate** and **Scale** take it whole; double-click it to work on its parts.
-- **An image** (PNG or JPEG): give its **Width**; its height follows its pixels. **Draft → Scale image** then sets it exactly: select the image, click two points on it a known distance apart, and type that distance.
+- **An image** (PNG or JPEG): give its **Width**; its height follows its pixels. It need not be right: the next step sets it exactly.
+
+**Scaling to a known distance.** With **Then scale it to a known distance** ticked (the default), the import goes straight on to scaling: the image or the PDF's group is selected, and you click two points on it a known distance apart, the two ends of a dimension or of the graphic scale. While you pick the second point, the box by the cursor shows how far apart they are now (↔); type their true distance there (`2400`, `50m`, `3000+250`; the project's unit unless you write one) and click, or press **Enter**. It grows or shrinks about the first point, and the whole PDF, lines and pictures, goes with it. **Esc** leaves it as it came in. Clicked without typing, the distance is asked for after. It is one undo step.
+
+The same tool is there later, whenever you need it: **Draft → Scale image**, **Scale to a known distance…** on the right-click menu of a selected image or PDF, or the button of the same name in its properties.
+
+![Scaling an imported image: the distance between the two points shown at the cursor, the true one typed beside it](shots/trace-scale.webp)
 
 An image is see-through (its **Opacity**, 0.5 by default, in its properties) and is never part of the model: it does not print on sheets unless you leave it in the view.
 

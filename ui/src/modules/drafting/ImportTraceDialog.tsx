@@ -13,6 +13,7 @@ import { traceFile } from '../../engine/files';
 import { execute, query, useSession } from '../../engine/session';
 import { frontView } from '../../viewport/frontView';
 import { zoomHost } from '../../viewport/zoom';
+import { startScaleImage } from './scaleImage';
 
 export function ImportTraceDialog() {
   const file = traceFile.current;
@@ -29,6 +30,8 @@ export function ImportTraceDialog() {
   const [opacity, setOpacity] = useState('0.5');
   const [at, setAt] = useState({ x: '0', y: '0' });
   const [busy, setBusy] = useState(false);
+  // Scale it to a known distance right after (forum 143): a picture's width is a guess, a PDF's scale may be unknown; Esc skips.
+  const [scaleNow, setScaleNow] = useState(true);
   const close = () => { traceFile.current = null; useUi.setState({ dialog: null }); };
 
   useEffect(() => {
@@ -58,19 +61,26 @@ export function ImportTraceDialog() {
     setBusy(true);
     try {
       const where = [num(at.x, 0), num(at.y, 0)];
+      let made: string | undefined;
       if (isPdf) {
         const r = await execute('drafting.importPdf', { ...file, viewId, page, scale: num(scale, 100), lines, pictures, at: where, opacity: num(opacity, 0.6) }) as { groupId?: string; lines: number; pictures: number; warnings: string[] } | null;
         if (!r) return;
         notify(`${r.lines} line(s) and ${r.pictures} picture(s) from page ${page}, as one group.${r.warnings.length ? ` ${r.warnings[0]}` : ''}`);
-        if (r.groupId) useUi.setState({ selected: [r.groupId], selection: r.groupId });
+        made = r.groupId;
+        if (made) useUi.setState({ selected: [made], selection: made });
       } else {
         const r = await execute('drafting.placeImage', { ...file, viewId, width: num(width, 10), at: where, opacity: num(opacity, 0.5) }) as { id?: string } | null;
         if (!r?.id) return;
-        useUi.setState({ selected: [r.id], selection: r.id });
+        made = r.id;
+        useUi.setState({ selected: [made], selection: made });
         notify('Placed. Scale image (two points and their true distance) sets its size exactly.');
       }
       close();
-      setTimeout(() => { if (!zoomHost()?.fitSelection()) zoomHost()?.fitAll(); }, 300);
+      // Then straight to Scale to a known distance (forum 143), seen whole first; Esc leaves it as it came in.
+      setTimeout(() => {
+        if (!zoomHost()?.fitSelection()) zoomHost()?.fitAll();
+        if (made && scaleNow) startScaleImage(made);
+      }, 300);
     } finally { setBusy(false); }
   };
   const size = pages?.[page - 1];
@@ -99,6 +109,7 @@ export function ImportTraceDialog() {
               <input className="num" style={{ width: 70 }} value={at.y} onChange={(e) => setAt({ ...at, y: e.target.value })} aria-label="Y" />
               <span className="muted small">m</span>
             </span></div>
+          <label className="field-line check" title="Two points on it a known distance apart, then their true distance (Esc skips)"><input type="checkbox" data-field="trace-scale-now" checked={scaleNow} onChange={(e) => setScaleNow(e.target.checked)} /><span>Then scale it to a known distance</span></label>
           {isPdf && <p className="muted small">It comes in as one group: Move, Rotate and Scale take it whole; double-click it to work on its parts.</p>}
         </div>
         <footer className="dialog-foot">

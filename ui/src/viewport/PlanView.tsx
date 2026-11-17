@@ -484,7 +484,8 @@ export function PlanView() {
       case 'twoPoints':
       case 'rectangle':
         if (pts.length === 0) setPts([p]);
-        else void complete([pts[0], p]);
+        // A measuring gesture hands on the true distance typed (Scale image, forum 143).
+        else void complete([pts[0], p], undefined, undefined, g.kind === 'twoPoints' && g.measure ? typed : undefined);
         break;
       case 'threePoints':
         if (pts.length < 2) setPts([...pts, p]);
@@ -570,7 +571,8 @@ export function PlanView() {
     const base = last ?? refPt;
     if (base && (k === 'point' || k === 'twoPoints' || k === 'polyline' || k === 'polygon' || k === 'rectangle' || k === 'threePoints' || k === 'pickThenPoint')) {
       liveBegin('tool', base, (p, typed) => { if (!last && refPt) setRefPt(null); clickRef.current(p, p, false, typed); },
-        k === 'rectangle' && last ? { rect: tool?.id ?? 'rectangle' } : !last && refPt ? { rect: `ref:${tool?.id ?? 'point'}`, delta: true } : {});
+        k === 'rectangle' && last ? { rect: tool?.id ?? 'rectangle' } : !last && refPt ? { rect: `ref:${tool?.id ?? 'point'}`, delta: true }
+          : last && tool?.gesture?.kind === 'twoPoints' && tool.gesture.measure ? { measure: true } : {});
     } else liveEnd('tool');
   }, [last, refPt, tool]);
   useEffect(() => () => liveEnd('tool'), []);

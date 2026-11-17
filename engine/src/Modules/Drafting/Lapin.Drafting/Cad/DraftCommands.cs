@@ -29,6 +29,136 @@ public static class DraftCommands
 
     static Shape ShapeArg(JsonNode? n) => Shape.From(n) ?? throw new CommandException("A shape is a line {a, b}, a polyline {pts, closed}, a circle {c, r} or an arc {c, r, start, end}.");
 
+    /// <summary>drafting.transform's work: drafted shapes and texts moved, copied, turned, mirrored or scaled (calibrateImage scales a PDF's group by it too).</summary>
+    public static JsonObject Transform(ICommandContext ctx, JsonObject a)
+    {
+        var op = (string?)a["op"] ?? "move";
+        Func<Vec2, Vec2> point;
+        Func<Shape, Shape> shape;
+        double turn = 0;
+        switch (op)
+        {
+            case "move" or "copy":
+            {
+                var d = P(a["by"], "displacement");
+                point = p => p + d; shape = s => Geo.Translate(s, d);
+                break;
+            }
+            case "rotate":
+            {
+                var c = P(a["center"], "centre");
+                var ang = (Json.Number(a["angle"]) ?? 0) * Math.PI / 180;
+                turn = ang;
+                point = p => Geo.Rotate(p, c, ang); shape = s => Geo.Rotate(s, c, ang);
+                break;
+            }
+            case "mirror":
+            {
+                var (p1, p2) = (P(a["a"]), P(a["b"]));
+                if ((p2 - p1).Length < 1e-9) throw new CommandException("A mirror line needs two different points.");
+                point = p => Geo.Mirror(p, p1, p2); shape = s => Geo.Mirror(s, p1, p2);
+                break;
+            }
+            case "scale":
+            {
+                var c = P(a["center"], "centre");
+                var k = Json.Number(a["factor"]) ?? 1;
+                if (!(Math.Abs(k) > 1e-9)) throw new CommandException("The scale factor cannot be 0.");
+                point = p => c + (p - c) * k; shape = s => Geo.Scale(s, c, k);
+                break;
+            }
+            default: throw new CommandException($"„{op}” is not move, copy, rotate, mirror or scale.");
+        }
+        var copy = op == "copy" || (a["copy"] is JsonValue cv && cv.TryGetValue<bool>(out var cb) && cb);
+        var made = new JsonArray();
+        foreach (var id in Ids(a))
+        {
+            // A grid axis (grid#tag): its two ends; a copy is the grid's next axis.
+            if (ctx.Model.Get(id) == null && new AxisPlacement().Transform(ctx, id, new Placement2D(point, turn, false), copy) is { } axis)
+            {
+                if (copy) made.Add((JsonNode)axis);
+                continue;
+            }
+            var e = ctx.Model.Get(id) ?? throw new CommandException($"There is no {id}.");
+            if (e.Class != IfcClass.Annotation) continue; // model elements move by their own tools
+            // A pinned shape stays where it is; its copy is not pinned (decision 449).
+            if (!copy) Pins.Refuse([e]);
+            var attrs = e.CloneAttrs();
+            if (e.PredefinedType == Drafts.Predefined)
+            {
+                Drafts.Require(ctx.Model, id);
+                if (Drafts.ShapeOf(e) is { } s) attrs["shape"] = shape(s).ToJson();
+                if (e.Attrs["hatch"] is JsonObject h)
+                {
+                    var loops = Drafts.HatchLoops(e).Select(l => (JsonNode)new JsonArray(l.Select(q => (JsonNode)new JsonArray(point(q).X, point(q).Y)).ToArray())).ToArray();
+                    var nh = (JsonObject)h.DeepClone();
+                    nh["loops"] = new JsonArray(loops);
+                    attrs["hatch"] = nh;
+                }
+            }
+            else if (e.PredefinedType == SymbolInstances.Predefined)
+            {
+                // A symbol: its point, angle and flips carried (a mirror turns it over, its texts stay readable); a scale its size.
+                var place = op switch
+                {
+                    "mirror" => Placement2D.Mirror(P(a["a"]), P(a["b"])),
+                    _ => new Placement2D(point, turn, false),
+                };
+                // A sheet's own symbol (paper mm, y down), moved on its paper's view, takes the move across.
+                SymbolInstances.Carry(attrs, AnnotationPlacement.OnPaper(ctx.Model, attrs, place));
+                if (op == "scale" && Json.Number(a["factor"]) is { } k)
+                {
+                    attrs["scale"] = Math.Round((Json.Number(attrs["scale"]) is > 0 and var s0 ? s0 : 1) * Math.Abs(k), 9);
+                    // A negative factor is a half turn about the centre.
+                    if (k < 0) attrs["angle"] = Math.Round(((Json.Number(attrs["angle"]) ?? 0) + 180) % 360, 9);
+                }
+            }
+            else if (e.PredefinedType == "TEXT" && attrs["at"] is JsonArray at)
+            {
+                var q = point(new Vec2(Json.Number(at[0]) ?? 0, Json.Number(at[1]) ?? 0));
+                attrs["at"] = new JsonArray(q.X, q.Y);
+                attrs["angle"] = (Json.Number(attrs["angle"]) ?? 0) + turn * 180 / Math.PI;
+                // Its leader's arrow and bends go with it (decision 620).
+                if (Texts.Leader(e) is { Count: > 0 } leader) attrs["leader"] = new JsonArray([.. leader.Select(p => (JsonNode)new JsonArray(point(p).X, point(p).Y))]);
+            }
+            else if (e.PredefinedType is DrawingKeys.Legend or DrawingKeys.ScaleBar && attrs["at"] is JsonArray kat)
+            {
+                // A legend or a scale bar: its corner moves; it stays upright.
+                var q = point(P(kat, "at"));
+                attrs["at"] = new JsonArray(q.X, q.Y);
+            }
+            else if (Dimensions.IsLinear(e))
+            {
+                // The whole string; moved, it measures where it is now: it lets go of its elements.
+                Dimensions.Write(attrs, Dimensions.Stations(e).Select(s => (point(s.P), (DimEndRef?)null)).ToList());
+                if (attrs["at"] is JsonArray at2) attrs["at"] = new JsonArray(point(P(at2, "at")).X, point(P(at2, "at")).Y);
+                if (attrs["dir"] is JsonArray dj)
+                {
+                    var d0 = P(dj, "dir");
+                    var dn = point(d0) - point(new Vec2(0, 0));
+                    if (dn.Length > 1e-12) attrs["dir"] = new JsonArray(dn.Normalized().X, dn.Normalized().Y);
+                }
+            }
+            else if (e.PredefinedType == "DIMENSION")
+            {
+                foreach (var k in new[] { "a", "b", "at" })
+                    if (attrs[k] is JsonArray pa) { var q = point(new Vec2(Json.Number(pa[0]) ?? 0, Json.Number(pa[1]) ?? 0)); attrs[k] = new JsonArray(q.X, q.Y); }
+                // A moved dimension measures where it is now: it lets go of its elements.
+                attrs.Remove("refA"); attrs.Remove("refB");
+            }
+            else continue;
+            if (copy)
+            {
+                attrs.Remove(Pins.Key);
+                var n = new Entity(ctx.NewId(), e.Class, e.Name, attrs, e.PredefinedType);
+                ctx.Add(n);
+                made.Add((JsonNode)n.Id);
+            }
+            else ctx.Replace(e.With(attrs: attrs));
+        }
+        return new JsonObject { ["ids"] = made };
+    }
+
     public static void Register(IModuleRegistry r)
     {
         // One or more shapes on a view, on a layer.
@@ -99,134 +229,7 @@ public static class DraftCommands
         });
 
         // Move, copy, rotate, mirror, scale: drafted shapes and texts. A copy returns the new ids.
-        r.Command("transform", "Transform", (ctx, a) =>
-        {
-            var op = (string?)a["op"] ?? "move";
-            Func<Vec2, Vec2> point;
-            Func<Shape, Shape> shape;
-            double turn = 0;
-            switch (op)
-            {
-                case "move" or "copy":
-                {
-                    var d = P(a["by"], "displacement");
-                    point = p => p + d; shape = s => Geo.Translate(s, d);
-                    break;
-                }
-                case "rotate":
-                {
-                    var c = P(a["center"], "centre");
-                    var ang = (Json.Number(a["angle"]) ?? 0) * Math.PI / 180;
-                    turn = ang;
-                    point = p => Geo.Rotate(p, c, ang); shape = s => Geo.Rotate(s, c, ang);
-                    break;
-                }
-                case "mirror":
-                {
-                    var (p1, p2) = (P(a["a"]), P(a["b"]));
-                    if ((p2 - p1).Length < 1e-9) throw new CommandException("A mirror line needs two different points.");
-                    point = p => Geo.Mirror(p, p1, p2); shape = s => Geo.Mirror(s, p1, p2);
-                    break;
-                }
-                case "scale":
-                {
-                    var c = P(a["center"], "centre");
-                    var k = Json.Number(a["factor"]) ?? 1;
-                    if (!(Math.Abs(k) > 1e-9)) throw new CommandException("The scale factor cannot be 0.");
-                    point = p => c + (p - c) * k; shape = s => Geo.Scale(s, c, k);
-                    break;
-                }
-                default: throw new CommandException($"„{op}” is not move, copy, rotate, mirror or scale.");
-            }
-            var copy = op == "copy" || (a["copy"] is JsonValue cv && cv.TryGetValue<bool>(out var cb) && cb);
-            var made = new JsonArray();
-            foreach (var id in Ids(a))
-            {
-                // A grid axis (grid#tag): its two ends; a copy is the grid's next axis.
-                if (ctx.Model.Get(id) == null && new AxisPlacement().Transform(ctx, id, new Placement2D(point, turn, false), copy) is { } axis)
-                {
-                    if (copy) made.Add((JsonNode)axis);
-                    continue;
-                }
-                var e = ctx.Model.Get(id) ?? throw new CommandException($"There is no {id}.");
-                if (e.Class != IfcClass.Annotation) continue; // model elements move by their own tools
-                // A pinned shape stays where it is; its copy is not pinned (decision 449).
-                if (!copy) Pins.Refuse([e]);
-                var attrs = e.CloneAttrs();
-                if (e.PredefinedType == Drafts.Predefined)
-                {
-                    Drafts.Require(ctx.Model, id);
-                    if (Drafts.ShapeOf(e) is { } s) attrs["shape"] = shape(s).ToJson();
-                    if (e.Attrs["hatch"] is JsonObject h)
-                    {
-                        var loops = Drafts.HatchLoops(e).Select(l => (JsonNode)new JsonArray(l.Select(q => (JsonNode)new JsonArray(point(q).X, point(q).Y)).ToArray())).ToArray();
-                        var nh = (JsonObject)h.DeepClone();
-                        nh["loops"] = new JsonArray(loops);
-                        attrs["hatch"] = nh;
-                    }
-                }
-                else if (e.PredefinedType == SymbolInstances.Predefined)
-                {
-                    // A symbol: its point, angle and flips carried (a mirror turns it over, its texts stay readable); a scale its size.
-                    var place = op switch
-                    {
-                        "mirror" => Placement2D.Mirror(P(a["a"]), P(a["b"])),
-                        _ => new Placement2D(point, turn, false),
-                    };
-                    // A sheet's own symbol (paper mm, y down), moved on its paper's view, takes the move across.
-                    SymbolInstances.Carry(attrs, AnnotationPlacement.OnPaper(ctx.Model, attrs, place));
-                    if (op == "scale" && Json.Number(a["factor"]) is { } k)
-                    {
-                        attrs["scale"] = Math.Round((Json.Number(attrs["scale"]) is > 0 and var s0 ? s0 : 1) * Math.Abs(k), 9);
-                        // A negative factor is a half turn about the centre.
-                        if (k < 0) attrs["angle"] = Math.Round(((Json.Number(attrs["angle"]) ?? 0) + 180) % 360, 9);
-                    }
-                }
-                else if (e.PredefinedType == "TEXT" && attrs["at"] is JsonArray at)
-                {
-                    var q = point(new Vec2(Json.Number(at[0]) ?? 0, Json.Number(at[1]) ?? 0));
-                    attrs["at"] = new JsonArray(q.X, q.Y);
-                    attrs["angle"] = (Json.Number(attrs["angle"]) ?? 0) + turn * 180 / Math.PI;
-                    // Its leader's arrow and bends go with it (decision 620).
-                    if (Texts.Leader(e) is { Count: > 0 } leader) attrs["leader"] = new JsonArray([.. leader.Select(p => (JsonNode)new JsonArray(point(p).X, point(p).Y))]);
-                }
-                else if (e.PredefinedType is DrawingKeys.Legend or DrawingKeys.ScaleBar && attrs["at"] is JsonArray kat)
-                {
-                    // A legend or a scale bar: its corner moves; it stays upright.
-                    var q = point(P(kat, "at"));
-                    attrs["at"] = new JsonArray(q.X, q.Y);
-                }
-                else if (Dimensions.IsLinear(e))
-                {
-                    // The whole string; moved, it measures where it is now: it lets go of its elements.
-                    Dimensions.Write(attrs, Dimensions.Stations(e).Select(s => (point(s.P), (DimEndRef?)null)).ToList());
-                    if (attrs["at"] is JsonArray at2) attrs["at"] = new JsonArray(point(P(at2, "at")).X, point(P(at2, "at")).Y);
-                    if (attrs["dir"] is JsonArray dj)
-                    {
-                        var d0 = P(dj, "dir");
-                        var dn = point(d0) - point(new Vec2(0, 0));
-                        if (dn.Length > 1e-12) attrs["dir"] = new JsonArray(dn.Normalized().X, dn.Normalized().Y);
-                    }
-                }
-                else if (e.PredefinedType == "DIMENSION")
-                {
-                    foreach (var k in new[] { "a", "b", "at" })
-                        if (attrs[k] is JsonArray pa) { var q = point(new Vec2(Json.Number(pa[0]) ?? 0, Json.Number(pa[1]) ?? 0)); attrs[k] = new JsonArray(q.X, q.Y); }
-                    // A moved dimension measures where it is now: it lets go of its elements.
-                    attrs.Remove("refA"); attrs.Remove("refB");
-                }
-                else continue;
-                if (copy)
-                {
-                    attrs.Remove(Pins.Key);
-                    var n = new Entity(ctx.NewId(), e.Class, e.Name, attrs, e.PredefinedType);
-                    ctx.Add(n);
-                    made.Add((JsonNode)n.Id);
-                }
-                else ctx.Replace(e.With(attrs: attrs));
-            }
-            return new JsonObject { ["ids"] = made };
-        });
+        r.Command("transform", "Transform", (ctx, a) => Transform(ctx, a));
 
         r.Command("offset", "Offset", (ctx, a) =>
         {

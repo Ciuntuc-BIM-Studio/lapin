@@ -15,7 +15,8 @@ export interface Vec2 { x: number; y: number }
 
 /** How a tool takes its input in a view: the gesture, then one engine command. */
 export type Gesture =
-  | { kind: 'twoPoints'; /** Chained: the end of one is the start of the next (walls). */ repeat?: boolean }
+  | { kind: 'twoPoints'; /** Chained: the end of one is the start of the next (walls). */ repeat?: boolean;
+    /** Measuring (Scale image, forum 143): the second point is the cursor's, and a length typed is the true distance between the two (the tool's `typed`). */ measure?: boolean }
   /** `ghost`: what the click would put there, as lines on the plan (metres), redrawn as the cursor moves (a family's outline, turned and mirrored). */
   | { kind: 'point'; ghost?: (at: Vec2) => Vec2[][] }
   | { kind: 'rectangle' }

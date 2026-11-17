@@ -19,6 +19,7 @@ import { hideSelection, isolateSelection, resetTemporary, temporaryOn, useTempor
 import { useScope } from '../platform/scope';
 import type { MenuItem } from './ContextMenu';
 import { offsetMenuItems } from '../viewport/outlineOffset';
+import { SCALE_IMAGE_TOOL, scalableTrace, startScaleImage } from '../modules/drafting/scaleImage';
 
 /** Group, Ungroup, Edit group, Remove from group: those that apply to the selection. */
 export function groupItems(): MenuItem[] {
@@ -100,6 +101,14 @@ export function wallFromSolidsItems(): MenuItem[] {
   return tool?.run ? [{ label: 'Make a layered wall…', onSelect: () => tool.run!() }] : [];
 }
 
+/** Scale to a known distance… on a selected image or an imported PDF's group (forum 143), when the product has the tool. */
+export function scaleImageItems(): MenuItem[] {
+  const { selected } = useUi.getState();
+  const { nodes, relations } = useSession.getState();
+  if (selected.length !== 1 || !nodes.get(selected[0])?.editable || !scalableTrace(selected[0], nodes, relations)) return [];
+  return allTools().some((t) => t.id === SCALE_IMAGE_TOOL) ? [{ label: 'Scale to a known distance…', onSelect: () => startScaleImage(selected[0]) }] : [];
+}
+
 export function editTypeItems(): MenuItem[] {
   const { selected } = useUi.getState();
   if (selected.length !== 1) return [];
@@ -128,7 +137,7 @@ export function selectionItems(): MenuItem[] {
     { label: 'Move to storey…', onSelect: () => useUi.setState({ dialog: 'moveToStorey' }) },
   ] : [];
   const shop: MenuItem[] = drawableElement(selected, useSession.getState().nodes) ? [{ label: 'Make drawing…', onSelect: () => useUi.setState({ dialog: 'shopDrawing' }) }] : [];
-  return [...offsetMenuItems(), ...groupItems(), ...storeys, ...shop, ...wallFromSolidsItems(), ...similarItems(), ...editTypeItems(), ...editSketchItems(), ...historyItems()];
+  return [...offsetMenuItems(), ...scaleImageItems(), ...groupItems(), ...storeys, ...shop, ...wallFromSolidsItems(), ...similarItems(), ...editTypeItems(), ...editSketchItems(), ...historyItems()];
 }
 
 /** The 3D view's temporary Hide and Isolate (HH, HI) for the selection, and Show all (HR) while something is hidden. */

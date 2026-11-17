@@ -103,7 +103,13 @@ Orice lungime cerută de linia de comandă e în unitatea proiectului, iar mesaj
 **Fișier → Importă PDF sau imagine…** sau **Desen → PDF sau imagine** aduce un desen peste care să calchiezi: un plan scanat, o fotografie a unei fațade, un PDF de la alt birou. Intră în planul, secțiunea sau fațada din față, sub desenul ei.
 
 - **Un PDF**: alege **Pagina** și scara la care a fost făcut desenul lui (**Desenat la 1:**). Un milimetru de hârtie măsoară atunci atâția milimetri aici, așa că un plan la 1:100 intră la mărimea lui reală. Liniile paginii intră ca desen de care te poți prinde, pe care îl poți modifica și calchia, iar imaginile ei (o scanare din PDF) ca imagini sub ele. Oricare poate fi lăsată deoparte. Pagina intră ca un singur grup numit după fișier, așa că **Mută**, **Rotire** și **Scalează** o iau întreagă; dublu clic pe ea ca să lucrezi pe părțile ei.
-- **O imagine** (PNG sau JPEG): dă-i **Lățimea**; înălțimea urmează pixelii ei. **Desen → Scalează imaginea** o fixează apoi exact: selectează imaginea, fă clic pe două puncte de pe ea aflate la o distanță cunoscută și scrie distanța.
+- **O imagine** (PNG sau JPEG): dă-i **Lățimea**; înălțimea urmează pixelii ei. Nu trebuie să fie exactă: pasul următor o fixează.
+
+**Scalarea la o distanță cunoscută.** Cu **Apoi scalează la o distanță cunoscută** bifat (implicit), importul trece direct la scalare: imaginea sau grupul PDF-ului e selectat, iar tu faci clic pe două puncte de pe el aflate la o distanță cunoscută, capetele unei cote sau ale scării grafice. Cât alegi al doilea punct, caseta de lângă cursor arată cât sunt acum de departe (↔); scrie acolo distanța lor reală (`2400`, `50m`, `3000+250`; în unitatea proiectului dacă nu scrii alta) și fă clic sau apasă **Enter**. Se mărește sau se micșorează în jurul primului punct, iar tot PDF-ul, linii și imagini, merge cu el. **Esc** îl lasă cum a intrat. Dacă faci clic fără să scrii, distanța e cerută după. E un singur pas de anulare.
+
+Aceeași unealtă e la îndemână și mai târziu: **Desen → Scalează imaginea**, **Scalează la o distanță cunoscută…** în meniul de clic dreapta al unei imagini sau al unui PDF selectat, sau butonul cu același nume din proprietățile lui.
+
+![Scalarea unei imagini importate: distanța dintre cele două puncte arătată la cursor, cea reală scrisă alături](shots/trace-scale.webp)
 
 O imagine e transparentă (**Opacitate**, 0,5 implicit, în proprietățile ei) și nu face niciodată parte din model: nu se tipărește pe planșe decât dacă o lași în vedere.
 

@@ -32,7 +32,11 @@ export function LiveBox({ toScreen }: { toScreen: ToScreen }) {
         <span className="live-cell ro"><span className="live-label">Δx</span>{formatLength(m.dx)}<span className="live-unit">{unitLabel()}</span></span>
         <span className="live-cell ro"><span className="live-label">Δy</span>{formatLength(m.dy)}<span className="live-unit">{unitLabel()}</span></span>
       </>}
-      {live.mode === 'rect' ? <>
+      {live.measure ? <>
+        {/* Measuring (Scale image): the distance the two points are apart now, and the true one typed beside it. */}
+        <span className="live-cell ro" title={t('Measured')}><span className="live-label">↔</span>{formatLength(m.len)}<span className="live-unit">{unitLabel()}</span></span>
+        {cell('len', '=', '?', live.len ? '' : unitLabel())}
+      </> : live.mode === 'rect' ? <>
         {cell('len', 'W', formatLength(m.dx), unitLabel())}
         {cell('ang', 'H', formatLength(m.dy), unitLabel())}
       </> : <>
@@ -68,7 +72,10 @@ export function LiveBar({ inline }: { inline?: boolean }) {
   return (
     <div className={`live-bar${inline ? ' inline' : ''}`} role="group" aria-label="Segment">
       {live.rect && <button type="button" className="live-mode" title={t('Space switches length and angle with width and height')} onClick={liveToggleMode}>{live.mode === 'rect' ? t('Width × Height') : t('Length ∠ Angle')}</button>}
-      {live.mode === 'rect' ? <>
+      {live.measure ? <>
+        <span className="live-ro"><span>{t('Measured')}</span>{formatLength(m.len)}</span>
+        {field('len', `${t('True distance')}${unitLabel() ? ` (${unitLabel()})` : ''}`, formatLength(m.len))}
+      </> : live.mode === 'rect' ? <>
         {field('len', `${t('Width')}${unitLabel() ? ` (${unitLabel()})` : ''}`, formatLength(m.dx))}
         {field('ang', `${t('Height')}${unitLabel() ? ` (${unitLabel()})` : ''}`, formatLength(m.dy))}
       </> : <>
