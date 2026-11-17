@@ -443,7 +443,9 @@ public static class Rooms
             if (Of(room, m, c.Geometry) is not { } o) continue;
             if (scheme != null && ColorSchemes.LookOf(scheme, room) is { } look && Fill(c, o, look, patterns) is { } fill) yield return fill;
             if (finishes && FinishHatchMark(c, room, o, finishPart, patterns, hiddenElements, graphics) is { } fh) yield return fh;
-            yield return Stamp(c, room, o, type, style);
+            // A tag rule of the rooms' that holds on this one gives its stamp (issue #72): a room's type of stamp, else the rooms' own.
+            if (TagRules.RuleType(m, c.Book, room) is { Shape: "room" } ruled) yield return Stamp(c, room, o, ruled, Standards.TextOf(c.Book, ruled.TextStyle));
+            else yield return Stamp(c, room, o, type, style);
         }
     }
 

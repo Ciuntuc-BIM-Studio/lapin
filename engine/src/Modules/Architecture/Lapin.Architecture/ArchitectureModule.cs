@@ -629,6 +629,9 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         // ------------------------------------------------------------ rooms
         // The scopes formulas and tags read a room by (decision 551): {room.name}, a door's {fromRoom.number}, {toRoom.number}.
         RoomScopes.Register();
+        // What the tag rules read of a door or a window: its width, height and sill (issue #72).
+        TagRules.AddMeasure(IfcClass.Door, OpeningMarkers.Measure);
+        TagRules.AddMeasure(IfcClass.Window, OpeningMarkers.Measure);
         // Room separation lines (forum topic 80): virtual walls rooms are bounded by.
         RoomDividerElements.Register(r);
         r.Class(new(Rooms.Class, "Room",

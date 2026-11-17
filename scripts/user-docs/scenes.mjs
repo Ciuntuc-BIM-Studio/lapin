@@ -11676,6 +11676,49 @@ export const scenes = [
       await t.ui({ dialog: null });
     },
   },
+  {
+    // Issue #72 (forum topic 114): the door markers drawn by a symbol of one's own (the mark and width in a box beyond the line's
+    // exterior end), the tag rules in Drafting standards → Tags (a door with a fire rating takes the fire door's marker), and a
+    // marker's Shown and Tag type in its properties.
+    id: 'tag-rules',
+    touches: ['core', 'architecture', 'drafting'],
+    async run(t) {
+      await t.fresh();
+      const { storey, walls } = await house(t, { roof: false });
+      const symbol = await t.cmd('symbols.create', { name: 'Door box', def: { scale: 'annotation', category: 'annotation', items: [
+        { type: 'rect', x: -7, y: -3, w: 14, h: 6, stroke: 0.35 },
+        { type: 'text', at: [0, 0], text: '{mark} · {width}', h: 2.2, align: 'middle', valign: 'middle' },
+      ] } });
+      await t.cmd('standards.set', { kind: 'tag', entry: { id: 'door', symbol: symbol.id } });
+      await t.cmd('standards.set', { kind: 'tag', entry: { id: 'door-fire', name: 'Fire door marker', template: '{mark} {FireRating}', inner: '{width}/{height}', shape: 'opening', classes: '' } });
+      await t.cmd('standards.set', { kind: 'tagRule', entry: { class: 'IfcDoor', when: 'FireRating != ""', tagType: 'door-fire' } });
+      const fire = (await t.cmd('architecture.addDoor', { wallId: walls.inner, x: 7, y: 4 })).id;
+      await t.cmd('element.setParam', { ids: [fire], name: 'Fire rating', kind: 'text', value: 'EI30' });
+      const plan = await t.cmd('view.create', { kind: 'plan', storeyId: storey, name: 'Ground floor plan' });
+      await t.ui({ planViewId: plan.id, keyPlan: false });
+      await t.cmd('architecture.tagOpenings', { viewId: plan.id });
+      await t.wait(1200);
+      const drawn = JSON.stringify(await t.call('doc.query', { name: 'view.drawing', args: { id: plan.id } }));
+      t.expect(drawn.includes(' · 90'), 'the door marker is the symbol, its texts the door\'s mark and width');
+      t.expect(drawn.includes(' EI30'), 'the door with a fire rating takes the fire door\'s marker by the rule');
+      await t.fit();
+      await t.shot('tag-marker-symbol', { of: '[data-testid=plan]', pad: 0 });
+      // The rules under the tag types.
+      await t.tool('manage.standards');
+      const dialog = t.page.locator('.dialog');
+      await dialog.getByText('Tags', { exact: true }).first().click();
+      await t.wait(600);
+      t.expect(await dialog.locator('[data-tag-rules] [data-field=tag-rule-when]').count() === 1, 'the Tags tab lists the tag rule');
+      t.expect(await dialog.locator('[data-field=tag-rule-new]').count() === 1, 'and New rule');
+      await t.shot('tag-rules', { of: '[data-tag-rules]', pad: 6 });
+      await t.ui({ dialog: null });
+      // A marker's properties: Shown, and its Tag type among the markers'.
+      const tag = (await t.nodes()).find((n) => n.type === 'IfcAnnotation' && n.props.predefinedType === 'TAG');
+      await t.ui({ selection: tag.id, selected: [tag.id] });
+      await t.wait(700);
+      t.expect(await t.page.locator('[data-tag-shown]').count() === 1 && await t.page.locator('[data-tag-marker-type]').count() === 1, 'a marker\'s properties have Shown and Tag type');
+    },
+  },
   // [scenes:B1]
   {
     // Rule packs (docs/plan-user-extensibility.md §5.4): Lapin's own read only, a copy of the project's with a stricter riser, in use; the check

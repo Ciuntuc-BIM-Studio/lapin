@@ -6,7 +6,7 @@ export interface StandardsPack { name?: string | null; entries: PackEntry[]; opt
 /** The kinds of entry a file carries, as the engine names them. */
 export const KIND_LABELS: Record<string, string> = {
   text: 'Text style', dim: 'Dimension style', axis: 'Grid axis style', tag: 'Tag type', layer: 'Layer', layerGroup: 'Layer group',
-  lineType: 'Line type', pattern: 'Hatch pattern', symbol: 'Symbol',
+  lineType: 'Line type', pattern: 'Hatch pattern', symbol: 'Symbol', tagRule: 'Tag rule',
 };
 
 export const kindLabel = (kind: string): string => KIND_LABELS[kind] ?? kind;

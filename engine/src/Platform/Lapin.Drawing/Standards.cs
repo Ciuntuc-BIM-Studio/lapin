@@ -61,7 +61,9 @@ public sealed record AxisStyle(string Id, string Name, string TextStyle, string 
 /// shoulder underlines the text's first row, each, the last or none (<see cref="Underline"/>), reaching
 /// <see cref="Extension"/> paper mm further out from the text towards the knee.
 /// A box or a room's stamp may be drawn by a symbol of the user's instead (decision 552, <see cref="Symbol"/>: a symbol's id):
-/// its lines as drawn, its texts' {fields} read from the tagged element as the template's are, at the tag's point.
+/// its lines as drawn, its texts' {fields} read from the tagged element as the template's are, at the tag's point. A door's or
+/// window's marker (issue #72) draws the symbol at its line's exterior end instead of its outer text, its texts reading the
+/// door or window ({mark}, {width}, {height}, {sill} as the marker writes them, any field, formulas); without one it is as before.
 /// </summary>
 public sealed record TagType(string Id, string Name, string Template, IReadOnlyList<string> Classes,
     string Shape = "box", string Inner = "", string Unit = "cm", double Reach = 6, string TextStyle = Standards.Standard, string TextOrientation = "across",
@@ -91,6 +93,14 @@ public sealed record TagType(string Id, string Name, string Template, IReadOnlyL
     /// <summary>How much further (paper mm) an elbow leader's shoulder reaches out from the text towards its knee.</summary>
     [JsonIgnore] public double ExtensionOrDefault => Extension is > 0 ? Extension.Value : 0;
 }
+
+/// <summary>
+/// A tag rule (issue #72, forum topic 114): per class, a condition (a formula over the element's fields, as <c>{= …}</c> reads
+/// them: <c>width &gt; 1.2</c>, <c>FireRating != ""</c>, <c>IsExternal</c>) and the tag type it gives when the condition holds.
+/// The rules of a class are tried in their order and the first that holds wins, over the type a tag was made with; a tag whose
+/// type was chosen in its properties keeps that one. No rule, or none that holds: the tag's own type, as before.
+/// </summary>
+public sealed record TagRule(string Id, string Class, string When, string TagType);
 
 /// <summary>Layers gathered under a group that shows and locks them together.</summary>
 public sealed record LayerGroup(string Id, string Name, bool Visible, bool Locked);
@@ -130,6 +140,7 @@ public sealed record DraftLayer(string Id, string Name, string Color, bool Visib
 /// <see cref="DimAutoText"/> and <see cref="DimTextLeader"/> (forum #78): dimension values that do not fit between their witness
 /// lines are moved clear of their neighbours, with a leader once moved further than that many paper mm, unless a dimension style
 /// says otherwise; on by default (values that fit are drawn exactly as before).
+/// <see cref="TagRules"/> (issue #72): the conditional tag rules, in their order (null: none, every tag its own type).
 /// </summary>
 public sealed record StyleBook(
     IReadOnlyList<TextStyle> TextStyles, IReadOnlyList<DimStyle> DimStyles, IReadOnlyList<AxisStyle> AxisStyles,
@@ -137,7 +148,7 @@ public sealed record StyleBook(
     string LineCap = "round", string Units = "mm", double? SectionMarkSize = null, double? SectionMarkText = null, double? ElevationMarkSize = null, double? ElevationMarkText = null,
     double? AreaRounding = null, IReadOnlyList<double>? Scales = null, double? PlanScale = null, double? SectionScale = null, double? ElevationScale = null,
     IReadOnlyList<LineTypeDef>? LineTypes = null, bool SuppressZeros = false, int LevelDecimals = Standards.DefaultLevelDecimals, string LevelZeros = "project",
-    bool DimAutoText = true, double DimTextLeader = Standards.DefaultTextLeader)
+    bool DimAutoText = true, double DimTextLeader = Standards.DefaultTextLeader, IReadOnlyList<TagRule>? TagRules = null)
 {
     public static StyleBook Default => Standards.Read(null);
 }
@@ -267,6 +278,16 @@ public static class Standards
             Text("symbol"));
     }
 
+    /// <summary>A tag rule as a file or a command gives it: a class, a condition and a tag type, each not empty; null when it is not one.</summary>
+    static TagRule? ReadTagRule(JsonObject v)
+    {
+        string Text(string key) => v[key] is JsonValue x && x.TryGetValue<string>(out var t) ? t.Trim() : "";
+        var (cls, when, type) = (Text("class"), Text("when"), Text("tagType"));
+        if (cls.Length == 0 || when.Length is 0 or > 2000 || type.Length == 0) return null;
+        var id = Text("id") is { Length: > 0 } given ? given : $"rule-{cls}-{type}";
+        return new TagRule(id, cls, when, type);
+    }
+
     /// <summary>A tag's leader (decision 331): straight from its box, or an elbow whose shoulder runs along the text.</summary>
     public static readonly string[] LeaderShapes = ["straight", "elbow"];
     /// <summary>What an elbow leader's shoulder underlines: the text's first row, each row, the last, or none (it stops at the text's side).</summary>
@@ -375,7 +396,8 @@ public static class Standards
             ViewScales(o["scales"]), ViewScale(o["planScale"]), ViewScale(o["sectionScale"]), ViewScale(o["elevationScale"]),
             own.Count > 0 ? own : null, True(o["suppressZeros"]),
             LevelDecimalsOf(o["levelDecimals"]) ?? DefaultLevelDecimals, OneOf(o["levelZeros"], ZeroChoices, "project"),
-            o["dimAutoText"] is not JsonValue av || !av.TryGetValue<bool>(out var autoText) || autoText, TextLeaderOf(o["dimTextLeader"]) ?? DefaultTextLeader);
+            o["dimAutoText"] is not JsonValue av || !av.TryGetValue<bool>(out var autoText) || autoText, TextLeaderOf(o["dimTextLeader"]) ?? DefaultTextLeader,
+            List("tagRules").Select(ReadTagRule).OfType<TagRule>().DistinctBy(r => r.Id).ToList() is { Count: > 0 } rules ? rules : null);
     }
 
     public static JsonObject ToJson(StyleBook b) => (JsonObject)JsonSerializer.SerializeToNode(b, DrawingJson.Default.StyleBook)!;

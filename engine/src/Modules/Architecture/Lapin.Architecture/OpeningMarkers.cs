@@ -31,9 +31,10 @@ public static class OpeningMarkers
         foreach (var t in m.OfClass(IfcClass.Annotation).Where(x => x.PredefinedType == "TAG" && x.Str("viewId") == c.View.Id))
         {
             if (m.Get(t.Str("element") ?? "") is not { Class: IfcClass.Door or IfcClass.Window } fill) continue;
-            if (Standards.TagTypeOf(c.Book, t.Str("tagType")) is not { Shape: "opening" } type) continue;
+            // Its type: chosen for it, else the first tag rule of its class that holds, else its own (issue #72).
+            if (TagRules.TypeOf(m, c.Book, t, fill) is not { Shape: "opening" } type) continue;
             if (Openings.OpeningOf(m, fill.Id) is not { } opening || Openings.WallOf(m, opening.Id) is not { } wall) continue;
-            if (Mark(c, t, fill, wall, Openings.Place(m, opening), type) is { } mark) yield return mark;
+            if (Mark(c, t, fill, wall, Openings.Place(m, opening), type) is { } mark) yield return TagRules.Off(t) ? TagRules.Ghost(mark, c.Mm) : mark;
         }
     }
 
@@ -99,7 +100,9 @@ public static class OpeningMarkers
                 data.Add((JsonNode)LabelParts.TextData(key, at, at0, along, outward, mm, angle, angle0, rotAt, part, box));
             }
         }
-        Write("o", b, outward, TagText.Lines(type.Template, c.Model, fill, values, c.Book.Units));
+        // Its outer text, or the type's symbol there (issue #72), its texts reading the door or window as the template does.
+        if (type.Symbol is not { } symbolId || !Symbol(c, mark, data, symbolId, fill, values, b, outward, along, alongLine, parts, color))
+            Write("o", b, outward, TagText.Lines(type.Template, c.Model, fill, values, c.Book.Units));
         Write("i", a, outward * -1, TagText.Lines(type.Inner, c.Model, fill, values, c.Book.Units));
         mark.Data = new JsonObject { ["of"] = fill.Id, ["marker"] = true, ["parts"] = data };
         mark.Snaps.Add(a);
@@ -108,10 +111,54 @@ public static class OpeningMarkers
     }
 
     /// <summary>
+    /// A marker's symbol (issue #72) beyond its line's exterior end <paramref name="b"/>, clear of it: turned as its texts would
+    /// lie (along the wall, or along the line), upright; its part o0 moved and turned on screen as a text line is. False when the
+    /// symbol is gone (the outer text is drawn instead).
+    /// </summary>
+    static bool Symbol(ViewContext c, ViewMark mark, JsonArray data, string symbolId, Entity fill, IReadOnlyDictionary<string, string> values,
+        Vec2 b, Vec2 outward, Vec2 along, bool alongLine, JsonObject? parts, string color)
+    {
+        var mm = c.Mm;
+        var part = LabelParts.Of(parts, "o0");
+        var angle0 = LabelParts.Upright(LabelParts.AngleOf(alongLine ? outward : along));
+        var angle = part.Rot is { } r ? LabelParts.Upright(angle0 + r) : angle0;
+        var rad = angle * Math.PI / 180;
+        if (TagSymbols.Lay(c, symbolId, b, rad, fill, values) is not { } laid) return false;
+        // Its box about its own origin, turned: how far it reaches along the line's outward direction, so it stands clear of the end.
+        var (mn, mx) = laid.Drawing.Bounds();
+        var u = laid.Xf.Unit;
+        var (cx, cy, hw, hh) = ((mn.X + mx.X) / 2 * u, (mn.Y + mx.Y) / 2 * u, Math.Max((mx.X - mn.X) / 2 * u, mm), Math.Max((mx.Y - mn.Y) / 2 * u, mm));
+        var (cos, sin) = (Math.Cos(rad), Math.Sin(rad));
+        var offset = new Vec2(cx * cos - cy * sin, cx * sin + cy * cos);
+        var (ux, vy) = (LabelParts.Dir(angle), new Vec2(-Math.Sin(rad), Math.Cos(rad)));
+        var reach = hw * Math.Abs(Vec2.Dot(ux, outward)) + hh * Math.Abs(Vec2.Dot(vy, outward));
+        var centre0 = b + outward * (reach + 0.9 * mm);
+        var centre = LabelParts.Moved(centre0, part, along, outward, mm);
+        var at = centre - offset;
+        var moved = (laid.Drawing, laid.Xf with { At = at });
+        TagSymbols.Into(c, mark, moved, at, rad, "TAG", color);
+        var rotAt = centre + ux * (hw + 2.5 * mm);
+        data.Add((JsonNode)LabelParts.TextData("o0", centre, centre0, along, outward, mm, angle, angle0, rotAt, part, (centre, hw, hh, angle)));
+        return true;
+    }
+
+    /// <summary>
     /// Markers for every door and window of a plan's storey not yet tagged in
     /// it: each with the type named for its kind, else the standards' type for
     /// its class. Returns how many were made.
     /// </summary>
+    /// <summary>
+    /// What the tag rules' conditions read of a door or a window (issue #72), in metres: its <c>width</c> and <c>height</c> (its
+    /// type's size, as its marker writes them) and its <c>sill</c>; null for any other name, or a door or window in no opening.
+    /// </summary>
+    public static double? Measure(IModelView m, Entity fill, string name)
+    {
+        var key = TagText.Squash(name);
+        if (key is not ("width" or "height" or "sill") || Openings.OpeningOf(m, fill.Id) is not { } opening) return null;
+        var p = Openings.Place(m, opening);
+        return key switch { "width" => p.Spec?.Width ?? p.Width, "height" => p.Spec?.Height ?? p.Height, _ => p.FillSill };
+    }
+
     public static int TagAll(ICommandContext ctx, Entity view, string? doorType, string? windowType)
     {
         var m = ctx.Model;
@@ -124,7 +171,9 @@ public static class OpeningMarkers
             if (tagged.Contains(fill.Id) || Openings.OpeningOf(m, fill.Id) is not { } opening || Openings.WallOf(m, opening.Id) is not { } wall) continue;
             if (Spatial.StoreyOf(m, wall.Id)?.Id != storey) continue;
             var named = fill.Class == IfcClass.Door ? doorType : windowType;
-            var type = Standards.TagTypeOf(book, named, fill.Class) ?? (named != null ? throw new CommandException("There is no such tag type.") : null);
+            // The type named, else the first tag rule of its class that holds (issue #72), else the standards' type for its class.
+            var type = (named == null ? TagRules.RuleType(m, book, fill) : null) ?? Standards.TagTypeOf(book, named, fill.Class)
+                ?? (named != null ? throw new CommandException("There is no such tag type.") : null);
             if (type == null) continue;
             var p = Openings.Place(m, opening);
             var centre = Openings.FrameOf(m, wall, p.Along).At(p.Along, 0, 0);
