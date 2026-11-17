@@ -140,6 +140,28 @@ public static class SymbolRender
                     if (w > 0) o.Strokes.Add(new SymStroke(Round(P(item["c"]), r, start, sweep), false, w, (string?)item["color"], Dash(item["dash"]), alpha));
                     break;
                 }
+                // A drafting table (docs/plan-drafting-tables.md §3b): its cells read this instance's live text (and a tag's
+                // element's fields), so each copy lays its own sizes; its lines at their paper widths, its texts as the symbol's.
+                case "table" when item["table"] is JsonObject tj:
+                {
+                    var g = DraftingTables.Read(tj);
+                    var v = new DraftingTables.Values(g, resolve, null, null, fields);
+                    var style = (string?)item["style"] is { Length: > 0 } tsid ? Standards.TextOf(book, tsid) : null;
+                    var font = (string?)item["font"] ?? style?.Font ?? "sans";
+                    // "": the instance's colour (as a symbol's text without its own).
+                    var l = DraftingTables.Lay(g, v, (font, style?.Bold ?? false, style?.Italic ?? false, style?.Color ?? ""));
+                    var at = P(item["at"]);
+                    var deg = Json.Number(item["angle"]) ?? 0;
+                    var rad = deg * Math.PI / 180;
+                    var (u, n) = (new Vec2(Math.Cos(rad), Math.Sin(rad)), new Vec2(-Math.Sin(rad), Math.Cos(rad)));
+                    Vec2 To(double x, double y) => at + u * x - n * y;
+                    foreach (var (x0, y0, x1, y1, c) in DraftingTables.Fills(g, l)) o.Fills.Add(new SymFill([[To(x0, y0), To(x1, y0), To(x1, y1), To(x0, y1)]], c, alpha));
+                    foreach (var (x0, y0, x1, y1, pen) in DraftingTables.Lines(g, l)) o.Strokes.Add(new SymStroke([To(x0, y0), To(x1, y1)], false, pen.W, pen.C, null, alpha));
+                    foreach (var p in DraftingTables.Placements(g, l))
+                        o.Texts.Add(new SymText(To(p.X, p.Y), p.Text, p.Style.Size, deg + p.Turn, p.Anchor, "bottom", p.Style.Bold, font, p.Style.Italic, p.Style.Color is { Length: > 0 } tc ? tc : null, alpha));
+                    if (unknown != null) unknown.AddRange(v.Errors);
+                    break;
+                }
                 case "text":
                 {
                     var raw = item["text"]?.ToString() ?? "";

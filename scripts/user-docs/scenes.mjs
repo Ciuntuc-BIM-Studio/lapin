@@ -7929,6 +7929,140 @@ export const scenes = [
     },
   },
   {
+    // Drafting tables, stage 2 (docs/plan-drafting-tables.md §3): a table reads another by its name; the editor's picker shows
+    // the other table's cells and puts a reference into the selected cell.
+    id: 'drafting-table-refs',
+    touches: ['drafting'],
+    async run(t) {
+      await t.fresh();
+      const sheet = await t.cmd('sheet.create', { name: 'Rooms', number: 'A-103', paper: 'A4' });
+      const paper = `paper:${sheet.id}`;
+      await t.cmd('drafting.addTable', { viewId: paper, at: [0.03, 0.19], rows: 4, cols: 2, preset: 'header', name: 'Areas',
+        cells: [['Room', 'Area (m²)'], ['Living', '24.50'], ['Kitchen', '12.25'], ['Bedroom', '15.80']] });
+      const summary = await t.cmd('drafting.addTable', { viewId: paper, at: [0.11, 0.19], rows: 3, cols: 2, preset: 'header', name: 'Summary',
+        cells: [['What', 'Value'], ['Total area', '{= sum(table.Areas.B2:B4) | 0.00} m²'], ['Largest room', '']] });
+      await t.ui({ view: 'sheet', sheetId: sheet.id });
+      await t.page.waitForSelector('[data-testid=sheet-annotate]', { timeout: 10_000 });
+      await t.page.locator('[data-testid=sheet-annotate]').click();
+      await t.page.waitForSelector('[data-testid=paper-back]', { timeout: 10_000 });
+      await t.wait(800);
+      await t.page.evaluate(async (id) => (await import('/src/modules/drafting/table/tableStore.ts')).openTableEditor(id), summary.id);
+      await t.page.waitForSelector('[data-table-editor]', { timeout: 10_000 });
+      // B3 selected; the picker shows Areas, its B2 cell picked and put in as a field.
+      await t.page.locator('[data-table-editor] td[data-cell=B3]').click();
+      const areas = (await t.nodes()).find((n) => n.name === 'Areas' && n.props?.predefinedType === 'TABLE');
+      await t.page.locator('[data-testid=table-ref-table]').selectOption(areas.id);
+      await t.page.waitForSelector('[data-ref-cell=B2]', { timeout: 10_000 });
+      await t.page.locator('[data-ref-cell=A2]').click();
+      await t.page.locator('[data-testid=table-ref-insert]').click();
+      await t.until(async () => (await t.page.locator('[data-table-editor] td[data-cell=B3]').textContent()) === 'Living', 'the picked cell reads in the summary');
+      await t.page.locator('[data-ref-cell=B2]').click();
+      await t.page.locator('[data-ref-cell=B4]').click({ modifiers: ['Shift'] });
+      await t.until(async () => (await t.page.locator('[data-table-editor] td[data-cell=B2]').textContent()) === '52.55 m²', 'the total reads the other table');
+      await t.shot('drafting-table-refs', { of: '[data-table-editor]', pad: 0 });
+      const info = await t.call('doc.query', { name: 'drafting.table', args: { id: summary.id } });
+      t.expect(info.cells[2][1].t === '{table.Areas.A2}', 'the picker puts a field naming the other table');
+    },
+  },
+  {
+    // Drafting tables, stage 3 (docs/plan-drafting-tables.md §6): column headings turned to read up their row, a cell's own
+    // padding, the table saved as a table style of the drafting standards and a new table made in it.
+    id: 'drafting-table-styles',
+    touches: ['drafting', 'core'],
+    async run(t) {
+      await t.fresh();
+      const sheet = await t.cmd('sheet.create', { name: 'Finishes', number: 'A-104', paper: 'A4' });
+      const paper = `paper:${sheet.id}`;
+      const made = await t.cmd('drafting.addTable', { viewId: paper, at: [0.03, 0.19], rows: 4, cols: 4, preset: 'header', name: 'Finishes',
+        cells: [['Room', 'Floor', 'Walls', 'Ceiling'], ['Living', 'oak', 'paint', 'plaster'], ['Kitchen', 'tiles', 'tiles', 'paint'], ['Bath', 'tiles', 'tiles', 'board']] });
+      await t.cmd('drafting.editTable', { id: made.id, ops: [
+        { op: 'style', range: 'B1:D1', style: { rot: 90, align: 'left', valign: 'bottom' } },
+        { op: 'fit', range: 'B1:D4', axis: 'cols' },
+        { op: 'style', range: 'A2:D4', style: { pad: 1.5 } },
+        { op: 'style', range: 'A3:D3', style: { fill: '#f2f2f2' } },
+      ] });
+      await t.cmd('drafting.saveTableStyle', { id: made.id, name: 'Finish schedule' });
+      await t.ui({ view: 'sheet', sheetId: sheet.id });
+      await t.page.waitForSelector('[data-testid=sheet-annotate]', { timeout: 10_000 });
+      await t.page.locator('[data-testid=sheet-annotate]').click();
+      await t.page.waitForSelector('[data-testid=paper-back]', { timeout: 10_000 });
+      await t.wait(800);
+      await t.page.evaluate(async (id) => (await import('/src/modules/drafting/table/tableStore.ts')).openTableEditor(id), made.id);
+      await t.page.waitForSelector('[data-table-editor]', { timeout: 10_000 });
+      await t.page.locator('[data-table-editor] td[data-cell=C1]').click();
+      await t.until(async () => (await t.page.locator('[data-testid=table-rot]').inputValue()) === '90', 'the heading reads up its row');
+      await t.shot('drafting-table-styles', { of: '[data-table-editor]', pad: 0 });
+      const book = await t.call('doc.query', { name: 'standards.get', args: {} });
+      t.expect((book.tableStyles ?? []).some((x) => x.name === 'Finish schedule'), 'the table style is kept in the drafting standards');
+    },
+  },
+  {
+    // Drafting tables, stage 4 (docs/plan-drafting-tables.md §3b): a table whose rows are linked to walls, each row reading its
+    // wall's name and length, and a symbol drawn as a table whose copies lay their own sizes from their values.
+    id: 'drafting-table-model',
+    touches: ['drafting', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const storey = await t.storey();
+      const walls = [];
+      for (const [i, [x1, y1, x2, y2]] of [[0, 0, 6, 0], [6, 0, 6, 4], [6, 4, 0, 4], [0, 4, 0, 0]].entries()) {
+        const w = await t.cmd('architecture.addWall', { storeyId: storey, x1, y1, x2, y2 });
+        await t.cmd('element.rename', { id: w.id, name: `W-0${i + 1}` });
+        walls.push(w.id);
+      }
+      const table = await t.cmd('drafting.addTable', { viewId: `plan:${storey}`, at: [8, 4], rows: 2, cols: 3, preset: 'header', name: 'Walls',
+        cells: [['Wall', 'Length (m)', 'Fire rating'], ['{el.name}', '{= el.Length | 0.00}', '{el.FireRating}']] });
+      await t.cmd('element.setParam', { id: walls[0], pset: 'Pset_WallCommon', name: 'FireRating', value: 'REI 90' });
+      await t.cmd('drafting.editTable', { id: table.id, ops: [{ op: 'linkRows', at: 'A2', els: walls }, { op: 'style', range: 'B2:B5', style: { align: 'right' } }] });
+      // A room box: a symbol drawn as a table, its copies reading their own values.
+      const def = {
+        scale: 'annotation', category: 'annotation',
+        items: [{ type: 'table', at: [0, 0], table: {
+          cols: [{ w: 10, fit: true }, { w: 10, fit: true }],
+          rows: [{ h: 5, fit: true, cells: [{ t: '{attr.name}', bold: true, cs: 2 }, null] }, { h: 5, fit: true, cells: [{ t: '{= attr.area | 0.00} m²' }, { t: '{attr.floor}' }] }],
+          style: { size: 2.5, pad: 1, grid: { w: 0.18, c: '#000000' }, outline: { w: 0.35, c: '#000000' } } } }],
+        attributes: [{ key: 'name', default: 'Room' }, { key: 'area', default: '0' }, { key: 'floor', default: '' }],
+      };
+      const sym = await t.cmd('symbols.create', { name: 'Room box', def });
+      await t.cmd('drafting.placeSymbol', { symbolId: sym.id, viewId: `plan:${storey}`, at: [0.6, 3.4], values: { name: 'Living room', area: '24.456', floor: 'oak' } });
+      await t.cmd('drafting.placeSymbol', { symbolId: sym.id, viewId: `plan:${storey}`, at: [3.6, 1.4], values: { name: 'WC', area: '3.5', floor: 'tiles' } });
+      await t.wait(1000);
+      await t.fit();
+      await t.shot('drafting-table-model-plan', { of: '.view-pane', pad: 0 });
+      await t.page.evaluate(async (id) => (await import('/src/modules/drafting/table/tableStore.ts')).openTableEditor(id), table.id);
+      await t.page.waitForSelector('[data-table-editor]', { timeout: 10_000 });
+      await t.page.locator('[data-table-editor] td[data-cell=B2]').click();
+      await t.until(async () => (await t.page.locator('[data-table-editor] td[data-cell=A5]').textContent()) === 'W-04', 'a row each wall');
+      await t.page.waitForSelector('[data-testid=table-reads]', { timeout: 10_000 });
+      await t.shot('drafting-table-model', { of: '[data-table-editor]', pad: 0 });
+      const info = await t.call('doc.query', { name: 'drafting.table', args: { id: table.id } });
+      t.expect(info.cells[1][1].shown === '6.00' && info.cells[1][2].shown === 'REI 90', 'the linked row reads its wall');
+    },
+  },
+  {
+    // Drafting tables, stage 5: a long table broken after four rows, each part with its header again, on a sheet.
+    id: 'drafting-table-long',
+    touches: ['drafting'],
+    async run(t) {
+      await t.fresh();
+      const sheet = await t.cmd('sheet.create', { name: 'Room list', number: 'A-105', paper: 'A4' });
+      const paper = `paper:${sheet.id}`;
+      const rooms = ['Hall', 'Living', 'Kitchen', 'Pantry', 'Bath', 'Bedroom 1', 'Bedroom 2', 'Study', 'Laundry', 'Terrace'];
+      const cells = [['No.', 'Room', 'Area (m²)'], ...rooms.map((r, i) => [String(i + 1), r, (8 + i * 2.35).toFixed(2)])];
+      const table = await t.cmd('drafting.addTable', { viewId: paper, at: [0.03, 0.19], rows: cells.length, cols: 3, preset: 'header', name: 'Rooms', cells });
+      await t.cmd('drafting.editTable', { id: table.id, ops: [{ op: 'fit', range: 'A1:C11', axis: 'cols', min: 10 }, { op: 'style', range: 'C2:C11', style: { align: 'right' } }, { op: 'parts', rows: 4, gap: 6 }] });
+      await t.ui({ view: 'sheet', sheetId: sheet.id });
+      await t.page.waitForSelector('[data-testid=sheet-annotate]', { timeout: 10_000 });
+      await t.page.locator('[data-testid=sheet-annotate]').click();
+      await t.page.waitForSelector('[data-testid=paper-back]', { timeout: 10_000 });
+      await t.wait(1000);
+      await t.fit();
+      const info = await t.call('doc.query', { name: 'drafting.table', args: { id: table.id } });
+      t.expect(info.parts === 3, 'ten rooms four a part: three parts');
+      await t.shot('drafting-table-long', { of: '.view-pane:has([data-testid=paper-back])', pad: 0 });
+    },
+  },
+  {
     id: 'title-blocks',
     async run(t) {
       // A title block of one's own (decision 340, report #76): the project's data and a parameter of its own, a Finnish-style

@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json.Nodes;
+using Lapin.Drawing;
 using Lapin.Geometry;
 using Lapin.Model;
 using Lapin.Platform;
@@ -15,11 +16,11 @@ namespace Lapin.Drafting;
 public static class TableEdits
 {
     public static readonly string[] Ops =
-        ["set", "style", "borders", "merge", "split", "insertRows", "deleteRows", "insertCols", "deleteCols", "colWidth", "rowHeight", "fit", "tableStyle", "preset"];
+        ["set", "style", "borders", "merge", "split", "insertRows", "deleteRows", "insertCols", "deleteCols", "colWidth", "rowHeight", "fit", "tableStyle", "preset", "header", "link", "linkRows", "parts", "load"];
 
     public static readonly string[] BorderKinds = ["all", "outer", "inner", "top", "bottom", "left", "right", "none", "default"];
 
-    static readonly string[] CellStyleKeys = ["fill", "color", "bold", "italic", "size", "align", "valign"];
+    static readonly string[] CellStyleKeys = ["fill", "color", "bold", "italic", "size", "align", "valign", "pad", "rot"];
     static readonly string[] TableStyleKeys = ["size", "pad", "color", "fill", "align", "valign", "grid", "outline"];
     static readonly string[] Sides = ["top", "bottom", "left", "right"];
 
@@ -86,6 +87,7 @@ public static class TableEdits
             "bold" or "italic" => v is JsonValue b && b.TryGetValue<bool>(out var x) ? x : throw new CommandException($"{k} is true or false."),
             "size" => Json.Number(v) is double s && s is >= 0.5 and <= 50 ? s : throw new CommandException("A text's height is 0.5 to 50 mm."),
             "pad" => Json.Number(v) is double p && p is >= 0 and <= 50 ? p : throw new CommandException("A cell's padding is 0 to 50 mm."),
+            "rot" => Json.Number(v) is double r && DraftingTables.Rotations.Contains((int)r) && r == Math.Floor(r) ? (r == 0 ? null : (int)r) : throw new CommandException("A cell's text turns 0, 90 or 270°."),
             "align" => (string?)v is { } a && DraftingTables.Aligns.Contains(a) ? a : throw new CommandException($"A text aligns {string.Join(", ", DraftingTables.Aligns)}."),
             "valign" => (string?)v is { } a && DraftingTables.VAligns.Contains(a) ? a : throw new CommandException($"A text stands {string.Join(", ", DraftingTables.VAligns)}."),
             "grid" or "outline" => SideValue(v),
@@ -101,7 +103,9 @@ public static class TableEdits
     }
 
     /// <summary>The ops applied in order to a table's JSON (a copy, returned): any that does not read refuses them all.</summary>
-    public static JsonObject Apply(JsonObject? table, JsonArray ops)
+    public static JsonObject Apply(JsonObject? table, JsonArray ops, IReadOnlyList<TableStyleDef>? styles = null, Func<string, bool>? exists = null) => Apply(table, ops, null, styles, exists);
+
+    static JsonObject Apply(JsonObject? table, JsonArray ops, List<Shifted>? shifts, IReadOnlyList<TableStyleDef>? styles, Func<string, bool>? exists)
     {
         var t = Normal(table);
         foreach (var n in ops)
@@ -149,6 +153,7 @@ public static class TableEdits
                     var at = Whole(op["at"], "Where");
                     var count = op["count"] is null ? 1 : Whole(op["count"], "How many");
                     Insert(t, g, rows, at, count);
+                    shifts?.Add(new Shifted(rows, at, count, true));
                     break;
                 }
                 case "deleteRows" or "deleteCols":
@@ -157,6 +162,7 @@ public static class TableEdits
                     var at = Whole(op["at"], "Which");
                     var count = op["count"] is null ? 1 : Whole(op["count"], "How many");
                     Delete(t, g, rows, at, count);
+                    shifts?.Add(new Shifted(rows, at, count, false));
                     break;
                 }
                 case "colWidth" or "rowHeight":
@@ -192,6 +198,92 @@ public static class TableEdits
                     if (axis is "cols" or "both") Fit(Cols(t), b.C0, b.C1);
                     break;
                 }
+                // The rows of a range marked header rows or not (stage 3): a style's header, the rows a long table repeats (stage 5).
+                case "header":
+                {
+                    var b = RangeOf(op, g);
+                    var on = op["on"] is not JsonValue hv || !hv.TryGetValue<bool>(out var hb) || hb;
+                    for (var r = b.R0; r <= b.R1; r++) { var row = (JsonObject)Rows(t)[r]!; if (on) row["header"] = true; else row.Remove("header"); }
+                    break;
+                }
+                // Cells, rows or the whole table linked to an element (stage 4: el.<field> reads it), or unlinked (el null).
+                case "link":
+                {
+                    var el = Element(op["el"], exists);
+                    var on = (string?)op["on"] ?? "cells";
+                    if (on == "table") { if (el == null) t.Remove("el"); else t["el"] = el; break; }
+                    var b = RangeOf(op, g);
+                    if (on == "rows")
+                        for (var r = b.R0; r <= b.R1; r++) { var row = (JsonObject)Rows(t)[r]!; if (el == null) row.Remove("el"); else row["el"] = el; }
+                    else if (on == "cells")
+                        foreach (var (r, c) in Masters(g, b)) { var o = Own(t, r, c); if (el == null) o.Remove("el"); else o["el"] = el; Tidy(t, r, c); }
+                    else throw new CommandException("Link cells, rows or the table.");
+                    break;
+                }
+                // Elements one a row from a row down (stage 4): rows added past the table's end, the first row's texts copied into
+                // the empty cells of the others, their references moved down as a spreadsheet's fill does.
+                case "linkRows":
+                {
+                    var at = DraftingTables.Parse((string?)op["at"] ?? (string?)op["cell"]) ?? throw new CommandException("From which row? A cell of it, such as A2.");
+                    if (at.R >= g.R) throw new CommandException($"Row {at.R + 1} is past the table.");
+                    var els = (op["els"] as JsonArray ?? throw new CommandException("Which elements? els: [ids].")).Select(x => Element(x, exists) ?? throw new CommandException("An element's id is missing.")).ToList();
+                    if (els.Count == 0) throw new CommandException("Which elements? els: [ids].");
+                    var need = at.R + els.Count - g.R;
+                    if (need > 0) { Insert(t, g, rows: true, g.R, need); shifts?.Add(new Shifted(true, g.R, need, true)); }
+                    var copy = op["copy"] is not JsonValue cv || !cv.TryGetValue<bool>(out var cb) || cb;
+                    var first = CellsOf(t, at.R);
+                    for (var k = 0; k < els.Count; k++)
+                    {
+                        var row = (JsonObject)Rows(t)[at.R + k]!;
+                        row["el"] = els[k];
+                        if (!copy || k == 0) continue;
+                        var cells = CellsOf(t, at.R + k);
+                        for (var c = 0; c < cells.Count && c < first.Count; c++)
+                        {
+                            var target = cells[c] as JsonObject;
+                            if (first[c] is not JsonObject src || (string?)src["t"] is not { Length: > 0 } text || target != null && target.ContainsKey("t")) continue;
+                            var down = k;
+                            var moved = MapRefs(text, r => r.Table == null ? Write(null, (r.A.R + down, r.A.C), r.B is { } z ? (z.R + down, z.C) : null) : null);
+                            if (target != null) { target["t"] = moved; continue; }
+                            var o = (JsonObject)src.DeepClone();
+                            o.Remove("rs"); o.Remove("cs"); o.Remove("el");
+                            o["t"] = moved;
+                            cells[c] = o;
+                        }
+                    }
+                    break;
+                }
+                // A long table broken into parts (stage 5): at most `rows` body rows a part, or parts at most `height` mm tall, laid
+                // `dir` (right, down) `gap` mm apart, each with the header rows again; off: one table.
+                case "parts":
+                {
+                    if (op["off"] is JsonValue ov && ov.TryGetValue<bool>(out var off) && off) { t.Remove("split"); break; }
+                    var sp = new JsonObject();
+                    if (op["rows"] != null) sp["rows"] = Json.Number(op["rows"]) is double pr && pr >= 1 && pr <= DraftingTables.MaxRows && pr == Math.Floor(pr) ? (int)pr : throw new CommandException("A part holds 1 row or more.");
+                    if (op["height"] != null) sp["height"] = Json.Number(op["height"]) is double ph && ph is > 0 and <= 5000 ? ph : throw new CommandException("A part's height is more than 0 and up to 5000 mm.");
+                    if (sp.Count == 0) throw new CommandException("Break the table after how many rows (rows), or at what height (height, mm)?");
+                    sp["gap"] = op["gap"] is null ? 10 : Json.Number(op["gap"]) is double pg && pg is >= 0 and <= 1000 ? pg : throw new CommandException("The gap between parts is 0 to 1000 mm.");
+                    sp["dir"] = (string?)op["dir"] is "down" ? "down" : (string?)op["dir"] is null or "right" ? "right" : throw new CommandException("The parts go right or down.");
+                    t["split"] = sp;
+                    break;
+                }
+                // Cells from a CSV text or a workbook (base64 data), from a cell on (stage 5): rows and columns added as needed.
+                case "load":
+                {
+                    var rowsIn = Loaded(op);
+                    var at = DraftingTables.Parse((string?)op["at"] ?? (string?)op["cell"] ?? "A1") ?? throw new CommandException("From which cell? Its address, such as A1.");
+                    var needR = at.R + rowsIn.Count - g.R;
+                    var needC = at.C + (rowsIn.Count == 0 ? 0 : rowsIn.Max(x => x.Count)) - g.C;
+                    if (at.R + rowsIn.Count > DraftingTables.MaxRows || at.C + (rowsIn.Count == 0 ? 0 : rowsIn.Max(x => x.Count)) > DraftingTables.MaxCols)
+                        throw new CommandException($"A table has up to {DraftingTables.MaxRows} rows and {DraftingTables.MaxCols} columns.");
+                    if (needR > 0) { Insert(t, g, rows: true, g.R, needR); shifts?.Add(new Shifted(true, g.R, needR, true)); }
+                    if (needC > 0) { var g2 = DraftingTables.Read(t); Insert(t, g2, rows: false, g2.C, needC); shifts?.Add(new Shifted(false, g2.C, needC, true)); }
+                    var g3 = DraftingTables.Read(t);
+                    for (var i = 0; i < rowsIn.Count; i++)
+                        for (var j = 0; j < rowsIn[i].Count; j++)
+                            if (!g3.Cells[at.R + i, at.C + j].Covered) Write(t, at.R + i, at.C + j, rowsIn[i][j]);
+                    break;
+                }
                 case "tableStyle":
                 {
                     var style = op["style"] as JsonObject ?? throw new CommandException($"A table's style is {{{string.Join(", ", TableStyleKeys)}}}.");
@@ -203,11 +295,44 @@ public static class TableEdits
                     }
                     break;
                 }
-                case "preset": DraftingTables.ApplyPreset(t, (string?)op["preset"] ?? throw new CommandException($"Which preset? One of {string.Join(", ", DraftingTables.Presets)}.")); break;
+                case "preset":
+                {
+                    var preset = (string?)op["preset"] ?? throw new CommandException($"Which preset? One of {string.Join(", ", DraftingTables.Presets)}, or a table style.");
+                    // A table style of the user's (stage 3): its look laid on the table's cells, their texts and sizes kept.
+                    if (DraftingTables.StyleOf(styles, preset) is { } st) DraftingTables.ApplyStyle(t, st, sizes: false);
+                    else DraftingTables.ApplyPreset(t, preset);
+                    break;
+                }
                 default: throw new CommandException($"„{name}” is not an edit of a table ({string.Join(", ", Ops)}).");
             }
         }
         return t;
+    }
+
+    /// <summary>The rows of what <c>load</c> brings: a workbook's first sheet or a CSV file (base64 <c>data</c>), or a CSV <c>text</c>; trailing empty cells and rows left out.</summary>
+    static List<List<string>> Loaded(JsonObject op)
+    {
+        List<List<string>> rows;
+        if ((string?)op["data"] is { Length: > 0 } data)
+        {
+            byte[] bytes;
+            try { bytes = Convert.FromBase64String(data); } catch (FormatException) { throw new CommandException("The file is not base64."); }
+            rows = Tables.Read(bytes);
+        }
+        else if ((string?)op["text"] is { } text) rows = Tables.Csv(text.TrimStart('\uFEFF'));
+        else throw new CommandException("What to load? A CSV text, or a file's data (base64).");
+        rows = [.. rows.Select(r => { var c = r.ToList(); while (c.Count > 0 && c[^1].Trim().Length == 0) c.RemoveAt(c.Count - 1); return c; })];
+        while (rows.Count > 0 && rows[^1].Count == 0) rows.RemoveAt(rows.Count - 1);
+        if (rows.Count == 0) throw new CommandException("The file holds no cells.");
+        return rows;
+    }
+
+    /// <summary>An element's id a link names (null: unlinked); refused when the model has no such element.</summary>
+    static string? Element(JsonNode? n, Func<string, bool>? exists)
+    {
+        if (n == null) return null;
+        var id = ((string?)n)?.Trim() is { Length: > 0 } x ? x : throw new CommandException("An element's id, or null to unlink.");
+        return exists == null || exists(id) ? id : throw new CommandException("There is no such element.");
     }
 
     /// <summary>The master cells whose regions meet a range, once each.</summary>
@@ -395,56 +520,87 @@ public static class TableEdits
         ShiftAll(t, rows, at, count, insert: false);
     }
 
-    static void ShiftAll(JsonObject t, bool rows, int at, int count, bool insert)
+    static void ShiftAll(JsonObject t, bool rows, int at, int count, bool insert) =>
+        MapCells(t, text => ShiftRefs(text, rows, at, count, insert));
+
+    /// <summary>Every cell's text mapped by <paramref name="f"/> where it holds a formula or a token; whether any changed.</summary>
+    public static bool MapCells(JsonObject t, Func<string, string> f)
     {
-        foreach (var rn in Rows(t))
-            foreach (var cn in (JsonArray)((JsonObject)rn!)["cells"]!)
-                if (cn is JsonObject o && (string?)o["t"] is { } text && text.Contains("{=", StringComparison.Ordinal))
-                    o["t"] = ShiftRefs(text, rows, at, count, insert);
+        var changed = false;
+        foreach (var rn in t["rows"] as JsonArray ?? [])
+            foreach (var cn in (rn as JsonObject)?["cells"] as JsonArray ?? [])
+                if (cn is JsonObject o && (string?)o["t"] is { } text && text.Contains('{'))
+                {
+                    var now = f(text);
+                    if (now != text) { o["t"] = now; changed = true; }
+                }
+        return changed;
     }
 
     /// <summary>The cell a reference names after rows (columns) went in or out at <paramref name="at"/>; null when it went out.</summary>
     static int? Moved(int i, int at, int count, bool insert) =>
         insert ? (i >= at ? i + count : i) : i < at ? i : i >= at + count ? i - count : null;
 
-    /// <summary>What a reference to a cell taken out reads as: it has no value, so the formula says so.</summary>
+    /// <summary>What a reference to a cell taken out (or to a table deleted) reads as: it has no value, so the formula says so.</summary>
     public const string Gone = "REF";
 
     /// <summary>
-    /// A text's formulas with their cell references following rows (or columns) put in or taken out at <paramref name="at"/>:
-    /// <c>{= A3 * 2}</c> reads <c>A4</c> after a row went in above it, a range narrows when some of its rows go, a reference to
-    /// a cell taken out reads <see cref="Gone"/>. Texts in quotes, functions and names with a dot (<c>sheet.number</c>) stay.
+    /// A reference to a cell or a range in a cell's text: of its own table (<see cref="Table"/> null: <c>A3</c>, <c>A1:B4</c>) or
+    /// of another by its name (<c>table.Areas.B4</c>, <c>table.Areas.B2:B9</c>); <see cref="B"/> the range's other end.
     /// </summary>
-    public static string ShiftRefs(string text, bool rows, int at, int count, bool insert)
+    public sealed record Ref(string? Table, (int R, int C) A, (int R, int C)? B);
+
+    /// <summary>A reference written back: its cell or its range (first to last), qualified by its table's name when it has one.</summary>
+    public static string Write(string? table, (int R, int C) a, (int R, int C)? b)
+    {
+        var q = table != null ? TableScope.Prefix + table + "." : "";
+        if (b is not { } z) return q + DraftingTables.Address(a.R, a.C);
+        var (r0, c0, r1, c1) = (Math.Min(a.R, z.R), Math.Min(a.C, z.C), Math.Max(a.R, z.R), Math.Max(a.C, z.C));
+        return q + DraftingTables.Address(r0, c0) + ":" + DraftingTables.Address(r1, c1);
+    }
+
+    /// <summary>
+    /// A text's cell references rewritten by <paramref name="map"/> (null: kept as written): in its <c>{= …}</c> formulas (texts in
+    /// quotes, functions and other dotted names left alone) and its tokens naming another table's cell (<c>{table.Areas.B4}</c>).
+    /// </summary>
+    public static string MapRefs(string text, Func<Ref, string?> map)
     {
         var sb = new StringBuilder();
         var i = 0;
         while (i < text.Length)
         {
-            var open = text.IndexOf("{=", i, StringComparison.Ordinal);
+            var open = text.IndexOf('{', i);
             if (open < 0) { sb.Append(text, i, text.Length - i); break; }
-            var close = LiveText.CloseOf(text, open + 2);
-            if (close < 0) { sb.Append(text, i, text.Length - i); break; }
-            sb.Append(text, i, open + 2 - i);
-            sb.Append(ShiftBody(text[(open + 2)..close], rows, at, count, insert));
+            if (open + 1 < text.Length && text[open + 1] == '=')
+            {
+                var close = LiveText.CloseOf(text, open + 2);
+                if (close < 0) { sb.Append(text, i, text.Length - i); break; }
+                sb.Append(text, i, open + 2 - i);
+                sb.Append(MapBody(text[(open + 2)..close], map));
+                sb.Append('}');
+                i = close + 1;
+                continue;
+            }
+            var end = text.IndexOf('}', open + 1);
+            var inner = end < 0 ? -1 : text.IndexOf('{', open + 1, end - open - 1);
+            if (end < 0 || inner >= 0) { sb.Append(text, i, open + 1 - i); i = open + 1; continue; }
+            var key = text[(open + 1)..end];
+            sb.Append(text, i, open + 1 - i);
+            var k = key.Trim();
+            sb.Append(TableScope.Split(k) is { } s && DraftingTables.Parse(s.Cell) is { } a && map(new Ref(s.Table, a, null)) is { } repl ? repl : key);
             sb.Append('}');
-            i = close + 1;
+            i = end + 1;
         }
         return sb.ToString();
     }
 
-    static string ShiftBody(string s, bool rows, int at, int count, bool insert)
+    static string MapBody(string s, Func<Ref, string?> map)
     {
         var sb = new StringBuilder();
         var i = 0;
         static bool WordChar(char ch) => char.IsLetterOrDigit(ch) || ch is '_' or '.';
         int WordEnd(int k) { while (k < s.Length && WordChar(s[k])) k++; return k; }
         int Space(int k) { while (k < s.Length && char.IsWhiteSpace(s[k])) k++; return k; }
-        (int R, int C)? Map((int R, int C) p)
-        {
-            var v = Moved(rows ? p.R : p.C, at, count, insert);
-            return v is { } x ? rows ? (x, p.C) : (p.R, x) : null;
-        }
         while (i < s.Length)
         {
             var ch = s[i];
@@ -461,30 +617,67 @@ public static class TableEdits
             var end = WordEnd(i);
             var word = s[i..end];
             var after = Space(end);
-            if (DraftingTables.Parse(word) is not { } a || word.Contains('.') || after < s.Length && s[after] == '(') { sb.Append(word); i = end; continue; }
-            // A range: its ends follow, its rows (columns) taken out narrow it.
-            if (after < s.Length && s[after] == ':' && Space(after + 1) is var b0 && b0 < s.Length && WordEnd(b0) is var b1 && DraftingTables.Parse(s[b0..b1]) is { } z && !s[b0..b1].Contains('.'))
+            // A cell of its own table (no dot), or of another by its name (table.<name>.<cell>); a function's name is neither.
+            string? table = null;
+            (int R, int C)? first = null;
+            if (!(after < s.Length && s[after] == '('))
             {
-                var (lo, hi) = rows ? (Math.Min(a.R, z.R), Math.Max(a.R, z.R)) : (Math.Min(a.C, z.C), Math.Max(a.C, z.C));
-                int from, to;
-                if (insert) (from, to) = (Moved(lo, at, count, true)!.Value, Moved(hi, at, count, true)!.Value);
-                else
-                {
-                    from = lo < at ? lo : lo >= at + count ? lo - count : at;
-                    to = hi < at ? hi : hi >= at + count ? hi - count : at - 1;
-                }
-                if (to < from) sb.Append(Gone);
-                else
-                {
-                    var (o0, o1) = rows ? ((from, Math.Min(a.C, z.C)), (to, Math.Max(a.C, z.C))) : ((Math.Min(a.R, z.R), from), (Math.Max(a.R, z.R), to));
-                    sb.Append(DraftingTables.Address(o0.Item1, o0.Item2)).Append(':').Append(DraftingTables.Address(o1.Item1, o1.Item2));
-                }
-                i = b1;
-                continue;
+                if (TableScope.Split(word) is { } q && DraftingTables.Parse(q.Cell) is { } qa) (table, first) = (q.Table, qa);
+                else if (!word.Contains('.') && DraftingTables.Parse(word) is { } la) first = la;
             }
-            sb.Append(Map(a) is { } m ? DraftingTables.Address(m.R, m.C) : Gone);
-            i = end;
+            if (first is not { } a) { sb.Append(word); i = end; continue; }
+            // A range: its other end a cell of the same table (written bare, or with the same table's name).
+            (int R, int C)? other = null;
+            var stop = end;
+            if (after < s.Length && s[after] == ':' && Space(after + 1) is var b0 && b0 < s.Length && WordEnd(b0) is var b1 && b1 > b0)
+            {
+                var w2 = s[b0..b1];
+                if (!w2.Contains('.') && DraftingTables.Parse(w2) is { } z) (other, stop) = (z, b1);
+                else if (table != null && TableScope.Split(w2) is { } q2 && string.Equals(q2.Table, table, StringComparison.OrdinalIgnoreCase) && DraftingTables.Parse(q2.Cell) is { } z2) (other, stop) = (z2, b1);
+            }
+            sb.Append(map(new Ref(table, a, other)) ?? s[i..stop]);
+            i = stop;
         }
         return sb.ToString();
+    }
+
+    /// <summary>A reference after rows (columns) went in or out at <paramref name="at"/>: moved, a range narrowed, <see cref="Gone"/> when all of it went.</summary>
+    public static string Shift(Ref r, bool rows, int at, int count, bool insert)
+    {
+        if (r.B is not { } z)
+        {
+            var v = Moved(rows ? r.A.R : r.A.C, at, count, insert);
+            return v is { } x ? Write(r.Table, rows ? (x, r.A.C) : (r.A.R, x), null) : Gone;
+        }
+        var a = r.A;
+        var (lo, hi) = rows ? (Math.Min(a.R, z.R), Math.Max(a.R, z.R)) : (Math.Min(a.C, z.C), Math.Max(a.C, z.C));
+        int from, to;
+        if (insert) (from, to) = (Moved(lo, at, count, true)!.Value, Moved(hi, at, count, true)!.Value);
+        else
+        {
+            from = lo < at ? lo : lo >= at + count ? lo - count : at;
+            to = hi < at ? hi : hi >= at + count ? hi - count : at - 1;
+        }
+        if (to < from) return Gone;
+        return rows ? Write(r.Table, (from, Math.Min(a.C, z.C)), (to, Math.Max(a.C, z.C))) : Write(r.Table, (Math.Min(a.R, z.R), from), (Math.Max(a.R, z.R), to));
+    }
+
+    /// <summary>
+    /// A text's formulas with their cell references following rows (or columns) put in or taken out at <paramref name="at"/>:
+    /// <c>{= A3 * 2}</c> reads <c>A4</c> after a row went in above it, a range narrows when some of its rows go, a reference to
+    /// a cell taken out reads <see cref="Gone"/>. Texts in quotes, functions and names with a dot (<c>sheet.number</c>) stay.
+    /// </summary>
+    public static string ShiftRefs(string text, bool rows, int at, int count, bool insert) =>
+        MapRefs(text, r => r.Table == null ? Shift(r, rows, at, count, insert) : null);
+
+    /// <summary>A row or column change of a table, kept to carry other tables' references to it along (stage 2).</summary>
+    public sealed record Shifted(bool Rows, int At, int Count, bool Insert);
+
+    /// <summary>The ops applied in order (as <see cref="Apply(JsonObject?, JsonArray)"/>), and the rows and columns they put in or took out, in order.</summary>
+    public static (JsonObject Table, List<Shifted> Shifts) ApplyTracked(JsonObject? table, JsonArray ops, IReadOnlyList<TableStyleDef>? styles = null, Func<string, bool>? exists = null)
+    {
+        var shifts = new List<Shifted>();
+        var t = Apply(table, ops, shifts, styles, exists);
+        return (t, shifts);
     }
 }

@@ -66,25 +66,6 @@ public static class Texts
     public static List<Vec2> Leader(Entity t) =>
         t.Attrs["leader"] is JsonArray a ? [.. a.Select(Args.TryPoint).OfType<Vec2>()] : [];
 
-    /// <summary>Split text on newlines and optionally word-wrap each paragraph to <paramref name="maxW"/> (metres).</summary>
-    public static List<string> WrapLines(string body, double charW, double? maxW)
-    {
-        var paras = body.Replace("\r\n", "\n").Split('\n');
-        if (maxW is not > 0) return [.. paras];
-        var maxChars = Math.Max(1, (int)Math.Floor(maxW.Value / charW));
-        var result = new List<string>();
-        foreach (var para in paras)
-        {
-            if (para.Length <= maxChars) { result.Add(para); continue; }
-            var cur = "";
-            foreach (var word in para.Split(' '))
-            {
-                if (cur.Length == 0) cur = word;
-                else if (cur.Length + 1 + word.Length <= maxChars) cur += " " + word;
-                else { result.Add(cur); cur = word; }
-            }
-            result.Add(cur);
-        }
-        return result;
-    }
+    /// <summary>Split text on newlines and optionally word-wrap each paragraph to <paramref name="maxW"/> (metres): <see cref="TextWrap.Lines"/>.</summary>
+    public static List<string> WrapLines(string body, double charW, double? maxW) => TextWrap.Lines(body, charW, maxW);
 }

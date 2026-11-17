@@ -141,6 +141,14 @@ public sealed record TagType(string Id, string Name, string Template, IReadOnlyL
 /// </summary>
 public sealed record TagRule(string Id, string Class, string When, string TagType);
 
+/// <summary>
+/// A table style of the user's own (docs/plan-drafting-tables.md §6, stage 3): a drafting table saved in the drafting standards,
+/// by its id and name: its <see cref="Table"/> is a table's JSON (its style, its columns' and rows' sizes, the header rows and the
+/// cells' own styles; with <see cref="Cells"/> its texts too, a template a new table copies whole). Kept as given, read by the
+/// drafting tables (<c>DraftingTables.ApplyStyle</c>); carried by <c>.lapinstandards</c> files with the rest.
+/// </summary>
+public sealed record TableStyleDef(string Id, string Name, System.Text.Json.Nodes.JsonObject Table, bool Cells = false);
+
 /// <summary>Layers gathered under a group that shows and locks them together.</summary>
 public sealed record LayerGroup(string Id, string Name, bool Visible, bool Locked);
 
@@ -180,6 +188,8 @@ public sealed record DraftLayer(string Id, string Name, string Color, bool Visib
 /// lines are moved clear of their neighbours, with a leader once moved further than that many paper mm, unless a dimension style
 /// says otherwise; on by default (values that fit are drawn exactly as before).
 /// <see cref="TagRules"/> (issue #72): the conditional tag rules, in their order (null: none, every tag its own type).
+/// <see cref="TableStyles"/> (issue #71, stage 3): the drafting tables' styles of the user's own (null: none; the built-in
+/// presets are not listed here).
 /// </summary>
 public sealed record StyleBook(
     IReadOnlyList<TextStyle> TextStyles, IReadOnlyList<DimStyle> DimStyles, IReadOnlyList<AxisStyle> AxisStyles,
@@ -187,7 +197,8 @@ public sealed record StyleBook(
     string LineCap = "round", string Units = "mm", double? SectionMarkSize = null, double? SectionMarkText = null, double? ElevationMarkSize = null, double? ElevationMarkText = null,
     double? AreaRounding = null, IReadOnlyList<double>? Scales = null, double? PlanScale = null, double? SectionScale = null, double? ElevationScale = null,
     IReadOnlyList<LineTypeDef>? LineTypes = null, bool SuppressZeros = false, int LevelDecimals = Standards.DefaultLevelDecimals, string LevelZeros = "project",
-    bool DimAutoText = true, double DimTextLeader = Standards.DefaultTextLeader, IReadOnlyList<TagRule>? TagRules = null)
+    bool DimAutoText = true, double DimTextLeader = Standards.DefaultTextLeader, IReadOnlyList<TagRule>? TagRules = null,
+    IReadOnlyList<TableStyleDef>? TableStyles = null)
 {
     public static StyleBook Default => Standards.Read(null);
 
@@ -455,7 +466,22 @@ public static class Standards
             own.Count > 0 ? own : null, True(o["suppressZeros"]),
             LevelDecimalsOf(o["levelDecimals"]) ?? DefaultLevelDecimals, OneOf(o["levelZeros"], ZeroChoices, "project"),
             o["dimAutoText"] is not JsonValue av || !av.TryGetValue<bool>(out var autoText) || autoText, TextLeaderOf(o["dimTextLeader"]) ?? DefaultTextLeader,
-            List("tagRules").Select(ReadTagRule).OfType<TagRule>().DistinctBy(r => r.Id).ToList() is { Count: > 0 } rules ? rules : null);
+            List("tagRules").Select(ReadTagRule).OfType<TagRule>().DistinctBy(r => r.Id).ToList() is { Count: > 0 } rules ? rules : null,
+            List("tableStyles").Select(ReadTableStyle).OfType<TableStyleDef>().DistinctBy(t => t.Id).ToList() is { Count: > 0 } tables ? tables : null);
+    }
+
+    /// <summary>The longest table style's JSON kept (characters): a table of the drafting module's bounds.</summary>
+    public const int MaxTableStyle = 2_000_000;
+
+    /// <summary>A table style as a file or a command gives it: an id, a name and a table (its rows and columns); null when it is not one.</summary>
+    static TableStyleDef? ReadTableStyle(JsonObject v)
+    {
+        string Text(string key) => v[key] is JsonValue x && x.TryGetValue<string>(out var t) ? t.Trim() : "";
+        if (v["table"] is not JsonObject table || table["rows"] is not JsonArray { Count: > 0 } || table["cols"] is not JsonArray { Count: > 0 }) return null;
+        var name = Text("name");
+        if (name.Length is 0 or > 80 || table.ToJsonString().Length > MaxTableStyle) return null;
+        var id = Text("id") is { Length: > 0 } given ? given : "table-" + name;
+        return new TableStyleDef(id, name, (JsonObject)table.DeepClone(), True(v["cells"]));
     }
 
     public static JsonObject ToJson(StyleBook b) => (JsonObject)JsonSerializer.SerializeToNode(b, DrawingJson.Default.StyleBook)!;

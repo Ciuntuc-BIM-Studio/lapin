@@ -145,6 +145,18 @@ public static class SymbolInstances
                         break;
                 }
             }
+            else if (e.PredefinedType == DraftingTables.Predefined && e.Attrs["table"] is JsonObject tj)
+            {
+                // A drafting table: its sizes are paper mm, a model symbol's mm the building's (as a text's height).
+                var table = DraftingTables.Scaled(tj, model ? mm * 1000 : 1);
+                var o = new JsonObject { ["type"] = "table", ["at"] = Pt(Args.PointOf(e.Attrs["at"])), ["angle"] = N(Deg(e.Num("angle") * Math.PI / 180)), ["table"] = table };
+                if (e.Str("textStyle") is { } ts) o["style"] = ts;
+                items.Add((JsonNode)o);
+                foreach (var cell in (tj["rows"] as JsonArray ?? []).SelectMany(r => (r as JsonObject)?["cells"] as JsonArray ?? []).OfType<JsonObject>())
+                    if ((string?)cell["t"] is { } text)
+                        foreach (var token in TitleBlocks.Tokens(text).Concat(FormulaNames(text)))
+                            if (token.StartsWith("attr.", StringComparison.Ordinal) && token[5..] is { Length: > 0 } k && !keys.Contains(k, StringComparer.OrdinalIgnoreCase)) keys.Add(k);
+            }
             else if (e.PredefinedType == "TEXT")
             {
                 var style = Standards.ResolveText(book, Dimensions.ParamsOf(e));
@@ -328,8 +340,8 @@ public static class SymbolInstances
             var m = ctx.Model;
             var view = Views.Find(m, (string?)a["viewId"] ?? "") ?? throw new CommandException("There is no such view.");
             var sources = Ids(a).Select(id => m.Get(id) ?? throw new CommandException("Something chosen is gone.")).ToList();
-            if (sources.Any(e => e.Class != IfcClass.Annotation || e.PredefinedType is not (Drafts.Predefined or "TEXT") || e.Str("viewId") != view.Id))
-                throw new CommandException("A symbol is made of drafted lines, shapes, hatches and texts of this view.");
+            if (sources.Any(e => e.Class != IfcClass.Annotation || e.PredefinedType is not (Drafts.Predefined or "TEXT" or DraftingTables.Predefined) || e.Str("viewId") != view.Id))
+                throw new CommandException("A symbol is made of drafted lines, shapes, hatches, texts and tables of this view.");
             var @base = P(a["base"], "The insertion point");
             var angle = (Json.Number(a["angle"]) ?? 0) * Math.PI / 180;
             var scale = (string?)a["scale"] is "model" ? "model" : "annotation";

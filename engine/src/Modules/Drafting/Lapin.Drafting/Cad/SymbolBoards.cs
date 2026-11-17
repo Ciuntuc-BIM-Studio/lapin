@@ -73,7 +73,7 @@ public static class SymbolBoards
     public static (SymbolDef Def, string Name, JsonObject Of) Read(IModelView m, Entity view, JsonObject of)
     {
         var was = SymbolDef.From(of["def"]) ?? new SymbolDef("annotation", "other", [], []);
-        var c = ItemBoards.Collect(m, view, was.Items, curves: true, "A symbol");
+        var c = ItemBoards.Collect(m, view, was.Items, curves: true, "A symbol", tables: true);
         if (c.Images.Count > 0) throw new CommandException($"A symbol has no pictures: „{c.Images[0].Name}” is one. Delete it, then Finish.");
         var items = c.Items;
         var attributes = was.Attributes.ToList();

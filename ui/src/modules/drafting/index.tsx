@@ -36,7 +36,7 @@ import { convertLayersInFront, convertSelection } from './convert/convert';
 import { SymbolSection } from '../core/symbols/SymbolSection';
 import { annotateSheetTool, leaderNote, legendTool, revisionCloudTool, scaleBarTool } from './sheetAnnotations';
 import { surveyPoint, useLocation } from '../../app/location';
-import { TableSection, tableTool } from './table/tableTool';
+import { TableSection, tableGrips, tablePartTool, tableTool } from './table/tableTool';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const ConvertDialog = lazyPart(() => import('./convert/ConvertDialog').then((m) => m.ConvertDialog), { title: 'Convert drafting' });
@@ -47,7 +47,7 @@ const LayersDialog = lazyPart(() => import('./LayersDialog').then((m) => m.Layer
 const TableEditor = lazyPart(() => import('./table/TableEditor').then((m) => m.TableEditor), { title: 'Table' });
 
 /** An aligned dimension: its two points, then where its line goes; then on as a string, one object. Points on an element's cut edge, a grid axis or a wall's centre line follow it. */
-const DRAFTED = new Set(['DRAFT', 'TEXT', 'DIMENSION', 'TAG', 'SYMBOL', 'SHEETLEGEND', 'SCALEBAR', 'TABLE']);
+const DRAFTED = new Set(['DRAFT', 'TEXT', 'DIMENSION', 'TAG', 'SYMBOL', 'SHEETLEGEND', 'SCALEBAR', 'TABLE', 'TABLEPART']);
 const draftsFields = (node: NodeDto) => DRAFTED.has(String(node.props.predefinedType));
 
 /**
@@ -879,7 +879,7 @@ function leaderGrips(node: NodeDto): Grip[] {
   });
 }
 
-const annotationGrips = (node: NodeDto, view?: GripView): Grip[] => [...draftGrips(node), ...leaderGrips(node), ...dimensionGrips(node, view), ...tagGrips(node, view)];
+const annotationGrips = (node: NodeDto, view?: GripView): Grip[] => [...draftGrips(node), ...leaderGrips(node), ...dimensionGrips(node, view), ...tagGrips(node, view), ...tableGrips(node, view)];
 
 /** A grid's axes: each axis's ends and middle (keys "<tag>:start"…), shown when that axis is selected (grid#tag). */
 function gridGrips(node: NodeDto): Grip[] {
@@ -1005,7 +1005,7 @@ const drafting: LapinModule = {
     },
   ],
   hotbar: [dimension],
-  legacyTools: [...dimensionAliases, ...tagAliases],
+  legacyTools: [...dimensionAliases, ...tagAliases, tablePartTool],
   dialogs: { convertDrafting: ConvertDialog, convertLayers: ConvertLayersDialog, draftLayers: LayersDialog, importDxf: ImportDxfDialog, importTrace: ImportTraceDialog, grid: GridDialog, renumberAxes: RenumberAxesDialog, dimensionRules: DimensionRulesDialog, tableEditor: TableEditor },
   propertySections: [
     // The drafted kinds show their own fields (a line its ends, a circle its radius), so the class's generic ones stay out.
