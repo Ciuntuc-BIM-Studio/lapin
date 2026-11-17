@@ -9,6 +9,7 @@ using Lapin.Phases;
 using Lapin.Platform;
 using Lapin.Structure;
 using Lapin.Studio;
+using Xunit.Abstractions;
 using static Lapin.Ifc.Step;
 
 namespace Lapin.Engine.Tests;
@@ -155,37 +156,56 @@ public class IfcRobustnessTests : IDisposable
     /// <summary>
     /// A Lapin file of many elements read back natively: each element's relationships (its type, material, openings,
     /// joins) found through indexes made once, not by scanning every relationship of the file for each element
-    /// (10,000 elements took some 10⁹ steps).
+    /// (10,000 elements took some 10⁹ steps). Checked by how the time grows, not by a limit in seconds a loaded machine
+    /// broke (#81): four times the elements take about four times as long, not sixteen, the two imports timed in the
+    /// same run, each at its best of three, and run apart from the parallel tests (<see cref="Scaling.Serial"/>).
     /// </summary>
-    [Fact]
-    public void Many_native_elements_import_in_linear_time()
+    [Collection(Scaling.Serial)]
+    public sealed class Timing(ITestOutputHelper output) : IDisposable
     {
-        const int count = 6000;
-        var x = new Tiny();
-        var material = x.F.Add("IFCMATERIAL", S("Concrete"), Null, Null);
-        var type = x.F.Add("IFCBUILDINGELEMENTPROXYTYPE", x.G("type"), Null, S("Block"), Null, Null, Null, Null, Null, Null, E("NOTDEFINED"));
-        var typed = new List<string>();
-        for (var i = 0; i < count; i++)
+        readonly string _dir = Directory.CreateTempSubdirectory("lapin-ifc-timing").FullName;
+        public void Dispose() => Directory.Delete(_dir, true);
+
+        [Fact]
+        public void Many_native_elements_import_in_linear_time()
         {
-            var e = x.Element("IFCBUILDINGELEMENTPROXY", $"e{i}", $"E{i}", x.Place(i, 0, 0), Null, E("ELEMENT"));
-            var intent = x.F.Add("IFCPROPERTYSET", x.G($"intent{i}"), Null, S(IfcExport.IntentSetName), Null,
-                L([x.F.Add("IFCPROPERTYSINGLEVALUE", S("LapinClass"), Null, Typed("IFCLABEL", S("IfcBuildingElementProxy")), Null),
-                   x.F.Add("IFCPROPERTYSINGLEVALUE", S("index"), Null, Typed("IFCREAL", R(i)), Null)]));
-            x.F.Add("IFCRELDEFINESBYPROPERTIES", x.G($"def{i}"), Null, Null, Null, L([e]), intent);
-            x.F.Add("IFCRELASSOCIATESMATERIAL", x.G($"mat{i}"), Null, Null, Null, L([e]), material);
-            x.F.Add("IFCRELDEFINESBYTYPE", x.G($"rt{i}"), Null, Null, Null, L([e]), type);
-            if (i > 0) x.F.Add("IFCRELCONNECTSPATHELEMENTS", x.G($"join{i}"), Null, S("L"), S("butt"), Null, e, typed[^1], Null, Null, E("ATEND"), E("ATSTART"));
-            typed.Add(e);
+            const int count = 6000;
+            var small = NativeElements(count / 4, Path.Combine(_dir, "small.ifc"));
+            var large = NativeElements(count, Path.Combine(_dir, "large.ifc"));
+            Fixture? last = null;
+            void Import(string path) { last = Full(); IfcImport.Run(last.Session, path, null, out _); }
+            Import(small);
+            var best = Scaling.Best(3, () => Import(small), () => Import(large));
+            var ratio = best[1] / best[0];
+            output.WriteLine($"{count / 4} elements {best[0]:0} ms, {count} elements {best[1]:0} ms, ratio {ratio:0.00}");
+            // About 4 (0.12 s and 0.5 s alone); 16 with the scans.
+            Assert.True(ratio < 9, $"{count} native elements took {best[1]:0} ms, {ratio:0.0}× the {best[0]:0} ms of {count / 4}");
+            var model = last!.Session.Model;
+            Assert.Equal(count, model.OfClass("IfcBuildingElementProxy").Count());
+            Assert.Equal(count - 1, Enumerable.Range(1, count - 1).Count(i => model.RelationsOf(Tiny.Gid($"e{i}"), IfcClass.RelConnectsPathElements).Any()));
         }
-        var path = x.Write(Path.Combine(_dir, "many.ifc"));
-        var fx = Full();
-        var clock = System.Diagnostics.Stopwatch.StartNew();
-        IfcImport.Run(fx.Session, path, null, out _);
-        clock.Stop();
-        // About 0.6 s here, 12 s with the scans: a margin for a loaded machine.
-        Assert.True(clock.ElapsedMilliseconds < 6000, $"{count} native elements took {clock.ElapsedMilliseconds} ms");
-        Assert.Equal(count, fx.Session.Model.OfClass("IfcBuildingElementProxy").Count());
-        Assert.Equal(count - 1, Enumerable.Range(1, count - 1).Count(i => fx.Session.Model.RelationsOf(Tiny.Gid($"e{i}"), IfcClass.RelConnectsPathElements).Any()));
+
+        /// <summary>A file of <paramref name="count"/> elements as Lapin writes them: each with its intent set, material and type, joined to the one before.</summary>
+        static string NativeElements(int count, string path)
+        {
+            var x = new Tiny();
+            var material = x.F.Add("IFCMATERIAL", S("Concrete"), Null, Null);
+            var type = x.F.Add("IFCBUILDINGELEMENTPROXYTYPE", x.G("type"), Null, S("Block"), Null, Null, Null, Null, Null, Null, E("NOTDEFINED"));
+            var typed = new List<string>();
+            for (var i = 0; i < count; i++)
+            {
+                var e = x.Element("IFCBUILDINGELEMENTPROXY", $"e{i}", $"E{i}", x.Place(i, 0, 0), Null, E("ELEMENT"));
+                var intent = x.F.Add("IFCPROPERTYSET", x.G($"intent{i}"), Null, S(IfcExport.IntentSetName), Null,
+                    L([x.F.Add("IFCPROPERTYSINGLEVALUE", S("LapinClass"), Null, Typed("IFCLABEL", S("IfcBuildingElementProxy")), Null),
+                       x.F.Add("IFCPROPERTYSINGLEVALUE", S("index"), Null, Typed("IFCREAL", R(i)), Null)]));
+                x.F.Add("IFCRELDEFINESBYPROPERTIES", x.G($"def{i}"), Null, Null, Null, L([e]), intent);
+                x.F.Add("IFCRELASSOCIATESMATERIAL", x.G($"mat{i}"), Null, Null, Null, L([e]), material);
+                x.F.Add("IFCRELDEFINESBYTYPE", x.G($"rt{i}"), Null, Null, Null, L([e]), type);
+                if (i > 0) x.F.Add("IFCRELCONNECTSPATHELEMENTS", x.G($"join{i}"), Null, S("L"), S("butt"), Null, e, typed[^1], Null, Null, E("ATEND"), E("ATSTART"));
+                typed.Add(e);
+            }
+            return x.Write(path);
+        }
     }
 
     /// <summary>

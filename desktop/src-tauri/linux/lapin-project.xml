@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The .lapin project's MIME type, for the .deb (installed in /usr/share/mime/packages, which dpkg's trigger adds to the
+     MIME database) and the AppImage (for the tools that integrate it). A .lapin is a zip (docs/format-lapin.md). -->
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-lapin-project">
+    <comment>Lapin project</comment>
+    <sub-class-of type="application/zip"/>
+    <icon name="lapin-desktop"/>
+    <glob pattern="*.lapin"/>
+  </mime-type>
+</mime-info>

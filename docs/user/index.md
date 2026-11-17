@@ -13,6 +13,8 @@ Lapin runs in two places:
 - **On your computer.** The desktop app for Windows, macOS and Linux is the fastest. It updates itself.
 - **In the browser.** [lapinbim.com/app](https://lapinbim.com/app/) runs the same app without installing anything. It is a little slower.
 
+The desktop app is downloaded from [lapinbim.com/download](https://lapinbim.com/download/); the same files are on [GitHub Releases](https://github.com/Ciuntuc-BIM-Studio/lapin/releases). On Linux, the `.deb` puts Lapin in the applications menu (under Graphics), with an icon your icon theme can replace, and opens `.lapin` projects with a double-click. The AppImage carries the same menu entry for the tools that add AppImages to the menu (AppImageLauncher, Gear Lever).
+
 ![Lapin's workspace with a small house on the ground floor plan](shots/workspace.webp)
 
 > The pictures in this guide are taken from Lapin itself each time a new version is published, so they show the app as it is today.

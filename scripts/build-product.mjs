@@ -130,6 +130,18 @@ if (cross) {
 const identity = mac ? process.env.LAPIN_SIGNING_IDENTITY
   ?? spawnSync('security', ['find-identity', '-v', '-p', 'codesigning'], { encoding: 'utf8' }).stdout?.match(/"(Developer ID Application: [^"]+)"/)?.[1] : undefined;
 if (mac) console.log(identity ? `▸ signing as ${identity}` : '▸ no Developer ID Application certificate in the keychain: the app is built unsigned');
+// Linux (issue #23): the .deb and the AppImage carry a desktop entry made from linux/app.desktop.hbs (name, comment,
+// Exec with the file opened, the icon by the binary's name, which icon themes look up, Categories=Graphics;Engineering;,
+// the .lapin MIME type, StartupWMClass), and the .lapin MIME type itself (linux/lapin-project.xml) for the MIME
+// database. The AppImage's entry comes from the same template (Tauri builds its AppDir from the .deb's data).
+// Only here: on macOS and Windows a file association would register .lapin before the app handles a file opened so.
+const mimeXml = { [`/usr/share/mime/packages/${id}.xml`]: 'linux/lapin-project.xml' };
+const linuxBundle = {
+  targets: ['deb', 'appimage'],
+  shortDescription: product.description ?? 'BIM modeller on the IFC schema',
+  fileAssociations: [{ ext: ['lapin'], name: 'Lapin project', description: 'Lapin project', mimeType: 'application/x-lapin-project', role: 'Editor' }],
+  linux: { deb: { desktopTemplate: 'linux/app.desktop.hbs', files: mimeXml }, appimage: { files: mimeXml } },
+};
 writeFileSync(join(tauriDir, 'tauri.product.json'), JSON.stringify({
   productName: product.name,
   version,
@@ -143,7 +155,7 @@ writeFileSync(join(tauriDir, 'tauri.product.json'), JSON.stringify({
     externalBin: ['binaries/lapin-host'], resources: ['resources/**/*'],
     // An edition under its own brand carries its icons (brand.icons: a folder from the repository, with Tauri's five files), Lapin its own (tauri.conf.json's).
     ...(product.brand?.icons ? { icon: ['32x32.png', '128x128.png', '128x128@2x.png', 'icon.icns', 'icon.ico'].map((f) => relative(join(root, 'desktop/src-tauri'), join(root, product.brand.icons, f))) } : {}),
-    ...(!cross && process.platform === 'linux' ? { targets: ['deb', 'appimage'] } : {}),
+    ...(!cross && process.platform === 'linux' ? linuxBundle : {}),
     // Windows: an NSIS installer for the current user (no admin rights), which fetches WebView2 when it is missing.
     ...(targetWin ? { targets: ['nsis'], windows: { nsis: { installMode: 'currentUser' } } } : {}),
     ...(mac ? { targets: ['app'], macOS: { minimumSystemVersion: '13.0', hardenedRuntime: true, entitlements: 'entitlements.plist', ...(identity ? { signingIdentity: identity } : {}) } } : {}),
