@@ -31,6 +31,7 @@ export function toolHint(tool: string | null): string | null {
   const active = findTool(tool);
   const g = active?.gesture;
   if (!active || !g) return null;
+  if (g.kind === 'twoPoints' && g.measure) return `${active.label}: click two points a known distance apart · type their true distance (2400, 50m) · Esc cancels`;
   if (g.kind === 'twoPoints') return `${active.label}: click its start, then its end · Shift squares it · ${g.repeat ? 'Enter ends the chain, Esc cancels' : 'Esc cancels'}`;
   if (g.kind === 'pickThenPoint') return `${active.label}: ${g.hint ?? 'click the element, then a point · Enter takes the first click alone, Esc cancels'}`;
   return null;

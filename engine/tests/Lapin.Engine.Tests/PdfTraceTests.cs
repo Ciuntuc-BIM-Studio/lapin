@@ -94,6 +94,60 @@ public class PdfTraceTests
         Assert.ThrowsAny<Exception>(() => f.Run("drafting.placeImage", new JsonObject { ["viewId"] = plan, ["name"] = "x.txt", ["data"] = Convert.ToBase64String(Encoding.UTF8.GetBytes("hello")) }));
     }
 
+    static List<Vec2> DraftPoints(Fixture f, string plan) =>
+        Drafts.On(f.Model, plan).SelectMany(e => Drafts.ShapeOf(e) switch { Drafting.Cad.Polyline p => p.Pts, Drafting.Cad.Line l => [l.A, l.B], _ => [] }).ToList();
+
+    [Fact]
+    public void A_pdf_group_is_scaled_true_by_two_points_as_one_undo_step()
+    {
+        // Forum 143: a PDF (its lines and its pictures, one group) scaled to a known distance as simply as an image.
+        var f = F();
+        var plan = Plan(f);
+        var r = (JsonObject)f.Run("drafting.importPdf", new JsonObject
+        {
+            ["viewId"] = plan, ["name"] = "survey.pdf", ["data"] = Convert.ToBase64String(Pdf()), ["scale"] = 100, ["at"] = new JsonArray(5, 5),
+        })!;
+        var groupId = (string)r["groupId"]!;
+        var members = Groups.MembersOf(f.Model, groupId).ToHashSet();
+        var image = ViewImages.On(f.Model, plan).Single();
+        Assert.Equal(20, image.Num("x"), 1);
+        // The rectangle's bottom edge, (7, 7) to (17, 7), 10 m apart, is really 20 m long: the whole doubles about (7, 7).
+        var k = (double)f.Run("drafting.calibrateImage", new JsonObject { ["id"] = groupId, ["a"] = new JsonArray(7, 7), ["b"] = new JsonArray(17, 7), ["length"] = 20 })!["factor"]!;
+        Assert.Equal(2, k, 6);
+        var pts = DraftPoints(f, plan);
+        Assert.Contains(pts, p => Math.Abs(p.X - 7) < 0.05 && Math.Abs(p.Y - 7) < 0.05);
+        Assert.Contains(pts, p => Math.Abs(p.X - 27) < 0.05 && Math.Abs(p.Y - 17) < 0.05);
+        Assert.DoesNotContain(pts, p => Math.Abs(p.X - 17) < 0.05 && Math.Abs(p.Y - 12) < 0.05);
+        image = ViewImages.On(f.Model, plan).Single();
+        Assert.Equal(7 + (20 - 7) * 2, image.Num("x"), 1);
+        Assert.Equal(12, image.Num("width"), 2);
+        Assert.Equal(6, image.Num("height"), 2);
+        // Nothing was made or lost: the same ids, the same group.
+        Assert.Equal(members, Groups.MembersOf(f.Model, groupId).ToHashSet());
+        // One undo step puts it all back.
+        f.Session.Undo();
+        Assert.Contains(DraftPoints(f, plan), p => Math.Abs(p.X - 17) < 0.05 && Math.Abs(p.Y - 12) < 0.05);
+        Assert.Equal(6, ViewImages.On(f.Model, plan).Single().Num("width"), 2);
+    }
+
+    [Fact]
+    public void A_scaled_group_keeps_its_turned_images_turn_and_refuses_what_it_cannot_scale()
+    {
+        var f = F();
+        var plan = Plan(f);
+        var id = (string)f.Run("drafting.placeImage", new JsonObject { ["viewId"] = plan, ["name"] = "p.png", ["data"] = Convert.ToBase64String(Png()), ["width"] = 4, ["at"] = new JsonArray(2, 0), ["rotation"] = 30 })!["id"]!;
+        var line = (string)f.Run("drafting.draw", new JsonObject { ["viewId"] = plan, ["shape"] = new JsonObject { ["type"] = "line", ["a"] = new JsonArray(0, 0), ["b"] = new JsonArray(4, 0) } })!["ids"]![0]!;
+        var group = (string)f.Run("group.create", new JsonObject { ["ids"] = new JsonArray(id, line) })!["id"]!;
+        f.Run("drafting.calibrateImage", new JsonObject { ["id"] = group, ["a"] = new JsonArray(0, 0), ["b"] = new JsonArray(4, 0), ["length"] = 2 });
+        var e = f.Model.Get(id)!;
+        Assert.Equal(1, e.Num("x"), 6);
+        Assert.Equal(2, e.Num("width"), 6);
+        Assert.Equal(30, e.Num("rotation"), 6);
+        Assert.Contains(DraftPoints(f, plan), p => Math.Abs(p.X - 2) < 1e-6 && Math.Abs(p.Y) < 1e-6);
+        // Not an image nor a group of drafting: refused.
+        Assert.ThrowsAny<Exception>(() => f.Run("drafting.calibrateImage", new JsonObject { ["id"] = line, ["a"] = new JsonArray(0, 0), ["b"] = new JsonArray(1, 0), ["length"] = 2 }));
+    }
+
     /// <summary>The picture's top-left corner must be upper-left of its bottom-left one, and its right edge to the right (a PenImage's order: top left, top right, bottom right, bottom left).</summary>
     static void AssertUpright(PenImage img, double turnDeg = 0)
     {

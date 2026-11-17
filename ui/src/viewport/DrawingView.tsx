@@ -227,7 +227,8 @@ export function DrawingView() {
       }
       case 'twoPoints':
       case 'rectangle':
-        if (pts.length === 0) setPts([p]); else void complete([pts[0], p]);
+        // A measuring gesture hands on the true distance typed (Scale image, forum 143).
+        if (pts.length === 0) setPts([p]); else void complete([pts[0], p], undefined, g.kind === 'twoPoints' && g.measure ? typed : undefined);
         break;
       case 'threePoints':
         if (pts.length < 2) setPts([...pts, p]); else void complete([pts[0], pts[1], p]);
@@ -272,11 +273,13 @@ export function DrawingView() {
   const live = useLive();
   const clickRef = useRef(gestureClick);
   clickRef.current = gestureClick;
-  const first = tool?.gesture?.kind === 'pickThenPoint' && pts.length === 1 && active ? pts[0] : undefined;
+  // A measuring two-point tool (Scale image, forum 143) likewise: the distance shown, the true one typed.
+  const measuring = tool?.gesture?.kind === 'twoPoints' && !!tool.gesture.measure;
+  const first = (tool?.gesture?.kind === 'pickThenPoint' || measuring) && pts.length === 1 && active ? pts[0] : undefined;
   useEffect(() => {
-    if (first) liveBegin('tool', first, (p, typed) => clickRef.current(p, p, typed));
+    if (first) liveBegin('tool', first, (p, typed) => clickRef.current(p, p, typed), { measure: measuring });
     else liveEnd('tool');
-  }, [first]);
+  }, [first, measuring]);
   useEffect(() => () => liveEnd('tool'), []);
   // A view that goes while the selection is dragged takes the drag's trace with it.
   useEffect(() => () => { if (carrying()) carryEnd(); clearLiveRise(); }, []);

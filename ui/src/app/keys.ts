@@ -239,7 +239,8 @@ export function carryOut(intent: KeyIntent): void {
     case 'valueEnter': valueOwner()?.enter(); break;
     case 'liveType': useLive.setState((l) => ({ [l.focus]: l[l.focus] + intent.key })); break;
     case 'liveBack': useLive.setState((l) => ({ [l.focus]: l[l.focus].slice(0, -1) })); break;
-    case 'liveFocus': useLive.setState((l) => ({ focus: intent.field ?? (l.focus === 'len' ? 'ang' : 'len') })); break;
+    // A measuring gesture has its one field, the true distance.
+    case 'liveFocus': useLive.setState((l) => ({ focus: l.measure ? 'len' : intent.field ?? (l.focus === 'len' ? 'ang' : 'len') })); break;
     case 'liveClear': useLive.setState({ len: '', ang: '' }); break;
     case 'liveCommit': liveCommit(); break;
     case 'liveMode': liveToggleMode(); break;

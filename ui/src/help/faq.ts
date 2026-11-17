@@ -78,6 +78,16 @@ export const FAQ: Entry[] = [
     source: 'report #23',
   },
   {
+    id: 'scale-image',
+    q: ['How do I scale an imported image or PDF to its true size?', 'How do I calibrate a scanned plan?', 'How do I align an image with a known measure or the graphic scale?'],
+    qRo: ['Cum scalez o imagine sau un PDF importat la mărimea reală?', 'Cum calibrez un plan scanat?', 'Cum potrivesc o imagine după o cotă cunoscută sau scara grafică?'],
+    keywords: ['scale', 'calibrate', 'pdf', 'scan', 'true', 'size', 'measure', 'distance', 'graphic', 'scalez', 'scalare', 'calibrez', 'imagine', 'poza', 'marime', 'reala', 'distanta', 'escala', 'escalar', 'echelle', 'scala', 'skalieren', 'skala', 'skaluj', '缩放'],
+    a: 'Right after File → Import PDF or image…, with „Then scale it to a known distance” ticked, the tool starts by itself: click two points on the picture or the PDF a known distance apart (a dimension, the graphic scale), type their true distance at the cursor (2400, 50m) and press Enter. The whole PDF, lines and pictures, scales about the first point. Later: Draft → Scale image, or Scale to a known distance… on the right-click menu or in the properties of a selected image or PDF.',
+    aRo: 'Imediat după File → Import PDF or image…, cu „Then scale it to a known distance” bifat, unealta pornește singură: fă clic pe două puncte de pe imagine sau de pe PDF aflate la o distanță cunoscută (o cotă, scara grafică), scrie distanța lor reală la cursor (2400, 50m) și apasă Enter. Tot PDF-ul, linii și imagini, se scalează în jurul primului punct. Mai târziu: Draft → Scale image, sau Scale to a known distance… în meniul de clic dreapta ori în proprietățile unei imagini sau ale unui PDF selectat.',
+    action: { label: 'Scale image', labelRo: 'Scalează imaginea', run: { kind: 'tool', id: 'drafting.scaleImage' } },
+    source: 'forum 143',
+  },
+  {
     id: 'dxf-locked-guide',
     q: ['How do I lock an imported DXF?', 'How do I turn a DXF into a locked group to use as a guide?', 'I cannot lock the DXF or make it a group'],
     qRo: ['Cum blochez un DXF importat?', 'Cum fac din DXF un grup blocat, ca ghidaj?', 'Nu pot bloca DXF-ul sau să-l fac grup'],

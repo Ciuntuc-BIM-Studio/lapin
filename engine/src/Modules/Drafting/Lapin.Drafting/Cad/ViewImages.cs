@@ -81,6 +81,35 @@ public static class ViewImages
         return File.ReadAllBytes(path);
     }
 
+    /// <summary>An image grown or shrunk by <paramref name="k"/> about <paramref name="p"/>: its corner carried, its size scaled, its turn kept.</summary>
+    public static Entity Scaled(Entity e, Vec2 p, double k)
+    {
+        var attrs = e.CloneAttrs();
+        var moved = p + (new Vec2(e.Num("x"), e.Num("y")) - p) * k;
+        attrs["x"] = moved.X; attrs["y"] = moved.Y;
+        attrs["width"] = e.Num("width") * k; attrs["height"] = e.Num("height") * k;
+        return e.With(attrs: attrs);
+    }
+
+    /// <summary>
+    /// A group's images and its drafting (an imported PDF's, forum 143), to scale true together; a group holding anything else
+    /// (a model's element, which has its own size) is refused, as is one with neither.
+    /// </summary>
+    static (List<Entity> Images, List<string> Drafted) Members(IModelView m, Entity group)
+    {
+        var images = new List<Entity>();
+        var drafted = new List<string>();
+        foreach (var id in Groups.MembersOf(m, group.Id))
+        {
+            var e = m.Get(id);
+            if (e is { Class: Class }) images.Add(e);
+            else if (e is { Class: IfcClass.Annotation } && e.Str("viewId") is { Length: > 0 }) drafted.Add(id);
+            else throw new CommandException($"„{group.Name}” holds more than drawing and images: only an image or an imported PDF's group scales true.");
+        }
+        if (images.Count == 0 && drafted.Count == 0) throw new CommandException($"„{group.Name}” has nothing to scale.");
+        return (images, drafted);
+    }
+
     public static void Register(IModuleRegistry r)
     {
         r.Class(new(Class, "Image to trace",
@@ -105,20 +134,29 @@ public static class ViewImages
         });
 
         // An image scaled true: two points on it and the distance they really are apart; it grows or shrinks about the first.
+        // A PDF's import (a group of drafted lines and images, forum 143) scales whole by the same rule, one undo step.
         r.Command("calibrateImage", "Scale image", (ctx, a) =>
         {
-            var e = ctx.Model.Get((string?)a["id"] ?? "") is { Class: Class } x ? x : throw new CommandException("Pick an image to scale.");
+            var target = ctx.Model.Get((string?)a["id"] ?? "");
+            var (images, drafted) = target switch
+            {
+                { Class: Class } x => ([x], []),
+                { Class: Groups.Class } g => Members(ctx.Model, g),
+                _ => throw new CommandException("Pick an image, or an imported PDF's group, to scale."),
+            };
             var (p, q) = (P(a["a"]), P(a["b"]));
             var length = Json.Number(a["length"]) ?? 0;
             var d = (q - p).Length;
             if (d < 1e-6 || !(length > 0)) throw new CommandException("Two different points and the distance between them, please.");
             var k = length / d;
-            var attrs = e.CloneAttrs();
-            var o = new Vec2(e.Num("x"), e.Num("y"));
-            var moved = p + (o - p) * k;
-            attrs["x"] = moved.X; attrs["y"] = moved.Y;
-            attrs["width"] = e.Num("width") * k; attrs["height"] = e.Num("height") * k;
-            ctx.Replace(e.With(attrs: attrs));
+            Pins.Refuse(images);
+            foreach (var e in images) ctx.Replace(Scaled(e, p, k));
+            if (drafted.Count > 0)
+                DraftCommands.Transform(ctx, new JsonObject
+                {
+                    ["op"] = "scale", ["center"] = new JsonArray(p.X, p.Y), ["factor"] = k,
+                    ["ids"] = new JsonArray([.. drafted.Select(x => (JsonNode)x)]),
+                });
             return new JsonObject { ["factor"] = k };
         });
 

@@ -1121,6 +1121,45 @@ export const scenes = [
     },
   },
   {
+    // Scaling to a known distance (forum 143): a PDF brought in at the wrong scale (1:50 for a 1:100 plan), the tool started on
+    // its group as an import goes on to it, two points clicked, the true distance typed at the cursor, Enter: the whole doubles.
+    id: 'trace-scale',
+    touches: ['drafting'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const sheet = await t.cmd('sheet.create', { paper: 'A3', name: 'Plan' });
+      await t.cmd('sheet.addViewport', { id: sheet.id, viewId: `plan:${storey}`, x: 200, y: 140 });
+      const data = await t.page.evaluate(async (id) => (await (await import('/src/engine/session.ts')).engine.call('export.pdf', { sheets: [id] })).data, sheet.id);
+      const upper = (await t.nodes()).find((n) => n.type === 'IfcBuildingStorey' && n.name === 'First floor');
+      const r = await t.cmd('drafting.importPdf', { viewId: `plan:${upper.id}`, name: 'plan.pdf', data, scale: 50, at: [0, 0] });
+      t.expect(Boolean(r.groupId), 'the PDF comes in as one group');
+      await t.ui({ view: 'plan', storeyId: upper.id, keyPlan: false, selected: [r.groupId], selection: r.groupId });
+      await t.wait(1500);
+      await t.fit();
+      await t.wait(600);
+      const shapeOf = async () => JSON.stringify((await t.nodes()).filter((n) => n.props.viewId === `plan:${upper.id}` && n.props.shape).map((n) => n.props.shape));
+      const before = await shapeOf();
+      // What the import's "Then scale it to a known distance" does: the group selected and the tool on.
+      await t.page.evaluate(async (id) => (await import('/src/modules/drafting/scaleImage.ts')).startScaleImage(id), r.groupId);
+      await t.wait(400);
+      const [ax, ay] = await t.planPoint(2, 3);
+      await t.page.mouse.move(ax, ay, { steps: 3 });
+      await t.page.mouse.click(ax, ay);
+      await t.wait(300);
+      const [bx, by] = await t.planPoint(6, 3);
+      await t.page.mouse.move(bx, by, { steps: 6 });
+      await t.wait(300);
+      for (const k of ['8', 'm']) await t.page.keyboard.press(k);
+      await t.wait(500);
+      t.expect(await t.page.locator('.live-box .live-cell.typed').count() === 1, 'the true distance is typed by the cursor, beside the measured one');
+      await t.shot('trace-scale', { of: '[data-testid=plan]', pad: 0 });
+      await t.page.keyboard.press('Enter');
+      await t.until(async () => (await shapeOf()) !== before, 'Enter scales the whole PDF');
+      await t.until(async () => (await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().tool)) == null, 'the tool ends once it is scaled');
+    },
+  },
+  {
     // A double door (decision 466): the Double door preset, its middle mullion picked in the elevation (none), the meeting section.
     id: 'joinery-double-door',
     async run(t) {
