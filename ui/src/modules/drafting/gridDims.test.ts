@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { GridAxis } from '../../shell/gridAxes';
-import { axisDims, commitSteps, formatDegrees, framePoint, parseDegrees, type ParallelDims, type RadialDims } from './gridDims';
+import { axisDims, commitSteps, stationAt, formatDegrees, framePoint, parseDegrees, type ParallelDims, type RadialDims } from './gridDims';
 
 /** Axes 1–4 up the plan at x = 0, 6, 12, 16.5 (y from −1.5 to 10.5); A and B across at y = 0 and 9. */
 const ortho: GridAxis[] = [
@@ -91,5 +91,23 @@ describe('a grid axis\'s temporary dimensions (forum #78)', () => {
     expect(parseDegrees('37,5°')).toBe(37.5);
     expect(parseDegrees('x')).toBeNull();
     expect(formatDegrees(44.99999)).toBe('45°');
+  });
+});
+
+describe('where the dimensions stand (issue #65)', () => {
+  it('stand near the clicked point, kept within the stretch the axes share; the middle without a click', () => {
+    const at = (click: { x: number; y: number } | null) => axisDims(ortho, '2', click) as ParallelDims;
+    expect(at(null).station).toBeCloseTo(4.5);
+    expect(at({ x: 6, y: 8 }).station).toBeCloseTo(8);
+    // Past the shared stretch (−1.5..10.5) it is held at its end.
+    expect(at({ x: 6, y: 40 }).station).toBeCloseTo(10.5);
+    expect(at({ x: 6, y: -9 }).station).toBeCloseTo(-1.5);
+    // A tilted axis: the click's component along the axis.
+    expect(stationAt(0, 10, [0, 10], 3)).toBe(3);
+    expect(stationAt(5, 5, [0, 10], 3)).toBe(5);
+  });
+  it('a radial grid ignores the click', () => {
+    const fan: GridAxis[] = [0, 45, 90].map((deg, i) => ({ tag: String(i + 1), a: { x: 0, y: 0 }, b: { x: 10 * Math.cos((deg * Math.PI) / 180), y: 10 * Math.sin((deg * Math.PI) / 180) } }));
+    expect(axisDims(fan, '2', { x: 3, y: 3 })).toEqual(axisDims(fan, '2'));
   });
 });
