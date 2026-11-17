@@ -8,7 +8,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
 import { useSession } from '../../engine/session';
 import { memberIdsOf } from './partMembersModel';
-import { activePartSketch, sketchHooks } from './partSketchStore';
+import { activePartSketch, sketchHooks, usePartSketch } from './partSketchStore';
 import { doubleClickHandlers, enterScope, exitScope, tabHandlers, useScope, type Scope } from '../../platform/scope';
 
 /** The scope's kind: what the bar says it is editing. */
@@ -24,7 +24,9 @@ export const isEditable = (node: NodeDto | null | undefined): boolean => !!node 
  */
 export function partScope(node: NodeDto): Scope {
   const held = (): Set<string> => new Set(memberIdsOf(useSession.getState().nodes.get(node.id)?.props));
-  return { id: PREFIX + node.id, kind: PART_KIND, label: node.name, includes: (n) => n.id === node.id || held().has(n.id), holdsEsc: () => !!activePartSketch() };
+  // The drafts of its sketch's board too (audit S11): the sketch is drawn and picked there while it is open.
+  const onBoard = (n: NodeDto) => { const v = usePartSketch.getState().viewId; return !!v && n.props.viewId === v; };
+  return { id: PREFIX + node.id, kind: PART_KIND, label: node.name, includes: (n) => n.id === node.id || held().has(n.id) || onBoard(n), holdsEsc: () => !!activePartSketch() };
 }
 
 /** The part being edited (its element's id), or null. */

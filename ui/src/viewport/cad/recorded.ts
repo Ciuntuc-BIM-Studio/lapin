@@ -157,12 +157,16 @@ export function inferConstraints(drawn: Drawn, placed: readonly PlacedPoint[], w
   return out;
 }
 
-/** The views whose drafted shapes build a Studio solid: a sketch (a solid's `profile` is the drafted shape its recipe starts from). */
+/**
+ * The views whose drafted shapes are a sketch: those that build a Studio solid (a solid's `profile` is the drafted shape its recipe
+ * starts from), and the boards of the shared sketch canvas that take constraints (an outline's, a part's own: audit S11).
+ */
 export function sketchViews(nodes: Iterable<{ id: string; props: Record<string, unknown> }>): Set<string> {
   const list = [...nodes];
   const draft = new Map(list.map((n) => [n.id, n]));
   const out = new Set<string>();
   for (const n of list) {
+    if (n.props.partSketchOf || typeof n.props.outlineSketchOf === 'string') { out.add(n.id); continue; }
     if (typeof n.props.operation !== 'string' || !n.props.operation || typeof n.props.profile !== 'string') continue;
     const v = draft.get(n.props.profile)?.props.viewId;
     if (typeof v === 'string') out.add(v);

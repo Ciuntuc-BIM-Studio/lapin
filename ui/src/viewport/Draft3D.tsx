@@ -30,6 +30,7 @@ import { axesInPlane, infer, type Inferred } from './sketch/inference';
 import { edgesInPlane, guidesInPlane, guidesOf, sceneSegments } from './sketch/edges';
 import { clearWorkPlane, finishSketch, lookAtPlane, useWorkPlane } from './sketch/sketch3d';
 import { middleOf, useAxisDrag } from './axisDrag';
+import { boardKey, boardOf } from './sketch/board';
 
 export function Draft3D({ camera, canvas, scene }: { camera: React.RefObject<THREE.Camera | null>; canvas: React.RefObject<HTMLElement | null>; scene: React.RefObject<THREE.Scene | null> }) {
   useCamera();
@@ -155,7 +156,7 @@ export function Draft3D({ camera, canvas, scene }: { camera: React.RefObject<THR
     };
     const onDown = (e: PointerEvent) => {
       if (e.button !== 0 || !inside(e)) return;
-      if ((e.target as Element | null)?.closest?.('.mode-chip, .cad-line, input, button')) return;
+      if ((e.target as Element | null)?.closest?.('.mode-chip, .sketch-bar, .cad-line, input, button')) return;
       e.stopPropagation(); e.preventDefault();
       if (facePickRef.current) { void planeOnFace(e); return; }
       const step = useCad.getState().step;
@@ -177,7 +178,7 @@ export function Draft3D({ camera, canvas, scene }: { camera: React.RefObject<THR
     };
     const onUp = (e: PointerEvent) => {
       if (e.button !== 0 || !inside(e)) return;
-      if ((e.target as Element | null)?.closest?.('.mode-chip, .cad-line, input, button')) return;
+      if ((e.target as Element | null)?.closest?.('.mode-chip, .sketch-bar, .cad-line, input, button')) return;
       e.stopPropagation();
     };
     /** A reference plane on the face under the click (Studio's Plane on face), selected: the next points go on it. */
@@ -204,13 +205,26 @@ export function Draft3D({ camera, canvas, scene }: { camera: React.RefObject<THR
     };
   }, [active, frame, camera, canvas, scene, acquire]);
 
-  // The sketch's work plane with no command running: Enter finishes it, Esc lets it go (the lines stay).
+  // The sketch's work plane with no command running: the board's rule (sketch/board.ts boardKey). Enter finishes it; Esc lets
+  // the selection go first, then leaves the board keeping its work (Studio's sketch: the lines stay; a part's: written back).
+  const board = sketch ? boardOf(sketch.planeId, nodes) : null;
   useEffect(() => {
     if (!sketch || command || dragging) return;
     const onKey = (e: KeyboardEvent) => {
       if (keyIsForField(e)) return;
-      if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); void finish(); }
-      else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); clearWorkPlane(); }
+      const b = boardOf(sketch.planeId, useSession.getState().nodes);
+      if (!b) {
+        if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); void finish(); }
+        else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); clearWorkPlane(); }
+        return;
+      }
+      const selected = useUi.getState().selected.length > 0;
+      const act = boardKey(e.key, { in3d: true, selected, board: b });
+      if (!act) return;
+      e.preventDefault(); e.stopPropagation();
+      if (act === 'deselect') useUi.setState({ selected: [], selection: null });
+      else if (act === 'leave') b.leave?.();
+      else void b.finish();
     };
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
@@ -223,7 +237,8 @@ export function Draft3D({ camera, canvas, scene }: { camera: React.RefObject<THR
     const s = o.map((q) => project(new THREE.Vector3(q.x, q.y, q.z)));
     return s.some((p) => !p) ? null : s.map((p, i) => `${i ? 'L' : 'M'}${p!.x.toFixed(1)} ${p!.y.toFixed(1)}`).join('') + 'Z';
   })();
-  const sketchChip = sketch && !dragging ? (
+  // A board's own bar is drawn by its module (Studio's Board3D); this chip is for a plane no board claims.
+  const sketchChip = sketch && !dragging && !board ? (
     <div className="axis-drag-chip mode-chip sketch-chip" data-draft3d="sketch">
       <span>Sketching on</span><span data-no-i18n>{sketch.name}</span>
       {!command && <span className="mode-hint">Draw with Line, Rectangle, Circle or Arc (or the command line); Enter finishes, Esc leaves</span>}
@@ -263,7 +278,7 @@ export function Draft3D({ camera, canvas, scene }: { camera: React.RefObject<THR
         <CadOverlay aimed={aimed} toScreen={toScreen} />
       </svg>
       {inferEl}
-      {sketchChip ?? <div className="axis-drag-chip mode-chip" data-draft3d="plane">
+      {board ? null : sketchChip ?? <div className="axis-drag-chip mode-chip" data-draft3d="plane">
         <span>Drafting on</span><span data-no-i18n>{work!.name}</span>
         <span className="mode-hint">{work!.id.startsWith('plan:') || nodes.get(work!.id)?.props.kind === 'plan' ? 'Select a reference plane to draw on it instead' : 'Deselect it to draw on the storey\'s level'}</span>
         <button type="button" className={`toggle${facePick ? ' active' : ''}`} aria-pressed={facePick} data-draft3d="face"

@@ -10,6 +10,8 @@ import { chipOf } from '../../viewport/cad/constraints';
 import { useCad } from '../../viewport/cad/session';
 import { setConstraintsHidden, useSketch } from '../../viewport/cad/sketchStore';
 import { constraintCommandOn } from './constraintTools';
+import { useSession } from '../../engine/session';
+import { boardOf } from '../../viewport/sketch/board';
 
 export function SketchChip() {
   const view = useUi((s) => s.view);
@@ -17,7 +19,9 @@ export function SketchChip() {
   const sketch = useSketch((s) => (s.shown ? s.views[s.shown] : undefined));
   const hidden = useSketch((s) => (s.shown ? !!s.hidden[s.shown] : false));
   const toolOn = useCad((s) => !!s.command && constraintCommandOn());
-  if ((view !== 'plan' && view !== 'drawing') || !shown) return null;
+  // A board's bar carries its own chip (SketchBar).
+  const onBoard = useSession((s) => !!shown && !!boardOf(shown, s.nodes));
+  if ((view !== 'plan' && view !== 'drawing') || !shown || onBoard) return null;
   if (!sketch?.constraints.length && !toolOn) return null;
   const chip = chipOf(sketch?.status ?? null);
   return (

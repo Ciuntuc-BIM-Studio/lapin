@@ -34,7 +34,9 @@ import { PartSketch3D } from './PartSketchEdit';
 import { ConstraintOverlay } from './ConstraintOverlay';
 import { SketchChip } from './SketchChip';
 import { constraintTool, DIMENSIONS, GEOMETRIC } from './constraintTools';
-import { OutlineSketchBar } from './outlineSketch';
+import { SketchBar2D } from './SketchBar';
+import { Board3D } from './Board3D';
+import './boards';
 import { COMMAND, DEFAULT_JUSTIFY, JUSTIFY, frontViewId, makesNative, nativeArgs, convertArgs, shapeFits, solidArgs, threePoints, viewOf, type ThickChoice, type ThickOp } from './thick';
 import { cadLog, registerCommand, startCommand, type Step } from '../../viewport/cad/session';
 import { useCamera, type Vec3 } from '../../viewport/camera';
@@ -865,10 +867,10 @@ const studio: LapinModule = {
     // Any element some solid cuts, unites or intersects: those solids listed, selectable even when never drawn.
     { id: 'studioOperations', label: 'Boolean', classes: ['*'], shows: hasTools, component: OperationsCard },
   ],
-  overlays: [PartTreePanel, PartParamsPanel, SketchChip, OutlineSketchBar],
+  overlays: [PartTreePanel, PartParamsPanel, SketchChip, SketchBar2D],
   planOverlays: [ConstraintOverlay],
   drawingOverlays: [ConstraintOverlay],
-  overlays3d: [PartPlane3D, PartFlex3D, PartSketch3D],
+  overlays3d: [PartPlane3D, PartFlex3D, PartSketch3D, Board3D],
   // Create similar: a placed part's Part tool with its part, values, turn and hand; a primitive's tool of its shape.
   placeSources: [{ id: 'parts', label: 'Parts', order: 40, useEntries: usePartEntries, manage: { label: 'Parts…', run: () => useUi.setState({ dialog: 'parts' }) } }],
   similarFor: (n) => {

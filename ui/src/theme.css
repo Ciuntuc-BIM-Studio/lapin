@@ -2754,6 +2754,19 @@ path.part-flex-ghost { fill: none; stroke: var(--accent); stroke-width: 1.6; str
 /* An outline sketched on its own plan (forum topic 97, stage 3): whose sketch it is, Finish and Cancel. */
 .outline-sketch-bar { position: absolute; top: 56px; left: 50%; transform: translateX(-50%); z-index: 6; display: inline-flex; align-items: center; gap: 10px; padding: 4px 6px 4px 12px; background: var(--hud); border: 1px solid var(--accent); border-radius: 6px; font-size: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); white-space: nowrap; }
 .outline-sketch-title { font-weight: 600; }
+/* The bar over every sketch board (audit S11, docs/plan-sketch-canvas.md): flat at the top of its view, over the 3D view at the bottom. */
+.sketch-bar { position: absolute; top: 56px; left: 50%; transform: translateX(-50%); z-index: 6; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 8px; max-width: calc(100% - 360px); padding: 4px 8px; background: var(--hud); border: 1px solid var(--accent); border-radius: 8px; font-size: 12px; backdrop-filter: blur(4px); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
+.sketch-bar.in3d { top: auto; bottom: 64px; max-width: calc(100% - 120px); }
+.sketch-bar.in3d[data-sketch-bar=part] { left: calc(50% + 162px); max-width: calc(100% - 348px); }
+.sketch-bar-title { font-weight: 600; white-space: nowrap; }
+.sketch-bar .sketch-chip.inline { position: static; transform: none; padding: 3px 10px; box-shadow: none; }
+.sketch-bar-group { display: inline-flex; align-items: center; gap: 1px; padding-left: 8px; border-left: 1px solid var(--rule); }
+.sketch-bar-group:empty { display: none; }
+.sketch-bar-group .icon.on { color: var(--accent); background: var(--accent-wash); }
+.sketch-bar-hint { font-size: 11px; }
+.sketch-bar-end { display: inline-flex; align-items: center; gap: 4px; padding-left: 8px; border-left: 1px solid var(--rule); }
+.sketch-bar .btn.small { width: auto; padding: 3px 8px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-size: 11px; letter-spacing: 0; text-transform: none; }
+.part-sketch-note.floating { position: absolute; left: 50%; top: 104px; transform: translateX(-50%); z-index: 6; padding: 2px 10px; background: var(--hud); border-radius: 6px; }
 /* The Place catalogue (S15): one search over every source, the cards in a grid. */
 .place-catalog { width: min(860px, calc(100vw - 32px)); }
 .place-catalog-bar { gap: 8px; align-items: center; margin-bottom: 8px; }

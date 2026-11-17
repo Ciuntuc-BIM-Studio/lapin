@@ -2,7 +2,7 @@
  * "Edit sketch" on an outline (forum topic 97, stage 3): a floor's, a floor opening's or a ceiling's outline opened as a sketch on
  * a plan view of its own (`studio.editOutline`), the element hidden there; drawn with the Draft tab's commands (Line, Arc, Fillet,
  * Trim, Offset…) and constrained with Studio → Constraints, as any sketch; Finish sketch writes it back to the element in one undo
- * step (`studio.finishOutline`) and Cancel drops it (`studio.cancelOutline`). The bar over the view says whose sketch it is.
+ * step (`studio.finishOutline`) and Cancel drops it (`studio.cancelOutline`). The bar over the view is every board's (SketchBar, boards.ts).
  */
 
 import { notify, useUi } from '../../app/store';
@@ -46,22 +46,4 @@ export async function cancelOutline(viewId: string): Promise<void> {
   const of = useSession.getState().nodes.get(viewId)?.props.outlineSketchOf as string | undefined;
   await execute('studio.cancelOutline', { viewId });
   useUi.setState({ view: 'plan', planViewId: back.planViewId, ...(of ? { selected: [of], selection: of } : {}) });
-}
-
-/** Over the plan an outline is sketched on: whose sketch it is, Finish sketch and Cancel. */
-export function OutlineSketchBar() {
-  const view = useUi((s) => s.view);
-  const planViewId = useUi((s) => s.planViewId);
-  const node = useSession((s) => (planViewId ? s.nodes.get(planViewId) : undefined));
-  const of = node?.props.outlineSketchOf as string | undefined;
-  const element = useSession((s) => (of ? s.nodes.get(of) : undefined));
-  if (view !== 'plan' || !planViewId || !of) return null;
-  return (
-    <div className="outline-sketch-bar" role="status" data-testid="outline-sketch-bar">
-      <span className="outline-sketch-title">Sketch of {element?.name ?? of}</span>
-      <span className="muted">Draw with Draft, constrain with Studio → Constraints</span>
-      <button type="button" className="btn primary small" data-action="finish-outline" onClick={() => void finishOutline(planViewId)}>Finish sketch</button>
-      <button type="button" className="btn small" data-action="cancel-outline" onClick={() => void cancelOutline(planViewId)}>Cancel</button>
-    </div>
-  );
 }
