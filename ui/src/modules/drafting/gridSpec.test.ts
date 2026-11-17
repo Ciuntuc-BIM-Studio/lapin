@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { useStandards } from '../../engine/unitsStore';
-import { gridLines, readSpacings } from './gridSpec';
+import { firstForCounting, gridLines, nextLabel, readSpacings, runUpThePlan } from './gridSpec';
 
 describe('the Grid dialog (report #68)', () => {
   it('reads spacings in the project\'s units, a count times a length repeating it', () => {
@@ -30,5 +30,24 @@ describe('Renumber axes (forum #75)', () => {
     expect(selectedAxes(['g#1', 'g#B'])).toEqual({ gridId: 'g', tags: ['1', 'B'] });
     expect(selectedAxes(['wall'])).toBeNull();
     expect(selectedAxes(['g#1', 'h#1'])).toBeNull();
+  });
+});
+
+describe('axes labelled either way, counting up or down (issue #64)', () => {
+  it('counts labels as the engine does', () => {
+    expect(['1', '9', 'A', 'Z', 'AZ', 'A1', 'b'].map(nextLabel)).toEqual(['2', '10', 'B', 'AA', 'BA', 'A2', 'c']);
+  });
+  it('turns a default first label into the one that ends the family on it, and back', () => {
+    expect(firstForCounting('1', '1', 4, true)).toBe('4');
+    expect(firstForCounting('A', 'A', 3, true)).toBe('C');
+    expect(firstForCounting('4', '1', 4, false)).toBe('1');
+    expect(firstForCounting('12', '1', 4, true)).toBe('12');
+    expect(firstForCounting('12', '1', 4, false)).toBe('12');
+  });
+  it('tells the selected axes\' direction', () => {
+    const axes = [{ tag: '1', a: { x: 0, y: 0 }, b: { x: 0, y: 10 } }, { tag: 'A', a: { x: 0, y: 0 }, b: { x: 10, y: 0 } }];
+    expect(runUpThePlan(axes, ['1'])).toBe(true);
+    expect(runUpThePlan(axes, ['A'])).toBe(false);
+    expect(runUpThePlan(axes, ['Q'])).toBeNull();
   });
 });

@@ -84,7 +84,9 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
 
         // Axes renumbered in order across their family (forum #75): the axes named (tags), or all of a direction (x: those
         // spaced along x, numbered left to right; y: along y, bottom to top), in numbers or letters (scheme; I and O left out
-        // unless skipIO is false) from start, after an optional prefix. What names them by their tag (dimensions) follows. One undo step.
+        // unless skipIO is false) from start, after an optional prefix. With reverse (issue #64) the other way: right to left, top
+        // to bottom; with descending the labels count down from start (or down to 1 or A when no start is given). What names
+        // them by their tag (dimensions) follows. One undo step.
         r.Command("renumberAxes", "Renumber grid axes", (ctx, a) =>
         {
             var grid = (string?)a["gridId"] is { Length: > 0 } gid ? Spatial.Require(ctx.Model, gid, IfcClass.Grid)
@@ -96,7 +98,9 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             var x = direction == "x" || (direction == null && tags is { Count: > 0 } && axes.FirstOrDefault(ax => tags.Contains(ax.Tag)) is { } first && Grids.AlongX(first));
             var scheme = (string?)a["scheme"] is { Length: > 0 } sc ? sc : x ? "numbers" : "letters";
             var skip = a["skipIO"] is not JsonValue sv || !sv.TryGetValue<bool>(out var skipIO) || skipIO;
-            var map = Grids.Renumber(axes, tags, direction, scheme, (string?)a["start"], ((string?)a["prefix"])?.Trim() ?? "", skip);
+            var reverse = a["reverse"] is JsonValue rv && rv.TryGetValue<bool>(out var rev) && rev;
+            var descending = a["descending"] is JsonValue dv && dv.TryGetValue<bool>(out var desc) && desc;
+            var map = Grids.Renumber(axes, tags, direction, scheme, (string?)a["start"], ((string?)a["prefix"])?.Trim() ?? "", skip, reverse, descending);
             var changed = map.Count(p => p.Key != p.Value);
             if (changed > 0)
             {
@@ -110,7 +114,9 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
 
         // A whole grid at once (report #68, Annotate → Grid…): axes square to x at the origin and after each spacing (labelled
         // from firstX, numbers by default), axes square to y likewise (from firstY, letters), each running past the outer ones by
-        // `extend`; the grid turned by `angle` (degrees) about the origin. With `replace`, the grid's axes so far go.
+        // `extend`; the grid turned by `angle` (degrees) about the origin. With `replace`, the grid's axes so far go. Each family's
+        // labels may run the other way (reverseX: right to left, reverseY: top to bottom) and count down from their first label
+        // (descendingX, descendingY; issue #64).
         r.Command("makeGrid", "Grid", (ctx, a) =>
         {
             static List<double> Spacings(JsonNode? n) => n is JsonArray arr ? arr.Select(v => Json.Number(v) ?? double.NaN).ToList() : [];
@@ -137,10 +143,23 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
                 made.Add((JsonNode)tag);
             }
             static IEnumerable<double> Stations(List<double> spacings) { double at = 0; yield return 0; foreach (var d in spacings) yield return at += d; }
-            var tag = Label((string?)a["firstX"], "1");
-            foreach (var s in Stations(xs)) { Line(tag, W(s, -extend), W(s, depth + extend)); tag = Grids.Next(tag); }
-            tag = Label((string?)a["firstY"], "A");
-            foreach (var t in Stations(ys)) { Line(tag, W(-extend, t), W(width + extend, t)); tag = Grids.Next(tag); }
+            var reverseX = a["reverseX"] is JsonValue rxv && rxv.TryGetValue<bool>(out var rx) && rx;
+            var reverseY = a["reverseY"] is JsonValue ryv && ryv.TryGetValue<bool>(out var ry) && ry;
+            var descendingX = a["descendingX"] is JsonValue dxv && dxv.TryGetValue<bool>(out var dx) && dx;
+            var descendingY = a["descendingY"] is JsonValue dyv && dyv.TryGetValue<bool>(out var dy) && dy;
+            // A family's labels, in the order its stations are made (left to right, bottom to top).
+            static List<string> Tags(string first, int count, bool reverse, bool descending)
+            {
+                var list = Grids.Series(first, count, descending);
+                if (reverse) list.Reverse();
+                return list;
+            }
+            var sx = Stations(xs).ToList();
+            var tx = Tags(Label((string?)a["firstX"], "1"), sx.Count, reverseX, descendingX);
+            for (var i = 0; i < tx.Count; i++) Line(tx[i], W(sx[i], -extend), W(sx[i], depth + extend));
+            var sy = Stations(ys).ToList();
+            var ty = Tags(Label((string?)a["firstY"], "A"), sy.Count, reverseY, descendingY);
+            for (var i = 0; i < ty.Count; i++) Line(ty[i], W(-extend, sy[i]), W(width + extend, sy[i]));
             Write(ctx, grid, axes);
             return new JsonObject { ["gridId"] = grid.Id, ["tags"] = made };
         });

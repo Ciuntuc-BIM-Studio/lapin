@@ -48,3 +48,40 @@ export function selectedAxes(selected: string[]): { gridId: string; tags: string
   if (axes.some((s) => !s.startsWith(`${gridId}#`))) return null;
   return { gridId, tags: axes.map((s) => s.slice(gridId.length + 1)) };
 }
+
+/**
+ * Whether the axes named run up the plan (the family spaced along x, numbered left to right) rather than across it, as the
+ * engine tells them apart (Grids.AlongX); null when none of them is in the grid. Renumber axes names the selected axes'
+ * directions by it (issue #64).
+ */
+export function runUpThePlan(axes: { tag: string; a: { x: number; y: number }; b: { x: number; y: number } }[], tags: string[]): boolean | null {
+  const first = axes.find((x) => tags.includes(x.tag));
+  return first ? Math.abs(first.b.y - first.a.y) >= Math.abs(first.b.x - first.a.x) : null;
+}
+
+/** The label after `tag`, as the engine counts (Grids.Next): 1 → 2, 9 → 10, A → B, Z → AA, A1 → A2. */
+export function nextLabel(tag: string): string {
+  const m = /^(.*?)(\d+)$/.exec(tag);
+  if (m) return m[1] + String(Number(m[2]) + 1);
+  if (!tag) return '1';
+  const chars = [...tag];
+  for (let i = chars.length - 1; i >= 0; i--) {
+    const c = chars[i];
+    if ((c >= 'A' && c < 'Z') || (c >= 'a' && c < 'z')) { chars[i] = String.fromCharCode(c.charCodeAt(0) + 1); return chars.join(''); }
+    if (c === 'Z' || c === 'z') { chars[i] = c === 'Z' ? 'A' : 'a'; continue; }
+    return `${tag}1`;
+  }
+  return (tag[0] === tag[0].toUpperCase() ? 'A' : 'a') + chars.join('');
+}
+
+/**
+ * Axis grid's first label when a family's counting is switched (issue #64): counting down from the default (1, A), the
+ * first becomes the label that ends the family on it (4 axes: 4, D); counting up again from that, the default comes back.
+ * A label the user typed is kept.
+ */
+export function firstForCounting(first: string, fallback: string, count: number, descending: boolean): string {
+  let top = fallback;
+  for (let i = 1; i < count; i++) top = nextLabel(top);
+  if (descending) return first.trim() === fallback ? top : first;
+  return first.trim() === top ? fallback : first;
+}
