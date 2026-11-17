@@ -67,6 +67,19 @@ The catalogue also lists **Python scripts**. On the desktop you can install one 
 
 ![A script's details: what it asks for, and that it is not runnable yet](shots/extensions-script.webp)
 
+## Paid extensions
+
+Some extensions are **sold by their authors**, through their own shop (Lemon Squeezy or Gumroad). They are marked **Paid** in the list, with their price; the price is *indicative*: the one that counts is the seller's, at the checkout. Lapin Extensions takes no commission and is not part of the sale: the seller takes the payment, issues the invoice and handles refunds, under the terms that **Seller's terms** opens.
+
+![A paid extension's details: sold by its author, Buy, the licence key](shots/extensions-paid.webp)
+
+1. Click **Buy**: the seller's checkout opens in your browser. After paying you receive a **licence key** (by e-mail, or on the receipt page).
+2. Back in **File → Extensions…**, paste the key into **Licence key** and click **Install**. Lapin sends the key to the store, which checks it with the seller's shop and then gives Lapin the file; Lapin checks its size, SHA-256 and signature like any other.
+
+The key is kept **on this computer** (in Lapin's settings), so you type it once: updates use it. Lapin checks it again when an update is offered, or once a week; without an internet connection nothing is blocked, and what is installed keeps working.
+
+If the seller refunds the purchase or disables the key, the extension gets **no more updates** and Installed says so; what is installed **stays**. **Forget licence key** in Installed removes the key kept for an extension (the next update asks for it again). A paid extension is installed in the browser too, from the store, with the same key.
+
 ## Another catalogue
 
 **Catalogue…** at the bottom of the dialog sets the catalogue's address: an https address, or the path of an `index.json` on this computer or a shared folder (a firm's own catalogue). Leave it empty for Lapin's own. The arrow beside it reads the catalogue again. A catalogue of your own need not be signed: Lapin then says above the list that it is **not signed by Lapin Extensions**, so install from it only if you trust who keeps it. A catalogue whose signature does not hold is never read.
@@ -79,5 +92,7 @@ Anyone can publish an extension. Export it from Lapin (My furniture → Export, 
 
 - **On the store**: sign in at store.lapinbim.com with your [forum](https://forum.lapinbim.com) account, open **Your extensions**, fill in the form and upload the file and a few screenshots. The store checks the file as Lapin will and sends it for review; your page shows the review and, once it is published, how many times it was downloaded. A new version goes the same way.
 - **On GitHub**: attach the file to a release of a repository of yours and add its manifest by a pull request on [Ciuntuc-BIM-Studio/lapin-extensions](https://github.com/Ciuntuc-BIM-Studio/lapin-extensions). Its README says how, and what the automatic checks look at.
+
+**To sell an extension**, set up the product with licence keys at your own Lemon Squeezy or Gumroad shop, then fill in **Sold through your own shop** in the store's form (the provider, the product's id, the checkout page, your terms of sale and refunds, and a price to show). You are the seller: the store lists it, keeps its file privately and gives it only to a valid key; it takes no commission ([author terms](https://store.lapinbim.com/legal/author-terms.html), section 5).
 
 A types pack comes from **Manage → Type packs… → Export types…** (or **Save to library** at a type configurator); a symbol, line type, standards, rule pack, bar shapes or parameters file from the **Export** of its own dialog (**Manage → Symbols…**, **Drafting standards**, **Rules…**, **Bar shapes…**, **Shared parameters**; line types as a `.lin`); a price list from **Price lists…**, with the export button of a list on this computer (a `.lapinprices` file, its prices marked indicative).

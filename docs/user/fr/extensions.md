@@ -63,6 +63,19 @@ Le catalogue liste aussi des **scripts Python**. Dans l'application de bureau, v
 
 ![Les détails d'un script : ce qu'il demande, et qu'il n'est pas encore exécutable](shots/extensions-script.webp)
 
+## Extensions payantes
+
+Certaines extensions sont **vendues par leurs auteurs**, dans leur propre boutique (Lemon Squeezy ou Gumroad). Elles sont marquées **Payante** dans la liste, avec leur prix ; ce prix est *indicatif* : celui qui compte est celui du vendeur, au paiement. Lapin Extensions ne prend aucune commission et n'est pas partie à la vente : le vendeur encaisse le paiement, émet la facture et gère les remboursements, selon les conditions qu'ouvre **Conditions du vendeur**.
+
+![Les détails d'une extension payante : vendue par son auteur, Acheter, la clé de licence](shots/extensions-paid.webp)
+
+1. Cliquez sur **Acheter** : la page de paiement du vendeur s'ouvre dans votre navigateur. Après le paiement, vous recevez une **clé de licence** (par e-mail ou sur la page du reçu).
+2. De retour dans **Fichier → Extensions…**, collez la clé dans **Clé de licence** et cliquez sur **Installer**. Lapin envoie la clé au magasin, qui la vérifie auprès de la boutique du vendeur puis donne le fichier à Lapin ; Lapin vérifie sa taille, son SHA-256 et sa signature comme pour tout autre.
+
+La clé est gardée **sur cet ordinateur** (dans les réglages de Lapin) : vous la saisissez une fois, les mises à jour l'utilisent. Lapin la vérifie de nouveau quand une mise à jour est proposée, ou une fois par semaine ; sans internet rien n'est bloqué, et ce qui est installé continue de fonctionner.
+
+Si le vendeur rembourse l'achat ou désactive la clé, l'extension **ne reçoit plus de mises à jour** et Installées le dit ; ce qui est installé **reste**. **Oublier la clé de licence** dans Installées retire la clé gardée (la prochaine mise à jour la redemande). Une extension payante s'installe aussi dans le navigateur, depuis le magasin, avec la même clé.
+
 ## Un autre catalogue
 
 **Catalogue…**, en bas de la boîte de dialogue, définit l'adresse du catalogue : une adresse https, ou le chemin d'un `index.json` sur cet ordinateur ou dans un dossier partagé (le catalogue propre à une entreprise). Laissez vide pour le catalogue de Lapin. La flèche à côté relit le catalogue. Un catalogue à vous n'a pas besoin d'être signé : Lapin indique alors au-dessus de la liste qu'il **n’est pas signé par Lapin Extensions**, alors n'installez depuis lui que si vous faites confiance à qui le tient. Un catalogue dont la signature n'est pas valide n'est jamais lu.

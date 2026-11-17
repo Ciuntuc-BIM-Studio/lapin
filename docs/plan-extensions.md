@@ -1,6 +1,6 @@
 # Lapin Extensions: plan
 
-Hotărârea utilizatorului (12.11.2026): un magazin de extensii, **Lapin Extensions**, cu adresa viitoare store.lapinbim.com. Etapa 0 e făcută (decizia 499); etapa 1 e construită și **publicată pe 12.11.2026** (decizia 504, §10): store.lapinbim.com live, containerul `lapin-store`, DiscourseConnect pornit pe forum, catalogul **semnat** cu cheia magazinului (`2daeb4d5dc6eae92`, în `STORE_KEYS` din același zi); pașii și întreținerea în `deploy/store/README.md`; etapa 2 e hotărâtă în §11. Extensiile vin în patru feluri, în ordinea asta:
+Hotărârea utilizatorului (12.11.2026): un magazin de extensii, **Lapin Extensions**, cu adresa viitoare store.lapinbim.com. Etapa 0 e făcută (decizia 499); etapa 1 e construită și **publicată pe 12.11.2026** (decizia 504, §10): store.lapinbim.com live, containerul `lapin-store`, DiscourseConnect pornit pe forum, catalogul **semnat** cu cheia magazinului (`2daeb4d5dc6eae92`, în `STORE_KEYS` din același zi); pașii și întreținerea în `deploy/store/README.md`; etapa 2 e hotărâtă în §11, iar 2a (extensiile plătite) e construită în §12 (decizia 660, nepublicată). Extensiile vin în patru feluri, în ordinea asta:
 
 1. **Pachete de conținut** (fără cod): mobilier (`.lapinlib`), șabloane de proiect (`.lapin`), profile (`.lapinprofiles`), hașuri (`.pat`), cartușe (`.json` al cartușelor), liste de prețuri (`.lapinprices`), tipuri de pereți, plăci, uși, ferestre, stâlpi, grinzi, scări (`.lapintypes`, felul `types`, §9.1). **Primele.**
 2. **Scripturi și unelte Python**, după etapa 4 a planului Python (`docs/plan-python-scripting.md`, decizia 489).
@@ -71,7 +71,7 @@ Felurile noi, câte un fișier fiecare, cu aceeași schemă de manifest: `symbol
 | **0.1** | tipurile ca fel separat (`types`, un `.lapintypes` adus în proiectul deschis de `types.importFrom`, un pas de undo; Gestionare → Pachete de tipuri…); licențele necomerciale marcate; exportul unei liste de prețuri ca `.lapinprices` | **făcută** (decizia 499, răspunsurile din §9) |
 | **0.2** | capturi de ecran în manifest (făcut în etapa 1: `screenshots`); un exemplu de pachet de tipuri în catalog (`make-examples.mjs`) | exemplul de făcut |
 | **1. store.lapinbim.com** | site-ul static generat din catalog (`lapin-extensions/site/`); serviciul magazinului (`deploy/store/`): conturi prin DiscourseConnect (forum.lapinbim.com), panoul autorului (trimite o extensie sau o versiune nouă: formular + fișier + capturi → pull request în catalog; starea reviziei; descărcările), contorul anonim de descărcări, găzduirea catalogului (lapinbim.com/extensions/); **semnarea** (cheia Ed25519 a magazinului, separată de a updater-ului: indexul și fiecare pachet, verificate în Lapin); proiectele juridice (`lapin-extensions/legal/`); recenziile și notele rămân pentru mai târziu | **construită** (decizia 504, §10); de publicat de utilizator (`deploy/store/README.md`) |
-| **2. Extensii plătite** | ale autorilor, vândute prin vânzătorul lor (§11); felurile 3 (JS) și 4 (C#) | hotărâtă (§11), de făcut |
+| **2. Extensii plătite** | ale autorilor, vândute prin vânzătorul lor (§11); felurile 3 (JS) și 4 (C#) | **2a construită** (decizia 660, §12), nepublicată; felurile 3 și 4 de făcut |
 
 ## 5. Siguranța și permisiunile
 
@@ -153,7 +153,7 @@ Aprobată de utilizator la 12.11.2026. Codul și testele sunt făcute; nimic nu 
 
 ## 11. Etapa 2: hotărârea utilizatorului (12.11.2026)
 
-- **2a, aprobată:** extensiile plătite ale altor autori sunt **vândute de autorii lor, prin propriul vânzător** (Lemon Squeezy, Gumroad, Paddle…), care face TVA-ul și facturile; magazinul doar trimite la pagina de cumpărare a autorului, iar Lapin verifică cheia de licență prin furnizorul autorului. **Comision 0 %.** Câmpul de manifest propus (de implementat mai târziu; încă nu e în schemă, ca să nu fie acceptat fără comportament): **`purchase`**, nu `licence`, ca să nu se confunde cu `license` (licența SPDX, care rămâne obligatorie și spune condițiile de folosire):
+- **2a, aprobată:** extensiile plătite ale altor autori sunt **vândute de autorii lor, prin propriul vânzător** (Lemon Squeezy, Gumroad, Paddle…), care face TVA-ul și facturile; magazinul doar trimite la pagina de cumpărare a autorului, iar Lapin verifică cheia de licență prin furnizorul autorului. **Comision 0 %.** Câmpul de manifest propus (**implementat în etapa 2a, §12**, cu `terms` în plus): **`purchase`**, nu `licence`, ca să nu se confunde cu `license` (licența SPDX, care rămâne obligatorie și spune condițiile de folosire):
 
   ```
   purchase: { provider: "lemonsqueezy" | "gumroad" | "paddle" | …,
@@ -165,3 +165,95 @@ Aprobată de utilizator la 12.11.2026. Codul și testele sunt făcute; nimic nu 
   Un pachet plătit nu are copie publică: `package.url` e adresa de descărcare a vânzătorului sau una a magazinului care cere cheia; Lapin cere cheia de licență la instalare și o verifică prin API-ul public de validare al furnizorului (Lemon Squeezy `/v1/licenses/validate`, Gumroad `/v2/licenses/verify`), pe desktop prin motor; cheia rămâne pe calculator. De stabilit la implementare: furnizorii acceptați, ce se întâmplă fără internet, revocarea.
 - **2b, schimbată:** modulele premium Lapin (mep-pro, urban, rail, planning-pro) **nu** se vând ca extensii în magazin. Devin o **platformă premium „ca un SaaS, dar locală + server”** (aplicația desktop plus un server), planificată separat în `docs/plan-premium-platform.md` (**de scris**, în afara acestei etape).
 - Felurile 3 (plug-in-uri JS) și 4 (module C# semnate, pentru parteneri) rămân pentru mai târziu.
+
+## 12. Etapa 2a: extensiile plătite, vândute de autorii lor (decizia 660, 17.11.2026)
+
+Hotărârile utilizatorului (17.11.2026, toate recomandările):
+
+1. **Ce se poate vinde acum:** conținutul și scripturile Python (felurile care există azi). Plug-in-urile JS (felul 3) și modulele C# semnate (felul 4) rămân pentru o etapă cu sandbox și permisiuni impuse; o listă explicită (`PAID_KINDS`) spune ce fel poate fi plătit, ca un fel nou să nu devină vandabil fără să hotărască cineva.
+2. **Furnizorii:** **Lemon Squeezy** și **Gumroad**, amândoi cu API public de verificare a cheii, fără cont API al nostru. Paddle mai târziu. Verificat pe 17.11.2026 în documentația lor:
+   - Lemon Squeezy: `POST https://api.lemonsqueezy.com/v1/licenses/validate`, formular `license_key` (și `instance_id`, nefolosit); răspuns `{valid, error, license_key: {status: inactive | active | expired | disabled, …}, instance, meta: {store_id, product_id, …}}`; erori 400 / 404 / 422 cu `error`. **`meta.product_id` trebuie comparat cu al manifestului**: altfel orice cheie a oricărui produs Lemon Squeezy ar trece. **Atenție: Lemon Squeezy nu mai primește înscrieri noi și se închide la 31.03.2027** (banda de pe docs.lemonsqueezy.com; vânzătorii lui sunt trimiși spre Stripe Managed Payments) — întrebare pentru utilizator, §12.9.
+   - Gumroad: `POST https://api.gumroad.com/v2/licenses/verify`, formular `product_id`, `license_key`, `increment_uses_count=false` (implicit e `true`: fiecare verificare ar număra o folosire); răspuns `{success, uses, purchase: {product_id, refunded, disputed, dispute_won, chargebacked, subscription_ended_at, subscription_cancelled_at, subscription_failed_at, …}}`; o cheie dezactivată răspunde 404 `{success: false, message: "This license key has been disabled."}`, una necunoscută 404 cu alt mesaj.
+3. **De unde vine pachetul plătit:** îl ține magazinul, **fără nicio copie publică**, și îl dă doar după o cheie bună, verificată la furnizor **de serverul magazinului**. Semnătura noastră rămâne pe pachet; autorul nu are nevoie de găzduire.
+4. **Fără internet:** o verificare reușită e ținută minte pe calculator; Lapin verifică din nou la actualizări; după instalare nimic nu e blocat fără internet.
+5. **Revocarea** (rambursare, cheie dezactivată): nicio actualizare și o notă în Lapin; nimic instalat nu e scos.
+6. **Revizia:** același pull request ca la cele gratuite (manifest + capturi / un exemplu); termenii autorilor primesc un paragraf despre vânzare: autorul e vânzătorul, el face rambursările, magazinul doar listează.
+7. **Juridic:** termenii din `lapin-extensions/legal/` (engleza de referință, copiile în `legal/ro/`) completați pentru extensiile plătite; pe pagina extensiei „Sold by <autor> through <furnizor>” cu legătura la termenii vânzătorului; rămân marcați „PROIECT, de revizuit de un avocat”.
+
+### 12.1 Câmpul `purchase` din manifest
+
+```
+purchase: { provider:    "lemonsqueezy" | "gumroad",
+            productId:   "<id-ul produsului la furnizor>",   // Lemon Squeezy: numărul produsului; Gumroad: product_id
+            checkoutUrl: "https://…",                         // pagina de cumpărare a autorului (Buy)
+            terms:       "https://…",                         // termenii de vânzare și rambursare ai vânzătorului
+            price?:      "29 EUR" }                           // doar afișat, „orientativ”; prețul real e al vânzătorului
+```
+
+Regulile (aceleași în `lapin-extensions/tools/lib.mjs` + `schema/manifest.schema.json`, în copia magazinului `deploy/store/server/catalogue-lib.mjs` și în `ui/src/platform/extensions/manifest.ts`):
+
+- `provider` din lista furnizorilor acceptați (`PROVIDERS`); `productId` 1–100 caractere `[A-Za-z0-9_=+/.-]`; `checkoutUrl` și `terms` https; `price` text de cel mult 40 de caractere.
+- `kind` din `PAID_KINDS` (azi: toate felurile de conținut și `script`).
+- **`package.url` e adresa magazinului care cere cheia**: `https://<magazin>/api/licensed/<id>/<versiune>`, cu id-ul și versiunea manifestului; `package.mirror` și `package.download` lipsesc (nicio copie publică, niciun contor care ar trimite la o copie). `sha256`, `size` și `signature` rămân: Lapin verifică pachetul primit exact ca pe unul gratuit.
+- `license` rămâne SPDX și obligatorie (de obicei un `LicenseRef-<Autor>-EULA`, cu textul la `purchase.terms` sau `homepage`).
+
+### 12.2 Unde stă pachetul plătit și cum îl dă autorul
+
+- Pe server: **`/data/paid/<id>/<versiune>/<fișier>`**, în afara oricărei căi servite (`/packages/…` e pentru cele gratuite în revizie, `/extensions/files/…` pentru copii). Doar `POST /api/licensed/…` îl citește, după cheie, și doar dacă mărimea și SHA-256-ul lui sunt ale indexului publicat.
+- **Calea simplă (magazinul):** în panoul autorului, „Sold through your own shop” cu furnizorul, id-ul produsului, adresa de cumpărare, termenii și prețul afișat; fișierul încărcat e verificat (`checkPackage`) și pus direct în `/data/paid/…`, nu în `/data/packages/…`. Pull request-ul conține doar manifestul și capturile.
+- **Calea GitHub:** autorul deschide pull request-ul cu manifestul și trimite fișierul **privat** maintainer-ului (un e-mail la hello@lapinbim.com sau o legătură privată de descărcare); maintainer-ul îl pune în `lapin-extensions/private/<id>/<versiune>/<fișier>` (folder **ignorat de git**, deci niciodată în depozitul public), `node tools/validate.mjs --only <id>` îl verifică de acolo, iar `node tools/publish.mjs --upload` îl trimite în `store-data/paid/` (rsync fără ștergere), după ce i-a verificat mărimea și SHA-256-ul.
+- **CI-ul public** nu poate descărca un pachet plătit: verifică manifestul și scrie „paid: the package is checked privately”. Un pull request plătit e acceptat doar după ce pachetul a fost verificat de magazin la încărcare sau de maintainer din `private/`.
+- `publish.mjs`: un pachet plătit nu e copiat în `extensions/files/` și nu primește `mirror` / `download`; e semnat ca oricare (semnătura e peste id, versiune, SHA-256 și mărime, deci nu cere fișierul).
+
+### 12.3 Serviciul magazinului (`deploy/store/server`)
+
+| Adresă | Ce face |
+|---|---|
+| `POST /api/licence/check` `{id, key}` | verifică cheia la furnizorul extensiei → `{status: active | revoked | invalid | unavailable, message?}` |
+| `POST /api/licensed/<id>/<versiune>` `{key}` | cheia verificată; `active` → fișierul (`application/octet-stream`, `no-store`); altfel 403 (`invalid`, `revoked`), 503 (`unavailable`), 404 (fără extensie plătită / fișier încă nepus), 429 |
+| `OPTIONS` pe ambele | CORS pentru ediția din browser (`POST`, `content-type`) |
+
+- **Cheia stă în corpul cererii (POST)**, niciodată în adresă: adresele ajung în jurnalele nginx și Cloudflare.
+- **Furnizorii** (`providers.mjs`): câte o funcție pe furnizor, `fetch` cu `AbortSignal.timeout(10 s)`; rezultatul e `active` (cheie bună, pentru acest produs), `revoked` (cheie a produsului, dar rambursată, dezactivată, expirată, contestată, abonament încheiat), `invalid` (nu e o cheie a acestui produs), `unavailable` (furnizorul nu răspunde, 429, 5xx). Lemon Squeezy: `valid` + `meta.product_id` = `productId` + `status` `active`/`inactive` → `active`; `expired`/`disabled` → `revoked`. Gumroad: `success` + `product_id` + nici `refunded`, `chargebacked`, `disputed` fără `dispute_won`, `subscription_ended_at` trecut, `subscription_failed_at` → `active`; altfel `revoked`; 404 „disabled” → `revoked`; alt 404 → `invalid`.
+- **Ce păstrează magazinul: nimic despre chei.** Nicio cheie, niciun hash de cheie, nicio adresă IP nu e scrisă pe disc sau în jurnal. Jurnalul are un rând pe verificare: ora, id-ul extensiei, furnizorul și rezultatul (`licence <id> lemonsqueezy: active`). Limitele de rată folosesc, ca până acum, un hash sărat al adresei date de Cloudflare, **doar în memorie**, cel mult o oră.
+- **Limite:** 20 de verificări pe oră pe vizitator, 60 pe minut în total (cât permite Lemon Squeezy API-ului de licențe); peste ele 429 / `unavailable`. Corpul cererii ≤ 4 KB; cheia 1–200 de caractere tipăribile.
+- **Panoul autorului:** câmpurile `purchase` (opționale), fișierul plătit pus în `/data/paid/`; `cli.mjs paid` listează fișierele plătite ținute.
+
+### 12.4 În Lapin
+
+- **Răsfoiește:** eticheta „Paid” și prețul „(indicative)” în listă și în detalii; în detalii „Sold by <autor> through <furnizor>”, **Buy** (deschide `checkoutUrl` în browserul sistemului: `support.open` → `extensionPage` pe desktop, o filă nouă în browser) și **Seller's terms**; la Instalează, câmpul **Licence key** (cheia primită de la vânzător). Instalarea: cheia → `POST /api/licensed/…` (pe desktop prin motor, `extensions.post`, fiindcă webview-ul nu ajunge la alte site-uri; în browser `fetch` cu CORS) → mărimea, SHA-256-ul și semnătura verificate ca la orice pachet → instalatorul felului.
+- **Cheia rămâne pe calculator:** `lapin.extensions.licences` (`{<id>: {key, provider, status, checkedAt}}`), cu celelalte setări `lapin.*`: în browser în stocarea paginii, pe desktop și în `settings.json` din folderul Lapin al utilizatorului. Nu intră în proiecte, în rapoarte, în exporturi. Dezinstalarea o păstrează (o reinstalare nu o mai cere); **Forget licence key** o șterge.
+- **Fără internet:** instalat înseamnă instalat; nimic nu verifică cheia la folosire sau la pornire.
+- **Verificarea din nou:** la citirea catalogului, pentru fiecare extensie plătită instalată cu o versiune nouă în catalog, sau verificată acum mai bine de 7 zile, `POST /api/licence/check`. `unavailable` / fără rețea: rămâne starea de dinainte. `revoked` / `invalid`: starea devine `revoked`.
+- **Revocarea:** o extensie plătită `revoked` nu mai primește Update; Instalate și detaliile spun „Its licence is no longer valid (refunded or disabled by its seller): it gets no more updates. What is installed stays.” și oferă **Enter another key**.
+- Textele noi, în toate limbile din `ui/src/i18n`.
+
+### 12.5 Juridic (`lapin-extensions/legal/`, PROIECTE)
+
+- **Termenii autorilor:** un paragraf „Selling an extension”: autorul e vânzătorul (prin furnizorul lui, care e merchant of record), stabilește prețul, facturează, face TVA-ul și rambursările, răspunde cumpărătorului; magazinul doar listează, ține și semnează pachetul și îl dă cumpărătorilor cu cheie bună; 0 % comision; licența dată magazinului pentru pachetele plătite e doar de păstrare, verificare, semnare și livrare către cumpărători, nu de copie publică; autorul ține `purchase` adevărat (o cheie revocată la rambursare).
+- **Termenii de utilizare:** „Paid extensions”: contractul de cumpărare e între cumpărător și autor (prin furnizor), Ciuntuc BIM Studio nu e parte; rambursările la vânzător; cheia rămâne pe calculator; ce e instalat rămâne și după revocare, fără actualizări.
+- **Confidențialitatea:** la o verificare, cheia trece prin magazin spre furnizor și nu e păstrată; ce se scrie în jurnal; furnizorii (Lemon Squeezy, Gumroad) ca destinatari, fiecare cu politica lui.
+- **Pagina extensiei:** „Paid”, prețul „indicative”, **Buy** (spre `checkoutUrl`), „Sold by <autor> through <furnizor>” cu legătura la `purchase.terms`; fără butonul de descărcare.
+
+### 12.6 Exemplul de test
+
+`lapin-extensions/examples/paid/<id>/manifest.json`: un manifest plătit marcat „EXAMPLE — not published”, **în afara `extensions/`**, deci nici indexul, nici site-ul, nici publicarea nu-l văd. Testele îl citesc direct; pentru o încercare de la cap la coadă, maintainer-ul îl copiază într-un catalog local (`extensions/` al unei copii de lucru, niciodată pe `main`), cu un produs de test al furnizorului (`deploy/store/README.md` → „Paid extensions”).
+
+### 12.7 Testele
+
+- `lapin-extensions`: `tools/lib.test.mjs` (regulile `purchase`), `site/build.test.mjs` (Paid, Buy, Sold by, fără descărcare), `tools/catalogue.test.mjs` (fără `mirror` / `download` pentru cele plătite).
+- Magazinul: `deploy/store/server/server.test.mjs` cu furnizorii simulați (cheie bună, a altui produs, rambursată, dezactivată, furnizor căzut, timeout), fișierul dat doar după cheie bună și doar dacă e al indexului, nicio cheie și nicio adresă în jurnal, limitele, CORS.
+- Motorul: `ExtensionFetchTests` (`extensions.post`: doar https sau acest calculator, starea și corpul întoarse, oaspeții refuzați).
+- Interfața (vitest): `manifest.test.ts`, `install.test.ts`, `licence.test.ts` (cheia ținută, verificarea din nou, revocarea, fără actualizări).
+
+### 12.8 Ce rămâne
+
+- **Activări / locuri:** nu numărăm calculatoarele pe cheie (Lemon Squeezy `activate` cu `instance_id`, Gumroad `uses`); o cheie dată mai departe merge până o dezactivează autorul. De făcut dacă autorii o cer.
+- **Paddle** (cere un token API al vânzătorului, deci altă formă de verificare) și alți furnizori.
+- Felurile 3 și 4, cu sandbox-ul și permisiunile impuse.
+- O listă publică de revocări ale magazinului (o extensie scoasă) — §5.
+- Pașii de publicare: `deploy/store/README.md` → „Paid extensions”.
+
+### 12.9 Întrebări pentru utilizator
+
+1. **Lemon Squeezy se închide la 31.03.2027** și nu mai primește vânzători noi: îl păstrăm (doar pentru autorii care au deja magazin acolo, până la închidere) sau îl scoatem acum și adăugăm Stripe (Managed Payments / chei de licență Stripe) în locul lui? Codul e pregătit pentru oricare (un furnizor = o funcție în `providers.mjs` și o intrare în `PROVIDERS`).

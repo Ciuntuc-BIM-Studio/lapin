@@ -63,6 +63,19 @@ Il catalogo elenca anche **script Python**. Nell'app desktop puoi installarne un
 
 ![I dettagli di uno script: cosa chiede, e che non è ancora eseguibile](shots/extensions-script.webp)
 
+## Estensioni a pagamento
+
+Alcune estensioni sono **vendute dai loro autori**, nel proprio negozio (Lemon Squeezy o Gumroad). Sono segnate **A pagamento** nell'elenco, con il loro prezzo; il prezzo è *indicativo*: conta quello del venditore, al pagamento. Lapin Extensions non prende commissioni e non è parte della vendita: il venditore incassa il pagamento, emette la fattura e gestisce i rimborsi, secondo le condizioni che apre **Condizioni del venditore**.
+
+![I dettagli di un'estensione a pagamento: venduta dal suo autore, Acquista, la chiave di licenza](shots/extensions-paid.webp)
+
+1. Fai clic su **Acquista**: la pagina di pagamento del venditore si apre nel browser. Dopo il pagamento ricevi una **chiave di licenza** (per e-mail o nella pagina della ricevuta).
+2. Tornato in **File → Estensioni…**, incolla la chiave in **Chiave di licenza** e fai clic su **Installa**. Lapin invia la chiave al negozio, che la verifica presso il negozio del venditore e poi dà il file a Lapin; Lapin ne verifica dimensione, SHA-256 e firma come per ogni altro.
+
+La chiave resta **su questo computer** (nelle impostazioni di Lapin), quindi la scrivi una volta: gli aggiornamenti la usano. Lapin la verifica di nuovo quando viene offerto un aggiornamento, o una volta alla settimana; senza internet nulla è bloccato e ciò che è installato continua a funzionare.
+
+Se il venditore rimborsa l'acquisto o disattiva la chiave, l'estensione **non riceve più aggiornamenti** e Installate lo dice; ciò che è installato **resta**. **Dimentica la chiave di licenza** in Installate toglie la chiave salvata (il prossimo aggiornamento la richiede). Un'estensione a pagamento si installa anche nel browser, dal negozio, con la stessa chiave.
+
 ## Un altro catalogo
 
 **Catalogo…**, in fondo alla finestra, imposta l'indirizzo del catalogo: un indirizzo https, oppure il percorso di un `index.json` su questo computer o in una cartella condivisa (il catalogo di uno studio). Lascialo vuoto per usare quello di Lapin. La freccia accanto rilegge il catalogo. Un catalogo tuo non deve essere firmato: Lapin dice allora sopra l'elenco che **non è firmato da Lapin Extensions**, quindi installa da esso solo se ti fidi di chi lo gestisce. Un catalogo la cui firma non è valida non viene mai letto.

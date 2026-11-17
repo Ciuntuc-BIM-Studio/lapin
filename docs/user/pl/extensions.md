@@ -63,6 +63,19 @@ Katalog zawiera też **skrypty Pythona**. W aplikacji na komputer możesz już j
 
 ![Szczegóły skryptu: o co prosi i że nie można go jeszcze uruchomić](shots/extensions-script.webp)
 
+## Płatne rozszerzenia
+
+Niektóre rozszerzenia są **sprzedawane przez ich autorów** we własnym sklepie (Lemon Squeezy lub Gumroad). Na liście są oznaczone jako **Płatne**, z ceną; cena jest *orientacyjna*: liczy się cena sprzedawcy przy płatności. Lapin Extensions nie pobiera prowizji i nie jest stroną sprzedaży: sprzedawca przyjmuje płatność, wystawia fakturę i obsługuje zwroty, na warunkach, które otwiera **Warunki sprzedawcy**.
+
+![Szczegóły płatnego rozszerzenia: sprzedawane przez autora, Kup, klucz licencyjny](shots/extensions-paid.webp)
+
+1. Kliknij **Kup**: strona płatności sprzedawcy otworzy się w przeglądarce. Po zapłacie otrzymasz **klucz licencyjny** (e-mailem lub na stronie potwierdzenia).
+2. Wróć do **Plik → Rozszerzenia…**, wklej klucz w **Klucz licencyjny** i kliknij **Zainstaluj**. Lapin wysyła klucz do sklepu, który sprawdza go w sklepie sprzedawcy, a potem przekazuje Lapin plik; Lapin sprawdza jego rozmiar, SHA-256 i podpis jak przy każdym innym.
+
+Klucz jest przechowywany **na tym komputerze** (w ustawieniach Lapin), więc wpisujesz go raz: aktualizacje z niego korzystają. Lapin sprawdza go ponownie, gdy dostępna jest aktualizacja, lub raz w tygodniu; bez internetu nic nie jest blokowane, a to, co zainstalowane, nadal działa.
+
+Jeśli sprzedawca zwróci pieniądze lub wyłączy klucz, rozszerzenie **nie dostaje już aktualizacji**, a Zainstalowane to pokazuje; to, co zainstalowane, **pozostaje**. **Zapomnij klucz licencyjny** w Zainstalowanych usuwa zapisany klucz (następna aktualizacja poprosi o niego ponownie). Płatne rozszerzenie można zainstalować także w przeglądarce, ze sklepu, tym samym kluczem.
+
 ## Inny katalog
 
 **Katalog…** na dole okna ustawia adres katalogu: adres https albo ścieżkę do `index.json` na tym komputerze lub we wspólnym folderze (własny katalog firmy). Zostaw puste, aby użyć katalogu Lapina. Strzałka obok czyta katalog ponownie. Własny katalog nie musi być podpisany: Lapin mówi wtedy nad listą, że **nie jest podpisany przez Lapin Extensions**, więc instaluj z niego tylko, jeśli ufasz temu, kto go prowadzi. Katalog, którego podpis się nie zgadza, nigdy nie jest odczytywany.

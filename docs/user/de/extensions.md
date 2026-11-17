@@ -63,6 +63,19 @@ Der Katalog listet auch **Python-Skripte**. In der Desktop-App kannst du schon e
 
 ![Die Details eines Skripts: was es verlangt, und dass es noch nicht ausführbar ist](shots/extensions-script.webp)
 
+## Kostenpflichtige Erweiterungen
+
+Manche Erweiterungen werden **von ihren Autoren verkauft**, über deren eigenen Shop (Lemon Squeezy oder Gumroad). Sie sind in der Liste als **Kostenpflichtig** markiert, mit ihrem Preis; der Preis ist *unverbindlich*: Es gilt der des Verkäufers an der Kasse. Lapin Extensions nimmt keine Provision und ist nicht Partei des Kaufs: Der Verkäufer nimmt die Zahlung ein, stellt die Rechnung aus und kümmert sich um Erstattungen, nach den Bedingungen, die **Bedingungen des Verkäufers** öffnet.
+
+![Die Details einer kostenpflichtigen Erweiterung: vom Autor verkauft, Kaufen, der Lizenzschlüssel](shots/extensions-paid.webp)
+
+1. Klicken Sie auf **Kaufen**: Die Kasse des Verkäufers öffnet sich im Browser. Nach der Zahlung erhalten Sie einen **Lizenzschlüssel** (per E-Mail oder auf der Quittungsseite).
+2. Zurück in **Datei → Erweiterungen…** fügen Sie den Schlüssel in **Lizenzschlüssel** ein und klicken auf **Installieren**. Lapin sendet den Schlüssel an den Store, der ihn beim Shop des Verkäufers prüft und Lapin dann die Datei gibt; Lapin prüft Größe, SHA-256 und Signatur wie bei jeder anderen.
+
+Der Schlüssel wird **auf diesem Computer** gespeichert (in den Einstellungen von Lapin), Sie geben ihn also nur einmal ein: Updates verwenden ihn. Lapin prüft ihn erneut, wenn ein Update angeboten wird, oder einmal pro Woche; ohne Internet wird nichts blockiert, und was installiert ist, funktioniert weiter.
+
+Erstattet der Verkäufer den Kauf oder deaktiviert er den Schlüssel, erhält die Erweiterung **keine Updates mehr**, und Installiert sagt es; was installiert ist, **bleibt**. **Lizenzschlüssel vergessen** in Installiert entfernt den gespeicherten Schlüssel (das nächste Update fragt erneut danach). Eine kostenpflichtige Erweiterung lässt sich auch im Browser installieren, aus dem Store, mit demselben Schlüssel.
+
 ## Ein anderer Katalog
 
 **Katalog…** unten im Dialog legt die Adresse des Katalogs fest: eine https-Adresse oder der Pfad einer `index.json` auf diesem Computer oder in einem geteilten Ordner (der eigene Katalog einer Firma). Leer lassen für Lapins eigenen Katalog. Der Pfeil daneben liest den Katalog erneut. Ein eigener Katalog muss nicht signiert sein: Lapin sagt dann über der Liste, dass er **nicht von Lapin Extensions signiert** ist; installiere daraus also nur, wenn du dem Betreiber vertraust. Ein Katalog, dessen Signatur nicht stimmt, wird nie gelesen.

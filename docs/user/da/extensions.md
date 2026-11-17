@@ -63,6 +63,19 @@ Kataloget oplister også **Python-scripts**. I skrivebordsprogrammet kan du inst
 
 ![Detaljerne for et script: hvad det beder om, og at det ikke kan køres endnu](shots/extensions-script.webp)
 
+## Betalte udvidelser
+
+Nogle udvidelser **sælges af deres forfattere** gennem deres egen butik (Lemon Squeezy eller Gumroad). De er markeret **Betalt** i listen med deres pris; prisen er *vejledende*: det er sælgerens pris ved betalingen, der gælder. Lapin Extensions tager ingen provision og er ikke part i salget: sælgeren modtager betalingen, udsteder fakturaen og håndterer refusioner efter de vilkår, som **Sælgerens vilkår** åbner.
+
+![Detaljerne for en betalt udvidelse: solgt af forfatteren, Køb, licensnøglen](shots/extensions-paid.webp)
+
+1. Klik på **Køb**: sælgerens betalingsside åbner i din browser. Efter betalingen får du en **licensnøgle** (på e-mail eller på kvitteringssiden).
+2. Tilbage i **Filer → Udvidelser…** indsætter du nøglen i **Licensnøgle** og klikker på **Installér**. Lapin sender nøglen til butikken, som tjekker den hos sælgerens butik og derefter giver Lapin filen; Lapin tjekker dens størrelse, SHA-256 og signatur som for alle andre.
+
+Nøglen gemmes **på denne computer** (i Lapins indstillinger), så du skriver den kun én gang: opdateringer bruger den. Lapin tjekker den igen, når en opdatering tilbydes, eller en gang om ugen; uden internet blokeres intet, og det installerede virker fortsat.
+
+Hvis sælgeren refunderer købet eller deaktiverer nøglen, får udvidelsen **ikke flere opdateringer**, og Installeret siger det; det installerede **bliver**. **Glem licensnøgle** i Installeret fjerner den gemte nøgle (næste opdatering beder om den igen). En betalt udvidelse kan også installeres i browseren, fra butikken, med samme nøgle.
+
 ## Et andet katalog
 
 **Katalog…** nederst i dialogen sætter kataloget adresse: en https-adresse eller stien til en `index.json` på denne computer eller i en delt mappe (en virksomheds eget katalog). Lad det stå tomt for Lapins eget. Pilen ved siden af læser kataloget igen. Et katalog af dit eget behøver ikke være signeret: Lapin siger så over listen, at det **ikke er signeret af Lapin Extensions**, så installer kun fra det, hvis du stoler på, hvem der vedligeholder det. Et katalog, hvis signatur ikke holder, bliver aldrig læst.

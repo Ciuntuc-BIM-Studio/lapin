@@ -6,7 +6,8 @@
  * until the Python console exists. Pure: the download, the stores and the questions are given (tests give fakes).
  */
 
-import { compatibility, compareVersions, KIND_INFO, MAX_PACKAGE, type AppFacts, type ExtensionKind, type Manifest } from './manifest';
+import { compatibility, compareVersions, isPaid, KIND_INFO, MAX_PACKAGE, type AppFacts, type ExtensionKind, type Manifest } from './manifest';
+import { fetchLicensedPackage, LicenceError, type PostJson } from './licence';
 import { packageProblem, type StoreKey } from './signature';
 
 /** What an installer added, kept to take it away again (ids, names); JSON. */
@@ -48,6 +49,8 @@ export interface InstallDeps {
   base?: string;
   /** The store keys and whether a package must be signed (Lapin's own catalogue once Lapin carries a key): signature.ts. */
   signature?: { keys: readonly StoreKey[]; required: boolean };
+  /** A paid extension's licence key and how to POST it to the store (stage 2a, licence.ts). */
+  licence?: { key: string | null; post: PostJson };
   now?: () => string;
 }
 
@@ -77,20 +80,37 @@ export function packageSources(m: Manifest, app: Pick<AppFacts, 'browser'>): str
   return [...new Set(list.filter((u): u is string => !!u))];
 }
 
-/** The package's bytes, from the first address that gives the file its manifest names (size, SHA-256), its signature checked first. */
-export async function download(m: Manifest, deps: Pick<InstallDeps, 'fetchBytes' | 'base' | 'app' | 'signature'>): Promise<Uint8Array> {
+/** Why bytes are not the file a manifest names (size, SHA-256); null: they are. */
+async function fileProblem(m: Manifest, bytes: Uint8Array): Promise<Error | null> {
+  if (bytes.length > MAX_PACKAGE) return new Error('The package is bigger than an extension may be.');
+  if (bytes.length !== m.package.size) return new Error(`The package is ${bytes.length} bytes, its manifest says ${m.package.size}: it was not installed.`);
+  if ((await sha256Hex(bytes)) !== m.package.sha256) return new Error('The package is not the one its manifest names (its SHA-256 differs): it was not installed.');
+  return null;
+}
+
+/**
+ * The package's bytes, from the first address that gives the file its manifest names (size, SHA-256), its signature checked
+ * first. A paid one comes from the store only, for its licence key, and is checked the same way.
+ */
+export async function download(m: Manifest, deps: Pick<InstallDeps, 'fetchBytes' | 'base' | 'app' | 'signature' | 'licence'>): Promise<Uint8Array> {
   if (deps.signature) {
     const problem = await packageProblem(m, deps.signature);
     if (problem) throw new Error(problem);
+  }
+  if (isPaid(m)) {
+    if (!deps.licence?.key) throw new LicenceError('missing');
+    const bytes = await fetchLicensedPackage(m, deps.licence.key, deps.licence.post);
+    const wrong = await fileProblem(m, bytes);
+    if (wrong) throw wrong;
+    return bytes;
   }
   let failure: Error | null = null;
   for (const url of packageSources(m, deps.app)) {
     let bytes: Uint8Array;
     try { bytes = await deps.fetchBytes(resolveUrl(deps.base, url)); } catch (e) { failure ??= e instanceof Error ? e : new Error(String(e)); continue; }
     // A wrong file is the strongest reason: it is the one said when no address gives the right one.
-    if (bytes.length > MAX_PACKAGE) { failure = new Error('The package is bigger than an extension may be.'); continue; }
-    if (bytes.length !== m.package.size) { failure = new Error(`The package is ${bytes.length} bytes, its manifest says ${m.package.size}: it was not installed.`); continue; }
-    if ((await sha256Hex(bytes)) !== m.package.sha256) { failure = new Error('The package is not the one its manifest names (its SHA-256 differs): it was not installed.'); continue; }
+    const wrong = await fileProblem(m, bytes);
+    if (wrong) { failure = wrong; continue; }
     return bytes;
   }
   throw failure ?? new Error('The package has no address to read it from.');
@@ -121,10 +141,13 @@ export async function uninstallExtension(id: string, deps: Pick<InstallDeps, 'in
   deps.store.remove(id);
 }
 
-/** The installed extensions the catalogue has a newer version of, which this app can take. */
-export function updatesOf(installed: InstalledExtension[], catalogue: Manifest[], app: AppFacts): Manifest[] {
+/**
+ * The installed extensions the catalogue has a newer version of, which this app can take; a paid one whose licence key its
+ * seller revoked (refunded, disabled) gets none (`revoked`: licence.ts's isRevoked).
+ */
+export function updatesOf(installed: InstalledExtension[], catalogue: Manifest[], app: AppFacts, revoked: (id: string) => boolean = () => false): Manifest[] {
   const byId = new Map(catalogue.map((m) => [m.id, m]));
-  return installed.map((x) => byId.get(x.id)).filter((m, i): m is Manifest => !!m && compareVersions(m.version, installed[i].version) > 0 && compatibility(m, app).ok);
+  return installed.map((x) => byId.get(x.id)).filter((m, i): m is Manifest => !!m && compareVersions(m.version, installed[i].version) > 0 && compatibility(m, app).ok && !(isPaid(m) && revoked(m.id)));
 }
 
 // ------------------------------------------------------------ the catalogue as Browse shows it

@@ -2297,6 +2297,13 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 /* How the catalogue is signed (stage 1): a quiet line when it is Lapin's, a warning for an unsigned one of one's own. */
 .ext-trust { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; }
 .ext-trust.warn { color: var(--accent); }
+/* Paid extensions (stage 2a): the mark, the seller's box, the licence key's field. */
+.ext-paid { font-weight: 600; }
+.ext-sale { border: 1px solid var(--rule-strong); border-radius: 3px; padding: 6px 8px; }
+.ext-sale p { margin: 0 0 4px; }
+.ext-key { display: flex; gap: 6px; align-items: center; }
+.ext-key input { flex: 1; min-width: 0; font-family: var(--mono, monospace); }
+.ext-revoked { color: var(--accent); }
 @media (max-width: 760px) { .ext-split { grid-template-columns: 1fr; } .ext-list { border-right: 0; max-height: 200px; } }
 
 /* The Script panel (docs/plan-python-scripting.md, stage 2): Python in Lapin, a developer extra. */

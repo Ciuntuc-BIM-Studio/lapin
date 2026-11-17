@@ -63,6 +63,19 @@ O catálogo também lista **scripts Python**. No aplicativo de desktop você já
 
 ![Os detalhes de um script: o que ele pede, e que ainda não pode ser executado](shots/extensions-script.webp)
 
+## Extensões pagas
+
+Algumas extensões são **vendidas pelos seus autores**, na própria loja (Lemon Squeezy ou Gumroad). Aparecem como **Pago** na lista, com o preço; o preço é *indicativo*: vale o do vendedor, no pagamento. A Lapin Extensions não cobra comissão e não faz parte da venda: o vendedor recebe o pagamento, emite a nota fiscal e cuida dos reembolsos, segundo os termos que **Termos do vendedor** abre.
+
+![Os detalhes de uma extensão paga: vendida pelo autor, Comprar, a chave de licença](shots/extensions-paid.webp)
+
+1. Clique em **Comprar**: a página de pagamento do vendedor abre no seu navegador. Depois de pagar você recebe uma **chave de licença** (por e-mail ou na página do recibo).
+2. De volta a **Arquivo → Extensões…**, cole a chave em **Chave de licença** e clique em **Instalar**. O Lapin envia a chave para a loja, que a verifica com a loja do vendedor e então entrega o arquivo ao Lapin; o Lapin confere o tamanho, o SHA-256 e a assinatura como em qualquer outro.
+
+A chave fica **neste computador** (nas configurações do Lapin), então você a digita uma vez: as atualizações a usam. O Lapin a verifica de novo quando uma atualização é oferecida, ou uma vez por semana; sem internet nada é bloqueado e o que está instalado continua funcionando.
+
+Se o vendedor reembolsar a compra ou desativar a chave, a extensão **não recebe mais atualizações** e Instaladas avisa; o que está instalado **permanece**. **Esquecer a chave de licença** em Instaladas remove a chave guardada (a próxima atualização pede de novo). Uma extensão paga também se instala no navegador, a partir da loja, com a mesma chave.
+
 ## Outro catálogo
 
 **Catálogo…**, na parte de baixo da janela, define o endereço do catálogo: um endereço https, ou o caminho de um `index.json` neste computador ou em uma pasta compartilhada (o catálogo próprio de um escritório). Deixe vazio para usar o do Lapin. A seta ao lado lê o catálogo de novo. Um catálogo seu não precisa ser assinado: o Lapin diz então acima da lista que ele **não é assinado pela Lapin Extensions**, então instale a partir dele só se confiar em quem o mantém. Um catálogo cuja assinatura não confere nunca é lido.

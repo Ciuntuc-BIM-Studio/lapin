@@ -1,3 +1,4 @@
+using System.Text;
 using Lapin.Platform;
 
 namespace Lapin.Host;
@@ -60,6 +61,42 @@ public static class ExtensionFetch
         }
         return ms.ToArray();
     }
+
+    /// <summary>
+    /// Stage 2a (docs/plan-extensions.md §12): a JSON body POSTed to the store, for a paid extension's licence key (checked,
+    /// or its package given). The key travels in the body, never in the address; it is neither kept nor logged here.
+    /// https only (http on this computer, a store run while developing); no redirect followed (a POST is not repeated
+    /// elsewhere). Whatever the status, its answer comes back as it is (the interface reads the store's
+    /// <c>{status, error}</c>); only an address that may not be reached, no answer, or one too big is an error.
+    /// </summary>
+    public static async Task<(int Status, string? Type, byte[] Body)> Post(string url, string json, long max = MaxBytes, CancellationToken ct = default)
+    {
+        url = (url ?? "").Trim();
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.IsFile || uri.Scheme is not ("https" or "http") || (uri.Scheme == "http" && !uri.IsLoopback))
+            throw new CommandException("A licence key is sent to https addresses only.");
+        if (Encoding.UTF8.GetByteCount(json ?? "") > 4096) throw new CommandException("The request is too large.");
+        try
+        {
+            using var req = new HttpRequestMessage(HttpMethod.Post, uri) { Content = new StringContent(json ?? "{}", Encoding.UTF8, "application/json") };
+            req.Headers.UserAgent.ParseAdd($"Lapin/{Session.AppVersion}");
+            using var res = await PostHttp.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
+            if (res.Content.Headers.ContentLength is { } len && len > max) throw new CommandException($"The file is bigger than an extension may be ({Size(max)}).");
+            await using var stream = await res.Content.ReadAsStreamAsync(ct);
+            using var ms = new MemoryStream();
+            var buffer = new byte[81920];
+            int n;
+            while ((n = await stream.ReadAsync(buffer, ct)) > 0)
+            {
+                if (ms.Length + n > max) throw new CommandException($"The file is bigger than an extension may be ({Size(max)}).");
+                ms.Write(buffer, 0, n);
+            }
+            return ((int)res.StatusCode, res.Content.Headers.ContentType?.MediaType, ms.ToArray());
+        }
+        catch (TaskCanceledException) when (!ct.IsCancellationRequested) { throw new CommandException($"{uri.Host} did not answer in time."); }
+        catch (HttpRequestException ex) { throw new CommandException($"{uri.Host} could not be reached: {ex.Message}"); }
+    }
+
+    static readonly HttpClient PostHttp = new(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromSeconds(90) };
 
     static string Size(long bytes) => bytes >= 1024 * 1024 ? $"{bytes / 1024 / 1024} MB" : $"{bytes / 1024} KB";
 }

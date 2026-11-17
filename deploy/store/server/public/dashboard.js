@@ -79,6 +79,7 @@
     call('GET', '/api/submissions/' + sid).then(function (s) {
       var f = s.fields;
       ['id', 'kind', 'name', 'summary', 'description', 'license', 'lapin', 'authorName', 'github', 'authorUrl', 'homepage', 'forum'].forEach(function (k) { if (form.elements[k]) form.elements[k].value = f[k] || ''; });
+      ['provider', 'productId', 'checkoutUrl', 'terms', 'price'].forEach(function (k) { form.elements[k].value = (f.purchase && f.purchase[k]) || ''; });
       ['tags', 'languages', 'items'].forEach(function (k) { form.elements[k].value = (f[k] || []).join(', '); });
       Array.prototype.forEach.call(form.querySelectorAll('[name=permissions]'), function (c) { c.checked = (f.permissions || []).indexOf(c.value) >= 0; });
       var m = /^(\d+)\.(\d+)\.(\d+)/.exec(f.version);
@@ -107,6 +108,7 @@
       homepage: el.homepage.value, forum: el.forum.value, tags: el.tags.value, languages: el.languages.value, items: el.items.value,
       permissions: Array.prototype.filter.call(form.querySelectorAll('[name=permissions]'), function (c) { return c.checked && el.kind.value === 'script'; }).map(function (c) { return c.value; }),
       acceptTerms: true,
+      purchase: el.provider.value ? { provider: el.provider.value, productId: el.productId.value, checkoutUrl: el.checkoutUrl.value, terms: el.terms.value, price: el.price.value } : null,
     };
     var button = form.querySelector('[type=submit]');
     button.disabled = true;

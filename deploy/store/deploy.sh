@@ -15,9 +15,9 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 SERVER="${DEPLOY_SERVER:?Set DEPLOY_SERVER (user@host) in deploy/store/.env, see .env.example}"
 REMOTE_DIR="${DEPLOY_DIR:-/opt/lapin}"
 
-node --test "$HERE/server/server.test.mjs" >/dev/null || { echo "✗ The store's tests fail: nothing deployed."; exit 1; }
+node --test "$HERE/server/server.test.mjs" "$HERE/server/paid.test.mjs" >/dev/null || { echo "✗ The store's tests fail: nothing deployed."; exit 1; }
 
-FILES=(server.mjs cli.mjs data.mjs discourse.mjs github.mjs catalogue-lib.mjs public/dashboard.html public/dashboard.js)
+FILES=(server.mjs cli.mjs data.mjs discourse.mjs github.mjs providers.mjs catalogue-lib.mjs public/dashboard.html public/dashboard.js)
 if [[ $DRY == 1 ]]; then
   printf 'would copy %s to %s:%s/store/\n' "${FILES[*]}" "$SERVER" "$REMOTE_DIR"
   exit 0

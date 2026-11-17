@@ -19,12 +19,16 @@
  *   GET  /api/submissions/<sid>                  one of theirs, to start a new version from it
  *   GET  /api/download/<id>/<version>            counts a download (no personal data) and redirects to the copy
  *   GET  /api/stats/<id>                         { total, versions } downloads
+ *   POST /api/licence/check {id, key}            a paid extension's licence key checked with its seller's provider →
+ *                                                { status: active | revoked | invalid | unavailable } (stage 2a, §12)
+ *   POST /api/licensed/<id>/<version> {key}      the paid package itself, to a key its provider says is active
  *   GET  /api/health
  *
  * Privacy (legal/privacy.md in lapin-extensions): from the forum the store keeps the user's id, name and display name with
  * what they submit, never their e-mail; sessions live in memory only (14 days); downloads are counted per extension, version
  * and month, nothing about who; a visitor is told apart for the rate limits by a salted hash of the address Cloudflare
- * reports, in memory, for an hour at most.
+ * reports, in memory, for an hour at most. A paid extension's licence key is passed to its provider and forgotten: never
+ * written, never logged (the log says the extension, the provider and the answer), and no address goes with it.
  */
 
 import { createServer } from 'node:http';
@@ -33,7 +37,8 @@ import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { createReadStream } from 'node:fs';
 import { basename, extname, join, normalize, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { checkPackage, KINDS, MAX_PACKAGE, validateManifest } from './catalogue-lib.mjs';
+import { checkPackage, isPaid, KINDS, MAX_PACKAGE, PROVIDERS, validateManifest } from './catalogue-lib.mjs';
+import { checkLicence, isKeyShaped } from './providers.mjs';
 import { downloadCounter, newSid, sha256, storeData, validSid, withLock } from './data.mjs';
 import { loginRequest, readLogin } from './discourse.mjs';
 import { githubClient } from './github.mjs';
@@ -109,6 +114,8 @@ export function settingsFrom(env = process.env) {
     countedPerHour: Number(env.COUNTED_PER_HOUR ?? 60), // downloads counted per visitor per hour; past that, served but not counted
     requestsPerMinute: Number(env.REQUESTS_PER_MINUTE ?? 240), // any API call per visitor
     keepDeclinedDays: Number(env.KEEP_DECLINED_DAYS ?? 90),
+    licenceChecksPerHour: Number(env.LICENCE_CHECKS_PER_HOUR ?? 20), // per visitor: a paid extension's key checked (install, update)
+    providerCallsPerMinute: Number(env.PROVIDER_CALLS_PER_MINUTE ?? 60), // all visitors together: the providers' own limits
     prCacheMs: 60_000, // a pull request's state read again after a minute
   };
 }
@@ -128,7 +135,10 @@ export function storeService(options = {}) {
     submit: limiter(s.submissionsPerDay, 86400_000),
     upload: limiter(s.uploadsPerHour),
     counted: limiter(s.countedPerHour),
+    licence: limiter(s.licenceChecksPerHour),
+    provider: limiter(s.providerCallsPerMinute, 60_000),
   };
+  const checkKey = s.checkLicence ?? ((purchase, key) => checkLicence(purchase, key, { fetch: s.providerFetch }));
 
   const visitorOf = (req) => {
     const ip = String(req.headers['cf-connecting-ip'] ?? '').trim();
@@ -221,10 +231,11 @@ export function storeService(options = {}) {
       ...(f.permissions?.length ? { permissions: f.permissions } : {}), ...(f.requires?.length ? { requires: f.requires } : {}),
       contents: { file: sub.package?.file ?? `package.${KINDS[f.kind]?.ext[0] ?? 'bin'}`, ...(f.items?.length ? { items: f.items } : sub.package?.items?.length ? { items: sub.package.items } : {}) },
       package: sub.package
-        ? { url: `${s.storeUrl}/packages/${f.id}/${f.version}/${sub.package.file}`, sha256: sub.package.sha256, size: sub.package.size }
-        : { url: `${s.storeUrl}/packages/${f.id}/${f.version}/pending`, sha256: '0'.repeat(64), size: 1 },
+        ? { url: f.purchase ? `${s.storeUrl}/api/licensed/${f.id}/${f.version}` : `${s.storeUrl}/packages/${f.id}/${f.version}/${sub.package.file}`, sha256: sub.package.sha256, size: sub.package.size }
+        : { url: f.purchase ? `${s.storeUrl}/api/licensed/${f.id}/${f.version}` : `${s.storeUrl}/packages/${f.id}/${f.version}/pending`, sha256: '0'.repeat(64), size: 1 },
       ...(f.homepage ? { homepage: f.homepage } : {}), ...(f.forum ? { forum: f.forum } : {}),
       ...(f.kind === 'priceList' ? { indicative: true } : {}),
+      ...(f.purchase ? { purchase: f.purchase } : {}),
     };
     return m;
   }
@@ -238,6 +249,10 @@ export function storeService(options = {}) {
       authorName: text(b.authorName, 80), github: text(b.github, 39), authorUrl: text(b.authorUrl, 300),
       tags: list(b.tags, 12), languages: list(b.languages, 12).map((l) => l.toLowerCase()), permissions: list(b.permissions, 6), requires: list(b.requires, 12),
       items: list(b.items, 200).map((i) => i.slice(0, 120)), homepage: text(b.homepage, 300), forum: text(b.forum, 300),
+      // Sold through the author's own shop (stage 2a): its package kept in paid/, given to a valid licence key only.
+      purchase: b.purchase && typeof b.purchase === 'object' && text(b.purchase.provider, 20)
+        ? { provider: text(b.purchase.provider, 20), productId: text(b.purchase.productId, 100), checkoutUrl: text(b.purchase.checkoutUrl, 300), terms: text(b.purchase.terms, 300), ...(text(b.purchase.price, 40) ? { price: text(b.purchase.price, 40) } : {}) }
+        : null,
     };
   }
 
@@ -285,7 +300,7 @@ export function storeService(options = {}) {
   });
 
   async function deleteFiles(sub) {
-    if (sub.package) await rm(data.packagePath(sub.fields.id, sub.fields.version, sub.package.file), { force: true });
+    if (sub.package) await rm(data.packagePath(sub.fields.id, sub.fields.version, sub.package.file, !!sub.fields.purchase), { force: true });
     await rm(data.screenshotDir(sub.sid), { recursive: true, force: true });
   }
 
@@ -332,8 +347,9 @@ export function storeService(options = {}) {
       try { items = checkPackage(sub.fields.kind, bytes); } catch (e) { return json(res, 400, { error: `The file is not a ${sub.fields.kind} package Lapin takes: ${e.message}.` }); }
       return withLock(s.dataDir, async () => {
         const fresh = await data.submission(sub.sid);
-        if (fresh.package) await rm(data.packagePath(fresh.fields.id, fresh.fields.version, fresh.package.file), { force: true });
-        const path = data.packagePath(fresh.fields.id, fresh.fields.version, name);
+        const paid = !!fresh.fields.purchase;
+        if (fresh.package) await rm(data.packagePath(fresh.fields.id, fresh.fields.version, fresh.package.file, paid), { force: true });
+        const path = data.packagePath(fresh.fields.id, fresh.fields.version, name, paid);
         if (await stat(path).catch(() => null)) return json(res, 409, { error: 'A file of this version is already kept: raise the version.' });
         await mkdir(join(path, '..'), { recursive: true });
         await writeFile(path, bytes);
@@ -380,7 +396,10 @@ export function storeService(options = {}) {
         `${listed ? 'A new version' : 'A new extension'}, submitted through store.lapinbim.com by forum user **${user.username}**.`,
         '', '| | |', '|---|---|', `| Name | ${m.name.replace(/\|/g, '/')} |`, `| Kind | ${m.kind} |`, `| Version | ${m.version} |`, `| Licence | ${m.license} |`,
         `| Lapin | ${m.lapin} |`, `| File | ${m.contents.file}, ${m.package.size} bytes |`, `| SHA-256 | \`${m.package.sha256}\` |`,
-        '', `The package is kept by the store at ${m.package.url}. The author accepted the author terms (legal/author-terms.md) on ${sub.acceptedTermsAt.slice(0, 10)}.`,
+        ...(m.purchase ? [`| Paid | ${PROVIDERS[m.purchase.provider] ?? m.purchase.provider}, product ${m.purchase.productId}${m.purchase.price ? `, ${m.purchase.price.replace(/\|/g, '/')}` : ''} |`] : []),
+        '', m.purchase
+          ? `**Paid** (stage 2a): the package is kept privately by the store (paid/${m.id}/${m.version}/) and given only to a valid licence key; the store checked it when it was uploaded. Check the checkout and terms pages. The author accepted`
+          : `The package is kept by the store at ${m.package.url}. The author accepted the author terms (legal/author-terms.md) on ${sub.acceptedTermsAt.slice(0, 10)}.`,
         KINDS[m.kind].code ? '\n**A script**: merged after its code review and the maintainer\'s approval.' : '',
       ].join('\n');
       let pr;
@@ -417,6 +436,48 @@ export function storeService(options = {}) {
     if (copy) return `${s.mirrorUrl}${id}/${version}/${encodeURIComponent(copy)}`;
     const own = (await readdir(join(s.dataDir, 'packages', id, version)).catch(() => []))[0];
     return own ? `${s.storeUrl}/packages/${id}/${version}/${encodeURIComponent(own)}` : null;
+  }
+
+  // ---------------------------------------------------------------- paid extensions (stage 2a)
+  const LICENCE_CORS = { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'POST, OPTIONS', 'access-control-allow-headers': 'content-type', 'access-control-max-age': '86400', 'cache-control': 'no-store' };
+  const LICENCE_SAYS = {
+    revoked: 'This licence key is no longer valid: its purchase was refunded, or its seller disabled it.',
+    invalid: 'This is not a licence key of this extension: check the key in the seller\'s e-mail.',
+    unavailable: 'The seller\'s shop could not be asked just now: try again later.',
+  };
+
+  /** The paid package of the published index for an id (and version), checked against it: its bytes, or why not. */
+  async function paidFile(m) {
+    const path = data.packagePath(m.id, m.version, m.contents.file, true);
+    const bytes = await readFile(path).catch(() => null);
+    if (!bytes) return null;
+    // Only the very file the signed index names: a stale or wrong file is never given.
+    if (bytes.length !== m.package.size || sha256(bytes) !== m.package.sha256) { console.error(new Date().toISOString(), `paid ${m.id} ${m.version}: the kept file is not the index's`); return null; }
+    return bytes;
+  }
+
+  /** POST /api/licence/check {id, key} and POST /api/licensed/<id>/<version> {key}. */
+  async function licensed(req, res, target) {
+    if (limits.licence(visitorOf(req))) { req.resume(); return json(res, 429, { status: 'unavailable', error: 'Too many licence checks from here: try again in an hour.' }, LICENCE_CORS); }
+    const raw = await body(req, 4096);
+    let b = null;
+    try { b = raw ? JSON.parse(raw.toString('utf8')) : null; } catch { b = null; }
+    if (!b || typeof b !== 'object') return json(res, 400, { error: 'Not a valid request.' }, LICENCE_CORS);
+    const id = target?.id ?? (typeof b.id === 'string' ? b.id : '');
+    const m = (await catalogue()).find((x) => x.id === id && isPaid(x));
+    if (!m) return json(res, 404, { error: 'There is no such paid extension in the catalogue.' }, LICENCE_CORS);
+    if (target && target.version !== m.version) return json(res, 404, { error: `The catalogue gives version ${m.version} of this extension.` }, LICENCE_CORS);
+    if (!isKeyShaped(b.key)) return json(res, 400, { status: 'invalid', error: LICENCE_SAYS.invalid }, LICENCE_CORS);
+    if (limits.provider('all')) return json(res, 503, { status: 'unavailable', error: LICENCE_SAYS.unavailable }, LICENCE_CORS);
+    const { status } = await checkKey(m.purchase, b.key);
+    // The one line kept: when, which extension, which provider, what it said. Never the key, never who asked.
+    console.log(new Date().toISOString(), `licence ${m.id} ${m.purchase.provider}: ${status}`);
+    if (!target) return json(res, 200, { status, ...(LICENCE_SAYS[status] ? { error: LICENCE_SAYS[status] } : {}) }, LICENCE_CORS);
+    if (status !== 'active') return json(res, status === 'unavailable' ? 503 : 403, { status, error: LICENCE_SAYS[status] }, LICENCE_CORS);
+    const bytes = await paidFile(m);
+    if (!bytes) return json(res, 404, { status: 'active', error: 'The store does not have this file yet: try again later, or write to hello@lapinbim.com.' }, LICENCE_CORS);
+    res.writeHead(200, { ...LICENCE_CORS, 'content-type': 'application/octet-stream', 'content-length': bytes.length, 'content-disposition': `attachment; filename="${m.contents.file.replace(/[^A-Za-z0-9._-]/g, '_')}"`, 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; sandbox" });
+    return res.end(bytes);
   }
 
   // ---------------------------------------------------------------- the dashboard's page
@@ -459,6 +520,16 @@ export function storeService(options = {}) {
       const id = path.slice('/api/stats/'.length);
       if (!/^[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(id)) return json(res, 404, { error: 'not found' }, cors);
       return json(res, 200, await counter.of(id), { ...cors, 'cache-control': 'public, max-age=300' });
+    }
+
+    // Paid extensions (stage 2a): a licence key checked, the package given for a good one. No session; any origin (the
+    // browser edition); the key in the body, never in the address (addresses reach the proxies' logs).
+    if (path === '/api/licence/check' || path.startsWith('/api/licensed/')) {
+      if (method === 'OPTIONS') { res.writeHead(204, LICENCE_CORS); return res.end(); }
+      if (method !== 'POST') { req.resume(); return json(res, 405, { error: 'POST the licence key.' }, LICENCE_CORS); }
+      const m = /^\/api\/licensed\/([a-z0-9]+(?:[.-][a-z0-9]+)*)\/([0-9A-Za-z.+-]{1,40})$/.exec(path);
+      if (path !== '/api/licence/check' && !m) { req.resume(); return json(res, 404, { error: 'not found' }, LICENCE_CORS); }
+      return licensed(req, res, m ? { id: m[1], version: m[2] } : null);
     }
 
     // Sign-in through the forum.

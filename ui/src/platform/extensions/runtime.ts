@@ -12,6 +12,11 @@
  * Stage 1: the catalogue's signature (`<index>.sig`) is read with it and checked against the store keys Lapin carries
  * (keys.ts). Lapin's own catalogue must be signed once Lapin carries a key; another may be unsigned (the dialog says so),
  * never wrongly signed. A package of Lapin's own catalogue must then be signed too (install.ts, signature.ts).
+ *
+ * Stage 2a (§12): a paid extension's licence key, kept here (`lapin.extensions.licences`, with the other `lapin.*`
+ * settings: the page's storage, and on the desktop the user's settings.json too) with what its last conclusive check said;
+ * sent to the store by POST (the desktop through its engine, `extensions.post`; the browser with fetch). It never goes into
+ * a project, a report or an export.
  */
 
 import { confirmAction } from '../../shell/prompts';
@@ -23,11 +28,14 @@ import { hasModule } from '../brand';
 import { installExtension, uninstallExtension, type ContentInstaller, type InstalledExtension, type InstalledStore } from './install';
 import { readIndex, type AppFacts, type ExtensionKind, type Manifest } from './manifest';
 import { STORE_KEYS } from './keys';
+import { afterCheck, checkLicenceKey, dueForCheck, LicenceError, type LicenceRecord, type StoreAnswer } from './licence';
+import { isPaid } from './manifest';
 import { catalogueTrust, trustProblem, type CatalogueTrust } from './signature';
 
 export const DEFAULT_INDEX = 'https://lapinbim.com/extensions/index.json';
 const INDEX_KEY = 'lapin.extensions.index';
 const INSTALLED_KEY = 'lapin.extensions';
+const LICENCES_KEY = 'lapin.extensions.licences';
 
 // ------------------------------------------------------------ installers, by kind
 
@@ -57,6 +65,51 @@ export const installedStore: InstalledStore = {
   remove: (id) => writeInstalled(useExtensions.getState().installed.filter((r) => r.id !== id)),
 };
 
+// ------------------------------------------------------------ paid extensions' licence keys (stage 2a)
+
+function readLicences(): Record<string, LicenceRecord> {
+  try {
+    const v = JSON.parse(localStorage.getItem(LICENCES_KEY) ?? '{}') as unknown;
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return {};
+    return Object.fromEntries(Object.entries(v as Record<string, LicenceRecord>).filter(([, r]) => r && typeof r.key === 'string' && (r.status === 'active' || r.status === 'revoked')));
+  } catch { return {}; }
+}
+
+function writeLicences(all: Record<string, LicenceRecord>): void {
+  try { localStorage.setItem(LICENCES_KEY, JSON.stringify(all)); } catch { /* kept for this session in the store */ }
+  useExtensions.setState({ licences: all });
+}
+
+const putLicence = (id: string, r: LicenceRecord) => writeLicences({ ...useExtensions.getState().licences, [id]: r });
+
+/** The licence key kept for an extension forgotten (Forget licence key); what is installed stays. */
+export function forgetLicence(id: string): void {
+  const { [id]: _gone, ...rest } = useExtensions.getState().licences;
+  writeLicences(rest);
+}
+
+/** A JSON body POSTed to the store: through the desktop's engine, or the browser's fetch (the store answers CORS). */
+export async function postJson(url: string, body: string): Promise<StoreAnswer> {
+  if (!engineInBrowser) {
+    const r = await engine.call<{ status: number; type?: string | null; data: string }>('extensions.post', { url, body }, { timeoutMs: 120_000 });
+    return { status: r.status, type: r.type ?? null, bytes: fromBase64(r.data) };
+  }
+  const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body, cache: 'no-store', credentials: 'omit' });
+  return { status: res.status, type: res.headers.get('content-type'), bytes: new Uint8Array(await res.arrayBuffer()) };
+}
+
+/** The installed paid extensions due a check (an update offered, or a week since), checked; their records updated. Offline: as they were. */
+export async function recheckLicences(now = Date.now()): Promise<void> {
+  const { installed, list, licences } = useExtensions.getState();
+  for (const m of dueForCheck(installed, list, licences, now)) {
+    const rec = useExtensions.getState().licences[m.id];
+    if (!rec) continue;
+    const status = await checkLicenceKey(m, rec.key, postJson);
+    const next = afterCheck(rec, status, new Date(now).toISOString());
+    if (next !== rec) putLicence(m.id, next);
+  }
+}
+
 /** A script installed (kept until the Python console runs it: docs/plan-python-scripting.md); the page's IndexedDB, the desktop's too. */
 export interface ScriptRow { id: string; name: string; file: string; text: string; at: string }
 export const scriptRows = indexedRows<ScriptRow>('lapin-extensions', 'scripts', 'script');
@@ -77,11 +130,13 @@ export interface CatalogueState {
   busy: string | null;
   /** How the catalogue read is signed: by a store key Lapin trusts, or not at all (null: not read yet). */
   trust: CatalogueTrust | null;
+  /** The paid extensions' licence keys kept on this computer, by extension id (stage 2a). */
+  licences: Record<string, LicenceRecord>;
 }
 
 const storedIndex = (): string | null => { try { return localStorage.getItem(INDEX_KEY) || null; } catch { return null; } };
 
-export const useExtensions = create<CatalogueState>(() => ({ chosen: storedIndex(), from: null, list: [], problems: [], loading: false, error: null, installed: readInstalled(), busy: null, trust: null }));
+export const useExtensions = create<CatalogueState>(() => ({ chosen: storedIndex(), from: null, list: [], problems: [], loading: false, error: null, installed: readInstalled(), busy: null, trust: null, licences: readLicences() }));
 
 /** The catalogue's address set (empty: back to the engine's or Lapin's own). */
 export function setCatalogueAddress(address: string): void {
@@ -136,6 +191,8 @@ export async function loadCatalogue(): Promise<void> {
     if (mine !== reading) return;
     useExtensions.setState({ from, list: extensions, problems, loading: false, trust });
     if (problems.length) console.info('Extensions left out of the catalogue:', problems.join(' '));
+    // Paid extensions installed: their keys checked again when due (never blocking, never removing anything).
+    void recheckLicences().catch(() => undefined);
   } catch (e) {
     if (mine !== reading) return;
     useExtensions.setState({ loading: false, error: e instanceof Error ? e.message : String(e), list: [], trust: null });
@@ -147,13 +204,24 @@ export function appFacts(): AppFacts {
   return { version: useSession.getState().info?.engineVersion ?? '0.0.0', browser: engineInBrowser, hasModule };
 }
 
-/** An extension installed (or updated) from the catalogue. */
-export async function install(m: Manifest): Promise<InstalledExtension> {
+/**
+ * An extension installed (or updated) from the catalogue. A paid one takes the key typed (`key`) or the one kept; a good
+ * key is kept, one its seller revoked is remembered as revoked (no more updates; nothing removed).
+ */
+export async function install(m: Manifest, key?: string): Promise<InstalledExtension> {
   useExtensions.setState({ busy: m.id });
+  const kept = useExtensions.getState().licences[m.id];
+  const useKey = key ?? kept?.key ?? null;
   try {
     const base = useExtensions.getState().from ?? undefined;
     const signature = { keys: STORE_KEYS, required: base === DEFAULT_INDEX && STORE_KEYS.length > 0 };
-    return await installExtension(m, { app: appFacts(), fetchBytes, installers, store: installedStore, confirm: (q) => confirmAction(q), base, signature });
+    const x = await installExtension(m, { app: appFacts(), fetchBytes, installers, store: installedStore, confirm: (q) => confirmAction(q), base, signature, licence: { key: useKey, post: postJson } });
+    if (isPaid(m) && useKey) putLicence(m.id, { key: useKey, provider: m.purchase.provider, status: 'active', checkedAt: new Date().toISOString() });
+    return x;
+  } catch (e) {
+    // The key kept, now refunded or disabled: remembered so (Installed says it, Update is no longer offered).
+    if (e instanceof LicenceError && (e.reason === 'revoked' || e.reason === 'invalid') && kept && useKey === kept.key) putLicence(m.id, { ...kept, status: 'revoked', checkedAt: new Date().toISOString() });
+    throw e;
   } finally { useExtensions.setState({ busy: null }); }
 }
 

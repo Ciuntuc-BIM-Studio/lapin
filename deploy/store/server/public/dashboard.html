@@ -88,6 +88,25 @@
         <label><input type="checkbox" name="permissions" value="network"> Reach the internet</label>
         <label><input type="checkbox" name="permissions" value="process"> Start other programs</label>
       </fieldset>
+      <fieldset data-purchase>
+        <legend>Sold through your own shop <span class="muted">(optional: leave the provider empty for a free extension)</span></legend>
+        <p class="muted small">You are the seller: your shop takes the payment, issues the invoice, handles VAT and refunds; the store lists it with a Buy link, takes no commission, keeps the file privately and gives it only to a licence key your shop says is valid (<a href="/legal/author-terms.html">author terms</a>, section 5). Licence keys must be switched on for the product at your shop.</p>
+        <div class="row">
+          <label>Provider
+            <select name="provider">
+              <option value="">Free: not sold</option>
+              <option value="lemonsqueezy">Lemon Squeezy</option>
+              <option value="gumroad">Gumroad</option>
+            </select>
+          </label>
+          <label>Product id <span class="muted">Lemon Squeezy: the product's number; Gumroad: product_id (the product's Content tab)</span><input name="productId" maxlength="100" autocomplete="off"></label>
+        </div>
+        <div class="row">
+          <label>Checkout page <span class="muted">https, where it is bought</span><input name="checkoutUrl" type="url"></label>
+          <label>Your terms of sale and refunds <span class="muted">https</span><input name="terms" type="url"></label>
+        </div>
+        <label>Price shown <span class="muted">optional, indicative: 29 EUR</span><input name="price" maxlength="40"></label>
+      </fieldset>
       <label>The file <span class="muted">at most 64 MB</span><input name="file" type="file" required></label>
       <label>Screenshots <span class="muted">optional: up to 6 PNG, WebP or JPEG pictures, 2 MB each</span><input name="screenshots" type="file" accept="image/png,image/webp,image/jpeg" multiple></label>
       <label class="check"><span><input type="checkbox" name="acceptTerms" required> I accept the <a href="/legal/author-terms.html">author terms</a>: the work is mine or I may share it under this licence.</span></label>

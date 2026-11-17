@@ -98,6 +98,69 @@ public class ExtensionFetchTests
         Assert.Equal("Only the host can do that.", Header((await hub.Handle(call, guest))!).GetProperty("error").GetString());
     }
 
+    /// <summary>A tiny server on 127.0.0.1 answering one request with <paramref name="status"/> and <paramref name="body"/>; what it was sent.</summary>
+    static (int Port, Task<string> Request) ServeOnce(int status, string type, byte[] body)
+    {
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        var request = Task.Run(async () =>
+        {
+            using var c = await listener.AcceptTcpClientAsync();
+            var s = c.GetStream();
+            var got = new StringBuilder();
+            var buf = new byte[8192];
+            // Headers, then the body its Content-Length says.
+            while (true)
+            {
+                var n = await s.ReadAsync(buf);
+                if (n == 0) break;
+                got.Append(Encoding.UTF8.GetString(buf, 0, n));
+                var text = got.ToString();
+                var end = text.IndexOf("\r\n\r\n", StringComparison.Ordinal);
+                if (end < 0) continue;
+                var m = System.Text.RegularExpressions.Regex.Match(text, "Content-Length: (\\d+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                if (!m.Success || Encoding.UTF8.GetByteCount(text[(end + 4)..]) >= int.Parse(m.Groups[1].Value)) break;
+            }
+            await s.WriteAsync(Encoding.ASCII.GetBytes($"HTTP/1.1 {status} X\r\nContent-Type: {type}\r\nContent-Length: {body.Length}\r\nConnection: close\r\n\r\n"));
+            await s.WriteAsync(body);
+            listener.Stop();
+            return got.ToString();
+        });
+        return (port, request);
+    }
+
+    [Fact]
+    public async Task A_licence_key_is_posted_in_the_body_and_the_stores_answer_comes_back_whatever_its_status()
+    {
+        var (port, request) = ServeOnce(403, "application/json", "{\"status\":\"revoked\"}"u8.ToArray());
+        var (status, type, body) = await ExtensionFetch.Post($"http://127.0.0.1:{port}/api/licensed/ana.x/1.0.0", "{\"key\":\"K-123\"}");
+        var sent = await request;
+        Assert.Equal(403, status);
+        Assert.Equal("application/json", type);
+        Assert.Equal("{\"status\":\"revoked\"}", Encoding.UTF8.GetString(body));
+        Assert.StartsWith("POST /api/licensed/ana.x/1.0.0 HTTP/1.1", sent);
+        Assert.EndsWith("{\"key\":\"K-123\"}", sent);
+        Assert.DoesNotContain("K-123", sent.Split("\r\n")[0]);
+    }
+
+    [Fact]
+    public async Task A_licence_key_goes_to_https_or_this_computer_only_and_the_host_refuses_a_guest()
+    {
+        Assert.Equal("A licence key is sent to https addresses only.", (await Assert.ThrowsAsync<CommandException>(() => ExtensionFetch.Post("http://example.com/api/licence/check", "{}"))).Message);
+        await Assert.ThrowsAsync<CommandException>(() => ExtensionFetch.Post("/tmp/x", "{}"));
+        await Assert.ThrowsAsync<CommandException>(() => ExtensionFetch.Post("https://store.lapinbim.com/api/licence/check", new string('x', 5000)));
+        var (port, request) = ServeOnce(200, "application/octet-stream", "*X, x\n"u8.ToArray());
+        var hub = new EngineHub(new Fixture().Session, PackageFiles.Create());
+        var call = new JsonObject { ["id"] = 1, ["method"] = "extensions.post", ["params"] = new JsonObject { ["url"] = $"http://127.0.0.1:{port}/api/licensed/a/1.0.0", ["body"] = "{\"key\":\"K\"}" } }.ToJsonString();
+        var guest = new Guest { Caller = new Caller("guest-1", "editor") };
+        Assert.Equal("Only the host can do that.", Header((await hub.Handle(call, guest))!).GetProperty("error").GetString());
+        var r = Header((await hub.Handle(call))!).GetProperty("result");
+        await request;
+        Assert.Equal(200, r.GetProperty("status").GetInt32());
+        Assert.Equal("*X, x\n", Encoding.UTF8.GetString(Convert.FromBase64String(r.GetProperty("data").GetString()!)));
+    }
+
     [Fact]
     public void An_extensions_page_is_opened_only_at_an_https_address()
     {

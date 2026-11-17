@@ -500,6 +500,15 @@ public sealed class EngineHub
                     if (caller.Remote) throw new CommandException("Only the host can do that.");
                     result = new JsonObject { ["data"] = Convert.ToBase64String(await ExtensionFetch.Fetch((string?)p["url"] ?? "")) };
                     break;
+                // Stage 2a: a paid extension's licence key POSTed to the store (checked, or its package given); the answer as it
+                // came, its status with it. The key is in the call's body only, never logged. Never a guest's.
+                case "extensions.post":
+                {
+                    if (caller.Remote) throw new CommandException("Only the host can do that.");
+                    var (status, type, body) = await ExtensionFetch.Post((string?)p["url"] ?? "", (string?)p["body"] ?? "{}");
+                    result = new JsonObject { ["status"] = status, ["type"] = type, ["data"] = Convert.ToBase64String(body) };
+                    break;
+                }
                 case "extensions.source":
                     if (caller.Remote) throw new CommandException("Only the host can do that.");
                     result = new JsonObject { ["index"] = ExtensionFetch.IndexFromEnvironment };

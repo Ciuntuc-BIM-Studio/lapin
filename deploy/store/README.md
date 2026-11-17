@@ -5,13 +5,14 @@ Lapin Extensions' stage 1 (docs/plan-extensions.md, decision 504): the catalogue
 | File | What it is |
 |---|---|
 | `server/server.mjs` | the HTTP service (`node server.mjs`): pages, catalogue, packages, sign-in, API, downloads |
+| `server/providers.mjs` | paid extensions' licence keys checked with the seller's provider (Lemon Squeezy, Gumroad): their public APIs, a 10 s timeout |
 | `server/discourse.mjs` | DiscourseConnect: the request to the forum and its answer checked |
 | `server/github.mjs` | the catalogue's repository: a submission's branch and pull request, its review state |
 | `server/data.mjs` | the files under `/data`, the lock and atomic writes, the download counter |
 | `server/catalogue-lib.mjs` | **a copy** of `lapin-extensions/tools/lib.mjs` (the manifest and package rules); the test fails when the two differ: `cp ../lapin-extensions/tools/lib.mjs deploy/store/server/catalogue-lib.mjs` |
 | `server/cli.mjs` | the maintainers' commands (`list`, `stats`, `owner`, `forget`) |
 | `server/public/` | the dashboard's page and script |
-| `server/server.test.mjs` | the tests: `pnpm test:store` (the forum and GitHub faked) |
+| `server/server.test.mjs`, `server/paid.test.mjs` | the tests: `pnpm test:store` (the forum, GitHub and the providers faked) |
 | `deploy.sh` | the service's files to the server, the container restarted |
 
 The store's pages themselves are **not** here: they are generated from the catalogue by `lapin-extensions/site/build.mjs` and published, with the signed index and the package copies, by `lapin-extensions/tools/publish.mjs --upload` (signing happens on the maintainer's Mac; the key never goes to the server).
@@ -29,6 +30,8 @@ The store's pages themselves are **not** here: they are generated from the catal
 | `/api/me`, `/api/me/submissions`, `/api/submissions…` | the dashboard's API (a session cookie; changes only from the store's own pages) |
 | `/api/download/<id>/<version>` | counts a download, then redirects to the copy (`package.download` in the index: Lapin tries it first) |
 | `/api/stats/<id>` | `{ total, versions }` |
+| `POST /api/licence/check` `{id, key}` | a paid extension's licence key checked with its provider → `{status: active \| revoked \| invalid \| unavailable}` |
+| `POST /api/licensed/<id>/<version>` `{key}` | the paid package (`/data/paid/…`) to a key its provider says is active; 403 / 503 / 404 otherwise |
 | `/api/health` | `{ ok: true }` |
 
 ## How a submission goes
@@ -66,7 +69,32 @@ From the environment (the compose file and `store.env` on the server):
 | `DATA_DIR`, `PUBLIC_DIR` | `/data`, `/data/public` | |
 | `PORT` | `8080` | |
 
-## Deploying (first time)
+## Paid extensions (stage 2a, docs/plan-extensions.md §12)
+
+Authors sell their extensions through their own shop (Lemon Squeezy or Gumroad); the store lists them, keeps the package privately in `/data/paid/<id>/<version>/<file>` (never under a served path) and gives it only to a licence key the provider says is valid. 0 % commission; the author is the seller.
+
+- **What the store keeps of a key: nothing.** It is POSTed in the body, passed to the provider (`providers.mjs`, a 10 s timeout) and forgotten. The log has one line per check: `licence <id> <provider>: <status>`; never the key, never an address. Limits (memory): 20 checks per visitor an hour (`LICENCE_CHECKS_PER_HOUR`), 60 provider calls a minute in all (`PROVIDER_CALLS_PER_MINUTE`).
+- **Where the file comes from:** a store submission marked *Sold through your own shop* puts it straight in `/data/paid/`; one made by a GitHub pull request is sent privately (hello@lapinbim.com), put by the maintainer in `lapin-extensions/private/<id>/<version>/<file>` (git-ignored), checked by `node tools/validate.mjs --only <id>`, and uploaded by `node tools/publish.mjs --upload` to `store-data/paid/` (modes 750/640). The store gives a file only if its size and SHA-256 are the published index's.
+- `docker exec lapin-store node cli.mjs paid` lists the paid files kept.
+
+### Going live (the owner's steps)
+
+1. **lapin-extensions:** review and merge the branch `feat/paid-extensions` (the `purchase` rules, the site's Paid / Buy, the legal drafts 0.2, `examples/paid/`).
+2. **The store service:** `deploy/store/deploy.sh` (it runs `pnpm test:store` first; it now copies `providers.mjs` too). Nothing to add to `store.env`: the providers' licence APIs need no account of ours. Then `ssh "$DEPLOY_SERVER" 'mkdir -p /opt/lapin/store-data/paid && chown 1000:1000 /opt/lapin/store-data/paid && chmod 750 /opt/lapin/store-data/paid'`.
+3. **Publish** as always (`node tools/publish.mjs --upload` in lapin-extensions): the site gets the Paid label and Buy, the index the `purchase` fields.
+4. **Lapin:** the build with stage 2a reads `purchase`; older builds see a paid extension as an ordinary entry whose download fails (the licensed address answers only POST), so publish the first paid extension after that build is out.
+
+### Trying it end to end (a test product, nothing published)
+
+Lemon Squeezy no longer takes new sign-ups (it closes on 31.03.2027): use it only with an existing store, in **test mode** (its licence keys of test orders validate through the same API). Otherwise Gumroad: a product priced 0 (or "pay what you want" from 0) with **Generate a unique license key per sale** on; buy it yourself and copy the key from the receipt. Then, on your own computer:
+
+1. In a working copy of lapin-extensions (not `main`): copy `examples/paid/example.paid-hatches` into `extensions/`, set `purchase.provider`, `productId` (Gumroad: the product's `product_id` from its Content tab; Lemon Squeezy: the product's number), `checkoutUrl` and `terms`; leave `package.url` as it is (the catalogue accepts only the store's https address).
+2. `node tools/build-index.mjs` → `index.json` (the paid entry has no mirror).
+3. A local store: `mkdir -p /tmp/store/public/extensions /tmp/store/paid/example.paid-hatches/1.0.0`, copy `index.json` to `/tmp/store/public/extensions/` and `brick-ro.pat` to `/tmp/store/paid/example.paid-hatches/1.0.0/`, then `DATA_DIR=/tmp/store STORE_URL=http://127.0.0.1:8080 node deploy/store/server/server.mjs`.
+4. Check a key without Lapin: `curl -s -X POST http://127.0.0.1:8080/api/licence/check -H 'content-type: application/json' -d '{"id":"example.paid-hatches","key":"<your test key>"}'` → `{"status":"active"}`; a mistyped key → `invalid`; refund the test order (or disable the key) → `revoked`.
+5. In Lapin (`pnpm dev`): File → Extensions… → Catalogue… → `/tmp/store/public/extensions/index.json`, open the paid entry (Paid, Buy, the licence key), and to install against the local store rewrite the entry's `package.url` host to `127.0.0.1:8080` in that local index only (http on this computer is accepted for a local catalogue, as for any package).
+
+
 
 **Done on 12.11.2026.** What differs from the steps below: no Cloudflare path route — the tunnel sends `store.lapinbim.com` and `lapinbim.com` to lapin-web (127.0.0.1:3461), whose nginx proxies `store.lapinbim.com` (its own `server` block) and `location /extensions/` to `lapin-store:8080` on the compose network; `store.env` was written on the server with the SSO secret and the salt made there (`openssl rand`) and the GitHub token piped from the Mac's keychain item `lapin-store-github`; the forum's two DiscourseConnect settings were set through the admin API with the secret read from `store.env`, never shown; the store key is `~/.lapin/store-key.pem` (id `2daeb4d5dc6eae92`), listed in `STORE_KEYS`, so **every publication is signed** (`node tools/publish.mjs --upload`, never `--unsigned` again). The steps stay as the record of a first install (and for a self-hosted copy). The forum, Cloudflare and GitHub steps are the owner's; secrets never go into a chat, a commit or a log.
 

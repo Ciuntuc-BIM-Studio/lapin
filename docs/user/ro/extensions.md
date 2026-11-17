@@ -67,6 +67,19 @@ Catalogul are și **scripturi Python**. În aplicația desktop poți instala unu
 
 ![Detaliile unui script: ce cere și că nu se poate rula încă](shots/extensions-script.webp)
 
+## Extensii plătite
+
+Unele extensii sunt **vândute de autorii lor**, prin propriul magazin (Lemon Squeezy sau Gumroad). Sunt marcate **Plătită** în listă, cu prețul lor; prețul e *orientativ*: contează cel al vânzătorului, din pagina de plată. Lapin Extensions nu ia comision și nu e parte la vânzare: vânzătorul încasează plata, emite factura și se ocupă de rambursări, după termenii pe care îi deschide **Termenii vânzătorului**.
+
+![Detaliile unei extensii plătite: vândută de autorul ei, Cumpără, cheia de licență](shots/extensions-paid.webp)
+
+1. Apasă **Cumpără**: pagina de plată a vânzătorului se deschide în browser. După plată primești o **cheie de licență** (pe e-mail sau pe pagina chitanței).
+2. Înapoi în **Fișier → Extensii…**, lipește cheia în **Cheie de licență** și apasă **Instalează**. Lapin trimite cheia magazinului, care o verifică la magazinul vânzătorului și apoi îi dă lui Lapin fișierul; Lapin îi verifică mărimea, SHA-256-ul și semnătura ca la oricare altul.
+
+Cheia e păstrată **pe acest calculator** (în setările Lapin), deci o scrii o singură dată: actualizările o folosesc. Lapin o verifică din nou când e oferită o actualizare sau o dată pe săptămână; fără internet nu e blocat nimic, iar ce e instalat merge mai departe.
+
+Dacă vânzătorul rambursează cumpărarea sau dezactivează cheia, extensia **nu mai primește actualizări**, iar Instalate spune asta; ce e instalat **rămâne**. **Uită cheia de licență** din Instalate șterge cheia păstrată pentru o extensie (următoarea actualizare o cere din nou). O extensie plătită se instalează și în browser, din magazin, cu aceeași cheie.
+
 ## Alt catalog
 
 **Catalog…**, jos în dialog, setează adresa catalogului: o adresă https sau calea unui `index.json` de pe acest calculator ori dintr-un folder partajat (catalogul propriu al unui birou). Lasă-l gol pentru catalogul Lapin. Săgeata de lângă el citește catalogul din nou. Un catalog propriu nu trebuie să fie semnat: Lapin spune atunci deasupra listei că **nu e semnat de Lapin Extensions**, așa că instalează din el doar dacă ai încredere în cine îl ține. Un catalog a cărui semnătură nu se potrivește nu este citit niciodată.
@@ -79,5 +92,7 @@ Oricine poate publica o extensie. O exporți din Lapin (Mobilierul meu → Expor
 
 - **Pe magazin**: intră pe store.lapinbim.com cu contul tău de pe [forum](https://forum.lapinbim.com), deschide **Your extensions** (extensiile tale), completează formularul și încarcă fișierul și câteva capturi de ecran. Magazinul verifică fișierul așa cum o va face Lapin și îl trimite la verificare; pagina ta arată verificarea și, după publicare, de câte ori a fost descărcat. O versiune nouă merge la fel.
 - **Pe GitHub**: atașează fișierul la un release al unui depozit al tău și adaugă manifestul lui printr-un pull request pe [Ciuntuc-BIM-Studio/lapin-extensions](https://github.com/Ciuntuc-BIM-Studio/lapin-extensions). README-ul lui spune cum, și ce verifică testele automate.
+
+**Ca să vinzi o extensie**, fă produsul cu chei de licență în magazinul tău de la Lemon Squeezy sau Gumroad, apoi completează **Sold through your own shop** în formularul magazinului (furnizorul, id-ul produsului, pagina de plată, termenii tăi de vânzare și rambursare și un preț de arătat). Tu ești vânzătorul: magazinul o listează, îi păstrează fișierul privat și îl dă doar unei chei bune; nu ia comision ([termenii autorilor](https://store.lapinbim.com/legal/author-terms.html), secțiunea 5).
 
 Un pachet de tipuri vine din **Gestionare → Pachete de tipuri… → Exportă tipuri…** (sau **Salvează în bibliotecă** la configuratorul unui tip); un fișier de simboluri, tipuri de linie, standarde, reguli, forme de bare sau parametri din **Exportă** al dialogului lui (**Gestionare → Simboluri…**, **Standarde de desen**, **Reguli…**, **Forme de bare…**, **Parametri comuni**; tipurile de linie ca `.lin`); o listă de prețuri din **Liste de prețuri…**, cu butonul de export al unei liste de pe acest calculator (un fișier `.lapinprices`, cu prețurile marcate orientative).

@@ -53,6 +53,23 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   process: 'Start other programs',
 };
 
+/**
+ * Paid extensions (docs/plan-extensions.md §12, stage 2a): sold by their authors through their own shop, the licence key
+ * checked by the store with the shop's provider. The providers accepted, and the kinds that may be sold, named one by one
+ * (a kind added later is not for sale until decided: JS plug-ins and C# modules wait for a sandbox). The same lists are in
+ * lapin-extensions' tools/lib.mjs.
+ */
+export const PROVIDERS = { lemonsqueezy: 'Lemon Squeezy', gumroad: 'Gumroad' } as const;
+export type Provider = keyof typeof PROVIDERS;
+export const PAID_KINDS: readonly ExtensionKind[] = ['furniture', 'template', 'types', 'profiles', 'hatches', 'titleBlock', 'priceList', 'symbols', 'lineTypes', 'standards', 'rules', 'barShapes', 'parameters', 'mapping', 'families', 'script'];
+
+/** How a paid extension is bought: its provider, the product there, its checkout and terms pages, a price shown as indicative. */
+export interface Purchase { provider: Provider; productId: string; checkoutUrl: string; terms: string; price?: string }
+
+/** The store's address that gives a paid package to a valid licence key. */
+export const licensedPath = (id: string, version: string) => `/api/licensed/${id}/${version}`;
+export const isPaid = (m: Pick<Manifest, 'purchase'>): m is Manifest & { purchase: Purchase } => m.purchase !== undefined;
+
 export interface Author { name: string; github?: string; url?: string; email?: string; /** Their user name on forum.lapinbim.com (set by the store for what is submitted there). */ forum?: string }
 
 export interface ExtensionPackage {
@@ -102,6 +119,8 @@ export interface Manifest {
   forum?: string;
   /** A price list's prices (and any norm) are the author's and indicative: required true for a price list. */
   indicative?: boolean;
+  /** Sold by its author through their own shop (stage 2a): its package comes from the store, for a valid licence key. */
+  purchase?: Purchase;
 }
 
 export interface CatalogueIndex {
@@ -234,6 +253,24 @@ export function validateManifest(m: unknown, opts: { local?: boolean } = {}): st
   if (kind === 'priceList' && o.indicative !== true) e.push('A price list says its prices are indicative: indicative must be true.');
   if (kind === 'rules' && o.indicative !== true) e.push('A rule pack says its values are indicative: indicative must be true.');
   if (o.indicative !== undefined && typeof o.indicative !== 'boolean') e.push('indicative must be true or false.');
+  if (o.purchase !== undefined) {
+    const b = o.purchase as Record<string, unknown> | null;
+    if (!b || typeof b !== 'object' || Array.isArray(b)) e.push('purchase must be { provider, productId, checkoutUrl, terms, price? }.');
+    else {
+      if (typeof b.provider !== 'string' || !Object.hasOwn(PROVIDERS, b.provider)) e.push(`purchase.provider must be one of ${Object.keys(PROVIDERS).join(', ')}.`);
+      if (typeof b.productId !== 'string' || !/^[A-Za-z0-9_=+/.-]{1,100}$/.test(b.productId)) e.push("purchase.productId must be the product's id at its provider.");
+      if (!str(b.checkoutUrl) || !isHttps(b.checkoutUrl)) e.push('purchase.checkoutUrl must be an https address (where it is bought).');
+      if (!str(b.terms) || !isHttps(b.terms)) e.push("purchase.terms must be an https address (the seller's terms of sale and refunds).");
+      if (b.price !== undefined && (!str(b.price) || b.price.length > 40)) e.push('purchase.price must be a short text (29 EUR), at most 40 characters.');
+    }
+    if (KINDS.includes(kind) && !PAID_KINDS.includes(kind)) e.push(`A ${kind} extension cannot be sold yet.`);
+    if (p && typeof p === 'object') {
+      let path: string | null = null;
+      try { path = new URL(String(p.url)).pathname; } catch { /* reported above */ }
+      if (str(p.url) && isHttps(p.url) && path !== licensedPath(String(o.id), String(o.version))) e.push(`A paid package is given by the store to a licence key: package.url must be https://store.lapinbim.com${licensedPath(String(o.id), String(o.version))}.`);
+      if (p.mirror !== undefined || p.download !== undefined) e.push('A paid package has no public copy: no package.mirror or package.download.');
+    }
+  }
   return e;
 }
 

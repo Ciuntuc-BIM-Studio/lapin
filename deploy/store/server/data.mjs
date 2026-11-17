@@ -3,6 +3,8 @@
  *   submissions/<sid>.json        a submission: its owner (forum id and name), its manifest fields, its file, its pull request
  *   submissions/<sid>/            its screenshots until they are sent
  *   packages/<id>/<version>/<file>   the files authors uploaded, served at /packages/… (a manifest's package.url)
+ *   paid/<id>/<version>/<file>       paid packages (stage 2a): never served by their path, only by POST /api/licensed/…
+ *                                    to a licence key the seller's provider says is valid
  *   owners.json                   { <extension id>: { forumId, username } }: who may publish its new versions here
  *   stats.json                    { <extension id>: { <version>: { <yyyy-mm>: n } } }: downloads, nothing about who
  * Every change happens under one lock (a directory, DATA_DIR/.lock) and is written atomically (a temporary file renamed
@@ -66,7 +68,8 @@ export function storeData(dataDir) {
       return out.sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
     },
     screenshotDir: (sid) => join(dataDir, 'submissions', sid),
-    packagePath: (id, version, file) => join(dataDir, 'packages', id, version, file),
+    /** Where a package is kept: packages/… (served), or paid/… (given to a valid licence key only). */
+    packagePath: (id, version, file, paid = false) => join(dataDir, paid ? 'paid' : 'packages', id, version, file),
     async owners() { return readJson(join(dataDir, 'owners.json'), {}); },
     async setOwner(id, owner) {
       const all = await readJson(join(dataDir, 'owners.json'), {});

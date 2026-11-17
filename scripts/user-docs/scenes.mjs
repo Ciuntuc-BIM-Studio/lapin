@@ -8712,6 +8712,8 @@ export const scenes = [
     // pack's details and the script's (installable, not runnable yet); the furniture pack installed (its SHA-256 checked)
     // lands in My furniture; Installed lists it; Uninstall takes its items away again. Everything is cleaned at the end.
     // Stage 1: the catalogue is unsigned and not Lapin's own, so the dialog warns above the list.
+    // Stage 2a (§12): a paid extension listed too (Paid, its price as indicative, sold by its author through their shop,
+    // Buy, the seller's terms, the licence key asked at Install); its details pictured, nothing bought or installed.
     id: 'extensions',
     touches: ['core', 'furniture'],
     async run(t) {
@@ -8748,6 +8750,10 @@ export const scenes = [
           summary: 'A project template with the storeys named the Romanian way.', contents: { file: 'sablon-romania.lapin' }, package: pkg('sablon-romania.lapin', tpl) },
         { ...base, id: 'ro.ciuntucbimstudio.pereti-perimetrali', name: 'Perimeter walls', kind: 'script', license: 'MIT', permissions: ['model.read', 'model.write'], requires: ['scripting'], tags: ['walls', 'python'],
           summary: 'A Python script: four walls round a rectangle, as one undo step.', contents: { file: 'perimeter_walls.py' }, package: pkg('perimeter_walls.py', py) },
+        { ...base, id: 'ro.ciuntucbimstudio.hasuri-caramida', name: 'Hașuri cărămidă', kind: 'hatches', license: 'LicenseRef-Ciuntuc-EULA', tags: ['brick', 'hatch'],
+          summary: 'Brick bond hatch patterns for plans and sections: running, Flemish, English and stack bond.', contents: { file: 'hasuri-caramida.pat', items: ['BRICK-RUNNING', 'BRICK-FLEMISH', 'BRICK-ENGLISH', 'BRICK-STACK'] },
+          package: { url: 'https://store.lapinbim.com/api/licensed/ro.ciuntucbimstudio.hasuri-caramida/1.0.0', sha256: sha(Buffer.from('example')), size: 2048 },
+          purchase: { provider: 'gumroad', productId: 'example-hasuri', checkoutUrl: 'https://ciuntucbimstudio.gumroad.com/l/hasuri-caramida', terms: 'https://ciuntucbimstudio.ro/terms', price: '9 EUR' } },
       ] };
       writeFileSync(join(dir, 'index.json'), JSON.stringify(index, null, 2));
       const before = (await t.call('furnitureLibrary.list', {})).map((e) => e.id);
@@ -8760,8 +8766,8 @@ export const scenes = [
         await dialog.locator('[data-action=extensions-catalogue]').click();
         await dialog.locator('[data-field=extensions-index]').fill(join(dir, 'index.json'));
         await dialog.locator('[data-action=extensions-index-set]').click();
-        await dialog.locator('[data-extension]').nth(2).waitFor({ timeout: 15_000 });
-        t.expect(await dialog.locator('[data-extension]').count() === 3, 'Browse lists the three extensions of the catalogue');
+        await dialog.locator('[data-extension]').nth(3).waitFor({ timeout: 15_000 });
+        t.expect(await dialog.locator('[data-extension]').count() === 4, 'Browse lists the four extensions of the catalogue');
         // Stage 1: a catalogue of one's own, unsigned, is read with a warning above the list.
         t.expect(await dialog.locator('[data-testid=extensions-unsigned]').isVisible(), 'an unsigned catalogue of one\'s own is said so above the list');
         await dialog.locator('[data-extension="ro.ciuntucbimstudio.mobilier-living"]').click();
@@ -8772,6 +8778,15 @@ export const scenes = [
         await dialog.locator('[data-extension="ro.ciuntucbimstudio.pereti-perimetrali"]').click();
         await dialog.locator('[data-extension-details="ro.ciuntucbimstudio.pereti-perimetrali"] .ext-code').waitFor({ timeout: 5000 });
         await t.shot('extensions-script', { of: '[data-extension-details="ro.ciuntucbimstudio.pereti-perimetrali"]', pad: 8 });
+        // A paid extension: Paid in the list with its price, sold by its author through their shop, Buy, the licence key asked.
+        t.expect(await dialog.locator('[data-extension="ro.ciuntucbimstudio.hasuri-caramida"] [data-paid]').isVisible(), 'a paid extension is marked Paid in the list');
+        await dialog.locator('[data-extension="ro.ciuntucbimstudio.hasuri-caramida"]').click();
+        const sale = dialog.locator('[data-extension-sale="ro.ciuntucbimstudio.hasuri-caramida"]');
+        await sale.waitFor({ timeout: 5000 });
+        t.expect(await sale.locator('[data-action=extension-buy]').isVisible() && await sale.locator('[data-field=extension-licence-key]').isVisible(), 'its details offer Buy and ask for the licence key');
+        t.expect(await dialog.locator('[data-action=extension-install]').isDisabled(), 'Install waits for a licence key');
+        await t.wait(200);
+        await t.shot('extensions-paid', { of: '[data-extension-details="ro.ciuntucbimstudio.hasuri-caramida"]', pad: 8 });
         // Install: downloaded, its SHA-256 checked, into My furniture.
         await dialog.locator('[data-extension="ro.ciuntucbimstudio.mobilier-living"]').click();
         await dialog.locator('[data-action=extension-install]').click();

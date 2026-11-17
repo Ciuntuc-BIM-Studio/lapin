@@ -23,6 +23,18 @@ export const KINDS = {
 export const PERMISSIONS = ['model.read', 'model.write', 'files.read', 'files.write', 'network', 'process'];
 export const MAX_PACKAGE = 64 * 1024 * 1024;
 
+/**
+ * Paid extensions (lapin-pro: docs/plan-extensions.md §12, stage 2a): sold by their authors through their own shop, whose
+ * public licence API the store asks. The providers accepted, and the kinds that may be sold (named one by one, so a kind
+ * added later is not for sale until someone decides it: JS plug-ins and C# modules wait for a sandbox).
+ */
+export const PROVIDERS = { lemonsqueezy: 'Lemon Squeezy', gumroad: 'Gumroad' };
+export const PAID_KINDS = ['furniture', 'template', 'types', 'profiles', 'hatches', 'titleBlock', 'priceList', 'symbols', 'lineTypes', 'standards', 'rules', 'barShapes', 'parameters', 'mapping', 'families', 'script'];
+const PRODUCT_ID = /^[A-Za-z0-9_=+/.-]{1,100}$/;
+/** The store's address that gives a paid package to a valid licence key: https://<store>/api/licensed/<id>/<version>. */
+export const licensedPath = (id, version) => `/api/licensed/${id}/${version}`;
+export const isPaid = (m) => !!m && typeof m === 'object' && m.purchase !== undefined;
+
 const ID = /^[a-z0-9]+(?:[.-][a-z0-9]+)*$/;
 const SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/;
 const SHA256 = /^[0-9a-f]{64}$/;
@@ -144,6 +156,24 @@ export function validateManifest(o, { local = false } = {}) {
   }
   if (o.screenshots !== undefined && (!Array.isArray(o.screenshots) || o.screenshots.length > MAX_SCREENSHOTS || o.screenshots.some((x) => !isScreenshot(x)))) e.push(`screenshots must be at most ${MAX_SCREENSHOTS} https addresses or files of its folder (screenshot.webp, screenshot-2.png).`);
   for (const k of ['homepage', 'forum']) if (o[k] !== undefined && (!str(o[k]) || !https(o[k]))) e.push(`${k} must be an https address.`);
+  if (o.purchase !== undefined) {
+    const b = o.purchase;
+    if (!b || typeof b !== 'object' || Array.isArray(b)) e.push('purchase must be { provider, productId, checkoutUrl, terms, price? }.');
+    else {
+      if (!Object.hasOwn(PROVIDERS, b.provider)) e.push(`purchase.provider must be one of ${Object.keys(PROVIDERS).join(', ')}.`);
+      if (typeof b.productId !== 'string' || !PRODUCT_ID.test(b.productId)) e.push("purchase.productId must be the product's id at its provider.");
+      if (!str(b.checkoutUrl) || !https(b.checkoutUrl)) e.push('purchase.checkoutUrl must be an https address (where it is bought).');
+      if (!str(b.terms) || !https(b.terms)) e.push("purchase.terms must be an https address (the seller's terms of sale and refunds).");
+      if (b.price !== undefined && (!str(b.price) || b.price.length > 40)) e.push('purchase.price must be a short text (29 EUR), at most 40 characters.');
+    }
+    if (kind && !PAID_KINDS.includes(o.kind)) e.push(`A ${o.kind} extension cannot be sold yet.`);
+    if (p && typeof p === 'object') {
+      let path = null;
+      try { path = new URL(p.url).pathname; } catch { /* reported above */ }
+      if (str(p.url) && https(p.url) && path !== licensedPath(o.id, o.version)) e.push(`A paid package is given by the store to a licence key: package.url must be https://store.lapinbim.com${licensedPath(o.id, o.version)}.`);
+      if (p.mirror !== undefined || p.download !== undefined) e.push('A paid package has no public copy: no package.mirror or package.download.');
+    }
+  }
   if (o.kind === 'rules' && o.indicative !== true) e.push('A rule pack says its values are indicative: indicative must be true.');
   if (o.kind === 'priceList' && o.indicative !== true) e.push('A price list says its prices are indicative: indicative must be true.');
   if (o.indicative !== undefined && typeof o.indicative !== 'boolean') e.push('indicative must be true or false.');

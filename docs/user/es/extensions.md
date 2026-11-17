@@ -63,6 +63,19 @@ El catálogo también incluye **scripts de Python**. En la aplicación de escrit
 
 ![Los detalles de un script: qué pide, y que aún no se puede ejecutar](shots/extensions-script.webp)
 
+## Extensiones de pago
+
+Algunas extensiones las **venden sus autores** en su propia tienda (Lemon Squeezy o Gumroad). Aparecen como **De pago** en la lista, con su precio; el precio es *orientativo*: el que cuenta es el del vendedor, al pagar. Lapin Extensions no cobra comisión y no es parte de la venta: el vendedor cobra el pago, emite la factura y gestiona los reembolsos, según las condiciones que abre **Condiciones del vendedor**.
+
+![Los detalles de una extensión de pago: la vende su autor, Comprar, la clave de licencia](shots/extensions-paid.webp)
+
+1. Pulsa **Comprar**: la página de pago del vendedor se abre en tu navegador. Tras pagar recibes una **clave de licencia** (por correo o en la página del recibo).
+2. De vuelta en **Archivo → Extensiones…**, pega la clave en **Clave de licencia** y pulsa **Instalar**. Lapin envía la clave a la tienda, que la comprueba con la tienda del vendedor y luego da el archivo a Lapin; Lapin comprueba su tamaño, SHA-256 y firma como con cualquier otro.
+
+La clave se guarda **en este equipo** (en los ajustes de Lapin), así que la escribes una vez: las actualizaciones la usan. Lapin la comprueba de nuevo cuando se ofrece una actualización, o una vez a la semana; sin internet no se bloquea nada y lo instalado sigue funcionando.
+
+Si el vendedor reembolsa la compra o desactiva la clave, la extensión **no recibe más actualizaciones** e Instaladas lo dice; lo instalado **se queda**. **Olvidar la clave de licencia** en Instaladas quita la clave guardada (la próxima actualización la vuelve a pedir). Una extensión de pago también se instala en el navegador, desde la tienda, con la misma clave.
+
 ## Otro catálogo
 
 **Catálogo…**, al pie del diálogo, fija la dirección del catálogo: una dirección https, o la ruta de un `index.json` en este ordenador o en una carpeta compartida (el catálogo propio de una empresa). Déjalo vacío para usar el de Lapin. La flecha de al lado vuelve a leer el catálogo. Un catálogo propio no necesita estar firmado: Lapin dice entonces sobre la lista que **no está firmado por Lapin Extensions**, así que instala desde él solo si confías en quien lo mantiene. Un catálogo cuya firma no es válida no se lee nunca.
