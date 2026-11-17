@@ -140,6 +140,10 @@ No IFC uma rampa é um IfcRamp (STRAIGHT_RUN_RAMP, TWO_STRAIGHT_RUN_RAMP, QUARTE
 
 Os segmentos de um guarda-corpo podem ser arcos. Clique com o botão direito junto a um segmento de um guarda-corpo selecionado para **Tornar arco** (ou **Tornar reto**), e arraste a pega redonda no meio do arco para o curvar por um ponto; clique com o botão direito na pega de um canto para **Arredondar canto…** ou **Chanfrar canto…**. **Concordância** e **Chanfro** (FILLET, CHAMFER) também aceitam guarda-corpos: clique num guarda-corpo nos dois segmentos de cada lado de um canto, ou em dois guarda-corpos cujas pontas se encontram, ou se encontrariam prolongadas: tornam-se um só guarda-corpo, o primeiro, à volta do arco. O corrimão, as barras e o vidro seguem o arco em troços retos curtos a não mais de um milímetro dele, os prumos e balaústres distribuem-se ao longo do arco como num segmento reto, e o seu comprimento é o do arco. **Draft → Convert → Railing** mantém o arco de uma concordância: linhas, arcos e polilinhas que se encontram ponta com ponta tornam-se um só guarda-corpo (desmarque **Um só guarda-corpo onde se encontram ponta com ponta** para um cada). Em IFC a curva verdadeira é o seu eixo. Os guarda-corpos de escadas e varandas seguem a sua escada ou varanda.
 
+Um guarda-corpo é dividido, aparado, estendido e deslocado com as ferramentas das paredes: **Modificar → Dividir elemento** corta-o em dois onde clicar (um arco em dois arcos do mesmo círculo; o primeiro mantém o id), **Modificar → Aparar/estender elementos** leva de volta a um limite a extremidade que o ultrapassa ou prolonga a extremidade mais próxima ao longo do seu segmento final (um arco pelo seu círculo), e **Deslocar** copia-o em paralelo, os arcos concêntricos, com os cantos onde se encontram os segmentos deslocados. Os seus comprimentos somam o do guarda-corpo.
+
+![Um guarda-corpo com um arco dividido em dois sobre o seu arco](shots/railing-split.webp)
+
 ![Um guarda-corpo com um canto arredondado](shots/railing-fillet.webp)
 
 ## Varandas

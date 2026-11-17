@@ -26,7 +26,7 @@ Den samme bjælke gælder for alle omridsværktøjer (dæk, dækåbning, loft, h
 
 ![Omridsværktøjernes bjælke med From drawn shape valgt](shots/outline-sources.webp)
 
-For dæk, dækåbning, loft og rum efter omrids giver bjælken også **Ellipse**: centrum, enden af en halvakse, så den anden. Omridsets kanter følger den sande ellipse (fire kvarte kanter), målt nøjagtigt; et hjørne flyttet bort fra ellipsen gør dets to kanter lige, og et hjørne ved en elliptisk kant afrundes ikke. IFC bærer den som IfcEllipse. **From drawn shape** tager en tegnet ellipse på samme måde.
+For dæk, dækåbning, loft og rum efter omrids giver bjælken også **Ellipse**: centrum, enden af en halvakse, så den anden. Omridsets kanter følger den sande ellipse (fire kvarte kanter), målt nøjagtigt; et hjørne flyttet bort fra ellipsen gør dets to kanter lige, og et hjørne ved en elliptisk kant afrundes ikke. IFC bærer den som IfcEllipse. **From drawn shape** tager en tegnet ellipse på samme måde. Et dæks eller lofts eget hul (**Hole in the outline**) tager også en ellipse. Et omrids med en elliptisk kant forskydes ikke som helhed (Shift-træk, **Offset outline…**): kurven i en afstand fra en ellipse er ingen ellipse.
 
 ![Et elliptisk dæk tegnes ved siden af en tegnet ellipse](shots/ellipse-floor.webp)
 
@@ -57,6 +57,12 @@ Et lag i et dæk kan også gå forbi dets omrids eller stoppe før det, hele vej
 **Redigér → Opdel element** på et dæk eller et loft beder om to punkter på en delelinje: den fortsætter forbi dem og skal skære konturen præcis to gange. Dækket bliver til to dæk; den del, du klikkede på, beholder id'et (GlobalId i IFC), buer på kanterne forbliver buer (en skåret bue forbliver en bue), og en åbning i dækket følger den del, den ligger i. En åbning, som linjen skærer, afvises. **Redigér → Trim/forlæng elementer** tager en ret grænse (en væg, en bjælke eller en tegnet linje) og skærer dækket eller loftet dér og beholder den side, du klikker på.
 
 ![Et dæk med en buet kant delt langs en linje: delen til højre er valgt](shots/floor-split.webp)
+
+Et dæks egne huller følger den del, de ligger i; et lag, der går forbi en buet kant, gør det fortsat på begge dele; et nedhængt lofts net bliver, hvor det var, hver lampe eller diffusor i den del, dens felt ligger i. Et dæk med elliptisk kant deles ikke af en linje.
+
+Et **tag** deles og trimmes på samme måde. Hver del beholder reglerne for sine kanter (udhæng eller gavl, hældning, udhæng), og snittet er en gavl uden udhæng; snittet er kun tilladt, hvor det efterlader taget, som det var, hver dels flader stående, hvor tagets stod, som på tværs af et sadeltags kip eller langs det. Andre steder afvises det (*would change its slopes*): en dels flader ville rejse sig til nye kipper. Ovenlysvinduer, kviste og nedløbsrør følger deres del. Et tøndetag deles ikke.
+
+![Et sadeltag delt på tværs af kippen: to tage, de samme flader](shots/roof-split.webp)
 
 ## Tage
 

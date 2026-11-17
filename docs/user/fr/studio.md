@@ -10,6 +10,8 @@ L’onglet **Studio** crée des solides qu’aucun autre onglet ne construit : u
 
 ![L’onglet Studio](shots/ribbon-studio.webp)
 
+Ses outils se répartissent en six groupes : **Esquisse** (lignes, rectangles, cercles, les **Arcs** ▾, décalage et, dessous, l’esquisse sur une face ou un plan, **Modifications d’esquisse** ▾, **Plans de travail** ▾ et **Sur face** ▾), **Contraintes** (les listes **Géométriques** ▾ et **Dimensions** ▾), **Solides** (extrusion, balayage, révolution, lissage, modifier l’esquisse, **Épais** ▾ et **Primitives** ▾), **Parties** (placer et modifier des pièces), **Modifier** (pousser/tirer, congé, chanfrein, coque, scinder, **Réseaux** ▾ et **Déplacer, pivoter, symétrie** ▾) et **Booléennes**. Un bouton avec ▾ ouvre sa liste ; chaque outil garde ses lettres, et **Commandes…** et **Mes outils** le trouvent comme avant.
+
 Un solide Studio a une classe IFC, comme tout élément. Choisissez-la dans ses propriétés : une barre, une plaque, un revêtement, un garde-corps, une dalle ou une autre. Ses quantités et son export suivent cette classe.
 
 ## Où esquisser
@@ -98,7 +100,7 @@ Ces outils travaillent sur les faces et les arêtes du corps tel qu’il est con
 
 ## Dessiner sur une face
 
-Dans la vue 3D, vous pouvez dessiner directement sur une face, puis pousser ou tirer ce que vous avez dessiné. Le groupe **Sur face** de l’onglet **Studio** contient **Rectangle sur face** (FRE), **Cercle sur face** (FCI) et **Polygone sur face** (FPL).
+Dans la vue 3D, vous pouvez dessiner directement sur une face, puis pousser ou tirer ce que vous avez dessiné. **Studio → Esquisse → Sur face** ▾ contient **Rectangle sur face** (FRE), **Cercle sur face** (FCI) et **Polygone sur face** (FPL).
 
 1. Cliquez sur une face de n’importe quel élément : un solide Studio, un mur, une dalle ou un poteau. Le clic est le premier point : le coin d’un rectangle, le centre d’un cercle ou le premier sommet d’un polygone. La face reste soulignée pendant que vous dessinez.
 2. Déplacez la souris. La forme la suit sur la face, avec sa taille à côté. Les points s’accrochent aux coins de la face, aux milieux de ses arêtes et à son milieu ; sinon ils avancent au centimètre, ou par 10 cm avec <kbd>Maj</kbd>. Cliquez sur le coin opposé, ou sur un point du cercle. Vous pouvez aussi taper la taille : la largeur et la hauteur d’un rectangle sous la forme `1200, 600`, ou le rayon d’un cercle. Un polygone prend un clic à chaque sommet, ou une longueur tapée dans la direction de la souris. Cliquez sur son premier sommet ou appuyez sur <kbd>Entrée</kbd> pour le fermer ; <kbd>Retour arrière</kbd> retire le dernier sommet.

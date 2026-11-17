@@ -1894,6 +1894,10 @@ export const scenes = [
       await t.page.mouse.move(ox, oy, { steps: 6 });
       await t.page.mouse.click(ox, oy);
       await t.until(async () => (await t.nodes()).find((n) => n.id === floor.id)?.props.holes?.length === 2, 'a round hole is cut in the floor\'s own outline');
+      // An elliptical one (audit §18 leftovers): the bar's Ellipse, its centre, one semi-axis's end, then the other.
+      await t.page.locator('[data-testid=command-line] [data-testid=outline-shape] [data-shape=ellipse]').click();
+      for (const [x, y] of [[5.2, 4.7], [6.1, 4.7], [5.2, 5.15]]) { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 4 }); await t.page.mouse.click(px, py); }
+      await t.until(async () => { const f = (await t.nodes()).find((n) => n.id === floor.id); return f?.props.holes?.length === 3 && Array.isArray(f.props.holeEllipses); }, 'an elliptical hole is cut too, its edges kept on the ellipse');
       await t.page.locator('[data-testid=command-line] [data-testid=outline-shape] [data-shape=polygon]').click();
       await t.keys('Escape');
       await t.ui({ tool: null });
@@ -2615,6 +2619,88 @@ export const scenes = [
       await t.wait(1000);
       t.expect((await t.nodes()).some((n) => n.type === 'IfcSlabType' && n.props?.wood?.construction === 'joists'), 'the floor type is on joists');
       await t.ui({ dialog: null });
+    },
+  },
+  {
+    // Split element on a railing (audit §15): clicked on its arc, two railings, the arc cut into two arcs of its circle.
+    id: 'railing-split',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      await t.ui({ keyPlan: false });
+      const storey = await t.storey();
+      const r = await t.cmd('architecture.addRailing', { storeyId: storey, points: [[0, 0], [4, 0], [4, 4]], arcs: [0, -1.5], style: 'balusters' });
+      await t.fit();
+      await t.wait(600);
+      await t.tool('modify.split');
+      await t.page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
+      const [px, py] = await t.planPoint(5.5, 2);
+      await t.page.mouse.move(px, py, { steps: 4 });
+      await t.page.mouse.click(px, py);
+      await t.wait(900);
+      await t.page.keyboard.press('Escape');
+      await t.wait(600);
+      const rails = (await t.nodes()).filter((n) => n.type === 'LapinRailing');
+      t.expect(rails.length === 2, `the railing is two railings (${rails.length})`);
+      t.expect(rails.some((n) => n.id === r.id), 'the first part keeps the railing\'s id');
+      t.expect(rails.every((n) => Array.isArray(n.props.arcs) && n.props.arcs.some((a) => Math.abs(a) > 0.1)), 'each part keeps a piece of the arc');
+      await select(t, rails.find((n) => n.id !== r.id).id);
+      await t.wait(600);
+      await t.shot('railing-split', { of: '.plan-svg', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
+    // A gable roof split across its ridge (audit §15): two roofs whose slopes stand where the roof's stood.
+    id: 'roof-split',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      await t.ui({ keyPlan: false });
+      const storey = await t.storey();
+      const roof = await t.cmd('architecture.addRoof', { storeyId: storey, points: [[0, 0], [10, 0], [10, 6], [0, 6]] });
+      await t.cmd('architecture.updateRoof', { id: roof.id, attrs: { shape: 'gable', ridgeDirection: 'x' } });
+      const refused = await t.cmd('element.splitOutline', { id: roof.id, a: [-1, 2], b: [11, 2] });
+      t.expect(!refused?.ids, 'a cut along the eaves, which would change the slopes, refuses');
+      const r = await t.cmd('element.splitOutline', { id: roof.id, a: [5, -1], b: [5, 7], keep: [1, 1] });
+      t.expect(Array.isArray(r?.ids) && r.ids.length === 2, 'the roof is two roofs');
+      await open3d(t);
+      // The second roof selected, so that the cut across the ridge shows.
+      await select(t, r.ids[1]);
+      await t.wait(1500);
+      await t.shot('roof-split', { of: '[data-testid=view3d]', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
+    // A timber-frame wall's studs edited in its frame elevation (audit §14): the wall selected, a grip on each stud, one moved.
+    id: 'wood-frame-grips',
+    touches: ['wood', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const { walls } = await house(t, { roof: false });
+      await t.tool('wood.frame');
+      const dialog = t.page.locator('[aria-label="Timber frame"]');
+      await dialog.locator('[data-testid=wood-on]').check();
+      await t.wait(900);
+      await dialog.locator('.btn.primary').click();
+      await t.wait(1200);
+      await t.ui({ dialog: null });
+      const view = await t.cmd('wood.frameView', { id: walls[0] });
+      const drawing = await t.call('doc.query', { name: 'view.drawing', args: { id: view.id } });
+      const grips = drawing?.marks?.find((m) => m.id === walls[0] && m.data?.frameGrips)?.data?.frameGrips ?? [];
+      const studs = grips.filter((g) => g.key.startsWith('stud:'));
+      t.expect(studs.length > 2, `the frame elevation offers a grip on each stud (${studs.length})`);
+      const from = Number(studs[1].key.slice(5));
+      await t.cmd('wood.editStuds', { id: walls[0], move: { from, to: from + 0.2 } });
+      await t.ui({ view: 'drawing', drawingViewId: view.id, keyPlan: false });
+      await select(t, walls[0]);
+      await t.wait(2000);
+      await t.fit();
+      await t.wait(800);
+      t.expect(await t.page.locator('[data-testid=drawing] [data-grip^="frame:stud"]').count() > 2, 'the selected wall shows its stud grips');
+      await t.shot('wood-frame-grips', { of: '[data-testid=drawing]', pad: 0 });
+      await t.ui({ keyPlan: true, view: 'plan', selection: null, selected: [] });
     },
   },
   {
@@ -7704,7 +7790,8 @@ export const scenes = [
       t.expect((await on()).some((n) => typeof n.props.cloud === 'number'), 'the revision cloud is drawn on the sheet\'s paper');
       // A live text, a legend of the plan's materials and a scale bar at the plan's scale.
       await t.cmd('drafting.addText', { viewId: paper, at: [0.02, 0.262], text: 'Sheet {sheet.number} of {sheet.count} · {project.name}' });
-      await t.cmd('sheet.addLegend', { viewId: paper, at: [0.3, 0.27] });
+      // The legend's own words in the guide's language, as the Legend tool writes them (audit §16 leftovers).
+      await t.cmd('sheet.addLegend', { viewId: paper, at: [0.3, 0.27], lang: t.lang });
       await t.cmd('sheet.addScaleBar', { viewId: paper, at: [0.09, 0.085], viewportId: placed.viewportId });
       await t.wait(1200);
       await t.fit();
@@ -7716,7 +7803,8 @@ export const scenes = [
       const drawn = await t.call('doc.query', { name: 'sheet.drawing', args: { id: sheet.id } });
       const texts = drawn.pens.flatMap((p) => p.texts ?? []).map((x) => x.text);
       t.expect(texts.includes('Sheet A-101 of 1 · Casa Popescu'), 'a text on the sheet reads its tokens: the sheet\'s number and the project\'s name');
-      t.expect(texts.includes('Check this wall on site') && texts.includes('LEGEND') && texts.includes('1:100'), 'the sheet itself draws the note, the legend and the scale bar');
+      const legendWord = { en: 'LEGEND', ro: 'LEGENDĂ', es: 'LEYENDA', de: 'LEGENDE', fr: 'LÉGENDE', da: 'SIGNATURFORKLARING', it: 'LEGENDA', pl: 'LEGENDA', pt: 'LEGENDA' }[t.lang] ?? 'LEGEND';
+      t.expect(texts.includes('Check this wall on site') && texts.includes(legendWord) && texts.includes('1:100'), 'the sheet itself draws the note, the legend (its heading in the guide\'s language) and the scale bar');
       await t.fit();
       await t.shot('sheet-annotated', { of: '[data-testid=sheet]', pad: 0 });
     },
@@ -11305,6 +11393,28 @@ export const scenes = [
       await t.shot('convert-terrain', { of: '[data-dialog=convert]', pad: 8 });
       await page.locator('[data-field=convert-run]').click();
       await t.until(async () => (await t.nodes()).filter((n) => n.type === 'IfcGeographicElement').length === 1, 'one terrain made of the four contours');
+      // A polyline made a stair along it (its foot, the way it climbs and turns), and a circle a round opening in the floor under it.
+      await t.cmd('architecture.addSlab', { storeyId: s, points: [[20, 0], [30, 0], [30, 8], [20, 8]] });
+      const path = (await t.cmd('drafting.draw', { viewId: view, shapes: [{ type: 'polyline', pts: [[22, 1], [22, 5], [25, 5]] }, { type: 'circle', c: [27.5, 2], r: 0.8 }] })).ids;
+      await t.fit();
+      await t.ui({ selected: [path[0]], selection: path[0] });
+      await t.wait(600);
+      await t.tool('drafting.convert');
+      await page.waitForSelector('[data-dialog=convert]', { timeout: 10_000 });
+      await page.locator('[data-field=convert-converter]').selectOption('stair');
+      await t.until(async () => (await page.locator('[data-field=convert-ok]').innerText().catch(() => '')) === '1', 'the path can make a stair');
+      await t.wait(600);
+      await t.shot('convert-stair', { of: '[data-dialog=convert]', pad: 8 });
+      await page.locator('[data-field=convert-run]').click();
+      await t.until(async () => (await t.nodes()).some((n) => n.type === 'IfcStair'), 'a stair made along the path');
+      await t.ui({ selected: [path[1]], selection: path[1] });
+      await t.wait(600);
+      await t.tool('drafting.convert');
+      await page.waitForSelector('[data-dialog=convert]', { timeout: 10_000 });
+      await page.locator('[data-field=convert-converter]').selectOption('floorOpening');
+      await t.until(async () => (await page.locator('[data-field=convert-ok]').innerText().catch(() => '')) === '1', 'the circle can make a floor opening');
+      await page.locator('[data-field=convert-run]').click();
+      await t.until(async () => (await t.nodes()).some((n) => n.type === 'IfcOpeningElement'), 'a round opening made in the floor');
     },
   },
   {
@@ -11888,9 +11998,9 @@ export const scenes = [
   },
   // [scenes:C]
   {
-    // Families of the user's own (docs/plan-user-extensibility.md §5.6): a table with parameters, a shelf made only when it is wanted,
-    // the dialog with its live wireframe and the engine's sentence when a formula does not read, the Family tool and its bar, the
-    // object's own values in Properties, and a family made from drafted outlines.
+    // Families are parts (audit S6; docs/plan-user-extensibility.md §5.6): a table with parameters and a shelf made only when it is
+    // wanted, the Parts manager (rename, class, Place, Edit part), the Part tool and its bar, the object's own values in Properties,
+    // and a part made from drafted outlines, opened in its edit mode.
     id: 'families',
     touches: ['studio', 'core'],
     async run(t) {
@@ -11912,60 +12022,45 @@ export const scenes = [
           { name: 'Shelf', plane: 'xy', points: [['L', 'L'], ['W - L', 'L'], ['W - L', 'D - L'], ['L', 'D - L']], depth: 0.02, offset: [0, 0, 0.2], when: 'HasShelf' },
         ],
       };
-      const family = await t.cmd('studio.createFamily', { name: 'Table', def });
-      t.expect(family?.id, 'the family is made');
-      // Studio → Families…: the Place catalogue on the parts, its Families… the editor: the family chosen, its wireframe built by the engine, a value tried.
+      const family = await t.cmd('studio.createPart', { name: 'Table', def });
+      t.expect(family?.id, 'the part is made');
+      // Studio → Parts…: the Place catalogue on the parts, its Parts… the manager: the part chosen, renamed, its class set.
       await t.button('Studio', { exact: true });
-      await t.tool('studio.families');
+      await t.tool('studio.parts');
       await page.locator('[data-dialog=placeCatalog] [data-action=place-manage]').click();
-      const dlg = page.locator('[data-dialog=families]');
+      const dlg = page.locator('[data-dialog=parts]');
       await dlg.waitFor({ timeout: 10_000 });
-      await dlg.locator(`[data-field="fam-item-${family.id}"]`).click();
-      await t.until(async () => (await dlg.locator('[data-field=fam-preview] line').count()) > 20, 'the wireframe is drawn');
-      await dlg.locator('[data-fam-try=W]').fill('1600');
-      await t.wait(700);
-      await t.shot('families-dialog', { of: '[data-dialog=families]', pad: 0, maxHeight: 820 });
-      // A condition that does not read: the engine says why, under the picture.
-      const shelf = dlg.locator('[data-fam-when="5"]');
-      await shelf.fill('HasShelf +');
-      await t.until(async () => (await dlg.locator('[data-field=fam-error]').count()) === 1, 'the engine says why the condition does not read');
-      await t.shot('families-error', { of: '.fam-sticky', pad: 4 });
-      await shelf.fill('HasShelf');
-      await t.until(async () => (await dlg.locator('[data-field=fam-error]').count()) === 0, 'the error goes when the condition reads');
-      // A parameter's key renamed: the formulas that name it follow.
-      const keyField = dlg.locator('[data-fam-key="0"]');
-      await keyField.fill('Width');
-      await keyField.press('Enter');
-      await t.until(async () => (await dlg.locator('[data-fam-when="5"]').inputValue()) === 'HasShelf' && (await dlg.locator('input[aria-label="y 2"]').first().inputValue()).length > 0, 'the dialog still reads');
-      await t.until(async () => (await dlg.locator('input[aria-label="x 2"]').first().inputValue()) === 'Width', 'the corners that named W now name Width');
-      await dlg.locator('[data-fam-try=Width]').waitFor({ timeout: 5000 });
-      await t.wait(600);
-      t.expect(await dlg.locator('[data-field=fam-preview] line').count() > 20, 'the wireframe is still drawn after the rename');
-      // The description changed and saved: the family keeps it.
-      await dlg.locator('[data-field=fam-description]').fill('A table, with a shelf when it is wanted');
-      await dlg.locator('[data-field=fam-save]').click();
-      await t.until(async () => ((await t.call('doc.query', { name: 'studio.families', args: {} })).families[0].def.description ?? '').includes('when it is wanted'), 'Save keeps the description');
+      await dlg.locator(`[data-field="part-item-${family.id}"]`).click();
+      await t.until(async () => (await dlg.locator('[data-field=part-name]').inputValue()) === 'Table', 'the part is chosen');
+      await t.shot('parts-dialog', { of: '[data-dialog=parts]', pad: 0, maxHeight: 560 });
+      const nameField = dlg.locator('[data-field=part-name]');
+      await nameField.fill('Dining table');
+      await nameField.press('Enter');
+      await t.until(async () => (await t.call('doc.query', { name: 'studio.parts', args: {} })).parts[0].name === 'Dining table', 'the part is renamed');
+      await dlg.locator('[data-field=part-class]').selectOption('IfcFurnishingElement');
+      await t.wait(500);
+      t.expect((await t.call('doc.query', { name: 'studio.parts', args: {} })).parts[0].def.description.includes('shelf'), 'a change of class keeps the rest of the definition');
       // Place on a plan: the tool and its bar; R turns it a quarter, the width asked in the bar.
-      await dlg.locator('[data-field=fam-place]').click();
+      await dlg.locator('[data-field=part-place]').click();
       await t.ui({ view: 'plan', keyPlan: false });
       await t.wait(800);
       await t.fit();
-      t.expect(await page.locator('[data-family-pick]').count() === 1, 'the bar offers the family');
-      await page.locator('[data-family-value=Width]').fill('1600');
+      t.expect(await page.locator('[data-family-pick]').count() === 1, 'the bar offers the part');
+      await page.locator('[data-family-value=W]').fill('1600');
       await page.locator('[data-family-rotate]').click();
       const [x1, y1] = await t.planPoint(3, 4);
       await page.mouse.move(x1, y1, { steps: 3 });
       // The ghost: the table's outline at the cursor, turned a quarter, with the width of the bar.
       const ghost = page.locator('[data-testid=point-ghost] polyline');
-      await t.until(async () => (await ghost.count()) >= 8, 'the ghost of the family follows the cursor');
+      await t.until(async () => (await ghost.count()) >= 8, 'the ghost of the part follows the cursor');
       const box = async () => ghost.evaluateAll((els) => { const xs = [], ys = []; for (const e of els) for (const p of e.getAttribute('points').trim().split(/\s+/)) { const [x, y] = p.split(',').map(Number); xs.push(x); ys.push(y); } return [Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)]; });
       const [gw, gh] = await box();
       t.expect(gh > gw, `turned a quarter, the 1.6 m table is taller than wide on the plan (${gw} x ${gh})`);
-      await t.shot('family-place-ghost', { of: '[data-testid=plan]', pad: 0 });
+      await t.shot('part-place-ghost', { of: '[data-testid=plan]', pad: 0 });
       await page.mouse.click(x1, y1);
       await t.wait(4500);
-      await t.shot('family-place-bar', { of: '[data-testid=command-line]', pad: 4 });
-      await page.locator('[data-family-value=Width]').fill('');
+      await t.shot('part-place-bar', { of: '[data-testid=command-line]', pad: 4 });
+      await page.locator('[data-family-value=W]').fill('');
       await page.locator('[data-family-rotate]').click();
       await page.locator('[data-family-mirror]').click();
       const [x2, y2] = await t.planPoint(9, 4);
@@ -11974,37 +12069,44 @@ export const scenes = [
       await t.keys('Escape');
       const placed = (await t.nodes()).filter((n) => n.props.operation === 'part');
       t.expect(placed.length === 2, `two table objects, found ${placed.length}`);
-      const first = placed.find((n) => n.props.values?.Width === 1.6) ?? placed[0];
-      t.expect(first.props.values?.Width === 1.6 && first.props.rotation === 90, 'the first one has its own width and is turned a quarter');
+      const first = placed.find((n) => n.props.values?.W === 1.6) ?? placed[0];
+      t.expect(first.props.values?.W === 1.6 && first.props.rotation === 90, 'the first one has its own width and is turned a quarter');
       // Its Properties: the family, each parameter's own value, the shelf switched off.
       await select(t, first.id);
       await t.wait(900);
       await page.locator('[data-published-param=HasShelf] input').uncheck();
       await t.until(async () => (await t.nodes()).find((n) => n.id === first.id)?.props.values?.HasShelf === 0, 'the shelf is switched off on this object');
-      await t.shot('family-properties', { of: 'aside.props', pad: 0, maxHeight: 700 });
+      await t.shot('part-properties', { of: 'aside.props', pad: 0, maxHeight: 700 });
       await t.ui({ view: '3d', selection: null, selected: [] });
       await t.wait(1500);
       await t.fit();
-      await t.shot('family-3d', { of: '[data-testid=view3d]', pad: 0 });
-      // Make family from sketch…: a closed outline drafted on the plan, then the dialog asks the name, the depth and the class.
+      await t.shot('part-3d', { of: '[data-testid=view3d]', pad: 0 });
+      // Make part from sketch…: a closed outline drafted on the plan, then the dialog asks the name, the depth and the class.
       await t.ui({ view: 'plan', keyPlan: false });
       await t.wait(600);
       const outline = (await t.cmd('drafting.draw', { viewId: plan, shape: { type: 'polyline', pts: [[14, 0], [15.2, 0], [15.2, 0.4], [14.4, 0.4], [14.4, 1.2], [14, 1.2]], closed: true } })).ids[0];
       await select(t, outline);
       await t.wait(400);
-      await t.tool('studio.familyFromSketch');
-      const from = page.locator('[data-dialog=family-from-sketch]');
+      await t.tool('studio.partFromSketch');
+      const from = page.locator('[data-dialog=part-from-sketch]');
       await from.waitFor({ timeout: 10_000 });
       await from.locator('[data-field=fs-name]').fill('Corner bench');
       await from.locator('[data-field=fs-depth]').fill('450 mm');
       await from.locator('[data-field=fs-class]').selectOption('IfcFurnishingElement');
-      await t.shot('family-from-sketch', { of: '[data-dialog=family-from-sketch]', pad: 0 });
+      await t.shot('part-from-sketch', { of: '[data-dialog=part-from-sketch]', pad: 0 });
       await from.locator('[data-field=fs-go]').click();
-      await t.until(async () => (await t.call('doc.query', { name: 'studio.families', args: {} })).families.some((f) => f.name === 'Corner bench'), 'the family is made from the outline');
-      const bench = (await t.call('doc.query', { name: 'studio.families', args: {} })).families.find((f) => f.name === 'Corner bench');
+      await t.until(async () => (await t.call('doc.query', { name: 'studio.parts', args: {} })).parts.some((f) => f.name === 'Corner bench'), 'the part is made from the outline');
+      const bench = (await t.call('doc.query', { name: 'studio.parts', args: {} })).parts.find((f) => f.name === 'Corner bench');
       t.expect(bench.def.params.map((p) => p.key).join() === 'W,H,D' && bench.def.ifcClass === 'IfcFurnishingElement', 'its parameters are W, H and D, its class the one chosen');
+      // The manager opens on it; Edit part places an object when there is none and enters the edit mode, where the sketch is the part's own.
       await dlg.waitFor({ timeout: 10_000 });
-      await t.until(async () => (await dlg.locator('[data-field=fam-preview] line').count()) > 10, 'the new family opens in the editor');
+      await t.until(async () => (await dlg.locator('[data-field=part-name]').inputValue()) === 'Corner bench', 'the new part is chosen in the manager');
+      await dlg.locator('[data-field=part-edit]').click();
+      const tree = page.locator('[data-testid=part-tree]');
+      await tree.waitFor({ timeout: 10_000 });
+      await t.until(async () => (await tree.locator('[data-part-sketch]').count()) > 0, 'the part\'s own sketch is listed in its tree');
+      await t.wait(1000);
+      await t.shot('part-from-sketch-tree', { of: '[data-testid=part-tree]', pad: 6 });
       await t.keys('Escape');
     },
   },
@@ -12120,6 +12222,67 @@ export const scenes = [
       await tree.waitFor({ timeout: 10_000 });
       await t.keys('Tab');
       await t.until(async () => (await tree.count()) === 0, 'Tab leaves it too');
+    },
+  },
+  {
+    // Elements a part holds (audit S6): a bench with a wall behind it made one part with Add to part, a second object turned and
+    // wider, the part's edit mode with its Elements section, and the wall's length driven by the width W.
+    id: 'part-members',
+    touches: ['studio', 'architecture', 'core'],
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const storey = await t.storey();
+      const def = {
+        ifcClass: 'IfcFurnishingElement',
+        params: [{ key: 'W', label: 'Width', kind: 'length', default: 3 }, { key: 'T', label: 'Depth', kind: 'length', default: 0.5 }, { key: 'H', label: 'Seat height', kind: 'length', default: 0.45 }],
+        bodies: [{ name: 'Seat', plane: 'xy', points: [[0, 0], ['W', 0], ['W', 'T'], [0, 'T']], depth: 'H' }],
+      };
+      const part = await t.cmd('studio.createPart', { name: 'Bench with wall', def, constrain: true });
+      const one = await t.cmd('studio.placePart', { typeId: part.id, storeyId: storey, at: [2, 2] });
+      const wall = await t.cmd('architecture.addWall', { storeyId: storey, x1: 2, y1: 1, x2: 5, y2: 1 });
+      t.expect(one?.id && wall?.id, 'the bench is placed and the wall drawn behind it');
+      await t.ui({ view: '3d', selection: wall.id, selected: [one.id, wall.id], keyPlan: false });
+      await t.wait(1200);
+      await t.fit();
+      // Add to part: the placed part and the wall selected, the wall becomes the part's own.
+      await t.button('Studio', { exact: true });
+      await t.tool('studio.addToPart');
+      await t.wait(1500);
+      const nodes = async () => t.nodes();
+      await t.until(async () => Object.keys((await nodes()).find((n) => n.id === one.id)?.props.memberIds ?? {}).filter((k) => !k.includes('/')).length === 1, 'the wall is a member of the part');
+      // A second object, turned and wider: the wall comes with it.
+      const two = await t.cmd('studio.placePart', { typeId: part.id, storeyId: storey, at: [9, 5], rotation: 90, values: { W: 4.5 } });
+      await t.until(async () => Object.keys((await nodes()).find((n) => n.id === two.id)?.props.memberIds ?? {}).filter((k) => !k.includes('/')).length === 1, 'the second object has its own wall');
+      await t.ui({ view: '3d', selection: null, selected: [] });
+      await t.wait(1200);
+      await t.fit();
+      await t.shot('part-members-3d', { of: '[data-testid=view3d]', pad: 0 });
+      // The edit mode: Tab on the first object, the tree lists the wall under Elements.
+      await select(t, one.id);
+      await t.keys('Tab');
+      const tree = page.locator('[data-testid=part-tree]');
+      await tree.waitFor({ timeout: 10_000 });
+      const members = tree.locator('[data-testid=part-members]');
+      await t.until(async () => (await members.locator('[data-part-member]').count()) === 1, 'the Elements section lists the wall');
+      // Drive: the wall's length is the part's width.
+      const drives = members.locator('[data-part-member-drives]');
+      await drives.locator('[data-field=member-drive-attr]').selectOption('length');
+      await drives.locator('[data-field=member-drive-new]').fill('W');
+      await drives.locator('[data-field=member-drive-set]').click();
+      await t.until(async () => (await drives.locator('[data-part-drive=length]').count()) === 1, 'the length is driven by W');
+      const tree2 = await t.call('doc.query', { name: 'studio.partTree', args: { id: two.id } });
+      t.expect(tree2.members?.[0]?.drives?.length === 'W', 'the drive reaches the other object too');
+      await t.wait(1000);
+      await t.shot('part-members-tree', { of: '[data-testid=part-tree]', pad: 6 });
+      await t.shot('part-members-edit', { of: '[data-testid=view3d]', pad: 0 });
+      await tree.locator('[data-testid=part-finish]').click();
+      await t.until(async () => (await tree.count()) === 0, 'Finish part leaves the edit mode');
+      // The wall's own Properties say which part holds it.
+      const heldWall = (await nodes()).find((n) => n.id === one.id).props.memberIds.wall1 ?? Object.values((await nodes()).find((n) => n.id === one.id).props.memberIds)[0];
+      await select(t, heldWall);
+      await t.wait(900);
+      t.expect(await page.locator('[data-section=part-member]').count() === 1, 'the wall\'s Properties name the part that holds it');
     },
   },
   {

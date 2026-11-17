@@ -10,6 +10,8 @@ Die Registerkarte **TGA** zeichnet die Haustechnik so, wie ein Ingenieur sie ski
 
 ## Ein System mit einem Klick
 
+Das Register TGA fasst seine Werkzeuge in drei Gruppen zusammen: **System** (**Neues System** ▾ mit den Gewerken, **System bearbeiten**, **Systeme…**, **TGA-Grundriss**, **Offene Anschlüsse** und **Bauteillisten** ▾), **Leitungen** (**Leitung**, **Knoten platzieren**, die Leitungsbearbeitungen, **Ring schließen** und **Straße** ▾) und **Kabelträger und Ventilatoren** (**Kabeltrasse**, **Ventilatoren** ▾, **In Kabelführung verlegen**, **Kanal zum Auslass**, **Ventilatortypen**). Eine Schaltfläche mit ▾ öffnet ihre Liste; jedes Werkzeug behält seine Buchstaben, und **Befehle…** und **Meine Werkzeuge** finden es wie bisher.
+
 Wählen Sie unter **Neues System** das Gewerk (**Heizung**, **Wasser**, **Warmwasser**, **Abwasser**, **Elektro**, **Lüftung**) und klicken Sie in den Grundriss. Lapin platziert das ganze System: die Quelle dort, wo Sie geklickt haben, einen ersten Endpunkt einige Meter entfernt und die Leitung dazwischen. Das System öffnet sich zur Bearbeitung.
 
 ![Ein Heizungssystem im Erdgeschossgrundriss: der Heizkessel, zwei Heizkörper unter den Fenstern und die Leitungen dazwischen](shots/mep-plan.webp)
@@ -31,6 +33,7 @@ Wählen Sie eine Leitung aus: Ihre Griffe sitzen auf der Linie, wie sie gezeichn
 - **Strg-Klick** auf einen Griff nimmt ihn heraus, auf die Mitte eines Abschnitts fügt einen hinzu; **Griff hinzufügen** setzt einen dort, wo Sie klicken.
 - **Umgehung** (<kbd>DU</kbd>) führt eine Leitung um ein Hindernis herum: Klicken Sie auf die Leitung, wo die Umgehung beginnt, klicken Sie, wo sie auf demselben Abschnitt endet, bewegen Sie dann die Maus zu der Seite, auf die sie ausweicht, und klicken Sie (oder geben Sie den Abstand ein). Die Leitung geht hinaus, entlang und zurück, mit vier neuen Ecken; ihre Verbindungen bleiben erhalten.
 - **Pfad neu zeichnen** (<kbd>RP</kbd>) gibt einer Leitung einen neuen Verlauf: Wählen Sie sie aus (oder beginnen Sie auf ihr) und zeichnen Sie den Pfad Punkt für Punkt, <kbd>Enter</kbd> zum Abschließen. Die Leitung behält ihr System, ihre Größe und ihre Verbindungen, und ihre Enden kehren auf ihre Anschlüsse zurück.
+- **Ändern → Element teilen** schneidet eine Leitung dort in zwei, wo Sie klicken: eine **Muffe** (ein Einbauteil in der Leitung, IfcPipeFitting CONNECTOR) verbindet die beiden Teile am Schnitt, ihre Enden in ihrer Mitte, sodass ihre Längen zusammen die der Leitung ergeben. Der zweite Teil übernimmt, woran das Ende der Leitung saß, und jeder Abzweig bleibt an dem Teil, den er anschließt. Eine gepaarte Leitung (Zu- und Rückluft) behält dort zwei offene Enden. **Ändern → Elemente stutzen/dehnen** führt das Ende einer Leitung an eine Grenze (das Ende löst sich von dem Anschluss, an dem es saß), und **Versetzen** kopiert eine Leitung parallel. Ein Abzweig an dem Teil, den ein Stutzen wegschneidet, wird abgelehnt.
 
 ![Eine Heizkörperleitung, mit Umgehung um ein Hindernis geführt: hinaus, entlang und zurück](shots/mep-detour.webp)
 
@@ -51,7 +54,7 @@ Im Eigenschaftenbereich zeigt ein Knoten sein System, seine Rolle und seine Ansc
 
 ## Grundrisse, Listen und IFC
 
-**TGA-Grundriss** erstellt einen Grundriss der Disziplin TGA für die Ebene, abgelegt unter dem TGA-Satz im Projektbrowser. Die **Geräteliste** und die **Leitungsliste** unter **System** sind Bauteillisten wie alle anderen: Sie kommen auf Pläne und werden mit ihnen exportiert.
+**TGA-Grundriss** erstellt einen Grundriss der Disziplin TGA für die Ebene, abgelegt unter dem TGA-Satz im Projektbrowser. Die **Geräteliste** und die **Leitungsliste** unter **System → Bauteillisten** sind Bauteillisten wie alle anderen: Sie kommen auf Pläne und werden mit ihnen exportiert.
 
 In einem IFC-Export ist jedes System ein IfcDistributionSystem, jeder Knoten und jede Leitung hat ihre IfcDistributionPorts, und die Verbindungen werden zwischen den Anschlüssen geschrieben, sodass das Netz in einem anderen Programm verbunden ankommt, von der Quelle bis zum letzten Endpunkt.
 
@@ -69,7 +72,7 @@ Jedes Gerät behält seinen **Verbrauch** (m³/h) und seine **Geräteart** nach 
 
 ### Die Versorgung in der Straße
 
-Unter **Straße** verlegt **Gasleitung entlang…** (<kbd>GM</kbd>) eine Gasleitung entlang dessen, was du anklickst — eine Straße, eine Achse, eine gezeichnete Linie, eine Wand — mit dem **Abstand zur Linie** und der **Tiefe (Überdeckung)** aus der Leiste der Befehlszeile; unter einem Gelände wird die Tiefe vom Boden gemessen, sonst vom Geschoss. **Gasleitung** zeichnet sie Punkt für Punkt. Die Leitung kommt in ein Mitteldruck-Gassystem aus PE-Rohr, mit ihrem **Warnband**.
+Unter **Leitungen → Straße** verlegt **Gasleitung entlang…** (<kbd>GM</kbd>) eine Gasleitung entlang dessen, was du anklickst — eine Straße, eine Achse, eine gezeichnete Linie, eine Wand — mit dem **Abstand zur Linie** und der **Tiefe (Überdeckung)** aus der Leiste der Befehlszeile; unter einem Gelände wird die Tiefe vom Boden gemessen, sonst vom Geschoss. **Gasleitung** zeichnet sie Punkt für Punkt. Die Leitung kommt in ein Mitteldruck-Gassystem aus PE-Rohr, mit ihrem **Warnband**.
 
 **Hausanschluss** (<kbd>GS</kbd>): Klicke die Leitung, dann den Zählerschrank. Lapin setzt eine **Anbohrschelle** auf die Leitung, verlegt die Anschlussleitung rechtwinklig von ihr in ihrer Überdeckung bis zum Schrank und führt sie dort in den Schrank hoch.
 
@@ -81,7 +84,7 @@ Unter **Straße** verlegt **Gasleitung entlang…** (<kbd>GM</kbd>) eine Gasleit
 
 ![Die Vorgaben eines Gassystems: sein Gas und seine Druckstufe](shots/mep-gas-systems.webp)
 
-**Gas- und Heizöl-Materialliste** unter **System** listet System für System die Rohre nach Material und Durchmesser mit ihrer Länge (davon die Steigleitungen), Bögen, T-Stücke und Schutzhülsen, das Warnband, Armaturen, Zähler und Schränke und die Geräte mit installiertem Verbrauch und Leistung. In IFC ist ein Gassystem ein IfcDistributionSystem vom Typ GAS, ein Heizölsystem FUEL; der Zählerschrank ist ein IfcDistributionChamberElement, der Zähler ein IfcFlowMeter GASMETER, die Armaturen IfcValve, der Herd ein IfcBurner, der Tank ein IfcTank.
+**Gas- und Heizöl-Materialliste** unter **System → Bauteillisten** listet System für System die Rohre nach Material und Durchmesser mit ihrer Länge (davon die Steigleitungen), Bögen, T-Stücke und Schutzhülsen, das Warnband, Armaturen, Zähler und Schränke und die Geräte mit installiertem Verbrauch und Leistung. In IFC ist ein Gassystem ein IfcDistributionSystem vom Typ GAS, ein Heizölsystem FUEL; der Zählerschrank ist ein IfcDistributionChamberElement, der Zähler ein IfcFlowMeter GASMETER, die Armaturen IfcValve, der Herd ein IfcBurner, der Tank ein IfcTank.
 
 ![Die Gas- und Heizöl-Materialliste](shots/mep-gas-list.webp)
 
@@ -89,7 +92,7 @@ Die Rohrbemessung aus dem Verbrauch der Geräte und der Nachweis des Druckverlus
 
 ## Brandschutz
 
-**Brandmeldung** und **Hydranten** sind eigene Gewerke unter **Neues System**, mit ihren Werkzeugen in den Gruppen **Brandmeldung** und **Hydranten**.
+**Brandmeldung** und **Hydranten** sind eigene Gewerke unter **Neues System**, ihre Geräte werden mit **Knoten platzieren** gesetzt, und der Ring wird mit **Ring schließen** in der Gruppe **Leitungen** geschlossen.
 
 **Neues System → Brandmeldung** setzt die **Brandmelderzentrale** an den Klickpunkt und einen ersten **Rauchmelder** daneben, verbunden durch das Ringkabel. Jedes danach gesetzte Gerät (**Rauchmelder** <kbd>SD</kbd>, **Wärmemelder** <kbd>HD</kbd>, **Handfeuermelder** <kbd>MC</kbd>, **Signalgeber**, **Signalgeber mit Blitzleuchte**) schließt sich an das offene Ende des Rings an, das zuvor gesetzte Gerät. Das Kabel läuft von einem Gerät zum nächsten in der Reihenfolge, in der du sie setzt. **Ring schließen** führt das Kabel vom letzten Gerät zum Rückführungseingang der Zentrale zurück, sodass der Ring von beiden Enden gespeist wird. Das Kabel ist ein Brandschutzkabel an der Decke.
 
@@ -103,7 +106,7 @@ Jeder Melder zeigt seinen **Überwachungsbereich** als gestrichelten Kreis. Stan
 
 ![Der Meldering und die Hydranten in 3D](shots/mep-fire-3d.webp)
 
-**Brandschutz-Materialliste** unter **System** listet System für System:
+**Brandschutz-Materialliste** unter **System → Bauteillisten** listet System für System:
 
 - die Zentralen, Melder, Handfeuermelder und Signalgeber;
 - das Ringkabel mit seiner Länge und ob jeder Ring geschlossen ist;
@@ -118,7 +121,7 @@ Die Melder Raum für Raum nach der Planungstabelle zu setzen und nachzuweisen, d
 
 ## Abluftventilatoren
 
-Die Gruppe **Ventilatoren** im Register TGA setzt Abluftventilatoren für Bad und Küche als eigene Elemente, jeder von einem Typ, den Sie konfigurieren:
+**Ventilatoren** (in der Gruppe **Kabelträger und Ventilatoren** im Register TGA) setzt Abluftventilatoren für Bad und Küche als eigene Elemente, jeder von einem Typ, den Sie konfigurieren:
 
 - **Wandventilator** (<kbd>VF</kbd>): ein Axialventilator an einer Wand, der direkt durch sie hinaus bläst;
 - **Deckenventilator**: ein Ventilator unter der Decke mit einem Rohr aus seiner Seite;

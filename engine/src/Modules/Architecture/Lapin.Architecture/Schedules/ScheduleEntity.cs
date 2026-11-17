@@ -436,6 +436,22 @@ public sealed class ScheduleEntity : ISheetContent, Lapin.Platform.Documents.IDo
             return new JsonObject { ["id"] = s.Id, ["name"] = s.Name };
         });
 
+        // What a template would do in this project, as every library import previews it (audit D13): {builtin | text} → the
+        // preview of its one row (new; the same as the field schedule of its name; or that name, to keep both, update or skip).
+        r.Query("schedule.templatePreview", (q, a) =>
+        {
+            var t = (string?)a["builtin"] is { } builtin
+                ? FieldSchedule.ReadTemplate(Shipped(q.Services, builtin)?.Template() ?? throw new CommandException($"This edition ships no schedule template „{builtin}”."))
+                : FieldSchedule.ReadTemplate(a["text"] ?? throw new CommandException("Which template?"));
+            var o = LibraryMerge.Preview([TemplateRow(q.Model, t)]);
+            o["format"] = FieldSchedule.FileFormat;
+            o["extension"] = FieldSchedule.Spec.Extension;
+            o["what"] = FieldSchedule.Spec.What;
+            o["header"] = t["format"] is not null && a["text"] is JsonValue tv && tv.TryGetValue<string>(out var text) && JsonNode.Parse(text) is JsonObject root
+                ? LibraryFile.HeaderOf(root, FieldSchedule.Spec).ToJson() : null;
+            return o;
+        });
+
         r.Service<ILibraryFormat>(new LibraryFormat(FieldSchedule.Spec, (q, text) => [TemplateRow(q.Model, FieldSchedule.ReadTemplate(JsonValue.Create(text)))],
             (ctx, text, choices, all) => ImportTemplate(ctx, FieldSchedule.ReadTemplate(JsonValue.Create(text)), choices, all)));
 

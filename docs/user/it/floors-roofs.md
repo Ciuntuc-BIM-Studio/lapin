@@ -26,7 +26,7 @@ La stessa barra serve tutti gli strumenti di contorno (solaio, foro nel solaio, 
 
 ![La barra degli strumenti di contorno, con From drawn shape scelto](shots/outline-sources.webp)
 
-Per solaio, foro nel solaio, controsoffitto e locale per contorno la barra offre anche **Ellipse**: il centro, l’estremo di un semiasse, poi l’altro. I bordi del contorno seguono la vera ellisse (quattro quarti), misurati esattamente; un angolo spostato fuori dall’ellisse rende dritti i suoi due bordi, e un angolo vicino a un bordo ellittico non si raccorda. L’IFC la porta come IfcEllipse. **From drawn shape** prende allo stesso modo un’ellisse disegnata.
+Per solaio, foro nel solaio, controsoffitto e locale per contorno la barra offre anche **Ellipse**: il centro, l’estremo di un semiasse, poi l’altro. I bordi del contorno seguono la vera ellisse (quattro quarti), misurati esattamente; un angolo spostato fuori dall’ellisse rende dritti i suoi due bordi, e un angolo vicino a un bordo ellittico non si raccorda. L’IFC la porta come IfcEllipse. **From drawn shape** prende allo stesso modo un’ellisse disegnata. Un foro proprio di un solaio o di un controsoffitto (**Hole in the outline**) accetta anche un’ellisse. Un contorno con un lato ellittico non si sposta per intero (Maiusc-trascina, **Offset outline…**): la curva a distanza da un’ellisse non è un’ellisse.
 
 ![Un solaio ellittico disegnato accanto a un’ellisse disegnata](shots/ellipse-floor.webp)
 
@@ -57,6 +57,12 @@ Uno strato di un solaio può anche andare oltre il suo contorno, o fermarsi prim
 **Modifica → Dividi elemento** su un solaio o un controsoffitto chiede due punti di una linea di divisione: la linea prosegue oltre di essi e deve incrociare il contorno esattamente due volte. Il solaio diventa due solai; la parte cliccata mantiene l’id (GlobalId in IFC), gli archi sui bordi restano archi (un arco tagliato resta un arco) e un’apertura del solaio va con la parte in cui si trova. Un’apertura che la linea attraversa viene rifiutata. **Modifica → Taglia/estendi elementi** accetta un limite retto (un muro, una trave o una linea disegnata) e taglia lì il solaio o il controsoffitto, mantenendo il lato cliccato.
 
 ![Un solaio con un bordo curvo diviso da una linea: la parte a destra selezionata](shots/floor-split.webp)
+
+I fori propri di un solaio vanno alla parte in cui cadono; uno strato che supera un bordo curvo continua a farlo su entrambe le parti; la griglia di un controsoffitto resta dov’era, ogni apparecchio o diffusore nella parte in cui cade la sua cella. Un solaio con un bordo ellittico non viene tagliato da una linea.
+
+Una **copertura** si divide e si taglia allo stesso modo. Ogni parte mantiene le regole dei suoi bordi (gronda o timpano, pendenza, sporgenza), e il taglio è un timpano senza sporgenza; il taglio è consentito solo dove lascia la copertura com’era, con le falde di ogni parte dove stavano quelle della copertura, come attraverso il colmo di una copertura a due falde o lungo di esso. Altrove viene rifiutato (*would change its slopes*): le falde di una parte salirebbero a nuovi colmi. Finestre da tetto, abbaini e pluviali vanno alla loro parte. Una copertura a botte non viene tagliata.
+
+![Una copertura a due falde divisa attraverso il colmo: due coperture, le stesse falde](shots/roof-split.webp)
 
 ## Tetti
 

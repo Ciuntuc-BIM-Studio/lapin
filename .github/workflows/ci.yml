@@ -65,6 +65,7 @@ jobs:
     # The engine in the browser (docs/plan-browser-engine.md): built for lapin and
     # checked in headless Chrome. The desktop jobs above never depend on it.
     runs-on: ubuntu-22.04
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       # An SDK of its own in a folder the job can write, so the wasm-tools workload installs without root.

@@ -35,7 +35,7 @@ Klik på **Installér**. Lapin henter filen, tjekker at dens størrelse og SHA-2
 | Prislister | **Udførelse → Prislister…**, markeret som vejledende: priserne er forfatterens, sammenlign dem med dine egne |
 | Typer | det projekt, der er åbent, når du installerer den, i ét trin at fortryde (**Administrer → Typepakker…** eksporterer dine egne) |
 
-Har dit bibliotek allerede noget med samme navn, spørger Lapin, før det erstatter det. Intet, en udvidelse medbringer, bliver nogensinde kørt: udvidelser er indhold.
+Har dit bibliotek allerede en prisliste, et profilbibliotek eller en skraveringsfil med samme navn, som er anderledes, tilbyder **Forhåndsvisning af import** at beholde begge (med (2) efter navnet), erstatte den eller springe over; for en projektskabelon med samme navn spørger Lapin, før det erstatter den. Intet, en udvidelse medbringer, bliver nogensinde kørt: udvidelser er indhold.
 
 Lapins katalog er også **signeret** af Lapin Extensions: kataloget og hver af dets filer bærer en signatur, som Lapin kontrollerer, før det læser listen eller installerer en fil, så en kopi, der er ændret undervejs, afvises. En linje over listen siger **Signeret af Lapin Extensions**, når det er tilfældet.
 

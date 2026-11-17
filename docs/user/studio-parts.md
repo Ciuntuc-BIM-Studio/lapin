@@ -8,7 +8,7 @@ summary: Edit a Studio solid or a placed part in place with Tab — the rest of 
 
 A **part** is a Studio solid with a definition behind it: a sketched solid with its steps, or an object of your own whose bodies follow **parameters** (what used to be a family). A part is placed as many times as you need, and each object keeps its own parameter values.
 
-**Families are now parts.** A project saved with families opens with the same objects as parts, with the same names, bodies, values and ids, and the Families page still describes how they are made. **Studio → Families…** and its tools keep working.
+**Families are now parts.** A project saved with families opens with the same objects as parts, with the same names, values and ids; their corners are sketches of the part's own. **Studio → Parts…** manages them (the Families page describes it), and the old tools keep working.
 
 ## Editing a part
 
@@ -16,7 +16,7 @@ Select one Studio solid or placed part in 3D, then do one of these:
 
 - press **Tab**;
 - **double-click** the part in 3D;
-- press **Edit part** in **Studio → Part**, or in the **Part** section of its Properties.
+- press **Edit part** in **Studio → Parts**, or in the **Part** section of its Properties.
 
 The part is then in **edit mode**. The rest of the model fades and cannot be selected, but it is still there to snap to. The part is drawn as usual, and the bar over the view says what you are editing.
 
@@ -96,10 +96,34 @@ Leave with **Finish sketch**, **Esc** (once the tool is down) or **Tab**: you ar
 - **+ Sketch** adds a sketch on the plane chosen (top, front or right). Beside each sketch of the part are buttons to rename it and to remove it (the bodies drawn from it go with it).
 - **+ Body from sketch** makes a body of a sketch's closed shape: choose the sketch and type its **depth**, a length or a formula of the parameters (`=H - T`). Under the body's step in the tree, its depth and its *made when* condition can be changed, and the body removed.
 
-In the Families dialog, a body drawn from a sketch reads *Drawn from sketch* followed by the sketch's name, instead of a table of corners: the sketch is edited in the part, with **Edit the sketch in the part** (it needs an object of the part in the project).
+A sketch of a body whose corners are still formulas opens with **Constrain part**, which makes them sketches of the part's own first.
+
+## Elements a part holds
+
+A part can hold **native elements**: walls, slabs, furniture, MEP equipment and whatever else stands on a storey. Make a bench, put the wall behind it into the part, and every object of the part has its own wall.
+
+1. Place an object of the part and draw or place the elements next to it, on the same storey.
+2. Select the placed part together with the elements and choose **Studio → Add to part**. Without a placed part and other elements selected, a notice says what to select.
+3. The elements are the part's now: every other object of the part gets its own copy, placed the way the part is.
+
+![A bench with a wall behind it, the second object turned and wider](shots/part-members-3d.webp)
+
+**Editing.** Open the edit mode (**Tab**) and the elements can be picked and edited there, with any command: change the wall's thickness, move it, give it a type. The change is written back to the part and reaches every placed part. Outside the edit mode, a click on an element of a part picks the part; its Properties say which part holds it, with **Edit part**.
+
+**Elements in the tree.** The part's tree has an **Elements** section listing each element with its class. **Select** picks it, and **Let go** frees it: it stays in this object as a plain element and goes from the other objects.
+
+**Drives.** An element's attribute can follow a formula of the part's parameters: choose the attribute (a wall's `length` or `height`, for instance), type the formula (`W`, `H / 2`) and press **Set**; the trash button stops it. With `length = W` the wall is as long as the bench is wide, in each object, whatever its width. A driven value follows its formula.
+
+![The part's tree: the wall under Elements, its length driven by W](shots/part-members-tree.webp)
+
+**What moves with the part.** Moving, turning, mirroring, copying and deleting an object of the part takes its elements along. A part of elements only needs no body of its own.
+
+**In IFC.** The elements are written as their own classes (an IfcWall stays an IfcWall). Each is a part of the placed part through an aggregation relation (`IfcRelAggregates`), and a part of elements only is written as an `IfcElementAssembly`. Quantities are counted once, on the elements, not again on the part.
+
+**Limits.** Joins to walls outside the part are not kept when the part is rebuilt. An element that came from a file, a Studio solid, an opening of a wall (choose its wall, which brings it) or a placed part cannot be added.
 
 ## Where to go next
 
-The Studio page tells how to model solids, and the Families page how parameters and formulas make a part.
+The Studio page tells how to model solids, and the Families page how the Parts manager, placing and Make part from sketch work.
 
 Sketches in a part can be held with **constraints** and dimensions: see [Sketch constraints](sketch-constraints.md).

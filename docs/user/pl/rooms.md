@@ -16,6 +16,8 @@ Dla przestrzeni bez ścian dookoła, takiej jak taras lub jeden koniec otwartej 
 
 Krawędzie narysowanego pomieszczenia mogą być łukami, jak krawędzie stropu: pasek **Room by outline** rysuje **Polygon**, którego krawędzie mogą być łukami (**Arcs (Space)**), **Rectangle** albo **Circle**, a prawy klik na zaznaczonym pomieszczeniu oferuje **Make arc**, **Make straight**, **Fillet corner…** i **Chamfer corner…**. Jego powierzchnia i obwód są mierzone na prawdziwych łukach, a w IFC profil przestrzeni jest prawdziwą krzywą. Pomieszczenie znalezione ze ścian podąża za nimi, więc jego obrysu nie edytuje się w ten sposób.
 
+**Modyfikuj → Podziel element** dzieli narysowane pomieszczenie na dwa wzdłuż linii z dwóch punktów: część, którą klikniesz, zachowuje pomieszczenie, druga jest nowym pomieszczeniem z następnym numerem kondygnacji, a ich powierzchnie sumują się do dawnej. **Modyfikuj → Utnij/wydłuż elementy** przycina je prostą granicą. Pomieszczenie znalezione na podstawie ścian dzieli się natomiast linią podziału pomieszczeń.
+
 ![Narysowane pomieszczenie z łukową krawędzią i zaokrąglonym narożnikiem, okrągłe pomieszczenie i balkon z łukowym frontem](shots/rooms-curved.webp)
 
 ## Właściwości pomieszczenia

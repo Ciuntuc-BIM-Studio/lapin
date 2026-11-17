@@ -37,6 +37,10 @@ export function WallWoodSection({ node }: { node: NodeDto }) {
       </dl>
       {(info.warnings ?? []).map((w, i) => <p key={i} className="error-text small">{w}</p>)}
       {elevation}
+      {node.props.frameStuds != null && (
+        <button type="button" className="btn compact" data-testid="wood-reset-studs" title="Studs moved, added or taken out on this wall (in its frame elevation) go back to its type's module"
+          onClick={() => void execute('wood.editStuds', { id: node.id, reset: true })}>Reset studs</button>
+      )}
     </div>
   );
 }

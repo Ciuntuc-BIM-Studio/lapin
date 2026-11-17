@@ -16,11 +16,13 @@ Pentru un spațiu care nu e închis de pereți peste tot, cum e o terasă sau un
 
 Laturile unei încăperi desenate pot fi curbe, ca ale unui planșeu: bara lui **Room by outline** desenează un **Polygon** ale cărui laturi pot fi arce (**Arcs (Space)**), un **Rectangle** sau un **Circle**, iar clicul dreapta pe încăperea selectată oferă **Make arc**, **Make straight**, **Fillet corner…** și **Chamfer corner…**. Aria și perimetrul ei se măsoară pe arcele adevărate, iar în IFC profilul spațiului este curba adevărată. O încăpere găsită din pereții ei îi urmează, așa că conturul ei nu se editează astfel.
 
+**Modifică → Împarte elementul** taie o încăpere desenată în două după o linie de două puncte: partea pe care dai clic rămâne încăperea, cealaltă e o încăpere nouă cu următorul număr al nivelului, iar ariile lor fac cât încăperea. **Modifică → Taie/Prelungește elemente** o taie după o limită dreaptă. O încăpere găsită din pereții ei se împarte în schimb cu o linie de separare.
+
 ![O încăpere desenată cu o latură curbă și un colț racordat, o încăpere rotundă și un balcon cu fața curbă](shots/rooms-curved.webp)
 
 ## Linii de separare a încăperilor
 
-O bucătărie deschisă spre living, cele două capete ale unui hol, palierul unei galerii: spații fără perete între ele care trebuie totuși să fie încăperi separate. **Arhitectură → Separare încăperi** (<kbd>RS</kbd> pentru o linie) desenează o linie care mărginește încăperile cum ar face-o un perete, fără corp: o **linie** (înlănțuită, fiecare clic e începutul următoarei; cu **Arc** în bara liniei de comandă e un arc: începutul, sfârșitul, un punct prin care trece), o **polilinie** (colțurile ei, apoi <kbd>Enter</kbd>), un **dreptunghi** (două colțuri opuse: zona din interior devine o încăpere a ei) sau un **cerc** (centrul, un punct pe el). Desenează-o de la perete la perete; un capăt care se oprește la un fir de fața peretelui se închide totuși pe ea.
+O bucătărie deschisă spre living, cele două capete ale unui hol, palierul unei galerii: spații fără perete între ele care trebuie totuși să fie încăperi separate. **Arhitectură → Separare încăperi** (<kbd>LS</kbd> pentru o linie) desenează o linie care mărginește încăperile cum ar face-o un perete, fără corp: o **linie** (înlănțuită, fiecare clic e începutul următoarei; cu **Arc** în bara liniei de comandă e un arc: începutul, sfârșitul, un punct prin care trece), o **polilinie** (colțurile ei, apoi <kbd>Enter</kbd>), un **dreptunghi** (două colțuri opuse: zona din interior devine o încăpere a ei) sau un **cerc** (centrul, un punct pe el). Desenează-o de la perete la perete; un capăt care se oprește la un fir de fața peretelui se închide totuși pe ea.
 
 ![O bucătărie deschisă spre living, despărțite de o linie de separare, fiecare încăpere cu aria ei](shots/room-dividers.webp)
 

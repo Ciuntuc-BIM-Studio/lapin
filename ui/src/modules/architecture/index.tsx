@@ -7,7 +7,7 @@ import { flipAcross, frameAt, holeGrips, holeRefs, outlineGrips, outlineRef, pat
 import { architectureGrips3d } from './grips3d';
 import { arcOf, project, type Arc } from '../../viewport/arc';
 import { arcsOf, fromPairs } from '../../viewport/contour';
-import { FloorShapeBar, EllipseShapeBar, PlainShapeBar, loopOf, toggleOutlineArcs, type EllipseEdgeJson } from '../../viewport/outlineShape';
+import { FloorShapeBar, EllipseShapeBar, loopOf, toggleOutlineArcs, type EllipseEdgeJson } from '../../viewport/outlineShape';
 import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
 import { activeStorey, execute, query, useSession } from '../../engine/session';
@@ -307,8 +307,11 @@ function contourGrips(command: string, withEdges = false) {
         fillet: (index, radius) => ({ command: 'architecture.roundCorner', args: { id: node.id, index, radius } }),
         chamfer: (index, distance) => ({ command: 'architecture.chamferCorner', args: { id: node.id, index, distance } }),
       } : undefined);
+    // An outline with an elliptical edge is not offset as a whole: the curve at a distance from an ellipse is no ellipse.
+    const elliptical = Array.isArray(node.props.ellipses) && node.props.ellipses.some(Boolean);
     // A floor's or a ceiling's own holes (audit S4).
-    return [...outline, ...holeGrips(node.id, node.props.holes, node.props.holeArcs, (holes, holeArcs) => ({ command, args: { id: node.id, holes, holeArcs } }))];
+    return [...(elliptical ? outline.map((g) => (g.offsetAll ? { ...g, offsetAll: undefined } : g)) : outline),
+      ...holeGrips(node.id, node.props.holes, node.props.holeArcs, (holes, holeArcs) => ({ command, args: { id: node.id, holes, holeArcs } }), 'architecture', node.props.holeEllipses)];
   };
 }
 /**
@@ -323,7 +326,16 @@ const contourRefs = (node: NodeDto): RefLine[] => {
   // Elliptical edges (audit S4) along their ellipses.
   const ellipses = Array.isArray(node.props.ellipses) && node.props.ellipses.length === pts.length ? (node.props.ellipses as (EllipseEdgeJson | null)[]) : undefined;
   const outer: RefLine = ellipses ? { points: loopOf({ pts, arcs: arcsOf(node.props.arcs, pts.length), ellipses }), closed: true, kind: 'outline' } : outlineRef(pts, arcsOf(node.props.arcs, pts.length));
-  return [outer, ...holeRefs(node.props.holes, node.props.holeArcs)];
+  // Holes with elliptical edges (audit §18 leftovers) along their ellipses too.
+  const holeEllipses = Array.isArray(node.props.holeEllipses) ? (node.props.holeEllipses as unknown[]) : [];
+  const holes = holeRefs(node.props.holes, node.props.holeArcs).map((ref, k) => {
+    const el = holeEllipses[k];
+    const corners = Array.isArray(node.props.holes) ? fromPairs((node.props.holes as unknown[])[k]) : [];
+    return Array.isArray(el) && el.length === corners.length && corners.length >= 3
+      ? { ...ref, points: loopOf({ pts: corners, arcs: arcsOf(Array.isArray(node.props.holeArcs) ? (node.props.holeArcs as unknown[])[k] : undefined, corners.length), ellipses: el as (EllipseEdgeJson | null)[] }) }
+      : ref;
+  });
+  return [outer, ...holes];
 };
 
 /**
@@ -466,14 +478,15 @@ const slabOpeningPart: ToolDef = {
 const outlineHolePart: ToolDef = {
   id: 'architecture.outlineHole', label: 'Hole in the outline', icon: SlabOpeningIcon,
   gesture: { kind: 'polygon', shapes: true },
-  options: PlainShapeBar,
+  // Its edges may run along an ellipse (audit §18 leftovers): the Ellipse source too.
+  options: EllipseShapeBar,
   space: toggleOutlineArcs,
-  complete: async ({ points, arcs }, ctx) => {
+  complete: async ({ points, arcs, ellipses }, ctx) => {
     if (points.length < 3) return;
     const { selected } = useUi.getState();
     const host = selected.length === 1 ? useSession.getState().nodes.get(selected[0]) : undefined;
     const id = host && (host.type === 'IfcSlab' || host.type === 'LapinCeiling') ? host.id : undefined;
-    await ctx.execute('architecture.addOutlineHole', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]), ...(arcs ? { arcs } : {}), ...(id ? { id } : {}) });
+    await ctx.execute('architecture.addOutlineHole', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]), ...(arcs ? { arcs } : {}), ...(ellipses ? { ellipses } : {}), ...(id ? { id } : {}) });
   },
 };
 /** The roof configurator, on the roof selected (decision 231). */

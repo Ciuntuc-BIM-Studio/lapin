@@ -159,27 +159,93 @@ public sealed class RebarSchedule : IScheduleSource
     /// </summary>
     public sealed record Entry(int Mark, double Diameter, string Shape, int Count, double Length, bool Derived = false, string Partition = "");
 
-    public static List<Entry> Entries(IModelView m)
+    public static List<Entry> Entries(IModelView m) => [.. Owned(m).Select(x => x.Entry)];
+
+    /// <summary>The entries, each with what it is read through: the bar or distribution drawn, the beam or column a type lays its bars in.</summary>
+    public static List<(Entity Owner, Entry Entry)> Owned(IModelView m)
     {
-        var o = new List<Entry>();
+        var o = new List<(Entity, Entry)>();
         // A bar is its view's annotation: one whose view is gone is drawn nowhere and not counted.
         bool Drawn(Entity e) => !e.Bool("excludeSchedule") && Views.Find(m, e.Str("viewId") ?? "") != null;
         foreach (var e in m.OfClass(Rebars.Class))
         {
             if (!Drawn(e)) continue;
             var s = Rebars.SpecOf(e);
-            o.Add(new Entry(Rebars.Mark(e), s.Diameter, RebarShapes.Def(s.Shape).Label, Rebars.Pieces(e), RebarShapes.Length(s), Partition: Rebars.Partition(e)));
+            o.Add((e, new Entry(Rebars.Mark(e), s.Diameter, RebarShapes.Def(s.Shape).Label, Rebars.Pieces(e), RebarShapes.Length(s), Partition: Rebars.Partition(e))));
         }
         foreach (var e in m.OfClass(Rebars.RunClass))
         {
             if (!Drawn(e)) continue;
             var s = Rebars.SpecOf(e);
             var (_, positions, _, _) = Rebars.RunOf(e, s);
-            o.Add(new Entry(Rebars.Mark(e), s.Diameter, RebarShapes.Def(s.Shape).Label, positions.Count * Rebars.Count(e), RebarShapes.Length(s), Partition: Rebars.Partition(e)));
+            o.Add((e, new Entry(Rebars.Mark(e), s.Diameter, RebarShapes.Def(s.Shape).Label, positions.Count * Rebars.Count(e), RebarShapes.Length(s), Partition: Rebars.Partition(e))));
         }
-        o.AddRange(TypeStirrups.Entries(m));
-        o.AddRange(ColumnBars.Entries(m));
+        o.AddRange(TypeStirrups.Owned(m));
+        o.AddRange(ColumnBars.Owned(m));
         return o;
+    }
+
+    // ------------------------------------------------------------ as a field schedule (audit S1)
+
+    /// <summary>
+    /// The bars as parts (<c>rebar</c>): each bar or distribution drawn on a view (read through itself: an annotation, not an
+    /// element), each type's stirrups and column bars (through their beam or column), with its mark, diameter (mm), shape,
+    /// count, length, total length and mass, its partition, and what tells a type's bars of one mark apart (shape, Ø, length).
+    /// </summary>
+    sealed class Parts : IPartSource
+    {
+        public string Source => "rebar";
+        public string Label => "Reinforcing bars";
+        public IReadOnlyList<(string Key, string Label)> Fields =>
+        [
+            ("rebarMark", "Mark"), ("rebarDiameter", "Ø (mm)"), ("rebarShape", "Shape"), ("rebarCount", "No."), ("rebarLength", "Length (m)"),
+            ("rebarTotal", "Total length (m)"), ("rebarMass", "Mass (kg)"), ("rebarPartition", "Partition"), ("rebarVariant", "A type's bars of one mark: shape, Ø, length"),
+        ];
+
+        public IEnumerable<ElementPart> PartsOf(IQueryContext q, Entity element) => [];
+
+        public IEnumerable<(Entity Owner, ElementPart Part)> LooseParts(IQueryContext q)
+        {
+            var keys = new Dictionary<string, int>();
+            foreach (var (owner, x) in Owned(q.Model))
+            {
+                var n = keys[owner.Id] = keys.GetValueOrDefault(owner.Id) + 1;
+                var variant = x.Derived ? FormattableString.Invariant($"{x.Shape}|{Math.Round(x.Diameter * 1000, 1)}|{Math.Round(x.Length, 3)}") : "";
+                yield return (owner, ElementPart.Of((n - 1).ToString(CultureInfo.InvariantCulture), ("rebarMark", (double)x.Mark), ("rebarDiameter", Math.Round(x.Diameter * 1000, 3)),
+                    ("rebarShape", x.Shape), ("rebarCount", (double)x.Count), ("rebarLength", x.Length), ("rebarTotal", x.Count * x.Length),
+                    ("rebarMass", x.Count * x.Length * RebarShapes.MassPerMetre(x.Diameter)), ("rebarPartition", x.Partition), ("rebarVariant", variant)));
+            }
+        }
+    }
+
+    /// <summary>
+    /// The bars by mark as a field schedule, offered beside the bar bending schedule (whose button stays): the same rows, a
+    /// totals line per diameter and one for all. What it cannot give as the fixed one does (decision 638): the per-diameter
+    /// totals' „Total” stands in the Mark column, not the Shape's, and they and the last line add up the bars' numbers and
+    /// lengths too; no note on a mark whose bars differ; no partition column of its own (marks of each partition stay apart).
+    /// </summary>
+    public const string TemplateFields = """
+        {
+          "source": "rebar", "groupBy": ["rebarPartition", "rebarMark", "rebarVariant"], "groupColumns": false, "count": false, "totals": "always",
+          "sort": ["rebarPartition", "rebarMark", "rebarLength"],
+          "subtotals": ["rebarDiameter"],
+          "columns": [
+            { "field": "rebarMark", "heading": "Mark", "aggregate": "first" },
+            { "field": "rebarDiameter", "heading": "Ø (mm)", "aggregate": "first", "format": "0.###" },
+            { "field": "rebarShape", "heading": "Shape", "aggregate": "first" },
+            { "field": "rebarCount", "heading": "No.", "aggregate": "sum", "decimals": 0 },
+            { "field": "rebarLength", "heading": "Length (m)", "aggregate": "first", "decimals": 2 },
+            { "field": "rebarTotal", "heading": "Total (m)", "aggregate": "sum", "decimals": 2 },
+            { "field": "rebarMass", "heading": "Mass (kg)", "aggregate": "sum", "decimals": 2 }
+          ]
+        }
+        """;
+
+    /// <summary>The bars as parts and the bars by mark as a template.</summary>
+    public static void RegisterTemplate(IModuleRegistry r)
+    {
+        r.Service<IPartSource>(new Parts());
+        r.Service(ShippedScheduleTemplate.Of("rebarMarks", "Bars by mark", null, TemplateFields));
     }
 
     /// <summary>
@@ -305,7 +371,9 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         r.Service<IElementPlacement>(this);
         r.Service<IDeletion>(this);
         r.Service<IDeletionFollowers>(new RebarHosts());
+        r.Service<ISplitFollower>(new RebarParts());
         r.Service<IScheduleSource>(new RebarSchedule());
+        RebarSchedule.RegisterTemplate(r);
 
         // A bar on a view: {viewId, shape, at: [x, y], params?: {key: m}, vertices?, diameter?, mark?, count?, rotation?, mirrorX?, mirrorY?, hooks?: {start?: {angle, length, flip}, end?}, view?, steel?, layer?, array?, excludeSchedule?}.
         r.Command("add", "Bar", (ctx, a) =>

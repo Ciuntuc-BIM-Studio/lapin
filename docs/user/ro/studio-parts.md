@@ -8,7 +8,7 @@ summary: Editează pe loc un solid Studio sau o piesă plasată cu Tab — restu
 
 O **piesă** este un solid Studio cu o definiție în spate: un solid schițat cu pașii lui, sau un obiect propriu ale cărui corpuri urmează **parametri** (ceea ce era înainte o familie). Piesa se plasează de câte ori ai nevoie, iar fiecare obiect își păstrează propriile valori ale parametrilor.
 
-**Familiile sunt acum piese.** Un proiect salvat cu familii se deschide cu aceleași obiecte ca piese, cu aceleași nume, corpuri, valori și identificatori, iar pagina Familii descrie în continuare cum sunt făcute. **Studio → Familii…** și uneltele ei funcționează ca până acum.
+**Familiile sunt acum piese.** Un proiect salvat cu familii se deschide cu aceleași obiecte ca piese, cu aceleași nume, valori și identificatori; colțurile lor sunt schițe proprii ale piesei. **Studio → Piese…** le gestionează (pagina Familii o descrie), iar uneltele vechi funcționează în continuare.
 
 ## Editarea unei piese
 
@@ -16,7 +16,7 @@ Selectează în 3D un solid Studio sau o piesă plasată, apoi fă una dintre ac
 
 - apasă **Tab**;
 - dă **dublu clic** pe piesă în 3D;
-- apasă **Editează piesa** în **Studio → Piesă**, sau în secțiunea **Piesă** din Proprietăți.
+- apasă **Editează piesa** în **Studio → Părți**, sau în secțiunea **Piesă** din Proprietăți.
 
 Piesa intră atunci în **modul de editare**. Restul modelului se estompează și nu poate fi selectat, dar rămâne acolo ca să te prinzi de el. Piesa se desenează ca de obicei, iar bara de deasupra vederii spune ce editezi.
 
@@ -96,10 +96,34 @@ Ieși cu **Termină schița**, cu **Esc** (după ce unealta e jos) sau cu **Tab*
 - **+ Schiță** adaugă o schiță pe planul ales (sus, față sau dreapta). Lângă fiecare schiță a piesei sunt butoane pentru a o redenumi și a o șterge (corpurile desenate din ea pleacă odată cu ea).
 - **+ Corp din schiță** face un corp din forma închisă a unei schițe: alege schița și scrie **adâncimea** lui, o lungime sau o formulă din parametri (`=H - T`). Sub pasul corpului din arbore se pot schimba adâncimea și condiția *făcut când*, iar corpul se poate scoate.
 
-În dialogul Familii, un corp desenat dintr-o schiță spune *Desenat din schița* urmat de numele schiței, în loc de un tabel de colțuri: schița se editează în piesă, cu **Editează schița în piesă** (are nevoie de un obiect al piesei în proiect).
+O schiță a unui corp ale cărui colțuri sunt încă formule se deschide cu **Constrânge piesa**, care le face întâi schițe proprii ale piesei.
+
+## Elemente pe care le ține o piesă
+
+O piesă poate ține **elemente native**: pereți, planșee, mobilier, echipamente de instalații și orice altceva stă pe un nivel. Fă o bancă, pune în piesă peretele din spatele ei și fiecare obiect al piesei are peretele lui.
+
+1. Plasează un obiect al piesei și desenează sau plasează elementele lângă el, pe același nivel.
+2. Selectează piesa plasată împreună cu elementele și alege **Studio → Adaugă la piesă**. Fără o piesă plasată și alte elemente selectate, o notificare spune ce să selectezi.
+3. Elementele sunt acum ale piesei: fiecare alt obiect al piesei primește propria copie, așezată cum e așezată piesa.
+
+![O bancă cu un perete în spate, al doilea obiect rotit și mai lat](shots/part-members-3d.webp)
+
+**Editarea.** Deschide modul de editare (**Tab**) și elementele pot fi alese și editate acolo, cu orice comandă: schimbi grosimea peretelui, îl muți, îi dai un tip. Schimbarea se scrie înapoi în piesă și ajunge în fiecare piesă plasată. În afara modului de editare, un clic pe un element al unei piese alege piesa; proprietățile lui spun ce piesă îl ține, cu **Editează piesa**.
+
+**Elementele în arbore.** Arborele piesei are o secțiune **Elemente** care listează fiecare element cu clasa lui. **Selectează** îl alege, iar **Eliberează** îl lasă liber: rămâne în acest obiect ca element obișnuit și dispare din celelalte obiecte.
+
+**Comenzi (drives).** Un atribut al unui element poate urma o formulă din parametrii piesei: alege atributul (de pildă `length` sau `height` la un perete), scrie formula (`W`, `H / 2`) și apasă **Set**; butonul coș de gunoi o oprește. Cu `length = W`, peretele are lungimea cât lățimea băncii, în fiecare obiect, oricare ar fi lățimea. O valoare comandată urmează formula ei.
+
+![Arborele piesei: peretele sub Elemente, lungimea lui comandată de W](shots/part-members-tree.webp)
+
+**Ce se mișcă odată cu piesa.** Mutarea, rotirea, oglindirea, copierea și ștergerea unui obiect al piesei îi iau elementele cu el. O piesă doar din elemente nu are nevoie de corp propriu.
+
+**În IFC.** Elementele se scriu ca propriile clase (un IfcWall rămâne IfcWall). Fiecare e parte a piesei plasate printr-o relație de agregare (`IfcRelAggregates`), iar o piesă doar din elemente se scrie ca `IfcElementAssembly`. Cantitățile se numără o singură dată, pe elemente, nu din nou pe piesă.
+
+**Limite.** Îmbinările cu pereți din afara piesei nu se păstrează când piesa se reconstruiește. Nu se pot adăuga un element venit dintr-un fișier, un solid Studio, o deschidere dintr-un perete (alege peretele, care o aduce) sau o piesă plasată.
 
 ## Mai departe
 
-Pagina Studio spune cum modelezi solide, iar pagina Familii cum fac parametrii și formulele o piesă.
+Pagina Studio spune cum modelezi solide, iar pagina Familii cum merg managerul de piese, plasarea și Fă piesă din schiță.
 
 Schițele unei piese pot fi ținute cu **constrângeri** și cote: vezi [Constrângerile schiței](sketch-constraints.md).

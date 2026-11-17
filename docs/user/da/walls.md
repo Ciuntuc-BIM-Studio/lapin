@@ -117,6 +117,8 @@ Under et tag går en vægs lag op til taget; en **Top**-forlængelse flytter lag
 
 **Redigér → Forskyd element** (kommandolinjens OFFSET, som nu tager elementer): skriv afstanden i projektets enhed, klik på en væg i en plan og derefter på siden, hvor kopien skal ligge. Kopien er parallel med væggen, koncentrisk for en buet væg, med samme type, lag og åbninger. **A** (Akse, standard) måler fra aksen, **F** (Flader) fra væggens flade, så kopiens flade står afstanden fra den; **T** (Gennem) tager et punkt, kopien går gennem.
 
+Det, der hænger på væggen, følger den del, det falder på. En finish malet på siden af en lige væg bliver, hvor den var på fladen; en, hvis område løber videre over snittet, maler også den anden del, medmindre en delelinje i fladen stopper den, og en malet over hele fladen dækker alle dele. Et solafskærmende element langs væggen følger den del, det løber langs (et på tværs af snittet afvises, som en dør), og en altan følger den del, dens midte ligger på, eller står frit, hvor den er, når dens del skæres væk. Armering tegnet i væggen bæres af den del, dens punkt ligger på, forskallingen former hver del, og en skeletvægs egne stolper (se [Træ](wood.md)) følger deres del. En buet vægs finish bliver på dens første del.
+
 ![To vægge trimmet til en grænse, og en væg med en dør delt i to](shots/wall-split-trim.webp)
 
 ## Vægtyper

@@ -35,11 +35,19 @@ export function membersOf(groupId: string, relations: Relations = useSession.get
   return out;
 }
 
-/** What a pick of `id` selects: its group, unless a group (or another scope) is open. */
+/** What a module makes a pick of an element select instead (Studio: a part's member picks its placed part), or undefined. */
+type PickRedirect = (id: string) => string | undefined;
+const redirects: PickRedirect[] = [];
+export function addPickRedirect(f: PickRedirect): void { if (!redirects.includes(f)) redirects.push(f); }
+
+/** What a pick of `id` selects: its group (or what a module redirects it to), unless a group (or another scope) is open. */
 export function pickTarget(id: string | null | undefined): string | null {
   if (!id) return null;
   if (useScope.getState().scope) return id;
-  return groupOf(id) ?? id;
+  const g = groupOf(id);
+  if (g) return g;
+  for (const f of redirects) { const to = f(id); if (to) return to; }
+  return id;
 }
 
 /** Several picks (a box, a lasso): each as its group, once. */
