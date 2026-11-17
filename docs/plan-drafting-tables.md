@@ -1,0 +1,146 @@
+# Drafting tables
+
+Issue #71, from the forum (https://forum.lapinbim.com/t/119): a free table annotation beside the model's schedules, with presets
+for cells, rows, columns and headers; multiline text with rotation; formulas; references to cells (`E5`) and to other tables'
+cells; merge and split; widths and heights with min, max and fit-to-text; borders, text and background colours with opacity;
+placeable on sheets, on views and in symbols (a room tag that grows with its text).
+
+Stage 1 is built (decision TBD). This page holds the design for all of it and what is left.
+
+## 1. What a table is, and what it is not
+
+A **schedule** lists the model (its rows come from elements, decision 287 and the schedule module); a **title block's revision
+table** lists a sheet's issues (`Sheets.RevisionTable`). Both are computed, never typed. A **drafting table** is the user's own:
+every cell typed, a formula where wanted. It lives where texts live: an `IfcAnnotation` with `PredefinedType = TABLE`, on a view
+(`viewId`), drawn by the drafting module's `IViewAnnotations` like a text note. A sheet's paper is a view (`paper:<sheetId>`,
+decision 620), so a table on a sheet is the same element on that view: copied with "Duplicate sheet", deleted with it, printed
+by the sheet's PDF and DXF through the same marks. Nothing else stores tables, so a table never forks into a sheet variant and a
+view variant.
+
+Sizes are **paper millimetres**, as a text's height is: a table reads the same at 1:50 and 1:200. Its corner `at` is its
+top-left in the view's coordinates, `angle` turns it; Move, Copy, Rotate and Mirror carry it as they carry a text
+(`AnnotationPlacement`, `TEXT or TABLE`). Visibility / Graphics counts it among the texts (`VisibilityGraphics`: `TABLE →
+texts`) until a category of its own is asked for.
+
+## 2. Data model
+
+`attrs.table`, JSON kept as typed (no derived value is stored: "what can be worked out is derived on every ask"):
+
+```json
+{
+  "cols": [{ "w": 25 }, { "w": 18, "fit": true, "min": 10, "max": 60 }],
+  "rows": [
+    { "h": 7, "fit": true, "header": true,
+      "cells": [{ "t": "Room", "bold": true, "fill": "#e6e6e6", "cs": 2 }, null] },
+    { "h": 7, "fit": true, "cells": [{ "t": "{= sum(B3:B9) | 0.00}", "align": "right" }, null] }
+  ],
+  "style": { "size": 2.5, "pad": 1, "color": "#000000", "fill": null, "align": "left", "valign": "middle",
+             "grid": { "w": 0.18, "c": "#000000" }, "outline": { "w": 0.35, "c": "#000000" } },
+  "preset": "header"
+}
+```
+
+- **Columns** have a width `w` (mm), or `fit` (as wide as their widest single-column text plus padding) within `min`/`max`.
+- **Rows** have a height `h`; with `fit` (the default for new rows) they grow to their tallest single-row cell and never shrink
+  under `h` (or `min`); `max` caps them. `header` marks the header row (presets style it; a later stage repeats it when a table
+  breaks across sheets).
+- **Cells** are row-major, one per column, `null` when empty. A cell has its text `t` (lines parted by `\n`), its span (`rs`,
+  `cs`: it is the top-left, *master*, cell of a merged region; the cells it covers are `null` and ignored), its own style
+  (`fill`, `color` as `#rrggbb` or `#rrggbbaa` with opacity, `bold`, `italic`, `size`, `align`, `valign`) and its own sides
+  (`top`, `bottom`, `left`, `right`: `{w, c}`, `w = 0` for none).
+- **Style**: the table's defaults; the font, weight and colour come from its `textStyle` (Drafting standards) like a text's.
+- **Lines**: an edge between two cells takes the heavier of their own sides when either has one, else the table's `outline` at
+  its edge and `grid` inside; none inside a merged cell. Collinear edges with the same pen are joined into one line, so a DXF
+  holds long lines, not a segment per cell.
+
+`DraftingTables.Read` turns the JSON into a `Grid` (columns, rows, a `Cell[,]` with covered cells marked, each cell's master) and
+tolerates hand-made JSON (short rows filled, spans cut where they would overlap). A table's JSON size is bounded (500 rows, 100
+columns, 10 000 characters a cell).
+
+## 3. Formulas and references
+
+Cells reuse the platform's formula language (`Lapin.Platform/Expressions.cs`, `Expr` and `LiveText`): `{= …}` anywhere in a
+cell's text, a format after a bar (`{= B2 * C2 | 0.00}`), texts with `&`, `if`, `round`, `text`, `pad` and the rest.
+
+- **A cell by its address**: `A1`, `B3`, `AA12` (case aside) is a name the table resolves: the referenced cell's value. A cell
+  that is one formula and nothing else keeps its number (not its printed text); any other cell is read as `XValue.Read` reads
+  a model's text (`"24.50 m²"` counts as 24.5 in arithmetic). An empty cell alone is 0.
+- **Ranges**: `Expr` now takes an optional range reader, so `A1:A4` is read among a function's values only:
+  `sum(A1:A4)`, `average(B2:B9)`, `count(C2:C20)`, `max(A1:C1; 10)`. `sum`, `average` and `count` are new functions of the
+  language (they work on plain values elsewhere: `sum(1; 2)`); over a range they take the numbers and leave texts and empty
+  cells out. With no range reader (every other formula in Lapin) a range is an error, so nothing else changes.
+- **Cycles**: a cell reading itself, directly or through others, does not read: it prints `<formula>` (as every formula that
+  does not read) and the table's errors say `A1 reads itself`. Evaluation is lazy and memoised per drawing (`DraftingTables.Values`).
+- **Rows and columns put in or taken out** rewrite every cell's formulas, as a spreadsheet does (`TableEdits.ShiftRefs`):
+  references after the change move, a range narrows when some of its rows go, a reference to a cell taken out becomes `REF`
+  (which reads as an unknown name). Quoted texts, function names and dotted names are left alone.
+- **Tokens**: on a sheet's paper a cell reads the sheet's tokens as a text there does (`{sheet.number}`, `{project.name}`,
+  and as formula names, `{= sheet.count + 1}`), through `PaperViews.Tokens`. Elsewhere tokens print as typed.
+
+### Later: other tables' cells (stage 2)
+
+A table gets a **name** (its `Name`, unique per project once referenced). A reference to another table is a dotted name,
+which `Expr` already reads as one word: `table.Areas.B4`, ranges `table.Areas.B2:table.Areas.B9` (or the shorthand
+`table.Areas.B2:B9`, the second end taking the first's table). The outer resolver that `DraftingTables.Values` already takes
+(`outer`) is where they come in: a project-wide resolver that builds the referenced table's `Values` on demand, with the
+cycle guard extended across tables (a set of `(table, cell)` busy). Renaming a table rewrites the references to it (the
+same rewriter as rows); deleting it leaves `REF`. A table never reads the model in stage 2; reading model values
+(`{= attr.…}` of a linked element, a schedule's total) is stage 4.
+
+## 4. Commands (one undo step each)
+
+| Command | Arguments | Does |
+|---|---|---|
+| `drafting.addTable` | `viewId, at, rows, cols, preset?, colWidth?, rowHeight?, angle?, textStyle?, cells?, name?` | places a table; `cells` fills it from A1 (Python, MCP) |
+| `drafting.editTable` | `id, ops: [{op, …}]` | applies the ops in order; one that does not read refuses them all |
+| `drafting.table` (query) | `id` | the cells as typed and as shown, spans, the laid sizes, the errors |
+
+Ops (`TableEdits.Ops`): `set` (`cell, text` or `values` from that cell: a pasted block), `style` (`range, style`), `borders`
+(`range, edges: all|outer|inner|top|bottom|left|right|none|default, w, c`), `merge`, `split`, `insertRows`/`insertCols`
+(`at, count`), `deleteRows`/`deleteCols`, `colWidth` (`range, w`), `rowHeight` (`range, h`), `fit` (`range, axis:
+rows|cols|both, on, min?, max?`), `tableStyle` (`style`), `preset` (`preset`). Both commands are in the command catalogue;
+guests who may edit run them like any edit (no entry needed in `AllowedRemote`).
+
+## 5. Interface
+
+- **Annotate → Text → Table** (TT): the command bar holds rows, columns and the preset; a click puts the top-left corner; the
+  editor opens on the new table.
+- **The table editor** (`TableEditor.tsx`): the cells as a grid scaled from the engine's laid sizes, each showing what it reads;
+  click, shift-click (a selection grows to take merged cells in whole), arrows, Tab, Enter/F2 or typing to edit, Shift+Enter a
+  new line, Esc, Delete clears, paste from a spreadsheet (tab-separated). A bar edits the first cell's text as typed. Buttons:
+  rows above/below, columns left/right, delete, merge, split, preset; bold, italic, alignment, vertical alignment, text height,
+  colour, background with opacity; borders (kind, width, colour); width and height of the selection with fit to text. Each
+  button is one `editTable` call. The formula errors are listed under the grid.
+- **Properties**: size, angle, Edit table…; a double-click on the table opens the editor too.
+
+## 6. Presets
+
+Built in: `header` (grid lines, outline 0.35, first row bold and shaded), `grid`, `minimal` (no grid, a rule under the header),
+`none`. A preset sets the table's lines and styles its first row; set again it restyles them. **User presets** (stage 3) follow
+the standing rule of extensibility: a table saved as a *table style* in the Drafting standards (its `style`, column and row
+settings, header styling and optionally its cells as a template), offered in the tool's bar beside the built-in ones, kept in
+`.lapinstandards` libraries; the built-in presets stay the defaults with the same output.
+
+## 7. Stages
+
+1. **Done (this work).** The element on views and sheets, cells with multiline text, formulas with same-table references and
+   ranges (`sum`, `average`, `count`), reference rewriting on insert/delete, merge/split, widths, heights, fit with min/max,
+   borders, text and background colours with opacity, presets, the engine's drawing (views, sheets, PDF, DXF), the editor,
+   undo per edit, saving (plain attributes: no project upgrade). Tests: `DraftingTableTests` (16), `tableModel.test.ts` (6).
+2. **Other tables' cells**: table names, `table.<name>.A1` references and ranges across tables, rename and delete rewriting,
+   cross-table cycle guard; the editor's reference picker (click a cell of another open table).
+3. **User presets and cell rotation**: table styles in the Drafting standards and libraries; cell text turned 90°/270°
+   (`rot`), which lays the text along the row's height and fits the row to its length; per-cell padding.
+4. **Tables in symbols and from the model**: a table inside a symbol definition (the room tag that grows with its text), its
+   cells reading the symbol's live tokens (`{attr.…}`, `{= attr.area | 0.00}`) through the symbol's resolver, so a placed copy
+   lays its own sizes; a cell reading a schedule's total or an element's parameter.
+5. **Long tables and exchange**: a table split across columns or sheets with its header repeated; CSV/XLSX import and export
+   of the cells (written after the public specifications, no dependency); grips on the drawing for column widths and row
+   heights (the marks already carry the laid sizes in `Data`).
+
+## 8. Files
+
+Engine: `engine/src/Modules/Drafting/Lapin.Drafting/DraftingTables.cs` (model, values, layout, lines, presets),
+`TableEdits.cs` (ops, reference rewriting), `TableCommands.cs` (commands, query, marks); `Expressions.cs` (ranges, `sum`,
+`average`, `count`). UI: `ui/src/modules/drafting/table/` (`tableModel.ts`, `tableStore.ts`, `tableTool.tsx`,
+`TableEditor.tsx`). Guide: docs/user/drafting.md → Tables, its scene `drafting-table`.

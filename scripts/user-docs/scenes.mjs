@@ -7824,6 +7824,75 @@ export const scenes = [
     },
   },
   {
+    // Drafting tables (issue #71, docs/plan-drafting-tables.md): Annotate → Table on a sheet's paper, its cells typed in the
+    // editor (a header, numbers, a total by a formula), two cells merged; the engine draws it on the sheet.
+    id: 'drafting-table',
+    touches: ['drafting'],
+    async run(t) {
+      await t.fresh();
+      const sheet = await t.cmd('sheet.create', { name: 'Rooms', number: 'A-102', paper: 'A4' });
+      await t.ui({ view: 'sheet', sheetId: sheet.id });
+      await t.page.waitForSelector('[data-testid=sheet-annotate]', { timeout: 10_000 });
+      await t.wait(800);
+      await t.page.locator('[data-testid=sheet-annotate]').click();
+      await t.page.waitForSelector('[data-testid=paper-back]', { timeout: 10_000 });
+      const paper = `paper:${sheet.id}`;
+      await t.wait(1200);
+      await t.fit();
+      const [px, py] = await t.page.evaluate(async ([id, x, y]) => {
+        const svg = document.querySelector('[data-testid=drawing]');
+        const view = (await import('/src/viewport/zoom.ts')).recall(id);
+        const r = svg.getBoundingClientRect();
+        return [r.left + (x - view.cx) * view.scale + r.width / 2, r.top + r.height / 2 - (y - view.cy) * view.scale];
+      }, [paper, 0.03, 0.19]);
+      // The tool: 5 rows, 3 columns, a header row; a click puts its corner; the editor opens.
+      await t.tool('drafting.table');
+      await t.page.evaluate(async () => (await import('/src/modules/drafting/table/tableStore.ts')).useNewTable.setState({ rows: 5, cols: 3, preset: 'header' }));
+      await t.page.mouse.move(px - 20, py - 20);
+      await t.page.mouse.move(px, py, { steps: 4 });
+      await t.page.mouse.click(px, py);
+      await t.page.waitForSelector('[data-table-editor]', { timeout: 10_000 });
+      const table = (await t.nodes()).find((n) => n.props?.viewId === paper && n.props.predefinedType === 'TABLE');
+      t.expect(!!table, 'the Table tool puts a table on the sheet\'s paper and opens its editor');
+      // Typed in the grid as in a spreadsheet: Tab goes right, Enter down.
+      const type = async (cell, text) => {
+        await t.page.locator(`[data-table-editor] td[data-cell=${cell}]`).dblclick();
+        await t.page.locator('[data-testid=table-cell-input]').fill(text);
+        await t.page.locator('[data-testid=table-cell-input]').press('Enter');
+        await t.wait(350);
+      };
+      const rows = [['Room', 'Area (m²)', 'Floor'], ['Living', '24.50', 'oak'], ['Kitchen', '12.25', 'tiles'], ['Bedroom', '15.80', 'oak']];
+      for (let r = 0; r < rows.length; r++) for (let c = 0; c < 3; c++) await type(`${'ABC'[c]}${r + 1}`, rows[r][c]);
+      await type('A5', 'Total');
+      await type('B5', '{= sum(B2:B4) | 0.00}');
+      // C4 and C5 merged: the first one's text stays.
+      await t.page.locator('[data-table-editor] td[data-cell=C4]').click();
+      await t.page.locator('[data-table-editor] td[data-cell=C5]').click({ modifiers: ['Shift'] });
+      await t.page.locator('[data-testid=table-merge]').click();
+      await t.wait(600);
+      // The total, bold, its background a light colour.
+      await t.page.locator('[data-table-editor] td[data-cell=A5]').click();
+      await t.page.locator('[data-table-editor] td[data-cell=B5]').click({ modifiers: ['Shift'] });
+      await t.page.locator('[data-testid=table-bold]').click();
+      await t.wait(400);
+      await t.cmd('drafting.editTable', { id: table.id, ops: [{ op: 'style', range: 'A5:B5', style: { fill: '#fff2cc' } }, { op: 'style', range: 'B2:B5', style: { align: 'right' } }] });
+      await t.until(async () => (await t.page.locator('[data-table-editor] td[data-cell=B5]').textContent()) === '52.55', 'the total cell shows its formula worked out');
+      await t.shot('drafting-table-editor', { of: '[data-table-editor]', pad: 0 });
+      await t.page.locator('[data-table-editor] button[title=Close]').click();
+      await t.wait(600);
+      await t.ui({ selection: null, selected: [] });
+      const info = await t.call('doc.query', { name: 'drafting.table', args: { id: table.id } });
+      t.expect(info.cells[4][1].shown === '52.55' && info.cells[3][2].rs === 2, 'the engine works out the total and keeps the merge');
+      await t.wait(1000);
+      await t.fit();
+      await t.shot('drafting-table', { of: '.view-pane:has([data-testid=paper-back])', pad: 0 });
+      // The sheet itself draws it.
+      const drawn = await t.call('doc.query', { name: 'sheet.drawing', args: { id: sheet.id } });
+      const texts = drawn.pens.flatMap((p) => p.texts ?? []).map((x) => x.text);
+      t.expect(texts.includes('52.55') && texts.includes('Kitchen'), 'the sheet prints the table as the editor shows it');
+    },
+  },
+  {
     id: 'title-blocks',
     async run(t) {
       // A title block of one's own (decision 340, report #76): the project's data and a parameter of its own, a Finnish-style

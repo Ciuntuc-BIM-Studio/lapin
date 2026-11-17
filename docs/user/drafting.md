@@ -260,6 +260,22 @@ Its form is set in **Manage → Drafting standards → Tags**: make a tag type's
 
 Like any tag, a build-up tag follows its element, and sheets and PDFs print it as you see it, λ, μ and ρ included. A **Text** of its own in its properties replaces the line per layer for that tag alone.
 
+### Tables
+
+**Annotate → Table** (TT) puts a table of your own on a plan, a section, a drafting view or a sheet's paper: set its **rows**, **columns** and look in the command bar (**Header row**, **Grid lines**, **Minimal**, **No lines**), then click where its top-left corner goes. Its editor opens; double-click the table, or **Edit table…** in its properties, to open it again.
+
+- **Cells** hold text, on several lines (Shift+Enter in a cell). Type in a cell, or double-click it; Enter keeps the text and goes down, Tab goes right, Esc leaves it as it was. Cells copied from a spreadsheet paste as they are.
+- **Formulas** are written as in a title block, `{= …}`, and read the table's cells by their address: `{= B2 * C2}`, `{= sum(D2:D9)}`, `{= average(B2:B5) | 0.0}` (a format after the bar), `{= count(A2:A20)}`. A text cell that starts with a number counts as that number. Put a row or a column in, or take one out, and the formulas follow, as a spreadsheet's do; a formula that reads its own cell, or a cell taken out, shows `<…>` and the editor says why. On a sheet a cell reads the sheet's fields too: `{sheet.number}`, `{project.name}`.
+- **Merge** the selected cells (the first one's text stays), or **split** them again; insert rows above or below and columns left or right, or delete the selected ones.
+- **Widths and heights** are in paper millimetres, so a table reads the same at any scale. A row fits its text by default, never shorter than its height; tick **fit to text** for columns as wide as their widest text (wrapped text stays in a column of its own width).
+- **Bold**, **italic**, alignment, text height, **text colour**, **background** and its **opacity** apply to the selected cells; **Borders** draws all lines, the outside, the inside, one side or none, at a width and in a colour.
+
+Each change is one undo step. The engine draws the table, so the view, the sheet, its PDF and its DXF show the same thing; it moves, copies and turns with the Modify tools.
+
+![A table on a sheet: a header row, merged cells and a total worked out by a formula](shots/drafting-table.webp)
+
+![The table editor: a formula's total, two cells merged, the header shaded](shots/drafting-table-editor.webp)
+
 ### Grid axes
 
 **Annotate → Grid axis** (<kbd>GR</kbd>) draws one axis by its two ends; it takes the next label of its direction. **Annotate → Axis grid…** lays a whole grid at once: the spacings **Across** (the numbered axes, left to right) and **Along** (the lettered axes, bottom to top) in the project's units, as `6000 6000 4500` or `3*6000`; the **Origin** where the first axes cross, an **Angle**, how far the axes run **Past the grid**, the **First labels** and the **Axis type**. With **replace the grid's axes** ticked, the axes drawn so far go.

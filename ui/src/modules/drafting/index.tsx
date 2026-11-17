@@ -36,6 +36,7 @@ import { convertLayersInFront, convertSelection } from './convert/convert';
 import { SymbolSection } from '../core/symbols/SymbolSection';
 import { annotateSheetTool, leaderNote, legendTool, revisionCloudTool, scaleBarTool } from './sheetAnnotations';
 import { surveyPoint, useLocation } from '../../app/location';
+import { TableSection, tableTool } from './table/tableTool';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const ConvertDialog = lazyPart(() => import('./convert/ConvertDialog').then((m) => m.ConvertDialog), { title: 'Convert drafting' });
@@ -43,9 +44,10 @@ const ConvertLayersDialog = lazyPart(() => import('./convert/ConvertLayersDialog
 const ImportDxfDialog = lazyPart(() => import('./ImportDxfDialog').then((m) => m.ImportDxfDialog), { title: 'Import DXF' });
 const ImportTraceDialog = lazyPart(() => import('./ImportTraceDialog').then((m) => m.ImportTraceDialog), { title: 'Import PDF or image' });
 const LayersDialog = lazyPart(() => import('./LayersDialog').then((m) => m.LayersDialog), { title: 'Drafting layers' });
+const TableEditor = lazyPart(() => import('./table/TableEditor').then((m) => m.TableEditor), { title: 'Table' });
 
 /** An aligned dimension: its two points, then where its line goes; then on as a string, one object. Points on an element's cut edge, a grid axis or a wall's centre line follow it. */
-const DRAFTED = new Set(['DRAFT', 'TEXT', 'DIMENSION', 'TAG', 'SYMBOL', 'SHEETLEGEND', 'SCALEBAR']);
+const DRAFTED = new Set(['DRAFT', 'TEXT', 'DIMENSION', 'TAG', 'SYMBOL', 'SHEETLEGEND', 'SCALEBAR', 'TABLE']);
 const draftsFields = (node: NodeDto) => DRAFTED.has(String(node.props.predefinedType));
 
 /**
@@ -976,7 +978,8 @@ const drafting: LapinModule = {
         { label: 'Dimension', tools: [dimension, roomDimensions, exteriorDimensions],
           // Points clicked into a selected string, as ArchiCAD's Insert dimension point.
           small: [dimensionRulesTool, dimAddTool, dimDelTool] },
-        { label: 'Text', small: [textBox, leaderNote, tagOpeningsTool], tools: [text, tagTool] },
+        // A drafting table (issue #71): cells, formulas, merges, on a view or a sheet.
+        { label: 'Text', small: [textBox, leaderNote, tagOpeningsTool], tools: [text, tagTool, tableTool] },
         { label: 'Datum', small: [gridTool, renumberAxesTool, axisStylesTool], tools: [
           axis,
           levelTool,
@@ -1003,12 +1006,13 @@ const drafting: LapinModule = {
   ],
   hotbar: [dimension],
   legacyTools: [...dimensionAliases, ...tagAliases],
-  dialogs: { convertDrafting: ConvertDialog, convertLayers: ConvertLayersDialog, draftLayers: LayersDialog, importDxf: ImportDxfDialog, importTrace: ImportTraceDialog, grid: GridDialog, renumberAxes: RenumberAxesDialog, dimensionRules: DimensionRulesDialog },
+  dialogs: { convertDrafting: ConvertDialog, convertLayers: ConvertLayersDialog, draftLayers: LayersDialog, importDxf: ImportDxfDialog, importTrace: ImportTraceDialog, grid: GridDialog, renumberAxes: RenumberAxesDialog, dimensionRules: DimensionRulesDialog, tableEditor: TableEditor },
   propertySections: [
     // The drafted kinds show their own fields (a line its ends, a circle its radius), so the class's generic ones stay out.
     { id: 'draft', label: 'Drafting', classes: ['IfcAnnotation'], component: DraftSection, replacesFields: draftsFields },
     { id: 'dimension', label: 'Dimension', classes: ['IfcAnnotation'], component: DimensionSection },
     { id: 'symbol', label: 'Symbol', classes: ['IfcAnnotation'], component: SymbolSection },
+    { id: 'table', label: 'Table', classes: ['IfcAnnotation'], component: TableSection },
     { id: 'viewBoundary', label: 'View boundary', classes: ['LapinViewBoundary'], component: BoundarySection },
     { id: 'grid', label: 'Axes', classes: ['IfcGrid'], component: GridSection },
   ],

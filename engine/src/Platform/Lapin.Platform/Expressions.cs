@@ -57,6 +57,7 @@ public static class Expr
     [
         "min", "max", "abs", "round", "floor", "ceil", "sqrt", "sin", "cos", "tan", "atan2", "if", "clamp",
         "concat", "text", "upper", "lower", "trim", "left", "right", "len", "pad",
+        "sum", "average", "count",
     ];
 
     /// <summary>The functions a formula may call (shown in the interface's help).</summary>
@@ -78,10 +79,17 @@ public static class Expr
     }
 
     /// <summary>The value of <paramref name="formula"/>, a number or a text; <paramref name="name"/> gives a name's value (null: unknown, an error).</summary>
-    public static XValue EvalValue(string formula, Func<string, XValue?> name)
+    public static XValue EvalValue(string formula, Func<string, XValue?> name) => EvalValue(formula, name, null);
+
+    /// <summary>
+    /// The value, with ranges (<c>A1:A4</c>) read by <paramref name="range"/> as a function's values: <c>sum(A1:A4)</c>,
+    /// <c>max(B2:D2; 10)</c>. A range stands only among a function's values; null from <paramref name="range"/> (or no
+    /// <paramref name="range"/>) makes it an error. A drafting table's cells (docs/plan-drafting-tables.md) are its first reader.
+    /// </summary>
+    public static XValue EvalValue(string formula, Func<string, XValue?> name, Func<string, string, IReadOnlyList<XValue>?>? range)
     {
         if (formula.Length > MaxLength) throw new ExprException($"A formula is at most {MaxLength} characters.");
-        var p = new Parser(formula, name);
+        var p = new Parser(formula, name, range);
         var v = p.Expression(0);
         p.SkipSpace();
         if (!p.End) throw new ExprException($"„{formula}”: something after the formula's end at {p.Pos + 1}.");
@@ -89,9 +97,9 @@ public static class Expr
     }
 
     /// <summary>The value, a number or a text, or null with why.</summary>
-    public static (XValue? Value, string? Error) TryEvalValue(string formula, Func<string, XValue?> name)
+    public static (XValue? Value, string? Error) TryEvalValue(string formula, Func<string, XValue?> name, Func<string, string, IReadOnlyList<XValue>?>? range = null)
     {
-        try { return (EvalValue(formula, name), null); }
+        try { return (EvalValue(formula, name, range), null); }
         catch (ExprException e) { return (null, e.Message); }
     }
 
@@ -122,7 +130,7 @@ public static class Expr
         return v.Number is { } x ? Format(x, format) : "";
     }
 
-    sealed class Parser(string s, Func<string, XValue?> name)
+    sealed class Parser(string s, Func<string, XValue?> name, Func<string, string, IReadOnlyList<XValue>?>? range)
     {
         int i;
         int depth;
@@ -276,7 +284,7 @@ public static class Expr
                     SkipSpace();
                     if (!Eat(")"))
                     {
-                        do args.Add(Expression(0)); while (Eat(";") || Eat(","));
+                        do { if (Range() is { } values) args.AddRange(values); else args.Add(Expression(0)); } while (Eat(";") || Eat(","));
                         if (!Eat(")")) throw new ExprException($"{word}(…) is not closed.");
                     }
                     return Call(word.ToLowerInvariant(), args);
@@ -287,6 +295,29 @@ public static class Expr
                 return name(word) ?? throw new ExprException($"„{word}” has no value here.");
             }
             throw new ExprException($"„{c}” cannot stand at {i + 1}.");
+        }
+
+        /// <summary>A range among a function's values (<c>A1:B4</c>, a name, a colon, a name, then the value's end), read by the caller; null (and nothing read) when there is none.</summary>
+        IReadOnlyList<XValue>? Range()
+        {
+            SkipSpace();
+            var save = i;
+            string? Word()
+            {
+                var start = i;
+                if (i >= s.Length || !(char.IsLetter(s[i]) || s[i] == '_')) return null;
+                while (i < s.Length && (char.IsLetterOrDigit(s[i]) || s[i] is '_' or '.')) i++;
+                return s[start..i];
+            }
+            var from = Word();
+            SkipSpace();
+            if (from == null || i >= s.Length || s[i] != ':') { i = save; return null; }
+            i++;
+            SkipSpace();
+            var to = Word();
+            SkipSpace();
+            if (to == null || i < s.Length && s[i] is not (')' or ';' or ',')) { i = save; return null; }
+            return range?.Invoke(from, to) ?? throw new ExprException($"„{from}:{to}” is not a range here.");
         }
 
         static XValue Call(string f, List<XValue> v)
@@ -335,6 +366,14 @@ public static class Expr
                     var with = v.Count > 2 && v[2].AsText is { Length: > 0 } w ? w[0] : '0';
                     return XValue.Of(Format(v[0], null).PadLeft(Whole(1), with));
                 }
+                // Over a range's values (a drafting table's cells): the numbers among them, as a spreadsheet adds them; texts and empty cells left out.
+                case "sum": return XValue.Of(v.Where(x => x.Number != null).Sum(x => x.Number!.Value));
+                case "average":
+                {
+                    var ns = v.Where(x => x.Number != null).Select(x => x.Number!.Value).ToList();
+                    return ns.Count == 0 ? throw new ExprException("average(…) of no numbers.") : XValue.Of(ns.Average());
+                }
+                case "count": return XValue.Of(v.Count(x => x.Number != null));
                 default: throw new ExprException($"„{f}” is not a function.");
             }
         }
@@ -369,7 +408,7 @@ public static class LiveText
     }
 
     /// <summary>The text's <c>{= …}</c> formulas, each written by its value (names read by <paramref name="name"/>); one that does not read as <c>&lt;formula&gt;</c>.</summary>
-    public static string Formulas(string text, Func<string, XValue?> name, List<string>? unknown)
+    public static string Formulas(string text, Func<string, XValue?> name, List<string>? unknown, Func<string, string, IReadOnlyList<XValue>?>? range = null)
     {
         var sb = new StringBuilder();
         var i = 0;
@@ -382,7 +421,7 @@ public static class LiveText
             var close = CloseOf(text, open + 2);
             if (close < 0) { sb.Append(text, open, text.Length - open); break; }
             var (formula, format) = SplitFormat(text[(open + 2)..close]);
-            var (value, error) = Expr.TryEvalValue(formula, name);
+            var (value, error) = Expr.TryEvalValue(formula, name, range);
             if (value is { } v) sb.Append(Expr.Format(v, format));
             else
             {

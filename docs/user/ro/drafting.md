@@ -260,6 +260,22 @@ Forma ei se stabilește în **Gestionare → Standarde de desen → Etichete**: 
 
 Ca orice etichetă, eticheta de stratificație își urmează elementul, iar planșele și PDF-urile o tipăresc cum o vezi, cu λ, μ și ρ cu tot. Un **Text** propriu în proprietățile ei înlocuiește rândul fiecărui strat doar pentru eticheta aceea.
 
+### Tabele
+
+**Adnotare → Tabel** (TT) pune un tabel al tău pe un plan, o secțiune, o vedere de desen sau hârtia unei planșe: alege **rândurile**, **coloanele** și aspectul în bara de comandă (**Rând de antet**, **Grilă**, **Minimal**, **Fără linii**), apoi clic unde vine colțul lui din stânga sus. Se deschide editorul; dublu clic pe tabel, sau **Editează tabelul…** în proprietățile lui, îl deschide din nou.
+
+- **Celulele** țin text, pe mai multe rânduri (Shift+Enter în celulă). Scrie într-o celulă sau dă dublu clic pe ea; Enter păstrează textul și coboară, Tab merge la dreapta, Esc o lasă cum era. Celulele copiate dintr-un tabelar se lipesc așa cum sunt.
+- **Formulele** se scriu ca într-un cartuș, `{= …}`, și citesc celulele tabelului după adresa lor: `{= B2 * C2}`, `{= sum(D2:D9)}`, `{= average(B2:B5) | 0.0}` (un format după bară), `{= count(A2:A20)}`. O celulă de text care începe cu un număr contează ca acel număr. Adaugi sau scoți un rând ori o coloană, și formulele urmează, ca într-un tabelar; o formulă care își citește propria celulă, sau o celulă scoasă, arată `<…>`, iar editorul spune de ce. Pe o planșă, o celulă citește și câmpurile planșei: `{sheet.number}`, `{project.name}`.
+- **Unește** celulele selectate (rămâne textul primei) sau **desparte-le** din nou; adaugă rânduri deasupra sau dedesubt și coloane la stânga sau la dreapta, ori șterge-le pe cele selectate.
+- **Lățimile și înălțimile** sunt în milimetri de hârtie, așa că un tabel se citește la fel la orice scară. Un rând se potrivește implicit textului, niciodată mai scund decât înălțimea lui; bifează **potrivit textului** pentru coloane cât cel mai lat text al lor (textul împărțit pe rânduri rămâne într-o coloană cu lățimea ei proprie).
+- **Aldin**, **cursiv**, alinierea, înălțimea textului, **culoarea textului**, **fundalul** și **opacitatea** lui se aplică celulelor selectate; **Borduri** desenează toate liniile, conturul, interiorul, o latură sau niciuna, cu o grosime și o culoare.
+
+Fiecare modificare e un pas de anulare. Motorul desenează tabelul, deci vederea, planșa, PDF-ul și DXF-ul ei arată același lucru; se mută, se copiază și se rotește cu uneltele Modifică.
+
+![Un tabel pe o planșă: un rând de antet, celule unite și un total calculat de o formulă](shots/drafting-table.webp)
+
+![Editorul de tabel: un total calculat de o formulă, două celule unite, antetul colorat](shots/drafting-table-editor.webp)
+
 ### Axe
 
 **Adnotări → Axă** (<kbd>GR</kbd>) desenează o axă după cele două capete; ia următoarea etichetă a direcției ei. **Adnotări → Rețea de axe…** pune o rețea întreagă dintr-odată: distanțele pe **Transversal** (axele numerotate, de la stânga la dreapta) și pe **Longitudinal** (axele cu litere, de jos în sus), în unitățile proiectului, ca `6000 6000 4500` sau `3*6000`; **Originea** unde se intersectează primele axe, un **Unghi**, cât trec axele **Dincolo de rețea**, **Primele etichete** și **Tipul de axă**. Cu **înlocuiește axele rețelei** bifat, axele desenate până atunci dispar.

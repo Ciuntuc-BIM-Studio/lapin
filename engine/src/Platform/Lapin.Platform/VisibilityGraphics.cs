@@ -197,7 +197,7 @@ public sealed class VisibilityGraphics
     /// <summary>The annotation category of a mark's owner (a dimension, a grid, a level, a room's stamp…), or null when it is not an annotation.</summary>
     public static string? AnnotationOf(Entity e, ViewMark? mk = null) => mk?.Owner is { } ow && ow.Contains(":partdim:", StringComparison.Ordinal) ? "dimensions" : e.Class switch
     {
-        IfcClass.Annotation => e.PredefinedType switch { "DIMENSION" => "dimensions", "TEXT" => "texts", "TAG" => "tags", "LEGEND" => "legends", "SYMBOL" => "symbols", _ => null },
+        IfcClass.Annotation => e.PredefinedType switch { "DIMENSION" => "dimensions", "TEXT" or "TABLE" => "texts", "TAG" => "tags", "LEGEND" => "legends", "SYMBOL" => "symbols", _ => null },
         IfcClass.Grid => "grids",
         IfcClass.BuildingStorey => "levels",
         IfcClass.Space => mk is { Under: false, Pick: false } ? "roomTags" : null,
