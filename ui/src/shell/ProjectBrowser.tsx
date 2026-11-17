@@ -9,7 +9,7 @@
 
 import { hasModule } from '../platform/brand';
 import { useState, type DragEvent } from 'react';
-import { Box, Camera, ChevronDown, ChevronRight, Copy, CopyPlus, FileText, Frame, Layers, Map as MapIcon, Plus, ScanSearch, Scissors, Settings2, Square, SquareStack, Table2, Trash2 } from 'lucide-react';
+import { Box, Camera, ChevronDown, ChevronRight, Copy, CopyPlus, FileText, ListPlus, Frame, Layers, Map as MapIcon, Plus, ScanSearch, Scissors, Settings2, Square, SquareStack, Table2, Trash2 } from 'lucide-react';
 import { notify, useUi } from '../app/store';
 import { execute, activeStorey, useSession } from '../engine/session';
 import { newSchedule } from '../modules/cost/schedules';
@@ -275,6 +275,7 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
       {tab === 'project' && <div className="tree-group">
         <div className="tree-label"><ChevronDown size={12} /><Layers size={13} />Levels<span className="count">{levels.length}</span>
           <button type="button" className="icon mini" title="New level above" onClick={() => void execute('storey.create', {})}><Plus size={12} /></button>
+          <button type="button" className="icon mini" title="New levels… (several at once, from their heights)" data-new-levels-open onClick={() => useUi.setState({ dialog: 'newLevels' })}><ListPlus size={12} /></button>
         </div>
         {levels.map((s) => (
           <span key={s.id} className="tree-row">

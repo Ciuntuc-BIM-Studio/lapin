@@ -5275,6 +5275,26 @@ export const scenes = [
     },
   },
   {
+    // New levels… (issue #83): several storeys at once from their heights, opened from the project browser's Levels; one undo step.
+    id: 'new-levels',
+    touches: ['core'],
+    async run(t) {
+      await t.fresh();
+      const before = (await t.nodes()).filter((n) => n.type === 'IfcBuildingStorey').length;
+      await t.page.locator('[data-new-levels-open]').click();
+      await t.page.waitForSelector('[data-new-levels]', { timeout: 5000 });
+      await t.page.locator('[data-levels-heights]').fill('3*3000 2800');
+      await t.wait(300);
+      const preview = await t.page.locator('[data-levels-preview] li').count();
+      t.expect(preview === 4, `four storeys in the preview (${preview})`);
+      await t.shot('new-levels', { of: '.dialog', pad: 0 });
+      await t.page.locator('[data-levels-make]').click();
+      await t.wait(1000);
+      const after = (await t.nodes()).filter((n) => n.type === 'IfcBuildingStorey').length;
+      t.expect(after === before + 4, `four levels made (${before} → ${after})`);
+    },
+  },
+  {
     // Copy to storeys (a tester's wish): the ground floor's walls, doors, windows and floor onto the two levels above, in one step.
     id: 'copy-storeys',
     async run(t) {
@@ -11517,8 +11537,18 @@ export const scenes = [
       await t.button('Annotate', { exact: true });
       await t.tool('drafting.grid');
       t.expect(await t.page.locator('[data-grid-dialog-body]').count() > 0, 'the Axis grid dialog opens');
-      await t.page.locator('[data-grid-across]').fill('6000 6000 4500');
+      // Issue #83: single spans and N*span mixed in one field, the ? hint beside it, and the labels shown as they will be.
+      await t.page.locator('[data-grid-across]').fill('2*6000 4500');
       await t.page.locator('[data-grid-along]').fill('2*5000');
+      await t.wait(300);
+      t.expect(await t.page.locator('[data-spans-hint]').count() === 2, 'a ? beside each spans field');
+      const labels = await t.page.locator('[data-grid-labels]').textContent();
+      t.expect(/1 2 … 4/.test(labels) && /A B C/.test(labels), `the labels the axes take (${labels})`);
+      await t.page.locator('[data-grid-across]').fill('100 2*abc');
+      await t.wait(200);
+      const error = await t.page.locator('[data-grid-error]').textContent();
+      t.expect(/2\*abc/.test(error), `a span that does not read is named (${error})`);
+      await t.page.locator('[data-grid-across]').fill('2*6000 4500');
       await t.wait(300);
       await t.shot('grid-dialog', { of: '.dialog', pad: 0 });
       await t.page.locator('[data-grid-make]').click();

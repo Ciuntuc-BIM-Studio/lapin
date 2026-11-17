@@ -4,7 +4,9 @@
  * where it starts, its angle, how far the axes run past it, its first labels
  * (each family's running either way and counting up or down, issue #64),
  * and the axis type it is drawn in (Drafting standards → Grid axes); the
- * grid's axes so far kept or replaced. One undo step.
+ * grid's axes so far kept or replaced. One undo step. Issue #83: single spans
+ * and N*span mixed in one field (one parser with New levels: core/spans), a
+ * prefix and a suffix for each family's labels, and a ? that tells the grammar.
  */
 
 import { Fragment, useEffect, useState } from 'react';
@@ -14,7 +16,9 @@ import { execute, query, useSession } from '../../engine/session';
 import { LengthField, NumberField } from '../../shell/cells';
 import { lengthText, useStandards } from '../../engine/unitsStore';
 import { openStandards } from '../core/standardsTab';
-import { firstForCounting, gridLines, readSpacings } from './gridSpec';
+import { firstForCounting, gridLines, labelSample } from './gridSpec';
+import { parseSpans } from '../core/spans';
+import { SpansHint } from '../core/SpansHint';
 import { axesOf, spacingOf } from '../../shell/gridAxes';
 import type { NodeDto } from '../../engine/protocol';
 
@@ -37,6 +41,7 @@ export function GridDialog() {
   const [reverseY, setReverseY] = useState(false);
   const [descendingX, setDescendingX] = useState(false);
   const [descendingY, setDescendingY] = useState(false);
+  const [around, setAround] = useState({ prefixX: '', suffixX: '', prefixY: '', suffixY: '' });
   const [replace, setReplace] = useState(existing > 0);
   const [styles, setStyles] = useState<{ list: AxisStyle[]; current: string }>({ list: [], current: 'standard' });
   useEffect(() => {
@@ -44,13 +49,17 @@ export function GridDialog() {
     void query<{ axisStyles?: AxisStyle[]; defaultAxisStyle?: string }>('standards.get').then((b) => { if (live && b) setStyles({ list: b.axisStyles ?? [], current: b.defaultAxisStyle ?? 'standard' }); });
     return () => { live = false; };
   }, [nodes]);
-  const x = readSpacings(across), y = readSpacings(along);
+  const readX = parseSpans(across), readY = parseSpans(along);
+  const x = readX.ok ? readX.spans : null, y = readY.ok ? readY.spans : null;
+  const bad = !readX.ok ? readX : !readY.ok ? readY : null;
   const ok = !!x && !!y && x.length + y.length > 0;
   const lines = ok ? gridLines({ x: x!, y: y!, extend, angle, origin }) : [];
   const close = () => useUi.setState({ dialog: null });
   const make = async () => {
     if (!ok) return;
     const r = await execute('drafting.makeGrid', { x: x!, y: y!, origin: [origin.x, origin.y], angle, extend, firstX, firstY, replace,
+      // Only a prefix or suffix typed is sent (issue #83).
+      ...Object.fromEntries(Object.entries(around).filter(([, v]) => v)),
       // The default order sends no flag, as before.
       ...(reverseX ? { reverseX } : {}), ...(reverseY ? { reverseY } : {}), ...(descendingX ? { descendingX } : {}), ...(descendingY ? { descendingY } : {}) });
     if (r) { notify('The grid is made: select an axis to set it.'); close(); }
@@ -71,10 +80,10 @@ export function GridDialog() {
         <div className="dialog-body row" style={{ alignItems: 'flex-start', gap: 16 }}>
           <dl className="fields" style={{ flex: 1 }}>
             <dt title="The spacings between the numbered axes, left to right, in the project's units: 6000 6000 4500, or 3*6000">Across</dt>
-            <dd><input className="cell num" style={{ minWidth: 200 }} value={across} data-grid-across onChange={(e) => setAcross(e.target.value)} aria-invalid={!x} /></dd>
+            <dd><input className="cell num" style={{ minWidth: 200 }} value={across} data-grid-across onChange={(e) => setAcross(e.target.value)} aria-invalid={!x} /><SpansHint /></dd>
             <dt>Width</dt><dd className="num muted">{total(x)}</dd>
             <dt title="The spacings between the lettered axes, bottom to top, in the project's units">Along</dt>
-            <dd><input className="cell num" style={{ minWidth: 200 }} value={along} data-grid-along onChange={(e) => setAlong(e.target.value)} aria-invalid={!y} /></dd>
+            <dd><input className="cell num" style={{ minWidth: 200 }} value={along} data-grid-along onChange={(e) => setAlong(e.target.value)} aria-invalid={!y} /><SpansHint /></dd>
             <dt>Depth</dt><dd className="num muted">{total(y)}</dd>
             <dt title="Where the first axes cross">Origin</dt>
             <dd className="pair"><LengthField noUnit metres={origin.x} onCommit={(v) => { if (v != null) setOrigin({ ...origin, x: v }); }} /><LengthField metres={origin.y} onCommit={(v) => { if (v != null) setOrigin({ ...origin, y: v }); }} /></dd>
@@ -84,6 +93,12 @@ export function GridDialog() {
             <dd><LengthField metres={extend} min={0} onCommit={(v) => { if (v != null) setExtend(v); }} /></dd>
             <dt title="The labels the axes start from: 1, A, A1…; each next one follows">First labels</dt>
             <dd className="pair"><input className="cell" value={firstX} data-no-i18n onChange={(e) => setFirstX(e.target.value)} aria-label="Across" /><input className="cell" value={firstY} data-no-i18n onChange={(e) => setFirstY(e.target.value)} aria-label="Along" /></dd>
+            <dt title="Text before each label of the family, never counted: X- makes X-1, X-2…">Prefix</dt>
+            <dd className="pair"><input className="cell" value={around.prefixX} data-no-i18n data-grid-prefix-x onChange={(e) => setAround({ ...around, prefixX: e.target.value })} aria-label="Across" /><input className="cell" value={around.prefixY} data-no-i18n data-grid-prefix-y onChange={(e) => setAround({ ...around, prefixY: e.target.value })} aria-label="Along" /></dd>
+            <dt title="Text after each label of the family, never counted: ' makes A', B'…">Suffix</dt>
+            <dd className="pair"><input className="cell" value={around.suffixX} data-no-i18n data-grid-suffix-x onChange={(e) => setAround({ ...around, suffixX: e.target.value })} aria-label="Across" /><input className="cell" value={around.suffixY} data-no-i18n data-grid-suffix-y onChange={(e) => setAround({ ...around, suffixY: e.target.value })} aria-label="Along" /></dd>
+            <dt title="The labels the axes take, across and along">Labels</dt>
+            <dd className="muted small" data-no-i18n data-grid-labels>{x ? labelSample(firstX, x.length + 1, around.prefixX, around.suffixX, descendingX) : '—'} · {y ? labelSample(firstY || 'A', y.length + 1, around.prefixY, around.suffixY, descendingY) : '—'}</dd>
             <dt title="Which way the labels run: the numbered axes, the lettered axes">Order</dt>
             <dd className="pair">
               <select data-grid-order-x value={reverseX ? 'reverse' : 'forward'} onChange={(e) => setReverseX(e.target.value === 'reverse')} aria-label="Across"><option value="forward">left to right</option><option value="reverse">right to left</option></select>
@@ -111,7 +126,8 @@ export function GridDialog() {
           </svg>
         </div>
         <footer className="dialog-foot">
-          {!ok && <span className="error-text">Spacings are lengths above zero.</span>}
+          {bad && !bad.ok && <span className="error-text" data-grid-error>{bad.error} <code data-no-i18n>{bad.token}</code></span>}
+          {!bad && !ok && <span className="error-text">Give the spacings across, along or both.</span>}
           <span className="grow" />
           <button type="button" onClick={close}>Cancel</button>
           <button type="button" className="btn primary" data-grid-make disabled={!ok} onClick={() => void make()}>Make the grid</button>

@@ -168,6 +168,36 @@ public sealed class CoreModule : ILapinModule
             return new JsonObject { ["id"] = storey.Id };
         });
 
+        // Several storeys at once (issue #83): one on another from `elevation` (default: the top of the highest storey), each as
+        // high as its entry in `heights`; named by the pattern `name` ({n} the number, from `start`; default "Level {n}" from the
+        // number of storeys there are, as storey.create counts). The storeys already there are left as they are. One undo step.
+        r.Command("storey.createMany", "New storeys", (ctx, a) =>
+        {
+            var heights = a["heights"] is JsonArray arr ? arr.Select(v => Json.Number(v) ?? double.NaN).ToList() : [];
+            if (heights.Count == 0) throw new CommandException("Give the storeys' heights.");
+            if (heights.Count > 200) throw new CommandException("At most 200 storeys at once.");
+            foreach (var h in heights) CheckHeight(h);
+            var storeys = Spatial.Storeys(ctx.Model).ToList();
+            var top = storeys.LastOrDefault();
+            var elevation = CheckLevel(Given(Json.Number(a["elevation"]), a["elevation"], "elevation") ?? (top == null ? 0 : top.Num("elevation") + top.Num("height", 3)));
+            var pattern = ((string?)a["name"])?.Trim() is { Length: > 0 } p ? p : "Level {n}";
+            if (heights.Count > 1 && !pattern.Contains("{n}")) throw new CommandException("Name several storeys with {n} in the name: Level {n}.");
+            var start = Json.Number(a["start"]) is { } st ? (long)Math.Round(st) : storeys.Count;
+            var building = Spatial.EnsureBuilding(ctx);
+            var ids = new JsonArray();
+            for (var i = 0; i < heights.Count; i++)
+            {
+                CheckLevel(elevation);
+                var name = pattern.Replace("{n}", (start + i).ToString(System.Globalization.CultureInfo.InvariantCulture));
+                var storey = new Entity(ctx.NewId(), IfcClass.BuildingStorey, name, new JsonObject { ["elevation"] = elevation, ["height"] = heights[i] });
+                ctx.Add(storey);
+                ctx.Relate(IfcClass.RelAggregates, building.Id, storey.Id);
+                ids.Add((JsonNode)storey.Id);
+                elevation = Math.Round((elevation + heights[i]) * 1e6) / 1e6;
+            }
+            return new JsonObject { ["ids"] = ids };
+        });
+
         r.Command("storey.update", "Change storey", (ctx, a) =>
         {
             var s = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.BuildingStorey);

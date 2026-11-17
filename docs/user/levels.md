@@ -10,6 +10,10 @@ summary: Add levels, set their heights, and see another level under the plan you
 
 The project browser lists the levels at the top, the highest first. **+** next to **Levels** adds a level above the highest one.
 
+**Several levels at once.** The button beside **+** (or **Annotate → Datum → New levels…**) opens **New levels**. Type the **Storey heights** bottom up, separated by spaces, as the Axis grid's spacings are typed: `3*3000 2800` makes four storeys, three 3000 high and one 2800. The first stands on the **Base level** (the top of the highest level, unless you type another); each next one stands on the one below. **Names** is a pattern where `{n}` is the number, counted from **First number**: `Level {n}` from 3 gives Level 3, Level 4…. The list beside shows each new level with its elevation. The levels already there are left as they are, and the new ones are one undo step.
+
+![New levels: four storeys from their heights](shots/new-levels.webp)
+
 Select a level to see its **base level** and **top level**. Either can be above or below ±0.00. Its height is the distance between them. When you move the base, the top stays where it is. A new project starts with Foundations, Ground floor and First floor. A level is at most 100 m high and lies within ±10 km of ±0.00: a value typed in the wrong unit is refused. A stair that would climb more than 50 m to the level above stops there and says why.
 
 ![A level's properties: base level, top level and height](shots/level-properties.webp)
