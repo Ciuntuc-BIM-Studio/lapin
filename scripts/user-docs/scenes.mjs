@@ -13051,6 +13051,39 @@ export const scenes = [
       await t.page.keyboard.press('Tab');
     },
   },
+  {
+    // Issues #32 and #30 (a CYPECAD MEP user): a new wall type made with IsExternal ticked, its walls having it from the start;
+    // the IFC export's option that writes a type's properties on each occurrence too.
+    id: 'type-params-ifc',
+    touches: ['architecture', 'core'],
+    async run(t) {
+      await t.fresh();
+      await t.tool('architecture.wallTypes');
+      const dialog = t.page.locator('.dialog');
+      await dialog.getByRole('button', { name: 'New type' }).click();
+      await dialog.locator('input[placeholder="(from its core and thickness)"]').fill('Exterior 30');
+      const draft = dialog.locator('[data-testid=draft-params]');
+      await draft.locator('select[data-draft-param-standard]').selectOption('Pset_WallCommon.IsExternal');
+      await draft.locator('input[data-draft-param="IsExternal"]').check();
+      await t.wait(300);
+      await t.shot('wall-type-params', { of: '.dialog', pad: 0 });
+      await dialog.getByRole('button', { name: 'Create type' }).click();
+      await t.wait(800);
+      const type = (await t.nodes()).find((n) => n.type === 'IfcWallType' && n.name === 'Exterior 30');
+      const p = (type?.props.params ?? []).find((x) => x.name === 'IsExternal');
+      t.expect(p?.pset === 'Pset_WallCommon' && p.value === true, 'the new type is made with IsExternal ticked');
+      t.expect(await dialog.locator('[data-testid=draft-params]').count() === 0, 'once made, its parameters are its own section');
+      await t.ui({ dialog: null });
+      await t.wait(300);
+      await t.button('File', { exact: true });
+      await t.page.getByRole('menuitem', { name: 'Export IFC, Fragments or BOS…' }).click();
+      const exchange = t.page.locator('[aria-label="Export IFC, Fragments or BOS"]');
+      const option = exchange.locator('[data-testid=export-type-properties]');
+      await option.waitFor({ timeout: 20_000 });
+      t.expect(await option.count() === 1 && !(await option.isChecked()), 'the export offers the type properties on each occurrence, unticked');
+      await exchange.getByRole('button', { name: 'Cancel' }).click();
+    },
+  },
 ];
 
 /** A zip of stored entries (name, text), enough for a BCF file: the local headers, the central directory and its end, with CRC-32. */

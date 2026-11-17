@@ -4240,6 +4240,10 @@ export const RO: Record<string, string> = {
   "Layer lines: colour": "Linii între straturi: culoare",
   "As the cut lines": "Ca liniile de secțiune",
   "The lines between a cut element's layers (a wall's, a floor's); unset: as the cut lines": "Liniile dintre straturile unui element secționat (ale unui perete, ale unui planșeu); nesetate: ca liniile de secțiune",
+  "A type's property sets (Pset_WallCommon.IsExternal on the wall type) also written on each element of the type, for programs that read only the element; an element's own value wins": "Seturile de proprietăți ale unui tip (Pset_WallCommon.IsExternal pe tipul de perete) scrise și pe fiecare element al tipului, pentru programele care citesc doar elementul; valoarea proprie a elementului are prioritate",
+  "Type properties": "Proprietățile tipului",
+  "Also write type properties on each occurrence": "Scrie proprietățile tipului și pe fiecare instanță",
+  "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "orice perete al tipului le are (IsExternal, FireRating); o valoare implicită de instanță e copia proprie a fiecărui perete",
 };
 
 /** Phrases with a number or a name in them. */

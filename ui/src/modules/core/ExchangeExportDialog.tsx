@@ -4,7 +4,7 @@
  * a phase, everything or only what the 3D view shows. IFC in IFC4 or IFC4X3, its parts grouped under their element
  * or one body each, its bodies as faceted B-reps (exact) or face sets (a much smaller file), simplified on request
  * within a tolerance where a body is meshed (Simplifier in the engine); Fragments from the project base point, the
- * internal origin or the survey point. On the desktop, an IFC can take Bonsai's drawing styles beside it (a stylesheet and its hatch patterns, decision 495). SDNF 3.0 (docs/sdnf.md, decision 463) where the product has the steel module: the columns, beams
+ * internal origin or the survey point. A type's properties may go on each occurrence too (issue #30). On the desktop, an IFC can take Bonsai's drawing styles beside it (a stylesheet and its hatch patterns, decision 495). SDNF 3.0 (docs/sdnf.md, decision 463) where the product has the steel module: the columns, beams
  * and steel members of the storeys and kinds chosen, their connections' plates, the grids, for steel detailing programs.
  */
 
@@ -46,6 +46,8 @@ export function ExchangeExportDialog() {
   const [bonsai, setBonsai] = useState(false);
   // The analytical model and the loads as an IFC Structural Analysis View (docs/plan-fem.md §8.7).
   const [structural, setStructural] = useState(false);
+  // A type's properties also on each of its elements (issue #30), for programs that read only the element: off, the export is as it was.
+  const [typeProps, setTypeProps] = useState(false);
   const [busy, setBusy] = useState(false);
   const close = () => useUi.setState({ dialog: null });
   useEffect(() => {
@@ -74,7 +76,7 @@ export function ExchangeExportDialog() {
       } catch (e) {
         notify(e instanceof Error ? e.message : String(e));
       }
-    } else if (format === 'ifc') await exportFile('project.exportIfc', { ...common, entourage: true, schema, detail, geometry, ...(simplify ? { tolerance: mm / 1000 } : {}), ...(bonsai && isDesktop() ? { bonsaiStyles: true } : {}), ...(structural ? { structural: true } : {}) }, `${projectTitle(path)}.ifc`, 'ifc');
+    } else if (format === 'ifc') await exportFile('project.exportIfc', { ...common, entourage: true, schema, detail, geometry, ...(simplify ? { tolerance: mm / 1000 } : {}), ...(bonsai && isDesktop() ? { bonsaiStyles: true } : {}), ...(structural ? { structural: true } : {}), ...(typeProps ? { typePropertiesOnOccurrences: true } : {}) },`${projectTitle(path)}.ifc`, 'ifc');
     else await exportFile('project.exportMesh', { ...common, format, origin, ...(onlyShown ? { viewId: view3dId ?? '3d' } : {}) }, `${projectTitle(path)}.${format}`, format);
     setBusy(false);
     close();
@@ -138,6 +140,8 @@ export function ExchangeExportDialog() {
                     <dd><label><input type="checkbox" data-testid="export-bonsai" style={{ width: 'auto', marginRight: 6 }} checked={bonsai} onChange={(e) => setBonsai(e.target.checked)} /> a stylesheet and its hatches beside the file</label></dd>
                   </>
                 )}
+                <dt title="A type's property sets (Pset_WallCommon.IsExternal on the wall type) also written on each element of the type, for programs that read only the element; an element's own value wins">Type properties</dt>
+                <dd><label><input type="checkbox" data-testid="export-type-properties" style={{ width: 'auto', marginRight: 6 }} checked={typeProps} onChange={(e) => setTypeProps(e.target.checked)} /> Also write type properties on each occurrence</label></dd>
                 <dt title="The analytical model (bearing walls, floors, columns and beams as structural members) with the load cases, the loads and the combinations, as an IFC Structural Analysis View">Structural analysis</dt>
                 <dd><label><input type="checkbox" data-testid="export-structural" style={{ width: 'auto', marginRight: 6 }} checked={structural} onChange={(e) => setStructural(e.target.checked)} /> Structural analysis view (analytical model and loads)</label></dd>
                 <dt>Simplify</dt>

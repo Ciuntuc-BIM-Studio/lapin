@@ -1175,7 +1175,9 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                     // `bonsaiStyles`: Bonsai's drawing styles (a stylesheet and its patterns) written beside the file, on the desktop (a path given).
                     p["bonsaiStyles"] is JsonValue bv && bv.TryGetValue<bool>(out var bonsai) && bonsai,
                     // `structural`: IFC's structural analysis view (the analytical model, the load cases, actions and combinations; docs/plan-fem.md §8.7).
-                    p["structural"] is JsonValue sv && sv.TryGetValue<bool>(out var structural) && structural);
+                    p["structural"] is JsonValue sv && sv.TryGetValue<bool>(out var structural) && structural,
+                    // `typePropertiesOnOccurrences` (issue #30): the type's properties also on each of its elements, the element's own value winning.
+                    p["typePropertiesOnOccurrences"] is JsonValue tv && tv.TryGetValue<bool>(out var onOccurrences) && onOccurrences);
                 if ((string?)p["path"] is { Length: > 0 } ifcPath) return (IfcExport.Write(session, RefuseOverRead(HostFiles.Check(ifcPath)), options).ToJson(), null);
                 using var ms = new MemoryStream();
                 IfcExport.Write(session, ms, "project.ifc", options);

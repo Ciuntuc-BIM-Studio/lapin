@@ -4287,6 +4287,10 @@ export const PL: Record<string, string> = {
   "Layer lines: colour": "Linie między warstwami: kolor",
   "As the cut lines": "Jak linie cięcia",
   "The lines between a cut element's layers (a wall's, a floor's); unset: as the cut lines": "Linie między warstwami przeciętego elementu (ściany, stropu); nieustawione: jak linie cięcia",
+  "A type's property sets (Pset_WallCommon.IsExternal on the wall type) also written on each element of the type, for programs that read only the element; an element's own value wins": "Zestawy właściwości typu (Pset_WallCommon.IsExternal na typie ściany) zapisane także na każdym elemencie typu, dla programów, które czytają tylko element; własna wartość elementu ma pierwszeństwo",
+  "Type properties": "Właściwości typu",
+  "Also write type properties on each occurrence": "Zapisz właściwości typu także na każdym wystąpieniu",
+  "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "każda ściana typu je ma (IsExternal, FireRating); domyślna wartość wystąpienia to własna kopia każdej ściany",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

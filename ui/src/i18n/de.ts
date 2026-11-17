@@ -4244,6 +4244,10 @@ export const DE: Record<string, string> = {
   "Layer lines: colour": "Schichtlinien: Farbe",
   "As the cut lines": "Wie die Schnittlinien",
   "The lines between a cut element's layers (a wall's, a floor's); unset: as the cut lines": "Die Linien zwischen den Schichten eines geschnittenen Bauteils (einer Wand, einer Decke); nicht gesetzt: wie die Schnittlinien",
+  "A type's property sets (Pset_WallCommon.IsExternal on the wall type) also written on each element of the type, for programs that read only the element; an element's own value wins": "Die Eigenschaftssätze eines Typs (Pset_WallCommon.IsExternal am Wandtyp) auch an jedes Element des Typs geschrieben, für Programme, die nur das Element lesen; der eigene Wert eines Elements hat Vorrang",
+  "Type properties": "Typeigenschaften",
+  "Also write type properties on each occurrence": "Typeigenschaften auch an jedes Exemplar schreiben",
+  "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "jede Wand des Typs hat sie (IsExternal, FireRating); ein Exemplar-Standardwert ist die eigene Kopie jeder Wand",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

@@ -1041,8 +1041,17 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
 
         r.Command("createWallType", "New wall type", (ctx, a) =>
         {
+            // `params` (issue #32): the type's parameters, checked as element.setParam checks one ([{name, kind, value, pset?, options?, instance?}]),
+            // set in the same step, so every wall drawn with it has them from the start (its instance defaults as copies of its own).
+            var ps = Params.ParseList(a["params"], IfcClass.WallType);
             var type = WallTypes.Create(ctx, (string?)a["name"], WallTypes.ParseLayers(a["layers"]), (string?)a["mark"], a["zones"], a["lintels"],
                 a["sweeps"] is null ? null : WallSweepTypes.Parse(ctx, null, a["sweeps"]));
+            if (ps.Count > 0)
+            {
+                var attrs = type.CloneAttrs();
+                attrs["params"] = ps;
+                ctx.Replace(type = type.With(attrs: attrs));
+            }
             return new JsonObject { ["id"] = type.Id };
         });
 

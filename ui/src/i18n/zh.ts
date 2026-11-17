@@ -4278,6 +4278,10 @@ export const ZH: Record<string, string> = {
   "Layer lines: colour": "层间线：颜色",
   "As the cut lines": "同剖切线",
   "The lines between a cut element's layers (a wall's, a floor's); unset: as the cut lines": "剖切构件各层之间的线（墙、楼板）；未设置：同剖切线",
+  "A type's property sets (Pset_WallCommon.IsExternal on the wall type) also written on each element of the type, for programs that read only the element; an element's own value wins": "类型的属性集（墙类型上的 Pset_WallCommon.IsExternal）也写到该类型的每个构件上，供只读取构件的程序使用；构件自身的值优先",
+  "Type properties": "类型属性",
+  "Also write type properties on each occurrence": "同时将类型属性写到每个实例上",
+  "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "该类型的每面墙都有这些参数（IsExternal、FireRating）；实例默认值是每面墙自己的副本",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

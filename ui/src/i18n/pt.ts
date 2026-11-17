@@ -4284,6 +4284,10 @@ export const PT: Record<string, string> = {
   "Layer lines: colour": "Linhas entre camadas: cor",
   "As the cut lines": "Como as linhas de corte",
   "The lines between a cut element's layers (a wall's, a floor's); unset: as the cut lines": "As linhas entre as camadas de um elemento cortado (uma parede, uma laje); sem definição: como as linhas de corte",
+  "A type's property sets (Pset_WallCommon.IsExternal on the wall type) also written on each element of the type, for programs that read only the element; an element's own value wins": "Os conjuntos de propriedades de um tipo (Pset_WallCommon.IsExternal no tipo de parede) escritos também em cada elemento do tipo, para os programas que só leem o elemento; o valor próprio de um elemento prevalece",
+  "Type properties": "Propriedades do tipo",
+  "Also write type properties on each occurrence": "Escrever as propriedades do tipo também em cada instância",
+  "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "cada parede do tipo tem-nas (IsExternal, FireRating); um valor predefinido de instância é a cópia própria de cada parede",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 
